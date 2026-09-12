@@ -18,4 +18,14 @@
 			reg = <0>;
 		};
 	};
+	ccompare: timer {
+		compatible = "cdns,xtensa-timer";
+	};
+
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &ccompare;
+	};
 };

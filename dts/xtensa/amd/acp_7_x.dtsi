@@ -604,4 +604,14 @@
 			status = "okay";
 		};
 	};
+	ccompare: timer {
+		compatible = "cdns,xtensa-timer";
+	};
+
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &ccompare;
+	};
 };

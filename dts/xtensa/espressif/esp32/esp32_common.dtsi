@@ -17,6 +17,7 @@
 
 / {
 	chosen {
+		zephyr,system-timer = &ccompare;
 		zephyr,canbus = &twai;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
@@ -605,4 +606,8 @@
 			status = "disabled";
 		};
 	};
+	ccompare: timer {
+		compatible = "cdns,xtensa-timer";
+	};
+
 };

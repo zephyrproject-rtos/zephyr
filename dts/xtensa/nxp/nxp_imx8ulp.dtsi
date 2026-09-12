@@ -124,4 +124,14 @@
 		#mbox-cells = <1>;
 		status = "disabled";
 	};
+	ccompare: timer {
+		compatible = "cdns,xtensa-timer";
+	};
+
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &ccompare;
+	};
 };

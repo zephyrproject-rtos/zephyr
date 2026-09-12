@@ -38,4 +38,14 @@
 		compatible = "mmio-sram";
 		reg = <0x20700000 DT_SIZE_K(512)>;
 	};
+	ccompare: timer {
+		compatible = "cdns,xtensa-timer";
+	};
+
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &ccompare;
+	};
 };

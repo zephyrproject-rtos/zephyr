@@ -37,6 +37,7 @@
 	};
 
 	chosen {
+		zephyr,system-timer = &qtimer;
 		zephyr,sram = &sram0;
 		zephyr,flash = &sram0;
 		zephyr,console = &uart0;
@@ -146,4 +147,8 @@
 		compatible = "mmio-sram";
 		reg = <0xa0000000 DT_SIZE_M(16)>;
 	};
+	qtimer: timer {
+		compatible = "qcom,hexagon-timer";
+	};
+
 };

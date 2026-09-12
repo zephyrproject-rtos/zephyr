@@ -36,4 +36,14 @@
 		compatible = "simple-bus";
 		ranges;
 	};
+	ccompare: timer {
+		compatible = "cdns,xtensa-timer";
+	};
+
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &ccompare;
+	};
 };

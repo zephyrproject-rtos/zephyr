@@ -333,4 +333,14 @@
 		compatible = "nxp,mbox-imx-mu";
 		status = "disabled";
 	};
+	ccompare: timer {
+		compatible = "cdns,xtensa-timer";
+	};
+
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &ccompare;
+	};
 };

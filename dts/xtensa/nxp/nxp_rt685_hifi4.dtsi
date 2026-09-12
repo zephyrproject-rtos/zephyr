@@ -11,6 +11,7 @@
 
 / {
 	chosen {
+		zephyr,system-timer = &ccompare;
 		zephyr,sram = &adsp_data;
 	};
 
@@ -231,4 +232,8 @@
 			};
 		};
 	};
+	ccompare: timer {
+		compatible = "cdns,xtensa-timer";
+	};
+
 };
