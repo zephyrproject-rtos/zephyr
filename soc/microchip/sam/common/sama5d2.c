@@ -50,6 +50,25 @@ static const struct clk_master_characteristics mck_characteristics = {
 	.have_div3_pres = 1,
 };
 
+static const struct clk_programmable_layout programmable_layout = {
+	.pres_mask      = PMC_PCK_PRES_Msk >> PMC_PCK_PRES_Pos,
+	.pres_shift     = PMC_PCK_PRES_Pos,
+	.css_mask       = PMC_PCK_CSS_Msk,
+	.have_slck_mck  = 0,
+	.is_pres_direct = 1,
+};
+
+static const struct {
+	char *n;
+	char *p;
+	uint32_t parent_idx;
+	uint8_t id;
+} sama5d2_systemck[] = {
+	{ .n = "pck0", .p = "prog0", .id = PMC_SCER_PCK0_Pos, .parent_idx = CLK_OFFSET_PROG + 0 },
+	{ .n = "pck1", .p = "prog1", .id = PMC_SCER_PCK1_Pos, .parent_idx = CLK_OFFSET_PROG + 1 },
+	{ .n = "pck2", .p = "prog2", .id = PMC_SCER_PCK2_Pos, .parent_idx = CLK_OFFSET_PROG + 2 },
+};
+
 static int sam_pmc_register_master(const struct device *dev, struct pmc_data *sama5d2_pmc,
 				   struct device **clk)
 {
@@ -122,6 +141,55 @@ static void clk_register_h32mx(mm_reg_t pmc, const char *name, const struct devi
 	h32mxclk->clk.api = &clk_mck_4_h32mx_api;
 	h32mxclk->parent = parent;
 	*clk = &h32mxclk->clk;
+}
+
+static int sam_pmc_register_programmable(const struct device *dev, struct pmc_data *sama5d2_pmc)
+{
+	const struct sam_pmc_cfg *cfg = dev->config;
+	const struct device *parents[6];
+	struct device *clk;
+	int ret, i;
+
+	parents[0] = cfg->md_slck;
+	parents[1] = sama5d2_pmc->chws[PMC_MAIN];
+	parents[2] = sama5d2_pmc->chws[PMC_PLLA];
+	parents[3] = sama5d2_pmc->chws[PMC_UPLL];
+	parents[4] = sama5d2_pmc->chws[PMC_MCK];
+	parents[5] = sama5d2_pmc->chws[PMC_AUDIOPMCPLL];
+
+	for (i = 0; i < SOC_NUM_CLOCK_PROGRAMMABLE; i++) {
+		ret = clk_register_programmable((void *const)cfg->reg, parents, ARRAY_SIZE(parents),
+						i, &programmable_layout, NULL, &clk);
+		if (ret) {
+			LOG_ERR("Register programmable clock %d failed", i);
+			return ret;
+		}
+
+		sama5d2_pmc->pchws[i] = clk;
+	}
+
+	return 0;
+}
+
+static int sam_pmc_register_system(const struct device *dev, struct pmc_data *sama5d2_pmc)
+{
+	const struct sam_pmc_cfg *cfg = dev->config;
+	struct device *clk;
+	int ret, i;
+
+	for (i = 0; i < ARRAY_SIZE(sama5d2_systemck); i++) {
+		ret = clk_register_system((void *const)cfg->reg, sama5d2_systemck[i].n,
+					  pmc_table[sama5d2_systemck[i].parent_idx],
+					  sama5d2_systemck[i].id, &clk);
+		if (ret) {
+			LOG_ERR("Register system clock %d failed", i);
+			return ret;
+		}
+
+		sama5d2_pmc->shws[sama5d2_systemck[i].id] = clk;
+	}
+
+	return 0;
 }
 
 void sam_pmc_setup(const struct device *dev)
@@ -198,4 +266,14 @@ void sam_pmc_setup(const struct device *dev)
 
 	clk_register_h32mx((mm_reg_t)regmap, "h32mxck", sama5d2_pmc->chws[PMC_MCK],
 			   &sama5d2_pmc->chws[PMC_MCK2]);
+
+	ret = sam_pmc_register_programmable(dev, sama5d2_pmc);
+	if (ret) {
+		return;
+	}
+
+	ret = sam_pmc_register_system(dev, sama5d2_pmc);
+	if (ret) {
+		return;
+	}
 }
