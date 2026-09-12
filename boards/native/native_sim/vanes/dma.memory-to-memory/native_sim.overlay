@@ -1,0 +1,20 @@
+/*
+ * Copyright 2021 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma: dma-test-dma {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma>;
+		channel-link;
+		scatter-gather;
+	};
+};
+
+&dma {
+	dma-channels = <2>;
+	status = "okay";
+	dma-requests = <4>;
+};
