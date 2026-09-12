@@ -26,6 +26,7 @@
 			compatible = "ti,mspm0-adc12";
 			reg = <0x40000000 0x2000>;
 			interrupts = <4 0>;
+			zephyr,disabling-power-states = <&stop2 &stdby0 &stdby1>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -34,6 +35,7 @@
 			compatible = "ti,mspm0-adc12";
 			reg = <0x40002000 0x2000>;
 			interrupts = <5 0>;
+			zephyr,disabling-power-states = <&stop2 &stdby0 &stdby1>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
