@@ -86,6 +86,7 @@ struct mcp23xxx_config {
 
 	uint8_t ngpios;
 	bool is_open_drain;
+	bool int_open_drain;
 	mcp23xxx_read_regs read_fn;
 	mcp23xxx_write_regs write_fn;
 	mcp23xxx_bus_is_ready bus_fn;

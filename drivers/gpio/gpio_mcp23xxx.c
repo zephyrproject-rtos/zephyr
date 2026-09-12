@@ -628,6 +628,12 @@ int gpio_mcp23xxx_init(const struct device *dev)
 			iocon |= REG_IOCON_INTCC;
 		}
 
+		if (config->int_open_drain) {
+			iocon |= REG_IOCON_ODR;
+		} else if ((config->gpio_int.dt_flags & GPIO_ACTIVE_LOW) == 0) {
+			iocon |= REG_IOCON_INTPOL;
+		}
+
 		err = write_iocon(dev, iocon);
 		if (err != 0) {
 			LOG_ERR("Failed to configure IOCON: %d", err);

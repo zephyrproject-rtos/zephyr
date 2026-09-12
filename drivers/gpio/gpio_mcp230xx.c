@@ -91,6 +91,7 @@ static int mcp230xx_bus_is_ready(const struct device *dev)
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
 		.ngpios =  num_gpios,                                                              \
 		.is_open_drain = open_drain,                                                       \
+		.int_open_drain = DT_INST_PROP(inst, int_open_drain),                              \
 		.read_fn = mcp230xx_read_regs,                                                     \
 		.write_fn = mcp230xx_write_regs,                                                   \
 		.bus_fn = mcp230xx_bus_is_ready,                                                   \
