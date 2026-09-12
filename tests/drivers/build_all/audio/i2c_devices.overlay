@@ -55,6 +55,12 @@
 				reg = <0x4>;
 				status = "okay";
 			};
+
+			test_i2c_nau88c10: nau88c10@5 {
+				compatible = "nuvoton,nau88c10";
+				reg = <0x5>;
+				status = "okay";
+			};
 		};
 	};
 };
