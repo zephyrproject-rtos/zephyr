@@ -25,7 +25,9 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <soc.h>
 #include <esp_memory_utils.h>
 #include <errno.h>
+#include <string.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/clock_control.h>
@@ -112,6 +114,24 @@ struct irq_config {
 typedef dma_descriptor_align8_t esp_dma_desc_t;
 #else
 typedef dma_descriptor_t esp_dma_desc_t;
+#endif
+
+/* Cache maintenance granule. CONFIG_DCACHE_LINE_SIZE comes from devicetree
+ * and describes the narrowest line the SoC can be built with, but the line
+ * the cache actually runs on is chosen at startup: esp32s3 programs its data
+ * cache and esp32p4 keeps a second level, either of which can be wider. A
+ * range operation covers those whole lines, so round to the widest one any
+ * level in this build uses.
+ */
+#if defined(CONFIG_DCACHE)
+#if defined(CONFIG_ESP32_CACHE_L2_LINE_SIZE)
+#define DMA_ESP32_SOC_CACHE_LINE CONFIG_ESP32_CACHE_L2_LINE_SIZE
+#elif defined(CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE)
+#define DMA_ESP32_SOC_CACHE_LINE CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE
+#else
+#define DMA_ESP32_SOC_CACHE_LINE 0
+#endif
+#define DMA_ESP32_CACHE_LINE MAX(CONFIG_DCACHE_LINE_SIZE, DMA_ESP32_SOC_CACHE_LINE)
 #endif
 
 struct dma_esp32_channel {
@@ -300,29 +320,55 @@ static void dma_esp32_cache_flush_data(struct dma_esp32_channel *dma_channel)
 	}
 }
 
-/*
- * Invalidating a GDMA-written buffer also drops the rest of any cache line it
- * shares with CPU-owned data. When the buffer is not cache-line aligned or
- * sized, flush the head and tail lines first so adjacent dirty data is written
- * back to memory before the invalidate discards it.
+/* Drop the cache over a buffer the GDMA wrote. The buffer rarely starts or
+ * ends on a cache line, so the two edge lines are shared with data the CPU
+ * owns: keep those bytes across the invalidate. Never write the lines back
+ * first, since a stale cached copy of the buffer would land on the received
+ * data.
  */
+static void dma_esp32_invd_keep_edges(uint8_t *buf, size_t len)
+{
+#if defined(CONFIG_DCACHE)
+	const size_t line = DMA_ESP32_CACHE_LINE;
+	uint8_t head[DMA_ESP32_CACHE_LINE - 1];
+	uint8_t tail[DMA_ESP32_CACHE_LINE - 1];
+	uintptr_t start = (uintptr_t)buf;
+	uintptr_t end = start + len;
+	uintptr_t base;
+	size_t head_len, tail_len;
+
+	base = ROUND_DOWN(start, line);
+	head_len = start - base;
+	tail_len = ROUND_UP(end, line) - end;
+
+	if (head_len > 0) {
+		memcpy(head, (void *)base, head_len);
+	}
+	if (tail_len > 0) {
+		memcpy(tail, (void *)end, tail_len);
+	}
+
+	sys_cache_data_invd_range((void *)base, ROUND_UP(end, line) - base);
+
+	if (head_len > 0) {
+		memcpy((void *)base, head, head_len);
+	}
+	if (tail_len > 0) {
+		memcpy((void *)end, tail, tail_len);
+	}
+#else
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+#endif
+}
+
 static void dma_esp32_cache_invd_data(struct dma_esp32_channel *dma_channel)
 {
-	const size_t line = sys_cache_data_line_size_get();
 	esp_dma_desc_t *desc = dma_channel->desc_list;
 
 	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list) && desc; ++i) {
 		if (desc->buffer && desc->dw0.size) {
-			uintptr_t start = (uintptr_t)desc->buffer;
-			uintptr_t end = start + desc->dw0.size;
-
-			if (line && (start & (line - 1))) {
-				sys_cache_data_flush_range((void *)start, 1);
-			}
-			if (line && (end & (line - 1))) {
-				sys_cache_data_flush_range((void *)(end - 1), 1);
-			}
-			sys_cache_data_invd_range(desc->buffer, desc->dw0.size);
+			dma_esp32_invd_keep_edges(desc->buffer, desc->dw0.size);
 		}
 		desc = desc->next;
 	}
