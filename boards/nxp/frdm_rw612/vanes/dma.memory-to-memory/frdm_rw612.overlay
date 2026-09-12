@@ -1,0 +1,26 @@
+/*
+ * Copyright 2023 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma0: dma-test-dma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma0>;
+		max-transfer-size = <1024>;
+	};
+
+	dma_test_gdma: dma-test-gdma {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&gdma>;
+		max-transfer-size = <1024>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&gdma {
+	status = "okay";
+};

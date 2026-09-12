@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+ * Copyright (c) 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	dma_test_edma_lpsr0: dma-test-edma_lpsr0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&edma_lpsr0>;
+	};
+};
+
+&sram1 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
+&edma_lpsr0 {
+	status = "okay";
+};

@@ -1,0 +1,27 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_edma3: dma-test-edma3 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&edma3>;
+		channel-link;
+	};
+
+	dma_test_edma4: dma-test-edma4 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&edma4>;
+		channel-link;
+	};
+};
+
+&edma3 {
+	status = "okay";
+};
+
+&edma4 {
+	status = "okay";
+};
