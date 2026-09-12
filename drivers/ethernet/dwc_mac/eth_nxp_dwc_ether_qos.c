@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include "eth_dwmac_priv.h"
 
-/* The DMA bus master interface is 32-bit on this IP */
+/* The DMA bus master interface is a 32-bit AHB interface on this IP */
 #define DATA_BUS_WIDTH 32
 
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
