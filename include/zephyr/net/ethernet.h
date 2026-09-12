@@ -56,6 +56,7 @@ struct net_eth_addr {
 
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_data(pkt))
 
+/* clang-format off */
 /* zephyr-keep-sorted-start */
 #define NET_ETH_PTYPE_ALL		0x0003 /* from linux/if_ether.h */
 #define NET_ETH_PTYPE_ARP		0x0806
@@ -68,10 +69,12 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_IP		0x0800
 #define NET_ETH_PTYPE_IPV6		0x86dd
 #define NET_ETH_PTYPE_LLDP		0x88cc
+#define NET_ETH_PTYPE_OAM		0x8902
 #define NET_ETH_PTYPE_PTP		0x88f7
 #define NET_ETH_PTYPE_TSN		0x22f0 /* TSN (IEEE 1722) packet */
 #define NET_ETH_PTYPE_VLAN		0x8100
 /* zephyr-keep-sorted-stop */
+/* clang-format on */
 
 /* zephyr-keep-sorted-start re(^#define) */
 #if !defined(ETH_P_8021Q)
