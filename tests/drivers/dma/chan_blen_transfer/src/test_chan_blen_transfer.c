@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2024 STMicroelectronics
  * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -17,34 +18,22 @@
  *   -# Data is transferred correctly from src to dest
  */
 
+#include <string.h>
+
 #include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/ztest.h>
 
-#include "test_buffers.h"
+#include "dma_test.h"
 
-#define DMA_TEST_NODE      DT_PATH(zephyr_user)
-#define DMA_TEST_DEVS_PROP dma_test_devs
+#define GUARD_BUF_SIZE (16)
+#define TEST_BUF_SIZE (48)
 
-#if DT_NODE_HAS_PROP(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
-/* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
- * phandle list.
- */
-#define DMA_TEST_DEV_COUNT DT_PROP_LEN(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
-#define DMA_TEST_DEV_GET(idx, _)                                                                   \
-	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, idx))
-#else
-/* Legacy boards use tst_dmaN devicetree labels and
- * CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS.
- */
-#define DMA_TEST_DEV_COUNT CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
-#define DMA_TEST_DEV_GET(idx, _) DEVICE_DT_GET(DT_NODELABEL(tst_dma##idx))
-#endif
+static const char test_pattern[TEST_BUF_SIZE] = "It is harder to be kind than to be wise........";
 
-static const struct device *const dma_test_devs[] = {
-	LISTIFY(DMA_TEST_DEV_COUNT, DMA_TEST_DEV_GET, (,))
-};
+static DMA_TEST_BUF char tx_data[TEST_BUF_SIZE];
+static DMA_TEST_BUF char rx_data[TEST_BUF_SIZE + GUARD_BUF_SIZE];
 
 static K_SEM_DEFINE(transfer_end_sem, 0, 1);
 static int dma_complete_status;
@@ -97,6 +86,7 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 		 dma->name, chan_id, blen >> 3);
 
 	TC_PRINT("Starting the transfer\n");
+	(void)memcpy(tx_data, test_pattern, TEST_BUF_SIZE);
 	(void)memset(rx_data, 0, TEST_BUF_SIZE);
 	(void)memset(rx_data + TEST_BUF_SIZE, 0xA5, GUARD_BUF_SIZE);
 	dma_block_cfg.block_size = TEST_BUF_SIZE;
@@ -165,37 +155,43 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 	return TC_PASS;
 }
 
-static void run_dma_m2m_test(const struct device *dma, uint32_t chan, uint32_t blen)
+/* Run the transfer on every channel the board or the driver gives the test. */
+static void run_dma_m2m_test(const struct dma_test_dev *td, uint32_t blen)
 {
-	zassert_true(test_task(dma, chan, blen) == TC_PASS, "%s failed chan %u burst %u", dma->name,
-		     chan, blen);
+	struct dma_test_channels chans;
+
+	zassert_ok(dma_test_channels_get(td, DMA_TEST_MAX_CHANNELS, &chans));
+
+	for (size_t i = 0; i < chans.count; i++) {
+		zassert_true(test_task(td->dev, chans.id[i], blen) == TC_PASS,
+			     "%s failed chan %u burst %u", td->dev->name, chans.id[i], blen);
+	}
+
+	dma_test_channels_put(td, &chans);
 }
 
 /* Generate one set of test cases per DMA controller under test so a failure
  * on one controller does not prevent the remaining controllers from running.
  */
 #define DEFINE_DMA_M2M_BURST8_TESTS(idx, _)                                                        \
-	ZTEST(dma_m2m, test_dma##idx##_m2m_chan0_burst8)                                           \
+	ZTEST(dma_m2m, test_dma##idx##_m2m_burst8)                                                 \
 	{                                                                                          \
-		run_dma_m2m_test(dma_test_devs[idx], CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8);         \
-	}                                                                                          \
-	ZTEST(dma_m2m, test_dma##idx##_m2m_chan1_burst8)                                           \
-	{                                                                                          \
-		run_dma_m2m_test(dma_test_devs[idx], CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8);         \
+		run_dma_m2m_test(&dma_test_devs[idx], 8);                                          \
 	}
 
 LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_BURST8_TESTS, ())
 
-#if CONFIG_DMA_TRANSFER_BURST16
+/* Skipped on a controller the board limits to shorter bursts. */
 #define DEFINE_DMA_M2M_BURST16_TESTS(idx, _)                                                       \
-	ZTEST(dma_m2m, test_dma##idx##_m2m_chan0_burst16)                                          \
+	ZTEST(dma_m2m, test_dma##idx##_m2m_burst16)                                                \
 	{                                                                                          \
-		run_dma_m2m_test(dma_test_devs[idx], CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16);        \
-	}                                                                                          \
-	ZTEST(dma_m2m, test_dma##idx##_m2m_chan1_burst16)                                          \
-	{                                                                                          \
-		run_dma_m2m_test(dma_test_devs[idx], CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16);        \
+		if (dma_test_devs[idx].max_burst_length != 0 &&                                    \
+		    dma_test_devs[idx].max_burst_length < 16) {                                    \
+			ztest_test_skip();                                                         \
+		}                                                                                  \
+		run_dma_m2m_test(&dma_test_devs[idx], 16);                                         \
 	}
 
 LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_BURST16_TESTS, ())
-#endif
+
+ZTEST_SUITE(dma_m2m, NULL, NULL, NULL, NULL, NULL);
