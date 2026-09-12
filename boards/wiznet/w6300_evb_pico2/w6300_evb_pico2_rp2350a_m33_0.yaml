@@ -1,4 +1,4 @@
-identifier: w6300_evb_pico2/rp2350a/m33
+identifier: w6300_evb_pico2/rp2350a/m33_0
 name: Wiznet W6300 Evaluation Board with RP2350
 type: mcu
 arch: arm
