@@ -10,6 +10,7 @@
 
 / {
 	chosen {
+		zephyr,system-timer = &stimer;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram;
@@ -34,4 +35,8 @@
 
 &uart0 {
 	status = "okay";
+	stimer: timer {
+		compatible = "riscv,supervisor-timer";
+	};
+
 };

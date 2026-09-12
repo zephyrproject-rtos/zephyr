@@ -10,6 +10,7 @@
 	interrupt-parent = <&pic>;
 
 	chosen {
+		zephyr,system-timer = &tick_timer;
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -49,4 +50,8 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+	tick_timer: timer {
+		compatible = "openrisc,tick-timer";
+	};
+
 };

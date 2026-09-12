@@ -16,6 +16,7 @@
 	compatible = "zephyr,posix";
 
 	chosen {
+		zephyr,system-timer = &host_timer;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-mcumgr = &uart0;
@@ -318,4 +319,8 @@
 			status = "okay";
 		};
 	};
+	host_timer: timer {
+		compatible = "zephyr,native-sim-timer";
+	};
+
 };
