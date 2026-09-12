@@ -955,6 +955,15 @@ void arch_irq_disable(unsigned int irq)
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	return !!(esp_cpu_intr_get_enabled_mask() & (1 << irq));
+	/* The z_isr_install() assert queries this with the isr table index,
+	 * which on a SoC that reserves entries sits above the line the enable
+	 * mask uses, so a raw shift runs past the end of the mask. Enable and
+	 * disable are called with the line itself and need no adjustment.
+	 */
+#ifdef CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	irq -= CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET;
+#endif
+
+	return !!(esp_cpu_intr_get_enabled_mask() & BIT(irq));
 }
 #endif
