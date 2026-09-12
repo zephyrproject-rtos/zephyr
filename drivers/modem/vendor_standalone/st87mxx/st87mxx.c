@@ -63,7 +63,7 @@ typedef enum  {
  * Static Data for ST87MXX
  */
 struct st87mxx_register {
-	struct mdm_receiver_context *mctx;
+	struct modem_context *mctx;
 	struct gpio_dt_spec *reset_gpio;
 	struct gpio_dt_spec *ring_gpio;
 };
@@ -895,7 +895,7 @@ static int modem_init(const struct device *dev)
 
 	struct st87mxx_register reg;
 
-	reg.mctx = (struct mdm_receiver_context *)&mctx;
+	reg.mctx = &mctx;
 	reg.reset_gpio = (struct gpio_dt_spec *)(&reset_gpio);
 	reg.ring_gpio = (struct gpio_dt_spec *)(&ring_gpio);
 	st87mxx_init(&reg);
