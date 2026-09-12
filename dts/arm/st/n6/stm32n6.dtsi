@@ -972,10 +972,12 @@
 				compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
 					     "st,stm32-ethernet", "snps,dwmac";
 				reg = <0x58036000 0x8000>;
-				clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
+				clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx",
+					      "mac-clk-ptp";
 				clocks = <&rcc STM32_CLOCK(AHB5, 22)>,
 					 <&rcc STM32_CLOCK(AHB5, 23)>,
-					 <&rcc STM32_CLOCK(AHB5, 24)>;
+					 <&rcc STM32_CLOCK(AHB5, 24)>,
+					 <&rcc STM32_SRC_HCLK5 ETH1PTP_SEL(0)>;
 				resets = <&rctl STM32_RESET(AHB5, 25)>;
 				interrupts = <179 0>;
 				snps,multicast-filter-bins = <64>;
