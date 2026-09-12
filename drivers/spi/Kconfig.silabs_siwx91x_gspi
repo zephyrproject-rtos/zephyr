@@ -13,9 +13,18 @@ config SPI_SILABS_SIWX91X_GSPI
 
 if SPI_SILABS_SIWX91X_GSPI
 
+config SPI_SILABS_SIWX91X_GSPI_DMA
+	bool "Silabs GSPI SPI controller driver DMA transfers"
+	default y if SPI_DMA || SPI_ASYNC
+	select DMA
+	select SPI_HAS_DMA
+	help
+	  Move the data of the transfers by DMA, on the controllers the
+	  devicetree gives DMA channels.
+
 config SPI_SILABS_SIWX91X_GSPI_DMA_DESCR_COUNT
 	int "Maximum number of DMA descriptor (per channel)"
-	default 3 if DMA
+	default 3 if SPI_SILABS_SIWX91X_GSPI_DMA
 	default 0
 	help
 	  One descriptor is needed for every SPI buffer in the transaction plus one

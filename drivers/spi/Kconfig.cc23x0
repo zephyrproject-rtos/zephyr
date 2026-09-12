@@ -13,6 +13,7 @@ config SPI_CC23X0
 
 config SPI_CC23X0_DMA_DRIVEN
 	bool "DMA support for TI CC23X0 SPI devices"
+	default y if SPI_DMA
 	depends on SPI_CC23X0
 	select DMA
 	select SPI_HAS_DMA
