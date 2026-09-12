@@ -13,6 +13,7 @@
 	compatible = "renesas,rza2m_evk";
 
 	chosen {
+		zephyr,system-timer = &ostm0_timer;
 		zephyr,sram = &ram;
 		zephyr,flash = &mx25l51245g;
 		zephyr,code-partition = &slot0_partition;

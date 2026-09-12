@@ -85,7 +85,7 @@
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_OSTM0, RZA2M_CLK_P1C)>;
 			status = "disabled";
 
-			os_timer {
+			ostm0_timer: os_timer {
 				compatible = "renesas,rza2m-ostm-timer";
 				status = "disabled";
 			};
@@ -105,7 +105,7 @@
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_OSTM1, RZA2M_CLK_P1C)>;
 			status = "disabled";
 
-			os_timer {
+			ostm1_timer: os_timer {
 				compatible = "renesas,rza2m-ostm-timer";
 				status = "disabled";
 			};
@@ -125,7 +125,7 @@
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_OSTM2, RZA2M_CLK_P1C)>;
 			status = "disabled";
 
-			os_timer {
+			ostm2_timer: os_timer {
 				compatible = "renesas,rza2m-ostm-timer";
 				status = "disabled";
 			};
