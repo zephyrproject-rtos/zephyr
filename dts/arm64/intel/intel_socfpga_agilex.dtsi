@@ -189,3 +189,9 @@
 		status = "disabled";
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

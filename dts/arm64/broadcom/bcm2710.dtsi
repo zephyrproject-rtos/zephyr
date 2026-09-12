@@ -35,7 +35,7 @@
 
 	interrupt-parent = <&armctrl_intc>;
 
-	timer {
+	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&local_intc>;
 		/* 0 = secure phys, 1 = nonsec phys, 2 = virtual, 3 = hyp phys */
@@ -173,5 +173,11 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
 	};
 };

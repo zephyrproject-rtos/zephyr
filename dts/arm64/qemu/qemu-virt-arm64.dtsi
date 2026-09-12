@@ -39,7 +39,7 @@
 		};
 	};
 
-	timer {
+	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
@@ -147,5 +147,11 @@
 			msi-parent = <&its>;
 			bus-range = <0x00 0xff>;
 		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
 	};
 };

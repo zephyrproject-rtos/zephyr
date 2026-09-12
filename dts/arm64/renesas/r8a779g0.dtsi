@@ -33,7 +33,7 @@
 		method = "smc";
 	};
 
-	timer {
+	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -221,5 +221,11 @@
 			clock-frequency = <16660000>;
 			#clock-cells = <0>;
 		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
 	};
 };

@@ -11,6 +11,7 @@
 
 / {
 	chosen {
+		zephyr,system-timer = &rtcc0;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &msc;
 		silabs,sleeptimer = &rtcc0;

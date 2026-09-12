@@ -519,3 +519,9 @@
 		 <&iomuxc_uart4_rxd_gpio_io_gpio5_io28>,
 		 <&iomuxc_uart4_txd_gpio_io_gpio5_io29>;
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

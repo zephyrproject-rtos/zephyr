@@ -21,7 +21,7 @@
 
 	interrupt-parent = <&gic>;
 
-	timer {
+	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
@@ -229,5 +229,11 @@
 				};
 			};
 		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
 	};
 };

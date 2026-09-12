@@ -8,6 +8,7 @@
 
 / {
 	chosen {
+		zephyr,system-timer = &arch_timer;
 		/*
 		 * The SRAM node is actually located in the
 		 * DRAM region of the FVP Base RevC 2xAEM.
@@ -48,7 +49,7 @@
 		};
 	};
 
-	timer {
+	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL

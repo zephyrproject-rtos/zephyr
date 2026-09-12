@@ -25,6 +25,7 @@
 	#size-cells = <0x02>;
 
 	chosen {
+		zephyr,system-timer = &arch_timer;
 		zephyr,sram = &ram;
 		zephyr,console = &xen_hvc;
 	};
@@ -59,7 +60,7 @@
 		reg = <0x00 0x3001000 0x00 0x1000 0x00 0x3002000 0x00 0x2000>;
 	};
 
-	timer {
+	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 0x0d IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
 			      GIC_PPI 0x0e IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY

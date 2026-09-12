@@ -625,3 +625,9 @@
 		 <&iomuxc1_ccm_clko3_gpio_io_gpio4_io28>,
 		 <&iomuxc1_ccm_clko4_gpio_io_gpio4_io29>;
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

@@ -246,3 +246,9 @@
 	interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

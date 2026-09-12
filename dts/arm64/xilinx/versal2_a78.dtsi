@@ -62,3 +62,9 @@
 		#interrupt-cells = <4>;
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

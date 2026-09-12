@@ -1129,3 +1129,9 @@
 		 <&iomuxc_xspi1_ss0_b_gpio_io_gpio7_io26>,
 		 <&iomuxc_xspi1_ss1_b_gpio_io_gpio7_io27>;
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

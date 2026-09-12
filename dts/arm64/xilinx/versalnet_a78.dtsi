@@ -77,3 +77,9 @@
 		#size-cells = <1>;
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

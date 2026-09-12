@@ -478,3 +478,9 @@
 		 <&iomuxc_gpio_io30_gpio_io_bit_gpio2_io_bit30>,
 		 <&iomuxc_gpio_io31_gpio_io_bit_gpio2_io_bit31>;
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

@@ -14,6 +14,7 @@
 
 / {
 	chosen {
+		zephyr,system-timer = &sysrtc0;
 		silabs,sleeptimer = &sysrtc0;
 		zephyr,crc = &gpcrc;
 		zephyr,entropy = &se;

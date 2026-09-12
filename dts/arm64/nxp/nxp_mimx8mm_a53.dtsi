@@ -16,6 +16,7 @@
 	#size-cells = <1>;
 
 	chosen {
+		zephyr,system-timer = &arch_timer;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 	};

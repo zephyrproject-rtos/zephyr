@@ -320,3 +320,9 @@
 };
 
 #include "mps3_an536-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

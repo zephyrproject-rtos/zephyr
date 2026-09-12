@@ -15,6 +15,7 @@
 	compatible = "blackberry,qnxhv_vm";
 
 	chosen {
+		zephyr,system-timer = &timer;
 		zephyr,sram = &sram0;
 		zephyr,console = &qvm_console;
 		zephyr,shell-uart = &qvm_console;

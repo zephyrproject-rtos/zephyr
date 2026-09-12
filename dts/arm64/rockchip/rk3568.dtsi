@@ -66,7 +66,7 @@
 		method = "smc";
 	};
 
-	timer {
+	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -82,5 +82,11 @@
 		clock-frequency = <12000000>;
 		reg-shift = <2>;
 		status = "disabled";
+	};
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
 	};
 };

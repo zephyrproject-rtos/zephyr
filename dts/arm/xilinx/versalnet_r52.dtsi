@@ -48,3 +48,9 @@
 		status = "okay";
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

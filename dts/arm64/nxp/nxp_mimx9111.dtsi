@@ -404,3 +404,9 @@
 		 <&iomuxc1_enet1_rd2_gpio_io_gpio4_io12>,
 		 <&iomuxc1_enet1_rd3_gpio_io_gpio4_io13>;
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
+	};
+};

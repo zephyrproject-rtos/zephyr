@@ -34,7 +34,7 @@
 		compatible = "renesas,rzv-pinctrl";
 	};
 
-	soc {
+	arch_timer: soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
@@ -1263,5 +1263,11 @@
 				status = "disabled";
 			};
 		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,system-timer = &arch_timer;
 	};
 };
