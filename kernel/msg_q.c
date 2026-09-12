@@ -310,7 +310,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, get, msgq, timeout);
 
-	if (msgq->used_msgs > 0U) {
+	if (likely(msgq->used_msgs > 0U)) {
 		/* take first available message from queue */
 		(void)memcpy((char *)data, msgq->read_ptr, msgq->msg_size);
 		msgq->read_ptr += msgq->msg_size;
