@@ -11,6 +11,7 @@
  */
 
 #include <errno.h>
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/byteorder.h>
@@ -24,37 +25,35 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_mcp230xx);
 
-static int mcp230xx_read_port_regs(const struct device *dev, uint8_t reg, uint16_t *buf)
+static int mcp230xx_read_regs(const struct device *dev, uint8_t reg, uint8_t *buf, size_t len)
 {
 	const struct mcp23xxx_config *config = dev->config;
-	uint16_t port_data = 0;
 	int ret;
 
-	uint8_t nread = (config->ngpios == 8) ? 1 : 2;
-
-	ret = i2c_burst_read_dt(&config->bus.i2c, reg, (uint8_t *)&port_data, nread);
+	ret = i2c_burst_read_dt(&config->bus.i2c, reg, buf, len);
 	if (ret < 0) {
 		LOG_ERR("i2c_read failed!");
 		return ret;
 	}
 
-	*buf = sys_le16_to_cpu(port_data);
-
 	return 0;
 }
 
-static int mcp230xx_write_port_regs(const struct device *dev, uint8_t reg, uint16_t value)
+static int mcp230xx_write_regs(const struct device *dev, uint8_t reg, const uint8_t *buf,
+			       size_t len)
 {
 	const struct mcp23xxx_config *config = dev->config;
+	uint8_t tx[1 + MCP23XXX_MAX_BURST];
 	int ret;
 
-	uint8_t nwrite = (config->ngpios == 8) ? 2 : 3;
-	uint8_t buf[3];
+	if (len > MCP23XXX_MAX_BURST) {
+		return -EINVAL;
+	}
 
-	buf[0] = reg;
-	sys_put_le16(value, &buf[1]);
+	tx[0] = reg;
+	memcpy(&tx[1], buf, len);
 
-	ret = i2c_write_dt(&config->bus.i2c, buf, nwrite);
+	ret = i2c_write_dt(&config->bus.i2c, tx, 1 + len);
 	if (ret < 0) {
 		LOG_ERR("i2c_write failed!");
 		return ret;
@@ -92,8 +91,8 @@ static int mcp230xx_bus_is_ready(const struct device *dev)
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
 		.ngpios =  num_gpios,                                                              \
 		.is_open_drain = open_drain,                                                       \
-		.read_fn = mcp230xx_read_port_regs,                                                \
-		.write_fn = mcp230xx_write_port_regs,                                              \
+		.read_fn = mcp230xx_read_regs,                                                     \
+		.write_fn = mcp230xx_write_regs,                                                   \
 		.bus_fn = mcp230xx_bus_is_ready,                                                   \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp##model##_##inst##_drvdata,      \

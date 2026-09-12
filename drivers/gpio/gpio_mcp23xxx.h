@@ -39,8 +39,24 @@
 #define MCP23SXX_ADDR 0x40
 #define MCP23SXX_READBIT 0x01
 
-typedef int (*mcp23xxx_read_port_regs)(const struct device *dev, uint8_t reg, uint16_t *buf);
-typedef int (*mcp23xxx_write_port_regs)(const struct device *dev, uint8_t reg, uint16_t value);
+/* Largest register burst the core driver issues, see mcp23xxx_read_regs. */
+#define MCP23XXX_MAX_BURST 6
+
+/**
+ * @brief Read @p len consecutive registers starting at @p reg.
+ *
+ * @p reg is the raw (IOCON.BANK = 0) register address, @p len is at most
+ * MCP23XXX_MAX_BURST.
+ */
+typedef int (*mcp23xxx_read_regs)(const struct device *dev, uint8_t reg, uint8_t *buf, size_t len);
+/**
+ * @brief Write @p len consecutive registers starting at @p reg.
+ *
+ * @p reg is the raw (IOCON.BANK = 0) register address, @p len is at most
+ * MCP23XXX_MAX_BURST.
+ */
+typedef int (*mcp23xxx_write_regs)(const struct device *dev, uint8_t reg, const uint8_t *buf,
+				   size_t len);
 typedef int (*mcp23xxx_bus_is_ready)(const struct device *dev);
 /** Configuration data */
 struct mcp23xxx_config {
@@ -62,8 +78,8 @@ struct mcp23xxx_config {
 
 	uint8_t ngpios;
 	bool is_open_drain;
-	mcp23xxx_read_port_regs read_fn;
-	mcp23xxx_write_port_regs write_fn;
+	mcp23xxx_read_regs read_fn;
+	mcp23xxx_write_regs write_fn;
 	mcp23xxx_bus_is_ready bus_fn;
 };
 

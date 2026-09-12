@@ -11,6 +11,7 @@
  */
 
 #include <errno.h>
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/byteorder.h>
@@ -24,21 +25,20 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_mcp23sxx);
 
-static int mcp23sxx_read_port_regs(const struct device *dev, uint8_t reg, uint16_t *buf)
+static int mcp23sxx_read_regs(const struct device *dev, uint8_t reg, uint8_t *buf, size_t len)
 {
 	const struct mcp23xxx_config *config = dev->config;
-	uint16_t port_data = 0;
+	uint8_t buffer_tx[2 + MCP23XXX_MAX_BURST] = {MCP23SXX_ADDR | MCP23SXX_READBIT, reg};
+	uint8_t buffer_rx[2 + MCP23XXX_MAX_BURST];
 	int ret;
 
-	uint8_t nread = (config->ngpios == 8) ? 1 : 2;
-
-	uint8_t addr = MCP23SXX_ADDR | MCP23SXX_READBIT;
-	uint8_t buffer_tx[4] = { addr, reg, 0, 0 };
-	uint8_t buffer_rx[4] = { 0 };
+	if (len > MCP23XXX_MAX_BURST) {
+		return -EINVAL;
+	}
 
 	const struct spi_buf tx_buf = {
 		.buf = buffer_tx,
-		.len = 4,
+		.len = 2 + len,
 	};
 	const struct spi_buf_set tx = {
 		.buffers = &tx_buf,
@@ -46,7 +46,7 @@ static int mcp23sxx_read_port_regs(const struct device *dev, uint8_t reg, uint16
 	};
 	const struct spi_buf rx_buf = {
 		.buf = buffer_rx,
-		.len = 2 + nread,
+		.len = 2 + len,
 	};
 	const struct spi_buf_set rx = {
 		.buffers = &rx_buf,
@@ -59,37 +59,31 @@ static int mcp23sxx_read_port_regs(const struct device *dev, uint8_t reg, uint16
 		return ret;
 	}
 
-	port_data = ((uint16_t)buffer_rx[3] << 8 | buffer_rx[2]);
-
-	*buf = sys_le16_to_cpu(port_data);
+	memcpy(buf, &buffer_rx[2], len);
 
 	return 0;
 }
 
-static int mcp23sxx_write_port_regs(const struct device *dev, uint8_t reg, uint16_t value)
+static int mcp23sxx_write_regs(const struct device *dev, uint8_t reg, const uint8_t *buf,
+			       size_t len)
 {
 	const struct mcp23xxx_config *config = dev->config;
+	uint8_t buffer_tx[2 + MCP23XXX_MAX_BURST] = {MCP23SXX_ADDR, reg};
 	int ret;
 
-	uint8_t nwrite = (config->ngpios == 8) ? 1 : 2;
-	uint16_t port_data = sys_cpu_to_le16(value);
-	uint8_t port_a_data = port_data & 0xFF;
-	uint8_t port_b_data = (port_data >> 8) & 0xFF;
+	if (len > MCP23XXX_MAX_BURST) {
+		return -EINVAL;
+	}
 
-	port_data = sys_cpu_to_le16(value);
+	memcpy(&buffer_tx[2], buf, len);
 
-	uint8_t addr = MCP23SXX_ADDR;
-	uint8_t buffer_tx[4] = { addr, reg, port_a_data, port_b_data };
-
-	const struct spi_buf tx_buf[1] = {
-		{
-			.buf = buffer_tx,
-			.len = nwrite + 2,
-		}
+	const struct spi_buf tx_buf = {
+		.buf = buffer_tx,
+		.len = 2 + len,
 	};
 	const struct spi_buf_set tx = {
-		.buffers = tx_buf,
-		.count = ARRAY_SIZE(tx_buf),
+		.buffers = &tx_buf,
+		.count = 1,
 	};
 
 	ret = spi_write_dt(&config->bus.spi, &tx);
@@ -132,8 +126,8 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),               \
 		.ngpios =  num_gpios,				                              \
 		.is_open_drain = open_drain,                                                  \
-		.read_fn = mcp23sxx_read_port_regs,                                           \
-		.write_fn = mcp23sxx_write_port_regs,                                         \
+		.read_fn = mcp23sxx_read_regs,                                                \
+		.write_fn = mcp23sxx_write_regs,                                              \
 		.bus_fn = mcp23sxx_bus_is_ready                                               \
 	};                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp##model##_##inst##_drvdata, \

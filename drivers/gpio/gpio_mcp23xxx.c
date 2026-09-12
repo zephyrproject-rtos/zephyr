@@ -40,12 +40,21 @@ LOG_MODULE_REGISTER(gpio_mcp23xxx);
 static int read_port_regs(const struct device *dev, uint8_t reg, uint16_t *buf)
 {
 	const struct mcp23xxx_config *config = dev->config;
+	uint8_t data[2] = {0};
+	size_t len = 1;
+	int ret;
 
 	if (config->ngpios == 16U) {
 		reg *= 2;
+		len = 2;
 	}
 
-	return config->read_fn(dev, reg, buf);
+	ret = config->read_fn(dev, reg, data, len);
+	if (ret == 0) {
+		*buf = sys_get_le16(data);
+	}
+
+	return ret;
 }
 
 /**
@@ -63,12 +72,17 @@ static int read_port_regs(const struct device *dev, uint8_t reg, uint16_t *buf)
 static int write_port_regs(const struct device *dev, uint8_t reg, uint16_t value)
 {
 	const struct mcp23xxx_config *config = dev->config;
+	uint8_t data[2];
+	size_t len = 1;
 
 	if (config->ngpios == 16U) {
 		reg *= 2;
+		len = 2;
 	}
 
-	return config->write_fn(dev, reg, value);
+	sys_put_le16(value, data);
+
+	return config->write_fn(dev, reg, data, len);
 }
 
 /**
