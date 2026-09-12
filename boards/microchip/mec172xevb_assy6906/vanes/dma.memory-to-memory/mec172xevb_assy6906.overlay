@@ -1,0 +1,17 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+ */
+
+/ {
+	dma_test_dmac: dma-test-dmac {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dmac>;
+		channels = <1 2 4>;
+	};
+};
+
+&dmac {
+	status = "okay";
+};
