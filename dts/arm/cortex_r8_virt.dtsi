@@ -68,3 +68,9 @@
 		};
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &ttc0;
+	};
+};

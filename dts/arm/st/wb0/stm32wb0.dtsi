@@ -23,6 +23,7 @@
  */
 / {
 	chosen {
+		zephyr,system-timer = &radio_timer;
 		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
 		zephyr,bt-hci = &bt_hci_wb0;

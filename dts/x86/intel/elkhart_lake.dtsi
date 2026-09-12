@@ -30,6 +30,7 @@
 	};
 
 	chosen {
+		zephyr,system-timer = &hpet;
 		zephyr,edac = &ibecc;
 	};
 

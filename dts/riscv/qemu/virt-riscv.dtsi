@@ -19,6 +19,7 @@
 	model = "riscv-virtio,qemu";
 
 	chosen {
+		zephyr,system-timer = &mtimer;
 		zephyr,pcie-controller = &pcie;
 	};
 

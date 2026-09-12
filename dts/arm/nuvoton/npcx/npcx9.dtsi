@@ -438,3 +438,9 @@
 		revision-reg = <0x0000fffc 4>;
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &itims;
+	};
+};

@@ -797,3 +797,9 @@
 &systick {
 	status = "disabled";
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &rtmr;
+	};
+};

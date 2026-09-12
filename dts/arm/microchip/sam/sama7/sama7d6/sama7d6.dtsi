@@ -20,6 +20,7 @@
 	};
 
 	chosen {
+		zephyr,system-timer = &pit64b0;
 		zephyr,entropy = &trng;
 	};
 

@@ -16,6 +16,7 @@
 
 / {
 	chosen {
+		zephyr,system-timer = &os_timer;
 		zephyr,entropy = &trng;
 	};
 

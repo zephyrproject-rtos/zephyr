@@ -19,6 +19,7 @@
 	};
 
 	chosen {
+		zephyr,system-timer = &os_timer;
 		zephyr,nbu = &ble_ll;
 		zephyr,bt-hci = &hci;
 		zephyr,entropy = &trng;

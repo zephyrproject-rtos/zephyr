@@ -1445,3 +1445,9 @@
 	 */
 	status = "disabled";
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &gpt_hw_timer;
+	};
+};

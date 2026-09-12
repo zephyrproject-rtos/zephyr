@@ -493,3 +493,9 @@
 		};
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &hpet;
+	};
+};

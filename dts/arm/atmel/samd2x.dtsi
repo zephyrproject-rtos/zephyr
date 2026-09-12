@@ -35,6 +35,7 @@
 	};
 
 	chosen {
+		zephyr,system-timer = &rtc;
 		zephyr,flash-controller = &nvmctrl;
 	};
 

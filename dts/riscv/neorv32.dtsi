@@ -12,6 +12,7 @@
 
 / {
 	chosen {
+		zephyr,system-timer = &mtimer;
 		zephyr,entropy = &trng;
 	};
 

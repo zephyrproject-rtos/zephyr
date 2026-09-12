@@ -839,3 +839,9 @@
 		};
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &cmt1;
+	};
+};

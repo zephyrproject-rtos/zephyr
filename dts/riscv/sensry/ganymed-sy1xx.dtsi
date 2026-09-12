@@ -10,6 +10,7 @@
 	#size-cells = <1>;
 
 	chosen {
+		zephyr,system-timer = &systick;
 		zephyr,entropy = &trng;
 	};
 

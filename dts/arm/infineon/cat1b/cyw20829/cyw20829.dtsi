@@ -410,3 +410,9 @@
 		};
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &mcwdt0;
+	};
+};

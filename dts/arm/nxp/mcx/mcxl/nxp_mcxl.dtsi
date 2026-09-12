@@ -305,3 +305,9 @@
 		#clock-cells = <0>;
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &ostimer0;
+	};
+};

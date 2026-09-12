@@ -1100,3 +1100,9 @@ rom_api: rom_api@1f000 {
 	reg = <0x1f000 0x1000>;
 	status = "disabled";
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &rtimer;
+	};
+};

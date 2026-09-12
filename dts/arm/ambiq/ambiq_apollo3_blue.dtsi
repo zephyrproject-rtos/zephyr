@@ -525,3 +525,9 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &stimer0;
+	};
+};

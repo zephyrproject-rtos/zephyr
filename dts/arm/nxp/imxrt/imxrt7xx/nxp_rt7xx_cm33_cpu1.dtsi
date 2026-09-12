@@ -412,3 +412,9 @@
 	#size-cells = <0>;
 	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &os_timer_cpu1;
+	};
+};

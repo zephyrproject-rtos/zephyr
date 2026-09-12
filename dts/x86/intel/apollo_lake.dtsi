@@ -681,3 +681,9 @@
 			   <42 0 &gpio_sw_032_042 10 0>;
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &hpet;
+	};
+};
