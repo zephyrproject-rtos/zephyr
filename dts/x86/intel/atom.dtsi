@@ -97,6 +97,9 @@
 
 / {
 	chosen {
-		zephyr,system-timer = &hpet;
 	};
+	apic_tsc: timer {
+		compatible = "intel,apic-tsc";
+	};
+
 };

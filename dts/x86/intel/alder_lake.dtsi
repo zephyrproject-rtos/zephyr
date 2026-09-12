@@ -496,6 +496,10 @@
 
 / {
 	chosen {
-		zephyr,system-timer = &hpet;
+		zephyr,system-timer = &apic_tsc;
 	};
+	apic_tsc: timer {
+		compatible = "intel,apic-tsc";
+	};
+
 };

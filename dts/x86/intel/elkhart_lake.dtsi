@@ -30,7 +30,7 @@
 	};
 
 	chosen {
-		zephyr,system-timer = &hpet;
+		zephyr,system-timer = &apic_tsc;
 		zephyr,edac = &ibecc;
 	};
 
@@ -738,4 +738,8 @@
 			status = "okay";
 		};
 	};
+	apic_tsc: timer {
+		compatible = "intel,apic-tsc";
+	};
+
 };

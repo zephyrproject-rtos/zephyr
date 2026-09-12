@@ -5,3 +5,9 @@
  */
 
 #include "acrn.dts"
+
+/ {
+	chosen {
+		zephyr,system-timer = &apic_tsc;
+	};
+};
