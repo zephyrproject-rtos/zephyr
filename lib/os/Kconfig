@@ -210,6 +210,12 @@ config BOOTARGS_ARGS_BUFFER_SIZE
 
 endif # BOOTARGS
 
+config BOOT_FDT
+	bool "Boot firmware device tree helpers"
+	help
+	  Enable helpers for validating and copying boot firmware device tree
+	  blobs into caller-owned storage.
+
 rsource "Kconfig.atomics"
 rsource "Kconfig.cbprintf"
 rsource "zvfs/Kconfig"
