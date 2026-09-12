@@ -492,6 +492,15 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC1_CLK>;
+			/* In deep sleep mode, the hardware allows the converter to keep
+			 * running there (CTRL[DOZEN] = 0, bus clock gated, hardware
+			 * trigger and compare wakeup still live): that only holds while
+			 * ADCK keeps running, which depends on the clock configuration.
+			 * An application that arranges a low-power ADCK source can drop
+			 * &deepsleep from this list in its own overlay. See MCX A344 RM
+			 * Rev. 1 section 24.5.
+			 */
+			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
 		lpadc1: lpadc@400b0000 {
@@ -508,6 +517,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC2_CLK>;
+			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
 		lpcmp0: lpcmp@400b1000 {
