@@ -4,6 +4,14 @@
 set(SUPPORTED_EMU_PLATFORMS qemu)
 set(QEMU_BINARY_SUFFIX hexagon)
 
+# Upstream QEMU has no Hexagon system emulation. The Hexagon LLVM
+# cross-toolchain bundles qemu-system-hexagon next to the compiler in its
+# bin/ directory, so look there before PATH. TOOLCHAIN_HOME is that
+# directory for both the hexagon and the host/llvm toolchain variants.
+if(TOOLCHAIN_HOME)
+  list(APPEND QEMU_BINARY_HINTS ${TOOLCHAIN_HOME})
+endif()
+
 set(QEMU_BOARD_FLAGS
   -machine virt
   -m 4G
