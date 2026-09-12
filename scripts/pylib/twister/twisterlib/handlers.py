@@ -1050,9 +1050,14 @@ class QEMUHandler(QEMUHandlerBase):
 
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
 
+        # The run command's stdout is the generator's own output (the failed
+        # command line when it fails), its stderr is what QEMU itself
+        # reports: a binary that cannot be executed, a bad option, missing
+        # firmware. The latter goes to the file the failure reports already
+        # read, so it reaches the inline log and twister.json.
         self.stdout_fn = os.path.join(instance.build_dir, "qemu.stdout")
 
-        self.stderr_fn = os.path.join(instance.build_dir, "qemu.stderr")
+        self.stderr_fn = os.path.join(instance.build_dir, "handler_stderr.log")
 
         if instance.testsuite.ignore_qemu_crash:
             self.ignore_crash = True
