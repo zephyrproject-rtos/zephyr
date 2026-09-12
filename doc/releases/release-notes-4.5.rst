@@ -167,6 +167,8 @@ Removed APIs and options
       * ``xiao_rp2350/rp2350a/hazard3`` to ``xiao_rp2350/rp2350a/hazard3_0``
       * ``rp2350_zero/rp2350a/m33`` to ``rp2350_zero/rp2350a/m33_0``
       * ``rp2350_zero/rp2350a/hazard3`` to ``rp2350_zero/rp2350a/hazard3_0``
+      * ``rp2350b_core/rp2350b/m33`` to ``rp2350b_core/rp2350b/m33_0``
+      * ``rp2350b_core/rp2350b/hazard3`` to ``rp2350b_core/rp2350b/hazard3_0``
 
 * Build system
 
