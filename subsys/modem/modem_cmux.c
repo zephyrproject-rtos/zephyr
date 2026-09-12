@@ -1144,6 +1144,7 @@ static void dlci_close(struct modem_cmux_dlci *dlci)
 
 static void modem_cmux_on_dlci_frame_dm(struct modem_cmux_dlci *dlci)
 {
+	LOG_DBG("Disconnected: DLCI %u", dlci->dlci_address);
 	return dlci_close(dlci);
 }
 
