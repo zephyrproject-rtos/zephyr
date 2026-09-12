@@ -4,7 +4,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-menu "SoC and Board Hooks"
+menu "Platform Hooks"
+
+config FWARGS_HANDLER_HOOK
+	bool "Firmware argument handler hook"
+	depends on ARCH_HAS_FWARGS_HANDLER_HOOK
+	help
+	  Enables fwargs_handler_hook() to handle firmware arguments preserved
+	  by the architecture.
+
+	  Code enabling this option must provide an implementation of
+	  fwargs_handler_hook().
 
 config SOC_EARLY_RESET_HOOK
 	bool
