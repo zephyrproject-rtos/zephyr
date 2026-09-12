@@ -5,6 +5,23 @@ if XEN
 
 menu "Xen drivers"
 
+config XEN_FDT
+	bool "Xen boot FDT support"
+	depends on BOARD_XENVM
+	select BOOT_FDT
+	select FWARGS_HANDLER_HOOK
+	help
+	  Copy the Xen-provided boot device tree blob from the first firmware
+	  argument into Zephyr-owned memory during early boot.
+
+config XEN_FDT_MAX_SIZE
+	hex "Maximum Xen boot FDT size"
+	default 0x8000
+	depends on XEN_FDT
+	help
+	  Maximum number of bytes reserved for the copied Xen boot device tree
+	  blob.
+
 config XEN_DMOP
 	bool "Xen dmop hypercall wrappers"
 	help
