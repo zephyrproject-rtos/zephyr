@@ -16,7 +16,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	telit_lex10q1_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 300),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(telit_lex10q1_init_chat_script, telit_lex10q1_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	telit_lex10q1_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=2", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+ICCID", iccid_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
@@ -32,8 +38,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 10000),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), 1000));
 
-MODEM_CHAT_SCRIPT_DEFINE(telit_lex10q1_init_chat_script, telit_lex10q1_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(telit_lex10q1_configuration_chat_script,
+			 telit_lex10q1_configuration_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_lex10q1_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
@@ -65,6 +72,7 @@ static const struct modem_cellular_vendor_config telit_lex10q1_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &telit_lex10q1_init_chat_script,
+		.configuration = &telit_lex10q1_configuration_chat_script,
 		.dial = &telit_lex10q1_dial_chat_script,
 		.periodic = &telit_lex10q1_periodic_chat_script,
 		.shutdown = &telit_lex10q1_shutdown_chat_script,

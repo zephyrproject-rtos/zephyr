@@ -29,7 +29,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSGT=1,\"APP RDY\"", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_init_chat_script, u_blox_sara_r4_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	u_blox_sara_r4_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG=1", ok_match),
@@ -45,8 +51,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), ok_match));
 
-MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_init_chat_script, u_blox_sara_r4_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_configuration_chat_script,
+			 u_blox_sara_r4_configuration_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 5);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT(
@@ -76,6 +83,7 @@ static const struct modem_cellular_vendor_config u_blox_sara_r4_vendor = {
 		.set_baudrate = &u_blox_sara_r4_set_baudrate_chat_script,
 #endif
 		.init = &u_blox_sara_r4_init_chat_script,
+		.configuration = &u_blox_sara_r4_configuration_chat_script,
 		.dial = &u_blox_sara_r4_dial_chat_script,
 		.periodic = &u_blox_sara_r4_periodic_chat_script,
 	},

@@ -2158,6 +2158,11 @@ Modem
   :c:struct:`modem_cellular_vendor_config`, not :c:struct:`modem_cellular_data`.
 * Cellular modem instance PPP pointer is now automatically populated in
   :c:struct:`modem_cellular_config`. Assignment to :c:struct:`modem_cellular_data` must be removed.
+* Cellular modem :c:struct:`modem_cellular_config_scripts` got an additional script ``configuration`` 
+  which is also mandatory like ``init`` and ``dial``. This script is a split-up script from ``init``
+  and it's scope is to send non high prioriry commands and should be limited to registration setup,
+  identity queries and CMUX-enable command, while ``init`` script should be limited to commands that
+  needed as soonest possible to bring up the modem interface.
 
 PTP
 ===

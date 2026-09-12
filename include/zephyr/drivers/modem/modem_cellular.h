@@ -64,6 +64,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_AWAIT_POWER_ON,
 	MODEM_CELLULAR_STATE_SET_BAUDRATE,
 	MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT,
+	MODEM_CELLULAR_STATE_RUN_CONFIGURATION_SCRIPT,
 	MODEM_CELLULAR_STATE_CONNECT_CMUX,
 	MODEM_CELLULAR_STATE_OPEN_DLCI1,
 	MODEM_CELLULAR_STATE_OPEN_DLCI2,
@@ -235,7 +236,7 @@ struct modem_cellular_user_pipe {
 /**
  * @brief Chat scripts for cellular modem.
  *
- * Only the init and dial scripts are mandatory, other scripts are optional.
+ * Only the init, configuration and dial scripts are mandatory, other scripts are optional.
  *
  * If the network script is provided, it will be used to wait for network registration
  * before issuing the dial script.
@@ -248,8 +249,10 @@ struct modem_cellular_user_pipe {
 struct modem_cellular_config_scripts {
 	/** Optional script that configures the modem's UART baud rate. */
 	const struct modem_chat_script *set_baudrate;
-	/** Script that initializes the modem and enables CMUX. Must not be NULL. */
+	/** Script that initiates first minimal AT commands. Must not be NULL. */
 	const struct modem_chat_script *init;
+	/** Script that sends initial configuration and enables CMUX, Must not be NULL. */
+	const struct modem_chat_script *configuration;
 	/** Optional script that waits for network registration before dialing. */
 	const struct modem_chat_script *network;
 	/** Script that starts the PPP data connection. Must not be NULL. */

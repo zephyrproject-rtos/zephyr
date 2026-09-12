@@ -77,6 +77,8 @@ static const char *modem_cellular_state_str(enum modem_cellular_state state)
 		return "set baudrate";
 	case MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT:
 		return "run init script";
+	case MODEM_CELLULAR_STATE_RUN_CONFIGURATION_SCRIPT:
+		return "run configuration script";
 	case MODEM_CELLULAR_STATE_CONNECT_CMUX:
 		return "connect cmux";
 	case MODEM_CELLULAR_STATE_OPEN_DLCI1:
@@ -172,6 +174,7 @@ static bool modem_cellular_apn_change_allowed(enum modem_cellular_state st)
 	case MODEM_CELLULAR_STATE_AWAIT_POWER_ON:
 	case MODEM_CELLULAR_STATE_SET_BAUDRATE:
 	case MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT:
+	case MODEM_CELLULAR_STATE_RUN_CONFIGURATION_SCRIPT:
 	case MODEM_CELLULAR_STATE_CONNECT_CMUX:
 	case MODEM_CELLULAR_STATE_OPEN_DLCI1:
 	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
@@ -1312,14 +1315,71 @@ static void modem_cellular_enter_recovery_state(struct modem_cellular_data *data
 	modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RECOVERY);
 }
 
-static void modem_cellular_run_init_script_event_handler(struct modem_cellular_data *data,
-							 enum modem_cellular_event evt)
+static void modem_cellular_close_bus_pipe(struct modem_cellular_data *data)
 {
 	const struct modem_cellular_config *config = data->dev->config;
 	uint8_t imei_len;
 	uint8_t link_addr_len;
 	uint8_t *link_addr_ptr;
 	int err;
+
+	/* Modem responded, so a skipped power-on pulse was the right call. */
+	data->power_on_skipped = false;
+
+	/* Get link_addr_len least significant bytes from IMEI as a link address */
+	imei_len = MODEM_CELLULAR_DATA_IMEI_LEN - 1; /* Exclude str end */
+	link_addr_len = MIN(NET_LINK_ADDR_MAX_LENGTH, imei_len);
+	link_addr_ptr = data->imei + (imei_len - link_addr_len);
+
+	err = net_if_set_link_addr(modem_ppp_get_iface(config->ppp), link_addr_ptr, link_addr_len,
+				   NET_LINK_UNKNOWN);
+	if (err) {
+		LOG_WRN("Failed to set link address on PPP interface (%d)", err);
+	}
+
+	modem_chat_release(&data->chat);
+	modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
+	modem_pipe_close_async(data->uart_pipe);
+}
+
+
+static int modem_cellular_on_run_configuration_script_state_enter(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	modem_chat_run_script_async(&data->chat, config->vendor->scripts.configuration);
+	return 0;
+}
+
+static void modem_cellular_run_configuration_script_event_handler(struct modem_cellular_data *data,
+								  enum modem_cellular_event evt)
+{
+	switch (evt) {
+	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		modem_cellular_close_bus_pipe(data);
+		break;
+
+	case MODEM_CELLULAR_EVENT_BUS_CLOSED:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_CONNECT_CMUX);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		modem_cellular_enter_recovery_state(data);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
+		break;
+
+	default:
+		break;
+	}
+}
+
+static void modem_cellular_run_init_script_event_handler(struct modem_cellular_data *data,
+							 enum modem_cellular_event evt)
+{
+	const struct modem_cellular_config *config = data->dev->config;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
@@ -1328,23 +1388,7 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
-		/* Modem responded, so a skipped power-on pulse was the right call. */
-		data->power_on_skipped = false;
-
-		/* Get link_addr_len least significant bytes from IMEI as a link address */
-		imei_len = MODEM_CELLULAR_DATA_IMEI_LEN - 1; /* Exclude str end */
-		link_addr_len = MIN(NET_LINK_ADDR_MAX_LENGTH, imei_len);
-		link_addr_ptr = data->imei + (imei_len - link_addr_len);
-
-		err = net_if_set_link_addr(modem_ppp_get_iface(config->ppp), link_addr_ptr,
-					   link_addr_len, NET_LINK_UNKNOWN);
-		if (err) {
-			LOG_WRN("Failed to set link address on PPP interface (%d)", err);
-		}
-
-		modem_chat_release(&data->chat);
-		modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
-		modem_pipe_close_async(data->uart_pipe);
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_CONFIGURATION_SCRIPT);
 		break;
 
 	case MODEM_CELLULAR_EVENT_BUS_CLOSED:
@@ -2310,6 +2354,10 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data *data)
 		ret = modem_cellular_on_run_init_script_state_enter(data);
 		break;
 
+	case MODEM_CELLULAR_STATE_RUN_CONFIGURATION_SCRIPT:
+		ret = modem_cellular_on_run_configuration_script_state_enter(data);
+		break;
+
 	case MODEM_CELLULAR_STATE_CONNECT_CMUX:
 		ret = modem_cellular_on_connect_cmux_state_enter(data);
 		break;
@@ -2508,6 +2556,10 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 
 	case MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT:
 		modem_cellular_run_init_script_event_handler(data, evt);
+		break;
+
+	case MODEM_CELLULAR_STATE_RUN_CONFIGURATION_SCRIPT:
+		modem_cellular_run_configuration_script_event_handler(data, evt);
 		break;
 
 	case MODEM_CELLULAR_STATE_CONNECT_CMUX:
@@ -3085,6 +3137,7 @@ int modem_cellular_init(const struct device *dev)
 
 	__ASSERT_NO_MSG(config->vendor->scripts.init != NULL);
 	__ASSERT_NO_MSG(config->vendor->scripts.dial != NULL);
+	__ASSERT_NO_MSG(config->vendor->scripts.configuration != NULL);
 
 	/* On-demand connect drives the dial off the PPP interface admin state. A
 	 * modem whose vendor configuration provides a network chat script instead
