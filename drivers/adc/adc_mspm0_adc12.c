@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #include <ti/driverlib/dl_adc12.h>
 
@@ -156,6 +157,7 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	ARG_UNUSED(status);
 
 	if (ctx->asynchronous) {
+		pm_policy_device_power_lock_put(data->dev);
 		(void)pm_device_runtime_put_async(data->dev, K_NO_WAIT);
 	}
 }
@@ -508,7 +510,12 @@ static int adc_mspm0_read(const struct device *dev, const struct adc_sequence *s
 		goto release;
 	}
 
+	pm_policy_device_power_lock_get(dev);
+
 	ret = adc_mspm0_read_internal(dev, sequence);
+
+	pm_policy_device_power_lock_put(dev);
+
 	(void)pm_device_runtime_put(dev);
 
 release:
@@ -531,8 +538,11 @@ static int adc_mspm0_read_async(const struct device *dev, const struct adc_seque
 		goto release;
 	}
 
+	pm_policy_device_power_lock_get(dev);
+
 	ret = adc_mspm0_read_internal(dev, sequence);
 	if (ret < 0) {
+		pm_policy_device_power_lock_put(dev);
 		(void)pm_device_runtime_put(dev);
 	}
 
