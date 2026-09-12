@@ -28,14 +28,33 @@ static struct z_futex_data futex_hash_buckets[FUTEX_HASH_BUCKETS] = {
 	LISTIFY(FUTEX_HASH_BUCKETS, FUTEX_HASH_BUCKET_INIT, (,))
 };
 
-static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
+#ifdef CONFIG_USERSPACE
+static struct z_futex_data *futex_kobject_data(struct k_futex *futex)
 {
-	struct k_object *obj;
-	uintptr_t addr = (uintptr_t)futex;
+	struct k_object *obj = k_object_find(futex);
 
-	obj = k_object_find(futex);
 	if ((obj != NULL) && (obj->type == K_OBJ_FUTEX)) {
 		return obj->data.futex_data;
+	}
+
+	return NULL;
+}
+#else
+static struct z_futex_data *futex_kobject_data(struct k_futex *futex)
+{
+	ARG_UNUSED(futex);
+
+	return NULL;
+}
+#endif
+
+static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
+{
+	uintptr_t addr = (uintptr_t)futex;
+	struct z_futex_data *futex_data = futex_kobject_data(futex);
+
+	if (futex_data != NULL) {
+		return futex_data;
 	}
 
 	return &futex_hash_buckets[(addr / sizeof(struct k_futex)) % FUTEX_HASH_BUCKETS];
@@ -81,6 +100,7 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 	return woken;
 }
 
+#ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
 	if (K_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
@@ -90,6 +110,7 @@ static inline int z_vrfy_k_futex_wake(struct k_futex *futex, bool wake_all)
 	return z_impl_k_futex_wake(futex, wake_all);
 }
 #include <zephyr/syscalls/k_futex_wake_mrsh.c>
+#endif
 
 int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 			k_timeout_t timeout)
@@ -125,6 +146,7 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 	return ret;
 }
 
+#ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected,
 				      k_timeout_t timeout)
 {
@@ -135,3 +157,4 @@ static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected,
 	return z_impl_k_futex_wait(futex, expected, timeout);
 }
 #include <zephyr/syscalls/k_futex_wait_mrsh.c>
+#endif

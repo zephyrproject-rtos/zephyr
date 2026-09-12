@@ -4,7 +4,6 @@
 # above these 2 files.
 target_sources(
   kernel PRIVATE
-  futex.c
   mem_domain.c
   userspace_handler.c
   userspace.c

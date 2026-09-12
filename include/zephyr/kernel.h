@@ -2724,7 +2724,6 @@ __syscall void *k_queue_peek_tail(struct k_queue *queue);
 
 /** @} */
 
-#ifdef CONFIG_USERSPACE
 /**
  * @brief futex structure
  *
@@ -2735,7 +2734,8 @@ __syscall void *k_queue_peek_tail(struct k_queue *queue);
  * permission management mechanism: statically-defined futexes are
  * tracked as kernel objects with a dedicated wait queue, while
  * futexes at other addresses (e.g. stack or heap) share a fixed set
- * of address-hashed wait queues.
+ * of address-hashed wait queues. Futexes do not require
+ * @kconfig{CONFIG_USERSPACE}; without it every futex is unregistered.
  *
  * The kernel maintains @a waiters, the number of threads currently
  * blocked on the futex: it is incremented before a thread blocks and
@@ -2835,7 +2835,6 @@ __syscall int k_futex_wait(struct k_futex *futex, int expected,
 __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
 
 /** @} */
-#endif
 
 /**
  * @defgroup event_apis Event APIs

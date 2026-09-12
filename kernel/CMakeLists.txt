@@ -168,6 +168,7 @@ else()
 
   kernel_sources_ifdef(CONFIG_MULTITHREADING
     idle.c
+    userspace/futex.c
     mailbox.c
     msg_q.c
     mutex.c
