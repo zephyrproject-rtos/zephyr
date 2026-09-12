@@ -977,7 +977,14 @@
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 		nxp,references = <&vref 1800>;
-		zephyr,disabling-power-states = <&deepsleep &powerdown>;
+		/* In deep sleep mode, the hardware allows the converter to keep
+		 * running there (CTRL[DOZEN] = 0, bus clock gated, hardware trigger
+		 * and compare wakeup still live): that only holds while ADCK keeps
+		 * running, which depends on the clock configuration. An application
+		 * that arranges a low-power ADCK source can drop &deepsleep from this
+		 * list in its own overlay. See MCX N23x RM Rev. 4 Table 220.
+		 */
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	temp0: temp0 {
@@ -999,6 +1006,7 @@
 		offset-value-b = <0>;
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC2_CLK>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	usb1: usbd@10b000 {
