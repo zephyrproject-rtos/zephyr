@@ -1660,6 +1660,10 @@ class ProjectBuilder(FilterBuilder):
         if instance.handler.ready:
             logger.debug(f"Reset instance status from '{instance.status}' to None before run.")
             instance.status = TwisterStatus.NONE
+            # The handler only fills in a reason of its own, such as the exit
+            # code, when none is set: drop whatever a loaded test plan or an
+            # earlier retry iteration left behind.
+            instance.reason = None
 
             if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()

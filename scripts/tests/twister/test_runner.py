@@ -2603,6 +2603,8 @@ def test_projectbuilder_run(
     instance_mock.platform.arch = platform_arch
     instance_mock.testsuite.harness = harness
     instance_mock.sidecar = None
+    # A reason left over from a loaded test plan or a previous iteration.
+    instance_mock.reason = 'stale'
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
@@ -2614,6 +2616,12 @@ def test_projectbuilder_run(
     with mock.patch('twisterlib.runner.HarnessImporter.get_harness',
                     mock_harness):
         pb.run()
+
+    if ready:
+        assert instance_mock.status == TwisterStatus.NONE
+        assert instance_mock.reason is None
+    else:
+        assert instance_mock.reason == 'stale'
 
     if expect_parse_generated:
         pb.parse_generated.assert_called_once()
