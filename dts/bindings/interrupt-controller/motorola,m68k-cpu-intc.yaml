@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Motorola M68K CPU interrupt controller
+
+compatible: "motorola,m68k-cpu-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#address-cells":
+    const: 0
+    description: This interrupt controller does not use address cells.
+
+  "#interrupt-cells":
+    const: 1
+    description: |
+      The single cell is the CPU vector number used for interrupt dispatch.
+      Autovectored inputs use M68K_IRQ_AUTOVECTOR(level).
+
+interrupt-cells:
+  - irq

@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Dimitri Varpusvuori
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_QEMU_VIRT_M68K
+
+# Divide the 1 GHz Goldfish RTC by 64 for an exact 15.625 MHz cycle
+# counter. The 32-bit cycle API wraps after approximately 275 seconds.
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 15625000
+
+endif # SOC_FAMILY_QEMU_VIRT_M68K
