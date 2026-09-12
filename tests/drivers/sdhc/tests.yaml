@@ -14,6 +14,21 @@ tests:
       - mimxrt1064_evk
     platform_exclude:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - zybo/xc7z010
+  drivers.sdhc.sdhc_api.xlnx_zynq:
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_alias_exists("sdhc0") and dt_compat_enabled("xlnx,zynq-8.9a")
+    extra_configs:
+      # Like xlnx_sdhc.c (Versal), this driver's sd.h include pulls in
+      # enum sd_voltage -- CONFIG_SDHC alone doesn't enable CONFIG_SD_STACK
+      # (only MMC_STACK/SDMMC_STACK/SDIO_STACK default it on), so
+      # CONFIG_SD_LOG_LEVEL/CONFIG_SD_BUFFER_SIZE stay undefined without this.
+      - CONFIG_SDMMC_STACK=y
+    tags: sdhc
+    platform_allow:
+      - zybo/xc7z010
   drivers.sdhc.sdhc_api.renesas_ra_sci_b_spi:
     depends_on: spi
     harness: ztest

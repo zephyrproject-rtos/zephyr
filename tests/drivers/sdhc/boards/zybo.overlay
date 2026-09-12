@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 David Paul-Beier
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Zybo's microSD slot is wired to PS SDIO0 (0xe0100000), confirmed against
+ * the board's real-hardware devicetree (Digilent's Linux fork's
+ * zynq-zybo.dts: ps7-sdio@e0100000, xlnx,has-cd/has-wp) -- not something
+ * this driver's own HW verification covers (that was TE0726 ZynqBerry's
+ * SDIO1), but the SDHCI IP block and register layout are identical either
+ * way; only the DT wiring differs per board.
+ */
+/ {
+	aliases {
+		sdhc0 = &sdhci0;
+	};
+};
+
+&sdhci0 {
+	status = "okay";
+};
