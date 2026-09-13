@@ -1430,6 +1430,7 @@ New Drivers
 * Fuel gauge
 
    * :dtcompatible:`hycon,hy4245` (:github:`105006`)
+   * :dtcompatible:`ti,bq41z50` (:github:`115257`)
 
 * :abbr:`GNSS (Global Navigation Satellite System)`
 

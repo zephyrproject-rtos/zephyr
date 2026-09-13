@@ -68,3 +68,9 @@ adp5360@8 {
 		status = "okay";
 	};
 };
+
+bq41z50@9 {
+	compatible = "ti,bq41z50";
+	reg = <0x9>;
+	status = "okay";
+};

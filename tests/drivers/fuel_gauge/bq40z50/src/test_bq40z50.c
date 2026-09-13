@@ -131,23 +131,23 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 	zassert_ok(fuel_gauge_get_props(fixture->dev, props, vals, ARRAY_SIZE(props)));
 	/* Check properties for valid ranges */
 #if CONFIG_EMUL
-	zassert_equal(vals[0].avg_current_ua, 1 * 1000);
-	zassert_equal(vals[1].current_ua, 1 * 1000);
+	zassert_equal(vals[0].avg_current_ua, -450 * 1000);
+	zassert_equal(vals[1].current_ua, -500 * 1000);
 	/* Not testing props[2]. This is the charger cutoff and has a boolean.*/
-	zassert_equal(vals[3].cycle_count, 1);
-	zassert_equal(vals[4].full_charge_capacity_uah, 1 * 1000);
-	zassert_equal(vals[5].remaining_capacity_uah, 1 * 1000);
-	zassert_equal(vals[6].runtime_to_empty_mins, 65535);
+	zassert_equal(vals[3].cycle_count, 67);
+	zassert_equal(vals[4].full_charge_capacity_uah, 4000 * 1000);
+	zassert_equal(vals[5].remaining_capacity_uah, 3500 * 1000);
+	zassert_equal(vals[6].runtime_to_empty_mins, 420);
 	/* Not testing props[7]. This is the manufacturer access and has only status bits */
-	zassert_equal(vals[8].absolute_state_of_charge_pct, 100);
-	zassert_equal(vals[9].relative_state_of_charge_pct, 100);
+	zassert_equal(vals[8].absolute_state_of_charge_pct, 85);
+	zassert_equal(vals[9].relative_state_of_charge_pct, 87);
 	zassert_equal(vals[10].temperature_dk, 2980);
-	zassert_equal(vals[11].voltage_uv, 1 * 1000);
+	zassert_equal(vals[11].voltage_uv, 16800 * 1000);
 	zassert_equal(vals[12].sbs_mode, 0);
-	zassert_equal(vals[13].chg_current_ua, 1 * 1000);
-	zassert_equal(vals[14].chg_voltage_uv, 1 * 1000);
+	zassert_equal(vals[13].chg_current_ua, 2000 * 1000);
+	zassert_equal(vals[14].chg_voltage_uv, 16800 * 1000);
 	/* Not testing props[15]. This property is the status and only has only status bits */
-	zassert_equal(vals[16].design_cap, 1);
+	zassert_equal(vals[16].design_cap, 4000);
 	zassert_equal(vals[17].design_volt_mv, 14400);
 	zassert_equal(vals[18].sbs_at_rate, 0);
 	zassert_equal(vals[19].sbs_at_rate_time_to_full_mins, 65535);
@@ -155,7 +155,7 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 	zassert_equal(vals[21].sbs_at_rate_ok, 0);
 	zassert_equal(vals[22].sbs_remaining_capacity_alarm, 300);
 	zassert_equal(vals[23].sbs_remaining_time_alarm_mins, 10);
-	zassert_equal(vals[24].state_of_health, 100);
+	zassert_equal(vals[24].state_of_health, 95);
 #else
 	/* When having a real device, check for the valid ranges */
 	zassert_between_inclusive(vals[0].avg_current_ua, -32767 * 1000, 32768 * 1000);
@@ -185,5 +185,32 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 	zassert_between_inclusive(vals[24].state_of_health, 0, 100);
 #endif
 }
+
+#if CONFIG_EMUL
+/*
+ * With CAPACITY_MODE set the gauge reports capacity in 10 mWh, which the uAh properties cannot
+ * express, so the driver must refuse them rather than return a wrongly scaled value.
+ */
+ZTEST_USER_F(bq40z50, test_capacity_mode_switches_uah_support)
+{
+	union fuel_gauge_prop_val original;
+	union fuel_gauge_prop_val mode;
+	union fuel_gauge_prop_val val;
+
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_SBS_MODE, &original));
+
+	/* BatteryMode bit 15 is CAPACITY_MODE. */
+	mode.sbs_mode = original.sbs_mode | BIT(15);
+	zassert_ok(fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_SBS_MODE, mode));
+
+	zassert_equal(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY_UAH, &val),
+		      -ENOTSUP);
+	zassert_equal(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH, &val),
+		      -ENOTSUP);
+
+	zassert_ok(fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_SBS_MODE, original));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY_UAH, &val));
+}
+#endif /* CONFIG_EMUL */
 
 ZTEST_SUITE(bq40z50, NULL, bq40z50_setup, NULL, NULL, NULL);

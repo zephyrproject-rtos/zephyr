@@ -1,0 +1,36 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# Copyright (c) 2026 Open Device Partnership and Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BQ4XZ50
+	bool
+	select I2C
+	help
+	  Implementation shared by the TI bq40z50 and bq41z50 fuel gauges. Selected by the
+	  per-device options below rather than chosen directly.
+
+config BQ40Z50
+	bool "BQ40Z50 Fuel Gauge"
+	default y
+	depends on DT_HAS_TI_BQ40Z50_ENABLED
+	select BQ4XZ50
+	help
+	  Enable I2C-based driver for BQ40Z50 Fuel Gauge.
+
+config BQ41Z50
+	bool "BQ41Z50 Fuel Gauge"
+	default y
+	depends on DT_HAS_TI_BQ41Z50_ENABLED
+	select BQ4XZ50
+	help
+	  Enable I2C-based driver for BQ41Z50 Fuel Gauge.
+
+config EMUL_BQ4XZ50
+	bool "Emulate a bq4xz50 family fuel gauge"
+	default y
+	depends on EMUL
+	depends on BQ4XZ50
+	help
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.
