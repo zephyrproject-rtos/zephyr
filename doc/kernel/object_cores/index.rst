@@ -72,7 +72,8 @@ Object cores have been integrated into the following kernel objects:
 
 Developers are free to integrate them if desired into other objects within
 their projects. The :zephyr:code-sample:`object_cores` sample shows the
-facility in use.
+facility step by step and the :zephyr:code-sample:`object_monitor` sample uses
+it to watch the objects of a running application.
 
 Object Core Statistics Concepts
 *******************************
