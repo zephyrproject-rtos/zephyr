@@ -1,0 +1,32 @@
+sample:
+  description: Enumerate kernel objects and query their statistics through object cores
+  name: object cores
+common:
+  tags:
+    - kernel
+    - obj_core
+  integration_platforms:
+    - native_sim
+  platform_exclude:
+    - qemu_x86_tiny
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "static semaphore .* reported: yes"
+      - "runtime semaphore .* reported: yes"
+      - "stack semaphore .* reported: no"
+      - "worker thread .* reported: yes"
+      - "aborted thread .* reported: no"
+      - "heap mutex after k_free .* reported: no"
+      - "runtime semaphore after k_obj_core_unlink .* reported: no"
+      - "slab .* allocated 128 bytes"
+      - "Done"
+tests:
+  sample.kernel.object_cores: {}
+  sample.kernel.object_cores.tracking:
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_NONE=y
+      - CONFIG_TRACING_OBJECT_TRACKING=y

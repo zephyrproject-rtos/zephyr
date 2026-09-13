@@ -722,7 +722,9 @@ each kernel object type. For instance, to visit every mutex, one can write::
 
   k_obj_type_walk_locked(k_obj_type_find(K_OBJ_TYPE_MUTEX_ID), visit_mutex, NULL);
 
-Each object type can be excluded through its ``CONFIG_OBJ_CORE_*`` option.
+Each object type can be excluded through its ``CONFIG_OBJ_CORE_*`` option. The
+:zephyr:code-sample:`object_cores` sample can be built with object tracking
+enabled.
 
 API
 ***
