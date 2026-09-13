@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/r5k574m.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include "ek_rx74m-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RX74M";
+	compatible = "renesas,ek_rx74m";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &mram0;
+		zephyr,console = &uart12;
+		zephyr,shell-uart = &uart12;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioportf 5 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioport8 7 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&ioport6 4 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(24)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+
+	pllp: pllp {
+		freq = <DT_FREQ_M(600)>;
+		status = "okay";
+	};
+};
+
+&sciclk {
+	clocks = <&pllp>;
+	status = "okay";
+};
+
+&cmt {
+	clock-frequency = <9375000>;
+	status = "okay";
+};
+
+&sci12 {
+	pinctrl-0 = <&sci12_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart12: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&ioport8 {
+	status = "okay";
+};
+
+&ioportf {
+	status = "okay";
+};

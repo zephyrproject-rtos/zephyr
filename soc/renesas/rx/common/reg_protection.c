@@ -11,8 +11,12 @@
 #include "r_bsp_cpu.h"
 #endif
 
-#define PRCR_KEY    (0xA500)
+#define PRCR_KEY (0xA500)
+#if !CONFIG_SOC_SERIES_RX74M
 #define SYSTEM_PRCR (*(volatile uint16_t *)0x000803FE)
+#else
+#define SYSTEM_PRCR (*(volatile uint16_t *)0x870193FA)
+#endif
 
 #ifndef CONFIG_HAS_RENESAS_RX_RDP
 static volatile uint16_t protect_counters[RENESAS_RX_REG_PROTECT_TOTAL_ITEMS];
@@ -22,8 +26,9 @@ static const uint16_t prcr_masks[RENESAS_RX_REG_PROTECT_TOTAL_ITEMS] = {
 	0x0002, /* PRC1. */
 	0x0004, /* PRC2. */
 	0x0008, /* PRC3. */
+	0x0010, /* PRC4. */
+	0x0020, /* PRC5. */
 };
-
 
 void renesas_rx_register_protect_open(void)
 {

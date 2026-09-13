@@ -9,3 +9,11 @@ config PINCTRL_RENESAS_RX
 	select USE_RX_RDP_GPIO
 	help
 	  Enable Renesas RX series pin controller driver.
+
+config PINCTRL_RENESAS_RX_PFS
+	bool "Renesas RX series pin controller driver with PFS support"
+	default y
+	depends on DT_HAS_RENESAS_RX_PINCTRL_PFS_ENABLED
+	help
+	  Enable Renesas RX series pin controller driver with PFS support.
+	  This is required for devices that use the PFS (Pin Function Select) registers.
