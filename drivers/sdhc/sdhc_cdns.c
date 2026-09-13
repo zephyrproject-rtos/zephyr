@@ -126,6 +126,7 @@ static int sdhc_cdns_get_host_props(const struct device *dev,
 	 */
 	props->f_max = SD_CLOCK_25MHZ;
 	props->power_delay = sdhc_config->power_delay_ms;
+	props->host_caps.adma_2_support = true;
 	props->host_caps.vol_330_support = true;
 	props->is_spi = false;
 	return 0;
