@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_NXP_IMXRT
@@ -145,6 +145,24 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 	  This setting should be enabled when the application uses HYPERRAM,
 	  or an MPU region will be defined to disable cached access to the
 	  HYPERRAM memory space.
+
+config SOC_SERIES_IMXRT_AMP_DSP
+	bool "HiFi4 DSP remote image support"
+	help
+	  Selected by sysbuild to enable support for secondary domains on NXP i.MX
+	  RTxxx devices. This symbol is driven by sysbuild
+	  (nxp_imxrt_add_amp_dsp_remote) and is not meant to be set by hand in
+	  application configuration.
+
+config SOC_SERIES_IMXRT_AMP_DSP_REMOTE_DIR
+	string "DSP remote image public include directory"
+	depends on SOC_SERIES_IMXRT_AMP_DSP
+	help
+	  Path to the DSP remote image's public include directory, which holds
+	  the stock zephyr_image_info.h (segment load addresses and sizes) the
+	  primary reads to load and boot the DSP. Set automatically by sysbuild
+	  (nxp_imxrt_add_amp_dsp_remote) on the primary image and not meant to
+	  be set by hand.
 
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT multi-core series"
