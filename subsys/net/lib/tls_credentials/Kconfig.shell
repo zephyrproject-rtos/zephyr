@@ -27,6 +27,7 @@ config TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH
 config TLS_CREDENTIALS_SHELL_DIGEST_BUF_SIZE
 	int "Buffer for generating credentials digests"
 	default 48
+	range 3 65535
 	help
 	   The amount of preallocated buffer (in bytes) for temporarily storing credential digests.
 
