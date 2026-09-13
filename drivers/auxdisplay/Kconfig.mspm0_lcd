@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_MSPM0_LCD
+	bool "TI MSPM0 LCD controller"
+	default y
+	depends on DT_HAS_TI_MSPM0_LCD_ENABLED
+	select PINCTRL
+	help
+	  Enable support for the TI MSPM0 LCD segment display controller.
+
+if AUXDISPLAY_MSPM0_LCD
+
+config AUXDISPLAY_MSPM0_LCD_VOLTAGE_BOOST
+	bool "On-chip LCD voltage boost"
+	default n
+	help
+	  Enables LCDVBSTEN (on-chip voltage boost circuitry, LCDVCTL bit 24).
+	  Required when the VDDA supply voltage is below 1.6 V.
+
+endif # AUXDISPLAY_MSPM0_LCD
