@@ -349,8 +349,8 @@
 			mmc-support;
 			card-detect;
 			max-bus-freq = <DT_FREQ_M(52)>;
-			interrupts = <57 12>, <58 12>, <59 12>;
-			interrupt-names = "accs", "card", "dma-req";
+			interrupts = <57 12>, <58 12>, <59 12>, <60 12>;
+			interrupt-names = "accs", "card", "dma-req", "sdio-int";
 			reg = <0x40092000 0x400>;
 			clocks = <&pclkb MSTPC 12>;
 			status = "disabled";
