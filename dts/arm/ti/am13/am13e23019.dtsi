@@ -49,6 +49,12 @@
 				#size-cells = <1>;
 			};
 		};
+
+		crc: crc@401b2000 {
+			compatible = "ti,msp-crc";
+			reg = <0x401b2000 0x2000>;
+			status = "disabled";
+		};
 	};
 };
 

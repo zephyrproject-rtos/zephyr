@@ -1,0 +1,18 @@
+# Copyright (c) 2026, Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Texas Instruments MSP CRC Accelerator
+
+description: |
+  Texas Instruments MSP Cyclic Redundancy Check (CRC) Engine.
+  This accelerator generates signature or a given data sequence
+  based on the CRC16-CCITT polynomial or the CRC32-ISO3309
+  polynomial.
+
+compatible: "ti,msp-crc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
