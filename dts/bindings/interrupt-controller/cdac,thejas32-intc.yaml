@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  C-DAC THEJAS32 interrupt controller.
+
+  This is a simple second-level interrupt aggregator that combines the SoC
+  peripheral interrupt sources into the RISC-V machine external interrupt
+  line. Unlike a RISC-V PLIC it has no per-source priority and no
+  claim/complete protocol: it exposes a single enable bitmask and a single
+  (enabled and pending) status bitmask. A source is cleared by servicing the
+  peripheral that raised it.
+
+compatible: "cdac,thejas32-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
