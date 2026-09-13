@@ -30,7 +30,7 @@ int mpxxdtyy_i2s_read(const struct device *dev, uint8_t stream, void **buffer,
 	size_t pdm_size;
 	TPDMFilter_InitStruct *pdm_filter = &data->pdm_filter[0];
 
-	ret = i2s_read(config->comm_master, &pdm_block, &pdm_size);
+	ret = i2s_read(config->comm_dev, &pdm_block, &pdm_size);
 	if (ret != 0) {
 		LOG_ERR("read failed (%d)", ret);
 		return ret;
@@ -81,7 +81,7 @@ int mpxxdtyy_i2s_trigger(const struct device *dev, enum dmic_trigger cmd)
 		return -EINVAL;
 	}
 
-	ret = i2s_trigger(config->comm_master, I2S_DIR_RX, i2s_cmd);
+	ret = i2s_trigger(config->comm_dev, I2S_DIR_RX, i2s_cmd);
 	if (ret != 0) {
 		LOG_ERR("trigger failed with %d error", ret);
 		return ret;
@@ -134,7 +134,7 @@ int mpxxdtyy_i2s_configure(const struct device *dev, struct dmic_cfg *cfg)
 	i2s_cfg.mem_slab = &rx_pdm_i2s_mslab;
 	i2s_cfg.timeout = 2000;
 
-	ret = i2s_configure(config->comm_master, I2S_DIR_RX, &i2s_cfg);
+	ret = i2s_configure(config->comm_dev, I2S_DIR_RX, &i2s_cfg);
 	if (ret != 0) {
 		LOG_ERR("I2S device configuration error");
 		return ret;
