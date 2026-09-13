@@ -18,3 +18,6 @@ properties:
     type: int
     description: >
       Priority for the instance-specific work_q thread.
+
+dma-cells:
+  - channel
