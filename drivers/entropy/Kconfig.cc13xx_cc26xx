@@ -8,7 +8,6 @@ config ENTROPY_CC13XX_CC26XX_RNG
 	default y
 	depends on DT_HAS_TI_CC13XX_CC26XX_TRNG_ENABLED
 	select ENTROPY_HAS_DRIVER
-	select RING_BUFFER
 	help
 	  This option enables the driver for the True Random Number Generator (TRNG)
 	  for TI SimpleLink CC13xx / CC26xx SoCs.

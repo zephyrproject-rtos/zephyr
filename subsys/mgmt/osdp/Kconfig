@@ -6,7 +6,6 @@
 
 menuconfig OSDP
 	bool "Open Supervised Device Protocol (OSDP) driver"
-	select RING_BUFFER
 	imply SERIAL_SUPPORT_INTERRUPT
 	imply UART_INTERRUPT_DRIVEN
 	imply UART_USE_RUNTIME_CONFIGURE
