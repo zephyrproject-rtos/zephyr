@@ -1,0 +1,58 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xen VHost MMIO device for VIRTIO backends
+
+compatible: "xen,vhost-mmio"
+
+include: base.yaml
+
+properties:
+  base:
+    type: int
+    required: true
+    description: |
+      Guest physical base address of the virtio MMIO register region used by
+      this Xen vhost-mmio device.
+
+  num-queues:
+    type: int
+    required: true
+    description: |
+      Number of virtqueues exposed by this device instance.
+
+  queue-size-max:
+    type: int
+    required: true
+    description: |
+      Maximum number of entries supported in each virtqueue for this device.
+
+  device-id:
+    type: int
+    required: true
+    description: |
+      Virtio device ID value, as defined by the VIRTIO Specification, used to
+      identify the type of device implemented by this vhost-mmio instance.
+
+  vendor-id:
+    type: int
+    default: 0
+    description: |
+      Virtio vendor ID value reported by the device. A value of 0 selects the
+      implementation-defined or Xen-provided default vendor ID.
+
+  stack-size:
+    type: int
+    description: |
+      Stack size (in bytes) for the instance-specific work_q thread.
+
+  priority:
+    type: int
+    description: |
+      Priority for the instance-specific work_q thread.
+
+  config-data:
+    type: uint8-array
+    description: |
+     Configuration at 0x100+ in the '4.2.2 MMIO Device Register Layout' section
+     of the VIRTIO Specification.
