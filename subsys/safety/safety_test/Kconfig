@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SAFETY_TEST
+	bool "Safety test subsystem"
+	help
+	  Framework for registering and executing hardware and software self-tests at
+	  boot time and at runtime.
+
+if SAFETY_TEST
+
+config SAFETY_TEST_STRICT_CRITICAL
+	bool "Refuse SAFETY_TEST_ACTION_CONTINUE for critical tests"
+	default y
+	help
+	  When set, a SAFETY_TEST_ACTION_CONTINUE returned from
+	  safety_test_safe_state() is ignored for a test carrying
+	  SAFETY_TEST_FLAG_CRITICAL, and the system halts instead. This gives a
+	  production build a compile-time guarantee that a critical failure
+	  cannot be waved through. Clear it only in test builds.
+
+choice
+	prompt "Default action when a critical test fails"
+	default SAFETY_TEST_DEFAULT_ACTION_HALT
+	help
+	  Action returned by the built-in weak safety_test_safe_state()
+	  implementation. Applications that override that function choose their
+	  own action and this setting no longer applies to them.
+
+config SAFETY_TEST_DEFAULT_ACTION_HALT
+	bool "Halt"
+
+config SAFETY_TEST_DEFAULT_ACTION_RESET
+	bool "Cold reboot"
+	depends on REBOOT
+
+endchoice
+
+config SAFETY_TEST_BUDGET_FAILS
+	bool "Treat a duration budget overrun as a test failure"
+	help
+	  When set, a test that runs longer than its max_duration_us is scored as
+	  failed, which for a SAFETY_TEST_FLAG_CRITICAL test reaches the safe
+	  state and can halt or reset the board.
+
+	  Leave this off unless the diagnostic timing is itself safety relevant
+	  and the budgets have been measured on a loaded system. The measurement
+	  is wall time, so an unrelated interrupt can push a healthy test over its
+	  budget. With this off, an overrun is still recorded and logged.
+
+config SAFETY_TEST_EARLY_TESTS
+	bool "Run safety tests at the EARLY init level"
+	help
+	  Execute tests registered for SAFETY_TEST_LEVEL_EARLY. At that point no
+	  kernel service is available and, on most targets, neither is the cycle
+	  counter, so duration budgets are not checked at that level.
+
+	  Logging is not usable that early either: the log buffer is created
+	  after the EARLY level, so messages are discarded. A critical failure
+	  here prints nothing and the board simply stops. The failing test is
+	  recorded in a noinit variable that a debugger can read, and that is
+	  reported on the next boot if RAM survived the reset.
+
+config SAFETY_TEST_INIT_PRIORITY
+	int "Init priority for safety test execution"
+	default 99
+	range 0 999
+	help
+	  SYS_INIT priority at which each level's tests run. The default places
+	  them after ordinary device drivers, which typically initialize in the
+	  40-60 range. Raise it to run tests later within their level.
+
+module = SAFETY_TEST
+module-str = safety test
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SAFETY_TEST
