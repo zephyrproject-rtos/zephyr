@@ -1003,10 +1003,15 @@ int bt_has_client_preset_prev(struct bt_has *has, bool sync)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_has_client *inst = inst_by_conn(conn);
+	struct bt_has_client *inst;
 
 	ARG_UNUSED(reason);
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
+	inst = inst_by_conn(conn);
 	if (!inst) {
 		return;
 	}
