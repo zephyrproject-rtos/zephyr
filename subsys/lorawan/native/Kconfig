@@ -8,12 +8,15 @@ if LORA_MODULE_BACKEND_NATIVE
 config LORAWAN_NATIVE
 	bool
 	default y
+	select LORAWAN_NVM_SETTINGS_SUPPORTED if SETTINGS_NVS
 	select PSA_CRYPTO
 	select PSA_WANT_ALG_CMAC
 	select PSA_WANT_ALG_ECB_NO_PADDING
 	select PSA_WANT_KEY_TYPE_AES
 	help
 	  Hidden config to enable native LoRaWAN backend specific options.
+	  Settings-based NVM requires NVS and persists only DevNonce, not the
+	  session. Each nonce is reserved before transmitting a join request.
 
 config LORAWAN_NATIVE_ENGINE_STACK_SIZE
 	int "Engine thread stack size"

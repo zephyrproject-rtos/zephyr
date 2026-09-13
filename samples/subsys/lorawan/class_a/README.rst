@@ -28,12 +28,28 @@ The following commands build and flash the sample.
 Important Notes for Multiple Runs
 *********************************
 
-By default, this example will only succeed the first time it is run. On subsequent join attempts, the LoRaWAN network server may reject the join request due to a hardcoded ``dev_nonce`` value. According to the LoRaWAN specification, ``dev_nonce`` must increment for every new connection attempt.
+Without persistent storage, this sample supplies the same ``dev_nonce`` on every
+boot. A network server may reject subsequent join requests. LoRaWAN 1.0.4 requires
+DevNonce to increase for each join attempt with the same device identity.
 
-To run this sample multiple times, choose one of the following options:
+Enable :kconfig:option:`CONFIG_LORAWAN_NVM_SETTINGS` to let the stack manage
+DevNonce. The native backend supports Settings with NVS and reserves each nonce
+before transmitting, including attempts that do not receive a Join-Accept.
+The following configuration uses the board's existing ``storage_partition``:
 
-1. **Manually Increment ``dev_nonce``:**
-   Modify the sample code to increment ``join_cfg.otaa.dev_nonce`` before each connection attempt and ensure it is preserved across reboots.
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/lorawan/class_a
+   :board: nucleo_wl55jc
+   :gen-args: -DEXTRA_CONF_FILE=overlay-native-nvs.conf -DCONFIG_LORAWAN_REGION_EU868=y
+   :goals: build flash
+   :compact:
 
-2. **Built-in Zephyr Settings Implementation:**
-   Enable :kconfig:option:`CONFIG_LORAWAN_NVM_SETTINGS` in the Kconfig. This allows proper storage and reuse of configuration settings, including the ``dev_nonce``, across multiple runs.
+Preserve the storage partition when updating firmware. Erasing it resets the
+counter and can cause nonce reuse. When switching an existing device from
+application-managed nonces, provision a new device identity and key or migrate
+its next unused nonce before joining. The native backend persists DevNonce only;
+it performs a new OTAA join after reboot.
+
+With :kconfig:option:`CONFIG_LORAWAN_NVM_NONE`, the application remains responsible
+for persisting the next unused nonce before each join and supplying the reserved
+value in ``join_cfg.otaa.dev_nonce``.

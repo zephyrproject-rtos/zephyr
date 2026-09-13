@@ -53,6 +53,7 @@
 #include "mac_internal.h"
 #include <engine.h>
 #include <crypto/crypto.h>
+#include <nvm.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
@@ -475,11 +476,21 @@ static void join_destroy_keys(struct join_state *state)
 
 void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req)
 {
-	const struct lwan_join_req *join_req = req->data;
+	struct lwan_join_req join_req = *(const struct lwan_join_req *)req->data;
 	struct join_state state;
 	int ret;
 
-	join_state_init(&state, join_req);
+	if (IS_ENABLED(CONFIG_LORAWAN_NVM_SETTINGS)) {
+		/* The engine serializes reservations. Persist before building the frame. */
+		ret = lwan_nvm_dev_nonce_reserve(&join_req.dev_nonce);
+		if (ret != 0) {
+			LOG_ERR("DevNonce reservation failed: %d", ret);
+			engine_signal_result(req, ret);
+			return;
+		}
+	}
+
+	join_state_init(&state, &join_req);
 
 	/* Import NwkKey into PSA — plaintext is not stored */
 	ret = join_import_nwk_key(&state);

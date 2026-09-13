@@ -13,6 +13,7 @@
 #include "radio.h"
 #include "crypto/crypto.h"
 #include "mac/mac_commands.h"
+#include "lorawan_nvm.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_native, CONFIG_LORAWAN_LOG_LEVEL);
@@ -109,6 +110,20 @@ int lorawan_start(void)
 	if (ret != 0) {
 		LOG_ERR("Failed to get default channels: %d", ret);
 		goto fail;
+	}
+
+	if (IS_ENABLED(CONFIG_LORAWAN_NVM_SETTINGS)) {
+		ret = lorawan_nvm_init();
+		if (ret != 0) {
+			LOG_ERR("NVM init failed: %d", ret);
+			goto fail;
+		}
+
+		ret = lorawan_nvm_restore();
+		if (ret != 0) {
+			LOG_ERR("NVM restore failed: %d", ret);
+			goto fail;
+		}
 	}
 
 	engine_init(&lwan_ctx);

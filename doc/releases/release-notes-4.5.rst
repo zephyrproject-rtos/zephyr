@@ -1883,6 +1883,8 @@ Libraries / Subsystems
     (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) that implements
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
+  * Added native DevNonce persistence using :kconfig:option:`CONFIG_LORAWAN_NVM_SETTINGS`
+    with NVS. Each OTAA join reserves its nonce in storage before transmission.
   * :c:member:`lora_modem_config.sync_word`
 
 * Management

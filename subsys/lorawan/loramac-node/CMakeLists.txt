@@ -9,8 +9,11 @@ else()
   zephyr_library_named(loramac-node)
 endif()
 
-# Add include path for local headers (lw_priv.h)
-zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+# Add include paths for local and shared NVM headers
+zephyr_library_include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${ZEPHYR_BASE}/subsys/lorawan/nvm
+)
 
 zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_AS923 REGION_AS923)
 zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_AU915 REGION_AU915)
@@ -29,3 +32,4 @@ if(NOT CONFIG_LORAWAN_EMUL)
 endif()
 
 zephyr_library_sources(lw_priv.c)
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_NVM_SETTINGS nvm.c)
