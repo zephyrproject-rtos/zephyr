@@ -11,3 +11,4 @@ Testing
    coverage
    BabbleSim<bsim>
    ci_test_plan
+   bluetooth_classic_sim
