@@ -52,7 +52,7 @@ config BOOT_FLEXSPI_NAND
 	bool "FlexSPI serial NAND"
 	depends on $(dt_has_compat,$(FLEXSPI_COMPAT))
 
-SEMC_COMPAT := nxp,imx-semc
+SEMC_COMPAT := nxp,mcux-semc
 
 config BOOT_SEMC_NOR
 	bool "SEMC parallel NOR"

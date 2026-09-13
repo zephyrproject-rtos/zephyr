@@ -40,6 +40,15 @@
 			reg = <0x445e0000 0x4000>, <0x04000000 DT_SIZE_M(64)>;
 			reg-names = "reg_base", "ahb";
 		};
+
+		semc: semc0@42910000 {
+			compatible = "nxp,mcux-semc";
+			reg = <0x42910000 0x4000>;
+			interrupts = <148 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
