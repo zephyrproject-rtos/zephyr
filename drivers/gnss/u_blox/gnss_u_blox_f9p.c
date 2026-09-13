@@ -147,12 +147,12 @@ static int ubx_f9p_start(const struct device *dev, enum gnss_start_mode mode)
 
 	case GNSS_WARM_START:
 		rst.nav_bbr_mask = (uint16_t)UBX_CFG_RST_WARM_START;
-		rst.reset_mode = (uint8_t)UBX_CFG_RST_MODE_SW;
+		rst.reset_mode = (uint8_t)UBX_CFG_RST_MODE_GNSS_START;
 		break;
 
 	case GNSS_COLD_START:
 		rst.nav_bbr_mask = (uint16_t)UBX_CFG_RST_COLD_START;
-		rst.reset_mode = (uint8_t)UBX_CFG_RST_MODE_SW;
+		rst.reset_mode = (uint8_t)UBX_CFG_RST_MODE_GNSS_START;
 		break;
 
 	default:
