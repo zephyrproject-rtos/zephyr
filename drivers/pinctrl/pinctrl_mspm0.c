@@ -16,11 +16,18 @@ LOG_MODULE_REGISTER(pinctrl_mspm0, CONFIG_PINCTRL_LOG_LEVEL);
 #define MSPM0_PIN_FUNCTION(pinmux)	(pinmux & 0x3F)
 
 /*
- * PINCM register array starts at IOMUX_BASE + 4 (RESERVED0 = 4 bytes).
+ * PINCM register array layout differs by SoC family:
+ *   MSPM: IOMUX_BASE + 4 (RESERVED0 word before PINCM[0])
+ *   AM13: IOMUX_BASE + 0 (PINCM[0] is the first register)
  * Each PINCM register is 4 bytes wide.
  * Bit 7 (PC) must be set to connect the pin to a peripheral function.
  */
-#define MSPM0_PINCM_ADDR(n)      (DT_INST_REG_ADDR(0) + 4U + (uint32_t)(n) * 4U)
+#if defined(CONFIG_SOC_SERIES_AM13E)
+#define PINCM_BASE_OFFSET 0U
+#else
+#define PINCM_BASE_OFFSET 4U
+#endif
+#define MSPM0_PINCM_ADDR(n)      (DT_INST_REG_ADDR(0) + PINCM_BASE_OFFSET + (uint32_t)(n) * 4U)
 #define MSPM0_PINCM_PC_CONNECTED BIT(7)
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins,
