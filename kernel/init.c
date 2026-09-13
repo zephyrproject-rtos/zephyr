@@ -146,8 +146,6 @@ K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks,
 extern void idle(void *unused1, void *unused2, void *unused3);
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
-static struct k_obj_type obj_type_cpu;
-
 #ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
 static struct k_obj_core_stats_desc  cpu_stats_desc = {
 	.raw_size = sizeof(struct k_cycle_stats),

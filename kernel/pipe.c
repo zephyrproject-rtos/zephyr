@@ -13,7 +13,7 @@
 #include <scheduler.h>
 
 #ifdef CONFIG_OBJ_CORE_PIPE
-static struct k_obj_type obj_type_pipe;
+K_OBJ_TYPE_DEFINE(obj_type_pipe, k_pipe, K_OBJ_TYPE_PIPE_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_PIPE */
 
 static inline bool pipe_closed(struct k_pipe *pipe)
@@ -354,7 +354,3 @@ void z_vrfy_k_pipe_close(struct k_pipe *pipe)
 }
 #include <zephyr/syscalls/k_pipe_close_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_PIPE
-K_OBJ_TYPE_DEFINE(obj_type_pipe, k_pipe, K_OBJ_TYPE_PIPE_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_PIPE */

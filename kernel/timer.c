@@ -17,7 +17,7 @@
 static struct k_spinlock timer_lock;
 
 #ifdef CONFIG_OBJ_CORE_TIMER
-static struct k_obj_type obj_type_timer;
+K_OBJ_TYPE_DEFINE(obj_type_timer, k_timer, K_OBJ_TYPE_TIMER_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_TIMER */
 
 #if defined(CONFIG_TIMER_OBSERVER)
@@ -459,7 +459,3 @@ static inline void z_vrfy_k_timer_user_data_set(struct k_timer *timer,
 #include <zephyr/syscalls/k_timer_user_data_set_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_TIMER
-K_OBJ_TYPE_DEFINE(obj_type_timer, k_timer, K_OBJ_TYPE_TIMER_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_TIMER */

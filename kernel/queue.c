@@ -467,11 +467,21 @@ static inline void *z_vrfy_k_queue_peek_tail(struct k_queue *queue)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_FIFO
-struct k_obj_type _obj_type_fifo;
-K_OBJ_TYPE_DEFINE(_obj_type_fifo, k_fifo, K_OBJ_TYPE_FIFO_ID, NULL);
+/* Referenced by k_fifo_init() in kernel.h, so not file-local */
+STRUCT_SECTION_START_EXTERN(k_fifo);
+STRUCT_SECTION_END_EXTERN(k_fifo);
+STRUCT_SECTION_ITERABLE(k_obj_type, _obj_type_fifo) =
+	K_OBJ_TYPE_INITIALIZER(k_fifo, K_OBJ_TYPE_FIFO_ID, NULL, 0, 0,
+			       STRUCT_SECTION_START(k_fifo),
+			       STRUCT_SECTION_END(k_fifo));
 #endif /* CONFIG_OBJ_CORE_FIFO */
 
 #ifdef CONFIG_OBJ_CORE_LIFO
-struct k_obj_type _obj_type_lifo;
-K_OBJ_TYPE_DEFINE(_obj_type_lifo, k_lifo, K_OBJ_TYPE_LIFO_ID, NULL);
+/* Referenced by k_lifo_init() in kernel.h, so not file-local */
+STRUCT_SECTION_START_EXTERN(k_lifo);
+STRUCT_SECTION_END_EXTERN(k_lifo);
+STRUCT_SECTION_ITERABLE(k_obj_type, _obj_type_lifo) =
+	K_OBJ_TYPE_INITIALIZER(k_lifo, K_OBJ_TYPE_LIFO_ID, NULL, 0, 0,
+			       STRUCT_SECTION_START(k_lifo),
+			       STRUCT_SECTION_END(k_lifo));
 #endif /* CONFIG_OBJ_CORE_LIFO */
