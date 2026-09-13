@@ -31,7 +31,6 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
-#include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 #include <zephyr/devicetree.h>
 
@@ -58,34 +57,6 @@ BUILD_ASSERT((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SE
 /* This driver uses compare frame 0 at runtime and does not touch frame 1. */
 #define TIMER_CMP_FRAME    kSYSCTR_CompareFrame_0
 #define TIMER_CMP_INT_MASK kSYSCTR_Compare0InterruptEnable
-
-/* 56-bit counter maximum value */
-#define COUNTER_SPAN ((1ULL << 56) - 1)
-
-#define CYC_PER_TICK ((uint64_t)sys_clock_hw_cycles_per_sec() \
-		      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-
-/*
- * Limit the maximum programmed compare distance to half the 56-bit counter
- * span. This keeps the ">=" comparison unambiguous when the counter
- * eventually wraps.
- */
-#define MAX_CYCLES (COUNTER_SPAN / 2)
-
-#define MIN_DELAY_CYCLES  CONFIG_MCUX_SYSCTR_TIMER_MIN_DELAY
-
-/*
- * The minimum compare setup distance must stay below one tick. Otherwise a
- * normal single-tick timeout would be pushed out to "now + MIN_DELAY_CYCLES"
- * in sys_clock_set_timeout(), losing ticks and introducing systematic drift.
- */
-BUILD_ASSERT(MIN_DELAY_CYCLES <
-	     (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC),
-	     "CONFIG_MCUX_SYSCTR_TIMER_MIN_DELAY must be smaller than one tick "
-	     "(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)");
-
-static struct k_spinlock lock;
-static uint64_t last_cycle;  /* Counter value at last sys_clock_announce() */
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = SYSCTR_IRQN;
@@ -124,85 +95,53 @@ static void sysctr_set_compare(uint64_t val)
 	SYSCTR_EnableCompare(CMP_BASE, TIMER_CMP_FRAME, true);
 }
 
+/*
+ * A free-running 56-bit counter and an absolute compare that fires once the
+ * counter reaches or has passed the value, so a COMPARE_ORDERED backend. The
+ * declared width bounds the arm range to half the counter span, which keeps
+ * the comparison unambiguous when the counter wraps.
+ */
+#define TIMER_CORE_BACKEND_COMPARE_ORDERED
+#define TIMER_CORE_COUNTER_WIDTH 56
+
+static inline uint64_t timer_driver_cycle_get(void)
+{
+	return counter_read();
+}
+
+static inline void timer_driver_set_compare(uint64_t cycles)
+{
+	sysctr_set_compare(cycles);
+}
+
+#include "system_timer_generic.h"
+
 static void sysctr_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	uint64_t curr_cycle = counter_read();
-	uint64_t delta_cycles = curr_cycle - last_cycle;
-	uint32_t delta_ticks = (uint32_t)(delta_cycles / CYC_PER_TICK);
-
-	last_cycle += (uint64_t)delta_ticks * CYC_PER_TICK;
-
-	/* Disable compare to clear ISTAT and prevent re-trigger */
+	/* Disable compare to clear ISTAT and prevent re-trigger. The core arms
+	 * the next deadline, which re-enables it.
+	 */
 	SYSCTR_EnableCompare(CMP_BASE, TIMER_CMP_FRAME, false);
+	SYSCTR_DisableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Non-tickless: schedule the next tick immediately */
-		uint64_t next = last_cycle + CYC_PER_TICK;
-
-		sysctr_set_compare(next);
-	} else {
-		/* Tickless: mask interrupt until next sys_clock_set_timeout() */
-		SYSCTR_DisableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);
-	}
-
-	k_spin_unlock(&lock, key);
-
-	sys_clock_announce(delta_ticks);
+	timer_core_announce();
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_no_timeout(void)
 {
-	uint64_t next_cycle;
-	uint64_t now;
-	uint64_t min;
-
-	ARG_UNUSED(idle);
-
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		/*
-		 * No near deadline to schedule: under sloppy idle, disable the
-		 * compare interrupt entirely. sys_clock_idle_exit() will
-		 * re-enable it when the CPU wakes from an external source.
-		 */
-		SYSCTR_EnableCompare(CMP_BASE, TIMER_CMP_FRAME, false);
-		SYSCTR_DisableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);
-		return;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	now = counter_read();
-
-	/*
-	 * Compute elapsed ticks from the most recent announce locally
-	 * instead of relying on a cached value from sys_clock_elapsed(),
-	 * which may be stale (or never have been called) by the time we
-	 * arrive here.
+	/* Nothing pending: mask the compare interrupt. The counter keeps
+	 * running, so the cycle getters go on working, and the next
+	 * sys_clock_set_timeout() re-enables both the interrupt and the
+	 * compare.
 	 */
-	uint64_t elapsed_ticks = (now - last_cycle) / CYC_PER_TICK;
-
-	next_cycle = last_cycle + (elapsed_ticks + (uint64_t)ticks) * CYC_PER_TICK;
-	if ((next_cycle - last_cycle) > MAX_CYCLES) {
-		next_cycle = last_cycle + MAX_CYCLES;
-	}
-
-	min = now + MIN_DELAY_CYCLES;
-
-	if ((int64_t)(next_cycle - min) < 0) {
-		next_cycle = min;
-	}
-
-	sysctr_set_compare(next_cycle);
-
-	k_spin_unlock(&lock, key);
+	SYSCTR_EnableCompare(CMP_BASE, TIMER_CMP_FRAME, false);
+	SYSCTR_DisableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);
 }
 
 void sys_clock_idle_exit(void)
@@ -214,33 +153,6 @@ void sys_clock_idle_exit(void)
 	 * trigger spuriously: ISTAT needs the counter to reach an enabled compare.
 	 */
 	SYSCTR_EnableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	uint64_t curr_cycle = counter_read();
-	uint64_t delta_cycles = curr_cycle - last_cycle;
-	uint32_t delta_ticks = (uint32_t)(delta_cycles / CYC_PER_TICK);
-
-	k_spin_unlock(&lock, key);
-
-	return delta_ticks;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return (uint32_t)counter_read();
-}
-
-uint64_t sys_clock_cycle_get_64(void)
-{
-	return counter_read();
 }
 
 void sys_clock_disable(void)
@@ -269,11 +181,7 @@ static int sys_clock_driver_init(void)
 
 	SYSCTR_StartCounter(CTRL_BASE);
 
-	/* Align to tick boundary */
-	last_cycle = (counter_read() / CYC_PER_TICK) * CYC_PER_TICK;
-
-	/* Arm the first compare */
-	sysctr_set_compare(last_cycle + CYC_PER_TICK);
+	timer_core_init();
 
 	return 0;
 }
