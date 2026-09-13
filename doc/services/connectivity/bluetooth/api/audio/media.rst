@@ -12,12 +12,12 @@ Media Control Service
 
 .. doxygengroup:: bt_mcs
 
-Media Proxy
-===========
-
-.. doxygengroup:: bt_media_proxy
-
 Media Control Client
 ====================
 
 .. doxygengroup:: bt_mcc
+
+Media Control Profile
+=====================
+
+.. doxygengroup:: bt_mcp
