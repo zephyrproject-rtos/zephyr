@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -27,3 +27,6 @@ endif()
 if(CONFIG_IMX_USDHC)
   zephyr_compile_definitions(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL=1)
 endif()
+
+zephyr_linker_sources_ifdef(CONFIG_LV_Z_VDB_CUSTOM_SECTION
+  SECTIONS psram_sections.ld)

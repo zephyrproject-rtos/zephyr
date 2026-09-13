@@ -231,6 +231,21 @@ config LV_Z_PXP_INTERRUPT_PRIORITY
 	help
 	  Sets the interrupt priority for PXP
 
+config LV_USE_DRAW_VG_LITE
+	bool
+
+config LV_USE_GPU_VG_LITE
+	bool
+	default y if LV_USE_DRAW_VG_LITE
+
+config LV_USE_VG_LITE_DRIVER
+	bool "VG-Lite GPU acceleration"
+	default n
+	help
+	  Select vglite driver.
+
+	  Use LVGL-internal VG-Lite driver (else external module).
+
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
 rsource "Kconfig.shell"
