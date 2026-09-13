@@ -1149,6 +1149,19 @@ config STATIC_INIT_GNU
 	  will emit an error if constructors are needed and this option has been
 	  disabled.
 
+config STATIC_INIT_IAR
+	bool "Support IAR dynamic initialization of static objects"
+	default y if CPP
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "iar"
+	help
+	  Run the constructors of C++ objects with static storage duration
+	  using the dynamic initialization routine of the IAR runtime,
+	  __iar_dynamic_initialization(). Since Zephyr provides its own startup
+	  code, the IAR linker is told not to perform the dynamic
+	  initialization automatically (--manual_dynamic_initialization) and
+	  Zephyr calls it before the application init level, at the same point
+	  where STATIC_INIT_GNU runs the constructors for GNU toolchains.
+
 config DEVICE_API_ASSERT
 	bool "Assert on DEVICE_API_GET"
 	default y

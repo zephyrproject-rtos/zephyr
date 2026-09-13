@@ -39,7 +39,10 @@ For example:
 
     - The GNU Assembler distributed with the Zephyr SDK is used for ``.S-files``.
 
-    - C library support for ``Minimal libc`` only. C++ is not supported.
+    - C library support for ``Minimal libc`` and the IAR C library (``CONFIG_IAR_LIBC``).
+      C++ is supported with the IAR libc++ library (``CONFIG_IAR_LIBCPP``) when a full
+      C++ standard library is required, or with Zephyr's minimal C++ library.
+      The compiler only supports the C++17 dialect.
 
     - Some Zephyr subsystems or modules may contain C or assembly code that relies on GNU intrinsics and have not yet been updated to work fully with ``iar``.
 

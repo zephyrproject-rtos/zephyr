@@ -13,11 +13,22 @@ set_property(TARGET linker PROPERTY optimization_size_aggressive "")
 
 set_linker_property(TARGET linker PROPERTY undefined "--keep=")
 
-string(APPEND CMAKE_C_LINK_FLAGS --no-wrap-diagnostics)
+set(IAR_LINK_FLAGS --no-wrap-diagnostics)
 
 if(CONFIG_IAR_DATA_INIT)
-  string(APPEND CMAKE_C_LINK_FLAGS " --redirect arch_data_copy=__iar_data_init3")
+  string(APPEND IAR_LINK_FLAGS " --redirect arch_data_copy=__iar_data_init3")
 endif()
+
+if(CONFIG_STATIC_INIT_IAR)
+  # Zephyr calls __iar_dynamic_initialization() itself, see kernel/init.c
+  string(APPEND IAR_LINK_FLAGS " --manual_dynamic_initialization")
+endif()
+
+# The link language is CXX when the application contains C++ sources
+foreach(lang C CXX)
+  string(APPEND CMAKE_${lang}_LINK_FLAGS "${IAR_LINK_FLAGS}")
+endforeach()
+
 foreach(lang C CXX ASM)
   set(commands "--log modules,libraries,initialization,redirects,sections")
   set(CMAKE_${lang}_LINK_EXECUTABLE
