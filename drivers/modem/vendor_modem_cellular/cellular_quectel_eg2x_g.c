@@ -135,7 +135,7 @@ static void quectel_eg2x_g_on_qeng(struct modem_chat *chat, char **argv, uint16_
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	struct cellular_evt_network_status evt = {
-		.status = data->registration_status_lte,
+		.status = data->registration_status,
 		.access_tech = data->access_tech,
 	};
 
