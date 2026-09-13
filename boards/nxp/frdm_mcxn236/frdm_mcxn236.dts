@@ -220,6 +220,11 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	fxls8974: accelerometer@18 {
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+	};
+
 	/* Note: The DA7212 codec is not populated on this board by default.
 	 * Refer to the board MCX_N5XX_EVK to use this sample with the same codec.
 	 */
