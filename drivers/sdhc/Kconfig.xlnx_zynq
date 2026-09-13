@@ -1,0 +1,13 @@
+# Copyright (c) 2026 David Paul-Beier
+# SPDX-License-Identifier: Apache-2.0
+
+config XLNX_ZYNQ_SDHC
+	bool "Xilinx Zynq-7000 SDHC driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQ_8_9A_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  Enable the Xilinx Zynq-7000 PS SD/SDIO host controller driver.
+	  Polling/PIO only in this initial version -- no DMA, no UHS or
+	  tuning support (this controller generation predates the PHY/tap-
+	  delay block used by ZynqMP and Versal).
