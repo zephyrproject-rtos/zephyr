@@ -51,10 +51,12 @@ static void reset_intel_soc_update(const struct device *dev, uint32_t id, bool a
 	if (assert ^ !config->active_low) {
 		if (sys_test_bit(base_address + offset, regbit) == 0) {
 			sys_set_bit(base_address + offset, regbit);
+			k_busy_wait(10);
 		}
 	} else {
 		if (sys_test_bit(base_address + offset, regbit) != 0) {
 			sys_clear_bit(base_address + offset, regbit);
+			k_busy_wait(10);
 		}
 	}
 }
