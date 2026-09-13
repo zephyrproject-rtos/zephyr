@@ -9,6 +9,9 @@
 
 #include <zephyr/sys/util_macro.h>
 #include <stdbool.h>
+#ifndef _ASMLANGUAGE
+#include <stdint.h>
+#endif
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -91,6 +94,22 @@
 
 #define GET_MPIDR()		read_sysreg(mpidr_el1)
 #define MPIDR_TO_CORE(mpidr)	(mpidr & MPIDR_AFF_MASK)
+
+#ifndef _ASMLANGUAGE
+/**
+ * @brief Get a secondary CPU's MPIDR affinity value from its Zephyr CPU index
+ *
+ * Returns the same MPIDR-derived value (MPIDR_TO_CORE(mpidr)) that was
+ * recorded when @p cpu_num was brought up by arch_cpu_start(), so it can be
+ * passed straight to routing/targeting APIs that take an MPIDR affinity
+ * value (e.g. arm_gic_irq_set_affinity(), gic_raise_sgi()).
+ *
+ * @param cpu_num Zephyr CPU index (0..CONFIG_MP_MAX_NUM_CPUS-1)
+ * @return That CPU's MPIDR affinity value, or UINT64_MAX if it was never
+ *         brought up (or cpu_num is out of range).
+ */
+uint64_t arch_cpu_mpidr_get(unsigned int cpu_num);
+#endif /* !_ASMLANGUAGE */
 
 #define MODE_EL_SHIFT		(0x2)
 #define MODE_EL_MASK		(0x3)
