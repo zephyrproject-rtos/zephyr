@@ -527,9 +527,9 @@ struct hl78xx_script_recovery_rule;
 
 struct hl78xx_script_failure {
 	const struct hl78xx_script_recovery_rule *recovery_rule;
+	const struct modem_chat_script_chat *script_chat;
 	enum modem_chat_script_result result;
 	enum hl78xx_state origin_state;
-	uint16_t script_chat_index;
 	bool valid;
 };
 
@@ -539,7 +539,7 @@ typedef int (*hl78xx_script_recovery_action_t)(struct hl78xx_data *data,
 struct hl78xx_script_recovery_rule {
 	enum hl78xx_state failed_state;
 	const char *failed_request;
-	uint16_t failed_script_chat_index;
+	const struct modem_chat_script_chat *failed_script_chat;
 	uint32_t result_mask;
 	hl78xx_script_recovery_action_t action;
 	/* State whose specified event confirms full recovery. */

@@ -56,8 +56,8 @@ MODEM_CHAT_MATCHES_DEFINE(
 	MODEM_CHAT_MATCH("ERROR", "", at_shell_print_match),
 );
 
-static void at_shell_script_callback(struct modem_chat *chat,
-				     enum modem_chat_script_result result,
+static void at_shell_script_callback(struct modem_chat *chat, enum modem_chat_script_result result,
+				     const struct modem_chat_script_completion_info *info,
 				     void *user_data)
 {
 	modem_at_user_pipe_release();
