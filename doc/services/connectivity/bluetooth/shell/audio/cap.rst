@@ -272,9 +272,10 @@ the optionally included CSIS instance by calling (:code:`cap_commander discover`
      change_microphone_mute    :Change microphone mute state on all connections <mute>
      change_microphone_gain    :Change microphone gain per connection <gain
                                 [gain [...]]>
-     broadcast_reception_start : Start broadcast reception with
-                                 source <address: XX:XX:XX:XX:XX:XX>
-                                 <type: public/random> <adv_sid> <broadcast_id>
+     broadcast_reception_start : Start broadcast reception with source
+                                  {<address: P:XX:XX:XX:XX:XX:XX or R:XX:XX:XX:XX:XX:XX> |
+                                  <address: XX:XX:XX:XX:XX:XX> <type: (public|random)>}
+                                  <adv_sid> <broadcast_id>
                                  [<pa_interval>] [<sync_bis>] [<metadata>]
      broadcast_reception_stop  : Stop broadcast reception <src_id [...]>
      distribute_broadcast_code : Distribute broadcast code <src_id [...]> <broadcast_code>

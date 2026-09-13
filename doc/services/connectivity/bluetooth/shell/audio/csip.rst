@@ -65,7 +65,7 @@ Setup
 .. code-block:: console
 
    uart:~$ init
-   uart:~$ bt connect xx:xx:xx:xx:xx:xx public
+   uart:~$ bt connect P:xx:xx:xx:xx:xx:xx
 
 When connected
 --------------
@@ -93,10 +93,10 @@ Discover set members, based on the set pointer above:
 .. code-block:: console
 
    uart:~$ csip_set_coordinator discover_members 0x566fdfe8
-   <dbg> bt_csip_set_coordinator.csip_found: Found CSIS advertiser with address 34:02:86:03:86:c0 (public)
+   <dbg> bt_csip_set_coordinator.csip_found: Found CSIS advertiser with address P:34:02:86:03:86:c0
    <dbg> bt_csip_set_coordinator.is_set_member: hash: 0x33ccb1, prand 0x5bfe6a
-   <dbg> bt_csip_set_coordinator.is_discovered: 34:02:86:03:86:c0 (public)
-   <dbg> bt_csip_set_coordinator.is_discovered: 34:13:e8:b3:7f:9e (public)
+   <dbg> bt_csip_set_coordinator.is_discovered: P:34:02:86:03:86:c0
+   <dbg> bt_csip_set_coordinator.is_discovered: P:34:13:e8:b3:7f:9e
    <dbg> bt_csip_set_coordinator.csip_found: Found member (2 / 2)
    Discovered 2/2 set members
 
@@ -105,8 +105,8 @@ Lock set members:
 .. code-block:: console
 
    uart:~$ csip_set_coordinator lock_set
-   <dbg> bt_csip_set_coordinator.bt_csip_set_coordinator_lock_set: Connecting to 34:02:86:03:86:c0 (public)
-   <dbg> bt_csip_set_coordinator.csip_set_coordinator_connected: Connected to 34:02:86:03:86:c0 (public)
+   <dbg> bt_csip_set_coordinator.bt_csip_set_coordinator_lock_set: Connecting to P:34:02:86:03:86:c0
+   <dbg> bt_csip_set_coordinator.csip_set_coordinator_connected: Connected to P:34:02:86:03:86:c0
    <dbg> bt_csip_set_coordinator.discover_func: Setup complete for 1 / 1
    <dbg> bt_csip_set_coordinator.csip_set_coordinator_lock_set_init_cb:
    <dbg> bt_csip_set_coordinator.SIRK
