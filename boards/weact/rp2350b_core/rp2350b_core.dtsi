@@ -126,6 +126,12 @@ gpio1: &gpio0_hi {
 	status = "okay";
 };
 
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &pwm {
 	pinctrl-0 = <&pwm_ch4b_default>;
 	pinctrl-names = "default";
