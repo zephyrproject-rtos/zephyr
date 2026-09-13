@@ -1740,7 +1740,12 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	operation_speed = DT_PROP_OR(DT_DRV_INST(0), hci_operation_speed, default_speed);
 	flowcontrol_of_hci = (bool)DT_PROP_OR(DT_DRV_INST(0), hw_flow_control, false);
 
-	if (operation_speed == default_speed) {
+	/* Raising the link to the operation speed needs the Host command APIs to
+	 * tell the controller about the new rate, so a raw (controller-only)
+	 * build has to leave both the controller and the local UART at the
+	 * device tree current-speed.
+	 */
+	if (!IS_ENABLED(CONFIG_BT_HCI_HOST) || operation_speed == default_speed) {
 		fw_upload.is_setup_done = true;
 		return 0;
 	}
