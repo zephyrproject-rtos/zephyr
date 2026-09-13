@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	soc {
@@ -14,12 +15,14 @@
 			compatible = "zephyr,memory-region", "nxp,imx-itcm";
 			reg = <0x00000000 DT_SIZE_K(256)>;
 			zephyr,memory-region = "ITCM";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 		};
 
 		dtcm: memory@20000000 {
 			compatible = "zephyr,memory-region", "nxp,imx-dtcm";
 			reg = <0x20000000 DT_SIZE_K(256)>;
 			zephyr,memory-region = "DTCM";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 		};
 
 		memory: memory@20480000 {
@@ -27,8 +30,11 @@
 		};
 
 		peripheral: peripheral@40000000 {
+			compatible = "zephyr,memory-region";
 			ranges = <0x0 0x40000000 0x40000000>;
 			reg = <0x40000000 0x40000000>;
+			zephyr,memory-region = "PERIPHERAL";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_PPB)>;
 		};
 
 		flexspi: spi@425e0000 {
@@ -73,6 +79,14 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <4>;
+};
+
+&ocram1 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+};
+
+&ocram2 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 };
 
 /*
