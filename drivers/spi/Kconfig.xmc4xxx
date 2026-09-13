@@ -15,11 +15,13 @@ if SPI_XMC4XXX
 
 config SPI_XMC4XXX_INTERRUPT
 	bool "XMC4XXX SPI interrupt mode"
+	default y if SPI_INTERRUPT_DRIVEN
 	help
 	  Enables interrupt support for XMC4XXX SPI driver.
 
 config SPI_XMC4XXX_DMA
 	bool "XMC4XXX SPI DMA support"
+	default y if SPI_DMA
 	select DMA
 	help
 	  Enables DMA for SPI transfers.
