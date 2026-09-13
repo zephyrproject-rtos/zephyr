@@ -169,6 +169,68 @@ ZTEST_USER(net_socket_select, test_select)
 	zassert_equal(res, 0, "close failed");
 }
 
+/*
+ * Verify that select() honors a large timeout and does not expire prematurely.
+ *
+ * OVERFLOW_TIMEOUT_SEC (4295) is the smallest whole-second timeout whose
+ * conversion to microseconds (seconds * 1,000,000) exceeds UINT32_MAX. If that
+ * multiplication is done in 32-bit arithmetic, the result wraps to a small
+ * value (~33 ms) instead of the intended >1 hour.
+ *
+ * SENDER_DELAY_MS (200) is when the helper thread makes the socket readable.
+ * That is long enough to outlast a wrongly truncated timeout, but far shorter
+ * than the real timeout, so select() should return 1 (data ready), not 0
+ * (timed out early).
+ */
+#define OVERFLOW_TIMEOUT_SEC 4295
+#define SENDER_DELAY_MS      200
+
+static int overflow_c_sock;
+
+static void overflow_sender(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_msleep(SENDER_DELAY_MS);
+	(void)zsock_send(overflow_c_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+}
+
+K_THREAD_STACK_DEFINE(overflow_sender_stack, 1024);
+static struct k_thread overflow_sender_thread;
+
+ZTEST(net_socket_select, test_select_large_timeout_no_overflow)
+{
+	int c_sock;
+	int s_sock;
+	struct net_sockaddr_in6 c_addr;
+	struct net_sockaddr_in6 s_addr;
+	zsock_fd_set readfds;
+	struct timeval tval = {.tv_sec = OVERFLOW_TIMEOUT_SEC, .tv_usec = 0};
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &c_sock, &c_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_addr);
+	zassert_equal(zsock_bind(s_sock, (struct net_sockaddr *)&s_addr, sizeof(s_addr)), 0);
+	zassert_equal(zsock_connect(c_sock, (struct net_sockaddr *)&s_addr, sizeof(s_addr)), 0);
+
+	ZSOCK_FD_ZERO(&readfds);
+	ZSOCK_FD_SET(s_sock, &readfds);
+
+	overflow_c_sock = c_sock;
+	k_thread_create(&overflow_sender_thread, overflow_sender_stack,
+			K_THREAD_STACK_SIZEOF(overflow_sender_stack), overflow_sender, NULL, NULL,
+			NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+
+	/* 1 = woken by data; 0 = timed out early (large timeout not honored) */
+	zassert_equal(zsock_select(s_sock + 1, &readfds, NULL, NULL, &tval), 1,
+		      "select timed out before data arrived: large timeout not honored");
+
+	zassert_ok(k_thread_join(&overflow_sender_thread, K_FOREVER));
+	zassert_equal(zsock_close(c_sock), 0);
+	zassert_equal(zsock_close(s_sock), 0);
+}
+
 static void *setup(void)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
