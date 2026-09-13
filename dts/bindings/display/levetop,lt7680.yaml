@@ -31,12 +31,32 @@ properties:
     default: 100
     description: |
       Time in milliseconds to hold the display in reset after asserting the reset pin.
-
-  rotation:
+  vscan-direction:
     type: int
     default: 0
+    description: |
+      Vertical scan direction. By default, the display is scanned from top to bottom.
+      Use the macros not the actual enum value, here is the concordance list
+      (see dt-bindings/display/lt7680.h)
+        0 vertical scan top→bottom
+        1 vertical scan bottom→top
     enum:
       - 0
-      - 180
+      - 1
+
+  memory-write-direction:
+    type: int
+    default: 0
     description: |
-      Display rotation clockwise in degrees. Defaults to 0, display default.
+      Memory write direction. By default, the display memory is written in left to right direction.
+      Use the macros not the actual enum value, here is the concordance list
+      (see dt-bindings/display/lt7680.h)
+        0 memory write left→right, top→bottom
+        1 memory write right→left, top→bottom
+        2 memory write top→down,   left→right
+        3 memory write down→top,   left→right
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
