@@ -65,21 +65,24 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 	/* If we have valid range values, we try to match them before enabling */
 	if ((config->min_uv > INT32_MIN) || (config->max_uv < INT32_MAX)) {
 
+		/* get_voltage is optional; without it there is nothing to snap */
 		ret = regulator_get_voltage(dev, &current_uv);
-		if (ret < 0) {
+		if ((ret < 0) && (ret != -ENOSYS)) {
 			return ret;
 		}
 
 		/* Snap to closest interval value if out of range */
-		if (current_uv < config->min_uv) {
-			ret = regulator_set_voltage(dev, config->min_uv, config->min_uv);
-			if (ret < 0) {
-				return ret;
-			}
-		} else if (current_uv > config->max_uv) {
-			ret = regulator_set_voltage(dev, config->max_uv, config->max_uv);
-			if (ret < 0) {
-				return ret;
+		if (ret == 0) {
+			if (current_uv < config->min_uv) {
+				ret = regulator_set_voltage(dev, config->min_uv, config->min_uv);
+				if (ret < 0) {
+					return ret;
+				}
+			} else if (current_uv > config->max_uv) {
+				ret = regulator_set_voltage(dev, config->max_uv, config->max_uv);
+				if (ret < 0) {
+					return ret;
+				}
 			}
 		}
 	}
