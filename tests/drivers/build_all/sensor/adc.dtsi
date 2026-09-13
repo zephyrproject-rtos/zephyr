@@ -160,3 +160,8 @@ test_nordic_nrf_vbat: test_nordic_nrf_vbat {
 	io-channels = <&test_adc 0>;
 	invert-voltage;
 };
+
+rf_power_detector: rf-power-detector {
+	compatible = "qorvo,cmd170p4";
+	io-channels = <&test_adc 0>;
+};
