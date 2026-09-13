@@ -406,6 +406,21 @@ static inline sys_dnode_t *sys_dlist_peek_tail(const sys_dlist_t *list)
 }
 
 /**
+ * @brief get a reference to the tail item in the list
+ *
+ * The list must be known to be non-empty.
+ *
+ * @param list the doubly-linked list to operate on
+ *
+ * @return a pointer to the tail element
+ */
+
+static inline sys_dnode_t *sys_dlist_peek_tail_not_empty(const sys_dlist_t *list)
+{
+	return list->tail;
+}
+
+/**
  * @brief add node to tail of list
  *
  * This and other sys_dlist_*() functions are not thread safe.
