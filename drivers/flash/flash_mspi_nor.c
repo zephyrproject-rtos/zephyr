@@ -473,6 +473,26 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 	return 0;
 }
 
+#if defined(CONFIG_MSPI_MEMMAP)
+/* Page programs can be serviced through the memory mapped region when the
+ * controller has memory mapping enabled for this chip and writes are permitted
+ * there. This is optional, so a controller that cannot do it reports -ENOTSUP
+ * and the driver keeps using the regular data transfer mode afterwards.
+ */
+static enum mspi_xfer_mode page_program_xfer_mode(const struct device *dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+
+	if (dev_data->no_memmap_write || !dev_config->memmap_cfg.enable ||
+	    dev_config->memmap_cfg.permission != MSPI_MEMMAP_READ_WRITE) {
+		return dev_config->data_xfer_mode;
+	}
+
+	return MSPI_MEMMAP;
+}
+#endif /* CONFIG_MSPI_MEMMAP */
+
 static int api_write(const struct device *dev, off_t addr, const void *src,
 		     size_t size)
 {
@@ -500,15 +520,36 @@ static int api_write(const struct device *dev, off_t addr, const void *src,
 		uint16_t page_offset = (uint16_t)(addr % page_size);
 		uint16_t page_left = page_size - page_offset;
 		uint16_t to_write = (uint16_t)MIN(size, page_left);
+		enum mspi_xfer_mode xfer_mode = dev_config->data_xfer_mode;
+
+#if defined(CONFIG_MSPI_MEMMAP)
+		xfer_mode = page_program_xfer_mode(dev);
+#endif
 
 		if (cmd_wren(dev) < 0) {
 			break;
 		}
 
-		set_up_xfer_with_addr(dev, MSPI_TX, addr, dev_config->data_xfer_mode);
+		set_up_xfer_with_addr(dev, MSPI_TX, addr, xfer_mode);
 		dev_data->packet.data_buf  = (uint8_t *)src;
 		dev_data->packet.num_bytes = to_write;
 		rc = perform_xfer(dev, dev_data->cmd_info.pp_cmd);
+
+#if defined(CONFIG_MSPI_MEMMAP)
+		if ((rc == -ENOTSUP) && (xfer_mode == MSPI_MEMMAP)) {
+			/* The controller rejected the request before driving the
+			 * bus, so the write enable latch is still set and this page
+			 * can be retried right away.
+			 */
+			dev_data->no_memmap_write = true;
+
+			set_up_xfer_with_addr(dev, MSPI_TX, addr, dev_config->data_xfer_mode);
+			dev_data->packet.data_buf = (uint8_t *)src;
+			dev_data->packet.num_bytes = to_write;
+			rc = perform_xfer(dev, dev_data->cmd_info.pp_cmd);
+		}
+#endif
+
 		if (rc < 0) {
 			LOG_ERR("Page program xfer failed: %d", rc);
 			break;

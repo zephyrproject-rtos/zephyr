@@ -1034,6 +1034,17 @@ MSPI
     -> ``MSPI_MEMMAP_CFG_STRUCT_DECLARE``/``MSPI_MEMMAP_BASE_ADDR_DECLARE``/``MSPI_MEMMAP_BASE_ADDR_INIT``
   * devicetree property ``xip-config`` -> ``memmap-config`` on MSPI device nodes
 
+* ``MSPI_MEMMAP`` has been added to ``enum mspi_xfer_mode``. Out-of-tree MSPI
+  controller drivers that dispatch on ``xfer_mode`` must reject it with
+  ``-ENOTSUP`` unless they service the transfer through the memory mapped
+  region. Drivers that treat anything other than ``MSPI_DMA`` as
+  ``MSPI_PIO`` would otherwise silently run the transfer in the wrong mode.
+  :c:func:`flash_write` on ``jedec,nor`` now asks for ``MSPI_MEMMAP`` on page
+  programs when memory mapping is enabled with
+  ``MSPI_MEMMAP_READ_WRITE`` permission, and falls back to the configured
+  transfer mode for the rest of the run time if the controller reports
+  ``-ENOTSUP``.
+
 Nordic
 ======
 
