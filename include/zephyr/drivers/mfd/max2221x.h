@@ -46,8 +46,10 @@ extern "C" {
 #define MAX2221X_REG_GLOBAL_CFG      0x01
 /** Status register address. */
 #define MAX2221X_REG_STATUS          0x02
+/** Satus configuration register address. */
+#define MAX2221X_REG_STATUS_CFG      0x03
 /** Demagnetization duty cycle high-to-low register address. */
-#define MAX2221X_REG_DC_H2L          0x03
+#define MAX2221X_REG_DC_H2L          0x04
 /** Voltage monitor register address. */
 #define MAX2221X_REG_VM_MONITOR      0x05
 /** Voltage monitor threshold register address. */
@@ -86,7 +88,7 @@ extern "C" {
  * @brief Channel PWM duty cycle register address
  * @param x Channel number
  */
-#define MAX2221X_REG_PWM_DUTY(x)     (0x49 + ((x) * 0xE))
+#define MAX2221X_REG_PWM_DUTY(x)     (0x49 + ((x) * 0x09))
 /** Fault 0 register address. */
 #define MAX2221X_REG_FAULT0          0x65
 /** Fault 1 register address. */
