@@ -28,6 +28,10 @@ if(CONFIG_USE_LORA_BASICS_MODEM_DRIVERS)
     zephyr_library_sources(${LBM_SMTC_MODEM_HAL_DIR}/smtc_modem_hal.c)
   endif()
 
+  if(CONFIG_LORA_BASICS_MODEM_CORE)
+    include(modem_core.cmake)
+  endif()
+
   if(CONFIG_LORA_SX126X)
     include(sx126x.cmake)
   elseif(CONFIG_LORA_SX127X)

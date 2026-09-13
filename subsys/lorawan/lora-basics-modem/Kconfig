@@ -1,0 +1,53 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if LORA_MODULE_BACKEND_LORA_BASICS_MODEM
+
+config LORAWAN_LBM
+	bool
+	default y
+	depends on LORA_BASICS_MODEM_CORE
+	help
+	  Hidden symbol enabling the LoRa Basics Modem LoRaWAN backend. The
+	  modem core carries the stack this backend calls into, and turns
+	  itself on alongside LoRaWAN.
+
+config LORAWAN_LBM_ENGINE_STACK_SIZE
+	int "Engine thread stack size"
+	default 4096
+
+config LORAWAN_LBM_ENGINE_PRIORITY
+	int "Engine thread priority"
+	default 5
+
+config LORAWAN_LBM_ENGINE_START_DELAY_MS
+	int "Engine thread start delay in milliseconds"
+	default 0
+	help
+	  Delay before the engine thread runs. Raise it to keep the modem off
+	  the bus until a console that only comes up after boot, such as CDC
+	  ACM, is ready to carry the log.
+
+config LORAWAN_LBM_ENGINE_MAX_SLEEP_MS
+	int "Longest the engine thread sleeps between runs"
+	default 1000
+	help
+	  Upper bound on the wait the modem engine asks for. The engine names
+	  a time and expects an interrupt to wake it sooner, so a wake-up that
+	  never arrives would otherwise park it for as long as it asked, which
+	  can be days. Running it again this often costs power but keeps a
+	  missed wake-up from stalling the stack.
+
+config LORAWAN_LBM_START_TIMEOUT_S
+	int "Seconds to wait for the modem to come up in lorawan_start()"
+	default 10
+
+config LORAWAN_LBM_JOIN_TIMEOUT_S
+	int "Seconds to wait for a join to settle"
+	default 120
+
+config LORAWAN_LBM_TX_TIMEOUT_S
+	int "Seconds to wait for an uplink to settle"
+	default 120
+
+endif # LORA_MODULE_BACKEND_LORA_BASICS_MODEM
