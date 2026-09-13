@@ -6,6 +6,8 @@ config DW_ICTL_ACE
 	default y
 	depends on DT_HAS_INTEL_ACE_INTC_ENABLED
 	depends on MULTI_LEVEL_INTERRUPTS
+	# The controller owns the multi-level routing: it provides the root API
+	select INTC_ROOT
 	help
 	  Designware Interrupt Controller used by ACE.
 
