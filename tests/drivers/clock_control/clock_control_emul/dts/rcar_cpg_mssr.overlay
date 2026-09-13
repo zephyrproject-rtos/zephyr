@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/renesas_cpg_mssr.h>
+
+/ {
+	test_clk: clock-controller {
+		compatible = "zephyr,clock-controller-emul-rcar-cpg-mssr";
+		#clock-cells = <2>;
+		clock-ids = <CPG_CORE 3 CPG_MOD 310>;
+		clock-initial-values = <66600000 133000000>;
+	};
+};

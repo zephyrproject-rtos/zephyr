@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_clk: clock-controller {
+		compatible = "zephyr,clock-controller-emul-id";
+		#clock-cells = <1>;
+		clock-ids = <0 1 7>;
+		clock-initial-values = <1000000 2000000 3000000>;
+	};
+};
