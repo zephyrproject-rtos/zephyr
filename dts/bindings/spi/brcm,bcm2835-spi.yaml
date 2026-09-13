@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM2835 / BCM2710 / BCM2837 SPI0 ("main") controller.
+
+  This is the SPI controller Linux binds with "brcm,bcm2835-spi" -- the
+  one exposed on the Raspberry Pi 40-pin header. The auxiliary SPI1 /
+  SPI2 blocks use a different register layout and need a separate
+  binding.
+
+  Chip select is expected to be driven from GPIOs (cs-gpios); the
+  controller's native CE0/CE1 lines are not used by the Zephyr driver.
+
+compatible: "brcm,bcm2835-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Frequency in Hz of the core clock that feeds the SPI clock
+      divider. On the BCM2710 this is the VPU core clock; with
+      "core_freq=250" in config.txt it is 250 MHz.
+      SCLK = clock-frequency / CDIV.
+
+  # pinctrl-0 / pinctrl-names come from the pinctrl-device.yaml include
+  # and are intentionally NOT required: a board may mux the SPI pins via
+  # pinctrl at init, or leave them unset and mux imperatively at runtime
+  # (e.g. an SPI display reusing MISO as a D/C line).
