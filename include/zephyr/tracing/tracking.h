@@ -90,6 +90,7 @@ extern struct k_event *_track_list_k_event;
 	sys_track_k_timer_init(timer)
 #define sys_port_track_k_queue_peek_tail(queue, ret)
 #define sys_port_track_k_queue_peek_head(queue, ret)
+#define sys_port_track_k_queue_peek_next(queue, data, ret)
 #define sys_port_track_k_queue_cancel_wait(queue)
 #define sys_port_track_k_queue_init(queue) \
 	sys_track_k_queue_init(queue)
@@ -150,6 +151,7 @@ void sys_track_socket_init(int sock, int family, int type, int proto);
 #define sys_port_track_k_timer_init(timer)
 #define sys_port_track_k_queue_peek_tail(queue, ret)
 #define sys_port_track_k_queue_peek_head(queue, ret)
+#define sys_port_track_k_queue_peek_next(queue, data, ret)
 #define sys_port_track_k_queue_cancel_wait(queue)
 #define sys_port_track_k_queue_init(queue)
 #define sys_port_track_k_pipe_init(pipe, buffer, buffer_size)
