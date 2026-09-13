@@ -200,7 +200,7 @@
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_M(40)>;
 	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>, <&gpio0 9 GPIO_ACTIVE_LOW>,
-		   <&gpio0 39 GPIO_ACTIVE_LOW>;
+		   <&gpio1 7 GPIO_ACTIVE_LOW>;
 
 	lora: lora@1 {
 		compatible = "semtech,sx1262";
