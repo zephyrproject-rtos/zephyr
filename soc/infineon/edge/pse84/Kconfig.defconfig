@@ -7,6 +7,12 @@
 
 if SOC_SERIES_PSE84
 
+# BXNS raises INVTRAN on PSE84 silicon even when every ARMv8-M precondition is
+# met, so the Secure image enters the Non-Secure domain via the arch SVC
+# exception-return flow instead of BXNS.
+config ARM_SECURE_DOMAIN_ENTRY_SVC
+	default y if ARM_SECURE_FIRMWARE
+
 # PSE84 uses SysTick as the primary system timer by default.
 # When PM is enabled, the MCWDT serves as a low-power companion timer
 # via the SYSTEM_TIMER_LPM_COMPANION_HOOKS mechanism, providing
@@ -45,11 +51,13 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 # For cm33 all code executes from CBUS aliases (0x08.../0x18...)
 # for performance improvements but must be flashed at SAHB
-# alias (0x60.../0x70...). Adjust LMA by +0x58000000 (constant
-# difference between 0x08 -> 0x60)
+# alias (0x60.../0x70...).
+# NS uses CBUS NS (0x08), SAHB is 0x60: delta = +0x58000000.
+# S  uses CBUS S  (0x18), SAHB is 0x60: delta = +0x48000000.
 config BUILD_OUTPUT_ADJUST_LMA
 	depends on XIP
 	depends on CPU_CORTEX_M33
+	default "0x48000000" if TRUSTED_EXECUTION_SECURE
 	default "0x58000000"
 
 # BL2 implementation not available yet
