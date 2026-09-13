@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/classic/sco.h>
 
 #include <common/bt_str.h>
 
@@ -880,10 +881,27 @@ void device_supported_pkt_type(void)
 	}
 }
 
-static void read_buffer_size_complete(struct net_buf *buf)
+static int read_sco_buffer_size_complete(struct bt_hci_rp_read_buffer_size *rp)
+{
+	uint16_t sco_pkts;
+
+	bt_dev.br.sco_mtu = rp->sco_max_len;
+	sco_pkts = sys_le16_to_cpu(rp->sco_max_num);
+
+	LOG_DBG("SCO BR/EDR buffers: pkts %u mtu %u", sco_pkts, bt_dev.br.sco_mtu);
+
+	if (rp->sco_max_len == 0 || sco_pkts == 0) {
+		return -ENOTSUP;
+	}
+
+	return k_sem_init(&bt_dev.br.sco_pkts, sco_pkts, sco_pkts);
+}
+
+static int read_buffer_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
 	uint16_t pkts;
+	int err = 0;
 
 	LOG_DBG("status 0x%02x", rp->status);
 
@@ -893,6 +911,81 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	LOG_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.br.mtu);
 
 	k_sem_init(&bt_dev.br.pkts, pkts, pkts);
+
+	if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
+		err = read_sco_buffer_size_complete(rp);
+	}
+
+	return err;
+}
+
+#define SCO_H2C_FC_ENABLED(_fc) ((_fc) == BT_HCI_SYNC_FLOW_ENABLE)
+
+static int read_sync_flow_control_enable(void)
+{
+	struct net_buf *buf;
+	struct net_buf *rsp = NULL;
+	struct bt_hci_rp_read_sync_flow_enable *rp;
+	int err;
+
+	/* Do nothing if command not supported by the controller */
+	if (!BT_HCI_READ_SYNC_FLOW_ENABLE_SUPPORTED(bt_dev.supported_commands)) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_SYNC_FLOW_ENABLE, buf, &rsp);
+	if (err != 0) {
+		return err;
+	}
+
+	if (rsp == NULL) {
+		return -EIO;
+	}
+
+	if (rsp->len < sizeof(*rp)) {
+		net_buf_unref(rsp);
+		return -ENODATA;
+	}
+
+	rp = (void *)rsp->data;
+	if (rp->status != BT_HCI_ERR_SUCCESS) {
+		net_buf_unref(rsp);
+		return -EIO;
+	}
+
+	bt_dev.br.sco_h2c_fc_enabled = SCO_H2C_FC_ENABLED(rp->sync_flow_enable);
+	net_buf_unref(rsp);
+	return 0;
+}
+
+static int write_sync_flow_control_enable(uint8_t sync_flow_enable)
+{
+	struct net_buf *buf;
+	struct bt_hci_cp_write_sync_flow_enable *cp;
+	int err;
+
+	/* Do nothing if command not supported by the controller */
+	if (!BT_HCI_WRITE_SYNC_FLOW_ENABLE_SUPPORTED(bt_dev.supported_commands)) {
+		return read_sync_flow_control_enable();
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->sync_flow_enable = sync_flow_enable;
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SYNC_FLOW_ENABLE, buf, NULL);
+
+	if (err == 0) {
+		bt_dev.br.sco_h2c_fc_enabled = SCO_H2C_FC_ENABLED(sync_flow_enable);
+	}
+	return err;
 }
 
 int bt_br_init(void)
@@ -922,8 +1015,12 @@ int bt_br_init(void)
 		return err;
 	}
 
-	read_buffer_size_complete(buf);
+	err = read_buffer_size_complete(buf);
 	net_buf_unref(buf);
+	if (err != 0) {
+		LOG_ERR("Failed to read buffer size (%d)", err);
+		return err;
+	}
 
 	/* Set SSP mode */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
@@ -1034,6 +1131,14 @@ int bt_br_init(void)
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY_SETTINGS, buf, NULL);
 		if (err) {
 			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
+		bt_dev.br.sco_h2c_fc_enabled = false;
+		err = write_sync_flow_control_enable(BT_HCI_SYNC_FLOW_ENABLE);
+		if (err != 0) {
+			LOG_WRN("Failed to enable SCO Host-to-Controller flow control (%d)", err);
 		}
 	}
 

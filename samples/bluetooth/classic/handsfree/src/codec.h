@@ -14,6 +14,7 @@
 typedef void (*codec_rx_cb_t)(const uint8_t *data, uint32_t len);
 
 int codec_init(uint8_t air_mode);
+int codec_deinit(void);
 int codec_tx(const uint8_t *data, uint32_t len);
 int codec_rx_start(codec_rx_cb_t cb);
 int codec_rx_stop(void);

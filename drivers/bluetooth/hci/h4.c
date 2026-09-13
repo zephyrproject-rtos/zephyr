@@ -62,6 +62,7 @@ struct h4_data {
 			struct bt_hci_evt_hdr evt;
 			struct bt_hci_acl_hdr acl;
 			struct bt_hci_iso_hdr iso;
+			struct bt_hci_sco_hdr sco;
 			uint8_t hdr[4];
 		};
 	} rx;
@@ -102,6 +103,15 @@ static inline void h4_get_type(const struct device *dev)
 		h4->rx.remaining = sizeof(h4->rx.acl);
 		h4->rx.hdr_len = h4->rx.remaining;
 		break;
+	case BT_HCI_H4_SCO:
+		if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
+			h4->rx.remaining = sizeof(h4->rx.sco);
+			h4->rx.hdr_len = h4->rx.remaining;
+		} else {
+			LOG_ERR("H:4 SCO is unsupported");
+			h4->rx.type = BT_HCI_H4_NONE;
+		}
+		break;
 	case BT_HCI_H4_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
 			h4->rx.remaining = sizeof(h4->rx.iso);
@@ -141,6 +151,21 @@ static inline void get_acl_hdr(const struct device *dev)
 
 		h4->rx.remaining = sys_le16_to_cpu(hdr->len);
 		LOG_DBG("Got ACL header. Payload %u bytes", h4->rx.remaining);
+		h4->rx.have_hdr = true;
+	}
+}
+
+static inline void get_sco_hdr(const struct device *dev)
+{
+	struct h4_data *h4 = dev->data;
+
+	h4_read_hdr(dev);
+
+	if (!h4->rx.remaining) {
+		struct bt_hci_sco_hdr *hdr = &h4->rx.sco;
+
+		h4->rx.remaining = hdr->len;
+		LOG_DBG("Got SCO header. Payload %u bytes", h4->rx.remaining);
 		h4->rx.have_hdr = true;
 	}
 }
@@ -222,6 +247,11 @@ static struct net_buf *get_rx(struct h4_data *h4, k_timeout_t timeout)
 		return bt_buf_get_evt(h4->rx.evt.evt, h4->rx.discardable, timeout);
 	case BT_HCI_H4_ACL:
 		return bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
+	case BT_HCI_H4_SCO:
+		if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
+			return bt_buf_get_rx(BT_BUF_SCO_IN, timeout);
+		}
+		return NULL;
 	case BT_HCI_H4_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
 			return bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
@@ -390,6 +420,11 @@ static inline void read_header(const struct device *dev)
 		break;
 	case BT_HCI_H4_ACL:
 		get_acl_hdr(dev);
+		break;
+	case BT_HCI_H4_SCO:
+		if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
+			get_sco_hdr(dev);
+		}
 		break;
 	case BT_HCI_H4_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {

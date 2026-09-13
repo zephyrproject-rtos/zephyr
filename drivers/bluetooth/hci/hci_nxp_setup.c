@@ -1719,6 +1719,23 @@ static int bt_hci_baudrate_update(const struct device *dev, uint32_t baudrate)
 	return 0;
 }
 
+static int bt_hci_set_voice_over_hci(const struct device *dev, bool enable)
+{
+	int err;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	__ASSERT(net_buf_tailroom(buf) >= 1, "No space in buffer");
+
+	net_buf_add_u8(buf, enable ? 0 : 1);
+	err = bt_hci_cmd_send_sync(BT_OP(BT_OGF_VS, 0x001d), buf, NULL);
+	return err;
+}
+
 int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	int err;
@@ -1838,6 +1855,12 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 #endif /* CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK */
 #endif /* CONFIG_BT_NXP_CTRL_WAKE_ON_BT */
 		fw_upload.is_setup_done = true;
+	}
+
+	err = bt_hci_set_voice_over_hci(dev, IS_ENABLED(CONFIG_BT_NXP_VOICE_OVER_HCI));
+	if (err < 0) {
+		LOG_ERR("Fail to set voice over HCI");
+		return err;
 	}
 
 	return 0;
