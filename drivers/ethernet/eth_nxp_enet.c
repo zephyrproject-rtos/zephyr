@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/kernel/thread_stack.h>
 
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/devicetree/nvmem.h>
@@ -111,6 +112,14 @@ struct nxp_enet_mac_data {
 #endif
 	uint8_t *tx_frame_buf;
 	uint8_t *rx_frame_buf;
+#if defined(CONFIG_ETH_NXP_ENET_RX_ZERO_COPY)
+	/* Slab of driver-owned, cache-line aligned full-frame DMA buffers handed
+	 * to the ENET Rx DMA and wrapped into net_pkt fragments with no copy.
+	 */
+	struct k_mem_slab *rx_buf_slab;
+	/* net_buf pool used only to wrap the above external DMA buffers. */
+	struct net_buf_pool *rx_buf_pool;
+#endif
 };
 
 static K_THREAD_STACK_DEFINE(enet_rx_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
@@ -185,6 +194,70 @@ static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev,
 }
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
+#if defined(CONFIG_ETH_NXP_ENET_TX_ZERO_COPY)
+
+/* Maximum number of net_buf fragments that can make up one outgoing frame in
+ * the zero-copy scatter list. With NET_BUF_DATA_SIZE >= the Ethernet MTU a
+ * frame is a single fragment; this cap only bounds pathological chains.
+ */
+#define ENET_TX_ZC_MAX_FRAGS 8
+
+static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
+{
+	struct nxp_enet_mac_data *data = dev->data;
+	enet_buffer_struct_t tx_buffers[ENET_TX_ZC_MAX_FRAGS];
+	enet_tx_frame_struct_t tx_frame = {0};
+	struct net_buf *frag;
+	unsigned int nfrags = 0;
+	status_t ret;
+
+	/* Wait for a TX buffer descriptor to be available */
+	k_sem_take(&data->tx_buf_sem, K_FOREVER);
+
+	/* Build a scatter list that points straight at the net_buf fragments so
+	 * the ENET DMA transmits from them in place - no per-frame memcpy into a
+	 * bounce buffer. The HAL cleans the cache for each source buffer.
+	 */
+	for (frag = pkt->frags; frag != NULL; frag = frag->frags) {
+		if (frag->len == 0U) {
+			continue;
+		}
+		if (nfrags >= ENET_TX_ZC_MAX_FRAGS) {
+			k_sem_give(&data->tx_buf_sem);
+			return -ENOMEM;
+		}
+		tx_buffers[nfrags].buffer = frag->data;
+		tx_buffers[nfrags].length = frag->len;
+		nfrags++;
+	}
+
+	if (nfrags == 0U) {
+		k_sem_give(&data->tx_buf_sem);
+		return -EINVAL;
+	}
+
+	/* Keep the packet referenced until the transmit DMA completes; the
+	 * Tx-done interrupt reclaim callback releases this reference.
+	 */
+	net_pkt_ref(pkt);
+
+	tx_frame.txBuffArray = tx_buffers;
+	tx_frame.txBuffNum = nfrags;
+	tx_frame.context = pkt;
+
+	ret = ENET_StartTxFrame(data->base, &data->enet_handle, &tx_frame, RING_ID);
+	if (ret != kStatus_Success) {
+		LOG_ERR("ENET_StartTxFrame error: %d", ret);
+		net_pkt_unref(pkt);
+		k_sem_give(&data->tx_buf_sem);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+#else /* !CONFIG_ETH_NXP_ENET_TX_ZERO_COPY */
+
 static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct nxp_enet_mac_data *data = dev->data;
@@ -218,6 +291,8 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 
 	return 0;
 }
+
+#endif /* CONFIG_ETH_NXP_ENET_TX_ZERO_COPY */
 
 static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev,
 							   struct net_if *iface __unused)
@@ -315,6 +390,142 @@ static int eth_nxp_enet_get_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
+#if defined(CONFIG_ETH_NXP_ENET_RX_ZERO_COPY)
+
+/* HAL Rx zero-copy allocate callback: hand the ENET Rx DMA one driver-owned,
+ * cache-line aligned full-frame buffer from the slab. Runs in ISR/HAL context,
+ * so it must not block.
+ */
+static void *eth_nxp_enet_rx_alloc(ENET_Type *base, void *userData, uint8_t ringId)
+{
+	const struct device *dev = userData;
+	struct nxp_enet_mac_data *data = dev->data;
+	void *buf;
+
+	ARG_UNUSED(base);
+	ARG_UNUSED(ringId);
+
+	if (k_mem_slab_alloc(data->rx_buf_slab, &buf, K_NO_WAIT) != 0) {
+		return NULL;
+	}
+
+	return buf;
+}
+
+/* HAL Rx zero-copy free callback: return a DMA buffer to the slab. Called by
+ * the HAL when it re-arms the DMA with a buffer the driver did not consume
+ * (e.g. errored frame or pool exhaustion on the read path).
+ */
+static void eth_nxp_enet_rx_free(ENET_Type *base, void *buffer, void *userData, uint8_t ringId)
+{
+	const struct device *dev = userData;
+	struct nxp_enet_mac_data *data = dev->data;
+
+	ARG_UNUSED(base);
+	ARG_UNUSED(ringId);
+
+	if (buffer != NULL) {
+		k_mem_slab_free(data->rx_buf_slab, buffer);
+	}
+}
+
+/* net_buf pool destroy handler: when the network stack unreferences the last
+ * net_buf wrapping a DMA buffer, return that external buffer to the slab so it
+ * can be handed back to the Rx DMA.
+ */
+static void eth_nxp_enet_rx_buf_destroy(struct net_buf *buf)
+{
+	/* The owning slab pointer was stashed in this net_buf's per-buffer
+	 * user_data when the DMA buffer was wrapped (struct net_buf_pool has no
+	 * user_data field, so the slab cannot be recovered from the pool).
+	 */
+	struct k_mem_slab *slab = *(struct k_mem_slab **)net_buf_user_data(buf);
+
+	if (buf->__buf != NULL && slab != NULL) {
+		k_mem_slab_free(slab, buf->__buf);
+		buf->__buf = NULL;
+	}
+
+	net_buf_destroy(buf);
+}
+
+static int eth_nxp_enet_rx(const struct device *dev)
+{
+	struct nxp_enet_mac_data *data = dev->data;
+	enet_buffer_struct_t rx_buffer = {0};
+	enet_rx_frame_struct_t rx_frame = {0};
+	struct net_if *iface;
+	struct net_pkt *pkt = NULL;
+	struct net_buf *frag;
+	status_t status;
+
+	rx_frame.rxBuffArray = &rx_buffer;
+
+	status = ENET_GetRxFrame(data->base, &data->enet_handle, &rx_frame, RING_ID);
+	if (status == kStatus_ENET_RxFrameEmpty) {
+		return 0;
+	} else if (status != kStatus_Success) {
+		/* On error the HAL has already re-armed the DMA and returned any
+		 * buffers of this frame through the free callback.
+		 */
+		if (status != kStatus_ENET_RxFrameError) {
+			LOG_ERR("ENET_GetRxFrame return: %d", (int)status);
+		}
+		eth_stats_update_errors_rx(get_iface(data));
+		return -EIO;
+	}
+
+	if (rx_frame.totLen > NET_ETH_MAX_FRAME_SIZE || rx_buffer.buffer == NULL) {
+		LOG_ERR("Frame too large (%d)", rx_frame.totLen);
+		goto error;
+	}
+
+	pkt = net_pkt_rx_alloc_on_iface(data->iface, K_NO_WAIT);
+	if (pkt == NULL) {
+		goto error;
+	}
+
+	/* Wrap the DMA buffer straight into a net_buf fragment - no copy. The
+	 * pool destroy handler returns the buffer to the slab once the stack is
+	 * done with the packet.
+	 */
+	frag = net_buf_alloc_with_data(data->rx_buf_pool, rx_buffer.buffer,
+				       rx_frame.totLen, K_NO_WAIT);
+	if (frag == NULL) {
+		goto error;
+	}
+
+	/* Stash the owning slab in the fragment so the pool destroy handler can
+	 * return this external DMA buffer to the correct slab.
+	 */
+	*(struct k_mem_slab **)net_buf_user_data(frag) = data->rx_buf_slab;
+
+	net_pkt_append_buffer(pkt, frag);
+
+	net_pkt_cursor_init(pkt);
+
+	iface = get_iface(data);
+	if (net_recv_data(iface, pkt) < 0) {
+		goto error;
+	}
+
+	return 1;
+error:
+	if (pkt != NULL) {
+		/* Unref frees any attached fragment via the destroy handler,
+		 * which returns the DMA buffer to the slab.
+		 */
+		net_pkt_unref(pkt);
+	} else if (rx_buffer.buffer != NULL) {
+		/* No packet/fragment took ownership; return the buffer directly. */
+		k_mem_slab_free(data->rx_buf_slab, rx_buffer.buffer);
+	}
+	eth_stats_update_errors_rx(get_iface(data));
+	return -EIO;
+}
+
+#else /* !CONFIG_ETH_NXP_ENET_RX_ZERO_COPY */
+
 static int eth_nxp_enet_rx(const struct device *dev)
 {
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
@@ -411,6 +622,8 @@ error:
 	eth_stats_update_errors_rx(get_iface(data));
 	return -EIO;
 }
+
+#endif /* CONFIG_ETH_NXP_ENET_RX_ZERO_COPY */
 
 static void eth_nxp_enet_rx_thread(struct k_work *work)
 {
@@ -512,7 +725,16 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		k_sem_give(&data->rx_thread_sem);
 		break;
 	case kENET_TxEvent:
+#if defined(CONFIG_ETH_NXP_ENET_TX_ZERO_COPY)
+		/* The transmit DMA is done with the net_buf fragments of this
+		 * frame; release the reference taken in eth_nxp_enet_tx().
+		 */
+		if (frameinfo != NULL && frameinfo->context != NULL) {
+			net_pkt_unref((struct net_pkt *)frameinfo->context);
+		}
+#else
 		ts_register_tx_event(dev, frameinfo);
+#endif
 		k_sem_give(&data->tx_buf_sem);
 		break;
 	case kENET_TimeStampEvent:
@@ -717,6 +939,15 @@ static int eth_nxp_enet_init(const struct device *dev)
 	enet_config.callback = eth_callback;
 	enet_config.userData = (void *)dev;
 
+#if defined(CONFIG_ETH_NXP_ENET_RX_ZERO_COPY)
+	/* Zero-copy RX: the HAL owns no static Rx buffers; it pulls a fresh
+	 * driver buffer from the slab for each descriptor via rxBuffAlloc and
+	 * returns unconsumed ones via rxBuffFree.
+	 */
+	enet_config.rxBuffAlloc = eth_nxp_enet_rx_alloc;
+	enet_config.rxBuffFree = eth_nxp_enet_rx_free;
+#endif
+
 	ENET_Up(data->base,
 		  &data->enet_handle,
 		  &enet_config,
@@ -742,6 +973,14 @@ static int eth_nxp_enet_init(const struct device *dev)
 	 */
 	data->base->GAUR = 0xFFFFFFFFU;
 	data->base->GALR = 0xFFFFFFFFU;
+#endif
+
+#if defined(CONFIG_ETH_NXP_ENET_TX_ZERO_COPY) && !defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	/* Zero-copy TX hands the DMA the net_buf buffers directly and relies on
+	 * the Tx reclaim callback to release each net_pkt once the transmit
+	 * descriptor is reclaimed. Enable reclaim for ring 0.
+	 */
+	ENET_SetTxReclaim(&data->enet_handle, true, 0);
 #endif
 
 	ENET_ActiveRead(data->base);
@@ -864,16 +1103,48 @@ static const struct ethernet_api api_funcs = {
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 #define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, ptp_clock)),
+#else
+#define NXP_ENET_PTP_DEV(n)
+#endif
+
+/* The HAL txDirtyRing (Tx reclaim) needs a per-instance enet_frame_info_t array.
+ * It is required both by the PTP Tx-timestamp path and by zero-copy TX, which
+ * relies on the reclaim callback to release each net_pkt after DMA completes.
+ */
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET) || defined(CONFIG_ETH_NXP_ENET_TX_ZERO_COPY)
 #define NXP_ENET_FRAMEINFO_ARRAY(n)							\
 	static enet_frame_info_t							\
 		nxp_enet_##n##_tx_frameinfo_array[CONFIG_ETH_NXP_ENET_TX_BUFFERS];
 #define NXP_ENET_FRAMEINFO(n)	\
 	.txFrameInfo = nxp_enet_##n##_tx_frameinfo_array,
 #else
-#define NXP_ENET_PTP_DEV(n)
 #define NXP_ENET_FRAMEINFO_ARRAY(n)
 #define NXP_ENET_FRAMEINFO(n)	\
 	.txFrameInfo = NULL
+#endif
+
+/* Zero-copy RX per-instance storage: a k_mem_slab of driver-owned, cache-line
+ * aligned full-frame DMA buffers, plus a net_buf pool (0 data bytes, external
+ * data) whose fragments wrap those buffers. Each fragment stashes the owning
+ * slab pointer in its per-buffer user_data so the destroy handler can return
+ * the wrapped buffer to the slab.
+ */
+#if defined(CONFIG_ETH_NXP_ENET_RX_ZERO_COPY)
+#define NXP_ENET_RX_ZC_DEFINE(n)							\
+	K_MEM_SLAB_DEFINE_STATIC(nxp_enet_##n##_rx_buf_slab,				\
+				 ETH_NXP_ENET_BUFFER_SIZE,				\
+				 CONFIG_ETH_NXP_ENET_RX_ZERO_COPY_BUFFERS,		\
+				 ENET_BUFF_ALIGNMENT);					\
+	NET_BUF_POOL_FIXED_DEFINE(nxp_enet_##n##_rx_buf_pool,				\
+				  CONFIG_ETH_NXP_ENET_RX_ZERO_COPY_BUFFERS,		\
+				  0, sizeof(struct k_mem_slab *),			\
+				  eth_nxp_enet_rx_buf_destroy);
+#define NXP_ENET_RX_ZC_DATA_INIT(n)							\
+	.rx_buf_slab = &nxp_enet_##n##_rx_buf_slab,					\
+	.rx_buf_pool = &nxp_enet_##n##_rx_buf_pool,
+#else
+#define NXP_ENET_RX_ZC_DEFINE(n)
+#define NXP_ENET_RX_ZC_DATA_INIT(n)
 #endif
 
 #define NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)						\
@@ -894,6 +1165,7 @@ static const struct ethernet_api api_funcs = {
 		NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)					\
 											\
 		NXP_ENET_FRAMEINFO_ARRAY(n)						\
+		NXP_ENET_RX_ZC_DEFINE(n)						\
 											\
 		static void nxp_enet_##n##_irq_config_func(void)			\
 		{									\
@@ -956,6 +1228,7 @@ static const struct ethernet_api api_funcs = {
 		struct nxp_enet_mac_data nxp_enet_##n##_data = {			\
 			.tx_frame_buf = nxp_enet_##n##_tx_frame_buf,			\
 			.rx_frame_buf = nxp_enet_##n##_rx_frame_buf,			\
+			NXP_ENET_RX_ZC_DATA_INIT(n)					\
 			.dev = DEVICE_DT_INST_GET(n),					\
 		};									\
 											\
