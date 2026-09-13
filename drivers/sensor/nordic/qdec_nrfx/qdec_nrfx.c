@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/rtio/work.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/sensor/qdec_nrf.h>
@@ -24,6 +25,9 @@ LOG_MODULE_REGISTER(qdec_nrfx, CONFIG_SENSOR_LOG_LEVEL);
 /* limit range to avoid overflow when converting steps to degrees */
 #define ACC_MAX (INT_MAX / FULL_ANGLE)
 #define ACC_MIN (INT_MIN / FULL_ANGLE)
+
+/* shift parameter for decode */
+#define QDEC_ANGLE_SHIFT 22
 
 BUILD_ASSERT(NRF_QDEC_SAMPLEPER_128US == SAMPLEPER_128US,
 	     "Different SAMPLEPER register values in devicetree binding and nRF HAL");
@@ -156,6 +160,210 @@ static int qdec_nrfx_trigger_set(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+
+struct qdec_nrfx_header {
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+struct qdec_nrfx_edata {
+	struct qdec_nrfx_header header;
+	q31_t angle_q31;
+};
+
+static int qdec_nrfx_encode_angle_q31(const struct device *dev, struct sensor_value *val,
+				      q31_t *angle_q31)
+{
+	ARG_UNUSED(dev);
+	int64_t micro;
+	int64_t q;
+
+	micro = sensor_value_to_micro(val);
+	q = (micro * (INT64_C(1) << 31)) / 1000000LL;
+	q >>= QDEC_ANGLE_SHIFT;
+	*angle_q31 = (q31_t)q;
+
+	return 0;
+}
+
+void qdec_nrfx_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
+{
+	uint32_t min_buf_len = sizeof(struct qdec_nrfx_edata);
+	int rc;
+	int32_t acc;
+	uint32_t accdbl;
+	uint8_t *buf;
+	uint32_t buf_len;
+	unsigned int key;
+	bool overflow;
+
+	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = cfg->sensor;
+	const struct qdec_nrfx_config *config = dev->config;
+	const struct sensor_chan_spec *const channels = cfg->channels;
+	struct qdec_nrfx_data *data = dev->data;
+	struct qdec_nrfx_edata *edata;
+	struct sensor_value val;
+
+	if (cfg->is_streaming) {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+		return;
+	}
+
+	if (cfg->count == 0) {
+		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+		return;
+	}
+
+	if ((channels[0].chan_type != SENSOR_CHAN_ALL) &&
+	    (channels[0].chan_type != SENSOR_CHAN_ROTATION)) {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+		return;
+	}
+
+	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
+	if (rc != 0) {
+		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
+	edata = (struct qdec_nrfx_edata *)buf;
+
+	/* fetch latest accumulator sample */
+	nrfx_qdec_accumulators_read(&data->qdec, &acc, &accdbl);
+	accumulate(data, acc);
+
+	key = irq_lock();
+
+	data->fetched_acc = data->acc;
+	data->acc = 0;
+	overflow = data->overflow;
+	data->overflow = false;
+
+	irq_unlock(key);
+
+	if (overflow) {
+		rtio_iodev_sqe_err(iodev_sqe, -EOVERFLOW);
+		return;
+	}
+
+	val.val1 = (data->fetched_acc * FULL_ANGLE) / config->steps;
+	val.val2 = (data->fetched_acc * FULL_ANGLE) - (val.val1 * config->steps);
+	if (val.val2 != 0) {
+		val.val2 *= 1000000;
+		val.val2 /= config->steps;
+	}
+
+	rc = qdec_nrfx_encode_angle_q31(dev, &val, &edata->angle_q31);
+	if (rc != 0) {
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+	edata->header.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
+}
+
+static void qdec_nrfx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_work_req *req = rtio_work_req_alloc();
+
+	if (req == NULL) {
+		LOG_ERR("RTIO work item allocation failed. Consider to increase "
+			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
+
+	rtio_work_req_submit(req, iodev_sqe, qdec_nrfx_submit_sync);
+}
+
+static int qdec_nrfx_decoder_get_frame_count(const uint8_t *buffer,
+						 struct sensor_chan_spec chan_spec,
+						 uint16_t *frame_count)
+{
+	int err = -ENOTSUP;
+
+	if (chan_spec.chan_idx != 0) {
+		return err;
+	}
+
+	switch (chan_spec.chan_type) {
+	case SENSOR_CHAN_ALL:
+	case SENSOR_CHAN_ROTATION:
+		*frame_count = 1;
+		break;
+	default:
+		return err;
+	}
+
+	if (*frame_count > 0) {
+		err = 0;
+	}
+
+	return err;
+}
+
+static int qdec_nrfx_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
+					   size_t *frame_size)
+{
+	switch (chan_spec.chan_type) {
+	case SENSOR_CHAN_ALL:
+	case SENSOR_CHAN_ROTATION:
+		*base_size = sizeof(struct sensor_q31_sample_data);
+		*frame_size = sizeof(struct sensor_q31_sample_data);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int qdec_nrfx_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				    uint32_t *fit, uint16_t max_count, void *data_out)
+{
+	if (*fit != 0) {
+		return 0;
+	}
+
+	struct sensor_q31_data *out = data_out;
+
+	out->header.reading_count = 1;
+
+	const struct qdec_nrfx_edata *edata = (const struct qdec_nrfx_edata *)buffer;
+
+	switch (chan_spec.chan_type) {
+	case SENSOR_CHAN_ALL:
+	case SENSOR_CHAN_ROTATION:
+		out->header.base_timestamp_ns = edata->header.timestamp;
+		out->shift = QDEC_ANGLE_SHIFT;
+		out->readings[0].angle = edata->angle_q31;
+
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	*fit = 1;
+
+	return 1;
+}
+
+SENSOR_DECODER_API_DT_DEFINE() = {
+	.get_frame_count = qdec_nrfx_decoder_get_frame_count,
+	.get_size_info = qdec_nrfx_decoder_get_size_info,
+	.decode = qdec_nrfx_decoder_decode,
+};
+
+static int qdec_nrfx_get_decoder(const struct device *dev,
+				 const struct sensor_decoder_api **decoder)
+{
+	ARG_UNUSED(dev);
+	*decoder = &SENSOR_DECODER_NAME();
+
+	return 0;
+}
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
 static void qdec_nrfx_event_handler(nrfx_qdec_event_t event, void *p_context)
 {
 	const struct device *dev = p_context;
@@ -206,6 +414,10 @@ static DEVICE_API(sensor, qdec_nrfx_driver_api) = {
 	.sample_fetch = qdec_nrfx_sample_fetch,
 	.channel_get  = qdec_nrfx_channel_get,
 	.trigger_set  = qdec_nrfx_trigger_set,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = qdec_nrfx_submit,
+	.get_decoder = qdec_nrfx_get_decoder,
+#endif
 };
 
 static void qdec_pm_suspend(const struct device *dev)
