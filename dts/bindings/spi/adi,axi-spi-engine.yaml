@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Devices AXI SPI Engine controller
+
+compatible: "adi,axi-spi-engine"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+  adi,ref-clock-hz:
+    type: int
+    required: true
+    description: Reference clock frequency in Hz (SPI Engine core clock)
+  adi,data-width:
+    type: int
+    default: 8
+    description: |
+      Default SPI word size in bits (8, 16, 24, or 32) used when a transfer's
+      spi_config leaves the word size unset.
+  adi,num-cs:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4, 5, 6, 7, 8]
+    description: |
+      Number of chip select lines. Capped at 8 because the CS assert pattern
+      is the 8-bit arg2 field of the ASSERT instruction.
