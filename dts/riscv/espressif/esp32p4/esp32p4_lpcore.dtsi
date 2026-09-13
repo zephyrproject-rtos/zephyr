@@ -6,7 +6,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/interrupt-controller/esp-esp32p4-intmux.h>
+#include <zephyr/dt-bindings/interrupt-controller/espressif-esp32p4-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32p4_clock.h>
 
 / {
@@ -66,17 +66,16 @@
 				status = "okay";
 				shared-memory = <&ipc_shm>;
 				shared-memory-size = <0x100>;
-				interrupts = <PMU_0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-					     <PMU_1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+				interrupts = <LP_CORE_PMU_INTR_SOURCE>;
 				interrupt-parent = <&intc>;
 				#mbox-cells = <1>;
 			};
 		};
 
 		intc: interrupt-controller@50108008 {
-			compatible = "espressif,esp32-intc";
+			compatible = "espressif,esp32-lpcore-intc";
 			#address-cells = <0>;
-			#interrupt-cells = <3>;
+			#interrupt-cells = <1>;
 			interrupt-controller;
 			reg = <0x50108008 DT_SIZE_K(4)>;
 			status = "okay";

@@ -65,11 +65,6 @@ struct lp_uart_esp32_config {
 	uint8_t rx_flow_ctrl_thresh;
 	uint8_t lp_uart_source_clk;
 	bool loopback;
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
-#endif
 };
 
 static int lp_uart_esp32_poll_in(const struct device *dev, unsigned char *p_char)
@@ -266,7 +261,7 @@ static void lp_uart_esp32_irq_callback_set(const struct device *dev,
 	data->irq_cb_data = cb_data;
 }
 
-static void lp_uart_esp32_isr(void *arg)
+static void lp_uart_esp32_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct lp_uart_esp32_data *data = dev->data;
@@ -429,15 +424,10 @@ static int lp_uart_esp32_init(const struct device *dev)
 	uart_hal_rxfifo_rst(&data->hal);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	const struct lp_uart_esp32_config *const cfg = dev->config;
-
-	ret = esp_intr_alloc(cfg->irq_source,
-			     ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-			     (intr_handler_t)lp_uart_esp32_isr, (void *)dev, NULL);
-	if (ret != 0) {
-		return ret;
-	}
+	/* Level-2 leaf on the LP UART INTMUX source; the ISR runs from flash. */
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(lp_uart)), IRQ_DEFAULT_PRIORITY, lp_uart_esp32_isr,
+		    DEVICE_DT_GET(DT_NODELABEL(lp_uart)), 0);
+	irq_enable(DT_IRQN(DT_NODELABEL(lp_uart)));
 #endif
 
 	return 0;
@@ -485,11 +475,6 @@ static const struct lp_uart_esp32_config lp_uart_esp32_cfg = {
 	.rx_flow_ctrl_thresh = 0,
 	.lp_uart_source_clk = LP_UART_SCLK_DEFAULT,
 	.loopback = DT_PROP(DT_NODELABEL(lp_uart), loopback),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_source = DT_IRQ_BY_IDX(DT_NODELABEL(lp_uart), 0, irq),
-	.irq_priority = DT_IRQ_BY_IDX(DT_NODELABEL(lp_uart), 0, priority),
-	.irq_flags = DT_IRQ_BY_IDX(DT_NODELABEL(lp_uart), 0, flags),
-#endif
 };
 
 #if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32C5_HPCORE) ||                    \

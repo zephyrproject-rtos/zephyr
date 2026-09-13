@@ -1,11 +1,34 @@
 common:
+  tags:
+    - drivers
+    - interrupt
   integration_platforms:
     - esp32s3_devkitc/esp32s3/procpu
 tests:
+  # Hardware-executed. esp32s3 is the only platform where the multi-level
+  # suites (mli_encoding, mli_dispatch) are active; the others run
+  # esp_irq_flags, and esp32/esp32s2 additionally run the nested-ISR suite.
+  # esp32c6 has only two counters, so main.c's COUNTER_INST_COUNT >= 3 guard
+  # leaves the nested-ISR suite out there.
   boards.esp32.interrupts:
-    tags:
-      - drivers
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
+      - esp32c6_devkitc/esp32c6/hpcore
+
+  # Compile-only sweep across both architectures and every SoC that carries the
+  # interrupt code, so a change to the tables, the bookkeeping or the Kconfig
+  # offsets is caught without hardware. This is the class of breakage the
+  # NUM_IRQS and pre-link placeholder bugs fell into.
+  boards.esp32.interrupts.build:
+    build_only: true
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c3_devkitm
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4_function_ev_board/esp32p4/hpcore
