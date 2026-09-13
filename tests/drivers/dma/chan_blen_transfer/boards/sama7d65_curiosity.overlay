@@ -1,0 +1,11 @@
+/*
+ * Copyright (C) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&xdmac0>, <&xdmac1>, <&xdmac2>;
+	};
+};
