@@ -9,6 +9,7 @@
 #include <zephyr/sys/mem_blocks.h>
 
 SYS_MEM_BLOCKS_DEFINE(block1, 32, 4, 16);
+SYS_MEM_BLOCKS_DEFINE(block2, 128, 2, 8);
 
 K_MEM_SLAB_DEFINE(slab1, 32, 4, 16);
 static char slab2_buffer[256] __aligned(8);
@@ -498,6 +499,72 @@ ZTEST(obj_core, test_obj_core_object_free)
 #else
 	ztest_test_skip();
 #endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+
+struct embedded {
+	uint32_t pad;
+	struct k_mutex mutex;
+};
+
+K_MEM_SLAB_DEFINE(slab3, ROUND_UP(sizeof(struct embedded), 8), 2, 8);
+
+ZTEST(obj_core, test_obj_core_released_memory)
+{
+	struct embedded *heap_obj = k_malloc(sizeof(struct embedded));
+	struct embedded *slab_obj;
+	struct embedded *blocks_obj;
+
+	/* Objects in memory returned to an allocator stop being reported */
+	zassert_not_null(heap_obj, "allocation failed");
+	k_mutex_init(&heap_obj->mutex);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&heap_obj->mutex)), 1);
+	k_free(heap_obj);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&heap_obj->mutex)), 0);
+
+	zassert_equal(k_mem_slab_alloc(&slab3, (void **)&slab_obj, K_NO_WAIT), 0);
+	k_mutex_init(&slab_obj->mutex);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&slab_obj->mutex)), 1);
+	k_mem_slab_free(&slab3, slab_obj);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&slab_obj->mutex)), 0);
+
+	zassert_equal(sys_mem_blocks_alloc(&block2, 1, (void **)&blocks_obj), 0);
+	k_mutex_init(&blocks_obj->mutex);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&blocks_obj->mutex)), 1);
+	zassert_equal(sys_mem_blocks_free(&block2, 1, (void **)&blocks_obj), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&blocks_obj->mutex)), 0);
+
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex1)), 1);
+}
+
+static int free_in_walk_op(struct k_obj_core *obj_core, void *data)
+{
+	struct embedded **objp = data;
+
+	if (obj_core == K_OBJ_CORE(&(*objp)->mutex)) {
+		k_free(*objp);
+	} else if (obj_core == K_OBJ_CORE(&mutex2)) {
+		k_obj_core_unlink(obj_core);
+	}
+
+	return 0;
+}
+
+ZTEST(obj_core, test_obj_core_walk_callback)
+{
+	struct embedded *obj = k_malloc(sizeof(*obj));
+
+	/* A walk callback may release memory holding registered objects and
+	 * unregister objects itself: neither takes the registry lock.
+	 */
+	zassert_not_null(obj, "allocation failed");
+	k_mutex_init(&obj->mutex);
+	k_mutex_init(&mutex2);
+
+	k_obj_type_walk_locked(k_obj_type_find(K_OBJ_TYPE_MUTEX_ID), free_in_walk_op, &obj);
+
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&obj->mutex)), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex1)), 1);
 }
 
 ZTEST_SUITE(obj_core, NULL, NULL,

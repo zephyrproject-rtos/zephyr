@@ -360,4 +360,22 @@ void *sys_heap_get_caller(struct sys_heap *heap, void *mem);
 }
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Heap memory release hook
+ *
+ * Provided by the consumer that selects CONFIG_SYS_HEAP_RELEASE_HOOK. Called
+ * with the memory still valid, from sys_heap_free() with the released block
+ * and from an in-place shrink with the released tail. The caller may hold a
+ * heap lock, so the hook must not allocate from or free to a heap. With
+ * CONFIG_USERSPACE the common libc free() may enter it from user mode.
+ *
+ * @param mem Start of the released memory
+ * @param bytes Size of the released memory
+ */
+void sys_heap_release_hook(void *mem, size_t bytes);
+
+/** @endcond */
+
 #endif /* ZEPHYR_INCLUDE_SYS_SYS_HEAP_H_ */

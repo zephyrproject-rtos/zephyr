@@ -69,6 +69,10 @@ static int free_blocks(sys_mem_blocks_t *mem_block, void *ptr,
 		goto out;
 	}
 
+#ifdef CONFIG_OBJ_CORE_EVICT_ON_FREE
+	k_obj_core_evict_range(blk, num_blocks << mem_block->info.blk_sz_shift);
+#endif /* CONFIG_OBJ_CORE_EVICT_ON_FREE */
+
 #ifdef CONFIG_SYS_MEM_BLOCKS_RUNTIME_STATS
 	k_spinlock_key_t  key = k_spin_lock(&mem_block->lock);
 #endif
