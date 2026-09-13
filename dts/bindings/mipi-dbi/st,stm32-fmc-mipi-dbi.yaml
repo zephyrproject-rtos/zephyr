@@ -1,7 +1,12 @@
 # Copyright (c) 2024 Bootlin
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 FMC display controller
+description: |
+  STM32 Flexible Memory Controller (FMC) display controller supporting
+  parallel MIPI-DBI interfaces in both 8-bit and 16-bit configurations.
+  The hardware bus width is configured in the parent NOR/PSRAM memory controller
+  bank node (st,control property MWID field).
+
 compatible: "st,stm32-fmc-mipi-dbi"
 
 include: ["mipi-dbi-controller.yaml"]
@@ -27,3 +32,5 @@ properties:
     required: true
     description: |
       Address pin used as Register Select for the display controller.
+      In 16-bit bus mode, pin FMC_Ax is driven by internal address line HADDR[x + 1].
+      In 8-bit bus mode, pin FMC_Ax is driven by internal address line HADDR[x].

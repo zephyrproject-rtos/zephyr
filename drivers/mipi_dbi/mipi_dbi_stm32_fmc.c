@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT st_stm32_fmc_mipi_dbi
 
+#include <soc.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -59,7 +60,6 @@ int mipi_dbi_stm32_fmc_check_config(const struct device *dev,
 		LOG_ERR("Only Intel 8080 8-bit and 16-bit modes are supported");
 		return -ENOTSUP;
 	}
-
 	if (memc_stm32_fmc_clock_rate(&fmc_freq) < 0) {
 		LOG_ERR("Unable to get FMC frequency");
 		return -EINVAL;
@@ -128,6 +128,8 @@ static int mipi_dbi_stm32_fmc_write_display(const struct device *dev,
 	size_t i;
 	int ret;
 
+	ARG_UNUSED(pixfmt);
+
 	ret = mipi_dbi_stm32_fmc_check_config(dev, dbi_config);
 	if (ret < 0) {
 		return ret;
@@ -138,7 +140,12 @@ static int mipi_dbi_stm32_fmc_write_display(const struct device *dev,
 			sys_write8(framebuf[i], config->data_addr);
 		}
 	} else {
-		for (i = 0U; i < desc->buf_size; i += 2) {
+		if ((desc->buf_size & 1U) != 0U) {
+			LOG_ERR("Buffer size %zu must be even in 16-bit mode", desc->buf_size);
+			return -EINVAL;
+		}
+
+		for (i = 0U; i < desc->buf_size; i += 2U) {
 			sys_write16(sys_get_le16(&framebuf[i]), config->data_addr);
 		}
 	}
@@ -210,16 +217,23 @@ static DEVICE_API(mipi_dbi, mipi_dbi_stm32_fmc_driver_api) = {
 	DT_INST_PROP_OR(n, bank_address,                                                           \
 			_CONCAT(FMC_BANK1_, UTIL_INC(DT_REG_ADDR_RAW(DT_INST_PARENT(n)))))
 
-#define MIPI_DBI_FMC_IS_8BIT(n)                                                                    \
-	(DT_PROP_BY_IDX(DT_INST_PARENT(n), st_control, 2) == FMC_NORSRAM_MEM_BUS_WIDTH_8)
+/*
+ * In 16-bit mode, FMC_A[x] outputs HADDR[x + 1] (shift by 1).
+ * In 8-bit mode, FMC_A[x] outputs HADDR[x] (shift by 0).
+ */
+#define MIPI_DBI_FMC_ADDR_SHIFT(n)                                                                 \
+	(DT_PROP_BY_IDX(DT_INST_PARENT(n), st_control, 2) == FMC_NORSRAM_MEM_BUS_WIDTH_16 ? 1 : 0)
 
 #define MIPI_DBI_FMC_GET_DATA_ADDRESS(n)                                                           \
-	MIPI_DBI_FMC_GET_ADDRESS(n) +                                                              \
-		(MIPI_DBI_FMC_IS_8BIT(n)                                                           \
-			 ? (1 << DT_INST_PROP(n, register_select_pin))                             \
-			 : (1 << (DT_INST_PROP(n, register_select_pin) + 1)))
+	(MIPI_DBI_FMC_GET_ADDRESS(n) +                                                             \
+	 BIT(DT_INST_PROP(n, register_select_pin) + MIPI_DBI_FMC_ADDR_SHIFT(n)))
 
 #define MIPI_DBI_STM32_FMC_INIT(n)                                                                 \
+	BUILD_ASSERT((DT_PROP_BY_IDX(DT_INST_PARENT(n), st_control, 2) ==                         \
+		      FMC_NORSRAM_MEM_BUS_WIDTH_8) ||                                             \
+		     (DT_PROP_BY_IDX(DT_INST_PARENT(n), st_control, 2) ==                         \
+		      FMC_NORSRAM_MEM_BUS_WIDTH_16),                                              \
+		     "Unsupported FMC bus width; only 8-bit and 16-bit supported");                \
 	static const struct mipi_dbi_stm32_fmc_config mipi_dbi_stm32_fmc_config_##n = {            \
 		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                             \
 		.power = GPIO_DT_SPEC_INST_GET_OR(n, power_gpios, {}),                             \
