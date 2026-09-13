@@ -1,0 +1,16 @@
+sample:
+  name: esp154_sniffer
+  description: IEEE 802.15.4 frame sniffer skeleton for Espressif (H2/C6/C5)
+common:
+  tags:
+    - ieee802154
+    - espressif
+  filter: dt_chosen_enabled("zephyr,ieee802154")
+tests:
+  sample.apps.esp154_sniffer.build:
+    build_only: true
+    platform_allow:
+      - esp32c6_devkitc
+      - esp32h2_devkitm
+      - esp32c5_devkitc
+
