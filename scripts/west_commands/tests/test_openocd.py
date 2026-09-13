@@ -150,3 +150,55 @@ def test_no_dev_id_no_serial(runner_config):
     '''Without a selector no _ZEPHYR_BOARD_SERIAL command is emitted.'''
     runner = create_from_args(runner_config, [])
     assert runner.serial == []
+
+
+#
+# --gdb-init commands are appended, in the order given, after the ones the
+# runner issues itself, so they cannot change the runner's default behavior.
+# Twenty-two in-tree board.cmake files rely on this.
+#
+
+INIT_A = 'set print asm-demangle on'
+INIT_B = 'mem 0x90000000 0x90020000 ro'
+INIT_ARGS = ['--gdb-init', INIT_A, '--gdb-init', INIT_B]
+INIT_EX = ['-ex', INIT_A, '-ex', INIT_B]
+LOAD = ['-ex', 'load']
+PRE_DEBUG = 'monitor reset halt'
+
+
+@pytest.mark.parametrize(
+    'command, argv, expected_tail',
+    [
+        # 'debug' loads the image first, so the user's commands come last.
+        ('debug', INIT_ARGS, LOAD + INIT_EX),
+        # Without the option the client gets no extra commands.
+        ('debug', [], LOAD),
+        # 'attach' loads nothing.
+        ('attach', INIT_ARGS, INIT_EX),
+        # --gdb-pre-debug is the other append point, and keeps its place.
+        ('debug', ['--gdb-pre-debug', PRE_DEBUG, *INIT_ARGS], LOAD + ['-ex', PRE_DEBUG] + INIT_EX),
+        # --no-load drops the load command.
+        ('debug', ['--no-load', *INIT_ARGS], INIT_EX),
+    ],
+)
+@patch('runners.openocd.OpenOcdBinaryRunner.read_version', return_value=(0, 12, 0))
+@patch('runners.openocd.OpenOcdBinaryRunner.check_call_ignore_sigint')
+@patch('runners.openocd.OpenOcdBinaryRunner.popen_ignore_int', return_value=MagicMock())
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+def test_gdb_init(
+    require,
+    popen_ignore_int,
+    check_call_ignore_sigint,
+    read_version,
+    command,
+    argv,
+    expected_tail,
+    runner_config,
+):
+    runner = create_from_args(runner_config, argv)
+    # Inject a fake build configuration so no real build dir is read.
+    runner._build_conf = FakeBuildConf({'CONFIG_DEBUG_THREAD_INFO': True})
+    runner.run(command)
+
+    cmd = check_call_ignore_sigint.call_args[0][0]
+    assert cmd[-len(expected_tail) :] == expected_tail
