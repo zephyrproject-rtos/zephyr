@@ -22,7 +22,7 @@
 #define COMMON_STATUS_MASK       0x7
 #define COMMON_GET_STATUS(flags) (flags & COMMON_STATUS_MASK)
 
-#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92))
+#if IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS)
 struct clock_onoff {
 	struct onoff_manager mgr;
 	onoff_notify_fn notify;
@@ -45,7 +45,7 @@ struct clock_onoff {
 		struct clock_onoff onoff[_onoff_cnt];                                              \
 	}
 
-#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
+#endif /* IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS) */
 
 typedef void (*clk_ctrl_func_t)(void);
 
@@ -73,7 +73,7 @@ struct clock_control_nrf_irq_handler {
 		.handler = _handler,                                                               \
 	}
 
-#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92))
+#if IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS)
 /**
  * @brief Initializes a clock configuration structure.
  *
@@ -127,7 +127,7 @@ void clock_config_update_end(void *clk_cfg, int status);
 
 int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys);
 
-#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
+#endif /* IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS) */
 
 void common_connect_irq(void);
 

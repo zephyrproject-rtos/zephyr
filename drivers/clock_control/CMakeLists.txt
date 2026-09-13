@@ -185,7 +185,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_AGILEX clock_agilex.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_AGILEX clock_agilex_ll.c)
 # zephyr-keep-sorted-stop
 
-if(CONFIG_CLOCK_CONTROL_NRF_COMMON AND NOT (CONFIG_SOC_SERIES_NRF54H OR CONFIG_SOC_SERIES_NRF92))
+if(CONFIG_CLOCK_CONTROL_NRF_COMMON AND NOT CONFIG_HAS_MULTI_OPTION_CLOCKS)
   zephyr_linker_sources(SECTIONS clock_control_nrf_irq_handlers.ld)
   zephyr_iterable_section(NAME clock_control_nrf_irq_handler KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
