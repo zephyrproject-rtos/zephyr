@@ -136,6 +136,21 @@ ZTEST(cxx_tests, test_new_delete)
 	zassert_equal(test_foo->get_foo(), 10);
 	delete test_foo;
 }
+
+#if __cplusplus >= 201703L
+struct alignas(64) over_aligned_foo {
+	int v;
+};
+
+ZTEST(cxx_tests, test_new_delete_aligned)
+{
+	over_aligned_foo *test_foo = new over_aligned_foo;
+
+	zassert_equal(reinterpret_cast<uintptr_t>(test_foo) % alignof(over_aligned_foo), 0);
+	delete test_foo;
+}
+#endif /* __cplusplus >= 201703L */
+
 ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
 
 /*
