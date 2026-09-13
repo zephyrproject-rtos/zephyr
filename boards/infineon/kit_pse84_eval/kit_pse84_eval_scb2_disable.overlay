@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Disable SCB2 (KitProg3 VCOM) on the peer core. This prevents the peer
+ * from resetting the UART hardware and breaking the console output of the
+ * host core, since the board default console is SCB2. Console/log for this
+ * peer core is moved to SCB1 (MiniProg4 VCOM) via the shared console overlay.
+ */
+#include "kit_pse84_eval_console_scb1.dtsi"
+
+&scb2 {
+	status = "disabled";
+};
