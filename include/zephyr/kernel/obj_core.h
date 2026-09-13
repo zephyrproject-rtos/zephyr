@@ -7,7 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_
 #define ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_
 
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -107,21 +109,44 @@ struct k_obj_core_stats_desc {
 	int (*enable)(struct k_obj_core *obj_core);
 };
 
+/**
+ * @brief Contiguous range of permanent objects of one type
+ *
+ * Objects in the range are enumerated by walking it, so they are never
+ * registered at run time. The range holds either the objects themselves or,
+ * when @a indirect is set, pointers to them.
+ */
+struct k_obj_range {
+	const void *start;   /**< First element */
+	const void *end;     /**< One past the last element */
+	size_t      stride;  /**< Element size */
+	bool        indirect; /**< Elements are pointers to the objects */
+};
+
 /** Object type structure */
 struct k_obj_type {
 	sys_snode_t    node;   /**< Node within list of object types */
-	sys_slist_t    list;   /**< List of objects of this object type */
 	uint32_t       id;     /**< Unique type ID */
 	size_t         obj_core_offset;  /**< Offset to obj_core field */
+	/** Permanent objects of this type, walked in place */
+	struct k_obj_range statics;
+	/** Registrations refused because the registry was full */
+	uint32_t       dropped;
+	/** Registrations refused because the object lives in stack storage */
+	uint32_t       skipped;
 #ifdef CONFIG_OBJ_CORE_STATS
 	/** Pointer to object core statistics descriptor */
 	struct k_obj_core_stats_desc *stats_desc;
 #endif /* CONFIG_OBJ_CORE_STATS */
 };
 
-/** Object core structure */
+/**
+ * Object core structure
+ *
+ * The @a type pointer doubles as the registry's validity tag: an object whose
+ * storage has been reused no longer carries the type it was registered with.
+ */
 struct k_obj_core {
-	sys_snode_t        node;   /**< Object node within object type's list */
 	struct k_obj_type *type;   /**< Object type to which object belongs */
 #ifdef CONFIG_OBJ_CORE_STATS
 	void  *stats;              /**< Pointer to kernel object's stats */
@@ -251,6 +276,21 @@ struct k_obj_type *z_obj_type_init(struct k_obj_type *type,
 				   uint32_t id, size_t off);
 
 /**
+ * @brief Register the permanent objects of an object type
+ *
+ * Objects in [@a start, @a end) are enumerated by walking the range and are
+ * not registered individually. The storage must outlive the object type.
+ *
+ * @param type Pointer to the object type
+ * @param start First element of the range
+ * @param end One past the last element of the range
+ * @param stride Element size
+ * @param indirect True if the elements are pointers to the objects
+ */
+void z_obj_type_init_range(struct k_obj_type *type, const void *start,
+			   const void *end, size_t stride, bool indirect);
+
+/**
  * @brief Find a specific object type by ID
  *
  * Given an object type ID, this function searches for the object type that
@@ -264,12 +304,15 @@ struct k_obj_type *z_obj_type_init(struct k_obj_type *type,
 struct k_obj_type *k_obj_type_find(uint32_t type_id);
 
 /**
- * @brief Walk the object type's list of object cores
+ * @brief Walk the object cores of an object type
  *
- * This function takes a global spinlock and walks the object type's list
- * of object cores and invokes the callback function on each element while
- * holding that lock. Although this will ensure that the list is not modified,
- * one can expect a significant penalty in terms of performance and latency.
+ * This function takes a global spinlock and invokes the callback on every
+ * object core of the object type while holding that lock: first the permanent
+ * objects of the type, then the objects registered at run time. A registered
+ * object whose storage has been reused is removed from the registry instead
+ * of being reported. Although the lock ensures that the registry is not
+ * modified, one can expect a significant penalty in terms of performance and
+ * latency.
  *
  * The callback function shall either return non-zero to stop further walking,
  * or it shall return 0 to continue walking.
@@ -285,13 +328,13 @@ int k_obj_type_walk_locked(struct k_obj_type *type,
 				  void *data);
 
 /**
- * @brief Walk the object type's list of object cores
+ * @brief Walk the object cores of an object type
  *
  * This function is similar to k_obj_type_walk_locked() except that it walks
- * the list without obtaining the global spinlock. No synchronization is
- * provided here. Mutation of the list of objects while this function is in
- * progress must be prevented at the application layer, otherwise
- * undefined/unreliable behavior, corruption and/or crashes may result.
+ * the registry without obtaining the global spinlock. No synchronization is
+ * provided here: objects registered or unregistered during the walk may or
+ * may not be reported, and a registered object whose storage has been reused
+ * is skipped rather than removed.
  *
  * The callback function shall either return non-zero to stop further walking,
  * or it shall return 0 to continue walking.
@@ -318,12 +361,17 @@ int k_obj_type_walk_unlocked(struct k_obj_type *type,
 void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type);
 
 /**
- * @brief Link the kernel object to the kernel object type list
+ * @brief Register the kernel object with its object type
  *
- * A kernel object can be optionally linked into the kernel object type's
- * list of objects. A kernel object must have been initialized before it
- * can be linked. Linked kernel objects can be traversed and have information
- * extracted from them by system tools.
+ * A kernel object can be optionally registered so that it is reported by
+ * k_obj_type_walk_locked() and k_obj_type_walk_unlocked(). It must have been
+ * initialized with k_obj_core_init() first. Registering an object that is
+ * already registered, or that belongs to the permanent range of its type, has
+ * no effect. The registry holds no reference inside the object, so an object
+ * may be discarded without unregistering it; the stale entry is dropped when
+ * its storage is reused or when the registry is full. When the registry is
+ * full the object is not registered and the type's @a dropped count is
+ * incremented.
  *
  * @param obj_core Pointer to the kernel object
  */
@@ -342,15 +390,27 @@ void k_obj_core_init_and_link(struct k_obj_core *obj_core,
 			      struct k_obj_type *type);
 
 /**
- * @brief Unlink the kernel object from the kernel object type list
+ * @brief Unregister the kernel object from its object type
  *
- * Kernel objects can be unlinked from their respective kernel object type
- * lists. If on a list, it must be done at the end of the kernel object's life
- * cycle.
+ * Unregistering is optional and removes the object from the walks
+ * immediately, instead of when its storage is reused. Unregistering an object
+ * that is not registered has no effect.
  *
  * @param obj_core Pointer to the kernel object
  */
 void k_obj_core_unlink(struct k_obj_core *obj_core);
+
+/**
+ * @brief Unregister every kernel object located in a memory range
+ *
+ * Intended for memory allocators: removes the registry entries of all objects
+ * whose object core lies in [@a addr, @a addr + @a len) as the memory is
+ * released.
+ *
+ * @param addr Start of the released memory
+ * @param len Size of the released memory in bytes
+ */
+void k_obj_core_evict_range(const void *addr, size_t len);
 
 /** @} */
 
