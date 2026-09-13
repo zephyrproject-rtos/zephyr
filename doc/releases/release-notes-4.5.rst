@@ -1831,6 +1831,7 @@ New Samples
 * :zephyr:code-sample:`tad2144`
 * :zephyr:code-sample:`tflite-neutron`
 * :zephyr:code-sample:`tfm_fwu`
+* :zephyr:code-sample:`tfm_secure_peripheral_st_secure_i2c`
 * :zephyr:code-sample:`tm6605`
 * :zephyr:code-sample:`tmc6460`
 * :zephyr:code-sample:`tracing-pipeline`
