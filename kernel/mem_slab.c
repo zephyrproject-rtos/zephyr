@@ -21,8 +21,6 @@
 #include <wait_q.h>
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
-static struct k_obj_type obj_type_mem_slab;
-
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 
 static int k_mem_slab_stats_raw(struct k_obj_core *obj_core, void *stats)
@@ -92,10 +90,10 @@ static struct k_obj_core_stats_desc mem_slab_stats_desc = {
 	.enable = NULL,
 };
 
-K_OBJ_TYPE_DEFINE_STATS(obj_type_mem_slab, k_mem_slab, K_OBJ_TYPE_MEM_SLAB_ID,
+K_OBJ_TYPE_DEFINE_STATS(z_obj_type_mem_slab, k_mem_slab, K_OBJ_TYPE_MEM_SLAB_ID,
 			&mem_slab_stats_desc, info);
 #else
-K_OBJ_TYPE_DEFINE(obj_type_mem_slab, k_mem_slab, K_OBJ_TYPE_MEM_SLAB_ID, NULL);
+K_OBJ_TYPE_DEFINE(z_obj_type_mem_slab, k_mem_slab, K_OBJ_TYPE_MEM_SLAB_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_STATS_MEM_SLAB */
 #endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 
@@ -188,7 +186,7 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	}
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
-	k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
+	k_obj_core_init_and_link(K_OBJ_CORE(slab), &z_obj_type_mem_slab);
 #endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 	k_obj_core_stats_register(K_OBJ_CORE(slab), &slab->info,
