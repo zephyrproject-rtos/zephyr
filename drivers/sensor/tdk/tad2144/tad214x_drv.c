@@ -43,6 +43,7 @@ static int tad214x_sample_fetch(const struct device *dev, const enum sensor_chan
 {
 	struct tad214x_data *data = (struct tad214x_data *)dev->data;
 	const struct tad214x_config *cfg = dev->config;
+	int rc = 0;
 
 	tad214x_mutex_lock(dev);
 
@@ -50,31 +51,34 @@ static int tad214x_sample_fetch(const struct device *dev, const enum sensor_chan
 		data->angle = data->encoder_position;
 
 	} else {
-		TAD214x_GetData(&data->tad214x_device, &data->angle, &data->temperature);
+		if (TAD214x_GetData(&data->tad214x_device, &data->angle,
+				    &data->temperature) != INV_ERROR_SUCCESS) {
+			rc = -EIO;
+		}
 	}
 	tad214x_mutex_unlock(dev);
-	return 0;
+	return rc;
 }
 
 static void tad214x_convert_encoder(struct sensor_value *val, uint16_t raw_val)
 {
 	raw_val = raw_val*36000/16384;
 	val->val1 = raw_val / 100;
-	val->val2 = (raw_val % 100) * 1000;
+	val->val2 = (raw_val % 100) * 10000;
 }
 
 static void tad214x_convert_angle(struct sensor_value *val, uint16_t raw_val)
 {
 	raw_val = ((uint32_t)raw_val*36000/65535+18000) % 36000;
 	val->val1 = raw_val / 100;
-	val->val2 = (raw_val % 100) * 1000;
+	val->val2 = (raw_val % 100) * 10000;
 }
 
 static void tad214x_convert_temperature(struct sensor_value *val, int16_t raw_val)
 {
 	raw_val = (2500 + raw_val*10/16);
 	val->val1 = raw_val / 100;
-	val->val2 = (raw_val % 100) * 1000;
+	val->val2 = (raw_val % 100) * 10000;
 }
 
 static int tad214x_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -209,13 +213,15 @@ static int tad214x_init(const struct device *dev)
 		inv_tad214x_sleep_us(30000);
 	}
 
-	if (IS_ENABLED(CONFIG_TAD2144_TRIGGER)) {
+#ifdef CONFIG_TAD2144_TRIGGER
+	if (config->if_mode == IF_ENC || config->gpio_int.port != NULL) {
 		rc = tad214x_trigger_init(dev);
 		if (rc < 0) {
 			LOG_ERR("Failed to initialize interrupt.");
 			return rc;
 		}
 	}
+#endif
 
 	/* successful init, return 0 */
 	return 0;
