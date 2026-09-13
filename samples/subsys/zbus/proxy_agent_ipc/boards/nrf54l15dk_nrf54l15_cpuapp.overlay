@@ -14,12 +14,12 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			sram_rx: memory@20018000 {
-				reg = <0x20018000 0x8000>;
+			sram_rx: memory@20017c00 {
+				reg = <0x20017c00 0x8000>;
 			};
 
-			sram_tx: memory@20020000 {
-				reg = <0x20020000 0x8000>;
+			sram_tx: memory@2001fc00 {
+				reg = <0x2001fc00 0x8000>;
 			};
 		};
 	};
