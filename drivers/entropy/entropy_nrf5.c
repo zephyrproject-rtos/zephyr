@@ -280,7 +280,7 @@ static int entropy_nrf5_get_entropy_isr(const struct device *dev,
 		 * to 1 (the bit is set when NVIC pending IRQ status is
 		 * changed from 0 to 1)
 		 */
-		NVIC_ClearPendingIRQ(IRQN);
+		k_irq_clear_pending(IRQN);
 
 		do {
 			int byte;
@@ -291,7 +291,7 @@ static int entropy_nrf5_get_entropy_isr(const struct device *dev,
 			}
 
 			byte = random_byte_get();
-			NVIC_ClearPendingIRQ(IRQN);
+			k_irq_clear_pending(IRQN);
 
 			if (byte < 0) {
 				continue;
