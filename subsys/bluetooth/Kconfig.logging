@@ -421,6 +421,14 @@ module = BT_MAP
 module-str = Bluetooth Message Access Profile (MAP)
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
+module = BT_BNEP
+module-str = "Bluetooth Network Encapsulation Protocol (BNEP)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_PAN
+module-str = "Bluetooth Personal Area Networking Profile (PAN)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 endmenu # Bluetooth Classic
 endif # BT_CLASSIC
 

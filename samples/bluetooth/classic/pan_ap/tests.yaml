@@ -1,0 +1,21 @@
+sample:
+  name: Bluetooth PAN Access Point
+tests:
+  sample.bluetooth.pan.ap:
+    harness: bluetooth
+    platform_allow:
+      - sf32lb52_devkit_lcd
+      - qemu_cortex_m3
+      - qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - sf32lb52_devkit_lcd
+  sample.bluetooth.pan.ap.no_blobs:
+    platform_allow:
+      - sf32lb52_devkit_lcd
+    tags:
+      - bluetooth
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 600
+    build_only: true
