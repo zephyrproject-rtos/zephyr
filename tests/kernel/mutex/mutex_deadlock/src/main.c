@@ -62,6 +62,10 @@ void ztest_post_fatal_error_hook(unsigned int reason,
 	/* Abort t_low which is stuck pending on mutex_a */
 	k_thread_abort(&t_low);
 
+	/* Neither mutex was ever unlocked; clear owner before re-init. */
+	mutex_a.owner = NULL;
+	mutex_b.owner = NULL;
+
 	/* Reinitialize both mutexes to clear all stale state */
 	k_mutex_init(&mutex_a);
 	k_mutex_init(&mutex_b);
