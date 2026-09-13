@@ -1120,16 +1120,16 @@ static void udc_sam0_irq_disable_func_##n(const struct device *dev)		\
 	}									\
 										\
 	static struct udc_ep_config						\
-		ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_out_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 	static struct udc_ep_config						\
-		ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_in_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 										\
 	static const struct udc_sam0_config udc_sam0_config_##n = {		\
 		.base = (UsbDevice *)DT_INST_REG_ADDR(n),			\
 		.bdt = sam0_bdt_##n,						\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
-		.ep_cfg_in = ep_cfg_out,					\
-		.ep_cfg_out = ep_cfg_in,					\
+		.ep_cfg_in = ep_cfg_out_##n,					\
+		.ep_cfg_out = ep_cfg_in_##n,					\
 		.irq_enable_func = udc_sam0_irq_enable_func_##n,		\
 		.irq_disable_func = udc_sam0_irq_disable_func_##n,		\
 		.pcfg = UDC_SAM0_PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\

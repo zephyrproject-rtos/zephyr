@@ -1185,16 +1185,16 @@ static const struct udc_api udc_rpi_pico_api = {
 		irq_disable(DT_INST_IRQN(n));						\
 	}										\
 											\
-	static struct udc_ep_config ep_cfg_out[USB_NUM_ENDPOINTS];			\
-	static struct udc_ep_config ep_cfg_in[USB_NUM_ENDPOINTS];			\
+	static struct udc_ep_config ep_cfg_out_##n[USB_NUM_ENDPOINTS];			\
+	static struct udc_ep_config ep_cfg_in_##n[USB_NUM_ENDPOINTS];			\
 											\
 	static const struct rpi_pico_config rpi_pico_config_##n = {			\
 		.base = (usb_hw_t *)DT_INST_REG_ADDR(n),				\
 		.dpram = (usb_device_dpram_t *)USBCTRL_DPRAM_BASE,			\
 		.mem_block = &rpi_pico_mb_##n,						\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),			\
-		.ep_cfg_in = ep_cfg_out,						\
-		.ep_cfg_out = ep_cfg_in,						\
+		.ep_cfg_in = ep_cfg_out_##n,						\
+		.ep_cfg_out = ep_cfg_in_##n,						\
 		.make_thread = udc_rpi_pico_make_thread_##n,				\
 		.irq_enable_func = udc_rpi_pico_irq_enable_func_##n,			\
 		.irq_disable_func = udc_rpi_pico_irq_disable_func_##n,			\
