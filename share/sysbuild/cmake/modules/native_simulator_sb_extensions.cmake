@@ -2,18 +2,31 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Usage:
-#   native_simulator_set_final_executable(<final_image>)
-#
-# When building for a native_simulator based target (including bsim targets),
-# this function adds an extra build target which will copy the executable produced by
-# `<final_image>` to the top level, as zephyr/zephyr.exe
-#
-# This final image is expected to have been set to assemble other dependent images into
-# itself if necessary, by calling native_simulator_set_child_images()
-# This will allow other tools, like twister, or the bsim test scripts, as well as users to find
-# this final executable in the same place as for non-sysbuild builds.
-#
+#[=======================================================================[.rst:
+native_simulator_sb_extensions
+##############################
+
+Sysbuild extension commands for :zephyr:board:`native_sim` based targets.
+
+These commands are used by the :file:`sysbuild.cmake` file of a board or application that builds
+several images into a single native simulator executable. They are no-ops unless the board target
+is a native simulator or :ref:`bsim <bsim boards>` based one.
+
+#]=======================================================================]
+
+#[=======================================================================[.rst:
+.. cmake:signature:: native_simulator_set_final_executable(<final_image>)
+
+   Add a build target which copies the executable produced by ``<final_image>`` to the top level,
+   as :file:`zephyr/zephyr.exe`.
+
+   ``<final_image>`` is expected to have been set to assemble other dependent images into itself
+   if necessary, by calling :cmake:command:`native_simulator_set_child_images`.
+
+   This allows other tools, like twister or the bsim test scripts, as well as users, to find this
+   final executable in the same place as for non-sysbuild builds.
+
+#]=======================================================================]
 function(native_simulator_set_final_executable final_image)
   if(("${BOARD}" MATCHES "native") OR ("${BOARD}" MATCHES "bsim"))
     add_custom_target(final_executable
@@ -27,13 +40,13 @@ function(native_simulator_set_final_executable final_image)
   endif()
 endfunction()
 
-# Usage:
-#   native_simulator_set_child_images(<final_image> <child_image>)
-#
-# When building for a native_simulator based target (including bsim targets),
-# this function sets a `<child_image>` as dependencies of `<final_image>`
-# and configures the final image to assemble the child images into its final executable.
-#
+#[=======================================================================[.rst:
+.. cmake:signature:: native_simulator_set_child_images(<final_image> <child_image>)
+
+   Set ``<child_image>`` as a dependency of ``<final_image>``, and configure the final image to
+   assemble the child image into its final executable.
+
+#]=======================================================================]
 function(native_simulator_set_child_images final_image child_image)
   if(("${BOARD}" MATCHES "native") OR ("${BOARD}" MATCHES "bsim"))
     add_dependencies(${final_image} ${child_image})
@@ -45,12 +58,13 @@ function(native_simulator_set_child_images final_image child_image)
   endif()
 endfunction()
 
-# Usage:
-#   native_simulator_set_primary_mcu_index(<image> [<image2> ...])
-#
-# Propagate the SB_CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX setting,
-# if it is set, to each given image CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
-#
+#[=======================================================================[.rst:
+.. cmake:signature:: native_simulator_set_primary_mcu_index(<image> [<image2> ...])
+
+   Propagate the ``SB_CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX`` setting, if it is set, to the
+   ``CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX`` of each given image.
+
+#]=======================================================================]
 function(native_simulator_set_primary_mcu_index)
   if(NOT ("${SB_CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX}" STREQUAL ""))
     foreach(arg IN LISTS ARGV)
