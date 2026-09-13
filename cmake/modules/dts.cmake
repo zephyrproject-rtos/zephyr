@@ -6,8 +6,6 @@ include(extensions)
 include(python)
 include(boards)
 include(pre_dt)
-find_package(HostTools)
-find_package(Dtc 1.4.6)
 
 # This module makes information from the devicetree available to
 # various build stages, as well as to other arbitrary Python scripts:
@@ -248,6 +246,8 @@ function(dts_configuration_files)
 endfunction()
 
 function(dts_edt_pickle)
+  find_package(HostTools)
+
   #
   # Run the C preprocessor on the devicetree source, so we can parse it
   # (using the Python devicetree package) in later steps.
@@ -391,6 +391,8 @@ function(dts_import)
 endfunction()
 
 function(dts_dtc)
+  find_package(Dtc 1.4.6)
+
   #
   # Run dtc if it was found.
   #
