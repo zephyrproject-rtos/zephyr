@@ -1,0 +1,53 @@
+# Copyright (c) 2026 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if SPI_NOR
+
+config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 4096 if MCUBOOT || BOOTLOADER_MCUBOOT
+
+endif # SPI_NOR
+
+if BOARD_XIAO_NRF54LM20B_NRF54LM20B_CPUAPP
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+# The nPM1300 charger raises the VBUS current limit (500 mA) during its
+# init. Until then the PMIC is limited to its power-up default (100 mA).
+# LDO1 powers the 3.3 V rail and its soft-start inrush exceeds 100 mA,
+# so the regulator init must not run before the charger has raised the
+# limit, otherwise the PMIC enters over-current protection and the board
+# brown-outs in a boot loop.
+#
+# 1. I2C (CONFIG_I2C_INIT_PRIORITY, default 50)
+# 2. NPM13xx MFD (CONFIG_MFD_INIT_PRIORITY, default 80)
+# 3. NPM13xx charger (CONFIG_SENSOR_INIT_PRIORITY, default 90)
+# 4. NPM13xx regulators (defaults 85/86)
+#
+# The charger driver lives under the sensor subsystem, so SENSOR must be
+# enabled for the VBUS current limit to be programmed at all.
+
+if !MCUBOOT
+
+config SENSOR
+	default y
+
+config REGULATOR
+	default y
+
+endif # !MCUBOOT
+
+if REGULATOR_NPM13XX
+
+config REGULATOR_NPM13XX_COMMON_INIT_PRIORITY
+	default 91
+
+config REGULATOR_NPM13XX_INIT_PRIORITY
+	default 92
+
+endif # REGULATOR_NPM13XX
+
+endif # BOARD_XIAO_NRF54LM20B_NRF54LM20B_CPUAPP
