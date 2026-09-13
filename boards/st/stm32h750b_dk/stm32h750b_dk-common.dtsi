@@ -255,9 +255,13 @@
 	status = "okay";
 };
 
-&adc3 {
-	st,adc-clock-source = "SYNC";
+&adc3_common {
 	st,adc-prescaler = <4>;
+	st,adc-clock-source = "SYNC";
+	status = "okay";
+};
+
+&adc3 {
 	status = "okay";
 };
 

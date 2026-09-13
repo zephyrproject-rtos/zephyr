@@ -180,14 +180,17 @@
 	status = "okay";
 };
 
+&adc12_common {
+	st,adc-prescaler = <6>;
+	st,adc-clock-source = "ASYNC";
+	status = "okay";
+};
+
 &adc1 {
 	/* Zio A0, Zio D35, VBUS_SENSE */
 	pinctrl-0 = <&adc1_inp3_pa6 &adc1_inp15_pa3 &adc1_inp18_pa4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <6>;
 	status = "okay";
-
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -203,8 +206,6 @@
 };
 
 &adc2 {
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <6>;
 	status = "okay";
 };
 

@@ -356,15 +356,15 @@
 			#io-channel-cells = <1>;
 		};
 
-		adc1: adc@42028000 {
+		adc12_common: adc@42028000 {
 			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x42028000 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 			clock-names = "adcx", "adc_ker";
-			interrupts = <37 0>;
-			vref-mv = <3300>;
-			#io-channel-cells = <1>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-sequencer = "programmable";
@@ -374,6 +374,13 @@
 			st,adc-has-differential-support;
 			st,adc-has-injected-support;
 			status = "disabled";
+
+			adc1: adc@42028000 {
+				reg = <0x42028000 0x100>;
+				interrupts = <37 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		rtc: rtc@44007800 {

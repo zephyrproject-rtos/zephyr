@@ -607,21 +607,29 @@
 			};
 		};
 
-		adc1: adc@40012000 {
+		adc123_common: adc@40012000 {
 			compatible = "st,stm32f4-adc", "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x40012000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 8)>;
-			clock-names = "adcx";
-			interrupts = <18 0>;
-			#io-channel-cells = <1>;
+			ranges;
+			st,adc-clock-source = "SYNC";
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
-			st,adc-clock-source = "SYNC";
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
 			st,adc-has-injected-support;
 			status = "disabled";
+
+			adc1: adc@40012000 {
+				reg = <0x40012000 0x50>;
+				clocks = <&rcc STM32_CLOCK(APB2, 8)>;
+				clock-names = "adcx";
+				interrupts = <18 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		dma1: dma@40026000 {

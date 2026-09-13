@@ -226,8 +226,12 @@ zephyr_udc0: &usbotg_fs {
 	};
 };
 
-&adc1 {
+&adc123_common {
 	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };
 

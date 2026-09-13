@@ -981,16 +981,16 @@ void stm32_sdmmc_get_card_csd(const struct device *dev, uint32_t csd[4])
 #if STM32_SDMMC_USE_DMA
 
 #define SDMMC_DMA_CHANNEL_INIT(dir, dir_cap)				\
-	.dev = DEVICE_DT_GET(STM32_DMA_CTLR(0, dir)),			\
+	.dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(0, dir)),		\
 	.channel = DT_INST_DMAS_CELL_BY_NAME(0, dir, channel),		\
 	.channel_nb = DT_DMAS_CELL_BY_NAME(				\
 			DT_DRV_INST(0), dir, channel),			\
 	.reg = (DMA_TypeDef *)DT_REG_ADDR(				\
 			DT_PHANDLE_BY_NAME(DT_DRV_INST(0), dmas, dir)),	\
 	.cfg = {							\
-		.dma_slot = STM32_DMA_SLOT(0, dir, slot),		\
+		.dma_slot = STM32_DT_INST_DMA_SLOT(0, dir),		\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-				STM32_DMA_CHANNEL_CONFIG(0, dir)),	\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(0, dir)),	\
 		.dma_callback = stm32_sdmmc_dma_cb,			\
 		.linked_channel = STM32_DMA_HAL_OVERRIDE,		\
 	},

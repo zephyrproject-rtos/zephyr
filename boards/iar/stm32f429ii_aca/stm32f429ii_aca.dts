@@ -248,11 +248,14 @@
 	};
 };
 
+&adc123_common {
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
 &adc2 {
-	compatible = "st,stm32f4-adc", "st,stm32-adc";
 	pinctrl-0 = <&adc2_in6_pa6>;
 	pinctrl-names = "default";
-	st,adc-prescaler = <2>;
 	status = "okay";
 
 	#address-cells = <1>;

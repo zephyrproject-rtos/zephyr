@@ -492,13 +492,14 @@
 			};
 		};
 
-		adc1: adc@50040000 {
+		adc1_common: adc@50040000 {
 			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x50040000 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(AHB2, 13)>;
 			clock-names = "adcx";
-			interrupts = <18 0>;
-			#io-channel-cells = <1>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-sequencer = "programmable";
@@ -508,6 +509,13 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-injected-support;
 			status = "disabled";
+
+			adc1: adc@50040000 {
+				reg = <0x50040000 0x100>;
+				interrupts = <18 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		iwdg: watchdog@40003000 {

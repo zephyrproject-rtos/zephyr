@@ -224,10 +224,13 @@ zephyr_udc0: &usbotg_fs {
 	};
 };
 
+&adc4_common {
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
 &adc4 {
 	/* needed by vbat */
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <4>;
 	status = "okay";
 };
 

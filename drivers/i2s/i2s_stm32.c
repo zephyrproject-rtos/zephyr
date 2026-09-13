@@ -958,11 +958,11 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 /* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
 #define I2S_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)		\
 	.dir = {								\
-		.dev_dma = DEVICE_DT_GET(STM32_DMA_CTLR(index, dir)),		\
+		.dev_dma = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),	\
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
 		.dma_cfg = {							\
 			.block_count = 2,					\
-			.dma_slot = STM32_DMA_SLOT(index, dir, slot),		\
+			.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),		\
 			.channel_direction = src_dev##_TO_##dest_dev,		\
 			.source_data_size = 2,  /* 16bit default */		\
 			.dest_data_size = 2,    /* 16bit default */		\
@@ -970,15 +970,15 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 			.source_burst_length = 2,				\
 			.dest_burst_length = 2,					\
 			.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),	\
 			.dma_callback = dma_##dir##_callback,			\
 		},								\
 		.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(	\
-					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),		\
 		.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(	\
-					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),		\
 		.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(		\
-					STM32_DMA_FEATURES(index, dir)),	\
+			STM32_DT_INST_DMA_FEATURES(index, dir)),		\
 		.stream_start = dir##_stream_start,				\
 		.stream_disable = dir##_stream_disable,				\
 		.msgq = &dir##_##index##_queue,					\

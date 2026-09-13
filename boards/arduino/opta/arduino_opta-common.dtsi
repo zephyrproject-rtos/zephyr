@@ -119,13 +119,16 @@
 	};
 };
 
+&adc12_common {
+	st,adc-prescaler = <4>;
+	st,adc-clock-source = "SYNC";
+	vref-mv = <10000>;
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_inp0_pa0_c &adc1_inp6_pf12>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
-	vref-mv = <10000>;
-
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -149,10 +152,6 @@
 &adc2 {
 	pinctrl-0 = <&adc2_inp9_pb0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
-	vref-mv = <10000>;
-
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -165,13 +164,16 @@
 	};
 };
 
+&adc3_common {
+	st,adc-prescaler = <4>;
+	st,adc-clock-source = "SYNC";
+	vref-mv = <10000>;
+	status = "okay";
+};
+
 &adc3 {
 	pinctrl-0 = <&adc3_inp6_pf10 &adc3_inp7_pf8 &adc3_inp8_pf6 &adc3_inp9_pf4 &adc3_inp0_pc2_c>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
-	vref-mv = <10000>;
-
 	#address-cells = <1>;
 	#size-cells = <0>;
 

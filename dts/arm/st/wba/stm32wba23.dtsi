@@ -30,8 +30,10 @@
 			status = "disabled";
 		};
 
-		adc4: adc@46021000 {
-			interrupts = <59 0>;
+		adc4_common: adc@46021000 {
+			adc4: adc@46021000 {
+				interrupts = <59 0>;
+			};
 		};
 
 		i2c1: i2c@40005400 {
