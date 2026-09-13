@@ -124,9 +124,36 @@ void net_tcp_conn_accepted(struct net_context *child_ctx)
 	k_mutex_unlock(&conn->lock);
 }
 
+static uint8_t tcp_send_options_len(struct tcp *conn);
+
 static uint32_t tcp_get_seq(struct net_buf *buf)
 {
 	return *(uint32_t *)net_buf_user_data(buf);
+}
+
+/*
+ * Out of order data is only held when the receive queue is enabled, and
+ * without it there is never a block to report.
+ */
+static inline bool tcp_sack_supported(void)
+{
+	return CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT > 0;
+}
+
+/*
+ * One SACK block, when out of order data is held. The queue keeps a single
+ * contiguous run, so one block is all there ever is to report.
+ */
+static bool tcp_sack_block(struct tcp *conn, uint32_t *left, uint32_t *right)
+{
+	if (!conn->sack_perm || conn->queue_recv_data == NULL) {
+		return false;
+	}
+
+	*left = tcp_get_seq(conn->queue_recv_data);
+	*right = *left + net_buf_frags_len(conn->queue_recv_data);
+
+	return true;
 }
 
 static void tcp_set_seq(struct net_buf *buf, uint32_t seq)
@@ -1143,6 +1170,7 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 
 	recv_options->mss_found = false;
 	recv_options->wnd_found = false;
+	recv_options->sack_perm_found = false;
 
 	for ( ; options && len >= 1; options += opt_len, len -= opt_len) {
 		opt = options[0];
@@ -1190,6 +1218,14 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 
 			recv_options->window = opt;
 			recv_options->wnd_found = true;
+			break;
+		case NET_TCP_SACK_PERM_OPT:
+			if (opt_len != NET_TCP_SACK_PERM_SIZE) {
+				result = false;
+				goto end;
+			}
+
+			recv_options->sack_perm_found = true;
 			break;
 		default:
 			continue;
@@ -1413,11 +1449,7 @@ static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, uint8_t flags,
 
 	UNALIGNED_PUT(conn->src.sin.sin_port, UNALIGNED_MEMBER_ADDR(th, th_sport));
 	UNALIGNED_PUT(conn->dst.sin.sin_port, UNALIGNED_MEMBER_ADDR(th, th_dport));
-	th->th_off = 5;
-
-	if (conn->send_options.mss_found) {
-		th->th_off++;
-	}
+	th->th_off = 5 + (tcp_send_options_len(conn) / 4U);
 
 	UNALIGNED_PUT(flags, &th->th_flags);
 	UNALIGNED_PUT(net_htons(conn->recv_win), UNALIGNED_MEMBER_ADDR(th, th_win));
@@ -1495,6 +1527,89 @@ static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 	UNALIGNED_PUT(net_htonl(recv_mss), (uint32_t *)mss);
 
 	return net_pkt_set_data(pkt, &mss_opt_access);
+}
+
+/*
+ * Bytes of TCP options this packet will carry. Used both to size the header
+ * and to keep the payload within the MSS.
+ */
+static uint8_t tcp_send_options_len(struct tcp *conn)
+{
+	uint8_t len = 0;
+
+	if (conn->send_options.mss_found) {
+		len += NET_TCP_MSS_SIZE + 2;
+	}
+
+	if (conn->send_options.sack_perm_found) {
+		len += 2 + NET_TCP_SACK_PERM_SIZE;
+	} else {
+		uint32_t left, right;
+
+		if (tcp_sack_block(conn, &left, &right)) {
+			len += 2 + 2 + NET_TCP_SACK_BLOCK_SIZE;
+		}
+	}
+
+	return len;
+}
+
+struct tcp_sack_option {
+	uint8_t nop[2];
+	uint8_t kind;
+	uint8_t len;
+	uint32_t left;
+	uint32_t right;
+} __packed;
+
+static int net_tcp_set_sack_opt(struct tcp *conn, struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(sack_access, struct tcp_sack_option);
+	struct tcp_sack_option *opt;
+	uint32_t left, right;
+
+	if (!tcp_sack_block(conn, &left, &right)) {
+		return 0;
+	}
+
+	opt = net_pkt_get_data(pkt, &sack_access);
+	if (!opt) {
+		return -ENOBUFS;
+	}
+
+	opt->nop[0] = NET_TCP_NOP_OPT;
+	opt->nop[1] = NET_TCP_NOP_OPT;
+	opt->kind = NET_TCP_SACK_OPT;
+	opt->len = 2 + NET_TCP_SACK_BLOCK_SIZE;
+	UNALIGNED_PUT(net_htonl(left), UNALIGNED_MEMBER_ADDR(opt, left));
+	UNALIGNED_PUT(net_htonl(right), UNALIGNED_MEMBER_ADDR(opt, right));
+
+	return net_pkt_set_data(pkt, &sack_access);
+}
+
+struct tcp_sack_perm_option {
+	uint8_t nop[2];
+	uint8_t kind;
+	uint8_t len;
+} __packed;
+
+static int net_tcp_set_sack_perm_opt(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(sack_opt_access, struct tcp_sack_perm_option);
+	struct tcp_sack_perm_option *opt;
+
+	opt = net_pkt_get_data(pkt, &sack_opt_access);
+	if (!opt) {
+		return -ENOBUFS;
+	}
+
+	/* Two NOPs keep the option list aligned to a 4 byte word. */
+	opt->nop[0] = NET_TCP_NOP_OPT;
+	opt->nop[1] = NET_TCP_NOP_OPT;
+	opt->kind = NET_TCP_SACK_PERM_OPT;
+	opt->len = NET_TCP_SACK_PERM_SIZE;
+
+	return net_pkt_set_data(pkt, &sack_opt_access);
 }
 
 static bool is_destination_local(struct net_pkt *pkt)
@@ -1640,6 +1755,20 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_
 
 	if (conn->send_options.mss_found) {
 		ret = net_tcp_set_mss_opt(conn, pkt);
+		if (ret < 0) {
+			tcp_pkt_unref(pkt);
+			goto out;
+		}
+	}
+
+	if (conn->send_options.sack_perm_found) {
+		ret = net_tcp_set_sack_perm_opt(pkt);
+		if (ret < 0) {
+			tcp_pkt_unref(pkt);
+			goto out;
+		}
+	} else {
+		ret = net_tcp_set_sack_opt(conn, pkt);
 		if (ret < 0) {
 			tcp_pkt_unref(pkt);
 			goto out;
@@ -1888,7 +2017,7 @@ static int tcp_send_data(struct tcp *conn)
 	int ret = 0;
 	int len;
 
-	len = MIN(tcp_unsent_len(conn), conn_mss(conn));
+	len = MIN(tcp_unsent_len(conn), conn_mss(conn) - tcp_send_options_len(conn));
 	if (len < 0) {
 		ret = len;
 		goto out;
@@ -3176,10 +3305,15 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 
 			/* Make sure our MSS is also sent in the ACK */
 			conn->send_options.mss_found = true;
+			conn->send_options.sack_perm_found =
+				tcp_sack_supported() &&
+				conn->recv_options.sack_perm_found;
+			conn->sack_perm = conn->send_options.sack_perm_found;
 			conn->isn_peer = th_seq(th);
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
 			tcp_out(conn, SYN | ACK);
 			conn->send_options.mss_found = false;
+			conn->send_options.sack_perm_found = false;
 			conn_seq(conn, + 1);
 			next = TCP_SYN_RECEIVED;
 
@@ -3289,6 +3423,11 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		 */
 		if (FL(&fl, &, SYN | ACK, th && th_ack(th) == conn->seq)) {
 			k_work_cancel_delayable(&conn->send_data_timer);
+			/* We offered SACK in the SYN; the peer agreed if it
+			 * came back in the SYN-ACK.
+			 */
+			conn->sack_perm = tcp_sack_supported() &&
+				conn->recv_options.sack_perm_found;
 			conn->isn_peer = th_seq(th);
 			conn_ack(conn, th_seq(th) + 1);
 			if (len) {
@@ -4048,6 +4187,7 @@ static int tcp_start_handshake(struct tcp *conn)
 	k_mutex_lock(&conn->lock, K_FOREVER);
 	tcp_check_sock_options(conn);
 	conn->send_options.mss_found = true;
+	conn->send_options.sack_perm_found = tcp_sack_supported();
 	ret = tcp_out_ext(conn, SYN, 0 /* no data */, conn->seq);
 	if (ret < 0) {
 		k_mutex_unlock(&conn->lock);
@@ -4056,6 +4196,7 @@ static int tcp_start_handshake(struct tcp *conn)
 	tcp_setup_retransmission(conn);
 
 	conn->send_options.mss_found = false;
+	conn->send_options.sack_perm_found = false;
 	conn_seq(conn, + 1);
 	conn_state(conn, TCP_SYN_SENT);
 	tcp_conn_ref(conn);
