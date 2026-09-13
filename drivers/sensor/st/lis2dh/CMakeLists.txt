@@ -14,3 +14,4 @@ zephyr_library_sources_ifdef(CONFIG_LIS2DH_STREAM
   lis2dh_fifo.c
   lis2dh_stream.c
 )
+zephyr_library_sources_ifdef(CONFIG_LIS2DH_SHELL lis2dh_shell.c)

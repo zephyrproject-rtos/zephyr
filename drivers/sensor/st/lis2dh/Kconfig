@@ -67,6 +67,15 @@ config LIS2DH_FIFO_POLL
 	  The polling interval is derived from the configured ODR and watermark:
 	  the status register is checked halfway through a watermark interval.
 
+config LIS2DH_SHELL
+	bool "Shell commands for LIS2DH diagnostics"
+	depends on LIS2DH_STREAM
+	depends on SHELL
+	help
+	  Add the `lis2dh` shell commands, which dump the FIFO state, the control
+	  and FIFO registers, and the FIFO diagnostic counters. Intended for
+	  bring-up and hardware validation, not for production builds.
+
 config LIS2DH_THREAD_PRIORITY
 	int "Thread priority"
 	depends on LIS2DH_TRIGGER_OWN_THREAD

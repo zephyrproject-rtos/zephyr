@@ -315,6 +315,13 @@ struct lis2dh_data {
 	atomic_ptr_t stream_pending;
 	uint8_t stream_routes;
 	uint8_t stream_nop_events;
+	/* Diagnostic counters, accessed under the lifecycle lock. */
+	struct {
+		uint32_t batches;
+		uint32_t frames;
+		uint32_t overruns;
+		uint32_t errors;
+	} fifo_stats;
 	struct k_work_delayable stream_work;
 #ifdef CONFIG_LIS2DH_FIFO_POLL
 	struct k_work_delayable fifo_poll_work;

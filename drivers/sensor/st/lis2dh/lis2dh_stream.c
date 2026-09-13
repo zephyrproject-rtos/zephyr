@@ -245,6 +245,11 @@ int lis2dh_stream_handle_irq(const struct device *dev)
 				(count - 1U) * LIS2DH_ENCODED_SAMPLE_SIZE + axis * 2U);
 		}
 		data->sample.status = LIS2DH_STATUS_ZYX_DRDY;
+		data->fifo_stats.batches++;
+		data->fifo_stats.frames += count;
+		if ((src & LIS2DH_FIFO_OVRN) != 0U) {
+			data->fifo_stats.overruns++;
+		}
 	}
 	if (event->opt == SENSOR_STREAM_DATA_DROP) {
 		status = lis2dh_fifo_drop(dev);
@@ -286,6 +291,7 @@ int lis2dh_stream_handle_irq(const struct device *dev)
 	return 0;
 
 fail:
+	data->fifo_stats.errors++;
 	lis2dh_stream_fail(dev, status);
 	return status;
 }
