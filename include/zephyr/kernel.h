@@ -2335,6 +2335,10 @@ struct k_queue {
 	Z_DECL_POLL_EVENT
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_queue)
+
+#ifdef CONFIG_OBJ_CORE_QUEUE
+	struct k_obj_core  obj_core;
+#endif
 /**
  * INTERNAL_HIDDEN @endcond
  */

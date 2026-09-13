@@ -58,6 +58,23 @@ static void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 	return ret;
 }
 
+#ifdef CONFIG_OBJ_CORE_QUEUE
+/* The queues embedded in statically defined FIFOs and LIFOs are permanent
+ * objects of the queue type too.
+ */
+BUILD_ASSERT(offsetof(struct k_fifo, _queue) == 0);
+BUILD_ASSERT(offsetof(struct k_lifo, _queue) == 0);
+STRUCT_SECTION_START_EXTERN(k_fifo);
+STRUCT_SECTION_END_EXTERN(k_fifo);
+STRUCT_SECTION_START_EXTERN(k_lifo);
+STRUCT_SECTION_END_EXTERN(k_lifo);
+STRUCT_SECTION_START_EXTERN(k_queue);
+STRUCT_SECTION_END_EXTERN(k_queue);
+K_OBJ_TYPE_DEFINE_RANGES(obj_type_queue, k_queue, K_OBJ_TYPE_QUEUE_ID, NULL,
+			 K_OBJ_RANGE_SECTION(k_queue), K_OBJ_RANGE_SECTION(k_fifo),
+			 K_OBJ_RANGE_SECTION(k_lifo));
+#endif /* CONFIG_OBJ_CORE_QUEUE */
+
 void z_impl_k_queue_init(struct k_queue *queue)
 {
 	sys_sflist_init(&queue->data_q);
@@ -70,6 +87,10 @@ void z_impl_k_queue_init(struct k_queue *queue)
 	SYS_PORT_TRACING_OBJ_INIT(k_queue, queue);
 
 	k_object_init(queue);
+
+#ifdef CONFIG_OBJ_CORE_QUEUE
+	k_obj_core_init_and_link(K_OBJ_CORE(queue), &obj_type_queue);
+#endif /* CONFIG_OBJ_CORE_QUEUE */
 }
 
 #ifdef CONFIG_USERSPACE

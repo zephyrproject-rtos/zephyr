@@ -22,6 +22,9 @@ K_STACK_DEFINE(stack1, 8);
 static struct k_stack stack2;
 stack_data_t stack2_buffer[8];
 
+static K_QUEUE_DEFINE(queue1);
+static struct k_queue queue2;
+
 static K_FIFO_DEFINE(fifo1);
 static struct k_fifo fifo2;
 
@@ -222,11 +225,22 @@ ZTEST(obj_core, test_obj_core_stack)
 			     K_OBJ_CORE(&stack1), K_OBJ_CORE(&stack2));
 }
 
+ZTEST(obj_core, test_obj_core_queue)
+{
+	k_queue_init(&queue2);
+	common_obj_core_test(K_OBJ_TYPE_QUEUE_ID, "queue",
+			     K_OBJ_CORE(&queue1), K_OBJ_CORE(&queue2));
+}
+
 ZTEST(obj_core, test_obj_core_fifo)
 {
 	k_fifo_init(&fifo2);
 	common_obj_core_test(K_OBJ_TYPE_FIFO_ID, "FIFO",
 			     K_OBJ_CORE(&fifo1), K_OBJ_CORE(&fifo2));
+
+	/* The embedded queues are reported by the queue type as well */
+	common_obj_core_test(K_OBJ_TYPE_QUEUE_ID, "FIFO queue",
+			     K_OBJ_CORE(&fifo1._queue), K_OBJ_CORE(&fifo2._queue));
 }
 
 ZTEST(obj_core, test_obj_core_lifo)
