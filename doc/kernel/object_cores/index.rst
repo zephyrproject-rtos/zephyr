@@ -71,7 +71,8 @@ Object cores have been integrated into the following kernel objects:
 * :ref:`System Memory Blocks <sys_mem_blocks>`
 
 Developers are free to integrate them if desired into other objects within
-their projects.
+their projects. The :zephyr:code-sample:`object_cores` sample shows the
+facility in use.
 
 Object Core Statistics Concepts
 *******************************

@@ -1845,6 +1845,7 @@ New Samples
 * :zephyr:code-sample:`nxp_mcx_s2ram`
 * :zephyr:code-sample:`nxp_mcx_system_off`
 * :zephyr:code-sample:`nxp_smartdma_mem_to_mem`
+* :zephyr:code-sample:`object_cores`
 * :zephyr:code-sample:`pm-latency`
 * :zephyr:code-sample:`pulse_io_byte_transfer`
 * :zephyr:code-sample:`qdec_multi`
