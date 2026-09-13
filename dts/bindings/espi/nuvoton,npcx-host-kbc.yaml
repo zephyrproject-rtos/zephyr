@@ -1,0 +1,42 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCX Host Sub-Module - Keyboard Controller (KBC)
+
+compatible: "nuvoton,npcx-host-kbc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    description: Clock configuration for the KBC module.
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Interrupt names for the KBC module. Must contain "kbc_ibf" for
+      the Input Buffer Full interrupt and "kbc_obe" for the Output
+      Buffer Empty interrupt.
+
+  ldn:
+    type: array
+    required: true
+    description: |
+      Logical Device Numbers for KBC module.
+      ldn[0] = mouse (LDN 5), ldn[1] = keyboard (LDN 6).
+
+  host-io-data-addr:
+    type: int
+    description: |
+      Host I/O data port address for KBC module.
+
+  host-io-cmd-addr:
+    type: int
+    description: |
+      Host I/O command/status port address for KBC module.
