@@ -1581,6 +1581,8 @@ static int mcux_lpuart_pm_action(const struct device *dev, enum pm_device_action
 	case PM_DEVICE_ACTION_RESUME:
 		LPUART_EnableInterrupts(get_base(dev), data->pm_saved_int);
 		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
 	default:
 		return -ENOTSUP;
 	}

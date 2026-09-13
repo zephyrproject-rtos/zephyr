@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: RT700 EVK system off sample
+
+common:
+  tags:
+    - boards
+    - nxp
+    - power
+  # An unattended run must not stop at the ENTER prompt.
+  extra_configs:
+    - CONFIG_SAMPLE_RT700_SYSTEM_OFF_WAIT_FOR_ENTER=n
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Cold boot, powering off (\\d+) times"
+      - "Wake-up alarm set for (\\d+) seconds"
+      - "Powering off"
+      - "Woke up from deep power down, cycle 1 of 3"
+      - "Woke up from deep power down, cycle 2 of 3"
+      - "Woke up from deep power down, cycle 3 of 3"
+      - "Done, staying awake"
+  timeout: 120
+  platform_allow:
+    - mimxrt700_evk/mimxrt798s/cm33_cpu0
+  integration_platforms:
+    - mimxrt700_evk/mimxrt798s/cm33_cpu0
+
+tests:
+  sample.boards.mimxrt700_evk.system_off.dpd:
+    extra_configs:
+      - CONFIG_SOC_IMXRT7XX_POWEROFF_DPD=y
+  sample.boards.mimxrt700_evk.system_off.fdpd:
+    extra_configs:
+      - CONFIG_SOC_IMXRT7XX_POWEROFF_FDPD=y

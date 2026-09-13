@@ -35,6 +35,8 @@
 		zephyr,flash = &mx25um51345g;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sram0;
+		zephyr,code-cpu1-partition = &sram_code;
+		zephyr,sram-cpu1-partition = &sram3;
 		zephyr,console = &flexcomm0_lpuart0;
 		zephyr,shell-uart = &flexcomm0_lpuart0;
 		zephyr,display = &lcdif;
