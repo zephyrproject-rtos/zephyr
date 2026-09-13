@@ -1,0 +1,119 @@
+# SPDX-FileCopyrightText: Copyright 2026 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# PCM output backend for the shared LE Audio playback helper. Each backend owns
+# the final transport (and any external codec); the LC3 decode and the playback
+# pump stay backend-agnostic. Add a backend by adding an option here plus a
+# pcm_sink_<backend>.c source in CMakeLists.txt.
+choice SAMPLE_BT_AUDIO_PLAYBACK_SINK
+	prompt "LE Audio playback PCM output backend"
+	depends on LIBLC3 && FPU
+	default SAMPLE_BT_AUDIO_PLAYBACK_SINK_I2S
+
+config SAMPLE_BT_AUDIO_PLAYBACK_SINK_I2S
+	bool "I2S with external audio codec"
+	depends on I2S && AUDIO_CODEC
+	depends on $(dt_alias_enabled,i2s-codec-tx) && $(dt_nodelabel_enabled,audio_codec)
+	help
+	  Stream decoded PCM out of the SoC I2S peripheral to an external codec
+	  driven through the audio_codec API. Requires the i2s_codec_tx DT alias
+	  and an audio_codec node.
+
+endchoice
+
+config SAMPLE_BT_AUDIO_PLAYBACK
+	bool "Shared LE Audio playback helper"
+	depends on SAMPLE_BT_AUDIO_PLAYBACK_SINK_I2S
+	default y
+	help
+	  Compile the shared LE Audio playback helper under
+	  samples/bluetooth/audio/common/. The helper decodes LC3 SDUs to PCM and
+	  feeds the transport backend selected by SAMPLE_BT_AUDIO_PLAYBACK_SINK. It
+	  is only available on boards that provide a usable backend; consuming
+	  samples guard the playback calls with IS_ENABLED() so they build
+	  unchanged when none is selected.
+
+if SAMPLE_BT_AUDIO_PLAYBACK
+
+config SAMPLE_BT_AUDIO_PLAYBACK_WORKER_STACK_SIZE
+	int "LC3 decode / output worker thread stack size"
+	default 4096
+	help
+	  Stack size of the worker thread that decodes LC3 SDUs and writes the
+	  decoded PCM blocks to the output sink. Must accommodate the LC3
+	  decoder and the sink driver's write path; 4096 B is safe for the
+	  NXP SAI + WM8962 combination.
+
+config SAMPLE_BT_AUDIO_PLAYBACK_WORKER_PRIORITY
+	int "LC3 decode / output worker thread priority (preemptible)"
+	default 5
+	range 0 NUM_PREEMPT_PRIORITIES
+	help
+	  Preemptible priority of the worker thread that decodes LC3 SDUs and
+	  feeds the output transport. It is preemptible so the Bluetooth RX thread
+	  can interrupt a long decode; lower values run ahead of BAP RX and risk
+	  starving the host, higher values increase the risk of transport
+	  underruns.
+
+config SAMPLE_BT_AUDIO_PLAYBACK_PCM_QUEUE_DEPTH
+	int "BAP RX to decode worker handoff queue depth"
+	default 8
+	range 2 32
+	help
+	  Number of received LC3 SDUs buffered between the BAP RX context and
+	  the decode/output worker. Larger values absorb SDU jitter; smaller
+	  values reduce audio latency. Each queued SDU holds a reference on a
+	  Bluetooth ISO RX buffer, so this should not exceed the ISO RX buffer
+	  count.
+
+if SAMPLE_BT_AUDIO_PLAYBACK_SINK_I2S
+
+config SAMPLE_BT_AUDIO_PLAYBACK_MCLK_FREQUENCY
+	int "Codec MCLK input frequency in Hz"
+	default 0
+	help
+	  Assigns audio_codec_cfg.mclk_freq for the codec DAI configuration.
+	  Most in-tree codec drivers (e.g. WM8962, WM8904, DA7212, WM8960,
+	  TLV320AIC3110) derive MCLK themselves from a DT "clocks" phandle or
+	  a driver-specific DT property, and ignore this value. It is only
+	  consumed as-is by drivers with no other source for it - currently
+	  TLV320DAC3100 (always), or WM8904/WM8962 boards that set
+	  clock-source = "FLL" instead of wiring a clocks phandle.
+
+config SAMPLE_BT_AUDIO_PLAYBACK_I2S_DMA_BLOCK_COUNT
+	int "I2S TX DMA block count"
+	default 4
+	range 2 16
+	help
+	  Number of decoded PCM blocks the SAI/DMA can hold. Each block is
+	  one SDU worth of audio (up to ~1920 B for 48 kHz / 10 ms stereo).
+	  Increase for looser DMA timing, decrease to shorten pause/resume
+	  latency.
+
+config SAMPLE_BT_AUDIO_PLAYBACK_CODEC_VOL_MIN
+	int "Codec output volume at VCS volume 0"
+	default 0
+	help
+	  Value written to AUDIO_PROPERTY_OUTPUT_VOLUME when the VCS volume
+	  is 0 (silence). The units and range are codec-specific: WM8962 uses
+	  a 0..127 register, while codecs such as TLV320 express volume in dB
+	  and use a negative range (e.g. -156). The VCS 0..255 scale is mapped
+	  linearly onto CODEC_VOL_MIN..CODEC_VOL_MAX, so boards should set
+	  these to match their codec instead of patching apply_volume().
+
+config SAMPLE_BT_AUDIO_PLAYBACK_CODEC_VOL_MAX
+	int "Codec output volume at VCS volume 255"
+	default 255
+	help
+	  Value written to AUDIO_PROPERTY_OUTPUT_VOLUME when the VCS volume
+	  is 255 (loudest). See CODEC_VOL_MIN. Defaults to the VCS maximum
+	  (255) for an identity mapping; boards should override it with their
+	  codec's loudest valid setting (e.g. 127 for the WM8962 register).
+
+endif # SAMPLE_BT_AUDIO_PLAYBACK_SINK_I2S
+
+module = SAMPLE_BT_AUDIO_PLAYBACK
+module-str = LE Audio playback helper
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SAMPLE_BT_AUDIO_PLAYBACK

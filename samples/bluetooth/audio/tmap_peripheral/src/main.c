@@ -34,11 +34,21 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
+#include <sample_bt_audio_playback.h>
 #include "tmap_peripheral.h"
+
+/* Advertised and registered TMAP role mask derived from Kconfig. */
+#define TMAP_PERIPHERAL_ROLE_MASK ( \
+	(IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT)  ? BT_TMAP_ROLE_CT  : 0) | \
+	(IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR) ? BT_TMAP_ROLE_UMR : 0))
+
+BUILD_ASSERT(TMAP_PERIPHERAL_ROLE_MASK != 0,
+	     "At least one of CONFIG_TMAP_PERIPHERAL_ROLE_CT / _ROLE_UMR must be set");
 
 static struct bt_conn *default_conn;
 static struct k_work_delayable call_terminate_set_work;
 static struct k_work_delayable media_pause_set_work;
+static struct bt_le_ext_adv *g_adv;
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
@@ -55,7 +65,7 @@ static const uint8_t cap_addata[] = {
 
 static uint8_t tmap_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL),                    /* TMAS UUID */
-	BT_BYTES_LIST_LE16(BT_TMAP_ROLE_UMR | BT_TMAP_ROLE_CT), /* TMAP Role */
+	BT_BYTES_LIST_LE16(TMAP_PERIPHERAL_ROLE_MASK),          /* TMAP Role */
 };
 
 static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
@@ -132,6 +142,27 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	k_sem_give(&sem_disconnected);
 }
 
+/* Restart advertising once the connection object is freed. Using the recycled
+ * callback avoids the -ENOMEM race seen when restarting from disconnected(),
+ * where the host is still tearing down conn_tx / ISO contexts.
+ */
+static void recycled_cb(void)
+{
+	int err;
+
+	if (g_adv == NULL) {
+		return;
+	}
+
+	err = bt_le_ext_adv_start(g_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0 && err != -EALREADY) {
+		printk("Failed to restart advertising (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising restarted\n");
+}
+
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 			     enum bt_security_err err)
 {
@@ -149,6 +180,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled_cb,
 	.security_changed = security_changed,
 };
 
@@ -221,11 +253,15 @@ int main(void)
 
 	printk("Bluetooth initialized\n");
 
-	k_work_init_delayable(&call_terminate_set_work, audio_timer_timeout);
-	k_work_init_delayable(&media_pause_set_work, media_play_timeout);
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT)) {
+		k_work_init_delayable(&call_terminate_set_work, audio_timer_timeout);
+	}
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)) {
+		k_work_init_delayable(&media_pause_set_work, media_play_timeout);
+	}
 
 	printk("Initializing TMAP and setting role\n");
-	err = bt_tmap_register(BT_TMAP_ROLE_CT | BT_TMAP_ROLE_UMR);
+	err = bt_tmap_register(TMAP_PERIPHERAL_ROLE_MASK);
 	if (err != 0) {
 		return err;
 	}
@@ -256,11 +292,21 @@ int main(void)
 	}
 	printk("BAP initialized\n");
 
+	if (IS_ENABLED(CONFIG_SAMPLE_BT_AUDIO_PLAYBACK)) {
+		err = sample_bt_audio_playback_init();
+		if (err != 0) {
+			printk("LE Audio playback init failed (err %d)\n", err);
+			return err;
+		}
+		printk("LE Audio playback initialized\n");
+	}
+
 	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, &adv_cb, &adv);
 	if (err != 0) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return err;
 	}
+	g_adv = adv;
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
@@ -289,19 +335,24 @@ int main(void)
 	err = k_sem_take(&sem_discovery_done, K_FOREVER);
 	__ASSERT_NO_MSG(err == 0);
 
-	err = ccp_call_ctrl_init(default_conn);
-	if (err != 0) {
-		return err;
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT)) {
+		err = ccp_call_ctrl_init(default_conn);
+		if (err != 0) {
+			return err;
+		}
+		printk("CCP initialized\n");
 	}
-	printk("CCP initialized\n");
 
-	err = mcp_ctlr_init(default_conn);
-	if (err != 0) {
-		return err;
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)) {
+		err = mcp_ctlr_init(default_conn);
+		if (err != 0) {
+			return err;
+		}
+		printk("MCP initialized\n");
 	}
-	printk("MCP initialized\n");
 
-	if (peer_is_cg) {
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT) &&
+	    IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_cg) {
 		/* Initiate a call with CCP */
 		err = ccp_originate_call();
 		if (err != 0) {
@@ -311,7 +362,8 @@ int main(void)
 		k_work_schedule(&call_terminate_set_work, K_MSEC(2000));
 	}
 
-	if (peer_is_ums) {
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR) &&
+	    IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_ums) {
 		/* Play media with MCP */
 		err = mcp_send_cmd(BT_MCS_OPC_PLAY);
 		if (err != 0) {

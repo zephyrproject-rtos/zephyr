@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <errno.h>
+
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/conn.h>
@@ -155,6 +157,21 @@ struct bt_tbs_client_cb tbs_client_cb = {
 	.terminate_call = terminate_call_cb,
 };
 
+static void ccp_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(reason);
+
+	if (conn != default_conn) {
+		return;
+	}
+
+	bt_conn_drop(&default_conn);
+}
+
+BT_CONN_CB_DEFINE(ccp_conn_callbacks) = {
+	.disconnected = ccp_disconnected,
+};
+
 int ccp_call_ctrl_init(struct bt_conn *conn)
 {
 	int err;
@@ -190,6 +207,11 @@ int ccp_originate_call(void)
 int ccp_terminate_call(void)
 {
 	int err;
+
+	if (default_conn == NULL) {
+		/* The peer disconnected before the terminate timer fired; nothing to do. */
+		return -ENOTCONN;
+	}
 
 	err = bt_tbs_client_terminate_call(default_conn, BT_TBS_GTBS_INDEX, new_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
