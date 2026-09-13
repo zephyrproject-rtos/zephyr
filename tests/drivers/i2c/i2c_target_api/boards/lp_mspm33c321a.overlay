@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * I2C loopback wiring for LP-MSPM33C321A:
+ *
+ * Wire PB0 <-> PB12 (SDA) and PB1 <-> PB13 (SCL).
+ * Internal pull-ups are enabled on all four pins.
+ */
+
+&pinctrl {
+	uc1_0_sda_pb0_pu: uc1_0_sda_pb0_pu {
+		pinmux = <MSP_PINMUX(12, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	uc1_0_scl_pb1_pu: uc1_0_scl_pb1_pu {
+		pinmux = <MSP_PINMUX(13, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	uc13_0_sda_pb12_pu: uc13_0_sda_pb12_pu {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	uc13_0_scl_pb13_pu: uc13_0_scl_pb13_pu {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+};
+
+&unicomm1_0 {
+	status = "okay";
+};
+
+&unicomm1_0_i2c {
+	pinctrl-0 = <&uc1_0_sda_pb0_pu &uc1_0_scl_pb1_pu>;
+	pinctrl-names = "default";
+	unicomm-advanced-i2c;
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
+
+&unicomm13_0 {
+	status = "okay";
+};
+
+&unicomm13_0_i2c {
+	pinctrl-0 = <&uc13_0_sda_pb12_pu &uc13_0_scl_pb13_pu>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
