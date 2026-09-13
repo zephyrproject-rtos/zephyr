@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Linumiz GmbH
+ * Copyright (c) 2026 Texas Instruments Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -16,7 +17,6 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/__assert.h>
 #include "rtc_utils.h"
-#include <ti/driverlib/dl_rtc_common.h>
 
 #if defined(CONFIG_RTC_ALARM)
 #define RTC_TI_ALARM_1		0
@@ -27,8 +27,116 @@ BUILD_ASSERT((RTC_TI_MAX_ALARM != 0),
 	     "CONFIG_RTC_ALARM is enabled, without setting alarms-count property");
 #endif
 
+#define RTC_MSPM0_PWREN_MASK			BIT(0)
+#define RTC_MSPM0_PWREN_KEY_MASK		GENMASK(31, 24)
+#define RTC_MSPM0_PWREN_KEY			0x26
+
+#define RTC_MSPM0_CLKCTL_ENABLE			BIT(31)
+
+#define RTC_MSPM0_CTL_BIN			0x0
+
+#define RTC_MSPM0_SEC_BIN_MASK			BIT_MASK(6)
+#define RTC_MSPM0_MIN_BIN_MASK			BIT_MASK(6)
+#define RTC_MSPM0_HOUR_BIN_MASK			BIT_MASK(5)
+#define RTC_MSPM0_MDAY_BIN_MASK			GENMASK(12, 8)
+#define RTC_MSPM0_WDAY_BIN_MASK			BIT_MASK(3)
+#define RTC_MSPM0_MON_BIN_MASK			BIT_MASK(4)
+#define RTC_MSPM0_YEARLOW_BIN_MASK		BIT_MASK(8)
+#define RTC_MSPM0_YEARHIGH_BIN_MASK		GENMASK(11, 8)
+
+#define RTC_MSPM0_IMASK_ALARM1			BIT(2)
+#define RTC_MSPM0_IMASK_ALARM2			BIT(3)
+#define RTC_MSPM0_AMIN_BIN_MASK			BIT_MASK(6)
+#define RTC_MSPM0_AMIN_BIN_ENABLE		BIT(7)
+#define RTC_MSPM0_AHOUR_BIN_MASK		BIT_MASK(5)
+#define RTC_MSPM0_AHOUR_BIN_ENABLE		BIT(7)
+#define RTC_MSPM0_ADAY_MON_BIN_MASK		GENMASK(12, 8)
+#define RTC_MSPM0_ADAY_MON_BIN_ENABLE		BIT(15)
+#define RTC_MSPM0_ADAY_WEEK_BIN_MASK		BIT_MASK(3)
+#define RTC_MSPM0_ADAY_WEEK_BIN_ENABLE		BIT(7)
+
+#define RTC_MSPM0_IIDX_ALARM1			0x3
+#define RTC_MSPM0_IIDX_ALARM2			0x4
+
+typedef struct {
+	volatile uint32_t a_min;	/* RTC Alarm Minutes	*/
+	volatile uint32_t a_hour;	/* RTC Alarm Hours	*/
+	volatile uint32_t a_day;	/* RTC Alarm Day	*/
+} rtc_ti_mspm0_alarm_reg_t;
+
+typedef struct {
+	uint32_t reserved0[0x111];
+	volatile uint32_t fpub_0;	/* Publisher Port 0			@0x444h */
+	uint32_t reserved1[0xEE];
+	volatile uint32_t pwren;	/* Power Enable				@0x800h */
+	volatile uint32_t rstctl;	/* Reset Control			@0x804h */
+	volatile uint32_t clkcfg;	/* Peripheral Clock Configuration	@0x808h */
+	uint32_t reserved2[2];
+	volatile uint32_t stat;		/* Status Register			@0x814h */
+	uint32_t reserved3[0x1FB];
+	volatile uint32_t clksel;	/* Clock Select				@0x1004h */
+	uint32_t reserved4[6];
+	volatile uint32_t iidx;		/* Interrupt Index Register		@0x1020h */
+	uint32_t reserved5[1];
+	volatile uint32_t imask;	/* Interrupt Mask			@0x1028h */
+	uint32_t reserved6[1];
+	volatile uint32_t ris;		/* Raw Interrupt Status			@0x1030h */
+	uint32_t reserved7[1];
+	volatile uint32_t mis;		/* Masked Interrupt Status		@0x1038h */
+	uint32_t reserved8[1];
+	volatile uint32_t iset;		/* Interrupt Set			@0x1040h */
+	uint32_t reserved9[1];
+	volatile uint32_t iclr;		/* Interrupt Clear			@0x1048h */
+	uint32_t reserved10[1];
+	volatile uint32_t iidx1;	/* Interrupt Index Register 1		@0x1050h */
+	uint32_t reserved11[1];
+	volatile uint32_t imask1;	/* Interrupt Mask 1			@0x1058h */
+	uint32_t reserved12[1];
+	volatile uint32_t ris1;		/* Raw Interrupt Status 1		@0x1060h */
+	uint32_t reserved13[1];
+	volatile uint32_t mis1;		/* Masked Interrupt Status 1		@0x1068h */
+	uint32_t reserved14[1];
+	volatile uint32_t iset1;	/* Interrupt Set 1			@0x1070h */
+	uint32_t reserved15[1];
+	volatile uint32_t iclr1;	/* Interrupt Clear 1			@0x1078h */
+	uint32_t reserved16[0x19];
+	volatile uint32_t evt_mode;	/* Event Mode				0x10E0h */
+	uint32_t reserved17[6];
+	volatile uint32_t desc;		/* RTC Descriptor Register		@0x10FCh */
+	volatile uint32_t clkctl;	/* RTC Clock Control			@0x1100h */
+	volatile uint32_t dbgctl;	/* RTC Debug Control			@0x1104h */
+	volatile uint32_t ctl;		/* RTC Control				@0x1108h */
+	volatile uint32_t sta;		/* RTC Status				@0x110Ch */
+	volatile uint32_t cal;		/* RTC Clock Offset Calibration		@0x1110h */
+	volatile uint32_t tcmp;		/* RTC Temperature Compensation		@0x1114h */
+	volatile uint32_t sec;		/* RTC Seconds				@0x1118h */
+	volatile uint32_t min;		/* RTC Minutes				@0x111Ch */
+	volatile uint32_t hour;		/* RTC Hours				@0x1120h */
+	volatile uint32_t day;		/* RTC Day of Week/Month		@0x1124h */
+	volatile uint32_t mon;		/* RTC Month				@0x1128h */
+	volatile uint32_t year;		/* RTC Year				@0x112Ch */
+	/*
+	 * Alarm 1 @0x1130h
+	 * Alarm 2 @0x113Ch
+	 */
+	rtc_ti_mspm0_alarm_reg_t alarm[2];
+	volatile uint32_t psctl;	/* RTC Prescale Timer 0/1 Control	@0x1148h */
+	volatile uint32_t extpsctl;     /* RTC Prescale Timer 2 Control		@0x114Ch */
+	volatile uint32_t tssec;	/* Time Stamp Seconds			@0x1150h */
+	volatile uint32_t tsmin;	/* Time Stamp Minutes			@0x1154h */
+	volatile uint32_t tshour;	/* Time Stamp Hours			@0x1158h */
+	volatile uint32_t tsday;	/* Time Stamp Day Of Week/Month		@0x115Ch */
+	volatile uint32_t tsmon;	/* Time Stamp Month			@0x1160h */
+	volatile uint32_t tsyear;	/* Time Stamp Years			@0x1164h */
+	volatile uint32_t tsstat;	/* Time Stamp Status			@0x1168h */
+	volatile uint32_t tsctl;	/* Time Stamp Control			@0x116Ch */
+	volatile uint32_t tsclr;	/* Time Stamp Clear			@0x1170h */
+	volatile uint32_t lfssrst;	/* Low Frequency Subsystem Reset	@0x1174h */
+	volatile uint32_t rtclock;	/* Real Time Clock Lock			@0x1178h */
+} rtc_ti_mspm0_reg_t;
+
 struct rtc_ti_mspm0_config {
-	RTC_Regs *regs;
+	rtc_ti_mspm0_reg_t *regs;
 #if defined(CONFIG_RTC_ALARM)
 	void (*irq_config_func)(void);
 #endif
@@ -66,20 +174,28 @@ static int rtc_ti_mspm0_set_time(const struct device *dev,
 	year = timeptr->tm_year + 1900;
 
 	K_SPINLOCK(&data->lock) {
-		DL_RTC_Common_setCalendarSecondsBinary(cfg->regs, timeptr->tm_sec);
-		DL_RTC_Common_setCalendarMinutesBinary(cfg->regs, timeptr->tm_min);
-		DL_RTC_Common_setCalendarHoursBinary(cfg->regs, timeptr->tm_hour);
 		/*
 		 * Back to back writes to counter/calendar registers such as
 		 * SEC, MIN, HOUR, DAY, MON, YEAR need to be avoided since writes
 		 * to calendar registers take 2 to 3 RTCCLK cycles to take effect.
 		 */
-		DL_Common_updateReg(&cfg->regs->DAY,
-				    (uint32_t)timeptr->tm_wday |
-					    ((uint32_t)timeptr->tm_mday << RTC_DAY_DOMBIN_OFS),
-				    RTC_DAY_DOW_MASK | RTC_DAY_DOMBIN_MASK);
-		DL_RTC_Common_setCalendarMonthBinary(cfg->regs, mon);
-		DL_RTC_Common_setCalendarYearBinary(cfg->regs, year);
+
+		/* Set calendar seconds in binary */
+		cfg->regs->sec = timeptr->tm_sec & RTC_MSPM0_SEC_BIN_MASK;
+		/* Set calendar minutes in binary */
+		cfg->regs->min = timeptr->tm_min & RTC_MSPM0_MIN_BIN_MASK;
+		/* Set calendar hours in binary */
+		cfg->regs->hour = timeptr->tm_hour & RTC_MSPM0_HOUR_BIN_MASK;
+		/* Set calendar day in binary */
+		/* Month of the day: bits 12-8
+		 * Month of the week: bits 2-0
+		 */
+		cfg->regs->day = FIELD_PREP(RTC_MSPM0_MDAY_BIN_MASK, timeptr->tm_mday) |
+				      FIELD_PREP(RTC_MSPM0_WDAY_BIN_MASK, timeptr->tm_wday);
+		/* Set calendar month in binary */
+		cfg->regs->mon = mon & RTC_MSPM0_MON_BIN_MASK;
+		cfg->regs->year =
+			year & (RTC_MSPM0_YEARLOW_BIN_MASK | RTC_MSPM0_YEARHIGH_BIN_MASK);
 	}
 
 	return 0;
@@ -96,13 +212,15 @@ static int rtc_ti_mspm0_get_time(const struct device *dev,
 	}
 
 	K_SPINLOCK(&data->lock) {
-		timeptr->tm_sec  = DL_RTC_Common_getCalendarSecondsBinary(cfg->regs);
-		timeptr->tm_min  = DL_RTC_Common_getCalendarMinutesBinary(cfg->regs);
-		timeptr->tm_hour = DL_RTC_Common_getCalendarHoursBinary(cfg->regs);
-		timeptr->tm_mday = DL_RTC_Common_getCalendarDayOfMonthBinary(cfg->regs);
-		timeptr->tm_mon = DL_RTC_Common_getCalendarMonthBinary(cfg->regs) - 1;
-		timeptr->tm_year = DL_RTC_Common_getCalendarYearBinary(cfg->regs) - 1900;
-		timeptr->tm_wday = DL_RTC_Common_getCalendarDayOfWeekBinary(cfg->regs);
+		timeptr->tm_sec = cfg->regs->sec & RTC_MSPM0_SEC_BIN_MASK;
+		timeptr->tm_min = cfg->regs->min & RTC_MSPM0_MIN_BIN_MASK;
+		timeptr->tm_hour = cfg->regs->hour & RTC_MSPM0_HOUR_BIN_MASK;
+		timeptr->tm_mday = FIELD_GET(RTC_MSPM0_MDAY_BIN_MASK, cfg->regs->day);
+		timeptr->tm_mon = (cfg->regs->mon & RTC_MSPM0_MON_BIN_MASK) - 1;
+		timeptr->tm_year = (cfg->regs->year &
+				    (RTC_MSPM0_YEARLOW_BIN_MASK | RTC_MSPM0_YEARHIGH_BIN_MASK)) -
+				   1900;
+		timeptr->tm_wday = FIELD_GET(RTC_MSPM0_WDAY_BIN_MASK, cfg->regs->day);
 	}
 
 	timeptr->tm_yday = -1;
@@ -129,96 +247,37 @@ static int rtc_ti_mspm0_alarm_get_supported_fields(const struct device *dev,
 	return 0;
 }
 
-static inline void rtc_ti_mspm0_set_alarm1(const struct device *dev,
-					   uint16_t mask,
-					   const struct rtc_time *timeptr)
-{
-	const struct rtc_ti_mspm0_config *cfg = dev->config;
-
-	DL_RTC_Common_disableInterrupt(cfg->regs, DL_RTC_COMMON_INTERRUPT_CALENDAR_ALARM1);
-
-	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
-		cfg->regs->A1MIN = 0;
-		DL_RTC_Common_setAlarm1MinutesBinary(cfg->regs, timeptr->tm_min);
-		DL_RTC_Common_enableAlarm1MinutesBinary(cfg->regs);
-	}
-
-	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
-		DL_RTC_Common_setAlarm1HoursBinary(cfg->regs, timeptr->tm_hour);
-		DL_RTC_Common_enableAlarm1HoursBinary(cfg->regs);
-	}
-
-	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
-		DL_RTC_Common_setAlarm1DayOfWeekBinary(cfg->regs, timeptr->tm_wday);
-		DL_RTC_Common_enableAlarm1DayOfWeekBinary(cfg->regs);
-	}
-
-	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
-		DL_RTC_Common_setAlarm1DayOfMonthBinary(cfg->regs, timeptr->tm_mday);
-		DL_RTC_Common_enableAlarm1DayOfMonthBinary(cfg->regs);
-	}
-
-	DL_RTC_Common_enableInterrupt(cfg->regs, DL_RTC_COMMON_INTERRUPT_CALENDAR_ALARM1);
-}
-
-static inline void rtc_ti_mspm0_set_alarm2(const struct device *dev,
-					   uint16_t mask,
-					   const struct rtc_time *timeptr)
-{
-	const struct rtc_ti_mspm0_config *cfg = dev->config;
-
-	DL_RTC_Common_disableInterrupt(cfg->regs, DL_RTC_COMMON_INTERRUPT_CALENDAR_ALARM2);
-
-	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
-		cfg->regs->A2MIN = 0;
-		DL_RTC_Common_setAlarm2MinutesBinary(cfg->regs, timeptr->tm_min);
-		DL_RTC_Common_enableAlarm2MinutesBinary(cfg->regs);
-	}
-
-	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
-		DL_RTC_Common_setAlarm2HoursBinary(cfg->regs, timeptr->tm_hour);
-		DL_RTC_Common_enableAlarm2HoursBinary(cfg->regs);
-	}
-
-	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
-		DL_RTC_Common_setAlarm2DayOfWeekBinary(cfg->regs, timeptr->tm_wday);
-		DL_RTC_Common_enableAlarm2DayOfWeekBinary(cfg->regs);
-	}
-
-	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
-		DL_RTC_Common_setAlarm2DayOfMonthBinary(cfg->regs, timeptr->tm_mday);
-		DL_RTC_Common_enableAlarm2DayOfMonthBinary(cfg->regs);
-	}
-
-	DL_RTC_Common_enableInterrupt(cfg->regs, DL_RTC_COMMON_INTERRUPT_CALENDAR_ALARM2);
-}
-
 static inline void rtc_ti_mspm0_clear_alarm(const struct device *dev, uint16_t id)
 {
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
 
-	if (id == RTC_TI_ALARM_1) {
-		cfg->regs->A1MIN = 0x00;
-		cfg->regs->A1HOUR = 0x00;
-		cfg->regs->A1DAY = 0x00;
-	} else {
-		cfg->regs->A2MIN = 0x00;
-		cfg->regs->A2HOUR = 0x00;
-		cfg->regs->A2DAY = 0x00;
-	}
+	cfg->regs->alarm[id].a_min = 0x00;
+	cfg->regs->alarm[id].a_hour = 0x00;
+	cfg->regs->alarm[id].a_day = 0x00;
 }
 
 static int rtc_ti_mspm0_alarm_set_time(const struct device *dev, uint16_t id,
 				       uint16_t mask,
 				       const struct rtc_time *timeptr)
 {
+	const struct rtc_ti_mspm0_config *cfg = dev->config;
 	struct rtc_ti_mspm0_data *data = dev->data;
+	uint32_t imask_bit;
 
-	if (timeptr == NULL) {
+	if (id != RTC_TI_ALARM_1 && id != RTC_TI_ALARM_2) {
 		return -EINVAL;
 	}
 
-	if (id != RTC_TI_ALARM_1 && id != RTC_TI_ALARM_2) {
+	if (mask == 0) {
+		K_SPINLOCK(&data->lock) {
+			rtc_ti_mspm0_clear_alarm(dev, id);
+			data->rtc_alarm[id].mask = 0;
+			data->rtc_alarm[id].is_pending = false;
+		}
+		return 0;
+	}
+
+	if (timeptr == NULL) {
 		return -EINVAL;
 	}
 
@@ -226,15 +285,38 @@ static int rtc_ti_mspm0_alarm_set_time(const struct device *dev, uint16_t id,
 		return -EINVAL;
 	}
 
+	imask_bit = (id == RTC_TI_ALARM_1) ? RTC_MSPM0_IMASK_ALARM1 : RTC_MSPM0_IMASK_ALARM2;
+
 	K_SPINLOCK(&data->lock) {
 		rtc_ti_mspm0_clear_alarm(dev, id);
+		cfg->regs->imask &= ~imask_bit;
 
-		if (id == RTC_TI_ALARM_1) {
-			rtc_ti_mspm0_set_alarm1(dev, mask, timeptr);
-		} else {
-			rtc_ti_mspm0_set_alarm2(dev, mask, timeptr);
+		if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
+			cfg->regs->alarm[id].a_min = RTC_MSPM0_AMIN_BIN_ENABLE |
+						     (timeptr->tm_min & RTC_MSPM0_AMIN_BIN_MASK);
 		}
 
+		if (mask & RTC_ALARM_TIME_MASK_HOUR) {
+			cfg->regs->alarm[id].a_hour =
+				RTC_MSPM0_AHOUR_BIN_ENABLE |
+				(timeptr->tm_hour & RTC_MSPM0_AHOUR_BIN_MASK);
+		}
+
+		if (mask & (RTC_ALARM_TIME_MASK_WEEKDAY | RTC_ALARM_TIME_MASK_MONTHDAY)) {
+			uint32_t day = 0;
+
+			if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
+				day |= RTC_MSPM0_ADAY_WEEK_BIN_ENABLE |
+				       (timeptr->tm_wday & RTC_MSPM0_ADAY_WEEK_BIN_MASK);
+			}
+			if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
+				day |= RTC_MSPM0_ADAY_MON_BIN_ENABLE |
+				       FIELD_PREP(RTC_MSPM0_ADAY_MON_BIN_MASK, timeptr->tm_mday);
+			}
+			cfg->regs->alarm[id].a_day = day;
+		}
+
+		cfg->regs->imask |= imask_bit;
 		data->rtc_alarm[id].mask = mask;
 		data->rtc_alarm[id].is_pending = false;
 	}
@@ -242,72 +324,12 @@ static int rtc_ti_mspm0_alarm_set_time(const struct device *dev, uint16_t id,
 	return 0;
 }
 
-static int rtc_ti_mspm0_get_alarm1(const struct device *dev,
-				   struct rtc_time *timeptr)
-{
-	uint16_t return_mask = 0;
-	uint16_t alarm_mask = 0;
-	const struct rtc_ti_mspm0_config *cfg = dev->config;
-	struct rtc_ti_mspm0_data *data = dev->data;
-
-	alarm_mask = data->rtc_alarm[RTC_TI_ALARM_1].mask;
-	if (alarm_mask & RTC_ALARM_TIME_MASK_MINUTE) {
-		timeptr->tm_min = DL_RTC_Common_getAlarm1MinutesBinary(cfg->regs);
-		return_mask |= RTC_ALARM_TIME_MASK_MINUTE;
-	}
-
-	if (alarm_mask & RTC_ALARM_TIME_MASK_HOUR) {
-		timeptr->tm_hour = DL_RTC_Common_getAlarm1HoursBinary(cfg->regs);
-		return_mask |= RTC_ALARM_TIME_MASK_HOUR;
-	}
-
-	if (alarm_mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
-		timeptr->tm_wday = DL_RTC_Common_getAlarm1DayOfWeekBinary(cfg->regs);
-		return_mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
-	}
-
-	if (alarm_mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
-		timeptr->tm_mday =  DL_RTC_Common_getAlarm1DayOfMonthBinary(cfg->regs);
-		return_mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
-	}
-
-	return return_mask;
-}
-
-static int rtc_ti_mspm0_get_alarm2(const struct device *dev, struct rtc_time *timeptr)
-{
-	uint16_t return_mask = 0;
-	uint16_t alarm_mask = 0;
-	const struct rtc_ti_mspm0_config *cfg = dev->config;
-	struct rtc_ti_mspm0_data *data = dev->data;
-
-	alarm_mask = data->rtc_alarm[RTC_TI_ALARM_2].mask;
-	if (alarm_mask & RTC_ALARM_TIME_MASK_MINUTE) {
-		timeptr->tm_min = DL_RTC_Common_getAlarm2MinutesBinary(cfg->regs);
-		return_mask |= RTC_ALARM_TIME_MASK_MINUTE;
-	}
-
-	if (alarm_mask & RTC_ALARM_TIME_MASK_HOUR) {
-		timeptr->tm_hour = DL_RTC_Common_getAlarm2HoursBinary(cfg->regs);
-		return_mask |= RTC_ALARM_TIME_MASK_HOUR;
-	}
-
-	if (alarm_mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
-		timeptr->tm_wday = DL_RTC_Common_getAlarm2DayOfWeekBinary(cfg->regs);
-		return_mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
-	}
-
-	if (alarm_mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
-		timeptr->tm_mday =  DL_RTC_Common_getAlarm2DayOfMonthBinary(cfg->regs);
-		return_mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
-	}
-
-	return return_mask;
-}
-
 static int rtc_ti_mspm0_alarm_get_time(const struct device *dev, uint16_t id,
 				       uint16_t *mask, struct rtc_time *timeptr)
 {
+	uint16_t return_mask = 0;
+	uint16_t alarm_mask = 0;
+	const struct rtc_ti_mspm0_config *cfg = dev->config;
 	struct rtc_ti_mspm0_data *data = dev->data;
 
 	if (timeptr == NULL) {
@@ -319,11 +341,29 @@ static int rtc_ti_mspm0_alarm_get_time(const struct device *dev, uint16_t id,
 	}
 
 	K_SPINLOCK(&data->lock) {
-		if (id == RTC_TI_ALARM_1) {
-			*mask = rtc_ti_mspm0_get_alarm1(dev, timeptr);
-		} else {
-			*mask = rtc_ti_mspm0_get_alarm2(dev, timeptr);
+		alarm_mask = data->rtc_alarm[id].mask;
+
+		if (alarm_mask & RTC_ALARM_TIME_MASK_MINUTE) {
+			timeptr->tm_min = cfg->regs->alarm[id].a_min & RTC_MSPM0_AMIN_BIN_MASK;
+			return_mask |= RTC_ALARM_TIME_MASK_MINUTE;
 		}
+		if (alarm_mask & RTC_ALARM_TIME_MASK_HOUR) {
+			timeptr->tm_hour =
+				cfg->regs->alarm[id].a_hour & RTC_MSPM0_AHOUR_BIN_MASK;
+			return_mask |= RTC_ALARM_TIME_MASK_HOUR;
+		}
+		if (alarm_mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
+			timeptr->tm_wday = FIELD_GET(RTC_MSPM0_ADAY_WEEK_BIN_MASK,
+						     cfg->regs->alarm[id].a_day);
+			return_mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
+		}
+		if (alarm_mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
+			timeptr->tm_mday = FIELD_GET(RTC_MSPM0_ADAY_MON_BIN_MASK,
+						     cfg->regs->alarm[id].a_day);
+			return_mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
+		}
+
+		*mask = return_mask;
 	}
 
 	return 0;
@@ -334,10 +374,6 @@ static int rtc_ti_mspm0_alarm_set_callback(const struct device *dev, uint16_t id
 					   void *user_data)
 {
 	struct rtc_ti_mspm0_data *data = dev->data;
-
-	if (callback == NULL) {
-		return -EINVAL;
-	}
 
 	if (id != RTC_TI_ALARM_1 && id != RTC_TI_ALARM_2) {
 		return -EINVAL;
@@ -361,46 +397,46 @@ static int rtc_ti_mspm0_alarm_is_pending(const struct device *dev, uint16_t id)
 		return -EINVAL;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	K_SPINLOCK(&data->lock) {
+		alarm = &data->rtc_alarm[id];
+		ret = alarm->is_pending ? 1 : 0;
+		alarm->is_pending = false;
+	}
 
-	alarm = &data->rtc_alarm[id];
-	ret = alarm->is_pending ? 1 : 0;
-	alarm->is_pending = false;
-
-	k_spin_unlock(&data->lock, key);
 	return ret;
 }
 
 static void rtc_ti_mspm0_isr(const struct device *dev)
 {
-	uint8_t id;
-	struct rtc_ti_mspm0_alarm *alarm = NULL;
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
 	struct rtc_ti_mspm0_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	struct rtc_ti_mspm0_alarm alarm = {0};
+	uint8_t alarm_id = 0;
+	bool has_cb = false;
 
-	switch (DL_RTC_Common_getPendingInterrupt(cfg->regs)) {
-	case DL_RTC_COMMON_IIDX_ALARM1:
-		id = RTC_TI_ALARM_1;
-		alarm = &data->rtc_alarm[RTC_TI_ALARM_1];
-		break;
-	case DL_RTC_COMMON_IIDX_ALARM2:
-		id = RTC_TI_ALARM_2;
-		alarm = &data->rtc_alarm[RTC_TI_ALARM_2];
-		break;
-	default:
-		goto out;
-	}
+	K_SPINLOCK(&data->lock) {
+		switch (cfg->regs->iidx) {
+		case RTC_MSPM0_IIDX_ALARM1:
+			alarm_id = RTC_TI_ALARM_1;
+			break;
+		case RTC_MSPM0_IIDX_ALARM2:
+			alarm_id = RTC_TI_ALARM_2;
+			break;
+		default:
+			K_SPINLOCK_BREAK;
+		}
 
-	if (alarm != NULL) {
-		alarm->is_pending = true;
-		if (alarm->callback) {
-			alarm->callback(dev, id, alarm->user_data);
+		alarm = data->rtc_alarm[alarm_id];
+		if (!alarm.callback) {
+			data->rtc_alarm[alarm_id].is_pending = true;
+		} else {
+			has_cb = true;
 		}
 	}
 
-out:
-	k_spin_unlock(&data->lock, key);
+	if (has_cb) {
+		alarm.callback(dev, alarm_id, alarm.user_data);
+	}
 }
 #endif
 
@@ -409,14 +445,17 @@ static int rtc_ti_mspm0_init(const struct device *dev)
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
 
 	if (!cfg->rtc_x) {
-		/* Enable power to RTC module */
-		if (!DL_RTC_Common_isPowerEnabled(cfg->regs)) {
-			DL_RTC_Common_enablePower(cfg->regs);
+		if (!(cfg->regs->pwren & RTC_MSPM0_PWREN_MASK)) {
+			/* Write Power enable key and set Power enable bit simultaneously */
+			cfg->regs->pwren =
+				FIELD_PREP(RTC_MSPM0_PWREN_KEY_MASK, RTC_MSPM0_PWREN_KEY) |
+				RTC_MSPM0_PWREN_MASK;
 		}
 	}
-
-	DL_RTC_Common_enableClockControl(cfg->regs);
-	DL_RTC_Common_setClockFormat(cfg->regs, DL_RTC_COMMON_FORMAT_BINARY);
+	/* Enable 32k clock supply */
+	cfg->regs->clkctl = RTC_MSPM0_CLKCTL_ENABLE;
+	/* Set clock format to binary */
+	cfg->regs->ctl = RTC_MSPM0_CTL_BIN;
 
 #if defined(CONFIG_RTC_ALARM)
 	cfg->irq_config_func();
@@ -449,7 +488,7 @@ static DEVICE_API(rtc, rtc_ti_mspm0_driver_api) = {
 	static struct rtc_ti_mspm0_data rtc_data_##n;				\
 										\
 	static struct rtc_ti_mspm0_config rtc_config_##n = {			\
-		.regs		 = (RTC_Regs *)DT_INST_REG_ADDR(n),		\
+		.regs = (rtc_ti_mspm0_reg_t *)DT_INST_REG_ADDR(n),		\
 		.rtc_x		 = DT_INST_PROP(n, ti_rtc_x),			\
 		IF_ENABLED(CONFIG_RTC_ALARM,					\
 		(.irq_config_func = ti_mspm0_config_irq_##n,))			\
