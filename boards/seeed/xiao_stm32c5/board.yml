@@ -1,0 +1,6 @@
+board:
+  name: xiao_stm32c5
+  full_name: XIAO STM32C5
+  vendor: seeed
+  socs:
+    - name: stm32c5a3xx
