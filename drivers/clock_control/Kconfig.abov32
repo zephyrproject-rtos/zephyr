@@ -1,0 +1,9 @@
+# Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_ABOV32
+	bool "ABOV32 clock control driver"
+	default y
+	depends on DT_HAS_ABOV_ABOV32_CCTL_ENABLED
+	help
+	  Enable driver for ABOV System Control Clock Unit.

@@ -1,0 +1,5 @@
+# Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STK_A31C156_RLN_A
+	select SOC_A31C156
