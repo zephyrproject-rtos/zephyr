@@ -321,9 +321,13 @@ static bool dma_emul_config_valid(const struct device *dev, uint32_t channel,
 			return false;
 		}
 
-		if (i >= config->num_requests) {
-			LOG_ERR("not enough slots to store block %zu / %u", i + 1,
-				xfer_config->block_count);
+		/*
+		 * Blocks are stored at config->block[channel * num_requests + dma_slot + i],
+		 * so the last block must still land inside this channel's slot window.
+		 */
+		if (xfer_config->dma_slot + i >= config->num_requests) {
+			LOG_ERR("not enough slots to store block %zu / %u at dma_slot %u", i + 1,
+				xfer_config->block_count, xfer_config->dma_slot);
 			return false;
 		}
 	}
