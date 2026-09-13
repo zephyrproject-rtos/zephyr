@@ -21,6 +21,7 @@
 		};
 
 		node {
+			compatible = "interrupt-3-cell-consumer";
 			interrupts = <1 2 3 4 5 6>;
 			interrupt-names = "foo", "bar";
 			interrupt-parent = <&{/interrupt-parent-test/controller}>;
