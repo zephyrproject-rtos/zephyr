@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2025 Benjamin Schilling <benjamin.schilling33@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "esp32s3_eth_8di_8ro.dtsi"
