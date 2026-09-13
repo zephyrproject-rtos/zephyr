@@ -450,11 +450,14 @@ static int init_mailbox_obj_core_list(void)
 	z_obj_type_init(&obj_type_mailbox, K_OBJ_TYPE_MBOX_ID,
 			offsetof(struct k_mbox, obj_core));
 
-	/* Initialize and link statically defined mailboxes */
+	/* Initialize statically defined mailboxes */
 
 	STRUCT_SECTION_FOREACH(k_mbox, mbox) {
-		k_obj_core_init_and_link(K_OBJ_CORE(mbox), &obj_type_mailbox);
+		k_obj_core_init(K_OBJ_CORE(mbox), &obj_type_mailbox);
 	}
+
+	k_obj_type_init_range(&obj_type_mailbox, STRUCT_SECTION_START(k_mbox),
+			      STRUCT_SECTION_END(k_mbox), sizeof(struct k_mbox), false);
 
 	return 0;
 }
