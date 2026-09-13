@@ -566,6 +566,7 @@ New APIs and options
 
 * Kernel
 
+  * :c:enumerator:`K_ERR_WORK_TIMEOUT`
   * :c:func:`k_thread_runtime_stats_is_enabled`
   * :c:func:`atomic_test_and_set_bit_to`
   * :c:macro:`K_MSGQ_DEFINE_STATIC`

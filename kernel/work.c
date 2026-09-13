@@ -640,6 +640,13 @@ static void work_timeout_handler(struct _timeout *record)
 		queue, space, name, work, handler);
 
 	k_thread_abort(queue->thread_id);
+
+	/*
+	 * For an essential queue, k_thread_abort() above already panics
+	 * (via z_thread_abort()'s essential-thread check) and never returns,
+	 * so this line only runs for non-essential queues.
+	 */
+	z_except_reason(K_ERR_WORK_TIMEOUT);
 }
 
 static void work_timeout_start_locked(struct k_work_q *queue, struct k_work *work)
