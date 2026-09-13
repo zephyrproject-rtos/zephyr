@@ -8,6 +8,7 @@ zephyr_library_sources_ifdef(CONFIG_LED_SHELL led_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE led_handlers.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_include_directories_ifdef(CONFIG_LED_NPM10XX ${ZEPHYR_BASE}/drivers/mfd)
 zephyr_library_sources_ifdef(CONFIG_HT16K33 ht16k33.c)
 zephyr_library_sources_ifdef(CONFIG_IS31FL319X is31fl319x.c)
 zephyr_library_sources_ifdef(CONFIG_IS31FL3216A is31fl3216a.c)
