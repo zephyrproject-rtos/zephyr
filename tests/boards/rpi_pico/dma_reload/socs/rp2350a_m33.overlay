@@ -8,6 +8,12 @@ loopback_pio: &pio1 {
 	status = "okay";
 };
 
-tst_dma0: &dma {
+&dma {
 	status = "okay";
+};
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&dma>;
+	};
 };

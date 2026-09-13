@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,20 @@
  * LPI2C0 SDA(J2-18)  -->  LPI2C1 SDA(J2-12)
  */
 
+/* lpspi0 uses PTE0/PTE1, which conflict with lpi2c1 SDA/SCL */
+&lpspi0 {
+	status = "disabled";
+};
+
+&gpioa {
+	status = "okay";
+};
+
 &lpi2c0 {
+	scl-gpios = <&gpioa 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	sda-gpios = <&gpioa 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	recover-bus-on-init;
+
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
@@ -18,6 +31,10 @@
 };
 
 &lpi2c1 {
+	scl-gpios = <&gpioe 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	sda-gpios = <&gpioe 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	recover-bus-on-init;
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
