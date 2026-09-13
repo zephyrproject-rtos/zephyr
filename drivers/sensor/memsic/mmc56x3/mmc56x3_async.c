@@ -47,11 +47,14 @@ void mmc56x3_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 	edata->has_magn_y = 0;
 	edata->has_magn_z = 0;
 
+	/* Temperature cannot be read in continuous mode */
+	const bool has_temp = !mmc56x3_is_continuous_mode(dev);
+
 	/* Check if the requested channels are supported */
 	for (size_t i = 0; i < num_channels; i++) {
 		switch (channels[i].chan_type) {
 		case SENSOR_CHAN_AMBIENT_TEMP:
-			edata->has_temp = 1;
+			edata->has_temp = has_temp;
 			break;
 		case SENSOR_CHAN_MAGN_X:
 			edata->has_magn_x = 1;
@@ -68,7 +71,7 @@ void mmc56x3_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 			edata->has_magn_z = 1;
 			break;
 		case SENSOR_CHAN_ALL:
-			edata->has_temp = 1;
+			edata->has_temp = has_temp;
 			edata->has_magn_x = 1;
 			edata->has_magn_y = 1;
 			edata->has_magn_z = 1;
