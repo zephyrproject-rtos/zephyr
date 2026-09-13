@@ -10,6 +10,7 @@ import copy
 import glob
 import json
 import logging
+import math
 import os
 import random
 import re
@@ -18,7 +19,6 @@ import sys
 import time
 from argparse import Namespace
 from collections import OrderedDict
-from itertools import islice
 from pathlib import Path
 
 from twisterlib import ZEPHYR_BASE
@@ -46,6 +46,11 @@ from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
 
 logger = logging.getLogger('twister')
+
+# Largest share of one subset a single test suite may occupy before it is cut
+# up between subsets. Keeping suites whole matters more than perfect balance,
+# but a suite bigger than this would leave its subset unable to catch up.
+SUBSET_UNIT_DIVISOR = 4
 
 # Directory holding twister's YAML schemas.
 TWISTER_SCHEMA_DIR = os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister")
@@ -358,22 +363,28 @@ class TestPlan:
         # This fixes an issue where some sets would get majority of skips and
         # basically run nothing beside filtering.
         to_run = {k : v for k,v in self.instances.items() if v.status == TwisterStatus.NONE}
-        total = len(to_run)
-        per_set = int(total / sets)
-        num_extra_sets = total - (per_set * sets)
 
-        # Try and be more fair for rounding error with integer division
-        # so the last subset doesn't get overloaded, we add 1 extra to
-        # subsets 1..num_extra_sets.
-        if subset <= num_extra_sets:
-            start = (subset - 1) * (per_set + 1)
-            end = start + per_set + 1
-        else:
-            base = num_extra_sets * (per_set + 1)
-            start = ((subset - num_extra_sets - 1) * per_set) + base
-            end = start + per_set
+        # Keep a test suite's instances together so that a suite failing on many
+        # platforms fails one subset rather than most of them. Suites too large
+        # to fit are cut up, otherwise one of them outweighs a whole subset.
+        limit = max(1, math.ceil(len(to_run) / (sets * SUBSET_UNIT_DIVISOR)))
+        by_suite = OrderedDict()
+        for name, instance in to_run.items():
+            by_suite.setdefault(instance.testsuite.name, []).append((name, instance))
+        units = []
+        for group in by_suite.values():
+            units += [group[i:i + limit] for i in range(0, len(group), limit)]
 
-        sliced_instances = islice(to_run.items(), start, end)
+        # Pack the units largest first into whichever subset is lightest. Simply
+        # slicing the list would hand each subset one alphabetical slab of the
+        # tree, and slabs differ widely in build cost.
+        buckets = [[] for _ in range(sets)]
+        load = [0] * sets
+        for unit in sorted(units, key=len, reverse=True):
+            lightest = load.index(min(load))
+            buckets[lightest] += unit
+            load[lightest] += len(unit)
+        sliced_instances = buckets[subset - 1]
         skipped = {k : v for k,v in self.instances.items() if v.status == TwisterStatus.SKIP}
         errors = {k : v for k,v in self.instances.items() if v.status == TwisterStatus.ERROR}
         self.instances = OrderedDict(sliced_instances)
