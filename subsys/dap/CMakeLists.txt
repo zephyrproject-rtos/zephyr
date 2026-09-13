@@ -7,3 +7,4 @@ zephyr_library()
 zephyr_library_sources(cmsis_dap.c)
 
 zephyr_library_sources_ifdef(CONFIG_DAP_BACKEND_USB dap_backend_usb.c)
+zephyr_library_sources_ifdef(CONFIG_DAP_SWO dap_swo.c)
