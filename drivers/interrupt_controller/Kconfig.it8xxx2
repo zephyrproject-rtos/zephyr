@@ -11,6 +11,7 @@ config ITE_IT8XXX2_INTC
 	def_bool DT_HAS_ITE_IT8XXX2_INTC_ENABLED
 	depends on DT_HAS_ITE_IT8XXX2_INTC_ENABLED
 	select HAS_ITE_INTC
+	select INTC_ROOT
 	help
 	 Configures the maximum number of clients allowed per shared
 	 instance of the shared interrupt driver. To conserve RAM set
@@ -21,6 +22,7 @@ config ITE_IT8XXX2_INTC_V2
 	def_bool DT_HAS_ITE_IT8XXX2_INTC_V2_ENABLED
 	depends on DT_HAS_ITE_IT8XXX2_INTC_V2_ENABLED
 	select HAS_ITE_INTC
+	select INTC_ROOT
 	help
 	  This option enables the interrupt controller for IT82XX2 family.
 
