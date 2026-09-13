@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Leica Geosystems AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_disk: test_disk {
+		compatible = "zephyr,virtual-fat-disk";
+		data-partition-size = <DT_SIZE_K(64)>;
+		sector-size = <512>;
+		disk-name = "TEST";
+	};
+};
