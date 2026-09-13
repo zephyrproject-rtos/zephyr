@@ -17,6 +17,7 @@
 
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
 #include "spi_if.h"
+#include "mspi_if.h"
 static struct qspi_config config;
 
 #if defined(CONFIG_NRF70_ON_QSPI)
@@ -25,6 +26,12 @@ static struct qspi_dev qspi = {.init = qspi_init,
 			       .read = qspi_read,
 			       .write = qspi_write,
 			       .hl_read = qspi_hl_read};
+#elif defined(CONFIG_NRF70_ON_MSPI)
+static struct qspi_dev mspi = {.init = mspi_if_init,
+			       .deinit = mspi_if_deinit,
+			       .read = mspi_if_read,
+			       .write = mspi_if_write,
+			       .hl_read = mspi_if_hl_read};
 #else
 static struct qspi_dev spim = {.init = spim_init,
 			       .deinit = spim_deinit,
@@ -75,6 +82,8 @@ struct qspi_dev *qspi_dev(void)
 {
 #if defined(CONFIG_NRF70_ON_QSPI)
 	return &qspi;
+#elif defined(CONFIG_NRF70_ON_MSPI)
+	return &mspi;
 #else
 	return &spim;
 #endif
