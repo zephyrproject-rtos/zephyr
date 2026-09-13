@@ -165,6 +165,28 @@ RPMsg UART console via overlays. On Linux, enable the RPMsg TTY driver
 (``rpmsg_tty``) and look for ``/dev/ttyRPMSG*`` (bind order depends on which
 cores are running).
 
+Debugging
+*********
+
+The board supports self-hosted OpenOCD debugging. In this flow, OpenOCD runs
+on Linux on the board and uses the TI K3 ``dmem`` adapter to access the SoC
+debug fabric. To debug a binary, utilize the ``debug`` build target from the
+board:
+
+.. zephyr-app-commands::
+   :app: <my_app>
+   :board: beaglebone_ai64/j721e/main_r5f0_0
+   :maybe-skip-config:
+   :goals: debug
+
+The other MAIN and MCU R5F targets use the same command with the matching board
+target.
+
+.. hint::
+   To utilize this feature, use an OpenOCD version with TI K3 J721E self-hosted
+   support. Older package-manager versions may not include the required scripts.
+   Ensure that the Linux system running OpenOCD allows access to ``/dev/mem``.
+
 References
 **********
 
