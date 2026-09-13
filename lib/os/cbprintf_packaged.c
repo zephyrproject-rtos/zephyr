@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -260,8 +263,11 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	uintptr_t buf = (uintptr_t)buf0; /* current buffer position */
 	unsigned int size;         /* current argument's size */
 	unsigned int align;        /* current argument's required alignment */
+
 	uint8_t str_ptr_pos[16];   /* string pointer positions */
 	uint8_t str_ptr_arg[16];   /* string pointer argument index */
+	int str_ptr_precision[16]; /* string pointer precision index*/
+
 	unsigned int s_idx = 0;    /* index into str_ptr_pos[] */
 	unsigned int s_rw_cnt = 0; /* number of rw strings */
 	unsigned int s_ro_cnt = 0; /* number of ro strings */
@@ -269,6 +275,10 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	unsigned int i;
 	const char *s;
 	bool parsing = false;
+
+	bool prec_present = false;
+	bool prec_capture_pending = false;
+	int precision = -1;
 	/* Flag indicates that rw strings are stored as array with positions,
 	 * instead of appending them to the package.
 	 */
@@ -488,6 +498,9 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 					arg_idx++;
 					align = VA_STACK_ALIGN(int);
 					size = sizeof(int);
+					precision = -1;
+					prec_present = false;
+					prec_capture_pending = false;
 				}
 				continue;
 			}
@@ -501,6 +514,8 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			case '-':
 			case '+':
 			case ' ':
+				continue;
+
 			case '0':
 			case '1':
 			case '2':
@@ -511,13 +526,27 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			case '7':
 			case '8':
 			case '9':
+				if (prec_present) {
+					if (precision < 0) {
+						precision = 0;
+					}
+					precision = precision * 10 + (*fmt - '0');
+				}
+				continue;
+
 			case '.':
+				prec_present = true;
+				continue;
+
 			case 'h':
 			case 'l':
 			case 'L':
 				continue;
 
 			case '*':
+				if (prec_present) {
+					prec_capture_pending = true;
+				}
 				break;
 
 			case 'j':
@@ -556,8 +585,10 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 
 			case 's':
 				is_str_arg = true;
+				prec_present = false;
 
 				__fallthrough;
+
 			case 'p':
 			case 'n':
 				align = VA_STACK_ALIGN(void *);
@@ -661,6 +692,8 @@ process_string:
 					 */
 					str_ptr_pos[s_idx] = s_ptr_idx;
 					str_ptr_arg[s_idx] = arg_idx;
+					str_ptr_precision[s_idx] = precision;
+
 					if (is_ro) {
 						/* flag read-only string. */
 						str_ptr_pos[s_idx] |= STR_POS_RO_FLAG;
@@ -685,7 +718,15 @@ process_string:
 					 * Add the string length, the final '\0'
 					 * and size of the pointer position prefix.
 					 */
-					len += strlen(s) + 1 + 1;
+
+					size_t s_len = 0;
+
+					if (precision >= 0) {
+						s_len = strnlen(s, precision);
+					} else {
+						s_len = strlen(s);
+					}
+					len += s_len + 1 + 1;
 				}
 
 				s_idx++;
@@ -695,6 +736,13 @@ process_string:
 			is_str_arg = false;
 		} else if (size == sizeof(int)) {
 			int v = va_arg(ap, int);
+
+			if (prec_capture_pending) {
+				/* C99: negative => precision omitted */
+				precision = (v < 0) ? -1 : v;
+
+				prec_capture_pending = false;
+			}
 
 			if (buf0 != NULL) {
 				*(int *)buf = v;
@@ -795,25 +843,52 @@ process_string:
 			size = 0;
 			*(uint8_t *)buf = str_ptr_arg[i];
 			++buf;
+			*(uint8_t *)buf = str_ptr_pos[i];
+			++buf;
 		} else {
 			/* retrieve the string pointer */
 			s = *(char **)(buf0 + str_ptr_pos[i] * sizeof(int));
+			/* retrieve the string precision*/
+			precision = str_ptr_precision[i];
 			/* clear the in-buffer pointer (less entropy if compressed) */
 			*(char **)(buf0 + str_ptr_pos[i] * sizeof(int)) = NULL;
 			/* find the string length including terminating '\0' */
-			size = strlen(s) + 1;
-		}
+			if (precision >= 0) {
+				size_t copy_len = strnlen(s, precision);
 
-		/* make sure it fits */
-		if ((BUF_OFFSET + 1 + size) > len) {
-			return -ENOSPC;
+				size = copy_len + 1;
+
+				/* make sure it fits */
+				if ((BUF_OFFSET + 1 + size) > len) {
+					return -ENOSPC;
+				}
+
+				/* store the pointer position prefix */
+				*(uint8_t *)buf = str_ptr_pos[i];
+				++buf;
+
+				/* copy the string with its terminating '\0' */
+				memcpy((void *)buf, (uint8_t *)s, copy_len);
+				((char *)buf)[copy_len] = '\0';
+				buf += size;
+
+			} else {
+				size = strlen(s) + 1;
+
+				/* make sure it fits */
+				if ((BUF_OFFSET + 1 + size) > len) {
+					return -ENOSPC;
+				}
+
+				/* store the pointer position prefix */
+				*(uint8_t *)buf = str_ptr_pos[i];
+				++buf;
+
+				/* copy the string with its terminating '\0' */
+				memcpy((void *)buf, (uint8_t *)s, size);
+				buf += size;
+			}
 		}
-		/* store the pointer position prefix */
-		*(uint8_t *)buf = str_ptr_pos[i];
-		++buf;
-		/* copy the string with its terminating '\0' */
-		memcpy((void *)buf, (uint8_t *)s, size);
-		buf += size;
 	}
 
 	/*
