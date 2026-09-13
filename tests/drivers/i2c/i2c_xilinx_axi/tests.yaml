@@ -1,0 +1,11 @@
+common:
+  tags:
+    - drivers
+    - i2c
+  depends_on: i2c
+  harness: ztest
+tests:
+  drivers.i2c.xilinx_axi:
+    # Runs on any board that instantiates the Xilinx AXI IIC controller.
+    filter: dt_compat_enabled("xlnx,xps-iic-2.1") or
+      dt_compat_enabled("xlnx,xps-iic-2.00.a")
