@@ -1,0 +1,22 @@
+# CONFIG_TRACING_SEMAPHORE stands in for "the tracing type symbols are
+# available on this platform", the same proxy tests/kernel/obj_tracking
+# uses. The suite itself exercises every tracked type.
+tests:
+  kernel.objects.tracking.free:
+    tags: kernel
+    filter: CONFIG_TRACING_SEMAPHORE
+    platform_exclude: qemu_x86_tiny
+  kernel.objects.tracking.free.minimallibc:
+    filter: CONFIG_TRACING_SEMAPHORE and CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags:
+      - kernel
+      - libc
+    platform_exclude: qemu_x86_tiny
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  kernel.objects.tracking.free.hardening:
+    tags: kernel
+    filter: CONFIG_TRACING_SEMAPHORE
+    platform_exclude: qemu_x86_tiny
+    extra_configs:
+      - CONFIG_SYS_HEAP_HARDENING_FULL=y

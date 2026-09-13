@@ -66,6 +66,37 @@ extern struct k_queue *_track_list_k_queue;
 extern struct k_event *_track_list_k_event;
 
 /**
+ * @name Tracking list locks
+ *
+ * Objects leave their list when their memory is released back to a sys_heap
+ * based allocator, so a traversal that can run concurrently with a release
+ * must hold the matching lock.
+ *
+ * @{
+ */
+/** @brief Lock protecting the k_timer tracking list. */
+extern struct k_spinlock _track_list_k_timer_lock;
+/** @brief Lock protecting the k_mem_slab tracking list. */
+extern struct k_spinlock _track_list_k_mem_slab_lock;
+/** @brief Lock protecting the k_sem tracking list. */
+extern struct k_spinlock _track_list_k_sem_lock;
+/** @brief Lock protecting the k_mutex tracking list. */
+extern struct k_spinlock _track_list_k_mutex_lock;
+/** @brief Lock protecting the k_stack tracking list. */
+extern struct k_spinlock _track_list_k_stack_lock;
+/** @brief Lock protecting the k_msgq tracking list. */
+extern struct k_spinlock _track_list_k_msgq_lock;
+/** @brief Lock protecting the k_mbox tracking list. */
+extern struct k_spinlock _track_list_k_mbox_lock;
+/** @brief Lock protecting the k_pipe tracking list. */
+extern struct k_spinlock _track_list_k_pipe_lock;
+/** @brief Lock protecting the k_queue tracking list. */
+extern struct k_spinlock _track_list_k_queue_lock;
+/** @brief Lock protecting the k_event tracking list. */
+extern struct k_spinlock _track_list_k_event_lock;
+/** @} */
+
+/**
  * @brief Gets node's next element in a object tracking list.
  *
  * @param list Node to get next element from.
@@ -129,6 +160,10 @@ void sys_track_k_pipe_init(struct k_pipe *pipe, void *buffer, size_t size);
 void sys_track_k_queue_init(struct k_queue *queue);
 void sys_track_k_event_init(struct k_event *event);
 void sys_track_socket_init(int sock, int family, int type, int proto);
+void sys_track_k_timer_deinit(struct k_timer *timer);
+void sys_track_k_stack_deinit(struct k_stack *stack);
+void sys_track_k_msgq_deinit(struct k_msgq *msgq);
+void sys_track_k_pipe_deinit(struct k_pipe *pipe);
 
 /** @endcond */
 
@@ -167,6 +202,26 @@ void sys_track_socket_init(int sock, int family, int type, int proto);
 #define sys_port_track_k_heap_init(h)
 #define sys_port_track_k_event_init(event)
 #define sys_port_track_socket_init(sock, family, type, proto)
+
+static inline void sys_track_k_timer_deinit(struct k_timer *obj)
+{
+	ARG_UNUSED(obj);
+}
+
+static inline void sys_track_k_stack_deinit(struct k_stack *obj)
+{
+	ARG_UNUSED(obj);
+}
+
+static inline void sys_track_k_msgq_deinit(struct k_msgq *obj)
+{
+	ARG_UNUSED(obj);
+}
+
+static inline void sys_track_k_pipe_deinit(struct k_pipe *obj)
+{
+	ARG_UNUSED(obj);
+}
 
 #endif
 

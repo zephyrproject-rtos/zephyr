@@ -279,8 +279,16 @@ config TRACING_CMD_BUFFER_SIZE
 
 config TRACING_OBJECT_TRACKING
 	bool "Object tracking"
+	select SYS_HEAP_RELEASE_HOOK
 	help
 	  Keep lists to track kernel objects.
+
+	  The tracking lists are intrusive, so a kernel object that is freed
+	  has to leave them while its memory is still valid. This selects the
+	  sys_heap release hook to get that notification.
+
+	  Every heap free then walks the tracking lists with interrupts
+	  locked, so free latency grows with the number of tracked objects.
 
 config TRACING_SHELL
 	bool "Tracing shell commands"
