@@ -294,6 +294,151 @@
 	};
 
 	//
+	// 'dma-ranges'
+	//
+	dma-ranges-zero-cells {
+		#address-cells = <0>;
+
+		node {
+			#address-cells = <0>;
+			#size-cells = <0>;
+
+			dma-ranges;
+		};
+	};
+
+	dma-ranges-zero-parent-cells {
+		#address-cells = <0>;
+
+		node {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			dma-ranges = <0xa>,
+				     <0x1a>,
+				     <0x2a>;
+		};
+	};
+
+	dma-ranges-one-address-cells {
+		#address-cells = <0>;
+
+		node {
+			reg = <1>;
+			#address-cells = <1>;
+
+			dma-ranges = <0xa 0xb>,
+				     <0x1a 0x1b>,
+				     <0x2a 0x2b>;
+		};
+	};
+
+	dma-ranges-one-address-two-size-cells {
+		#address-cells = <0>;
+
+		node {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <2>;
+
+			dma-ranges = <0xa 0xb 0xc>,
+				     <0x1a 0x1b 0x1c>,
+				     <0x2a 0x2b 0x2c>;
+		};
+	};
+
+	dma-ranges-two-address-cells {
+		#address-cells = <1>;
+
+		node@1 {
+			reg = <1 2>;
+
+			dma-ranges = <0xa 0xb 0xc 0xd>,
+				     <0x1a 0x1b 0x1c 0x1d>,
+				     <0x2a 0x2b 0x2c 0x2d>;
+		};
+	};
+
+	dma-ranges-two-address-two-size-cells {
+		#address-cells = <1>;
+
+		node@1 {
+			reg = <1 2>;
+			#size-cells = <2>;
+
+			dma-ranges = <0xa 0xb 0xc 0xd 0xe>,
+				     <0x1a 0x1b 0x1c 0x1d 0x1e>,
+				     <0x2a 0x2b 0x2c 0x2d 0x1d>;
+		};
+	};
+
+	dma-ranges-three-address-cells {
+		node@1 {
+			reg = <0 1 2>;
+			#address-cells = <3>;
+
+			dma-ranges = <0xa 0xb 0xc 0xd 0xe 0xf>,
+				     <0x1a 0x1b 0x1c 0x1d 0x1e 0x1f>,
+				     <0x2a 0x2b 0x2c 0x2d 0x2e 0x2f>;
+		};
+	};
+
+	dma-ranges-three-address-two-size-cells {
+		node@1 {
+			reg = <0 1 2>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			dma-ranges = <0xa 0xb 0xc 0xd 0xe 0xf 0x10>,
+				     <0x1a 0x1b 0x1c 0x1d 0x1e 0x1f 0x110>,
+				     <0x2a 0x2b 0x2c 0x2d 0x2e 0x2f 0x210>;
+		};
+	};
+
+	dma-ranges-zero-child-address-cells {
+		#address-cells = <1>;
+
+		node {
+			#address-cells = <0>;
+			#size-cells = <1>;
+
+			dma-ranges = <0xa 0xb>,
+				     <0x1a 0x1b>,
+				     <0x2a 0x2b>;
+		};
+	};
+
+	//
+	// 'ranges' and 'dma-ranges' without the binding declaring them
+	//
+
+	spec-defined-range-props {
+		#address-cells = <1>;
+
+		node {
+			compatible = "spec-props";
+			a-prop = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ranges = <0x0 0x10000000 0x1000>;
+			dma-ranges = <0x0 0x20000000 0x2000>;
+		};
+	};
+
+	spec-defined-range-props-no-binding {
+		#address-cells = <1>;
+
+		node {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ranges = <0x0 0x30000000 0x3000>;
+			dma-ranges = <0x0 0x40000000 0x4000>;
+		};
+	};
+
+	//
 	// 'reg'
 	//
 
