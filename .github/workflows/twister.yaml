@@ -176,6 +176,7 @@ jobs:
       PR_OPTIONS: ' --clobber-output --integration -j 16'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
+      HEXAGON_TOOLCHAIN_PATH: /opt/toolchains/hexagon/host
     steps:
       - name: Print cloud service information
         run: |

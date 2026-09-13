@@ -9,8 +9,6 @@ toolchain:
   - host
   - hexagon
 preferred_toolchain: hexagon
-env:
-  - HEXAGON_TOOLCHAIN_PATH
 ram: 16384
 testing:
   default: true
