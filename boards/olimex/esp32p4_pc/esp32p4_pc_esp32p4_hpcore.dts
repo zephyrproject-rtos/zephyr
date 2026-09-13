@@ -9,6 +9,7 @@
 #include <espressif/esp32p4/esp32p4_n16r32.dtsi>
 #include "esp32p4_pc_esp32p4_hpcore-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <espressif/partitions_0x2000_default_16M.dtsi>
 
 / {
@@ -21,6 +22,7 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &dsi_display;
 	};
 
 	aliases {
@@ -83,6 +85,37 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
+	/* On-board MIPI DSI to HDMI bridge */
+	hdmi_bridge: lt8912b@48 {
+		compatible = "lontium,lt8912b";
+		reg = <0x48>;
+		mipi-dsi = <&mipi_dsi>;
+		data-lanes = <2>;
+		width = <1280>;
+		height = <720>;
+
+		display-timings {
+			compatible = "zephyr,panel-timing";
+			/* Reduced-blanking 1280x720; together with the 60 MHz
+			 * DPI clock (an exact divider of the 240 MHz source)
+			 * this gives a clean ~56 Hz mode. PC monitors need
+			 * >= ~50 Hz vertical; a TV also accepts 1920x1080
+			 * at 30 Hz (80 MHz DPI clock, hfront-porch 401,
+			 * vback-porch 8).
+			 */
+			hsync-len = <32>;
+			hback-porch = <80>;
+			hfront-porch = <48>;
+			vsync-len = <5>;
+			vback-porch = <13>;
+			vfront-porch = <3>;
+			hsync-active = <1>;
+			vsync-active = <0>;
+			de-active = <1>;
+			pixelclk-active = <0>;
+		};
+	};
 };
 
 &spi2 {
@@ -124,6 +157,13 @@
 
 	ldo2@2 {
 		regulator-init-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	/* VDD_MIPI D-PHY supply */
+	ldo3@3 {
+		regulator-init-microvolt = <2500000>;
 		regulator-boot-on;
 		regulator-always-on;
 	};
@@ -179,4 +219,18 @@
 
 zephyr_udc0: &usb_otg {
 	status = "okay";
+};
+
+&mipi_dsi {
+	status = "okay";
+	phy-clock = <1000000000>;
+	dpi-clock-frequency = <60000000>;
+};
+
+&dsi_display {
+	status = "okay";
+	/* The bridge consumes 24-bit pixels in B,G,R memory order */
+	pixel-format = <PANEL_PIXEL_FORMAT_BGR_888>;
+	width = <1280>;
+	height = <720>;
 };
