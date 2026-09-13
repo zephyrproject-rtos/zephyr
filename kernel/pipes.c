@@ -156,23 +156,34 @@ void z_vrfy_k_pipe_buffer_flush(struct k_pipe *pipe)
 }
 #endif /* CONFIG_USERSPACE */
 
-int k_pipe_cleanup(struct k_pipe *pipe)
+int z_pipe_cleanup(struct k_pipe *pipe, bool locked)
 {
+	int ret = 0;
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, cleanup, pipe);
 
 	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
 
-	CHECKIF((z_waitq_head(&pipe->wait_q.readers) != NULL) ||
-			(z_waitq_head(&pipe->wait_q.writers) != NULL)) {
+	CHECKIF(locked && ((z_waitq_head_locked(&pipe->wait_q.readers) != NULL) ||
+			   (z_waitq_head_locked(&pipe->wait_q.writers) != NULL))) {
 		k_spin_unlock(&pipe->lock, key);
+		ret = -EAGAIN;
+		goto out;
+	}
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, -EAGAIN);
-
-		return -EAGAIN;
+	CHECKIF(!locked && ((z_waitq_head(&pipe->wait_q.readers) != NULL) ||
+			    (z_waitq_head(&pipe->wait_q.writers) != NULL))) {
+		k_spin_unlock(&pipe->lock, key);
+		ret = -EAGAIN;
+		goto out;
 	}
 
 	if ((pipe->flags & K_PIPE_FLAG_ALLOC) != 0U) {
-		k_free(pipe->buffer);
+		if (locked) {
+			k_free_sched_locked(pipe->buffer);
+		} else {
+			k_free(pipe->buffer);
+		}
 		pipe->buffer = NULL;
 
 		/*
@@ -189,9 +200,15 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 
 	k_spin_unlock(&pipe->lock, key);
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, 0U);
+out:
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, ret);
 
-	return 0;
+	return ret;
+}
+
+int k_pipe_cleanup(struct k_pipe *pipe)
+{
+	return z_pipe_cleanup(pipe, false);
 }
 
 /**
