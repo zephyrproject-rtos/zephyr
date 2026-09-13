@@ -1,0 +1,25 @@
+description: Allwinner H618 Clock Control Unit (CCU)
+
+compatible: "allwinner,sun50i-h618-ccu"
+
+include: [clock-controller.yaml, reset-controller.yaml, base.yaml]
+
+clock-cells:
+  - clkid
+
+reset-cells:
+  - id
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  clock-names:
+    required: true
+  "#clock-cells":
+    type: int
+    const: 1
+  "#reset-cells":
+    type: int
+    const: 1
