@@ -33,3 +33,33 @@ command-prompt. This allows you to use software such as the :ref:`Zephyr SDK
    the documentation itself here.
 
 .. _Install the Windows Subsystem for Linux (WSL): https://msdn.microsoft.com/en-us/commandline/wsl/install_guide
+
+Using USB in WSL2 (Troubleshooting)
+===================================
+
+Out of the box, WSL2 can't see physical USB devices plugged into your Windows machine. This means you won't be able to flash your board right away. You can easily fix this by using a tool called ``usbipd-win`` to share the USB port from Windows over to Linux.
+
+1. Install usbipd on Windows:
+   Open PowerShell as Administrator on your Windows side and install the tool:
+
+   .. code-block:: console
+
+      winget install --interactive --exact dorssel.usbipd-win
+
+2. Attach your board to WSL:
+   Plug in your board and run these commands in Windows PowerShell to find it and share it:
+
+   .. code-block:: console
+
+      usbipd list
+      usbipd bind --busid <BUSID>
+      usbipd attach --wsl --busid <BUSID>
+
+3. Fixing WSL Permissions:
+   Even after attaching the USB, Linux might give you a "Permission Denied" error (like on ``/dev/ttyUSB0``) when you actually try to flash. To fix this, just add your WSL user to the dialout group:
+
+   .. code-block:: console
+
+      sudo usermod -aG dialout $USER
+
+   Make sure to completely close and reopen your WSL terminal after running this so the permissions take effect!
