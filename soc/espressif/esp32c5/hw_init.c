@@ -44,10 +44,19 @@ int hardware_init(void)
 	 * The APM access-path filters default to enabled and only allow
 	 * masters in TEE mode. Disable them so the application (which runs in
 	 * REE mode) is not denied access to peripherals.
+	 *
+	 * The CPU_APM filter is the critical one for userspace: it gates the
+	 * CPU's own bus access to memory per security mode, and the REE
+	 * permissions (including execute) default to deny. A user-mode (REE)
+	 * thread fetching instructions from flash is then silently blocked -
+	 * the access is dropped with no architectural exception, so the thread
+	 * cannot retire a single instruction. Disabling the CPU_APM filter
+	 * removes that gating so user-mode execution and data access work.
 	 */
 	apm_ll_hp_apm_enable_ctrl_filter_all(false);
 	apm_ll_lp_apm_enable_ctrl_filter_all(false);
 	apm_ll_lp_apm0_enable_ctrl_filter_all(false);
+	apm_ll_cpu_apm_enable_ctrl_filter_all(false);
 
 	/*
 	 * On power-up only the HP CPU starts in TEE mode; the LP CPU defaults
