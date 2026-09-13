@@ -8,6 +8,8 @@ config CAVS_ICTL
 	default y
 	depends on DT_HAS_INTEL_CAVS_INTC_ENABLED
 	depends on MULTI_LEVEL_INTERRUPTS
+	# The controllers own the multi-level routing: they provide the root API
+	select INTC_ROOT
 	help
 	  These are 4 in number supporting a max of 32 interrupts each.
 
