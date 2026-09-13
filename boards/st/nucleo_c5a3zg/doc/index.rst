@@ -37,7 +37,7 @@ Hardware
 - Board connectors:
 
   - USB Type-C® connector
-  - M.2 Key A serial memory connector
+  - M.2 Key A serial memory connector is supported through the :ref:`st_b_m2mem_pack1_shield` shield.
   - MIPI20 connector for debugging (SWD, JTAG, 4-bit Trace)
   - 10/100 Mbit/s Ethernet connector
   - ARDUINO® Uno V3 connector
