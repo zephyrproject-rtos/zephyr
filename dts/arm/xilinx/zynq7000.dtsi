@@ -131,7 +131,7 @@
 		};
 
 		uart0: uart@e0000000 {
-			compatible = "xlnx,xuartps";
+			compatible = "xlnx,xuartps", "cdns,uart";
 			status = "disabled";
 			reg = <0xe0000000 0x4c>;
 			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL
@@ -140,7 +140,7 @@
 		};
 
 		uart1: uart@e0001000 {
-			compatible = "xlnx,xuartps";
+			compatible = "xlnx,xuartps", "cdns,uart";
 			status = "disabled";
 			reg = <0xe0001000 0x4c>;
 			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL
