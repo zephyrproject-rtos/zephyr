@@ -68,8 +68,8 @@ class SignedOffBy(CommitRule):
         flags |= re.IGNORECASE
         for line in commit.message.body:
             if line.lower().startswith("signed-off-by"):
-                if not re.search(r"(^)Signed-off-by: ([-'\w.]+) ([-'\w.]+) (.*)", line, flags=flags):
-                    return [RuleViolation(self.id, "Signed-off-by: must have a full name", line_nr=1)]
+                if not re.search(r"(^)Signed-off-by: ([-'\w.]+ )+(.*)", line, flags=flags):
+                    return [RuleViolation(self.id, "Signed-off-by: must include name", line_nr=1)]
                 else:
                     return
         return [RuleViolation(self.id, "Commit message does not contain a 'Signed-off-by:' line", line_nr=1)]
