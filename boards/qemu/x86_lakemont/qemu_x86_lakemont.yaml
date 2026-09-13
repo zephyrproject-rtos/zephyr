@@ -11,6 +11,7 @@ testing:
   default: true
   only_tags:
     - kernel
+    - integration
   ignore_tags:
     - benchmark
 ram: 3000
