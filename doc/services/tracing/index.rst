@@ -706,38 +706,23 @@ Locking may not be needed if multiple independent channels are available.
 Object tracking
 ***************
 
-The kernel can also maintain lists of objects that can be used to track
-their usage. Currently, the following lists can be enabled::
+The kernel can also keep track of the kernel objects in the system. Enabling
+:kconfig:option:`CONFIG_TRACING_OBJECT_TRACKING` enables the
+:ref:`object core framework <object_cores_api>`, which enumerates the objects of
+each kernel object type. For instance, to visit every mutex, one can write::
 
-  struct k_timer *_track_list_k_timer;
-  struct k_mem_slab *_track_list_k_mem_slab;
-  struct k_sem *_track_list_k_sem;
-  struct k_mutex *_track_list_k_mutex;
-  struct k_stack *_track_list_k_stack;
-  struct k_msgq *_track_list_k_msgq;
-  struct k_mbox *_track_list_k_mbox;
-  struct k_pipe *_track_list_k_pipe;
-  struct k_queue *_track_list_k_queue;
-  struct k_event *_track_list_k_event;
+  static int visit_mutex(struct k_obj_core *obj_core, void *data)
+  {
+      struct k_mutex *mutex = CONTAINER_OF(obj_core, struct k_mutex, obj_core);
 
-Those global variables are the head of each list - they can be traversed
-with the help of macro ``SYS_PORT_TRACK_NEXT``. For instance, to traverse
-all initialized mutexes, one can write::
+      /* Do something */
 
-  struct k_mutex *cur = _track_list_k_mutex;
-  while (cur != NULL) {
-    /* Do something */
-
-    cur = SYS_PORT_TRACK_NEXT(cur);
+      return 0;
   }
 
-To enable object tracking, enable :kconfig:option:`CONFIG_TRACING_OBJECT_TRACKING`.
-Note that each list can be enabled or disabled via their tracing
-configuration. For example, to disable tracking of semaphores, one can
-disable :kconfig:option:`CONFIG_TRACING_SEMAPHORE`.
+  k_obj_type_walk_locked(k_obj_type_find(K_OBJ_TYPE_MUTEX_ID), visit_mutex, NULL);
 
-Object tracking is behind tracing configuration as it currently leverages
-tracing infrastructure to perform the tracking.
+Each object type can be excluded through its ``CONFIG_OBJ_CORE_*`` option.
 
 API
 ***
@@ -826,11 +811,6 @@ Timers
 ======
 
 .. doxygengroup:: subsys_tracing_apis_timer
-
-Object tracking
-===============
-
-.. doxygengroup:: subsys_tracing_object_tracking
 
 Syscalls
 ========
