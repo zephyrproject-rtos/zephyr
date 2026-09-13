@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		commander = &lin0;
+		responder = &lin1;
+	};
+};
+
+&pinctrl {
+	sci0_default: sci0_default {
+		group1 {
+			/* TXD */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 9)>;
+			drive-strength = "high";
+		};
+
+		group2 {
+			/* RXD */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 10)>;
+		};
+	};
+
+	sci1_default: sci1_default {
+		group1 {
+			/* TXD */
+			psels = <RA_PSEL(RA_PSEL_SCI_1, 7, 7)>;
+			drive-strength = "high";
+		};
+
+		group2 {
+			/* RXD */
+			psels = <RA_PSEL(RA_PSEL_SCI_1, 7, 6)>;
+		};
+	};
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	interrupts = <95 1>, <94 1>, <93 1>, <92 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	lin0: lin {
+		status = "okay";
+	};
+};
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	interrupts = <87 1>, <86 1>, <85 1>, <84 1>, <83 1>, <82 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri", "aed", "bfd";
+	status = "okay";
+
+	lin1: lin {
+		status = "okay";
+	};
+};
+
+/* Disable unused nodes that conflict with LIN interrupts */
+&port_irq12 {
+	status = "disabled";
+};
+
+&port_irq13 {
+	status = "disabled";
+};
+
+&pmod1_serial {
+	status = "disabled";
+};
