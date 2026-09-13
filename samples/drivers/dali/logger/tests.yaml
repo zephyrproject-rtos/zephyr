@@ -1,0 +1,27 @@
+sample:
+  description: Dali Zephyr driver logger application
+  name: dali-logger
+common:
+  tags: dali
+  filter: dt_nodelabel_enabled("dali0")
+tests:
+  sample.drivers.dali.logger.nucleo_f091rc:
+    platform_allow:
+      - nucleo_f091rc
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "\\[(.*)\\] <inf> D: \\{(.*):(.*) (.*)\\}"
+    extra_args:
+      - SHIELD=arduino_uno_click;mikroe_dali_2_click
+  sample.drivers.dali.logger.nrf52840dk:
+    platform_allow:
+      - nrf52840dk/nrf52840
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "\\[(.*)\\] <inf> D: \\{(.*):(.*) (.*)\\}"
+    extra_args:
+      - SHIELD=arduino_uno_click;mikroe_dali_2_click
