@@ -71,6 +71,96 @@ extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
 #endif /* CONFIG_INTC_ROOT */
 
+/*
+ * CPU interrupt lines: the bits of the mie CSR, sie in S-mode. With the AIA
+ * extension on RV32 the upper 32 lines are in mieh (sieh). A root interrupt
+ * controller driver uses these for the lines it does not aggregate.
+ */
+
+/**
+ * @brief Enable a CPU interrupt line
+ *
+ * @param irq CPU interrupt line
+ */
+static ALWAYS_INLINE void riscv_cpu_irq_enable(unsigned int irq)
+{
+#if defined(CONFIG_RISCV_S_MODE)
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	if (irq >= 32U) {
+		csr_set(sieh, BIT(irq - 32U));
+		return;
+	}
+#endif
+	csr_set(sie, 1UL << irq);
+#else
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	if (irq >= 32U) {
+		csr_set(mieh, BIT(irq - 32U));
+		return;
+	}
+#endif
+	csr_set(mie, 1UL << irq);
+#endif
+}
+
+/**
+ * @brief Disable a CPU interrupt line
+ *
+ * @param irq CPU interrupt line
+ */
+static ALWAYS_INLINE void riscv_cpu_irq_disable(unsigned int irq)
+{
+#if defined(CONFIG_RISCV_S_MODE)
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	if (irq >= 32U) {
+		csr_clear(sieh, BIT(irq - 32U));
+		return;
+	}
+#endif
+	csr_clear(sie, 1UL << irq);
+#else
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	if (irq >= 32U) {
+		csr_clear(mieh, BIT(irq - 32U));
+		return;
+	}
+#endif
+	csr_clear(mie, 1UL << irq);
+#endif
+}
+
+/**
+ * @brief Get the enable state of a CPU interrupt line
+ *
+ * @param irq CPU interrupt line
+ *
+ * @return 1 if the line is enabled, 0 otherwise
+ */
+static ALWAYS_INLINE int riscv_cpu_irq_is_enabled(unsigned int irq)
+{
+	unsigned long ie;
+
+#if defined(CONFIG_RISCV_S_MODE)
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	if (irq >= 32U) {
+		ie = csr_read(sieh);
+		return (ie & BIT(irq - 32U)) != 0UL ? 1 : 0;
+	}
+#endif
+	ie = csr_read(sie);
+#else
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	if (irq >= 32U) {
+		ie = csr_read(mieh);
+		return (ie & BIT(irq - 32U)) != 0UL ? 1 : 0;
+	}
+#endif
+	ie = csr_read(mie);
+#endif
+
+	return (ie & (1UL << irq)) != 0UL ? 1 : 0;
+}
+
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
 	defined(CONFIG_RISCV_HAS_AIA)
 extern void z_riscv_irq_priority_set(unsigned int irq,
