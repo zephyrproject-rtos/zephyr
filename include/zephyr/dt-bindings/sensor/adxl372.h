@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Analog Devices Inc.
+ * Copyright (c) 2026 Daniel Kampert
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +31,19 @@
 #define ADXL372_FIFO_MODE_STREAMED  0x1 /**< Continuous stream, overwrite oldest */
 #define ADXL372_FIFO_MODE_TRIGGERED 0x2 /**< Capture samples around a trigger event */
 #define ADXL372_FIFO_MODE_OLD_SAVED 0x3 /**< Stop when full, keep oldest samples */
+/** @} */
+
+/**
+ * @name Operating mode options
+ *
+ * Values for the `op-mode` devicetree property. Also settable at runtime via
+ * SENSOR_ATTR_CONFIGURATION.
+ * @{
+ */
+#define ADXL372_OP_MODE_STANDBY             0x0 /**< Lowest power, detection disabled */
+#define ADXL372_OP_MODE_WAKE_UP             0x1 /**< Duty-cycled low-power detection */
+#define ADXL372_OP_MODE_INSTANT_ON          0x2 /**< Always-on threshold detection */
+#define ADXL372_OP_MODE_FULL_BW_MEASUREMENT 0x3 /**< Continuous measurement, highest power */
 /** @} */
 
 /** @} */
