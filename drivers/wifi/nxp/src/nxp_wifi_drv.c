@@ -1060,10 +1060,27 @@ static int nxp_wifi_scan(const struct device *dev,
 
 	wlan_scan_params_v2.num_channels = i;
 
+	/* Propagate scan type for full-band scans where no explicit
+	 * channel list is provided and the loop above is skipped.
+	 */
+	if (i == 0U) {
+		if (params->scan_type == WIFI_SCAN_TYPE_PASSIVE) {
+			wlan_scan_params_v2.chan_list[0].scan_type =
+				MLAN_SCAN_TYPE_PASSIVE;
+			wlan_scan_params_v2.chan_list[0].scan_time =
+				params->dwell_time_passive;
+		} else {
+			wlan_scan_params_v2.chan_list[0].scan_type =
+				MLAN_SCAN_TYPE_ACTIVE;
+			wlan_scan_params_v2.chan_list[0].scan_time =
+				params->dwell_time_active;
+		}
+	}
+
 	if (params->bands & (1 << WIFI_FREQ_BAND_2_4_GHZ)) {
 		wlan_scan_params_v2.chan_list[0].radio_type = 0 | BAND_SPECIFIED;
 	}
-#ifdef CONFIG_5GHz_SUPPORT
+#ifdef CONFIG_NXP_WIFI_5GHz_SUPPORT
 	if (params->bands & (1 << WIFI_FREQ_BAND_5_GHZ)) {
 		if (wlan_scan_params_v2.chan_list[0].radio_type & BAND_SPECIFIED) {
 			wlan_scan_params_v2.chan_list[0].radio_type = 0;
