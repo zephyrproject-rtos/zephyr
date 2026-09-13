@@ -314,6 +314,12 @@ struct bt_l2cap_le_chan {
 	uint8_t                         pending_req;
 	bt_security_t			required_sec_level;
 
+	/** @internal Server that accepted this channel, NULL when the channel
+	 *  was initiated locally. Blocks unregistering that server for as long
+	 *  as the channel lives.
+	 */
+	struct bt_l2cap_server		*_server;
+
 	/* Response Timeout eXpired (RTX) timer */
 	struct k_work_delayable		rtx_work;
 	struct k_work_sync		rtx_sync;
@@ -872,6 +878,11 @@ struct bt_l2cap_server {
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_server *server,
 		      struct bt_l2cap_chan **chan);
 
+	/** @internal Channels accepted by this server that are still
+	 *  connected.
+	 */
+	atomic_t _active_chans;
+
 	sys_snode_t node;
 };
 
@@ -890,11 +901,35 @@ struct bt_l2cap_server {
  *  a GATT service, and that's how L2CAP clients discover how to connect to
  *  the server.
  *
+ *  @note This may be called from any thread, but not from an interrupt
+ *  context.
+ *
  *  @param server Server structure.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_server_register(struct bt_l2cap_server *server);
+
+/** @brief Unregister L2CAP server.
+ *
+ *  Unregister the L2CAP server for a PSM, making the PSM available for
+ *  registration again.
+ *
+ *  @note This may be called from any thread, but not from an interrupt
+ *  context. It blocks while an incoming connection request for this server is
+ *  being processed, so the server is no longer in use once it returns. It must
+ *  not be called from the server's own accept() callback: the list is locked
+ *  across that callback, and the RX path still uses the server after it
+ *  returns.
+ *
+ *  @param server Server structure.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL @p server is NULL.
+ *  @retval -EBUSY Channels accepted by @p server are still connected.
+ *  @retval -ENOENT @p server was not registered.
+ */
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server);
 
 /** @brief Register L2CAP server on BR/EDR oriented connection.
  *
