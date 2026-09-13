@@ -1,0 +1,10 @@
+sample:
+  name: Bluetooth HID Device
+tests:
+  sample.bluetooth.classic.hid_device:
+    harness: bluetooth
+    platform_allow:
+      - native_sim
+    tags: bluetooth
+    integration_platforms:
+      - native_sim
