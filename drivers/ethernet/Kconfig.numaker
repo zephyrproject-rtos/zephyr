@@ -7,6 +7,7 @@ config ETH_NUMAKER
 	bool "Nuvoton NUMAKER MCU Ethernet driver"
 	default y
 	select HAS_NUMAKER_ETH
+	select HAS_NUMAKER_FMC
 	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_ETHERNET_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
