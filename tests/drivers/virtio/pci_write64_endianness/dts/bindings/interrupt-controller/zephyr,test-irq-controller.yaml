@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test interrupt controller for VirtIO PCI
+
+compatible: "zephyr,test-irq-controller"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
