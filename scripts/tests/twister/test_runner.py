@@ -115,10 +115,9 @@ def test_projectbuilder_cmake_assemble_args_single(m):
         "-Dbasearg1", "-DSNIPPET_t=test",
         "-Dhandler_arg1", "-Dhandler_arg2",
         "-DCONF_FILE=a.conf;b.conf;c.conf",
-        "-DEXTRA_CONF_FILE=d.conf;e.conf;f.conf",
-        "-DDTC_OVERLAY_FILE=x.overlay;y.overlay;z.overlay",
-        "-DOVERLAY_CONFIG=extra_overlay.conf "
+        "-DEXTRA_CONF_FILE=d.conf;e.conf;f.conf;extra_overlay.conf;"
         "/builddir/twister/testsuite_extra.conf",
+        "-DDTC_OVERLAY_FILE=x.overlay;y.overlay;z.overlay",
     ])
 
 
@@ -2343,10 +2342,9 @@ def test_projectbuilder_cmake_assemble_args():
         '-DDUMMY_EXTRA=yes',
         '-Ddummy_handler',
         '-DCONF_FILE=file1.conf;file2.conf',
-        '-DEXTRA_CONF_FILE=extrafile1.conf;extrafile2.conf',
+        '-DEXTRA_CONF_FILE=extrafile1.conf;extrafile2.conf;extra_overlay_conf;'
+        f'{os.path.join("build", "dir", "twister", "testsuite_extra.conf")}',
         '-DDTC_OVERLAY_FILE=overlay1.dtc;overlay2.dtc',
-        f'-DOVERLAY_CONFIG=extra_overlay_conf ' \
-        f'{os.path.join("build", "dir", "twister", "testsuite_extra.conf")}'
     ]
 
     assert results == expected_results
