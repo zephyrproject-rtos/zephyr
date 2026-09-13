@@ -153,6 +153,16 @@ config RISCV_ISA_EXT_SMCSRIND
 	  The Smcsrind extension provides indirect access to CSRs through
 	  the MISELECT and MIREG registers.
 
+config RISCV_ISA_EXT_SDTRIG
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),sdtrig)
+	depends on RISCV_ISA_EXT_ZICSR
+	help
+	  (Sdtrig) - Standard Extension for Debug Triggers
+
+	  The Sdtrig extension provides the trigger CSRs used for native
+	  hardware breakpoints and watchpoints.
+
 config RISCV_ISA_EXT_ZIFENCEI
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zifencei)

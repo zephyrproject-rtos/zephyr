@@ -1,0 +1,51 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - debug
+    - watchpoint
+  timeout: 20
+
+tests:
+  debug.watchpoint.cpu_startup.deferred:
+    platform_allow:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    extra_args:
+      - DTC_OVERLAY_FILE=secondary_cpu.overlay
+
+  debug.watchpoint.cpu_startup.boot_cpu:
+    platform_allow:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    extra_args:
+      - DTC_OVERLAY_FILE=boot_cpu.overlay
+
+  debug.watchpoint.cpu_startup.unused_cpu:
+    platform_allow:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    extra_args:
+      - DTC_OVERLAY_FILE=unused_cpu.overlay
+    extra_configs:
+      - CONFIG_MP_MAX_NUM_CPUS=2
+
+  debug.watchpoint.cpu_startup.up:
+    platform_allow:
+      - qemu_riscv32
+      - qemu_riscv64
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
+    extra_args:
+      - DTC_OVERLAY_FILE=secondary_cpu.overlay
