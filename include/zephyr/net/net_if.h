@@ -105,6 +105,9 @@ struct net_if_addr {
 
 			/** How many times we have done DAD */
 			uint8_t dad_count;
+
+			/** RFC7527 DAD nonce payload (6 bytes). */
+			uint8_t dad_nonce[6];
 		};
 #endif /* CONFIG_NET_IPV6_DAD */
 #if defined(CONFIG_NET_IPV4_ACD)
