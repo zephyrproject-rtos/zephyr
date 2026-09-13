@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Synaptics, Inc. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -183,15 +183,29 @@
 		};
 
 		usb0: usb@50100000 {
-			compatible = "snps,dwc2";
+			compatible = "syna,sr100-usb", "snps,dwc2";
 			reg = <0x50100000 0xffff>;
 			interrupts = <48 0>;
 			num-out-eps = <8>;
 			num-in-eps = <8>;
 			clocks = <&gcr SYNA_USB_CLK>;
+			resets = <&reset SYNA_USB_RST>;
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x02882054>; // 8 endpoints, dynamic sizing
 			ghwcfg4 = <0xe2003e20>; // 9 in endpoints, desc-DMA
+			status = "disabled";
+		};
+
+		aon_gpio: aon-gpio@50350060 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "syna,aon-gpio";
+			reg = <0x50350060 0x4>;
+			reg-width = <9>;
+			polarity-shift = <8>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			ngpios = <3>;
 			status = "disabled";
 		};
 	};

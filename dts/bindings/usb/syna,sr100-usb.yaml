@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+#
+description: Synaptics SR11X DWC2 compatible controller
+
+compatible: "syna,sr100-usb"
+
+include: ["snps,dwc2.yaml", reset-device.yaml]
