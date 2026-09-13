@@ -1,0 +1,16 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Clock output node. This node describes a clock output. Clock outputs may be
+  used by consumers to query rate, or request a new rate. Static clock states
+  may also be defined as children of these nodes, and can be applied directly
+  by consumers.
+
+compatible: "clock-output"
+
+include: [clock-node.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0

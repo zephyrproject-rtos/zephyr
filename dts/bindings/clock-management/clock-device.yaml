@@ -1,0 +1,84 @@
+# Copyright 2024 NXP
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This file needs to be included by devices that need to specify clock
+  controller requests. The maximum number of requests currently defined is 5
+  (clock-request-0...clock-request-4) but can be incremented if required.
+  Clock requests are defined as a set of suitable clock states. Clock
+  states will apply to the clock node they are defined as a child of.
+  If multiple clock states are defined as suitable for a given clock node,
+  the lowest rank state will be selected. If other clock consumers
+  have outstanding requests on a given clock node, these requests
+  will be considered when selecting the best clock state for a given clock node.
+properties:
+  clock-outputs:
+    type: phandles
+    description: Output clock sources
+
+  clock-output-names:
+    type: string-array
+    description: |
+      Names for clock outputs. The number of names needs to match the number
+      of output clock sources.
+
+  clock-request-0:
+    type: phandles
+    description: |
+      Clock request/s for the first state. Each clock request should define a
+      set of suitable clock states. These states will apply to the clock node
+      they are defined as a child of.
+
+  clock-request-0-locking:
+    type: boolean
+    description: |
+       Set if the clock request for the first state should "lock" any of the
+       outputs the state affects. If set, the clock outputs this state affects
+       will deny any future reconfiguration attempts.
+
+  clock-request-1:
+    type: phandles
+    description: |
+      Clock configuration/s for the second state. See clock-request-0.
+
+  clock-request-1-locking:
+    type: boolean
+    description: |
+      Clock lock setting for the second state. See clock-request-0-locking.
+
+  clock-request-2:
+    type: phandles
+    description: |
+      Clock configuration/s for the third state. See clock-request-0.
+
+  clock-request-2-locking:
+    type: boolean
+    description: |
+      Clock lock setting for the third state. See clock-request-0-locking.
+
+  clock-request-3:
+    type: phandles
+    description: |
+      Clock configuration/s for the fourth state. See clock-request-0.
+
+  clock-request-3-locking:
+    type: boolean
+    description: |
+      Clock lock setting for the fourth state. See clock-request-0-locking.
+
+  clock-request-4:
+    type: phandles
+    description: |
+      Clock configuration/s for the fifth state. See clock-request-0.
+
+  clock-request-4-locking:
+    type: boolean
+    description: |
+      Clock lock setting for the fifth state. See clock-request-5-locking.
+
+  clock-request-names:
+    type: string-array
+    description: |
+      Names for the provided states. The number of names needs to match the
+      number of states.

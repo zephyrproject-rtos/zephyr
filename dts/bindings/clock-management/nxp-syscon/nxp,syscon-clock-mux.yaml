@@ -1,0 +1,44 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LPC SYSCON multiplexer clock node. Accepts one specifier, which sets the
+  clock multiplexer selection to the given zero based index in the
+  "input-sources" phandle array for the given node.
+
+compatible: "nxp,syscon-clock-mux"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Tuple containing address of register and width of the bitfield
+      to set to set the multiplexer selection
+
+  input-sources:
+    type: phandles
+    required: true
+    description: |
+      List of all input sources provided to the multiplexer. These sources
+      should be references to other clock nodes within the clock tree.
+
+  offset:
+    type: int
+    required: true
+    description: |
+      Offset of bitfield within register to set to configure multiplexer
+
+  safe-mux:
+    type: boolean
+    description: |
+      Indicates that the mux uses a synchronized input. Safe muxes will not
+      switch clock sources unless both their current source and new source
+      are ungated
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - multiplexer

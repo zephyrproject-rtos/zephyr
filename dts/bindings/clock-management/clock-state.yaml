@@ -1,0 +1,24 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "clock-state"
+
+description: |
+  Statically defined clock configurations for this clock output. Each
+  configuration should define a frequency and settings for parent nodes of
+  this clock to produce that frequency.
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: |
+      Settings for parent nodes of this clock output to apply when this state
+      is selected.
+  rank:
+    type: int
+    default: 0
+    description: |
+      Rank of this configuration. Lower rank values are preferred over higher
+      rank values when the user requests a clock state with the best ranking.
+      Defaults to 0, the highest possible rank.
