@@ -115,6 +115,7 @@ def main():
             write_dep_info(node)
             write_idents_and_existence(node)
             write_bus(node)
+            write_classes(node)
             write_special_props(node)
             write_vanilla_props(node)
 
@@ -302,6 +303,19 @@ def write_bus(node: edtlib.Node) -> None:
         out_dt_define(f"{node.z_path_id}_BUS_{str2ident(one_bus)}", 1)
 
     out_dt_define(f"{node.z_path_id}_BUS", f"DT_{bus.z_path_id}")
+
+
+def write_classes(node: edtlib.Node) -> None:
+    # Macros about the device classes declared by the node's binding,
+    # if there are any
+
+    if not node.classes:
+        return
+
+    out_comment(f"Device classes (from the node's binding): {node.classes}")
+
+    for cls in node.classes:
+        out_dt_define(f"{node.z_path_id}_CLASS_{str2ident(cls)}", 1)
 
 
 def write_special_props(node: edtlib.Node) -> None:
@@ -1256,6 +1270,27 @@ def write_global_macros(edt: edtlib.EDT):
         out_define(macro, value)
     for macro, value in for_each_macros.items():
         out_define(macro, value)
+
+    class2okay: defaultdict = defaultdict(list)
+    for node in edt.nodes:
+        if node.status == "okay":
+            for cls in node.classes:
+                ident = str2ident(cls)
+                if node not in class2okay[ident]:
+                    class2okay[ident].append(node)
+
+    out_comment('Macros for device classes with status "okay" nodes\n')
+    for cls, okay_nodes in class2okay.items():
+        out_define(f"DT_CLASS_HAS_OKAY_{cls}", 1)
+        out_define(f"DT_N_CLASS_{cls}_NUM_OKAY", len(okay_nodes))
+        out_define(
+            f"DT_FOREACH_OKAY_CLASS_{cls}(fn)",
+            " ".join(f"fn(DT_{node.z_path_id})" for node in okay_nodes),
+        )
+        out_define(
+            f"DT_FOREACH_OKAY_VARGS_CLASS_{cls}(fn, ...)",
+            " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in okay_nodes),
+        )
 
     out_comment('Bus information for status "okay" nodes of each compatible\n')
     for compat, buses in compat2buses.items():
