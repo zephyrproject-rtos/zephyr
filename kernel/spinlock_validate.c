@@ -37,6 +37,13 @@ bool z_spin_lock_valid(struct k_spinlock *l)
 }
 EXPORT_SYMBOL(z_spin_lock_valid);
 
+/* z_spin_unlock_valid() and z_spin_lock_set_owner() below use _raw_current
+ * rather than _current: they run at points where z_current_thread_set() may
+ * just have changed the current thread, which an architecture caching it in a
+ * register (CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL) would not report.  Both are
+ * called from k_spin_lock() and k_spin_unlock() with the lock held, hence with
+ * interrupts locked as _raw_current requires.
+ */
 bool z_spin_unlock_valid(struct k_spinlock *l)
 {
 	uint8_t cpu_id = _current_cpu->id;
@@ -48,14 +55,15 @@ bool z_spin_unlock_valid(struct k_spinlock *l)
 		z_held_spinlock[cpu_id] = NULL;
 	}
 
-	if (arch_is_in_isr() && _current->base.thread_state & _THREAD_DUMMY) {
+	if (arch_is_in_isr() &&
+	    (_raw_current->base.thread_state & _THREAD_DUMMY) != 0) {
 		/* Edge case where an ISR aborted _current */
 		z_held_spinlock_count[cpu_id]--;
 		__ASSERT(z_held_spinlock_count[cpu_id] >= 0,
 			 "spinlock unlock with no matching lock");
 		return true;
 	}
-	if (tcpu != (cpu_id | (uintptr_t)_current)) {
+	if (tcpu != (cpu_id | (uintptr_t)_raw_current)) {
 		return false;
 	}
 	z_held_spinlock_count[cpu_id]--;
@@ -69,7 +77,7 @@ void z_spin_lock_set_owner(struct k_spinlock *l)
 {
 	uint8_t cpu_id = _current_cpu->id;
 
-	l->thread_cpu = cpu_id | (uintptr_t)_current;
+	l->thread_cpu = cpu_id | (uintptr_t)_raw_current;
 
 	if (z_held_spinlock[cpu_id] == NULL) {
 		z_held_spinlock[cpu_id] = l;
@@ -78,12 +86,16 @@ void z_spin_lock_set_owner(struct k_spinlock *l)
 }
 EXPORT_SYMBOL(z_spin_lock_set_owner);
 
-/* Called from do_swap() after z_current_thread_set() to transfer ownership
- * of an inherited lock.  Does NOT update the tracking arrays.
+/* Called from the switch paths after z_current_thread_set() to transfer
+ * ownership of an inherited lock.  Does NOT update the tracking arrays.
+ *
+ * @a thread is passed in rather than read from _current: the caller has just
+ * made it current, and _current is not required to report it until the switch
+ * completes (see z_current_thread_set()).
  */
-void z_spin_lock_transfer_owner(struct k_spinlock *l)
+void z_spin_lock_transfer_owner(struct k_spinlock *l, struct k_thread *thread)
 {
-	l->thread_cpu = _current_cpu->id | (uintptr_t)_current;
+	l->thread_cpu = _current_cpu->id | (uintptr_t)thread;
 }
 EXPORT_SYMBOL(z_spin_lock_transfer_owner);
 

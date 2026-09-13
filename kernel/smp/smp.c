@@ -273,12 +273,11 @@ bool z_smp_cpu_mobile(void)
 __attribute_const__ struct k_thread *z_smp_current_get(void)
 {
 	/*
-	 * _current is a field read from _current_cpu, which can race
-	 * with preemption before it is read.  We must lock local
-	 * interrupts when reading it.
+	 * _raw_current can race with preemption before it is read.  We
+	 * must lock local interrupts when reading it.
 	 */
 	unsigned int key = arch_irq_lock();
-	struct k_thread *t = _current_cpu->current;
+	struct k_thread *t = _raw_current;
 
 	arch_irq_unlock(key);
 	return t;
