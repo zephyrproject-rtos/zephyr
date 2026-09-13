@@ -1,0 +1,7 @@
+&zephyr_udc0 {
+	status = "disabled";
+};
+
+&zephyr_uhc0 {
+	status = "okay";
+};
