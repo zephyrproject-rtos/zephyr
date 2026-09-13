@@ -22,3 +22,6 @@ tests:
   drivers.led_strip.build.ai_m62_12f_kit:
     platform_allow:
       - ai_m62_12f_kit
+  drivers.led_strip.build.nrf_pwm:
+    platform_allow:
+      - nrf52840dk/nrf52840
