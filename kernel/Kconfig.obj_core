@@ -12,6 +12,16 @@ menuconfig OBJ_CORE
 	  automated means.
 
 if OBJ_CORE
+config OBJ_CORE_MAX_DYNAMIC_OBJECTS
+	int "Maximum number of registered objects"
+	default 128
+	help
+	  Size of the registry of objects that are initialized at run time,
+	  such as kernel objects embedded in driver data. Statically defined
+	  objects (K_SEM_DEFINE() and the like) are enumerated in place and do
+	  not use a registry entry. When the registry is full, further objects
+	  are not tracked and the object type's dropped count is incremented.
+
 config OBJ_CORE_CONDVAR
 	bool "Integrate condition variables into object core framework"
 	default y
