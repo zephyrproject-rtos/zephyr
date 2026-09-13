@@ -250,7 +250,7 @@ bool iso_tx_can_send(const struct bt_iso_chan *iso_chan)
 	return info.can_send;
 }
 
-void iso_tx_sent_cb(struct bt_iso_chan *iso_chan)
+static void decrement_enqueued(struct bt_iso_chan *iso_chan)
 {
 	ARRAY_FOR_EACH_PTR(tx_streams, tx_stream) {
 		int mutex_err;
@@ -277,6 +277,17 @@ void iso_tx_sent_cb(struct bt_iso_chan *iso_chan)
 		mutex_err = k_mutex_unlock(&tx_stream->mutex);
 		TEST_ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
 	}
+}
+
+void iso_tx_sent_cb(struct bt_iso_chan *iso_chan)
+{
+	decrement_enqueued(iso_chan);
+}
+
+void iso_tx_send_failed_cb(struct bt_iso_chan *iso_chan, int err)
+{
+	LOG_DBG("Send failed: %d", err);
+	decrement_enqueued(iso_chan);
 }
 
 size_t iso_tx_get_sent_cnt(const struct bt_iso_chan *iso_chan)
