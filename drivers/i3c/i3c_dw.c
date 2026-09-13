@@ -2044,6 +2044,25 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		return -EACCES;
 	}
 
+	if ((payload->ccc.data_len > 0) && (payload->ccc.data == NULL)) {
+		LOG_ERR("%s: CCC 0x%02x has length %zu but no buffer", dev->name,
+			payload->ccc.id, payload->ccc.data_len);
+		return -EINVAL;
+	}
+
+	if (payload->targets.payloads != NULL) {
+		for (i = 0; i < payload->targets.num_targets; i++) {
+			const struct i3c_ccc_target_payload *tgt = &payload->targets.payloads[i];
+
+			if ((tgt->data_len > 0) && (tgt->data == NULL)) {
+				LOG_ERR("%s: CCC 0x%02x target 0x%02x has length %zu but no "
+					"buffer",
+					dev->name, payload->ccc.id, tgt->addr, tgt->data_len);
+				return -EINVAL;
+			}
+		}
+	}
+
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
 		LOG_DBG("%s: Mutex err (%d)", dev->name, ret);
