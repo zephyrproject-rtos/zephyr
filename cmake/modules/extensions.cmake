@@ -2666,7 +2666,17 @@ function(import_kconfig prefix kconfig_fragment)
     ENCODING "UTF-8"
   )
 
-  foreach (LINE ${DOT_CONFIG_LIST})
+  # CMake list parsing treats '[' and ']' as bracket quoting delimiters. If a
+  # line in the imported Kconfig fragment contains an unmatched bracket (for
+  # example in a string value), subsequent ';' separators can be ignored and
+  # multiple lines get merged into one list element. Replace brackets with
+  # placeholders before list iteration and restore them on extracted values.
+  string(ASCII 1 KCONFIG_LBRACKET_PLACEHOLDER)
+  string(ASCII 2 KCONFIG_RBRACKET_PLACEHOLDER)
+  string(REPLACE "[" "${KCONFIG_LBRACKET_PLACEHOLDER}" DOT_CONFIG_LIST "${DOT_CONFIG_LIST}")
+  string(REPLACE "]" "${KCONFIG_RBRACKET_PLACEHOLDER}" DOT_CONFIG_LIST "${DOT_CONFIG_LIST}")
+
+  foreach(LINE IN LISTS DOT_CONFIG_LIST)
     if("${LINE}" MATCHES "^(${prefix}[^=]+)=([ymn]|.+$)")
       # Matched a normal value assignment, like: CONFIG_NET_BUF=y
       # Note: if the value starts with 'y', 'm', or 'n', then we assume it's a
@@ -2702,6 +2712,9 @@ function(import_kconfig prefix kconfig_fragment)
     if("${CONF_VARIABLE_VALUE}" MATCHES "^\"(.*)\"$")
       set(CONF_VARIABLE_VALUE ${CMAKE_MATCH_1})
     endif()
+
+    string(REPLACE "${KCONFIG_LBRACKET_PLACEHOLDER}" "[" CONF_VARIABLE_VALUE "${CONF_VARIABLE_VALUE}")
+    string(REPLACE "${KCONFIG_RBRACKET_PLACEHOLDER}" "]" CONF_VARIABLE_VALUE "${CONF_VARIABLE_VALUE}")
 
     if(DEFINED IMPORT_KCONFIG_TARGET)
       set_property(TARGET ${IMPORT_KCONFIG_TARGET} PROPERTY "${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}")
