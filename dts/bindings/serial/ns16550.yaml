@@ -5,6 +5,9 @@ compatible: "ns16550"
 include: [uart-controller.yaml, pcie-device.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
+  framing-error-reporting:
+    default: "FIFO_HEAD"
+
   reg-shift:
     type: int
     required: true

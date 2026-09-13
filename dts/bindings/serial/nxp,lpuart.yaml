@@ -5,6 +5,9 @@ compatible: "nxp,lpuart"
 include: [uart-controller.yaml, uart-controller-pin-inversion.yaml, pinctrl-device.yaml]
 
 properties:
+  framing-error-reporting:
+    default: "STICKY_MULTIPLE"
+
   reg:
     required: true
 
