@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(rtc_mchp_g1, CONFIG_RTC_LOG_LEVEL);
 #define RTC_ALARM_PENDING           (1)
 
 /* Timeout values for WAIT_FOR macro */
-#define TIMEOUT_REG_SYNC 5000
+#define TIMEOUT_REG_SYNC 20000
 #define DELAY_US         1
 
 #ifdef CONFIG_RTC_ALARM
