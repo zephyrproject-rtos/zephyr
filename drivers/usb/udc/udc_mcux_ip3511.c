@@ -38,6 +38,7 @@ struct udc_mcux_config {
 	const usb_device_controller_interface_struct_t *mcux_if;
 	void (*irq_enable_func)(const struct device *dev);
 	void (*irq_disable_func)(const struct device *dev);
+	void (*make_thread)(const struct device *dev);
 	size_t num_of_eps;
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
@@ -46,23 +47,42 @@ struct udc_mcux_config {
 	usb_phy_config_struct_t *phy_config;
 };
 
+/*
+ * Event bits posted to the driver thread through k_event.
+ * Completed transfer buffers are queued on the complete_bufs slist and
+ * coalesced under the single UDC_MCUX_EVT_XFER bit.
+ */
+#define UDC_MCUX_EVT_XFER	BIT(0)
+#define UDC_MCUX_EVT_RESET	BIT(1)
+#define UDC_MCUX_EVT_DEQUEUE	BIT(2)
+
 struct udc_mcux_data {
 	const struct device *dev;
 	usb_device_struct_t mcux_device;
-	struct k_work work;
-	struct k_fifo fifo;
+	struct k_thread thread_data;
+	struct k_event events;
+	struct k_spinlock lock;
+	sys_slist_t complete_bufs;
+	uint32_t ep_dequeue;
+	struct k_condvar dequeue_cond;
+	bool setup_received;
+	uint8_t setup[8];
 	uint8_t controller_id; /* 0xFF is invalid value */
 };
 
-/* Structure for driver's events */
-struct udc_mcux_event {
-	sys_snode_t node;
-	const struct device *dev;
-	usb_device_callback_message_struct_t mcux_msg;
-};
+/* Convert an endpoint address to a bit position in the ep_dequeue mask and
+ * back. OUT endpoints occupy bits 0..15, IN endpoints occupy bits 16..31.
+ */
+static inline uint8_t udc_mcux_ep2bit(uint8_t ep)
+{
+	return USB_EP_GET_IDX(ep) | (USB_EP_DIR_IS_IN(ep) ? 0x10U : 0U);
+}
 
-K_MEM_SLAB_DEFINE_TYPE(udc_event_slab, struct udc_mcux_event,
-		       CONFIG_UDC_NXP_EVENT_COUNT);
+static inline uint8_t udc_mcux_bit2ep(uint8_t bitpos)
+{
+	return (bitpos & 0x0FU) | ((bitpos & 0x10U) ? USB_EP_DIR_IN : USB_EP_DIR_OUT);
+}
+
 
 static void udc_mcux_lock(const struct device *dev)
 {
@@ -157,9 +177,24 @@ static int udc_mcux_ep_try_feed(const struct device *dev,
 	return 0;
 }
 
-static int udc_mcux_handler_setup(const struct device *dev, struct usb_setup_packet *setup)
+static void udc_mcux_handle_setup(const struct device *dev)
 {
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	struct usb_setup_packet setup_pkt;
+	struct usb_setup_packet *setup;
+	k_spinlock_key_t key;
+
 	LOG_DBG("setup packet");
+
+	/*
+	 * Take a stable snapshot of the setup packet. The spinlock guards
+	 * priv->setup against the writer in udc_mcux_notify_xfer().
+	 */
+	key = k_spin_lock(&priv->lock);
+	memcpy(&setup_pkt, priv->setup, sizeof(setup_pkt));
+	priv->setup_received = false;
+	k_spin_unlock(&priv->lock, key);
+	setup = &setup_pkt;
 
 	if (setup->RequestType.type == USB_REQTYPE_TYPE_STANDARD &&
 	    setup->RequestType.direction == USB_REQTYPE_DIR_TO_DEVICE &&
@@ -170,103 +205,6 @@ static int udc_mcux_handler_setup(const struct device *dev, struct usb_setup_pac
 	}
 
 	udc_setup_received(dev, setup);
-
-	return 0;
-}
-
-static int udc_mcux_handler_ctrl_out(const struct device *dev, struct net_buf *buf,
-				uint8_t *mcux_buf, uint32_t mcux_len)
-{
-	int err;
-	uint32_t len;
-
-	err = mcux_len == USB_CANCELLED_TRANSFER_LENGTH ? -ECONNABORTED : 0;
-	if (err == 0) {
-		len = MIN(net_buf_tailroom(buf), mcux_len);
-		net_buf_add(buf, len);
-	}
-
-	return udc_submit_ep_event(dev, buf, err);
-}
-
-static int udc_mcux_handler_ctrl_in(const struct device *dev, struct net_buf *buf,
-				uint8_t *mcux_buf, uint32_t mcux_len)
-{
-	int err;
-	uint32_t len;
-
-	err = mcux_len == USB_CANCELLED_TRANSFER_LENGTH ? -ECONNABORTED : 0;
-	if (err == 0) {
-		len = MIN(buf->len, mcux_len);
-		buf->data += len;
-		buf->len -= len;
-	}
-
-	return udc_submit_ep_event(dev, buf, err);
-}
-
-static int udc_mcux_handler_non_ctrl_in(const struct device *dev, uint8_t ep,
-			struct net_buf *buf, uint8_t *mcux_buf, uint32_t mcux_len)
-{
-	int err;
-	uint32_t len;
-
-	err = mcux_len == USB_CANCELLED_TRANSFER_LENGTH ? -ECONNABORTED : 0;
-	if (err == 0) {
-		len = MIN(buf->len, mcux_len);
-		buf->data += len;
-		buf->len -= len;
-	}
-
-	err = udc_submit_ep_event(dev, buf, err);
-	udc_mcux_ep_try_feed(dev, udc_get_ep_cfg(dev, ep));
-
-	return err;
-}
-
-static int udc_mcux_handler_non_ctrl_out(const struct device *dev, uint8_t ep,
-			struct net_buf *buf, uint8_t *mcux_buf, uint32_t mcux_len)
-{
-	int err;
-	uint32_t len;
-
-	err = mcux_len == USB_CANCELLED_TRANSFER_LENGTH ? -ECONNABORTED : 0;
-	if (err == 0) {
-		len = MIN(net_buf_tailroom(buf), mcux_len);
-		net_buf_add(buf, len);
-	}
-
-	err = udc_submit_ep_event(dev, buf, err);
-	udc_mcux_ep_try_feed(dev, udc_get_ep_cfg(dev, ep));
-
-	return err;
-}
-
-static int udc_mcux_handler_out(const struct device *dev, uint8_t ep,
-				uint8_t *mcux_buf, uint32_t mcux_len)
-{
-	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, ep);
-	int err;
-	struct net_buf *buf;
-
-	buf = udc_buf_get(cfg);
-
-	udc_mcux_lock(dev);
-	udc_ep_set_busy(cfg, false);
-	udc_mcux_unlock(dev);
-
-	if (buf == NULL) {
-		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
-		return -ENOBUFS;
-	}
-
-	if (ep == USB_CONTROL_EP_OUT) {
-		err = udc_mcux_handler_ctrl_out(dev, buf, mcux_buf, mcux_len);
-	} else {
-		err = udc_mcux_handler_non_ctrl_out(dev, ep, buf, mcux_buf, mcux_len);
-	}
-
-	return err;
 }
 
 /* return true - zlp is feed; false - no zlp */
@@ -300,119 +238,199 @@ static bool udc_mcux_handler_zlt(const struct device *dev, uint8_t ep, struct ne
 	return false;
 }
 
-static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
-				uint8_t *mcux_buf, uint32_t mcux_len)
+/*
+ * Report a completed transfer buffer to the stack and feed the next request
+ * queued on the same endpoint. Runs in the driver thread context.
+ */
+static void udc_mcux_xfer_done(const struct device *dev, struct net_buf *buf)
 {
-	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, ep);
+	struct udc_buf_info *bi = udc_get_buf_info(buf);
+	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, bi->ep);
 	int err;
-	struct net_buf *buf;
-
-	buf = udc_buf_peek(cfg);
-	if (buf == NULL) {
-		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
-		return -ENOBUFS;
-	}
-
-	if (udc_mcux_handler_zlt(dev, ep, buf, mcux_len)) {
-		return 0;
-	}
-
-	buf = udc_buf_get(cfg);
 
 	udc_mcux_lock(dev);
 	udc_ep_set_busy(cfg, false);
 	udc_mcux_unlock(dev);
 
-	if (buf == NULL) {
-		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
-		return -ENOBUFS;
-	}
-	if (ep == USB_CONTROL_EP_IN) {
-		err = udc_mcux_handler_ctrl_in(dev, buf, mcux_buf, mcux_len);
-	} else {
-		err = udc_mcux_handler_non_ctrl_in(dev, ep, buf, mcux_buf, mcux_len);
+	err = udc_submit_ep_event(dev, buf, bi->err);
+	if (unlikely(err)) {
+		udc_submit_event(dev, UDC_EVT_ERROR, err);
 	}
 
-	return err;
+	if (USB_EP_GET_IDX(cfg->addr) != 0) {
+		udc_mcux_ep_try_feed(dev, cfg);
+	}
 }
 
-static void udc_mcux_event_submit(const struct device *dev,
-				  const usb_device_callback_message_struct_t *mcux_msg)
+/*
+ * Handle a transfer completion (or setup) reported by the HAL for a given
+ * endpoint. The net_buf is updated in-place here, then detached from the
+ * endpoint queue and appended to the complete_bufs slist; the driver thread
+ * is then notified to report it. Multiple completions coalesce into a single
+ * wake-up.
+ */
+static void udc_mcux_notify_xfer(const struct device *dev, uint8_t ep,
+				 const usb_device_callback_message_struct_t *mcux_msg)
 {
+	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, ep);
 	struct udc_mcux_data *priv = udc_get_private(dev);
-	struct udc_mcux_event *ev;
-	int ret;
+	uint32_t mcux_len = mcux_msg->length;
+	struct udc_buf_info *bi;
+	k_spinlock_key_t key;
+	struct net_buf *buf;
 
-	ret = k_mem_slab_alloc(&udc_event_slab, (void **)&ev, K_NO_WAIT);
-	if (ret) {
-		udc_submit_event(dev, UDC_EVT_ERROR, ret);
-		LOG_ERR("Failed to allocate slab");
+	if (mcux_msg->isSetup) {
+		/* The spinlock guards priv->setup against the reader in
+		 * udc_mcux_handle_setup() running in the driver thread.
+		 */
+		key = k_spin_lock(&priv->lock);
+		memcpy(priv->setup, mcux_msg->buffer, sizeof(priv->setup));
+		priv->setup_received = true;
+		k_spin_unlock(&priv->lock, key);
+		k_event_post(&priv->events, UDC_MCUX_EVT_XFER);
 		return;
 	}
 
-	ev->dev = dev;
-	ev->mcux_msg = *mcux_msg;
-	k_fifo_put(&priv->fifo, ev);
-	k_work_submit_to_queue(udc_get_work_q(), &priv->work);
+	buf = udc_buf_peek(cfg);
+	if (buf == NULL) {
+		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
+		return;
+	}
+
+	bi = udc_get_buf_info(buf);
+	bi->err = 0;
+
+	if (mcux_len == USB_CANCELLED_TRANSFER_LENGTH) {
+		bi->err = -ECONNABORTED;
+	} else if (USB_EP_DIR_IS_IN(ep)) {
+		/* A pending ZLP is handled here without completing the buffer */
+		if (udc_mcux_handler_zlt(dev, ep, buf, mcux_len)) {
+			return;
+		}
+
+		net_buf_pull(buf, MIN(buf->len, mcux_len));
+	} else {
+		net_buf_add(buf, MIN(net_buf_tailroom(buf), mcux_len));
+	}
+
+	/* Remove the buffer from the endpoint queue and hand it to the thread */
+	buf = udc_buf_get(cfg);
+	if (buf == NULL) {
+		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
+		return;
+	}
+
+	/*
+	 * complete_bufs is shared between this notification path and the
+	 * driver thread (get).
+	 */
+	key = k_spin_lock(&priv->lock);
+	sys_slist_append(&priv->complete_bufs, &buf->node);
+	k_spin_unlock(&priv->lock, key);
+
+	k_event_post(&priv->events, UDC_MCUX_EVT_XFER);
 }
 
-static void udc_mcux_work_handler(struct k_work *item)
+static void udc_mcux_handle_reset(const struct device *dev)
 {
-	struct udc_mcux_event *ev;
-	struct udc_mcux_data *priv;
-	usb_device_callback_message_struct_t *mcux_msg;
-	int err;
-	uint8_t ep;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	struct udc_ep_config *cfg;
+	k_spinlock_key_t key;
 
-	priv = CONTAINER_OF(item, struct udc_mcux_data, work);
-	while ((ev = k_fifo_get(&priv->fifo, K_NO_WAIT)) != NULL) {
-		mcux_msg = &ev->mcux_msg;
+	key = k_spin_lock(&priv->lock);
+	priv->setup_received = false;
+	k_spin_unlock(&priv->lock, key);
 
-		if (mcux_msg->code == kUSB_DeviceNotifyBusReset) {
-			struct udc_ep_config *cfg;
+	udc_mcux_control(dev, kUSB_DeviceControlSetDefaultStatus, NULL);
+	cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	if (cfg->stat.enabled) {
+		udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT);
+	}
+	cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
+	if (cfg->stat.enabled) {
+		udc_ep_disable_internal(dev, USB_CONTROL_EP_IN);
+	}
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL,
+				   USB_MCUX_EP0_SIZE, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+	}
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL,
+				   USB_MCUX_EP0_SIZE, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+	}
+	udc_submit_event(dev, UDC_EVT_RESET, 0);
+}
 
-			udc_mcux_control(ev->dev, kUSB_DeviceControlSetDefaultStatus, NULL);
-			cfg = udc_get_ep_cfg(ev->dev, USB_CONTROL_EP_OUT);
-			if (cfg->stat.enabled) {
-				udc_ep_disable_internal(ev->dev, USB_CONTROL_EP_OUT);
-			}
-			cfg = udc_get_ep_cfg(ev->dev, USB_CONTROL_EP_IN);
-			if (cfg->stat.enabled) {
-				udc_ep_disable_internal(ev->dev, USB_CONTROL_EP_IN);
-			}
-			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_OUT,
-						USB_EP_TYPE_CONTROL,
-						USB_MCUX_EP0_SIZE, 0)) {
-				LOG_ERR("Failed to enable control endpoint");
-			}
-			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_IN,
-						USB_EP_TYPE_CONTROL,
-						USB_MCUX_EP0_SIZE, 0)) {
-				LOG_ERR("Failed to enable control endpoint");
-			}
-			udc_submit_event(ev->dev, UDC_EVT_RESET, 0);
-		} else {
-			ep  = mcux_msg->code;
+static void udc_mcux_thread_handler(void *arg1, void *arg2, void *arg3)
+{
+	const struct device *dev = (const struct device *)arg1;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	uint32_t evt;
 
-			if (mcux_msg->isSetup) {
-				struct usb_setup_packet *setup =
-					(struct usb_setup_packet *)mcux_msg->buffer;
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
-				err = udc_mcux_handler_setup(ev->dev, setup);
-			} else if (USB_EP_DIR_IS_IN(ep)) {
-				err = udc_mcux_handler_in(ev->dev, ep, mcux_msg->buffer,
-							  mcux_msg->length);
-			} else {
-				err = udc_mcux_handler_out(ev->dev, ep, mcux_msg->buffer,
-							   mcux_msg->length);
+	while (true) {
+		evt = k_event_wait(&priv->events, UINT32_MAX, false, K_FOREVER);
+
+		if (evt & UDC_MCUX_EVT_XFER) {
+			k_event_clear(&priv->events, UDC_MCUX_EVT_XFER);
+
+			if (priv->setup_received) {
+				udc_mcux_handle_setup(dev);
 			}
 
-			if (unlikely(err)) {
-				udc_submit_event(ev->dev, UDC_EVT_ERROR, err);
+			while (true) {
+				k_spinlock_key_t key;
+				struct net_buf *buf;
+				sys_snode_t *node;
+
+				key = k_spin_lock(&priv->lock);
+				node = sys_slist_get(&priv->complete_bufs);
+				k_spin_unlock(&priv->lock, key);
+
+				if (node == NULL) {
+					break;
+				}
+
+				buf = CONTAINER_OF(node, struct net_buf, node);
+				udc_mcux_xfer_done(dev, buf);
 			}
 		}
 
-		k_mem_slab_free(&udc_event_slab, (void *)ev);
+		if (evt & UDC_MCUX_EVT_RESET) {
+			k_event_clear(&priv->events, UDC_MCUX_EVT_RESET);
+			udc_mcux_handle_reset(dev);
+		}
+
+		if (evt & UDC_MCUX_EVT_DEQUEUE) {
+			k_event_clear(&priv->events, UDC_MCUX_EVT_DEQUEUE);
+
+			/*
+			 * Cancel the transfers still queued in the endpoint
+			 * FIFO here, in the driver thread. The HAL controller
+			 * cancellation was already requested from the dequeue
+			 * caller; its cancelled transfers are reported through
+			 * the complete_bufs path above (UDC_MCUX_EVT_XFER),
+			 * so handling the FIFO cancellation in the same thread
+			 * preserves the callback order.
+			 */
+			udc_mcux_lock(dev);
+			while (priv->ep_dequeue) {
+				uint8_t bitpos = find_lsb_set(priv->ep_dequeue) - 1;
+				struct udc_ep_config *ep_cfg =
+					udc_get_ep_cfg(dev, udc_mcux_bit2ep(bitpos));
+
+				udc_ep_cancel_queued(dev, ep_cfg);
+				priv->ep_dequeue &= ~BIT(bitpos);
+			}
+
+			/* Avoid context switch immediately after broadcast */
+			k_sched_lock();
+			k_condvar_broadcast(&priv->dequeue_cond);
+			udc_mcux_unlock(dev);
+			k_sched_unlock();
+		}
 	}
 }
 
@@ -435,7 +453,7 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 
 	switch (mcux_notify) {
 	case kUSB_DeviceNotifyBusReset:
-		udc_mcux_event_submit(dev, mcux_msg);
+		k_event_post(&priv->events, UDC_MCUX_EVT_RESET);
 		break;
 	case kUSB_DeviceNotifyError:
 		udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
@@ -460,7 +478,11 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 		udc_submit_sof_event(dev);
 		break;
 	default:
-		udc_mcux_event_submit(dev, mcux_msg);
+		/* Usually called from ISR context.
+		 * If a transfer is canceled, it runs in the context of the caller
+		 * performing the cancellation.
+		 */
+		udc_mcux_notify_xfer(dev, (uint8_t)mcux_msg->code, mcux_msg);
 		break;
 	}
 
@@ -529,12 +551,47 @@ static int udc_mcux_ep_enqueue(const struct device *dev,
 static int udc_mcux_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
-	cfg->stat.halted = false;
-	udc_ep_cancel_queued(dev, cfg);
+	const struct udc_mcux_config *config = dev->config;
+	const usb_device_controller_interface_struct_t *mcux_if = config->mcux_if;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	struct udc_data *data = dev->data;
+	usb_status_t status;
 
-	udc_mcux_lock(dev);
-	udc_ep_set_busy(cfg, false);
-	udc_mcux_unlock(dev);
+	cfg->stat.halted = false;
+
+	/*
+	 * Ask the HAL controller to cancel the transfer it currently owns.
+	 * Those transfers are reported back (with -ECONNABORTED) through the
+	 * driver thread via the complete_bufs path.
+	 */
+	status = mcux_if->deviceCancel(priv->mcux_device.controllerHandle, cfg->addr);
+	if (status != kStatus_USB_Success) {
+		LOG_WRN("Failed to cancel endpoint 0x%02x", cfg->addr);
+	}
+
+	/*
+	 * The transfers still queued in the endpoint FIFO must also be
+	 * cancelled from the driver thread so that their -ECONNABORTED
+	 * callbacks are delivered in the same order as (and after) the
+	 * transfers cancelled by the HAL controller above. Signal the thread
+	 * and wait for it to finish. The UDC mutex is held here (acquired by
+	 * api->lock() in udc_ep_dequeue()) and is used with the condvar.
+	 */
+	priv->ep_dequeue |= BIT(udc_mcux_ep2bit(cfg->addr));
+
+	/*
+	 * Lock the scheduler around the post + wait to avoid a meaningless
+	 * context switch: k_event_post() may wake the driver thread right
+	 * away, but data->mutex is still held by this thread until
+	 * k_condvar_wait() releases it below, so the driver thread would
+	 * just block on the mutex and get switched out again. Keeping the
+	 * scheduler locked defers that switch until the mutex is actually
+	 * available.
+	 */
+	k_sched_lock();
+	k_event_post(&priv->events, UDC_MCUX_EVT_DEQUEUE);
+	k_condvar_wait(&priv->dequeue_cond, &data->mutex, K_FOREVER);
+	k_sched_unlock();
 
 	return 0;
 }
@@ -739,8 +796,9 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 	}
 
 	k_mutex_init(&data->mutex);
-	k_fifo_init(&priv->fifo);
-	k_work_init(&priv->work, udc_mcux_work_handler);
+	k_event_init(&priv->events);
+	k_condvar_init(&priv->dequeue_cond);
+	sys_slist_init(&priv->complete_bufs);
 
 	for (int i = 0; i < config->num_of_eps; i++) {
 		config->ep_cfg_out[i].caps.out = 1;
@@ -802,6 +860,8 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 	}
 
 	priv->dev = dev;
+
+	config->make_thread(dev);
 
 	pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 
@@ -873,10 +933,31 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 											\
 	PINCTRL_DT_INST_DEFINE(n);							\
 											\
+	K_THREAD_STACK_DEFINE(udc_mcux_stack_##n,					\
+			      CONFIG_UDC_NXP_IP3511_THREAD_STACK_SIZE);			\
+											\
+	static void udc_mcux_thread_##n(void *dev, void *arg1, void *arg2)		\
+	{										\
+		udc_mcux_thread_handler(dev, arg1, arg2);				\
+	}										\
+											\
+	static void udc_mcux_make_thread_##n(const struct device *dev)			\
+	{										\
+		struct udc_mcux_data *priv = udc_get_private(dev);			\
+											\
+		k_thread_create(&priv->thread_data, udc_mcux_stack_##n,			\
+				K_THREAD_STACK_SIZEOF(udc_mcux_stack_##n),		\
+				udc_mcux_thread_##n, (void *)dev, NULL, NULL,		\
+				K_PRIO_COOP(CONFIG_UDC_NXP_IP3511_THREAD_PRIORITY),	\
+				K_ESSENTIAL, K_NO_WAIT);				\
+		k_thread_name_set(&priv->thread_data, dev->name);			\
+	}										\
+											\
 	static struct udc_mcux_config priv_config_##n = {				\
 		.base = DT_INST_REG_ADDR(n),						\
 		.irq_enable_func = udc_irq_enable_func##n,				\
 		.irq_disable_func = udc_irq_disable_func##n,				\
+		.make_thread = udc_mcux_make_thread_##n,				\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),			\
 		.ep_cfg_in = ep_cfg_in##n,						\
 		.ep_cfg_out = ep_cfg_out##n,						\
