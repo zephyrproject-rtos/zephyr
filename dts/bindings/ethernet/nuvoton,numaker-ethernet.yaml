@@ -25,5 +25,6 @@ properties:
 
   phy-addr:
     type: int
-    description: Address of the phy controller
-    required: true
+    description: |
+      Address of the PHY on the station management interface. Only used by
+      the deprecated NuMaker Ethernet driver.

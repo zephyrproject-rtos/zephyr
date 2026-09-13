@@ -694,6 +694,17 @@ Ethernet
   :dtcompatible:`nxp,enet-mac` need to be moved from the MAC node to the parent Ethernet controller
   node. (:github:`107352`)
 
+* The ``phy-addr`` property of :dtcompatible:`nuvoton,numaker-ethernet` has moved from the SoC
+  devicetree to the boards, as the address a PHY answers on is a property of the board that wires
+  it up, not of the SoC. Out-of-tree boards have to set it on their own Ethernet node, if they
+  want to use the deprecated driver.
+
+* :kconfig:option:`CONFIG_ETH_NUMAKER` is deprecated and superseded by
+  :kconfig:option:`CONFIG_ETH_NUMAKER_DWC_ETHER_1000`, which is now enabled by default. To keep
+  using the deprecated driver, enable :kconfig:option:`CONFIG_ETH_NUMAKER` explicitly, disable
+  the ``mdio`` and ``ptp_clock`` nodes, add the MDIO pins to the pinctrl state of the
+  ``emac`` node and set its ``phy-addr``.
+
 * ``port_generate_random_mac`` of the :c:struct:`dsa_api` got removed. Also
   :c:struct:`dsa_port_config` now uses :c:struct:`net_eth_mac_config` to set the MAC address.
   ``mac_addr`` and ``use_random_mac_addr`` members of :c:struct:`dsa_port_config` were removed.

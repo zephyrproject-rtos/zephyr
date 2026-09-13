@@ -29,6 +29,7 @@ tests:
       - CONFIG_ETH_ESP32=n
       - CONFIG_ETH_NXP_ENET_QOS=n
       - CONFIG_ETH_XMC4XXX=n
+      - CONFIG_ETH_NUMAKER=n
     depends_on:
       - eth
       - ptp_clock
@@ -43,4 +44,6 @@ tests:
       - esp32p4x_function_ev_board/esp32p4/hpcore
       - frdm_mcxe31b
       - frdm_mcxn947/mcxn947/cpu0
+      - numaker_m55m1
+      - numaker_pfm_m467
       - xmc47_relax_kit
