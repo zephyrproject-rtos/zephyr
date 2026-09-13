@@ -13,13 +13,13 @@
 #include <zephyr/drivers/w1.h>
 
 struct w1_vnd_config {
-	/** w1 master config, common to all drivers */
-	struct w1_master_config master_config;
+	/** w1 controller config, common to all drivers */
+	struct w1_controller_config controller_config;
 };
 
 struct w1_vnd_data {
-	/** w1 master data, common to all drivers */
-	struct w1_master_data master_data;
+	/** w1 controller data, common to all drivers */
+	struct w1_controller_data controller_data;
 };
 
 static int w1_vnd_reset_bus(const struct device *dev)
@@ -63,8 +63,8 @@ static DEVICE_API(w1, w1_vnd_api) = {
 };
 
 #define W1_VND_INIT(inst)                                                                          \
-	static const struct w1_vnd_config w1_vnd_cfg_##inst = {.master_config.slave_count =        \
-								       W1_INST_SLAVE_COUNT(inst)}; \
+	static const struct w1_vnd_config w1_vnd_cfg_##inst = {                                    \
+		.controller_config.peripheral_count = W1_INST_PERIPHERAL_COUNT(inst)};             \
 	static struct w1_vnd_data w1_vnd_data_##inst = {};                                         \
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &w1_vnd_data_##inst, &w1_vnd_cfg_##inst,           \
 			      POST_KERNEL, CONFIG_W1_INIT_PRIORITY, &w1_vnd_api);
