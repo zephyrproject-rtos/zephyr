@@ -4,6 +4,7 @@
 	aw9523b@58 {
 		status = "okay";
 		reg = <0x58>;
+		reset-gpios = <&arduino_header 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		compatible = "awinic,aw9523b";
 
 		aw9523_gpio: gpio {
@@ -12,7 +13,6 @@
 			#gpio-cells = <2>;
 			port0-push-pull;
 			int-gpios = <&arduino_header 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			reset-gpios = <&arduino_header 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
 };
