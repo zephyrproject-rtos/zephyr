@@ -500,5 +500,33 @@ ZTEST(obj_core, test_obj_core_object_free)
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 }
 
+struct embedded {
+	uint32_t pad;
+	struct k_mutex mutex;
+};
+
+K_MEM_SLAB_DEFINE(slab3, ROUND_UP(sizeof(struct embedded), 8), 2, 8);
+
+ZTEST(obj_core, test_obj_core_released_memory)
+{
+	struct embedded *heap_obj = k_malloc(sizeof(struct embedded));
+	struct embedded *slab_obj;
+
+	/* Objects in memory returned to a heap or a slab stop being reported */
+	zassert_not_null(heap_obj, "allocation failed");
+	k_mutex_init(&heap_obj->mutex);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&heap_obj->mutex)), 1);
+	k_free(heap_obj);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&heap_obj->mutex)), 0);
+
+	zassert_equal(k_mem_slab_alloc(&slab3, (void **)&slab_obj, K_NO_WAIT), 0);
+	k_mutex_init(&slab_obj->mutex);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&slab_obj->mutex)), 1);
+	k_mem_slab_free(&slab3, slab_obj);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&slab_obj->mutex)), 0);
+
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex1)), 1);
+}
+
 ZTEST_SUITE(obj_core, NULL, NULL,
 	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

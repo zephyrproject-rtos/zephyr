@@ -272,6 +272,10 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 		return;
 	}
 
+#ifdef CONFIG_OBJ_CORE_EVICT_ON_FREE
+	k_obj_core_evict_range(mem, slab->info.block_size);
+#endif /* CONFIG_OBJ_CORE_EVICT_ON_FREE */
+
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);

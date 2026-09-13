@@ -25,6 +25,15 @@ config OBJ_CORE_MAX_DYNAMIC_OBJECTS
 	  full, further objects are not tracked and the object type's dropped
 	  count is incremented.
 
+config OBJ_CORE_EVICT_ON_FREE
+	bool "Unregister objects located in released memory"
+	default y
+	select SYS_HEAP_RELEASE_HOOK
+	help
+	  When memory is returned to a sys_heap or a memory slab, unregister
+	  every object located in it so that it stops being reported at once.
+	  The cost is a scan of the registry on each release.
+
 config OBJ_CORE_CONDVAR
 	bool "Integrate condition variables into object core framework"
 	default y

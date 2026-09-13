@@ -205,6 +205,20 @@ void k_obj_core_evict_range(const void *addr, size_t len)
 	k_spin_unlock(&obj_core_lock, key);
 }
 
+#ifdef CONFIG_OBJ_CORE_EVICT_ON_FREE
+void sys_heap_release_hook(void *mem, size_t bytes)
+{
+	/* The registry is kernel data; user mode releases never hold
+	 * registered objects.
+	 */
+	if (k_is_user_context()) {
+		return;
+	}
+
+	k_obj_core_evict_range(mem, bytes);
+}
+#endif /* CONFIG_OBJ_CORE_EVICT_ON_FREE */
+
 /* Add the object types defined at build time to the type list and initialize
  * the object cores of their permanent objects.
  */

@@ -310,6 +310,9 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		k_panic();
 	}
 
+	IF_ENABLED(CONFIG_SYS_HEAP_RELEASE_HOOK,
+		   (sys_heap_release_hook(mem, chunk_usable_bytes(h, c) - mem_align_gap(h, mem));))
+
 	/*
 	 * Header fields are ordered as LEFT_SIZE then SIZE_AND_USED.
 	 * This places SIZE_AND_USED immediately before the user data,
@@ -638,6 +641,9 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		size_t bytes_freed = chunk_usable_bytes(h, c) - align_gap;
 #endif
+		IF_ENABLED(CONFIG_SYS_HEAP_RELEASE_HOOK,
+			   (sys_heap_release_hook((uint8_t *)ptr + bytes,
+						  chunk_usable_bytes(h, c) - align_gap - bytes);))
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 		h->allocated_bytes -=
