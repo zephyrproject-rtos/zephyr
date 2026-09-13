@@ -190,6 +190,24 @@ static int dsa_get_config(const struct device *dev,
 	return dsa_switch_ctx->dapi->get_config(dev, type, config);
 }
 
+#if defined(CONFIG_NET_VLAN)
+static int dsa_vlan_setup(const struct device *dev, struct net_if *iface, uint16_t tag, bool enable)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+
+	if (dsa_switch_ctx->dapi->vlan_setup == NULL) {
+		/* Getting here means that the driver has set the ETHERNET_HW_VLAN capability.
+		 * Assume that the absence of a vlan_setup implementation implies that no setup is
+		 * required. Setting the aforementioned cap while not providing a vlan_setup
+		 * function for a chip that does require VLAN configuration is a programming error.
+		 */
+		return 0;
+	}
+
+	return dsa_switch_ctx->dapi->vlan_setup(dev, iface, tag, enable);
+}
+#endif /* CONFIG_NET_VLAN */
+
 const struct ethernet_api dsa_eth_api = {
 	.iface_api.init = dsa_port_iface_init,
 	.get_phy = dsa_port_get_phy,
@@ -200,4 +218,7 @@ const struct ethernet_api dsa_eth_api = {
 	.get_capabilities = dsa_port_get_capabilities,
 	.set_config = dsa_set_config,
 	.get_config = dsa_get_config,
+#if defined(CONFIG_NET_VLAN)
+	.vlan_setup = dsa_vlan_setup,
+#endif /* CONFIG_NET_VLAN */
 };
