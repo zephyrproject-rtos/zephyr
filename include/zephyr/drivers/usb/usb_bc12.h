@@ -134,17 +134,38 @@ typedef void (*bc12_callback_t)(const struct device *dev, struct bc12_partner_st
 				void *user_data);
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * These are for internal use only, so skip these in public documentation.
+ * @def_driverbackendgroup{BC1.2,b12_interface}
+ * @{
+ */
+
+/**
+ * @brief Set the BC1.2 role.
+ * See bc12_set_role() for argument description.
+ */
+typedef int (*bc12_api_set_role_t)(const struct device *dev, enum bc12_role role);
+
+/**
+ * @brief Register a callback for BC1.2 results.
+ * See bc12_set_result_cb() for argument description.
+ */
+typedef int (*bc12_api_set_result_cb_t)(const struct device *dev, bc12_callback_t cb,
+					void *user_data);
+
+/**
+ * @driver_ops{BC1.2}
  */
 __subsystem struct bc12_driver_api {
-	int (*set_role)(const struct device *dev, enum bc12_role role);
-	int (*set_result_cb)(const struct device *dev, bc12_callback_t cb, void *user_data);
+	/**
+	 * @driver_ops_mandatory @copybrief bc12_set_role
+	 */
+	bc12_api_set_role_t set_role;
+	/**
+	 * @driver_ops_mandatory @copybrief bc12_set_result_cb
+	 */
+	bc12_api_set_result_cb_t set_result_cb;
 };
-/**
- * @endcond
- */
+
+/** @} */
 
 /**
  * @brief Set the BC1.2 role.
