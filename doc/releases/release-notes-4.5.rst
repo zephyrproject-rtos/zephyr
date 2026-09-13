@@ -509,6 +509,20 @@ New APIs and options
     * :c:func:`bt_mesh_stat_lpn_timing_reset`
     * :kconfig:option:`CONFIG_BT_MESH_LPN_OFFER_WAIT_TIMEOUT`
 
+  * Services
+
+    * :kconfig:option:`CONFIG_BT_HIDS`
+    * :c:func:`bt_hids_register`
+    * :c:func:`bt_hids_unregister`
+    * :c:func:`bt_hids_report_set`
+    * :c:func:`bt_hids_report_get`
+    * :c:func:`bt_hids_send_report`
+    * :c:func:`bt_hids_boot_report_set`
+    * :c:func:`bt_hids_boot_report_get`
+    * :c:func:`bt_hids_boot_report_send`
+    * :c:func:`bt_hids_get_protocol_mode`
+    * :c:func:`bt_hids_get_suspend_state`
+
 * Clock control
 
   * :kconfig:option:`CLOCK_CONTROL_NRF_ONOFF`
@@ -1781,6 +1795,7 @@ New Samples
 * :zephyr:code-sample:`adi-gpio-wakeup`
 * :zephyr:code-sample:`adi-pm`
 * :zephyr:code-sample:`autanalog_fir_fifo`
+* :zephyr:code-sample:`ble_peripheral_hogp`
 * :zephyr:code-sample:`bluetooth_cap_handover`
 * :zephyr:code-sample:`buzzer-tone`
 * :zephyr:code-sample:`coap-client-tcp`
@@ -1837,6 +1852,13 @@ New Samples
 
 Libraries / Subsystems
 **********************
+
+* Bluetooth
+
+  * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
+    the HID Device role of the HID over GATT Profile is built on, with a
+    ``hids`` Bluetooth shell command set
+    (:kconfig:option:`CONFIG_BT_HIDS_SHELL`).
 
 * Crypto
 
