@@ -793,6 +793,322 @@ ZTEST(coap, test_block2_size)
 	}
 }
 
+static const uint8_t block2_number_out_of_range_pdu[] = {
+	0x60, 0x45, 0x12, 0x34,
+	0xD4, 0x0A, 0x7F, 0xFF, 0xFF, 0x06,
+};
+
+static const uint8_t size2_at_uint32_max_pdu[] = {
+	0x60, 0x45, 0x12, 0x34,
+	0xD1, 0x0A, 0x06,
+	0x54, 0xFF, 0xFF, 0xFF, 0xFF,
+};
+
+static const uint8_t block2_at_enoent_pattern_pdu[] = {
+	0x60, 0x45, 0x12, 0x34,
+	0xD4, 0x0A, 0xFF, 0xFF, 0xFF, 0xFE,
+};
+
+static const uint8_t block1_at_enoent_pattern_pdu[] = {
+	0x40, 0x02, 0x12, 0x34,
+	0xD4, 0x0E, 0xFF, 0xFF, 0xFF, 0xFE,
+};
+
+static const uint8_t size2_at_enoent_pattern_pdu[] = {
+	0x60, 0x45, 0x12, 0x34,
+	0xD1, 0x0A, 0x06,
+	0x54, 0xFF, 0xFF, 0xFF, 0xFE,
+};
+
+ZTEST(coap, test_block2_number_out_of_range)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, block2_number_out_of_range_pdu,
+	       sizeof(block2_number_out_of_range_pdu));
+
+	r = coap_packet_parse(&cpkt, data,
+			      sizeof(block2_number_out_of_range_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, -EINVAL, "Block number out of range was accepted");
+	zassert_equal(ctx.current, 0U,
+		      "Block context was updated from a refused option");
+}
+
+ZTEST(coap, test_size2_at_uint32_max)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, size2_at_uint32_max_pdu, sizeof(size2_at_uint32_max_pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(size2_at_uint32_max_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, 0, "Size2 of 0xFFFFFFFF was rejected");
+	zassert_equal(ctx.total_size, (size_t)UINT32_MAX,
+		      "Size2 did not survive as the value the peer sent");
+}
+
+ZTEST(coap, test_block2_at_enoent_pattern)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, block2_at_enoent_pattern_pdu, sizeof(block2_at_enoent_pattern_pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(block2_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, -EINVAL, "Block2 was mistaken for an absent option");
+	zassert_equal(ctx.current, 0U, "Block context was updated from a refused option");
+}
+
+ZTEST(coap, test_get_block1_option_at_enoent_pattern)
+{
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	uint32_t block_number = 0U;
+	bool has_more = false;
+	int r;
+
+	memcpy(data, block1_at_enoent_pattern_pdu, sizeof(block1_at_enoent_pattern_pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(block1_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_get_block1_option(&cpkt, &has_more, &block_number);
+	zassert_equal(r, -EINVAL, "Block1 was mistaken for an absent option");
+	zassert_equal(block_number, 0U, "Block number was taken from a refused option");
+}
+
+ZTEST(coap, test_get_block2_option_at_enoent_pattern)
+{
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	uint32_t block_number = 0U;
+	bool has_more = false;
+	int r;
+
+	memcpy(data, block2_at_enoent_pattern_pdu, sizeof(block2_at_enoent_pattern_pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(block2_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_get_block2_option(&cpkt, &has_more, &block_number);
+	zassert_equal(r, -EINVAL, "Block2 was mistaken for an absent option");
+	zassert_equal(block_number, 0U, "Block number was taken from a refused option");
+}
+
+ZTEST(coap, test_size2_at_enoent_pattern)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, size2_at_enoent_pattern_pdu, sizeof(size2_at_enoent_pattern_pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(size2_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, 0, "Size2 was rejected");
+	zassert_equal(ctx.total_size, (size_t)0xFFFFFFFEU,
+		      "Size2 was mistaken for an absent option");
+}
+
+static const uint8_t control_block2_at_enoent_pattern_pdu[] = {
+	0x40, 0x01, 0x12, 0x34,
+	0xD4, 0x0A, 0xFF, 0xFF, 0xFF, 0xFE,
+};
+
+static const uint8_t control_size1_at_enoent_pattern_pdu[] = {
+	0x60, 0x45, 0x12, 0x34,
+	0xD1, 0x0E, 0x06,
+	0xD4, 0x14, 0xFF, 0xFF, 0xFF, 0xFE,
+};
+
+static const uint8_t tcp_control_block2_at_enoent_pattern_pdu[] = {
+	0x60, 0x01,
+	0xD4, 0x0A, 0xFF, 0xFF, 0xFF, 0xFE,
+};
+
+static const uint8_t tcp_control_size1_at_enoent_pattern_pdu[] = {
+	0x90, 0x45,
+	0xD1, 0x0E, 0x06,
+	0xD4, 0x14, 0xFF, 0xFF, 0xFF, 0xFE,
+};
+
+ZTEST(coap, test_control_block2_at_enoent_pattern)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, control_block2_at_enoent_pattern_pdu,
+	       sizeof(control_block2_at_enoent_pattern_pdu));
+
+	r = coap_packet_parse(&cpkt, data,
+			      sizeof(control_block2_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, -EINVAL, "Block2 was mistaken for an absent option");
+	zassert_equal(ctx.current, 0U, "Block context was updated from a refused option");
+}
+
+ZTEST(coap, test_control_size1_at_enoent_pattern)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, control_size1_at_enoent_pattern_pdu,
+	       sizeof(control_size1_at_enoent_pattern_pdu));
+
+	r = coap_packet_parse(&cpkt, data,
+			      sizeof(control_size1_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, 0, "Block1 was rejected");
+	zassert_equal(ctx.total_size, (size_t)0xFFFFFFFEU,
+		      "Size1 was mistaken for an absent option");
+}
+
+ZTEST(coap, test_tcp_control_block2_at_enoent_pattern)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, tcp_control_block2_at_enoent_pattern_pdu,
+	       sizeof(tcp_control_block2_at_enoent_pattern_pdu));
+
+	r = coap_tcp_packet_parse(&cpkt, data,
+				  sizeof(tcp_control_block2_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_tcp_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, -EINVAL, "Block2 was mistaken for an absent option");
+	zassert_equal(ctx.current, 0U, "Block context was updated from a refused option");
+}
+
+ZTEST(coap, test_tcp_control_size1_at_enoent_pattern)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, tcp_control_size1_at_enoent_pattern_pdu,
+	       sizeof(tcp_control_size1_at_enoent_pattern_pdu));
+
+	r = coap_tcp_packet_parse(&cpkt, data,
+				  sizeof(tcp_control_size1_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_tcp_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, 0, "Block1 was rejected");
+	zassert_equal(ctx.total_size, (size_t)0xFFFFFFFEU,
+		      "Size1 was mistaken for an absent option");
+}
+
+static const uint8_t control_block2_number_out_of_range_pdu[] = {
+	0x40, 0x01, 0x12, 0x34,
+	0xD4, 0x0A, 0x7F, 0xFF, 0xFF, 0x06,
+};
+
+static const uint8_t tcp_control_block2_number_out_of_range_pdu[] = {
+	0x60, 0x01,
+	0xD4, 0x0A, 0x7F, 0xFF, 0xFF, 0x06,
+};
+
+ZTEST(coap, test_control_block2_number_out_of_range)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, control_block2_number_out_of_range_pdu,
+	       sizeof(control_block2_number_out_of_range_pdu));
+
+	r = coap_packet_parse(&cpkt, data,
+			      sizeof(control_block2_number_out_of_range_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, -EINVAL, "Block number out of range was accepted");
+	zassert_equal(ctx.current, 0U,
+		      "Block context was updated from a refused option");
+}
+
+ZTEST(coap, test_tcp_control_block2_number_out_of_range)
+{
+	struct coap_block_context ctx;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, tcp_control_block2_number_out_of_range_pdu,
+	       sizeof(tcp_control_block2_number_out_of_range_pdu));
+
+	r = coap_tcp_packet_parse(&cpkt, data,
+				  sizeof(tcp_control_block2_number_out_of_range_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 0);
+	zassert_equal(r, 0, "Could not initialize block context");
+
+	r = coap_tcp_update_from_block(&cpkt, &ctx);
+	zassert_equal(r, -EINVAL, "Block number out of range was accepted");
+	zassert_equal(ctx.current, 0U,
+		      "Block context was updated from a refused option");
+}
+
 ZTEST(coap, test_retransmit_second_round)
 {
 	struct coap_packet cpkt;
