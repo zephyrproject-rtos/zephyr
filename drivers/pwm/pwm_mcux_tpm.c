@@ -12,6 +12,7 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <errno.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/irq.h>
 #include <soc.h>
@@ -45,6 +46,14 @@ LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 #define DEV_CFG(_dev) ((const struct mcux_tpm_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct mcux_tpm_data *)(_dev)->data)
 #define TPM_TYPE_BASE(dev, name) ((TPM_Type *)DEVICE_MMIO_NAMED_GET(dev, name))
+
+#ifdef CONFIG_PM_DEVICE
+typedef struct pwm_channel_config {
+	uint32_t period_cycles;
+	uint32_t duty_cycles;
+	pwm_flags_t flags;
+} pwm_channel_config_t;
+#endif /* CONFIG_PM_DEVICE */
 
 struct mcux_tpm_config {
 	DEVICE_MMIO_NAMED_ROM(base);
@@ -81,11 +90,19 @@ struct mcux_tpm_data {
 	uint32_t clock_freq;
 	uint32_t period_cycles;
 	tpm_chnl_pwm_signal_param_t channel[TPM_MAX_CHANNELS];
+#ifdef CONFIG_PM_DEVICE
+	pwm_channel_config_t pwm_channel_config[TPM_MAX_CHANNELS];
+#endif /* CONFIG_PM_DEVICE */
 #ifdef CONFIG_PWM_CAPTURE
 	uint32_t overflows;
 	struct mcux_tpm_capture_data capture[TPM_MAX_CAPTURE_PAIRS];
 #endif /* CONFIG_PWM_CAPTURE */
+	bool pwm_channel_active;
 };
+
+#ifdef CONFIG_PM_DEVICE
+static void mcux_tpm_restore_chn_config(const struct device *dev);
+#endif /* CONFIG_PM_DEVICE */
 
 static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			       uint32_t period_cycles, uint32_t pulse_cycles,
@@ -111,6 +128,15 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 	    (pulse_cycles > TPM_MAX_COUNTER_VALUE(base))) {
 		return -ENOTSUP;
 	}
+	#ifdef CONFIG_PM_DEVICE
+	/* Save channel configuration when CONFIG_PM_DEVICE is defined
+	 * to recover it when exiting from DeepSleep
+	 */
+	data->pwm_channel_config[channel].period_cycles = period_cycles;
+	data->pwm_channel_config[channel].duty_cycles = pulse_cycles;
+	data->pwm_channel_config[channel].flags = flags;
+	data->pwm_channel_active = true;
+	#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_PWM_CAPTURE
 	if (data->capture[pair].capture_active) {
@@ -518,7 +544,27 @@ static int mcux_tpm_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static int mcux_tpm_init(const struct device *dev)
+#ifdef CONFIG_PM_DEVICE
+static void mcux_tpm_restore_chn_config(const struct device *dev)
+{
+	const struct mcux_tpm_data *data = dev->data;
+	uint8_t channel;
+
+	for (channel = 0; channel < TPM_MAX_CHANNELS; channel++) {
+		/* Only restore the channels configured
+		 * before entering into a low power mode
+		 */
+		if (data->pwm_channel_config[channel].period_cycles != 0) {
+			mcux_tpm_set_cycles(dev, channel,
+			data->pwm_channel_config[channel].period_cycles,
+			data->pwm_channel_config[channel].duty_cycles,
+			data->pwm_channel_config[channel].flags);
+		}
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static int mcux_tpm_init_common(const struct device *dev)
 {
 	const struct mcux_tpm_config *config = dev->config;
 	struct mcux_tpm_data *data = dev->data;
@@ -608,6 +654,65 @@ static int mcux_tpm_init(const struct device *dev)
 	return 0;
 }
 
+static int mcux_tpm_pwm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+#ifdef CONFIG_PM_DEVICE
+	struct mcux_tpm_data *data = dev->data;
+	uint8_t channel;
+	const struct mcux_tpm_config *config = dev->config;
+	TPM_Type *base;
+
+	base = TPM_TYPE_BASE(dev, base);
+
+#endif /* CONFIG_PM_DEVICE */
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_PM_DEVICE
+		if (data->pwm_channel_active == true) {
+			TPM_StartTimer(base, config->tpm_clock_source);
+		}
+#endif /* CONFIG_PM_DEVICE */
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef CONFIG_PM_DEVICE
+#if defined(FSL_FEATURE_TPM_HAS_PAUSE_LEVEL_SELECT) && FSL_FEATURE_TPM_HAS_PAUSE_LEVEL_SELECT
+		for (channel = 0; channel < TPM_MAX_CHANNELS; channel++) {
+			if (data->pwm_channel_config[channel].period_cycles != 0) {
+				if (data->channel[channel].level == kTPM_HighTrue) {
+					data->channel[channel].pauseLevel = kTPM_ClearOnPause;
+				} else {
+					data->channel[channel].pauseLevel = kTPM_SetOnPause;
+				}
+			}
+		}
+#endif /* FSL_FEATURE_TPM_HAS_PAUSE_LEVEL_SELECT */
+		TPM_StopTimer(base);
+#endif /* CONFIG_PM_DEVICE */
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		mcux_tpm_init_common(dev);
+#ifdef CONFIG_PM_DEVICE
+		if (data->pwm_channel_active == true) {
+			mcux_tpm_restore_chn_config(dev);
+		}
+#endif /* CONFIG_PM_DEVICE */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+static int mcux_tpm_init(const struct device *dev)
+{
+	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, mcux_tpm_pwm_pm_action);
+}
+
 static DEVICE_API(pwm, mcux_tpm_driver_api) = {
 	.set_cycles = mcux_tpm_set_cycles,
 	.get_cycles_per_sec = mcux_tpm_get_cycles_per_sec,
@@ -664,7 +769,9 @@ static void mcux_tpm_config_func_##n(const struct device *dev) \
 	PINCTRL_DT_INST_DEFINE(n); \
 	static const struct mcux_tpm_config mcux_tpm_config_##n; \
 	static struct mcux_tpm_data mcux_tpm_data_##n; \
-	DEVICE_DT_INST_DEFINE(n, &mcux_tpm_init, NULL, \
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_tpm_pwm_pm_action); \
+	DEVICE_DT_INST_DEFINE(n, &mcux_tpm_init, \
+				PM_DEVICE_DT_INST_GET(n), \
 			    &mcux_tpm_data_##n, \
 			    &mcux_tpm_config_##n, \
 			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
