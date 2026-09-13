@@ -55,9 +55,11 @@ def load_edt(path: str) -> edtlib.EDT:
         return pickle.load(f)
 
 
-def setup_kconfig() -> kconfiglib.Kconfig:
-    kconf = kconfiglib.Kconfig(os.path.join(os.environ.get("ZEPHYR_BASE"), "Kconfig"), warn=False)
-    return kconf
+def setup_kconfig() -> kconfiglib.Kconfig | None:
+    zephyr_base = os.environ.get("ZEPHYR_BASE")
+    if not zephyr_base:
+        return None
+    return kconfiglib.Kconfig(os.path.join(zephyr_base, "Kconfig"), warn=False)
 
 
 def format_node(node: edtlib.Node) -> str:
@@ -70,7 +72,15 @@ def find_kconfig_deps(kconf: kconfiglib.Kconfig, dt_has_symbol: str) -> set[str]
     """
     prefix = os.environ.get("CONFIG_", "CONFIG_")
     target = f"{prefix}{dt_has_symbol}"
+    # Word-boundary match so e.g. DT_HAS_FOO_ENABLED doesn't match DT_HAS_FOO_ENABLED_EXT
+    target_re = re.compile(rf"(?<!\w){re.escape(target)}(?!\w)")
     deps = set()
+
+    def expr_to_str(expr):
+        return kconfiglib.expr_str(
+            expr,
+            lambda sc: f"{prefix}{sc.name}" if hasattr(sc, 'name') and sc.name else str(sc),
+        )
 
     def collect_syms(expr):
         # Recursively collect all symbol names in the expression tree except the target
@@ -81,24 +91,19 @@ def find_kconfig_deps(kconf: kconfiglib.Kconfig, dt_has_symbol: str) -> set[str]
             if sym_name != target:
                 deps.add(sym_name)
 
-    for sym in getattr(kconf, "unique_defined_syms", []):
+    for sym in kconf.unique_defined_syms:
         for node in sym.nodes:
             # Check dependencies
-            if node.dep is None:
-                continue
-            dep_str = kconfiglib.expr_str(
-                node.dep,
-                lambda sc: f"{prefix}{sc.name}" if hasattr(sc, 'name') and sc.name else str(sc),
-            )
-            if target in dep_str:
+            if node.dep is not None and target_re.search(expr_to_str(node.dep)):
                 collect_syms(node.dep)
 
-            # Check selects/implies
+            # A symbol whose select/imply is conditioned on the DT_HAS symbol is itself
+            # an option worth enabling
             for attr in ["orig_selects", "orig_implies"]:
-                for value, _ in getattr(node, attr, []) or []:
-                    value_str = kconfiglib.expr_str(value, str)
-                    if target in value_str:
-                        collect_syms(value)
+                for _, cond in getattr(node, attr, []) or []:
+                    if cond is not None and target_re.search(expr_to_str(cond)):
+                        deps.add(f"{prefix}{sym.name}")
+                        collect_syms(cond)
 
     return deps
 
@@ -111,8 +116,12 @@ def handle_enabled_node(node: edtlib.Node) -> list[str]:
     lines = [f"'{format_node(node)}' is enabled but no driver appears to be available for it.\n"]
 
     compats = list(getattr(node, "compats", []))
-    if compats:
-        kconf = setup_kconfig()
+    kconf = setup_kconfig() if compats else None
+    if not compats:
+        lines.append("Could not determine compatible; check driver Kconfig manually.")
+    elif not kconf:
+        lines.append("ZEPHYR_BASE is not set; check driver Kconfig manually.")
+    else:
         deps = set()
         for compat in compats:
             dt_has = f"DT_HAS_{edtlib.str_as_token(compat.upper())}_ENABLED"
@@ -121,8 +130,6 @@ def handle_enabled_node(node: edtlib.Node) -> list[str]:
         if deps:
             lines.append("Try enabling these Kconfig options:\n")
             lines.extend(f" - {dep}=y" for dep in sorted(deps))
-    else:
-        lines.append("Could not determine compatible; check driver Kconfig manually.")
 
     return lines
 
@@ -142,12 +149,8 @@ def handle_disabled_node(node: edtlib.Node) -> list[str]:
         lines.extend(f" - {u.path}" for u in users)
 
     # Show chosen/alias references
-    chosen_refs = [
-        name
-        for name, n in (getattr(edt, "chosen_nodes", {}) or getattr(edt, "chosen", {})).items()
-        if n is node
-    ]
-    alias_refs = [name for name, n in getattr(edt, "aliases", {}).items() if n is node]
+    chosen_refs = [name for name, n in edt.chosen_nodes.items() if n is node]
+    alias_refs = node.aliases
 
     if chosen_refs or alias_refs:
         lines.append("")
