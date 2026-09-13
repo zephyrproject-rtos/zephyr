@@ -148,6 +148,8 @@ Removed APIs and options
       * ``scobc_module1``
       * ``xiao_esp32c6``
 
+    * ``CONFIG_BT_ISO_TX_MTU``
+
 * Build system
 
     * ``CONFIG_BUILD_NO_GAP_FILL``
