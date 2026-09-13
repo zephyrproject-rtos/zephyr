@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2026 NUCODE Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nucode_nu54/nrf54l15/cpuapp
+name: NUCODE-NU54V-DK-nRF54L15-Application
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+sysbuild: true
+ram: 188
+flash: 1428
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - retained_mem
+  - watchdog
+vendor: nucode
