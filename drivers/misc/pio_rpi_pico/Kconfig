@@ -8,3 +8,29 @@ config PIO_RPI_PICO
 	depends on RESET
 	select PICOSDK_USE_PIO
 	select PINCTRL
+
+if PIO_RPI_PICO
+
+config PIO_RPI_PICO_IRQ
+	bool "Raspberry Pi Pico PIO interrupt support"
+	help
+	  Connect the interrupt lines of each PIO block and dispatch them to
+	  the child devices that registered a handler.
+
+	  A PIO block has two interrupt lines shared by all four of its state
+	  machines, so a child device cannot connect them on its own without
+	  locking out every other child of the same block. Child drivers that
+	  need PIO interrupts should select this symbol and register through
+	  pio_rpi_pico_register_irq().
+
+config PIO_RPI_PICO_MAX_IRQ_HANDLERS
+	int "Maximum number of handlers per PIO interrupt line"
+	depends on PIO_RPI_PICO_IRQ
+	default 4
+	range 1 8
+	help
+	  Number of handler slots reserved per interrupt line, per PIO block.
+	  A child device registers one handler per line it uses, so this is the
+	  number of child devices that can share a line of the same block.
+
+endif # PIO_RPI_PICO
