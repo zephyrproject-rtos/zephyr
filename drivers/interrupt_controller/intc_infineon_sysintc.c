@@ -6,6 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/irq.h>
 #include <zephyr/irq_multilevel.h>
@@ -48,7 +49,12 @@ static void sysintc_mux_isr(void)
 #define SYSINTC_REGISTER_DISPATCHERS(parent_id)                                                    \
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(parent_id, _SYSINTC_REGISTER_DISPATCHER, (;))
 
-void z_soc_irq_enable(unsigned int irq)
+/*
+ * SYSINTC owns the multi-level interrupt routing of these SoCs: level 1
+ * lines are the NVIC's and level 2 lines are multiplexed onto them. It
+ * therefore provides the root interrupt controller API.
+ */
+void intc_root_enable(unsigned int irq)
 {
 	unsigned int parent;
 	unsigned int sys_int;
@@ -65,7 +71,7 @@ void z_soc_irq_enable(unsigned int irq)
 	arm_irq_enable(parent);
 }
 
-void z_soc_irq_disable(unsigned int irq)
+void intc_root_disable(unsigned int irq)
 {
 	if (irq_get_level(irq) == 1) {
 		arm_irq_disable(irq);
@@ -75,7 +81,7 @@ void z_soc_irq_disable(unsigned int irq)
 	Cy_SysInt_DisableSystemInt(irq_from_level_2(irq));
 }
 
-int z_soc_irq_is_enabled(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
 	unsigned int sys_int;
 
@@ -99,7 +105,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 #endif
 }
 
-void z_soc_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags)
+void intc_root_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	/* L2 system interrupts share their parent NvicMux's priority,
 	 * so only L1 priorities are programmed.
