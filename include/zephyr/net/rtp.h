@@ -119,6 +119,8 @@ struct rtp_packet {
 };
 
 struct rtp_session;
+struct srtp_policy;
+struct srtp_session_ctx;
 
 /**
  * @brief RTP packet receive callback type.
@@ -252,6 +254,15 @@ struct rtp_session {
 	uint32_t csrc[RTP_MAX_CSRC_COUNT];
 	/** Number of active entries in @p csrc. */
 	size_t csrc_len;
+
+#if defined(CONFIG_SRTP) || defined(__DOXYGEN__)
+	/** SRTP state installed with @ref rtp_session_set_srtp; NULL when the
+	 *  session runs plain RTP.
+	 *
+	 *  @kconfig_dep{CONFIG_SRTP}
+	 */
+	struct srtp_session_ctx *srtp;
+#endif /* CONFIG_SRTP */
 
 #if CONFIG_RTP_LOG_LEVEL >= LOG_LEVEL_DBG
 	/** Human-readable session name used in debug log messages. */
@@ -456,6 +467,61 @@ static inline int rtp_session_send_simple(struct rtp_session *session, void *dat
 {
 	return rtp_session_send(session, data, len, delta_ts, 0, 0, NULL, NULL);
 }
+
+#if defined(CONFIG_SRTP) || defined(__DOXYGEN__)
+
+/**
+ * @brief Enable SRTP protection on an RTP session.
+ *
+ * Install SRTP crypto contexts for the transmit and/or receive direction of
+ * a session. Call after @ref rtp_session_init, which assigns the session's
+ * SSRC, and before @ref rtp_session_start. The @p srtp_ctx storage is
+ * provided by the application and must remain valid until
+ * @ref rtp_session_clear_srtp is called; the policy structures and their key
+ * material are copied and may be discarded afterwards.
+ *
+ * Re-initializing the session with @ref rtp_session_init clears the
+ * installed SRTP state again, as it is keyed to the previous SSRC. While SRTP
+ * is installed, @ref rtp_session_stop and @ref rtp_session_start preserve the
+ * RTP sequence number, keeping the packet index monotonic as required for a
+ * master key (@rfc{3711,section-3.3.1}).
+ *
+ * @note On the net_pkt transport, packets are staged in a buffer inside
+ *       @p srtp_ctx that is shared between transmit and receive; the receive
+ *       callback must therefore not transmit on the same session.
+ *
+ * @kconfig_dep{CONFIG_SRTP}
+ *
+ * @param session   Pointer to the RTP session.
+ * @param tx_policy Protection policy for transmitted packets, or NULL to
+ *                  leave the transmit direction unprotected.
+ * @param rx_policy Protection policy for received packets, or NULL to leave
+ *                  the receive direction unprotected.
+ * @param srtp_ctx  SRTP state storage for this session.
+ *
+ * @retval 0        On success.
+ * @retval negative Errno value on failure.
+ */
+int rtp_session_set_srtp(struct rtp_session *session, const struct srtp_policy *tx_policy,
+			 const struct srtp_policy *rx_policy, struct srtp_session_ctx *srtp_ctx);
+
+/**
+ * @brief Disable SRTP protection on an RTP session.
+ *
+ * Destroys all SRTP keys of the session and zeroizes the stored key material.
+ * Call after @ref rtp_session_stop, and only once no packet reception is in
+ * flight; see @ref rtp_rx_cb_t for the callback semantics after a stop.
+ *
+ * @kconfig_dep{CONFIG_SRTP}
+ *
+ * @param session Pointer to the RTP session.
+ *
+ * @retval 0        On success.
+ * @retval negative Errno value on failure.
+ */
+int rtp_session_clear_srtp(struct rtp_session *session);
+
+#endif /* CONFIG_SRTP */
 
 /**
  * @brief Get the RTP version (V) field.

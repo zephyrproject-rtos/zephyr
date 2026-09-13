@@ -60,3 +60,51 @@ tests:
       - CONFIG_NET_IPV4=n
       - CONFIG_NET_IPV6=y
       - CONFIG_NET_IPV6_DAD=n
+  net.rtp.loopback.socket.srtp.cm.ipv4:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS=1
+      - CONFIG_SRTP=y
+      - CONFIG_ENTROPY_GENERATOR=y
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=n
+  net.rtp.loopback.socket.srtp.cm.ipv6:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS=1
+      - CONFIG_SRTP=y
+      - CONFIG_ENTROPY_GENERATOR=y
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_IPV6_DAD=n
+  net.rtp.loopback.socket.srtp.gcm.ipv4:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS=1
+      - CONFIG_SRTP=y
+      - CONFIG_ENTROPY_GENERATOR=y
+      - CONFIG_RTP_LOOPBACK_TEST_SRTP_GCM=y
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=n
+  net.rtp.loopback.net_pkt.srtp.cm.ipv4:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_NET_PKT=y
+      - CONFIG_RTP_TRANSPORT_SOCKET=n
+      - CONFIG_SRTP=y
+      - CONFIG_ENTROPY_GENERATOR=y
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=n
+  net.rtp.loopback.net_pkt.srtp.gcm.ipv4:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_NET_PKT=y
+      - CONFIG_RTP_TRANSPORT_SOCKET=n
+      - CONFIG_SRTP=y
+      - CONFIG_ENTROPY_GENERATOR=y
+      - CONFIG_RTP_LOOPBACK_TEST_SRTP_GCM=y
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=n
+  net.rtp.loopback.socket.srtp.gcm256.ipv4:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS=1
+      - CONFIG_SRTP=y
+      - CONFIG_ENTROPY_GENERATOR=y
+      - CONFIG_RTP_LOOPBACK_TEST_SRTP_GCM_256=y
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=n

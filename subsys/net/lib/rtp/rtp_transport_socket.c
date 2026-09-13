@@ -24,10 +24,17 @@ LOG_MODULE_REGISTER(rtp_socket, CONFIG_RTP_LOG_LEVEL);
 #include <zephyr/net/ptp_time.h>
 #endif
 
+#include "rtp_packet.h"
+#include "rtp_srtp.h"
 #include "rtp_transport.h"
 
 #define CTX_LOCK_TIMEOUT   K_MSEC(1)
 #define RTP_SOCKET_MAX_FDS CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS
+
+#ifdef CONFIG_SRTP
+BUILD_ASSERT(CONFIG_RTP_TRANSPORT_SOCKET_BUF_SIZE > RTP_MIN_HEADER_LEN + SRTP_MAX_TRAILER_LEN,
+	     "Socket buffer too small for SRTP protected packets");
+#endif /* CONFIG_SRTP */
 
 struct rtp_socket_context {
 	struct zsock_pollfd fds[RTP_SOCKET_MAX_FDS];
@@ -40,121 +47,6 @@ static struct rtp_socket_context socket_ctx;
 static void rtp_socket_svc_handler(struct net_socket_service_event *pev);
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(rtp_socket_svc, rtp_socket_svc_handler, RTP_SOCKET_MAX_FDS);
-
-static int rtp_parse_raw(struct rtp_packet *packet, uint8_t *data, size_t len)
-{
-	uint8_t *cursor = data;
-	uint8_t *end = cursor + len;
-
-	if (len < RTP_MIN_HEADER_LEN) {
-		NET_DBG("RTP packet too small (%zu)", len);
-		return -EINVAL;
-	}
-
-	packet->header.vpxcc = *cursor;
-	cursor += sizeof(uint8_t);
-	packet->header.mpt = *cursor;
-	cursor += sizeof(uint8_t);
-
-	packet->header.seq = sys_get_be16(cursor);
-	cursor += sizeof(uint16_t);
-
-	packet->header.ts = sys_get_be32(cursor);
-	cursor += sizeof(uint32_t);
-
-	packet->header.ssrc = sys_get_be32(cursor);
-	cursor += sizeof(uint32_t);
-
-	if (rtp_header_get_v(&packet->header) != RTP_VERSION) {
-		NET_DBG("Invalid RTP version (%d)", rtp_header_get_v(&packet->header));
-		return -EINVAL;
-	}
-
-	if (rtp_header_get_cc(&packet->header) > 0) {
-		size_t csrc_count = rtp_header_get_cc(&packet->header);
-		size_t csrc_skip = 0;
-
-		if (end - cursor < (ptrdiff_t)(csrc_count * sizeof(uint32_t))) {
-			NET_DBG("Data too small for cc");
-			return -EINVAL;
-		}
-
-#if CONFIG_RTP_MAX_CSRC_COUNT > 0
-		if (csrc_count > ARRAY_SIZE(packet->header.csrc)) {
-			NET_DBG("Size of csrc too small, ignoring following csrcs. Please increase "
-				"CONFIG_RTP_MAX_CSRC_COUNT");
-			csrc_skip = csrc_count - ARRAY_SIZE(packet->header.csrc);
-			csrc_count = ARRAY_SIZE(packet->header.csrc);
-			rtp_header_set_cc(&packet->header, csrc_count);
-		}
-
-		for (size_t i = 0; i < csrc_count; i++) {
-			packet->header.csrc[i] = sys_get_be32(cursor);
-			cursor += sizeof(uint32_t);
-		}
-#else
-		NET_DBG("Received packet with cc > 0, but CONFIG_RTP_MAX_CSRC_COUNT = 0");
-
-		csrc_skip = csrc_count;
-		rtp_header_set_cc(&packet->header, 0);
-#endif /* CONFIG_RTP_MAX_CSRC_COUNT > 0 */
-
-		cursor += csrc_skip * sizeof(uint32_t);
-	}
-
-	if (rtp_header_get_x(&packet->header) == 1) {
-		struct rtp_header_extension *hdr_x = &packet->header.header_extension;
-		size_t x_data_len;
-
-		if (end - cursor < (ptrdiff_t)(2 * sizeof(uint16_t))) {
-			NET_DBG("Data too small for header extension");
-			return -EINVAL;
-		}
-
-		hdr_x->definition = sys_get_be16(cursor);
-		cursor += sizeof(uint16_t);
-
-		hdr_x->length = sys_get_be16(cursor);
-		cursor += sizeof(uint16_t);
-		x_data_len = hdr_x->length * sizeof(uint32_t);
-
-		if (end - cursor < (ptrdiff_t)x_data_len) {
-			NET_DBG("RTP extension header length too large for pkt");
-			return -EINVAL;
-		}
-
-		hdr_x->data = cursor;
-		cursor += x_data_len;
-	}
-
-	packet->payload_len = end - cursor;
-	packet->payload = cursor;
-
-	if (rtp_header_get_p(&packet->header) == 1) {
-		uint8_t padding;
-
-		if (packet->payload_len == 0) {
-			NET_DBG("Padding flag set but no payload");
-			return -EINVAL;
-		}
-
-		padding = *(end - 1);
-
-		if (padding == 0) {
-			NET_DBG("Padding flag is set but padding is 0");
-			return -EINVAL;
-		}
-
-		if (padding > packet->payload_len) {
-			NET_DBG("Padding larger than payload");
-			return -EINVAL;
-		}
-
-		packet->payload_len -= padding;
-	}
-
-	return 0;
-}
 
 static void rtp_socket_svc_handler(struct net_socket_service_event *pev)
 {
@@ -222,7 +114,20 @@ static void rtp_socket_svc_handler(struct net_socket_service_event *pev)
 
 	(void)k_mutex_unlock(&ctx->lock);
 
-	if (rtp_parse_raw(&packet, data, len) < 0) {
+#ifdef CONFIG_SRTP
+	if (rtp_srtp_rx_enabled(session)) {
+		size_t plain_len;
+
+		if (rtp_srtp_unprotect(session, data, len, &plain_len) < 0) {
+			NET_DBG("Dropping unauthenticated SRTP packet");
+			return;
+		}
+
+		len = plain_len;
+	}
+#endif /* CONFIG_SRTP */
+
+	if (rtp_packet_deserialize(&packet, data, len) < 0) {
 		return;
 	}
 
@@ -610,99 +515,48 @@ int rtp_transport_socket_send(struct rtp_session *session, struct rtp_packet *rt
 {
 	int fd = session->transport.socket_tx_fd;
 	uint8_t buf[CONFIG_RTP_TRANSPORT_SOCKET_BUF_SIZE];
-	const uint8_t *end = buf + sizeof(buf);
-	uint8_t *cursor = buf;
+	size_t budget = sizeof(buf);
 	ssize_t ret;
+	int len;
 
 	if (fd < 0) {
 		NET_DBG("TX socket not open");
 		return -ENOTCONN;
 	}
 
-	*cursor = rtp_pkt->header.vpxcc;
-	cursor += sizeof(uint8_t);
-	*cursor = rtp_pkt->header.mpt;
-	cursor += sizeof(uint8_t);
+#ifdef CONFIG_SRTP
+	/* Snapshot the decision: a concurrent rtp_session_clear_srtp() must
+	 * fail the send instead of falling back to an unprotected packet.
+	 */
+	const bool srtp_tx = rtp_srtp_tx_enabled(session);
 
-	sys_put_be16(rtp_pkt->header.seq, cursor);
-	cursor += sizeof(uint16_t);
+	if (srtp_tx) {
+		/* Leave room for the SRTP authentication tag */
+		budget -= SRTP_MAX_TRAILER_LEN;
+	}
+#endif /* CONFIG_SRTP */
 
-	sys_put_be32(rtp_pkt->header.ts, cursor);
-	cursor += sizeof(uint32_t);
-
-	sys_put_be32(rtp_pkt->header.ssrc, cursor);
-	cursor += sizeof(uint32_t);
-
-#if CONFIG_RTP_MAX_CSRC_COUNT > 0
-	if (rtp_header_get_cc(&rtp_pkt->header) > CONFIG_RTP_MAX_CSRC_COUNT) {
-		NET_DBG("CSRC count %u exceeds maximum %d", rtp_header_get_cc(&rtp_pkt->header),
-			CONFIG_RTP_MAX_CSRC_COUNT);
-		return -EINVAL;
+	len = rtp_packet_serialize(rtp_pkt, padding, buf, budget);
+	if (len < 0) {
+		return len;
 	}
 
-	if (end - cursor <
-	    (ptrdiff_t)((size_t)rtp_header_get_cc(&rtp_pkt->header) * sizeof(uint32_t))) {
-		NET_DBG("Not enough buffer space for CSRC list");
-		return -EINVAL;
-	}
+#ifdef CONFIG_SRTP
+	if (srtp_tx) {
+		size_t protected_len;
+		int err;
 
-	for (size_t i = 0; i < rtp_header_get_cc(&rtp_pkt->header); i++) {
-		sys_put_be32(rtp_pkt->header.csrc[i], cursor);
-		cursor += sizeof(uint32_t);
-	}
-#endif
-
-	if (rtp_header_get_x(&rtp_pkt->header) == 1) {
-		struct rtp_header_extension *hdr_x = &rtp_pkt->header.header_extension;
-		size_t x_data_len = (size_t)hdr_x->length * sizeof(uint32_t);
-
-		if (hdr_x->length > 0 && hdr_x->data == NULL) {
-			NET_DBG("Extension header data pointer is NULL");
-			return -EINVAL;
+		err = rtp_srtp_protect(session, buf, len, sizeof(buf), &protected_len);
+		if (err < 0) {
+			NET_DBG("Failed to protect RTP packet (%d)", err);
+			return err;
 		}
 
-		if (end - cursor < (ptrdiff_t)(2 * sizeof(uint16_t) + x_data_len)) {
-			NET_DBG("Extension header length too large");
-			return -EINVAL;
-		}
-
-		sys_put_be16(hdr_x->definition, cursor);
-		cursor += sizeof(uint16_t);
-
-		sys_put_be16(hdr_x->length, cursor);
-		cursor += sizeof(uint16_t);
-
-		memcpy(cursor, hdr_x->data, x_data_len);
-		cursor += x_data_len;
+		len = protected_len;
 	}
+#endif /* CONFIG_SRTP */
 
-	if (rtp_pkt->payload_len > 0) {
-		if (rtp_pkt->payload == NULL) {
-			NET_DBG("Payload pointer is NULL with non-zero length");
-			return -EINVAL;
-		}
-
-		if (end - cursor < (ptrdiff_t)rtp_pkt->payload_len) {
-			NET_DBG("Payload of len %zu too large", rtp_pkt->payload_len);
-			return -EINVAL;
-		}
-
-		memcpy(cursor, rtp_pkt->payload, rtp_pkt->payload_len);
-		cursor += rtp_pkt->payload_len;
-	}
-
-	if (padding > 0) {
-		if (end - cursor < (ptrdiff_t)padding) {
-			NET_DBG("Padding of size %u too large", padding);
-			return -EINVAL;
-		}
-
-		memset(cursor, 0, padding - 1);
-		cursor += padding - 1;
-		*cursor++ = padding;
-	}
-
-	ret = zsock_send(fd, buf, cursor - buf, 0);
+	ret = zsock_send(fd, buf, len, 0);
 	if (ret < 0) {
 		NET_DBG("Failed to send RTP packet (%d)", errno);
 		return -errno;

@@ -1,0 +1,17 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - rtp
+    - psa
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+
+tests:
+  net.rtp.srtp:
+    extra_configs:
+      - CONFIG_SRTP_REPLAY_WINDOW_SIZE=128
+  net.rtp.srtp.small_window:
+    extra_configs:
+      - CONFIG_SRTP_REPLAY_WINDOW_SIZE=64
