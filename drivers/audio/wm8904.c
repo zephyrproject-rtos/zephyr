@@ -363,16 +363,16 @@ static void wm8904_set_master_clock(const struct device *dev, audio_dai_cfg_t *c
 		audioInterface |= 1U;
 		break;
 	case 20:
-		/* Avoid MISRA 16.4 violation */
+		audioInterface |= 2U;
 		break;
 	case 30:
-		/* Avoid MISRA 16.4 violation */
+		audioInterface |= 3U;
 		break;
 	case 40:
-		/* Avoid MISRA 16.4 violation */
+		audioInterface |= 4U;
 		break;
 	case 50:
-		audioInterface |= (uint16_t)bclkDiv / 10U;
+		audioInterface |= 5U;
 		break;
 	case 55:
 		audioInterface |= 6U;
@@ -384,13 +384,13 @@ static void wm8904_set_master_clock(const struct device *dev, audio_dai_cfg_t *c
 		audioInterface |= 8U;
 		break;
 	case 100:
-		/* Avoid MISRA 16.4 violation */
+		audioInterface |= 9U;
 		break;
 	case 110:
-		/* Avoid MISRA 16.4 violation */
+		audioInterface |= 10U;
 		break;
 	case 120:
-		audioInterface |= (uint16_t)bclkDiv / 10U - 1U;
+		audioInterface |= 11U;
 		break;
 	case 160:
 		audioInterface |= 12U;
