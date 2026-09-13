@@ -1,0 +1,13 @@
+# Copyright (c) 2025 WIZnet Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    W6300 standalone 10/100BASE-T Ethernet controller accessed over SPI.
+
+    The W6300 is driven in single data line (SPI) mode: the variable length
+    data mode instruction, the 16-bit address and the payload are all clocked
+    out on MOSI/MISO.
+
+compatible: "wiznet,w6300"
+
+include: [spi-device.yaml, "wiznet,w6300-common.yaml"]

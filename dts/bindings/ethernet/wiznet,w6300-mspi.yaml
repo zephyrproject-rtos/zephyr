@@ -1,0 +1,21 @@
+# Copyright (c) 2025 WIZnet Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    W6300 standalone 10/100BASE-T Ethernet controller accessed over MSPI in
+    quad data line (QSPI) mode.
+
+    The W6300 QSPI frame starts with a single data line instruction byte and
+    then switches to four data lines for the address, dummy and data phases,
+    which corresponds to MSPI_IO_MODE_QUAD_1_4_4.  Both read and write
+    transfers insert one dummy byte (two clock cycles in quad mode) between
+    the address and data phases, so rx-dummy and tx-dummy are fixed by the
+    driver rather than taken from devicetree.
+
+compatible: "wiznet,w6300"
+
+include: [mspi-device.yaml, "wiznet,w6300-common.yaml"]
+
+properties:
+  mspi-io-mode:
+    required: true

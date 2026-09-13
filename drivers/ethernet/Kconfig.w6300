@@ -7,10 +7,15 @@ menuconfig ETH_W6300
 	bool "W6300 Ethernet Controller"
 	default y
 	depends on DT_HAS_WIZNET_W6300_ENABLED
-	select SPI
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_WIZNET_W6300),spi)
+	select MSPI if $(dt_compat_on_bus,$(DT_COMPAT_WIZNET_W6300),mspi)
 	select GPIO
 	help
-	  W6300 Stand-Alone Ethernet Controller with SPI interface.
+	  W6300 Stand-Alone Ethernet Controller.
+
+	  The controller is driven over a plain SPI bus, or over an MSPI bus
+	  in quad (1-4-4) mode for higher throughput, depending on which bus
+	  the devicetree node is placed on.
 
 if ETH_W6300
 

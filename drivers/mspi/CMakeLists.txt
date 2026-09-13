@@ -11,6 +11,7 @@ zephyr_library_sources_ifdef(CONFIG_MSPI_AMBIQ_TIMING_SCAN mspi_ambiq_timing_sca
 zephyr_library_sources_ifdef(CONFIG_MSPI_DW mspi_dw.c)
 zephyr_library_sources_ifdef(CONFIG_MSPI_EMUL mspi_emul.c)
 zephyr_library_sources_ifdef(CONFIG_MSPI_MCHP_XEC_QMSPI mspi_mchp_xec_qmspi.c)
+zephyr_library_sources_ifdef(CONFIG_MSPI_RPI_PICO_PIO mspi_rpi_pico_pio.c)
 zephyr_library_sources_ifdef(CONFIG_MSPI_STM32_OSPI  mspi_stm32_ospi.c mspi_stm32_common.c)
 zephyr_library_sources_ifdef(CONFIG_MSPI_STM32_QSPI  mspi_stm32_qspi.c mspi_stm32_common.c)
 zephyr_library_sources_ifdef(CONFIG_MSPI_STM32_XSPI  mspi_stm32_xspi.c mspi_stm32_common.c)
