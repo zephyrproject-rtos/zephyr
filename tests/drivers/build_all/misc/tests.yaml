@@ -1,0 +1,7 @@
+common:
+  build_only: true
+  tags: drivers
+tests:
+  drivers.misc.nxp_igf.build:
+    platform_allow:
+      - imx943_evk/mimx94398/m33
