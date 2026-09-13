@@ -67,11 +67,40 @@ static int lis2dh_fifo_period_ns(const struct device *dev, uint64_t *period_ns)
 	return 0;
 }
 
+#ifdef CONFIG_LIS2DH_FIFO_POLL
+static k_timeout_t lis2dh_fifo_poll_interval(const struct device *dev)
+{
+	const struct lis2dh_config *cfg = dev->config;
+	const struct lis2dh_data *data = dev->data;
+
+	/* Check halfway through a watermark interval, but keep bus load sane. */
+	return K_NSEC(MAX(data->fifo_period_ns * cfg->fifo_watermark / 2U, 500000ULL));
+}
+
+static void lis2dh_fifo_poll_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct lis2dh_data *data = CONTAINER_OF(dwork, struct lis2dh_data, fifo_poll_work);
+
+	(void)lis2dh_fifo_handle_irq(data->dev);
+
+	lis2dh_lock(data->dev);
+	if (lis2dh_fifo_is_active(data->dev)) {
+		(void)k_work_reschedule(dwork, lis2dh_fifo_poll_interval(data->dev));
+	}
+	lis2dh_unlock(data->dev);
+}
+#endif /* CONFIG_LIS2DH_FIFO_POLL */
+
 int lis2dh_fifo_init(const struct device *dev)
 {
 	struct lis2dh_data *data = dev->data;
 
+	data->dev = dev;
 	atomic_clear(&data->fifo_active);
+#ifdef CONFIG_LIS2DH_FIFO_POLL
+	k_work_init_delayable(&data->fifo_poll_work, lis2dh_fifo_poll_work);
+#endif
 	lis2dh_stream_init(dev);
 	return 0;
 }
@@ -111,10 +140,12 @@ static int lis2dh_fifo_restore(const struct device *dev, uint8_t ctrl3, uint8_t 
 	if (status < 0 && first_error == 0) {
 		first_error = status;
 	}
+#ifndef CONFIG_LIS2DH_FIFO_POLL
 	status = lis2dh_trigger_int1_set(dev, false);
 	if (status < 0 && first_error == 0) {
 		first_error = status;
 	}
+#endif
 
 	status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL3, &value);
 	if (status < 0 || value != ctrl3) {
@@ -174,9 +205,11 @@ int lis2dh_fifo_start(const struct device *dev)
 	if (cfg->fifo_watermark < 1U || cfg->fifo_watermark > LIS2DH_FIFO_MAX_SAMPLES) {
 		return -EINVAL;
 	}
+#ifndef CONFIG_LIS2DH_FIFO_POLL
 	if (cfg->gpio_drdy.port == NULL) {
 		return -ENOTSUP;
 	}
+#endif
 
 	lis2dh_lock(dev);
 	if (lis2dh_fifo_is_busy(dev) || data->handler_drdy != NULL) {
@@ -207,10 +240,12 @@ int lis2dh_fifo_start(const struct device *dev)
 	if (status < 0) {
 		goto unlock;
 	}
+#ifndef CONFIG_LIS2DH_FIFO_POLL
 	status = lis2dh_trigger_int1_set(dev, false);
 	if (status < 0) {
 		goto unlock;
 	}
+#endif
 
 	data->fifo_restore_pending = true;
 	status = data->hw_tf->write_reg(dev, LIS2DH_REG_FIFO_CTRL, LIS2DH_FIFO_MODE_BYPASS);
@@ -233,11 +268,16 @@ int lis2dh_fifo_start(const struct device *dev)
 	}
 
 	atomic_set(&data->fifo_active, 1);
+#ifdef CONFIG_LIS2DH_FIFO_POLL
+	(void)k_work_reschedule(&data->fifo_poll_work, lis2dh_fifo_poll_interval(dev));
+	status = 0;
+#else
 	status = lis2dh_trigger_fifo_int1_set(dev, true);
 	if (status < 0) {
 		atomic_clear(&data->fifo_active);
 		goto rollback;
 	}
+#endif
 	data->fifo_restore_pending = false;
 	LOG_DBG("%s: FIFO started watermark=%u period=%llu ns", dev->name, cfg->fifo_watermark,
 		(unsigned long long)data->fifo_period_ns);
@@ -270,6 +310,9 @@ int lis2dh_fifo_stop(const struct device *dev)
 	data->stream_iodev = NULL;
 	data->stream_nop_events = 0U;
 	(void)k_work_cancel_delayable(&data->stream_work);
+#ifdef CONFIG_LIS2DH_FIFO_POLL
+	(void)k_work_cancel_delayable(&data->fifo_poll_work);
+#endif
 	if (lis2dh_fifo_is_busy(dev)) {
 		atomic_clear(&data->fifo_active);
 		if (!data->fifo_restore_pending) {
@@ -321,9 +364,11 @@ int lis2dh_fifo_handle_irq(const struct device *dev)
 		goto unlock;
 	}
 	status = lis2dh_stream_handle_irq(dev);
+#ifndef CONFIG_LIS2DH_FIFO_POLL
 	if (status == 0 && lis2dh_fifo_is_active(dev)) {
 		status = lis2dh_trigger_fifo_int1_set(dev, true);
 	}
+#endif
 	if (status < 0) {
 		(void)lis2dh_fifo_stop(dev);
 	}

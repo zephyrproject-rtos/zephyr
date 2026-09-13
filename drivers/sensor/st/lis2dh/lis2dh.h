@@ -316,6 +316,9 @@ struct lis2dh_data {
 	uint8_t stream_routes;
 	uint8_t stream_nop_events;
 	struct k_work_delayable stream_work;
+#ifdef CONFIG_LIS2DH_FIFO_POLL
+	struct k_work_delayable fifo_poll_work;
+#endif
 #endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER

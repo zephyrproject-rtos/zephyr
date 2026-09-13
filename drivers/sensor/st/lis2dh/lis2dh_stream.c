@@ -77,7 +77,12 @@ static int lis2dh_stream_arm(const struct device *dev, const struct sensor_read_
 	if (status < 0) {
 		return status;
 	}
+#ifdef CONFIG_LIS2DH_FIFO_POLL
+	/* The routing above only documents intent in poll mode; no pin is armed. */
+	return 0;
+#else
 	return lis2dh_trigger_fifo_int1_set(dev, routes != 0U);
+#endif
 }
 
 void lis2dh_stream_submit(const struct device *dev, struct rtio_iodev_sqe *sqe)

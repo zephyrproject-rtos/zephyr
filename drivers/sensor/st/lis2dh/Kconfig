@@ -52,6 +52,21 @@ config LIS2DH_STREAM
 	  Samples are delivered through RTIO and decoded with the Sensor Async
 	  API decoder.
 
+config LIS2DH_FIFO_POLL
+	bool "Drain the FIFO from a timer instead of the INT1 interrupt"
+	depends on LIS2DH_STREAM
+	help
+	  Poll the FIFO status register from a periodic delayed work instead of
+	  using the INT1 interrupt.
+
+	  Use this on boards where INT1 is not wired, or is routed to a pin that
+	  cannot raise an interrupt. On Nordic nRF54L devices, for example, port
+	  P2 has no GPIOTE instance, so pins on that port cannot be used as
+	  interrupt sources even though the pin itself works as GPIO.
+
+	  The polling interval is derived from the configured ODR and watermark:
+	  the status register is checked halfway through a watermark interval.
+
 config LIS2DH_THREAD_PRIORITY
 	int "Thread priority"
 	depends on LIS2DH_TRIGGER_OWN_THREAD
