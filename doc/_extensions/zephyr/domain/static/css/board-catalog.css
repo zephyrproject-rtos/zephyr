@@ -183,6 +183,16 @@ input:checked + .toggle-label .toggle-switch::before {
   left: 20px;
 }
 
+input:disabled + .toggle-label {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.dt-status-toggle {
+  justify-content: flex-start;
+  padding-left: 18px;
+}
+
 #catalog {
   display: flex;
   flex-wrap: wrap;
