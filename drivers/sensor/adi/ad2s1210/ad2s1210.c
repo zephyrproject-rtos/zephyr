@@ -598,10 +598,10 @@ static int ad2s1210_set_resolution(const struct device *dev, enum ad2s1210_res r
 	case AD2S1210_RES_10BIT:
 		break;
 	case AD2S1210_RES_12BIT:
-		control |= AD2S1210_CONTROL_RES1_MASK;
+		control |= AD2S1210_CONTROL_RES0_MASK;
 		break;
 	case AD2S1210_RES_14BIT:
-		control |= AD2S1210_CONTROL_RES0_MASK;
+		control |= AD2S1210_CONTROL_RES1_MASK;
 		break;
 	case AD2S1210_RES_16BIT:
 		control |= (AD2S1210_CONTROL_RES1_MASK | AD2S1210_CONTROL_RES0_MASK);
