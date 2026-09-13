@@ -198,7 +198,7 @@ struct pm_state_constraint {
  */
 struct pm_state_constraints {
 	/** Array of power state constraints */
-	struct pm_state_constraint *list;
+	const struct pm_state_constraint *list;
 	/** Number of constraints in the list */
 	size_t count;
 };

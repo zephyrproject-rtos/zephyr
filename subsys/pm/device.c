@@ -349,6 +349,35 @@ bool pm_device_wakeup_is_capable(const struct device *dev)
 			       PM_DEVICE_FLAG_WS_CAPABLE);
 }
 
+bool pm_device_wakeup_is_capable_from_state(const struct device *dev,
+					    enum pm_state state,
+					    uint8_t substate_id)
+{
+	if (!pm_device_wakeup_is_capable(dev)) {
+		return false;
+	}
+
+#ifdef CONFIG_PM_DEVICE_WAKEUP_POWER_STATES
+	const struct pm_state_constraints *blocked = dev->pm_base->wakeup_states;
+	const struct pm_state_constraint match = {
+		.state = state,
+		.substate_id = substate_id,
+	};
+
+	/* Named by zephyr,wakeup-disabling-power-states, or by
+	 * zephyr,disabling-power-states, which removes the device's power.
+	 */
+	if ((blocked != NULL) && pm_state_in_constraints(blocked, match)) {
+		return false;
+	}
+#else
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+#endif /* CONFIG_PM_DEVICE_WAKEUP_POWER_STATES */
+
+	return true;
+}
+
 bool pm_device_on_power_domain(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
