@@ -20,12 +20,13 @@ given devicetree configuration.
 Building and Running
 ********************
 
-Make sure that the ADC is enabled (``status = "okay";``) and has each channel as a
-child node, with your desired settings like gain, reference, or acquisition time and
-oversampling setting (if used). It is also needed to provide an alias ``adc0`` for the
-desired adc. See :zephyr_file:`boards/nrf52840dk_nrf52840.overlay
-<samples/drivers/adc/adc_dt/boards/nrf52840dk_nrf52840.overlay>` for an example of
-such setup.
+The sample reads every channel node of the first enabled ADC controller in the
+devicetree. Make sure that the ADC is enabled (``status = "okay";``) and has
+each channel as a child node, with your desired settings like gain, reference,
+or acquisition time and oversampling setting (if used), as shown in the
+:zephyr:code-sample:`adc_dt` sample. Boards that describe the channels
+available for testing in the :ref:`snippet-hw-test` snippet need no overlay:
+build with the snippet to read those channels.
 
 Building and Running for Nordic nRF52840
 ========================================
@@ -36,11 +37,13 @@ The sample can be built and executed for the
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/adc/adc_sequence
    :board: nrf52840dk/nrf52840
+   :snippets: hw-test
    :goals: build flash
    :compact:
 
-To build for another board, change "nrf52840dk/nrf52840" above to that board's name
-and provide a corresponding devicetree overlay.
+To build for another board, change "nrf52840dk/nrf52840" above to that board's
+name, and provide a devicetree overlay if the board does not describe its
+channels in the snippet.
 
 Sample output
 =============

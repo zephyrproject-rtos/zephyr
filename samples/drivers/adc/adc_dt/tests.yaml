@@ -3,7 +3,13 @@ sample:
 common:
   tags:
     - adc
-  filter: dt_node_has_prop("/zephyr,user","io-channels")
+  required_snippets:
+    - hw-test
+  # A zephyr,user channel list, or a channel described under an enabled ADC
+  # controller (zephyr,gain is required in every ADC channel node).
+  filter: >-
+    dt_node_has_prop("/zephyr,user","io-channels") or
+    dt_any_enabled_node_has_prop("zephyr,gain")
 
 tests:
   sample.drivers.adc.adc_dt:

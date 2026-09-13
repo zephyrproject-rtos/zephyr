@@ -1,5 +1,7 @@
 common:
   depends_on: spi
+  required_snippets:
+    - hw-test
   tags:
     - drivers
     - spi

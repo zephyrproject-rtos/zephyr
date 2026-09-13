@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A DAC output of the board wired to one of its ADC channels, for the
+  accuracy test of tests/drivers/adc/adc_api.
+
+compatible: "test-adc-dac-loopback"
+
+include: base.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: The ADC channel the DAC output is wired to.
+
+  dac:
+    type: phandle
+    required: true
+    description: The DAC controller.
+
+  dac-channel-id:
+    type: int
+    required: true
+    description: The DAC channel driving the output.
+
+  dac-resolution:
+    type: int
+    required: true
+    description: The resolution the DAC channel is set up with, in bits.

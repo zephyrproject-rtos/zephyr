@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A known voltage wired to an ADC channel of the board, for the accuracy
+  test of tests/drivers/adc/adc_api.
+
+compatible: "test-adc-reference-voltage"
+
+include: base.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: The ADC channel the reference voltage is wired to.
+
+  reference-mv:
+    type: int
+    required: true
+    description: The reference voltage, in millivolts.
+
+  expected-accuracy:
+    type: int
+    required: true
+    description: The largest acceptable difference from the reference, in millivolts.

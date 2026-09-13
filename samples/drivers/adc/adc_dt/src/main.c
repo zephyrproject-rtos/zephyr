@@ -15,20 +15,26 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
-#if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
-	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
-#error "No suitable devicetree overlay specified"
-#endif
-
 #define DT_SPEC_AND_COMMA_FOR_INPUTS(node_id, prop, idx) \
 	COND_CODE_1(DT_PHA_HAS_CELL_AT_IDX(node_id, prop, idx, input), \
 		    (ADC_DT_SPEC_GET_BY_IDX(node_id, idx),), ())
 
-/* Data of ADC io-channels specified in devicetree. */
+#define CHANNEL_NODE_SPEC_AND_COMMA(node_id) ADC_DT_SPEC_FROM_CHANNEL_NODE(node_id),
+
+/*
+ * Channels to read: the io-channels of the zephyr,user node when it has
+ * some, otherwise every channel node of an enabled ADC controller.
+ */
 static const struct adc_dt_spec adc_channels[] = {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
 			     DT_SPEC_AND_COMMA_FOR_INPUTS)
+#else
+	ADC_DT_FOREACH_CHANNEL_NODE(CHANNEL_NODE_SPEC_AND_COMMA)
+#endif
 };
+
+BUILD_ASSERT(ARRAY_SIZE(adc_channels) > 0, "No ADC channel described in devicetree");
 
 int main(void)
 {
