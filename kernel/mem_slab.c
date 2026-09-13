@@ -21,8 +21,6 @@
 #include <wait_q.h>
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
-static struct k_obj_type obj_type_mem_slab;
-
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 
 static int k_mem_slab_stats_raw(struct k_obj_core *obj_core, void *stats)

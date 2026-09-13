@@ -30,7 +30,7 @@ struct mbox_walk_data {
 };
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
-static struct k_obj_type  obj_type_mailbox;
+K_OBJ_TYPE_DEFINE(obj_type_mailbox, k_mbox, K_OBJ_TYPE_MBOX_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_MAILBOX */
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
@@ -513,7 +513,3 @@ out:
 
 	return result;
 }
-
-#ifdef CONFIG_OBJ_CORE_MAILBOX
-K_OBJ_TYPE_DEFINE(obj_type_mailbox, k_mbox, K_OBJ_TYPE_MBOX_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_MAILBOX */

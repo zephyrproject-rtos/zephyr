@@ -22,7 +22,7 @@
 #include <stdbool.h>
 
 #ifdef CONFIG_OBJ_CORE_STACK
-static struct k_obj_type obj_type_stack;
+K_OBJ_TYPE_DEFINE(obj_type_stack, k_stack, K_OBJ_TYPE_STACK_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_STACK */
 
 void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
@@ -213,7 +213,3 @@ static inline int z_vrfy_k_stack_pop(struct k_stack *stack,
 }
 #include <zephyr/syscalls/k_stack_pop_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_STACK
-K_OBJ_TYPE_DEFINE(obj_type_stack, k_stack, K_OBJ_TYPE_STACK_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_STACK */

@@ -75,7 +75,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 static struct k_spinlock mutex_lock;
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
-static struct k_obj_type obj_type_mutex;
+K_OBJ_TYPE_DEFINE(obj_type_mutex, k_mutex, K_OBJ_TYPE_MUTEX_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_MUTEX */
 
 int z_impl_k_mutex_init(struct k_mutex *mutex)
@@ -490,7 +490,3 @@ static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)
 }
 #include <zephyr/syscalls/k_mutex_unlock_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_MUTEX
-K_OBJ_TYPE_DEFINE(obj_type_mutex, k_mutex, K_OBJ_TYPE_MUTEX_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_MUTEX */

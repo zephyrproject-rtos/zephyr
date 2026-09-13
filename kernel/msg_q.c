@@ -26,7 +26,7 @@
 #include <zephyr/sys/check.h>
 
 #ifdef CONFIG_OBJ_CORE_MSGQ
-static struct k_obj_type obj_type_msgq;
+K_OBJ_TYPE_DEFINE(obj_type_msgq, k_msgq, K_OBJ_TYPE_MSGQ_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_MSGQ */
 
 static inline bool msgq_handle_poll_events(struct k_msgq *msgq)
@@ -536,7 +536,3 @@ static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *msgq)
 #include <zephyr/syscalls/k_msgq_num_used_get_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_MSGQ
-K_OBJ_TYPE_DEFINE(obj_type_msgq, k_msgq, K_OBJ_TYPE_MSGQ_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_MSGQ */
