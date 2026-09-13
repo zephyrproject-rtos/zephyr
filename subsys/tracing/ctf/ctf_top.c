@@ -22,12 +22,20 @@ struct rtio_iodev_sqe;
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {
-	const char *tname = k_thread_name_get(thread);
+	ctf_bounded_string_t tname;
 
-	if (tname != NULL && tname[0] != '\0') {
-		strncpy(name->buf, tname, sizeof(name->buf));
-		/* strncpy may not always null-terminate */
-		name->buf[sizeof(name->buf) - 1] = 0;
+	/* Copy rather than read thread->name through k_thread_name_get(): a
+	 * thread renamed while it is running is rewritten in place, and reading
+	 * it directly from another CPU can splice the old and new names
+	 * together. k_thread_name_copy() takes a stable snapshot instead, and
+	 * always terminates it.
+	 */
+	if (k_thread_name_copy(thread, tname.buf, sizeof(tname.buf)) != 0) {
+		return;
+	}
+
+	if (tname.buf[0] != '\0') {
+		*name = tname;
 	}
 }
 
@@ -323,6 +331,17 @@ void sys_trace_idle(void)
 #ifdef CONFIG_TRACING_IDLE
 	ctf_top_idle();
 #endif
+	/*
+	 * This CPU has run out of work, so whatever it has gathered would sit
+	 * in an unfinished packet until enough further events arrived to fill
+	 * it - on a CPU that has just gone quiet, possibly never. Close it here
+	 * instead, which bounds how long an event can be held to the point the
+	 * CPU next goes idle. Packets are sized to their contents, so closing
+	 * one early costs only what is in it.
+	 */
+	tracing_stream_flush_cpu();
+	tracing_stream_drain();
+
 	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
 		cpu_load_on_enter_idle();
 	}

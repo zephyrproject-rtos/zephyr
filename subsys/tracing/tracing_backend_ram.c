@@ -16,9 +16,11 @@ static uint32_t pos;
 static bool buffer_full;
 
 static void tracing_backend_ram_output(
-		const struct tracing_backend *backend,
+		const struct tracing_backend *backend, uint8_t stream_id,
 		uint8_t *data, uint32_t length)
 {
+	ARG_UNUSED(stream_id);
+
 	if (buffer_full) {
 		return;
 	}

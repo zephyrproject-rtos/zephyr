@@ -258,8 +258,9 @@ struct net_buf *tracing_func_buf_alloc(struct usbd_class_data *const c_data)
 }
 
 static void tracing_backend_usb_output(const struct tracing_backend *backend,
-				       uint8_t *data, uint32_t length)
+				       uint8_t stream_id, uint8_t *data, uint32_t length)
 {
+	ARG_UNUSED(stream_id);
 	int ret = 0;
 	uint32_t bytes;
 	struct net_buf *buf;
