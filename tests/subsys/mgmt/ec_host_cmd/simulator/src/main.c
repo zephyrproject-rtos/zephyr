@@ -412,6 +412,22 @@ ZTEST(ec_host_cmd, test_unbounded_handler_response_too_big)
 	verify_tx_error(EC_HOST_CMD_INVALID_RESPONSE);
 }
 
+
+ZTEST(ec_host_cmd, test_unbounded_handler_response_wrap)
+{
+	host_to_dut->header.prtcl_ver = 3;
+	host_to_dut->header.cmd_id = EC_CMD_UNBOUNDED;
+	host_to_dut->header.cmd_ver = 1;
+	host_to_dut->header.reserved = 0;
+	host_to_dut->header.data_len = sizeof(host_to_dut->unbounded);
+
+	/* 0xFFF8 + 8 wraps to 0 in uint16_t */
+	host_to_dut->unbounded.bytes_to_write =
+		(uint16_t)(UINT16_MAX - sizeof(struct ec_host_cmd_response_header) + 1);
+	simulate_rx_data();
+	verify_tx_error(EC_HOST_CMD_INVALID_RESPONSE);
+}
+
 #define EC_CMD_TOO_BIG 0x0003
 static enum ec_host_cmd_status
 ec_host_cmd_too_big(struct ec_host_cmd_handler_args *args)
@@ -432,6 +448,76 @@ ZTEST(ec_host_cmd, test_response_always_too_big)
 	simulate_rx_data();
 
 	verify_tx_error(EC_HOST_CMD_INVALID_RESPONSE);
+}
+
+
+ZTEST(ec_host_cmd, test_rx_data_len_overflow)
+{
+	int rv;
+
+	host_to_dut->header.prtcl_ver = 3;
+	host_to_dut->header.cmd_id = EC_CMD_HELLO;
+	host_to_dut->header.cmd_ver = 0;
+	host_to_dut->header.reserved = 0;
+
+	/* 0xFFF8 + 8 wraps to 0 in uint16_t */
+	host_to_dut->header.data_len =
+		(uint16_t)(UINT16_MAX - sizeof(struct ec_host_cmd_request_header) + 1);
+	host_to_dut->header.checksum = 0;
+
+	/* Send 64 bytes (simulating a USB bulk packet) */
+	rv = ec_host_cmd_backend_sim_data_received(host_to_dut_buffer, 64);
+	zassert_equal(rv, 0, "Could not send data %d", rv);
+
+	/* Ensure Send was called so we can verify outputs */
+	rv = k_sem_take(&send_called, K_SECONDS(1));
+	zassert_equal(rv, 0, "Send was not called");
+	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
+}
+ZTEST(ec_host_cmd, test_rx_data_len_max)
+{
+	int rv;
+
+	host_to_dut->header.prtcl_ver = 3;
+	host_to_dut->header.cmd_id = EC_CMD_HELLO;
+	host_to_dut->header.cmd_ver = 0;
+	host_to_dut->header.reserved = 0;
+
+	/* UINT16_MAX (0xFFFF) */
+	host_to_dut->header.data_len = UINT16_MAX;
+	host_to_dut->header.checksum = 0;
+
+	/* Send 64 bytes */
+	rv = ec_host_cmd_backend_sim_data_received(host_to_dut_buffer, 64);
+	zassert_equal(rv, 0, "Could not send data %d", rv);
+
+	/* Ensure Send was called so we can verify outputs */
+	rv = k_sem_take(&send_called, K_SECONDS(1));
+	zassert_equal(rv, 0, "Send was not called");
+	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
+}
+
+ZTEST(ec_host_cmd, test_rx_data_len_greater_than_len_max)
+{
+	int rv;
+
+	host_to_dut->header.prtcl_ver = 3;
+	host_to_dut->header.cmd_id = EC_CMD_HELLO;
+	host_to_dut->header.cmd_ver = 0;
+	host_to_dut->header.reserved = 0;
+
+	/* Greater than CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE */
+	host_to_dut->header.data_len = CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE + 1;
+	host_to_dut->header.checksum = 0;
+
+	/* Send fewer bytes than data_len */
+	rv = ec_host_cmd_backend_sim_data_received(host_to_dut_buffer, 64);
+	zassert_equal(rv, 0, "Could not send data %d", rv);
+
+	/* Ensure Send was called so we can verify outputs */
+	rv = k_sem_take(&send_called, K_SECONDS(1));
+	zassert_equal(rv, 0, "Send was not called");
+	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
 }
 
 static void *ec_host_cmd_tests_setup(void)
