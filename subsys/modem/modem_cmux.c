@@ -1144,6 +1144,13 @@ static void dlci_close(struct modem_cmux_dlci *dlci)
 
 static void modem_cmux_on_dlci_frame_dm(struct modem_cmux_dlci *dlci)
 {
+	/* TS 127 010 5.4.1
+	 *    If the responding station is not ready or unwilling to establish the
+	 *    particular DLC it will reply with a DM frame with the F-bit set to 1.
+	 */
+	const char *extra = dlci->cmux->frame.pf ? " (Not ready/unwilling)" : "";
+
+	LOG_DBG("Disconnected: DLCI %u%s", dlci->dlci_address, extra);
 	return dlci_close(dlci);
 }
 
