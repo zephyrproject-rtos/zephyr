@@ -13,4 +13,5 @@
 
 &rtc0 {
 	status = "okay";
+	alarms-count = <2>;
 };
