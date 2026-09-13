@@ -20,6 +20,37 @@ LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 
 #define SX126X_SF56_MIN_PREAMBLE_LEN	12
 
+#ifdef CONFIG_LORA_GFSK
+#define SX126X_IS_GFSK(data) ((data)->gfsk)
+#else
+#define SX126X_IS_GFSK(data) false
+#endif
+
+#ifdef CONFIG_LORA_GFSK
+/*
+ * Receive bandwidths the GFSK modem offers, smallest first, stated across
+ * both sidebands the way the datasheet does (DS.SX1261-2.W.APP Rev 2.2,
+ * Table 4-2). A request takes the narrowest filter at least as wide, so the
+ * receiver is never narrower than what was asked for.
+ */
+static const struct {
+	uint32_t bandwidth;
+	uint8_t reg;
+} sx126x_gfsk_bw[] = {
+	{4800, SX126X_GFSK_BW_4800},     {5800, SX126X_GFSK_BW_5800},
+	{7300, SX126X_GFSK_BW_7300},     {9700, SX126X_GFSK_BW_9700},
+	{11700, SX126X_GFSK_BW_11700},   {14600, SX126X_GFSK_BW_14600},
+	{19500, SX126X_GFSK_BW_19500},   {23400, SX126X_GFSK_BW_23400},
+	{29300, SX126X_GFSK_BW_29300},   {39000, SX126X_GFSK_BW_39000},
+	{46900, SX126X_GFSK_BW_46900},   {58600, SX126X_GFSK_BW_58600},
+	{78200, SX126X_GFSK_BW_78200},   {93800, SX126X_GFSK_BW_93800},
+	{117300, SX126X_GFSK_BW_117300}, {156200, SX126X_GFSK_BW_156200},
+	{187200, SX126X_GFSK_BW_187200}, {234300, SX126X_GFSK_BW_234300},
+	{312000, SX126X_GFSK_BW_312000}, {373600, SX126X_GFSK_BW_373600},
+	{467000, SX126X_GFSK_BW_467000},
+};
+#endif /* CONFIG_LORA_GFSK */
+
 static int bandwidth_to_reg(enum lora_signal_bandwidth bw, uint8_t *reg)
 {
 	switch (bw) {
@@ -115,6 +146,65 @@ static bool should_enable_ldro(enum lora_datarate sf, enum lora_signal_bandwidth
 
 	return symbol_time_us > 16380;
 }
+
+#ifdef CONFIG_LORA_GFSK
+static int sx126x_gfsk_bw_to_reg(uint32_t bandwidth, uint8_t *reg)
+{
+	for (int i = 0; i < ARRAY_SIZE(sx126x_gfsk_bw); i++) {
+		if (sx126x_gfsk_bw[i].bandwidth >= bandwidth) {
+			*reg = sx126x_gfsk_bw[i].reg;
+			return 0;
+		}
+	}
+
+	return -ENOTSUP;
+}
+
+static int sx126x_gfsk_pulse_shape_to_reg(enum lora_gfsk_pulse_shape shape, uint8_t *reg)
+{
+	switch (shape) {
+	case LORA_GFSK_PULSE_SHAPE_NONE:
+		*reg = SX126X_GFSK_PULSE_SHAPE_OFF;
+		return 0;
+	case LORA_GFSK_PULSE_SHAPE_BT_0_3:
+		*reg = SX126X_GFSK_PULSE_SHAPE_BT_03;
+		return 0;
+	case LORA_GFSK_PULSE_SHAPE_BT_0_5:
+		*reg = SX126X_GFSK_PULSE_SHAPE_BT_05;
+		return 0;
+	case LORA_GFSK_PULSE_SHAPE_BT_0_7:
+		*reg = SX126X_GFSK_PULSE_SHAPE_BT_07;
+		return 0;
+	case LORA_GFSK_PULSE_SHAPE_BT_1_0:
+		*reg = SX126X_GFSK_PULSE_SHAPE_BT_10;
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int sx126x_validate_gfsk_config(const struct lora_gfsk_config *gfsk)
+{
+	uint8_t reg;
+
+	if (gfsk->bitrate == 0) {
+		LOG_ERR("GFSK bit rate must be set");
+		return -EINVAL;
+	}
+
+	if (gfsk->sync_word_len > LORA_GFSK_SYNC_WORD_MAX) {
+		LOG_ERR("GFSK sync word too long: %u", gfsk->sync_word_len);
+		return -EINVAL;
+	}
+
+	if (sx126x_gfsk_bw_to_reg(gfsk->bandwidth, &reg) < 0) {
+		LOG_ERR("Unsupported GFSK bandwidth: %u Hz", gfsk->bandwidth);
+		return -ENOTSUP;
+	}
+
+	return sx126x_gfsk_pulse_shape_to_reg(gfsk->pulse_shape, &reg);
+}
+#endif /* CONFIG_LORA_GFSK */
 
 static int sx126x_validate_config(const struct lora_modem_config *config)
 {
@@ -258,10 +348,14 @@ static int sx126x_set_modulation_params(const struct device *dev,
  * Workaround — Modulation Quality with 500 kHz LoRa Bandwidth
  * (DS_SX1261-2_V1.2, chapter 15.1)
  *
- * Must be called before each packet transmission.
+ * Must be called before each packet transmission. The bit is cleared only
+ * for 500 kHz LoRa; every other LoRa bandwidth and every GFSK setup wants
+ * it set.
  */
-static int sx126x_apply_tx_modulation_workaround(const struct device *dev,
-						  enum lora_signal_bandwidth bw)
+/* The bit is cleared for one LoRa bandwidth and set for everything else,
+ * GFSK included (DS.SX1261-2.W.APP Rev 2.2, 15.1).
+ */
+static int sx126x_apply_tx_modulation_workaround(const struct device *dev, bool lora_bw_500)
 {
 	uint8_t reg_val;
 	int ret;
@@ -271,7 +365,7 @@ static int sx126x_apply_tx_modulation_workaround(const struct device *dev,
 		return ret;
 	}
 
-	if (bw == BW_500_KHZ) {
+	if (lora_bw_500) {
 		reg_val &= ~BIT(2);
 	} else {
 		reg_val |= BIT(2);
@@ -414,6 +508,28 @@ static int sx126x_get_packet_status(const struct device *dev,
 {
 	uint8_t buf[3];
 	int ret;
+
+	/*
+	 * The three status bytes carry different readings depending on the
+	 * packet type: RxStatus, RssiSync and RssiAvg under GFSK against
+	 * RssiPkt, SnrPkt and SignalRssiPkt under LoRa (DS.SX1261-2.W.APP
+	 * Rev 2.2, GetPacketStatus).
+	 */
+#ifdef CONFIG_LORA_GFSK
+	struct sx126x_data *data = dev->data;
+
+	if (data->gfsk) {
+		ret = sx126x_hal_read_cmd(dev, SX126X_CMD_GET_PACKET_STATUS, buf, 3);
+		if (ret == 0) {
+			/* RSSI is -value/2 dBm, averaged over the payload */
+			*rssi = -((int16_t)buf[2] >> 1);
+			/* GFSK estimates no signal-to-noise ratio */
+			*snr = 0;
+		}
+
+		return ret;
+	}
+#endif /* CONFIG_LORA_GFSK */
 
 	ret = sx126x_hal_read_cmd(dev, SX126X_CMD_GET_PACKET_STATUS, buf, 2);
 	if (ret == 0) {
@@ -840,8 +956,176 @@ static void sx126x_irq_work_handler(struct k_work *work)
 	}
 }
 
-static int sx126x_lora_config(const struct device *dev,
-			      const struct lora_modem_config *config)
+#ifdef CONFIG_LORA_GFSK
+static int sx126x_set_gfsk_modulation_params(const struct device *dev,
+					     const struct lora_gfsk_config *gfsk)
+{
+	uint8_t buf[8];
+	uint8_t bw_reg;
+	uint8_t shape_reg;
+	int ret;
+
+	ret = sx126x_gfsk_bw_to_reg(gfsk->bandwidth, &bw_reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sx126x_gfsk_pulse_shape_to_reg(gfsk->pulse_shape, &shape_reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	sys_put_be24(SX126X_GFSK_BR_TO_REG(gfsk->bitrate), &buf[0]);
+	buf[3] = shape_reg;
+	buf[4] = bw_reg;
+	sys_put_be24(SX126X_FREQ_TO_REG(gfsk->freq_deviation), &buf[5]);
+
+	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_MODULATION_PARAMS, buf, 8);
+}
+
+static int sx126x_set_gfsk_packet_params(const struct device *dev,
+					 const struct lora_gfsk_config *gfsk, uint8_t payload_len)
+{
+	uint8_t buf[9];
+
+	sys_put_be16(gfsk->preamble_len * BITS_PER_BYTE, &buf[0]);
+	buf[2] = SX126X_GFSK_PREAMBLE_DETECT_8_BITS;
+	buf[3] = gfsk->sync_word_len * BITS_PER_BYTE;
+	buf[4] = SX126X_GFSK_ADDR_FILTER_OFF;
+	buf[5] = gfsk->fixed_len ? SX126X_GFSK_PKT_FIX_LEN : SX126X_GFSK_PKT_VAR_LEN;
+	buf[6] = payload_len;
+	buf[7] = gfsk->packet_crc_disable ? SX126X_GFSK_CRC_OFF : SX126X_GFSK_CRC_2_BYTES_INV;
+	buf[8] = gfsk->whitening ? SX126X_GFSK_WHITENING_ON : SX126X_GFSK_WHITENING_OFF;
+
+	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PACKET_PARAMS, buf, 9);
+}
+
+static int sx126x_config_gfsk(const struct device *dev, const struct lora_gfsk_config *gfsk)
+{
+	uint8_t buf[2];
+	int ret;
+
+	ret = sx126x_set_gfsk_modulation_params(dev, gfsk);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The payload length only matters for a fixed-length packet; a
+	 * variable-length one carries its own and this caps what is accepted.
+	 */
+	ret = sx126x_set_gfsk_packet_params(
+		dev, gfsk, gfsk->fixed_len ? gfsk->payload_len : SX126X_MAX_PAYLOAD_LEN);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (gfsk->sync_word_len > 0) {
+		ret = sx126x_hal_write_regs(dev, SX126X_REG_GFSK_SYNC_WORD, gfsk->sync_word,
+					    gfsk->sync_word_len);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (!gfsk->packet_crc_disable) {
+		sys_put_be16(SX126X_GFSK_CRC_INIT_CCITT, buf);
+		ret = sx126x_hal_write_regs(dev, SX126X_REG_GFSK_CRC_INIT_MSB, buf, 2);
+		if (ret < 0) {
+			return ret;
+		}
+
+		sys_put_be16(SX126X_GFSK_CRC_POLY_CCITT, buf);
+		ret = sx126x_hal_write_regs(dev, SX126X_REG_GFSK_CRC_POLY_MSB, buf, 2);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (gfsk->whitening) {
+		/* Only the low bit of the high byte belongs to the seed. What
+		 * else the register holds is the radio's, so read it back and
+		 * leave it alone.
+		 */
+		ret = sx126x_hal_read_regs(dev, SX126X_REG_GFSK_WHITENING_MSB, buf, 1);
+		if (ret < 0) {
+			return ret;
+		}
+
+		buf[0] = (buf[0] & ~SX126X_GFSK_WHITENING_MSB_MASK) |
+			 ((SX126X_GFSK_WHITENING_INIT >> 8) & SX126X_GFSK_WHITENING_MSB_MASK);
+		buf[1] = SX126X_GFSK_WHITENING_INIT & 0xFF;
+		ret = sx126x_hal_write_regs(dev, SX126X_REG_GFSK_WHITENING_MSB, buf, 2);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * Frame a packet the way the configuration asks for. The two modems take
+ * different parameters, and every send and receive needs the same choice
+ * made, so it is made here rather than at each of them.
+ */
+#endif /* CONFIG_LORA_GFSK */
+static int sx126x_set_configured_packet_params(const struct device *dev, uint8_t payload_len)
+{
+	struct sx126x_data *data = dev->data;
+
+#ifdef CONFIG_LORA_GFSK
+	if (data->gfsk) {
+		return sx126x_set_gfsk_packet_params(dev, &data->gfsk_config, payload_len);
+	}
+#endif
+
+	return sx126x_set_packet_params(
+		dev, data->config.preamble_len, SX126X_LORA_HEADER_EXPLICIT, payload_len,
+		data->config.packet_crc_disable ? SX126X_LORA_CRC_OFF : SX126X_LORA_CRC_ON,
+		data->config.iq_inverted ? SX126X_LORA_IQ_INVERTED : SX126X_LORA_IQ_STANDARD);
+}
+
+static int sx126x_config_begin(const struct device *dev)
+{
+	struct sx126x_data *data = dev->data;
+	int ret;
+
+	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_IDLE)) {
+		return -EBUSY;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	ret = sx126x_ensure_ready(dev);
+	if (ret < 0) {
+		k_mutex_unlock(&data->lock);
+		atomic_set(&data->state, SX126X_REST_STATE);
+	}
+
+	return ret;
+}
+
+/* Frequency and transmit power are reached the same way whichever modem the
+ * rest of the configuration is for.
+ */
+static int sx126x_config_carrier(const struct device *dev, uint32_t frequency, int8_t tx_power)
+{
+	int ret;
+
+	ret = sx126x_calibrate_image(dev, frequency);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sx126x_set_rf_frequency(dev, frequency);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return sx126x_hal_configure_tx_params(dev, tx_power, frequency, SX126X_RAMP_200_US);
+}
+
+static int sx126x_lora_config(const struct device *dev, const struct lora_modem_config *config)
 {
 	struct sx126x_data *data = dev->data;
 	const struct sx126x_hal_config *hal_config = dev->config;
@@ -854,16 +1138,8 @@ static int sx126x_lora_config(const struct device *dev,
 		return ret;
 	}
 
-	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_IDLE)) {
-		return -EBUSY;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	ret = sx126x_ensure_ready(dev);
+	ret = sx126x_config_begin(dev);
 	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_REST_STATE);
 		return ret;
 	}
 
@@ -882,22 +1158,20 @@ static int sx126x_lora_config(const struct device *dev,
 		data->config.preamble_len = SX126X_SF56_MIN_PREAMBLE_LEN;
 	}
 
-	/* Run image calibration for frequency band */
-	ret = sx126x_calibrate_image(dev, config->frequency);
+	/*
+	 * Selecting the modem resets part of the radio, so it comes before
+	 * everything the configuration then sets (DS.SX1261-2.W.APP Rev 2.2,
+	 * 13.4.2). The radio also keeps whichever type was last selected, so
+	 * say it every time rather than relying on the one set at init: a
+	 * GFSK setup in between would otherwise leave LoRa parameters going
+	 * to the wrong modem.
+	 */
+	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_LORA);
 	if (ret < 0) {
 		goto out;
 	}
 
-	/* Set RF frequency */
-	ret = sx126x_set_rf_frequency(dev, config->frequency);
-	if (ret < 0) {
-		goto out;
-	}
-
-	/* Configure PA and TX power based on chip variant and frequency */
-	ret = sx126x_hal_configure_tx_params(dev, config->tx_power,
-						config->frequency,
-						SX126X_RAMP_200_US);
+	ret = sx126x_config_carrier(dev, config->frequency, config->tx_power);
 	if (ret < 0) {
 		goto out;
 	}
@@ -906,10 +1180,7 @@ static int sx126x_lora_config(const struct device *dev,
 	ret = bandwidth_to_reg(config->bandwidth, &bw_reg);
 	__ASSERT_NO_MSG(ret == 0);
 	ldro = should_enable_ldro(config->datarate, config->bandwidth, hal_config);
-	ret = sx126x_set_modulation_params(dev,
-					   config->datarate,
-					   bw_reg,
-					   config->coding_rate,
+	ret = sx126x_set_modulation_params(dev, config->datarate, bw_reg, config->coding_rate,
 					   ldro);
 	if (ret < 0) {
 		goto out;
@@ -927,6 +1198,9 @@ static int sx126x_lora_config(const struct device *dev,
 		goto out;
 	}
 
+#ifdef CONFIG_LORA_GFSK
+	data->gfsk = false;
+#endif
 	data->config_valid = true;
 	LOG_DBG("Config: freq=%u, SF=%d, BW=%d, CR=%d, power=%d",
 		config->frequency, config->datarate, config->bandwidth,
@@ -937,6 +1211,58 @@ out:
 	k_mutex_unlock(&data->lock);
 	return ret;
 }
+
+#ifdef CONFIG_LORA_GFSK
+static int sx126x_lora_config_gfsk(const struct device *dev, const struct lora_gfsk_config *gfsk)
+{
+	struct sx126x_data *data = dev->data;
+	const struct sx126x_hal_config *hal_config = dev->config;
+	int ret;
+
+	ret = sx126x_validate_gfsk_config(gfsk);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sx126x_config_begin(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->gfsk_config = *gfsk;
+
+	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_GFSK);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = sx126x_config_carrier(dev, gfsk->frequency, gfsk->tx_power);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = sx126x_config_gfsk(dev, gfsk);
+	if (ret < 0) {
+		goto out;
+	}
+
+	/* Boosting the receiver is a board property, not a modem one */
+	ret = sx126x_set_rx_gain(dev, hal_config->rx_boosted);
+	if (ret < 0) {
+		goto out;
+	}
+
+	data->gfsk = true;
+	data->config_valid = true;
+	LOG_DBG("Config: GFSK freq=%u, br=%u, fdev=%u, bw=%u, power=%d", gfsk->frequency,
+		gfsk->bitrate, gfsk->freq_deviation, gfsk->bandwidth, gfsk->tx_power);
+
+out:
+	sx126x_set_sleep(dev);
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+#endif /* CONFIG_LORA_GFSK */
 
 static int sx126x_lora_send_async(const struct device *dev,
 				  uint8_t *data_buf, uint32_t data_len,
@@ -973,14 +1299,7 @@ static int sx126x_lora_send_async(const struct device *dev,
 	k_msgq_purge(&data->tx_msgq);
 
 	/* Set packet parameters */
-	ret = sx126x_set_packet_params(dev,
-				       data->config.preamble_len,
-				       SX126X_LORA_HEADER_EXPLICIT,
-				       data_len,
-				       data->config.packet_crc_disable ?
-				       SX126X_LORA_CRC_OFF : SX126X_LORA_CRC_ON,
-				       data->config.iq_inverted ?
-				       SX126X_LORA_IQ_INVERTED : SX126X_LORA_IQ_STANDARD);
+	ret = sx126x_set_configured_packet_params(dev, data_len);
 	if (ret < 0) {
 		goto out_error;
 	}
@@ -991,7 +1310,8 @@ static int sx126x_lora_send_async(const struct device *dev,
 		goto out_error;
 	}
 
-	ret = sx126x_apply_tx_modulation_workaround(dev, data->config.bandwidth);
+	ret = sx126x_apply_tx_modulation_workaround(
+		dev, !SX126X_IS_GFSK(data) && data->config.bandwidth == BW_500_KHZ);
 	if (ret < 0) {
 		goto out_error;
 	}
@@ -1072,14 +1392,7 @@ static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 	k_msgq_purge(&data->rx_msgq);
 
 	/* Set packet parameters for variable length reception */
-	ret = sx126x_set_packet_params(dev,
-				       data->config.preamble_len,
-				       SX126X_LORA_HEADER_EXPLICIT,
-				       SX126X_MAX_PAYLOAD_LEN,
-				       data->config.packet_crc_disable ?
-				       SX126X_LORA_CRC_OFF : SX126X_LORA_CRC_ON,
-				       data->config.iq_inverted ?
-				       SX126X_LORA_IQ_INVERTED : SX126X_LORA_IQ_STANDARD);
+	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN);
 	if (ret < 0) {
 		sx126x_set_sleep(dev);
 		k_mutex_unlock(&data->lock);
@@ -1171,14 +1484,7 @@ static int sx126x_lora_recv_async(const struct device *dev,
 	data->rx_cb_user_data = user_data;
 
 	/* Set packet parameters */
-	ret = sx126x_set_packet_params(dev,
-				       data->config.preamble_len,
-				       SX126X_LORA_HEADER_EXPLICIT,
-				       SX126X_MAX_PAYLOAD_LEN,
-				       data->config.packet_crc_disable ?
-				       SX126X_LORA_CRC_OFF : SX126X_LORA_CRC_ON,
-				       data->config.iq_inverted ?
-				       SX126X_LORA_IQ_INVERTED : SX126X_LORA_IQ_STANDARD);
+	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN);
 	if (ret < 0) {
 		data->rx_cb = NULL;
 		sx126x_set_sleep(dev);
@@ -1267,15 +1573,7 @@ static int sx126x_duty_cycle_start(const struct device *dev,
 	data->duty_cycle.sleep_period = SX126X_MS_TO_TIMEOUT(
 		k_ticks_to_ms_ceil32(sleep_period.ticks));
 
-	ret = sx126x_set_packet_params(dev,
-				       data->config.preamble_len,
-				       SX126X_LORA_HEADER_EXPLICIT,
-				       SX126X_MAX_PAYLOAD_LEN,
-				       data->config.packet_crc_disable ?
-				       SX126X_LORA_CRC_OFF : SX126X_LORA_CRC_ON,
-				       data->config.iq_inverted ?
-				       SX126X_LORA_IQ_INVERTED :
-				       SX126X_LORA_IQ_STANDARD);
+	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN);
 	if (ret < 0) {
 		goto out_error;
 	}
@@ -1421,6 +1719,22 @@ static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 		return 0;
 	}
 
+#ifdef CONFIG_LORA_GFSK
+	if (data->gfsk) {
+		/*
+		 * A GFSK frame is preamble, sync word, an optional length
+		 * byte, the payload and an optional CRC, all clocked out at
+		 * the configured bit rate.
+		 */
+		uint32_t bits = (data->gfsk_config.preamble_len + data->gfsk_config.sync_word_len +
+				 (data->gfsk_config.fixed_len ? 0 : 1) + data_len +
+				 (data->gfsk_config.packet_crc_disable ? 0 : 2)) *
+				BITS_PER_BYTE;
+
+		return DIV_ROUND_UP(bits * MSEC_PER_SEC, data->gfsk_config.bitrate);
+	}
+#endif /* CONFIG_LORA_GFSK */
+
 	/* Calculate symbol time in microseconds */
 	ret = bandwidth_to_hz(data->config.bandwidth, &bw_hz);
 	__ASSERT_NO_MSG(ret == 0);
@@ -1525,6 +1839,9 @@ out_unlock:
 
 static DEVICE_API(lora, sx126x_lora_api) = {
 	.config = sx126x_lora_config,
+#ifdef CONFIG_LORA_GFSK
+	.config_gfsk = sx126x_lora_config_gfsk,
+#endif
 	.send = sx126x_lora_send,
 	.send_async = sx126x_lora_send_async,
 	.recv = sx126x_lora_recv,

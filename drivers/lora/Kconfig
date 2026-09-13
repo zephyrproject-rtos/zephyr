@@ -46,6 +46,14 @@ module = LORA
 module-str = lora
 source "subsys/logging/Kconfig.template.log_config"
 
+config LORA_GFSK
+	bool "GFSK modulation"
+	help
+	  Let the modem be set up for GFSK through lora_config_gfsk(), as well
+	  as for LoRa. These radios carry the second modem either way; leaving
+	  this off keeps the code that drives it out of drivers that have no
+	  use for it.
+
 config LORA_SHELL
 	bool "LoRa Shell"
 	depends on SHELL

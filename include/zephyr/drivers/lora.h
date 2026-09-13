@@ -129,6 +129,84 @@ enum lora_cad_mode {
 	LORA_CAD_MODE_LBT,
 };
 
+/** @brief Gaussian filter applied to the GFSK transmit pulse */
+enum lora_gfsk_pulse_shape {
+	/** No filtering */
+	LORA_GFSK_PULSE_SHAPE_NONE,
+	/** Gaussian, BT = 0.3 */
+	LORA_GFSK_PULSE_SHAPE_BT_0_3,
+	/** Gaussian, BT = 0.5 */
+	LORA_GFSK_PULSE_SHAPE_BT_0_5,
+	/** Gaussian, BT = 0.7 */
+	LORA_GFSK_PULSE_SHAPE_BT_0_7,
+	/** Gaussian, BT = 1.0 */
+	LORA_GFSK_PULSE_SHAPE_BT_1_0,
+};
+
+/** Longest sync word the GFSK modem will match on, in bytes */
+#define LORA_GFSK_SYNC_WORD_MAX 8
+
+/**
+ * @struct lora_gfsk_config
+ * Structure containing the configuration of a GFSK modem
+ */
+struct lora_gfsk_config {
+	/** Frequency in Hz to use for transceiving */
+	uint32_t frequency;
+
+	/** Bit rate in bits per second */
+	uint32_t bitrate;
+
+	/** Transmit frequency deviation in Hz */
+	uint32_t freq_deviation;
+
+	/**
+	 * Receive bandwidth in Hz, measured across both sidebands.
+	 *
+	 * Radio datasheets state their channel filters this way, so a value
+	 * copied from one needs no conversion. A regulation that states a
+	 * single-sideband figure does: it is half of this.
+	 *
+	 * A radio offers a fixed set of filters, so the driver takes the
+	 * narrowest one that is at least this wide, and refuses the
+	 * configuration when it has none wide enough.
+	 */
+	uint32_t bandwidth;
+
+	/** Pulse shaping filter */
+	enum lora_gfsk_pulse_shape pulse_shape;
+
+	/** Sync word to transmit and to match on */
+	uint8_t sync_word[LORA_GFSK_SYNC_WORD_MAX];
+
+	/** Sync word length in bytes; 0 leaves the sync word out */
+	uint8_t sync_word_len;
+
+	/** Length of the preamble in bytes */
+	uint16_t preamble_len;
+
+	/** TX-power in dBm to use for transmission */
+	int8_t tx_power;
+
+	/** Set to true for transmission, false for receiving */
+	bool tx;
+
+	/** Whiten the payload to keep the transmitted spectrum flat */
+	bool whitening;
+
+	/**
+	 * Send and expect a fixed payload length rather than a length byte
+	 * ahead of the payload
+	 */
+	bool fixed_len;
+
+	/** Payload length in bytes, used only when @ref fixed_len is set */
+	uint8_t payload_len;
+
+	/** Set to true to disable the CRC-16-CCITT over the payload */
+	bool packet_crc_disable;
+};
+
 /**
  * @struct lora_modem_config
  * Structure containing the configuration of a LoRa modem
@@ -239,6 +317,16 @@ typedef void (*lora_cad_cb)(const struct device *dev, bool activity_detected,
 typedef int (*lora_api_config)(const struct device *dev,
 			       const struct lora_modem_config *config);
 
+#if defined(CONFIG_LORA_GFSK) || defined(__DOXYGEN__)
+/**
+ * @brief Callback API for configuring the GFSK modem
+ *
+ * @see lora_config_gfsk() for argument descriptions.
+ */
+typedef int (*lora_api_config_gfsk)(const struct device *dev,
+				    const struct lora_gfsk_config *config);
+#endif /* defined(CONFIG_LORA_GFSK) || defined(__DOXYGEN__) */
+
 /**
  * @brief Callback API for querying packet airtime
  *
@@ -342,6 +430,10 @@ typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
 __subsystem struct lora_driver_api {
 	/** @driver_ops_mandatory @copybrief lora_config */
 	lora_api_config config;
+#if defined(CONFIG_LORA_GFSK) || defined(__DOXYGEN__)
+	/** @driver_ops_optional @copybrief lora_config_gfsk */
+	lora_api_config_gfsk config_gfsk;
+#endif /* defined(CONFIG_LORA_GFSK) || defined(__DOXYGEN__) */
 	/** @driver_ops_mandatory @copybrief lora_airtime */
 	lora_api_airtime airtime;
 	/** @driver_ops_mandatory @copybrief lora_send */
@@ -381,6 +473,32 @@ static inline int lora_config(const struct device *dev,
 {
 	return DEVICE_API_GET(lora, dev)->config(dev, config);
 }
+
+#if defined(CONFIG_LORA_GFSK) || defined(__DOXYGEN__)
+/**
+ * @brief Configure the GFSK modem
+ *
+ * These radios carry a GFSK modem alongside the LoRa one. Setting one up
+ * leaves the other unconfigured; every operation that follows runs on
+ * whichever was asked for last.
+ *
+ * @param dev     LoRa device
+ * @param config  Data structure containing the intended configuration for the
+		  modem
+ * @return 0 on success, -ENOSYS if the driver has no GFSK modem, negative on
+ *	   error
+ */
+static inline int lora_config_gfsk(const struct device *dev, const struct lora_gfsk_config *config)
+{
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
+
+	if (api->config_gfsk == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->config_gfsk(dev, config);
+}
+#endif /* defined(CONFIG_LORA_GFSK) || defined(__DOXYGEN__) */
 
 /**
  * @brief Query the airtime of a packet with a given length
@@ -570,7 +688,8 @@ static inline int lora_rssi(const struct device *dev, int16_t *rssi)
  * @p rssi_threshold, and clear if the window elapses without that happening.
  *
  * Unlike @ref lora_cad this reacts to any energy on the channel, not only to
- * a LoRa preamble. Sensing happens at the bandwidth set by @ref lora_config.
+ * a LoRa preamble. Sensing happens at the bandwidth the modem was last set
+ * to, by @ref lora_config or @ref lora_config_gfsk.
  *
  * @note This is a blocking call.
  *

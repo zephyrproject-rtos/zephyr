@@ -17,6 +17,16 @@
 
 LOG_MODULE_REGISTER(lbm_driver, CONFIG_LORA_LOG_LEVEL);
 
+/*
+ * The CRC LoRaWAN's FSK datarate asks for is CRC-16-CCITT, whose seed and
+ * polynomial these radios happen to reset to. The whitening seed is not:
+ * the parts come up at 0x0100, and LoRaWAN wants every bit of the register
+ * set instead.
+ */
+#define LBM_GFSK_CRC_SEED       0x1D0F
+#define LBM_GFSK_CRC_POLYNOMIAL 0x1021
+#define LBM_GFSK_WHITENING_SEED 0x01FF
+
 /* When Symbol Time exceeds 16.38 ms (6.1.1.4 SX1261/2 datasheet), enable LDRO
  * Symbol Rate is bw / (2 ^ sf) so Symbol time is (2 ^ sf) / bw (6.1.1.1 SX1261/2 datasheet)
  * Additionally, enable LDRO in additional situations described in Lora Basic Modem lr1mac
@@ -79,6 +89,92 @@ static bool modem_release(const struct device *dev)
 	atomic_set(&data->modem_state, STATE_FREE);
 	return true;
 }
+
+#ifdef CONFIG_LORA_GFSK
+static int lbm_gfsk_pulse_shape(enum lora_gfsk_pulse_shape shape, ral_gfsk_pulse_shape_t *out)
+{
+	switch (shape) {
+	case LORA_GFSK_PULSE_SHAPE_NONE:
+		*out = RAL_GFSK_PULSE_SHAPE_OFF;
+		break;
+	case LORA_GFSK_PULSE_SHAPE_BT_0_3:
+		*out = RAL_GFSK_PULSE_SHAPE_BT_03;
+		break;
+	case LORA_GFSK_PULSE_SHAPE_BT_0_5:
+		*out = RAL_GFSK_PULSE_SHAPE_BT_05;
+		break;
+	case LORA_GFSK_PULSE_SHAPE_BT_0_7:
+		*out = RAL_GFSK_PULSE_SHAPE_BT_07;
+		break;
+	case LORA_GFSK_PULSE_SHAPE_BT_1_0:
+		*out = RAL_GFSK_PULSE_SHAPE_BT_1;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int lbm_lora_config_gfsk(const struct device *dev, const struct lora_gfsk_config *gfsk)
+{
+	const struct lbm_lora_config_common *config = dev->config;
+	struct lbm_lora_data_common *data = dev->data;
+	ralf_params_gfsk_t params = {
+		.rf_freq_in_hz = gfsk->frequency,
+		.output_pwr_in_dbm = gfsk->tx_power,
+		.sync_word = gfsk->sync_word,
+		.crc_seed = LBM_GFSK_CRC_SEED,
+		.crc_polynomial = LBM_GFSK_CRC_POLYNOMIAL,
+		.whitening_seed = LBM_GFSK_WHITENING_SEED,
+	};
+	int ret;
+
+	if (gfsk->sync_word_len > LORA_GFSK_SYNC_WORD_MAX) {
+		return -EINVAL;
+	}
+
+	ret = lbm_gfsk_pulse_shape(gfsk->pulse_shape, &params.mod_params.pulse_shape);
+	if (ret < 0) {
+		return ret;
+	}
+
+	params.mod_params.br_in_bps = gfsk->bitrate;
+	params.mod_params.fdev_in_hz = gfsk->freq_deviation;
+	params.mod_params.bw_dsb_in_hz = gfsk->bandwidth;
+
+	params.pkt_params.preamble_len_in_bits = gfsk->preamble_len * BITS_PER_BYTE;
+	params.pkt_params.preamble_detector = RAL_GFSK_PREAMBLE_DETECTOR_MIN_8BITS;
+	params.pkt_params.sync_word_len_in_bits = gfsk->sync_word_len * BITS_PER_BYTE;
+	params.pkt_params.address_filtering = RAL_GFSK_ADDRESS_FILTERING_DISABLE;
+	params.pkt_params.header_type =
+		gfsk->fixed_len ? RAL_GFSK_PKT_FIX_LEN : RAL_GFSK_PKT_VAR_LEN;
+	params.pkt_params.pld_len_in_bytes = gfsk->fixed_len ? gfsk->payload_len : UINT8_MAX;
+	params.pkt_params.crc_type =
+		gfsk->packet_crc_disable ? RAL_GFSK_CRC_OFF : RAL_GFSK_CRC_2_BYTES_INV;
+	params.pkt_params.dc_free =
+		gfsk->whitening ? RAL_GFSK_DC_FREE_WHITENING : RAL_GFSK_DC_FREE_OFF;
+
+	if (!modem_acquire(dev)) {
+		return -EBUSY;
+	}
+
+	if (ralf_setup_gfsk(&config->ralf, &params) != RAL_STATUS_OK) {
+		ret = -EIO;
+		goto release;
+	}
+
+	data->gfsk_mod_params = params.mod_params;
+	data->gfsk_pkt_params = params.pkt_params;
+	data->gfsk = true;
+	data->configured = true;
+	ret = 0;
+
+release:
+	modem_release(dev);
+	return ret;
+}
+#endif /* CONFIG_LORA_GFSK */
 
 int lbm_lora_config(const struct device *dev, const struct lora_modem_config *lora_config)
 {
@@ -184,6 +280,17 @@ int lbm_lora_config(const struct device *dev, const struct lora_modem_config *lo
 	status = ralf_setup_lora(&config->ralf, &params);
 	ret = status == RAL_STATUS_OK ? 0 : -EIO;
 
+	/* Only claim the radio is set up once it has taken the settings, so a
+	 * rejected configuration leaves the previous one in force rather than
+	 * a modem the radio was never put into.
+	 */
+	if (ret == 0) {
+#ifdef CONFIG_LORA_GFSK
+		data->gfsk = false;
+#endif
+		data->configured = true;
+	}
+
 release:
 	modem_release(dev);
 	return ret;
@@ -194,9 +301,19 @@ uint32_t lbm_lora_airtime(const struct device *dev, uint32_t data_len)
 	const struct lbm_lora_config_common *config = dev->config;
 	struct lbm_lora_data_common *data = dev->data;
 
-	/* Updating the internal variable is fine since it is only used by ral_set_lora_pkt_params
-	 * in lbm_lora_send_async, and the value is set there immediately before use.
+	/* Updating the internal variable is fine since it is only used by the
+	 * matching ral_set_*_pkt_params in lbm_lora_send_async, and the value
+	 * is set there immediately before use.
 	 */
+#ifdef CONFIG_LORA_GFSK
+	if (data->gfsk) {
+		data->gfsk_pkt_params.pld_len_in_bytes = data_len;
+
+		return ral_get_gfsk_time_on_air_in_ms(&config->ralf.ral, &data->gfsk_pkt_params,
+						      &data->gfsk_mod_params);
+	}
+#endif /* CONFIG_LORA_GFSK */
+
 	data->pkt_params.pld_len_in_bytes = data_len;
 
 	return ral_get_lora_time_on_air_in_ms(&config->ralf.ral, &data->pkt_params,
@@ -221,7 +338,7 @@ int lbm_lora_send_async(const struct device *dev, uint8_t *msg, uint32_t msg_len
 	data->modem_mode = MODE_TX;
 
 	/* Validate that we have a TX configuration */
-	if (data->mod_params.sf == 0) {
+	if (!data->configured) {
 		ret = -EINVAL;
 		goto release;
 	}
@@ -234,8 +351,16 @@ int lbm_lora_send_async(const struct device *dev, uint8_t *msg, uint32_t msg_len
 	 * generic way to update the variable. Why this isn't just done in ral_set_pkt_payload
 	 * is anyones guess.
 	 */
-	data->pkt_params.pld_len_in_bytes = msg_len;
-	status = ral_set_lora_pkt_params(&config->ralf.ral, &data->pkt_params);
+#ifdef CONFIG_LORA_GFSK
+	if (data->gfsk) {
+		data->gfsk_pkt_params.pld_len_in_bytes = msg_len;
+		status = ral_set_gfsk_pkt_params(&config->ralf.ral, &data->gfsk_pkt_params);
+	} else
+#endif /* CONFIG_LORA_GFSK */
+	{
+		data->pkt_params.pld_len_in_bytes = msg_len;
+		status = ral_set_lora_pkt_params(&config->ralf.ral, &data->pkt_params);
+	}
 	if (status != RAL_STATUS_OK) {
 		ret = -EINVAL;
 		goto release;
@@ -439,8 +564,8 @@ int lbm_lora_test_cw(const struct device *dev, uint32_t frequency, int8_t tx_pow
 	lbm_driver_antenna_configure(dev, MODE_CW);
 	data->modem_mode = MODE_CW;
 
-	/* Invalidate stored config */
-	data->mod_params.sf = 0;
+	/* The radio no longer matches either stored parameter set. */
+	data->configured = false;
 
 	/* Configure continuous wave */
 	status = ral_set_pkt_type(&config->ralf.ral, RAL_PKT_TYPE_LORA);
@@ -490,6 +615,25 @@ static int op_done_sync_rx(const struct device *dev)
 		ret = -EIO;
 	}
 
+#ifdef CONFIG_LORA_GFSK
+	if (data->gfsk) {
+		ral_gfsk_rx_pkt_status_t gfsk_status;
+
+		status = ral_get_gfsk_rx_pkt_status(&config->ralf.ral, &gfsk_status);
+		if (status == RAL_STATUS_OK) {
+			data->rx_state.sync.rssi_dbm = gfsk_status.rssi_avg_in_dbm;
+			/* GFSK measures no signal-to-noise ratio */
+			data->rx_state.sync.snr_db = 0;
+		} else {
+			LOG_WRN("Failed to query packet signal stats");
+			data->rx_state.sync.rssi_dbm = INT16_MIN;
+			data->rx_state.sync.snr_db = INT8_MIN;
+		}
+
+		return ret;
+	}
+#endif /* CONFIG_LORA_GFSK */
+
 	status = ral_get_lora_rx_pkt_status(&config->ralf.ral, &pkt_status);
 	if (status == RAL_STATUS_OK) {
 		data->rx_state.sync.rssi_dbm = pkt_status.signal_rssi_pkt_in_dbm;
@@ -522,6 +666,22 @@ static void op_done_async_rx(const struct device *dev)
 	LOG_HEXDUMP_DBG(rx_buffer, size, "RX");
 
 	/* Retrieve packet parameters */
+#ifdef CONFIG_LORA_GFSK
+	if (data->gfsk) {
+		ral_gfsk_rx_pkt_status_t gfsk_status = {0};
+
+		status = ral_get_gfsk_rx_pkt_status(&config->ralf.ral, &gfsk_status);
+		if (status != RAL_STATUS_OK) {
+			LOG_WRN("Failed to query packet signal stats");
+		}
+
+		/* GFSK measures no signal-to-noise ratio */
+		data->rx_state.async.rx_cb(dev, rx_buffer, size, gfsk_status.rssi_avg_in_dbm, 0,
+					   data->rx_state.async.user_data);
+		return;
+	}
+#endif /* CONFIG_LORA_GFSK */
+
 	status = ral_get_lora_rx_pkt_status(&config->ralf.ral, &pkt_status);
 	if (status != RAL_STATUS_OK) {
 		LOG_WRN("Failed to query packet signal stats");
@@ -666,6 +826,9 @@ int lbm_lora_rssi(const struct device *dev, int16_t *rssi)
 
 DEVICE_API(lora, lbm_lora_api) = {
 	.config = lbm_lora_config,
+#ifdef CONFIG_LORA_GFSK
+	.config_gfsk = lbm_lora_config_gfsk,
+#endif
 	.airtime = lbm_lora_airtime,
 	.send = lbm_lora_send,
 	.send_async = lbm_lora_send_async,

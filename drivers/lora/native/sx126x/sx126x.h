@@ -42,6 +42,13 @@ struct sx126x_data {
 	/* Current configuration */
 	struct lora_modem_config config;
 	bool config_valid;
+#ifdef CONFIG_LORA_GFSK
+	/* Set when the GFSK configuration, rather than the LoRa one,
+	 * describes the radio
+	 */
+	struct lora_gfsk_config gfsk_config;
+	bool gfsk;
+#endif
 
 	/* TX completion via message queue */
 	struct k_msgq tx_msgq;

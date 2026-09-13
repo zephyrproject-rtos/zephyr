@@ -36,6 +36,10 @@ uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len);
 int sx12xx_lora_config(const struct device *dev,
 		       const struct lora_modem_config *config);
 
+#if defined(CONFIG_LORA_GFSK) && defined(CONFIG_HAS_SEMTECH_SX126X)
+int sx12xx_lora_config_gfsk(const struct device *dev, const struct lora_gfsk_config *config);
+#endif
+
 int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 			int8_t tx_power,
 			uint16_t duration);

@@ -102,6 +102,67 @@
 #define SX126X_CALIBRATE_IMAGE              BIT(6)
 #define SX126X_CALIBRATE_ALL                0x7F
 
+/* GFSK receive bandwidths (double-side band), for SET_MODULATION_PARAMS */
+#define SX126X_GFSK_BW_4800   0x1F
+#define SX126X_GFSK_BW_5800   0x17
+#define SX126X_GFSK_BW_7300   0x0F
+#define SX126X_GFSK_BW_9700   0x1E
+#define SX126X_GFSK_BW_11700  0x16
+#define SX126X_GFSK_BW_14600  0x0E
+#define SX126X_GFSK_BW_19500  0x1D
+#define SX126X_GFSK_BW_23400  0x15
+#define SX126X_GFSK_BW_29300  0x0D
+#define SX126X_GFSK_BW_39000  0x1C
+#define SX126X_GFSK_BW_46900  0x14
+#define SX126X_GFSK_BW_58600  0x0C
+#define SX126X_GFSK_BW_78200  0x1B
+#define SX126X_GFSK_BW_93800  0x13
+#define SX126X_GFSK_BW_117300 0x0B
+#define SX126X_GFSK_BW_156200 0x1A
+#define SX126X_GFSK_BW_187200 0x12
+#define SX126X_GFSK_BW_234300 0x0A
+#define SX126X_GFSK_BW_312000 0x19
+#define SX126X_GFSK_BW_373600 0x11
+#define SX126X_GFSK_BW_467000 0x09
+
+/* GFSK bit rate: br_reg = (32 * XTAL_FREQ) / bitrate */
+#define SX126X_GFSK_BR_TO_REG(br) ((uint32_t)(((uint64_t)SX126X_XTAL_FREQ * 32) / (br)))
+
+/* GFSK registers */
+#define SX126X_REG_GFSK_SYNC_WORD     0x06C0
+#define SX126X_REG_GFSK_CRC_INIT_MSB  0x06BC
+#define SX126X_REG_GFSK_CRC_POLY_MSB  0x06BE
+#define SX126X_REG_GFSK_WHITENING_MSB 0x06B8
+
+/*
+ * The CRC LoRaWAN's FSK datarate asks for is CRC-16-CCITT, whose seed and
+ * polynomial the part happens to reset to. The whitening seed is not: the
+ * part comes up at 0x0100 and LoRaWAN wants every bit of the register set.
+ */
+#define SX126X_GFSK_CRC_INIT_CCITT     0x1D0F
+#define SX126X_GFSK_CRC_POLY_CCITT     0x1021
+#define SX126X_GFSK_WHITENING_INIT     0x01FF
+/* The seed's high byte reaches only bit 0 of the register it lands in */
+#define SX126X_GFSK_WHITENING_MSB_MASK 0x01
+
+/* GFSK packet parameter fields (for SET_PACKET_PARAMS) */
+#define SX126X_GFSK_PREAMBLE_DETECT_8_BITS 0x04
+#define SX126X_GFSK_ADDR_FILTER_OFF        0x00
+#define SX126X_GFSK_PKT_VAR_LEN            0x01
+#define SX126X_GFSK_PKT_FIX_LEN            0x00
+#define SX126X_GFSK_CRC_OFF                0x01
+#define SX126X_GFSK_CRC_2_BYTES_INV        0x06
+#define SX126X_GFSK_WHITENING_ON           0x01
+#define SX126X_GFSK_WHITENING_OFF          0x00
+
+/* GFSK pulse shapes (for SET_MODULATION_PARAMS) */
+#define SX126X_GFSK_PULSE_SHAPE_OFF   0x00
+#define SX126X_GFSK_PULSE_SHAPE_BT_03 0x08
+#define SX126X_GFSK_PULSE_SHAPE_BT_05 0x09
+#define SX126X_GFSK_PULSE_SHAPE_BT_07 0x0A
+
+#define SX126X_GFSK_PULSE_SHAPE_BT_10 0x0B
+
 /* LoRa Bandwidth values (for SET_MODULATION_PARAMS) */
 #define SX126X_LORA_BW_7_8                  0x00
 #define SX126X_LORA_BW_10_4                 0x08
