@@ -59,7 +59,7 @@
 /** Init script timeout - contains CFUN, NVM commands */
 #define HL78XX_SCRIPT_TIMEOUT_INIT         100
 /** Post-restart script timeout - waiting for +KSUP after restart/power-cycle */
-#define HL78XX_SCRIPT_TIMEOUT_POST_RESTART HL78XX_CMD_TIMEOUT_LONG
+#define HL78XX_SCRIPT_TIMEOUT_POST_RESTART HL78XX_CMD_TIMEOUT_VERY_LONG
 /** Periodic script timeout - basic queries */
 #define HL78XX_SCRIPT_TIMEOUT_PERIODIC     4
 /** Network registration script timeout */
@@ -156,6 +156,10 @@ int hl78xx_run_post_restart_script(struct hl78xx_data *data);
 int hl78xx_run_init_fail_script(struct hl78xx_data *data);
 int hl78xx_run_enable_ksup_urc_script(struct hl78xx_data *data);
 int hl78xx_run_pwroff_script_async(struct hl78xx_data *data);
+/* Stop whatever script currently owns the chat, releasing any synchronous
+ * caller waiting on it.
+ */
+void hl78xx_chat_abort_active_script(struct hl78xx_data *data);
 int hl78xx_run_post_restart_script_async(struct hl78xx_data *data);
 /* Run the LTE disable GSM enable registration status script */
 int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data);
