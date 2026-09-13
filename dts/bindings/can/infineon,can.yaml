@@ -22,3 +22,7 @@ properties:
       Peripheral clock destination ID for this CAN instance.
       Maps to an en_clk_dst_t value used by the Infineon PDL to
       connect a peripheral clock divider to this CAN block.
+  frequency:
+    type: int
+    description: |
+      operating frequency should be given for traveo family devices.
