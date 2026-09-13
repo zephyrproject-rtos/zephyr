@@ -16,15 +16,29 @@ config SOC_RP2350A
 
 config SOC_RP2350A_HAZARD3
 	bool
-	select SOC_RP2350A
+	select SOC_RP2350A_HAZARD3_0
 	help
 	  Use the RP2350A with a Hazard3 core in both 'sockets'.
+	  Deprecated, use SOC_RP2350A_HAZARD3_0 instead
 
-config SOC_RP2350A_M33
+config SOC_RP2350A_HAZARD3_0
 	bool
 	select SOC_RP2350A
 	help
+	  Use the RP2350A with CPU0 as a Hazard3 core
+
+config SOC_RP2350A_M33
+	bool
+	select SOC_RP2350A_M33_0
+	help
 	  Use the RP2350A with a Cortex-M33 core in both 'sockets'.
+	  Deprecated, use SOC_RP2350A_M33_0 instead
+
+config SOC_RP2350A_M33_0
+	bool
+	select SOC_RP2350A
+	help
+	  Use the RP2350A with CPU0 as a Cortex-M33 core.
 
 config SOC_RP2350B
 	bool
@@ -32,15 +46,29 @@ config SOC_RP2350B
 
 config SOC_RP2350B_HAZARD3
 	bool
-	select SOC_RP2350B
+	select SOC_RP2350B_HAZARD3_0
 	help
 	  Use the RP2350B with a Hazard3 core in both 'sockets'.
+	  Deprecated, use SOC_RP2350B_HAZARD3_0 instead
 
-config SOC_RP2350B_M33
+config SOC_RP2350B_HAZARD3_0
 	bool
 	select SOC_RP2350B
 	help
+	  Use the RP2350B with CPU0 as a Hazard3 core.
+
+config SOC_RP2350B_M33
+	bool
+	select SOC_RP2350B_M33_0
+	help
 	  Use the RP2350B with a Cortex-M33 core in both 'sockets'.
+	  Deprecated, use SOC_RP2350B_M33_0 instead
+
+config SOC_RP2350B_M33_0
+	bool
+	select SOC_RP2350B
+	help
+	  Use the RP2350B with CPU0 as a Cortex-M33 core.
 
 config SOC
 	default "rp2350a" if SOC_RP2350A

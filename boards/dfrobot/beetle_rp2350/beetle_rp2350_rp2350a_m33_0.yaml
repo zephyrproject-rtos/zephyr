@@ -1,8 +1,8 @@
-identifier: rpi_pico2/rp2350a/m33/w
-name: Raspberry Pi Pico 2 (Cortex-M33) WiFi
+identifier: beetle_rp2350/rp2350a/m33_0
+name: DFRobot Beetle RP2350 (Cortex M33)
 type: mcu
 arch: arm
-flash: 4096
+flash: 2048
 ram: 520
 toolchain:
   - zephyr
@@ -12,15 +12,12 @@ supported:
   - clock
   - counter
   - dma
+  - flash
   - gpio
   - hwinfo
   - i2c
-  - pico_gpio
-  - pico_i2c
-  - pico_serial
-  - pico_spi
   - pwm
   - spi
   - uart
+  - usbd
   - watchdog
-  - wifi

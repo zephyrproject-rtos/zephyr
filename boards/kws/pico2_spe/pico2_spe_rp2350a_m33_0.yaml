@@ -1,22 +1,20 @@
-identifier: motion_2350_pro/rp2350a/hazard3
-name: Cytron Motion 2350 Pro (Hazard3)
+identifier: pico2_spe/rp2350a/m33_0
+name: KWS Pico2 SinglePairEthernet
 type: mcu
-arch: riscv
-flash: 2048
+arch: arm
+flash: 4096
 ram: 520
 toolchain:
   - zephyr
+  - gnuarmemb
 supported:
   - adc
   - clock
   - counter
   - dma
-  - flash
   - gpio
   - hwinfo
   - i2c
   - pwm
   - spi
   - uart
-  - usbd
-  - watchdog

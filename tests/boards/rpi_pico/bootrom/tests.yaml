@@ -6,17 +6,17 @@ tests:
   boards.rpi_pico.bootrom.basic:
     platform_allow:
       - rpi_pico/rp2040
-      - rpi_pico2/rp2350a/m33
-      - rpi_pico2/rp2350a/hazard3
+      - rpi_pico2/rp2350a/m33_0
+      - rpi_pico2/rp2350a/hazard3_0
   boards.rpi_pico.bootrom.basic.mcuboot:
     platform_allow:
       - rpi_pico/rp2040/mcuboot
-      - rpi_pico2/rp2350a/m33/mcuboot
+      - rpi_pico2/rp2350a/m33_0/mcuboot
     sysbuild: true
   boards.rpi_pico.bootrom.mpu:
     platform_allow:
       - rpi_pico/rp2040
-      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/m33_0
     extra_configs:
       - CONFIG_ARM_MPU=y
       - CONFIG_HW_STACK_PROTECTION=y
@@ -25,7 +25,7 @@ tests:
   boards.rpi_pico.bootrom.mpu.mcuboot:
     platform_allow:
       - rpi_pico/rp2040/mcuboot
-      - rpi_pico2/rp2350a/m33/mcuboot
+      - rpi_pico2/rp2350a/m33_0/mcuboot
     sysbuild: true
     extra_configs:
       - CONFIG_ARM_MPU=y
@@ -34,7 +34,7 @@ tests:
   boards.rpi_pico.bootrom.userspace:
     platform_allow:
       - rpi_pico/rp2040
-      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/m33_0
     extra_configs:
       - CONFIG_ARM_MPU=y
       - CONFIG_HW_STACK_PROTECTION=y
@@ -45,7 +45,7 @@ tests:
     sysbuild: true
     platform_allow:
       - rpi_pico/rp2040/mcuboot
-      - rpi_pico2/rp2350a/m33/mcuboot
+      - rpi_pico2/rp2350a/m33_0/mcuboot
     extra_configs:
       - CONFIG_ARM_MPU=y
       - CONFIG_HW_STACK_PROTECTION=y

@@ -1,4 +1,4 @@
-identifier: rp2350_zero/rp2350a/hazard3
+identifier: rp2350_zero/rp2350a/hazard3_0
 name: Waveshare RP2350-Zero (Hazard3)
 type: mcu
 arch: riscv
