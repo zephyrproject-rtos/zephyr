@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -94,7 +95,9 @@ int pm_device_action_run(const struct device *dev,
 	pm->state = action_target_state[action];
 	/* Power up flags are no longer relevant */
 	if (action == PM_DEVICE_ACTION_TURN_OFF) {
-		atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_PD_CLAIMED);
+		if (!atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_PD_RELEASING)) {
+			atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_PD_CLAIMED);
+		}
 		atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_TURN_ON_FAILED);
 	}
 
