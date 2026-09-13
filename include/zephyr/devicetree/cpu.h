@@ -24,12 +24,13 @@ extern "C" {
  */
 
 /**
- * @brief Invokes @p fn for each child of the devicetree's "/cpus" node whose
- *        device_type is "cpu"
+ * @brief Invokes @p fn for each CPU node in the devicetree's "/cpus" node
  *
  * The macro @p fn must take one parameter, which will be the node
- * identifier of a "/cpus" child node with device_type = "cpu". Children of
- * "/cpus" that do not have device_type = "cpu" are skipped.
+ * identifier of a "/cpus/cpu@N" node. The list is determined at build time
+ * by the Python devicetree tooling (edt.cpus) using a structural check:
+ * direct children of "/cpus" whose name prefix is "cpu". Children of
+ * "/cpus" that do not match (e.g. "power-states") are excluded.
  *
  * Example devicetree fragment:
  *
@@ -67,19 +68,15 @@ extern "C" {
  *     };
  * @endcode
  *
- * Notice that "power-states" is skipped, since its device_type is not "cpu".
+ * Notice that "power-states" is excluded.
  *
  * @param fn macro to invoke
  */
-#define DT_FOREACH_CPU(fn) DT_FOREACH_CHILD_VARGS(DT_PATH(cpus), DT_FOREACH_CPU_INTERNAL, fn)
+#define DT_FOREACH_CPU(fn) DT_FOREACH_CPU_HELPER(fn)
 
 /**
- * @brief Invokes @p fn for each child of the devicetree's "/cpus" node whose
- *        device_type is "cpu", with a separator
- *
- * The macro @p fn must take one parameter, which will be the node
- * identifier of a "/cpus" child node with device_type = "cpu". Children of
- * "/cpus" that do not have device_type = "cpu" are skipped.
+ * @brief Invokes @p fn for each CPU node in the devicetree's "/cpus" node,
+ *        with a separator
  *
  * @p sep is placed after each invocation of @p fn, not between invocations.
  * This means the expansion has a trailing @p sep, which is convenient for
@@ -100,12 +97,11 @@ extern "C" {
  *
  * @see DT_FOREACH_CPU
  */
-#define DT_FOREACH_CPU_SEP(fn, sep)                                                                \
-	DT_FOREACH_CHILD_VARGS(DT_PATH(cpus), DT_FOREACH_CPU_SEP_INTERNAL, fn, sep)
+#define DT_FOREACH_CPU_SEP(fn, sep) DT_FOREACH_CPU_SEP_HELPER(fn, sep)
 
 /**
- * @brief Invokes @p fn for each child of the devicetree's "/cpus" node whose
- *        device_type is "cpu", with multiple arguments
+ * @brief Invokes @p fn for each CPU node in the devicetree's "/cpus" node,
+ *        with multiple arguments
  *
  * The macro @p fn takes multiple arguments. The first should be the node
  * identifier for the "/cpus" child node. The remaining are passed-in by the
@@ -116,14 +112,11 @@ extern "C" {
  *
  * @see DT_FOREACH_CPU
  */
-#define DT_FOREACH_CPU_VARGS(fn, ...)                                                              \
-	DT_FOREACH_CHILD_VARGS(DT_PATH(cpus), DT_FOREACH_CPU_VARGS_INTERNAL, fn, __VA_ARGS__)
+#define DT_FOREACH_CPU_VARGS(fn, ...) DT_FOREACH_CPU_VARGS_HELPER(fn, __VA_ARGS__)
 
 /**
- * @brief Invokes @p fn for each child of the devicetree's "/cpus" node whose
- *        device_type is "cpu", with a separator and multiple arguments
- *
- * The macro @p fn takes multiple arguments. The remaining are passed-in by the caller.
+ * @brief Invokes @p fn for each CPU node in the devicetree's "/cpus" node,
+ *        with a separator and multiple arguments
  *
  * @param fn macro to invoke
  * @param sep Separator (e.g. comma or semicolon) placed after each
@@ -133,32 +126,21 @@ extern "C" {
  *
  * @see DT_FOREACH_CPU_SEP
  */
-#define DT_FOREACH_CPU_SEP_VARGS(fn, sep, ...)                                                     \
-	DT_FOREACH_CHILD_VARGS(DT_PATH(cpus), DT_FOREACH_CPU_SEP_VARGS_INTERNAL, fn, sep,          \
-			       __VA_ARGS__)
+#define DT_FOREACH_CPU_SEP_VARGS(fn, sep, ...) DT_FOREACH_CPU_SEP_VARGS_HELPER(fn, sep, __VA_ARGS__)
 
 /**
- * @brief Invokes @p fn for each child of the devicetree's "/cpus" node whose
- *        device_type is "cpu" and status is "okay"
- *
- * This macro iterates through children of the "/cpus" node in the same order
- * as they appear in the final devicetree, but children whose status is not `okay`
- * are also skipped.
+ * @brief Invokes @p fn for each CPU node in the devicetree's "/cpus" node
+ *        whose status is "okay"
  *
  * @param fn macro to invoke
  *
  * @see DT_FOREACH_CPU
  */
-#define DT_FOREACH_CPU_STATUS_OKAY(fn)                                                             \
-	DT_FOREACH_CHILD_VARGS(DT_PATH(cpus), DT_FOREACH_CPU_STATUS_OKAY_INTERNAL, fn)
+#define DT_FOREACH_CPU_STATUS_OKAY(fn) DT_FOREACH_CPU_OKAY_HELPER(fn)
 
 /**
- * @brief Invokes @p fn for each child of the devicetree's "/cpus" node whose
- *        device_type is "cpu" and status is "okay", with a separator
- *
- * This macro iterates through children of the "/cpus" node in the same order
- * as they appear in the final devicetree, but children whose status is not `okay`
- * are also skipped.
+ * @brief Invokes @p fn for each CPU node in the devicetree's "/cpus" node
+ *        whose status is "okay", with a separator
  *
  * @param fn macro to invoke
  * @param sep Separator (e.g. comma or semicolon) placed after each
@@ -167,17 +149,11 @@ extern "C" {
  *
  * @see DT_FOREACH_CPU_SEP
  */
-#define DT_FOREACH_CPU_STATUS_OKAY_SEP(fn, sep)                                                    \
-	DT_FOREACH_CHILD_VARGS(DT_PATH(cpus), DT_FOREACH_CPU_STATUS_OKAY_SEP_INTERNAL, fn, sep)
+#define DT_FOREACH_CPU_STATUS_OKAY_SEP(fn, sep) DT_FOREACH_CPU_OKAY_SEP_HELPER(fn, sep)
 
 /**
- * @brief Invokes @p fn for each child of the devicetree's "/cpus" node whose
- *        device_type is "cpu" and status is "okay", with a separator and
- *        multiple arguments
- *
- * This macro iterates through children of the "/cpus" node in the same order
- * as they appear in the final devicetree, but children whose status is not `okay`
- * are also skipped.
+ * @brief Invokes @p fn for each CPU node in the devicetree's "/cpus" node
+ *        whose status is "okay", with a separator and multiple arguments
  *
  * @param fn macro to invoke
  * @param sep Separator (e.g. comma or semicolon) placed after each
@@ -187,42 +163,8 @@ extern "C" {
  *
  * @see DT_FOREACH_CPU_STATUS_OKAY_SEP
  */
-#define DT_FOREACH_CPU_STATUS_OKAY_SEP_VARGS(fn, sep, ...)                                         \
-	DT_FOREACH_CHILD_VARGS(DT_PATH(cpus), DT_FOREACH_CPU_STATUS_OKAY_SEP_VARGS_INTERNAL, fn,   \
-			       sep, __VA_ARGS__)
-
-/** @cond INTERNAL_HIDDEN */
-#define DT_FOREACH_CPU_INTERNAL(node_id, fn)                                                       \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, device_type), (fn(node_id)), ())
-
-#define DT_FOREACH_CPU_VARGS_INTERNAL(node_id, fn, ...)                                            \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, device_type), \
-		    (fn(node_id, __VA_ARGS__)), ())
-
-#define DT_FOREACH_CPU_SEP_INTERNAL(node_id, fn, sep)                                              \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, device_type), \
-		    (fn(node_id) DT_DEBRACKET_INTERNAL sep), ())
-
-#define DT_FOREACH_CPU_SEP_VARGS_INTERNAL(node_id, fn, sep, ...)                                   \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, device_type), \
-		    (fn(node_id, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep), ())
-
-#define DT_FOREACH_CPU_STATUS_OKAY_INTERNAL(node_id, fn)                                           \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, device_type), \
-		    (COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), (fn(node_id)), ())), ())
-
-#define DT_FOREACH_CPU_STATUS_OKAY_SEP_INTERNAL(node_id, fn, sep)                                  \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, device_type), \
-		    (COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), \
-				  (fn(node_id) DT_DEBRACKET_INTERNAL sep), ())), \
-		    ())
-
-#define DT_FOREACH_CPU_STATUS_OKAY_SEP_VARGS_INTERNAL(node_id, fn, sep, ...)                       \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, device_type), \
-		    (COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), \
-				  (fn(node_id, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep), ())), \
-		    ())
-/** @endcond */
+#define DT_FOREACH_CPU_STATUS_OKAY_SEP_VARGS(fn, sep, ...) \
+	DT_FOREACH_CPU_OKAY_SEP_VARGS_HELPER(fn, sep, __VA_ARGS__)
 
 /**
  * @}

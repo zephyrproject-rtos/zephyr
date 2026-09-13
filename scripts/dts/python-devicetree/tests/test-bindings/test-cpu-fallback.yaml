@@ -6,5 +6,5 @@ properties:
     type: array
 
   clock-frequency:
-    type: int
+    type: uint64
     required: true
