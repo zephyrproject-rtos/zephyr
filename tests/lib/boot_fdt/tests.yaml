@@ -1,0 +1,11 @@
+# Copyright (c) 2026 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - boot_fdt
+    - fdt
+tests:
+  libraries.boot_fdt:
+    integration_platforms:
+      - native_sim

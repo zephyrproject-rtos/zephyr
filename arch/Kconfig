@@ -18,6 +18,22 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.arch"
 # Should be 'select'ed by low-level symbols like SOC_SERIES_* or, lacking that,
 # by SOC_*.
 
+config ARCH_HAS_FWARGS_HANDLER_HOOK
+	bool
+	help
+	  Indicates that the architecture supports calling a firmware
+	  argument handler hook during initialization.
+
+config FWARGS_HANDLER_HOOK
+	bool "Firmware argument handler hook"
+	depends on ARCH_HAS_FWARGS_HANDLER_HOOK
+	help
+	  Enables fwargs_handler_hook() to handle firmware arguments preserved
+	  by the architecture.
+
+	  Code enabling this option must provide an implementation of
+	  fwargs_handler_hook().
+
 config ARC
 	bool
 	select ARCH_IS_SET
@@ -53,6 +69,7 @@ config ARM64
 	bool
 	select ARCH_IS_SET
 	select 64BIT
+	select ARCH_HAS_FWARGS_HANDLER_HOOK
 	select ARCH_SUPPORTS_COREDUMP
 	select HAS_ARM_SMCCC
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
