@@ -13,6 +13,7 @@ static inline int z_vrfy_bc12_set_role(const struct device *dev, enum bc12_role 
 
 	return z_impl_bc12_set_role(dev, role);
 }
+#include <zephyr/syscalls/bc12_set_role_mrsh.c>
 
 static inline int z_vrfy_bc12_set_result_cb(const struct device *dev, bc12_callback_t cb,
 					    void *user_data)
@@ -22,3 +23,4 @@ static inline int z_vrfy_bc12_set_result_cb(const struct device *dev, bc12_callb
 
 	return z_impl_bc12_set_result_cb(dev, cb, user_data);
 }
+#include <zephyr/syscalls/bc12_set_result_cb_mrsh.c>
