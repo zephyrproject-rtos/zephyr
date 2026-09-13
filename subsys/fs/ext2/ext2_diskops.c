@@ -799,6 +799,7 @@ int ext2_commit_superblock(struct ext2_data *fs)
 
 	ret = ext2_write_block(fs, b);
 	if (ret < 0) {
+		ext2_drop_block(b);
 		return ret;
 	}
 	ext2_drop_block(b);
@@ -827,6 +828,7 @@ int ext2_commit_bg(struct ext2_data *fs)
 
 	ret = ext2_write_block(fs, b);
 	if (ret < 0) {
+		ext2_drop_block(b);
 		return ret;
 	}
 	ext2_drop_block(b);
