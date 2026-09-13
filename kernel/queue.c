@@ -58,6 +58,10 @@ static void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 	return ret;
 }
 
+#ifdef CONFIG_OBJ_CORE_QUEUE
+K_OBJ_TYPE_DEFINE(z_obj_type_queue, k_queue, K_OBJ_TYPE_QUEUE_ID, NULL);
+#endif /* CONFIG_OBJ_CORE_QUEUE */
+
 void z_impl_k_queue_init(struct k_queue *queue)
 {
 	sys_sflist_init(&queue->data_q);
@@ -70,6 +74,10 @@ void z_impl_k_queue_init(struct k_queue *queue)
 	SYS_PORT_TRACING_OBJ_INIT(k_queue, queue);
 
 	k_object_init(queue);
+
+#ifdef CONFIG_OBJ_CORE_QUEUE
+	k_obj_core_init_and_link(K_OBJ_CORE(queue), &z_obj_type_queue);
+#endif /* CONFIG_OBJ_CORE_QUEUE */
 }
 
 #ifdef CONFIG_USERSPACE

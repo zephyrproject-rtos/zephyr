@@ -97,6 +97,13 @@ config OBJ_CORE_PIPE
 	  When enabled, this option integrates pipes into the object core
 	  framework.
 
+config OBJ_CORE_QUEUE
+	bool "Integrate queues into object core framework"
+	default y
+	help
+	  When enabled, this option integrates queues into the object core
+	  framework.
+
 config OBJ_CORE_SEM
 	bool "Integrate semaphores into object core framework"
 	default y
