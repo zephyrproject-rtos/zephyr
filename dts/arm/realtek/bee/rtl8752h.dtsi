@@ -9,6 +9,7 @@
 #include <freq.h>
 #include <dt-bindings/pinctrl/rtl8752h-pinctrl.h>
 #include <dt-bindings/clock/rtl8752h-clocks.h>
+#include <dt-bindings/dma/rtl8752h-dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
