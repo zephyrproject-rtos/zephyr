@@ -1,0 +1,15 @@
+# Common fields for Ultra-Wide Band UCI devices
+
+include: base.yaml
+
+properties:
+  uwb-uci-name:
+    type: string
+    description: Name of the UCI transport
+  uwb-uci-bus:
+    type: string
+    description: Bus of the transport
+    enum:
+      - "virtual"
+      - "spi"
+      - "i2c"
