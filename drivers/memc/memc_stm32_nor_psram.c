@@ -110,6 +110,22 @@ static int memc_stm32_nor_psram_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(FMC_BTRx_DATAHLD_Pos) || defined(FMC_BTR1_DATAHLD_Pos)
+#define MEMC_STM32_FMC_HAS_DATA_HOLD 1
+#else
+#define MEMC_STM32_FMC_HAS_DATA_HOLD 0
+#endif
+
+#if MEMC_STM32_FMC_HAS_DATA_HOLD
+#define TIMING_DATA_HOLD(node_id) \
+	.DataHoldTime = DT_PROP_OR(node_id, st_data_hold_cycles, 0),
+#define TIMING_EXT_DATA_HOLD(node_id) \
+	.DataHoldTime = DT_PROP_OR(node_id, st_data_hold_cycles_ext, 0),
+#else
+#define TIMING_DATA_HOLD(node_id)
+#define TIMING_EXT_DATA_HOLD(node_id)
+#endif
+
 /** SDRAM bank/s configuration initialization macro. */
 #define BANK_CONFIG(node_id)                                                    \
 	{ .init = {                                                             \
@@ -137,6 +153,7 @@ static int memc_stm32_nor_psram_init(const struct device *dev)
 	    .CLKDivision = DT_PROP_BY_IDX(node_id, st_timing, 4),               \
 	    .DataLatency = DT_PROP_BY_IDX(node_id, st_timing, 5),               \
 	    .AccessMode = DT_PROP_BY_IDX(node_id, st_timing, 6),                \
+	    TIMING_DATA_HOLD(node_id)                                           \
 	  },                                                                    \
 	  .timing_ext = {                                                       \
 	    .AddressSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 0),      \
@@ -144,12 +161,19 @@ static int memc_stm32_nor_psram_init(const struct device *dev)
 	    .DataSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 2),         \
 	    .BusTurnAroundDuration = DT_PROP_BY_IDX(node_id, st_timing_ext, 3), \
 	    .AccessMode = DT_PROP_BY_IDX(node_id, st_timing_ext, 4),            \
+	    TIMING_EXT_DATA_HOLD(node_id)                                       \
 	  }                                                                     \
 	},
 
 #define BUILD_ASSERT_BANK_CONFIG(node_id)                                       \
 	BUILD_ASSERT(IS_FMC_NORSRAM_BANK(DT_REG_ADDR(node_id)),                 \
-		     "NSBank " STRINGIFY(DT_REG_ADDR(node_id)) " is not a NORSRAM bank");
+		     "NSBank " STRINGIFY(DT_REG_ADDR(node_id)) " is not a NORSRAM bank"); \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, st_data_hold_cycles) ||         \
+		     MEMC_STM32_FMC_HAS_DATA_HOLD,                             \
+		     "st,data-hold-cycles is not supported on this STM32 SoC"); \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, st_data_hold_cycles_ext) ||     \
+		     MEMC_STM32_FMC_HAS_DATA_HOLD,                             \
+		     "st,data-hold-cycles-ext is not supported on this STM32 SoC");
 
 DT_INST_FOREACH_CHILD(0, BUILD_ASSERT_BANK_CONFIG);
 
