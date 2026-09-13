@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_SUNXI
+	bool "Allwinner sunXi pinctrl driver"
+	default y
+	depends on DT_HAS_ALLWINNER_SUN50I_H618_PINCTRL_ENABLED
+	help
+	  Enable pinctrl driver for Allwinner SoCs.
