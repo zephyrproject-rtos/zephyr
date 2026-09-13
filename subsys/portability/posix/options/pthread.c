@@ -1006,6 +1006,14 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
 		return EINVAL;
 	}
 
+	/* Nothing to do once the flag is set: it is never cleared, and since it is
+	 * set before init_func() is called, taking the lock would not make this
+	 * caller wait for initialization to finish anyway.
+	 */
+	if (_once->flag) {
+		return 0;
+	}
+
 	SYS_SEM_LOCK(&pthread_pool_lock) {
 		if (!_once->flag) {
 			run_init_func = true;
