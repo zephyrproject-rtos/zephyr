@@ -29,6 +29,10 @@
 		zephyr,console = &xen_hvc;
 	};
 
+	aliases {
+		watchdog0 = &xen_wdt;
+	};
+
 	cpus {
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
@@ -76,6 +80,11 @@
 
 	xen_hvc: hvc {
 		compatible = "xen,hvc-uart";
+		status = "okay";
+	};
+
+	xen_wdt: watchdog {
+		compatible = "xen,watchdog";
 		status = "okay";
 	};
 };
