@@ -279,8 +279,10 @@ config TRACING_CMD_BUFFER_SIZE
 
 config TRACING_OBJECT_TRACKING
 	bool "Object tracking"
+	select OBJ_CORE
 	help
-	  Keep lists to track kernel objects.
+	  Track kernel objects through the object core framework, which
+	  enumerates them per object type. See CONFIG_OBJ_CORE.
 
 config TRACING_SHELL
 	bool "Tracing shell commands"
