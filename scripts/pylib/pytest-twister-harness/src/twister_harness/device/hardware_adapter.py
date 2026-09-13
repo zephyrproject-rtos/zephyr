@@ -81,6 +81,9 @@ class HardwareAdapter(DeviceAdapter):
         extra_args: list[str] = []
         runner = self.device_config.runner
         base_args.extend(['--runner', runner])
+        if self.device_config.base_params:
+            for param in self.device_config.base_params:
+                base_args.append(param)
         if self.device_config.runner_params:
             for param in self.device_config.runner_params:
                 extra_args.append(param)
@@ -105,6 +108,11 @@ class HardwareAdapter(DeviceAdapter):
             ):
                 extra_args.append("--cmd-pre-init")
                 extra_args.append(f'adapter serial {board_id}')
+            elif runner == 'openocd' and (
+                self.device_config.product == "Raspberry Pi Debug Probe (CMSIS-DAP)"
+            ):
+                extra_args.append('--cmd-pre-init')
+                extra_args.append(f'cmsis_dap_serial {board_id}')
             elif runner in ('jlink', 'mplab_ipe') or (
                 runner == 'stm32cubeprogrammer' and self.device_config.product != "BOOT-SERIAL"
             ):

@@ -35,6 +35,7 @@ class DeviceConfig:
     platform: str = ''
     serial_configs: list[DeviceSerialConfig] = field(default_factory=list)
     runner: str = ''
+    base_params: list[str] = field(default_factory=list, repr=False)
     runner_params: list[str] = field(default_factory=list, repr=False)
     id: str = ''
     product: str = ''
@@ -102,6 +103,10 @@ class TwisterHarnessConfig:
         elif test_params.flash_command:
             flash_command = [w.strip() for w in next(csv.reader([test_params.flash_command]))]
 
+        base_params: list[str] = []
+        if config.option.base_params:
+            base_params = [w.strip() for w in config.option.base_params]
+
         runner_params: list[str] = []
         if config.option.runner_params:
             runner_params = [w.strip() for w in config.option.runner_params]
@@ -142,6 +147,7 @@ class TwisterHarnessConfig:
                 platform=dut.platform or config.option.platform or test_params.platform,
                 serial_configs=serial_configs,
                 runner=config.option.runner or test_params.runner or dut.runner,
+                base_params=base_params or dut.base_params,
                 runner_params=runner_params or dut.runner_params,
                 id=config.option.device_id or dut.id,
                 product=config.option.device_product or dut.product,
