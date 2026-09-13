@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr_dma_test = &dma_emul0;
+	};
+
+	dma_emul0: dma@0 {
+		compatible = "zephyr,dma-emul";
+		dma-channels = <4>;
+		dma-requests = <4>;
+		#dma-cells = <1>;
+		dma-buf-addr-alignment = <4>;
+		dma-buf-size-alignment = <1>;
+		dma-copy-alignment = <1>;
+		stack-size = <2048>;
+		priority = <0>;
+		status = "okay";
+	};
+};
