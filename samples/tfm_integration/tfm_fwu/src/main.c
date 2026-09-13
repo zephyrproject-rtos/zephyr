@@ -9,7 +9,7 @@
 #include <psa/update.h>
 
 static const uint8_t swapped_ns_firmware[] = {
-#include "zephyr_ns_signed.inc"
+#include "swapped_app_image.inc"
 };
 
 int main(void)
