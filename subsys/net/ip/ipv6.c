@@ -263,8 +263,11 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 			break;
 		case NET_IPV6_EXT_HDR_OPT_PADN:
 			NET_DBG("PADN option");
-			/* Ensure PADN doesn't exceed the extension header boundary */
-			if (opt_len > (exthdr_len - length - 2U)) {
+			/* Ensure PADN doesn't exceed the extension header
+			 * boundary. The addition cannot overflow, as opt_len is
+			 * at most 255 and length/exthdr_len are 16-bit.
+			 */
+			if ((uint32_t)opt_len + length + 2U > exthdr_len) {
 				return -EINVAL;
 			}
 
@@ -276,10 +279,14 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 
 			break;
 		default:
-			/* Make sure that the option length is not too large */
-			if (opt_len > (exthdr_len - length - 2U)) {
+			/* Make sure that the option length is not too large.
+			 * The addition cannot overflow, as opt_len is at most
+			 * 255 and length/exthdr_len are 16-bit.
+			 */
+			if ((uint32_t)opt_len + length + 2U > exthdr_len) {
 				return -EINVAL;
 			}
+
 			if (ipv6_drop_on_unknown_option(pkt, hdr,
 							opt_type, opt_type_offset)) {
 				return -ENOTSUP;

@@ -164,12 +164,12 @@ static const unsigned char ipv6_hbho[] = {
 static const unsigned char ipv6_ext_hdr_err_1[] = {
 	/* IPv6 header */
 	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x40,
-	/* Src IP */
-	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* Dst IP */
+	/* Src IP (peer_addr 2001:db8::2, not one of our own) */
 	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	/* Dst IP (my_addr 2001:db8::1, delivered locally) */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 	/* Hop-by-hop option */
 	0x3b, 0x05,
 	/* Padding to reach 48 bytes */
@@ -180,12 +180,12 @@ static const unsigned char ipv6_ext_hdr_err_1[] = {
 static const unsigned char ipv6_ext_hdr_err_2[] = {
 	/* IPv6 header */
 	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x40,
-	/* Src IP */
-	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* Dst IP */
+	/* Src IP (peer_addr 2001:db8::2, not one of our own) */
 	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	/* Dst IP (my_addr 2001:db8::1, delivered locally) */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 	/* Hop-by-hop option */
 	0x3b, 0x00,
 	/* Option PADN */
@@ -198,18 +198,43 @@ static const unsigned char ipv6_ext_hdr_err_2[] = {
 static const unsigned char ipv6_ext_hdr_err_3[] = {
 	/* IPv6 header */
 	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x40,
-	/* Src IP */
-	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* Dst IP */
+	/* Src IP (peer_addr 2001:db8::2, not one of our own) */
 	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	/* Dst IP (my_addr 2001:db8::1, delivered locally) */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 	/* Hop-by-hop option */
 	0x3b, 0x00,
 	/* Option Unknown */
 	0x3f, 0x08,
 	/* Padding to reach 48 bytes */
 	0x00, 0x00, 0x00, 0x00,
+};
+
+/* Scenario 4: Option length bounds-check underflow.
+ * An 8-byte extension header with five Pad1 options brings "length" to 7, so
+ * the final option's opt_len is read from just past the header boundary. The
+ * opt_len byte is kept at 0 so net_pkt_skip() still succeeds, isolating the
+ * bounds-check bypass itself.
+ */
+static const unsigned char ipv6_ext_hdr_err_4[] = {
+	/* IPv6 header */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x40,
+	/* Src IP (peer_addr 2001:db8::2, not one of our own) */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	/* Dst IP (my_addr 2001:db8::1, delivered locally) */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	/* Hop-by-hop option, No Next Header, hdr_ext_len = 0 -> 8 bytes */
+	0x3b, 0x00,
+	/* Five Pad1 options, advancing length to 7 */
+	0x00, 0x00, 0x00, 0x00, 0x00,
+	/* Non-Pad1 option type at the last byte of the header */
+	0x01,
+	/* Bytes past the header; first is read as opt_len (0) */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
 /* clang-format on */
@@ -805,59 +830,72 @@ ZTEST(net_ipv6, test_send_ns_no_options)
 		      "Data receive for invalid NS failed.");
 }
 
-ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_1)
+struct ext_hdr_test_case {
+	const char *name;
+	const unsigned char *data;
+	size_t len;
+};
+
+static const struct ext_hdr_test_case ext_hdr_test_cases[] = {
+	{ "exthdr_len_too_long", ipv6_ext_hdr_err_1, sizeof(ipv6_ext_hdr_err_1) },
+	{ "padn_opt_len_too_large", ipv6_ext_hdr_err_2, sizeof(ipv6_ext_hdr_err_2) },
+	{ "unknown_opt_len_too_large", ipv6_ext_hdr_err_3, sizeof(ipv6_ext_hdr_err_3) },
+	{ "opt_len_check_underflow", ipv6_ext_hdr_err_4, sizeof(ipv6_ext_hdr_err_4) },
+};
+
+static const char *ext_hdr_test_name(size_t index, const void *value)
 {
+	const struct ext_hdr_test_case *tc = value;
+
+	ARG_UNUSED(index);
+	return tc->name;
+}
+
+static const struct ztest_param_values ext_hdr_cases = {
+	.values    = ext_hdr_test_cases,
+	.count     = ARRAY_SIZE(ext_hdr_test_cases),
+	.elem_size = sizeof(ext_hdr_test_cases[0]),
+	.name_cb   = ext_hdr_test_name,
+};
+
+/* Feed a malformed extension header packet directly to net_ipv6_input() so the
+ * verdict and drop statistic can be checked synchronously, without the timing
+ * noise of the asynchronous RX path. The packet must be rejected, so it is
+ * dropped and the IPv6 drop count increases by one.
+ */
+ZTEST_P(net_ipv6, test_ipv6_ext_hdr_len_bounds)
+{
+	const struct ext_hdr_test_case *tc = ZTEST_GET_PARAM_PTR(struct ext_hdr_test_case);
+	struct net_stats_ip ipv6_stats_before = { 0 };
+	struct net_stats_ip ipv6_stats_after = { 0 };
+	enum net_verdict verdict;
 	struct net_pkt *pkt;
-	struct net_if *iface;
+	struct net_if *iface = TEST_NET_IF;
 
-	iface = TEST_NET_IF;
-
-	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_1), NET_AF_UNSPEC, 0,
-					K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, tc->len, NET_AF_INET6, 0, K_FOREVER);
 
 	NET_ASSERT(pkt, "Out of TX packets");
 
-	net_pkt_write(pkt, ipv6_ext_hdr_err_1, sizeof(ipv6_ext_hdr_err_1));
+	zassert_ok(net_pkt_write(pkt, tc->data, tc->len), "Failed to write packet");
+	net_pkt_cursor_init(pkt);
 	net_pkt_lladdr_clear(pkt);
 
-	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
+	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6, NULL, &ipv6_stats_before,
+			    sizeof(ipv6_stats_before)),
+		   "Failed to retrieve stats");
+
+	verdict = net_ipv6_input(pkt);
+
+	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6, NULL, &ipv6_stats_after,
+			    sizeof(ipv6_stats_after)),
+		   "Failed to retrieve stats");
+
+	zassert_equal(verdict, NET_DROP, "Packet was not dropped: %s", tc->name);
+	zassert_equal(ipv6_stats_before.drop + 1, ipv6_stats_after.drop,
+		      "Packet was not counted as an IPv6 drop: %s", tc->name);
 }
 
-ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_2)
-{
-	struct net_pkt *pkt;
-	struct net_if *iface;
-
-	iface = TEST_NET_IF;
-
-	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_2), NET_AF_UNSPEC, 0,
-					K_FOREVER);
-
-	NET_ASSERT(pkt, "Out of TX packets");
-
-	net_pkt_write(pkt, ipv6_ext_hdr_err_2, sizeof(ipv6_ext_hdr_err_2));
-	net_pkt_lladdr_clear(pkt);
-
-	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
-}
-
-ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_3)
-{
-	struct net_pkt *pkt;
-	struct net_if *iface;
-
-	iface = TEST_NET_IF;
-
-	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_3), NET_AF_UNSPEC, 0,
-					K_FOREVER);
-
-	NET_ASSERT(pkt, "Out of TX packets");
-
-	net_pkt_write(pkt, ipv6_ext_hdr_err_3, sizeof(ipv6_ext_hdr_err_3));
-	net_pkt_lladdr_clear(pkt);
-
-	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
-}
+ZTEST_INSTANTIATE_TEST_SUITE_P(bounds, net_ipv6, test_ipv6_ext_hdr_len_bounds, ext_hdr_cases);
 
 struct test_nd_context {
 	struct k_sem wait_ns;
