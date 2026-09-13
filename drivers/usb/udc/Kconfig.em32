@@ -1,0 +1,46 @@
+# Copyright (c) 2021-2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_ELAN_EM32
+	bool "Elan USB device controller driver"
+	depends on DT_HAS_ELAN_EM32_USBD_ENABLED
+	default y
+	help
+	  EM32 USB device controller driver.
+
+if UDC_ELAN_EM32
+
+config UDC_EM32_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 4096
+	help
+	  ELAN USB device controller driver internal thread stack size.
+
+config UDC_EM32_THREAD_PRIORITY
+	int "ELAN USB controller driver thread priority"
+	default 8
+	help
+	  ELAN USB device controller driver thread priority.
+
+config UDC_EM32_MSG_QUEUE_SIZE
+	int "UDC EM32 message queue size"
+	default 32
+	help
+	  Maximum number of messages the driver can queue for interrupt bottom half processing.
+
+config UDC_EM32_IO_ROUTE
+	bool "Endpoint IN/OUT routing workaround"
+	default n
+	help
+	  EM32 endpoints are bidirectional, but the IN and OUT directions of
+	  the same endpoint share the same data toggle state. Therefore, the
+	  same endpoint number cannot be used independently for both IN and
+	  OUT directions.
+
+	  When a USB descriptor assigns both IN and OUT directions to the same
+	  endpoint number, the driver works around this hardware limitation by
+	  remapping the IN endpoint to an unused endpoint number.
+
+	  Currently, only one such IN/OUT endpoint pair can be remapped.
+
+endif # UDC_ELAN_EM32
