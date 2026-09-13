@@ -115,6 +115,11 @@ def pytest_addoption(parser: pytest.Parser):
         help='Script executed before flashing and connecting to serial.'
     )
     twister_harness_group.addoption(
+        '--pre-flash-script',
+        metavar='PATH',
+        help='Script executed before flashing.'
+    )
+    twister_harness_group.addoption(
         '--post-flash-script',
         metavar='PATH',
         help='Script executed after flashing.'
@@ -174,6 +179,7 @@ def _normalize_paths(config: pytest.Config) -> None:
     config.option.twister_config = _normalize_path(config.option.twister_config)
     config.option.pre_script = _normalize_path(config.option.pre_script)
     config.option.post_script = _normalize_path(config.option.post_script)
+    config.option.pre_flash_script = _normalize_path(config.option.pre_flash_script)
     config.option.post_flash_script = _normalize_path(config.option.post_flash_script)
 
 
