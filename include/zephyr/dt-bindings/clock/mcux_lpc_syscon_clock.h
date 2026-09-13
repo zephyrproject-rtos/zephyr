@@ -243,6 +243,9 @@
 /** PowerQuad DSP coprocessor clock identifier. */
 #define MCUX_POWERQUAD_CLK MCUX_LPC_CLK_ID(0x39, 0x00)
 
+/** EVTG (Event Generator) peripheral clock identifier. */
+#define MCUX_EVTG_CLK MCUX_LPC_CLK_ID(0x3A, 0x00)
+
 /** FRO high-frequency clock (FRO_HF) rate identifier. */
 #define MCUX_FRO_HF_CLK MCUX_LPC_CLK_ID(0x40, 0x00)
 
