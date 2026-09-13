@@ -26,8 +26,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #define HTTP_SCHEMA_LEN   sizeof("https://")
 #define HTTP_PROTOCOL_LEN sizeof("HTTP/1.1")
-#define HTTP_HEADERS_LEN  2
-#define HTTP_HEADER_SIZE  64
+#define HTTP_HEADERS_LEN  3
 
 #if defined(CONFIG_HTTP_CLIENT)
 static K_SEM_DEFINE(l4_wait, 0, 1);
@@ -48,11 +47,10 @@ struct http_client_sh_ctx {
 	enum http_method method;
 	http_response_cb_t cb;
 	uint8_t recv_buf[NET_IPV4_MTU];
-	uint8_t payload[NET_IPV4_MTU];
+	const uint8_t *payload;
 	uint16_t payload_size;
 	uint8_t protocol[HTTP_PROTOCOL_LEN];
 	const char *headers[HTTP_HEADERS_LEN];
-	uint8_t header_data[HTTP_HEADER_SIZE];
 	bool is_ssl_verifyhost;
 	int is_ssl_verifypeer;
 	int sec_tag;
@@ -465,22 +463,13 @@ static int http_client_args_to_params(struct http_client_sh_ctx *ctx, size_t arg
 		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'd':
-			ctx->payload_size =
-				snprintf(ctx->payload, sizeof(ctx->payload), "%s", state->optarg);
-			if (ctx->payload_size >= sizeof(ctx->payload)) {
-				PR_ERROR("Payload is too big\n");
-				return -EINVAL;
-			}
+			ctx->payload = state->optarg;
+			ctx->payload_size = strlen(state->optarg);
 			break;
 		case 'H':
-			ret = snprintf(ctx->header_data, sizeof(ctx->header_data), "%s" HTTP_CRLF,
-				       state->optarg);
-			if (ret >= sizeof(ctx->header_data)) {
-				PR_ERROR("HTTP header is too long\n");
-				return -EINVAL;
-			}
-			ctx->headers[0] = ctx->header_data;
-			ctx->headers[1] = NULL;
+			ctx->headers[0] = state->optarg;
+			ctx->headers[1] = HTTP_CRLF;
+			ctx->headers[2] = NULL;
 			break;
 		case 'p':
 			ret = snprintf(ctx->protocol, sizeof(ctx->protocol), "%s", state->optarg);
