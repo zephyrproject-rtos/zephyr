@@ -7,6 +7,7 @@
 #include <string.h>
 #include <zephyr/crypto/crypto.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <hal/nrf_ecb.h>
 
 #define DT_DRV_COMPAT nordic_nrf_ecb
@@ -24,7 +25,7 @@ struct ecb_data {
 
 struct nrf_ecb_drv_state {
 	struct ecb_data data;
-	bool in_use;
+	atomic_t in_use;
 };
 
 static struct nrf_ecb_drv_state drv_state;
@@ -70,7 +71,7 @@ static int nrf_ecb_driver_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	nrf_ecb_data_pointer_set(NRF_ECB, &drv_state.data);
-	drv_state.in_use = false;
+	atomic_clear(&drv_state.in_use);
 	return 0;
 }
 
@@ -103,12 +104,10 @@ static int nrf_ecb_session_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (drv_state.in_use) {
+	if (!atomic_cas(&drv_state.in_use, 0, 1)) {
 		LOG_ERR("Peripheral in use");
 		return -EBUSY;
 	}
-
-	drv_state.in_use = true;
 
 	ctx->ops.block_crypt_hndlr = do_ecb_encrypt;
 	ctx->ops.cipher_mode = mode;
@@ -127,7 +126,7 @@ static int nrf_ecb_session_free(const struct device *dev,
 	ARG_UNUSED(dev);
 	ARG_UNUSED(sessn);
 
-	drv_state.in_use = false;
+	atomic_clear(&drv_state.in_use);
 
 	return 0;
 }

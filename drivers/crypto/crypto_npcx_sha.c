@@ -67,16 +67,24 @@ struct npcx_sha_session {
 
 struct npcx_sha_session npcx_sessions[NPCX_SHA_MAX_SESSION];
 
+/* Serializes the allocation and the release of the session slots above. */
+static K_MUTEX_DEFINE(npcx_sessions_lock);
+
 static int npcx_get_unused_session_index(void)
 {
 	int i;
 
+	k_mutex_lock(&npcx_sessions_lock, K_FOREVER);
+
 	for (i = 0; i < NPCX_SHA_MAX_SESSION; i++) {
 		if (!npcx_sessions[i].in_use) {
 			npcx_sessions[i].in_use = true;
+			k_mutex_unlock(&npcx_sessions_lock);
 			return i;
 		}
 	}
+
+	k_mutex_unlock(&npcx_sessions_lock);
 
 	return -1;
 }
@@ -178,7 +186,10 @@ static int npcx_hash_session_free(const struct device *dev, struct hash_ctx *ctx
 	NPCX_NCL_SHA->reset(npcx_ctx->handle);
 	NPCX_NCL_SHA->power(npcx_ctx->handle, 0);
 	NPCX_NCL_SHA->finalize_context(npcx_ctx->handle);
+
+	k_mutex_lock(&npcx_sessions_lock, K_FOREVER);
 	npcx_session->in_use = false;
+	k_mutex_unlock(&npcx_sessions_lock);
 
 	return 0;
 }
