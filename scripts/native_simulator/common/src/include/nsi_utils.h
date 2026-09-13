@@ -43,4 +43,14 @@
 #define NSI_NOASAN
 #endif
 
+#if defined(__APPLE__)
+#define NSI_KEEP_SECTION_DATA(sec) \
+	__attribute__((__used__)) __attribute__((__section__("__DATA," sec)))
+#define NSI_KEEP_SECTION_TEXT(sec) \
+	__attribute__((__used__)) __attribute__((__section__("__TEXT," sec)))
+#else
+#define NSI_KEEP_SECTION_DATA(sec) __attribute__((__section__(sec)))
+#define NSI_KEEP_SECTION_TEXT(sec) __attribute__((__section__(sec)))
+#endif
+
 #endif /* NSI_COMMON_SRC_INCL_NSI_UTILS_H */

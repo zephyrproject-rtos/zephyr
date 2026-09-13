@@ -17,7 +17,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#if !defined(__APPLE__)
+/*
+ * posix_openpt()/grantpt()/unlockpt()/ptsname() (the only PTY calls this file
+ * makes) are declared in <stdlib.h> on macOS; <pty.h> itself does not exist
+ * there. Only pull it in on platforms that have it (e.g. glibc Linux) --
+ * <pty.h> also transitively provides <termios.h> there, which macOS does not
+ * do implicitly, so <termios.h> below is included explicitly for both.
+ */
 #include <pty.h>
+#endif
+#include <termios.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
@@ -190,17 +200,28 @@ int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 	 */
 	ret = tcgetattr(master_pty, &ter);
 	if (ret == -1) {
-		ERROR("Could not read terminal driver settings\n");
-	}
-	ter.c_cc[VMIN] = 0;
-	ter.c_cc[VTIME] = 0;
-	ter.c_lflag &= ~(ICANON | ISIG | IEXTEN | ECHO);
-	ter.c_iflag &= ~(BRKINT | ICRNL | IGNBRK | IGNCR | INLCR | INPCK
-			 | ISTRIP | IXON | PARMRK);
-	ter.c_oflag &= ~OPOST;
-	ret = tcsetattr(master_pty, TCSANOW, &ter);
-	if (ret == -1) {
-		ERROR("Could not change terminal driver settings\n");
+		/*
+		 * Some platforms' PTY master fd (e.g. macOS, opened via
+		 * posix_openpt()) does not support tcgetattr()/tcsetattr(),
+		 * unlike Linux's ptmx master. Raw-mode line-discipline tweaks
+		 * are a usability nicety for interactive terminal use (no
+		 * local echo/line-editing on the master side); nothing in
+		 * this driver depends on them for a binary/non-interactive
+		 * consumer of the PTY. Warn and keep the PTY usable instead
+		 * of aborting the whole process.
+		 */
+		WARN("Could not read terminal driver settings; leaving PTY in its default mode\n");
+	} else {
+		ter.c_cc[VMIN] = 0;
+		ter.c_cc[VTIME] = 0;
+		ter.c_lflag &= ~(ICANON | ISIG | IEXTEN | ECHO);
+		ter.c_iflag &= ~(BRKINT | ICRNL | IGNBRK | IGNCR | INLCR | INPCK
+				 | ISTRIP | IXON | PARMRK);
+		ter.c_oflag &= ~OPOST;
+		ret = tcsetattr(master_pty, TCSANOW, &ter);
+		if (ret == -1) {
+			WARN("Could not change terminal driver settings; leaving PTY in its default mode\n");
+		}
 	}
 
 	nsi_print_trace("%s connected to pseudotty: %s\n",

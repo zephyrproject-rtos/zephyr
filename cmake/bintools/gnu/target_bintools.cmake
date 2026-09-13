@@ -118,15 +118,24 @@ set_property(TARGET bintools PROPERTY strip_flag_outfile -o )
 #                           file, but result is printed to standard out, and
 #                           is redirected.
 
-# This is using readelf from bintools.
-set_property(TARGET bintools PROPERTY readelf_command ${CMAKE_READELF})
+if(CMAKE_HOST_APPLE AND HOST_GNU_READELF_IS_OTOOL)
+  set_property(TARGET bintools PROPERTY readelf_command ${CMAKE_READELF})
+  set_property(TARGET bintools PROPERTY readelf_flag "")
+  set_property(TARGET bintools PROPERTY readelf_flag_final "")
+  set_property(TARGET bintools PROPERTY readelf_flag_headers -hvl)
+  set_property(TARGET bintools PROPERTY readelf_flag_infile "")
+  set_property(TARGET bintools PROPERTY readelf_flag_outfile ">;" )
+else()
+  # This is using readelf from bintools.
+  set_property(TARGET bintools PROPERTY readelf_command ${CMAKE_READELF})
 
-set_property(TARGET bintools PROPERTY readelf_flag "")
-set_property(TARGET bintools PROPERTY readelf_flag_final "")
-set_property(TARGET bintools PROPERTY readelf_flag_headers -e)
+  set_property(TARGET bintools PROPERTY readelf_flag "")
+  set_property(TARGET bintools PROPERTY readelf_flag_final "")
+  set_property(TARGET bintools PROPERTY readelf_flag_headers -e)
 
-set_property(TARGET bintools PROPERTY readelf_flag_infile "")
-set_property(TARGET bintools PROPERTY readelf_flag_outfile ">;" )
+  set_property(TARGET bintools PROPERTY readelf_flag_infile "")
+  set_property(TARGET bintools PROPERTY readelf_flag_outfile ">;" )
+endif()
 
 # Example on how to support dwarfdump instead of readelf
 #set_property(TARGET bintools PROPERTY readelf_command dwarfdump)

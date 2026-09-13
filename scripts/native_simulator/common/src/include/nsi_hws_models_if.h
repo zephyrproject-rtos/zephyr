@@ -15,6 +15,14 @@
 extern "C" {
 #endif
 
+#if defined(__APPLE__)
+#define NSI_HW_EVENT_SECTION(prio) \
+	NSI_KEEP_SECTION_DATA("nsihwe_" NSI_STRINGIFY(prio))
+#else
+#define NSI_HW_EVENT_SECTION(prio) \
+	__attribute__((__section__(".nsi_hw_event_" NSI_STRINGIFY(prio))))
+#endif
+
 /* Internal structure used to link HW events */
 struct nsi_hw_event_st {
 	void (*const callback)(void);
@@ -36,7 +44,7 @@ struct nsi_hw_event_st {
 #define NSI_HW_EVENT(t, fn, prio)					\
 	static const struct nsi_hw_event_st NSI_CONCAT(NSI_CONCAT(__nsi_hw_event_, fn), t) \
 		__attribute__((__used__)) NSI_NOASAN					\
-		__attribute__((__section__(".nsi_hw_event_" NSI_STRINGIFY(prio))))	\
+		NSI_HW_EVENT_SECTION(prio)	\
 		= {			\
 			.callback = fn,	\
 			.timer = &t,	\

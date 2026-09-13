@@ -66,15 +66,28 @@ NSI_WARNINGS?=-Wall -Wpedantic
 #  Preprocessor flags
 NSI_CPPFLAGS?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED
 
+HOST_OS:=$(shell uname -s)
+
 NO_PIE_CO:=-fno-pie -fno-pic
 DEPENDFLAGS:=-MMD -MP
 COMMON_BUILD_FLAGS:=-DNSI_RUNNER_BUILD ${NSI_DEBUG} ${NSI_WARNINGS} ${NSI_OPT} ${NO_PIE_CO} \
   -DNSI_N_CPUS=${NSI_N_CPUS} -ffunction-sections -fdata-sections ${DEPENDFLAGS} ${NSI_BUILD_OPTIONS}
 CFLAGS:=-std=c11 ${COMMON_BUILD_FLAGS} ${NSI_BUILD_C_OPTIONS}
 CXXFLAGS:=${COMMON_BUILD_FLAGS} ${NSI_BUILD_CXX_OPTIONS}
+ifeq (${HOST_OS},Darwin)
+FINALLINK_FLAGS:=${NO_PIE_CO} ${NSI_WARNINGS} \
+  -Wl,-dead_strip -pthread \
+  ${NSI_LINK_OPTIONS} -lm
+NSI_LINK_CMD=${NSI_LINKER} ${LOCALIZED_EMBSW} -Wl,-force_load,${NSI_BUILD_PATH}/${RUNNER_LIB} \
+  ${NSI_EXTRA_LIBS} -o $@ ${FINALLINK_FLAGS}
+else
 FINALLINK_FLAGS:=${NO_PIE_CO} -no-pie  ${NSI_WARNINGS} \
   -Wl,--gc-sections -ldl -pthread \
   ${NSI_LINK_OPTIONS} -lm
+NSI_LINK_CMD=${NSI_LINKER} -Wl,--whole-archive ${LOCALIZED_EMBSW} ${NSI_BUILD_PATH}/${RUNNER_LIB} \
+  ${NSI_EXTRA_LIBS} -Wl,--no-whole-archive \
+  -o $@ ${FINALLINK_FLAGS} -T ${NSI_BUILD_PATH}/linker_script.ld
+endif
 
 no_default:
 	@echo "There is no default rule, please specify what you want to build,\
@@ -83,6 +96,9 @@ no_default:
 RUNNER_LIB:=runner.a
 
 SRCS:=$(shell ls ${NSI_PATH}common/src/*.c)
+ifneq (${HOST_OS},Darwin)
+  SRCS:=$(filter-out ${NSI_PATH}common/src/macho_ranges.c,${SRCS})
+endif
 ifdef NSI_NATIVE
   SRCS+=$(shell ls ${NSI_PATH}native/src/*.c)
 endif
@@ -135,13 +151,19 @@ ${NSI_BUILD_PATH}/%.loc_cpusw.o: /% ${NSI_CONFIG_FILE}
 	  false; \
 	fi
 	@if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
+ifeq (${HOST_OS},Darwin)
+	@if [ -z "${NSI_OBJCOPY}" ] || [ "${NSI_OBJCOPY}" = "CMAKE_OBJCOPY-NOTFOUND" ]; then \
+	  ld -r -o $@ $<; \
+	else \
+	  ${NSI_OBJCOPY} --localize-hidden $< $@ -w --localize-symbol=_* ${NSI_LOCALIZE_OPTIONS}; \
+	fi
+else
 	${NSI_OBJCOPY} --localize-hidden $< $@ -w --localize-symbol=_* ${NSI_LOCALIZE_OPTIONS}
+endif
 
 ${NSI_EXE}: ${NSI_BUILD_PATH}/${RUNNER_LIB} ${LOCALIZED_EMBSW} ${NSI_EXTRA_LIBS} \
  ${NSI_BUILD_PATH}/linker_script.ld
-	${NSI_LINKER} -Wl,--whole-archive ${LOCALIZED_EMBSW} ${NSI_BUILD_PATH}/${RUNNER_LIB} \
-	  ${NSI_EXTRA_LIBS} -Wl,--no-whole-archive \
-	  -o $@ ${FINALLINK_FLAGS} -T ${NSI_BUILD_PATH}/linker_script.ld
+	${NSI_LINK_CMD}
 
 Makefile: ;
 

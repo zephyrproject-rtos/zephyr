@@ -21,6 +21,23 @@ extern "C" {
 #define NSITASK_ON_EXIT_PRE_LEVEL	5
 #define NSITASK_ON_EXIT_POST_LEVEL	6
 
+#if defined(__APPLE__)
+#define NSI_TASK_MACHO_SEC_LEVEL_PRE_BOOT_1 "nsit0_"
+#define NSI_TASK_MACHO_SEC_LEVEL_PRE_BOOT_2 "nsit1_"
+#define NSI_TASK_MACHO_SEC_LEVEL_HW_INIT "nsit2_"
+#define NSI_TASK_MACHO_SEC_LEVEL_PRE_BOOT_3 "nsit3_"
+#define NSI_TASK_MACHO_SEC_LEVEL_FIRST_SLEEP "nsit4_"
+#define NSI_TASK_MACHO_SEC_LEVEL_ON_EXIT_PRE "nsit5_"
+#define NSI_TASK_MACHO_SEC_LEVEL_ON_EXIT_POST "nsit6_"
+#define NSI_TASK_MACHO_SEC_LEVEL(level) NSI_TASK_MACHO_SEC_LEVEL_(level)
+#define NSI_TASK_MACHO_SEC_LEVEL_(level) NSI_CONCAT(NSI_TASK_MACHO_SEC_LEVEL_, level)
+#define NSI_TASK_SECTION(level, prio) \
+	NSI_KEEP_SECTION_DATA(NSI_TASK_MACHO_SEC_LEVEL(level) NSI_STRINGIFY(prio))
+#else
+#define NSI_TASK_SECTION(level, prio) \
+	__attribute__((__section__(".nsi_" #level NSI_STRINGIFY(prio) "_task")))
+#endif
+
 /**
  * NSI_TASK
  *
@@ -52,7 +69,7 @@ extern "C" {
 #define NSI_TASK(fn, level, prio)	\
 	static void (* const NSI_CONCAT(__nsi_task_, fn))(void) \
 	__attribute__((__used__)) NSI_NOASAN \
-	__attribute__((__section__(".nsi_" #level NSI_STRINGIFY(prio) "_task")))\
+	NSI_TASK_SECTION(level, prio) \
 	= fn; \
 	/* Let's cross-check the macro level is a valid one, so we don't silently drop it */ \
 	_Static_assert(NSITASK_##level##_LEVEL >= 0, \
