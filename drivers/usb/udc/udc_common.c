@@ -10,7 +10,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/usb/usb_ch9.h>
-#include <zephyr/drivers/usb/usb_buf.h>
 #include "udc_common.h"
 
 #include <zephyr/logging/log.h>
@@ -20,12 +19,6 @@
 #define UDC_COMMON_LOG_LEVEL LOG_LEVEL_NONE
 #endif
 LOG_MODULE_REGISTER(udc, CONFIG_UDC_DRIVER_LOG_LEVEL);
-
-static inline void udc_buf_destroy(struct net_buf *buf);
-
-UDC_BUF_POOL_VAR_DEFINE(udc_ep_pool,
-			CONFIG_UDC_BUF_COUNT, CONFIG_UDC_BUF_POOL_SIZE,
-			sizeof(struct udc_buf_info), udc_buf_destroy);
 
 #define USB_EP_LUT_IDX(ep) (USB_EP_DIR_IS_IN(ep) ? (ep & BIT_MASK(4)) + 16 : \
 						   ep & BIT_MASK(4))
@@ -46,6 +39,13 @@ struct udc_ep_config *udc_get_ep_cfg(const struct device *dev, const uint8_t ep)
 	struct udc_data *data = dev->data;
 
 	return data->ep_lut[USB_EP_LUT_IDX(ep)];
+}
+
+uint16_t udc_ep_mps(const struct device *dev, const uint8_t ep)
+{
+	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, ep);
+
+	return cfg != NULL ? cfg->mps : 0U;
 }
 
 bool udc_ep_is_busy(const struct udc_ep_config *const ep_cfg)
@@ -692,129 +692,6 @@ int udc_ep_dequeue(const struct device *dev, const uint8_t ep)
 	}
 
 ep_dequeue_error:
-	api->unlock(dev);
-
-	return ret;
-}
-
-struct net_buf *udc_ep_buf_alloc(const struct device *dev,
-				 const uint8_t ep,
-				 const size_t size)
-{
-	const struct udc_api *api = dev->api;
-	struct net_buf *buf = NULL;
-	struct udc_buf_info *bi;
-
-	api->lock(dev);
-
-	buf = net_buf_alloc_len(&udc_ep_pool, size, K_NO_WAIT);
-	if (!buf) {
-		LOG_ERR("Failed to allocate net_buf %zd, ep 0x%02x", size, ep);
-		goto ep_alloc_error;
-	}
-
-	bi = udc_get_buf_info(buf);
-	bi->ep = ep;
-	LOG_DBG("Allocate net_buf %p, ep 0x%02x, size %zd", buf, ep, size);
-
-ep_alloc_error:
-	api->unlock(dev);
-
-	return buf;
-}
-
-struct net_buf *udc_ctrl_alloc(const struct device *dev,
-			       const uint8_t ep,
-			       const size_t size)
-{
-	/* TODO: for now just pass to udc_buf_alloc() */
-	return udc_ep_buf_alloc(dev, ep, size);
-}
-
-struct net_buf *udc_ctrl_setup_alloc(const struct device *dev)
-{
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-
-	/* Allocate bMaxPacketSize0 despite SETUP being just 8 bytes */
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, ep_cfg->mps);
-	if (buf) {
-		struct udc_buf_info *bi = udc_get_buf_info(buf);
-
-		bi->setup = 1;
-		bi->data = 0;
-		bi->status = 0;
-	}
-
-	return buf;
-}
-
-struct net_buf *udc_ctrl_data_alloc(const struct device *dev,
-				    const uint8_t ep,
-				    const size_t size)
-{
-	struct udc_buf_info *bi;
-	struct net_buf *buf;
-	size_t alloc_len = size;
-
-	if (ep == USB_CONTROL_EP_OUT) {
-		struct udc_ep_config *ep_cfg;
-
-		/* Round up to bMaxPacketSize0 */
-		ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-		alloc_len = ROUND_UP(size, ep_cfg->mps);
-	}
-
-	buf = udc_ctrl_alloc(dev, ep, alloc_len);
-	if (buf) {
-		bi = udc_get_buf_info(buf);
-
-		bi->setup = 0;
-		bi->data = 1;
-		bi->status = 0;
-	}
-
-	return buf;
-}
-
-struct net_buf *udc_ctrl_status_alloc(const struct device *dev, const uint8_t ep)
-{
-	struct net_buf *buf;
-	size_t alloc_len = 0;
-
-	if (ep == USB_CONTROL_EP_OUT) {
-		struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
-
-		/* Allocate bMaxPacketSize0 despite Status being ZLP */
-		alloc_len = ep_cfg->mps;
-	}
-
-	buf = udc_ctrl_alloc(dev, ep, alloc_len);
-	if (buf) {
-		struct udc_buf_info *bi = udc_get_buf_info(buf);
-
-		bi->setup = 0;
-		bi->data = 0;
-		bi->status = 1;
-	}
-
-	return buf;
-}
-
-static inline void udc_buf_destroy(struct net_buf *buf)
-{
-	/* Adjust level and use together with the log in udc_ep_buf_alloc() */
-	LOG_DBG("destroy %p", buf);
-	net_buf_destroy(buf);
-}
-
-int udc_ep_buf_free(const struct device *dev, struct net_buf *const buf)
-{
-	const struct udc_api *api = dev->api;
-	int ret = 0;
-
-	api->lock(dev);
-	net_buf_unref(buf);
 	api->unlock(dev);
 
 	return ret;

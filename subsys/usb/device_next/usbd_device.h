@@ -135,6 +135,15 @@ static inline void usbd_device_unlock(struct usbd_context *const uds_ctx)
 	k_mutex_unlock(&uds_ctx->mutex);
 }
 
+struct net_buf *usbd_ep_ctrl_setup_alloc(const struct device *dev);
+
+struct net_buf *usbd_ep_ctrl_data_alloc(const struct device *dev,
+					const uint8_t ep,
+					const size_t size);
+
+struct net_buf *usbd_ep_ctrl_status_alloc(const struct device *dev,
+					  const uint8_t ep);
+
 /**
  * @brief Init USB device stack core
  *

@@ -67,6 +67,16 @@ enum udc_bus_speed {
 };
 
 /**
+ * @brief Get endpoint maximum packet size.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Endpoint address
+ *
+ * @return Endpoint maximum packet size, or zero if endpoint is not found.
+ */
+uint16_t udc_ep_mps(const struct device *dev, const uint8_t ep);
+
+/**
  * USB device controller endpoint capabilities
  */
 struct udc_ep_caps {
@@ -675,72 +685,6 @@ bool udc_ep_queue_is_empty(const struct device *dev, const uint8_t ep);
  * @retval -EPERM controller is not initialized
  */
 int udc_ep_dequeue(const struct device *dev, const uint8_t ep);
-
-/**
- * @brief Allocate UDC request buffer
- *
- * Allocate a new buffer from common request buffer pool.
- *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] ep     Endpoint address
- * @param[in] size   Size of the request buffer
- *
- * @return pointer to allocated request or NULL on error.
- */
-struct net_buf *udc_ep_buf_alloc(const struct device *dev,
-				 const uint8_t ep,
-				 const size_t size);
-
-/**
- * @brief Allocate UDC control transfer SETUP buffer
- *
- * Allocate a new buffer from common control transfer buffer pool.
- *
- * @param[in] dev    Pointer to device struct of the driver instance
- *
- * @return pointer to allocated request or NULL on error.
- */
-struct net_buf *udc_ctrl_setup_alloc(const struct device *dev);
-
-/**
- * @brief Allocate UDC control transfer data stage buffer
- *
- * Allocate a new buffer from common control transfer buffer pool.
- *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] ep     Control endpoint address
- * @param[in] size   Size of the request buffer
- *
- * @return pointer to allocated request or NULL on error.
- */
-struct net_buf *udc_ctrl_data_alloc(const struct device *dev,
-				    const uint8_t ep,
-				    const size_t size);
-
-/**
- * @brief Allocate UDC control transfer status stage buffer
- *
- * Allocate a new buffer from common control transfer buffer pool.
- *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] ep     Control endpoint address
- *
- * @return pointer to allocated request or NULL on error.
- */
-struct net_buf *udc_ctrl_status_alloc(const struct device *dev,
-				      const uint8_t ep);
-
-/**
- * @brief Free UDC request buffer
- *
- * Put the buffer back into the request buffer pool.
- *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] buf    Pointer to UDC request buffer
- *
- * @return 0 on success, all other values should be treated as error.
- */
-int udc_ep_buf_free(const struct device *dev, struct net_buf *const buf);
 
 /**
  * @brief Set ZLP flag in requests metadata.

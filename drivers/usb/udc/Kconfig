@@ -20,20 +20,6 @@ config UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED
 	  Allow High-Speed capable device to operate at High-Speed. Disable this
 	  option to force Full-Speed only operation.
 
-config UDC_BUF_COUNT
-	int "Number of buffers in the pool"
-	range 16 256
-	default 16
-	help
-	  Number of UDC request buffers in the pool.
-
-config UDC_BUF_POOL_SIZE
-	int "Memory available for requests"
-	range 64 32768
-	default 1024
-	help
-	  Total amount of memory available for UDC requests.
-
 config UDC_BUF_FORCE_NOCACHE
 	bool "Place the buffer pools in the nocache memory region"
 	depends on NOCACHE_MEMORY && DCACHE
