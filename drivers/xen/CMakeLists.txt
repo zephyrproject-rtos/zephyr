@@ -9,5 +9,6 @@ zephyr_sources(sched.c)
 zephyr_sources_ifdef(CONFIG_XEN_DMOP dmop.c)
 zephyr_sources(version.c)
 zephyr_sources_ifdef(CONFIG_XEN_REGIONS regions.c)
+zephyr_sources_ifdef(CONFIG_XEN_FLASK flask_op.c)
 
 add_subdirectory_ifdef(CONFIG_XEN_DOM0 dom0)
