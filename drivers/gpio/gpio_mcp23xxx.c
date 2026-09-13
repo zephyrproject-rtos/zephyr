@@ -40,12 +40,21 @@ LOG_MODULE_REGISTER(gpio_mcp23xxx);
 static int read_port_regs(const struct device *dev, uint8_t reg, uint16_t *buf)
 {
 	const struct mcp23xxx_config *config = dev->config;
+	uint8_t data[2] = {0};
+	size_t len = 1;
+	int ret;
 
 	if (config->ngpios == 16U) {
 		reg *= 2;
+		len = 2;
 	}
 
-	return config->read_fn(dev, reg, buf);
+	ret = config->read_fn(dev, reg, data, len);
+	if (ret == 0) {
+		*buf = sys_get_le16(data);
+	}
+
+	return ret;
 }
 
 /**
@@ -63,12 +72,17 @@ static int read_port_regs(const struct device *dev, uint8_t reg, uint16_t *buf)
 static int write_port_regs(const struct device *dev, uint8_t reg, uint16_t value)
 {
 	const struct mcp23xxx_config *config = dev->config;
+	uint8_t data[2];
+	size_t len = 1;
 
 	if (config->ngpios == 16U) {
 		reg *= 2;
+		len = 2;
 	}
 
-	return config->write_fn(dev, reg, value);
+	sys_put_le16(value, data);
+
+	return config->write_fn(dev, reg, data, len);
 }
 
 /**
@@ -95,6 +109,68 @@ static int write_iocon(const struct device *dev, uint8_t value)
 	}
 
 	return ret;
+}
+
+/**
+ * @brief Read the interrupt status registers in one bus transaction.
+ *
+ * INTF, INTCAP and GPIO are consecutive registers (with IOCON.BANK = 0), so the
+ * whole interrupt state can be captured atomically from the device's point of
+ * view. Reading INTCAP clears the pending interrupt, so this must always read
+ * INTCAP before GPIO: the datasheet warns that reading GPIO first while another
+ * interrupt is pending loses the captured value.
+ *
+ * @param dev The mcp23xxx device.
+ * @param intf Receives INTF.
+ * @param intcap Receives INTCAP.
+ * @param gpio If not NULL, receives GPIO as well.
+ *
+ * @return 0 if successful. Otherwise <0 will be returned.
+ */
+static int read_int_regs(const struct device *dev, uint16_t *intf, uint16_t *intcap, uint16_t *gpio)
+{
+	const struct mcp23xxx_config *config = dev->config;
+	size_t nports = (config->ngpios == 16U) ? 2 : 1;
+	size_t nregs = (gpio != NULL) ? 3 : 2;
+	uint8_t data[MCP23XXX_MAX_BURST] = {0};
+	int ret;
+
+	ret = config->read_fn(dev, REG_INTF * nports, data, nregs * nports);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (nports == 2) {
+		*intf = sys_get_le16(&data[0]);
+		*intcap = sys_get_le16(&data[2]);
+		if (gpio != NULL) {
+			*gpio = sys_get_le16(&data[4]);
+		}
+	} else {
+		*intf = data[0];
+		*intcap = data[1];
+		if (gpio != NULL) {
+			*gpio = data[2];
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Turn raw INTF/INTCAP contents into the set of pins whose interrupt fired.
+ *
+ * The mcp23xxx only knows "any change" and "differs from DEFVAL" interrupts,
+ * so single-edge interrupts are filtered here using the captured pin state.
+ * Must be called with the driver lock held.
+ */
+static uint16_t filter_int_pins(const struct device *dev, uint16_t intf, uint16_t intcap)
+{
+	struct mcp23xxx_drv_data *drv_data = dev->data;
+	uint16_t level_ints = drv_data->reg_cache.gpinten & drv_data->reg_cache.intcon;
+
+	return intf & (level_ints | (intcap & drv_data->rising_edge_ints) |
+		       (~intcap & drv_data->falling_edge_ints));
 }
 
 /**
@@ -214,6 +290,7 @@ done:
 static int mcp23xxx_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	struct mcp23xxx_drv_data *drv_data = dev->data;
+	const struct mcp23xxx_config *config = dev->config;
 	uint16_t buf;
 	int ret;
 
@@ -223,7 +300,24 @@ static int mcp23xxx_port_get_raw(const struct device *dev, uint32_t *value)
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	ret = read_port_regs(dev, REG_GPIO, &buf);
+	if (config->gpio_int.port && drv_data->reg_cache.gpinten != 0) {
+		/* Reading GPIO clears any pending interrupt and discards INTCAP.
+		 * Capture both alongside the port value so the event is not lost
+		 * if the interrupt handler has not run yet, and let the handler
+		 * deliver it.
+		 */
+		uint16_t intf;
+		uint16_t intcap;
+
+		ret = read_int_regs(dev, &intf, &intcap, &buf);
+		if (ret == 0 && intf != 0) {
+			drv_data->pending_ints |= filter_int_pins(dev, intf, intcap);
+			k_work_submit(&drv_data->work);
+		}
+	} else {
+		ret = read_port_regs(dev, REG_GPIO, &buf);
+	}
+
 	if (ret == 0) {
 		*value = buf;
 	}
@@ -316,6 +410,7 @@ static int mcp23xxx_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
 		gpinten &= ~BIT(pin);
+		drv_data->pending_ints &= ~BIT(pin);
 		break;
 
 	case GPIO_INT_MODE_LEVEL:
@@ -361,6 +456,26 @@ static int mcp23xxx_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 			goto done;
 		}
 		break;
+	}
+
+	if ((gpinten & ~drv_data->reg_cache.gpinten) != 0) {
+		/* Interrupt-on-change compares against the pin value seen at the
+		 * last GPIO or INTCAP read, which may be long stale. Refresh it so
+		 * that enabling does not fire for a change that predates the
+		 * enable, keeping any interrupt the read consumes for the handler.
+		 */
+		uint16_t intf;
+		uint16_t intcap;
+		uint16_t gpio;
+
+		ret = read_int_regs(dev, &intf, &intcap, &gpio);
+		if (ret != 0) {
+			goto done;
+		}
+		if (intf != 0) {
+			drv_data->pending_ints |= filter_int_pins(dev, intf, intcap);
+			k_work_submit(&drv_data->work);
+		}
 	}
 
 	ret = write_port_regs(dev, REG_GPINTEN, gpinten);
@@ -414,53 +529,47 @@ static void mcp23xxx_work_handler(struct k_work *work)
 {
 	struct mcp23xxx_drv_data *drv_data = CONTAINER_OF(work, struct mcp23xxx_drv_data, work);
 	const struct device *dev = drv_data->dev;
-
+	const struct mcp23xxx_config *config = dev->config;
+	uint16_t intf;
+	uint16_t intcap;
+	uint16_t pins;
 	int ret;
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	uint16_t intf;
-
-	ret = read_port_regs(dev, REG_INTF, &intf);
+	/* Reading INTCAP acknowledges the interrupt */
+	ret = read_int_regs(dev, &intf, &intcap, NULL);
 	if (ret != 0) {
-		LOG_ERR("Failed to read INTF");
-		goto fail;
+		LOG_ERR("Failed to read INTF/INTCAP (%d)", ret);
+		k_sem_give(&drv_data->lock);
+		return;
 	}
 
-	if (!intf) {
-		/* Probable causes:
-		 * - REG_GPIO was read from somewhere else before the interrupt handler had a chance
-		 *   to run
-		 * - Even though the datasheet says differently, reading INTCAP while a level
-		 *   interrupt is active briefly (~2ns) causes the interrupt line to go high and
-		 *   low again. This causes a second ISR to be scheduled, which then won't
-		 *   find any active interrupts if the callback has disabled the level interrupt.
+	pins = drv_data->pending_ints | filter_int_pins(dev, intf, intcap);
+	drv_data->pending_ints = 0;
+
+	k_sem_give(&drv_data->lock);
+
+	if (pins != 0) {
+		gpio_fire_callbacks(&drv_data->callbacks, dev, pins);
+	} else {
+		/* Not an error: a level interrupt that the callback disabled, or an
+		 * edge interrupt filtered out for the other edge, ends up here.
 		 */
-		LOG_ERR("Spurious interrupt");
-		goto fail;
+		LOG_DBG("No interrupt pending");
 	}
 
-	uint16_t intcap;
-
-	/* Read INTCAP to acknowledge the interrupt */
-	ret = read_port_regs(dev, REG_INTCAP, &intcap);
-	if (ret != 0) {
-		LOG_ERR("Failed to read INTCAP");
-		goto fail;
+	/* The host side interrupt is edge triggered, but a DEFVAL compare (level)
+	 * interrupt keeps INT asserted for as long as the mismatch exists, so no
+	 * new edge is ever produced. Re-run while the line is still active rather
+	 * than relying on the brief INT pulse the chip emits when INTCAP is read
+	 * during a level interrupt. Submitting instead of looping lets other work
+	 * items run in between.
+	 */
+	if (gpio_pin_get_dt(&config->gpio_int) > 0 ||
+	    (config->gpio_intb.port && gpio_pin_get_dt(&config->gpio_intb) > 0)) {
+		k_work_submit(work);
 	}
-
-	/* mcp23xxx does not support single-edge interrupts in hardware, filter them out manually */
-	uint16_t level_ints = drv_data->reg_cache.gpinten & drv_data->reg_cache.intcon;
-
-	intf &= level_ints | (intcap & drv_data->rising_edge_ints) |
-		(~intcap & drv_data->falling_edge_ints);
-
-	k_sem_give(&drv_data->lock);
-	gpio_fire_callbacks(&drv_data->callbacks, dev, intf);
-	return;
-
-fail:
-	k_sem_give(&drv_data->lock);
 }
 
 static void mcp23xxx_int_gpio_handler(const struct device *port, struct gpio_callback *cb,
@@ -470,6 +579,50 @@ static void mcp23xxx_int_gpio_handler(const struct device *port, struct gpio_cal
 		CONTAINER_OF(cb, struct mcp23xxx_drv_data, int_gpio_cb);
 
 	k_work_submit(&drv_data->work);
+}
+
+static void mcp23xxx_intb_gpio_handler(const struct device *port, struct gpio_callback *cb,
+				       gpio_port_pins_t pins)
+{
+	struct mcp23xxx_drv_data *drv_data =
+		CONTAINER_OF(cb, struct mcp23xxx_drv_data, intb_gpio_cb);
+
+	k_work_submit(&drv_data->work);
+}
+
+/**
+ * @brief Connect one INT line to the given callback.
+ */
+static int setup_int_line(const struct gpio_dt_spec *spec, struct gpio_callback *cb,
+			  gpio_callback_handler_t handler)
+{
+	int err;
+
+	if (!gpio_is_ready_dt(spec)) {
+		LOG_ERR("INT port is not ready");
+		return -ENODEV;
+	}
+
+	err = gpio_pin_configure_dt(spec, GPIO_INPUT);
+	if (err != 0) {
+		LOG_ERR("Failed to configure INT line: %d", err);
+		return -EIO;
+	}
+
+	gpio_init_callback(cb, handler, BIT(spec->pin));
+	err = gpio_add_callback(spec->port, cb);
+	if (err != 0) {
+		LOG_ERR("Failed to add INT callback: %d", err);
+		return -EIO;
+	}
+
+	err = gpio_pin_interrupt_configure_dt(spec, GPIO_INT_EDGE_TO_ACTIVE);
+	if (err != 0) {
+		LOG_ERR("Failed to configure INT interrupt: %d", err);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 DEVICE_API(gpio, gpio_mcp23xxx_api_table) = {
@@ -526,42 +679,57 @@ int gpio_mcp23xxx_init(const struct device *dev)
 
 	/* If the INT line is available, configure the callback for it. */
 	if (config->gpio_int.port) {
-		if (config->ngpios == 16) {
-			/* send both ports' interrupts through one IRQ pin */
-			err = write_iocon(dev, REG_IOCON_MIRROR);
+		uint8_t iocon = 0;
 
-			if (err != 0) {
-				LOG_ERR("Failed to enable mirrored IRQ pins: %d", err);
-				return -EIO;
+		if (config->gpio_intb.port) {
+			if (config->ngpios != 16) {
+				LOG_ERR("Only the 16 pin parts have two INT lines");
+				return -EINVAL;
 			}
+			if ((config->gpio_int.dt_flags & GPIO_ACTIVE_LOW) !=
+			    (config->gpio_intb.dt_flags & GPIO_ACTIVE_LOW)) {
+				LOG_ERR("INTA and INTB must have the same polarity");
+				return -EINVAL;
+			}
+		} else if (config->ngpios == 16) {
+			/* send both ports' interrupts through one IRQ pin */
+			iocon |= REG_IOCON_MIRROR;
 		}
 
-		if (!gpio_is_ready_dt(&config->gpio_int)) {
-			LOG_ERR("INT port is not ready");
-			return -ENODEV;
+		if (config->is_open_drain) {
+			/* The MCP23x09/x18 default to clearing the interrupt on a GPIO
+			 * read; this driver acknowledges by reading INTCAP.
+			 */
+			iocon |= REG_IOCON_INTCC;
+		}
+
+		if (config->int_open_drain) {
+			iocon |= REG_IOCON_ODR;
+		} else if ((config->gpio_int.dt_flags & GPIO_ACTIVE_LOW) == 0) {
+			iocon |= REG_IOCON_INTPOL;
+		}
+
+		err = write_iocon(dev, iocon);
+		if (err != 0) {
+			LOG_ERR("Failed to configure IOCON: %d", err);
+			return -EIO;
 		}
 
 		drv_data->dev = dev;
 		k_work_init(&drv_data->work, mcp23xxx_work_handler);
 
-		err = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
+		err = setup_int_line(&config->gpio_int, &drv_data->int_gpio_cb,
+				     mcp23xxx_int_gpio_handler);
 		if (err != 0) {
-			LOG_ERR("Failed to configure INT line: %d", err);
-			return -EIO;
+			return err;
 		}
 
-		gpio_init_callback(&drv_data->int_gpio_cb, mcp23xxx_int_gpio_handler,
-				   BIT(config->gpio_int.pin));
-		err = gpio_add_callback(config->gpio_int.port, &drv_data->int_gpio_cb);
-		if (err != 0) {
-			LOG_ERR("Failed to add INT callback: %d", err);
-			return -EIO;
-		}
-
-		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
-		if (err != 0) {
-			LOG_ERR("Failed to configure INT interrupt: %d", err);
-			return -EIO;
+		if (config->gpio_intb.port) {
+			err = setup_int_line(&config->gpio_intb, &drv_data->intb_gpio_cb,
+					     mcp23xxx_intb_gpio_handler);
+			if (err != 0) {
+				return err;
+			}
 		}
 	}
 
