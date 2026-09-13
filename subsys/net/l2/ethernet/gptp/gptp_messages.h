@@ -22,6 +22,11 @@
 extern "C" {
 #endif
 
+/* Destination MAC address of every gPTP message, the nearest bridge group
+ * address of IEEE 802.1AS.
+ */
+extern const struct net_eth_addr gptp_multicast_eth_addr;
+
 /* Helpers to access gPTP messages. */
 #define GPTP_HDR(pkt) gptp_get_hdr(pkt)
 #define GPTP_ANNOUNCE(pkt) ((struct gptp_announce *)gptp_data(pkt))

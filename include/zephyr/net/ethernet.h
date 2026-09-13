@@ -433,15 +433,6 @@ struct ethernet_filter {
 
 /** @cond INTERNAL_HIDDEN */
 
-/* The L2 multicast addresses are tracked only if something joins the groups,
- * either the IP level or a packet socket.
- */
-#if defined(CONFIG_NET_L2_ETHERNET) && !defined(CONFIG_NET_RAW_MODE) &&	\
-	(defined(CONFIG_NET_NATIVE_IP) ||				\
-	 defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP))
-#define NET_ETH_MCAST_FILTER_SUPPORTED 1
-#endif
-
 /* How many L2 multicast addresses one interface can track. The build system
  * sums up what the subsystems asked for and gives the result here, the
  * Kconfig value is only the floor and is used if the header is compiled
@@ -449,6 +440,14 @@ struct ethernet_filter {
  */
 #ifndef NET_ETH_MCAST_FILTER_COUNT
 #define NET_ETH_MCAST_FILTER_COUNT CONFIG_NET_L2_ETHERNET_MCAST_FILTER_COUNT
+#endif
+
+/* The L2 multicast addresses are tracked only if something joins the groups,
+ * either the IP level, a packet socket, or other parts of the system.
+ */
+#if defined(CONFIG_NET_L2_ETHERNET) && !defined(CONFIG_NET_RAW_MODE) &&	\
+	(NET_ETH_MCAST_FILTER_COUNT > 0)
+#define NET_ETH_MCAST_FILTER_SUPPORTED 1
 #endif
 
 /** @endcond */

@@ -44,11 +44,13 @@ static void lldp_submit_work(k_timeout_t timeout)
 			k_work_delayable_remaining_get(&lldp_tx_timer)));
 }
 
+/* The nearest bridge group address of IEEE 802.1AB */
+static const struct net_eth_addr lldp_multicast_eth_addr = {
+	{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }
+};
+
 static void lldp_send(struct ethernet_lldp *lldp)
 {
-	static const struct net_eth_addr lldp_multicast_eth_addr = {
-		{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }
-	};
 	struct ethernet_context *ctx = CONTAINER_OF(lldp, struct ethernet_context, lldp);
 	int ret = 0;
 	struct net_pkt *pkt;
@@ -244,6 +246,21 @@ int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t recv_cb)
 	}
 
 	ctx = net_if_l2_data(iface);
+
+	/* Received frames are only useful with a callback, so a device that
+	 * filters multicast frames in hardware is told to listen to the
+	 * group address while one is registered.
+	 */
+	if (recv_cb != NULL && ctx->lldp.cb == NULL) {
+		ret = net_eth_mcast_addr_add(iface, &lldp_multicast_eth_addr);
+		if (ret < 0) {
+			return ret;
+		}
+	} else if (recv_cb == NULL && ctx->lldp.cb != NULL) {
+		(void)net_eth_mcast_addr_rm(iface, &lldp_multicast_eth_addr);
+	} else {
+		/* No change, do not touch the multicast group */
+	}
 
 	ctx->lldp.cb = recv_cb;
 
