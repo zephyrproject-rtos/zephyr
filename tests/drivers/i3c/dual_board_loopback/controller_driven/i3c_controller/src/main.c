@@ -374,6 +374,8 @@ static void suite_before_each(void *fixture)
 static void suite_after_each(void *fixture)
 {
 	ARG_UNUSED(fixture);
+
+	dual_board_loopback_attach_cleanup();
 }
 
 static void suite_teardown(void *data)
