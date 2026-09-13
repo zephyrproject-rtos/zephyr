@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -162,6 +162,18 @@ static DEVICE_API(mbox, nxp_imx_mu_driver_api) = {
 
 static void mu_isr(const struct device *dev);
 
+#define MU_IRQ_COUNT(inst_idx) DT_NUM_IRQS(DT_DRV_INST(inst_idx))
+
+#define MU_IRQ_CONNECT(irq_idx, inst_idx)                                                          \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(inst_idx, irq_idx),                                \
+			    DT_INST_IRQ_BY_IDX(inst_idx, irq_idx, priority), mu_isr,               \
+			    DEVICE_DT_INST_GET(inst_idx), 0);                                      \
+		irq_enable(DT_INST_IRQN_BY_IDX(inst_idx, irq_idx));                                \
+	} while (false)
+
+#define MU_IRQ_CONNECT_ALL(inst_idx) LISTIFY(MU_IRQ_COUNT(inst_idx), MU_IRQ_CONNECT, (;), inst_idx)
+
 #define MU_INSTANCE_DEFINE(idx)                                                                    \
 	static struct nxp_imx_mu_data nxp_imx_mu_##idx##_data;                                     \
 	const static struct nxp_imx_mu_config nxp_imx_mu_##idx##_config = {                        \
@@ -171,9 +183,7 @@ static void mu_isr(const struct device *dev);
 	{                                                                                          \
 		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);                                            \
 		MU_Init(get_base(dev));                                                            \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), mu_isr,                 \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQN(idx));                                                     \
+		MU_IRQ_CONNECT_ALL(idx);                                              \
 		return 0;                                                                          \
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(idx, nxp_imx_mu_##idx##_init, NULL, &nxp_imx_mu_##idx##_data,        \

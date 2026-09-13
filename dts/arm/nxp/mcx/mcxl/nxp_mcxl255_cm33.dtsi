@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,9 +76,10 @@
 };
 
 &fmu {
-	flash: flash@0 {
+	/* Secure images are linked at the IDAU secure alias. */
+	flash: flash@10000000 {
 		compatible = "soc-nv-flash";
-		reg = <0 DT_SIZE_K(512)>;
+		reg = <0x10000000 DT_SIZE_K(512)>;
 		erase-block-size = <DT_SIZE_K(8)>;
 		write-block-size = <128>;
 	};
