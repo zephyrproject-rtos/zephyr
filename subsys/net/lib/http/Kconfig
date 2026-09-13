@@ -22,6 +22,15 @@ config HTTP_PARSER_STRICT
 	help
 	  This option enables the strict parsing option
 
+config HTTP_PARSER_MAX_HEADER_SIZE
+	int "HTTP maximum header size allowed"
+	default 81920
+	depends on HTTP_PARSER
+	help
+	  This option configures the HTTP maximum header size allowed.
+	  To remove the effective limit on the size of the header, configure this option to a very
+	  large number.
+
 config HTTP_CLIENT
 	bool "HTTP client API"
 	select HTTP_PARSER
