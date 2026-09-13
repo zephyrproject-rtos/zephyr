@@ -11,7 +11,7 @@
 #include <zephyr/sys/util_macro.h>
 
 struct pm_state_device_constraint {
-	const char *const dev;
+	const struct device *const dev;
 	size_t pm_constraints_size;
 	struct pm_state_constraint *constraints;
 };
@@ -61,7 +61,7 @@ DT_FOREACH_STATUS_OKAY_NODE(DEVICE_CONSTRAINTS_DEFINE)
  */
 #define PM_STATE_DEVICE_CONSTRAINT_INIT(node_id)                                              \
 	{                                                                                     \
-		.dev = DEVICE_DT_NAME(node_id),                                                \
+		.dev = DEVICE_DT_GET(node_id),                                                \
 		.pm_constraints_size = ARRAY_SIZE(PM_CONSTRAINTS_NAME(node_id)),               \
 		.constraints = PM_CONSTRAINTS_NAME(node_id),                                  \
 	},
@@ -87,9 +87,8 @@ pm_policy_priv_device_find_device_constraints(const struct device *dev)
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(_devices_constraints); i++) {
-		const struct device *device = device_get_binding(_devices_constraints[i].dev);
 
-		if (device == dev) {
+		if (_devices_constraints[i].dev == dev) {
 			return &_devices_constraints[i];
 		}
 	}
