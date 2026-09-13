@@ -13,6 +13,10 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>
+#if defined(CONFIG_PTP_CLOCK)
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/ptp_time.h>
+#endif
 #include "eth_numaker_priv.h"
 #include "ethernet/eth_stats.h"
 #include <soc.h>
@@ -59,11 +63,24 @@ struct eth_numaker_config {
 	uint32_t clk_div;
 	const struct device *clk_dev;
 	const struct pinctrl_dev_config *pincfg;
+#if defined(CONFIG_PTP_CLOCK)
+	const struct device *ptp_clock;
+#endif
 };
 
 /* Driver context/data */
 struct eth_numaker_data {
 	synopGMACdevice *gmacdev;
+#if defined(CONFIG_PTP_CLOCK)
+	/*
+	 * One outstanding egress timestamp. A single slot rather than one per descriptor
+	 * because timestamped frames are the PTP event messages -- a handful per second --
+	 * and a second concurrent one simply goes out untimestamped instead of growing a
+	 * ring of references that has to be unwound on every error and reset path.
+	 */
+	struct net_pkt *tx_ts_pkt;
+	DmaDesc *tx_ts_desc;
+#endif
 	struct net_if *iface;
 	uint8_t mac_addr[NU_HWADDR_SIZE];
 	struct k_spinlock rx_frame_buf_lock;
@@ -277,6 +294,7 @@ static int m_numaker_gmacdev_init(synopGMACdevice *gmacdev, uint8_t *mac_addr, u
 	/* This enables the pause control in Full duplex mode of operation */
 	synopGMAC_pause_control(gmacdev);
 
+
 #if defined(NU_USING_HW_CHECKSUM)
 	/*IPC Checksum offloading is enabled for this driver. Should only be used if
 	 * Full Ip checksumm offload engine is configured in the hardware
@@ -309,11 +327,29 @@ static int m_numaker_gmacdev_init(synopGMACdevice *gmacdev, uint8_t *mac_addr, u
 	return status;
 }
 
-static int m_numaker_gmacdev_get_rx_buf(synopGMACdevice *gmacdev, uint16_t *len, uint8_t **buf)
+static int m_numaker_gmacdev_get_rx_buf(synopGMACdevice *gmacdev, uint16_t *len, uint8_t **buf,
+					struct net_ptp_time *ts, bool *ts_valid)
 {
 	DmaDesc *rxdesc = gmacdev->RxBusyDesc;
 
 	LOG_DBG("start");
+#if defined(CONFIG_PTP_CLOCK)
+	/*
+	 * Read the descriptor timestamp before synop_handle_received_data() advances
+	 * RxBusyDesc. DescRxTSAvailable shares bit 7 with Giant Frame, so it only means
+	 * "timestamp captured" while timestamping is enabled -- which is exactly when this
+	 * runs. With digital rollover selected, the low word is nanoseconds.
+	 */
+	*ts_valid = false;
+	if (rxdesc->status & DescRxTSAvailable) {
+		ts->second = rxdesc->timestamphigh;
+		ts->nanosecond = rxdesc->timestamplow;
+		*ts_valid = true;
+	}
+#else
+	ARG_UNUSED(ts);
+	ARG_UNUSED(ts_valid);
+#endif
 	if (synopGMAC_is_desc_owned_by_dma(rxdesc)) {
 		return -EIO;
 	}
@@ -370,6 +406,8 @@ static void m_numaker_gmacdev_packet_rx(const struct device *dev)
 	struct net_pkt *pkt;
 	k_spinlock_key_t key;
 	int res;
+	struct net_ptp_time ts = {0};
+	bool ts_valid = false;
 
 	/* Get exclusive access, use spin-lock instead of mutex in ISR */
 	key = k_spin_lock(&data->rx_frame_buf_lock);
@@ -379,7 +417,7 @@ static void m_numaker_gmacdev_packet_rx(const struct device *dev)
 	 */
 	while (1) {
 		/* get received frame */
-		if (m_numaker_gmacdev_get_rx_buf(gmacdev, &len, &buffer) != 0) {
+		if (m_numaker_gmacdev_get_rx_buf(gmacdev, &len, &buffer, &ts, &ts_valid) != 0) {
 			break;
 		}
 
@@ -403,6 +441,12 @@ static void m_numaker_gmacdev_packet_rx(const struct device *dev)
 			net_pkt_unref(pkt);
 			goto error;
 		}
+
+#if defined(CONFIG_PTP_CLOCK)
+		if (ts_valid) {
+			net_pkt_set_timestamp(pkt, &ts);
+		}
+#endif
 
 		if (pkt != NULL) {
 			res = net_recv_data(data->iface, pkt);
@@ -470,12 +514,60 @@ static void m_numaker_gmacdev_trigger_tx(synopGMACdevice *gmacdev, uint16_t leng
 	synopGMAC_resume_dma_tx(gmacdev);
 }
 
+#if defined(CONFIG_PTP_CLOCK)
+/*
+ * Collect the egress timestamp of the parked frame, if it has been transmitted.
+ *
+ * Must run BEFORE synop_handle_transmit_over(), which reclaims the descriptor and clears
+ * the status word this reads.
+ */
+static void eth_numaker_reap_tx_timestamp(const struct device *dev)
+{
+	struct eth_numaker_data *data = dev->data;
+	struct net_pkt *pkt = data->tx_ts_pkt;
+	DmaDesc *desc = data->tx_ts_desc;
+
+	if (pkt == NULL || desc == NULL) {
+		return;
+	}
+	if (synopGMAC_is_desc_owned_by_dma(desc)) {
+		return; /* still in flight; a later TX interrupt will find it */
+	}
+
+	if (desc->status & DescTxTSStatus) {
+		struct net_ptp_time ts = {
+			.second = desc->timestamphigh,
+			.nanosecond = desc->timestamplow,
+		};
+
+		net_pkt_set_timestamp(pkt, &ts);
+#if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
+		/* Only declared with the timestamp thread, which is what delivers the
+		 * completion to whoever registered a callback. Without it the timestamp is
+		 * still attached to the packet, so a caller holding its own reference can
+		 * read it; there is simply nobody to notify.
+		 */
+		net_if_add_tx_timestamp(pkt);
+#endif
+	}
+	/* Released whether or not TTSS was set: the frame is gone either way, and holding
+	 * the reference for a timestamp the MAC did not capture leaks it.
+	 */
+	data->tx_ts_pkt = NULL;
+	data->tx_ts_desc = NULL;
+	net_pkt_unref(pkt);
+}
+#endif /* CONFIG_PTP_CLOCK */
+
 static int numaker_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_numaker_data *data = dev->data;
 	synopGMACdevice *gmacdev = data->gmacdev;
 	uint16_t total_len = net_pkt_get_len(pkt);
 	uint8_t *buffer;
+#if defined(CONFIG_PTP_CLOCK)
+	const struct eth_numaker_config *cfg = dev->config;
+#endif
 
 	/* Get exclusive access */
 	if (total_len > NET_ETH_MAX_FRAME_SIZE) {
@@ -493,6 +585,27 @@ static int numaker_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	if (net_pkt_read(pkt, buffer, total_len)) {
 		goto error;
 	}
+
+#if defined(CONFIG_PTP_CLOCK)
+	if (cfg->ptp_clock != NULL && net_pkt_is_tx_timestamping(pkt) &&
+	    data->tx_ts_pkt == NULL) {
+		/*
+		 * Park the packet against the descriptor trigger_tx() is about to use, with
+		 * interrupts locked across both. Outside the lock there is a window where the
+		 * frame completes before the slot is set, and the timestamp would be lost --
+		 * not corrupted, but lost silently, which for a Delay_Req is a path-delay
+		 * measurement that never converges.
+		 */
+		unsigned int key = irq_lock();
+
+		data->tx_ts_pkt = net_pkt_ref(pkt);
+		data->tx_ts_desc = gmacdev->TxNextDesc;
+		m_numaker_gmacdev_trigger_tx(gmacdev, total_len);
+		irq_unlock(key);
+
+		return 0;
+	}
+#endif
 
 	/* Prepare transmit descriptors to give to DMA */
 	m_numaker_gmacdev_trigger_tx(gmacdev, total_len);
@@ -544,19 +657,43 @@ static int numaker_eth_set_config(const struct device *dev,
 	}
 }
 
-static enum ethernet_hw_caps numaker_eth_get_cap(const struct device *dev __unused,
+static enum ethernet_hw_caps numaker_eth_get_cap(const struct device *dev,
 						 struct net_if *iface __unused)
 {
+	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+
 #if defined(NU_USING_HW_CHECKSUM)
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
-#else
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+	caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 #endif
+#if defined(CONFIG_PTP_CLOCK)
+	/* Both directions are timestamped: RX from the descriptor on receive, TX from
+	 * the descriptor once the frame has gone out.
+	 */
+	if (((const struct eth_numaker_config *)dev->config)->ptp_clock != NULL) {
+		caps |= ETHERNET_PTP;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+	return caps;
 }
+
+#if defined(CONFIG_PTP_CLOCK)
+static const struct device *eth_numaker_get_ptp_clock(const struct device *dev,
+						      struct net_if *iface __unused)
+{
+	const struct eth_numaker_config *cfg = dev->config;
+
+	return cfg->ptp_clock;
+}
+#endif
 
 static const struct ethernet_api eth_numaker_driver_api = {
 	.iface_api.init = numaker_eth_if_init,
 	.get_capabilities = numaker_eth_get_cap,
+#if defined(CONFIG_PTP_CLOCK)
+	.get_ptp_clock = eth_numaker_get_ptp_clock,
+#endif
 	.set_config = numaker_eth_set_config,
 	.send = numaker_eth_tx,
 };
@@ -671,6 +808,10 @@ static void eth_numaker_isr(const struct device *dev)
 
 	if (interrupt & synopGMACDmaTxNormal) {
 		LOG_DBG("Finished Normal Transmission");
+#if defined(CONFIG_PTP_CLOCK)
+		/* Before the reclaim below clears the descriptor status. */
+		eth_numaker_reap_tx_timestamp(dev);
+#endif
 		synop_handle_transmit_over(0);
 		/* No-op at this stage for TX INT */
 	}
@@ -761,6 +902,23 @@ static int eth_numaker_init(const struct device *dev)
 		goto done;
 	}
 
+#if defined(CONFIG_PTP_CLOCK)
+	/*
+	 * Per-frame snapshotting, enabled here rather than in m_numaker_gmacdev_init()
+	 * because it is conditional on a ptp_clock being present. That driver owns the
+	 * timebase -- update method, sub-second increment, addend -- and this owns only
+	 * which frames get a snapshot; both touch TSControl and each sets only its own bits.
+	 *
+	 * Snapshot every frame rather than snooping for PTP: it is profile-agnostic, so a
+	 * 1588 default profile over UDP and 802.1AS over Ethernet both work without telling
+	 * the MAC which is in use, and software already knows which frames it cares about.
+	 */
+	if (cfg->ptp_clock != NULL) {
+		synopGMAC_TS_enable(gmacdev);
+		synopGMAC_TS_all_frames_enable(gmacdev);
+	}
+#endif
+
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_numaker_isr,
 		    DEVICE_DT_INST_GET(0), 0);
 
@@ -784,6 +942,9 @@ static struct eth_numaker_config eth_numaker_cfg_inst = {
 	.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(0))),
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.reset = RESET_DT_SPEC_INST_GET(0),
+#if defined(CONFIG_PTP_CLOCK)
+	.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, ptp_clock)),
+#endif
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_numaker_init, NULL, &eth_numaker_data_inst,
