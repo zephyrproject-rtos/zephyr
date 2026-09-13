@@ -1284,42 +1284,36 @@ static int i3c_dw_endis_ibi(const struct device *dev, struct i3c_device_desc *ta
 	struct dw_i3c_data *data = dev->data;
 	const struct dw_i3c_config *config = dev->config;
 	uint32_t role = data->role;
-	uint32_t bitpos, sir_con;
+	uint32_t bitpos, sir_con, reg;
 	struct i3c_ccc_events i3c_events;
 	int ret;
 	int pos;
 
-	if (!DW_IBI_REJECT_VIA_REG(role)) {
+	pos = get_i3c_addr_pos(dev, target->dynamic_addr, false);
+	if (pos < 0) {
+		LOG_ERR("%s: Invalid Slave address", dev->name);
+		return pos;
+	}
 
-		/* controller-only: SIR via DAT entry */
-
-		pos = get_i3c_addr_pos(dev, target->dynamic_addr, false);
-		if (pos < 0) {
-			LOG_ERR("%s: Invalid Slave address", dev->name);
-			return pos;
-		}
-
-		uint32_t reg =
-			sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
-
-		if (i3c_ibi_has_payload(target)) {
-			reg |= DEV_ADDR_TABLE_IBI_WITH_DATA;
-		} else {
-			reg &= ~DEV_ADDR_TABLE_IBI_WITH_DATA;
-		}
-		if (en) {
-			reg &= ~DEV_ADDR_TABLE_SIR_REJECT;
-		} else {
-			reg |= DEV_ADDR_TABLE_SIR_REJECT;
-		}
-		sys_write32(reg, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
-
+	reg = sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+	if (i3c_ibi_has_payload(target)) {
+		reg |= DEV_ADDR_TABLE_IBI_WITH_DATA;
 	} else {
+		reg &= ~DEV_ADDR_TABLE_IBI_WITH_DATA;
+	}
+	if (en) {
+		reg &= ~DEV_ADDR_TABLE_SIR_REJECT;
+	} else {
+		reg |= DEV_ADDR_TABLE_SIR_REJECT;
+	}
+	sys_write32(reg, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 
-		/* dual-role: SIR via IBI_SIR_REQ_REJECT */
-
+	/* The DAT entry carries the IBI payload flag and SIR gating for every role;
+	 * a secondary controller gates SIR again in IBI_SIR_REQ_REJECT.
+	 */
+	if (DW_IBI_REJECT_VIA_REG(role)) {
 		sir_con = sys_read32(config->regs + IBI_SIR_REQ_REJECT);
-		/* TODO: what is this macro doing?? */
+		/* Map dynamic address to its SIR reject-bit position. */
 		bitpos = IBI_SIR_REQ_ID(target->dynamic_addr);
 
 		if (en) {
