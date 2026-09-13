@@ -217,6 +217,11 @@ int nordicsemi_nrf71_init(void)
 	*(volatile uint32_t *)PWR_ANTSWC_REG |= PWR_ANTSWC_ENABLE;
 #endif
 
+#if DT_NODE_EXISTS(DT_NODELABEL(gpio4)) && !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
+	/* P4 is powered on by default and draws roughly 40 uA when unused, see soc.h */
+	*(volatile uint32_t *)P4_PWRCTRL_REG = P4_PWRCTRL_OFF;
+#endif
+
 	/* Configure LFXO capacitive load if internal load capacitors are used */
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
 	nrf_lfxo_cload_set(NRF_LFXO,
