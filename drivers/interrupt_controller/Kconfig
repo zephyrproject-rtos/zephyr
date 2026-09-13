@@ -36,6 +36,7 @@ config VEXRISCV_LITEX_IRQ
 	bool "VexRiscv LiteX Interrupt controller"
 	default y
 	depends on DT_HAS_LITEX_VEXRISCV_INTC0_ENABLED
+	select INTC_ROOT
 	help
 	  IRQ implementation for LiteX VexRiscv
 
