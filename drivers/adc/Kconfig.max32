@@ -14,6 +14,7 @@ config ADC_MAX32
 config ADC_MAX32_STREAM
 	bool "Use FIFO to stream data"
 	select ADC_ASYNC
+	select RTIO_WORKQ
 	depends on ADC_MAX32
 	depends on DT_HAS_ADI_MAX32_ADC_B_ME18_ENABLED
 	help
