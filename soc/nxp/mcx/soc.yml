@@ -51,6 +51,7 @@ family:
     socs:
     - name: mcxa537
     - name: mcxa577
+    - name: mcxa287
 - name: mcxw
   series:
   - name: mcxw2xx
@@ -130,6 +131,8 @@ runners:
       - qualifiers:
         - mcxa577
       - qualifiers:
+        - mcxa287
+      - qualifiers:
         - mcxw716c
       - qualifiers:
         - mcxw235
@@ -201,6 +204,8 @@ runners:
         - mcxa537
       - qualifiers:
         - mcxa577
+      - qualifiers:
+        - mcxa287
       - qualifiers:
         - mcxw716c
       - qualifiers:
