@@ -6868,6 +6868,16 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 
 	if (adv->type == PDU_ADV_TYPE_DIRECT_IND) {
 		adv_info->direct_addr.type = adv->rx_addr;
+
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+		if (node_rx->rx_ftr.direct != 0U) {
+			/* The target address is a resolvable private address
+			 * that the Controller was unable to resolve.
+			 */
+			adv_info->direct_addr.type = BT_ADDR_LE_UNRESOLVED;
+		}
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
 		bt_addr_copy(&adv_info->direct_addr.a,
 			     (void *)adv->direct_ind.tgt_addr);
 	} else {

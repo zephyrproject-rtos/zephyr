@@ -501,6 +501,13 @@ New APIs and options
     * HCI packet helpers (:c:macro:`BT_HCI_PKT_CMD_DEFINE`, :c:func:`bt_hci_pkt_push_cmd_hdr`,
       :c:func:`bt_hci_pkt_parse_cmd_rsp` and friends) for framing HCI command packets and
       parsing command responses independently of the Host.
+    * :c:enumerator:`BT_LE_SCAN_OPT_EXT_FILTER_POLICY`, enabled by
+      :kconfig:option:`CONFIG_BT_SCAN_EXT_FILTER_POLICY`, to scan with the extended scanner
+      filter policy. The Controller then also reports directed advertisements whose target
+      address is a resolvable private address that it was unable to resolve.
+    * :c:member:`bt_le_scan_recv_info.direct_addr` holding the target address of a directed
+      advertisement when the report carries one, with the address type set to
+      ``BT_ADDR_LE_UNRESOLVED`` when the Controller was unable to resolve it.
 
   * Mesh
 
