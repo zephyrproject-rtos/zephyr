@@ -196,3 +196,21 @@ child-binding:
         (see control register FMC_BCRx).
 
         If absent, then reset state values are used.
+
+    st,data-hold-cycles:
+      type: int
+      enum: [0, 1, 2, 3]
+      description: |
+        Data-hold phase duration in HCLK cycles for read accesses (DATAHLD).
+        This parameter can be a value between 0 and 3.
+        Supported only on FMC controller versions that feature DATAHLD bits in FMC_BTRx.
+        Use constants defined in dt-bindings/memory-controller/stm32-fmc-nor-psram.h.
+
+    st,data-hold-cycles-ext:
+      type: int
+      enum: [0, 1, 2, 3]
+      description: |
+        Data-hold phase duration in HCLK cycles for write accesses (DATAHLD).
+        This parameter can be a value between 0 and 3.
+        Supported only on FMC controller versions that feature DATAHLD bits in FMC_BWTRx.
+        Use constants defined in dt-bindings/memory-controller/stm32-fmc-nor-psram.h.
