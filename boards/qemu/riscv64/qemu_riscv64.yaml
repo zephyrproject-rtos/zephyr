@@ -6,8 +6,6 @@ simulation:
 arch: riscv
 toolchain:
   - zephyr
-supported:
-  - netif:eth
 ram: 262144
 flash: 32768
 testing:

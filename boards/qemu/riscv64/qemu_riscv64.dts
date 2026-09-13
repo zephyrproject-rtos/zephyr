@@ -57,3 +57,8 @@
 		status = "okay";
 	};
 };
+
+&{/cpus} {
+	riscv,privilege-modes = "m", "s", "u";
+	mmu-type = "riscv,sv39";
+};
