@@ -74,6 +74,7 @@ static sys_slist_t domain_list;
 /* Forward declarations */
 static int domain_privatize_kernel_text(uint64_t *domain_root);
 static void sync_domains(void);
+static void sync_domain_leaves(uintptr_t va, size_t size);
 
 /*
  * Allocate a unique ASID for a new memory domain.  ASIDs allow the TLB to
@@ -434,6 +435,56 @@ next_page:
 	}
 }
 
+#ifdef CONFIG_USERSPACE
+/*
+ * The frame the kernel page tables hold for @a va, or false if the kernel
+ * has no leaf mapping there.  Must be called with xlat_lock held.
+ */
+static bool kernel_page_phys(uintptr_t va, uintptr_t *phys)
+{
+	uint64_t *table = kernel_root_table;
+	int level;
+
+	for (level = 0; level < PGTABLE_LEVELS; level++) {
+		pte_t pte = table[VPN(va, level)];
+
+		if (!pte_is_valid(pte)) {
+			return false;
+		}
+		if (pte_is_leaf(pte)) {
+			*phys = pte_to_phys(pte) + (va & (BIT(RISCV_PGLEVEL_SHIFT(level)) - 1));
+			return true;
+		}
+		table = (uint64_t *)pte_to_phys(pte);
+	}
+
+	return false;
+}
+
+/*
+ * Map [va, va+size) into @a root for user access at the frames the kernel
+ * maps there, page by page: memory-mapped ranges such as a k_mem_map()
+ * thread stack are not identity mapped, so the user view must follow the
+ * kernel's leaves rather than assume virt == phys.  A page the kernel does
+ * not map keeps the identity mapping (device memory in a partition).
+ *
+ * Must be called with xlat_lock held.
+ */
+static void map_user_range(uint64_t *root, uintptr_t va, size_t size, pte_t pte_flags)
+{
+	uintptr_t end = va + size;
+
+	for (; va < end; va += PAGE_SIZE) {
+		uintptr_t phys;
+
+		if (!kernel_page_phys(va, &phys)) {
+			phys = va;
+		}
+		map_pages_into(root, va, phys, PAGE_SIZE, pte_flags);
+	}
+}
+#endif /* CONFIG_USERSPACE */
+
 /**
  * Map physical pages into virtual address space
  *
@@ -459,9 +510,11 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 #ifdef CONFIG_USERSPACE
 	/*
 	 * Propagate any new kernel L0/L1 entries to all active domain
-	 * page tables that carry a private copy of the relevant L1.
+	 * page tables that carry a private copy of the relevant L1, then
+	 * the new leaves to the domains holding private leaf tables.
 	 */
 	sync_domains();
+	sync_domain_leaves((uintptr_t)virt, size);
 #endif
 
 	k_spin_unlock(&xlat_lock, key);
@@ -493,6 +546,10 @@ int arch_mem_unmap(void *addr, size_t size)
 	LOG_DBG("unmapping VA:%p size:%zu", addr, size);
 
 	unmap_pages_from(kernel_root_table, (uintptr_t)addr, size);
+
+#ifdef CONFIG_USERSPACE
+	sync_domain_leaves((uintptr_t)addr, size);
+#endif
 
 	k_spin_unlock(&xlat_lock, key);
 
@@ -1146,6 +1203,88 @@ static void sync_domains(void)
 	}
 }
 
+/*
+ * Mirror the kernel's leaf mappings of [va, va+size) into a page table that
+ * holds a private copy of the covering leaf table; a table still shared with
+ * the kernel already sees the kernel's entry.  Leaves carrying PTE_USER
+ * belong to the domain (partitions, user stacks) and are left alone.  This
+ * keeps late kernel mappings, such as dynamically allocated thread stacks,
+ * reachable while the table is the active address space.
+ *
+ * Must be called with xlat_lock held.
+ */
+static void sync_root_leaves(uint64_t *root, uint16_t asid, uintptr_t va, size_t size)
+{
+	uintptr_t end = va + size;
+	bool changed = false;
+
+	for (; va < end; va += PAGE_SIZE) {
+		uint64_t *k_tbl = kernel_root_table;
+		uint64_t *d_tbl = root;
+		bool shared = false;
+		int lv;
+
+		for (lv = 0; lv < PGTABLE_LEVELS - 1; lv++) {
+			unsigned int idx = VPN(va, lv);
+			pte_t dp = d_tbl[idx];
+
+			if (!pte_is_valid(dp) || !pte_is_table(dp)) {
+				shared = true;
+				break;
+			}
+			d_tbl = (uint64_t *)pte_to_phys(dp);
+
+			if (k_tbl != NULL) {
+				pte_t kp = k_tbl[idx];
+
+				k_tbl = (pte_is_valid(kp) && pte_is_table(kp))
+						? (uint64_t *)pte_to_phys(kp) : NULL;
+			}
+			if (k_tbl == d_tbl) {
+				shared = true;
+				break;
+			}
+		}
+		if (shared) {
+			continue;
+		}
+
+		{
+			unsigned int li = VPN(va, PGTABLE_LEVELS - 1);
+			pte_t kp = (k_tbl != NULL) ? k_tbl[li] : 0;
+			pte_t dp = d_tbl[li];
+
+			if (pte_is_valid(dp) && ((dp & PTE_USER) != 0)) {
+				continue;
+			}
+			if (dp != kp) {
+				set_pte(d_tbl, li, kp);
+				changed = true;
+			}
+		}
+	}
+
+	if (changed) {
+		SFENCE_VMA_ASID(asid);
+	}
+}
+
+/*
+ * Propagate a kernel leaf-level mapping change to every active domain.
+ * Must be called with xlat_lock held.
+ */
+static void sync_domain_leaves(uintptr_t va, size_t size)
+{
+	sys_snode_t *node;
+
+	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
+		struct arch_mem_domain *arch_domain =
+			CONTAINER_OF(node, struct arch_mem_domain, node);
+
+		sync_root_leaves(arch_domain->ptables, arch_domain->asid, va, size);
+	}
+}
+
 int arch_mem_domain_max_partitions_get(void)
 {
 	return CONFIG_MAX_DOMAIN_PARTITIONS;
@@ -1300,7 +1439,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partitio
 		return ret;
 	}
 
-	map_pages_into(domain->arch.ptables, part->start, part->start, part->size, pte_flags);
+	map_user_range(domain->arch.ptables, part->start, part->size, pte_flags);
 
 	SFENCE_VMA_ASID(domain->arch.asid);
 
@@ -1480,7 +1619,7 @@ void z_riscv_mmu_map_user_stack(struct k_thread *thread)
 	 * which also changes the kernel's mapping for the same pages.
 	 */
 	ensure_private_tables(domain->arch.ptables, stack_start, stack_size);
-	map_pages_into(domain->arch.ptables, stack_start, stack_start, stack_size,
+	map_user_range(domain->arch.ptables, stack_start, stack_size,
 		       PTE_VALID | PTE_READ | PTE_WRITE | PTE_USER |
 		       PTE_ACCESSED | PTE_DIRTY);
 	SFENCE_VMA_ASID(domain->arch.asid);
@@ -1514,7 +1653,7 @@ void z_riscv_mmu_switch_stack_perms(struct k_thread *old_thread,
 		uintptr_t start = old_thread->stack_info.start;
 		size_t size = ROUND_UP(old_thread->stack_info.size, PAGE_SIZE);
 
-		map_pages_into(old_domain->arch.ptables, start, start, size,
+		map_user_range(old_domain->arch.ptables, start, size,
 			       PTE_VALID | PTE_READ | PTE_WRITE |
 			       PTE_ACCESSED | PTE_DIRTY);
 		SFENCE_VMA_ASID(old_domain->arch.asid);
@@ -1527,7 +1666,7 @@ void z_riscv_mmu_switch_stack_perms(struct k_thread *old_thread,
 		uintptr_t start = new_thread->stack_info.start;
 		size_t size = ROUND_UP(new_thread->stack_info.size, PAGE_SIZE);
 
-		map_pages_into(new_domain->arch.ptables, start, start, size,
+		map_user_range(new_domain->arch.ptables, start, size,
 			       PTE_VALID | PTE_READ | PTE_WRITE | PTE_USER |
 			       PTE_ACCESSED | PTE_DIRTY);
 		SFENCE_VMA_ASID(new_domain->arch.asid);
