@@ -54,4 +54,23 @@
 #define __CONCAT CONCAT
 #endif
 
+/*
+ * modules/hal_rpi_pico/CMakeLists.txt compiles pico_runtime_init/runtime_init.c
+ * on RP2350 solely to reuse runtime_init_per_core_enable_coprocessors(); Zephyr
+ * does not use the Pico SDK's runtime_init() pre-init array walker.
+ *
+ * That file unconditionally registers several other init steps into
+ * .preinit_array via PICO_RUNTIME_INIT_FUNC(), and those .preinit_array.*
+ * sections are KEEP()'d by the linker script so they survive even though
+ * nothing calls them. Each of the two steps below references symbols Zephyr
+ * doesn't provide (Zephyr installs its own vector table and performs its own
+ * clock init), which GNU ld silently drops as unreferenced but LLD retains
+ * and then fails to resolve. Disabling the SDK implementation of just these
+ * two steps (as opposed to registration alone) removes both the function
+ * bodies and their .preinit_array entries, without touching the coprocessor
+ * init step Zephyr relies on.
+ */
+#define PICO_RUNTIME_NO_INIT_INSTALL_RAM_VECTOR_TABLE 1
+#define PICO_RUNTIME_NO_INIT_CLOCKS 1
+
 #endif
