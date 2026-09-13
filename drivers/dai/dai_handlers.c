@@ -14,9 +14,12 @@
 /*
  * Bespoke config objects up to this size are validated on the stack;
  * larger objects (up to DAI_MAX_BESPOKE_CFG_SIZE) are copied into a
- * temporary heap allocation instead.
+ * temporary heap allocation instead. This has to stay small: the buffer
+ * is placed on the privileged stack, which is only
+ * CONFIG_PRIVILEGED_STACK_SIZE bytes (1024 by default) for the whole
+ * system call.
  */
-#define DAI_BESPOKE_CFG_STACK_SIZE 1024
+#define DAI_BESPOKE_CFG_STACK_SIZE 64
 
 static inline int z_vrfy_dai_probe(const struct device *dev)
 {
