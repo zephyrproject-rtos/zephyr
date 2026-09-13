@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,13 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(uhc_xfer_pool, struct uhc_transfer,
 USB_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
 			CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE,
 			0, NULL);
+
+int uhc_common_init(const struct device *dev)
+{
+	struct uhc_data *data = dev->data;
+
+	return k_mutex_init(&data->mutex);
+}
 
 int uhc_submit_event(const struct device *dev,
 		     const enum uhc_event_type type,
@@ -54,29 +62,268 @@ void uhc_xfer_return(const struct device *dev,
 	data->event_cb(dev, &drv_evt);
 }
 
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
+void uhc_xfer_add_periodic(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_data *data = dev->data;
-	struct uhc_transfer *xfer;
-	sys_dnode_t *node;
+	sys_dlist_t *periodic_list = &data->periodic_xfers;
+	struct uhc_transfer *curr;
 
-	/* Draft, WIP */
-	node = sys_dlist_peek_head(&data->ctrl_xfers);
-	if (node == NULL) {
-		node = sys_dlist_peek_head(&data->bulk_xfers);
+	SYS_DLIST_FOR_EACH_CONTAINER(periodic_list, curr, node) {
+		if (xfer_seq_cmp(xfer->start_frame, curr->start_frame) < 0) {
+			continue;
+		}
+		sys_dlist_insert(&curr->node, &xfer->node);
+		return;
 	}
 
-	return (node == NULL) ? NULL : SYS_DLIST_CONTAINER(node, xfer, node);
+	sys_dlist_append(periodic_list, &xfer->node);
 }
 
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer)
+void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer *const xfer,
+				  uint32_t frame_number)
+{
+	uint32_t old_start_frame = xfer->start_frame;
+
+	if (unlikely(xfer->interval == 0)) {
+		/* Prevent a infinite loop if somehow interval equals 0 */
+		xfer->interval = 1;
+	}
+
+	do {
+		xfer->start_frame += xfer->interval;
+	} while (xfer_seq_cmp(xfer->start_frame, frame_number) <= 0);
+
+	sys_dlist_remove(&xfer->node);
+	/* Reset active flag, in case the interrupt was in the active list */
+	xfer->active = 0;
+	uhc_xfer_add_periodic(dev, xfer);
+
+	LOG_DBG("Periodic transfer advance frame old s.f. %u new s.f %u f.n. %u interval %u",
+		old_start_frame, xfer->start_frame, frame_number, xfer->interval);
+}
+
+static enum uhc_xfer_mask uhc_xfer_type_to_mask(const struct uhc_transfer *xfer)
+{
+	return BIT(xfer->type);
+}
+
+static struct uhc_transfer *uhc_xfer_get_next_periodic(const struct device *dev,
+						       uint32_t frame_number,
+						       enum uhc_xfer_mask mask,
+						       uhc_xfer_filter_func_t filter, void *priv)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *xfer = NULL;
+	sys_dnode_t *node;
+
+	for (node = sys_dlist_peek_tail(&data->periodic_xfers); node != NULL;
+	     node = sys_dlist_peek_prev(&data->periodic_xfers, node)) {
+		xfer = SYS_DLIST_CONTAINER(node, xfer, node);
+
+		if (xfer_seq_cmp(xfer->start_frame, frame_number) > 0) {
+			break;
+		}
+
+		if (uhc_xfer_type_to_mask(xfer) & ~mask) {
+			continue;
+		}
+
+		if (filter == NULL || filter(xfer, priv)) {
+			return xfer;
+		}
+	}
+
+	return NULL;
+}
+
+static struct uhc_transfer *uhc_xfer_get_next_non_periodic(const struct device *dev,
+						       sys_dlist_t *dlist,
+						       uhc_xfer_filter_func_t filter, void *priv)
+{
+	struct uhc_transfer *xfer = NULL;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(dlist, xfer, node) {
+		if (filter == NULL || filter(xfer, priv)) {
+			return xfer;
+		}
+	}
+
+	return NULL;
+}
+
+static void uhc_xfer_set_in_progress(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_data *data = dev->data;
 
-	sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+	sys_dlist_remove(&xfer->node);
+	sys_dlist_append(&data->active_xfers, &xfer->node);
+	xfer->active = 1;
+}
+
+int uhc_xfer_defer_active(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	sys_dlist_remove(&xfer->node);
+	xfer->active = 0;
+
+	struct uhc_data *data = dev->data;
+
+	switch (xfer->type) {
+	case USB_EP_TYPE_CONTROL:
+		sys_dlist_prepend(&data->ctrl_xfers, &xfer->node);
+		break;
+	case USB_EP_TYPE_BULK:
+		sys_dlist_prepend(&data->bulk_xfers, &xfer->node);
+		break;
+	case USB_EP_TYPE_ISO:
+	case USB_EP_TYPE_INTERRUPT:
+		uhc_xfer_add_periodic(dev, xfer);
+		break;
+	default:
+		LOG_ERR("Invalid xfer type: %d", xfer->type);
+		return -EINVAL;
+	}
 
 	return 0;
+}
+
+int uhc_xfer_defer_all_active(const struct device *dev)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *current, *next;
+	int ret;
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&data->active_xfers, current, next, node) {
+		ret = uhc_xfer_defer_active(dev, current);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t frame_number,
+				       enum uhc_xfer_mask mask, uhc_xfer_filter_func_t filter,
+				       void *priv)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *xfer = NULL;
+
+	if (mask & UHC_XFER_MASK_PERIODIC) {
+		xfer = uhc_xfer_get_next_periodic(dev, frame_number, mask, filter, priv);
+	}
+
+	if (xfer == NULL && mask & UHC_XFER_MASK_CONTROL) {
+		xfer = uhc_xfer_get_next_non_periodic(dev, &data->ctrl_xfers, filter, priv);
+	}
+
+	if (xfer == NULL && mask & UHC_XFER_MASK_BULK) {
+		xfer = uhc_xfer_get_next_non_periodic(dev, &data->bulk_xfers, filter, priv);
+	}
+
+	if (xfer) {
+		uhc_xfer_set_in_progress(dev, xfer);
+	}
+
+	return xfer;
+}
+
+static int uhc_xfer_add_new_periodic(const struct device *dev, struct uhc_transfer *const xfer,
+				     uint32_t frame_number)
+{
+	if (xfer->interval == 0) {
+		LOG_ERR("Tried to schedule a periodic xfer that has interval equal to 0");
+		return -EINVAL;
+	}
+
+	xfer->start_frame = frame_number + xfer->interval;
+
+	LOG_DBG("New periodic transfer s.f. %u f.n. %u interval %u", xfer->start_frame,
+		frame_number, xfer->interval);
+
+	uhc_xfer_add_periodic(dev, xfer);
+
+	return 0;
+}
+
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer,
+		    uint32_t frame_number)
+{
+	struct uhc_data *data = dev->data;
+
+	switch (xfer->type) {
+	case USB_EP_TYPE_CONTROL:
+		sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+		break;
+	case USB_EP_TYPE_BULK:
+		sys_dlist_append(&data->bulk_xfers, &xfer->node);
+		break;
+	case USB_EP_TYPE_ISO:
+	case USB_EP_TYPE_INTERRUPT:
+		return uhc_xfer_add_new_periodic(dev, xfer, frame_number);
+	default:
+		LOG_ERR("Invalid xfer type: %d", xfer->type);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void uhc_xfer_dlist_cleanup_cancelled(const struct device *dev, sys_dlist_t *dlist)
+{
+	struct uhc_transfer *tmp;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(dlist, tmp, node) {
+		if (tmp->err == -ECONNRESET) {
+			uhc_xfer_return(dev, tmp, -ECONNRESET);
+		}
+	}
+}
+
+void uhc_xfer_cleanup_cancelled(const struct device *dev)
+{
+	struct uhc_data *data = dev->data;
+
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->ctrl_xfers);
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->bulk_xfers);
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->periodic_xfers);
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->active_xfers);
+}
+
+int uhc_xfer_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *tmp;
+	sys_dlist_t *dlist;
+
+	switch (xfer->type) {
+	case USB_EP_TYPE_CONTROL:
+		dlist = &data->ctrl_xfers;
+		break;
+	case USB_EP_TYPE_BULK:
+		dlist = &data->bulk_xfers;
+		break;
+	case USB_EP_TYPE_ISO:
+	case USB_EP_TYPE_INTERRUPT:
+		dlist = &data->periodic_xfers;
+		break;
+	default:
+		LOG_ERR("Invalid xfer type: %d", xfer->type);
+		return -EINVAL;
+	}
+
+	if (xfer->active) {
+		dlist = &data->active_xfers;
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER(dlist, tmp, node) {
+		if (xfer == tmp) {
+			tmp->err = -ECONNRESET;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
 }
 
 struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
@@ -90,9 +337,44 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 	net_buf_unref(buf);
 }
 
+static uint32_t uhc_xfer_bInterval_to_microframe(const struct usb_device *const udev,
+					       uint16_t bInterval, uint8_t ep_type)
+{
+	if (bInterval == 0) {
+		return 0;
+	}
+
+	switch (udev->speed) {
+	case USB_SPEED_SPEED_SS:
+	case USB_SPEED_SPEED_HS:
+		bInterval = CLAMP(bInterval, 1, 16);
+		return 1U << (bInterval - 1);
+	case USB_SPEED_SPEED_FS:
+		/*
+		 * ISO FS uses 2^(bInterval - 1) * 1ms
+		 * unlike ISO HS which uses 2^(bInterval - 1) * 125microseconds
+		 * INT FS does it the same as INT LS
+		 * See USB 2.0 Specification 5.6.4 and 5.7.4
+		 */
+		if (ep_type == USB_EP_TYPE_ISO) {
+			bInterval = CLAMP(bInterval, 1, 16);
+			return (1U << (bInterval - 1)) * 8;
+		}
+		bInterval = CLAMP(bInterval, 1, 255);
+		return bInterval * 8;
+	case USB_SPEED_SPEED_LS:
+	case USB_SPEED_UNKNOWN:
+		bInterval = CLAMP(bInterval, 10, 255);
+		return bInterval * 8;
+	}
+
+	return 0;
+}
+
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
+				    const size_t rec_len,
 				    void *const cb,
 				    void *const cb_priv)
 {
@@ -100,7 +382,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_transfer *xfer = NULL;
 	uint16_t mps;
-	uint16_t interval;
+	uint16_t bInterval;
 	uint8_t type;
 
 	api->lock(dev);
@@ -110,7 +392,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	}
 
 	if (ep_idx == 0) {
-		interval = 0;
+		bInterval = 0;
 		type = USB_EP_TYPE_CONTROL;
 		mps = udev->dev_desc.bMaxPacketSize0;
 	} else {
@@ -128,7 +410,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		}
 
 		mps = ep_desc->wMaxPacketSize;
-		interval = ep_desc->bInterval;
+		bInterval = ep_desc->bInterval;
 		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
 	}
 
@@ -142,11 +424,13 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	memset(xfer, 0, sizeof(struct uhc_transfer));
 	xfer->ep = ep;
 	xfer->mps = mps;
-	xfer->interval = interval;
+	xfer->interval = uhc_xfer_bInterval_to_microframe(udev, bInterval, type);
+	xfer->bInterval = bInterval;
 	xfer->type = type;
 	xfer->udev = udev;
 	xfer->cb = cb;
 	xfer->priv = cb_priv;
+	xfer->expected_data_len = rec_len;
 
 xfer_alloc_error:
 	api->unlock(dev);
@@ -169,7 +453,7 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 		return NULL;
 	}
 
-	xfer = uhc_xfer_alloc(dev, ep, udev, cb, cb_priv);
+	xfer = uhc_xfer_alloc(dev, ep, udev, size, cb, cb_priv);
 	if (xfer == NULL) {
 		net_buf_unref(buf);
 		return NULL;
@@ -339,6 +623,8 @@ int uhc_init(const struct device *dev,
 	data->event_ctx = event_ctx;
 	sys_dlist_init(&data->ctrl_xfers);
 	sys_dlist_init(&data->bulk_xfers);
+	sys_dlist_init(&data->periodic_xfers);
+	sys_dlist_init(&data->active_xfers);
 
 	ret = api->init(dev);
 	if (ret == 0) {
