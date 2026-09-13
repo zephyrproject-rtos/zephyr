@@ -12,6 +12,7 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/arch/riscv/irq.h>
 #include "asm_macros.inc"
+#include <smp_boot.h>
 
 #ifdef CONFIG_RISCV_S_MODE
 /* mcounteren bits */
@@ -26,8 +27,7 @@ GTEXT(__reset)
 
 /* imports */
 GTEXT(z_prep_c)
-GDATA(riscv_cpu_wake_flag)
-GDATA(riscv_cpu_sp)
+GDATA(riscv_cpu_boot_slots)
 GTEXT(arch_secondary_cpu_init)
 #ifdef CONFIG_RISCV_S_MODE_INTERNAL_SBI
 GTEXT(__m_mode_sbi_handler)
@@ -213,21 +213,93 @@ s_mode_entry:
 
 boot_secondary_core:
 #if CONFIG_MP_MAX_NUM_CPUS > 1
-	la t0, riscv_cpu_wake_flag
-	li t1, -1
-	sr t1, 0(t0)
-	la t0, riscv_cpu_boot_flag
-	sr zero, 0(t0)
+	/*
+	 * Scan riscv_cpu_boot_slots[] for the slot the primary hart
+	 * published for us: wake flag set, hartid matching ours (a0).
+	 */
+	la t0, riscv_cpu_boot_slots
+	li t1, RISCV_CPU_BOOT_SLOT_SIZE * CONFIG_MP_MAX_NUM_CPUS
+	add t1, t0, t1		/* t1: end of riscv_cpu_boot_slots[] */
+	li t5, 0		/* t5: current slot index */
+#ifdef CONFIG_PM_CPU_OPS
+	/*
+	 * With PM_CPU_OPS, the platform CPU-start mechanism does not release
+	 * this hart until the primary calls pm_cpu_on(). The primary does so
+	 * after initializing BSS and publishing the boot slot, so pre-arm all
+	 * configured CPU slots (their count comes from the devicetree).
+	 */
+	li t4, -1
+#if CONFIG_MP_MAX_NUM_CPUS < __riscv_xlen
+	srli t4, t4, __riscv_xlen - CONFIG_MP_MAX_NUM_CPUS
+#endif
+#else
+	/*
+	 * t4: bitmask of armed slots. A slot is armed once it was observed
+	 * with a clear wake flag, or cleared by us after rejecting a
+	 * publication (see below). A set wake flag is accepted only on an
+	 * armed slot, i.e. it was provably stored by the primary after the
+	 * slot was last clear, which garbage (cold boot) or stale slots
+	 * (RAM retained on a warm reboot) never satisfy.
+	 */
+	li t4, 0
+#endif
 
 wait_secondary_wake_flag:
-	la t0, riscv_cpu_wake_flag
-	lr t0, 0(t0)
-	bne a0, t0, wait_secondary_wake_flag
+	lr t2, RISCV_CPU_BOOT_SLOT_WAKE_FLAG_OFF(t0)
+	beqz t2, mark_slot_seen_clear
 
-	/* Set up stack */
-	la t0, riscv_cpu_sp
-	lr sp, 0(t0)
+	/*
+	 * Acquire fence: pairs with the primary's release fence of every
+	 * publication, so the loads below never read pre-publication
+	 * values once a set wake flag was observed.
+	 */
+	fence r, rw
 
+	lr t3, RISCV_CPU_BOOT_SLOT_HARTID_OFF(t0)
+	bne t3, a0, wait_next_slot
+
+	/* Accept the wake flag only on a slot armed earlier */
+	li t6, 1
+	sll t6, t6, t5
+	and t3, t4, t6
+	bnez t3, slot_armed
+
+	/*
+	 * Our hartid but not armed: we may have started scanning only
+	 * after the primary published. Reject this publication: clear
+	 * the wake flag ourselves and arm the slot. The primary
+	 * re-publishes once it observes the clear, and only that later
+	 * store is accepted on a later pass.
+	 */
+	sr zero, RISCV_CPU_BOOT_SLOT_WAKE_FLAG_OFF(t0)
+	or t4, t4, t6
+	j wait_next_slot
+
+slot_armed:
+	/* Our slot: set up the stack provided by the primary hart */
+	lr sp, RISCV_CPU_BOOT_SLOT_SP_OFF(t0)
+
+	/* Consume the slot so it cannot match again on a later re-boot */
+	sr zero, RISCV_CPU_BOOT_SLOT_WAKE_FLAG_OFF(t0)
+
+	/* Order the slot consume above before the boot flag store below */
+	fence w, w
+	j secondary_stack_ready
+
+mark_slot_seen_clear:
+	li t6, 1
+	sll t6, t6, t5
+	or t4, t4, t6
+
+wait_next_slot:
+	addi t0, t0, RISCV_CPU_BOOT_SLOT_SIZE
+	addi t5, t5, 1
+	bltu t0, t1, wait_secondary_wake_flag
+	la t0, riscv_cpu_boot_slots	/* wrap around to the first slot */
+	li t5, 0
+	j wait_secondary_wake_flag
+
+secondary_stack_ready:
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* Initialize tp early so TLS-based stack canaries work on secondary CPUs */
 	mv s2, a0		/* save hartid across TLS init calls */
