@@ -1974,6 +1974,22 @@ Other notable changes
     behind the failure. The supplicant fills these in, and the Wi-Fi shell prints
     them with the connection and disconnection results. (:github:`116704`)
 
+  * The ESP32 Wi-Fi driver gained 802.11k/v/r and MBO support, off by default
+    and enabled with :kconfig:option:`CONFIG_ESP32_WIFI_11KV_SUPPORT`,
+    :kconfig:option:`CONFIG_ESP32_WIFI_MBO_SUPPORT` and
+    :kconfig:option:`CONFIG_ESP32_WIFI_11R_SUPPORT`. The station advertises the
+    matching capabilities when it associates, and the driver implements the
+    ``cfg_11k``, ``send_11k_neighbor_request``, ``bss_support_neighbor_rep``,
+    ``bss_ext_capab`` and ``btm_query`` Wi-Fi management operations, so the
+    ``wifi 11k``, ``wifi 11k_neighbor_request`` and ``wifi 11v_btm_query``
+    shell commands now work on ESP32. With
+    :kconfig:option:`CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT` the driver also
+    raises :c:macro:`NET_EVENT_WIFI_SIGNAL_CHANGE` once the signal of the
+    connected access point drops below
+    :kconfig:option:`CONFIG_ESP32_WIFI_LOW_RSSI_THRESHOLD`. Deciding when and
+    where to roam stays with the application; the driver never changes access
+    point on its own.
+
   * The transmit power ceiling properties in ``wifi-tx-power-2g.yaml`` and
     ``wifi-tx-power-5g.yaml`` are no longer ``required`` and now carry
     conservative defaults, so a board that has not been characterised errs on

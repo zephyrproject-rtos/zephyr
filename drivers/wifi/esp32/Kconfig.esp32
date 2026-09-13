@@ -812,6 +812,118 @@ config ESP32_WIFI_BSS_MAX_IDLE_SUPPORT
 	  Enable BSS max idle feature capability advertisement in the Espressif
 	  Wi-Fi driver.
 
+config ESP32_WIFI_11KV_SUPPORT
+	bool "802.11k and 802.11v support"
+	help
+	  Build the 802.11k (radio resource measurement) and 802.11v (wireless
+	  network management) code of the Espressif supplicant. This is the
+	  umbrella option; select ESP32_WIFI_RRM_SUPPORT and
+	  ESP32_WIFI_WNM_SUPPORT for the individual mechanisms.
+
+	  Roaming policy stays with the application: the driver advertises the
+	  capabilities and exposes the 11k/11v operations through the Wi-Fi
+	  management API, but never decides on its own to change AP.
+
+config ESP32_WIFI_RRM_SUPPORT
+	bool "802.11k (radio resource measurement)"
+	depends on ESP32_WIFI_11KV_SUPPORT
+	default y
+	help
+	  Radio measurements let a station observe and report on the radio
+	  environment. Only the measurements useful for network assisted
+	  roaming are implemented: beacon report, link measurement and
+	  neighbor report.
+
+	  Enabling this makes the station advertise RRM capability on
+	  association, which is what an AP looks for before it will answer a
+	  neighbor report request.
+
+config ESP32_WIFI_WNM_SUPPORT
+	bool "802.11v (BSS transition management)"
+	depends on ESP32_WIFI_11KV_SUPPORT
+	default y
+	help
+	  BSS transition management lets an AP ask a station to move to a
+	  specific AP, or tell it which APs are preferred. Only the operations
+	  useful for network assisted roaming are implemented.
+
+	  Enabling this makes the station advertise BTM capability on
+	  association, which is what an AP looks for before it will send a BSS
+	  transition management request.
+
+config ESP32_WIFI_SCAN_CACHE
+	bool "Keep scan results in cache"
+	depends on ESP32_WIFI_RRM_SUPPORT
+	help
+	  Retain scan results so a beacon report can be answered from the
+	  cache. Without this they are flushed as soon as the scan completes,
+	  and every report costs a fresh scan.
+
+config ESP32_WIFI_MBO_SUPPORT
+	bool "Multi Band Operation (MBO)"
+	select ESP32_WIFI_11KV_SUPPORT
+	select ESP32_WIFI_RRM_SUPPORT
+	select ESP32_WIFI_WNM_SUPPORT
+	select ESP32_WIFI_SCAN_CACHE
+	help
+	  Enable Wi-Fi Agile Multiband (MBO) support. MBO builds on 802.11k
+	  and 802.11v, so both are selected along with the scan cache.
+
+config ESP32_WIFI_SKIP_DHCP_ON_ROAMING
+	bool "Keep the IP configuration when roaming to another AP"
+	depends on ESP32_WIFI_WNM_SUPPORT
+	default y
+	help
+	  A BSS transition moves the station between APs of the same network.
+	  With this enabled the interface stays up across the change and the
+	  address is kept, which is correct when both APs are in the same
+	  subnet (L2 roaming).
+
+	  Disable it if the APs are in different subnets, so that the roam is
+	  reported as a disconnect and the address is requested again.
+
+config ESP32_WIFI_SIGNAL_CHANGE_EVENT
+	bool "Report a signal change event when the AP signal weakens"
+	depends on ESP32_WIFI_11KV_SUPPORT
+	help
+	  Watch the RSSI of the connected AP and raise
+	  NET_EVENT_WIFI_SIGNAL_CHANGE once it drops below the configured
+	  threshold. This is the trigger an application needs to decide that
+	  it is time to look for a better AP; the driver itself never roams.
+
+config ESP32_WIFI_LOW_RSSI_THRESHOLD
+	int "Signal strength (dBm) that raises the signal change event"
+	depends on ESP32_WIFI_SIGNAL_CHANGE_EVENT
+	range -99 -30
+	default -70
+	help
+	  Signal strength of the connected AP, in dBm, below which the signal
+	  change event is raised. A value close to -30 reports on a link that
+	  is still perfectly good and produces a lot of events.
+
+config ESP32_WIFI_LOW_RSSI_THRESHOLD_STEP
+	int "Amount (dB) to lower the threshold after each event"
+	depends on ESP32_WIFI_SIGNAL_CHANGE_EVENT
+	range 1 20
+	default 5
+	help
+	  The Wi-Fi library reports the threshold being crossed once and then
+	  has to be armed again. Arming it at the same value on a link that
+	  stays weak would repeat the same event, so it is armed this much
+	  lower each time, until the link recovers or is lost. The configured
+	  threshold is restored on the next connection.
+
+config ESP32_WIFI_11R_SUPPORT
+	bool "802.11r (fast BSS transition)"
+	help
+	  Build the fast BSS transition code of the Espressif supplicant.
+	  802.11r shortens reassociation by carrying the key negotiation in
+	  the authentication exchange, so a roam does not need a full
+	  four-way handshake.
+
+	  The station only advertises FT when the connection request asks for
+	  it, so enabling this does not change behaviour on its own.
+
 config ESP32_WIFI_ENABLE_WPA3_SAE
 	bool "WPA3-Personal"
 	select ESP32_WIFI_MBEDTLS_CRYPTO
