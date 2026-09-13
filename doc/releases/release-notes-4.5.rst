@@ -495,6 +495,7 @@ New APIs and options
     * :c:func:`bt_conn_drop`
     * :c:func:`bt_iso_chan_state_str`
     * :c:func:`bt_iso_get_chan_by_conn`
+    * :c:func:`bt_le_ext_adv_foreach`
     * :c:func:`bt_le_per_adv_update_did`
     * :c:member:`bt_le_adv_param.tx_power` and :c:enumerator:`BT_LE_ADV_OPT_TX_POWER`
       to request a specific TX power level per extended advertising set.
