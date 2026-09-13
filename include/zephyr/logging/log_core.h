@@ -558,6 +558,60 @@ static inline uint32_t log_dynamic_source_id(const struct log_source_dynamic_dat
 			sizeof(struct log_source_dynamic_data);
 }
 
+/** @brief Get pointer to the dynamic source data based on the source ID.
+ *
+ * @param source_id Source ID.
+ *
+ * @return Pointer to the dynamic source data.
+ */
+static inline struct log_source_dynamic_data *log_dynamic_source(uint32_t source_id)
+{
+	uint32_t section_count;
+
+	TYPE_SECTION_COUNT(struct log_source_dynamic_data, log_dynamic, &section_count);
+	__ASSERT_NO_MSG(source_id < section_count);
+
+	struct log_source_dynamic_data *dst;
+
+	TYPE_SECTION_GET(struct log_source_dynamic_data, log_dynamic, source_id, &dst);
+
+	return dst;
+}
+
+/** @brief Get pointer to the constant source data based on the source ID.
+ *
+ * @param source_id Source ID.
+ *
+ * @return Pointer to the constant source data.
+ */
+static inline const struct log_source_const_data *log_const_source(uint32_t source_id)
+{
+	uint32_t section_count;
+
+	TYPE_SECTION_COUNT(struct log_source_const_data, log_const, &section_count);
+	__ASSERT_NO_MSG(source_id < section_count);
+
+	const struct log_source_const_data *dst;
+
+	TYPE_SECTION_GET(struct log_source_const_data, log_const, source_id, &dst);
+
+	return dst;
+}
+
+/** @brief Get pointer to the source data based on the source ID.
+ *
+ * @param source_id Source ID.
+ *
+ * @return Pointer to the source data.
+ */
+static inline void *log_source_ptr(uint32_t source_id)
+{
+	return IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+		(void *)log_dynamic_source(source_id) :
+		(void *)log_const_source(source_id);
+}
+
+
 /** @brief Get index of the log source based on the address of the associated data.
  *
  * @ingroup log_api
