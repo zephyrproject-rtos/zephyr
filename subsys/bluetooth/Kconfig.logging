@@ -421,6 +421,10 @@ module = BT_MAP
 module-str = Bluetooth Message Access Profile (MAP)
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
+module = BT_OPP
+module-str = "Bluetooth Object Push Profile (OPP)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 endmenu # Bluetooth Classic
 endif # BT_CLASSIC
 
