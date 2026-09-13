@@ -6,6 +6,8 @@ config CLIC
 	default y
 	depends on DT_HAS_NUCLEI_ECLIC_ENABLED || DT_HAS_RISCV_CLIC_ENABLED
 	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	# The SoC's CLIC is its root interrupt controller
+	select INTC_ROOT if RISCV_HAS_CLIC
 	help
 	  Core Local Interrupt Controller provide low-latency, vectored,
 	  preemptive interrupts for RISC-V systems.
@@ -26,6 +28,8 @@ config NRFX_CLIC
 	default y
 	depends on DT_HAS_NORDIC_NRF_CLIC_ENABLED
 	select GEN_IRQ_VECTOR_TABLE
+	# The SoC's CLIC is its root interrupt controller
+	select INTC_ROOT if RISCV_HAS_CLIC
 	help
 	  Interrupt controller for Nordic VPR cores.
 

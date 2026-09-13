@@ -65,6 +65,11 @@ extern "C" {
 #define arch_irq_enable(irq)		intc_root_enable(irq)
 #define arch_irq_disable(irq)		intc_root_disable(irq)
 #define arch_irq_is_enabled(irq)	intc_root_is_enabled(irq)
+#elif defined(CONFIG_RISCV_PRIVILEGED)
+/* No root interrupt controller: the CPU interrupt lines are all there is */
+#define arch_irq_enable(irq)		riscv_cpu_irq_enable(irq)
+#define arch_irq_disable(irq)		riscv_cpu_irq_disable(irq)
+#define arch_irq_is_enabled(irq)	riscv_cpu_irq_is_enabled(irq)
 #else
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
@@ -161,20 +166,19 @@ static ALWAYS_INLINE int riscv_cpu_irq_is_enabled(unsigned int irq)
 	return (ie & (1UL << irq)) != 0UL ? 1 : 0;
 }
 
-#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
-	defined(CONFIG_RISCV_HAS_AIA)
-extern void z_riscv_irq_priority_set(unsigned int irq,
-				     unsigned int prio,
-				     uint32_t flags);
+/* The PLIC, CLIC and AIA root interrupt controllers have a priority to set */
+#if defined(CONFIG_INTC_ROOT) && (defined(CONFIG_RISCV_HAS_PLIC) ||                                \
+				  defined(CONFIG_RISCV_HAS_CLIC) || defined(CONFIG_RISCV_HAS_AIA))
+#define z_riscv_irq_priority_set(i, p, f) intc_root_priority_set(i, p, f)
 #else
 #define z_riscv_irq_priority_set(i, p, f) /* Nothing */
-#endif /* CONFIG_RISCV_HAS_PLIC || CONFIG_RISCV_HAS_CLIC */
+#endif
 
-#ifdef CONFIG_RISCV_HAS_CLIC
+#ifdef CONFIG_CLIC_SMCLICSHV_EXT
 extern void z_riscv_irq_vector_set(unsigned int irq);
 #else
 #define z_riscv_irq_vector_set(i) /* Nothing */
-#endif /* CONFIG_RISCV_HAS_CLIC */
+#endif /* CONFIG_CLIC_SMCLICSHV_EXT */
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \

@@ -13,6 +13,7 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/arch/riscv/icsr.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include "intc_clic.h"
 
@@ -351,3 +352,15 @@ static int clic_init(const struct device *dev)
 			      CONFIG_INTC_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CLIC_INTC_DEVICE_INIT)
+
+#if defined(CONFIG_RISCV_HAS_CLIC)
+/* The CLIC is the root interrupt controller: alias its functions to the API names */
+FUNC_ALIAS(riscv_clic_irq_enable, intc_root_enable, void);
+FUNC_ALIAS(riscv_clic_irq_disable, intc_root_disable, void);
+FUNC_ALIAS(riscv_clic_irq_is_enabled, intc_root_is_enabled, int);
+FUNC_ALIAS(riscv_clic_irq_priority_set, intc_root_priority_set, void);
+#endif /* CONFIG_RISCV_HAS_CLIC */
+
+#if defined(CONFIG_CLIC_SMCLICSHV_EXT)
+FUNC_ALIAS(riscv_clic_irq_vector_set, z_riscv_irq_vector_set, void);
+#endif

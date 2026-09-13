@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/devicetree/interrupt_controller.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/drivers/interrupt_controller/riscv_aia.h>
 #include <zephyr/drivers/interrupt_controller/riscv_aplic.h>
 #ifdef CONFIG_RISCV_APLIC_DIRECT
@@ -127,6 +128,54 @@ void riscv_aia_config_source(uint32_t irq, uint32_t mode)
 
 	riscv_aplic_config_src(aplic, src, mode);
 }
+
+#if defined(CONFIG_RISCV_HAS_AIA)
+/*
+ * The AIA is the root interrupt controller of the SoC. Level 2 lines are
+ * AIA lines and handled here; level 1 lines are the CPU interrupt lines
+ * and go to the architecture.
+ */
+void intc_root_enable(unsigned int irq)
+{
+	if (irq_get_level(irq) == 2) {
+		riscv_aia_irq_enable(irq);
+	} else {
+		riscv_cpu_irq_enable(irq);
+	}
+}
+
+void intc_root_disable(unsigned int irq)
+{
+	if (irq_get_level(irq) == 2) {
+		riscv_aia_irq_disable(irq);
+	} else {
+		riscv_cpu_irq_disable(irq);
+	}
+}
+
+int intc_root_is_enabled(unsigned int irq)
+{
+	if (irq_get_level(irq) == 2) {
+		return riscv_aia_irq_is_enabled(irq);
+	}
+
+	return riscv_cpu_irq_is_enabled(irq);
+}
+
+void intc_root_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+	if (irq_get_level(irq) != 2) {
+		return;
+	}
+
+	if (flags != 0U) {
+		riscv_aia_config_source(irq, flags);
+	}
+
+	/* In MSI delivery mode the priority is the IMSIC threshold or EIID order */
+	riscv_aia_set_priority(irq, prio);
+}
+#endif /* CONFIG_RISCV_HAS_AIA */
 
 #ifdef CONFIG_RISCV_APLIC_MSI
 void riscv_aia_route_to_hart(uint32_t irq, uint32_t hart, uint32_t eiid)
