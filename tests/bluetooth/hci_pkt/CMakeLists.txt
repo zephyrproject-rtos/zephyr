@@ -7,4 +7,5 @@ project(bt_hci_pkt)
 target_sources(app PRIVATE
   src/main.c
   ${ZEPHYR_BASE}/subsys/bluetooth/common/hci_pkt.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/common/hci_lockstep.c
 )
