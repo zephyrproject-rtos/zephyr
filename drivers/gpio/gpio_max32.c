@@ -86,6 +86,16 @@ static int api_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flag
 	gpio_cfg.port = cfg->regs;
 	gpio_cfg.mask = BIT(pin);
 
+	/* GPIO_DISCONNECTED leaves the pad floating with input buffer, interrupt and wakeup off */
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == 0) {
+		ret = MXC_GPIO_Disable(cfg->regs, gpio_cfg.mask);
+		if (ret != 0) {
+			return -ENOTSUP;
+		}
+
+		return 0;
+	}
+
 	if (flags & GPIO_PULL_UP) {
 		gpio_cfg.pad = MXC_GPIO_PAD_PULL_UP;
 	} else if (flags & GPIO_PULL_DOWN) {
@@ -100,11 +110,9 @@ static int api_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flag
 
 	if (flags & GPIO_OUTPUT) {
 		gpio_cfg.func = MXC_GPIO_FUNC_OUT;
-	} else if (flags & GPIO_INPUT) {
-		gpio_cfg.func = MXC_GPIO_FUNC_IN;
 	} else {
+		/* Disconnected already returned above, so this can only be GPIO_INPUT */
 		gpio_cfg.func = MXC_GPIO_FUNC_IN;
-		gpio_cfg.pad = MXC_GPIO_PAD_NONE;
 	}
 
 	if (flags & MAX32_GPIO_VSEL_VDDIOH) {
