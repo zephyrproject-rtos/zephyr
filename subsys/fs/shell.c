@@ -611,6 +611,72 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_write_text(const struct shell *sh, size_t argc, char **argv)
+{
+	char path[MAX_PATH_LEN];
+	struct fs_file_t file;
+	int err;
+	int flags = FS_O_CREATE | FS_O_WRITE;
+	bool append = false;
+	int arg_offset = 2;
+
+	create_abs_path(argv[1], path, sizeof(path));
+
+	if (argc > 2 && strcmp(argv[2], "-a") == 0) {
+		if (argc < 4) {
+			shell_error(sh, "Missing string argument");
+			return -EINVAL;
+		}
+		append = true;
+		arg_offset = 3;
+	} else {
+		flags |= FS_O_TRUNC;
+	}
+
+	fs_file_t_init(&file);
+	err = fs_open(&file, path, flags);
+	if (err != 0) {
+		shell_error(sh, "Failed to open %s (%d)", path, err);
+		return -EIO;
+	}
+
+	if (append) {
+		err = fs_seek(&file, 0, FS_SEEK_END);
+		if (err != 0) {
+			shell_error(sh, "Failed to seek %s (%d)", path, err);
+			fs_close(&file);
+			return -EIO;
+		}
+	}
+
+	for (int i = arg_offset; i < argc; i++) {
+		const char *str = argv[i];
+		size_t str_len = strlen(str);
+		ssize_t written = 0;
+
+		written = fs_write(&file, str, str_len);
+		if (written < 0 || written != str_len) {
+			shell_error(sh, "Failed to write %s (%d)", path, written);
+			fs_close(&file);
+			return -EIO;
+		}
+
+		/* Write a space between arguments, newline after the last one */
+		const char sep = (i < argc - 1) ? ' ' : '\n';
+
+		err = fs_write(&file, &sep, 1);
+		if (err < 0) {
+			shell_error(sh, "Failed to write %s (%d)", path, err);
+			fs_close(&file);
+			return -EIO;
+		}
+	}
+
+	fs_close(&file);
+
+	return 0;
+}
+
 #ifdef CONFIG_FILE_SYSTEM_SHELL_TEST_COMMANDS
 const static uint8_t speed_types[][4] = {"B", "KiB", "MiB", "GiB"};
 const static uint32_t speed_divisor = 1024;
@@ -994,6 +1060,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 		      cmd_trunc, 2, 255),
 	SHELL_CMD_ARG(write, NULL, SHELL_HELP("Write file", "<path> <data> [<data> ...]"),
 		      cmd_write, 3, 255),
+	SHELL_CMD_ARG(write_text, NULL,
+		      SHELL_HELP("Write strings to a file",
+			     "<path> [-a] <string> [<string> ...]"),
+		      cmd_write_text, 3, 255),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_TEST_COMMANDS
 	SHELL_CMD_ARG(read_test, NULL, SHELL_HELP("Read file test", "<path> <repeat>"),
 		      cmd_read_test, 3, 0),
