@@ -16,6 +16,7 @@ tests:
       - native_sim
       - qemu_riscv32
       - qemu_x86
+      - qemu_leon3
     integration_platforms:
       - native_sim
     extra_configs:
