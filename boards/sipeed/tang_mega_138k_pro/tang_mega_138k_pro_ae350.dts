@@ -1,0 +1,79 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <riscv/andes/andes_v5_ae350.dtsi>
+#include <freq.h>
+
+/ {
+	cpus {
+		/delete-node/ cpu@1;
+		/delete-node/ cpu@2;
+		/delete-node/ cpu@3;
+		/delete-node/ cpu@4;
+		/delete-node/ cpu@5;
+		/delete-node/ cpu@6;
+		/delete-node/ cpu@7;
+	};
+
+	aliases {
+		gpio-0 = &gpio0;
+		counter-0 = &pit0;
+		watchdog0 = &wdt;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,code-partition = &code_partition;
+		zephyr,flash = &spiflash;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &dram;
+	};
+
+	soc {
+		spiflash: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(16)>;
+			erase-block-size = <4096>;
+			write-block-size = <1>;
+			ranges = <0x600000 0x80000000 DT_SIZE_M(10)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			bitstream_partition: partition@0 {
+				label = "fpga_bitstream";
+				reg = <0x0 DT_SIZE_M(6)>;
+				read-only;
+			};
+
+			code_partition: partition@600000 {
+				compatible = "zephyr,mapped-partition";
+				label = "code";
+				reg = <0x600000 DT_SIZE_M(10)>;
+			};
+		};
+	};
+};
+
+&cpu0 {
+	riscv,isa-extensions = "i", "m", "a", "zicsr", "xandes";
+	clock-frequency = <800000000>;
+};
+
+&dram {
+	reg = <0x00000000 DT_SIZE_G(1)>;
+};
+
+&plic0 {
+	interrupts-extended = <&cpu0_intc 11>;
+};
+
+&plic_sw {
+	interrupts-extended = <&cpu0_intc 3>;
+};
+
+&mtimer {
+	interrupts-extended = <&cpu0_intc 7>;
+	clock-frequency = <DT_FREQ_M(50)>;
+};

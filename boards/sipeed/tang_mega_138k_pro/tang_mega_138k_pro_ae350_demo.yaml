@@ -1,0 +1,15 @@
+identifier: tang_mega_138k_pro/ae350/demo
+name: Sipeed Tang Mega 138K Pro Dock AE350 Demo
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 262144
+supported:
+  - gpio
+  - led
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: sipeed

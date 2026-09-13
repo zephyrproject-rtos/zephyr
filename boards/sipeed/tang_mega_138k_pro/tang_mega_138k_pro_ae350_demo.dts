@@ -1,0 +1,80 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "tang_mega_138k_pro_ae350.dts"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Sipeed Tang Mega 138K Pro Dock AE350 Demo";
+	compatible = "sipeed,tang-mega-138k-pro-ae350-demo";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &key0;
+		sw1 = &key1;
+		sw2 = &key2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "LED 3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		key0: key_0 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "S0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		key1: key_1 {
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			label = "S1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		key2: key_2 {
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			label = "S2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+};
+
+&dram {
+	reg = <0x00000000 DT_SIZE_M(256)>;
+};
+
+&uart1 {
+	clock-frequency = <50000000>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&gpio0 {
+	ngpios = <6>;
+	status = "okay";
+};
