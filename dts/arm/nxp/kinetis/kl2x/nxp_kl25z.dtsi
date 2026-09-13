@@ -120,6 +120,45 @@
 			status = "disabled";
 		};
 
+		tpm0: pwm@40038000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x40038000 0x1000>;
+			interrupts = <17 0>;
+
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x103c, 24)>;
+			prescaler = <1>;
+
+			status = "disabled";
+
+			#pwm-cells = <3>;
+		};
+
+		tpm1: pwm@40039000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x40039000 0x1000>;
+			interrupts = <18 0>;
+
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x103c, 25)>;
+			prescaler = <1>;
+
+			status = "disabled";
+
+			#pwm-cells = <3>;
+		};
+
+		tpm2: pwm@4003a000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x4003a000 0x1000>;
+			interrupts = <19 0>;
+
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x103c, 26)>;
+			prescaler = <1>;
+
+			status = "disabled";
+
+			#pwm-cells = <3>;
+		};
+
 		adc0: adc@4003b000 {
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x70>;
