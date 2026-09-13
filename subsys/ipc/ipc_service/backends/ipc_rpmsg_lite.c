@@ -1128,13 +1128,13 @@ static int backend_init(const struct device *instance)
 			(MBOX_DT_SPEC_INST_GET(i, tx)), ({0})),                                \
 		.mbox_rx = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, mboxes),                       \
 			(MBOX_DT_SPEC_INST_GET(i, rx)), ({0})),                                \
-		.wq_prio = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, priority),                    \
-			(DT_INST_PROP_BY_IDX(i, priority, 0)), (0)),                           \
-		.wq_prio_type = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, priority),                \
-			(DT_INST_PROP_BY_IDX(i, priority, 1)), (PRIO_PREEMPT)),                \
-		.buffer_size = DT_INST_PROP_OR(i, buffer_size,                                 \
+		.wq_prio = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),              \
+			(DT_INST_PROP_BY_IDX(i, zephyr_priority, 0)), (0)),                    \
+		.wq_prio_type = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),         \
+			(DT_INST_PROP_BY_IDX(i, zephyr_priority, 1)), (PRIO_PREEMPT)),         \
+		.buffer_size = DT_INST_PROP_OR(i, zephyr_buffer_size,                          \
 			RL_BUFFER_PAYLOAD_SIZE + RPMSG_HEADER_SIZE),                           \
-		.buffer_count = DT_INST_PROP_OR(i, buffer_count, RL_BUFFER_COUNT),             \
+		.buffer_count = DT_INST_PROP_OR(i, zephyr_buffer_count, RL_BUFFER_COUNT),      \
 		.id = i,                                                                        \
 		.is_notification_owner = !DT_INST_NODE_HAS_PROP(i, notification_parent),       \
 	};                                                                                     \

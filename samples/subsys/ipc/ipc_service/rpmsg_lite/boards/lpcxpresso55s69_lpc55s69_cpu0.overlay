@@ -75,8 +75,8 @@
 			notification-parent = <&ipc0>;
 			link-id = <1>;
 			role = "host";
-			priority = <1 PRIO_COOP>;
-			buffer-size = <128>;
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
 			status = "okay";
 		};
 
@@ -86,8 +86,8 @@
 			notification-parent = <&ipc0>;
 			link-id = <2>;
 			role = "host";
-			priority = <1 PRIO_COOP>;
-			buffer-size = <128>;
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
 			status = "okay";
 		};
 	};
