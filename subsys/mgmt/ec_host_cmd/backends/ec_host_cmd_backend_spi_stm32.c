@@ -662,10 +662,9 @@ void gpio_cb_nss(const struct device *port, struct gpio_callback *cb, gpio_port_
 	if (gpio_pin_get(hc_spi->cs.port, hc_spi->cs.pin)) {
 		ec_host_cmd_pm_policy_state_lock_put(hc_spi);
 
-		/* CS asserted during processing a command. Prepare for receiving after
-		 * sending response.
-		 */
-		if (hc_spi->state == SPI_HOST_CMD_STATE_PROCESSING) {
+		/* If command processing or response sending is in progress, do not re-arm RX. */
+		if (hc_spi->state == SPI_HOST_CMD_STATE_PROCESSING ||
+		    hc_spi->state == SPI_HOST_CMD_STATE_SENDING) {
 			hc_spi->prepare_rx_later = 1;
 			return;
 		}
@@ -679,6 +678,13 @@ void gpio_cb_nss(const struct device *port, struct gpio_callback *cb, gpio_port_
 	}
 
 	/* CS asserted. Receive full packet and call general handler */
+	if (hc_spi->state == SPI_HOST_CMD_STATE_PROCESSING ||
+	    hc_spi->state == SPI_HOST_CMD_STATE_SENDING) {
+		/* Ignore unexpected CS assertions while busy. Do not alter state to RX_BAD. */
+		LOG_WRN("Unexpected CS assert in state %d", hc_spi->state);
+		return;
+	}
+
 	if (hc_spi->state == SPI_HOST_CMD_STATE_READY_TO_RX) {
 		/* The SPI module and DMA are already configured and ready to receive data.
 		 * Consider disabling the SPI module at the end of sending response and
