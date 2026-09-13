@@ -334,10 +334,10 @@ static int monitor_loop(const struct device *chgdev, const struct device *flgdev
 
 int main(void)
 {
-	const struct device *chgdev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(charger));
-	const struct device *flgdev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(fuelgauge));
-	const struct device *bckdev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(buck));
-	const struct device *bstdev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(buckboost));
+	const struct device *chgdev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(charger));
+	const struct device *flgdev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(fuelgauge));
+	const struct device *bckdev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(buck));
+	const struct device *bstdev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(buckboost));
 	int ret;
 
 	ret = check_device_ready(chgdev, DEVICE_NAME_CHARGER);
