@@ -31,8 +31,7 @@ extern "C" {
 #endif
 
 #ifdef _ASMLANGUAGE
-#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || \
-	(defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && !defined(CONFIG_INTC_ROOT))
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 #define arch_irq_enable                     z_soc_irq_enable
 #define arch_irq_disable                    z_soc_irq_disable
 #define arch_irq_is_enabled                 z_soc_irq_is_enabled
@@ -47,6 +46,7 @@ extern "C" {
 #define arch_irq_set_pending                intc_root_set_pending
 #define arch_irq_is_pending                 intc_root_is_pending
 #else
+/* No custom or root interrupt controller: the NVIC functions */
 #define arch_irq_enable                     arm_irq_enable
 #define arch_irq_disable                    arm_irq_disable
 #define arch_irq_is_enabled                 arm_irq_is_enabled
@@ -85,7 +85,8 @@ extern void arm_irq_clear_pending(unsigned int irq);
 extern void arm_irq_set_pending(unsigned int irq);
 extern bool arm_irq_is_pending(unsigned int irq);
 #endif
-#if !defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && !defined(CONFIG_INTC_ROOT)
+#if !defined(CONFIG_INTC_ROOT)
+/* No root interrupt controller: the NVIC functions */
 #define arch_irq_enable(irq)                     arm_irq_enable(irq)
 #define arch_irq_disable(irq)                    arm_irq_disable(irq)
 #define arch_irq_is_enabled(irq)                 arm_irq_is_enabled(irq)
@@ -98,12 +99,15 @@ extern bool arm_irq_is_pending(unsigned int irq);
 #endif
 #endif
 
-#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || \
-	(defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && !defined(CONFIG_INTC_ROOT))
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && !defined(CONFIG_INTC_ROOT) &&                        \
+	!defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#error "Multi-level interrupts need the aggregator driver as the root interrupt controller"
+#endif
+
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 /*
- * When a custom interrupt controller or multi-level interrupts is specified,
- * map the architecture interrupt control functions to the SoC layer interrupt
- * control functions.
+ * When a custom interrupt controller is specified, map the architecture
+ * interrupt control functions to the SoC layer interrupt control functions.
  */
 
 void z_soc_irq_init(void);

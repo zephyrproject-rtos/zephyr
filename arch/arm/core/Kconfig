@@ -27,8 +27,9 @@ config CPU_CORTEX_M
 	select ARCH_HAS_RAMFUNC_SUPPORT
 	select ARCH_HAS_VECTOR_TABLE_RELOCATION if CPU_CORTEX_M_HAS_VTOR
 	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
-	# The NVIC exposes per-line pending state via ISPR/ICPR. With a custom
-	# or multi-level controller these operations belong to the SoC layer.
+	# The NVIC exposes per-line pending state via ISPR/ICPR. A custom
+	# controller or a multi-level aggregator as root declares itself
+	# whether it exposes per-line pending state.
 	select ARCH_HAS_IRQ_PENDING_OPS if !ARM_CUSTOM_INTERRUPT_CONTROLLER && \
 		!MULTI_LEVEL_INTERRUPTS
 	select SWAP_NONATOMIC
