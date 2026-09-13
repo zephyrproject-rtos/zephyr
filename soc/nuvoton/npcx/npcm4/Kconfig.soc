@@ -4,7 +4,7 @@
 
 config SOC_SERIES_NPCM4
 	bool
-	select SOC_FAMILY_NPCM
+	select NPCX_SOC_VARIANT_NPCMN
 	help
 	  Enable support for Nuvoton NPCM4 series
 
