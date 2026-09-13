@@ -116,7 +116,7 @@ int mram_no_latency_sync_request(void)
 	}
 
 	k_sem_init(&req.sem, 0, 1);
-	sys_notify_init_callback(&req.cli.notify, sync_req_cb);
+	sys_notify_init_callback(&req.cli.notify, (sys_notify_generic_callback)sync_req_cb);
 	rv = onoff_request(&mram_latency_mgr, &req.cli);
 	if (rv < 0) {
 		return rv;
