@@ -212,21 +212,45 @@ request that they create an :ref:`RFC proposal <rfcs>`.
 Workflow Suggestions That Help Reviewers
 ========================================
 
-- Unless they applied the reviewer's recommendation exactly, authors must not
-  resolve and hide comments, they must let the initial reviewer do it. The
-  Zephyr project does not require all comments to be resolved before merge.
-  Leaving some completed discussions open can sometimes be useful to understand
-  the greater picture.
+- Describe in the PR what you tested and how: which boards or emulators, which twister scenarios
+  or samples, and what was not tested (for example, hardware you do not have). Reviewers cannot
+  tell the difference between "tested on hardware" and "compiles", so say which it is. For a bug
+  fix, say how the bug was reproduced and that the added test fails without the fix.
 
-- Respond to comments using the "Start Review" and "Add Review" green buttons in
-  the "Files changed" view. This allows responding to multiple comments and
-  publishing the responses in bulk. This reduces the number of emails sent to
-  reviewers.
+- Push follow-up changes as amendments to the commits they belong to (see the
+  :ref:`Contribution workflow`), not as extra "fix review comments" commits.
 
-- As GitHub does not implement |git range-diff|_, try to minimize rebases in the
-  middle of a review. If a rebase is required, push this as a separate update
-  with no other changes since the last push of the PR. When pushing a rebase
-  only, add a comment to the PR indicating which commit is the rebase.
+- Do not open several PRs for review that share commits, whether stacked (one PR carrying the
+  commits of another that is still open) or otherwise interleaved. The reviewer sees the same
+  code in more than one place, reviews it more than once, and cannot tell which PR a comment
+  belongs to. If a change depends on another open PR, either wait for that PR to merge or put
+  both in one PR and say so in the description. To show reviewers what is coming, open only the
+  first PR of the series for review and keep the follow-up PRs as drafts that mention the PR
+  they depend on; reviewers can then look ahead when they want to and ignore the drafts until
+  the first PR has merged.
+
+- Do not rebase the PR onto ``main`` while a review is in progress unless there is a merge
+  conflict or CI needs a change that is only on ``main``. GitHub does not implement
+  |git range-diff|_, so after a rebase the reviewer can no longer see what changed since the
+  last round and has to re-read the whole PR, and existing approvals are dismissed. Rebasing
+  after the PR has been approved is fine. If a rebase is unavoidable, push it as a separate
+  update with no other changes and add a comment saying so.
+
+- Reply to every review comment, either with the change you made or with why you did not make
+  it. Unless they applied the reviewer's recommendation exactly, authors must not resolve and
+  hide comments; they must let the initial reviewer do it. The Zephyr project does not require
+  all comments to be resolved before merge. Leaving some completed discussions open can
+  sometimes be useful to understand the greater picture.
+
+- Respond to comments using the "Start Review" and "Add Review" green buttons in the "Files
+  changed" view. This allows responding to multiple comments and publishing the responses in
+  bulk. This reduces the number of emails sent to reviewers.
+
+- After pushing changes that address review comments, add a comment to the PR summarizing what
+  changed in that push, then click "Re-request review" next to each reviewer who requested
+  changes. A push alone does not notify anyone, the reviewer otherwise has to reconstruct the
+  changes from the diff, and a PR with an open "changes requested" and no re-request looks
+  untouched in the reviewer's queue.
 
 .. |git range-diff| replace:: ``git range-diff``
 .. _`git range-diff`: https://git-scm.com/docs/git-range-diff
