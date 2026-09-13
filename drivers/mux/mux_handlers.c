@@ -30,9 +30,9 @@ static inline int mux_control_copy_from_user(struct mux_control *k_ctrl,
 		return -EFAULT;
 	}
 
-	if (!K_SYSCALL_VERIFY_MSG(k_ctrl->len <= CONFIG_MUX_MAX_CELLS,
-				  "mux_control cells len %zu exceeds maximum %d",
-				  k_ctrl->len, CONFIG_MUX_MAX_CELLS)) {
+	if (K_SYSCALL_VERIFY_MSG(k_ctrl->len <= CONFIG_MUX_MAX_CELLS,
+				 "mux_control cells len %zu exceeds maximum %d",
+				 k_ctrl->len, CONFIG_MUX_MAX_CELLS)) {
 		return -EINVAL;
 	}
 
