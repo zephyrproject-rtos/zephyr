@@ -35,12 +35,17 @@ LOG_MODULE_REGISTER(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 static void set_up_xfer(const struct device *dev, enum mspi_xfer_direction dir,
 			enum mspi_xfer_mode xfer_mode);
+static void set_up_xfer_with_addr(const struct device *dev,
+					enum mspi_xfer_direction dir,
+					uint32_t addr,
+					enum mspi_xfer_mode xfer_mode);
 static int perform_xfer(const struct device *dev, uint8_t cmd);
 static int cmd_rdsr(const struct device *dev, uint8_t op_code, uint8_t *sr);
 static int wait_until_ready(const struct device *dev, k_timeout_t poll_period);
 static int cmd_wren(const struct device *dev);
 static int cmd_wrsr(const struct device *dev, uint8_t op_code,
 		    uint8_t sr_cnt, uint8_t *sr);
+static int read_jedec_id(const struct device *dev, uint8_t *id);
 
 #include "flash_mspi_nor_quirks.h"
 
@@ -50,6 +55,15 @@ static bool in_octal_io(const struct device *dev)
 
 	return dev_data->last_applied_cfg &&
 		dev_data->last_applied_cfg->io_mode == MSPI_IO_MODE_OCTAL;
+}
+
+
+static bool in_ddr(const struct device *dev)
+{
+	struct flash_mspi_nor_data *dev_data = dev->data;
+
+	return dev_data->last_applied_cfg &&
+	       dev_data->last_applied_cfg->data_rate == MSPI_DATA_RATE_DUAL;
 }
 
 static bool is_quad_enable_needed(const struct mspi_dev_cfg *cfg)
@@ -164,6 +178,7 @@ static int cmd_rdsr(const struct device *dev, uint8_t op_code, uint8_t *sr)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
+	uint8_t sr_even[2] = {0};
 	int rc;
 
 	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
@@ -171,14 +186,23 @@ static int cmd_rdsr(const struct device *dev, uint8_t op_code, uint8_t *sr)
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.rdsr_dummy;
 		dev_data->xfer.addr_length = dev_data->cmd_info.rdsr_addr_4
 					   ? 4 : 0;
+		dev_data->packet.address = 0;
 	}
-	dev_data->packet.num_bytes = sizeof(uint8_t);
-	dev_data->packet.data_buf  = sr;
+
+	if (in_ddr(dev)) {
+		dev_data->packet.num_bytes = sizeof(uint8_t) * 2;
+	} else {
+		dev_data->packet.num_bytes = sizeof(uint8_t);
+	}
+
+	dev_data->packet.data_buf = sr_even;
 	rc = perform_xfer(dev, op_code);
 	if (rc < 0) {
 		LOG_ERR("%s 0x%02x failed: %d", __func__, op_code, rc);
 		return rc;
 	}
+
+	*sr = sr_even[0];
 
 	return 0;
 }
@@ -671,6 +695,7 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
+	uint8_t id_even[JESD216_READ_ID_LEN + 1] = {0};
 	int rc;
 
 	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
@@ -678,15 +703,53 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.rdid_dummy;
 		dev_data->xfer.addr_length = dev_data->cmd_info.rdid_addr_4
 					   ? 4 : 0;
+		dev_data->packet.address = 0;
 	}
-	dev_data->packet.data_buf  = id;
-	dev_data->packet.num_bytes = JESD216_READ_ID_LEN;
+
+	if (in_ddr(dev)) {
+		dev_data->packet.num_bytes = JESD216_READ_ID_LEN + 1;
+	} else {
+		dev_data->packet.num_bytes = JESD216_READ_ID_LEN;
+	}
+
+	dev_data->packet.data_buf = id_even;
 	rc = perform_xfer(dev, SPI_NOR_CMD_RDID);
 	if (rc < 0) {
 		LOG_ERR("Read JEDEC ID failed: %d", rc);
 	}
 
+	memcpy(id, id_even, JESD216_READ_ID_LEN);
+
 	return rc;
+}
+
+static int verify_jedec_id(const struct device *dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	uint8_t id[JESD216_READ_ID_LEN] = {0};
+	int rc;
+
+	if (!dev_config->jedec_id_specified) {
+		return 0;
+	}
+
+	rc = read_jedec_id(dev, id);
+	if (rc < 0) {
+		LOG_ERR("Failed to read JEDEC ID: %d", rc);
+		return rc;
+	}
+
+	if (memcmp(id, dev_config->jedec_id, sizeof(id)) != 0) {
+		LOG_ERR("JEDEC ID mismatch, read: %02x %02x %02x, "
+			"expected: %02x %02x %02x",
+			id[0], id[1], id[2],
+			dev_config->jedec_id[0],
+			dev_config->jedec_id[1],
+			dev_config->jedec_id[2]);
+		return -ENODEV;
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -1071,6 +1134,7 @@ static int switch_to_target_io_mode(const struct device *dev)
 		return rc;
 	}
 	dev_data->last_applied_cfg = &dev_config->mspi_nor_cfg;
+
 	return 0;
 }
 
@@ -1199,7 +1263,6 @@ static int flash_chip_init(const struct device *dev)
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	struct mspi_dev_cfg mspi_nor_init_cfg;
-	uint8_t id[JESD216_READ_ID_LEN] = {0};
 	uint16_t dts_cmd = 0;
 	uint32_t sfdp_signature;
 	bool flash_reset = false;
@@ -1209,7 +1272,7 @@ static int flash_chip_init(const struct device *dev)
 	memcpy(&mspi_nor_init_cfg, &dev_config->mspi_control_cfg, sizeof(mspi_nor_init_cfg));
 	mspi_nor_init_cfg.freq = MIN(dev_config->mspi_control_cfg.freq, MHZ(50));
 	rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
-			     MSPI_DEVICE_CONFIG_ALL,
+			     NON_XIP_DEV_CFG_MASK,
 			     &mspi_nor_init_cfg);
 	if (rc < 0) {
 		LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
@@ -1328,22 +1391,9 @@ static int flash_chip_init(const struct device *dev)
 	}
 
 
-	if (dev_config->jedec_id_specified) {
-		rc = read_jedec_id(dev, id);
-		if (rc < 0) {
-			LOG_ERR("Failed to read JEDEC ID: %d", rc);
-			return rc;
-		}
-
-		if (memcmp(id, dev_config->jedec_id, sizeof(id)) != 0) {
-			LOG_ERR("JEDEC ID mismatch, read: %02x %02x %02x, "
-				"expected: %02x %02x %02x",
-				id[0], id[1], id[2],
-				dev_config->jedec_id[0],
-				dev_config->jedec_id[1],
-				dev_config->jedec_id[2]);
-			return -ENODEV;
-		}
+	rc = verify_jedec_id(dev);
+	if (rc < 0) {
+		return rc;
 	}
 
 	rc = switch_to_target_io_mode(dev);
@@ -1368,6 +1418,12 @@ static int flash_chip_init(const struct device *dev)
 			LOG_ERR("SFDP signature mismatch: %08x, expected: %08x",
 				sfdp_signature, JESD216_SFDP_MAGIC);
 			return -ENODEV;
+		}
+	} else {
+		/* Verify the JEDEC ID after switching to target IO mode since SFDP is disabled */
+		rc = verify_jedec_id(dev);
+		if (rc < 0) {
+			return rc;
 		}
 	}
 
@@ -1520,7 +1576,7 @@ static DEVICE_API(flash, drv_api) = {
 	.io_mode = MSPI_IO_MODE_SINGLE,					\
 	.data_rate = MSPI_DATA_RATE_SINGLE,				\
 	.cpp = MSPI_CPP_MODE_0,						\
-	.endian = MSPI_XFER_BIG_ENDIAN,					\
+	.endian = DT_INST_ENUM_IDX_OR(inst, mspi_endian, MSPI_XFER_BIG_ENDIAN),	\
 	.ce_polarity = MSPI_CE_ACTIVE_LOW,				\
 	.dqs_enable = false,						\
 }
