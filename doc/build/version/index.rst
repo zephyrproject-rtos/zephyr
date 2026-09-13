@@ -68,6 +68,22 @@ For the sections below, examples are provided for the following :file:`VERSION` 
    VERSION_TWEAK = 4
    EXTRAVERSION = unstable.5
 
+Application build version
+=========================
+
+The *application build version* is a separate, more dynamic concept from the one described in the
+``VERSION`` file: it is intended to represent the current state of the application source code at
+the time of build, and is extracted from source versioning metadata.
+
+By default, if the application is in a Git repository, its contents are generated from the output of
+the command ``git describe --abbrev=12 --always`` run in the application folder. This results in a
+string which contains the most recent tag, the number of commits since that tag, and the abbreviated
+commit hash.
+
+Setting :cmake:variable:`APP_BUILD_VERSION` to the desired string value directly overrides this
+default behavior. This can either be done from the application ``CMakeLists.txt`` file or on the
+command line when invoking CMake, e.g. via ``cmake -DAPP_BUILD_VERSION="v3.3.0-18-g2c85d92" ..``.
+
 Use in code
 ===========
 
@@ -113,8 +129,7 @@ following defines are available:
 |                             |                   | ``PATCHLEVEL``, |br|                                 |                           |
 |                             |                   | ``VERSION_TWEAK`` |br|                               |                           |
 +-----------------------------+-------------------+------------------------------------------------------+---------------------------+
-| APP_BUILD_VERSION           | String (unquoted) | None (value of ``git describe --abbrev=12 --always`` | v3.3.0-18-g2c85d9224fca   |
-|                             |                   | from application repository)                         |                           |
+| APP_BUILD_VERSION           | String (unquoted) | None (see `Application build version`_ above)        | v3.3.0-18-g2c85d92        |
 +-----------------------------+-------------------+------------------------------------------------------+---------------------------+
 
 Use in Kconfig
@@ -195,6 +210,8 @@ The following variable are available for usage in CMake files:
 |                             |                 | ``PATCHLEVEL``, |br|                              |                    |
 |                             |                 | ``VERSION_TWEAK``                                 |                    |
 +-----------------------------+-----------------+---------------------------------------------------+--------------------+
+| APP_BUILD_VERSION           | String          | None (see `Application build version`_ above)     | v3.3.0-18-g2c85d92 |
++-----------------------------+-----------------+---------------------------------------------------+--------------------+
 
 Use in MCUboot-supported applications
 =====================================
@@ -215,5 +232,5 @@ When a shell interface is configured, the following commands are available to re
 +----------------------+-----------------------------+-------------------------+
 | app version-extended | APP_VERSION_EXTENDED_STRING | 1.2.3-unstable.5+4      |
 +----------------------+-----------------------------+-------------------------+
-| app build-version    | APP_BUILD_VERSION           | v3.3.0-18-g2c85d9224fca |
+| app build-version    | APP_BUILD_VERSION           | v3.3.0-18-g2c85d92      |
 +----------------------+-----------------------------+-------------------------+
