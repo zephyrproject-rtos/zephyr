@@ -525,13 +525,29 @@ def main():
     emit_list = []
     exported = []
 
+    # A syscall may be declared in both a registered header (to_emit=True)
+    # and a merely-scanned header (to_emit=False), e.g. when the same service
+    # is declared in a subsystem header and re-declared in an application
+    # header. Collect the emitted IDs up front so the not-emit copy does not
+    # define the ID a second time: the later definition lands above
+    # K_SYSCALL_LIMIT and wins for every user of the header, so the call is
+    # rejected as out of range. The invocation wrapper is still emitted, as
+    # the scanned header needs it to compile.
+    emitted_ids = {
+        "K_SYSCALL_" + typename_split(mg[0])[1].upper() for mg, _f, emit in syscalls if emit
+    }
+
     for match_group, fn, to_emit in syscalls:
         handler, inv, mrsh, sys_id, entry = analyze_fn(match_group, fn, args.userspace_only)
 
         if fn not in invocations:
             invocations[fn] = []
 
-        invocations[fn].append(inv)
+        # The same declaration may be seen twice for one header, in which case
+        # emitting the wrapper again would redefine it.
+        if inv not in invocations[fn]:
+            invocations[fn].append(inv)
+
         handlers.append(handler)
 
         if to_emit:
@@ -539,7 +555,7 @@ def main():
             table_entries.append(entry)
             emit_list.append(handler)
             exported.append(handler.replace("z_mrsh_", "z_impl_"))
-        else:
+        elif sys_id not in emitted_ids and sys_id not in ids_not_emit:
             ids_not_emit.append(sys_id)
 
         if mrsh and to_emit:
