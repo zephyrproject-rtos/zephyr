@@ -1,0 +1,141 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_FLASH_RTS5817_QSPI_REG_H_
+#define ZEPHYR_DRIVERS_FLASH_RTS5817_QSPI_REG_H_
+
+#define R_SPI_META_CTRL     0x04
+#define R_SPI_CA_NUMBER     0x08
+#define R_SPI_CONTROL       0x10
+#define R_SPI_TCTL          0x14
+#define R_SPI_CLK_DIVIDER   0x18
+#define R_SPI_PAD_PULL_CTRL 0x1C
+#define R_SPI_CRC_KEY       0x20
+#define R_SPI_CRC_EN        0x24
+#define R_SPI_CRC_OUT       0x28
+#define R_SPI_COM_TRANSFER  0x2C
+#define R_SPI_SUB1_MODE     0x30
+#define R_SPI_SUB1_COMMAND  0x34
+#define R_SPI_SUB1_ADDR     0x38
+#define R_SPI_SUB1_LENGTH   0x3C
+#define R_SPI_SUB2_MODE     0x40
+#define R_SPI_SUB2_COMMAND  0x44
+#define R_SPI_SUB2_ADDR     0x48
+#define R_SPI_SUB2_LENGTH   0x4C
+#define R_SPI_SUB3_MODE     0x50
+#define R_SPI_SUB3_COMMAND  0x54
+#define R_SPI_SUB3_ADDR     0x58
+#define R_SPI_SUB3_LENGTH   0x5C
+#define R_SPI_SUB4_MODE     0x60
+#define R_SPI_SUB4_COMMAND  0x64
+#define R_SPI_SUB4_ADDR     0x68
+#define R_SPI_SUB4_LENGTH   0x6C
+#define R_SPI_INT_EN        0x70
+#define R_SPI_INT_SR        0x74
+#define R_SPI_WB_DMA_ADDR   0x78
+#define R_SPI_WB_DMA_LEN    0x7C
+#define R_SPI_WB_DMA_DIR    0x80
+#define R_SPI_COM_TCTL_1    0x90
+#define R_SPI_COM_TCTL_2    0x94
+#define R_SPI_TOP_CTL       0x98
+#define R_SPI_SCK_AUTO_STOP 0x9C
+#define R_SPI_AXI_M_CFG     0xA0
+
+/* Bits of R_SPI_CA_NUMBER (0x08) */
+
+#define SPI_U_ADDR_BIT_NUM_OFFSET 0
+#define SPI_U_ADDR_BIT_NUM_MASK   GENMASK(4, 0)
+
+#define SPI_U_CMD_BIT_NUM_OFFSET 5
+#define SPI_U_CMD_BIT_NUM_MASK   GENMASK(7, 5)
+
+/* Bits of R_SPI_CONTROL (0x10) */
+
+#define SPI_SOFT_RST_OFFSET 0
+#define SPI_SOFT_RST_MASK   BIT(0)
+
+#define SPI_MODE_OFFSET 2
+#define SPI_MODE_MASK   GENMASK(3, 2)
+
+#define SPI_LSB_FIRST_OFFSET 5
+#define SPI_LSB_FIRST_MASK   BIT(5)
+
+#define SPI_CS_POLARITY_OFFSET 6
+#define SPI_CS_POLARITY_MASK   BIT(6)
+
+/* Bits of R_SPI_TCTL (0x14) */
+
+#define SPI_T_EDO_OFFSET 0
+#define SPI_T_EDO_MASK   GENMASK(1, 0)
+
+#define SPI_T_CS_OFFSET 2
+#define SPI_T_CS_MASK   GENMASK(3, 2)
+
+#define SPI_U_DUM_BIT_NUM_OFFSET 8
+#define SPI_U_DUM_BIT_NUM_MASK   GENMASK(12, 8)
+
+/* Bits of R_SPI_CLK_DIVIDER (0x18) */
+
+#define SPI_SCK_DIVIDER_OFFSET 0
+#define SPI_SCK_DIVIDER_MASK   GENMASK(7, 0)
+
+/* Bits of R_SPI_PAD_PULL_CTRL (0x1C) */
+
+#define SPI_MISO_PULLCTL_OFFSET 0
+#define SPI_MISO_PULLCTL_MASK   GENMASK(1, 0)
+
+#define SPI_MOSI_PULLCTL_OFFSET 2
+#define SPI_MOSI_PULLCTL_MASK   GENMASK(3, 2)
+
+#define SPI_SCK_PULLCTL_OFFSET 4
+#define SPI_SCK_PULLCTL_MASK   GENMASK(5, 4)
+
+#define SPI_CS_N_PULLCTL_OFFSET 6
+#define SPI_CS_N_PULLCTL_MASK   GENMASK(7, 6)
+
+#define SPI_WP_N_PULLCTL_OFFSET 8
+#define SPI_WP_N_PULLCTL_MASK   GENMASK(9, 8)
+
+#define SPI_HOLD_N_PULLCTL_OFFSET 10
+#define SPI_HOLD_N_PULLCTL_MASK   GENMASK(11, 10)
+
+/* Bits of R_SPI_COM_TRANSFER (0x2C) */
+
+#define SPI_WB_TRANS_NUM_OFFSET 0
+#define SPI_WB_TRANS_NUM_MASK   GENMASK(1, 0)
+
+#define SPI_WB_RST_OFFSET 2
+#define SPI_WB_RST_MASK   BIT(2)
+
+#define SPI_WB_TIMEOUT_OFFSET 3
+#define SPI_WB_TIMEOUT_MASK   BIT(3)
+
+#define SPI_WB_IDLE_OFFSET 6
+#define SPI_WB_IDLE_MASK   BIT(6)
+
+#define SPI_WB_START_OFFSET 7
+#define SPI_WB_START_MASK   BIT(7)
+
+/* Bits of R_SPI_SUB1_MODE (0x30) */
+
+#define SPI_WB_SUB_MODE1_OFFSET 0
+#define SPI_WB_SUB_MODE1_MASK   GENMASK(3, 0)
+
+/* Parameters definition */
+
+/* Parametsers of R_SPI_COM_TRANSFER (0x2C)*/
+
+#define SPI_COM_TRANSFER_NUM_1 0x00UL
+#define SPI_COM_TRANSFER_NUM_2 0x01UL
+#define SPI_COM_TRANSFER_NUM_3 0x02UL
+#define SPI_COM_TRANSFER_NUM_4 0x03UL
+
+/* Parametsers of R_SPI_WB_DMA_DIR (0x80) */
+
+#define SPI_TO_DTCM 0
+#define DTCM_TO_SPI 1
+
+#endif /* ZEPHYR_DRIVERS_FLASH_RTS5817_QSPI_REG_H_ */
