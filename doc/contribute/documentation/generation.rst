@@ -314,6 +314,44 @@ This option can also be used with the :command:`make` wrapper::
    # To generate HTML output with supported features limited to a subset of vendors
    make html HW_FEATURES_VENDOR_FILTER=vendor1,vendor2
 
+LLM-friendly documentation output
+*********************************
+
+In addition to HTML and PDF, the documentation can be generated in a format
+optimized for consumption by Large Language Models, following the `llms.txt
+convention <https://llmstxt.org>`_. When enabled, the HTML build additionally
+produces:
+
+- ``llms.txt``: a markdown "sitemap" listing the documentation pages along with
+  a short description of each of them.
+- ``llms-full.txt``: the entire documentation contents as a single markdown
+  file.
+- A markdown version of every page of the documentation, generated alongside
+  its HTML version (e.g. ``develop/getting_started/index.html.md``).
+
+To enable this output, set the following option when invoking cmake::
+
+   -DLLMS_TXT=1
+
+This option can also be used with the :command:`make` wrapper::
+
+   cd ~/zephyrproject/zephyr/doc
+
+   # To generate HTML output along with LLM-friendly markdown output
+   make html LLMS_TXT=1
+
+.. note::
+
+   The markdown output is produced by an additional Sphinx build pass which
+   runs automatically once the HTML build is finished, making the overall
+   build take noticeably longer.
+
+.. note::
+
+   The auto-generated Devicetree bindings pages, due to their sheer number,
+   are not included in ``llms.txt`` and ``llms-full.txt``. A markdown version
+   of each of these pages is still generated next to its HTML version.
+
 Viewing generated documentation locally
 ***************************************
 
