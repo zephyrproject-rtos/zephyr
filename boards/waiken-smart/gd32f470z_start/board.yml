@@ -1,0 +1,6 @@
+board:
+  name: gd32f470z_start
+  full_name: GD32F470Z-START
+  vendor: waiken-smart
+  socs:
+    - name: gd32f470

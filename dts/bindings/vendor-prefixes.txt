@@ -796,6 +796,7 @@ vocore	VoCore Studio
 voipac	Voipac Technologies s.r.o.
 vot	Vision Optical Technology Co., Ltd.
 vxt	VXT Ltd
+waiken-smart	Dongguan Waiken-Smart Technology Co., Ltd.
 wand	Wandbord (Technexion)
 waveshare	Waveshare Electronics
 wch	WinChipHead

@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Zhijian Han
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GD32F470Z_START
+	select SOC_GD32F470
