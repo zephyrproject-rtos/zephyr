@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: seeed_xiao_logger_hat
+  full_name: Logger Hat shield for XIAO
+  vendor: seeed
+  supported_features:
+    - sensor
+    - i2c
+    - rtc
+    - adc
