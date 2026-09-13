@@ -1,0 +1,16 @@
+# Copyright 2025 Mediatek
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MT8365
+	bool
+	select SOC_SERIES_MT8365
+
+config SOC_MT8365_ADSP
+	bool
+	select SOC_MT8365
+	select SOC_MTK_ADSP
+	help
+	  Mediatek MT8365 audio DSP
+
+config SOC
+	default "mt8365" if SOC_MT8365

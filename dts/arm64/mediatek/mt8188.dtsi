@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2026 MediaTek Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/clock/mtk_mt8188_clock.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x000>;
+		};
+
+		cpu1: cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+		};
+
+		cpu2: cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x200>;
+		};
+
+		cpu3: cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x300>;
+		};
+
+		cpu4: cpu@400 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x400>;
+		};
+
+		cpu5: cpu@500 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x500>;
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	gic: interrupt-controller@c000000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0xc000000 0x40000>,
+		      <0xc040000 0x200000>;
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
+	infracfg_ao: clock-controller@10001000 {
+		compatible = "mediatek,mt8188-infracfg-ao";
+		reg = <0x10001000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	pinctrl: pinctrl@10005000 {
+		compatible = "mediatek,mt8188-pinctrl";
+		reg = <0x10005000 0x1000>;
+		status = "okay";
+	};
+
+	uart0: uart@11001100 {
+		compatible = "mediatek,mt8188-uart";
+		reg = <0x11001100 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 141 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&infracfg_ao CLK_INFRA_AO_UART0>;
+		clock-frequency = <26000000>;
+		status = "disabled";
+	};
+
+	uart1: uart@11001200 {
+		compatible = "mediatek,mt8188-uart";
+		reg = <0x11001200 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&infracfg_ao CLK_INFRA_AO_UART1>;
+		clock-frequency = <26000000>;
+		status = "disabled";
+	};
+
+	uart2: uart@11001300 {
+		compatible = "mediatek,mt8188-uart";
+		reg = <0x11001300 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 143 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&infracfg_ao CLK_INFRA_AO_UART2>;
+		clock-frequency = <26000000>;
+		status = "disabled";
+	};
+
+	uart3: uart@11001400 {
+		compatible = "mediatek,mt8188-uart";
+		reg = <0x11001400 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 723 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&infracfg_ao CLK_INFRA_AO_UART3>;
+		clock-frequency = <26000000>;
+		status = "disabled";
+	};
+};

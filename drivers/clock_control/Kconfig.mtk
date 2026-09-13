@@ -1,0 +1,10 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MT8188_INFRA_AO
+	bool "MediaTek MT8188 infra always-on clock controller"
+	default y
+	depends on DT_HAS_MEDIATEK_MT8188_INFRACFG_AO_ENABLED
+	help
+	  Enable the peripheral gate clocks in the MT8188 infra always-on
+	  subsystem.

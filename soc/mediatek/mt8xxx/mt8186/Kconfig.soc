@@ -1,0 +1,16 @@
+# Copyright 2024 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MT8186
+	bool
+	select SOC_SERIES_MT818X
+
+config SOC_MT8186_ADSP
+	bool
+	select SOC_MT8186
+	select SOC_MTK_ADSP
+	help
+	  Mediatek MT8186 audio DSP
+
+config SOC
+	default "mt8186" if SOC_MT8186

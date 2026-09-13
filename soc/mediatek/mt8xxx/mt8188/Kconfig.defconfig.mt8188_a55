@@ -1,0 +1,21 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MT8188_A55
+
+# The Cortex-A cores can run alongside another operating system, so the GIC
+# distributor must not be reprogrammed from scratch during initialisation.
+config GIC_SAFE_CONFIG
+	default y
+
+# Covers the full GICv3 SPI range; the highest INTID this die can raise is
+# below 1024 and the software ISR table is sized from this value.
+config NUM_IRQS
+	default 1024
+
+# Placeholder only: the Arm architected timer overwrites this at boot from
+# CNTFRQ_EL0, see arm_arch_timer_init().
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 13000000
+
+endif # SOC_MT8188_A55
