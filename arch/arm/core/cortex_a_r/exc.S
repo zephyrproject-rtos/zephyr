@@ -41,17 +41,89 @@ GTEXT(z_arm_fault_data)
 GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_prefetch_abort)
 GTEXT(z_arm_data_abort)
+GDATA(z_arm_coredump_fault_sp)
 
 #ifndef CONFIG_USE_SWITCH
 
+#if defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_VFP_FEATURE_REGS_S64_D32)
+#define CFI_DABT_FPU_SIZE 200
+#else
+#define CFI_DABT_FPU_SIZE 72
+#endif
+#else
+#define CFI_DABT_FPU_SIZE 0
+#endif
+/* fpu + __basic_sf (32). Prev-mode SP is in z_arm_coredump_fault_sp; the
+ * 256-byte abort stack cannot hold an extra ESF word with FPU_SHARING.
+ */
+#define CFI_DABT_ESF_SIZE (CFI_DABT_FPU_SIZE + 32)
+
+.macro cfi_after_exception_entry
+	.cfi_def_cfa 13, CFI_DABT_ESF_SIZE
+	.cfi_offset 15, -8
+	.cfi_offset 14, -12
+	.cfi_offset 12, -16
+	.cfi_offset 3, -20
+	.cfi_offset 2, -24
+	.cfi_offset 1, -28
+	.cfi_offset 0, -32
+	/*
+	 * Previous-mode SP is *z_arm_coredump_fault_sp. A bare `.long` is
+	 * emitted into .text and would be executed on abort. `.cfi_label`
+	 * plus `.reloc` puts the DW_OP_addr reloc in .debug_frame (GAS and
+	 * LLVM IAS). `\@` keeps the label unique per expansion.
+	 */
+	.cfi_escape 0x16, 13, 6, 0x03
+	.cfi_label .Lcfisp\@
+	.cfi_escape 0, 0, 0, 0
+	.cfi_escape 0x06
+	.reloc .Lcfisp\@, R_ARM_ABS32, z_arm_coredump_fault_sp
+.endm
+
+/*
+ * After r0-r3, r12, lr^ are stored at [sp], capture previous-mode SP (in r1)
+ * and LR (written to [sp, #20]). Clobbers r0-r2. Cannot CPS into USR.
+ *
+ * Do not msr SPSR into CPSR: the T bit would switch this ARM handler to Thumb.
+ * Keep current CPSR (ARM, I/F) and replace only the mode field.
+ */
+.macro exception_capture_prev_sp_lr
+	mrs r0, cpsr
+	mrs r1, spsr
+	and r2, r1, #MODE_MASK
+	cmp r2, #MODE_USR
+	beq 1f
+	bic r1, r0, #MODE_MASK
+	orr r1, r1, r2
+	orr r1, r1, #(I_BIT | F_BIT)
+	msr CPSR_c, r1
+	mov r1, sp
+	mov r2, lr
+	msr CPSR_c, r0
+	str r2, [sp, #20]
+	b 2f
+1:
+	sub r0, sp, #4
+	stmia r0, {sp}^
+	ldr r1, [r0]
+2:
+	ldr r2, =z_arm_coredump_fault_sp
+	str r1, [r2]
+.endm
+
 .macro exception_entry mode
 	/*
-	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
-	 * construct an exception stack frame.
+	 * ESF on the exception-mode stack (not the thread stack):
+	 *   [fpu] [r0-r3, r12, lr, pc, xpsr]
+	 * Interrupted LR is written into the iframe; prev-mode SP is
+	 * stored in z_arm_coredump_fault_sp for GDB CFI so the 256-byte
+	 * abort stack is not grown (FPU_SHARING already uses 200 bytes).
 	 */
 	srsdb sp!, #\mode
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
+	exception_capture_prev_sp_lr
 
 #if defined(CONFIG_FPU_SHARING)
 	sub sp, #___fpu_t_SIZEOF
@@ -111,6 +183,11 @@ GTEXT(z_arm_data_abort)
  * encountered.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	.cfi_signal_frame
+	.cfi_return_column 15
+	.cfi_undefined 13
 	/*
 	 * The undefined instruction address is offset by 2 if the previous
 	 * mode is Thumb; otherwise, it is offset by 4.
@@ -121,6 +198,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	subeq lr, #4	/* ARM   (!T_BIT) */
 	subne lr, #2	/* Thumb (T_BIT) */
 	pop {r0}
+	.cfi_register 15, 14
 
 	/*
 	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
@@ -129,6 +207,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	srsdb sp!, #MODE_UND
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
+	exception_capture_prev_sp_lr
 
 	/* Increment exception nesting count */
 	get_cpu r2
@@ -175,10 +254,12 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	mov r0, sp
 #endif
 
+	cfi_after_exception_entry
 	bl z_arm_fault_undef_instruction
 	exception_exit
 
 	b z_arm_exc_exit
+	.cfi_endproc
 
 /**
  * @brief Prefetch abort exception handler
@@ -187,17 +268,23 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
  * prefetched instruction as invalid and the instruction is executed.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_pabt_frame
 	/*
 	 * The faulting instruction address is always offset by 4 for the
 	 * prefetch abort exceptions.
 	 */
 	sub lr, #4
+	.cfi_register 15, 14
 
 	exception_entry MODE_ABT
+	cfi_after_exception_entry
 	bl z_arm_fault_prefetch
 	exception_exit
 
 	b z_arm_exc_exit
+	.cfi_endproc
 
 #if defined(CONFIG_FPU_SHARING)
 #define FPU_SF_SIZE	___fpu_t_SIZEOF
@@ -213,13 +300,18 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
  * depending on the type of fault that caused it.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_dabt_frame
 	/*
 	 * The faulting instruction address is always offset by 8 for the data
 	 * abort exceptions.
 	 */
 	sub lr, #8
+	.cfi_register 15, 14
 
 	exception_entry MODE_ABT
+	cfi_after_exception_entry
 	bl z_arm_fault_data
 
 	/*
@@ -235,6 +327,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	streq r1, [sp, #24 + FPU_SF_SIZE]
 
 	b z_arm_exc_exit
+	.cfi_endproc
 
 #else
 
@@ -289,14 +382,22 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
  * prefetched instruction as invalid and the instruction is executed.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_pabt_frame
 	/*
 	 * The faulting instruction address is always offset by 4 for the
 	 * prefetch abort exceptions.
 	 */
 	sub lr, #4
+	.cfi_register 15, 14
 	z_arm_cortex_ar_enter_exc
+	.cfi_def_cfa 13, 32
+	.cfi_offset 15, -8
+	.cfi_offset 14, -12
 	bl z_arm_fault_prefetch
 	b z_arm_cortex_ar_exit_exc
+	.cfi_endproc
 
 /**
  * @brief Data abort exception handler
@@ -306,10 +407,18 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
  * depending on the type of fault that caused it.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_dabt_frame
 	sub lr, #8
+	.cfi_register 15, 14
 
 	z_arm_cortex_ar_enter_exc
+	.cfi_def_cfa 13, 32
+	.cfi_offset 15, -8
+	.cfi_offset 14, -12
 	bl z_arm_fault_data
 	b z_arm_cortex_ar_exit_exc
+	.cfi_endproc
 
 #endif
