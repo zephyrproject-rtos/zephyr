@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
 #include <fsl_pwm.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -24,6 +25,15 @@
 LOG_MODULE_REGISTER(pwm_mcux, CONFIG_PWM_LOG_LEVEL);
 
 #define CHANNEL_COUNT 3
+
+#ifdef CONFIG_PM_DEVICE
+/* Channel setup replayed after the submodule is powered back on. */
+struct pwm_mcux_channel_config {
+	uint32_t period_cycles;
+	uint32_t pulse_cycles;
+	pwm_flags_t flags;
+};
+#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_PWM_CAPTURE
 struct pwm_mcux_capture_data {
@@ -60,11 +70,53 @@ struct pwm_mcux_data {
 	uint32_t pulse_cycles[CHANNEL_COUNT];
 	pwm_signal_param_t channel[CHANNEL_COUNT];
 	struct k_mutex lock;
+#ifdef CONFIG_PM_DEVICE
+	struct pwm_mcux_channel_config channel_config[CHANNEL_COUNT];
+	bool pwm_channel_active;
+#endif /* CONFIG_PM_DEVICE */
 #ifdef CONFIG_PWM_CAPTURE
 	struct pwm_mcux_capture_data capture;
 	bool capture_active;
 #endif
 };
+
+/*
+ * Mask a channel to its inactive level, or hand the pin back to the generator.
+ *
+ * The mask forces the channel signal to 0 ahead of the polarity stage, so a
+ * masked pin settles on OCTRL POLx. That is already the inactive level for
+ * channels A and B, but channel X runs with POLX inverted (its pulse width comes
+ * from VAL0 alone), so POLX has to be flipped while masked.
+ */
+static void mcux_pwm_force_inactive(const struct device *dev, uint32_t channel, bool force)
+{
+	static const pwm_channels_t pwm_channel[CHANNEL_COUNT] = {
+		kPWM_PwmA,
+		kPWM_PwmB,
+		kPWM_PwmX,
+	};
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
+	bool polx;
+
+	if (channel == 2) {
+		if (force) {
+			polx = (data->channel[channel].level == kPWM_LowTrue);
+		} else {
+			polx = (data->channel[channel].level == kPWM_HighTrue);
+		}
+
+		if (polx) {
+			config->base->SM[config->index].OCTRL |=
+				((uint16_t)1U << PWM_OCTRL_POLX_SHIFT);
+		} else {
+			config->base->SM[config->index].OCTRL &=
+				~((uint16_t)1U << PWM_OCTRL_POLX_SHIFT);
+		}
+	}
+
+	PWM_SetPwmForceOutputToZero(config->base, config->index, pwm_channel[channel], force);
+}
 
 static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t channel,
 			       uint32_t period_cycles, uint32_t pulse_cycles,
@@ -226,6 +278,11 @@ static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t chann
 		PWM_SetPwmLdok(config->base, 1U << config->index, true);
 	}
 
+	/* A zero pulse width must hold the inactive level, but on channel X a VAL0
+	 * of 0 still lets a one tick pulse through at the reload boundary.
+	 */
+	mcux_pwm_force_inactive(dev, channel, pulse_cycles == 0U);
+
 	return 0;
 }
 
@@ -253,6 +310,15 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		/* TODO: dynamically adjust prescaler */
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_PM_DEVICE
+	/* Remember the setup for replay after a power down. */
+	data->channel_config[channel].period_cycles = period_cycles;
+	data->channel_config[channel].pulse_cycles = pulse_cycles;
+	data->channel_config[channel].flags = flags;
+	data->pwm_channel_active = true;
+#endif /* CONFIG_PM_DEVICE */
+
 	k_mutex_lock(&data->lock, K_FOREVER);
 	result = mcux_pwm_set_cycles_internal(dev, channel, period_cycles, pulse_cycles, flags);
 	k_mutex_unlock(&data->lock);
@@ -304,6 +370,41 @@ static int mcux_pwm_calc_ticks(uint16_t first_capture, uint16_t second_capture, 
 	return 0;
 }
 
+static void mcux_pwm_capture_irq_disable(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_mcux_config *config = dev->config;
+
+	switch (channel) {
+#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA) && \
+	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA == 1U)
+	case 0U:
+		/* Channel A */
+		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureA0InterruptEnable |
+			kPWM_CaptureA1InterruptEnable | kPWM_ReloadInterruptEnable);
+		break;
+#endif
+#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB) && \
+	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB == 1U)
+	case 1U:
+		/* Channel B */
+		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureB0InterruptEnable |
+			kPWM_CaptureB1InterruptEnable | kPWM_ReloadInterruptEnable);
+		break;
+#endif
+#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX) && \
+	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX == 1U)
+	case 2U:
+		/* Channel X */
+		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureX0InterruptEnable |
+			kPWM_CaptureX1InterruptEnable | kPWM_ReloadInterruptEnable);
+		break;
+#endif
+	default:
+		/* unsupported channel for this SoC: check_channel() should have rejected it */
+		break;
+	}
+}
+
 static void mcux_pwm_handle_capture(const struct device *dev, uint16_t first_edge_value,
 				    uint16_t second_edge_value, uint16_t modValue,
 				    int overflow_err)
@@ -332,6 +433,15 @@ static void mcux_pwm_handle_capture(const struct device *dev, uint16_t first_edg
 	}
 
 	capture->overflow_count = 0;
+
+	if (!capture->continuous) {
+		/* One shot capture is done: the hardware stops arming, so drop the
+		 * interrupts that would keep firing on every reload. The channel
+		 * stays claimed until pwm_disable_capture(), as the API expects.
+		 */
+		mcux_pwm_capture_irq_disable(dev, capture->capture_channel);
+		pm_device_busy_clear(dev);
+	}
 }
 
 static void mcux_pwm_isr(const struct device *dev)
@@ -410,6 +520,46 @@ static void mcux_pwm_isr(const struct device *dev)
 		/* unsupported channel for this SoC: check_channel() should have rejected it */
 		break;
 	}
+}
+
+/* Free running modulo for a capture-only submodule. The counter is signed
+ * (reference manual, "Counter Register"), so 0x7FFF is the maximum with INIT = 0.
+ */
+#define CAPTURE_ONLY_MODULO 0x7FFFU
+
+static bool mcux_pwm_period_configured(const struct pwm_mcux_data *data)
+{
+	uint32_t channel;
+
+	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
+		if (data->period_cycles[channel] != 0U) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* mcux_pwm_isr() derives the overflow size from VAL1 and INIT, which only
+ * mcux_pwm_set_cycles() ever programs. A capture-only submodule would keep their
+ * reset value of 0, making the reported tick count meaningless.
+ */
+static void mcux_pwm_setup_capture_modulo(const struct device *dev)
+{
+	const struct pwm_mcux_config *config = dev->config;
+	uint16_t ctrl;
+
+	config->base->SM[config->index].INIT = 0U;
+	PWM_SetVALxValue(config->base, config->index, kPWM_ValueRegister_1,
+			 CAPTURE_ONLY_MODULO);
+
+	/* INIT and VAL1 are buffered and would only load on the next reload, which
+	 * never comes while the counter is stopped, so force it through LDMOD.
+	 */
+	ctrl = config->base->SM[config->index].CTRL;
+	config->base->SM[config->index].CTRL = ctrl | PWM_CTRL_LDMOD_MASK;
+	PWM_SetPwmLdok(config->base, 1U << config->index, true);
+	config->base->SM[config->index].CTRL = ctrl;
 }
 
 static int check_channel(const struct device *dev, uint32_t channel)
@@ -519,6 +669,11 @@ static int mcux_pwm_configure_capture(const struct device *dev,
 		pwm_channel = kPWM_PwmX;
 	}
 
+	/* A capture-only submodule has no period, so nothing set the modulo. */
+	if (!mcux_pwm_period_configured(data)) {
+		mcux_pwm_setup_capture_modulo(dev);
+	}
+
 	/* Setup input capture on channel */
 	PWM_SetupInputCapture(config->base, config->index, pwm_channel, &capture_config);
 
@@ -557,6 +712,14 @@ static int mcux_pwm_enable_capture(const struct device *dev, uint32_t channel)
 	}
 
 	data->capture_active = true;
+
+	/* The suspend hook halts the counter, which would leave an unknown gap
+	 * between the two captured edges and report a bogus result with err == 0.
+	 * This only keeps the system awake with CONFIG_PM_NEED_ALL_DEVICES_IDLE=y;
+	 * on its own it just makes pm_suspend_devices() skip this device.
+	 */
+	pm_device_busy_set(dev);
+
 	/* Make sure the flags are cleared in case it enters IRQ immediately after enable
 	 * interrupts, results in error result at first.
 	 */
@@ -599,8 +762,10 @@ static int mcux_pwm_enable_capture(const struct device *dev, uint32_t channel)
 		break;
 	}
 
-	/* Start the PWM counter if it's stopped.*/
-	if ((config->base->MCTRL & PWM_MCTRL_RUN_MASK) == 0) {
+	/* MCTRL[RUN] has one bit per submodule: testing the whole field would let
+	 * another running submodule hide that this one is halted.
+	 */
+	if ((config->base->MCTRL & PWM_MCTRL_RUN(1U << config->index)) == 0) {
 		PWM_StartTimer(config->base, (1U << config->index));
 	}
 
@@ -609,7 +774,6 @@ static int mcux_pwm_enable_capture(const struct device *dev, uint32_t channel)
 
 static int mcux_pwm_disable_capture(const struct device *dev, uint32_t channel)
 {
-	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
 	int ret;
 
@@ -619,52 +783,23 @@ static int mcux_pwm_disable_capture(const struct device *dev, uint32_t channel)
 	}
 
 	/* Disable capture interrupts */
-	switch (channel) {
-#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA) && \
-	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA == 1U)
-	case 0U:
-		/* Channel A */
-		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureA0InterruptEnable |
-			kPWM_CaptureA1InterruptEnable | kPWM_ReloadInterruptEnable);
-		break;
-#endif
-#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB) && \
-	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB == 1U)
-	case 1U:
-		/* Channel B */
-		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureB0InterruptEnable |
-			kPWM_CaptureB1InterruptEnable | kPWM_ReloadInterruptEnable);
-		break;
-#endif
-#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX) && \
-	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX == 1U)
-	case 2U:
-		/* Channel X */
-		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureX0InterruptEnable |
-			kPWM_CaptureX1InterruptEnable | kPWM_ReloadInterruptEnable);
-		break;
-#endif
-	default:
-		/* unsupported channel for this SoC: check_channel() should have rejected it */
-		break;
-	}
+	mcux_pwm_capture_irq_disable(dev, channel);
 
 	data->capture_active = false;
 	data->capture.callback = NULL;
+	pm_device_busy_clear(dev);
 
 	return 0;
 }
 #endif /* CONFIG_PWM_CAPTURE */
 
-static int pwm_mcux_init(const struct device *dev)
+static int pwm_mcux_init_common(const struct device *dev)
 {
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
 	pwm_config_t pwm_config;
 	status_t status;
 	int i, err;
-
-	k_mutex_init(&data->lock);
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -716,6 +851,14 @@ static int pwm_mcux_init(const struct device *dev)
 	data->channel[2].pwmChannel = kPWM_PwmX;
 	data->channel[2].level = kPWM_HighTrue;
 
+	/* The submodule is back in reset state, so drop the cached VALx contents and
+	 * make the next set_cycles() take the full setup path.
+	 */
+	for (i = 0; i < CHANNEL_COUNT; i++) {
+		data->period_cycles[i] = 0U;
+		data->pulse_cycles[i] = 0U;
+	}
+
 #ifdef CONFIG_PWM_CAPTURE
 	if (config->irq_config_func) {
 		config->irq_config_func(dev);
@@ -723,6 +866,136 @@ static int pwm_mcux_init(const struct device *dev)
 #endif
 
 	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+/* Park every configured channel, or release them. A zero pulse width stays forced
+ * either way, so releasing does not resurrect an output the API wanted held
+ * inactive.
+ */
+static void mcux_pwm_park_channels(const struct device *dev, bool park)
+{
+	struct pwm_mcux_data *data = dev->data;
+	uint32_t channel;
+
+	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
+		if (data->period_cycles[channel] == 0U) {
+			continue;
+		}
+
+		mcux_pwm_force_inactive(dev, channel,
+				       park || data->pulse_cycles[channel] == 0U);
+	}
+}
+
+static void mcux_pwm_restore_chn_config(const struct device *dev)
+{
+	struct pwm_mcux_data *data = dev->data;
+	uint32_t channel;
+
+	/* Ascending order matters: set_cycles() only restores channel X's VAL0 for
+	 * channels A/B once channel X has been set up.
+	 */
+	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
+		if (data->channel_config[channel].period_cycles == 0U) {
+			continue;
+		}
+
+		(void)mcux_pwm_set_cycles(dev, channel, data->channel_config[channel].period_cycles,
+					  data->channel_config[channel].pulse_cycles,
+					  data->channel_config[channel].flags);
+	}
+}
+
+static bool mcux_pwm_timer_needed(const struct device *dev)
+{
+	struct pwm_mcux_data *data = dev->data;
+
+	if (data->pwm_channel_active) {
+		return true;
+	}
+
+#ifdef CONFIG_PWM_CAPTURE
+	if (data->capture_active) {
+		return true;
+	}
+#endif /* CONFIG_PWM_CAPTURE */
+
+	return false;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static int mcux_pwm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct pwm_mcux_config *config = dev->config;
+	int err;
+#ifdef CONFIG_PM_DEVICE
+	struct pwm_mcux_data *data = dev->data;
+#endif /* CONFIG_PM_DEVICE */
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+#ifdef CONFIG_PM_DEVICE
+		/* Release the parked outputs before the generator drives them. */
+		mcux_pwm_park_channels(dev, false);
+
+		if (mcux_pwm_timer_needed(dev)) {
+			PWM_StartTimer(config->base, 1U << config->index);
+		}
+#endif /* CONFIG_PM_DEVICE */
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef CONFIG_PM_DEVICE
+		/* The submodule keeps its registers but stops counting in every low
+		 * power mode, so park the outputs before halting the counter or the
+		 * pins would hold whatever level they had when the clock went away.
+		 */
+		mcux_pwm_park_channels(dev, true);
+		PWM_StopTimer(config->base, 1U << config->index);
+#endif /* CONFIG_PM_DEVICE */
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+		break;
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+		err = pwm_mcux_init_common(dev);
+		if (err < 0) {
+			return err;
+		}
+#ifdef CONFIG_PM_DEVICE
+		if (data->pwm_channel_active) {
+			mcux_pwm_restore_chn_config(dev);
+		}
+#endif /* CONFIG_PM_DEVICE */
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int pwm_mcux_init(const struct device *dev)
+{
+	struct pwm_mcux_data *data = dev->data;
+
+	k_mutex_init(&data->lock);
+
+	/* Rest of the init is done from the PM_DEVICE_ACTION_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, mcux_pwm_pm_action);
 }
 
 static DEVICE_API(pwm, pwm_mcux_driver_api) = {
@@ -773,9 +1046,11 @@ static DEVICE_API(pwm, pwm_mcux_driver_api) = {
 		PWM_MCUX_CAPTURE_CONFIG_INIT(n)	\
 	};								  \
 									  \
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_pwm_pm_action);			  \
+									  \
 	DEVICE_DT_INST_DEFINE(n,					  \
 			    pwm_mcux_init,				  \
-			    NULL,					  \
+			    PM_DEVICE_DT_INST_GET(n),			  \
 			    &pwm_mcux_data_ ## n,			  \
 			    &pwm_mcux_config_ ## n,			  \
 			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,	  \

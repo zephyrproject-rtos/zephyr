@@ -1,0 +1,67 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/*
+ * MCXA156 only implements input capture on FlexPWM channel X
+ * (FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX; A and B are 0), so the capture end
+ * has to be a channel X. Both ends use one, which also gets the channel X output
+ * path covered: it derives its pulse width from VAL0 alone and runs with an
+ * inverted output polarity, unlike channels A and B.
+ *
+ * The two ends are on different submodules on purpose, so that the capture-only
+ * submodule path is covered as well: that submodule never gets a PWM period of
+ * its own, and its counter has to be started while the output submodule is
+ * already running.
+ *
+ * To run this test, connect
+ * P3_12 (J1-16) ---> P3_14 (J1-12)
+ */
+
+&pinctrl {
+	pinmux_flexpwm0_pwm0_loopback: pinmux_flexpwm0_pwm0_loopback {
+		group0 {
+			pinmux = <PWM0_X0_P3_12>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm0_pwm2_loopback: pinmux_flexpwm0_pwm2_loopback {
+		group0 {
+			pinmux = <PWM0_X2_P3_14>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+};
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&flexpwm0_pwm0 2 0 PWM_POLARITY_NORMAL>, /* P3_12, channel X, out */
+		       <&flexpwm0_pwm2 2 0 PWM_POLARITY_NORMAL>; /* P3_14, channel X, in */
+	};
+
+	/* The GPIO LED node also claims P3_12, and configuring it as a GPIO would
+	 * take the pin mux away from FlexPWM.
+	 */
+	leds {
+		status = "disabled";
+	};
+};
+
+&flexpwm0_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm0_pwm0_loopback>;
+	pinctrl-names = "default";
+};
+
+&flexpwm0_pwm2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm0_pwm2_loopback>;
+	pinctrl-names = "default";
+};
