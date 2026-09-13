@@ -18,23 +18,15 @@
 	};
 };
 
-&lpspi3 {
+#define SPI_LOOPBACK_FAST_HZ 5000000
+
+spi_loopback: &lpspi3 {
 	status = "okay";
 	pinctrl-0 = <&lpspi3_default>;
 	pinctrl-names = "default";
 	pcs-sck-delay = <1000>;
 	sck-pcs-delay = <1000>;
 	transfer-delay = <1000>;
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <5000000>;
-	};
 };
+
+#include "../spi-loopback.dtsi"

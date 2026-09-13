@@ -6,16 +6,9 @@
 
 #include <freq.h>
 
-&main_mcspi0 {
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_K(500)>;
-	};
+#define SPI_LOOPBACK_SLOW_HZ DT_FREQ_K(500)
+#define SPI_LOOPBACK_FAST_HZ DT_FREQ_M(50)
 
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(50)>;
-	};
-};
+spi_loopback: &main_mcspi0 {};
+
+#include "../spi-loopback.dtsi"

@@ -23,7 +23,7 @@
 	};
 };
 
-&spi2 {
+spi_loopback: &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	dma-enabled;
@@ -33,20 +33,10 @@
 
 	dmas = <&dma_axi 0>, <&dma_axi 1>;
 	dma-names = "rx", "tx";
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@1 {
-		compatible = "test-spi-loopback-fast";
-		reg = <1>;
-		spi-max-frequency = <16000000>;
-	};
 };
 
 &dma_axi {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"

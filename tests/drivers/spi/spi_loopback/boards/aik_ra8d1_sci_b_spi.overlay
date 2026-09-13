@@ -8,18 +8,11 @@
  * To run this test on AIK-RA8D1 board on PMOD 1, set S4-1 to UART/SPI position.
  */
 
-&pmod1_spi {
+#define SPI_LOOPBACK_SLOW_HZ 2000000
+#define SPI_LOOPBACK_FAST_HZ 3000000
+
+spi_loopback: &pmod1_spi {
 	status = "okay";
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <2000000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <3000000>;
-	};
 };
+
+#include "../spi-loopback.dtsi"

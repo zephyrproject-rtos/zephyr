@@ -8,7 +8,9 @@
 	status = "disabled";
 };
 
-&sercom4 {
+#define SPI_LOOPBACK_FAST_HZ 24000000
+
+spi_loopback: &sercom4 {
 	compatible = "microchip,sercom-g1-spi";
 	/* Internally connect MOSI to MISO for loop-back operation */
 	dipo = <3>;
@@ -18,18 +20,6 @@
 	/* Configure DMA */
 	dmas = <&dmac 0 12>, <&dmac 1 13>;
 	dma-names = "rx", "tx";
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <24000000>;
-	};
 
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -47,3 +37,5 @@
 		};
 	};
 };
+
+#include "../spi-loopback.dtsi"

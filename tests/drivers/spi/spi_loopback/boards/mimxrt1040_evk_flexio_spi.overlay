@@ -36,7 +36,7 @@
 &flexio3 {
 	status = "okay";
 
-	flexio3_spi0: flexio3_spi0 {
+	spi_loopback: flexio3_spi0: flexio3_spi0 {
 		compatible = "nxp,flexio-spi";
 		status = "okay";
 		#address-cells = <1>;
@@ -81,3 +81,5 @@
 &lpspi3 {
 	status = "disabled";
 };
+
+#include "../spi-loopback.dtsi"

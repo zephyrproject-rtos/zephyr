@@ -23,6 +23,12 @@
 	};
 };
 
+/*
+ * Kept inline on purpose. An SoC overlay is applied in addition to the
+ * board overlay, and olimex_esp32_evb/esp32/procpu already puts the
+ * loopback contract on &spi2. Labelling &spi3 spi_loopback here as well
+ * would be a duplicate label and break that board's build.
+ */
 &spi3 {
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

@@ -8,23 +8,13 @@
 	apb1-prescaler = <2>;
 };
 
-&spi2 {
+#define SPI_LOOPBACK_FAST_HZ 10000000
+
+spi_loopback: &spi2 {
 	dmas = <&gpdma1 0 9 STM32_DMA_PERIPH_TX>,
 	       <&gpdma1 1 8 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 	st,fifo-threshold = <8>;
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <10000000>;
-	};
 };
 
 &gpdma1 {
@@ -34,3 +24,5 @@
 &gpdma2 {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"

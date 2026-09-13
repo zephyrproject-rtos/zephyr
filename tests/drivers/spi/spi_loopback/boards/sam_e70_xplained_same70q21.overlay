@@ -1,31 +1,19 @@
 /*
- * Copyright (c) 2022 Intel Corporation
+ * Copyright (c) 2024 The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&spi0 {
-	loopback;
+#define SPI_LOOPBACK_FAST_HZ 1000000
 
+spi_loopback: &spi0 {
+	loopback;
 	dmas = <&xdmac 1 DMA_PERID_SPI0_TX>, <&xdmac 2 DMA_PERID_SPI0_RX>;
 	dma-names = "tx", "rx";
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <1000000>;
-	};
 };
 
 &spi1 {
 	loopback;
-
 	dmas = <&xdmac 3 DMA_PERID_SPI1_TX>, <&xdmac 4 DMA_PERID_SPI1_RX>;
 	dma-names = "tx", "rx";
 
@@ -41,3 +29,5 @@
 		spi-max-frequency = <1000000>;
 	};
 };
+
+#include "../spi-loopback.dtsi"
