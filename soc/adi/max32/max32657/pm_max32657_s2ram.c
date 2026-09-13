@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +10,19 @@
 #include <zephyr/arch/arm/cortex_m/scb.h>
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
 #include <zephyr/arch/common/pm_s2ram.h>
+#include <zephyr/sys/util_macro.h>
 #include <mxc_device.h>
+#include <gcr_regs.h>
 #include <mcr_regs.h>
 #include <wrap_max32_lp.h>
 
 #define NVIC_MEMBER_SIZE(member) ARRAY_SIZE(((NVIC_Type *)0)->member)
+
+#define MXC_GCR_REVISION_LOW_MASK     GENMASK(7, 0)
+#define MXC_GCR_REVISION_LOW_EXPECTED 0xA3
+
+#define WARM_BOOT_RESERVED_START 0x3000a558
+#define WARM_BOOT_RESERVED_END   (WARM_BOOT_RESERVED_START + 8)
 
 /* Coprocessor Power Control Register Definitions */
 #define SCnSCB_CPPWR_SU11_Pos 22U                            /*!< CPPWR: SU11 Position */
@@ -66,6 +74,36 @@ static void nvic_restore(_nvic_context_t *backup)
 	memcpy((uint32_t *)NVIC->IPR, backup->IPR, sizeof(NVIC->IPR));
 }
 
+/* Naked wrapper that adjusts SP away from the warm-boot reserved region
+ * before calling arch_pm_s2ram_suspend.
+ */
+#if defined(CONFIG_HAS_PM_S2RAM_CUSTOM_MARKING) && defined(CONFIG_TRUSTED_EXECUTION_SECURE) &&     \
+	defined(CONFIG_SOC_MAX32657)
+static void __attribute__((naked)) pm_s2ram_suspend_with_sp_pad(
+	pm_s2ram_system_off_fn_t system_off, uintptr_t sp_pad)
+{
+	__asm__ volatile(
+		"sub	sp, sp, r1\n"
+		"push	{r4, r5, r6, lr}\n"
+		"mov	r4, r0\n"
+		"mov	r5, r1\n"
+		/* Save 8 bytes from ROM stack area onto the stack */
+		"ldr	r0, =" STRINGIFY(WARM_BOOT_RESERVED_START) "\n"
+		"ldrd	r2, r3, [r0]\n"
+		"push	{r2, r3}\n"
+		/* Call arch_pm_s2ram_suspend with system_off */
+		"mov	r0, r4\n"
+		"bl	arch_pm_s2ram_suspend\n"
+		/* Restore 8 bytes from stack to ROM stack area */
+		"pop	{r2, r3}\n"
+		"ldr	r0, =" STRINGIFY(WARM_BOOT_RESERVED_START) "\n"
+		"strd	r2, r3, [r0]\n"
+		"add	sp, sp, r5\n"
+		"pop	{r4, r5, r6, pc}\n"
+	);
+}
+#endif
+
 #if defined(CONFIG_FPU)
 static void fpu_power_down(void)
 {
@@ -101,8 +139,36 @@ void pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 #if defined(CONFIG_ARM_MPU)
 	z_arm_save_mpu_context(&backup_data.mpu_context);
 #endif
-	/* Save context and enter Standby mode */
+
+#if defined(CONFIG_HAS_PM_S2RAM_CUSTOM_MARKING) && defined(CONFIG_TRUSTED_EXECUTION_SECURE) &&     \
+	defined(CONFIG_SOC_MAX32657)
+	if (FIELD_GET(MXC_GCR_REVISION_LOW_MASK, MXC_GCR->revision) >=
+	    MXC_GCR_REVISION_LOW_EXPECTED) {
+		arch_pm_s2ram_suspend(system_off);
+	} else {
+		/*
+		 * Apply the workaround for only the revisions of MAX32657 that has
+		 * the issue with warm boot reserved region.
+		 * If SP is in or near the warm boot reserved region, pad it below
+		 * so the naked function's pushes don't corrupt the reserved data
+		 * before it gets saved.
+		 */
+		uintptr_t sp = (__get_IPSR() != 0U) ? (uintptr_t)__get_MSP()
+						    : ((__get_CONTROL() & CONTROL_SPSEL_Msk)
+							       ? (uintptr_t)__get_PSP()
+							       : (uintptr_t)__get_MSP());
+		uintptr_t sp_pad = 0;
+
+		if (sp > (uintptr_t)WARM_BOOT_RESERVED_START &&
+		    sp < (uintptr_t)WARM_BOOT_RESERVED_END + 24U) {
+			sp_pad = ROUND_UP(sp - (uintptr_t)WARM_BOOT_RESERVED_START, 8U);
+		}
+
+		pm_s2ram_suspend_with_sp_pad(system_off, sp_pad);
+	}
+#else
 	arch_pm_s2ram_suspend(system_off);
+#endif
 
 	/* Restore MPU, SCB and FPU states */
 #if defined(CONFIG_FPU)
@@ -121,6 +187,7 @@ void pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 	Wrap_MXC_LP_DisableSramRetention();
 }
 
+#if defined(CONFIG_HAS_PM_S2RAM_CUSTOM_MARKING) && defined(CONFIG_TRUSTED_EXECUTION_SECURE)
 void __attribute__((naked)) pm_s2ram_mark_set(void)
 {
 	__asm__ volatile(
@@ -161,3 +228,4 @@ bool __attribute__((naked)) pm_s2ram_mark_check_and_clear(void)
 		: [_bypass_val] "r"(MXC_S_MCR_BYPASS0), [_byp_reg] "r"(&MXC_MCR->bypass0)
 		: "r0", "r1", "r3", "r4", "memory");
 }
+#endif
