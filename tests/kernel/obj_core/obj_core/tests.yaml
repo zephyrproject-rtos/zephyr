@@ -1,7 +1,6 @@
 tests:
   kernel.obj_core:
     tags: kernel
-    ignore_faults: true
     integration_platforms:
       - qemu_x86
     platform_exclude:
