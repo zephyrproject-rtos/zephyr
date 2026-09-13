@@ -87,7 +87,7 @@
 		reg = <0x00>;
 		size = <512>;
 		pagesize = <16>;
-		address-width = <8>;
+		address-width = <9>;
 		spi-max-frequency = <DT_FREQ_M(20)>;
 		timeout = <5>;
 

@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 Axon Enterprise, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * U5 on the X-NUCLEO-EEPRMA2 shield is an ST M95040 (AT25-compatible, 512
+ * bytes, address-width = 9), the real chip this 9-bit addressing mode was
+ * written for.
+ */
+/ {
+	aliases {
+		eeprom-9bit = &eeprom4_x_nucleo_eeprma2;
+	};
+};

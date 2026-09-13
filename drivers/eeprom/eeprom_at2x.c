@@ -457,6 +457,12 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 
 	paddr = &cmd[1];
 	switch (config->addr_width) {
+	case 9:
+		if (offset & BIT(8)) {
+			cmd[0] |= BIT(3);
+		}
+		*paddr = offset & 0xFF;
+		break;
 	case 24:
 		*paddr++ = offset >> 16;
 		__fallthrough;
@@ -526,6 +532,12 @@ static int eeprom_at25_write(const struct device *dev, off_t offset,
 
 	paddr = &cmd[1];
 	switch (config->addr_width) {
+	case 9:
+		if (offset & BIT(8)) {
+			cmd[0] |= BIT(3);
+		}
+		*paddr = offset & 0xFF;
+		break;
 	case 24:
 		*paddr++ = offset >> 16;
 		__fallthrough;
@@ -602,7 +614,7 @@ static DEVICE_API(eeprom, eeprom_at2x_api) = {
 		     "Unsupported address width")
 
 #define ASSERT_AT25_ADDR_W_VALID(w)			\
-	BUILD_ASSERT(w == 8U || w == 16U || w == 24U,	\
+	BUILD_ASSERT(w == 8U || w == 9U || w == 16U || w == 24U,	\
 		     "Unsupported address width")
 
 #define ASSERT_PAGESIZE_IS_POWER_OF_2(page) \
