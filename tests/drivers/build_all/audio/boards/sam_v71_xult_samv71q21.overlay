@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Ugo Marchand
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The playback node lives under the timer counter whose channel paces the
+ * conversions. tc0 itself stays disabled, so that the counter driver does not
+ * bind to the registers this driver programs.
+ */
+&tc0 {
+	dac-audio {
+		compatible = "atmel,sam-dac-audio";
+		status = "okay";
+		channel = <0>;
+		io-channels = <&dacc 1>;
+		dmas = <&xdmac 0 DMA_PERID_DACC1_TX>;
+		dma-names = "tx";
+	};
+};
+
+&dacc {
+	pinctrl-0 = <&dac_default>;
+	pinctrl-names = "default";
+};
+
+&xdmac {
+	status = "okay";
+};
+
+&pinctrl {
+	dac_default: dac_default {
+		group1 {
+			pinmux = <PD0X_DACC_DAC1>;
+		};
+	};
+};
