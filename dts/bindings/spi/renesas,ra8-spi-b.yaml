@@ -20,9 +20,13 @@ properties:
 
   tx-dtc:
     type: boolean
+    description: |
+      Use DTC (Data Transfer Controller) for TX transfers.
 
   rx-dtc:
     type: boolean
+    description: |
+      Use DTC (Data Transfer Controller) for RX transfers.
 
   pinctrl-0:
     required: true
@@ -35,3 +39,11 @@ properties:
 
   interrupt-names:
     required: true
+    enum: ["rxi", "txi", "tei", "eri"]
+    description: |
+      Names of the interrupts used by the SPI controller.
+
+  dma-names:
+    enum: ["tx", "rx"]
+    description: |
+      Names of the DMA channels used for TX and RX transfers.
