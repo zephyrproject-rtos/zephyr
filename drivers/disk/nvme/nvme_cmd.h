@@ -303,12 +303,6 @@ enum nvme_feature {
 	/* 0xC0-0xFF - vendor specific */
 };
 
-#if !defined(CONFIG_DCACHE_LINE_SIZE) || (CONFIG_DCACHE_LINE_SIZE == 0)
-#define CACHE_LINE_SIZE				(64)
-#else
-#define CACHE_LINE_SIZE				CONFIG_DCACHE_LINE_SIZE
-#endif
-
 #define NVME_PBAO_MASK (CONFIG_NVME_PRP_PAGE_SIZE - 1)
 
 #define NVME_PRP_NEXT_PAGE(_addr)				\
@@ -347,7 +341,7 @@ struct nvme_cmd_qpair {
 	uintptr_t		cpl_bus_addr;
 
 	uint16_t		vector;
-} __aligned(CACHE_LINE_SIZE);
+} __dcacheline_aligned;
 
 typedef void (*nvme_cb_fn_t)(void *, const struct nvme_completion *);
 
