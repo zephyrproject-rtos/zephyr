@@ -53,7 +53,19 @@ West currently supports shell completion in the following shells:
 * bash
 * zsh
 * fish
-* powershell (board qualifiers only)
+* powershell (board and snippet values for ``west build`` only)
+
+The scripts printed by ``west completion`` are generated from west's live
+argparse parsers (built-in commands plus in-tree Zephyr extensions) and checked
+in CI. Out-of-tree workspace extensions are not included. To regenerate them
+after changing a command parser, run::
+
+  python3 scripts/west_commands/completion/generate.py
+
+The generator walks west builtins through private ``west.app.main`` symbols
+(``WestApp``, ``BUILTIN_COMMAND_GROUPS``). The hidden ``None`` group
+(``selfupdate``) is skipped. A public enumerator in west.git would be
+preferable.
 
 In order to enable shell completion, you will need to obtain the corresponding
 completion script and have it sourced.

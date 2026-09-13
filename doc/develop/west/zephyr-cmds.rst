@@ -35,6 +35,13 @@ Shell completion scripts: ``west completion``
 The ``completion`` extension command outputs shell completion scripts that can
 then be used directly to enable shell completion for the supported shells.
 
+The scripts are generated from west's live argparse parsers (built-in commands
+plus in-tree Zephyr extensions) and checked in CI. Out-of-tree workspace
+extensions are not included. Builtins are discovered through private
+``west.app.main`` symbols (``WestApp``, ``BUILTIN_COMMAND_GROUPS``); the
+hidden ``None`` group (``selfupdate``) is skipped. PowerShell currently only
+completes board and snippet values for ``west build``.
+
 It currently supports the following shells:
 
 - bash
