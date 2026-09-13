@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation
  * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2026 The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,25 +22,18 @@
 
 #ifdef CONFIG_SMP
 
-#include <ipi.h>
+#include <esp_rom_sys.h>
+#include <xt_instr_macros.h>
+#include <zephyr/arch/xtensa/smp.h>
 
-#ifndef CONFIG_SOC_ESP32_PROCPU
 static struct k_spinlock loglock;
-#endif
 
-struct cpustart_rec {
-	int cpu;
-	arch_cpustart_t fn;
-	char *stack_top;
-	void *arg;
-	int vecbase;
-	volatile int *alive;
-};
-
-volatile struct cpustart_rec *start_rec;
-static void *appcpu_top;
-static bool cpus_active[CONFIG_MP_MAX_NUM_CPUS];
-static struct k_spinlock loglock;
+/* VECBASE value for whichever secondary core is currently being started.
+ * ESP32 only ever starts core 1 (__ASSERT'd in soc_mp_start_core() below),
+ * so a single instance is enough -- no need for a per-core array the way
+ * the shared layer's own cpustart_rec[] needs one.
+ */
+static int appcpu_vecbase;
 
 /* Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
  * OPERATION!  At least one particular board will experience spurious
@@ -82,84 +76,41 @@ static void appcpu_entry2(void)
 	 */
 	__asm__ volatile("rsr.PS %0" : "=r"(ps));
 	ps &= ~(XCHAL_PS_EXCM_MASK | XCHAL_PS_INTLEVEL_MASK);
+	/* Raise INTLEVEL before clearing INTENABLE below (not just to 0) so
+	 * stale INTENABLE bits left over from the ROM handoff can't let a
+	 * spurious interrupt fire before the wsr.INTENABLE below.
+	 */
+	ps |= XCHAL_EXCM_LEVEL;
 	__asm__ volatile("wsr.PS %0" : : "r"(ps));
 
 	ie = 0;
 	__asm__ volatile("wsr.INTENABLE %0" : : "r"(ie));
-	__asm__ volatile("wsr.VECBASE %0" : : "r"(start_rec->vecbase));
+	__asm__ volatile("wsr.VECBASE %0" : : "r"(appcpu_vecbase));
 	__asm__ volatile("rsync");
-
-	/* Set up the CPU pointer.  Really this should be xtensa arch
-	 * code, not in the ESP-32 layer
-	 */
-	_cpu_t *cpu = &_kernel.cpus[1];
-
-	__asm__ volatile("wsr %0, " ZSR_CPU_STR : : "r"(cpu));
 
 	smp_log("ESP32: APPCPU running");
 
-	*start_rec->alive = 1;
-	start_rec->fn(start_rec->arg);
+	/* Hands off to the shared Xtensa SMP layer (arch/xtensa/core/smp.c):
+	 * sets up the ZSR_CPU pointer, calls soc_mp_startup_self(1) (below)
+	 * to register this core's own incoming IPI line, marks this core
+	 * active, then calls the fn/arg pair arch_cpu_start() was given.
+	 * Never returns.
+	 */
+	xtensa_smp_secondary_start(1);
 }
 
-/* Defines a locally callable "function" named _stack-switch().  The
- * first argument (in register a2 post-ENTRY) is the new stack pointer
- * to go into register a1.  The second (a3) is the entry point.
- * Because this never returns, a0 is used as a scratch register then
- * set to zero for the called function (a null return value is the
- * signal for "top of stack" to the debugger).
+/* Direct ROM boot target -- an ordinary C function, matching ESP-IDF's
+ * call_start_cpu1() shape: runs on whatever SP the ROM handoff left in a1.
+ * Region 1 (0x20000000-0x3FFFFFFF) must be unlocked for RW before any code
+ * here touches DRAM (e.g. appcpu_entry2()'s locals) -- matches ESP-IDF's own
+ * esp_cpu_configure_region_protection(), called at the same point in
+ * call_start_cpu1().
  */
-void z_appcpu_stack_switch(void *stack, void *entry);
-__asm__("\n"
-	".align 4"		"\n"
-	"z_appcpu_stack_switch:"	"\n\t"
-
-	"entry a1, 16"		"\n\t"
-
-	/* Subtle: we want the stack to be 16 bytes higher than the
-	 * top on entry to the called function, because the ABI forces
-	 * it to assume that those bytes are for its caller's A0-A3
-	 * spill area.  (In fact ENTRY instructions with stack
-	 * adjustments less than 16 are a warning condition in the
-	 * assembler). But we aren't a caller, have no bit set in
-	 * WINDOWSTART and will never be asked to spill anything.
-	 * Those 16 bytes would otherwise be wasted on the stack, so
-	 * adjust
-	 */
-	"addi a1, a2, 16"	"\n\t"
-
-	/* Clear WINDOWSTART so called functions never try to spill
-	 * our callers' registers into the now-garbage stack pointers
-	 * they contain.  No need to set the bit corresponding to
-	 * WINDOWBASE, our C callee will do that when it does an
-	 * ENTRY.
-	 */
-	"movi a0, 0"		"\n\t"
-	"wsr.WINDOWSTART a0"	"\n\t"
-
-	/* Clear CALLINC field of PS (you would think it would, but
-	 * our ENTRY doesn't actually do that) so the callee's ENTRY
-	 * doesn't shift the registers
-	 */
-	"rsr.PS a0"		"\n\t"
-	"movi a2, 0xfffcffff"	"\n\t"
-	"and a0, a0, a2"	"\n\t"
-	"wsr.PS a0"		"\n\t"
-
-	"rsync"			"\n\t"
-	"movi a0, 0"		"\n\t"
-
-	"jx a3"			"\n\t");
-
-/* Carefully constructed to use no stack beyond compiler-generated ABI
- * instructions.  WE DO NOT KNOW WHERE THE STACK FOR THIS FUNCTION IS.
- * The ROM library just picks a spot on its own with no input from our
- * app linkage and tells us nothing about it until we're already
- * running.
- */
-static void appcpu_entry1(void)
+void appcpu_entry1(void)
 {
-	z_appcpu_stack_switch(appcpu_top, appcpu_entry2);
+	WDTLB(0x0, 0x20000000);
+
+	appcpu_entry2();
 }
 
 /* The calls and sequencing here were extracted from the ESP-32
@@ -167,16 +118,43 @@ static void appcpu_entry1(void)
  * calls or registers shown are documented, so treat this code with
  * extreme caution.
  */
+/* ESP32 (unlike every later Espressif chip) has two entirely separate flash
+ * MMU page-table hardware banks, one per core (DR_REG_FLASH_MMU_TABLE_PRO /
+ * _APP). Zephyr's image loader only ever populates PRO's table
+ * (mmu_hal_map_region() is hardcoded to core 0); APP's is left empty by
+ * reset_mmu()'s mmu_init(1) call and never filled in anywhere else in-tree.
+ * Without this copy, APPCPU has no valid mapping for its own flash-cached
+ * (IROM) code. Matches ESP-IDF's restore_app_mmu_from_pro_mmu().
+ */
+static void restore_app_mmu_from_pro_mmu(void)
+{
+	volatile uint32_t *from = (volatile uint32_t *)DR_REG_FLASH_MMU_TABLE_PRO;
+	volatile uint32_t *to = (volatile uint32_t *)DR_REG_FLASH_MMU_TABLE_APP;
+
+	/* Matches ESP-IDF's restore_app_mmu_from_pro_mmu() mmu_reg_num exactly. */
+	for (int i = 0; i < 2048; i++) {
+		*(to++) = *(from++);
+	}
+}
+
 void esp_appcpu_start(void *entry_point)
 {
 	ets_printf("ESP32: starting APPCPU");
 
-	/* These two calls are wrapped in a "stall_other_cpu" API in
-	 * esp-idf.  But in this context the appcpu is stalled by
-	 * definition, so we can skip that complexity and just call
-	 * the ROM directly.
+	/* Cache must stay disabled while the MMU table below is being
+	 * overwritten, under the DPORT_APP_CACHE_MMU_IA_CLR erratum guard --
+	 * a real Xtensa/ESP32 hardware erratum (see Zephyr's own reset_mmu(),
+	 * which does the same for PRO_CPU). Enabling cache read before the
+	 * table write, or skipping the guard, makes APPCPU's first
+	 * flash-cached instruction fetch stall forever with no exception.
 	 */
+	esp_rom_Cache_Read_Disable(1);
 	esp_rom_Cache_Flush(1);
+
+	DPORT_SET_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+	restore_app_mmu_from_pro_mmu();
+	DPORT_CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+
 	esp_rom_Cache_Read_Enable(1);
 
 	esp_rom_ets_set_appcpu_boot_addr((void *)0);
@@ -186,121 +164,82 @@ void esp_appcpu_start(void *entry_point)
 	DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
 	DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
 
-	/* extracted from SMP LOG above, THIS IS REQUIRED FOR AMP RELIABLE
-	 * OPERATION AS WELL, PLEASE DON'T touch on the dummy write below!
-	 *
-	 * Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
-	 * OPERATION!  At least one particular board will experience spurious
-	 * hangs during initialization (usually the APPCPU fails to start at
-	 * all) without these calls present.  It's not just time -- careful
-	 * use of k_busy_wait() (and even hand-crafted timer loops using the
-	 * Xtensa timer SRs directly) that duplicates the timing exactly still
-	 * sees hangs.  Something is happening inside the ROM UART code that
-	 * magically makes the startup sequence reliable.
-	 *
-	 * Leave this in place until the sequence is understood better.
-	 *
-	 */
-	esp_rom_output_tx_one_char('\r');
-	esp_rom_output_tx_one_char('\r');
-	esp_rom_output_tx_one_char('\n');
-
 	/* Seems weird that you set the boot address AFTER starting
 	 * the CPU, but this is how they do it...
 	 */
 	esp_rom_ets_set_appcpu_boot_addr((void *)entry_point);
 
-	ets_printf("ESP32: APPCPU start sequence complete");
+	/* mcuboot's appcpu_start() follows the boot-address write with a real
+	 * 10ms delay plus a wait for the UART to actually finish transmitting,
+	 * not just a couple of dummy character writes -- matching that here
+	 * instead of guessing at the timing.
+	 */
+	esp_rom_delay_us(10000);
+	esp_rom_output_tx_wait_idle(0);
 }
 
-IRAM_ATTR static void esp_crosscore_isr(void *arg)
+void soc_mp_start_core(int cpu_num)
 {
-	ARG_UNUSED(arg);
-
-	/* Right now this interrupt is only used for IPIs */
-	z_sched_ipi();
-
-	const int core_id = esp_core_id();
-
-	if (core_id == 0) {
-		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
-	} else {
-		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
-	}
-}
-
-void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
-		    arch_cpustart_t fn, void *arg)
-{
-	volatile struct cpustart_rec sr;
-	int vb;
-	volatile int alive_flag;
-
 	__ASSERT(cpu_num == 1, "ESP-32 supports only two CPUs");
 
-	__asm__ volatile("rsr.VECBASE %0\n\t" : "=r"(vb));
-
-	alive_flag = 0;
-
-	sr.cpu = cpu_num;
-	sr.fn = fn;
-	sr.stack_top = K_KERNEL_STACK_BUFFER(stack) + sz;
-	sr.arg = arg;
-	sr.vecbase = vb;
-	sr.alive = &alive_flag;
-
-	appcpu_top = K_KERNEL_STACK_BUFFER(stack) + sz;
-
-	start_rec = &sr;
+	__asm__ volatile("rsr.VECBASE %0\n\t" : "=r"(appcpu_vecbase));
 
 	esp_appcpu_start(appcpu_entry1);
-
-	while (!alive_flag) {
-	}
-
-	cpus_active[0] = true;
-	cpus_active[cpu_num] = true;
-
-	esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, priority)) |
-		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		esp_crosscore_isr,
-		NULL,
-		NULL);
-
-	esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, priority)) |
-		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		esp_crosscore_isr,
-		NULL,
-		NULL);
-
-	smp_log("ESP32: APPCPU initialized");
 }
 
-void arch_sched_directed_ipi(uint32_t cpu_bitmap)
+void soc_mp_startup_self(int cpu_num)
 {
-	const int core_id = esp_core_id();
+	int ret;
 
-	ARG_UNUSED(cpu_bitmap);
+	/* ipi0 (FROM_CPU_INTR0_SOURCE, tied to DPORT_CPU_INTR_FROM_CPU_0_REG)
+	 * is core 1's own incoming line: it fires when core 0 writes that
+	 * register. ipi1/FROM_CPU_1 is the mirror image, core 0's own
+	 * incoming line. Each core registers only its own line, on itself
+	 * -- this is the structural fix for the bug where both lines used
+	 * to be registered while executing on PRO_CPU only, leaving
+	 * APPCPU's own line (ipi0) never actually enabled on APPCPU.
+	 */
+	if (cpu_num == 0) {
+		ret = esp_intr_alloc(
+			DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, irq),
+			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, priority)) |
+				ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, flags)) |
+				ESP_INTR_FLAG_IRAM,
+			xtensa_smp_ipi_isr, NULL, NULL);
+	} else {
+		ret = esp_intr_alloc(
+			DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, irq),
+			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, priority)) |
+				ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, flags)) |
+				ESP_INTR_FLAG_IRAM,
+			xtensa_smp_ipi_isr, NULL, NULL);
 
-	if (core_id == 0) {
+		smp_log("ESP32: APPCPU initialized");
+	}
+
+	/* A silently-unregistered IPI line here means this core's own incoming
+	 * IPI signal is lost forever -- no exception, no crash, just missed
+	 * scheduler wake-ups on this core. Fail loud instead.
+	 */
+	__ASSERT(ret == 0, "failed to register CPU %d IPI line: %d", cpu_num, ret);
+}
+
+void soc_ipi_trigger(int cpu_num)
+{
+	if (cpu_num == 1) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
 	} else {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
 	}
 }
 
-void arch_sched_broadcast_ipi(void)
+void soc_ipi_clear(void)
 {
-	arch_sched_directed_ipi(IPI_ALL_CPUS_MASK);
-}
-
-IRAM_ATTR bool arch_cpu_active(int cpu_num)
-{
-	return cpus_active[cpu_num];
+	if (esp_core_id() == 0) {
+		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
+	} else {
+		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
+	}
 }
 #endif /* CONFIG_SMP */
 
