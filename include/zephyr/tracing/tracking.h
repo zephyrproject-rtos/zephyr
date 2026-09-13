@@ -121,6 +121,7 @@ extern struct k_event *_track_list_k_event;
 void sys_track_k_timer_init(struct k_timer *timer);
 void sys_track_k_mem_slab_init(struct k_mem_slab *slab);
 void sys_track_k_sem_init(struct k_sem *sem);
+void sys_track_k_sem_deinit(struct k_sem *sem);
 void sys_track_k_mutex_init(struct k_mutex *mutex);
 void sys_track_k_stack_init(struct k_stack *stack);
 void sys_track_k_msgq_init(struct k_msgq *msgq);
