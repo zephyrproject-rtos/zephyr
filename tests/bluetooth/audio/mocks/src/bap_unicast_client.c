@@ -206,13 +206,13 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
-		__maybe_unused const int err =
-			bt_bap_unicast_client_qos_from_group(stream, &stream->ep->qos);
-
-		__ASSERT(err == 0, "%d", err);
-		stream->qos = &stream->ep->qos;
-
 		if (stream->conn == conn) {
+			__maybe_unused const int err =
+				bt_bap_unicast_client_qos_from_group(stream, &stream->ep->qos);
+
+			__ASSERT(err == 0, "%d", err);
+			stream->qos = &stream->ep->qos;
+
 			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next,
 							  _node) {
 				if (listener->qos != NULL) {
@@ -342,6 +342,7 @@ int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
@@ -373,6 +374,7 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 
 	return 0;
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 {
@@ -430,6 +432,7 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
@@ -502,6 +505,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 
 	return 0;
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 {
