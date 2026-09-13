@@ -209,6 +209,27 @@ Troubleshooting
 
 .. include:: ../../common/segger-ecc-systemview.rst.inc
 
+QSPI Flash
+**********
+
+The FRDM-MCXE31B board is populated with an on-board Winbond W25Q64
+(64 Mbit) QSPI NOR flash. The QSPI data and clock signals are not connected
+to the flash by default, so the ``w25q64`` node is disabled on the default
+board target and enabled by the ``w25q64`` board revision.
+
+.. note::
+   In order to use the on-board QSPI flash, populate resistors R126, R128,
+   R129, R130, R131 and R133, and remove resistors R153 and R154.
+
+Once the rework is done, build for the ``frdm_mcxe31b@w25q64`` revision to
+exercise the flash with the MSPI flash sample
+(``samples/drivers/mspi/mspi_flash``):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mspi/mspi_flash
+   :board: frdm_mcxe31b@w25q64
+   :goals: flash
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _MCXE31X Datasheet:

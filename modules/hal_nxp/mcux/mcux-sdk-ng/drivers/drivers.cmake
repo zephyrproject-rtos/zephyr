@@ -118,6 +118,7 @@ set_variable_ifdef(CONFIG_GPIO_MCUX_RGPIO       CONFIG_MCUX_COMPONENT_driver.rgp
 set_variable_ifdef(CONFIG_I2S_MCUX_SAI          CONFIG_MCUX_COMPONENT_driver.sai)
 set_variable_ifdef(CONFIG_DAI_NXP_SAI           CONFIG_MCUX_COMPONENT_driver.sai)
 set_variable_ifdef(CONFIG_MEMC_MCUX_FLEXSPI     CONFIG_MCUX_COMPONENT_driver.flexspi)
+set_variable_ifdef(CONFIG_MSPI_NXP_QSPI         CONFIG_MCUX_COMPONENT_driver.qspi)
 set_variable_ifdef(CONFIG_PWM_MCUX              CONFIG_MCUX_COMPONENT_driver.pwm)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_CSI        CONFIG_MCUX_COMPONENT_driver.csi)
 set_variable_ifdef(CONFIG_WDT_MCUX_IMX_WDOG     CONFIG_MCUX_COMPONENT_driver.wdog01)
@@ -455,6 +456,11 @@ if(CONFIG_ADVC_DRIVER_USED)
   elseif(CONFIG_SOC_MCXL255_CPU1)
     target_link_libraries(${MCUX_SDK_PROJECT_NAME} PRIVATE ${advc_blobs_dir}/libadvc_cm0p.a)
   endif()
+endif()
+
+if(CONFIG_MSPI_NXP_QSPI)
+  set_variable_ifdef(CONFIG_SOC_SERIES_MCXE24X CONFIG_MCUX_COMPONENT_driver.qspi_mcxe247)
+  set_variable_ifdef(CONFIG_SOC_SERIES_MCXE31X CONFIG_MCUX_COMPONENT_driver.qspi_mcxe31b)
 endif()
 
 # Load all drivers
