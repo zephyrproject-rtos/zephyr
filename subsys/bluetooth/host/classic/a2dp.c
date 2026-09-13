@@ -753,6 +753,10 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf 
 					      &delay_report);
 	if (err) {
 		LOG_DBG("codec capability parsing fail");
+		if ((a2dp->discover_cb_param != NULL) && (a2dp->discover_cb_param->cb != NULL)) {
+			a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
+			a2dp->discover_cb_param = NULL;
+		}
 		return 0;
 	}
 
