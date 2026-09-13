@@ -55,6 +55,8 @@
 #define K_OBJ_TYPE_MUTEX_ID      K_OBJ_TYPE_ID_GEN("MUTX")
 /** Pipe object type */
 #define K_OBJ_TYPE_PIPE_ID       K_OBJ_TYPE_ID_GEN("PIPE")
+/** Queue object type */
+#define K_OBJ_TYPE_QUEUE_ID      K_OBJ_TYPE_ID_GEN("QUEU")
 /** Semaphore object type */
 #define K_OBJ_TYPE_SEM_ID        K_OBJ_TYPE_ID_GEN("SEM4")
 /** Stack object type */
