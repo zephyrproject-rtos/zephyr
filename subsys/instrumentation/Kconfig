@@ -112,6 +112,8 @@ config INSTRUMENTATION_DYNAMIC_TRIGGER
 
 config INSTRUMENTATION_EXCLUDE_FUNCTION_LIST
 	string "Exclude function list"
+	default "arch_timing_counter_get,arch_irq_lock,arch_irq_unlock,\
+		k_cycle_get_64,sys_clock_cycle_get_64,elapsed"
 	depends on INSTRUMENTATION_MODE_CALLGRAPH || INSTRUMENTATION_MODE_STATISTICAL
 	help
 	  Set the list of function names to be excluded from instrumentation.
