@@ -308,6 +308,8 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_unref(pkt);
 		return len;
 	}
+	/* Learn the sender's MAC so replies can reach it without multicast NDP. */
+	openthread_border_router_learn_ail_neighbor(pkt);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 	if (notify_new_tx_frame(pkt) != 0) {

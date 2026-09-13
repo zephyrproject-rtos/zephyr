@@ -622,6 +622,48 @@ static bool openthread_border_router_check_unicast_packet_forwarding_policy(stru
 	return true;
 }
 
+/*
+ * Learn the IPv6 source address -> L2 source address mapping for packets arriving
+ * from the AIL (WiFi/Ethernet) interface, so the reverse path (Thread->AIL reply)
+ * can resolve the neighbor MAC without depending on multicast NDP.
+ * This must be called for every packet forwarded from AIL toward Thread.
+ */
+void openthread_border_router_learn_ail_neighbor(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct net_ipv6_hdr *hdr;
+	struct net_linkaddr *lladdr_src;
+
+	if (ail_iface_ptr == NULL) {
+		return;
+	}
+
+	if (net_pkt_orig_iface(pkt) != ail_iface_ptr) {
+		return;
+	}
+
+	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
+	if (hdr == NULL) {
+		return;
+	}
+
+	/* Skip link-local and multicast -- they are not routed. */
+	if (net_ipv6_is_ll_addr_raw(hdr->src) || net_ipv6_is_addr_mcast_raw(hdr->src)) {
+		return;
+	}
+
+	lladdr_src = net_pkt_lladdr_src(pkt);
+	if (lladdr_src == NULL || lladdr_src->len == 0) {
+		return;
+	}
+
+	(void)net_ipv6_nbr_add(ail_iface_ptr,
+			       (const struct net_in6_addr *)hdr->src,
+			       lladdr_src,
+			       false,
+			       NET_IPV6_NBR_STATE_REACHABLE);
+}
+
 bool openthread_border_router_check_packet_forwarding_rules(struct net_pkt *pkt)
 {
 	if (is_border_router_started) {
