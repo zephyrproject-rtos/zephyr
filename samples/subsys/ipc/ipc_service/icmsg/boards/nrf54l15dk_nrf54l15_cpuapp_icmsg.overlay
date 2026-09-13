@@ -4,6 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&uart135 {
-	/delete-property/ hw-flow-control;
-};
+#include "nrf54l_cpuapp_icmsg.dtsi"
