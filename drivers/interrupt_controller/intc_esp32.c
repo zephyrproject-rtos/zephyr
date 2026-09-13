@@ -27,6 +27,7 @@
 #include <soc/clic_reg.h>
 #endif
 
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -935,25 +936,22 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
 
 #if defined(CONFIG_RISCV)
 /*
- * Functions below are implemented to keep consistency with current
- * Xtensa chips API behavior. When accessing Zephyr's API
- * directly, the CPU IRQs can be enabled or disabled directly. This
- * is mostly used to control lines that are not muxed, thus bypass the
- * interrupt matrix. For RISCV, these functions are not expected to
- * be used via user API, as peripherals are all routed through INTMUX
- * and shared interrupts require managing sources state.
+ * On RISC-V the allocator is the root interrupt controller: the functions
+ * control the CPU interrupt lines, matching the Xtensa core behaviour. Lines
+ * that are not muxed bypass the interrupt matrix; peripherals are routed
+ * through the matrix and shared interrupts manage their sources' state.
  */
-void arch_irq_enable(unsigned int irq)
+void intc_root_enable(unsigned int irq)
 {
 	esp_cpu_intr_enable(1 << irq);
 }
 
-void arch_irq_disable(unsigned int irq)
+void intc_root_disable(unsigned int irq)
 {
 	esp_cpu_intr_disable(1 << irq);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
 	return !!(esp_cpu_intr_get_enabled_mask() & (1 << irq));
 }
