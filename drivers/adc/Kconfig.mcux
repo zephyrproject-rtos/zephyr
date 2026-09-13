@@ -122,6 +122,18 @@ config LPADC_CHANNEL_COUNT
 	  15 ADC channels. This value corresponds to how many of the CMD
 	  registers can be configured within the ADC.
 
+config ADC_MCUX_LPADC_ACQUISITION_TIMEOUT_MS
+	int "LPADC acquisition timeout (ms)"
+	default 1000
+	range 1 60000
+	help
+	  Upper bound on how long a blocking adc_read() waits for the conversion
+	  sequence to complete. Without a bound, a sequence that can never finish
+	  (for example a trigger issued while the converter is disabled) blocks the
+	  calling thread forever. On expiry the driver stops the sequence and
+	  returns -EAGAIN. Raise this if you chain many channels with a high
+	  hardware average count on a slow ADCK.
+
 config ADC_MCUX_LPADC_DMA_DRIVEN
 	bool "Use DMA to transfer data"
 	select DMA

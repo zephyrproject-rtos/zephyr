@@ -48,6 +48,15 @@ LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 #define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #endif
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+/*
+ * Bound the wait for sequence completion. The default in adc_context.h is
+ * K_FOREVER, which turns any sequence that can never complete into a permanent
+ * block of the calling thread -- for instance a trigger issued while the
+ * converter is disabled, so the watermark interrupt that would release the
+ * semaphore never fires.
+ */
+#define ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT \
+	K_MSEC(CONFIG_ADC_MCUX_LPADC_ACQUISITION_TIMEOUT_MS)
 #include "adc_context.h"
 
 struct mcux_lpadc_config {
@@ -76,6 +85,7 @@ struct mcux_lpadc_config {
 	 * (from that channel node's zephyr,vref-mv)
 	 */
 	uint16_t opamp_vref_mv;
+	bool stop_in_low_power;
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	bool pm_device_constraints;
 #endif
@@ -337,6 +347,43 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	return 0;
 }
 
+static void mcux_lpadc_stop_sequence(const struct device *dev)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	struct mcux_lpadc_data *data = dev->data;
+
+#ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
+	if (data->use_dma) {
+		(void)dma_stop(config->dma_dev, config->dma_channel);
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+		LPADC_EnableFIFO0WatermarkDMA(config->base, false);
+#else
+		LPADC_EnableFIFOWatermarkDMA(config->base, false);
+#endif
+	}
+#endif /* CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN */
+
+	/* Drop whatever the aborted sequence left behind: an ADC disable/enable
+	 * cycle clears the command state machine, and the FIFO reset discards any
+	 * result that arrived too late to be consumed. Without this the next read
+	 * would return a stale conversion.
+	 */
+	LPADC_Enable(config->base, false);
+
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+	LPADC_DoResetFIFO0(config->base);
+	LPADC_DoResetFIFO1(config->base);
+#else
+	LPADC_DoResetFIFO(config->base);
+#endif
+
+	LPADC_Enable(config->base, true);
+
+	data->buffer = NULL;
+	data->repeat_buffer = NULL;
+	data->channels = 0U;
+}
+
 static int mcux_lpadc_start_read(const struct device *dev,
 		 const struct adc_sequence *sequence)
 {
@@ -466,6 +513,12 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	adc_context_start_read(&data->ctx, sequence);
 	int error = adc_context_wait_for_completion(&data->ctx);
 
+	if (error == -EAGAIN) {
+		LOG_ERR("Conversion sequence timed out after %d ms",
+			CONFIG_ADC_MCUX_LPADC_ACQUISITION_TIMEOUT_MS);
+		mcux_lpadc_stop_sequence(dev);
+	}
+
 	return error;
 }
 
@@ -494,12 +547,42 @@ static void mcux_lpadc_pm_policy_device_power_lock_put(const struct device *dev)
 #endif
 }
 
+/*
+ * A conversion issued against a suspended converter can never complete: SUSPEND
+ * runs LPADC_Enable(false), so no watermark interrupt is ever raised. Reject the
+ * request instead of arming a sequence that only the acquisition timeout would
+ * eventually clean up.
+ */
+static int mcux_lpadc_check_active(const struct device *dev)
+{
+#if defined(CONFIG_PM_DEVICE)
+	enum pm_device_state state;
+	int err;
+
+	err = pm_device_state_get(dev, &state);
+	if (err == 0 && state != PM_DEVICE_STATE_ACTIVE) {
+		LOG_ERR("Converter is not active (pm state %s)",
+			pm_device_state_str(state));
+		return -EBUSY;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif /* CONFIG_PM_DEVICE */
+
+	return 0;
+}
+
 static int mcux_lpadc_read_async(const struct device *dev,
 			const struct adc_sequence *sequence,
 			struct k_poll_signal *async)
 {
 	struct mcux_lpadc_data *data = dev->data;
 	int error;
+
+	error = mcux_lpadc_check_active(dev);
+	if (error) {
+		return error;
+	}
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
 
@@ -962,6 +1045,7 @@ static int mcux_lpadc_init(const struct device *dev)
 
 	adc_config.enableAnalogPreliminary = true;
 	adc_config.referenceVoltageSource = config->voltage_ref;
+	adc_config.enableInDozeMode = !config->stop_in_low_power;
 
 #if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) && FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
 	adc_config.conversionAverageMode = config->calibration_average;
@@ -1097,11 +1181,11 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 #endif
 
 #if CONFIG_PM_DEVICE
-#define LPADC_PM_DEVICE_DEFINE		PM_DEVICE_DT_INST_DEFINE(n, mcux_lpadc_pm_callback);
-#define LPADC_PM_DEVICE_GET		PM_DEVICE_DT_INST_GET(n)
+#define LPADC_PM_DEVICE_DEFINE(n)	PM_DEVICE_DT_INST_DEFINE(n, mcux_lpadc_pm_callback);
+#define LPADC_PM_DEVICE_GET(n)		PM_DEVICE_DT_INST_GET(n)
 #else
-#define LPADC_PM_DEVICE_DEFINE
-#define LPADC_PM_DEVICE_GET		NULL
+#define LPADC_PM_DEVICE_DEFINE(n)
+#define LPADC_PM_DEVICE_GET(n)		NULL
 #endif
 
 #define LPADC_BANDGAP_SUPPLY_INIT(node_id)							\
@@ -1147,6 +1231,7 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		.sample_max = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ideal_sample_range),		\
 			(DT_PROP_BY_IDX(DT_DRV_INST(n), ideal_sample_range, 1)), (UINT32_MAX)),	\
 			OPAMP_GAINS_INIT(n)							\
+		.stop_in_low_power = DT_INST_PROP(n, stop_in_low_power_mode),			\
 		DMA_INIT(n)									\
 	};											\
 												\
@@ -1156,9 +1241,9 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),				\
 	};											\
 												\
-	LPADC_PM_DEVICE_DEFINE									\
+	LPADC_PM_DEVICE_DEFINE(n)								\
 												\
-	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, LPADC_PM_DEVICE_GET, &mcux_lpadc_data_##n,	\
+	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, LPADC_PM_DEVICE_GET(n), &mcux_lpadc_data_##n,	\
 			      &mcux_lpadc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	\
 			      &mcux_lpadc_driver_api);						\
 												\
