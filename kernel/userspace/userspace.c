@@ -560,6 +560,11 @@ void k_object_free(void *obj)
 	}
 
 	if (dyn != NULL) {
+#ifdef CONFIG_OBJ_CORE
+		if (dyn->kobj.type != K_OBJ_THREAD_STACK_ELEMENT) {
+			k_obj_core_evict_range(obj, obj_size_get(dyn->kobj.type));
+		}
+#endif /* CONFIG_OBJ_CORE */
 #ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
 		/* We may have nudged the pointer to point to the cached area
 		 * in dynamic_object_create() when we first created the thread

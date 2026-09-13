@@ -89,6 +89,7 @@ int z_stack_cleanup(struct k_stack *stack, __maybe_unused bool locked)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, cleanup, stack);
 
 	int ret = 0;
+	bool freed = false;
 	k_spinlock_key_t key = k_spin_lock(&stack->lock);
 
 	CHECKIF(locked && (z_waitq_head_locked(&stack->wait_q) != NULL)) {
@@ -105,10 +106,17 @@ int z_stack_cleanup(struct k_stack *stack, __maybe_unused bool locked)
 		k_free(stack->base);
 		stack->base = NULL;
 		stack->flags &= ~K_STACK_FLAG_ALLOC;
+		freed = true;
 	}
 
 out:
 	k_spin_unlock(&stack->lock, key);
+
+#ifdef CONFIG_OBJ_CORE_STACK
+	if (freed) {
+		k_obj_core_unlink(K_OBJ_CORE(stack));
+	}
+#endif /* CONFIG_OBJ_CORE_STACK */
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, ret);
 
 	return ret;
