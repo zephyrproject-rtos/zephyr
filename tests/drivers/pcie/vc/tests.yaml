@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.pcie.vc:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - drivers
+      - pcie
