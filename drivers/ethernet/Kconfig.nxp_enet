@@ -44,16 +44,16 @@ config ETH_NXP_ENET_HW_ACCELERATION
 config ETH_NXP_ENET_RX_BUFFERS
 	int "Number of RX buffers for ethernet driver"
 	default 6
-	range 6 16
+	range 6 128
 	help
-	  Set the number of RX buffers provided to the NXP ENET driver.
+	  Depth of the receive DMA buffer-descriptor ring.
 
 config ETH_NXP_ENET_TX_BUFFERS
 	int "Number of TX buffers for ethernet driver"
 	default 1
-	range 1 16
+	range 1 128
 	help
-	  Set the number of TX buffers provided to the NXP ENET driver.
+	  Depth of the transmit DMA buffer-descriptor ring.
 
 config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
 	int "NXP ENET RX thread stack size"
@@ -62,11 +62,64 @@ config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
 	  ENET RX thread stack size in bytes.
 
 config ETH_NXP_ENET_RX_THREAD_PRIORITY
-	int "NXP ENET driver RX cooperative thread priority"
+	int "NXP ENET driver RX thread priority"
 	default 2
 	help
-	  ENET MAC Driver handles RX in cooperative workqueue thread.
-	  This options sets the priority of that thread.
+	  Priority level of the dedicated ENET RX workqueue thread.
+
+config ETH_NXP_ENET_RX_THREAD_PREEMPTIVE
+	bool "Run the NXP ENET RX drain thread at a preemptible priority"
+	help
+	  Run the RX drain thread at a preemptible priority instead of the
+	  default cooperative one.
+
+config ETH_NXP_ENET_RX_INT_COALESCE
+	bool "ENET hardware RX/TX interrupt coalescing"
+	help
+	  Program the ENET RXIC/TXIC registers so the MAC raises an interrupt
+	  only after a number of frames accumulate or a hardware timer expires,
+	  instead of once per frame.
+
+if ETH_NXP_ENET_RX_INT_COALESCE
+
+config ETH_NXP_ENET_RX_COALESCE_FRAMES
+	int "RX interrupt coalescing frame-count threshold"
+	default 8
+	range 1 255
+	help
+	  Number of received frames the MAC accumulates before raising a
+	  receive interrupt (RXIC ICFT, ring 0). Higher values mean fewer
+	  interrupts but more latency; ensure the ring is deep enough for this
+	  many in-flight frames.
+
+config ETH_NXP_ENET_RX_COALESCE_TICKS
+	int "RX interrupt coalescing timer threshold"
+	default 100
+	range 0 65535
+	help
+	  Maximum time the MAC waits (coalescing timer units, 64 bus-clock
+	  cycles each) before raising a receive interrupt if the frame-count
+	  threshold is not reached. Bounds worst-case latency. 0 disables it.
+
+config ETH_NXP_ENET_TX_COALESCE_FRAMES
+	int "TX interrupt coalescing frame-count threshold"
+	default 1
+	range 1 255
+	help
+	  Number of transmitted frames the MAC accumulates before raising a
+	  transmit interrupt (TXIC ICFT, ring 0). Keep at 1 unless the reclaim
+	  path tolerates batching.
+
+config ETH_NXP_ENET_TX_COALESCE_TICKS
+	int "TX interrupt coalescing timer threshold"
+	default 0
+	range 0 65535
+	help
+	  Maximum time the MAC waits (coalescing timer units, 64 bus-clock
+	  cycles each) before raising a transmit interrupt if the TX frame-count
+	  threshold is not reached. 0 disables it.
+
+endif # ETH_NXP_ENET_RX_INT_COALESCE
 
 config ETH_NXP_ENET_RMII_EXT_CLK
 	bool "RMII clock from external sources"

@@ -116,6 +116,18 @@ struct nxp_enet_mac_data {
 static K_THREAD_STACK_DEFINE(enet_rx_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
 static struct k_work_q rx_work_queue;
 
+/* Priority of the dedicated ENET RX drain thread. Cooperative by default;
+ * on a sustained 1G receive path that can be delayed long enough for the RX
+ * DMA to overrun its descriptors (kStatus_ENET_RxFrameError). Selecting
+ * ETH_NXP_ENET_RX_THREAD_PREEMPTIVE runs it preemptibly so it recycles
+ * descriptors promptly.
+ */
+#if defined(CONFIG_ETH_NXP_ENET_RX_THREAD_PREEMPTIVE)
+#define ENET_RX_THREAD_PRIO K_PRIO_PREEMPT(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY)
+#else
+#define ENET_RX_THREAD_PRIO K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY)
+#endif
+
 static int rx_queue_init(void)
 {
 	struct k_work_queue_config cfg = {.name = "ENET_RX"};
@@ -123,7 +135,7 @@ static int rx_queue_init(void)
 	k_work_queue_init(&rx_work_queue);
 	k_work_queue_start(&rx_work_queue, enet_rx_stack,
 			   K_THREAD_STACK_SIZEOF(enet_rx_stack),
-			   K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY),
+			   ENET_RX_THREAD_PRIO,
 			   &cfg);
 
 	return 0;
@@ -716,6 +728,30 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 	enet_config.callback = eth_callback;
 	enet_config.userData = (void *)dev;
+
+#if defined(CONFIG_ETH_NXP_ENET_RX_INT_COALESCE) &&					\
+	defined(FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE) &&				\
+	FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE
+	/* Program hardware RX/TX interrupt coalescing so the MAC raises an
+	 * interrupt only after a batch of frames (or a hardware timer) rather
+	 * than once per frame. This amortizes the fixed per-interrupt and
+	 * RX-thread wake cost across many standard frames on the 1G path. Ring 0
+	 * only; the other rings (AVB-classified) are left uncoalesced.
+	 */
+	{
+		static enet_intcoalesce_config_t intcoalesce_cfg;
+
+		intcoalesce_cfg.rxCoalesceFrameCount[0] =
+			CONFIG_ETH_NXP_ENET_RX_COALESCE_FRAMES;
+		intcoalesce_cfg.rxCoalesceTimeCount[0] =
+			CONFIG_ETH_NXP_ENET_RX_COALESCE_TICKS;
+		intcoalesce_cfg.txCoalesceFrameCount[0] =
+			CONFIG_ETH_NXP_ENET_TX_COALESCE_FRAMES;
+		intcoalesce_cfg.txCoalesceTimeCount[0] =
+			CONFIG_ETH_NXP_ENET_TX_COALESCE_TICKS;
+		enet_config.intCoalesceCfg = &intcoalesce_cfg;
+	}
+#endif
 
 	ENET_Up(data->base,
 		  &data->enet_handle,
