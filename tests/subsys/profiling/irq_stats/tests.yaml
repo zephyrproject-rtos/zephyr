@@ -1,0 +1,14 @@
+common:
+  tags:
+    - profiling
+    - interrupt
+tests:
+  profiling.irq_stats:
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_riscv32
+      - qemu_riscv64
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_riscv32
