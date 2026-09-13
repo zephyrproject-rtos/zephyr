@@ -797,7 +797,9 @@ static __bflb_critfunc void clock_control_bl616cl_init_root_as_crystal(const str
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_XTAL);
 }
 
-static __ramfunc void clock_control_bl616cl_update_flash_clk(const struct device *dev)
+static __ramfunc void clock_control_bl616cl_update_flash_clk(const struct device *dev,
+							     const enum bl616cl_clkid source,
+							     bool final)
 {
 	struct clock_control_bl616cl_data *data = dev->data;
 	volatile uint32_t tmp;
@@ -811,11 +813,11 @@ static __ramfunc void clock_control_bl616cl_update_flash_clk(const struct device
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_SEL_UMSK;
 	tmp &= GLB_SF_CLK_SEL2_UMSK;
-	if (data->flashclk.source == bl616cl_clkid_clk_pll) {
+	if (source == bl616cl_clkid_clk_pll) {
 		clk = clock_control_bl616cl_get_hclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
-	} else if (data->flashclk.source == bl616cl_clkid_clk_crystal) {
+	} else if (source == bl616cl_clkid_clk_crystal) {
 		clk = clock_control_bl616cl_get_xclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
@@ -828,12 +830,12 @@ static __ramfunc void clock_control_bl616cl_update_flash_clk(const struct device
 	/* If flash controller will manage flash, set to standard speed
 	 * and let it set the divider.
 	 */
-#if defined(CONFIG_SOC_FLASH_BFLB)
-	clk = DIV_ROUND_CLOSEST(clk, BL616CL_TARGET_BASIC_CLOCK);
-	tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
-#else
-	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
-#endif
+	if (IS_ENABLED(CONFIG_SOC_FLASH_BFLB) || !final) {
+		clk = DIV_ROUND_CLOSEST(clk, BL616CL_TARGET_BASIC_CLOCK);
+		tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
+	} else {
+		tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
+	}
 
 	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
@@ -1002,7 +1004,7 @@ static __bflb_critfunc int clock_control_bl616cl_update_clocks(const struct devi
 
 	clock_control_bl616cl_set_crystal_type(6U);
 
-	clock_control_bl616cl_update_flash_clk(dev);
+	clock_control_bl616cl_update_flash_clk(dev, bl616cl_clkid_clk_rc32m, false);
 
 	ret = clock_control_bl616cl_update_f32k(dev);
 	if (ret < 0) {
@@ -1073,6 +1075,8 @@ static __bflb_critfunc int clock_control_bl616cl_update_clocks(const struct devi
 	} else {
 		/* Root clock already setup as RC32M */
 	}
+
+	clock_control_bl616cl_update_flash_clk(dev, data->flashclk.source, true);
 
 	ret = clock_control_bl616cl_clock_trim_32M();
 	if (ret < 0) {
