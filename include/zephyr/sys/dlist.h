@@ -344,6 +344,21 @@ static inline sys_dnode_t *sys_dlist_peek_next_no_check(const sys_dlist_t *list,
 /**
  * @brief get a reference to the next item in the list
  *
+ * The node must be known not to be the tail of the list.
+ *
+ * @param node the node from which to get the next element in the list
+ *
+ * @return a pointer to the next element
+ */
+
+static inline sys_dnode_t *sys_dlist_peek_next_not_tail(const sys_dnode_t *node)
+{
+	return node->next;
+}
+
+/**
+ * @brief get a reference to the next item in the list
+ *
  * @param list the doubly-linked list to operate on
  * @param node the node from which to get the next element in the list
  *
