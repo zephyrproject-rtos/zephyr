@@ -112,6 +112,7 @@ int z_msgq_cleanup(struct k_msgq *msgq, __maybe_unused bool locked)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, cleanup, msgq);
 
 	int ret = 0;
+	bool freed = false;
 	k_spinlock_key_t key = k_spin_lock(&msgq->lock);
 
 	CHECKIF(locked && (z_waitq_head_locked(&msgq->wait_q) != NULL)) {
@@ -127,10 +128,18 @@ int z_msgq_cleanup(struct k_msgq *msgq, __maybe_unused bool locked)
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
 		k_free(msgq->buffer_start);
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
+		freed = true;
 	}
 
 out:
 	k_spin_unlock(&msgq->lock, key);
+
+#ifdef CONFIG_OBJ_CORE_MSGQ
+	if (freed) {
+		k_obj_core_unlink(K_OBJ_CORE(msgq));
+	}
+#endif /* CONFIG_OBJ_CORE_MSGQ */
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
 	return ret;
 }
