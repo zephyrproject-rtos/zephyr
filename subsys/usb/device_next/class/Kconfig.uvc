@@ -11,6 +11,11 @@ config USBD_VIDEO_CLASS
 
 if USBD_VIDEO_CLASS
 
+config USBD_VIDEO_ISO
+	bool "USB Video Class ISO EP Implementation"
+	help
+	  This allows the USB Video class to use an ISO Endpoint Implementation
+
 config USBD_VIDEO_MAX_FORMATS
 	int "Max number of format descriptors"
 	range 1 254
