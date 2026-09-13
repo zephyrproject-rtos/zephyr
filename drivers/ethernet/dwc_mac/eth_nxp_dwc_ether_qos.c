@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/irq.h>
 #include <fsl_device_registers.h>
@@ -59,6 +60,16 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
+/*
+ * The PHY interface selection is sampled when the MAC leaves reset, so the MAC
+ * has to be held there while dwmac_bus_init() sets it. MCXE31x is the one SoC
+ * without a reset line, where gating the MAC clocks takes that role instead.
+ */
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, resets) || IS_ENABLED(CONFIG_SOC_SERIES_MCXE31X),
+	     "Ethernet node is missing the resets property");
+
+static const struct reset_dt_spec eth_reset = RESET_DT_SPEC_INST_GET_OR(0, {0});
+
 /* The mc_cgm clock cell is itself named "name", hence the repetition. */
 #define NXP_ETH_CLOCK_SUBSYS(clk)                                                                 \
 	(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, clk, name)
@@ -76,6 +87,36 @@ int dwmac_bus_init(const struct device *dev)
 {
 	const struct dwmac_config *cfg = dev->config;
 	int ret;
+
+	/*
+	 * Hold the MAC in reset while the pads, the PHY interface and the
+	 * clocks are set up: the interface selection is sampled by the MAC
+	 * when it leaves reset.
+	 */
+	if (eth_reset.dev != NULL) {
+		ret = reset_line_assert_dt(&eth_reset);
+		if (ret != 0) {
+			LOG_ERR("Could not assert ethernet reset (%d)", ret);
+			return ret;
+		}
+	}
+
+#if defined(CONFIG_SOC_SERIES_MCXE31X)
+	/*
+	 * MCXE31x has no reset line for the MAC: its MC_ME block clock is the
+	 * only gate, and the MAC leaves reset when that clock is turned on.
+	 * Gate the clocks off here in case they were left on, so that the
+	 * interface selection below is in place before the loop turns them on
+	 * again.
+	 */
+	for (size_t n = 0; n < ARRAY_SIZE(eth0_clocks); n++) {
+		ret = clock_control_off(cfg->clock, eth0_clocks[n]);
+		if (ret != 0) {
+			LOG_ERR("Failed to disable ethernet clock #%zu (%d)", n, ret);
+			return ret;
+		}
+	}
+#endif
 
 	/* Mux the pads first: the clocks below are derived from what they carry. */
 	ret = pinctrl_apply_state(eth0_pcfg, PINCTRL_STATE_DEFAULT);
@@ -107,6 +148,14 @@ int dwmac_bus_init(const struct device *dev)
 		ret = clock_control_on(cfg->clock, eth0_clocks[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to enable ethernet clock #%zu (%d)", n, ret);
+			return ret;
+		}
+	}
+
+	if (eth_reset.dev != NULL) {
+		ret = reset_line_deassert_dt(&eth_reset);
+		if (ret != 0) {
+			LOG_ERR("Could not deassert ethernet reset (%d)", ret);
 			return ret;
 		}
 	}
