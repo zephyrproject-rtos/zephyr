@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "xenvm_xenvm_gicv3.dts"
+
+&{/cpus} {
+	cpu@1 {
+		device_type = "cpu";
+		compatible = "arm,armv8";
+		enable-method = "psci";
+		reg = <0x01>;
+	};
+};

@@ -45,6 +45,7 @@ following board configuration variants:
 
 - ``xenvm`` selects GICv2
 - ``xenvm//gicv3`` selects GICv3
+- ``xenvm//gicv3_smp`` selects GICv3 and two vCPUs
 
 CPU Core type
 -------------
@@ -76,6 +77,23 @@ Now only following features are supported:
 * Xen early console_io interface (mainly for debug purposes - requires debug version of Xen)
 * Xen grant tables (granting access for own grants and map/unmap foreign grants)
 
+Xen event channels on SMP guests
+================================
+
+The ``xenvm//gicv3_smp`` variant builds a two-vCPU Xen guest. Xen
+event-channel delivery is per vCPU: Xen raises a per-CPU interrupt and records
+pending work in the ``vcpu_info`` block that belongs to the vCPU receiving the
+upcall. Zephyr therefore registers separate ``vcpu_info`` storage for
+secondary vCPUs and enables the event-channel interrupt on each secondary CPU
+during CPU bring-up.
+
+This support covers event-channel delivery to vCPUs that are already online
+during normal SMP guest operation. Reconfiguring an active channel should be
+done by masking the port, draining or clearing pending state, updating the Xen
+binding, and unmasking it again. CPU hotplug and lifetime-safe teardown of
+callback private data while another CPU may already be running the callback are
+outside the current event-channel API contract.
+
 Building and Running
 ********************
 
@@ -94,6 +112,12 @@ guest, for example, with the :zephyr:code-sample:`synchronization` sample:
 
    $ west build -b xenvm//gicv3 samples/synchronization
 
+- for a two-vCPU SMP guest on a GICv3 platform:
+
+.. code-block::
+
+   $ west build -b xenvm//gicv3_smp samples/synchronization
+
 This will build an image with the synchronization sample app. Next, you need to
 create guest configuration file :code:`zephyr.conf`. There is example:
 
@@ -106,8 +130,10 @@ create guest configuration file :code:`zephyr.conf`. There is example:
    gic_version="v2"
    on_crash="preserve"
 
-When using ``xenvm//gicv3`` configuration, you need to remove the ``gic_version``
-parameter or set it to ``"v3"``.
+When using ``xenvm//gicv3`` or ``xenvm//gicv3_smp`` configuration, you need to
+remove the ``gic_version`` parameter or set it to ``"v3"``.
+
+When using ``xenvm//gicv3_smp``, set :code:`vcpus=2` in :code:`zephyr.conf`.
 
 You need to upload both :code:`zephyr.bin` and :code:`zephyr.conf` to your Dom0
 and then you can run Zephyr by issuing
