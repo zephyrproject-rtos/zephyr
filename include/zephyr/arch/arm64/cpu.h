@@ -30,6 +30,9 @@
 #define SPSR_DAIF_SHIFT		(6)
 #define SPSR_DAIF_MASK		(0xf << SPSR_DAIF_SHIFT)
 
+/* PSTATE/SPSR software step bit (used with MDSCR_EL1.SS) */
+#define SPSR_SS_BIT		BIT(21)
+
 #define SPSR_MODE_EL0T		(0x0)
 #define SPSR_MODE_EL1T		(0x4)
 #define SPSR_MODE_EL1H		(0x5)
@@ -254,6 +257,23 @@
 #define CORTEX_A72_L2ACTLR_DISABLE_ACE_SH_OR_CHI_BIT	BIT(6)
 
 #endif /* CONFIG_CPU_CORTEX_A72 */
+
+/* Monitor Debug System Control Register (MDSCR_EL1) */
+#define MDSCR_EL1_SS_BIT	BIT(0)	/* Software step enable */
+#define MDSCR_EL1_KDE_BIT	BIT(13)	/* Local (kernel) debug enable */
+#define MDSCR_EL1_MDE_BIT	BIT(15)	/* Monitor debug enable */
+
+/* Debug breakpoint control (DBGBCR_ELn) */
+#define DBGBCR_E_BIT		BIT(0)		/* Enable */
+#define DBGBCR_PMC_EL1_EL0	(0x3 << 1)	/* EL1 & EL0 */
+#define DBGBCR_BAS_A64		(0xF << 5)	/* Match A64 instruction */
+
+/* OS Lock Access Register - write 0 to clear the OS lock */
+#define OSLAR_EL1		S3_0_C1_C0_4
+
+/* ID_AA64DFR0_EL1 breakpoint pair count */
+#define ID_AA64DFR0_BRPS_SHIFT	12
+#define ID_AA64DFR0_BRPS_MASK	0xf
 
 #define L1_CACHE_SHIFT		(6)
 #define L1_CACHE_BYTES		BIT(L1_CACHE_SHIFT)
