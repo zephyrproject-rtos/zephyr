@@ -19,7 +19,23 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_mchp_xec, CONFIG_DMA_LOG_LEVEL);
 
-#define XEC_DMA_MAX_CHANS			CONFIG_DMA_MCHP_XEC_DMAC_MAX_CHANNELS
+#define XEC_DMA_MAX_CHANS CONFIG_DMA_MCHP_XEC_DMAC_MAX_CHANNELS
+
+/* Hardware has no alignment restriction on buffer addresses
+ * other than run time based on byte count.
+ */
+#define XEC_DMA_BUF_ADDR_ALIGNMENT 1U
+#define XEC_DMA_BUF_SIZE_ALIGNMENT 1U
+#define XEC_DMA_COPY_ALIGNMENT     1U
+
+/* Hardware programs one block at a time. The driver caches up to
+ * CONFIG_DMA_MCHP_XEC_MAX_BLOCKS_PER_CHAN block descriptors
+ * per channel from dma_config()'s linked list and chains them in the
+ * channel ISR (ABORT, rewrite MSA/MEA/DEVA + INC bits, set RUN). When
+ * the Kconfig knob is 1 (the historical default) the driver behaves
+ * exactly as the single-block implementation did.
+ */
+#define XEC_DMA_MAX_BLOCK_COUNT CONFIG_DMA_MCHP_XEC_MAX_BLOCKS_PER_CHAN
 
 #define XEC_DMA_ABORT_WAIT_LOOPS		32
 
@@ -92,44 +108,59 @@ LOG_MODULE_REGISTER(dma_mchp_xec, CONFIG_DMA_LOG_LEVEL);
 #define XEC_DMA_CHAN_CTRL		0x10u
 #define XEC_DMA_CHAN_ISTATUS		0x14u
 #define XEC_DMA_CHAN_IENABLE		0x18u
+#define XEC_DMA_CHAN_ISTATUS_MSK        0x0fu
 #define XEC_DMA_CHAN_FSM		0x1cu
 
 struct dma_xec_irq_info {
 	uint8_t gid;	/* GIRQ id [8, 26] */
-	uint8_t gpos;	/* bit position in GIRQ [0, 31] */
-	uint8_t anid;	/* aggregated external NVIC input */
-	uint8_t dnid;	/* direct NVIC input */
+	uint8_t gpos;   /* bit position in GIRQ [0, 31] */
 };
 
 struct dma_xec_config {
 	mm_reg_t regs;
-	uint8_t dma_channels;
 	uint8_t dma_requests;
 	uint16_t enc_pcr;
 	int irq_info_size;
 	const struct dma_xec_irq_info *irq_info_list;
-	void (*irq_connect)(void);
+	void (*irq_connect)(const struct device *dev);
+};
+
+/* Per-block descriptor cached by the driver at dma_config time. The
+ * channel CR fields that are common to every block in a chain --
+ * direction (M2D), HFC peer/disable, transfer unit -- live in
+ * xec_dchan::ctrl_base; only the address-increment bits vary per block
+ * (different blocks may legitimately come from different sources or go
+ * to different destinations with different adjust modes).
+ */
+struct dma_xec_block {
+	uint32_t mstart;
+	uint32_t dstart;
+	uint32_t nbytes;
+	uint32_t inc_bits;
 };
 
 struct dma_xec_channel {
 	uint32_t control;
-	uint32_t mstart;
-	uint32_t mend;
-	uint32_t dstart;
-	uint32_t isr_hw_status;
-	uint32_t block_count;
-	uint8_t unit_size;
-	uint8_t dir;
+	struct dma_xec_block blocks[XEC_DMA_MAX_BLOCK_COUNT];
+	volatile uint32_t isr_hw_status;
+	uint8_t num_blocks;
+	uint8_t cur_block;
+	bool cyclic; /* on last-block DONE wrap to block 0 */
 	uint8_t flags;
-	uint8_t rsvd[1];
-	struct dma_block_config *head;
-	struct dma_block_config *curr;
 	dma_callback_t cb;
 	void *user_data;
-	uint32_t total_req_xfr_len;
-	uint32_t total_curr_xfr_len;
 };
 
+/* DMA callback flags from struct dma_config.
+ * Default behavior is to invoke the user callback once when the entire
+ * transfer list completes, and once on any error along the way.
+ * The caller can request changes in callback behavior:
+ *  - Disable error callback (error_callback_dis).
+ *  - Fire a callback at every block boundary instead of only after
+ *    the last block (complete_callback_en). The block-mid-list
+ *    "halfway" callback flag in dma_config is not supported -- this
+ *    HW has no halfway-through-list interrupt.
+ */
 #define DMA_XEC_CHAN_FLAGS_CB_EOB_POS		0
 #define DMA_XEC_CHAN_FLAGS_CB_ERR_DIS_POS	1
 
@@ -175,16 +206,75 @@ static int is_data_aligned(uint32_t src, uint32_t dest, uint32_t unitsz)
 	return 1;
 }
 
-static void xec_dma_chan_clr(mm_reg_t chregs, const struct dma_xec_irq_info *info)
+/* Translate one dma_block_config into the cached per-block descriptor.
+ * The channel-wide CR bits (direction, HFC peer, unit size, DIS_HFC) are
+ * already in ctrl_base; only the per-block INC bits land in blk->inc_bits.
+ */
+static void dma_xec_translate_block(struct dma_xec_block *out, const struct dma_block_config *blk,
+				    uint32_t direction)
 {
-	sys_write32(0, chregs + XEC_DMA_CHAN_ACTV);
+	uint32_t inc = 0;
+
+	out->nbytes = blk->block_size;
+
+	if (direction == PERIPHERAL_TO_MEMORY) {
+		out->mstart = blk->dest_address;
+		out->dstart = blk->source_address;
+		if (blk->source_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			inc |= BIT(XEC_DMA_CHAN_CTRL_INCR_DEV_POS);
+		}
+		if (blk->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			inc |= BIT(XEC_DMA_CHAN_CTRL_INCR_MEM_POS);
+		}
+	} else {
+		out->mstart = blk->source_address;
+		out->dstart = blk->dest_address;
+		if (blk->source_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			inc |= BIT(XEC_DMA_CHAN_CTRL_INCR_MEM_POS);
+		}
+		if (blk->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			inc |= BIT(XEC_DMA_CHAN_CTRL_INCR_DEV_POS);
+		}
+	}
+
+	out->inc_bits = inc;
+}
+
+static bool xec_dma_chan_is_busy(mm_reg_t chregs)
+{
+	uint32_t ctrl = sys_read32(chregs + XEC_DMA_CHAN_CTRL);
+
+	if ((ctrl & (BIT(XEC_DMA_CHAN_CTRL_HWFL_RUN_POS) | BIT(XEC_DMA_CHAN_CTRL_SWFL_GO_POS))) &&
+	    (ctrl & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS))) {
+		return true;
+	}
+
+	return false;
+}
+
+static void dma_xec_chan_reset(const struct device *dev, uint32_t chan)
+{
+	const struct dma_xec_config *devcfg = dev->config;
+	int wait_loops = XEC_DMA_ABORT_WAIT_LOOPS;
+
+	mm_reg_t chregs = xec_chan_regs(devcfg->regs, chan);
+	const struct dma_xec_irq_info *info = xec_chan_irq_info(devcfg, chan);
+
+	sys_set_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_ABORT_POS);
+	/* HW stops on next unit boundary (1, 2, or 4 bytes) */
+	while ((sys_test_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_BUSY_POS) != 0) &&
+	       (wait_loops-- > 0)) {
+	}
+
+	sys_clear_bit(chregs + XEC_DMA_CHAN_ACTV, XEC_DMA_CHAN_ACTV_EN_POS);
 	sys_write32(0, chregs + XEC_DMA_CHAN_CTRL);
-	sys_write32(0, chregs + XEC_DMA_CHAN_MEM_ADDR);
+	/* mem end address before mem start address to ensure msa >= mea */
 	sys_write32(0, chregs + XEC_DMA_CHAN_MEM_ADDR_END);
+	sys_write32(0, chregs + XEC_DMA_CHAN_MEM_ADDR);
 	sys_write32(0, chregs + XEC_DMA_CHAN_DEV_ADDR);
-	sys_write32(0, chregs + XEC_DMA_CHAN_CTRL);
 	sys_write32(0, chregs + XEC_DMA_CHAN_IENABLE);
-	sys_write32(0xffu, chregs + XEC_DMA_CHAN_ISTATUS);
+	sys_write32(XEC_DMA_CHAN_ISTATUS_MSK, chregs + XEC_DMA_CHAN_ISTATUS);
+
 	soc_ecia_girq_status_clear(info->gid, info->gpos);
 }
 
@@ -194,6 +284,11 @@ static int is_dma_config_valid(const struct device *dev, struct dma_config *conf
 
 	if (config->dma_slot >= (uint32_t)devcfg->dma_requests) {
 		LOG_ERR("XEC DMA config dma slot > exceeds number of request lines");
+		return 0;
+	}
+
+	if (config->half_complete_callback_en != 0) {
+		LOG_ERR("XEC DMA does not support half-complete callback");
 		return 0;
 	}
 
@@ -209,13 +304,19 @@ static int is_dma_config_valid(const struct device *dev, struct dma_config *conf
 		return 0;
 	}
 
-	if (!is_dma_data_size_valid(config->source_data_size)) {
+	if (config->source_handshake != config->dest_handshake) {
+		LOG_ERR("Source & Dest. handshake not match");
+		return 0;
+	}
+
+	if (!is_dma_data_size_valid(config->source_data_size) ||
+	    !is_dma_data_size_valid(config->dest_data_size)) {
 		LOG_ERR("XEC DMA requires xfr unit size of 1, 2 or 4 bytes");
 		return 0;
 	}
 
-	if (config->block_count != 1) {
-		LOG_ERR("XEC DMA block count != 1");
+	if ((config->block_count == 0) || (config->block_count > XEC_DMA_MAX_BLOCK_COUNT)) {
+		LOG_ERR("XEC DMA block count out of range (1..%u)", XEC_DMA_MAX_BLOCK_COUNT);
 		return 0;
 	}
 
@@ -230,9 +331,12 @@ static int check_blocks(struct dma_xec_channel *chdata, struct dma_block_config 
 		return -EINVAL;
 	}
 
-	chdata->total_req_xfr_len = 0;
-
 	for (uint32_t i = 0; i < block_count; i++) {
+		if (!block) {
+			LOG_ERR("XEC DMA block chain shorter than block_count");
+			return -EINVAL;
+		}
+
 		if ((block->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) ||
 		    (block->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT)) {
 			LOG_ERR("XEC DMA HW does not support address decrement. Block index %u", i);
@@ -244,10 +348,41 @@ static int check_blocks(struct dma_xec_channel *chdata, struct dma_block_config 
 			return -EINVAL;
 		}
 
-		chdata->total_req_xfr_len += block->block_size;
+		if (block->block_size == 0u) {
+			LOG_ERR("XEC DMA block at index %u has zero size", i);
+			return -EINVAL;
+		}
+
+		block = block->next_block;
+	}
+
+	if (block != NULL) {
+		LOG_ERR("XEC DMA block chain longer than block_count");
+		return -EINVAL;
 	}
 
 	return 0;
+}
+
+/* Reset channel and load mem start address, mem end address, device address,
+ * and control register from the cached block at index `idx`. Does not enable
+ * or program interrupt enables. Used at dma_xec_start time for the first
+ * block of a chain.
+ */
+static void dma_xec_load_chan(const struct device *dev, uint32_t channel, uint32_t idx)
+{
+	const struct dma_xec_config *const devcfg = dev->config;
+	struct dma_xec_data *const data = dev->data;
+	struct dma_xec_channel *chdata = &data->channels[channel];
+	struct dma_xec_block *blk = &chdata->blocks[idx];
+	mm_reg_t chregs = xec_chan_regs(devcfg->regs, channel);
+
+	dma_xec_chan_reset(dev, channel);
+
+	sys_write32(blk->mstart, chregs + XEC_DMA_CHAN_MEM_ADDR);
+	sys_write32(blk->mstart + blk->nbytes, chregs + XEC_DMA_CHAN_MEM_ADDR_END);
+	sys_write32(blk->dstart, chregs + XEC_DMA_CHAN_DEV_ADDR);
+	sys_write32(chdata->control | blk->inc_bits, chregs + XEC_DMA_CHAN_CTRL);
 }
 
 /*
@@ -262,7 +397,8 @@ static int check_blocks(struct dma_xec_channel *chdata, struct dma_block_config 
  * source_chaining_en - Chaining channel together
  * dest_chaining_en - HW does not support channel chaining.
  * linked_channel - HW does not support
- * cyclic - HW does not support cyclic buffer. Would have to emulate with SW.
+ * cyclic - HW does not support cyclic buffer natively; emulated in SW by
+ *	     wrapping back to block 0 from the ISR when block_count > 1.
  * source_data_size - unit size of source data. HW supports 1, 2, or 4 bytes
  * dest_data_size - unit size of dest data. HW requires same as source_data_size
  * source_burst_length - HW does not support
@@ -321,21 +457,20 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 	const struct dma_xec_config * const devcfg = dev->config;
 	mm_reg_t const regs = devcfg->regs;
 	struct dma_xec_data * const data = dev->data;
-	uint32_t ctrl, mstart, mend, dstart, unit_size;
+	uint32_t ctrl, unit_size;
 	int ret;
 
-	if (!config || (channel >= (uint32_t)devcfg->dma_channels)) {
+	if (!config || (channel >= XEC_DMA_MAX_CHANS)) {
 		return -EINVAL;
 	}
 
-	const struct dma_xec_irq_info *info = xec_chan_irq_info(devcfg, channel);
 	mm_reg_t const chregs = xec_chan_regs(regs, channel);
 	struct dma_xec_channel *chdata = &data->channels[channel];
 
-	chdata->total_req_xfr_len = 0;
-	chdata->total_curr_xfr_len = 0;
-
-	xec_dma_chan_clr(chregs, info);
+	/* Do not reconfigure a channel with a transfer in progress */
+	if (xec_dma_chan_is_busy(chregs)) {
+		return -EBUSY;
+	}
 
 	if (!is_dma_config_valid(dev, config)) {
 		return -EINVAL;
@@ -349,11 +484,6 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 	}
 
 	unit_size = config->source_data_size;
-	chdata->unit_size = unit_size;
-	chdata->head = block;
-	chdata->curr = block;
-	chdata->block_count = config->block_count;
-	chdata->dir = config->channel_direction;
 
 	chdata->flags = 0;
 	chdata->cb = config->dma_callback;
@@ -367,10 +497,11 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 		chdata->flags |= BIT(DMA_XEC_CHAN_FLAGS_CB_ERR_DIS_POS);
 	}
 
-	/* Use the control member of struct dma_xec_channel to
-	 * store control register value containing fields invariant
-	 * for all buffers: HW flow control device, direction, unit size, ...
-	 * derived from struct dma_config
+	/* Use the control member of struct dma_xec_channel to store control
+	 * register bits invariant for every block in this channel's chain:
+	 * HW flow control device, direction, unit size. Per-block address
+	 * increment bits live in each dma_xec_block entry instead, since
+	 * they can differ block to block.
 	 */
 	ctrl = XEC_DMA_CHAN_CTRL_UNIT_VAL(unit_size);
 	if (config->channel_direction == MEMORY_TO_MEMORY) {
@@ -378,55 +509,36 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 	} else {
 		ctrl |= XEC_DMA_HWFL_DEV_VAL(config->dma_slot);
 	}
-
-	if (config->channel_direction == PERIPHERAL_TO_MEMORY) {
-		mstart = block->dest_address;
-		mend = block->dest_address + block->block_size;
-		dstart = block->source_address;
-		if (block->source_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
-			ctrl |= BIT(XEC_DMA_CHAN_CTRL_INCR_DEV_POS);
-		}
-		if (block->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
-			ctrl |= BIT(XEC_DMA_CHAN_CTRL_INCR_MEM_POS);
-		}
-	} else {
-		mstart = block->source_address;
-		mend = block->source_address + block->block_size;
-		dstart = block->dest_address;
+	if (config->channel_direction != PERIPHERAL_TO_MEMORY) {
 		ctrl |= BIT(XEC_DMA_CHAN_CTRL_M2D_POS);
-		if (block->source_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
-			ctrl |= BIT(XEC_DMA_CHAN_CTRL_INCR_MEM_POS);
-		}
-		if (block->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
-			ctrl |= BIT(XEC_DMA_CHAN_CTRL_INCR_DEV_POS);
-		}
 	}
 
 	chdata->control = ctrl;
-	chdata->mstart = mstart;
-	chdata->mend = mend;
-	chdata->dstart = dstart;
+	chdata->num_blocks = config->block_count;
+	chdata->cur_block = 0;
+	chdata->cyclic = (config->cyclic != 0);
 
-	sys_clear_bit(chregs + XEC_DMA_CHAN_ACTV, XEC_DMA_CHAN_ACTV_EN_POS);
-	sys_write32(mstart, chregs + XEC_DMA_CHAN_MEM_ADDR);
-	sys_write32(mend, chregs + XEC_DMA_CHAN_MEM_ADDR_END);
-	sys_write32(dstart, chregs + XEC_DMA_CHAN_DEV_ADDR);
+	block = config->head_block;
+	for (uint32_t i = 0; i < config->block_count; i++) {
+		dma_xec_translate_block(&chdata->blocks[i], block, config->channel_direction);
+		block = block->next_block;
+	}
 
-	sys_write32(ctrl, chregs + XEC_DMA_CHAN_CTRL);
-	sys_write32(BIT(XEC_DMA_CHAN_IES_BERR_POS) | BIT(XEC_DMA_CHAN_IES_DONE_POS),
-		    chregs + XEC_DMA_CHAN_IENABLE);
-	sys_set_bit(chregs + XEC_DMA_CHAN_ACTV, XEC_DMA_CHAN_ACTV_EN_POS);
+	/* Load HW registers from blocks[0]; do not start. */
+	dma_xec_load_chan(dev, channel, 0);
 
 	return 0;
 }
 
-/* Update previously configured DMA channel with new data source address,
- * data destination address, and size in bytes.
- * src = source address for DMA transfer
- * dst = destination address for DMA transfer
- * size = size of DMA transfer. Assume this is in bytes.
- * We assume the caller will pass src, dst, and size that matches
- * the unit size from the previous configure call.
+/* Reload DMA channel and do not start. Callable from ISR context.
+ * Channel configuration: direction, flow control, etc. are not changed.
+ * We only reprogram the memory start, memory end, and device addresses.
+ *
+ * Reload collapses any multi-block chain previously configured on this
+ * channel into a single block (num_blocks = 1) at cur_block = 0. The
+ * caller's expectation for reload is "replace whatever block was about
+ * to run next", so chains beyond block 0 are not preserved -- callers
+ * needing chain-style behavior re-issue dma_config.
  */
 static int dma_xec_reload(const struct device *dev, uint32_t channel,
 			  uint32_t src, uint32_t dst, size_t size)
@@ -434,63 +546,83 @@ static int dma_xec_reload(const struct device *dev, uint32_t channel,
 	const struct dma_xec_config * const devcfg = dev->config;
 	struct dma_xec_data * const data = dev->data;
 	mm_reg_t const regs = devcfg->regs;
-	uint32_t ctrl;
 
-	if (channel >= (uint32_t)devcfg->dma_channels) {
+	if (channel >= XEC_DMA_MAX_CHANS) {
 		return -EINVAL;
 	}
 
 	struct dma_xec_channel *chdata = &data->channels[channel];
 	mm_reg_t chregs = xec_chan_regs(regs, channel);
 
-	if (sys_read32(chregs + XEC_DMA_CHAN_CTRL) & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS)) {
+	if (xec_dma_chan_is_busy(chregs)) {
 		return -EBUSY;
 	}
 
-	ctrl = sys_read32(chregs + XEC_DMA_CHAN_CTRL) & ~(BIT(XEC_DMA_CHAN_CTRL_HWFL_RUN_POS)
-				   | BIT(XEC_DMA_CHAN_CTRL_SWFL_GO_POS));
-	sys_write32(0, chregs + XEC_DMA_CHAN_IENABLE);
-	sys_write32(0, chregs + XEC_DMA_CHAN_CTRL);
-	sys_write32(0xffu, chregs + XEC_DMA_CHAN_ISTATUS);
+	dma_xec_chan_reset(dev, channel);
 
-	if (ctrl & BIT(XEC_DMA_CHAN_CTRL_M2D_POS)) { /* Memory to Device */
-		chdata->mstart = src;
-		chdata->dstart = dst;
+	/* reload always re-arms a single buffer; drop any block chain left
+	 * over from a prior multi-block configure() so the ISR's chaining
+	 * logic doesn't reference stale entries.
+	 */
+	chdata->num_blocks = 1;
+	chdata->cur_block = 0;
+	chdata->cyclic = false;
+
+	if ((chdata->control &
+	     (BIT(XEC_DMA_CHAN_CTRL_M2D_POS) | BIT(XEC_DMA_CHAN_CTRL_DIS_HWFL_POS)))) {
+		/* memory to memory or memory to peripheral */
+		chdata->blocks[0].mstart = src;
+		chdata->blocks[0].dstart = dst;
 	} else {
-		chdata->mstart = dst;
-		chdata->dstart = src;
+		chdata->blocks[0].mstart = dst;
+		chdata->blocks[0].dstart = src;
 	}
 
-	chdata->mend = chdata->mstart + size;
-	chdata->total_req_xfr_len = size;
-	chdata->total_curr_xfr_len = 0;
+	chdata->blocks[0].nbytes = size;
 
-	sys_write32(chdata->mstart, chregs + XEC_DMA_CHAN_MEM_ADDR);
-	sys_write32(chdata->mend, chregs + XEC_DMA_CHAN_MEM_ADDR_END);
-	sys_write32(chdata->dstart, chregs + XEC_DMA_CHAN_DEV_ADDR);
-	sys_write32(ctrl, chregs + XEC_DMA_CHAN_CTRL);
+	sys_write32(chdata->blocks[0].mstart, chregs + XEC_DMA_CHAN_MEM_ADDR);
+	sys_write32(chdata->blocks[0].mstart + size, chregs + XEC_DMA_CHAN_MEM_ADDR_END);
+	sys_write32(chdata->blocks[0].dstart, chregs + XEC_DMA_CHAN_DEV_ADDR);
+	sys_write32(chdata->control | chdata->blocks[0].inc_bits, chregs + XEC_DMA_CHAN_CTRL);
 
 	return 0;
 }
 
+/* API - start selected channel. Callable from ISR context.
+ * Clears channel status
+ * Enables channel Done and Bus Error interrupts
+ * Starts channel based on current channel control register HW flow control configuration.
+ * If HW flow control is Disabled set SW Flow control Go bit
+ * Else set HW flow control Run bit.
+ */
 static int dma_xec_start(const struct device *dev, uint32_t channel)
 {
 	const struct dma_xec_config * const devcfg = dev->config;
+	struct dma_xec_data *const data = dev->data;
 	mm_reg_t const regs = devcfg->regs;
 	uint32_t chan_ctrl = 0U;
 
-	if (channel >= (uint32_t)devcfg->dma_channels) {
+	if (channel >= XEC_DMA_MAX_CHANS) {
 		return -EINVAL;
 	}
 
 	mm_reg_t chregs = xec_chan_regs(regs, channel);
 
-	if (sys_read32(chregs + XEC_DMA_CHAN_CTRL) & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS)) {
+	if (xec_dma_chan_is_busy(chregs)) {
 		return -EBUSY;
 	}
 
-	sys_write32(0u, chregs + XEC_DMA_CHAN_IENABLE);
-	sys_write32(0xffu, chregs + XEC_DMA_CHAN_ISTATUS);
+	data->channels[channel].isr_hw_status = 0;
+	data->channels[channel].cur_block = 0;
+	/* HW registers were loaded from blocks[0] at dma_xec_configure or
+	 * dma_xec_reload time; nothing to do here besides arm IER+ACTIVATE
+	 * and trip the run bit.
+	 */
+
+	sys_set_bit(chregs + XEC_DMA_CHAN_ACTV, XEC_DMA_CHAN_ACTV_EN_POS);
+	sys_write32(XEC_DMA_CHAN_ISTATUS_MSK, chregs + XEC_DMA_CHAN_ISTATUS);
+	sys_write32(BIT(XEC_DMA_CHAN_IES_BERR_POS) | BIT(XEC_DMA_CHAN_IES_DONE_POS),
+		    chregs + XEC_DMA_CHAN_IENABLE);
 	chan_ctrl = sys_read32(chregs + XEC_DMA_CHAN_CTRL);
 
 	if (chan_ctrl & BIT(XEC_DMA_CHAN_CTRL_DIS_HWFL_POS)) {
@@ -499,65 +631,88 @@ static int dma_xec_start(const struct device *dev, uint32_t channel)
 		chan_ctrl |= BIT(XEC_DMA_CHAN_CTRL_HWFL_RUN_POS);
 	}
 
-	sys_write32(BIT(XEC_DMA_CHAN_IES_BERR_POS) | BIT(XEC_DMA_CHAN_IES_DONE_POS),
-		    chregs + XEC_DMA_CHAN_IENABLE);
 	sys_write32(chan_ctrl, chregs + XEC_DMA_CHAN_CTRL);
-	sys_set_bit(chregs + XEC_DMA_CHAN_ACTV, XEC_DMA_CHAN_ACTV_EN_POS);
 
 	return 0;
 }
 
+/* Stopping a channel while it is running requires using the CR.ABORT bit and spinning
+ * for the channel to clear read-only CR.BUSY status. Busy will clear when the current
+ * unit (byte, 16-bit half-word, or 32-bit word) completes. When not busy only clear the
+ * abort, HW flow control run, and SW flow control go bits. Do not clear other bits or
+ * registers.
+ */
 static int dma_xec_stop(const struct device *dev, uint32_t channel)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
-	mm_reg_t const regs = devcfg->regs;
+	const struct dma_xec_config *devcfg = dev->config;
 	int wait_loops = XEC_DMA_ABORT_WAIT_LOOPS;
 
-	if (channel >= (uint32_t)devcfg->dma_channels) {
+	if (channel >= XEC_DMA_MAX_CHANS) {
 		return -EINVAL;
 	}
 
-	mm_reg_t chregs = xec_chan_regs(regs, channel);
+	mm_reg_t chregs = xec_chan_regs(devcfg->regs, channel);
 
-	sys_write32(0, chregs + XEC_DMA_CHAN_IENABLE);
-
-	if (sys_read32(chregs + XEC_DMA_CHAN_CTRL) & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS)) {
-		sys_write32(0, chregs + XEC_DMA_CHAN_IENABLE);
-		sys_set_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_ABORT_POS);
-		/* HW stops on next unit boundary (1, 2, or 4 bytes) */
-
-		do {
-			if (!(sys_read32(chregs + XEC_DMA_CHAN_CTRL) &
-			      BIT(XEC_DMA_CHAN_CTRL_BUSY_POS))) {
-				break;
-			}
-		} while (wait_loops--);
+	sys_set_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_ABORT_POS);
+	/* HW stops on next unit boundary (1, 2, or 4 bytes) */
+	while ((sys_test_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_BUSY_POS) != 0) &&
+	       (wait_loops-- > 0)) {
 	}
 
-	sys_write32(sys_read32(chregs + XEC_DMA_CHAN_MEM_ADDR_END),
-		    chregs + XEC_DMA_CHAN_MEM_ADDR);
-	sys_write32(0, chregs + XEC_DMA_CHAN_FSM); /* delay */
-	sys_write32(0, chregs + XEC_DMA_CHAN_CTRL);
-	sys_write32(0xffu, chregs + XEC_DMA_CHAN_ISTATUS);
-	sys_write32(0, chregs + XEC_DMA_CHAN_ACTV);
+	sys_clear_bits(chregs + XEC_DMA_CHAN_CTRL,
+		       (BIT(XEC_DMA_CHAN_CTRL_HWFL_RUN_POS) | BIT(XEC_DMA_CHAN_CTRL_SWFL_GO_POS) |
+			BIT(XEC_DMA_CHAN_CTRL_ABORT_POS)));
 
 	return 0;
 }
 
-/* Get DMA transfer status.
- * HW supports: MEMORY_TO_MEMORY, MEMORY_TO_PERIPHERAL, or
- * PERIPHERAL_TO_MEMORY
- * current DMA runtime status structure
+/* Fast-path reprogram used by the channel ISR to chain to the next block
+ * without tearing down the channel state we need to keep (IER, ACTIVATE,
+ * GIRQ enables). The HW design team's guidance for issue SCG_MR_22NM-131
+ * is: a still-pending peripheral request can spontaneously start the new
+ * transfer the instant MSA<MEA becomes true after a reprogram, so we must
+ * use the channel ABORT bit to force HW IDLE before writing the new block.
+ * ABORT at natural DONE settles immediately; mid-transfer it waits at most
+ * one unit-size AHB transfer (~83 ns at 48 MHz worst case for a 4-byte
+ * unit), which is negligible compared to any peripheral byte time we care
+ * about. The DONE latch was W1C-cleared by the caller before we got here
+ * and will not re-latch until the new RUN write below takes effect.
+ */
+static void dma_xec_chan_reprogram(const struct device *dev, uint32_t channel, uint32_t idx)
+{
+	const struct dma_xec_config *const devcfg = dev->config;
+	struct dma_xec_data *const data = dev->data;
+	struct dma_xec_channel *chdata = &data->channels[channel];
+	struct dma_xec_block *blk = &chdata->blocks[idx];
+	mm_reg_t chregs = xec_chan_regs(devcfg->regs, channel);
+	uint32_t ctrl;
+
+	sys_set_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_ABORT_POS);
+	while (sys_test_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_BUSY_POS) != 0) {
+	}
+
+	sys_write32(blk->mstart, chregs + XEC_DMA_CHAN_MEM_ADDR);
+	sys_write32(blk->mstart + blk->nbytes, chregs + XEC_DMA_CHAN_MEM_ADDR_END);
+	sys_write32(blk->dstart, chregs + XEC_DMA_CHAN_DEV_ADDR);
+
+	ctrl = chdata->control | blk->inc_bits;
+	sys_write32(ctrl, chregs + XEC_DMA_CHAN_CTRL);
+
+	if (ctrl & BIT(XEC_DMA_CHAN_CTRL_DIS_HWFL_POS)) {
+		sys_set_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_SWFL_GO_POS);
+	} else {
+		sys_set_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_HWFL_RUN_POS);
+	}
+}
+
+/* Microchip XEC central DMA does not support cyclic transfers.
+ * We zero free, write_position, and read_position members.
+ * Hardware does not implement a transferred by count accumlator therefore
+ * we can't provide a total_copied value.
  *
- * busy				- is current DMA transfer busy or idle
- * dir				- DMA transfer direction
- * pending_length		- data length pending to be transferred in bytes
- *					or platform dependent.
- * We don't implement a circular buffer
- * free                         - free buffer space
- * write_position               - write position in a circular dma buffer
- * read_position                - read position in a circular dma buffer
- *
+ * pending_length is the live MEA-MSA of the currently running block plus
+ * the cached block_size of every block that has not started yet. After
+ * the final block's DONE this resolves to zero.
  */
 static int dma_xec_get_status(const struct device *dev, uint32_t channel,
 			      struct dma_status *status)
@@ -565,9 +720,8 @@ static int dma_xec_get_status(const struct device *dev, uint32_t channel,
 	const struct dma_xec_config * const devcfg = dev->config;
 	struct dma_xec_data * const data = dev->data;
 	mm_reg_t const regs = devcfg->regs;
-	uint32_t chan_ctrl = 0U;
 
-	if ((channel >= (uint32_t)devcfg->dma_channels) || (!status)) {
+	if ((channel >= XEC_DMA_MAX_CHANS) || (!status)) {
 		LOG_ERR("unsupported channel");
 		return -EINVAL;
 	}
@@ -575,57 +729,87 @@ static int dma_xec_get_status(const struct device *dev, uint32_t channel,
 	struct dma_xec_channel *chan_data = &data->channels[channel];
 	mm_reg_t chregs = xec_chan_regs(regs, channel);
 
-	chan_ctrl = sys_read32(chregs + XEC_DMA_CHAN_CTRL);
-
-	if (chan_ctrl & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS)) {
-		uint32_t rem = sys_read32(chregs + XEC_DMA_CHAN_MEM_ADDR_END) -
-			       sys_read32(chregs + XEC_DMA_CHAN_MEM_ADDR);
-
+	status->busy = false;
+	if (xec_dma_chan_is_busy(chregs)) {
 		status->busy = true;
-		/* number of bytes remaining in channel */
-		status->pending_length = chan_data->total_req_xfr_len - rem;
-	} else {
-		status->pending_length = chan_data->total_req_xfr_len -
-						chan_data->total_curr_xfr_len;
-		status->busy = false;
 	}
 
-	if (chan_ctrl & BIT(XEC_DMA_CHAN_CTRL_DIS_HWFL_POS)) {
+	status->free = 0;
+	status->write_position = 0;
+	status->read_position = 0;
+
+	uint32_t msa = sys_read32(chregs + XEC_DMA_CHAN_MEM_ADDR);
+	uint32_t mea = sys_read32(chregs + XEC_DMA_CHAN_MEM_ADDR_END);
+
+	status->pending_length = 0;
+	if (mea > msa) {
+		status->pending_length = mea - msa;
+	}
+
+	if (XEC_DMA_MAX_BLOCK_COUNT > 1) {
+		for (uint32_t i = chan_data->cur_block + 1U; i < chan_data->num_blocks; i++) {
+			status->pending_length += chan_data->blocks[i].nbytes;
+		}
+	}
+
+	if (chan_data->control & BIT(XEC_DMA_CHAN_CTRL_DIS_HWFL_POS)) {
 		status->dir = MEMORY_TO_MEMORY;
-	} else if (chan_ctrl & BIT(XEC_DMA_CHAN_CTRL_M2D_POS)) {
+	} else if (chan_data->control & BIT(XEC_DMA_CHAN_CTRL_M2D_POS)) {
 		status->dir = MEMORY_TO_PERIPHERAL;
 	} else {
 		status->dir = PERIPHERAL_TO_MEMORY;
 	}
 
-	status->total_copied = chan_data->total_curr_xfr_len;
+	status->total_copied = 0;
+
+	/* Report a latched bus error from the last transfer */
+	if (chan_data->isr_hw_status & BIT(XEC_DMA_CHAN_IES_BERR_POS)) {
+		return -EIO;
+	}
 
 	return 0;
 }
 
 int xec_dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
 {
-	if ((type == DMA_ATTR_MAX_BLOCK_COUNT) && value) {
-		*value = 1;
-		return 0;
+	ARG_UNUSED(dev);
+
+	if (value == NULL) {
+		return -EINVAL;
 	}
 
-	return -EINVAL;
+	switch (type) {
+	case DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT:
+		*value = XEC_DMA_BUF_ADDR_ALIGNMENT;
+		break;
+	case DMA_ATTR_BUFFER_SIZE_ALIGNMENT:
+		*value = XEC_DMA_BUF_SIZE_ALIGNMENT;
+		break;
+	case DMA_ATTR_COPY_ALIGNMENT:
+		*value = XEC_DMA_COPY_ALIGNMENT;
+		break;
+	case DMA_ATTR_MAX_BLOCK_COUNT:
+		*value = XEC_DMA_MAX_BLOCK_COUNT;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
-/* returns true if filter matched otherwise returns false */
 static bool dma_xec_chan_filter(const struct device *dev, int ch, void *filter_param)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
-	uint32_t filter = 0u;
-
-	if (!filter_param && devcfg->dma_channels) {
-		filter = GENMASK(devcfg->dma_channels-1u, 0);
-	} else {
-		filter = *((uint32_t *)filter_param);
+	if ((ch < 0) || (ch >= XEC_DMA_MAX_CHANS)) {
+		return false;
 	}
 
-	return (filter & BIT(ch));
+	if (filter_param == NULL) { /* allow any valid channel */
+		return true;
+	}
+
+	/* Hardware only supports normal channels */
+	return (*((enum dma_channel_filter *)filter_param) == DMA_CHANNEL_NORMAL);
 }
 
 /* API - HW does not stupport suspend/resume */
@@ -669,6 +853,30 @@ static int dmac_xec_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
+/* Called by channel ISR passing the driver device pointer and channel number
+ * NOTE: the callback can call any DMA driver API's for this channel.
+ *
+ * On a successful DONE with more cached blocks remaining, this advances
+ * the chain in-place: the channel is ABORTed back to HW IDLE, the next
+ * block is programmed via dma_xec_chan_reprogram, and RUN is re-issued.
+ * IER and the GIRQ enables are deliberately left armed across the
+ * transition so the next block's DONE re-enters this handler. The
+ * per-block callback fires here only when complete_callback_en was set
+ * on the dma_config (DMA_XEC_CHAN_FLAGS_CB_EOB_POS).
+ *
+ * If the channel was configured cyclic (config->cyclic), DONE on the
+ * final block wraps back to block 0 instead of taking the terminal path:
+ * the per-block callback fires (if enabled), cur_block resets to 0, and
+ * the channel is reprogrammed and restarted. Useful for ping-pong
+ * peripheral-to-memory transfers where the application drains each
+ * chunk during its per-block callback and the channel keeps cycling
+ * until the peripheral signals end-of-transfer (HFC_TERM) or an
+ * external dma_stop call.
+ *
+ * On error, or on DONE of the last block in a non-cyclic chain, the
+ * channel is fully quiesced (IER cleared, status W1C, GIRQ acknowledged)
+ * and the user callback fires once with the appropriate status.
+ */
 static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 {
 	const struct dma_xec_config * const devcfg = dev->config;
@@ -678,6 +886,7 @@ static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 	mm_reg_t const regs = xec_chan_regs(devcfg->regs, channel);
 	uint32_t sts = sys_read32(regs + XEC_DMA_CHAN_ISTATUS);
 	int cb_status = 0;
+	bool invoke_cb = true;
 
 	LOG_DBG("maddr=0x%08x mend=0x%08x daddr=0x%08x ctrl=0x%08x sts=0x%02x",
 		sys_read32(regs + XEC_DMA_CHAN_MEM_ADDR),
@@ -685,21 +894,42 @@ static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 		sys_read32(regs + XEC_DMA_CHAN_DEV_ADDR),
 		sys_read32(regs + XEC_DMA_CHAN_CTRL), sts);
 
-	sys_write32(0u, regs + XEC_DMA_CHAN_IENABLE);
-	sys_write32(0xffu, regs + XEC_DMA_CHAN_ISTATUS);
+	sys_write32(sts, regs + XEC_DMA_CHAN_ISTATUS);
 	soc_ecia_girq_status_clear(info[channel].gid, info[channel].gpos);
 
 	chan_data->isr_hw_status = sts;
-	chan_data->total_curr_xfr_len +=
-		(sys_read32(regs + XEC_DMA_CHAN_MEM_ADDR) - chan_data->mstart);
 
-	if (sts & BIT(XEC_DMA_CHAN_IES_BERR_POS)) {/* Bus Error? */
-		if (!(chan_data->flags & BIT(DMA_XEC_CHAN_FLAGS_CB_ERR_DIS_POS))) {
-			cb_status = -EIO;
+	if (!(sts & BIT(XEC_DMA_CHAN_IES_BERR_POS))) {
+		bool last_block = (chan_data->cur_block + 1U) >= chan_data->num_blocks;
+
+		if (!last_block || chan_data->cyclic) {
+			/* Optional per-block callback for the block that just
+			 * completed. Fired BEFORE we advance so the application can
+			 * inspect status, reload state, etc.
+			 */
+			if ((chan_data->flags & BIT(DMA_XEC_CHAN_FLAGS_CB_EOB_POS)) &&
+			    chan_data->cb) {
+				chan_data->cb(dev, chan_data->user_data, channel, DMA_STATUS_BLOCK);
+			}
+
+			chan_data->cur_block =
+				last_block ? 0U : (uint8_t)(chan_data->cur_block + 1U);
+			dma_xec_chan_reprogram(dev, channel, chan_data->cur_block);
+			return;
 		}
 	}
 
-	if (chan_data->cb) {
+	/* Terminal: error, or DONE of the final block in a non-cyclic chain. */
+	sys_write32(0u, regs + XEC_DMA_CHAN_IENABLE);
+
+	if (sts & BIT(XEC_DMA_CHAN_IES_BERR_POS)) {/* Bus Error? */
+		cb_status = -EIO;
+		if (chan_data->flags & BIT(DMA_XEC_CHAN_FLAGS_CB_ERR_DIS_POS)) {
+			invoke_cb = false;
+		}
+	}
+
+	if (invoke_cb && chan_data->cb) {
 		chan_data->cb(dev, chan_data->user_data, channel, cb_status);
 	}
 }
@@ -723,7 +953,9 @@ static int dma_xec_init(const struct device *dev)
 	}
 	sys_write32(BIT(XEC_DMA_MAIN_CTRL_EN_POS), regs + XEC_DMA_MAIN_CTRL);
 
-	devcfg->irq_connect();
+	if (devcfg->irq_connect != NULL) {
+		devcfg->irq_connect(dev);
+	}
 
 	return 0;
 }
@@ -736,69 +968,62 @@ static int dma_xec_init(const struct device *dev)
 	{									\
 		.gid = DMA_XEC_GID(n, p, i),					\
 		.gpos = DMA_XEC_GPOS(n, p, i),					\
-		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),	\
-		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)),	\
 	},
 
-/* n = node-id, p = property, i = index(channel?) */
-#define DMA_XEC_IRQ_DECLARE(node_id, p, i)					\
-	static void dma_xec_chan_##i##_isr(const struct device *dev)		\
-	{									\
-		dma_xec_irq_handler(dev, i);					\
-	}									\
-
-#define DMA_XEC_IRQ_CONNECT_SUB(node_id, p, i)					\
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, i, irq),				\
-		    DT_IRQ_BY_IDX(node_id, i, priority),			\
-		    dma_xec_chan_##i##_isr,					\
-		    DEVICE_DT_GET(node_id), 0);					\
-	irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));				\
-	soc_ecia_girq_ctrl(DMA_XEC_GID(node_id, p, i), DMA_XEC_GPOS(node_id, p, i), 1);
-
-/* i = instance number of DMA controller */
-#define DMA_XEC_IRQ_CONNECT(inst)							\
-	DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_DECLARE)			\
-	void dma_xec_irq_connect##inst(void)						\
-	{										\
-		DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_CONNECT_SUB)		\
+/* node_id, p = property (interrupt-names), i = interrupt/channel index */
+#define DMA_XEC_IRQ_DECLARE(node_id, p, i)                                                         \
+	static void dma_xec_chan_##i##_isr(const struct device *dev)                               \
+	{                                                                                          \
+		dma_xec_irq_handler(dev, i);                                                       \
 	}
 
-#define DMA_XEC_DEVICE(i)								\
-	BUILD_ASSERT(DT_INST_PROP(i, dma_channels) <= XEC_DMA_MAX_CHANS,		\
-		     "XEC DMA dma-channels exceeds max");				\
-	BUILD_ASSERT(DT_INST_PROP(i, dma_requests) <= XEC_DMA_MAX_CHANS,		\
-		     "XEC DMA dma-requests exceeds max");				\
-											\
-	static struct dma_xec_channel							\
-		dma_xec_ctrl##i##_chans[DT_INST_PROP(i, dma_channels)];			\
-	ATOMIC_DEFINE(dma_xec_atomic##i, DT_INST_PROP(i, dma_channels));		\
-											\
-	static struct dma_xec_data dma_xec_data##i = {					\
-		.ctx.magic = DMA_MAGIC,							\
-		.ctx.dma_channels = DT_INST_PROP(i, dma_channels),			\
-		.ctx.atomic = dma_xec_atomic##i,					\
-		.channels = dma_xec_ctrl##i##_chans,					\
-	};										\
-											\
-	DMA_XEC_IRQ_CONNECT(i)								\
-											\
-	static const struct dma_xec_irq_info dma_xec_irqi##i[] = {			\
-		DT_INST_FOREACH_PROP_ELEM(i, girqs, DMA_XEC_GIRQ_INFO)			\
-	};										\
-	static const struct dma_xec_config dma_xec_cfg##i = {				\
-		.regs = DT_INST_REG_ADDR(i),						\
-		.dma_channels = DT_INST_PROP(i, dma_channels),				\
-		.dma_requests = DT_INST_PROP(i, dma_requests),				\
-		.enc_pcr = DT_INST_PROP(i, pcr_scr),					\
-		.irq_info_size = ARRAY_SIZE(dma_xec_irqi##i),				\
-		.irq_info_list = dma_xec_irqi##i,					\
-		.irq_connect = dma_xec_irq_connect##i,					\
-	};										\
-	PM_DEVICE_DT_DEFINE(i, dmac_xec_pm_action);					\
-	DEVICE_DT_INST_DEFINE(i, dma_xec_init,						\
-		PM_DEVICE_DT_GET(i),							\
-		&dma_xec_data##i, &dma_xec_cfg##i,					\
-		PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,					\
-		&dma_xec_api);
+#define DMA_XEC_IRQ_CONNECT_SUB(node_id, p, i)                                                     \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, i, irq), DT_IRQ_BY_IDX(node_id, i, priority),           \
+		    dma_xec_chan_##i##_isr, DEVICE_DT_GET(node_id), 0);                            \
+	irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));                                                \
+	soc_ecia_girq_ctrl(devcfg->irq_info_list[i].gid, devcfg->irq_info_list[i].gpos, 1);
+
+/* i = instance number of DMA controller. The connect loop iterates the
+ * interrupt-names property so the index aligns 1:1 with the interrupts
+ * entries; the GIRQ enable is looked up from the config array by index.
+ */
+#define DMA_XEC_IRQ_CONNECT(inst)                                                                  \
+	DT_INST_FOREACH_PROP_ELEM(inst, interrupt_names, DMA_XEC_IRQ_DECLARE)                      \
+	void dma_xec_irq_connect##inst(const struct device *dev)                                   \
+	{                                                                                          \
+		const struct dma_xec_config *const devcfg = dev->config;                           \
+		DT_INST_FOREACH_PROP_ELEM(inst, interrupt_names, DMA_XEC_IRQ_CONNECT_SUB)          \
+	}
+
+#define DMA_XEC_DEVICE(i)                                                                          \
+	BUILD_ASSERT(DT_INST_PROP(i, dma_requests) <= XEC_DMA_MAX_CHANS,                           \
+		     "XEC DMA dma-requests exceeds max");                                          \
+                                                                                                   \
+	static struct dma_xec_channel dma_xec_ctrl##i##_chans[DT_INST_PROP(i, dma_channels)];      \
+	ATOMIC_DEFINE(dma_xec_atomic##i, DT_INST_PROP(i, dma_channels));                           \
+                                                                                                   \
+	static struct dma_xec_data dma_xec_data##i = {                                             \
+		.ctx.magic = DMA_MAGIC,                                                            \
+		.ctx.dma_channels = DT_INST_PROP(i, dma_channels),                                 \
+		.ctx.atomic = dma_xec_atomic##i,                                                   \
+		.channels = dma_xec_ctrl##i##_chans,                                               \
+	};                                                                                         \
+                                                                                                   \
+	DMA_XEC_IRQ_CONNECT(i)                                                                     \
+                                                                                                   \
+	static const struct dma_xec_irq_info dma_xec_irqi##i[] = {                                 \
+		DT_INST_FOREACH_PROP_ELEM(i, girqs, DMA_XEC_GIRQ_INFO)};                           \
+	static const struct dma_xec_config dma_xec_cfg##i = {                                      \
+		.regs = DT_INST_REG_ADDR(i),                                                       \
+		.dma_requests = DT_INST_PROP(i, dma_requests),                                     \
+		.enc_pcr = DT_INST_PROP(i, pcr_scr),                                               \
+		.irq_info_size = ARRAY_SIZE(dma_xec_irqi##i),                                      \
+		.irq_info_list = dma_xec_irqi##i,                                                  \
+		.irq_connect = dma_xec_irq_connect##i,                                             \
+	};                                                                                         \
+	PM_DEVICE_DT_DEFINE(i, dmac_xec_pm_action);                                                \
+	DEVICE_DT_INST_DEFINE(i, dma_xec_init, PM_DEVICE_DT_GET(i), &dma_xec_data##i,              \
+			      &dma_xec_cfg##i, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,             \
+			      &dma_xec_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_XEC_DEVICE)
