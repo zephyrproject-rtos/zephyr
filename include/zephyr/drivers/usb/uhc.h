@@ -37,19 +37,19 @@ enum usb_device_state {
 };
 
 /**
- * @brief USB device operating speed
+ * @brief USB port operating speed
  */
-enum usb_device_speed {
+enum usb_port_speed {
 	/** Device is probably not connected */
-	USB_SPEED_UNKNOWN,
-	/** Low speed */
-	USB_SPEED_SPEED_LS,
-	/** Full speed */
-	USB_SPEED_SPEED_FS,
-	/** High speed */
-	USB_SPEED_SPEED_HS,
-	/** Super speed */
-	USB_SPEED_SPEED_SS,
+	USB_PORT_SPEED_UNKNOWN,
+	/** Port at Low speed */
+	USB_PORT_SPEED_LS,
+	/** Port at Full speed */
+	USB_PORT_SPEED_FS,
+	/** Port at High speed */
+	USB_PORT_SPEED_HS,
+	/** Port at Super speed */
+	USB_PORT_SPEED_SS,
 };
 
 #define UHC_INTERFACES_MAX 32
@@ -83,7 +83,7 @@ struct usb_device {
 	/** Device state */
 	enum usb_device_state state;
 	/** Device speed */
-	enum usb_device_speed speed;
+	enum usb_port_speed speed;
 	/** Actual active device configuration */
 	uint8_t actual_cfg;
 	/** Device address */
@@ -157,12 +157,8 @@ struct uhc_transfer {
  * @brief USB host controller event types
  */
 enum uhc_event_type {
-	/** Low speed device connected */
-	UHC_EVT_DEV_CONNECTED_LS,
-	/** Full speed device connected */
-	UHC_EVT_DEV_CONNECTED_FS,
-	/** High speed device connected */
-	UHC_EVT_DEV_CONNECTED_HS,
+	/** New device connected */
+	UHC_EVT_DEV_CONNECTED,
 	/** Device (peripheral) removed */
 	UHC_EVT_DEV_REMOVED,
 	/** Bus reset operation finished */
@@ -307,6 +303,8 @@ __subsystem struct uhc_driver_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
+	enum usb_port_speed (*get_speed)(const struct device *dev);
+
 	int (*ep_enqueue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
 	int (*ep_dequeue)(const struct device *dev,
@@ -405,6 +403,32 @@ static inline int uhc_bus_resume(const struct device *dev)
 	api->unlock(dev);
 
 	return ret;
+}
+
+/**
+ * @brief Get the USB speed at which the root port is operating
+ *
+ * Expected to be called after the bus reset did happen.
+ *
+ * @param[in] dev      Pointer to device struct of the driver instance
+ *
+ * @return The operating speed of the port.
+ */
+static inline enum usb_port_speed uhc_get_speed(const struct device *dev)
+{
+	const struct uhc_api *api = dev->api;
+	enum usb_port_speed speed;
+
+	if (api->get_speed == NULL) {
+		__ASSERT(false, "%s() is not implemented", __func__);
+		return USB_PORT_SPEED_UNKNOWN;
+	}
+
+	api->lock(dev);
+	speed = api->get_speed(dev);
+	api->unlock(dev);
+
+	return speed;
 }
 
 /**
