@@ -42,6 +42,9 @@ LOG_MODULE_REGISTER(microchip_vsc8541, CONFIG_PHY_LOG_LEVEL);
 
 /* Extended Register */
 #define PHY_REG_PAGE2_RGMII_CONTROL         PHY_REG(PHY_PAGE_2, 0x14)
+#define PHY_REG_PAGE2_WOL_MAC_IF_CONTROL    PHY_REG(PHY_PAGE_2, 0x1B)
+
+#define PHY_REG_PAGE2_WOL_MAC_IF_CONTROL_PAD_EDGE_RATE GENMASK(7, 5)
 
 #define PHY_REG_PAGE0_EXT_DEV_AUX_DUPLEX    BIT(5)
 #define PHY_REG_PAGE0_INT_MASK_MDINT_EN     BIT(15)
@@ -63,6 +66,7 @@ struct mc_vsc8541_config {
 	enum phy_link_speed default_speeds;
 	uint8_t rgmii_rx_clk_delay;
 	uint8_t rgmii_tx_clk_delay;
+	uint8_t pad_edge_rate;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
@@ -201,6 +205,19 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 			return -ETIMEDOUT;
 		}
 	} while ((reg & MII_BMCR_RESET) != 0U);
+
+	/* Configure the MAC interface pad edge rate. */
+	ret = phy_mc_vsc8541_read(dev, PHY_REG_PAGE2_WOL_MAC_IF_CONTROL, &reg);
+	if (ret < 0) {
+		return ret;
+	}
+	reg &= ~PHY_REG_PAGE2_WOL_MAC_IF_CONTROL_PAD_EDGE_RATE;
+	reg |= FIELD_PREP(PHY_REG_PAGE2_WOL_MAC_IF_CONTROL_PAD_EDGE_RATE,
+			  cfg->pad_edge_rate);
+	ret = phy_mc_vsc8541_write(dev, PHY_REG_PAGE2_WOL_MAC_IF_CONTROL, reg);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* configure the RGMII clk delay */
 	reg = 0x0;
@@ -654,6 +671,7 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 		.microchip_interface_type = DT_INST_ENUM_IDX(n, microchip_interface_type),         \
 		.rgmii_rx_clk_delay = DT_INST_PROP(n, microchip_rgmii_rx_clk_delay),               \
 		.rgmii_tx_clk_delay = DT_INST_PROP(n, microchip_rgmii_tx_clk_delay),               \
+		.pad_edge_rate = DT_INST_PROP(n, microchip_pad_edge_rate),                         \
 		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),                             \
 		RESET_GPIO(n)                                                                      \
 		INTERRUPT_GPIO(n)};                                                                \
