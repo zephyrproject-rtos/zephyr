@@ -27,13 +27,18 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
       "between the ethernet PHY and the external oscillator")
   endif()
 
-  # Set TX power limit
-  if(CONFIG_WIFI_NXP)
-    zephyr_include_directories(
-      tx_pwr_limits
-    )
+endif()
 
+# IRIS-W1 WiFi RF configuration
+if(CONFIG_WIFI_NXP)
+  # TX power limits: uses NXP default. For IRIS-W1 certified limits, replace
+  # with the u-blox file from:
+  # https://github.com/u-blox/u-blox-sho-OpenCPU/tree/master/MCUXpresso/IRIS-W1/sw_config/wifi_txpower_cfg
   zephyr_compile_definitions(WIFI_BT_TX_PWR_LIMITS_OVERRIDE="wlan_txpwrlimit_cfg_WW_rw610.h")
-  endif()
 
+  if(CONFIG_NXP_OVERRIDE_CALIBRATION_DATA)
+    zephyr_include_directories(
+      rf_config/wifi_cal_data
+    )
+  endif()
 endif()
