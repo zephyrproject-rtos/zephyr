@@ -186,6 +186,8 @@ struct coap_client_internal_request {
 	atomic_t in_callback;
 	int unreported_error;
 	struct coap_block_context recv_blk_ctx;
+	uint8_t recv_etag[COAP_ETAG_MAX_LEN];
+	uint8_t recv_etag_len;
 	struct coap_block_context send_blk_ctx;
 	struct coap_pending pending;
 	struct coap_client_request coap_request;

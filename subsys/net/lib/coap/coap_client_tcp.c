@@ -26,6 +26,8 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_client_tcp.h>
 
+#include "coap_client_internal.h"
+
 #define COAP_PERIODIC_TIMEOUT 500
 
 /* RFC 8323 Section 5.3.1: Base value for Max-Message-Size */
@@ -1008,6 +1010,16 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 						 coap_bytes_to_block_size(client->max_block_size),
 						 0);
 			internal_req->offset = 0;
+		}
+
+		/* RFC 7959, section 2.4: blocks reassembled into one representation
+		 * must all carry the same ETag.
+		 */
+		ret = coap_client_check_etag(response, block_num == 0, internal_req->recv_etag,
+					     &internal_req->recv_etag_len);
+		if (ret < 0) {
+			LOG_ERR("ETag changed during block-wise transfer");
+			goto fail;
 		}
 
 		ret = coap_tcp_update_from_block(response, &internal_req->recv_blk_ctx);
