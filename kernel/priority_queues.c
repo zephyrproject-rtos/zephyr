@@ -28,3 +28,22 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b)
 			? 1 : 0;
 	}
 }
+
+/* Renumber at wraparound.  This is tiny code, and in practice
+ * will almost never be hit on real systems.  BUT on very
+ * long-running systems where a priq never completely empties
+ * AND that contains very large numbers of threads, it can be
+ * a latency glitch to loop over all the threads like this.
+ *
+ * Kept out of line so that the iterator's stack allocation does not
+ * land in every caller that inlines z_priq_rb_add().
+ */
+void z_priq_rb_renumber(struct _priq_rb *pq)
+{
+	struct k_thread *t;
+
+	RB_FOR_EACH_CONTAINER(&pq->tree, t, base.qnode_rb) {
+		t->base.order_key = pq->next_order_key;
+		++pq->next_order_key;
+	}
+}

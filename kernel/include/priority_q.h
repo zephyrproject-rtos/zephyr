@@ -204,24 +204,16 @@ static ALWAYS_INLINE void z_priq_rb_init(struct _priq_rb *pq)
 	};
 }
 
+void z_priq_rb_renumber(struct _priq_rb *pq);
+
 static ALWAYS_INLINE void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *thread)
 {
-	struct k_thread *t;
-
 	thread->base.order_key = pq->next_order_key;
 	++pq->next_order_key;
 
-	/* Renumber at wraparound.  This is tiny code, and in practice
-	 * will almost never be hit on real systems.  BUT on very
-	 * long-running systems where a priq never completely empties
-	 * AND that contains very large numbers of threads, it can be
-	 * a latency glitch to loop over all the threads like this.
-	 */
-	if (!pq->next_order_key) {
-		RB_FOR_EACH_CONTAINER(&pq->tree, t, base.qnode_rb) {
-			t->base.order_key = pq->next_order_key;
-			++pq->next_order_key;
-		}
+	/* Renumber at wraparound, see z_priq_rb_renumber(). */
+	if (unlikely(pq->next_order_key == 0)) {
+		z_priq_rb_renumber(pq);
 	}
 
 	rb_insert(&pq->tree, &thread->base.qnode_rb);
@@ -239,8 +231,27 @@ static ALWAYS_INLINE void z_priq_rb_remove(struct _priq_rb *pq, struct k_thread 
 static ALWAYS_INLINE void z_priq_rb_yield(struct _priq_rb *pq)
 {
 #ifndef CONFIG_SMP
-	z_priq_rb_remove(pq, _current);
-	z_priq_rb_add(pq, _current);
+	struct k_thread *cur = _current;
+	struct rbnode *n = &cur->base.qnode_rb;
+	uint32_t key = (uint32_t)pq->next_order_key;
+
+	/*
+	 * Keys only grow while the tree is non-empty, so the thread holding
+	 * the newest key already sorts behind every equal-rank thread and a
+	 * remove/add pair would put it back in place. Only the key bookkeeping
+	 * of that pair is kept: the reset of an emptied tree here, the
+	 * wraparound renumbering on the slow path.
+	 */
+	if (unlikely((cur->base.order_key + 1U == key) && (pq->tree.root != n))) {
+		if (key + 1U != 0U) {
+			cur->base.order_key = key;
+			pq->next_order_key = (int)(key + 1U);
+			return;
+		}
+	}
+
+	z_priq_rb_remove(pq, cur);
+	z_priq_rb_add(pq, cur);
 #endif
 }
 
