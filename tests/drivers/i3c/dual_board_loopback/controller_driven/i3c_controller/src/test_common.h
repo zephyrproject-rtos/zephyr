@@ -100,6 +100,8 @@ static inline int target_device_addr_read(uint32_t *device_addr)
  */
 int dual_board_loopback_heal_target(void);
 
+/* Detach any scratch descriptors test_attach.c still has on the bus. */
+void dual_board_loopback_attach_cleanup(void);
 
 /*
  * Stage @p len bytes (<= 64) of @p pattern on the target's SLV_TX
