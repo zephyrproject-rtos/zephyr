@@ -1,0 +1,9 @@
+common:
+  tags:
+    - drivers
+    - flash
+tests:
+  drivers.flash.preload_data:
+    platform_allow: qemu_riscv64
+    integration_platforms:
+      - qemu_riscv64
