@@ -1,0 +1,105 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief SoC initialization for Silicon Labs Series 3 devices
+ */
+
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
+#include <sl_clock_manager_init.h>
+#include <sl_power_manager.h>
+#include <sl_sleeptimer.h>
+
+#include <soc_radio.h>
+
+#if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
+#define PR_EXC(...) LOG_ERR(__VA_ARGS__)
+#else
+#define PR_EXC(...)
+#endif /* CONFIG_PRINTK || CONFIG_LOG */
+
+#if (CONFIG_FAULT_DUMP == 2)
+#define PR_FAULT_INFO(...) PR_EXC(__VA_ARGS__)
+#else
+#define PR_FAULT_INFO(...)
+#endif
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
+
+void soc_early_init_hook(void)
+{
+	sl_clock_manager_init();
+
+	if (IS_ENABLED(CONFIG_SILABS_SISDK_SLEEPTIMER)) {
+		sl_sleeptimer_init();
+	}
+
+	if (IS_ENABLED(CONFIG_PM)) {
+		sl_power_manager_init();
+	}
+	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
+		soc_radio_init();
+	}
+}
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
+static void smu_fault(void)
+{
+	PR_FAULT_INFO("***** SMU FAULT *****");
+
+	if (SMU->IF & SMU_IF_BMPUSEC) {
+		PR_FAULT_INFO("Bus Manager Fault");
+		PR_EXC("SMU.BMPUFS=%d", SMU->BMPUFS);
+	}
+	if (SMU->IF & SMU_IF_PPUSEC) {
+		PR_FAULT_INFO("Peripheral Access Fault");
+		PR_EXC("SMU.PPUFS=%d", SMU->PPUFS);
+	}
+
+	z_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
+}
+#endif
+
+void soc_prep_hook(void)
+{
+	/* Initialize TrustZone state of the device.
+	 * If this is a secure app with no non-secure callable functions, it is a secure-only app.
+	 * Configure all peripherals except the SMU to non-secure aliases, and make all bus
+	 * transactions from the CPU have non-secure attribution.
+	 * This makes the secure-only app behave more like a non-secure app, allowing the use of
+	 * libraries that only expect to use non-secure peripherals, such as the radio subsystem.
+	 * If MCUboot is used, assume that the bootloader has configured the SMU and SAU
+	 * appropriately, and only connect the IRQ for SMU faults.
+	 */
+#if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT)
+#if defined(CMU_CLKEN1_SMU)
+	CMU_S->CLKEN1_SET = CMU_CLKEN1_SMU;
+#endif
+	SMU_S->ESAURTYPES_SET = SMU_ESAURTYPES_ESAUEN;
+	SMU_S->PPURSPERRD_SET = SMU_PPURSPERRD_PPURSPERRD;
+	SMU_S->PPUSATD0_CLR = _SMU_PPUSATD0_MASK;
+	SMU_S->PPUSATD1_CLR = (_SMU_PPUSATD1_MASK & ~SMU_PPUSATD1_SMU);
+#if defined(_SMU_PPUSATD2_MASK)
+	SMU_S->PPUSATD2_CLR = _SMU_PPUSATD2_MASK;
+#endif
+
+	SAU->CTRL = SAU_CTRL_ALLNS_Msk;
+	__DSB();
+	__ISB();
+
+	k_irq_clear_pending(SMU_SECURE_IRQn);
+	SMU_S->IF_CLR = SMU_IF_PPUSEC | SMU_IF_BMPUSEC;
+	SMU_S->IEN = SMU_IEN_PPUSEC | SMU_IEN_BMPUSEC;
+#endif
+
+	IRQ_DIRECT_CONNECT(SMU_SECURE_IRQn, 0, smu_fault, 0);
+	irq_enable(SMU_SECURE_IRQn);
+#endif
+}

@@ -1,0 +1,20 @@
+identifier: sixg301_rb4407a
+name: SixG301 +10 dBm, 4 MB Flash Radio Board (SixG301-RB4407A, BRD4407A)
+type: mcu
+arch: arm
+ram: 512
+flash: 3652
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - pwm
+  - spi
+  - uart
+vendor: silabs

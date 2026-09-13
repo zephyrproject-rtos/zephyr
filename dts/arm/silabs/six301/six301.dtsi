@@ -1,0 +1,690 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/silabs/six301-clock.h>
+#include <zephyr/dt-bindings/dma/silabs/six301-dma.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	chosen {
+		silabs,sleeptimer = &sysrtc0;
+		zephyr,crc = &gpcrc;
+		zephyr,entropy = &se;
+	};
+
+	clocks {
+		adcclk: adcclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&em01grpaclk>;
+		};
+
+		em01grpaclk: em01grpaclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hfrcodpll>;
+		};
+
+		em01grpcclk: em01grpcclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hfrcodpll>;
+		};
+
+		em01grpdclk: em01grpdclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hfrcodpll>;
+		};
+
+		em23grpaclk: em23grpaclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&lfrco>;
+		};
+
+		em4grpaclk: em4grpaclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&lfrco>;
+		};
+
+		eusart0clk: eusart0clk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&em01grpcclk>;
+		};
+
+		hclk: hclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <1>;
+			clocks = <&sysclk>;
+		};
+
+		hclkdiv1024: hclkdiv1024 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <1024>;
+			clocks = <&hclk>;
+		};
+
+		hfrcodpllrt: hfrcodpllrt {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hfrcodpll>;
+		};
+
+		hfxo0lfclk: hfxo0lfclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&lfrco>;
+		};
+
+		hfxort: hfxort {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hfxo>;
+		};
+
+		i2c0clk: i2c0clk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&em01grpdclk>;
+		};
+
+		lspclk: lspclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <2>;
+			clocks = <&pclk>;
+		};
+
+		pclk: pclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <2>;
+			clocks = <&hclk>;
+		};
+
+		pcnt0clk: pcnt0clk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&em23grpaclk>;
+		};
+
+		pixelrzclk: pixelrzclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <10>;
+			clocks = <&hfrcodpll>;
+		};
+
+		sysclk: sysclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&socpll>;
+		};
+
+		sysrtcclk: sysrtcclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&lfrco>;
+		};
+
+		systickclk: systickclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hclk>;
+		};
+
+		traceclk: traceclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <1>;
+			clocks = <&sysclk>;
+		};
+
+		wdog0clk: wdog0clk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&lfrco>;
+		};
+
+		wdog1clk: wdog1clk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hclkdiv1024>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			/*
+			 * The minimum residency and exit latency is managed by sl_power_manager
+			 * on S3 devices.
+			 */
+			cpu-power-states = <&pstate_em1 &pstate_em1div16 &pstate_em4>;
+			device_type = "cpu";
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+			};
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			pstate_em1: em1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			pstate_em1div16: em1div16 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+			};
+
+			pstate_em4: em4 {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				status = "disabled";
+			};
+		};
+	};
+
+	hwinfo: hwinfo {
+		compatible = "silabs,series3-hwinfo";
+		status = "disabled";
+	};
+
+	soc {
+		letimer0: letimer@40000000 {
+			compatible = "silabs,series2-letimer";
+			reg = <0x40000000 0x4000>;
+			clocks = <&cmu CLOCK_LETIMER0 CLOCK_BRANCH_EM23GRPACLK>;
+			interrupt-names = "letimer0";
+			interrupts = <26 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,letimer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		adc0: adc@40004000 {
+			compatible = "silabs,series3-adc";
+			reg = <0x40004000 0x4000>;
+			#io-channel-cells = <1>;
+			clocks = <&cmu CLOCK_ADC0 CLOCK_BRANCH_ADCCLK>;
+			interrupt-names = "adc0";
+			interrupts = <76 2>;
+			status = "disabled";
+		};
+
+		acmp0: acmp@40008000 {
+			compatible = "silabs,acmp";
+			reg = <0x40008000 0x4000>;
+			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_INVALID>;
+			interrupt-names = "acmp0";
+			interrupts = <62 2>;
+			status = "disabled";
+		};
+
+		acmp1: acmp@4000c000 {
+			compatible = "silabs,acmp";
+			reg = <0x4000c000 0x4000>;
+			clocks = <&cmu CLOCK_ACMP1 CLOCK_BRANCH_INVALID>;
+			interrupt-names = "acmp1";
+			interrupts = <63 2>;
+			status = "disabled";
+		};
+
+		hfrcoem23: hfrcoem23@40100000 {
+			compatible = "silabs,series2-hfrcoem23";
+			reg = <0x40100000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(20)>;
+			clocks = <&cmu CLOCK_HFRCOEM23 CLOCK_BRANCH_INVALID>;
+			interrupt-names = "hfrcoem23";
+			interrupts = <68 2>;
+		};
+
+		clk_hfxo: hfxo: hfxo@40104000 {
+			compatible = "silabs,hfxo";
+			reg = <0x40104000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_K(38400)>;
+			clocks = <&cmu CLOCK_HFXO0 CLOCK_BRANCH_INVALID>;
+			ctune = <140>;
+			interrupt-names = "hfxo0";
+			interrupts = <66 2>;
+			precision = <50>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@40200000 {
+			compatible = "silabs,i2c";
+			reg = <0x40200000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			clocks = <&cmu CLOCK_I2C0 CLOCK_BRANCH_I2C0CLK>;
+			interrupt-names = "i2c0";
+			interrupts = <44 2>;
+			status = "disabled";
+		};
+
+		wdog0: wdog@40204000 {
+			compatible = "silabs,wdog";
+			reg = <0x40204000 0x4000>;
+			clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
+			interrupt-names = "wdog0";
+			interrupts = <64 2>;
+			status = "disabled";
+		};
+
+		eusart0: eusart@40208000 {
+			compatible = "silabs,eusart-uart";
+			reg = <0x40208000 0x4000>;
+			clocks = <&cmu CLOCK_EUSART0 CLOCK_BRANCH_EUSART0CLK>;
+			interrupt-names = "rx", "tx";
+			interrupts = <17 2>, <18 2>;
+			status = "disabled";
+		};
+
+		socpll: socpll0@40800000 {
+			compatible = "silabs,socpll";
+			reg = <0x40800000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(150)>;
+			interrupt-names = "socpll0";
+			interrupts = <79 2>;
+		};
+
+		cmu: clock@40804000 {
+			compatible = "silabs,series-clock";
+			reg = <0x40804000 0x4000>;
+			#clock-cells = <2>;
+			interrupt-names = "cmu";
+			interrupts = <69 2>;
+			status = "okay";
+		};
+
+		hfrcodpll: hfrcodpll@40810000 {
+			compatible = "silabs,series2-hfrcodpll";
+			reg = <0x40810000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(38)>;
+			interrupt-names = "hfrco0";
+			interrupts = <67 2>;
+		};
+
+		dma0: dma@40814000 {
+			compatible = "silabs,ldma";
+			reg = <0x40814000 0x4000>;
+			#dma-cells = <1>;
+			clock-names = "ldma", "xbar";
+			clocks = <&cmu CLOCK_LDMA0 CLOCK_BRANCH_HCLK>,
+				 <&cmu CLOCK_LDMAXBAR0 CLOCK_BRANCH_HCLK>;
+			dma-channels = <8>;
+			interrupt-names = "ldma0_chnl0", "ldma0_chnl1", "ldma0_chnl2",
+					  "ldma0_chnl3", "ldma0_chnl4", "ldma0_chnl5",
+					  "ldma0_chnl6", "ldma0_chnl7";
+			interrupts = <31 2>, <32 2>, <33 2>, <34 2>, <35 2>, <36 2>, <37 2>,
+				     <38 2>;
+			status = "disabled";
+		};
+
+		fsrco: fsrco@40818000 {
+			compatible = "fixed-clock";
+			reg = <0x40818000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(20)>;
+			clocks = <&cmu CLOCK_FSRCO CLOCK_BRANCH_INVALID>;
+		};
+
+		lfxo: lfxo@40820000 {
+			compatible = "silabs,series2-lfxo";
+			reg = <0x40820000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			clocks = <&cmu CLOCK_LFXO CLOCK_BRANCH_INVALID>;
+			ctune = <63>;
+			interrupt-names = "lfxo";
+			interrupts = <39 2>;
+			precision = <50>;
+			timeout = <4096>;
+			status = "disabled";
+		};
+
+		lfrco: lfrco@40824000 {
+			compatible = "silabs,series2-lfrco";
+			reg = <0x40824000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			clocks = <&cmu CLOCK_LFRCO CLOCK_BRANCH_INVALID>;
+			interrupt-names = "lfrco";
+			interrupts = <40 2>;
+		};
+
+		ulfrco: ulfrco@40828000 {
+			compatible = "fixed-clock";
+			reg = <0x40828000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <1000>;
+			clocks = <&cmu CLOCK_ULFRCO CLOCK_BRANCH_INVALID>;
+			interrupt-names = "ulfrco";
+			interrupts = <41 2>;
+		};
+
+		gpio: gpio@4083c000 {
+			compatible = "silabs,gpio";
+			reg = <0x4083c000 0x4000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clocks = <&cmu CLOCK_GPIO CLOCK_BRANCH_INVALID>;
+			interrupt-names = "gpio_odd", "gpio_even";
+			interrupts = <42 2>, <43 2>;
+
+			gpioa: gpio@4083c030 {
+				compatible = "silabs,gpio-port";
+				reg = <0x4083c030 0x30>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				status = "disabled";
+			};
+
+			gpiob: gpio@4083c060 {
+				compatible = "silabs,gpio-port";
+				reg = <0x4083c060 0x30>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				silabs,wakeup-ints = <3>;
+				silabs,wakeup-pins = <1>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@4083c090 {
+				compatible = "silabs,gpio-port";
+				reg = <0x4083c090 0x30>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				silabs,wakeup-ints = <6>, <7>;
+				silabs,wakeup-pins = <0>, <5>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@4083c0c0 {
+				compatible = "silabs,gpio-port";
+				reg = <0x4083c0c0 0x30>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				silabs,wakeup-ints = <9>;
+				silabs,wakeup-pins = <2>;
+				status = "disabled";
+			};
+		};
+
+		pinctrl: pin-controller@4083c440 {
+			compatible = "silabs,dbus-pinctrl";
+			reg = <0x4083c440 0x0bc0>, <0x4083c320 0x40>;
+			reg-names = "dbus", "abus";
+		};
+
+		clkin0: clkin0@4083c4e0 {
+			compatible = "fixed-clock";
+			reg = <0x4083c4e0 0x04>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(38)>;
+		};
+
+		timer0: timer@40848000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x40848000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER0 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <32>;
+			interrupt-names = "timer0";
+			interrupts = <10 2>;
+			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer1: timer@4084c000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x4084c000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER1 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <32>;
+			interrupt-names = "timer1";
+			interrupts = <11 2>;
+			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer2: timer@40850000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x40850000 0x4000>;
+			channels = <7>;
+			clocks = <&cmu CLOCK_TIMER2 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <32>;
+			interrupt-names = "timer2";
+			interrupts = <12 2>;
+			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer3: timer@40854000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x40854000 0x4000>;
+			channels = <7>;
+			clocks = <&cmu CLOCK_TIMER3 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <32>;
+			interrupt-names = "timer3";
+			interrupts = <13 2>;
+			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		burtc0: burtc@40864000 {
+			compatible = "silabs,burtc-counter";
+			reg = <0x40864000 0x4000>;
+			clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
+			interrupt-names = "burtc";
+			interrupts = <25 2>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40868000 {
+			compatible = "silabs,i2c";
+			reg = <0x40868000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			clocks = <&cmu CLOCK_I2C1 CLOCK_BRANCH_EM01GRPDCLK>;
+			interrupt-names = "i2c1";
+			interrupts = <45 2>;
+			status = "disabled";
+		};
+
+		buram: retained-memory@40878000 {
+			compatible = "silabs,buram";
+			reg = <0x40878000 0x80>;
+			clocks = <&cmu CLOCK_BURAM CLOCK_BRANCH_INVALID>;
+			status = "disabled";
+		};
+
+		gpcrc: gpcrc0@4087c000 {
+			compatible = "silabs,gpcrc";
+			reg = <0x4087c000 0x4000>;
+			clocks = <&cmu CLOCK_GPCRC0 CLOCK_BRANCH_PCLK>;
+			status = "okay";
+		};
+
+		eusart1: eusart@40884000 {
+			compatible = "silabs,eusart-spi";
+			reg = <0x40884000 0x4000>;
+			clocks = <&cmu CLOCK_EUSART1 CLOCK_BRANCH_EM01GRPCCLK>;
+			interrupt-names = "rx", "tx";
+			interrupts = <19 2>, <20 2>;
+			status = "disabled";
+		};
+
+		eusart2: eusart@40888000 {
+			compatible = "silabs,eusart-spi";
+			reg = <0x40888000 0x4000>;
+			clocks = <&cmu CLOCK_EUSART2 CLOCK_BRANCH_EM01GRPCCLK>;
+			interrupt-names = "rx", "tx";
+			interrupts = <21 2>, <22 2>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@40890000 {
+			compatible = "silabs,i2c";
+			reg = <0x40890000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			clocks = <&cmu CLOCK_I2C2 CLOCK_BRANCH_EM01GRPDCLK>;
+			interrupt-names = "i2c2";
+			interrupts = <46 2>;
+			status = "disabled";
+		};
+
+		wdog1: wdog@40894000 {
+			compatible = "silabs,wdog";
+			reg = <0x40894000 0x4000>;
+			clocks = <&cmu CLOCK_WDOG1 CLOCK_BRANCH_WDOG1CLK>;
+			interrupt-names = "wdog1";
+			interrupts = <65 2>;
+			status = "disabled";
+		};
+
+		symcrypto: symcrypto@41000000 {
+			compatible = "silabs,series3-crypto";
+			reg = <0x41000000 0x4000>;
+			clocks = <&cmu CLOCK_SYMCRYPTO CLOCK_BRANCH_INVALID>;
+			interrupt-names = "symcrypto";
+			interrupts = <74 2>;
+			status = "disabled";
+		};
+
+		lpwaes: lpwaes@41004000 {
+			compatible = "silabs,series3-crypto";
+			reg = <0x41004000 0x4000>;
+			clocks = <&cmu CLOCK_LPWAES CLOCK_BRANCH_INVALID>;
+			interrupt-names = "lpwaes";
+			interrupts = <75 2>;
+			status = "disabled";
+		};
+
+		se: semailbox@42800000 {
+			compatible = "silabs,gecko-semailbox";
+			reg = <0x42800000 0x4000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupt-names = "setamperhost", "sembrx", "sembtx";
+			interrupts = <0 2>, <1 2>, <2 2>;
+			status = "disabled";
+
+			extmem: flash-controller@42800000 {
+				compatible = "silabs,series3-extmem";
+				reg = <0x42800000 0x4000>;
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				flash0: flash@11000000 {
+					compatible = "soc-nv-flash";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					erase-block-size = <4096>;
+					write-block-size = <4>;
+				};
+			};
+		};
+
+		sysrtc0: sysrtc@a3000000 {
+			compatible = "silabs,sysrtc";
+			reg = <0xa3000000 0x4000>;
+			clock-frequency = <32768>;
+			clocks = <&cmu CLOCK_SYSRTC0 CLOCK_BRANCH_SYSRTCCLK>;
+			interrupt-names = "sysrtc_app", "sysrtc_ms", "sysrtc_seq";
+			interrupts = <15 2>, <16 2>, <14 2>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@30000000 {
+		compatible = "mmio-sram";
+		device_type = "memory";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

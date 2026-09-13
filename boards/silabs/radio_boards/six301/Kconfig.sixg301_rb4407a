@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SIXG301_RB4407A
+	select SOC_SIMG301M104LIL

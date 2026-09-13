@@ -3,5 +3,3 @@
 
 zephyr_sources(soc.c)
 zephyr_sources_ifdef(CONFIG_SOC_GECKO_USE_RAIL soc_radio.c)
-zephyr_sources_ifdef(CONFIG_SOC_SILABS_IMAGE_PROPERTIES soc_image_properties.c)
-zephyr_linker_sources_ifdef(CONFIG_SOC_SILABS_IMAGE_PROPERTIES RODATA soc_image_properties.ld)

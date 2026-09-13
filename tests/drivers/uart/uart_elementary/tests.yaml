@@ -32,6 +32,7 @@ tests:
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
       - bgm220_ek4314a
+      - sixg301_rb4407a
       - slwrb4180b
       - xg23_rb4210a
       - xg24_rb4186c

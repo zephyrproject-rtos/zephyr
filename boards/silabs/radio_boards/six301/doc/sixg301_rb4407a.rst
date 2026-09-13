@@ -1,0 +1,159 @@
+.. zephyr:board:: sixg301_rb4407a
+
+
+Overview
+********
+
+The `SixG301 +10 dBm, 4 MB Flash Radio Board`_ is designed to support the development of Wireless
+IoT devices based on 2.4 GHz wireless protocols including BLE, Bluetooth Mesh, Matter, OpenThread
+and Zigbee.
+
+The radio board plugs into the Wireless Pro Kit Mainboard and is supported in Zephyr as one
+of several :ref:`silabs_radio_boards`.
+
+.. _SixG301 +10 dBm, 4 MB Flash Radio Board:
+   https://www.silabs.com/development-tools/wireless/sixg301-rb4407a-wireless-10-dbm-4-mb-flash-radio-board
+
+Hardware
+********
+
+- SIMG301M104LIL SoC
+- CPU core: ARM Cortex®-M33 with FPU
+- CPU clock speed: 150 MHz
+- Flash memory: 4096 kB in-package QSPI NOR Flash
+- RAM: 512 kB
+- Transmit power: up to +10 dBm
+- Operation frequency: 2.4 GHz
+- High Frequency Crystal Oscillator (38.4 MHz)
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
+System Clock
+============
+
+The SiMG301 SoC is configured to use the SOCPLL oscillator at 150 MHz as the system clock.
+
+Serial Port
+===========
+
+The SiMG301 SoC has three EUSARTs. EUSART0 is connected to the board controller and is used for the
+console.
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
+
+Memory Configuration
+====================
+
+The SiMG301 flash controller divides memory into 8 code regions and one data region. Code regions
+are made up of 32 kB erasable pages used to store firmware images. The data region is made up of
+4 kB erasable pages used to store data.
+
+Code regions may be configured with no protection, EXiP (encrypted execute-in-place) or AXiP
+(authenticated execute-in-place). When AXiP is enabled, an additional 4 bytes of MAC (message
+authentication code) are stored for every 32 bytes of ciphertext. This means that 36 kB of physical
+memory is consumed for every 32 kB of firmware. The MAC is not directly accessible, but must be
+accounted for when calculating code and data region sizes. See `Configuring Code Regions`_ for
+more information.
+
+.. _Configuring Code Regions:
+   https://docs.silabs.com/iot-security/latest/iot-security-series-3-axip/configuring-code-regions
+
+In Zephyr, the partition configuration in Devicetree must align with the logical memory map as
+configured on the device. Since the apparent logical size of memory varies depending on how many
+flash pages are used for AXiP code regions, the total flash size must also be configured to match
+the device configuration.
+
+
+Configuring the Board for Development
+-------------------------------------
+
+When AXiP (authenticated execute-in-place) or EXiP (encrypted execute-in-place) are enabled, it is
+recommended to configure development devices to not regenerate the IV (initial value) for flash
+encryption every time an image is flashed, to limit the use of OTP (one-time-programmable memory)
+bits.
+
+This can be done by executing the following command using Simplicity Commander:
+
+.. code-block:: console
+
+   commander security transitiontodevelopment
+
+See `Considerations for Development Devices`_ for more details. For more information about OTP bit
+consumption, see `SE Anti-Rollback OTP Bit Consumption for Series 3`_.
+
+.. _Considerations for Development Devices:
+   https://docs.silabs.com/iot-security/latest/iot-security-series-3-axip/considerations-for-development-devices
+
+.. _SE Anti-Rollback OTP Bit Consumption for Series 3:
+   https://docs.silabs.com/iot-security/latest/iot-security-anti-rollback-series3
+
+Flashing
+========
+
+Connect the BRD4002A mainboard with a mounted BRD4407A radio board to your host computer using the
+USB-C port.
+
+Build and flash the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: sixg301_rb4407a
+   :goals: build flash
+
+Open a serial terminal (minicom, putty, etc.) with the following settings:
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+Reset the board and you should see the following message in the terminal:
+
+.. code-block:: console
+
+   Hello World! sixg301_rb4407a
+
+Bluetooth
+=========
+
+To use Bluetooth functionality, run the command below to retrieve necessary binary
+blobs from the Silicon Labs HAL repository.
+
+.. code-block:: console
+
+   west blobs fetch hal_silabs
+
+Then build the Zephyr kernel and a Bluetooth sample with the following
+command. The :zephyr:code-sample:`bluetooth_observer` sample application is used in
+this example.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/observer
+   :board: sixg301_rb4407a
+   :goals: build flash
+
+References
+**********
+
+- `SiMG301 Website`_
+- `SiMG301 Datasheet`_
+- `SixG301 Reference Manual`_
+- `SixG301-RB4407A User Guide`_
+
+.. _SiMG301 Website:
+   https://www.silabs.com/wireless/zigbee/simg301-series-3-socs
+
+.. _SiMG301 Datasheet:
+   https://www.silabs.com/documents/public/data-sheets/simg301-datasheet.pdf
+
+.. _SixG301 Reference Manual:
+   https://www.silabs.com/documents/public/reference-manuals/sixg301-rm.pdf
+
+.. _SixG301-RB4407A User Guide:
+   https://www.silabs.com/documents/public/user-guides/ug578-brd4407a-user-guide.pdf
