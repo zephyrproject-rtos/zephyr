@@ -40,3 +40,29 @@ config UDC_MCHP_UDPHS_G1_BURST_LOCK
 	  maximum optimization of the bus bandwidth usage.
 
 endif # UDC_MCHP_UDPHS_G1
+
+config UDC_MCHP_G3
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_USB_G3_ENABLED
+	select PINCTRL
+	select SYS_MEM_BLOCKS
+	select EVENTS
+	help
+	  USB Device Controller Driver for USB G3 group of IPs.
+
+if UDC_MCHP_G3
+
+config UDC_MCHP_G3_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 512
+	help
+	  Device controller driver internal thread stack size.
+
+config UDC_MCHP_G3_THREAD_PRIORITY
+	int "UDC controller driver thread priority"
+	default 8
+	help
+	  Device controller driver thread priority.
+
+endif # UDC_MCHP_G3
