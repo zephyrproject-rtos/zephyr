@@ -17,6 +17,16 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#if DT_NUM_INST_STATUS_OKAY(zephyr_ipc_icbmsg) == 1
+#define IPC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_ipc_icbmsg)
+#elif DT_NUM_INST_STATUS_OKAY(zephyr_ipc_icmsg) == 1
+#define IPC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_ipc_icmsg)
+#elif DT_NUM_INST_STATUS_OKAY(zephyr_ipc_openamp_static_vrings) == 1
+#define IPC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_ipc_openamp_static_vrings)
+#else
+#error "No IPC node found"
+#endif
+
 #define GPPI_EXT_MSG_LEN(member)                                                                   \
 	(offsetof(struct gppi_ext_msg, member) + sizeof(((struct gppi_ext_msg *)0)->member))
 
@@ -27,7 +37,7 @@ union gppi_ext_allocator_handle {
 	nrfx_gppi_group_handle_t group_handle;
 };
 
-static const struct device *ipc0_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
+static const struct device *ipc0_instance = DEVICE_DT_GET(IPC_NODE);
 static struct ipc_ept ept;
 static union gppi_ext_allocator_handle rsp_handle;
 static int rsp_result;
