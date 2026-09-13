@@ -122,29 +122,64 @@ SYS_HEAP_KASAN_ENABLE(z_malloc_heap, HEAP_SIZE);
 #endif /* CONFIG_SYS_HEAP_KASAN_MALLOC && HEAP_STATIC */
 
 #ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_USERSPACE
+/*
+ * User threads reach the heap directly, so the lock has to be one they can
+ * take without a syscall.
+ */
 Z_LIBC_DATA SYS_MUTEX_DEFINE(z_malloc_heap_mutex);
 
-static inline void
-malloc_lock(void) {
+typedef int malloc_key_t;
+
+static inline malloc_key_t
+malloc_lock(void)
+{
 	int lock_ret;
 
 	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
 	__ASSERT_NO_MSG(lock_ret == 0);
+
+	return 0;
 }
 
 static inline void
-malloc_unlock(void)
+malloc_unlock(malloc_key_t key)
 {
+	ARG_UNUSED(key);
 	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
 }
 #else
-#define malloc_lock()
-#define malloc_unlock()
+/*
+ * Without userspace the heap is only reachable from supervisor context, so a
+ * spinlock is enough. sys_heap operations are bounded, and k_heap already
+ * guards the very same allocator this way.
+ */
+static struct k_spinlock z_malloc_heap_lock;
+
+typedef k_spinlock_key_t malloc_key_t;
+
+static inline malloc_key_t
+malloc_lock(void)
+{
+	return k_spin_lock(&z_malloc_heap_lock);
+}
+
+static inline void
+malloc_unlock(malloc_key_t key)
+{
+	k_spin_unlock(&z_malloc_heap_lock, key);
+}
+#endif /* CONFIG_USERSPACE */
+#else
+typedef int malloc_key_t;
+
+#define malloc_lock()     0
+#define malloc_unlock(key) ARG_UNUSED(key)
 #endif
 
 void *malloc(size_t size)
 {
-	malloc_lock();
+	malloc_key_t key = malloc_lock();
 
 	void *ret = sys_heap_aligned_alloc(&z_malloc_heap,
 					   __alignof__(z_max_align_t),
@@ -153,14 +188,14 @@ void *malloc(size_t size)
 		errno = ENOMEM;
 	}
 
-	malloc_unlock();
+	malloc_unlock(key);
 
 	return ret;
 }
 
 void *aligned_alloc(size_t alignment, size_t size)
 {
-	malloc_lock();
+	malloc_key_t key = malloc_lock();
 
 	void *ret = sys_heap_aligned_alloc(&z_malloc_heap,
 					   alignment,
@@ -169,7 +204,7 @@ void *aligned_alloc(size_t alignment, size_t size)
 		errno = ENOMEM;
 	}
 
-	malloc_unlock();
+	malloc_unlock(key);
 
 	return ret;
 }
@@ -245,7 +280,7 @@ static int malloc_prepare(void)
 
 void *realloc(void *ptr, size_t requested_size)
 {
-	malloc_lock();
+	malloc_key_t key = malloc_lock();
 
 	void *ret = sys_heap_aligned_realloc(&z_malloc_heap, ptr,
 					     __alignof__(z_max_align_t),
@@ -255,16 +290,16 @@ void *realloc(void *ptr, size_t requested_size)
 		errno = ENOMEM;
 	}
 
-	malloc_unlock();
+	malloc_unlock(key);
 
 	return ret;
 }
 
 void free(void *ptr)
 {
-	malloc_lock();
+	malloc_key_t key = malloc_lock();
 	sys_heap_free(&z_malloc_heap, ptr);
-	malloc_unlock();
+	malloc_unlock(key);
 }
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -273,11 +308,11 @@ int malloc_runtime_stats_get(struct sys_memory_stats *stats)
 {
 	int ret;
 
-	malloc_lock();
+	malloc_key_t key = malloc_lock();
 
 	ret = sys_heap_runtime_stats_get(&z_malloc_heap, stats);
 
-	malloc_unlock();
+	malloc_unlock(key);
 
 	return ret;
 }
