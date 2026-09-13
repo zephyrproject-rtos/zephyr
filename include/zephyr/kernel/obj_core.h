@@ -351,11 +351,13 @@ void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type);
  * k_obj_type_walk_locked() and k_obj_type_walk_unlocked(). It must have been
  * initialized with k_obj_core_init() first. Registering an object that is
  * already registered, or that belongs to the permanent range of its type, has
- * no effect. The registry holds no reference inside the object, so an object
- * may be discarded without unregistering it; the stale entry is dropped when
- * its storage is reused or when the registry is full. When the registry is
- * full the object is not registered and the type's @a dropped count is
- * incremented.
+ * no effect. An object located in the current thread's stack or in the
+ * interrupt stack is not registered and the type's @a skipped count is
+ * incremented. The registry holds no reference inside the object, so an
+ * object may be discarded without unregistering it; the stale entry is
+ * dropped when its storage is reused or when the registry is full. When the
+ * registry is full the object is not registered and the type's @a dropped
+ * count is incremented.
  *
  * @param obj_core Pointer to the kernel object
  */

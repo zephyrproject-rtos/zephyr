@@ -394,5 +394,67 @@ ZTEST(obj_core, test_obj_core_registry_full)
 	}
 }
 
+static void init_stack_sem(void)
+{
+	struct k_sem sem;
+
+	k_sem_init(&sem, 0, 1);
+}
+
+static struct k_sem *isr_sem;
+
+static void init_isr_stack_sem(const void *arg)
+{
+	struct k_sem sem;
+
+	ARG_UNUSED(arg);
+	isr_sem = &sem;
+	k_sem_init(&sem, 0, 1);
+}
+
+static void work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+}
+
+ZTEST(obj_core, test_obj_core_stack_storage)
+{
+	struct k_obj_type *type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
+	uint32_t skipped = type->skipped;
+	struct k_sem sem;
+	struct k_work work;
+	struct k_work_sync sync;
+
+	/* Objects in stack storage are counted, not registered, and leave
+	 * the registry intact once their frames are gone.
+	 */
+	init_stack_sem();
+	init_stack_sem();
+	k_sem_init(&sem, 0, 1);
+	zassert_equal(type->skipped, skipped + 3);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem)), 0);
+
+	/* An object in the interrupt stack is skipped too. Some architectures
+	 * run offloaded interrupts on another exception stack, which the
+	 * kernel does not recognize: the object is then registered and stays
+	 * reported until its storage is reused.
+	 */
+	irq_offload(init_isr_stack_sem, NULL);
+	if (count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(isr_sem)) == 0) {
+		zassert_equal(type->skipped, skipped + 4);
+	} else {
+		zassert_equal(type->skipped, skipped + 3);
+		k_obj_core_unlink(K_OBJ_CORE(isr_sem));
+	}
+	skipped = type->skipped;
+
+	k_work_init(&work, work_handler);
+	k_work_submit(&work);
+	k_work_flush(&work, &sync);
+	zassert_equal(type->skipped, skipped + 1);
+
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
+}
+
 ZTEST_SUITE(obj_core, NULL, NULL,
 	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

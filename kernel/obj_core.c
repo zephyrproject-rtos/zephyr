@@ -47,6 +47,28 @@ static struct k_obj_core *range_core(const struct k_obj_type *type, const void *
 	return (struct k_obj_core *)(obj + type->obj_core_offset);
 }
 
+/* Objects in the running thread's stack or in the interrupt stack are
+ * transient by construction. Called with the registry lock held, which pins
+ * the current CPU.
+ */
+static bool in_stack_storage(const void *ptr)
+{
+	uintptr_t addr = (uintptr_t)ptr;
+	const struct k_thread *thread = _current;
+	uintptr_t irq_stack = (uintptr_t)K_KERNEL_STACK_BUFFER(
+		z_interrupt_stacks[_current_cpu->id]);
+	uintptr_t irq_stack_end =
+		irq_stack + K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]);
+
+	if ((thread->stack_info.size != 0U) &&
+	    (addr >= thread->stack_info.start) &&
+	    (addr < thread->stack_info.start + thread->stack_info.size)) {
+		return true;
+	}
+
+	return (addr >= irq_stack) && (addr < irq_stack_end);
+}
+
 static struct obj_core_slot *slot_find(const struct k_obj_core *core)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(registry); i++) {
@@ -125,6 +147,12 @@ void k_obj_core_link(struct k_obj_core *obj_core)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&obj_core_lock);
+
+	if (in_stack_storage(obj_core)) {
+		type->skipped++;
+		k_spin_unlock(&obj_core_lock, key);
+		return;
+	}
 
 	slot = slot_find(obj_core);
 	if (slot == NULL) {
