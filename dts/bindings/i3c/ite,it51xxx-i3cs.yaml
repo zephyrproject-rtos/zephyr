@@ -7,6 +7,8 @@ compatible: "ite,it51xxx-i3cs"
 
 include: [base.yaml, pinctrl-device.yaml]
 
+class: [i3c, i2c]
+
 bus: [i3c, i2c]
 
 properties:
