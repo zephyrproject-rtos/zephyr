@@ -1,0 +1,61 @@
+# Description of the device
+description: Diodes I2C USB PD3.1 EPR sink controller
+
+# Compatibility string that matches the one in the Devicetree source and
+# DT_DRV_COMPAT macro in the driver source code
+compatible: "diodes,ap33772s"
+
+# Includes common definitions from other bindings files
+#  - sensor-device.yaml - common sensor properties
+#  - i2c-device.yaml - common I2C communication properties
+include: [sensor-device.yaml, i2c-device.yaml]
+
+# Defines specific Devicetree properties of the AP33772S
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO when not using polling mode.
+
+  flip-gpios:
+    type: phandle-array
+    description: |
+      Flip GPIO indicating cable connected is flipped.
+
+# The optional default: setting gives a value that will be used
+# if the property is missing from the devicetree node
+  poll-interval-ms:
+    type: int
+    default: 100
+    description: |
+      Polling interval in ms when not using interrupt mode.
+
+  epr-delay-ms:
+    type: int
+    default: 100
+    description: |
+      Delay for reading EPR PDOs after second negotiation.
+
+  tr25:
+    type: int
+    default: 10000
+    description: |
+      Thermal Resistance @25°C, Unit: Ω.
+
+  tr50:
+    type: int
+    default: 4161
+    description: |
+      Thermal Resistance @50°C, Unit: Ω.
+
+  tr75:
+    type: int
+    default: 1928
+    description: |
+      Thermal Resistance @75°C, Unit: Ω.
+
+  tr100:
+    type: int
+    default: 974
+    description: |
+      Thermal Resistance @100°C, Unit: Ω.
