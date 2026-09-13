@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Ahnaf Shahriar
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.modem.modem_cellular:
+    tags: modem_cellular
+    harness: ztest
+    platform_allow:
+      - native_sim
+      - mps2/an385
+    integration_platforms:
+      - native_sim
