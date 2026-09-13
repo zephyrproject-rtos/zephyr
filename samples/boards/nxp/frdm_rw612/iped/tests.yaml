@@ -1,0 +1,12 @@
+sample:
+  name: IPED Flash Driver Sample for frdm_rw612
+common:
+  tags: flash iped memc
+tests:
+  sample.boards.frdm_rw612.iped:
+    # Requires IPED-provisioned hardware — see README.rst
+    build_only: true
+    platform_allow:
+      - frdm_rw612
+    integration_platforms:
+      - frdm_rw612
