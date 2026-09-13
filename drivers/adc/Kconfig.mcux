@@ -112,16 +112,6 @@ config LPADC_DO_OFFSET_CALIBRATION
 	help
 	  Do offset calibration
 
-config LPADC_CHANNEL_COUNT
-	int "LPADC channel count"
-	default 15
-	range 1 15
-	help
-	  Amount of hardware command channels to use, reduce to save RAM.
-	  The user can reduce this value if their application uses fewer than
-	  15 ADC channels. This value corresponds to how many of the CMD
-	  registers can be configured within the ADC.
-
 config ADC_MCUX_LPADC_DMA_DRIVEN
 	bool "Use DMA to transfer data"
 	select DMA
