@@ -55,3 +55,11 @@
 &rng {
 	status = "okay";
 };
+
+&aes {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};

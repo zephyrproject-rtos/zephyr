@@ -11,18 +11,19 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
-  - netif:eth
-  - i2c
-  - ptp_clock
-  - spi
-  - gpio
-  - pwm
-  - counter
-  - usb_device
-  - watchdog
   - adc
+  - counter
+  - crypto
   - dac
   - dma
+  - gpio
+  - i2c
+  - netif:eth
+  - ptp_clock
+  - pwm
   - rtc
+  - spi
   - usbd
+  - usb_device
+  - watchdog
 vendor: st

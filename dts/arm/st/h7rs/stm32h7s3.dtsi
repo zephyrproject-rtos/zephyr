@@ -12,6 +12,15 @@
 / {
 	soc {
 		compatible = "st,stm32h7s3", "st,stm32h7rs", "simple-bus";
+
+		cryp: crypto@48020800 {
+			compatible = "st,stm32-cryp";
+			reg = <0x48020800 0x800>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 2)>;
+			resets = <&rctl STM32_RESET(AHB3, 2)>;
+			interrupts = <34 0>;
+			status = "disabled";
+		};
 	};
 };
 

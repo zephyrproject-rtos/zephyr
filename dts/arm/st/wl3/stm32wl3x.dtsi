@@ -15,6 +15,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &flash;
+		zephyr,entropy = &rng;
 	};
 
 	cpus {
@@ -177,6 +178,22 @@
 				 <&rcc STM32_SRC_CLK_ROOT_DIV NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 10)>;
 			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		rng: rng@48600000 {
+			compatible = "st,stm32-rng-noirq";
+			reg = <0x48600000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 18)>;
+			status = "disabled";
+		};
+
+		aes: crypto@48900000 {
+			compatible = "st,stm32-aes";
+			reg = <0x48900000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 20)>;
+			resets = <&rctl STM32_RESET(AHB0, 20)>;
+			interrupts = <13 0>;
 			status = "disabled";
 		};
 	};

@@ -8,16 +8,18 @@ toolchain:
 ram: 256
 flash: 1024
 supported:
-  - arduino_i2c
   - arduino_gpio
+  - arduino_i2c
   - arduino_spi
-  - ptp_clock
-  - uart
+  - crypto
   - gpio
-  - netif:eth
-  - usb_device
   - i2c
+  - netif:eth
+  - ptp_clock
   - pwm
+  - rng
   - spi
+  - uart
   - usbd
+  - usb_device
 vendor: st

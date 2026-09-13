@@ -362,6 +362,14 @@ csi_capture_port: &pipe_main {};
 	status = "okay";
 };
 
+&cryp {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };

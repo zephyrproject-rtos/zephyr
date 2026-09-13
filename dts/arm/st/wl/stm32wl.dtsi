@@ -529,7 +529,7 @@
 			compatible = "st,stm32-aes";
 			reg = <0x58001800 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 17)>;
-			resets = <&rctl STM32_RESET(AHB3, 16)>;
+			resets = <&rctl STM32_RESET(AHB3, 17)>;
 			interrupts = <51 0>;
 			status = "disabled";
 		};

@@ -458,6 +458,14 @@
 			status = "disabled";
 		};
 
+		hash: crypto@50060400 {
+			compatible = "st,stm32-hash";
+			reg = <0x50060400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			resets = <&rctl STM32_RESET(AHB2, 17)>;
+			status = "disabled";
+		};
+
 		rng: rng@50060800 {
 			nist-config = <0xf00d00>;
 			health-test-magic = <0x17590abc>;
