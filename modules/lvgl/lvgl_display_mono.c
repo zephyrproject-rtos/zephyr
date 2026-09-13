@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <lvgl.h>
 #include <string.h>
 #include "lvgl_display.h"
@@ -46,8 +47,8 @@ static ALWAYS_INLINE void set_px_at_pos(uint8_t *dst_buf, uint32_t x, uint32_t y
 #endif
 }
 
-static uint8_t *lvgl_transform_buffer(uint8_t *px_map, uint32_t width, uint32_t height,
-				      struct lvgl_disp_data *data)
+static uint8_t *lvgl_transform_buffer(uint8_t *px_map, uint32_t src_w, uint32_t dst_w,
+				      uint32_t dst_h, struct lvgl_disp_data *data)
 {
 #ifdef CONFIG_LV_Z_COLOR_MONO_HW_INVERSION
 	uint8_t clear_color = 0x00;
@@ -59,16 +60,16 @@ static uint8_t *lvgl_transform_buffer(uint8_t *px_map, uint32_t width, uint32_t 
 
 	/* Needed because LVGL reserves some bytes in the buffer for the color palette. */
 	uint8_t *src_buf = px_map + COLOR_PALETTE_HEADER_SIZE;
-	uint32_t stride = (width + CONFIG_LV_DRAW_BUF_STRIDE_ALIGN - 1) &
-			  ~(CONFIG_LV_DRAW_BUF_STRIDE_ALIGN - 1);
+	uint32_t stride_bytes = ROUND_UP(DIV_ROUND_UP(src_w, 8U), CONFIG_LV_DRAW_BUF_STRIDE_ALIGN);
+	uint32_t stride = stride_bytes * 8U;
 
-	for (uint32_t y = 0; y < height; y++) {
-		for (uint32_t x = 0; x < width; x++) {
+	for (uint32_t y = 0; y < dst_h; y++) {
+		for (uint32_t x = 0; x < dst_w; x++) {
 			uint32_t bit_idx = x + y * stride;
 			uint8_t src_bit = (src_buf[bit_idx / 8] >> (7 - (bit_idx % 8))) & 1;
 
 			if (src_bit) {
-				set_px_at_pos(data->mono_conv_buf, x, y, width, &data->cap);
+				set_px_at_pos(data->mono_conv_buf, x, y, dst_w, &data->cap);
 			}
 		}
 	}
@@ -83,6 +84,7 @@ void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *p
 	const bool is_last = lv_display_flush_is_last(display);
 
 	uint16_t w, h, x, y;
+	uint16_t vis_w, vis_h;
 	uint8_t *dst;
 
 #ifdef CONFIG_LV_Z_DIRECT_RENDERING
@@ -117,28 +119,39 @@ void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *p
 	}
 #endif
 
-	/* Transform buffer from LVGL format to hardware format */
-	dst = lvgl_transform_buffer(px_map, w, h, data);
+	if (x < data->cap.x_resolution && y < data->cap.y_resolution) {
+		vis_w = MIN(w, data->cap.x_resolution - x);
+		vis_h = MIN(h, data->cap.y_resolution - y);
 
-	struct display_buffer_descriptor desc = {
-		.buf_size = (w * h) / 8U,
-		.width = w,
-		.pitch = w,
-		.height = h,
+		if (vis_w > 0 && vis_h > 0) {
+			/* Transform buffer from LVGL format to hardware format */
+			dst = lvgl_transform_buffer(px_map, w, vis_w, vis_h, data);
+
+			struct display_buffer_descriptor desc = {
+				.buf_size = (data->cap.screen_info & SCREEN_INFO_MONO_VTILED) ?
+						    (uint32_t)vis_w * DIV_ROUND_UP(vis_h, 8U) :
+						    (uint32_t)DIV_ROUND_UP(vis_w, 8U) * vis_h,
+				.width = vis_w,
+				.pitch = vis_w,
+				.height = vis_h,
 #ifdef CONFIG_LV_Z_DIRECT_RENDERING
-		.frame_incomplete = false,
+				.frame_incomplete = false,
 #else
-		.frame_incomplete = !is_last,
+				.frame_incomplete = !is_last,
 #endif
-	};
+			};
 
-	display_write(display_dev, x, y, &desc, (void *)dst);
+			display_write(display_dev, x, y, &desc, (void *)dst);
 
 #ifndef CONFIG_LV_Z_DIRECT_RENDERING
-	if (data->cap.screen_info & SCREEN_INFO_DOUBLE_BUFFER) {
-		display_write(display_dev, x, y, &desc, (void *)dst);
+			if (data->cap.screen_info & SCREEN_INFO_DOUBLE_BUFFER) {
+				display_write(display_dev, x, y, &desc, (void *)dst);
+			}
+#endif
+		}
 	}
 
+#ifndef CONFIG_LV_Z_DIRECT_RENDERING
 	if (is_epd && is_last && data->blanking_on) {
 		/*
 		 * The entire screen has now been rendered. Update the display by
