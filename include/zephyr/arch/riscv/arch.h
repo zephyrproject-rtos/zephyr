@@ -316,6 +316,10 @@ struct arch_mem_domain {
 	uint64_t *ptables; /* root page table for this domain */
 	uint16_t asid; /* ASID assigned to this domain */
 	sys_snode_t node; /* domain list linkage for kernel mapping sync */
+#ifdef CONFIG_PROCESS_VM
+	uint64_t *kptables; /* the kernel's view of the domain (z_mem_domain_clone_remap) */
+	uint16_t kasid;
+#endif /* CONFIG_PROCESS_VM */
 #else
 	unsigned int pmp_update_nr;
 #endif

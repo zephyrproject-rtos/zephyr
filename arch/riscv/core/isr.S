@@ -133,6 +133,9 @@ GTEXT(z_riscv_thread_start)
 #ifdef CONFIG_RISCV_MMU
 GTEXT(z_riscv_userspace_enter)
 #endif
+#ifdef CONFIG_PROCESS_VM
+GTEXT(z_riscv_fork_resume)
+#endif
 
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_isr_enter)
@@ -214,8 +217,14 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 
 #ifdef CONFIG_RISCV_MMU
 	/* Switch to kernel address space before touching any kernel data. */
+#ifdef CONFIG_PROCESS_VM
+	/* the kernel's view of the current process (z_mem_domain_clone_remap) */
+	lr t1, ___cpu_t_current_OFFSET(s0)
+	lr t1, _thread_offset_to_ksatp(t1)
+#else
 	la t1, z_riscv_kernel_satp_val
 	lr t1, 0(t1)
+#endif /* CONFIG_PROCESS_VM */
 	csrw satp, t1
 	sfence.vma
 #endif /* CONFIG_RISCV_MMU */
@@ -708,6 +717,28 @@ close_ecall_done:
 	mv a6, sp
 #endif /* CONFIG_RISCV_ISA_RV32E */
 
+#ifdef CONFIG_PROCESS_VM
+	/*
+	 * The callee-saved registers still hold the caller's values (the C
+	 * convention preserves them through the kernel, so the exit path never
+	 * restores them); bank them so fork() can seed the child's resume.
+	 */
+	lr t1, ___cpu_t_current_OFFSET(s0)
+	li t2, __thread_fork_s_OFFSET
+	add t1, t1, t2
+	sr s1, (0*RV_REGSIZE)(t1)
+	sr s2, (1*RV_REGSIZE)(t1)
+	sr s3, (2*RV_REGSIZE)(t1)
+	sr s4, (3*RV_REGSIZE)(t1)
+	sr s5, (4*RV_REGSIZE)(t1)
+	sr s6, (5*RV_REGSIZE)(t1)
+	sr s7, (6*RV_REGSIZE)(t1)
+	sr s8, (7*RV_REGSIZE)(t1)
+	sr s9, (8*RV_REGSIZE)(t1)
+	sr s10, (9*RV_REGSIZE)(t1)
+	sr s11, (10*RV_REGSIZE)(t1)
+#endif /* CONFIG_PROCESS_VM */
+
 	/* validate syscall limit */
 	li t1, K_SYSCALL_LIMIT
 	bltu t0, t1, valid_syscall_id
@@ -1119,3 +1150,37 @@ SECTION_FUNC(exception.entry, z_riscv_userspace_enter)
 	mv sp, a4
 	TRAP_RET
 #endif /* CONFIG_RISCV_MMU */
+
+#ifdef CONFIG_PROCESS_VM
+/*
+ * void z_riscv_fork_resume(struct arch_esf *esf, const unsigned long *s)
+ *
+ * First run of a forked child, in supervisor mode on its own stack: leave
+ * through the exception exit path on the staged frame, the callee-saved
+ * registers loaded with the values banked at the parent's syscall entry.
+ */
+SECTION_FUNC(exception.entry, z_riscv_fork_resume)
+	csrc RV_STATUS, STATUS_IE
+	mv sp, a0
+	lr s1, (0*RV_REGSIZE)(a1)
+	lr s2, (1*RV_REGSIZE)(a1)
+	lr s3, (2*RV_REGSIZE)(a1)
+	lr s4, (3*RV_REGSIZE)(a1)
+	lr s5, (4*RV_REGSIZE)(a1)
+	lr s6, (5*RV_REGSIZE)(a1)
+	lr s7, (6*RV_REGSIZE)(a1)
+	lr s8, (7*RV_REGSIZE)(a1)
+	lr s9, (8*RV_REGSIZE)(a1)
+	lr s10, (9*RV_REGSIZE)(a1)
+	lr s11, (10*RV_REGSIZE)(a1)
+#ifdef CONFIG_FPU_SHARING
+	/* the exit path decrements exception_depth and re-evaluates FPU access */
+	get_current_cpu s0
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lb t1, _thread_offset_to_exception_depth(t0)
+	addi t1, t1, 1
+	sb t1, _thread_offset_to_exception_depth(t0)
+	call z_riscv_fpu_enter_exc
+#endif /* CONFIG_FPU_SHARING */
+	j might_have_rescheduled
+#endif /* CONFIG_PROCESS_VM */

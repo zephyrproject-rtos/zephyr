@@ -85,6 +85,11 @@ struct _thread_arch {
 #endif
 #ifdef CONFIG_RISCV_MMU
 	uintptr_t satp; /* SATP value for this thread's address space */
+#ifdef CONFIG_PROCESS_VM
+	uintptr_t ksatp; /* SATP of the kernel's view of that address space */
+	/* caller's s1..s11 banked at syscall entry (fork frame seed) */
+	unsigned long fork_s[11];
+#endif /* CONFIG_PROCESS_VM */
 #endif
 #if defined(CONFIG_CPP) && !defined(CONFIG_FPU_SHARING) && !defined(CONFIG_USERSPACE) && \
 	!defined(CONFIG_PMP_STACK_GUARD) && !defined(CONFIG_RISCV_MMU)

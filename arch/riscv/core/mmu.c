@@ -1144,6 +1144,58 @@ static void sync_l2_from_kernel(uint64_t *k_l1, uint64_t *d_l1)
  *
  * Must be called with xlat_lock held.
  */
+static void sync_root(uint64_t *domain_root)
+{
+	unsigned int i;
+
+	for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
+		pte_t k_pte = kernel_root_table[i];
+		pte_t d_pte = domain_root[i];
+
+		if (!pte_is_valid(k_pte)) {
+			continue;
+		}
+
+		if (!pte_is_valid(d_pte)) {
+			/* Domain missing this L0 entry entirely. */
+			domain_root[i] = k_pte;
+			continue;
+		}
+
+		if (!pte_is_table(k_pte) || !pte_is_table(d_pte)) {
+			/* Leaf (huge page) mapping - no sub-table to sync. */
+			continue;
+		}
+
+		{
+			uint64_t *k_l1 = (uint64_t *)pte_to_phys(k_pte);
+			uint64_t *d_l1 = (uint64_t *)pte_to_phys(d_pte);
+			unsigned int j;
+
+			if (k_l1 == d_l1) {
+				/* Shared L1 - already in sync. */
+				continue;
+			}
+
+			/*
+			 * Domain has a private L1 copy.  Copy any
+			 * kernel L1 entries that are absent in the
+			 * private copy.
+			 */
+			for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
+				if (pte_is_valid(k_l1[j]) &&
+				    !pte_is_valid(d_l1[j])) {
+					d_l1[j] = k_l1[j];
+				}
+			}
+
+#if PGTABLE_LEVELS == 4
+			sync_l2_from_kernel(k_l1, d_l1);
+#endif
+		}
+	}
+}
+
 static void sync_domains(void)
 {
 	sys_snode_t *node;
@@ -1151,55 +1203,13 @@ static void sync_domains(void)
 	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
 		struct arch_mem_domain *arch_domain =
 			CONTAINER_OF(node, struct arch_mem_domain, node);
-		uint64_t *domain_root = arch_domain->ptables;
-		unsigned int i;
 
-		for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
-			pte_t k_pte = kernel_root_table[i];
-			pte_t d_pte = domain_root[i];
-
-			if (!pte_is_valid(k_pte)) {
-				continue;
-			}
-
-			if (!pte_is_valid(d_pte)) {
-				/* Domain missing this L0 entry entirely. */
-				domain_root[i] = k_pte;
-				continue;
-			}
-
-			if (!pte_is_table(k_pte) || !pte_is_table(d_pte)) {
-				/* Leaf (huge page) mapping - no sub-table to sync. */
-				continue;
-			}
-
-			{
-				uint64_t *k_l1 = (uint64_t *)pte_to_phys(k_pte);
-				uint64_t *d_l1 = (uint64_t *)pte_to_phys(d_pte);
-				unsigned int j;
-
-				if (k_l1 == d_l1) {
-					/* Shared L1 - already in sync. */
-					continue;
-				}
-
-				/*
-				 * Domain has a private L1 copy.  Copy any
-				 * kernel L1 entries that are absent in the
-				 * private copy.
-				 */
-				for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
-					if (pte_is_valid(k_l1[j]) &&
-					    !pte_is_valid(d_l1[j])) {
-						d_l1[j] = k_l1[j];
-					}
-				}
-
-#if PGTABLE_LEVELS == 4
-				sync_l2_from_kernel(k_l1, d_l1);
-#endif
-			}
+		sync_root(arch_domain->ptables);
+#ifdef CONFIG_PROCESS_VM
+		if (arch_domain->kptables != NULL) {
+			sync_root(arch_domain->kptables);
 		}
+#endif /* CONFIG_PROCESS_VM */
 	}
 }
 
@@ -1282,6 +1292,11 @@ static void sync_domain_leaves(uintptr_t va, size_t size)
 			CONTAINER_OF(node, struct arch_mem_domain, node);
 
 		sync_root_leaves(arch_domain->ptables, arch_domain->asid, va, size);
+#ifdef CONFIG_PROCESS_VM
+		if (arch_domain->kptables != NULL) {
+			sync_root_leaves(arch_domain->kptables, arch_domain->kasid, va, size);
+		}
+#endif /* CONFIG_PROCESS_VM */
 	}
 }
 
@@ -1332,6 +1347,9 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	}
 
 	domain->arch.asid = alloc_asid();
+#ifdef CONFIG_PROCESS_VM
+	domain->arch.kptables = NULL;
+#endif /* CONFIG_PROCESS_VM */
 
 	sys_slist_append(&domain_list, &domain->arch.node);
 
@@ -1411,6 +1429,177 @@ static int ensure_private_tables(uint64_t *domain_root, uintptr_t va, size_t siz
 	}
 	return 0;
 }
+
+#ifdef CONFIG_PROCESS_VM
+/* A private copy of a page table, PTE count included. Must hold xlat_lock. */
+static uint64_t *copy_table(const uint64_t *src)
+{
+	uint64_t *table = new_table();
+	unsigned int i;
+
+	if (table == NULL) {
+		return NULL;
+	}
+	inc_table_ref(table);
+	memcpy(table, src, PAGE_SIZE);
+	for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
+		if (pte_is_valid(table[i])) {
+			adjust_table_usage(table, 1);
+		}
+	}
+
+	return table;
+}
+
+/* Clear PTE_USER on the leaves of @table in [text_start, rom_end). */
+static void clear_user_text(uint64_t *table, uintptr_t base, uintptr_t text_start,
+			    uintptr_t rom_end)
+{
+	unsigned int i;
+
+	for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
+		uintptr_t page_va = base + ((uintptr_t)i << PAGE_SIZE_SHIFT);
+		pte_t pte = table[i];
+
+		if (pte_is_valid(pte) && pte_is_leaf(pte) && (page_va >= text_start) &&
+		    (page_va < rom_end)) {
+			table[i] = pte & ~((pte_t)PTE_USER);
+		}
+	}
+}
+
+/*
+ * Build the kernel's view of a domain whose memory diverges from the
+ * kernel's own (a forking child): the domain's own tables, except that the
+ * leaf tables covering kernel text are copied so PTE_USER can stay clear
+ * there (S-mode cannot execute a user page).  Everything else is shared
+ * with the user view, so the diverged leaves z_mem_domain_clone_remap()
+ * installs are seen by both.  Threads of the domain trap into this view
+ * instead of the kernel's global tables (see _isr_wrapper), so their
+ * system calls read and write the process's copies.
+ *
+ * Must be called with xlat_lock held.
+ */
+static int kernel_view_init(struct k_mem_domain *domain)
+{
+	extern char __rom_region_start[];
+	extern char __text_region_start[];
+	extern char __rom_region_end[];
+
+	const uintptr_t rom_start = ROUND_DOWN((uintptr_t)__rom_region_start, PAGE_SIZE);
+	const uintptr_t text_start = (uintptr_t)__text_region_start;
+	const uintptr_t rom_end = ROUND_UP((uintptr_t)__rom_region_end, PAGE_SIZE);
+	const unsigned int l0_idx = VPN(rom_start, 0);
+	uint64_t *root;
+	uint64_t *l1;
+	pte_t l0_pte;
+	unsigned int l1_idx;
+
+	root = new_table();
+	if (root == NULL) {
+		return -ENOMEM;
+	}
+	inc_table_ref(root);
+	memcpy(root, domain->arch.ptables, PAGE_SIZE);
+
+	l0_pte = root[l0_idx];
+	if (!pte_is_valid(l0_pte) || !pte_is_table(l0_pte)) {
+		goto done;
+	}
+
+	l1 = copy_table((uint64_t *)pte_to_phys(l0_pte));
+	if (l1 == NULL) {
+		return -ENOMEM;
+	}
+	root[l0_idx] = pte_create((uintptr_t)l1, PTE_TYPE_TABLE);
+
+	for (l1_idx = 0; l1_idx < RISCV_PGTABLE_ENTRIES; l1_idx++) {
+		pte_t l1_pte = l1[l1_idx];
+		uintptr_t l1_base = ((uintptr_t)l0_idx << RISCV_PGLEVEL_SHIFT(0)) |
+				    ((uintptr_t)l1_idx << RISCV_PGLEVEL_SHIFT(1));
+		uint64_t *l2;
+
+		if (!pte_is_valid(l1_pte) || pte_is_leaf(l1_pte) || (l1_base >= rom_end) ||
+		    (l1_base + L1_MAP_SIZE <= text_start)) {
+			continue;
+		}
+
+		l2 = copy_table((uint64_t *)pte_to_phys(l1_pte));
+		if (l2 == NULL) {
+			return -ENOMEM;
+		}
+		l1[l1_idx] = pte_create((uintptr_t)l2, PTE_TYPE_TABLE);
+
+#if PGTABLE_LEVELS == 4
+		for (unsigned int i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
+			pte_t l2_pte = l2[i];
+			uintptr_t l2_base = l1_base | ((uintptr_t)i << RISCV_PGLEVEL_SHIFT(2));
+			uint64_t *l3;
+
+			if (!pte_is_valid(l2_pte) || pte_is_leaf(l2_pte) || (l2_base >= rom_end) ||
+			    (l2_base + BIT(RISCV_PGLEVEL_SHIFT(2)) <= text_start)) {
+				continue;
+			}
+
+			l3 = copy_table((uint64_t *)pte_to_phys(l2_pte));
+			if (l3 == NULL) {
+				return -ENOMEM;
+			}
+			l2[i] = pte_create((uintptr_t)l3, PTE_TYPE_TABLE);
+			clear_user_text(l3, l2_base, text_start, rom_end);
+		}
+#else
+		clear_user_text(l2, l1_base, text_start, rom_end);
+#endif
+	}
+
+done:
+	domain->arch.kptables = root;
+	domain->arch.kasid = alloc_asid();
+
+	return 0;
+}
+
+/*
+ * Repoint the mappings of [virt, virt+size) in @a domain at fresh physical
+ * memory starting at @a phys, as writable user memory, in the user and the
+ * kernel view alike (S-mode reaches user pages through SUM).  The domain is
+ * not live on any CPU when this runs (a forking child before its first
+ * start).
+ */
+int z_mem_domain_clone_remap(struct k_mem_domain *domain, void *virt, size_t size, uintptr_t phys)
+{
+	uintptr_t va = (uintptr_t)virt;
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	if (((va | size | phys) % CONFIG_MMU_PAGE_SIZE) != 0U) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&xlat_lock);
+
+	if (domain->arch.kptables == NULL) {
+		ret = kernel_view_init(domain);
+	}
+	if (ret == 0) {
+		ret = ensure_private_tables(domain->arch.ptables, va, size);
+	}
+	if (ret == 0) {
+		ret = ensure_private_tables(domain->arch.kptables, va, size);
+	}
+	if (ret == 0) {
+		map_pages_into(domain->arch.ptables, va, phys, size, PTE_PAGE_RW | PTE_USER);
+		map_pages_into(domain->arch.kptables, va, phys, size, PTE_PAGE_RW | PTE_USER);
+		SFENCE_VMA_ASID(domain->arch.asid);
+		SFENCE_VMA_ASID(domain->arch.kasid);
+	}
+
+	k_spin_unlock(&xlat_lock, key);
+
+	return ret;
+}
+#endif /* CONFIG_PROCESS_VM */
 
 int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partition_id)
 {
@@ -1550,6 +1739,15 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	thread->arch.satp = ((uintptr_t)SATP_MODE << SATP_MODE_SHIFT) |
 			    ((uintptr_t)domain->arch.asid << SATP_ASID_SHIFT) |
 			    ((uintptr_t)domain->arch.ptables >> PAGE_SIZE_SHIFT);
+#ifdef CONFIG_PROCESS_VM
+	/* system calls run on the kernel's view of a diverged address space */
+	thread->arch.ksatp = z_riscv_kernel_satp();
+	if (domain->arch.kptables != NULL) {
+		thread->arch.ksatp = ((uintptr_t)SATP_MODE << SATP_MODE_SHIFT) |
+				     ((uintptr_t)domain->arch.kasid << SATP_ASID_SHIFT) |
+				     ((uintptr_t)domain->arch.kptables >> PAGE_SIZE_SHIFT);
+	}
+#endif /* CONFIG_PROCESS_VM */
 
 	/*
 	 * Ensure the thread's user stack is mapped with PTE_USER in the
@@ -1569,33 +1767,28 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	/* Revert to kernel page tables */
 	thread->arch.satp = z_riscv_kernel_satp();
+#ifdef CONFIG_PROCESS_VM
+	thread->arch.ksatp = thread->arch.satp;
+#endif /* CONFIG_PROCESS_VM */
 
 	return 0;
 }
 
-int arch_mem_domain_destroy(struct k_mem_domain *domain)
+/*
+ * Release intermediate tables that are exclusively owned by a root table
+ * (ref_count == XLAT_REF_COUNT_UNIT means only that root points to them),
+ * then the root itself.  Tables shared with the kernel page table have a
+ * higher ref count and must not be freed.
+ *
+ * TODO: recurse into deeper levels for partitions that required
+ * multi-level exclusive sub-tables.
+ *
+ * Must be called with xlat_lock held.
+ */
+static void release_root(uint64_t *ptables)
 {
-	k_spinlock_key_t key;
-	uint64_t *ptables = domain->arch.ptables;
 	int i;
 
-	if (!ptables) {
-		return 0;
-	}
-
-	key = k_spin_lock(&xlat_lock);
-
-	sys_slist_find_and_remove(&domain_list, &domain->arch.node);
-
-	/*
-	 * Release intermediate tables that are exclusively owned by this
-	 * domain (ref_count == XLAT_REF_COUNT_UNIT means only the domain
-	 * root points to them).  Tables shared with the kernel page table
-	 * have a higher ref count and must not be freed.
-	 *
-	 * TODO: recurse into deeper levels for partitions that required
-	 * multi-level exclusive sub-tables.
-	 */
 	for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
 		pte_t pte = ptables[i];
 
@@ -1609,8 +1802,29 @@ int arch_mem_domain_destroy(struct k_mem_domain *domain)
 		}
 	}
 
-	/* Free the domain root table */
 	xlat_use_count[table_index(ptables)] = 0;
+}
+
+int arch_mem_domain_destroy(struct k_mem_domain *domain)
+{
+	k_spinlock_key_t key;
+	uint64_t *ptables = domain->arch.ptables;
+
+	if (!ptables) {
+		return 0;
+	}
+
+	key = k_spin_lock(&xlat_lock);
+
+	sys_slist_find_and_remove(&domain_list, &domain->arch.node);
+
+#ifdef CONFIG_PROCESS_VM
+	if (domain->arch.kptables != NULL) {
+		release_root(domain->arch.kptables);
+		domain->arch.kptables = NULL;
+	}
+#endif /* CONFIG_PROCESS_VM */
+	release_root(ptables);
 	domain->arch.ptables = NULL;
 
 	k_spin_unlock(&xlat_lock, key);

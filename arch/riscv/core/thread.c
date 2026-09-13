@@ -135,6 +135,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #ifdef CONFIG_RISCV_MMU
 	thread->arch.satp = z_riscv_kernel_satp();
+#ifdef CONFIG_PROCESS_VM
+	thread->arch.ksatp = thread->arch.satp;
+#endif /* CONFIG_PROCESS_VM */
 #endif
 
 #ifdef CONFIG_RISCV_MMU_STACK_GUARD
@@ -378,3 +381,44 @@ int arch_coprocessors_disable(struct k_thread *thread)
 	return -ENOTSUP;
 #endif
 }
+
+#ifdef CONFIG_PROCESS_VM
+/*
+ * A forked child resumes through the exception exit path on a copy of the
+ * parent's syscall frame, staged where a live user trap would build it: at
+ * the top of the child's privilege stack.  The parent's callee-saved
+ * registers, banked at syscall entry, seed the child's; a0 reads 0, the
+ * child's fork() return.
+ */
+void *arch_fork_frame_init(struct k_thread *child, void *parent_ssf)
+{
+	const struct arch_esf *pesf = parent_ssf;
+	struct arch_esf *esf;
+	unsigned long top;
+
+	child->arch.priv_stack_start = (unsigned long)child->stack_obj;
+	top = Z_STACK_PTR_ALIGN(child->arch.priv_stack_start + K_KERNEL_STACK_RESERVED +
+				CONFIG_PRIVILEGED_STACK_SIZE);
+	esf = Z_STACK_PTR_TO_FRAME(struct arch_esf, top);
+
+	*esf = *pesf;
+	esf->a0 = 0;
+	(void)memcpy(child->arch.fork_s, _current->arch.fork_s, sizeof(child->arch.fork_s));
+
+	return esf;
+}
+
+FUNC_NORETURN void arch_fork_resume(void *frame)
+{
+	extern FUNC_NORETURN void z_riscv_fork_resume(struct arch_esf *esf,
+						       const unsigned long *s);
+#ifdef CONFIG_INIT_STACKS
+	uintptr_t bottom = _current->arch.priv_stack_start + K_KERNEL_STACK_RESERVED;
+
+	/* the privilege stack below the staged frame, as arch_user_mode_enter() would */
+	(void)memset((void *)bottom, 0xaa, (uintptr_t)frame - bottom);
+#endif /* CONFIG_INIT_STACKS */
+
+	z_riscv_fork_resume(frame, _current->arch.fork_s);
+}
+#endif /* CONFIG_PROCESS_VM */

@@ -73,6 +73,16 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	/* Get the new thread's stack pointer */
 	lr sp, _thread_offset_to_sp(a0)
 
+#ifdef CONFIG_PROCESS_VM
+	/* run on the incoming thread's kernel view of its address space */
+	lr t0, _thread_offset_to_ksatp(a0)
+	csrr t1, satp
+	beq t0, t1, 1f
+	csrw satp, t0
+	sfence.vma
+1:
+#endif /* CONFIG_PROCESS_VM */
+
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 #ifdef CONFIG_USERSPACE
 	/*

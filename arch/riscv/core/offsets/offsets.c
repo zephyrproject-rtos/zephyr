@@ -97,6 +97,10 @@ GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
 
 #ifdef CONFIG_RISCV_MMU
 GEN_OFFSET_SYM(_thread_arch_t, satp);
+#ifdef CONFIG_PROCESS_VM
+GEN_OFFSET_SYM(_thread_arch_t, ksatp);
+GEN_ABSOLUTE_SYM(__thread_fork_s_OFFSET, offsetof(struct k_thread, arch.fork_s));
+#endif /* CONFIG_PROCESS_VM */
 #endif
 
 /* esf member offsets */

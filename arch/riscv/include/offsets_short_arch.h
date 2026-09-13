@@ -64,6 +64,10 @@
 #ifdef CONFIG_RISCV_MMU
 #define _thread_offset_to_satp \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_satp_OFFSET)
+#ifdef CONFIG_PROCESS_VM
+#define _thread_offset_to_ksatp \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_ksatp_OFFSET)
+#endif
 #endif
 
 #ifdef CONFIG_USERSPACE
