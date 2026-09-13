@@ -22,6 +22,13 @@ struct zvfs_eventfd {
 	struct k_spinlock lock;
 	zvfs_eventfd_t cnt;
 	int flags;
+	/* fdtable entry lock, delivered via ZFD_IOCTL_SET_LOCK at creation
+	 * time so that read/write paths do not need to scan the fdtable to
+	 * recover it.  The condvar used with that lock for blocking
+	 * operations is embedded here for the same reason.
+	 */
+	struct k_mutex *mtx;
+	struct k_condvar cond;
 };
 
 static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
@@ -173,8 +180,6 @@ static int zvfs_eventfd_close_op(void *obj)
 	int ret;
 	int err;
 	k_spinlock_key_t key;
-	struct k_mutex *lock = NULL;
-	struct k_condvar *cond = NULL;
 	struct zvfs_eventfd *efd = (struct zvfs_eventfd *)obj;
 
 	if (k_is_in_isr()) {
@@ -182,11 +187,6 @@ static int zvfs_eventfd_close_op(void *obj)
 		errno = EWOULDBLOCK;
 		return -1;
 	}
-
-	err = (int)zvfs_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
-	__ASSERT((bool)err, "zvfs_get_obj_lock_and_cond() failed");
-	__ASSERT_NO_MSG(lock != NULL);
-	__ASSERT_NO_MSG(cond != NULL);
 
 	key = k_spin_lock(&efd->lock);
 
@@ -207,7 +207,7 @@ static int zvfs_eventfd_close_op(void *obj)
 unlock:
 	k_spin_unlock(&efd->lock, key);
 	/* when closing an zvfs_eventfd, broadcast to all waiters */
-	k_condvar_broadcast(cond);
+	k_condvar_broadcast(&efd->cond);
 
 	return ret;
 }
@@ -270,6 +270,14 @@ static int zvfs_eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 		ret = zvfs_eventfd_poll_update(obj, pfd, pev);
 	} break;
 
+	case ZFD_IOCTL_SET_LOCK: {
+		/* Cache the fdtable entry lock so that the read/write paths
+		 * do not need an O(N) reverse fdtable scan to recover it.
+		 */
+		efd->mtx = va_arg(args, struct k_mutex *);
+		ret = 0;
+	} break;
+
 	default:
 		errno = EOPNOTSUPP;
 		ret = -1;
@@ -297,8 +305,8 @@ static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
 	ssize_t ret;
 	k_spinlock_key_t key;
 	struct zvfs_eventfd *efd = obj;
-	struct k_mutex *lock = NULL;
-	struct k_condvar *cond = NULL;
+	struct k_mutex *lock;
+	struct k_condvar *cond;
 
 	if (sz < sizeof(zvfs_eventfd_t)) {
 		errno = EINVAL;
@@ -339,10 +347,9 @@ static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
 		goto unlock_spin;
 	}
 
-	err = (int)zvfs_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
-	__ASSERT((bool)err, "zvfs_get_obj_lock_and_cond() failed");
+	lock = efd->mtx;
+	cond = &efd->cond;
 	__ASSERT_NO_MSG(lock != NULL);
-	__ASSERT_NO_MSG(cond != NULL);
 
 	k_spin_unlock(&efd->lock, key);
 
@@ -419,7 +426,9 @@ int zvfs_eventfd(unsigned int initval, int flags)
 
 	efd->flags = ZVFS_EFD_IN_USE | flags;
 	efd->cnt = initval;
+	efd->mtx = NULL;
 
+	k_condvar_init(&efd->cond);
 	k_poll_signal_init(&efd->write_sig);
 	k_poll_signal_init(&efd->read_sig);
 
@@ -439,18 +448,15 @@ int zvfs_eventfd_read(int fd, zvfs_eventfd_t *value)
 	int ret;
 	void *obj;
 	int err;
-	struct k_mutex *lock = NULL;
-	struct k_condvar *cond = NULL;
+	struct k_mutex *lock;
 
 	obj = zvfs_get_fd_obj(fd, &zvfs_eventfd_fd_vtable, EBADF);
 	if (obj == NULL) {
 		return -1;
 	}
 
-	err = (int)zvfs_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
-	__ASSERT((bool)err, "zvfs_get_obj_lock_and_cond() failed");
+	lock = ((struct zvfs_eventfd *)obj)->mtx;
 	__ASSERT_NO_MSG(lock != NULL);
-	__ASSERT_NO_MSG(cond != NULL);
 
 	err = k_mutex_lock(lock, K_FOREVER);
 	__ASSERT(err == 0, "k_mutex_lock() failed: %d", err);
@@ -473,18 +479,15 @@ int zvfs_eventfd_write(int fd, zvfs_eventfd_t value)
 	int ret;
 	void *obj;
 	int err;
-	struct k_mutex *lock = NULL;
-	struct k_condvar *cond = NULL;
+	struct k_mutex *lock;
 
 	obj = zvfs_get_fd_obj(fd, &zvfs_eventfd_fd_vtable, EBADF);
 	if (obj == NULL) {
 		return -1;
 	}
 
-	err = (int)zvfs_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
-	__ASSERT((bool)err, "zvfs_get_obj_lock_and_cond() failed");
+	lock = ((struct zvfs_eventfd *)obj)->mtx;
 	__ASSERT_NO_MSG(lock != NULL);
-	__ASSERT_NO_MSG(cond != NULL);
 
 	err = k_mutex_lock(lock, K_FOREVER);
 	__ASSERT(err == 0, "k_mutex_lock() failed: %d", err);
