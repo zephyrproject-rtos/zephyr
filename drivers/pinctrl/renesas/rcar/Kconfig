@@ -11,6 +11,7 @@ config PINCTRL_RCAR_PFC
 config PINCTRL_RCAR_VOLTAGE_CONTROL
 	bool "Voltage control functionality of Renesas R-Car PFC driver"
 	default y if SOC_SERIES_RCAR_GEN3
+	default y if SOC_R8A779G0_R52 || SOC_R8A779G0_A76
 	depends on PINCTRL_RCAR_PFC
 
 config PINCTRL_RCAR_SCMI
