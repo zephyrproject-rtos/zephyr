@@ -184,6 +184,13 @@
 				reg = <0xe>;
 				clocks = <&imx219_input_clock>;
 			};
+
+			test_i2c_gc0308: gc0308@f {
+				compatible = "galaxycore,gc0308";
+				reg = <0xf>;
+				reset-gpios = <&test_gpio 0 0>;
+				pwdn-gpios = <&test_gpio 1 0>;
+			};
 		};
 
 		test_video_emul_rx: video_emul_rx@10003000 {
