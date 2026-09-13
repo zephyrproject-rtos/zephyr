@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+description: Allwinner Security ID (SID) eFuse Controller
+
+compatible: "allwinner,sunxi-sid"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
