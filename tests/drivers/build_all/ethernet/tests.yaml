@@ -38,6 +38,8 @@ tests:
       - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
       - stm32h573i_dk
       - stm32mp135f_dk
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - stm32n6570_dk/stm32n657xx/sb
       - esp32_ethernet_kit/esp32/procpu
       - esp32p4x_function_ev_board/esp32p4/hpcore
       - frdm_mcxn947/mcxn947/cpu0
