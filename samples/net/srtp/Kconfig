@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Basalte bv
+# SPDX-FileCopyrightText: 2026 Sayed Naser Moravej
+# SPDX-License-Identifier: Apache-2.0
+
+choice SRTP_SAMPLE_ROLE
+	prompt "SRTP Sample Role"
+
+config SRTP_SAMPLE_ROLE_SINK
+	bool "SRTP Sample Role Sink"
+	help
+	  Build the SRTP sample as a sink
+
+config SRTP_SAMPLE_ROLE_SOURCE
+	bool "SRTP Sample Role Source"
+	help
+	  Build the SRTP sample as a source
+
+endchoice
+
+config RTP_SAMPLE_IPV6
+	bool "Use IPv6 for the RTP session"
+	depends on NET_IPV6
+	help
+	  Join the RTP multicast group over IPv6 instead of IPv4.
+
+source "Kconfig.zephyr"
