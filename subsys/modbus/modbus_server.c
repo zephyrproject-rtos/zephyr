@@ -989,6 +989,10 @@ bool modbus_server_handler(struct modbus_context *ctx)
 
 	update_server_msg_ctr(ctx);
 
+	if (ctx->mbs_user_cb->lock_reg != NULL) {
+		ctx->mbs_user_cb->lock_reg();
+	}
+
 	switch (fc) {
 	case MODBUS_FC01_COIL_RD:
 		send_reply = mbs_fc01_coil_read(ctx);
@@ -1028,6 +1032,10 @@ bool modbus_server_handler(struct modbus_context *ctx)
 
 	default:
 		send_reply = mbs_try_user_fc(ctx, fc);
+	}
+
+	if (ctx->mbs_user_cb->unlock_reg != NULL) {
+		ctx->mbs_user_cb->unlock_reg();
 	}
 
 	if (addr == 0) {
