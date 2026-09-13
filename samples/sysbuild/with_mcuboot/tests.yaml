@@ -55,3 +55,29 @@ tests:
       regex:
         - "Address of sample(.*)"
         - "Hello sysbuild with mcuboot!(.*)"
+
+  sample.sysbuild.with_mcuboot.nxp_ethernet:
+    sysbuild: true
+    # Validates that Ethernet initializes correctly after MCUboot in
+    # sysbuild scenarios on NXP boards. MCUboot calls
+    # CLOCK_DeinitTddrRefClk() unconditionally, which clears the
+    # TDDR_PDB bit. Without the soc.c fix the PHY autonegotiation
+    # fails on boards using the ksz8081 transceiver.
+    # See: https://github.com/zephyrproject-rtos/zephyr/issues/108399
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga/rw612/ethernet
+      - mimxrt1064_evk
+    integration_platforms:
+      - frdm_rw612
+    extra_configs:
+      - CONFIG_NETWORKING=y
+      - CONFIG_NET_L2_ETHERNET=y
+      - CONFIG_ETH_DRIVER=y
+    tags: mcuboot ethernet
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Address of sample(.*)"
+        - "Hello sysbuild with mcuboot!(.*)"
