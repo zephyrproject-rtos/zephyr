@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * FeatherS3 revision P4:
+ * Both STEMMA QT connectors share the same I2C bus (I2C0 on IO8/IO9).
+ */
+
+&i2c1 {
+	status = "disabled";
+};
+
+/ {
+	/* P4: Vertical STEMMA QT shares I2C0 pins (IO8/IO9) */
+	stemma2_connector: stemma2_connector {
+		gpio-map = <0 0 &gpio0 9 0>,	/* SCL */
+			   <1 0 &gpio0 8 0>;	/* SDA */
+	};
+};
