@@ -160,6 +160,32 @@ details on this bootloader.
 Integration of this bootloader in the Zephyr build environment is available
 in the external `STM32 OEMxROT module`_.
 
+Low Power
+=========
+
+Nucleo WBA25CE1 supports Zephyr power management to enter low-power states
+when the application is idle.
+
+To achieve the lowest power consumption, Zephyr ``suspend-to-ram`` leverages
+the STM32 Standby mode on this platform.
+
+Power management must be enabled in your application by activating
+``CONFIG_PM``:
+
+.. code-block:: none
+
+  CONFIG_PM=y
+
+For suspend-to-ram on STM32WBA, the reference implementation is
+:zephyr:code-sample:`ble_peripheral_hr`, used together with
+:zephyr_file:`samples/bluetooth/peripheral_hr/boards/stm32wba_pwr_optim.overlay`.
+
+.. code-block:: console
+
+   west build -b nucleo_wba25ce1 samples/bluetooth/peripheral_hr -- \
+     -DDTC_OVERLAY_FILE=boards/stm32wba_pwr_optim.overlay \
+     -DCONFIG_PM=y
+
 Connections and IOs
 ===================
 
