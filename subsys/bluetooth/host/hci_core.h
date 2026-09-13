@@ -102,7 +102,9 @@ enum {
 #endif
 
 enum {
-	/* Advertising set has been created in the host. */
+	/* Advertising set has been reserved for creation in the host. */
+	BT_ADV_RESERVED,
+	/* Advertising set has been created and finalized for use */
 	BT_ADV_CREATED,
 	/* Advertising parameters has been set in the controller.
 	 * This implies that the advertising set has been created in the
@@ -191,6 +193,7 @@ struct pawr_rsp_reassembly {
 #endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
 
 struct bt_le_ext_adv {
+
 	/* ID Address used for advertising */
 	uint8_t                 id;
 
@@ -224,14 +227,15 @@ struct bt_le_ext_adv {
 	/* Current target address */
 	bt_addr_le_t            target_addr;
 
-	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
-
 	struct k_work_delayable	lim_adv_timeout_work;
 
 	/** The options used to set the parameters for this advertising set
 	 * @ref bt_le_adv_param
 	 */
 	uint32_t options;
+
+	/* Shall be the last field in this struct */
+	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
 };
 
 enum {
