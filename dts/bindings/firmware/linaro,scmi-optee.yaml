@@ -1,0 +1,44 @@
+# Copyright 2026 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        SCMI (System Control and Management Interface) transport using OP-TEE SCMI PTA.
+
+compatible: "linaro,scmi-optee"
+
+include: [base.yaml]
+
+properties:
+  linaro,optee-channel-id:
+    required: true
+    type: int
+    description: |
+      Channel specifier required when using OP-TEE transport.
+
+  '#address-cells':
+    const: 1
+
+  '#size-cells':
+    const: 0
+
+examples:
+  - |
+    scmi {
+          compatible = "linaro,scmi-optee";
+          linaro,optee-channel-id = <0>;
+
+          #address-cells = <1>;
+          #size-cells = <0>;
+
+          scmi_pds: protocol@11 {
+            compatible = "arm,scmi-power";
+            reg = <0x11>;
+            #power-domain-cells = <1>;
+          };
+
+          scmi_clk: protocol@14 {
+            compatible = "arm,scmi-clock";
+            reg = <0x14>;
+            #clock-cells = <1>;
+          };
+    };
