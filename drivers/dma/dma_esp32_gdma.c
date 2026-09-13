@@ -362,6 +362,23 @@ static void dma_esp32_invd_keep_edges(uint8_t *buf, size_t len)
 #endif
 }
 
+/* Before a transfer the CPU still owns the buffer: the controller may fill
+ * only part of it, and the rest has to read back as the CPU left it. Write
+ * the cached copy out and drop it, so memory holds the CPU data and no
+ * stale line can later be written over what the controller delivers.
+ */
+static void dma_esp32_cache_prepare_data(struct dma_esp32_channel *dma_channel)
+{
+	esp_dma_desc_t *desc = dma_channel->desc_list;
+
+	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list) && desc; ++i) {
+		if (desc->buffer && desc->dw0.size) {
+			sys_cache_data_flush_and_invd_range(desc->buffer, desc->dw0.size);
+		}
+		desc = desc->next;
+	}
+}
+
 static void dma_esp32_cache_invd_data(struct dma_esp32_channel *dma_channel)
 {
 	esp_dma_desc_t *desc = dma_channel->desc_list;
@@ -551,7 +568,7 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 	if (dma_channel->dir == DMA_TX) {
 		dma_esp32_cache_flush_data(dma_channel);
 	} else {
-		dma_esp32_cache_invd_data(dma_channel);
+		dma_esp32_cache_prepare_data(dma_channel);
 	}
 
 	return 0;
@@ -930,7 +947,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 	if (dma_channel->dir == DMA_TX) {
 		dma_esp32_cache_flush_data(dma_channel);
 	} else {
-		dma_esp32_cache_invd_data(dma_channel);
+		dma_esp32_cache_prepare_data(dma_channel);
 	}
 
 	return 0;
