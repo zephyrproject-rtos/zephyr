@@ -110,6 +110,23 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     def do_require(self):
         self.require('nrfutil')
 
+    def _read_ctrl_ap_register(self, address):
+        output = self._exec([
+            'x-access-port-register-read',
+            '--ctrl-ap',
+            '--address', hex(address),
+            '--serial-number', self.dev_id,
+            '--family', self.family,
+        ])
+
+        for item in output:
+            if item.get('type') == 'task_end':
+                result = item.get('data', {}).get('data', {})
+                return result['registerValue']
+
+        raise RuntimeError(
+            f'nrfutil CTRL-AP register read failed to return a value for address {hex(address)}')
+
     def _insert_op(self, op):
         op['operationId'] = f'{self._op_id}'
         self._op_id += 1
