@@ -223,3 +223,10 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&main_spi0 {
+	pinctrl-0 = <&main_spi0_clk &main_spi0_cs0 &main_spi0_d0 &main_spi0_d1>;
+	pinctrl-names = "default";
+	status = "okay";
+	power-domains = <&main_spi0_pd>;
+};
