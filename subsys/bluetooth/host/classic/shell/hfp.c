@@ -1908,12 +1908,14 @@ static int cmd_ag_voice_recognition(const struct shell *sh, size_t argc, char **
 static int cmd_ag_vre_state(const struct shell *sh, size_t argc, char **argv)
 {
 	const char *action;
+	size_t len;
 	uint8_t state = 0;
 	int err;
 
 	action = argv[1];
 
-	for (size_t index = 0; index < strlen(action); index++) {
+	len = strlen(action);
+	for (size_t index = 0; index < len; index++) {
 		switch (action[index]) {
 		case 'R':
 			state |= BIT(0);
@@ -1939,6 +1941,7 @@ static int cmd_ag_vre_state(const struct shell *sh, size_t argc, char **argv)
 static int cmd_ag_vre_text(const struct shell *sh, size_t argc, char **argv)
 {
 	const char *action;
+	size_t len;
 	uint8_t state = 0;
 	const char *id;
 	uint8_t type;
@@ -1952,7 +1955,8 @@ static int cmd_ag_vre_text(const struct shell *sh, size_t argc, char **argv)
 	operation = (uint8_t)atoi(argv[4]);
 	text = argv[5];
 
-	for (size_t index = 0; index < strlen(action); index++) {
+	len = strlen(action);
+	for (size_t index = 0; index < len; index++) {
 		switch (action[index]) {
 		case 'R':
 			state |= BIT(0);
