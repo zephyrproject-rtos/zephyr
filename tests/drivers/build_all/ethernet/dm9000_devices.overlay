@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 Fuyu Fei
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing the DM9000 parallel-bus driver build.
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_dm9000: dm9000@33334444 {
+			compatible = "davicom,dm9000";
+			reg = <0x33334444 0x2>, <0x33334446 0x2>;
+			reg-names = "addr", "data";
+			int-gpios = <&test_gpio 0 0>;
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&test_dm9000_phy>;
+			status = "okay";
+
+			mdio {
+				compatible = "davicom,dm9000-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "okay";
+
+				test_dm9000_phy: ethernet-phy@1 {
+					compatible = "ethernet-phy";
+					reg = <1>;
+					status = "okay";
+				};
+			};
+		};
+	};
+};
