@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Fractional PLL in an NXP i.MX CGU analog block.
+
+  The VCO runs at a fixed frequency chosen from a small set, and the outputs are
+  taken from integer dividers and from three independently configured
+  fractional dividers. The fractional outputs are what feed the compute and bus
+  clock roots, so this is the node a board edits to change the CPU frequency.
+
+      main_pll: main-pll {
+              compatible = "nxp,imx-cguana-frac-pll";
+              clocks = <&sxosc>;
+              nxp,vco-frequency = <2000000000>;
+              nxp,int-divs = <5>, <8>, <10>, <20>;
+              nxp,frac-div-sels = <12>, <8>, <10>;
+              #clock-cells = <0>;
+      };
+
+compatible: "nxp,imx-cguana-frac-pll"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      The source's register groups inside the parent nxp,imx-cguana block, as
+      offsets: "ctrl" and "status". Split rather than one span, because
+      the block reserves address space between the groups.
+
+  reg-names:
+    required: true
+
+  "#clock-cells":
+    type: int
+    const: 0
+
+  clocks:
+    required: true
+    description: |
+      The reference this PLL locks to, normally the crystal. Which source is
+      selected and what frequency it runs at both come from this phandle.
+
+  nxp,vco-frequency:
+    type: int
+    required: true
+    description: |
+      VCO frequency in Hz. Only the values the hardware offers are accepted;
+      anything else is a build error rather than a silently wrong clock tree.
+
+  nxp,int-divs:
+    type: array
+    description: |
+      Which integer-divider outputs to enable, as divide values. Only the
+      dividers the hardware implements are accepted. Outputs that are not
+      listed stay off.
+
+  nxp,frac-div-sels:
+    type: array
+    description: |
+      Divider selector for each of the three fractional outputs, in order. The
+      selector counts quarter steps of the divide value, so the output is
+      vco-frequency * 4 / selector: 8 divides by 2.0, 10 by 2.5 and 12 by 3.0.
+      A 2 GHz VCO with a selector of 8 therefore yields 1 GHz. A zero leaves
+      that output disabled.

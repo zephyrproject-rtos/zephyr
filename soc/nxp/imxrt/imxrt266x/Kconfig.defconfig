@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMXRT266X
+
+config GPIO
+	default y
+
+endif # SOC_SERIES_IMXRT266X
+
+# Scoped to the core, not the die: NVIC vector count, this core's L1, the
+# layout of the image it boots, and SysTick.
+if SOC_SERIES_IMXRT266X_CM85
+
+config NUM_IRQS
+	# Highest device IRQ in MIMXRT2663_COMMON.h is MEDIA_FREQME_IRQn = 333.
+	default 334
+
+config DCACHE
+	# The hardware has an L1 D-cache (CPU_HAS_DCACHE); this series does not use
+	# it yet. Data lives in the XSPI1 PSRAM, which the SoC's last-level cache
+	# also caches, and with L1 D on top spi_loopback fails intermittently --
+	# 27/27 one run, 15 of 28 failing the next -- while the same transfers from a
+	# bare application and a 128 KiB PSRAM pattern test are clean. The i-cache
+	# alone is stable and is where the win is (16x, see soc.c), so the baseline
+	# takes that and leaves the L1/LLC interaction to be understood first.
+	default n
+
+config ROM_START_OFFSET
+	# The core image starts after the flash configuration block, the external
+	# memory configuration data and the container; see the series Kconfig.
+	default 0xC000 if BOOT_XSPI_NOR
+
+config XSPI_CONFIG_BLOCK_OFFSET
+	default 0x400 if BOOT_XSPI_NOR
+
+config EXTERNAL_MEM_CONFIG_OFFSET
+	default 0xA00 if EXTERNAL_MEM_CONFIG_DATA
+
+config IMAGE_VECTOR_TABLE_OFFSET
+	# Inert here -- the boot format is container-based and boot_header.ld emits no
+	# .boot_hdr.ivt -- but the symbol still needs a value: every hex symbol
+	# becomes an absolute symbol in the generated configs.c, so an empty one fails
+	# to assemble. Zero rather than the image start, so it cannot be mistaken for
+	# a real offset.
+	default 0x0 if BOOT_XSPI_NOR
+	default 0x0
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# Derived from cpu@0 only when SysTick counts the processor clock. A board can
+	# point it at the SoC's dedicated SysTick root (CMPT systick_clk0) with
+	# `external-clock-source` on &systick, and then the value is that reference's
+	# rate, not the CPU's, so the board owns it.
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) \
+		if CORTEX_M_SYSTICK && \
+		!$(dt_nodelabel_bool_prop,systick,external-clock-source)
+
+endif # SOC_SERIES_IMXRT266X_CM85

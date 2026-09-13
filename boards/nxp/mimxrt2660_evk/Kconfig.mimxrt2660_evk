@@ -1,0 +1,11 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_MIMXRT2660_EVK
+	# U36 per the MIMXRT2660-EVK Rev A bill of materials: MIMXRT2663CVVAA,
+	# Industrial grade, 289BGA 0.8 mm 14 x 14 mm, 1 GHz.
+	select SOC_PART_NUMBER_MIMXRT2663CVVAA
+	select SOC_MIMXRT2663_CM85 if BOARD_MIMXRT2660_EVK_MIMXRT2663_CM85

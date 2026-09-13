@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Die-level only. Anything scoped to a core belongs to the cluster symbol below,
+# because this symbol is shared by every cluster of the die.
+config SOC_SERIES_IMXRT266X
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select SOC_EARLY_INIT_HOOK
+	select SOC_RESET_HOOK
+
+if SOC_SERIES_IMXRT266X
+
+#
+# Boot data placement for XSPI serial NOR boot.
+#
+# This SoC's boot ROM uses a container-based (AHAB) image format, not the image
+# vector table format the other i.MX RT families in tree use -- the boot chapter
+# describes a memory configuration block (IPED config, flash configuration
+# block, external memory configuration data) followed by one or more containers
+# and then the core image, and never mentions an image vector table.
+#
+# So IMAGE_VECTOR_TABLE_OFFSET deliberately gets no default here: Zephyr's boot
+# header generation emits a vector table and boot data this ROM never reads, and
+# giving the symbol the address where the image happens to start would be a
+# plausible-looking value that means nothing.
+#
+# The layout is the same shape i.MX RT118x already uses, so soc/nxp/imxrt's
+# boot_header.ld reserves the container region and places the external memory
+# configuration data for this series alongside that one. soc.c fills the
+# container in from the link-time image bounds, so the build emits all three
+# blocks the ROM reads and the image boots from a cold reset without any
+# post-build step.
+#
+# Every offset below comes from the boot chapter's tables and agrees with the
+# device linker script:
+#
+#   flash configuration block          0x400   (size 0x300)
+#   external memory configuration data 0xA00   (size 0x300, serial NOR via XSPI)
+#   container                          0x1000  (size 0x9000)
+#   core image                         0xC000
+#
+
+# This series' CM85 cluster. Selected by each part's SOC_MIMXRT266x_CM85 symbol,
+# so the core's properties are stated once and a cluster that is not this core is
+# an additive change.
+config SOC_SERIES_IMXRT266X_CM85
+	bool
+	select ARM
+	select CPU_CORTEX_M85
+	select CPU_CORTEX_M_HAS_DWT
+	select ARMV8_M_DSP
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select ARM_MPU
+	select ARM_TRUSTZONE_M
+	# CPU_HAS_[ID]CACHE only describes the hardware; sys_cache_* compiles to
+	# nothing without this.
+	select CACHE_MANAGEMENT
+	select INIT_ARCH_HW_AT_BOOT
+	select HAS_SWO
+
+config IMAGE_CONTAINER_OFFSET
+	hex "Image container offset"
+	default 0x1000
+	help
+	  Offset of the container header from the start of the boot device. The
+	  container carries the container header, the image array entry, the
+	  signature block and the user image descriptors, and the boot ROM expects
+	  to find it in external memory.
+
+config CONTAINER_USER_IMAGE_OFFSET
+	hex "Offset between the container header and the user image"
+	default 0xB000
+	help
+	  How far the core image sits past the container header, which is how the
+	  ROM locates it. This is ROM_START_OFFSET minus IMAGE_CONTAINER_OFFSET
+	  (0xC000 - 0x1000), matching __CONTAINER_IMG_OFFSET in the device linker
+	  script; change it together with either of those.
+
+endif # SOC_SERIES_IMXRT266X

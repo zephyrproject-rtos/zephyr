@@ -1,0 +1,69 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Boot data for the ROM. This SoC boots a container-based (AHAB) image and has no
+# image vector table, so soc/nxp/imxrt/boot_header.ld follows the i.MX RT118x
+# layout for this series: flash configuration block, external memory
+# configuration data, then a reserved container region -- and no vector table.
+#
+# EXTERNAL_MEM_CONFIG_DATA is what makes the on-board PSRAM usable as the
+# board's RAM: the ROM reads it and initializes the XSPI1 Xccela PSRAM before
+# this image runs, so no Zephyr PSRAM driver is needed. The container in the
+# third region is filled in by soc.c at link time.
+CONFIG_NXP_IMXRT_BOOT_HEADER=y
+CONFIG_EXTERNAL_MEM_CONFIG_DATA=y
+
+# Execute in place from the XSPI0 NOR flash. CONFIG_XIP,
+# CONFIG_FLASH_MCUX_XSPI_XIP, CONFIG_FLASH_BASE_ADDRESS and CONFIG_FLASH_SIZE
+# are all derived from the devicetree by soc/nxp/common/Kconfig.xspi_xip and
+# must not be set here.
+#
+# CODE_DATA_RELOCATION_SRAM is turned off because this target runs code from
+# flash but never writes it and carries no partitions, so the flash driver stays
+# out of the image -- and Kconfig.xspi_xip's default would otherwise leave an
+# empty relocation set for gen_relocate_app.py. Enabling the flash driver is
+# separate work: Zephyr's shared XSPI drivers use xspi_config_t fields RT266x
+# does not have (byteOrder, enableDoze and enableDQSLatency are gated on
+# FSL_FEATURE_XSPI_HAS_END_CFG, _DOZE_MODE and _DQS_LAT_EN) and call
+# XSPI_Cache64_InvalidateCacheByRange, which does not exist on a part whose
+# cache is the LLC rather than a CACHE64 controller.
+CONFIG_CODE_DATA_RELOCATION_SRAM=n
+
+# SysTick counts the external reference (see &systick external-clock-source in
+# the board devicetree), which is the crystal-derived CMPT systick_clk0 root at
+# 24 MHz. This is the timer's rate, not the CPU's -- cpu0's clock-frequency
+# describes the core and must not be reused here.
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=24000000
+
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_GPIO=y
+CONFIG_ARM_MPU=y
+CONFIG_HW_STACK_PROTECTION=y
+
+# Place all kernel stacks (ISR, main, idle, work-queue, application threads)
+# in DTCM for deterministic single-cycle access.
+CONFIG_ARM_STACKS_IN_DTCM=y
+
+# Heap placement: both the libc malloc arena and the k_malloc()/k_heap pool are
+# relocated into SRAM2 by CMakeLists.txt, which is where the SDK's
+# xspi_nor_psram configuration puts the heap.  SRAM2 is 256 KB in total and is
+# shared between the arena pinned below, the kernel pool
+# (CONFIG_HEAP_MEM_POOL_SIZE, 0 by default), and anything an application places
+# in the "SRAM2" devicetree region.  Overflowing that fails the link rather than
+# spilling silently, so an application that wants a multi-megabyte heap has to
+# put it back in the PSRAM by overriding these options instead of raising them.
+#
+# Pinning the arena to a fixed size is what makes malloc_arena[] a real object
+# that code relocation can place -- the -1 default is derived at runtime from
+# zephyr,sram and has no symbol to move.  224 KB leaves 32 KB of SRAM2 for the
+# kernel pool and future residents.
+CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=229376
+# Enables the code/data relocation infrastructure the heap placement above
+# needs. Distinct from CODE_DATA_RELOCATION_SRAM, which is kept off (see above)
+# because it also programs an MPU entry for relocated code.
+CONFIG_CODE_DATA_RELOCATION=y
