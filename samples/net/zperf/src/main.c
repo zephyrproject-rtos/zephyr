@@ -14,6 +14,13 @@
 #include <zephyr/usb/usbd.h>
 #include <zephyr/net/net_config.h>
 
+#if defined(CONFIG_USB_HOST_STACK)
+#include <zephyr/device.h>
+#include <zephyr/usb/usbh.h>
+
+USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
+#endif
+
 LOG_MODULE_REGISTER(zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #ifdef CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP
@@ -258,6 +265,20 @@ static void run_loopback_selftest(void)
 
 int main(void)
 {
+#if defined(CONFIG_USB_HOST_STACK)
+	int err;
+
+	err = usbh_init(&uhs_ctx);
+	if (err) {
+		return err;
+	}
+
+	err = usbh_enable(&uhs_ctx);
+	if (err) {
+		return err;
+	}
+#endif
+
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 	struct usbd_context *sample_usbd;
 	int err;
