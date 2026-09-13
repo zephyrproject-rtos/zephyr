@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/intc_max32_rv32.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 
 typedef struct {
 	uint32_t enable;        /**< <tt>\b 0x00:<\tt> */
@@ -27,7 +28,8 @@ static volatile rv32_intc_regs_t *get_intc_regs(void)
 	return (rv32_intc_regs_t *)DT_INST_REG_ADDR(0);
 }
 
-void arch_irq_enable(unsigned int source)
+/* The RV32 controller is the root interrupt controller of the MAX32 RISC-V core */
+void intc_root_enable(unsigned int source)
 {
 	volatile rv32_intc_regs_t *regs = get_intc_regs();
 	uint8_t grp = source / 32;
@@ -42,7 +44,7 @@ void arch_irq_enable(unsigned int source)
 	arch_irq_unlock(key);
 }
 
-void arch_irq_disable(unsigned int source)
+void intc_root_disable(unsigned int source)
 {
 	volatile rv32_intc_regs_t *regs = get_intc_regs();
 	uint8_t grp = source / 32;
@@ -57,7 +59,7 @@ void arch_irq_disable(unsigned int source)
 	arch_irq_unlock(key);
 }
 
-int arch_irq_is_enabled(unsigned int source)
+int intc_root_is_enabled(unsigned int source)
 {
 	volatile rv32_intc_regs_t *regs = get_intc_regs();
 	uint8_t grp = source / 32;
