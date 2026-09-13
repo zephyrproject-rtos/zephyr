@@ -1042,10 +1042,10 @@ C library:
   status: maintained
   maintainers:
     - stephanosio
+    - keith-packard
   collaborators:
     - aescolar
     - nashif
-    - keith-packard
     - cfriedt
   files:
     - lib/libc/
