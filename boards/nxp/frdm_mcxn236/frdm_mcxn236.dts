@@ -206,7 +206,7 @@
 
 /*
  * LPFLEXCOMM supports UART and I2C on the same instance, enable this for
- * LFLEXCOMM2
+ * LPFLEXCOMM2
  */
 &flexcomm2_lpuart2 {
 	status = "okay";
