@@ -25,3 +25,30 @@
 &sram0 {
 	status = "okay";
 };
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(160)>;
+};
+
+&mclk {
+	clocks = <&hsclk>;
+};
+
+&hsclk {
+	clocks = <&syspll>;
+	status = "okay";
+};
+
+&syspll {
+	status = "okay";
+};
+
+&hfxt {
+	clock-frequency = <DT_FREQ_M(48)>;
+	ti,xtal-startup-delay-us = <500>;
+};
+
+&lfxt {
+	clock-frequency = <32768>;
+	ti,xtal-startup-delay-us = <640000>;
+};

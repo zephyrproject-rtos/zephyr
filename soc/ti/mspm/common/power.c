@@ -4,56 +4,130 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <soc.h>
+#include <cmsis_core.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/drivers/syscon.h>
 #include <zephyr/logging/log.h>
 
-#include <ti/driverlib/driverlib.h>
+#include <soc_sysctl.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
+static const struct device *const sysctl_dev = DEVICE_DT_GET(DT_NODELABEL(sysctl));
+
+#if !defined(CONFIG_SOC_SERIES_MSPM33C)
+static const struct device *const ckm_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
+
+static int mclk_set_source(enum mspm0_clock_source source)
+{
+	struct mspm0_sys_clock mclk = {.clk = MSPM0_CLOCK_MCLK};
+
+	return clock_control_configure(ckm_dev, (clock_control_subsys_t)&mclk, &source);
+}
+
+static int sysosc_set_enabled(bool enable)
+{
+	struct mspm0_sys_clock sysosc = {.clk = MSPM0_CLOCK_SYSOSC};
+
+	if (enable) {
+		return clock_control_on(ckm_dev, (clock_control_subsys_t)&sysosc);
+	}
+
+	return clock_control_off(ckm_dev, (clock_control_subsys_t)&sysosc);
+}
+#endif /* !CONFIG_SOC_SERIES_MSPM33C */
+
 static void set_mode_run(uint8_t state)
 {
+#if defined(CONFIG_SOC_SERIES_MSPM33C)
+	/* MSPM33C has a single combined RUN/SLEEP policy: no MCLK source tiering. */
+	ARG_UNUSED(state);
+#else
 	switch (state) {
-	case DL_SYSCTL_POWER_POLICY_RUN_SLEEP0:
-		DL_SYSCTL_setPowerPolicyRUN0SLEEP0();
+	case 1: /* RUN0/SLEEP0: MCLK from SYSOSC */
+		sysosc_set_enabled(true);
+		mclk_set_source(MSPM0_CLOCK_SRC_SYSOSC);
 		break;
-	case DL_SYSCTL_POWER_POLICY_RUN_SLEEP1:
-		DL_SYSCTL_setPowerPolicyRUN1SLEEP1();
+	case 2: /* RUN1/SLEEP1: MCLK from LFCLK, SYSOSC stays on */
+		sysosc_set_enabled(true);
+		mclk_set_source(MSPM0_CLOCK_SRC_LFCLK);
 		break;
-	case DL_SYSCTL_POWER_POLICY_RUN_SLEEP2:
-		DL_SYSCTL_setPowerPolicyRUN2SLEEP2();
+	case 3: /* RUN2/SLEEP2: MCLK from LFCLK, SYSOSC off */
+		mclk_set_source(MSPM0_CLOCK_SRC_LFCLK);
+		sysosc_set_enabled(false);
 		break;
+	default:
+		return;
 	}
+#endif /* !CONFIG_SOC_SERIES_MSPM33C */
+
+	SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 }
 
 static void set_mode_stop(uint8_t state)
 {
+	syscon_write_reg(sysctl_dev, SYSCTL_PMODECFG_OFFSET, SYSCTL_PMODECFG_DSLEEP_VAL_STOP);
+	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+
+#if defined(CONFIG_SOC_SERIES_MSPM33C)
+	/* MSPM33C's STOP mode never touches SYSOSC: there is only one STOP policy. */
+	ARG_UNUSED(state);
+#else
 	switch (state) {
-	case DL_SYSCTL_POWER_POLICY_STOP0:
-		DL_SYSCTL_setPowerPolicySTOP0();
+	case 1: /* STOP0: SYSOSC keeps running */
+		syscon_update_bits(sysctl_dev, SYSCTL_SYSOSCCFG_OFFSET,
+				   SYSCTL_SYSOSCCFG_USE4MHZSTOP | SYSCTL_SYSOSCCFG_DISABLESTOP, 0);
 		break;
-	case DL_SYSCTL_POWER_POLICY_STOP1:
-		DL_SYSCTL_setPowerPolicySTOP1();
+	case 2: /* STOP1: SYSOSC gear-shifted to 4 MHz */
+		syscon_update_bits(sysctl_dev, SYSCTL_SYSOSCCFG_OFFSET,
+				   SYSCTL_SYSOSCCFG_USE4MHZSTOP | SYSCTL_SYSOSCCFG_DISABLESTOP,
+				   SYSCTL_SYSOSCCFG_USE4MHZSTOP);
 		break;
-	case DL_SYSCTL_POWER_POLICY_STOP2:
-		DL_SYSCTL_setPowerPolicySTOP2();
+	case 3: /* STOP2: SYSOSC disabled */
+		syscon_update_bits(sysctl_dev, SYSCTL_SYSOSCCFG_OFFSET,
+				   SYSCTL_SYSOSCCFG_USE4MHZSTOP | SYSCTL_SYSOSCCFG_DISABLESTOP,
+				   SYSCTL_SYSOSCCFG_DISABLESTOP);
 		break;
+	default:
+		return;
 	}
+#endif /* !CONFIG_SOC_SERIES_MSPM33C */
 }
 
 static void set_mode_standby(uint8_t state)
 {
+	syscon_write_reg(sysctl_dev, SYSCTL_PMODECFG_OFFSET, SYSCTL_PMODECFG_DSLEEP_VAL_STANDBY);
+	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+
 	switch (state) {
-	case DL_SYSCTL_POWER_POLICY_STANDBY0:
-		DL_SYSCTL_setPowerPolicySTANDBY0();
+	case 1: /* STANDBY0: ULPCLK/LFCLK stays available to all PD0 peripherals */
+		syscon_update_bits(sysctl_dev, SYSCTL_MCLKCFG_OFFSET, SYSCTL_MCLKCFG_STOPCLKSTBY,
+				   0);
 		break;
-	case DL_SYSCTL_POWER_POLICY_STANDBY1:
-		DL_SYSCTL_setPowerPolicySTANDBY1();
+	case 2: /* STANDBY1: ULPCLK/LFCLK gated to PD0, only TIMG0/1 and RTC clocked */
+		syscon_update_bits(sysctl_dev, SYSCTL_MCLKCFG_OFFSET, SYSCTL_MCLKCFG_STOPCLKSTBY,
+				   SYSCTL_MCLKCFG_STOPCLKSTBY);
 		break;
+	default:
+		return;
 	}
+}
+
+static void enter_wfi(void)
+{
+#ifdef CONFIG_PM_STATE_SET_IRQ_UNLOCKED
+	__WFI();
+#else
+	unsigned int key = arch_pm_state_set_prepare();
+	__WFI();
+	arch_pm_state_set_finish(key);
+#endif /* CONFIG_PM_STATE_SET_IRQ_UNLOCKED */
 }
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
@@ -73,11 +147,11 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		return;
 	}
 
-	__WFI();
+	enter_wfi();
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	DL_SYSCTL_setPowerPolicyRUN0SLEEP0();
+	set_mode_run(1);
 	irq_unlock(0);
 }
