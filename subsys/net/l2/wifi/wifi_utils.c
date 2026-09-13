@@ -239,16 +239,18 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 }
 
 
-static int wifi_utils_validate_chan_str(char *chan_str)
+static int wifi_utils_validate_chan_str(const char *chan_str)
 {
-	uint8_t i;
+	size_t i;
+	size_t len;
 
-	if ((!chan_str) || (!strlen(chan_str))) {
-		NET_ERR("Null or empty channel string\n");
+	len = strlen(chan_str);
+	if (len == 0) {
+		NET_ERR("Empty channel string\n");
 		return -EINVAL;
 	}
 
-	for (i = 0; i < strlen(chan_str); i++) {
+	for (i = 0; i < len; i++) {
 		if (!isdigit((int)chan_str[i])) {
 			NET_ERR("Invalid character in channel string %c\n", chan_str[i]);
 			return -EINVAL;
