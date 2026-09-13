@@ -133,6 +133,7 @@
 	iap: flash-controller@34000 {
 		compatible = "nxp,iap-fmc55";
 		reg = <0x34000 0x18>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		status = "okay";
@@ -142,6 +143,9 @@
 			reg = <0x0 DT_SIZE_K(1016)>;
 			erase-block-size = <DT_SIZE_K(8)>;
 			write-block-size = <16>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		flash_reserved: flash@fe000 {
