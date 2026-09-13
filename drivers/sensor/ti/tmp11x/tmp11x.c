@@ -120,9 +120,12 @@ int tmp11x_eeprom_await(const struct device *dev)
 
 	k_sleep(K_MSEC(EEPROM_MIN_BUSY_MS));
 
-	WAIT_FOR((res = tmp11x_reg_read(dev, TMP11X_REG_EEPROM_UL, &val)) != 0 ||
-			 val & TMP11X_EEPROM_UL_BUSY,
-		 100, k_msleep(1));
+	if (!WAIT_FOR((res = tmp11x_reg_read(dev, TMP11X_REG_EEPROM_UL, &val)) != 0 ||
+			      (val & TMP11X_EEPROM_UL_BUSY) == 0,
+		      50000, k_msleep(1))) {
+		LOG_ERR("%s: timed out waiting for EEPROM programming to finish", dev->name);
+		return -ETIMEDOUT;
+	}
 
 	return res;
 }
@@ -131,7 +134,7 @@ int tmp11x_eeprom_write(const struct device *dev, off_t offset, const void *data
 {
 	uint8_t reg;
 	const uint16_t *src = data;
-	int res;
+	int res, lock_res;
 
 	if (!check_eeprom_bounds(dev, offset, len)) {
 		return -EINVAL;
@@ -158,9 +161,9 @@ int tmp11x_eeprom_write(const struct device *dev, off_t offset, const void *data
 		}
 	}
 
-	res = tmp11x_reg_write(dev, TMP11X_REG_EEPROM_UL, 0);
+	lock_res = tmp11x_reg_write(dev, TMP11X_REG_EEPROM_UL, 0);
 
-	return res;
+	return res != 0 ? res : lock_res;
 }
 
 int tmp11x_eeprom_read(const struct device *dev, off_t offset, void *data, size_t len)
@@ -224,6 +227,12 @@ static int tmp11x_sample_fetch(const struct device *dev, enum sensor_channel cha
 		return rc;
 	}
 
+#ifdef CONFIG_TMP11X_TRIGGER
+	/* The interrupt handler may already have consumed the clear-on-read flag */
+	cfg_reg |= drv_data->alert_status & TMP11X_CFGR_DATA_READY;
+	drv_data->alert_status &= ~TMP11X_CFGR_DATA_READY;
+#endif
+
 	if ((cfg_reg & TMP11X_CFGR_DATA_READY) == 0) {
 		LOG_DBG("%s: no data ready", dev->name);
 		return -EBUSY;
@@ -248,11 +257,11 @@ static int tmp11x_sample_fetch(const struct device *dev, enum sensor_channel cha
  */
 static void tmp11x_temperature_to_sensor_value(int16_t temperature, struct sensor_value *val)
 {
-	int32_t tmp;
+	int64_t tmp;
 
-	tmp = (temperature * (int32_t)TMP11X_RESOLUTION) / 10;
-	val->val1 = tmp / 1000000; /* uCelsius */
-	val->val2 = tmp % 1000000;
+	tmp = ((int64_t)temperature * TMP11X_RESOLUTION) / 10;
+	val->val1 = (int32_t)(tmp / 1000000); /* uCelsius */
+	val->val2 = (int32_t)(tmp % 1000000);
 }
 
 static int tmp11x_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -469,6 +478,9 @@ static int tmp11x_attr_set(const struct device *dev, enum sensor_channel chan,
 static int tmp11x_attr_get(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr, struct sensor_value *val)
 {
+#ifdef CONFIG_TMP11X_TRIGGER
+	struct tmp11x_data *drv_data = dev->data;
+#endif
 	uint16_t data;
 	int rc;
 
@@ -481,6 +493,11 @@ static int tmp11x_attr_get(const struct device *dev, enum sensor_channel chan,
 		rc = tmp11x_reg_read(dev, TMP11X_REG_CFGR, &data);
 
 		if (rc == 0) {
+#ifdef CONFIG_TMP11X_TRIGGER
+			/* Report the status bits the interrupt handler already consumed */
+			data |= drv_data->alert_status;
+			drv_data->alert_status = 0;
+#endif
 			val->val1 = data;
 			val->val2 = 0;
 		}
@@ -604,7 +621,8 @@ static int tmp11x_pm_control(const struct device *dev, enum pm_device_action act
 	case PM_DEVICE_ACTION_RESUME: {
 		const struct tmp11x_dev_config *cfg = dev->config;
 
-		ret = tmp11x_write_config(dev, TMP11X_CFGR_CONV, cfg->odr);
+		ret = tmp11x_write_config(dev, TMP11X_CFGR_MODE | TMP11X_CFGR_CONV,
+					  TMP11X_MODE_CONTINUOUS | cfg->odr);
 		if (ret < 0) {
 			LOG_ERR("Failed to resume TMP11X");
 		}
