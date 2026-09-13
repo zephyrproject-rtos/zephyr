@@ -341,11 +341,8 @@
 };
 
 &xspi1 {
-	/* Change the compatible here, and keep xspi for other boards */
-	compatible = "st,stm32-xspi-controller";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
 	st,csbound = <0>;
-	clock-frequency = <DT_FREQ_M(50)>;
 
 	pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
 		     &octospi1_io2_pc2 &octospi1_io3_pd13

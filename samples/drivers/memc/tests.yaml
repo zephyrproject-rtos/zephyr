@@ -32,6 +32,7 @@ tests:
     tags: mspi
     platform_allow:
       - b_u585i_iot02a/stm32u585xx
+      - stm32h5f5j_dk
       - stm32h7s78_dk/stm32h7s7xx
     integration_platforms:
       - b_u585i_iot02a/stm32u585xx
