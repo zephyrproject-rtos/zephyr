@@ -123,7 +123,8 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 		duty_mode = channel->inverted ? DUTY_MODE_ACTIVE_LOW : DUTY_MODE_ACTIVE_HIGH;
 	}
 
-	uint32_t timer_clk_hz = data->mcpwm_clk_hz / config->prescale / channel->prescale;
+	uint32_t timer_clk_hz =
+		data->mcpwm_clk_hz / (config->prescale + 1) / (channel->prescale + 1);
 
 	set_duty = (timer_clk_hz / channel->freq) * channel->duty / 100;
 	mcpwm_ll_operator_connect_timer(data->hal.dev, channel->operator_id, channel->timer_id);
@@ -183,11 +184,16 @@ static int mcpwm_esp32_timer_set(const struct device *dev,
 
 	__ASSERT_NO_MSG(channel->freq > 0);
 
-	mcpwm_ll_timer_set_clock_prescale(data->hal.dev, channel->timer_id, channel->prescale);
+	mcpwm_ll_timer_set_clock_prescale(data->hal.dev, channel->timer_id, channel->prescale + 1);
 	mcpwm_ll_timer_set_count_mode(data->hal.dev, channel->timer_id, MCPWM_TIMER_COUNT_MODE_UP);
 	mcpwm_ll_timer_update_period_at_once(data->hal.dev, channel->timer_id);
 
-	uint32_t timer_clk_hz = data->mcpwm_clk_hz / config->prescale / channel->prescale;
+	uint32_t timer_clk_hz =
+		data->mcpwm_clk_hz / (config->prescale + 1) / (channel->prescale + 1);
+	if ((timer_clk_hz / channel->freq) > 65536U) {
+		LOG_ERR("Period too large for timer %d", channel->timer_id);
+		return -ENOTSUP;
+	}
 
 	mcpwm_ll_timer_set_peak(data->hal.dev, channel->timer_id, timer_clk_hz / channel->freq,
 				false);
@@ -241,6 +247,9 @@ static int mcpwm_esp32_set_cycles(const struct device *dev, uint32_t channel_idx
 
 	/* Update PWM frequency according to period_cycles */
 	mcpwm_esp32_get_cycles_per_sec(dev, channel_idx, &clk_freq);
+	if (period_cycles == 0U) {
+		return -EINVAL;
+	}
 
 	channel->freq = (uint32_t)(clk_freq / period_cycles);
 	if (!channel->freq) {
@@ -360,7 +369,7 @@ static int mcpwm_esp32_enable_capture(const struct device *dev, uint32_t channel
 		return -EBUSY;
 	}
 
-	mcpwm_ll_group_set_clock_prescale(config->index, config->prescale);
+	mcpwm_ll_group_set_clock_prescale(config->index, config->prescale + 1);
 	mcpwm_ll_group_enable_shadow_mode(data->hal.dev);
 	mcpwm_ll_group_flush_shadow(data->hal.dev);
 
@@ -520,7 +529,7 @@ int mcpwm_esp32_init(const struct device *dev)
 
 	channel_init(dev);
 
-	mcpwm_ll_group_set_clock_prescale(config->index, config->prescale);
+	mcpwm_ll_group_set_clock_prescale(config->index, config->prescale + 1);
 	mcpwm_ll_group_enable_shadow_mode(data->hal.dev);
 	mcpwm_ll_group_flush_shadow(data->hal.dev);
 
