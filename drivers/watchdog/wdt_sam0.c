@@ -37,6 +37,8 @@ LOG_MODULE_REGISTER(wdt_sam0);
 struct wdt_sam0_dev_data {
 	wdt_callback_t cb;
 	bool timeout_valid;
+	bool window_mode;
+	bool window_open;
 };
 
 static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
@@ -90,6 +92,10 @@ static void wdt_sam0_isr(const struct device *dev)
 
 	WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
 
+	if (data->window_mode) {
+		data->window_open = true;
+	}
+
 	if (data->cb != NULL) {
 		data->cb(dev, 0);
 	}
@@ -120,6 +126,7 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 	}
 
 	/* Enable watchdog */
+	data->window_open = false;
 	wdt_sam0_set_enable(1);
 	wdt_sam0_wait_synchronization();
 
@@ -168,6 +175,8 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 
 	if (cfg->window.min) {
 		/* Window mode */
+		data->window_mode = true;
+		data->window_open = false;
 		window = wdt_sam0_timeout_to_wdt_period(cfg->window.min);
 		if (window > WDT_CONFIG_PER_8K_Val) {
 			LOG_ERR("Lower limit timeout out of range");
@@ -183,8 +192,17 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 		WDT_REGS->CTRL.bit.WEN = 1;
 #endif
 		wdt_sam0_wait_synchronization();
+
+		/* EWOFFSET is ignored in window mode per datasheet 23.6.8.2:
+		 * the EW fires at the start of the open window regardless of
+		 * the offset value. Clear it to be defensive in case the
+		 * register was left over from a previous normal-mode config.
+		 */
+		WDT_REGS->EWCTRL.bit.EWOFFSET = 0;
+		wdt_sam0_wait_synchronization();
 	} else {
 		/* Normal mode */
+		data->window_mode = false;
 		if (cfg->callback) {
 			if (per == WDT_CONFIG_PER_8_Val) {
 				/* Ensure we have time for the early warning */
@@ -204,9 +222,14 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 	WDT_REGS->CONFIG.reg = WDT_CONFIG_WINDOW(window) | WDT_CONFIG_PER(per);
 	wdt_sam0_wait_synchronization();
 
-	/* Only enable IRQ if a callback was provided */
+	/* Enable IRQ: always in window mode (to track window open),
+	 * otherwise only if a callback was provided.
+	 */
 	data->cb = cfg->callback;
-	if (data->cb) {
+	if (data->window_mode) {
+		WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
+		WDT_REGS->INTENSET.reg = WDT_INTENSET_EW;
+	} else if (data->cb) {
 		WDT_REGS->INTENSET.reg = WDT_INTENSET_EW;
 	} else {
 		WDT_REGS->INTENCLR.reg = WDT_INTENCLR_EW;
@@ -233,11 +256,20 @@ static int wdt_sam0_feed(const struct device *dev, int channel_id)
 		return -EINVAL;
 	}
 
+	if (data->window_mode && !data->window_open) {
+		LOG_WRN("Feed rejected: closed window period has not elapsed");
+		return -EAGAIN;
+	}
+
 	if (WDT_SYNCBUSY) {
 		return -EAGAIN;
 	}
 
 	WDT_REGS->CLEAR.reg = WDT_CLEAR_CLEAR_KEY_Val;
+
+	if (data->window_mode) {
+		data->window_open = false;
+	}
 
 	return 0;
 }
