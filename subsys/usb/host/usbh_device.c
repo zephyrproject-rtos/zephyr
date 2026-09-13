@@ -357,6 +357,15 @@ static void reset_configuration(struct usb_device *const udev)
 	udev->state = USB_STATE_ADDRESSED;
 }
 
+/*
+ * usbh_device_set_configuration() does not attempt to restore the previous
+ * configuration. If something fails, the device state will be set to addressed
+ * and all resources will be released. We could increase resilience by reading
+ * all configuration descriptors at once, but that would increase memory usage.
+ *
+ * TODO: Although almost everything is in place, there should be tests covering
+ * it before it is made a public interface for users and applications.
+ */
 int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t num)
 {
 	struct usb_cfg_descriptor cfg_desc;
@@ -374,8 +383,13 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 		goto error;
 	}
 
+	/* Free any allocated resources unconditionally */
+	usbh_class_remove_all(udev);
+	k_heap_free(&usb_device_heap, udev->cfg_desc);
+	udev->cfg_desc = NULL;
+	reset_configuration(udev);
+
 	if (num == 0) {
-		reset_configuration(udev);
 		err = usbh_req_set_cfg(udev, num);
 		if (err) {
 			LOG_ERR("Set Configuration %u request failed", num);
@@ -426,10 +440,6 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 	}
 
 	memset(udev->cfg_desc, 0, cfg_desc.wTotalLength + sizeof(struct usb_desc_header));
-	if (udev->state == USB_STATE_CONFIGURED) {
-		reset_configuration(udev);
-	}
-
 	err = usbh_req_desc_cfg(udev, idx, cfg_desc.wTotalLength, udev->cfg_desc);
 	if (err) {
 		LOG_ERR("Failed to read configuration descriptor of %u bytes: %d",
@@ -458,6 +468,8 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 
 	udev->actual_cfg = num;
 	udev->state = USB_STATE_CONFIGURED;
+
+	usbh_class_probe_device(udev);
 
 error:
 	k_mutex_unlock(&udev->mutex);
@@ -489,46 +501,6 @@ int usbh_device_set_address(struct usb_device *const udev, const uint8_t new_add
 struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
 {
 	return ctx->root;
-}
-
-void usbh_device_connect(struct usbh_context *const ctx,
-			 struct usb_device *const udev)
-{
-	int err;
-
-	LOG_DBG("Device connected event");
-
-	udev->state = USB_STATE_DEFAULT;
-
-	if (ctx->root == NULL) {
-		ctx->root = udev;
-	}
-
-	err = usbh_device_init(udev);
-	if (err != 0) {
-		LOG_ERR("Failed to init new USB device");
-		if (usbh_device_is_root(ctx, udev)) {
-			ctx->root = NULL;
-		}
-
-		usbh_device_free(udev);
-		return;
-	}
-
-	usbh_class_probe_device(udev);
-}
-
-void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
-{
-	usbh_class_remove_all(udev);
-
-	if (usbh_device_is_root(ctx, udev)) {
-		ctx->root = NULL;
-	}
-
-	usbh_device_free(udev);
-
-	LOG_DBG("Device removed");
 }
 
 int usbh_device_init(struct usb_device *const udev)
@@ -598,13 +570,66 @@ int usbh_device_init(struct usb_device *const udev)
 		goto error;
 	}
 
-	err = usbh_device_set_configuration(udev, 1);
-	if (err) {
-		LOG_ERR("Failed to configure new device with address %u", udev->addr);
-	}
-
 error:
 	k_mutex_unlock(&udev->mutex);
 
 	return err;
+}
+
+void usbh_device_connect(struct usbh_context *const ctx,
+			 struct usb_device *const udev)
+{
+	int err;
+
+	LOG_DBG("Device connected event");
+
+	udev->state = USB_STATE_DEFAULT;
+
+	if (ctx->root == NULL) {
+		ctx->root = udev;
+	}
+
+	err = usbh_device_init(udev);
+	if (err != 0) {
+		LOG_ERR("Failed to init new USB device");
+		if (usbh_device_is_root(ctx, udev)) {
+			ctx->root = NULL;
+		}
+
+		usbh_device_free(udev);
+		return;
+	}
+
+	/*
+	 * For now, choosing the configuration is quite simple. If a current
+	 * configuration is not used by any driver, try the next one. There is
+	 * no reason to revert to first configuration if no driver uses
+	 * anything.
+	 */
+	for (int n = 1; n < udev->dev_desc.bNumConfigurations + 1; n++) {
+		err = usbh_device_set_configuration(udev, n);
+		if (err) {
+			LOG_ERR("Failed to set device %u configuration to %u",
+				udev->addr, n);
+			break;
+		}
+
+		LOG_DBG("Set device %u configuration to %u", udev->addr, n);
+		if (usbh_class_is_any_iface_bound(udev)) {
+			break;
+		}
+	}
+}
+
+void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
+{
+	usbh_class_remove_all(udev);
+
+	if (usbh_device_is_root(ctx, udev)) {
+		ctx->root = NULL;
+	}
+
+	usbh_device_free(udev);
+
+	LOG_DBG("Device removed");
 }
