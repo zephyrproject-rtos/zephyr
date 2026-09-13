@@ -16,8 +16,17 @@ config CORTEX_M_SYSTICK
 config NUM_IRQS
 	default 70
 
+# The lp-timer counts at clk_lf, sourced from the PILO, and CORTEX_M_SYSTICK is
+# turned off above when it is the kernel timer. The kernel cycle rate is then
+# that counter's, not the CPU's.
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/clocks/clk_pilo,clock-frequency) if INFINEON_LP_TIMER_HAL
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+# A tick must be a whole number of counter cycles. The tickless default of 10000
+# does not divide 32768, so pick a quarter of the counter rate.
+config SYS_CLOCK_TICKS_PER_SEC
+	default $(div,$(dt_node_int_prop_int,/clocks/clk_pilo,clock-frequency),4) if INFINEON_LP_TIMER_HAL
 
 config BUILD_OUTPUT_ADJUST_LMA
 	depends on XIP
