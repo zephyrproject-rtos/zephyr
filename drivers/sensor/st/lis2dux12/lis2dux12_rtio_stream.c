@@ -322,6 +322,7 @@ static void lis2dux12_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	if (res != 0) {
 		rtio_iodev_sqe_err(lis2dux12->streaming_sqe, res);
 		lis2dux12->streaming_sqe = NULL;
+		gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
 	}
 
@@ -419,6 +420,9 @@ static void lis2dux12_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		rtio_read_regs_async(lis2dux12->rtio_ctx, lis2dux12->iodev, lis2dux12->bus_type,
 				     &fifo_regs, lis2dux12->streaming_sqe, dev,
 				     lis2dux12_complete_op_cb);
+	} else {
+		/* spurious interrupt: re-arm the irq and wait for next drdy event */
+		gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	}
 }
 

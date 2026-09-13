@@ -51,20 +51,21 @@ static const float lis2dux12_odr_map[LIS2DUX12_DT_ODR_END] = {FOREACH_ODR_ENUM(G
 
 static int lis2dux12_freq_to_odr_val(const struct device *dev, uint16_t freq)
 {
-	const struct lis2dux12_config *cfg = dev->config;
 	int odr;
+
+	ARG_UNUSED(dev);
 
 	for (odr = LIS2DUX12_DT_ODR_OFF; odr < LIS2DUX12_DT_ODR_END; odr++) {
 		/*
-		 * In case power-mode is HP, skip the ULP odrs in order to
-		 * avoid to erroneously break the loop sooner than expected.
-		 * In HP mode the correct ODRs must be found from
-		 * LIS2DUX12_DT_ODR_6Hz on.
+		 * Skip the ULP odrs in order to avoid to erroneously break
+		 * the loop sooner than expected: the map is not monotonic
+		 * around them (25 Hz ULP comes before 6 Hz), so the correct
+		 * ODRs must be found from LIS2DUX12_DT_ODR_6Hz on. ULP odrs
+		 * remain selectable through the devicetree odr property.
 		 */
-		if ((cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) &&
-		    ((odr == LIS2DUX12_DT_ODR_1Hz_ULP) ||
-		     (odr == LIS2DUX12_DT_ODR_3Hz_ULP) ||
-		     (odr == LIS2DUX12_DT_ODR_25Hz_ULP))) {
+		if ((odr == LIS2DUX12_DT_ODR_1Hz_ULP) ||
+		    (odr == LIS2DUX12_DT_ODR_3Hz_ULP) ||
+		    (odr == LIS2DUX12_DT_ODR_25Hz_ULP)) {
 			continue;
 		}
 
