@@ -3,3 +3,17 @@ tests:
     tags:
       - drivers
       - hwinfo
+  drivers.hwinfo.api.nvmem:
+    tags:
+      - drivers
+      - hwinfo
+      - nvmem
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_HWINFO_NATIVE=n
+      - CONFIG_EEPROM=y
+    extra_dtc_overlay_files:
+      - nvmem.overlay
