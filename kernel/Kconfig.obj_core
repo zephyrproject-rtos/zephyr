@@ -4,6 +4,7 @@
 menuconfig OBJ_CORE
 	bool "Object core framework"
 	default n
+	select THREAD_STACK_INFO
 	help
 	  This option enables the object core framework. This will link
 	  participating kernel objects and their respective types together
@@ -19,8 +20,10 @@ config OBJ_CORE_MAX_DYNAMIC_OBJECTS
 	  Size of the registry of objects that are initialized at run time,
 	  such as kernel objects embedded in driver data. Statically defined
 	  objects (K_SEM_DEFINE() and the like) are enumerated in place and do
-	  not use a registry entry. When the registry is full, further objects
-	  are not tracked and the object type's dropped count is incremented.
+	  not use a registry entry, and objects located in a thread's stack or
+	  in the interrupt stack are never registered. When the registry is
+	  full, further objects are not tracked and the object type's dropped
+	  count is incremented.
 
 config OBJ_CORE_CONDVAR
 	bool "Integrate condition variables into object core framework"
