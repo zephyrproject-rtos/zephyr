@@ -64,8 +64,30 @@
 
 #define GENERATE_SINE_SUPPORTED (IS_ENABLED(CONFIG_LIBLC3) && !IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS))
 
-#if defined(CONFIG_BT_BAP_UNICAST)
+static enum bt_audio_location supported_sink_audio_location = DEFAULT_LOCATION;
+static enum bt_audio_location supported_source_audio_location = DEFAULT_LOCATION;
+#if defined(CONFIG_LIBLC3)
+/* LIBLC3 only supports 8, 16, 24, 32 and 48 KHz sampling frequencies */
+static const enum bt_audio_codec_cap_freq supported_sampling_freq =
+	BT_AUDIO_CODEC_CAP_FREQ_8KHZ | BT_AUDIO_CODEC_CAP_FREQ_16KHZ |
+	BT_AUDIO_CODEC_CAP_FREQ_24KHZ | BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
+	BT_AUDIO_CODEC_CAP_FREQ_48KHZ;
+#else
+static const enum bt_audio_codec_cap_freq supported_sampling_freq = BT_AUDIO_CODEC_CAP_FREQ_ANY;
+#endif /* CONFIG_LIBLC3*/
+static const enum bt_audio_codec_cap_frame_dur supported_frame_dur =
+	BT_AUDIO_CODEC_CAP_DURATION_ANY;
+static const uint16_t supported_min_octets_per_codec_frame = 30U;
+static const uint16_t supported_max_octets_per_codec_frame = 155U;
+static const enum bt_audio_codec_cap_chan_count supported_chan_count =
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U);
 
+static const struct bt_audio_codec_cap bap_lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+	supported_sampling_freq, supported_frame_dur, supported_chan_count,
+	supported_min_octets_per_codec_frame, supported_max_octets_per_codec_frame,
+	MAX_CODEC_FRAMES_PER_SDU, DEFAULT_CONTEXT);
+
+#if defined(CONFIG_BT_BAP_UNICAST)
 struct shell_stream unicast_streams[CONFIG_BT_ISO_MAX_CHAN] = {0};
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
@@ -583,6 +605,20 @@ const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_aud
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST)
+static uint8_t stream_dir(const struct bt_bap_stream *stream)
+{
+	struct bt_bap_ep_info ep_info;
+	__maybe_unused int err;
+
+	__ASSERT(stream != NULL, "Invalid stream");
+	__ASSERT(stream->ep != NULL, "Invalid stream ep");
+
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
+	__ASSERT(err == 0, "Failed to get EP info: %d", err);
+
+	return ep_info.dir;
+}
+
 static void set_unicast_stream(struct bt_bap_stream *stream)
 {
 	default_stream = stream;
@@ -640,6 +676,208 @@ static struct bt_bap_stream *stream_alloc(void)
 	return NULL;
 }
 
+bool supported_lc3_config(const struct bt_audio_codec_cap *codec_cap,
+			  enum bt_audio_location location,
+			  const struct bt_audio_codec_cfg *codec_cfg)
+{
+	struct bt_audio_codec_octets_per_codec_frame cap_octets_per_codec_frame;
+	enum bt_audio_codec_cap_chan_count cap_chan_count;
+	enum bt_audio_codec_cap_frame_dur cap_frame_dur;
+	enum bt_audio_codec_cfg_frame_dur cfg_frame_dur;
+	enum bt_audio_codec_cap_freq cap_sampling_freq;
+	enum bt_audio_codec_cfg_freq cfg_sampling_freq;
+	enum bt_audio_location chan_allocation;
+	uint8_t cfg_frame_blocks_per_sdu;
+	uint8_t cap_frame_blocks_per_sdu;
+	uint16_t cfg_octets_per_frame;
+	size_t chan_bits_cnt;
+	int ret;
+
+	/* Verify sampling frequency */
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cfg sampling frequency: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+
+	cfg_sampling_freq = ret;
+
+	ret = bt_audio_codec_cap_get_freq(codec_cap);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cap sampling frequency: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+
+	cap_sampling_freq = ret;
+
+	/* codec_cfg frequencies starts from 0x01 and correspond to the codec_cap frequency bits -
+	 * 1, so that 0x01 == BIT(0), 0x02 = BIT(1), etc., so we can check with BIT(x - 1)
+	 */
+	if ((BIT(cfg_sampling_freq - 1U) & cap_sampling_freq) == 0) {
+		bt_shell_warn("Unsupported sampling frequency: 0x%02X (0x%04X)",
+			      (uint8_t)cfg_sampling_freq, (uint16_t)cap_sampling_freq);
+		return false;
+	}
+
+	/* Verify frame duration */
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cfg sampling frame duration: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+
+	cfg_frame_dur = (enum bt_audio_codec_cfg_frame_dur)ret;
+
+	ret = bt_audio_codec_cap_get_frame_dur(codec_cap);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cap sampling frame duration: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+
+	cap_frame_dur = (enum bt_audio_codec_cap_frame_dur)ret;
+
+	/* codec_cfg frame durations starts from 0x00 and correspond to the codec_cap duration
+	 * bits, so that 0x00 == BIT(0), 0x01 = BIT(1), etc., so we can check with BIT(x)
+	 */
+	if ((BIT(cfg_frame_dur) & cap_frame_dur) == 0) {
+		bt_shell_warn("Unsupported frame duration: 0x%02X (0x%02X)", (uint8_t)cfg_frame_dur,
+			      (uint8_t)cap_frame_dur);
+		return false;
+	}
+
+	/* Verify channel allocation */
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, true);
+	if (ret < 0) {
+		bt_shell_warn("Could not get channel allocation: %d", ret);
+		return false; /* With fallback to mono, this shall not fail */
+	}
+
+	if (chan_allocation != BT_AUDIO_LOCATION_MONO_AUDIO &&
+	    (chan_allocation & location) != chan_allocation) {
+		bt_shell_warn("Unsupported audio location: 0x%08X (0x%08X)", chan_allocation,
+			      location);
+		return false;
+	}
+
+	ret = bt_audio_codec_cap_get_supported_audio_chan_counts(codec_cap, true);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cap chan count: %d", ret);
+		return false; /* With fallback to mono, this shall not fail */
+	}
+
+	cap_chan_count = (enum bt_audio_codec_cap_chan_count)ret;
+
+	/* Compare the number of bits in `chan_allocation` to the number of channels we support.
+	 * BIT(0) is 1, BIT(1) is 2, etc.
+	 */
+	chan_bits_cnt = sys_count_bits(&chan_allocation, sizeof(uint32_t));
+	if (chan_bits_cnt > 0U /* !mono */ &&
+	    (BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(chan_bits_cnt) & cap_chan_count) == 0) {
+		bt_shell_warn(
+			"Unsupported audio location count: %u (0x%02X) for chan_alloc 0x%08X ",
+			chan_bits_cnt, cap_chan_count, (uint32_t)chan_allocation);
+		return false;
+	}
+
+	/* Verify octets per frame */
+	ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cfg octets per codec frame: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+
+	cfg_octets_per_frame = (uint16_t)ret;
+
+	ret = bt_audio_codec_cap_get_octets_per_frame(codec_cap, &cap_octets_per_codec_frame);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cap octets per codec frame: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+
+	if (!IN_RANGE(cfg_octets_per_frame, cap_octets_per_codec_frame.min,
+		      cap_octets_per_codec_frame.max)) {
+		bt_shell_warn("Unsupported octets per codec frame: 0x%04X (0x%04X - 0x%04X)",
+			      (uint16_t)ret, cap_octets_per_codec_frame.min,
+			      cap_octets_per_codec_frame.max);
+		return false;
+	}
+
+	/* Verify frame blocks per SDU */
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cfg frame blocks per SDU: %d", ret);
+		return false; /* With fallback to 1, this shall not fail */
+	}
+
+	cfg_frame_blocks_per_sdu = (uint8_t)ret;
+
+	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(codec_cap, true);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cap frame blocks per SDU: %d", ret);
+		return false; /* With fallback to 1, this shall not fail */
+	}
+
+	cap_frame_blocks_per_sdu = (uint8_t)ret;
+
+	if (!IN_RANGE(cfg_frame_blocks_per_sdu, 1U, cap_frame_blocks_per_sdu)) {
+		bt_shell_warn("Unsupported codec frames blocks per SDU: 0x%02X (0x%02X)",
+			      (uint8_t)ret, cap_frame_blocks_per_sdu);
+		return false;
+	}
+
+	return true;
+}
+
+static bool supported_lc3_config_meta(struct bt_conn *conn, enum bt_audio_dir dir,
+				      const uint8_t meta[], size_t meta_len)
+{
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
+		struct bt_audio_codec_cfg codec_cfg;
+		enum bt_audio_context stream_ctxs;
+		enum bt_audio_context avail_ctxs;
+		int ret;
+
+		__ASSERT_NO_MSG(meta_len <= sizeof(codec_cfg.meta));
+		/* Copy to a struct bt_audio_codec_cfg to be able to use the bt_audio_codec_cfg
+		 * functions
+		 */
+		(void)memcpy(codec_cfg.meta, meta, meta_len);
+		codec_cfg.meta_len = meta_len;
+
+		ret = bt_audio_codec_cfg_meta_get_stream_context(&codec_cfg);
+		if (ret < 0) {
+			bt_shell_warn("Could not get streaming context: %d", ret);
+			return false; /* mandatory field for CAP */
+		}
+
+		stream_ctxs = (enum bt_audio_context)ret;
+
+		avail_ctxs = bt_pacs_get_available_contexts_for_conn(conn, dir);
+		if ((stream_ctxs & avail_ctxs) != stream_ctxs) {
+			/* Not a true subset of available contexts*/
+			bt_shell_warn("Unsupported streaming context: 0x%08X (0x%08X)",
+				      (uint32_t)stream_ctxs, (uint32_t)avail_ctxs);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static bool bap_supported_lc3_config_data(enum bt_audio_dir dir,
+					  const struct bt_audio_codec_cfg *codec_cfg)
+{
+	const enum bt_audio_location location = dir == BT_AUDIO_DIR_SINK
+							? supported_sink_audio_location
+							: supported_source_audio_location;
+
+	if (IS_ENABLED(CONFIG_BT_GMAP) && gmap_supported_lc3_config_data(dir, codec_cfg)) {
+		return true;
+	}
+
+	return supported_lc3_config(&bap_lc3_codec_cap, location, codec_cfg);
+}
+
 static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
 		      struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
@@ -647,6 +885,18 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 	bt_shell_print("ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
 
 	print_codec_cfg(0, codec_cfg);
+
+	/* ASCS only verifies non-codec-configuration data (codec ID etc.), so check if we support
+	 * the supported LC3 parameters
+	 */
+	if (!bap_supported_lc3_config_data(dir, codec_cfg)) {
+
+		bt_shell_print("Unsupported codec_cfg data");
+
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED,
+				       BT_BAP_ASCS_REASON_NONE);
+		return -ENOTSUP;
+	}
 
 	*stream = stream_alloc();
 	if (*stream == NULL) {
@@ -670,12 +920,20 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
 			struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
-	ARG_UNUSED(dir);
-	ARG_UNUSED(rsp);
-
 	bt_shell_print("ASE Codec Reconfig: stream %p", stream);
 
 	print_codec_cfg(0, codec_cfg);
+
+	/* ASCS only verifies non-CC data (codec ID etc.), so check if we support the supported LC3
+	 * parameters
+	 */
+	if (!bap_supported_lc3_config_data(dir, codec_cfg)) {
+		bt_shell_print("Unsupported codec_cfg data");
+
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED,
+				       BT_BAP_ASCS_REASON_NONE);
+		return -ENOTSUP;
+	}
 
 	if (default_stream == NULL) {
 		set_unicast_stream(stream);
@@ -689,11 +947,98 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
+	enum bt_audio_location chan_allocation;
+	enum bt_audio_codec_cfg_frame_dur frame_dur;
+	uint16_t frame_dur_us;
+	uint8_t frame_blocks_per_sdu;
+	uint16_t octets_per_frame;
+	uint16_t expected_sdu_size;
+	int ret;
 	ARG_UNUSED(rsp);
 
 	bt_shell_print("QoS: stream %p %p", stream, qos);
 
 	print_qos(qos);
+
+	if (IS_ENABLED(CONFIG_LIBLC3)) {
+		/* We only support unframed for LIBLC3 */
+		if (qos->framing == BT_BAP_QOS_CFG_FRAMING_FRAMED) {
+			bt_shell_warn("Framed SDUs not supported");
+
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED,
+					       BT_BAP_ASCS_REASON_FRAMING);
+			return -ENOTSUP;
+		}
+
+		/* Verify SDU interval is a multiple of frame duration which it must be for unframed
+		 */
+		ret = bt_audio_codec_cfg_get_frame_dur(stream->codec_cfg);
+		if (ret < 0) {
+			bt_shell_warn("Could not get codec_cfg sampling frame duration: %d", ret);
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+					       BT_BAP_ASCS_REASON_NONE);
+			return -ENOTSUP; /* mandatory field for LC3 */
+		}
+
+		frame_dur = (enum bt_audio_codec_cfg_frame_dur)ret;
+		ret = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(frame_dur);
+		/* Frame duration is verified in bt_audio_codec_cfg_get_frame_dur */
+		__ASSERT(ret > 0, "Could not get convert frame_dur %d to microseconds: %d",
+			 frame_dur, ret);
+		frame_dur_us = (uint16_t)ret;
+
+		if ((qos->interval % frame_dur_us) != 0U) {
+			bt_shell_warn("SDU interval %u not a multiple of frame duration %u",
+				      qos->interval, frame_dur_us);
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_REJECTED,
+					       BT_BAP_ASCS_REASON_INTERVAL);
+			return -ENOTSUP;
+		}
+	}
+
+	/* Verify that the SDU size matches the number of channels, frame blocks and octets per
+	 * frame
+	 */
+	ret = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cfg octets per codec frame: %d", ret);
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
+		return -ENOTSUP; /* mandatory field for LC3 */
+	}
+
+	octets_per_frame = (uint16_t)ret;
+
+	/* Verify frame blocks per SDU */
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec_cfg frame blocks per SDU: %d", ret);
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
+		return -ENOTSUP; /* mandatory field for LC3 */
+	}
+
+	frame_blocks_per_sdu = (uint8_t)ret;
+
+	ret = bt_audio_codec_cfg_get_chan_allocation(stream->codec_cfg, &chan_allocation, true);
+	if (ret < 0) {
+		bt_shell_warn("Could not get channel allocation: %d", ret);
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
+		return -ENOTSUP; /* With fallback to mono, this shall not fail */
+	}
+
+	expected_sdu_size =
+		octets_per_frame * bt_audio_get_chan_count(chan_allocation) * frame_blocks_per_sdu;
+
+	if (qos->sdu < expected_sdu_size) {
+		bt_shell_warn("Invalid SDU size (%u < %u)", qos->sdu, expected_sdu_size);
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID, BT_BAP_ASCS_REASON_SDU);
+		return -ENOTSUP; /* With fallback to 1, this shall not fail */
+	}
+
+	if (qos->sdu > expected_sdu_size) {
+		bt_shell_warn("SDU size larger than necessary (%u > %u)", qos->sdu,
+			      expected_sdu_size);
+		/* Not invalid, just warn */
+	}
 
 	return 0;
 }
@@ -701,8 +1046,14 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qo
 static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 		      struct bt_bap_ascs_rsp *rsp)
 {
-	ARG_UNUSED(meta);
-	ARG_UNUSED(rsp);
+	if (!supported_lc3_config_meta(stream->conn, stream_dir(stream), meta, meta_len)) {
+		bt_shell_print("Unsupported codec_cfg meta");
+
+		*rsp = BT_BAP_ASCS_RSP(
+			BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
+			(enum bt_bap_ascs_reason)BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT);
+		return -ENOTSUP;
+	}
 
 	bt_shell_print("Enable: stream %p meta_len %zu", stream, meta_len);
 
@@ -718,25 +1069,21 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 	return 0;
 }
 
-static bool meta_data_func_cb(struct bt_data *data, void *user_data)
-{
-	struct bt_bap_ascs_rsp *rsp = (struct bt_bap_ascs_rsp *)user_data;
-
-	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->type)) {
-		bt_shell_print("Invalid metadata type %u or length %u", data->type, data->data_len);
-		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data->type);
-		return false;
-	}
-
-	return true;
-}
-
 static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 			struct bt_bap_ascs_rsp *rsp)
 {
 	bt_shell_print("Metadata: stream %p meta_len %zu", stream, meta_len);
 
-	return bt_audio_data_parse(meta, meta_len, meta_data_func_cb, rsp);
+	if (!supported_lc3_config_meta(stream->conn, stream_dir(stream), meta, meta_len)) {
+		bt_shell_print("Unsupported codec_cfg meta");
+
+		*rsp = BT_BAP_ASCS_RSP(
+			BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
+			(enum bt_bap_ascs_reason)BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT);
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
@@ -830,20 +1177,6 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected_cb,
 };
-
-static uint8_t stream_dir(const struct bt_bap_stream *stream)
-{
-	struct bt_bap_ep_info ep_info;
-	__maybe_unused int err;
-
-	__ASSERT(stream != NULL, "Invalid stream");
-	__ASSERT(stream->ep != NULL, "Invalid stream ep");
-
-	err = bt_bap_ep_get_info(stream->ep, &ep_info);
-	__ASSERT(err == 0, "Failed to get EP info: %d", err);
-
-	return ep_info.dir;
-}
 
 static void print_remote_codec_cap(const struct bt_conn *conn,
 				   const struct bt_audio_codec_cap *codec_cap,
@@ -3782,6 +4115,12 @@ static int cmd_set_loc(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	if (dir == BT_AUDIO_DIR_SINK) {
+		supported_sink_audio_location = loc;
+	} else {
+		supported_source_audio_location = loc;
+	}
+
 	return 0;
 }
 
@@ -3862,10 +4201,6 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PACS)) {
-		static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-			BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
-			BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U), 30U, 155U,
-			MAX_CODEC_FRAMES_PER_SDU, DEFAULT_CONTEXT);
 		const struct bt_pacs_register_param pacs_param = {
 			IF_ENABLED(CONFIG_BT_PAC_SNK, (.snk_pac = true,))
 			IF_ENABLED(CONFIG_BT_PAC_SNK_LOC, (.snk_loc = true,))
@@ -3873,10 +4208,10 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 			IF_ENABLED(CONFIG_BT_PAC_SRC_LOC, (.src_loc = true,))
 		};
 		static struct bt_pacs_cap cap_sink = {
-			.codec_cap = &lc3_codec_cap,
+			.codec_cap = &bap_lc3_codec_cap,
 		};
 		static struct bt_pacs_cap cap_source = {
-			.codec_cap = &lc3_codec_cap,
+			.codec_cap = &bap_lc3_codec_cap,
 		};
 
 		err = bt_pacs_register(&pacs_param);
@@ -3894,7 +4229,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, DEFAULT_LOCATION);
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+						   supported_sink_audio_location);
 			__ASSERT(err == 0, "Failed to set sink location: %d", err);
 		}
 
@@ -3910,7 +4246,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
-			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE, DEFAULT_LOCATION);
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+						   supported_source_audio_location);
 			__ASSERT(err == 0, "Failed to set source location: %d", err);
 		}
 	}
