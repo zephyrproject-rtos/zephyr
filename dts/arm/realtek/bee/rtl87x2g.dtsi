@@ -609,6 +609,18 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
+		udc: udc@40100000 {
+			compatible = "realtek,bee-udc", "snps,dwc2";
+			reg = <0x40100000 0x40000>;
+			interrupts = <77 0>, <78 0>;
+			num-in-eps = <6>;
+			num-out-eps = <6>;
+			ghwcfg1 = <0>;
+			ghwcfg2 = <0x2298d454>;
+			ghwcfg4 = <0xd600aa20>;
+			status = "disabled";
+		};
 	};
 };
 
