@@ -118,6 +118,7 @@
 	DT_FOREACH_STATUS_OKAY(zephyr_mmc_disk, _FF_DISK_NAME)                                     \
 	IF_ENABLED(CONFIG_SDMMC_STM32, (DT_FOREACH_STATUS_OKAY(st_stm32_sdmmc, _FF_DISK_NAME)))    \
 	DT_FOREACH_STATUS_OKAY(zephyr_ftl_dhara, _FF_DISK_NAME)                                    \
+	DT_FOREACH_STATUS_OKAY(zephyr_usb_msc_disk, _FF_DISK_NAME)                                 \
 	DT_FOREACH_STATUS_OKAY(virtio_blk, _FF_DISK_NAME)
 /* clang-format on */
 

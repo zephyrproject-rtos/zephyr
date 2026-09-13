@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Disk exposing a USB mass storage device attached to the USB host stack.
+
+compatible: "zephyr,usb-msc-disk"
+
+include: [base.yaml]
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.

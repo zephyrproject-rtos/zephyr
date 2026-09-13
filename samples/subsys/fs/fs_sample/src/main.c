@@ -14,6 +14,10 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/fs/fs.h>
 
+#if defined(CONFIG_USB_MSC_DISK)
+#include <zephyr/usb/usbh.h>
+#endif
+
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 
 #include <ff.h>
@@ -22,7 +26,9 @@
  *  Note the fatfs library is able to mount only strings inside _VOLUME_STRS
  *  in ffconf.h
  */
-#if defined(CONFIG_DISK_DRIVER_MMC)
+#if defined(CONFIG_USB_MSC_DISK)
+#define DISK_DRIVE_NAME DT_PROP(DT_NODELABEL(usb_disk), disk_name)
+#elif defined(CONFIG_DISK_DRIVER_MMC)
 #define DISK_DRIVE_NAME "SD2"
 #else
 #define DISK_DRIVE_NAME "SD"
@@ -109,8 +115,71 @@ static bool create_some_entries(const char *base_path)
 
 static const char *disk_mount_pt = DISK_MOUNT_PT;
 
+#if defined(CONFIG_USB_MSC_DISK)
+#define MEDIUM_TIMEOUT       K_SECONDS(10)
+#define MEDIUM_POLL_INTERVAL K_MSEC(100)
+
+/* The medium is the first partition of the attached device. Volume 0 is
+ * whatever disk the board itself provides.
+ */
+PARTITION VolToPart[FF_VOLUMES] = {
+	{0, 0},
+	{1, 1},
+};
+
+/* FF_VOLUMES follows the disks enabled in the devicetree, so a board with more
+ * than the USB medium and one of its own would leave the extra volumes mapped
+ * to physical drive 0.
+ */
+BUILD_ASSERT(FF_VOLUMES == 2, "The partition map assumes one board disk plus the USB medium");
+
+USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
+
+/* Bringing up the host controller is the application's job, and the disk
+ * reports no medium until a device is attached and its geometry has been
+ * read.
+ */
+static int usb_medium_init(void)
+{
+	k_timepoint_t deadline;
+	int ret;
+
+	ret = usbh_init(&uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize USB host support: %d", ret);
+		return ret;
+	}
+
+	ret = usbh_enable(&uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB host support: %d", ret);
+		return ret;
+	}
+
+	printk("Waiting for a mass storage device\n");
+
+	deadline = sys_timepoint_calc(MEDIUM_TIMEOUT);
+	while (!sys_timepoint_expired(deadline)) {
+		if (disk_access_status(DISK_DRIVE_NAME) == DISK_STATUS_OK) {
+			return 0;
+		}
+
+		k_sleep(MEDIUM_POLL_INTERVAL);
+	}
+
+	LOG_ERR("No mass storage device became ready");
+	return -ENODEV;
+}
+#endif /* CONFIG_USB_MSC_DISK */
+
 int main(void)
 {
+#if defined(CONFIG_USB_MSC_DISK)
+	if (usb_medium_init() != 0) {
+		return 0;
+	}
+#endif
+
 	/* raw disk i/o */
 	do {
 		static const char *disk_pdrv = DISK_DRIVE_NAME;

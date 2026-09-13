@@ -1,0 +1,58 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_MSC
+	bool "USB host mass storage class support"
+	help
+	  Enable the USB host Mass Storage class driver. It implements the
+	  Bulk-Only Transport and the SCSI commands needed for block access
+	  to an attached medium.
+
+if USBH_MSC
+
+config USBH_MSC_LUN_COUNT
+	int "Number of mass storage devices supported at once"
+	default 1
+	range 1 8
+	help
+	  Number of attached mass storage devices the host can use
+	  simultaneously.
+
+config USBH_MSC_STACK_SIZE
+	int "Mass storage start-up thread stack size"
+	default 1536
+	help
+	  Stack size of the thread that identifies an attached medium.
+
+config USBH_MSC_THREAD_PRIORITY
+	int "Mass storage start-up thread priority"
+	default 9
+	help
+	  Priority of the thread that identifies an attached medium.
+
+config USBH_MSC_XFER_TIMEOUT_MS
+	int "Bulk transfer timeout in milliseconds"
+	default 5000
+	help
+	  Time to wait for a bulk transfer of a command, data or status
+	  wrapper to complete before the command is treated as failed.
+
+config USBH_MSC_UNIT_READY_TIMEOUT_MS
+	int "Medium ready timeout in milliseconds"
+	default 3000
+	help
+	  Time to wait for an attached medium to report itself ready
+	  before start-up gives up on it.
+
+config USBH_MSC_UNIT_READY_INTERVAL_MS
+	int "Medium ready poll interval in milliseconds"
+	default 100
+	help
+	  Interval between TEST UNIT READY commands while waiting for an
+	  attached medium to become ready.
+
+module = USBH_MSC
+module-str = usbh msc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_MSC
