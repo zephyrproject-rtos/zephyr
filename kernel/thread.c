@@ -39,8 +39,6 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_OBJ_CORE_THREAD
-static struct k_obj_type  obj_type_thread;
-
 #ifdef CONFIG_OBJ_CORE_STATS_THREAD
 static struct k_obj_core_stats_desc  thread_stats_desc = {
 	.raw_size = sizeof(struct k_cycle_stats),
@@ -58,10 +56,10 @@ static struct k_obj_core_stats_desc  thread_stats_desc = {
  * type only.
  */
 #ifdef CONFIG_OBJ_CORE_STATS_THREAD
-K_OBJ_TYPE_DEFINE_TYPE_ONLY(obj_type_thread, k_thread, K_OBJ_TYPE_THREAD_ID,
+K_OBJ_TYPE_DEFINE_TYPE_ONLY(z_obj_type_thread, k_thread, K_OBJ_TYPE_THREAD_ID,
 			    &thread_stats_desc);
 #else
-K_OBJ_TYPE_DEFINE_TYPE_ONLY(obj_type_thread, k_thread, K_OBJ_TYPE_THREAD_ID,
+K_OBJ_TYPE_DEFINE_TYPE_ONLY(z_obj_type_thread, k_thread, K_OBJ_TYPE_THREAD_ID,
 			    NULL);
 #endif /* CONFIG_OBJ_CORE_STATS_THREAD */
 #endif /* CONFIG_OBJ_CORE_THREAD */
@@ -690,7 +688,7 @@ static inline void thread_abort_cleanup_check_reuse(struct k_thread *thread)
 static inline void init_thread_obj_core(struct k_thread *thread)
 {
 #ifdef CONFIG_OBJ_CORE_THREAD
-	k_obj_core_init_and_link(K_OBJ_CORE(thread), &obj_type_thread);
+	k_obj_core_init_and_link(K_OBJ_CORE(thread), &z_obj_type_thread);
 #ifdef CONFIG_OBJ_CORE_STATS_THREAD
 	k_obj_core_stats_register(K_OBJ_CORE(thread), &thread->base.usage,
 				  sizeof(thread->base.usage));

@@ -177,36 +177,29 @@ void k_obj_core_evict_range(const void *addr, size_t len)
 	k_spin_unlock(&obj_core_lock, key);
 }
 
+/* Add the object types defined at build time to the type list and initialize
+ * the object cores of their permanent objects.
+ */
 static void z_obj_core_init_all(void)
 {
-	STRUCT_SECTION_FOREACH(k_obj_core_desc, desc) {
-		struct k_obj_type *type = desc->type;
+	STRUCT_SECTION_FOREACH(k_obj_type, type) {
+		const struct k_obj_range *range = &type->statics;
 
-		z_obj_type_init(type, desc->type_id, desc->obj_core_offset);
-		z_obj_type_init_range(type, desc->objs_start, desc->objs_end,
-				      desc->obj_size, false);
-#ifdef CONFIG_OBJ_CORE_STATS
-		if (desc->stats_desc != NULL) {
-			k_obj_type_stats_init(type, desc->stats_desc);
-		}
-#endif /* CONFIG_OBJ_CORE_STATS */
+		sys_slist_append(&z_obj_type_list, &type->node);
 
-		/* Initialize every statically defined object */
-
-		for (const uint8_t *obj = desc->objs_start;
-		     obj < (const uint8_t *)desc->objs_end;
-		     obj += desc->obj_size) {
+		for (const uint8_t *obj = range->start;
+		     obj < (const uint8_t *)range->end; obj += range->stride) {
 			struct k_obj_core *obj_core =
-				(struct k_obj_core *)(obj + desc->obj_core_offset);
+				(struct k_obj_core *)(obj + type->obj_core_offset);
 
 			k_obj_core_init(obj_core, type);
 #ifdef CONFIG_OBJ_CORE_STATS
-			if ((desc->stats_desc != NULL) &&
-			    (desc->stats_size != 0)) {
+			if ((type->stats_desc != NULL) &&
+			    (type->stats_size != 0)) {
 				k_obj_core_stats_register(
 					obj_core,
-					(void *)(obj + desc->stats_offset),
-					desc->stats_size);
+					(void *)(obj + type->stats_offset),
+					type->stats_size);
 			}
 #endif /* CONFIG_OBJ_CORE_STATS */
 		}
@@ -217,14 +210,22 @@ K_KERNEL_INIT_PRE(z_obj_core_init_all);
 
 struct k_obj_type *k_obj_type_find(uint32_t type_id)
 {
-	struct k_obj_type *type;
 	struct k_obj_type *rv = NULL;
 	sys_snode_t *node;
+
+	/* Types defined at build time are valid before the type list is */
+
+	STRUCT_SECTION_FOREACH(k_obj_type, type) {
+		if (type->id == type_id) {
+			return type;
+		}
+	}
 
 	k_spinlock_key_t  key = k_spin_lock(&obj_core_lock);
 
 	SYS_SLIST_FOR_EACH_NODE(&z_obj_type_list, node) {
-		type = CONTAINER_OF(node, struct k_obj_type, node);
+		struct k_obj_type *type = CONTAINER_OF(node, struct k_obj_type, node);
+
 		if (type->id == type_id) {
 			rv = type;
 			break;

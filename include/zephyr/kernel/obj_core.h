@@ -87,8 +87,10 @@ struct k_obj_core;
  */
 
 /**
- * Tools may use this list as an entry point to identify all registered
- * object types and the object cores linked to them.
+ * List of every object type: those defined with K_OBJ_TYPE_DEFINE() are added
+ * at boot, those initialized with z_obj_type_init() as they are initialized.
+ * Tools may use it as an entry point to identify all object types and the
+ * object cores registered with them.
  */
 extern sys_slist_t z_obj_type_list;
 
@@ -137,6 +139,10 @@ struct k_obj_type {
 #ifdef CONFIG_OBJ_CORE_STATS
 	/** Pointer to object core statistics descriptor */
 	struct k_obj_core_stats_desc *stats_desc;
+	/** Offset of the stats buffer within each permanent object, if any */
+	size_t         stats_offset;
+	/** Size of the stats buffer within each permanent object (0 = none) */
+	size_t         stats_size;
 #endif /* CONFIG_OBJ_CORE_STATS */
 };
 
@@ -157,114 +163,92 @@ struct k_obj_core {
  * @cond INTERNAL_HIDDEN
  */
 
-/**
- * Descriptor used to register an object type with the object core framework at
- * boot. One descriptor is emitted per participating object type via
- * K_OBJ_TYPE_DEFINE(); the kernel walks them all from a single init point
- * instead of each object type providing its own SYS_INIT.
- */
-struct k_obj_core_desc {
-	struct k_obj_type *type;        /**< Object type storage to initialize */
-	const void        *objs_start;  /**< Start of static object section */
-	const void        *objs_end;    /**< End of static object section */
-	size_t             obj_core_offset; /**< Offset of obj_core in object */
-	size_t             obj_size;    /**< Stride between static objects */
-	uint32_t           type_id;     /**< Unique type ID */
 #ifdef CONFIG_OBJ_CORE_STATS
-	struct k_obj_core_stats_desc *stats_desc; /**< Stats descriptor or NULL */
-	size_t             stats_offset; /**< Offset of per-object stats buffer */
-	size_t             stats_size;   /**< Per-object stats buffer size (0=none) */
-#endif /* CONFIG_OBJ_CORE_STATS */
-};
-
-#ifdef CONFIG_OBJ_CORE_STATS
-#define Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz) \
+#define Z_OBJ_CORE_STATS_INIT(_stats, _soff, _ssz) \
 	.stats_desc = (_stats), .stats_offset = (_soff), .stats_size = (_ssz),
 #else
-#define Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz)
+#define Z_OBJ_CORE_STATS_INIT(_stats, _soff, _ssz)
 #endif /* CONFIG_OBJ_CORE_STATS */
 
-#define Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats, _soff, _ssz)      \
-	STRUCT_SECTION_START_EXTERN(_struct);                                  \
-	STRUCT_SECTION_END_EXTERN(_struct);                                    \
-	static const STRUCT_SECTION_ITERABLE(k_obj_core_desc,                  \
-					     _obj_core_desc_##_struct) = {     \
-		.type = &(_type_var),                                          \
-		.objs_start = STRUCT_SECTION_START(_struct),                   \
-		.objs_end = STRUCT_SECTION_END(_struct),                       \
-		.obj_core_offset = offsetof(struct _struct, obj_core),         \
-		.obj_size = sizeof(struct _struct),                            \
-		.type_id = (_id),                                              \
-		Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz)                     \
+#define Z_K_OBJ_TYPE_DEFINE(_type_var, _start, _end, _stride, _off, _id,       \
+			    _stats, _soff, _ssz)                               \
+	STRUCT_SECTION_ITERABLE(k_obj_type, _type_var) = {                     \
+		.id = (_id),                                                   \
+		.obj_core_offset = (_off),                                     \
+		.statics = {                                                   \
+			.start = (_start),                                     \
+			.end = (_end),                                         \
+			.stride = (_stride),                                   \
+			.indirect = false,                                     \
+		},                                                             \
+		Z_OBJ_CORE_STATS_INIT(_stats, _soff, _ssz)                     \
 	}
 
+#define Z_K_OBJ_TYPE_DEFINE_STRUCT(_type_var, _struct, _id, _stats, _soff, _ssz) \
+	STRUCT_SECTION_START_EXTERN(_struct);                                  \
+	STRUCT_SECTION_END_EXTERN(_struct);                                    \
+	Z_K_OBJ_TYPE_DEFINE(_type_var, STRUCT_SECTION_START(_struct),          \
+			    STRUCT_SECTION_END(_struct), sizeof(struct _struct), \
+			    offsetof(struct _struct, obj_core), _id, _stats,    \
+			    _soff, _ssz)
+
 /**
- * @brief Register an object type with the object core framework
+ * @brief Define an object type
  *
- * Emits a descriptor that the kernel uses at boot to initialize @a _type_var
- * and to initialize and link every statically defined object of @a _struct.
- * This replaces the per-type SYS_INIT boilerplate that would otherwise iterate
- * the object's static section by hand.
+ * Defines the object type @a _type_var, initialized at build time, whose
+ * permanent objects are the statically defined instances of @a _struct.
+ * The kernel initializes the object cores of those instances at boot.
  *
- * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _type_var Name of the object type (struct k_obj_type) to define
  * @param _struct   Object struct type (e.g. k_sem) with an obj_core member
  * @param _id       Unique type ID (e.g. K_OBJ_TYPE_SEM_ID)
  * @param _stats    Pointer to a k_obj_core_stats_desc, or NULL
  */
 #define K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats)                     \
-	Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats, 0, 0)
+	Z_K_OBJ_TYPE_DEFINE_STRUCT(_type_var, _struct, _id, _stats, 0, 0)
 
 /**
- * @brief Register an object type that also gathers per-object statistics
+ * @brief Define an object type that also gathers per-object statistics
  *
- * Like K_OBJ_TYPE_DEFINE(), but additionally registers each statically defined
- * object's embedded statistics buffer with the object core framework at boot.
+ * Like K_OBJ_TYPE_DEFINE(), but additionally registers each statically
+ * defined object's embedded statistics buffer at boot.
  *
- * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _type_var Name of the object type (struct k_obj_type) to define
  * @param _struct   Object struct type with obj_core and stats members
  * @param _id       Unique type ID
  * @param _stats    Pointer to a k_obj_core_stats_desc
  * @param _member   Name of the per-object stats buffer member within @a _struct
  */
 #define K_OBJ_TYPE_DEFINE_STATS(_type_var, _struct, _id, _stats, _member)      \
-	Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats,                   \
-			    offsetof(struct _struct, _member),                 \
-			    sizeof(((struct _struct *)0)->_member))
+	Z_K_OBJ_TYPE_DEFINE_STRUCT(_type_var, _struct, _id, _stats,            \
+				   offsetof(struct _struct, _member),          \
+				   sizeof(((struct _struct *)0)->_member))
 
 /**
- * @brief Register an object type without linking any static objects
+ * @brief Define an object type without permanent objects
  *
- * Like K_OBJ_TYPE_DEFINE(), but for object types that have no statically
- * defined instances to walk and link at boot (e.g. threads, which link their
- * own object core as they are created). Only the object type (and its stats
- * descriptor, if any) is initialized.
+ * Like K_OBJ_TYPE_DEFINE(), but for object types whose objects are all
+ * registered at run time (e.g. threads, which register their own object core
+ * as they are created).
  *
- * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _type_var Name of the object type (struct k_obj_type) to define
  * @param _struct   Object struct type with an obj_core member
  * @param _id       Unique type ID
  * @param _stats    Pointer to a k_obj_core_stats_desc, or NULL
  */
 #define K_OBJ_TYPE_DEFINE_TYPE_ONLY(_type_var, _struct, _id, _stats)           \
-	static const STRUCT_SECTION_ITERABLE(k_obj_core_desc,                  \
-					     _obj_core_desc_##_struct) = {     \
-		.type = &(_type_var),                                          \
-		.objs_start = NULL,                                            \
-		.objs_end = NULL,                                              \
-		.obj_core_offset = offsetof(struct _struct, obj_core),         \
-		.obj_size = sizeof(struct _struct),                            \
-		.type_id = (_id),                                              \
-		Z_OBJ_CORE_STATS_DESC(_stats, 0, 0)                            \
-	}
+	Z_K_OBJ_TYPE_DEFINE(_type_var, NULL, NULL, sizeof(struct _struct),     \
+			    offsetof(struct _struct, obj_core), _id, _stats, 0, 0)
 
 /**
  * INTERNAL_HIDDEN @endcond
  */
 
 /**
- * @brief Initialize a specific object type
+ * @brief Initialize an object type at run time
  *
- * Initializes a specific object type and links it into the object core
- * framework.
+ * Initializes an object type that is not defined with K_OBJ_TYPE_DEFINE()
+ * and links it into the object core framework.
  *
  * @param type Pointer to the object type to initialize
  * @param id A means to identify the object type

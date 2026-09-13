@@ -467,11 +467,9 @@ static inline void *z_vrfy_k_queue_peek_tail(struct k_queue *queue)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_FIFO
-struct k_obj_type _obj_type_fifo;
-K_OBJ_TYPE_DEFINE(_obj_type_fifo, k_fifo, K_OBJ_TYPE_FIFO_ID, NULL);
+K_OBJ_TYPE_DEFINE(z_obj_type_fifo, k_fifo, K_OBJ_TYPE_FIFO_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_FIFO */
 
 #ifdef CONFIG_OBJ_CORE_LIFO
-struct k_obj_type _obj_type_lifo;
-K_OBJ_TYPE_DEFINE(_obj_type_lifo, k_lifo, K_OBJ_TYPE_LIFO_ID, NULL);
+K_OBJ_TYPE_DEFINE(z_obj_type_lifo, k_lifo, K_OBJ_TYPE_LIFO_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_LIFO */
