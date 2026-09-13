@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/instrumentation/instrumentation.h>
-#include <instr_timestamp.h>
 
 __no_instrumentation__
 void __cyg_profile_func_enter(void *callee, void *caller)
