@@ -71,22 +71,16 @@ int arm_irq_is_enabled(unsigned int irq)
 #if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
 void arm_irq_clear_pending(unsigned int irq)
 {
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
-
 	NVIC_ClearPendingIRQ((IRQn_Type)irq);
 }
 
 void arm_irq_set_pending(unsigned int irq)
 {
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
-
 	NVIC_SetPendingIRQ((IRQn_Type)irq);
 }
 
 bool arm_irq_is_pending(unsigned int irq)
 {
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
-
 	return NVIC_GetPendingIRQ((IRQn_Type)irq) != 0U;
 }
 #endif

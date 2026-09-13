@@ -25,7 +25,3 @@ if(CONFIG_SOC_FAMILY_MICROCHIP_SAMA5 OR CONFIG_SOC_FAMILY_MICROCHIP_SAMA7)
     clk-utmi.c
   )
 endif()
-
-if(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-  zephyr_sources(irq_aic.c)
-endif()

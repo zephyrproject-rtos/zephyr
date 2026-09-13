@@ -166,6 +166,18 @@ static inline void z_xt_set_intset3(unsigned int arg)
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
 #endif /* CONFIG_2ND_LEVEL_INTERRUPTS */
 
+#if defined(CONFIG_INTC_ROOT)
+/*
+ * The root interrupt controller driver provides the intc_root_* API:
+ * map the architecture interrupt control functions onto it directly.
+ */
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
+
+#define arch_irq_enable(irq)	intc_root_enable(irq)
+#define arch_irq_disable(irq)	intc_root_disable(irq)
+
+#define arch_irq_is_enabled(irq)	intc_root_is_enabled(irq)
+#else
 void z_soc_irq_init(void);
 void z_soc_irq_enable(unsigned int irq);
 void z_soc_irq_disable(unsigned int irq);
@@ -175,6 +187,7 @@ int z_soc_irq_is_enabled(unsigned int irq);
 #define arch_irq_disable(irq)	z_soc_irq_disable(irq)
 
 #define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+#endif /* CONFIG_INTC_ROOT */
 
 #else
 

@@ -5,6 +5,8 @@ config BCM2836_L1_INTC
 	bool "BCM2836 ARM-local interrupt controller"
 	default y
 	depends on DT_HAS_BRCM_BCM2836_L1_INTC_ENABLED
+	# The L1 controller is the BCM283x root interrupt controller.
+	select INTC_ROOT if !ARM_CUSTOM_INTERRUPT_CONTROLLER
 	help
 	  Driver for the BCM2836 ARM-local interrupt controller (also
 	  present on BCM2710 / Pi Zero 2 W). Routes per-core ARM

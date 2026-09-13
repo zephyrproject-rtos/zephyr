@@ -6,6 +6,14 @@
 
 menu "Interrupt controller drivers"
 
+config INTC_ROOT
+	bool
+	help
+	  Selected by the interrupt controller driver that is the platform's
+	  root interrupt controller. The driver provides the intc_root_*
+	  functions and the architecture interrupt control functions map
+	  onto them directly.
+
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"
 	default y
@@ -29,6 +37,7 @@ config HAZARD3_INTC
 	default y
 	select PICOSDK_USE_CLAIM
 	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	select INTC_ROOT
 	depends on DT_HAS_HAZARD3_HAZARD3_INTC_ENABLED
 	help
 	  IRQ implementation for Hazard3 Interrupt Controller found on the RP2350 series SoCs

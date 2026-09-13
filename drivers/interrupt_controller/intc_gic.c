@@ -17,6 +17,7 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/sys/barrier.h>
 
 #if defined(CONFIG_GIC_V1)
@@ -372,6 +373,24 @@ int arm_gic_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, arm_gic_init, NULL, NULL, NULL,
 		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+
+#if defined(CONFIG_INTC_ROOT)
+/* The GIC is the root interrupt controller: alias its functions to the API names */
+FUNC_ALIAS(arm_gic_irq_enable, intc_root_enable, void);
+FUNC_ALIAS(arm_gic_irq_disable, intc_root_disable, void);
+FUNC_ALIAS(arm_gic_irq_set_priority, intc_root_priority_set, void);
+FUNC_ALIAS(arm_gic_irq_set_pending, intc_root_set_pending, void);
+FUNC_ALIAS(arm_gic_irq_clear_pending, intc_root_clear_pending, void);
+FUNC_ALIAS(arm_gic_irq_is_pending, intc_root_is_pending, bool);
+FUNC_ALIAS(arm_gic_get_active, intc_root_get_active, unsigned int);
+FUNC_ALIAS(arm_gic_eoi, intc_root_eoi, void);
+
+/* arm_gic_irq_is_enabled() returns bool and the API int: wrap instead of alias */
+int intc_root_is_enabled(unsigned int irq)
+{
+	return arm_gic_irq_is_enabled(irq);
+}
+#endif /* CONFIG_INTC_ROOT */
 
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)

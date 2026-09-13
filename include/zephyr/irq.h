@@ -17,6 +17,7 @@
 #ifndef _ASMLANGUAGE
 #include <limits.h>
 #include <stdbool.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
@@ -461,6 +462,9 @@ static ALWAYS_INLINE int k_irq_disconnect_dynamic(unsigned int irq, unsigned int
  */
 static ALWAYS_INLINE void k_irq_clear_pending(unsigned int irq)
 {
+	__ASSERT(IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS) || irq < CONFIG_NUM_IRQS,
+		 "IRQ %u out of range", irq);
+
 	arch_irq_clear_pending(irq);
 }
 
@@ -477,6 +481,9 @@ static ALWAYS_INLINE void k_irq_clear_pending(unsigned int irq)
  */
 static ALWAYS_INLINE void k_irq_set_pending(unsigned int irq)
 {
+	__ASSERT(IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS) || irq < CONFIG_NUM_IRQS,
+		 "IRQ %u out of range", irq);
+
 	arch_irq_set_pending(irq);
 }
 
@@ -495,6 +502,9 @@ static ALWAYS_INLINE void k_irq_set_pending(unsigned int irq)
  */
 static ALWAYS_INLINE bool k_irq_is_pending(unsigned int irq)
 {
+	__ASSERT(IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS) || irq < CONFIG_NUM_IRQS,
+		 "IRQ %u out of range", irq);
+
 	return arch_irq_is_pending(irq);
 }
 #endif /* CONFIG_ARCH_HAS_IRQ_PENDING_OPS */

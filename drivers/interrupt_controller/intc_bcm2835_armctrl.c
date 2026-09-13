@@ -20,8 +20,8 @@
  *   3. The shortcut bits in the bank-0 enable/disable registers are
  *      ignored; the actual bank-1/2 enable register must be used.
  *
- * Called from soc/brcm/bcm2710/soc_irq.c via the
- * bcm2835_armctrl_ic_* entry points in
+ * Driven by the BCM2836 L1 root interrupt controller through the
+ * intc_bcm2835_armctrl_* entry points in
  * <zephyr/drivers/interrupt_controller/intc_bcm283x.h>.
  */
 
@@ -97,9 +97,11 @@ static uintptr_t armc_disable_reg(unsigned int bank)
 	return armc_base + disable_off[bank];
 }
 
-void bcm2835_armctrl_ic_init(void)
+static int intc_bcm2835_armctrl_init(const struct device *dev)
 {
-	/* See the comment in bcm2836_l1_intc_init() on why we map here. */
+	ARG_UNUSED(dev);
+
+	/* See the comment in intc_bcm2836_l1_init() on mapping */
 	device_map(&armc_base, DT_INST_REG_ADDR(0), DT_INST_REG_SIZE(0),
 		   K_MEM_CACHE_NONE);
 
@@ -114,9 +116,11 @@ void bcm2835_armctrl_ic_init(void)
 
 	/* Cancel any FIQ left enabled by the boot firmware. */
 	sys_write32(0, armc_base + ARMC_FIQ_CONTROL_OFF);
+
+	return 0;
 }
 
-void bcm2835_armctrl_ic_irq_enable(unsigned int irq)
+void intc_bcm2835_armctrl_irq_enable(unsigned int irq)
 {
 	if (!BCM283X_IRQ_IS_ARMC(irq)) {
 		return;
@@ -124,7 +128,7 @@ void bcm2835_armctrl_ic_irq_enable(unsigned int irq)
 	sys_write32(BIT(ARMC_IRQ_BIT(irq)), armc_enable_reg(ARMC_IRQ_BANK(irq)));
 }
 
-void bcm2835_armctrl_ic_irq_disable(unsigned int irq)
+void intc_bcm2835_armctrl_irq_disable(unsigned int irq)
 {
 	if (!BCM283X_IRQ_IS_ARMC(irq)) {
 		return;
@@ -132,7 +136,7 @@ void bcm2835_armctrl_ic_irq_disable(unsigned int irq)
 	sys_write32(BIT(ARMC_IRQ_BIT(irq)), armc_disable_reg(ARMC_IRQ_BANK(irq)));
 }
 
-int bcm2835_armctrl_ic_irq_is_enabled(unsigned int irq)
+int intc_bcm2835_armctrl_irq_is_enabled(unsigned int irq)
 {
 	if (!BCM283X_IRQ_IS_ARMC(irq)) {
 		return 0;
@@ -141,7 +145,7 @@ int bcm2835_armctrl_ic_irq_is_enabled(unsigned int irq)
 		  & BIT(ARMC_IRQ_BIT(irq)));
 }
 
-unsigned int bcm2835_armctrl_ic_irq_get_active(void)
+unsigned int intc_bcm2835_armctrl_irq_get_active(void)
 {
 	uint32_t basic;
 	uint32_t p;
@@ -174,3 +178,6 @@ unsigned int bcm2835_armctrl_ic_irq_get_active(void)
 	}
 	return CONFIG_NUM_IRQS;
 }
+
+DEVICE_DT_INST_DEFINE(0, intc_bcm2835_armctrl_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_INTC_INIT_PRIORITY, NULL);
