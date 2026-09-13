@@ -17,7 +17,9 @@ providing:
 * **Statistical Analysis**: Calculations of Mean, Standard Deviation, Standard
   Error, and Min/Max values.
 * **Overhead Compensation**: Inclusion of a control test to account for the
-  benchmarking frameworks own execution time.
+  benchmarking frameworks own execution time. The control is subtracted from
+  every reported statistic identically, so the corrected values are real
+  numbers that generally do not coincide with any single measurement.
 
 Configuration
 *************
@@ -92,6 +94,64 @@ functions only once allowing the test function to run hot within a dedicated tim
 This will give a more realistic measurements as it includes the overhead of the system as it would
 be in a real-world scenario, such as interrupts, context switches, and other background tasks.
 
+Manual Benchmarks
+=================
+
+Standard and timed benchmarks are timed by the framework itself, which takes both timestamps in
+thread context around each invocation of the benchmark body. Some measurements cannot be expressed
+that way because their endpoints are captured in different execution contexts: for example the
+latency from raising an interrupt to the first instruction of its ISR, or from the end of an ISR to
+a woken thread running.
+
+Manual benchmarks keep the loop, the setup and the teardown in the framework and hand the body
+only the choice of what is measured, by bracketing it with :c:func:`ztest_benchmark_start` and
+:c:func:`ztest_benchmark_end`. The framework computes and reports the same statistics as for
+standard benchmarks.
+
+.. code-block:: c
+
+   ZTEST_BENCHMARK_MANUAL(<suite name>, <benchmark name>, <samples>, <setup_fn>, <teardown_fn>)
+   {
+         prepare();
+
+         ztest_benchmark_start();
+         operation_under_test();
+         ztest_benchmark_end();
+   }
+
+Both hooks only take a timestamp, so either may be called from an ISR and the span need not begin
+and end in the same execution context. For the latency from an interrupt to the thread it wakes,
+the ISR marks the start and the thread ends the span:
+
+.. code-block:: c
+
+   static void my_isr(const void *arg)
+   {
+         ztest_benchmark_start();
+   }
+
+   ZTEST_BENCHMARK_MANUAL(<suite name>, isr_exit_latency, 1000, NULL, NULL)
+   {
+         trigger_the_interrupt();
+
+         ztest_benchmark_end();
+   }
+
+The sample itself is computed once the body has returned, which is what keeps the statistics out
+of interrupt context: updating them uses floating point, which is not allowed in an ISR on every
+architecture. An iteration whose body marks no span contributes no sample.
+
+Manual benchmarks are corrected against a control of their own rather than the one the sampled
+benchmarks use. A manual span costs the two timestamps that bracket it and nothing else, where the
+sampled control also measures the indirect call to the benchmark body, which is not part of a
+manual span. A span whose ends are captured in two different contexts pays neither exactly, and no
+control can express that.
+
+The warmup applies here exactly as it does to a sampled benchmark: the framework runs the body
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` extra times and discards those spans, keeping the
+first as the cold cost. The body never has to distinguish between the two phases, and every
+measured iteration is preceded by exactly the same work as the one before it.
+
 Understanding Results
 *********************
 
@@ -113,6 +173,19 @@ Standard Benchmarking Results
 Statistical Metrics
 """""""""""""""""""
 
+.. note::
+
+   :kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTLIERS` replaces the standard error line with the
+   number of samples that exceed the median by more than
+   :kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTLIER_MARGIN_DIV` allows, and that number as a
+   percentage. The margin matters because the counter resolution spreads the baseline over a
+   few counts; without it about half of any distribution would be reported. A latency
+   distribution is usually a baseline plus a handful of disturbed runs rather than samples of
+   one stochastic population, and a standard error over the two suggests an average that no
+   single execution ever produced -- ten thousand runs of 760 cycles and one of 1240 give a
+   standard error of 0.048, which reads as precision and is not, where ``1 / 10000 (0.010%)``
+   says what happened. Only the report changes; the standard error keeps its CSV column.
+
 * **Mean (u)**: The average number of cycles taken per sample. It provides a
   central value representing the expected cost of execution.
 
@@ -127,6 +200,60 @@ Statistical Metrics
 
 * **Min/Max**: The minimum and maximum cycle counts observed, along with which
   sample they occurred on.
+
+Warmup and the cold cost
+""""""""""""""""""""""""
+
+A benchmark is defined as three phases: the setup, then
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` iterations that are executed but not recorded,
+then the measured samples. The warmup applies to every benchmark in the image.
+
+The very first execution is always unrecorded, whatever the warmup is set to. It runs with cold
+caches, branch predictors and TLBs and can be an order of magnitude slower than the steady state,
+and rather than discard that information the framework reports it on its own as the **cold cost**.
+The two answer different questions — what an operation costs the first time it is reached, and
+what it costs thereafter — and an application that runs a path once at startup cares about the
+first.
+
+Keeping it out of the distribution is what makes the distribution mean anything at the tail. A
+benchmark that reported the cold start in both places would have it decide the far percentiles:
+at ten thousand samples the nearest-rank p99.99 is the second largest value, so one cold start
+would be read as the steady-state tail.
+
+Raising the warmup beyond that costs accuracy on a micro benchmark whose whole cost is comparable
+to a cache miss, and with a large enough sample count the early iterations have no measurable
+effect on the mean, so the default of zero is the right starting point. Raise it when the
+benchmark is large enough for cache state to matter and the steady state is what you are after.
+
+Latency percentiles
+"""""""""""""""""""
+
+The mean and the standard error describe how precisely the average was
+estimated. That is the right question for throughput, but not for latency: a
+real-time system is characterised by how bad an individual operation can be,
+and that lives in the tail of the distribution rather than near the mean.
+
+Enable :kconfig:option:`CONFIG_ZTEST_BENCHMARK_PERCENTILES` to retain the
+individual samples and report ``min``, ``p50``, ``p90``, ``p99``, ``p99.9``,
+``p99.99`` and ``max`` alongside the usual statistics. In CSV mode each
+sampled and manual benchmark emits an additional ``P`` row; see
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV` for the columns.
+
+The difference this makes is clearest on a distribution with a tail. Measuring
+interrupt entry latency on a loaded system gives a mean of 1264 cycles with a
+standard error of 34, which describes no interrupt that actually occurred: the
+percentiles show 1216 cycles all the way out to p99, and 25184 beyond it.
+
+A percentile has to be resolvable by the number of samples taken. p99 needs at
+least 100 samples, p99.9 at least 1000 and p99.99 at least 10000; with fewer,
+the reported value degenerates to the maximum. Samples are retained in a
+buffer of :kconfig:option:`CONFIG_ZTEST_BENCHMARK_MAX_SAMPLES` entries of
+8 bytes each, which has to be at least as large as the sample count of the
+largest benchmark. The retained samples are the first ones taken rather than a
+sample of the whole run, so percentiles over a truncated prefix would miss
+whatever happened after the buffer filled, which is where the tail tends to
+live. A benchmark that overruns the buffer therefore reports no percentiles at
+all, and says how many samples did not fit.
 
 Plainly speaking, lower values are better for all metrics.
 Lower mean, min, and max values indicates better raw performance.
@@ -147,6 +274,7 @@ Timed Benchmarking Results
 
 Statistical Metrics
 """""""""""""""""""
+
 * **Total Time**: The total time taken for all samples of the benchmark, including overhead.
 
 * **Work Time**: The total time taken for the code under test, excluding the overhead of the
