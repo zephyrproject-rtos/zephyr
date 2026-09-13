@@ -46,6 +46,14 @@ config CLOCK_CONTROL_MCHP_PIC32CM_SG_GC
 	help
 	  Enable clock controller driver for Microchip PIC32CM_SG_GC family.
 
+config CLOCK_CONTROL_MCHP_PIC32CX_BZ
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_PIC32CX_BZ6_CLOCK_ENABLED
+	select CLOCK_CONTROL_MCHP_COMMON
+	help
+	  Enable clock controller driver for Microchip PIC32CX_BZ family.
+
 config CLOCK_CONTROL_MCHP_SMARTFUSION2
 	bool
 	default y

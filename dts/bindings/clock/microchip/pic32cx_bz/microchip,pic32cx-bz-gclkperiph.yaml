@@ -1,0 +1,44 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: Peripheral clock (GCLKPERIPH) configuration.
+compatible: "microchip,pic32cx-bz-gclkperiph"
+
+properties:
+  "#clock-cells":
+    const: 1
+    type: int
+
+clock-cells:
+  - subsystem
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: Clock subsystem
+
+    gclkperiph-src-sel:
+      type: string
+      enum:
+        - "no_clock"
+        - "refclk_1"
+        - "refclk_2"
+        - "refclk_3"
+        - "refclk_4"
+        - "refclk_5"
+        - "refclk_6"
+        - "lpclk"
+      default: "no_clock"
+      description: Peripheral clock source delection
+
+    gclkperiph-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: Peripheral clock Enable

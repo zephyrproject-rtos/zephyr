@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Image Header Settings"
+	depends on SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config MD_SEQ_NUM
+	hex "Metadata Sequence Number of the image"
+	default 0xfffffffe
+
+config AUTH_MTHD
+	int "Metadata authentication method"
+	range 0 0
+	default 0
+	help
+	  0: None
+
+config FW_IMG_REV
+	hex "Firmware Image revision"
+	default 0x01000000
+
+endmenu
