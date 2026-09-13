@@ -593,7 +593,7 @@ static inline void lsm6dsl_magn_convert(struct sensor_value *val, int raw_val,
 {
 	double dval;
 
-	/* Sensitivity is exposed in mgauss/LSB */
+	/* Sensitivity is exposed in ugauss/LSB */
 	dval = (double)(raw_val * sensitivity);
 	val->val1 = (int32_t)dval / 1000000;
 	val->val2 = (int32_t)dval % 1000000;
