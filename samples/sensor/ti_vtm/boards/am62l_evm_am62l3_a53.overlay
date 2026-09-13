@@ -1,0 +1,10 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments Incorporated
+ */
+
+/ {
+	aliases {
+		vtm-temp0 = &sensor_0;
+	};
+};
