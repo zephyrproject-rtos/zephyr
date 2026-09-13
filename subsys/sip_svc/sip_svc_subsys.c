@@ -235,37 +235,12 @@ int sip_svc_unregister(void *ct, uint32_t c_token)
 	return 0;
 }
 
-static bool get_timer_status(bool *first_iteration, struct k_timer *timer, k_timeout_t duration)
-{
-	if (first_iteration == NULL || timer == NULL) {
-		return false;
-	}
-
-	if (!(*first_iteration)) {
-		/* start the timer using the timeout variable provided and return true*/
-		k_timer_start(timer, duration, K_NO_WAIT);
-		*first_iteration = true;
-		return true;
-	} else if (K_TIMEOUT_EQ(duration, K_NO_WAIT)) {
-		/* here we will be at second iteration if duration is K_NO_WAIT, return false */
-		return false;
-	} else if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
-		/* k_timer won't start for K_FOREVER, so return true*/
-		return true;
-	} else if (k_timer_remaining_get(timer) > 0) {
-		/* return true if timer has not expired */
-		return true;
-	}
-
-	return false;
-}
-
 int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 {
 
 	uint32_t c_idx;
 	int ret;
-	struct k_timer timer;
+	k_timepoint_t end;
 
 	if (ct == NULL || !is_sip_svc_controller(ct)) {
 		return -EINVAL;
@@ -273,8 +248,10 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 
 	struct sip_svc_controller *ctrl = (struct sip_svc_controller *)ct;
 
-	/* Initialize the timer */
-	k_timer_init(&timer, NULL, NULL);
+	/* Calculate the timeout deadline; the loop below always runs at
+	 * least one iteration.
+	 */
+	end = sys_timepoint_calc(k_timeout);
 
 	/**
 	 * Run through the loop until the client is in IDLE state.
@@ -282,8 +259,8 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 	 * the client state will be ABORT state.This will only change when the pending
 	 * transactions are complete.
 	 */
-	for (bool first_iteration = false; get_timer_status(&first_iteration, &timer, k_timeout);
-	     k_usleep(CONFIG_ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY)) {
+	for (bool first_iteration = true; first_iteration || !sys_timepoint_expired(end);
+	     first_iteration = false, k_usleep(CONFIG_ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY)) {
 
 		ret = k_mutex_lock(&ctrl->data_mutex, K_NO_WAIT);
 		if (ret != 0) {
@@ -295,7 +272,6 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 		if (c_idx == SIP_SVC_ID_INVALID) {
 			LOG_ERR("Invalid client token");
 			k_mutex_unlock(&ctrl->data_mutex);
-			k_timer_stop(&timer);
 			return -EINVAL;
 		}
 
@@ -303,7 +279,6 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 		if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_OPEN) {
 			LOG_DBG("client with token 0x%x is already open", c_token);
 			k_mutex_unlock(&ctrl->data_mutex);
-			k_timer_stop(&timer);
 			return -EALREADY;
 		}
 
@@ -326,15 +301,13 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 		}
 #endif
 
-		/* Make the client state to be open and stop timer*/
+		/* Make the client state to be open */
 		ctrl->clients[c_idx].state = SIP_SVC_CLIENT_ST_OPEN;
 		LOG_INF("0x%x successfully opened a connection with sip_svc", c_token);
 		k_mutex_unlock(&ctrl->data_mutex);
-		k_timer_stop(&timer);
 		return 0;
 	}
 
-	k_timer_stop(&timer);
 	LOG_ERR("Timedout at %s for 0x%x", __func__, c_token);
 	return -ETIMEDOUT;
 }
