@@ -105,12 +105,23 @@
 #define REGION_2G   REGION_SIZE(2GB)
 #define REGION_4G   REGION_SIZE(4GB)
 
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#define ARM_MPU_REGION_INIT(p_name, p_base, p_size, p_attr)                                        \
+	{                                                                                          \
+		.name = p_name,                                                                    \
+		.base = p_base,                                                                    \
+		.size = size_to_mpu_rasr_size(p_size),                                             \
+		.attr = p_attr(0U),                                                                \
+	}
+
+#else
 #define ARM_MPU_REGION_INIT(p_name, p_base, p_size, p_attr)                                        \
 	{                                                                                          \
 		.name = p_name,                                                                    \
 		.base = p_base,                                                                    \
 		.attr = p_attr(size_to_mpu_rasr_size(p_size)),                                     \
 	}
+#endif
 
 /* Some helper defines for common regions */
 
