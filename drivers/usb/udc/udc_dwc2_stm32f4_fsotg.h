@@ -90,7 +90,11 @@ static inline int stm32f4_fsotg_disable_phy(const struct device *dev)
 		.irq_clear = NULL,						\
 	};
 
+/* Define the quirks only for instances that use this compatible */
+#define QUIRK_STM32F4_FSOTG_DEFINE_COMPAT(n)					\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), st_stm32f4_fsotg),	\
+		   (QUIRK_STM32F4_FSOTG_DEFINE(n)))
 
-DT_INST_FOREACH_STATUS_OKAY(QUIRK_STM32F4_FSOTG_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(QUIRK_STM32F4_FSOTG_DEFINE_COMPAT)
 
 #endif /* ZEPHYR_DRIVERS_USB_UDC_DWC2_STM32F4_FSOTG_H */
