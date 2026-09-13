@@ -1,0 +1,17 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Object monitor sample"
+
+config SAMPLE_MONITOR_CLEAR_SCREEN
+	bool "Redraw the monitor in place"
+	default y
+	help
+	  Clear the terminal and draw the monitor at the top on every refresh.
+	  Disable this to let the output scroll, for logs and CI.
+
+config SAMPLE_MONITOR_PERIOD_MS
+	int "Monitor refresh period in milliseconds"
+	default 1000
+
+source "Kconfig.zephyr"
