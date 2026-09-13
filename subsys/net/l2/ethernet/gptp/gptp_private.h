@@ -15,6 +15,8 @@
 #define __GPTP_PRIVATE_H
 
 #include <zephyr/net/gptp.h>
+#include <zephyr/precision_timing/precision_clock_ptp.h>
+#include <zephyr/precision_timing/precision_pi.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,8 +38,12 @@ extern "C" {
 struct gptp_clock_data {
 	/** gptp_domain pointer */
 	struct gptp_domain *domain;
-	/** pi control drift value */
-	double pi_drift;
+#if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
+	/** PI controller used by the default clock update implementation. */
+	struct precision_pi pi;
+	/** Precision clock adapters initialized for each gPTP port. */
+	struct precision_clock_ptp_adapter clocks[CONFIG_NET_GPTP_NUM_PORTS];
+#endif
 };
 
 extern struct gptp_clock_data gptp_clock;
@@ -119,15 +125,6 @@ static inline uint64_t gptp_timestamp_to_nsec(struct net_ptp_time *ts)
 
 	return (ts->second * NSEC_PER_SEC) + ts->nanosecond;
 }
-
-/**
- * @brief gPTP PI servo.
- *
- * @param nanosecond_diff nanosecond offset.
- *
- * @return ppb value to adjust.
- */
-double gptp_servo_pi(int64_t nanosecond_diff);
 
 /**
  * @brief Change the port state
