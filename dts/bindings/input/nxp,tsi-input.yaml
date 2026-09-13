@@ -18,8 +18,14 @@ properties:
     required: true
 
   channel-mask:
-    type: int
-    description: Bitmask of enabled TSI channels (bit N = channel N)
+    type: array
+    description: |
+      Bitmask of enabled TSI channels, one or more 32-bit words.
+      Word W (index W) covers channels [32*W .. 32*W + 31]; within a word,
+      bit N enables channel 32*W + N. A single word covers channels 0-31,
+      so <0x08> enables channel 3. Parts with more than 32 TSI channels
+      (e.g. MCXA577 with 70 channels) use additional words:
+      <word0 word1 word2> for channels 0-31, 32-63 and 64+.
 
   input-codes:
     type: array
