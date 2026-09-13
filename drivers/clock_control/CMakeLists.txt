@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
+zephyr_library_sources(common_helpers.c)
 
 if(CONFIG_CLOCK_CONTROL_RENESAS_RZA2M_CPG)
   zephyr_library_sources(clock_control_renesas_rza2m_cpg.c)

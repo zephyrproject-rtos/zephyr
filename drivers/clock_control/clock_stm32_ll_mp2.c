@@ -182,15 +182,9 @@ static DEVICE_API(clock_control, stm32_clock_control_api) = {
 	.get_rate = stm32_clock_control_get_subsys_rate,
 };
 
-static int stm32_clock_control_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
  */
-DEVICE_DT_DEFINE(DT_NODELABEL(rcc), stm32_clock_control_init, NULL, NULL, NULL, PRE_KERNEL_1,
+DEVICE_DT_DEFINE(DT_NODELABEL(rcc), NULL, NULL, NULL, NULL, PRE_KERNEL_1,
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &stm32_clock_control_api);
