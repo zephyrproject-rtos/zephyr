@@ -5124,6 +5124,7 @@ OTP:
     - drivers/otp/
     - dts/bindings/otp/
     - include/zephyr/drivers/otp.h
+    - tests/drivers/otp/
     - tests/subsys/nvmem/api/otp.overlay
   labels:
     - "area: OTP"

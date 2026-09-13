@@ -20,5 +20,19 @@
 			reg = <0xdeadbeef 0x1000>;
 			status = "okay";
 		};
+
+		test_gpio: gpio@11112222 {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0x11112222 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_gpio_straps: gpio-straps {
+			compatible = "zephyr,gpio-straps";
+			gpios = <&test_gpio 0 0>, <&test_gpio 1 0>, <&test_gpio 2 0>;
+			status = "okay";
+		};
 	};
 };
