@@ -12,3 +12,8 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # Enable TrustZone-M
 CONFIG_TRUSTED_EXECUTION_SECURE=y
+
+# Perform main-domain clock bring-up in the clock-control driver
+CONFIG_CLOCK_CONTROL_NXP_MCXL_MAIN_INIT=y
+
+CONFIG_ADVC_DRIVER_USED=y
