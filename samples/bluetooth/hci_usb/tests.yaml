@@ -5,7 +5,16 @@ tests:
     harness: bluetooth
     depends_on:
       - usbd
-      - ble
+      - bluetooth
+    # The AIROC H4 vendor setup calls bt_hci_cmd_send_sync(), which is part of
+    # the host and so is not built with CONFIG_BT_HCI_RAW.
+    platform_exclude:
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    integration_platforms:
+      - nrf52840dk/nrf52840
     tags:
       - usb
       - bluetooth
