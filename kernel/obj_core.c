@@ -25,7 +25,12 @@ struct k_obj_type *z_obj_type_init(struct k_obj_type *type,
 
 void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type)
 {
-	obj_core->node.next = NULL;
+	/* The link node is not touched here: it is owned by
+	 * k_obj_core_link() and k_obj_core_unlink(). Resetting the node of
+	 * a linked object (an object being re-initialized) would corrupt
+	 * its type's list; sys_slist_append() initializes the node of a new
+	 * object when it is linked.
+	 */
 	obj_core->type = type;
 #ifdef CONFIG_OBJ_CORE_STATS
 	obj_core->stats = NULL;
@@ -34,9 +39,18 @@ void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type)
 
 void k_obj_core_link(struct k_obj_core *obj_core)
 {
+	sys_slist_t *list = &obj_core->type->list;
 	k_spinlock_key_t  key = k_spin_lock(&obj_core_lock);
 
-	sys_slist_append(&obj_core->type->list, &obj_core->node);
+	/* Unlink the object if it is already linked--linking is part of
+	 * (re-)initializing an object, and appending an already linked node
+	 * would corrupt the list. The removal walk only compares node
+	 * addresses, so it never reads the possibly indeterminate link node
+	 * of an object that was never linked before.
+	 */
+	(void)sys_slist_find_and_remove(list, &obj_core->node);
+
+	sys_slist_append(list, &obj_core->node);
 
 	k_spin_unlock(&obj_core_lock, key);
 }

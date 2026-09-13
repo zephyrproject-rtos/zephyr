@@ -131,6 +131,18 @@ int z_msgq_cleanup(struct k_msgq *msgq, __maybe_unused bool locked)
 
 out:
 	k_spin_unlock(&msgq->lock, key);
+
+#ifdef CONFIG_OBJ_CORE_MSGQ
+	/* On success the message queue has reached the end of its life
+	 * cycle; the message queue object type list must not reference it
+	 * anymore. Unlink with the message queue lock released so that the
+	 * object core lock remains a leaf lock.
+	 */
+	if (ret == 0) {
+		k_obj_core_unlink(K_OBJ_CORE(msgq));
+	}
+#endif /* CONFIG_OBJ_CORE_MSGQ */
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
 	return ret;
 }

@@ -282,6 +282,10 @@ config TRACING_OBJECT_TRACKING
 	help
 	  Keep lists to track kernel objects.
 
+	  Tracked objects are never removed from the tracking lists, so any
+	  object passed to a kernel object *_init() function must remain
+	  valid forever.
+
 config TRACING_SHELL
 	bool "Tracing shell commands"
 	depends on TRACING_CORE && SHELL

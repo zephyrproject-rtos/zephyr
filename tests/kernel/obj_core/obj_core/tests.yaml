@@ -6,3 +6,15 @@ tests:
       - qemu_x86
     platform_exclude:
       - qemu_x86_tiny
+  kernel.obj_core.dynamic:
+    tags: kernel
+    ignore_faults: true
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - qemu_x86_tiny
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_DYNAMIC_OBJECTS=y
+      - CONFIG_HEAP_MEM_POOL_SIZE=8192
