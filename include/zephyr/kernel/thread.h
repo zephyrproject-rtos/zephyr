@@ -204,14 +204,27 @@ struct _thread_userspace_local_data {
 };
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
 
+/**
+ * @brief Thread and CPU runtime statistics
+ *
+ * Filled in by k_thread_runtime_stats_get() for a single thread, and by
+ * k_thread_runtime_stats_all_get() and k_thread_runtime_stats_cpu_get() for
+ * the system as a whole or a single CPU. Which fields are present depends on
+ * the @kconfig{CONFIG_SCHED_THREAD_USAGE} family of options.
+ *
+ * @ingroup thread_apis
+ */
 typedef struct k_thread_runtime_stats {
 #ifdef CONFIG_SCHED_THREAD_USAGE
-	/*
-	 * For CPU stats, execution_cycles is the sum of non-idle + idle cycles.
-	 * For thread stats, execution_cycles = total_cycles.
+	/**
+	 * Total number of cycles.
+	 *
+	 * For CPU stats this is the sum of non-idle and idle cycles.
+	 * For thread stats it is equal to @ref total_cycles.
 	 */
-	uint64_t execution_cycles;    /* total # of cycles (cpu: non-idle + idle) */
-	uint64_t total_cycles;        /* total # of non-idle cycles */
+	uint64_t execution_cycles;
+	/** Total number of non-idle cycles. */
+	uint64_t total_cycles;
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
@@ -222,18 +235,21 @@ typedef struct k_thread_runtime_stats {
 	 * non-idle threads as bounded by the idle thread(s).
 	 */
 
-	uint64_t current_cycles;      /* current # of non-idle cycles */
-	uint64_t peak_cycles;         /* peak # of non-idle cycles */
-	uint64_t average_cycles;      /* average # of non-idle cycles */
+	/** Number of non-idle cycles in the current scheduling interval. */
+	uint64_t current_cycles;
+	/** Longest scheduling interval observed, in non-idle cycles. */
+	uint64_t peak_cycles;
+	/** Average scheduling interval, in non-idle cycles. */
+	uint64_t average_cycles;
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	/*
-	 * This field is always zero for individual threads. It only comes
-	 * into play when gathering statistics for the CPU. In that case it
-	 * represents the total number of cycles spent idling.
+	/**
+	 * Total number of cycles spent idling.
+	 *
+	 * Always zero for individual threads; only meaningful when gathering
+	 * statistics for a CPU or for the whole system.
 	 */
-
 	uint64_t idle_cycles;
 #endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
