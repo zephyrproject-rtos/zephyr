@@ -1175,6 +1175,23 @@ html.writer-html5 .rst-content .sidebar dl.field-list > dd {
     font-size: 0.9em;
 }
 
+/* Keep a long generated driver list from growing the overview sidebar
+ * indefinitely. The list itself remains fully accessible by scrolling. */
+.rst-content .sidebar.dt-binding-overview-multiple-drivers dl.field-list>dd:last-child>ul {
+    column-width: 18rem;
+    column-gap: 1rem;
+    max-height: 24rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 0.5rem;
+}
+
+/* Keep the Properties section below a multi-driver overview. The Description
+ * can still use the space beside the sidebar without risking table overlap. */
+.rst-content .sidebar.dt-binding-overview-multiple-drivers + section + section {
+    clear: right;
+}
+
 /* Icon for the hover text that appears next to headings */
 .headerlink::after {
     content: "\f0c1"; /* font-awesome "link" icon */
