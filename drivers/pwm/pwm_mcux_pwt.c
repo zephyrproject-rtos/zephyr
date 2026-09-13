@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Vestas Wind Systems A/S
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,7 @@ struct mcux_pwt_data {
 	bool continuous : 1;
 	bool inverted : 1;
 	bool overflowed : 1;
+	bool skip_first: 1;
 };
 
 static inline bool mcux_pwt_is_active(const struct device *dev)
@@ -86,19 +87,6 @@ static int mcux_pwt_configure_capture(const struct device *dev,
 		return -EBUSY;
 	}
 
-#if defined(CONFIG_SOC_SERIES_KE1XZ)
-	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
-		return -ENOTSUP;
-	}
-
-	if (((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_PERIOD) &&
-		((flags & PWM_POLARITY_MASK) == PWM_POLARITY_NORMAL)) {
-		LOG_ERR("Cannot capture period in normal polarity (active-high pulse)");
-		return -ENOTSUP;
-	}
-#endif
-
 	data->callback = cb;
 	data->user_data = user_data;
 
@@ -140,6 +128,7 @@ static int mcux_pwt_enable_capture(const struct device *dev, uint32_t channel)
 	data->overflowed = false;
 	data->high_overflows = 0;
 	data->low_overflows = 0;
+	data->skip_first = true;
 	PWT_StartTimer(config->base);
 
 	return 0;
@@ -239,6 +228,25 @@ static void mcux_pwt_isr(const struct device *dev)
 	if (flags & kPWT_PulseWidthValidFlag) {
 		ppw = PWT_ReadPositivePulseWidth(config->base);
 		npw = PWT_ReadNegativePulseWidth(config->base);
+
+		if (data->skip_first) {
+			/*
+			 * The first pulse width valid event after enabling
+			 * the capture reports a partial measurement: the PWT
+			 * starts counting when it is enabled, which is in the
+			 * middle of an input pulse, and the pulse width
+			 * register holding the level present at that time is
+			 * loaded with that truncated value (or is still zero).
+			 * Discard it and report the next event, for which both
+			 * pulse width registers hold complete, adjacent pulses.
+			 */
+			data->skip_first = false;
+			data->overflowed = false;
+			data->high_overflows = 0;
+			data->low_overflows = 0;
+			PWT_ClearStatusFlags(config->base, kPWT_PulseWidthValidFlag);
+			return;
+		}
 
 		if (!data->continuous) {
 			PWT_StopTimer(config->base);
