@@ -90,6 +90,9 @@ struct ism330dhcx_data {
 	uint16_t gyro_freq;
 	uint8_t gyro_fs;
 
+	/* Factory trim of the internal oscillator, read once at init. */
+	int8_t freq_fine;
+
 #ifdef CONFIG_ISM330DHCX_TRIGGER
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
