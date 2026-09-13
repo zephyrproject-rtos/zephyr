@@ -27,7 +27,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_driver);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include "../util.h"
 

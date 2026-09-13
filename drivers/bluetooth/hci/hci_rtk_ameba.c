@@ -6,10 +6,10 @@
 
 #include <stdbool.h>
 
-#include "hci/hci_common.h"
-#include "hci/hci_if_zephyr.h"
-#include "hci/hci_transport.h"
-#include "hci_platform.h"
+#include <hci/hci_common.h>
+#include <hci/hci_if_zephyr.h>
+#include <hci/hci_transport.h>
+#include <hci_platform.h>
 
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/logging/log.h>
