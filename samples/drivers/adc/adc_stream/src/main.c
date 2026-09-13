@@ -68,7 +68,7 @@ static int print_adc_stream(const struct device *adc, struct rtio_iodev *local_i
 	struct rtio_cqe *cqe;
 	uint8_t *buf;
 	uint32_t buf_len;
-	struct rtio_sqe *handles;
+	rtio_sqe_handle_t handles;
 
 	/* Start the streams */
 	adc_stream(local_iodev, &adc_ctx, NULL, &handles);
