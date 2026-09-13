@@ -323,6 +323,58 @@
 			mclk-is-output;
 			status = "disabled";
 		};
+
+		pwm1: pwm@30660000 {
+			compatible = "nxp,ipwm";
+			reg = <0x30660000 DT_SIZE_K(64)>;
+			interrupts = <81 0>;
+			clocks = <&ccm IMX_CCM_PWM1_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@30670000 {
+			compatible = "nxp,ipwm";
+			reg = <0x30670000 DT_SIZE_K(64)>;
+			interrupts = <82 0>;
+			clocks = <&ccm IMX_CCM_PWM2_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@30680000 {
+			compatible = "nxp,ipwm";
+			reg = <0x30680000 DT_SIZE_K(64)>;
+			interrupts = <83 0>;
+			clocks = <&ccm IMX_CCM_PWM3_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm4: pwm@30690000 {
+			compatible = "nxp,ipwm";
+			reg = <0x30690000 DT_SIZE_K(64)>;
+			interrupts = <84 0>;
+			clocks = <&ccm IMX_CCM_PWM4_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 };
 

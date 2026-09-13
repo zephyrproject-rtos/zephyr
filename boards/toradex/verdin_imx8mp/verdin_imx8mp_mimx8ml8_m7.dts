@@ -44,3 +44,17 @@
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
 };
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	run-in-wait;
+};
+
+&pwm2 {
+	status = "okay";
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-names = "default";
+	run-in-wait;
+};
