@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_TC3X
+	select TRICORE
+	select CPU_TC162
+	select AURIX_IR
+
+config SOC_SERIES_TC4X
+	select TRICORE
+	select CPU_TC18
+	select AURIX_IR
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_TRICORE_VIRTUALIZATION
+	imply FPU
+
+config SOC_QEMU_TC3X
+	select SOC_SERIES_TC3X
+
+config SOC_QEMU_TC4X
+	select SOC_SERIES_TC4X

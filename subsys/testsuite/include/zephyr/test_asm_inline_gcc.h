@@ -52,6 +52,8 @@ static inline void timestamp_serialize(void)
 #define timestamp_serialize()
 #elif defined(CONFIG_HEXAGON)
 #define timestamp_serialize()
+#elif defined(CONFIG_TRICORE)
+#define timestamp_serialize()
 #else
 #error implementation of timestamp_serialize() not provided for your CPU target
 #endif
