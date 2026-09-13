@@ -937,7 +937,28 @@ Example snippet sysbuild preset file:
 
 The application preset file is located in the application's source folder ``<application>/CMakePresets.json``
 and is only used for the build process of the application itself. This is the CMake default behaviour.
-Selecting a preset for a specific application is currently not possible `#111494 <https://github.com/zephyrproject-rtos/zephyr/issues/111494>`_.
+
+Selecting presets
+=================
+
+When using sysbuild with CMake presets, the preset selection is done at the sysbuild level.
+This means that the preset selection you pass on the commandline is only applied to the high-level sysbuild process.
+
+To select a preset for the image build process, you can use the ``CMAKE_PRESET`` variable.
+This will be applied to all builds of all images in the sysbuild project.
+To select a preset for a specific image, you can use name spacing as described in :ref:`sysbuild_cmake_namespace`.
+
+A good place to set the preset selection for a specific image is in the sysbuild preset file, as described above.
+Tip: By defining the selection in a (high level) preset you can define combinations for specific scenarios.
+
+Example snippet selecting a preset for a specific domain:
+
+.. code-block:: json
+
+   "cacheVariables": {
+         "<domain>_CMAKE_PRESET": "PresetName",
+         "<domain2>_CMAKE_PRESET": "PresetName2"
+   },
 
 Running sysbuild with a preset selection
 ========================================
