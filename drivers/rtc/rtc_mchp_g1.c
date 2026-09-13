@@ -163,7 +163,7 @@ static void rtc_set_clock_time(rtc_registers_t *regs, struct rtc_mchp_time *rtc_
 			   (rtc_set_time->minute << RTC_MODE2_CLOCK_MINUTE_Pos) |
 			   (rtc_set_time->second << RTC_MODE2_CLOCK_SECOND_Pos));
 
-	rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_CLOCKSYNC_Msk);
+	rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_CLOCK_Msk);
 }
 
 static void rtc_get_clock_time(const rtc_registers_t *regs, struct rtc_mchp_time *rtc_get_time)
@@ -171,7 +171,7 @@ static void rtc_get_clock_time(const rtc_registers_t *regs, struct rtc_mchp_time
 	uint32_t dataClockCalendar = 0U;
 
 	/* Synchronization before reading value from CLOCK Register */
-	rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_CLOCKSYNC_Msk);
+	rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_CLOCK_Msk);
 	dataClockCalendar = regs->MODE2.RTC_CLOCK;
 
 	rtc_get_time->hour =
@@ -267,17 +267,17 @@ static void rtc_set_alarm_time(rtc_registers_t *regs, uint16_t alarm_id,
 
 	if (alarm_id == RTC_MCHP_ALARM_1) {
 		RTC_MCHP_ALARM_REG(regs, 0) = alarm_val;
+		rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_ALARM0_Msk);
 	}
 #ifdef CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM
 	else if (alarm_id == RTC_MCHP_ALARM_2) {
 		RTC_MCHP_ALARM_REG(regs, 1) = alarm_val;
+		rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_ALARM1_Msk);
 	}
 #endif /* CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM */
 	else {
 		LOG_ERR("Invalid alarm_id: %u", alarm_id);
 	}
-
-	rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_CLOCKSYNC_Msk);
 }
 
 static void rtc_get_alarm_time(const rtc_registers_t *regs, uint16_t alarm_id,
