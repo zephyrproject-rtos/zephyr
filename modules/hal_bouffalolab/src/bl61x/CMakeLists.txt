@@ -37,13 +37,15 @@ if(CONFIG_WIFI_BFLB)
   message(STATUS "BL61x WiFi MACSW: ${MACSW_CFG_LIB}")
 endif()
 
-if((CONFIG_BT_BFLB_BL61X OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+# Replace blob's printf with blob_printf
+set(BLOBS_OBJCOPY_ARGS --redefine-sym printf=blob_printf)
 
-  # Replace blob's printf with blob_printf
-  set(BLOBS_OBJCOPY_ARGS --redefine-sym printf=blob_printf)
-
-  # phyrf is shared between BLE and WiFi
+# phyrf is shared between BLE, WiFi and IEEE 802.15.4.
+if(CONFIG_BFLB_PHYRF AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
   blob_objcopy(phyrf.a "${BLOBS_DIR}/libbl616_phyrf.a" ${BLOBS_OBJCOPY_ARGS})
+endif()
+
+if((CONFIG_BT_BFLB_BL61X OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
 
   if(CONFIG_BT_BFLB_BL61X)
     blob_objcopy(${BLE_VARIANT_LIB} "${BLOBS_DIR}/${BLE_VARIANT_LIB}" ${BLOBS_OBJCOPY_ARGS})
@@ -58,4 +60,16 @@ if((CONFIG_BT_BFLB_BL61X OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLOBS
     blob_objcopy(${MACSW_CFG_LIB} "${BLOBS_DIR}/${MACSW_CFG_LIB}" ${BLOBS_OBJCOPY_ARGS})
   endif()
 
+endif()
+
+if(CONFIG_IEEE802154_BFLB)
+  zephyr_include_directories(
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${CONFIG_SOC_SERIES}/lmac154)
+
+  if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+    # The lmac154 blob is a fat LTO object with incompatible IR; disable LTO at link time
+    zephyr_link_libraries($<TARGET_PROPERTY:compiler,prohibit_lto>)
+
+    zephyr_link_libraries(${BLOBS_DIR}/liblmac154_bl616.a)
+  endif()
 endif()

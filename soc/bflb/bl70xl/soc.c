@@ -22,7 +22,7 @@
 #include <glb_reg.h>
 #include <hbn_reg.h>
 
-#if defined(CONFIG_BT_BFLB_BL70XL)
+#if defined(CONFIG_BT_BFLB_BL70XL) || defined(CONFIG_IEEE802154_BFLB)
 extern char _hbn_load_start[];
 extern char _hbn_run_start[];
 extern char _hbn_run_size[];
@@ -74,7 +74,7 @@ void soc_early_init_hook(void)
 
 	sys_cache_data_flush_and_invd_all();
 
-#if defined(CONFIG_BT_BFLB_BL70XL)
+#if defined(CONFIG_BT_BFLB_BL70XL) || defined(CONFIG_IEEE802154_BFLB)
 	/* Copy .hbn_code from flash (LMA) to HBN RAM (VMA) */
 	memcpy(_hbn_run_start, _hbn_load_start, (size_t)_hbn_run_size);
 #endif
