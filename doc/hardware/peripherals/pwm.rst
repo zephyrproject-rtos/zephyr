@@ -158,6 +158,21 @@ Related configuration options:
 * :kconfig:option:`CONFIG_PWM_CAPTURE`
 * :kconfig:option:`CONFIG_PWM_EVENT`
 
+Shell commands
+**************
+
+.. zephyr:shell-module:: pwm
+   :kconfig: CONFIG_PWM_SHELL
+   :depends: CONFIG_PWM
+
+   The ``pwm`` command allows setting the period and pulse width of a PWM channel, in cycles,
+   microseconds or nanoseconds, and querying the frequency of the PWM counter, which is convenient
+   for testing a PWM output (e.g. driving an LED or a servo) without writing any code.
+
+.. rubric:: Command reference
+
+.. zephyr:shell-command-reference::
+
 API Reference
 *************
 
