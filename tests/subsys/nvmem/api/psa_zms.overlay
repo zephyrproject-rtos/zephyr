@@ -1,0 +1,11 @@
+/**
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026, Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		secure_storage_its_partition = &storage_partition;
+	};
+};
