@@ -711,7 +711,15 @@ static int max32664c_channel_get(const struct device *dev, enum sensor_channel c
 		break;
 	}
 	case SENSOR_CHAN_MAX32664C_SKIN_CONTACT: {
-		val->val1 = data->report.scd_state;
+		if (data->op_mode == MAX32664C_OP_MODE_SCD) {
+			val->val1 = data->scd.scd_classifier;
+		} else {
+#ifdef CONFIG_MAX32664C_USE_EXTENDED_REPORTS
+			val->val1 = data->ext.scd_state;
+#else
+			val->val1 = data->report.scd_state;
+#endif
+		}
 		break;
 	}
 	default: {

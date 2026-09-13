@@ -98,6 +98,19 @@ static void max32664c_parse_and_push_raw(const struct device *dev)
 	max32664c_push_to_queue(&data->raw_report_queue, &report);
 }
 
+/** @brief          Process the buffer to get the skin contact detection data from the sensor hub.
+ *  @param dev      Pointer to device
+ */
+static void max32664c_parse_and_push_scd(const struct device *dev)
+{
+	struct max32664c_data *data = dev->data;
+	struct max32664c_scd_report_t report;
+
+	report.scd_classifier = data->max32664_i2c_buffer[1];
+
+	max32664c_push_to_queue(&data->scd_report_queue, &report);
+}
+
 #ifdef CONFIG_MAX32664C_USE_EXTENDED_REPORTS
 /** @brief          Process the buffer to get the extended report data from the sensor hub.
  *  @param dev      Pointer to device
@@ -290,6 +303,8 @@ void max32664c_worker(const struct device *dev)
 
 		uint8_t tx[2] = {0x12, 0x01};
 
+		data->max32664_i2c_buffer[0] = 0;
+
 		switch (data->op_mode) {
 		case MAX32664C_OP_MODE_RAW: {
 			/* Get all samples to clear the FIFO */
@@ -350,6 +365,21 @@ void max32664c_worker(const struct device *dev)
 			break;
 		}
 #endif /* CONFIG_MAX32664C_USE_EXTENDED_REPORTS */
+		case MAX32664C_OP_MODE_SCD: {
+			/* Get all samples to clear the FIFO */
+			max32664c_i2c_transmit(
+				dev, tx, 2, data->max32664_i2c_buffer,
+				(fifo * (sizeof(struct max32664c_scd_report_t))) + 1,
+				MAX32664C_DEFAULT_CMD_DELAY);
+
+			if (data->max32664_i2c_buffer[0] != 0) {
+				break;
+			}
+
+			max32664c_parse_and_push_scd(dev);
+
+			break;
+		}
 		default: {
 			break;
 		}
