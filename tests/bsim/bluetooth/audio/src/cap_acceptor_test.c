@@ -1230,6 +1230,31 @@ static void test_cap_acceptor_unicast_disconnect(void)
 	PASS("CAP acceptor unicast disconnect passed\n");
 }
 
+static void test_cap_acceptor_unicast_cancel_in_subproc(void)
+{
+	init();
+
+	test_start_adv();
+
+	auto_start_sink_streams = true;
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	/* Wait until initiator is done starting streams */
+	backchannel_sync_wait(CAP_INITIATOR_DEV_ID);
+
+	if (expect_rx) {
+		wait_for_data();
+	}
+
+	/* let initiator know we have received what we wanted */
+	backchannel_sync_send(CAP_INITIATOR_DEV_ID);
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	PASS("CAP acceptor unicast cancel in subproc passed\n");
+}
+
 static void pa_sync_to_broadcaster(void)
 {
 	int err;
@@ -1411,6 +1436,12 @@ static const struct bst_test_instance test_cap_acceptor[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_unicast_disconnect,
+	},
+	{
+		.test_id = "cap_acceptor_unicast_cancel_in_subproc",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_acceptor_unicast_cancel_in_subproc,
 	},
 	{
 		.test_id = "cap_acceptor_broadcast",

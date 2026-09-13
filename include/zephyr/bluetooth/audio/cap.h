@@ -123,6 +123,69 @@ struct bt_cap_initiator_cb {
 	void (*unicast_start_complete)(int err, struct bt_conn *conn);
 
 	/**
+	 * @brief All streams have been codec configured
+	 *
+	 * All streams supplied to bt_cap_initiator_unicast_audio_start() are in the
+	 * @ref BT_BAP_EP_STATE_CODEC_CONFIGURED state or higher, with the requested codec
+	 * configuration.
+	 *
+	 * This is only called if at least one Config Codec operation was sent to a CAP acceptor,
+	 * i.e. it is not called if all streams already had the requested codec configuration.
+	 *
+	 * The unicast group may be reconfigured with bt_cap_unicast_group_reconfig() from this
+	 * callback, as the QoS Configuration subprocedure has not been started yet. This is only
+	 * possible if none of the streams in the unicast group have been connected earlier, as the
+	 * unicast group cannot be reconfigured once a CIS has been established. It is not possible
+	 * to start a new CAP procedure from this callback, as the current procedure is still in
+	 * progress.
+	 */
+	void (*unicast_start_codec_configured)(void);
+
+	/**
+	 * @brief All streams have been QoS configured
+	 *
+	 * All streams supplied to bt_cap_initiator_unicast_audio_start() are in the
+	 * @ref BT_BAP_EP_STATE_QOS_CONFIGURED state or higher, with the QoS configuration of the
+	 * unicast group.
+	 *
+	 * This is only called if at least one Config QoS operation was sent to a CAP acceptor, i.e.
+	 * it is not called if all streams already had the requested QoS configuration.
+	 */
+	void (*unicast_start_qos_configured)(void);
+
+	/**
+	 * @brief All streams have been enabled
+	 *
+	 * All streams supplied to bt_cap_initiator_unicast_audio_start() are in the
+	 * @ref BT_BAP_EP_STATE_ENABLING state or higher, with the requested metadata.
+	 *
+	 * This is only called if at least one Enable operation was sent to a CAP acceptor, i.e. it
+	 * is not called if all streams were already enabled with the requested metadata.
+	 */
+	void (*unicast_start_enabled)(void);
+
+	/**
+	 * @brief All streams have their CIS connected
+	 *
+	 * All streams supplied to bt_cap_initiator_unicast_audio_start() have an established CIS.
+	 *
+	 * This is only called if at least one CIS was established as part of the procedure, i.e. it
+	 * is not called if all CISes were already established.
+	 */
+	void (*unicast_start_connected)(void);
+
+	/**
+	 * @brief All streams have been started
+	 *
+	 * All streams supplied to bt_cap_initiator_unicast_audio_start() are in the
+	 * @ref BT_BAP_EP_STATE_STREAMING state.
+	 *
+	 * This is only called if at least one Receiver Start Ready operation was sent to a CAP
+	 * acceptor, i.e. it is not called if all streams were started by the CAP acceptors.
+	 */
+	void (*unicast_start_started)(void);
+
+	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_update().
 	 *
 	 * @param err
@@ -164,6 +227,39 @@ struct bt_cap_initiator_cb {
 	 *             cancelled by bt_cap_initiator_unicast_audio_cancel()
 	 */
 	void (*unicast_stop_complete)(int err, struct bt_conn *conn);
+
+	/**
+	 * @brief All streams have been disabled
+	 *
+	 * All streams supplied to bt_cap_initiator_unicast_audio_stop() are in the
+	 * @ref BT_BAP_EP_STATE_DISABLING or @ref BT_BAP_EP_STATE_QOS_CONFIGURED state.
+	 *
+	 * This is only called if at least one Disable operation was sent to a CAP acceptor, i.e. it
+	 * is not called if none of the streams were enabled or streaming.
+	 */
+	void (*unicast_stop_disabled)(void);
+
+	/**
+	 * @brief All streams have been stopped
+	 *
+	 * All streams supplied to bt_cap_initiator_unicast_audio_stop() are in the
+	 * @ref BT_BAP_EP_STATE_QOS_CONFIGURED state.
+	 *
+	 * This is only called if at least one Receiver Stop Ready operation was sent to a CAP
+	 * acceptor, i.e. it is not called if none of the streams were in the
+	 * @ref BT_BAP_EP_STATE_DISABLING state.
+	 */
+	void (*unicast_stop_stopped)(void);
+
+	/**
+	 * @brief All streams have been released
+	 *
+	 * All streams supplied to bt_cap_initiator_unicast_audio_stop() have been released.
+	 *
+	 * This is only called if at least one Release operation was sent to a CAP acceptor, i.e. it
+	 * is not called if the streams were not requested to be released.
+	 */
+	void (*unicast_stop_released)(void);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(__DOXYGEN__)
 	/**

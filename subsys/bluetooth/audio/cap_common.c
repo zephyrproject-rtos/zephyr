@@ -63,6 +63,15 @@ void bt_cap_common_unlock_proc(void)
 	LOG_DBG("Released active_proc_mutex");
 }
 
+uint32_t bt_cap_common_get_active_proc_mutex_lock_count(const struct bt_cap_common_proc *proc)
+{
+	__ASSERT(proc == &active_proc, "Caller did not provide the active_proc");
+	__ASSERT(active_proc_mutex.lock_count > 0U, "Unexpected active_proc_mutex.lock_count: %u",
+		 active_proc_mutex.lock_count);
+
+	return active_proc_mutex.lock_count;
+}
+
 void bt_cap_common_clear_proc(struct bt_cap_common_proc *proc)
 {
 	(void)memset(proc, 0, sizeof(*proc));
@@ -88,6 +97,7 @@ void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type)
 	active_proc.proc_done_cnt = 0U;
 	active_proc.proc_initiated_cnt = 0U;
 	active_proc.subproc_type = subproc_type;
+	active_proc.subproc_initiated = false;
 }
 
 bool bt_cap_common_proc_is_type(enum bt_cap_common_proc_type proc_type)

@@ -282,6 +282,8 @@ struct bt_cap_common_proc {
 	struct bt_cap_common_proc_param proc_param;
 #if defined(CONFIG_BT_CAP_SUBPROC_SUPPORT)
 	enum bt_cap_common_subproc_type subproc_type;
+	/* Whether any request has been sent to a peer device for the current subprocedure */
+	bool subproc_initiated;
 #endif /* CONFIG_BT_CAP_SUBPROC_SUPPORT */
 };
 
@@ -306,6 +308,7 @@ void bt_cap_common_unlock_proc(void);
  * @param proc The procedure to unlock and clear
  */
 void bt_cap_common_clear_proc(struct bt_cap_common_proc *proc);
+uint32_t bt_cap_common_get_active_proc_mutex_lock_count(const struct bt_cap_common_proc *proc);
 void bt_cap_common_set_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt);
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type);
 void bt_cap_common_set_handover_active(void);
