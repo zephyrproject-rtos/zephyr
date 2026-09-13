@@ -40,10 +40,15 @@ void z_shell_log_backend_enable(const struct shell_log_backend *backend,
 
 	if (err == 0) {
 		fifo_reset(backend);
-		log_backend_enable(backend->backend, ctx, init_log_level);
 		log_output_ctx_set(backend->log_output, ctx);
 		backend->control_block->dropped_cnt = 0;
+		/* Set the state before activating the backend. When the backend
+		 * is activated the logging thread may immediately dispatch
+		 * buffered messages which would be dropped if the backend was
+		 * not yet in the enabled state.
+		 */
 		backend->control_block->state = SHELL_LOG_BACKEND_ENABLED;
+		log_backend_enable(backend->backend, ctx, init_log_level);
 	}
 }
 
