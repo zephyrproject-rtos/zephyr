@@ -255,8 +255,8 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	memcpy(&pdu_tx->connect_ind.init_addr[0], init_addr, BDADDR_SIZE);
 	memcpy(&pdu_tx->connect_ind.adv_addr[0], adv_addr, BDADDR_SIZE);
 	memcpy(&pdu_tx->connect_ind.access_addr[0],
-	       &lll_conn->access_addr[0], 4);
-	memcpy(&pdu_tx->connect_ind.crc_init[0], &lll_conn->crc_init[0], 3);
+	       &lll_conn->access_addr[0], PDU_ACCESS_ADDR_SIZE);
+	memcpy(&pdu_tx->connect_ind.crc_init[0], &lll_conn->crc_init[0], PDU_CRC_SIZE);
 	pdu_tx->connect_ind.win_size = 1;
 
 	conn_interval_us = (uint32_t)lll_conn->interval * CONN_INT_UNIT_US;
