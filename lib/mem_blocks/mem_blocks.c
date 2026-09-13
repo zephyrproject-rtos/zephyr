@@ -526,12 +526,22 @@ static struct k_obj_core_stats_desc sys_mem_blocks_stats_desc = {
 #ifdef CONFIG_OBJ_CORE_SYS_MEM_BLOCKS
 static struct k_obj_type obj_type_sys_mem_blocks;
 
+TYPE_SECTION_START_EXTERN(struct sys_mem_blocks *, sys_mem_blocks_ptr);
+TYPE_SECTION_END_EXTERN(struct sys_mem_blocks *, sys_mem_blocks_ptr);
+
 static int init_sys_mem_blocks_obj_core_list(void)
 {
-	/* Initialize the sys_mem_blocks object type */
+	/* Initialize the sys_mem_blocks object type. The statically defined
+	 * allocators are its permanent objects, reached through the section
+	 * of pointers to them.
+	 */
 
 	z_obj_type_init(&obj_type_sys_mem_blocks, K_OBJ_TYPE_MEM_BLOCK_ID,
 			offsetof(struct sys_mem_blocks, obj_core));
+	z_obj_type_init_range(&obj_type_sys_mem_blocks,
+			      TYPE_SECTION_START(sys_mem_blocks_ptr),
+			      TYPE_SECTION_END(sys_mem_blocks_ptr),
+			      sizeof(struct sys_mem_blocks *), true);
 
 #ifdef CONFIG_OBJ_CORE_STATS_SYS_MEM_BLOCKS
 	k_obj_type_stats_init(&obj_type_sys_mem_blocks,
@@ -542,8 +552,8 @@ static int init_sys_mem_blocks_obj_core_list(void)
 
 	STRUCT_SECTION_FOREACH_ALTERNATE(sys_mem_blocks_ptr,
 					 sys_mem_blocks *, block_pp) {
-		k_obj_core_init_and_link(K_OBJ_CORE(*block_pp),
-					 &obj_type_sys_mem_blocks);
+		k_obj_core_init(K_OBJ_CORE(*block_pp),
+				&obj_type_sys_mem_blocks);
 #ifdef CONFIG_OBJ_CORE_STATS_SYS_MEM_BLOCKS
 		k_obj_core_stats_register(K_OBJ_CORE(*block_pp),
 					  &(*block_pp)->info,
