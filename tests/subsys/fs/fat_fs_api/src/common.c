@@ -7,12 +7,9 @@
  */
 
 #include "test_fat.h"
-#ifdef CONFIG_DISK_DRIVER_FLASH
-#include <zephyr/storage/flash_map.h>
-#else
+
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/sys/byteorder.h>
-#endif
 
 /* FatFs work area */
 FATFS fat_fs;
@@ -50,31 +47,6 @@ int check_file_dir_exists(const char *path)
 	return !res;
 }
 
-#ifdef CONFIG_DISK_DRIVER_FLASH
-int wipe_partition(void)
-{
-	/* In this test the first partition on flash device is used for FAT */
-	unsigned int id = 0;
-	const struct flash_area *pfa;
-	int rc = flash_area_open(id, &pfa);
-
-	if (rc < 0) {
-		TC_PRINT("Error accessing flash area %u [%d]\n", id, rc);
-		return TC_FAIL;
-	}
-
-	TC_PRINT("Erasing %zu (0x%zx) bytes\n", pfa->fa_size, pfa->fa_size);
-	rc = flash_area_flatten(pfa, 0, pfa->fa_size);
-	(void)flash_area_close(pfa);
-
-	if (rc < 0) {
-		TC_PRINT("Error wiping flash area %u [%d]\n", id, rc);
-		return TC_FAIL;
-	}
-
-	return TC_PASS;
-}
-#else
 static uint8_t erase_buffer[4096] __aligned(32) = {0};
 
 int wipe_partition(void)
@@ -165,4 +137,3 @@ int wipe_partition(void)
 
 	return TC_PASS;
 }
-#endif
