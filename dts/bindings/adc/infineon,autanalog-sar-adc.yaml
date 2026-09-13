@@ -159,6 +159,74 @@ child-binding:
       description: |
         Bypass the Hi-Z buffers for MUX channels.
 
+    sign:
+      type: boolean
+      description: |
+        Enable sign extension for this channel's conversion result.
+
+    differential:
+      type: boolean
+      description: |
+        Enable differential mode for this GPIO channel. When set, the negative
+        input pin is taken from the neg-pin property. Only applies to GPIO
+        channels (channel IDs 0-7).
+
+    neg-pin:
+      type: int
+      default: 0
+      description: |
+        Negative GPIO pin for differential mode on GPIO channels. Only used
+        when differential is enabled. Values correspond to GPIO pin indices
+        (0-7).
+
+    pos-coeff:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      description: |
+        Positive channel correction coefficient selection.
+        Use IFX_AUTANALOG_SAR_CH_COEFF_* constants from
+        <dt-bindings/adc/infineon-autanalog-sar.h>.
+          IFX_AUTANALOG_SAR_CH_COEFF_DISABLED (0) - Disabled (default)
+          IFX_AUTANALOG_SAR_CH_COEFF0         (1) - Coefficient config 0
+          IFX_AUTANALOG_SAR_CH_COEFF1         (2) - Coefficient config 1
+          IFX_AUTANALOG_SAR_CH_COEFF2         (3) - Coefficient config 2
+          IFX_AUTANALOG_SAR_CH_COEFF3         (4) - Coefficient config 3
+          IFX_AUTANALOG_SAR_CH_COEFF4         (5) - Coefficient config 4
+          IFX_AUTANALOG_SAR_CH_COEFF5         (6) - Coefficient config 5
+          IFX_AUTANALOG_SAR_CH_COEFF6         (7) - Coefficient config 6
+          IFX_AUTANALOG_SAR_CH_COEFF7         (8) - Coefficient config 7
+
+    neg-coeff:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      description: |
+        Negative channel correction coefficient selection.
+        Use IFX_AUTANALOG_SAR_CH_COEFF_* constants from
+        <dt-bindings/adc/infineon-autanalog-sar.h>.
+        See pos-coeff for valid values.
+
+    acc-shift:
+      type: boolean
+      description: |
+        Enable accumulator shift for this channel. When enabled, the
+        accumulator result is right-shifted after accumulation.
+
+    limit:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3, 4]
+      description: |
+        Limit status / range detection configuration for this channel.
+        Use IFX_AUTANALOG_SAR_LIMIT_* constants from
+        <dt-bindings/adc/infineon-autanalog-sar.h>.
+          IFX_AUTANALOG_SAR_LIMIT_DISABLED (0) - Disabled (default)
+          IFX_AUTANALOG_SAR_LIMIT_STC0     (1) - Limit status config 0
+          IFX_AUTANALOG_SAR_LIMIT_STC1     (2) - Limit status config 1
+          IFX_AUTANALOG_SAR_LIMIT_STC2     (3) - Limit status config 2
+          IFX_AUTANALOG_SAR_LIMIT_STC3     (4) - Limit status config 3
+
     fifo-sel:
       type: int
       default: 0
