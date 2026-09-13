@@ -39,6 +39,7 @@ Transport
    Available transports:
 
    - **USB HID (CTAPHID)** — :kconfig:option:`CONFIG_FIDO2_TRANSPORT_USB_HID`
+   - **Bluetooth LE (CTAPBLE)** — :kconfig:option:`CONFIG_FIDO2_TRANSPORT_BLE`
 
 User Presence (UP)
    Confirms that a human is physically present. Backends are selected via

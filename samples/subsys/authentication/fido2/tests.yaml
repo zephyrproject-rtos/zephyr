@@ -11,5 +11,6 @@ common:
       - "FIDO2 authenticator ready"
   integration_platforms:
     - weact_stm32wb55_core
+    - nrf54lm20dk/nrf54lm20a/cpuapp
 tests:
   sample.authentication.fido2: {}
