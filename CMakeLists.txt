@@ -1457,6 +1457,10 @@ if(CONFIG_GEN_ISR_TABLES)
     list(APPEND GEN_ISR_TABLE_EXTRA_ARG --vector-table)
   endif()
 
+  if(CONFIG_SW_ISR_TABLE_ENTRY_FUNCTION)
+    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --isr-function ${CONFIG_SW_ISR_TABLE_ENTRY_FUNCTION})
+  endif()
+
   # isr_tables.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
   # gen_isr_tables.py
   add_custom_command(
