@@ -28,4 +28,5 @@ supported:
   - usbd
   - watchdog
   - crc
+  - i3c
 vendor: nxp
