@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sdhc0 = &sdhc;
+	};
+};
+
+sdhc: &sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	clocks = <&rcc STM32_CLOCK(AHB5, 8)>,
+		 <&rcc STM32_SRC_PLL2_S SDMMC_SEL(0)>;
+	pinctrl-names = "default";
+	interrupt-names = "event";
+	disk-name = "SD";
+	bus-width = <4>;
+	hw-flow-control;
+	min-bus-freq = <DT_FREQ_K(400)>;
+	max-bus-freq = <DT_FREQ_M(208)>;
+	cd-gpios = <&gpiom 14 GPIO_ACTIVE_LOW>;
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&pll2 {
+	div-m = <12>;
+	mul-n = <100>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	div-s = <2>;
+	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
