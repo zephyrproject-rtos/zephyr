@@ -32,6 +32,7 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - nrf9160dk/nrf9160
+      - sama7d65_curiosity
       - sama7g54_ek
       - samd20_xpro
       - bl5340_dvk/nrf5340/cpuapp
