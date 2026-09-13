@@ -1,0 +1,51 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config D7S
+	bool "D7S seismic sensor"
+	default y
+	depends on DT_HAS_OMRON_D7S_ENABLED
+	select I2C
+	help
+	  Enable the Omron D7S seismic sensor driver. The sensor reports the
+	  spectral intensity and the peak ground acceleration of an earthquake
+	  over I2C.
+
+if D7S
+
+choice
+	prompt "Trigger mode"
+	default D7S_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver. Triggers require
+	  the int1-gpios or int2-gpios property to be present.
+
+config D7S_TRIGGER_NONE
+	bool "No trigger"
+
+config D7S_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select D7S_TRIGGER
+
+config D7S_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select D7S_TRIGGER
+
+endchoice
+
+config D7S_TRIGGER
+	bool
+
+config D7S_THREAD_PRIORITY
+	int "Thread priority"
+	depends on D7S_TRIGGER_OWN_THREAD
+	default 10
+
+config D7S_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on D7S_TRIGGER_OWN_THREAD
+	default 1024
+
+endif # D7S
