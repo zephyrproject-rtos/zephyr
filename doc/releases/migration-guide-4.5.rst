@@ -42,6 +42,15 @@ Build System
   :kconfig:option:`CONFIG_SOC`, :kconfig:option:`CONFIG_SOC_SERIES`,
   :kconfig:option:`CONFIG_SOC_FAMILY` and ``SOC_FULL_DIR``.
 
+* :envvar:`ZEPHYR_SDK_INSTALL_DIR` no longer causes the Zephyr SDK to be loaded when a third-party
+  toolchain is selected with :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`. The variable now only selects
+  *which* Zephyr SDK is used, not *whether* one is used. Builds that combined a third-party
+  toolchain with :envvar:`ZEPHYR_SDK_INSTALL_DIR` to pick up Zephyr SDK host tools, such as
+  ``dtc``, ``gperf``, ``qemu`` or ``openocd``, now use the host tools found on the system instead;
+  install them as described in :ref:`getting_started` if they are not present. Toolchains that
+  depend on Zephyr SDK host tools, such as ``iar`` and ``arcmwdt``, request the Zephyr SDK
+  explicitly and are unaffected.
+
 * ``CONFIG_BUILD_NO_GAP_FILL`` has been removed. Gap filling is opt-in through
   :kconfig:option:`CONFIG_BUILD_OUTPUT_HEX_GAP_FILL` and
   :kconfig:option:`CONFIG_BUILD_OUTPUT_S19_GAP_FILL`, so simply drop the option.

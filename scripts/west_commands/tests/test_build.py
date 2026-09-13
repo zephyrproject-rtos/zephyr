@@ -180,6 +180,112 @@ def test_cmake_args(monkeypatch, test_case):
     b._run_cmake(board='any', origin=None)
 
 
+def _run_cmake_for_sdk(monkeypatch, config_values, cmake_opts=None, cmake_cache=None):
+    """Drive Build._run_cmake and return the forwarded CMake arguments."""
+    b = Build()
+    b.config = _FakeConfig(config_values)
+    b.run_cmake = True
+    b.source_dir = 'source_dir'
+    b.build_dir = 'build_dir'
+    b.args = Namespace(
+        cmake_opts=cmake_opts or [],
+        snippets=None,
+        shields=None,
+        extra_conf_files=None,
+        extra_dtc_overlay_files=None,
+        sysbuild=None,
+        dry_run=False,
+    )
+    if cmake_cache is not None:
+        b.cmake_cache = cmake_cache
+
+    captured = {}
+
+    def run_cmake_mock(final_cmake_args, dry_run, env):
+        captured['args'] = final_cmake_args
+
+    monkeypatch.setattr('build.run_cmake', run_cmake_mock)
+    monkeypatch.setattr('build.west_topdir', lambda start=None, fall_back=True: '/west/topdir')
+    monkeypatch.setattr(b, '_banner', lambda _: True)
+
+    b._run_cmake(board='any', origin=None)
+    return captured['args']
+
+
+def test_sdk_config_path(monkeypatch, tmp_path):
+    """build.sdk set to a directory forwards ZEPHYR_SDK_INSTALL_DIR."""
+    sdk_dir = tmp_path / 'zephyr-sdk-1.0.1'
+    sdk_dir.mkdir()
+
+    args = _run_cmake_for_sdk(monkeypatch, {'build.sdk': str(sdk_dir)})
+    assert f'-DZEPHYR_SDK_INSTALL_DIR={sdk_dir.as_posix()}' in args
+
+
+def test_sdk_config_version(monkeypatch):
+    """build.sdk set to a non-directory forwards ZEPHYR_SDK_VERSION verbatim."""
+    args = _run_cmake_for_sdk(monkeypatch, {'build.sdk': '1.0.1'})
+    assert '-DZEPHYR_SDK_VERSION=1.0.1' in args
+    assert not any(a.startswith('-DZEPHYR_SDK_INSTALL_DIR') for a in args)
+
+
+def test_sdk_config_unset(monkeypatch):
+    """Nothing is forwarded when build.sdk is unset."""
+    args = _run_cmake_for_sdk(monkeypatch, {})
+    assert not any(a.startswith('-DZEPHYR_SDK_') for a in args)
+
+
+@pytest.mark.parametrize('value', ['', '   '])
+def test_sdk_config_empty(monkeypatch, value):
+    """An empty or whitespace-only build.sdk is treated as unset."""
+    args = _run_cmake_for_sdk(monkeypatch, {'build.sdk': value})
+    assert not any(a.startswith('-DZEPHYR_SDK_') for a in args)
+
+
+def test_sdk_config_path_expanduser(monkeypatch, tmp_path):
+    """A '~'-prefixed build.sdk path is expanded before forwarding."""
+    sdk_dir = tmp_path / 'zephyr-sdk-1.0.1'
+    sdk_dir.mkdir()
+    # '~' resolves from HOME on POSIX and from USERPROFILE on Windows.
+    monkeypatch.setenv('HOME', str(tmp_path))
+    monkeypatch.setenv('USERPROFILE', str(tmp_path))
+
+    args = _run_cmake_for_sdk(monkeypatch, {'build.sdk': '~/zephyr-sdk-1.0.1'})
+    assert f'-DZEPHYR_SDK_INSTALL_DIR={sdk_dir.as_posix()}' in args
+
+
+@pytest.mark.parametrize(
+    'opt',
+    [
+        '-DZEPHYR_SDK_INSTALL_DIR=/other',
+        '-DZEPHYR_SDK_VERSION=0.16.8',
+        '-DZEPHYR_SDK_VERSION:STRING=0.16.8',
+    ],
+)
+def test_sdk_config_overridden_by_cmdline(monkeypatch, opt):
+    """A command-line SDK argument overrides build.sdk."""
+    args = _run_cmake_for_sdk(monkeypatch, {'build.sdk': '1.0.1'}, cmake_opts=[opt])
+    assert opt in args
+    assert '-DZEPHYR_SDK_VERSION=1.0.1' not in args
+
+
+def test_sdk_config_unrelated_cmdline_var(monkeypatch):
+    """A command-line variable that merely shares the prefix does not suppress."""
+    args = _run_cmake_for_sdk(
+        monkeypatch, {'build.sdk': '1.0.1'}, cmake_opts=['-DZEPHYR_SDK_VERSION_EXTRA=x']
+    )
+    assert '-DZEPHYR_SDK_VERSION=1.0.1' in args
+
+
+def test_sdk_config_overridden_by_cache(monkeypatch):
+    """A cached SDK value overrides build.sdk."""
+    args = _run_cmake_for_sdk(
+        monkeypatch,
+        {'build.sdk': '1.0.1'},
+        cmake_cache={'ZEPHYR_SDK_INSTALL_DIR': '/cached/sdk'},
+    )
+    assert '-DZEPHYR_SDK_VERSION=1.0.1' not in args
+
+
 def test_test_item_updates_source_dir(tmp_path, monkeypatch):
     """Test: _resolve_test_item sets source_dir from test path, not CWD."""
     sample_dir = tmp_path / 'samples' / 'app'
