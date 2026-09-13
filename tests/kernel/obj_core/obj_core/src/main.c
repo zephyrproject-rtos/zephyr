@@ -456,5 +456,49 @@ ZTEST(obj_core, test_obj_core_stack_storage)
 	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
 }
 
+static struct k_msgq msgq3;
+static struct k_stack stack3;
+static struct k_timer timer3;
+
+ZTEST(obj_core, test_obj_core_cleanup)
+{
+	/* Releasing an object's allocated buffer, or cleaning up a timer,
+	 * ends its registration. Static objects stay reported.
+	 */
+	zassert_equal(k_msgq_alloc_init(&msgq3, 4, 4), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MSGQ_ID, K_OBJ_CORE(&msgq3)), 1);
+	zassert_equal(k_msgq_cleanup(&msgq3), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MSGQ_ID, K_OBJ_CORE(&msgq3)), 0);
+	zassert_equal(k_msgq_cleanup(&msgq1), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MSGQ_ID, K_OBJ_CORE(&msgq1)), 1);
+
+	zassert_equal(k_stack_alloc_init(&stack3, 4), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_STACK_ID, K_OBJ_CORE(&stack3)), 1);
+	zassert_equal(k_stack_cleanup(&stack3), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_STACK_ID, K_OBJ_CORE(&stack3)), 0);
+
+	k_timer_init(&timer3, NULL, NULL);
+	zassert_equal(count_walk(K_OBJ_TYPE_TIMER_ID, K_OBJ_CORE(&timer3)), 1);
+	zassert_equal(k_timer_cleanup(&timer3), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_TIMER_ID, K_OBJ_CORE(&timer3)), 0);
+}
+
+ZTEST(obj_core, test_obj_core_object_free)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	struct k_sem *sem = k_object_alloc(K_OBJ_SEM);
+
+	zassert_not_null(sem, "semaphore allocation failed");
+	k_sem_init(sem, 0, 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(sem)), 1);
+
+	k_object_free(sem);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(sem)), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+
 ZTEST_SUITE(obj_core, NULL, NULL,
 	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
