@@ -51,8 +51,8 @@ static inline int z_vrfy_pwm_capture_cycles(const struct device *dev,
 					    uint32_t *pulse_cycles,
 					    k_timeout_t timeout)
 {
-	uint32_t period;
-	uint32_t pulse;
+	uint32_t period = 0;
+	uint32_t pulse = 0;
 	int err;
 
 	K_OOPS(K_SYSCALL_DRIVER_PWM(dev, configure_capture));
@@ -61,14 +61,16 @@ static inline int z_vrfy_pwm_capture_cycles(const struct device *dev,
 
 	err = z_impl_pwm_capture_cycles(dev, channel,
 					flags, &period, &pulse, timeout);
-	if (period_cycles != NULL) {
-		K_OOPS(k_usermode_to_copy(period_cycles, &period,
-				      sizeof(*period_cycles)));
-	}
+	if (err == 0) {
+		if (period_cycles != NULL) {
+			K_OOPS(k_usermode_to_copy(period_cycles, &period,
+						  sizeof(*period_cycles)));
+		}
 
-	if (pulse_cycles != NULL) {
-		K_OOPS(k_usermode_to_copy(pulse_cycles, &pulse,
-				      sizeof(*pulse_cycles)));
+		if (pulse_cycles != NULL) {
+			K_OOPS(k_usermode_to_copy(pulse_cycles, &pulse,
+						  sizeof(*pulse_cycles)));
+		}
 	}
 
 	return err;
