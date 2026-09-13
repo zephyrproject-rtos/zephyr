@@ -7,10 +7,6 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 
-/*
- * 0xB00 is CSR mcycle
- * 0xB02 is CSR minstret
- */
 void supervisor_thread_function(void *p1, void *p2, void *p3)
 {
 	register unsigned long cycle_before, cycle_count;
@@ -22,11 +18,11 @@ void supervisor_thread_function(void *p1, void *p2, void *p3)
 	while (1) {
 		k_sleep(K_MSEC(2000));
 
-		inst_before = csr_read(0xB02);
-		cycle_before = csr_read(0xB00);
+		inst_before = csr_read(minstret);
+		cycle_before = csr_read(mcycle);
 		thread = k_current_get();
-		cycle_count = csr_read(0xB00);
-		inst_count = csr_read(0xB02);
+		cycle_count = csr_read(mcycle);
+		inst_count = csr_read(minstret);
 
 		if (cycle_count > cycle_before) {
 			cycle_count -= cycle_before;
