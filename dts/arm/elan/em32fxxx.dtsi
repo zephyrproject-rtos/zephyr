@@ -106,11 +106,11 @@
 		};
 
 		spi2: spi@40013000 {
-			compatible = "elan,elandev-spi2";
+			compatible = "arm,pl022";
 			reg = <0x40013000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <25 0>;
+			interrupts = <15 0>;
 			clocks = <&clk_apb EM32_GATE_PCLKG_SSP2>;
 			status = "disabled";
 		};
