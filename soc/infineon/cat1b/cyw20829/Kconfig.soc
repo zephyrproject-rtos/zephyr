@@ -56,6 +56,18 @@ config SOC_CYW89829B1232
 	bool
 	select SOC_SERIES_CYW20829
 
+# Silicon-revision helper symbols. On B0 silicon the BLE controller boot
+# leaves CLK_HF0 on the 48 MHz BLE ECO path; the btstack-integration HCI
+# layer restores it to the 96 MHz FLL path only when COMPONENT_CYW20829B0 /
+# COMPONENT_CYW89829B0 is defined. B1 silicon does not need the restore.
+config SOC_CYW20829_B0
+	bool
+	default y if SOC_CYW20829B0LKML || SOC_CYW20829B0000 || SOC_CYW20829B0010
+
+config SOC_CYW89829_B0
+	bool
+	default y if SOC_CYW89829B0232 || SOC_CYW89829B0062
+
 config SOC
 	default "cyw20829b0lkml" if SOC_CYW20829B0LKML
 	default "cyw89829b0232" if SOC_CYW89829B0232
