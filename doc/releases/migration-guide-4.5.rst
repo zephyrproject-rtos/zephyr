@@ -2316,6 +2316,9 @@ Secure Storage
   * ``zephyr/secure_storage/its/transform/aead_get.h`` ->
     ``zephyr/secure_storage/its/transform/aead.h``
 
+* The ZMS backend partition chosen name has been updated from
+  ``secure_storage_its_partition`` to ``zephyr,secure-storage-its-partition`` (:github:`118501`).
+
 Shell
 =====
 
