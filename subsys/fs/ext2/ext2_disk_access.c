@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
 #include <zephyr/storage/disk_access.h>
@@ -61,14 +62,27 @@ static int disk_write(const char *disk, const uint8_t *buf, uint32_t start, uint
 	return rc;
 }
 
-static int disk_prepare_range(struct disk_data *disk, uint32_t addr, uint32_t size,
+static int disk_prepare_range(struct disk_data *disk, uint64_t addr, uint32_t size,
 		uint32_t *s_start, uint32_t *s_count)
 {
-	*s_start = CONFIG_EXT2_DISK_STARTING_SECTOR + addr / disk->sector_size;
+	uint64_t start64;
+
+	if (disk->sector_size == 0) {
+		return -EINVAL;
+	}
+
+	start64 = (uint64_t)CONFIG_EXT2_DISK_STARTING_SECTOR + addr / disk->sector_size;
 	*s_count = size / disk->sector_size;
 
-	LOG_DBG("addr:0x%x size:0x%x -> sector_start:%d sector_count:%d",
-			addr, size, *s_start, *s_count);
+	LOG_DBG("addr:0x%llx size:0x%x -> sector_start:%llu sector_count:%d",
+			(unsigned long long)addr, size, (unsigned long long)start64, *s_count);
+
+	if (start64 > UINT32_MAX) {
+		LOG_ERR("Requested range can't be accessed due to overflow.");
+		return -ENOSPC;
+	}
+
+	*s_start = (uint32_t)start64;
 
 	/* Check for overflow. */
 	if (*s_count > UINT32_MAX - *s_start) {
@@ -92,7 +106,7 @@ static int disk_access_read_block(struct ext2_data *fs, void *buf, uint32_t bloc
 	struct disk_data *disk = fs->backend;
 	uint32_t sector_start, sector_count;
 
-	rc = disk_prepare_range(disk, block * fs->block_size, fs->block_size,
+	rc = disk_prepare_range(disk, (uint64_t)block * fs->block_size, fs->block_size,
 			&sector_start, &sector_count);
 	if (rc < 0) {
 		return rc;
@@ -106,7 +120,7 @@ static int disk_access_write_block(struct ext2_data *fs, const void *buf, uint32
 	struct disk_data *disk = fs->backend;
 	uint32_t sector_start, sector_count;
 
-	rc = disk_prepare_range(disk, block * fs->block_size, fs->block_size,
+	rc = disk_prepare_range(disk, (uint64_t)block * fs->block_size, fs->block_size,
 			&sector_start, &sector_count);
 	if (rc < 0) {
 		return rc;
