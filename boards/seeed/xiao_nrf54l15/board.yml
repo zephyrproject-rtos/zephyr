@@ -7,3 +7,38 @@ board:
     variants:
     - name: xip
       cpucluster: cpuflpr
+runners:
+  run_once:
+    '--recover':
+    - runners:
+      - nrfjprog
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - xiao_nrf54l15/nrf54l15/cpuapp
+        - xiao_nrf54l15/nrf54l15/cpuflpr
+        - xiao_nrf54l15/nrf54l15/cpuflpr/xip
+    '--erase':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      - openocd
+      run: first
+      groups:
+      - boards:
+        - xiao_nrf54l15/nrf54l15/cpuapp
+        - xiao_nrf54l15/nrf54l15/cpuflpr
+        - xiao_nrf54l15/nrf54l15/cpuflpr/xip
+    '--reset':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: last
+      groups:
+      - boards:
+        - xiao_nrf54l15/nrf54l15/cpuapp
+        - xiao_nrf54l15/nrf54l15/cpuflpr
+        - xiao_nrf54l15/nrf54l15/cpuflpr/xip
