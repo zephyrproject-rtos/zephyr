@@ -98,10 +98,13 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
 	const struct scmi_shmem_config *cfg;
+	uint32_t act_len;
+	int ret = 0;
 
 	data = shmem->data;
 	cfg = shmem->config;
 	layout = (struct scmi_shmem_layout *)data->regmap;
+	act_len = layout->len - sizeof(layout->msg_hdr);
 
 	/* some input validation first */
 	if (!msg) {
@@ -118,10 +121,11 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	}
 
 	/* mismatch between expected reply size and actual size? */
-	if (msg->len != (layout->len - sizeof(layout->msg_hdr))) {
+	if (msg->len < act_len) {
+		ret = -EMSGSIZE;
+	} else if (msg->len > act_len) {
 		LOG_ERR("bad message len. Expected 0x%x, got 0x%x",
-			msg->len,
-			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
+			msg->len, act_len);
 		return -EINVAL;
 	}
 
@@ -142,7 +146,7 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 				  data->regmap + sizeof(*layout), msg->len);
 	}
 
-	return 0;
+	return ret;
 }
 
 int scmi_shmem_write_message(const struct device *shmem,
