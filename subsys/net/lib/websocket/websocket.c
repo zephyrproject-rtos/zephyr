@@ -178,6 +178,10 @@ static int on_header_field(struct http_parser *parser, const char *at,
 	len = strlen(ws_accept_str);
 	if (length >= len && strncasecmp(at, ws_accept_str, len) == 0) {
 		ctx->sec_accept_present = true;
+		ctx->sec_accept_matched = 0;
+	} else {
+		/* Any other header ends the value we were collecting */
+		ctx->sec_accept_present = false;
 	}
 
 	if (ctx->http_cb && ctx->http_cb->on_header_field) {
@@ -188,6 +192,26 @@ static int on_header_field(struct http_parser *parser, const char *at,
 }
 
 #define MAX_SEC_ACCEPT_LEN 32
+
+/* The parser gives a pointer and a length, and the header value is not
+ * terminated, so it cannot be handed to a %s conversion. Copy the part that
+ * fits and print that instead.
+ */
+static void log_sec_accept_mismatch(struct websocket_context *ctx,
+				    const char *expected, const char *at,
+				    size_t length)
+{
+	if (IS_ENABLED(CONFIG_NET_WEBSOCKET_LOG_LEVEL_DBG)) {
+		char got[MAX_SEC_ACCEPT_LEN];
+		size_t len = MIN(length, sizeof(got) - 1);
+
+		memcpy(got, at, len);
+		got[len] = '\0';
+
+		NET_DBG("[%p] Security keys do not match %s vs %s", ctx,
+			expected, got);
+	}
+}
 
 static int on_header_value(struct http_parser *parser, const char *at,
 			   size_t length)
@@ -203,17 +227,24 @@ static int on_header_value(struct http_parser *parser, const char *at,
 		size_t olen;
 
 		ctx->sec_accept_ok = false;
-		ctx->sec_accept_present = false;
 
 		ret = base64_encode(str, sizeof(str) - 1, &olen,
 				    ctx->sec_accept_key,
 				    WS_SHA1_OUTPUT_LEN);
 		if (ret == 0) {
-			if (strncmp(at, str, length)) {
-				NET_DBG("[%p] Security keys do not match "
-					"%s vs %s", ctx, str, at);
+			/* The value can be handed over in more than one piece,
+			 * so match it against the expected one as it arrives
+			 * and only accept it once every byte of the expected
+			 * value, and no more, has been seen.
+			 */
+			if (length <= olen - ctx->sec_accept_matched &&
+			    memcmp(at, str + ctx->sec_accept_matched, length) == 0) {
+				ctx->sec_accept_matched += length;
+				ctx->sec_accept_ok =
+					(ctx->sec_accept_matched == olen);
 			} else {
-				ctx->sec_accept_ok = true;
+				ctx->sec_accept_present = false;
+				log_sec_accept_mismatch(ctx, str, at, length);
 			}
 		}
 	}
