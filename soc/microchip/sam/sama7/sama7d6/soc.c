@@ -8,6 +8,7 @@
 #include <zephyr/init.h>
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include <zephyr/kernel.h>
+#include <delay.h>
 
 #define MMU_REGION_FLEXCOM_DEFN(idx, n)								\
 		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flx##n)),			\
@@ -62,6 +63,26 @@ static const struct arm_mmu_region mmu_regions[] = {
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(microchip_trng_g2_entropy),
 		   (MMU_REGION_FLAT_ENTRY("trng", TRNG_BASE_ADDRESS, 0x100,
 					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(udphsa)),
+		(MMU_REGION_FLAT_ENTRY("udphsa",
+				       DT_REG_ADDR_BY_IDX(DT_NODELABEL(udphsa), 1),
+				       DT_REG_SIZE_BY_IDX(DT_NODELABEL(udphsa), 1),
+				       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+		 MMU_REGION_FLAT_ENTRY("udphsa_ram",
+				       DT_REG_ADDR_BY_IDX(DT_NODELABEL(udphsa), 0),
+				       DT_REG_SIZE_BY_IDX(DT_NODELABEL(udphsa), 0),
+				       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(udphsb)),
+		(MMU_REGION_FLAT_ENTRY("udphsb",
+				       DT_REG_ADDR_BY_IDX(DT_NODELABEL(udphsb), 1),
+				       DT_REG_SIZE_BY_IDX(DT_NODELABEL(udphsb), 1),
+				       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+		 MMU_REGION_FLAT_ENTRY("udphsb_ram",
+				       DT_REG_ADDR_BY_IDX(DT_NODELABEL(udphsb), 0),
+				       DT_REG_SIZE_BY_IDX(DT_NODELABEL(udphsb), 0),
+				       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
 };
 
 const struct arm_mmu_config mmu_config = {
@@ -112,5 +133,26 @@ void soc_early_init_hook(void)
 		PMC_REGS->PMC_PCR = PMC_PCR_CMD_Msk | PMC_PCR_GCLKEN_Msk | PMC_PCR_EN_Msk |
 				    PMC_PCR_GCLKDIV(4) |
 				    PMC_PCR_GCLKCSS_ETHPLL | PMC_PCR_PID(ID_GMAC0);
+	}
+
+	/* Enable clock for USB subsystem */
+	if (DT_HAS_COMPAT_STATUS_OKAY(microchip_udphs_g1_udc)) {
+		PMC_REGS->PMC_XTALF = PMC_XTALF_XTALF_F24M;
+
+		/* Enable USBPLL, frequency = 480MHz */
+		PMC_REGS->PMC_PLL_UPDT = PMC_PLL_UPDT_ID(PLL_ID_USBPLL);
+		PMC_REGS->PMC_PLL_ACR = PMC_PLL_ACR_LOOP_FILTER(0x12) |
+					PMC_PLL_ACR_LOCK_THR(2) |
+					PMC_PLL_ACR_CONTROL(0x10);
+		PMC_REGS->PMC_PLL_CTRL1 = PMC_PLL_CTRL1_MUL(0x27);
+		PMC_REGS->PMC_PLL_ACR |= PMC_PLL_ACR_UTMIBG_Msk;
+		UDELAY(10);
+		PMC_REGS->PMC_PLL_ACR |= PMC_PLL_ACR_UTMIVR_Msk;
+		UDELAY(10);
+		PMC_REGS->PMC_PLL_UPDT = PMC_PLL_UPDT_UPDATE_Msk | PMC_PLL_UPDT_ID(8);
+		PMC_REGS->PMC_PLL_CTRL0 = PMC_PLL_CTRL0_ENPLL_Msk;
+		PMC_REGS->PMC_PLL_UPDT = PMC_PLL_UPDT_UPDATE_Msk | PMC_PLL_UPDT_ID(8);
+		while ((PMC_REGS->PMC_PLL_ISR0 & BIT(PLL_ID_USBPLL)) == 0) {
+		}
 	}
 }

@@ -118,6 +118,14 @@ static const struct udphs_ep_desc sam_ep_desc[UDPHS_EPT_NUMBER] = {
 
 static inline int udc_ep_to_bnum(const uint8_t ep);
 
+static inline bool dcache_aligned(const void *addr, size_t len)
+{
+	size_t line_size = sys_cache_data_line_size_get();
+
+	return IS_ALIGNED((uintptr_t)addr, line_size) &&
+	       IS_ALIGNED(len, line_size);
+}
+
 static inline udphs_registers_t *base_reg(const struct device *const dev)
 {
 	const struct udc_sam_config *config = dev->config;
@@ -382,11 +390,14 @@ static int sam_prep_out(const struct device *dev,
 	LOG_DBG("Prep OUT ep%02x %u %s", ep_cfg->addr, buf->size,
 					 ep_can_dma(dev, idx) ? "dma" : "fifo");
 
-	if (ep_can_dma(dev, idx)) {
+	if (ep_can_dma(dev, idx) &&
+	    dcache_aligned(buf->data, buf->size)) {
 		udphs_dma_registers_t *const dma = dma_reg(dev, UDC_SAM_DMA(ep_cfg->addr));
 		struct udphs_request req = {0};
 
 		sys_cache_data_invd_range(buf->data, buf->size);
+		__DSB();
+
 		req.buf = buf->data;
 		req.len = MIN(buf->size, UDC_SAM_MAX_DMA_LEN);
 
@@ -416,11 +427,13 @@ static int sam_prep_in(const struct device *dev,
 					   ep_can_dma(dev, idx) ? "dma" : "fifo",
 					   udc_ep_buf_has_zlp(buf) ? "zlp" : "");
 
-	if (ep_can_dma(dev, idx)) {
+	if (ep_can_dma(dev, idx) &&
+	    dcache_aligned(buf->data, buf->size)) {
 		udphs_dma_registers_t *const dma = dma_reg(dev, UDC_SAM_DMA(ep_cfg->addr));
 		struct udphs_request req = {0};
 
 		sys_cache_data_flush_range(buf->data, buf->len);
+		__DSB();
 
 		req.is_in = true;
 		req.buf = buf->data;
@@ -655,6 +668,7 @@ static int ALWAYS_INLINE dma_out(const struct device *dev, const uint8_t chan, u
 
 	if ((status & UDPHS_DMASTATUS_END_TR_ST_Msk) || (size == 0)) {
 		sys_cache_data_invd_range(buf->data, buf->len);
+		__DSB();
 
 		atomic_clear_bit(&priv->xfer_running,
 				 udc_ep_to_bnum(idx | USB_EP_DIR_OUT));
@@ -1375,9 +1389,11 @@ static int udc_sam_init(const struct device *dev)
 
 	udphs_stop(udphs);
 
-	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0 && ret != -ENOENT) {
-		return ret;
+	if (config->pincfg) {
+		ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
 	}
 
 	if (config->vbus_gpio.port) {
@@ -1610,7 +1626,7 @@ static void udc_sam_irq_disable_func_##n(const struct device *dev)	\
 		.base = (udphs_registers_t *)DT_INST_REG_ADDR_BY_IDX(n, 1),		\
 		.fifo = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(n, 0),			\
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),				\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+		.pincfg = UDC_SAM_PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.ep_desc = sam_ep_desc,							\
 		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),		\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),			\
