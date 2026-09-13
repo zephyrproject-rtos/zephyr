@@ -819,6 +819,10 @@ static int mec5_qspi_pm_action(const struct device *dev, enum pm_device_action a
 	mm_reg_t qb = devcfg->regbase;
 	int ret = 0;
 
+	if (soc_taf_enabled() != 0) {
+		return 0;
+	}
+
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
 		sys_clear_bit(qb + XEC_QSPI_MODE_OFS, XEC_QSPI_MODE_ACTV_POS);
