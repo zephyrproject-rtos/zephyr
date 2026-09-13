@@ -1,0 +1,9 @@
+# Copyright (c) 2026, Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: mbv32
+  full_name: AMD MicroBlaze V Board
+  vendor: amd
+  socs:
+    - name: mbv32
