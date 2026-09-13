@@ -36,20 +36,17 @@
 /* FS reg value from Full Scale */
 #define IIS2DH_FS_TO_REG(_fs)	(30 - __builtin_clz(_fs))
 
-/**
- * struct iis2dh_device_config - iis2dh hw configuration
- * @spi: SPI bus spec.
- * @i2c: I2C bus spec.
- * @pm: Power mode (lis2dh_powermode).
- * @int_gpio: GPIO spec for sensor pin interrupt.
- */
+/* sensor hw configuration */
 struct iis2dh_device_config {
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_dt_spec spi;
-#endif
+	stmdev_ctx_t ctx;
+	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	struct i2c_dt_spec i2c;
+		const struct i2c_dt_spec i2c;
 #endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		const struct spi_dt_spec spi;
+#endif
+	} stmemsc_cfg;
 	uint8_t pm;
 #ifdef CONFIG_IIS2DH_TRIGGER
 	struct gpio_dt_spec int_gpio;
@@ -61,7 +58,6 @@ struct iis2dh_data {
 	int16_t acc[3];
 	uint32_t gain;
 
-	stmdev_ctx_t *ctx;
 #ifdef CONFIG_IIS2DH_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
@@ -76,9 +72,6 @@ struct iis2dh_data {
 #endif /* CONFIG_IIS2DH_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_IIS2DH_TRIGGER */
 };
-
-int iis2dh_i2c_init(const struct device *dev);
-int iis2dh_spi_init(const struct device *dev);
 
 #ifdef CONFIG_IIS2DH_TRIGGER
 int iis2dh_init_interrupt(const struct device *dev);
