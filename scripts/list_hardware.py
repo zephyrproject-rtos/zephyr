@@ -45,6 +45,7 @@ class Systems:
         self._series = []
         self._families = []
         self._extended_socs = []
+        self._based_socs = {}
 
         if soc_yaml is None:
             return
@@ -60,34 +61,29 @@ class Systems:
             family = Family(f['name'], [folder], [], [])
             for s in f.get('series', []):
                 series = Series(s['name'], [folder], f['name'], [])
-                socs = [(Soc(soc['name'],
-                             [c['name'] for c in soc.get('cpuclusters', [])],
-                             [folder], s['name'], f['name']))
-                        for soc in s.get('socs', [])]
+                socs = self._make_socs(s.get('socs', []), folder, s['name'], f['name'])
                 series.socs.extend(socs)
                 self._series.append(series)
                 self._socs.extend(socs)
                 family.series.append(series)
                 family.socs.extend(socs)
-            socs = [(Soc(soc['name'],
-                         [c['name'] for c in soc.get('cpuclusters', [])],
-                         [folder], None, f['name']))
-                    for soc in f.get('socs', [])]
+            socs = self._make_socs(f.get('socs', []), folder, None, f['name'])
             self._socs.extend(socs)
             self._families.append(family)
 
         for s in data.get('series', []):
             series = Series(s['name'], [folder], '', [])
-            socs = [(Soc(soc['name'],
-                         [c['name'] for c in soc.get('cpuclusters', [])],
-                         [folder], s['name'], ''))
-                    for soc in s.get('socs', [])]
+            socs = self._make_socs(s.get('socs', []), folder, s['name'], '')
             series.socs.extend(socs)
             self._series.append(series)
             self._socs.extend(socs)
 
         for soc in data.get('socs', []):
-            if soc.get('name') is not None:
+            if soc.get('base') is not None:
+                # A SoC based on another one adds no configuration of its own, so it is recorded
+                # as a pointer to the SoC it is based on rather than as a SoC in its own right.
+                self._based_socs[soc['name']] = BasedSoc(soc['name'], soc['base'], folder)
+            elif soc.get('name') is not None:
                 self._socs.append(Soc(soc['name'], [c['name'] for c in soc.get('cpuclusters', [])],
                                   [folder], '', ''))
             elif soc.get('extend') is not None:
@@ -113,6 +109,10 @@ class Systems:
                                 if re.match(fr'^{soc_name}$', soc.name) is not None:
                                     found_match = True
                                     break
+                            else:
+                                # A SoC declared with 'base' is a valid board qualifier too.
+                                found_match = any(re.match(fr'^{soc_name}$', name) is not None
+                                                  for name in self._based_socs)
 
                             if found_match is False:
                                 sys.exit(f'ERROR: SoC qualifier match unresolved: {qualifiers}')
@@ -135,9 +135,36 @@ class Systems:
         '''
         return Systems('', socs_yaml)
 
+    def _make_socs(self, entries, folder, series, family):
+        '''Build the SoCs of a "socs" list, setting aside the ones declared with "base".'''
+        socs = []
+        for soc in entries:
+            if soc.get('base') is not None:
+                # A SoC based on another one adds no configuration of its own, so it is recorded
+                # as a pointer to the SoC it is based on rather than as a SoC in its own right.
+                self._based_socs[soc['name']] = BasedSoc(soc['name'], soc['base'], folder)
+                continue
+            socs.append(Soc(soc['name'], [c['name'] for c in soc.get('cpuclusters', [])],
+                            [folder], series, family))
+        return socs
+
     def extend(self, systems):
         self._families.extend(systems.get_families())
         self._series.extend(systems.get_series())
+
+        for name, based in systems.get_based_socs().items():
+            existing = self._based_socs.get(name)
+            if existing is not None and existing.base != based.base:
+                sys.exit(f"ERROR: SoC '{name}' is declared twice, based on '{existing.base}' in "
+                         f"{existing.folder} and on '{based.base}' in {based.folder}.")
+            self._based_socs[name] = based
+
+        for es in self._extended_socs + systems.get_extended_socs():
+            based = self._based_socs.get(es.name)
+            if based is not None:
+                sys.exit(f"ERROR: SoC '{es.name}' is declared with 'base' in {based.folder} and "
+                         "carries no configuration of its own, so it cannot be extended. Extend "
+                         f"SoC '{based.base}' instead.")
 
         for es in self._extended_socs[:]:
             for s in systems.get_socs():
@@ -167,12 +194,76 @@ class Systems:
     def get_extended_socs(self):
         return self._extended_socs
 
+    def get_based_socs(self):
+        return self._based_socs
+
+    def resolve_soc_name(self, name):
+        '''Return the name of the SoC that provides the configuration for the given SoC.
+
+        A SoC declared with 'base' carries no configuration of its own, so it resolves to the SoC
+        it is based on. That SoC must be a real one, which keeps resolution one step deep.
+        '''
+        based = self._based_socs.get(name)
+        if based is None:
+            return name
+
+        if based.base in self._based_socs:
+            sys.exit(f"ERROR: SoC '{name}' in {based.folder} is based on '{based.base}', which is "
+                     "itself based on another SoC. 'base' must name a SoC.")
+
+        if not any(s.name == based.base for s in self._socs):
+            sys.exit(f"ERROR: SoC '{name}' in {based.folder} is based on SoC '{based.base}', "
+                     "which is not found. Please ensure that the SoC exists and that the "
+                     "soc-root containing it has been correctly defined.")
+
+        return based.base
+
+    def get_loaded_trees(self, names):
+        '''Return the SoCs, series and families described by the soc.yml trees holding the given
+        SoCs.
+        '''
+        folders = {f for n in names for f in self.get_soc(n).folder}
+        return (
+            [s for s in self._socs if folders.intersection(s.folder)],
+            [s for s in self._series if folders.intersection(s.folder)],
+            [f for f in self._families if folders.intersection(f.folder)],
+        )
+
+    def get_base_symbol(self, name):
+        '''Return the Kconfig symbol of the SoC that the given based SoC is built on.'''
+        based = self._based_socs[name]
+        base = self.get_soc(self.resolve_soc_name(name))
+        symbols = find_soc_symbol(base.folder, based.base)
+        if not symbols:
+            sys.exit(f"ERROR: cannot determine the Kconfig symbol of SoC '{based.base}', which "
+                     f"SoC '{name}' is based on: no 'config SOC' default names it in "
+                     f"{base.folder}.")
+        if len(symbols) > 1:
+            sys.exit(f"ERROR: the Kconfig symbol of SoC '{based.base}', which SoC '{name}' is "
+                     f"based on, is ambiguous: {sorted(symbols)}.")
+        return symbols.pop()
+
     def get_soc(self, name):
+        if name in self._based_socs:
+            # Keep the name the board target uses, but take everything else from the SoC it is
+            # based on, so it resolves to that SoC's tree and CPU clusters.
+            base = self.get_soc(self.resolve_soc_name(name))
+            return Soc(name, list(base.cpuclusters), list(base.folder), base.series, base.family)
+
         try:
             return next(s for s in self._socs if s.name == name)
         except StopIteration:
             sys.exit(f"ERROR: SoC '{name}' is not found, please ensure that the SoC exists "
                      f"and that soc-root containing '{name}' has been correctly defined.")
+
+
+
+@dataclass
+class BasedSoc:
+    '''A SoC built on another SoC, adding no configuration of its own.'''
+    name: str
+    base: str
+    folder: str
 
 
 @dataclass
@@ -203,6 +294,33 @@ class Family:
     folder: list[str]
     series: list[Series]
     socs: list[Soc]
+
+
+def find_soc_symbol(folders, name):
+    '''Return the Kconfig symbols that make CONFIG_SOC resolve to the given SoC name, found by
+    scanning the Kconfig files of the folders holding that SoC for the 'config SOC' default
+    guarded by them. Compliance requires every SoC name to appear in exactly such a default, so
+    the symbol of a SoC is discoverable even where its name does not follow the SOC_<NAME>
+    convention.
+    '''
+    symbols = set()
+    for folder in folders:
+        for f in sorted(Path(folder).rglob('Kconfig*')):
+            if not f.is_file():
+                continue
+            current = None
+            for line in f.read_text(encoding='utf-8', errors='ignore').splitlines():
+                m = re.match(r'^\s*(?:menu)?config\s+([A-Za-z0-9_]+)\s*$', line)
+                if m:
+                    current = m.group(1)
+                    continue
+                if current != 'SOC':
+                    continue
+                m = re.match(rf'^\s*default\s+"{re.escape(name)}"\s+if\s+([A-Za-z0-9_]+)\s*$',
+                             line)
+                if m:
+                    symbols.add(m.group(1))
+    return symbols
 
 
 def unique_paths(paths):
@@ -263,7 +381,8 @@ def add_args(parser):
     parser.add_argument("--soc-root", dest='soc_roots', default=[],
                         type=Path, action='append',
                         help='add a SoC root, may be given more than once')
-    parser.add_argument("--soc", default=None, help='lookup the specific soc')
+    parser.add_argument("--soc", dest='socs_lookup', default=[], action='append',
+                        help='lookup the specific soc, may be given more than once')
     parser.add_argument("--soc-series", default=None, help='lookup the specific soc series')
     parser.add_argument("--soc-family", default=None, help='lookup the specific family')
     parser.add_argument("--socs", action='store_true', help='lookup all socs')
@@ -313,9 +432,6 @@ def dump_v2_archs(args):
 
 
 def dump_v2_system(args, type, system):
-    if args.soc is not None and system.name != args.soc:
-        return
-
     if args.soc_family is not None and (type != "soc" or system.family is None or \
        system.family != args.soc_family):
         return
@@ -359,19 +475,44 @@ def dump_v2_system(args, type, system):
 def dump_v2_systems(args):
     systems = find_v2_systems(args)
 
-    for f in systems.get_families():
+    if args.socs_lookup:
+        socs, series, families = systems.get_loaded_trees(args.socs_lookup)
+        based = [systems.get_based_socs()[n] for n in args.socs_lookup
+                 if n in systems.get_based_socs()]
+    else:
+        socs = systems.get_socs()
+        families = systems.get_families()
+        series = systems.get_series()
+        based = list(systems.get_based_socs().values())
+
+    for f in families:
         dump_v2_system(args, 'family', f)
 
-    for s in systems.get_series():
+    for s in series:
         dump_v2_system(args, 'series', s)
 
-    for s in systems.get_socs():
+    for s in socs:
         dump_v2_system(args, 'soc', s)
+
+    # A SoC declared with 'base' is not a SoC of its own, but the build system still needs to
+    # know it exists so it can generate the Kconfig symbol named after it, selecting the symbol
+    # of the SoC it is based on.
+    for b in based:
+        if args.cmakeformat is not None:
+            info = args.cmakeformat.format(
+                TYPE='TYPE;based',
+                NAME='NAME;' + b.name + ';SYMBOL;' + systems.get_base_symbol(b.name),
+                DIR='DIR;' + ';'.join(
+                    Path(x).as_posix() for x in systems.get_soc(b.name).folder),
+                HWM='HWM;v2', SERIES='SERIES;', FAMILY='FAMILY;')
+            print(info)
+        else:
+            print(b.name)
 
 
 if __name__ == '__main__':
     args = parse_args()
-    if any([args.socs, args.soc, args.soc_series, args.soc_family]):
+    if any([args.socs, args.socs_lookup, args.soc_series, args.soc_family]):
         dump_v2_systems(args)
     if args.archs or args.arch is not None:
         dump_v2_archs(args)

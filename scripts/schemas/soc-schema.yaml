@@ -21,18 +21,35 @@ $defs:
       - name
     additionalProperties: false
   soc:
-    type: object
-    properties:
-      name:
-        type: string
-        description: Name of the SoC
-      cpuclusters:
-        type: array
-        items:
-          $ref: "#/$defs/cpucluster"
-    required:
-      - name
-    additionalProperties: false
+    oneOf:
+      - type: object
+        properties:
+          name:
+            type: string
+            description: Name of the SoC
+          cpuclusters:
+            type: array
+            items:
+              $ref: "#/$defs/cpucluster"
+        required:
+          - name
+        additionalProperties: false
+      - type: object
+        properties:
+          name:
+            type: string
+            description: Name of the SoC
+          base:
+            type: string
+            description: |
+              Name of the SoC this one is built on. A SoC declared with "base" carries no
+              configuration of its own: it defines no Kconfig symbols, declares no CPU clusters
+              and loads no SoC tree beyond the one of the SoC it is based on. That SoC must not
+              itself declare "base".
+        required:
+          - name
+          - base
+        additionalProperties: false
   soc-extend:
     type: object
     oneOf:
@@ -47,6 +64,22 @@ $defs:
               $ref: "#/$defs/cpucluster"
         required:
           - name
+        additionalProperties: false
+      - type: object
+        properties:
+          name:
+            type: string
+            description: Name of the SoC
+          base:
+            type: string
+            description: |
+              Name of the SoC this one is built on. A SoC declared with "base" carries no
+              configuration of its own: it defines no Kconfig symbols, declares no CPU clusters
+              and loads no SoC tree beyond the one of the SoC it is based on. That SoC must not
+              itself declare "base".
+        required:
+          - name
+          - base
         additionalProperties: false
       - type: object
         properties:
