@@ -191,8 +191,9 @@ void z_arm64_el2_init(void)
 	 * Clear TGE bit: All exceptions that would not be routed to EL2;
 	 * Clear AMO bit: Physical SError interrupts are not taken to EL2 and EL3.
 	 * Clear IMO bit: Physical IRQ interrupts are not taken to EL2 and EL3.
+	 * Clear FMO bit: Physical FIQ interrupts are not taken to EL2 and EL3.
 	 */
-	reg &= ~(HCR_IMO_BIT | HCR_AMO_BIT | HCR_TGE_BIT);
+	reg &= ~(HCR_FMO_BIT | HCR_IMO_BIT | HCR_AMO_BIT | HCR_TGE_BIT);
 	reg |= HCR_RW_BIT;		/* EL1 Execution state is AArch64 */
 
 #ifdef CONFIG_ARM_PAC
