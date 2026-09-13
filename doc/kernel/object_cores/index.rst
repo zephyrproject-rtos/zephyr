@@ -13,13 +13,46 @@ perform operations on registered objects.
 Object Core Concepts
 ********************
 
-Each instance of an object embeds an object core field named ``obj_core``.
-Objects of the same type are linked together via their respective object
-cores to form a singly linked list. Each object core also links to their
-respective object type. Each object type contains a singly linked list
-linking together all the object cores of that type. Object types are also
-linked together via a singly linked list. Together, this can allow debugging
-tools to traverse all the objects in the system.
+Each instance of an object embeds an object core field named ``obj_core``. An
+object core links the object to its object type, and each object type lets
+debugging tools enumerate the objects of that type. Object types are linked
+together via a singly linked list. Together, this allows debugging tools to
+traverse all the objects in the system.
+
+An object type enumerates its objects from two places:
+
+* Its permanent objects, which are statically defined instances such as those
+  created with :c:macro:`K_SEM_DEFINE`. They are walked in place from their
+  iterable section and are never registered at run time.
+* A bounded registry of the objects initialized at run time, for instance a
+  semaphore in a driver's data structure initialized with :c:func:`k_sem_init`.
+  The registry only references the objects; it never stores anything inside
+  them.
+
+Because of that, an object may be initialized in any storage, initialized
+again in place, or discarded without any object core call: the registry
+cannot be corrupted by an object that no longer exists. Some rules follow
+from this model:
+
+* An object located in the running thread's stack or in the interrupt stack is
+  not registered: its life ends with the stack frame. The object type counts
+  such objects in its ``skipped`` field. Other stacks are not recognized, such
+  as the privileged stack a user thread's system calls run on or an exception
+  stack specific to an architecture; an object there is registered and stays
+  reported until its storage is reused.
+* When the registry is full, further objects are not registered and the object
+  type counts them in its ``dropped`` field. The registry size is set with
+  :kconfig:option:`CONFIG_OBJ_CORE_MAX_DYNAMIC_OBJECTS`.
+* An object that was discarded without being unregistered stays reported until
+  its storage is reused: the walk recognizes the reused storage by the missing
+  type tag and drops the entry. The kernel unregisters objects itself when it
+  releases them: on thread abort, in :c:func:`k_object_free`,
+  :c:func:`k_timer_cleanup`, :c:func:`k_msgq_cleanup` and
+  :c:func:`k_stack_cleanup`, and, with
+  :kconfig:option:`CONFIG_OBJ_CORE_EVICT_ON_FREE`, when memory is returned to a
+  heap or a memory slab. Code that ends an object's life in another way may
+  call :c:func:`k_obj_core_unlink` so that the object stops being reported at
+  once.
 
 Object cores have been integrated into the following kernel objects:
 
@@ -31,6 +64,7 @@ Object cores have been integrated into the following kernel objects:
 * :ref:`Message Queues <message_queues_v2>`
 * :ref:`Mutexes <mutexes_v2>`
 * :ref:`Pipes <pipes_v2>`
+* :ref:`Queues <queues>`
 * :ref:`Semaphores <semaphores_v2>`
 * :ref:`Threads <threads_v2>`
 * :ref:`Timers <timers_v2>`
@@ -71,17 +105,18 @@ Implementation
 Defining a New Object Type
 ==========================
 
-An object type is defined using a global variable of type
-:c:struct:`k_obj_type`. It must be initialized before any objects of that type
-are initialized. The following code shows how a new object type can be
-initialized for use with object cores and object core statistics.
+An object type is a global variable of type :c:struct:`k_obj_type`. When the
+object struct has statically defined instances in an iterable section, the
+type is defined at build time with :c:macro:`K_OBJ_TYPE_DEFINE` and those
+instances become its permanent objects. The following code shows how a new
+object type can be defined for use with object cores and object core
+statistics.
 
 .. code-block:: c
 
     /* Unique object type ID */
 
     #define K_OBJ_TYPE_MY_NEW_TYPE  K_OBJ_TYPE_ID_GEN("UNIQ")
-    struct k_obj_type  my_obj_type;
 
     struct my_obj_type_raw_info {
         ...
@@ -107,10 +142,25 @@ initialized for use with object cores and object core statistics.
         .enable = NULL,     /* Stats gathering is always on */
     };
 
+    K_OBJ_TYPE_DEFINE_STATS(my_obj_type, my_new_obj, K_OBJ_TYPE_MY_NEW_TYPE,
+                            &my_obj_type_stats_desc, info);
+
+A type whose objects are not in an iterable section is initialized at run
+time instead, before any of its objects. A permanent array of objects can be
+registered as the type's range so that its objects need no registry entry.
+
+.. code-block:: c
+
+    struct k_obj_type  my_obj_type;
+    struct my_new_obj  my_objects[8];
+
     void my_obj_type_init(void)
     {
         z_obj_type_init(&my_obj_type, K_OBJ_TYPE_MY_NEW_TYPE,
-                        offsetof(struct my_new_obj, obj_core);
+                        offsetof(struct my_new_obj, obj_core));
+        z_obj_type_init_range(&my_obj_type, my_objects,
+                              &my_objects[ARRAY_SIZE(my_objects)],
+                              sizeof(struct my_new_obj), false);
         k_obj_type_stats_init(&my_obj_type, &my_obj_type_stats_desc);
     }
 
@@ -120,8 +170,10 @@ Initializing a New Object Core
 Kernel objects that have already been integrated into the object core framework
 automatically have their object cores initialized when the object is
 initialized. However, developers that wish to add their own objects into the
-framework need to both initialize the object core and link it. The following
-code builds on the example above and initializes the object core.
+framework need to both initialize the object core and register it. Registering
+an object that belongs to the type's permanent range has no effect, as it is
+reported from the range. The following code builds on the example above and
+initializes the object core.
 
 .. code-block:: c
 
@@ -137,10 +189,11 @@ code builds on the example above and initializes the object core.
 Walking a List of Object Cores
 ==============================
 
-Two routines exist for walking the list of object cores linked to an object
-type. These are :c:func:`k_obj_type_walk_locked` and
-:c:func:`k_obj_type_walk_unlocked`. The following code builds upon the example
-above and prints the addresses of all the objects of that new object type.
+Two routines exist for walking the object cores of an object type. These are
+:c:func:`k_obj_type_walk_locked` and :c:func:`k_obj_type_walk_unlocked`. Both
+visit the permanent objects of the type first and the registered objects next.
+The following code builds upon the example above and prints the addresses of
+all the objects of that new object type.
 
 .. code-block:: c
 
@@ -209,6 +262,8 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_OBJ_CORE`
+* :kconfig:option:`CONFIG_OBJ_CORE_MAX_DYNAMIC_OBJECTS`
+* :kconfig:option:`CONFIG_OBJ_CORE_EVICT_ON_FREE`
 * :kconfig:option:`CONFIG_OBJ_CORE_CONDVAR`
 * :kconfig:option:`CONFIG_OBJ_CORE_EVENT`
 * :kconfig:option:`CONFIG_OBJ_CORE_FIFO`
@@ -218,6 +273,7 @@ Related configuration options:
 * :kconfig:option:`CONFIG_OBJ_CORE_MSGQ`
 * :kconfig:option:`CONFIG_OBJ_CORE_MUTEX`
 * :kconfig:option:`CONFIG_OBJ_CORE_PIPE`
+* :kconfig:option:`CONFIG_OBJ_CORE_QUEUE`
 * :kconfig:option:`CONFIG_OBJ_CORE_SEM`
 * :kconfig:option:`CONFIG_OBJ_CORE_STACK`
 * :kconfig:option:`CONFIG_OBJ_CORE_THREAD`
