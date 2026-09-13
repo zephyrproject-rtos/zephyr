@@ -1519,4 +1519,25 @@
 		pinmux = <MCHP_XEC_PINMUX(0140, MCHP_AF5)>;
 		low-power-enable;
 	};
+
+	/* GP SPI */
+	/omit-if-no-ref/ spi1_clk_gpio141_lp: spi1_clk_gpio141_lp {
+		pinmux = <MCHP_XEC_PINMUX(0141, MCHP_AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_sdo_gpio142_lp: spi1_sdo_gpio142_lp {
+		pinmux = <MCHP_XEC_PINMUX(0142, MCHP_AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_sdi_gpio143_lp: spi1_sdi_gpio143_lp {
+		pinmux = <MCHP_XEC_PINMUX(0143, MCHP_AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_cs_n_gpio144_lp: spi1_cs_n_gpio144_lp {
+		pinmux = <MCHP_XEC_PINMUX(0144, MCHP_AF3)>;
+		low-power-enable;
+	};
 };
