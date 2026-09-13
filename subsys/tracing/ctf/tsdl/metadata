@@ -3368,7 +3368,7 @@ event {
 	name = thread_sleep_ticks_enter;
 	id = 0x184;
 	fields := struct {
-		uint32_t timeout;
+		int32_t timeout;
 	};
 };
 
@@ -3376,7 +3376,7 @@ event {
 	name = thread_sleep_ticks_exit;
 	id = 0x185;
 	fields := struct {
-		uint32_t timeout;
+		int32_t timeout;
 		int32_t ret;
 	};
 };

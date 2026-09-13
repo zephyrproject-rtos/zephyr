@@ -43,8 +43,13 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_thread_join_exit(thread, timeout, ret)                                    \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_THREAD_JOIN, (int32_t)ret)
 
+/* Signed: K_FOREVER is -1 and an absolute timeout is a negative Z_TICK_ABS()
+ * encoding, so casting straight to unsigned loses which one this was. The
+ * wire format carries a raw 32-bit word either way, and the description file
+ * renders it signed. A deadline beyond 2^31 ticks still truncates.
+ */
 #define sys_port_trace_k_thread_sleep_ticks_enter(timeout)                                        \
-	SEGGER_SYSVIEW_RecordU32(TID_SLEEP_TICKS, (uint32_t)timeout.ticks)
+	SEGGER_SYSVIEW_RecordU32(TID_SLEEP_TICKS, (uint32_t)(int32_t)timeout.ticks)
 #define sys_port_trace_k_thread_sleep_ticks_exit(timeout, ret)                                     \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_SLEEP_TICKS, (int32_t)ret)
 
