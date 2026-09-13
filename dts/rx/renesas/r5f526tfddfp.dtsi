@@ -160,30 +160,48 @@
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
 
-		flash: flash-controller@7e0000 {
+		flashif: flashif@7e0000  {
+			compatible = "renesas,rx-flash-if";
+			reg = <0x007e0000 0x1000>;
+			interrupts = <23 1>;
+			interrupt-names = "frdyi";
+		};
+
+		code_flash_ctrl: code-flash-ctrl {
+			compatible = "renesas,rx-flash-controller";
+			flash-if = <&flashif>;
+			ranges;
+			programming-enable;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			compatible = "renesas,rx-flash";
-			reg = <0x007e0000 0x1000>;
 
 			code_flash: flash@fff80000 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "renesas,rx-nv-flash";
+				compatible = "soc-nv-flash";
 				reg = <0xfff80000 DT_SIZE_K(512)>;
 				ranges = <0x0 0xfff80000 DT_SIZE_K(512)>;
 				write-block-size = <128>;
 				erase-block-size = <DT_SIZE_K(16)>;
-			};
-
-			data_flash: flash@100000 {
 				#address-cells = <1>;
 				#size-cells = <1>;
-				compatible = "renesas,rx-nv-flash";
+			};
+		};
+
+		data_flash_ctrl: data-flash-ctrl {
+			compatible = "renesas,rx-flash-controller";
+			flash-if = <&flashif>;
+			ranges;
+			bgo-enable;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			data_flash: flash@100000 {
+				compatible = "soc-nv-flash";
 				reg = <0x100000 DT_SIZE_K(16)>;
 				ranges = <0x0 0x100000 DT_SIZE_K(16)>;
 				write-block-size = <1>;
 				erase-block-size = <64>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 	};

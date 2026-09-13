@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,18 +23,18 @@
 extern void Excep_FCU_FRDYI(void);
 #endif
 
-#define DT_DRV_COMPAT renesas_rx_flash
+#define DT_DRV_COMPAT renesas_rx_flash_controller
 
 LOG_MODULE_REGISTER(flash_rx, CONFIG_FLASH_LOG_LEVEL);
 
-#define FLASH_RX_CF_INCLUDED DT_PROP(DT_NODELABEL(code_flash), programming_enable)
-#define ERASE_BLOCK_SIZE_0   DT_PROP(DT_INST(0, renesas_rx_nv_flash), erase_block_size)
-#define ERASE_BLOCK_SIZE_1   DT_PROP(DT_INST(1, renesas_rx_nv_flash), erase_block_size)
+#define FLASH_RX_CF_INCLUDED DT_PROP(DT_NODELABEL(code_flash_ctrl), programming_enable)
+#define ERASE_BLOCK_SIZE_CF  DT_PROP(DT_NODELABEL(code_flash), erase_block_size)
+#define ERASE_BLOCK_SIZE_DF  DT_PROP(DT_NODELABEL(data_flash), erase_block_size)
 
-BUILD_ASSERT((ERASE_BLOCK_SIZE_0 % FLASH_CF_BLOCK_SIZE) == 0,
-	     "erase-block-size expected to be a multiple of a block size");
-BUILD_ASSERT((ERASE_BLOCK_SIZE_1 % FLASH_DF_BLOCK_SIZE) == 0,
-	     "erase-block-size expected to be a multiple of a block size");
+BUILD_ASSERT((ERASE_BLOCK_SIZE_CF % FLASH_CF_BLOCK_SIZE) == 0,
+	     "code flash erase-block-size expected to be a multiple of block size");
+BUILD_ASSERT((ERASE_BLOCK_SIZE_DF % FLASH_DF_BLOCK_SIZE) == 0,
+	     "data flash erase-block-size expected to be a multiple of block size");
 
 /* Flags, set from Callback function */
 static volatile struct flash_rx_event flash_event = {
@@ -59,6 +59,18 @@ static void flash_bgo_callback(void *event)
 	}
 }
 #endif
+
+static int flash_rx_open_init(void)
+{
+	flash_err_t err = R_FLASH_Open();
+	if (err != FLASH_SUCCESS) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+SYS_INIT(flash_rx_open_init, PRE_KERNEL_1, 0);
 
 static inline bool flash_rx_valid_range(off_t area_size, off_t offset, size_t len)
 {
@@ -265,25 +277,30 @@ out:
 	return result;
 }
 
-#ifdef CONFIG_FLASH_RENESAS_RX_BGO_ENABLED
-#define IRQ_FLASH_CONFIG_INIT(index)                                                               \
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(index), frdyi, irq),                                \
-		    DT_IRQ_BY_NAME(DT_DRV_INST(index), frdyi, priority), Excep_FCU_FRDYI,          \
-		    DEVICE_DT_INST_GET(index), 0);                                                 \
-                                                                                                   \
-	irq_enable(DT_INST_IRQ_BY_NAME(index, frdyi, irq));
-#endif /* CONFIG_FLASH_RENESAS_RX_BGO_ENABLED */
-
 static int flash_rx_controller_init(const struct device *dev)
 {
-	const struct device *dev_ctrl = DEVICE_DT_INST_GET(0);
 	struct flash_rx_data *flash_data = dev->data;
 
-	if (!device_is_ready(dev_ctrl)) {
-		return -ENODEV;
-	}
-
 	if (flash_data->area_address == FLASH_DF_BLOCK_0) {
+#ifdef CONFIG_FLASH_RENESAS_RX_BGO_ENABLED
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(flashif), frdyi, irq),
+			    DT_IRQ_BY_NAME(DT_NODELABEL(flashif), frdyi, priority), Excep_FCU_FRDYI,
+			    NULL, 0);
+		irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(flashif), frdyi, irq));
+
+		/* Register BGO callback */
+		flash_interrupt_config_t cb_func_info;
+		flash_err_t bgo_err;
+
+		cb_func_info.pcallback = flash_bgo_callback;
+		cb_func_info.int_priority = DT_IRQ_BY_NAME(DT_NODELABEL(flashif), frdyi, priority);
+
+		bgo_err = R_FLASH_Control(FLASH_CMD_SET_BGO_CALLBACK, (void *)&cb_func_info);
+		if (bgo_err != FLASH_SUCCESS) {
+			LOG_ERR("set bgo callback error=%d", (int)bgo_err);
+			return -EIO;
+		}
+#endif
 		flash_data->FlashRegion = DATA_FLASH;
 	} else {
 #ifdef CONFIG_FLASH_RENESAS_RX_BGO_ENABLED
@@ -295,44 +312,11 @@ static int flash_rx_controller_init(const struct device *dev)
 			LOG_ERR("Code flash is not enabled");
 			return -ENODEV;
 		}
-
 		flash_data->FlashRegion = CODE_FLASH;
 	}
 
-	if (flash_data->FlashRegion == DATA_FLASH) {
-#ifdef CONFIG_FLASH_RENESAS_RX_BGO_ENABLED
-		/* Register irq flash configs */
-		IRQ_FLASH_CONFIG_INIT(0);
-		flash_interrupt_config_t cb_func_info;
-
-		cb_func_info.pcallback = flash_bgo_callback;
-		cb_func_info.int_priority = DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, priority);
-
-		/* Set callback function */
-		flash_err_t err =
-			R_FLASH_Control(FLASH_CMD_SET_BGO_CALLBACK, (void *)&cb_func_info);
-		if (err != FLASH_SUCCESS) {
-			LOG_DBG("set bgo callback error=%d", (int)err);
-			return -EIO;
-		}
-#endif
-	}
 	/* Init semaphore */
 	k_sem_init(&flash_data->transfer_sem, 1, 1);
-
-	return 0;
-}
-
-static int flash_rx_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	flash_err_t err;
-
-	err = R_FLASH_Open();
-	if (err != FLASH_SUCCESS) {
-		LOG_DBG("open error=%d", (int)err);
-		return -EIO;
-	}
 
 	return 0;
 }
@@ -348,22 +332,20 @@ static DEVICE_API(flash, flash_rx_api) = {
 #endif
 };
 
-#define FLASH_RX_INIT(index)                                                                       \
+#define FLASH_RX_INIT_NV(nv_node, index)                                                           \
 	struct flash_rx_data flash_rx_data_##index = {                                             \
-		.area_address = DT_REG_ADDR(index),                                                \
-		.area_size = DT_REG_SIZE(index),                                                   \
+		.area_address = DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(nv_node, 0),                   \
+		.area_size = DT_RANGES_LENGTH_BY_IDX(nv_node, 0),                                  \
 	};                                                                                         \
 	static struct flash_rx_config flash_rx_config_##index = {                                  \
 		.flash_rx_parameters = {                                                           \
 			.erase_value = (0xff),                                                     \
-			.write_block_size = DT_PROP(index, write_block_size),                      \
+			.write_block_size = DT_PROP(nv_node, write_block_size),                    \
 		}};                                                                                \
-	DEVICE_DT_DEFINE(index, flash_rx_controller_init, NULL, &flash_rx_data_##index,            \
-			 &flash_rx_config_##index, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,        \
-			 &flash_rx_api);
+	DEVICE_DT_DEFINE(DT_DRV_INST(index), flash_rx_controller_init, NULL,                       \
+			 &flash_rx_data_##index, &flash_rx_config_##index, POST_KERNEL,            \
+			 CONFIG_FLASH_INIT_PRIORITY, &flash_rx_api);
 
-DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(0), FLASH_RX_INIT);
+#define FLASH_RX_INIT(index) DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(index, FLASH_RX_INIT_NV, index)
 
-/* define the flash controller device just to run the init. */
-DEVICE_DT_DEFINE(DT_DRV_INST(0), flash_rx_init, NULL, NULL, NULL, PRE_KERNEL_1,
-		 CONFIG_FLASH_INIT_PRIORITY, NULL);
+DT_INST_FOREACH_STATUS_OKAY(FLASH_RX_INIT);

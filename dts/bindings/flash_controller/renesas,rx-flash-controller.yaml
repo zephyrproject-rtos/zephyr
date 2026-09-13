@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX Flash Controller
+
+compatible: "renesas,rx-flash-controller"
+
+include: base.yaml
+
+properties:
+  programming-enable:
+    type: boolean
+    description: |
+      Enable code flash programming. If present, code flash is available.
+
+  bgo-enable:
+    type: boolean
+    description: |
+      Enable Background Operations (BGO) mode. If present, BGO mode is enabled
+      for data flash operations.
+
+  flash-if:
+    type: phandle
+    description: |
+      Phandle to command interface node.
