@@ -39,19 +39,7 @@ set_property(TARGET native_simulator PROPERTY LOCALIZE_EXTRA_OPTIONS "")
 
 set(NSI_DIR ${ZEPHYR_BASE}/scripts/native_simulator CACHE PATH "Path to the native simulator")
 
-if(NATIVE_TARGET_HOST) # Allow users to manually select the target for cross-compiling use cases
-  set(TARGET_HOST ${NATIVE_TARGET_HOST})
-else()
-  if("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "arm.*")
-    # All 32bit arm variants
-    set(TARGET_HOST "arm")
-  elseif("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES ".*86.*")
-    # x86_64/i*86
-    set(TARGET_HOST "x86_64")
-  else()
-    set(TARGET_HOST ${CMAKE_HOST_SYSTEM_PROCESSOR})
-  endif()
-endif()
+include(${CMAKE_CURRENT_LIST_DIR}/target_arch.cmake)
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${TARGET_HOST}.cmake)
   # Set necessary compiler & linker options for this specific host architecture
