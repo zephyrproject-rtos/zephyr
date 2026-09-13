@@ -107,6 +107,22 @@ static void usbh_class_probe_function(struct usb_device *const udev,
 			continue;
 		}
 
+		/* Skip classes whose filter rules are all interface-only when probing
+		 * at device level; iterate the rules to check for any rule that allows
+		 * device-level matching.
+		 */
+		if (iface == USBH_CLASS_IFNUM_DEVICE && c_node->filters != NULL) {
+			const struct usbh_class_filter *r = c_node->filters;
+
+			while (r->flags != 0 &&
+			       (r->flags & USBH_CLASS_MATCH_IFACE_ONLY)) {
+				r++;
+			}
+			if (r->flags == 0) {
+				continue;
+			}
+		}
+
 		if (!usbh_class_is_matching(c_node->filters, filter_data)) {
 			LOG_DBG("Class %s not matching interface %u",
 				c_data->name, iface);
