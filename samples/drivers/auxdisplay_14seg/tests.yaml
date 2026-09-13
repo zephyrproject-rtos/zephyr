@@ -1,0 +1,12 @@
+sample:
+  description: Demonstration of 14 segment LCD auxdisplay driver with points and bars.
+  name: Auxiliary 14 segment display sample
+tests:
+  sample.drivers.auxdisplay_14seg.stm32l476g_disco:
+    tags: auxdisplay
+    platform_allow:
+      - stm32l476g_disco
+    integration_platforms:
+      - stm32l476g_disco
+    extra_args:
+      - SHIELD=st_gh08172t

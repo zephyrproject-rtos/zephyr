@@ -1,0 +1,30 @@
+/*
+ * Copyright 2026 Renato Mauro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&slcd_panel {
+	rotated;
+};
+
+&clk_lse {
+	status = "okay";  /* Enable the on-board external quartz at 32.768 kHz */
+	driving-capability = <3>;
+};
+
+&slcd {
+	status = "okay";
+	lcd-duty = "LCD_DUTY_1_4";
+	lcd-bias = "LCD_BIAS_1_3";
+	lcd-mux-segment = "LCD_MUXSEGMENT_DISABLE";
+	lcd-voltage-source = "LCD_VOLTAGESOURCE_INTERNAL";
+	lcd-prescaler = "LCD_PRESCALER_1";
+	lcd-divider = "LCD_DIVIDER_31";
+	lcd-contrast = "LCD_CONTRASTLEVEL_5";
+	lcd-pulse-on-duration = "LCD_PULSEONDURATION_4";
+	lcd-dead-time = "LCD_DEADTIME_0";
+	lcd-high-drive = "LCD_HIGHDRIVE_DISABLE";
+	lcd-blink-mode = "LCD_BLINKMODE_OFF";
+	lcd-blink-frequency = "LCD_BLINKFREQUENCY_DIV32";
+};

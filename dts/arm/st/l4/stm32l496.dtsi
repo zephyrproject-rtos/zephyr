@@ -68,6 +68,15 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
+
+		slcd: display-controller@40002400 {
+			compatible = "st,slcd";
+			reg = <0x40002400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 9)>,
+				 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+			clock-names = "bus", "device";
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
