@@ -73,7 +73,12 @@ def safe_open(path, mode, **kwargs):
     return open(real, mode, **kwargs)  # noqa: SIM115
 
 
-# Record framing, identical for every event:
+# Packet framing:
+#   uint16_t stream_id
+#   uint16_t packet_size (bits)
+PACKET_HDR = struct.Struct("<HH")
+
+# Event framing inside a packet:
 #   uint64_t timestamp (ns)   <- present when CONFIG_TRACING_CTF_TIMESTAMP=y
 #   uint16_t id
 #   <packed, byte-aligned event specific fields>
@@ -178,7 +183,7 @@ class EventDef:
 
 
 def parse_metadata(path):
-    """Parse the TSDL metadata file into {id: EventDef}."""
+    """Parse the TSDL metadata file into {(stream_id, id): EventDef}."""
     with safe_open(path, "r", errors="replace") as f:
         text = f.read()
 
@@ -198,9 +203,11 @@ def parse_metadata(path):
             i += 1
         body = text[start : i - 1]
         name_m = re.search(r"name\s*=\s*([A-Za-z0-9_]+)\s*;", body)
-        id_m = re.search(r"id\s*=\s*(0[xX][0-9a-fA-F]+|\d+)\s*;", body)
+        stream_m = re.search(r"stream_id\s*=\s*(0[xX][0-9a-fA-F]+|\d+)\s*;", body)
+        id_m = re.search(r"(?<![A-Za-z0-9_])id\s*=\s*(0[xX][0-9a-fA-F]+|\d+)\s*;", body)
         if not name_m or not id_m:
             continue
+        stream_id = int(stream_m.group(1), 0) if stream_m else 0
         eid = int(id_m.group(1), 0)
         name = name_m.group(1)
 
@@ -218,7 +225,7 @@ def parse_metadata(path):
                     fields.append((fname, ftype))
                 # Unknown types are skipped; they would desync decoding, but the
                 # Zephyr metadata only uses the integer aliases and strings.
-        defs[eid] = EventDef(eid, name, fields)
+        defs[(stream_id, eid)] = EventDef(eid, name, fields)
     return defs
 
 
@@ -448,33 +455,61 @@ class TraceReader:
         n = len(data)
         hsz = self.hdr.size
         new = 0
-        while off + hsz <= n:
-            if self.has_ts:
-                ts, eid = self.hdr.unpack_from(data, off)
-            else:
-                (eid,) = self.hdr.unpack_from(data, off)
-                ts = None
-            edef = self.defs.get(eid)
-            if edef is None:
-                # Unknown id: the record length is unknown, so we cannot safely
-                # skip it. Stop and keep the bytes; flag the desync for the UI.
+
+        while off + PACKET_HDR.size <= n:
+            stream_id, packet_size_bits = PACKET_HDR.unpack_from(data, off)
+            if packet_size_bits % 8:
                 self._desync = True
                 break
-            rec = hsz + edef.size
-            if off + rec > n:
-                break  # incomplete trailing record; wait for more
-            if ts is None:
-                ts = self._fake_ts
-                self._fake_ts += 1
-            else:
-                if self._prev_raw is not None and ts < self._prev_raw:
-                    self._ts_off += self._prev_raw  # counter wrapped
-                self._prev_raw = ts
-                ts += self._ts_off
-            fields, _ = edef.decode(data, off + hsz)
-            off += rec
-            self._consume(ts, eid, edef.name, fields)
-            new += 1
+
+            packet_size = packet_size_bits // 8
+            if packet_size < PACKET_HDR.size:
+                self._desync = True
+                break
+            if off + packet_size > n:
+                break  # incomplete trailing packet; wait for more
+
+            packet_end = off + packet_size
+            event_off = off + PACKET_HDR.size
+            packet_bad = False
+
+            while event_off + hsz <= packet_end:
+                if self.has_ts:
+                    ts, eid = self.hdr.unpack_from(data, event_off)
+                else:
+                    (eid,) = self.hdr.unpack_from(data, event_off)
+                    ts = None
+
+                edef = self.defs.get((stream_id, eid)) or self.defs.get(eid)
+                if edef is None:
+                    self._desync = True
+                    packet_bad = True
+                    break
+
+                rec = hsz + edef.size
+                if event_off + rec > packet_end:
+                    self._desync = True
+                    packet_bad = True
+                    break
+
+                if ts is None:
+                    ts = self._fake_ts
+                    self._fake_ts += 1
+                else:
+                    if self._prev_raw is not None and ts < self._prev_raw:
+                        self._ts_off += self._prev_raw  # counter wrapped
+                    self._prev_raw = ts
+                    ts += self._ts_off
+
+                fields, _ = edef.decode(data, event_off + hsz)
+                event_off += rec
+                self._consume(ts, eid, edef.name, fields)
+                new += 1
+
+            if not packet_bad and event_off != packet_end:
+                self._desync = True
+            off = packet_end
+
         self._buf = data[off:]
         return new
 
