@@ -31,6 +31,11 @@ GDATA(z_arm_sys_stack)
 GDATA(z_arm_fiq_stack)
 GDATA(z_arm_abort_stack)
 GDATA(z_arm_undef_stack)
+#if defined(CONFIG_CPU_CORTEX_R52_TCM_INIT)
+GDATA(z_arm_tcm_a_region)
+GDATA(z_arm_tcm_b_region)
+GDATA(z_arm_tcm_c_region)
+#endif
 #if defined(CONFIG_SOC_RESET_HOOK)
 GTEXT(soc_reset_hook)
 #endif
@@ -65,6 +70,34 @@ __start:
 #else
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, z_arm_reset)
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
+#endif
+#if defined(CONFIG_CPU_CORTEX_R52_TCM_INIT)
+    /*
+     * Configure implementation-defined Cortex-R52 TCM mappings before any
+     * stack or writable-data access. Bit zero marks a mapping as enabled; a
+     * clear bit leaves the corresponding reset/boot-firmware value intact.
+     */
+    ldr r0, =z_arm_tcm_a_region
+    ldr r1, [r0]
+    tst r1, #1
+    beq 1f
+    mcr p15, 0, r1, c9, c1, 0
+    isb
+1:
+    ldr r0, =z_arm_tcm_b_region
+    ldr r1, [r0]
+    tst r1, #1
+    beq 2f
+    mcr p15, 0, r1, c9, c1, 1
+    isb
+2:
+    ldr r0, =z_arm_tcm_c_region
+    ldr r1, [r0]
+    tst r1, #1
+    beq 3f
+    mcr p15, 0, r1, c9, c1, 2
+    isb
+3:
 #endif
 #if defined(CONFIG_AARCH32_ARMV8_A_MONITOR_INIT)
     /*
