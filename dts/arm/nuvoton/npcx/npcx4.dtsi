@@ -23,14 +23,31 @@
 / {
 	cpus {
 		cpu0: cpu@0 {
-			cpu-power-states = <&suspend_to_idle0>;
+			cpu-power-states = <&suspend_to_idle1>;
 		};
 
 		power-states {
+			/* Instant Wakeup from Deep Sleep State */
 			suspend_to_idle0: suspend-to-idle0 {
-				compatible = "zephyr,power-state";
+				compatible = "nuvoton,npcx-power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <0>;
+				min-residency-us = <1000>;
+				unlimited-instant-wakeup;
+			};
+
+			/* Normal Wakeup from Deep Sleep State */
+			suspend_to_idle1: suspend-to-idle1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <1000>;
+			};
+
+			suspend_to_idle2: suspend-to-idle2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
 				min-residency-us = <1000>;
 			};
 		};

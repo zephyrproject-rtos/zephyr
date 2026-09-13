@@ -102,6 +102,8 @@ struct pmc_reg {
 #define NPCX_PMCSR_DHF             1
 #define NPCX_PMCSR_IDLE            2
 #define NPCX_PMCSR_NWBI            3
+/* Reserved before NPCX4 */
+#define NPCX_PMCSR_UNLIMIT_INSTW   4
 #define NPCX_PMCSR_OHFC            6
 #define NPCX_PMCSR_OLFC            7
 #define NPCX_DISIDL_CTL_RAM_DID    5

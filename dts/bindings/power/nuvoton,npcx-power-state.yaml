@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NPCX power management idle state. Extends the generic power state with the
+  NPCX specific properties of the deep sleep sub-states.
+
+compatible: "nuvoton,npcx-power-state"
+
+include: zephyr,power-state.yaml
+
+properties:
+  unlimited-instant-wakeup:
+    type: boolean
+    description: |
+      The instant wake-up path stays valid for an unlimited residency in deep
+      sleep. When omitted, instant wake-up is only guaranteed for a residency
+      shorter than 200 ms and the standard wake-up sub-state must be used
+      beyond that. Only supported since the NPCX4 series, earlier series have
+      no such control bit and ignore the property.
