@@ -59,8 +59,8 @@ static int pd_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct pd_deviceonoff_config *config = dev->config;
 	uint8_t i = 0;
-	/* Get the next power state that will be used */
-	enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
+	const struct pm_state_info *next;
+	enum pm_state state;
 	struct pd_visitor_context context = {.domain = dev};
 
 	switch (action) {
@@ -80,6 +80,12 @@ static int pd_pm_action(const struct device *dev, enum pm_device_action action)
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		LOG_DBG("%s: suspending", dev->name);
+		next = pm_state_next_get(_current_cpu->id);
+		if (next == NULL) {
+			break;
+		}
+		state = next->state;
+
 		while (config->onoff_power_states[i] != POWER_DOMAIN_DEVICE_ONOFF_STATE_MARKER) {
 			/* Check if need to do the turn off action for this state */
 			if (state == config->onoff_power_states[i]) {
