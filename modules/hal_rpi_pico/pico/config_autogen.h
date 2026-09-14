@@ -54,4 +54,7 @@
 #define __CONCAT CONCAT
 #endif
 
+/* Zephyr performs runtime initialization itself. */
+#define PICO_RUNTIME_INIT_FUNC(func, priority_string)
+
 #endif
