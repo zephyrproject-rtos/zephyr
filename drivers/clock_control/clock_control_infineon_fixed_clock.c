@@ -190,7 +190,14 @@ static int fixed_rate_clk_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ilo))
 	case IFX_ILO:
+#if defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K)
+		/* HVMS/PA requires the WDT unlocked while the ILO is enabled. */
+		Cy_WDT_Unlock();
 		Cy_SysClk_IloEnable();
+		Cy_WDT_Lock();
+#else
+		Cy_SysClk_IloEnable();
+#endif
 		break;
 #endif
 
@@ -208,7 +215,21 @@ static int fixed_rate_clk_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pilo))
 	case IFX_PILO:
+#if defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K)
+		/* PILO enable requires the WDT unlocked. */
+		Cy_WDT_Unlock();
 		Cy_SysClk_PiloEnable();
+		Cy_WDT_Lock();
+#else
+		Cy_SysClk_PiloEnable();
+#endif
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hposc)) &&                                            \
+	(defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K))
+	case IFX_HPOSC:
+		Cy_SysClk_HposcEnable();
 		break;
 #endif
 
