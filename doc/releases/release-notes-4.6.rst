@@ -99,6 +99,7 @@ New Drivers
 * Relay
 
   * :dtcompatible:`zephyr,gpio-relay`
+  * :dtcompatible:`zephyr,pwm-relay`
 
 New Samples
 ***********
