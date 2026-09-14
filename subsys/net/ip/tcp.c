@@ -149,7 +149,7 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 
 	buf = net_pkt_get_frag(pkt, len, TCP_PKT_ALLOC_TIMEOUT);
 
-	if (!buf || net_buf_max_len(buf) < len) {
+	if (!buf || net_buf_tailroom(buf) < len) {
 		if (buf) {
 			net_buf_unref(buf);
 		}
@@ -157,7 +157,7 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 		goto out;
 	}
 
-	net_buf_linearize(buf->data, net_buf_max_len(buf), pkt->frags, pos, len);
+	net_buf_linearize(buf->data, net_buf_tailroom(buf), pkt->frags, pos, len);
 	net_buf_add(buf, len);
 
 	len1 = first->len - (pkt->cursor.pos - pkt->cursor.buf->data);
