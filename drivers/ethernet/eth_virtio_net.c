@@ -97,6 +97,9 @@ struct _virtio_net_ctrl_hdr {
 #define VIRTIO_NET_OK  0
 #define VIRTIO_NET_ERR 1
 
+#define VIRTIO_NET_CTRL_RX            0
+#define VIRTIO_NET_CTRL_RX_PROMISC    0
+#define VIRTIO_NET_CTRL_RX_ALLMULTI   1
 #define VIRTIO_NET_CTRL_MAC           1
 #define VIRTIO_NET_CTRL_MAC_TABLE_SET 0
 #define VIRTIO_NET_CTRL_MAC_ADDR_SET  1
@@ -153,10 +156,9 @@ struct virtnet_data {
 	struct _virtio_net_ctrl_mac ctrl_multi;
 #endif /* CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER */
 	uint8_t ctrl_ack;
-#if defined(CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER)
+	uint8_t ctrl_onoff;
 	/* VIRTIO_NET_F_CTRL_VQ and VIRTIO_NET_F_CTRL_RX were negotiated */
-	bool has_mac_filter;
-#endif /* CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER */
+	bool has_ctrl_rx;
 	/* VIRTIO_NET_F_CTRL_VQ and VIRTIO_NET_F_CTRL_MAC_ADDR were negotiated */
 	bool has_mac_addr_set;
 };
@@ -180,18 +182,20 @@ static uint16_t virtnet_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, vo
 static enum ethernet_hw_caps virtnet_get_capabilities(const struct device *dev,
 						     struct net_if *iface __unused)
 {
-#if defined(CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER)
 	const struct virtnet_data *data = dev->data;
-#endif /* CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER */
 	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
 				     ETHERNET_LINK_1000BASE | ETHERNET_LINK_2500BASE |
 				     ETHERNET_LINK_5000BASE;
 
-#if defined(CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER)
-	if (data->has_mac_filter) {
-		caps |= ETHERNET_HW_FILTERING;
+	if (data->has_ctrl_rx) {
+		if (IS_ENABLED(CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER)) {
+			caps |= ETHERNET_HW_FILTERING;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
+			caps |= ETHERNET_PROMISC_MODE;
+		}
 	}
-#endif /* CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER */
 
 	return caps;
 }
@@ -277,6 +281,69 @@ static int virtnet_mac_table_set(const struct device *dev, struct net_if *iface)
 }
 #endif /* CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER */
 
+/* Set or clear one of the receive mode flags of the device */
+static int virtnet_rx_mode_set(const struct device *dev, uint8_t cmd, bool on)
+{
+	const struct virtnet_config *config = dev->config;
+	struct virtnet_data *data = dev->data;
+	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_CTRL);
+	int ret;
+
+	if (vq == NULL) {
+		return -ENODEV;
+	}
+
+	k_mutex_lock(&data->ctrl_lock, K_FOREVER);
+
+	data->ctrl_hdr.class = VIRTIO_NET_CTRL_RX;
+	data->ctrl_hdr.cmd = cmd;
+	data->ctrl_onoff = on ? 1 : 0;
+	data->ctrl_ack = VIRTIO_NET_ERR;
+
+	struct virtq_buf bufs[] = {
+		{.addr = &data->ctrl_hdr, .len = sizeof(data->ctrl_hdr)},
+		{.addr = &data->ctrl_onoff, .len = sizeof(data->ctrl_onoff)},
+		{.addr = &data->ctrl_ack, .len = sizeof(data->ctrl_ack)},
+	};
+
+	/* Everything but the trailing ack byte is device-readable */
+	ret = virtq_add_buffer_chain(vq, bufs, ARRAY_SIZE(bufs), ARRAY_SIZE(bufs) - 1,
+				     virtnet_ctrl_cb, data, K_FOREVER);
+	if (ret != 0) {
+		LOG_ERR("could not send control command");
+		k_mutex_unlock(&data->ctrl_lock);
+		return ret;
+	}
+
+	virtio_notify_virtqueue(config->vdev, VIRTQ_CTRL);
+	k_sem_take(&data->ctrl_sem, K_FOREVER);
+
+	ret = data->ctrl_ack == VIRTIO_NET_OK ? 0 : -EIO;
+
+	k_mutex_unlock(&data->ctrl_lock);
+
+	return ret;
+}
+
+/* A device may start out in promiscuous mode, as QEMU's does, so that
+ * drivers without the receive filter commands receive everything. Leave
+ * that mode so the MAC table takes effect, or if the table is not kept up
+ * to date, so all multicast is received instead.
+ */
+static int virtnet_rx_mode_init(const struct device *dev)
+{
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER)) {
+		ret = virtnet_rx_mode_set(dev, VIRTIO_NET_CTRL_RX_ALLMULTI, true);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return virtnet_rx_mode_set(dev, VIRTIO_NET_CTRL_RX_PROMISC, false);
+}
+
 /* Tell the device the MAC address the driver chose, so the device does not
  * pass through unicast traffic meant for other addresses
  */
@@ -334,7 +401,7 @@ static int virtnet_set_config(const struct device *dev, struct net_if *iface,
 	switch (type) {
 #if defined(CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER)
 	case ETHERNET_CONFIG_TYPE_FILTER:
-		if (!data->has_mac_filter) {
+		if (!data->has_ctrl_rx) {
 			return -ENOTSUP;
 		}
 
@@ -351,6 +418,15 @@ static int virtnet_set_config(const struct device *dev, struct net_if *iface,
 		 */
 		return virtnet_mac_table_set(dev, iface);
 #endif /* CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		if (!data->has_ctrl_rx) {
+			return -ENOTSUP;
+		}
+
+		return virtnet_rx_mode_set(dev, VIRTIO_NET_CTRL_RX_PROMISC,
+					   net_config->promisc_mode);
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		/* Without the command the device would keep filtering with
 		 * the old address
@@ -477,8 +553,7 @@ static int virtnet_dev_init(const struct device *dev)
 	 * the MAC address setting command
 	 */
 	if (virtio_read_device_feature_bit(config->vdev, VIRTIO_NET_F_CTRL_VQ) &&
-	    ((IS_ENABLED(CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER) &&
-	      virtio_read_device_feature_bit(config->vdev, VIRTIO_NET_F_CTRL_RX)) ||
+	    (virtio_read_device_feature_bit(config->vdev, VIRTIO_NET_F_CTRL_RX) ||
 	     virtio_read_device_feature_bit(config->vdev, VIRTIO_NET_F_CTRL_MAC_ADDR))) {
 		if (virtio_write_driver_feature_bit(config->vdev, VIRTIO_NET_F_CTRL_VQ, true)) {
 			LOG_WRN("could not enable control virtqueue feature bit");
@@ -487,16 +562,16 @@ static int virtnet_dev_init(const struct device *dev)
 		}
 	}
 
-#if defined(CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER)
-	/* MAC address filtering needs the receive filter commands */
+	/* MAC address filtering and the receive modes need the receive filter
+	 * commands
+	 */
 	if (has_ctrl_vq && virtio_read_device_feature_bit(config->vdev, VIRTIO_NET_F_CTRL_RX)) {
 		if (virtio_write_driver_feature_bit(config->vdev, VIRTIO_NET_F_CTRL_RX, true)) {
-			LOG_WRN("could not enable MAC filtering feature bit");
+			LOG_WRN("could not enable receive filter feature bit");
 		} else {
-			data->has_mac_filter = true;
+			data->has_ctrl_rx = true;
 		}
 	}
-#endif /* CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER */
 
 	/* Telling the device the driver's MAC address needs the MAC address
 	 * setting command
@@ -524,6 +599,10 @@ static int virtnet_dev_init(const struct device *dev)
 
 	virtio_init_virtqueues(config->vdev, has_ctrl_vq ? 3 : 2, virtnet_enum_queues_cb, NULL);
 	virtio_finalize_init(config->vdev);
+
+	if (data->has_ctrl_rx && virtnet_rx_mode_init(dev) != 0) {
+		LOG_WRN("could not leave promiscuous mode");
+	}
 
 	/* The driver chose its own MAC address, tell the device about it */
 	if (data->has_mac_addr_set && ret == 0 && virtnet_mac_addr_set(dev) != 0) {
