@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2026 Jamie McCrae
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  platform_allow: nrf52840dk/nrf52840
+  tags:
+    - mgmt
+    - mcumgr
+    - transport
+    - bluetooth
+  build_only: true
+tests:
+  mgmt.mcumgr.transport.bluetooth: {}
