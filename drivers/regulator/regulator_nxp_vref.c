@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/regulator/nxp_vref.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
@@ -26,18 +27,22 @@ LOG_MODULE_REGISTER(nxp_vref, CONFIG_REGULATOR_LOG_LEVEL);
  * value loaded at reset). Expose that trim as a narrow window centred on the
  * 1.2 V nominal (mid-code = nominal).
  */
-#define NXP_VREF_TRIM_MASK  VREF_UTRIM_VREFTRIM_MASK
-#define NXP_VREF_TRIM_SHIFT VREF_UTRIM_VREFTRIM_SHIFT
+#define NXP_VREF_TRIM_MASK      VREF_UTRIM_VREFTRIM_MASK
+#define NXP_VREF_TRIM_SHIFT     VREF_UTRIM_VREFTRIM_SHIFT
+#define NXP_VREF_TRIM_IS_FACTORY 1
 static const struct linear_range utrim_range =
 	LINEAR_RANGE_INIT(1200000 - (0x20 * 667), 667U, 0x0U, 0x3FU);
 #else
-#define NXP_VREF_TRIM_MASK  VREF_UTRIM_TRIM2V1_MASK
-#define NXP_VREF_TRIM_SHIFT VREF_UTRIM_TRIM2V1_SHIFT
+#define NXP_VREF_TRIM_MASK      VREF_UTRIM_TRIM2V1_MASK
+#define NXP_VREF_TRIM_SHIFT     VREF_UTRIM_TRIM2V1_SHIFT
+#define NXP_VREF_TRIM_IS_FACTORY 0
 static const struct linear_range utrim_range = LINEAR_RANGE_INIT(1000000, 100000U, 0x0U, 0xBU);
 #endif
 
 struct regulator_nxp_vref_data {
 	struct regulator_common_data common;
+	uint16_t trim;
+	bool trim_set;
 };
 
 struct regulator_nxp_vref_config {
@@ -152,6 +157,7 @@ static int regulator_nxp_vref_list_voltage(const struct device *dev, unsigned in
 static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
+	struct regulator_nxp_vref_data *data = dev->data;
 	VREF_Type *const base = config->base;
 	uint16_t idx;
 	int ret;
@@ -163,6 +169,9 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_
 
 	base->UTRIM = (base->UTRIM & ~NXP_VREF_TRIM_MASK) |
 		      (((uint32_t)idx << NXP_VREF_TRIM_SHIFT) & NXP_VREF_TRIM_MASK);
+
+	data->trim = idx;
+	data->trim_set = true;
 
 	return 0;
 }
@@ -196,6 +205,7 @@ static DEVICE_API(regulator, api) = {
 static int regulator_nxp_vref_configure_hw(const struct device *dev)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
+	struct regulator_nxp_vref_data *data = dev->data;
 	VREF_Type *const base = config->base;
 	int ret;
 
@@ -236,15 +246,53 @@ static int regulator_nxp_vref_configure_hw(const struct device *dev)
 		base->CSR |= VREF_CSR_REGEN_MASK;
 	}
 
-#if !(defined(FSL_FEATURE_VREF_HAS_TRIM2V1) && (FSL_FEATURE_VREF_HAS_TRIM2V1 == 0))
-	/*
-	 * Clear VREF UTRIM[TRIM2V1] first. On the VREFTRIM-only variant the trim
-	 * register holds a factory value loaded at reset, so it is left intact.
-	 */
-	base->UTRIM &= ~VREF_UTRIM_TRIM2V1_MASK;
-#endif
+	if (data->trim_set) {
+		/*
+		 * A trim asked for through set_voltage() is the consumer's choice
+		 * of output voltage, and nothing else puts it back once the block
+		 * has been reset, so restore it rather than the reset value.
+		 */
+		base->UTRIM = (base->UTRIM & ~NXP_VREF_TRIM_MASK) |
+			      (((uint32_t)data->trim << NXP_VREF_TRIM_SHIFT) & NXP_VREF_TRIM_MASK);
+	} else if (!NXP_VREF_TRIM_IS_FACTORY) {
+		/*
+		 * Start from the bottom of the trim range. On the VREFTRIM-only
+		 * variant the trim register holds a factory value loaded at
+		 * reset instead, so it is left intact.
+		 */
+		base->UTRIM &= ~NXP_VREF_TRIM_MASK;
+	}
 
 	return 0;
+}
+
+static int regulator_nxp_vref_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * enable() only starts the bandgap and the buffer. Everything
+		 * else the reference needs -- the clock, the compensation and
+		 * chopping settings, the internal regulator, the trim -- is
+		 * written once and then only lost to a reset of the block, so
+		 * put it back here before any consumer asks for the output.
+		 */
+		return regulator_nxp_vref_configure_hw(dev);
+
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/*
+		 * Whether the output is on is owned by the consumers through the
+		 * regulator reference count, not by the SoC power state: a
+		 * consumer that keeps converting in a low-power state needs its
+		 * reference to keep running.
+		 */
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static int regulator_nxp_vref_init(const struct device *dev)
@@ -253,7 +301,7 @@ static int regulator_nxp_vref_init(const struct device *dev)
 
 	regulator_common_data_init(dev);
 
-	ret = regulator_nxp_vref_configure_hw(dev);
+	ret = pm_device_driver_init(dev, regulator_nxp_vref_pm_action);
 	if (ret < 0) {
 		return ret;
 	}
@@ -281,7 +329,10 @@ static int regulator_nxp_vref_init(const struct device *dev)
 			((clock_control_subsys_t)0)),                                    \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst, &config_##inst,   \
+	PM_DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_pm_action);                              \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init,                                       \
+			      PM_DEVICE_DT_INST_GET(inst), &data_##inst, &config_##inst,           \
 			      POST_KERNEL, CONFIG_REGULATOR_NXP_VREF_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NXP_VREF_DEFINE)
