@@ -8,10 +8,6 @@ if LVGL
 config LV_Z_DOUBLE_VDB
 	default y
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
 # VDB size is 10% of the full screen size
 config LV_Z_VDB_SIZE
 	default 10

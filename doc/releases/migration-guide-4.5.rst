@@ -534,6 +534,14 @@ Controller Area Network (CAN)
 * The deprecated ``bus-speed`` and ``bus-speed-data`` CAN controller devicetree properties have
   been removed. Use ``bitrate`` and ``bitrate-data`` instead.
 
+* The CAN controllers driver ops no longer contain a ``can_set_state_change_callback_t`` function
+  pointer as adding/removing callbacks is now handled via the generic
+  :c:func:`can_add_state_change_callback`, and :c:func:`can_remove_state_change_callback` API
+  functions. Out-of-tree drivers can either remove the driver op completely or replace it with
+  ``can_state_change_callbacks_enabled_t`` as needed. Drivers must now use
+  :c:func:`can_fire_state_change_callbacks` for firing CAN controller state change callbacks
+  (:github:`117889`).
+
 Counter
 =======
 
@@ -1950,6 +1958,14 @@ Bluetooth Host
   deprecated since Zephyr 4.2, and the number of pending TX buffers with a callback always
   follows :kconfig:option:`CONFIG_BT_BUF_ACL_TX_COUNT`.
 
+* :c:member:`bt_le_ext_adv_info.sid` is now being set to ``BT_GAP_SID_INVALID`` for legacy
+  advertising sets, as SIDs are only valid for extended advertising sets. Applications should not
+  expect the :c:member:`bt_le_adv_param.sid` to be applied for legacy advertising sets.
+
+* :c:member:`bt_le_ext_adv_info.sid` now reflects the SID given to
+  :c:func:`bt_le_ext_adv_update_param`. Previously it kept the value from
+  :c:func:`bt_le_ext_adv_create` even though the controller applied the new one.
+
 Bluetooth Mesh
 ==============
 
@@ -2273,6 +2289,17 @@ MCUmgr
   :ref:`mcumgr_os_application_info` command now always reports the board target as hardware
   platform; the pre-4.3 board and board revision output is no longer available.
 
+* The image management client (:kconfig:option:`CONFIG_MCUMGR_GRP_IMG_CLIENT`)
+  now supports SHA-512 image digests in addition to SHA-256:
+
+  * :c:func:`img_mgmt_client_state_write` takes a new ``hash_len`` argument.
+    When ``hash`` is not ``NULL``, pass its length in bytes (for example, ``32``
+    for SHA-256). Otherwise, pass ``0``.
+  * :c:struct:`mcumgr_image_data` now stores a variable-length digest: the
+    ``hash`` buffer is :c:macro:`IMG_MGMT_CLIENT_HASH_MAX_LEN` (64) bytes, and
+    the new ``hash_len`` field holds the actual length. Code that reads ``hash``
+    must use ``hash_len`` instead of assuming :c:macro:`IMG_MGMT_DATA_SHA_LEN`.
+
 POSIX
 =====
 
@@ -2328,6 +2355,11 @@ Tools
 
 Modules
 *******
+
+* The `CHRE <https://github.com/zephyrproject-rtos/chre>`_ framework is no longer an optional
+  module of the Zephyr manifest and its sample moved out of the Zephyr tree. It is now an
+  :ref:`external module <external_module_chre>`; add it to the application manifest to keep using
+  it.
 
 * Support for the `CANopenNode <https://github.com/CANopenNode/CANopenNode>`_ protocol stack was
   moved to an :ref:`external module<external_module_canopennode>`.

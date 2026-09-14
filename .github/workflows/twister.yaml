@@ -29,7 +29,7 @@ jobs:
       group: zephyr-runner-v2-linux-x64-4xlarge
     timeout-minutes: 60
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.4.20260912
       options: '--entrypoint /bin/bash'
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
@@ -156,7 +156,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.4.20260912
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -171,7 +171,7 @@ jobs:
       CCACHE_IGNOREOPTIONS: '-specs=* --specs=*'
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
-      TWISTER_COMMON: ' --test-config tests/test_config_ci.yaml --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 2 --post-build-checks '
+      TWISTER_COMMON: ' --test-config tests/test_config_ci.yaml --force-color --inline-logs -v -N -M --retry-failed 2 --timeout-multiplier 2 --post-build-checks '
       WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered -j 32'
       PR_OPTIONS: ' --clobber-output --integration -j 16'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'

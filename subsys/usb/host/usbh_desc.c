@@ -186,11 +186,6 @@ const void *usbh_desc_get_next_function(const void *const desc)
 		skip_num = ass_d->bInterfaceCount;
 	}
 
-	/* Skip the interface if the head is interface */
-	if (usbh_desc_is_valid_interface(head)) {
-		skip_num = 1;
-	}
-
 	while (true) {
 		/* If already on an Interface Association or Interface, this will skip it */
 		head = usbh_desc_get_next(head);

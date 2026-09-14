@@ -1,0 +1,6 @@
+board:
+  name: kit_t2g_c2d6m_lite
+  full_name: Kit T2G-C2-D-6M Lite
+  vendor: infineon
+  socs:
+  - name: cyt4dnjbzs

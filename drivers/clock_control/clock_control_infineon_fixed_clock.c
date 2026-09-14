@@ -38,7 +38,9 @@ struct fixed_rate_clock_config {
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp)) ||                                              \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                         \
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1)) ||                                         \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco)) &&                                         \
+	 !IS_ENABLED(CONFIG_SOC_FAMILY_INFINEON_PSOC4))
 static void clock_startup_error(uint32_t error)
 {
 	(void)error; /* Suppress the compiler warning */

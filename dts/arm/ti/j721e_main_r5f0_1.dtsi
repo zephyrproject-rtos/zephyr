@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ti/j721e_main_r5.dtsi>
+
+/ {
+	chosen {
+		zephyr,system-timer = &timer13;
+	};
+};
+
+&mbox1 {
+	usr-id = <1>;
+	status = "okay";
+};
+
+&timer13 {
+	status = "okay";
+};

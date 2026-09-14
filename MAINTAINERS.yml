@@ -406,8 +406,11 @@ Alif Semiconductor Platforms:
     Alif Semiconductor SoCs, device tree files, and related drivers.
 
 Allwinner Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - khaidox
   files:
+    - boards/xunlong/opi_zero2w/
     - dts/arm/allwinner/
     - dts/arm64/allwinner/
     - soc/allwinner/
@@ -3444,6 +3447,26 @@ Heimann Platforms:
     - boards/heimann/
   labels:
     - "platform: heimann"
+
+Hexagon arch:
+  status: maintained
+  maintainers:
+    - androm3da
+  collaborators:
+    - dkalowsk
+  files:
+    - dts/bindings/*/qcom*hexagon*
+    - dts/bindings/interrupt-controller/qcom,hvm-pic.yaml
+    - dts/bindings/timer/qcom,hvm-timer.yaml
+    - arch/hexagon/
+    - cmake/compiler/clang/target_hexagon.cmake
+    - cmake/toolchain/hexagon/
+    - doc/develop/toolchains/hexagon_llvm.rst
+    - drivers/*/hexagon_*.c
+    - drivers/*/hexagon_*.h
+    - soc/qemu/hexagon/
+    - include/zephyr/arch/hexagon/
+    - boards/qemu/hexagon/
 
 IPC:
   status: maintained
@@ -6798,18 +6821,6 @@ West:
   labels:
     - "platform: nRF BSIM"
 
-"West project: chre":
-  status: maintained
-  maintainers:
-    - yperess
-  files:
-    - samples/modules/chre/
-    - modules/Kconfig.chre
-  labels:
-    - "area: CHRE"
-
-  tests:
-    - sample.modules.chre
 "West project: cmsis":
   status: maintained
   maintainers:
@@ -7668,7 +7679,9 @@ West:
     - libraries.uoscore.oscore_tests
 
 "West project: zcbor":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - oyvindronningstad
   collaborators:
     - de-nordic
   files:

@@ -6,8 +6,8 @@ Time Utilities
 Overview
 ********
 
-:ref:`kernel_timing_uptime` in Zephyr is based on the a tick counter.  With
-the default :kconfig:option:`CONFIG_TICKLESS_KERNEL` this counter advances at a
+:ref:`kernel_timing_uptime` in Zephyr is based on a tick counter.  With
+the default :kconfig:option:`CONFIG_TICKLESS_KERNEL`, this counter advances at a
 nominally constant rate from zero at the instant the system started. The POSIX
 equivalent to this counter is something like ``CLOCK_MONOTONIC`` or, in Linux,
 ``CLOCK_MONOTONIC_RAW``.  :c:func:`k_uptime_get()` provides a millisecond
@@ -88,13 +88,13 @@ Time Scale Synchronization
 
 There are several factors that affect synchronizing time scales:
 
-* The rate of discrete instant representation change.  For example Zephyr
+* The rate of discrete instant representation change.  For example, Zephyr
   uptime is tracked in ticks which advance at events that nominally occur at
   :kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` Hertz, while an external time
   source may provide data in whole or fractional seconds (e.g. microseconds).
 * The absolute offset required to align the two scales at a single instant.
 * The relative error between observable instants in each scale, required to
-  align multiple instants consistently.  For example a reference clock that's
+  align multiple instants consistently.  For example, a reference clock that's
   conditioned by a 1-pulse-per-second GPS signal will be much more accurate
   than a Zephyr system clock driven by a RC oscillator with a +/- 250 ppm
   error.

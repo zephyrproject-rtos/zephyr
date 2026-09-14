@@ -90,6 +90,9 @@ const size_t _kernel_thread_info_offsets[] = {
 #elif defined(CONFIG_ARCH_POSIX)
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.thread_status),
+#elif defined(CONFIG_HEXAGON)
+	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
+						switch_handle),
 #elif defined(CONFIG_XTENSA)
 /* Xtensa does not store stack pointers inside thread objects.
  * The registers are saved in thread stack where there is

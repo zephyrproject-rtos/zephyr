@@ -1,0 +1,211 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include "psc3m6.cm33.dtsi"
+
+/ {
+	sram0: memory@34000000 {
+		compatible = "mmio-sram";
+		reg = <0x34000000 0x20000>;
+	};
+
+	soc {
+		pinctrl: pinctrl@52400000 {
+			compatible = "infineon,pinctrl";
+			reg = <0x52400000 0x20000>;
+		};
+
+		gpio_prt0: gpio@52410000 {
+			compatible = "infineon,gpio";
+			reg = <0x52410000 0x80>;
+			interrupts = <14 4>;
+			gpio-controller;
+			ngpios = <2>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt1: gpio@52410080 {
+			compatible = "infineon,gpio";
+			reg = <0x52410080 0x80>;
+			interrupts = <15 4>;
+			gpio-controller;
+			ngpios = <4>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt2: gpio@52410100 {
+			compatible = "infineon,gpio";
+			reg = <0x52410100 0x80>;
+			interrupts = <16 4>;
+			gpio-controller;
+			ngpios = <4>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt3: gpio@52410180 {
+			compatible = "infineon,gpio";
+			reg = <0x52410180 0x80>;
+			interrupts = <17 4>;
+			gpio-controller;
+			ngpios = <4>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt4: gpio@52410200 {
+			compatible = "infineon,gpio";
+			reg = <0x52410200 0x80>;
+			interrupts = <18 4>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt5: gpio@52410280 {
+			compatible = "infineon,gpio";
+			reg = <0x52410280 0x80>;
+			interrupts = <19 4>;
+			gpio-controller;
+			ngpios = <4>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt6: gpio@52410300 {
+			compatible = "infineon,gpio";
+			reg = <0x52410300 0x80>;
+			interrupts = <20 4>;
+			gpio-controller;
+			ngpios = <4>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt7: gpio@52410380 {
+			compatible = "infineon,gpio";
+			reg = <0x52410380 0x80>;
+			interrupts = <21 4>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt8: gpio@52410400 {
+			compatible = "infineon,gpio";
+			reg = <0x52410400 0x80>;
+			interrupts = <22 4>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt9: gpio@52410480 {
+			compatible = "infineon,gpio";
+			reg = <0x52410480 0x80>;
+			interrupts = <23 4>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt10: gpio@52410500 {
+			compatible = "infineon,gpio";
+			reg = <0x52410500 0x80>;
+			interrupts = <24 4>;
+			gpio-controller;
+			ngpios = <3>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt11: gpio@52410580 {
+			compatible = "infineon,gpio";
+			reg = <0x52410580 0x80>;
+			interrupts = <25 4>;
+			gpio-controller;
+			ngpios = <2>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt12: gpio@52410600 {
+			compatible = "infineon,gpio";
+			reg = <0x52410600 0x80>;
+			interrupts = <26 4>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt13: gpio@52410680 {
+			compatible = "infineon,gpio";
+			reg = <0x52410680 0x80>;
+			interrupts = <27 4>;
+			gpio-controller;
+			ngpios = <3>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		scb0: scb@52820000 {
+			compatible = "infineon,scb";
+			reg = <0x52820000 0xfe0>;
+			interrupts = <31 4>;
+			clk-dst = <0x400>;
+			status = "disabled";
+		};
+
+		scb1: scb@52840000 {
+			compatible = "infineon,scb";
+			reg = <0x52840000 0xfe0>;
+			interrupts = <39 4>;
+			clk-dst = <0x402>;
+			status = "disabled";
+		};
+
+		scb2: scb@52850000 {
+			compatible = "infineon,scb";
+			reg = <0x52850000 0xfe0>;
+			interrupts = <40 4>;
+			clk-dst = <0x404>;
+			status = "disabled";
+		};
+
+		scb3: scb@52860000 {
+			compatible = "infineon,scb";
+			reg = <0x52860000 0xfe0>;
+			interrupts = <41 4>;
+			clk-dst = <0x406>;
+			status = "disabled";
+		};
+
+		scb4: scb@52870000 {
+			compatible = "infineon,scb";
+			reg = <0x52870000 0xfe0>;
+			interrupts = <42 4>;
+			clk-dst = <0x408>;
+			status = "disabled";
+		};
+
+		scb5: scb@52c00000 {
+			compatible = "infineon,scb";
+			reg = <0x52c00000 0xfe0>;
+			interrupts = <43 4>;
+			clk-dst = <0x600>;
+			status = "disabled";
+		};
+	};
+};

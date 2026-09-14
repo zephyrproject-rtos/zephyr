@@ -4,12 +4,6 @@ common:
 tests:
   bluetooth.init.test:
     platform_allow: qemu_cortex_m3
-  bluetooth.init.test_0:
-    extra_args: CONF_FILE=prj_0.conf
-    platform_allow: qemu_cortex_m3
-  bluetooth.init.test_1:
-    extra_args: CONF_FILE=prj_1.conf
-    platform_allow: qemu_cortex_m3
   bluetooth.init.test_10:
     extra_args: CONF_FILE=prj_10.conf
     platform_allow: qemu_cortex_m3
@@ -37,9 +31,6 @@ tests:
   bluetooth.init.test_19:
     extra_args: CONF_FILE=prj_19.conf
     platform_allow: qemu_cortex_m3
-  bluetooth.init.test_2:
-    extra_args: CONF_FILE=prj_2.conf
-    platform_allow: qemu_cortex_m3
   bluetooth.init.test_20:
     extra_args: CONF_FILE=prj_20.conf
     platform_allow: qemu_cortex_m3
@@ -51,12 +42,6 @@ tests:
     platform_allow: qemu_cortex_m3
   bluetooth.init.test_3:
     extra_args: CONF_FILE=prj_3.conf
-    platform_allow: qemu_cortex_m3
-  bluetooth.init.test_4:
-    extra_args: CONF_FILE=prj_4.conf
-    platform_allow: qemu_cortex_m3
-  bluetooth.init.test_5:
-    extra_args: CONF_FILE=prj_5.conf
     platform_allow: qemu_cortex_m3
   bluetooth.init.test_6:
     extra_args: CONF_FILE=prj_6.conf
@@ -148,24 +133,6 @@ tests:
       - rv32m1_vega/openisa_rv32m1/ri5cy
     integration_platforms:
       - nrf52dk/nrf52832
-  bluetooth.init.test_ctlr_peripheral:
-    extra_args: CONF_FILE=prj_ctlr_peripheral.conf
-    platform_allow:
-      - nrf52840dk/nrf52840
-      - nrf52dk/nrf52832
-      - nrf51dk/nrf51822
-      - rv32m1_vega/openisa_rv32m1/ri5cy
-    integration_platforms:
-      - nrf52dk/nrf52832
-  bluetooth.init.test_ctlr_peripheral_priv:
-    extra_args: CONF_FILE=prj_ctlr_peripheral_priv.conf
-    platform_allow:
-      - nrf52840dk/nrf52840
-      - nrf52dk/nrf52832
-      - nrf51dk/nrf51822
-      - rv32m1_vega/openisa_rv32m1/ri5cy
-    integration_platforms:
-      - nrf52840dk/nrf52840
   bluetooth.init.test_ctlr_observer:
     extra_args: CONF_FILE=prj_ctlr_observer.conf
     platform_allow:

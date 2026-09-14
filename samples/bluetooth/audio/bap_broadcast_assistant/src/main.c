@@ -309,9 +309,21 @@ static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
 static int pa_sync_create(void)
 {
 	struct bt_le_per_adv_sync_param create_params = {0};
+	struct bt_le_local_features feature;
+	int err;
+
+	err = bt_le_get_local_features(&feature);
+	if (err < 0) {
+		printk("Failed to get local le features (err %d)\n", err);
+		return err;
+	}
 
 	bt_addr_le_copy(&create_params.addr, &selected_addr);
-	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	if (BT_FEAT_LE_PER_ADV_ADI_SUPP(feature.features)) {
+		create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	} else {
+		create_params.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
+	}
 	create_params.sid = selected_sid;
 	create_params.skip = PA_SYNC_SKIP;
 	create_params.timeout = interval_to_sync_timeout(selected_pa_interval);

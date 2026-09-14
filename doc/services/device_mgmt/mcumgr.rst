@@ -17,12 +17,6 @@ The following management operations are available:
 * Statistic management
 * Zephyr management
 
-over the following transports:
-
-* Bluetooth Low Energy (LE)
-* Serial (UART)
-* UDP over IP
-
 The management subsystem is based on the Simple Management Protocol (SMP)
 provided by `MCUmgr`_, an open source project that provides a
 management subsystem that is portable across multiple real-time operating
@@ -33,6 +27,47 @@ the Zephyr tree.
 
 Additionally, there is a :zephyr:code-sample:`sample <smp-svr>` server that provides
 management functionality over Bluetooth LE and serial.
+
+.. _mcumgr_transports:
+
+Supported transports
+********************
+
+MCUmgr supports a wide range of transports in-tree of Zephyr, additional transports can be added
+and submitted upstream or used out-of-tree in downstream projects without needing to fork the
+Zephyr repository.
+
+The following transports are supported in Zephyr:
+
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+-----------------+----------------------------------------------------------------+
+| Name       | Kconfigs                                               | Extra details                                                              | Mode support    | :ref:`Transport group management support<mcumgr_smp_group_11>` |
+|            |                                                        +----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+|            |                                                        |                                                                            | Server | Client | Incoming | Outgoing                                            |
++============+========================================================+============================================================================+========+========+==========+=====================================================+
+| UART       | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART`         | :ref:`UART SMP over console encoding <mcumgr_smp_transport_uart>`          | ✓      |        | ✓        | ✓                                                   |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| Raw UART   | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART`     |                                                                            | ✓      |        | ✓        | ✓                                                   |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| Shell      | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SHELL`        | :ref:`UART SMP over console encoding <mcumgr_smp_transport_uart>`          | ✓      |        | ✓        | ✕                                                   |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| Bluetooth  | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT`           | :ref:`Bluetooth Low Energy <mcumgr_smp_transport_ble>`                     | ✓      |        | ✕        | ✕                                                   |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| UDP (IPv4) | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP` and |br| | Optional DTLS support                                                      | ✓      |        | ✕        | ✕                                                   |
+|            | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_IPV4`     |                                                                            |        |        |          |                                                     |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| UDP (IPv6) | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP` and |br| | Optional DTLS support                                                      | ✓      |        | ✕        | ✕                                                   |
+|            | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_IPV6`     |                                                                            |        |        |          |                                                     |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| LoRaWAN    | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_LORAWAN`      |                                                                            | ✓      |        | ✕        | ✕                                                   |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| SPI        | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SPI`          |                                                                            | ✓      |        | ✕        | ✕                                                   |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| *The following are designed for usage in tests:*                                                                                                                                                                                    |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| Dummy      | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_DUMMY`        | Virtual                                                                    | ✓      |        | ✓        | ✓                                                   |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
+| Raw Dummy  | :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_DUMMY`    | :ref:`UART SMP over console encoding <mcumgr_smp_transport_uart>`, virtual | ✓      |        | ✓        | ✓                                                   |
++------------+--------------------------------------------------------+----------------------------------------------------------------------------+--------+--------+----------+-----------------------------------------------------+
 
 .. _mcumgr_tools_libraries:
 

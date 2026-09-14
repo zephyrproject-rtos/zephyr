@@ -51,6 +51,7 @@ struct regset_target_lib_config {
 	uint32_t buffer_size;
 	uint8_t *buffer;
 	uint8_t address_width;
+	bool auto_register;
 	/** @endcond */
 };
 
@@ -161,6 +162,7 @@ int regset_target_lib_init(const struct device *dev);
 	.buffer_size = DT_PROP(node_id, size),			\
 	.buffer = (uint8_t[DT_PROP(node_id, size)]) {},		\
 	.address_width = DT_PROP_OR(node_id, address_width, 8),	\
+	.auto_register = DT_PROP(node_id, auto_register),	\
 }
 
 /**

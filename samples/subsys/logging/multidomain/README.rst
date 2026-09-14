@@ -37,13 +37,11 @@ The following lines are expected to appear in the HOST UART output
 .. code-block:: console
 
    Hello World! nrf5340dk
-   <inf> app: IPC-service HOST [INST 1] demo started
+   <inf> app: Multidomain logging HOST demo started
    <inf> app: loop: 0
-   <inf> app: ipc open 0
    <inf> app: wait for bound
-   <inf> app: ipc open 0
    <inf> app: bounded
    <inf> app: REMOTE [1]: 0
    <inf> app: HOST [1]: 1
    ...
-   <inf> app: IPC-service HOST [INST 1] demo ended.
+   <inf> app: Multidomain logging HOST demo ended.

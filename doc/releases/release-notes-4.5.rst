@@ -329,6 +329,13 @@ Deprecated APIs and options
     located in the ``drivers/clock_control/Kconfig.nrf`` and  ``modules/hal_nordic/nrfx/Kconfig``
     files.
 
+* Controller Area Network (CAN)
+
+  * :c:func:`can_set_state_change_callback` is deprecated in favor of
+    :c:func:`can_init_state_change_callback`, :c:func:`can_add_state_change_callback`, and
+    :c:func:`can_remove_state_change_callback`. The new API functions allow adding more than one CAN
+    controller state change callback (:github:`117889`).
+
 * CPU Load
 
   * :kconfig:option:`CONFIG_CPU_LOAD_METRIC` and :c:func:`cpu_load_metric_get` are deprecated. The
@@ -521,6 +528,10 @@ New APIs and options
     * :c:func:`clock_control_release`
     * :c:func:`clock_control_cancel_or_release`
 
+* CPUFreq
+
+  * :kconfig:option:`CONFIG_CPU_FREQ_POLICY_TIMING_NOISE`
+
 * Crypto
 
   * :c:enumerator:`CRYPTO_CIPHER_MODE_CFB`
@@ -535,16 +546,19 @@ New APIs and options
 
 * Haptics
 
-  * :c:enumerator:`haptics_monitor`
-  * :c:enumerator:`haptics_monitor_type`
-  * :c:enumerator:`haptics_source`
+  * :c:enum:`haptics_monitor`
+  * :c:enum:`haptics_monitor_type`
+  * :c:enum:`haptics_source`
+  * :c:enum:`haptics_trigger_type`
   * :c:union:`haptics_config`
   * :c:func:`haptics_calibrate`
   * :c:func:`haptics_monitor_get`
   * :c:func:`haptics_monitor_set`
   * :c:func:`haptics_select_source`
   * :c:func:`haptics_set_level`
+  * :c:func:`haptics_set_trigger`
   * :c:func:`haptics_stream_samples`
+  * :c:func:`haptics_trigger`
 
 * HWSPINLOCK
 
@@ -1788,6 +1802,7 @@ New Samples
 * :zephyr:code-sample:`coredump-udp-demo-shell`
 * :zephyr:code-sample:`coresight_stm_shell`
 * :zephyr:code-sample:`cpu_freq_thermal_cap`
+* :zephyr:code-sample:`cpu_freq_timing_noise`
 * :zephyr:code-sample:`cs40l26`
 * :zephyr:code-sample:`dali`
 * :zephyr:code-sample:`dhcpv6-pd`
@@ -1877,6 +1892,14 @@ Libraries / Subsystems
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
+
+* Management
+
+  * MCUmgr
+
+    * The image management client now supports SHA-512 image digests. It can
+      list and select images for testing or confirmation on targets built with
+      :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512`.
 
 * Video
 

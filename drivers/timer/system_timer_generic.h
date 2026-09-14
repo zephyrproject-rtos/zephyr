@@ -210,7 +210,7 @@ BUILD_ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick
  * 64-bit mask on a 32-bit counter underflows once the baseline passes 2^32.
  */
 #if !defined(TIMER_CORE_COUNTER_WIDTH)
-#define TIMER_CORE_COUNTER_WIDTH __LONG_WIDTH__
+#define TIMER_CORE_COUNTER_WIDTH (__SIZEOF_LONG__ * 8)
 #endif
 
 /* Wrap mask for the counter. */
@@ -868,7 +868,11 @@ static inline void timer_core_init(void)
 	 * non-zero check the constant case gets at build time happens here instead.
 	 */
 	__ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick rate");
-	__ASSERT(TIMER_CORE_COUNTER_SAFE_SPAN >= TIMER_CORE_CYC_PER_TICK,
+	/* Both sides are widened so the comparison is not typed against the
+	 * runtime rate's uint32_t, which a 64-bit counter's span cannot reach
+	 * and which the compiler would then flag as always true.
+	 */
+	__ASSERT((uint64_t)TIMER_CORE_COUNTER_SAFE_SPAN >= (uint64_t)TIMER_CORE_CYC_PER_TICK,
 		 "a tick is longer than the counter can span");
 #endif
 	/* The counter read is inside the counter's width, so the tick count it
