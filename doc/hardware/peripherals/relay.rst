@@ -18,6 +18,12 @@ functions in :zephyr_file:`include/zephyr/drivers/relay/relay.h`:
   :c:enumerator:`RELAY_STATE_ON` and :c:enumerator:`RELAY_STATE_OFF`.
 - :c:func:`relay_get_state` reads back the last requested state.
 
+Shell
+*****
+
+When :kconfig:option:`CONFIG_RELAY_SHELL` is enabled, the ``relay`` shell
+command turns relays on and off, reads back their state, and lists the relay
+devices in the system.
 
 API Reference
 *************
