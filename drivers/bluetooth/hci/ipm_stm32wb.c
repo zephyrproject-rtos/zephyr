@@ -650,7 +650,8 @@ static int bt_ipm_ble_init(void)
 
 	err = bt_ipm_set_addr();
 	if (err) {
-		LOG_ERR("Can't set BLE UID addr");
+		LOG_ERR("Can't set BLE UID addr (err %d)", err);
+		return err;
 	}
 	/* Send ACI_WRITE_SET_TX_POWER_LEVEL */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
