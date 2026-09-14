@@ -1,0 +1,29 @@
+tests:
+  bluetooth.classic.ftp.server:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - ftp
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      # Two BR/EDR boards are needed, so the suite is only built unless the
+      # fixture is supplied: twister -X bt_classic_multi_test
+      fixture: bt_classic_multi_test
+      required_devices:
+        # Second board, same platform and image, drives the FTP client role
+        - {}
+    timeout: 1200
+  bluetooth.classic.ftp.server.no_blobs:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+      - bluetooth
+      - ftp
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 1200
+    build_only: true
