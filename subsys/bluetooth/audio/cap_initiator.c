@@ -3008,14 +3008,14 @@ void bt_cap_initiator_stopped(struct bt_cap_stream *cap_stream)
 
 		proc_param = get_next_proc_param(active_proc);
 		if (proc_param == NULL) {
-			bt_cap_common_unlock_proc();
-
 			/* If proc_param is NULL then this step is a no-op.
 			 * May happen if we have sink streams only, mark subproc_initiated to treat
 			 * this similar to sources.
 			 * BAP will call ops->qos_configured for the sink stream after this
 			 */
 			active_proc->subproc_initiated = true;
+
+			bt_cap_common_unlock_proc();
 
 			return;
 		}
