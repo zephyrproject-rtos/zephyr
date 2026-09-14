@@ -216,6 +216,51 @@ static void reassembly_foreach_cb(struct net_ipv4_reassembly *reassembly, void *
 	++*packets;
 }
 
+/* Reassembly timeout-vs-completion race test state */
+static K_SEM_DEFINE(race_reached, 0, 1);
+static K_SEM_DEFINE(race_resume, 0, 1);
+static K_THREAD_STACK_DEFINE(race_worker_stack, 2048);
+static struct k_thread race_worker;
+static struct net_pkt *race_final_frag;
+static struct net_ipv4_hdr race_final_hdr;
+static struct k_work_delayable *race_timer;
+static bool race_armed;
+
+/* CONFIG_TRACING_USER hook run on entry to k_work_cancel_delayable(), before
+ * the work lock is taken. Reassembly completion cancels the slot timer first;
+ * when armed for that timer, signal the test and block so the slot timeout
+ * can fire against the same slot. One-shot, so the timeout handler's own
+ * cancel passes straight through.
+ */
+void sys_trace_k_work_cancel_delayable_enter_user(struct k_work_delayable *dwork)
+{
+	if (race_armed && dwork == race_timer) {
+		race_armed = false;
+		k_sem_give(&race_reached);
+		k_sem_take(&race_resume, K_FOREVER);
+	}
+}
+
+/* Records the timer of the only active reassembly slot. */
+static void race_timer_cb(struct net_ipv4_reassembly *reassembly, void *data)
+{
+	ARG_UNUSED(data);
+
+	race_timer = &reassembly->timer;
+}
+
+/* Delivers the final fragment from its own thread so the main thread stays free
+ * to advance time while the completion path is paused in the hook.
+ */
+static void race_worker_fn(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	(void)net_ipv4_handle_fragment_hdr(race_final_frag, &race_final_hdr);
+}
+
 /* Checks all IPv4 headers against expected values */
 static void check_ipv4_fragment_header(struct net_pkt *pkt, const uint8_t *orig_hdr, uint16_t id,
 				       uint16_t current_length, bool final)
@@ -1065,8 +1110,82 @@ ZTEST(net_ipv4_fragment, test_reassembly_error_path_cleanup)
 		      free_before, free_after);
 }
 
+/* Exercises the reassembly timeout against completion of the same slot.
+ *
+ * The final fragment drives reassembly completion while the per-slot timeout
+ * handler runs concurrently against the same slot. The timer cancel hook
+ * pins the interleaving: completion is paused at its cancel, the slot timeout
+ * is allowed to fire, then completion resumes. The timeout handler must wait
+ * for completion to finish rather than release the fragments under it, so
+ * reassembly completes and the slot is released.
+ */
+ZTEST(net_ipv4_fragment, test_reassembly_timeout_race)
+{
+	struct net_if *iface = net_if_get_default();
+	uint8_t udp_dgram[REASS_ERR_FRAG_PAYLOAD * 2];
+	struct net_pkt *frag0;
+	struct net_ipv4_hdr hdr0;
+	uint8_t packets;
+
+	zassert_not_null(iface);
+
+	for (unsigned int i = 0; i < sizeof(udp_dgram); i++) {
+		udp_dgram[i] = (uint8_t)i;
+	}
+
+	/* First fragment arms the slot timeout. */
+	frag0 = reass_err_make_udp_fragment(iface, udp_dgram, 0, REASS_ERR_FRAG_PAYLOAD, true);
+	zassert_ok(net_pkt_read(frag0, &hdr0, sizeof(hdr0)));
+	net_pkt_cursor_init(frag0);
+	zassert_equal(net_ipv4_handle_fragment_hdr(frag0, &hdr0), NET_OK);
+
+	packets = 0;
+	net_ipv4_frag_foreach(reassembly_foreach_cb, &packets);
+	zassert_equal(packets, 1, "Expected one pending reassembly");
+
+	race_timer = NULL;
+	net_ipv4_frag_foreach(race_timer_cb, NULL);
+	zassert_not_null(race_timer, "Reassembly slot timer not found");
+
+	/* Prepare the final fragment for delivery from the worker thread. */
+	race_final_frag = reass_err_make_udp_fragment(iface, udp_dgram, REASS_ERR_FRAG_PAYLOAD,
+						      REASS_ERR_FRAG_PAYLOAD, false);
+	zassert_ok(net_pkt_read(race_final_frag, &race_final_hdr, sizeof(race_final_hdr)));
+	net_pkt_cursor_init(race_final_frag);
+
+	race_armed = true;
+
+	k_thread_create(&race_worker, race_worker_stack,
+			K_THREAD_STACK_SIZEOF(race_worker_stack),
+			race_worker_fn, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+
+	/* Wait until completion is inside reassembly and paused. */
+	zassert_equal(k_sem_take(&race_reached, K_SECONDS(1)), 0,
+		      "Reassembly completion path was not reached");
+
+	/* Let the slot timeout fire while completion is paused. */
+	k_sleep(K_MSEC(CONFIG_NET_IPV4_FRAGMENT_TIMEOUT * 1000 + 200));
+
+	/* Resume completion. */
+	k_sem_give(&race_resume);
+
+	zassert_equal(k_thread_join(&race_worker, K_SECONDS(2)), 0,
+		      "Reassembly completion did not finish");
+
+	/* The slot must be released after completion. */
+	k_sleep(K_MSEC(100));
+	packets = 0;
+	net_ipv4_frag_foreach(reassembly_foreach_cb, &packets);
+	zassert_equal(packets, 0, "Reassembly slot was not released");
+}
+
 static void test_pre(void *ptr)
 {
+	race_armed = false;
+	k_sem_reset(&race_reached);
+	k_sem_reset(&race_resume);
+
 	k_sem_reset(&wait_data);
 	k_sem_reset(&wait_received_data);
 
