@@ -1,40 +1,13 @@
 # Copyright (c) 2026 BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
-config TF_PSA_CRYPTO_CONFIG_FILE
-	string "TF-PSA-Crypto configuration file"
-	default "config-tf-psa-crypto.h"
-	help
-	  Specify the configuration header file to be used when building
-	  TF-PSA-Crypto. The default one can be tweaked with Kconfig.
+if PSA_CRYPTO
 
-if TF_PSA_CRYPTO_CONFIG_FILE = "config-tf-psa-crypto.h"
+rsource "Kconfig.tf-psa-crypto.interface"
 
-config TF_PSA_CRYPTO_DRIVER_CONFIG_FILE
-	string
-	help
-	  Optional driver configuration header to be included at the end of
-	  TF_PSA_CRYPTO_CONFIG_FILE. This file is intended to be used to supply
-	  configuration options needed by the driver dispatch interface.
+endif # PSA_CRYPTO
 
-config TF_PSA_CRYPTO_DRIVER_CONFIG
-	def_bool TF_PSA_CRYPTO_DRIVER_CONFIG_FILE != ""
-
-endif # TF_PSA_CRYPTO_CONFIG_FILE = "config-tf-psa-crypto.h"
-
-config TF_PSA_CRYPTO_USER_CONFIG_FILE
-	string "User configuration file for TF-PSA-Crypto"
-	help
-	  If defined, this is a header which will be included after TF_PSA_CRYPTO_CONFIG_FILE.
-	  This allows you to modify the default configuration,
-	  including the ability to undefine options that are enabled.
-
-config TF_PSA_CRYPTO_USER_CONFIG
-	def_bool TF_PSA_CRYPTO_USER_CONFIG_FILE != ""
-
-config TF_PSA_CRYPTO_DISPATCH_DIR
-	string
-	default "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/dispatch"
+if MBEDTLS
 
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NIST curves optimization"
@@ -359,10 +332,6 @@ config MBEDTLS_PSA_CRYPTO_C
 	depends on !BUILD_WITH_TFM
 	select CSPRNG_NEEDED if PSA_CRYPTO_PROVIDER_MBEDTLS
 
-config MBEDTLS_PSA_CRYPTO_CLIENT
-	def_bool y
-	depends on PSA_CRYPTO
-
 config MBEDTLS_LMS_C
 	bool "Support LMS signature schemes"
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
@@ -456,3 +425,5 @@ config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	  TF-PSA-Crypto builtin include path exported by the mbedtls target).
 	  The long term goal is to remove this option once all users are on the
 	  PSA Crypto API.
+
+endif # MBEDTLS

@@ -5,8 +5,6 @@
 # from ../../../modules/crypto/tf-psa-crypto/include/psa/crypto_config.h.
 # Some manual additions are made, but no deletion.
 
-if PSA_CRYPTO
-
 config PSA_CRYPTO_ENABLE_ALL
 	bool "All PSA crypto features"
 
@@ -343,5 +341,3 @@ config PSA_WANT_KEY_TYPE_DH_KEY_PAIR_EXPORT
 config PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE
 	bool "PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE" if !MBEDTLS_PROMPTLESS
 	default y if PSA_CRYPTO_ENABLE_ALL
-
-endif # PSA_CRYPTO
