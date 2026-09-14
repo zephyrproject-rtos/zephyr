@@ -14,4 +14,11 @@ module = RELAY
 module-str = relay
 source "subsys/logging/Kconfig.template.log_config"
 
+config RELAY_SHELL
+	bool "Relay shell"
+	depends on SHELL
+	help
+	  Enable shell commands to turn relays on and off and to read back their
+	  state, for any relay device in the system.
+
 endif # RELAY
