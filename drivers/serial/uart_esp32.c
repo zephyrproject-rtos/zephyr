@@ -45,6 +45,10 @@
 #include <esp32p4/rom/ets_sys.h>
 #include <esp32p4/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32p4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32S31)
+#include <esp32s31/rom/ets_sys.h>
+#include <esp32s31/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32s31_clock.h>
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>

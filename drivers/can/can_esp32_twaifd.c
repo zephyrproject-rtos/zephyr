@@ -853,6 +853,12 @@ static DEVICE_API(can, can_esp32_twaifd_api) = {
 #endif
 };
 
+/* The ESP32-S31 register map names the controllers TWAIFD0 and TWAIFD1. */
+#if !defined(DR_REG_TWAI0_BASE) && defined(DR_REG_TWAIFD0_BASE)
+#define DR_REG_TWAI0_BASE DR_REG_TWAIFD0_BASE
+#define DR_REG_TWAI1_BASE DR_REG_TWAIFD1_BASE
+#endif
+
 /*
  * Derive the hardware controller index (0 or 1) from the node's reg address
  * by matching it against DR_REG_TWAI0_BASE and DR_REG_TWAI1_BASE. The reg
