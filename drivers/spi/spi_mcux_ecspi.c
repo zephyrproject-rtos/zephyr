@@ -37,6 +37,9 @@ struct spi_mcux_data {
 
 	uint32_t rx_data;
 	uint32_t tx_data;
+
+	/* Set on completion timeout; makes a late SDK callback a no-op */
+	bool aborted;
 };
 
 static inline uint16_t bytes_per_word(uint16_t bits_per_word)
@@ -118,6 +121,10 @@ static void spi_mcux_transfer_callback(ECSPI_Type *base, ecspi_master_handle_t *
 {
 	const struct device *dev = (const struct device *)user_data;
 	struct spi_mcux_data *data = dev->data;
+
+	if (data->aborted) {
+		return;
+	}
 
 	if (spi_context_rx_buf_on(&data->ctx)) {
 		switch (data->dfs) {
@@ -233,6 +240,7 @@ static int transceive(const struct device *dev,
 		      spi_callback_t cb,
 		      void *userdata)
 {
+	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
@@ -246,8 +254,29 @@ static int transceive(const struct device *dev,
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
 	spi_context_cs_control(&data->ctx, true);
 
+	data->aborted = false;
 	spi_mcux_transfer_next_packet(dev);
 	ret = spi_context_wait_for_completion(&data->ctx);
+	if (ret != 0) {
+		/*
+		 * Sync path only (async never times out here). Abort so the
+		 * SDK handle does not stay busy. The SDK ISR does not check
+		 * the handle state, so disarm the callback first and drop a
+		 * completion that raced in before the abort.
+		 */
+		unsigned int key = irq_lock();
+
+		data->aborted = true;
+		ECSPI_MasterTransferAbort(config->base, &data->handle);
+		irq_unlock(key);
+
+		spi_context_cs_control(&data->ctx, false);
+#ifdef CONFIG_MULTITHREADING
+		k_sem_reset(&data->ctx.sync);
+#else
+		atomic_set(&data->ctx.ready, 0);
+#endif
+	}
 
 out:
 	spi_context_release(&data->ctx, ret);
