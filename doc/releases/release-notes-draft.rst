@@ -164,6 +164,10 @@ New Drivers
 
   * :dtcompatible:`microchip,mcp7940n` (:github:`119309`)
 
+* Relay
+
+  * :dtcompatible:`zephyr,gpio-relay`
+
 New Samples
 ***********
 
