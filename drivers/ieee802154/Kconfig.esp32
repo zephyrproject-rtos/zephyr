@@ -196,4 +196,13 @@ config IEEE802154_ESP32_TXRX_STATISTIC
 
 	  This config is used in the Espressif HAL module.
 
+config IEEE802154_ESP32_SLEEP_ENABLE
+	bool "IEEE 802.15.4 light sleep"
+	depends on PM && TICKLESS_KERNEL && IEEE802154_ESP32
+	select MAC_BB_PD if SOC_SERIES_ESP32C6
+	help
+	  Power down the 802.15.4 PHY during light sleep, which reduces
+	  current consumption. The driver releases the SoC PM policy lock
+	  when the radio is in sleep.
+
 endif # IEEE802154_ESP32
