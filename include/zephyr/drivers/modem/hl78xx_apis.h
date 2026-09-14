@@ -1092,7 +1092,7 @@ typedef int (*hl78xx_api_get_modem_info)(const struct device *dev,
 
 /** API for getting registration status */
 typedef int (*hl78xx_api_get_registration_status)(const struct device *dev,
-						  enum cellular_access_technology tech,
+						  enum cellular_access_technology *tech,
 						  enum cellular_registration_status *status);
 
 /**

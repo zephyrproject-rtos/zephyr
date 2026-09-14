@@ -165,6 +165,7 @@ struct cellular_evt_modem_info {
 
 /** Payload for @ref CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED. */
 struct cellular_evt_registration_status {
+	enum cellular_access_technology technology; /**< Active RAT */
 	enum cellular_registration_status status; /**< New registration status */
 };
 
@@ -261,7 +262,7 @@ typedef int (*cellular_api_get_modem_info)(const struct device *dev,
 
 /** API for getting registration status */
 typedef int (*cellular_api_get_registration_status)(const struct device *dev,
-						    enum cellular_access_technology tech,
+						    enum cellular_access_technology *tech,
 						    enum cellular_registration_status *status);
 
 /** API for getting the last reported network (serving cell) status */
@@ -408,18 +409,18 @@ static inline int cellular_get_modem_info(const struct device *dev,
 }
 
 /**
- * @brief Get network registration status for the device
+ * @brief Get network registration status and active access technology for the device
  *
  * @param dev Cellular network device instance
- * @param tech Which access technology to get status for
- * @param status Registration status for given access technology
+ * @param status Current registration status
+ * @param tech Active access technology, or CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN if not registered
  *
- * @return 0 on success, negative errno value on failure.
- * @retval -ENOSYS API is not supported by cellular network device.
- * @retval -ENODATA Modem does not provide the requested info.
+ * @retval 0 if successful.
+ * @retval -ENOSYS if API is not supported by cellular network device.
+ * @retval <0 Negative errno-code from chat module otherwise.
  */
 static inline int cellular_get_registration_status(const struct device *dev,
-						   enum cellular_access_technology tech,
+						   enum cellular_access_technology *tech,
 						   enum cellular_registration_status *status)
 {
 	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);

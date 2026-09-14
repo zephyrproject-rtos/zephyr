@@ -616,6 +616,7 @@ static int app_collect_and_log_modem_info(void)
 	char imei[MDM_IMEI_LENGTH] = {0};
 	char serial_number[MDM_SERIAL_NUMBER_LENGTH] = {0};
 	enum hl78xx_cell_rat_mode tech = HL78XX_RAT_MODE_NONE;
+	enum cellular_access_technology reg_tech;
 	enum cellular_registration_status status;
 	int16_t signal_strength = 0;
 	uint32_t current_baudrate = 0;
@@ -653,7 +654,7 @@ static int app_collect_and_log_modem_info(void)
 	}
 #endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 
-	cellular_get_registration_status(modem, hl78xx_rat_to_access_tech(tech), &status);
+	cellular_get_registration_status(modem, &reg_tech, &status);
 #ifdef CONFIG_MODEM_HL78XX_RAT_GSM
 	cellular_get_signal(modem, CELLULAR_SIGNAL_RSSI, &signal_strength);
 #else

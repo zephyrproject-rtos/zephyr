@@ -1238,7 +1238,7 @@ int hl78xx_hex_string_to_bitmap(const char *hex_str, uint8_t *bitmap_out);
  * @return int Description of return value.
  */
 int hl78xx_api_func_get_registration_status(const struct device *dev,
-					    enum cellular_access_technology tech,
+					    enum cellular_access_technology *tech,
 					    enum cellular_registration_status *status);
 
 /**

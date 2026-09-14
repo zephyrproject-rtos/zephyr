@@ -3730,6 +3730,7 @@ static int hl78xx_init(const struct device *dev)
 	data->buffers.eof_pattern_size = strlen(data->buffers.eof_pattern);
 	data->buffers.termination_pattern_size = strlen(data->buffers.termination_pattern);
 	data->status.kcellmeas.bootstrap_done = false;
+	data->status.registration.rat_mode = HL78XX_RAT_MODE_NONE;
 	memset(data->identity.apn, 0, MDM_APN_MAX_LENGTH);
 #ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
 	data->status.uart.current_baudrate = 0;
