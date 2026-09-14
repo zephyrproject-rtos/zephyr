@@ -1258,7 +1258,6 @@ static void sdl_display_get_capabilities(
 	const struct sdl_display_config *config = dev->config;
 	struct sdl_display_data *disp_data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 #ifdef CONFIG_DISPLAY_COLOR_PALETTE
 	memcpy(capabilities->color_palette, config->color_palette, sizeof(config->color_palette));
 #endif /* CONFIG_DISPLAY_COLOR_PALETTE */

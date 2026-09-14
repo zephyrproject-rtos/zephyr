@@ -272,7 +272,6 @@ static void nt35510_get_capabilities(const struct device *dev,
 	const struct nt35510_config *cfg = dev->config;
 	struct nt35510_data *data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;

@@ -142,7 +142,6 @@ static void dpu_get_capabilities(const struct device *dev,
 	const struct dpu_config *config = dev->config;
 	struct dpu_data *data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->display_timing.width;
 	capabilities->y_resolution = config->display_timing.height;
 	capabilities->supported_pixel_formats = dpu_supported_fmts;

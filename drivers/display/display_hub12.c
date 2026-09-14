@@ -257,7 +257,6 @@ static void hub12_get_capabilities(const struct device *dev, struct display_capa
 {
 	const struct hub12_config *config = dev->config;
 
-	memset(caps, 0, sizeof(*caps));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;

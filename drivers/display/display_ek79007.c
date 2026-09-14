@@ -89,7 +89,6 @@ static void ek79007_get_capabilities(const struct device *dev,
 	const struct ek79007_config *config = dev->config;
 	enum display_pixel_format format = ek79007_display_format(config->pixel_format);
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
 	capabilities->supported_pixel_formats = format;
