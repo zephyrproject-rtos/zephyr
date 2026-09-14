@@ -8,13 +8,21 @@
 #include "main_functions.h"
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include "NeutronDriver.h"
 
 /* Number of inference runs */
-#define NUM_INFERENCE_RUNS 1
+#define NUM_INFERENCE_RUNS 3
 
 int main(void)
 {
+	NeutronSdkVersion sdkVersion;
+
 	printk("\n\n=== TFLM NXP Neutron Starting ===\n");
+	/* Print Neutron driver version once the NPU is powered up */
+	sdkVersion = neutronGetSdkVersion();
+	printk("=== Neutron Software version: %u.%u.%u-%s ===\n\n", (unsigned int)sdkVersion.major,
+	       (unsigned int)sdkVersion.minor, (unsigned int)sdkVersion.patch,
+	       sdkVersion.hashString);
 
 	/* Initialize the model and interpreter */
 	setup();
