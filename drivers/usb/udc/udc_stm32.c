@@ -810,6 +810,13 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 
 	while (true) {
 		k_msgq_get(&priv->msgq_data, &msg, K_FOREVER);
+
+		/*
+		 * Ensure we hold the device lock during processing
+		 * to avoid race conditions with API entrypoints.
+		 */
+		udc_lock_internal(dev, K_FOREVER);
+
 		switch (msg.type) {
 		case UDC_STM32_MSG_SETUP:
 			/* HAL copies SETUP packet contents to pcd.Setup */
@@ -828,6 +835,8 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 			handle_msg_data_out(priv, msg.ep, msg.rx_count);
 			break;
 		}
+
+		udc_unlock_internal(dev);
 	}
 }
 
