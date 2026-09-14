@@ -137,7 +137,7 @@ struct arm_m_cs_ptrs arm_m_cs_ptrs;
  * global to store pointers in arm_m_new_stack(), wasting a few bytes
  * of code & data.
  */
-void *arm_m_lto_refs[2];
+void *arm_m_lto_refs[3];
 #endif
 
 /* Bitmask to determine if the XPSR indicates the exception frame was padded */
@@ -369,6 +369,36 @@ static void fpu_cs_copy(struct hw_frame_fpu *src, struct z_frame_fpu *dst)
 	}
 }
 
+/* Out-of-line tail of arm_m_switch(): pops the incoming thread's switch
+ * frame.  Entered by a branch with SP already at the frame, interrupts still
+ * locked, r0 zero and r8 holding the CONTROL value to install.
+ *
+ * Out of line because arm_m_switch() is inlined at every arch_switch() call
+ * site: a label inside it would be emitted once per site, and
+ * arm_m_cpu_to_switch() needs a single address range to compare an
+ * interrupted PC against.
+ */
+__used __attribute__((naked)) void arm_m_switch_restore(void)
+{
+	__asm__("  msr basepri, r0;"
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_USE_SWITCH)
+		"  msr control, r8;" /* Now we can drop privilege */
+#endif
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+		"  pop {r1-r2};"
+		"  msr psplim, r1;"
+#else
+		"  pop {r2};"
+#endif
+#ifdef _ARM_M_SWITCH_HAVE_DSP
+		"  msr apsr_nzcvqg, r2;"
+#else
+		"  msr apsr_nzcvq, r2;"
+#endif
+		"  pop {r0-r12, lr};"
+		"  pop {pc};");
+}
+
 /* Converts, in-place, a CPU-spilled ("hardware") exception entry
  * frame to our ("zephyr") switch handle format such that the thread
  * can be suspended
@@ -459,6 +489,7 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 #ifdef CONFIG_LTO
 	arm_m_lto_refs[0] = &arm_m_cs_ptrs;
 	arm_m_lto_refs[1] = arm_m_must_switch;
+	arm_m_lto_refs[2] = arm_m_switch_restore;
 #endif
 
 #ifdef CONFIG_MULTITHREADING
