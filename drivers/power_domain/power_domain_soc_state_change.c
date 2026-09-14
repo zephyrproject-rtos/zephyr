@@ -66,17 +66,17 @@ static int pd_pm_action(const struct device *dev, enum pm_device_action action)
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		LOG_DBG("%s: resuming", dev->name);
-		while (config->onoff_power_states[i] != POWER_DOMAIN_DEVICE_ONOFF_STATE_MARKER) {
-			/* Check if we need do the turn on action for this state */
-			if (state == config->onoff_power_states[i]) {
-				/* Notify devices on the domain they are now powered */
-				context.action = PM_DEVICE_ACTION_TURN_ON;
-				(void)device_supported_foreach(dev, pd_domain_visitor, &context);
-				/* No need to go through the rest of the array of states */
-				break;
-			}
-			i++;
-		}
+		/*
+		 * Anything on the domain may be waiting for its power-up: the
+		 * devices the domain turned off on the way into a low-power
+		 * state, and the ones that initialised while the domain itself
+		 * was suspended -- those were told they had no power and skipped
+		 * their own power-up. Hand it to all of them without looking at
+		 * which state is coming next; a device that is already powered
+		 * answers -EALREADY and nothing happens to it.
+		 */
+		context.action = PM_DEVICE_ACTION_TURN_ON;
+		(void)device_supported_foreach(dev, pd_domain_visitor, &context);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		LOG_DBG("%s: suspending", dev->name);
