@@ -94,6 +94,18 @@
 #include <soc/dport_access.h>
 #include <hal/clk_tree_ll.h>
 #include <esp_private/esp_pmu.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32S31)
+#define DT_CPU_COMPAT espressif_riscv
+#include <zephyr/dt-bindings/clock/esp32s31_clock.h>
+#include <soc/lp_clkrst_reg.h>
+#include <soc/pmu_reg.h>
+#include <soc/regi2c_dig_reg.h>
+#include <regi2c_ctrl.h>
+#include <esp32s31/rom/rtc.h>
+#include <soc/dport_access.h>
+#include <hal/clk_tree_ll.h>
+#include <esp_private/esp_pmu.h>
+#include <modem/modem_syscon_struct.h>
 #endif
 
 #include <zephyr/device.h>
@@ -125,8 +137,8 @@
  * whose slow/CPU clocks are driven through the RTC_CNTL peripheral
  * (ESP32, ESP32-S2, ESP32-S3, ESP32-C2, ESP32-C3). The PMU variant covers
  * the SoCs that use the PMU/LP_CLKRST peripherals (ESP32-C5, ESP32-C6,
- * ESP32-H2, ESP32-P4). Exactly one implementation file is compiled per
- * build, selected from CMakeLists.txt by SoC series.
+ * ESP32-C61, ESP32-H2, ESP32-P4, ESP32-S31). Exactly one implementation
+ * file is compiled per build, selected from CMakeLists.txt by SoC series.
  */
 int esp32_select_rtc_slow_clk(uint8_t slow_clk);
 
