@@ -51,28 +51,8 @@ const static uint8_t df_dummy_switch_pattern[BT_HCI_LE_SWITCH_PATTERN_LEN_MIN] =
 
 #define DF_SAMPLING_ANTENNA_NUMBER_MIN 0x2
 
-#if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX) || defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
-static bool valid_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durations,
-				       uint8_t num_ant_ids, const uint8_t *ant_ids);
-#endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX || CONFIG_BT_DF_CONNECTION_CTE_RX */
 
-#if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
-static bool valid_cl_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param *params);
-static int
-prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_le_per_adv_sync *sync,
-				    const struct bt_df_per_adv_sync_cte_rx_param *params,
-				    bool enable);
-static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enable,
-				       const struct bt_df_per_adv_sync_cte_rx_param *params);
-#endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
-#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
-static int prepare_conn_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_conn *conn,
-						 const struct bt_df_conn_cte_rx_param *params,
-						 bool enable);
-static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
-					 const struct bt_df_conn_cte_rx_param *params);
-#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 static uint8_t get_hci_cte_type(enum bt_df_cte_type type)
 {
@@ -762,7 +742,6 @@ int hci_df_vs_prepare_connection_iq_report(struct net_buf *buf,
 
 	return 0;
 }
-
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
@@ -1117,7 +1096,6 @@ int bt_df_set_conn_cte_tx_param(struct bt_conn *conn, const struct bt_df_conn_ct
 
 	return hci_df_set_conn_cte_tx_param(conn, params);
 }
-
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_TX */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
