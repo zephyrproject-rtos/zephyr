@@ -30,6 +30,12 @@ static const uint8_t mac_addr_init[6] = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x00};
 /* 00-00-5E-00-53-xx Documentation RFC 7042 */
 static const uint8_t mac_addr_change[6] = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x01};
 
+struct eth_mac_filter {
+	bool is_used;
+	uint16_t vid;
+	struct net_eth_addr mac_address;
+};
+
 struct eth_fake_context {
 	struct net_if *iface;
 	uint8_t mac_address[6];
@@ -65,6 +71,8 @@ struct eth_fake_context {
 		uint8_t additional_fragment_size : 2;
 	} ports[2];
 
+	struct eth_mac_filter dst_mac_filter[CONFIG_NET_L2_ETHERNET_MCAST_FILTER_COUNT];
+
 	/* TXTIME parameters */
 	bool txtime_statuses[NET_TC_TX_COUNT];
 };
@@ -97,9 +105,9 @@ static int eth_fake_send(const struct device *dev,
 static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev __unused,
 						       struct net_if *iface __unused)
 {
-	return  ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_QAV |
-		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES |
-		ETHERNET_QBV | ETHERNET_QBU | ETHERNET_TXTIME;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_QAV | ETHERNET_PROMISC_MODE |
+	       ETHERNET_PRIORITY_QUEUES | ETHERNET_QBV | ETHERNET_QBU | ETHERNET_TXTIME |
+	       ETHERNET_HW_FILTERING | ETHERNET_HW_VLAN;
 }
 
 static int eth_fake_get_total_bandwidth(struct eth_fake_context *ctx)
@@ -139,6 +147,40 @@ static void eth_fake_recalc_qav_idle_slopes(struct eth_fake_context *ctx)
 	}
 }
 
+static struct eth_mac_filter *eth_fake_find_empty_dst_filter_slot(struct eth_fake_context *ctx)
+{
+	for (unsigned int i = 0u; i < ARRAY_SIZE(ctx->dst_mac_filter); ++i) {
+		if (!ctx->dst_mac_filter[i].is_used) {
+			return &ctx->dst_mac_filter[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct eth_mac_filter *eth_fake_find_dst_filter_slot(struct eth_fake_context *ctx,
+							    const struct net_eth_addr *mac,
+							    uint16_t vid)
+{
+	for (unsigned int i = 0u; i < ARRAY_SIZE(ctx->dst_mac_filter); ++i) {
+		if (!ctx->dst_mac_filter[i].is_used) {
+			continue;
+		}
+
+		if (ctx->dst_mac_filter[i].vid != vid) {
+			continue;
+		}
+
+		if (memcmp(mac, &ctx->dst_mac_filter[i].mac_address, sizeof(*mac)) != 0) {
+			continue;
+		}
+
+		return &ctx->dst_mac_filter[i];
+	}
+
+	return NULL;
+}
+
 static int eth_fake_set_config(const struct device *dev,
 			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
@@ -151,6 +193,7 @@ static int eth_fake_set_config(const struct device *dev,
 	enum ethernet_qbv_param_type qbv_param_type;
 	enum ethernet_qbu_param_type qbu_param_type;
 	enum ethernet_txtime_param_type txtime_param_type;
+	struct eth_mac_filter *dst_filter;
 	int queue_id, port_id;
 
 	switch (type) {
@@ -290,6 +333,27 @@ static int eth_fake_set_config(const struct device *dev,
 		ctx->promisc_mode = config->promisc_mode;
 
 		break;
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		if (config->filter.type == ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS) {
+			if (!config->filter.set) {
+				dst_filter = eth_fake_find_dst_filter_slot(
+					ctx, &config->filter.mac_address, config->filter.vid);
+				if (dst_filter != NULL) {
+					memset(dst_filter, 0, sizeof(*dst_filter));
+				}
+			} else {
+				dst_filter = eth_fake_find_empty_dst_filter_slot(ctx);
+				if (dst_filter == NULL) {
+					return -ENOBUFS;
+				}
+				dst_filter->is_used = true;
+				dst_filter->vid = config->filter.vid;
+				memcpy(&dst_filter->mac_address, &config->filter.mac_address,
+				       sizeof(struct net_eth_addr));
+			}
+			break;
+		}
+		__fallthrough;
 	default:
 		return -ENOTSUP;
 	}
@@ -1259,5 +1323,70 @@ ZTEST(net_ethernet_mgmt, test_change_to_promisc_mode)
 	change_promisc_mode_on();
 	change_to_same_promisc_mode();
 	change_promisc_mode_off();
+}
+
+ZTEST(net_ethernet_mgmt, test_change_mac_filter)
+{
+	struct net_eth_addr mac_address = {.addr = {0x33, 0x33, 0x00, 0x00, 0xa0, 0x11}};
+	struct net_if *iface = default_iface;
+	struct eth_mac_filter *filter;
+	/* clang-format off */
+	struct ethernet_req_params params = {
+		.filter = {
+			.type = ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
+			.vid = NET_VLAN_TAG_PRIORITY,
+			.set = true,
+		},
+	};
+	/* clang-format on */
+	struct eth_fake_context *ctx;
+	const struct device *dev;
+	int ret;
+
+	memcpy(&params.filter.mac_address, &mac_address, sizeof(struct net_eth_addr));
+
+	dev = net_if_get_device(iface);
+	ctx = dev->data;
+
+	memset(&ctx->dst_mac_filter, 0, sizeof(ctx->dst_mac_filter));
+
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_FILTER, iface, &params,
+		       sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, 0, "Could not apply filter");
+
+	filter = eth_fake_find_dst_filter_slot(ctx, &mac_address, params.filter.vid);
+	zassert_not_null(filter);
+
+	zassert_true(filter->is_used, "MAC filter not enabled");
+	zassert_mem_equal(&filter->mac_address, &mac_address, sizeof(struct net_eth_addr));
+	zassert_equal(filter->vid, params.filter.vid);
+
+	params.filter.vid = 0xff0;
+
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_FILTER, iface, &params,
+		       sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, 0, "Could not update filter");
+
+	filter = eth_fake_find_dst_filter_slot(ctx, &mac_address, params.filter.vid);
+
+	zassert_true(filter->is_used, "MAC filter not enabled");
+	zassert_mem_equal(&filter->mac_address, &mac_address, sizeof(struct net_eth_addr));
+	zassert_equal(filter->vid, params.filter.vid);
+
+	/* PRIORITY entry should still be there */
+	filter = eth_fake_find_dst_filter_slot(ctx, &mac_address, NET_VLAN_TAG_PRIORITY);
+	zassert_not_null(filter);
+
+	params.filter.set = false;
+
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_FILTER, iface, &params,
+		       sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, 0, "Error disabling filter");
+
+	filter = eth_fake_find_dst_filter_slot(ctx, &mac_address, params.filter.vid);
+	zassert_is_null(filter);
 }
 ZTEST_SUITE(net_ethernet_mgmt, NULL, ethernet_mgmt_setup, NULL, NULL, NULL);

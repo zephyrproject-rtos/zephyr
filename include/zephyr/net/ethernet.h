@@ -425,6 +425,8 @@ enum ethernet_if_types {
 struct ethernet_filter {
 	/** Type of filter */
 	enum ethernet_filter_type type;
+	/** VLAN tag */
+	uint16_t vid;
 	/** MAC address to filter */
 	struct net_eth_addr mac_address;
 	/** Set (true) or unset (false) the filter */
@@ -467,6 +469,9 @@ struct net_eth_mcast_addr {
 	 * leaving from the IP level and from the packet sockets.
 	 */
 	atomic_t atomic_ref;
+
+	/** VLAN identifier */
+	uint16_t vid;
 
 	/** Is this address used or not */
 	uint8_t is_used : 1;
@@ -939,16 +944,32 @@ typedef void (*net_eth_mcast_addr_cb_t)(struct net_if *iface,
 #if defined(NET_ETH_MCAST_FILTER_SUPPORTED) || defined(__DOXYGEN__)
 
 /**
- * @brief Join a L2 multicast group on a network interface.
+ * @brief Join L2 multicast group for VLAN identified by @p vid.
  *
- * @details Adds the address to the multicast addresses of the interface, or
- * increments the reference count of the address if the group was already
- * joined. The receive filter of the device is programmed only when the
- * address is joined by its first user. A device that has no receive filter
- * passes the group up anyway, so the group is joined in that case too.
+ * @details Adds the address to the multicast addresses of the interface for
+ * the VLAN identified by @p vid, or increments the reference count of the
+ * VLAN-specific address if the group is already joined. The receive filter
+ * of the device is programmed only when the address is joined for the first
+ * time for the particular VLAN. A device that has no receive filter passes the
+ * group up anyway, so the group is joined in that case too.
  *
  * This is called by the Ethernet L2 itself when the IP level or a packet
  * socket joins a multicast group. Drivers should not need to call this.
+ *
+ * @param iface Network interface
+ * @param addr Multicast MAC address to join
+ * @param vid VLAN identifier
+ *
+ * @return 0 if ok, -ENOMEM if the interface cannot track another address,
+ * <0 for any other error
+ */
+int net_eth_vlan_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr,
+				uint16_t vid);
+
+/**
+ * @brief Join a L2 multicast group on a network interface.
+ *
+ * @sa net_eth_vlan_mcast_addr_add().
  *
  * @param iface Network interface
  * @param addr Multicast MAC address to join
@@ -956,16 +977,32 @@ typedef void (*net_eth_mcast_addr_cb_t)(struct net_if *iface,
  * @return 0 if ok, -ENOMEM if the interface cannot track another address,
  * <0 for any other error
  */
-int net_eth_mcast_addr_add(struct net_if *iface,
-			   const struct net_eth_addr *addr);
+static inline int net_eth_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr)
+{
+	return net_eth_vlan_mcast_addr_add(iface, addr, NET_VLAN_TAG_PRIORITY);
+}
+
+/**
+ * @brief Leave L2 multicast group for the VLAN identified by @p vid.
+ *
+ * @details Decrements the reference count of the address for the VLAN with
+ * identifier @p vid and removes it from the multicast addresses of the interface
+ * if this was the last user. The receive filter of the device is reprogrammed only
+ * when the address is left by its last user for the particular VLAN.
+ *
+ * @param iface Network interface
+ * @param addr Multicast MAC address to leave
+ * @param vid VLAN identifier
+ *
+ * @return 0 if ok, -ENOENT if the group was not joined, <0 for any other
+ * error
+ */
+int net_eth_vlan_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr, uint16_t vid);
 
 /**
  * @brief Leave a L2 multicast group on a network interface.
  *
- * @details Decrements the reference count of the address, and removes it
- * from the multicast addresses of the interface if this was the last user.
- * The receive filter of the device is reprogrammed only when the address is
- * left by its last user.
+ * @sa net_eth_vlan_mcast_addr_rm().
  *
  * @param iface Network interface
  * @param addr Multicast MAC address to leave
@@ -973,8 +1010,10 @@ int net_eth_mcast_addr_add(struct net_if *iface,
  * @return 0 if ok, -ENOENT if the group was not joined, <0 for any other
  * error
  */
-int net_eth_mcast_addr_rm(struct net_if *iface,
-			  const struct net_eth_addr *addr);
+static inline int net_eth_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr)
+{
+	return net_eth_vlan_mcast_addr_rm(iface, addr, NET_VLAN_TAG_PRIORITY);
+}
 
 /**
  * @brief Go through all the L2 multicast addresses of a network interface.
@@ -993,11 +1032,31 @@ void net_eth_mcast_addr_foreach(struct net_if *iface,
 
 #else /* NET_ETH_MCAST_FILTER_SUPPORTED */
 
+static inline int net_eth_vlan_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr,
+					      uint16_t vid)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(vid);
+
+	return -ENOTSUP;
+}
+
 static inline int net_eth_mcast_addr_add(struct net_if *iface,
 					 const struct net_eth_addr *addr)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(addr);
+
+	return -ENOTSUP;
+}
+
+static inline int net_eth_vlan_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr,
+					     uint16_t vid)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(vid);
 
 	return -ENOTSUP;
 }
@@ -1584,7 +1643,7 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable);
 int net_eth_txinjection_mode(struct net_if *iface, bool enable);
 
 /**
- * @brief Set or unset HW filtering for MAC address @p mac.
+ * @brief Set or unset VLAN HW filtering for MAC address @p mac.
  *
  * @details A multicast destination address is shared with the groups that
  * the IP stack and the packet sockets have joined, so the device is only
@@ -1598,11 +1657,30 @@ int net_eth_txinjection_mode(struct net_if *iface, bool enable);
  * @param mac Pointer to an ethernet MAC address
  * @param type Filter type, either source or destination
  * @param enable Set (true) or unset (false)
+ * @param vid VLAN tag
  *
  * @return 0 if filter set or unset was successful, <0 otherwise.
  */
-int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
-		       enum ethernet_filter_type type, bool enable);
+int net_eth_vlan_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
+			    enum ethernet_filter_type type, bool enable, uint16_t vid);
+
+/**
+ * @brief Set or unset HW filtering for MAC address @p mac.
+ *
+ * @sa net_eth_vlan_mac_filter().
+ *
+ * @param iface Network interface
+ * @param mac Pointer to an ethernet MAC address
+ * @param type Filter type, either source or destination
+ * @param enable Set (true) or unset (false)
+ *
+ * @return 0 if filter set or unset was successful, <0 otherwise.
+ */
+static inline int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
+				     enum ethernet_filter_type type, bool enable)
+{
+	return net_eth_vlan_mac_filter(iface, mac, type, enable, NET_VLAN_TAG_PRIORITY);
+}
 
 /**
  * @brief Return the PHY device that is tied to this ethernet network interface.
