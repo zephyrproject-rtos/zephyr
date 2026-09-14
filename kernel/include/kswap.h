@@ -159,12 +159,18 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 			barrier_dmem_fence_full(); /* write barrier */
 		}
 		z_sched_spinlock_release();
+#ifdef CONFIG_CRITICAL_SECTION_MONITOR
+		z_critical_section_monitor_irq_end(key);
+#endif
 		arch_switch(newsh, &old_thread->switch_handle);
 	} else {
 		z_sched_spinlock_release();
 	}
 
 	if (is_spinlock) {
+#ifdef CONFIG_CRITICAL_SECTION_MONITOR
+		z_critical_section_monitor_irq_end(key);
+#endif
 		arch_irq_unlock(key);
 	} else {
 		irq_unlock(key);
@@ -205,6 +211,9 @@ static inline int z_swap_irqlock(unsigned int key)
 	z_assert_can_swap(key, NULL);
 #endif /* CONFIG_SPIN_VALIDATE */
 
+#ifdef CONFIG_CRITICAL_SECTION_MONITOR
+	z_critical_section_monitor_irq_end(key);
+#endif
 	ret = arch_swap(key);
 	return ret;
 }

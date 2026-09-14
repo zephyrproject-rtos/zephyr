@@ -394,6 +394,48 @@ endmenu
 
 menu "Kernel Debugging and Metrics"
 
+menuconfig CRITICAL_SECTION_MONITOR
+	bool "Critical section monitor"
+	depends on SYSTEM_CLOCK_LOCK_FREE_COUNT
+	depends on !SMP || ATOMIC_OPERATIONS_BUILTIN
+	select NONZERO_SPINLOCK_SIZE
+	help
+	  Track the longest periods spent with interrupts locked and the
+	  longest spinlock wait and hold times on each CPU.
+
+	  The monitor records cycles, call site, associated spinlock, current
+	  thread, and whether the event began in an ISR. It instruments the
+	  public interrupt locking APIs and the k_spin_lock() family. Calls
+	  made directly to the architecture interrupt locking API are not
+	  tracked. Use matching public or architecture IRQ lock/unlock pairs;
+	  mixing them bypasses the monitor's interval boundaries.
+
+	  Spinlocks need distinct addresses for tracking. On uniprocessor
+	  builds without spinlock validation, this gives otherwise empty
+	  spinlock objects a non-zero size.
+
+	  Timing uses the system clock's 32-bit lock-free cycle counter.
+	  Therefore, a single measured interval must be shorter than one
+	  complete counter wrap.
+
+	  SMP snapshots require compiler atomic builtins for payload accesses
+	  and memory ordering.
+
+if CRITICAL_SECTION_MONITOR
+
+config CRITICAL_SECTION_MONITOR_MAX_SPINLOCKS
+	int "Maximum simultaneously tracked spinlocks"
+	range 1 16
+	default 4
+	help
+	  Maximum number of spinlock hold intervals tracked on each CPU.
+	  Tracking supports releases in any order. When all slots are in use,
+	  further acquisitions increment an overflow counter and their hold
+	  times are not recorded. Releasing a tracked lock frees a slot;
+	  interrupt-locked and spinlock-wait measurements always continue.
+
+endif # CRITICAL_SECTION_MONITOR
+
 config INIT_STACKS
 	bool "Initialize stack areas"
 	help

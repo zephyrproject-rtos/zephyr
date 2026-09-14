@@ -20,6 +20,10 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
+#ifdef CONFIG_CRITICAL_SECTION_MONITOR
+#include <zephyr/kernel/internal/critical_section_monitor.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -258,6 +262,8 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 #ifdef CONFIG_SMP
 unsigned int z_smp_global_lock(void);
 #define irq_lock() z_smp_global_lock()
+#elif defined(CONFIG_CRITICAL_SECTION_MONITOR)
+#define irq_lock() z_critical_section_monitor_irq_lock()
 #else
 #define irq_lock() arch_irq_lock()
 #endif
@@ -286,6 +292,8 @@ unsigned int z_smp_global_lock(void);
 #ifdef CONFIG_SMP
 void z_smp_global_unlock(unsigned int key);
 #define irq_unlock(key) z_smp_global_unlock(key)
+#elif defined(CONFIG_CRITICAL_SECTION_MONITOR)
+#define irq_unlock(key) z_critical_section_monitor_irq_unlock(key)
 #else
 #define irq_unlock(key) arch_irq_unlock(key)
 #endif
