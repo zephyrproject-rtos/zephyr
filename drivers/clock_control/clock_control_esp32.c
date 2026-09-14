@@ -9,10 +9,15 @@
 
 #include "clock_control_esp32_priv.h"
 
-#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
 #include <esp_private/esp_clk_tree_common.h>
+#endif
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
 #include <hal/clk_gate_ll.h>
 #include <soc/hp_sys_clkrst_reg.h>
+#endif
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+#include <hal/systimer_ll.h>
 #endif
 
 #include <zephyr/logging/log.h>
@@ -62,7 +67,8 @@ static enum clock_control_status clock_control_esp32_get_status(const struct dev
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
 	}
 
-#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32C61)
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32C61) ||                   \
+	defined(CONFIG_SOC_SERIES_ESP32S31)
 	return CLOCK_CONTROL_STATUS_UNKNOWN;
 #else
 	uint32_t clk_en_reg = periph_ll_get_clk_en_reg((shared_periph_module_t)module_id);
@@ -91,7 +97,8 @@ static int clock_control_esp32_on(const struct device *dev, clock_control_subsys
 	int module_id = (int)sys;
 
 	if (module_id < ESP32_MODULE_MAX) {
-#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61) &&                 \
+	!defined(CONFIG_SOC_SERIES_ESP32S31)
 		periph_module_enable((shared_periph_module_t)module_id);
 #endif
 	} else {
@@ -110,7 +117,8 @@ static int clock_control_esp32_off(const struct device *dev, clock_control_subsy
 	int module_id = (int)sys;
 
 	if (module_id < ESP32_MODULE_MAX) {
-#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61) &&                 \
+	!defined(CONFIG_SOC_SERIES_ESP32S31)
 		periph_module_disable((shared_periph_module_t)module_id);
 #endif
 	} else {
@@ -210,7 +218,7 @@ static int clock_control_esp32_init(const struct device *dev)
 		return ret;
 	}
 
-#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
 	/* Until this runs, esp_clk_tree_enable_src() is a no-op and the PLL
 	 * reference branches keep their cold-boot state. On esp32p4 the 80 MHz
 	 * branch comes up gated, leaving the timers without a functional clock.
@@ -231,6 +239,12 @@ static int clock_control_esp32_init(const struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_ESP32P4)
 	esp32p4_crypto_clk_to_pll();
+#endif
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+	/* Ungate and reset the system timer used as the kernel tick source */
+	systimer_ll_enable_bus_clock(true);
+	systimer_ll_reset_register();
+	systimer_ll_enable_sys_clock(true);
 #endif
 #endif
 
