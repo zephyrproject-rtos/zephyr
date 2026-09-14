@@ -215,4 +215,14 @@
 #define IFX_AUTANALOG_SAR_CH_COEFF7         8 /**< Correction coefficient config 7 */
 /** @} */
 
+/**
+ * @name Range detection condition (cy_en_autanalog_sar_cond_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_COND_BELOW   0 /**< result < low threshold */
+#define IFX_AUTANALOG_SAR_COND_INSIDE  1 /**< low <= result < high */
+#define IFX_AUTANALOG_SAR_COND_ABOVE   2 /**< result > high threshold */
+#define IFX_AUTANALOG_SAR_COND_OUTSIDE 3 /**< result < low OR result >= high */
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_INFINEON_AUTANALOG_SAR_H_ */
