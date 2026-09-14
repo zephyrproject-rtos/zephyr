@@ -42,6 +42,7 @@ config ESP_ROM_USB_SERIAL_DEVICE_NUM
 	default 6 if SOC_SERIES_ESP32P4
 	default 4 if SOC_SERIES_ESP32S3
 	default 4 if SOC_SERIES_ESP32C61
+	default 5 if SOC_SERIES_ESP32S31
 	default 3
 
 endif # $(dt_nodelabel_enabled,usb_serial)
@@ -85,7 +86,7 @@ config ESP_USB_SERIAL_JTAG_ENABLED
 	depends on SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3 || \
 		SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || \
 		SOC_SERIES_ESP32C61 || \
-		SOC_SERIES_ESP32H2 || SOC_SERIES_ESP32P4
+		SOC_SERIES_ESP32H2 || SOC_SERIES_ESP32P4 || SOC_SERIES_ESP32S31
 	help
 	  Keep the USB Serial/JTAG controller clock and PHY pads enabled
 	  at boot. This is needed for JTAG debugging over the built-in USB
