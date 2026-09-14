@@ -172,6 +172,9 @@
 		spi-max-frequency = <12000000>;
 		size = <0x800000>;
 		jedec-id = [c2 28 14];
+		has-dpd;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		t-enter-dpd = <10000>;
 		sfdp-bfp = [
 			 e5 20 f1 ff  ff ff 7f 00  44 eb 08 6b  08 3b 04 bb
 			 ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
