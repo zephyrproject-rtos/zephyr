@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 
 #include <stdint.h>
 #include <zephyr/usb/usbh.h>
+#include <zephyr/usb/bos.h>
 
 #include "usbh_device.h"
 
@@ -67,5 +69,12 @@ int usbh_req_set_hcfs_ppwr(const struct usb_device *udev,
 
 int usbh_req_set_hcfs_prst(const struct usb_device *udev,
 			   const uint8_t port);
+
+int usbh_req_desc_bos(struct usb_device *udev, size_t len,
+		      struct usb_bos_descriptor *const bos_desc);
+
+int usbh_req_desc_string(struct usb_device *udev, size_t len,
+			 struct usb_string_descriptor *const str_desc, uint8_t str_id,
+			 uint16_t lang_code);
 
 #endif /* ZEPHYR_INCLUDE_USBH_CH9_H */

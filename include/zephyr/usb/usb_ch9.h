@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -498,27 +499,53 @@ struct usb_association_descriptor {
  * @{
  */
 /** Audio device class. */
-#define USB_BCC_AUDIO			0x01
+#define USB_BCC_AUDIO               0x01
 /** CDC control device class. */
-#define USB_BCC_CDC_CONTROL		0x02
+#define USB_BCC_CDC_CONTROL         0x02
 /** HID device class. */
-#define USB_BCC_HID			0x03
+#define USB_BCC_HID                 0x03
+/** Physical device class */
+#define USB_BCC_PHYSICAL            0x05
+/** Image device class */
+#define USB_BCC_IMAGE               0x06
+/** Printer device class */
+#define USB_BCC_PRINTER             0x07
 /** Mass storage device class. */
-#define USB_BCC_MASS_STORAGE		0x08
+#define USB_BCC_MASS_STORAGE        0x08
+/** HUB device class. */
+#define USB_BCC_HUB                 0x09
 /** CDC data device class. */
-#define USB_BCC_CDC_DATA		0x0A
+#define USB_BCC_CDC_DATA            0x0A
+/** Smart card device class. */
+#define USB_BCC_SMART_CARD          0x0B
+/** Content security device class. */
+#define USB_BCC_SECURITY            0x0D
 /** Video device class. */
-#define USB_BCC_VIDEO			0x0E
+#define USB_BCC_VIDEO               0x0E
+/** Healthcare device class. */
+#define USB_BCC_HEALTHCARE          0x0F
+/** Audio/Video device class. */
+#define USB_BCC_AUDIO_VIDEO         0x10
+/** Billboard device class. */
+#define USB_BCC_BILLBOARD           0x11
+/** USB-C Bridge device class. */
+#define USB_BCC_USBC_BRIDGE         0x12
+/** USB Bulk display device class. */
+#define USB_BCC_BULK_DISPLAY        0x13
 /** MCTP device class. */
-#define USB_BCC_MCTP			0x14
+#define USB_BCC_MCTP                0x14
+/** I3C device class. */
+#define USB_BCC_I3C                 0x3C
+/** Diagnostic device class. */
+#define USB_BCC_DIAGNOSTIC          0xDC
 /** Wireless controller device class. */
-#define USB_BCC_WIRELESS_CONTROLLER	0xE0
+#define USB_BCC_WIRELESS_CONTROLLER 0xE0
 /** Miscellaneous device class. */
-#define USB_BCC_MISCELLANEOUS		0xEF
+#define USB_BCC_MISCELLANEOUS       0xEF
 /** Application-specific device class. */
-#define USB_BCC_APPLICATION		0xFE
+#define USB_BCC_APPLICATION         0xFE
 /** Vendor-specific device class. */
-#define USB_BCC_VENDOR			0xFF
+#define USB_BCC_VENDOR              0xFF
 /** @} */
 
 /**
