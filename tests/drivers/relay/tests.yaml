@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - relay
+  harness: ztest
+tests:
+  drivers.relay.gpio:
+    filter: dt_compat_enabled("zephyr,gpio-relay")
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
