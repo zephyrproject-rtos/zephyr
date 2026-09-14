@@ -130,7 +130,7 @@ jobs:
 
     - name: Install and vendor copies of JS libs within within docs sources
       run: |
-        npm install --prefix doc
+        npm install --prefix doc --ignore-scripts
         for pkg in mermaid d3; do
           mkdir -p doc/_static/js/${pkg}
           cp -a doc/node_modules/${pkg}/dist/. doc/_static/js/${pkg}/
@@ -183,7 +183,7 @@ jobs:
           libxkbcommon0 libxdamage1 libgbm1 libpango-1.0-0 \
           libcairo2 libasound2t64
 
-        npm install -g pa11y-ci@4 pa11y-ci-reporter-html@7
+        npm install -g pa11y-ci@4 pa11y-ci-reporter-html@7 --ignore-scripts
         npx puppeteer browsers install chrome
 
         python3 -m http.server 8000 --directory doc/_build/html &
