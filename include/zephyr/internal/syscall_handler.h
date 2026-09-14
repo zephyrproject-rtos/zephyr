@@ -78,7 +78,7 @@ static inline bool k_is_in_user_syscall(void)
  *
  * @param ko Kernel object metadata pointer, or NULL
  * @param otype Expected type of the kernel object, or K_OBJ_ANY if type
- *	  doesn't matter
+ *	  doesn't matter, or K_OBJ_DRIVER_ANY for any driver object
  * @param init Indicate whether the object needs to already be in initialized
  *             or uninitialized state, or that we don't care
  * @note This is an internal API. Do not use unless you are extending
