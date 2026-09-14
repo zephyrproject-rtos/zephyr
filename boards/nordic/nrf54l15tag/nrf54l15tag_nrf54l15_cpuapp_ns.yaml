@@ -9,7 +9,7 @@ toolchain:
   - gnuarmemb
   - zephyr
 ram: 128
-flash: 512
+flash: 940
 supported:
   - adc
   - counter
