@@ -115,10 +115,9 @@ def test_projectbuilder_cmake_assemble_args_single(m):
         "-Dbasearg1", "-DSNIPPET_t=test",
         "-Dhandler_arg1", "-Dhandler_arg2",
         "-DCONF_FILE=a.conf;b.conf;c.conf",
-        "-DEXTRA_CONF_FILE=d.conf;e.conf;f.conf",
-        "-DDTC_OVERLAY_FILE=x.overlay;y.overlay;z.overlay",
-        "-DOVERLAY_CONFIG=extra_overlay.conf "
+        "-DEXTRA_CONF_FILE=d.conf;e.conf;f.conf;extra_overlay.conf;"
         "/builddir/twister/testsuite_extra.conf",
+        "-DDTC_OVERLAY_FILE=x.overlay;y.overlay;z.overlay",
     ])
 
 
@@ -2357,13 +2356,49 @@ def test_projectbuilder_cmake_assemble_args():
         '-DDUMMY_EXTRA=yes',
         '-Ddummy_handler',
         '-DCONF_FILE=file1.conf;file2.conf',
-        '-DEXTRA_CONF_FILE=extrafile1.conf;extrafile2.conf',
+        '-DEXTRA_CONF_FILE=extrafile1.conf;extrafile2.conf;extra_overlay_conf;'
+        f'{os.path.join("build", "dir", "twister", "testsuite_extra.conf")}',
         '-DDTC_OVERLAY_FILE=overlay1.dtc;overlay2.dtc',
-        f'-DOVERLAY_CONFIG=extra_overlay_conf ' \
-        f'{os.path.join("build", "dir", "twister", "testsuite_extra.conf")}'
     ]
 
     assert results == expected_results
+
+
+def test_projectbuilder_cmake_assemble_args_extra_args_extra_conf_file():
+    # A test suite can set EXTRA_CONF_FILE through its extra_args. The option
+    # built from the overlay confs must not shadow it.
+    extra_args = ['EXTRA_CONF_FILE="from_extra_args.conf"']
+    handler = mock.Mock(ready=True, args=[])
+    extra_overlay_confs = ['extra_overlay.conf']
+    build_dir = os.path.join('build', 'dir')
+
+    with mock.patch('os.path.exists', return_value=True):
+        results = ProjectBuilder.cmake_assemble_args(extra_args, handler, [], [],
+                                                     extra_overlay_confs, [], [], build_dir)
+
+    assert results == [
+        '-DEXTRA_CONF_FILE=from_extra_args.conf;extra_overlay.conf;'
+        f'{os.path.join("build", "dir", "twister", "testsuite_extra.conf")}',
+    ]
+
+
+def test_projectbuilder_cmake_assemble_args_extra_conf_file_precedence():
+    # Only one EXTRA_CONF_FILE can be kept, as CMake keeps the last -D option
+    # given for a variable: the last entry of extra_args wins, and the extra
+    # conf files of the test suite win over it.
+    extra_args = ['EXTRA_CONF_FILE="first.conf"', 'EXTRA_CONF_FILE="last.conf"']
+    handler = mock.Mock(ready=True, args=[])
+
+    with mock.patch('os.path.exists', return_value=False):
+        results = ProjectBuilder.cmake_assemble_args(extra_args, handler, [], [],
+                                                     ['extra_overlay.conf'], [], [], '/builddir/')
+    assert results == ['-DEXTRA_CONF_FILE=last.conf;extra_overlay.conf']
+
+    with mock.patch('os.path.exists', return_value=False):
+        results = ProjectBuilder.cmake_assemble_args(extra_args, handler, [],
+                                                     ['extrafile.conf'],
+                                                     ['extra_overlay.conf'], [], [], '/builddir/')
+    assert results == ['-DEXTRA_CONF_FILE=extrafile.conf;extra_overlay.conf']
 
 
 def test_projectbuilder_cmake():
