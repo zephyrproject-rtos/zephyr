@@ -30,7 +30,7 @@ KCONFIG_HEADER="""\
 # Some manual additions are made, but no deletion.
 
 config PSA_CRYPTO_ENABLE_ALL
-	bool "All PSA crypto features"
+	bool "All PSA crypto features" if !PSA_PROMPTLESS
 """.format(os.path.basename(__file__), INPUT_REL_PATH)
 
 H_HEADER="""\
@@ -82,7 +82,7 @@ def generate_kconfig_content(symbols: List[str]) -> str:
             continue
         output.append("""
 config {0}
-\tbool "{0}" if !MBEDTLS_PROMPTLESS
+\tbool "{0}" if !PSA_PROMPTLESS
 \tdefault y if PSA_CRYPTO_ENABLE_ALL
 """.format(sym))
 
