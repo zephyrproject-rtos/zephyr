@@ -502,11 +502,16 @@ static void dwmac_dma_irq(const struct device *dev, unsigned int ch)
 
 static void dwmac_mac_irq(const struct device *dev)
 {
+	struct dwmac_priv *p = dev->data;
 	uint32_t status;
 
+	/* reading clears the status bits */
 	status = DWMAC_REG_READ(MAC_IRQ_STATUS);
 	LOG_DBG("MAC_IRQ_STATUS = 0x%08x", status);
-	__ASSERT(false, "unimplemented");
+
+	if ((status & MAC_IRQ_STATUS_MDIOIS) != 0U) {
+		k_sem_give(&p->mdio_done);
+	}
 }
 
 static void dwmac_mtl_irq(const struct device *dev)
@@ -779,6 +784,9 @@ int dwmac_probe(const struct device *dev)
 	p->feature3 = DWMAC_REG_READ(MAC_HW_FEATURE3);
 	LOG_DBG("hw_feature: 0x%08x 0x%08x 0x%08x 0x%08x",
 		p->feature0, p->feature1, p->feature2, p->feature3);
+
+	/* the MDIO driver enables the MDIO interrupt if the IP has it */
+	k_sem_init(&p->mdio_done, 0, 1);
 
 	ret = dwmac_platform_init(dev);
 	if (ret != 0) {
