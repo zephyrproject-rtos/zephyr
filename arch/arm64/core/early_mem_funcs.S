@@ -46,7 +46,7 @@ SECTION_FUNC(TEXT, arch_early_memset)
 
 3:	/* one byte at a time */
 	subs	x2, x2, #1
-	strb	w8, [x0], #1
+	strb	w1, [x0], #1
 	b.ne	3b
 
 4:	ret

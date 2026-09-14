@@ -36,6 +36,8 @@ class ThreadInfoOffset(IntEnum):
     THREAD_INFO_OFFSET_T_COOP_FLOAT = 12
     THREAD_INFO_OFFSET_T_ARM_EXC_RETURN = 13
     THREAD_INFO_OFFSET_T_ARC_RELINQUISH_CAUSE = 14
+    THREAD_INFO_OFFSET_CPU_STRIDE = 15
+    THREAD_INFO_OFFSET_NUM_CPUS = 16
 
     def __int__(self):
         return self.value
@@ -78,10 +80,14 @@ class CoredumpElfFile:
         return self.kernel_thread_info_offsets is not None
 
     def get_kernel_thread_info_offset(self, thread_info_offset_index):
+        # Check against the count actually read from this target's binary
+        # (_kernel_thread_info_num_offsets), not a hardcoded ceiling: an
+        # older build may have fewer elements than this script knows about,
+        # and a newer field (e.g. THREAD_INFO_OFFSET_NUM_CPUS) must degrade
+        # to "not present" rather than reading garbage/out-of-bounds.
         if (
             self.has_kernel_thread_info()
-            and thread_info_offset_index
-            <= ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARC_RELINQUISH_CAUSE
+            and thread_info_offset_index < self.kernel_thread_info_num_offsets
         ):
             return self.kernel_thread_info_offsets[thread_info_offset_index]
         else:

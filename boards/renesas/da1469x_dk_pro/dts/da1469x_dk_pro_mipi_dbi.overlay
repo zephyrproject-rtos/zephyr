@@ -28,9 +28,9 @@
 		status = "okay";
 		reg = <0x38>;
 		int-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
-		swap-xy;
-		invert-x;
-		invert-y;
+		swapped-x-y;
+		inverted-x;
+		inverted-y;
 	};
 };
 

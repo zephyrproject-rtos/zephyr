@@ -428,7 +428,7 @@ static DEVICE_API(sensor, icm42605_driver_api) = {
 #define ICM42605_DEFINE_CONFIG(index)					\
 	static const struct icm42605_config icm42605_cfg_##index = {	\
 		.spi = SPI_DT_SPEC_INST_GET(index,			\
-					    SPI_OP_MODE_MASTER |	\
+					    SPI_OP_MODE_CONTROLLER |	\
 					    SPI_MODE_CPOL |		\
 					    SPI_MODE_CPHA |		\
 					    SPI_WORD_SET(8) |		\

@@ -31,9 +31,7 @@ struct dynamic_region_info {
  * regions may be configured.
  */
 static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
-#if defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M52) || defined(CONFIG_CPU_CORTEX_M55) || \
-	defined(CONFIG_CPU_CORTEX_M85)
+#if !defined(CONFIG_AARCH32_ARMV8_R)
 static inline void mpu_set_mair0(uint32_t mair0)
 {
 	MPU->MAIR0 = mair0;
@@ -77,8 +75,7 @@ static inline void mpu_clear_region(uint32_t rnr)
 {
 	ARM_MPU_ClrRegion(rnr);
 }
-
-#elif defined(CONFIG_AARCH32_ARMV8_R)
+#else
 static inline void mpu_set_mair0(uint32_t mair0)
 {
 	write_mair0(mair0);
@@ -131,9 +128,6 @@ static inline void mpu_clear_region(uint32_t rnr)
 	mpu_set_rbar(0);
 	mpu_set_rlar(0);
 }
-
-#else
-#error "Unsupported ARM CPU"
 #endif
 
 /* Global MPU configuration at system initialization. */

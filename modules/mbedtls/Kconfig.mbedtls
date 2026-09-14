@@ -98,6 +98,23 @@ config MBEDTLS_SSL_ENCRYPT_THEN_MAC
 	  padding oracle attacks. Disable only if interoperability
 	  with non-compliant peers is required.
 
+config MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
+	bool "Maximum Fragment Length (MFL) extension support (RFC 6066)"
+	depends on !MBEDTLS_SSL_PROTO_TLS1_3
+	default y
+	help
+	  Enable support for negotiating a Maximum Fragment Length (MFL)
+	  (RFC 6066), allowing a smaller fragment size to be
+	  requested than the configured buffer size. Not supported by
+	  Mbed TLS in TLS 1.3 mode.
+
+config MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
+	bool "Automatic post-handshake buffer resize"
+	depends on MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
+	help
+	  When this option is enabled, the SSL buffer will be resized automatically
+	  based on the negotiated maximum fragment length in each direction.
+
 endif # MBEDTLS_SSL_PROTO_TLS1_2
 
 if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3

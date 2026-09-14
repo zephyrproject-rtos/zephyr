@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-FileCopyrightText: 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_ADI_ADGM3121
+	bool "ADI ADGM3121 MEMS switch MUX driver"
+	default y
+	depends on DT_HAS_ADI_ADGM3121_ENABLED || DT_HAS_ADI_ADGM3121_GPIO_ENABLED
+	select SPI if DT_HAS_ADI_ADGM3121_ENABLED
+	select GPIO if DT_HAS_ADI_ADGM3121_GPIO_ENABLED
+	help
+	  Enable the ADI ADGM3121 DPDT MEMS switch as a MUX controller. The four
+	  switches are exposed as a single control line whose state is a 4-bit
+	  switch bitmask (bit i = SW(i+1)). Both SPI (adi,adgm3121) and parallel
+	  GPIO (adi,adgm3121-gpio) control modes are supported.
+
+if MUX_ADI_ADGM3121
+
+config MUX_ADI_ADGM3121_INIT_PRIORITY
+	int "ADGM3121 init priority"
+	default 60
+	help
+	  Device initialization priority. Unlike on-chip MUX backends, the
+	  ADGM3121 sits on a bus, so it must initialize later than its SPI or
+	  GPIO controller (SPI_INIT_PRIORITY defaults to
+	  KERNEL_INIT_PRIORITY_DEVICE) while still being earlier than any MUX
+	  consumer that references it.
+
+endif # MUX_ADI_ADGM3121

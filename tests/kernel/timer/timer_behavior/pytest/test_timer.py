@@ -38,9 +38,9 @@ def do_analysis(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec):
                  expected_period_drift) / 1_000_000
 
     min_cyc = 1. / sys_clock_hw_cycles_per_sec
-    max_stddev = int(config['TIMER_TEST_MAX_STDDEV']) / 1_000_000
-    # Max STDDEV cannot be lower than clock single cycle
-    max_stddev = max(min_cyc, max_stddev)
+    # Allowed jitter is one tick (the scheduling quantum), computed from the
+    # clock; never below a single cycle.
+    max_stddev = max(min_cyc, 1. / ticks_per_sec)
 
     max_drift_ppm = int(config['TIMER_EXTERNAL_TEST_MAX_DRIFT_PPM'])
     time_diff = stats['total_time'] - seconds - expected_total_drift

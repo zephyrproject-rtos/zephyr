@@ -46,13 +46,36 @@ static int gpio_psoc6_config(const struct device *dev,
 	uint32_t drv_mode;
 	uint32_t pin_val;
 
+	if (pin >= (sizeof(cfg->common.port_pin_mask) * 8U) ||
+	    (cfg->common.port_pin_mask & BIT(pin)) == 0U) {
+		return -EINVAL;
+	}
+
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_SINGLE_ENDED) {
-			drv_mode = (flags & GPIO_LINE_OPEN_DRAIN) ?
-				CY_GPIO_DM_OD_DRIVESLOW_IN_OFF :
-				CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF;
+			if (flags & GPIO_LINE_OPEN_DRAIN) {
+				if (flags & GPIO_PULL_DOWN) {
+					return -ENOTSUP;
+				}
+				drv_mode = (flags & GPIO_PULL_UP) ?
+					CY_GPIO_DM_PULLUP_IN_OFF :
+					CY_GPIO_DM_OD_DRIVESLOW_IN_OFF;
+			} else {
+				if (flags & GPIO_PULL_UP) {
+					return -ENOTSUP;
+				}
+				drv_mode = (flags & GPIO_PULL_DOWN) ?
+					CY_GPIO_DM_PULLDOWN_IN_OFF :
+					CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF;
+			}
 
-			pin_val = (flags & GPIO_LINE_OPEN_DRAIN) ? 1 : 0;
+			if (flags & GPIO_OUTPUT_INIT_HIGH) {
+				pin_val = 1;
+			} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+				pin_val = 0;
+			} else {
+				pin_val = (flags & GPIO_LINE_OPEN_DRAIN) ? 1 : 0;
+			}
 		} else {
 			drv_mode = CY_GPIO_DM_STRONG_IN_OFF;
 
@@ -229,6 +252,85 @@ static uint32_t gpio_psoc6_get_pending_int(const struct device *dev)
 	return GPIO_PRT_INTR_MASKED(port);
 }
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_psoc6_pin_get_config(const struct device *dev, gpio_pin_t pin,
+				     gpio_flags_t *out_flags)
+{
+	const struct gpio_psoc6_config *cfg = dev->config;
+	GPIO_PRT_Type *port = cfg->regs;
+	gpio_flags_t flags = 0;
+	uint32_t drv_mode;
+
+	if (pin >= (sizeof(cfg->common.port_pin_mask) * 8U) ||
+	    (cfg->common.port_pin_mask & BIT(pin)) == 0U) {
+		return -EINVAL;
+	}
+
+	if ((uint32_t)Cy_GPIO_GetHSIOM(port, pin) != (uint32_t)HSIOM_SEL_GPIO) {
+		*out_flags = 0;
+		return 0;
+	}
+
+	drv_mode = Cy_GPIO_GetDrivemode(port, pin);
+
+	switch (drv_mode) {
+	case CY_GPIO_DM_ANALOG:
+		flags = GPIO_DISCONNECTED;
+		break;
+	case CY_GPIO_DM_HIGHZ:
+		flags = GPIO_INPUT;
+		break;
+	case CY_GPIO_DM_PULLUP_IN_OFF:
+		flags = GPIO_PULL_UP;
+		break;
+	case CY_GPIO_DM_PULLUP:
+		flags = GPIO_INPUT | GPIO_PULL_UP;
+		break;
+	case CY_GPIO_DM_PULLDOWN_IN_OFF:
+		flags = GPIO_PULL_DOWN;
+		break;
+	case CY_GPIO_DM_PULLDOWN:
+		flags = GPIO_INPUT | GPIO_PULL_DOWN;
+		break;
+	case CY_GPIO_DM_PULLUP_DOWN_IN_OFF:
+		flags = GPIO_PULL_UP | GPIO_PULL_DOWN;
+		break;
+	case CY_GPIO_DM_PULLUP_DOWN:
+		flags = GPIO_INPUT | GPIO_PULL_UP | GPIO_PULL_DOWN;
+		break;
+	case CY_GPIO_DM_STRONG_IN_OFF:
+		flags = GPIO_OUTPUT;
+		flags |= Cy_GPIO_ReadOut(port, pin) ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+		break;
+	case CY_GPIO_DM_STRONG:
+		flags = GPIO_INPUT | GPIO_OUTPUT;
+		flags |= Cy_GPIO_ReadOut(port, pin) ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+		break;
+	case CY_GPIO_DM_OD_DRIVESLOW_IN_OFF:
+		flags = GPIO_OUTPUT | GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_DRAIN;
+		flags |= Cy_GPIO_ReadOut(port, pin) ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+		break;
+	case CY_GPIO_DM_OD_DRIVESLOW:
+		flags = GPIO_INPUT | GPIO_OUTPUT | GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_DRAIN;
+		flags |= Cy_GPIO_ReadOut(port, pin) ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+		break;
+	case CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF:
+		flags = GPIO_OUTPUT | GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_SOURCE;
+		flags |= Cy_GPIO_ReadOut(port, pin) ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+		break;
+	case CY_GPIO_DM_OD_DRIVESHIGH:
+		flags = GPIO_INPUT | GPIO_OUTPUT | GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_SOURCE;
+		flags |= Cy_GPIO_ReadOut(port, pin) ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	*out_flags = flags;
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_CONFIG */
+
 static DEVICE_API(gpio, gpio_psoc6_api) = {
 	.pin_configure = gpio_psoc6_config,
 	.port_get_raw = gpio_psoc6_port_get_raw,
@@ -239,6 +341,9 @@ static DEVICE_API(gpio, gpio_psoc6_api) = {
 	.pin_interrupt_configure = gpio_psoc6_pin_interrupt_configure,
 	.manage_callback = gpio_psoc6_manage_callback,
 	.get_pending_int = gpio_psoc6_get_pending_int,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_psoc6_pin_get_config,
+#endif
 };
 
 int gpio_psoc6_init(const struct device *dev)

@@ -168,8 +168,37 @@ remoteproc framework. (more information about the procedure can be found in the
 
 Debugging
 =========
-Applications can be debugged using OpenOCD and GDB. The OpenOCD files can be
-found at `device-stm-openocd`_.
+Applications can be debugged using OpenOCD and GDB, using the
+community/mainline `OpenOCD project`_ (tested at commit ``fc566d7``), which
+ships a ready-made ``board/st/stm32mp257f-dk.cfg``. This board provides its
+own ``support/openocd_stm32mp257f_dk_m33.cfg`` file on top of it to keep
+both Cortex®-A35 and Cortex®-M33 enabled with deterministic GDB ports.
+
+The OpenOCD version bundled with the Zephyr SDK is typically too old for
+this board file (missing board/target scripts, or an incompatible
+``interface/stlink.cfg``), so build the community/mainline OpenOCD from
+source instead:
+
+.. code-block:: console
+
+  $ git clone https://github.com/openocd-org/openocd
+  $ cd openocd
+  $ ./bootstrap with-submodules
+  $ ./configure --enable-internal-jimtcl --enable-stlink
+  $ make
+
+``--enable-internal-jimtcl`` is required unless jimtcl is already
+installed system-wide. Building the ST-Link driver also requires the
+libusb-1.0 development headers (e.g. ``libusb-1.0-0-dev`` on
+Debian/Ubuntu).
+
+Then point west at both the built binary and its scripts directory:
+
+.. code-block:: console
+
+  $ west build -- -DOPENOCD=/path/to/openocd/src/openocd \
+      -DSTM32MP_OPENOCD_SCRIPTS=/path/to/openocd/tcl
+
 The firmware must first be started by the Cortex®-A35. The debugger can
 then be attached to the running Zephyr firmware using OpenOCD.
 
@@ -179,6 +208,7 @@ then be attached to the running Zephyr firmware using OpenOCD.
    :zephyr-app: samples/basic/blinky
    :board: stm32mp257f_dk/stm32mp257fxx/m33
    :goals: build
+   :gen-args: -DOPENOCD=/path/to/openocd/src/openocd -DSTM32MP_OPENOCD_SCRIPTS=/path/to/openocd/tcl
 
 - Copy the firmware to the board, load it and start it with remoteproc
   (`STM32MP257F boot Cortex-M33 firmware`_). The orange LED should be blinking.
@@ -186,7 +216,13 @@ then be attached to the running Zephyr firmware using OpenOCD.
 
 .. code-block:: console
 
-   $ west attach
+  $ west attach
+
+The Cortex®-A35 (SMP pair) and Cortex®-M33 cores are independent debug views
+(Access Ports) behind the same physical debug/SWD port. The board file keeps
+both enabled and pins their GDB ports so ``west attach`` reliably reaches the
+Cortex®-M33 (port 3334) while the Cortex®-A35 stays reachable on port 3333,
+e.g. with ``gdb-multiarch -ex "target extended-remote :3333"``.
 
 References
 ==========
@@ -220,5 +256,5 @@ References
 .. _STM32MPU Wiki:
   https://wiki.st.com/stm32mpu/wiki/Main_Page
 
-.. _device-stm-openocd:
-  https://github.com/STMicroelectronics/device-stm-openocd/tree/main
+.. _OpenOCD project:
+  https://github.com/openocd-org/openocd

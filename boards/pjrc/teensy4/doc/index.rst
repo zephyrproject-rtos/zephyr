@@ -412,13 +412,8 @@ Configuring a Console
       By mapping the console output to USB, a usb-to-serial adapter is no longer required.
       Utilizing the :ref:`snippet-cdc-acm-console` and a config option will enable this feature.
 
-      #. If application code doesn´t enable USB device support, this must be done via Kconfig option.
-
-         .. code-block:: kconfig
-
-            CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=y
-
-      #. Build application including the snippet.
+      #. Build application including the snippet. It initializes USB device
+         support automatically.
 
          .. zephyr-app-commands::
             :zephyr-app: samples/basic/blinky

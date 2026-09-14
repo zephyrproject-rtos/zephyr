@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_3R_TNH_SENSOR_LITE
-	select SOC_BL704L10Q2I
+	select SOC_BL704L10Q2IW

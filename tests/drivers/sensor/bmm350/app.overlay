@@ -1,0 +1,10 @@
+/* Copyright (c) 2026 Meta Platforms
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	bmm350: bmm350@14 {
+		compatible = "bosch,bmm350";
+		reg = <0x14>;
+	};
+};

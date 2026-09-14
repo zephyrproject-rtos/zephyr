@@ -229,7 +229,9 @@ static void bt_ready(int err)
 	bt_sdp_register_service(&a2dp_sink_rec);
 
 	bt_a2dp_register_ep(&sbc_sink_ep, BT_AVDTP_AUDIO, BT_AVDTP_SINK);
-	bt_a2dp_register_cb(&a2dp_cb);
+
+	err = bt_a2dp_register_cb(&a2dp_cb);
+	__ASSERT(err == 0, "Failed to register A2DP callbacks");
 
 	err = bt_br_set_connectable(true, NULL);
 	if (err != 0) {

@@ -36,6 +36,13 @@ static uint8_t pub_key[BT_PUB_KEY_LEN];
 static sys_slist_t pub_key_cb_slist;
 static bt_dh_key_cb_t dh_key_cb;
 
+/* Incremented by bt_pub_key_hci_disrupted() under the host lock. A public
+ * key generation that was in flight at that point publishes nothing when it
+ * completes: the disruption completed the callbacks registered with it, and
+ * any request made since has re-queued the work item.
+ */
+static uint32_t pub_key_disruptions;
+
 static void generate_pub_key(struct k_work *work);
 static void generate_dh_key(struct k_work *work);
 K_WORK_DEFINE(pub_key_work, generate_pub_key);
@@ -127,12 +134,18 @@ static void set_key_attributes(psa_key_attributes_t *attr)
 static void generate_pub_key(struct k_work *work)
 {
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
-	struct bt_pub_key_cb *cb;
+	struct bt_pub_key_cb *cb, *next;
+	sys_slist_t cbs;
 	psa_key_id_t key_id;
 	uint8_t tmp_pub_key_buf[BT_PUB_KEY_LEN + 1];
 	size_t tmp_len;
+	uint32_t disruptions;
 	int err;
 	psa_status_t ret;
+
+	bt_dev_lock();
+	disruptions = pub_key_disruptions;
+	bt_dev_unlock();
 
 	set_key_attributes(&attr);
 
@@ -169,32 +182,49 @@ static void generate_pub_key(struct k_work *work)
 		goto done;
 	}
 
-	sys_memcpy_swap(pub_key, ecc.public_key_be, BT_PUB_KEY_COORD_LEN);
-	sys_memcpy_swap(&pub_key[BT_PUB_KEY_COORD_LEN],
-			&ecc.public_key_be[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
-
-	atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 	err = 0;
 
 done:
+	/* Publish the key, detach the registered callbacks and clear the
+	 * pending state under the host lock, then invoke the callbacks
+	 * without it, so that the lock is never held across application
+	 * callbacks.
+	 */
+	bt_dev_lock();
+
+	if (disruptions != pub_key_disruptions) {
+		/* Disrupted while in flight: the disruption completed the
+		 * registered callbacks, and any request made since has
+		 * re-queued this work item, so leave the list and the
+		 * pending state to that run.
+		 */
+		bt_dev_unlock();
+		return;
+	}
+
+	if (err == 0) {
+		sys_memcpy_swap(pub_key, ecc.public_key_be, BT_PUB_KEY_COORD_LEN);
+		sys_memcpy_swap(&pub_key[BT_PUB_KEY_COORD_LEN],
+				&ecc.public_key_be[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
+		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+	}
+
+	cbs = pub_key_cb_slist;
+	sys_slist_init(&pub_key_cb_slist);
 	atomic_clear_bit(flags, PENDING_PUB_KEY);
+	bt_dev_unlock();
 
-	/* Change to cooperative priority while we do the callbacks */
-	k_sched_lock();
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cbs, cb, next, node) {
 		if (cb->func) {
 			cb->func(err ? NULL : pub_key);
 		}
 	}
-
-	sys_slist_init(&pub_key_cb_slist);
-
-	k_sched_unlock();
 }
 
 static void generate_dh_key(struct k_work *work)
 {
+	uint8_t dhkey[BT_DH_KEY_LEN];
+	bt_dh_key_cb_t cb;
 	int err;
 
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -237,26 +267,21 @@ static void generate_dh_key(struct k_work *work)
 	err = 0;
 
 exit:
-	/* Change to cooperative priority while we do the callback */
-	k_sched_lock();
-
-	if (dh_key_cb) {
-		bt_dh_key_cb_t cb = dh_key_cb;
-
-		dh_key_cb = NULL;
-		atomic_clear_bit(flags, PENDING_DHKEY);
-
-		if (err) {
-			cb(NULL);
-		} else {
-			uint8_t dhkey[BT_DH_KEY_LEN];
-
-			sys_memcpy_swap(dhkey, ecc.dhkey_be, sizeof(ecc.dhkey_be));
-			cb(dhkey);
-		}
+	/* Take the callback and the result and clear the pending state under
+	 * the host lock, then invoke the callback without it.
+	 */
+	bt_dev_lock();
+	cb = dh_key_cb;
+	dh_key_cb = NULL;
+	if (err == 0) {
+		sys_memcpy_swap(dhkey, ecc.dhkey_be, sizeof(ecc.dhkey_be));
 	}
+	atomic_clear_bit(flags, PENDING_DHKEY);
+	bt_dev_unlock();
 
-	k_sched_unlock();
+	if (cb != NULL) {
+		cb(err ? NULL : dhkey);
+	}
 }
 
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
@@ -274,14 +299,21 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 		return -EINVAL;
 	}
 
+	/* The callback list and the pending state are only accessed under
+	 * the host lock (see generate_pub_key()).
+	 */
+	bt_dev_lock();
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
 		if (cb == new_cb) {
+			bt_dev_unlock();
 			LOG_DBG("Callback already registered");
 			return -EALREADY;
 		}
 	}
 
 	if (atomic_test_bit(flags, PENDING_DHKEY)) {
+		bt_dev_unlock();
 		LOG_WRN("Busy performing another ECDH operation");
 		return -EBUSY;
 	}
@@ -289,10 +321,13 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 	sys_slist_prepend(&pub_key_cb_slist, &new_cb->node);
 
 	if (atomic_test_and_set_bit(flags, PENDING_PUB_KEY)) {
+		bt_dev_unlock();
 		return 0;
 	}
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+
+	bt_dev_unlock();
 
 	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
 		bt_long_wq_submit(&pub_key_work);
@@ -305,17 +340,21 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 
 void bt_pub_key_hci_disrupted(void)
 {
-	struct bt_pub_key_cb *cb;
+	struct bt_pub_key_cb *cb, *next;
+	sys_slist_t cbs;
 
+	bt_dev_lock();
+	pub_key_disruptions++;
+	cbs = pub_key_cb_slist;
+	sys_slist_init(&pub_key_cb_slist);
 	atomic_clear_bit(flags, PENDING_PUB_KEY);
+	bt_dev_unlock();
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cbs, cb, next, node) {
 		if (cb->func) {
 			cb->func(NULL);
 		}
 	}
-
-	sys_slist_init(&pub_key_cb_slist);
 }
 
 const uint8_t *bt_pub_key_get(void)
@@ -333,17 +372,27 @@ const uint8_t *bt_pub_key_get(void)
 
 int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb)
 {
+	/* The pending state and the callback are only accessed under the
+	 * host lock; the shared key storage is written under it here and
+	 * then owned by the worker until it clears the pending state (see
+	 * generate_dh_key()).
+	 */
+	bt_dev_lock();
+
 	if (dh_key_cb == cb) {
+		bt_dev_unlock();
 		return -EALREADY;
 	}
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY)) {
+		bt_dev_unlock();
 		return -EADDRNOTAVAIL;
 	}
 
 	if (dh_key_cb ||
 	    atomic_test_bit(flags, PENDING_PUB_KEY) ||
 	    atomic_test_and_set_bit(flags, PENDING_DHKEY)) {
+		bt_dev_unlock();
 		return -EBUSY;
 	}
 
@@ -355,6 +404,8 @@ int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb)
 	sys_memcpy_swap(ecc.public_key_be, remote_pk, BT_PUB_KEY_COORD_LEN);
 	sys_memcpy_swap(&ecc.public_key_be[BT_PUB_KEY_COORD_LEN],
 			&remote_pk[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
+
+	bt_dev_unlock();
 
 	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
 		bt_long_wq_submit(&dh_key_work);

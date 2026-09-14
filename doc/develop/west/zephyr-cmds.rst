@@ -90,24 +90,20 @@ Choosing an SPDX version
 select another version with the ``--spdx-version`` option.
 
 SPDX 2.3 is a superset of 2.2 and adds fields such as ``PrimaryPackagePurpose``. Pick SPDX 2.x for
-compatibility with tooling that does not yet understand SPDX 3.0; pick SPDX 3.0 for the richer,
-machine-readable build provenance described in :ref:`west-spdx-build-profile`.
+compatibility with tooling that does not yet understand SPDX 3; pick SPDX 3.0 or above for the
+richer, machine-readable build provenance described in :ref:`west-spdx-build-profile`.
+
+.. note::
+
+   SPDX 3.1 support is experimental: the SPDX 3.1 specification is still in development.
 
 Generating SPDX documents
 -------------------------
 
-#. Pre-populate a build directory :file:`BUILD_DIR` like this:
+#. Enable :kconfig:option:`CONFIG_BUILD_OUTPUT_META` in your project, so that the build
+   records what ``west spdx`` needs.
 
-   .. code-block:: bash
-
-      west spdx --init -d BUILD_DIR
-
-   This step ensures the build directory contains the CMake metadata (a CMake file-API query)
-   required for SPDX document generation.
-
-#. Enable :kconfig:option:`CONFIG_BUILD_OUTPUT_META` in your project.
-
-#. Build your application using this pre-created build directory, like so:
+#. Build your application:
 
    .. code-block:: bash
 
@@ -134,8 +130,7 @@ Generating SPDX documents
 
    .. code-block:: bash
 
-     west spdx --init  -d BUILD_DIR/hello_world
-     west build -d BUILD_DIR/hello_world
+     west build --sysbuild -d BUILD_DIR
      west spdx -d BUILD_DIR/hello_world
 
 Output documents
@@ -208,6 +203,10 @@ Command-line options
 
 ``west spdx`` accepts these additional options:
 
+- ``-i``, ``--init``: create the CMake file-based API query in a build directory before it is
+  configured. Deprecated, and to be removed in Zephyr 5.0: a build with
+  :kconfig:option:`CONFIG_BUILD_OUTPUT_META` now requests the query itself.
+
 - ``-n PREFIX``: a prefix for the Document Namespaces that will be included in
   the generated SPDX documents. See `SPDX specification clause 6`_ for
   details. If ``-n`` is omitted, a default namespace will be generated
@@ -216,7 +215,7 @@ Command-line options
 - ``-s SPDX_DIR``: specifies an alternate directory where the SPDX documents
   should be written instead of :file:`BUILD_DIR/spdx/`.
 
-- ``--spdx-version {2.2,2.3,3.0}``: specifies which SPDX specification version to use.
+- ``--spdx-version {2.2,2.3,3.0,3.1}``: specifies which SPDX specification version to use.
   Defaults to ``2.3``. See :ref:`west-spdx-versions` for the differences between
   the versions.
 

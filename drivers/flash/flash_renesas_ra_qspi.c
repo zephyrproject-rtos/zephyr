@@ -13,7 +13,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/flash.h>
-#include <zephyr/drivers/flash/ra_flash_api_extensions.h>
 #include "spi_nor.h"
 #include "r_spi_flash_api.h"
 #include "r_qspi.h"

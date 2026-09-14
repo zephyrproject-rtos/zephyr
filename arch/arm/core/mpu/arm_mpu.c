@@ -39,13 +39,6 @@ LOG_MODULE_DECLARE(mpu);
 #define MPU_NODEID DT_INST(0, arm_armv6m_mpu)
 #endif
 
-#define NODE_HAS_PROP_AND_OR(node_id, prop) \
-	DT_NODE_HAS_PROP(node_id, prop) ||
-
-BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
-	      NODE_HAS_PROP_AND_OR, zephyr_memory_region_mpu) false) == false,
-	      "`zephyr,memory-region-mpu` was deprecated in favor of `zephyr,memory-attr`");
-
 #define NULL_PAGE_DETECT_NODE_FINDER(node_id, prop)                                                \
 	(DT_NODE_HAS_PROP(node_id, prop) && (DT_REG_ADDR(node_id) == 0) &&                         \
 	 (DT_REG_SIZE(node_id) >= CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE)) ||
@@ -79,21 +72,10 @@ static const struct arm_mpu_region unmapped_region =
 #endif /* CONFIG_ARM_MPU_CM7_UNMAPPED_REGION */
 
 /* Include architecture-specific internal headers. */
-#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
-	defined(CONFIG_CPU_CORTEX_M3) || \
-	defined(CONFIG_CPU_CORTEX_M4) || \
-	defined(CONFIG_CPU_CORTEX_M7) || \
-	defined(CONFIG_ARMV7_R)
-#include "arm_mpu_v7_internal.h"
-#elif defined(CONFIG_CPU_CORTEX_M23) || \
-	defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M52) || \
-	defined(CONFIG_CPU_CORTEX_M55) || \
-	defined(CONFIG_CPU_CORTEX_M85) || \
-	defined(CONFIG_AARCH32_ARMV8_R)
+#if Z_ARM_CPU_HAS_PMSAV8_MPU
 #include "arm_mpu_v8_internal.h"
 #else
-#error "Unsupported ARM CPU"
+#include "arm_mpu_v7_internal.h"
 #endif
 
 static int region_allocate_and_init(const uint8_t index,
@@ -186,9 +168,6 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 			 */
 			continue;
 		}
-#if defined(CONFIG_ARMV7_R)
-		region_conf.size = size_to_mpu_rasr_size(region[idx].dt_size);
-#endif
 
 		if (region_allocate_and_init((*reg_index),
 					     (const struct arm_mpu_region *) &region_conf) < 0) {
@@ -335,47 +314,6 @@ void arm_core_mpu_disable(void)
 #endif
 
 #if defined(CONFIG_USERSPACE)
-/**
- * @brief update configuration of an active memory partition
- */
-void arm_core_mpu_mem_partition_config_update(
-	struct z_arm_mpu_partition *partition,
-	k_mem_partition_attr_t *new_attr)
-{
-	/* Find the partition. ASSERT if not found. */
-	uint8_t i;
-	uint8_t reg_index = get_num_regions();
-
-	for (i = get_dyn_region_min_index(); i < get_num_regions(); i++) {
-		if (!is_enabled_region(i)) {
-			continue;
-		}
-
-		uint32_t base = mpu_region_get_base(i);
-
-		if (base != partition->start) {
-			continue;
-		}
-
-		uint32_t size = mpu_region_get_size(i);
-
-		if (size != partition->size) {
-			continue;
-		}
-
-		/* Region found */
-		reg_index = i;
-		break;
-	}
-	__ASSERT(reg_index != get_num_regions(),
-		 "Memory domain partition %p size %zu not found\n",
-		 (void *)partition->start, partition->size);
-
-	/* Modify the permissions */
-	partition->attr = *new_attr;
-	mpu_configure_region(reg_index, partition);
-}
-
 /**
  * @brief get the maximum number of available (free) MPU region indices
  *        for configuring dynamic MPU partitions

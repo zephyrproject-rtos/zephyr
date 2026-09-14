@@ -35,7 +35,7 @@
 		clk_sys: clk_sys {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_M(260)>;
+			clock-frequency = <DT_FREQ_M(200)>;
 		};
 
 		rcc: rcc@40000000 {

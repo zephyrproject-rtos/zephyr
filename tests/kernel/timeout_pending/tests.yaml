@@ -1,0 +1,28 @@
+common:
+  tags:
+    - kernel
+    - timer
+  min_ram: 128
+  timeout: 60
+  integration_platforms:
+    - qemu_x86
+    - qemu_x86_64
+
+tests:
+  kernel.timer.timeout_pending:
+    tags:
+      - kernel
+      - timer
+  kernel.timer.timeout_pending.min_heap:
+    extra_configs:
+      - CONFIG_TIMEOUT_BACKEND_MINHEAP=y
+      - CONFIG_TIMEOUT_HEAP_MAX_ENTRIES=512
+  kernel.timer.timeout_pending.wheel:
+    extra_configs:
+      - CONFIG_TIMEOUT_BACKEND_WHEEL=y
+  kernel.timer.timeout_pending.bucket:
+    extra_configs:
+      - CONFIG_TIMEOUT_BACKEND_BUCKET=y
+  kernel.timer.timeout_pending.skiplist:
+    extra_configs:
+      - CONFIG_TIMEOUT_BACKEND_SKIPLIST=y

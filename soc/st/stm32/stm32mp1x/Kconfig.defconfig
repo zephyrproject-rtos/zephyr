@@ -5,6 +5,6 @@
 
 if SOC_SERIES_STM32MP1X
 
-rsource "Kconfig.defconfig.stm32mp15_m4"
+rsource "Kconfig.defconfig.stm32mp157cxx_m4"
 
 endif # SOC_SERIES_STM32MP1X

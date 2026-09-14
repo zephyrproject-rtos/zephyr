@@ -32,27 +32,23 @@
 	status = "okay";
 };
 
+/* gpt runs in free-run mode (run-mode default comes from the SoC dtsi). */
 &gpt2 {
 	status = "okay";
-	run-mode = "free-run";
 };
 
 &gpt3 {
 	status = "okay";
-	run-mode = "free-run";
 };
 
 &gpt4 {
 	status = "okay";
-	run-mode = "free-run";
 };
 
 &gpt5 {
 	status = "okay";
-	run-mode = "free-run";
 };
 
 &gpt6 {
 	status = "okay";
-	run-mode = "free-run";
 };

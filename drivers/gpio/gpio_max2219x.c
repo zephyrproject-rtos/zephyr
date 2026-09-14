@@ -175,6 +175,7 @@ enum max22190_delay {
 };
 
 struct max22190_config {
+	struct gpio_driver_config common;
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec fault_gpio;
 	struct gpio_dt_spec ready_gpio;
@@ -657,7 +658,8 @@ static DEVICE_API(gpio, gpio_max22190_api) = {
 
 #define GPIO_MAX22190_DEVICE(id, model)                                                            \
 	static const struct max22190_config max##model##_##id##_cfg = {                            \
-		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),            \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),                                     \
+		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8U)),        \
 		.ready_gpio = GPIO_DT_SPEC_INST_GET(id, drdy_gpios),                               \
 		.fault_gpio = GPIO_DT_SPEC_INST_GET(id, fault_gpios),                              \
 		.latch_gpio = GPIO_DT_SPEC_INST_GET(id, latch_gpios),                              \

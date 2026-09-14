@@ -15,4 +15,17 @@ config BT_USER_PHY_UPDATE
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x70d16653"
 
+if BT_STM32_IPM_FW_INFO_CHECK
+
+configdefault BT_FW_EXPECTED_VERSION_MAJOR
+	default 1
+
+configdefault BT_FW_EXPECTED_VERSION_MINOR
+	default 24
+
+configdefault BT_FW_EXPECTED_VERSION_SUB
+	default 0
+
+endif # BT_STM32_IPM_FW_INFO_CHECK
+
 endif # SOC_SERIES_STM32WBX

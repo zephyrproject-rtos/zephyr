@@ -43,6 +43,10 @@ static int get_source_name(const struct log_link *link, uint32_t domain_id,
 {
 	struct mock_log_link *mock = (struct mock_log_link *)link->ctx;
 
+	if (source_id >= mock->domains[domain_id]->source_cnt) {
+		return -EINVAL;
+	}
+
 	strncpy(buf, mock->domains[domain_id]->sources[source_id].source,
 			*length);
 	*length = strlen(mock->domains[domain_id]->sources[source_id].source);

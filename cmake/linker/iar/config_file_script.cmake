@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.28.0)
 
 set(SORT_TYPE_NAME Lexical)
 
@@ -940,7 +940,7 @@ function(symbol_to_string)
             "${${STRING_STRING}}define image symbol ${symbol} = ${expr};\n"
             )
         else()
-          # Treatmen of "zephyr_linker_symbol(SYMBOL z_arm_platform_init EXPR "@SystemInit@")"
+          # Treatmen of "zephyr_linker_symbol(SYMBOL soc_reset_hook EXPR "@SystemInit@")"
           set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
             "--redirect ${symbol}=${expr}\n"
             )

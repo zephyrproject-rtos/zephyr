@@ -103,6 +103,18 @@
 	status = "okay";
 };
 
+&xo {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+
+	/* DK does no have 32kHz crystal, use the internal RC oscillator */
+	k32src = "rc";
+	k32src-accuracy-ppm = <250>;
+};
+
 &gpregret1 {
 	status = "okay";
 

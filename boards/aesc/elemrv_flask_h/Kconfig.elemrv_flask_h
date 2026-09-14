@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ELEMRV_FLASK_H
+	select SOC_ELEMRV_H if BOARD_ELEMRV_FLASK_H_ELEMRV_H

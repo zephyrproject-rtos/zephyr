@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,7 +99,9 @@
 			compatible = "infineon,ipc";
 			reg = <0x401d0000 0x1200>;
 			status = "disabled";
-			#ipc-config-cells = <3>;
+			#ipc-config-cells = <2>;
+			channel-count = <4>;
+			interrupt-count = <2>;
 		};
 
 		scb0: scb@40590000 {

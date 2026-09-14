@@ -1002,10 +1002,10 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 		.ioswp = DT_INST_PROP(index, ioswp),				\
 	};									\
 										\
-	K_MSGQ_DEFINE(rx_##index##_queue, sizeof(struct queue_item),		\
-		      CONFIG_I2S_STM32_RX_BLOCK_COUNT, 4);			\
-	K_MSGQ_DEFINE(tx_##index##_queue, sizeof(struct queue_item),		\
-		      CONFIG_I2S_STM32_TX_BLOCK_COUNT, 4);			\
+	K_MSGQ_DEFINE_STATIC_TYPE(rx_##index##_queue, struct queue_item,	\
+				  CONFIG_I2S_STM32_RX_BLOCK_COUNT);		\
+	K_MSGQ_DEFINE_STATIC_TYPE(tx_##index##_queue, struct queue_item,	\
+				  CONFIG_I2S_STM32_TX_BLOCK_COUNT);		\
 										\
 	static struct i2s_stm32_data i2s_stm32_data_##index = {			\
 		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx),			\

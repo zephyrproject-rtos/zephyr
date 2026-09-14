@@ -69,19 +69,40 @@ void object_permission_checks(struct k_sem *sem, bool skip_init)
 }
 
 /**
- * @brief Test to verify object permission
- *
- * @details
- * - The kernel must be able to associate kernel object memory addresses
- *   with whether the calling thread has access to that object, the object is
- *   of the expected type, and the object is of the expected init state.
- * - Test support freeing kernel objects allocated at runtime manually.
+ * @brief Verify that kernel object validation reports address, permission,
+ *        type and init state.
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_object_alloc(), k_object_access_grant()
+ * @details
+ * Every system call that takes a kernel object has to answer three questions
+ * about it before trusting it: is this address a kernel object at all, does
+ * the calling thread have access to it, and is it initialized and of the
+ * expected type. Each answer has its own error code, so the test drives an
+ * address through every state in turn -- unknown to the table, known but not
+ * granted, granted but uninitialized, and fully usable -- and checks the code
+ * that comes back. Dynamically allocated objects are put through the same
+ * sequence and then freed, which also covers an object leaving the table.
+ *
+ * Test steps:
+ * - Validate a stack variable, a bad address and a wild pointer, none of
+ *   which are in the object table.
+ * - Validate static objects with and without permission granted, before and
+ *   after initialization.
+ * - Allocate objects at run time, granting an extra reference so they survive
+ *   revocation, and validate them through the same states.
+ * - Free each dynamic object and validate it once more.
+ *
+ * Expected result:
+ * - Addresses outside the table report -EBADF, objects without permission or
+ *   not yet initialized report -EINVAL, usable objects validate successfully,
+ *   and a freed object goes back to reporting -EBADF.
+ *
+ * @see k_object_alloc()
+ * @see k_object_access_grant()
+ * @see k_object_free()
  */
-ZTEST(object_validation, test_generic_object)
+ZTEST(object_validation, test_kobj_validate_states)
 {
 	struct k_sem stack_sem = {};
 
@@ -115,19 +136,29 @@ ZTEST(object_validation, test_generic_object)
 }
 
 /**
- * @brief Test requestor thread will implicitly be assigned permission on the
- * dynamically allocated object
- *
- * @details
- * - Create kernel object semaphore, dynamically allocate it from the calling
- *   thread's resource pool.
- * - Check that object's address is in bounds of that memory pool.
- * - Then check the requestor thread will implicitly be assigned permission on
- *   the allocated object by using semaphore API k_sem_init()
+ * @brief Verify that allocating an object grants the caller permission on it.
  *
  * @ingroup kernel_memprotect_tests
  *
+ * @details
+ * A thread that allocates a kernel object must be able to use it straight
+ * away, without a separate grant: the allocation implicitly gives the
+ * requesting thread permission. The object also has to come out of that
+ * thread's own resource pool, so its address is checked against the pool
+ * bounds, and it is then used through an ordinary API call, which would fail
+ * the permission check if the implicit grant were missing.
+ *
+ * Test steps:
+ * - Allocate a semaphore object with k_object_alloc().
+ * - Check its address lies within the calling thread's resource pool.
+ * - Call k_sem_init() on it from the same thread.
+ *
+ * Expected result:
+ * - The allocation succeeds, the object lies in the thread's pool, and the
+ *   thread can initialize it without being granted access explicitly.
+ *
  * @see k_object_alloc()
+ * @see k_sem_init()
  */
 ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
 {
@@ -154,17 +185,30 @@ ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
 }
 
 /**
- * @brief Test dynamically allocated kernel object release memory
- *
- * @details Dynamically allocated kernel objects whose access is controlled by
- * the permission system will use object permission as a reference count.
- * If no threads have access to an object, the object's memory released.
+ * @brief Verify that a kernel object is freed once nothing references it.
  *
  * @ingroup kernel_memprotect_tests
  *
+ * @details
+ * For a dynamically allocated object the set of threads holding permission on
+ * it doubles as its reference count, so revoking the last permission has to
+ * release the memory rather than leak it. The object is looked up again
+ * afterwards, and its disappearance from the object table is what shows the
+ * release happened.
+ *
+ * Test steps:
+ * - Allocate a mutex object with k_object_alloc().
+ * - Revoke the allocating thread's access, leaving no thread with permission.
+ * - Look the object up and validate it.
+ *
+ * Expected result:
+ * - The object is no longer in the table, reported as -EBADF, so its memory
+ *   was released.
+ *
  * @see k_object_alloc()
+ * @see k_object_access_revoke()
  */
-ZTEST(object_validation, test_no_ref_dyn_kobj_release_mem)
+ZTEST(object_validation, test_kobj_freed_when_unreferenced)
 {
 	int ret;
 

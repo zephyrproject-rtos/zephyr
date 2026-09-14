@@ -8,6 +8,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
 #include <zephyr/kernel_structs.h>
+#include <kspinlock.h>
 #include <kernel_internal.h>
 #include <timeout_q.h>
 #include <kthread.h>
@@ -38,17 +39,9 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
 #endif /* CONFIG_MULTITHREADING */
 
-#if (CONFIG_MP_MAX_NUM_CPUS == 1)
-#define LOCK_SCHED_SPINLOCK
-#else
-#define LOCK_SCHED_SPINLOCK   K_SPINLOCK(&_sched_spinlock)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern struct k_spinlock _sched_spinlock;
 
 extern struct k_thread _thread_dummy;
 
@@ -67,6 +60,7 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout);
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key);
+void z_reschedule_locked(k_spinlock_key_t key);
 void z_reschedule_irqlock(uint32_t key);
 int z_unpend_all(_wait_q_t *wait_q);
 bool z_thread_prio_set(struct k_thread *thread, int prio);
@@ -100,15 +94,15 @@ void move_current_to_end_of_prio_q(void);
 
 /*
  * Internal scheduler functions exposed for use by thread lifecycle code
- * (thread.c). These operate under _sched_spinlock and must not be called
- * without holding it.
+ * (thread.c). These operate under the scheduler's spinlock and must not be
+ * called without holding it.
  */
 
 /**
  * @brief Halt a thread, suspending or terminating it.
  *
  * Shared implementation for k_thread_suspend() and k_thread_abort(). The
- * caller must hold _sched_spinlock; this function releases it before
+ * caller must hold the scheduler's spinlock; this function releases it before
  * returning (possibly after a context switch).
  *
  * @param thread  Thread to halt.
@@ -120,8 +114,8 @@ void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key, bool terminate
 /**
  * @brief Ready a thread while the scheduler spinlock is already held.
  *
- * Equivalent to the internal ready_thread() helper. Callers must hold
- * _sched_spinlock.
+ * Equivalent to the internal ready_thread() helper. Callers must hold the
+ * scheduler's spinlock.
  *
  * @param thread Thread to make ready.
  */
@@ -131,7 +125,7 @@ void z_sched_ready_locked(struct k_thread *thread);
  * @brief Add a thread to a wait queue while the scheduler spinlock is held.
  *
  * Moves the thread out of the run queue and onto the specified wait queue.
- * Callers must hold _sched_spinlock.
+ * Callers must hold the scheduler's spinlock.
  *
  * @param thread  Thread to pend.
  * @param wait_q  Wait queue to add the thread to (may be NULL).
@@ -142,7 +136,7 @@ void z_sched_add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
  * @brief Remove a thread from the run queue (scheduler spinlock must be held).
  *
  * Called by sleep.c to unready the current thread before arming its wakeup
- * timeout.  Callers must already hold _sched_spinlock.
+ * timeout.  Callers must already hold the scheduler's spinlock.
  *
  * @param thread Thread to remove from the run queue.
  */
@@ -242,10 +236,10 @@ static inline void unpend_thread_no_timeout(struct k_thread *thread)
  * timeout it had pending. Returns the thread, or NULL if the wait_q was
  * empty.
  *
- * Caller MUST hold _sched_spinlock and MUST complete the wake (set return
- * value, ready the thread) under the same lock acquisition before releasing
- * it. Otherwise a racing in-flight timeout handler can ready the thread
- * before the caller's wake state is in place, exposing the woken thread
+ * Caller MUST hold the scheduler's spinlock and MUST complete the wake (set
+ * return value, ready the thread) under the same lock acquisition before
+ * releasing it. Otherwise a racing in-flight timeout handler can ready the
+ * thread before the caller's wake state is in place, exposing the woken thread
  * to a stale swap_retval. The pre-1b8c7a3 dticks-cancel check used to
  * close this window; doing all the wake work atomically under the sched
  * lock is now the way.
@@ -276,8 +270,8 @@ static ALWAYS_INLINE struct k_thread *z_unpend_first_thread_locked(_wait_q_t *wa
  * Given a wait_q, wake up the highest priority thread on the queue. If the
  * queue was empty just return false.
  *
- * Otherwise, do the following, in order,  holding _sched_spinlock the entire
- * time so that the thread state is guaranteed not to change:
+ * Otherwise, do the following, in order,  holding the scheduler's spinlock the
+ *  entire time so that the thread state is guaranteed not to change:
  * - Set the thread's swap return values to swap_retval and swap_data
  * - un-pend and ready the thread, but do not invoke the scheduler.
  *

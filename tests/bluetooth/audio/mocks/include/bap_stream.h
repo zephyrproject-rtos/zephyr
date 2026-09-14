@@ -19,9 +19,9 @@ extern struct bt_bap_stream_ops mock_bap_stream_ops;
 void mock_bap_stream_init(void);
 void mock_bap_stream_cleanup(void);
 
-DECLARE_FAKE_VOID_FUNC(mock_bap_stream_configured_cb, struct bt_bap_stream *,
+DECLARE_FAKE_VOID_FUNC(mock_bap_stream_codec_configured_cb, struct bt_bap_stream *,
 		       const struct bt_bap_qos_cfg_pref *);
-DECLARE_FAKE_VOID_FUNC(mock_bap_stream_qos_set_cb, struct bt_bap_stream *);
+DECLARE_FAKE_VOID_FUNC(mock_bap_stream_qos_configured_cb, struct bt_bap_stream *);
 DECLARE_FAKE_VOID_FUNC(mock_bap_stream_enabled_cb, struct bt_bap_stream *);
 DECLARE_FAKE_VOID_FUNC(mock_bap_stream_metadata_updated_cb, struct bt_bap_stream *);
 DECLARE_FAKE_VOID_FUNC(mock_bap_stream_disabled_cb, struct bt_bap_stream *);

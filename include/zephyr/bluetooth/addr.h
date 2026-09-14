@@ -22,6 +22,8 @@ extern "C" {
 /**
  * @brief Bluetooth device address definitions and utilities.
  * @defgroup bt_addr Device Address
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */

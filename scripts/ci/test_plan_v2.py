@@ -119,6 +119,7 @@ if "ZEPHYR_BASE" not in os.environ:
 
 ZEPHYR_BASE = Path(os.environ["ZEPHYR_BASE"])
 sys.path.insert(0, str(ZEPHYR_BASE / "scripts"))
+sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "pylib" / "twister"))
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -744,10 +745,8 @@ class Orchestrator:
     @staticmethod
     def _count_errors(testsuites):
         errors = 0
-        try:
-            from pylib.twister.twisterlib.statuses import TwisterStatus  # noqa: PLC0415
-        except ImportError:
-            return 0
+        from twisterlib.statuses import TwisterStatus  # noqa: PLC0415
+
         for ts in testsuites:
             if TwisterStatus(ts.get("status")) == TwisterStatus.ERROR:
                 log.warning(
@@ -3445,10 +3444,13 @@ class BoilerplateFilter(SelectionStrategy):
     # Applied to the line content after stripping the leading ``+`` / ``-``.
     _BOILERPLATE_LINE_RE = re.compile(
         r"^\s*(?:"
+        r"(?:[/*#]+\s*)?"
+        r"(?:"
         r"SPDX-License-Identifier:"
         r"|SPDX-FileCopyrightText:"
         r"|Copyright\b"
-        r"|[/*#]+\s*"  # comment delimiters only (e.g. bare ``*`` or ``//``)
+        r").*"
+        r"|[/*#]+"  # comment delimiters only (e.g. bare ``*`` or ``//``)
         r")\s*",
         re.IGNORECASE,
     )
@@ -3566,7 +3568,7 @@ class BoilerplateFilter(SelectionStrategy):
             content = raw_line[1:]  # strip leading + or -
             if not content.strip():
                 continue  # blank / whitespace-only line
-            if self._BOILERPLATE_LINE_RE.search(content):
+            if self._BOILERPLATE_LINE_RE.fullmatch(content):
                 continue  # boilerplate content
             return False  # substantive change found
         return True

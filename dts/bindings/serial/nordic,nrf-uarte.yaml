@@ -15,6 +15,11 @@ properties:
     description: |
       UARTE has RX frame timeout HW feature.
 
+  dmaend-supported:
+    type: boolean
+    description: |
+      UARTE has the DMAEND task and FRAMETIMEOUT_DMAEND HW short.
+
   default-gpio-port:
     type: phandle
     description: |

@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32P4_PC
+	select SOC_ESP32P4_HPCORE if BOARD_ESP32P4_PC_ESP32P4_HPCORE
+	select SOC_ESP32P4_LPCORE if BOARD_ESP32P4_PC_ESP32P4_LPCORE
+	select SOC_ESP32P4_REV_1_3

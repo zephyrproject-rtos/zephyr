@@ -6,7 +6,7 @@
  * from fsl-imx8mq-evk.mex
  */
 
-#include <nxp/nxp_imx/mimx8mq6dvajz-pinctrl.dtsi>
+#include <nxp/imx/pinctrl/mimx8mq6dvajz-pinctrl.dtsi>
 
 &pinctrl {
 	uart2_default: uart2_default {

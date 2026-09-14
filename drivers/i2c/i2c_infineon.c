@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(i2c_infineon, CONFIG_I2C_LOG_LEVEL);
 #define I2C_CAT1_EVENTS_MASK  (CYHAL_I2C_MASTER_WR_CMPLT_EVENT | CYHAL_I2C_MASTER_RD_CMPLT_EVENT | \
 			       CYHAL_I2C_MASTER_ERR_EVENT)
 
-#define I2C_CAT1_SLAVE_EVENTS_MASK                                                                 \
+#define I2C_CAT1_TARGET_EVENTS_MASK                                                                \
 	(CYHAL_I2C_SLAVE_READ_EVENT | CYHAL_I2C_SLAVE_WRITE_EVENT |                                \
 	 CYHAL_I2C_SLAVE_RD_BUF_EMPTY_EVENT | CYHAL_I2C_SLAVE_RD_CMPLT_EVENT |                     \
 	 CYHAL_I2C_SLAVE_WR_CMPLT_EVENT | CYHAL_I2C_SLAVE_RD_BUF_EMPTY_EVENT |                     \
@@ -57,7 +57,7 @@ struct ifx_cat1_i2c_data {
 
 /* Device config structure */
 struct ifx_cat1_i2c_config {
-	uint32_t master_frequency;
+	uint32_t controller_frequency;
 	CySCB_Type *reg_addr;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t irq_priority;
@@ -94,7 +94,7 @@ static int32_t _get_hw_block_num(CySCB_Type *reg_addr)
 	return -ENOMEM;
 }
 
-static void ifx_master_event_handler(void *callback_arg, cyhal_i2c_event_t event)
+static void ifx_controller_event_handler(void *callback_arg, cyhal_i2c_event_t event)
 {
 	const struct device *dev = (const struct device *) callback_arg;
 	struct ifx_cat1_i2c_data *data = dev->data;
@@ -201,7 +201,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 		return -EIO;
 	}
 
-	/* Configure the I2C resource to be master */
+	/* Configure the I2C resource to be controller */
 	rslt = cyhal_i2c_configure(&data->obj, &data->cfg);
 	if (rslt != CY_RSLT_SUCCESS) {
 		LOG_ERR("cyhal_i2c_configure failed with err 0x%x", rslt);
@@ -210,7 +210,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	}
 
 	/* Register an I2C event callback handler */
-	cyhal_i2c_register_callback(&data->obj, ifx_master_event_handler, (void *)dev);
+	cyhal_i2c_register_callback(&data->obj, ifx_controller_event_handler, (void *)dev);
 
 	/* Release semaphore */
 	k_sem_give(&data->operation_sem);
@@ -307,7 +307,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 			data->async_pending = CAT1_I2C_PENDING_TX_RX;
 		}
 
-		/* Initiate master write and read transfer
+		/* Initiate controller write and read transfer
 		 * using tx_buff and rx_buff respectively
 		 */
 		rslt = cyhal_i2c_master_transfer_async(&data->obj, addr,
@@ -329,7 +329,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		}
 
 		/* If error_status != 1 we have error during transfer async.
-		 * error_status is handling in master_event_handler function.
+		 * error_status is handling in controller_event_handler function.
 		 */
 		if (data->error_status != 0) {
 			/* Release semaphore */
@@ -405,10 +405,10 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 	}
 	data->obj.is_clock_owned = true;
 
-	/* Store Master initial configuration */
+	/* Store Controller initial configuration */
 	data->cfg.is_slave = false;
 	data->cfg.address = 0;
-	data->cfg.frequencyhal_hz = config->master_frequency;
+	data->cfg.frequencyhal_hz = config->controller_frequency;
 
 	if (ifx_cat1_i2c_configure(dev, 0) != 0) {
 		/* Free I2C resource */
@@ -443,7 +443,7 @@ static int ifx_cat1_i2c_target_register(const struct device *dev, struct i2c_tar
 		return -EIO;
 	}
 
-	cyhal_i2c_enable_event(&data->obj, (cyhal_i2c_event_t)I2C_CAT1_SLAVE_EVENTS_MASK,
+	cyhal_i2c_enable_event(&data->obj, (cyhal_i2c_event_t)I2C_CAT1_TARGET_EVENTS_MASK,
 			       config->irq_priority, true);
 	return 0;
 }
@@ -458,7 +458,7 @@ static int ifx_cat1_i2c_target_unregister(const struct device *dev, struct i2c_t
 
 	cyhal_i2c_free(&data->obj);
 	data->p_target_config = NULL;
-	cyhal_i2c_enable_event(&data->obj, (cyhal_i2c_event_t)I2C_CAT1_SLAVE_EVENTS_MASK,
+	cyhal_i2c_enable_event(&data->obj, (cyhal_i2c_event_t)I2C_CAT1_TARGET_EVENTS_MASK,
 			       config->irq_priority, false);
 
 	/* Release semaphore */
@@ -486,7 +486,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
                                                                                                    \
 	static const struct ifx_cat1_i2c_config i2c_cat1_cfg_##n = {                               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.master_frequency = DT_INST_PROP_OR(n, clock_frequency, 100000),                   \
+		.controller_frequency = DT_INST_PROP_OR(n, clock_frequency, 100000),               \
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 	};                                                                                         \

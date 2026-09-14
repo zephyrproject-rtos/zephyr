@@ -19,7 +19,7 @@ config UART_$(nrfx_uart_num)_ASYNC
 
 config UART_$(nrfx_uart_num)_NRF_USE_TIMER
 	bool
-	depends on UART_ASYNC_API
+	depends on UART_$(nrfx_uart_num)_ASYNC
 	depends on $(dt_nodelabel_has_prop,uart$(nrfx_uart_num),timer)
 	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
 	default y

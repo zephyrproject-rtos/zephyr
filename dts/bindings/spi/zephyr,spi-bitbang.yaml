@@ -14,14 +14,26 @@ properties:
     description: |
       Clock gpio info
 
-  mosi-gpios:
+  sdo-gpios:
     type: phandle-array
     description: |
-      MOSI gpio info. Output pin for Master Out Slave In.
+      SDO gpio info. Output pin for Serial Data Out.
       If this is not provided then the driver will transmit 0s
+
+  sdi-gpios:
+    type: phandle-array
+    description: |
+      SDI gpio info. Input pin for Serial Data In.
+      If this is not provided the driver will read 0s
+
+  mosi-gpios:
+    type: phandle-array
+    deprecated: true
+    description: |
+      Deprecated. Use sdo-gpios instead.
 
   miso-gpios:
     type: phandle-array
+    deprecated: true
     description: |
-      MISO gpio info. Input pin for Master In Slave Out.
-      If this is not provided the driver will read 0s
+      Deprecated. Use sdi-gpios instead.

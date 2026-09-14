@@ -57,14 +57,14 @@ struct lpc11u6x_i2c_regs {
 	volatile uint32_t con_set;           /* Control set */
 	volatile const uint32_t stat;        /* Status */
 	volatile uint32_t dat;               /* Data */
-	volatile uint32_t addr0;             /* Slave address 0 */
+	volatile uint32_t addr0;             /* Target address 0 */
 	volatile uint32_t sclh;              /* SCL Duty Cycle */
 	volatile uint32_t scll;              /* SCL Duty Cycle */
 	volatile uint32_t con_clr;           /* Control clear */
 	volatile uint32_t mm_ctrl;           /* Monitor mode control */
-	volatile uint32_t addr[3];           /* Slave address {1,2,3} */
+	volatile uint32_t addr[3];           /* Target address {1,2,3} */
 	volatile const uint32_t data_buffer; /* Data buffer */
-	volatile uint32_t mask[4];           /* Slave address mask */
+	volatile uint32_t mask[4];           /* Target address mask */
 };
 
 struct lpc11u6x_i2c_config {
@@ -86,7 +86,7 @@ struct lpc11u6x_i2c_current_transfer {
 
 struct lpc11u6x_i2c_data {
 	struct lpc11u6x_i2c_current_transfer transfer;
-	struct i2c_target_config *slave;
+	struct i2c_target_config *target;
 	struct k_sem completion;
 	struct k_mutex mutex;
 };

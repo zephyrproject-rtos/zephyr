@@ -11,6 +11,7 @@
 
 #define DT_DRV_COMPAT infineon_counter
 
+#include <zephyr/irq.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <cyhal_timer.h>
@@ -457,7 +458,7 @@ static uint32_t ifx_cat1_counter_get_pending_int(const struct device *dev)
 
 	const struct ifx_cat1_counter_config *const config = dev->config;
 
-	return NVIC_GetPendingIRQ(config->irqn);
+	return k_irq_is_pending(config->irqn);
 }
 
 static uint32_t ifx_cat1_counter_get_guard_period(const struct device *dev, uint32_t flags)

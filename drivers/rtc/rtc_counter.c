@@ -748,7 +748,8 @@ DT_INST_FOREACH_STATUS_OKAY(RTC_COUNTER_DECLARE_ALARM_STORAGE)
 		))                                                                      \
 	};                                                                          \
 	DEVICE_DT_INST_DEFINE(n, rtc_counter_init, NULL, &rtc_counter_data_##n,     \
-				&rtc_counter_config_##n, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, \
+				&rtc_counter_config_##n, POST_KERNEL,               \
+				CONFIG_RTC_COUNTER_INIT_PRIORITY,                   \
 				&rtc_counter_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_COUNTER_DEVICE_INIT)

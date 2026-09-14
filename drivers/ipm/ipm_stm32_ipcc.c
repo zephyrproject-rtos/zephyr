@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);
 #define IPCC_EnableTransmitChannel(hipcc, ch)	\
 			LL_C1_IPCC_EnableTransmitChannel(hipcc, 1 << ch)
 #define IPCC_DisableReceiveChannel(hipcc, ch)	\
-			LL_C2_IPCC_DisableReceiveChannel(hipcc, 1 << ch)
+			LL_C1_IPCC_DisableReceiveChannel(hipcc, 1 << ch)
 #define IPCC_DisableTransmitChannel(hipcc, ch)	\
 			LL_C1_IPCC_DisableTransmitChannel(hipcc, 1 << ch)
 
@@ -260,11 +260,7 @@ static int stm32_ipcc_mailbox_init(const struct device *dev)
 	IPCC_DisableIT_TXF(cfg->ipcc);
 	IPCC_DisableIT_RXO(cfg->ipcc);
 
-#if defined(CONFIG_SOC_SERIES_STM32MP2X)
 	data->num_ch = LL_IPCC_GetChannelNumber(cfg->ipcc);
-#else
-	data->num_ch = LL_IPCC_GetChannelConfig(cfg->ipcc);
-#endif
 
 	for (i = 0; i < data->num_ch; i++) {
 		/* Clear RX status */

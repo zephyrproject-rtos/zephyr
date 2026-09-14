@@ -42,7 +42,7 @@ The network stack is layered and consists of the following parts:
 * **Network Protocols.** This provides implementations for
   various protocols such as
 
-  * Application-level network protocols like CoAP, LWM2M, and MQTT.
+  * Application-level network protocols like CoAP, LwM2M, and MQTT.
     See :ref:`application protocols chapter <net_protocols>` for information
     about them.
   * Core network protocols like IPv6, IPv4, UDP, TCP, ICMPv4, and ICMPv6.

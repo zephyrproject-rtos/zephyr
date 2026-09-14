@@ -9,6 +9,6 @@ toolchain:
   - gnuarmemb
 supported:
   - usbd
-  - ble
+  - bluetooth
   - watchdog
   - counter

@@ -315,8 +315,9 @@ static DEVICE_API(uart, kb106x_uart_api) = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 /* UART module instances */
-#define KB106X_UART_DEV(inst) DEVICE_DT_INST_GET(inst),
-static const struct device *const uart_devices[] = {DT_INST_FOREACH_STATUS_OKAY(KB106X_UART_DEV)};
+static const struct device *const uart_devices[] = {
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
+};
 static void kb106x_uart_isr_wrap(const struct device *dev)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(uart_devices); i++) {

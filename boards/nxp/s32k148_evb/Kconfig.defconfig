@@ -10,7 +10,7 @@ config UART_CONSOLE
 
 endif # SERIAL
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y if !MODEM
 
 endif # BOARD_S32K148_EVB

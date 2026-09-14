@@ -44,8 +44,8 @@ static int sc18is606_spi_configure(const struct device *dev, const struct spi_co
 	uint8_t cfg_byte = 0;
 	uint8_t buffer[2];
 
-	if ((config->operation & SPI_OP_MODE_SLAVE) != 0U) {
-		LOG_ERR("SC18IS606 does not support Slave mode");
+	if ((config->operation & SPI_OP_MODE_PERIPHERAL) != 0U) {
+		LOG_ERR("SC18IS606 does not support Peripheral mode");
 		return -ENOTSUP;
 	}
 
@@ -95,7 +95,7 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 	}
 
 	/* CS line to be Used */
-	uint8_t ss_idx = spi_cfg->slave;
+	uint8_t ss_idx = spi_cfg->peripheral;
 
 	if (ss_idx > 2) {
 		LOG_ERR("SC18IS606: Invalid SS Index (%u) must be 0-2", ss_idx);
@@ -165,7 +165,7 @@ static int sc18is606_spi_init(const struct device *dev)
 	struct spi_config my_config = {
 		.frequency = data->frequency_idx,
 		.operation = data->spi_mode,
-		.slave = 0,
+		.peripheral = 0,
 	};
 
 	ret = sc18is606_spi_configure(dev, &my_config);

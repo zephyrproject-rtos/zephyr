@@ -280,7 +280,8 @@ static int i2c_sf32lb_dma_rx_config(const struct device *dev, struct i2c_msg *ms
 	return 0;
 }
 
-static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
+static int i2c_sf32lb_controller_send_dma(const struct device *dev, uint16_t addr,
+					  struct i2c_msg *msg)
 {
 	int ret;
 	const struct i2c_sf32lb_config *config = dev->config;
@@ -333,7 +334,7 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 
 	ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000));
 	if (ret < 0) {
-		LOG_ERR("master send timeout");
+		LOG_ERR("controller send timeout");
 		sf32lb_dma_stop_dt(&config->dma_tx);
 		sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
 		sys_clear_bits(config->base + I2C_IER, I2C_IER_DMADONEIE | I2C_IER_BEDIE);
@@ -362,7 +363,8 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 	return ret;
 }
 
-static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
+static int i2c_sf32lb_controller_recv_dma(const struct device *dev, uint16_t addr,
+					  struct i2c_msg *msg)
 {
 	const struct i2c_sf32lb_config *config = dev->config;
 	struct i2c_sf32lb_data *data = dev->data;
@@ -414,7 +416,7 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 
 	ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000));
 	if (ret < 0) {
-		LOG_ERR("master recv timeout");
+		LOG_ERR("controller recv timeout");
 		sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
 		sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
 		sf32lb_dma_stop_dt(&config->dma_rx);
@@ -443,7 +445,7 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 	return ret;
 }
 
-static int i2c_sf32lb_master_send(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
+static int i2c_sf32lb_controller_send(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
 {
 	int ret = 0;
 	const struct i2c_sf32lb_config *cfg = dev->config;
@@ -488,7 +490,7 @@ static int i2c_sf32lb_master_send(const struct device *dev, uint16_t addr, struc
 	sys_set_bit(cfg->base + I2C_IER, I2C_IER_BEDIE_Pos);
 
 	if (k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000)) != 0) {
-		LOG_ERR("master sent timeout");
+		LOG_ERR("controller sent timeout");
 		sys_write32(0, cfg->base + I2C_IER);
 		data->current_msg = NULL;
 		return -ETIMEDOUT;
@@ -503,7 +505,7 @@ static int i2c_sf32lb_master_send(const struct device *dev, uint16_t addr, struc
 	return ret;
 }
 
-static int i2c_sf32lb_master_recv(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
+static int i2c_sf32lb_controller_recv(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
 {
 	int ret;
 	const struct i2c_sf32lb_config *cfg = dev->config;
@@ -542,7 +544,7 @@ static int i2c_sf32lb_master_recv(const struct device *dev, uint16_t addr, struc
 	sys_set_bits(cfg->base + I2C_IER, I2C_IER_RFIE | I2C_IER_MSDIE | I2C_IER_BEDIE);
 
 	if (k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000)) != 0) {
-		LOG_ERR("master recv timeout");
+		LOG_ERR("controller recv timeout");
 		sys_write32(0, cfg->base + I2C_IER);
 		data->current_msg = NULL;
 		return -ETIMEDOUT;
@@ -657,18 +659,18 @@ static int i2c_sf32lb_transfer(const struct device *dev, struct i2c_msg *msgs, u
 
 		if (msgs[i].flags & I2C_MSG_READ) {
 			if (cfg->dma_used) {
-				ret = i2c_sf32lb_master_recv_dma(dev, addr, &msgs[i]);
+				ret = i2c_sf32lb_controller_recv_dma(dev, addr, &msgs[i]);
 			} else {
-				ret = i2c_sf32lb_master_recv(dev, addr, &msgs[i]);
+				ret = i2c_sf32lb_controller_recv(dev, addr, &msgs[i]);
 			}
 			if (ret < 0) {
 				break;
 			}
 		} else {
 			if (cfg->dma_used) {
-				ret = i2c_sf32lb_master_send_dma(dev, addr, &msgs[i]);
+				ret = i2c_sf32lb_controller_send_dma(dev, addr, &msgs[i]);
 			} else {
-				ret = i2c_sf32lb_master_send(dev, addr, &msgs[i]);
+				ret = i2c_sf32lb_controller_send(dev, addr, &msgs[i]);
 			}
 			if (ret < 0) {
 				break;

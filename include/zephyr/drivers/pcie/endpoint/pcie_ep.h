@@ -2,6 +2,7 @@
  * @file
  *
  * @brief Public APIs for the PCIe EP drivers.
+ * @ingroup pcie_interface
  */
 
 /*
@@ -18,28 +19,32 @@
 #include <zephyr/kernel.h>
 #include <stdint.h>
 
+/** @brief PCIe outbound memory address range type */
 enum pcie_ob_mem_type {
 	PCIE_OB_ANYMEM,  /**< PCIe OB window within any address range */
 	PCIE_OB_LOWMEM,  /**< PCIe OB window within 32-bit address range */
 	PCIE_OB_HIGHMEM, /**< PCIe OB window above 32-bit address range */
 };
 
+/** @brief Type of interrupt raised to the Host */
 enum pci_ep_irq_type {
 	PCIE_EP_IRQ_LEGACY,	/**< Raise Legacy interrupt */
 	PCIE_EP_IRQ_MSI,	/**< Raise MSI interrupt */
 	PCIE_EP_IRQ_MSIX,	/**< Raise MSIX interrupt */
 };
 
+/** @brief Direction of data transfer between Host and endpoint device */
 enum xfer_direction {
 	HOST_TO_DEVICE,		/**< Read from Host */
 	DEVICE_TO_HOST,		/**< Write to Host */
 };
 
+/** @brief PCIe reset interrupt type */
 enum pcie_reset {
 	PCIE_PERST,	/**< Cold reset */
 	PCIE_PERST_INB,	/**< Inband hot reset */
 	PCIE_FLR,	/**< Functional Level Reset */
-	PCIE_RESET_MAX
+	PCIE_RESET_MAX	/**< Number of PCIe reset types */
 };
 
 /**
@@ -55,25 +60,84 @@ enum pcie_reset {
 
 typedef void (*pcie_ep_reset_callback_t)(void *arg);
 
+/**
+ * @def_driverbackendgroup{PCIe Endpoint,pcie_interface}
+ * @{
+ */
+
+/**
+ * @brief Type definition of PCIe EP API function for reading the configuration space.
+ * See pcie_ep_conf_read() for argument descriptions.
+ */
+typedef int (*pcie_ep_api_conf_read)(const struct device *dev, uint32_t offset,
+				     uint32_t *data);
+
+/**
+ * @brief Type definition of PCIe EP API function for writing the configuration space.
+ * See pcie_ep_conf_write() for argument descriptions.
+ */
+typedef void (*pcie_ep_api_conf_write)(const struct device *dev, uint32_t offset,
+				       uint32_t data);
+
+/**
+ * @brief Type definition of PCIe EP API function for mapping a Host address.
+ * See pcie_ep_map_addr() for argument descriptions.
+ */
+typedef int (*pcie_ep_api_map_addr)(const struct device *dev, uint64_t pcie_addr,
+				    uint64_t *mapped_addr, uint32_t size,
+				    enum pcie_ob_mem_type ob_mem_type);
+
+/**
+ * @brief Type definition of PCIe EP API function for unmapping a Host address.
+ * See pcie_ep_unmap_addr() for argument descriptions.
+ */
+typedef void (*pcie_ep_api_unmap_addr)(const struct device *dev, uint64_t mapped_addr);
+
+/**
+ * @brief Type definition of PCIe EP API function for raising an interrupt to the Host.
+ * See pcie_ep_raise_irq() for argument descriptions.
+ */
+typedef int (*pcie_ep_api_raise_irq)(const struct device *dev,
+				     enum pci_ep_irq_type irq_type,
+				     uint32_t irq_num);
+
+/**
+ * @brief Type definition of PCIe EP API function for registering a reset callback.
+ * See pcie_ep_register_reset_cb() for argument descriptions.
+ */
+typedef int (*pcie_ep_api_register_reset_cb)(const struct device *dev,
+					     enum pcie_reset reset,
+					     pcie_ep_reset_callback_t cb, void *arg);
+
+/**
+ * @brief Type definition of PCIe EP API function for data transfer using the system DMA.
+ * See pcie_ep_dma_xfer() for argument descriptions.
+ */
+typedef int (*pcie_ep_api_dma_xfer)(const struct device *dev, uint64_t mapped_addr,
+				    uintptr_t local_addr, uint32_t size,
+				    enum xfer_direction dir);
+
+/**
+ * @driver_ops{PCIe Endpoint}
+ */
 __subsystem struct pcie_ep_driver_api {
-	int (*conf_read)(const struct device *dev, uint32_t offset,
-			 uint32_t *data);
-	void (*conf_write)(const struct device *dev, uint32_t offset,
-			   uint32_t data);
-	int (*map_addr)(const struct device *dev, uint64_t pcie_addr,
-			uint64_t *mapped_addr, uint32_t size,
-			enum pcie_ob_mem_type ob_mem_type);
-	void (*unmap_addr)(const struct device *dev, uint64_t mapped_addr);
-	int (*raise_irq)(const struct device *dev,
-			 enum pci_ep_irq_type irq_type,
-			 uint32_t irq_num);
-	int (*register_reset_cb)(const struct device *dev,
-				 enum pcie_reset reset,
-				 pcie_ep_reset_callback_t cb, void *arg);
-	int (*dma_xfer)(const struct device *dev, uint64_t mapped_addr,
-			uintptr_t local_addr, uint32_t size,
-			enum xfer_direction dir);
+	/** @driver_ops_mandatory @copybrief pcie_ep_conf_read */
+	pcie_ep_api_conf_read conf_read;
+	/** @driver_ops_mandatory @copybrief pcie_ep_conf_write */
+	pcie_ep_api_conf_write conf_write;
+	/** @driver_ops_mandatory @copybrief pcie_ep_map_addr */
+	pcie_ep_api_map_addr map_addr;
+	/** @driver_ops_mandatory @copybrief pcie_ep_unmap_addr */
+	pcie_ep_api_unmap_addr unmap_addr;
+	/** @driver_ops_mandatory @copybrief pcie_ep_raise_irq */
+	pcie_ep_api_raise_irq raise_irq;
+	/** @driver_ops_optional @copybrief pcie_ep_register_reset_cb */
+	pcie_ep_api_register_reset_cb register_reset_cb;
+	/** @driver_ops_optional @copybrief pcie_ep_dma_xfer */
+	pcie_ep_api_dma_xfer dma_xfer;
 };
+
+/** @} */
 
 /**
  * @brief Read PCIe EP configuration space

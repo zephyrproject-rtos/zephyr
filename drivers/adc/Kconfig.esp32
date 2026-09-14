@@ -17,4 +17,15 @@ config ADC_ESP32_DMA
 	help
 	  Enable the ADC DMA mode
 
+config ADC_ESP32_CONVERSION_TIMEOUT_US
+	int "Oneshot conversion completion timeout in microseconds"
+	default 2000
+	range 100 1000000
+	help
+	  Maximum time to wait for a oneshot conversion to complete
+	  before adc_read returns -ETIMEDOUT. A conversion cannot
+	  complete while a shared analog block is temporarily powered
+	  down, for example during a Wi-Fi modem sleep window; callers
+	  are expected to retry such reads.
+
 endif

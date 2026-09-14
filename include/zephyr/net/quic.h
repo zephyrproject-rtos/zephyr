@@ -21,7 +21,7 @@
  * @ingroup networking
  *
  * @note Server mode sends Version Negotiation for unsupported versions and can
- * enforce the RFC 9000 anti-amplification limit before peer address
+ * enforce the @rfc{9000} anti-amplification limit before peer address
  * validation, including Retry and NEW_TOKEN-based address-validation tokens.
  * @{
  */
@@ -164,7 +164,7 @@ enum {
 	 * The option value is a pointer to a uint32_t. Set it on a listening or
 	 * server-side connection socket before the handshake. A value of 0 keeps
 	 * 0-RTT disabled for newly issued tickets; any non-zero value enables it.
-	 * Per RFC 9001 4.6.1 the ticket always advertises the fixed 0xffffffff
+	 * Per @rfc{9001,section-4.6.1} the ticket always advertises the fixed 0xffffffff
 	 * sentinel and the amount of early data a resuming client may send is
 	 * bounded by the connection's flow-control (transport-parameter) limits,
 	 * not by this value; the option is therefore only an enable switch, not a
@@ -238,7 +238,7 @@ struct quic_session_state {
 	uint32_t ticket_age_add;
 	/**
 	 * Early-data allowance from NewSessionTicket: 0 when 0-RTT is not
-	 * permitted, otherwise the RFC 9001 4.6.1 sentinel 0xffffffff (in QUIC
+	 * permitted, otherwise the @rfc{9001,section-4.6.1} sentinel 0xffffffff (in QUIC
 	 * the actual early-data limit is governed by transport parameters).
 	 */
 	uint32_t max_early_data_size;

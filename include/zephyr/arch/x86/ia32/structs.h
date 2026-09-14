@@ -32,7 +32,9 @@ struct _cpu_arch {
 #endif
 #if defined(__cplusplus) && !defined(CONFIG_FPU_SHARING) && \
 		!defined(CONFIG_HW_SHADOW_STACK)
-	/* Ensure this struct does not have a size of 0 which is not allowed in C++. */
+	/* An empty struct is not valid C, and compilers that accept it give
+	 * it size 0 while C++ gives 1. Keep a byte so both languages agree.
+	 */
 	uint8_t dummy;
 #endif
 };

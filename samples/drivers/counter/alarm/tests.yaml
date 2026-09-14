@@ -57,6 +57,9 @@ tests:
       - xg24_rb4187c
       - xg27_rb4194a
       - xg29_rb4412a
+      - mec172xevb_assy6906
+      - mec15xxevb_assy6853
+      - mec_assy6941/mec1753_qsz
     integration_platforms:
       - nucleo_f746zg
   sample.drivers.counter.alarm.stm32_rtc:

@@ -42,8 +42,14 @@ int credential_digest_raw(struct tls_credential *credential, void *dest, size_t 
 	err = base64_encode(dest, *len, &written, digest_buf, sizeof(digest_buf));
 	*len = err ? 0 : written;
 
-	/* Clean up. */
-	memset(digest_buf, 0, sizeof(digest_buf));
+	/* Clean up. Clear via a volatile pointer so the compiler cannot
+	 * optimize the wipe of the intermediate digest away.
+	 */
+	volatile uint8_t *p = digest_buf;
+
+	for (size_t i = 0; i < sizeof(digest_buf); i++) {
+		p[i] = 0U;
+	}
 
 	return err;
 }

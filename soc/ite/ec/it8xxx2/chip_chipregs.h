@@ -1140,6 +1140,60 @@ struct gpio_it8xxx2_regs {
 #define IT8XXX2_GPIO_GPCRP0 ECREG(IT8XXX2_GPIO2_BASE + 0x18)
 #define IT8XXX2_GPIO_GPCRP1 ECREG(IT8XXX2_GPIO2_BASE + 0x19)
 
+/* Get the GPCRn, GPDMRn, and pin for the UART TX strapping pin */
+#ifdef CONFIG_SOC_IT8XXX2_UART_TX_STRATPPING_PIN
+
+#include <zephyr/devicetree.h>
+
+/* Get the UART2 TX pinctrl configuration from pinctrl state */
+#define UART2_TX_NODE_IS_GPH2(node_id, idx)                                                        \
+	DT_SAME_NODE(DT_PINCTRL_0(node_id, idx), DT_NODELABEL(uart2_tx_gph2_default))
+
+#define IT8XXX2_REG_V1_UART2_TX_IS_H2                                                              \
+	(UART2_TX_NODE_IS_GPH2(DT_NODELABEL(ite_uart2_wrapper), 0) ||                              \
+	 UART2_TX_NODE_IS_GPH2(DT_NODELABEL(ite_uart2_wrapper), 1))
+
+#define IT8XXX2_REG_V1_GPCRB1 0xf01619
+#define IT8XXX2_REG_V1_GPDMRB 0xf01662
+#define IT8XXX2_REG_V1_GPCRH2 0xf0164a
+#define IT8XXX2_REG_V1_GPCRH6 0xf0164e
+#define IT8XXX2_REG_V1_GPDMRH 0xf01668
+
+#define IT8XXX2_REG_V2_GPCRB1 0xf01669
+#define IT8XXX2_REG_V2_GPDMRB 0xf01619
+#define IT8XXX2_REG_V2_GPCRF1 0xf01689
+#define IT8XXX2_REG_V2_GPDMRF 0xf0161d
+
+#if DT_SAME_NODE(DT_CHOSEN(zephyr_console), DT_NODELABEL(uart1))
+#define IT8XXX2_GPIO_PIN_EC_UART_TX BIT(1)
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+#define IT8XXX2_GPIO_GPCR_EC_UART_TX  IT8XXX2_REG_V1_GPCRB1
+#define IT8XXX2_GPIO_GPDMR_EC_UART_TX IT8XXX2_REG_V1_GPDMRB
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+#define IT8XXX2_GPIO_GPCR_EC_UART_TX  IT8XXX2_REG_V2_GPCRB1
+#define IT8XXX2_GPIO_GPDMR_EC_UART_TX IT8XXX2_REG_V2_GPDMRB
+#endif
+
+#elif DT_SAME_NODE(DT_CHOSEN(zephyr_console), DT_NODELABEL(uart2))
+
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+#define IT8XXX2_GPIO_GPDMR_EC_UART_TX IT8XXX2_REG_V1_GPDMRH
+#if IT8XXX2_REG_V1_UART2_TX_IS_H2
+#define IT8XXX2_GPIO_GPCR_EC_UART_TX IT8XXX2_REG_V1_GPCRH2
+#define IT8XXX2_GPIO_PIN_EC_UART_TX  BIT(2)
+#else
+#define IT8XXX2_GPIO_GPCR_EC_UART_TX IT8XXX2_REG_V1_GPCRH6
+#define IT8XXX2_GPIO_PIN_EC_UART_TX  BIT(6)
+#endif
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+#define IT8XXX2_GPIO_GPCR_EC_UART_TX  IT8XXX2_REG_V2_GPCRF1
+#define IT8XXX2_GPIO_GPDMR_EC_UART_TX IT8XXX2_REG_V2_GPDMRF
+#define IT8XXX2_GPIO_PIN_EC_UART_TX   BIT(1)
+#endif
+
+#endif /* DT_SAME_NODE(DT_CHOSEN(zephyr_console), DT_NODELABEL(uart)) */
+#endif /* CONFIG_SOC_IT8XXX2_UART_TX_STRATPPING_PIN */
+
 /**
  *
  * (19xxh) Analog to Digital Converter (ADC) registers

@@ -221,7 +221,7 @@ static DEVICE_API(dac, dac_xx11_driver_api) = {
 	static struct dacx311_data dac##t##_data_##n; \
 	static const struct dacx311_config dac##t##_config_##n = { \
 		.bus = SPI_DT_SPEC_GET(INST_DT_DACX311(n, t), \
-					SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
+					SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | \
 					SPI_MODE_CPHA | \
 					SPI_WORD_SET(8)),  \
 		.resolution = res, \

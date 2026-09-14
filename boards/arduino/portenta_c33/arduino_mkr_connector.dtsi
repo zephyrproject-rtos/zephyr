@@ -40,7 +40,4 @@ arduino_mkr_i2c: &iic0 {};
 
 arduino_mkr_serial: &uart9 {};
 
-/*
- * TODO: enable when SCI as SPI is supported
- * arduino_mkr_spi: &sci4 {};
- */
+arduino_mkr_spi: &sci4_spi {};

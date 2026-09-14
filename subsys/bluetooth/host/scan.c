@@ -89,6 +89,10 @@ struct fragmented_advertiser {
 
 static struct fragmented_advertiser reassembling_advertiser;
 
+/* The timeout handler runs on the Bluetooth workqueue and is thereby
+ * serialized with the extended advertising report processing, which also
+ * accesses reassembling_advertiser without locking.
+ */
 static void reassembly_timeout_work_handler(struct k_work *work)
 {
 	if (reassembling_advertiser.state == FRAG_ADV_REASSEMBLING) {
@@ -105,7 +109,7 @@ K_WORK_DELAYABLE_DEFINE(reassembly_timeout_work, reassembly_timeout_work_handler
 
 static void reassembly_timeout_work_reschedule(void)
 {
-	int err = k_work_reschedule(&reassembly_timeout_work, REASSEMBLY_TIMEOUT);
+	int err = bt_work_reschedule(&reassembly_timeout_work, REASSEMBLY_TIMEOUT);
 
 	if (err < 0) {
 		LOG_ERR("Failed to reschedule reassembly timeout work: %d", err);
@@ -1141,6 +1145,16 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 
 	if (!per_adv_sync->report_truncated) {
 #if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+		if (evt->length > buf->len) {
+			/* The event does not carry the data it claims. Drop the report */
+			LOG_WRN("Periodic adv report corrupted (wants %u out of %u)", evt->length,
+				buf->len);
+
+			per_adv_sync->report_truncated = true;
+			net_buf_simple_reset(&per_adv_sync->reassembly);
+			return;
+		}
+
 		if (net_buf_simple_tailroom(&per_adv_sync->reassembly) < evt->length) {
 			/* The buffer is too small for the entire report. Drop it */
 			LOG_WRN("Buffer is too small to reassemble the report. "
@@ -1862,6 +1876,17 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 
 int bt_le_scan_stop(void)
 {
+	__maybe_unused int unlock_err;
+	int err;
+
+	/* Take the same lock as bt_le_scan_start(), so that the state it sets
+	 * up is not cleared while it is still being set up.
+	 */
+	err = k_mutex_lock(&scan_state.scan_explicit_params_mutex, K_NO_WAIT);
+	if (err != 0) {
+		return err;
+	}
+
 	bt_scan_softreset();
 	scan_dev_found_cb = NULL;
 
@@ -1874,7 +1899,12 @@ int bt_le_scan_stop(void)
 #endif
 	}
 
-	return bt_le_scan_user_remove(BT_LE_SCAN_USER_EXPLICIT_SCAN);
+	err = bt_le_scan_user_remove(BT_LE_SCAN_USER_EXPLICIT_SCAN);
+
+	unlock_err = k_mutex_unlock(&scan_state.scan_explicit_params_mutex);
+	__ASSERT_NO_MSG(unlock_err == 0);
+
+	return err;
 }
 
 int bt_le_scan_cb_register(struct bt_le_scan_cb *cb)

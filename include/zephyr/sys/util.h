@@ -686,8 +686,8 @@ int char2hex(char c, uint8_t *x);
 /**
  * @brief      Convert a single hexadecimal nibble into a character.
  *
- * @param c     The number to convert
- * @param x     The address of storage for the converted character.
+ * @param x     The number to convert
+ * @param c     The address of storage for the converted character.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
@@ -1106,7 +1106,7 @@ static ALWAYS_INLINE uint64_t sys_lcm_s(int32_t a, int32_t b)
 		bool _wf_ret;                                                                      \
 		while (!(_wf_ret = (expr)) &&                                                      \
 		       (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {                       \
-			delay_stmt;                                                                \
+			({ delay_stmt; });                                                         \
 			Z_SPIN_DELAY(10);                                                          \
 		}                                                                                  \
 		(_wf_ret);                                                                         \

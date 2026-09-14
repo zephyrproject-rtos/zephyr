@@ -6,7 +6,7 @@
  * from mimxrt1040_evk.mex
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1042xjm5b-pinctrl.dtsi>
+#include <nxp/imxrt/imxrt10xx/pinctrl/mimxrt1042xjm5b-pinctrl.dtsi>
 
 &pinctrl {
 	/* Route ADC1 IN3 and IN4 to J33 pins 1 and 2 */

@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-#include "power_ctrl.h"
+#include <power_ctrl.h>
 
 #define USBC_PORT0_NODE         DT_ALIAS(usbc_port0)
 #define USBC_PORT0_PWRCTRL_NODE DT_ALIAS(usbc_port0_pwrctrl)

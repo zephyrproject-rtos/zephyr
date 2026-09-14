@@ -7,6 +7,7 @@ menu "Miscellaneous drivers"
 
 # zephyr-keep-sorted-start
 source "drivers/misc/devmux/Kconfig"
+source "drivers/misc/esp_hosted_mcu/Kconfig"
 source "drivers/misc/ethos_u/Kconfig"
 source "drivers/misc/ft8xx/Kconfig"
 source "drivers/misc/grove_lcd_rgb/Kconfig"
@@ -24,7 +25,6 @@ source "drivers/misc/renesas_drw/Kconfig"
 source "drivers/misc/renesas_ra_external_interrupt/Kconfig"
 source "drivers/misc/renesas_rx_dtc/Kconfig"
 source "drivers/misc/renesas_rx_external_interrupt/Kconfig"
-source "drivers/misc/stm32n6_axisram/Kconfig"
 source "drivers/misc/ti_tdp2004/Kconfig"
 source "drivers/misc/tmc6460/Kconfig"
 # zephyr-keep-sorted-stop

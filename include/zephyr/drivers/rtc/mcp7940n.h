@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Register layout and API for the MCP7940N RTC based counter driver.
+ * @ingroup counter_interface_ext
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RTC_MCP7940N_H_
 #define ZEPHYR_INCLUDE_DRIVERS_RTC_MCP7940N_H_
 

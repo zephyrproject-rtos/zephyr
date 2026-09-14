@@ -275,9 +275,7 @@ static struct k_sem cy8c95xx_lock = Z_SEM_INITIALIZER(cy8c95xx_lock, 1, 1);
 
 #define GPIO_PORT_INIT(idx) \
 static const struct cy8c95xx_config cy8c95xx_##idx##_cfg = { \
-	.common = { \
-		.port_pin_mask = 0xFF, \
-	}, \
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx), \
 	.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))), \
 	.port_num = DT_INST_REG_ADDR(idx), \
 }; \

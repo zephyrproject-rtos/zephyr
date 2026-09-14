@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L4PLUS_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L4PLUS_CLOCK_H_
 
-#include "stm32l4_clock.h"
+#include <zephyr/dt-bindings/clock/stm32l4_clock.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /*
  * On STM32L4+ series, the SAI1 / SAI2 input clock selection fields
@@ -18,5 +20,7 @@
 /** CCIPR2 devices */
 #define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 5, CCIPR2_REG)
 #define SAI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR2_REG)
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L4PLUS_CLOCK_H_ */

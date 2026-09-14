@@ -3,7 +3,7 @@
 
 if SHIELD_WIZNET_W5500
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # SHIELD_WIZNET_W5500

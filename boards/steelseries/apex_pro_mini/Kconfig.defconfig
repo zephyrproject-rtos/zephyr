@@ -5,10 +5,6 @@
 
 if BOARD_APEX_PRO_MINI
 
-config SPI_STM32_INTERRUPT
-	default y
-	depends on SPI
-
 config INPUT_KBD_MATRIX_16_BIT_ROW
 	default y if INPUT_GPIO_KBD_MATRIX
 

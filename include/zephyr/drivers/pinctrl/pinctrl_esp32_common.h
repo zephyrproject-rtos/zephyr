@@ -9,9 +9,6 @@
 
 /** @cond INTERNAL_HIDDEN */
 
-/** @brief Get GPIO port index from pin number */
-#define ESP32_PORT_IDX(_pin) (((_pin) < 32) ? 0 : 1)
-
 /** @brief Extract pin number from pinmux value */
 #define ESP32_PIN_NUM(_mux) (((_mux) >> ESP32_PIN_NUM_SHIFT) & ESP32_PIN_NUM_MASK)
 

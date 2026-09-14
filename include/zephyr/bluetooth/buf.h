@@ -14,6 +14,8 @@
 /**
  * @brief Data buffers
  * @defgroup bt_buf Data buffers
+ * @since 1.7
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */

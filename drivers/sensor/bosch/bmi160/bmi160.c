@@ -759,7 +759,7 @@ static int bmi160_attr_get(const struct device *dev, enum sensor_channel chan,
 					int32_t udeg =
 						(FIELD_GET(GENMASK((2 * i) + 1, 2 * i), data[6])
 						 << 8) |
-						data[3 + i];
+						(uint8_t)data[3 + i];
 
 					udeg |= 0 - (udeg & 0x200);
 					udeg *= 61000;
@@ -859,7 +859,7 @@ static int bmi160_sample_fetch(const struct device *dev,
 		if (data->pmu_sts.raw == 0U) {
 			return -EINVAL;
 		}
-		return bmi160_word_read(dev, BMI160_REG_TEMPERATURE0, &data->sample.temperature);
+		return bmi160_word_read(dev, BMI160_REG_TEMPERATURE0, &data->temperature);
 	}
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -962,10 +962,10 @@ static int bmi160_temp_channel_get(const struct device *dev,
 	struct bmi160_data *data = dev->data;
 
 	/* the scale is 1/2^9/LSB = 1953 micro degrees */
-	int32_t temp_micro = BMI160_TEMP_OFFSET * 1000000ULL + data->sample.temperature * 1953ULL;
+	int32_t temp_micro = BMI160_TEMP_OFFSET * 1000000 + (int16_t)data->temperature * 1953;
 
-	val->val1 = temp_micro / 1000000ULL;
-	val->val2 = temp_micro % 1000000ULL;
+	val->val1 = temp_micro / 1000000;
+	val->val2 = temp_micro % 1000000;
 
 	return 0;
 }
@@ -1163,10 +1163,10 @@ int bmi160_pm(const struct device *dev, enum pm_device_action action)
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		bmi160_resume(dev);
+		ret = bmi160_resume(dev);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		bmi160_suspend(dev);
+		ret = bmi160_suspend(dev);
 		break;
 	default:
 		ret = -ENOTSUP;

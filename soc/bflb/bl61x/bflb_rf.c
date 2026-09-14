@@ -140,7 +140,7 @@ static void capcode_set(uint8_t capcode_in, uint8_t capcode_out)
 	sys_write32(val, AON_XTAL_CFG_ADDR);
 }
 
-#define WIFI_NODE DT_INST(0, bflb_bl61x_wifi)
+#define WIFI_NODE DT_INST(0, bflb_wifi6)
 #define BT_NODE   DT_INST(0, bflb_bt_hci)
 
 #define DT_COPY_I8(node, prop, dst, n)                                                             \
@@ -277,9 +277,9 @@ int8_t rfparam_load(struct wl_param_t *param)
 #endif
 
 	param->pwrcal.Temperature_MP = TEMPERATURE_MP_DEFAULT;
-#ifdef CONFIG_BFLB_WIFI_BL61X_DEFAULT_COUNTRY
-	param->country_code = CONFIG_BFLB_WIFI_BL61X_DEFAULT_COUNTRY[0] |
-			      (CONFIG_BFLB_WIFI_BL61X_DEFAULT_COUNTRY[1] << 8);
+#ifdef CONFIG_WIFI_BFLB_WIFI6_DEFAULT_COUNTRY
+	param->country_code = CONFIG_WIFI_BFLB_WIFI6_DEFAULT_COUNTRY[0] |
+			      (CONFIG_WIFI_BFLB_WIFI6_DEFAULT_COUNTRY[1] << 8);
 #endif
 
 	for (i = 0; i < ARRAY_SIZE(tmp_mp_descs); i++) {

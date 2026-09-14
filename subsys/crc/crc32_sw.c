@@ -6,11 +6,6 @@
 
 #include <zephyr/sys/crc.h>
 
-uint32_t __weak crc32_ieee(const uint8_t *data, size_t len)
-{
-	return crc32_ieee_update(0x0, data, len);
-}
-
 uint32_t __weak crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len)
 {
 	/* crc table generated from polynomial 0xedb88320 */
@@ -32,9 +27,9 @@ uint32_t __weak crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len)
 	return (~crc);
 }
 
-uint32_t __weak crc32_mpeg2(const uint8_t *data, size_t len)
+uint32_t __weak crc32_ieee(const uint8_t *data, size_t len)
 {
-	return crc32_mpeg2_update(0xFFFFFFFFU, data, len);
+	return crc32_ieee_update(0x0, data, len);
 }
 
 uint32_t __weak crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len)
@@ -54,4 +49,9 @@ uint32_t __weak crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len
 	}
 
 	return crc;
+}
+
+uint32_t __weak crc32_mpeg2(const uint8_t *data, size_t len)
+{
+	return crc32_mpeg2_update(0xFFFFFFFFU, data, len);
 }

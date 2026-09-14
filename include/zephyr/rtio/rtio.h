@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2022 Intel Corporation
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief Real-Time IO device API for moving bytes with low effort
+ * @ingroup rtio
  *
  * RTIO is a context for asynchronous batch operations using a submission and completion queue.
  *
@@ -56,6 +57,18 @@ extern "C" {
  * @{
  */
 
+struct rtio;
+
+/**
+ * @brief RTIO completion queue event callback
+ *
+ * Called every time a new completion queue event is submitted to RTIO context, if set.
+ *
+ * @param r The RTIO context to which the completion queue event was submitted
+ * @param user_data User data specified with @ref rtio_set_cqe_callback
+ */
+typedef void (*rtio_cqe_callback_t)(struct rtio *r, void *user_data);
+
 /**
  * @brief An RTIO context containing what can be viewed as a pair of queues.
  *
@@ -85,18 +98,16 @@ struct rtio {
 	struct k_sem *consume_sem;
 #endif
 
-	/* Total number of completions */
+	/** Total number of completions */
 	atomic_t cq_count;
 
-	/* Number of completions that were unable to be submitted with results
-	 * due to the cq spsc being full
-	 */
+	/** Number of completions dropped because no CQE was available */
 	atomic_t xcqcnt;
 
-	/* Submission queue object pool with free list */
+	/** Submission queue object pool with free list */
 	struct rtio_sqe_pool *sqe_pool;
 
-	/* Complete queue object pool with free list */
+	/** Completion queue object pool with free list */
 	struct rtio_cqe_pool *cqe_pool;
 
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
@@ -104,11 +115,19 @@ struct rtio {
 	struct sys_mem_blocks *block_pool;
 #endif
 
-	/* Submission queue */
+	/** Submission queue */
 	struct mpsc sq;
 
-	/* Completion queue */
+	/** Completion queue */
 	struct mpsc cq;
+
+#ifdef CONFIG_RTIO_CQE_CALLBACK
+	/* Completion queue event callback */
+	rtio_cqe_callback_t cqe_cb;
+
+	/* Completion queue event callback user data */
+	void *cqe_cb_user_data;
+#endif
 };
 
 /* @cond ignore */
@@ -128,6 +147,7 @@ struct rtio {
 		IF_ENABLED(CONFIG_RTIO_SYS_MEM_BLOCKS, (.block_pool = _block_pool,))               \
 		.sq = MPSC_INIT((name.sq)),                                                        \
 		.cq = MPSC_INIT((name.cq)),                                                        \
+		IF_ENABLED(CONFIG_RTIO_CQE_CALLBACK, (.cqe_cb = NULL, .cqe_cb_user_data = NULL,))  \
 	}
 /* @endcond */
 
@@ -189,6 +209,8 @@ static inline uint16_t __rtio_compute_mempool_block_index(const struct rtio *r, 
 }
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 					  size_t max_sz, uint8_t **buf, uint32_t *buf_len)
 {
@@ -242,6 +264,8 @@ static inline void rtio_block_pool_free(struct rtio *r, void *buf, uint32_t buf_
 	sys_mem_blocks_free_contiguous(r->block_pool, buf, num_blks);
 #endif
 }
+
+/** @endcond */
 
 
 /** The memory partition associated with all RTIO context information */
@@ -430,6 +454,40 @@ static inline struct rtio_cqe *rtio_cqe_acquire(struct rtio *r)
 
 	SYS_PORT_TRACING_FUNC_EXIT(rtio, cqe_acquire, r, cqe);
 	return cqe;
+}
+
+/**
+ * @brief Set the completion queue event callback
+ *
+ * The callback will be called every time a new completion queue event is produced
+ *
+ * @warning The callback can only be set safely while no SQE is being executed
+ *
+ * @note Set the callback to NULL to disable the it
+ *
+ * @param r RTIO context
+ * @param callback The callback to set
+ * @param user_data User data passed to callback
+ *
+ * @retval 0 Callback set successfully
+ * @retval -ENOTSUP CQE callback is not supported
+ */
+static inline int rtio_set_cqe_callback(struct rtio *r,
+					rtio_cqe_callback_t callback,
+					void *user_data)
+{
+#ifdef CONFIG_RTIO_CQE_CALLBACK
+	r->cqe_cb = callback;
+	r->cqe_cb_user_data = user_data;
+
+	return 0;
+#else
+	ARG_UNUSED(r);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(user_data);
+
+	return -ENOTSUP;
+#endif
 }
 
 /**
@@ -645,9 +703,13 @@ static inline int z_impl_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 #endif
 }
 
+/** @cond INTERNAL_HIDDEN */
+
 void rtio_executor_submit(struct rtio *r);
 void rtio_executor_ok(struct rtio_iodev_sqe *iodev_sqe, int result);
 void rtio_executor_err(struct rtio_iodev_sqe *iodev_sqe, int result);
+
+/** @endcond */
 
 /**
  * @brief Inform the executor of a submission completion with success
@@ -700,6 +762,11 @@ static inline void rtio_cqe_submit(struct rtio *r, int result, void *userdata, u
 		rtio_cqe_produce(r, cqe);
 #ifdef CONFIG_RTIO_CONSUME_SEM
 		k_sem_give(r->consume_sem);
+#endif
+#ifdef CONFIG_RTIO_CQE_CALLBACK
+		if (r->cqe_cb != NULL) {
+			r->cqe_cb(r, r->cqe_cb_user_data);
+		}
 #endif
 	}
 
@@ -826,6 +893,13 @@ static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
 #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_grant(r->consume_sem, t);
 #endif
+
+#ifdef CONFIG_RTIO_OP_DELAY
+	/* Delay submissions are dispatched to the shared timeout iodev, so a thread
+	 * allowed to use this context must also be able to reference it.
+	 */
+	k_object_access_grant(&rtio_timeout_iodev, t);
+#endif
 }
 
 
@@ -845,6 +919,10 @@ static inline void rtio_access_revoke(struct rtio *r, struct k_thread *t)
 
 #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_revoke(r->consume_sem, t);
+#endif
+
+#ifdef CONFIG_RTIO_OP_DELAY
+	k_object_access_revoke(&rtio_timeout_iodev, t);
 #endif
 }
 

@@ -78,8 +78,33 @@ enum dp83826_interface {
 	DP83826_RGMII,
 	DP83826_RGMII_ID,
 	DP83826_RGMII_RX_ID,
-	DP83826_RGMII_TX_ID
+	DP83826_RGMII_TX_ID,
+	DP83826_GMII
 };
+
+static bool dp83867_is_rgmii(enum dp83826_interface iface)
+{
+	return iface == DP83826_RGMII || iface == DP83826_RGMII_ID ||
+	       iface == DP83826_RGMII_RX_ID || iface == DP83826_RGMII_TX_ID;
+}
+
+static const char *dp83867_iface_name(enum dp83826_interface iface)
+{
+	switch (iface) {
+	case DP83826_RGMII:
+		return "rgmii";
+	case DP83826_RGMII_ID:
+		return "rgmii-id";
+	case DP83826_RGMII_RX_ID:
+		return "rgmii-rxid";
+	case DP83826_RGMII_TX_ID:
+		return "rgmii-txid";
+	case DP83826_GMII:
+		return "gmii";
+	default:
+		return "unknown";
+	}
+}
 
 struct ti_dp83867_config {
 	uint8_t addr;
@@ -580,69 +605,72 @@ static int phy_ti_dp83867_init(const struct device *dev)
 		}
 	}
 
-	/* Read the RGMIICTL1 register to configure internal delay enable bits*/
-	ret = phy_ti_dp83867_indirect_read(dev, DP83867_RGMIICTL1, &rgmii_ctl_val);
-	if (ret) {
-		LOG_ERR("Error reading DP83867_RGMIICTL1");
-		return ret;
-	}
+	if (dp83867_is_rgmii(config->phy_iface)) {
+		/* Read the RGMIICTL1 register to configure internal delay enable bits*/
+		ret = phy_ti_dp83867_indirect_read(dev, DP83867_RGMIICTL1, &rgmii_ctl_val);
+		if (ret) {
+			LOG_ERR("Error reading DP83867_RGMIICTL1");
+			return ret;
+		}
 
-	/* Clear any existing delay enable bits*/
-	rgmii_ctl_val &= ~(DP83867_RGMII_TX_CLK_DELAY_EN | DP83867_RGMII_RX_CLK_DELAY_EN);
+		/* Clear any existing delay enable bits*/
+		rgmii_ctl_val &= ~(DP83867_RGMII_TX_CLK_DELAY_EN | DP83867_RGMII_RX_CLK_DELAY_EN);
 
-	/* Set delay enable bits based on PHY interface mode from devicetree*/
-	switch (config->phy_iface) {
-	case DP83826_RGMII_ID:
-		rgmii_ctl_val |= (DP83867_RGMII_TX_CLK_DELAY_EN | DP83867_RGMII_RX_CLK_DELAY_EN);
-		break;
+		/* Set delay enable bits based on PHY interface mode from devicetree*/
+		switch (config->phy_iface) {
+		case DP83826_RGMII_ID:
+			rgmii_ctl_val |= (DP83867_RGMII_TX_CLK_DELAY_EN |
+					  DP83867_RGMII_RX_CLK_DELAY_EN);
+			break;
 
-	case DP83826_RGMII_RX_ID:
-		rgmii_ctl_val |= DP83867_RGMII_RX_CLK_DELAY_EN;
-		break;
+		case DP83826_RGMII_RX_ID:
+			rgmii_ctl_val |= DP83867_RGMII_RX_CLK_DELAY_EN;
+			break;
 
-	case DP83826_RGMII_TX_ID:
-		rgmii_ctl_val |= DP83867_RGMII_TX_CLK_DELAY_EN;
-		break;
+		case DP83826_RGMII_TX_ID:
+			rgmii_ctl_val |= DP83867_RGMII_TX_CLK_DELAY_EN;
+			break;
 
-	case DP83826_RGMII:
-	default:
-		break;
-	}
+		case DP83826_RGMII:
+		default:
+			break;
+		}
 
-	/* write updated delay enable configuration to PHY(DP83867_RGMIICTL1)*/
-	ret = phy_ti_dp83867_indirect_write(dev, DP83867_RGMIICTL1, rgmii_ctl_val);
-	if (ret) {
-		LOG_ERR("Failed to write DP83867_RGMIICTL1");
-		return ret;
-	}
+		/* write updated delay enable configuration to PHY(DP83867_RGMIICTL1)*/
+		ret = phy_ti_dp83867_indirect_write(dev, DP83867_RGMIICTL1, rgmii_ctl_val);
+		if (ret) {
+			LOG_ERR("Failed to write DP83867_RGMIICTL1");
+			return ret;
+		}
 
-	/* Read RGMIIDCTL the delay value control register*/
-	ret = phy_ti_dp83867_indirect_read(dev, DP83867_RGMIIDCTL, &rgmii_dctl_val);
-	if (ret) {
-		LOG_ERR("Error reading DP83867_RGMIIDCTL");
-		return ret;
-	}
+		/* Read RGMIIDCTL the delay value control register*/
+		ret = phy_ti_dp83867_indirect_read(dev, DP83867_RGMIIDCTL, &rgmii_dctl_val);
+		if (ret) {
+			LOG_ERR("Error reading DP83867_RGMIIDCTL");
+			return ret;
+		}
 
-	/* Clear existing delay values*/
-	rgmii_dctl_val &= ~DP83867_RGMIIDCTL_DELAY_MASK;
+		/* Clear existing delay values*/
+		rgmii_dctl_val &= ~DP83867_RGMIIDCTL_DELAY_MASK;
 
-	/* Set TX delay if specified*/
-	if (config->ti_tx_internal_delay != DP83867_RGMII_TX_CLK_DELAY_INV) {
-		rgmii_dctl_val |= ((config->ti_tx_internal_delay & 0xF) <<
-					DP83867_RGMII_TX_CLK_DELAY_SHIFT);
-	}
+		/* Set TX delay if specified*/
+		if (config->ti_tx_internal_delay != DP83867_RGMII_TX_CLK_DELAY_INV) {
+			rgmii_dctl_val |= ((config->ti_tx_internal_delay & 0xF) <<
+						DP83867_RGMII_TX_CLK_DELAY_SHIFT);
+		}
 
-	/* Set RX delay if specified */
-	if (config->ti_rx_internal_delay != DP83867_RGMII_RX_CLK_DELAY_INV) {
-		rgmii_dctl_val |= ((config->ti_rx_internal_delay & 0xF) <<
-					DP83867_RGMII_RX_CLK_DELAY_SHIFT);
-	}
+		/* Set RX delay if specified */
+		if (config->ti_rx_internal_delay != DP83867_RGMII_RX_CLK_DELAY_INV) {
+			rgmii_dctl_val |= ((config->ti_rx_internal_delay & 0xF) <<
+						DP83867_RGMII_RX_CLK_DELAY_SHIFT);
+		}
 
-	/* Write final delay values to PHY(DP83867_RGMIIDCTL) */
-	ret = phy_ti_dp83867_indirect_write(dev, DP83867_RGMIIDCTL, rgmii_dctl_val);
-	if (ret) {
-		LOG_ERR("Error writing DP83867_RGMIIDCTL");
-		return ret;
+		/* Write final delay values to PHY(DP83867_RGMIIDCTL) */
+		ret = phy_ti_dp83867_indirect_write(dev, DP83867_RGMIIDCTL, rgmii_dctl_val);
+		if (ret) {
+			LOG_ERR("Error writing DP83867_RGMIIDCTL");
+			return ret;
+		}
 	}
 
 	/* Verify fifo depth value */
@@ -655,12 +683,15 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	fifo_depth = (phycr_val & PHY_TI_DP83867_FIFO_DEPTH_MASK) >>
 					PHY_TI_DP83867_FIFO_DEPTH_SHIFT;
 	if (fifo_depth == PHY_TI_DP83867_FIFO_DEPTH_4B) {
-		LOG_INF("TX FIFO depth is set to 4 bytes/nibbles");
+		LOG_DBG("TX FIFO depth is set to 4 bytes/nibbles");
 	} else {
 		LOG_WRN("TX FIFO depth is not set to 4 bytes/nibbles (actual: %u)", fifo_depth);
 	}
 
 	k_work_init_delayable(&data->phy_monitor_work, phy_ti_dp83867_monitor_work_handler);
+
+	LOG_INF("PHY addr %d: interface %s initialized", config->addr,
+		dp83867_iface_name(config->phy_iface));
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	if (!config->interrupt_gpio.port) {

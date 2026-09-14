@@ -304,10 +304,10 @@ static int sam_hsmci_send_cmd(Hsmci *hsmci, struct sdhc_command *cmd, uint32_t c
 	}
 
 	/* RSPR is just a FIFO, index is of no consequence */
-	cmd->response[3] = hsmci->HSMCI_RSPR[0];
-	cmd->response[2] = hsmci->HSMCI_RSPR[0];
-	cmd->response[1] = hsmci->HSMCI_RSPR[0];
 	cmd->response[0] = hsmci->HSMCI_RSPR[0];
+	cmd->response[1] = hsmci->HSMCI_RSPR[0];
+	cmd->response[2] = hsmci->HSMCI_RSPR[0];
+	cmd->response[3] = hsmci->HSMCI_RSPR[0];
 	return 0;
 }
 
@@ -538,11 +538,11 @@ static int sam_hsmci_request_inner(const struct device *dev, struct sdhc_command
 		if ((sd_data->block_size & 0x3) == 0 && (((uint32_t)sd_data->data) & 0x3) == 0) {
 			size = (sd_data->block_size + 3) >> 2;
 			hsmci->HSMCI_MR &= ~HSMCI_MR_FBYTE;
-			byte_mode = true;
+			byte_mode = false;
 		} else {
 			size = sd_data->block_size;
 			hsmci->HSMCI_MR |= HSMCI_MR_FBYTE;
-			byte_mode = false;
+			byte_mode = true;
 		}
 
 		hsmci->HSMCI_BLKR =

@@ -115,6 +115,7 @@ bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blackberry	BlackBerry Limited
+bliiot	BLIIoT Technology Co., Ltd.
 blues	Blues Wireless
 blutek	BluTek Power
 boe	BOE Technology Group Co., Ltd.
@@ -264,6 +265,7 @@ fibocom	Fibocom Wireless Inc.
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
+fitipower	Fitipower Integrated Technology Inc.
 flysky	FlySky
 fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
@@ -403,6 +405,7 @@ leez	Leez
 lego	LEGO Systems A/S
 lemaker	Shenzhen LeMaker Technology Co., Ltd.
 lenovo	Lenovo Group Ltd.
+levetop	LeveTop Semiconductor
 lg	LG Corporation
 lgphilips	LG Display
 libretech	Shenzhen Libre Technology Co., Ltd
@@ -434,6 +437,7 @@ macnica	Macnica Americas
 madmachine	Shenzhen FeiKaiTe Technology Co., Ltd.
 makerbase	Makerbase Co., Ltd.
 makerdiary	Shenzhen Zaowubang Technology Co., Ltd.
+makerfabs	Makerfabs
 mantix	Mantix Display Technology Co.,Ltd.
 mapleboard	Mapleboard.org
 marvell	Marvell Technology Group Ltd.
@@ -714,6 +718,7 @@ swir	Sierra Wireless
 syna	Synaptics Inc.
 synochip	Hangzhou Synochip Data Security Technology Co., Ltd.
 synology	Synology, Inc.
+t3gemstone	T3 Gemstone
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
 tcg	Trusted Computing Group

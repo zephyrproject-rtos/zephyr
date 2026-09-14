@@ -52,7 +52,7 @@ endif # SOC_LPC55S06
 if SOC_LPC55S36
 
 # Enable cache management features
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 choice CACHE_TYPE

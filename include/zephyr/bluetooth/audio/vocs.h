@@ -130,10 +130,10 @@ void *bt_vocs_svc_decl_get(struct bt_vocs *vocs);
 /**
  * @brief Get the connection pointer of a client instance
  *
- * Get the Bluetooth connection pointer of a Audio Input Control Service
+ * Get the Bluetooth connection pointer of a Volume Offset Control Service
  * client instance.
  *
- * @param vocs    Audio Input Control Service client instance pointer.
+ * @param vocs    Volume Offset Control Service client instance pointer.
  * @param conn    Connection pointer.
  *
  * @return 0 if success, errno on failure.
@@ -322,6 +322,18 @@ void bt_vocs_client_cb_register(struct bt_vocs *inst, struct bt_vocs_cb *cb);
  * @return Pointer to the instance, or NULL if no free instances are left.
  */
 struct bt_vocs *bt_vocs_client_free_instance_get(void);
+
+/**
+ * @brief Free an instance received from bt_vocs_client_free_instance_get()
+ *
+ * @param inst The instance to free
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p inst is NULL or not a client instance.
+ * @retval -EALREADY @p inst is already free
+ * @retval -EBUSY @p inst is busy.
+ */
+int bt_vocs_client_free_instance(struct bt_vocs *inst);
 
 /**
  * @brief Discover a Volume Offset Control Service.

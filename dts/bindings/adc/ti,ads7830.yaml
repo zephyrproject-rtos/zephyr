@@ -1,0 +1,8 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments ADS7830 8-bit 8-channel I2C ADC
+
+compatible: "ti,ads7830"
+
+include: ti,ads7828-base.yaml

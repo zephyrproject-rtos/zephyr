@@ -1,9 +1,12 @@
-# Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+# Copyright (c) 2026 Philipp Steiner
 # SPDX-License-Identifier: Apache-2.0
 
 rsource "../Kconfig.unit"
 
 # See ../Kconfig.unit for why selected PTP Kconfig entries are redeclared here.
+
+config PTP_NUM_PORTS
+	default 1
 
 config PTP_DSCP_VALUE
 	default 0

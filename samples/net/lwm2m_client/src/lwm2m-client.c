@@ -29,13 +29,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define NTN_DTLS_HANDSHAKE_TIMEOUT_MIN  CONFIG_NET_SAMPLE_LWM2M_NTN_DTLS_HANDSHAKE_TIMEOUT_MIN_MS
 #define NTN_DTLS_HANDSHAKE_TIMEOUT_MAX  CONFIG_NET_SAMPLE_LWM2M_NTN_DTLS_HANDSHAKE_TIMEOUT_MAX_MS
 #endif
-#define APP_BANNER "Run LWM2M client"
+#define APP_BANNER "Run LwM2M client"
 
 #define WAIT_TIME	K_SECONDS(10)
 #define CONNECT_TIME	K_SECONDS(10)
 
 #define CLIENT_MANUFACTURER	"Zephyr"
-#define CLIENT_MODEL_NUMBER	"OMA-LWM2M Sample Client"
+#define CLIENT_MODEL_NUMBER	"OMA-LwM2M Sample Client"
 #define CLIENT_SERIAL_NUMBER	"345000123"
 #define CLIENT_FIRMWARE_VER	"1.0"
 #define CLIENT_HW_VER		"1.0.1"
@@ -521,7 +521,7 @@ int main(void)
 
 	ret = lwm2m_setup();
 	if (ret < 0) {
-		LOG_ERR("Cannot setup LWM2M fields (%d)", ret);
+		LOG_ERR("Cannot setup LwM2M fields (%d)", ret);
 		return 0;
 	}
 

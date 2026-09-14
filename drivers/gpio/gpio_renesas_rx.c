@@ -279,7 +279,7 @@ static DEVICE_API(gpio, gpio_rx_drv_api_funcs) = {
 	GPIO_RX_PORT_IRQ_DECL(node);                                                               \
 	struct gpio_rx_irq_info gpio_rx_irq_info_##suffix[] = {GPIO_RX_PORT_IRQ_ELEM(node)};       \
 	static const struct gpio_rx_config gpio_rx_config_##suffix = {                             \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(8U)},                   \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(node),                                   \
 		.port_num = port_number,                                                           \
 		.pinmux = (uint8_t *)DT_REG_ADDR(DT_PROP(node, pinmux)),                           \
 		.reg =                                                                             \

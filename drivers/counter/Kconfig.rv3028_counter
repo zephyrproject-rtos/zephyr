@@ -1,0 +1,13 @@
+# Copyright (c) 2025 BayLibre, SAS
+# Copyright (c) 2026 Janez Ugovsek <janez@ugovsek.info>
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_RV3028
+	bool "Micro Crystal RV3028 counter driver"
+	default y
+	depends on DT_HAS_MICROCRYSTAL_RV3028_COUNTER_ENABLED
+	depends on DT_HAS_MICROCRYSTAL_RV3028_ENABLED
+	select MFD
+	help
+	  Enable the counter/timer child driver for the Micro Crystal RV3028.
+	  The hardware timer is exposed through the counter API.

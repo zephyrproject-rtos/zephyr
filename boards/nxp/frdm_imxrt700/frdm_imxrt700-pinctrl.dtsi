@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/rt/MIMXRT798SGFOB-pinctrl.h>
+#include <nxp/imxrt/imxrt7xx/pinctrl/MIMXRT798SGFOB-pinctrl.h>
 
 &pinctrl {
 	/* CPU0 debug console (MCU-Link), FLEXCOMM0 LPUART - same pins as MIMXRT700-EVK */

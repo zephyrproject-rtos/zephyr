@@ -47,9 +47,13 @@ static atomic_t sli_btctrl_events;
 /* FIFO for received HCI packets */
 static struct k_fifo slz_rx_fifo;
 
+const struct {
+	uint32_t buffer_memory_size;
+} sli_bluetooth_common_default_config = {
+	.buffer_memory_size = CONFIG_BT_SILABS_EFR32_BUFFER_MEMORY,
+};
+
 /* FIXME: these functions should come from the SiSDK headers! */
-void BTLE_LL_EventRaise(uint32_t events);
-void BTLE_LL_Process(uint32_t events);
 int16_t BTLE_LL_SetMaxPower(int16_t power);
 bool sli_pending_btctrl_events(void);
 
@@ -195,7 +199,7 @@ static int slz_bt_send(const struct device *dev, struct net_buf *buf)
 /**
  * The HCI driver thread simply waits for the LL semaphore to signal that
  * it has an event to handle, whether it's from the radio, its own scheduler,
- * or an HCI event to pass upstairs. The BTLE_LL_Process function call will
+ * or an HCI event to pass upstairs. The sl_btctrl_process_events function call will
  * take care of all of them, and add HCI events to the HCI queue when applicable.
  */
 static void slz_ll_thread_func(void *p1, void *p2, void *p3)
@@ -209,7 +213,7 @@ static void slz_ll_thread_func(void *p1, void *p2, void *p3)
 
 		k_sem_take(&slz_ll_sem, K_FOREVER);
 		events = atomic_clear(&sli_btctrl_events);
-		BTLE_LL_Process(events);
+		sl_btctrl_process_events(events);
 	}
 }
 
@@ -330,7 +334,7 @@ void sli_btctrl_events_init(void)
 }
 
 /* Store event flags and increment the LL semaphore */
-void BTLE_LL_EventRaise(uint32_t events)
+void sl_btctrl_raise_events(uint32_t events)
 {
 	atomic_or(&sli_btctrl_events, events);
 	k_sem_give(&slz_ll_sem);

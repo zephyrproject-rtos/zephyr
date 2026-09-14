@@ -328,8 +328,8 @@ function(dts_edt_pickle)
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMAND_ERROR_IS_FATAL ANY
   )
-  zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
-  zephyr_file_copy(${EDT_PICKLE}.new ${EDT_PICKLE} ONLY_IF_DIFFERENT)
+  file(COPY_FILE ${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
+  file(COPY_FILE ${EDT_PICKLE}.new ${EDT_PICKLE} ONLY_IF_DIFFERENT)
   file(REMOVE ${ZEPHYR_DTS}.new ${EDT_PICKLE}.new)
   message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
   message(STATUS "Generated pickled edt: ${EDT_PICKLE}")
@@ -353,7 +353,7 @@ function(dts_gen_defines)
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMAND_ERROR_IS_FATAL ANY
   )
-  zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
+  file(COPY_FILE ${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
   file(REMOVE ${DEVICETREE_GENERATED_H}.new)
   message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
   file(STRINGS ${DEVICETREE_BINDINGS_USED} bindings)

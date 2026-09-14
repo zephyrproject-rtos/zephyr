@@ -6,7 +6,7 @@ if BOARD_ARDUINO_PORTENTA_H7
 configdefault REGULATOR
 	default y if NETWORKING
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 if BOARD_ARDUINO_PORTENTA_H7_STM32H747XX_M7

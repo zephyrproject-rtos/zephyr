@@ -8,7 +8,7 @@ toolchain:
 supported:
   - pwm
   - spi
-  - ble
+  - bluetooth
   - i2c
   - gpio
   - usbd

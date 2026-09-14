@@ -1,0 +1,20 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 STMicroelectronics
+ */
+
+/ {
+	chosen {
+		st,lptim-stdby-timer = &rtc;
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &stop2 &stop3>;
+};
+
+&rtc {
+	status = "okay";
+	prescaler = <32768>;
+};

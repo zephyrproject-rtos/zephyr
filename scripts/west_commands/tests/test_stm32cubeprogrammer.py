@@ -46,7 +46,7 @@ WINDOWS_CLI_PATH = (
 )
 """Windows CLI path."""
 
-MACOS_ARM64_CLI_PATH = (
+MACOS_LEGACY_CLI_PATH = (
     Path("/Applications")
     / "STMicroelectronics"
     / "STM32Cube"
@@ -57,20 +57,20 @@ MACOS_ARM64_CLI_PATH = (
     / "bin"
     / "STM32_Programmer_CLI"
 )
-"""macOS CLI path on Apple Silicon (arm64)."""
+"""macOS CLI path on older STM32CubeProgrammer release."""
 
-MACOS_X86_64_CLI_PATH = (
+MACOS_NEW_CLI_PATH = (
     Path("/Applications")
     / "STMicroelectronics"
     / "STM32Cube"
     / "STM32CubeProgrammer"
     / "STM32CubeProgrammer.app"
     / "Contents"
-    / "MacOs"
+    / "MacOS"
     / "bin"
     / "STM32_Programmer_CLI"
 )
-"""macOS CLI path on Intel (x86_64)."""
+"""macOS CLI path on newer STM32CubeProgrammer release."""
 
 TEST_CASES = (
     {
@@ -432,11 +432,11 @@ TEST_CASES = (
         "extload": None,
         "tool_opt": [],
         "system": "Darwin",
-        "machine": "arm64",
-        "cli_path": str(MACOS_ARM64_CLI_PATH),
+        "macos_new_exe": False,
+        "cli_path": str(MACOS_LEGACY_CLI_PATH),
         "calls": [
             [
-                str(MACOS_ARM64_CLI_PATH),
+                str(MACOS_LEGACY_CLI_PATH),
                 "--connect",
                 "port=swd",
                 "--download",
@@ -462,11 +462,11 @@ TEST_CASES = (
         "extload": None,
         "tool_opt": [],
         "system": "Darwin",
-        "machine": "x86_64",
-        "cli_path": str(MACOS_X86_64_CLI_PATH),
+        "macos_new_exe": True,
+        "cli_path": str(MACOS_NEW_CLI_PATH),
         "calls": [
             [
-                str(MACOS_X86_64_CLI_PATH),
+                str(MACOS_NEW_CLI_PATH),
                 "--connect",
                 "port=swd",
                 "--download",
@@ -547,24 +547,23 @@ def os_path_isfile_patch(filename):
     return os_path_isfile(filename)
 
 @pytest.mark.parametrize("tc", TEST_CASES)
-@patch("runners.stm32cubeprogrammer.platform.machine")
 @patch("runners.stm32cubeprogrammer.platform.system")
 @patch("runners.stm32cubeprogrammer.Path.home", return_value=HOME_PATH)
-@patch("runners.stm32cubeprogrammer.Path.exists", return_value=True)
+@patch("runners.stm32cubeprogrammer.Path.exists")
 @patch.dict("runners.stm32cubeprogrammer.os.environ", ENVIRON)
 @patch("runners.core.ZephyrBinaryRunner.require")
 @patch("runners.stm32cubeprogrammer.STM32CubeProgrammerBinaryRunner.check_call")
 @patch("os.path.isfile", side_effect=os_path_isfile_patch)
 def test_stm32cubeprogrammer_init(
     os_path_isfile_patch,
-    check_call, require, path_exists, path_home, system, machine, tc, runner_config
+    check_call, require, path_exists, path_home, system, tc, runner_config
 ):
     """Tests that ``STM32CubeProgrammerBinaryRunner`` class can be initialized
     and that ``flash`` command works as expected.
     """
 
     system.return_value = tc["system"]
-    machine.return_value = tc.get("machine") # only for some system(s)
+    path_exists.return_value = tc.get("macos_new_exe", True)
 
     runner = STM32CubeProgrammerBinaryRunner(
         cfg=runner_config,
@@ -592,24 +591,23 @@ def test_stm32cubeprogrammer_init(
 
 
 @pytest.mark.parametrize("tc", TEST_CASES)
-@patch("runners.stm32cubeprogrammer.platform.machine")
 @patch("runners.stm32cubeprogrammer.platform.system")
 @patch("runners.stm32cubeprogrammer.Path.home", return_value=HOME_PATH)
-@patch("runners.stm32cubeprogrammer.Path.exists", return_value=True)
+@patch("runners.stm32cubeprogrammer.Path.exists")
 @patch.dict("runners.stm32cubeprogrammer.os.environ", ENVIRON)
 @patch("runners.core.ZephyrBinaryRunner.require")
 @patch("runners.stm32cubeprogrammer.STM32CubeProgrammerBinaryRunner.check_call")
 @patch("os.path.isfile", side_effect=os_path_isfile_patch)
 def test_stm32cubeprogrammer_create(
     os_path_isfile_patch,
-    check_call, require, path_exists, path_home, system, machine, tc, runner_config
+    check_call, require, path_exists, path_home, system, tc, runner_config
 ):
     """Tests that ``STM32CubeProgrammerBinaryRunner`` class can be created using
     the ``create`` factory method and that ``flash`` command works as expected.
     """
 
     system.return_value = tc["system"]
-    machine.return_value = tc.get("machine") # only for some system(s)
+    path_exists.return_value = tc.get("macos_new_exe", True)
 
     args = ["--port", tc["port"]]
     if tc["dev_id"]:

@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/* Use 512KB SRAM for network stack */
+		zephyr,sram = &sram0;
+	};
+
+	soc {
+		/* Combine SRAM banks 0-3 into one contiguous region */
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(512)>;
+		};
+	};
+};
+
+&spi0b_mosi_p2_28 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0b_miso_p2_27 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0b_sck_p2_29 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0a_ss0_p0_22 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0 {
+	status = "okay";
+	cs-gpios = <&gpio2 26 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+
+	adin1140@0 {
+		compatible = "adi,adin1140";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
+		int-gpios = <&gpio0 8 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH | GPIO_PULL_UP)>;
+		wake-gpios = <&gpio0 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
+		local-mac-address = [00 e0 22 fe da d0];
+		phy-handle = <&adin1140_phy>;
+
+		mdio {
+			compatible = "adi,adin1140-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			adin1140_phy: ethernet-phy@0 {
+				reg = <0x0>;
+				compatible = "adi,adin1140-phy";
+				/* PLCA disabled; params below apply only when enabled.
+				 * Add "plca-enable;" to turn PLCA on.
+				 */
+				plca-node-id = <0>;
+				plca-node-count = <5>;
+				plca-burst-count = <0>;
+				plca-burst-timer = <0x60>;
+				plca-to-timer = <0x20>;
+			};
+		};
+	};
+};

@@ -11,3 +11,28 @@ config MIPI_DBI_NXP_FLEXIO_LCDIF
 	select PINCTRL
 	help
 	  Enable support for MIPI DBI driver for NXP FlexIO based LCDIF controller.
+
+if MIPI_DBI_NXP_FLEXIO_LCDIF
+
+config MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+	bool "Use SMARTDMA controller with FlexIO LCDIF"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_MIPI_DBI_FLEXIO_LCDIF),dma-names,smartdma)
+	depends on DMA_MCUX_SMARTDMA
+	help
+	  Use SMARTDMA to accelerate the FlexIO LCDIF data transfer, instead
+	  of a generic DMA controller (e.g. eDMA). This is auto-enabled when
+	  the FlexIO LCDIF instance's own "dmas"/"dma-names" devicetree
+	  properties route it to the SMARTDMA controller, mirroring how
+	  DMA_MCUX_EDMA auto-enables based on the eDMA controller's own
+	  devicetree node. It is not driven off DMA_MCUX_SMARTDMA directly,
+	  since some boards enable that option for an unrelated peripheral
+	  (e.g. MIPI DSI) while still wiring the FlexIO LCDIF instance to a
+	  generic DMA controller.
+
+	  Some SoCs also need an INPUTMUX route (see the "mux-states"
+	  devicetree property) to connect the FlexIO IRQ to a SmartDMA
+	  trigger input. Boards that use this route must enable CONFIG_MUX
+	  and CONFIG_MUX_NXP_INPUTMUX themselves (a "select" here would
+	  create a Kconfig dependency loop through DMA_MCUX_SMARTDMA -> DMA).
+
+endif # MIPI_DBI_NXP_FLEXIO_LCDIF

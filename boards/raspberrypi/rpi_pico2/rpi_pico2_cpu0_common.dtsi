@@ -74,6 +74,10 @@
 	status = "okay";
 };
 
+&vreg {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };

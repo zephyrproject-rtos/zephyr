@@ -11,6 +11,7 @@ supported:
   - gpio
   - netif:eth
   - i2c
+  - ptp_clock
   - spi
   - qspi
   - memc

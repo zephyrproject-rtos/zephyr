@@ -26,8 +26,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 NET_BUF_POOL_DEFINE(avrcp_tx_pool, CONFIG_BT_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),

@@ -42,11 +42,11 @@ static struct openthread_state_changed_callback ot_l2_state_changed_cb;
 
 #define PKT_IS_IPv4(_p) ((NET_IPV6_HDR(_p)->vtc & 0xf0) == 0x40)
 
-#ifdef CONFIG_NET_MGMT_EVENT
-static struct net_mgmt_event_callback ip6_addr_cb;
-
-static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-				    struct net_if *iface)
+#if defined(CONFIG_NET_MGMT_EVENT) && !defined(CONFIG_OPENTHREAD_COPROCESSOR) &&                   \
+	!defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+static void ipv6_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct net_if *iface,
+				    void *info __maybe_unused, size_t info_length __maybe_unused,
+				    void *user_data __unused)
 {
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(OPENTHREAD)) {
 		return;
@@ -55,14 +55,14 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
-	if (cb->info == NULL || cb->info_length != sizeof(struct net_in6_addr)) {
+	if (info == NULL || info_length != sizeof(struct net_in6_addr)) {
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
-		add_ipv6_addr_to_ot(ot_context, (const struct net_in6_addr *)cb->info);
+		add_ipv6_addr_to_ot(ot_context, (const struct net_in6_addr *)info);
 	} else if (mgmt_event == NET_EVENT_IPV6_MADDR_ADD) {
-		add_ipv6_maddr_to_ot(ot_context, (const struct net_in6_addr *)cb->info);
+		add_ipv6_maddr_to_ot(ot_context, (const struct net_in6_addr *)info);
 	}
 #else
 	NET_WARN("No address info provided with event, "
@@ -70,6 +70,9 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 }
 
+NET_MGMT_REGISTER_EVENT_HANDLER(ot_ipv6_addr_events,
+				NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_MADDR_ADD,
+				ipv6_addr_event_handler, NULL);
 #endif /* CONFIG_NET_MGMT_EVENT */
 
 #ifndef CONFIG_HDLC_RCP_IF
@@ -332,12 +335,6 @@ static int openthread_l2_init(struct net_if *iface)
 	ot_l2_context->iface = iface;
 
 	if (!IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
-		if (!IS_ENABLED(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)) {
-			net_mgmt_init_event_callback(&ip6_addr_cb, ipv6_addr_event_handler,
-						     NET_EVENT_IPV6_ADDR_ADD |
-						     NET_EVENT_IPV6_MADDR_ADD);
-			net_mgmt_add_event_callback(&ip6_addr_cb);
-		}
 		net_if_dormant_on(iface);
 
 		openthread_set_receive_cb(ot_receive_handler, (void *)ot_l2_context);

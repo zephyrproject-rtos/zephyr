@@ -330,7 +330,7 @@ static DEVICE_API(wdt, mcux_wwdt_api) = {
 		/* Defensive: clear any peripheral status and NVIC pending */                      \
 		WWDT_ClearStatusFlags((WWDT_Type *)DT_INST_REG_ADDR(id),                           \
 			      WWDT_GetStatusFlags((WWDT_Type *)DT_INST_REG_ADDR(id)));             \
-		NVIC_ClearPendingIRQ(DT_INST_IRQN(id));                                            \
+		k_irq_clear_pending(DT_INST_IRQN(id));                                            \
 		irq_enable(DT_INST_IRQN(id));                                                      \
 	}
 

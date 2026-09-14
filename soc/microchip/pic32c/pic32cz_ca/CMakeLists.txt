@@ -3,4 +3,4 @@
 
 add_subdirectory(common)
 
-zephyr_include_directories(${SOC_SERIES})
+zephyr_include_directories(${CONFIG_SOC_SERIES})

@@ -19,6 +19,8 @@ supported:
   - entropy
   - dma
   - spi
+  - crypto
+  - adc
 testing:
   ignore_tags:
     - pm

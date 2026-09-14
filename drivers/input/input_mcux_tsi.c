@@ -17,6 +17,13 @@
 
 LOG_MODULE_REGISTER(input_mcux_tsi, CONFIG_INPUT_LOG_LEVEL);
 
+/*
+ * channel_mask is a uint32_t, so only channels 0..31 are addressable even on
+ * SoCs whose TSI has more than 32 channels (e.g. MCXA577 = 70). Clamp the
+ * usable width so the state array and mask checks never exceed 32 channels.
+ */
+#define MCUX_TSI_MAX_CHANNELS MIN(FSL_FEATURE_TSI_CHANNEL_COUNT, 32)
+
 struct tsi_channel_state {
 	uint16_t baseline;
 	uint16_t counter;
@@ -50,7 +57,7 @@ struct mcux_tsi_data {
 	const struct device *dev;
 
 	/* Channel states */
-	struct tsi_channel_state channels[FSL_FEATURE_TSI_CHANNEL_COUNT];
+	struct tsi_channel_state channels[MCUX_TSI_MAX_CHANNELS];
 
 	/* Current scanning channel */
 	uint8_t current_channel;
@@ -135,7 +142,7 @@ static void mcux_tsi_isr(const struct device *dev)
 		uint16_t counter = TSI_GetCounter(base);
 		uint8_t ch_idx = data->current_channel;
 
-		if (ch_idx < FSL_FEATURE_TSI_CHANNEL_COUNT) {
+		if (ch_idx < MCUX_TSI_MAX_CHANNELS) {
 			struct tsi_channel_state *ch = &data->channels[ch_idx];
 
 			/* Update channel data */
@@ -163,7 +170,7 @@ static void mcux_tsi_process_work_handler(struct k_work *work)
 	uint8_t ch_idx = data->current_channel;
 
 	/* Process channel data in work handler instead of ISR */
-	if (ch_idx < FSL_FEATURE_TSI_CHANNEL_COUNT) {
+	if (ch_idx < MCUX_TSI_MAX_CHANNELS) {
 		mcux_tsi_process_channel(dev, ch_idx);
 	}
 }
@@ -219,9 +226,13 @@ static int mcux_tsi_init(const struct device *dev)
 	uint32_t mask = config->channel_mask;
 	uint8_t enabled_channels = POPCOUNT(mask);
 
-	if (mask & ~BIT_MASK(FSL_FEATURE_TSI_CHANNEL_COUNT)) {
-		LOG_ERR("Channel mask 0x%x exceeds %d channels", mask,
-			FSL_FEATURE_TSI_CHANNEL_COUNT);
+	/*
+	 * Valid channel bits are 0..MCUX_TSI_MAX_CHANNELS-1. GENMASK is used
+	 * instead of BIT_MASK because MCUX_TSI_MAX_CHANNELS can be 32, and
+	 * BIT_MASK(32) would shift a 32-bit long by its full width (UB).
+	 */
+	if (mask & ~GENMASK(MCUX_TSI_MAX_CHANNELS - 1, 0)) {
+		LOG_ERR("Channel mask 0x%x exceeds %u channels", mask, MCUX_TSI_MAX_CHANNELS);
 		return -EINVAL;
 	}
 
@@ -280,7 +291,7 @@ static int mcux_tsi_init(const struct device *dev)
 	TSI_SelfCapCalibrate(base, &cal_data);
 
 	/* Initialize channel states */
-	for (uint8_t i = 0; i < FSL_FEATURE_TSI_CHANNEL_COUNT; i++) {
+	for (uint8_t i = 0; i < MCUX_TSI_MAX_CHANNELS; i++) {
 		if (config->channel_mask & BIT(i)) {
 			data->channels[i].baseline = cal_data.calibratedData[i];
 			data->channels[i].counter = 0;
@@ -328,7 +339,7 @@ static int mcux_tsi_init(const struct device *dev)
 			DT_INST_CLOCKS_CELL(n, name),				\
 		.irq_config_func = mcux_tsi_irq_config_##n,			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.num_channels = FSL_FEATURE_TSI_CHANNEL_COUNT,			\
+		.num_channels = MCUX_TSI_MAX_CHANNELS,			\
 		.input_code_count = DT_INST_PROP_LEN(n, input_codes),		\
 		.input_codes = mcux_tsi_input_codes_##n,			\
 		.channel_mask = DT_INST_PROP(n, channel_mask),			\

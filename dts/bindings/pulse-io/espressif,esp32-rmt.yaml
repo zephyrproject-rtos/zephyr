@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Espressif Remote Control Transceiver (RMT) pulse_io controller
+
+description: |
+  The RMT peripheral generates and captures timed digital edges on GPIO
+  lines. It is exposed through the vendor-neutral pulse_io API.
+
+  Channel model: pulse_io channel indexes map directly to hardware RMT
+  channels. On SoCs with dedicated channels (ESP32-S3, ESP32-C3,
+  ESP32-C5, ESP32-C6, ESP32-H2, ESP32-P4), transmit channels come
+  first, followed by receive channels (for example on ESP32-S3 channels
+  0-3 are transmit and 4-7 are receive). On ESP32 and ESP32-S2 every
+  channel supports both directions, but each channel can only be used
+  in one direction at a time. The capability masks reported by
+  pulse_io_get_capabilities() describe the split.
+
+  pinctrl routes a channel to a GPIO: RMT_OUTn selects the n-th
+  transmit channel and RMT_INn selects the n-th receive channel. On
+  SoCs with dedicated channels the receive index is relative, so
+  RMT_IN0 on ESP32-S3 is pulse_io channel 4. A channel without a pin
+  in the selected pinctrl state cannot be opened for that direction.
+
+  DMA is available only on ESP32-S3 and only on the last transmit and
+  last receive channel. It is optional and enabled by adding the "tx"
+  and "rx" dmas entries.
+
+  The first example below routes transmit channel 0 to GPIO13 and the
+  first receive channel (pulse_io channel 4 on ESP32-S3) to GPIO12.
+  The second example enables DMA on the ESP32-S3.
+
+compatible: "espressif,esp32-rmt"
+
+include: [base.yaml, pinctrl-device.yaml, pulse-io-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-parent:
+    required: true
+
+examples:
+  - |
+      &pinctrl {
+        rmt_default: rmt_default {
+          group1 {
+            pinmux = <RMT_OUT0_GPIO13>;
+          };
+
+          group2 {
+            pinmux = <RMT_IN0_GPIO12>;
+          };
+        };
+      };
+
+      &rmt {
+        pinctrl-0 = <&rmt_default>;
+        pinctrl-names = "default";
+        status = "okay";
+      };
+  - |
+      &rmt {
+        dmas = <&dma 8>, <&dma 9>;
+        dma-names = "rx", "tx";
+      };

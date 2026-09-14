@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Nodes that match on every xG21 radio board in this folder. Board .dts
+ * files may add properties but must not override values set here.
+ */
+
+#include <silabs/xg21/clock-hfrcodpll.dtsi>
+#include <silabs/xg21/clock-lfxo.dtsi>
+#include "xg21_common-pinctrl.dtsi"
+
+&hfxo {
+	precision = <50>;
+	status = "okay";
+};
+
+&lfxo {
+	precision = <50>;
+	status = "okay";
+};
+
+&usart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

@@ -104,4 +104,14 @@
 				 <TWAI_RX_GPIO6>;
 		};
 	};
+
+	rmt_default: rmt_default {
+		group1 {
+			pinmux = <RMT_OUT3_GPIO8>;
+		};
+
+		group2 {
+			pinmux = <RMT_IN3_GPIO9>;
+		};
+	};
 };

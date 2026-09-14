@@ -1,7 +1,7 @@
 # Copyright (c) 2024 CISPA Helmholtz Center for Information Security gGmbH
 # SPDX-License-Identifier: Apache-2.0
 
-add_subdirectory(${SOC_SERIES})
+add_subdirectory(${CONFIG_SOC_SERIES})
 
 zephyr_library_sources_ifdef(CONFIG_CACHE_MANAGEMENT soc_cache_management.c)
 

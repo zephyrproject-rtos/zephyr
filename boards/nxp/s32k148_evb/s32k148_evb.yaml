@@ -20,3 +20,5 @@ supported:
   - watchdog
   - counter
   - adc
+  - netif:eth
+  - ptp_clock

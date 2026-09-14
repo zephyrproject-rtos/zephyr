@@ -26,6 +26,8 @@ HYPERCALL(hvm_op);
 HYPERCALL(memory_op);
 HYPERCALL(dm_op);
 HYPERCALL(xen_version);
+HYPERCALL(vcpu_op);
+HYPERCALL(xsm_op);
 
 #ifdef CONFIG_XEN_DOM0
 HYPERCALL(domctl);

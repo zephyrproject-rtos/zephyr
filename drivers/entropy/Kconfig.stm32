@@ -64,4 +64,24 @@ config ENTROPY_STM32_CLK_CHECK
 	  available, CED is enabled by default). Disable this check if CED is
 	  disabled.
 
+config ENTROPY_STM32_WORKQUEUE
+	bool "Dedicated worqueue to refill the random bytes pools"
+	help
+	  When enabled, a dedicated workqueue is used to refill the
+	  random bytes pools. When disabled, Zephyr's system workqueue
+	  is used in which case less RAM is consumed but random bytes polls
+	  refilling can be delayed due to system workqueue tasks behavior.
+
+if ENTROPY_STM32_WORKQUEUE
+
+config ENTROPY_STM32_WQ_STACK_SIZE
+	int "Dedicated workqueue stack size"
+	default 384
+
+config ENTROPY_STM32_WQ_PRIO
+	int "Dedicated workqueue priority"
+	default 1
+
+endif # ENTROPY_STM32_WORKQUEUE
+
 endif # ENTROPY_STM32_RNG

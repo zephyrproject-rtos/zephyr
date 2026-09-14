@@ -6,7 +6,8 @@ menuconfig IPC_SERVICE_BACKEND_ICBMSG
 	default y
 	depends on MBOX
 	depends on DT_HAS_ZEPHYR_IPC_ICBMSG_ENABLED
-	select IPC_SERVICE_ICMSG
+	select SYS_HASH_FUNC32
+	select SYS_HASH_FUNC32_DJB2
 	help
 	  Choosing this backend results in multi endpoint implementation based
 	  on dynamically allocated buffers. References to them are send over
@@ -23,13 +24,27 @@ config IPC_SERVICE_BACKEND_ICBMSG_NUM_EP
 	  backend. The number of endpoints are applied to all the instances,
 	  so this value should be maximum number among all the instances.
 
-config IPC_SERVICE_BACKEND_ICBMSG_EP_BOUND_WORK_Q_STACK_SIZE
-	int "Workqueue stack size"
-	default 1024 if NO_OPTIMIZATIONS
-	default 512
+config IPC_SERVICE_BACKEND_ICBMSG_MAX_ACTIVE_COUNT
+	int "Maximum number of active buffers"
+	range 16 32
+	default 16
 	help
-	  Workqueue stack size for bounding processing
-	  (this configuration is not optimized).
+	  Maximum number of concurrently active buffers in the message queues.
+
+config IPC_SERVICE_BACKEND_ICBMSG_DEINIT
+	bool "Support closing and deregistering endpoints"
+	help
+	  Enable support for closing and deregistering endpoints. Disabled by
+	  by default to reduce the code size.
+
+config IPC_SERVICE_BACKEND_ICBMSG_SHELL
+	bool "ICBMsg shell commands"
+	depends on SHELL
+	select STATS
+	select STATS_NAMES
+	help
+	  Enable shell commands for the ICBMsg IPC backend. When enabled,
+	  the "icbmsg stats" command prints human-readable IPC statistics.
 
 module = IPC_SERVICE_BACKEND_ICBMSG
 module-str = ICMSG backend with separate buffers

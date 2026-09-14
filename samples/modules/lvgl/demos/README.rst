@@ -30,7 +30,20 @@ Requirements
 * A board with display, ideally with 480x272 resolution or higher.
 * A pointer input device: touchpad, mouse, or touch screen capable display, compatible with :dtcompatible:`zephyr,lvgl-pointer-input`.
 
-Note that other input devices types are not demonstrated in these demos, namely keyboards, keypads (:dtcompatible:`zephyr,lvgl-keypad-input`), rotary encoders (:dtcompatible:`zephyr,lvgl-encoder-input`) and hardware buttons (:dtcompatible:`zephyr,lvgl-button-input`).
+Note that other input devices types are not demonstrated in these demos, namely keyboards, keypads (:dtcompatible:`zephyr,lvgl-keypad-input`) and hardware buttons (:dtcompatible:`zephyr,lvgl-button-input`).
+
+Keypad and Encoder demo on native_sim
+*************************************
+
+On :zephyr:board:`native_sim` the Keypad and Encoder demo is driven by a rotary
+encoder (:dtcompatible:`zephyr,lvgl-encoder-input`) emulated with the SDL mouse:
+the mouse wheel rotates the encoder and the middle button (wheel-click) acts as
+ENTER. No extra hardware is required.
+
+Since this demo is meant to be navigated with the encoder, the LVGL pointer that
+is otherwise derived from the ``zephyr,touch`` chosen device is disabled for it,
+so that pointer clicks do not short-circuit the encoder navigation. The other
+demos keep their pointer.
 
 Building and Running
 ********************

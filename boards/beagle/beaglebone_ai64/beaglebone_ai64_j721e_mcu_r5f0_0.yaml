@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: beaglebone_ai64/j721e/mcu_r5f0_0
+name: BeagleBone-AI64 MCU R5 (MCU R5FSS0 Core0)
+type: mcu
+arch: arm
+ram: 32
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+vendor: beagle

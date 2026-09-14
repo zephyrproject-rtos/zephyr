@@ -34,21 +34,6 @@ struct i2c_nrfx_twim_rtio_data {
 	uint16_t user_rx_buf_size;
 };
 
-static bool i2c_nrfx_twim_rtio_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf,
-					 size_t buf_len, uint16_t i2c_addr)
-{
-	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
-	struct i2c_rtio *ctx = config->ctx;
-	int ret = 0;
-
-	ret = i2c_nrfx_twim_msg_transfer(dev, flags, buf, buf_len, i2c_addr);
-	if (ret != 0) {
-		return i2c_rtio_complete(ctx, ret);
-	}
-
-	return false;
-}
-
 static void i2c_nrfx_twim_rtio_complete(const struct device *dev, int status);
 
 static void i2c_nrfx_twim_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, void *userdata)
@@ -58,7 +43,7 @@ static void i2c_nrfx_twim_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, vo
 	(void)i2c_nrfx_twim_rtio_complete(dev, 0);
 }
 
-static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
+static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 {
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
 	struct i2c_nrfx_twim_rtio_data *data = dev->data;
@@ -66,30 +51,34 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 	struct rtio_iodev_sqe *iodev_sqe;
+	int error;
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
 		if (!nrf_dma_accessible_check(&config->common.twim, sqe->rx.buf)) {
 			if (sqe->rx.buf_len > config->common.msg_buf_size) {
-				return i2c_rtio_complete(ctx, -ENOSPC);
+				error = -ENOSPC;
+				break;
 			}
 
 			data->user_rx_buf = sqe->rx.buf;
 			data->user_rx_buf_size = sqe->rx.buf_len;
-			return i2c_nrfx_twim_rtio_msg_start(dev,
-							    I2C_MSG_READ | sqe->iodev_flags,
-							    config->common.msg_buf,
-							    data->user_rx_buf_size,
-							    dt_spec->addr);
+			error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_READ | sqe->iodev_flags,
+							   config->common.msg_buf,
+							   data->user_rx_buf_size,
+							   dt_spec->addr);
+		} else {
+			data->user_rx_buf = NULL;
+			error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_READ | sqe->iodev_flags,
+							   sqe->rx.buf, sqe->rx.buf_len,
+							   dt_spec->addr);
 		}
-
-		data->user_rx_buf = NULL;
-		return i2c_nrfx_twim_rtio_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
-						    sqe->rx.buf, sqe->rx.buf_len, dt_spec->addr);
+		break;
 	case RTIO_OP_TINY_TX:
-		return i2c_nrfx_twim_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						    sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
-						    dt_spec->addr);
+		error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+						   sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
+						   dt_spec->addr);
+		break;
 	case RTIO_OP_TX:
 		/* If buffer is not accessible by DMA, copy it into the internal driver buffer */
 		if (!nrf_dma_accessible_check(&config->common.twim, sqe->tx.buf)) {
@@ -103,52 +92,57 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
 					"(the one with greater value) in the "
 					"\"%s\"' node.",
 					sqe->tx.buf_len, config->common.msg_buf_size, dev->name);
-				return i2c_rtio_complete(ctx, -ENOSPC);
+				error = -ENOSPC;
+				break;
 			}
+
 			memcpy(config->common.msg_buf, sqe->tx.buf, sqe->tx.buf_len);
 			sqe->tx.buf = config->common.msg_buf;
 		}
-		return i2c_nrfx_twim_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						    (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
-						    dt_spec->addr);
+		error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+						   (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+						   dt_spec->addr);
+		break;
 	case RTIO_OP_I2C_CONFIGURE:
-		(void)i2c_nrfx_twim_configure(dev, sqe->i2c_config);
-		/** This request will not generate an event therefore, this
-		 * code immediately submits a CQE in order to unblock
-		 * i2c_rtio_configure.
-		 */
-		return i2c_rtio_complete(ctx, 0);
+		*status = i2c_nrfx_twim_configure(dev, sqe->i2c_config);
+		return false;
 	case RTIO_OP_I2C_RECOVER:
-		(void)i2c_nrfx_twim_recover_bus(dev);
+		*status = i2c_nrfx_twim_recover_bus(dev);
 		return false;
 	case RTIO_OP_AWAIT:
 		iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
 		rtio_iodev_sqe_await_signal(iodev_sqe, i2c_nrfx_twim_rtio_sqe_signaled,
 					    (void *)dev);
+		*status = 0;
 		return false;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-		return i2c_rtio_complete(ctx, -EINVAL);
+		error = -EINVAL;
 	}
-}
 
-/* Start RTIO operations until there are no more queued or an async operation is pending */
-static void i2c_nrfx_twim_rtio_start_next_async(const struct device *dev)
-{
-	while (i2c_nrfx_twim_rtio_start(dev)) {
-		;
+	/* When reaching this point from the above switch case, an asynchronous operation
+	 * is started only upon a successful status.
+	 */
+	if (error != 0) {
+		*status = error;
+		return false;
 	}
+
+	return true;
 }
 
 static void i2c_nrfx_twim_rtio_complete(const struct device *dev, int status)
 {
 	/** Finalize if there are no more pending xfers */
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
-	struct i2c_rtio *ctx = config->ctx;
+	bool async_started = false;
 
-	if (i2c_rtio_complete(ctx, status)) {
-		i2c_nrfx_twim_rtio_start_next_async(dev);
-	} else {
+	if (i2c_rtio_complete(config->ctx, status)) {
+		async_started = i2c_rtio_run_sync_start_async(dev, config->ctx,
+							      i2c_nrfx_twim_rtio_start);
+	}
+
+	if (!async_started) {
 		/* Release bus on completion */
 		pm_device_runtime_put(dev);
 	}
@@ -183,13 +177,22 @@ static void i2c_nrfx_twim_rtio_submit(const struct device *dev, struct rtio_iode
 {
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
 	struct i2c_rtio *ctx = config->ctx;
+	int ret;
 
-	if (i2c_rtio_submit(ctx, iodev_seq)) {
-		if (pm_device_runtime_get(dev) < 0) {
-			(void)i2c_rtio_complete(ctx, -EINVAL);
-		} else {
-			i2c_nrfx_twim_rtio_start_next_async(dev);
+	if (!i2c_rtio_submit(ctx, iodev_seq)) {
+		return;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		/* Flush pending transactions since we failed to get the device */
+		while (i2c_rtio_complete(ctx, ret)) {
 		}
+		return;
+	}
+
+	if (!i2c_rtio_run_sync_start_async(dev, ctx, i2c_nrfx_twim_rtio_start)) {
+		pm_device_runtime_put(dev);
 	}
 }
 

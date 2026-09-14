@@ -114,8 +114,11 @@ struct virtnet_data {
 	uint8_t rxb[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS][VIRTIO_NET_BUFLEN];
 };
 
-static uint16_t virtnet_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *)
+static uint16_t virtnet_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *priv)
 {
+	ARG_UNUSED(q_size_max);
+	ARG_UNUSED(priv);
+
 	if (q_index % 2 == 0) { /* receiving virtqueue (even-numbered) */
 		return CONFIG_ETH_VIRTIO_NET_RX_BUFFERS;
 	} else {

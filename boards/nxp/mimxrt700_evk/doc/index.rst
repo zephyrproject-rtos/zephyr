@@ -44,7 +44,7 @@ Hardware
 - 2.5D GPU with vector graphics acceleration and frame buffer compression
 - EZH-V using RISC-V core with additional SIMD/DSP instructions
 - Full openVG 1.1 support
-- Up to 720p@60FPS from on-chip SRAM
+- Up to 720p at 60 FPS from on-chip SRAM
 - LCD Interface + MIPI DSI
 - Integrated JPEG and PNG support
 - CSI 8/10/16-bit parallel (via FlexIO)

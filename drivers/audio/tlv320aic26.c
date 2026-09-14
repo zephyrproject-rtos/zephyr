@@ -293,7 +293,7 @@ static int aic26_configure(const struct device *dev,
 	struct aic26_pll_cfg pll;
 	bool need_dac;
 	bool need_adc;
-	bool codec_master;
+	bool codec_controller;
 	uint16_t reg;
 	uint8_t wlen;
 	uint8_t datfm;
@@ -365,7 +365,7 @@ static int aic26_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	codec_master = !(cfg->dai_cfg.i2s.options & I2S_OPT_BIT_CLK_TARGET);
+	codec_controller = !(cfg->dai_cfg.i2s.options & I2S_OPT_BIT_CLK_TARGET);
 
 	ret = aic26_calc_pll(dev_cfg->mclk_freq,
 			     cfg->dai_cfg.i2s.frame_clk_freq, &pll);
@@ -416,7 +416,7 @@ static int aic26_configure(const struct device *dev,
 		reg |= AIC26_REFFS;
 	}
 
-	if (codec_master) {
+	if (codec_controller) {
 		reg |= AIC26_SLVMS;
 	}
 
@@ -438,7 +438,7 @@ static int aic26_configure(const struct device *dev,
 	LOG_INF("Configured: Fs=%u ws=%u %s",
 		cfg->dai_cfg.i2s.frame_clk_freq,
 		cfg->dai_cfg.i2s.word_size,
-		codec_master ? "controller" : "target");
+		codec_controller ? "controller" : "target");
 
 	return 0;
 }
@@ -656,7 +656,7 @@ static int aic26_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_API(audio_codec, aic26_api) = {
+static DEVICE_API(audio_codec, aic26_api) = {
 	.configure        = aic26_configure,
 	.start_output     = aic26_start_output,
 	.stop_output      = aic26_stop_output,
@@ -669,7 +669,7 @@ DEVICE_API(audio_codec, aic26_api) = {
 									\
 	static const struct tlv320aic26_config aic26_cfg_##n = {	\
 		.spi = SPI_DT_SPEC_INST_GET(n,				\
-			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |		\
+			SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB |		\
 			SPI_MODE_CPHA | SPI_WORD_SET(8)),		\
 		.mclk_freq = DT_INST_PROP(n, mclk_frequency),		\
 	};								\

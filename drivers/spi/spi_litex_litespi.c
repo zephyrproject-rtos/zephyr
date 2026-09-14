@@ -129,8 +129,8 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		return 0;
 	}
 
-	if (config->slave >= SPI_MAX_CS_SIZE) {
-		LOG_ERR("More slaves than supported");
+	if (config->peripheral >= SPI_MAX_CS_SIZE) {
+		LOG_ERR("More peripherals than supported");
 		return -ENOTSUP;
 	}
 
@@ -165,8 +165,8 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		return -ENOTSUP;
 	}
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -243,7 +243,7 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 	struct spi_context *ctx = &data->ctx;
 	uint32_t rxd;
 
-	litex_write32(BIT(config->slave), dev_config->master_cs_addr);
+	litex_write32(BIT(config->peripheral), dev_config->master_cs_addr);
 
 	/* Flush RX buffer */
 	while ((litex_read8(dev_config->master_status_addr) &

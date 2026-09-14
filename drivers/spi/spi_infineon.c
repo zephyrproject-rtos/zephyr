@@ -154,7 +154,7 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 		return -EINVAL;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_SLAVE) {
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_PERIPHERAL) {
 		scb_spi_config.spiMode = CY_SCB_SPI_SLAVE;
 		scb_spi_config.oversample = 0;
 		scb_spi_config.enableMisoLateSample = false;
@@ -208,8 +208,8 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 		return -ENOTSUP;
 	}
 
-	/* Configure Slave select polarity */
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_SLAVE) {
+	/* Configure chip select polarity */
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_PERIPHERAL) {
 		Cy_SCB_SPI_SetActiveSlaveSelectPolarity(data->obj.base, CY_SCB_SPI_SLAVE_SELECT0,
 							scb_spi_config.ssPolarity);
 	}
@@ -317,7 +317,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Configure slave select (master) */
+	/* Configure chip select (controller) */
 	spi_context_cs_configure_all(&data->ctx);
 
 	spi_context_unlock_unconditionally(&data->ctx);

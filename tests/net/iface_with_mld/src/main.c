@@ -302,4 +302,100 @@ ZTEST(net_iface_with_mld, test_bringup_adds_link_local)
 	zassert_not_null(ll, "No link-local address configured on interface bring-up");
 }
 
+ZTEST(net_iface_with_mld, test_ipv6_config_put)
+{
+	const struct net_in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0xdd, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	const struct net_in6_addr maddr = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+					     0, 0, 0, 0, 0, 0, 0, 0x5 } } };
+	const struct net_in6_addr prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0xdd,
+					      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					      0 } } };
+	struct net_if_ipv6 *ipv6, *reused;
+	struct net_if *tmp = dad_iface;
+	int ret;
+
+	/* Bring the interface up so that the router solicitation state and,
+	 * with DAD enabled, the DAD timers are populated for real.
+	 */
+	if (!net_if_is_up(dad_iface)) {
+		ret = net_if_up(dad_iface);
+		zassert_ok(ret, "Cannot bring dad_iface up");
+	}
+
+	ret = net_if_config_ipv6_get(dad_iface, &ipv6);
+	zassert_ok(ret, "Cannot get IPv6 config (%d)", ret);
+
+	zassert_not_null(net_if_ipv6_addr_add(dad_iface, &addr,
+					      NET_ADDR_MANUAL, 0),
+			 "Cannot add IPv6 address");
+	zassert_not_null(net_if_ipv6_maddr_add(dad_iface, &maddr),
+			 "Cannot add IPv6 multicast address");
+	zassert_not_null(net_if_ipv6_prefix_add(dad_iface, &prefix, 64, 3600),
+			 "Cannot add IPv6 prefix");
+
+	net_if_ipv6_set_hop_limit(dad_iface, 42);
+
+	/* The RS state only advances once a solicitation goes out and times
+	 * out, which is timing dependent, so set it directly. A slot handed
+	 * over with a stale rs_count makes the next interface give up router
+	 * discovery early.
+	 */
+	ipv6->rs_start = 1;
+	ipv6->rs_count = 2;
+
+	zassert_equal(net_if_config_ipv6_put(dad_iface), -EBUSY,
+		      "IPv6 config released while the interface is up");
+
+	ret = net_if_down(dad_iface);
+	zassert_ok(ret, "Cannot bring dad_iface down (%d)", ret);
+
+	ret = net_if_config_ipv6_put(dad_iface);
+	zassert_ok(ret, "Cannot release IPv6 config (%d)", ret);
+	zassert_is_null(dad_iface->config.ip.ipv6, "IPv6 config not released");
+
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
+		zassert_false(ipv6->unicast[i].is_used,
+			      "Unicast address %zu still in use", i);
+		zassert_equal(atomic_get(&ipv6->unicast[i].atomic_ref), 0,
+			      "Unicast address %zu still referenced", i);
+	}
+
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		zassert_false(ipv6->mcast[i].is_used,
+			      "Multicast address %zu still in use", i);
+		zassert_false(ipv6->mcast[i].is_joined,
+			      "Multicast address %zu still joined", i);
+	}
+
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
+		zassert_false(ipv6->prefix[i].is_used,
+			      "Prefix %zu still in use", i);
+		zassert_is_null(ipv6->prefix[i].iface,
+				"Prefix %zu still bound to an interface", i);
+	}
+
+	zassert_equal(ipv6->hop_limit, CONFIG_NET_INITIAL_HOP_LIMIT,
+		      "Hop limit not reset (%u)", ipv6->hop_limit);
+
+	zassert_equal(ipv6->rs_count, 0, "RS count not reset (%u)",
+		      ipv6->rs_count);
+	zassert_equal(ipv6->rs_start, 0, "RS start not reset (%u)",
+		      ipv6->rs_start);
+
+	/* The released config goes back to the pool, the next interface
+	 * allocating it must not see anything left from this one.
+	 */
+	ret = net_if_config_ipv6_get(dad_iface, &reused);
+	zassert_ok(ret, "Cannot get IPv6 config again (%d)", ret);
+	zassert_equal_ptr(reused, ipv6, "Released config was not re-used");
+	zassert_is_null(net_if_ipv6_addr_lookup_by_iface(dad_iface, &addr),
+			"Stale IPv6 address in re-used config");
+	zassert_is_null(net_if_ipv6_maddr_lookup(&maddr, &tmp),
+			"Stale IPv6 multicast address in re-used config");
+	zassert_equal(net_if_ipv6_get_hop_limit(dad_iface),
+		      CONFIG_NET_INITIAL_HOP_LIMIT,
+		      "Stale hop limit in re-used config");
+}
+
 ZTEST_SUITE(net_iface_with_mld, NULL, iface_with_mld_setup, NULL, NULL, NULL);

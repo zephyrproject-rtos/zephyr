@@ -6,11 +6,12 @@
 /**
  * @file
  * @brief USB Type-C Power Path Controller device API
+ * @ingroup usb_type_c_power_path_controller
  *
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PPC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PPC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_PPC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_PPC_H_
 
 /**
  * @brief USB Type-C Power Path Controller
@@ -54,6 +55,15 @@ enum usbc_ppc_event {
 	USBC_PPC_EVENT_SNK_OVERVOLTAGE,
 };
 
+/**
+ * @brief Callback used to notify about PPC events
+ *
+ * Registered with ppc_set_event_handler().
+ *
+ * @param dev PPC device structure
+ * @param data User data passed to ppc_set_event_handler()
+ * @param ev Event being notified
+ */
 typedef void (*usbc_ppc_event_cb_t)(const struct device *dev, void *data, enum usbc_ppc_event ev);
 
 /**
@@ -305,4 +315,4 @@ static inline int ppc_dump_regs(const struct device *dev)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PPC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_PPC_H_ */

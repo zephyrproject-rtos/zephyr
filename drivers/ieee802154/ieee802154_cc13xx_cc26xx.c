@@ -433,8 +433,16 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 
 	for (int i = 0; i < CC13XX_CC26XX_NUM_RX_BUF; i++) {
 		if (drv_data->rx_entry[i].status == DATA_ENTRY_FINISHED) {
-			/* rx_data contains length, psdu, fcs, rssi, corr */
+			/* rx_data contains length, psdu, fcs, rssi, corr.
+			 * The two trailing len-- post-decrements and optional
+			 * len -= 2 underflow uint8_t when len < 4; reject early.
+			 */
 			len = drv_data->rx_data[i][0];
+			if (len < 4U) {
+				LOG_WRN("Frame too short");
+				drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
+				continue;
+			}
 			sdu = drv_data->rx_data[i] + 1;
 			seq = drv_data->rx_data[i][3];
 			corr = drv_data->rx_data[i][len--] & 0x3F;

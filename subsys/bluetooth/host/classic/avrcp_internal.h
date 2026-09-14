@@ -203,12 +203,6 @@ struct bt_avrcp_tg_notify_state {
 	bool interim_sent; /* we have already sent INTERIM */
 };
 
-struct bt_avrcp_req {
-	uint8_t tid;
-	uint8_t subunit;
-	uint8_t opcode;
-};
-
 struct bt_avrcp_header {
 	uint8_t byte0;  /**< [7:4]: RFA, [3:0]: Ctype */
 	uint8_t byte1;  /**< [7:3]: Subunit_type, [2:0]: Subunit_ID */

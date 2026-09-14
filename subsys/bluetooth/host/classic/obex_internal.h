@@ -52,7 +52,7 @@ struct bt_obex_setpath_req_hdr {
 } __packed;
 
 /* OBEX initialization */
-int bt_obex_reg_transport(struct bt_obex *obex, const struct bt_obex_transport_ops *ops);
+void bt_obex_reg_transport(struct bt_obex *obex, const struct bt_obex_transport_ops *ops);
 
 /* Process the received OBEX packet */
 int bt_obex_recv(struct bt_obex *obex, struct net_buf *buf);

@@ -175,10 +175,10 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 
 	stream->ep->state = BT_BAP_EP_STATE_CODEC_CONFIGURED;
 
-	if (stream->ops != NULL && stream->ops->configured != NULL) {
+	if (stream->ops != NULL && stream->ops->codec_configured != NULL) {
 		const struct bt_bap_qos_cfg_pref pref = {0};
 
-		stream->ops->configured(stream, &pref);
+		stream->ops->codec_configured(stream, &pref);
 	}
 
 	return 0;
@@ -223,8 +223,8 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 
 			stream->ep->state = BT_BAP_EP_STATE_QOS_CONFIGURED;
 
-			if (stream->ops != NULL && stream->ops->qos_set != NULL) {
-				stream->ops->qos_set(stream);
+			if (stream->ops != NULL && stream->ops->qos_configured != NULL) {
+				stream->ops->qos_configured(stream);
 			}
 		}
 	}
@@ -416,8 +416,8 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 			stream->ops->stopped(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 		}
 
-		if (stream->ops != NULL && stream->ops->qos_set != NULL) {
-			stream->ops->qos_set(stream);
+		if (stream->ops != NULL && stream->ops->qos_configured != NULL) {
+			stream->ops->qos_configured(stream);
 		}
 	} else if (stream->ep->dir == BT_AUDIO_DIR_SOURCE) {
 		stream->ep->state = BT_BAP_EP_STATE_DISABLING;
@@ -462,8 +462,8 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 		stream->ops->stopped(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	}
 
-	if (stream->ops != NULL && stream->ops->qos_set != NULL) {
-		stream->ops->qos_set(stream);
+	if (stream->ops != NULL && stream->ops->qos_configured != NULL) {
+		stream->ops->qos_configured(stream);
 	}
 
 	/* If the stream can be disconnected, BAP will disconnect the stream once it reaches the
@@ -494,8 +494,8 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 							  BT_HCI_ERR_LOCALHOST_TERM_CONN);
 			}
 
-			if (pair_stream->ops != NULL && pair_stream->ops->qos_set != NULL) {
-				pair_stream->ops->qos_set(pair_stream);
+			if (pair_stream->ops != NULL && pair_stream->ops->qos_configured != NULL) {
+				pair_stream->ops->qos_configured(pair_stream);
 			}
 		}
 	}
@@ -844,6 +844,34 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 {
 	if (unicast_group == NULL || param == NULL) {
 		return -EINVAL;
+	}
+
+	if (unicast_group->has_been_connected) {
+		LOG_DBG("Cannot modify a unicast_group where a CIS has been connected");
+		return -EINVAL;
+	}
+
+	/* Update the stream and group parameters */
+	for (size_t i = 0U; i < param->params_count; i++) {
+		struct bt_bap_unicast_group_stream_pair_param *stream_param = &param->params[i];
+		struct bt_bap_unicast_group_stream_param *rx_param = stream_param->rx_param;
+		struct bt_bap_unicast_group_stream_param *tx_param = stream_param->tx_param;
+
+		if (rx_param != NULL) {
+			struct bt_bap_iso *bap_iso =
+				CONTAINER_OF(rx_param->stream->iso, struct bt_bap_iso, chan);
+
+			unicast_group_set_iso_stream_param(unicast_group, bap_iso, rx_param->qos,
+							   BT_AUDIO_DIR_SOURCE);
+		}
+
+		if (tx_param != NULL) {
+			struct bt_bap_iso *bap_iso =
+				CONTAINER_OF(tx_param->stream->iso, struct bt_bap_iso, chan);
+
+			unicast_group_set_iso_stream_param(unicast_group, bap_iso, tx_param->qos,
+							   BT_AUDIO_DIR_SINK);
+		}
 	}
 
 	return 0;

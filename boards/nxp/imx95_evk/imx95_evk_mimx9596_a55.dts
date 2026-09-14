@@ -136,3 +136,9 @@
 	phys = <&can_phy2>;
 	status = "okay";
 };
+
+&pwm2 {
+	pinctrl-0 = <&tpm2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

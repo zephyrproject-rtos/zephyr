@@ -163,6 +163,7 @@ void zperf_reset_session_stats(struct session *session)
 	session->length = 0U;
 	session->outorder = 0U;
 	session->error = 0U;
+	session->missing_id_bitmap = 0U;
 	session->jitter = 0;
 	session->last_transit_time = 0;
 }

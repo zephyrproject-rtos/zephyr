@@ -385,7 +385,7 @@ typedef void (*usb_transfer_callback)(uint8_t ep, int tsize, void *priv);
  * If a USB class driver wants to use high-level transfer functions, driver
  * needs to register this callback as usb endpoint callback.
  */
-__deprecated void usb_transfer_ep_callback(uint8_t ep, enum usb_dc_ep_cb_status_code);
+__deprecated void usb_transfer_ep_callback(uint8_t ep, enum usb_dc_ep_cb_status_code status);
 
 /**
  * @brief Start a transfer

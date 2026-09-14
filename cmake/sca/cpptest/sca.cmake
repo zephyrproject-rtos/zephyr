@@ -11,5 +11,5 @@ file(MAKE_DIRECTORY ${output_dir})
 set(output_file ${output_dir}/cpptestscan.bdf)
 set(output_arg --cpptestscanOutputFile=${output_file})
 
-set(CMAKE_C_COMPILER_LAUNCHER ${CPPTESTSCAN} ${output_arg} CACHE INTERNAL "")
-set(CMAKE_CXX_COMPILER_LAUNCHER ${CPPTESTSCAN} ${output_arg} CACHE INTERNAL "")
+set(CMAKE_C_COMPILER_LAUNCHER ${CPPTESTSCAN} ${output_arg})
+set(CMAKE_CXX_COMPILER_LAUNCHER ${CPPTESTSCAN} ${output_arg})

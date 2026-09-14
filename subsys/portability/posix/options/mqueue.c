@@ -168,7 +168,15 @@ mqd_t mq_open(const char *name, int oflags, ...)
 		k_sem_give(&mq_sem);
 
 	} else {
+		k_sem_take(&mq_sem, K_FOREVER);
+		if (find_in_list(name) != msg_queue) {
+			k_sem_give(&mq_sem);
+			errno = ENOENT;
+			goto free_mq_desc;
+		}
+
 		atomic_inc(&msg_queue->ref_count);
+		k_sem_give(&mq_sem);
 	}
 
 	msg_queue_desc->mqueue = msg_queue;
@@ -470,16 +478,23 @@ static int32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_le
 		return ret;
 	}
 
-	uint32_t msgq_num = k_msgq_num_used_get(&mqd->mqueue->queue);
+	struct sigevent *sevp = &mqd->mqueue->not;
+	bool notify = (sevp->sigev_notify & SIGEV_MASK) != 0;
+	uint32_t msgq_num = 0;
+
+	/* The used-count is only needed to detect the empty->non-empty edge that
+	 * triggers a registered notification; skip the syscalls when none is set.
+	 */
+	if (notify) {
+		msgq_num = k_msgq_num_used_get(&mqd->mqueue->queue);
+	}
 
 	if (k_msgq_put(&mqd->mqueue->queue, (void *)msg_ptr, timeout) != 0) {
 		errno = K_TIMEOUT_EQ(timeout, K_NO_WAIT) ? EAGAIN : ETIMEDOUT;
 		return ret;
 	}
 
-	if (k_msgq_num_used_get(&mqd->mqueue->queue) - msgq_num > 0) {
-		struct sigevent *sevp = &mqd->mqueue->not;
-
+	if (notify && (k_msgq_num_used_get(&mqd->mqueue->queue) - msgq_num > 0)) {
 		if (sevp->sigev_notify == SIGEV_NONE) {
 			sevp->sigev_notify_function(sevp->sigev_value);
 		} else if (sevp->sigev_notify == SIGEV_THREAD) {

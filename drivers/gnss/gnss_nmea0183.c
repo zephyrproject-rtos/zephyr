@@ -73,14 +73,13 @@ static void align_satellite_with_gnss_system(enum gnss_system sv_system,
 {
 	switch (sv_system) {
 	case GNSS_SYSTEM_GPS:
-	case GNSS_SYSTEM_GPS_L5:
 		if (satellite->prn > GNSS_NMEA0183_GSV_PRN_GPS_RANGE) {
 			satellite->system = GNSS_SYSTEM_SBAS;
 			satellite->prn += GNSS_NMEA0183_GSV_PRN_SBAS_OFFSET;
 			break;
 		}
 
-		satellite->system = sv_system;
+		satellite->system = GNSS_SYSTEM_GPS;
 		break;
 
 	case GNSS_SYSTEM_GLONASS:
@@ -89,21 +88,16 @@ static void align_satellite_with_gnss_system(enum gnss_system sv_system,
 		break;
 
 	case GNSS_SYSTEM_GALILEO:
-	case GNSS_SYSTEM_GALILEO_L5:
-		satellite->system = sv_system;
+		satellite->system = GNSS_SYSTEM_GALILEO;
 		break;
 
 	case GNSS_SYSTEM_BEIDOU:
-	case GNSS_SYSTEM_BEIDOU_B1C:
-	case GNSS_SYSTEM_BEIDOU_B2A:
-		satellite->system = sv_system;
+		satellite->system = GNSS_SYSTEM_BEIDOU;
 		satellite->prn -= GNSS_NMEA0183_GSV_PRN_BEIDOU_OFFSET;
 		break;
 
 	case GNSS_SYSTEM_QZSS:
-	case GNSS_SYSTEM_QZSS_L5:
-	case GNSS_SYSTEM_QZSS_L1S:
-		satellite->system = sv_system;
+		satellite->system = GNSS_SYSTEM_QZSS;
 		break;
 
 	case GNSS_SYSTEM_IRNSS:
@@ -672,6 +666,11 @@ int gnss_nmea0183_parse_gsv_svs(const char **argv, uint16_t argc,
 	}
 
 	sv_args_size = (argc - GNSS_NMEA0183_GSV_HDR_ARG_CNT) / GNSS_NMEA0183_GSV_SV_ARG_CNT;
+
+	/* Some receivers pad the last GSV message with empty satellite fields */
+	while ((sv_args_size > 0) && (sv_args[sv_args_size - 1].prn[0] == '\0')) {
+		sv_args_size--;
+	}
 
 	if (size < sv_args_size) {
 		return -ENOMEM;

@@ -59,6 +59,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     ${RADIO_DIR}/rail_lib/common
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_compatible_pa
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
     ${BLUETOOTH_DIR}/bgstack/ll/inc
   )
 
@@ -107,6 +108,39 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch/sl_rail_util_rf_path_switch.c
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_sequencer/sl_rail_util_sequencer.c
     )
+
+    if(NOT CONFIG_SILABS_DEVICE_IS_MODULE)
+      zephyr_library_sources(
+        ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/sl_rail_util_built_in_phys.c
+      )
+
+      if(CONFIG_SOC_SILABS_XG24 OR CONFIG_SOC_SILABS_XG26)
+        dt_nodelabel(hfxo_node NODELABEL "hfxo" REQUIRED)
+        dt_prop(hfxo_freq PATH "${hfxo_node}" PROPERTY "clock-frequency")
+        if(hfxo_freq EQUAL "38400000")
+          set(phy_suffix "_38M4Hz")
+        elseif(hfxo_freq EQUAL "39000000")
+          set(phy_suffix "_39MHz")
+        elseif(hfxo_freq EQUAL "40000000")
+          set(phy_suffix "_40MHz")
+        else()
+          message(FATAL_ERROR "Unknown HFXO frequency, not compatible with radio PHYs")
+        endif()
+      endif()
+      set(PHY_DIR ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/efr32xg${SILABS_DEVICE_FAMILY_NUMBER})
+
+      # sl_rail_util_built_in_phys.c provides strong definitions of the PHY pointers for
+      # every protocol the device supports, overriding the weak fallbacks in the RAIL
+      # library. Core RAIL objects reference those pointers regardless of which protocol
+      # is enabled, so the configuration of every supported protocol must be compiled,
+      # including protocols Zephyr has no support for. Unused configurations are
+      # discarded by the linker.
+      foreach(phy ble ieee802154 zwave sidewalk rfsense_ook)
+        if(EXISTS ${PHY_DIR}/sl_rail_${phy}_config${phy_suffix}.c)
+          zephyr_library_sources(${PHY_DIR}/sl_rail_${phy}_config${phy_suffix}.c)
+        endif()
+      endforeach()
+    endif()
 
     # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules
     zephyr_library_sources_ifdef(CONFIG_SILABS_DEVICE_IS_MODULE
@@ -158,7 +192,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   endif()
 
   if(CONFIG_IEEE802154_SILABS_EFR32 AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
-    set(SL_OPENTHREAD_PAL_PREBUILT protocol/openthread/build/gcc/cortex-m33/cmake/sl-openthread-library/Release/libsl_openthread.a)
+    set(SL_OPENTHREAD_PAL_PREBUILT protocol/openthread/build/gcc/cortex-m33/sl-openthread-library/Release/libsl_openthread.a)
     if(NOT EXISTS "${BLOBS_DIR}/${SL_OPENTHREAD_PAL_PREBUILT}")
       message(FATAL_ERROR
         "IEEE802154_SILABS_EFR32 requires the OpenThread PAL prebuilt library at:\n"
@@ -178,14 +212,13 @@ zephyr_include_directories(
   ${DRIVER_DIR}/i2c/inc
   ${DRIVER_DIR}/i2c/src
   ${EMDRV_DIR}/common/inc
-  ${EMDRV_DIR}/dmadrv/config/s2_8ch/
-  ${EMDRV_DIR}/dmadrv/inc
-  ${EMDRV_DIR}/dmadrv/inc/s2_signals/
   ${EMLIB_DIR}/inc
   ${PERIPHERAL_DIR}/inc
   ${SERVICE_DIR}/clock_manager/inc
   ${SERVICE_DIR}/device_init/inc
   ${SERVICE_DIR}/device_manager/inc
+  ${SERVICE_DIR}/dma_manager/config/8ch
+  ${SERVICE_DIR}/dma_manager/inc
   ${SERVICE_DIR}/hfxo_manager/config
   ${SERVICE_DIR}/hfxo_manager/inc
   ${SERVICE_DIR}/hfxo_manager/src
@@ -202,6 +235,7 @@ zephyr_include_directories(
   ${SERVICE_DIR}/udelay/inc
   ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src
   ${SECURITY_DIR}/sl_component/sli_crypto/inc
+  ${SECURITY_DIR}/sl_component/sli_psec_common/inc
   ${SECURITY_DIR}/sl_component/sli_psec_osal/inc
   ${BOARD_DIR}
 )
@@ -217,7 +251,9 @@ zephyr_library_sources(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_DEVICE_FAMILY}/Source/system_${CONFIG_SOC_SERIES}.c
   ${EMLIB_DIR}/src/em_system.c
   ${SERVICE_DIR}/device_manager/devices/sl_device_peripheral_hal_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}.c
+  ${SERVICE_DIR}/device_manager/dma/sl_device_dma_s2.c
   ${SERVICE_DIR}/device_manager/src/sl_device_clock.c
+  ${SERVICE_DIR}/device_manager/src/sl_device_dma.c
   ${SERVICE_DIR}/device_manager/src/sl_device_gpio.c
   ${SERVICE_DIR}/device_manager/src/sl_device_peripheral.c
   ${SERVICE_DIR}/memory_manager/profiler/src/sli_memory_profiler_stubs.c
@@ -315,16 +351,22 @@ if(CONFIG_SILABS_SISDK_CORE)
     SL_CODE_COMPONENT_CORE=core
   )
 endif()
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_ACMP      ${EMLIB_DIR}/src/em_acmp.c)
+
+if(CONFIG_SILABS_SISDK_ACMP)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_acmp.c)
+  zephyr_library_sources(${PERIPHERAL_DIR}/src/sl_hal_acmp.c)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_EMU       ${EMLIB_DIR}/src/em_emu.c)
 if(CONFIG_SILABS_SISDK_GPIO)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_gpio.c)
   zephyr_library_sources(
-    ${EMLIB_DIR}/src/em_gpio.c
     ${DRIVER_DIR}/gpio/src/sl_gpio.c
     ${PERIPHERAL_DIR}/src/sl_hal_gpio.c
   )
   zephyr_library_compile_definitions(
     SL_CATALOG_GPIO_PRESENT
+    SL_CODE_COMPONENT_GPIO=gpio
     SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
   )
 endif()
@@ -358,18 +400,30 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER
   ${EMLIB_DIR}/src/em_timer.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LDMA
-  ${EMDRV_DIR}/dmadrv/src/dmadrv.c
-  ${EMLIB_DIR}/src/em_ldma.c
-)
+if(CONFIG_SILABS_SISDK_LDMA)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_ldma.c)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/dma_manager/src/sl_dma_manager.c
+    ${SERVICE_DIR}/dma_manager/src/sl_dma_manager_hal_ldma.c
+    ${PERIPHERAL_DIR}/src/sl_hal_ldma.c
+  )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_MSC       ${EMLIB_DIR}/src/em_msc.c)
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_PRS       ${EMLIB_DIR}/src/em_prs.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_RMU       ${EMLIB_DIR}/src/em_rmu.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_RTCC      ${EMLIB_DIR}/src/em_rtcc.c)
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_EUSART    ${EMLIB_DIR}/src/em_eusart.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_USART     ${EMLIB_DIR}/src/em_usart.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_WDOG      ${EMLIB_DIR}/src/em_wdog.c)
+
+if(CONFIG_SILABS_SISDK_EUSART)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_eusart.c)
+  zephyr_library_sources(${PERIPHERAL_DIR}/src/sl_hal_eusart.c)
+endif()
+
+if(CONFIG_SILABS_SISDK_PRS)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_prs.c)
+  zephyr_library_sources(${PERIPHERAL_DIR}/src/sl_hal_prs.c)
+endif()
 
 zephyr_include_directories_ifdef(CONFIG_SILABS_SISDK_SE
   ${SECURITY_DIR}/sl_component/se_manager/src

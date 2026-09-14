@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief ESP32 Wi-Fi mesh public API.
+ * @ingroup esp_wifi_mesh
  *
  * Zephyr-native interface to the ESP Wi-Fi mesh stack: mesh bring-up, the
  * application event callback, the raw send/receive path, and status and

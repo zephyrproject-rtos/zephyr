@@ -61,11 +61,9 @@ typedef struct pinctrl_soc_pin {
 #define RZA_GET_PU_PD(node_id)                                                                     \
 	DT_PROP(node_id, bias_pull_up) == 1 ? 1U : (DT_PROP(node_id, bias_pull_down) == 1 ? 2U : 0U)
 
-#define RZA_GET_FILNUM(node_id) ((DT_PROP(node_id, renesas_filter) >> 2) & 0x3)
-
-#define RZA_GET_FILCLKSEL(node_id) (DT_PROP(node_id, renesas_filter) & 0x3)
-
-#define RZA_FILTER_ON_OFF(node_id) COND_CODE_0(DT_PROP(node_id, renesas_filter), (0), (1))
+#define RZA_GET_FILNUM(node_id)    ((DT_PROP_OR(node_id, renesas_filter, 0) >> 2) & 0x3)
+#define RZA_GET_FILCLKSEL(node_id) (DT_PROP_OR(node_id, renesas_filter, 0) & 0x3)
+#define RZA_FILTER_ON_OFF(node_id) DT_NODE_HAS_PROP(node_id, renesas_filter)
 
 /* Process pinmux cfg */
 #define Z_PINCTRL_PINMUX_INIT(node_id, state_prop, idx)                                            \

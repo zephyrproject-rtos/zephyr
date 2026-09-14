@@ -8,7 +8,7 @@
 
 /dts-v1/;
 
-#include <ti/j721e_main_r5.dtsi>
+#include <ti/j721e_main_r5f0_0.dtsi>
 #include "beaglebone_ai64_j721e_main_r5f0_0-pinctrl.dtsi"
 #include <freq.h>
 
@@ -58,6 +58,10 @@
 		clock-frequency = <DT_FREQ_K(19200)>;
 		#clock-cells = <0>;
 	};
+
+	rpmsg0: rpmsg0 {
+		compatible = "rpmsg-uart";
+	};
 };
 
 &i2c6 {
@@ -71,8 +75,4 @@
 	pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
-};
-
-&systick_timer {
-	status = "okay";
 };

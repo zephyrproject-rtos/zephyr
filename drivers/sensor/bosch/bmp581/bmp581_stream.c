@@ -8,6 +8,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include "bmp581.h"
 #include "bmp581_stream.h"
@@ -116,6 +117,14 @@ static void bmp581_event_handler(const struct device *dev)
 	CHECKIF(atomic_cas(&data->stream.state, BMP581_STREAM_ON, BMP581_STREAM_BUSY) == false) {
 		LOG_WRN("Callback triggered while stream is busy. Ignoring request");
 		return;
+	}
+
+	uint64_t cycles;
+
+	if (sensor_clock_get_cycles(&cycles) == 0) {
+		data->stream.timestamp = sensor_clock_cycles_to_ns(cycles);
+	} else {
+		data->stream.timestamp = 0;
 	}
 
 	if ((data->stream.enabled_mask & BMP581_EVENT_DRDY) != 0) {

@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Gabriel Ivo <gabriel.bozi@usp.br>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_NXP_KINETIS
+	bool "NXP Kinetis SPI driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_L_SPI_ENABLED
+	help
+	  Enable support for the NXP Kinetis SPI peripheral.

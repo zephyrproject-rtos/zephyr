@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Nodes that match on every xG29 radio board in this folder. Board .dts
+ * files may add properties but must not override values set here.
+ */
+
+#include <silabs/xg29/clock-hfrcodpll.dtsi>
+#include <silabs/xg29/clock-lfxo.dtsi>
+#include "xg29_common-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usart1;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &usart1;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		spi-flash0 = &mx25r80;
+		watchdog0 = &wdog0;
+	};
+};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&eusart1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(8)>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25r80: mx25r8035f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		has-dpd;
+		jedec-id = [c2 28 14];
+		mxicy,mx25r-power-mode = "low-power";
+		size = <0x800000>;
+		spi-max-frequency = <DT_FREQ_M(33)>;
+		t-enter-dpd = <0>;
+	};
+};
+
+&gpio {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&rtcc0 {
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0000c000 DT_SIZE_K(472)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@82000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00082000 DT_SIZE_K(472)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@f8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x000f8000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};

@@ -151,6 +151,8 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-volatile")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
   "-Wno-register" "-Wno-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp26 "-std=c++26"
+  "-Wno-register" "-Wno-volatile")
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
@@ -253,10 +255,6 @@ set_compiler_property(PROPERTY linker_script -T)
 
 # Flags to not track macro expansion
 set_compiler_property(PROPERTY no_track_macro_expansion -ftrack-macro-expansion=0)
-
-# GCC 11 by default emits DWARF version 5 which cannot be parsed by
-# pyelftools. Can be removed once pyelftools supports v5.
-check_set_compiler_property(APPEND PROPERTY debug -gdwarf-4)
 
 set_compiler_property(PROPERTY no_common -fno-common)
 

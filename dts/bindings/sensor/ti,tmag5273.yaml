@@ -39,11 +39,11 @@ properties:
       - 0  # TMAG5273_DT_AXIS_NONE
       - 1  # TMAG5273_DT_AXIS_X
       - 2  # TMAG5273_DT_AXIS_Y
-      - 3  # TMAG5273_DT_AXIS_Z
-      - 4  # TMAG5273_DT_AXIS_XY
-      - 5  # TMAG5273_DT_AXIS_XZ
-      - 6  # TMAG5273_DT_AXIS_YZ
-      - 7  # TMAG5273_DT_AXIS_XYZ
+      - 3  # TMAG5273_DT_AXIS_XY  (TMAG5173_DT_AXIS_X | TMAG5173_DT_AXIS_Y)
+      - 4  # TMAG5273_DT_AXIS_Z
+      - 5  # TMAG5273_DT_AXIS_XZ  (TMAG5173_DT_AXIS_X | TMAG5173_DT_AXIS_Z)
+      - 6  # TMAG5273_DT_AXIS_YZ  (TMAG5173_DT_AXIS_Y | TMAG5173_DT_AXIS_Z)
+      - 7  # TMAG5273_DT_AXIS_XYZ (TMAG5173_DT_AXIS_X | TMAG5173_DT_AXIS_Y | TMAG5173_DT_AXIS_Z)
       - 8  # TMAG5273_DT_AXIS_XYX (pseudo-simultaneous sampling)
       - 9  # TMAG5273_DT_AXIS_YXY (pseudo-simultaneous sampling)
       - 10 # TMAG5273_DT_AXIS_YZY (pseudo-simultaneous sampling)

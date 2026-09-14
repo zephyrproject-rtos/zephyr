@@ -38,6 +38,7 @@ EXPECTED_COMMANDS = {
     'flash':
     ([RC_GDB,
       '-ex', "set confirm off",
+      '-ex', "set pagination off",
       '-ex', "target extended-remote {}".format(TEST_GDB_SERIAL),
       '-ex', "monitor swdp_scan",
       '-ex', "attach 1",

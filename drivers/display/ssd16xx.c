@@ -1035,6 +1035,17 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 };
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1683)
+static struct ssd16xx_quirks quirks_solomon_ssd1683 = {
+	.max_width = 300,
+	.max_height = 400,
+	.pp_width_bits = 8,
+	.pp_height_bits = 16,
+	.ctrl2_full = SSD16XX_GEN2_CTRL2_DISPLAY,
+	.ctrl2_partial = SSD16XX_GEN2_CTRL2_DISPLAY | SSD16XX_GEN2_CTRL2_MODE2,
+};
+#endif
+
 #define SOFTSTART_ASSIGN(n)						\
 		.softstart = {						\
 			.data = softstart_##n,				\
@@ -1088,7 +1099,7 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 		.dbi_config = {                                         \
 			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
 			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
-				SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |  \
+				SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | \
 				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),       \
 		},                                                      \
 		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\
@@ -1127,3 +1138,5 @@ DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1680, SSD16XX_DEFINE,
 			     &quirks_solomon_ssd1680);
 DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1681, SSD16XX_DEFINE,
 			     &quirks_solomon_ssd1681);
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1683, SSD16XX_DEFINE,
+			     &quirks_solomon_ssd1683);

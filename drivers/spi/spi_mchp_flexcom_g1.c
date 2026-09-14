@@ -72,7 +72,7 @@ static inline void spi_spin_unlock(const struct device *dev, k_spinlock_key_t ke
 	k_spin_unlock(&data->lock, key);
 }
 
-static int spi_slave_to_mr_pcs(int slave)
+static int spi_peripheral_to_mr_pcs(int peripheral)
 {
 	int pcs[SAM_SPI_CHIP_SELECT_COUNT] = {0x0, 0x1, 0x3, 0x7};
 
@@ -85,7 +85,7 @@ static int spi_slave_to_mr_pcs(int slave)
 	 * PCS = 0111    NPCS[3:0] = 0111
 	 */
 
-	return pcs[slave];
+	return pcs[peripheral];
 }
 
 static int spi_sam_configure(const struct device *dev,
@@ -96,7 +96,7 @@ static int spi_sam_configure(const struct device *dev,
 	Spi *regs = cfg->regs;
 	uint32_t spi_mr = 0U, spi_csr = 0U;
 	uint32_t rate;
-	uint16_t spi_csr_idx = spi_cs_is_gpio(config) ? 0 : config->slave;
+	uint16_t spi_csr_idx = spi_cs_is_gpio(config) ? 0 : config->peripheral;
 	int clk_div;
 	int ret;
 
@@ -116,22 +116,22 @@ static int spi_sam_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
-		/* Slave mode is not implemented. */
+	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_CONTROLLER) {
+		/* Peripheral mode is not implemented. */
 		return -ENOTSUP;
 	}
 
 	if (spi_csr_idx > (SAM_SPI_CHIP_SELECT_COUNT - 1)) {
-		LOG_ERR("Slave %d is greater than %d",
+		LOG_ERR("Peripheral %d is greater than %d",
 			spi_csr_idx, SAM_SPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
 
-	/* Set master mode, disable mode fault detection, set fixed peripheral
+	/* Set controller mode, disable mode fault detection, set fixed peripheral
 	 * select mode.
 	 */
 	spi_mr |= (SPI_MR_MSTR_Msk | SPI_MR_MODFDIS_Msk);
-	spi_mr |= SPI_MR_PCS(spi_slave_to_mr_pcs(spi_csr_idx));
+	spi_mr |= SPI_MR_PCS(spi_peripheral_to_mr_pcs(spi_csr_idx));
 
 	if (cfg->loopback) {
 		spi_mr |= SPI_MR_LLB_Msk;
@@ -568,7 +568,7 @@ static bool spi_sam_transfer_ongoing(struct spi_sam_data *data)
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
 
-static void spi_sam_shift_master(Spi *regs, struct spi_sam_data *data)
+static void spi_sam_shift_controller(Spi *regs, struct spi_sam_data *data)
 {
 	uint8_t tx;
 	uint8_t rx;
@@ -663,7 +663,7 @@ static int spi_sam_transceive(const struct device *dev,
 		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 		do {
-			spi_sam_shift_master(cfg->regs, data);
+			spi_sam_shift_controller(cfg->regs, data);
 		} while (spi_sam_transfer_ongoing(data));
 	}
 

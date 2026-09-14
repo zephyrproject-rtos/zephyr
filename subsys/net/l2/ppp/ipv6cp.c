@@ -32,10 +32,11 @@ static int ipv6cp_add_iid(struct ppp_context *ctx, struct net_pkt *pkt)
 {
 	uint8_t *iid = ctx->ipv6cp.my_options.iid;
 	size_t iid_len = sizeof(ctx->ipv6cp.my_options.iid);
-	struct net_linkaddr *linkaddr;
+	struct net_linkaddr *linkaddr = net_if_get_link_addr(ctx->iface);
 	int ret;
 
-	linkaddr = net_if_get_link_addr(ctx->iface);
+	NET_ASSERT(linkaddr != NULL);
+
 	if (linkaddr->len == 8) {
 		memcpy(iid, linkaddr->addr, iid_len);
 	} else {

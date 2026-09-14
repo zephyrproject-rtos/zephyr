@@ -236,7 +236,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 				LOG_WRN("Received 'NO CARRIER' event");
 				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
 				atomic_set_bit(&ppp->state, MODEM_PPP_STATE_DEAD_BIT);
-				/* TODO: Notify L2 PPP that link is dead */
+				net_if_carrier_off(ppp->iface);
 			}
 			break;
 		}
@@ -442,15 +442,16 @@ static void modem_ppp_send_handler(struct k_work *item)
 	if (ppp->tx_pkt != NULL) {
 		/* Initialize wrap */
 		if (ppp->transmit_state == MODEM_PPP_TRANSMIT_STATE_IDLE) {
+			LOG_DBG("Transmitting PPP frame (len %zu)", net_pkt_get_len(ppp->tx_pkt));
 			ppp->transmit_state = MODEM_PPP_TRANSMIT_STATE_SOF;
 		}
 
 		/* Claim as much space as possible */
-		reserved_size = ring_buf_put_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
+		reserved_size = ring_buf_put_ptr(&ppp->transmit_rb, &reserved, 0);
 		/* Push wrapped data into claimed buffer */
 		pushed = modem_ppp_wrap(ppp, reserved, reserved_size);
 		/* Limit claimed data to what was actually pushed */
-		ring_buf_put_finish(&ppp->transmit_rb, pushed);
+		ring_buf_commit(&ppp->transmit_rb, pushed);
 
 		if (ppp->transmit_state == MODEM_PPP_TRANSMIT_STATE_IDLE) {
 			net_pkt_unref(ppp->tx_pkt);
@@ -463,15 +464,14 @@ static void modem_ppp_send_handler(struct k_work *item)
 #endif
 
 	while (!ring_buf_is_empty(&ppp->transmit_rb)) {
-		reserved_size = ring_buf_get_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
+		reserved_size = ring_buf_get_ptr(&ppp->transmit_rb, &reserved, 0);
 
 		ret = modem_pipe_transmit(ppp->pipe, reserved, reserved_size);
 		if (ret < 0) {
-			ring_buf_get_finish(&ppp->transmit_rb, 0);
 			break;
 		}
 
-		ring_buf_get_finish(&ppp->transmit_rb, (uint32_t)ret);
+		ring_buf_consume(&ppp->transmit_rb, (uint32_t)ret);
 
 		if (ret < reserved_size) {
 			break;
@@ -622,6 +622,7 @@ int modem_ppp_attach(struct modem_ppp *ppp, struct modem_pipe *pipe)
 
 	atomic_clear(&ppp->state);
 	atomic_set_bit(&ppp->state, MODEM_PPP_STATE_ATTACHED_BIT);
+	net_if_carrier_on(ppp->iface);
 	return 0;
 }
 
@@ -639,6 +640,7 @@ void modem_ppp_release(struct modem_ppp *ppp)
 		return;
 	}
 
+	net_if_carrier_off(ppp->iface);
 	modem_pipe_release(ppp->pipe);
 	k_work_cancel_sync(&ppp->send_work, &sync);
 	k_work_cancel_sync(&ppp->process_work, &sync);

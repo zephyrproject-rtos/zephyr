@@ -374,6 +374,25 @@ int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int cou
 	return HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap_ops, count);
 }
 
+int gnttab_query_size(domid_t dom, uint32_t *nr_frames, uint32_t *max_nr_frames,
+		      int16_t *status)
+{
+	struct gnttab_query_size query = {
+		.dom = dom,
+	};
+	int ret;
+
+	if (!nr_frames || !max_nr_frames || !status) {
+		return -EINVAL;
+	}
+
+	ret = HYPERVISOR_grant_table_op(GNTTABOP_query_size, &query, 1);
+	*nr_frames = query.nr_frames;
+	*max_nr_frames = query.max_nr_frames;
+	*status = query.status;
+
+	return ret;
+}
 
 static const char * const gnttab_error_msgs[] = GNTTABOP_error_msgs;
 
@@ -392,16 +411,16 @@ const char *gnttabop_error(int16_t status)
 static unsigned long gnttab_get_max_frames(void)
 {
 	int ret;
-	struct gnttab_query_size q = {
-		.dom = DOMID_SELF,
-	};
+	uint32_t nr_frames;
+	uint32_t max_nr_frames;
+	int16_t status;
 
-	ret = HYPERVISOR_grant_table_op(GNTTABOP_query_size, &q, 1);
-	if ((ret < 0) || (q.status != GNTST_okay)) {
+	ret = gnttab_query_size(DOMID_SELF, &nr_frames, &max_nr_frames, &status);
+	if ((ret < 0) || (status != GNTST_okay)) {
 		return LEGACY_MAX_GNT_FRAMES_SUPPORTED;
 	}
 
-	return q.max_nr_frames;
+	return max_nr_frames;
 }
 
 static int gnttab_init(void)

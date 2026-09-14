@@ -224,7 +224,7 @@ static int i3g4250d_init(const struct device *dev)
 		.stmemsc_cfg = {	\
 			.spi = SPI_DT_SPEC_INST_GET(	\
 				inst,	\
-				SPI_OP_MODE_MASTER | SPI_MODE_CPOL |	\
+				SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | \
 				SPI_MODE_CPHA | SPI_WORD_SET(8) |	\
 				SPI_LINES_SINGLE),	\
 		},	\

@@ -75,7 +75,7 @@ static void task_entry_wrapper(void *p1, void *p2, void *p3)
  * stack_size is in 4-byte words.
  * taskHandler receives the opaque handle for later deletion.
  */
-int btblecontroller_task_new(void (*taskFunction)(void *), const char *name, int stack_size,
+int btblecontroller_task_new(void (*taskFunction)(void *arg), const char *name, int stack_size,
 			     void *arg, int prio, void *taskHandler)
 {
 	size_t stack_bytes = (size_t)stack_size * STACK_WORD_SIZE;

@@ -26,6 +26,11 @@ extern "C" {
  * @defgroup stepper_interface Stepper
  * @ingroup io_interfaces
  *
+ * @defgroup stepper_interface_ext Device-specific stepper API extensions
+ * @ingroup stepper_interface
+ * @{
+ * @}
+ *
  * @defgroup stepper_hw_driver Stepper Hardware Driver
  * @brief Interfaces for stepper hardware drivers
  * @ingroup stepper_interface

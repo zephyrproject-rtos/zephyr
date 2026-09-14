@@ -182,11 +182,12 @@ static void ism330dhcx_handle_interrupt(const struct device *dev)
 			return;
 		}
 
-		if ((status.xlda == 0) && (status.gda == 0)
+		if (!((status.xlda && (ism330dhcx->handler_drdy_acc != NULL)) ||
+		      (status.gda && (ism330dhcx->handler_drdy_gyr != NULL))
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
-					&& (status.tda == 0)
+		      || (status.tda && (ism330dhcx->handler_drdy_temp != NULL))
 #endif
-					) {
+		      )) {
 			break;
 		}
 

@@ -25,7 +25,7 @@ config NET_UDP_CHECKSUM
 
 endif # ETH_DRIVER && NET_L2_ETHERNET
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 # S32K3 places the vector table at +0x400

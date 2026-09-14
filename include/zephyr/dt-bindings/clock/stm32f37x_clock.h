@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F37X_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F37X_CLOCK_H_
 
-#include "stm32f3_clock.h"
+#include <zephyr/dt-bindings/clock/stm32f3_clock.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /* On STM32F37x, the ADC prescaler is located in CFGR1 and the prescaler values are more limited */
 #undef ADC12_PRE
@@ -34,5 +36,7 @@
 #define ADC_PRE_DIV_4		1
 #define ADC_PRE_DIV_6		2
 #define ADC_PRE_DIV_8		3
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F37X_CLOCK_H_ */

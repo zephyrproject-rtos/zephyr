@@ -275,7 +275,7 @@ if(DEFINED chosen_itcm)
     if(NOT DEFINED chosen_itcm_region)
       zephyr_linker_group(NAME ITCM_REGION VMA ITCM LMA ROM_REGION)
 
-      zephyr_linker_section(NAME .itcm GROUP ITCM_REGION SUBALIGN 4)
+      zephyr_linker_section(NAME .itcm GROUP ITCM_REGION ALIGN 4)
     endif()
   endif()
 endif()

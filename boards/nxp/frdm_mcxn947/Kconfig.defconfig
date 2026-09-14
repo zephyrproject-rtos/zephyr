@@ -3,7 +3,7 @@
 
 if BOARD_FRDM_MCXN947
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 if SD_STACK

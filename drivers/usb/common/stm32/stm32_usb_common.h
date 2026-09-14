@@ -33,7 +33,10 @@
  * All embedded HS PHYs have specific compatibles (with ST vendor).
  */
 #define USB_STM32_NODE_PHY_IS_EMBEDDED_HS(usb_node)					\
-	UTIL_OR(DT_NODE_HAS_COMPAT(USB_STM32_PHY(usb_node), st_stm32_usbphyc),		\
+	UTIL_OR(UTIL_OR(UTIL_OR(							\
+		DT_NODE_HAS_COMPAT(USB_STM32_PHY(usb_node), st_stm32_usbphyc),		\
+		DT_NODE_HAS_COMPAT(USB_STM32_PHY(usb_node), st_stm32f7_usbphyc)),	\
+		DT_NODE_HAS_COMPAT(USB_STM32_PHY(usb_node), st_stm32n6_usbphyc)),	\
 		DT_NODE_HAS_COMPAT(USB_STM32_PHY(usb_node), st_stm32u5_otghs_phy))
 
 /*

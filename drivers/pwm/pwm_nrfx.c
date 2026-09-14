@@ -335,6 +335,10 @@ static int pwm_resume(const struct device *dev)
 		bool inverted = initially_inverted & BIT(i);
 
 		seq_values_ptr_get(dev)[i] = PWM_NRFX_CH_VALUE(0, inverted);
+
+#if NRF_PWM_HAS_IDLEOUT
+		nrfy_pwm_channel_idle_set(data->pwm.p_reg, i, inverted);
+#endif
 	}
 
 	return 0;

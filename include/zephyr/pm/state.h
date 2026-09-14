@@ -119,6 +119,7 @@ enum pm_state {
  * Information about a power management state
  */
 struct pm_state_info {
+	/** Power management state */
 	enum pm_state state;
 
 	/**

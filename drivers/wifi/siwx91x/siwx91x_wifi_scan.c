@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/logging/log.h>
+#include <zephyr/net/wifi_utils.h>
 
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
@@ -38,16 +39,16 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 		.mac_length = sizeof(result->scan_info[item].bssid),
 		.security = WIFI_SECURITY_TYPE_UNKNOWN,
 		.mfp = WIFI_MFP_UNKNOWN,
-		.band = WIFI_FREQ_BAND_2_4_GHZ,
+		.band = WIFI_FREQ_BAND_UNKNOWN,
 	};
 
 	if (result->scan_count == 0) {
 		return;
 	}
 
-	if (result->scan_info[item].rf_channel <= 0 || result->scan_info[item].rf_channel > 14) {
+	tmp.band = wifi_utils_chan_to_band(tmp.channel);
+	if (tmp.band != WIFI_FREQ_BAND_2_4_GHZ) {
 		LOG_WRN("Unexpected scan result");
-		tmp.band = WIFI_FREQ_BAND_UNKNOWN;
 	}
 
 	memcpy(tmp.ssid, result->scan_info[item].ssid, tmp.ssid_length);
@@ -112,15 +113,17 @@ siwx91x_configure_scan_dwell_time(sl_wifi_scan_type_t scan_type, uint16_t dwell_
 
 	switch (scan_type) {
 	case SL_WIFI_SCAN_TYPE_ACTIVE:
-		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_ACTIVE_SCAN_TIMEOUT,
-						 dwell_time_active);
+		ret = sl_wifi_configure_timeout(SL_WIFI_ALL_INTERFACES,
+						SL_WIFI_CHANNEL_ACTIVE_SCAN_TIMEOUT,
+						dwell_time_active);
 		return ret;
 	case SL_WIFI_SCAN_TYPE_PASSIVE:
 		if (!dwell_time_passive) {
 			dwell_time_passive = SIWX91X_DEFAULT_PASSIVE_SCAN_DWELL_TIME;
 		}
-		ret = sl_si91x_configure_timeout(SL_SI91X_CHANNEL_PASSIVE_SCAN_TIMEOUT,
-						 dwell_time_passive);
+		ret = sl_wifi_configure_timeout(SL_WIFI_ALL_INTERFACES,
+						SL_WIFI_CHANNEL_PASSIVE_SCAN_TIMEOUT,
+						dwell_time_passive);
 		return ret;
 	case SL_WIFI_SCAN_TYPE_ADV_SCAN:
 		if (dwell_time_active || dwell_time_passive) {
@@ -242,7 +245,7 @@ int siwx91x_scan(const struct device *dev,
 	if (IS_ENABLED(CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX)) {
 		if (z_scan_config->ssids[0]) {
 			strncpy(ssid.value, z_scan_config->ssids[0], WIFI_SSID_MAX_LEN);
-			ssid.length = strlen(z_scan_config->ssids[0]);
+			ssid.length = strnlen(z_scan_config->ssids[0], WIFI_SSID_MAX_LEN);
 		}
 	}
 

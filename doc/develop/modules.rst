@@ -999,7 +999,7 @@ when executing twister, for example:
 
   ./scripts/zephyr_module.py --twister-out module_tests.args
   if [ -s module_tests.args ]; then
-      ./scripts/twister +module_tests.args --outdir module_tests ...
+      west twister +module_tests.args --outdir module_tests ...
   fi
 
 

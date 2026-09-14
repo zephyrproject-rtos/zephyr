@@ -465,6 +465,30 @@ static const char chunked_te_response[] =
 	"0\r\n"
 	"\r\n";
 
+/* Three chunks delivered in one recv call. Before every chunk was reported,
+ * only the last fragment reached the application.
+ */
+#define MULTI_CHUNKED_BODY_SIZE 32
+
+static const char multi_chunked_te_response[] =
+	"HTTP/1.1 200 OK\r\n"
+	"Transfer-Encoding: chunked\r\n"
+	"\r\n"
+	"10\r\n"
+	"AAAAAAAAAAAAAAAA"
+	"\r\n"
+	"a\r\n"
+	"BBBBBBBBBB"
+	"\r\n"
+	"6\r\n"
+	"CCCCCC"
+	"\r\n"
+	"0\r\n"
+	"\r\n";
+
+static const char *chunked_srv_response;
+static size_t chunked_srv_response_len;
+
 static K_THREAD_STACK_DEFINE(chunked_srv_stack, 2048 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread chunked_srv_thread;
 static K_SEM_DEFINE(chunked_srv_ready, 0, 1);
@@ -504,8 +528,7 @@ static void chunked_srv_fn(void *p1, void *p2, void *p3)
 	conn = zsock_accept(srv, NULL, NULL);
 	if (conn >= 0) {
 		(void)zsock_recv(conn, req_buf, sizeof(req_buf) - 1, 0);
-		(void)zsock_send(conn, chunked_te_response,
-				 sizeof(chunked_te_response) - 1, 0);
+		(void)zsock_send(conn, chunked_srv_response, chunked_srv_response_len, 0);
 		zsock_close(conn);
 	}
 
@@ -525,6 +548,8 @@ static void chunked_tests_before(void *fixture)
 
 	memset(chunked_recv_buf, 0, sizeof(chunked_recv_buf));
 	memset(chunked_response_buf, 0, sizeof(chunked_response_buf));
+	chunked_srv_response = chunked_te_response;
+	chunked_srv_response_len = sizeof(chunked_te_response) - 1;
 
 	k_thread_create(&chunked_srv_thread, chunked_srv_stack,
 			K_THREAD_STACK_SIZEOF(chunked_srv_stack),
@@ -585,6 +610,58 @@ ZTEST(http_client_chunked_te, test_body_frag_len_chunked_te)
 		      ctx.offset, CHUNKED_BODY_SIZE);
 	zassert_mem_equal(chunked_response_buf, "AAAAAAAAAAAAAAAA",
 			  CHUNKED_BODY_SIZE, "Body content mismatch");
+}
+
+static void multi_chunked_request_init(struct http_request *req)
+{
+	req->method = HTTP_GET;
+	req->url = "/firmware/app.bin";
+	req->host = SERVER_IPV6_ADDR;
+	req->protocol = "HTTP/1.1";
+	req->response = response_cb;
+	req->recv_buf = chunked_recv_buf;
+	req->recv_buf_len = sizeof(chunked_recv_buf);
+
+	chunked_srv_response = multi_chunked_te_response;
+	chunked_srv_response_len = sizeof(multi_chunked_te_response) - 1;
+}
+
+ZTEST(http_client_chunked_te, test_body_multi_chunk_single_recv)
+{
+	struct http_request req = { 0 };
+	struct test_ctx ctx = { 0 };
+	int ret;
+
+	multi_chunked_request_init(&req);
+
+	ctx.buf = chunked_response_buf;
+	ctx.buflen = sizeof(chunked_response_buf);
+
+	ret = http_client_req(chunked_client_fd, &req, -1, &ctx);
+	zassert_true(ret > 0, "http_client_req() failed (%d)", ret);
+	zassert_true(ctx.final, "No final event received");
+	zassert_equal(ctx.status, 200, "Unexpected HTTP status code");
+
+	zassert_equal(ctx.offset, MULTI_CHUNKED_BODY_SIZE,
+		      "body length mismatch: got %zu, expected %d",
+		      ctx.offset, MULTI_CHUNKED_BODY_SIZE);
+	zassert_mem_equal(chunked_response_buf, "AAAAAAAAAAAAAAAABBBBBBBBBBCCCCCC",
+			  MULTI_CHUNKED_BODY_SIZE, "Body content mismatch");
+}
+
+ZTEST(http_client_chunked_te, test_abort_multi_chunk_single_recv)
+{
+	struct http_request req = { 0 };
+	struct test_ctx ctx = { 0 };
+	int ret;
+
+	multi_chunked_request_init(&req);
+
+	ctx.abort = true;
+
+	ret = http_client_req(chunked_client_fd, &req, -1, &ctx);
+	zassert_equal(ret, -ECONNABORTED,
+		      "http_client_req() should've reported abort (%d)", ret);
 }
 
 ZTEST_SUITE(http_client_chunked_te, NULL, NULL,

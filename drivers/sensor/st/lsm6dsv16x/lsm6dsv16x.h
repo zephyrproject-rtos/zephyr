@@ -232,6 +232,7 @@ int lsm6dsv16x_shub_get_idx(const struct device *dev, enum sensor_channel type);
 int lsm6dsv16x_shub_config(const struct device *dev, enum sensor_channel chan,
 			enum sensor_attribute attr,
 			const struct sensor_value *val);
+enum sensor_channel lsm6dsv16x_shub_type(uint8_t k);
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER

@@ -173,7 +173,7 @@ static int spi_cc23x0_configure(const struct device *dev,
 	}
 
 	/* Peripheral mode has not been implemented */
-	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_CONTROLLER) {
 		LOG_ERR("Peripheral mode is not supported");
 		return -ENOTSUP;
 	}
@@ -346,7 +346,7 @@ static int spi_cc23x0_transceive(const struct device *dev,
 
 	ret = pm_device_runtime_get(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to resume DMA (%d)", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(cfg->dma_dev, ret);
 		goto int_disable;
 	}
 
@@ -386,7 +386,7 @@ static int spi_cc23x0_transceive(const struct device *dev,
 dma_suspend:
 	ret = pm_device_runtime_put(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to suspend DMA (%d)", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(cfg->dma_dev, ret);
 	}
 int_disable:
 	SPIDisableInt(cfg->base, SPI_CC23_INT_MASK);

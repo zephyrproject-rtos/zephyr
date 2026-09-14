@@ -13,7 +13,7 @@ config USB_DEVICE_DRIVER
 	default y
 endif # USB_DEVICE_STACK
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault TEST_RANDOM_GENERATOR

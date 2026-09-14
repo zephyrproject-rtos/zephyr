@@ -7,7 +7,11 @@
 #include <zephyr/drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 #include <nrfx_clock.h>
+#else
+#include <nrfx_clock_lfclk.h>
+#endif
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 
@@ -45,7 +49,9 @@ static void cal_lf_callback(struct onoff_manager *mgr,
 			    uint32_t state, int res);
 
 static struct onoff_client client;
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 static struct onoff_manager *mgrs;
+#endif
 
 /* Temperature sensor is only needed if
  * CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP > 0, since a value of 0
@@ -67,42 +73,80 @@ static int16_t prev_temperature; /* Previous temperature measurement. */
 static void timeout_handler(struct k_timer *timer);
 static K_TIMER_DEFINE(backoff_timer, timeout_handler, NULL);
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 static void clk_request(struct onoff_manager *mgr, struct onoff_client *cli,
 			onoff_client_callback callback)
+#else
+static void clk_request(const struct device *dev, struct onoff_client *cli,
+			onoff_client_callback callback)
+#endif
 {
 	int err;
 
 	sys_notify_init_callback(&cli->notify, callback);
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	err = onoff_request(mgr, cli);
+#else
+	err = nrf_clock_control_request(dev, NULL, cli);
+#endif
 	__ASSERT_NO_MSG(err >= 0);
 }
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 static void clk_release(struct onoff_manager *mgr)
+#else
+static void clk_release(const struct device *dev)
+#endif
 {
 	int err;
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	err = onoff_release(mgr);
+#else
+	err = nrf_clock_control_release(dev, NULL);
+#endif
 	__ASSERT_NO_MSG(err >= 0);
 }
 
 static void hf_request(void)
 {
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	clk_request(&mgrs[CLOCK_CONTROL_NRF_TYPE_HFCLK], &client, cal_hf_callback);
+#else
+	clk_request(COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
+				DEVICE_DT_GET_ONE(nordic_nrf_clock_hfclk),
+				DEVICE_DT_GET_ONE(nordic_nrf_clock_xo)),
+		    &client, cal_hf_callback);
+#endif
 }
 
 static void lf_request(void)
 {
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	clk_request(&mgrs[CLOCK_CONTROL_NRF_TYPE_LFCLK], &client, cal_lf_callback);
+#else
+	clk_request(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), &client, cal_lf_callback);
+#endif
 }
 
 static void hf_release(void)
 {
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	clk_release(&mgrs[CLOCK_CONTROL_NRF_TYPE_HFCLK]);
+#else
+	clk_release(COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
+				DEVICE_DT_GET_ONE(nordic_nrf_clock_hfclk),
+				DEVICE_DT_GET_ONE(nordic_nrf_clock_xo)));
+#endif
 }
 
 static void lf_release(void)
 {
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	clk_release(&mgrs[CLOCK_CONTROL_NRF_TYPE_LFCLK]);
+#else
+	clk_release(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk));
+#endif
 }
 
 static void cal_lf_callback(struct onoff_manager *mgr,
@@ -115,7 +159,11 @@ static void cal_lf_callback(struct onoff_manager *mgr,
 /* Start actual HW calibration assuming that HFCLK XTAL is on. */
 static void start_hw_cal(void)
 {
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	nrfx_clock_calibration_start();
+#else
+	nrfx_clock_lfclk_calibration_start();
+#endif
 	calib_skip_cnt = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP;
 }
 
@@ -126,7 +174,6 @@ static void start_cycle(void)
 		      K_MSEC(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD),
 		      K_NO_WAIT);
 	hf_release();
-
 	if (!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON)) {
 		lf_release();
 	}
@@ -235,9 +282,15 @@ static void measure_temperature(struct k_work *work)
 }
 #endif /* USE_TEMP_SENSOR */
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 void z_nrf_clock_calibration_init(struct onoff_manager *onoff_mgrs)
+#else
+void z_nrf_clock_calibration_init(void)
+#endif
 {
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 	mgrs = onoff_mgrs;
+#endif
 	total_cnt = 0;
 	total_skips_cnt = 0;
 }

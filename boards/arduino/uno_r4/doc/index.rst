@@ -22,6 +22,31 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Serial Console
+==============
+
+On the Arduino UNO R4 WiFi the console is routed over SCI9, which the on-board
+ESP32-S3 bridges to the USB-C connector as a USB CDC ACM port. No external
+adapter is needed -- open the same port you flash through, at 115200 baud.
+
+Do not open that port at 1200 or 2400 baud: the bridge firmware treats those
+line rates as a request to reset the RA4M1 or to enter its DFU bootloader.
+
+The UART on the D0/D1 header (SCI2) remains available. To use it as the console
+instead, override the choice in an application overlay:
+
+.. code-block:: devicetree
+
+   / {
+       chosen {
+           zephyr,console = &uart2;
+           zephyr,shell-uart = &uart2;
+       };
+   };
+
+On the Arduino UNO R4 Minima the console is on SCI2 (D0/D1); that board has no
+ESP32-S3 and so no USB bridge.
+
 Programming and debugging
 *************************
 

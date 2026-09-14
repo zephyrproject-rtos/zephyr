@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_I2C_I2C_DW_H_
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/sys_io.h>
 #include <stdbool.h>
 
 #define DT_DRV_COMPAT snps_designware_i2c
@@ -53,21 +54,21 @@ typedef int (*i2c_api_check_bus_t)(const struct device *dev);
 #define I2C_DW_STUCK_ERR_MASK (I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_USER_ABRT)
 
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
-#define DW_ENABLE_TX_INT_I2C_MASTER                                                                \
+#define DW_ENABLE_TX_INT_I2C_CONTROLLER                                                            \
 	(DW_INTR_STAT_TX_OVER | DW_INTR_STAT_TX_EMPTY | DW_INTR_STAT_TX_ABRT |                     \
 	 DW_INTR_STAT_STOP_DET | DW_INTR_STAT_SCL_STUCK_LOW)
 #else
-#define DW_ENABLE_TX_INT_I2C_MASTER                                                                \
+#define DW_ENABLE_TX_INT_I2C_CONTROLLER                                                            \
 	(DW_INTR_STAT_TX_OVER | DW_INTR_STAT_TX_EMPTY | DW_INTR_STAT_TX_ABRT |                     \
 	 DW_INTR_STAT_STOP_DET)
 #endif
-#define DW_ENABLE_RX_INT_I2C_MASTER                                                                \
+#define DW_ENABLE_RX_INT_I2C_CONTROLLER                                                            \
 	(DW_INTR_STAT_RX_UNDER | DW_INTR_STAT_RX_OVER | DW_INTR_STAT_RX_FULL |                     \
 	 DW_INTR_STAT_STOP_DET)
 
-#define DW_ENABLE_TX_INT_I2C_SLAVE                                                                 \
+#define DW_ENABLE_TX_INT_I2C_TARGET                                                                \
 	(DW_INTR_STAT_RD_REQ | DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_STOP_DET)
-#define DW_ENABLE_RX_INT_I2C_SLAVE (DW_INTR_STAT_RX_FULL | DW_INTR_STAT_STOP_DET)
+#define DW_ENABLE_RX_INT_I2C_TARGET (DW_INTR_STAT_RX_FULL | DW_INTR_STAT_STOP_DET)
 
 #define DW_DISABLE_ALL_I2C_INT 0x00000000
 
@@ -144,7 +145,7 @@ typedef int (*i2c_api_check_bus_t)(const struct device *dev);
 /* convert sda hold time in nanoseconds to DW I2C clock ticks at build time */
 #define HOLD_TIME_TO_TICKS(i2c_sda_hold_time_ns)                                                \
 	   ((uint32_t)DIV_ROUND_UP((uint64_t)(CONFIG_I2C_DW_CLOCK_SPEED) * (i2c_sda_hold_time_ns), \
-							   1000000000ULL))
+							   1000ULL))
 
 struct i2c_dw_rom_config {
 	DEVICE_MMIO_ROM;
@@ -152,11 +153,14 @@ struct i2c_dw_rom_config {
 	uint32_t bitrate;
 	uint32_t sda_hold_tx;
 	uint32_t sda_hold_rx;
+#ifdef CONFIG_I2C_RTS5912
 	uint32_t irqnumber;
+#endif
 	int16_t lcnt_offset;
 	int16_t hcnt_offset;
 	uint8_t fs_spk_len;
 	uint8_t hs_spk_len;
+	k_timeout_t transfer_timeout;
 
 #if I2C_DW_PINCTRL_ENABLED
 	const struct pinctrl_dev_config *pcfg;
@@ -208,7 +212,7 @@ struct i2c_dw_dev_config {
 	bool xfr_status;
 #endif
 
-	struct i2c_target_config *slave_cfg;
+	struct i2c_target_config *target_cfg;
 
 	i2c_api_recover_bus_t recover_bus_cb;
 	struct device *recover_bus_dev;
@@ -228,30 +232,30 @@ struct i2c_dw_dev_config {
 #define Z_REG_TEST_BIT    sys_test_bit
 
 #define DEFINE_MM_REG_READ(__reg, __off, __sz)                                                     \
-	static inline uint32_t read_##__reg(uint32_t addr)                                         \
+	static inline uint32_t read_##__reg(mm_reg_t addr)                                         \
 	{                                                                                          \
 		return Z_REG_READ(__sz)(addr + __off);                                             \
 	}
 #define DEFINE_MM_REG_WRITE(__reg, __off, __sz)                                                    \
-	static inline void write_##__reg(uint32_t data, uint32_t addr)                             \
+	static inline void write_##__reg(uint32_t data, mm_reg_t addr)                             \
 	{                                                                                          \
 		Z_REG_WRITE(__sz)(data, addr + __off);                                             \
 	}
 
 #define DEFINE_SET_BIT_OP(__reg_bit, __reg_off, __bit)                                             \
-	static inline void set_bit_##__reg_bit(uint32_t addr)                                      \
+	static inline void set_bit_##__reg_bit(mm_reg_t addr)                                      \
 	{                                                                                          \
 		Z_REG_SET_BIT(addr + __reg_off, __bit);                                            \
 	}
 
 #define DEFINE_CLEAR_BIT_OP(__reg_bit, __reg_off, __bit)                                           \
-	static inline void clear_bit_##__reg_bit(uint32_t addr)                                    \
+	static inline void clear_bit_##__reg_bit(mm_reg_t addr)                                    \
 	{                                                                                          \
 		Z_REG_CLEAR_BIT(addr + __reg_off, __bit);                                          \
 	}
 
 #define DEFINE_TEST_BIT_OP(__reg_bit, __reg_off, __bit)                                            \
-	static inline int test_bit_##__reg_bit(uint32_t addr)                                      \
+	static inline int test_bit_##__reg_bit(mm_reg_t addr)                                      \
 	{                                                                                          \
 		return Z_REG_TEST_BIT(addr + __reg_off, __bit);                                    \
 	}

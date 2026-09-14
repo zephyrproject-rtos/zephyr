@@ -1,5 +1,5 @@
 tests:
-  tests.bsim.bluetooth.audio_samples.bap_broadcast_sink:
+  bluetooth.audio_samples.bsim.bap_broadcast_sink:
     timeout: 600
     tags:
       - bluetooth

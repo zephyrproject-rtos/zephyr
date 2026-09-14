@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ACTINIUS_ICARUS_SOM_DK
+	select BOARD_LATE_INIT_HOOK

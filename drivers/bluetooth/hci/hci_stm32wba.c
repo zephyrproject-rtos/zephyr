@@ -34,7 +34,11 @@ LOG_MODULE_REGISTER(hci_wba);
 
 #define DT_DRV_COMPAT st_hci_stm32wba
 
-static K_SEM_DEFINE(hci_sem, 1, 1);
+/* Serializes the accesses to the controller. It is a mutex, and not a
+ * semaphore, because the controller can indicate an event from within
+ * BleStack_Request(), i.e. from the thread that is already holding it.
+ */
+static K_MUTEX_DEFINE(hci_lock);
 
 #if defined(CONFIG_BT_HCI_SETUP)
 /* Bluetooth LE public STM32WBA default device address (if udn not available) */
@@ -43,11 +47,6 @@ static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
 #define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
 #define HCI_CONFIG_DATA_PUBADDR_OFFSET	   0
 static bt_addr_t bd_addr_udn;
-struct aci_set_ble_addr {
-	uint8_t config_offset;
-	uint8_t length;
-	uint8_t value[6];
-} __packed;
 #endif /* CONFIG_BT_HCI_SETUP */
 
 /* ACI Reset command */
@@ -270,6 +269,7 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 			 const uint8_t *ext_data, uint16_t ext_length)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	__maybe_unused int unlock_err;
 	int ret = 0;
 	int err;
 
@@ -278,12 +278,17 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 		LOG_DBG("ext_length: %d", ext_length);
 	}
 
-	k_sem_take(&hci_sem, K_FOREVER);
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return 1;
+	}
 
 	err = receive_data(dev, data, (size_t)length,
 			   ext_data, (size_t)ext_length);
 
-	k_sem_give(&hci_sem);
+	unlock_err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(unlock_err == 0);
 
 	HostStack_Process();
 
@@ -300,9 +305,14 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	struct net_buf *evt_buf = NULL;
 	uint16_t event_length;
 	uint8_t *data;
+	__maybe_unused int unlock_err;
 	int err = 0;
 
-	k_sem_take(&hci_sem, K_FOREVER);
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return err;
+	}
 
 	if (buf->data[0] == BT_HCI_H4_CMD) {
 		/*
@@ -351,7 +361,8 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	}
 
 done:
-	k_sem_give(&hci_sem);
+	unlock_err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(unlock_err == 0);
 
 	net_buf_unref(buf);
 
@@ -442,8 +453,8 @@ static int bt_hci_stm32wba_open(const struct device *dev)
 
 static int bt_hci_stm32wba_close(const struct device *dev)
 {
-	int err = 0;
 	uint8_t aci_reset_cmd[9];
+	int err;
 
 	ARG_UNUSED(dev);
 
@@ -457,7 +468,16 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	aci_reset_cmd[7] = (uint8_t)(CFG_BLE_OPTIONS >> 16);
 	aci_reset_cmd[8] = (uint8_t)(CFG_BLE_OPTIONS >> 24);
 
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return err;
+	}
+
 	BleStack_Request(aci_reset_cmd);
+
+	err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(err == 0);
 
 	bt_hci_state = BT_HCI_STATE_CLOSED;
 
@@ -476,7 +496,7 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
 #endif
 
-	return err;
+	return 0;
 }
 
 #if defined(CONFIG_BT_HCI_SETUP)
@@ -528,6 +548,7 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 	bt_addr_t *uid_addr;
 	uint8_t aci_set_ble_addr_cmd[12];
 	uint16_t event_length;
+	int err;
 
 	ARG_UNUSED(dev);
 
@@ -549,7 +570,17 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 		memcpy(&aci_set_ble_addr_cmd[6], &(params->public_addr), 6);
 	}
 
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return err;
+	}
+
 	event_length = BleStack_Request(aci_set_ble_addr_cmd);
+
+	err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(err == 0);
+
 	if (event_length) {
 		/* Get the return status from the event */
 		uint8_t evt_status;

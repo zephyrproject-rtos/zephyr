@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Texas Instruments Incorporated
+ * Copyright (c) 2026 Siemens Mobility GmbH
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -111,12 +112,43 @@ struct omap_mcspi_data {
 static void omap_mcspi_channel_enable(const struct device *dev, bool enable)
 {
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
-	uint8_t chan = DEV_DATA(dev)->ctx.config->slave;
+	uint8_t chan = DEV_DATA(dev)->ctx.config->peripheral;
 
 	if (enable) {
 		regs->CHAN[chan].CHCTRL |= OMAP_MCSPI_CHCTRL_EN;
 	} else {
 		regs->CHAN[chan].CHCTRL &= ~OMAP_MCSPI_CHCTRL_EN;
+	}
+}
+
+static void omap_mcspi_hw_cs_control(const struct device *dev, bool enabled)
+{
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+	uint8_t chan = DEV_DATA(dev)->ctx.config->peripheral;
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+
+	/*
+	 * This works due to omap_mcspi_transceive_one writing data->chconf to the
+	 * CHCONF register, meaning we also can't just write into CHCONF directly.
+	 * After the transfer we can clear the FORCE bit directly inside the
+	 * register.
+	 */
+	if (enabled) {
+		data->chconf |= OMAP_MCSPI_CHCONF_FORCE;
+	} else {
+		regs->CHAN[chan].CHCONF &= ~OMAP_MCSPI_CHCONF_FORCE;
+	}
+}
+
+static void omap_mcspi_cs_control(const struct device *dev, bool enabled)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct spi_context *ctx = &data->ctx;
+
+	if (spi_cs_is_gpio(ctx->config)) {
+		spi_context_cs_control(ctx, enabled);
+	} else {
+		omap_mcspi_hw_cs_control(dev, enabled);
 	}
 }
 
@@ -128,7 +160,7 @@ static void omap_mcspi_set_mode(const struct device *dev, bool is_peripheral)
 	/* disable system test mode */
 	modulctrl &= ~(OMAP_MCSPI_MODULCTRL_SYSTEST);
 
-	/* set controller or peripheral (master/slave) */
+	/* set controller or peripheral */
 	if (is_peripheral) {
 		modulctrl |= OMAP_MCSPI_MODULCTRL_MS;
 	} else {
@@ -191,9 +223,9 @@ static int omap_mcspi_configure(const struct device *dev, const struct spi_confi
 	struct omap_mcspi_data *data = DEV_DATA(dev);
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
 	struct spi_context *ctx = &data->ctx;
-	uint8_t chan = config->slave;
+	uint8_t chan = config->peripheral;
 	uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
-	bool is_peripheral = config->operation & SPI_OP_MODE_SLAVE;
+	bool is_peripheral = config->operation & SPI_OP_MODE_PERIPHERAL;
 	int rv;
 
 	if (spi_context_configured(ctx, config)) {
@@ -205,13 +237,13 @@ static int omap_mcspi_configure(const struct device *dev, const struct spi_confi
 		return -ENOTSUP;
 	}
 
-	if (is_peripheral && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for SPI slave mode is not enabled");
+	if (is_peripheral && !IS_ENABLED(CONFIG_SPI_PERIPHERAL)) {
+		LOG_ERR("Kconfig for SPI peripheral mode is not enabled");
 		return -ENOTSUP;
 	}
 
 	if (chan >= cfg->num_cs) {
-		LOG_ERR("invalid slave selected");
+		LOG_ERR("invalid peripheral selected");
 		return -EINVAL;
 	}
 
@@ -238,7 +270,6 @@ static int omap_mcspi_configure(const struct device *dev, const struct spi_confi
 		if (ch != chan) {
 			/* only when MODULCTRL_SINGLE is set */
 			regs->CHAN[ch].CHCTRL &= ~OMAP_MCSPI_CHCTRL_EN;
-			regs->CHAN[ch].CHCONF &= ~OMAP_MCSPI_CHCONF_FORCE;
 		}
 
 		/* disable FIFO for all channels */
@@ -292,13 +323,6 @@ static int omap_mcspi_configure(const struct device *dev, const struct spi_confi
 		data->chconf |= OMAP_MCSPI_CHCONF_PHA;
 	} else {
 		data->chconf &= ~OMAP_MCSPI_CHCONF_PHA;
-	}
-
-	/* set force */
-	if (!spi_cs_is_gpio(config)) {
-		data->chconf |= OMAP_MCSPI_CHCONF_FORCE;
-	} else {
-		data->chconf &= ~OMAP_MCSPI_CHCONF_FORCE;
 	}
 
 	rv = omap_mcspi_configure_clk_freq(dev, config->frequency, cfg->clock_frequency);
@@ -376,7 +400,7 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
 	struct spi_context *ctx = &data->ctx;
 	const uint32_t word_mask = (1ULL << SPI_WORD_SIZE_GET(ctx->config->operation)) - 1;
-	const uint8_t chan = ctx->config->slave;
+	const uint8_t chan = ctx->config->peripheral;
 	const uint8_t dfs = data->dfs;
 	const uint8_t *tx_buf = ctx->tx_buf;
 	uint8_t *rx_buf = ctx->rx_buf;
@@ -476,7 +500,7 @@ static int omap_mcspi_transceive_one(const struct device *dev)
 	struct omap_mcspi_data *data = DEV_DATA(dev);
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
 	struct spi_context *ctx = &data->ctx;
-	const uint8_t chan = ctx->config->slave;
+	const uint8_t chan = ctx->config->peripheral;
 	const uint8_t *tx_buf = ctx->tx_buf;
 	uint8_t *rx_buf = ctx->rx_buf;
 	size_t count = spi_context_max_continuous_chunk(ctx);
@@ -565,12 +589,12 @@ static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_
 	ret = omap_mcspi_configure(dev, config, tx_bufs, rx_bufs);
 	if (ret) {
 		LOG_ERR("An error occurred in the SPI configuration");
-		goto cleanup;
+		goto cleanup_no_cs;
 	}
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs);
 
-	spi_context_cs_control(ctx, true);
+	omap_mcspi_cs_control(dev, true);
 
 	while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
 		ret = omap_mcspi_transceive_one(dev);
@@ -583,8 +607,9 @@ static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_
 	}
 
 cleanup:
-	spi_context_cs_control(ctx, false);
+	omap_mcspi_cs_control(dev, false);
 
+cleanup_no_cs:
 	if (!(config->operation & SPI_LOCK_ON)) {
 		spi_context_release(ctx, ret);
 	}
@@ -642,6 +667,14 @@ static int omap_mcspi_init(const struct device *dev)
 
 	data->fifo_depth = FIELD_GET(OMAP_MCSPI_HWINFO_FFNBYTE, regs->HWINFO) << 4;
 
+	ARRAY_FOR_EACH(regs->CHAN, ch) {
+		regs->CHAN[ch].CHCONF &= ~OMAP_MCSPI_CHCONF_FORCE;
+	}
+
+	ret = spi_context_cs_configure_all(&data->ctx);
+	if (ret < 0) {
+		return ret;
+	}
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;

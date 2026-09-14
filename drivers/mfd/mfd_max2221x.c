@@ -126,7 +126,7 @@ static int max2221x_init(const struct device *dev)
 
 #define MAX2221X_DEFINE(inst)                                                                      \
 	static const struct mfd_max2221x_config mfd_max2221x_config_##inst = {                     \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),          \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),             \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, max2221x_init, NULL, NULL, &mfd_max2221x_config_##inst,        \

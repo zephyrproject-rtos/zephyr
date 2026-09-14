@@ -6,6 +6,9 @@ if BOARD_QEMU_CORTEX_M3
 config BUILD_OUTPUT_BIN
 	default n
 
+configdefault QEMU_ICOUNT_SHIFT
+	default 6
+
 # DWT is not properly emulated in QEMU
 choice NULL_POINTER_EXCEPTION_DETECTION
 	bool

@@ -23,7 +23,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/usb/class/usbd_uvc.h>
 
-#include "uvc.h"
+#include <uvc.h>
+
 #include "../../../../drivers/video/video_common.h"
 
 LOG_MODULE_REGISTER(usbd_uvc, CONFIG_USBD_VIDEO_LOG_LEVEL);
@@ -1118,7 +1119,8 @@ end:
 
 /* UVC descriptor handling */
 
-static void *uvc_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
+static const void *uvc_get_desc(struct usbd_class_data *const c_data,
+				const enum usbd_speed speed)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uvc_config *const cfg = dev->config;

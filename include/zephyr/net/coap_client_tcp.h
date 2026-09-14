@@ -12,7 +12,7 @@
  * @brief CoAP TCP client API
  *
  * An API for applications to send CoAP requests over reliable transports
- * (TCP/TLS) as specified in RFC 8323.
+ * (TCP/TLS) as specified in @rfc{8323}.
  */
 
 /**
@@ -85,9 +85,9 @@ enum coap_client_tcp_event {
 	COAP_CLIENT_TCP_EVENT_CSM_UPDATED,
 	/** Pong received in response to Ping */
 	COAP_CLIENT_TCP_EVENT_PONG_RECEIVED,
-	/** Server initiated connection release (RFC 8323) */
+	/** Server initiated connection release (@rfc{8323}) */
 	COAP_CLIENT_TCP_EVENT_RELEASE,
-	/** Server aborted connection (RFC 8323) */
+	/** Server aborted connection (@rfc{8323}) */
 	COAP_CLIENT_TCP_EVENT_ABORT,
 };
 
@@ -234,7 +234,7 @@ int coap_client_tcp_init(struct coap_client_tcp *client, const char *info);
  * Unlike the UDP client, the TCP client manages the socket internally.
  * This function creates a TCP socket, connects to the server, and
  * automatically sends a CSM (Capabilities and Settings Message) to
- * negotiate capabilities per RFC 8323.
+ * negotiate capabilities per @rfc{8323}.
  *
  * @param client Client instance.
  * @param addr Destination address of the server.
@@ -273,7 +273,7 @@ int coap_client_tcp_req(struct coap_client_tcp *client,
 /**
  * @brief Send CSM (Capabilities and Settings Message) over TCP
  *
- * Per RFC 8323, CSM should be exchanged when a CoAP-over-TCP connection is
+ * Per @rfc{8323}, CSM should be exchanged when a CoAP-over-TCP connection is
  * established. This negotiates capabilities like max message size and BERT.
  *
  * @param client Client instance (must be connected via coap_client_tcp_connect).
@@ -320,7 +320,7 @@ struct coap_client_tcp_option coap_client_tcp_option_initial_block2(struct coap_
 bool coap_client_tcp_has_ongoing_exchange(struct coap_client_tcp *client);
 
 /**
- * @brief Send a Ping signal to the server (RFC 8323)
+ * @brief Send a Ping signal to the server (@rfc{8323})
  *
  * This sends a Ping signal and waits for Pong response. Can be used
  * for connection keep-alive or RTT measurement.
@@ -331,7 +331,7 @@ bool coap_client_tcp_has_ongoing_exchange(struct coap_client_tcp *client);
 int coap_client_tcp_ping(struct coap_client_tcp *client);
 
 /**
- * @brief Send a Release signal to the server (RFC 8323)
+ * @brief Send a Release signal to the server (@rfc{8323})
  *
  * This signals graceful connection termination. The server should
  * complete pending requests before closing.

@@ -64,8 +64,17 @@ static int lsm6dso16is_accel_range_to_fs_val(int32_t range)
 	return -EINVAL;
 }
 
-static const uint16_t lsm6dso16is_gyro_fs_map[] = {250, 125, 500, 0, 1000, 0, 2000};
-static const uint16_t lsm6dso16is_gyro_fs_sens[] = {2, 1, 4, 0, 8, 0, 16};
+/* 125 dps is selected by the FS_125 bit, all other ranges by FS_G[1:0] */
+#define LSM6DSO16IS_GYRO_FS_125DPS		0x10
+#define LSM6DSO16IS_GYRO_FS_125DPS_IDX		4
+
+static const uint16_t lsm6dso16is_gyro_fs_map[] = {250, 500, 1000, 2000, 125};
+static const uint16_t lsm6dso16is_gyro_fs_sens[] = {2, 4, 8, 16, 1};
+
+static inline uint8_t lsm6dso16is_gyro_fs_idx(uint8_t fs)
+{
+	return (fs == LSM6DSO16IS_GYRO_FS_125DPS) ? LSM6DSO16IS_GYRO_FS_125DPS_IDX : (fs & 0x3);
+}
 
 static int lsm6dso16is_gyro_range_to_fs_val(int32_t range)
 {
@@ -73,6 +82,10 @@ static int lsm6dso16is_gyro_range_to_fs_val(int32_t range)
 
 	for (i = 0; i < ARRAY_SIZE(lsm6dso16is_gyro_fs_map); i++) {
 		if (range == lsm6dso16is_gyro_fs_map[i]) {
+			if (i == LSM6DSO16IS_GYRO_FS_125DPS_IDX) {
+				return LSM6DSO16IS_GYRO_FS_125DPS;
+			}
+
 			return i;
 		}
 	}
@@ -237,7 +250,7 @@ static int lsm6dso16is_gyro_range_set(const struct device *dev, int32_t range)
 		return -EIO;
 	}
 
-	data->gyro_gain = (lsm6dso16is_gyro_fs_sens[fs] * GAIN_UNIT_G);
+	data->gyro_gain = (lsm6dso16is_gyro_fs_sens[lsm6dso16is_gyro_fs_idx(fs)] * GAIN_UNIT_G);
 	return 0;
 }
 
@@ -267,7 +280,7 @@ static int lsm6dso16is_gyro_config(const struct device *dev,
 			return -EIO;
 		}
 
-		return lsm6dso16is_xl_hm_mode_set(ctx, mode);
+		return lsm6dso16is_gy_hm_mode_set(ctx, mode);
 	default:
 		LOG_DBG("Gyro attribute not supported.");
 		return -ENOTSUP;
@@ -512,15 +525,14 @@ static int lsm6dso16is_gyro_channel_get(enum sensor_channel chan,
 static void lsm6dso16is_gyro_channel_get_temp(struct sensor_value *val,
 					  struct lsm6dso16is_data *data)
 {
-	int32_t micro_c;
-
 	/* convert units to micro Celsius. Raw temperature samples are
 	 * expressed in 256 LSB/deg_C units. And LSB output is 0 at 25 C.
 	 */
-	micro_c = (data->temp_sample * 1000000) / 256;
+	int64_t temp_sample = data->temp_sample;
+	int64_t micro_c = (temp_sample * 1000000LL) / 256;
 
-	val->val1 = micro_c / 1000000 + 25;
-	val->val2 = micro_c % 1000000;
+	val->val1 = (int32_t)(micro_c / 1000000) + 25;
+	val->val2 = (int32_t)(micro_c % 1000000);
 }
 #endif
 
@@ -601,8 +613,7 @@ static inline void lsm6dso16is_hum_convert(struct sensor_value *val,
 	rh /= (ht->x1 - ht->x0);
 
 	/* convert humidity to integer and fractional part */
-	val->val1 = rh;
-	val->val2 = rh * 1000000;
+	(void)sensor_value_from_float(val, rh);
 }
 
 static inline void lsm6dso16is_press_convert(struct sensor_value *val,
@@ -785,7 +796,8 @@ static int lsm6dso16is_init_chip(const struct device *dev)
 		LOG_ERR("failed to set gyroscope range %d", fs);
 		return -EIO;
 	}
-	lsm6dso16is->gyro_gain = (lsm6dso16is_gyro_fs_sens[fs] * GAIN_UNIT_G);
+	lsm6dso16is->gyro_gain =
+		(lsm6dso16is_gyro_fs_sens[lsm6dso16is_gyro_fs_idx(fs)] * GAIN_UNIT_G);
 
 	odr = cfg->gyro_odr;
 	LOG_DBG("gyro odr is %d", odr);
@@ -871,7 +883,7 @@ static int lsm6dso16is_init(const struct device *dev)
 #endif /* CONFIG_LSM6DSO16IS_TRIGGER */
 
 #define LSM6DSO16IS_SPI_OP  (SPI_WORD_SET(8) |				\
-			 SPI_OP_MODE_MASTER |				\
+			 SPI_OP_MODE_CONTROLLER |			\
 			 SPI_MODE_CPOL |				\
 			 SPI_MODE_CPHA)					\
 

@@ -386,8 +386,8 @@ struct usbd_class_api {
 	void (*shutdown)(struct usbd_class_data *const c_data);
 
 	/** Get function descriptor based on speed parameter */
-	void *(*get_desc)(struct usbd_class_data *const c_data,
-			  const enum usbd_speed speed);
+	const void *(*get_desc)(struct usbd_class_data *const c_data,
+				const enum usbd_speed speed);
 };
 
 /**
@@ -799,8 +799,8 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  *  @param _reqs Variable number of vendor requests
  */
 #define USBD_VENDOR_REQ(_reqs...) \
-	VENDOR_REQ_DEFINE(((uint8_t []) { _reqs }), \
-			  sizeof((uint8_t []) { _reqs }))
+	VENDOR_REQ_DEFINE(((const uint8_t []) { _reqs }), \
+			  sizeof((const uint8_t []) { _reqs }))
 
 
 /**

@@ -146,16 +146,14 @@ or if you want to use native_sim board, type this:
 
 .. code-block:: console
 
-   west build -d build/server -b native_sim -t run \
+   west build -d build/server -b native_sim \
       samples/net/sockets/echo_server -- \
       -DCONFIG_NET_CONFIG_MY_IPV4_ADDR=\"198.51.100.1\" \
       -DCONFIG_NET_CONFIG_PEER_IPV4_ADDR=\"203.0.113.1\" \
       -DCONFIG_NET_CONFIG_MY_IPV6_ADDR=\"2001:db8:100::1\" \
       -DCONFIG_NET_CONFIG_PEER_IPV6_ADDR=\"2001:db8:200::1\" \
-      -DCONFIG_NET_CONFIG_MY_IPV4_GW=\"203.0.113.1\" \
-      -DCONFIG_ETH_NATIVE_TAP_DRV_NAME=\"zeth.1\" \
-      -DCONFIG_ETH_NATIVE_TAP_MAC_ADDR=\"00:00:5e:00:53:01\" \
-      -DCONFIG_ETH_NATIVE_TAP_RANDOM_MAC=n
+      -DCONFIG_NET_CONFIG_MY_IPV4_GW=\"203.0.113.1\"
+   build/server/zephyr/zephyr.exe --eth-if=zeth.1 --mac-addr=00:00:5e:00:53:01
 
 
 In terminal #5, if you are using QEMU, type this:
@@ -177,16 +175,14 @@ or if you want to use native_sim board, type this:
 
 .. code-block:: console
 
-   west build -d build/client -b native_sim -t run \
+   west build -d build/client -b native_sim \
       samples/net/sockets/echo_client -- \
       -DCONFIG_NET_CONFIG_MY_IPV4_ADDR=\"203.0.113.1\" \
       -DCONFIG_NET_CONFIG_PEER_IPV4_ADDR=\"198.51.100.1\" \
       -DCONFIG_NET_CONFIG_MY_IPV6_ADDR=\"2001:db8:200::1\" \
       -DCONFIG_NET_CONFIG_PEER_IPV6_ADDR=\"2001:db8:100::1\" \
-      -DCONFIG_NET_CONFIG_MY_IPV4_GW=\"198.51.100.1\" \
-      -DCONFIG_ETH_NATIVE_TAP_DRV_NAME=\"zeth.2\" \
-      -DCONFIG_ETH_NATIVE_TAP_MAC_ADDR=\"00:00:5e:00:53:02\" \
-      -DCONFIG_ETH_NATIVE_TAP_RANDOM_MAC=n
+      -DCONFIG_NET_CONFIG_MY_IPV4_GW=\"198.51.100.1\"
+   build/client/zephyr/zephyr.exe --eth-if=zeth.2 --mac-addr=00:00:5e:00:53:02
 
 
 Also if you have firewall enabled in your host, you need to allow traffic

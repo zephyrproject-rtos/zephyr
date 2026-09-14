@@ -24,6 +24,15 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,soc_reset_hook)
     movs.n r0, #0
     msr msplim, r0
     msr psplim, r0
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) &&\
+    !defined(CONFIG_BUILD_WITH_TFM)
+    /*
+     * Initialize SRAM when this image owns the secure SRAM initialization.
+     *
+     * For a non-secure image running under TF-M, do not access the secure
+     * alias at 0x30000000. Secure SRAM/ECC initialization must be performed
+     * by TF-M secure image or an app running without TF-M.
+     */
     ldr r0, =0x20000000
     ldr r1, =.ram_init_sram0
     bics r1, #0x10000000
@@ -41,4 +50,5 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,soc_reset_hook)
     cmp r0, r1
     bcc.n .loop01
 .ram_init_done:
+#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE && !CONFIG_BUILD_WITH_TFM */
     b SystemInit

@@ -14,9 +14,6 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/counter/stm32.h>
 #include <zephyr/drivers/pinctrl.h>
-#if defined(CONFIG_GIC)
-#include <zephyr/drivers/interrupt_controller/gic.h>
-#endif /* CONFIG_GIC */
 #include <stm32_ll_tim.h>
 #include <stm32_ll_rcc.h>
 
@@ -26,6 +23,14 @@ LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
 /* L0 series MCUs only have 16-bit timers and don't have below macro defined */
 #ifndef IS_TIM_32B_COUNTER_INSTANCE
 #define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE) (0)
+#endif
+
+/* Some series (e.g., WB0) don't support this feature and lack the macro */
+#ifdef IS_TIM_MASTER_INSTANCE
+#define HAS_MASTERMODE_SUPPORT 1
+#else
+#define HAS_MASTERMODE_SUPPORT 0
+#define IS_TIM_MASTER_INSTANCE(INSTANCE) 0
 #endif
 
 /** Maximum number of timer channels. */
@@ -137,6 +142,7 @@ struct counter_stm32_config {
 	struct counter_stm32_ch_data *ch_data;
 	TIM_TypeDef *timer;
 	uint32_t prescaler;
+	uint8_t mastermode;
 	const struct stm32_pclken *pclken;
 	size_t pclk_len;
 	void (*irq_config_func)(const struct device *dev);
@@ -223,22 +229,13 @@ static uint32_t counter_stm32_ticks_sub(uint32_t val, uint32_t old, uint32_t top
 	return (val >= old) ? (val - old) : val + top + 1U - old;
 }
 
-static void counter_stm32_set_pending(unsigned int irq)
-{
-#if defined(CONFIG_GIC)
-	arm_gic_irq_set_pending(irq);
-#else  /* NVIC */
-	NVIC_SetPendingIRQ(irq);
-#endif /* CONFIG_GIC */
-}
-
 static void counter_stm32_counter_stm32_set_cc_int_pending(const struct device *dev, uint8_t chan)
 {
 	const struct counter_stm32_config *config = dev->config;
 	struct counter_stm32_data *data = dev->data;
 
 	atomic_or(&data->cc_int_pending, BIT(chan));
-	counter_stm32_set_pending(config->irqn);
+	k_irq_set_pending(config->irqn);
 }
 
 static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
@@ -492,6 +489,17 @@ static int counter_stm32_init_timer(const struct device *dev)
 		LL_TIM_SetRepetitionCounter(timer, 0U);
 	}
 #endif
+
+	if (IS_TIM_MASTER_INSTANCE(timer)) {
+#if HAS_MASTERMODE_SUPPORT
+		LL_TIM_SetTriggerOutput(timer, cfg->mastermode);
+#endif
+	} else {
+		if (cfg->mastermode != 0) {
+			LOG_ERR("%s: Timer does not support mastermode", dev->name);
+			return -ENOTSUP;
+		}
+	}
 
 	/* Generate an update event to reload the Prescaler
 	 * and the repetition counter value (if applicable) immediately
@@ -927,6 +935,12 @@ static void counter_stm32_irq_handler_global(const struct device *dev)
 		.ch_data = counter##idx##_ch_data,				  \
 		.timer = TIM(idx),						  \
 		.prescaler = DT_PROP(TIMER(idx), st_prescaler),			  \
+		.mastermode = COND_CODE_1(					  \
+			HAS_MASTERMODE_SUPPORT,					  \
+			(CONCAT(LL_TIM_TRGO_,					  \
+				DT_STRING_TOKEN(DT_INST_PARENT(idx),		  \
+				st_mastermode))),				  \
+			(0)),							  \
 		.pclken = pclken_##idx,						  \
 		.pclk_len = DT_NUM_CLOCKS(TIMER(idx)),				  \
 		.irq_config_func = counter_##idx##_stm32_irq_config,		  \

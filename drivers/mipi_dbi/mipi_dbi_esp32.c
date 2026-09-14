@@ -67,7 +67,7 @@ static const struct mipi_dbi_esp32_device_config *
 mipi_dbi_esp32_get_device_config(const struct mipi_dbi_esp32_config *cfg,
 				 const struct mipi_dbi_config *dbi_cfg)
 {
-	uint16_t index = dbi_cfg->config.slave;
+	uint16_t index = dbi_cfg->config.peripheral;
 
 	if (index >= cfg->num_devices) {
 		LOG_ERR("Invalid device index %d", index);
@@ -86,11 +86,11 @@ static void mipi_dbi_esp32_set_cs(const struct device *dev, const struct mipi_db
 		return;
 	}
 
-	if (dbi_cfg->config.slave >= cfg->num_cs_gpios) {
+	if (dbi_cfg->config.peripheral >= cfg->num_cs_gpios) {
 		return;
 	}
 
-	gpio_pin_set_dt(&cfg->cs_gpios[dbi_cfg->config.slave], active);
+	gpio_pin_set_dt(&cfg->cs_gpios[dbi_cfg->config.peripheral], active);
 }
 
 static int mipi_dbi_esp32_switch_device(const struct device *dev,
@@ -103,7 +103,8 @@ static int mipi_dbi_esp32_switch_device(const struct device *dev,
 	const struct mipi_dbi_esp32_device_config *pcfg;
 	uint32_t pclk_prescale;
 
-	if (curr_dbi_cfg != NULL && curr_dbi_cfg->config.slave == next_dbi_cfg->config.slave) {
+	if (curr_dbi_cfg != NULL &&
+	    curr_dbi_cfg->config.peripheral == next_dbi_cfg->config.peripheral) {
 		return 0; /* Already selected */
 	}
 
@@ -129,7 +130,7 @@ static int mipi_dbi_esp32_switch_device(const struct device *dev,
 	}
 
 	if (pcfg->pclk_freq_hz == 0U) {
-		LOG_ERR("Invalid PCLK frequency for device %u", next_dbi_cfg->config.slave);
+		LOG_ERR("Invalid PCLK frequency for device %u", next_dbi_cfg->config.peripheral);
 		return -EINVAL;
 	}
 

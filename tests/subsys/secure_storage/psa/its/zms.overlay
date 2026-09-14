@@ -1,5 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 / {
 	chosen {
-		secure_storage_its_partition = &storage_partition;
+		zephyr,secure-storage-its-partition = &storage_partition;
 	};
 };

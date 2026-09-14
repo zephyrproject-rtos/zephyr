@@ -24,16 +24,25 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 				sizeof(struct i2s_config)));
 
 	/* When frame_clk_freq is 0, the stream is being disabled/unconfigured
-	 * and other config fields are not used, so skip validation.
+	 * and other config fields are not used, so skip validation. Clear the
+	 * memory slab so that an unvalidated pointer is never handed to a
+	 * driver that does not special-case this.
 	 */
 	if (config.frame_clk_freq == 0U) {
+		config.mem_slab = NULL;
+		config.block_size = 0;
 		goto do_configure;
 	}
 
 	/* Check that the k_mem_slab provided is a valid pointer and that
-	 * the caller has permission on it
+	 * the caller has permission on it.
+	 *
+	 * The slab pointer is copied into the driver's stream state and is
+	 * dereferenced by i2s_buf_write()/i2s_buf_read() and by driver DMA
+	 * callbacks long after this call returns, so it must not be an object
+	 * which user mode can free. See K_SYSCALL_OBJ_STATIC().
 	 */
-	if (K_SYSCALL_OBJ(config.mem_slab, K_OBJ_MEM_SLAB)) {
+	if (K_SYSCALL_OBJ_STATIC(config.mem_slab, K_OBJ_MEM_SLAB)) {
 		goto out;
 	}
 
@@ -100,9 +109,10 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 		return -EINVAL;
 	}
 
-	ret = k_mem_slab_alloc(tx_cfg->mem_slab, &mem_block, K_FOREVER);
+	ret = k_mem_slab_alloc(tx_cfg->mem_slab, &mem_block,
+			       SYS_TIMEOUT_MS(tx_cfg->timeout));
 	if (ret < 0) {
-		return -ENOMEM;
+		return ret;
 	}
 
 	ret = k_usermode_from_copy(mem_block, buf, size);

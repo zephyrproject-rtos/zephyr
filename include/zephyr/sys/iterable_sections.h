@@ -10,8 +10,8 @@
  * @ingroup iterable_section_apis
  */
 
-#ifndef INCLUDE_ZEPHYR_SYS_ITERABLE_SECTIONS_H_
-#define INCLUDE_ZEPHYR_SYS_ITERABLE_SECTIONS_H_
+#ifndef ZEPHYR_INCLUDE_SYS_ITERABLE_SECTIONS_H_
+#define ZEPHYR_INCLUDE_SYS_ITERABLE_SECTIONS_H_
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
@@ -68,7 +68,7 @@ extern "C" {
  * will return '_<SECNAME>_list_end'.
  *
  * @param[in]  secname type name of iterable section.  For 'struct foobar' this
- * would be TYPE_SECTION_START(foobar)
+ * would be TYPE_SECTION_END(foobar)
  */
 #define TYPE_SECTION_END(secname) _CONCAT(_##secname, _list_end)
 
@@ -356,4 +356,4 @@ extern "C" {
 }
 #endif
 
-#endif /* INCLUDE_ZEPHYR_SYS_ITERABLE_SECTIONS_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_ITERABLE_SECTIONS_H_ */

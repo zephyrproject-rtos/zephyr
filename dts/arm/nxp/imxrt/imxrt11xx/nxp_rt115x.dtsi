@@ -1,0 +1,57 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Common SOC level devicetree for the i.MX RT1150 family (RT1151/RT1152),
+ * single Cortex-M7 core members of the i.MX RT11xx series.
+ * This file must be included after nxp_rt11xx_cm7.dtsi, as done by
+ * nxp_rt1151.dtsi and nxp_rt1152.dtsi.
+ */
+
+#include <nxp/imxrt/imxrt11xx/nxp_rt11xx.dtsi>
+
+/* Configure ARM PLL to 798MHz (24MHz * 133 / (2 * 2)) */
+&arm_pll {
+	loop-div = <133>;
+	post-div = <2>;
+};
+
+/* Set OCRAM regions/sizes for RT1150 (1MB dedicated OCRAM) */
+/ {
+	soc {
+		ocram1: ocram@20240000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "OCRAM1";
+			reg = <0x20240000 DT_SIZE_K(512)>;
+		};
+
+		ocram2: ocram@202c0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "OCRAM2";
+			reg = <0x202c0000 DT_SIZE_K(512)>;
+		};
+	};
+};
+
+/*
+ * Remove peripherals and memory regions defined in the shared RT11xx
+ * series devicetrees that are not present on the RT1150 family:
+ * - 100M ENET (only ENET_1G and ENET_QOS are present)
+ * - LPUART4/10/11, LPI2C5, LPSPI6, FLEXCAN3, SAI4
+ * - MU mailbox and the M4 ITCM OCRAM alias (no second core)
+ * - MIPI DSI host controller
+ */
+/delete-node/ &enet;
+/delete-node/ &lpuart4;
+/delete-node/ &lpuart10;
+/delete-node/ &lpuart11;
+/delete-node/ &lpi2c5;
+/delete-node/ &lpspi6;
+/delete-node/ &flexcan3;
+/delete-node/ &sai4;
+/delete-node/ &mailbox_a;
+/delete-node/ &mipi_dsi;
+/delete-node/ &ocram;

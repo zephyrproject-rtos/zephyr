@@ -1,130 +1,23 @@
 /*
  * Copyright (c) 2024 ANITRA system s.r.o.
+ * Copyright (c) 2026 Janez Ugovsek <janez@ugovsek.info>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT microcrystal_rv3028
+#define DT_DRV_COMPAT microcrystal_rv3028_rtc
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/rtc.h>
+#include <rv3028.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include "rtc_utils.h"
 
-LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
-
-/* RV3028 RAM register addresses */
-#define RV3028_REG_SECONDS              0x00
-#define RV3028_REG_MINUTES              0x01
-#define RV3028_REG_HOURS                0x02
-#define RV3028_REG_WEEKDAY              0x03
-#define RV3028_REG_DATE                 0x04
-#define RV3028_REG_MONTH                0x05
-#define RV3028_REG_YEAR                 0x06
-#define RV3028_REG_ALARM_MINUTES        0x07
-#define RV3028_REG_ALARM_HOURS          0x08
-#define RV3028_REG_ALARM_WEEKDAY        0x09
-#define RV3028_REG_STATUS               0x0E
-#define RV3028_REG_CONTROL1             0x0F
-#define RV3028_REG_CONTROL2             0x10
 #define RV3028_REG_EVENT_CONTROL        0x13
-#define RV3028_REG_TS_COUNT             0x14
-#define RV3028_REG_TS_SECONDS           0x15
-#define RV3028_REG_TS_MINUTES           0x16
-#define RV3028_REG_TS_HOURS             0x17
-#define RV3028_REG_TS_DATE              0x18
-#define RV3028_REG_TS_MONTH             0x19
-#define RV3028_REG_TS_YEAR              0x1A
-#define RV3028_REG_UNIXTIME0            0x1B
-#define RV3028_REG_UNIXTIME1            0x1C
-#define RV3028_REG_UNIXTIME2            0x1D
-#define RV3028_REG_UNIXTIME3            0x1E
-#define RV3028_REG_USER_RAM1            0x1F
-#define RV3028_REG_USER_RAM2            0x20
-#define RV3028_REG_EEPROM_ADDRESS       0x25
-#define RV3028_REG_EEPROM_DATA          0x26
-#define RV3028_REG_EEPROM_COMMAND       0x27
-#define RV3028_REG_ID                   0x28
-#define RV3028_REG_CLKOUT               0x35
-#define RV3028_REG_OFFSET               0x36
-#define RV3028_REG_BACKUP               0x37
-
-#define RV3028_CONTROL1_TD              BIT(0)
-#define RV3028_CONTROL1_TE              GENMASK(2, 1)
-#define RV3028_CONTROL1_EERD            BIT(3)
-#define RV3028_CONTROL1_USEL            BIT(4)
-#define RV3028_CONTROL1_WADA            BIT(5)
-#define RV3028_CONTROL1_TRPT            BIT(7)
-
-#define RV3028_CONTROL2_RESET           BIT(0)
-#define RV3028_CONTROL2_12_24           BIT(1)
-#define RV3028_CONTROL2_EIE             BIT(2)
-#define RV3028_CONTROL2_AIE             BIT(3)
-#define RV3028_CONTROL2_TIE             BIT(4)
-#define RV3028_CONTROL2_UIE             BIT(5)
-#define RV3028_CONTROL2_TSE             BIT(7)
-
-#define RV3028_STATUS_PORF              BIT(0)
-#define RV3028_STATUS_EVF               BIT(1)
-#define RV3028_STATUS_AF                BIT(2)
-#define RV3028_STATUS_TF                BIT(3)
-#define RV3028_STATUS_UF                BIT(4)
-#define RV3028_STATUS_BSF               BIT(5)
-#define RV3028_STATUS_CLKF              BIT(6)
-#define RV3028_STATUS_EEBUSY            BIT(7)
-
-#define RV3028_CLKOUT_FD                GENMASK(2, 0)
-#define RV3028_CLKOUT_PORIE             BIT(3)
-#define RV3028_CLKOUT_CLKSY             BIT(6)
-#define RV3028_CLKOUT_CLKOE             BIT(7)
-
-#define RV3028_CLKOUT_FD_LOW            0x7
-
-#define RV3028_OFFSET_SIGN_BIT_INDEX    8
-
-#define RV3028_BACKUP_TCE               BIT(5)
-#define RV3028_BACKUP_TCR               GENMASK(1, 0)
-#define RV3028_BACKUP_BSM               GENMASK(3, 2)
-#define RV3028_BACKUP_OFFSET_BIT_INDEX  7
-
-#define RV3028_BSM_LEVEL                0x3
-#define RV3028_BSM_DIRECT               0x1
-#define RV3028_BSM_DISABLED             0x0
-
-/* RV3028 EE command register values */
-#define RV3028_EEPROM_CMD_INIT          0x00
-#define RV3028_EEPROM_CMD_UPDATE        0x11
-#define RV3028_EEPROM_CMD_REFRESH       0x12
-#define RV3028_EEPROM_CMD_WRITE         0x21
-#define RV3028_EEPROM_CMD_READ          0x22
-
-#define RV3028_SECONDS_MASK             GENMASK(6, 0)
-#define RV3028_MINUTES_MASK             GENMASK(6, 0)
-#define RV3028_HOURS_AMPM               BIT(5)
-#define RV3028_HOURS_12H_MASK           GENMASK(4, 0)
-#define RV3028_HOURS_24H_MASK           GENMASK(5, 0)
-#define RV3028_DATE_MASK                GENMASK(5, 0)
-#define RV3028_WEEKDAY_MASK             GENMASK(2, 0)
-#define RV3028_MONTH_MASK               GENMASK(4, 0)
-#define RV3028_YEAR_MASK                GENMASK(7, 0)
-
-#define RV3028_ALARM_MINUTES_AE_M       BIT(7)
-#define RV3028_ALARM_MINUTES_MASK       GENMASK(6, 0)
-#define RV3028_ALARM_HOURS_AE_H         BIT(7)
-#define RV3028_ALARM_HOURS_AMPM         BIT(5)
-#define RV3028_ALARM_HOURS_12H_MASK     GENMASK(4, 0)
-#define RV3028_ALARM_HOURS_24H_MASK     GENMASK(5, 0)
-#define RV3028_ALARM_DATE_AE_WD         BIT(7)
-#define RV3028_ALARM_DATE_MASK          GENMASK(5, 0)
-
-/* The RV3028 only supports two-digit years. Leap years are correctly handled from 2000 to 2099 */
-#define RV3028_YEAR_OFFSET              (2000 - 1900)
-
-/* The RV3028 enumerates months 1 to 12 */
-#define RV3028_MONTH_OFFSET 1
+LOG_MODULE_REGISTER(rtc_rv3028, CONFIG_RTC_LOG_LEVEL);
 
 /* Convert part per billion calibration value to a number of clock pulses added or removed each
  * 2^20 clock cycles so it is suitable for the EEOffset register field
@@ -134,7 +27,7 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 #define PPB_TO_NB_PULSES(ppb) DIV_ROUND_CLOSEST((ppb) * 2048, 1953125)
 
 /* Convert EEOffset register value (number of clock pulses added or removed each 2^20 clock cycles)
- * to part ber billion calibration value
+ * to part per billion calibration value
  *
  * ppb = nb_pulses * 10^9 / 2^20 = nb_pulses * 5^9 / 2^11 = nb_pulses * 1953125 / 2048
  */
@@ -142,10 +35,6 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 
 #define MAX_PPB NB_PULSES_TO_PPB(255)
 #define MIN_PPB NB_PULSES_TO_PPB(-256)
-
-#define RV3028_EEBUSY_READ_POLL_MS      1
-#define RV3028_EEBUSY_WRITE_POLL_MS     10
-#define RV3028_EEBUSY_TIMEOUT_MS        100
 
 /* RTC alarm time fields supported by the RV3028 */
 #define RV3028_RTC_ALARM_TIME_MASK                                                                 \
@@ -157,28 +46,11 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR |     \
 	 RTC_ALARM_TIME_MASK_WEEKDAY)
 
-/* Helper macro to guard int-gpios related code */
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) &&                                                 \
-	(defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE))
-#define RV3028_INT_GPIOS_IN_USE 1
-#endif
-
 struct rv3028_config {
-	const struct i2c_dt_spec i2c;
-#ifdef RV3028_INT_GPIOS_IN_USE
-	struct gpio_dt_spec gpio_int;
-#endif /* RV3028_INT_GPIOS_IN_USE */
-	uint8_t cof;
-	uint8_t backup;
+	const struct device *mfd;
 };
 
 struct rv3028_data {
-	struct k_sem lock;
-#if RV3028_INT_GPIOS_IN_USE
-	const struct device *dev;
-	struct gpio_callback int_callback;
-	struct k_work work;
-
 #ifdef CONFIG_RTC_ALARM
 	rtc_alarm_callback alarm_callback;
 	void *alarm_user_data;
@@ -187,308 +59,19 @@ struct rv3028_data {
 	rtc_update_callback update_callback;
 	void *update_user_data;
 #endif /* CONFIG_RTC_UPDATE */
-#endif /* RV3028_INT_GPIOS_IN_USE */
 };
-
-static void rv3028_lock_sem(const struct device *dev)
-{
-	struct rv3028_data *data = dev->data;
-
-	(void)k_sem_take(&data->lock, K_FOREVER);
-}
-
-static void rv3028_unlock_sem(const struct device *dev)
-{
-	struct rv3028_data *data = dev->data;
-
-	k_sem_give(&data->lock);
-}
-
-static int rv3028_read_regs(const struct device *dev, uint8_t addr, void *buf, size_t len)
-{
-	const struct rv3028_config *config = dev->config;
-	int err;
-
-	err = i2c_write_read_dt(&config->i2c, &addr, sizeof(addr), buf, len);
-	if (err) {
-		LOG_ERR("failed to read reg addr 0x%02x, len %d (err %d)", addr, len, err);
-		return err;
-	}
-
-	return 0;
-}
-
-static int rv3028_read_reg8(const struct device *dev, uint8_t addr, uint8_t *val)
-{
-	return rv3028_read_regs(dev, addr, val, sizeof(*val));
-}
-
-static int rv3028_write_regs(const struct device *dev, uint8_t addr, void *buf, size_t len)
-{
-	const struct rv3028_config *config = dev->config;
-	uint8_t block[sizeof(addr) + len];
-	int err;
-
-	block[0] = addr;
-	memcpy(&block[1], buf, len);
-
-	err = i2c_write_dt(&config->i2c, block, sizeof(block));
-	if (err) {
-		LOG_ERR("failed to write reg addr 0x%02x, len %d (err %d)", addr, len, err);
-		return err;
-	}
-
-	return 0;
-}
-
-static int rv3028_write_reg8(const struct device *dev, uint8_t addr, uint8_t val)
-{
-	return rv3028_write_regs(dev, addr, &val, sizeof(val));
-}
-
-static int rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val)
-{
-	const struct rv3028_config *config = dev->config;
-	int err;
-
-	err = i2c_reg_update_byte_dt(&config->i2c, addr, mask, val);
-	if (err) {
-		LOG_ERR("failed to update reg addr 0x%02x, mask 0x%02x, val 0x%02x (err %d)", addr,
-			mask, val, err);
-		return err;
-	}
-
-	return 0;
-}
-
-static int rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
-{
-	uint8_t status = 0;
-	int err;
-	int64_t timeout_time = k_uptime_get() + RV3028_EEBUSY_TIMEOUT_MS;
-
-	/* Wait while the EEPROM is busy */
-	for (;;) {
-		err = rv3028_read_reg8(dev, RV3028_REG_STATUS, &status);
-		if (err) {
-			return err;
-		}
-
-		if (!(status & RV3028_STATUS_EEBUSY)) {
-			break;
-		}
-
-		if (k_uptime_get() > timeout_time) {
-			return -ETIME;
-		}
-
-		k_msleep(poll_ms);
-	}
-
-	return 0;
-}
-
-static int rv3028_exit_eerd(const struct device *dev)
-{
-	return rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD, 0);
-}
-
-static int rv3028_enter_eerd(const struct device *dev)
-{
-	uint8_t ctrl1;
-	bool eerd;
-	int ret;
-
-	ret = rv3028_read_reg8(dev, RV3028_REG_CONTROL1, &ctrl1);
-	if (ret) {
-		return ret;
-	}
-
-	eerd = ctrl1 & RV3028_CONTROL1_EERD;
-	if (eerd) {
-		return 0;
-	}
-
-	ret = rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD,
-				 RV3028_CONTROL1_EERD);
-
-	ret = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
-	if (ret) {
-		rv3028_exit_eerd(dev);
-		return ret;
-	}
-
-	return ret;
-}
-
-static int rv3028_eeprom_command(const struct device *dev, uint8_t command)
-{
-	int err;
-
-	err = rv3028_write_reg8(dev, RV3028_REG_EEPROM_COMMAND, RV3028_EEPROM_CMD_INIT);
-	if (err) {
-		return err;
-	}
-
-	return rv3028_write_reg8(dev, RV3028_REG_EEPROM_COMMAND, command);
-}
-
-static int rv3028_update(const struct device *dev)
-{
-	int err;
-
-	err = rv3028_eeprom_command(dev, RV3028_EEPROM_CMD_UPDATE);
-	if (err) {
-		goto exit_eerd;
-	}
-
-	err = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
-
-exit_eerd:
-	rv3028_exit_eerd(dev);
-
-	return err;
-}
-
-static int rv3028_refresh(const struct device *dev)
-{
-	int err;
-
-	err = rv3028_eeprom_command(dev, RV3028_EEPROM_CMD_REFRESH);
-	if (err) {
-		goto exit_eerd;
-	}
-
-	err = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_READ_POLL_MS);
-
-exit_eerd:
-	rv3028_exit_eerd(dev);
-
-	return err;
-}
-
-static int rv3028_update_cfg(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val)
-{
-	uint8_t val_old, val_new;
-	int err;
-
-	err = rv3028_read_reg8(dev, addr, &val_old);
-	if (err) {
-		return err;
-	}
-
-	val_new = (val_old & ~mask) | (val & mask);
-	if (val_new == val_old) {
-		return 0;
-	}
-
-	err = rv3028_enter_eerd(dev);
-	if (err) {
-		return err;
-	}
-
-	err = rv3028_write_reg8(dev, addr, val_new);
-	if (err) {
-		rv3028_exit_eerd(dev);
-		return err;
-	}
-
-	return rv3028_update(dev);
-}
-
-#if RV3028_INT_GPIOS_IN_USE
-
-static void rv3028_work_cb(struct k_work *work)
-{
-	struct rv3028_data *data = CONTAINER_OF(work, struct rv3028_data, work);
-	const struct device *dev = data->dev;
-	rtc_alarm_callback alarm_callback = NULL;
-	void *alarm_user_data = NULL;
-	rtc_update_callback update_callback = NULL;
-	void *update_user_data = NULL;
-	uint8_t status;
-	int err;
-
-	rv3028_lock_sem(dev);
-
-	err = rv3028_read_reg8(data->dev, RV3028_REG_STATUS, &status);
-	if (err) {
-		goto unlock;
-	}
-
-#ifdef CONFIG_RTC_ALARM
-	if ((status & RV3028_STATUS_AF) && data->alarm_callback != NULL) {
-		status &= ~(RV3028_STATUS_AF);
-		alarm_callback = data->alarm_callback;
-		alarm_user_data = data->alarm_user_data;
-	}
-#endif /* CONFIG_RTC_ALARM */
-
-#ifdef CONFIG_RTC_UPDATE
-	if ((status & RV3028_STATUS_UF) && data->update_callback != NULL) {
-		status &= ~(RV3028_STATUS_UF);
-		update_callback = data->update_callback;
-		update_user_data = data->update_user_data;
-	}
-#endif /* CONFIG_RTC_UPDATE */
-
-	err = rv3028_write_reg8(dev, RV3028_REG_STATUS, status);
-	if (err) {
-		goto unlock;
-	}
-
-	/* Check if interrupt occurred between STATUS read/write */
-	err = rv3028_read_reg8(dev, RV3028_REG_STATUS, &status);
-	if (err) {
-		goto unlock;
-	}
-
-	if (((status & RV3028_STATUS_AF) && alarm_callback != NULL) ||
-	    ((status & RV3028_STATUS_UF) && update_callback != NULL)) {
-		/* Another interrupt occurred while servicing this one */
-		k_work_submit(&data->work);
-	}
-
-unlock:
-	rv3028_unlock_sem(dev);
-
-	if (alarm_callback != NULL) {
-		alarm_callback(dev, 0U, alarm_user_data);
-		alarm_callback = NULL;
-	}
-
-	if (update_callback != NULL) {
-		update_callback(dev, update_user_data);
-		update_callback = NULL;
-	}
-}
-
-static void rv3028_int_handler(const struct device *port, struct gpio_callback *cb,
-			       gpio_port_pins_t pins)
-{
-	struct rv3028_data *data = CONTAINER_OF(cb, struct rv3028_data, int_callback);
-
-	ARG_UNUSED(port);
-	ARG_UNUSED(pins);
-
-	k_work_submit(&data->work);
-}
-
-#endif /* RV3028_INT_GPIOS_IN_USE */
 
 static int rv3028_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
+	const struct rv3028_config *config = dev->config;
 	uint8_t date[7];
 	int err;
 
-	if (timeptr == NULL ||
-	    !rtc_utils_validate_rtc_time(timeptr, RV3028_RTC_TIME_MASK) ||
+	if ((timeptr == NULL) || (!rtc_utils_validate_rtc_time(timeptr, RV3028_RTC_TIME_MASK)) ||
 	    (timeptr->tm_year < RV3028_YEAR_OFFSET)) {
 		LOG_ERR("invalid time");
 		return -EINVAL;
 	}
-
-	rv3028_lock_sem(dev);
 
 	LOG_DBG("set time: year = %d, mon = %d, mday = %d, wday = %d, hour = %d, "
 		"min = %d, sec = %d",
@@ -503,22 +86,25 @@ static int rv3028_set_time(const struct device *dev, const struct rtc_time *time
 	date[5] = bin2bcd(timeptr->tm_mon + RV3028_MONTH_OFFSET) & RV3028_MONTH_MASK;
 	date[6] = bin2bcd(timeptr->tm_year - RV3028_YEAR_OFFSET) & RV3028_YEAR_MASK;
 
-	err = rv3028_write_regs(dev, RV3028_REG_SECONDS, &date, sizeof(date));
+	mfd_rv3028_lock_sem(config->mfd);
+
+	err = mfd_rv3028_write_regs(config->mfd, RV3028_REG_SECONDS, &date, sizeof(date));
 	if (err) {
 		goto unlock;
 	}
 
 	/* Clear Power On Reset Flag */
-	err = rv3028_update_reg8(dev, RV3028_REG_STATUS, RV3028_STATUS_PORF, 0);
+	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_STATUS, RV3028_STATUS_PORF, 0);
 
 unlock:
-	rv3028_unlock_sem(dev);
+	mfd_rv3028_unlock_sem(config->mfd);
 
 	return err;
 }
 
 static int rv3028_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
+	const struct rv3028_config *config = dev->config;
 	uint8_t status;
 	uint8_t date[7];
 	int err;
@@ -527,17 +113,25 @@ static int rv3028_get_time(const struct device *dev, struct rtc_time *timeptr)
 		return -EINVAL;
 	}
 
-	err = rv3028_read_reg8(dev, RV3028_REG_STATUS, &status);
+	mfd_rv3028_lock_sem(config->mfd);
+	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_STATUS, &status);
 	if (err) {
-		return err;
+		goto unlock;
 	}
 
 	if (status & RV3028_STATUS_PORF) {
 		/* Power On Reset Flag indicates invalid data */
-		return -ENODATA;
+		err = -ENODATA;
+		goto unlock;
 	}
 
-	err = rv3028_read_regs(dev, RV3028_REG_SECONDS, date, sizeof(date));
+	err = mfd_rv3028_read_regs(config->mfd, RV3028_REG_SECONDS, date, sizeof(date));
+	if (err) {
+		goto unlock;
+	}
+
+unlock:
+	mfd_rv3028_unlock_sem(config->mfd);
 	if (err) {
 		return err;
 	}
@@ -562,6 +156,14 @@ static int rv3028_get_time(const struct device *dev, struct rtc_time *timeptr)
 }
 
 #ifdef CONFIG_RTC_ALARM
+static void rv3028_rtc_alarm_isr(const struct device *dev)
+{
+	struct rv3028_data *data = dev->data;
+
+	if (data->alarm_callback != NULL) {
+		data->alarm_callback(dev, 0U, data->alarm_user_data);
+	}
+}
 
 static int rv3028_alarm_get_supported_fields(const struct device *dev, uint16_t id, uint16_t *mask)
 {
@@ -580,6 +182,7 @@ static int rv3028_alarm_get_supported_fields(const struct device *dev, uint16_t 
 static int rv3028_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
 				 const struct rtc_time *timeptr)
 {
+	const struct rv3028_config *config = dev->config;
 	uint8_t regs[3];
 
 	if (id != 0U) {
@@ -615,16 +218,17 @@ static int rv3028_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 		regs[2] = RV3028_ALARM_DATE_AE_WD;
 	}
 
-	LOG_DBG("set alarm: mday = %d, hour = %d, min = %d, mask = 0x%04x",
-		timeptr->tm_mday, timeptr->tm_hour, timeptr->tm_min, mask);
+	LOG_DBG("set alarm: mday = %d, hour = %d, min = %d, mask = 0x%04x", timeptr->tm_mday,
+		timeptr->tm_hour, timeptr->tm_min, mask);
 
 	/* Write registers RV3028_REG_ALARM_MINUTES through RV3028_REG_ALARM_WEEKDAY */
-	return rv3028_write_regs(dev, RV3028_REG_ALARM_MINUTES, &regs, sizeof(regs));
+	return mfd_rv3028_write_regs(config->mfd, RV3028_REG_ALARM_MINUTES, &regs, sizeof(regs));
 }
 
 static int rv3028_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
 				 struct rtc_time *timeptr)
 {
+	const struct rv3028_config *config = dev->config;
 	uint8_t regs[3];
 	int err;
 
@@ -634,7 +238,7 @@ static int rv3028_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 	}
 
 	/* Read registers RV3028_REG_ALARM_MINUTES through RV3028_REG_ALARM_WEEKDAY */
-	err = rv3028_read_regs(dev, RV3028_REG_ALARM_MINUTES, &regs, sizeof(regs));
+	err = mfd_rv3028_read_regs(config->mfd, RV3028_REG_ALARM_MINUTES, &regs, sizeof(regs));
 	if (err) {
 		return err;
 	}
@@ -657,14 +261,15 @@ static int rv3028_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 		*mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
 	}
 
-	LOG_DBG("get alarm: mday = %d, hour = %d, min = %d, mask = 0x%04x",
-		timeptr->tm_mday, timeptr->tm_hour, timeptr->tm_min, *mask);
+	LOG_DBG("get alarm: mday = %d, hour = %d, min = %d, mask = 0x%04x", timeptr->tm_mday,
+		timeptr->tm_hour, timeptr->tm_min, *mask);
 
 	return 0;
 }
 
 static int rv3028_alarm_is_pending(const struct device *dev, uint16_t id)
 {
+	const struct rv3028_config *config = dev->config;
 	uint8_t status;
 	int err;
 
@@ -673,9 +278,9 @@ static int rv3028_alarm_is_pending(const struct device *dev, uint16_t id)
 		return -EINVAL;
 	}
 
-	rv3028_lock_sem(dev);
+	mfd_rv3028_lock_sem(config->mfd);
 
-	err = rv3028_read_reg8(dev, RV3028_REG_STATUS, &status);
+	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_STATUS, &status);
 	if (err) {
 		goto unlock;
 	}
@@ -684,7 +289,7 @@ static int rv3028_alarm_is_pending(const struct device *dev, uint16_t id)
 		/* Clear alarm flag */
 		status &= ~(RV3028_STATUS_AF);
 
-		err = rv3028_write_reg8(dev, RV3028_REG_STATUS, status);
+		err = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_STATUS, status);
 		if (err) {
 			goto unlock;
 		}
@@ -694,7 +299,7 @@ static int rv3028_alarm_is_pending(const struct device *dev, uint16_t id)
 	}
 
 unlock:
-	rv3028_unlock_sem(dev);
+	mfd_rv3028_unlock_sem(config->mfd);
 
 	return err;
 }
@@ -702,51 +307,45 @@ unlock:
 static int rv3028_alarm_set_callback(const struct device *dev, uint16_t id,
 				     rtc_alarm_callback callback, void *user_data)
 {
-#ifndef RV3028_INT_GPIOS_IN_USE
-	ARG_UNUSED(dev);
-	ARG_UNUSED(id);
-	ARG_UNUSED(callback);
-	ARG_UNUSED(user_data);
-
-	return -ENOTSUP;
-#else
 	const struct rv3028_config *config = dev->config;
 	struct rv3028_data *data = dev->data;
 	int err;
-
-	if (config->gpio_int.port == NULL) {
-		return -ENOTSUP;
-	}
 
 	if (id != 0U) {
 		LOG_ERR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
-	rv3028_lock_sem(dev);
+	mfd_rv3028_lock_sem(config->mfd);
 
+	mfd_rv3028_set_irq_handler(config->mfd, dev, RV3028_DEV_RTC_ALARM, rv3028_rtc_alarm_isr);
 	data->alarm_callback = callback;
 	data->alarm_user_data = user_data;
 
-	err = rv3028_update_reg8(dev, RV3028_REG_CONTROL2, RV3028_CONTROL2_AIE,
-				 callback != NULL ? RV3028_CONTROL2_AIE : 0);
+	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_CONTROL2, RV3028_CONTROL2_AIE,
+				     callback != NULL ? RV3028_CONTROL2_AIE : 0);
 	if (err) {
 		goto unlock;
 	}
 
 unlock:
-	rv3028_unlock_sem(dev);
-
-	/* Alarm flag may already be set */
-	k_work_submit(&data->work);
+	mfd_rv3028_unlock_sem(config->mfd);
 
 	return err;
-#endif /* RV3028_INT_GPIOS_IN_USE */
 }
 
 #endif /* CONFIG_RTC_ALARM */
 
-#if RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE)
+#if defined(CONFIG_RTC_UPDATE)
+
+static void rv3028_rtc_update_isr(const struct device *dev)
+{
+	struct rv3028_data *data = dev->data;
+
+	if (data->update_callback != NULL) {
+		data->update_callback(dev, data->update_user_data);
+	}
+}
 
 static int rv3028_update_set_callback(const struct device *dev, rtc_update_callback callback,
 				      void *user_data)
@@ -754,36 +353,41 @@ static int rv3028_update_set_callback(const struct device *dev, rtc_update_callb
 	const struct rv3028_config *config = dev->config;
 	struct rv3028_data *data = dev->data;
 	int err;
+	uint8_t val = 0;
 
-	if (config->gpio_int.port == NULL) {
-		return -ENOTSUP;
-	}
+	mfd_rv3028_lock_sem(config->mfd);
 
-	rv3028_lock_sem(dev);
-
+	mfd_rv3028_set_irq_handler(config->mfd, dev, RV3028_DEV_RTC_UPDATE, rv3028_rtc_update_isr);
 	data->update_callback = callback;
 	data->update_user_data = user_data;
 
-	err = rv3028_update_reg8(dev, RV3028_REG_CONTROL2, RV3028_CONTROL2_UIE,
-				 callback != NULL ? RV3028_CONTROL2_UIE : 0);
+	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_CONTROL1, RV3028_CONTROL1_USEL, val);
+	if (err) {
+		goto unlock;
+	}
+
+	val = 0;
+	if (callback != NULL) {
+		val |= RV3028_CONTROL2_UIE;
+	}
+
+	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_CONTROL2, RV3028_CONTROL2_UIE, val);
 	if (err) {
 		goto unlock;
 	}
 
 unlock:
-	rv3028_unlock_sem(dev);
-
-	/* Seconds flag may already be set */
-	k_work_submit(&data->work);
+	mfd_rv3028_unlock_sem(config->mfd);
 
 	return err;
 }
 
-#endif /* RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE) */
+#endif /* defined(CONFIG_RTC_UPDATE) */
 
 #ifdef CONFIG_RTC_CALIBRATION
 static int rv3028_set_calibration(const struct device *dev, int32_t freq_ppb)
 {
+	const struct rv3028_config *config = dev->config;
 	int err;
 	int32_t nb_pulses;
 	uint16_t offset;
@@ -801,19 +405,19 @@ static int rv3028_set_calibration(const struct device *dev, int32_t freq_ppb)
 		offset);
 
 	/* Refresh the settings in the RAM with the settings from the EEPROM */
-	err = rv3028_enter_eerd(dev);
+	err = mfd_rv3028_enter_eerd(config->mfd);
 	if (err) {
 		return -ENODEV;
 	}
-	err = rv3028_refresh(dev);
+	err = mfd_rv3028_refresh(config->mfd);
 	if (err) {
-		rv3028_exit_eerd(dev);
+		mfd_rv3028_exit_eerd(config->mfd);
 		return err;
 	}
 
-	err = rv3028_read_reg8(dev, RV3028_REG_BACKUP, &val_backup);
+	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_BACKUP, &val_backup);
 	if (err) {
-		rv3028_exit_eerd(dev);
+		mfd_rv3028_exit_eerd(config->mfd);
 		return err;
 	}
 
@@ -821,30 +425,31 @@ static int rv3028_set_calibration(const struct device *dev, int32_t freq_ppb)
 	val_backup &= ~BIT(RV3028_BACKUP_OFFSET_BIT_INDEX);
 	val_backup |= (offset & 0x01) << RV3028_BACKUP_OFFSET_BIT_INDEX;
 
-	err = rv3028_write_reg8(dev, RV3028_REG_BACKUP, val_backup);
+	err = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_BACKUP, val_backup);
 	if (err) {
-		rv3028_exit_eerd(dev);
+		mfd_rv3028_exit_eerd(config->mfd);
 		return err;
 	}
 
-	err = rv3028_write_reg8(dev, RV3028_REG_OFFSET, offset >> 1);
+	err = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_OFFSET, offset >> 1);
 	if (err) {
-		rv3028_exit_eerd(dev);
+		mfd_rv3028_exit_eerd(config->mfd);
 		return err;
 	}
 
-	return rv3028_update(dev);
+	return mfd_rv3028_update(config->mfd);
 }
 
 static int rv3028_get_calibration(const struct device *dev, int32_t *freq_ppb)
 {
+	const struct rv3028_config *config = dev->config;
 	uint8_t regs[2];
 	int err;
 	uint16_t offset;
 	int32_t nb_pulses;
 
 	/* Read OFFSET and BACKUP register */
-	err = rv3028_read_regs(dev, RV3028_REG_OFFSET, regs, sizeof(regs));
+	err = mfd_rv3028_read_regs(config->mfd, RV3028_REG_OFFSET, regs, sizeof(regs));
 	if (err) {
 		return err;
 	}
@@ -864,108 +469,21 @@ static int rv3028_get_calibration(const struct device *dev, int32_t *freq_ppb)
 static int rv3028_init(const struct device *dev)
 {
 	const struct rv3028_config *config = dev->config;
-	struct rv3028_data *data = dev->data;
 	uint8_t regs[3];
-	uint8_t val;
 	int err;
 
-	k_sem_init(&data->lock, 1, 1);
-
-	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus not ready");
-		return -ENODEV;
-	}
-
-	err = rv3028_read_reg8(dev, RV3028_REG_ID, &val);
-	if (err) {
-		return -ENODEV;
-	}
-
-	LOG_DBG("HID: 0x%02x, VID: 0x%02x", (val & 0xF0) >> 0x04, val & 0x0F);
-
-#if RV3028_INT_GPIOS_IN_USE
-	if (config->gpio_int.port != NULL) {
-		if (!gpio_is_ready_dt(&config->gpio_int)) {
-			LOG_ERR("GPIO not ready");
-			return -ENODEV;
-		}
-
-		err = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
-		if (err) {
-			LOG_ERR("failed to configure GPIO (err %d)", err);
-			return -ENODEV;
-		}
-
-		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
-		if (err) {
-			LOG_ERR("failed to enable GPIO interrupt (err %d)", err);
-			return err;
-		}
-
-		gpio_init_callback(&data->int_callback, rv3028_int_handler,
-				   BIT(config->gpio_int.pin));
-
-		err = gpio_add_callback_dt(&config->gpio_int, &data->int_callback);
-		if (err) {
-			LOG_ERR("failed to add GPIO callback (err %d)", err);
-			return -ENODEV;
-		}
-
-		data->dev = dev;
-		data->work.handler = rv3028_work_cb;
-	}
-#endif /* RV3028_INT_GPIOS_IN_USE */
-
-	err = rv3028_read_reg8(dev, RV3028_REG_STATUS, &val);
-	if (err) {
-		return -ENODEV;
-	}
-
-	if (val & RV3028_STATUS_AF) {
-		LOG_WRN("an alarm may have been missed");
-	}
-
-	/* Refresh the settings in the RAM with the settings from the EEPROM */
-	err = rv3028_enter_eerd(dev);
-	if (err) {
-		return -ENODEV;
-	}
-	err = rv3028_refresh(dev);
-	if (err) {
-		return -ENODEV;
-	}
-
-	/* Configure the CLKOUT register */
-	val = FIELD_PREP(RV3028_CLKOUT_FD, config->cof) |
-	      (config->cof != RV3028_CLKOUT_FD_LOW ? RV3028_CLKOUT_CLKOE : 0);
-	err = rv3028_update_cfg(dev,
-				RV3028_REG_CLKOUT,
-				RV3028_CLKOUT_FD | RV3028_CLKOUT_CLKOE,
-				val);
-	if (err) {
-		return -ENODEV;
-	}
-
-	err = rv3028_update_cfg(dev,
-				RV3028_REG_BACKUP,
-				RV3028_BACKUP_TCE | RV3028_BACKUP_TCR | RV3028_BACKUP_BSM,
-				config->backup);
-	if (err) {
-		return -ENODEV;
-	}
-
-	err = rv3028_write_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_WADA);
+	err = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_CONTROL1, RV3028_CONTROL1_WADA);
 	if (err) {
 		return -ENODEV;
 	}
 
 	/* Disable interrupts and use 24 hour mode */
-	err = rv3028_write_reg8(dev, RV3028_REG_CONTROL2, 0);
+	err = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_CONTROL2, 0);
 	if (err) {
 		return -ENODEV;
 	}
 
-	err = rv3028_read_regs(dev, RV3028_REG_ALARM_MINUTES, regs, sizeof(regs));
+	err = mfd_rv3028_read_regs(config->mfd, RV3028_REG_ALARM_MINUTES, regs, sizeof(regs));
 	if (err) {
 		return -ENODEV;
 	}
@@ -974,7 +492,7 @@ static int rv3028_init(const struct device *dev)
 	regs[1] |= RV3028_ALARM_HOURS_AE_H;
 	regs[2] |= RV3028_ALARM_DATE_AE_WD;
 
-	err = rv3028_write_regs(dev, RV3028_REG_ALARM_MINUTES, regs, sizeof(regs));
+	err = mfd_rv3028_write_regs(config->mfd, RV3028_REG_ALARM_MINUTES, regs, sizeof(regs));
 	if (err) {
 		return -ENODEV;
 	}
@@ -992,30 +510,19 @@ static DEVICE_API(rtc, rv3028_driver_api) = {
 	.alarm_is_pending = rv3028_alarm_is_pending,
 	.alarm_set_callback = rv3028_alarm_set_callback,
 #endif /* CONFIG_RTC_ALARM */
-#if RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE)
+#if defined(CONFIG_RTC_UPDATE)
 	.update_set_callback = rv3028_update_set_callback,
-#endif /* RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE) */
+#endif /* defined(CONFIG_RTC_UPDATE) */
 #ifdef CONFIG_RTC_CALIBRATION
 	.set_calibration = rv3028_set_calibration,
 	.get_calibration = rv3028_get_calibration
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
-#define RV3028_BSM_FROM_DT_INST(inst)                                                              \
-	UTIL_CAT(RV3028_BSM_, DT_INST_STRING_UPPER_TOKEN(inst, backup_switch_mode))
-
-#define RV3028_BACKUP_FROM_DT_INST(inst)                                                           \
-	((FIELD_PREP(RV3028_BACKUP_BSM, RV3028_BSM_FROM_DT_INST(inst))) |                          \
-	 (FIELD_PREP(RV3028_BACKUP_TCR, DT_INST_ENUM_IDX_OR(inst, trickle_resistor_ohms, 0))) |    \
-	 (DT_INST_NODE_HAS_PROP(inst, trickle_resistor_ohms) ? RV3028_BACKUP_TCE : 0))
-
 #define RV3028_INIT(inst)                                                                          \
 	static const struct rv3028_config rv3028_config_##inst = {                                 \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.cof = DT_INST_ENUM_IDX_OR(inst, clkout_frequency, RV3028_CLKOUT_FD_LOW),          \
-		.backup = RV3028_BACKUP_FROM_DT_INST(inst),                                        \
-		IF_ENABLED(RV3028_INT_GPIOS_IN_USE,                                                \
-			   (.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0})))};         \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
+	};                                                                                         \
                                                                                                    \
 	static struct rv3028_data rv3028_data_##inst;                                              \
                                                                                                    \

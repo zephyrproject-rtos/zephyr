@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ESP32S2_LOLIN_MINI
-	select SOC_ESP32S2_FN4R2
+	select SOC_ESP32S2

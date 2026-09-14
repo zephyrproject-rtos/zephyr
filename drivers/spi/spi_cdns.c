@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/device_mmio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
@@ -78,7 +79,7 @@ LOG_MODULE_REGISTER(spi_cadence, CONFIG_SPI_LOG_LEVEL);
 #define SPI_FREQ_LIST_MAX ((SPI_MBRD_MAX + 1) * 2 + 1)
 
 #define SPI_CFG(dev)         ((struct spi_cdns_cfg *)(dev->config))
-#define SPI_REG(dev, offset) ((mem_addr_t)(SPI_CFG(dev)->base + (offset)))
+#define SPI_REG(dev, offset) ((mem_addr_t)(DEVICE_MMIO_GET(dev) + (offset)))
 /*******************************************************************************
  * Types Definition
  ******************************************************************************/
@@ -89,13 +90,12 @@ typedef void (*irq_config_func_t)(void);
  *
  * This parameter isn't updated after initialization.
  *
- * @param base                         SPI register base address.
  * @param clock_frequency              Peripheral bus clock
  * @param ext_clock                    External clock frequency.
  * @param cs_setup_us                  Array of durations from CS assert to
- *                                     SCLK in us for slaves.
+ *                                     SCLK in us for peripherals.
  * @param cs_hold_us                   Array of durations from CS assert to
- *                                     SCLK in us for slaves.
+ *                                     SCLK in us for peripherals.
  * @param irq_config                   Interrupt configuration function.
  * @param leave_enabled_during_config  Conditionally enable or
  *                                     disable the SPI bus during
@@ -104,7 +104,7 @@ typedef void (*irq_config_func_t)(void);
  *                                     frequency list.
  */
 struct spi_cdns_cfg {
-	uint32_t base;
+	DEVICE_MMIO_ROM;
 	uint32_t clock_frequency;
 	uint32_t ext_clock;
 	irq_config_func_t irq_config;
@@ -123,6 +123,7 @@ struct spi_cdns_cfg {
  * @param fifo_diff       Difference between Tx-FIFO entry and Rx-FIFO entry.
  */
 struct spi_cdns_data {
+	DEVICE_MMIO_RAM;
 	struct spi_context ctx;
 	struct spi_config config;
 	uint32_t freq;
@@ -168,7 +169,7 @@ static inline bool spi_cdns_context_configured(const struct device *dev,
 	if (spi_context_configured(&data->ctx, config) &&
 	    (data->config.frequency == config->frequency) &&
 	    (data->config.operation == config->operation) &&
-	    (data->config.slave == config->slave)) {
+	    (data->config.peripheral == config->peripheral)) {
 		return true;
 	}
 
@@ -202,14 +203,14 @@ static inline void spi_cdns_cs_control(const struct device *dev, bool on)
 {
 	struct spi_cdns_data *data = dev->data;
 
-	if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(&data->ctx)) {
-		/* Skip slave select assert/de-assert in slave mode */
+	if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(&data->ctx)) {
+		/* Skip peripheral select assert/de-assert in peripheral mode */
 		return;
 	}
 
 	if (on) {
 		uint32_t val = SPI_CONF_PCSL_MASK &
-			       ~(1 << (SPI_CONF_PCSL_OFFSET + data->ctx.config->slave));
+			       ~(1 << (SPI_CONF_PCSL_OFFSET + data->ctx.config->peripheral));
 		sys_set_mask32(SPI_REG(dev, SPI_CONF), SPI_CONF_PCSL_MASK, val);
 		k_busy_wait(data->ctx.config->cs.delay);
 	} else if (!(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
@@ -271,28 +272,24 @@ static void spi_cdns_send(const struct device *dev)
 	sys_write32(val, SPI_REG(dev, SPI_TX_DATA));
 }
 
-static inline void spi_cdns_rx_store(const struct spi_cdns_cfg *config,
-		struct spi_context *ctx,
-		uint32_t val, uint8_t dfs, int idx)
+static inline void spi_cdns_rx_store(const struct spi_cdns_cfg *config, struct spi_context *ctx,
+				     uint32_t val, uint8_t dfs, int idx)
 {
 	switch (dfs) {
 	case 1:
 		if (config->fifo_width == 8) {
 			UNALIGNED_PUT(val & 0xFF, (uint8_t *)ctx->rx_buf);
 		} else if (config->fifo_width == 16) {
-			UNALIGNED_PUT((val >> 8 * (1 - idx)) & 0xFF,
-					(uint8_t *)ctx->rx_buf);
+			UNALIGNED_PUT((val >> 8 * (1 - idx)) & 0xFF, (uint8_t *)ctx->rx_buf);
 		} else if (config->fifo_width == 32) {
-			UNALIGNED_PUT((val >> 8 * (3 - idx)) & 0xFF,
-					(uint8_t *)ctx->rx_buf);
+			UNALIGNED_PUT((val >> 8 * (3 - idx)) & 0xFF, (uint8_t *)ctx->rx_buf);
 		}
 		break;
 	case 2:
 		if (config->fifo_width == 16) {
 			UNALIGNED_PUT(val & 0xFFFF, (uint16_t *)ctx->rx_buf);
 		} else if (config->fifo_width == 32) {
-			UNALIGNED_PUT((val >> 16 * (1 - idx)) & 0xFFFF,
-					(uint16_t *)ctx->rx_buf);
+			UNALIGNED_PUT((val >> 16 * (1 - idx)) & 0xFFFF, (uint16_t *)ctx->rx_buf);
 		}
 		break;
 	case 4:
@@ -325,13 +322,13 @@ static void spi_cdns_recv(const struct device *dev)
 		if (spi_context_rx_buf_on(ctx)) {
 			spi_cdns_rx_store(config, ctx, val, dfs, i);
 
-			/* Slave: advance RX only when a buffer is present */
-			if (spi_context_is_slave(ctx)) {
+			/* Peripheral: advance RX only when a buffer is present */
+			if (spi_context_is_peripheral(ctx)) {
 				spi_context_update_rx(ctx, dfs, 1);
 			}
 		}
-		/* Master: always advance RX per received frame */
-		if (!spi_context_is_slave(ctx)) {
+		/* Controller: always advance RX per received frame */
+		if (!spi_context_is_peripheral(ctx)) {
 			spi_context_update_rx(ctx, dfs, 1);
 		}
 		if (data->fifo_diff > 0) {
@@ -352,7 +349,7 @@ static void spi_cdns_push_data(const struct device *dev)
 	struct spi_cdns_data *data = dev->data;
 	uint32_t tx_entry;
 
-	if (spi_context_is_slave(&data->ctx)) {
+	if (spi_context_is_peripheral(&data->ctx)) {
 		/*
 		 * while tx fifo is not full and there is data to transmit, as we are a target fill
 		 * it up until we are full
@@ -421,8 +418,8 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 		return -ENOTSUP;
 	}
 
-	if ((config->operation & SPI_OP_MODE_SLAVE) && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for enable SPI in slave mode is not enabled");
+	if ((config->operation & SPI_OP_MODE_PERIPHERAL) && !IS_ENABLED(CONFIG_SPI_PERIPHERAL)) {
+		LOG_ERR("Kconfig for enable SPI in peripheral mode is not enabled");
 		return -ENOTSUP;
 	}
 
@@ -440,8 +437,8 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 
 	conf_val = SPI_CONF_PCSL_MASK | SPI_CONF_MCSE;
 
-	/* Configure for Master or Slave */
-	if (config->operation & SPI_OP_MODE_SLAVE) {
+	/* Configure for controller or peripheral */
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
 		conf_val &= ~(SPI_CONF_MSEL);
 	} else {
 		conf_val |= SPI_CONF_MSEL;
@@ -537,7 +534,7 @@ static void spi_cdns_isr(const struct device *dev)
 	}
 
 	if (int_status & SPI_INT_TNF) {
-		if (spi_context_is_slave(&data->ctx)) {
+		if (spi_context_is_peripheral(&data->ctx)) {
 			/* Fixed delay due to controller limitation with
 			 * RX_NEMPTY incorrect status
 			 * Xilinx AR:65885 contains more details
@@ -593,6 +590,8 @@ static int spi_cdns_init(const struct device *dev)
 {
 	const struct spi_cdns_cfg *cfg = dev->config;
 	struct spi_cdns_data *data = dev->data;
+
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	cfg->irq_config();
 
@@ -685,8 +684,9 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 		goto out;
 	}
 
-	/* Set slave TX fifo threshold */
-	if (spi_context_is_slave(&data->ctx) && data->tx_remain_entry > dev_config->tx_fifo_depth) {
+	/* Set peripheral TX fifo threshold */
+	if (spi_context_is_peripheral(&data->ctx) &&
+	    data->tx_remain_entry > dev_config->tx_fifo_depth) {
 		/* Set TX threshold to half FIFO depth
 		 * when transfer size exceeds FIFO depth
 		 */
@@ -712,11 +712,11 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 		pm_device_busy_clear(dev);
 	}
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && !ret) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(&data->ctx) && !ret) {
 		ret = data->ctx.recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 out:
 	spi_context_release(&data->ctx, ret);
@@ -813,7 +813,7 @@ static DEVICE_API(spi, spi_cdns_api) = {
 		SPI_CONTEXT_INIT_SYNC(spi_cdns_data_##n, ctx),                                     \
 	};                                                                                         \
 	static struct spi_cdns_cfg spi_cdns_cfg_##n = {                                            \
-		.base = DT_INST_REG_ADDR(n),                                                       \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.irq_config = spi_cdns_irq_config_##n,                                             \
 		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
 		.ext_clock = DT_INST_PROP_OR(n, clock_frequency_ext, 0),                           \

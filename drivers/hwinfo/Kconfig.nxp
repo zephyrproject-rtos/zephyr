@@ -1,0 +1,102 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_NXP_CMC
+	bool "NXP MCX CMC reset cause"
+	default y
+	depends on DT_HAS_NXP_CMC_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP Kinetis CMC hwinfo driver.
+
+config HWINFO_NXP_IMXRT
+	bool "NXP i.MX RT device ID"
+	default y
+	depends on SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP i.MX RT hwinfo driver.
+
+config HWINFO_NXP_OTP_UID
+	bool "NXP OTP unique chip identifier"
+	default y
+	depends on DT_HAS_NXP_OTP_UID_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable the hwinfo device-id backend that reads the unique chip
+	  identifier stored in the NXP OTP flash memory area, as described by the
+	  nxp,otp-uid devicetree node.
+
+config HWINFO_NXP_PMC
+	bool "NXP LPC PMC reset cause"
+	default y
+	depends on DT_HAS_NXP_LPC_PMC_HWINFO_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable the NXP LPC PMC (AOREG1) reset-cause hwinfo driver.
+
+config HWINFO_NXP_RCM
+	bool "NXP Kinetis reset cause"
+	default y
+	depends on DT_HAS_NXP_RCM_HWINFO_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP Kinetis RCM hwinfo driver.
+
+config HWINFO_NXP_RGM
+	bool "NXP MC_RGM reset cause"
+	default y
+	depends on DT_HAS_NXP_MC_RGM_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable the NXP MC_RGM (Reset Generation Module) hwinfo driver for
+	  reset cause reporting on NXP MCUs with the MC_RGM module, such as the
+	  MCXE family.
+
+config HWINFO_NXP_RSTCTL
+	bool "NXP RSTCTL reset cause"
+	default y
+	depends on DT_HAS_NXP_RSTCTL_HWINFO_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP RSTCTL hwinfo driver.
+
+config HWINFO_NXP_RW61X
+	bool "NXP RW61X hwinfo"
+	default y
+	depends on SOC_SERIES_RW6XX
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP RW61X hwinfo driver
+
+config HWINFO_NXP_SIM
+	bool "NXP Kinetis SIM device ID"
+	default y
+	depends on DT_HAS_NXP_SIM_UUID_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP Kinetis SIM hwinfo driver.
+
+config HWINFO_NXP_SRC
+	bool "NXP SRC reset cause"
+	default y
+	depends on HAS_MCUX_SRC
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP i.MX SRC hwinfo driver.
+
+config HWINFO_NXP_SRC_V2
+	bool "NXP SRC reset cause (multicore devices)"
+	default y
+	depends on DT_HAS_NXP_IMX_SRC_REV2_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable version 2 multicore NXP i.MX SRC hwinfo driver.
+
+config HWINFO_NXP_SYSCON
+	bool "NXP LPC device ID"
+	default y
+	depends on DT_HAS_NXP_LPC_UID_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP LPC ID hwinfo driver.

@@ -4,14 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32F7X
+	# Architecture options & CPU model selection
 	select ARM
 	select CPU_CORTEX_M7
+	# Hardware options
 	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_DCACHE
 	select CPU_HAS_FPU
 	select CPU_HAS_ICACHE
-	select CPU_HAS_DCACHE
+	select HAS_SWO
+	# Software options
+	select SOC_EARLY_INIT_HOOK
+	# STM32-specific options
 	select HAS_STM32CUBE
 	select HAS_STM32_FLASH_PREFETCH
-	select CPU_HAS_ARM_MPU
-	select HAS_SWO
-	select SOC_EARLY_INIT_HOOK

@@ -83,7 +83,7 @@ static int renesas_ra_sci_b_i2c_configure(const struct device *dev, uint32_t dev
 	struct sci_b_i2c_data *data = (struct sci_b_i2c_data *const)dev->data;
 
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
+		LOG_ERR("Only I2C controller mode supported.");
 		return -EIO;
 	}
 

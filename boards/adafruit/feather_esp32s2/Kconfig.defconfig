@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+# Copyright (c) 2025 Philipp Steiner
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_ADAFRUIT_FEATHER_ESP32S2_TFT || BOARD_ADAFRUIT_FEATHER_ESP32S2_TFT_REVERSE
@@ -6,10 +6,6 @@ if BOARD_ADAFRUIT_FEATHER_ESP32S2_TFT || BOARD_ADAFRUIT_FEATHER_ESP32S2_TFT_REVE
 if DISPLAY
 
 if LVGL
-
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
 
 config LV_COLOR_16_SWAP
 	default y

@@ -1,9 +1,14 @@
 # Copyright (c) 2024 Meta Platforms
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources_ifdef(CONFIG_PROFILING_PERF_BACKEND_RISCV
   perf_riscv.c
+)
+
+zephyr_sources_ifdef(CONFIG_PROFILING_PERF_BACKEND_ARM_CORTEX_M
+  perf_arm_cortex_m.c
 )
 
 zephyr_sources_ifdef(CONFIG_PROFILING_PERF_BACKEND_X86

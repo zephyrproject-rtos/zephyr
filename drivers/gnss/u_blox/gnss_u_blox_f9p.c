@@ -83,10 +83,34 @@ static void f9p_rtk_data_cb(const struct device *dev, const struct gnss_rtk_data
 
 #endif /* CONFIG_GNSS_U_BLOX_F9P_RTK */
 
+static int f9p_send_init_config(const struct device *dev)
+{
+	const struct u_blox_iface_config *cfg = dev->config;
+	int err;
+
+	err = gnss_set_fix_rate(dev, cfg->fix_rate_ms);
+	if (err != 0) {
+		LOG_ERR("Failed to set fix-rate: %d", err);
+		return err;
+	}
+
+	for (size_t i = 0 ; i < ARRAY_SIZE(u_blox_f9p_init_seq) ; i++) {
+		err = u_blox_iface_msg_send(dev,
+				       u_blox_f9p_init_seq[i],
+				       UBX_FRAME_SZ(u_blox_f9p_init_seq[i]->payload_size),
+				       true);
+		if (err < 0) {
+			LOG_ERR("Failed to send init sequence - idx: %d, result: %d", i, err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 static int u_blox_f9p_init(const struct device *dev)
 {
 	int err = 0;
-	const struct u_blox_iface_config *cfg = dev->config;
 
 	const static struct ubx_frame version_get = UBX_FRAME_GET_INITIALIZER(
 						UBX_CLASS_ID_MON,
@@ -108,22 +132,61 @@ static int u_blox_f9p_init(const struct device *dev)
 	}
 	LOG_INF("SW Version: %s, HW Version: %s", ver.sw_ver, ver.hw_ver);
 
-	err = gnss_set_fix_rate(dev, cfg->fix_rate_ms);
-	if (err != 0) {
-		LOG_ERR("Failed to set fix-rate: %d", err);
-		return err;
+	return f9p_send_init_config(dev);
+}
+
+static int ubx_f9p_start(const struct device *dev, enum gnss_start_mode mode)
+{
+	struct ubx_cfg_rst rst = { .reserved = 0 };
+
+	switch (mode) {
+	case GNSS_HOT_START:
+		rst.nav_bbr_mask = (uint16_t)UBX_CFG_RST_HOT_START;
+		rst.reset_mode = (uint8_t)UBX_CFG_RST_MODE_GNSS_START;
+		break;
+
+	case GNSS_WARM_START:
+		rst.nav_bbr_mask = (uint16_t)UBX_CFG_RST_WARM_START;
+		rst.reset_mode = (uint8_t)UBX_CFG_RST_MODE_SW;
+		break;
+
+	case GNSS_COLD_START:
+		rst.nav_bbr_mask = (uint16_t)UBX_CFG_RST_COLD_START;
+		rst.reset_mode = (uint8_t)UBX_CFG_RST_MODE_SW;
+		break;
+
+	default:
+		return -EINVAL;
 	}
 
-	for (size_t i = 0 ; i < ARRAY_SIZE(u_blox_f9p_init_seq) ; i++) {
-		err = u_blox_iface_msg_send(dev,
-				       u_blox_f9p_init_seq[i],
-				       UBX_FRAME_SZ(u_blox_f9p_init_seq[i]->payload_size),
-				       true);
-		if (err < 0) {
-			LOG_ERR("Failed to send init sequence - idx: %d, result: %d", i, err);
-			return err;
-		}
+	/* CFG-RST never ACKs — send fire-and-forget, then let the engine settle. */
+	u_blox_iface_msg_payload_send(dev, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_RST,
+				       (const uint8_t *)&rst, sizeof(rst), false);
+
+	k_sleep(K_MSEC(100));
+
+	if (mode == GNSS_HOT_START) {
+		/* GNSS-only restart: RAM config is retained, nothing to reapply. */
+		return 0;
 	}
+
+	/* SW reset (warm/cold): RAM config is lost and must be reapplied. */
+	return f9p_send_init_config(dev);
+}
+
+static int ubx_f9p_stop(const struct device *dev)
+{
+	struct ubx_cfg_rst rst = {
+		.nav_bbr_mask = 0,
+		.reset_mode = UBX_CFG_RST_MODE_GNSS_STOP,
+		.reserved = 0,
+	};
+
+	/* CFG-RST never ACKs — send fire-and-forget, then let the engine settle. */
+	u_blox_iface_msg_payload_send(dev, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_RST,
+				       (const uint8_t *)&rst, sizeof(rst), false);
+
+	k_sleep(K_MSEC(100));
 
 	return 0;
 }
@@ -320,6 +383,8 @@ static int ubx_f9p_get_supported_systems(const struct device *dev, gnss_systems_
 
 
 static DEVICE_API(gnss, ublox_f9p_driver_api) = {
+	.start = ubx_f9p_start,
+	.stop = ubx_f9p_stop,
 	.set_fix_rate = ubx_f9p_set_fix_rate,
 	.get_fix_rate = ubx_f9p_get_fix_rate,
 	.set_navigation_mode = ubx_f9p_set_navigation_mode,

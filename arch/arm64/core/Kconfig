@@ -19,6 +19,7 @@ config CPU_CORTEX_A
 	# callee_saved.sp_elx, so THREAD_STACK_TOP cannot rely on the saved SP.
 	# Dump the full stack allocation instead (matches RISC-V and Xtensa).
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
+	select ARCH_SUPPORTS_COREDUMP_SMP_FREEZE if SMP
 	imply FPU
 	imply FPU_SHARING
 	help
@@ -106,6 +107,13 @@ config CPU_CORTEX_A320
 	  enhanced SVE2, improved security extensions, and specialized performance
 	  optimizations.
 
+config CPU_CORTEX_A720
+	bool
+	select CPU_CORTEX_A
+	select ARMV9_A
+	help
+	  This option signifies the use of a Cortex-A720 CPU
+
 config CPU_CORTEX_R82
 	bool
 	select CPU_AARCH64_CORTEX_R
@@ -173,7 +181,7 @@ config WAIT_AT_RESET_VECTOR
 	  execution
 
 config ARM64_SAFE_EXCEPTION_STACK
-	bool "To enable the safe exception stack"
+	bool
 	help
 	  The safe exception stack is used for checking whether the kernel stack
 	  overflows during the exception happens from EL1. This stack is not

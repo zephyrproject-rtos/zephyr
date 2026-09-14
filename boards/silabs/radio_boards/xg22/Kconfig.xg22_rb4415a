@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XG22_RB4415A
+	select SOC_EFR32MG22E224F512IM40

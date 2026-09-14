@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/ch32v00x-clocks.h>
+#include <zephyr/dt-bindings/reset/ch32v00x-reset.h>
 #include <zephyr/dt-bindings/dma/ch32v003-dma.h>
 
 / {
@@ -49,15 +50,21 @@
 		};
 
 		flash: flash-controller@40022000 {
-			compatible = "wch,ch32v00x-flash-controller";
+			compatible = "wch,ch32v-flash-controller";
 			reg = <0x40022000 0x400>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
 				reg = <0x8000000 DT_SIZE_K(16)>;
+				ranges = <0x0 0x08000000 DT_SIZE_K(16)>;
+				erase-block-size = <64>;
+				write-block-size = <64>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
@@ -137,6 +144,7 @@
 			compatible = "wch,usart";
 			reg = <0x40013800 0x10>;
 			clocks = <&rcc CH32V00X_CLOCK_USART1>;
+			resets = <&rctl CH32_RESET(APB2, 14)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <32>;
 		};
@@ -146,6 +154,11 @@
 			reg = <0x40021000 0x10>;
 			#clock-cells = <1>;
 			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "wch,ch32-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
 
 		dma1: dma@40020000 {
@@ -215,6 +228,11 @@
 			interrupts = <29>;
 			#io-channel-cells = <1>;
 			status = "disabled";
+		};
+
+		esig: esig@1ffff7e0 {
+			compatible = "wch,esig";
+			reg = <0x1ffff7e0 0x20>;
 		};
 	};
 };

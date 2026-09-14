@@ -7,6 +7,11 @@
 #include <zephyr/ztest.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_instance.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/sys/cbprintf.h>
 
 #include "test_driver.h"
 #include <zephyr/sys/util_macro.h>
@@ -36,57 +41,6 @@ static void get_runner(void *arg1, void *arg2, void *arg3)
 	zassert_equal(ret, 0);
 }
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
-
-void test_api_setup(void *data)
-{
-	int ret;
-	enum pm_device_state state;
-
-	test_driver_pm_retval(test_dev, 0);
-
-	/* check API always returns 0 when runtime PM is disabled */
-	ret = pm_device_runtime_get(test_dev);
-	zassert_equal(ret, 0);
-	ret = pm_device_runtime_put(test_dev);
-	zassert_equal(ret, 0);
-	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
-#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
-	zassert_equal(ret, 0);
-#else
-	zassert_equal(ret, -ENOSYS);
-#endif
-
-	/* enable runtime PM */
-	ret = pm_device_runtime_enable(test_dev);
-	zassert_equal(ret, 0);
-
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
-
-	/* enabling again should succeed (no-op) */
-	ret = pm_device_runtime_enable(test_dev);
-	zassert_equal(ret, 0);
-}
-
-static void test_api_teardown(void *data)
-{
-	int ret;
-	enum pm_device_state state;
-
-	/* let test driver finish async PM (in case it was left pending due to
-	 * a failure)
-	 */
-	if (test_driver_pm_ongoing(test_dev)) {
-		test_driver_pm_done(test_dev);
-	}
-
-	/* disable runtime PM, make sure device is left into active state */
-	ret = pm_device_runtime_disable(test_dev);
-	zassert_equal(ret, 0);
-
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
-}
 
 /**
  * @brief Test the behavior of the device runtime PM API.
@@ -328,11 +282,346 @@ ZTEST(device_runtime_api, test_pm_device_runtime_auto)
 	zassert_equal(pm_device_runtime_put(dev), 0, "");
 }
 
+LOG_MODULE_REGISTER(tests_device_runtime_api, LOG_LEVEL_DBG);
+LOG_INSTANCE_REGISTER(tests_device_runtime_api, test_log_inst, LOG_LEVEL_DBG);
+
+struct test_log_macro {
+	bool seen;
+	uint8_t level;
+	char source[64];
+	char msg[128];
+};
+
+static struct test_log_macro test_log;
+
+static int test_log_out(int c, void *ctx)
+{
+	char **p = ctx;
+
+	**p = (char)c;
+	(*p)++;
+
+	return c;
+}
+
+static void test_log_process(const struct log_backend *const backend, union log_msg_generic *msg)
+{
+	char *p = test_log.msg;
+	const char *source;
+	size_t len;
+	int slen;
+
+	if (test_log.seen) {
+		return;
+	}
+
+	test_log.seen = true;
+	test_log.level = msg->log.hdr.desc.level;
+
+	source = log_source_name_get(log_msg_get_domain(&msg->log),
+				     log_msg_get_source_id(&msg->log));
+
+	if (source != NULL) {
+		strncpy(test_log.source, source, sizeof(test_log.source) - 1);
+	}
+
+	slen = cbpprintf(test_log_out, &p, log_msg_get_package(&msg->log, &len));
+	test_log.msg[slen] = '\0';
+}
+
+static const struct log_backend_api test_log_macro_api = {
+	.process = test_log_process,
+};
+
+LOG_BACKEND_DEFINE(test_log_macro, test_log_macro_api, false);
+
+ZTEST(device_runtime_api, test_log_macros)
+{
+	const void *_test_log_inst = LOG_INSTANCE_PTR(tests_device_runtime_api, test_log_inst);
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(test_dev));
+	const int ret = -EIO;
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_DBG_PM_DEVICE_RUNTIME_GET(dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_DBG, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg,
+			  "device_runtime_api_test_log_macros: Failed to resume test_dev",
+			  "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_DBG_PM_DEVICE_RUNTIME_GET(dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_DBG, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg,
+			  "device_runtime_api_test_log_macros: Failed to resume test_dev (-5)",
+			  "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_WRN_PM_DEVICE_RUNTIME_GET(dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_WRN, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to resume test_dev", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_WRN_PM_DEVICE_RUNTIME_GET(dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_WRN, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to resume test_dev (-5)", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_ERR_PM_DEVICE_RUNTIME_GET(dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_ERR, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to resume test_dev", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_ERR, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to resume test_dev (-5)", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_DBG_PM_DEVICE_RUNTIME_PUT(dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_DBG, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg,
+			  "device_runtime_api_test_log_macros: Failed to suspend test_dev",
+			  "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_DBG_PM_DEVICE_RUNTIME_PUT(dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_DBG, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg,
+			  "device_runtime_api_test_log_macros: Failed to suspend test_dev (-5)",
+			  "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_WRN_PM_DEVICE_RUNTIME_PUT(dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_WRN, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to suspend test_dev", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_WRN_PM_DEVICE_RUNTIME_PUT(dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_WRN, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to suspend test_dev (-5)", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_ERR, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to suspend test_dev", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_ERR, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api", "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to suspend test_dev (-5)", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(_test_log_inst, dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_DBG, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg,
+			  "device_runtime_api_test_log_macros: Failed to resume test_dev",
+			  "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(_test_log_inst, dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_DBG, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg,
+			  "device_runtime_api_test_log_macros: Failed to resume test_dev (-5)",
+			  "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_WRN_PM_DEVICE_RUNTIME_GET(_test_log_inst, dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_WRN, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to resume test_dev", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_WRN_PM_DEVICE_RUNTIME_GET(_test_log_inst, dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_WRN, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to resume test_dev (-5)", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_ERR_PM_DEVICE_RUNTIME_GET(_test_log_inst, dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_ERR, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to resume test_dev", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_ERR_PM_DEVICE_RUNTIME_GET(_test_log_inst, dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_ERR, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to resume test_dev (-5)", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_DBG_PM_DEVICE_RUNTIME_PUT(_test_log_inst, dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_DBG, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg,
+			  "device_runtime_api_test_log_macros: Failed to suspend test_dev",
+			  "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_DBG_PM_DEVICE_RUNTIME_PUT(_test_log_inst, dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_DBG, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg,
+			  "device_runtime_api_test_log_macros: Failed to suspend test_dev (-5)",
+			  "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT(_test_log_inst, dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_WRN, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to suspend test_dev", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT(_test_log_inst, dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_WRN, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to suspend test_dev (-5)", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT(_test_log_inst, dev);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_ERR, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to suspend test_dev", "unexpected log output");
+
+	memset(&test_log, 0, sizeof(test_log));
+	LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT(_test_log_inst, dev, ret);
+	log_flush();
+	zassert_true(test_log.seen, "failed to receive log message");
+	zassert_equal(test_log.level, LOG_LEVEL_ERR, "unexpected log level");
+	zassert_str_equal(test_log.source, "tests_device_runtime_api.test_log_inst",
+			  "unexpected source name");
+	zassert_str_equal(test_log.msg, "Failed to suspend test_dev (-5)", "unexpected log output");
+}
+
 void *device_runtime_api_setup(void)
 {
 	test_dev = device_get_binding("test_driver");
 	zassert_not_null(test_dev);
 	return NULL;
+}
+
+void test_api_setup(void *data)
+{
+	int ret;
+	enum pm_device_state state;
+
+	test_driver_pm_retval(test_dev, 0);
+
+	/* check API always returns 0 when runtime PM is disabled */
+	ret = pm_device_runtime_get(test_dev);
+	zassert_equal(ret, 0);
+	ret = pm_device_runtime_put(test_dev);
+	zassert_equal(ret, 0);
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+	zassert_equal(ret, 0);
+#else
+	zassert_equal(ret, -ENOSYS);
+#endif
+
+	/* enable runtime PM */
+	ret = pm_device_runtime_enable(test_dev);
+	zassert_equal(ret, 0);
+
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+
+	/* enabling again should succeed (no-op) */
+	ret = pm_device_runtime_enable(test_dev);
+	zassert_equal(ret, 0);
+
+	log_backend_enable(&test_log_macro, NULL, LOG_LEVEL_DBG);
+}
+
+static void test_api_teardown(void *data)
+{
+	int ret;
+	enum pm_device_state state;
+
+	log_backend_disable(&test_log_macro);
+
+	/* let test driver finish async PM (in case it was left pending due to
+	 * a failure)
+	 */
+	if (test_driver_pm_ongoing(test_dev)) {
+		test_driver_pm_done(test_dev);
+	}
+
+	/* disable runtime PM, make sure device is left into active state */
+	ret = pm_device_runtime_disable(test_dev);
+	zassert_equal(ret, 0);
+
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 }
 
 ZTEST_SUITE(device_runtime_api, NULL, device_runtime_api_setup,

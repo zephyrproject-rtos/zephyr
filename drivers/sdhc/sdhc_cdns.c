@@ -90,7 +90,7 @@ static int sdhc_cdns_request(const struct device *dev,
 				return -ENODATA;
 			}
 			ret = cdns_sdmmc_ops->cache_invd(data->block_addr, (uintptr_t)data->data,
-				data->block_size);
+				data->blocks * data->block_size);
 			if (ret != 0) {
 				return ret;
 			}

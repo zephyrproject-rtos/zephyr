@@ -188,8 +188,9 @@ static int socks5_tcp_connect(struct net_context *ctx,
 int net_socks5_connect(struct net_context *ctx, const struct net_sockaddr *addr,
 		       net_socklen_t addrlen)
 {
-	struct net_sockaddr proxy;
-	net_socklen_t proxy_len;
+	struct net_sockaddr_storage proxy;
+	struct net_sockaddr *proxy_sa = net_sad(&proxy);
+	net_socklen_t proxy_len = sizeof(proxy);
 	int type;
 	int ret;
 
@@ -199,18 +200,18 @@ int net_socks5_connect(struct net_context *ctx, const struct net_sockaddr *addr,
 		return -ENOTSUP;
 	}
 
-	ret = net_context_get_option(ctx, NET_OPT_SOCKS5, &proxy, &proxy_len);
+	ret = net_context_get_option(ctx, NET_OPT_SOCKS5, proxy_sa, &proxy_len);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Connect to Proxy Server */
-	ret = net_context_connect(ctx, &proxy, proxy_len, NULL,
+	ret = net_context_connect(ctx, proxy_sa, proxy_len, NULL,
 				  K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
 				  NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return socks5_tcp_connect(ctx, &proxy, proxy_len, addr, addrlen);
+	return socks5_tcp_connect(ctx, proxy_sa, proxy_len, addr, addrlen);
 }

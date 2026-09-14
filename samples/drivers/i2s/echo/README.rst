@@ -24,7 +24,9 @@ streams.
 
 This sample has been tested on :zephyr:board:`nrf52840dk` (nrf52840dk/nrf52840)
 and :zephyr:board:`nrf5340dk` (nrf5340dk/nrf5340/cpuapp), using the Audio Codec
-Shield, and provides overlay files for both of these boards.
+Shield, and provides overlay files for both of these boards. A configuration is
+also provided for :zephyr:board:`max32690evkit` (max32690evkit/max32690/m4),
+using its onboard MAX9867 audio CODEC.
 
 More information about the used shield and the CODEC itself can be found here:
 
@@ -44,7 +46,23 @@ To build and flash the application:
    :goals: build flash
    :compact:
 
-Press Button 1 to toggle the echo effect and Button 2 to stop the streams.
+On the Nordic boards, press Button 1 to toggle the echo effect and Button 2 to
+stop the streams.
+
+MAX32690EVKIT
+=============
+
+Set jumpers JP9 and JP10 to positions 2-3. Connect the audio source to the
+``LINE_IN`` jack and headphones to the ``HD_PHONE`` jack.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/i2s/echo
+   :board: max32690evkit/max32690/m4
+   :goals: build flash
+   :compact:
+
+Press SW2 to toggle the echo effect. Stream stop/restart control is not
+available on this board.
 
 .. _Audio Codec Shield: http://wiki.openmusiclabs.com/wiki/AudioCodecShield
 .. _WM8731: https://www.cirrus.com/products/wm8731/

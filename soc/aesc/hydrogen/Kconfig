@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HYDROGEN
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select INCLUDE_RESET_VECTOR
+	select PINCTRL
+
+config SOC_PART_NUMBER
+	default "elemrv_h" if SOC_ELEMRV_H

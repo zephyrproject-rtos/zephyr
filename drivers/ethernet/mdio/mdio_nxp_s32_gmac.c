@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_s32_gmac_mdio
+#define DT_DRV_COMPAT snps_dwmac_mdio
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_s32_mdio, CONFIG_MDIO_LOG_LEVEL);
@@ -16,8 +16,6 @@ LOG_MODULE_REGISTER(nxp_s32_mdio, CONFIG_MDIO_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 
 #include <Gmac_Ip.h>
-
-#define GMAC_MDIO_REG_OFFSET (0x200)
 
 #define GMAC_STATUS_TO_ERRNO(x) \
 	((x) == GMAC_STATUS_SUCCESS ? 0 : ((x) == GMAC_STATUS_TIMEOUT ? -ETIMEDOUT : -EIO))
@@ -149,7 +147,7 @@ static DEVICE_API(mdio, mdio_nxp_s32_driver_api) = {
 };
 
 #define MDIO_NXP_S32_HW_INSTANCE_CHECK(i, n)						\
-	(((DT_INST_REG_ADDR(n) - GMAC_MDIO_REG_OFFSET) == IP_GMAC_##i##_BASE) ? i : 0)
+	((DT_REG_ADDR(DT_INST_PARENT(n)) == IP_GMAC_##i##_BASE) ? i : 0)
 
 #define MDIO_NXP_S32_HW_INSTANCE(n)							\
 	LISTIFY(__DEBRACKET FEATURE_GMAC_NUM_INSTANCES,					\

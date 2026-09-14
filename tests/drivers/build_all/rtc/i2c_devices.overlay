@@ -48,6 +48,11 @@
 				backup-switch-mode = "disabled";
 				trickle-resistor-ohms = <3000>;
 				int-gpios = <&test_gpio 0 0>;
+
+				test_rv3028_rtc: rv3028_rtc {
+					compatible = "microcrystal,rv3028-rtc";
+					status = "okay";
+				};
 			};
 
 			test_rv8263: rv8263@4 {

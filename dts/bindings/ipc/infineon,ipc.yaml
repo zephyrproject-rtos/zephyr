@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon inter-processor communication (IPC) instance.
+
+  An IPC instance groups a set of IPC channels and IPC interrupt structures
+  behind a single register block. It is referenced by mailbox controllers
+  (see infineon,mbox) to describe which channel and interrupt structure a
+  given mailbox channel uses.
+
+compatible: "infineon,ipc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#ipc-config-cells":
+    type: int
+    const: 2
+
+  channel-count:
+    type: int
+    description: |
+      Number of IPC channel structures (STRUCT[]) present in this instance.
+      Used to bounds-check the channel index of each ipc-configs entry that
+      references this instance. When omitted, the full 32-entry range is
+      assumed.
+
+  interrupt-count:
+    type: int
+    description: |
+      Number of IPC interrupt structures (INTR_STRUCT[]) present in this
+      instance. Used to bounds-check the interrupt index of each ipc-configs
+      entry that references this instance. When omitted, the full 32-entry
+      range is assumed.
+
+  channel-mask:
+    type: int
+    description: |
+      Bitmask of the IPC channels in this instance that are available to the
+      application (bit c set means channel c is usable). Channels whose bit is
+      clear are reserved by the system. When omitted, all channels are assumed
+      available.
+
+  interrupt-mask:
+    type: int
+    description: |
+      Bitmask of the IPC interrupt structures in this instance that are
+      available to the application (bit i set means interrupt structure i is
+      usable). When omitted, all interrupt structures are assumed available.
+
+ipc-config-cells:
+  - channel
+  - interrupt

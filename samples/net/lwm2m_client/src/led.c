@@ -32,7 +32,7 @@ static int led_on_off_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_ins
 		ret = gpio_pin_set_dt(&led_gpio, (int)led_val);
 		if (ret) {
 			/*
-			 * We need an extra hook in LWM2M to better handle
+			 * We need an extra hook in LwM2M to better handle
 			 * failures before writing the data value and not in
 			 * post_write_cb, as there is not much that can be
 			 * done here.

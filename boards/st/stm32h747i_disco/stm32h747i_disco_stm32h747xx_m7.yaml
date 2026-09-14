@@ -11,6 +11,7 @@ supported:
   - arduino_gpio
   - gpio
   - arduino_spi
+  - ptp_clock
   - spi
   - netif:eth
   - qspi

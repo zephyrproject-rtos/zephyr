@@ -13,7 +13,13 @@
  * Short Pin PB1 to PA7, and PB2 to PA6, for the test to pass.
  */
 
-&i2c1 {
+#define IC2_TEST_0_DMA_TX <&gpdma1 0 6 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_0_DMA_RX <&gpdma1 1 5 STM32_DMA_PERIPH_RX>
+
+i2c_test_0: &i2c1 {
+	dmas = IC2_TEST_0_DMA_TX, IC2_TEST_0_DMA_RX;
+	dma-names = "tx", "rx";
+
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
@@ -21,11 +27,16 @@
 	};
 };
 
-&i2c3 {
+#define IC2_TEST_1_DMA_TX <&gpdma1 2 9 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_1_DMA_RX <&gpdma1 3 8 STM32_DMA_PERIPH_RX>
+
+i2c_test_1: &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pa6 &i2c3_sda_pa7>;
 	pinctrl-names = "default";
 	scl-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+	dmas = IC2_TEST_1_DMA_TX, IC2_TEST_1_DMA_RX;
+	dma-names = "tx", "rx";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -34,4 +45,8 @@
 		reg = <0x56>;
 		size = <256>;
 	};
+};
+
+&gpdma1 {
+	status = "okay";
 };

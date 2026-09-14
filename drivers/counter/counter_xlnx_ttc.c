@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT xlnx_ttc_counter
 
+#include <zephyr/irq.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
-#include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
@@ -256,7 +256,7 @@ static void ttc_set_alarm_pending(const struct device *dev, uint8_t chan_id)
 	struct ttc_data *data = dev->data;
 
 	atomic_or(&data->late_alarm_pending, BIT(chan_id));
-	arm_gic_irq_set_pending(config->irq_num);
+	k_irq_set_pending(config->irq_num);
 }
 
 /* ==================== COUNTER API IMPLEMENTATION ==================== */

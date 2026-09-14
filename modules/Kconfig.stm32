@@ -390,6 +390,11 @@ config USE_STM32_HAL_LCD
 	help
 	  Enable STM32Cube LCD controller (LCD) HAL module driver
 
+config USE_STM32_HAL_LPAWUR
+	bool
+	help
+	  Enable STM32Cube Low power wakeup radio (LPAWUR) HAL module driver
+
 config USE_STM32_HAL_LPTIM
 	bool
 	help
@@ -437,6 +442,16 @@ config USE_STM32_HAL_MMC_EX
 	help
 	  Enable STM32Cube Extended MultiMediaCard interface (SDMMC) HAL module
 	  driver
+
+config USE_STM32_HAL_MRSUBG
+	bool
+	help
+	  Enable STM32Cube Sub-GHz radio (MRSUBG) HAL module driver
+
+config USE_STM32_HAL_MRSUBG_TIMER
+	bool
+	help
+	  Enable STM32Cube Sub-GHz radio timer (MRSUBG_TIMER) HAL module driver
 
 config USE_STM32_HAL_MSP
 	bool
@@ -830,6 +845,11 @@ config USE_STM32_LL_IPCC
 	help
 	  Enable STM32Cube Inter-Processor communication controller (IPCC) LL
 	  module driver
+
+config USE_STM32_LL_LCSC
+	bool
+	help
+	  Enable STM32Cube LC sensor controller (LCSC) LL module driver
 
 config USE_STM32_LL_LPGPIO
 	bool

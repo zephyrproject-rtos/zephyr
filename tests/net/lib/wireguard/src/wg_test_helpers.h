@@ -113,6 +113,35 @@ int wireguard_test_inject_transport(int peer_id,
 				    size_t ciphertext_len);
 
 /**
+ * @brief Drop any session and handshake state from a test peer.
+ *
+ * Leaves the peer in the state it has at boot or after a session has expired.
+ *
+ * @param peer_id Peer id from wireguard_test_peer_add().
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int wireguard_test_clear_session(int peer_id);
+
+/**
+ * @brief Inject a transport-data message for an unknown session.
+ *
+ * Drives the receive path with a message whose receiver index matches no
+ * session, i.e. a message that cannot be authenticated.
+ *
+ * @param peer_id Peer id from wireguard_test_peer_add().
+ * @param src Source UDP/IP address of the outer packet.
+ * @param receiver Receiver index to put into the message.
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int wireguard_test_inject_stale_session(int peer_id, const struct net_sockaddr *src,
+					uint32_t receiver);
+
+/** @brief Query whether a peer is scheduled to send a handshake initiation. */
+bool wireguard_test_peer_send_handshake(int peer_id);
+
+/**
  * @brief Read accumulated VPN statistics for a peer interface.
  *
  * @param peer_id Peer id from wireguard_test_peer_add().

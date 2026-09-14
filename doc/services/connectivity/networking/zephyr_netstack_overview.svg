@@ -115,7 +115,7 @@
 			<text x="49.82" y="607.73" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>Application Protocols</text>		</g>
 		<g id="shape70-30" v:mID="70" v:groupContext="shape" transform="translate(122.475,-479.759)">
 			<title>Rectangle.70</title>
-			<desc>LWM2M</desc>
+			<desc>LwM2M</desc>
 			<v:userDefs>
 				<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
 			</v:userDefs>
@@ -126,7 +126,7 @@
 				<rect x="0" y="587.391" width="81.3545" height="30.1313" class="st2"/>
 			</g>
 			<rect x="0" y="587.391" width="81.3545" height="30.1313" class="st8"/>
-			<text x="24.81" y="605.16" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>LWM2M</text>		</g>
+			<text x="24.81" y="605.16" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>LwM2M</text>		</g>
 		<g id="shape71-36" v:mID="71" v:groupContext="shape" transform="translate(33.9643,-479.759)">
 			<title>Rectangle.71</title>
 			<desc>CoAP</desc>

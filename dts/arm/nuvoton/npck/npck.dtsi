@@ -139,6 +139,7 @@
 			reg = <0x40081000 0x2000>;
 			gpio-controller;
 			index = <0x0>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -147,6 +148,7 @@
 			reg = <0x40083000 0x2000>;
 			gpio-controller;
 			index = <0x1>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -155,6 +157,7 @@
 			reg = <0x40085000 0x2000>;
 			gpio-controller;
 			index = <0x2>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -163,6 +166,7 @@
 			reg = <0x40087000 0x2000>;
 			gpio-controller;
 			index = <0x3>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -171,6 +175,7 @@
 			reg = <0x40089000 0x2000>;
 			gpio-controller;
 			index = <0x4>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -179,6 +184,7 @@
 			reg = <0x4008b000 0x2000>;
 			gpio-controller;
 			index = <0x5>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -187,6 +193,7 @@
 			reg = <0x4008d000 0x2000>;
 			gpio-controller;
 			index = <0x6>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -195,6 +202,7 @@
 			reg = <0x4008f000 0x2000>;
 			gpio-controller;
 			index = <0x7>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -203,6 +211,7 @@
 			reg = <0x40091000 0x2000>;
 			gpio-controller;
 			index = <0x8>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -211,6 +220,7 @@
 			reg = <0x40093000 0x2000>;
 			gpio-controller;
 			index = <0x9>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -219,6 +229,7 @@
 			reg = <0x40095000 0x2000>;
 			gpio-controller;
 			index = <0xa>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -227,6 +238,7 @@
 			reg = <0x40097000 0x2000>;
 			gpio-controller;
 			index = <0xb>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -235,6 +247,7 @@
 			reg = <0x40099000 0x2000>;
 			gpio-controller;
 			index = <0xc>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -243,6 +256,7 @@
 			reg = <0x4009b000 0x2000>;
 			gpio-controller;
 			index = <0xd>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -251,6 +265,7 @@
 			reg = <0x4009d000 0x2000>;
 			gpio-controller;
 			index = <0xe>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -259,6 +274,7 @@
 			reg = <0x4009f000 0x2000>;
 			gpio-controller;
 			index = <0xf>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -267,6 +283,7 @@
 			reg = <0x400a7000 0x2000>;
 			gpio-controller;
 			index = <0x10>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -275,6 +292,7 @@
 			reg = <0x400a9000 0x2000>;
 			gpio-controller;
 			index = <0x11>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -283,6 +301,7 @@
 			reg = <0x400ab000 0x2000>;
 			gpio-controller;
 			index = <0x12>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 
@@ -291,6 +310,7 @@
 			reg = <0x400ad000 0x2000>;
 			gpio-controller;
 			index = <0x13>;
+			ngpios = <8>;
 			#gpio-cells = <2>;
 		};
 

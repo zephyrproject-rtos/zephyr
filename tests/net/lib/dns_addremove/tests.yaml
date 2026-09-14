@@ -4,7 +4,7 @@ common:
     - net
   depends_on: netif
   min_ram: 16
-  timeout: 600
+  timeout: 120
 tests:
   net.dns.addremove:
     min_ram: 21

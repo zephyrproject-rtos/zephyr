@@ -22,11 +22,11 @@
 	transfer-delay = <100>;
 	sck-pcs-delay = <10>;
 	pcs-sck-delay = <10>;
-	/* lower the master interrupt priority so slave can interrupt */
+	/* lower the controller interrupt priority so peripheral can interrupt */
 	interrupts = <28 1>;
-	label = "spi_master";
+	label = "spi_controller";
 };
 
 dut_spis: &lpspi1 {
-	label = "spi_slave";
+	label = "spi_peripheral";
 };

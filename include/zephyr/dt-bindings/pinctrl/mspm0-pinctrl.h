@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _MSPM0_DT_BINDINGS_PINCTRL_H_
-#define _MSPM0_DT_BINDINGS_PINCTRL_H_
-
-#define MSP_PORT_INDEX_BY_NAME(x) ((x == "PORTA") ? 0 : 1)
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_MSPM0_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_MSPM0_PINCTRL_H_
 
 #define MSPM0_PIN_FUNCTION_ANALOG (0x00000000)
 #define MSPM0_PIN_FUNCTION_GPIO   (0x00000001)
@@ -31,4 +29,4 @@
  */
 #define MSP_PINMUX(pincm, function) (((pincm - 1) << 0x10) | function)
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_MSPM0_PINCTRL_H_ */

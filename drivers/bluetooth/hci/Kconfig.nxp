@@ -47,6 +47,18 @@ config HCI_NXP_CONFIG_IR
 	  If enabled, the Host will send iR configuration vendor command to the Bluetooth Controller
 	  during HCI init.
 
+config BT_HCI_NXP_IR_ENABLE_PDN_TOGGLE
+	bool "PDN (Power Down Pin) toggle for Independent Reset"
+	depends on HCI_NXP_CONFIG_IR
+	depends on BT_HCI_HOST
+	default y
+	help
+	  If enabled, this option will toggle the PDN (Power Down) pin during an Independent
+	  Reset (IR) of the Bluetooth chipset. Toggling the PDN pin resets both the Bluetooth
+	  and Wi-Fi CPUs. When disabled, IR is performed without toggling the PDN pin, limiting
+	  the reset operation to the Bluetooth CPU. Disable this option in coexistence (COEX)
+	  scenarios where resetting the Wi-Fi CPU must be avoided.
+
 config HCI_NXP_TRIGGER_IR_ON_BT_INIT
 	bool "IR triggered on BT Init"
 	depends on BT_H4_NXP_CTLR

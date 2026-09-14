@@ -10,8 +10,8 @@
  * @ingroup xen_console_driver
  */
 
-#ifndef __XEN_CONSOLE_H__
-#define __XEN_CONSOLE_H__
+#ifndef ZEPHYR_INCLUDE_XEN_CONSOLE_H_
+#define ZEPHYR_INCLUDE_XEN_CONSOLE_H_
 
 #include <zephyr/init.h>
 #include <zephyr/device.h>
@@ -53,4 +53,4 @@ int xen_console_init(const struct device *dev);
 
 /** @} */
 
-#endif /* __XEN_CONSOLE_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_CONSOLE_H_ */

@@ -20,6 +20,14 @@
 		};
 	};
 
+	/omit-if-no-ref/ dma0_pins: dma0_pins {
+		dma0-pinmux {
+			pinmux = <RZA2M_PINMUX(PORT_04, 5, 5)>, /* DREQ0 */
+				 <RZA2M_PINMUX(PORT_04, 6, 5)>, /* DACK0 */
+				 <RZA2M_PINMUX(PORT_04, 7, 5)>; /* TEND0 */
+		};
+	};
+
 	/omit-if-no-ref/ gpt3_pins: gpt3 {
 		gpt3-pinmux {
 			pinmux = <RZA2M_PINMUX(PORT_08, 3, 5)>, /* GTIOCA */

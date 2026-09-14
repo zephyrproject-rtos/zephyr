@@ -44,12 +44,13 @@ struct mctp_usb_class_desc {
 struct mctp_usb_class_ctx {
 	struct usbd_class_data *class_data;
 	struct mctp_usb_class_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header *const *const fs_desc;
+	const struct usb_desc_header *const *const hs_desc;
 	struct mctp_usb_class_inst *inst;
 	uint8_t inst_idx;
 	struct k_fifo rx_fifo;
 	struct k_work out_work;
+	struct k_work_sync out_work_sync;
 	atomic_t state;
 	atomic_t in_pending;
 };
@@ -410,8 +411,8 @@ static int mctp_usb_class_request(struct usbd_class_data *const c_data,
 	return 0;
 }
 
-static void *mctp_usb_class_get_desc(struct usbd_class_data *const c_data,
-				     const enum usbd_speed speed)
+static const void *mctp_usb_class_get_desc(struct usbd_class_data *const c_data,
+					   const enum usbd_speed speed)
 {
 	struct mctp_usb_class_ctx *ctx = usbd_class_get_private(c_data);
 
@@ -456,8 +457,12 @@ static void mctp_usb_class_disable(struct usbd_class_data *const c_data)
 
 	atomic_clear_bit(&ctx->state, MCTP_USB_ENABLED);
 
-	/* Stop worker first so it doesn't race while we drain FIFO */
-	(void)k_work_cancel(&ctx->out_work);
+	/*
+	 * Stop the worker and wait for it to finish. This prevents the case
+	 * in which the worker is running and ends up using usb->rx_pkt after it
+	 * has been freed in mctp_usb_reset_rx_state().
+	 */
+	(void)k_work_cancel_sync(&ctx->out_work, &ctx->out_work_sync);
 
 	/* Drain and free any queued OUT buffers */
 	while (1) {
@@ -531,7 +536,7 @@ static int mctp_usb_class_init(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-struct usbd_class_api mctp_usb_class_api = {
+static const struct usbd_class_api mctp_usb_class_api = {
 	.request = mctp_usb_class_request,
 	.enable = mctp_usb_class_enable,
 	.disable = mctp_usb_class_disable,
@@ -589,14 +594,14 @@ struct usbd_class_api mctp_usb_class_api = {
 			.bDescriptorType = 0						\
 		}									\
 	};										\
-	const static struct usb_desc_header *mctp_usb_class_fs_desc_##n[] = {		\
+	const static struct usb_desc_header *const mctp_usb_class_fs_desc_##n[] = {	\
 		(struct usb_desc_header *)&mctp_usb_class_desc_##n.if0,			\
 		(struct usb_desc_header *)&mctp_usb_class_desc_##n.if0_fs_in_ep,	\
 		(struct usb_desc_header *)&mctp_usb_class_desc_##n.if0_fs_out_ep,	\
 		(struct usb_desc_header *)&mctp_usb_class_desc_##n.nil_desc		\
 	};										\
 											\
-	const static struct usb_desc_header *mctp_usb_class_hs_desc_##n[] = {		\
+	const static struct usb_desc_header *const mctp_usb_class_hs_desc_##n[] = {	\
 		(struct usb_desc_header *)&mctp_usb_class_desc_##n.if0,			\
 		(struct usb_desc_header *)&mctp_usb_class_desc_##n.if0_hs_in_ep,	\
 		(struct usb_desc_header *)&mctp_usb_class_desc_##n.if0_hs_out_ep,	\

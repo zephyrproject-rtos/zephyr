@@ -8,7 +8,7 @@ toolchain:
 supported:
   - adc
   - usb_device
-  - ble
+  - bluetooth
   - pwm
   - watchdog
   - gpio

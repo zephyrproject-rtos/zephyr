@@ -142,3 +142,12 @@ config WS2812_STRIP_BFLB_WO_ASYNC
 	  This may use a lot of RAM.
 
 endif
+
+config WS2812_STRIP_PULSE_IO
+	bool "WS2812 LED strip pulse_io driver"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_PULSE_IO_ENABLED
+	select PULSE_IO
+	help
+	  Enable driver for WS2812 (and compatible) LED strips using a
+	  pulse_io controller channel in CELL mode.

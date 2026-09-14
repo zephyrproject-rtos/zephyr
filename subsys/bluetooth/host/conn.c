@@ -139,10 +139,11 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #if defined(CONFIG_BT_CONN_TX)
 static void frag_destroy(struct net_buf *buf);
 
-/* Storage for fragments (views) into the upper layers' PDUs. */
-/* TODO: remove user-data requirements */
-NET_BUF_POOL_FIXED_DEFINE(fragments, CONFIG_BT_CONN_FRAG_COUNT, 0,
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, frag_destroy);
+/* Storage for fragments (views) into the upper layers' PDUs. No user data:
+ * the HCI driver may use a sent fragment's user data, so the view metadata
+ * lives in frag_md_pool below instead.
+ */
+NET_BUF_POOL_FIXED_DEFINE(fragments, CONFIG_BT_CONN_FRAG_COUNT, 0, 0, frag_destroy);
 
 struct frag_md {
 	struct bt_buf_view_meta view_meta;
@@ -344,7 +345,7 @@ void bt_conn_tx_notify(struct bt_conn *conn, bool wait_for_completion)
 		tx_notify_process(conn);
 	} else {
 		struct k_work_sync sync;
-		int err;
+		__maybe_unused int err;
 
 		err = k_work_submit_to_queue(tx_notify_workqueue_get(), &conn->tx_complete_work);
 		__ASSERT(err >= 0, "couldn't submit (err %d)", err);
@@ -378,6 +379,11 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 	(void)memset(conn, 0, offsetof(struct bt_conn, ref));
 
 #if defined(CONFIG_BT_CONN)
+	/* The deferred work must run on the Bluetooth workqueue: it performs
+	 * channel and profile teardown, and the non-blocking work
+	 * cancellations in those paths are only guaranteed to be effective
+	 * against work items running on the same workqueue.
+	 */
 	k_work_init_delayable(&conn->deferred_work, deferred_work);
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_CONN_TX)
@@ -664,15 +670,23 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		goto error_return;
 	}
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		LOG_WRN("Dropping buffer since Bluetooth is not ready");
+		err = -EHOSTDOWN;
+		goto error_return;
+	}
+
 	LOG_DBG("conn %p buf %p len %zu buf->len %u cb %p ud %p",
 		conn, buf, len, buf->len, cb, ud);
 
 	/* Acquire the right to send 1 packet to the controller */
 	if (k_sem_take(bt_conn_get_pkts(conn), K_NO_WAIT)) {
 		/* This shouldn't happen now that we acquire the resources
-		 * before calling `send_buf` (in `get_conn_ready`). We say
-		 * "acquire" as `tx_processor()` is not re-entrant and the
-		 * thread is non-preemptible. So the sem value shouldn't change.
+		 * before calling `send_buf` (in `get_conn_ready`). All
+		 * consumers of this semaphore run under the host lock
+		 * (held across the whole TX processing pass), and givers
+		 * only ever increase the count. So the sem value cannot
+		 * have decreased since the get_conn_ready() check.
 		 */
 		__ASSERT(0, "No controller bufs");
 
@@ -860,11 +874,11 @@ void bt_conn_data_ready(struct bt_conn *conn)
 
 	bt_conn_ref(conn);
 
-	/* This function is the only function which accesses conn_ready list  that can be called
-	 * from a preemptive thread context, therefore requires a critical section to ensure that
-	 * the conn_ready list is not modified while we are checking and appending to it.
+	/* The conn_ready list is only ever modified under the host lock:
+	 * here (append, any thread context) and in get_conn_ready() (remove,
+	 * TX processor context, which holds the lock across the whole pass).
 	 */
-	k_sched_lock();
+	bt_dev_lock();
 
 	if (!sys_slist_find(&bt_dev.le.conn_ready, &conn->_conn_ready, NULL)) {
 		sys_slist_append(&bt_dev.le.conn_ready, &conn->_conn_ready);
@@ -874,7 +888,7 @@ void bt_conn_data_ready(struct bt_conn *conn)
 		added = false;
 	}
 
-	k_sched_unlock();
+	bt_dev_unlock();
 
 	if (!added) {
 		bt_conn_unref(conn);
@@ -921,6 +935,11 @@ static struct bt_conn *get_conn_ready(void)
 {
 	struct bt_conn *conn, *tmp;
 	sys_snode_t *prev = NULL;
+
+	/* Called from the TX processor with the host lock held; the lock
+	 * serializes conn_ready list access against bt_conn_data_ready().
+	 */
+	BT_DEV_LOCK_ASSERT();
 
 	if (dont_have_viewbufs()) {
 		/* We will get scheduled again when the (view) buffers are freed. If you
@@ -1198,8 +1217,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 #endif /* CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS */
 
-			k_work_schedule(&conn->deferred_work,
-					CONN_UPDATE_TIMEOUT);
+			bt_work_schedule(&conn->deferred_work, CONN_UPDATE_TIMEOUT);
 		}
 #endif /* CONFIG_BT_CONN */
 
@@ -1230,7 +1248,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_conn_reset_rx_state(conn);
 
 			LOG_DBG("trigger disconnect work");
-			k_work_reschedule(&conn->deferred_work, K_NO_WAIT);
+			bt_work_reschedule(&conn->deferred_work, K_NO_WAIT);
 
 			/* The last ref will be dropped during cleanup */
 			break;
@@ -1312,8 +1330,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) && bt_conn_is_le(conn) &&
 		    bt_dev.create_param.timeout != 0) {
-			k_work_schedule(&conn->deferred_work,
-					K_MSEC(10 * bt_dev.create_param.timeout));
+			bt_work_schedule(&conn->deferred_work,
+					 K_MSEC(10 * bt_dev.create_param.timeout));
 		}
 
 		break;
@@ -1868,7 +1886,7 @@ static K_WORK_DEFINE(procedures_on_connect, auto_initiated_procedures);
 static void schedule_auto_initiated_procedures(struct bt_conn *conn)
 {
 	LOG_DBG("[%p] Scheduling auto-init procedures", conn);
-	k_work_submit(&procedures_on_connect);
+	bt_work_submit(&procedures_on_connect);
 }
 
 void bt_conn_connected(struct bt_conn *conn)
@@ -2313,7 +2331,7 @@ static void deferred_work(struct k_work *work)
 		 */
 		if (bt_le_create_conn_cancel() == -ENOBUFS) {
 			LOG_WRN("No buffers to cancel connection, retrying in 10 ms");
-			k_work_reschedule(dwork, K_MSEC(10));
+			bt_work_reschedule(dwork, K_MSEC(10));
 		}
 		return;
 	}
@@ -2891,7 +2909,7 @@ struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
 	case BT_CONN_TYPE_LE:
 		(void)bt_addr_le_to_str(&conn->le.dst, val.str, sizeof(val.str));
 		break;
-#if defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_ISO_UNICAST)
 	case BT_CONN_TYPE_ISO:
 		if (conn->iso.acl != NULL) {
 			(void)bt_addr_le_to_str(&conn->iso.acl->le.dst, val.str, sizeof(val.str));
@@ -2899,7 +2917,7 @@ struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
 			val.str[0] = '\0';
 		}
 		break;
-#endif /* CONFIG_BT_ISO */
+#endif /* CONFIG_BT_ISO_UNICAST */
 	default:
 		val.str[0] = '\0';
 		break;
@@ -2988,8 +3006,8 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #endif
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
-		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
-		    (conn->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
+#if defined(CONFIG_BT_ISO_UNICAST)
+		if ((conn->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
 		     conn->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL) &&
 		    conn->iso.acl != NULL) {
 			info->le.dst = &conn->iso.acl->le.dst;
@@ -2998,8 +3016,12 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 			info->le.src = BT_ADDR_LE_NONE;
 			info->le.dst = BT_ADDR_LE_NONE;
 		}
+#else
+		info->le.src = BT_ADDR_LE_NONE;
+		info->le.dst = BT_ADDR_LE_NONE;
+#endif /* CONFIG_BT_ISO_UNICAST */
 		return 0;
-#endif
+#endif /* CONFIG_BT_ISO */
 	default:
 		break;
 	}

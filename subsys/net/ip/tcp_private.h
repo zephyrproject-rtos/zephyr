@@ -60,20 +60,20 @@
 #endif
 
 #define tcp_pkt_ref(_pkt) net_pkt_ref(_pkt)
+/* The allocation includes a headroom estimate for the IP and TCP headers
+ * plus options, so a zero length allocates enough buffer space for a
+ * segment without payload.
+ */
 #define tcp_pkt_alloc(_conn, _len)					\
 ({									\
 	struct net_pkt *_pkt;						\
 									\
-	if ((_len) > 0) {						\
-		_pkt = net_pkt_alloc_with_buffer(			\
-			(_conn)->iface,					\
-			(_len),						\
-			net_context_get_family((_conn)->context),	\
-			NET_IPPROTO_TCP,				\
-			TCP_PKT_ALLOC_TIMEOUT);				\
-	} else {							\
-		_pkt = net_pkt_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
-	}								\
+	_pkt = net_pkt_alloc_with_buffer(				\
+		(_conn)->iface,						\
+		(_len),							\
+		net_context_get_family((_conn)->context),		\
+		NET_IPPROTO_TCP,					\
+		TCP_PKT_ALLOC_TIMEOUT);					\
 									\
 	tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__);		\
 									\

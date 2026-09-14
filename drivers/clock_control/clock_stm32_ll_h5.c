@@ -11,6 +11,7 @@
 #include <soc.h>
 #include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_crs.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
@@ -808,6 +809,23 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_HSI48_Enable();
 		while (LL_RCC_HSI48_IsReady() != 1) {
 		}
+
+		if (IS_ENABLED(STM32_HSI48_CRS_USB_SOF)) {
+			/*
+			 * Use SOF from full-speed USB as CRS synchronization source
+			 * as this is the most plausible usecase: XTAL-less USB.
+			 *
+			 * TODO: support arbitrary CRS sync source selection
+			 */
+			LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CRS);
+#if defined(USB_DRD_FS)
+			LL_CRS_SetSyncSignalSource(LL_CRS_SYNC_SOURCE_USB);
+#elif defined(USB_OTG_FS)
+			LL_CRS_SetSyncSignalSource(LL_CRS_SYNC_SOURCE_OTG_FS);
+#endif
+			LL_CRS_EnableFreqErrorCounter();
+			LL_CRS_EnableAutoTrimming();
+		}
 	}
 
 }
@@ -882,6 +900,24 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
 	} else {
 		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
+	}
+
+	/* Set programming delay for the read latency */
+	switch (LL_FLASH_GetLatency()) {
+	case LL_FLASH_LATENCY_0:
+	case LL_FLASH_LATENCY_1:
+		MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, 0U);
+		break;
+
+	case LL_FLASH_LATENCY_2:
+	case LL_FLASH_LATENCY_3:
+		MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, FLASH_ACR_WRHIGHFREQ_0);
+		break;
+
+	case LL_FLASH_LATENCY_4:
+	case LL_FLASH_LATENCY_5:
+		MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, FLASH_ACR_WRHIGHFREQ_1);
+		break;
 	}
 
 	/* Update CMSIS variable */

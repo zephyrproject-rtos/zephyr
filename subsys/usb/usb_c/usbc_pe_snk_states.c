@@ -608,18 +608,14 @@ void pe_snk_transition_to_default_entry(void *obj)
 
 	/* Reset flags */
 	atomic_clear(pe->flags);
-	pe->data_role = TC_ROLE_UFP;
 
 	/*
 	 * Indicate to the Device Policy Manager that the Sink Shall
 	 * transition to default
 	 */
 	policy_notify(dev, SNK_TRANSITION_TO_DEFAULT);
-	/*
-	 * Request the Device Policy Manager that the Port Data Role is
-	 * set to UFP
-	 */
-	policy_notify(dev, DATA_ROLE_IS_UFP);
+	/* Reset the data role of the policy engine to UFP */
+	pe_set_data_role(dev, TC_ROLE_UFP);
 }
 
 /**

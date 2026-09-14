@@ -296,7 +296,7 @@ static DEVICE_API(gpio, stmpe1600_drv_api) = {
 
 #define STMPE1600_INIT(inst)					     \
 	static struct stmpe1600_config stmpe1600_##inst##_config = { \
-		.common = { .port_pin_mask = 0xffff },		     \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),     \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),		     \
 	};							     \
 								     \

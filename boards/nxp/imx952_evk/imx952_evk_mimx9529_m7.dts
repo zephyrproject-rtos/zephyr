@@ -38,3 +38,15 @@
 &tstmr2 {
 	status = "okay";
 };
+
+&gpio2 {
+	status = "okay";
+};
+
+&edma1 {
+	status = "okay";
+};
+
+&edma2 {
+	status = "okay";
+};

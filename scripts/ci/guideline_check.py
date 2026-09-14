@@ -18,6 +18,7 @@ coccinelle_scripts = [
     RESERVED_NAMES_SCRIPT,
     "/scripts/coccinelle/same_identifier.cocci",
     "/scripts/coccinelle/boolean_strict_init.cocci",
+    "/scripts/coccinelle/unnamed_parameters.cocci",
     # "/scripts/coccinelle/boolean.cocci",  # Rule 14.4 - disabled (timeout)
     # "/scripts/coccinelle/identifier_length.cocci",
 ]
@@ -29,9 +30,40 @@ coccinelle_reserved_names_exclude_regex = [
     r"tests/subsys/portability/.*",
 ]
 
+# GitHub only renders the first 10 annotations of a given level per step, the
+# rest are dropped silently. Summarise anything past that in a single warning.
+GITHUB_ANNOTATION_LIMIT = 10
+
+# Every rule reports as "WARNING: Violation to rule <x.y> (<what>) ...".
+rule_regex = re.compile(r"\bViolation to rule\s+(\d+\.\d+)\b")
+
+
+def annotate(path, line, messages):
+    """
+    Emit a GitHub Actions annotation so the violation shows up on the changed
+    line in the pull request instead of only in the workflow log.
+
+    https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#about-workflow-commands
+    """
+
+    def _esc(msg: str) -> str:
+        return msg.replace('%', '%25').replace('\n', '%0A').replace('\r', '%0D')
+
+    body = "\n".join(m.removeprefix("WARNING: ") for m in messages)
+
+    rule = rule_regex.search(body)
+    title = f"MISRA C:2012 Rule {rule.group(1)}" if rule else "Coding guidelines"
+
+    # Properties are comma separated, so a comma in the title would truncate it.
+    title = title.replace(',', ' ')
+
+    print(f"::error file={path},line={line},title={title}::{_esc(body)}")
+
 
 def parse_coccinelle(contents: str, violations: dict):
-    reg = re.compile("([a-zA-Z0-9_/]*\\.[ch]:[0-9]*)(:[0-9\\-]*: )(.*)")
+    # Paths may contain any character other than the colon that separates them
+    # from the line number, hyphens and dots included.
+    reg = re.compile("([^\\s:]+\\.[ch]:[0-9]+)(:[0-9\\-]*: )(.*)")
     for line in contents.split("\n"):
         r = reg.match(line)
         if r:
@@ -49,6 +81,9 @@ def parse_args():
     parser.add_argument('-r', "--repository", required=False, help="Path to repository")
     parser.add_argument('-c', '--commits', default=None, help="Commit range in the form: a..b")
     parser.add_argument("-o", "--output", required=False, help="Print violation into a file")
+    parser.add_argument(
+        "--annotate", action="store_true", help="Print GitHub Actions-compatible annotations."
+    )
     return parser.parse_args()
 
 
@@ -71,6 +106,7 @@ def main():
     zephyr_base = os.getenv("ZEPHYR_BASE")
     violations = {}
     numViolations = 0
+    annotations = []
 
     for f in patch_set:
         c_file = f.path.endswith(".c")
@@ -112,11 +148,23 @@ def main():
                         v_str = "\t\n".join(violations[violation])
                         out_str = f"{violation}:{v_str}"
                         numViolations += 1
+                        annotations.append((f.path, line.target_line_no, violations[violation]))
                         if args.output:
                             with open(args.output, "a+") as fp:
                                 fp.write(f"{out_str}\n")
                         else:
                             print(out_str)
+
+    if args.annotate:
+        for path, line_no, messages in annotations[:GITHUB_ANNOTATION_LIMIT]:
+            annotate(path, line_no, messages)
+
+        dropped = len(annotations) - GITHUB_ANNOTATION_LIMIT
+        if dropped > 0:
+            print(
+                f"::warning title=Coding guidelines::... and {dropped} more violation(s), "
+                f"only the first {GITHUB_ANNOTATION_LIMIT} are annotated"
+            )
 
     return numViolations
 

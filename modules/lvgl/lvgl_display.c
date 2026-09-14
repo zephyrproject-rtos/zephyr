@@ -13,7 +13,7 @@
 #ifdef CONFIG_LV_Z_FLUSH_THREAD
 
 /* There can be up to DISPLAY_COUNT flush events at the same time*/
-K_MSGQ_DEFINE(flush_queue, sizeof(struct lvgl_display_flush), DT_ZEPHYR_DISPLAYS_COUNT, 1);
+K_MSGQ_DEFINE_STATIC_TYPE(flush_queue, struct lvgl_display_flush, DT_ZEPHYR_DISPLAYS_COUNT);
 
 void lvgl_flush_thread_entry(void *arg1, void *arg2, void *arg3)
 {
@@ -112,6 +112,7 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
 					display);
 		break;
+#ifdef CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER
 	case PIXEL_FORMAT_MONO01:
 	case PIXEL_FORMAT_MONO10:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_I1);
@@ -119,6 +120,8 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 		lv_display_add_event_cb(display, lvgl_rounder_cb_mono, LV_EVENT_INVALIDATE_AREA,
 					display);
 		break;
+#endif /* CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER */
+
 	default:
 		lv_display_set_flush_cb(display, NULL);
 		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,

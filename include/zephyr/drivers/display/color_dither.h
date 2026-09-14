@@ -193,7 +193,9 @@ struct display_color_dither_state {
 	/** Number of elements in each error-diffusion row buffer. */
 	size_t err_row_len;
 #elif defined(CONFIG_CPP)
-	/* C++ does not allow empty structs, add an extra 1 byte. */
+	/* An empty struct is not valid C, and compilers that accept it give
+	 * it size 0 while C++ gives 1. Keep a byte so both languages agree.
+	 */
 	uint8_t c;
 #endif /* CONFIG_DISPLAY_COLOR_DITHER */
 };

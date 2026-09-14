@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/imxrt/rt118x/nxp_rt1189_cm33.dtsi>
+#include <nxp/imxrt/imxrt118x/nxp_rt1189_cm33.dtsi>
 #include "mimxrt1180_evk.dtsi"
 #include <freq.h>
 

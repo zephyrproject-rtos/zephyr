@@ -106,14 +106,33 @@ static void permission_test(void)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Test object permission on dynamic user thread when index is reused
+ * @brief Verify that object permissions do not survive a reused thread index.
  *
- * @details This creates one dynamic thread with permissions to both
- * semaphores so there is no fault. Then a new thread is created and will be
- * re-using the thread index in first pass. Except the second thread does
- * not have permission to one of the semaphore. If permissions are cleared
- * correctly when thread is destroyed, the second should raise kernel oops.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * Thread indexes are recycled, so a newly allocated dynamic thread may occupy
+ * the index a destroyed one used. Its permission bits must be cleared when the
+ * old thread is destroyed, otherwise the new thread silently inherits access
+ * to objects that were granted to its predecessor. The dynamic creation cases
+ * of this suite run before this one and leave behind destroyed threads that
+ * had access to both semaphores; this case then creates a thread granted
+ * access to only one of them and has it touch the other, which must fault
+ * rather than succeed.
+ *
+ * Test steps:
+ * - Allocate a dynamic thread object and create a user thread from it,
+ *   granting access to the start semaphore only.
+ * - Start the thread and release it, so it attempts to give the end semaphore
+ *   it was not granted.
+ * - Take the end semaphore with a timeout from the test thread.
+ *
+ * Expected result:
+ * - The thread raises a kernel oops on the object it was not granted, and the
+ *   end semaphore is never given, so the take times out.
+ *
+ * @see k_object_alloc()
+ * @see k_object_access_grant()
  */
 ZTEST(thread_dynamic, test_dyn_thread_perms)
 {
@@ -126,7 +145,30 @@ ZTEST(thread_dynamic, test_dyn_thread_perms)
 	TC_PRINT("===== must have access denied on k_sem %p\n", &end_sem);
 }
 
-ZTEST(thread_dynamic, test_thread_index_management)
+/**
+ * @brief Verify dynamic thread object indexes are exhausted and recycled.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * Allocates kernel thread objects until allocation fails, then proves the
+ * failure is caused by thread-index exhaustion rather than lack of heap by
+ * allocating an equally-sized plain kernel object. Freeing one thread object
+ * must make its index available for a subsequent allocation.
+ *
+ * Test steps:
+ * - Allocate K_OBJ_THREAD objects until k_object_alloc() returns NULL.
+ * - Allocate a same-size dynamic kernel object to show heap remains.
+ * - Free one thread object and allocate a new one.
+ *
+ * Expected result:
+ * - At least one thread object is created, the heap allocation succeeds,
+ *   and the freed thread index is reused for the new allocation.
+ *
+ * @see k_object_alloc()
+ * @see k_object_free()
+ */
+ZTEST(thread_dynamic, test_dyn_thread_index_recycle)
 {
 	int i, ctr = 0;
 
@@ -186,13 +228,34 @@ ZTEST(thread_dynamic, test_thread_index_management)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Test creation of dynamic user thread under kernel thread
+ * @brief Verify that a kernel thread can create a dynamic user thread.
  *
- * @details This is a simple test to create a user thread
- * dynamically via k_object_alloc() under a kernel thread.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A thread object obtained from k_object_alloc() must be usable as the target
+ * of k_thread_create() exactly like a statically defined one, and the thread
+ * created from it must be able to run and use the objects it was granted. The
+ * created thread runs to completion through a pair of semaphores, so a
+ * dynamic object that is mis-initialized shows up as the handshake failing
+ * rather than as a silent no-op. Skipped without userspace, where dynamic
+ * kernel objects do not exist.
+ *
+ * Test steps:
+ * - Allocate a thread object with k_object_alloc() from the kernel-mode test
+ *   thread.
+ * - Create a user thread from it and grant it both semaphores.
+ * - Start the thread, give the start semaphore and wait on the end semaphore.
+ * - Abort the thread and release the object.
+ *
+ * Expected result:
+ * - The allocation succeeds and the dynamic user thread completes the
+ *   handshake within the timeout.
+ *
+ * @see k_object_alloc()
+ * @see k_thread_create()
  */
-ZTEST(thread_dynamic, test_kernel_create_dyn_user_thread)
+ZTEST(thread_dynamic, test_dyn_thread_create_from_kernel)
 {
 	if (!(IS_ENABLED(CONFIG_USERSPACE))) {
 		ztest_test_skip();
@@ -202,13 +265,31 @@ ZTEST(thread_dynamic, test_kernel_create_dyn_user_thread)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Test creation of dynamic user thread under user thread
+ * @brief Verify that a user thread can create a dynamic user thread.
  *
- * @details This is a simple test to create a user thread
- * dynamically via k_object_alloc() under a user thread.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * The same dynamic creation path has to work when the caller is itself a user
+ * thread, where k_object_alloc() and the grants that follow it are reached
+ * through system calls and are subject to the caller's own permissions. The
+ * check is therefore repeated with the test case running in user mode.
+ *
+ * Test steps:
+ * - Allocate a thread object with k_object_alloc() from a user-mode test
+ *   thread.
+ * - Create a user thread from it and grant it both semaphores.
+ * - Start the thread, give the start semaphore and wait on the end semaphore.
+ * - Abort the thread and release the object.
+ *
+ * Expected result:
+ * - The allocation succeeds and the dynamic user thread completes the
+ *   handshake within the timeout.
+ *
+ * @see k_object_alloc()
+ * @see k_thread_create()
  */
-ZTEST_USER(thread_dynamic, test_user_create_dyn_user_thread)
+ZTEST_USER(thread_dynamic, test_dyn_thread_create_from_user)
 {
 	create_dynamic_thread();
 }

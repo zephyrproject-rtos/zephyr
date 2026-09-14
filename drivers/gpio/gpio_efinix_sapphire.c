@@ -36,9 +36,9 @@ LOG_MODULE_REGISTER(gpio_efinix_sapphire);
 
 /* efinix sapphire specific gpio config struct */
 struct gpio_efinix_sapphire_cfg {
+	struct gpio_driver_config common;
 	uint32_t base_addr;
 	int n_gpios;
-	struct gpio_driver_config common;
 };
 
 /* efinix sapphire specific gpio data struct */
@@ -217,6 +217,7 @@ static DEVICE_API(gpio, gpio_efinix_sapphire_api) = {
 
 #define GPIO_EFINIX_SAPPHIRE_INIT(n) \
 	static struct gpio_efinix_sapphire_cfg gpio_efinix_sapphire_cfg_##n = { \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n), \
 		.base_addr = DT_INST_REG_ADDR(n), \
 		.n_gpios = DT_INST_PROP(n, ngpios), \
 }; \

@@ -17,7 +17,7 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
-  - ble
+  - bluetooth
   - counter
   - gpio
   - i2c

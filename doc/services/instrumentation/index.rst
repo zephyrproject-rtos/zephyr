@@ -124,8 +124,8 @@ bottlenecks. The subsystem tracks up to
    9.45% 0000061d main
    6.00% 0000049d k_msleep
    5.98% 00000469 k_sleep
-   5.95% 0000aea1 z_impl_k_sleep
-   5.93% 0000ad6d z_tick_sleep
+   5.95% 0000aea1 k_sleep_ticks
+   5.93% 0000ad6d z_impl_k_sleep_ticks
    5.66% 00000431 k_sem_take
    5.65% 00007e65 z_impl_k_sem_take
    5.51% 0000ac29 z_pend_curr

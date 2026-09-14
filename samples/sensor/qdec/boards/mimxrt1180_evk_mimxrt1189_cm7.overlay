@@ -1,0 +1,57 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	aliases {
+		qdec0 = &eqdc1;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	/* Wire J44-6 <-> J44-12 and J44-8 <-> J44-10 */
+	encoder-emulate {
+		compatible = "gpio-leds";
+
+		phase_a: phase_a {
+			gpios = <&gpio5 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		phase_b: phase_b {
+			gpios = <&gpio5 6 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&pinctrl {
+	eqdc1_default: eqdc1_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_01_xbar_inout21>,
+				 <&iomuxc_gpio_sd_b1_03_xbar_inout23>;
+			input-enable;
+		};
+	};
+};
+
+&xbar1 {
+	status = "okay";
+};
+
+&eqdc1 {
+	status = "okay";
+	pinctrl-0 = <&eqdc1_default>;
+	pinctrl-names = "default";
+	counts-per-revolution = <120>;
+	prescaler = <11>;
+	input-filter-period = <1>;
+	/*
+	 * mux-states cells = <output, input>:
+	 *   XBAR_INOUT21 -> EQDC1 PHASEA  output=87, input=21
+	 *   XBAR_INOUT23 -> EQDC1 PHASEB  output=88, input=23
+	 */
+	mux-states = <&xbar1 87 21>,
+		     <&xbar1 88 23>;
+};

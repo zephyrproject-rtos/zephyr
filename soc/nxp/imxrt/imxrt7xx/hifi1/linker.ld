@@ -451,6 +451,14 @@ SECTIONS
   .debug_funcnames  0 :  { *(.debug_funcnames) }
   .debug_typenames  0 :  { *(.debug_typenames) }
   .debug_varnames  0 :  { *(.debug_varnames) }
+  .debug_addr  0 :  { *(.debug_addr) }
+  .debug_line_str  0 :  { *(.debug_line_str) }
+  .debug_loclists  0 :  { *(.debug_loclists) }
+  .debug_macro  0 :  { *(.debug_macro) }
+  .debug_names  0 :  { *(.debug_names) }
+  .debug_rnglists  0 :  { *(.debug_rnglists) }
+  .debug_str_offsets  0 :  { *(.debug_str_offsets) }
+  .debug_sup  0 :  { *(.debug_sup) }
   .xt.insn 0 :
   {
     KEEP (*(.xt.insn))

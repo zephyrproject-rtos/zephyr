@@ -39,4 +39,12 @@ config BMI323_BUS_I2C
 	select I2C
 	select I2C_RTIO if SENSOR_ASYNC_API
 
+config EMUL_BMI323
+	bool "Emulator for the BMI323"
+	default y
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the BMI323. Doing so allows exercising
+	  the driver against emulated I2C and SPI buses without real hardware.
+
 endif # BMI323

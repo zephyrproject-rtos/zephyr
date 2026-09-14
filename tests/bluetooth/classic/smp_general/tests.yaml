@@ -12,6 +12,28 @@ tests:
       pytest_dut_scope: session
       fixture: usb_hci
     timeout: 900
+  bluetooth.classic.smp.general.no_derive_ltk:
+    platform_allow:
+    - native_sim
+    integration_platforms:
+    - native_sim
+    tags:
+    - bluetooth
+    - smp
+    extra_configs:
+    - CONFIG_BT_SMP_DERIVE_LTK=n
+    build_only: true
+  bluetooth.classic.smp.general.no_derive_lk:
+    platform_allow:
+    - native_sim
+    integration_platforms:
+    - native_sim
+    tags:
+    - bluetooth
+    - smp
+    extra_configs:
+    - CONFIG_BT_SMP_DERIVE_LK=n
+    build_only: true
   bluetooth.classic.smp.general.no_blobs:
     platform_allow:
     - mimxrt1170_evk@B/mimxrt1176/cm7

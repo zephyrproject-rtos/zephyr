@@ -1,0 +1,8 @@
+/*
+ * Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <microchip/sam/sama5/sama5d2/sama5d2.dtsi>

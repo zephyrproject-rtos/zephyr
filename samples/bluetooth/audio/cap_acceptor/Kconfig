@@ -47,4 +47,21 @@ config SAMPLE_TARGET_BROADCAST_NAME
 	  Name of target broadcast device. If not empty string, sink device
 	  will only listen to the specified broadcast source. Not case sensitive.
 
+if SAMPLE_UNICAST
+
+configdefault BT_ASCS_MAX_ASE_SNK_COUNT
+	default 2
+
+configdefault BT_ASCS_MAX_ASE_SRC_COUNT
+	default 1
+
+configdefault BT_ISO_MAX_CHAN
+	default 2
+
+# Mandatory to support at least 1 for ASCS
+configdefault BT_ATT_PREPARE_COUNT
+	default 1
+
+endif
+
 source "Kconfig.zephyr"

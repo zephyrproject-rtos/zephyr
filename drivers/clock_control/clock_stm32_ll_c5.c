@@ -153,7 +153,7 @@ int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_PSIK) && IS_ENABLED(STM32_PSIK_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
-	    (src_clk == STM32_SRC_CK48)) {
+	    ((src_clk == STM32_SRC_CK48) && IS_ENABLED(STM32_CK48_ENABLED))) {
 		return 0;
 	}
 

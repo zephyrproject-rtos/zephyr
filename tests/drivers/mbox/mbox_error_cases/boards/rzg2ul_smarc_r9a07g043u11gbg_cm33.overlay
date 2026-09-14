@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/*
+	 * Allocating whole openamp region as reserved memory
+	 * to save MPU entries
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		openamp_shm: memory-region@62f00000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x62f00000 0x900000>;
+			zephyr,memory-region = "openamp_memory";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+		};
+	};
+
+	/* Memory region for MBOX (MHU) driver */
+	mhu_shmem: memory-region@62f01000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x62f01000 0x1000>;
+		zephyr,memory-region = "mhu_shmem";
+	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox1 0>, <&mbox1 4>, <&mbox4 0>, <&mbox4 3>;
+		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
+	};
+};
+
+&mbox1 {
+	status = "okay";
+};
+
+&mbox4 {
+	status = "okay";
+};

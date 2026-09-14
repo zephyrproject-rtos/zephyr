@@ -9,7 +9,7 @@
 #include "mesh/transport.h"
 #include "mesh/va.h"
 #include <zephyr/sys/byteorder.h>
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 #include "friendship_common.h"
 

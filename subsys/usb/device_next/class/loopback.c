@@ -62,8 +62,8 @@ struct loopback_desc {
 
 struct lb_data {
 	struct loopback_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header *const *const fs_desc;
+	const struct usb_desc_header *const *const hs_desc;
 	atomic_t state;
 };
 
@@ -220,7 +220,7 @@ static struct net_buf *lb_control_to_host(struct usbd_class_data *c_data,
 
 		net_buf_add_mem(buf, lb_buf, len);
 
-		LOG_WRN("Device-to-Host, wLength %u | %zu", setup->wLength, len);
+		LOG_WRN("Device-to-Host, wLength %u | %u", setup->wLength, len);
 
 		return buf;
 	}
@@ -254,8 +254,8 @@ static int lb_control_to_dev(struct usbd_class_data *c_data,
 	return -ENOTSUP;
 }
 
-static void *lb_get_desc(struct usbd_class_data *const c_data,
-			 const enum usbd_speed speed)
+static const void *lb_get_desc(struct usbd_class_data *const c_data,
+			       const enum usbd_speed speed)
 {
 	struct lb_data *data = usbd_class_get_private(c_data);
 
@@ -293,7 +293,7 @@ static int lb_init(struct usbd_class_data *c_data)
 	return 0;
 }
 
-struct usbd_class_api lb_api = {
+static const struct usbd_class_api lb_api = {
 	.update = lb_update,
 	.control_to_host = lb_control_to_host,
 	.control_to_dev = lb_control_to_dev,
@@ -470,7 +470,7 @@ static struct loopback_desc lb_desc_##x = {					\
 	},									\
 };										\
 										\
-const static struct usb_desc_header *lb_fs_desc_##x[] = {			\
+const static struct usb_desc_header *const lb_fs_desc_##x[] = {			\
 	(struct usb_desc_header *) &lb_desc_##x.iad,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0_in_ep,			\
@@ -487,7 +487,7 @@ const static struct usb_desc_header *lb_fs_desc_##x[] = {			\
 	(struct usb_desc_header *) &lb_desc_##x.nil_desc,			\
 };										\
 										\
-const static struct usb_desc_header *lb_hs_desc_##x[] = {			\
+const static struct usb_desc_header *const lb_hs_desc_##x[] = {			\
 	(struct usb_desc_header *) &lb_desc_##x.iad,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0_hs_in_ep,			\

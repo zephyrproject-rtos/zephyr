@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief FIDO2 transport abstraction API.
+ * @ingroup fido2
  */
 
 #ifndef ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_TRANSPORT_H_

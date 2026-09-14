@@ -266,27 +266,32 @@ struct nvme_request *nvme_cmd_request_alloc(void)
 
 static void nvme_cmd_register_request(struct nvme_request *request)
 {
+	const uint32_t timeout_ms =
+		CONFIG_NVME_REQUEST_TIMEOUT * MSEC_PER_SEC;
+
 	sys_dlist_append(&pending_request, &request->node);
 
 	request->req_start = k_uptime_get_32();
 
 	if (!k_work_delayable_remaining_get(&request_timer)) {
-		k_work_reschedule(&request_timer,
-				  K_SECONDS(CONFIG_NVME_REQUEST_TIMEOUT));
+		k_work_reschedule(&request_timer, K_MSEC(timeout_ms));
 	}
 }
 
 static void request_timeout(struct k_work *work)
 {
+	const uint32_t timeout_ms =
+		CONFIG_NVME_REQUEST_TIMEOUT * MSEC_PER_SEC;
 	uint32_t current = k_uptime_get_32();
 	struct nvme_request *request, *next;
+	int32_t remain = 0;
 
 	ARG_UNUSED(work);
 
 	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&pending_request,
 					  request, next, node) {
-		if ((int32_t)(request->req_start +
-			      CONFIG_NVME_REQUEST_TIMEOUT - current) > 0) {
+		remain = (int32_t)(request->req_start + timeout_ms - current);
+		if (remain > 0) {
 			break;
 		}
 
@@ -306,11 +311,8 @@ static void request_timeout(struct k_work *work)
 		nvme_cmd_request_free(request);
 	}
 
-	if (request) {
-		k_work_reschedule(&request_timer,
-				  K_SECONDS(request->req_start +
-					    CONFIG_NVME_REQUEST_TIMEOUT -
-					    current));
+	if (request && remain > 0) {
+		k_work_reschedule(&request_timer, K_MSEC(remain));
 	}
 }
 

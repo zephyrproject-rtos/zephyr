@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
-set(QEMU_ARCH aarch64)
+set(QEMU_BINARY_SUFFIX aarch64)
 
 set(QEMU_MACH virt,gic-version=3,accel=kvm)
 
@@ -11,7 +11,7 @@ if(NOT CONFIG_ARMV8_A_NS)
   set(QEMU_MACH ${QEMU_MACH},secure=on)
 endif()
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -cpu host
   -machine ${QEMU_MACH}
   )

@@ -96,10 +96,10 @@ static inline void mipi_dbi_bflb_cs_control(const struct device *dev,
 {
 	const struct mipi_dbi_bflb_config *cfg = dev->config;
 
-	if (config->config.slave < cfg->num_cs_gpios) {
-		if (mipi_dbi_has_pin(&cfg->cs_gpios[config->config.slave])) {
+	if (config->config.peripheral < cfg->num_cs_gpios) {
+		if (mipi_dbi_has_pin(&cfg->cs_gpios[config->config.peripheral])) {
 			if (on) {
-				gpio_pin_set_dt(&cfg->cs_gpios[config->config.slave], 1);
+				gpio_pin_set_dt(&cfg->cs_gpios[config->config.peripheral], 1);
 				k_busy_wait(config->config.cs.delay);
 			} else {
 				if (!force_off
@@ -108,7 +108,7 @@ static inline void mipi_dbi_bflb_cs_control(const struct device *dev,
 					return;
 				}
 				k_busy_wait(config->config.cs.delay);
-				gpio_pin_set_dt(&cfg->cs_gpios[config->config.slave], 0);
+				gpio_pin_set_dt(&cfg->cs_gpios[config->config.peripheral], 0);
 			}
 		}
 	}
@@ -274,7 +274,7 @@ static int mipi_dbi_bflb_configure(const struct device *dev, const struct mipi_d
 	    && config->config.operation == data->configured.config.operation
 	    && config->config.cs.gpio.port == data->configured.config.cs.gpio.port
 	    && config->config.cs.gpio.pin == data->configured.config.cs.gpio.pin
-	    && config->config.slave == data->configured.config.slave) {
+	    && config->config.peripheral == data->configured.config.peripheral) {
 		return 0;
 	}
 

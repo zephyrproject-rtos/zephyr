@@ -7,7 +7,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_fn8.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include <espressif/partitions_0x0_amp.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/lora/sx126x.h>
@@ -46,7 +46,7 @@
 
 	vbatt {
 		compatible = "voltage-divider";
-		io-channels = <&adc1 0>;
+		io-channels = <&adc0 0>;
 		output-ohms = <100000>;
 		full-ohms = <(100000 + 390000)>;
 	};
@@ -101,7 +101,12 @@
 	};
 };
 
-&adc1 {
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+	ranges = <0x0 0x0 DT_SIZE_M(8)>;
+};
+
+&adc0 {
 	status = "okay";
 };
 

@@ -170,6 +170,23 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			sram {
+				compatible = "st,stm32-fmc-nor-psram";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		quadspi: spi@a0001000 {
+			compatible = "st,stm32-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xa0001000 0x400>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <92 0>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 1)>;
+			status = "disabled";
 		};
 
 		sai1: sai1@40015800 {
@@ -179,6 +196,7 @@
 			reg = <0x40015800 0x400>;
 			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+			clock-names = "sai_ck";
 			status = "disabled";
 
 			sai1_a: sai1a@40015804 {
@@ -192,6 +210,33 @@
 			sai1_b: sai1b@40015824 {
 				reg = <0x40015824 0x20>;
 				dmas = <&dma2 5 0 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		sai2: sai2@40015c00 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40015c00 0x400>;
+			ranges;
+			clocks = <&rcc STM32_CLOCK(APB2, 23)>;
+			clock-names = "sai_ck";
+			status = "disabled";
+
+			sai2_a: sai2a@40015c04 {
+				reg = <0x40015c04 0x20>;
+				dmas = <&dma2 4 3 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai2_b: sai2b@40015c24 {
+				reg = <0x40015c24 0x20>;
+				dmas = <&dma2 6 3 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";

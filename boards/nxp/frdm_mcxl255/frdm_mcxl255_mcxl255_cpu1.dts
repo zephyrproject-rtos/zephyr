@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxl255_cm0.dtsi>
+#include <nxp/mcx/mcxl/nxp_mcxl255_cm0.dtsi>
 #include "frdm_mcxl255-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -18,6 +18,10 @@
 		zephyr,sram = &sram;
 		zephyr,console = &aon_lpuart0;
 		zephyr,shell-uart = &aon_lpuart0;
+	};
+
+	aliases {
+		rtc = &rtc;
 	};
 };
 
@@ -32,6 +36,20 @@
 	pinctrl-names = "default";
 };
 
+&rtc {
+	status = "okay";
+};
+
 &systick {
+	status = "okay";
+};
+
+&aon_lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_aon_lpi2c0>;
+	pinctrl-names = "default";
+};
+
+&mbox_b {
 	status = "okay";
 };

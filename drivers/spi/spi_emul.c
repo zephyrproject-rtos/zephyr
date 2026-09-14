@@ -71,7 +71,7 @@ static int spi_emul_io(const struct device *dev, const struct spi_config *config
 	const struct spi_emul_api *api;
 	int ret;
 
-	emul = spi_emul_find(dev, config->slave);
+	emul = spi_emul_find(dev, config->peripheral);
 	if (!emul) {
 		return -EIO;
 	}

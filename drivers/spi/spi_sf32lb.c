@@ -152,7 +152,7 @@ static int spi_sf32lb_configure(const struct device *dev, const struct spi_confi
 		return ret;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
 		top_ctrl |= SPI_TOP_CTRL_SFRMDIR | SPI_TOP_CTRL_SCLKDIR;
 	}
 	top_ctrl |= (config->operation & SPI_MODE_CPOL) ? SPI_TOP_CTRL_SPO : 0U;

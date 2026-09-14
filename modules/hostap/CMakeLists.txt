@@ -765,3 +765,9 @@ if(CONFIG_SAE_PWE_EARLY_EXIT)
   "this is not secure and is a workaround for low resource systems, "
   "please use it carefully and do not use it production.")
 endif()
+
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK)
+  message(WARNING "CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK is enabled, "
+  "the PMK will be printed in cleartext on every successful Wi-Fi handshake, "
+  "this is a security risk and must not be enabled in production builds.")
+endif()

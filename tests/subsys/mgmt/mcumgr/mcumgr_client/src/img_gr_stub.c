@@ -95,7 +95,7 @@ void img_fail_response(int status)
 	}
 }
 
-void img_read_response(int count)
+void img_read_response(int count, size_t hash_len)
 {
 	struct net_buf *nb;
 	zcbor_state_t zse[CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS + 2];
@@ -113,6 +113,7 @@ void img_read_response(int count)
 	     zcbor_list_start_encode(zse, 2);
 
 	for (int i = 0; ok && i < count; i++) {
+		image_dummy_info[i].hash_len = hash_len;
 
 		ok = zcbor_map_start_encode(zse, 15) &&
 		     ((zcbor_tstr_put_lit(zse, "image") &&
@@ -121,10 +122,10 @@ void img_read_response(int count)
 		     zcbor_uint32_put(zse, image_dummy_info[i].slot_num) &&
 		     zcbor_tstr_put_lit(zse, "version") &&
 		     zcbor_tstr_put_term(zse, image_dummy_info[i].version,
-					sizeof(image_dummy_info[i].version)) &&
+					 sizeof(image_dummy_info[i].version)) &&
 
 		     zcbor_tstr_put_lit(zse, "hash") &&
-		     zcbor_bstr_encode_ptr(zse, image_dummy_info[i].hash, IMG_MGMT_DATA_SHA_LEN) &&
+		     zcbor_bstr_encode_ptr(zse, image_dummy_info[i].hash, hash_len) &&
 		     ZCBOR_ENCODE_FLAG(zse, "bootable", image_dummy_info[i].flags.bootable) &&
 		     ZCBOR_ENCODE_FLAG(zse, "pending", image_dummy_info[i].flags.pending) &&
 		     ZCBOR_ENCODE_FLAG(zse, "confirmed", image_dummy_info[i].flags.confirmed) &&
@@ -197,7 +198,9 @@ void img_state_write_verify(struct net_buf *nb)
 	}
 	if (hash.len) {
 		printf("HASH %d", hash.len);
-		if (memcmp(hash.value, image_dummy_info[1].hash, 32) == 0) {
+		if (hash.len <= sizeof(image_dummy_info[1].hash) &&
+		    hash.len == image_dummy_info[1].hash_len &&
+		    memcmp(hash.value, image_dummy_info[1].hash, hash.len) == 0) {
 			if (confirm) {
 				/* Set Permanent bit */
 				image_dummy_info[1].flags.permanent = true;
@@ -205,7 +208,7 @@ void img_state_write_verify(struct net_buf *nb)
 				/* Set pending */
 				image_dummy_info[1].flags.pending = true;
 			}
-			img_read_response(2);
+			img_read_response(2, image_dummy_info[1].hash_len);
 		} else {
 			img_fail_response(MGMT_ERR_EINVAL);
 		}
@@ -213,7 +216,7 @@ void img_state_write_verify(struct net_buf *nb)
 		if (confirm) {
 			image_dummy_info[0].flags.confirmed = true;
 		}
-		img_read_response(2);
+		img_read_response(2, image_dummy_info[0].hash_len);
 	}
 }
 
@@ -281,8 +284,10 @@ void img_upload_init_verify(struct net_buf *nb)
 void img_gr_stub_data_init(uint8_t *hash_ptr)
 {
 	image_hash_ptr = hash_ptr;
-	for (int i = 0; i < 32; i++) {
+	for (int i = 0; i < IMG_MGMT_DATA_SHA_LEN; i++) {
 		image_hash_ptr[i] = i;
+	}
+	for (int i = 0; i < IMG_MGMT_CLIENT_HASH_MAX_LEN; i++) {
 		image_dummy_info[0].hash[i] = i + 32;
 		image_dummy_info[1].hash[i] = i + 64;
 	}
@@ -290,6 +295,7 @@ void img_gr_stub_data_init(uint8_t *hash_ptr)
 	for (int i = 0; i < 2; i++) {
 		image_dummy_info[i].img_num = i;
 		image_dummy_info[i].slot_num = i;
+		image_dummy_info[i].hash_len = IMG_MGMT_DATA_SHA_LEN;
 		/* Write version */
 		snprintf(image_dummy_info[i].version, IMG_MGMT_VER_MAX_STR_LEN, "1.1.%u", i);
 		image_dummy_info[i].version[sizeof(image_dummy_info[i].version) - 1] = '\0';

@@ -11,6 +11,10 @@
 #include <zephyr/fff.h>
 #include <zephyr/toolchain.h>
 
+#ifdef CONFIG_ZTEST
+#include <zephyr/ztest.h>
+#endif /* CONFIG_ZTEST */
+
 /* regulator */
 
 struct regulator_fake_config {
@@ -50,6 +54,15 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_active_discharge, const struct de
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_error_flags,
 		       const struct device *, regulator_error_flags_t *);
 
+static int regulator_fake_get_voltage_delegate(const struct device *dev, int32_t *volt_uv)
+{
+	ARG_UNUSED(dev);
+
+	*volt_uv = 1e6; /* 1V */
+
+	return 0;
+};
+
 static DEVICE_API(regulator, api) = {
 	.enable = regulator_fake_enable,
 	.disable = regulator_fake_disable,
@@ -72,6 +85,8 @@ static int regulator_fake_init(const struct device *dev)
 {
 	const struct regulator_fake_config *config = dev->config;
 
+	regulator_fake_get_voltage_fake.custom_fake = regulator_fake_get_voltage_delegate;
+
 	regulator_common_data_init(dev);
 
 	return regulator_common_init(dev, config->is_enabled);
@@ -89,6 +104,37 @@ static DEVICE_API(regulator_parent, parent_api) = {
 	.dvs_state_set = regulator_parent_fake_dvs_state_set,
 	.ship_mode = regulator_parent_fake_ship_mode,
 };
+
+#ifdef CONFIG_ZTEST
+static void regulator_fake_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
+{
+	ARG_UNUSED(test);
+	ARG_UNUSED(fixture);
+
+	RESET_FAKE(regulator_fake_enable);
+	RESET_FAKE(regulator_fake_disable);
+	RESET_FAKE(regulator_fake_count_voltages);
+	RESET_FAKE(regulator_fake_list_voltage);
+	RESET_FAKE(regulator_fake_set_voltage);
+	RESET_FAKE(regulator_fake_get_voltage);
+	RESET_FAKE(regulator_fake_count_current_limits);
+	RESET_FAKE(regulator_fake_list_current_limit);
+	RESET_FAKE(regulator_fake_set_current_limit);
+	RESET_FAKE(regulator_fake_get_current_limit);
+	RESET_FAKE(regulator_fake_set_mode);
+	RESET_FAKE(regulator_fake_get_mode);
+	RESET_FAKE(regulator_fake_set_active_discharge);
+	RESET_FAKE(regulator_fake_get_active_discharge);
+	RESET_FAKE(regulator_fake_get_error_flags);
+	RESET_FAKE(regulator_parent_fake_dvs_state_set);
+	RESET_FAKE(regulator_parent_fake_ship_mode);
+
+	/* Re-install default delegate */
+	regulator_fake_get_voltage_fake.custom_fake = regulator_fake_get_voltage_delegate;
+}
+
+ZTEST_RULE(regulator_fake_reset_rule, regulator_fake_reset_rule_before, NULL);
+#endif /* CONFIG_ZTEST */
 
 #define FAKE_DATA_NAME(node_id) _CONCAT(data_, DT_DEP_ORD(node_id))
 #define FAKE_CONF_NAME(node_id) _CONCAT(config_, DT_DEP_ORD(node_id))

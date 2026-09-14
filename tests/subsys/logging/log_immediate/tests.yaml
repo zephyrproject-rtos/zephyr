@@ -12,7 +12,6 @@ tests:
       - nucleo_l053r8
       - nucleo_f030r8
       - stm32f0_disco
-      - nrf52_bsim
   logging.immediate.clean_output:
     extra_args: CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT=y
     tags:
@@ -23,4 +22,3 @@ tests:
       - nucleo_l053r8
       - nucleo_f030r8
       - stm32f0_disco
-      - nrf52_bsim

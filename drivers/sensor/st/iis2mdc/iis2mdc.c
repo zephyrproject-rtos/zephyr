@@ -350,7 +350,7 @@ static int iis2mdc_init(const struct device *dev)
 #endif /* CONFIG_IIS2MDC_TRIGGER */
 
 #define IIS2MDC_SPI_OP  (SPI_WORD_SET(8) |				\
-			 SPI_OP_MODE_MASTER |				\
+			 SPI_OP_MODE_CONTROLLER |			\
 			 SPI_MODE_CPOL |				\
 			 SPI_MODE_CPHA)					\
 

@@ -21,11 +21,18 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/zvfs/eventfd.h>
 
 #if defined(CONFIG_COAP_OSCORE)
+#include <psa/crypto.h>
+#include <zephyr/net/coap_oscore.h>
 #include "coap_oscore_internal.h"
 
 /* Approximate OSCORE buffer overhead */
 #define OSCORE_BUFFER_OVERHEAD        40
 #define COAP_SERVER_WIRE_MESSAGE_SIZE (CONFIG_COAP_SERVER_MESSAGE_SIZE + OSCORE_BUFFER_OVERHEAD)
+
+/* Length of the Echo option challenge value used for replay window
+ * synchronization (RFC 9175 Appendix A.2).
+ */
+#define OSCORE_ECHO_CHALLENGE_LEN 12U
 
 K_MEM_SLAB_DEFINE_STATIC(coap_oscore_send_buffer, ROUND_UP(COAP_SERVER_WIRE_MESSAGE_SIZE, 4), 1, 4);
 #else
@@ -54,22 +61,22 @@ BUILD_ASSERT(CONFIG_ZVFS_POLL_MAX > 0, "CONFIG_ZVFS_POLL_MAX can't be 0");
 static K_MUTEX_DEFINE(lock);
 static int control_sock;
 
+/* Signalled by the server thread once it has honoured a deferred close request
+ * (see coap_service_stop() and the deferred-close pass in coap_server_thread()).
+ */
+static K_CONDVAR_DEFINE(close_done);
+/* Identity of the server (poll) thread, captured when it starts. Lets
+ * coap_service_stop() detect a same-thread call and close directly instead of
+ * deadlocking on itself.
+ */
+extern const k_tid_t coap_server_id;
+
 #if defined(CONFIG_COAP_SERVER_PENDING_ALLOCATOR_STATIC)
 K_MEM_SLAB_DEFINE_STATIC(pending_data, COAP_SERVER_WIRE_MESSAGE_SIZE,
 			 CONFIG_COAP_SERVER_PENDING_ALLOCATOR_STATIC_BLOCKS, 4);
 #endif
 
 #if defined(CONFIG_COAP_OSCORE)
-static inline struct coap_oscore_context *
-coap_service_oscore_ctx(const struct coap_service *service)
-{
-	if (service->oscore_ctx_provider == NULL) {
-		return NULL;
-	}
-
-	return service->oscore_ctx_provider();
-}
-
 static void coap_oscore_finish_exchange(struct coap_oscore_exchange *cache,
 				   const struct coap_packet *cpkt, const struct net_sockaddr *addr,
 				   net_socklen_t addr_len)
@@ -117,35 +124,115 @@ static inline void coap_server_free(void *ptr)
 #endif
 }
 
+/* OSCORE protection mode for coap_service_send_internal */
+enum coap_oscore_protect_mode {
+	OSCORE_PROTECT_CACHE, /* Normal operation: cache exchange and protect if applicable */
+	OSCORE_PROTECT_SKIP,  /* Skip OSCORE protection entirely */
+	OSCORE_PROTECT_FORCE, /* Force OSCORE protection regardless of exchange state */
+};
+
+struct coap_oscore_protect_params {
+	enum coap_oscore_protect_mode mode;
+#if defined(CONFIG_COAP_OSCORE)
+	struct coap_oscore_context *ctx;
+#endif /* CONFIG_COAP_OSCORE */
+};
+
 static int coap_service_send_internal(const struct coap_service *service,
 				      const struct coap_packet *cpkt,
 				      const struct net_sockaddr *addr, net_socklen_t addr_len,
 				      const struct coap_transmission_parameters *params,
-				      bool skip_oscore);
+				      struct coap_oscore_protect_params *oscore_params);
 
 #if defined(CONFIG_COAP_OSCORE)
-static int send_error_response(const struct coap_service *service,
-			       const struct coap_packet *request, uint8_t code,
-			       const struct net_sockaddr *client_addr,
-			       net_socklen_t client_addr_len)
+static int init_error_response_packet(struct coap_packet *response,
+				      const struct coap_packet *request, uint8_t code, uint8_t *buf,
+				      size_t buf_len)
 {
-	static uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE]; /* under coap server lock */
-	struct coap_packet response;
 	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint8_t tkl = coap_header_get_token(request, token);
 	uint16_t id = coap_header_get_id(request);
 	uint8_t type = (coap_header_get_type(request) == COAP_TYPE_CON) ? COAP_TYPE_ACK
 									: COAP_TYPE_NON_CON;
+
+	return coap_packet_init(response, buf, buf_len, COAP_VERSION_1, type, tkl, token, code, id);
+}
+
+static int send_error_response(const struct coap_service *service,
+			       const struct coap_packet *request, uint8_t code,
+			       const struct net_sockaddr *client_addr,
+			       net_socklen_t client_addr_len, uint8_t *buf, size_t buf_len)
+{
+	struct coap_packet response;
 	int ret;
 
-	ret = coap_packet_init(&response, buf, sizeof(buf), COAP_VERSION_1, type, tkl, token, code,
-			       id);
+	ret = init_error_response_packet(&response, request, code, buf, buf_len);
 	if (ret < 0) {
 		return ret;
 	}
 
+	struct coap_oscore_protect_params oscore_params = {
+		.mode = OSCORE_PROTECT_SKIP,
+		.ctx = NULL,
+	};
 	return coap_service_send_internal(service, &response, client_addr, client_addr_len, NULL,
-					  true);
+					  &oscore_params);
+}
+
+/* RFC 8613 Appendix B.1.2: after a reboot with a reused context the recipient replay
+ * window is lost. Answer the offending request with a 4.01 Unauthorized carrying a fresh
+ * Echo option and protect it with OSCORE so the client can prove freshness by echoing the
+ * value back, allowing the replay window to be re-synchronized.
+ */
+static int send_oscore_echo_challenge(const struct coap_service *service,
+				      const struct coap_packet *request,
+				      const struct net_sockaddr *client_addr,
+				      net_socklen_t client_addr_len, uint8_t *buf, size_t buf_len,
+				      struct coap_oscore_context *ctx)
+{
+	uint8_t echo_val[OSCORE_ECHO_CHALLENGE_LEN];
+	struct coap_packet response;
+	psa_status_t status;
+	int ret;
+
+	/* RFC 9175: the Echo value must be unpredictable, hence the PSA CSPRNG (already
+	 * pulled in by OSCORE's PSA Crypto dependency).
+	 */
+	status = psa_generate_random(echo_val, sizeof(echo_val));
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("Failed to generate OSCORE Echo challenge (%d)", status);
+		return -EIO;
+	}
+
+	ret = init_error_response_packet(&response, request, COAP_RESPONSE_CODE_UNAUTHORIZED, buf,
+					 buf_len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The Echo option is class E (inner); uoscore caches its value while in the
+	 * ECHO_VERIFY state so the next request can be validated for freshness.
+	 */
+	ret = coap_packet_append_option(&response, COAP_OPTION_ECHO, echo_val, sizeof(echo_val));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Use coap_service_send_internal with FORCE mode to bypass exchange cache logic
+	 * and ensure OSCORE protection is applied regardless of exchange state.
+	 */
+	struct coap_oscore_protect_params oscore_params = {
+		.mode = OSCORE_PROTECT_FORCE,
+		.ctx = ctx,
+	};
+	ret = coap_service_send_internal(service, &response, client_addr, client_addr_len, NULL,
+					  &oscore_params);
+
+	if (ret == 0) {
+		LOG_DBG("Sent OSCORE Echo challenge for replay window synchronization");
+	}
+
+	return ret;
 }
 #endif /* CONFIG_COAP_OSCORE */
 
@@ -205,6 +292,9 @@ static int coap_server_process(int sock_fd)
 	ssize_t received;
 	int ret;
 	int flags = ZSOCK_MSG_DONTWAIT;
+#if defined(CONFIG_COAP_OSCORE)
+	struct coap_oscore_context *oscore_ctx = NULL;
+#endif
 
 	if (IS_ENABLED(CONFIG_COAP_SERVER_TRUNCATE_MSGS)) {
 		flags |= ZSOCK_MSG_TRUNC;
@@ -372,25 +462,43 @@ static int coap_server_process(int sock_fd)
 		goto unlock;
 	}
 
-	/* RFC 8613 Section 8.2: Verify and decrypt OSCORE-protected requests */
-	struct coap_oscore_context *oscore_ctx = coap_service_oscore_ctx(service);
+	if (request_has_oscore && service->data->oscore_exchange_cache == NULL) {
+		/* Service is not OSCORE-enabled (no exchange cache), so it can neither
+		 * track the exchange nor protect a response. Reject the unsupported
+		 * critical option instead of decrypting a request we cannot answer.
+		 */
+		LOG_WRN("OSCORE request on non-OSCORE service %s, rejecting", service->name);
+		(void)send_error_response(service, &request, COAP_RESPONSE_CODE_BAD_OPTION,
+					  net_sad(&client_addr), client_addr_len, buf, sizeof(buf));
+		ret = -ENOTSUP;
+		goto unlock;
+	}
 
-	if (oscore_ctx != NULL && request_has_oscore) {
+	if (request_has_oscore) {
 		static uint8_t decrypted_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 		uint32_t decrypted_len = sizeof(decrypted_buf);
 		uint8_t error_code = COAP_RESPONSE_CODE_BAD_REQUEST;
+		bool needs_echo_challenge = false;
 
-		ret = coap_oscore_verify(buf, received, decrypted_buf, &decrypted_len, oscore_ctx,
-					 &error_code);
+		ret = coap_oscore_verify(&request, buf, received, decrypted_buf, &decrypted_len,
+					 &oscore_ctx, &error_code, &needs_echo_challenge);
 		if (ret < 0) {
-			/* RFC 8613 Section 8.2: OSCORE errors are sent as simple CoAP
-			 * responses without OSCORE processing
-			 */
-			LOG_ERR("OSCORE verification failed (%d), sending error %d", ret,
-				error_code);
-			(void)send_error_response(service, &request, error_code,
-						  net_sad(&client_addr), client_addr_len);
-			ret = -EACCES;
+			if (needs_echo_challenge) {
+				/* RFC 8613 Appendix B.1.2: re-synchronize the recipient replay
+				 * window by challenging the client with a protected Echo option.
+				 */
+				LOG_DBG("OSCORE replay window desync, sending Echo challenge");
+				(void)send_oscore_echo_challenge(
+					service, &request, net_sad(&client_addr), client_addr_len,
+					buf, sizeof(buf), oscore_ctx);
+			} else {
+				/* RFC 8613 Section 8.2: OSCORE errors are sent as simple CoAP
+				 * responses without OSCORE processing
+				 */
+				(void)send_error_response(service, &request, error_code,
+							  net_sad(&client_addr), client_addr_len,
+							  buf, sizeof(buf));
+			}
 			goto unlock;
 		}
 
@@ -404,7 +512,6 @@ static int coap_server_process(int sock_fd)
 		}
 
 		LOG_DBG("OSCORE request verified and decrypted");
-		request.is_oscore = true; /* persists into observer via coap_observer_init */
 
 		/* RFC 8613 Section 8.3: Track OSCORE exchanges to protect responses */
 		uint8_t token[COAP_TOKEN_MAX_LEN];
@@ -413,8 +520,8 @@ static int coap_server_process(int sock_fd)
 
 		if (!is_observe) {
 			ret = coap_oscore_exchange_add(service->data->oscore_exchange_cache,
-						  net_sad(&client_addr), client_addr_len, token,
-						  tkl);
+						       net_sad(&client_addr), client_addr_len,
+						       token, tkl, oscore_ctx);
 			if (ret < 0) {
 				if (ret == -ENOMEM) {
 					LOG_WRN("OSCORE exchange full. Sending 5.03 Service "
@@ -423,7 +530,8 @@ static int coap_server_process(int sock_fd)
 					(void)send_error_response(
 						service, &request,
 						COAP_RESPONSE_CODE_SERVICE_UNAVAILABLE,
-						net_sad(&client_addr), client_addr_len);
+						net_sad(&client_addr), client_addr_len, buf,
+						sizeof(buf));
 					ret = -ENOMEM;
 					goto unlock;
 				}
@@ -432,17 +540,15 @@ static int coap_server_process(int sock_fd)
 				ret = -EINVAL;
 				goto unlock;
 			}
+		} else {
+			request.oscore_ctx =
+				oscore_ctx; /* persists into observer via coap_observer_init */
 		}
-	} else if (oscore_ctx == NULL && request_has_oscore) {
-		LOG_WRN("OSCORE message received but no context configured");
-		(void)send_error_response(service, &request, COAP_RESPONSE_CODE_UNAUTHORIZED,
-					  net_sad(&client_addr), client_addr_len);
-		ret = -ENOTSUP;
-		goto unlock;
-	} else if (service->oscore_required && !request_has_oscore) {
+
+	} else if (service->oscore_required) {
 		LOG_WRN("Service requires OSCORE but request is not protected");
 		(void)send_error_response(service, &request, COAP_RESPONSE_CODE_UNAUTHORIZED,
-					  net_sad(&client_addr), client_addr_len);
+					  net_sad(&client_addr), client_addr_len, buf, sizeof(buf));
 		ret = -EACCES;
 		goto unlock;
 	}
@@ -531,6 +637,12 @@ static int coap_server_process(int sock_fd)
 	}
 
 unlock:
+#if defined(CONFIG_COAP_OSCORE)
+	if (oscore_ctx != NULL) {
+		/* Release the reference taken by coap_oscore_verify() */
+		coap_oscore_context_dec_refcount(oscore_ctx);
+	}
+#endif
 	(void)k_mutex_unlock(&lock);
 
 	return ret;
@@ -564,7 +676,8 @@ static void coap_server_retransmit(void)
 
 		if (coap_pending_cycle(pending)) {
 			ret = zsock_sendto(service->data->sock_fd, pending->data, pending->len, 0,
-					   &pending->addr, ADDRLEN(&pending->addr));
+					   net_sad(&pending->addr_storage),
+					   ADDRLEN(net_sad(&pending->addr_storage)));
 			if (ret < 0) {
 				LOG_ERR("Failed to send pending retransmission for %s (%d)",
 					service->name, ret);
@@ -573,7 +686,8 @@ static void coap_server_retransmit(void)
 		} else {
 			LOG_WRN("Packet retransmission failed for %s", service->name);
 
-			coap_service_remove_observer(service, NULL, &pending->addr, NULL, 0U);
+			coap_service_remove_observer(service, NULL,
+						     net_sad(&pending->addr_storage), NULL, 0U);
 			coap_server_free(pending->data);
 			coap_pending_clear(pending);
 		}
@@ -796,20 +910,44 @@ int coap_service_stop(const struct coap_service *service)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	if (service->data->sock_fd < 0) {
+	if ((service->data->sock_fd < 0) || (service->data->close_requested)) {
 		k_mutex_unlock(&lock);
 		return -EALREADY;
 	}
 
-	/* Closing a socket will trigger a poll event */
-	ret = zsock_close(service->data->sock_fd);
-	service->data->sock_fd = -1;
+	if (k_current_get() == coap_server_id) {
+		/* Called from the server thread itself (e.g. a resource handler).
+		 * zsock_poll() has already returned,
+		 */
+		ret = zsock_close(service->data->sock_fd);
+		service->data->sock_fd = -1;
+		k_mutex_unlock(&lock);
+
+		coap_service_raise_event(service, NET_EVENT_COAP_SERVICE_STOPPED);
+
+		return ret;
+	}
+
+	/* Defer the close to the server thread: it must remove the fd from its
+	 * poll set before the socket is closed. Closing here would close a socket
+	 * the server thread may hold inside an active zsock_poll(), which can lead
+	 * to socket fd reuse issues. Wake the poll, then block until the
+	 * server thread has performed the close, preserving the synchronous
+	 * "socket released on return" contract callers (e.g. stop-then-rebind)
+	 * rely on.
+	 */
+	service->data->close_requested = true;
+	coap_server_update_services();
+
+	while (service->data->close_requested) {
+		k_condvar_wait(&close_done, &lock, K_FOREVER);
+	}
 
 	k_mutex_unlock(&lock);
 
 	coap_service_raise_event(service, NET_EVENT_COAP_SERVICE_STOPPED);
 
-	return ret;
+	return 0;
 }
 
 int coap_service_is_running(const struct coap_service *service)
@@ -834,7 +972,7 @@ static int coap_service_send_internal(const struct coap_service *service,
 				      const struct coap_packet *cpkt,
 				      const struct net_sockaddr *addr, net_socklen_t addr_len,
 				      const struct coap_transmission_parameters *params,
-				      bool skip_oscore)
+				      struct coap_oscore_protect_params *oscore_params)
 {
 	int ret;
 
@@ -865,17 +1003,25 @@ static int coap_service_send_internal(const struct coap_service *service,
 
 #if defined(CONFIG_COAP_OSCORE)
 	/* RFC 8613 Section 8.3: Protect responses for OSCORE exchanges */
-	struct coap_oscore_context *oscore_ctx = coap_service_oscore_ctx(service);
+	struct coap_oscore_context *oscore_ctx = NULL;
 
-	if (oscore_ctx != NULL && !skip_oscore) {
+	if (oscore_params != NULL && oscore_params->mode != OSCORE_PROTECT_SKIP &&
+	    (service->data->oscore_exchange_cache != NULL ||
+	     oscore_params->mode == OSCORE_PROTECT_FORCE)) {
 		uint8_t token[COAP_TOKEN_MAX_LEN];
 		uint8_t tkl = coap_header_get_token(cpkt, token);
-		bool protect = false;
 
 		is_notify = coap_get_option_int(cpkt, COAP_OPTION_OBSERVE) >= 0;
 		is_empty = coap_header_get_code(cpkt) == COAP_CODE_EMPTY;
 
-		if (is_notify) {
+		if (oscore_params->mode == OSCORE_PROTECT_FORCE) {
+			if (oscore_params->ctx == NULL) {
+				LOG_ERR("OSCORE context required for FORCE mode");
+				(void)k_mutex_unlock(&lock);
+				return -EINVAL;
+			}
+			oscore_ctx = oscore_params->ctx;
+		} else if (is_notify) {
 			/* For Observe notifications, find the observer to determine if the response
 			 * needs OSCORE protection
 			 */
@@ -892,15 +1038,13 @@ static int coap_service_send_internal(const struct coap_service *service,
 								      MAX_OBSERVERS, addr);
 			}
 
-			protect = (observer != NULL) && observer->is_oscore;
-		} else if (is_empty) {
-			protect = false; /* empty ACK/RST: messaging layer only */
-		} else {
+			oscore_ctx = observer ? observer->oscore_ctx : NULL;
+		} else if (!is_empty) {
 			exchange = coap_oscore_exchange_find(service->data->oscore_exchange_cache,
 							     addr, addr_len, token, tkl);
-			protect = (exchange != NULL);
+			oscore_ctx = exchange ? exchange->ctx : NULL;
 		}
-		if (protect) {
+		if (oscore_ctx != NULL) {
 			(void)k_mem_slab_alloc(&coap_oscore_send_buffer, (void **)&oscore_buf,
 					       K_FOREVER);
 			ret = coap_oscore_protect(cpkt->data, cpkt->offset, oscore_buf, &oscore_len,
@@ -978,8 +1122,8 @@ static int coap_service_send_internal(const struct coap_service *service,
 		 * so release the exchange slot now rather than leaving it stale for the full
 		 * retransmit window if the initial send fails.
 		 */
-		if (oscore_ctx != NULL && !skip_oscore && !is_notify && !is_empty &&
-		    exchange != NULL) {
+		if (oscore_ctx != NULL && oscore_params->mode != OSCORE_PROTECT_SKIP &&
+		    !is_notify && !is_empty && exchange != NULL) {
 			coap_oscore_finish_exchange(service->data->oscore_exchange_cache, cpkt,
 						    addr, addr_len);
 			exchange_removed = true;
@@ -1006,8 +1150,8 @@ send:
 	/* For NON responses and CON when the pending cache was full, remove the exchange
 	 * entry only after a successful send so the application can retry on failure.
 	 */
-	if (!exchange_removed && oscore_ctx != NULL && !skip_oscore && !is_notify && !is_empty &&
-	    exchange != NULL) {
+	if (!exchange_removed && oscore_ctx != NULL && oscore_params->mode != OSCORE_PROTECT_SKIP &&
+	    !is_notify && !is_empty && exchange != NULL) {
 
 		(void)k_mutex_lock(&lock, K_FOREVER);
 		coap_oscore_finish_exchange(service->data->oscore_exchange_cache, cpkt, addr,
@@ -1022,7 +1166,13 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
 		      const struct net_sockaddr *addr, net_socklen_t addr_len,
 		      const struct coap_transmission_parameters *params)
 {
-	return coap_service_send_internal(service, cpkt, addr, addr_len, params, false);
+	struct coap_oscore_protect_params oscore_params = {
+		.mode = OSCORE_PROTECT_CACHE, /* default to cache-based protection for responses */
+#if defined(CONFIG_COAP_OSCORE)
+		.ctx = NULL,
+#endif /* CONFIG_COAP_OSCORE */
+	};
+	return coap_service_send_internal(service, cpkt, addr, addr_len, params, &oscore_params);
 }
 
 int coap_resource_send(const struct coap_resource *resource, const struct coap_packet *cpkt,
@@ -1083,6 +1233,25 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
 					      tkl);
 		if (observer != NULL) {
 			/* Client refresh */
+#if defined(CONFIG_COAP_OSCORE)
+			if (request->oscore_ctx != NULL &&
+			    observer->oscore_ctx != request->oscore_ctx) {
+				struct coap_oscore_context *old_ctx = observer->oscore_ctx;
+
+				if (old_ctx != NULL) {
+					(void)coap_oscore_context_dec_refcount(old_ctx);
+				}
+				observer->oscore_ctx = request->oscore_ctx;
+
+				if (coap_oscore_context_inc_refcount(observer->oscore_ctx) != 0) {
+					/* old context removed but potentially new one could not be
+					 * added
+					 */
+					observer->oscore_ctx = NULL;
+					ret = -EINVAL;
+				}
+			}
+#endif /* CONFIG_COAP_OSCORE */
 			goto unlock;
 		}
 
@@ -1094,7 +1263,7 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
 		}
 
 #if defined(CONFIG_COAP_OSCORE)
-		coap_observer_init_oscore(observer, request, addr, request->is_oscore);
+		coap_observer_init_oscore(observer, request, addr, request->oscore_ctx);
 #else
 		coap_observer_init(observer, request, addr);
 #endif /* CONFIG_COAP_OSCORE */
@@ -1225,10 +1394,36 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 			k_msleep(10);
 		}
 
+		/* Honour deferred close requests from coap_service_stop(). zsock_poll()
+		 * has returned, so every fd has already been removed from the poll set;
+		 * closing here cannot race an active poll.
+		 */
+		k_mutex_lock(&lock, K_FOREVER);
+		COAP_SERVICE_FOREACH(svc) {
+			if (svc->data->close_requested && svc->data->sock_fd >= 0) {
+				/* invalidate the fd in the poll set */
+				for (int i = 0; i < sock_nfds; ++i) {
+					if (sock_fds[i].fd == svc->data->sock_fd) {
+						sock_fds[i].fd = -1;
+						break;
+					}
+				}
+
+				(void)zsock_close(svc->data->sock_fd);
+				svc->data->sock_fd = -1;
+				svc->data->close_requested = false;
+			}
+		}
+		k_mutex_unlock(&lock);
+		k_condvar_broadcast(&close_done);
+
 		for (int i = 0; i < sock_nfds; ++i) {
+			if (sock_fds[i].fd == -1) {
+				/* closing this fd was requested */
+				continue;
+			}
 			/* Check the wake up event */
-			if (sock_fds[i].fd == control_sock &&
-			    sock_fds[i].revents & ZSOCK_POLLIN) {
+			if (sock_fds[i].fd == control_sock && sock_fds[i].revents & ZSOCK_POLLIN) {
 				zvfs_eventfd_t tmp;
 
 				zvfs_eventfd_read(sock_fds[i].fd, &tmp);

@@ -297,19 +297,19 @@ static int uart_sedi_err_check(const struct device *dev)
 
 	sedi_uart_get_status(instance, (uint32_t *const)&status);
 	if (status &  SEDI_UART_RX_OE) {
-		ret_status = UART_ERROR_OVERRUN;
+		ret_status |= UART_ERROR_OVERRUN;
 	}
 
 	if (status & SEDI_UART_RX_PE) {
-		ret_status = UART_ERROR_PARITY;
+		ret_status |= UART_ERROR_PARITY;
 	}
 
 	if (status & SEDI_UART_RX_FE) {
-		ret_status = UART_ERROR_FRAMING;
+		ret_status |= UART_ERROR_FRAMING;
 	}
 
 	if (status & SEDI_UART_RX_BI) {
-		ret_status = UART_BREAK;
+		ret_status |= UART_BREAK;
 	}
 
 	pm_device_runtime_put(dev);

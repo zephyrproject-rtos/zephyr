@@ -196,8 +196,7 @@ static void icp201xx_convert_pressure(struct sensor_value *val, int32_t raw_val)
 		raw_val |= 0xFFF00000;
 	}
 	/* P = (POUT/2^17)*40kPa + 70kPa */
-	val->val1 = (raw_val * 40) / 131072 + 70;
-	val->val2 = ((uint64_t)(raw_val * 40) % 131072) * 1000000 / 131072;
+	sensor_value_from_micro(val, ((int64_t)raw_val * 40 * 1000000) / 131072 + 70000000);
 }
 
 static void icp201xx_convert_temperature(struct sensor_value *val, int32_t raw_val)
@@ -207,8 +206,7 @@ static void icp201xx_convert_temperature(struct sensor_value *val, int32_t raw_v
 		raw_val |= 0xFFF00000;
 	}
 	/* T = (TOUT/2^18)*65C + 25C */
-	val->val1 = (raw_val * 65) / 262144 + 25;
-	val->val2 = ((uint64_t)(raw_val * 65) % 262144) * 1000000 / 262144;
+	sensor_value_from_micro(val, ((int64_t)raw_val * 65 * 1000000) / 262144 + 25000000);
 }
 
 static int icp201xx_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -419,7 +417,7 @@ static DEVICE_API(sensor, icp201xx_api_funcs) = {.sample_fetch = icp201xx_sample
 	{                                                              \
 		.if_mode = ICP201XX_IF_4_WIRE_SPI,                         \
 		.bus.spi = SPI_DT_SPEC_INST_GET(inst,                      \
-			(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |    \
+			(SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | \
 			SPI_TRANSFER_MSB | SPI_FULL_DUPLEX |      \
 			SPI_MODE_CPHA | SPI_MODE_CPOL)), \
 		.bus_io = &icp201xx_bus_io_spi,                            \

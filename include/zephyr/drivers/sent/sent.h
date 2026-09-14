@@ -95,7 +95,10 @@ struct sent_frame {
 typedef void (*sent_rx_frame_callback_t)(const struct device *dev, uint8_t channel,
 					 uint32_t num_frame, void *user_data);
 
-/** @cond INTERNAL_HIDDEN */
+/**
+ * @def_driverbackendgroup{SENT,sent_interface}
+ * @{
+ */
 
 /**
  * @brief Callback API upon starting receive frame
@@ -140,13 +143,21 @@ struct sent_rx_callback_configs {
 typedef int (*sent_register_callback_t)(const struct device *dev, uint8_t channel,
 					struct sent_rx_callback_configs callback_configs);
 
+/**
+ * @driver_ops{SENT}
+ */
 __subsystem struct sent_driver_api {
+	/** @driver_ops_optional @copybrief sent_start_listening */
 	sent_start_listening_t start_listening;
+	/** @driver_ops_optional @copybrief sent_stop_listening */
 	sent_stop_listening_t stop_listening;
+	/** @driver_ops_optional @copybrief sent_register_callback */
 	sent_register_callback_t register_callback;
 };
 
-/** @endcond */
+/**
+ * @}
+ */
 
 /**
  * @brief Enable a specific channel to start receiving from the bus

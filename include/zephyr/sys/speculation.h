@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_MISC_SPECULATION_H
-#define ZEPHYR_MISC_SPECULATION_H
+#ifndef ZEPHYR_INCLUDE_SYS_SPECULATION_H_
+#define ZEPHYR_INCLUDE_SYS_SPECULATION_H_
 
 #include <zephyr/types.h>
 
@@ -52,4 +52,4 @@ static inline uint32_t k_array_index_sanitize(uint32_t index, uint32_t array_siz
 	return index;
 #endif /* CONFIG_BOUNDS_CHECK_BYPASS_MITIGATION */
 }
-#endif /* ZEPHYR_MISC_SPECULATION_H */
+#endif /* ZEPHYR_INCLUDE_SYS_SPECULATION_H_ */

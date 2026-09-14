@@ -68,7 +68,11 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       ${extra_dependencies}
       # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
       ${linker_script_dep}
-      COMMAND ${CMAKE_C_COMPILER}
+      # Make sure the FLAGS are passed so xtensa-core is set correctly.
+      # Otherwise, if linker.ld includes a core specific file, like core-isa.h,
+      # the compiler may pickup the wrong file if the toolchain registry
+      # has more than one core registered.
+      COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS}
       -x assembler-with-cpp
       ${NOSYSDEF_CFLAG}
       -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}

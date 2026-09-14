@@ -780,8 +780,8 @@ __syscall int uart_tx(const struct device *dev, const uint8_t *buf,
  * @param dev     UART device instance.
  * @param buf     Pointer to wide data transmit buffer.
  * @param len     Length of wide data transmit buffer.
- * @param timeout Timeout in milliseconds. Valid only if flow control is
- *		  enabled. @ref SYS_FOREVER_MS disables timeout.
+ * @param timeout Timeout in microseconds. Valid only if flow control is
+ *		  enabled. @ref SYS_FOREVER_US disables timeout.
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP API is not enabled.
@@ -837,8 +837,8 @@ __syscall int uart_rx_enable(const struct device *dev, uint8_t *buf,
  * @param buf     Pointer to wide data receive buffer.
  * @param len     Buffer length.
  * @param timeout Inactivity period after receiving at least a byte which
- *		  triggers  #UART_RX_RDY event. Given in milliseconds.
- *		  @ref SYS_FOREVER_MS disables timeout. See
+ *		  triggers  #UART_RX_RDY event. Given in microseconds.
+ *		  @ref SYS_FOREVER_US disables timeout. See
  *		  @ref uart_event_type for details.
  *
  * @return 0 on success, negative errno value on failure.

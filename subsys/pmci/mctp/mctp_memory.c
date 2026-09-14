@@ -5,6 +5,7 @@
  *
  */
 
+#include <zephyr/init.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/sys_heap.h>
 #include <libmctp.h>

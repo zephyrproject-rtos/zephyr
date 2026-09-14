@@ -1,0 +1,14 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_MICROCHIP_SAMA5
+	bool
+	help
+	  Enable support for Microchip SAMA5 Cortex-A Microprocessors.
+
+config SOC_FAMILY
+	default "microchip_sama5" if SOC_FAMILY_MICROCHIP_SAMA5
+
+rsource "*/Kconfig.soc"

@@ -90,6 +90,56 @@ static void test_disable_set_default_id(void)
 	TEST_PASS("Disable set default ID test passed");
 }
 
+K_SEM_DEFINE(ready_sem, 0, 1);
+
+static void ready_cb(int err)
+{
+	if (err != 0) {
+		TEST_FAIL("bt_enable ready callback error %d", err);
+	} else {
+		k_sem_give(&ready_sem);
+	}
+}
+
+static void test_disable_async_init(void)
+{
+	/* Call bt_enable() with a ready callback so bt_init() runs
+	 * asynchronously on the system workqueue. Immediately call
+	 * bt_disable(); it must return -EAGAIN because init is still
+	 * in progress.
+	 *
+	 * k_sched_lock() prevents the workqueue from running until
+	 * k_sched_unlock() is called, so bt_disable() is guaranteed to
+	 * observe the init work item as queued regardless of
+	 * controller behavior.
+	 */
+	int err;
+
+	k_sched_lock();
+
+	err = bt_enable(ready_cb);
+	if (err != 0) {
+		k_sched_unlock();
+		TEST_FAIL("bt_enable failed (err %d)", err);
+	}
+
+	err = bt_disable();
+	k_sched_unlock();
+	if (err != -EAGAIN) {
+		TEST_FAIL("Expected -EAGAIN from bt_disable before init complete, got %d", err);
+	}
+
+	/* Wait for init to finish, then disable properly. */
+	k_sem_take(&ready_sem, K_FOREVER);
+
+	err = bt_disable();
+	if (err != 0) {
+		TEST_FAIL("bt_disable after init failed (err %d)", err);
+	}
+
+	TEST_PASS("disable async init test passed");
+}
+
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "disable",
@@ -100,6 +150,11 @@ static const struct bst_test_instance test_def[] = {
 		.test_id = "disable_set_default_id",
 		.test_descr = "disable_test where each iteration sets the default ID",
 		.test_main_f = test_disable_set_default_id
+	},
+	{
+		.test_id = "disable_async_init",
+		.test_descr = "bt_disable during async bt_init returns -EAGAIN",
+		.test_main_f = test_disable_async_init
 	},
 	BSTEST_END_MARKER
 };

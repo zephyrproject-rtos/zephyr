@@ -185,6 +185,7 @@ enum {
 	BT_HFP_AG_RECORD_FOUND,  /* SDP HF Record found */
 	BT_HFP_AG_1ST_AT_RECV,   /* 1st AT is received */
 	BT_HFP_AG_FEAT_UPDATED,  /* Remote feature has been updated */
+	BT_HFP_AG_RELEASING,     /* Release object when SDP discovery completes */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_AG_NUM_FLAGS,

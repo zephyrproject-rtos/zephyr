@@ -13,6 +13,7 @@ supported:
   - arduino_spi
   - netif:eth
   - i2c
+  - ptp_clock
   - spi
   - gpio
   - pwm

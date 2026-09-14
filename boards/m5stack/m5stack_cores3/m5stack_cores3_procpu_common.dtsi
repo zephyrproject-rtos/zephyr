@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include <espressif/partitions_0x0_amp.dtsi>
 #include <zephyr/dt-bindings/display/panel.h>
 #include "m5stack_cores3-pinctrl.dtsi"
@@ -77,6 +77,15 @@
 		regulator-name = "usb_otg";
 		enable-gpios = <&aw9523b_gpio 5 GPIO_ACTIVE_HIGH>;
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
 };
 
 &usb_serial {

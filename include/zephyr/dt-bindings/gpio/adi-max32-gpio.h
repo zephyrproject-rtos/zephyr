@@ -31,11 +31,11 @@
  *          MAX32_GPIO_DRV_STRENGTH_2 = 4mA
  *          MAX32_GPIO_DRV_STRENGTH_3 = 8mA
  *
- * - Bit 10: Weak pull up selection, Weak Pullup to VDDIO (1MOhm)
+ * - Bit 11: Weak pull up selection, Weak Pullup to VDDIO (1MOhm)
  *          0: Disable
  *          1: Enable
  *
- * - Bit 11: Weak pull down selection, Weak Pulldown to VDDIOH (1MOhm)
+ * - Bit 12: Weak pull down selection, Weak Pulldown to VDDIOH (1MOhm)
  *          0: Disable
  *          1: Enable
  * @{

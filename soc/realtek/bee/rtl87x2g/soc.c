@@ -6,6 +6,7 @@
 
 #include <string.h>
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/common/init.h>
 #include <zephyr/sys/reboot.h>
@@ -13,16 +14,16 @@
 #include <zephyr/logging/log.h>
 #include <soc.h>
 
-#include "system_init_ns.h"
-#include "utils.h"
-#include "sys_reset.h"
-#include "osif_zephyr.h"
-#include "clock_manager.h"
-#include "vector_table.h"
-#include "image_info.h"
-#include "image_check.h"
-#include "rom_uuid.h"
-#include "aon_reg.h"
+#include <system_init_ns.h>
+#include <utils.h>
+#include <sys_reset.h>
+#include <osif_zephyr.h>
+#include <clock_manager.h>
+#include <vector_table.h>
+#include <image_info.h>
+#include <image_check.h>
+#include <rom_uuid.h>
+#include <aon_reg.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -116,11 +117,11 @@ static void rtl87x2g_isr_register(void)
 		uint32_t expected_zephyr_isr = FlashVectorTable_INT[irq];
 
 		if (current_isr != expected_zephyr_isr) {
-			if (NVIC_GetEnableIRQ(irq) == 1) {
-				NVIC_DisableIRQ(irq);
+			if (irq_is_enabled(irq) != 0) {
+				irq_disable(irq);
 				z_isr_install(irq, (void *)current_isr, NULL);
 				RamVectorTableUpdate(irq + 16, (IRQ_Fun)_isr_wrapper);
-				NVIC_EnableIRQ(irq);
+				irq_enable(irq);
 			} else {
 				z_isr_install(irq, (void *)current_isr, NULL);
 				RamVectorTableUpdate(irq + 16, (IRQ_Fun)_isr_wrapper);

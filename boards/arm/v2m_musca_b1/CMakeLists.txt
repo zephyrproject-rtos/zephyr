@@ -6,7 +6,6 @@
 #
 
 zephyr_library()
-zephyr_library_sources(pinmux.c)
 
 if(CONFIG_BUILD_WITH_TFM)
   set_property(TARGET zephyr_property_target

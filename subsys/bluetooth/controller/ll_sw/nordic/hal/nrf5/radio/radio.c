@@ -720,6 +720,11 @@ static uint8_t sw_tifs_toggle;
  * PPIs related with the Radio operation switch.
  * Enable of end event compensation is controller by @p end_evt_delay_en.
  *
+ * On an RX-to-TX switch, flags for the received PHY are unused. For Coded
+ * PHY, the radio hardware determines whether the received PDU used S2 or S8
+ * and adjusts TIFS using the S2-event PPI/DPPI configuration. The flags for
+ * the following TX PHY select its coding scheme.
+ *
  * @param dir_curr         Current direction the Radio is working: SW_SWITCH_TX or SW_SWITCH_RX
  * @param dir_next         Next direction the Radio is preparing for: SW_SWITCH_TX or SW_SWITCH_RX
  * @param phy_curr         PHY the Radio is working on.
@@ -769,7 +774,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			delay = HAL_RADIO_NS2US_ROUND(
 			    hal_radio_tx_ready_delay_ns_get(phy_next,
 							    flags_next) +
-			    hal_radio_rx_chain_delay_ns_get(phy_curr, 1));
+			    hal_radio_rx_chain_delay_ns_get(phy_curr, PHY_FLAGS_S8));
 
 			hal_radio_txen_on_sw_switch(cc, ppi);
 		}
@@ -811,7 +816,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			delay_s2 = HAL_RADIO_NS2US_ROUND(
 				hal_radio_tx_ready_delay_ns_get(phy_next,
 								flags_next) +
-				hal_radio_rx_chain_delay_ns_get(phy_curr, 0));
+				hal_radio_rx_chain_delay_ns_get(phy_curr, PHY_FLAGS_S2));
 
 			new_cc_s2_value = SW_SWITCH_TIMER->CC[cc];
 
@@ -1483,16 +1488,11 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	last_pdu_end_us_init(latency_us);
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
 	SW_SWITCH_TIMER->MODE = 0;
 	SW_SWITCH_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
 	SW_SWITCH_TIMER->BITMODE = 0; /* 16 bit */
 
-#if defined(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)
 	hal_sw_switch_timer_start_ppi_config();
-#else /* !CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN */
-	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_START);
-#endif /* !CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN */
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	hal_sw_switch_timer_clear_ppi_config();

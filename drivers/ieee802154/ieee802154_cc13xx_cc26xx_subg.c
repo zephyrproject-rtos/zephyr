@@ -335,7 +335,19 @@ static void drv_rx_done(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 
 	for (int i = 0; i < CC13XX_CC26XX_NUM_RX_BUF; i++) {
 		if (drv_data->rx_entry[i].status == DATA_ENTRY_FINISHED) {
+			/* The length byte covers the PSDU plus the status and
+			 * RSSI bytes the RF core appends. It comes from the
+			 * air, so reject values that would underflow the two
+			 * post-decrements below, or that would let the optional
+			 * CRC append write past the receive buffer.
+			 */
 			len = drv_data->rx_data[i][0];
+			if (len < 2U || len >= CC13XX_CC26XX_RX_BUF_SIZE) {
+				LOG_WRN("Invalid frame length");
+				drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
+				continue;
+			}
+
 			sdu = drv_data->rx_data[i] + 1;
 			status = drv_data->rx_data[i][len--];
 			rssi = drv_data->rx_data[i][len--];

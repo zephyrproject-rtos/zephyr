@@ -26,10 +26,12 @@ set(dtdoctor_wrapper_cmd
   --
 )
 
-set(CMAKE_C_COMPILER_LAUNCHER   ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
-set(CMAKE_CXX_COMPILER_LAUNCHER ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
-set(CMAKE_ASM_COMPILER_LAUNCHER ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
+# The wrapper runs the command it is given unmodified, so it can be chained with
+# an already configured launcher such as ccache instead of replacing it.
+set(CMAKE_C_COMPILER_LAUNCHER   ${dtdoctor_wrapper_cmd} ${CMAKE_C_COMPILER_LAUNCHER})
+set(CMAKE_CXX_COMPILER_LAUNCHER ${dtdoctor_wrapper_cmd} ${CMAKE_CXX_COMPILER_LAUNCHER})
+set(CMAKE_ASM_COMPILER_LAUNCHER ${dtdoctor_wrapper_cmd} ${CMAKE_ASM_COMPILER_LAUNCHER})
 
-set(CMAKE_C_LINKER_LAUNCHER   ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
-set(CMAKE_CXX_LINKER_LAUNCHER ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
-set(CMAKE_ASM_LINKER_LAUNCHER ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
+set(CMAKE_C_LINKER_LAUNCHER   ${dtdoctor_wrapper_cmd} ${CMAKE_C_LINKER_LAUNCHER})
+set(CMAKE_CXX_LINKER_LAUNCHER ${dtdoctor_wrapper_cmd} ${CMAKE_CXX_LINKER_LAUNCHER})
+set(CMAKE_ASM_LINKER_LAUNCHER ${dtdoctor_wrapper_cmd} ${CMAKE_ASM_LINKER_LAUNCHER})

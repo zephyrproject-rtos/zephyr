@@ -53,7 +53,6 @@ extern "C" {
  * (1..15) to logical interrupt source number. For example by probing the
  * interrupt controller.
  */
-int z_sparc_int_get_source(int irl);
 void z_irq_spurious(const void *unused);
 
 

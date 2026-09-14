@@ -64,7 +64,7 @@ message is printed to confirm Bluetooth has been initialized.
         [00:02:26.771,179] <inf> fs_nvs: nvs_mount: data wra: 0, 0
         [00:02:26.777,984] <inf> bt_hci_core: hci_vs_init: HW Platform: Nordic Semiconductor (0x0002)
         [00:02:26.778,015] <inf> bt_hci_core: hci_vs_init: HW Variant: nRF52x (0x0002)
-        [00:02:26.778,045] <inf> bt_hci_core: hci_vs_init: Firmware: Standard Bluetooth controller (0x00) Version 3.2 Build 99
+        [00:02:26.778,045] <inf> bt_hci_core: hci_vs_init: Controller: Zephyr Bluetooth Controller (0x00) manufacturer 0x05f1 Version 3.2 Build 99
         [00:02:26.778,656] <inf> bt_hci_core: bt_init: No ID address. App must call settings_load()
         [00:02:26.794,738] <inf> bt_hci_core: bt_dev_show_info: Identity: EB:BF:36:26:42:09 (random)
         [00:02:26.794,769] <inf> bt_hci_core: bt_dev_show_info: HCI: version 5.3 (0x0c) revision 0x0000, manufacturer 0x05f1

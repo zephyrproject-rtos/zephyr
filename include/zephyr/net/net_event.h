@@ -54,6 +54,29 @@ enum net_event_if_cmd {
 	NET_MGMT_CMD(NET_EVENT_IF_CMD_ADMIN_UP),
 };
 
+/* Packet socket (L2) events */
+#define NET_PACKET_LAYER	NET_MGMT_LAYER_L2
+#define NET_PACKET_CORE_CODE	NET_MGMT_LAYER_CODE_PACKET
+#define NET_EVENT_PACKET_BASE	(NET_MGMT_EVENT_BIT |			\
+				 NET_MGMT_IFACE_BIT |			\
+				 NET_MGMT_LAYER(NET_PACKET_LAYER) |	\
+				 NET_MGMT_LAYER_CODE(NET_PACKET_CORE_CODE))
+
+enum {
+	NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_ADD_VAL,
+	NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_DROP_VAL,
+
+	NET_EVENT_PACKET_CMD_MAX
+};
+
+BUILD_ASSERT(NET_EVENT_PACKET_CMD_MAX <= NET_MGMT_MAX_COMMANDS,
+	     "Number of events in net_event_packet_cmd exceeds the limit");
+
+enum net_event_packet_cmd {
+	NET_MGMT_CMD(NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_ADD),
+	NET_MGMT_CMD(NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_DROP),
+};
+
 /* IPv6 Events */
 #define NET_IPV6_LAYER		NET_MGMT_LAYER_L3
 #define NET_IPV6_CORE_CODE	NET_MGMT_LAYER_CODE_IPV6
@@ -244,6 +267,14 @@ enum net_event_l4_cmd {
 /** Event emitted when the network interface goes up manually. */
 #define NET_EVENT_IF_ADMIN_UP					\
 	(NET_EVENT_IF_BASE | NET_EVENT_IF_CMD_ADMIN_UP)
+
+/** Event emitted when a packet socket multicast group membership is added. */
+#define NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD				\
+	(NET_EVENT_PACKET_BASE | NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_ADD)
+
+/** Event emitted when a packet socket multicast group membership is dropped. */
+#define NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP				\
+	(NET_EVENT_PACKET_BASE | NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_DROP)
 
 /** Event emitted when an IPv6 address is added to the system. */
 #define NET_EVENT_IPV6_ADDR_ADD					\
@@ -498,6 +529,22 @@ enum net_event_l4_cmd {
 /** Event emitted when a VPN peer is removed from the system. */
 #define NET_EVENT_VPN_PEER_DEL				\
 	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_VPN_PEER_DEL)
+
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network events like
+ *   NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD and
+ *   NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP
+ * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
+ * information.
+ */
+struct net_event_packet_mcast {
+	/** L2 multicast address of the group */
+	struct net_linkaddr addr;
+
+	/** Multicast filtering type, one of the NET_PACKET_MR_* values */
+	uint16_t type;
+};
 
 /**
  * @brief Network Management event information structure

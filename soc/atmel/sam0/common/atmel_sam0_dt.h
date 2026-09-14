@@ -312,7 +312,7 @@
 	DT_ASSIGNED_CLOCKS_HAS_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Equivalent to DT_CLOCK_HAS_NAME(DT_DRV_INST(inst), name)
+ * @brief Equivalent to ATMEL_SAM0_DT_ASSIGNED_CLOCKS_HAS_NAME(DT_DRV_INST(inst), name)
  * @param inst DT_DRV_COMPAT instance number; may or may not have any
  *             atmel,clock-names property.
  * @param name lowercase-and-underscores clock-names cell value name to check

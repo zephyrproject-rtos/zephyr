@@ -202,7 +202,7 @@
 		};
 
 		lfclk: lfclk {
-			compatible = "nordic,nrf-lfclk";
+			compatible = "nordic,nrfs-lfclk";
 			status = "disabled";
 			#clock-cells = <0>;
 			clock-frequency = <32768>;
@@ -263,6 +263,11 @@
 		current-limit-ua = <7500>;
 		zephyr,pm-device-runtime-auto;
 		#power-domain-cells = <0>;
+	};
+
+	usbhs_phy: usbhs_phy {
+		compatible = "nordic,nrf-usbhs-phy-type1";
+		status = "reserved";
 	};
 
 	soc {
@@ -682,6 +687,7 @@
 				ghwcfg1 = <0xaa555000>;
 				ghwcfg2 = <0x22abfc72>;
 				ghwcfg4 = <0x1e10aa60>;
+				phy = <&usbhs_phy>;
 				status = "disabled";
 			};
 

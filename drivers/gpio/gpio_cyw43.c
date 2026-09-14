@@ -142,9 +142,7 @@ static int gpio_cyw43_init(const struct device *dev)
 #define GPIO_CYW43_DEFINE(inst)                                                                    \
 	static struct gpio_cyw43_data gpio_cyw43_data_##inst;                                      \
 	static const struct gpio_cyw43_config gpio_cyw43_config_##inst = {                         \
-		.common = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),                    \
-		},                                                                                 \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, gpio_cyw43_init, NULL, &gpio_cyw43_data_##inst,                \
 			      &gpio_cyw43_config_##inst, POST_KERNEL,                              \

@@ -499,8 +499,6 @@ struct bt_bap_scan_delegator_cb {
 	 * @param conn       Pointer to the connection to a remote device if
 	 *                   the change was caused by it, otherwise NULL.
 	 * @param recv_state Pointer to the receive state that was updated.
-	 *
-	 * @return 0 in case of success or negative value in case of error.
 	 */
 	void (*recv_state_updated)(struct bt_conn *conn,
 				   const struct bt_bap_scan_delegator_recv_state *recv_state);
@@ -753,24 +751,26 @@ struct bt_bap_stream {
 struct bt_bap_stream_ops {
 #if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
 	/**
-	 * @brief Stream configured callback
+	 * @brief Stream codec configured callback
 	 *
-	 * Configured callback is called whenever an Audio Stream has been configured.
+	 * Codec configured callback is called whenever an Audio Stream has been configured with a
+	 * codec configuration.
 	 *
 	 * @param stream Stream object that has been configured.
 	 * @param pref   Remote QoS preferences.
 	 */
-	void (*configured)(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref);
+	void (*codec_configured)(struct bt_bap_stream *stream,
+				 const struct bt_bap_qos_cfg_pref *pref);
 
 	/**
-	 * @brief Stream QoS set callback
+	 * @brief Stream QoS configured callback
 	 *
-	 * QoS set callback is called whenever an Audio Stream Quality of Service has been set or
-	 * updated.
+	 * QoS configured callback is called whenever an Audio Stream Quality of Service has been
+	 * set or updated.
 	 *
 	 * @param stream Stream object that had its QoS updated.
 	 */
-	void (*qos_set)(struct bt_bap_stream *stream);
+	void (*qos_configured)(struct bt_bap_stream *stream);
 
 	/**
 	 * @brief Stream enabled callback
@@ -929,7 +929,7 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream, struct bt_bap_strea
  * @param ep Remote Audio Endpoint being configured
  * @param codec_cfg Codec configuration
  *
- * @return Allocated Audio Stream object or NULL in case of error.
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
 			 const struct bt_audio_codec_cfg *codec_cfg);
@@ -1573,9 +1573,10 @@ int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_gro
 					bt_bap_unicast_group_foreach_stream_func_t func,
 					void *user_data);
 
-/** Structure holding information of audio stream endpoint */
+/** Structure holding information of a unicast group */
 struct bt_bap_unicast_group_info {
-	/** Presentation delay for sink ASEs
+	/**
+	 * @brief Presentation delay for sink ASEs (central to peripheral audio direction)
 	 *
 	 * Will be @ref BT_BAP_PD_UNSET if no sink streams have been added to group.
 	 * The value does not reflect what has been configured on any remote ASEs, but only the
@@ -1583,13 +1584,79 @@ struct bt_bap_unicast_group_info {
 	 */
 	uint32_t sink_pd;
 
-	/** Presentation delay for source ASEs
+	/**
+	 * @brief Presentation delay for source ASEs (peripheral to central audio direction)
 	 *
 	 * Will be @ref BT_BAP_PD_UNSET if no source streams have been added to group.
 	 * The value does not reflect what has been configured on any remote ASEs, but only the
 	 * local value from when the group was created or reconfigured.
 	 */
 	uint32_t source_pd;
+
+	/**
+	 * @brief Central to Peripheral SDU interval in microseconds
+	 *
+	 * Will be 0 if no sink streams have been added to the group.
+	 */
+	uint32_t c_to_p_interval;
+
+	/**
+	 * @brief Peripheral to Central SDU interval in microseconds
+	 *
+	 * Will be 0 if no source streams have been added to the group.
+	 */
+	uint32_t p_to_c_interval;
+
+	/**
+	 * @brief Central to Peripheral maximum transport latency in milliseconds
+	 *
+	 * Will be 0 if no sink streams have been added to the group.
+	 */
+	uint16_t c_to_p_latency;
+
+	/**
+	 * @brief Peripheral to Central maximum transport latency in milliseconds
+	 *
+	 * Will be 0 if no source streams have been added to the group.
+	 */
+	uint16_t p_to_c_latency;
+
+	/** @brief The framing of the streams in the group */
+	enum bt_bap_qos_cfg_framing framing;
+
+	/**
+	 * @brief The packing of the group
+	 *
+	 * @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 */
+	uint8_t packing;
+
+	/**
+	 * @brief Whether any stream in the group has been connected
+	 *
+	 * If this is true, then the group can no longer be modified with e.g.
+	 * bt_bap_unicast_group_reconfig() or bt_bap_unicast_group_add_streams().
+	 */
+	bool has_been_connected;
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
+	/**
+	 * @brief Central to Peripheral flush timeout in multiples of the ISO interval
+	 *
+	 * Will be 0 if no sink streams have been added to the group.
+	 */
+	uint8_t c_to_p_ft;
+
+	/**
+	 * @brief Peripheral to Central flush timeout in multiples of the ISO interval
+	 *
+	 * Will be 0 if no source streams have been added to the group.
+	 */
+	uint8_t p_to_c_ft;
+
+	/** @brief ISO interval in 1.25 ms units */
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /**
@@ -2002,8 +2069,8 @@ int bt_bap_base_get_subgroup_codec_data(const struct bt_bap_base_subgroup *subgr
  * @param[in]  subgroup The subgroup pointer
  * @param[out] meta     Pointer that will point to the resulting codec metadata
  *
+ * @return Length of the metadata on success
  * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
  */
 int bt_bap_base_get_subgroup_codec_meta(const struct bt_bap_base_subgroup *subgroup,
 					uint8_t **meta);
@@ -2532,7 +2599,9 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
  * Unregister the scan delegator and Broadcast Audio Scan Service (BASS)
  * dynamically at runtime.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 Success
+ * @retval -EALREADY Already unregistering
+ * @retval -EAGAIN Not registered
  */
 int bt_bap_scan_delegator_unregister(void);
 
@@ -2601,7 +2670,12 @@ struct bt_bap_scan_delegator_add_src_param {
  *
  * @param param The parameters for adding the new source
  *
- * @return int  errno on failure, or source ID on success.
+ * @return The source ID of the new state if return value is >= 0
+ * @retval -EAGAIN Service not yet registered with bt_bap_scan_delegator_register()
+ * @retval -EINVAL Invalid parameters
+ * @retval -ENOMEM Could not add any more receive states
+ * @retval -EALREADY A receive state with the same advertiser address type, SID, and
+ *          broadcast ID already exists
  */
 int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_param *param);
 
@@ -2619,12 +2693,7 @@ struct bt_bap_scan_delegator_mod_src_param {
 	/** Number of subgroups */
 	uint8_t num_subgroups;
 
-	/**
-	 * @brief Subgroup specific information
-	 *
-	 * If a subgroup's metadata_len is set to 0, the existing metadata
-	 * for the subgroup will remain unchanged
-	 */
+	/** Subgroup specific information */
 	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 };
 

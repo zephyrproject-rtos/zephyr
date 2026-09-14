@@ -57,8 +57,9 @@ static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t dela
 		z_add_thread_timeout(thread, delay);
 	}
 #else
-	ARG_UNUSED(delay);
-	k_thread_start(thread);
+	if (!K_TIMEOUT_EQ(delay, K_FOREVER)) {
+		k_thread_start(thread);
+	}
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 }
 

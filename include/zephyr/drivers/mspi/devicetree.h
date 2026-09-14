@@ -181,7 +181,7 @@ extern "C" {
 
 
 /**
- * @brief Get a <tt>struct gpio_dt_spec</tt> for a MSPI device's chip enable pin
+ * @brief Get a <tt>struct gpio_dt_spec</tt> for an MSPI device's chip enable pin
  *
  * Example devicetree fragment:
  *
@@ -214,7 +214,7 @@ extern "C" {
  *           // { DEVICE_DT_GET(DT_NODELABEL(gpio2)), 20, GPIO_ACTIVE_LOW }
  * @endcode
  *
- * @param mspi_dev a MSPI device node identifier
+ * @param mspi_dev an MSPI device node identifier
  * @return #gpio_dt_spec struct corresponding with mspi_dev's chip enable
  */
 #define MSPI_DEV_CE_GPIOS_DT_SPEC_GET(mspi_dev)                                                   \
@@ -222,7 +222,7 @@ extern "C" {
 					   DT_REG_ADDR_RAW(mspi_dev), {})
 
 /**
- * @brief Get a <tt>struct gpio_dt_spec</tt> for a MSPI device's chip enable pin
+ * @brief Get a <tt>struct gpio_dt_spec</tt> for an MSPI device's chip enable pin
  *
  * This is equivalent to
  * <tt>MSPI_DEV_CE_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))</tt>.
@@ -235,7 +235,7 @@ extern "C" {
 
 
 /**
- * @brief Get an array of <tt>struct gpio_dt_spec</tt> from devicetree for a MSPI controller
+ * @brief Get an array of <tt>struct gpio_dt_spec</tt> from devicetree for an MSPI controller
  *
  * This helper macro check whether <tt>ce_gpios</tt> binding exist first
  * before calling <tt>GPIO_DT_SPEC_GET_BY_IDX</tt> and expand to an array of
@@ -252,7 +252,7 @@ extern "C" {
 }
 
 /**
- * @brief Get an array of <tt>struct gpio_dt_spec</tt> for a MSPI controller
+ * @brief Get an array of <tt>struct gpio_dt_spec</tt> for an MSPI controller
  *
  * This is equivalent to
  * <tt>MSPI_CE_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))</tt>.
@@ -267,9 +267,9 @@ extern "C" {
  * @brief Initialize and get a pointer to a @p mspi_ce_control from a
  *        devicetree node identifier
  *
- * This helper is useful for initializing a device on a MSPI bus. It
+ * This helper is useful for initializing a device on an MSPI bus. It
  * initializes a struct mspi_ce_control and returns a pointer to it.
- * Here, @p node_id is a node identifier for a MSPI device, not a MSPI
+ * Here, @p node_id is a node identifier for an MSPI device, not an MSPI
  * controller.
  *
  * Example devicetree fragment:
@@ -297,7 +297,7 @@ extern "C" {
  *     };
  * @endcode
  *
- * @param node_id Devicetree node identifier for a device on a MSPI bus
+ * @param node_id Devicetree node identifier for a device on an MSPI bus
  * @param delay_ The @p delay field to set in the @p mspi_ce_control
  * @return a pointer to the @p mspi_ce_control structure
  */

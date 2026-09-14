@@ -6,9 +6,115 @@
 
 /dts-v1/;
 #include <silabs/xg26/efr32mg26b510f3200im68.dtsi>
-#include "xg26_rb41xxa.dtsi"
+#include <silabs/xg26/clock-hfrcodpll.dtsi>
+#include "xg26_common.dtsi"
+#include "xg26_rb4120a-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs EFR32xG26 2.4 GHz +10 dBm Radio Board (xG26-RB4120A, BRD4120A)";
 	compatible = "silabs,xg26_rb4120a", "silabs,efr32mg26";
+
+	aliases {
+		spi-flash0 = &mx25r80;
+	};
+};
+
+&led0 {
+	gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+};
+
+&led1 {
+	gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+};
+
+&button0 {
+	gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+};
+
+&button1 {
+	gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+};
+
+&sensor_enable {
+	enable-gpios = <&gpioc 10 GPIO_ACTIVE_HIGH>;
+};
+
+&exp_header {
+	gpio-map = <3 0 &gpiob 5 0>,
+		   <4 0 &gpiod 7 0>,
+		   <5 0 &gpiob 7 0>,
+		   <6 0 &gpiod 8 0>,
+		   <7 0 &gpiob 6 0>,
+		   <8 0 &gpiod 9 0>,
+		   <9 0 &gpiob 8 0>,
+		   <10 0 &gpiod 10 0>,
+		   <11 0 &gpiod 2 0>,
+		   <12 0 &gpioc 12 0>,
+		   <13 0 &gpiod 3 0>,
+		   <14 0 &gpioc 13 0>,
+		   <15 0 &gpioc 5 0>,
+		   <16 0 &gpioc 7 0>;
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&eusart1 {
+	cs-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>, <&gpioc 4 GPIO_ACTIVE_LOW>;
+
+	mx25r80: mx25r8035f@1 {
+		compatible = "jedec,spi-nor";
+		reg = <1>;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		has-dpd;
+		jedec-id = [c2 28 14];
+		mxicy,mx25r-power-mode = "low-power";
+		size = <0x800000>;
+		spi-max-frequency = <DT_FREQ_M(33)>;
+		t-enter-dpd = <0>;
+		zephyr,pm-device-runtime-auto;
+	};
+};
+
+&ls0xx_ls013b7dh03 {
+	disp-en-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+	extcomin-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+};
+
+&eusart2 {
+	compatible = "silabs,eusart-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(10)>;
+	cs-gpios = <&gpiod 10 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&eusart2_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&adc0 {
+	channel@0 {
+		zephyr,input-positive = <IADC_INPUT_PC11>;
+	};
+};
+
+&gpiob {
+	board-controller-enable {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
 };

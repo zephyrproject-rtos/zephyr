@@ -161,6 +161,8 @@ ZTEST(posix_fs_dir_test, test_fs_readdir_threadsafe)
 ZTEST(posix_fs_dir_test, test_fs_rmdir)
 {
 #define IRWXG	0070
+	int fd;
+
 	/* Create and remove empty directory */
 	zassert_ok(mkdir(TEST_DIR, IRWXG), "Error creating dir: %d", errno);
 	zassert_ok(rmdir(TEST_DIR), "Error removing dir: %d\n", errno);
@@ -170,8 +172,9 @@ ZTEST(posix_fs_dir_test, test_fs_rmdir)
 	 * fail in removal of non empty directory
 	 */
 	zassert_ok(mkdir(TEST_DIR, IRWXG), "Error creating dir: %d", errno);
-	zassert_not_equal(open(TEST_DIR_FILE, O_CREAT | O_RDWR), -1,
-			  "Error creating file: %d", errno);
+	fd = open(TEST_DIR_FILE, O_CREAT | O_RDWR);
+	zassert_not_equal(fd, -1, "Error creating file: %d", errno);
+	zassert_ok(close(fd), "Error closing file: %d", errno);
 	zassert_not_ok(rmdir(TEST_DIR), "Error Non empty dir removed");
 	zassert_not_ok(rmdir(""), "Error Invalid path removed");
 	zassert_not_ok(rmdir(NULL), "Error Invalid path removed");

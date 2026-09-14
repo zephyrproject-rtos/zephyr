@@ -1,0 +1,18 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas R-Car RS-CANFD channel
+
+compatible: "renesas,rcar-rscanfd"
+
+include: [can-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  channel:
+    type: int
+    required: true
+    min: 0
+    max: 7

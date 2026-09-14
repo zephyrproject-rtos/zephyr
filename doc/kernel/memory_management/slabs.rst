@@ -49,7 +49,7 @@ Any number of threads may wait on an empty memory slab simultaneously;
 when a memory block becomes available, it is given to the highest-priority
 thread that has waited the longest.
 
-Unlike a heap, more than one memory slab can be defined, if needed. This
+More than one memory slab can be defined, if needed. This
 allows for a memory slab with smaller blocks and others with larger-sized
 blocks. Alternatively, a memory pool object may be used.
 

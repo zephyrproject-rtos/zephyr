@@ -1,0 +1,12 @@
+# Copyright (c) 2026 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+# The test compiles the streaming translation unit directly, without a
+# device-tree instance of the sensor, so the driver's own dependency chain
+# for this symbol is not active. Provide the value here so the shared
+# driver data layout selects its streaming fields.
+config ICM45686_STREAM
+	bool
+	default y

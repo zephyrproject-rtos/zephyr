@@ -310,6 +310,72 @@ For function-like macros, document parameters like you would for functions.
     */
    #define DT_REG_SIZE(node_id) DT_REG_SIZE_BY_IDX(node_id, 0)
 
+.. _doxygen_sphinx_xrefs:
+
+Referencing the main documentation
+**********************************
+
+API documentation can reference content from the main, Sphinx-based documentation using the
+commands described below. In the generated API documentation pages, these references are rendered
+as hyperlinks pointing back to the corresponding page of the main documentation.
+
+``@kconfig{<option>}``
+  Reference a Kconfig option by its full name (including the ``CONFIG_`` prefix). This is the
+  Doxygen counterpart of the :rst:role:`kconfig:option` role.
+
+  Example: ``@kconfig{CONFIG_GPIO}``
+
+``@kconfig_regex{<regex>}``
+  Reference all the Kconfig options matching a regular expression, as a link to the Kconfig search
+  page with the pattern pre-filled. This is the Doxygen counterpart of the
+  :rst:role:`kconfig:option-regex` role. As commas have a special meaning in Doxygen commands, they
+  must be escaped with a backslash.
+
+  Example: ``@kconfig_regex{CONFIG_SECURE_STORAGE_ITS_.*_CUSTOM}``
+
+``@dtcompatible{<compatible>}``
+  Reference a Devicetree binding by its compatible string. This is the Doxygen counterpart of the
+  :rst:role:`dtcompatible` role. As commas have a special meaning in Doxygen commands, they must be
+  escaped with a backslash.
+
+  Example: ``@dtcompatible{zephyr\,input-longpress}``
+
+``@rstref{<target>}`` or ``@rstref{<text> <target>}``
+  Reference any documentation page or section by its reference label (or document name), similar to
+  the Sphinx :rst:role:`ref` role. When no custom text is provided, the title of the referenced
+  page or section is used as the link text.
+
+  Example: ``@rstref{zephyr_licensing}`` or ``@rstref{the licensing page <zephyr_licensing>}``
+
+References are checked when the documentation is built: a reference to a Kconfig option, binding,
+or label that does not exist causes a documentation build warning.
+
+.. note::
+
+   These commands expand to plain text when the Doxygen documentation is built standalone, i.e.
+   without the rest of the documentation. See :ref:`zephyr_doc` for more details.
+
+.. _doxygen_rfc_refs:
+
+Referencing IETF RFCs
+*********************
+
+``@rfc{<number>}`` or ``@rfc{<number>,<anchor>}``
+  Reference an IETF RFC by number, optionally pointing to an anchor within it. This is the
+  Doxygen counterpart of the :rst:role:`rfc` role and renders as a hyperlink to the RFC on the
+  IETF Datatracker.
+
+  The anchor is passed through verbatim, so it can target anything the Datatracker defines for
+  that RFC, such as ``section-3.1``, ``appendix-B.1.2``, ``figure-2``, or ``table-1``. Which
+  anchors exist depends on the RFC: figures and tables are only anchored on RFCs rendered from
+  their XML source.
+
+  Do not put whitespace after the comma: Doxygen keeps it as part of the argument, where it ends
+  up inside the URL fragment. The rendered link text still looks correct, so a broken anchor is
+  only noticeable when following the link.
+
+  Example: ``@rfc{7519}``, ``@rfc{8613,section-3.1}`` or ``@rfc{8613,appendix-B.1.2}``
+
 .. _doxygen_internals:
 
 Hiding internal details

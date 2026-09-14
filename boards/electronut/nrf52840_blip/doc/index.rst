@@ -120,10 +120,11 @@ Debugging
 =========
 
 Debug and attach configurations are available using Black Magic Probe, and
-``ninja debug``, or ``ninja attach`` (or with ``make``) are available.
+``west debug`` and ``west attach`` are available.
 
-NOTE: You may need to press the reset button once after using ``ninja flash``
-to start executing the code. (not required with ``debug`` or ``attach``)
+NOTE: You may need to press the reset button once after using ``west flash``
+to start executing the code. (not required with ``west debug`` or
+``west attach``)
 
 
 Testing the LEDs and buttons in the nRF52840 PDK

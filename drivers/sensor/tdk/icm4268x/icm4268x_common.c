@@ -386,7 +386,11 @@ int icm4268x_safely_configure(const struct device *dev, struct icm4268x_cfg *cfg
 	if (ret == 0) {
 		drv_data->cfg = *cfg;
 	} else {
-		ret = icm4268x_configure(dev, &drv_data->cfg);
+		int rb = icm4268x_configure(dev, &drv_data->cfg);
+
+		if (rb != 0) {
+			LOG_ERR("Failed to rollback configuration");
+		}
 	}
 
 	return ret;

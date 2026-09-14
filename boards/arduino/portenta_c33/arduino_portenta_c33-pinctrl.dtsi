@@ -172,6 +172,15 @@
 		};
 	};
 
+	sci4_spi_default: sci4_spi_default {
+		group1 {
+			/* MOSI(TXD4) SCK4 MISO(RXD4) */
+			psels = <RA_PSEL(RA_PSEL_SCI_4, 9, 0)>,
+				<RA_PSEL(RA_PSEL_SCI_4, 2, 4)>,
+				<RA_PSEL(RA_PSEL_SCI_4, 3, 15)>;
+		};
+	};
+
 	pwm7_default: pwm7_default {
 		group1 {
 			psels = <RA_PSEL(RA_PSEL_GPT1, 3, 3)>;

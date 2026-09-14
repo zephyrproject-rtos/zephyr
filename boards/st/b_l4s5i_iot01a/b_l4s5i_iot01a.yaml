@@ -16,7 +16,7 @@ supported:
   - lsm6dsl
   - pwm
   - gpio
-  - ble
+  - bluetooth
   - spi
   - vl53l0x
   - watchdog

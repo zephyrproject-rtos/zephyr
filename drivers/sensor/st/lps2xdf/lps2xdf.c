@@ -92,7 +92,7 @@ static inline void lps2xdf_press_convert(const struct device *dev,
 {
 	const struct lps2xdf_config *const cfg = dev->config;
 	int32_t press_tmp = raw_val >> 8; /* raw value is left aligned (24 msb) */
-	int divider;
+	int divider, factor;
 
 	/* Pressure sensitivity is:
 	 * - 4096 LSB/hPa for Full-Scale of 260 - 1260 hPa:
@@ -101,15 +101,16 @@ static inline void lps2xdf_press_convert(const struct device *dev,
 	 */
 	if (cfg->fs == 0) {
 		divider = 40960;
+		/* For the decimal part use (3125 / 128) as a factor instead of
+		 * (1000000 / 40960) to avoid int32 overflow
+		 */
+		factor = 3125;
 	} else {
 		divider = 20480;
+		factor = 6250;
 	}
 	val->val1 = press_tmp / divider;
-
-	/* For the decimal part use (3125 / 128) as a factor instead of
-	 * (1000000 / 40960) to avoid int32 overflow
-	 */
-	val->val2 = (press_tmp % divider) * 3125 / 128;
+	val->val2 = (press_tmp % divider) * factor / 128;
 }
 
 
@@ -203,7 +204,7 @@ static int lps2xdf_init(const struct device *dev)
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),                    \
 		   (LPS2XDF_CFG_IRQ(inst)))
 
-#define LPS2XDF_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER |          \
+#define LPS2XDF_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER |      \
 			       SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define LPS2XDF_CONFIG_SPI(inst, name)                                         \

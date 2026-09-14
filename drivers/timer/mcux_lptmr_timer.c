@@ -37,83 +37,28 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_system_timer), nxp_lptmr),
 #define LPTMR_IRQN DT_IRQN(LPTMR_NODE)
 #define LPTMR_IRQ_PRIORITY DT_IRQ(LPTMR_NODE, priority)
 
-/* Timer cycles per tick */
-#define CYCLES_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() \
-			/ (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-
 /* Counter maximum value based on resolution */
 #define LPTMR_RESOLUTION DT_PROP(LPTMR_NODE, resolution)
 #define COUNTER_MAX GENMASK(LPTMR_RESOLUTION - 1, 0)
 
-#define MAX_TICKS ((COUNTER_MAX / CYCLES_PER_TICK) - 1)
-#define MAX_CYCLES (MAX_TICKS * CYCLES_PER_TICK)
-#define MIN_DELAY MAX(1024U, ((uint32_t)CYCLES_PER_TICK/16U))
-
-/* 32 bit cycle counter, the variable only used in tickful mode */
-static volatile uint32_t cycles;
-
 /*
- * Stores the current number of cycles the system has had announced to it,
- * since the last rollover of the free running counter.
+ * A free-running counter and a compare register that matches on equality, so a
+ * value written after the counter has passed it is missed for a whole counter
+ * period: a COMPARE_EXACT backend. The core writes the comparator through its
+ * verify loop.
+ * The counter is narrower than a register, so its width is declared and the
+ * core masks every delta to it.
  */
-static uint32_t announced_cycles;
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+#define TIMER_CORE_COUNTER_WIDTH LPTMR_RESOLUTION
 
-/* Lock on shared variables */
-static struct k_spinlock lock;
-
-static inline uint32_t counter_delta(uint32_t now, uint32_t then)
+static inline uint32_t timer_driver_cycle_get(void)
 {
-	return (now - then) & COUNTER_MAX;
+	return LPTMR_GetCurrentTimerCount(LPTMR_BASE);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+static inline void timer_driver_set_compare(uint32_t cycles)
 {
-	ARG_UNUSED(idle);
-
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
-		return;
-	}
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	k_spinlock_key_t key;
-	uint32_t next, adj, now;
-
-	/* Clamp ticks. We subtract one since we round up to next tick */
-	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
-
-	key = k_spin_lock(&lock);
-
-	/* Read current timer value */
-	now = LPTMR_GetCurrentTimerCount(LPTMR_BASE);
-
-	/* Adjustment value, used to ensure next capture is on tick boundary */
-	adj = counter_delta(now, announced_cycles) + (CYCLES_PER_TICK - 1);
-
-	next = ticks * CYCLES_PER_TICK;
-	/*
-	 * The following section rounds the capture value up to the next tick
-	 * boundary
-	 */
-	if (next <= MAX_CYCLES - adj) {
-		next += adj;
-	} else {
-		next = MAX_CYCLES;
-	}
-	next = (next / CYCLES_PER_TICK) * CYCLES_PER_TICK;
-
-	/* Keep the comparison in LPTMR counter space so targets after a
-	 * hardware counter wrap are treated as future compare values.
-	 */
-	if (counter_delta(next + announced_cycles, now) < MIN_DELAY) {
-		next += CYCLES_PER_TICK;
-	}
-
-	next = (next + announced_cycles) & COUNTER_MAX;
-
 	/* Update CMR safely while the timer is running.
 	 *
 	 * CMR writes are not hardware‑synchronized. If TCF is cleared while the
@@ -125,10 +70,26 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 */
 	LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
 	LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
-	LPTMR_SetTimerPeriod(LPTMR_BASE, next);
+	LPTMR_SetTimerPeriod(LPTMR_BASE, cycles & COUNTER_MAX);
 	LPTMR_EnableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
+}
 
-	k_spin_unlock(&lock, key);
+#include "system_timer_generic.h"
+
+void sys_clock_no_timeout(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* The interrupt masked below is the periodic tick there, and
+		 * sys_clock_set_timeout() would not bring it back.
+		 */
+		return;
+	}
+
+	/* Nothing pending: stop taking wakeups. The counter keeps running, so
+	 * the cycle getters go on working; sys_clock_idle_exit() and the next
+	 * arm both re-enable the interrupt.
+	 */
+	LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
 }
 
 void sys_clock_idle_exit(void)
@@ -150,50 +111,13 @@ void sys_clock_disable(void)
 	LPTMR_StopTimer(LPTMR_BASE);
 }
 
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t now = LPTMR_GetCurrentTimerCount(LPTMR_BASE);
-
-	now = counter_delta(now, announced_cycles);
-	k_spin_unlock(&lock, key);
-
-	return now / CYCLES_PER_TICK;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return LPTMR_GetCurrentTimerCount(LPTMR_BASE) + cycles;
-}
-
 static void mcux_lptmr_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-	k_spinlock_key_t key;
-	uint32_t tick = 0;
 
-	key = k_spin_lock(&lock);
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		uint32_t now = LPTMR_GetCurrentTimerCount(LPTMR_BASE);
+	LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
 
-		LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
-		tick += counter_delta(now, announced_cycles) / CYCLES_PER_TICK;
-		/*
-		 * Advance in whole ticks to avoid accumulating sub-tick
-		 * ISR latency, which would otherwise cause long-term drift.
-		 */
-		announced_cycles = (announced_cycles + tick * CYCLES_PER_TICK) & COUNTER_MAX;
-	} else {
-		LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
-		cycles += CYCLES_PER_TICK;
-	}
-
-	k_spin_unlock(&lock, key);
-	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? tick : 1);
+	timer_core_announce();
 }
 
 static int sys_clock_driver_init(void)
@@ -207,11 +131,10 @@ static int sys_clock_driver_init(void)
 
 	LPTMR_GetDefaultConfig(&config);
 	config.timerMode = kLPTMR_TimerModeTimeCounter;
-#if defined(CONFIG_TICKLESS_KERNEL)
+	/* Free-running in both modes: the core arms an absolute compare, which
+	 * a counter that resets on match could not express.
+	 */
 	config.enableFreeRunning = true;
-#else
-	config.enableFreeRunning = false;
-#endif
 	config.prescalerClockSource = LPTMR_CLK_SOURCE;
 	config.bypassPrescaler = LPTMR_PRESCALER_BYPASS;
 	config.value = LPTMR_PRESCALER;
@@ -222,8 +145,9 @@ static int sys_clock_driver_init(void)
 	irq_enable(LPTMR_IRQN);
 
 	LPTMR_EnableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
-	LPTMR_SetTimerPeriod(LPTMR_BASE, CYCLES_PER_TICK);
 	LPTMR_StartTimer(LPTMR_BASE);
+
+	timer_core_init();
 
 	return 0;
 }

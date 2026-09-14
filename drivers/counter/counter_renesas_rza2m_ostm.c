@@ -6,11 +6,12 @@
 
 #define DT_DRV_COMPAT renesas_rza2m_ostm_counter
 
+#include <zephyr/irq.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
-#include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 
 #define RZA2M_OSTM_TOP_VALUE UINT32_MAX
 
@@ -145,12 +146,12 @@ static int renesas_rza2m_ostm_abs_alarm_set(const struct device *dev, uint32_t v
 
 		if (irq_on_late) {
 			irq_enable(data->cycle_end_irq);
-			arm_gic_irq_set_pending(data->cycle_end_irq);
+			k_irq_set_pending(data->cycle_end_irq);
 		} else {
 			data->alarm_cb = NULL;
 		}
 	} else {
-		arm_gic_irq_clear_pending(data->cycle_end_irq);
+		k_irq_clear_pending(data->cycle_end_irq);
 		irq_enable(data->cycle_end_irq);
 	}
 
@@ -187,12 +188,12 @@ static int renesas_rza2m_ostm_rel_alarm_set(const struct device *dev, uint32_t v
 	if (diff > max_rel_val || diff == 0) {
 		if (irq_on_late) {
 			irq_enable(data->cycle_end_irq);
-			arm_gic_irq_set_pending(data->cycle_end_irq);
+			k_irq_set_pending(data->cycle_end_irq);
 		} else {
 			data->alarm_cb = NULL;
 		}
 	} else {
-		arm_gic_irq_clear_pending(data->cycle_end_irq);
+		k_irq_clear_pending(data->cycle_end_irq);
 		irq_enable(data->cycle_end_irq);
 	}
 
@@ -292,7 +293,7 @@ static int counter_rza2m_ostm_start(const struct device *dev)
 
 	renesas_rza2m_ostm_switch_timer_mode(dev);
 
-	arm_gic_irq_clear_pending(data->cycle_end_irq);
+	k_irq_clear_pending(data->cycle_end_irq);
 	data->is_started = true;
 	if (data->top_cb) {
 		irq_enable(data->cycle_end_irq);
@@ -320,7 +321,7 @@ static int counter_rza2m_ostm_stop(const struct device *dev)
 
 	/* Disable irq */
 	irq_disable(data->cycle_end_irq);
-	arm_gic_irq_clear_pending(data->cycle_end_irq);
+	k_irq_clear_pending(data->cycle_end_irq);
 
 	data->top_cb = NULL;
 	data->alarm_cb = NULL;
@@ -441,7 +442,7 @@ static int counter_rza2m_ostm_cancel_alarm(const struct device *dev, uint8_t cha
 	}
 
 	irq_disable(data->cycle_end_irq);
-	arm_gic_irq_clear_pending(data->cycle_end_irq);
+	k_irq_clear_pending(data->cycle_end_irq);
 	data->alarm_cb = NULL;
 	data->user_data = NULL;
 
@@ -530,7 +531,7 @@ static uint32_t counter_rza2m_ostm_get_pending_int(const struct device *dev)
 {
 	struct counter_rza2m_ostm_data *data = dev->data;
 
-	return arm_gic_irq_is_pending(data->cycle_end_irq);
+	return k_irq_is_pending(data->cycle_end_irq);
 }
 
 static uint32_t counter_rza2m_ostm_get_top_value(const struct device *dev)

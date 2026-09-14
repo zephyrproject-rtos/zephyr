@@ -173,13 +173,13 @@ static void xlnx_zynqmp_gqspi_cs_control(const struct device *dev, bool on)
 	struct spi_context *ctx = &data->ctx;
 	uint32_t genfifo_entry = GQSPI_GEN_FIFO_SPI_MODE_SINGLE << GQSPI_GEN_FIFO_SPI_MODE_SHIFT;
 
-	if (ctx->config->slave == 1 && !config->shared_data_bus) {
+	if (ctx->config->peripheral == 1 && !config->shared_data_bus) {
 		genfifo_entry |= GQSPI_GEN_FIFO_BUS_UPPER_MASK;
 	} else {
 		genfifo_entry |= GQSPI_GEN_FIFO_BUS_LOWER_MASK;
 	}
 	if (on) {
-		if (ctx->config->slave == 1) {
+		if (ctx->config->peripheral == 1) {
 			genfifo_entry |= GQSPI_GEN_FIFO_CS_UPPER_MASK;
 		} else {
 			genfifo_entry |= GQSPI_GEN_FIFO_CS_LOWER_MASK;
@@ -187,7 +187,7 @@ static void xlnx_zynqmp_gqspi_cs_control(const struct device *dev, bool on)
 		genfifo_entry |= GQSPI_CS_SETUP_CYCLES;
 	} else {
 		if (ctx->config->operation & SPI_HOLD_ON_CS) {
-			/* Skip slave select de-assert */
+			/* Skip chip select de-assert */
 			return;
 		}
 		genfifo_entry |= GQSPI_CS_HOLD_CYCLES;
@@ -212,7 +212,7 @@ static int xlnx_zynqmp_gqspi_configure(const struct device *dev, const struct sp
 		return 0;
 	}
 
-	if (spi_cfg->operation & (SPI_FRAME_FORMAT_TI | SPI_HALF_DUPLEX | SPI_OP_MODE_SLAVE |
+	if (spi_cfg->operation & (SPI_FRAME_FORMAT_TI | SPI_HALF_DUPLEX | SPI_OP_MODE_PERIPHERAL |
 				  SPI_MODE_LOOP | SPI_TRANSFER_LSB | SPI_CS_ACTIVE_HIGH)) {
 		LOG_ERR("Unsupported SPI operation mode 0x%x", spi_cfg->operation);
 		return -ENOTSUP;
@@ -223,8 +223,8 @@ static int xlnx_zynqmp_gqspi_configure(const struct device *dev, const struct sp
 		return -ENOTSUP;
 	}
 
-	if (spi_cfg->slave >= 2) {
-		LOG_ERR("unsupported slave %d", spi_cfg->slave);
+	if (spi_cfg->peripheral >= 2) {
+		LOG_ERR("unsupported peripheral %d", spi_cfg->peripheral);
 		return -ENOTSUP;
 	}
 
@@ -407,7 +407,7 @@ static int xlnx_zynqmp_gqspi_transceive(const struct device *dev, const struct s
 		}
 		transfer_bytes = max(tx_bytes, rx_bytes);
 
-		if (ctx->config->slave == 1) {
+		if (ctx->config->peripheral == 1) {
 			genfifo_entry |= GQSPI_GEN_FIFO_CS_UPPER_MASK;
 			genfifo_entry |= config->shared_data_bus ? GQSPI_GEN_FIFO_BUS_LOWER_MASK
 								 : GQSPI_GEN_FIFO_BUS_UPPER_MASK;

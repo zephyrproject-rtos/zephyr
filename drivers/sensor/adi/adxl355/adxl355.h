@@ -269,11 +269,11 @@ struct adxl355_extra_attr {
  *
  */
 struct adxl355_sample {
+	uint8_t is_fifo: 1;
 	int32_t x;
 	int32_t y;
 	int32_t z;
 	enum adxl355_range range;
-	uint8_t is_fifo: 1;
 };
 
 /**
@@ -291,7 +291,6 @@ struct adxl355_data {
 #ifdef CONFIG_ADXL355_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
-	bool route_to_int2;
 
 	sensor_trigger_handler_t drdy_handler;
 	const struct sensor_trigger *drdy_trigger;

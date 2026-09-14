@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Default configurations applied to the E8 DK boards
+
+if BOARD_ENSEMBLE_E8_DK
+
+configdefault I2C_DW_CLOCK_SPEED
+	default 100
+
+endif # BOARD_ENSEMBLE_E8_DK

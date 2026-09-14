@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -35,6 +35,13 @@ if(CONFIG_BUILD_WITH_TFM)
     set(IFX_SMIF_0_MEMORY_CONFIG "S25FS128S_SMIF0_SlaveSlot_1")
   else()
     message(FATAL_ERROR "No supported board selected.")
+  endif()
+
+  # Let a board supply crypto algorithms/modules its chosen TFM_PROFILE omits,
+  # without patching the vendored TF-M platform tree.
+  if(EXISTS ${BOARD_DIR}/tfm_extra_crypto_config.h)
+    set_property(TARGET zephyr_property_target APPEND PROPERTY TFM_CMAKE_OPTIONS
+      -DTFM_TF_PSA_CRYPTO_PLATFORM_EXTRA_CONFIG_PATH=${BOARD_DIR}/tfm_extra_crypto_config.h)
   endif()
 
 endif()

@@ -431,7 +431,7 @@ static DEVICE_API(adc, ads79xx_api) = {
 #endif
 };
 
-#define ADS79XX_SPI_OP (SPI_OP_MODE_MASTER | SPI_WORD_SET(16) | SPI_TRANSFER_MSB)
+#define ADS79XX_SPI_OP (SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(16) | SPI_TRANSFER_MSB)
 
 #define DT_INST_ADS79XX(inst, t) DT_INST(inst, ti_ads##t)
 

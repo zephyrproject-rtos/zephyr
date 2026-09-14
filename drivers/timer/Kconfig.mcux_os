@@ -10,6 +10,7 @@ config MCUX_OS_TIMER
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	select RESET
+	select SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
 	help
 	  This module implements a kernel device driver for the NXP OS
 	  event timer and provides the standard "system clock driver" interfaces.
@@ -24,7 +25,7 @@ config MCUX_OS_TIMER_PM_POWERED_OFF
 
 config MCUX_OS_TIMER_MIN_DELAY
 	int "Minimum delay cycles for OS timer match value"
-	default 1000
+	default 50
 	help
 	  Timer hardware requires a minimum setup time to reliably trigger
 	  interrupts. If a match value is set too close to the current timer

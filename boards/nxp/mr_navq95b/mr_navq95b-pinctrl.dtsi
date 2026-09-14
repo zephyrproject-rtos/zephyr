@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/mimx9596avzxn-pinctrl.dtsi>
+#include <nxp/imx/pinctrl/mimx9596avzxn-pinctrl.dtsi>
 
 &pinctrl {
 	flexspi_default: flexspi_default {

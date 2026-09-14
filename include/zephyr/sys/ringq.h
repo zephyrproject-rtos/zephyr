@@ -40,8 +40,8 @@ struct sys_ringq {
 
 #define SYS_RINGQ_INIT(buf, item_sz, item_capacity)			\
 {									\
-	.rb = RING_BUF_INIT(buf, item_sz * item_capacity),		\
-	.item_size = item_sz,						\
+	.rb = RING_BUF_INIT((buf), (item_sz) * (item_capacity)),	\
+	.item_size = (item_sz),						\
 }
 
 /** @endcond */
@@ -56,8 +56,9 @@ struct sys_ringq {
  * @param item_capacity capacity (in number of elements).
  */
 #define SYS_RINGQ_DEFINE(name, item_size, item_capacity)					\
-	static uint8_t __noinit CONCAT(_ringq_data_, name)[item_size * item_capacity];		\
-	struct sys_ringq name = SYS_RINGQ_INIT(CONCAT(_ringq_data_, name), item_size, item_capacity)
+	static uint8_t __noinit CONCAT(_ringq_data_, name)[(item_size) * (item_capacity)];	\
+	struct sys_ringq name = SYS_RINGQ_INIT(CONCAT(_ringq_data_, name), (item_size),		\
+					       (item_capacity))
 
 /**
  * @brief Initialize a ringq queue.

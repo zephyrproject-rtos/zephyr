@@ -13,3 +13,6 @@ CONFIG_SERIAL=y
 # Enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
+
+# Enable the MemoryMapped mode
+CONFIG_MSPI_MEMMAP=y

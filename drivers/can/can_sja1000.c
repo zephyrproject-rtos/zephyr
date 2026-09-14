@@ -369,6 +369,7 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 		     can_tx_callback_t callback, void *user_data)
 {
 	struct can_sja1000_data *data = dev->data;
+	k_spinlock_key_t key;
 	uint8_t cmr;
 	uint8_t sr;
 
@@ -404,8 +405,6 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 	data->tx_callback = callback;
 	data->tx_user_data = user_data;
 
-	can_sja1000_write_frame(dev, frame);
-
 	if ((data->common.mode & CAN_MODE_LOOPBACK) != 0) {
 		cmr = CAN_SJA1000_CMR_SRR;
 	} else {
@@ -416,7 +415,10 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 		cmr |= CAN_SJA1000_CMR_AT;
 	}
 
+	key = k_spin_lock(&data->buf_lock);
+	can_sja1000_write_frame(dev, frame);
 	can_sja1000_write_reg(dev, CAN_SJA1000_CMR, cmr);
+	k_spin_unlock(&data->buf_lock, key);
 
 	return 0;
 }
@@ -536,15 +538,6 @@ int can_sja1000_get_state(const struct device *dev, enum can_state *state,
 	return 0;
 }
 
-void can_sja1000_set_state_change_callback(const struct device *dev,
-					   can_state_change_callback_t callback, void *user_data)
-{
-	struct can_sja1000_data *data = dev->data;
-
-	data->common.state_change_cb = callback;
-	data->common.state_change_cb_user_data = user_data;
-}
-
 int can_sja1000_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(dev);
@@ -561,7 +554,11 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 	uint8_t sr;
 
 	do {
+		k_spinlock_key_t key = k_spin_lock(&data->buf_lock);
+
 		can_sja1000_read_frame(dev, &frame);
+		can_sja1000_write_reg(dev, CAN_SJA1000_CMR, CAN_SJA1000_CMR_RRB);
+		k_spin_unlock(&data->buf_lock, key);
 
 #ifndef CONFIG_CAN_ACCEPT_RTR
 		if ((frame.flags & CAN_FRAME_RTR) == 0U) {
@@ -582,7 +579,6 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 		}
 #endif /* !CONFIG_CAN_ACCEPT_RTR */
 
-		can_sja1000_write_reg(dev, CAN_SJA1000_CMR, CAN_SJA1000_CMR_RRB);
 		sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
 	} while ((sr & CAN_SJA1000_SR_RBS) != 0);
 }
@@ -688,8 +684,6 @@ static void can_sja1000_handle_error_passive_irq(const struct device *dev)
 void can_sja1000_isr(const struct device *dev)
 {
 	struct can_sja1000_data *data = dev->data;
-	const can_state_change_callback_t cb = data->common.state_change_cb;
-	void *cb_data = data->common.state_change_cb_user_data;
 	enum can_state prev_state = data->state;
 	struct can_bus_err_cnt err_cnt;
 	uint8_t ir;
@@ -722,10 +716,11 @@ void can_sja1000_isr(const struct device *dev)
 		can_sja1000_handle_error_passive_irq(dev);
 	}
 
-	if (prev_state != data->state && cb != NULL) {
+	if (prev_state != data->state) {
 		err_cnt.rx_err_cnt = can_sja1000_read_reg(dev, CAN_SJA1000_RXERR);
 		err_cnt.tx_err_cnt = can_sja1000_read_reg(dev, CAN_SJA1000_TXERR);
-		cb(dev, data->state, err_cnt, cb_data);
+
+		can_fire_state_change_callbacks(dev, data->state, err_cnt);
 	}
 }
 
@@ -746,6 +741,7 @@ int can_sja1000_init(const struct device *dev)
 		}
 	}
 
+	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&data->mod_lock);
 	k_sem_init(&data->tx_idle, 1, 1);
 

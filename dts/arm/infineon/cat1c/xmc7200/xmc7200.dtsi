@@ -26,6 +26,7 @@
 			reg = <0x10080000 0x200000>;
 			write-block-size = <512>;
 			erase-block-size = <512>;
+			status = "disabled";
 		};
 	};
 

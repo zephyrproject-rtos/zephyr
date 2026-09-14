@@ -7,7 +7,7 @@ toolchain:
   - gnuarmemb
 ram: 16
 supported:
-  - ble
+  - bluetooth
 testing:
   ignore_tags:
     - net

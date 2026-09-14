@@ -1550,7 +1550,8 @@ static const struct ethernet_api adin2111_port_api = {
 				     &name##_port_config_##port_n, CONFIG_ETH_INIT_PRIORITY,	\
 				     &adin2111_port_api, NET_ETH_MTU);
 
-#define ADIN2111_SPI_OPERATION ((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
+#define ADIN2111_SPI_OPERATION									\
+	((uint16_t)(SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
 #define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)					\
 	ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);		\
 	COND_CODE_1(DT_INST_PROP(inst, spi_oa),							\

@@ -4,84 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
-#include <soc.h>
-#include <stm32_ll_i2c.h>
-#include <stm32_ll_rcc.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2c_ll_stm32_rtio);
+#include <soc.h>
+#include <stm32_ll_i2c.h>
+#include <stm32_ll_rcc.h>
+#include <errno.h>
 
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
+LOG_MODULE_REGISTER(i2c_ll_stm32_rtio, CONFIG_I2C_LOG_LEVEL);
 
-int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	I2C_TypeDef *i2c = cfg->i2c;
-	uint32_t i2c_clock = 0U;
-	int ret;
-
-	if (cfg->pclk_len > 1) {
-		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
-					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
-			return -EIO;
-		}
-	} else {
-		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0],
-					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
-			return -EIO;
-		}
-	}
-
-	data->dev_config = config;
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("Failed enabling I2C clock");
-		return ret;
-	}
-#endif
-
-	LL_I2C_Disable(i2c);
-	ret = i2c_stm32_configure_timing(dev, i2c_clock);
-	if (ret < 0) {
-		LOG_ERR("Failed configuring I2C timing");
-		return ret;
-	}
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("Failed disabling I2C clock");
-		return ret;
-	}
-#endif
-
-	return ret;
-}
-
-/* Return true when message is started and will complete from an interrupt
- * handler, otherwise return false and set return status in @param status.
- */
 static bool i2c_stm32_start(const struct device *dev, int *status)
 {
 	struct i2c_stm32_data *data = dev->data;
@@ -119,7 +64,10 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 		return false;
 #if CONFIG_I2C_STM32_BUS_RECOVERY
 	case RTIO_OP_I2C_RECOVER:
-		k_work_submit(&data->recovery_work);
+		error = k_work_submit(&data->recovery_work);
+		if (error < 0) {
+			break;
+		}
 		return true;
 #endif
 	default:
@@ -137,29 +85,16 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 	return true;
 }
 
-static void i2c_stm32_start_or_complete(const struct device *dev)
-{
-	struct i2c_stm32_data *data = dev->data;
-	int status;
-
-	/* Process all synchronous sequences until an async one is started (which will complete
-	 * from an asynchronous handler) or the synchronous sequence is the last queued one.
-	 */
-	while (!i2c_stm32_start(dev, &status)) {
-		if (!i2c_rtio_complete(data->ctx, status)) {
-			i2c_stm32_pm_put(dev);
-			return;
-		}
-	}
-}
-
 void i2c_stm32_rtio_complete(const struct device *dev, int status)
 {
 	struct i2c_stm32_data *data = dev->data;
+	bool async_started = false;
 
 	if (i2c_rtio_complete(data->ctx, status)) {
-		i2c_stm32_start_or_complete(dev);
-	} else {
+		async_started = i2c_rtio_run_sync_start_async(dev, data->ctx, i2c_stm32_start);
+	}
+
+	if (!async_started) {
 		i2c_stm32_pm_put(dev);
 	}
 }
@@ -172,8 +107,6 @@ static int i2c_stm32_configure(const struct device *dev,
 
 	return i2c_rtio_configure(ctx, dev_config_raw);
 }
-
-#define OPERATION(msg)	((msg)->flags & I2C_MSG_RW_MASK)
 
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr)
@@ -207,7 +140,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
 		}
 #endif
 
-		if ((OPERATION(msgs + n - 1) != OPERATION(msgs + n)) &&
+		if (((msgs[n].flags & I2C_MSG_RW_MASK) != (msgs[n - 1].flags & I2C_MSG_RW_MASK)) &&
 		    ((msgs[n].flags & I2C_MSG_RESTART) == 0U)) {
 			LOG_ERR("Missing restart flag between message of different directions");
 			return -EINVAL;
@@ -246,7 +179,9 @@ static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *io
 			do {
 			} while (i2c_rtio_complete(data->ctx, ret));
 		} else {
-			i2c_stm32_start_or_complete(dev);
+			if (!i2c_rtio_run_sync_start_async(dev, data->ctx, i2c_stm32_start)) {
+				i2c_stm32_pm_put(dev);
+			}
 		}
 	}
 }

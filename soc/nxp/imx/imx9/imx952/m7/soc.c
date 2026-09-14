@@ -5,7 +5,9 @@
  */
 
 #include <zephyr/cache.h>
+#include <zephyr/init.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/arch/arch_interface.h>
 #include <zephyr/drivers/firmware/scmi/nxp/cpu.h>
 #include <zephyr/drivers/firmware/scmi/power.h>
 #include <soc.h>
@@ -17,6 +19,33 @@ void soc_early_init_hook(void)
 	sys_cache_instr_enable();
 #endif
 }
+
+static int soc_init(void)
+{
+	int ret = 0;
+
+#if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
+	struct scmi_nxp_cpu_sleep_mode_config cpu_cfg = {0};
+
+	/*
+	 * SLEEP_HOLD_EN is enabled by default, which gates SysTick.
+	 * Set CPU sleep mode to RUN to clear it and allow SysTick to run.
+	 */
+	cpu_cfg.cpu_id = CPU_IDX_M7P;
+	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_RUN;
+
+	ret = scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
+#endif /* CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS */
+
+	return ret;
+}
+
+/*
+ * Because platform is using ARM SCMI, drivers like scmi, mbox etc. are
+ * initialized during PRE_KERNEL_1. Common init hooks is not able to use.
+ * SoC early init and board early init could be run during PRE_KERNEL_2 instead.
+ */
+SYS_INIT(soc_init, PRE_KERNEL_2, 0);
 
 #ifdef CONFIG_PM
 void pm_state_before(void)
@@ -68,45 +97,38 @@ void pm_state_before(void)
 	scmi_nxp_cpu_set_irq_mask(&cpu_irq_mask_cfg);
 }
 
+static void enter_low_power(struct scmi_nxp_cpu_sleep_mode_config *cpu_cfg)
+{
+	unsigned int key;
+
+	scmi_nxp_cpu_sleep_mode_set(cpu_cfg);
+	key = arch_pm_state_set_prepare();
+	__DSB();
+	__WFI();
+	arch_pm_state_set_finish(key);
+}
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	struct scmi_nxp_cpu_sleep_mode_config cpu_cfg = {0};
 
 	pm_state_before();
 
-	/* iMX952 M7 core is based on ARMv7-M architecture. For this architecture,
-	 * the current implementation of arch_irq_lock of zephyr is based on BASEPRI,
-	 * which will only retain abnormal interrupts such as NMI,
-	 * and all other interrupts from the CPU(including systemtick) will be masked,
-	 * which makes the CORE unable to be woken up from WFI.
-	 * Set PRIMASK as workaround, Shield the CPU from responding to interrupts,
-	 * the CPU will not jump to the interrupt service routine (ISR).
-	 */
-	__disable_irq();
-	/* Set BASEPRI to 0 */
-	irq_unlock(0);
-
 	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		cpu_cfg.cpu_id = CPU_IDX_M7P;
 		cpu_cfg.sleep_mode = CPU_SLEEP_MODE_WAIT;
-		scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
-		__DSB();
-		__WFI();
+		enter_low_power(&cpu_cfg);
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
 		cpu_cfg.cpu_id = CPU_IDX_M7P;
 		cpu_cfg.sleep_mode = CPU_SLEEP_MODE_STOP;
-		scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
-		__DSB();
-		__WFI();
+		enter_low_power(&cpu_cfg);
 		break;
 	case PM_STATE_STANDBY:
 		cpu_cfg.cpu_id = CPU_IDX_M7P;
 		cpu_cfg.sleep_mode = CPU_SLEEP_MODE_SUSPEND;
-		scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
-		__DSB();
-		__WFI();
+		enter_low_power(&cpu_cfg);
 		break;
 	default:
 		break;
@@ -140,9 +162,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	cpu_cfg.cpu_id = CPU_IDX_M7P;
 	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_RUN;
 	scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
-
-	/* Clear PRIMASK */
-	__enable_irq();
 }
 
 #endif /* CONFIG_PM */

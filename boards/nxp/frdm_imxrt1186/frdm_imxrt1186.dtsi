@@ -163,6 +163,18 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 	status = "okay";
 };
 
+&flexspi {
+	/*
+	 * FlexSPI1 is configured by the Boot ROM for HyperRAM (via XMCD).
+	 * Reinitializing the controller overwrites the Boot ROM configuration
+	 * and makes HyperRAM inaccessible. Enable this node via an overlay only
+	 * when the application explicitly manages FlexSPI1 initialization, or
+	 * when CM7 executes XIP from HyperRAM (the XIP guard preserves the
+	 * Boot ROM configuration in that case).
+	 */
+	status = "disabled";
+};
+
 &flexspi2 {
 	/*
 	 * If booting with XIP from FlexSPI flash, the flash memory will be initialized by the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2020-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #endif
@@ -20,7 +21,9 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #endif
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
+#include <esp_private/sleep_modem.h>
 #include <esp_private/wifi.h>
 #include <esp_event.h>
 #include <esp_rom_sys.h>
@@ -41,8 +44,6 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
 #include <esp_private/adc_share_hw_ctrl.h>
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
-
-#define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
 
 /* use global iface pointer to support any ethernet driver */
 /* necessary for wifi callback functions */
@@ -138,19 +139,57 @@ struct esp32_wifi_event {
 K_MSGQ_DEFINE(esp32_wifi_event_msgq, sizeof(struct esp32_wifi_event),
 	      CONFIG_ESP32_WIFI_EVENT_QUEUE_SIZE, 4);
 
-static struct net_mgmt_event_callback esp32_dhcp_cb;
-
-static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-			       struct net_if *iface)
+/*
+ * Set the station IPv4 address in the Wi-Fi stack. The address is only reported
+ * when it is usable and the station is associated. A static address is usually
+ * set before the connection, so the connect handler calls this as well.
+ */
+static void esp32_wifi_set_sta_ip(void)
 {
+	if (esp32_data.state != ESP32_STA_CONNECTED) {
+		return;
+	}
+
+	if (net_if_ipv4_get_global_addr(esp32_wifi_iface, NET_ADDR_PREFERRED) == NULL) {
+		return;
+	}
+
+	esp_wifi_internal_set_sta_ip();
+}
+
+#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
+#define ESP32_WIFI_IPV4_EVENT_MASK                                                                 \
+	(NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED | NET_EVENT_IPV4_DHCP_BOUND)
+#else
+#define ESP32_WIFI_IPV4_EVENT_MASK (NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED)
+#endif
+
+static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				size_t info_length __unused, void *user_data __unused)
+{
+	if (iface != esp32_wifi_iface) {
+		return;
+	}
+
 	switch (mgmt_event) {
+	case NET_EVENT_IPV4_ADDR_ADD:
+	case NET_EVENT_IPV4_ACD_SUCCEED:
+		esp32_wifi_set_sta_ip();
+		break;
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	case NET_EVENT_IPV4_DHCP_BOUND:
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 		break;
+#endif
 	default:
 		break;
 	}
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(esp32_wifi_events, ESP32_WIFI_IPV4_EVENT_MASK, wifi_event_handler,
+				NULL);
+#endif /* CONFIG_NET_IPV4 */
 
 static void esp32_wifi_tx_done(uint8_t ifidx, uint8_t *data __unused, uint16_t *data_len __unused,
 			       bool status __unused)
@@ -389,7 +428,7 @@ static void scan_done_handler(void)
 		strncpy(res.ssid, ap_record.ssid, ssid_len);
 		res.rssi = ap_record.rssi;
 		res.channel = ap_record.primary;
-		res.band = ap_record.primary <= 14 ? WIFI_FREQ_BAND_2_4_GHZ : WIFI_FREQ_BAND_5_GHZ;
+		res.band = wifi_utils_chan_to_band(res.channel);
 
 		memcpy(res.mac, ap_record.bssid, WIFI_MAC_ADDR_LEN);
 		res.mac_length = WIFI_MAC_ADDR_LEN;
@@ -406,6 +445,13 @@ static void scan_done_handler(void)
 			break;
 		case WIFI_AUTH_WPA3_PSK:
 			res.security = WIFI_SECURITY_TYPE_SAE;
+			break;
+		case WIFI_AUTH_WPA_WPA2_PSK:
+		case WIFI_AUTH_WPA2_WPA3_PSK:
+			res.security = WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
+			break;
+		case WIFI_AUTH_DPP:
+			res.security = WIFI_SECURITY_TYPE_DPP;
 			break;
 		case WIFI_AUTH_WAPI_PSK:
 			res.security = WIFI_SECURITY_TYPE_WAPI;
@@ -460,6 +506,7 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 	ARG_UNUSED(event_data);
 	esp32_data.state = ESP32_STA_CONNECTED;
 	net_if_dormant_off(esp32_wifi_iface);
+	esp32_wifi_set_sta_ip();
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
@@ -1213,6 +1260,7 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 		ret = esp_wifi_sta_enterprise_disable();
 		if (ret != ESP_OK) {
 			LOG_ERR("Failed to disable Enterprise authentication (%d)", ret);
+			data->state = ESP32_STA_STARTED;
 			return -EIO;
 		}
 	}
@@ -1278,6 +1326,7 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 #else
 		LOG_ERR("WPA3 not supported for STA mode. Enable "
 			"CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE");
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 #endif /* CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE */
 	case WIFI_SECURITY_TYPE_EAP_TLS:
@@ -1288,16 +1337,19 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 		ret = esp32_wifi_configure_enterprise(data, params, &wifi_config);
 		if (ret) {
+			data->state = ESP32_STA_STARTED;
 			return ret;
 		}
 		break;
 #else
 		LOG_ERR("WPA Enterprise not supported for STA mode. Enable "
 			"CONFIG_ESP32_WIFI_ENTERPRISE");
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 #endif /* CONFIG_ESP32_WIFI_ENTERPRISE */
 	default:
 		LOG_ERR("Authentication method not supported");
+		data->state = ESP32_STA_STARTED;
 		return -EIO;
 	}
 
@@ -1312,12 +1364,14 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
 	if (ret) {
 		LOG_ERR("Failed to set Wi-Fi configuration (%d)", ret);
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 	}
 
 	ret = esp_wifi_connect();
 	if (ret) {
 		LOG_ERR("Failed to connect to Wi-Fi access point (%d)", ret);
+		data->state = ESP32_STA_STARTED;
 		return -EAGAIN;
 	}
 
@@ -1598,7 +1652,8 @@ static int esp32_wifi_status(const struct device *dev __unused,
 	status->ssid[WIFI_SSID_MAX_LEN-1] = '\0';
 	/* We know it is NUL terminated, so we can use strlen */
 	status->ssid_len = strlen(data->status.ssid);
-	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	/* Derived from the channel below, once the channel is known. */
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->mfp = WIFI_MFP_DISABLE;
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
@@ -1620,6 +1675,7 @@ static int esp32_wifi_status(const struct device *dev __unused,
 
 			status->iface_mode = WIFI_MODE_INFRA;
 			status->channel = ap_info.primary;
+			status->band = wifi_utils_chan_to_band(status->channel);
 			status->rssi = ap_info.rssi;
 			memcpy(status->bssid, ap_info.bssid, WIFI_MAC_ADDR_LEN);
 
@@ -1643,6 +1699,7 @@ static int esp32_wifi_status(const struct device *dev __unused,
 			status->iface_mode = WIFI_MODE_AP;
 			status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 			status->channel = conf.ap.channel;
+			status->band = wifi_utils_chan_to_band(status->channel);
 			status->beacon_interval = conf.ap.beacon_interval;
 
 		} else {
@@ -1664,6 +1721,13 @@ static int esp32_wifi_status(const struct device *dev __unused,
 		break;
 	case WIFI_AUTH_WPA3_PSK:
 		status->security = WIFI_SECURITY_TYPE_SAE;
+		break;
+	case WIFI_AUTH_WPA_WPA2_PSK:
+	case WIFI_AUTH_WPA2_WPA3_PSK:
+		status->security = WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
+		break;
+	case WIFI_AUTH_DPP:
+		status->security = WIFI_SECURITY_TYPE_DPP;
 		break;
 	case WIFI_AUTH_WPA_ENTERPRISE:
 	case WIFI_AUTH_WPA2_ENTERPRISE:
@@ -1811,6 +1875,49 @@ static int esp32_wifi_reset_stats(const struct device *dev __unused,
 }
 #endif
 
+static int esp32_wifi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#if defined(SOC_WIFI_HW_TSF)
+		if (esp_wifi_internal_is_tsf_active()) {
+			/* Reject sleep while TSF is active (timing critical) */
+			return -EBUSY;
+		}
+#endif
+#if defined(CONFIG_ESP32_WIFI_ENHANCED_LIGHT_SLEEP)
+		if (sleep_modem_wifi_modem_state_skip_light_sleep()) {
+			/* Block the system from entering sleep before modem link done */
+			return -EBUSY;
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+#if defined(CONFIG_PM)
+		/* Register the Wi-Fi modem sleep configuration. Advanced DTIM
+		 * sleep (ESP32_WIFI_ENHANCED_LIGHT_SLEEP) and default sleep
+		 * timing parameters (SOC_ESP32_PM_SLP_DEFAULT_PARAMS_OPT) are
+		 * applied inside when those options are enabled.
+		 */
+		sleep_modem_configure(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+				      CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, true);
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
@@ -1851,12 +1958,7 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_WIFI_STA_AUTO_DHCPV4)) {
-		net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
-		net_mgmt_add_event_callback(&esp32_dhcp_cb);
-	}
-
-	return 0;
+	return pm_device_driver_init(dev, esp32_wifi_pm_action);
 }
 
 static int esp32_wifi_set_config(const struct device *dev __unused,
@@ -1919,11 +2021,11 @@ static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
 
-NET_DEVICE_DT_INST_DEFINE(0,
-		esp32_wifi_dev_init, NULL,
-		&esp32_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
-		&esp32_api, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+PM_DEVICE_DT_INST_DEFINE(0, esp32_wifi_pm_action);
+
+NET_DEVICE_DT_INST_DEFINE(0, esp32_wifi_dev_init, PM_DEVICE_DT_INST_GET(0), &esp32_data, NULL,
+			  CONFIG_WIFI_INIT_PRIORITY, &esp32_api, ETHERNET_L2,
+			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 NET_DEVICE_DT_INST_ADD_IFACE(0, ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU, 1);

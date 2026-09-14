@@ -10,7 +10,7 @@
 #include "bs_tracing.h"
 #include "time_machine.h"
 #include "bstests.h"
-#include <argparse.h>
+#include <bsim_args_runner.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>

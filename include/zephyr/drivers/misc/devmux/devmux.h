@@ -55,6 +55,20 @@ extern "C" {
  */
 
 /**
+ * @driver_ops{DEVMUX}
+ */
+__subsystem struct devmux_driver_api {
+	/**
+	 * @driver_ops_mandatory Callback API to get the current selection of a devmux device.
+	 */
+	int (*select_get)(const struct device *dev);
+	/**
+	 * @driver_ops_mandatory Callback API to set the selection of a devmux device.
+	 */
+	int (*select_set)(struct device *dev, size_t index);
+};
+
+/**
  * @brief Get the current selection of a devmux device.
  *
  * Return the index of the currently selected device.

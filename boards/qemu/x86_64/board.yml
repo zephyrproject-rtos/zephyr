@@ -1,0 +1,8 @@
+board:
+  name: qemu_x86_64
+  full_name: QEMU Emulation for X86 64bit
+  vendor: intel
+  socs:
+    - name: atom
+      variants:
+        - name: 'nokpti'

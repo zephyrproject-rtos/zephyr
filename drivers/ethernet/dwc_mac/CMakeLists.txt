@@ -6,10 +6,20 @@ zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_1000_CORE eth_dwc_ether_1000_c
 zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_QOS_CORE eth_dwc_ether_qos_core.c)
 # zephyr-keep-sorted-stop
 
+# Common parts shared between cores
+# zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH eth_dwc_ether_multicast_filter_hash.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_PERFECT eth_dwc_ether_multicast_filter_perfect.c)
+# zephyr-keep-sorted-stop
+
 # Platform specific drivers
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC_MMU eth_dwmac_mmu.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_ESP32_DWC_ETHER_1000 eth_esp32_dwc_ether_1000.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_NXP_DWC_ETHER_QOS eth_nxp_dwc_ether_qos.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STM32_DWC_ETHER_1000 eth_stm32_dwc_ether_1000.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STM32_DWC_ETHER_QOS eth_stm32_dwc_ether_qos.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_XMC_DWC_ETHER_1000 eth_xmc_dwc_ether_1000.c)
 # zephyr-keep-sorted-stop
+
+zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_DWC_MAC eth_dwmac_ptp.c)

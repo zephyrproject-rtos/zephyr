@@ -375,6 +375,11 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 					     struct net_pkt *pkt,
 					     size_t ip_udp_hdr_len,
 					     struct net_sockaddr *addr);
+ZTESTABLE_STATIC int handle_transport_data(struct wg_peer *peer,
+					   struct net_sockaddr *peer_addr,
+					   struct net_pkt *pkt,
+					   size_t ip_udp_hdr_len,
+					   size_t data_len);
 ZTESTABLE_STATIC void keypair_destroy(struct wg_keypair *keypair);
 static void wg_encrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
 			      struct wg_keypair *keypair);

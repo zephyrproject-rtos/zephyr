@@ -10,7 +10,7 @@
 # it takes the following arguments:
 # FORMAT=json: Print the output as a json formatted string, useful for Python
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 if(NOT CMAKE_SCRIPT_MODE_FILE)
   message(FATAL_ERROR "verify-toolchain.cmake is a script and must be invoked "

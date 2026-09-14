@@ -56,6 +56,9 @@ enum mchp_mec_ecia_girq {
 #define MCHP_MEC_ECIA_INIT_CLR_ENABLES 0x01u
 #define MCHP_MEC_ECIA_INIT_CLR_STATUS  0x02u
 
+#define MCHP_MEC_ECIA_GIRQ_DIS 0
+#define MCHP_MEC_ECIA_GIRQ_EN  1U
+
 int soc_ecia_init(uint32_t aggr_girq_bm, uint32_t direct_girq_bm, uint32_t flags);
 
 #define MCHP_MEC_ECIA_GIRQ_DIS 0

@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 
+#include "rsi_d_cache.h"
 #include "rsi_qspi_proto.h"
 #include "sl_si91x_psram_handle.h"
 
@@ -26,6 +27,13 @@ static int siwx91x_memc_init(const struct device *dev)
 {
 	const struct siwx91x_memc_config *config = dev->config;
 	int ret;
+
+	/* The bootloader leaves the PSRAM data cache enabled, and nothing in a
+	 * Zephyr build maintains it: the SoC does not select CPU_HAS_DCACHE and
+	 * sys_cache_data_*() return -ENOTSUP. The network processor writes the
+	 * same memory, so leaving the cache on returns stale data.
+	 */
+	rsi_d_cache_disable();
 
 	/* Memory controller is automatically setup by the siwx91x bootloader,
 	 * so we have to uninitialize it before to change the configuration

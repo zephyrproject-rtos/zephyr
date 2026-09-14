@@ -49,6 +49,7 @@ family:
     - name: mcxa344
   - name: mcxaxx7
     socs:
+    - name: mcxa537
     - name: mcxa577
 - name: mcxw
   series:
@@ -125,6 +126,8 @@ runners:
       - qualifiers:
         - mcxa366
       - qualifiers:
+        - mcxa537
+      - qualifiers:
         - mcxa577
       - qualifiers:
         - mcxw716c
@@ -194,6 +197,8 @@ runners:
         - mcxa266
       - qualifiers:
         - mcxa366
+      - qualifiers:
+        - mcxa537
       - qualifiers:
         - mcxa577
       - qualifiers:

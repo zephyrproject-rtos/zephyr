@@ -16,6 +16,8 @@
 /**
  * @brief Interfaces for battery chargers.
  * @defgroup charger_interface Battery Charger
+ * @since 3.5
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  *

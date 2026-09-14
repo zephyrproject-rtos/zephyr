@@ -297,8 +297,8 @@ static inline void usbd_class_shutdown(struct usbd_class_data *const c_data)
  * @return Array of struct usb_desc_header pointers with a last element
  *         pointing to a nil descriptor on success, NULL if not available.
  */
-static inline void *usbd_class_get_desc(struct usbd_class_data *const c_data,
-					const enum usbd_speed speed)
+static inline const void *usbd_class_get_desc(struct usbd_class_data *const c_data,
+					      const enum usbd_speed speed)
 {
 	const struct usbd_class_api *api = c_data->api;
 

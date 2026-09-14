@@ -6,7 +6,7 @@ if BOARD_ARDUINO_PORTENTA_C33
 config USE_DT_CODE_PARTITION
 	default y
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_ARDUINO_PORTENTA_C33

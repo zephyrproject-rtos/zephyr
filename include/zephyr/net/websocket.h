@@ -139,7 +139,7 @@ int websocket_connect(int http_sock, struct websocket_request *req,
  * @param payload Websocket data to send.
  * @param payload_len Length of the data to be sent.
  * @param opcode Operation code (text, binary, ping, pong, close)
- * @param mask Mask the data, see RFC 6455 for details
+ * @param mask Mask the data, see @rfc{6455} for details
  * @param final Is this final message for this message send. If final == false,
  *        then the first message must have valid opcode and subsequent messages
  *        must have opcode WEBSOCKET_OPCODE_CONTINUE. If final == true and this

@@ -8,16 +8,21 @@ description: |
   for different data rates and sub-bands to get the best performance.
   Resolution is 1 dBm
 
+  The defaults are the conservative values currently used for the Sheliak DK,
+  so a board that has not been characterised errs on the side of transmitting
+  too little rather than exceeding a regulatory limit. Every board should set
+  the values measured for its own RF front-end.
+
 properties:
   wifi-max-tx-pwr-2g-dsss:
     type: int
-    required: true
+    default: 18
     description: Maximum transmit power allowed in 2.4GHz band for DSSS/CCK rates
   wifi-max-tx-pwr-2g-mcs0:
     type: int
-    required: true
+    default: 14
     description: Maximum transmit power allowed in 2.4GHz band for MCS0
   wifi-max-tx-pwr-2g-mcs7:
     type: int
-    required: true
+    default: 14
     description: Maximum transmit power allowed in 2.4GHz band for MCS7

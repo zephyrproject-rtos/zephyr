@@ -83,10 +83,23 @@ static void decode_flags(struct net_buf_simple *buf, struct mqtt_sn_flags *flags
 						      MQTT_SN_FLAGS_SHIFT_TOPICID_TYPE);
 }
 
-static void decode_data(struct net_buf_simple *buf, struct mqtt_sn_data *dest)
+static int decode_data(struct net_buf_simple *buf, struct mqtt_sn_data *dest)
 {
-	dest->size = buf->len;
-	dest->data = net_buf_simple_pull_mem(buf, buf->len);
+	size_t size = buf->len;
+	const uint8_t *data = net_buf_simple_pull_mem(buf, size);
+
+	if (data == NULL) {
+		/* The pull only fails with CONFIG_NET_BUF_HARDENING, when the
+		 * buffer metadata is corrupt: fail closed rather than exposing
+		 * a NULL pointer with a non-zero size to the caller.
+		 */
+		return -EINVAL;
+	}
+
+	dest->data = data;
+	dest->size = size;
+
+	return 0;
 }
 
 static int decode_empty_message(struct net_buf_simple *buf)
@@ -124,6 +137,8 @@ static int decode_msg_searchgw(struct net_buf_simple *buf, struct mqtt_sn_param_
 
 static int decode_msg_gwinfo(struct net_buf_simple *buf, struct mqtt_sn_param_gwinfo *params)
 {
+	int ret;
+
 	if (buf->len < 1) {
 		return -EPROTO;
 	}
@@ -131,7 +146,10 @@ static int decode_msg_gwinfo(struct net_buf_simple *buf, struct mqtt_sn_param_gw
 	params->gw_id = net_buf_simple_pull_u8(buf);
 
 	if (buf->len) {
-		decode_data(buf, &params->gw_add);
+		ret = decode_data(buf, &params->gw_add);
+		if (ret) {
+			return ret;
+		}
 	} else {
 		params->gw_add.size = 0;
 	}
@@ -168,9 +186,8 @@ static int decode_msg_register(struct net_buf_simple *buf, struct mqtt_sn_param_
 
 	params->topic_id = net_buf_simple_pull_be16(buf);
 	params->msg_id = net_buf_simple_pull_be16(buf);
-	decode_data(buf, &params->topic);
 
-	return 0;
+	return decode_data(buf, &params->topic);
 }
 
 static int decode_msg_regack(struct net_buf_simple *buf, struct mqtt_sn_param_regack *params)
@@ -201,9 +218,8 @@ static int decode_msg_publish(struct net_buf_simple *buf, struct mqtt_sn_param_p
 	params->topic_type = flags.topic_type;
 	params->topic_id = net_buf_simple_pull_be16(buf);
 	params->msg_id = net_buf_simple_pull_be16(buf);
-	decode_data(buf, &params->data);
 
-	return 0;
+	return decode_data(buf, &params->data);
 }
 
 static int decode_msg_puback(struct net_buf_simple *buf, struct mqtt_sn_param_puback *params)

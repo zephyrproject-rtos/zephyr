@@ -23,8 +23,8 @@
 #include <zephyr/bluetooth/classic/sdp.h>
 
 #include "avctp_internal.h"
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_AVCTP_LOG_LEVEL
@@ -64,7 +64,7 @@ static void avctp_tx_raise(int msec)
 		return;
 	}
 	LOG_DBG("kick TX");
-	k_work_schedule(&avctp_tx_work, K_MSEC(msec));
+	bt_work_schedule(&avctp_tx_work, K_MSEC(msec));
 }
 
 static void bt_avctp_clear_tx(struct bt_avctp *session)
@@ -450,10 +450,15 @@ static int avctp_recv_fragmented(struct bt_avctp *avctp, struct net_buf *buf)
 			goto failed;
 		}
 
-		avctp->reassembly_buf = net_buf_alloc(avctp->rx_pool, K_FOREVER);
+		/* This runs in the Bluetooth RX workqueue, which is also the only
+		 * context that releases reassembly buffers, so waiting here could
+		 * never be satisfied. Drop the fragment instead and let the peer
+		 * time out.
+		 */
+		avctp->reassembly_buf = net_buf_alloc(avctp->rx_pool, K_NO_WAIT);
 		if (avctp->reassembly_buf == NULL) {
-			LOG_ERR("Failed to allocate reassembly buffer");
-			return -ENOMEM;
+			LOG_ERR("Failed to allocate reassembly buffer (tid=%u, cr=%u)", tid, cr);
+			goto failed;
 		}
 
 		__ASSERT_NO_MSG(avctp->reassembly_buf->user_data_size >= sizeof(*hdr_reassembly));

@@ -21,6 +21,7 @@
 		sw0 = &button0;
 		watchdog0 = &wdt0;
 		counter = &counterg0;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -28,6 +29,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,entropy = &trng;
+		zephyr,rtc = &rtc;
 	};
 
 	gpio_keys {
@@ -91,5 +93,9 @@
 };
 
 &counterg0 {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };

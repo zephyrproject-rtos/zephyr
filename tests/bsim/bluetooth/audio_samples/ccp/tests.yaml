@@ -10,11 +10,11 @@ common:
   build: false
 
 tests:
-  tests.bsim.bluetooth.audio_samples.ccp:
+  bluetooth.audio_samples.bsim.ccp:
     harness_config:
       fixture: bsim_multi_test
     required_applications:
-      - application: tests.bsim.bluetooth.audio_samples.ccp.client
+      - application: bluetooth.audio_samples.bsim.ccp.client
         path: call_control_client
-      - application: tests.bsim.bluetooth.audio_samples.ccp.server
+      - application: bluetooth.audio_samples.bsim.ccp.server
         path: call_control_server

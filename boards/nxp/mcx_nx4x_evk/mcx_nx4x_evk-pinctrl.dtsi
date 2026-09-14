@@ -299,4 +299,13 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_tsi: pinmux_tsi {
+		group0 {
+			pinmux = <TSI0_CH19_PIO1_10>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			bias-pull-up;
+		};
+	};
 };

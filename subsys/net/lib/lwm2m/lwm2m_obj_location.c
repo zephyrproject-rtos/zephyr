@@ -106,7 +106,7 @@ static int ipso_location_init(void)
 	/* auto create the only instance */
 	ret = lwm2m_create_obj_inst(LWM2M_OBJECT_LOCATION_ID, 0, &obj_inst);
 	if (ret < 0) {
-		LOG_DBG("Create LWM2M instance 0 error: %d", ret);
+		LOG_DBG("Create LwM2M instance 0 error: %d", ret);
 	}
 
 	return ret;

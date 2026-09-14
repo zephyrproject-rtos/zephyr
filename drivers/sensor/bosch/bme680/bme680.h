@@ -49,7 +49,7 @@ struct bme680_bus_io {
 
 #if BME680_BUS_SPI
 #define BME680_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL \
-		| SPI_MODE_CPHA | SPI_OP_MODE_MASTER)
+		| SPI_MODE_CPHA | SPI_OP_MODE_CONTROLLER)
 extern const struct bme680_bus_io bme680_bus_io_spi;
 #endif
 

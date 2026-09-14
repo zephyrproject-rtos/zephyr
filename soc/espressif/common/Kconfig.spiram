@@ -1,7 +1,8 @@
 # Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4
+if SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32S2 || \
+	SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4
 
 ESP32_PSRAM0_NODE_PATH := $(dt_nodelabel_path,psram0)
 
@@ -102,7 +103,8 @@ config SPIRAM_SPEED_80M
 
 config SPIRAM_SPEED_120M
 	bool "120MHz clock speed"
-	depends on SPIRAM_MODE_QUAD && (SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S3)
+	depends on SPIRAM_MODE_QUAD && (SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || \
+		SOC_SERIES_ESP32S3)
 	depends on ESPTOOLPY_FLASHFREQ_120M
 
 config SPIRAM_SPEED_200M
@@ -150,11 +152,12 @@ config SPIRAM_RODATA
 
 config SPIRAM_ECC_ENABLE
 	bool "Allow enabling SPI RAM ECC"
-	depends on SOC_SERIES_ESP32C5 || (SPIRAM_MODE_OCT && SOC_SERIES_ESP32S3) || SOC_SERIES_ESP32P4
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || \
+		(SPIRAM_MODE_OCT && SOC_SERIES_ESP32S3) || SOC_SERIES_ESP32P4
 	help
 	  Enable MSPI Error-Correcting Code function when accessing SPIRAM.
 	  If enabled, 1/16 of the SPI RAM total size will be reserved for
-	  error-correcting code (1/8 on ESP32-C5).
+	  error-correcting code (1/8 on ESP32-C5 and ESP32-C61).
 
 if SOC_SERIES_ESP32
 

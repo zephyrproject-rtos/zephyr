@@ -21,13 +21,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ti_am654_timer, CONFIG_KERNEL_LOG_LEVEL);
 
-#define TIMER_IRQ_NUM   DT_INST_IRQN(0)
-#define TIMER_IRQ_PRIO  DT_INST_IRQ(0, priority)
-#define TIMER_IRQ_FLAGS DT_INST_IRQ(0, flags)
+#define SYSTEM_TIMER_NODE DT_CHOSEN(zephyr_system_timer)
 
-#define CLKSEL_SYSCON DT_INST_PHANDLE(0, clksel)
-#define CLKSEL_OFFSET DT_INST_PHA(0, clksel, offset)
-#define CLKSEL_VALUE  DT_INST_PHA(0, clksel, value)
+#define TIMER_IRQ_NUM   DT_IRQN(SYSTEM_TIMER_NODE)
+#define TIMER_IRQ_PRIO  DT_IRQ(SYSTEM_TIMER_NODE, priority)
+#define TIMER_IRQ_FLAGS DT_IRQ(SYSTEM_TIMER_NODE, flags)
+
+#define CLKSEL_SYSCON DT_PHANDLE(SYSTEM_TIMER_NODE, clksel)
+#define CLKSEL_OFFSET DT_PHA(SYSTEM_TIMER_NODE, clksel, offset)
+#define CLKSEL_VALUE  DT_PHA(SYSTEM_TIMER_NODE, clksel, value)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ_NUM;
@@ -50,7 +52,7 @@ struct ti_dm_timer_data {
 	uint32_t last_cycle;
 };
 
-static const struct device *systick_timer_dev = DEVICE_DT_GET(DT_DRV_INST(0));
+static const struct device *systick_timer_dev = DEVICE_DT_GET(SYSTEM_TIMER_NODE);
 
 #define TI_DM_TIMER_MASK(reg)  TI_DM_TIMER_##reg##_MASK
 #define TI_DM_TIMER_SHIFT(reg) TI_DM_TIMER_##reg##_SHIFT

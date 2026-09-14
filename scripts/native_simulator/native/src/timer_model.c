@@ -63,6 +63,7 @@ static char *us_time_to_str(char *dest, uint64_t time)
 static uint64_t hw_timer_timer; /* Event timer exposed to the HW scheduler */
 
 static uint64_t hw_timer_tick_timer;
+static uint64_t hw_timer_rt_timer;
 static uint64_t hw_timer_awake_timer;
 
 static uint64_t tick_p; /* Period of the ticker */
@@ -84,6 +85,7 @@ static uint64_t boot_time;
  * than real time
  */
 static double clock_ratio = 1.0;
+static uint64_t rt_period = 10e3; /* in microseconds */
 
 #if DEBUG_NP_TIMER
 /*
@@ -108,14 +110,25 @@ static uint64_t last_radj_rtime;
 /* Last simulated time when the ratio was adjusted */
 static uint64_t last_radj_stime;
 
+/* Set in real time mode. Note this can only be called before HW_INIT */
 void hwtimer_set_real_time_mode(bool new_rt)
 {
-	real_time_mode = new_rt;
+	if (hw_timer_rt_timer) {
+		nsi_print_warning("%s: can't be called after init. Ignored\n", __func__);
+	} else {
+		real_time_mode = new_rt;
+	}
+}
+
+void hwtimer_set_rt_period(uint64_t period)
+{
+	rt_period = period;
 }
 
 static void hwtimer_update_timer(void)
 {
 	hw_timer_timer = NSI_MIN(hw_timer_tick_timer, hw_timer_awake_timer);
+	hw_timer_timer = NSI_MIN(hw_timer_timer, hw_timer_rt_timer);
 }
 
 static inline void host_clock_gettime(struct timespec *tv)
@@ -140,17 +153,28 @@ uint64_t get_host_us_time(void)
 	return (uint64_t)tv.tv_sec * 1e6 + tv.tv_nsec / 1000;
 }
 
-static void hwtimer_init(void)
+static void hwtimer_rt_init(void)
 {
-	silent_ticks = 0;
-	hw_timer_tick_timer = NSI_NEVER;
-	hw_timer_awake_timer = NSI_NEVER;
-	hwtimer_update_timer();
 	if (real_time_mode) {
 		boot_time = get_host_us_time();
 		last_radj_rtime = boot_time;
 		last_radj_stime = 0U;
+
+		hw_timer_rt_timer = rt_period;
+	} else {
+		hw_timer_rt_timer = NSI_NEVER;
 	}
+}
+
+static void hwtimer_init(void)
+{
+	hwtimer_rt_init();
+
+	silent_ticks = 0;
+	hw_timer_tick_timer = NSI_NEVER;
+	hw_timer_awake_timer = NSI_NEVER;
+	hwtimer_update_timer();
+
 	if (!reset_rtc) {
 		struct timespec tv;
 		uint64_t realhosttime;
@@ -165,50 +189,103 @@ static void hwtimer_init(void)
 NSI_TASK(hwtimer_init, HW_INIT, 10);
 
 /**
- * Enable the HW timer tick interrupts with a period <period> in microseconds
+ * Enable the HW ticker timer in one shot mode, so it triggers once at <deadline>
+ * where <deadline> is the number of microseconds since boot.
+ *
+ * If deadline is in the past, at less than UINT64_MAX/2 it will trigger immediately.
+ * If it is further than that, an overflow will be assumed, and it will not trigger ever.
+ *
+ * You can call it with deadline = NSI_NEVER to effectively disable the tick timer interrupt
+ *
+ * Note a possible periodic tick, and silent_ticks, configuration will be cleared.
  */
-void hwtimer_enable(uint64_t period)
+void hwtimer_set_tick_one_shot(uint64_t deadline)
 {
-	tick_p = period;
-	hw_timer_tick_timer = nsi_hws_get_time() + tick_p;
+	uint64_t now = nsi_hws_get_time();
+
+	if (deadline < now) {
+		if ((now - deadline) > UINT64_MAX/2) {
+			nsi_print_warning("%s: deadline seems to have overflowed. "
+					  "It will never trigger.\n", __func__);
+			deadline = NSI_NEVER;
+		} else {
+			deadline = now;
+		}
+	}
+	hw_timer_tick_timer = deadline;
+	tick_p = NSI_NEVER;
+	silent_ticks = 0;
 	hwtimer_update_timer();
 	nsi_hws_find_next_event();
 }
 
-static void hwtimer_tick_timer_reached(void)
+/**
+ * Enable the HW timer periodic tick interrupts with a period <period> in microseconds.
+ *
+ * The next interrupt will be <period> microseconds from now.
+ *
+ * If silent_ticks had been enabled, it will be cleared.
+ * If a one shot deadline had been configured it will also be cleared.
+ *
+ * If period would overflow the timer, the deadline will be set at the end of time (NSI_NEVER)
+ */
+void hwtimer_enable(uint64_t period)
 {
-	if (real_time_mode) {
-		uint64_t expected_rt = (hw_timer_tick_timer - last_radj_stime)
-				    / clock_ratio
-				    + last_radj_rtime;
-		uint64_t real_time = get_host_us_time();
+	uint64_t now = nsi_hws_get_time();
 
-		int64_t diff = expected_rt - real_time;
+	tick_p = period;
+	hw_timer_tick_timer = now + tick_p;
+	if (hw_timer_tick_timer < now) { /* We'd wrap around the end of time */
+		hw_timer_tick_timer = NSI_NEVER;
+	}
+	silent_ticks = 0;
+	hwtimer_update_timer();
+	nsi_hws_find_next_event();
+}
+
+static void hwtimer_rt_timer_reached(void)
+{
+	uint64_t expected_rt = (hw_timer_rt_timer - last_radj_stime) / clock_ratio
+				+ last_radj_rtime;
+	uint64_t real_time = get_host_us_time();
+
+	int64_t diff = expected_rt - real_time;
 
 #if DEBUG_NP_TIMER
-		char es[30];
-		char rs[30];
+	char es[30];
+	char rs[30];
 
-		us_time_to_str(es, expected_rt - boot_time);
-		us_time_to_str(rs, real_time - boot_time);
-		printf("tick @%5"PRIu64"ms: diff = expected_rt - real_time = "
-			"%5"PRIi64" = %s - %s\n",
-			hw_timer_tick_timer/1000U, diff, es, rs);
+	us_time_to_str(es, expected_rt - boot_time);
+	us_time_to_str(rs, real_time - boot_time);
+	printf("rt sync @%5"PRIu64"ms: diff = expected_rt - real_time = "
+		"%5"PRIi64" = %s - %s\n",
+		hw_timer_rt_timer/1000U, diff, es, rs);
 #endif
 
-		if (diff > 0) { /* we need to slow down */
-			struct timespec requested_time;
-			struct timespec remaining;
+	if (diff > 0) { /* we need to slow down */
+		struct timespec requested_time;
+		struct timespec remaining;
 
-			requested_time.tv_sec  = diff / 1e6;
-			requested_time.tv_nsec = (diff -
-						 requested_time.tv_sec*1e6)*1e3;
+		requested_time.tv_sec  = diff / 1e6;
+		requested_time.tv_nsec = (diff - requested_time.tv_sec*1e6)*1e3;
 
-			(void) nanosleep(&requested_time, &remaining);
-		}
+		(void) nanosleep(&requested_time, &remaining);
 	}
 
-	hw_timer_tick_timer += tick_p;
+	hw_timer_rt_timer += rt_period;
+	if (hw_timer_rt_timer < nsi_hws_get_time()) { /* wrapped around the end of time */
+		hw_timer_rt_timer = NSI_NEVER;
+	}
+	hwtimer_update_timer();
+}
+
+static void hwtimer_tick_timer_reached(void)
+{
+	if (tick_p > NSI_NEVER - hw_timer_tick_timer) { /* We'd wrap around the end of time */
+		hw_timer_tick_timer = NSI_NEVER;
+	} else {
+		hw_timer_tick_timer += tick_p;
+	}
 	hwtimer_update_timer();
 
 	if (silent_ticks > 0) {
@@ -233,6 +310,10 @@ static void hwtimer_timer_reached(void)
 		hwtimer_awake_timer_reached();
 	}
 
+	if (hw_timer_rt_timer == Now) {
+		hwtimer_rt_timer_reached();
+	}
+
 	if (hw_timer_tick_timer == Now) {
 		hwtimer_tick_timer_reached();
 	}
@@ -242,7 +323,8 @@ NSI_HW_EVENT(hw_timer_timer, hwtimer_timer_reached, 0);
 
 /**
  * The timer HW will awake the CPU (without an interrupt) at least when <time>
- * comes (it may awake it earlier)
+ * comes (it may awake it earlier).
+ * This is unrelated to the timer tick functionality and its one shot mode
  *
  * If there was a previous request for an earlier time, the old one will prevail
  *
@@ -250,6 +332,13 @@ NSI_HW_EVENT(hw_timer_timer, hwtimer_timer_reached, 0);
  */
 void hwtimer_wake_in_time(uint64_t time)
 {
+	uint64_t now = nsi_hws_get_time();
+
+	if (time < now) {
+		nsi_print_warning("%s: deadline was in the past (did it wrap around?)\n", __func__);
+		time = now;
+	}
+
 	if (hw_timer_awake_timer > time) {
 		hw_timer_awake_timer = time;
 		hwtimer_update_timer();
@@ -406,6 +495,7 @@ static struct {
 	double stop_at;
 	double rtc_offset;
 	double rt_drift;
+	double rt_period;
 	double rt_ratio;
 } args;
 
@@ -463,6 +553,24 @@ static void cmd_rt_ratio_found(char *argv, int offset)
 	hwtimer_set_rt_ratio(args.rt_ratio);
 }
 
+static void cmd_rt_period_found(char *argv, int offset)
+{
+	NSI_ARG_UNUSED(argv);
+	NSI_ARG_UNUSED(offset);
+
+	if (args.rt_period < 1e-6) {
+		nsi_print_error_and_exit("The rt-period (%le) needs to be >= 1e-6. "
+					  "Please use --help for more info\n", args.rt_period);
+	}
+	if ((args.rt_period < 1e-3) || (args.rt_period > 60)) {
+		nsi_print_warning("rt-period has a weird value (%le). "
+				  "Are you sure this is what you want?\n",
+				  args.rt_period);
+	}
+	hwtimer_set_rt_period(args.rt_period * 1e6);
+	hwtimer_set_real_time_mode(true);
+}
+
 static void cmd_rtcreset_found(char *argv, int offset)
 {
 	(void) argv;
@@ -513,6 +621,19 @@ static void nsi_add_time_options(void)
 				    "speed, and therefore it does not make sense to use them "
 				    "simultaneously. "
 				    "This option has no effect in non real time mode"
+		},
+		{
+			.option = "rt-period",
+			.name = "period",
+			.type = 'd',
+			.dest = (void *)&args.rt_period,
+			.call_when_found = cmd_rt_period_found,
+			.descript = "In seconds, periodicity at which real time and simulated time "
+				    "will be sync'ed. "
+				    "For ex. set to 50e-3 to have the simulation held every 50ms "
+				    "until the real time catches up. By default it is 10ms. "
+				    "This option has no effect in non real time mode, but setting "
+				    "it implies `-rt`"
 		},
 		{
 			.option = "rtc-offset",

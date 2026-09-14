@@ -30,9 +30,11 @@ from typing import TYPE_CHECKING
 import psutil
 from domains import Domains
 from twisterlib import ZEPHYR_BASE
+from twisterlib.constants import FAULT_REASON
 from twisterlib.environment import strip_ansi_sequences
 from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.platform import Platform
+from twisterlib.runmonitor import console_ui_active
 from twisterlib.statuses import TwisterStatus
 
 if TYPE_CHECKING:
@@ -55,6 +57,11 @@ except ImportError as capture_error:
 
 logger = logging.getLogger('twister')
 
+# Once a test reports its first status, the QEMU monitor keeps reading briefly
+# to catch late output. Coverage dumps take much longer than a normal tail.
+COVERAGE_TIMEOUT_EXTENSION = 30
+POST_STATUS_TIMEOUT_EXTENSION = 2
+
 
 def terminate_process(proc):
     """
@@ -65,10 +72,20 @@ def terminate_process(proc):
     so we need to use try_kill_process_by_pid.
     """
 
+    children = []
+
     with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
-        for child in psutil.Process(proc.pid).children(recursive=True):
+        children = psutil.Process(proc.pid).children(recursive=True)
+        for child in children:
             with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
                 os.kill(child.pid, signal.SIGTERM)
+
+    if children:
+        _, alive = psutil.wait_procs(children, timeout=5, callback=None)
+        for p in alive:
+            with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
+                p.kill()
+
     proc.terminate()
     # sleep for a while before attempting to kill
     time.sleep(0.5)
@@ -201,6 +218,12 @@ class Handler:
             # Depending on the failure type, we set the reason
             if self.options.enable_valgrind and self.returncode == 2:
                 self.instance.reason = "Valgrind error"
+            elif harness.fault:
+                # The console showed an unexpected fatal error: the test
+                # crashed. A crash typically also makes the run time out or
+                # the simulator exit with an error, so report the crash
+                # itself rather than those side effects.
+                self.instance.reason = FAULT_REASON
             elif failure_type == self.FailureType.TIMEOUT:
                 self.instance.reason = "Timeout"
             elif failure_type == self.FailureType.FLASH:
@@ -277,8 +300,12 @@ class BinaryHandler(Handler):
                     log_out_fp.write(strip_ansi_sequences(line_decoded))
                     log_out_fp.flush()
                     harness.handle(stripped_line)
+                    # A harness status means the run reached a verdict; a
+                    # fault means it crashed and no verdict is coming. In
+                    # both cases stop after a short grace period to catch
+                    # late output instead of waiting for the full timeout.
                     if (
-                        harness.status != TwisterStatus.NONE
+                        (harness.status != TwisterStatus.NONE or harness.fault)
                         and not timeout_extended
                         or harness.capture_coverage
                     ):
@@ -401,8 +428,12 @@ class BinaryHandler(Handler):
             return
 
         stderr_log = f"{self.instance.build_dir}/handler_stderr.log"
+        # Keep the binary away from the terminal's stdin while the
+        # --console-monitor UI owns it, so it cannot steal or re-mode it.
+        stdin = subprocess.DEVNULL if console_ui_active() else None
         with open(stderr_log, "w+") as stderr_log_fp, subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=stderr_log_fp, cwd=self.build_dir, env=env
+            command, stdin=stdin, stdout=subprocess.PIPE, stderr=stderr_log_fp,
+            cwd=self.build_dir, env=env
         ) as proc:
             logger.debug(f"Spawning BinaryHandler Thread for {self.name}")
             t = threading.Thread(target=self._output_handler, args=(proc, harness,), daemon=True)
@@ -422,7 +453,10 @@ class BinaryHandler(Handler):
 
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
-        if sys.stdout.isatty():
+        # Must not run while the --console-monitor curses UI owns the
+        # terminal: stty sane would knock it out of cbreak/noecho mode and
+        # kill its keyboard handling.
+        if sys.stdout.isatty() and not console_ui_active():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
         self._update_instance_info(harness)
@@ -923,7 +957,73 @@ class DeviceHandler(Handler):
             self.run_custom_script(post_script, timeout)
 
 
-class QEMUHandler(Handler):
+class QEMUHandlerBase(Handler):
+    """Shared behaviour for the POSIX and Windows QEMU handlers.
+
+    Both spawn a thread to monitor QEMU console output and decide the test
+    result from it. The monitor loops themselves differ per OS (select.poll on
+    fifos vs a reader-thread Queue) and are kept in the subclasses; everything
+    that does not depend on that mechanism lives here.
+    """
+
+    @staticmethod
+    def _get_cpu_time(pid):
+        """get process CPU time.
+
+        The guest virtual time in QEMU icount mode isn't host time and
+        it's maintained by counting guest instructions, so we use QEMU
+        process execution time to mostly simulate the time of guest OS.
+        """
+        proc = psutil.Process(pid)
+        cpu_time = proc.cpu_times()
+        return cpu_time.user + cpu_time.system
+
+    @staticmethod
+    def _thread_update_instance_info(handler, status, reason):
+        handler.instance.execution_time = handler.execution_time
+        handler.instance.status = status
+        if reason:
+            handler.instance.reason = reason
+        elif status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+            handler.instance.reason = "Unknown Error"
+        else:
+            # Not a failure (e.g. a pass): no reason to report. Clear it
+            # rather than keep it, so a stale reason from an earlier retry
+            # iteration cannot stick to a now-passing instance.
+            handler.instance.reason = None
+
+    @staticmethod
+    def _extend_timeout_on_status(harness):
+        """Return the extended monitor deadline after the first test status.
+
+        Coverage dumps can take a while, so allow much longer when capturing.
+        """
+        extension = (
+            COVERAGE_TIMEOUT_EXTENSION if harness.capture_coverage
+            else POST_STATUS_TIMEOUT_EXTENSION
+        )
+        return time.time() + extension
+
+    def _set_qemu_filenames(self, sysbuild_build_dir):
+        # PID file will be created in the main sysbuild app's build dir
+        self.pid_fn = os.path.join(sysbuild_build_dir, "qemu.pid")
+
+        if os.path.exists(self.pid_fn):
+            os.unlink(self.pid_fn)
+
+        self.log_fn = self.log
+
+    def _create_command(self, sysbuild_build_dir):
+        command = [self.generator_cmd]
+        command += ["-C", sysbuild_build_dir, "run"]
+
+        return command
+
+    def get_fifo(self):
+        return self.fifo_fn
+
+
+class QEMUHandler(QEMUHandlerBase):
     """Spawns a thread to monitor QEMU output from pipes
 
     We pass QEMU_PIPE to 'make run' and monitor the pipes for output.
@@ -962,32 +1062,11 @@ class QEMUHandler(Handler):
             self.ignore_unexpected_eof = False
 
     @staticmethod
-    def _get_cpu_time(pid):
-        """get process CPU time.
-
-        The guest virtual time in QEMU icount mode isn't host time and
-        it's maintained by counting guest instructions, so we use QEMU
-        process execution time to mostly simulate the time of guest OS.
-        """
-        proc = psutil.Process(pid)
-        cpu_time = proc.cpu_times()
-        return cpu_time.user + cpu_time.system
-
-    @staticmethod
     def _thread_get_fifo_names(fifo_fn):
         fifo_in = fifo_fn + ".in"
         fifo_out = fifo_fn + ".out"
 
         return fifo_in, fifo_out
-
-    @staticmethod
-    def _thread_update_instance_info(handler, status, reason):
-        handler.instance.execution_time = handler.execution_time
-        handler.instance.status = status
-        if reason:
-            handler.instance.reason = reason
-        else:
-            handler.instance.reason = "Unknown Error"
 
     @staticmethod
     def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn,
@@ -1067,7 +1146,10 @@ class QEMUHandler(Handler):
 
                 if c == "":
                     # EOF, this shouldn't happen unless QEMU crashes
-                    if not ignore_unexpected_eof:
+                    # Don't overwrite an already-recorded failure (e.g. a
+                    # fault): that reason is more precise than the EOF that
+                    # follows it.
+                    if not ignore_unexpected_eof and _status != TwisterStatus.FAIL:
                         _status = TwisterStatus.FAIL
                         _reason = "unexpected eof"
                     break
@@ -1082,25 +1164,32 @@ class QEMUHandler(Handler):
                 logger.debug(f"QEMU ({pid}): {line}")
 
                 harness.handle(line)
-                if harness.status != TwisterStatus.NONE:
+
+                if harness.fault and _status == TwisterStatus.NONE:
+                    # The console showed an unexpected fatal error: the test
+                    # crashed and usually halts right after, so no verdict is
+                    # coming. Record the crash as the failure now instead of
+                    # letting the run expire as a timeout.
+                    _status = TwisterStatus.FAIL
+                    _reason = FAULT_REASON
+
+                if harness.status != TwisterStatus.NONE and _status != TwisterStatus.FAIL:
                     # if we have registered a fail make sure the status is not
                     # overridden by a false success message coming from the
                     # testsuite
-                    if _status != TwisterStatus.FAIL:
-                        _status = harness.status
-                        _reason = harness.reason
+                    _status = harness.status
+                    _reason = harness.reason
 
-                    # if we get some status, that means test is doing well, we reset
-                    # the timeout and wait for 2 more seconds to catch anything
-                    # printed late. We wait much longer if code
-                    # coverage is enabled since dumping this information can
-                    # take some time.
-                    if not timeout_extended or harness.capture_coverage:
-                        timeout_extended = True
-                        if harness.capture_coverage:
-                            timeout_time = time.time() + 30
-                        else:
-                            timeout_time = time.time() + 2
+                # once a verdict (or a crash) is known the test is done;
+                # reset the timeout and wait for 2 more seconds to catch
+                # anything printed late. We wait much longer if code
+                # coverage is enabled since dumping this information can
+                # take some time.
+                if _status != TwisterStatus.NONE and (
+                    not timeout_extended or harness.capture_coverage
+                ):
+                    timeout_extended = True
+                    timeout_time = QEMUHandler._extend_timeout_on_status(harness)
                 line = ""
 
             handler.execution_time = time.time() - start_time
@@ -1124,19 +1213,7 @@ class QEMUHandler(Handler):
         # We pass this to QEMU which looks for fifos with .in and .out suffixes.
         # QEMU fifo will use main build dir
         self.fifo_fn = os.path.join(self.instance.build_dir, "qemu-fifo")
-        # PID file will be created in the main sysbuild app's build dir
-        self.pid_fn = os.path.join(sysbuild_build_dir, "qemu.pid")
-
-        if os.path.exists(self.pid_fn):
-            os.unlink(self.pid_fn)
-
-        self.log_fn = self.log
-
-    def _create_command(self, sysbuild_build_dir):
-        command = [self.generator_cmd]
-        command += ["-C", sysbuild_build_dir, "run"]
-
-        return command
+        super()._set_qemu_filenames(sysbuild_build_dir)
 
     def handle(self, harness):
         robot_test = getattr(harness, "is_robot_test", False) is True
@@ -1176,7 +1253,9 @@ class QEMUHandler(Handler):
         logger.debug(f"Spawning QEMUHandler Thread for {self.name}")
         self.thread.start()
         thread_max_time = time.time() + self.get_test_timeout()
-        if sys.stdout.isatty():
+        # See BinaryHandler._handle: never reset the terminal while the
+        # --console-monitor curses UI owns it.
+        if sys.stdout.isatty() and not console_ui_active():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
         logger.debug(f"Running {self.name} ({self.type_str})")
@@ -1184,9 +1263,13 @@ class QEMUHandler(Handler):
         failure_type = self.FailureType.NONE
         qemu_pid = None
 
+        # As in BinaryHandler._handle: no terminal stdin for QEMU while the
+        # --console-monitor UI owns the terminal.
+        stdin = subprocess.DEVNULL if console_ui_active() else None
         with open(self.stdout_fn, "w") as stdout_fp, \
             open(self.stderr_fn, "w") as stderr_fp, subprocess.Popen(
             command,
+            stdin=stdin,
             stdout=stdout_fp,
             stderr=stderr_fp,
             cwd=self.build_dir
@@ -1236,11 +1319,8 @@ class QEMUHandler(Handler):
 
         self._final_handle_actions(harness)
 
-    def get_fifo(self):
-        return self.fifo_fn
 
-
-class QEMUWinHandler(Handler):
+class QEMUWinHandler(QEMUHandlerBase):
     """Spawns a thread to monitor QEMU output from pipes on Windows OS
 
      QEMU creates single duplex pipe at //.pipe/path, where path is fifo_fn.
@@ -1278,18 +1358,6 @@ class QEMUWinHandler(Handler):
             self.ignore_unexpected_eof = False
 
     @staticmethod
-    def _get_cpu_time(pid):
-        """get process CPU time.
-
-        The guest virtual time in QEMU icount mode isn't host time and
-        it's maintained by counting guest instructions, so we use QEMU
-        process execution time to mostly simulate the time of guest OS.
-        """
-        proc = psutil.Process(pid)
-        cpu_time = proc.cpu_times()
-        return cpu_time.user + cpu_time.system
-
-    @staticmethod
     def _open_log_file(logfile):
         return open(logfile, "w")
 
@@ -1308,30 +1376,6 @@ class QEMUWinHandler(Handler):
                 pass
             except OSError:
                 pass
-
-    @staticmethod
-    def _monitor_update_instance_info(handler, status, reason):
-        handler.instance.execution_time = handler.execution_time
-        handler.instance.status = status
-        if reason:
-            handler.instance.reason = reason
-        else:
-            handler.instance.reason = "Unknown Error"
-
-    def _set_qemu_filenames(self, sysbuild_build_dir):
-        # PID file will be created in the main sysbuild app's build dir
-        self.pid_fn = os.path.join(sysbuild_build_dir, "qemu.pid")
-
-        if os.path.exists(self.pid_fn):
-            os.unlink(self.pid_fn)
-
-        self.log_fn = self.log
-
-    def _create_command(self, sysbuild_build_dir):
-        command = [self.generator_cmd]
-        command += ["-C", sysbuild_build_dir, "run"]
-
-        return command
 
     def _enqueue_char(self, queue):
         while not self.stop_thread:
@@ -1415,7 +1459,10 @@ class QEMUWinHandler(Handler):
 
             if c == "":
                 # EOF, this shouldn't happen unless QEMU crashes
-                if not ignore_unexpected_eof:
+                # Don't overwrite an already-recorded failure (e.g. a
+                # fault): that reason is more precise than the EOF that
+                # follows it.
+                if not ignore_unexpected_eof and _status != TwisterStatus.FAIL:
                     _status = TwisterStatus.FAIL
                     _reason = "unexpected eof"
                 break
@@ -1430,25 +1477,32 @@ class QEMUWinHandler(Handler):
             logger.debug(f"QEMU ({self.pid}): {line}")
 
             harness.handle(line)
-            if harness.status != TwisterStatus.NONE:
+
+            if harness.fault and _status == TwisterStatus.NONE:
+                # The console showed an unexpected fatal error: the test
+                # crashed and usually halts right after, so no verdict is
+                # coming. Record the crash as the failure now instead of
+                # letting the run expire as a timeout.
+                _status = TwisterStatus.FAIL
+                _reason = FAULT_REASON
+
+            if harness.status != TwisterStatus.NONE and _status != TwisterStatus.FAIL:
                 # if we have registered a fail make sure the status is not
                 # overridden by a false success message coming from the
                 # testsuite
-                if _status != TwisterStatus.FAIL:
-                    _status = harness.status
-                    _reason = harness.reason
+                _status = harness.status
+                _reason = harness.reason
 
-                # if we get some status, that means test is doing well, we reset
-                # the timeout and wait for 2 more seconds to catch anything
-                # printed late. We wait much longer if code
-                # coverage is enabled since dumping this information can
-                # take some time.
-                if not timeout_extended or harness.capture_coverage:
-                    timeout_extended = True
-                    if harness.capture_coverage:
-                        timeout_time = time.time() + 30
-                    else:
-                        timeout_time = time.time() + 2
+            # once a verdict (or a crash) is known the test is done;
+            # reset the timeout and wait for 2 more seconds to catch
+            # anything printed late. We wait much longer if code
+            # coverage is enabled since dumping this information can
+            # take some time.
+            if _status != TwisterStatus.NONE and (
+                not timeout_extended or harness.capture_coverage
+            ):
+                timeout_extended = True
+                timeout_time = self._extend_timeout_on_status(harness)
             line = ""
 
         self.stop_thread = True
@@ -1458,7 +1512,7 @@ class QEMUWinHandler(Handler):
             f"QEMU ({self.pid}) complete with {_status} ({_reason}) "
             f"after {self.execution_time} seconds"
         )
-        self._monitor_update_instance_info(self, _status, _reason)
+        self._thread_update_instance_info(self, _status, _reason)
         self._close_log_file(log_out_fp)
         self._stop_qemu_process(self.pid)
 
@@ -1511,6 +1565,3 @@ class QEMUWinHandler(Handler):
         self._update_instance_info(harness, failure_type=failure_type)
 
         self._final_handle_actions(harness)
-
-    def get_fifo(self):
-        return self.fifo_fn

@@ -5,7 +5,7 @@
 
 if BOARD_NUCLEO_F439ZI
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_NUCLEO_F439ZI

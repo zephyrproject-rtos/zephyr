@@ -11,3 +11,6 @@ config ENABLE_CUSTOM_INTERRUPTS
 	bool
 	default y
 	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	# The custom controller wraps the NVIC, so it can provide the
+	# pending-state hooks the way a real SoC integration would.
+	select ARCH_HAS_IRQ_PENDING_OPS

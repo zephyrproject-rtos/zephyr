@@ -23,5 +23,5 @@ endif()
 # Enable include-what-you-use using the native CMake support. CMake invokes the
 # tool alongside the compiler for every translation unit and prints the
 # suggested include changes to stderr during the build.
-set(CMAKE_C_INCLUDE_WHAT_YOU_USE ${iwyu_command} CACHE INTERNAL "")
-set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${iwyu_command} CACHE INTERNAL "")
+set(CMAKE_C_INCLUDE_WHAT_YOU_USE ${iwyu_command})
+set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${iwyu_command})

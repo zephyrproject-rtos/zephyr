@@ -52,9 +52,11 @@ int xendom_remove_from_physmap(int domid, xen_pfn_t gpfn)
 	return HYPERVISOR_memory_op(XENMEM_remove_from_physmap, &xrfp);
 }
 
-int xendom_populate_physmap(int domid, unsigned int extent_order,
-			    unsigned int nr_extents, unsigned int mem_flags,
-			    xen_pfn_t *extent_start)
+static int xendom_memory_reservation_op(unsigned int cmd, int domid,
+					unsigned int extent_order,
+					unsigned int nr_extents,
+					unsigned int mem_flags,
+					xen_pfn_t *extent_start)
 {
 	struct xen_memory_reservation reservation = {
 		.domid = domid,
@@ -65,7 +67,34 @@ int xendom_populate_physmap(int domid, unsigned int extent_order,
 
 	set_xen_guest_handle(reservation.extent_start, extent_start);
 
-	return HYPERVISOR_memory_op(XENMEM_populate_physmap, &reservation);
+	return HYPERVISOR_memory_op(cmd, &reservation);
+}
+
+int xendom_increase_reservation(int domid, unsigned int extent_order,
+				unsigned int nr_extents, unsigned int mem_flags,
+				xen_pfn_t *extent_start)
+{
+	return xendom_memory_reservation_op(XENMEM_increase_reservation, domid,
+					    extent_order, nr_extents, mem_flags,
+					    extent_start);
+}
+
+int xendom_decrease_reservation(int domid, unsigned int extent_order,
+				unsigned int nr_extents, unsigned int mem_flags,
+				xen_pfn_t *extent_start)
+{
+	return xendom_memory_reservation_op(XENMEM_decrease_reservation, domid,
+					    extent_order, nr_extents, mem_flags,
+					    extent_start);
+}
+
+int xendom_populate_physmap(int domid, unsigned int extent_order,
+			    unsigned int nr_extents, unsigned int mem_flags,
+			    xen_pfn_t *extent_start)
+{
+	return xendom_memory_reservation_op(XENMEM_populate_physmap, domid,
+					    extent_order, nr_extents, mem_flags,
+					    extent_start);
 }
 
 int xendom_acquire_resource(domid_t domid, uint16_t type, uint32_t id, uint64_t frame,

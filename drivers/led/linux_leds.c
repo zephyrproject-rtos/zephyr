@@ -100,8 +100,6 @@ cleanup:
 	return ret;
 }
 
-#define DEVICE_DT_GET_COMMA(node_id) DEVICE_DT_GET(node_id),
-
 static void linux_leds_cleanup(void)
 {
 	const struct device *devs[] = {

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DAC_MAX22017
-	bool "Analog Devices MAX22017 DAC"
+	bool "Analog Devices MAX22017 DAC driver"
 	default y
 	depends on DT_HAS_ADI_MAX22017_DAC_ENABLED
 	select MFD

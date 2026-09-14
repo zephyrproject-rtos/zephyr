@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
- * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+ * Copyright (c) 2026 Philipp Steiner
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,8 +48,6 @@ struct ptp_port {
 	int			       socket[2];
 	/** Status of a link. */
 	uint8_t			       link_status;
-	/** Link event callback. */
-	struct net_mgmt_event_callback link_cb;
 	/** Structure of system timers used by the Port. */
 	struct {
 		struct k_timer	       announce;
@@ -118,6 +116,20 @@ struct ptp_port {
 	int64_t pdelay_prev_resp_ingress_ns;
 	/** True if previous P2P rate-ratio timestamps are valid. */
 	bool pdelay_prev_rate_sample_valid;
+#if defined(CONFIG_PTP_NETWORK_MODE_HYBRID)
+	/** Protocol address of the current timeTransmitter used for unicast Delay_Req. */
+	struct net_sockaddr_storage tt_addr;
+	/** True if tt_addr holds a valid timeTransmitter address. */
+	bool tt_addr_valid;
+#if !defined(CONFIG_PTP_NETWORK_MODE_HYBRID_NO_FALLBACK)
+	/** Port ID of the timeTransmitter that @ref ptp_port.tt_addr belongs to. */
+	struct ptp_port_id tt_id;
+	/** Consecutive unicast Delay_Req messages sent without a matching Delay_Resp. */
+	uint8_t hybrid_unanswered;
+	/** True if the port reverted to multicast Delay_Req until a new timeTransmitter. */
+	bool hybrid_fallback_active;
+#endif
+#endif
 };
 
 /**

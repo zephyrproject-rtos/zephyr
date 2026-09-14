@@ -11,8 +11,8 @@
  * Misc UTF-8 utilities.
  */
 
-#ifndef ZEPHYR_INCLUDE_SYS_UTIL_UFT8_H_
-#define ZEPHYR_INCLUDE_SYS_UTIL_UFT8_H_
+#ifndef ZEPHYR_INCLUDE_SYS_UTIL_UTF8_H_
+#define ZEPHYR_INCLUDE_SYS_UTIL_UTF8_H_
 
 #include <stddef.h>
 
@@ -90,4 +90,4 @@ int utf8_count_chars(const char *s);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_SYS_UTIL_UFT8_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_UTIL_UTF8_H_ */

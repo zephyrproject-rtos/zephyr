@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon IPC block exposed as a Zephyr MBOX controller.
+
+  This driver implements the Multi-Channel Inter-Processor Mailbox (MBOX) API
+  on top of the Infineon inter-processor communication (IPC) block using direct
+  register access. Each mailbox channel carries one or two 32-bit data words,
+  selected per controller by "msg-size-bytes".
+
+  A mailbox channel is described by one "ipc-configs" entry and one
+  "interrupts" entry, at the same index:
+
+    * ipc-configs = <&ipcX channel interrupt>
+        &ipcX     - phandle of the IPC instance the channel belongs to,
+        channel   - IPC channel index within that instance,
+        interrupt - IPC interrupt-structure index within that instance the
+                    receiver watches on this channel.
+    * interrupts  - NVIC vector, on this core, of that interrupt structure.
+
+  The channel index passed by consumers through "#mbox-cells = <1>" is the
+  index into these arrays, not an IPC channel number.
+
+  Any core may use any IPC instance; there is no fixed instance-to-core
+  mapping. A controller may reference any instance and may even mix instances
+  across its channels. Only the "interrupts" entry is core-specific: it must be
+  the NVIC vector of the chosen interrupt structure in the servicing core's own
+  vector table.
+
+  Example:
+
+    &ipc0 {
+        status = "okay";
+    };
+
+    mbox0: mbox {
+        compatible = "infineon,mbox";
+        #mbox-cells = <1>;
+        ipc-configs = <&ipc0 3 3>, <&ipc0 4 4>;
+        interrupts = <73 4>, <74 4>;
+        status = "okay";
+    };
+
+compatible: "infineon,mbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  ipc-configs:
+    type: phandle-array
+    required: true
+    description: |
+      One entry per mailbox channel, selecting the IPC instance, channel and
+      interrupt structure that channel uses. Its length must match the number
+      of "interrupts" entries.
+
+  msg-size-bytes:
+    type: int
+    default: 8
+    enum: [4, 8]
+    description: |
+      Fixed message size, in bytes, carried by every channel of this
+      controller. 4 bytes uses IPC DATA0 only; 8 bytes uses DATA0 and DATA1 and
+      requires an IPC block that implements DATA1 (M33SYSCPUSS, M7CPUSS or
+      M4CPUSS v2, e.g. PSE84 and TRAVEO T2G). Use 4 on IP that has only DATA0
+      (e.g. M4CPUSS v1). Defaults to 8 to match the PSE84 series.
+
+mbox-cells:
+  - channel

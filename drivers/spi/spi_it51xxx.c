@@ -204,7 +204,7 @@ static void spi_it51xxx_ctrl_mode_selection(const struct device *dev)
 	}
 
 	/* spi cs1 only supports pio mode */
-	if (ctx->config->slave != 0) {
+	if (ctx->config->peripheral != 0) {
 		data->ctrl_mode.tx = PIO_MODE;
 		data->ctrl_mode.rx = PIO_MODE;
 		goto out;
@@ -266,15 +266,16 @@ static int spi_it51xxx_configure(const struct device *dev, const struct spi_conf
 	int ret;
 	uint8_t reg_val;
 
-	if (spi_cfg->slave > (SPI_CHIP_SELECT_COUNT - 1)) {
-		LOG_ERR("slave %d is greater than %d", spi_cfg->slave, SPI_CHIP_SELECT_COUNT - 1);
+	if (spi_cfg->peripheral > (SPI_CHIP_SELECT_COUNT - 1)) {
+		LOG_ERR("peripheral %d is greater than %d", spi_cfg->peripheral,
+			SPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
 
-	LOG_DBG("chip select: %d, operation: 0x%x", spi_cfg->slave, spi_cfg->operation);
+	LOG_DBG("chip select: %d, operation: 0x%x", spi_cfg->peripheral, spi_cfg->operation);
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("unsupported spi slave mode");
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("unsupported spi peripheral mode");
 		return -ENOTSUP;
 	}
 
@@ -439,7 +440,7 @@ static inline void spi_it51xxx_tx(const struct device *dev)
 	sys_write8(sys_read8(cfg->base + SPI02_CTRL2) & ~READ_CYCLE, cfg->base + SPI02_CTRL2);
 
 	sys_write8(ctx->tx_buf[0], cfg->base + SPI00_DATA);
-	sys_write8(ctx->config->slave ? CH1_START : CH0_START, cfg->base + SPI03_STATUS);
+	sys_write8(ctx->config->peripheral ? CH1_START : CH0_START, cfg->base + SPI03_STATUS);
 }
 
 static inline void spi_it51xxx_rx(const struct device *dev)
@@ -449,7 +450,7 @@ static inline void spi_it51xxx_rx(const struct device *dev)
 	struct spi_context *ctx = &data->ctx;
 
 	sys_write8(sys_read8(cfg->base + SPI02_CTRL2) | READ_CYCLE, cfg->base + SPI02_CTRL2);
-	sys_write8(ctx->config->slave ? CH1_START : CH0_START, cfg->base + SPI03_STATUS);
+	sys_write8(ctx->config->peripheral ? CH1_START : CH0_START, cfg->base + SPI03_STATUS);
 }
 
 static inline bool spi_it51xxx_xfer_done(struct spi_context *ctx)

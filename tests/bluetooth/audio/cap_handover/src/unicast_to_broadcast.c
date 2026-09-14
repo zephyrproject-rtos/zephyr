@@ -204,7 +204,7 @@ static void cap_handover_unicast_to_broadcast_test_suite_before(void *f)
 	fixture->unicast_to_broadcast_param.ext_adv = &fixture->ext_adv;
 	fixture->unicast_to_broadcast_param.unicast_group = fixture->unicast_group;
 	fixture->unicast_to_broadcast_param.pa_interval = 0x1234U;
-	fixture->unicast_to_broadcast_param.broadcast_id = 0x123456U;
+	fixture->unicast_to_broadcast_param.broadcast_id = TEST_COMMON_BROADCAST_ID;
 	fixture->unicast_to_broadcast_param.broadcast_create_param =
 		&fixture->broadcast_create_param;
 
@@ -228,16 +228,22 @@ static void cap_handover_unicast_to_broadcast_test_suite_before(void *f)
 static void cap_handover_unicast_to_broadcast_test_suite_after(void *f)
 {
 	struct cap_handover_unicast_to_broadcast_test_suite_fixture *fixture = f;
+	int err;
 
-	(void)bt_cap_initiator_unregister_cb(&mock_cap_initiator_cb);
-	(void)bt_cap_handover_unregister_cb(&mock_cap_handover_cb);
+	err = bt_cap_initiator_unregister_cb(&mock_cap_initiator_cb);
+	zassert_true(err == 0 || err == -EINVAL, "Unexpected error: %d", err);
+
+	err = bt_cap_handover_unregister_cb(&mock_cap_handover_cb);
+	zassert_true(err == 0 || err == -EINVAL, "Unexpected error: %d", err);
 
 	ARRAY_FOR_EACH_PTR(fixture->conns, conn) {
 		mock_bt_conn_disconnected(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 
 	/* In the case of a test failing, we cancel the procedure so that subsequent won't fail */
-	(void)bt_cap_initiator_unicast_audio_cancel();
+	err = bt_cap_initiator_unicast_audio_cancel();
+	/* May fail if no CAP procedure is in progress */
+	zassert_true(err == 0 || err == -EALREADY, "Unexpected error: %d", err);
 
 	/* In the case of a test failing, we delete the group so that subsequent tests won't fail */
 	if (fixture->unicast_group != NULL) {
@@ -254,8 +260,12 @@ static void cap_handover_unicast_to_broadcast_test_suite_after(void *f)
 			cap_stream_ptrs[idx] = &fixture->cap_streams[idx];
 		}
 
-		(void)bt_cap_initiator_unicast_audio_stop(&param);
-		(void)bt_cap_unicast_group_delete(fixture->unicast_group);
+		err = bt_cap_initiator_unicast_audio_stop(&param);
+		zassert_true(err == 0 || err == -EALREADY, "Unexpected error: %d", err);
+
+		err = bt_cap_unicast_group_delete(fixture->unicast_group);
+		zassert_true(err == 0, "Unexpected error: %d", err);
+		fixture->unicast_group = NULL;
 	}
 
 	/* If a broadcast source was create it exists as the 4th parameter in the callback */
@@ -263,8 +273,11 @@ static void cap_handover_unicast_to_broadcast_test_suite_after(void *f)
 		struct bt_cap_broadcast_source *broadcast_source =
 			mock_unicast_to_broadcast_complete_cb_fake.arg3_history[0];
 
-		(void)bt_cap_initiator_broadcast_audio_stop(broadcast_source);
-		(void)bt_cap_initiator_broadcast_audio_delete(broadcast_source);
+		err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
+		zassert_true(err == 0 || err == -EALREADY || err == -EBADMSG,
+			     "Unexpected error: %d", err);
+		err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
+		zassert_true(err == 0, "Unexpected error: %d", err);
 	}
 }
 
@@ -492,7 +505,7 @@ static ZTEST_F(cap_handover_unicast_to_broadcast_test_suite,
 	void *group = fixture->broadcast_stream_params[0].stream->bap_stream.group;
 
 	/* Attempt to use a stream with invalid unicast group */
-	fixture->broadcast_stream_params[0].stream->bap_stream.group = UINT_TO_POINTER(0x12345678);
+	fixture->broadcast_stream_params[0].stream->bap_stream.group = UINT_TO_POINTER(0x12345678U);
 
 	err = bt_cap_handover_unicast_to_broadcast(&fixture->unicast_to_broadcast_param);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);

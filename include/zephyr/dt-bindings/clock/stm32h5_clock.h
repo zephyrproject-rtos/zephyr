@@ -5,9 +5,10 @@
  */
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H5_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H5_CLOCK_H_
-/** @cond INTERNAL_HIDDEN */
 
-#include "stm32_common_clocks.h"
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /** Domain clocks */
 
@@ -40,7 +41,6 @@
 #define STM32_SRC_PLL3_R	(STM32_SRC_PLL3_Q + 1)
 /** Clock muxes */
 #define STM32_SRC_CKPER		(STM32_SRC_PLL3_R + 1)
-
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB1    0x088
@@ -104,8 +104,11 @@
 #define OCTOSPI1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR4_REG)
 #define SYSTICK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 2, CCIPR4_REG)
 #define USB_SEL(val)		STM32_DT_CLOCK_SELECT((val), 5, 4, CCIPR4_REG)
+#define OTGFS_SEL(val)		STM32_DT_CLOCK_SELECT((val), 5, 4, CCIPR4_REG) /*!< H5E/F only */
 #define SDMMC1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 6, 6, CCIPR4_REG)
 #define SDMMC2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 7, CCIPR4_REG)
+#define OTGHS_SEL(val)		STM32_DT_CLOCK_SELECT((val), 11, 10, CCIPR4_REG) /*!< H5E/F only */
+#define OTGPHYREFCK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 15, 12, CCIPR4_REG) /*!< H5E/F only */
 #define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CCIPR4_REG)
 #define I2C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 19, 18, CCIPR4_REG)
 #define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 21, 20, CCIPR4_REG)
@@ -151,4 +154,5 @@
 #define MCO_PRE_DIV_15 15
 
 /** @endcond */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H5_CLOCK_H_ */

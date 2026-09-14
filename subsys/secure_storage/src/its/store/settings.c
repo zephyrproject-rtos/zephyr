@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/secure_storage/its/store.h>
-#include <zephyr/secure_storage/its/store/settings_get.h>
+#include <zephyr/secure_storage/its/store/settings.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
@@ -21,7 +21,7 @@ static int init_settings_subsys(void)
 	}
 	return ret;
 }
-SYS_INIT(init_settings_subsys, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(init_settings_subsys, APPLICATION, CONFIG_SECURE_STORAGE_INIT_PRIORITY);
 
 BUILD_ASSERT(CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN <= SETTINGS_MAX_NAME_LEN);
 

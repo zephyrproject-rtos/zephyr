@@ -360,12 +360,6 @@ config RISCV_HART_MASK
 	  i.e. 128, 129, ..(0x80, 8x81, ..), this can be configured to 63 (0x7f)
 	  such that we can extract the bits that start from 0.
 
-config EXTRA_EXCEPTION_INFO
-	bool "Collect extra exception info [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This option is deprecated and should be replaced with CONFIG_EXCEPTION_DEBUG.
-
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	depends on !RISCV_S_MODE
@@ -410,7 +404,7 @@ config PMP_NO_NAPOT
 	  Set this if NAPOT (Naturally Aligned Power Of Two) is not supported.
 
 config PMP_POWER_OF_TWO_ALIGNMENT
-	bool "Enforce power-of-two alignment on PMP memory areas" if !PMP_NO_TOR
+	bool "Enforce power-of-two alignment on PMP memory areas"
 	default y if TEST_USERSPACE
 	default y if (PMP_SLOTS = 8)
 	default y if PMP_NO_TOR
@@ -420,6 +414,49 @@ config PMP_POWER_OF_TWO_ALIGNMENT
 	  This option reduces the PMP slot usage but increases
 	  memory consumption. Useful when enabling userspace mode with
 	  many memory domains and/or few PMP slots available.
+
+config PMP_NAPOT_USE_MULTI_SLOTS
+	bool "Use multiple NAPOT entries to cover non-aligned memory regions"
+	depends on PMP_NO_TOR
+	depends on !PMP_POWER_OF_TWO_ALIGNMENT
+	depends on !PMP_NO_NAPOT
+	depends on !USERSPACE
+	default y
+	help
+	  Enable splitting non-naturally-aligned memory regions into multiple
+	  NAPOT entries. This allows PMP to protect memory regions that are
+	  not power-of-2 aligned in both start address and size.
+
+	  When enabled, a region like [0x1800, 0x3800) will be split into
+	  multiple naturally-aligned blocks (e.g., 0x800+0x1000+0x800 bytes),
+	  each protected by a separate NAPOT entry.
+
+	  This option is useful when TOR mode is not supported and memory
+	  regions are not naturally aligned. It consumes more PMP slots
+	  but provides flexible memory protection coverage.
+
+	  Note: disabling PMP_POWER_OF_TWO_ALIGNMENT affects more than the
+	  code+rodata region. The kernel-mode stack guard
+	  (Z_RISCV_STACK_GUARD_SIZE) is then rounded up to Z_RISCV_STACK_PMP_ALIGN
+	  instead of to a power of two, and ARCH_KERNEL_STACK_OBJ_ALIGN drops to
+	  the PMP granularity. As a result, every kernel-mode stack guard and,
+	  under CONFIG_USERSPACE, every user-mode stack region is also split into
+	  multiple NAPOT entries. With the typical PMP_SLOTS=8 or 16, this is
+	  where the slot budget is actually consumed.
+
+	  Setting PMP_GRANULARITY to 64 reduces the number of split entries for
+	  code+rodata, but it also makes the stack guard a multiple of 64 that
+	  is generally not a power of two, so the guard itself still needs to be
+	  split. Weigh both effects when choosing a granularity.
+
+	  Depends on !USERSPACE: under CONFIG_USERSPACE, arch_mem_domain_max_partitions_get()
+	  assumes 1 or 2 PMP slots per partition, and resync_pmp_domain() can
+	  only log an error (compiles out __ASSERT) when a partition needs more
+	  slots than remain. The domain would then run with partitions unmapped,
+	  a silent loss of protection rather than a visible failure. Until the
+	  slot estimate and the failure path handle a partition requiring an
+	  arbitrary number of slots, this option is limited to the M-mode
+	  code+rodata region case.
 
 config PMP_GRANULARITY
 	int "The granularity of PMP address matching"
@@ -679,21 +716,60 @@ config RISCV_S_MODE
 	bool "Supervisor mode (S-mode)"
 	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_PRIV_MODES_PROP),s)
 	help
-	  Indicates that the kernel runs in Supervisor mode (S-mode). When
-	  enabled, the boot code performs an M-mode to S-mode transition
-	  before entering the C runtime, and a minimal SBI runtime is kept
-	  resident in M-mode to service timer and ecall requests.
+	  Indicates that the kernel runs in Supervisor mode (S-mode).
 
 endchoice # RISCV_PRIVILEGE_MODE
+
+choice RISCV_S_MODE_SBI
+	prompt "RISC-V SBI Implementation"
+	depends on RISCV_S_MODE
+	default RISCV_S_MODE_INTERNAL_SBI
+	help
+	  Select the Supervisor Binary Interface (SBI) implementation to use
+	  when running in Supervisor mode (S-mode).
+
+config RISCV_S_MODE_INTERNAL_SBI
+	bool "Use built-in minimal SBI runtime"
+	help
+	  Enable this to have the boot code handle the transition from
+	  Machine mode (M-mode) to Supervisor mode (S-mode) internally.
+	  A minimal SBI runtime will remain resident in M-mode to service
+	  timer interrupts and ecall requests.
+
+config RISCV_S_MODE_EXTERNAL_SBI
+	bool "Enter S-mode directly, relying on an external SBI (e.g. OpenSBI)"
+	# TODO: Remove once SMP is fixed with this configuration
+	depends on !SMP
+	help
+	  Skip the in-tree M-mode boot sequence (PMP/medeleg/mideleg/
+	  mcounteren/mtvec setup and the mret drop to S-mode). Use this when
+	  Zephyr is launched as a payload by a bootloader (e.g. U-Boot) that
+	  is already running in S-mode under an external M-mode SBI
+	  implementation such as OpenSBI, which has already performed the
+	  M-mode setup and delegation.
+
+endchoice # RISCV_S_MODE_SBI
 
 config RISCV_M_MODE_STACK_SIZE
 	int "M-mode SBI handler stack size (bytes)"
 	default 256
-	depends on RISCV_S_MODE
+	depends on RISCV_S_MODE_INTERNAL_SBI
 	help
 	  Size in bytes of the dedicated stack used by the in-tree M-mode SBI
 	  runtime handler. Increase this if the handler is extended with
 	  functionality that requires more stack space.
+
+config RISCV_FPU_INSN_VALIDATE
+	bool
+	depends on FPU_SHARING
+	depends on ASSERT
+	default y
+	help
+	  Derived debug-only symbol. When enabled, the FPU trap handler will
+	  explicitly decode the trapping instruction to ensure it is a valid
+	  floating-point instruction. This catches edge cases where non-FPU
+	  instructions (like Vector instructions) might accidentally trigger
+	  an FP trap.
 
 rsource "Kconfig.isa"
 

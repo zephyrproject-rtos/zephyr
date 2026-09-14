@@ -11,8 +11,13 @@ config SOC_SIWG917M111MGTBA
 	bool
 	select SOC_SERIES_SIWG917
 
+config SOC_SIWG917Y111MGABA
+	bool
+	select SOC_SERIES_SIWG917
+
 config SOC_SERIES
 	default "siwg917" if SOC_SERIES_SIWG917
 
 config SOC
 	default "siwg917m111mgtba" if SOC_SIWG917M111MGTBA
+	default "siwg917y111mgaba" if SOC_SIWG917Y111MGABA

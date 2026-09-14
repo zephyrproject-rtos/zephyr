@@ -117,17 +117,6 @@ config BT_BLUENRG_ACI
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
-config BT_STM32_IPM
-	bool
-	default y
-	depends on DT_HAS_ST_STM32WB_RF_ENABLED
-	select USE_STM32_HAL_CORTEX
-	select HAS_STM32LIB
-	select BT_HCI_SETUP
-	help
-	  STM32WB HCI driver using the shared memory transport between
-	  CPU1 and the wireless coprocessor on CPU2.
-
 config BT_STM32WBA
 	bool
 	default y
@@ -154,16 +143,18 @@ config BT_STM32WB0
 
 config BT_USERCHAN
 	bool
-	depends on BOARD_NATIVE_SIM
+	depends on NATIVE_LIBRARY
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
 	select NATIVE_USE_NSI_ERRNO
 	help
 	  This driver provides access to the local Linux host's Bluetooth
 	  adapter using a User Channel HCI socket to the Linux kernel. It
-	  is only intended to be used with the native_sim[//64] build of Zephyr.
-	  The Bluetooth adapter must be powered off in order for Zephyr to
-	  be able to use it.
+	  can also connect to a UNIX socket or TCP HCI endpoint. It is
+	  intended to be used with native simulator based targets that run
+	  in real time, including out-of-tree boards.
+	  When using a local Bluetooth adapter, the adapter must be powered
+	  off in order for Zephyr to be able to use it.
 
 config BT_ESP32
 	bool
@@ -187,11 +178,14 @@ config BT_ESP32
 	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT if !SOC_SERIES_ESP32
 	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT if !SOC_SERIES_ESP32
 	select BT_CTLR_ADV_PERIODIC_RSP_SUPPORT \
-		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
+			SOC_SERIES_ESP32H2
 	select BT_CTLR_LE_POWER_CONTROL_SUPPORT \
-		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
+			SOC_SERIES_ESP32H2
 	select BT_CTLR_SUBRATING_SUPPORT \
-		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
+			SOC_SERIES_ESP32H2
 	help
 	  Espressif HCI bluetooth interface
 
@@ -341,7 +335,7 @@ config BT_DRV_TX_STACK_SIZE
 config BT_DRV_RX_STACK_SIZE
 	int
 	default 640 if (BT_SPI || BT_AMBIQ_HCI)
-	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
+	default BT_RX_STACK_SIZE if BT_H4
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default HCI_NXP_RX_STACK_SIZE if HCI_NXP_RX_THREAD
 	default 1024 if BT_SF32LB

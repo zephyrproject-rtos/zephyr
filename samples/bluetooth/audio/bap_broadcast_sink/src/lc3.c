@@ -45,6 +45,9 @@
 
 LOG_MODULE_REGISTER(lc3, CONFIG_LOG_DEFAULT_LEVEL);
 
+#define LC3_THREAD_PRIO 10
+BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO >= LC3_THREAD_PRIO);
+
 struct lc3_data {
 	void *fifo_reserved; /* 1st word reserved for use by FIFO */
 	struct net_buf *buf;
@@ -492,7 +495,7 @@ void lc3_enqueue_for_decoding(struct stream_rx *stream, const struct bt_iso_recv
 int lc3_init(void)
 {
 	static K_KERNEL_STACK_DEFINE(lc3_decoder_thread_stack, 4096);
-	const int lc3_decoder_thread_prio = K_PRIO_PREEMPT(5);
+	const int lc3_decoder_thread_prio = K_PRIO_PREEMPT(LC3_THREAD_PRIO);
 	static struct k_thread lc3_decoder_thread;
 	static bool initialized;
 

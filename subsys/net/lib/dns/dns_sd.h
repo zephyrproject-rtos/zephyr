@@ -40,7 +40,7 @@ extern "C" {
 	STRUCT_SECTION_GET(dns_sd_rec, i, dst)
 
 /**
- * @brief Extract labels from a DNS-SD PTR query
+ * @brief Extract labels from a DNS-SD PTR query name
  *
  * ```
  *            <sn>._tcp.<domain>.
@@ -53,19 +53,19 @@ extern "C" {
  * <sub>._sub.<sn>._tcp.<servicedomain>.<parentdomain>.
  * ```
  *
- * @param query a pointer to the start of the query
- * @param query_size the number of bytes contained in the query
+ * @param name a decompressed, dot-separated DNS name, as produced by dns_unpack_name()
+ * @param name_len length of @p name in bytes, excluding the NUL terminator
  * @param[out] record the DNS-SD record to initialize and populate
  * @param label array of pointers to suitably sized buffers
  * @param size array of sizes for each buffer in @p label
  * @param[inout] n number of elements in @p label and @p size
  *
- * @return on success, number of bytes read from @p query
+ * @return on success, @p name_len
  * @return on failure, a negative errno value
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc6763">RFC 6763</a>, Section 7.2.
  */
-int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_rec *record,
+int dns_sd_query_extract(const char *name, size_t name_len, struct dns_sd_rec *record,
 			 char **label, size_t *size, size_t *n);
 
 /**
@@ -133,13 +133,16 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
  * @param addr6 pointer to the IPv6 address
  * @param buf output buffer
  * @param buf_size size of the output buffer
+ * @param announce if true, place the SRV/TXT/A/AAAA records in the Answer
+ *        section instead of the Additional Records section, as required by
+ *        RFC 6762 Section 8.3 for unsolicited announcements
  *
  * @return on success, number of bytes written to @p buf
  * @return on failure, a negative errno value
  */
 int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
-	uint8_t *buf, uint16_t buf_size);
+	uint8_t *buf, uint16_t buf_size, bool announce);
 
 /**
  * @brief Handle a Service Type Enumeration with DNS Service Discovery

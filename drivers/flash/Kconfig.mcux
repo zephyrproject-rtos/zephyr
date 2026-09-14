@@ -53,6 +53,29 @@ config FLASH_MCUX_FLEXSPI_NOR
 	select FLASH_JESD216
 	select MEMC
 	select MEMC_MCUX_FLEXSPI
+	help
+	  Driver for external NOR flash on an NXP FlexSPI controller.
+
+	  When PM_DEVICE is enabled and the flash node is bound to a power
+	  domain, the TURN_ON restore re-runs the flash probe from the PM
+	  wake path (the idle thread).  The probe itself needs roughly 270
+	  bytes of stack, which can exceed the default idle stack (320 bytes
+	  on ARM with FPU), so CONFIG_IDLE_STACK_SIZE may need to be
+	  increased.
+
+config FLASH_MCUX_FLEXSPI_NOR_PM_RESTORE
+	bool "Restore FlexSPI NOR configuration on power-domain wake"
+	depends on PM_DEVICE
+	help
+	  Re-run the flash probe on PM_DEVICE_ACTION_TURN_ON so the FlexSPI
+	  controller configuration is rebuilt after a power-domain power-down
+	  (for example a PM3-class wake on RW6xx) where the controller state
+	  is lost.  The probe runs in the idle-thread PM wake context and
+	  needs roughly 270 bytes of stack, so CONFIG_IDLE_STACK_SIZE may need
+	  to be increased (2048 on frdm_rw612).
+
+	  Disabled by default so other platforms are unaffected; boards that
+	  bind this driver to a power domain should enable it.
 
 config FLASH_MCUX_FLEXSPI_MX25UM51345G
 	bool "MCUX FlexSPI MX25UM51345G driver"

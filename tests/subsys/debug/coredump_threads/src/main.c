@@ -7,8 +7,26 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#if defined(CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING_UDP)
+#include <zephyr/net/net_if.h>
+#endif
 
-#define STACK_SIZE   2048
+/*
+ * 2048 is enough for the base THREADS-mode dump (blocking k_sem_take() +
+ * SMP overhead, see the crashed/k_sys_fatal_error_handler comment below).
+ * The UDP backend's fatal-path call chain is far deeper and all runs on
+ * this same worker thread's stack (no dedicated fault stack in this
+ * config): coredump() -> backend -> zsock_sendto() -> socket layer ->
+ * net_try_send_data() -> net_if_try_send_data() -> the ethernet driver.
+ * With 2048, elr_el1 lands inside net_try_send_data() at an "Illegal
+ * Execution State" trap -- a corrupted return address, i.e. stack
+ * overflow. Give UDP-backend builds a shell-thread-sized stack instead.
+ */
+#if defined(CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING_UDP)
+#define STACK_SIZE 8192
+#else
+#define STACK_SIZE 2048
+#endif
 #define THREAD_COUNT 7
 
 /*
@@ -75,6 +93,36 @@ static void test_thread_entry(void *p1, void *p2, void *p3)
 
 static void *coredump_threads_suite_setup(void)
 {
+#if defined(CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING_UDP)
+	/*
+	 * The UDP coredump backend transmits the dump from the fatal path, so
+	 * the network must be genuinely ready before the crash is triggered.
+	 * Wait here, before the worker threads are created, so their short
+	 * (500-506ms) semaphore timeouts only start counting once the network
+	 * is ready -- delaying the crash trigger itself would let every worker
+	 * time out first.
+	 *
+	 * net_if_is_carrier_ok() (NET_IF_LOWER_UP, set from the PHY driver's
+	 * real link-up callback) can read true well before the far-end switch
+	 * port has finished its own bring-up and is actually forwarding frames;
+	 * there is no software-visible flag for that state. Use a fixed delay
+	 * after the carrier check as a pragmatic wait for the link to settle.
+	 */
+	struct net_if *iface = net_if_get_default();
+	int waited_ms = 0;
+
+	while (iface != NULL && !net_if_is_carrier_ok(iface) && waited_ms < 15000) {
+		k_sleep(K_MSEC(100));
+		waited_ms += 100;
+	}
+
+	k_sleep(K_SECONDS(10));
+	waited_ms += 10000;
+
+	printk("coredump_threads: waited %d ms total (iface=%p, carrier_ok=%d)\n",
+	       waited_ms, (void *)iface, iface != NULL && net_if_is_carrier_ok(iface));
+#endif
+
 	/* Spawn a few threads */
 	for (int i = 0; i < THREAD_COUNT; i++) {
 		params[i] = i;

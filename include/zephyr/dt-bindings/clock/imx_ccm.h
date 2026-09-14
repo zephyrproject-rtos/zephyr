@@ -88,4 +88,11 @@
 
 #define IMX_CCM_OCOTP_CLK		0x1700UL
 
+/** XBAR1 peripheral clock identifier */
+#define IMX_CCM_XBAR1_CLK		0x1800UL
+/** XBAR2 peripheral clock identifier */
+#define IMX_CCM_XBAR2_CLK		0x1801UL
+/** XBAR3 peripheral clock identifier */
+#define IMX_CCM_XBAR3_CLK		0x1802UL
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_H_ */

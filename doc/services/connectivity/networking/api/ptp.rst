@@ -42,8 +42,8 @@ In the table below all supported features are listed.
     Management Node,
     End to end delay mechanism, yes
     Peer to peer delay mechanism, yes (two-step)
-    Multicast operation mode,
-    Hybrid operation mode,
+    Multicast operation mode, yes
+    Hybrid operation mode, yes
     Unicast operation mode,
     Non-volatile storage,
     UDP IPv4 transport protocol, yes
@@ -53,6 +53,44 @@ In the table below all supported features are listed.
     Software timestamping,
     TIME_RECEIVER_ONLY PTP Instance, yes
     TIME_TRANSMITTER_ONLY PTP Instance,
+
+Network transmission modes
+**************************
+
+The network transmission mode is selected with the ``PTP_NETWORK_MODE``
+Kconfig choice:
+
+* Multicast mode (:kconfig:option:`CONFIG_PTP_NETWORK_MODE_MULTICAST`, the
+  default) is the standard PTP mode whereby all PTP messages are sent to the
+  default multicast addresses. The implication is that every node receives the
+  ``Delay_Req`` and ``Delay_Resp`` message pairs of all other nodes, thereby
+  increasing the amount of traffic on the network. This is usually not a
+  problem on smaller networks employing only a few timeReceivers.
+
+* Hybrid mode (:kconfig:option:`CONFIG_PTP_NETWORK_MODE_HYBRID`) still sends
+  ``Announce``, ``Sync`` and ``Follow_Up`` messages to the default multicast
+  addresses, but a timeReceiver sends its ``Delay_Req`` messages as unicast
+  directly to the protocol address (IP address, or MAC address for the
+  IEEE 802.3 transport) of the current timeTransmitter, which in turn responds
+  with a unicast ``Delay_Resp`` to the requesting timeReceiver. This reduces
+  the level of PTP traffic on the network, which can be a factor when scaling
+  to larger networks employing many timeReceivers. Hybrid mode only requires
+  the network to support multicast transmission from the timeTransmitter to
+  the timeReceivers. The mode is compatible with the ``hybrid_e2e`` option of
+  linuxptp and the ``hybrid`` network mode of sfptpd; unicast negotiation is
+  not supported.
+
+  If the timeTransmitter fails to answer
+  :kconfig:option:`CONFIG_PTP_HYBRID_FALLBACK_ATTEMPTS` consecutive unicast
+  ``Delay_Req`` messages, the PTP Port logs an error, reverts to multicast
+  delay measurement and stays in multicast until a new timeTransmitter is
+  selected. The fallback can be disabled with
+  :kconfig:option:`CONFIG_PTP_NETWORK_MODE_HYBRID_NO_FALLBACK`, in which case
+  the port always keeps sending unicast ``Delay_Req`` messages.
+
+  Hybrid mode requires the End-to-End delay mechanism
+  (:kconfig:option:`CONFIG_PTP_DELAY_MECHANISM_E2E`) and is supported on all
+  transport protocols (UDP IPv4, UDP IPv6 and IEEE 802.3).
 
 Supported Management messages
 *****************************

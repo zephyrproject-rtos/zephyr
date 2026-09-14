@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-FileCopyrightText: 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_ADGM3121_OBSERVE_GPIO
+	bool "Observe the GPIO-mode switch lines via gpio_emul"
+	help
+	  Set for the GPIO-control fixture on native_sim: the test reads the four
+	  emulated switch lines with gpio_emul_output_get_dt() to confirm set /
+	  disconnect physically drive them. Leave off for SPI (build-only) runs.

@@ -1,0 +1,7 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/imxrt/imxrt7xx/nxp_rt7xx_cm33_cpu0.dtsi>

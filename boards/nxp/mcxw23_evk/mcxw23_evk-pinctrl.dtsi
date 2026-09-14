@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/MCXW236BIHNAR-pinctrl.h>
+#include <nxp/mcx/mcxw/pinctrl/MCXW236BIHNAR-pinctrl.h>
 
 &pinctrl {
 	/* Configures pin routing and optionally pin electrical features. */

@@ -16,4 +16,19 @@ config REGULATOR_STM32_VREFBUF_INIT_PRIORITY
 	help
 	  Init priority for the STM32 VREFBUF regulator driver.
 
+config REGULATOR_STM32_SOFTWARE_TRIM
+	bool "Software copy of trimming data from OTP"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_VREFBUF),nvmem-cells)
+	depends on NVMEM
+	help
+	  Copy trimming data from OTP in software when changing voltage range.
+
+	  On some series (such as STM32WB), trimming data is not automatically
+	  loaded by hardware from OTP when changing voltage range; in this case,
+	  this option should be enabled to ensure correct VREFBUF output voltage.
+
+	  The `VREFBUF trimming` section of the VREFBUF chapter in Reference Manuals
+	  indicates whether or not trimming data is loaded automatically by hardware.
+
 endif # REGULATOR_STM32_VREFBUF

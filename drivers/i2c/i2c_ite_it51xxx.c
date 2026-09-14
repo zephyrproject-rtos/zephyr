@@ -497,6 +497,11 @@ static void target_i2c_isr_fifo(const struct device *dev)
 	/* bit0-4 : FIFO byte count */
 	count = fifo_status & GENMASK(4, 0);
 
+	/* Which target address to match. */
+	target_idx = (target_status & SMB_MSLA2) ? SMB_SADR2 : SMB_SADR;
+	target_cfg = data->target_cfg[target_idx];
+	target_cb = target_cfg->callbacks;
+
 	/* Timeout status occurs */
 	if (target_status & SMB_STS) {
 		LOG_ERR("I2CS ch%d timeout occurs", config->port);
@@ -504,13 +509,12 @@ static void target_i2c_isr_fifo(const struct device *dev)
 		data->w_index = 0;
 		data->r_index = 0;
 		target_i2c_reset_fifo(dev);
+
+		if (target_cb->error) {
+			target_cb->error(target_cfg, I2C_ERROR_TIMEOUT);
+		}
 		goto done;
 	}
-
-	/* Which target address to match. */
-	target_idx = (target_status & SMB_MSLA2) ? SMB_SADR2 : SMB_SADR;
-	target_cfg = data->target_cfg[target_idx];
-	target_cb = target_cfg->callbacks;
 
 	/* Target data status, the register is waiting for read or write. */
 	if (target_status & SMB_SDS) {
@@ -589,18 +593,21 @@ static void target_i2c_isr_pio(const struct device *dev)
 	/* Write to clear a target status */
 	clear_target_status(dev, target_status);
 
+	/* Which target address to match. */
+	target_idx = (target_status & SMB_MSLA2) ? SMB_SADR2 : SMB_SADR;
+	target_cfg = data->target_cfg[target_idx];
+	target_cb = target_cfg->callbacks;
+
 	/* Any error */
 	if (target_status & SMB_STS) {
 		data->w_index = 0;
 		data->r_index = 0;
 
+		if (target_cb->error) {
+			target_cb->error(target_cfg, I2C_ERROR_TIMEOUT);
+		}
 		return;
 	}
-
-	/* Which target address to match. */
-	target_idx = (target_status & SMB_MSLA2) ? SMB_SADR2 : SMB_SADR;
-	target_cfg = data->target_cfg[target_idx];
-	target_cb = target_cfg->callbacks;
 
 	/* Stop condition, indicate stop condition detected. */
 	if (target_status & SMB_SPDS) {
@@ -1956,7 +1963,7 @@ static int i2c_it51xxx_init(const struct device *dev)
 
 	/* Enable SMBus function */
 	sys_write8(SMB_SMD_TO_EN | SMB_SMH_EN, config->host_base + SMB_HOCTL2);
-	/* Kill SMBus host transaction. And enable the interrupt for the master interface */
+	/* Kill SMBus host transaction. And enable the interrupt for the controller interface */
 	sys_write8(SMB_KILL | SMB_INTREN, config->host_base + SMB_HOCTL);
 	sys_write8(SMB_INTREN, config->host_base + SMB_HOCTL);
 	/* W/C host status register */

@@ -36,7 +36,7 @@ config VIDEO_BUFFER_POOL_ZEPHYR_REGION
 	help
 	  Place video buffer pool in a region, automatically
 	  created from a 'zephyr,memory-region' compatible node,
-	  whose name is specified in CONFIG_VIDEO_BUFFER_ZEPHYR_REGION_NAME.
+	  whose name is specified in CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME.
 
 config VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME
 	string "Name of the zephyr memory-region for video buffer pool"
@@ -82,6 +82,7 @@ source "drivers/video/Kconfig.hm0360"
 source "drivers/video/Kconfig.imx219"
 source "drivers/video/Kconfig.imx335"
 source "drivers/video/Kconfig.mcux_csi"
+source "drivers/video/Kconfig.mcux_flexio"
 source "drivers/video/Kconfig.mcux_mipi_csi2rx"
 source "drivers/video/Kconfig.mcux_sdma"
 source "drivers/video/Kconfig.mt9m114"

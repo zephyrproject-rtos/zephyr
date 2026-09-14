@@ -14,6 +14,6 @@ config LPD880X_STRIP
 	  Each LPD880x LED driver chip has some output channels
 	  (3 channels for LPD8803, 6 for LPD8806), whose PWM
 	  duty cycle can be set at 7 bit resolution via a
-	  reduced SPI interface (MOSI and CLK lines only).
+	  reduced SPI interface (SDI and CLK lines only).
 	  Each chip also includes data and clock out pins for
 	  daisy chaining LED strips.

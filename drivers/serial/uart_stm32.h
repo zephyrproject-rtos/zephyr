@@ -12,6 +12,7 @@
 #ifndef ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 #define ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/uart.h>
@@ -48,6 +49,10 @@ struct uart_stm32_config {
 	bool de_invert;
 	/* enable fifo */
 	bool fifo_enable;
+#if defined(CONFIG_UART_STM32_ABNORMAL_RTS_ERRATUM_WORKAROUND)
+	/* optional rts gpio for software flow control */
+	const struct gpio_dt_spec rts_gpio;
+#endif
 	/* pin muxing */
 	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \

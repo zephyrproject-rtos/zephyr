@@ -315,7 +315,7 @@ static DEVICE_API(clock_control, stm32_clock_control_api) = {
 
 static void set_regu_voltage(uint32_t hclk_freq)
 {
-	if (hclk_freq < MHZ(48)) {
+	if (hclk_freq <= MHZ(48)) {
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
 	} else {
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);

@@ -360,8 +360,12 @@ static void pwm_numaker_isr(const struct device *dev, uint32_t st_channel, uint3
 	uint32_t int_mask = (BIT(st_channel) | BIT(end_channel));
 	uint32_t cap_int_rise_mask, cap_int_fall_mask;
 	uint32_t cap_int_mask =
+#if defined(CONFIG_SOC_SERIES_M031X)
+		(NUMAKER_PWM_CHANNEL_MASK << 8 | NUMAKER_PWM_CHANNEL_MASK);
+#else
 		(EPWM_CAPIF_CFLIF0_Msk << st_channel | EPWM_CAPIF_CRLIF0_Msk << st_channel |
 		 EPWM_CAPIF_CFLIF0_Msk << end_channel | EPWM_CAPIF_CRLIF0_Msk << end_channel);
+#endif
 
 	/* Get Output int status */
 	int_status = epwm->AINTSTS & int_mask;
@@ -397,6 +401,13 @@ static void pwm_numaker_isr(const struct device *dev, uint32_t st_channel, uint3
 	}
 }
 
+#if defined(CONFIG_SOC_SERIES_M031X)
+static void pwm_numaker_pair_isr(const struct device *dev)
+{
+	/* Pair service channel 0 to 5 */
+	pwm_numaker_isr(dev, 0, 5);
+}
+#else
 static void pwm_numaker_p0_isr(const struct device *dev)
 {
 	/* Pair0 service channel 0, 1 */
@@ -414,6 +425,7 @@ static void pwm_numaker_p2_isr(const struct device *dev)
 	/* Pair2 service channel 4, 5 */
 	pwm_numaker_isr(dev, 4, 5);
 }
+#endif /* CONFIG_SOC_SERIES_M031X */
 #endif /* CONFIG_PWM_CAPTURE */
 
 /* PWM driver registration */
@@ -552,6 +564,17 @@ done:
 }
 
 #ifdef CONFIG_PWM_CAPTURE
+#if defined(CONFIG_SOC_SERIES_M031X)
+#define NUMAKER_PWM_IRQ_CONFIG_FUNC(n)                                                             \
+	static void pwm_numaker_irq_config_##n(const struct device *dev)                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n),                                                       \
+			    DT_INST_IRQ(n, priority), pwm_numaker_pair_isr,                        \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}
+#else
 #define NUMAKER_PWM_IRQ_CONFIG_FUNC(n)                                                             \
 	static void pwm_numaker_irq_config_##n(const struct device *dev)                           \
 	{                                                                                          \
@@ -573,6 +596,7 @@ done:
                                                                                                    \
 		irq_enable(DT_INST_IRQ_BY_NAME(n, pair2, irq));                                    \
 	}
+#endif
 #define IRQ_FUNC_INIT(n) .irq_config_func = pwm_numaker_irq_config_##n
 #else
 #define NUMAKER_PWM_IRQ_CONFIG_FUNC(n)

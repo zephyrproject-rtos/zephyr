@@ -1,0 +1,8 @@
+common:
+  tags:
+    - kernel
+    - interrupt
+tests:
+  arch.interrupt.pending:
+    # Needs a software-triggerable line with clearable pending state (NVIC).
+    filter: CONFIG_ARCH_HAS_IRQ_PENDING_OPS and CONFIG_CPU_CORTEX_M

@@ -78,7 +78,8 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
   * @param opcode Command OpCode.
   * @param buf    Command buffer or NULL (if no parameters).
   *
-  * @return 0 on success or negative error value on failure.
+  * @return 0 on success (the command has been queued), negative errno value on failure.
+  * @retval -EHOSTDOWN The HCI transport is not open, i.e. Bluetooth is not enabled.
   */
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
 
@@ -103,7 +104,8 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
   *               for calling net_buf_unref() on the buffer when done parsing
   *               it.
   *
-  * @return 0 on success or negative error value on failure.
+  * @return 0 on success (the command completed), negative errno value on failure.
+  * @retval -EHOSTDOWN The HCI transport is not open, i.e. Bluetooth is not enabled.
   */
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);

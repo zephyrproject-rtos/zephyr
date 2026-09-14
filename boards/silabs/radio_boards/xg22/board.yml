@@ -9,3 +9,8 @@ boards:
     vendor: silabs
     socs:
       - name: bgm220pc22hna
+  - name: xg22_rb4415a
+    full_name: EFR32xG22E 2.4 GHz 6 dBm (xG22-RB4415A)
+    vendor: silabs
+    socs:
+      - name: efr32mg22e224f512im40

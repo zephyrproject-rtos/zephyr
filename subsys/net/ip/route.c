@@ -614,12 +614,22 @@ int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 	}
 
 	if (net_route_ll_addr_supported(iface)) {
-		memcpy(net_pkt_lladdr_src(pkt)->addr,
-		       net_pkt_lladdr_if(pkt)->addr,
-		       net_pkt_lladdr_if(pkt)->len);
-		net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
-		net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
+		struct net_linkaddr *lladdr_if = net_pkt_lladdr_if(pkt);
+
+		NET_ASSERT(lladdr_if != NULL);
+
+		memcpy(net_pkt_lladdr_src(pkt)->addr, lladdr_if->addr,
+		       lladdr_if->len);
+		net_pkt_lladdr_src(pkt)->type = lladdr_if->type;
+		net_pkt_lladdr_src(pkt)->len = lladdr_if->len;
 	}
+
+	/* The RX path left the router's own MAC in lladdr_dst, and L2 takes a
+	 * non-empty lladdr_dst as "already resolved". Clear it so the
+	 * destination gets resolved on the outgoing interface, the same way
+	 * net_route_ipv4_packet() does on the route table path.
+	 */
+	(void)net_linkaddr_clear(net_pkt_lladdr_dst(pkt));
 
 	return net_send_data(pkt);
 }

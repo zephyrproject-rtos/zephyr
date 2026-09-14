@@ -5,9 +5,19 @@ description: NXP FlexIO LCD controller
 
 compatible: "nxp,mipi-dbi-flexio-lcdif"
 
-include: [mipi-dbi-controller.yaml, base.yaml, pinctrl-device.yaml]
+include: [mipi-dbi-controller.yaml, base.yaml, pinctrl-device.yaml, mux-consumer.yaml]
 
 properties:
+  mux-states:
+    description: |
+      Optional INPUTMUX route needed by some SmartDMA back-ends to connect
+      the FlexIO IRQ to a SmartDMA trigger input, given as
+      <&inputmuxN index connection>. "connection" is the numeric value of
+      the inputmux_connection_t enum from the SoC's fsl_inputmux_connections.h
+      that routes the FlexIO IRQ to the SmartDMA trigger (e.g.
+      kINPUTMUX_FlexioIrqToSmartdma0Trigger). Leave unset on back-ends/SoCs
+      that need no such route.
+
   shifters-count:
     type: int
     required: true

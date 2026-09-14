@@ -4,8 +4,6 @@ sample:
     LED blinking application using the i.MX RTxxx devices as AMP systems.
 common:
   sysbuild: true
-  min_ram: 1024
-  min_flash: 1024
   platform_allow:
     - mimxrt685_evk/mimxrt685s/cm33
   harness: console

@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
-#include <zephyr/arch/common/ffs.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
 #include <stm32_bitops.h>

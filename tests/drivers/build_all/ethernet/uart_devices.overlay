@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Madhab Sharma <madhabsharma94@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing UART ethernet driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+			current-speed = <9600>;
+			status = "okay";
+
+			test_uart_ch9120: ch9120 {
+				compatible = "wch,ch9120";
+				status = "okay";
+				reset-gpios = <&test_gpio 19 GPIO_ACTIVE_LOW>;
+				config-gpios = <&test_gpio 18 GPIO_ACTIVE_LOW>;
+				tcpcs-gpios = <&test_gpio 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			};
+		};
+	};
+};

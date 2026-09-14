@@ -93,7 +93,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		}
 
 		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
-		if (ret > 0) {
+		if (ret >= 0) {
 			LOG_DBG("  Frame Duration: %d us",
 				bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
 		}
@@ -563,8 +563,8 @@ static void stream_state_changed(struct bt_bap_stream *stream)
 	btp_send_ascs_ase_state_changed_ev(stream->conn, u_stream->ase_id, info.state);
 }
 
-static void stream_configured_cb(struct bt_bap_stream *stream,
-				 const struct bt_bap_qos_cfg_pref *pref)
+static void stream_codec_configured_cb(struct bt_bap_stream *stream,
+				       const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_bap_ep_info info;
 	struct btp_bap_unicast_connection *u_conn;
@@ -582,7 +582,7 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 	stream_state_changed(stream);
 }
 
-static void stream_qos_set_cb(struct bt_bap_stream *stream)
+static void stream_qos_configured_cb(struct bt_bap_stream *stream)
 {
 	LOG_DBG("QoS set stream %p", stream);
 
@@ -850,8 +850,8 @@ static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 }
 
 static struct bt_bap_stream_ops stream_ops = {
-	.configured = stream_configured_cb,
-	.qos_set = stream_qos_set_cb,
+	.codec_configured = stream_codec_configured_cb,
+	.qos_configured = stream_qos_configured_cb,
 	.enabled = stream_enabled_cb,
 	.metadata_updated = stream_metadata_updated_cb,
 	.disabled = stream_disabled_cb,
@@ -1425,7 +1425,7 @@ static int server_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 				  uint8_t ase_id, struct bt_audio_codec_cfg *codec_cfg)
 {
 	struct btp_bap_unicast_stream *stream;
-	int err = 0;
+	int err = -EINVAL;
 
 	stream = btp_bap_unicast_stream_find(u_conn, ase_id);
 	if (stream == NULL) {
@@ -1444,13 +1444,16 @@ static int server_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 			stream = btp_bap_unicast_stream_alloc(u_conn);
 			if (stream == NULL) {
 				LOG_DBG("No streams available");
-
-				return -ENOMEM;
+				err = -ENOMEM;
+				break;
 			}
 
 			memcpy(&stream->codec_cfg, codec_cfg, sizeof(*codec_cfg));
 			err = server_stream_config(conn, stream_unicast_to_bap(stream),
 						   &stream->codec_cfg, &qos_pref);
+			if (err != 0) {
+				break;
+			}
 		}
 	} else {
 		/* Reconfigure a stream */

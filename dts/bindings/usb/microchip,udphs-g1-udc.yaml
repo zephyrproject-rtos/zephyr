@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip USB Device High Speed Port (UDPHS) G1.
+
+  SAM UDPHS is based on the following hardware peripheral:
+    - module name="UDPHS" id="6227" version="160"
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      &pinctrl {
+        pinctrl_usba_vbus_det: usba_vbus_det {
+          pinmux = <PIN_PD11__GPIO>;
+          bias-disable;
+        };
+      };
+
+      zephyr_udc0: &udphsa {
+        vbus-gpios = <&piod 11 GPIO_ACTIVE_HIGH>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_usba_vbus_det>;
+        status = "okay";
+      };
+
+compatible: "microchip,udphs-g1-udc"
+
+include:
+  - name: usb-ep.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

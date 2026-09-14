@@ -24,11 +24,11 @@ A LIFO has the following key properties:
 
 A LIFO must be initialized before it can be used. This sets its queue to empty.
 
-LIFO data items must be aligned on a word boundary, as the kernel reserves
-the first word of an item for use as a pointer to the next data item in the
-queue. Consequently, a data item that holds N bytes of application data
-requires N+4 (or N+8) bytes of memory. There are no alignment or reserved
-space requirements for data items if they are added with
+LIFO data items must be aligned as required for a pointer, as the kernel
+reserves the first pointer-sized field of an item for use as a pointer to the
+next data item in the queue. Consequently, a data item that holds N bytes of
+application data requires N+4 (or N+8) bytes of memory. There are no alignment
+or reserved space requirements for data items if they are added with
 :c:func:`k_lifo_alloc_put`, instead additional memory is temporarily
 allocated from the calling thread's resource pool.
 

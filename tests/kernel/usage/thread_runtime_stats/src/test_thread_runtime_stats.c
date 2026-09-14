@@ -272,6 +272,76 @@ ZTEST(usage_api, test_thread_stats_enable_disable)
 }
 #endif
 
+#if defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) && defined(CONFIG_SCHED_THREAD_USAGE_ALL)
+/**
+ * @brief Test the enable/disable APIs on the current thread
+ */
+ZTEST(usage_api, test_thread_stats_enable_disable_current)
+{
+	k_thread_runtime_stats_t cpu_stats1;
+	k_thread_runtime_stats_t cpu_stats2;
+	k_thread_runtime_stats_t thread_stats1;
+	k_thread_runtime_stats_t thread_stats2;
+	uint64_t cpu_delta;
+	uint64_t thread_delta;
+	uint32_t start_cycles;
+	uint32_t elapsed_cycles;
+	uint32_t tolerance = k_ticks_to_cyc_near32(1);
+
+	k_thread_runtime_stats_enable(_current);
+
+	/* Anchor the CPU stats and the cycle counter at now. */
+
+	k_thread_runtime_stats_cpu_get(0, &cpu_stats1);
+	start_cycles = k_cycle_get_32();
+
+	/*
+	 * Run for a while with tracking on, then disable stats on the
+	 * current thread and force a context switch.
+	 */
+
+	busy_loop(3);
+	k_thread_runtime_stats_disable(_current);
+	k_sleep(K_TICKS(2));
+
+	k_thread_runtime_stats_cpu_get(0, &cpu_stats2);
+	elapsed_cycles = k_cycle_get_32() - start_cycles;
+
+	/*
+	 * The CPU must not be credited with more cycles than actually
+	 * elapsed.
+	 */
+
+	cpu_delta = cpu_stats2.execution_cycles - cpu_stats1.execution_cycles;
+	zassert_true(cpu_delta <= (uint64_t)elapsed_cycles + tolerance,
+		     "CPU credited with %llu cycles but only %u elapsed",
+		     (unsigned long long)cpu_delta, elapsed_cycles);
+
+	/*
+	 * Run untracked for a while, then re-enable stats on the current
+	 * thread. The stretch that ran while tracking was off must not be
+	 * credited to the thread.
+	 */
+
+	k_thread_runtime_stats_get(_current, &thread_stats1);
+
+	busy_loop(3);
+
+	k_thread_runtime_stats_enable(_current);
+
+	k_thread_runtime_stats_get(_current, &thread_stats2);
+
+	thread_delta = thread_stats2.execution_cycles - thread_stats1.execution_cycles;
+	zassert_true(thread_delta <= (uint64_t)tolerance,
+		     "thread credited with %llu untracked cycles",
+		     (unsigned long long)thread_delta);
+}
+#else
+ZTEST(usage_api, test_thread_stats_enable_disable_current)
+{
+}
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS && CONFIG_SCHED_THREAD_USAGE_ALL */
+
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 /**
  * @brief Test the k_sys_runtime_stats_enable/disable APIs

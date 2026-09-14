@@ -1,0 +1,210 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/siwg917y111mgaba.dtsi>
+#include <zephyr/dt-bindings/adc/silabs-siwx91x-adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+#include <freq.h>
+#include "siwx917_ek2708a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs BRD2708A (SiWx917Y Explorer Kit)";
+	compatible = "silabs,siwx917_ek2708a", "silabs,siwg917";
+
+	chosen {
+		zephyr,bt-hci = &bt_hci0;
+		zephyr,code-partition = &code_partition;
+		zephyr,console = &ulpuart;
+		zephyr,shell-uart = &ulpuart;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &ulpuart;
+	};
+
+	aliases {
+		adc0 = &adc0;
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+
+		led1: led_1 {
+			gpios = <&ulpgpio 2 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&uulpgpio 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpioa 11 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpiob 13 0>,   /* AN   */
+			   <1 0 &gpiob 14 0>,   /* RST  */
+			   <2 0 &gpiob 12 0>,   /* CS   */
+			   <3 0 &gpiob 9 0>,    /* SCK  */
+			   <4 0 &gpiob 10 0>,   /* MISO */
+			   <5 0 &gpiob 11 0>,   /* MOSI */
+			   <6 0 &gpioa 12 0>,   /* PWM  */
+			   <7 0 &uulpgpio 2 0>, /* INT  */
+			   <8 0 &ulpgpio 6 0>,  /* RX   */
+			   <9 0 &ulpgpio 7 0>,  /* TX   */
+			   <10 0 &gpioa 7 0>,   /* SCL  */
+			   <11 0 &gpioa 6 0>;   /* SDA  */
+	};
+
+	qwiic_connector: stemma-qt-connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpioa 7 0>, /* SCL */
+			   <1 0 &gpioa 6 0>; /* SDA */
+	};
+
+	mikrobus_adc: zephyr,user {
+		io-channels = <&adc0 0>;
+	};
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@202000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00202000 DT_SIZE_K(2008)>;
+			label = "code_partition";
+		};
+
+		storage_partition: partition@3f8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x003f8000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <180000000>;
+};
+
+&ulpuart {
+	pinctrl-0 = <&ulpuart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <DT_FREQ_K(100)>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi0 {
+	cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&memc {
+	clocks = <&clock0 SIWX91X_CLK_QSPI>;
+	pinctrl-0 = <&psram_default>;
+	pinctrl-names = "default";
+	device-id = [0d 5d 00 00 00 00 00 00];
+	fast-freq = <DT_FREQ_M(144)>;
+	normal-freq = <DT_FREQ_M(33)>;
+	status = "okay";
+
+	psram: psram@a000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa000000 DT_SIZE_M(8)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		zephyr,memory-region = "psram";
+	};
+};
+
+&ulpdma {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&gpdma {
+	status = "okay";
+};
+
+&bt_hci0 {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	silabs,adc-ref-voltage = <3300>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <SIWX91X_ADC_INPUT_HP29>;
+	};
+
+	status = "okay";
+};
+
+mikrobus_i2c: &i2c0 {};
+
+mikrobus_spi: &spi0 {};
+
+zephyr_i2c: &i2c0 {};
+
+zephyr_spi: &spi0 {};

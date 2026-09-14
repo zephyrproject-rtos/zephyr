@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,6 @@ struct max32_wut_data {
 struct max32_wut_config {
 	struct counter_config_info info;
 	mxc_wut_regs_t *regs;
-	int clock_source;
 	int prescaler;
 	void (*irq_config)(const struct device *dev);
 	uint32_t irq_number;
@@ -164,7 +163,7 @@ static int counter_max32_wut_set_alarm(const struct device *dev, uint8_t chan,
 
 	irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
 	if (irq_on_late || !absolute) {
-		NVIC_SetPendingIRQ(cfg->irq_number);
+		k_irq_set_pending(cfg->irq_number);
 	} else {
 		data->alarm.callback = NULL;
 		data->alarm.user_data = NULL;
@@ -234,8 +233,6 @@ static int counter_max32_wut_init(const struct device *dev)
 	mxc_wut_pres_t pres;
 	mxc_wut_cfg_t wut_cfg;
 
-	Wrap_MXC_SYS_Select32KClockSource(cfg->clock_source);
-
 	counter_max32_wut_hw_init(dev);
 
 	prescaler_lo = FIELD_GET(GENMASK(2, 0), LOG2(cfg->prescaler));
@@ -288,8 +285,6 @@ static DEVICE_API(counter, counter_max32_wut_driver_api) = {
 				.channels = 1,                                                     \
 			},                                                                         \
 		.regs = (mxc_wut_regs_t *)DT_REG_ADDR(TIMER(_num)),                                \
-		.clock_source =                                                                    \
-			DT_PROP_OR(TIMER(_num), clock_source, ADI_MAX32_PRPH_CLK_SRC_ERTCO),       \
 		.prescaler = DT_PROP(TIMER(_num), prescaler),                                      \
 		.irq_config = max32_wut_irq_init_##_num,                                           \
 		.irq_number = DT_IRQN(TIMER(_num)),                                                \

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DAC_SAM0
-	bool "Atmel SAM0 series DAC Driver"
+	bool "Atmel SAM0 series DAC driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM0_DAC_ENABLED
 	select PINCTRL

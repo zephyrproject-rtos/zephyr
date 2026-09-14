@@ -64,10 +64,6 @@
 	current-speed = <115200>;
 };
 
-&systick_timer {
-	status = "okay";
-};
-
 &mcu_rti0 {
 	status = "okay";
 };

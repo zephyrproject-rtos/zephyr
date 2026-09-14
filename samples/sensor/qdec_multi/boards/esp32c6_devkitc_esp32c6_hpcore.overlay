@@ -1,0 +1,63 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ */
+
+/ {
+	aliases {
+		qdec0 = &pcnt;
+	};
+};
+
+&pinctrl {
+	pcnt_default: pcnt_default {
+		group1 {
+			pinmux = <PCNT0_CH0SIG_GPIO1>,
+				 <PCNT0_CH0CTRL_GPIO15>,
+				 <PCNT1_CH0SIG_GPIO3>,
+				 <PCNT1_CH0CTRL_GPIO4>;
+			bias-pull-up;
+		};
+	};
+};
+
+&pcnt {
+	pinctrl-0 = <&pcnt_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	unit0@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		filter = <100>;
+		counts-per-revolution = <400>;
+
+		channelA@0 {
+			reg = <0>;
+			sig-pos-mode = <1>;
+			sig-neg-mode = <0>;
+			ctrl-h-mode = <0>;
+			ctrl-l-mode = <0>;
+		};
+	};
+
+	unit1@1 {
+		reg = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		filter = <100>;
+		counts-per-revolution = <400>;
+
+		channelA@0 {
+			reg = <0>;
+			sig-pos-mode = <1>;
+			sig-neg-mode = <0>;
+			ctrl-h-mode = <0>;
+			ctrl-l-mode = <0>;
+		};
+	};
+};

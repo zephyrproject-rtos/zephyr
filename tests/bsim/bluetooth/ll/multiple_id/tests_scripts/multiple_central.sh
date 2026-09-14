@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # Multiple connection between two devices with multiple peripheral identity
 simulation_id="${BOARD_TS}_central_single_peripheral_multilink"
 verbosity_level=2
-EXECUTE_TIMEOUT=1600
+EXECUTE_TIMEOUT=3600
 
 cd ${BSIM_OUT_PATH}/bin
 
@@ -27,6 +27,6 @@ done
 let device_count=$central_count+1
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=$device_count -sim_length=1800e6 $@ -argschannel -at=40
+  -D=$device_count -sim_length=1800e6 -nodump $@ -argschannel -at=40
 
 wait_for_background_jobs

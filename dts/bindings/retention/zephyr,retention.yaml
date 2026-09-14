@@ -40,6 +40,11 @@ properties:
       16-bit CRC, 4 for 32-bit CRC). Default is to not use a checksum.
     type: int
     default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 4
 
 examples:
   - |

@@ -5,6 +5,7 @@ toolchain:
   - zephyr
 supported:
   - gpio
+  - ptp_clock
   - uart
   - watchdog
   - dma

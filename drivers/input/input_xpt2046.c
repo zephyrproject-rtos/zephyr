@@ -142,7 +142,7 @@ static void xpt2046_work_handler(struct k_work *kw)
 
 	for (int i = 0; i < rounds; i++) {
 		if (xpt2046_read_and_cumulate(&config->bus, &tx_bufs, &rx_bufs, &meas) != 0) {
-			return;
+			goto reenable_cb;
 		}
 	}
 	meas.x /= rounds;
@@ -185,6 +185,7 @@ static void xpt2046_work_handler(struct k_work *kw)
 		k_work_reschedule(&data->dwork, K_MSEC(100));
 	}
 
+reenable_cb:
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
 		LOG_ERR("Could not set gpio callback");
@@ -240,7 +241,7 @@ static int xpt2046_init(const struct device *dev)
 #define XPT2046_INIT(index)                                                                        \
 	static const struct xpt2046_config xpt2046_config_##index = {                              \
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			index, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),           \
+			index, SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),       \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),                               \
 		.min_x = DT_INST_PROP(index, min_x),                                               \
 		.min_y = DT_INST_PROP(index, min_y),                                               \

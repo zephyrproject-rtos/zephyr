@@ -7,8 +7,6 @@ tests:
 
   boards.esp32.ethernet.esp_threadbr:
     platform_allow:
-      - esp_threadbr/esp32s3/procpu
-    extra_args:
-      - SHIELD=esp_threadbr_ethernet
+      - esp_threadbr/esp32s3/procpu/ethernet
     tags:
       - ethernet

@@ -525,7 +525,7 @@ struct lwm2m_message {
 	bool block_send : 1;
 };
 
-/* LWM2M format writer for the various formats supported */
+/* LwM2M format writer for the various formats supported */
 struct lwm2m_writer {
 	int (*put_begin)(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path);

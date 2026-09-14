@@ -42,17 +42,22 @@ tests:
       - CONFIG_SECURE_STORAGE_64_BIT_UID=y
 
   secure_storage.psa.its.secure_storage.store.settings:
-    filter: &settings_filter
-      CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+    filter: CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
     extra_args: &settings_extra_args
       "EXTRA_CONF_FILE=\
        overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_settings.conf"
 
   secure_storage.psa.its.secure_storage.store.settings.64-bit_uids:
-    filter: *settings_filter
+    filter: CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
     extra_args: *settings_extra_args
     extra_configs:
       - CONFIG_SECURE_STORAGE_64_BIT_UID=y
+
+  secure_storage.psa.its.secure_storage.custom.aead_crypt:
+    filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
+    extra_args: "EXTRA_CONF_FILE=\
+      overlay-secure_storage.conf;overlay-transform_default.conf;\
+      overlay-store_settings.conf;overlay-transform_aead_crypt_custom.conf"
 
   secure_storage.psa.its.secure_storage.custom.transform:
     filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE

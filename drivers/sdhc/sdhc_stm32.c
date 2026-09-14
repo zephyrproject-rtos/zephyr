@@ -611,10 +611,11 @@ static int sdhc_stm32_set_response(struct sdhc_stm32_data *dev_data, SDMMC_TypeD
 	__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_CMD_FLAGS);
 	switch (resp) {
 	case SDMMC_RESPONSE_LONG:
-		cmd->response[0] = SDMMC_GetResponse(instance, SDMMC_RESP1);
-		cmd->response[1] = SDMMC_GetResponse(instance, SDMMC_RESP2);
-		cmd->response[2] = SDMMC_GetResponse(instance, SDMMC_RESP3);
-		cmd->response[3] = SDMMC_GetResponse(instance, SDMMC_RESP4);
+		/* NOTE: RESPn registers are in "reverse order" for R2 response */
+		cmd->response[0] = SDMMC_GetResponse(instance, SDMMC_RESP4);
+		cmd->response[1] = SDMMC_GetResponse(instance, SDMMC_RESP3);
+		cmd->response[2] = SDMMC_GetResponse(instance, SDMMC_RESP2);
+		cmd->response[3] = SDMMC_GetResponse(instance, SDMMC_RESP1);
 		break;
 	case SDMMC_RESPONSE_SHORT:
 		cmd->response[0] = SDMMC_GetResponse(instance, SDMMC_RESP1);

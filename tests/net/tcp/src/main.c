@@ -117,6 +117,7 @@ static enum test_case_no {
 	TEST_SERVER_ACK_VALIDATION = 20,
 	TEST_SERVER_FIN_ACK_AFTER_DATA = 21,
 	TEST_SERVER_RST_ON_CLOSED_PORT_FIN = 22,
+	TEST_ADVERTISED_RECV_WINDOW = 23,
 } test_case_no;
 
 static enum test_state t_state;
@@ -129,6 +130,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt);
 static void handle_client_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_server_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(void);
+static void handle_advertised_recv_window(struct tcphdr *th);
 static void handle_syn_rst_ack(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_failure_test(net_sa_family_t af, struct tcphdr *th);
@@ -158,6 +160,14 @@ static void verify_flags(struct tcphdr *th, uint8_t flags,
 
 #define test_verify_flags(_th, _flags) \
 	verify_flags(_th, _flags, __func__, __LINE__)
+
+/* State captured by the tcp_send_cb TX intercept hook (see
+ * test_contiguous_tx).
+ */
+static int send_cb_total_calls;
+static int send_cb_data_calls;
+static int send_cb_data_frags;
+static size_t send_cb_data_payload_len;
 
 struct net_tcp_context {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -431,6 +441,49 @@ fail:
 	return -EINVAL;
 }
 
+/* TX intercept hook used by test_contiguous_tx. It exercises the tcp_send_cb
+ * branch of tcp_out_ext(), records how the data segment was assembled, and
+ * then hands the packet to the normal send path. The hook takes ownership of
+ * pkt: net_send_data() consumes the reference on success, and we release it
+ * explicitly on failure.
+ */
+static int test_tcp_send_cb(struct net_pkt *pkt)
+{
+	struct tcphdr th;
+	int ret;
+
+	send_cb_total_calls++;
+
+	if (read_tcp_header(pkt, &th) == 0 && (th.th_flags & PSH)) {
+		size_t hdr_len = net_pkt_ip_hdr_len(pkt) +
+				 net_pkt_ip_opts_len(pkt) + (th.th_off * 4U);
+		struct net_buf *buf = pkt->buffer;
+		int frags = 0;
+
+		while (buf != NULL) {
+			frags++;
+			buf = buf->frags;
+		}
+
+		send_cb_data_calls++;
+		send_cb_data_frags = frags;
+		send_cb_data_payload_len = net_pkt_get_len(pkt) - hdr_len;
+	}
+
+	/* Restore the packet state that read_tcp_header() changed before the
+	 * packet continues down the send path.
+	 */
+	net_pkt_set_overwrite(pkt, false);
+	net_pkt_cursor_init(pkt);
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return ret;
+}
+
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct tcphdr th;
@@ -458,6 +511,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case TEST_CLIENT_SYN_RESEND:
 		handle_syn_resend();
+		break;
+	case TEST_ADVERTISED_RECV_WINDOW:
+		handle_advertised_recv_window(&th);
 		break;
 	case TEST_CLIENT_FIN_WAIT_2_IPV4:
 		handle_client_fin_wait_2_test(net_pkt_family(pkt), &th);
@@ -1089,6 +1145,49 @@ ZTEST(net_tcp, test_client_syn_resend)
 	zassert_true(ret < 0, "Connect on no response from peer");
 
 	/* test handler will release the sem once it receives SYN again */
+	test_sem_take(K_MSEC(500), __LINE__);
+
+	net_context_put(ctx);
+}
+
+static void handle_advertised_recv_window(struct tcphdr *th)
+{
+	test_verify_flags(th, SYN);
+
+	zassert_not_equal(net_ntohs(th_win(th)), 0, "Advertised receive window is zero");
+
+	test_sem_give();
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   expect the advertised receive window to be usable.
+ *
+ * The window is derived from the buffer pool but travels in a 16 bit header
+ * field, so a pool that works out to 65536 has to be capped rather than
+ * truncated to zero.
+ */
+ZTEST(net_tcp, test_advertised_recv_window)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = TEST_ADVERTISED_RECV_WINDOW;
+	seq = ack = 0;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_equal(ret, 0, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	/* The peer never answers, so the connect itself is expected to fail.
+	 * All this test needs is the SYN the stack puts on the wire.
+	 */
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in), NULL, K_MSEC(150), NULL);
+	zassert_true(ret < 0, "Connect on no response from peer");
+
 	test_sem_take(K_MSEC(500), __LINE__);
 
 	net_context_put(ctx);
@@ -3271,4 +3370,87 @@ ZTEST(net_tcp, test_server_fin_ack_after_data)
 	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
-ZTEST_SUITE(net_tcp, NULL, presetup, NULL, NULL, NULL);
+/* Verify how outgoing TCP data segments are assembled by intercepting them
+ * with the tcp_send_cb hook: a small data segment must consist of a single
+ * net_buf fragment carrying exactly the sent bytes right after the TCP
+ * header. This also verifies that tcp_out_ext() hands the packet off to the
+ * hook cleanly, as the hook takes ownership of the outgoing packet.
+ */
+ZTEST(net_tcp, test_contiguous_tx)
+{
+	struct net_context *ctx;
+	uint8_t data = 0x41;
+	int data_frags;
+	size_t data_payload_len;
+	int data_calls;
+	int total_calls;
+	int ret;
+
+	send_cb_total_calls = 0;
+	send_cb_data_calls = 0;
+	send_cb_data_frags = 0;
+	send_cb_data_payload_len = 0;
+
+	t_state = T_SYN;
+	test_case_no = TEST_CLIENT_IPV4;
+	seq = ack = 0;
+
+	/* Install the TX intercept hook. The net_tcp_after() teardown clears it
+	 * again so it never leaks into another test, even if an assertion below
+	 * aborts this one.
+	 */
+	tcp_send_cb = test_tcp_send_cb;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_ok(ret, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in),
+				  NULL, K_MSEC(100), NULL);
+	zassert_ok(ret, "Failed to connect to peer");
+
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	ret = net_context_send(ctx, &data, 1, NULL, K_NO_WAIT, NULL);
+	zassert_true(ret >= 0, "Failed to send data to peer (%d)", ret);
+
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	net_context_put(ctx);
+
+	/* Peer will release the semaphore after it receives ACK to FIN | ACK */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+
+	/* Snapshot the captured state and uninstall the hook before asserting,
+	 * so a failed assertion cannot leave the hook installed.
+	 */
+	total_calls = send_cb_total_calls;
+	data_calls = send_cb_data_calls;
+	data_frags = send_cb_data_frags;
+	data_payload_len = send_cb_data_payload_len;
+	tcp_send_cb = NULL;
+
+	zassert_true(total_calls > 0, "TX intercept hook was never invoked");
+	zassert_equal(data_calls, 1, "Expected exactly one data segment, got %d", data_calls);
+
+	zassert_equal(data_frags, 1, "Expected single net_buf fragment, got %d", data_frags);
+
+	zassert_equal(data_payload_len, 1,
+		      "Unexpected data segment payload length %zu (expected 1)", data_payload_len);
+}
+
+/* Always clear the TX intercept hook after every test so a test that installs
+ * it (and possibly aborts) cannot affect the following tests.
+ */
+static void net_tcp_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	tcp_send_cb = NULL;
+}
+
+ZTEST_SUITE(net_tcp, NULL, presetup, NULL, net_tcp_after, NULL);

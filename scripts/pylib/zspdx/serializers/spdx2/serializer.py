@@ -7,6 +7,7 @@ import logging
 import os
 from datetime import UTC, datetime
 
+from zspdx.licenses import get_license_ids
 from zspdx.model import (
     ComponentPurpose,
     ExternalReferenceType,
@@ -16,8 +17,8 @@ from zspdx.model import (
     SBOMFile,
 )
 from zspdx.serializers.helpers import (
+    format_blob_comment,
     generate_download_url,
-    get_standard_licenses,
     normalize_spdx_name,
 )
 from zspdx.util import get_hashes
@@ -127,10 +128,9 @@ class SPDX2Serializer:
         try:
             # Write the updated document
             with open(output_path, "w", encoding="utf-8") as f:
-                # Write header
+                # Write header (external document refs are emitted within the
+                # creation-info section by _write_document_header)
                 self._write_document_header(f, doc)
-                # Write external document refs (now we have all hashes)
-                self._write_external_document_refs(f, doc)
                 # Write the rest (relationships, packages, licenses)
                 self._write_document_relationships(f, doc)
                 self._write_packages(f, doc)
@@ -158,15 +158,41 @@ class SPDX2Serializer:
             created = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
             self.document_created_timestamps[doc.name] = created
 
+        creators = "".join(f"Creator: {creator}\n" for creator in self._creators())
+
         f.write(f"""SPDXVersion: SPDX-{self.spdx_version}
 DataLicense: CC0-1.0
 SPDXID: SPDXRef-DOCUMENT
 DocumentName: {normalized_name}
 DocumentNamespace: {namespace}
-Creator: Tool: Zephyr SPDX builder
-Created: {created}
-
 """)
+        # ExternalDocumentRef is part of the Document Creation Information section and
+        # must precede Creator/Created; strict tag-value parsers reject it if it appears
+        # after the section (e.g. once Created has been seen).
+        self._write_external_document_refs(f, doc)
+        f.write(f"{creators}Created: {created}\n\n")
+
+    def _creators(self):
+        """Build the SPDX Creator values: an organization author and the tool.
+
+        An ``Organization`` creator gives the SBOM a declared author, and the
+        ``Tool`` creator carries a version suffix so downstream tooling can
+        identify which generator produced the document.
+        """
+        metadata = self.sbom_graph.metadata
+        creators = []
+
+        organization = metadata.get("creator_organization")
+        if organization:
+            creators.append(f"Organization: {organization}")
+
+        tool_name = metadata.get("tool_name") or "Zephyr SPDX builder"
+        tool_version = metadata.get("tool_version")
+        if tool_version:
+            tool_name = f"{tool_name}-{tool_version}"
+        creators.append(f"Tool: {tool_name}")
+
+        return creators
 
     def _write_external_document_refs(self, f, doc: SBOMDocument):
         """Write external document references."""
@@ -190,7 +216,6 @@ Created: {created}
                     ext_doc.namespace or f"{self.sbom_graph.namespace_prefix}/{ext_doc.name}"
                 )
                 f.write(f"ExternalDocumentRef: {doc_ref_id} {namespace} SHA1: {doc_hash}\n")
-            f.write("\n")
 
     def _write_document_relationships(self, f, doc: SBOMDocument):
         """Write document-level relationships (DESCRIBES) for the document's primary subjects."""
@@ -223,11 +248,10 @@ Created: {created}
         return spdx_id
 
     def _resolve_cpe_metadata(self, component):
-        """Derive (name, supplier, version), filling gaps from a CPE 2.3 reference.
+        """Derive (supplier, version), filling gaps from a CPE 2.3 reference.
 
-        Returns local copies so component.name is left untouched (it drives ID lookup).
+        Returns local copies so the component is left untouched.
         """
-        package_name = component.name
         supplier = component.supplier
         package_version = component.version
         for ref in component.external_references:
@@ -237,14 +261,13 @@ Created: {created}
             metadata = ref.locator.split(':', 6)
             if len(metadata) > 5:
                 supplier = supplier or metadata[3]
-                package_name = metadata[4]
                 package_version = package_version or metadata[5]
-        return package_name, supplier, package_version
+        return supplier, package_version
 
     def _write_files_analyzed(self, f, component):
         """Write the FilesAnalyzed section and verification code for a component."""
         if not component.files:
-            f.write("FilesAnalyzed: false\nPackageComment: Utility target; no files\n\n")
+            f.write("FilesAnalyzed: false\n\n")
             return
 
         if component.license_info_from_files:
@@ -260,7 +283,8 @@ Created: {created}
     def _write_package(self, f, component, doc: SBOMDocument):
         """Write a single package."""
         spdx_id = self._resolve_package_id(component)
-        package_name, supplier, package_version = self._resolve_cpe_metadata(component)
+        supplier, package_version = self._resolve_cpe_metadata(component)
+        package_name = component.name
         normalized_name = normalize_spdx_name(package_name)
 
         f.write(f"""##### Package: {normalized_name}
@@ -304,6 +328,10 @@ PackageCopyrightText: {component.copyright_text}
             else:
                 _logger.warning(f"Unknown external reference ({ref.locator})")
 
+        # Comment describing the package's role
+        if component.comment:
+            f.write(f"PackageComment: <text>{component.comment}</text>\n")
+
         # Files analyzed and verification code
         self._write_files_analyzed(f, component)
 
@@ -339,7 +367,13 @@ FileChecksum: SHA1: {file_obj.hashes.get('SHA1', '')}
             for lic in file_obj.license_info_in_file:
                 f.write(f"LicenseInfoInFile: {lic}\n")
 
-        f.write(f"FileCopyrightText: {file_obj.copyright_text}\n\n")
+        f.write(f"FileCopyrightText: {file_obj.copyright_text}\n")
+
+        blob = file_obj.metadata.get("blob")
+        if blob:
+            f.write(f"FileComment: <text>{format_blob_comment(blob)}</text>\n")
+
+        f.write("\n")
 
         # File relationships
         for rel in file_obj.relationships:
@@ -376,7 +410,7 @@ FileChecksum: SHA1: {file_obj.hashes.get('SHA1', '')}
         """Write custom license declarations."""
         # Get custom licenses from components in this document
         custom_licenses = set()
-        standard_licenses = get_standard_licenses()
+        standard_licenses = get_license_ids()
         for component in doc.components.values():
             for file_obj in component.files.values():
                 for lic in file_obj.license_info_in_file:

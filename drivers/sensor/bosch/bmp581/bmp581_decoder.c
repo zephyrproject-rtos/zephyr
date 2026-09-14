@@ -13,6 +13,40 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(BMP581_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
+/* Period in ns indexed by BMP581_DT_ODR_* value (0x00 = 240 Hz .. 0x1D = 0.5 Hz) */
+static const uint32_t odr_period_ns[] = {
+	[0x00] = UINT32_C(4166666),    /* 240 Hz   */
+	[0x01] = UINT32_C(4575637),    /* 218.5 Hz */
+	[0x02] = UINT32_C(5022603),    /* 199.1 Hz */
+	[0x03] = UINT32_C(5580357),    /* 179.2 Hz */
+	[0x04] = UINT32_C(6250000),    /* 160 Hz   */
+	[0x05] = UINT32_C(6698592),    /* 149.3 Hz */
+	[0x06] = UINT32_C(7142857),    /* 140 Hz   */
+	[0x07] = UINT32_C(7703559),    /* 129.8 Hz */
+	[0x08] = UINT32_C(8333333),    /* 120 Hz   */
+	[0x09] = UINT32_C(9082652),    /* 110.1 Hz */
+	[0x0A] = UINT32_C(9980040),    /* 100.2 Hz */
+	[0x0B] = UINT32_C(11160714),   /* 89.6 Hz  */
+	[0x0C] = UINT32_C(12500000),   /* 80 Hz    */
+	[0x0D] = UINT32_C(14285714),   /* 70 Hz    */
+	[0x0E] = UINT32_C(16666667),   /* 60 Hz    */
+	[0x0F] = UINT32_C(20000000),   /* 50 Hz    */
+	[0x10] = UINT32_C(22222222),   /* 45 Hz    */
+	[0x11] = UINT32_C(25000000),   /* 40 Hz    */
+	[0x12] = UINT32_C(28571428),   /* 35 Hz    */
+	[0x13] = UINT32_C(33333333),   /* 30 Hz    */
+	[0x14] = UINT32_C(40000000),   /* 25 Hz    */
+	[0x15] = UINT32_C(50000000),   /* 20 Hz    */
+	[0x16] = UINT32_C(66666667),   /* 15 Hz    */
+	[0x17] = UINT32_C(100000000),  /* 10 Hz    */
+	[0x18] = UINT32_C(200000000),  /* 5 Hz     */
+	[0x19] = UINT32_C(250000000),  /* 4 Hz     */
+	[0x1A] = UINT32_C(333333333),  /* 3 Hz     */
+	[0x1B] = UINT32_C(500000000),  /* 2 Hz     */
+	[0x1C] = UINT32_C(1000000000), /* 1 Hz     */
+	[0x1D] = UINT32_C(2000000000), /* 0.5 Hz   */
+};
+
 static uint8_t bmp581_encode_channel(enum sensor_channel chan)
 {
 	uint8_t encode_bmask = 0;
@@ -41,15 +75,15 @@ int bmp581_encode(const struct device *dev,
 {
 	struct bmp581_encoded_data *edata = (struct bmp581_encoded_data *)buf;
 	struct bmp581_data *data = dev->data;
-	uint64_t cycles;
-	int err;
 
 	edata->header.channels = 0;
 	edata->header.press_en = data->osr_odr_press_config.press_en;
+	edata->header.odr = data->osr_odr_press_config.odr;
 
 	if (trigger_status) {
 		edata->header.channels |= bmp581_encode_channel(SENSOR_CHAN_ALL);
 		edata->header.fifo_count = data->stream.fifo_thres;
+		edata->header.timestamp = data->stream.timestamp;
 	} else {
 		const struct sensor_chan_spec *const channels = read_config->channels;
 		size_t num_channels = read_config->count;
@@ -57,15 +91,17 @@ int bmp581_encode(const struct device *dev,
 		for (size_t i = 0; i < num_channels; i++) {
 			edata->header.channels |= bmp581_encode_channel(channels[i].chan_type);
 		}
-	}
 
-	err = sensor_clock_get_cycles(&cycles);
-	if (err != 0) {
-		return err;
+		uint64_t cycles;
+		int err = sensor_clock_get_cycles(&cycles);
+
+		if (err != 0) {
+			return err;
+		}
+		edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 	}
 
 	edata->header.events = trigger_status;
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
 }
@@ -182,15 +218,26 @@ static int bmp581_decoder_decode(const uint8_t *buffer,
 	}
 
 	struct sensor_q31_data *out = data_out;
+	uint8_t total_frames = (edata->header.events & BMP581_EVENT_FIFO_WM)
+			       ? edata->header.fifo_count : 1;
+	uint32_t period_ns = (edata->header.odr < ARRAY_SIZE(odr_period_ns))
+			     ? odr_period_ns[edata->header.odr] : 0;
 
-	out->header.base_timestamp_ns = edata->header.timestamp;
+	out->header.base_timestamp_ns =
+		edata->header.timestamp -
+		(uint64_t)(total_frames > 0 ? total_frames - 1 : 0) * period_ns;
 
 	int err;
 	uint32_t fit_0 = *fit;
+	uint32_t frame_idx = 0;
 
 	do {
 		err = bmp581_convert_raw_to_q31_value(&edata->header, &chan_spec,
 						      edata->frame, fit, out);
+		if (err == 0) {
+			out->readings[frame_idx].timestamp_delta = frame_idx * period_ns;
+			frame_idx++;
+		}
 	} while (err == 0 && *fit < max_count);
 
 	if (*fit == fit_0 || err != 0) {

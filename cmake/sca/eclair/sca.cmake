@@ -169,7 +169,7 @@ list(JOIN ECLAIR_ENV_ADDITIONAL_OPTIONS "\n                        " ECLAIR_ENV_
 configure_file(${CMAKE_CURRENT_LIST_DIR}/eclair.template ${ECLAIR_OUTPUT_DIR}/eclair.cmake @ONLY)
 
 set(launch_environment ${CMAKE_COMMAND} -P ${ECLAIR_OUTPUT_DIR}/eclair.cmake --)
-set(CMAKE_C_COMPILER_LAUNCHER ${launch_environment} CACHE INTERNAL "")
+set(CMAKE_C_COMPILER_LAUNCHER ${launch_environment})
 
 list(APPEND ECLAIR_PROJECT_ARGS
                         +project

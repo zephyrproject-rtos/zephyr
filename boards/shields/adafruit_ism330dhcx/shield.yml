@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Analog Devices, Inc
+
+shield:
+  name: adafruit_ism330dhcx
+  full_name: Adafruit ISM330DHCX T DoF IMU Sensor Shield
+  vendor: adafruit
+  supported_features:
+    - sensor

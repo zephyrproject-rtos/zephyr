@@ -193,14 +193,19 @@ class Blobs(WestCommand):
         return None
 
     def download_blob(self, blob, path):
-        '''Download a blob from its url to a given path.'''
+        '''Download a blob from its url to a given path.
+
+        Each URL is tried in order until one provides a download with a
+        matching checksum. A download whose checksum does not match is
+        treated like a failed download, as a server may respond with a
+        bogus payload and a success status.
+        '''
         urls = blob['url']
         if not isinstance(urls, list):
             urls = (urls,)
 
-        valid_url = None
-        has_error = False
-        for url in urls:
+        downloaded = False
+        for i, url in enumerate(urls):
             scheme = blob.get('fetcher') or urlparse(url).scheme
             self.dbg(f'Fetching blob from url {url} with {scheme} to path: {path}')
             import fetchers
@@ -218,15 +223,20 @@ class Blobs(WestCommand):
                 fetcher.fetch(self, single_url_blob, path)
             except ZephyrBlobException as e:
                 self.wrn(e)
-                has_error = True
-            else:
-                valid_url = url
-                break
+                continue
 
-        if valid_url is None:
+            downloaded = True
+            if zephyr_module.get_blob_status(path, blob['sha256']) == zephyr_module.BLOB_PRESENT:
+                if i > 0:
+                    self.inf(f'Fallback URL worked: {url}')
+                return
+            # Not necessarily an attack: a server can answer a raw file
+            # request with an HTML sign-in page and a 200 status.
+            self.wrn(f'Checksum mismatch for blob downloaded from {url}')
+
+        if not downloaded:
             raise ZephyrBlobException('No URL worked for this blob')
-        if has_error:
-            self.inf(f'Fallback URL worked: {valid_url}')
+        # verify_blob() will report the detailed checksum error later.
 
     def fetch_blob(self, args, blob):
         """

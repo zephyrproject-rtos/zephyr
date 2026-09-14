@@ -41,7 +41,7 @@ bool bt_cap_handover_is_handover_broadcast_source(
 	const struct bt_cap_handover_proc_param *proc_param = &active_proc->proc_param.handover;
 	bool ret;
 
-	if (!bt_cap_common_handover_is_active()) {
+	if (!bt_cap_common_active_proc_is_handover()) {
 		ret = false;
 	} else if (proc_param->is_unicast_to_broadcast) {
 		ret = cap_broadcast_source == proc_param->unicast_to_broadcast.broadcast_source;
@@ -1101,6 +1101,32 @@ int bt_cap_handover_unregister_cb(const struct bt_cap_handover_cb *cb)
 	}
 
 	cap_cb = NULL;
+
+	return 0;
+}
+
+int bt_cap_handover_cancel(void)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+	if (!bt_cap_common_proc_is_active() && !bt_cap_common_proc_is_aborted()) {
+		bt_cap_common_unlock_proc();
+
+		LOG_DBG("No CAP procedure is in progress");
+
+		return -EALREADY;
+	}
+
+	if (!bt_cap_common_active_proc_is_handover()) {
+		bt_cap_common_unlock_proc();
+
+		LOG_DBG("No CAP Handover procedure is in progress");
+
+		return -EOPNOTSUPP;
+	}
+
+	bt_cap_common_abort_proc(NULL, -ECANCELED);
+	bt_cap_handover_complete(active_proc);
 
 	return 0;
 }

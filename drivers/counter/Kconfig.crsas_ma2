@@ -1,0 +1,20 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_CRSAS_MA2
+	bool "ARM CRSAS-MA2 System Counter driver"
+	default y
+	depends on DT_HAS_ARM_CRSAS_MA2_COUNTER_ENABLED
+	help
+	  Enable support for the ARM CRSAS-MA2 (Corstone Reference System Architecture Specification
+	  Ma2) System Counter.
+
+config COUNTER_CRSAS_MA2_TIMER
+	bool "ARM CRSAS-MA2 System Timer driver"
+	default y
+	depends on DT_HAS_ARM_CRSAS_MA2_TIMER_ENABLED
+	select COUNTER_CRSAS_MA2
+	help
+	  Enable support for the ARM CRSAS-MA2 (Corstone Reference System Architecture Specification
+	  Ma2) System Timers. Note that despite the name assigned by ARM, its operation is closer to
+	  what Zephyr counter interface provides.

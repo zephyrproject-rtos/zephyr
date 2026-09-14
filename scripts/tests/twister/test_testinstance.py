@@ -17,6 +17,7 @@ from twisterlib.error import BuildError
 from twisterlib.handlers import QEMUHandler
 from twisterlib.platform import Simulator
 from twisterlib.runner import TwisterRunner
+from twisterlib.sidecars.virtiofs import VirtiofsSidecar
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 
@@ -89,6 +90,38 @@ def test_check_build_or_run(
          mock.patch('os.path.exists', return_value=False):
         run = testinstance.check_runnable(env.options, env.hwm)
         assert not run
+
+def test_check_runnable_sidecar_host(class_testplan, all_testsuites_dict, platforms_list):
+    """A sidecar whose host requirements are not met demotes the instance to build-only."""
+    class_testplan.testsuites = all_testsuites_dict
+    testsuite = class_testplan.testsuites.get('test_a.check_1')
+    class_testplan.platforms = platforms_list
+    platform = class_testplan.get_platform("demo_board_2")
+    platform.type = 'sim'
+    platform.simulators = [Simulator({"name": "qemu"})]
+    testsuite.harness = 'ztest'
+    testsuite.build_only = False
+    testsuite.slow = False
+    testsuite.sidecar = 'virtiofs'
+
+    testinstance = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
+    env = mock.Mock(
+        options=mock.Mock(
+            device_testing=False,
+            enable_slow=False,
+            fixtures=[],
+            filter="",
+            sim_name="qemu"
+        ),
+        hwm=mock.Mock(duts=[])
+    )
+
+    with mock.patch.object(VirtiofsSidecar, 'find_virtiofsd', return_value=None):
+        assert not testinstance.check_runnable(env.options, env.hwm)
+
+    with mock.patch.object(VirtiofsSidecar, 'find_virtiofsd', return_value='/found'):
+        assert testinstance.check_runnable(env.options, env.hwm)
+
 
 TESTDATA_PART_2 = [
     (True, True, True, ["demo_board_2/unit_testing"], "native",

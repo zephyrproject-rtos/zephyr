@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 project(Zephyr-Kernel-Doc LANGUAGES)
 
 set(MIN_WEST_VERSION 1.0.0)
@@ -51,6 +51,7 @@ set(SPHINX_ENV
   DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
   DOT_EXECUTABLE=${DOXYGEN_DOT_EXECUTABLE}
   DOCS_HTML_DIR=${CMAKE_CURRENT_BINARY_DIR}/html
+  DOXY_REQ_INPUT=${CMAKE_CURRENT_BINARY_DIR}/requirements/dox
 )
 
 set(DOXYGEN_CUSTOM_LINES)
@@ -82,6 +83,67 @@ if(WIN32)
 else()
   set(SEP :)
 endif()
+
+#-------------------------------------------------------------------------------
+# Requirements (reqmgmt module)
+#
+# When the 'reqmgmt' module (the StrictDoc requirements repository) is present
+# in the workspace, its requirements are exported to JSON and converted into
+# reStructuredText (for Sphinx) and Doxygen (for the API docs) by the
+# 'requirements' target. When the module is absent, only a placeholder is
+# generated so that the strict Sphinx and Doxygen builds still succeed.
+
+set(GEN_REQUIREMENTS_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_requirements.py)
+set(REQ_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/requirements)
+set(REQ_DOX_DIR ${REQ_BUILD_DIR}/dox)
+set(REQ_RST_DIR ${DOCS_SRC_DIR}/build/requirements)
+
+# Requirements .dox directory consumed by the Doxygen INPUT (see
+# zephyr.doxyfile.in). Always points at REQ_DOX_DIR; the directory is populated
+# (possibly empty) by the 'requirements' target before Doxygen runs.
+set(DOXY_REQ_INPUT ${REQ_DOX_DIR})
+
+set(REQMGMT_FOUND FALSE)
+if(DEFINED ZEPHYR_REQMGMT_MODULE_DIR AND
+   EXISTS ${ZEPHYR_REQMGMT_MODULE_DIR}/strictdoc_config.py)
+  find_program(STRICTDOC strictdoc)
+  if(STRICTDOC)
+    set(REQMGMT_FOUND TRUE)
+    message(STATUS "Requirements management module: ${ZEPHYR_REQMGMT_MODULE_DIR}")
+  else()
+    message(WARNING "reqmgmt module found but 'strictdoc' is not installed; "
+                    "requirements will not be included in the documentation.")
+  endif()
+else()
+  message(STATUS "Requirements management module not found; "
+                 "requirements will not be included in the documentation.")
+endif()
+
+if(REQMGMT_FOUND)
+  add_custom_target(
+    requirements
+    COMMAND ${STRICTDOC} export ${ZEPHYR_REQMGMT_MODULE_DIR}
+      --formats json
+      --output-dir ${REQ_BUILD_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} ${GEN_REQUIREMENTS_SCRIPT}
+      --json ${REQ_BUILD_DIR}/json/index.json
+      --rst-out ${REQ_RST_DIR}
+      --dox-out ${REQ_DOX_DIR}
+      --module-present 1
+    COMMENT "Exporting and converting requirements from reqmgmt..."
+  )
+else()
+  add_custom_target(
+    requirements
+    COMMAND ${PYTHON_EXECUTABLE} ${GEN_REQUIREMENTS_SCRIPT}
+      --rst-out ${REQ_RST_DIR}
+      --dox-out ${REQ_DOX_DIR}
+      --module-present 0
+    COMMENT "reqmgmt module not present; generating placeholder requirements..."
+  )
+endif()
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_REQUIREMENTS_SCRIPT})
 
 #-------------------------------------------------------------------------------
 # Functions
@@ -120,10 +182,44 @@ add_custom_target(
   COMMENT "Running Doxygen..."
 )
 
+add_dependencies(doxygen requirements)
+
 set_target_properties(
   doxygen
   PROPERTIES
     ADDITIONAL_CLEAN_FILES "${DOXY_OUT}"
+)
+
+#-------------------------------------------------------------------------------
+# Doxygen (XML only)
+#
+# Same configuration as 'doxygen' -- overlays included, since the generated
+# Doxyfile is pulled in with @INCLUDE -- with the HTML and the tag file turned
+# off. Writes to its own directory so that it cannot race with 'doxygen'.
+
+set(DOXY_XML_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen-xml)
+set(DOXYFILE_XML_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr-xml.doxyfile)
+
+file(WRITE ${DOXYFILE_XML_OUT}
+"@INCLUDE = ${DOXYFILE_OUT}
+OUTPUT_DIRECTORY = ${DOXY_XML_OUT}
+GENERATE_HTML = NO
+GENERATE_TAGFILE =
+")
+
+add_custom_target(
+  doxygen-xml
+  COMMAND
+    ${DOXYGEN_EXECUTABLE} ${DOXYFILE_XML_OUT}
+  COMMENT "Running Doxygen (XML only)..."
+)
+
+add_dependencies(doxygen-xml requirements)
+
+set_target_properties(
+  doxygen-xml
+  PROPERTIES
+    ADDITIONAL_CLEAN_FILES "${DOXY_XML_OUT}"
 )
 
 #-------------------------------------------------------------------------------
@@ -132,7 +228,7 @@ set_target_properties(
 add_custom_target(
   doxygen-coverage
   COMMAND ${PYTHON_EXECUTABLE} -m coverxygen
-    --xml-dir ${CMAKE_CURRENT_BINARY_DIR}/doxygen/xml/
+    --xml-dir ${DOXY_XML_OUT}/xml/
     --src-dir ${ZEPHYR_BASE}/include/
     --output ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.info
   COMMAND lcov
@@ -143,18 +239,18 @@ add_custom_target(
     --no-branch-coverage
     ${CMAKE_CURRENT_BINARY_DIR}/new.info
     -o ${CMAKE_CURRENT_BINARY_DIR}/coverage-report
-  DEPENDS doxygen
+  DEPENDS doxygen-xml
   COMMENT "Generating Doxygen coverage info and HTML report..."
 )
 
 add_custom_target(
   doxygen-coverage-json
   COMMAND ${PYTHON_EXECUTABLE} -m coverxygen
-    --xml-dir ${CMAKE_CURRENT_BINARY_DIR}/doxygen/xml/
+    --xml-dir ${DOXY_XML_OUT}/xml/
     --src-dir ${ZEPHYR_BASE}/include/
     --format json-v3
     --output ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.json
-  DEPENDS doxygen
+  DEPENDS doxygen-xml
   COMMENT "Generating Doxygen coverage info in JSON format..."
 )
 
@@ -200,6 +296,10 @@ if(NO_EXTERNAL_DEPS)
   list(APPEND SPHINX_TAGS "no-external-deps")
 endif()
 
+if(REQMGMT_FOUND)
+  list(APPEND SPHINX_TAGS "reqmgmt")
+endif()
+
 set(SPHINX_TAGS_ARGS "")
 foreach(tag ${SPHINX_TAGS})
   list(APPEND SPHINX_TAGS_ARGS "-t" "${tag}")
@@ -234,7 +334,7 @@ if(SPHINXBUILD)
       ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
   )
 
-  add_dependencies(html devicetree)
+  add_dependencies(html devicetree requirements)
 endif()
 
 #-------------------------------------------------------------------------------
@@ -266,7 +366,7 @@ if(SPHINXBUILD)
       ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
   )
 
-  add_dependencies(html-live devicetree)
+  add_dependencies(html-live devicetree requirements)
 endif()
 #-------------------------------------------------------------------------------
 # pdf
@@ -296,7 +396,7 @@ if(SPHINXBUILD)
       ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_LATEX_DIR};${DOCS_DOCTREE_DIR}"
   )
 
-  add_dependencies(latex devicetree)
+  add_dependencies(latex devicetree requirements)
 endif()
 
 if(SPHINXBUILD AND LATEX_PDFLATEX_FOUND AND LATEXMK)
@@ -349,7 +449,7 @@ if(SPHINXBUILD)
       ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_LINKCHECK_DIR};${DOCS_DOCTREE_DIR}"
   )
 
-  add_dependencies(linkcheck devicetree)
+  add_dependencies(linkcheck devicetree requirements)
 endif()
 
 #-------------------------------------------------------------------------------

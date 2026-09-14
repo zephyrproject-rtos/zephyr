@@ -340,6 +340,8 @@ struct display_capabilities {
 	enum display_pixel_format current_pixel_format;
 	/** Current display orientation */
 	enum display_orientation current_orientation;
+	/** Supported callback events mask, 0 when event callback unsupported */
+	uint32_t supported_events;
 #if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
 	/** Color palette supported by the display, indexed by pixel value */
 	struct display_palette_color color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
@@ -383,6 +385,10 @@ enum display_event {
 	DISPLAY_EVENT_VSYNC = BIT(1),
 	/** Fired when a frame transfer to the panel or frame buffer update completes */
 	DISPLAY_EVENT_FRAME_DONE = BIT(2),
+	/** Fired when a FIFO underflow occurs.
+	 *  Checked in some UI frameworks such as Qt Ultralite
+	 */
+	DISPLAY_EVENT_FIFO_UNDERFLOW = BIT(3),
 };
 
 /** @brief Display event callback return flags. */
@@ -770,6 +776,8 @@ static inline void display_get_capabilities(const struct device *dev,
 					    struct display_capabilities *
 					    capabilities)
 {
+	__ASSERT(capabilities != NULL, "display_capabilities struct is NULL");
+	memset(capabilities, 0, sizeof(struct display_capabilities));
 	DEVICE_API_GET(display, dev)->get_capabilities(dev, capabilities);
 }
 
@@ -837,8 +845,7 @@ static inline int display_set_orientation(const struct device *dev,
  *
  * @return 0 and a non-zero out_reg_handle value on success, otherwise a negative errno code.
  * @retval -EBUSY A callback is already registered.
- * @retval -ENOTSUP One of the events is not supported,
- * or the requested invocation context is not supported.
+ * @retval -ENOTSUP The requested callback invocation context is not supported.
  * @retval -ENOSYS Not implemented.
  * @retval -EINVAL Invalid argument.
  */
@@ -850,9 +857,18 @@ static inline int display_register_event_cb(const struct device *dev,
 	__ASSERT(cb != NULL, "Registration failed: callback function pointer is NULL");
 
 	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
+	struct display_capabilities caps;
 
 	if (api->register_event_cb == NULL) {
 		return -ENOSYS;
+	}
+
+	api->get_capabilities(dev, &caps);
+	if (!caps.supported_events) {
+		return -ENOSYS;
+	}
+	if (event_mask == 0 || (~caps.supported_events & event_mask)) {
+		return -EINVAL;
 	}
 
 	return api->register_event_cb(dev, cb, user_data, event_mask, in_isr, out_reg_handle);

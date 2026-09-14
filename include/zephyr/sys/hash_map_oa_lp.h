@@ -36,7 +36,7 @@ struct sys_hashmap_oa_lp_data {
  *
  * Declare a Open Addressing Linear Probe Hashmap with control over advanced parameters.
  *
- * @note The allocator @p _alloc is used for allocating internal Hashmap
+ * @note The allocator @p _alloc_func is used for allocating internal Hashmap
  * entries and does not interact with any user-provided keys or values.
  *
  * @param _name Name of the Hashmap.
@@ -53,7 +53,7 @@ struct sys_hashmap_oa_lp_data {
  *
  * Declare a Open Addressing Linear Probe Hashmap with control over advanced parameters.
  *
- * @note The allocator @p _alloc is used for allocating internal Hashmap
+ * @note The allocator @p _alloc_func is used for allocating internal Hashmap
  * entries and does not interact with any user-provided keys or values.
  *
  * @param _name Name of the Hashmap.

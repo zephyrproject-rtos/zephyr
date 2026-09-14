@@ -4,42 +4,55 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 / {
-	reserved_memory: reserved-memory@28000000 {
-		compatible = "soc-nv-flash";
+	flash_controller: flash-controller@28000000 {
 		reg = <0x28000000 DT_SIZE_M(8)>;
-		erase-block-size = <65536>;
-		write-block-size = <4>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		partitions {
-			compatible = "fixed-partitions";
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>;
+			ranges = <0x0 0x0 DT_SIZE_M(8)>;
+			erase-block-size = <65536>;
+			write-block-size = <4>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			/* The memory regions defined below must match what the TF-M
-			 * project has defined for that board - a single image boot is
-			 * assumed. Please see the memory layout in:
-			 * https://git.trustedfirmware.org/plugins/gitiles/TF-M/trusted-firmware-m.git/+/refs/heads/main/platform/ext/target/arm/mps4/common/partition/flash_layout.h
-			 */
-			slot0_partition: partition@0 {
-				reg = <0x00000000 DT_SIZE_K(512)>;
-			};
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 
-			slot0_ns_partition: partition@80000 {
-				reg = <0x00080000 DT_SIZE_M(3)>;
-			};
+				/* The memory regions defined below must match what the TF-M
+				 * project has defined for that board - a single image boot is
+				 * assumed. Please see the memory layout in:
+				 * https://git.trustedfirmware.org/plugins/gitiles/TF-M/trusted-firmware-m.git/+/refs/heads/main/platform/ext/target/arm/mps4/common/partition/flash_layout.h
+				 */
+				slot0_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00000000 DT_SIZE_K(512)>;
+				};
 
-			slot1_partition: partition@380000 {
-				reg = <0x00380000 DT_SIZE_K(512)>;
-			};
+				slot0_ns_partition: partition@80000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00080000 DT_SIZE_M(3)>;
+				};
 
-			slot1_ns_partition: partition@400000 {
-				reg = <0x00400000 DT_SIZE_M(3)>;
-			};
+				slot1_partition: partition@380000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00380000 DT_SIZE_K(512)>;
+				};
 
-			scratch_partition: partition@700000 {
-				reg = <0x00700000 DT_SIZE_K(512)>;
+				slot1_ns_partition: partition@400000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00400000 DT_SIZE_M(3)>;
+				};
+
+				scratch_partition: partition@700000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00700000 DT_SIZE_K(512)>;
+				};
 			};
 		};
 	};

@@ -605,38 +605,32 @@ drop:
 }
 #endif
 
-int net_ipv4_igmp_rejoin(struct net_if *iface, const struct net_in_addr *addr)
+int net_ipv4_igmp_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
-	struct net_if_mcast_addr *maddr;
-	int ret = 0;
-
-	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
-	if (maddr == NULL) {
-		return -ENOENT;
-	}
+	int ret;
 
 	if (net_if_is_offloaded(iface)) {
 		goto out;
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-	ret = igmpv3_send_generic(iface, maddr);
+	ret = igmpv3_send_generic(iface, addr);
 #else
-	ret = igmp_send_generic(iface, addr, true);
+	ret = igmp_send_generic(iface, &addr->address.in_addr, true);
 #endif
 	if (ret < 0) {
 		return ret;
 	}
 
 out:
-	net_if_ipv4_maddr_join(iface, maddr);
+	net_if_ipv4_maddr_join(iface, addr);
 
-	net_if_mcast_monitor(iface, &maddr->address, true);
+	net_if_mcast_monitor(iface, &addr->address, true);
 
-	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_JOIN, iface, &maddr->address.in_addr,
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_JOIN, iface, &addr->address.in_addr,
 					sizeof(struct net_in_addr));
 
-	return ret;
+	return 0;
 }
 
 int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
@@ -775,6 +769,30 @@ out:
 					&removed_addr.address.in_addr,
 					sizeof(struct net_in_addr));
 	return ret;
+}
+
+void net_ipv4_igmp_send_leave(struct net_if *iface, const struct net_if_mcast_addr *addr)
+{
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	struct net_if_mcast_addr removed_addr = *addr;
+
+	removed_addr.record_type = IGMPV3_CHANGE_TO_INCLUDE_MODE;
+	removed_addr.sources_len = 0;
+
+	igmpv3_send_generic(iface, &removed_addr);
+#else
+	igmp_send_generic(iface, &addr->address.in_addr, false);
+#endif
+out:
+	net_if_mcast_monitor(iface, &addr->address, false);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_LEAVE, iface,
+					&addr->address.in_addr,
+					sizeof(struct net_in_addr));
 }
 
 void net_ipv4_igmp_init(struct net_if *iface)

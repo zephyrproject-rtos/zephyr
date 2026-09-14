@@ -73,7 +73,16 @@ struct llext_test {
 };
 
 
-K_THREAD_STACK_DEFINE(llext_stack, 1024);
+/* Extensions run in a user thread on this stack. 64-bit targets need
+ * more room: pointers, saved registers and stack slots all double.
+ */
+#ifdef CONFIG_64BIT
+#define LLEXT_STACK_SIZE 4096
+#else
+#define LLEXT_STACK_SIZE 1024
+#endif
+
+K_THREAD_STACK_DEFINE(llext_stack, LLEXT_STACK_SIZE);
 struct k_thread llext_thread;
 
 
@@ -371,7 +380,7 @@ static LLEXT_CONST uint8_t inspect_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "inspect.inc"
 };
 
-#if defined(CONFIG_LLEXT_RODATA_NO_RELOC)
+#if defined(CONFIG_LLEXT_RODATA_NO_RELOC) && !defined(CONFIG_XTENSA)
 static LLEXT_CONST uint8_t rodata_no_reloc_ext[] ELF_ALIGN = {
 	#include "rodata_no_reloc.inc"
 };
@@ -529,7 +538,8 @@ ZTEST(llext, test_inter_ext)
 #endif
 
 #if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA) &&                        \
-	!defined(CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM)
+	!defined(CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM) &&                                \
+	defined(CONFIG_LLEXT_STORAGE_WRITABLE)
 static LLEXT_CONST uint8_t pre_located_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "pre_located.inc"
 };

@@ -758,7 +758,8 @@ static int i2c_bflb_deinit(const struct device *dev)
 	sys_write32(tmp, config->base + I2C_INT_STS_OFFSET);
 
 	/* disable clocks */
-#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 	tmp = sys_read32(GLB_BASE + GLB_I2C_CFG0_OFFSET);
 	tmp &= GLB_I2C_CLK_EN_UMSK;
 	sys_write32(tmp, GLB_BASE + GLB_I2C_CFG0_OFFSET);

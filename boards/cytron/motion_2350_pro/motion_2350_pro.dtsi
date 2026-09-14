@@ -173,6 +173,10 @@ zephyr_i2c: &i2c0 {
 	status = "okay";
 };
 
+&vreg {
+	status = "okay";
+};
+
 &wdt0 {
 	status = "okay";
 };

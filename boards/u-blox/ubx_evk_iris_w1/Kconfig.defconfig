@@ -4,7 +4,7 @@
 
 if BOARD_UBX_EVK_IRIS_W1
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y if DT_HAS_NXP_ENET_MAC_ENABLED
 
 endif # BOARD_UBX_EVK_IRIS_W1

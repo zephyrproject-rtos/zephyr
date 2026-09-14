@@ -298,6 +298,13 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
 				  void *user_data);
 
 /**
+ * @brief Callback API for reading the instantaneous RSSI
+ *
+ * @see lora_rssi() for argument descriptions.
+ */
+typedef int (*lora_api_rssi)(const struct device *dev, int16_t *rssi);
+
+/**
  * @typedef lora_api_recv_duty_cycle()
  * @brief Callback API for blocking receive with duty cycling
  *
@@ -349,6 +356,8 @@ __subsystem struct lora_driver_api {
 	lora_api_cad cad;
 	/** @driver_ops_optional @copybrief lora_cad_async */
 	lora_api_cad_async cad_async;
+	/** @driver_ops_optional @copybrief lora_rssi */
+	lora_api_rssi rssi;
 	/** @driver_ops_optional @copybrief lora_recv_duty_cycle_async */
 	lora_api_recv_duty_cycle_async recv_duty_cycle_async;
 	/** @driver_ops_optional @copybrief lora_recv_duty_cycle */
@@ -524,6 +533,58 @@ static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
 
 	return api->cad_async(dev, cb, user_data);
 }
+
+/**
+ * @brief Read the instantaneous RSSI of the current channel
+ *
+ * Samples the receiver's signal strength once, at the bandwidth configured by
+ * @ref lora_config.
+ *
+ * The radio must already be receiving, set up by @ref lora_recv_async. The
+ * value read outside of receive mode is undefined; the driver does not detect
+ * this.
+ *
+ * @param dev  LoRa device
+ * @param rssi Sampled level in dBm
+ * @return 0 on success
+ * @return -EBUSY if the modem is in use
+ * @return -ENOSYS if the operation is not supported by the driver
+ * @return negative on other errors
+ */
+static inline int lora_rssi(const struct device *dev, int16_t *rssi)
+{
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
+
+	if (api->rssi == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->rssi(dev, rssi);
+}
+
+/**
+ * @brief Perform energy-detection carrier sense
+ *
+ * Puts the radio into receive mode and samples the RSSI repeatedly for
+ * @p duration. The channel is reported busy as soon as one sample reaches
+ * @p rssi_threshold, and clear if the window elapses without that happening.
+ *
+ * Unlike @ref lora_cad this reacts to any energy on the channel, not only to
+ * a LoRa preamble. Sensing happens at the bandwidth set by @ref lora_config.
+ *
+ * @note This is a blocking call.
+ *
+ * @param dev            LoRa device
+ * @param rssi_threshold Level in dBm at or above which the channel is busy
+ * @param duration       Carrier sense window, neither K_NO_WAIT nor K_FOREVER
+ * @return 0 if the channel is clear
+ * @return 1 if the channel is busy
+ * @return -EINVAL if @p duration is K_NO_WAIT or K_FOREVER
+ * @return -EBUSY if the modem is in use
+ * @return -ENOSYS if the driver supports neither RSSI nor asynchronous receive
+ * @return negative on other errors
+ */
+int lora_energy_detect(const struct device *dev, int16_t rssi_threshold, k_timeout_t duration);
 
 /**
  * @brief Receive data using duty cycling (wake-on-radio)

@@ -4,13 +4,13 @@
 
 '''Modified openocd and gdb runner for Cyclone V SoC DevKit.'''
 
-import os
 import re
 import subprocess
 from os import path
 from pathlib import Path
 
 from runners.core import RunnerCaps, ZephyrBinaryRunner
+from zephyr_ext_common import ZEPHYR_BASE
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444
@@ -237,7 +237,7 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
 
         server_cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +        #added mevalver
                       pre_init_cmd)
-        temp_str = '--cd=' + os.environ.get('ZEPHYR_BASE') #Go to Zephyr base Dir
+        temp_str = f'--cd={ZEPHYR_BASE}' #Go to Zephyr base Dir
         # Execute First Script in Zephyr Base Dir
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
                    [temp_str,'-ex', f'target extended-remote localhost:{self.gdb_port}' , '-batch'])
@@ -298,7 +298,7 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
                    ['-ex', f'target extended-remote :{self.gdb_port}',
                     self.elf_name, '-q'])
 
-        temp_str = '--cd=' + os.environ.get('ZEPHYR_BASE') #Go to Zephyr base Dir
+        temp_str = f'--cd={ZEPHYR_BASE}' #Go to Zephyr base Dir
 
         # Execute First Script in Zephyr Base Dir
         gdb_cmd = (self.gdb_cmd + self.tui_arg +

@@ -6,6 +6,8 @@ config NT35510
 	default y
 	depends on DT_HAS_FRIDA_NT35510_ENABLED
 	select MIPI_DSI
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_FRIDA_NT35510),reset-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_FRIDA_NT35510),bl-gpios)
 	help
 	  Enable driver for NT35510 display driver.
 

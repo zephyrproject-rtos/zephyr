@@ -9,9 +9,9 @@
 
 #include <zephyr/cache.h>
 
-static ALWAYS_INLINE void DEMO_CleanInvalidateCacheByAddr(void *addr, uint16_t size)
+static ALWAYS_INLINE void DEMO_CleanInvalidateCacheByAddr(void *addr, size_t size)
 {
-	sys_cache_data_invd_range(addr, size);
+	sys_cache_data_flush_and_invd_range(addr, size);
 }
 
 #endif /* ZEPHYR_MODULES_LVGL_LVGL_SUPPORT_H_ */

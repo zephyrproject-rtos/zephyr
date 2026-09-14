@@ -326,6 +326,12 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
 	CLOCK_EnableClock(kCLOCK_GateENET0);
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	/* Attach PLL1 (200 MHz) to the ENET QoS PTP reference clock. */
+	CLOCK_AttachClk(kPll1Clk_to_ENETPTPREF);
+	CLOCK_SetClockDiv(kCLOCK_DivE1588, 1u);
+	CLOCK_EnableClock(kCLOCK_GateE1588);
+#endif
 	RESET_PeripheralReset(kENET0_RST_SHIFT_RSTn);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(t1s))
 	/* TENBASET_PHY needs 100 MHz clock */
@@ -347,6 +353,19 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_FLEXCAN0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
+	/* FRO_HF (192 MHz) / 4 = 48 MHz FlexSPI root clock */
+	CLOCK_SetClockDiv(kCLOCK_DivFLEXSPI0, 4U);
+	CLOCK_AttachClk(kFRO_HF_to_FLEXSPI);
+	CLOCK_EnableClock(kCLOCK_GateFLEXSPI0);
+	RESET_ReleasePeripheralReset(kFLEXSPI0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
+	CLOCK_SetClockDiv(kCLOCK_DivFLEXIO0, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_FLEXIO0);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
 	RESET_ReleasePeripheralReset(kEWM0_RST_SHIFT_RSTn);
 	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN | kCLKE_16K_VBAT);
@@ -363,6 +382,14 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
 	/* RTC uses the OSC32K (32.768 kHz) as its clock source */
 	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToAll);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tsi0))
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN | kCLKE_16K_VBAT);
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToAll);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_TSI0);
+	CLOCK_SetClockDiv(kCLOCK_DivTSI0, 4);
+	CLOCK_EnableClock(kCLOCK_GateTSI0);
 #endif
 
 	/* Set SystemCoreClock variable. */

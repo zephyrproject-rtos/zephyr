@@ -55,9 +55,19 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	key = __get_BASEPRI();
 	__set_BASEPRI_MAX(_EXC_IRQ_DEFAULT_PRIO);
+#if defined(CONFIG_CORTEX_M_ERRATUM_440977_WORKAROUND)
+	/* Arm erratum 440977 (formerly 837070): the next instruction can
+	 * still be preempted. Keep the ISB before the critical region
+	 * without masking higher-priority interrupts through PRIMASK.
+	 */
 	__ISB();
-#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
+#endif
+	/* Priority-raising writes to PRIMASK/FAULTMASK/BASEPRI are
+	 * serialized to the instruction stream, so (other than the above
+	 * erratum) no ISB is needed here; see Arm DAI0321A, section 4.8.
+	 */
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) ||                                \
+	defined(CONFIG_ARM_A_PROFILE_AARCH32)
 	__asm__ volatile(
 		"mrs %0, cpsr;"
 		"and %0, #" STRINGIFY(I_BIT) ";"
@@ -79,17 +89,22 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
+	/* No barrier is used when unmasking: on Cortex-M an interrupt
+	 * that is (or becomes) pended is taken after at most a couple of
+	 * instructions; unlocking makes no promise that it is taken
+	 * *before* the next instruction (see Arm DAI0321A, section 4.7).
+	 * The one spot that does need synchronous recognition of a pended
+	 * exception, the Cortex-M arch_swap(), inserts its own ISB.
+	 */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	if (key != 0U) {
 		return;
 	}
 	__enable_irq();
-	__ISB();
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__set_BASEPRI(key);
-	__ISB();
-#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) ||                                \
+	defined(CONFIG_ARM_A_PROFILE_AARCH32)
 	if (key != 0U) {
 		return;
 	}
@@ -112,8 +127,8 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 	return __get_PRIMASK() == 0U;
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	return __get_BASEPRI() == 0U;
-#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) ||                                \
+	defined(CONFIG_ARM_A_PROFILE_AARCH32)
 	unsigned int cpsr;
 
 	__asm__ volatile("mrs %0, cpsr" : "=r" (cpsr));

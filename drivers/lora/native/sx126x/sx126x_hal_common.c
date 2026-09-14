@@ -113,7 +113,7 @@ int sx126x_hal_wakeup(const struct device *dev)
 	/*
 	 * Send a write-only GET_STATUS command. The NSS falling edge wakes
 	 * the chip from sleep. Use spi_write_dt() (TX-only) rather than
-	 * spi_transceive_dt() because the chip's MISO line is undefined
+	 * spi_transceive_dt() because the chip's SDO line is undefined
 	 * during sleep mode.
 	 */
 	ret = spi_write_dt(&config->spi, &tx_set);

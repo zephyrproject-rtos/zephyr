@@ -30,7 +30,7 @@ extern "C" {
  * @note HTTP response status codes are subject to IANA approval.
  *
  * @see <a href="https://www.iana.org/assignments/http-status-codes">Hypertext Transfer Protocol (HTTP) Status Code Registry</a>
- * @see <a href="https://www.ietf.org/rfc/rfc9110.txt">RFC9110</a>
+ * @see @rfc{9110}
  * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status">HTTP response status codes</a>
  */
 enum http_status {

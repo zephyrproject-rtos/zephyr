@@ -447,6 +447,7 @@ static inline void uart_irq_update(const struct device *dev)
 		api->irq_update(dev);
 	}
 #endif
+	ARG_UNUSED(dev);
 }
 
 static inline int uart_irq_callback_user_data_set(const struct device *dev,

@@ -63,6 +63,7 @@ static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 	if (err != 0) {
 		const char *unicast_group_del_str =
 			unicast_group != NULL ? " without deleting the unicast_group" : "";
+		bool reset_default_source = broadcast_source == NULL;
 
 		if (err == -ECANCELED) {
 			bt_shell_print("Unicast to broadcast handover was cancelled for conn %p%s",
@@ -75,15 +76,25 @@ static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 		if (broadcast_source != NULL) {
 			err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
 
+			/* If we do not manage to delete the source here if it is in the streaming
+			 * state, then that needs to be done manually by the shell user
+			 */
 			if (err != 0) {
-				bt_shell_error("Failed to delete broadcast source: %d", err);
+				bt_shell_error("Failed to delete broadcast source: %d. Use "
+					       "`cmd_broadcast_stop` and `cmd_broadcast_delete` "
+					       "to manually stop and delete",
+					       err);
+			} else {
+				reset_default_source = true;
 			}
 		}
 
-		default_source.cap_source = NULL;
-		default_source.is_cap = false;
-		default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
-		default_source.adv_sid = BT_GAP_SID_INVALID;
+		if (reset_default_source) {
+			default_source.cap_source = NULL;
+			default_source.is_cap = false;
+			default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+			default_source.adv_sid = BT_GAP_SID_INVALID;
+		}
 	} else {
 		bt_shell_print(
 			"Unicast to broadcast handover completed with new broadcast source %p",
@@ -241,6 +252,22 @@ static int validate_and_parse_cmd_cap_handover_unicast_to_broadcast_args(
 		}
 
 		i++;
+	}
+
+	return 0;
+}
+
+static int cmd_cap_handover_cancel(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	err = bt_cap_handover_cancel();
+	if (err != 0) {
+		shell_print(sh, "Failed to cancel CAP handover procedure: %d", err);
+		return -ENOEXEC;
 	}
 
 	return 0;
@@ -796,6 +823,8 @@ static int cmd_cap_handover(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cap_handover_cmds,
+	SHELL_CMD_ARG(cancel, NULL, "CAP Handover cancel current procedure",
+		      cmd_cap_handover_cancel, 1, 0),
 	SHELL_CMD_ARG(unicast_to_broadcast, NULL,
 		      "Handover current unicast group to broadcast (unicast group will be deleted) "
 		      "[enc <broadcast_code>] [preset <preset_name>]",

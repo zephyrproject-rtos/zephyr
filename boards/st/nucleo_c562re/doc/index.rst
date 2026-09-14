@@ -68,6 +68,36 @@ use both functions simultaneously.
 
 For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 
+CAN FD
+======
+
+The board has an onboard CAN FD transceiver connected to ``FDCAN1``:
+
+- ``PB8``: CAN receive (CAN_RX)
+- ``PB9``: CAN transmit (CAN_TX)
+- ``PE2``: transceiver standby control (low for normal operation, high for standby)
+
+The CAN FD bus is available on connector ``CN18`` with the following pinout:
+
+- pin 1: CANH
+- pin 2: CANL
+- pin 3: GND
+
+The CAN connections use solder bridges ``SB32`` (PE2), ``SB36`` (PB8), and
+``SB34`` (PB9), which are populated in the default configuration. ``JP9``
+connects the onboard 120-ohm termination resistor when set to ON.
+
+USB
+===
+
+.. warning::
+
+  By default, the dead-battery pull-downs are not present on the connector (self-powered mode).
+  Therefore, the board cannot be powered from the user USB-C connector using a USB-C-to-USB-C cable.
+  A legacy USB-C-to-USB-A cable should still work.
+  Another option is to connect both the user USB and the ST-Link USB.
+  The board can also be modified to support bus-powered mode.
+
 Programming and Debugging
 *************************
 

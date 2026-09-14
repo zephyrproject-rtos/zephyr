@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: esp_threadbr/esp32s3/procpu/ethernet
+name: ESP Thread Border Router / ZigBee Gateway PROCPU Ethernet
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - input
+  - crypto
+  - retained_mem
+  - netif:eth
+vendor: espressif

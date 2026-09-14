@@ -234,13 +234,12 @@ install `stm32mp1 developer package`_.
 
       # On Linux
       cd $ZEPHYR_BASE/samples/hello_world
-      mkdir -p build && cd build
 
-      # Use cmake to configure a Ninja-based build system:
-      cmake -GNinja -DBOARD=96b_avenger96 ..
+      # Build the application:
+      west build -b 96b_avenger96
 
-      # Now run ninja on the generated build system:
-      ninja debug
+      # Now start a debug session:
+      west debug
 
 .. _96Boards website:
    https://www.96boards.org/product/avenger96/

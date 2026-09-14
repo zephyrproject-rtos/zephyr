@@ -204,3 +204,76 @@ def test_load_yaml_with_no_scenario_data(zephyr_base):
     with pytest.raises(KeyError):
         scenario_data = parser.get_scenario('scenario1')
         assert scenario_data is None
+
+
+@pytest.mark.parametrize(
+    "key, value",
+    [
+        ("tags", "'kernel userspace'"),
+        ("tags", "['kernel', 'memory slabs']"),
+        ("depends_on", "'gpio input'"),
+        ("platform_allow", "'board_a board_b'"),
+        ("integration_platforms", "['native_sim qemu_x86']"),
+    ],
+    ids=[
+        "tags-space-separated-string",
+        "tags-list-item-with-space",
+        "depends_on-space-separated-string",
+        "platform_allow-space-separated-string",
+        "integration_platforms-list-item-with-space",
+    ],
+)
+def test_whitespace_in_identifier_key_is_rejected(zephyr_base, key, value):
+    """Space-separated lists are no longer split, so they must not be accepted."""
+    filename = "test_data.yaml"
+    yaml_data = f"""
+    tests:
+      scenario1:
+        {key}: {value}
+    """
+
+    loaded_schema = scl.yaml_load(
+        os.path.join(zephyr_base, 'scripts', 'schemas', 'twister', 'testsuite-schema.yaml')
+    )
+
+    with mock.patch('builtins.open', mock.mock_open(read_data=yaml_data)):
+        parser = TwisterConfigParser(filename, loaded_schema)
+        parser.load()
+
+    with pytest.raises(ConfigurationError, match="Space-separated lists are not supported"):
+        parser.get_scenario('scenario1')
+
+
+@pytest.mark.parametrize(
+    "key, value, expected",
+    [
+        ("tags", "['kernel', 'userspace']", {'kernel', 'userspace'}),
+        ("tags", "'kernel'", {'kernel'}),
+        ("extra_configs", "['CONFIG_BOOT_BANNER_STRING=\"a b\"']", ['CONFIG_BOOT_BANNER_STRING="a b"']),
+        ("extra_conf_files", "['my dir/a.conf']", ['my dir/a.conf']),
+    ],
+    ids=[
+        "tags-proper-list",
+        "tags-single-value",
+        "extra_configs-keeps-spaces",
+        "extra_conf_files-keeps-spaces",
+    ],
+)
+def test_legitimate_whitespace_is_preserved(zephyr_base, key, value, expected):
+    """Kconfig values and file paths may contain spaces and must be left alone."""
+    filename = "test_data.yaml"
+    yaml_data = f"""
+    tests:
+      scenario1:
+        {key}: {value}
+    """
+
+    loaded_schema = scl.yaml_load(
+        os.path.join(zephyr_base, 'scripts', 'schemas', 'twister', 'testsuite-schema.yaml')
+    )
+
+    with mock.patch('builtins.open', mock.mock_open(read_data=yaml_data)):
+        parser = TwisterConfigParser(filename, loaded_schema)
+        parser.load()
+
+    assert parser.get_scenario('scenario1')[key] == expected

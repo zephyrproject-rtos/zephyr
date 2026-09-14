@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,7 +38,9 @@ struct fixed_rate_clock_config {
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp)) ||                                              \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                         \
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1)) ||                                         \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco)) &&                                         \
+	 !IS_ENABLED(CONFIG_SOC_FAMILY_INFINEON_PSOC4))
 static void clock_startup_error(uint32_t error)
 {
 	(void)error; /* Suppress the compiler warning */

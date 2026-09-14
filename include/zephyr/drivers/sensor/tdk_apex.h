@@ -17,11 +17,21 @@
  * cannot be expressed within the sensor driver abstraction.
  */
 
-/** TDK APEX features */
+/** @name TDK APEX features */
+/** @{ */
+/** @brief Disable APEX feature. */
+#define TDK_APEX_DISABLE   (0)
+/** @brief Enable Pedometer feature. */
 #define TDK_APEX_PEDOMETER (1)
+/** @brief Enable Tilt detection feature. */
 #define TDK_APEX_TILT      (2)
+/** @brief Enable Significant Motion Detector (SMD) feature. */
 #define TDK_APEX_SMD       (3)
+/** @brief Enable Wake on Motion (WoM) feature. */
 #define TDK_APEX_WOM       (4)
+/** @brief Enable TAP gesture detection feature. */
+#define TDK_APEX_TAP       (5)
+/** @} */
 
 /**
  * @brief Extended sensor channel for TDK MEMS supportintg APEX features

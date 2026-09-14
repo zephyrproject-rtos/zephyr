@@ -41,15 +41,16 @@ Tests with radio activity
 =========================
 
 When there is radio activity, BabbleSim tests require at the very least a physical layer simulation
-running, and most, more than 1 simulated device. Due to this, these tests are not build and run
-with twister, but with a dedicated set of tests scripts.
+running, and most, more than 1 simulated device. Due to this, these tests are executed by running
+a dedicated script for each test which starts both the needed simulated devices, and the physical
+layer executable with their required parameters, and any other tool which may be required.
 
-These tests are kept in the :code:`tests/bsim/` folder. The ``compile.sh`` and ``run_parallel.sh``
-scripts contained in that folder are used by the CI system to build the needed images and execute
-these tests in batch.
+To be able to run them with twister, the :ref:`bsim harness <twister_bsim_harness>` should be used.
 
-See sections below for more information about how to build and run them, as well as the conventions
-they follow.
+These tests are kept in the :zephyr_file:`tests/bsim/` folder.
+
+Check the sub-sections below for more information about how to build and run them, as well as the
+conventions they follow.
 
 There are two main sets of tests:
 
@@ -68,14 +69,12 @@ found in the :ref:`bsim boards tests section<bsim_boards_tests>`.
 Test coverage and BabbleSim
 ***************************
 
-As the :ref:`nrf52_bsim<nrf52_bsim>` and :ref:`nrf5340bsim<nrf5340bsim>`, and
-:ref:`nrf54l15bsim<nrf54l15bsim>` boards are based on the POSIX architecture, you can easily collect
+As the :ref:`bsim boards <bsim boards>` are based on the POSIX architecture, you can easily collect
 test coverage information.
 
-You can use the script :zephyr_file:`tests/bsim/generate_coverage_report.sh` to generate an html
-coverage report from tests.
-
-Check :ref:`the page on coverage generation <coverage_posix>` for more info.
+Check :ref:`the page on coverage generation <coverage_posix>` for more info, and note you can
+just pass the ``--coverage`` option to twister to automatically build with
+:kconfig:option:`CONFIG_COVERAGE` and generate the coverage report.
 
 .. _BabbleSim:
    https://BabbleSim.github.io
@@ -86,9 +85,40 @@ Check :ref:`the page on coverage generation <coverage_posix>` for more info.
 Building and running the tests
 ******************************
 
-See the :ref:`nrf52_bsim` page for setting up the simulator.
+Check the :ref:`nrf52_bsim <nrf52bsim_build_and_run>` page for instructions on how to set up the
+simulator.
 
-The scripts also expect a few environment variables to be set.
+You can build and run these tests with :ref:`twister <twister_script>`.
+To run multidevice tests, you will need to pass twister the option ``--fixture bsim_multi_test``.
+
+For example, from ${ZEPHYR_BASE}, you can build and run one of the BT tests with:
+
+.. code-block:: bash
+
+   twister -p nrf52_bsim/native -T tests/bsim/bluetooth/host/adv/chain/ --fixture bsim_multi_test
+
+If the test binaries have already been built, you can also run a test directly using its individual
+test script. For example:
+
+.. code-block:: bash
+
+   BOARD=nrf52_bsim/native tests/bsim/bluetooth/host/adv/chain/tests_scripts/adv_chain.sh
+
+:ref:`Twister command line options <twister_commandline_options>` like ``-n, --no-clean``,
+``--aggressive-no-clean``, or ``-b, --build-only`` are likely to be useful when debugging or
+fixing issues.
+
+Legacy batch scripts
+====================
+
+Until the twister bsim harness was added, building and running multidevice bsim tests relied
+on two scripts in the :zephyr_file:`tests/bsim/` folder: ``compile.sh`` and ``run_parallel.sh``.
+These scripts were used by the CI system to build the needed images and execute these tests in
+batch. They were also meant as utilities for users to build and execute their tests.
+These scripts can still be used, but users are recommended to transition to using
+:ref:`twister <twister_script>` and ``tests.yaml`` definitions.
+
+These scripts expect a few environment variables to be set.
 For example, from Zephyr's root folder, you can run:
 
 .. code-block:: bash
@@ -140,21 +170,6 @@ Test code
 See the :zephyr_file:`Bluetooth sample test <tests/bsim/bluetooth/host/misc/sample_test/README.rst>` for conventions that apply to test
 code.
 
-Build scripts
--------------
-
-The build scripts ``compile.sh`` simply build all the required test and sample applications
-for the tests' scripts placed in the subfolders below.
-
-This build scripts use the common compile.source which provide a function (compile) which calls
-cmake and ninja with the provided application, configuration and overlay files.
-
-To speed up compilation for users interested only in a subset of tests, several compile scripts
-exist in several subfolders, where the upper ones call into the lower ones.
-
-Note that cmake and ninja are used directly instead of the ``west build`` wrapper as west is not
-required, and some Zephyr users do not use or have west, but still use the build and tests scripts.
-
 Test scripts
 ------------
 
@@ -176,7 +191,7 @@ building and running tests locally, debugging, etc..
 Here are the conventions:
 
 - Each test is defined by a shell script with the extension ``.sh``, in a subfolder called
-  ``test_scripts/``.
+  ``tests_scripts/``.
 - It is recommended to run a single test per script file. It allows for better parallelization of
   the runs in CI.
 - Scripts expect that the binaries they require are already built. They should not compile binaries.

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_NXP_RSTCTL
-	bool "NXP RSTCTL driver"
+	bool "NXP RSTCTL reset driver"
 	default y
 	depends on DT_HAS_NXP_RSTCTL_ENABLED
 	help

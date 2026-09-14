@@ -1,0 +1,12 @@
+identifier: dect_nr_plus_usb_dongle/nrf9151/ns
+name: DECT NR+ USB Dongle
+vendor: norik
+type: mcu
+arch: arm
+ram: 128
+flash: 192
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - serial

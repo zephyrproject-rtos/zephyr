@@ -198,7 +198,7 @@ unlock:
 int can_mcan_set_timing(const struct device *dev, const struct can_timing *timing)
 {
 	struct can_mcan_data *data = dev->data;
-	uint32_t nbtp = 0U;
+	uint32_t nbtp;
 	int err;
 
 	if (data->common.started) {
@@ -207,17 +207,13 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	nbtp |= FIELD_PREP(CAN_MCAN_NBTP_NSJW, timing->sjw - 1UL) |
+	nbtp = FIELD_PREP(CAN_MCAN_NBTP_NSJW, timing->sjw - 1UL) |
 		FIELD_PREP(CAN_MCAN_NBTP_NTSEG1, timing->phase_seg1 - 1UL) |
 		FIELD_PREP(CAN_MCAN_NBTP_NTSEG2, timing->phase_seg2 - 1UL) |
 		FIELD_PREP(CAN_MCAN_NBTP_NBRP, timing->prescaler - 1UL);
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_NBTP, nbtp);
-	if (err != 0) {
-		goto unlock;
-	}
 
-unlock:
 	k_mutex_unlock(&data->lock);
 
 	return err;
@@ -228,7 +224,7 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 {
 	const uint8_t tdco_max = FIELD_GET(CAN_MCAN_TDCR_TDCO, CAN_MCAN_TDCR_TDCO);
 	struct can_mcan_data *data = dev->data;
-	uint32_t dbtp = 0U;
+	uint32_t dbtp;
 	uint8_t tdco;
 	int err;
 
@@ -238,7 +234,7 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	dbtp |= FIELD_PREP(CAN_MCAN_DBTP_DSJW, timing_data->sjw - 1UL) |
+	dbtp = FIELD_PREP(CAN_MCAN_DBTP_DSJW, timing_data->sjw - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DTSEG1, timing_data->phase_seg1 - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DTSEG2, timing_data->phase_seg2 - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DBRP, timing_data->prescaler - 1UL);
@@ -261,9 +257,6 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 	}
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_DBTP, dbtp);
-	if (err != 0) {
-		goto unlock;
-	}
 
 unlock:
 	k_mutex_unlock(&data->lock);
@@ -482,8 +475,6 @@ static void can_mcan_state_change_handler(const struct device *dev)
 {
 	const struct can_mcan_config *config = dev->config;
 	struct can_mcan_data *data = dev->data;
-	const can_state_change_callback_t state_cb = data->common.state_change_cb;
-	void *state_cb_data = data->common.state_change_cb_user_data;
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	can_tx_callback_t tx_cb;
 	struct can_bus_err_cnt err_cnt;
@@ -496,9 +487,7 @@ static void can_mcan_state_change_handler(const struct device *dev)
 		return;
 	}
 
-	if (state_cb != NULL) {
-		state_cb(dev, state, err_cnt, state_cb_data);
-	}
+	can_fire_state_change_callbacks(dev, state, err_cnt);
 
 	if (state == CAN_STATE_BUS_OFF) {
 		/* Request all TX buffers to be cancelled */
@@ -712,7 +701,7 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 	const struct can_mcan_config *config = dev->config;
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	struct can_mcan_rx_fifo_hdr hdr;
-	struct can_frame frame = {0};
+	struct can_frame frame;
 	can_rx_callback_t cb;
 	void *user_data;
 	uint32_t get_idx;
@@ -737,6 +726,8 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			LOG_ERR("failed to read Rx FIFO header (err %d)", err);
 			return;
 		}
+
+		memset(&frame, 0, sizeof(frame));
 
 		frame.dlc = hdr.dlc;
 
@@ -1041,7 +1032,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 				  &tx_hdr, sizeof(struct can_mcan_tx_buffer_hdr));
 	if (err != 0) {
 		LOG_ERR("failed to write Tx Buffer header (err %d)", err);
-		goto err_unlock;
+		goto unlock;
 	}
 
 	if ((frame->flags & CAN_FRAME_RTR) == 0U && data_length != 0U) {
@@ -1051,7 +1042,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 					&frame->data_32, ROUND_UP(data_length, sizeof(uint32_t)));
 		if (err != 0) {
 			LOG_ERR("failed to write Tx Buffer data (err %d)", err);
-			goto err_unlock;
+			goto unlock;
 		}
 	}
 
@@ -1061,13 +1052,13 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXBAR, BIT(put_idx));
 	if (err != 0) {
 		cbs->tx[put_idx].function = NULL;
-		goto err_unlock;
+		goto unlock;
 	}
 
 	k_mutex_unlock(&data->tx_mtx);
 	return 0;
 
-err_unlock:
+unlock:
 	k_mutex_unlock(&data->tx_mtx);
 	k_sem_give(&data->tx_sem);
 
@@ -1264,15 +1255,6 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 	k_mutex_unlock(&data->lock);
 }
 
-void can_mcan_set_state_change_callback(const struct device *dev,
-					can_state_change_callback_t callback, void *user_data)
-{
-	struct can_mcan_data *data = dev->data;
-
-	data->common.state_change_cb = callback;
-	data->common.state_change_cb_user_data = user_data;
-}
-
 /* helper function allowing mcan drivers without access to private mcan
  * definitions to set CCCR_CCE, which might be needed to disable write
  * protection for some registers.
@@ -1286,18 +1268,12 @@ void can_mcan_enable_configuration_change(const struct device *dev)
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	err = can_mcan_read_reg(dev, CAN_MCAN_CCCR, &cccr);
-	if (err != 0) {
-		goto unlock;
+	if (err == 0) {
+		cccr |= CAN_MCAN_CCCR_CCE;
+
+		(void)can_mcan_write_reg(dev, CAN_MCAN_CCCR, cccr);
 	}
 
-	cccr |= CAN_MCAN_CCCR_CCE;
-
-	err = can_mcan_write_reg(dev, CAN_MCAN_CCCR, cccr);
-	if (err != 0) {
-		goto unlock;
-	}
-
-unlock:
 	k_mutex_unlock(&data->lock);
 }
 
@@ -1377,6 +1353,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 		return err;
 	}
 
+#if defined(CONFIG_CAN_FD_MODE) || defined(CONFIG_CAN_MCAN_FIXED_MRAM_LAYOUT)
 	/* 64 byte Tx Buffer data fields size */
 	reg = CAN_MCAN_TXESC_TBDS;
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXESC, reg);
@@ -1390,6 +1367,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 	if (err != 0) {
 		return err;
 	}
+#endif /* defined(CONFIG_CAN_FD_MODE) || defined(CONFIG_CAN_MCAN_FIXED_MRAM_LAYOUT) */
 
 	return 0;
 }

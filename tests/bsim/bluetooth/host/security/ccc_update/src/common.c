@@ -6,7 +6,7 @@
 
 #include "common.h"
 
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "bs_pc_backchannel.h"
 
 void backchannel_sync_send(uint channel, uint device_nbr)

@@ -17,6 +17,7 @@ supported:
   - dma
   - i2c
   - netif:eth
+  - ptp_clock
   - pwm
   - spi
   - uart

@@ -66,10 +66,10 @@ void dns_result_cb(enum dns_resolve_status status,
 
 	if (info->ai_family == NET_AF_INET) {
 		hr_family = "IPv4";
-		addr = &net_sin(&info->ai_addr)->sin_addr;
+		addr = &net_sin(net_sad(&info->ai_addr_storage))->sin_addr;
 	} else if (info->ai_family == NET_AF_INET6) {
 		hr_family = "IPv6";
-		addr = &net_sin6(&info->ai_addr)->sin6_addr;
+		addr = &net_sin6(net_sad(&info->ai_addr_storage))->sin6_addr;
 	} else {
 		LOG_ERR("Invalid IP address family %d", info->ai_family);
 		return;
@@ -115,10 +115,10 @@ void mdns_result_cb(enum dns_resolve_status status,
 
 	if (info->ai_family == NET_AF_INET) {
 		hr_family = "IPv4";
-		addr = &net_sin(&info->ai_addr)->sin_addr;
+		addr = &net_sin(net_sad(&info->ai_addr_storage))->sin_addr;
 	} else if (info->ai_family == NET_AF_INET6) {
 		hr_family = "IPv6";
-		addr = &net_sin6(&info->ai_addr)->sin6_addr;
+		addr = &net_sin6(net_sad(&info->ai_addr_storage))->sin6_addr;
 	} else {
 		LOG_ERR("Invalid IP address family %d", info->ai_family);
 		return;

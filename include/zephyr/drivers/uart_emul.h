@@ -17,6 +17,7 @@
  * @file
  *
  * @brief Public APIs for the UART device emulation drivers.
+ * @ingroup uart_emul_interface
  */
 
 /**
@@ -45,6 +46,7 @@ typedef void (*uart_emul_device_tx_data_ready_t)(const struct device *dev, size_
 
 /** Node in a linked list of emulators for UART devices */
 struct uart_emul {
+	/** Node in the controller's linked list of emulators */
 	sys_snode_t node;
 	/** Target emulator - REQUIRED for all emulated bus nodes of any type */
 	const struct emul *target;
@@ -54,6 +56,7 @@ struct uart_emul {
 
 /** Definition of the emulator API */
 struct uart_emul_device_api {
+	/** Called when there is new data in the TX buffer */
 	uart_emul_device_tx_data_ready_t tx_data_ready;
 };
 

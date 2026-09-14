@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(peripheral, LOG_LEVEL_INF);
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "bs_pc_backchannel.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 #include "babblekit/testcase.h"
 

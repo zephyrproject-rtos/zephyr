@@ -34,6 +34,8 @@ if(NOT "${ARCH}" STREQUAL "posix")
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm.cmake)
   elseif("${ARCH}" STREQUAL "arm64")
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm64.cmake)
+  elseif("${ARCH}" STREQUAL "hexagon")
+    include(${ZEPHYR_BASE}/cmake/compiler/clang/target_hexagon.cmake)
   elseif("${ARCH}" STREQUAL "riscv")
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_riscv.cmake)
   endif()
@@ -96,6 +98,25 @@ if(NOT "${ARCH}" STREQUAL "posix")
       list(APPEND CMAKE_REQUIRED_FLAGS --config=${picolibc_cfg})
       list(APPEND TOOLCHAIN_C_FLAGS --config=${picolibc_cfg})
     endif()
+  endif()
+
+  # Compiler capability probes run through try_compile(), which only sees
+  # CMAKE_REQUIRED_FLAGS. The target flags gathered in TOOLCHAIN_C_FLAGS are
+  # applied as target properties and never reach it. CMake does propagate
+  # '--target=<triple>', but the triples used by the LLVM toolchain only pin the
+  # architecture profile, so the CPU, FPU and ABI have to be passed explicitly
+  # for probe results to describe the target actually being built.
+  if("${ARCH}" STREQUAL "arm")
+    list(APPEND CMAKE_REQUIRED_FLAGS ${ARM_C_FLAGS})
+  elseif("${ARCH}" STREQUAL "arm64")
+    if(DEFINED GCC_M_CPU)
+      list(APPEND CMAKE_REQUIRED_FLAGS -mcpu=${GCC_M_CPU})
+    endif()
+    if(DEFINED GCC_M_ARCH)
+      list(APPEND CMAKE_REQUIRED_FLAGS -march=${GCC_M_ARCH})
+    endif()
+  elseif("${ARCH}" STREQUAL "riscv")
+    list(APPEND CMAKE_REQUIRED_FLAGS ${RISCV_C_FLAGS})
   endif()
 
   list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})

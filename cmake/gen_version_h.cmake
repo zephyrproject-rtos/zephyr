@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 set(ZEPHYR_BASE $ENV{ZEPHYR_BASE} CACHE PATH "Zephyr base")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ZEPHYR_BASE}/cmake/modules)
@@ -14,8 +14,7 @@ else()
 endif()
 
 if(NOT DEFINED ${BUILD_VERSION_NAME})
-  cmake_path(GET VERSION_FILE PARENT_PATH work_dir)
-  git_describe(${work_dir} ${BUILD_VERSION_NAME})
+  git_describe(${VERSION_FILE} ${BUILD_VERSION_NAME})
 endif()
 
 include(${ZEPHYR_BASE}/cmake/modules/version.cmake)

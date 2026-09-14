@@ -85,38 +85,6 @@
 			reg = <0x10000000 DT_SIZE_M(2)>;
 		};
 
-		xspi0_cs0: memory@60000000 {
-			compatible = "mmio-sram";
-			reg = <0x60000000 DT_SIZE_M(64)>;
-			ranges = <0 0x60000000 DT_SIZE_M(64)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partitions {
-				compatible = "fixed-partitions";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				loader_param: partition@0 {
-					label = "loader-param";
-					reg = <0x00000000 0x4c>;
-					read-only;
-				};
-
-				loader_program: partition@4c {
-					label = "loader-program";
-					reg = <0x0000004c (DT_SIZE_K(56) - 0x4C)>;
-					read-only;
-				};
-
-				slot0_partition: partition@e000 {
-					label = "image-0";
-					reg = <0x0000e000 (DT_SIZE_M(64) - DT_SIZE_K(56))>;
-					read-only;
-				};
-			};
-		};
-
 		cgc: clock-controller@80280000 {
 			compatible = "renesas,rz-cgc";
 			reg = <0x80280000 0x314>, <0x81280000 0x320>;
@@ -1400,7 +1368,7 @@
 			interrupts = <GIC_SPI 339 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 340 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
@@ -1411,7 +1379,7 @@
 			interrupts = <GIC_SPI 341 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 342 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

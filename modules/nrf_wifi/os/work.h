@@ -30,7 +30,7 @@ struct zep_work_item {
 	enum zep_work_type type;
 };
 
-struct zep_work_item *work_alloc(enum zep_work_type);
+struct zep_work_item *work_alloc(enum zep_work_type type);
 
 void work_init(struct zep_work_item *work, void (*callback)(unsigned long callbk_data),
 		  unsigned long data);

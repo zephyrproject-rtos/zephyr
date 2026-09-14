@@ -18,6 +18,7 @@
 #include <zephyr/cache.h>
 
 #include <stm32_ll_dma.h>
+#include <stm32_bitops.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -121,9 +122,30 @@ struct stm32_sai_sub_cfg {
 };
 
 struct stm32_sai_cfg {
-	const struct stm32_pclken *pclken;
-	size_t pclk_len;
+	const struct stm32_pclken sai_ck;
+	const struct stm32_pclken sai_ker_ck;
+	const struct stm32_pclken sai_b_ker_ck; /* Dedicated to SAIn_B, if applicable */
+	bool has_sai_ker_ck: 1;
+	bool has_sai_b_ker_ck: 1;
 };
+
+static inline void sai_sub_disable(SAI_HandleTypeDef *hsai, i2s_opt_t options)
+{
+	if ((options & I2S_OPT_BIT_CLK_GATED) == 0) {
+		LOG_DBG("SAI sub-block %p not disabled: bit clock gating disabled", hsai->Instance);
+		return;
+	}
+
+	if (hsai->Init.Synchro == SAI_SYNCHRONOUS) {
+		LOG_DBG("SAI sub-block %p not disabled: configured as synchronous peripheral",
+			hsai->Instance);
+		return;
+	}
+
+	__HAL_SAI_DISABLE(hsai);
+
+	LOG_DBG("SAI Disabled");
+}
 
 void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 {
@@ -140,7 +162,7 @@ void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 		if (stream->state != I2S_STATE_READY) {
 			stream->state = I2S_STATE_ERROR;
 			LOG_ERR("RX mem_block NULL");
-			__HAL_SAI_DISABLE(hsai);
+			sai_sub_disable(hsai, stream->i2s_cfg.options);
 			goto exit;
 		} else {
 			return;
@@ -152,21 +174,21 @@ void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 	ret = k_msgq_put(&stream->queue, &item, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
 	if (stream->state == I2S_STATE_STOPPING) {
 		stream->state = I2S_STATE_READY;
 		LOG_DBG("Stopping RX ...");
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
 	ret = k_mem_slab_alloc(stream->i2s_cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
@@ -191,7 +213,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 
 	if (stream->state == I2S_STATE_ERROR) {
 		LOG_ERR("TX bad status: %d, Stopping...", stream->state);
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
@@ -199,7 +221,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		if (stream->state != I2S_STATE_READY) {
 			stream->state = I2S_STATE_ERROR;
 			LOG_ERR("TX mem_block NULL");
-			__HAL_SAI_DISABLE(hsai);
+			sai_sub_disable(hsai, stream->i2s_cfg.options);
 			goto exit;
 		} else {
 			return;
@@ -210,7 +232,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		LOG_DBG("TX Stopped ...");
 		stream->state = I2S_STATE_READY;
 		stream->mem_block = NULL;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
@@ -220,14 +242,14 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		LOG_DBG("Exit TX callback, no more data in the queue");
 		stream->state = I2S_STATE_READY;
 		stream->mem_block = NULL;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
 	ret = k_msgq_get(&stream->queue, &item, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
@@ -285,16 +307,25 @@ static int stm32_sai_clock_en(const struct device *dev)
 	int ret;
 
 	/* Turn on SAI peripheral clock */
-	ret = clock_control_on(clk, (clock_control_subsys_t)&sai_cfg->pclken[0]);
+	ret = clock_control_on(clk, (clock_control_subsys_t)&sai_cfg->sai_ck);
 	if (ret != 0) {
 		return -EIO;
 	}
 
-	if (sai_cfg->pclk_len > 1) {
-		/* Enable SAI clock source */
-		ret = clock_control_configure(clk, (clock_control_subsys_t)&sai_cfg->pclken[1],
+	/* Configure shared SAIn_A & SAIn_B or dedicated SAIn_A kernel clock */
+	if (sai_cfg->has_sai_ker_ck) {
+		ret = clock_control_configure(clk, (clock_control_subsys_t)&sai_cfg->sai_ker_ck,
 					      NULL);
-		if (ret < 0) {
+		if (ret != 0) {
+			return -EIO;
+		}
+	}
+
+	/* Configure dedicated SAI B kernel clock */
+	if (sai_cfg->has_sai_b_ker_ck) {
+		ret = clock_control_configure(clk, (clock_control_subsys_t)&sai_cfg->sai_b_ker_ck,
+					      NULL);
+		if (ret != 0) {
 			return -EIO;
 		}
 	}
@@ -483,8 +514,8 @@ static int stm32_sai_sub_f4_clk_src_conf(const struct device *dev)
 	SAI_HandleTypeDef *hsai = &sub_data->hsai;
 	uint32_t clock_source = 0U;
 
-	if (sai_cfg->pclk_len > 1) {
-		clock_source = sai_cfg->pclken[1].bus;
+	if (sai_cfg->has_sai_ker_ck) {
+		clock_source = sai_cfg->sai_ker_ck.bus;
 	}
 
 	switch (clock_source) {
@@ -566,6 +597,8 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 			hsai->Init.AudioMode = SAI_MODESLAVE_RX;
 			if (sub_cfg->synchronous) {
 				hsai->Init.Synchro = SAI_SYNCHRONOUS;
+				LOG_WRN("Synchronous RX peripheral mode requires an active "
+					"controller with bit clock gating disabled");
 			}
 		}
 
@@ -581,6 +614,8 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 			hsai->Init.AudioMode = SAI_MODESLAVE_TX;
 			if (sub_cfg->synchronous) {
 				hsai->Init.Synchro = SAI_SYNCHRONOUS;
+				LOG_WRN("Synchronous TX peripheral mode requires an active "
+					"controller with bit clock gating disabled");
 			}
 		}
 	} else {
@@ -729,6 +764,30 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 	}
 
 	stream->state = I2S_STATE_READY;
+
+	/*
+	 * Enable immediately SAI peripheral only when the bit clock is not gated.
+	 * It allows the synchronous sub-block to become operational immediately.
+	 */
+	if (((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED) == 0) &&
+	    hsai->Init.Synchro != SAI_SYNCHRONOUS) {
+
+		__HAL_SAI_ENABLE(hsai);
+
+		if (sub_cfg->dir == I2S_DIR_TX) {
+			/* Prime the FIFO with a dummy sample so the controller
+			 * actually starts clocking out frames.
+			 */
+			stm32_reg_write(&hsai->Instance->DR, 0U);
+		} else {
+			/* Discard whatever's in DR to clear FIFO state
+			 * before the real DMA-driven reads begin.
+			 */
+			(void)stm32_reg_read(&hsai->Instance->DR);
+		}
+
+		LOG_DBG("SAI Enabled");
+	}
 
 	return 0;
 }
@@ -1053,17 +1112,27 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 	};                                                                                         \
 	DEVICE_DT_DEFINE(node, &sai_sub_init, NULL, &sub_data_##node, &sub_cfg_##node,             \
 			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_sai_api);               \
-	K_MSGQ_DEFINE(queue_##node, sizeof(struct queue_item), CONFIG_I2S_STM32_SAI_BLOCK_COUNT, 4);
+	K_MSGQ_DEFINE_STATIC_TYPE(queue_##node, struct queue_item,                                 \
+				  CONFIG_I2S_STM32_SAI_BLOCK_COUNT);
+
+#define SAI_KER_CK_FIELD_INIT(inst, n)                                                             \
+	COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(inst, n),                                              \
+		(.n = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, n), .has_##n = true,),                \
+		(.has_##n = false,))
+
+#define SAI_KER_CK_INIT(inst)                                                                      \
+	SAI_KER_CK_FIELD_INIT(inst, sai_ker_ck)                                                    \
+	SAI_KER_CK_FIELD_INIT(inst, sai_b_ker_ck)
 
 /* Controller Node */
 #define SAI_INIT(inst)                                                                             \
-	static const struct stm32_pclken clk_##inst[] = STM32_DT_INST_CLOCKS(inst);                \
 	static const struct stm32_sai_cfg sai_cfg_##inst = {                                       \
-		.pclken = clk_##inst,                                                              \
-		.pclk_len = DT_INST_NUM_CLOCKS(inst),                                              \
+		.sai_ck = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, sai_ck),                          \
+		SAI_KER_CK_INIT(inst)                                                              \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &sai_init, NULL, NULL, &sai_cfg_##inst, POST_KERNEL,           \
 			      CONFIG_I2S_INIT_PRIORITY, NULL);                                     \
+                                                                                                   \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, SAI_SUB_INIT)
 
 DT_INST_FOREACH_STATUS_OKAY(SAI_INIT)

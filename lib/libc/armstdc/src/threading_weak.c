@@ -54,7 +54,7 @@ k_tid_t __weak z_impl_k_sched_current_thread_query(void)
 	return 0;
 }
 
-int32_t __weak z_impl_k_usleep(int us)
+k_ticks_t __weak z_impl_k_sleep_ticks(k_timeout_t timeout)
 {
 	return 0;
 }

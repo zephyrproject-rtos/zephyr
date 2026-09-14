@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <argparse.h>
+#include <bsim_args_runner.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
@@ -21,7 +21,7 @@
 #include "testlib/security.h"
 
 /* This test uses system asserts to fail tests. */
-BUILD_ASSERT(__ASSERT_ON);
+BUILD_ASSERT(IS_ENABLED(CONFIG_ASSERT));
 
 #define CENTRAL_DEVICE_NBR    0
 #define PERIPHERAL_DEVICE_NBR 1

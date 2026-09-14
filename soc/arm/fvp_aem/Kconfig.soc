@@ -3,6 +3,8 @@
 
 config SOC_SERIES_FVP_AEM
 	bool
+	help
+	  Enable support for Arm FVP AEM (Architectural Envelope Model) Series
 
 config SOC_V8A
 	bool

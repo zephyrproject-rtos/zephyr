@@ -228,6 +228,18 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start)
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
+	/* All streams started from the idle state, so all subprocedures were performed */
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_codec_configured", 1,
+			   mock_cap_initiator_unicast_start_codec_configured_cb_fake.call_count);
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_qos_configured", 1,
+			   mock_cap_initiator_unicast_start_qos_configured_cb_fake.call_count);
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_enabled", 1,
+			   mock_cap_initiator_unicast_start_enabled_cb_fake.call_count);
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_connected", 1,
+			   mock_cap_initiator_unicast_start_connected_cb_fake.call_count);
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_started", 1,
+			   mock_cap_initiator_unicast_start_started_cb_fake.call_count);
+
 	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 1,
 			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);
 
@@ -421,8 +433,17 @@ static ZTEST_F(cap_initiator_test_unicast_start,
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
+	/* The streams had a different codec configuration, so the Codec Configuration
+	 * subprocedure was performed
+	 */
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_codec_configured", 1,
+			   mock_cap_initiator_unicast_start_codec_configured_cb_fake.call_count);
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_qos_configured", 1,
+			   mock_cap_initiator_unicast_start_qos_configured_cb_fake.call_count);
+
 	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 1,
 			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);
+
 	zassert_equal(0, mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0], "%d",
 		      mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0]);
 	zassert_equal_ptr(NULL, mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0],
@@ -445,9 +466,7 @@ static ZTEST_F(cap_initiator_test_unicast_start,
 
 static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_state_qos_configured)
 {
-	/* Use a different preset than fixture->preset to also verify that the codec_cfg data is
-	 * updated
-	 */
+	/* Use a different preset than fixture->preset to also verify that the QoS is updated */
 	struct bt_bap_lc3_preset preset =
 		(struct bt_bap_lc3_preset)BT_BAP_LC3_UNICAST_PRESET_48_2_1(
 			BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
@@ -476,16 +495,27 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 	/* Ensure that the stream and group QoS are different at this point*/
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
+		struct bt_bap_qos_cfg qos;
 
-		/* Verify that the QoS config was updated */
-		zassert_false(bt_bap_qos_cfg_eq(&preset.qos, bap_stream->qos));
+		err = bt_bap_unicast_client_qos_from_group(bap_stream, &qos);
+
+		zassert_false(bt_bap_qos_cfg_eq(&qos, bap_stream->qos));
 	}
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
+	/* The streams were already codec configured, so that subprocedure was skipped, but the
+	 * QoS configuration was different so that subprocedure was performed
+	 */
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_codec_configured", 0,
+			   mock_cap_initiator_unicast_start_codec_configured_cb_fake.call_count);
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_qos_configured", 1,
+			   mock_cap_initiator_unicast_start_qos_configured_cb_fake.call_count);
+
 	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 1,
 			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);
+
 	zassert_equal(0, mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0], "%d",
 		      mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0]);
 	zassert_equal_ptr(NULL, mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0],
@@ -499,7 +529,7 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
 
 		/* Verify that the QoS config was updated */
-		zassert_true(bt_bap_qos_cfg_eq(&fixture->preset.qos, bap_stream->qos));
+		zassert_true(bt_bap_qos_cfg_eq(&preset.qos, bap_stream->qos));
 	}
 }
 
@@ -525,6 +555,16 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	/* The streams were already enabled with the requested configuration and metadata, so the
+	 * Codec Configuration, QoS Configuration and Enable subprocedures were all skipped
+	 */
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_codec_configured", 0,
+			   mock_cap_initiator_unicast_start_codec_configured_cb_fake.call_count);
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_qos_configured", 0,
+			   mock_cap_initiator_unicast_start_qos_configured_cb_fake.call_count);
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_enabled", 0,
+			   mock_cap_initiator_unicast_start_enabled_cb_fake.call_count);
 
 	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 1,
 			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);

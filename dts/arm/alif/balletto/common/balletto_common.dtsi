@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/clock/alif-balletto-clocks.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -149,6 +150,209 @@
 			interrupts = <129 0>;
 			reg-shift = <2>;
 			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		/*
+		 * DesignWare I2C controllers.
+		 * hcnt-offset / lcnt-offset are the tuning offsets applied on top
+		 * of the values computed from the input clock and target speed.
+		 * Verify against the target board layout and adjust per instance if needed.
+		 */
+		i2c0: i2c@49010000 {
+			compatible = "snps,designware-i2c";
+			clocks = <&clockctrl ALIF_I2C0_SYST_PCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			hcnt-offset = <0>;
+			lcnt-offset = <0>;
+			fs-spike-len = <5>;
+			hs-spike-len = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <132 0>;
+			reg = <0x49010000 0x1000>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@49011000 {
+			compatible = "snps,designware-i2c";
+			clocks = <&clockctrl ALIF_I2C1_SYST_PCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			hcnt-offset = <0>;
+			lcnt-offset = <0>;
+			fs-spike-len = <5>;
+			hs-spike-len = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <133 0>;
+			reg = <0x49011000 0x1000>;
+			status = "disabled";
+		};
+
+		gpio0: gpio@49000000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49000000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <179 0>,
+				     <180 0>,
+				     <181 0>,
+				     <182 0>,
+				     <183 0>,
+				     <184 0>,
+				     <185 0>,
+				     <186 0>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@49001000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49001000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <187 0>,
+				     <188 0>,
+				     <189 0>,
+				     <190 0>,
+				     <191 0>,
+				     <192 0>,
+				     <193 0>,
+				     <194 0>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@49002000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49002000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <195 0>,
+				     <196 0>,
+				     <197 0>,
+				     <198 0>,
+				     <199 0>,
+				     <200 0>,
+				     <201 0>,
+				     <202 0>;
+			status = "disabled";
+		};
+
+		gpio3: gpio@49003000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49003000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <203 0>,
+				     <204 0>,
+				     <205 0>,
+				     <206 0>,
+				     <207 0>,
+				     <208 0>,
+				     <209 0>,
+				     <210 0>;
+			status = "disabled";
+		};
+
+		gpio4: gpio@49004000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49004000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <211 0>,
+				     <212 0>,
+				     <213 0>,
+				     <214 0>,
+				     <215 0>,
+				     <216 0>,
+				     <217 0>,
+				     <218 0>;
+			status = "disabled";
+		};
+
+		gpio5: gpio@49005000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49005000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <219 0>,
+				     <220 0>,
+				     <221 0>,
+				     <222 0>,
+				     <223 0>,
+				     <224 0>,
+				     <225 0>,
+				     <226 0>;
+			status = "disabled";
+		};
+
+		gpio6: gpio@49006000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49006000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <227 0>,
+				     <228 0>,
+				     <229 0>,
+				     <230 0>,
+				     <231 0>,
+				     <232 0>,
+				     <233 0>,
+				     <234 0>;
+			status = "disabled";
+		};
+
+		gpio7: gpio@49007000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49007000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <235 0>,
+				     <236 0>,
+				     <237 0>,
+				     <238 0>,
+				     <239 0>,
+				     <240 0>,
+				     <241 0>,
+				     <242 0>;
+			status = "disabled";
+		};
+
+		gpio8: gpio@49008000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49008000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <243 0>,
+				     <244 0>,
+				     <245 0>,
+				     <246 0>,
+				     <247 0>,
+				     <248 0>,
+				     <249 0>,
+				     <250 0>;
+			status = "disabled";
+		};
+
+		/*
+		 * LPGPIO sits in the Always-On domain and is reached through a
+		 * separate pin control region. It is two pins wide.
+		 */
+		lpgpio: gpio@42002000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x42002000 0x1000>;
+			ngpios = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <171 0>, <172 0>;
 			status = "disabled";
 		};
 	};

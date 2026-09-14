@@ -18,6 +18,10 @@ supported:
   - gpio
   - i2c
   - net
+  - netif:eth
+  - ptp_clock
+  - pwm
+  - spi
   - uart
   - watchdog
 testing:

@@ -469,6 +469,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	enum http_compression chosen_compression = 0;
 	int len;
 	int remaining;
+	size_t file_size;
 	char tmp[64];
 
 	if (client->method != HTTP_GET) {
@@ -493,10 +494,10 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 
 	/* open file, if it exists */
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
-	ret = http_server_find_file(fname, sizeof(fname), &client->data_len,
+	ret = http_server_find_file(fname, sizeof(fname), &file_size,
 					client->supported_compression, &chosen_compression);
 #else
-	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, 0, NULL);
+	ret = http_server_find_file(fname, sizeof(fname), &file_size, 0, NULL);
 #endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
@@ -519,7 +520,9 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 
 	/* send headers */
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
-		res_detail.content_encoding = http_compression_text(chosen_compression);
+		if (chosen_compression != HTTP_NONE) {
+			res_detail.content_encoding = http_compression_text(chosen_compression);
+		}
 	}
 	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier, &res_detail, 0,
 				 NULL, 0);
@@ -529,7 +532,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* read and send file */
-	remaining = client->data_len;
+	remaining = file_size;
 	while (remaining > 0) {
 		len = fs_read(&file, tmp, sizeof(tmp));
 		if (len < 0) {
@@ -798,6 +801,10 @@ static int handle_http2_dynamic_resource(
 		return -ESRCH;
 	}
 
+	if (client->current_stream == NULL) {
+		return -ENOENT;
+	}
+
 	user_method = dynamic_detail->common.bitmask_of_supported_http_methods;
 
 	if (!(BIT(client->method) & user_method)) {
@@ -966,6 +973,17 @@ static int enter_http_frame_continuation_state(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
 
+	/* Current_stream is only preserved for an expected
+	 * continuation, so a NULL pointer here means the peer sent a
+	 * stray CONTINUATION frame.
+	 */
+	if (client->current_stream == NULL ||
+	    client->current_stream->stream_id != frame->stream_identifier) {
+		LOG_DBG("Unexpected CONTINUATION frame for stream ID %d",
+			frame->stream_identifier);
+		return -ENOENT;
+	}
+
 	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
 		client->expect_continuation = true;
 	} else {
@@ -1027,7 +1045,14 @@ int handle_http_frame_header(struct http_client_ctx *client)
 		return -EBADMSG;
 	}
 
-	client->current_stream = NULL;
+	/* The stream context is bound when the header block starts and has to
+	 * stay valid until that block is complete, i. e. across the
+	 * CONTINUATION frames that carry the rest of it. Only release it when
+	 * the previous frame actually ended a block.
+	 */
+	if (!client->expect_continuation) {
+		client->current_stream = NULL;
+	}
 
 	switch (client->current_frame.type) {
 	case HTTP2_DATA_FRAME:

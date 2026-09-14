@@ -113,6 +113,7 @@
 
 &gpio2 {
 	status = "okay";
+	/delete-property/ hspadctrl-supported;
 };
 
 &gpiote20 {
@@ -135,5 +136,13 @@
 };
 
 &clock {
+	status = "okay";
+};
+
+&xo {
+	status = "okay";
+};
+
+&lfclk {
 	status = "okay";
 };

@@ -207,6 +207,17 @@ ZTEST(mheap_api, test_mheap_malloc_free)
 
 
 
+/**
+ * @brief Test to demonstrate k_realloc() API usage
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The test resizes blocks previously allocated from the system heap
+ * with k_realloc(), growing and shrinking allocations and verifying the
+ * contents are preserved and that allocation back to the system heap works.
+ *
+ * @see k_realloc()
+ */
 ZTEST(mheap_api, test_mheap_realloc)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
@@ -261,6 +272,17 @@ ZTEST(mheap_api, test_mheap_calloc)
 	k_free(mem);
 }
 
+/**
+ * @brief Test to demonstrate k_aligned_alloc() API usage
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The test allocates blocks from the system heap with k_aligned_alloc()
+ * using several alignment values and verifies each returned pointer satisfies
+ * the requested alignment before freeing it.
+ *
+ * @see k_aligned_alloc()
+ */
 ZTEST(mheap_api, test_k_aligned_alloc)
 {
 	void *r;
@@ -301,7 +323,9 @@ ZTEST(mheap_api, test_k_aligned_alloc)
  *
  * @ingroup k_heap_api_tests
  *
- * @see k_thread_system_pool_assign(), z_thread_malloc(), k_free()
+ * @see k_thread_system_pool_assign()
+ * @see z_thread_malloc()
+ * @see k_free()
  */
 ZTEST(mheap_api, test_sys_heap_mem_pool_assign)
 {
@@ -330,7 +354,8 @@ ZTEST(mheap_api, test_sys_heap_mem_pool_assign)
  *
  * @ingroup k_heap_api_tests
  *
- * @see z_thread_malloc(), k_free()
+ * @see z_thread_malloc()
+ * @see k_free()
  */
 ZTEST(mheap_api, test_malloc_in_isr)
 {

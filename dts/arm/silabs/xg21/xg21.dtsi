@@ -42,6 +42,13 @@
 			clocks = <&lfrco>;
 		};
 
+		exportclk: exportclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <1>;
+			clocks = <&sysclk>;
+		};
+
 		hclk: hclk {
 			compatible = "fixed-factor-clock";
 			#clock-cells = <0>;
@@ -178,6 +185,29 @@
 			interrupt-names = "cmu";
 			interrupts = <48 2>;
 			status = "okay";
+
+			clkout: clkout {
+				compatible = "silabs,series-clock-output";
+				#address-cells = <1>;
+				#clock-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				clkout0: clock-output@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				clkout1: clock-output@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				clkout2: clock-output@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+			};
 		};
 
 		clk_hfxo: hfxo: hfxo@5000c000 {
@@ -326,7 +356,9 @@
 			compatible = "silabs,ldma";
 			reg = <0x50040000 0x4000>;
 			#dma-cells = <1>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>;
+			clock-names = "ldma", "xbar";
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>,
+				 <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			dma-channels = <8>;
 			interrupt-names = "ldma";
 			interrupts = <21 2>;

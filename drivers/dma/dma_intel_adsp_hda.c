@@ -442,8 +442,6 @@ int intel_adsp_hda_dma_get_attribute(const struct device *dev, uint32_t type, ui
 	return 0;
 }
 
-#define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
-
 void intel_adsp_hda_dma_isr(void)
 {
 #if CONFIG_DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
@@ -455,10 +453,10 @@ void intel_adsp_hda_dma_isr(void)
 	atomic_val_t enabled_chs;
 	const struct device *host_dev[] = {
 #if CONFIG_DMA_INTEL_ADSP_HDA_HOST_OUT
-		DT_FOREACH_STATUS_OKAY(intel_adsp_hda_host_out, DEVICE_DT_GET_AND_COMMA)
+		DT_FOREACH_STATUS_OKAY(intel_adsp_hda_host_out, DEVICE_DT_GET_COMMA)
 #endif
 #if CONFIG_DMA_INTEL_ADSP_HDA_HOST_IN
-		DT_FOREACH_STATUS_OKAY(intel_adsp_hda_host_in, DEVICE_DT_GET_AND_COMMA)
+		DT_FOREACH_STATUS_OKAY(intel_adsp_hda_host_in, DEVICE_DT_GET_COMMA)
 #endif
 	};
 

@@ -1,5 +1,7 @@
 common:
   depends_on: netif
+  platform_allow:
+    - native_sim
   tags:
     - net
     - dhcpv4

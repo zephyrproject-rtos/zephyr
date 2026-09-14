@@ -14,6 +14,22 @@ config MODBUS_BUFFER_SIZE
 	help
 	  Modbus buffer size.
 
+config MODBUS_WORKQUEUE
+	bool "Use dedicated workqueue in Modbus"
+	help
+	  Use the dedicated queue to process received ADUs if the system work
+	  queue cannot be used due to performance issues or other conflicts.
+	  For example, a client transaction can time out when the system work
+	  queue is busy or is itself the caller's context, because response
+	  handling shares that single queue.
+
+config MODBUS_STACK_SIZE
+	int "Modbus workqueue stack size"
+	depends on MODBUS_WORKQUEUE
+	default 1024
+	help
+	  Modbus workqueue stack size.
+
 choice
 	prompt "Supported node roles"
 	default MODBUS_ROLE_CLIENT_SERVER

@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Routes one transmit channel and one receive channel to the same
+ * pad, so the frame loops back internally without external wiring.
+ */
+
+&pinctrl {
+	pulse_io_loopback: pulse_io_loopback {
+		group1 {
+			pinmux = <RMT_OUT0_GPIO13>;
+		};
+
+		group2 {
+			pinmux = <RMT_IN0_GPIO13>;
+			input-enable;
+		};
+	};
+};
+
+&rmt {
+	pinctrl-0 = <&pulse_io_loopback>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/ {
+	aliases {
+		pulse-io0 = &rmt;
+	};
+};

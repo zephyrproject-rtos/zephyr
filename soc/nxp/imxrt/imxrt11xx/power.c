@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2021, 2025 NXP
+ * Copyright (c) 2021, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/arch/arch_interface.h>
 #include <fsl_dcdc.h>
 #include <fsl_gpc.h>
 #include <zephyr/dt-bindings/power/imx_spc.h>
@@ -232,6 +233,8 @@ static void dcdc_init(void)
 
 static void system_enter_sleep(gpc_cpu_mode_t gpc_mode)
 {
+	unsigned int key;
+
 	__ASSERT_NO_MSG(gpc_mode != kGPC_RunMode);
 
 	if (gpc_mode == kGPC_WaitMode) {
@@ -241,19 +244,11 @@ static void system_enter_sleep(gpc_cpu_mode_t gpc_mode)
 		/* Set SLEEPDEEP bit to enter STOP mode */
 		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 	}
-	/* When this function is entered the Kernel has disabled
-	 * interrupts using BASEPRI register. We will clear BASEPRI, and use PRIMASK
-	 * to disable interrupts, so that the WFI instruction works correctly.
-	 */
-
-	/* Set PRIMASK */
-	__disable_irq();
-	/* Set BASEPRI to 0 */
-	irq_unlock(0);
-
 	/* WFI instruction will start entry into WAIT/STOP mode */
 	LOG_DBG("Entering LPM via WFI");
+	key = arch_pm_state_set_prepare();
 	__WFI();
+	arch_pm_state_set_finish(key);
 }
 
 void cpu_mode_transition(gpc_cpu_mode_t mode, bool enable_standby)
@@ -310,8 +305,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
-	/* Clear PRIMASK */
-	__enable_irq();
 	LOG_DBG("Exiting LPM");
 	LOG_DBG("CM7 mode was %d", GPC_CM_GetPreviousCpuMode(GPC_CPU_MODE_CTRL_0));
 	LOG_DBG("CM4 mode was %d", GPC_CM_GetPreviousCpuMode(GPC_CPU_MODE_CTRL_1));

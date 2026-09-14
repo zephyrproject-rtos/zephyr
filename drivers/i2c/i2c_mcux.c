@@ -102,9 +102,9 @@ static void i2c_mcux_async_iter(const struct device *dev);
 
 #endif
 
-static void i2c_mcux_master_transfer_callback(I2C_Type *base,
-					      i2c_master_handle_t *handle,
-					      status_t status, void *userdata)
+static void i2c_mcux_controller_transfer_callback(I2C_Type *base,
+						  i2c_master_handle_t *handle,
+						  status_t status, void *userdata)
 {
 
 	ARG_UNUSED(handle);
@@ -449,7 +449,7 @@ static int i2c_mcux_target_register(const struct device *dev,
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = dev->config;
 	struct i2c_mcux_data *data = dev->data;
-	i2c_slave_config_t slave_config;
+	i2c_slave_config_t target_cfg;
 	uint32_t clock_freq;
 
 	if (!target_config || !target_config->callbacks) {
@@ -467,12 +467,12 @@ static int i2c_mcux_target_register(const struct device *dev,
 	data->target_first_rxtx = true;
 	data->target_receiving = false;
 
-	I2C_SlaveGetDefaultConfig(&slave_config);
-	slave_config.slaveAddress = target_config->address;
+	I2C_SlaveGetDefaultConfig(&target_cfg);
+	target_cfg.slaveAddress = target_config->address;
 
 	clock_freq = CLOCK_GetFreq(config->clock_source);
 
-	I2C_SlaveInit(base, &slave_config, clock_freq);
+	I2C_SlaveInit(base, &target_cfg, clock_freq);
 	I2C_SlaveClearStatusFlags(base, kClearFlags);
 	I2C_SlaveTransferCreateHandle(base, &data->target_handle, i2c_mcux_target_transfer_cb,
 				      (void *)dev);
@@ -525,17 +525,17 @@ static int i2c_mcux_init(const struct device *dev)
 	const struct i2c_mcux_config *config = dev->config;
 	struct i2c_mcux_data *data = dev->data;
 	uint32_t clock_freq, bitrate_cfg;
-	i2c_master_config_t master_config;
+	i2c_master_config_t controller_config;
 	int error;
 
 	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	clock_freq = CLOCK_GetFreq(config->clock_source);
-	I2C_MasterGetDefaultConfig(&master_config);
-	I2C_MasterInit(base, &master_config, clock_freq);
+	I2C_MasterGetDefaultConfig(&controller_config);
+	I2C_MasterInit(base, &controller_config, clock_freq);
 	I2C_MasterTransferCreateHandle(base, &data->handle,
-				       i2c_mcux_master_transfer_callback, (void *)dev);
+				       i2c_mcux_controller_transfer_callback, (void *)dev);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 

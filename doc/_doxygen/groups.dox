@@ -299,6 +299,13 @@
 @{
 @}
 
+@brief Management Component Transport Protocol (MCTP)
+@defgroup mctp MCTP
+@ingroup device_mgmt
+@details Bus bindings connecting Zephyr transports to the libmctp protocol stack.
+@{
+@}
+
 @brief Connectivity
 @defgroup connectivity Connectivity
 @ingroup os_services

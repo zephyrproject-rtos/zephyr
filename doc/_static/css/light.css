@@ -33,6 +33,17 @@
     --external-reference-icon: url("data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEyIiB3aWR0aD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWE1YThhIj48cGF0aCBkPSJtNy41IDcuMXYzLjRoLTZ2LTZoMy40Ii8+PHBhdGggZD0ibTUuNzY1IDFoNS4yMzV2NS4zOWwtMS41NzMgMS41NDctMS4zMS0xLjMxLTIuNzI0IDIuNzIzLTIuNjktMi42ODggMi44MS0yLjgwOC0xLjMxMy0xLjMxeiIvPjwvZz48L3N2Zz4=");
     --classref-badge-text-color: hsl(0, 0%, 45%);
 
+    /* Definition terms */
+    --term-color: #1a1a1a;
+
+    /* Signature blocks */
+    --sig-background-color: #e8edf4;
+    --sig-border-color: #8996a8;
+
+    /* Heading rails */
+    --heading-accent-color: #1a5c8a;
+    --heading-rule-color: #8996a8;
+
     --hr-color: #e1e4e5;
     --table-row-odd-background-color: #f3f6f6;
     --code-background-color: #fff;

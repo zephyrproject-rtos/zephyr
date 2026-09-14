@@ -21,7 +21,7 @@
 #include "common.h"
 #include "settings.h"
 
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"

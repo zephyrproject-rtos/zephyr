@@ -1300,7 +1300,7 @@ ZTEST(mcp_server_tests, test_10_invalid_execution_tokens)
 
 	mcp_safe_strcpy(used_token, sizeof(used_token), last_execution_token);
 
-	zassert_not_equal(used_token, 0, "Should have captured the execution token");
+	zassert_not_equal(used_token[0], '\0', "Should have captured the execution token");
 
 	printk("=== Test 3a: Attempting to reuse token %s ===\n", used_token);
 	ret = mcp_server_submit_tool_message(server, &tool_msg, used_token);
@@ -1409,7 +1409,7 @@ ZTEST(mcp_server_tests, test_11_health_monitor)
 				"{\"test\":\"idle\"}");
 	memset(execution_token_idle, 0, sizeof(execution_token_idle));
 	mcp_safe_strcpy(execution_token_idle, sizeof(execution_token_idle), last_execution_token);
-	zassert_not_equal(execution_token_idle, 0,
+	zassert_not_equal(execution_token_idle[0], '\0',
 			  "Execution token should be captured for idle test");
 
 	k_msleep(CONFIG_MCP_TOOL_IDLE_TIMEOUT_MS / 2);
@@ -1432,7 +1432,7 @@ ZTEST(mcp_server_tests, test_11_health_monitor)
 	memset(execution_token_cancel, 0, sizeof(execution_token_cancel));
 	mcp_safe_strcpy(execution_token_cancel, sizeof(execution_token_cancel),
 			last_execution_token);
-	zassert_not_equal(execution_token_cancel, 0,
+	zassert_not_equal(execution_token_cancel[0], '\0',
 			  "Execution token should be captured for idle test");
 
 	k_msleep(CONFIG_MCP_TOOL_IDLE_TIMEOUT_MS / 2);
@@ -1456,6 +1456,27 @@ ZTEST(mcp_server_tests, test_11_health_monitor)
 	mcp_server_remove_tool(server, "cancel_timeout_tool");
 
 	printk("=== Health monitor test completed ===\n");
+}
+
+/* A tools/call argument object with an unbalanced brace inside a string value
+ * must reach the tool intact. A byte-level brace counter closes the object early
+ * at the in-string '}'; the JSON object walker is string-aware, so the whole
+ * object is delivered.
+ */
+ZTEST(mcp_server_tests, test_12_tools_call_arguments_braces_in_string)
+{
+	reset_tool_execution_tracking();
+	register_test_tools();
+
+	send_tools_call_request(valid_client_binding, 3200, "test_success_tool",
+				"{\"filter\":\"a}b\"}");
+
+	zassert_equal(tool_execution_count, 1, "tool should execute once");
+	zassert_true(strcmp(last_execution_arguments, "{\"filter\":\"a}b\"}") == 0,
+		     "arguments with a brace in a string must reach the tool intact, got '%s'",
+		     last_execution_arguments);
+
+	cleanup_test_tools();
 }
 
 static void *mcp_server_tests_setup(void)

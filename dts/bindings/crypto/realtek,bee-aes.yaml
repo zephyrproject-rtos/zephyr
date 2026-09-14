@@ -1,0 +1,11 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek Bee family AES hardware accelerator.
+
+  Supports AES-128 and AES-256 in ECB, CBC, CFB, OFB and CTR modes on Realtek Bee family SoCs.
+
+compatible: "realtek,bee-aes"
+
+include: base.yaml

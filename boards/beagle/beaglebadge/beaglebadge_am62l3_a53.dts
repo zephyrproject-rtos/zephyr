@@ -93,7 +93,7 @@
 
 		clk-gpios = <&main_gpio0 89 GPIO_ACTIVE_HIGH>;
 		cs-gpios = <&main_gpio0 87 GPIO_ACTIVE_LOW>;
-		mosi-gpios = <&main_gpio0 91 GPIO_ACTIVE_HIGH>;
+		sdo-gpios = <&main_gpio0 91 GPIO_ACTIVE_HIGH>;
 	};
 
 	mipi_dbi {

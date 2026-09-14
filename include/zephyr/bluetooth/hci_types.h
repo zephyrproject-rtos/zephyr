@@ -4679,6 +4679,7 @@ struct bt_hci_evt_le_conn_rate_change {
 #define BT_HCI_ERR_LINK_KEY_CANNOT_BE_CHANGED   0x26
 #define BT_HCI_ERR_REQUESTED_QOS_NOT_SUPPORTED  0x27
 #define BT_HCI_ERR_INSTANT_PASSED               0x28
+/** Pairing with Unit Key Not Supported. This error is only valid for BR/EDR. */
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED        0x29
 #define BT_HCI_ERR_DIFF_TRANS_COLLISION         0x2a
 #define BT_HCI_ERR_QOS_UNACCEPTABLE_PARAM       0x2c

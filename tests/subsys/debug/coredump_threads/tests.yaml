@@ -14,12 +14,10 @@ common:
     - qemu_cortex_a53/qemu_cortex_a53/smp
 tests:
   debug.coredump.threads:
-    platform_exclude:
-      # In S-mode ARCH_EXCEPT calls z_riscv_fatal_error() with esf=NULL;
-      # arch_coredump_info_dump() returns immediately when esf is NULL so
-      # the coredump output is never produced.
-      - qemu_riscv64/qemu_virt_riscv64/smode
-    filter: CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS
+    # In S-mode ARCH_EXCEPT calls z_riscv_fatal_error() with esf=NULL;
+    # arch_coredump_info_dump() returns immediately when esf is NULL so
+    # the coredump output is never produced.
+    filter: CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS and not CONFIG_RISCV_S_MODE
     harness: console
     harness_config:
       type: multi_line

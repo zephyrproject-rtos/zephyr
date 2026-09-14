@@ -45,6 +45,8 @@ static inline void z_vrfy_ztest_set_fault_valid(bool valid)
 __weak void ztest_post_fatal_error_hook(unsigned int reason,
 		const struct arch_esf *pEsf)
 {
+	ARG_UNUSED(reason);
+	ARG_UNUSED(pEsf);
 }
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)

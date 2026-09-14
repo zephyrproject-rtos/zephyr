@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2017 Christian Taedcke
 
-zephyr_include_directories(${SOC_FAMILY})
-zephyr_include_directories(${SOC_FAMILY}/${SOC_SERIES})
+zephyr_include_directories(${CONFIG_SOC_FAMILY})
+zephyr_include_directories(${CONFIG_SOC_FAMILY}/${CONFIG_SOC_SERIES})
 
 add_subdirectory(common)
 

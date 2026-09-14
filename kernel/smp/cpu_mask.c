@@ -4,11 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <kspinlock.h>
 #include <ksched.h>
 #include <zephyr/spinlock.h>
-
-extern struct k_spinlock _sched_spinlock;
-
 
 # ifdef CONFIG_SMP
 /* The mask width scales with CONFIG_MP_MAX_NUM_CPUS, up to 32 bits */
@@ -25,7 +23,7 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 		 "Running threads cannot change CPU pin");
 #endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 
-	K_SPINLOCK(&_sched_spinlock) {
+	Z_SCHED_SPINLOCK {
 		if (z_is_thread_prevented_from_running(thread)) {
 			thread->base.cpu_mask |= enable_mask;
 			thread->base.cpu_mask  &= ~disable_mask;

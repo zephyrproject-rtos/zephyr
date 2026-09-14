@@ -39,6 +39,7 @@ int main(void)
 	__maybe_unused const struct device *sqn_gm02s = DEVICE_DT_GET_ONE(sqn_gm02s);
 	__maybe_unused const struct device *st_st87mxx = DEVICE_DT_GET_ONE(st_st87mxx);
 	__maybe_unused const struct device *trasna_lexi_r10 = DEVICE_DT_GET_ONE(trasna_lexi_r10);
+	__maybe_unused const struct device *quectel_bg770 = DEVICE_DT_GET_ONE(quectel_bg770);
 
 #elif defined(CONFIG_MODEM_HL78XX)
 	/** Validate driver compiled in. */

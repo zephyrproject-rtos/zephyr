@@ -313,14 +313,21 @@ struct dma_context {
 #define DMA_MAGIC 0x47494749
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * These are for internal use only, so skip these in
- * public documentation.
+ * @def_driverbackendgroup{DMA,dma_interface}
+ * @{
+ */
+
+/**
+ * @brief Configure individual channel for DMA transfer.
+ * See dma_config() for argument descriptions.
  */
 typedef int (*dma_api_config)(const struct device *dev, uint32_t channel,
 			      struct dma_config *config);
 
+/**
+ * @brief Reload buffer(s) for a DMA channel.
+ * See dma_reload() for argument descriptions.
+ */
 #ifdef CONFIG_DMA_64BIT
 typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel,
 			      uint64_t src, uint64_t dst, size_t size);
@@ -329,17 +336,41 @@ typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel,
 			      uint32_t src, uint32_t dst, size_t size);
 #endif
 
+/**
+ * @brief Enable DMA channel and start the transfer.
+ * See dma_start() for argument descriptions.
+ */
 typedef int (*dma_api_start)(const struct device *dev, uint32_t channel);
 
+/**
+ * @brief Stop the DMA transfer and disable the channel.
+ * See dma_stop() for argument descriptions.
+ */
 typedef int (*dma_api_stop)(const struct device *dev, uint32_t channel);
 
+/**
+ * @brief Suspend a DMA channel transfer.
+ * See dma_suspend() for argument descriptions.
+ */
 typedef int (*dma_api_suspend)(const struct device *dev, uint32_t channel);
 
+/**
+ * @brief Resume a DMA channel transfer.
+ * See dma_resume() for argument descriptions.
+ */
 typedef int (*dma_api_resume)(const struct device *dev, uint32_t channel);
 
+/**
+ * @brief Get current runtime status of DMA transfer.
+ * See dma_get_status() for argument descriptions.
+ */
 typedef int (*dma_api_get_status)(const struct device *dev, uint32_t channel,
 				  struct dma_status *status);
 
+/**
+ * @brief Get attribute of a DMA controller.
+ * See dma_get_attribute() for argument descriptions.
+ */
 typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, uint32_t *value);
 
 /**
@@ -370,21 +401,37 @@ typedef bool (*dma_api_chan_filter)(const struct device *dev,
 typedef void (*dma_api_chan_release)(const struct device *dev,
 				     uint32_t channel);
 
+/**
+ * @driver_ops{DMA}
+ */
 __subsystem struct dma_driver_api {
+	/** @driver_ops_mandatory @copybrief dma_config */
 	dma_api_config config;
+	/** @driver_ops_optional @copybrief dma_reload */
 	dma_api_reload reload;
+	/** @driver_ops_mandatory @copybrief dma_start */
 	dma_api_start start;
+	/** @driver_ops_optional @copybrief dma_stop */
 	dma_api_stop stop;
+	/** @driver_ops_optional @copybrief dma_suspend */
 	dma_api_suspend suspend;
+	/** @driver_ops_optional @copybrief dma_resume */
 	dma_api_resume resume;
+	/** @driver_ops_optional @copybrief dma_get_status */
 	dma_api_get_status get_status;
+	/** @driver_ops_optional @copybrief dma_get_attribute */
 	dma_api_get_attribute get_attribute;
+	/** @driver_ops_optional @copybrief dma_chan_filter */
 	dma_api_chan_filter chan_filter;
+	/**
+	 * @driver_ops_optional Release channel resources allocated during the
+	 * request phase.
+	 * See dma_release_channel() for details.
+	 */
 	dma_api_chan_release chan_release;
 };
-/**
- * @endcond
- */
+
+/** @} */
 
 /**
  * @brief Configure individual channel for DMA transfer.

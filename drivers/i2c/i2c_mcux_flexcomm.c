@@ -116,10 +116,10 @@ static int mcux_flexcomm_configure(const struct device *dev,
 	return 0;
 }
 
-static void mcux_flexcomm_master_transfer_callback(I2C_Type *base,
-						   i2c_master_handle_t *handle,
-						   status_t status,
-						   void *userData)
+static void mcux_flexcomm_controller_transfer_callback(I2C_Type *base,
+						       i2c_master_handle_t *handle,
+						       status_t status,
+						       void *userData)
 {
 	struct mcux_flexcomm_data *data = userData;
 
@@ -456,7 +456,7 @@ static void i2c_target_transfer_callback(I2C_Type *base,
 	}
 }
 
-static int mcux_flexcomm_setup_slave_config(const struct device *dev)
+static int mcux_flexcomm_setup_target_config(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
@@ -511,7 +511,7 @@ int mcux_flexcomm_target_register(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (mcux_flexcomm_setup_slave_config(dev) < 0) {
+	if (mcux_flexcomm_setup_target_config(dev) < 0) {
 		return -EINVAL;
 	}
 
@@ -542,8 +542,8 @@ int mcux_flexcomm_target_unregister(const struct device *dev,
 	data->nr_targets_attached--;
 
 	if (data->nr_targets_attached > 0) {
-		/* still slaves attached, reconfigure the I2C peripheral after address removal */
-		if (mcux_flexcomm_setup_slave_config(dev) < 0) {
+		/* still targets attached, reconfigure the I2C peripheral after address removal */
+		if (mcux_flexcomm_setup_target_config(dev) < 0) {
 			return -EINVAL;
 		}
 
@@ -577,7 +577,7 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 	struct mcux_flexcomm_data *data = dev->data;
 	I2C_Type *base = config->base;
 	uint32_t clock_freq, bitrate_cfg;
-	i2c_master_config_t master_config;
+	i2c_master_config_t controller_config;
 	int error;
 
 	if (!device_is_ready(config->reset.dev)) {
@@ -615,11 +615,11 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 		return -EINVAL;
 	}
 
-	I2C_MasterGetDefaultConfig(&master_config);
-	master_config.enableMaster = false;
-	I2C_MasterInit(base, &master_config, clock_freq);
+	I2C_MasterGetDefaultConfig(&controller_config);
+	controller_config.enableMaster = false;
+	I2C_MasterInit(base, &controller_config, clock_freq);
 	I2C_MasterTransferCreateHandle(base, &data->handle,
-				       mcux_flexcomm_master_transfer_callback,
+				       mcux_flexcomm_controller_transfer_callback,
 				       data);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);

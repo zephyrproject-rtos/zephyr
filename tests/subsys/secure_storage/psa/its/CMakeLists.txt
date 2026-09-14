@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(app)
 
@@ -6,6 +6,9 @@ target_sources(app PRIVATE src/main.c)
 
 zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_CUSTOM
   src/custom_transform.c)
+
+zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
+  src/custom_aead_crypt.c)
 
 zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
   src/custom_store.c)

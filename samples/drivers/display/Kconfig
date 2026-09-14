@@ -15,6 +15,7 @@ config SAMPLE_BUFFER_ADDR_ALIGN
 
 config SAMPLE_PITCH_ALIGN
 	int "The update area pitch alignment"
+	default 8 if UC81XX
 	default 1
 
 config HEAP_MEM_POOL_ADD_SIZE_SAMPLE

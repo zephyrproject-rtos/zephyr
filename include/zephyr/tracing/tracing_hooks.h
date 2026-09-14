@@ -103,54 +103,22 @@
 #endif
 
 /**
- * @brief Called when entering k_thread_sleep
- * @param timeout Timeout period
+ * @brief Called when entering k_sleep_ticks
+ * @param timeout Timeout period, in system ticks, whose rate is given by
+ *                CONFIG_SYS_CLOCK_TICKS_PER_SEC
  */
-#ifndef sys_port_trace_k_thread_sleep_enter
-#define sys_port_trace_k_thread_sleep_enter(timeout)
+#ifndef sys_port_trace_k_thread_sleep_ticks_enter
+#define sys_port_trace_k_thread_sleep_ticks_enter(timeout)
 #endif
 
 /**
- * @brief Called when exiting k_thread_sleep
- * @param timeout Timeout period
- * @param ret Return value
+ * @brief Called when exiting k_sleep_ticks
+ * @param timeout Timeout period, in system ticks, whose rate is given by
+ *                CONFIG_SYS_CLOCK_TICKS_PER_SEC
+ * @param ret Time left to sleep, in those same ticks
  */
-#ifndef sys_port_trace_k_thread_sleep_exit
-#define sys_port_trace_k_thread_sleep_exit(timeout, ret)
-#endif
-
-/**
- * @brief Called when entering k_thread_msleep
- * @param ms Duration in milliseconds
- */
-#ifndef sys_port_trace_k_thread_msleep_enter
-#define sys_port_trace_k_thread_msleep_enter(ms)
-#endif
-
-/**
- * @brief Called when exiting k_thread_msleep
- * @param ms Duration in milliseconds
- * @param ret Return value
- */
-#ifndef sys_port_trace_k_thread_msleep_exit
-#define sys_port_trace_k_thread_msleep_exit(ms, ret)
-#endif
-
-/**
- * @brief Called when entering k_thread_usleep
- * @param us Duration in microseconds
- */
-#ifndef sys_port_trace_k_thread_usleep_enter
-#define sys_port_trace_k_thread_usleep_enter(us)
-#endif
-
-/**
- * @brief Called when exiting k_thread_usleep
- * @param us Duration in microseconds
- * @param ret Return value
- */
-#ifndef sys_port_trace_k_thread_usleep_exit
-#define sys_port_trace_k_thread_usleep_exit(us, ret)
+#ifndef sys_port_trace_k_thread_sleep_ticks_exit
+#define sys_port_trace_k_thread_sleep_ticks_exit(timeout, ret)
 #endif
 
 /**

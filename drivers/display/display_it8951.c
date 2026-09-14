@@ -907,7 +907,7 @@ static DEVICE_API(display, it8951_api) = {
 #define IT8951_DEFINE(inst)                                                                        \
 	static uint8_t it8951_row_spi_##inst[IT8951_ROW_SPI_BUF_SIZE(inst)];                       \
 	static const struct it8951_config it8951_cfg_##inst = {                                    \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),          \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8U)),      \
 		.busy_gpio = GPIO_DT_SPEC_INST_GET(inst, busy_gpios),                              \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
 		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),                  \

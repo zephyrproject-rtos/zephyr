@@ -29,6 +29,7 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 	struct net_if *filtered_iface = NULL;
 	enum net_verdict verdict;
 	sys_slist_t *interfaces;
+	const struct device *dev;
 
 	interfaces = &iface->config.virtual_interfaces;
 
@@ -37,7 +38,11 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 			continue;
 		}
 
-		api = net_if_get_device(ctx->virtual_iface)->api;
+		dev = net_if_get_device(ctx->virtual_iface);
+
+		NET_ASSERT(dev != NULL);
+
+		api = dev->api;
 		if (!api || api->recv == NULL) {
 			continue;
 		}
@@ -103,7 +108,11 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 	/* If there are no virtual interfaces attached, then pass the packet
 	 * to the actual virtual network interface.
 	 */
-	api = net_if_get_device(iface)->api;
+	dev = net_if_get_device(iface);
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 	if (!api || api->recv == NULL) {
 		goto drop;
 	}
@@ -145,9 +154,14 @@ silent_drop:
 
 static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct virtual_interface_api *api = net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct virtual_interface_api *api;
 	size_t pkt_len;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 
 	if (!api) {
 		return -ENOENT;
@@ -179,14 +193,21 @@ static int virtual_enable(struct net_if *iface, bool state)
 {
 	const struct virtual_interface_api *virt;
 	struct virtual_interface_context *ctx;
+	const struct device *dev;
 	int ret = 0;
 
-	virt = net_if_get_device(iface)->api;
+	dev = net_if_get_device(iface);
+
+	NET_ASSERT(dev != NULL);
+
+	virt = dev->api;
 	if (!virt) {
 		return -ENOENT;
 	}
 
 	ctx = net_if_l2_data(iface);
+
+	NET_ASSERT(ctx != NULL);
 
 	if (state) {
 		/* Take the interfaces below this interface up as
@@ -211,17 +232,19 @@ static int virtual_enable(struct net_if *iface, bool state)
 
 			net_if_up(ctx->iface);
 			ctx = net_if_l2_data(ctx->iface);
+
+			NET_ASSERT(ctx != NULL);
 		}
 
 		if (virt->start) {
-			ret = virt->start(net_if_get_device(iface));
+			ret = virt->start(dev);
 		}
 
 		return ret;
 	}
 
 	if (virt->stop) {
-		ret = virt->stop(net_if_get_device(iface));
+		ret = virt->stop(dev);
 	}
 
 	return ret;
@@ -230,6 +253,8 @@ static int virtual_enable(struct net_if *iface, bool state)
 enum net_l2_flags virtual_flags(struct net_if *iface)
 {
 	struct virtual_interface_context *ctx = net_if_l2_data(iface);
+
+	NET_ASSERT(ctx != NULL);
 
 	return ctx->virtual_l2_flags;
 }
@@ -260,6 +285,7 @@ int net_virtual_interface_attach(struct net_if *virtual_iface,
 {
 	const struct virtual_interface_api *api;
 	struct virtual_interface_context *ctx;
+	const struct device *dev;
 	bool up = false;
 
 	if (net_if_get_by_iface(virtual_iface) < 0 ||
@@ -271,12 +297,18 @@ int net_virtual_interface_attach(struct net_if *virtual_iface,
 		return -EINVAL;
 	}
 
-	api = net_if_get_device(virtual_iface)->api;
-	if (api->attach == NULL) {
+	dev = net_if_get_device(virtual_iface);
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
+	if (api == NULL || api->attach == NULL) {
 		return -ENOENT;
 	}
 
 	ctx = net_if_l2_data(virtual_iface);
+
+	NET_ASSERT(ctx != NULL);
 
 	if (ctx->iface) {
 		if (iface != NULL) {
@@ -391,6 +423,8 @@ struct net_if *net_virtual_get_iface(struct net_if *iface)
 
 	ctx = net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	return ctx->iface;
 }
 
@@ -407,6 +441,8 @@ char *net_virtual_get_name(struct net_if *iface, char *buf, size_t len)
 	}
 
 	ctx = net_if_l2_data(iface);
+
+	NET_ASSERT(ctx != NULL);
 
 	strncpy(buf, ctx->name, MIN(len, sizeof(ctx->name)));
 	buf[len - 1] = '\0';
@@ -428,6 +464,8 @@ void net_virtual_set_name(struct net_if *iface, const char *name)
 
 	ctx = net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	strncpy(ctx->name, name, ARRAY_SIZE(ctx->name) - 1);
 	ctx->name[ARRAY_SIZE(ctx->name) - 1] = '\0';
 }
@@ -447,6 +485,9 @@ enum net_l2_flags net_virtual_set_flags(struct net_if *iface,
 	}
 
 	ctx = net_if_l2_data(iface);
+
+	NET_ASSERT(ctx != NULL);
+
 	old_flags = ctx->virtual_l2_flags;
 	ctx->virtual_l2_flags = flags;
 
@@ -464,6 +505,9 @@ void net_virtual_init(struct net_if *iface)
 	}
 
 	ctx = net_if_l2_data(iface);
+
+	NET_ASSERT(ctx != NULL);
+
 	if (ctx->is_init) {
 		return;
 	}

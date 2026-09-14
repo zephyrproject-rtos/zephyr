@@ -2133,7 +2133,7 @@ static enum ieee802154_hw_caps silabs_efr32_get_capabilities(const struct device
 	ARG_UNUSED(dev);
 	enum ieee802154_hw_caps caps = IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
 				       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN |
-				       IEEE802154_HW_SLEEP_TO_TX | IEEE802154_HW_CSMA |
+				       IEEE802154_HW_CSMA |
 				       IEEE802154_HW_TX_SEC | IEEE802154_RX_ON_WHEN_IDLE;
 
 	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME)) {

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/s32/S32Z27-BGA594-pinctrl.h>
+#include <nxp/s32/pinctrl/S32Z27-BGA594-pinctrl.h>
 
 &pinctrl {
 	uart0_default: uart0_default {

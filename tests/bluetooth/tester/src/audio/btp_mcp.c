@@ -1659,6 +1659,32 @@ static uint8_t mcs_inactive_state_set(const void *cmd, uint16_t cmd_len, void *r
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t mcs_player_name_set(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mcs_player_name_set_cmd *cp = cmd;
+	char name[CONFIG_BT_MPL_MEDIA_PLAYER_NAME_MAX];
+	int err;
+
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
+	if (cmd_len < sizeof(*cp) || cmd_len != sizeof(*cp) + cp->name_len ||
+	    cp->name_len >= sizeof(name)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	(void)memcpy(name, cp->name, cp->name_len);
+	name[cp->name_len] = '\0';
+
+	LOG_DBG("MCS Set Media Player Name");
+	err = media_proxy_ctrl_set_player_name(mcs_media_player, name);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static void mcs_player_instance_cb(struct media_player *plr, int err)
 {
 	ARG_UNUSED(err);
@@ -1768,6 +1794,11 @@ static const struct btp_handler mcs_handlers[] = {
 		.opcode = BTP_MCS_PARENT_GROUP_SET,
 		.expect_len = 0,
 		.func = mcs_parent_group_set,
+	},
+	{
+		.opcode = BTP_MCS_PLAYER_NAME_SET,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = mcs_player_name_set,
 	},
 };
 

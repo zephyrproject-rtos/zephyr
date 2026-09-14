@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_OSCORE_SALT_ONLY
+	bool "Build only the master-salt-zero OSCORE test"
+	help
+	  Select the minimal salt-only test source (src/salt.c) instead of the
+	  full OSCORE test suite (src/main.c).
+
+source "Kconfig.zephyr"

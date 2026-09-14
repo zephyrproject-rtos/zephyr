@@ -52,6 +52,16 @@ config MEMC_MCUX_FLEXSPI_INIT_PRIORITY
 	  MEMC_MCUX_FLEXSPI_INIT_PRIORITY < FLASH_INIT_PRIORITY <
 	  MEMC_INIT_PRIORITY
 
+config MEMC_MCUX_FLEXSPI_WAIT_BUS_IDLE_TIMEOUT
+	int "Number of polls waiting for the FlexSPI bus to go idle"
+	depends on PM_DEVICE
+	default 100000
+	help
+	  Maximum number of polls while waiting for the FlexSPI bus to go
+	  idle before clearing the per-port LUT bookkeeping on a power-domain
+	  wake.  Bounds the wake path so a wedged controller cannot hang
+	  resume.
+
 config MEMC_MCUX_FLEXSPI_INIT_XIP
 	bool "Initialize FLEXSPI when using device for XIP"
 	help

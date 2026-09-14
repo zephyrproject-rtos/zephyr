@@ -115,6 +115,18 @@ def test_virtiofs_configure_defaults_without_config(tmp_path):
     assert sidecar.virtiofs_extra_args == []
 
 
+def test_virtiofs_host_ready_requires_virtiofsd(tmp_path):
+    instance = _make_instance(tmp_path)
+    sidecar = VirtiofsSidecar()
+    with mock.patch.object(VirtiofsSidecar, "find_virtiofsd", return_value=None):
+        sidecar.configure(instance)
+    assert sidecar.host_ready() is False
+
+    with mock.patch.object(VirtiofsSidecar, "find_virtiofsd", return_value="/found"):
+        sidecar.configure(instance)
+    assert sidecar.host_ready() is True
+
+
 def test_virtiofs_config_schema_matches_dataclass():
     assert VirtiofsSidecar.config_schema() == {
         'type': 'object',

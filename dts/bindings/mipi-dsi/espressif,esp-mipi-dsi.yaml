@@ -1,0 +1,33 @@
+#
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Espressif ESP32 MIPI DSI host controller
+
+compatible: "espressif,esp-mipi-dsi"
+
+include: mipi-dsi-host.yaml
+
+properties:
+  reg:
+    required: true
+
+  data-lanes:
+    type: int
+    required: true
+    min: 1
+    max: 2
+    description: |
+      Number of MIPI DSI data lanes. The D-PHY is brought up before a panel
+      attaches, so the count is needed here as well as on the panel node,
+      and the two have to agree.
+
+  dpi-clock-frequency:
+    type: int
+    required: true
+    description: |
+      DPI pixel clock frequency in Hz. It is derived from the fixed 240 MHz
+      source through an integer divider, so a value that does not divide it
+      evenly is rounded to the nearest achievable rate.

@@ -11,7 +11,7 @@
 
 #include <zephyr/toolchain.h>
 
-EXTERN_C int __cxa_atexit(void (*destructor)(void *), void *objptr, void *dso);
+EXTERN_C int __cxa_atexit(void (*destructor)(void *obj), void *objptr, void *dso);
 
 /**
  * @brief Register destructor for a global object
@@ -22,7 +22,7 @@ EXTERN_C int __cxa_atexit(void (*destructor)(void *), void *objptr, void *dso);
  *
  * Wrapper for __cxa_atexit()
  */
-int __aeabi_atexit(void *objptr, void (*destructor)(void *), void *dso)
+int __aeabi_atexit(void *objptr, void (*destructor)(void *obj), void *dso)
 {
 	return __cxa_atexit(destructor, objptr, dso);
 }

@@ -234,7 +234,7 @@ static int iis3dhhc_init(const struct device *dev)
 										  1),))))	\
 												\
 		.bus_init = iis3dhhc_spi_init,							\
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |				\
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER |			\
 					    SPI_MODE_CPOL | SPI_MODE_CPHA |			\
 					    SPI_WORD_SET(8)),					\
 	};											\

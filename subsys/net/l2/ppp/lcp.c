@@ -63,6 +63,8 @@ struct lcp_option_data {
 	uint32_t async_ctrl_char_map;
 	uint16_t auth_proto;
 	uint16_t mru;
+	bool pfc;
+	bool acfc;
 };
 
 static const enum ppp_protocol_type lcp_supported_auth_protos[] = {
@@ -155,6 +157,32 @@ static int lcp_peer_mru_nack(struct ppp_fsm *fsm, struct net_pkt *ret_pkt,
 }
 #endif
 
+#if defined(CONFIG_NET_L2_PPP_OPTION_PFC)
+static int lcp_peer_pfc_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
+			      void *user_data)
+{
+	struct lcp_option_data *data = user_data;
+
+	data->pfc = true;
+	NET_DBG("[LCP] Peer requested Protocol-Field-Compression");
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_NET_L2_PPP_OPTION_ACFC)
+static int lcp_peer_acfc_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
+			       void *user_data)
+{
+	struct lcp_option_data *data = user_data;
+
+	data->acfc = true;
+	NET_DBG("[LCP] Peer requested Address-and-Control-Field-Compression");
+
+	return 0;
+}
+#endif
+
 static const struct ppp_peer_option_info lcp_peer_options[] = {
 	PPP_PEER_OPTION(LCP_OPTION_AUTH_PROTO, lcp_auth_proto_parse,
 			lcp_auth_proto_nack),
@@ -162,6 +190,12 @@ static const struct ppp_peer_option_info lcp_peer_options[] = {
 			NULL),
 #if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
 	PPP_PEER_OPTION(LCP_OPTION_MRU, lcp_peer_mru_parse, lcp_peer_mru_nack),
+#endif
+#if defined(CONFIG_NET_L2_PPP_OPTION_PFC)
+	PPP_PEER_OPTION(LCP_OPTION_PROTO_COMPRESS, lcp_peer_pfc_parse, NULL),
+#endif
+#if defined(CONFIG_NET_L2_PPP_OPTION_ACFC)
+	PPP_PEER_OPTION(LCP_OPTION_ADDR_CTRL_COMPRESS, lcp_peer_acfc_parse, NULL),
 #endif
 };
 
@@ -192,6 +226,12 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 #if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
 	ctx->lcp.peer_options.mru = data.mru;
 #endif
+#if defined(CONFIG_NET_L2_PPP_OPTION_PFC)
+	ctx->lcp.peer_options.pfc = data.pfc;
+#endif
+#if defined(CONFIG_NET_L2_PPP_OPTION_ACFC)
+	ctx->lcp.peer_options.acfc = data.acfc;
+#endif
 	NET_DBG("Asynchronous Control Character Map: %08X",  data.async_ctrl_char_map);
 
 	if (data.auth_proto_present) {
@@ -218,10 +258,18 @@ static void lcp_lower_up(struct ppp_context *ctx)
 	ppp_fsm_lower_up(&ctx->lcp.fsm);
 }
 
+static void lcp_reset_peer_compression(struct ppp_context *ctx)
+{
+	ctx->lcp.peer_options.pfc = false;
+	ctx->lcp.peer_options.acfc = false;
+}
+
 static void lcp_open(struct ppp_context *ctx)
 {
 	/* Reset peer async control character map */
 	ctx->lcp.peer_options.async_map = 0xffffffff;
+
+	lcp_reset_peer_compression(ctx);
 
 	ppp_fsm_open(&ctx->lcp.fsm);
 }
@@ -247,6 +295,9 @@ static void lcp_down(struct ppp_fsm *fsm)
 
 	memset(&ctx->lcp.peer_options.auth_proto, 0,
 	       sizeof(ctx->lcp.peer_options.auth_proto));
+
+	/* The peer has to ask for compression again after renegotiation */
+	lcp_reset_peer_compression(ctx);
 
 	k_sem_give(&ctx->wait_ppp_link_down);
 
@@ -428,10 +479,38 @@ static int lcp_nak_async_map(struct ppp_context *ctx, struct net_pkt *pkt,
 	return 0;
 }
 
+#if defined(CONFIG_NET_L2_PPP_OPTION_PFC) || defined(CONFIG_NET_L2_PPP_OPTION_ACFC)
+#define COMPRESS_OPTION_LEN 2
+
+static int lcp_add_compress(struct ppp_context *ctx, struct net_pkt *pkt)
+{
+	return net_pkt_write_u8(pkt, COMPRESS_OPTION_LEN);
+}
+
+static int lcp_ack_compress(struct ppp_context *ctx, struct net_pkt *pkt,
+			    uint8_t oplen)
+{
+	return (oplen == 0) ? 0 : -EINVAL;
+}
+
+static int lcp_nak_compress(struct ppp_context *ctx, struct net_pkt *pkt,
+			    uint8_t oplen)
+{
+	return 0;
+}
+#endif
 
 static const struct ppp_my_option_info lcp_my_options[] = {
 #if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
 	PPP_MY_OPTION(LCP_OPTION_MRU, lcp_add_mru, lcp_ack_mru, lcp_nak_mru),
+#endif
+#if defined(CONFIG_NET_L2_PPP_OPTION_PFC)
+	PPP_MY_OPTION(LCP_OPTION_PROTO_COMPRESS, lcp_add_compress,
+		      lcp_ack_compress, lcp_nak_compress),
+#endif
+#if defined(CONFIG_NET_L2_PPP_OPTION_ACFC)
+	PPP_MY_OPTION(LCP_OPTION_ADDR_CTRL_COMPRESS, lcp_add_compress,
+		      lcp_ack_compress, lcp_nak_compress),
 #endif
 	PPP_MY_OPTION(LCP_OPTION_ASYNC_CTRL_CHAR_MAP, lcp_add_async_map,
 			lcp_ack_async_map, lcp_nak_async_map),
@@ -440,11 +519,19 @@ BUILD_ASSERT(ARRAY_SIZE(lcp_my_options) == LCP_NUM_MY_OPTIONS);
 
 static struct net_pkt *lcp_config_info_add(struct ppp_fsm *fsm)
 {
+	size_t len = ASYNC_MAP_OPTION_LEN;
+
 #if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
-	return ppp_my_options_add(fsm, MRU_OPTION_LEN + ASYNC_MAP_OPTION_LEN);
-#else
-	return ppp_my_options_add(fsm, ASYNC_MAP_OPTION_LEN);
+	len += MRU_OPTION_LEN;
 #endif
+#if defined(CONFIG_NET_L2_PPP_OPTION_PFC)
+	len += COMPRESS_OPTION_LEN;
+#endif
+#if defined(CONFIG_NET_L2_PPP_OPTION_ACFC)
+	len += COMPRESS_OPTION_LEN;
+#endif
+
+	return ppp_my_options_add(fsm, len);
 }
 
 static int lcp_config_info_nack(struct ppp_fsm *fsm, struct net_pkt *pkt,

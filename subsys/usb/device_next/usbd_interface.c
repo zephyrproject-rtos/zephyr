@@ -56,7 +56,7 @@ static int usbd_interface_modify(struct usbd_context *const uds_ctx,
 				 const uint8_t iface,
 				 const uint8_t alt)
 {
-	struct usb_desc_header **dhp;
+	struct usb_desc_header *const *dhp;
 	bool found_iface = false;
 	int ret;
 

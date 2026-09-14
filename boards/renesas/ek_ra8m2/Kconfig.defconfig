@@ -3,7 +3,7 @@
 
 if BOARD_EK_RA8M2
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 # Enable fixed clock for ethernet phy

@@ -3,7 +3,6 @@ common:
     - dns
     - net
   depends_on: netif
-  timeout: 600
   min_ram: 21
 tests:
   net.dns.resolve:
@@ -32,6 +31,7 @@ tests:
     extra_configs:
       - CONFIG_LLMNR_RESOLVER=y
       - CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS=y
+      - CONFIG_WARN_DEPRECATED=n
   net.dns.resolve.hostname:
     extra_configs:
       - CONFIG_NET_HOSTNAME_ENABLE=y

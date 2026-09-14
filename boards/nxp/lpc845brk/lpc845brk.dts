@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/lpc/nxp_lpc845.dtsi>
+#include <nxp/lpc/lpc84x/nxp_lpc845.dtsi>
 #include <zephyr/dt-bindings/pinctrl/lpc84x-pinctrl.h>
 
 / {

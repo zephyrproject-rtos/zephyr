@@ -577,7 +577,7 @@ cleanup:
 }
 
 static __ramfunc int write_status_register(const struct device *dev, uint8_t sr, uint8_t mask,
-					   uint8_t op_read, uint8_t op_write)
+					   uint8_t op_read, uint8_t op_write, bool volatile_write)
 {
 	uint8_t sr_curr;
 	uint8_t sr_new;
@@ -593,7 +593,11 @@ static __ramfunc int write_status_register(const struct device *dev, uint8_t sr,
 	}
 	sr_new = (sr_curr & ~mask) | sr;
 	if (sr_new != sr_curr) {
-		ret = write_protection_set(dev, false);
+		if (volatile_write) {
+			ret = flash_andes_qspi_xip_cmd_write(dev, FLASH_ANDES_CMD_VOL_SR);
+		} else {
+			ret = write_protection_set(dev, false);
+		}
 		if (ret != 0) {
 			return ret;
 		}
@@ -621,19 +625,19 @@ static __ramfunc int flash_andes_qspi_xip_set_status(const struct device *dev,
 	prepare_for_flashing(dev);
 
 	ret = write_status_register(dev, op_out->regs[0], op_out->masks[0], SPI_NOR_CMD_RDSR,
-				    SPI_NOR_CMD_WRSR);
+				    SPI_NOR_CMD_WRSR, op_out->volatile_write);
 	if (ret) {
 		goto cleanup;
 	}
 
 	ret = write_status_register(dev, op_out->regs[1], op_out->masks[1], SPI_NOR_CMD_RDSR2,
-				    SPI_NOR_CMD_WRSR2);
+				    SPI_NOR_CMD_WRSR2, op_out->volatile_write);
 	if (ret) {
 		goto cleanup;
 	}
 
 	ret = write_status_register(dev, op_out->regs[2], op_out->masks[2], SPI_NOR_CMD_RDSR3,
-				    SPI_NOR_CMD_WRSR3);
+				    SPI_NOR_CMD_WRSR3, op_out->volatile_write);
 
 cleanup:
 	cleanup_after_flashing(dev, 0, 0);

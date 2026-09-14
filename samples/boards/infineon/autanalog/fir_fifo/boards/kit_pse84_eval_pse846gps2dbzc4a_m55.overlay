@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,10 @@
 		/* ADC channels: GPIO ch0, MUX ch0, FIR0, FIR1 */
 		io-channels = <&adc0 0>, <&adc0 8>, <&adc0 24>, <&adc0 25>;
 	};
+};
+
+&autanalog {
+	status = "okay";
 };
 
 &adc0 {

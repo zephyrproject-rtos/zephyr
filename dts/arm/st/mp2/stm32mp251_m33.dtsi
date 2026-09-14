@@ -68,6 +68,19 @@
 			status = "disabled";
 		};
 
+		spi8: spi@46020000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x46020000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(SPI8, STM32_CLK)>;
+			interrupts = <156 0>;
+			st,spi-data-width = "limited-8-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <1023>;
+			status = "disabled";
+		};
+
 		uart8: serial@40380000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40380000 DT_SIZE_K(1)>;

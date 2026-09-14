@@ -58,6 +58,8 @@ static void test_central_main(void)
 
 	PASS("Central tests passed\n");
 
+	bs_trace_silent_exit(0);
+
 	return;
 
 exit:
@@ -98,6 +100,8 @@ static void test_central_multiple_main(void)
 	k_sleep(K_SECONDS(1));
 
 	PASS("Central tests passed\n");
+
+	bs_trace_silent_exit(0);
 
 	return;
 
@@ -151,9 +155,14 @@ static void test_peripheral_multilink_main(void)
 		goto exit;
 	}
 
-	k_sleep(K_SECONDS(3));
-
 	PASS("Peripheral tests passed\n");
+
+	/* Wait a little so all centrals complete. Ideally we would just have a backchannel
+	 * and wait for all peripherals to report passed.
+	 */
+	k_sleep(K_SECONDS(30));
+
+	bs_trace_silent_exit(0);
 
 	return;
 

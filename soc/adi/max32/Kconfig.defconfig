@@ -5,6 +5,8 @@
 
 if SOC_FAMILY_MAX32
 
+# Source the per-SoC Kconfig files first, so that individual SoCs can override
+# the family-level defaults given below.
 rsource "Kconfig.defconfig.max*"
 rsource "sbt/Kconfig.defconfig"
 
@@ -12,6 +14,24 @@ choice PM_PREWAKEUP_CONV_MODE
 	default PM_PREWAKEUP_CONV_MODE_CEIL
 
 endchoice # PM_PREWAKEUP_CONV_MODE
+
+# Compute the IRQ table size automatically using DT.
+# dt_highest_controller_irq_number() returns a zero-based IRQn, increment it to
+# obtain the table size (= max IRQn + 1). Both cores are covered here: only one
+# of the two interrupt controllers is ever present in a given build's DT, so the
+# default for the other core is inert.
+
+# Cortex-M4 (ARMv7-M) and Cortex-M33 (ARMv8-M) cores: NVIC.
+DT_NVIC_PATH := /soc/interrupt-controller@e000e100
+DT_NVIC_MAX_IRQN := $(dt_highest_controller_irq_number,$(DT_NVIC_PATH),irq)
+
+# RV32 cores: MAX32 RISC-V core interrupt controller.
+DT_RV32_INTC_PATH := /soc/intc@e5070000
+DT_RV32_INTC_MAX_IRQN := $(dt_highest_controller_irq_number,$(DT_RV32_INTC_PATH),irq)
+
+configdefault NUM_IRQS
+	default $(inc,$(DT_NVIC_MAX_IRQN)) if $(dt_path_enabled,$(DT_NVIC_PATH))
+	default $(inc,$(DT_RV32_INTC_MAX_IRQN)) if $(dt_path_enabled,$(DT_RV32_INTC_PATH))
 
 if SOC_FAMILY_MAX32_RV32
 

@@ -56,10 +56,10 @@ static int8_t nm_i2c_write_special(uint8_t *wb1, uint16_t sz1,
 
 #ifdef CONF_WINC_USE_SPI
 
-static int8_t spi_rw(uint8_t *mosi, uint8_t *miso, uint16_t size)
+static int8_t spi_rw(uint8_t *sdo, uint8_t *sdi, uint16_t size)
 {
 	const struct spi_buf buf_tx = {
-		.buf = mosi,
+		.buf = sdo,
 		.len = size
 	};
 	const struct spi_buf_set tx = {
@@ -67,8 +67,8 @@ static int8_t spi_rw(uint8_t *mosi, uint8_t *miso, uint16_t size)
 		.count = 1
 	};
 	const struct spi_buf buf_rx = {
-		.buf = miso,
-		.len = miso ? size : 0
+		.buf = sdi,
+		.len = sdi ? size : 0
 	};
 	const struct spi_buf_set rx = {
 		.buffers = &buf_rx,

@@ -1,0 +1,10 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config ADXL313
+	bool "ADXL313 Three-Axis Accelerometer"
+	default y
+	depends on DT_HAS_ADI_ADXL313_ENABLED
+	select I2C
+	help
+	  Enable driver for Analog Devices ADXL313 3-axis digital accelerometer.

@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * QEMU variant: disable peripherals not modeled by Espressif QEMU.
+ * See boards/espressif/common/qemu.rst and the Espressif QEMU feature matrix.
+ */
+
+#include "esp32c3_devkitc.dts"
+
+/ {
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+
+	aliases {
+		/delete-property/ sw0;
+	};
+
+	/delete-node/ gpio_keys;
+};
+
+&wifi {
+	status = "disabled";
+};
+
+&esp32_bt_hci {
+	status = "disabled";
+};
+
+&i2c0 {
+	status = "disabled";
+};
+
+&i2s {
+	status = "disabled";
+};
+
+&spi2 {
+	status = "disabled";
+};
+
+&usb_serial {
+	status = "disabled";
+};
+
+&ledc0 {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "disabled";
+};
+
+&coretemp {
+	status = "disabled";
+};

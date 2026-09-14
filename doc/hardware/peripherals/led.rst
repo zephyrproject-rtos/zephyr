@@ -159,3 +159,8 @@ LED Strip
 =========
 
 .. doxygengroup:: led_strip_interface
+
+Fake LED controller
+===================
+
+.. doxygengroup:: led_fake

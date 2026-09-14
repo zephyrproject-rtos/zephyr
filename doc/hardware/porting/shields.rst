@@ -268,6 +268,19 @@ Relevant devicetree node labels:
 - ``st_morpho_flash_spi``
 
 
+ST Zio
+------
+
+STM32 Nucleo-144 development boards from ST Microelectronics expose the ST Zio
+connector, an extension of the Arduino Uno V3 connector that gives access to
+more of the STM32 I/Os through four headers (CN7, CN8, CN9 and CN10).
+
+Relevant devicetree node labels:
+
+- ``st_zio_header``  See :dtcompatible:`st-zio-header` for details on GPIO pin definitions
+  and includes for use in devicetree files.
+
+
 STMod+
 ------
 

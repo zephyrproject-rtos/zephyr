@@ -80,10 +80,10 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sparkfun_thing_plus_mgm240p
+   :board: sparkfun_thing_plus_matter_mgm240p
    :goals: build
 
-Connect the sparkfun_thing_plus_mgm240p to your host computer using the USB port and you
+Connect the ``sparkfun_thing_plus_matter_mgm240p`` to your host computer using the USB port and you
 should see a USB connection.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:

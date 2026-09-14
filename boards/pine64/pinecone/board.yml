@@ -1,0 +1,6 @@
+board:
+  name: pinecone
+  full_name: PineCone BL602 Evaluation Board
+  vendor: pine64
+  socs:
+    - name: bl602c20q2i

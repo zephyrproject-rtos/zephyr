@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32C61
+	select RISCV
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select DYNAMIC_INTERRUPTS
+	select CLOCK_CONTROL
+	select PINCTRL
+	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_DCACHE
+	select HAS_PM
+	select HAS_POWEROFF
+
+if SOC_SERIES_ESP32C61
+
+config MAC_BB_PD
+	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
+	depends on SOC_SERIES_ESP32C61 && TICKLESS_KERNEL && PM
+	help
+	  If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
+	  down when PHY is disabled. Enabling this setting reduces power consumption
+	  by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
+	  2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
+
+rsource "Kconfig.caps"
+
+config SOC_ESP32C61_REV_MIN_FULL
+	int
+	default 100 if SOC_ESP32C61_REV_1_0
+	default 101 if SOC_ESP32C61_REV_1_1
+	default 100
+	help
+	  Minimum supported ESP32-C61 chip revision in major * 100 + minor
+	  format, matching what efuse_hal_chip_revision() returns at runtime.
+	  Derived from the SOC_ESP32C61_REV_* symbol the board selects;
+	  defaults to v1.0 (100), the floor of the family.
+
+endif # SOC_SERIES_ESP32C61

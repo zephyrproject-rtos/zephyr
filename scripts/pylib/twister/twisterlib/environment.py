@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import functools
 import json
 import logging
 import os
@@ -61,6 +62,17 @@ PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
 def norm_path(astring):
     newstring = os.path.normpath(astring).replace(os.sep, '/')
     return newstring
+
+
+@functools.cache
+def _parse_modules(zephyr_base: str = ZEPHYR_BASE):
+    """Cached wrapper around zephyr_module.parse_modules.
+
+    parse_modules() walks the workspace for module manifests. Twister needs the
+    result both when building the --board-root default and when TwisterEnv
+    computes its *_roots, so cache the read-only result to avoid scanning twice.
+    """
+    return zephyr_module.parse_modules(zephyr_base)
 
 
 def add_parse_arguments(parser = None) -> argparse.ArgumentParser:
@@ -435,7 +447,7 @@ Artificially long but functional example:
 
     board_root_list = [f"{ZEPHYR_BASE}/boards", f"{ZEPHYR_BASE}/subsys/testsuite/boards"]
 
-    modules = zephyr_module.parse_modules(ZEPHYR_BASE)
+    modules = _parse_modules()
     for module in modules:
         board_root = module.meta.get("build", {}).get("settings", {}).get("board_root")
         if board_root:
@@ -848,6 +860,18 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         help="Call multiple times to increase verbosity.")
 
     parser.add_argument(
+        "--console-monitor", action="store_true",
+        help="Show a live full-screen dashboard for the run in this terminal "
+             "instead of the normal scrolling output: progress, in-flight "
+             "jobs with their pipeline stage, and a filterable instance "
+             "table with per-instance details and logs. Requires an "
+             "interactive terminal (ignored otherwise). Press q to leave "
+             "the dashboard; while the run is still going, normal console "
+             "output resumes, and after it finishes, reports are written as "
+             "usual. Normal log output goes to twister.log while the "
+             "dashboard is shown.")
+
+    parser.add_argument(
         "-ll",
         "--log-level",
         type=str.upper,
@@ -1092,28 +1116,28 @@ class TwisterEnv:
         else:
             self.board_roots = options.board_root
         self.outdir = os.path.abspath(options.outdir)
+        self._setup_ccache()
 
         self.snippet_roots = [Path(ZEPHYR_BASE)]
         self.soc_roots = [Path(ZEPHYR_BASE), Path(ZEPHYR_BASE) / 'subsys' / 'testsuite']
         self.dts_roots = [Path(ZEPHYR_BASE)]
         self.arch_roots = [Path(ZEPHYR_BASE)]
 
-        modules = zephyr_module.parse_modules(ZEPHYR_BASE)
+        # module build.settings key -> the *_roots list it extends
+        root_settings = {
+            "snippet_root": self.snippet_roots,
+            "soc_root": self.soc_roots,
+            "dts_root": self.dts_roots,
+            "arch_root": self.arch_roots,
+        }
+        modules = _parse_modules()
         for module in modules:
             settings = module.meta.get("build", {}).get("settings", {})
             project = Path(module.project)
-            snippet_root = settings.get("snippet_root")
-            if snippet_root:
-                self.snippet_roots.append(project / snippet_root)
-            soc_root = settings.get("soc_root")
-            if soc_root:
-                self.soc_roots.append(project / Path(soc_root))
-            dts_root = settings.get("dts_root")
-            if dts_root:
-                self.dts_roots.append(project / Path(dts_root))
-            arch_root = settings.get("arch_root")
-            if arch_root:
-                self.arch_roots.append(project / Path(arch_root))
+            for setting_key, roots in root_settings.items():
+                root = settings.get(setting_key)
+                if root:
+                    roots.append(project / Path(root))
 
         self.modules = [m.meta for m in modules]
         self.hwm: HardwareMap | None = None
@@ -1121,6 +1145,29 @@ class TwisterEnv:
         self.test_config = options.test_config
 
         self.alt_config_root = options.alt_config_root
+
+    def _setup_ccache(self) -> None:
+        """Let ccache reuse objects between the per-test build directories.
+
+        The build directory otherwise appears in the compiler command line and,
+        because Zephyr builds with -g, in the hash that separates debug info.
+        The trade-off is that a reused object carries the debug info of the
+        build directory it came from. That is of little consequence for test
+        builds, and is limited to files generated into the build directory, as
+        Zephyr refers to the rest by absolute path. Settings already in the
+        environment win.
+
+        Coverage builds are left alone: ccache hashes the working directory
+        whenever it generates a .gcno file, so there is nothing to reuse, while
+        rewriting the paths would leave gcov unable to find the generated
+        headers.
+        """
+        if self.options.enable_coverage:
+            return
+
+        os.environ.setdefault("CCACHE_BASEDIR", self.outdir)
+        if not {"CCACHE_HASHDIR", "CCACHE_NOHASHDIR"} & os.environ.keys():
+            os.environ["CCACHE_NOHASHDIR"] = "true"
 
     def non_default_options(self) -> dict:
         """Returns current command line options which are set to non-default values."""

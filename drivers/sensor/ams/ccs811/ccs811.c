@@ -130,7 +130,7 @@ int ccs811_baseline_fetch(const struct device *dev)
 	rc = i2c_write_read_dt(&config->i2c, &cmd, sizeof(cmd), (uint8_t *)&baseline,
 			       sizeof(baseline));
 	set_wake(dev, false);
-	if (rc <= 0) {
+	if (rc == 0) {
 		rc = baseline;
 	}
 

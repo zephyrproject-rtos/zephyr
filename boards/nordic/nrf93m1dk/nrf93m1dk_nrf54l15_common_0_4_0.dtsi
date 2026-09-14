@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf93m1dk_nrf54l15_common_0_3_0.dtsi"
+
+/* The only v0.4.0 change with respect to v0.3.0 is the loading
+ * of the PUYA P25Q64SL SPI flash instead of the Macronix MX25R64.
+ */
+/delete-node/ &mx25r64;
+
+&spi00 {
+	p25q64: p25q64sl@0 {
+		compatible = "jedec,spi-nor";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		jedec-id = [85 60 17];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <35000>;
+		reset-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+	};
+};

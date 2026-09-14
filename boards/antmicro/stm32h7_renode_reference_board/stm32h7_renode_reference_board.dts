@@ -7,6 +7,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <st/h7/stm32h753Xi.dtsi>
 #include "stm32h7_renode_reference_board-pinctrl.dtsi"
@@ -42,7 +43,7 @@
 		pwm-led2 = &green_pwm_led_2;
 		pwm-led3 = &green_pwm_led_3;
 		rtc = &rtc;
-		spi-flash0 = &mt25ql01g;
+		spi-flash0 = &is25lp01gj;
 		sw0 = &btn0;
 		sw1 = &btn1;
 		sw2 = &btn2;
@@ -76,17 +77,26 @@
 	leds {
 		compatible = "gpio-leds";
 
-		green_rgb_led: led_rgb_g {
-			gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
-		};
-
 		red_rgb_led: led_rgb_r {
 			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		green_rgb_led: led_rgb_g {
+			gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
 		};
 
 		blue_rgb_led: led_rgb_b {
 			gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	rgbled {
+		compatible = "leds-group-multicolor";
+
+		leds = <&red_rgb_led>, <&green_rgb_led>, <&blue_rgb_led>;
+		color-mapping = <LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
 	};
 
 	pwmleds {
@@ -352,7 +362,7 @@ zephyr_udc0: &usbotg_fs {
 	flash-id = <1>;
 	status = "okay";
 
-	mt25ql01g: qspi-nor-flash@0 {
+	is25lp01gj: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(1024)>; /* 1Gb = 128MB */

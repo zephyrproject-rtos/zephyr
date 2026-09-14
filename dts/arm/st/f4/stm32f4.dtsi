@@ -652,21 +652,24 @@
 			interrupts = <49 0>;
 			status = "disabled";
 		};
-	};
 
-	pwr: power@40007000 {
-		compatible = "st,stm32-pwr";
-		reg = <0x40007000 0x400>; /* PWR register bank */
-		status = "disabled";
+		pwr: power@40007000 {
+			compatible = "st,stm32-pwr";
+			reg = <0x40007000 0x400>; /* PWR register bank */
 
-		wkup-pins-nb = <1>;
+			wakeup-controller {
+				compatible = "st,stm32f1-pwr-wkupctrl", "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
 
-		#address-cells = <1>;
-		#size-cells = <0>;
+				st,max-wkup-line-idx = <1>;
 
-		wkup-pin@1 {
-			reg = <0x1>;
-			wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+			};
 		};
 	};
 

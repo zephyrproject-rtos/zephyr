@@ -217,6 +217,7 @@ class Maintainers:
             area.tests = area_dict.get("tests", [])
             area.tags = area_dict.get("tags", [])
             area.description = area_dict.get("description")
+            area.meta = bool(area_dict.get("meta", False))
 
             # Initialize file groups if present
             area.file_groups = []
@@ -545,6 +546,11 @@ class Area:
         Text from 'description' key, or None if the area has no 'description'
         key
 
+    meta:
+        True if the area is a meta-area, i.e. one that cuts across the tree
+        (documentation, samples, tests, ...) instead of owning a subsystem.
+        False if the area has no 'meta' key. See MAINTAINERS.yml.
+
     file_groups:
         List of FileGroup instances for any file-groups defined in the area.
         Empty if the area has no 'file-groups' key.
@@ -623,6 +629,7 @@ def _print_areas(areas):
 \tlabels: {}
 \ttests: {}
 \ttags: {}
+\tmeta: {}
 \tdescription: {}""".format(area.name,
                             area.status,
                             ", ".join(area.maintainers),
@@ -631,6 +638,7 @@ def _print_areas(areas):
                             ", ".join(area.labels),
                             ", ".join(area.tests),
                             ", ".join(area.tags),
+                            area.meta,
                             area.description or ""))
 
         # Print file groups if any exist
@@ -712,7 +720,8 @@ def _check_maintainers(maints_path, yaml):
 
     ok_keys = {"status", "maintainers", "collaborators", "inform", "files",
                "files-exclude", "files-regex", "files-regex-exclude",
-               "labels", "description", "tests", "tags", "file-groups"}
+               "labels", "description", "tests", "tags", "file-groups",
+               "meta"}
 
     ok_status = {"maintained", "odd fixes", "unmaintained", "obsolete"}
     ok_status_s = ", ".join('"' + s + '"' for s in ok_status)  # For messages
@@ -847,6 +856,10 @@ def _check_maintainers(maints_path, yaml):
            not isinstance(area_dict["description"], str):
             ferr("malformed 'description' value for area '{}' -- should be a "
                  "string".format(area_name))
+
+        if "meta" in area_dict and not isinstance(area_dict["meta"], bool):
+            ferr("malformed 'meta' value for area '{}' -- should be a "
+                 "boolean".format(area_name))
 
 
 def _git(*args):

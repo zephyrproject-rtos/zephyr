@@ -87,6 +87,7 @@ extern "C" {
 #define TID_TIMER_EXPIRY_FN     (61u + TID_OFFSET)
 #define TID_TIMER_STOP_FN       (62u + TID_OFFSET)
 
+/* 63, 64 and 65 are no longer used, see TID_SLEEP_TICKS below */
 #define TID_SLEEP  (63u + TID_OFFSET)
 #define TID_MSLEEP (64u + TID_OFFSET)
 #define TID_USLEEP (65u + TID_OFFSET)
@@ -165,6 +166,8 @@ extern "C" {
 
 #define TID_TIMER_EXPIRY (135u + TID_OFFSET)
 #define TID_TIMER_STOP_EXPIRY (136u + TID_OFFSET)
+
+#define TID_SLEEP_TICKS (137u + TID_OFFSET)
 
 /* latest ID is 136 */
 

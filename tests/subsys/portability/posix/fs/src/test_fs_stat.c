@@ -73,6 +73,9 @@ ZTEST(posix_fs_stat_test, test_fs_stat_file)
 	zassert_equal(0, stat(TEST_FILE, &buf));
 	zassert_equal(TEST_FILE_SIZE, buf.st_size);
 	zassert_equal(S_IFREG, buf.st_mode);
+	/* The block-size hint (from statvfs) must still be populated. */
+	zassert_true(buf.st_blksize > 0);
+	zassert_equal(buf.st_blocks, (buf.st_size + buf.st_blksize - 1) / buf.st_blksize);
 
 	zassert_equal(0, stat(TEST_DIR_FILE, &buf));
 	zassert_equal(TEST_DIR_FILE_SIZE, buf.st_size);

@@ -21,8 +21,6 @@ const struct device *const uart_dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
 
 static struct usbd_context *sample_usbd;
 
-#define DEVICE_DT_GET_COMMA(node_id) DEVICE_DT_GET(node_id),
-
 const struct device *uart_bridges[] = {
 	DT_FOREACH_STATUS_OKAY(zephyr_uart_bridge, DEVICE_DT_GET_COMMA)
 };

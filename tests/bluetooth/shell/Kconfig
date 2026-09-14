@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth Shell Test Application"
+
+# LE Audio Controller settings for non-network core devices
+if BT_AUDIO && BT_LL_SW_SPLIT
+
+configdefault BT_CTLR_DATA_LENGTH_MAX
+	default 251
+
+# Set to high value to support large BASEs + extra data
+configdefault BT_CTLR_SCAN_DATA_LEN_MAX
+	default 1650
+
+configdefault BT_CTLR_ADV_SYNC_SET
+	default BT_CTLR_ADV_AUX_SET
+
+configdefault BT_CTLR_ADV_DATA_LEN_MAX
+	default 191
+
+configdefault BT_CTLR_ADV_DATA_BUF_MAX
+	default 6
+
+# Match BT_BAP_BROADCAST_SRC_STREAM_COUNT in audio.conf
+configdefault BT_CTLR_SYNC_ISO_STREAM_MAX
+	default 2
+
+# Match BT_BAP_BROADCAST_SNK_STREAM_COUNT in audio.conf
+configdefault BT_CTLR_ADV_ISO_STREAM_MAX
+	default 2
+
+# Match BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT/BT_ASCS_MAX_ASE_SNK_COUNT audio.conf
+configdefault BT_CTLR_ISOAL_SOURCES
+	default 2
+
+# BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT/BT_ASCS_MAX_ASE_SRC_COUNT in audio.conf
+configdefault BT_CTLR_ISOAL_SINKS
+	default 2
+
+endif # BT_AUDIO && BT_LL_SW_SPLIT
+
+source "Kconfig.zephyr"

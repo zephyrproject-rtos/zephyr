@@ -25,8 +25,7 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define RX_FRAG_SIZE  CONFIG_NET_BUF_DATA_SIZE
 #define TX_AVAIL_WAIT K_MSEC(1)
 
-#define INC_WRAP(idx, size) ({ (idx) = ((idx) + 1) % (size); })
-#define DEC_WRAP(idx, size) ({ (idx) = ((idx) + (size) - 1) % (size); })
+#define INC_WRAP(idx, size) ((idx) = ((idx) + 1) % (size))
 
 #define TDES0_OWN BIT(31)
 #define TDES0_IC  BIT(30)
@@ -34,6 +33,8 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TDES0_FS  BIT(28)
 #define TDES0_TER BIT(21)
 #define TDES0_TCH BIT(20)
+#define TDES0_TTSE BIT(25)
+#define TDES0_TTSS BIT(17)
 #define TDES0_ES  BIT(15)
 #define TDES0_CIC GENMASK(23, 22)
 
@@ -43,6 +44,7 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define RDES0_OWN BIT(31)
 #define RDES0_FL  GENMASK(29, 16)
 #define RDES0_ES  BIT(15)
+#define RDES0_TSV BIT(7)
 #define RDES0_FS  BIT(9)
 #define RDES0_LS  BIT(8)
 
@@ -77,6 +79,9 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
 #endif
 #ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
 	       | ETHERNET_HW_TX_CHKSUM_OFFLOAD
+#endif
+#ifdef CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER
+	       | ETHERNET_HW_FILTERING
 #endif
 		;
 }
@@ -159,6 +164,13 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 		}
 	}
 
+	des0_flags = TDES0_OWN | TDES0_FS;
+
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC) &&
+		net_pkt_is_tx_timestamping(pkt)) {
+		des0_flags |= TDES0_TTSE;
+	}
+
 	K_SPINLOCK(&p->spinlock) {
 		net_pkt_ref(pkt);
 		k_fifo_put(&p->tx_queue, pkt);
@@ -168,7 +180,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 		barrier_dmem_fence_full();
 
 		d = &p->tx_descs[first_d_idx];
-		d->des0 |= TDES0_OWN | TDES0_FS;
+		d->des0 |= des0_flags;
 
 		barrier_dmem_fence_full();
 		DWMAC_REG_WRITE(DWMAC_DMATPDR, 0);
@@ -198,6 +210,19 @@ static void dwmac_tx_release(const struct device *dev)
 			if (pkt != NULL) {
 				LOG_DBG("pkt len/frags=%zu/%u", net_pkt_get_len(pkt),
 					net_pkt_get_nbfrags(pkt));
+
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+				if ((des0 & TDES0_TTSS) != 0U) {
+#if defined(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)
+					pkt->timestamp.second = d->des7;
+					pkt->timestamp.nanosecond = d->des6;
+#else /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
+					pkt->timestamp.second = d->des3;
+					pkt->timestamp.nanosecond = d->des2;
+#endif /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
+					net_if_add_tx_timestamp(pkt);
+				}
+#endif /* CONFIG_PTP_CLOCK_DWC_MAC */
 			}
 
 			net_pkt_unref(pkt);
@@ -213,6 +238,31 @@ static void dwmac_tx_release(const struct device *dev)
 
 	p->tx_desc_tail = d_idx;
 }
+
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+static void dwmac_receive_timestamp(struct net_pkt *pkt, struct dwmac_dma_desc *d)
+{
+#if defined(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)
+	if ((d->des0 & RDES0_TSV) == 0U) {
+		return;
+	}
+	pkt->timestamp.second = d->des7;
+	pkt->timestamp.nanosecond = d->des6;
+#else
+	if (d->des2 == UINT32_MAX && d->des3 == UINT32_MAX) {
+		return;
+	}
+
+	pkt->timestamp.second = d->des3;
+	pkt->timestamp.nanosecond = d->des2;
+#endif /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
+	net_pkt_set_rx_timestamping(pkt, true);
+}
+#else
+static void dwmac_receive_timestamp(struct net_pkt *pkt __unused, struct dwmac_dma_desc *d __unused)
+{
+}
+#endif /* CONFIG_PTP_CLOCK_DWC_MAC */
 
 static void dwmac_receive(const struct device *dev)
 {
@@ -271,6 +321,8 @@ static void dwmac_receive(const struct device *dev)
 
 		if ((des0 & RDES0_LS) != 0U) {
 			if ((des0 & RDES0_ES) == 0U) {
+				dwmac_receive_timestamp(p->rx_pkt, d);
+
 				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
 					net_pkt_unref(p->rx_pkt);
 				}
@@ -317,7 +369,8 @@ static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
 
 	d->des0 = RDES0_OWN;
 
-	p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
+	INC_WRAP(d_idx, NB_RX_DESCS);
+	p->rx_desc_head = d_idx;
 	DWMAC_REG_WRITE(DWMAC_DMARPDR, 0);
 
 	LOG_DBG("desc sem/head/tail=%d/%d/%d %s", k_sem_count_get(&p->free_rx_descs),
@@ -403,6 +456,11 @@ static int dwmac_set_config(const struct device *dev, struct net_if *iface __unu
 		DWMAC_REG_WRITE(DWMAC_MACFFR, reg);
 		break;
 #endif
+#if defined(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER)
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		dwmac_setup_multicast_filter(dev, &config->filter);
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -463,8 +521,16 @@ static void dwmac_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, p->mac_addr, sizeof(p->mac_addr), NET_LINK_ETHERNET);
 	dwmac_set_mac_addr(dev, p->mac_addr);
 
-	/* Pass all multicast frames */
-	DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
+	if (!IS_ENABLED(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER)) {
+		/* Pass all multicast frames */
+		DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
+	} else if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH)) {
+		DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_HM);
+	} else {
+		/* multicast is perfect filtered against the MAC address entries,
+		 * which is the default filter mode
+		 */
+	}
 
 	net_if_carrier_off(iface);
 	if (device_is_ready(cfg->phy_dev)) {
@@ -598,6 +664,9 @@ const struct ethernet_api dwmac_api = {
 	.set_config = dwmac_set_config,
 	.get_phy = dwmac_get_phy,
 	.send = dwmac_send,
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	.get_ptp_clock = dwmac_get_ptp_clock,
+#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = dwmac_stats,
 #endif

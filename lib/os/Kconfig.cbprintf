@@ -166,12 +166,13 @@ config CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
 	  (integer).
 
 config CBPRINTF_CONVERT_CHECK_PTR
-	bool
+	bool "Check if string is used for %p format specifier"
 	default y if !LOG_FMT_SECTION_STRIP
 	help
 	  If enabled, cbprintf_package_convert() supports checking if string
 	  candidate is used for %p format specifier. Check cannot be performed
-	  if string is not present in the memory.
+	  if string is not present in the memory. Checking takes some time and
+	  code space so it can be disabled if performance or code space is critical.
 
 config CBPRINTF_RV32E_USE_DEFAULT_ALIGNMENT
 	bool

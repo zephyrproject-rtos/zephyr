@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma0 {
+	status = "okay";
+};
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&dma0>;
+	};
+};

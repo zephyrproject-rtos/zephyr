@@ -43,7 +43,7 @@ configdefault GIC_V3_ITS
 configdefault HEAP_MEM_POOL_SIZE
 	default 851968
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 # Enlarge default networking stack

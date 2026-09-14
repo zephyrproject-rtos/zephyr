@@ -132,11 +132,12 @@ static int spi_esp32_gdma_config(const struct device *dev, uint8_t dir, uint8_t 
 		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 		dma_blk.source_address = (uint32_t)buf;
 	}
-#if SOC_AXI_GDMA_SUPPORTED
+	/* dma-host selects the SPI host (0 -> SPI2, 1 -> SPI3), while the GDMA
+	 * expects the peripheral trigger id. Derive the trigger from the SPI2
+	 * base so the correct peripheral is connected on SoCs where the SPI2
+	 * trigger is not zero (e.g. ESP32-C5, ESP32-C61).
+	 */
 	dma_cfg.dma_slot = SOC_GDMA_TRIG_PERIPH_SPI2 + cfg->dma_host;
-#else
-	dma_cfg.dma_slot = cfg->dma_host;
-#endif
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 	dma_blk.block_size = len;
@@ -236,7 +237,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 		} else if (!ctx->tx_buf && ctx->rx_buf) {
 			/* RX-only transfer: allocate zero-filled TX buffer.
 			 * In loopback configurations (GPIO matrix or external wire),
-			 * MOSI must actively output zeros so MISO receives zeros.
+			 * SDO must actively output zeros so SDI receives zeros.
 			 */
 			tx_temp = k_calloc(dma_len_rx, sizeof(uint8_t));
 			if (!tx_temp) {
@@ -262,8 +263,9 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 	/* clean up and prepare SPI hal */
 	for (size_t i = 0; i < ARRAY_SIZE(hal->hw->data_buf); ++i) {
-#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
-	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C61) ||                   \
+	defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2) ||                \
+	defined(CONFIG_SOC_SERIES_ESP32P4)
 		hal->hw->data_buf[i].val = 0;
 #else
 		hal->hw->data_buf[i] = 0;
@@ -339,7 +341,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	}
 
 	if (cfg->dma_enabled) {
-		/* Enable MOSI/MISO data lines AFTER DMA is configured.
+		/* Enable SDO/SDI data lines AFTER DMA is configured.
 		 * Note: For RX-only DMA, we allocate a zero-filled TX buffer above,
 		 * so send_buffer is always set when rcv_buffer is set.
 		 */
@@ -730,7 +732,7 @@ static int spi_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static inline uint8_t spi_esp32_get_line_mode(uint16_t operation)
+static inline uint8_t spi_esp32_get_line_mode(spi_operation_t operation)
 {
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
 		switch (operation & SPI_LINES_MASK) {
@@ -749,6 +751,36 @@ static inline uint8_t spi_esp32_get_line_mode(uint16_t operation)
 
 	return 1;
 }
+
+#ifdef SPI_LL_SRC_PRE_DIV_MAX
+
+/* Peripheral hardware limitation for the clock rate entering the peripheral */
+#define SPI_ESP32_PERIPH_SRC_FREQ_MAX (80 * 1000 * 1000)
+
+static uint32_t spi_esp32_find_clock_src_pre_div(uint32_t src_freq, uint32_t target_freq)
+{
+	/* Pre-division must be even and at least 2 */
+	uint32_t min_div = (DIV_ROUND_UP(src_freq, SPI_ESP32_PERIPH_SRC_FREQ_MAX) + 1) & (~0x01UL);
+
+	min_div = min_div < 2 ? 2 : min_div;
+
+	if (target_freq == 0) {
+		return min_div;
+	}
+
+	uint32_t total_div = src_freq / target_freq;
+
+	for (uint32_t pre_div = min_div; pre_div <= MIN(total_div, SPI_LL_SRC_PRE_DIV_MAX);
+	     pre_div += 2) {
+		if ((total_div % pre_div) || (total_div / pre_div) > SPI_LL_PERIPH_CLK_DIV_MAX) {
+			continue;
+		}
+		return pre_div;
+	}
+	return min_div;
+}
+
+#endif /* SPI_LL_SRC_PRE_DIV_MAX */
 
 static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 					 const struct spi_config *spi_cfg)
@@ -770,7 +802,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
+	if (spi_cfg->operation & SPI_OP_MODE_PERIPHERAL) {
 #ifdef CONFIG_ESP32_SPI_TARGET
 		spi_slave_hal_context_t *shal = &data->target_hal;
 
@@ -786,7 +818,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 #ifdef SOC_GDMA_SUPPORTED
 		shal->use_dma = false;
 #else
-		/* CPU/FIFO slave mode drops the final received byte on these
+		/* CPU/FIFO peripheral mode drops the final received byte on these
 		 * socs, so the target is driven via the integrated SPI-DMA.
 		 */
 		if (!cfg->dma_enabled) {
@@ -829,14 +861,25 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	 *   chip select via GPIO. Hardware CS must be disabled by setting
 	 *   cs_pin_id outside valid range (0-2). Any value > 2 disables all
 	 *   hardware CS lines per documentation.
-	 * - When using hardware CS (directly via pinctrl), the slave
+	 * - When using hardware CS (directly via pinctrl), the peripheral
 	 *   number maps to the hardware CS pin (CS0, CS1, CS2).
 	 */
 	if (spi_cs_is_gpio(spi_cfg)) {
 		hal_dev->cs_pin_id = -1;
 	} else {
-		hal_dev->cs_pin_id = ctx->config->slave;
+		hal_dev->cs_pin_id = ctx->config->peripheral;
 	}
+
+	uint32_t clk_src_hz = data->clock_source_hz;
+
+#ifdef SPI_LL_SRC_PRE_DIV_MAX
+	uint32_t pre_div = spi_esp32_find_clock_src_pre_div(clk_src_hz, spi_cfg->frequency);
+
+	/* The timing configuration below is computed from the rate that
+	 * enters the peripheral, after the pre-divider
+	 */
+	clk_src_hz /= pre_div;
+#endif
 
 	/* input parameters to calculate timing configuration */
 	spi_hal_timing_param_t timing_param = {
@@ -846,10 +889,15 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		.duty_cycle = cfg->duty_cycle == 0 ? 128 : cfg->duty_cycle,
 		.input_delay_ns = cfg->input_delay_ns,
 		.use_gpio = !cfg->use_iomux,
-		.clk_src_hz = data->clock_source_hz,
+		.clk_src_hz = clk_src_hz,
 	};
 
 	spi_hal_cal_clock_conf(&timing_param, &hal_dev->timing_conf);
+
+#ifdef SPI_LL_SRC_PRE_DIV_MAX
+	hal_dev->timing_conf.source_pre_div = pre_div;
+	hal_dev->timing_conf.source_real_freq = clk_src_hz;
+#endif
 
 	data->trans_config.dummy_bits = hal_dev->timing_conf.timing_dummy;
 
@@ -880,7 +928,19 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 
 	spi_hal_setup_device(hal, hal_dev);
 
-	/* Workaround to handle default state of MISO and MOSI lines */
+#ifdef SPI_LL_SRC_PRE_DIV_MAX
+	/* The pre-divider fields share a clkrst register with the other
+	 * SPI host, so the read-modify-write must not be preempted
+	 */
+	unsigned int key = irq_lock();
+
+	/* Program the pre-divider; hs_div times mst_div is the total pre-division */
+	spi_ll_clk_source_pre_div(hal->hw, pre_div / 2, 2);
+
+	irq_unlock(key);
+#endif
+
+	/* Workaround to handle default state of SDI and SDO lines */
 #ifndef CONFIG_SOC_SERIES_ESP32
 	spi_dev_t *hw = hal->hw;
 
@@ -980,6 +1040,22 @@ static int transceive(const struct device *dev,
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
 	spi_ll_enable_int(cfg->spi);
 	spi_ll_set_int_stat(cfg->spi);
+
+	if (!asynchronous) {
+		ret = spi_context_wait_for_completion(&data->ctx);
+		if (ret != 0) {
+			/* A late ISR completion must not signal the context of
+			 * the next transfer
+			 */
+			spi_ll_disable_int(cfg->spi);
+			spi_ll_clear_int_stat(cfg->spi);
+			spi_context_cs_control(&data->ctx, false);
+#ifdef CONFIG_PM
+			spi_esp32_pm_policy_state_lock_put(dev);
+#endif
+		}
+	}
+
 	spi_context_release(&data->ctx, ret);
 	return ret;
 #else

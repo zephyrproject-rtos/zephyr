@@ -482,6 +482,12 @@ struct mcp251xfd_fifo {
 struct mcp251xfd_data {
 	struct can_driver_data common;
 
+	/* Active SPI config; a distinct clamped copy is used until the PLL has
+	 * locked, since SPI drivers detect config changes by pointer comparison.
+	 */
+	struct spi_config spi_cfg_init;
+	const struct spi_config *spi_cfg;
+
 	/* Interrupt Data */
 	struct gpio_callback int_gpio_cb;
 	struct k_thread int_thread;

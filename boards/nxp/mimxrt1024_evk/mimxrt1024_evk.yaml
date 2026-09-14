@@ -23,6 +23,7 @@ supported:
   - gpio
   - hwinfo
   - netif:eth
+  - ptp_clock
   - pwm
   - sdhc
   - spi

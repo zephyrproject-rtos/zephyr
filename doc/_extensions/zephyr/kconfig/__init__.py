@@ -375,6 +375,8 @@ def kconfig_build_resources(app: Sphinx) -> None:
     """Build the Kconfig database and install HTML resources."""
 
     if not app.config.kconfig_generate_db:
+        # nothing was parsed, so no Kconfig reference can be resolved in this build
+        app.env.kconfig_all_names = None  # type: ignore
         return
 
     with progress_message("Building Kconfig database..."):
@@ -513,6 +515,15 @@ def kconfig_build_resources(app: Sphinx) -> None:
                     )
 
         app.env.kconfig_db = db  # type: ignore
+
+        # the database above only holds documented symbols; keep every name too, so that a
+        # reference to an undocumented option can be told apart from one to a nonexistent option
+        app.env.kconfig_all_names = {  # type: ignore
+            f"{kconfig_obj.config_prefix}{sc.name}"
+            for kconfig_obj in (kconfig, sysbuild_kconfig)
+            for sc in chain(kconfig_obj.unique_defined_syms, kconfig_obj.unique_choices)
+            if sc.name
+        }
 
         outdir = Path(app.outdir) / "kconfig"
         outdir.mkdir(exist_ok=True)

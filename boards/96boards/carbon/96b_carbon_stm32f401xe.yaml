@@ -7,7 +7,7 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
-  - ble
+  - bluetooth
   - i2c
   - counter
   - spi

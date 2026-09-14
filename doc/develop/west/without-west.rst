@@ -78,51 +78,12 @@ instead of using ``west blobs``. See :ref:`bin-blobs` for more details.
 Flashing and Debugging
 ----------------------
 
-Running build system targets like ``ninja flash``, ``ninja debug``,
-etc. is just a call to the corresponding :ref:`west command
-<west-build-flash-debug>`. For example, ``ninja flash`` calls ``west
-flash``\ [#wbninja]_. If you don't have west installed on your system, running
-those targets will fail. You can of course still flash and debug using
-any :ref:`flash-debug-host-tools` which work for your board (and which those
-west commands wrap).
+Flashing and debugging are done with the ``west flash``, ``west debug``,
+``west debugserver``, ``west attach`` and ``west rtt`` commands, which are
+documented in :ref:`west-build-flash-debug`. These commands require west, so
+they are not available if you are using Zephyr without it.
 
-If you want to use these build system targets but do not want to
-install west on your system using ``pip``, it is possible to do so
-by manually creating a :term:`west workspace`:
-
-.. code-block:: console
-
-   # cd into zephyrproject if not already there
-   git clone https://github.com/zephyrproject-rtos/west.git .west/west
-
-Then create a file :file:`.west/config` with the following contents:
-
-.. code-block:: none
-
-   [manifest]
-   path = zephyr
-
-   [zephyr]
-   base = zephyr
-
-After that, and in order for ``ninja`` to be able to invoke ``west``
-to flash and debug, you must specify the west directory. This can be
-done by setting the environment variable ``WEST_DIR`` to point to
-:file:`zephyrproject/.west/west` before running CMake to set up a
-build directory.
-
-.. rubric:: Footnotes
-
-.. [#wbninja]
-
-   Note that ``west build`` invokes ``ninja``, among other
-   tools. There's no recursive invocation of either ``west`` or
-   ``ninja`` involved by default, however, as ``west build`` does not
-   invoke ``ninja flash``, ``debug``, etc. The one exception is if you
-   specifically run one of these build system targets with a command
-   line like ``west build -t flash``. In that case, west is run twice:
-   once for ``west build``, and in a subprocess, again for ``west
-   flash``. Even in this case, ``ninja`` is only run once, as ``ninja
-   flash``. This is because these build system targets depend on an
-   up to date build of the Zephyr application, so it's compiled before
-   ``west flash`` is run.
+Without west, you can still flash and debug using any of the
+:ref:`flash-debug-host-tools` which work for your board (and which those west
+commands wrap), but you will have to invoke them yourself, with the right
+options for your board and application.

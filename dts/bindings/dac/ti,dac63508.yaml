@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI DAC63508 12-bit DAC
+
+compatible: "ti,dac63508"
+
+include: ti,dacx3508-base.yaml

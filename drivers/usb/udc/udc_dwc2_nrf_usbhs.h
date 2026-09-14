@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 #include <nrfs_backend_ipc_service.h>
 #include <nrfs_usb.h>
+#include "../common/nordic/nrf_usbhs_phy_config.h"
 
 #define USBHS_DT_WRAPPER_REG_ADDR(n) UINT_TO_POINTER(DT_INST_REG_ADDR_BY_NAME(n, wrapper))
 
@@ -21,6 +22,8 @@
  */
 static K_EVENT_DEFINE(usbhs_events);
 #define USBHS_VBUS_READY	BIT(0)
+
+const static uint32_t phy_config = PHY_CONFIG(DT_INST_PROP(0, phy));
 
 static void usbhs_vbus_handler(nrfs_usb_evt_t const *p_evt, void *const context)
 {
@@ -96,6 +99,13 @@ static inline int usbhs_enable_core(const struct device *dev)
 		}
 	}
 
+	/* Power up peripheral */
+	wrapper->ENABLE = USBHS_ENABLE_CORE_Msk;
+
+	/* Set PHY strapping options */
+	wrapper->PHY.CONFIG = phy_config;
+
+	/* Release PHY power-on reset */
 	wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;
 
 	/* Wait for PHY clock to start */

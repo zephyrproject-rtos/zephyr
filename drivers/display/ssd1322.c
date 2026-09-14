@@ -567,7 +567,7 @@ static DEVICE_API(display, ssd1322_driver_api) = {
 		.external_vsl = DT_PROP(node_id, external_vsl),                                    \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
-			node_id, SSD1322_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),              \
+			node_id, SSD1322_WORD_SIZE(node_id) | SPI_OP_MODE_CONTROLLER, 0),          \
 		.conversion_buf = conversion_buf##node_id,                                         \
 		.conversion_buf_size = sizeof(conversion_buf##node_id),                            \
 		SSD1322_GRAYSCALE_TABLE(node_id),                                                \

@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Native Sim TAP Ethernet
+
+description: |
+  This binding describes a TAP Ethernet interface for use with native_sim.
+  It provides network connectivity between the host and Zephyr through a Linux
+  TAP interface, which can be used for testing and development purposes without
+  requiring actual hardware.
+
+compatible: "zephyr,native-tap"
+
+include: ethernet-controller.yaml
+
+properties:
+  host-interface:
+    type: string
+    description: |
+      Name of the host TAP network interface to use (e.g. zeth). It can be
+      overridden from the command line using the per-instance "<node>_eth-if"
+      option (or the "eth-if" option for the first interface).

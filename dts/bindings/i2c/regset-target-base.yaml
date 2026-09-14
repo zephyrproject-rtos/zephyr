@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml, i2c-device.yaml]
+
+properties:
+  size:
+    type: int
+    description: Total register size in bytes
+
+  address-width:
+    type: int
+    enum: [8, 16]
+    description: |
+      Number of address bits used to address the EEPROM. If not specified
+      the EEPROM is assumed to have a 8-bit address.
+
+  auto-register:
+    type: boolean
+    description: Automatically register target device on the I2C bus at init time.

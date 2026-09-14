@@ -15,10 +15,10 @@ providing shared subprocess execution, output streaming, and log handling.
 tests_scripts: <list of script paths> (default tests_scripts)
     Specify a list of shell script paths, relative to the test source
     directory, that need to be executed when a test scenario runs.
-    Each entry can be a path to a single file or a directory.
-    When a directory is specified, all ``.sh`` files in that directory
-    are collected (excluding files starting with ``_``). The default
-    is the ``tests_scripts`` directory.
+    Each entry can be a path to a single file, a directory, or a glob pattern.
+    When a directory is specified, all ``.sh`` files in that directory,
+    including its sub-directories, are collected (excluding files starting with ``_``).
+    The default is the ``tests_scripts`` directory.
 
     .. code-block:: yaml
 

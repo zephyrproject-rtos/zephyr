@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxa344.dtsi>
+#include <nxp/mcx/mcxa/nxp_mcxa344.dtsi>
 #include "frdm_mcxa344-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -233,10 +233,25 @@
 	status = "okay";
 };
 
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
+};
+
 &flexpwm0_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
 	pinctrl-names = "default";
+};
+
+/*
+ * Uses OS timer as the kernel timer
+ */
+&ostimer0 {
+	status = "okay";
 };
 
 /* OPAMP configuration */

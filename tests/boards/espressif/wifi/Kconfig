@@ -79,3 +79,10 @@ config WIFI_PING_TIMEOUT
 	help
 	  Timeout duration for pinging the network gateway.
 	  If no reply is received within this time, test will fail.
+
+config HEAP_MEM_POOL_ADD_SIZE_WIFI_TEST
+	int "Wi-Fi test extra system heap (bytes)"
+	default 0
+	help
+	  Extra system heap for Wi-Fi PM test scenarios.
+	  Added on top of subsystem minimums (Wi-Fi driver, board, etc.).

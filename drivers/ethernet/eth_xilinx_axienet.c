@@ -75,20 +75,29 @@ BUILD_ASSERT(CONFIG_NET_BUF_DATA_SIZE >= XILINX_AXIENET_ETH_BUFFER_SIZE,
 /*
  * Maximum DMA SG blocks per TX packet (one per net_buf in net_pkt->frags).
  *
- * When CONFIG_NET_L2_ETHERNET_RESERVE_HEADER is disabled (default), the L2
- * layer allocates the Ethernet header in a separate small net_buf; payload
- * fragments follow, so add 1 to the payload fragment count.
- * When enabled, the header is reserved in the first data net_buf via
- * net_buf_push().
+ * When CONFIG_NET_L2_ETHERNET_RESERVE_HEADER is enabled, L2 usually places
+ * the Ethernet header in the first data buffer via net_buf_push(), but
+ * ethernet_fill_header() falls back to a separate net_buf for
+ * forwarded/routed/bridged packets or when headroom is insufficient.
+ *
+ * TCP with payload often uses three net_buf fragments: Ethernet header, then
+ * IP and TCP headers together, then application data.
  */
-#if IS_ENABLED(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER)
+
+/* One extra net_buf for IP + TCP/UDP headers vs application payload. */
+#define XILINX_AXIENET_TX_L3L4_HDR_FRAG_OVERHEAD 1U
+
+/* Worst-case separate net_buf for struct net_eth_hdr (see ethernet_fill_header()). */
+#define XILINX_AXIENET_TX_L2_FRAG_OVERHEAD 1U
+
+#define XILINX_AXIENET_TX_PAYLOAD_MAX_SIZE \
+	(NET_ETH_MAX_FRAME_SIZE - NET_ETH_MAX_HDR_SIZE)
+
 #define XILINX_AXIENET_TX_MAX_FRAGS \
-	DIV_ROUND_UP(NET_ETH_MAX_FRAME_SIZE, CONFIG_NET_BUF_DATA_SIZE)
-#else
-#define XILINX_AXIENET_TX_MAX_FRAGS \
-	(1 + DIV_ROUND_UP(NET_ETH_MAX_FRAME_SIZE - NET_ETH_MAX_HDR_SIZE, \
-			  CONFIG_NET_BUF_DATA_SIZE))
-#endif
+	(XILINX_AXIENET_TX_L2_FRAG_OVERHEAD + \
+	 XILINX_AXIENET_TX_L3L4_HDR_FRAG_OVERHEAD + \
+	 DIV_ROUND_UP(XILINX_AXIENET_TX_PAYLOAD_MAX_SIZE, \
+		      CONFIG_NET_BUF_DATA_SIZE))
 
 /* device state */
 struct xilinx_axienet_data {

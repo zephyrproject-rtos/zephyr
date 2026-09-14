@@ -18,6 +18,8 @@ struct flash_mspi_nor_quirks {
 	int (*pre_init)(const struct device *dev);
 	/* Called after switching to default IO mode. */
 	int (*post_switch_mode)(const struct device *dev);
+	/* Called by flash_ex_op() while the flash device is acquired. */
+	int (*ex_op)(const struct device *dev, uint16_t code, const uintptr_t in, void *out);
 };
 
 /* Extend this macro when adding new flash chip with quirks */
@@ -26,7 +28,11 @@ struct flash_mspi_nor_quirks {
 		    (&flash_quirks_mxicy_mx25r),				\
 	(COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, mxicy_mx25u, okay),	\
 		    (&flash_quirks_mxicy_mx25u),				\
-		    (NULL))))
+	(COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, st_m95p32, okay),		\
+		    (&flash_quirks_st_m95p32),					\
+	(COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, infineon_s28hx512t, okay), \
+		    (FLASH_QUIRKS_INFINEON_S28HX512T(node)),                    \
+		    (NULL))))))))
 
 #if DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25r)
 
@@ -210,5 +216,13 @@ struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25u = {
 };
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25u) */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_m95p32)
+#include "flash_mspi_nor_quirks_m95p32.h"
+#endif
+
+#ifdef CONFIG_FLASH_MSPI_INFINEON_S28HX512T
+#include "flash_mspi_nor_quirks_infineon_s28hx512t.h"
+#endif /* CONFIG_FLASH_MSPI_INFINEON_S28HX512T */
 
 #endif /*__FLASH_MSPI_NOR_QUIRKS_H__*/

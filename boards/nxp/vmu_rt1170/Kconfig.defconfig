@@ -12,7 +12,7 @@ config IMX_USDHC_DAT3_PWR_TOGGLE
 
 endif # DISK_DRIVERS
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y if CPU_CORTEX_M7 # No cache memory support is required for driver
 
 configdefault ETH_NXP_ENET_RMII_EXT_CLK

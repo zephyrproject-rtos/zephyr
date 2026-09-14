@@ -11,3 +11,7 @@ tests:
       - CONFIG_NET_STATISTICS=y
       - CONFIG_NET_STATISTICS_PPP=y
       - CONFIG_NET_STATISTICS_USER_API=y
+  net.ppp.option_compress:
+    extra_args:
+      - CONFIG_NET_L2_PPP_OPTION_PFC=y
+      - CONFIG_NET_L2_PPP_OPTION_ACFC=y

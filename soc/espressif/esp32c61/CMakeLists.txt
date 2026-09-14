@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_sources(
+  vectors.S
+  soc_irq.S
+  soc.c
+  ../common/start.S
+  ../common/loader.c
+  )
+
+zephyr_include_directories(.)
+
+zephyr_sources_ifndef(CONFIG_BOOTLOADER_MCUBOOT hw_init.c)
+zephyr_library_sources_ifdef(CONFIG_PM ../common/power.c)
+zephyr_library_sources_ifdef(CONFIG_POWEROFF ../common/poweroff.c)
+zephyr_sources_ifdef(CONFIG_RISCV_PMP pmp_regions.c)

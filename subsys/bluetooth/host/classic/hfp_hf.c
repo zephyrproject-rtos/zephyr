@@ -14,14 +14,14 @@
 
 #include <zephyr/bluetooth/conn.h>
 
-#include "common/assert.h"
+#include <common/assert.h>
 
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/hfp_hf.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
 #include "at.h"
@@ -4258,18 +4258,40 @@ static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
+	struct net_buf *buf;
 
 	LOG_DBG("hf disconnected!");
 	if (bt_hf->disconnected) {
 		bt_hf->disconnected(hf);
 	}
 
+	/* Stop the senders before draining the TX queue below: with the flag
+	 * cleared, command senders are rejected with -ENOTCONN instead of
+	 * queueing buffers that nothing will ever send.
+	 */
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED);
+
 	k_work_cancel(&hf->work);
+	k_work_cancel(&hf->slc_work);
 	k_work_cancel_delayable(&hf->deferred_work);
+
+	/* Drop queued TX buffers. Nothing will send them any more, and
+	 * leaving them on the FIFO would leak them from hf_pool for good:
+	 * hfp_hf_create() wipes the FIFO with memset() when the slot is
+	 * reused. Freeing them also unblocks a work handler that is stuck
+	 * in the K_FOREVER allocation in hfp_hf_send_cmd() waiting for the
+	 * exhausted pool to be refilled.
+	 */
+	buf = k_fifo_get(&hf->tx_pending, K_NO_WAIT);
+	while (buf != NULL) {
+		net_buf_unref(buf);
+		buf = k_fifo_get(&hf->tx_pending, K_NO_WAIT);
+	}
+
 	hf->acl = NULL;
 }
 
-static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
+static int hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
 
@@ -4279,6 +4301,8 @@ static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	}
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_RX_ONGOING);
 	k_work_submit(&hf->work);
+
+	return 0;
 }
 
 static void hfp_hf_sent(struct bt_rfcomm_dlc *dlc, int err)
@@ -4333,6 +4357,15 @@ static uint8_t bt_hfp_hf_discover_cb(struct bt_conn *conn, struct bt_sdp_client_
 
 	hf = &bt_hfp_hf_pool[index];
 
+	if (hf->acl == NULL) {
+		/* The HF object was released by hfp_hf_disconnected() while
+		 * the discovery was still ongoing. Do not touch the object
+		 * state or re-submit any work in that case.
+		 */
+		LOG_WRN("HF %p released before discovery completed", hf);
+		return BT_SDP_DISCOVER_UUID_STOP;
+	}
+
 	if ((result == NULL) || (result->resp_buf == NULL)) {
 		LOG_ERR("SDP discovery failed");
 		goto failed;
@@ -4367,6 +4400,15 @@ static uint8_t bt_hfp_hf_discover_cb(struct bt_conn *conn, struct bt_sdp_client_
 	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_RECORD_FOUND);
 failed:
 	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_DISCOVER_DONE);
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_RELEASING)) {
+		/* The RFCOMM connection creation failed and the object was
+		 * kept allocated only to keep the SDP discovery request
+		 * valid. Release the object now that the discovery has
+		 * completed.
+		 */
+		hf->acl = NULL;
+		return BT_SDP_DISCOVER_UUID_STOP;
+	}
 	k_work_submit(&hf->slc_work);
 
 	return BT_SDP_DISCOVER_UUID_STOP;
@@ -4406,6 +4448,22 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 		return NULL;
 	}
 
+	/* The work items are canceled on disconnect, but a handler that was
+	 * already running at that point may still be executing: cancellation
+	 * does not wait for a running handler, and the handlers can block for
+	 * a long time in the K_FOREVER buffer allocation in
+	 * hfp_hf_send_cmd(). Wiping the object under a running handler would
+	 * corrupt the work items and the TX FIFO, so refuse to reuse the
+	 * object until the handlers have finished. This is a transient
+	 * failure: retry once the pending work has drained.
+	 */
+	if ((k_work_busy_get(&hf->work) != 0) ||
+	    (k_work_busy_get(&hf->slc_work) != 0) ||
+	    (k_work_delayable_busy_get(&hf->deferred_work) != 0)) {
+		LOG_WRN("Work of HF %p is still pending or running", hf);
+		return NULL;
+	}
+
 	memset(hf, 0, sizeof(*hf));
 
 	uuid.uuid.type = BT_UUID_TYPE_16;
@@ -4417,12 +4475,13 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 	hf->sdp_param.pool = &hf_pool;
 	hf->sdp_param.ids  = &id_list;
 
+	hf->acl = conn;
+
 	err = bt_sdp_discover(conn, &hf->sdp_param);
 	if (err != 0) {
+		hf->acl = NULL;
 		return NULL;
 	}
-
-	hf->acl = conn;
 
 	hf->rfcomm_dlc.ops = &ops;
 	hf->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
@@ -4588,7 +4647,17 @@ int bt_hfp_hf_connect(struct bt_conn *conn, struct bt_hfp_hf **hf, uint8_t chann
 
 	err = bt_rfcomm_dlc_connect(conn, &new_hf->rfcomm_dlc, channel);
 	if (err != 0) {
-		(void)memset(new_hf, 0, sizeof(*new_hf));
+		/* The SDP discovery request started by hfp_hf_create() is
+		 * linked in the SDP client's request list, so the object
+		 * cannot be wiped here. Mark the object for release and let
+		 * the SDP discovery callback release it. If the discovery
+		 * has already completed, release the object immediately.
+		 */
+		atomic_set_bit(new_hf->flags, BT_HFP_HF_FLAG_RELEASING);
+		if (atomic_test_bit(new_hf->flags, BT_HFP_HF_FLAG_DISCOVER_DONE)) {
+			k_work_cancel(&new_hf->slc_work);
+			new_hf->acl = NULL;
+		}
 		*hf = NULL;
 	} else {
 		*hf = new_hf;

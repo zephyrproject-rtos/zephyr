@@ -31,5 +31,7 @@ properties:
       and also to produce a square wave aligned to the countdown chain.
       Both capabilities are used within the driver.
 
-      This signal must be present to support time set
-      and read operations that preserve sub-second accuracy.
+      This signal is optional. It is only required to use the alarm and
+      update callback APIs. Basic time get/set operations do not require
+      this signal, and the driver will still build and operate without
+      it, e.g. when the INT/SQW pin is left unconnected on the board.

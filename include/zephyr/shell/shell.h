@@ -330,7 +330,7 @@ struct shell_cmd_help {
  * @brief Magic number used to identify the beginning of a structured help
  * message when cast to a char pointer.
  */
-#define SHELL_STRUCTURED_HELP_MAGIC 0x86D20BC4
+#define SHELL_STRUCTURED_HELP_MAGIC 0x86D20BC4U
 
 /**
  * @endcond
@@ -1247,7 +1247,10 @@ int shell_start(const struct shell *sh);
  *
  * @param sh Pointer to shell instance.
  *
- * @return Standard error code.
+ * @retval 0 On success.
+ * @retval -ENOTSUP If the shell is already stopped or not yet started.
+ * @retval -EBUSY If the shell thread is currently processing received data
+ *  (e.g. executing a command). Retry once processing completes.
  */
 int shell_stop(const struct shell *sh);
 

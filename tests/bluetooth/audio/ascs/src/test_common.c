@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/gap.h>
@@ -78,11 +79,15 @@ void test_conn_init(struct bt_conn *conn)
 	conn->index = 0U;
 	conn->info.type = BT_CONN_TYPE_LE;
 	conn->info.role = BT_CONN_ROLE_PERIPHERAL;
-	conn->info.state = BT_CONN_STATE_CONNECTED;
-	conn->info.security.level = BT_SECURITY_L2;
 	conn->info.security.enc_key_size = BT_ENC_KEY_SIZE_MAX;
 	conn->info.security.flags = BT_SECURITY_FLAG_OOB | BT_SECURITY_FLAG_SC;
 	conn->info.le.interval_us = BT_GAP_INIT_CONN_INT_MIN * BT_HCI_LE_INTERVAL_UNIT_US;
+	conn->info.le.dst = &conn->addr;
+	conn->addr =
+		(bt_addr_le_t){.type = 0x00U, .a.val = {0xCEU, 0xBFU, 0x37U, 0x37U, 0x12U, 0x56U}};
+
+	mock_bt_conn_connected(conn, BT_HCI_ERR_SUCCESS);
+	mock_bt_conn_security_changed(conn, BT_SECURITY_L2, BT_SECURITY_ERR_SUCCESS);
 }
 
 const struct bt_gatt_attr *test_ase_control_point_get(void)

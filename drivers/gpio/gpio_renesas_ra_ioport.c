@@ -338,10 +338,7 @@ static DEVICE_API(gpio, gpio_ra_drv_api_funcs) = {
 	IF_ENABLED(CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT,                                           \
 	(struct gpio_ra_irq_info gpio_ra_irq_info_##suffix[] = {IRQ_INFO_PARAMETER(node)};))	   \
 	static const struct gpio_ra_config gpio_ra_config_##suffix = {                             \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),              \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(node),                                   \
 		.port_num = port_number,                                                           \
 		.port = (R_PORT0_Type *)addr,                                                      \
 		.vbatt_pins = DT_PROP_OR(DT_NODELABEL(ioport##suffix), vbatts_pins, {0xFF}),       \

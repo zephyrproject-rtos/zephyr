@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 NXP
+ * Copyright (c) 2021, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #include <zephyr/drivers/clock_control.h>
 #ifdef CONFIG_PWM_CAPTURE
 #include <zephyr/irq.h>
-#include <fsl_inputmux.h>
+#include <zephyr/drivers/mux.h>
 #endif
 #include <zephyr/logging/log.h>
 
@@ -37,6 +37,17 @@ typedef struct pwm_channel_config {
 } pwm_channel_config_t;
 #endif /* CONFIG_PM_DEVICE */
 
+#ifdef CONFIG_PWM_CAPTURE
+/* One INPUTMUX capture route decoded from the mux-states phandle-array. The
+ * trailing state cell is an inputmux_connection_t applied via the mux
+ * subsystem.
+ */
+struct pwm_sctimer_mux_entry {
+	const struct device *dev;
+	const struct mux_state *state;
+};
+#endif /* CONFIG_PWM_CAPTURE */
+
 struct pwm_mcux_sctimer_config {
 	SCT_Type *base;
 	uint32_t prescale;
@@ -45,9 +56,8 @@ struct pwm_mcux_sctimer_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 #ifdef CONFIG_PWM_CAPTURE
-	const uint32_t *input_channels;
-	const uint32_t *inputmux_connections;
-	uint8_t input_channel_count;
+	const struct pwm_sctimer_mux_entry *mux_entries;
+	uint8_t mux_entries_count;
 	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_PWM_CAPTURE */
 };
@@ -83,6 +93,8 @@ struct pwm_mcux_sctimer_data {
 	uint32_t configured_chan;
 #ifdef CONFIG_PWM_CAPTURE
 	uint32_t match_event;
+	/* Channels with a measurement in flight, see mcux_sctimer_update_overflow_irq() */
+	uint32_t overflow_irq_mask;
 	struct pwm_mcux_sctimer_capture_data capture_data[CAPTURE_CHANNEL_COUNT];
 #endif /* CONFIG_PWM_CAPTURE */
 	bool pwm_channel_active;
@@ -135,6 +147,34 @@ static int mcux_sctimer_new_channel(const struct device *dev,
 	SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 	data->configured_chan++;
 	return 0;
+}
+
+/* Hold a channel's output at its inactive level. */
+static void mcux_sctimer_pwm_force_inactive(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	struct pwm_mcux_sctimer_data *data = dev->data;
+	SCT_Type *base = config->base;
+	bool was_running = (base->CTRL & SCT_CTRL_HALT_L_MASK) == 0U;
+
+	/* SCT OUTPUT is only writable while the counter is halted*/
+	if (was_running) {
+		SCTIMER_StopTimer(base, kSCTIMER_Counter_U);
+	}
+
+	base->OUT[channel].SET = 0U;
+	base->OUT[channel].CLR = 0U;
+
+	/* Set the output to inactive State */
+	if (data->channel[channel].level == kSCTIMER_HighTrue) {
+		base->OUTPUT &= ~(1UL << channel);
+	} else {
+		base->OUTPUT |= (1UL << channel);
+	}
+
+	if (was_running) {
+		SCTIMER_StartTimer(base, kSCTIMER_Counter_U);
+	}
 }
 
 static void mcux_sctimer_pwm_update_polarity(const struct device *dev, uint32_t channel)
@@ -204,25 +244,6 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 
 	duty_cycle = 100 * pulse_cycles / period_cycles;
 
-	if (duty_cycle == 0 && data->configured_chan == 1) {
-		/* Only one channel is active. We can turn off the SCTimer
-		 * global counter.
-		 */
-		SCT_Type *base = config->base;
-
-		/* Stop timer so we can set output directly */
-		SCTIMER_StopTimer(base, kSCTIMER_Counter_U);
-
-		/* Set the output to inactive State */
-		if (data->channel[channel].level == kSCTIMER_HighTrue) {
-			base->OUTPUT &= ~(1UL << channel);
-		} else {
-			base->OUTPUT |= (1UL << channel);
-		}
-
-		return 0;
-	}
-
 	/* SCTimer has some unique restrictions when operation as a PWM output.
 	 * The peripheral is based around a single counter, with a block of
 	 * match registers that can trigger corresponding events. When used
@@ -291,6 +312,11 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		/* Only duty cycle needs to be updated */
 		SCTIMER_UpdatePwmDutycycle(config->base, channel, duty_cycle,
 					   data->event_number[channel]);
+	}
+
+	if (duty_cycle == 0) {
+		/* Must work on the first call for a channel and while others run */
+		mcux_sctimer_pwm_force_inactive(dev, channel);
 	}
 
 	return 0;
@@ -455,6 +481,33 @@ static int mcux_sctimer_configure_capture(const struct device *dev,
 	return 0;
 }
 
+/* Arm the counter overflow interrupt only while a measurement is in flight.
+ *
+ * calc_ticks() uses the wrap count as a difference between the two edges, so wraps
+ * before the first edge cancel out. They are not free: match_event is the PWM period
+ * event and nothing disables it until a capture completes, so waiting for an edge that
+ * never arrives turns a short PWM period into an interrupt storm. The event is shared
+ * by all capture channels, hence the bitmask.
+ */
+static void mcux_sctimer_update_overflow_irq(const struct device *dev, uint32_t channel,
+					     bool needed)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	struct pwm_mcux_sctimer_data *data = dev->data;
+
+	if (needed) {
+		data->overflow_irq_mask |= (1UL << channel);
+	} else {
+		data->overflow_irq_mask &= ~(1UL << channel);
+	}
+
+	if (data->overflow_irq_mask != 0U) {
+		SCTIMER_EnableInterrupts(config->base, (1 << data->match_event));
+	} else {
+		SCTIMER_DisableInterrupts(config->base, (1 << data->match_event));
+	}
+}
+
 static int mcux_sctimer_enable_capture(const struct device *dev, uint32_t channel)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
@@ -485,11 +538,12 @@ static int mcux_sctimer_enable_capture(const struct device *dev, uint32_t channe
 	status_flags = SCTIMER_GetStatusFlags(config->base);
 	SCTIMER_ClearStatusFlags(config->base, status_flags);
 
-	/* Enable interrupts for capture events and limit */
+	/* Enable interrupts for the capture edges only, the overflow interrupt is armed
+	 * once a first edge has been captured.
+	 */
 	SCTIMER_EnableInterrupts(config->base,
 		(1 << data->capture_data[channel].first_capture_event) |
-		(1 << data->capture_data[channel].second_capture_event) |
-		(1 << data->match_event));
+		(1 << data->capture_data[channel].second_capture_event));
 
 	return 0;
 }
@@ -509,8 +563,9 @@ static int mcux_sctimer_disable_capture(const struct device *dev, uint32_t chann
 		data->capture_data[channel].channel_used = false;
 		SCTIMER_DisableInterrupts(config->base,
 			(1 << data->capture_data[channel].first_capture_event) |
-			(1 << data->capture_data[channel].second_capture_event) |
-			(1 << data->match_event));
+			(1 << data->capture_data[channel].second_capture_event));
+		/* Drop this channel's claim on the shared overflow interrupt */
+		mcux_sctimer_update_overflow_irq(dev, channel, false);
 	}
 
 	/* Stop timer */
@@ -560,6 +615,9 @@ static void mcux_sctimer_capture_first_edge(const struct device *dev, uint32_t c
 	data->capture_data[channel].first_limit_count =
 		data->capture_data[channel].overflow_count;
 	data->capture_data[channel].first_edge_captured = true;
+
+	/* A measurement is now in flight: start counting counter wraps */
+	mcux_sctimer_update_overflow_irq(dev, channel, true);
 }
 
 static void mcux_sctimer_capture_second_edge(const struct device *dev, uint32_t channel)
@@ -574,6 +632,9 @@ static void mcux_sctimer_capture_second_edge(const struct device *dev, uint32_t 
 		data->capture_data[channel].overflow_count;
 	data->capture_data[channel].capture_ready = true;
 	data->capture_data[channel].first_edge_captured = false;
+
+	/* Measurement window closed */
+	mcux_sctimer_update_overflow_irq(dev, channel, false);
 }
 
 static void prepare_next_capture(const struct device *dev, uint32_t channel)
@@ -601,16 +662,21 @@ static void prepare_next_capture(const struct device *dev, uint32_t channel)
 			/* No actions required. */
 		}
 	} else {
-		/* Single capture mode: Disable interrupts */
+		/* Single capture mode: Disable interrupts, overflow handled below */
 		SCTIMER_DisableInterrupts(config->base,
 			(1 << data->capture_data[channel].first_capture_event) |
-			(1 << data->capture_data[channel].second_capture_event) |
-			(1 << data->match_event));
+			(1 << data->capture_data[channel].second_capture_event));
 	}
 
 	/* Clear second capture setting */
 	data->capture_data[channel].second_limit_count = 0;
 	data->capture_data[channel].second_capture_value = 0;
+
+	/* Continuous period capture keeps a measurement in flight by carrying the second
+	 * edge over as the next first edge.
+	 */
+	mcux_sctimer_update_overflow_irq(dev, channel,
+					 data->capture_data[channel].first_edge_captured);
 }
 
 static void mcux_sctimer_process_channel_events(const struct device *dev, uint32_t channel,
@@ -741,14 +807,24 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 	data->configured_chan = 0;
 
 #ifdef CONFIG_PWM_CAPTURE
-	/* set inputmux connections */
-	INPUTMUX_Init(INPUTMUX);
-	for (i = 0; i < config->input_channel_count; i++) {
-		INPUTMUX_AttachSignal(INPUTMUX, config->input_channels[i],
-			config->inputmux_connections[i]);
+	/* Apply the INPUTMUX capture routing through the mux subsystem */
+	for (i = 0; i < config->mux_entries_count; i++) {
+		const struct pwm_sctimer_mux_entry *entry = &config->mux_entries[i];
+
+		if (!device_is_ready(entry->dev)) {
+			LOG_ERR_DEVICE_NOT_READY(entry->dev);
+			return -ENODEV;
+		}
+
+		err = mux_state_apply(entry->dev, entry->state);
+		if (err) {
+			LOG_ERR("failed to apply mux state %d: %d", i, err);
+			return err;
+		}
 	}
 	/* Initialize capture data */
 	data->match_event = EVENT_NOT_SET;
+	data->overflow_irq_mask = 0;
 	for (i = 0; i < CAPTURE_CHANNEL_COUNT; i++) {
 		/* Reset capture state */
 		memset(&data->capture_data[i], 0, sizeof(struct pwm_mcux_sctimer_capture_data));
@@ -856,14 +932,27 @@ static void mcux_sctimer_config_func_##n(const struct device *dev) \
 		    mcux_sctimer_isr, DEVICE_DT_INST_GET(n), 0); \
 	irq_enable(DT_INST_IRQN(n)); \
 }
+#define SCTIMER_MUX_ENTRY(node_id, prop, idx) \
+	{ \
+		.dev   = MUX_STATE_DT_DEV_GET_BY_IDX(node_id, idx), \
+		.state = MUX_STATE_DT_GET_BY_IDX(node_id, idx), \
+	}
+#define SCTIMER_MUX_DEFINE(n) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states), \
+		    (MUX_STATE_DT_INST_SPEC_DEFINE_ALL(n); \
+		     static const struct pwm_sctimer_mux_entry \
+			    pwm_mcux_sctimer_mux_entries_##n[] = { \
+			    DT_INST_FOREACH_PROP_ELEM_SEP(n, mux_states, \
+							  SCTIMER_MUX_ENTRY, (,))};), ())
 #define SCTIMER_CFG_CAPTURE_INIT(n) \
-	.input_channels = (const uint32_t[]) DT_INST_PROP(n, input_channels), \
-	.inputmux_connections = (const uint32_t[]) DT_INST_PROP(n, inputmux_connections), \
-	.input_channel_count = DT_INST_PROP_LEN(n, input_channels), \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states), \
+		    (.mux_entries = pwm_mcux_sctimer_mux_entries_##n, \
+		     .mux_entries_count = ARRAY_SIZE(pwm_mcux_sctimer_mux_entries_##n),), ()) \
 	.irq_config_func = mcux_sctimer_config_func_##n
 #define SCTIMER_INIT_CFG(n)	SCTIMER_DECLARE_CFG(n, SCTIMER_CFG_CAPTURE_INIT(n))
 #else /* !CONFIG_PWM_CAPTURE */
 #define SCTIMER_CONFIG_FUNC(n)
+#define SCTIMER_MUX_DEFINE(n)
 #define SCTIMER_CFG_CAPTURE_INIT
 #define SCTIMER_INIT_CFG(n)	SCTIMER_DECLARE_CFG(n, SCTIMER_CFG_CAPTURE_INIT)
 #endif /* !CONFIG_PWM_CAPTURE */
@@ -873,6 +962,7 @@ static void mcux_sctimer_config_func_##n(const struct device *dev) \
 	static struct pwm_mcux_sctimer_data pwm_mcux_sctimer_data_##n;			\
 											\
 	SCTIMER_CONFIG_FUNC(n)								\
+	SCTIMER_MUX_DEFINE(n)								\
 	SCTIMER_INIT_CFG(n);								\
 	PM_DEVICE_DT_INST_DEFINE(n, mcux_sctimer_pwm_pm_action);			\
 	DEVICE_DT_INST_DEFINE(n,							\

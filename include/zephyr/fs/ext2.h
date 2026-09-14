@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Ext2 file system configuration structures.
+ * @ingroup file_system_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_FS_EXT2_H_
 #define ZEPHYR_INCLUDE_FS_EXT2_H_
 
@@ -38,6 +44,10 @@ struct ext2_cfg {
 	bool set_uuid;
 };
 
+/** @brief Declare an ext2 format configuration with default values.
+ *
+ * @param name Name of the declared @ref ext2_cfg object.
+ */
 #define FS_EXT2_DECLARE_DEFAULT_CONFIG(name)			\
 	static struct ext2_cfg name = {				\
 		.block_size = 1024,				\

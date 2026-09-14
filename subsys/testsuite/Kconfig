@@ -126,6 +126,22 @@ config TEST_BUSY_SIM
 	  It simulates cpu load by using counter device to generate interrupts
 	  with random intervals and random busy looping in the interrupt.
 
+config TEST_CAPTURE
+	bool "Test output capture"
+	depends on TEST
+	help
+	  Enable the tc_capture helper (zephyr/tc_capture.h), which records
+	  printk and logging output into an in-memory buffer so tests can assert
+	  on the text produced during a test.
+
+config TEST_CAPTURE_BUFFER_SIZE
+	int "Test output capture buffer size"
+	depends on TEST_CAPTURE
+	default 512
+	help
+	  Size, in bytes, of the buffer used to hold captured test output. Output
+	  beyond this size is discarded.
+
 endmenu
 
 

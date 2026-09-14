@@ -594,13 +594,13 @@ static DEVICE_API(sensor, fxls8974_driver_api) = {
 
 #define FXLS8974_CONFIG_SPI(n)									\
 		.bus_cfg = { .spi = SPI_DT_SPEC_INST_GET(n,					\
-						SPI_OP_MODE_MASTER | SPI_WORD_SET(8)) },	\
+						SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8)) },	\
 						.ops = &fxls8974_spi_ops,			\
 						.range = DT_INST_PROP(n, range),		\
 						.inst_on_bus = FXLS8974_BUS_SPI,		\
 
 #define FXLS8974_SPI_OPERATION (SPI_WORD_SET(8) |	\
-				SPI_OP_MODE_MASTER)	\
+				SPI_OP_MODE_CONTROLLER)	\
 
 #define FXLS8974_INTM_PROPS(n, m)			\
 	.int_gpio = GPIO_DT_SPEC_INST_GET(n, int##m##_gpios),

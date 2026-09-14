@@ -140,7 +140,7 @@ static int i2c_smartbond_apply_configure(const struct device *dev, uint32_t dev_
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	/* Enable sending RESTART as master */
+	/* Enable sending RESTART as controller */
 	con_reg |= I2C_I2C_CON_REG_I2C_RESTART_EN_Msk;
 
 	i2c_smartbond_disable_when_inactive(dev);

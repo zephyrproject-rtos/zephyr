@@ -18,6 +18,7 @@ struct bmp581_encoded_header {
 		uint64_t timestamp;
 		uint8_t press_en;
 		uint8_t fifo_count;
+		uint8_t odr;
 };
 
 struct bmp581_frame {

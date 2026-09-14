@@ -190,7 +190,7 @@ static int fpga_slg47910_init(const struct device *dev)
 }
 
 #define SLG47910_SPI_OPERATION                                                                     \
-	(SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_OP_MODE_MASTER | SPI_LINES_SINGLE)
+	(SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_OP_MODE_CONTROLLER | SPI_LINES_SINGLE)
 
 #define SLG47910_INIT(inst)                                                                        \
 	static struct fpga_slg47910_data fpga_slg47910_data_##inst;                                \

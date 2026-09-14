@@ -69,8 +69,7 @@ static int isds_2536030320001_sample_fetch(const struct device *dev, enum sensor
 	uint32_t accel_step_sleep_duration, gyro_step_sleep_duration, step_sleep_duration;
 
 	switch (channel) {
-	case SENSOR_CHAN_ALL:
-	case SENSOR_CHAN_AMBIENT_TEMP: {
+	case SENSOR_CHAN_ALL: {
 		if (!wsen_sensor_step_sleep_duration_milli_from_odr_hz(
 			    &isds_2536030320001_accel_odr_list[data->accel_odr],
 			    &accel_step_sleep_duration)) {
@@ -88,6 +87,30 @@ static int isds_2536030320001_sample_fetch(const struct device *dev, enum sensor
 		step_sleep_duration = accel_step_sleep_duration < gyro_step_sleep_duration
 					      ? gyro_step_sleep_duration
 					      : accel_step_sleep_duration;
+		break;
+	}
+	case SENSOR_CHAN_AMBIENT_TEMP: {
+		bool accel_enabled = wsen_sensor_step_sleep_duration_milli_from_odr_hz(
+			&isds_2536030320001_accel_odr_list[data->accel_odr],
+			&accel_step_sleep_duration);
+		bool gyro_enabled = wsen_sensor_step_sleep_duration_milli_from_odr_hz(
+			&isds_2536030320001_gyro_odr_list[data->gyro_odr],
+			&gyro_step_sleep_duration);
+
+		if (!accel_enabled && !gyro_enabled) {
+			LOG_ERR("Accelerometer and gyroscope are disabled.");
+			return -ENOTSUP;
+		}
+
+		if (!gyro_enabled) {
+			step_sleep_duration = accel_step_sleep_duration;
+		} else if (!accel_enabled) {
+			step_sleep_duration = gyro_step_sleep_duration;
+		} else {
+			step_sleep_duration = accel_step_sleep_duration < gyro_step_sleep_duration
+						      ? gyro_step_sleep_duration
+						      : accel_step_sleep_duration;
+		}
 		break;
 	}
 	case SENSOR_CHAN_ACCEL_X:
@@ -565,8 +588,7 @@ static int isds_2536030320001_accel_full_scale_get(const struct device *dev,
 
 	data->accel_range = accel_fs;
 
-	fs->val1 = isds_2536030320001_accel_full_scale_list[accel_fs];
-	fs->val2 = 0;
+	sensor_g_to_ms2(isds_2536030320001_accel_full_scale_list[accel_fs], fs);
 
 	return 0;
 }
@@ -583,6 +605,12 @@ static int isds_2536030320001_gyro_full_scale_set(const struct device *dev,
 	uint16_t scale_dps = (uint16_t)sensor_rad_to_degrees(fs);
 
 	uint8_t idx;
+
+	if (scale_dps == 0) {
+		/* 0 marks the reserved gaps in isds_2536030320001_gyro_full_scale_list */
+		LOG_ERR("Bad scale %d", scale_dps);
+		return -EINVAL;
+	}
 
 	for (idx = 0; idx < ARRAY_SIZE(isds_2536030320001_gyro_full_scale_list); idx++) {
 		if (isds_2536030320001_gyro_full_scale_list[idx] == scale_dps) {
@@ -625,8 +653,7 @@ static int isds_2536030320001_gyro_full_scale_get(const struct device *dev, stru
 
 	data->gyro_range = gyro_fs;
 
-	fs->val1 = isds_2536030320001_gyro_full_scale_list[gyro_fs];
-	fs->val2 = 0;
+	sensor_degrees_to_rad((int32_t)isds_2536030320001_gyro_full_scale_list[gyro_fs], fs);
 
 	return 0;
 }
@@ -895,7 +922,7 @@ static int isds_2536030320001_init(const struct device *dev)
  */
 
 #define ISDS_2536030320001_SPI_OPERATION                                                           \
-	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define ISDS_2536030320001_CONFIG_SPI(inst)                                                        \
 	{.bus_cfg =                                                                                \

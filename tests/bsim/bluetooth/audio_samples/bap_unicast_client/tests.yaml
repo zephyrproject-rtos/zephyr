@@ -1,5 +1,5 @@
 tests:
-  tests.bsim.bluetooth.audio_samples.bap_unicast_client:
+  bluetooth.audio_samples.bsim.bap_unicast_client:
     tags:
       - bluetooth
     depends_on: bsim

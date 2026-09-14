@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +57,9 @@ GTEXT(z_prep_c)
 #if defined(CONFIG_GEN_ISR_TABLES)
 GTEXT(_isr_wrapper)
 #endif /* CONFIG_GEN_ISR_TABLES */
+#if defined(CONFIG_PROFILING_PERF) && defined(CONFIG_PROFILING_PERF_BACKEND_ARM_CORTEX_M)
+GTEXT(z_arm_perf_sys_clock_isr)
+#endif /* CONFIG_PROFILING_PERF && CONFIG_PROFILING_PERF_BACKEND_ARM_CORTEX_M */
 
 #else /* _ASMLANGUAGE */
 

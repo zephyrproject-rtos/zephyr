@@ -8,21 +8,6 @@ common:
   tags:
     - power
     - poweroff
-  platform_allow:
-    - frdm_mcxn947/mcxn947/cpu0
-    - mcx_n5xx_evk/mcxn547/cpu0
-    - mcx_n9xx_evk/mcxn947/cpu0
-    - frdm_mcxn236
-    - frdm_mcxa153
-    - frdm_mcxa156
-    - frdm_mcxa344
-    - frdm_mcxa266
-    - frdm_mcxa346
-    - frdm_mcxa366
-    - frdm_mcxa577
-  integration_platforms:
-    - frdm_mcxn947/mcxn947/cpu0
-    - frdm_mcxa156
   harness: console
   harness_config:
     type: one_line
@@ -30,15 +15,85 @@ common:
       - "system off demo"
 
 tests:
-  sample.boards.nxp.mcxn_a.system_off.timer:
+  sample.boards.nxp.mcxn_a.system_off.timer.mcxn:
     timeout: 120
+    integration_platforms:
+      - frdm_mcxn947/mcxn947/cpu0
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n5xx_evk/mcxn547/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - frdm_mcxn236
+    extra_dtc_overlay_files:
+      - mcx.overlay
+      - mcxn.overlay
     harness_config:
       type: one_line
       regex:
         - "Completed 10 system-off cycles"
     extra_configs:
       - CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_TIMER=y
-  sample.boards.nxp.mcxn_a.system_off.button:
+  sample.boards.nxp.mcxn_a.system_off.timer.mcxa:
+    timeout: 120
+    integration_platforms:
+      - frdm_mcxa156
+    platform_allow:
+      - frdm_mcxa153
+      - frdm_mcxa156
+      - frdm_mcxa344
+      - frdm_mcxa266
+      - frdm_mcxa346
+      - frdm_mcxa366
+    extra_dtc_overlay_files:
+      - mcx.overlay
+    harness_config:
+      type: one_line
+      regex:
+        - "Completed 10 system-off cycles"
+    extra_configs:
+      - CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_TIMER=y
+  sample.boards.nxp.mcxn_a.system_off.timer.mcxa577:
+    timeout: 120
+    platform_allow:
+      - frdm_mcxa577
+    harness_config:
+      type: one_line
+      regex:
+        - "Completed 10 system-off cycles"
+    extra_configs:
+      - CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_TIMER=y
+  sample.boards.nxp.mcxn_a.system_off.button.mcxn:
     timeout: 300
+    integration_platforms:
+      - frdm_mcxn947/mcxn947/cpu0
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n5xx_evk/mcxn547/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - frdm_mcxn236
+    extra_dtc_overlay_files:
+      - mcx.overlay
+      - mcxn.overlay
+    extra_configs:
+      - CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_BUTTON=y
+  sample.boards.nxp.mcxn_a.system_off.button.mcxa:
+    timeout: 300
+    integration_platforms:
+      - frdm_mcxa156
+    platform_allow:
+      - frdm_mcxa153
+      - frdm_mcxa156
+      - frdm_mcxa344
+      - frdm_mcxa266
+      - frdm_mcxa346
+      - frdm_mcxa366
+    extra_dtc_overlay_files:
+      - mcx.overlay
+    extra_configs:
+      - CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_BUTTON=y
+  sample.boards.nxp.mcxn_a.system_off.button.mcxa577:
+    timeout: 300
+    platform_allow:
+      - frdm_mcxa577
     extra_configs:
       - CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_BUTTON=y

@@ -166,6 +166,8 @@ struct can_sja1000_data {
 	ATOMIC_DEFINE(rx_allocs, CONFIG_CAN_SJA1000_MAX_FILTERS);
 	struct can_sja1000_rx_filter filters[CONFIG_CAN_SJA1000_MAX_FILTERS];
 	struct k_mutex mod_lock;
+	/* Serializes thread and ISR access to the shared rx/tx buffer window */
+	struct k_spinlock buf_lock;
 	enum can_state state;
 	struct k_sem tx_idle;
 	can_tx_callback_t tx_callback;
@@ -246,13 +248,6 @@ int can_sja1000_recover(const struct device *dev, k_timeout_t timeout);
  */
 int can_sja1000_get_state(const struct device *dev, enum can_state *state,
 			  struct can_bus_err_cnt *err_cnt);
-
-/**
- * @brief SJA1000 callback API upon setting a state change callback
- * See @a can_set_state_change_callback() for argument description
- */
-void can_sja1000_set_state_change_callback(const struct device *dev,
-					   can_state_change_callback_t callback, void *user_data);
 
 /**
  * @brief SJA1000 callback API upon getting the maximum number of concurrent CAN RX filters

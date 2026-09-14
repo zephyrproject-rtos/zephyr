@@ -44,7 +44,7 @@ endif # SPI_NRFX_SPIM_RTIO
 config SPI_NRFX_SPIS
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_SPIS_ENABLED
-	select SPI_SLAVE
+	select SPI_PERIPHERAL
 	select NRFX_SPIS
 
 config SPI_NRFX_RAM_BUFFER_SIZE
@@ -79,11 +79,11 @@ config SPI_NRFX_DMM_BUFFER_SIZE
 	  twice the chunk size.
 
 config SPI_NRFX_WAKE_TIMEOUT_US
-	int "Maximum time to wait for SPI slave to wake up"
+	int "Maximum time to wait for SPI peripheral to wake up"
 	default 200
 	help
-	  Maximum amount of time (in microseconds) that SPI master should wait
-	  for SPI slave to wake up after the WAKE line is asserted. Used only
+	  Maximum amount of time (in microseconds) that SPI controller should wait
+	  for SPI peripheral to wake up after the WAKE line is asserted. Used only
 	  by instances that have the WAKE line configured (see the wake-gpios
 	  devicetree property).
 

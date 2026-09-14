@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Zephyr Kernel Objects */
 
-static void ot_plat_ble_thread(void *, void *, void *);
+static void ot_plat_ble_thread(void *unused1, void *unused2, void *unused3);
 static uint8_t ot_plat_ble_msg_buf[PLAT_BLE_MSG_DATA_MAX];
 
 static K_SEM_DEFINE(ot_plat_ble_init_semaphore, 0, 1);

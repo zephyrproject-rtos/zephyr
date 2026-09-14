@@ -236,6 +236,14 @@ int posix_irq_is_enabled(unsigned int irq)
 	return hw_irq_ctrl_is_irq_enabled(CONFIG_NATIVE_SIMULATOR_MCU_N, irq);
 }
 
+/**
+ * Report whether an irq is pending (not necessarily active)
+ */
+int posix_irq_is_pending(unsigned int irq)
+{
+	return hw_irq_ctrl_is_irq_pending(CONFIG_NATIVE_SIMULATOR_MCU_N, irq);
+}
+
 int posix_get_current_irq(void)
 {
 	return currently_running_irq;

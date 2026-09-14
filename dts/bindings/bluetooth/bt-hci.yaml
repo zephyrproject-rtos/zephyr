@@ -28,6 +28,7 @@ properties:
     enum:
       - "no-reset"
       - "no-auto-dle"
+      - "no-flow-control"
   bt-hci-vs-ext:
     type: boolean
     description: Zephyr HCI vendor extensions are supported

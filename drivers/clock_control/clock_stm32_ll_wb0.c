@@ -18,8 +18,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/arch/common/sys_io.h>
-#include <zephyr/arch/common/sys_bitops.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 /* Driver definitions */

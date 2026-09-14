@@ -9,7 +9,7 @@ supported:
   - adc
   - arduino_gpio
   - arduino_spi
-  - ble
+  - bluetooth
   - counter
   - crc
   - dac

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,6 +70,10 @@
 };
 
 &clk_ipo {
+	status = "okay";
+};
+
+&clk_ertco {
 	status = "okay";
 };
 

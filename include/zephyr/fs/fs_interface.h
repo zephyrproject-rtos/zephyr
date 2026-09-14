@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief File system core structures and file name length limits.
+ * @ingroup file_system_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_FS_FS_INTERFACE_H_
 #define ZEPHYR_INCLUDE_FS_FS_INTERFACE_H_
 
@@ -59,14 +65,19 @@ extern "C" {
 #endif
 
 #if !defined(MAX_FILE_NAME) /* filesystem selection */
-/* Use standard 8.3 when no filesystem is explicitly selected */
+/**
+ * @brief Maximum length of a file name, without the terminating null character.
+ *
+ * The value depends on the enabled file systems. The standard 8.3 length is
+ * used when no file system is explicitly selected.
+ */
 #define MAX_FILE_NAME 12
 #endif /* filesystem selection */
 
 #endif /* CONFIG_FILE_SYSTEM_MAX_FILE_NAME */
 
 
-/* Type for fs_open flags */
+/** Type for fs_open() flags */
 typedef uint8_t fs_mode_t;
 
 struct fs_mount_t;

@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -330,6 +330,7 @@
 			wakeup-source;
 			interrupts = <57 4>, <58 4>;
 			interrupt-names = "autanalog", "autanalog_fifo";
+			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
@@ -337,6 +338,7 @@
 			ctb0: ctb0@0 {
 				compatible = "infineon,autanalog-ctb";
 				reg = <0x0 0x1000>;
+				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
@@ -344,6 +346,7 @@
 			ctb1: ctb1@10000 {
 				compatible = "infineon,autanalog-ctb";
 				reg = <0x10000 0x1000>;
+				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
@@ -405,18 +408,41 @@
 			};
 		};
 
+		/* System-reserved: channels 0-3, 8-10; interrupts 0-2, 6-7.
+		 * ch0 and 1 are used for communication with the secure enclave
+		 * ch2 is used to monitor RRAM operations
+		 * ch3 is used to handle PDL semaphores
+		 * ch 8-9-10 are used by TF-M
+		 * intr0 and 1 are used for secure enclave purposes
+		 * intr2 is used for the RRAM
+		 * Application-usable: channels 4-7, 11-15; interrupts 3-5.
+		 */
 		ipc0: ipc@522a0000 {
 			compatible = "infineon,ipc";
 			reg = <0x522a0000 0x1200>;
 			status = "disabled";
-			#ipc-config-cells = <3>;
+			#ipc-config-cells = <2>;
+			channel-count = <16>;
+			interrupt-count = <8>;
+			channel-mask = <0xf8f0>;
+			interrupt-mask = <0x38>;
 		};
 
+		/* System-reserved: channels 0, 1, 15; interrupts 0-4.
+		 * ch0 is reserved
+		 * ch1 and 15 are used by SRF
+		 * intr 0-4 are used by SRF
+		 * Application-usable: channels 2-14; interrupts 5-7.
+		 */
 		ipc1: ipc@541d0000 {
 			compatible = "infineon,ipc";
 			reg = <0x541d0000 0x1200>;
 			status = "disabled";
-			#ipc-config-cells = <3>;
+			#ipc-config-cells = <2>;
+			channel-count = <16>;
+			interrupt-count = <8>;
+			channel-mask = <0x7ffc>;
+			interrupt-mask = <0xe0>;
 		};
 
 		scb0: scb@52990000 {
@@ -1240,6 +1266,18 @@
 			};
 		};
 
+		axidmac: axidmac@541a0000 {
+			#dma-cells = <1>;
+			compatible = "infineon,mdma";
+			reg = <0x541a0000 0x1800>;
+			dma-channels = <4>;
+			interrupts = <98 4>,  /* CH0 */
+				     <99 4>,  /* CH1 */
+				     <100 4>, /* CH2 */
+				     <101 4>; /* CH3 */
+			status = "disabled";
+		};
+
 		dma0: dw@52270000 {
 			#dma-cells = <1>;
 			compatible = "infineon,dma";
@@ -1326,6 +1364,21 @@
 				     <161 4>; /* TX Structure */
 			clk-dst = <0x00010101>;
 			status = "disabled";
+		};
+
+		crypto0: crypto@52440000 {
+			compatible = "infineon,mxcrypto";
+			reg = <0x52440000 0x10000>;
+
+			mxcrypto_trng: mxcrypto_trng {
+				compatible = "infineon,mxcrypto-trng";
+				status = "disabled";
+			};
+
+			mxcrypto_crypto: mxcrypto_crypto {
+				compatible = "infineon,mxcrypto-crypto";
+				status = "disabled";
+			};
 		};
 
 		dmic0: pdm@54400000 {

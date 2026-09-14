@@ -15,6 +15,11 @@ properties:
   bt-hci-quirks:
     default: ["no-auto-dle"]
 
+  interrupts:
+    description: |
+      DM, BT, and BLE interrupts for SoCs using direct IRQs (BL61x, BL616CL, BL618DG).
+      Three entries required: "dm", "bt", and "ble" in names.
+
   pwr-table-ble:
     type: int
     description: BLE TX power target in quarter-dBm (0-15 dBm range).

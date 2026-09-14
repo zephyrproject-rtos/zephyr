@@ -37,8 +37,9 @@ args = None
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 sys.path.append(os.path.join(zephyr_base, 'scripts'))
+sys.path.append(os.path.join(zephyr_base, 'scripts', 'pylib', 'twister'))
 import list_boards  # noqa: E402
-from pylib.twister.twisterlib.statuses import TwisterStatus  # noqa: E402
+from twisterlib.statuses import TwisterStatus  # noqa: E402
 
 
 def _get_match_fn(globs, regexes):

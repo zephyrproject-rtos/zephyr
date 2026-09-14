@@ -52,23 +52,23 @@ int64_t timeutil_timegm64(const struct tm *tm)
 	unsigned int m = tm->tm_mon + 1;
 	unsigned int d = tm->tm_mday - 1;
 	int64_t ndays = time_days_from_civil(y, m, d);
-	int64_t time = tm->tm_sec;
+	int64_t secs = tm->tm_sec;
 
-	time += 60LL * (tm->tm_min + 60LL * tm->tm_hour);
-	time += 86400LL * ndays;
+	secs += 60LL * (tm->tm_min + 60LL * tm->tm_hour);
+	secs += 86400LL * ndays;
 
-	return time;
+	return secs;
 }
 
 time_t timeutil_timegm(const struct tm *tm)
 {
-	int64_t time = timeutil_timegm64(tm);
-	time_t rv = (time_t)time;
+	int64_t secs = timeutil_timegm64(tm);
+	time_t rv = (time_t)secs;
 
 	errno = 0;
 	if ((sizeof(rv) == sizeof(int32_t))
-	    && ((time < (int64_t)INT32_MIN)
-		|| (time > (int64_t)INT32_MAX))) {
+	    && ((secs < (int64_t)INT32_MIN)
+		|| (secs > (int64_t)INT32_MAX))) {
 		errno = ERANGE;
 		rv = -1;
 	}

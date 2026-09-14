@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: xg24_rb4188a
+name: EFR32xG24 2.4 GHz +20 dBm Antenna Diversity Radio Board (xG24-RB4188A, BRD4188B)
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+  - netif:openthread
+vendor: silabs

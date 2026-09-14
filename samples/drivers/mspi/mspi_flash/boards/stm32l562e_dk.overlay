@@ -35,7 +35,7 @@
 			status = "okay";
 
 			mx25lm51245: ospi-nor-flash@0 {
-				compatible = "mxicy,mx25u", "jedec,nor";
+				compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 				reg = <0>;
 				size = <DT_SIZE_M(512)>; /* 512 Megabits */
 				mspi-max-frequency = <DT_FREQ_M(50)>;
@@ -47,6 +47,7 @@
 				write-command = <0x12ed>; /* WRite 4Bytes */
 				rx-dummy = <20>;
 				jedec-id = [c2 85 3a];
+				st,mem-type = "macronix";
 				status = "okay";
 
 				partitions {

@@ -72,9 +72,7 @@ config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	# overflow issues. Need to identify the cause for higher stack usage.
 	default 8600 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || WIFI_USAGE_MODE_STA_AP
 	default 8000 if WIFI_NM_WPA_SUPPLICANT_P2P
-	# This is needed to handle stack overflow issues on nRF Wi-Fi drivers.
-	default 6300 if WIFI_NM_WPA_SUPPLICANT_AP
-	default 5800
+	default 6300
 
 config WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE
 	int "Stack size for wpa_supplicant iface workqueue"
@@ -127,6 +125,19 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS
 	  development or debugging. Key material should never be logged in production
 	  systems as it can compromise network security.
 
+config WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
+	bool "Print PMK once per successful handshake"
+	select EXPERIMENTAL
+	help
+	  Prints the PMK (as a hex string) once per completed 4-way handshake,
+	  independent of WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL and
+	  WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS. Intended for capturing the PMK
+	  needed to decrypt an over-the-air Wi-Fi capture, without the log
+	  volume that comes with enabling full supplicant debug output.
+
+	  WARNING: This is a security risk and should only be enabled during
+	  development or debugging.
+
 if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
 # hostap debug is very verbose and despite large log buffer sizes
 # log messages can be lost. So, we set the log mode to immediate
@@ -169,8 +180,6 @@ config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
 	bool "Legacy (non-FIPS) crypto for backward compatibility"
 	default y
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
-	imply WIFI_NM_WPA_SUPPLICANT_WEP
-	select DEPRECATED
 	select NOT_SECURE
 	help
 	  Drop CONFIG_FIPS from the supplicant build to re-enable the legacy
@@ -182,9 +191,9 @@ config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
 	  is off, CMake links md5-internal.c and md5.c so EAPOL-Key v1
 	  HMAC-MD5 does not depend on PSA.
 
-	  Implies WIFI_NM_WPA_SUPPLICANT_WEP by default (merged legacy option,
-	  kept for prj.conf compatibility). Set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP=n
-	  to strip WEP while keeping WPA/TKIP interop.
+	  WEP is not part of this option. It is deprecated and has to be
+	  enabled separately with CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP, which
+	  only takes effect together with this option.
 
 	  Enabled by default so WPA/TKIP and other legacy AP interop works
 	  out of the box. This is NOT a TKIP-only switch: it disables CONFIG_FIPS
@@ -210,12 +219,10 @@ config WIFI_NM_WPA_SUPPLICANT_WEP
 	select DEPRECATED
 	select NOT_SECURE
 	help
-	  Deprecated: merged under WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO.
-	  Symbol retained for backward compatibility with existing prj.conf
-	  files that set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP. WEP is enabled by
-	  default via LEGACY_CRYPTO imply; set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP=n
-	  to strip WEP while keeping WPA/TKIP interop. Has no effect unless
-	  LEGACY_CRYPTO is enabled.
+	  Deprecated: WEP is legacy broken crypto and will be removed.
+	  Enable this together with WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO to
+	  keep WEP support while it lasts. Has no effect unless LEGACY_CRYPTO
+	  is enabled.
 
 choice WIFI_NM_WPA_SUPPLICANT_CRYPTO_BACKEND
 	prompt "WPA supplicant crypto implementation"
@@ -525,6 +532,19 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 config WIFI_NM_WPA_SUPPLICANT_NAN
 	bool "NAN (Neighbor Awareness Networking) support"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+
+config WIFI_NAN_MAX_SSI_LEN
+	int "Maximum length of NAN service specific info"
+	depends on WIFI_NM_WPA_SUPPLICANT_NAN
+	range 1 65535
+	default 128
+	help
+	  Maximum NAN Service Specific Info (SSI) payload length in bytes.
+	  This value is stored inline in NAN event and request structures,
+	  so increasing it raises the net_mgmt event queue footprint by
+	  roughly CONFIG_NET_MGMT_EVENT_QUEUE_SIZE times this value.
+	  Users needing larger SSI payloads (e.g. Matter PAF commissioning
+	  with MTU=350) should set this to the required size.
 
 config WIFI_NM_WPA_SUPPLICANT_11AC
 	bool "IEEE 802.11ac VHT support"

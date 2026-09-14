@@ -105,7 +105,11 @@ static int console_out(int c)
 	 * when tranmiting chain of chars.
 	 * As errors cannot be returned, ignore the return value
 	 */
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 	(void)pm_device_runtime_put_async(uart_console_dev, K_MSEC(1));
+#else
+	(void)pm_device_runtime_put(uart_console_dev);
+#endif
 
 	return c;
 }

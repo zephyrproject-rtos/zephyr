@@ -33,10 +33,10 @@ config BUILD_OUTPUT_HEX
 config CLOCK_CONTROL
 	default y
 
-config DCACHE
+configdefault DCACHE
 	default n
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default n
 
 endif # SOC_SERIES_RA8D2

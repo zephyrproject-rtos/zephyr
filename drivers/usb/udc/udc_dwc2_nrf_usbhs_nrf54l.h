@@ -21,7 +21,9 @@
  * CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT timeout expires.
  */
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 static struct onoff_manager *pclk24m_mgr;
+#endif
 static struct onoff_client pclk24m_cli;
 
 static void vregusb_event_cb(const struct device *dev,
@@ -54,7 +56,9 @@ static inline int usbhs_init_vreg_and_clock(const struct device *dev)
 		return err;
 	}
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	pclk24m_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF24M);
+#endif
 
 	return 0;
 }
@@ -66,7 +70,12 @@ static int usbhs_request_pclk24m(void)
 
 	/* Request PCLK24M using clock control driver */
 	sys_notify_init_spinwait(&pclk24m_cli.notify);
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	err = onoff_request(pclk24m_mgr, &pclk24m_cli);
+#else
+	err = nrf_clock_control_request(DEVICE_DT_GET_ONE(nordic_nrf_clock_xo24m), NULL,
+					&pclk24m_cli);
+#endif
 	if (err < 0) {
 		LOG_ERR("Failed to start PCLK24M %d", err);
 		return err;
@@ -81,7 +90,12 @@ static int usbhs_release_pclk24m(void)
 	int err;
 
 	/* Release PCLK24M using clock control driver */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	err = onoff_cancel_or_release(pclk24m_mgr, &pclk24m_cli);
+#else
+	err = nrf_clock_control_cancel_or_release(DEVICE_DT_GET_ONE(nordic_nrf_clock_xo24m),
+						  NULL, &pclk24m_cli);
+#endif
 	if (err < 0) {
 		LOG_ERR("Failed to stop PCLK24M %d", err);
 		return err;

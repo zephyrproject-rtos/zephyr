@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BCM2836 / BCM2710 ARM-local interrupt controller (Pi 2 / Pi 3 / Pi Zero 2 W).
+
+  Sits at physical 0x40000000, ABOVE the peripheral base. Routes per-core
+  ARM generic timer IRQs, four mailbox IRQs per core (used as IPIs), the
+  per-core PMU IRQ, and the cascaded GPU IRQ -- the latter aggregating
+  every pending source on the BCM2835 ARMC peripheral interrupt
+  controller for whichever core the firmware (or Zephyr) routes the GPU
+  IRQ to.
+
+compatible: "brcm,bcm2836-l1-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-controller:
+    required: true
+
+  "#interrupt-cells":
+    const: 3
+    description: |
+      Cell 0: per-core source.
+        0=CNTPSIRQ (secure phys), 1=CNTPNSIRQ (nonsec phys),
+        2=CNTHPIRQ (hyp phys),    3=CNTVIRQ   (virtual),
+        4..7=MAILBOX0..3,         8=GPU IRQ,  9=PMU.
+      Cell 1: trigger-type flags (IRQ_TYPE_LEVEL / IRQ_TYPE_EDGE).
+      Cell 2: priority -- unused by this controller (no per-IRQ
+              priority register exists), kept as a fixed third cell
+              so that the canonical ARM-arch-timer driver's
+              DT_IRQ_BY_IDX(node, n, priority) macro resolves.
+
+interrupt-cells:
+  - irq
+  - flags
+  - priority

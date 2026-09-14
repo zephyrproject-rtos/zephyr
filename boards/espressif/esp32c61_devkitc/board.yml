@@ -1,0 +1,6 @@
+board:
+  name: esp32c61_devkitc
+  full_name: ESP32-C61-DevKitC
+  vendor: espressif
+  socs:
+  - name: esp32c61

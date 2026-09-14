@@ -7,4 +7,4 @@
 zephyr_include_directories(${ZEPHYR_BASE}/drivers)
 
 add_subdirectory(common)
-add_subdirectory(${SOC_SERIES})
+add_subdirectory(${CONFIG_SOC_SERIES})

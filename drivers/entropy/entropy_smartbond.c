@@ -94,7 +94,7 @@ static void trng_enable(bool enable)
 	} else {
 		CRG_TOP->CLK_AMBA_REG &= ~CRG_TOP_CLK_AMBA_REG_TRNG_CLK_ENABLE_Msk;
 		TRNG->TRNG_CTRL_REG = 0;
-		NVIC_ClearPendingIRQ(IRQN);
+		k_irq_clear_pending(IRQN);
 
 		entropy_smartbond_pm_policy_state_lock_put();
 	}
@@ -323,7 +323,7 @@ static int entropy_smartbond_get_entropy_isr(const struct device *dev, uint8_t *
 		 * to 1 (the bit is set when NVIC pending IRQ status is
 		 * changed from 0 to 1)
 		 */
-		NVIC_ClearPendingIRQ(IRQN);
+		k_irq_clear_pending(IRQN);
 
 		do {
 			uint8_t bytes[4];
@@ -345,7 +345,7 @@ static int entropy_smartbond_get_entropy_isr(const struct device *dev, uint8_t *
 				__WFE();
 			}
 
-			NVIC_ClearPendingIRQ(IRQN);
+			k_irq_clear_pending(IRQN);
 			if (random_word_get(bytes) != 0) {
 				continue;
 			}

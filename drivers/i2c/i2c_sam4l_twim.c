@@ -10,7 +10,7 @@
 /** @file
  * @brief I2C bus (TWIM) driver for Atmel SAM4L MCU family.
  *
- * I2C Master Mode with 7/10 bit addressing is currently supported.
+ * I2C Controller Mode with 7/10 bit addressing is currently supported.
  * Very long transfers are allowed using NCMDR register. DMA is not
  * yet supported.
  */
@@ -170,7 +170,7 @@ static int i2c_sam_twim_configure(const struct device *dev, uint32_t config)
 	int ret;
 
 	if (!(config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Master Mode is not enabled");
+		LOG_ERR("Controller Mode is not enabled");
 		return -EIO;
 	}
 
@@ -331,8 +331,8 @@ static void i2c_start_xfer(const struct device *dev, uint16_t daddr)
 		twim->CMDR = cmdr_reg | TWIM_CMDR_START;
 
 		/* Fill next transfer command. REPSAME performs a repeated
-		 * start to the same slave address as addressed in the
-		 * previous transfer in order to enter master receiver mode.
+		 * start to the same target address as addressed in the
+		 * previous transfer in order to enter controller receiver mode.
 		 */
 		cmdr_reg |= TWIM_CMDR_REPSAME;
 
@@ -368,7 +368,7 @@ static void i2c_start_xfer(const struct device *dev, uint16_t daddr)
 	cmdr_reg = twim->CMDR;
 	cur_is_read = (cmdr_reg & TWIM_CMDR_READ);
 
-	/* Enable master transfer */
+	/* Enable controller transfer */
 	twim->CR = TWIM_CR_MEN;
 
 	twim->IER = TWIM_IER_STD_MASK |

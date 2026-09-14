@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-fmeas.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -171,6 +172,61 @@
 		#clock-cells = <1>;
 	};
 
+	inputmux: inputmux@26000 {
+		compatible = "nxp,inputmux";
+		reg = <0x26000 0x1000>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+		status = "disabled";
+	};
+
+	fmeas: fmeas@2f000 {
+		compatible = "nxp,fmeas";
+		reg = <0x2f000 0x1000>;
+		clocks = <&clkctl1 MCUX_FREQME_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(1, 31)>;
+		status = "disabled";
+
+		reference-sources {
+			fmeas_ref_c0_fr_hclk: ref-c0-fr-hclk {
+				default-source;
+				mux-states = <&inputmux 0 NXP_FMEAS_RW6XX_C0_FR_HCLK>;
+				clocks = <&clkctl0 MCUX_SYSTEM_CLK>;
+			};
+		};
+
+		target-sources {
+			fmeas_tar_sfro: tar-sfro {
+				default-source;
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_SFRO>;
+			};
+
+			fmeas_tar_ffro: tar-ffro {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_FFRO>;
+			};
+
+			fmeas_tar_c0_fr_hclk: tar-c0-fr-hclk {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_C0_FR_HCLK>;
+			};
+
+			fmeas_tar_sysosc: tar-sysosc {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_SYSOSC>;
+			};
+
+			fmeas_tar_lposc: tar-lposc {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_LPOSC>;
+			};
+
+			fmeas_tar_xtal_32k: tar-xtal-32k {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_XTAL_32K>;
+			};
+
+			fmeas_tar_gpio_clk: tar-gpio-clk {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_FREQME_GPIO_CLK>;
+			};
+		};
+	};
+
 	rstctl0: reset@0 {
 		compatible = "nxp,rstctl";
 		reg = <0x0 0x80>;
@@ -266,7 +322,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x106000 0x1000>;
 		interrupts = <14 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK &clkctl1 MCUX_FLEXCOMM0_LP_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>, <&clkctl1 MCUX_FLEXCOMM0_LP_CLK>;
 		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 8)>;
 		dmas = <&dma0 0>, <&dma0 1>;
@@ -281,7 +337,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x107000 0x1000>;
 		interrupts = <15 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK &clkctl1 MCUX_FLEXCOMM1_LP_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK>, <&clkctl1 MCUX_FLEXCOMM1_LP_CLK>;
 		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 9)>;
 		dmas = <&dma0 2>, <&dma0 3>;
@@ -296,7 +352,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x108000 0x1000>;
 		interrupts = <16 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK &clkctl1 MCUX_FLEXCOMM2_LP_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK>, <&clkctl1 MCUX_FLEXCOMM2_LP_CLK>;
 		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 10)>;
 		dmas = <&dma0 4>, <&dma0 5>;
@@ -311,7 +367,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x109000 0x1000>;
 		interrupts = <17 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK &clkctl1 MCUX_FLEXCOMM3_LP_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK>, <&clkctl1 MCUX_FLEXCOMM3_LP_CLK>;
 		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 11)>;
 		dmas = <&dma0 6>, <&dma0 7>;
@@ -372,6 +428,14 @@
 		/* first index is the imu interrupt, the second is the wakeup done interrupt */
 		interrupts = <72 2>, <64 2>;
 		power-domains = <&peripheral_domain>;
+
+		/* New subnode to pass antenna data down to the driver */
+		wifi_antenna: wifi-antenna {
+			antenna-gain-2ghz = <0>;
+			antenna-gain-5ghz-sb1 = <0>;
+			antenna-gain-5ghz-sb2 = <0>;
+			antenna-gain-5ghz-sb3 = <0>;
+		};
 	};
 
 	dma0: dma-controller@104000 {
@@ -687,6 +751,13 @@
 			clocks = <&clkctl1 MCUX_ENET_PLL>;
 			power-domains = <&peripheral_domain>;
 		};
+	};
+
+	powerquad: powerquad@150000 {
+		compatible = "nxp,powerquad";
+		reg = <0x150000 0x1000>;
+		clocks = <&clkctl0 MCUX_POWERQUAD_CLK>;
+		status = "disabled";
 	};
 };
 

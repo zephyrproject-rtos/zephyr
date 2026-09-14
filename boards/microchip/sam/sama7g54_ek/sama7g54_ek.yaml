@@ -20,4 +20,5 @@ supported:
   - sdhc
   - spi
   - uart
+  - usbd
 vendor: microchip

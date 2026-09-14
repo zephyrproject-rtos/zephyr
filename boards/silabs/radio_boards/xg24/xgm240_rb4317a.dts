@@ -6,9 +6,72 @@
 
 /dts-v1/;
 #include <silabs/xg24/mgm240pb32vna.dtsi>
-#include "xgm240_rb431xa.dtsi"
+#include "xg24_common.dtsi"
+#include "xgm240_rb4317a-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs xGM240P +20 dBm Module Radio Board (xGM240-RB4317A, BRD4317A)";
 	compatible = "silabs,xgm240_rb4317a", "silabs,mgm24";
+};
+
+&led0 {
+	gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+};
+
+&led1 {
+	gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+};
+
+&pwm_led0 {
+	pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+};
+
+&pwm_led1 {
+	pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+};
+
+&button0 {
+	gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+};
+
+&button1 {
+	gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+};
+
+&sensor_enable {
+	enable-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+};
+
+&exp_header {
+	gpio-map = <4 0 &gpioc 0 0>,
+		   <6 0 &gpioc 1 0>,
+		   <7 0 &gpiob 0 0>,
+		   <8 0 &gpioc 2 0>,
+		   <9 0 &gpiob 1 0>,
+		   <10 0 &gpioc 3 0>,
+		   <12 0 &gpioa 5 0>,
+		   <14 0 &gpioa 6 0>,
+		   <15 0 &gpiob 2 0>,
+		   <16 0 &gpiob 3 0>;
+};
+
+&lfxo {
+	ctune = <44>;
+};
+
+&eusart1 {
+	cs-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>, <&gpioa 4 GPIO_ACTIVE_LOW>;
+};
+
+&ls0xx_ls013b7dh03 {
+	disp-en-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+	extcomin-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+};
+
+&gpiob {
+	board-controller-enable {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
 };

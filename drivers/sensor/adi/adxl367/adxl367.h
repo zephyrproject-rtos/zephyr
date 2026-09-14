@@ -384,6 +384,7 @@ struct adxl367_dev_config {
 
 #ifdef CONFIG_ADXL367_TRIGGER
 	struct gpio_dt_spec interrupt;
+	uint8_t int_map_reg;
 #endif
 
 	enum adxl367_odr odr;
@@ -392,6 +393,7 @@ struct adxl367_dev_config {
 	bool autosleep;
 	bool low_noise;
 	bool temp_en;
+	bool self_test_enable;
 
 	struct adxl367_activity_threshold activity_th;
 	struct adxl367_activity_threshold inactivity_th;

@@ -141,35 +141,42 @@ ZTEST(mcumgr_client, test_image_state_read)
 	zassert_equal(MGMT_ERR_ETIMEOUT, rc, "Expected to receive %d response %d",
 		      MGMT_ERR_ETIMEOUT, rc);
 	/* Testing read successfully 1 image info and print that */
-	img_read_response(1);
+	img_read_response(1, IMG_MGMT_DATA_SHA_LEN);
 	rc = img_mgmt_client_state_read(&img_client, &res_buf);
 	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
 	zassert_equal(1, res_buf.image_list_length, "Expected to receive %d response %d", 1,
 		      res_buf.image_list_length);
-	img_read_response(2);
+	img_read_response(2, IMG_MGMT_DATA_SHA_LEN);
 	rc = img_mgmt_client_state_read(&img_client, &res_buf);
 	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
 	zassert_equal(2, res_buf.image_list_length, "Expected to receive %d response %d", 2,
 		      res_buf.image_list_length);
+	zassert_equal(IMG_MGMT_DATA_SHA_LEN, image_info[1].hash_len);
+
+	/* Test a SHA-512 image state response */
+	img_read_response(2, IMG_MGMT_CLIENT_HASH_MAX_LEN);
+	rc = img_mgmt_client_state_read(&img_client, &res_buf);
+	zassert_equal(MGMT_ERR_EOK, rc);
+	zassert_equal(IMG_MGMT_CLIENT_HASH_MAX_LEN, image_info[1].hash_len);
 }
 
 ZTEST(mcumgr_client, test_image_state_set)
 {
 	int rc;
-	char hash[32];
+	char hash[IMG_MGMT_CLIENT_HASH_MAX_LEN];
 	struct mcumgr_image_state res_buf;
 
 	smp_client_response_buf_clean();
 	smp_stub_set_rx_data_verify(NULL);
 	smp_client_send_status_stub(MGMT_ERR_EOK);
 	/* Test timeout */
-	rc = img_mgmt_client_state_write(&img_client, NULL, false, &res_buf);
+	rc = img_mgmt_client_state_write(&img_client, NULL, 0, false, &res_buf);
 	zassert_equal(MGMT_ERR_ETIMEOUT, rc, "Expected to receive %d response %d",
 		      MGMT_ERR_ETIMEOUT, rc);
 
 	printf("Timeout OK\r\n");
 	/* Read secondary image hash for testing */
-	img_read_response(2);
+	img_read_response(2, IMG_MGMT_DATA_SHA_LEN);
 	rc = img_mgmt_client_state_read(&img_client, &res_buf);
 	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
 	zassert_equal(2, res_buf.image_list_length, "Expected to receive %d response %d", 2,
@@ -177,21 +184,34 @@ ZTEST(mcumgr_client, test_image_state_set)
 	zassert_equal(false, image_info[1].flags.pending, "Expected to receive %d response %d",
 		      false, image_info[1].flags.pending);
 	/* Copy hash for set pending flag */
-	memcpy(hash, image_info[1].hash, 32);
+	memcpy(hash, image_info[1].hash, image_info[1].hash_len);
 	printf("Read OK\r\n");
 
 	/* Read secondary image hash for testing */
 	smp_stub_set_rx_data_verify(img_state_write_verify);
-	rc = img_mgmt_client_state_write(&img_client, hash, false, &res_buf);
+	rc = img_mgmt_client_state_write(&img_client, hash, image_info[1].hash_len, false,
+					 &res_buf);
 	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
 	zassert_equal(2, res_buf.image_list_length, "Expected to receive %d response %d", 2,
 		      res_buf.image_list_length);
 	zassert_equal(true, image_info[1].flags.pending, "Expected to receive %d response %d",
 		      true, image_info[1].flags.pending);
+
+	/* Test selecting an image using a SHA-512 digest */
+	img_read_response(2, IMG_MGMT_CLIENT_HASH_MAX_LEN);
+	rc = img_mgmt_client_state_read(&img_client, &res_buf);
+	zassert_equal(MGMT_ERR_EOK, rc);
+	memcpy(hash, image_info[1].hash, image_info[1].hash_len);
+	smp_stub_set_rx_data_verify(img_state_write_verify);
+	rc = img_mgmt_client_state_write(&img_client, hash, image_info[1].hash_len, false,
+					 &res_buf);
+	zassert_equal(MGMT_ERR_EOK, rc);
+	zassert_equal(IMG_MGMT_CLIENT_HASH_MAX_LEN, image_info[1].hash_len);
+
 	/* Test to set confirmed bit  */
 	image_info[0].flags.confirmed = false;
 	smp_stub_set_rx_data_verify(img_state_write_verify);
-	rc = img_mgmt_client_state_write(&img_client, NULL, true, &res_buf);
+	rc = img_mgmt_client_state_write(&img_client, NULL, 0, true, &res_buf);
 	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
 	zassert_equal(2, res_buf.image_list_length, "Expected to receive %d response %d", 2,
 		      res_buf.image_list_length);

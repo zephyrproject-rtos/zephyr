@@ -7,7 +7,7 @@
 
 if BOARD_STM32H5F5J_DK
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y if NETWORKING
 
 configdefault SDMMC_STM32_CLOCK_CHECK

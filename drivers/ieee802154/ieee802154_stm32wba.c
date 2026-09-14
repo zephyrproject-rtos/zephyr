@@ -120,6 +120,15 @@ static void stm32wba_802154_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		__ASSERT_NO_MSG(rx_frame->psdu != NULL);
 
+		/* The length is supplied by the radio firmware; reject one that
+		 * cannot hold the FCS before subtracting it.
+		 */
+		if (rx_frame->length < IEEE802154_FCS_LENGTH) {
+			LOG_ERR("Invalid frame length %u", rx_frame->length);
+			rx_frame->psdu = NULL;
+			continue;
+		}
+
 		/* Depending on the net L2 layer, the FCS may be included in length or not */
 		if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 			pkt_len = rx_frame->length;
@@ -128,7 +137,11 @@ static void stm32wba_802154_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 #if defined(CONFIG_NET_BUF_DATA_SIZE)
-		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
+		if (pkt_len > CONFIG_NET_BUF_DATA_SIZE) {
+			LOG_ERR("Frame too long: %u", pkt_len);
+			rx_frame->psdu = NULL;
+			continue;
+		}
 #endif
 
 		LOG_DBG("Frame received - sequence nb: %u, length: %u", rx_frame->psdu[2],
@@ -364,7 +377,6 @@ static enum ieee802154_hw_caps stm32wba_802154_get_capabilities(const struct dev
 #if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
 		IEEE802154_HW_TX_SEC |
 #endif
-		IEEE802154_HW_SLEEP_TO_TX |
 		IEEE802154_RX_ON_WHEN_IDLE;
 }
 

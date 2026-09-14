@@ -47,14 +47,14 @@ static int bt_mesh_sha256_hmac_one_raw_key(const uint8_t key[32], const void *m,
 	return bt_mesh_sha256_hmac_raw_key(key, &sg, 1, mac);
 }
 
-int bt_mesh_s1(const char *m, size_t m_len, uint8_t salt[16])
+int bt_mesh_s1(const void *m, size_t m_len, uint8_t salt[16])
 {
 	const uint8_t zero[16] = { 0 };
 
 	return bt_mesh_aes_cmac_one_raw_key(zero, m, m_len, salt);
 }
 
-int bt_mesh_s2(const char *m, size_t m_len, uint8_t salt[32])
+int bt_mesh_s2(const void *m, size_t m_len, uint8_t salt[32])
 {
 	const uint8_t zero[32] = { 0 };
 
@@ -200,7 +200,7 @@ int bt_mesh_k4(const uint8_t n[16], uint8_t out[1])
 }
 
 int bt_mesh_k5(const uint8_t *n, size_t n_len, const uint8_t salt[32],
-		uint8_t *p, uint8_t out[32])
+		const char *p, uint8_t out[32])
 {
 	uint8_t t[32];
 	int err;

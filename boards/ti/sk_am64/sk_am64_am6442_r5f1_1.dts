@@ -48,7 +48,3 @@
 		mbox-names = "tx", "rx";
 	};
 };
-
-&main_timer11 {
-	status = "okay";
-};

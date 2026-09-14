@@ -56,7 +56,7 @@ properties:
   spi-hold-cs:
     type: boolean
     description: |
-      In some cases, it is necessary for the master to manage SPI chip select
+      In some cases, it is necessary for the controller to manage SPI chip select
       under software control, so that multiple spi transactions can be performed
       without releasing it. A typical use case is variable length SPI packets
       where the first spi transaction reads the length and the second spi transaction

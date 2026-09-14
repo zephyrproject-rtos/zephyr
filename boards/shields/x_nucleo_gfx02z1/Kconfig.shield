@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Michele Vaccari
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_X_NUCLEO_GFX02Z1_AZ2
+	def_bool $(shields_list_contains,x_nucleo_gfx02z1_az2)

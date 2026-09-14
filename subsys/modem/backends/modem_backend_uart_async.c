@@ -161,7 +161,7 @@ static int modem_backend_uart_async_open(void *data)
 
 	ret = pm_device_runtime_get(backend->uart);
 	if (ret < 0) {
-		LOG_ERR("Failed to power on UART: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(backend->uart, ret);
 		return ret;
 	}
 	if (backend->dtr_gpio) {
@@ -297,7 +297,7 @@ static int modem_backend_uart_async_close(void *data)
 	}
 	ret = pm_device_runtime_put_async(backend->uart, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to power off UART: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(backend->uart, ret);
 		return ret;
 	}
 	return 0;

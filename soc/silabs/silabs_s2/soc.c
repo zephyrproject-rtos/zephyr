@@ -9,6 +9,7 @@
  * @brief SoC initialization for Silicon Labs Series 2 products
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
@@ -115,7 +116,7 @@ void soc_prep_hook(void)
 	__DSB();
 	__ISB();
 
-	NVIC_ClearPendingIRQ(SMU_SECURE_IRQn);
+	k_irq_clear_pending(SMU_SECURE_IRQn);
 	SMU->IF_CLR = SMU_IF_PPUSEC | SMU_IF_BMPUSEC;
 	SMU->IEN = SMU_IEN_PPUSEC | SMU_IEN_BMPUSEC;
 #endif

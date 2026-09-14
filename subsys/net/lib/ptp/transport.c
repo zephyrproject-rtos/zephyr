@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
- * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+ * Copyright (c) 2026 Philipp Steiner
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,13 @@ static const struct net_in6_addr pdelay_mcast_addr_ipv6 = {
 	{{0xff, 0x02, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x6b}}};
 static const uint8_t mcast_addr_l2[PTP_L2_ADDR_LEN] = {0x01, 0x1B, 0x19, 0x00, 0x00, 0x00};
 static const uint8_t pdelay_mcast_addr_l2[PTP_L2_ADDR_LEN] = {0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E};
+
+#if defined(CONFIG_PTP_IEEE_802_3_PROTOCOL) && defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP)
+BUILD_ASSERT((CONFIG_PTP_NUM_PORTS * (IS_ENABLED(CONFIG_PTP_DELAY_MECHANISM_P2P) ? 2 : 1)) <=
+		     CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT,
+	     "CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT not large enough for the number of "
+	     "PTP ports and delay mechanisms");
+#endif
 
 static bool transport_is_pdelay_msg(const void *buf)
 {
@@ -136,8 +143,42 @@ static int transport_join_ipv6_group(struct ptp_port *port, int socket,
 	return 0;
 }
 
+static int transport_join_l2_group(struct ptp_port *port, int socket, const uint8_t *addr,
+				   const char *name)
+{
+	struct net_packet_mreq mreq = {0};
+
+	mreq.mr_ifindex = net_if_get_by_iface(port->iface);
+	mreq.mr_type = NET_PACKET_MR_MULTICAST;
+	mreq.mr_alen = PTP_L2_ADDR_LEN;
+	memcpy(mreq.mr_address, addr, PTP_L2_ADDR_LEN);
+
+	if (zsock_setsockopt(socket, ZSOCK_SOL_PACKET, ZSOCK_PACKET_ADD_MEMBERSHIP, &mreq,
+			     sizeof(mreq)) != 0) {
+		LOG_ERR("Failed to join L2 %s multicast group", name);
+		return -1;
+	}
+
+	return 0;
+}
+
 static int transport_join_multicast(struct ptp_port *port)
 {
+	if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
+		if (transport_join_l2_group(port, port->socket[PTP_SOCKET_EVENT], mcast_addr_l2,
+					    "default") != 0) {
+			return -1;
+		}
+
+		if (CONFIG_PTP_DELAY_MECHANISM == PTP_DM_P2P &&
+		    transport_join_l2_group(port, port->socket[PTP_SOCKET_EVENT],
+					    pdelay_mcast_addr_l2, "peer-delay") != 0) {
+			return -1;
+		}
+
+		return 0;
+	}
+
 	if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
 		if (transport_join_ipv4_group(port, port->socket[PTP_SOCKET_GENERAL],
 					      &mcast_addr_ipv4, "default") != 0) {
@@ -295,32 +336,50 @@ static int transport_l2_open(struct net_if *iface)
 static int transport_send_udp(int socket, int port, void *buf, int length,
 			      struct net_sockaddr *addr)
 {
-	struct net_sockaddr m_addr;
+	struct net_sockaddr_storage m_addr_storage;
+	struct net_sockaddr *m_addr = net_sad(&m_addr_storage);
 	net_socklen_t addrlen;
 	int cnt;
 
+	if (addr != NULL) {
+		/* Deliver unicast messages to the well-known PTP port of the
+		 * used socket instead of the source port the peer sent from.
+		 */
+		if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL) && addr->sa_family == NET_AF_INET) {
+			net_sin(addr)->sin_port = net_htons(port);
+		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPV6_PROTOCOL) &&
+			   addr->sa_family == NET_AF_INET6) {
+			net_sin6(addr)->sin6_port = net_htons(port);
+		} else {
+			/* Not usable with the configured transport, use the
+			 * default multicast address instead.
+			 */
+			addr = NULL;
+		}
+	}
+
 	if (!addr) {
 		if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
-			m_addr.sa_family = NET_AF_INET;
-			net_sin(&m_addr)->sin_port = net_htons(port);
+			m_addr->sa_family = NET_AF_INET;
+			net_sin(m_addr)->sin_port = net_htons(port);
 			if (transport_is_pdelay_msg(buf)) {
-				net_sin(&m_addr)->sin_addr.s_addr = pdelay_mcast_addr_ipv4.s_addr;
+				net_sin(m_addr)->sin_addr.s_addr = pdelay_mcast_addr_ipv4.s_addr;
 			} else {
-				net_sin(&m_addr)->sin_addr.s_addr = mcast_addr_ipv4.s_addr;
+				net_sin(m_addr)->sin_addr.s_addr = mcast_addr_ipv4.s_addr;
 			}
 
 		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPV6_PROTOCOL)) {
-			m_addr.sa_family = NET_AF_INET6;
-			net_sin6(&m_addr)->sin6_port = net_htons(port);
+			m_addr->sa_family = NET_AF_INET6;
+			net_sin6(m_addr)->sin6_port = net_htons(port);
 			if (transport_is_pdelay_msg(buf)) {
-				memcpy(&net_sin6(&m_addr)->sin6_addr, &pdelay_mcast_addr_ipv6,
+				memcpy(&net_sin6(m_addr)->sin6_addr, &pdelay_mcast_addr_ipv6,
 				       sizeof(struct net_in6_addr));
 			} else {
-				memcpy(&net_sin6(&m_addr)->sin6_addr, &mcast_addr_ipv6,
+				memcpy(&net_sin6(m_addr)->sin6_addr, &mcast_addr_ipv6,
 				       sizeof(struct net_in6_addr));
 			}
 		}
-		addr = &m_addr;
+		addr = m_addr;
 	}
 
 	addrlen = IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL) ? sizeof(struct net_sockaddr_in)
@@ -334,8 +393,10 @@ static int transport_send_udp(int socket, int port, void *buf, int length,
 	return cnt;
 }
 
-static int transport_send_l2(struct ptp_port *port, int socket, void *buf, int length)
+static int transport_send_l2(struct ptp_port *port, int socket, void *buf, int length,
+			     const struct net_sockaddr *dst)
 {
+	const struct net_sockaddr_ll *dst_ll = (const struct net_sockaddr_ll *)dst;
 	struct net_sockaddr_ll addr = {0};
 	int ifindex = net_if_get_by_iface(port->iface);
 	int cnt;
@@ -349,7 +410,10 @@ static int transport_send_l2(struct ptp_port *port, int socket, void *buf, int l
 	addr.sll_protocol = net_htons(NET_ETH_PTYPE_PTP);
 	addr.sll_ifindex = ifindex;
 	addr.sll_halen = PTP_L2_ADDR_LEN;
-	if (transport_is_pdelay_msg(buf)) {
+	if (dst != NULL && dst->sa_family == NET_AF_PACKET &&
+	    dst_ll->sll_halen == PTP_L2_ADDR_LEN) {
+		memcpy(addr.sll_addr, dst_ll->sll_addr, PTP_L2_ADDR_LEN);
+	} else if (transport_is_pdelay_msg(buf)) {
 		memcpy(addr.sll_addr, pdelay_mcast_addr_l2, sizeof(pdelay_mcast_addr_l2));
 	} else {
 		memcpy(addr.sll_addr, mcast_addr_l2, sizeof(mcast_addr_l2));
@@ -378,7 +442,7 @@ int ptp_transport_open(struct ptp_port *port)
 		port->socket[PTP_SOCKET_EVENT] = socket;
 		port->socket[PTP_SOCKET_GENERAL] = -1;
 
-		return 0;
+		goto end;
 	}
 
 	for (int i = 0; i < PTP_SOCKET_CNT; i++) {
@@ -398,6 +462,7 @@ int ptp_transport_open(struct ptp_port *port)
 		port->socket[i] = socket;
 	}
 
+end:
 	if (transport_join_multicast(port)) {
 		ptp_transport_close(port);
 		return -1;
@@ -446,7 +511,7 @@ int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 	int length = net_ntohs(msg->header.msg_length);
 
 	if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
-		return transport_send_l2(port, port->socket[PTP_SOCKET_EVENT], msg, length);
+		return transport_send_l2(port, port->socket[PTP_SOCKET_EVENT], msg, length, NULL);
 	}
 
 	return transport_send_udp(port->socket[idx], socket_port[idx], msg, length, NULL);
@@ -460,10 +525,12 @@ int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 	int length = net_ntohs(msg->header.msg_length);
 
 	if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
-		return transport_send_l2(port, port->socket[PTP_SOCKET_EVENT], msg, length);
+		return transport_send_l2(port, port->socket[PTP_SOCKET_EVENT], msg, length,
+					 net_sad(&msg->addr));
 	}
 
-	return transport_send_udp(port->socket[idx], socket_port[idx], msg, length, &msg->addr);
+	return transport_send_udp(port->socket[idx], socket_port[idx], msg, length,
+				  net_sad(&msg->addr));
 }
 
 static void transport_init_recv_msghdr(struct ptp_msg *msg, struct net_msghdr *msghdr,
@@ -544,6 +611,8 @@ static int transport_recv_l2_msg(struct ptp_port *port, struct ptp_msg *msg)
 	int cnt;
 
 	transport_init_recv_msghdr(msg, &msghdr, &iov, ctrl, sizeof(ctrl));
+	msghdr.msg_name = &msg->addr;
+	msghdr.msg_namelen = sizeof(msg->addr);
 
 	now = k_uptime_get();
 
@@ -574,8 +643,10 @@ static int transport_recv_l2_msg(struct ptp_port *port, struct ptp_msg *msg)
 	}
 
 	if (!recvmsg_ok) {
+		net_socklen_t addrlen = sizeof(msg->addr);
+
 		cnt = zsock_recvfrom(port->socket[PTP_SOCKET_EVENT], msg, sizeof(msg->mtu),
-				     ZSOCK_MSG_DONTWAIT, NULL, NULL);
+				     ZSOCK_MSG_DONTWAIT, net_sad(&msg->addr), &addrlen);
 		if (cnt < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				return 0;
@@ -609,6 +680,8 @@ static int transport_recv_udp_msg(struct ptp_port *port, struct ptp_msg *msg, en
 	int cnt;
 
 	transport_init_recv_msghdr(msg, &msghdr, &iov, ctrl, sizeof(ctrl));
+	msghdr.msg_name = &msg->addr;
+	msghdr.msg_namelen = sizeof(msg->addr);
 
 	cnt = zsock_recvmsg(port->socket[idx], &msghdr, ZSOCK_MSG_DONTWAIT);
 	if (cnt < 0) {

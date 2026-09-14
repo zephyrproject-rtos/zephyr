@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/lpc/nxp_lpc55S36_ns.dtsi>
+#include <nxp/lpc/lpc55xxx/nxp_lpc55S36_ns.dtsi>
 #include "lpcxpresso55s36-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -235,6 +235,10 @@ zephyr_udc0: &usbfs {
 };
 
 &wwdt0 {
+	status = "okay";
+};
+
+&powerquad {
 	status = "okay";
 };
 

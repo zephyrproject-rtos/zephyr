@@ -36,11 +36,19 @@ const fc_flexspi_nor_config_t flexspi_config = {
 				FC_CMD_SDR, FC_FLEXSPI_1PAD,
 				0xEB, FC_RADDR_SDR,
 				FC_FLEXSPI_4PAD, 0x18),
+#if defined(FLASH_MACRONIX_16MB)
+			[1] = FC_FLEXSPI_LUT_SEQ(
+				FC_DUMMY_SDR,
+				FC_FLEXSPI_4PAD, 0x0A,
+				FC_READ_SDR,
+				FC_FLEXSPI_4PAD, 0x04),
+#else
 			[1] = FC_FLEXSPI_LUT_SEQ(
 				FC_MODE8_SDR,
 				FC_FLEXSPI_4PAD, 0x0A,
 				FC_DUMMY_SDR,
 				FC_FLEXSPI_4PAD, 0x04),
+#endif
 
 			/* Read Status */
 			[4 * 1 + 0] = FC_FLEXSPI_LUT_SEQ(
@@ -74,6 +82,23 @@ const fc_flexspi_nor_config_t flexspi_config = {
 				FC_FLEXSPI_1PAD,
 				0x18),
 
+#if defined(FLASH_MACRONIX_16MB)
+			/* Page program - Quad (0x38) */
+			[4 * 9 + 0] = FC_FLEXSPI_LUT_SEQ(
+				FC_CMD_SDR,
+				FC_FLEXSPI_1PAD,
+				0x38, FC_RADDR_SDR,
+				FC_FLEXSPI_4PAD,
+				0x18),
+
+			[4 * 9 + 1] = FC_FLEXSPI_LUT_SEQ(
+				FC_WRITE_SDR,
+				FC_FLEXSPI_4PAD,
+				0x40,
+				FC_STOP_EXE,
+				FC_FLEXSPI_1PAD,
+				0x00),
+#else
 			/* Page program */
 			[4 * 9 + 0] = FC_FLEXSPI_LUT_SEQ(
 				FC_CMD_SDR,
@@ -89,6 +114,7 @@ const fc_flexspi_nor_config_t flexspi_config = {
 				FC_STOP_EXE,
 				FC_FLEXSPI_1PAD,
 				0x00),
+#endif
 
 			/* Chip erase */
 			[4 * 11 + 0] = FC_FLEXSPI_LUT_SEQ(

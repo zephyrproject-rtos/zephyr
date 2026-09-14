@@ -8,7 +8,6 @@ arch: arm
 toolchain:
   - gnuarmemb
   - zephyr
-sysbuild: true
 ram: 256
 flash: 712
 supported:
@@ -22,3 +21,7 @@ supported:
   - spi
   - watchdog
   - i2s
+  - netif:modem
+  - ble
+vendor: nordic
+sysbuild: true

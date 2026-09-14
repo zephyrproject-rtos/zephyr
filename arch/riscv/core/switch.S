@@ -48,6 +48,18 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	/* Save the old thread's stack pointer */
 	sr sp, _thread_offset_to_sp(a1)
 
+#ifdef CONFIG_SMP
+	/*
+	 * Release barrier: ensure the stores above (stack pointer and
+	 * callee-saved registers) are globally visible BEFORE we publish
+	 * switch_handle below. z_sched_switch_spin() on another hart uses a
+	 * plain volatile load to observe switch_handle; without this fence a
+	 * weakly-ordered core could see switch_handle before the saved
+	 * context, causing an SMP hang.
+	 */
+	fence rw, w
+#endif
+
 	/* Set thread->switch_handle = thread to mark completion */
 	sr a1, ___thread_t_switch_handle_OFFSET(a1)
 

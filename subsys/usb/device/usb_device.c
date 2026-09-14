@@ -1211,7 +1211,7 @@ static void usb_register_status_callback(usb_dc_status_callback cb)
 	usb_dev.status_callback = cb;
 }
 
-static int foreach_ep(int (* endpoint_callback)(const struct usb_ep_cfg_data *))
+static int foreach_ep(int (*endpoint_callback)(const struct usb_ep_cfg_data *ep_data))
 {
 	struct usb_ep_cfg_data *ep_data;
 

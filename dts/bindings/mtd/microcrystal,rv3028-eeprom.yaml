@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Janez Ugovsek <janez@ugovsek.info>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Micro Crystal RV3028 RTC EEPROM driver
+
+compatible: "microcrystal,rv3028-eeprom"
+
+include: base.yaml
+
+examples:
+  - |
+    /* Example node for RV3028 EEPROM on the i2c0 bus. */
+    &i2c0 {
+      status = "okay";
+      clock-frequency = <I2C_BITRATE_STANDARD>;
+
+      rv3028: rv3028@52 {
+        compatible = "microcrystal,rv3028";
+        reg = <0x52>;
+        backup-switch-mode = "disabled";
+        status = "okay";
+
+        rv3028_eeprom: rv3028_eeprom {
+          compatible = "microcrystal,rv3028-eeprom";
+          status = "okay";
+        };
+      };
+    };

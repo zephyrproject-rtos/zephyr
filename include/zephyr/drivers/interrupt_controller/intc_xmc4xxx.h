@@ -26,7 +26,8 @@
  */
 
 int intc_xmc4xxx_gpio_enable_interrupt(int port_id, int pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig, void(*fn)(const struct device*, int), void *user_data);
+		enum gpio_int_trig trig, void (*fn)(const struct device *dev, int pin),
+		void *user_data);
 
 /**
  * @brief Disable interrupt for specific port_id and pin combination

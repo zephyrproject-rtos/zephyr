@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Michele Vaccari
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/*
+ * STM32F4 HAL does not provide the FMC_BANK1_x sub-bank macros, so the bank
+ * base address (NE1) must be given explicitly.
+ */
+&fmc_mipi_dbi {
+	bank-address = <0x60000000>;
+};
+
+&mx_flash {
+	qspi-max-frequency = <DT_FREQ_M(50)>;
+};

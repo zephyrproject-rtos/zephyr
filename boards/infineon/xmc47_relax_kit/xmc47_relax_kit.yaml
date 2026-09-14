@@ -10,6 +10,7 @@ supported:
   - dma
   - gpio
   - i2c
+  - ptp_clock
   - spi
   - uart
   - arduino_spi

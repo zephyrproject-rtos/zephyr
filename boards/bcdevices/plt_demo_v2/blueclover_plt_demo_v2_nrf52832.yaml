@@ -9,7 +9,7 @@ toolchain:
 ram: 64
 flash: 512
 supported:
-  - ble
+  - bluetooth
   - counter
   - nvs
   - i2c

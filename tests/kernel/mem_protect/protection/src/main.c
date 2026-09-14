@@ -84,11 +84,26 @@ static void execute_from_buffer(uint8_t *dst)
 #endif /* SKIP_EXECUTE_TESTS */
 
 /**
- * @brief Test write to read only section
+ * @brief Verify that writing to .rodata faults.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Read-only data must be mapped without write permission, so an attempt to
+ * modify it has to trap rather than silently succeed.
+ *
+ * The suite installs a fatal error handler that reports the case as passed
+ * and moves on, so a caught fault is the success path: reaching the
+ * zassert_unreachable() after the access means the region was not protected.
+ *
+ * Test steps:
+ * - Take a pointer to a variable in .rodata.
+ * - Write the inverse of its value through that pointer.
+ *
+ * Expected result:
+ * - The write raises a fatal error; the code after it is never reached.
  */
-ZTEST(protection, test_write_ro)
+ZTEST(protection, test_protection_write_rodata)
 {
 	volatile uint32_t *ptr = (volatile uint32_t *)&rodata_var;
 
@@ -113,11 +128,27 @@ ZTEST(protection, test_write_ro)
 }
 
 /**
- * @brief Test to execute on text section
+ * @brief Verify that writing to .text faults.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Executable code must be mapped without write permission, otherwise running
+ * code could be rewritten in place. The test copies one function over
+ * another, which is the shape a real code-injection attempt would take.
+ *
+ * The suite installs a fatal error handler that reports the case as passed
+ * and moves on, so a caught fault is the success path: reaching the
+ * zassert_unreachable() after the access means the region was not protected.
+ *
+ * Test steps:
+ * - Copy the body of one function over another function in .text.
+ * - Call the overwritten function.
+ *
+ * Expected result:
+ * - The write raises a fatal error; the code after it is never reached.
  */
-ZTEST(protection, test_write_text)
+ZTEST(protection, test_protection_write_text)
 {
 	void *src = FUNC_TO_PTR(add_one);
 	void *dst = FUNC_TO_PTR(overwrite_target);
@@ -144,11 +175,27 @@ ZTEST(protection, test_write_text)
 }
 
 /**
- * @brief Test execution from data section
+ * @brief Verify that executing from .data faults.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Writable data must be mapped without execute permission, so code copied
+ * into a data buffer cannot be run. Skipped on configurations without data
+ * execution prevention, where the hardware cannot enforce this.
+ *
+ * The suite installs a fatal error handler that reports the case as passed
+ * and moves on, so a caught fault is the success path: reaching the
+ * zassert_unreachable() after the access means the region was not protected.
+ *
+ * Test steps:
+ * - Copy a small function into a buffer in .data.
+ * - Call into that buffer.
+ *
+ * Expected result:
+ * - The call raises a fatal error; the code after it is never reached.
  */
-ZTEST(protection, test_exec_data)
+ZTEST(protection, test_protection_exec_data)
 {
 #ifdef SKIP_EXECUTE_TESTS
 	ztest_test_skip();
@@ -159,11 +206,27 @@ ZTEST(protection, test_exec_data)
 }
 
 /**
- * @brief Test execution from stack section
+ * @brief Verify that executing from the stack faults.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A thread stack must be mapped without execute permission, which is what
+ * stops a stack overflow from being turned into code execution. Skipped on
+ * configurations without data execution prevention.
+ *
+ * The suite installs a fatal error handler that reports the case as passed
+ * and moves on, so a caught fault is the success path: reaching the
+ * zassert_unreachable() after the access means the region was not protected.
+ *
+ * Test steps:
+ * - Copy a small function into a buffer on the current thread's stack.
+ * - Call into that buffer.
+ *
+ * Expected result:
+ * - The call raises a fatal error; the code after it is never reached.
  */
-ZTEST(protection, test_exec_stack)
+ZTEST(protection, test_protection_exec_stack)
 {
 #ifdef SKIP_EXECUTE_TESTS
 	ztest_test_skip();
@@ -176,11 +239,29 @@ ZTEST(protection, test_exec_stack)
 }
 
 /**
- * @brief Test execution from heap
+ * @brief Verify that executing from the heap faults.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Heap memory must be mapped without execute permission, for the same reason
+ * as the stack and data cases. Skipped when there is no heap configured or
+ * the platform has no data execution prevention.
+ *
+ * The suite installs a fatal error handler that reports the case as passed
+ * and moves on, so a caught fault is the success path: reaching the
+ * zassert_unreachable() after the access means the region was not protected.
+ *
+ * Test steps:
+ * - Allocate a buffer with k_malloc() and copy a small function into it.
+ * - Call into that buffer.
+ *
+ * Expected result:
+ * - The call raises a fatal error; the code after it is never reached.
+ *
+ * @see k_malloc()
  */
-ZTEST(protection, test_exec_heap)
+ZTEST(protection, test_protection_exec_heap)
 {
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0) && !defined(SKIP_EXECUTE_TESTS)
 	uint8_t *heap_buf = k_malloc(BUF_SIZE);

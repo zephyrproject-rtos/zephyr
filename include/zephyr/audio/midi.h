@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for MIDI 2.0 Universal MIDI Packet (UMP) definitions.
+ * @ingroup midi_ump
+ */
+
 #ifndef ZEPHYR_INCLUDE_AUDIO_MIDI_H_
 #define ZEPHYR_INCLUDE_AUDIO_MIDI_H_
 

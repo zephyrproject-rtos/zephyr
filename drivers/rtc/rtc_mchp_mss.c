@@ -60,7 +60,7 @@ LOG_MODULE_REGISTER(rtc_mchp_mss, CONFIG_RTC_LOG_LEVEL);
 #define CALCULATION_MASK_HOUR    0x1F0000u
 #define CALCULATION_MASK_MIN     0x3F00u
 #define CALCULATION_MASK_SEC     0x3Fu
-#define CALCULATION_MASK_WEEKDAY 0x08000000000000u
+#define CALCULATION_MASK_WEEKDAY 0x07000000000000u
 
 #define RTC_ALARM_COUNT   DT_PROP(DT_NODELABEL(rtc), alarms_count)
 #define RTC_ALARM_PENDING (1)
@@ -115,7 +115,7 @@ static inline uint64_t rtc_mchp_tm_to_time(const struct rtc_time *timeptr)
 {
 	uint64_t timr = 0u;
 
-	timr = (uint64_t)((timeptr->tm_wday + 1) & 0x08);
+	timr = (uint64_t)((timeptr->tm_wday + 1) & 0x07);
 	timr = (timr << 8) | (timeptr->tm_year & 0xFF);
 	timr = (timr << 8) | ((timeptr->tm_mon + 1) & 0x0F);
 	timr = (timr << 8) | (timeptr->tm_mday & 0x1F);

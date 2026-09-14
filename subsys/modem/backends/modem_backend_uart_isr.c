@@ -31,7 +31,7 @@ static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backen
 	int ret;
 
 	receive_rb = &backend->isr.receive_rdb[backend->isr.receive_rdb_used];
-	size = ring_buf_put_claim(receive_rb, &buffer, UINT32_MAX);
+	size = ring_buf_put_ptr(receive_rb, &buffer, 0);
 	if (size == 0) {
 		/* This can be caused by
 		 * - a too long CONFIG_MODEM_BACKEND_UART_ISR_RECEIVE_IDLE_TIMEOUT_MS
@@ -39,17 +39,15 @@ static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backen
 		 * relatively to the (too high) baud rate and amount of incoming data.
 		 */
 		LOG_WRN("Receive buffer overrun");
-		ring_buf_put_finish(receive_rb, 0);
 		ring_buf_reset(receive_rb);
-		size = ring_buf_put_claim(receive_rb, &buffer, UINT32_MAX);
+		size = ring_buf_put_ptr(receive_rb, &buffer, 0);
 	}
 
 	ret = uart_fifo_read(backend->uart, buffer, size);
 	if (ret <= 0) {
-		ring_buf_put_finish(receive_rb, 0);
 		return;
 	}
-	ring_buf_put_finish(receive_rb, (uint32_t)ret);
+	ring_buf_commit(receive_rb, (uint32_t)ret);
 
 	if (ring_buf_space_get(receive_rb) > ring_buf_capacity_get(receive_rb) / 20) {
 		/*
@@ -77,12 +75,10 @@ static void modem_backend_uart_isr_irq_handler_transmit_ready(struct modem_backe
 		return;
 	}
 
-	size = ring_buf_get_claim(&backend->isr.transmit_rb, &buffer, UINT32_MAX);
+	size = ring_buf_get_ptr(&backend->isr.transmit_rb, &buffer, 0);
 	ret = uart_fifo_fill(backend->uart, buffer, size);
-	if (ret < 0) {
-		ring_buf_get_finish(&backend->isr.transmit_rb, 0);
-	} else {
-		ring_buf_get_finish(&backend->isr.transmit_rb, (uint32_t)ret);
+	if (ret >= 0) {
+		ring_buf_consume(&backend->isr.transmit_rb, (uint32_t)ret);
 
 		/* Update transmit buf capacity tracker */
 		atomic_sub(&backend->isr.transmit_buf_len, (uint32_t)ret);
@@ -116,7 +112,7 @@ static int modem_backend_uart_isr_open(void *data)
 
 	ret = pm_device_runtime_get(backend->uart);
 	if (ret < 0) {
-		LOG_ERR("Failed to power on UART: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(backend->uart, ret);
 		return ret;
 	}
 	if (backend->dtr_gpio) {
@@ -269,7 +265,7 @@ static int modem_backend_uart_isr_close(void *data)
 	}
 	ret = pm_device_runtime_put_async(backend->uart, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to power off UART: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(backend->uart, ret);
 		return ret;
 	}
 	modem_pipe_notify_closed(&backend->pipe);

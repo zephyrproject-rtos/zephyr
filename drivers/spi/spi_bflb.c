@@ -160,7 +160,7 @@ static bool spi_bflb_bus_busy(const struct device *dev)
 	return (tmp & SPI_STS_SPI_BUS_BUSY) == 0 ? false : true;
 }
 
-static int spi_bflb_trigger_master(const struct device *dev)
+static int spi_bflb_trigger_controller(const struct device *dev)
 {
 	uint32_t tmp;
 	const struct spi_bflb_cfg *config = dev->config;
@@ -180,7 +180,7 @@ static int spi_bflb_trigger_master(const struct device *dev)
 	return 0;
 }
 
-static int spi_bflb_detrigger_master(const struct device *dev)
+static int spi_bflb_detrigger_controller(const struct device *dev)
 {
 	uint32_t tmp;
 	const struct spi_bflb_cfg *config = dev->config;
@@ -351,20 +351,20 @@ static int spi_bflb_configure(const struct device *dev, const struct spi_config 
 	}
 
 	tmp = sys_read32(cfg->base + SPI_CONFIG_OFFSET);
-	/* detrigger SPI slave and master*/
+	/* detrigger SPI peripheral and controller*/
 	tmp &= ~SPI_CR_SPI_S_EN;
 	tmp &= ~SPI_CR_SPI_M_EN;
 
 	sys_write32(tmp, cfg->base + SPI_CONFIG_OFFSET);
 
 	tmp = sys_read32(GLB_SPI_MODE_ADDRESS);
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 		tmp |= 1U << GLB_REG_SPI_0_MASTER_MODE_POS;
 #if defined(CONFIG_SOC_SERIES_BL616CL)
 		tmp |= 1U << GLB_REG_SPI_1_MASTER_MODE_POS;
 #endif
 	} else {
-		/* TODO: slave mode */
+		/* TODO: peripheral mode */
 		return -ENOTSUP;
 		tmp &= ~(1U << GLB_REG_SPI_0_MASTER_MODE_POS);
 	}
@@ -383,7 +383,7 @@ static int spi_bflb_configure(const struct device *dev, const struct spi_config 
 	tmp |= SPI_CR_SPI_M_CONT_EN;
 	/* disable ignore RX */
 	tmp &= ~SPI_CR_SPI_RXD_IGNR_EN;
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL616CL)
 	tmp &= ~SPI_CR_SPI_S_3PIN_MODE;
 #endif
 
@@ -426,7 +426,7 @@ static int spi_bflb_configure(const struct device *dev, const struct spi_config 
 	} else if (framesize == 32) {
 		tmp |= 3 << SPI_CR_SPI_FRAME_SIZE_SHIFT;
 	}
-	/* detrigger SPI slave and master*/
+	/* detrigger SPI peripheral and controller*/
 	tmp &= ~SPI_CR_SPI_S_EN;
 	tmp &= ~SPI_CR_SPI_M_EN;
 
@@ -511,7 +511,7 @@ static int spi_bflb_transceive_sync(const struct device *dev,
 
 	spi_context_cs_control(ctx, true);
 
-	rc = spi_bflb_trigger_master(dev);
+	rc = spi_bflb_trigger_controller(dev);
 	if (rc != 0) {
 		goto out;
 	}
@@ -545,14 +545,14 @@ static int spi_bflb_transceive_sync(const struct device *dev,
 		}
 	}
 
-	rc = spi_bflb_detrigger_master(dev);
+	rc = spi_bflb_detrigger_controller(dev);
 	spi_context_cs_control(ctx, false);
 	spi_context_release(&data->ctx, rc);
 
 	return rc;
 
 out:
-	spi_bflb_detrigger_master(dev);
+	spi_bflb_detrigger_controller(dev);
 	spi_context_cs_control(ctx, false);
 	spi_context_release(&data->ctx, rc);
 
@@ -601,7 +601,7 @@ static int spi_bflb_deinit(const struct device *dev)
 	uint32_t tmp;
 
 	tmp = sys_read32(cfg->base + SPI_CONFIG_OFFSET);
-	/* detrigger SPI slave and master*/
+	/* detrigger SPI peripheral and controller*/
 	tmp &= ~SPI_CR_SPI_S_EN;
 	tmp &= ~SPI_CR_SPI_M_EN;
 	sys_write32(tmp, cfg->base + SPI_CONFIG_OFFSET);
@@ -632,9 +632,17 @@ static int spi_bflb_deinit(const struct device *dev)
 	sys_write32(tmp, cfg->base + SPI_INT_STS_OFFSET);
 
 	/* disable clocks */
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL616CL)
 	tmp = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+	if (cfg->base == SPI1_BASE) {
+		tmp &= ~GLB_SPI1_CLK_EN_MSK;
+	} else {
+		tmp &= ~GLB_SPI_CLK_EN_MSK;
+	}
+#else
 	tmp &= ~GLB_SPI_CLK_EN_MSK;
+#endif
 	sys_write32(tmp, GLB_BASE + GLB_SPI_CFG0_OFFSET);
 #else
 	tmp = sys_read32(GLB_BASE + GLB_CLK_CFG3_OFFSET);

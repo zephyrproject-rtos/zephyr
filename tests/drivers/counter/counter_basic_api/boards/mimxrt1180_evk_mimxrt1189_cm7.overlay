@@ -69,7 +69,3 @@
 &lpit3_channel3 {
 	status = "okay";
 };
-
-&gpt2 {
-	run-mode = "free-run";
-};

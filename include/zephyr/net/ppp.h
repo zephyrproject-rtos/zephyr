@@ -79,16 +79,16 @@ BUILD_ASSERT(offsetof(struct ppp_api, iface_api) == 0);
  * for details.
  */
 enum ppp_protocol_type {
-	PPP_IP     = 0x0021, /**< RFC 1332 */
-	PPP_IPV6   = 0x0057, /**< RFC 5072 */
-	PPP_IPCP   = 0x8021, /**< RFC 1332 */
-	PPP_ECP    = 0x8053, /**< RFC 1968 */
-	PPP_IPV6CP = 0x8057, /**< RFC 5072 */
-	PPP_CCP    = 0x80FD, /**< RFC 1962 */
-	PPP_LCP    = 0xc021, /**< RFC 1661 */
-	PPP_PAP    = 0xc023, /**< RFC 1334 */
-	PPP_CHAP   = 0xc223, /**< RFC 1334 */
-	PPP_EAP    = 0xc227, /**< RFC 2284 */
+	PPP_IP     = 0x0021, /**< @rfc{1332} */
+	PPP_IPV6   = 0x0057, /**< @rfc{5072} */
+	PPP_IPCP   = 0x8021, /**< @rfc{1332} */
+	PPP_ECP    = 0x8053, /**< @rfc{1968} */
+	PPP_IPV6CP = 0x8057, /**< @rfc{5072} */
+	PPP_CCP    = 0x80FD, /**< @rfc{1962} */
+	PPP_LCP    = 0xc021, /**< @rfc{1661} */
+	PPP_PAP    = 0xc023, /**< @rfc{1334} */
+	PPP_CHAP   = 0xc223, /**< @rfc{1334} */
+	PPP_EAP    = 0xc227, /**< @rfc{2284} */
 };
 
 /**
@@ -147,7 +147,7 @@ enum ppp_packet_type {
 /** @endcond */
 
 /**
- * LCP option types from RFC 1661 ch. 6
+ * LCP option types from @rfc{1661,section-6}
  */
 enum lcp_option_type {
 	/** Reserved option value (do not use) */
@@ -176,7 +176,7 @@ enum lcp_option_type {
 } __packed;
 
 /**
- * IPCP option types from RFC 1332
+ * IPCP option types from @rfc{1332}
  */
 enum ipcp_option_type {
 	/** Reserved IPCP option value (do not use) */
@@ -207,7 +207,7 @@ enum ipcp_option_type {
 } __packed;
 
 /**
- * IPV6CP option types from RFC 5072
+ * IPV6CP option types from @rfc{5072}
  */
 enum ipv6cp_option_type {
 	/** Reserved IPV6CP option value (do not use) */
@@ -379,13 +379,18 @@ struct lcp_options {
 
 	/** Which authentication protocol was negotiated (0 means none) */
 	uint16_t auth_proto;
+
+	/** Protocol-Field-Compression negotiated */
+	bool pfc;
+
+	/** Address-and-Control-Field-Compression negotiated */
+	bool acfc;
 };
 
-#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
-#define LCP_NUM_MY_OPTIONS	2
-#else
-#define LCP_NUM_MY_OPTIONS	1
-#endif
+#define LCP_NUM_MY_OPTIONS	(1						\
+	+ IS_ENABLED(CONFIG_NET_L2_PPP_OPTION_MRU)			\
+	+ IS_ENABLED(CONFIG_NET_L2_PPP_OPTION_PFC)			\
+	+ IS_ENABLED(CONFIG_NET_L2_PPP_OPTION_ACFC))
 
 /** IPv4 control protocol options */
 struct ipcp_options {
@@ -504,9 +509,6 @@ struct ppp_context {
 
 	/** Network interface related to this PPP connection */
 	struct net_if *iface;
-
-	/** Network management callback structure */
-	struct net_mgmt_event_callback mgmt_evt_cb;
 
 	/** Current phase of PPP link */
 	enum ppp_phase phase;

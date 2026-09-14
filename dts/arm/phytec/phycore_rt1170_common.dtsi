@@ -80,6 +80,7 @@
 		status = "okay";
 		reset-gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpio5 15 GPIO_ACTIVE_LOW>;
+		ti,interface-type = "rgmii";
 	};
 };
 

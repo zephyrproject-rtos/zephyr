@@ -12,4 +12,7 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - i2c
+  - mbox
+  - rtc
 vendor: nxp

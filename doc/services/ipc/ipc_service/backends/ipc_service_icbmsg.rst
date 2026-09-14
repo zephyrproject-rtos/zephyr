@@ -3,41 +3,65 @@
 ICMsg with dynamically allocated buffers backend
 ################################################
 
-This backend is built on top of the :ref:`ipc_service_backend_icmsg`.
 Data transferred over this backend travels in dynamically allocated buffers on shared memory.
-The ICMsg just sends references to the buffers.
-It also supports multiple endpoints.
+Allocation is thread safe and can happen from any context.
+The backend supports:
 
-This architecture allows for overcoming some common problems with other backends (mostly related to multithread access and zero-copy).
-This backend provides an alternative with no significant limitations.
+* Multiple endpoints.
+* No-copy sending.
+* Holding RX buffers.
+* Sending from an interrupt context.
+* Two levels of endpoint priorities.
+* Statistics and optional shell command with utilization report
+* Up to 32 blocks are supported.
+* Data cache support.
+* Low memory footprint (around 2 kB of code).
 
 Overview
 ========
 
-The shared memory is divided into two parts.
-One is reserved for the ICMsg and the other contains equal-sized blocks.
-The number of blocks is configured in the devicetree.
+For each direction a shared memory region is reserved and each region is divided into two parts.
+One part forms a pool of fixed size buffers and the allocator builds a variable size buffer from adjacent buffers in the pool.
+The other part is used for control path consisting of two message queues (for each direction).
+There is a producer queue which is written by the sender and read by the receiver and a consumer queue which is written by the receiver and read by the sender.
+The producer queue has information about location (within the pool) of the next message.
+The consumer queue has information about location (within the pool) of the consumed message.
 
 The data sending process is following:
 
-* The sender allocates one or more blocks.
-  If there are not enough sequential blocks, it waits using the timeout provided in the parameter that also includes K_FOREVER and K_NO_WAIT.
+* The sender allocates one or more blocks from the pool.
+  If there are not enough sequential blocks, a thread context waits using the timeout provided in the parameter that also includes K_FOREVER and K_NO_WAIT.
 * The allocated blocks are filled with data.
+  At the beginning of the first block there is a 32 bit message header with length, endpoint ID and own block index.
   For the zero-copy case, this is done by the caller, otherwise, it is copied automatically.
   During this time other threads are not blocked in any way as long as there are enough free blocks for them.
   They can allocate, send data and receive data.
-* A message containing the block index is sent over ICMsg to the receiver.
-  The size of the ICMsg queue is large enough to hold messages for all blocks, so it will never overflow.
-* The receiver can hold the data as long as desired.
+* A block index with the beginning of the message is written to the producer queue.
+  Information about the priority of the endpoint is appended to the block index.
+  :kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_ICBMSG_MAX_ACTIVE_COUNT` defines number of slots in the queue.
+  Mailbox notification is send to the receiver.
+* The receiver reads the producer queue. Higher prioriy messages are processed first.
+  It can hold the data as long as desired.
   Again, other threads are not blocked as long as there are enough free blocks for them.
-* When data is no longer needed, the backend sends a release message over ICMsg.
-* When the backend receives this message, it deallocates all blocks.
-  It is done internally by the backend and it is invisible to the caller.
+* When data is no longer needed, the receiver writes to the consumer queue the block index.
+* The sender is performing a garbage collection by reading the consumer queue and freeing the buffers.
+  Garbage collection is performed after sending any message or if there is no available buffers.
 
 Configuration
 =============
 
 The backend is configured using Kconfig and devicetree.
+
+There are following Kconfig options:
+
+:kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP` - maximum number of registered endpoints.
+
+:kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_ICBMSG_MAX_ACTIVE_COUNT` - number of slots in the queues.
+
+:kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT` - support for deregistration and closing.
+
+:kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_ICBMSG_SHELL` - support for the shell command.
+
 When configuring the backend, do the following:
 
 * If at least one of the cores uses data cache on shared memory, set the ``dcache-alignment`` value.
@@ -54,6 +78,15 @@ When configuring the backend, do the following:
     Make sure that you set correct value of the ``dcache-alignment``.
     At first, wrong value may not show any signs, which may give a false impression that everything works.
     Unstable behavior will appear sooner or later.
+
+If ``dcache-alignment`` is used then configuration for the number of blocks should be selected carefully to avoid inefficient usage of the memory.
+That is because the blocks are aligned to the cache alignment and if the number of blocks is not a multiple of the cache alignment then the last block will not be used efficiently.
+That is because the blocks and control data are aligned to the cache alignment.
+For example, if ``dcache-alignment`` is 32 and 1024 bytes of shared memory is used for one direction.
+Control data will take 64 bytes and 960 bytes are left for the buffers.
+Using 16 blocks will result in 32 bytes per block (due to the cache alignment).
+Using 15 blocks will result in 64 bytes per block (due to the cache alignment) with much better memory utilization.
+
 
 See the following configuration example for one of the instances:
 
@@ -76,7 +109,7 @@ See the following configuration example for one of the instances:
          tx-region = <&tx>;
          rx-region = <&rx>;
          tx-blocks = <16>;
-         rx-blocks = <32>;
+         rx-blocks = <16>;
          mboxes = <&mbox 0>, <&mbox 1>;
          mbox-names = "tx", "rx";
          status = "okay";
@@ -87,6 +120,12 @@ See the following configuration example for one of the instances:
 You must provide a similar configuration for the other side of the communication (domain or CPU).
 Swap the MBOX channels, memory regions (``tx-region`` and ``rx-region``), and block count (``tx-blocks`` and ``rx-blocks``).
 
+Limitations
+===========
+
+* Expected same endianness on both sides of the communication.
+* No support for detection of unexpected remote reset.
+
 Samples
 =======
 
@@ -96,7 +135,6 @@ Detailed Protocol Specification
 ===============================
 
 The ICBMsg protocol transfers messages using dynamically allocated blocks of shared memory.
-Internally, it uses ICMsg for control messages.
 
 Shared Memory Organization
 --------------------------
@@ -107,7 +145,7 @@ Those regions are interchanged on each core.
 
 Each shared memory region is divided into following two parts:
 
-* **ICMsg area** - An area reserved by ICMsg instance and used to transfer the control messages.
+* **Control area** - An area reserved by producer and consumer queues.
 * **Blocks area** - An area containing allocatable blocks carrying the content of the messages.
   This area is divided into even-sized blocks aligned to cache boundaries.
 
@@ -129,14 +167,14 @@ The algorithm:
    * ``region_end_aligned = ROUND_DOWN(region_end, alignment)``
    * ``region_size_aligned = region_end_aligned - region_begin_aligned``
 
-#. Calculate the minimum size required for ICMsg area ``icmsg_min_size``, which is a sum of:
+#. Calculate the minimum size required for the control area:
 
-   * ICMsg header size (refer to the ICMsg specification)
-   * ICMsg message size for 4 bytes of content (refer to the ICMsg specification) multiplied by ``local_blocks + remote_blocks + 2``
+   * for each queue there is :kconfig:option:`IPC_SERVICE_BACKEND_ICBMSG_MAX_ACTIVE_COUNT` bytes and 8 byte queue header.
+   * Typically control data takes less than 64 bytes per direction.
 
 #. Calculate available size for block area. Note that the actual size may be smaller because of block alignment:
 
-   ``blocks_area_available_size = region_size_aligned - icmsg_min_size``
+   ``blocks_area_available_size = region_size_aligned - control_area``
 
 #. Calculate single block size:
 
@@ -167,224 +205,68 @@ Message Transfer
 
 The ICBMsg uses following two types of messages:
 
-* **Binding message** - Message exchanged during endpoint binding process (described below).
-* **Data message** - Message carrying actual data from a user.
+* **Control message** - Messages like binding or unbinding.
+* **Data message** - Message carrying actual user data.
 
 They serve different purposes, but their lifetime and flow are the same.
 The following steps describe it:
 
 #. The sender wants to send a message that contains ``K`` bytes.
 #. The sender reserves blocks from his ``tx-region`` blocks area that can hold at least ``K + 4`` bytes.
-   The additional ``+ 4`` bytes are reserved for the header, which contains the exact size of the message.
+   The additional ``+ 4`` bytes are reserved for the header.
    The blocks must be continuous (one after another).
    The sender is responsible for block allocation management.
-   It is up to the implementation to decide what to do if no blocks are available.
-#. The sender fills the header with a 32-bit integer value, ``K`` (little-endian).
+   If blocks are not available then a thread context may block and an interrupt context will return error.
+#. The sender fills the header.
 #. The sender fills the remaining part of the blocks with his data.
    Unused space is ignored.
-#. The sender sends an ``MSG_DATA`` or ``MSG_BOUND`` control message over ICMsg that contains starting block number (where the header is located).
-   Details about the control message are in the next section.
-#. The control message travels to the receiver.
-#. The receiver reads message size and data from his ``rx-region`` starting from the block number received in the control message.
-#. The receiver processes the message.
-#. The receiver sends ``MSG_RELEASE_DATA`` or ``MSG_RELEASE_BOUND`` control message over ICMsg containing the starting block number
-   (the same as inside received control message).
-#. The control message travels back to the sender.
-#. The sender releases the blocks starting from the block number provided in the control message.
-   The number of blocks to release can be calculated using a size from the header.
+#. The sender writes the message to the producer queue and sends the mailbox signal.
+#. The receiver excutes mailbox callback in the mailbox interrupt context and reads the producer queue.
+#. The receiver reads the block index and locates the message within his ``rx-region``.
+#. The receiver reads the endpoint and message length and processes the message.
+#. The receiver consumes the message by writing its block index to the consumer queue.
+   The mailbox signal is not send.
+#. The sender checks consume queue after each sending or if sending fails.
+   Messages are read from the consumer queue and released to the pool.
 
 .. image:: icbmsg_message.svg
    :align: center
 
 |
 
-Control Messages
-----------------
-
-The control messages are transmitted over ICMsg.
-Each control message contains three bytes.
-The first byte tells what kind of message it is.
-
-The allocated size for ICMsg ensures that the maximum possible number of control messages will fit into its ring buffer,
-so sending over the ICMsg will never fail because of buffer overflow.
-
-MSG_DATA
-^^^^^^^^
-
-.. list-table::
-   :header-rows: 1
-
-   * - byte 0
-     - byte 1
-     - byte 2
-   * - MSG_DATA
-     - endpoint address
-     - block number
-   * - 0x00
-     - 0x00 ÷ 0xFD
-     - 0x00 ÷ N-1
-
-The ``MSG_DATA`` control message indicates that a new data message was sent.
-The data message starts with a header inside ``block number``.
-The data message was sent over the endpoint specified in ``endpoint address``.
-The endpoint binding procedure must be finished before sending this control message.
-
-MSG_RELEASE_DATA
-^^^^^^^^^^^^^^^^
-
-.. list-table::
-   :header-rows: 1
-
-   * - byte 0
-     - byte 1
-     - byte 2
-   * - MSG_RELEASE_DATA
-     - unused
-     - block number
-   * - 0x01
-     -
-     - 0x00 ÷ N-1
-
-The ``MSG_RELEASE_DATA`` control message is sent in response to ``MSG_DATA``.
-It informs us that the data message starting with ``block number`` was received and is no longer needed.
-When this control message is received, the blocks containing the message must be released.
-
-MSG_BOUND
-^^^^^^^^^
-
-.. list-table::
-   :header-rows: 1
-
-   * - byte 0
-     - byte 1
-     - byte 2
-   * - MSG_BOUND
-     - endpoint address
-     - block number
-   * - 0x02
-     - 0x00 ÷ 0xFD
-     - 0x00 ÷ N-1
-
-The ``MSG_BOUND`` control message is similar to the ``MSG_DATA`` except the blocks carry binding information.
-See the next section for details on the binding procedure.
-
-MSG_RELEASE_BOUND
-^^^^^^^^^^^^^^^^^
-
-.. list-table::
-   :header-rows: 1
-
-   * - byte 0
-     - byte 1
-     - byte 2
-   * - MSG_RELEASE_BOUND
-     - endpoint address
-     - block number
-   * - 0x03
-     - 0x00 ÷ 0xFD
-     - 0x00 ÷ N-1
-
-The ``MSG_RELEASE_BOUND`` control message is sent in response to ``MSG_BOUND``.
-It is similar to the ``MSG_RELEASE_DATA`` except the ``endpoint address`` is required.
-See the next section for details on the binding procedure.
-
-Initialization
---------------
-
-The ICBMsg initialization calls ICMsg to initialize.
-When it is done, no further initialization is required.
-Blocks can be left uninitialized.
-
-After ICBMsg initialization, you are ready for the endpoint binding procedure.
-
-Endpoint Binding
+Binding Instances
 -----------------
 
-So far, the protocol is symmetrical.
-Each side of the connection was the same.
-The binding process is not symmetrical.
-There are following two roles:
+When backend instance is opened it send bound message which contains a 64 bit magic number.
+Mailbox callback is enabled and instance is waiting for bound message.
+After receiving bound message, instance is bound to the remote instance and endpoints can be registered.
 
-* **Initiator** - It assigns endpoint addresses and sends binding messages.
-* **Follower** - It waits for a binding message.
+Binding Endpoint
+----------------
 
-The roles are determined based on the addresses of the ``rx-region`` and ``tx-region``.
+Endpoint binding message contains SHA of the endpoint name and endpoint ID which is the index in the local array with endpoint's data.
 
-* If ``address of rx-region < address of tx-region``, then it is initiator.
-* If ``address of rx-region > address of tx-region``, then it is follower.
+There are two possible scenarios:
 
-The binding process needs an endpoint name and is responsible for following two things:
+* The remote instance sent binding message for the endpoint before it was registered.
+* The endpoint is registered before receiving the binding message from the remote instance.
 
-* To establish a common endpoint address,
-* To make sure that two sides are ready to exchange messages over that endpoint.
+When the binding message is received then SHA is compared to the stored SHA in the array of endpoint's data.
+If match is found then it means that the endpoint is already registered by the local instance.
+Endpoint ID is stored in the endpoint's data and bound callback is called.
+If match is not found then empty slot is found and endpoint ID and SHA is stored in the available slot.
 
-After ICMsg is initialized, both sides can start the endpoint binding.
-There are no restrictions on the order in which the sides start the endpoint binding.
+When endpoint is registered then SHA for the name is calculated and compared to the stored SHA in the array of endpoint's data.
+If match is found then it means that remote binding message for that endpoint is already received.
+In this case binding message is sent to the remote instance and bound callback is called.
+If match is not found then empty slot is found and endpoint ID and SHA is stored in the available slot.
+Binding message is sent to the remote instance but endpoints are not bound yet.
 
-Initiator Binding Procedure
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Later on, remote endpoint ID is used for data message to identify the endpoint.
 
-The initiator sends a binding message.
-It contains a single null-terminated string with an endpoint name.
-As usual, it is preceded by a message header containing the message size (including null-terminator).
+Unbinding Endpoint
+------------------
 
-Example of the binding message for ``example`` endpoint name:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Header
-     - Endpoint name
-     - Null-terminator
-   * - bytes 0-3
-     - bytes 4-10
-     - byte 11
-   * - 0x00000008
-     - ``example``
-     - 0x00
-
-The binding message is sent using the ``MSG_BOUND`` control message and released with the ``MSG_RELEASE_BOUND`` control message.
-
-The endpoint binding procedure from the initiator's point of view is the following:
-
-#. The initiator assigns an endpoint address to this endpoint.
-#. The initiator sends a binding message containing the endpoint name and address.
-#. The initiator waits for any message from the follower using this endpoint address.
-   Usually, it will be ``MSG_RELEASE_BOUND``, but ``MSG_DATA`` is also allowed.
-#. The initiator is bound to an endpoint, and it can send data messages using this endpoint.
-
-Follower Binding Procedure
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If the follower receives a binding message before it starts the binding procedure on that endpoint, it should store the message for later.
-It should not send the ``MSG_RELEASE_BOUND`` yet.
-
-The endpoint binding procedure from the follower's point of view is the following:
-
-#. The follower waits for a binding message containing its endpoint name.
-   The message may be a newly received message or a message stored before the binding procedure started.
-#. The follower stores the endpoint address assigned to this endpoint by the initiator.
-#. The follower sends the ``MSG_RELEASE_BOUND`` control message.
-#. The follower is bound to an endpoint, and it can send data messages using this endpoint.
-
-Example sequence diagrams
--------------------------
-
-The following diagram shows a few examples of how the messages flow between two ends.
-There is a binding of two endpoints and one fully processed data message exchange.
-
-.. image:: icbmsg_flows.svg
-   :align: center
-
-|
-
-Protocol Versioning
--------------------
-
-The protocol allows improvements in future versions.
-The newer implementations should be able to work with older ones in backward compatible mode.
-To allow it, the current protocol version has the following restrictions:
-
-* If the receiver receives a longer control message, it should use only the first three bytes and ignore the remaining.
-* If the receiver receives a control message starting with a byte that does not match any of the messages described here, it should ignore it.
-* If the receiver receives a binding message with additional bytes at the end, it should ignore the additional bytes.
+When endpoint is unregistered then unbinding control message is sent.
+Endpoint is removed from the array of endpoint's data.
+When unbinding message is received then endpoint slot is marked as empty and unbinding callback is called.

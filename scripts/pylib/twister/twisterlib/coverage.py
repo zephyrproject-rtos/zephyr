@@ -18,6 +18,8 @@ import sys
 import tempfile
 import time
 
+from packaging import version
+
 logger = logging.getLogger('twister')
 
 supported_coverage_formats = {
@@ -275,6 +277,8 @@ class Lcov(CoverageTool):
                 "--ignore-errors", "unused,unused",
                 "--ignore-errors", "empty,empty",
                 "--ignore-errors", "mismatch,mismatch",
+                "--ignore-errors", "gcov,gcov",
+                "--ignore-errors", "child,child",
             ]
 
         cmd_str = " ".join(cmd)
@@ -533,7 +537,7 @@ class Gcovr(CoverageTool):
             version_lines = result.stdout.strip().split('\n')
             if version_lines:
                 version_output = version_lines[0].replace('gcovr ', '')
-                return version_output
+                return version.parse(version_output)
         except subprocess.CalledProcessError as e:
             logger.error(f"Unable to determine gcovr version: {e}")
             sys.exit(1)
@@ -569,11 +573,12 @@ class Gcovr(CoverageTool):
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         cmd = ["gcovr", "-r", self.base_dir,
                "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
+               "--gcov-ignore-errors=all",
                "--gcov-executable", self.gcov_tool,
                "-e", "tests/*"]
-        if self.version >= "7.0":
+        if self.version >= version.parse("7.0"):
             cmd += ["--gcov-object-directory", outdir]
-        if self.version >= "8.0":
+        if self.version >= version.parse("8.0"):
             cmd += ["--gcov-ignore-parse-errors=suspicious_hits.warn_once_per_file"]
         cmd += excludes + self.options + ["--json", "-o", coverage_file, outdir]
         cmd_str = " ".join(cmd)
@@ -587,9 +592,10 @@ class Gcovr(CoverageTool):
 
         cmd = ["gcovr", "-r", self.base_dir] + self.options
         cmd += ["--gcov-executable", self.gcov_tool,
+                "--gcov-ignore-errors=all",
                 "-f", "tests/ztest", "-e", "tests/ztest/test/*",
                 "--json", "-o", ztest_file, outdir]
-        if self.version >= "7.0":
+        if self.version >= version.parse("7.0"):
             cmd += ["--gcov-object-directory", outdir]
 
         cmd_str = " ".join(cmd)

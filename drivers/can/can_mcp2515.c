@@ -658,15 +658,6 @@ static void mcp2515_remove_rx_filter(const struct device *dev, int filter_id)
 	k_mutex_unlock(&dev_data->mutex);
 }
 
-static void mcp2515_set_state_change_callback(const struct device *dev,
-					      can_state_change_callback_t cb, void *user_data)
-{
-	struct mcp2515_data *dev_data = dev->data;
-
-	dev_data->common.state_change_cb = cb;
-	dev_data->common.state_change_cb_user_data = user_data;
-}
-
 static void mcp2515_rx_filter(const struct device *dev, struct can_frame *frame)
 {
 	struct mcp2515_data *dev_data = dev->data;
@@ -777,21 +768,19 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 static void mcp2515_handle_errors(const struct device *dev)
 {
 	struct mcp2515_data *dev_data = dev->data;
-	can_state_change_callback_t state_change_cb = dev_data->common.state_change_cb;
-	void *state_change_cb_data = dev_data->common.state_change_cb_user_data;
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
 	int err;
 
-	err = mcp2515_get_state(dev, &state, state_change_cb ? &err_cnt : NULL);
+	err = mcp2515_get_state(dev, &state, &err_cnt);
 	if (err != 0) {
 		LOG_ERR("Failed to get CAN controller state [%d]", err);
 		return;
 	}
 
-	if (state_change_cb && dev_data->old_state != state) {
+	if (dev_data->old_state != state) {
 		dev_data->old_state = state;
-		state_change_cb(dev, state, err_cnt, state_change_cb_data);
+		can_fire_state_change_callbacks(dev, state, err_cnt);
 	}
 }
 
@@ -898,7 +887,6 @@ static DEVICE_API(can, can_api_funcs) = {
 	.add_rx_filter = mcp2515_add_rx_filter,
 	.remove_rx_filter = mcp2515_remove_rx_filter,
 	.get_state = mcp2515_get_state,
-	.set_state_change_callback = mcp2515_set_state_change_callback,
 	.get_core_clock = mcp2515_get_core_clock,
 	.get_max_filters = mcp2515_get_max_filters,
 	.timing_min = {
@@ -925,6 +913,7 @@ static int mcp2515_init(const struct device *dev)
 	k_tid_t tid;
 	int ret;
 
+	sys_slist_init(&dev_data->common.state_change_callbacks);
 	k_sem_init(&dev_data->int_sem, 0, 1);
 	k_mutex_init(&dev_data->mutex);
 	k_sem_init(&dev_data->tx_sem, MCP2515_TX_CNT, MCP2515_TX_CNT);

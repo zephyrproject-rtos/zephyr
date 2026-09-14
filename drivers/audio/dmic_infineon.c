@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/pm.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dmic_infineon, CONFIG_AUDIO_DMIC_LOG_LEVEL);
@@ -459,9 +463,20 @@ static int ifx_dmic_trigger(const struct device *dev, enum dmic_trigger cmd)
 			return -EIO;
 		}
 
+		/*
+		 * Take the capture-window reference. With device runtime PM this
+		 * resumes the PDM block; the matching release happens on
+		 * PAUSE/STOP/RESET. Inert under system-managed PM.
+		 */
+		(void)pm_device_runtime_get(dev);
+		/* Block power-loss states while capturing. */
+		pm_policy_device_power_lock_get(dev);
+
 		ret = dmic_start_capture(dev);
 		if (ret != 0) {
 			LOG_ERR("Failed to start capture: %d", ret);
+			pm_policy_device_power_lock_put(dev);
+			(void)pm_device_runtime_put(dev);
 			return ret;
 		}
 
@@ -472,9 +487,15 @@ static int ifx_dmic_trigger(const struct device *dev, enum dmic_trigger cmd)
 			return -EIO;
 		}
 
+		(void)pm_device_runtime_get(dev);
+		/* Block power-loss states while capturing. */
+		pm_policy_device_power_lock_get(dev);
+
 		ret = dmic_start_capture(dev);
 		if (ret != 0) {
 			LOG_ERR("Failed to start capture: %d", ret);
+			pm_policy_device_power_lock_put(dev);
+			(void)pm_device_runtime_put(dev);
 			return ret;
 		}
 
@@ -482,7 +503,10 @@ static int ifx_dmic_trigger(const struct device *dev, enum dmic_trigger cmd)
 
 	case DMIC_TRIGGER_PAUSE:
 	case DMIC_TRIGGER_STOP:
-	case DMIC_TRIGGER_RESET:
+	case DMIC_TRIGGER_RESET: {
+		/* A capture-window reference is held only while ACTIVE. */
+		bool was_active = (data->state == DMIC_STATE_ACTIVE);
+
 		for (uint8_t ch = 0; ch < PDM_PCM_MAX_CHANNELS; ch++) {
 			/* prevent interrupts from occurring while stopping the stream */
 			Cy_PDM_PCM_Channel_SetInterruptMask(config->reg_addr, ch, 0);
@@ -492,7 +516,15 @@ static int ifx_dmic_trigger(const struct device *dev, enum dmic_trigger cmd)
 							    : DMIC_STATE_CONFIGURED;
 		dmic_stop_capture(dev);
 
+		/* Drop the capture-window reference taken at START/RELEASE. */
+		if (was_active) {
+			pm_policy_device_power_lock_put(dev);
+			ret = pm_device_runtime_put(dev);
+			__ASSERT(ret == 0, "unbalanced PM runtime put: %d", ret);
+		}
+
 		break;
+	}
 
 	default:
 		return -EINVAL;
@@ -576,6 +608,62 @@ static int dmic_init(const struct device *dev)
 
 	return 0;
 }
+
+/*
+ * Cold-boot init wrapper. dmic_init() doubles as the PM TURN_ON handler and
+ * runs on every warm boot, so device runtime PM must be enabled here (once)
+ * rather than inside dmic_init().
+ */
+static int ifx_dmic_init(const struct device *dev)
+{
+	int ret = dmic_init(dev);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Enable device runtime PM; system-managed PM still applies when unused. */
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int ifx_dmic_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct ifx_dmic_data *const data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Refuse while capturing; gating mid-stream corrupts audio. The
+		 * channels are enabled only while capturing (refused here), so the
+		 * block is already idle - nothing to gate.
+		 */
+		if (data->state == DMIC_STATE_ACTIVE) {
+			return -EBUSY;
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* No-op: the app re-enables channels via DMIC_TRIGGER_START. */
+		break;
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power was lost: re-init the base hardware. The application must
+		 * call dmic_configure() again before the next capture.
+		 */
+		return dmic_init(dev);
+#endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static void dmic_isr(const struct device *dev, uint8_t channel)
 {
@@ -720,7 +808,7 @@ static DEVICE_API(dmic, dmic_ops) = {
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 	}                                                                                          \
                                                                                                    \
-	K_MSGQ_DEFINE(dmic_msgq##index, sizeof(void *), CONFIG_DMIC_INFINEON_QUEUE_SIZE, 1);       \
+	K_MSGQ_DEFINE_STATIC_TYPE(dmic_msgq##index, void *, CONFIG_DMIC_INFINEON_QUEUE_SIZE);      \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
                                                                                                    \
@@ -741,7 +829,10 @@ static DEVICE_API(dmic, dmic_ops) = {
 		.rx_queue = &dmic_msgq##index,                                                     \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &dmic_init, NULL, &dmic_data_##index, &dmic_config_##index,   \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dmic_ops);
+	PM_DEVICE_DT_INST_DEFINE(index, ifx_dmic_pm_action);                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &ifx_dmic_init, PM_DEVICE_DT_INST_GET(index),                 \
+			      &dmic_data_##index, &dmic_config_##index, POST_KERNEL,               \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dmic_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_DMIC_INIT)

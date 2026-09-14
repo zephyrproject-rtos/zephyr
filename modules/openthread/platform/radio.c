@@ -691,12 +691,8 @@ void platformRadioProcess(otInstance *aInstance)
 
 	if (is_pending_event_set(PENDING_EVENT_TX_DONE)) {
 		reset_pending_event(PENDING_EVENT_TX_DONE);
-
-		if (sState == OT_RADIO_STATE_TRANSMIT ||
-		    radio_api->get_capabilities(radio_dev) & IEEE802154_HW_SLEEP_TO_TX) {
-			sState = OT_RADIO_STATE_RECEIVE;
-			handle_tx_done(aInstance);
-		}
+		sState = OT_RADIO_STATE_RECEIVE;
+		handle_tx_done(aInstance);
 	}
 
 	if (is_pending_event_set(PENDING_EVENT_SLEEP)) {
@@ -927,13 +923,7 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 
 	__ASSERT_NO_MSG(aPacket == &sTransmitFrame);
 
-	enum ieee802154_hw_caps radio_caps;
-
-	radio_caps = radio_api->get_capabilities(radio_dev);
-
-	if (sState == OT_RADIO_STATE_RECEIVE ||
-	    (sState == OT_RADIO_STATE_SLEEP &&
-	     radio_caps & IEEE802154_HW_SLEEP_TO_TX)) {
+	if (sState == OT_RADIO_STATE_RECEIVE || sState == OT_RADIO_STATE_SLEEP) {
 		if (run_tx_task(aInstance) == 0) {
 			error = OT_ERROR_NONE;
 		}
@@ -1013,9 +1003,8 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 		caps |= OT_RADIO_CAPS_ACK_TIMEOUT;
 	}
 
-	if (radio_caps & IEEE802154_HW_SLEEP_TO_TX) {
-		caps |= OT_RADIO_CAPS_SLEEP_TO_TX;
-	}
+	/* All Zephyr 802.15.4 drivers support transmitting from a low-power state. */
+	caps |= OT_RADIO_CAPS_SLEEP_TO_TX;
 
 #if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 	if (radio_caps & IEEE802154_HW_TX_SEC) {

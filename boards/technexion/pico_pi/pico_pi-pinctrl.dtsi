@@ -5,7 +5,7 @@
  */
 
 #include <nxp/imx/nxp_imx7d_m4.dtsi>
-#include <nxp/nxp_imx/mimx7d-pinctrl.dtsi>
+#include <nxp/imx/pinctrl/mimx7d-pinctrl.dtsi>
 
 &pinctrl {
 	uart2_default: uart2_default {

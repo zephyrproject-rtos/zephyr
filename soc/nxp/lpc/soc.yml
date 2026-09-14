@@ -18,6 +18,7 @@ family:
       cpuclusters:
       - name: m4
       - name: m0
+    - name: lpc54628
   - name: lpc55xxx
     socs:
     - name: lpc55s06

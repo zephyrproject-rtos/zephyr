@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2017-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2026 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -185,7 +186,7 @@ static struct bt_le_ext_adv adv_pool[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 
 
 #if defined(CONFIG_BT_EXT_ADV)
-uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv)
+uint8_t bt_le_ext_adv_get_index(const struct bt_le_ext_adv *adv)
 {
 	__ASSERT(IS_ARRAY_ELEMENT(adv_pool, adv), "Invalid bt_adv pointer");
 
@@ -211,6 +212,14 @@ static struct bt_le_ext_adv *adv_new(void)
 	(void)memset(adv, 0, sizeof(*adv));
 	atomic_set_bit(adv_pool[i].flags, BT_ADV_CREATED);
 	adv->handle = i;
+
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+	net_buf_simple_init_with_data(&adv->pawr_rsp_reassembly.buf,
+				      adv->pawr_rsp_reassembly.reassembly_data,
+				      BT_PER_ADV_RSP_REASSEMBLY_BUF_SIZE);
+
+	net_buf_simple_reset(&adv->pawr_rsp_reassembly.buf);
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
 
 	return adv;
 }
@@ -365,29 +374,21 @@ int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable)
 	return bt_le_adv_set_enable_legacy(adv, enable);
 }
 
-static uint32_t adv_interval_max_get(void)
-{
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		return BT_LE_EXT_ADV_INTERVAL_MAX;
-	}
-
-	return BT_LE_ADV_INTERVAL_MAX;
-}
-
 static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
+	const bool is_ext_adv = (param->options & BT_LE_ADV_OPT_EXT_ADV) != 0U;
+
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		if (param->peer && !(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
-		    !(param->options & BT_LE_ADV_OPT_CONN)) {
+
+		if (param->peer && !is_ext_adv && !(param->options & BT_LE_ADV_OPT_CONN)) {
 			/* Cannot do directed non-connectable advertising
 			 * without extended advertising.
 			 */
 			return false;
 		}
 
-		if (param->peer &&
-		    (param->options & BT_LE_ADV_OPT_EXT_ADV) &&
+		if (param->peer && is_ext_adv &&
 		    !(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
 			/* High duty cycle directed connectable advertising
 			 * shall not be used with Extended Advertising.
@@ -395,13 +396,16 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 			return false;
 		}
 
-		if (!(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
-		    param->options & (BT_LE_ADV_OPT_EXT_ADV |
-				      BT_LE_ADV_OPT_NO_2M |
-				      BT_LE_ADV_OPT_CODED |
-				      BT_LE_ADV_OPT_ANONYMOUS |
-				      BT_LE_ADV_OPT_USE_TX_POWER)) {
+		if (!is_ext_adv &&
+		    param->options & (BT_LE_ADV_OPT_NO_2M | BT_LE_ADV_OPT_CODED |
+				      BT_LE_ADV_OPT_ANONYMOUS | BT_LE_ADV_OPT_USE_TX_POWER)) {
 			/* Extended options require extended advertising. */
+			return false;
+		}
+
+		/* For non-ext-adv we ignore the param->sid */
+		if (is_ext_adv && param->sid > BT_GAP_SID_MAX) {
+			LOG_DBG("Invalid SID 0x%02X", param->sid);
 			return false;
 		}
 	}
@@ -440,9 +444,19 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 
 	if ((param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) ||
 	    !param->peer) {
+		uint32_t interval_max_limit = BT_LE_ADV_INTERVAL_MAX;
+
+		if (is_ext_adv) {
+			/* BT Core [Vol 4, Part E, 7.8.53]: extended advertising uses
+			 * a 24-bit interval with a permitted range of 0x000020 to
+			 * 0xFFFFFF (~10485s), not the legacy 0x4000 ceiling.
+			 */
+			interval_max_limit = BT_HCI_LE_PRIM_ADV_INTERVAL_MAX;
+		}
+
 		if (param->interval_min > param->interval_max ||
-		    param->interval_min < 0x0020 ||
-		    param->interval_max > adv_interval_max_get()) {
+		    param->interval_min < BT_LE_ADV_INTERVAL_MIN ||
+		    param->interval_max > interval_max_limit) {
 			return false;
 		}
 	}
@@ -988,6 +1002,8 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 		return err;
 	}
 
+	bt_id_save_adv_addr(adv, set_param.own_addr_type);
+
 	if (!dir_adv) {
 		err = le_adv_update(adv, ad, ad_len, sd, sd_len, false, scannable);
 		if (err) {
@@ -1022,6 +1038,10 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 		bt_conn_unref(conn);
 	}
 
+#if defined(CONFIG_BT_EXT_ADV)
+	adv->sid = BT_GAP_SID_INVALID;
+#endif /* CONFIG_BT_EXT_ADV */
+
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE, param->options & BT_LE_ADV_OPT_CONN);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_SCANNABLE, scannable);
@@ -1036,6 +1056,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 				const struct bt_le_adv_param *param,
 				bool  has_scan_data)
 {
+	const bool is_ext_adv = (param->options & BT_LE_ADV_OPT_EXT_ADV) != 0U;
 	struct bt_hci_cp_le_set_ext_adv_param_v2 *cp;
 
 	uint16_t opcode;
@@ -1045,8 +1066,6 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	uint8_t own_addr_type;
 	int err;
 	uint16_t props = 0;
-
-	adv->options = param->options;
 
 	if ((param->options & BT_LE_ADV_OPT_TX_POWER) != 0U) {
 		if (!IN_RANGE(param->tx_power, BT_HCI_LE_ADV_TX_POWER_MIN,
@@ -1094,8 +1113,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		       param->tx_power : BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	cp->prim_adv_phy = BT_HCI_LE_PHY_1M;
 
-	if ((param->options & BT_LE_ADV_OPT_EXT_ADV) &&
-	    !(param->options & BT_LE_ADV_OPT_NO_2M)) {
+	if (is_ext_adv && !(param->options & BT_LE_ADV_OPT_NO_2M)) {
 		cp->sec_adv_phy = BT_HCI_LE_PHY_2M;
 	} else {
 		cp->sec_adv_phy = BT_HCI_LE_PHY_1M;
@@ -1122,7 +1140,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		}
 	}
 
-	if (!(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
+	if (!is_ext_adv) {
 		props |= BT_HCI_LE_ADV_PROP_LEGACY;
 	}
 
@@ -1140,7 +1158,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	if (param->options & BT_LE_ADV_OPT_CONN) {
 		props |= BT_HCI_LE_ADV_PROP_CONN;
-		if (!dir_adv && !(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
+		if (!dir_adv && !is_ext_adv) {
 			/* When using non-extended adv packets then undirected
 			 * advertising has to be scannable as well.
 			 * We didn't require this option to be set before, so
@@ -1165,7 +1183,12 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		bt_addr_le_copy(&cp->peer_addr, param->peer);
 	}
 
-	cp->sid = param->sid;
+	if (is_ext_adv) {
+		cp->sid = param->sid;
+	} else {
+		/* The SID is ignored for legacy advertising, but 0 keeps the parameter valid */
+		cp->sid = 0U;
+	}
 
 	cp->sec_adv_max_skip = param->secondary_max_skip;
 
@@ -1187,11 +1210,23 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	atomic_set_bit(adv->flags, BT_ADV_PARAMS_SET);
 
 	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_PENDING)) {
-		err = bt_id_set_adv_random_addr(adv, &adv->random_addr.a);
+		err = bt_id_set_adv_random_addr(adv, &adv->adv_addr.a);
 		if (err) {
 			return err;
 		}
 	}
+
+	adv->options = param->options;
+#if defined(CONFIG_BT_EXT_ADV)
+	/* Only set SID for extended advertising sets, else set BT_GAP_SID_INVALID for legacy adv */
+	if (is_ext_adv) {
+		adv->sid = param->sid;
+	} else {
+		adv->sid = BT_GAP_SID_INVALID;
+	}
+#endif /* CONFIG_BT_EXT_ADV */
+
+	bt_id_save_adv_addr(adv, own_addr_type);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE, param->options & BT_LE_ADV_OPT_CONN);
 
@@ -1200,8 +1235,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	atomic_set_bit_to(adv->flags, BT_ADV_USE_IDENTITY,
 			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
 
-	atomic_set_bit_to(adv->flags, BT_ADV_EXT_ADV,
-			  param->options & BT_LE_ADV_OPT_EXT_ADV);
+	atomic_set_bit_to(adv->flags, BT_ADV_EXT_ADV, is_ext_adv);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED,
 			  own_addr_type == BT_HCI_OWN_ADDR_RANDOM);
@@ -1239,6 +1273,7 @@ static int adv_start_ext(struct bt_le_ext_adv *adv,
 	}
 
 	adv->id = param->id;
+
 	err = le_ext_adv_param_set(adv, param, sd != NULL);
 	if (err) {
 		return err;
@@ -1323,8 +1358,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 
 	if (ad_is_limited(ad, ad_len)) {
 		k_work_init_delayable(&adv->lim_adv_timeout_work, adv_timeout);
-		k_work_reschedule(&adv->lim_adv_timeout_work,
-				  K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
+		bt_work_reschedule(&adv->lim_adv_timeout_work,
+				   K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
 	}
 
 	return err;
@@ -1410,7 +1445,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 	info->id = adv->id;
 	info->sid = adv->sid;
 	info->tx_power = adv->tx_power;
-	info->addr = &adv->random_addr;
+	info->addr = &adv->adv_addr;
 
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		info->ext_adv_state = BT_LE_EXT_ADV_STATE_ENABLED;
@@ -1460,7 +1495,6 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 	}
 
 	adv->id = param->id;
-	adv->sid = param->sid;
 	adv->cb = cb;
 
 	err = le_ext_adv_param_set(adv, param, false);
@@ -2018,6 +2052,19 @@ void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+static void pawr_rsp_reassembly_reset(struct pawr_rsp_reassembly *reassembly)
+{
+	net_buf_simple_reset(&reassembly->buf);
+	reassembly->report_truncated = false;
+}
+
+static bool pawr_rsp_reassembly_active(const struct pawr_rsp_reassembly *reassembly)
+{
+	return reassembly->buf.len != 0 || reassembly->report_truncated;
+}
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
+
 void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_per_adv_response_report *evt;
@@ -2062,16 +2109,92 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 			return;
 		}
 
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+		if (pawr_rsp_reassembly_active(&adv->pawr_rsp_reassembly) &&
+		    (adv->pawr_rsp_reassembly.subevent != info.subevent ||
+		     adv->pawr_rsp_reassembly.response_slot != info.response_slot)) {
+			/* A partial chain is buffered (or was truncated) for a
+			 * different response. Discard its state and start
+			 * reassembling the new one.
+			 */
+			LOG_WRN("Response reassembly interrupted, discarding");
+			pawr_rsp_reassembly_reset(&adv->pawr_rsp_reassembly);
+		}
+#endif
+
 		if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+			if (net_buf_simple_tailroom(&adv->pawr_rsp_reassembly.buf) <
+			    response->data_length) {
+				/* The fragment does not fit. Mark the chain truncated so
+				 * the remaining fragments, including the terminating
+				 * COMPLETE fragment, are dropped instead of reported.
+				 */
+				LOG_WRN("Response reassembly buffer overflow, discarding");
+				net_buf_simple_reset(&adv->pawr_rsp_reassembly.buf);
+				adv->pawr_rsp_reassembly.subevent = info.subevent;
+				adv->pawr_rsp_reassembly.response_slot = info.response_slot;
+				adv->pawr_rsp_reassembly.report_truncated = true;
+				(void)net_buf_pull_mem(buf, response->data_length);
+			} else {
+				/* Record the response identity on the first fragment and
+				 * buffer the data. The reassembled data is only reported
+				 * once the matching COMPLETE report arrives.
+				 */
+				adv->pawr_rsp_reassembly.subevent = info.subevent;
+				adv->pawr_rsp_reassembly.response_slot = info.response_slot;
+				net_buf_simple_add_mem(&adv->pawr_rsp_reassembly.buf,
+						       net_buf_pull_mem(buf, response->data_length),
+						       response->data_length);
+			}
+#else
 			LOG_WRN("Incomplete response report received, discarding");
 			(void)net_buf_pull_mem(buf, response->data_length);
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
 		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED) {
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+			/* Reception failed, drop any partial chain in progress. */
+			pawr_rsp_reassembly_reset(&adv->pawr_rsp_reassembly);
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
 			(void)net_buf_pull_mem(buf, response->data_length);
 
 			if (adv->cb && adv->cb->pawr_response) {
 				adv->cb->pawr_response(adv, &info, NULL);
 			}
 		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+			if (adv->pawr_rsp_reassembly.report_truncated ||
+			    net_buf_simple_tailroom(&adv->pawr_rsp_reassembly.buf) <
+				    response->data_length) {
+				/* The chain was already truncated, or the final fragment
+				 * does not fit. Drop the chain instead of reporting a
+				 * partial response as if it were complete.
+				 */
+				LOG_WRN("Response reassembly buffer overflow, discarding");
+				(void)net_buf_pull_mem(buf, response->data_length);
+			} else if (adv->pawr_rsp_reassembly.buf.len != 0) {
+				/* Final fragment of a buffered chain. */
+				net_buf_simple_add_mem(&adv->pawr_rsp_reassembly.buf,
+						       net_buf_pull_mem(buf, response->data_length),
+						       response->data_length);
+
+				if (adv->cb && adv->cb->pawr_response) {
+					adv->cb->pawr_response(adv, &info,
+							       &adv->pawr_rsp_reassembly.buf);
+				}
+			} else {
+				/* Self-contained COMPLETE, no buffered chain. */
+				net_buf_simple_init_with_data(
+					&data, net_buf_pull_mem(buf, response->data_length),
+					response->data_length);
+
+				if (adv->cb && adv->cb->pawr_response) {
+					adv->cb->pawr_response(adv, &info, &data);
+				}
+			}
+
+			pawr_rsp_reassembly_reset(&adv->pawr_rsp_reassembly);
+#else
 			net_buf_simple_init_with_data(&data,
 						      net_buf_pull_mem(buf, response->data_length),
 						      response->data_length);
@@ -2079,6 +2202,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 			if (adv->cb && adv->cb->pawr_response) {
 				adv->cb->pawr_response(adv, &info, &data);
 			}
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
 		} else {
 			LOG_ERR("Invalid data status %d", response->data_status);
 			(void)net_buf_pull_mem(buf, response->data_length);
@@ -2158,14 +2282,15 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 		if (bt_dev.cached_conn_complete[i].valid &&
 		    bt_dev.cached_conn_complete[i].evt.handle == evt->conn_handle) {
 			if (was_adv_enabled) {
-				/* Process the cached connection complete event
-				 * now that the corresponding advertising set is known.
+				/* Process the cached connection complete event with the
+				 * advertising set context.
 				 *
 				 * If the advertiser has been stopped before the connection
 				 * complete event has been raised to the application, we
 				 * discard the event.
 				 */
-				bt_hci_le_enh_conn_complete(&bt_dev.cached_conn_complete[i].evt);
+				bt_hci_le_enh_conn_complete(&bt_dev.cached_conn_complete[i].evt,
+							    adv);
 			}
 			bt_dev.cached_conn_complete[i].valid = false;
 		}
@@ -2190,11 +2315,11 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 				conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
 				if (bt_addr_eq(&conn->le.resp_addr.a, BT_ADDR_ANY)) {
 					bt_addr_copy(&conn->le.resp_addr.a,
-						     &adv->random_addr.a);
+						     &adv->adv_addr.a);
 				}
 			} else if (adv->options & BT_LE_ADV_OPT_USE_NRPA) {
 				bt_addr_le_copy(&conn->le.resp_addr,
-						&adv->random_addr);
+						&adv->adv_addr);
 			} else {
 				bt_addr_le_copy(&conn->le.resp_addr,
 					&bt_dev.id_addr[conn->id]);

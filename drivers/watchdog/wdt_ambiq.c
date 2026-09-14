@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT ambiq_watchdog
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/watchdog.h>
 
@@ -178,7 +179,7 @@ static int wdt_ambiq_init(const struct device *dev)
 		}
 	}
 
-	NVIC_ClearPendingIRQ(dev_cfg->irq_num);
+	k_irq_clear_pending(dev_cfg->irq_num);
 
 	dev_cfg->cfg_func();
 

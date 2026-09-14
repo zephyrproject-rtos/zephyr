@@ -10,7 +10,10 @@ zephyr_sources(
   heap.c
   )
 
-zephyr_sources_ifdef(CONFIG_SYS_HEAP_RUNTIME_STATS heap_stats.c)
+if(CONFIG_SYS_HEAP_RUNTIME_STATS OR CONFIG_SYS_HEAP_THREAD_STATS OR CONFIG_SYS_HEAP_CALLER_POINTER)
+  zephyr_sources(heap_stats.c)
+endif()
+
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_INFO heap_info.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_VALIDATE heap_validate.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_STRESS heap_stress.c)

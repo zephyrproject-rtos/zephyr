@@ -97,7 +97,7 @@ Build and flash with:
    :board: rpi_pico
    :gen-args: -DDTC_OVERLAY_FILE=rpi_pico_spi_pio.overlay
 
-Note that miso-gpios, mosi-gpios, and clk-gpios need to be assigned to the
+Note that sdi-gpios, sdo-gpios, and clk-gpios need to be assigned to the
 selected PIO device in pinctrl, while cs-gpios should not;  chip select is
 controlled by the SPI context and must operate as a conventional GPIO pin,
 not under control of PIO.

@@ -455,6 +455,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 client_cmd += ['-ex', 'monitor halt',
                                '-ex', 'monitor reset',
                                '-ex', 'load']
+            if command in ('debug', 'attach'):
                 if self.is_batch:
                     client_cmd += ['-ex', 'monitor go', '-ex', 'disconnect', '-ex', 'quit']
                 elif self.reset:

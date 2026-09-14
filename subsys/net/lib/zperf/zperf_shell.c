@@ -221,11 +221,11 @@ static int zperf_bind_host(const struct shell *sh,
 
 	if (argc >= 3) {
 		char *addr_str = argv[2];
-		struct net_sockaddr addr;
+		struct net_sockaddr_storage addr;
 
 		memset(&addr, 0, sizeof(addr));
 
-		ret = net_ipaddr_parse(addr_str, strlen(addr_str), &addr);
+		ret = net_ipaddr_parse(addr_str, strlen(addr_str), net_sad(&addr));
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot parse address \"%s\"\n",
@@ -233,7 +233,7 @@ static int zperf_bind_host(const struct shell *sh,
 			return ret;
 		}
 
-		memcpy(&param->addr, &addr, sizeof(struct net_sockaddr));
+		memcpy(&param->addr_storage, &addr, sizeof(addr));
 	}
 
 	return 0;
@@ -839,9 +839,10 @@ static int execute_upload(const struct shell *sh,
 		shell_fprintf(sh, SHELL_NORMAL, "Starting...\n");
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && param->peer_addr.sa_family == NET_AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    param->peer_addr_storage.ss_family == NET_AF_INET6) {
 		struct net_sockaddr_in6 *ipv6 =
-				(struct net_sockaddr_in6 *)&param->peer_addr;
+				net_sin6(net_sad(&param->peer_addr_storage));
 		/* For IPv6, we should make sure that neighbor discovery
 		 * has been done for the peer. So send ping here, wait
 		 * some time and start the test after that.
@@ -1136,7 +1137,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 		shell_fprintf(sh, SHELL_NORMAL, "Connecting to %s\n",
 			      net_sprint_ipv6_addr(&ipv6.sin6_addr));
 
-		memcpy(&param.peer_addr, &ipv6, sizeof(ipv6));
+		memcpy(&param.peer_addr_storage, &ipv6, sizeof(ipv6));
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && !IS_ENABLED(CONFIG_NET_IPV6)) {
@@ -1155,7 +1156,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 		shell_fprintf(sh, SHELL_NORMAL, "Connecting to %s\n",
 			      net_sprint_ipv4_addr(&ipv4.sin_addr));
 
-		memcpy(&param.peer_addr, &ipv4, sizeof(ipv4));
+		memcpy(&param.peer_addr_storage, &ipv4, sizeof(ipv4));
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -1177,13 +1178,13 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 				      "Connecting to %s\n",
 				      net_sprint_ipv4_addr(&ipv4.sin_addr));
 
-			memcpy(&param.peer_addr, &ipv4, sizeof(ipv4));
+			memcpy(&param.peer_addr_storage, &ipv4, sizeof(ipv4));
 		} else {
 			shell_fprintf(sh, SHELL_NORMAL,
 				      "Connecting to %s\n",
 				      net_sprint_ipv6_addr(&ipv6.sin6_addr));
 
-			memcpy(&param.peer_addr, &ipv6, sizeof(ipv6));
+			memcpy(&param.peer_addr_storage, &ipv6, sizeof(ipv6));
 		}
 	}
 
@@ -1378,7 +1379,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			      "Connecting to %s\n",
 			      net_sprint_ipv6_addr(&ipv6_addr_dst.sin6_addr));
 
-		memcpy(&param.peer_addr, &ipv6_addr_dst, sizeof(ipv6_addr_dst));
+		memcpy(&param.peer_addr_storage, &ipv6_addr_dst, sizeof(ipv6_addr_dst));
 	} else {
 		if (net_ipv4_is_addr_unspecified(&ipv4_addr_dst.sin_addr)) {
 			shell_fprintf(sh, SHELL_WARNING,
@@ -1390,7 +1391,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			      "Connecting to %s\n",
 			      net_sprint_ipv4_addr(&ipv4_addr_dst.sin_addr));
 
-		memcpy(&param.peer_addr, &ipv4_addr_dst, sizeof(ipv4_addr_dst));
+		memcpy(&param.peer_addr_storage, &ipv4_addr_dst, sizeof(ipv4_addr_dst));
 	}
 
 	if (argc > 2) {

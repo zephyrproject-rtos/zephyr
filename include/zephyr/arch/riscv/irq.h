@@ -18,6 +18,7 @@
 extern "C" {
 #endif
 
+#include <zephyr/arch/riscv/arch_inlines.h>
 #include <zephyr/sys/util_macro.h>
 
 #ifndef _ASMLANGUAGE

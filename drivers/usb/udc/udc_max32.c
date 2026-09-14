@@ -37,8 +37,7 @@ struct udc_max32_evt {
 	struct udc_ep_config *ep_cfg;
 };
 
-K_MSGQ_DEFINE(drv_msgq, sizeof(struct udc_max32_evt), CONFIG_UDC_MAX32_MAX_QMESSAGES,
-	      sizeof(uint32_t));
+K_MSGQ_DEFINE_STATIC_TYPE(drv_msgq, struct udc_max32_evt, CONFIG_UDC_MAX32_MAX_QMESSAGES);
 
 struct udc_max32_config {
 	mxc_usbhs_regs_t *base;

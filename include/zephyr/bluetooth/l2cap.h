@@ -14,6 +14,8 @@
 /**
  * @brief L2CAP
  * @defgroup bt_l2cap L2CAP
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */
@@ -351,25 +353,30 @@ struct bt_l2cap_fixed_chan {
 	 *
 	 *  This callback needs to be provided by the application, and is invoked when a new
 	 *  connection has been established. If accepting the connection, the user is expected to
-	 *  allocate memory with suitable alignment for the type @ref bt_l2cap_chan for the channel,
-	 *  and update the channel reference @p chan to point to the allocated memory. The channel
-	 *  should be initialized by assigning the callbacks to the @ref bt_l2cap_chan_ops field
-	 *  as follows:
+	 *  allocate memory for a zero-initialized object of type @ref bt_l2cap_le_chan, and update
+	 *  the channel reference @p chan to point to the @ref bt_l2cap_le_chan.chan member of the
+	 *  allocated object. The channel should be initialized by assigning the callbacks to the
+	 *  @ref bt_l2cap_chan_ops field as follows:
 	 *  @code
 	 *  static int accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	 *  {
 	 *      // Allocation of fixed_chan and definition of the ops are assumed done prior.
-	 *      *chan = &fixed_chan;
-	 *
-	 *      **chan = (struct bt_l2cap_chan){
-	 *          .ops = &ops,
+	 *      fixed_chan = (struct bt_l2cap_le_chan){
+	 *          .chan.ops = &ops,
 	 *      };
+	 *
+	 *      *chan = &fixed_chan.chan;
 	 *
 	 *      return 0;
 	 *  }
 	 *  @endcode
 	 *  The allocated context needs to be valid for the lifetime of the channel, i. e.
 	 *  freeing of the memory can be done in the @ref bt_l2cap_chan_ops.released callback.
+	 *
+	 *  @warning Even though the reference passed back through @p chan is a
+	 *           @ref bt_l2cap_chan, it must be the @ref bt_l2cap_le_chan.chan member of a
+	 *           @ref bt_l2cap_le_chan object. The stack uses the containing object, so
+	 *           returning a bare @ref bt_l2cap_chan would result in out-of-bounds access.
 	 *
 	 *  @param conn The connection that has been established.
 	 *  @param chan L2CAP channel reference.
@@ -443,22 +450,22 @@ struct bt_l2cap_br_endpoint {
 	uint8_t                                 max_transmit;
 	/** Endpoint Retransmission Timeout
 	 * The field is configured by
-	 * `@kconfig{BT_L2CAP_BR_RET_TIMEOUT}`
+	 * @kconfig{CONFIG_BT_L2CAP_BR_RET_TIMEOUT}
 	 * The field should be no more than the field
 	 * `monitor_timeout`.
 	 */
 	uint16_t                                ret_timeout;
 	/** Endpoint Monitor Timeout
 	 * The field is configured by
-	 * `@kconfig{BT_L2CAP_BR_MONITOR_TIMEOUT}`
+	 * @kconfig{CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT}
 	 */
 	uint16_t                                monitor_timeout;
 	/** Endpoint Maximum PDU payload Size */
 	uint16_t                                mps;
 	/** Endpoint Maximum Window Size
 	 * MAX supported window size is configured by
-	 * `@kconfig{BT_L2CAP_MAX_WINDOW_SIZE}`. The field
-	 * should be no more then `CONFIG_BT_L2CAP_MAX_WINDOW_SIZE`.
+	 * @kconfig{CONFIG_BT_L2CAP_MAX_WINDOW_SIZE}. The field
+	 * should be no more than @kconfig{CONFIG_BT_L2CAP_MAX_WINDOW_SIZE}.
 	 */
 	uint16_t                                max_window;
 	/** Endpoint FCS Type
@@ -611,6 +618,14 @@ struct bt_l2cap_br_chan {
 /** @brief L2CAP Channel operations structure.
  *
  * The object has to stay valid and constant for the lifetime of the channel.
+ *
+ * @note The callbacks are invoked from a thread context, never from an
+ *       ISR. Whether a callback is invoked from a context internal to
+ *       the stack or synchronously from within the API call that
+ *       triggers it, and from which context, is not part of the API and
+ *       may change between releases. See
+ *       @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *       for the hazards of blocking in a callback and their mitigations.
  */
 struct bt_l2cap_chan_ops {
 	/** @brief Channel connected callback
@@ -642,7 +657,7 @@ struct bt_l2cap_chan_ops {
 	 *  controller.
 	 *
 	 *  @param chan The channel which has made encryption status changed.
-	 *  @param status HCI status of performed security procedure caused
+	 *  @param hci_status HCI status of performed security procedure caused
 	 *  by channel security requirements. The value is populated
 	 *  by HCI layer and set to 0 when success and to non-zero (reference to
 	 *  HCI Error Codes) when security/authentication failed.
@@ -829,10 +844,21 @@ struct bt_l2cap_server {
 	/** @brief Server accept callback
 	 *
 	 *  This callback is called whenever a new incoming connection requires
-	 *  authorization.
+	 *  authorization. If accepting the connection, the callback is expected
+	 *  to allocate a zero-initialized channel object and update the channel
+	 *  reference @p chan to point to its common member: for a server
+	 *  registered with bt_l2cap_server_register() the object must be of type
+	 *  @ref bt_l2cap_le_chan and @p chan set to its @ref bt_l2cap_le_chan.chan
+	 *  member, and for a server registered with bt_l2cap_br_server_register()
+	 *  the object must be of type @ref bt_l2cap_br_chan and @p chan set to its
+	 *  @ref bt_l2cap_br_chan.chan member.
 	 *
-	 *  @warning It is the responsibility of this callback to zero out the
-	 *  parent of the chan object.
+	 *  @warning Even though the reference passed back through @p chan is a
+	 *  @ref bt_l2cap_chan, it must be a member of a @ref bt_l2cap_le_chan or
+	 *  @ref bt_l2cap_br_chan object as described above. The stack uses the
+	 *  containing object, so returning a bare @ref bt_l2cap_chan would result in
+	 *  out-of-bounds access. It is the responsibility of this callback to
+	 *  zero out the containing object.
 	 *
 	 *  @param conn The connection that is requesting authorization
 	 *  @param server Pointer to the server structure this callback relates to

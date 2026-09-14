@@ -6,4 +6,4 @@
 #
 
 add_subdirectory(common)
-add_subdirectory(${SOC_SERIES})
+add_subdirectory(${CONFIG_SOC_SERIES})

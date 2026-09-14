@@ -133,7 +133,7 @@ static int pcf8563_set_time(const struct device *dev, const struct rtc_time *tim
 	raw_time[5] = timeptr->tm_wday;
 
 	/*Set month */
-	raw_time[6] = bin2bcd(timeptr->tm_mon);
+	raw_time[6] = bin2bcd(timeptr->tm_mon + 1);
 
 	/* Set year */
 	raw_time[7] = bin2bcd(timeptr->tm_year % 100);
@@ -186,7 +186,7 @@ static int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
 	timeptr->tm_wday = raw_time[4] & PCF8563_WEEKDAYS_MASK;
 
 	/* Get month */
-	timeptr->tm_mon = bcd2bin(raw_time[5] & PCF8563_MONTHS_MASK);
+	timeptr->tm_mon = bcd2bin(raw_time[5] & PCF8563_MONTHS_MASK) - 1;
 
 	/* Get year */
 	timeptr->tm_year = bcd2bin(raw_time[6]);

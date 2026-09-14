@@ -15,6 +15,7 @@
 #include <DA1469xAB.h>
 #include <da1469x_config.h>
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/usb/udc.h>
@@ -1613,7 +1614,7 @@ static int udc_smartbond_init(const struct device *dev)
 	/* Both connect and disconnect needs to be handled */
 	CRG_TOP->VBUS_IRQ_MASK_REG = CRG_TOP_VBUS_IRQ_MASK_REG_VBUS_IRQ_EN_FALL_Msk |
 				     CRG_TOP_VBUS_IRQ_MASK_REG_VBUS_IRQ_EN_RISE_Msk;
-	NVIC_SetPendingIRQ(config->vbus_irq);
+	k_irq_set_pending(config->vbus_irq);
 	irq_enable(config->vbus_irq);
 
 	return 0;
