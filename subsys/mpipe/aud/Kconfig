@@ -46,6 +46,21 @@ config MPIPE_AUD_BUFFER_POOL_NUM_MAX
 	  audible artifact rather than a dropped frame, so leave enough for the
 	  sink to keep its buffers primed.
 
+config MPIPE_AUD_DMIC_SRC_PDM_CLK_FREQ_MIN
+	int "Lowest PDM clock frequency the DMIC source may use (Hz)"
+	default 1000000
+	help
+	  Lower bound of the PDM clock the microphone supports. The DMIC driver
+	  picks its clock divider within this range.
+
+config MPIPE_AUD_DMIC_SRC_PDM_CLK_FREQ_MAX
+	int "Highest PDM clock frequency the DMIC source may use (Hz)"
+	default 3500000
+	help
+	  Upper bound of the PDM clock the microphone supports. Lowering it also
+	  steers the driver towards a clock another peripheral can match, so that
+	  capture and playback derived from the same source run at the same rate.
+
 config MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME
 	bool "Prime I2S TX with silence for synchronized capture"
 	help
