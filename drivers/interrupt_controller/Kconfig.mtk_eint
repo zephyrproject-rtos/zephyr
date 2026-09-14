@@ -1,0 +1,13 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_MT8188_EINT
+	bool "MediaTek MT8188 external interrupt controller"
+	default y
+	depends on DT_HAS_MEDIATEK_MT8188_EINT_ENABLED
+	help
+	  Enable the external interrupt controller driver for MediaTek MT8188.
+
+	  The controller multiplexes the per-pin external interrupt lines onto
+	  one parent interrupt and hands events to whichever driver registered
+	  for the line.  On this SoC the GPIO driver is the only consumer.
