@@ -225,8 +225,6 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 {
 	struct display_stm32_ltdc_data *data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
-
 	capabilities->x_resolution = data->hltdc.LayerCfg[0].WindowX1 -
 				     data->hltdc.LayerCfg[0].WindowX0;
 	capabilities->y_resolution = data->hltdc.LayerCfg[0].WindowY1 -

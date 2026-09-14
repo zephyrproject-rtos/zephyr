@@ -337,7 +337,6 @@ static void ili9806e_get_capabilities(const struct device *dev,
 {
 	const struct ili9806e_config *cfg = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
 	capabilities->supported_pixel_formats = cfg->pixel_format;

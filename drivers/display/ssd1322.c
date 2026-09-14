@@ -327,7 +327,6 @@ static void ssd1322_get_capabilities(const struct device *dev, struct display_ca
 	const struct ssd1322_config *config = dev->config;
 	struct ssd1322_data *data = dev->data;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01 | PIXEL_FORMAT_L_8;

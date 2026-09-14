@@ -276,7 +276,6 @@ static int ls0xx_write(const struct device *dev, const uint16_t x,
 static void ls0xx_get_capabilities(const struct device *dev,
 				   struct display_capabilities *caps)
 {
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = LS0XX_PANEL_WIDTH;
 	caps->y_resolution = LS0XX_PANEL_HEIGHT;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;

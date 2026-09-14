@@ -250,7 +250,6 @@ static void ssd1331_get_capabilities(const struct device *dev, struct display_ca
 {
 	const struct ssd1331_config *config = dev->config;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565;

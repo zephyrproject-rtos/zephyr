@@ -563,7 +563,6 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height -
 			     config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
