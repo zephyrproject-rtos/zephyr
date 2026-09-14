@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+# SPDX-FileCopyrightText: Copyright (c) 2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
@@ -25,8 +26,17 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USBH_DFU_CLASS
+  class/usbh_dfu.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_USBIP
   usbip.c
 )
 
 zephyr_linker_sources(DATA_SECTIONS usbh_data.ld)
+
+if(CONFIG_FILE_SYSTEM_LITTLEFS)
+  zephyr_library_link_libraries(LITTLEFS)
+endif()

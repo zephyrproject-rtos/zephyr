@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_DFU_CLASS
+	bool "USB DFU Class support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  USB Host Device Firmware Update Class implementation.
+
+if USBH_DFU_CLASS
+
+config USBH_DFU_MAX_ALTERNATE_NR
+	int "Maximum number of alternate settings"
+	default 32
+	range 1 32
+	help
+	  Maximum number of alternate settings that
+	  driver accepts from device
+
+config USBH_DFU_LIMIT_DATA_ALLOC_BYTES
+	int "Upper memory limit in bytes allocated for USB Host data transfers"
+	default 512
+	range 1 65535
+	help
+	  The driver won't allocate more than LIMIT_DATA_ALLOC_BYTES for data transfers.
+	  This prevents a malicious device from requesting a full 64K space from host.
+
+# USBH_DFU_INIT_PRIORITY = USBH_INIT_PRIO + 1
+config USBH_DFU_INIT_PRIORITY
+	int "Init priority for DFU class"
+	default 91
+	help
+	  Driver initialization priority.
+
+module = USBH_DFU
+module-str = usbh dfu
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_DFU_CLASS
