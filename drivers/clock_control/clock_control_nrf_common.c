@@ -479,7 +479,7 @@ DEVICE_API(nrf_clock_control, common_clock_control_api) = {
 		.async_on = common_api_start,
 		.get_status = common_api_get_status,
 	},
-#if CONFIG_CLOCK_CONTROL_NRF_ONOFF
+#ifdef CONFIG_CLOCK_CONTROL_NRF_ONOFF
 	.request = common_api_request,
 	.release = common_api_release,
 	.cancel_or_release = common_api_cancel_or_release,
