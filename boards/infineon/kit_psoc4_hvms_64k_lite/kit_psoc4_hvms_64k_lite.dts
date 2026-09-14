@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/psoc4/mpns/cy8c4146lwe_hvs115x.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "kit_psoc4_hvms_64k_lite_common.dtsi"
+
+/ {
+	model = "KIT_PSOC4-HVMS-64K_LITE Development Board";
+	compatible = "infineon,kit-psoc4-hvms-64k-lite", "infineon,psoc4hvms64k";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	aliases {
+		led0 = &user_led6;
+		led1 = &user_led7;
+		sw0 = &user_btn;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led6: led_6 {
+			label = "LED6";
+			gpios = <&gpio_prt0 7 GPIO_ACTIVE_HIGH>;
+		};
+		user_led7: led_7 {
+			label = "LED7";
+			gpios = <&gpio_prt0 6 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_btn: button_1 {
+			label = "SW5";
+			gpios = <&gpio_prt5 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
