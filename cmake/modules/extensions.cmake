@@ -2660,21 +2660,28 @@ Misc
 function(import_kconfig prefix kconfig_fragment)
   cmake_parse_arguments(IMPORT_KCONFIG "" "TARGET" "" ${ARGN})
   file(
-    STRINGS
+    READ
     ${kconfig_fragment}
-    DOT_CONFIG_LIST
+    dot_config_content
     ENCODING "UTF-8"
   )
+  string(APPEND dot_config_content "\n")
 
-  foreach (LINE ${DOT_CONFIG_LIST})
-    if("${LINE}" MATCHES "^(${prefix}[^=]+)=([ymn]|.+$)")
+  while(dot_config_content)
+    # Match content to first newline and store regex match as line.
+    # Remaining content is placed in new dot_config_content to find next line on next iteration.
+    string(REGEX MATCH "^([^\r\n]*)\r?\n(.*)$" _ "${dot_config_content}")
+    set(line "${CMAKE_MATCH_1}")
+    set(dot_config_content "${CMAKE_MATCH_2}")
+
+    if("${line}" MATCHES "^(${prefix}[^=]+)=([ymn]|.+$)")
       # Matched a normal value assignment, like: CONFIG_NET_BUF=y
       # Note: if the value starts with 'y', 'm', or 'n', then we assume it's a
       # bool or tristate (we don't know the type from <kconfig_fragment> alone)
       # and we only match the first character. This is to align with Kconfiglib.
       set(CONF_VARIABLE_NAME "${CMAKE_MATCH_1}")
       set(CONF_VARIABLE_VALUE "${CMAKE_MATCH_2}")
-    elseif("${LINE}" MATCHES "^# (${prefix}[^ ]+) is not set")
+    elseif("${line}" MATCHES "^# (${prefix}[^ ]+) is not set")
       # Matched something like: # CONFIG_FOO is not set
       # This is interpreted as: CONFIG_FOO=n
       set(CONF_VARIABLE_NAME "${CMAKE_MATCH_1}")
@@ -2709,7 +2716,7 @@ function(import_kconfig prefix kconfig_fragment)
       set("${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}" PARENT_SCOPE)
     endif()
     list(APPEND keys "${CONF_VARIABLE_NAME}")
-  endforeach()
+  endwhile()
 
   if(DEFINED IMPORT_KCONFIG_TARGET)
     set_property(TARGET ${IMPORT_KCONFIG_TARGET} PROPERTY "kconfigs" "${keys}")
