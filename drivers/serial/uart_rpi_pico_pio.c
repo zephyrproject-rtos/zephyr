@@ -75,8 +75,9 @@ static int pio_uart_tx_init(PIO pio, uint32_t sm, uint32_t tx_pin, float div)
 			   offset + RPI_PICO_PIO_GET_WRAP_TARGET(uart_tx),
 			   offset + RPI_PICO_PIO_GET_WRAP(uart_tx));
 
-	pio_sm_set_pins_with_mask(pio, sm, BIT(tx_pin), BIT(tx_pin));
-	pio_sm_set_pindirs_with_mask(pio, sm, BIT(tx_pin), BIT(tx_pin));
+	/* Use 64-bit mask to support RP235xB SoCs (i.e. chips with >32 GPIO). */
+	pio_sm_set_pins_with_mask64(pio, sm, BIT64(tx_pin), BIT64(tx_pin));
+	pio_sm_set_pindirs_with_mask64(pio, sm, BIT64(tx_pin), BIT64(tx_pin));
 	pio_sm_init(pio, sm, offset, &sm_config);
 	pio_sm_set_enabled(pio, sm, true);
 
