@@ -219,6 +219,7 @@ struct ifx_autanalog_sar_adc_config {
 	uint16_t sample_times[IFX_AUTANALOG_SAR_SAMPLETIME_COUNT];
 	struct ifx_autanalog_sar_limit_config limit_cond[IFX_AUTANALOG_SAR_LIMIT_CFG_NUM];
 	uint8_t limit_cond_mask; /* bitmask of which limit conditions are configured */
+	bool ac_advanced;        /* true when parent MFD uses advanced AC (ac-states in DT) */
 	bool has_gain_offset_corr;
 	uint16_t gain_corr[IFX_AUTANALOG_SAR_CORR_COEFF_NUM];
 	int16_t offset_corr[IFX_AUTANALOG_SAR_CORR_COEFF_NUM];
@@ -446,7 +447,7 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 		.shiftMode = cfg->shift_mode,
 		.intMuxChan = {NULL}, /* MUX channels configured during channel setup */
 		.limitCond = {NULL},
-		.muxResultMask = 0u,  /* MUX result mask updated during channel setup */
+		.muxResultMask = 0u, /* MUX result mask updated during channel setup */
 		.firResultMask = cfg->fir_result_mask,
 	};
 
@@ -926,7 +927,6 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	const struct ifx_autanalog_sar_adc_config *cfg = data->dev->config;
 	const struct adc_sequence *sequence = &ctx->sequence;
 	uint32_t result_status;
-	cy_stc_autanalog_state_t ac_state;
 
 	data->repeat_buffer = data->conversion_buffer;
 	if (data->conversion_buffer == NULL || sequence->buffer_size == 0) {
@@ -952,11 +952,15 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		return;
 	}
 
-	Cy_AutAnalog_GetControllerState(&ac_state);
-	if (ac_state.ac.status == CY_AUTANALOG_AC_STATUS_RUNNING) {
-		LOG_ERR("Autonomous Controller is busy");
-		ifx_autanalog_sar_complete_error(data, -EBUSY);
-		return;
+	if (!cfg->ac_advanced) {
+		cy_stc_autanalog_state_t ac_state;
+
+		Cy_AutAnalog_GetControllerState(&ac_state);
+		if (ac_state.ac.status == CY_AUTANALOG_AC_STATUS_RUNNING) {
+			LOG_ERR("Autonomous Controller is busy");
+			ifx_autanalog_sar_complete_error(data, -EBUSY);
+			return;
+		}
 	}
 
 	if (Cy_AutAnalog_SAR_IsBusy(0)) {
@@ -975,65 +979,71 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		Cy_AutAnalog_SAR_ClearMuxChanResultStatus(0, mux_ch);
 	}
 
-	if (cfg->lp_mode) {
-		if (cfg->lp_seq != NULL) {
-			/* DT-defined LP sequencer: force last entry to single-shot */
-			data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-			if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
-				ifx_autanalog_sar_complete_error(data, -EINVAL);
-				return;
-			}
-			result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
-				0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
-		} else {
-			if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
-				LOG_ERR("Error building LP ADC Sequencer Configuration");
-				ifx_autanalog_sar_complete_error(data, -EINVAL);
-				return;
-			}
-			data->pdl_adc_seq_lp_cfg[0].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-			result_status =
-				Cy_AutAnalog_SAR_LoadLPseqTable(0, 1, &data->pdl_adc_seq_lp_cfg[0]);
-		}
-	} else {
-		if (cfg->hs_seq != NULL) {
-			/* DT-defined HS sequencer: force last entry to single-shot */
-			data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-			if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
-				ifx_autanalog_sar_complete_error(data, -EINVAL);
-				return;
-			}
-			result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
-				0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
-		} else {
-			if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
-				LOG_ERR("Error building HS ADC Sequencer Configuration");
-				ifx_autanalog_sar_complete_error(data, -EINVAL);
-				return;
-			}
-			data->pdl_adc_seq_hs_cfg[0].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-			result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
-				0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
-		}
-	}
-
-	if (result_status != CY_AUTANALOG_SUCCESS) {
-		LOG_ERR("Failed to load ADC sequencer: %u", (unsigned int)result_status);
-		ifx_autanalog_sar_complete_error(data, -EIO);
-		return;
-	}
-
-	/* State 0 is used for LP/HS mode selection and peripheral power up.
-	 * State 1 is the stop/reconfiguration state.
-	 * State 2 is the SAR sampling state.
-	 * State 3 jumps back to state 1
+	/* In advanced AC mode the state machine is already running and
+	 * triggers SAR conversions according to its STT.  Skip sequencer
+	 * loading and AC start — just wait for results below.
 	 */
-	Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
-	ifx_autanalog_start_autonomous_control(cfg->mfd);
+	if (!cfg->ac_advanced) {
+		if (cfg->lp_mode) {
+			if (cfg->lp_seq != NULL) {
+				/* DT-defined LP sequencer: force last entry to single-shot */
+				data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+				if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
+					ifx_autanalog_sar_complete_error(data, -EINVAL);
+					return;
+				}
+				result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
+					0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
+			} else {
+				if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
+					LOG_ERR("Error building LP ADC Sequencer Configuration");
+					ifx_autanalog_sar_complete_error(data, -EINVAL);
+					return;
+				}
+				data->pdl_adc_seq_lp_cfg[0].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+				result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
+					0, 1, &data->pdl_adc_seq_lp_cfg[0]);
+			}
+		} else {
+			if (cfg->hs_seq != NULL) {
+				/* DT-defined HS sequencer: force last entry to single-shot */
+				data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+				if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
+					ifx_autanalog_sar_complete_error(data, -EINVAL);
+					return;
+				}
+				result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
+					0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
+			} else {
+				if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
+					LOG_ERR("Error building HS ADC Sequencer Configuration");
+					ifx_autanalog_sar_complete_error(data, -EINVAL);
+					return;
+				}
+				data->pdl_adc_seq_hs_cfg[0].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+				result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
+					0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
+			}
+		}
+		if (result_status != CY_AUTANALOG_SUCCESS) {
+			LOG_ERR("Error Loading ADC Sequencer Configuration: %u",
+				(unsigned int)result_status);
+			ifx_autanalog_sar_complete_error(data, -EIO);
+			return;
+		}
+
+		/* State 0 is used for LP/HS mode selection and peripheral power up.
+		 * State 1 is the stop/reconfiguration state.
+		 * State 2 is the SAR sampling state.
+		 * State 3 jumps back to state 1
+		 */
+		Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
+		ifx_autanalog_start_autonomous_control(cfg->mfd);
+	}
 
 #if defined(CONFIG_ADC_ASYNC)
 	if (!data->ctx.asynchronous) {
@@ -1366,8 +1376,8 @@ static int ifx_apply_static_config(struct ifx_autanalog_sar_adc_data *data)
 			hs_chans[ch].sign = ccfg->sign;
 			hs_chans[ch].posCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->pos_coeff;
 			hs_chans[ch].negPin = ccfg->differential
-					      ? (cy_en_autanalog_sar_pin_hs_t)ccfg->neg_pin
-					      : CY_AUTANALOG_SAR_PIN_GPIO0;
+						      ? (cy_en_autanalog_sar_pin_hs_t)ccfg->neg_pin
+						      : CY_AUTANALOG_SAR_PIN_GPIO0;
 			hs_chans[ch].accShift = ccfg->acc_shift;
 			hs_chans[ch].negCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->neg_coeff;
 			hs_chans[ch].hsLimit = (cy_en_autanalog_sar_limit_t)ccfg->limit;
@@ -1776,8 +1786,8 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 
 	/* Load offset and gain correction coefficients if provided via DT */
 	if (cfg->has_gain_offset_corr) {
-		result_val = Cy_AutAnalog_SAR_LoadOffsetGainCorr(
-			0, (uint16_t *)cfg->gain_corr, (int16_t *)cfg->offset_corr);
+		result_val = Cy_AutAnalog_SAR_LoadOffsetGainCorr(0, (uint16_t *)cfg->gain_corr,
+								 (int16_t *)cfg->offset_corr);
 		if (result_val != CY_AUTANALOG_SUCCESS) {
 			LOG_ERR("Failed to load offset/gain correction coefficients");
 			return -EIO;
@@ -2225,12 +2235,19 @@ static void ifx_autanalog_sar_submit_stream(const struct device *dev,
 		return;
 	}
 
-	Cy_AutAnalog_GetControllerState(&ac_state);
-	if (ac_state.ac.status == CY_AUTANALOG_AC_STATUS_RUNNING) {
-		LOG_ERR("Autonomous Controller is busy");
-		data->stream_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
-		return;
+	/* In advanced AC mode the user-defined state machine is expected to be
+	 * running already (it drives SAR conversions via the STT), so a RUNNING
+	 * controller is normal.  Only reject a busy AC when the driver itself is
+	 * responsible for starting it.
+	 */
+	if (!cfg->ac_advanced) {
+		Cy_AutAnalog_GetControllerState(&ac_state);
+		if (ac_state.ac.status == CY_AUTANALOG_AC_STATUS_RUNNING) {
+			LOG_ERR("Autonomous Controller is busy");
+			data->stream_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
+			return;
+		}
 	}
 
 	/* Build channel-to-FIFO mapping from the sequence channel mask */
@@ -2283,87 +2300,98 @@ static void ifx_autanalog_sar_submit_stream(const struct device *dev,
 		data->stream_num_channels++;
 	}
 
-	/* Configure the sequencer for continuous mode */
-	if (cfg->lp_mode) {
-		if (cfg->lp_seq != NULL) {
-			/* DT-defined LP sequencer: set last entry to continuous */
-			data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-			if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
+	/* In advanced AC mode the state machine is already running and
+	 * triggers SAR conversions via the STT.
+	 */
+	if (!cfg->ac_advanced) {
+		/* Configure the sequencer for continuous mode */
+		if (cfg->lp_mode) {
+			if (cfg->lp_seq != NULL) {
+				/* DT-defined LP sequencer: set last entry to continuous */
+				data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+				if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
+					data->stream_sqe = NULL;
+					rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+					return;
+				}
+			} else {
+				if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
+					LOG_ERR("Error building LP ADC sequencer for stream");
+					data->stream_sqe = NULL;
+					rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+					return;
+				}
+				/* Continuous mode: loop back to start after each conversion */
+				data->pdl_adc_seq_lp_cfg[0].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+			}
+
+			uint32_t result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
+				0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
+
+			if (result_status != CY_AUTANALOG_SUCCESS) {
+				LOG_ERR("Failed to load LP sequencer for stream: %u",
+					(unsigned int)result_status);
 				data->stream_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+				rtio_iodev_sqe_err(iodev_sqe, -EIO);
 				return;
 			}
 		} else {
-			if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
-				LOG_ERR("Error building LP ADC sequencer for stream");
+			if (cfg->hs_seq != NULL) {
+				/* DT-defined HS sequencer: set last entry to continuous */
+				data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+				if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
+					data->stream_sqe = NULL;
+					rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+					return;
+				}
+			} else {
+				if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
+					LOG_ERR("Error building ADC sequencer for stream");
+					data->stream_sqe = NULL;
+					rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+					return;
+				}
+				/* Continuous mode: loop back to start after each conversion */
+				data->pdl_adc_seq_hs_cfg[0].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+			}
+
+			uint32_t result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
+				0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
+
+			if (result_status != CY_AUTANALOG_SUCCESS) {
+				LOG_ERR("Failed to load sequencer for stream: %u",
+					(unsigned int)result_status);
 				data->stream_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+				rtio_iodev_sqe_err(iodev_sqe, -EIO);
 				return;
 			}
-			data->pdl_adc_seq_lp_cfg[0].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-		}
-
-		uint32_t result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
-			0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
-
-		if (result_status != CY_AUTANALOG_SUCCESS) {
-			LOG_ERR("Failed to load LP sequencer for stream: %u",
-				(unsigned int)result_status);
-			data->stream_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -EIO);
-			return;
-		}
-	} else {
-		if (cfg->hs_seq != NULL) {
-			/* DT-defined HS sequencer: set last entry to continuous */
-			data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-			if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
-				data->stream_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
-				return;
-			}
-		} else {
-			if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
-				LOG_ERR("Error building ADC sequencer for stream");
-				data->stream_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
-				return;
-			}
-			data->pdl_adc_seq_hs_cfg[0].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-		}
-
-		uint32_t result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
-			0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
-
-		if (result_status != CY_AUTANALOG_SUCCESS) {
-			LOG_ERR("Failed to load sequencer for stream: %u",
-				(unsigned int)result_status);
-			data->stream_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -EIO);
-			return;
 		}
 	}
 
-	/* Re-enable the FIFO level interrupt for this stream's channels. Restore under
-	 * interrupt lock so the ISR cannot observe a partial state transition.
+	/* Enable the FIFO level interrupt for this stream's channels and mark the
+	 * driver as streaming.  Restore under interrupt lock so the ISR cannot
+	 * observe a partial state transition.  In advanced AC mode the user's state
+	 * machine already drives SAR conversions.
 	 */
 	key = irq_lock();
 	Cy_AutAnalog_FIFO_SetInterruptMask(0, Cy_AutAnalog_FIFO_GetInterruptMask(0) |
 						      ifx_stream_level_mask(data));
-
-	/* State 0 is used for LP/HS mode selection and peripheral power up.
-	 * State 1 is the stop/reconfiguration state.
-	 * State 2 is the SAR sampling state.
-	 * State 3 jumps back to state 1
-	 */
 	data->streaming = true;
 	irq_unlock(key);
-	Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
-	ifx_autanalog_start_autonomous_control(cfg->mfd);
+
+	if (!cfg->ac_advanced) {
+		/* State 0 is used for LP/HS mode selection and peripheral power up.
+		 * State 1 is the stop/reconfiguration state.
+		 * State 2 is the SAR sampling state.
+		 * State 3 jumps back to state 1
+		 */
+		Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
+		ifx_autanalog_start_autonomous_control(cfg->mfd);
+	}
 
 	LOG_DBG("ADC stream started with %d channels", data->stream_num_channels);
 }
@@ -2384,18 +2412,21 @@ int adc_ifx_autanalog_sar_stream_stop(const struct device *dev)
 	 * single-shot (nextAction = STOP), then re-trigger the AC from the SAR
 	 * sampling state.  The AC runs one more SAR scan, now using the STOP
 	 * sequencer, after which the SAR powers down and the AC walks back to its
-	 * STOP state.
+	 * STOP state.  In advanced AC mode the user's state machine owns the
+	 * sequencer and the controller.
 	 */
-	if (cfg->lp_mode) {
-		data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
-			CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-		(void)Cy_AutAnalog_SAR_LoadLPseqTable(0, cfg->num_lp_seq,
-						      &data->pdl_adc_seq_lp_cfg[0]);
-	} else {
-		data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
-			CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-		(void)Cy_AutAnalog_SAR_LoadHSseqTable(0, cfg->num_hs_seq,
-						      &data->pdl_adc_seq_hs_cfg[0]);
+	if (!cfg->ac_advanced) {
+		if (cfg->lp_mode) {
+			data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+			(void)Cy_AutAnalog_SAR_LoadLPseqTable(0, cfg->num_lp_seq,
+							      &data->pdl_adc_seq_lp_cfg[0]);
+		} else {
+			data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+			(void)Cy_AutAnalog_SAR_LoadHSseqTable(0, cfg->num_hs_seq,
+							      &data->pdl_adc_seq_hs_cfg[0]);
+		}
 	}
 
 	/* Clear the streaming state under an interrupt lock so the final STOP scan's
@@ -2413,23 +2444,26 @@ int adc_ifx_autanalog_sar_stream_stop(const struct device *dev)
 	/* Re-trigger the AC from the SAR sampling state so it issues one final scan
 	 * with the STOP sequencer and then halts.  Safe because the AC is not RUNNING
 	 * during streaming (it self-stopped after kicking off the continuous scan).
+	 * Skipped in advanced AC mode, where the user's state machine keeps running.
 	 */
-	Cy_AutAnalog_RunControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
-	ifx_autanalog_start_autonomous_control(cfg->mfd);
+	if (!cfg->ac_advanced) {
+		Cy_AutAnalog_RunControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
+		ifx_autanalog_start_autonomous_control(cfg->mfd);
 
-	/* Wait for the single STOP scan to complete and the SAR to power down,
-	 * so a subsequent adc_read() does not race the in-flight conversion.
-	 * This is a deterministic single-conversion wait.
-	 */
-	for (int i = 0; i < IFX_AUTANALOG_SAR_STREAM_STOP_RETRIES; i++) {
-		if (!Cy_AutAnalog_SAR_IsBusy(0)) {
-			break;
+		/* Wait for the single STOP scan to complete and the SAR to power down,
+		 * so a subsequent adc_read() does not race the in-flight conversion.
+		 * This is a deterministic single-conversion wait.
+		 */
+		for (int i = 0; i < IFX_AUTANALOG_SAR_STREAM_STOP_RETRIES; i++) {
+			if (!Cy_AutAnalog_SAR_IsBusy(0)) {
+				break;
+			}
+			k_busy_wait(IFX_AUTANALOG_SAR_STREAM_STOP_POLL_US);
 		}
-		k_busy_wait(IFX_AUTANALOG_SAR_STREAM_STOP_POLL_US);
-	}
-	if (Cy_AutAnalog_SAR_IsBusy(0)) {
-		LOG_WRN("SAR did not go idle after stream stop");
-		ret = -EBUSY;
+		if (Cy_AutAnalog_SAR_IsBusy(0)) {
+			LOG_WRN("SAR did not go idle after stream stop");
+			ret = -EBUSY;
+		}
 	}
 
 	/* Terminate the in-flight multishot SQE (if any) so RTIO does not stall.
@@ -2862,6 +2896,7 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 				    (IFX_LIMIT_COND_INIT(n, 3)), ({0})),                           \
 		},                                                                                 \
 		.limit_cond_mask = IFX_LIMIT_COND_MASK(n),                                         \
+		.ac_advanced = DT_NODE_HAS_PROP(DT_INST_PARENT(n), ac_states),                     \
 		.has_gain_offset_corr = IFX_HAS_GAIN_OFFSET_CORR(n),                               \
 		.gain_corr = {                                                                     \
 			IFX_GAIN_CORR_ELEM(n, 0), IFX_GAIN_CORR_ELEM(n, 1),                       \
