@@ -410,7 +410,7 @@ static void dcache_invalidate_lines(void *start_addr_ptr, size_t size)
 		__builtin_arc_nop();
 		start_addr += sys_dcache_line_size;
 	} while (start_addr < end_addr);
-	irq_unlock(key); /* -exit critical section- */
+	arch_irq_unlock(key); /* -exit critical section- */
 }
 
 static void dcache_flush_and_invalidate_lines(void *start_addr_ptr, size_t size)
@@ -436,7 +436,7 @@ static void dcache_flush_and_invalidate_lines(void *start_addr_ptr, size_t size)
 		__builtin_arc_nop();
 		start_addr += sys_dcache_line_size;
 	} while (start_addr < end_addr);
-	irq_unlock(key); /* -exit critical section- */
+	arch_irq_unlock(key); /* -exit critical section- */
 }
 
 #endif /* CONFIG_ARC_DCACHE_REGION_OPERATIONS */
@@ -506,7 +506,7 @@ int arch_dcache_flush_all(void)
 		return -ENOTSUP;
 	}
 
-	key = irq_lock();
+	key = arch_irq_lock();
 
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_FLSH, 0x1);
 
@@ -514,7 +514,7 @@ int arch_dcache_flush_all(void)
 		/* Do nothing */
 	}
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 
 #if defined(CONFIG_ARC_SLC)
 	slc_flush_all();
@@ -532,7 +532,7 @@ int arch_dcache_invd_all(void)
 		return -ENOTSUP;
 	}
 
-	key = irq_lock();
+	key = arch_irq_lock();
 
 	ctrl = z_arc_v2_aux_reg_read(_ARC_V2_DC_CTRL);
 	ctrl &= ~DC_CTRL_INVALIDATE_MODE;
@@ -540,7 +540,7 @@ int arch_dcache_invd_all(void)
 
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_IVDC, 0x1);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 
 #if defined(CONFIG_ARC_SLC)
 	slc_invalidate_all();
@@ -558,7 +558,7 @@ int arch_dcache_flush_and_invd_all(void)
 		return -ENOTSUP;
 	}
 
-	key = irq_lock();
+	key = arch_irq_lock();
 
 	ctrl = z_arc_v2_aux_reg_read(_ARC_V2_DC_CTRL);
 	ctrl |= DC_CTRL_INVALIDATE_MODE;
@@ -570,7 +570,7 @@ int arch_dcache_flush_and_invd_all(void)
 		/* Do nothing */
 	}
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 
 #if defined(CONFIG_ARC_SLC)
 	slc_flush_and_invalidate_all();
