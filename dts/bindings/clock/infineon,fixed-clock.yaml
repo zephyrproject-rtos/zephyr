@@ -17,6 +17,7 @@ properties:
       The type of clock (refer to include/.../dt-bindings/clock/ifx_clock_source_common.h):
       clk_iho  : system-clock = <IFX_IHO>
       clk_pilo : system-clock = <IFX_PILO>
+      clk_hposc : system-clock = <IFX_HPOSC>
 
   feedback-div:
     type: int
