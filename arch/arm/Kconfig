@@ -81,6 +81,7 @@ config ROMSTART_DEPRECATED_SET
 	default y if $(dt_chosen_enabled,$(DT_CHOSEN_ROMSTART)) && ROMSTART_REGION_SIZE != $(dt_chosen_reg_size_hex,$(DT_CHOSEN_ROMSTART),0,K)
 	default y if $(dt_chosen_enabled,$(DT_CHOSEN_ROMSTART)) && ROMSTART_REGION_ADDRESS != $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_ROMSTART))
 	default y if !$(dt_chosen_enabled,$(DT_CHOSEN_ROMSTART)) && ROMSTART_RELOCATION_ROM
+	select DEPRECATED
 	help
 	  This option indicates that `ROMSTART_RELOCATION_ROM`,
 	  `ROMSTART_REGION_ADDRESS` or `ROMSTART_REGION_SIZE` have been manually
