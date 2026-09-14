@@ -146,6 +146,12 @@ Main configuration options:
 * :kconfig:option:`CONFIG_GPIO_GET_CONFIG`
 * :kconfig:option:`CONFIG_GPIO_HOGS`
 * :kconfig:option:`CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT`
+* :kconfig:option:`CONFIG_GPIO_FAST`
+
+Related APIs
+************
+
+* :ref:`gpio_fast_api`: Sub-microsecond GPIO operations for bit-bang drivers.
 
 API Reference
 *************

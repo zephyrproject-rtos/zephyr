@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_fast_gpio: test_fast_gpio {
+		compatible = "test-gpio-fast-api";
+		gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		fast-gpio-backend = "generic";
+		fast-gpio-cpu-clock-frequency = <1000000>;
+	};
+};
+
+&gpio0 {
+	ngpios = <2>;
+};
