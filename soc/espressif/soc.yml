@@ -46,6 +46,11 @@ family:
       cpuclusters:
       - name: hpcore
       - name: lpcore
+  - name: esp32s31
+    socs:
+    - name: esp32s31
+      cpuclusters:
+      - name: hpcore
 runners:
   run_once:
     '--erase':
@@ -78,3 +83,5 @@ runners:
       - qualifiers:
         - esp32p4/hpcore
         - esp32p4/lpcore
+      - qualifiers:
+        - esp32s31/hpcore

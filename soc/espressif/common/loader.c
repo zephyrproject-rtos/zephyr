@@ -311,7 +311,7 @@ void map_rom_segments(int core, struct rom_segments *map)
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2) &&                    \
-	!defined(CONFIG_SOC_SERIES_ESP32P4)
+	!defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32S31)
 	/* Configure the Cache MMU size for instruction and rodata in flash. */
 	uint32_t cache_mmu_irom_size =
 		((map->irom_size + CONFIG_MMU_PAGE_SIZE - 1) / CONFIG_MMU_PAGE_SIZE) *

@@ -1,0 +1,45 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S31
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+
+config SOC_ESP32S31
+	bool
+	select SOC_SERIES_ESP32S31
+
+#
+# ESP32-S31 silicon revision selection.
+#
+# This is a hidden symbol selected by a board's Kconfig.defconfig to
+# declare the minimum supported chip revision. The numeric revision value
+# (major * 100 + minor) is derived from it in the soc Kconfig, which owns
+# the revision-to-build plumbing.
+#
+# v0.0 is the only revision so far and the family floor.
+#
+config SOC_ESP32S31_REV_0_0
+	bool
+	depends on SOC_ESP32S31
+
+config SOC_ESP32S31_HPCORE
+	bool
+	select SOC_ESP32S31
+	help
+	  This hidden configuration defines that build is targeted for HP CORE.
+
+config SOC_ESP32S31_LPCORE
+	bool
+	select SOC_ESP32S31
+	help
+	  This hidden configuration defines that build is targeted for LP CORE.
+
+config SOC_SERIES
+	default "esp32s31" if SOC_SERIES_ESP32S31
+
+config SOC
+	default "esp32s31" if SOC_ESP32S31
+
+config SOC_PART_NUMBER
+	default "ESP32S31" if SOC_ESP32S31
