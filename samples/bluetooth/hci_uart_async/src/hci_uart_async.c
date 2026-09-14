@@ -267,7 +267,7 @@ static void h2c_h4_transport(void)
 			/* Reset `buf` so all of it is available. */
 			net_buf_reset(buf);
 			discard_dst = net_buf_tail(buf);
-			discard_size = net_buf_max_len(buf);
+			discard_size = net_buf_tailroom(buf);
 
 			while (payload_size) {
 				uint16_t read_size = MIN(payload_size, discard_size);
