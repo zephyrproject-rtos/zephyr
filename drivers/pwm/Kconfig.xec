@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_XEC
-	bool "Microchip XEC PWM"
+	bool "Microchip XEC PWM driver"
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_PWM_ENABLED
 	select PINCTRL
@@ -12,7 +12,7 @@ config PWM_XEC
 	  Enable driver to utilize PWM on the Microchip XEC IP block.
 
 config PWM_BBLED_XEC
-	bool "Microchip XEC PWM-BBLED"
+	bool "Microchip XEC PWM-BBLED driver"
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_PWMBBLED_ENABLED
 	select PINCTRL

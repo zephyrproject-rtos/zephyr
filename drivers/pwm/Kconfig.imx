@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PWM_IMX
-	bool "i.MX PWM Driver"
+	bool "i.MX PWM driver"
 	default y
 	depends on DT_HAS_FSL_IMX27_PWM_ENABLED
 	select PINCTRL

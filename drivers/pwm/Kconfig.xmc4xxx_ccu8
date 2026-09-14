@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_XMC4XXX_CCU8
-	bool "Infineon XMC4XXX CCU4 driver"
+	bool "Infineon XMC4XXX CCU8 driver"
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_CCU8_PWM_ENABLED
 	select PINCTRL

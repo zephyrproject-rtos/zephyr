@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_TI_AM3352_ECAP
-	bool "TI ECAP based PWM controller"
+	bool "TI ECAP PWM driver"
 	default y
 	depends on DT_HAS_TI_AM3352_ECAP_ENABLED
 	depends on CLOCK_CONTROL
