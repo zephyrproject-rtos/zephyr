@@ -13,6 +13,8 @@
 #include <zephyr/drivers/relay/relay.h>
 #include <zephyr/ztest.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_gpio_relay)
+
 #define RELAY_ACTIVE_HIGH DT_NODELABEL(relay0)
 #define RELAY_ACTIVE_LOW  DT_NODELABEL(relay1)
 
@@ -79,3 +81,5 @@ ZTEST(relay_gpio, test_set_state_active_low)
 }
 
 ZTEST_SUITE(relay_gpio, NULL, NULL, NULL, NULL, NULL);
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(zephyr_gpio_relay) */

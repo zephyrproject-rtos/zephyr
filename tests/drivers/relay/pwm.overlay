@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Siemens AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	fake_pwm: pwm {
+		compatible = "zephyr,fake-pwm";
+		status = "okay";
+		#pwm-cells = <2>;
+		frequency = <1000000>;
+	};
+
+	relay_pwm_simple: relay-pwm-simple {
+		compatible = "zephyr,pwm-relay";
+		pwms = <&fake_pwm 0 PWM_MSEC(20)>;
+		status = "okay";
+	};
+
+	relay_pwm_profile: relay-pwm-profile {
+		compatible = "zephyr,pwm-relay";
+		pwms = <&fake_pwm 1 PWM_MSEC(20)>;
+		pull-in-time-ms = <50>;
+		pull-in-duty-percent = <100>;
+		hold-duty-percent = <50>;
+		status = "okay";
+	};
+
+	relay_pwm_refresh: relay-pwm-refresh {
+		compatible = "zephyr,pwm-relay";
+		pwms = <&fake_pwm 2 PWM_MSEC(20)>;
+		pull-in-time-ms = <50>;
+		pull-in-duty-percent = <100>;
+		hold-duty-percent = <40>;
+		refresh-interval-ms = <50>;
+		status = "okay";
+	};
+};
