@@ -1,0 +1,38 @@
+# Copyright 2024 NXP
+# Copyright 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic clock gate node. This node accepts one specifier, which
+  either gates the clock (when set to 0), or ungates the clock (when set to 1).
+  Other specifier values may cause undefined behavior. A gate is assumed to have
+  a single bit that controls whether the clock is gated or not.
+
+compatible: "clock-gate"
+
+include: [clock-node.yaml]
+
+properties:
+  input:
+    type: phandle
+    required: true
+    description: |
+      phandle to upstream clock that this gate controls.
+
+  reg:
+    required: true
+    description: |
+      Tuple containing address of register and width of the bitfield
+      to set to ungate the clock.
+
+  offset:
+    type: int
+    required: true
+    description: |
+      Offset of bitfield within register to set to ungate clock.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - gate

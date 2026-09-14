@@ -1,0 +1,149 @@
+/*
+ * Copyright 2024 NXP
+ * Copyright (c) 2025, Tenstorrent AI ULC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Clock CPU from FROHF, since we will use the PLLs within our testcases */
+&system_clock {
+	sys_clk_96mhz: sys-clk-96mhz {
+		compatible = "clock-state";
+		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
+	};
+};
+
+&cpu0 {
+	clock-request-0 = <&sys_clk_96mhz>;
+	clock-request-0-locking;
+};
+
+/* Disable the SD controller- we are using its clock for this test */
+&sdif {
+	status = "disabled";
+};
+
+/* Define clock states for clockout clock */
+&clkout_clock {
+	clkout_500mhz: clkout-500mhz {
+		compatible = "clock-state";
+		/* Expect a clock frequency of 500 KHz */
+		clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
+			  &pll0_pdec 4 &pll0_directo 0
+			  &pll0 8 256 0 31 31 0 0 0
+			  &pll0_bypass 0 &clkoutsel 1
+			  &clkoutdiv 256>;
+		rank = <0>;
+	};
+
+	clkout_invalid: clkout-invalid {
+		compatible = "clock-state";
+		/* Expect error when applying this invalid state */
+		clocks = <&clkoutsel 10>;
+		rank = <2>;
+	};
+
+	clkout_shared: clkout-shared {
+		compatible = "clock-state";
+		/* This state configures the clock to produce 25.0625 MHz, but
+		 * since we apply the sdioclk_shared state afterwards PLL0 will be
+		 * reconfigured to produce 25.5 MHz.
+		 */
+		clocks = <&pll0_pdec 8 &pll0 4 0
+			  0 4 3 1 3363831808 0 &clkoutdiv 2>;
+		rank = <1>;
+	};
+};
+
+/* Define clock states for SDIO clock */
+&sdio_clock {
+	sdioclk_48mhz: sdioclk-48mhz {
+		compatible = "clock-state";
+		/* Expect a clock frequency of 48 MHz */
+		clocks = <&fro_12m 1 &pll1clksel 0
+			  &pll1_pdec 4 &pll1_directo 0
+			  &pll1 4 128 0 62 31
+			  &pll1_bypass 0 &sdioclksel 5
+			  &sdioclkdiv 2>;
+		rank = <2>;
+	};
+
+	sdioclk_invalid: sdioclk-invalid {
+		compatible = "clock-state";
+		/* Expect error when applying this invalid state */
+		clocks = <&sdioclksel 8>;
+		rank = <1>;
+	};
+
+	sdioclk_shared: sdioclk-shared {
+		compatible = "clock-state";
+		/* Expect notification on both devices with this state.
+		 * frequency should be 25.5 MHz for each
+		 */
+		clocks = <&pll0_pdec 8 &pll0 4 0
+			  0 4 3 1 3422552064 0 &sdioclkdiv 2
+			  &sdioclksel 1>;
+		rank = <0>;
+	};
+};
+
+/*
+ * Replace the compatible for fro_1m with a generic driver.  this makes us use a
+ * bit more flash (which is why it isn't the default setting), but lets us
+ * test the driver
+ */
+&fro_1m {
+	compatible = "clock-source";
+	/delete-property/ pdown-mask;
+	/delete-property/ offset;
+	/delete-property/ frequency;
+	clock-frequency = <DT_FREQ_M(1)>;
+	gate-offset = <0x6>;
+};
+
+/ {
+	/* Emulated device clock consumers */
+	emul_devices {
+		emul_dev1: emul-dev1 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&clkout_clock>;
+			clock-output-names = "default";
+			clock-request-0 = <&clkout_500mhz>;
+			clock-request-1 = <&clkout_invalid>;
+			default-freq = <500000>;
+			clock-request-2 = <&clkout_500mhz &clkout_shared>;
+			ranked-freq = <500000>;
+			shared-freq = <25500000>;
+			clock-request-names = "default", "invalid", "ranked";
+			/* Should configure using PLL0. Lock the clock after this */
+			freq-req-1 = <25062500>;
+			req-freq-1 = <25062500>;
+		};
+
+		emul_dev2: emul-dev2 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&sdio_clock>;
+			clock-output-names = "default";
+			clock-request-0 = <&sdioclk_48mhz>;
+			default-freq = <48000000>;
+			clock-request-1 = <&sdioclk_invalid>;
+			/*
+			 * Order matters here. We want the clk out output to switch onto
+			 * PLL0 first, so that the SDIO clock will reconfigure it
+			 * afterwards. This allows us to test shared notifications.
+			 */
+			clock-request-2 = <&clkout_shared &sdioclk_48mhz &sdioclk_shared>;
+			clock-request-3 = <&sdioclk_48mhz>;
+			/* This request will be rejected, since the clkout output is locked */
+			clock-request-4 = <&sdioclk_shared &clkout_500mhz>;
+			shared-freq = <25500000>;
+			ranked-freq = <48000000>;
+			clock-request-names = "default", "invalid", "shared", "ranked", "locked";
+			/* PLL0 will be locked, so this request will go to PLL1
+			 * (which is less accurate)
+			 */
+			freq-req-1 = <18937500>;
+			req-freq-1 = <18750000>;
+		};
+	};
+};
