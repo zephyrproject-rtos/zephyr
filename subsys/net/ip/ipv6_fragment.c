@@ -47,6 +47,11 @@ static bool reassembly_init_done;
 static struct net_ipv6_reassembly
 reassembly[CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT];
 
+/* Serializes the reassembly array between the RX path and the timeout handler,
+ * which run on different threads.
+ */
+static K_MUTEX_DEFINE(reass_lock);
+
 int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, uint16_t *next_hdr_off,
 			       uint16_t *last_hdr_off)
 {
@@ -221,15 +226,29 @@ static void reassembly_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct net_ipv6_reassembly *reass =
 		CONTAINER_OF(dwork, struct net_ipv6_reassembly, timer);
+	struct net_pkt *first = NULL;
+
+	k_mutex_lock(&reass_lock, K_FOREVER);
 
 	reassembly_info("Reassembly cancelled", reass);
 
-	/* Send a ICMPv6 Time Exceeded only if we received the first fragment (RFC 2460 Sec. 5) */
+	/* Detach the first fragment so the ICMP error can be sent without
+	 * holding the lock; sending may block on buffers and the TX path.
+	 */
 	if (reass->pkt[0] && net_pkt_ipv6_fragment_offset(reass->pkt[0]) == 0) {
-		net_icmpv6_send_error(reass->pkt[0], NET_ICMPV6_TIME_EXCEEDED, 1, 0);
+		first = reass->pkt[0];
+		reass->pkt[0] = NULL;
 	}
 
 	reassembly_cancel(reass->id, &reass->src, &reass->dst);
+
+	k_mutex_unlock(&reass_lock);
+
+	/* Send a ICMPv6 Time Exceeded only if we received the first fragment (RFC 2460 Sec. 5) */
+	if (first != NULL) {
+		net_icmpv6_send_error(first, NET_ICMPV6_TIME_EXCEEDED, 1, 0);
+		net_pkt_unref(first);
+	}
 }
 
 static void reassemble_packet(struct net_ipv6_reassembly *reass)
@@ -369,6 +388,8 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data)
 {
 	int i;
 
+	k_mutex_lock(&reass_lock, K_FOREVER);
+
 	for (i = 0; reassembly_init_done &&
 		     i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
 		if (!k_work_delayable_remaining_get(&reassembly[i].timer)) {
@@ -377,6 +398,8 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data)
 
 		cb(&reassembly[i], user_data);
 	}
+
+	k_mutex_unlock(&reass_lock);
 }
 
 /* Verify that we have all the fragments received and in correct order.
@@ -478,18 +501,6 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	int ret;
 	int i;
 
-	if (!reassembly_init_done) {
-		/* Static initializing does not work here because of the array
-		 * so we must do it at runtime.
-		 */
-		for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
-			k_work_init_delayable(&reassembly[i].timer,
-					      reassembly_timeout);
-		}
-
-		reassembly_init_done = true;
-	}
-
 	/* Each fragment has a fragment header, however since we already
 	 * read the nexthdr part of it, we are not going to use
 	 * net_pkt_get_data() and access the header directly: the cursor
@@ -498,7 +509,7 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	if (net_pkt_skip(pkt, 1) || /* reserved */
 	    net_pkt_read_be16(pkt, &flag) ||
 	    net_pkt_read_be32(pkt, &id)) {
-		goto drop;
+		return NET_DROP;
 	}
 
 	more = flag & 0x01;
@@ -511,7 +522,21 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		 */
 		net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
 				      NET_ICMPV6_PARAM_PROB_HEADER, NET_IPV6H_LENGTH_OFFSET);
-		goto drop;
+		return NET_DROP;
+	}
+
+	k_mutex_lock(&reass_lock, K_FOREVER);
+
+	if (!reassembly_init_done) {
+		/* Static initializing does not work here because of the array
+		 * so we must do it at runtime.
+		 */
+		for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
+			k_work_init_delayable(&reassembly[i].timer,
+					      reassembly_timeout);
+		}
+
+		reassembly_init_done = true;
 	}
 
 	reass = reassembly_get(id, hdr->src, hdr->dst);
@@ -580,15 +605,18 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	reassemble_packet(reass);
 
 accept:
+	k_mutex_unlock(&reass_lock);
 	return NET_OK;
 
 drop:
 	if (reass) {
 		if (reassembly_cancel(reass->id, &reass->src, &reass->dst)) {
+			k_mutex_unlock(&reass_lock);
 			return NET_OK;
 		}
 	}
 
+	k_mutex_unlock(&reass_lock);
 	return NET_DROP;
 }
 
