@@ -31,6 +31,17 @@ config RESET
 
 if PM
 
+DT_CHOSEN_SYSTEM_TIMER_COMPANION := zephyr,system-timer-companion
+
+# Every low-power state this SoC offers gates the core clock, and with it
+# SysTick, so a sleep is only measurable if timekeeping is handed over to the
+# companion timer named by /chosen/zephyr,system-timer-companion. That timer is
+# driven through the Counter API, which nothing else in a PM build selects, and
+# without it the companion choice silently falls back to none: the kernel keeps
+# arming SysTick, the wakeup never arrives and the sleep never ends.
+configdefault COUNTER
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_SYSTEM_TIMER_COMPANION))
+
 configdefault SYSTEM_TIMER_RESET_BY_LPM
 	default y
 
