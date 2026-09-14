@@ -7,18 +7,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set(emlib_dir      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/emlib)
-set(emdrv_dir      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/emdrv)
-set(common_dir     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/common)
-set(device_dir     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/Device)
-set(driver_dir     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/driver)
-set(radio_dir      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/radio)
-set(security_dir   ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/security)
-set(service_dir    ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/service)
-set(peripheral_dir ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/peripheral)
-set(bluetooth_dir  ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/protocol/bluetooth)
-set(crypto_dir     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/util/third_party/crypto_ip)
-set(blobs_dir      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/simplicity_sdk)
+zephyr_library_named(simplicity_sdk)
+
+set(emlib_dir      ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/platform/emlib)
+set(emdrv_dir      ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/platform/emdrv)
+set(common_dir     ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/platform/common)
+set(device_dir     ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/platform/Device)
+set(driver_dir     ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/platform/driver)
+set(radio_dir      ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/platform/radio)
+set(security_dir   ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/platform/security)
+set(service_dir    ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/platform/service)
+set(peripheral_dir ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/platform/peripheral)
+set(bluetooth_dir  ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/protocol/bluetooth)
+set(crypto_dir     ${ZEPHYR_CURRENT_MODULE_DIR}/simplicity_sdk/util/third_party/crypto_ip)
+set(blobs_dir      ${ZEPHYR_CURRENT_MODULE_DIR}/zephyr/blobs/simplicity_sdk)
 
 # Translate the SoC name and part number into the gecko device and cpu name
 # respectively.
@@ -59,7 +61,6 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
 
   zephyr_compile_definitions(
     SL_RAIL_UTIL_PA_CONFIG_HEADER="sl_rail_util_pa_config.h"
-    SL_CATALOG_SL_RAIL_UTIL_RF_PATH_SWITCH_PRESENT=1
   )
 
   zephyr_include_directories(
@@ -236,6 +237,7 @@ endif()
 
 zephyr_include_directories(
   config
+  inc
   ${device_dir}/SiliconLabs/${device_family}/Include
   ${common_dir}/config
   ${common_dir}/inc
@@ -275,6 +277,7 @@ zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
 
 zephyr_compile_definitions(
   ${device_part_number}
+  SL_COMPONENT_CATALOG_PRESENT=1
   SL_CODE_COMPONENT_DEVICE_PERIPHERAL=peripheral
   SL_CODE_COMPONENT_HAL_COMMON=hal_common
   SL_CODE_COMPONENT_SYSTEM=system
@@ -333,7 +336,6 @@ if(CONFIG_SILABS_SISDK_SLEEPTIMER)
     ${service_dir}/sleeptimer/src/sl_sleeptimer.c
   )
   zephyr_compile_definitions(
-    SL_CATALOG_SLEEPTIMER_PRESENT
     SL_CODE_COMPONENT_SLEEPTIMER=sleeptimer
     SL_CODE_COMPONENT_HAL_SYSRTC=hal_sysrtc
   )
@@ -355,18 +357,8 @@ if(CONFIG_SILABS_SISDK_CLOCK_MANAGER)
     ${service_dir}/clock_manager/src/sl_clock_manager_init.c
   )
   zephyr_compile_definitions(
-    SL_CATALOG_CLOCK_MANAGER_PRESENT
     SL_CODE_COMPONENT_CLOCK_MANAGER=clock_manager
   )
-  dt_nodelabel(ext_flash_path NODELABEL "extmem")
-  if(DEFINED ext_flash_path)
-    dt_prop(ext_flash_freq PATH ${ext_flash_path} PROPERTY "clock-frequency")
-    if(DEFINED ext_flash_freq)
-      zephyr_compile_definitions(
-        SL_CATALOG_CLOCK_MANAGER_EXT_FLASH_PRESENT
-      )
-    endif()
-  endif()
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SYSTEM         ${peripheral_dir}/src/sl_hal_system.c)
@@ -404,14 +396,7 @@ if(CONFIG_SILABS_SISDK_POWER_MANAGER)
     ${service_dir}/power_manager/src/sleep_loop/sl_power_manager.c
   )
   zephyr_compile_definitions(
-    SL_CATALOG_POWER_MANAGER_PRESENT
     SL_CODE_COMPONENT_POWER_MANAGER=power_manager
-  )
-  zephyr_compile_definitions_ifdef(CONFIG_SILABS_SISDK_RTCC
-    SL_CATALOG_POWER_MANAGER_DEEPSLEEP_BLOCKING_HFXO_RESTORE_PRESENT
-  )
-  zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_SILABS_S3_SIX301
-    SL_CATALOG_POWER_MANAGER_NO_DEEPSLEEP_PRESENT
   )
 endif()
 zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S3_SIX301
@@ -426,9 +411,6 @@ if(CONFIG_SILABS_SISDK_HFXO_MANAGER)
   zephyr_library_sources(
     ${service_dir}/hfxo_manager/src/sl_hfxo_manager.c
     ${service_dir}/hfxo_manager/src/sl_hfxo_manager_hal_s2.c
-  )
-  zephyr_compile_definitions(
-    SL_CATALOG_HFXO_MANAGER_PRESENT
   )
 endif()
 
@@ -460,7 +442,6 @@ if(CONFIG_SILABS_SISDK_GPIO)
     ${peripheral_dir}/src/sl_hal_gpio.c
   )
   zephyr_library_compile_definitions(
-    SL_CATALOG_GPIO_PRESENT
     SL_CODE_COMPONENT_GPIO=gpio
     SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
   )
@@ -471,9 +452,6 @@ if(CONFIG_SILABS_SISDK_I2C)
     ${driver_dir}/i2c/src/sl_i2c.c
     ${service_dir}/udelay/src/sl_udelay.c
     ${peripheral_dir}/src/sl_hal_i2c.c
-  )
-  zephyr_library_compile_definitions_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
-    SL_CATALOG_I2C_FIFO_PRESENT
   )
 endif()
 
