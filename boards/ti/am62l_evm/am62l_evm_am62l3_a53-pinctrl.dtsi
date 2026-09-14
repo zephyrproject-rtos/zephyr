@@ -43,6 +43,22 @@
 		pinmux = <K3_PINMUX(0x01d8, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (A6) I2C1_SDA */
 	};
 
+	main_spi0_clk: spi0_clk_default {
+		pinmux = <K3_PINMUX(0x01a8, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_spi0_d0: spi0_d0_default {
+		pinmux = <K3_PINMUX(0x01ac, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_spi0_d1: spi0_d1_default {
+		pinmux = <K3_PINMUX(0x01b0, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_spi0_cs0: spi0_cs0_default {
+		pinmux = <K3_PINMUX(0x01a0, PIN_INPUT, MUX_MODE_0)>;
+	};
+
 	mmc0_cmd: mmc0_cmd_default {
 		pinmux = <K3_PINMUX(0x0214, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (D2) MMC0_CMD */
 	};
