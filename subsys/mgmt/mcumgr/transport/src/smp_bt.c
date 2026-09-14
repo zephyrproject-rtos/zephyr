@@ -6,7 +6,7 @@
  */
 
 /** @file
- * @brief Bluetooth transport for the mcumgr SMP protocol.
+ * @brief Bluetooth transport for the MCUmgr SMP protocol.
  */
 
 #include <zephyr/kernel.h>
@@ -75,6 +75,25 @@ LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
  */
 #define SMP_BT_MINIMUM_MTU_SEND_FAILURE 20
 
+#define BT_SERVICE_ATTRIBUTE_SIZE 1
+#define BT_CHARACTERISTIC_ATTRIBUTE_SIZE 2
+#define BT_GATT_MESSAGE_OVERHEAD 3
+
+static ssize_t smp_bt_chr_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				const void *buf, uint16_t len, uint16_t offset, uint8_t flags);
+
+static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value);
+
+#define SMP_BT_ATTRS									\
+	BT_GATT_PRIMARY_SERVICE(SMP_BT_SVC_UUID),					\
+	BT_GATT_CHARACTERISTIC(SMP_BT_CHR_UUID,						\
+			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |			\
+			       BT_GATT_CHRC_NOTIFY,					\
+			       SMP_GATT_PERM & SMP_GATT_PERM_WRITE_MASK,		\
+			       NULL, smp_bt_chr_write, NULL),				\
+	BT_GATT_CCC(smp_bt_ccc_changed,							\
+		    SMP_GATT_PERM),
+
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
 /* Verification of SMP Connection Parameters configuration that is not possible in the Kconfig. */
 BUILD_ASSERT((CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_TIMEOUT * 4U) >
@@ -93,14 +112,17 @@ BUILD_ASSERT(sizeof(struct smp_bt_user_data) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_U
 	     " user data");
 
 enum {
+	/* SMP server values */
 	CONN_PARAM_SMP_REQUESTED = BIT(0),
 };
 
 struct conn_param_data {
 	struct bt_conn *conn;
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
 	struct k_work_delayable dwork;
 	struct k_work_delayable ework;
 	uint8_t state;
+#endif
 	uint8_t id;
 	struct k_sem smp_notify_sem;
 };
@@ -112,24 +134,38 @@ static struct conn_param_data conn_data[CONFIG_BT_MAX_CONN];
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
 
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
+static struct bt_gatt_attr attr_smp_bt_svc[] = {SMP_BT_ATTRS};
+static struct bt_gatt_service smp_bt_svc = BT_GATT_SERVICE(attr_smp_bt_svc);
+#else
+BT_GATT_SERVICE_DEFINE(smp_bt_svc, SMP_BT_ATTRS);
+#endif
+
 /* Bluetooth connection callback handlers */
 BT_CONN_CB_DEFINE(mcumgr_bt_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
 
-#ifdef CONFIG_SMP_CLIENT
-static struct smp_client_transport_entry smp_client_transport;
+#if defined(CONFIG_SMP_CLIENT)
+static struct smp_client_transport_entry smp_client_transport = {
+	.smpt = &smp_bt_transport,
+	.smpt_type = SMP_BLUETOOTH_TRANSPORT,
+};
 #endif
 
 /* Helper function that allocates conn_param_data for a conn. */
 static struct conn_param_data *conn_param_data_alloc(struct bt_conn *conn)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(conn_data); i++) {
-		if (conn_data[i].conn == NULL) {
+		if (conn_data[i].conn == NULL && conn_data[i].id == 0) {
 			bool valid = false;
 
 			conn_data[i].conn = conn;
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
+			conn_data[i].state = 0;
+#endif
 
 			/* Generate an ID for this connection and reset semaphore */
 			while (!valid) {
@@ -179,11 +215,14 @@ static void smp_notify_finished(struct bt_conn *conn, void *user_data)
 {
 	struct conn_param_data *cpd = conn_param_data_get(conn);
 
+	__ASSERT(cpd != NULL, "Invalid CPD for connection: %p", conn);
+
 	if (cpd != NULL) {
 		k_sem_give(&cpd->smp_notify_sem);
 	}
 }
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
 /* Sets connection parameters for a given conn. */
 static void conn_param_set(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
@@ -237,6 +276,7 @@ static void conn_param_smp_enable(struct bt_conn *conn)
 		(void)k_work_reschedule(&cpd->dwork, K_MSEC(RESTORE_TIME));
 	}
 }
+#endif
 
 /**
  * Write handler for the SMP characteristic; processes an incoming SMP request.
@@ -252,7 +292,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	bool started;
 
 	if (cpd == NULL) {
-		LOG_ERR("Null cpd object for connection %p", (void *)conn);
+		LOG_ERR("NULL cpd object for connection %p", (void *)conn);
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
@@ -294,9 +334,9 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 		 */
 		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
 
-		if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)) {
-			conn_param_smp_enable(conn);
-		}
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
+		conn_param_smp_enable(conn);
+#endif
 
 		ud->conn = conn;
 		ud->id = cpd->id;
@@ -314,7 +354,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	struct net_buf *nb;
 
 	if (cpd == NULL) {
-		LOG_ERR("Null cpd object for connection %p", (void *)conn);
+		LOG_ERR("NULL cpd object for connection %p", (void *)conn);
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
@@ -337,9 +377,9 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	ud->conn = conn;
 	ud->id = cpd->id;
 
-	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)) {
-		conn_param_smp_enable(conn);
-	}
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
+	conn_param_smp_enable(conn);
+#endif
 
 	smp_rx_req(&smp_bt_transport, nb);
 
@@ -361,27 +401,10 @@ static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 #endif
 }
 
-#define SMP_BT_ATTRS									\
-	BT_GATT_PRIMARY_SERVICE(SMP_BT_SVC_UUID),					\
-	BT_GATT_CHARACTERISTIC(SMP_BT_CHR_UUID,						\
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |			\
-			       BT_GATT_CHRC_NOTIFY,					\
-			       SMP_GATT_PERM & SMP_GATT_PERM_WRITE_MASK,		\
-			       NULL, smp_bt_chr_write, NULL),				\
-	BT_GATT_CCC(smp_bt_ccc_changed,							\
-		    SMP_GATT_PERM),
-
-
-#ifdef CONFIG_MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
-static struct bt_gatt_attr attr_smp_bt_svc[] = {SMP_BT_ATTRS};
-static struct bt_gatt_service smp_bt_svc = BT_GATT_SERVICE(attr_smp_bt_svc);
-#else
-BT_GATT_SERVICE_DEFINE(smp_bt_svc, SMP_BT_ATTRS);
-#endif
-
 int smp_bt_notify(struct bt_conn *conn, const void *data, uint16_t len)
 {
-	return bt_gatt_notify(conn, attr_smp_bt_svc + 2, data, len);
+	return bt_gatt_notify(conn, (attr_smp_bt_svc + BT_CHARACTERISTIC_ATTRIBUTE_SIZE), data,
+			      len);
 }
 
 /**
@@ -402,20 +425,22 @@ static struct bt_conn *smp_bt_conn_from_pkt(const struct net_buf *nb)
  * Calculates the maximum fragment size to use when sending the specified
  * response packet.
  */
-static uint16_t smp_bt_get_mtu(const struct net_buf *nb)
+static uint16_t smp_bt_conn_get_mtu(struct bt_conn *conn)
+{
+	/* Account for the three-byte notification header. */
+	return bt_gatt_get_mtu(conn) - BT_GATT_MESSAGE_OVERHEAD;
+}
+
+static uint16_t smp_bt_nb_get_mtu(const struct net_buf *nb)
 {
 	struct bt_conn *conn;
-	uint16_t mtu;
 
 	conn = smp_bt_conn_from_pkt(nb);
 	if (conn == NULL) {
 		return 0;
 	}
 
-	mtu = bt_gatt_get_mtu(conn);
-
-	/* Account for the three-byte notification header. */
-	return mtu - 3;
+	return smp_bt_conn_get_mtu(conn);
 }
 
 static void smp_bt_ud_free(void *ud)
@@ -451,7 +476,7 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 	uint16_t off = 0;
 	uint16_t mtu_size;
 	struct bt_gatt_notify_params notify_param = {
-		.attr = attr_smp_bt_svc + 2,
+		.attr = (attr_smp_bt_svc + BT_CHARACTERISTIC_ATTRIBUTE_SIZE),
 		.func = smp_notify_finished,
 		.data = nb->data,
 	};
@@ -482,7 +507,7 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 	}
 
 	/* Send data in chunks of the MTU size */
-	mtu_size = smp_bt_get_mtu(nb);
+	mtu_size = smp_bt_conn_get_mtu(conn);
 
 	if (mtu_size == 0U) {
 		/* The transport cannot support a transmission right now. */
@@ -605,21 +630,19 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		cpd->id = 0;
 		cpd->conn = NULL;
 
-		if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)) {
-			/* Cancel work if ongoing. */
-			(void)k_work_cancel_delayable(&cpd->dwork);
-			(void)k_work_cancel_delayable(&cpd->ework);
-
-			/* Clear cpd. */
-			cpd->state = 0;
-		}
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
+		/* Cancel work if ongoing. */
+		(void)k_work_cancel_delayable(&cpd->dwork);
+		(void)k_work_cancel_delayable(&cpd->ework);
+#endif
 
 		k_sem_give(&cpd->smp_notify_sem);
 	} else {
-		LOG_ERR("Null cpd object for connection %p", (void *)conn);
+		LOG_ERR("NULL cpd object for connection %p", (void *)conn);
 	}
 }
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
 static void conn_param_control_init(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(conn_data); i++) {
@@ -627,6 +650,7 @@ static void conn_param_control_init(void)
 		k_work_init_delayable(&conn_data[i].ework, conn_param_on_error_retry);
 	}
 }
+#endif
 
 static bool smp_bt_query_valid_check(struct net_buf *nb, void *arg)
 {
@@ -654,9 +678,9 @@ static void smp_bt_setup(void)
 
 	next_id = 1;
 
-	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)) {
-		conn_param_control_init();
-	}
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
+	conn_param_control_init();
+#endif
 
 	while (i < CONFIG_BT_MAX_CONN) {
 		k_sem_init(&conn_data[i].smp_notify_sem, 0, 1);
@@ -664,7 +688,7 @@ static void smp_bt_setup(void)
 	}
 
 	smp_bt_transport.functions.output = smp_bt_tx_pkt;
-	smp_bt_transport.functions.get_mtu = smp_bt_get_mtu;
+	smp_bt_transport.functions.get_mtu = smp_bt_nb_get_mtu;
 	smp_bt_transport.functions.ud_copy = smp_bt_ud_copy;
 	smp_bt_transport.functions.ud_free = smp_bt_ud_free;
 	smp_bt_transport.functions.query_valid_check = smp_bt_query_valid_check;
@@ -675,10 +699,8 @@ static void smp_bt_setup(void)
 		rc = smp_bt_register();
 	}
 
-#ifdef CONFIG_SMP_CLIENT
+#if defined(CONFIG_SMP_CLIENT)
 	if (rc == 0) {
-		smp_client_transport.smpt = &smp_bt_transport;
-		smp_client_transport.smpt_type = SMP_BLUETOOTH_TRANSPORT;
 		smp_client_transport_register(&smp_client_transport);
 	}
 #endif
