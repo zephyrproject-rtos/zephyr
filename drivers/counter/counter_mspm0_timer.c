@@ -269,37 +269,35 @@ static void counter_mspm0_isr(void *arg)
 
 #define MSPM0_CLK_DIV(div)		DT_CAT(DL_TIMER_CLOCK_DIVIDE_, div)
 
-#define COUNTER_DEVICE_INIT_MSPM0(n)							\
-	static struct counter_mspm0_data counter_mspm0_data_ ## n;			\
-	MSPM0_COUNTER_IRQ_REGISTER(n)							\
-											\
-	static const struct counter_mspm0_config counter_mspm0_config_ ## n = {		\
-		.base = (GPTIMER_Regs *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_IDX(			\
-						DT_INST_PARENT(n), 0)),			\
-		.clock_subsys = {							\
-			.clk = DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk),	\
-			},								\
-		.irq_config_func = (mspm0_ ## n ##_irq_register),			\
-		.clk_config = {								\
-			.clockSel = MSPM0_CLOCK_PERIPH_REG_MASK(			\
-				DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk)),	\
-			.divideRatio = MSPM0_CLK_DIV(DT_PROP(DT_INST_PARENT(n),		\
-						     ti_clk_div)),			\
-			.prescale = DT_PROP(DT_INST_PARENT(n), ti_clk_prescaler),	\
-			},								\
-		.counter_info = {.max_top_value = (DT_INST_PROP(n, resolution) == 32)	\
-							? UINT32_MAX : UINT16_MAX,	\
-				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-				 .channels = 1},					\
-	};										\
-											\
-	DEVICE_DT_INST_DEFINE(n,							\
-			      counter_mspm0_init,					\
-			      NULL,							\
-			      &counter_mspm0_data_ ## n,				\
-			      &counter_mspm0_config_ ## n,				\
-			      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,		\
-			      &mspm0_counter_api);
+#define COUNTER_DEVICE_INIT_MSPM0(n)                                                               \
+	static struct counter_mspm0_data counter_mspm0_data_##n;                                   \
+	MSPM0_COUNTER_IRQ_REGISTER(n)                                                              \
+                                                                                                   \
+	static const struct counter_mspm0_config counter_mspm0_config_##n = {                      \
+		.base = (GPTIMER_Regs *)DT_REG_ADDR(DT_INST_PARENT(n)),                            \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_IDX(DT_INST_PARENT(n), 0)),           \
+		.clock_subsys =                                                                    \
+			{                                                                          \
+				.clk = DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk),           \
+			},                                                                         \
+		.irq_config_func = (mspm0_##n##_irq_register),                                     \
+		.clk_config =                                                                      \
+			{                                                                          \
+				.clockSel = MSPM0_CLOCK_PERIPH_REG_MASK(                           \
+					DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk)),         \
+				.divideRatio =                                                     \
+					MSPM0_CLK_DIV(DT_PROP(DT_INST_PARENT(n), ti_clk_div)),     \
+				.prescale = DT_PROP(DT_INST_PARENT(n), ti_clk_prescaler),          \
+			},                                                                         \
+		.counter_info = {.max_top_value = (DT_INST_PROP(n, resolution) == 32)              \
+							  ? UINT32_MAX                             \
+							  : UINT16_MAX,                            \
+				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
+				 .channels = 1},                                                   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, counter_mspm0_init, NULL, &counter_mspm0_data_##n,                \
+			      &counter_mspm0_config_##n, POST_KERNEL,                              \
+			      CONFIG_COUNTER_INIT_PRIORITY, &mspm0_counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_DEVICE_INIT_MSPM0)
