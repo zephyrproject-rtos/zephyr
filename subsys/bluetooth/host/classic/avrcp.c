@@ -509,7 +509,16 @@ static void avrcp_connected(struct bt_avctp *session)
 	}
 }
 
-static void cleanup_fragmentation_context(struct bt_avrcp_ct *ct);
+static void cleanup_fragmentation_context(struct bt_avrcp_ct *ct)
+{
+	if (ct == NULL) {
+		return;
+	}
+
+	if (ct->reassembly_buf != NULL) {
+		net_buf_drop(&ct->reassembly_buf);
+	}
+}
 
 /* The AVCTP L2CAP channel released */
 static void avrcp_disconnected(struct bt_avctp *session)
@@ -801,17 +810,6 @@ static int add_fragment_data(struct bt_avrcp_ct *ct, const uint8_t *data, uint16
 	/* Add fragment data to reassembly buffer */
 	net_buf_add_mem(ct->reassembly_buf, data, data_len);
 	return 0;
-}
-
-static void cleanup_fragmentation_context(struct bt_avrcp_ct *ct)
-{
-	if (ct == NULL) {
-		return;
-	}
-
-	if (ct->reassembly_buf != NULL) {
-		net_buf_drop(&ct->reassembly_buf);
-	}
 }
 
 static struct net_buf *avrcp_prepare_vendor_pdu(struct bt_avrcp *avrcp,
@@ -2227,7 +2225,6 @@ static int process_inform_batt_status_of_ct_cmd(struct bt_avrcp *avrcp, uint8_t 
 	return BT_AVRCP_STATUS_OPERATION_COMPLETED;
 }
 
-
 static int process_set_absolute_volume_cmd(struct bt_avrcp *avrcp, uint8_t tid,
 					   uint8_t ctype_or_rsp, struct net_buf *buf)
 {
@@ -2410,7 +2407,6 @@ static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t t
 		error_code = BT_AVRCP_STATUS_INVALID_PARAMETER;
 		goto err_rsp;
 	}
-
 
 	error_code = handle_vendor_pdu(avrcp, tid, buf, ctype_or_rsp, pdu->pdu_id,
 				       cmd_vendor_handlers, ARRAY_SIZE(cmd_vendor_handlers));
