@@ -6,15 +6,15 @@
 /dts-v1/;
 
 #include <espressif/esp32/esp32_pico_v3_02.dtsi>
-#include "adafruit_feather_esp32-pinctrl.dtsi"
+#include "adafruit_feather_esp32_v2-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "Adafruit Feather ESP32 PROCPU";
-	compatible = "adafruit,adafruit_feather_esp32";
+	model = "Adafruit Feather ESP32 V2 PROCPU";
+	compatible = "adafruit,adafruit_feather_esp32_v2";
 
 	chosen {
 		zephyr,sram = &sram1;

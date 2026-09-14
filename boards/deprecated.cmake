@@ -49,6 +49,12 @@ set(bl54l15u_dvk/nrf54l15/cpuapp_DEPRECATED
 set(bl54l15u_dvk/nrf54l15/cpuflpr_DEPRECATED
     bl54l15_dvk/nrf54l15/cpuflpr
 )
+set(adafruit_feather_esp32/esp32/procpu_DEPRECATED
+    adafruit_feather_esp32_v2/esp32/procpu
+)
+set(adafruit_feather_esp32/esp32/appcpu_DEPRECATED
+    adafruit_feather_esp32_v2/esp32/appcpu
+)
 set(elemrv/elemrv_n_DEPRECATED
     elemrv_flask_n
 )
