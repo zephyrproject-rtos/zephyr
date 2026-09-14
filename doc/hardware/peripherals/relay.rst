@@ -18,6 +18,14 @@ functions in :zephyr_file:`include/zephyr/drivers/relay/relay.h`:
   :c:enumerator:`RELAY_STATE_ON` and :c:enumerator:`RELAY_STATE_OFF`.
 - :c:func:`relay_get_state` reads back the last requested state.
 
+Backends
+********
+
+One devicetree-discoverable backend is provided:
+
+- :dtcompatible:`zephyr,gpio-relay` for a relay switched by a single GPIO. The
+  coil's active level comes from the flags in the ``gpios`` specifier.
+
 Shell
 *****
 

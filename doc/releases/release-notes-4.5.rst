@@ -1568,6 +1568,10 @@ New Drivers
   * :dtcompatible:`sifli,sf32lb52x-ldo` (:github:`108093`)
   * :dtcompatible:`ti,mspm0-vref` (:github:`94732`)
 
+* Relay
+
+  * :dtcompatible:`zephyr,gpio-relay`
+
 * Reset controller
 
   * :dtcompatible:`wch,ch32-rcc-rctl` (:github:`115714`)
