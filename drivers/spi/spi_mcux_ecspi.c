@@ -248,6 +248,18 @@ static int transceive(const struct device *dev,
 
 	spi_mcux_transfer_next_packet(dev);
 	ret = spi_context_wait_for_completion(&data->ctx);
+	if (ret != 0) {
+		/*
+		 * On timeout the SDK transfer handle stays busy, which would
+		 * make every subsequent transfer on this bus fail with
+		 * kStatus_ECSPI_Busy. Abort the transfer and deassert the
+		 * chip select so the bus recovers and the caller can retry.
+		 */
+		const struct spi_mcux_config *config = dev->config;
+
+		ECSPI_MasterTransferAbort(config->base, &data->handle);
+		spi_context_cs_control(&data->ctx, false);
+	}
 
 out:
 	spi_context_release(&data->ctx, ret);
