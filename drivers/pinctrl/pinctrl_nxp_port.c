@@ -51,6 +51,20 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 	return 0;
 }
 
+static int pinctrl_mcux_clock_on(const struct device *dev)
+{
+	const struct pinctrl_mcux_config *config = dev->config;
+	int err;
+
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (err) {
+		LOG_ERR("failed to enable clock (err %d)", err);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int pinctrl_mcux_init(const struct device *dev)
 {
 	const struct pinctrl_mcux_config *config = dev->config;
@@ -61,10 +75,9 @@ static int pinctrl_mcux_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	err = pinctrl_mcux_clock_on(dev);
 	if (err) {
-		LOG_ERR("failed to enable clock (err %d)", err);
-		return -EINVAL;
+		return err;
 	}
 
 	return 0;
