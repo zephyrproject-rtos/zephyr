@@ -43,11 +43,6 @@ static bt_dh_key_cb_t dh_key_cb;
  */
 static uint32_t pub_key_disruptions;
 
-static void generate_pub_key(struct k_work *work);
-static void generate_dh_key(struct k_work *work);
-K_WORK_DEFINE(pub_key_work, generate_pub_key);
-K_WORK_DEFINE(dh_key_work, generate_dh_key);
-
 enum {
 	PENDING_PUB_KEY,
 	PENDING_DHKEY,
@@ -221,6 +216,8 @@ done:
 	}
 }
 
+K_WORK_DEFINE(pub_key_work, generate_pub_key);
+
 static void generate_dh_key(struct k_work *work)
 {
 	uint8_t dhkey[BT_DH_KEY_LEN];
@@ -283,6 +280,8 @@ exit:
 		cb(err ? NULL : dhkey);
 	}
 }
+
+K_WORK_DEFINE(dh_key_work, generate_dh_key);
 
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 {
