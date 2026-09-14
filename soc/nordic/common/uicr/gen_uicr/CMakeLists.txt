@@ -71,14 +71,6 @@ function(compute_optional_partition_address_and_size partition_nodelabel output_
   endif()
 endfunction()
 
-set(IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE "")
-
-if(CONFIG_SOC_NRF54H20)
-  set(IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE
-    "${IRONSIDE_SUPPORT_DIR}/se/resources/periphconf_registers-nrf54h20_xxaa-v23.4.0+27.json"
-  )
-endif()
-
 # Use CMAKE_VERBOSE_MAKEFILE to silence an unused-variable warning.
 if(CMAKE_VERBOSE_MAKEFILE)
 endif()
@@ -391,17 +383,22 @@ if(CONFIG_GEN_UICR_SNAPSHOT_REGIONS)
   endforeach()
 endif()
 
+if(CONFIG_GEN_UICR_IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE)
+  string(CONFIGURE "${CONFIG_GEN_UICR_IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE}" registers_file)
+  string(CONFIGURE "${registers_file}" registers_file)
+endif()
+
 set(periphconf_check_base_cmd
   ${CMAKE_COMMAND} -E env ZEPHYR_BASE=${ZEPHYR_BASE}
   ${PYTHON_EXECUTABLE} ${IRONSIDE_SUPPORT_DIR}/se/tool/ironside/__main__.py
   periphconf-check
-  --in-periphconf-registers-json ${IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE}
+  --in-periphconf-registers-json ${registers_file}
 )
 
 set(periphconf_validate_command)
 set(secondary_periphconf_validate_command)
 
-if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF AND IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE)
+if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF AND CONFIG_GEN_UICR_IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE)
   set(check_cmd ${periphconf_check_base_cmd} --in-periphconf-hex ${periphconf_hex_file})
 
   set(periphconf_validate_build_command
@@ -428,7 +425,7 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF AND IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE
   )
 endif()
 
-if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF AND IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE)
+if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF AND CONFIG_GEN_UICR_IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE)
   set(check_cmd ${periphconf_check_base_cmd} --in-periphconf-hex ${secondary_periphconf_hex_file})
 
   set(secondary_periphconf_validate_build_command
