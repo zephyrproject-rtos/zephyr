@@ -41,6 +41,10 @@ LOG_MODULE_REGISTER(mpipe_aud_i2s_codec_sink, CONFIG_MPIPE_LOG_LEVEL);
 
 static void mpipe_aud_i2s_codec_sink_start_codec(const struct device *codec)
 {
+	if (codec == NULL) {
+		return;
+	}
+
 	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, codec);
 
 	if (api->start_output != NULL) {
@@ -48,7 +52,7 @@ static void mpipe_aud_i2s_codec_sink_start_codec(const struct device *codec)
 	}
 }
 
-/* A capability of this sink is one the I2S link and the codec both support */
+/* A capability of this sink is one the I2S link and the codec, if any, both support */
 static int mpipe_aud_i2s_codec_sink_enum_caps(struct mpipe_pad *pad, uint32_t index,
 					      const struct mpipe_structure *filter,
 					      struct mpipe_structure *out)
@@ -62,6 +66,10 @@ static int mpipe_aud_i2s_codec_sink_enum_caps(struct mpipe_pad *pad, uint32_t in
 	if (i2s_get_caps(aud->i2s_dev, &i2s_caps, I2S_DIR_TX) != 0) {
 		LOG_ERR("Failed to get I2S capabilities");
 		return -ENODEV;
+	}
+
+	if (aud->codec_dev == NULL) {
+		return mpipe_aud_enum_caps(&i2s_caps, index, filter, out);
 	}
 
 	if (audio_codec_get_caps(aud->codec_dev, &codec_caps) != 0) {
@@ -99,14 +107,14 @@ static int mpipe_aud_i2s_codec_sink_propose_buffer_pool(struct mpipe_sink *sink,
 	struct mpipe_aud_i2s_codec_sink *aud = (struct mpipe_aud_i2s_codec_sink *)sink;
 	struct mpipe_buffer_pool_config cfg = {0};
 	struct audio_caps i2s_caps;
-	struct audio_caps codec_caps;
+	struct audio_caps codec_caps = {0};
 
 	if (i2s_get_caps(aud->i2s_dev, &i2s_caps, I2S_DIR_TX) != 0) {
 		LOG_ERR("Failed to get I2S capabilities");
 		return -ENODEV;
 	}
 
-	if (audio_codec_get_caps(aud->codec_dev, &codec_caps) != 0) {
+	if (aud->codec_dev != NULL && audio_codec_get_caps(aud->codec_dev, &codec_caps) != 0) {
 		LOG_ERR("Failed to get codec capabilities");
 		return -ENODEV;
 	}
@@ -203,28 +211,12 @@ static int mpipe_aud_i2s_codec_sink_get_property(struct mpipe_object *obj, uint3
 	return 0;
 }
 
-static int mpipe_aud_i2s_codec_sink_set_caps(struct mpipe_sink *sink,
-					     const struct mpipe_structure *caps)
+static int mpipe_aud_i2s_codec_sink_configure_codec(
+	struct mpipe_aud_i2s_codec_sink *aud_i2s_codec_sink, uint32_t sample_rate,
+	uint32_t bit_width, uint32_t num_of_channel, uint32_t frame_interval)
 {
-	struct mpipe_aud_i2s_codec_sink *aud_i2s_codec_sink =
-		(struct mpipe_aud_i2s_codec_sink *)sink;
-	struct i2s_config config;
 	struct audio_codec_cfg audio_cfg;
 	int ret;
-
-	uint32_t sample_rate, bit_width, num_of_channel, frame_interval;
-
-	if (mpipe_aud_caps_get_uint(caps, MPIPE_CAPS_SAMPLE_RATE, &sample_rate) != 0 ||
-	    mpipe_aud_caps_get_uint(caps, MPIPE_CAPS_BITWIDTH, &bit_width) != 0 ||
-	    mpipe_aud_caps_get_uint(caps, MPIPE_CAPS_NUM_OF_CHANNEL, &num_of_channel) != 0 ||
-	    mpipe_aud_caps_get_uint(caps, MPIPE_CAPS_FRAME_INTERVAL, &frame_interval) != 0) {
-		return -EINVAL;
-	}
-
-	if (aud_i2s_codec_sink->mem_slab == NULL) {
-		LOG_ERR("Memory slab not configured");
-		return -EINVAL;
-	}
 
 	audio_cfg.dai_route = AUDIO_ROUTE_PLAYBACK;
 	audio_cfg.dai_type = AUDIO_DAI_TYPE_I2S;
@@ -264,6 +256,40 @@ static int mpipe_aud_i2s_codec_sink_set_caps(struct mpipe_sink *sink,
 #endif
 
 	k_msleep(1000);
+
+	return 0;
+}
+
+static int mpipe_aud_i2s_codec_sink_set_caps(struct mpipe_sink *sink,
+					     const struct mpipe_structure *caps)
+{
+	struct mpipe_aud_i2s_codec_sink *aud_i2s_codec_sink =
+		(struct mpipe_aud_i2s_codec_sink *)sink;
+	struct i2s_config config;
+	int ret;
+
+	uint32_t sample_rate, bit_width, num_of_channel, frame_interval;
+
+	if (mpipe_aud_caps_get_uint(caps, MPIPE_CAPS_SAMPLE_RATE, &sample_rate) != 0 ||
+	    mpipe_aud_caps_get_uint(caps, MPIPE_CAPS_BITWIDTH, &bit_width) != 0 ||
+	    mpipe_aud_caps_get_uint(caps, MPIPE_CAPS_NUM_OF_CHANNEL, &num_of_channel) != 0 ||
+	    mpipe_aud_caps_get_uint(caps, MPIPE_CAPS_FRAME_INTERVAL, &frame_interval) != 0) {
+		return -EINVAL;
+	}
+
+	if (aud_i2s_codec_sink->mem_slab == NULL) {
+		LOG_ERR("Memory slab not configured");
+		return -EINVAL;
+	}
+
+	if (aud_i2s_codec_sink->codec_dev != NULL) {
+		ret = mpipe_aud_i2s_codec_sink_configure_codec(aud_i2s_codec_sink, sample_rate,
+							       bit_width, num_of_channel,
+							       frame_interval);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	config.word_size = bit_width;
 	config.channels = num_of_channel;
