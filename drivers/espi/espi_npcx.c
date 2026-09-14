@@ -396,7 +396,7 @@ static uint32_t espi_taf_parse(const struct device *dev)
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	struct npcx_taf_head taf_head;
 	uint32_t taf_addr, head_data;
-	uint8_t i, roundsize;
+	uint16_t i, roundsize, max_rxbuf_words;
 
 	/* Get type, length and tag from RX buffer */
 	head_data = inst->FLASHRXBUF[0];
@@ -405,6 +405,7 @@ static uint32_t espi_taf_parse(const struct device *dev)
 	taf_pckt.type = taf_head.type;
 	taf_pckt.len = (((uint16_t)taf_head.tag_hlen & 0xF) << 8) | taf_head.llen;
 	taf_pckt.tag = taf_head.tag_hlen >> 4;
+	taf_pckt.invalid_flag = 0;
 
 	if ((taf_pckt.len == 0) && (taf_pckt.type == NPCX_ESPI_TAF_REQ_READ)) {
 		taf_pckt.len = KB(4);
@@ -419,11 +420,24 @@ static uint32_t espi_taf_parse(const struct device *dev)
 	    (IS_ENABLED(CONFIG_ESPI_TAF_NPCX_RPMC_SUPPORT) &&
 	     (taf_pckt.type == NPCX_ESPI_TAF_REQ_RPMC_OP1))) {
 		roundsize = DIV_ROUND_UP(taf_pckt.len, sizeof(uint32_t));
+
+		max_rxbuf_words = ARRAY_SIZE(((struct espi_reg *)0)->FLASHRXBUF) -
+				  NPCX_ESPI_FLASH_HEADER_ADDRESS_LEN;
+
+		if ((roundsize > max_rxbuf_words) || (roundsize > NPCX_TAF_RX_PAYLOAD_WORDS)) {
+			LOG_ERR("TAF packet length exceeds max payload size");
+			LOG_ERR("Requested length: %d bytes, maximum payload size: %d bytes",
+				taf_pckt.len,
+				NPCX_TAF_RX_PAYLOAD_WORDS * (uint16_t)sizeof(uint32_t));
+			taf_pckt.invalid_flag = 1;
+			goto parse_exit;
+		}
+
 		for (i = 0; i < roundsize; i++) {
-			taf_pckt.src[i] = inst->FLASHRXBUF[2 + i];
+			taf_pckt.src[i] = inst->FLASHRXBUF[NPCX_ESPI_FLASH_HEADER_ADDRESS_LEN + i];
 		}
 	}
-
+parse_exit:
 	return (uint32_t)&taf_pckt;
 }
 #endif /* CONFIG_ESPI_TAF */
