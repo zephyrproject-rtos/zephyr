@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-test = &mcpwm0;
+	};
+};
+
+&pinctrl {
+	mcpwm0_default: mcpwm0_default {
+		group1 {
+			pinmux = <MCPWM0_OUT0A_GPIO10>;
+			output-enable;
+		};
+	};
+};
+
+&mcpwm0 {
+	pinctrl-0 = <&mcpwm0_default>;
+	pinctrl-names = "default";
+	/* 160 MHz / 10 = 16 MHz timer clock: 64000 cycles and 2 ms both fit the 16-bit timer */
+	prescale = <9>;
+	prescale-timer0 = <0>;
+	status = "okay";
+};
