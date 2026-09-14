@@ -159,6 +159,19 @@
 			gclkperiph-src = "gclk0";
 			gclkperiph-en = <1>;
 		};
+
+		/*
+		 * The AC needs a generic clock for register synchronization
+		 * as well as for the digital filter and the comparator
+		 * start-up counter. Without it CTRLA.SWRST is written, never
+		 * completes, and every later access reads back the reset
+		 * value.
+		 */
+		ac {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_AC>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
 	};
 
 	mclkdomain: mclkdomain {
@@ -176,6 +189,11 @@
 
 		sercom1 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>;
+			mclk-en = <1>;
+		};
+
+		ac {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_AC>;
 			mclk-en = <1>;
 		};
 	};
@@ -220,4 +238,43 @@ i2c0: &sercom1 {
 	dmas = <&dmac 2 6>, <&dmac 3 7>;
 	dma-names = "rx", "tx";
 	status = "okay";
+};
+
+&ac0 {
+	status = "okay";
+
+	/*
+	 * Arduino A3 against the block's own reference DAC. AC_AIN1 is PA08,
+	 * used elsewhere on this board, so the pin input here is AC_AIN2 on
+	 * PB00. Nothing drives A3 on this board, so this comparator only
+	 * says something once a wire is strapped to it.
+	 */
+	comp0: comparator@0 {
+		compatible = "microchip,ac-g2-comparator";
+		reg = <0>;
+		positive-mux-input = "pin2";
+		negative-mux-input = "dac";
+		dac-value = <64>;
+		hysteresis-level = "hyst20";
+		filter-length = "maj3";
+		pinctrl-0 = <&ac0_comp0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+
+	/*
+	 * Entirely on-die: the reference DAC against the 0.8 V bandgap. No
+	 * pin, no jumper, and the output flips at a DAC value the data sheet
+	 * predicts. This comparator needs no pinctrl-0: neither mux names a
+	 * pin.
+	 */
+	comp1: comparator@1 {
+		compatible = "microchip,ac-g2-comparator";
+		reg = <1>;
+		positive-mux-input = "dac";
+		negative-mux-input = "bandgap";
+		dac-value = <40>;
+		hysteresis-level = "hyst10";
+		status = "okay";
+	};
 };
