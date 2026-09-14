@@ -38,13 +38,9 @@ static int mpipe_aud_dmic_src_set_caps(struct mpipe_src *src, const struct mpipe
 
 	struct dmic_cfg cfg = {0};
 
-	/* These fields can be used to limit the PDM clock
-	 * configurations that the driver is allowed to use
-	 * to those supported by the microphone.
-	 */
 	/* TODO: Move to DT and driver init */
-	cfg.io.min_pdm_clk_freq = 1000000;
-	cfg.io.max_pdm_clk_freq = 3500000;
+	cfg.io.min_pdm_clk_freq = CONFIG_MPIPE_AUD_DMIC_SRC_PDM_CLK_FREQ_MIN;
+	cfg.io.max_pdm_clk_freq = CONFIG_MPIPE_AUD_DMIC_SRC_PDM_CLK_FREQ_MAX;
 	cfg.io.min_pdm_clk_dc = 40;
 	cfg.io.max_pdm_clk_dc = 60;
 
