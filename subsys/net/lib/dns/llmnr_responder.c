@@ -225,10 +225,10 @@ static int create_answer(enum dns_rr_type qtype,
 	/* Prepare the response into the query buffer: move the name
 	 * query buffer has to get enough free space: dns_hdr + query + answer
 	 */
-	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE + 1 +
-					  (DNS_QTYPE_LEN + DNS_QCLASS_LEN) * 2 +
-					  DNS_TTL_LEN + DNS_RDLENGTH_LEN +
-					  addr_len)) {
+	if (net_buf_tailroom(query) < (DNS_MSG_HEADER_SIZE + 1 +
+				       (DNS_QTYPE_LEN + DNS_QCLASS_LEN) * 2 +
+				       DNS_TTL_LEN + DNS_RDLENGTH_LEN +
+				       addr_len)) {
 		return -ENOBUFS;
 	}
 
@@ -456,8 +456,8 @@ static int dns_read(int sock,
 		enum dns_rr_type qtype;
 		enum dns_class qclass;
 
-		(void)memset(result->data, 0, net_buf_max_len(result));
 		result->len = 0U;
+		(void)memset(result->data, 0, net_buf_tailroom(result));
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);
 		if (ret < 0) {
@@ -520,7 +520,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	}
 
 	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
-			     net_buf_max_len(dns_data), 0,
+			     net_buf_tailroom(dns_data), 0,
 			     (struct net_sockaddr *)&addr, &addrlen);
 	if (ret < 0) {
 		ret = -errno;
