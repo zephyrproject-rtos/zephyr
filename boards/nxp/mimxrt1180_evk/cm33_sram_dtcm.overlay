@@ -10,6 +10,7 @@
 / {
 	chosen {
 		zephyr,sram = &dtcm;
+		/delete-property/ zephyr,dtcm;
 	};
 
 	soc {
