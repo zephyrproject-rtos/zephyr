@@ -14,6 +14,8 @@ config CRITICAL_SECTION_HOOKS
 	  Enable IRQ and spinlock hooks. A consumer selects this option
 	  and implements the functions in critical_section_hooks.h.
 
+source "subsys/debug/critical_section_monitor/Kconfig"
+
 endmenu
 
 menu "Debugging Options"
