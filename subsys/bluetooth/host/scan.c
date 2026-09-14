@@ -145,7 +145,6 @@ static void reset_reassembling_advertiser(void)
 }
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
-static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void);
 static struct bt_le_per_adv_sync per_adv_sync_pool[CONFIG_BT_PER_ADV_SYNC_MAX];
 static sys_slist_t pa_sync_cbs = SYS_SLIST_STATIC_INIT(&pa_sync_cbs);
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
