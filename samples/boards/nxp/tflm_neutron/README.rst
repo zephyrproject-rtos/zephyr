@@ -20,6 +20,7 @@ Supported Platforms
 This sample supports NXP platforms with the Neutron NPU:
 
 - MIMXRT798S (i.MX RT700 series)
+- MIMXRT2663 (i.MX RT2600 series)
 - FRDM-MCXN947 (MCXN series)
 
 A platform-specific model is selected at build time via the CMakeLists.txt.
@@ -37,22 +38,34 @@ Software requirements
   (available for Windows and Linux)
 - GCC, Python, and Git dependencies
 
-Converting the model using neutron-converter
-=============================================
+Converting the model using neutron-compiler
+===========================================
 
-After installing the eIQ Toolkit, the ``neutron-converter`` tool is located in
-the eIQ Toolkit installation directory (for example
-``C:\NXP\eIQ_Toolkit_v1.15.1\bin\neutron-converter\MCU_SDK_25.03.00``). Add it
+After installing the eIQ neutron SDK, the ``neutron-compiler`` tool is located in
+the eIQ Neutron SDK directory (for example
+``C:\eiq-neutron-sdk-windows-3.2.2\bin``). Add it
 to your executable path.
+
+To list the available Neutron targets:
+
+.. code-block:: console
+
+   neutron-compiler --show-targets
+
+Some of the supported targets are:
+
+- ``imxrt700`` : NXP i.MX RT700 MCU
+- ``imxrt2660`` : NXP i.MX RT2660 Application Processor
+- ``mcxn94x`` : NXP MCX N94x MCU
 
 To convert a quantized TFLite model for the Neutron NPU:
 
 .. code-block:: console
 
-   neutron-converter --input model_quant.tflite --output model_npu.tflite \
+   neutron-compiler --input model_quant.tflite --output model_npu.tflite \
    --target imxrt700 --use-sequencer
 
-The ``neutron-converter`` takes a TFLite file as input and produces another
+The ``neutron-compiler`` takes a TFLite file as input and produces another
 TFLite file as output, where the operators supported by the Neutron NPU have
 been replaced by a ``NeutronGraph`` custom operator. Any layers that were not
 converted run on the Cortex-M33 core.
@@ -68,7 +81,7 @@ Use ``xxd`` to convert the TFLite model and input/output data to C header files:
    xxd -c 16 -i input_data.bin input_data.h
    xxd -c 16 -i output_data.bin output_data.h
 
-Alternatively, the ``neutron-converter`` can generate header files directly
+Alternatively, the ``neutron-compiler`` can generate header files directly
 using the ``--dump-header-file-input`` and ``--dump-header-file-output``
 arguments.
 
@@ -78,6 +91,7 @@ Synchronizing to this sample
 Copy the generated header files to the appropriate model directory:
 
 - For RT700: ``src/models/rt700/model.hpp``
+- For RT2660: ``src/models/rt2660/model.hpp``
 - For MCXN: ``src/models/mcxn/model.hpp``
 
 Building and running
@@ -112,6 +126,54 @@ Then flash the image:
 .. code-block:: console
 
     west flash
+
+Building for RT2660
+===================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/nxp/tflm_neutron
+   :board: mimxrt2660_evk/mimxrt2663/cm85
+   :goals: build
+
+RT2660 memory map
+-----------------
+
+The MIMXRT2663 NPU cannot access TCM. The sample uses the
+following memory layout:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 18 14 48
+
+   * - Region
+     - Address
+     - Attribute
+     - Contents
+   * - ``SRAM01_NPU`` (512 KB)
+     - ``0x22000000``
+     - non-cacheable
+     - Tensor arena and Neutron DMA-shared data
+   * - ``SRAM2`` (256 KB)
+     - ``0x22080000``
+     - cacheable
+     - Model, libc malloc arena, and system heap
+   * - ``PSRAM`` (32 MB)
+     - ``0x80000000``
+     - uncached alias
+     - Application data, BSS, heap, and stacks
+
+The board overlay combines SRAM0 and SRAM1 into ``SRAM01_NPU``. The
+``nocache.ld`` fragment places ``.data.neutron_driver`` in this region, while
+the model is copied from flash to SRAM2 before inference.
+
+Running a larger model
+----------------------
+
+If the model does not fit in SRAM2, place ``g_model_sram`` in the ``psram``
+devicetree region in ``src/main_functions.cpp`` and keep the existing
+``cleanCache_by_Addr()`` call. Keep the tensor arena and driver data in
+``SRAM01_NPU`` for best performance. If necessary, increase
+``kTensorArenaSize`` without exceeding the region's 512 KB capacity.
 
 Building for MCXN
 =================

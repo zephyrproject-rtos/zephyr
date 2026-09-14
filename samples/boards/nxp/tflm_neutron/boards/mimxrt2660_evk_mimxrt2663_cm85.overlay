@@ -1,0 +1,23 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/* Combine SRAM0 and SRAM1 into a non-cacheable NPU memory region. */
+&sram1 {
+	status = "disabled";
+};
+
+&sram0 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	reg = <0x22000000 DT_SIZE_K(512)>;
+	zephyr,memory-region = "SRAM01_NPU";
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
+/* Keep XSPI boot-header offsets enabled for the XIP image. */
+&xspi0 {
+	status = "okay";
+};

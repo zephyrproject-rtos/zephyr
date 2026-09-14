@@ -10,6 +10,8 @@
  * and clock roots belong to the nxp,imx-ccm-rev3 driver, driven from devicetree.
  */
 
+#include <stdarg.h>
+
 #include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/fatal.h>
@@ -17,6 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/section_tags.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
 #include "soc.h"
@@ -24,6 +27,9 @@
 
 #include <fsl_common.h>
 #include <fsl_powercon.h>
+#include <fsl_power.h>
+
+#include <fsl_trdc_soc.h>
 
 /*
  * The ROM leaves SCB->VTOR at 0 and SystemInit() only relocates it for a RAM
@@ -70,6 +76,53 @@ static void soc_llc_init(void)
 	llc->CCUUEDR = LLC_CCUUEDR_PROTERRDETEN(1U) | LLC_CCUUEDR_MEMERRDETEN(1U);
 	llc->CCUCAOR = LLC_CCUCAOR_WRALLOCPARTIALEN(1U);
 }
+
+void soc_neutron_init(void)
+{
+	CMPT__TRDC->MDA_DFMT1[kTRDC_CMPT_MasterNPU].MDA_W_DFMT1[0] =
+		TRDC_MDA_W_DFMT1_DID(0) | TRDC_MDA_W_DFMT1_VLD_MASK;
+
+	POWER_SetDomainRunMode(kPOWER_DomainNpu, kPDCON_EventNoneOrActive);
+
+	CLOCK_EnableClock(kCLOCK_CMPT_npu_core);
+	CLOCK_EnableClock(kCLOCK_CMPT_npu_mem);
+
+	ARM_MPU_SetRegion(10U, ARM_MPU_RBAR(0x20900000, ARM_MPU_SH_NON, 0U, 0U, 1U),
+			  ARM_MPU_RLAR(0x20900FFF, MPU_MAIR_INDEX_DEVICE));
+}
+
+/*
+ * The prebuilt Neutron driver blob references a few MCUX SDK helpers that have
+ * no counterpart in a Zephyr build: the debug console (DbgConsole_Printf /
+ * DbgConsole_Vprintf) for its diagnostic messages and cleanCache_by_Addr() for
+ * cache maintenance. Provide thin shims that route them to the equivalent
+ * Zephyr APIs. They live here, next to soc_neutron_init(), because they are
+ * platform glue for a SoC-specific blob rather than a standalone driver.
+ */
+#ifdef CONFIG_NXP_NEUTRON
+int DbgConsole_Printf(const char *fmt_s, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt_s);
+	vprintk(fmt_s, ap);
+	va_end(ap);
+
+	return 0;
+}
+
+int DbgConsole_Vprintf(const char *fmt_s, va_list formatStringArg)
+{
+	vprintk(fmt_s, formatStringArg);
+
+	return 0;
+}
+
+void cleanCache_by_Addr(uint32_t addr, uint32_t size)
+{
+	sys_cache_data_flush_range((uint32_t *)addr, (int32_t)size);
+}
+#endif /* CONFIG_NXP_NEUTRON */
 
 /*
  * Release the sleep hold, which comes out of reset set. It pins the CMC state
@@ -125,6 +178,9 @@ void soc_early_init_hook(void)
 	 * it depends on has to be working already.
 	 */
 	soc_clock_init();
+#ifdef CONFIG_NXP_NEUTRON
+	soc_neutron_init();
+#endif
 }
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
