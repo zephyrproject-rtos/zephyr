@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bindings for Billboard Host driver
+
+compatible: "zephyr,usbh-billboard"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
