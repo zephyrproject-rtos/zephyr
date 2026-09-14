@@ -862,6 +862,10 @@ GPIO
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
 
+* The ``CONFIG_GPIO_NCT38XX_PORT_INIT_PRIORITY`` and ``CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY``
+  Kconfig options have been removed. The NCT38xx GPIO port and alert drivers now use
+  :kconfig:option:`CONFIG_GPIO_NCT38XX_INIT_PRIORITY`. (:github:`115448`)
+
 Haptics
 =======
 
@@ -1031,6 +1035,54 @@ MBOX
              unit = <3>;
              channel-mask = <0x1>;
      };
+
+MFD
+===
+
+* The default of :kconfig:option:`CONFIG_MFD_INIT_PRIORITY` changed from ``80`` to
+  :kconfig:option:`CONFIG_KERNEL_INIT_PRIORITY_DEVICE`, the default init priority of I2C and SPI
+  controllers. All in-tree multi-function device drivers now use this option, and the init
+  priorities of their child drivers default to it. Devices sharing an init priority are
+  initialized in devicetree dependency order, so a parent MFD device is still initialized before
+  its children. Out-of-tree boards and applications that choose init priorities relative to the
+  old default of ``80``, for example to initialize a device between an MFD and its child devices,
+  must review them. (:github:`115448`)
+
+* The following driver-specific init priority Kconfig options have been removed. The drivers now
+  use :kconfig:option:`CONFIG_MFD_INIT_PRIORITY` instead. (:github:`115448`)
+
+  * ``CONFIG_MFD_ADP5360_INIT_PRIORITY``
+  * ``CONFIG_MFD_ADP5585_INIT_PRIORITY``
+  * ``CONFIG_MFD_MAXQ10XX_INIT_PRIORITY``
+  * ``CONFIG_MFD_MICROCRYSTAL_RV3032_INIT_PRIORITY``
+  * ``CONFIG_MFD_MOTOROLA_MC146818_INIT_PRIORITY``
+  * ``CONFIG_MFD_NPM10XX_INIT_PRIORITY``
+  * ``CONFIG_MFD_NPM13XX_INIT_PRIORITY``
+  * ``CONFIG_MFD_NPM6001_INIT_PRIORITY``
+  * ``CONFIG_MFD_RV3028_INIT_PRIORITY``
+  * ``CONFIG_MFD_TLA2528_INIT_PRIO``
+
+* The following init priority Kconfig options of MFD child drivers now default to
+  :kconfig:option:`CONFIG_MFD_INIT_PRIORITY` instead of a fixed value. (:github:`115448`)
+
+  * :kconfig:option:`CONFIG_GPIO_ADP5585_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_AXP192_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_BD8LB600FS_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_M5PM1_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_MAX22017_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_NCT38XX_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_NPM10XX_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_NPM13XX_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_NPM2100_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_NPM6001_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_GPIO_TLE9104_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_REGULATOR_AXP192_AXP2101_INIT_PRIORITY`
+  * :kconfig:option:`CONFIG_SENSOR_DS3231_INIT_PRIORITY`
+
+* The :dtcompatible:`motorola,mc146818` RTC and x86 CMOS counter drivers are no longer initialized
+  at a fixed offset from the MC146818 MFD init priority. They now use
+  :kconfig:option:`CONFIG_RTC_INIT_PRIORITY` and :kconfig:option:`CONFIG_COUNTER_INIT_PRIORITY`
+  respectively. (:github:`115448`)
 
 MSPI
 ====
