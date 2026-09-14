@@ -24,8 +24,8 @@ config TF_PSA_CRYPTO_MODULE_DIR
 	string
 	default "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}"
 
-rsource "Kconfig.psa.auto"
-rsource "Kconfig.psa.logic"
+rsource "Kconfig.psa"
+rsource "Kconfig.tf-psa-crypto"
 
 menuconfig MBEDTLS
 	bool "mbed TLS Support" if !MBEDTLS_PROMPTLESS
@@ -75,7 +75,6 @@ config TF_PSA_CRYPTO_CUSTOM
 endchoice # TF_PSA_CRYPTO_IMPLEMENTATION
 
 rsource "Kconfig.mbedtls"
-rsource "Kconfig.tf-psa-crypto"
 rsource "Kconfig.ciphersuites"
 rsource "Kconfig.deprecated"
 
