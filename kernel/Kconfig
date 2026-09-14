@@ -389,6 +389,12 @@ config NONZERO_SPINLOCK_SIZE
 	  non-zero size (such as if used in an array). It is automatically
 	  selected when using C++.
 
+config CRITICAL_SECTION_HOOKS
+	bool
+	help
+	  Enable IRQ and spinlock hooks. A consumer selects this option
+	  and implements the functions in critical_section_hooks.h.
+
 endmenu
 
 menu "Kernel Debugging and Metrics"
