@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip NVMCTRL G4 flash controller
+
+description: |
+  Flash controller built from the FCW write controller and the FCR read
+  controller.
+
+  Group g4 supports the following hardware peripherals:
+    - module name="FCW" id="04971" version="2a0"
+    - module name="FCR" id="04972" version="2a0"
+
+  The driver serves the program flash child only, and needs program_flash
+  as its node label.
+
+compatible: "microchip,nvmctrl-g4"
+
+include: flash-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: FCW register block first, FCR register block second.
+
+  reg-names:
+    required: true
+    description: Must be "fcw" then "fcr".
