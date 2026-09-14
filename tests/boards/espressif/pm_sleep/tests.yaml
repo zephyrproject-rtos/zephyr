@@ -17,6 +17,7 @@ tests:
       - esp8684_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
+      - esp32s31_devkitc/esp32s31/hpcore
   boards.espressif.pm_sleep.periph_pd:
     extra_configs:
       - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
@@ -25,9 +26,11 @@ tests:
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
+      - esp32s31_devkitc/esp32s31/hpcore
   boards.espressif.pm_sleep.periph_pd.noflash:
     extra_configs:
       - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
       - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
     platform_allow:
       - esp32c5_devkitc/esp32c5/hpcore
+      - esp32s31_devkitc/esp32s31/hpcore

@@ -11,6 +11,12 @@ common:
     fixture: spi_loopback
 tests:
   drivers.spi.loopback: {}
+  drivers.spi.loopback.esp32s31.dma:
+    extra_args:
+      - DTC_OVERLAY_FILE="socs/esp32s31_hpcore_dma.overlay"
+      - EXTRA_CONF_FILE="socs/esp32s31_hpcore_dma.conf"
+    platform_allow:
+      - esp32s31_devkitc/esp32s31/hpcore
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
   drivers.spi.loopback.lpspi.dma:

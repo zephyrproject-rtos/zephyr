@@ -7,5 +7,6 @@ tests:
   boards.esp32.dma_desc_bounds:
     platform_allow:
       - esp32s3_devkitc/esp32s3/procpu
+      - esp32s31_devkitc/esp32s31/hpcore
     integration_platforms:
       - esp32s3_devkitc/esp32s3/procpu

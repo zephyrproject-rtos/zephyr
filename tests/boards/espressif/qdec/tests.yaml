@@ -15,6 +15,7 @@ common:
     - esp32c6_devkitc/esp32c6/hpcore
     - esp32h2_devkitm/esp32h2
     - esp32p4x_function_ev_board/esp32p4/hpcore
+    - esp32s31_devkitc/esp32s31/hpcore
 
 tests:
   boards.esp32.qdec.self_loopback: {}
