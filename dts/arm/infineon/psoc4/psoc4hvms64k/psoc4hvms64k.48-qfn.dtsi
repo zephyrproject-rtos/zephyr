@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+#include "psoc4hvms64k.dtsi"
+
+/ {
+	soc {
+		pinctrl: pinctrl@40020000 {
+			/* scb_uart */
+			/omit-if-no-ref/ p5_0_scb1_uart_tx: p5_0_scb1_uart_tx {
+				pinmux = <DT_CAT1_PINMUX(5, 0, HSIOM_SEL_ACT_2)>;
+			};
+
+			/omit-if-no-ref/ p5_1_scb1_uart_rx: p5_1_scb1_uart_rx {
+				pinmux = <DT_CAT1_PINMUX(5, 1, HSIOM_SEL_ACT_2)>;
+			};
+		};
+	};
+};

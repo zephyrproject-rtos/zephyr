@@ -51,3 +51,53 @@ family:
   - name: psoc4100smax
     socs:
     - name: cy8c4149azi_s598
+  - name: psoc4hvms64k
+    socs:
+    - name: cy8c4125lce_hvs003
+    - name: cy8c4125lce_hvs013
+    - name: cy8c4126lce_hvs003
+    - name: cy8c4126lce_hvs013
+    - name: cy8c4146lce_hvs003
+    - name: cy8c4146lce_hvs013
+    - name: cy8c4146lce_hvs003x
+    - name: cy8c4146lce_hvs013x
+    - name: cy8c4125lce_hvs103
+    - name: cy8c4125lce_hvs113
+    - name: cy8c4126lce_hvs103
+    - name: cy8c4126lce_hvs113
+    - name: cy8c4146lce_hvs103
+    - name: cy8c4146lce_hvs113
+    - name: cy8c4146lce_hvs103x
+    - name: cy8c4146lce_hvs113x
+    - name: cy8c4125lde_hvs004
+    - name: cy8c4125lde_hvs014
+    - name: cy8c4126lde_hvs004
+    - name: cy8c4126lde_hvs014
+    - name: cy8c4146lde_hvs004
+    - name: cy8c4146lde_hvs014
+    - name: cy8c4146lde_hvs004x
+    - name: cy8c4146lde_hvs014x
+    - name: cy8c4125lde_hvs104
+    - name: cy8c4125lde_hvs114
+    - name: cy8c4126lde_hvs104
+    - name: cy8c4126lde_hvs114
+    - name: cy8c4146lde_hvs104
+    - name: cy8c4146lde_hvs114
+    - name: cy8c4146lde_hvs104x
+    - name: cy8c4146lde_hvs114x
+    - name: cy8c4125lwe_hvs005
+    - name: cy8c4125lwe_hvs015
+    - name: cy8c4126lwe_hvs005
+    - name: cy8c4126lwe_hvs015
+    - name: cy8c4146lwe_hvs005
+    - name: cy8c4146lwe_hvs015
+    - name: cy8c4146lwe_hvs005x
+    - name: cy8c4146lwe_hvs015x
+    - name: cy8c4125lwe_hvs105
+    - name: cy8c4125lwe_hvs115
+    - name: cy8c4126lwe_hvs105
+    - name: cy8c4126lwe_hvs115
+    - name: cy8c4146lwe_hvs105
+    - name: cy8c4146lwe_hvs115
+    - name: cy8c4146lwe_hvs105x
+    - name: cy8c4146lwe_hvs115x
