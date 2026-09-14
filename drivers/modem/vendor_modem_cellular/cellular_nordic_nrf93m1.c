@@ -22,6 +22,9 @@ struct nrf93m1_modem_cellular_data {
 
 	/** HWFC already enabled */
 	bool hwfc_enabled;
+
+	/** Modem baud rate is already changed */
+	bool baudrate_changed;
 };
 BUILD_ASSERT(offsetof(struct nrf93m1_modem_cellular_data, data) == 0,
 	     "Common data must be at start of struct");
@@ -30,6 +33,7 @@ static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t a
 				void *user_data);
 static void nrf93m1_on_ifc(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 static bool nrf93m1_ifc_required(void *user_data);
+static bool nrf93m1_baudrate_change_required(void *user_data);
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCH_DEFINE(pwd_match, "POWERED DOWN", "", NULL);
@@ -44,6 +48,15 @@ MODEM_CHAT_MATCHES_DEFINE(nordic_nrf93m1_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATC
 MODEM_CHAT_MATCHES_DEFINE(nordic_nrf93m1_ifc_matches,
 			  MODEM_CHAT_MATCH_INITIALIZER("+IFC:", ",", nrf93m1_on_ifc, false, true),
 			  MODEM_CHAT_MATCH("OK", "", NULL));
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf93m1_set_baudrate_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_COND(
+				"AT+IPR=" STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE),
+				ok_match, nrf93m1_baudrate_change_required));
+
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_set_baudrate_chat_script,
+			 nordic_nrf93m1_set_baudrate_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 1);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	nordic_nrf93m1_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
@@ -163,9 +176,24 @@ static bool nrf93m1_ifc_required(void *user_data)
 	return vendor_config->bus_has_hwfc && !vendor_data->hwfc_enabled;
 }
 
+static bool nrf93m1_baudrate_change_required(void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	struct nrf93m1_modem_cellular_data *vendor_data =
+		CONTAINER_OF(data, struct nrf93m1_modem_cellular_data, data);
+
+	/* Only try changing the baudrate once, as it is stored in NVM */
+	if (!vendor_data->baudrate_changed) {
+		vendor_data->baudrate_changed = true;
+		return true;
+	}
+	return !vendor_data->baudrate_changed;
+}
+
 static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	/* clang-format off */
 	.scripts = {
+		.set_baudrate = &nordic_nrf93m1_set_baudrate_chat_script,
 		.init = &nordic_nrf93m1_init_chat_script,
 		.network = &nordic_nrf93m1_network_chat_script,
 		.dial = &nordic_nrf93m1_dial_chat_script,
