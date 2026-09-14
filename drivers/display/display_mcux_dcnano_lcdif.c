@@ -142,8 +142,6 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 	const struct mcux_dcnano_lcdif_config *config = dev->config;
 	struct mcux_dcnano_lcdif_data *data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
-
 	capabilities->y_resolution = config->dpi_config.panelHeight;
 	capabilities->x_resolution = config->dpi_config.panelWidth;
 #if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)

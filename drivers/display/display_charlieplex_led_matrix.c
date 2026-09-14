@@ -247,7 +247,6 @@ static void cplx_get_capabilities(const struct device *dev, struct display_capab
 {
 	const struct cplx_config *cfg = dev->config;
 
-	memset(caps, 0, sizeof(*caps));
 	caps->x_resolution = cfg->width;
 	caps->y_resolution = cfg->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;

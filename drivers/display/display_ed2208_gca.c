@@ -316,7 +316,6 @@ static void ed2208_gca_get_capabilities(const struct device *dev, struct display
 	const struct ed2208_gca_config *config = dev->config;
 	struct ed2208_gca_data *data = dev->data;
 
-	memset(caps, 0, sizeof(*caps));
 	memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;

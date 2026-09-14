@@ -85,7 +85,6 @@ static void dummy_display_get_capabilities(const struct device *dev,
 	const struct dummy_display_config *config = dev->config;
 	struct dummy_display_data *disp_data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |

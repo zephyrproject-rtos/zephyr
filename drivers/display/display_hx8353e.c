@@ -399,7 +399,6 @@ static void hx8353e_get_capabilities(const struct device *dev,
 	const struct hx8353e_config *cfg = dev->config;
 	const struct hx8353e_data *data = dev->data;
 
-	memset(caps, 0, sizeof(*caps));
 	caps->x_resolution         = cfg->width;
 	caps->y_resolution         = cfg->height;
 	/*

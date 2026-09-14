@@ -493,7 +493,6 @@ static void rm67162_get_capabilities(const struct device *dev,
 	const struct rm67162_config *config = dev->config;
 	const struct rm67162_data *data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 |

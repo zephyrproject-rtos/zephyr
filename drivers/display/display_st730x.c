@@ -589,7 +589,6 @@ static void st730x_get_capabilities(const struct device *dev, struct display_cap
 	const struct st730x_config *config = dev->config;
 	struct st730x_data *data = dev->data;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	if (config->bppx > 1 || config->bppy > 1) {
