@@ -68,7 +68,7 @@ struct mpipe_aud_i2s_codec_sink {
 	struct mpipe_sink sink;
 	/** I2S device instance for audio data transmission */
 	const struct device *i2s_dev;
-	/** Codec device instance for configuration */
+	/** Codec device, or NULL for an amplifier with no control interface */
 	const struct device *codec_dev;
 	/** Memory slab for audio buffer allocation */
 	struct k_mem_slab *mem_slab;
@@ -92,7 +92,7 @@ struct mpipe_aud_i2s_codec_sink {
  *
  * The function expects the following device tree nodes:
  * - i2s_codec_tx alias for I2S transmission device
- * - audio_codec node label for codec configuration device
+ * - audio_codec node label for codec configuration device, optional
  *
  * @param aud_i2s_codec_sink Pointer to the element to initialize.
  * @param id Unique element identifier.
