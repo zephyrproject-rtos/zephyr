@@ -537,6 +537,7 @@ static void counter_mspm0_isr(void *arg)
 	}
 }
 
+/* clang-format off */
 #define MSPM0_COUNTER_IRQ_REGISTER(n)							\
 	static void mspm0_ ## n ##_irq_register(void)					\
 	{										\
@@ -560,7 +561,7 @@ static void counter_mspm0_isr(void *arg)
 			.clk = DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk),	\
 			},								\
 		.irq_config_func = (mspm0_ ## n ##_irq_register),			\
-		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(				\
+		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(					\
 				DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk)),	\
 		.clk_div_reg = DT_PROP(DT_INST_PARENT(n), ti_clk_div) - 1U,		\
 		.prescaler = DT_PROP(DT_INST_PARENT(n), ti_clk_prescaler),		\
@@ -568,7 +569,7 @@ static void counter_mspm0_isr(void *arg)
 		.counter_info = {.max_top_value = (DT_INST_PROP(n, resolution) == 32)	\
 							? UINT32_MAX : UINT16_MAX,	\
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-				 .channels = DT_INST_PROP(n, channels)},			\
+				 .channels = DT_INST_PROP(n, channels)},		\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(n,							\
@@ -578,4 +579,5 @@ static void counter_mspm0_isr(void *arg)
 			      &counter_mspm0_config_ ## n,				\
 			      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,		\
 			      &mspm0_counter_api);
+/* clang-format on */
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_DEVICE_INIT_MSPM0)
