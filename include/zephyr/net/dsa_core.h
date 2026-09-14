@@ -136,6 +136,11 @@ struct dsa_api {
 	int (*get_config)(const struct device *dev,
 			  enum ethernet_config_type type,
 			  struct ethernet_config *config);
+#if defined(CONFIG_NET_VLAN)
+	/** Configure VLAN for port */
+	int (*vlan_setup)(const struct device *dev, struct net_if *iface, uint16_t tag,
+			  bool enable);
+#endif /* CONFIG_NET_VLAN */
 };
 
 /**
