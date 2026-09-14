@@ -1,0 +1,103 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - kernel
+    - critical_section_monitor
+
+tests:
+  kernel.critical_section_monitor.up:
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_a53
+      - qemu_riscv64
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a53
+      - qemu_riscv64
+  kernel.critical_section_monitor.no_spin_validate:
+    tags:
+      - spinlock
+    platform_allow:
+      - qemu_cortex_a53
+    integration_platforms:
+      - qemu_cortex_a53
+    extra_configs:
+      - CONFIG_SPIN_VALIDATE=n
+  kernel.critical_section_monitor.spin_validate:
+    tags:
+      - spinlock
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_CRITICAL_SECTION_MONITOR_MAX_SPINLOCKS=1
+      - CONFIG_SPIN_VALIDATE=y
+      - CONFIG_SPIN_LOCK_TIME_LIMIT=1000000000
+  kernel.critical_section_monitor.smp:
+    tags:
+      - smp
+      - spinlock
+    platform_allow:
+      - qemu_x86_64
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_x86_64
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_MP_MAX_NUM_CPUS=2
+      - CONFIG_SCHED_CPU_MASK=y
+  kernel.critical_section_monitor.smp_ticket:
+    tags:
+      - smp
+      - spinlock
+    platform_allow:
+      - qemu_x86_64
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_x86_64
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_MP_MAX_NUM_CPUS=2
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_TICKET_SPINLOCKS=y
+  kernel.critical_section_monitor.smp_deferred:
+    tags:
+      - smp
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_args:
+      - DTC_OVERLAY_FILE=deferred.overlay
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_MP_MAX_NUM_CPUS=2
+      - CONFIG_SCHED_CPU_MASK=y
+  kernel.critical_section_monitor.shell.up:
+    tags:
+      - shell
+    platform_allow:
+      - qemu_cortex_a53
+    integration_platforms:
+      - qemu_cortex_a53
+    extra_conf_files:
+      - shell.conf
+  kernel.critical_section_monitor.shell.smp:
+    tags:
+      - shell
+      - smp
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_conf_files:
+      - shell.conf
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_MP_MAX_NUM_CPUS=2
+      - CONFIG_SCHED_CPU_MASK=y
