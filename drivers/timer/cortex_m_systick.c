@@ -375,7 +375,7 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 	}
 
 	/* The synthesized count goes on at the new rate from where it is. */
-	timer_core_rescale(cycle_count, new_hz, old_hz);
+	timer_core_rescale(cycle_count, new_hz);
 
 	if (load_old != TIMER_STOPPED) {
 		uint32_t new_load;
