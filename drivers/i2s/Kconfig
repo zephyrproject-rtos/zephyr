@@ -20,6 +20,11 @@ config I2S_RTIO
 	help
 	  I2S RTIO APIs and common context.
 
+config I2S_CONTINUITY
+	bool "I2S continuity iodev"
+	depends on I2S_RTIO
+	select RTIO_CQE_CALLBACK
+
 config I2S_INIT_PRIORITY
 	int "Init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
