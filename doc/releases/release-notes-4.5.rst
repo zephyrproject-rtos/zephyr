@@ -390,6 +390,12 @@ Deprecated APIs and options
     as the deprecated switch that restores the legacy claim/finish and item APIs while out-of-tree
     code migrates to the replacement APIs.
 
+* Network buffers
+
+  * :c:func:`net_buf_max_len` and :c:func:`net_buf_simple_max_len` have been deprecated. Use
+    :c:func:`net_buf_tailroom` and :c:func:`net_buf_simple_tailroom` instead. See the
+    :ref:`migration guide <migration_4.5>` for details.
+
 * Networking
 
   * Deprecated LLMNR support (:kconfig:option:`CONFIG_LLMNR_RESOLVER` and
