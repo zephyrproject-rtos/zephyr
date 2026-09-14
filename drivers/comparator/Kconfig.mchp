@@ -9,3 +9,11 @@ config COMPARATOR_MCHP_AC_G1
 	help
 	  Enable support for the Microchip Comparator driver
 	  on G1 AC peripherals.
+
+config COMPARATOR_MCHP_AC_G2
+	bool "Microchip AC G2 comparator driver"
+	default y
+	depends on DT_HAS_MICROCHIP_AC_G2_COMPARATOR_ENABLED
+	select PINCTRL
+	help
+	  Enable the driver for the Microchip AC G2 analog comparator.
