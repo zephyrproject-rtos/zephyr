@@ -577,6 +577,7 @@ int usbh_device_init(struct usb_device *const udev)
 	if (!udev->dev_desc.bNumConfigurations) {
 		LOG_ERR("Device has no configurations, bNumConfigurations %d",
 			udev->dev_desc.bNumConfigurations);
+		err = -EINVAL;
 		goto error;
 	}
 
