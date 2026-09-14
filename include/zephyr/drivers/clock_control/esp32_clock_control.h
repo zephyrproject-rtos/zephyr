@@ -39,6 +39,8 @@
 #include <zephyr/dt-bindings/clock/esp32h2_clock.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32P4)
 #include <zephyr/dt-bindings/clock/esp32p4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32S31)
+#include <zephyr/dt-bindings/clock/esp32s31_clock.h>
 #endif /* CONFIG_SOC_SERIES_ESP32xx */
 
 /** @name ESP32 clock control subsystem identifiers */

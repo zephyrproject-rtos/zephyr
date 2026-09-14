@@ -26,7 +26,8 @@ static enum clock_control_status clock_control_esp32_get_status(const struct dev
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
 	}
 
-#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32C61)
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32C61) ||                   \
+	defined(CONFIG_SOC_SERIES_ESP32S31)
 	return CLOCK_CONTROL_STATUS_UNKNOWN;
 #else
 	uint32_t clk_en_reg = periph_ll_get_clk_en_reg((shared_periph_module_t)module_id);
@@ -55,7 +56,8 @@ static int clock_control_esp32_on(const struct device *dev, clock_control_subsys
 	int module_id = (int)sys;
 
 	if (module_id < ESP32_MODULE_MAX) {
-#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61) &&                 \
+	!defined(CONFIG_SOC_SERIES_ESP32S31)
 		periph_module_enable((shared_periph_module_t)module_id);
 #endif
 	} else {
@@ -74,7 +76,8 @@ static int clock_control_esp32_off(const struct device *dev, clock_control_subsy
 	int module_id = (int)sys;
 
 	if (module_id < ESP32_MODULE_MAX) {
-#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61) &&                 \
+	!defined(CONFIG_SOC_SERIES_ESP32S31)
 		periph_module_disable((shared_periph_module_t)module_id);
 #endif
 	} else {

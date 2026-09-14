@@ -8,7 +8,7 @@
 /*
  * Clock implementation for SoCs whose slow and CPU clocks are managed
  * through the PMU and LP_CLKRST peripherals: ESP32-C5, ESP32-C6,
- * ESP32-C61, ESP32-H2 and ESP32-P4.
+ * ESP32-C61, ESP32-H2, ESP32-P4 and ESP32-S31.
  */
 
 #include "clock_control_esp32_priv.h"
@@ -45,7 +45,7 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 			if (slow_clk == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
 				rtc_clk_32k_enable(true);
 			}
-#if !defined(CONFIG_SOC_SERIES_ESP32P4)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32S31)
 			else if (slow_clk == ESP32_RTC_SLOW_CLK_32K_EXT_OSC) {
 				rtc_clk_32k_enable_external();
 			} else {
@@ -81,17 +81,19 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 		rtc_clk_slow_src_set(rtc_slow_clk_src);
 
 		/*
-		 * The source enums differ per SoC (ESP32-C5 has no RC32K,
-		 * ESP32-P4 has no OSC_SLOW), so each term is computed under the
-		 * SoC guard where its enum exists.
+		 * The source enums differ per SoC (ESP32-C5, ESP32-C61 and
+		 * ESP32-S31 have no RC32K, ESP32-P4 and ESP32-S31 have no
+		 * OSC_SLOW), so each term is computed under the SoC guard
+		 * where its enum exists.
 		 */
 		bool xpd_xtal32k = (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_XTAL32K);
 		bool xpd_rc32k = false;
 
-#if !defined(CONFIG_SOC_SERIES_ESP32P4)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32S31)
 		xpd_xtal32k |= (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
 #endif
-#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C61)
+#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C61) &&                 \
+	!defined(CONFIG_SOC_SERIES_ESP32S31)
 		xpd_rc32k = (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K);
 #endif
 
@@ -148,6 +150,12 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_SCK_DCAP, rtc_clk_cfg.slow_clk_dcap);
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_RTC_DREG, 1);
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_DIG_DREG, 1);
+#elif defined(CONFIG_SOC_SERIES_ESP32S31)
+	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_SCK_DCAP, rtc_clk_cfg.slow_clk_dcap);
+	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_RTC_DREG, 1);
+	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_DIG_DREG, 1);
+	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
+	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
 #elif defined(CONFIG_SOC_SERIES_ESP32P4)
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_SCK_DCAP, rtc_clk_cfg.slow_clk_dcap);
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_FORCE_RTC_DREG, 1);
@@ -165,8 +173,14 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 #endif
 	/* clang-format on */
 
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+	REG_SET_FIELD(LP_AONCLKRST_FOSC_DFREQ_REG, LP_AONCLKRST_FOSC_DFREQ,
+		      rtc_clk_cfg.clk_8m_dfreq);
+#else
 	REG_SET_FIELD(LP_CLKRST_FOSC_CNTL_REG, LP_CLKRST_FOSC_DFREQ, rtc_clk_cfg.clk_8m_dfreq);
-#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C61)
+#endif
+#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C61) &&                 \
+	!defined(CONFIG_SOC_SERIES_ESP32S31)
 	REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, rtc_clk_cfg.rc32k_dfreq);
 #endif
 
@@ -177,8 +191,12 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 	 * the RO HP/LP DBIAS_VOL fields, causing pvt_func_enable(false)
 	 * at sleep entry to read stale values (0) and write an invalid
 	 * regulator bias which brown-outs the core.
+	 *
+	 * ESP32-S31 provides no get_act_hp_dbias()/get_act_lp_dbias();
+	 * its pmu_init() programs the regulator bias from the PMU
+	 * parameter tables instead.
 	 */
-#if !defined(CONFIG_SOC_ESP32_ENABLE_PVT)
+#if !defined(CONFIG_SOC_ESP32_ENABLE_PVT) && !defined(CONFIG_SOC_SERIES_ESP32S31)
 	uint32_t hp_cali_dbias = get_act_hp_dbias();
 	uint32_t lp_cali_dbias = get_act_lp_dbias();
 
@@ -192,13 +210,14 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 			  hp_cali_dbias, PMU_HP_MODEM_HP_REGULATOR_DBIAS_S);
 	SET_PERI_REG_BITS(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS,
 			  lp_cali_dbias, PMU_HP_SLEEP_LP_REGULATOR_DBIAS_S);
-#endif /* !CONFIG_SOC_ESP32_ENABLE_PVT */
+#endif /* !CONFIG_SOC_ESP32_ENABLE_PVT && !CONFIG_SOC_SERIES_ESP32S31 */
 
-#if !defined(CONFIG_SOC_SERIES_ESP32P4)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32S31)
 	clk_ll_rc_fast_tick_conf();
 #endif
 	esp_rom_output_tx_wait_idle(0);
-#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C61)
+#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C61) &&                 \
+	!defined(CONFIG_SOC_SERIES_ESP32S31)
 	rtc_clk_xtal_freq_update(rtc_clk_cfg.xtal_freq);
 #endif
 
@@ -254,6 +273,20 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 					? (new_config.source != SOC_CPU_CLK_SRC_XTAL)
 					: (cpu_cfg->clk_src != ESP32_CLK_SRC_RC_FAST ||
 					   new_config.source != SOC_CPU_CLK_SRC_RC_FAST)))) {
+#elif defined(CONFIG_SOC_SERIES_ESP32S31)
+	/* S31 DT binding values (ESP32_CPU_CLK_SRC_*) don't match HAL
+	 * enums (SOC_CPU_CLK_SRC_*). The PLL marker covers both PLL
+	 * sources the HAL selects by frequency: CPLL (80/160/320 MHz)
+	 * and PLL_F240M (240 MHz). Map each DT value to its HAL
+	 * equivalent(s).
+	 */
+	if (!ret || (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL
+			     ? (new_config.source != SOC_CPU_CLK_SRC_CPLL &&
+				new_config.source != SOC_CPU_CLK_SRC_PLL_F240M)
+			     : (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_XTAL
+					? (new_config.source != SOC_CPU_CLK_SRC_XTAL)
+					: (cpu_cfg->clk_src != ESP32_CLK_SRC_RC_FAST ||
+					   new_config.source != SOC_CPU_CLK_SRC_RC_FAST)))) {
 #elif defined(CONFIG_SOC_SERIES_ESP32P4)
 	/*
 	 * P4 uses CPLL as its PLL source.
@@ -269,7 +302,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 		return -EINVAL;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_ESP32P4)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32S31)
 	bool keep_pll = (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_XTAL);
 
 	if (keep_pll) {
@@ -314,7 +347,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	}
 #endif
 
-#if !defined(CONFIG_SOC_SERIES_ESP32P4)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32S31)
 	if (keep_pll) {
 		rtc_clk_bbpll_remove_consumer();
 	}
@@ -356,7 +389,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 
 		esp_clk_tree_src_get_freq_hz(
 			UART_SCLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &uart_sclk_freq);
-#if defined(CONFIG_SOC_SERIES_ESP32C5)
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32S31)
 		esp_clk_tree_enable_src(UART_SCLK_DEFAULT, true);
 #endif
 		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_DEFAULT);
