@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip ADC G2
+
+description: |
+  Multi-shared-channel SAR ADC, ATDF module ADC id 03620, found on
+  PIC32CM SG/GC.
+
+  Only channels declared as devicetree child nodes are set up: the
+  channel set is fixed at init time, since CHNCFG4/5 raise a bus error
+  if written once the ADC is running and cannot be reconfigured.
+
+compatible: "microchip,adc-g2"
+
+include:
+  - name: base.yaml
+  - name: adc-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  nvm-calib:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the NVM calibration OTP area containing the factory
+      FCCFG65 calibration word.
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: '"global" (VREFRDY, core ready, FIFO flags) then "core0" (CHRDY).'
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: '"mclk" then "gclk".'
+
+  num-channels:
+    type: int
+    required: true
+    description: Number of analog inputs this instance reaches.
+
+  ctrl-clock-div:
+    type: int
+    default: 0
+    description: |
+      CTRLD.CTLCKDIV. The control clock is GCLK_ADC / (value + 1) and must
+      not exceed 72 MHz. Range 0 to 63.
+
+  adc-div-ratio:
+    type: int
+    default: 1
+    description: |
+      CORCTRL.ADCDIV. TAD is 2 * value * the control clock period.
+      Range 1 to 127.
+
+  adc-wkup-clock-count:
+    type: int
+    default: 11
+    description: |
+      CTRLD.WKUPEXP: the analog warm-up is 2^value TAD for value above 4,
+      16 TAD otherwise. The data sheet needs at least 50 us; 11 clears it at
+      the fastest TAD the part allows. Range 0 to 15.
+
+  sample-count:
+    type: int
+    default: 2
+    description: |
+      CORCTRL.SAMC, shared by every channel: the sampling window is
+      (value + 2) * TAD. Range 0 to 1023.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
