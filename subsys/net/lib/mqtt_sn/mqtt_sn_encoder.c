@@ -31,7 +31,7 @@ static int prepare_message(struct net_buf_simple *buf, size_t sz, enum mqtt_sn_m
 	/* add size of length field */
 	sz += (sz > 254 ? 3 : 1);
 
-	size_t maxlen = net_buf_simple_max_len(buf);
+	size_t maxlen = net_buf_simple_tailroom(buf);
 
 	LOG_DBG("Preparing message of type %d with size %zu", type, sz);
 
@@ -42,7 +42,8 @@ static int prepare_message(struct net_buf_simple *buf, size_t sz, enum mqtt_sn_m
 	}
 
 	if (sz > maxlen) {
-		LOG_ERR("Message of size %zu does not fit in buffer of length %zu", sz, maxlen);
+		LOG_ERR("Message of size %zu does not fit in the %zu bytes left in the buffer",
+			sz, maxlen);
 		return -ENOMEM;
 	}
 
