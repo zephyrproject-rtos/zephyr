@@ -8,6 +8,7 @@ config ZEPHYR_MBEDTLS_MODULE
 
 config MBEDTLS_PROMPTLESS
 	bool
+	imply PSA_PROMPTLESS
 	help
 	  Symbol to disable the prompt for MBEDTLS selection.
 	  This symbol may be used internally in a Kconfig tree to hide the

@@ -33,6 +33,12 @@ config PSA_CRYPTO_PROVIDER_CUSTOM
 
 endchoice # PSA_CRYPTO_PROVIDER
 
+config PSA_PROMPTLESS
+	bool
+	help
+	  Symbol for PSA Crypto providers with a fixed feature set to hide the
+	  configurable PSA feature prompts.
+
 config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 	bool
 	default y
