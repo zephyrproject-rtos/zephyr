@@ -223,3 +223,39 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&pktdma {
+	status = "okay";
+};
+
+&cpsw3g {
+	status = "okay";
+};
+
+&cpsw_port1 {
+	phy-handle = <&cpsw_phy1>;
+};
+
+&cpsw_port2 {
+	phy-handle = <&cpsw_phy2>;
+};
+
+&cpsw_mdio {
+	status = "okay";
+
+	cpsw_phy1: ethernet-phy@0 {
+		compatible = "ti,dp83867";
+		reg = <0>;
+		ti,interface-type = "rgmii-id";
+		ti,rx-internal-delay = <7>; /* 2 ns delay */
+		ti,tx-internal-delay = <0>; /* Delay added by MAC */
+	};
+
+	cpsw_phy2: ethernet-phy@1 {
+		compatible = "ti,dp83867";
+		reg = <1>;
+		ti,interface-type = "rgmii-id";
+		ti,rx-internal-delay = <7>; /* 2 ns delay */
+		ti,tx-internal-delay = <0>; /* Delay added by MAC */
+	};
+};

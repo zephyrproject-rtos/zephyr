@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_TI_AM62L_CPSW
+	bool "TI AM62L CPSW MDIO Driver"
+	default y
+	depends on DT_HAS_TI_AM62L_CPSW_MDIO_ENABLED
+	help
+	  Enable TI AM62L CPSW MDIO controller driver.

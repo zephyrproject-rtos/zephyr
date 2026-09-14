@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# Author: Siddharth Vadapalli <s-vadapalli@ti.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI AM62L CPSW MDIO controller
+
+compatible: "ti,am62l-cpsw-mdio"
+
+include: mdio-controller.yaml
