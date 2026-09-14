@@ -20,6 +20,8 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/time_units.h>
 
+#include <zephyr/kernel/internal/critical_section_monitor.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -152,11 +154,61 @@ static ALWAYS_INLINE void z_spinlock_validate_post(struct k_spinlock *l)
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
 	z_spin_lock_set_owner(l);
-#if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
-	l->lock_time = sys_clock_cycle_get_32();
-#endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
 #endif /* CONFIG_SPIN_VALIDATE */
 }
+
+/** @cond INTERNAL_HIDDEN */
+
+/* Share hold samples without making time-limit checks depend on monitor state. */
+static ALWAYS_INLINE void z_spinlock_timing_acquired(struct k_spinlock *l, unsigned int key)
+{
+#if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
+	uint32_t now = sys_clock_cycle_get_32();
+
+	l->lock_time = now;
+	z_critical_section_monitor_spin_acquired(l, key, now);
+#elif defined(CONFIG_CRITICAL_SECTION_MONITOR)
+	if (!z_critical_section_monitor_is_ready()) {
+		return;
+	}
+	z_critical_section_monitor_spin_acquired(l, key, sys_clock_cycle_get_32());
+#else
+	ARG_UNUSED(l);
+	ARG_UNUSED(key);
+#endif
+}
+
+/* Sample before release; only k_spin_unlock() checks the time limit. */
+static ALWAYS_INLINE uint32_t z_spinlock_timing_releasing(struct k_spinlock *l, bool check_limit)
+{
+	ARG_UNUSED(l);
+	ARG_UNUSED(check_limit);
+
+#if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
+	if (!check_limit && !z_critical_section_monitor_is_ready()) {
+		return 0U;
+	}
+	uint32_t now = sys_clock_cycle_get_32();
+
+	if (check_limit) {
+		uint32_t delta = now - l->lock_time;
+
+		__ASSERT(delta < CONFIG_SPIN_LOCK_TIME_LIMIT,
+			 "Spin lock %p held %u cycles, longer than limit of %u cycles",
+			 l, delta, CONFIG_SPIN_LOCK_TIME_LIMIT);
+	}
+	return now;
+#elif defined(CONFIG_CRITICAL_SECTION_MONITOR)
+	if (!z_critical_section_monitor_is_ready()) {
+		return 0U;
+	}
+	return sys_clock_cycle_get_32();
+#else
+	return 0U;
+#endif
+}
+
+/** @endcond */
 
 /**
  * @brief Lock a spinlock
@@ -200,6 +252,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	 */
 	k.key = arch_irq_lock();
 
+	z_spinlock_timing_attempt(l, k.key);
 	z_spinlock_validate_pre(l);
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
@@ -221,7 +274,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #endif /* CONFIG_SMP */
 	z_spinlock_validate_post(l);
-
+	z_spinlock_timing_acquired(l, k.key);
 	return k;
 }
 
@@ -243,6 +296,7 @@ static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l, k_spinlock_key_t *
 {
 	int key = arch_irq_lock();
 
+	z_spinlock_timing_attempt(l, key);
 	z_spinlock_validate_pre(l);
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
@@ -276,13 +330,14 @@ static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l, k_spinlock_key_t *
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #endif /* CONFIG_SMP */
 	z_spinlock_validate_post(l);
-
+	z_spinlock_timing_acquired(l, key);
 	k->key = key;
 
 	return 0;
 
 #ifdef CONFIG_SMP
 busy:
+	z_spinlock_timing_abort(l, key);
 	arch_irq_unlock(key);
 	return -EBUSY;
 #endif /* CONFIG_SMP */
@@ -315,15 +370,8 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
-
-#if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
-	uint32_t delta = sys_clock_cycle_get_32() - l->lock_time;
-
-	__ASSERT(delta < CONFIG_SPIN_LOCK_TIME_LIMIT,
-		 "Spin lock %p held %u cycles, longer than limit of %u cycles",
-		 l, delta, CONFIG_SPIN_LOCK_TIME_LIMIT);
-#endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
 #endif /* CONFIG_SPIN_VALIDATE */
+	uint32_t now = z_spinlock_timing_releasing(l, true);
 
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
@@ -340,6 +388,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	(void)atomic_clear(&l->locked);
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #endif /* CONFIG_SMP */
+	z_spinlock_timing_unlocked(l, key.key, now);
 	arch_irq_unlock(key.key);
 }
 
@@ -381,6 +430,8 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 #endif
+	uint32_t now = z_spinlock_timing_releasing(l, false);
+
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
 	(void)atomic_inc(&l->owner);
@@ -388,6 +439,7 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 	(void)atomic_clear(&l->locked);
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #endif /* CONFIG_SMP */
+	z_spinlock_timing_released(l, now);
 }
 
 #if defined(CONFIG_SPIN_VALIDATE) && defined(__GNUC__)

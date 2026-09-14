@@ -110,6 +110,7 @@ These pages cover timing related services.
    :maxdepth: 1
 
    timing/clocks.rst
+   timing/critical_section_monitor.rst
    timing/timers.rst
    timing/system_timer_drivers.rst
 
