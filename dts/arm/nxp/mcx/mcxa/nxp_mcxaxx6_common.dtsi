@@ -490,6 +490,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC1_CLK>;
+			power-domains = <&core_domain>;
 			/* In deep sleep mode, the hardware allows the converter to keep
 			 * running there (CTRL[DOZEN] = 0, bus clock gated, hardware
 			 * trigger and compare wakeup still live): that only holds while
@@ -520,6 +521,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC2_CLK>;
+			power-domains = <&core_domain>;
 			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
@@ -537,6 +539,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC3_CLK>;
+			power-domains = <&core_domain>;
 			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
@@ -554,6 +557,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC4_CLK>;
+			power-domains = <&core_domain>;
 			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
