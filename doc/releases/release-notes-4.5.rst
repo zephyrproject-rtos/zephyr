@@ -1571,6 +1571,7 @@ New Drivers
 * Relay
 
   * :dtcompatible:`zephyr,gpio-relay`
+  * :dtcompatible:`zephyr,pwm-relay`
 
 * Reset controller
 
