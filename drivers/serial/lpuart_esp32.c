@@ -13,7 +13,7 @@
 
 #include <hal/uart_hal.h>
 #if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32C5_HPCORE) ||                    \
-	defined(CONFIG_SOC_ESP32P4_HPCORE)
+	defined(CONFIG_SOC_ESP32P4_HPCORE) || defined(CONFIG_SOC_ESP32S31_HPCORE)
 #include <hal/uart_ll.h>
 #include <hal/clk_tree_ll.h>
 #include <hal/clk_tree_hal.h>
@@ -289,7 +289,7 @@ static void lp_uart_esp32_isr(void *arg)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32C5_HPCORE) ||                    \
-	defined(CONFIG_SOC_ESP32P4_HPCORE)
+	defined(CONFIG_SOC_ESP32P4_HPCORE) || defined(CONFIG_SOC_ESP32S31_HPCORE)
 
 static int lp_uart_esp32_param_config(const struct device *dev)
 {
@@ -318,6 +318,16 @@ static int lp_uart_esp32_param_config(const struct device *dev)
 
 	/* Initialize the controller to normal UART mode with default parameters */
 	uart_hal_init(&data->hal, 0);
+#elif CONFIG_SOC_SERIES_ESP32S31
+	/* The LP UART selects XTAL directly, so the baud rate does not depend on
+	 * the uncalibrated RC_FAST default.
+	 */
+	sclk_freq = clk_hal_xtal_get_freq_mhz() * MHZ(1);
+
+	lp_uart_ll_enable_bus_clock(0, true);
+	lp_uart_ll_reset_register(0);
+	lp_uart_ll_set_source_clk(data->hal.dev, LP_UART_SCLK_XTAL);
+	lp_uart_ll_sclk_enable(0);
 #else
 	/* Get LP UART source clock frequency */
 	switch (clk_ll_rtc_fast_get_src()) {
@@ -443,7 +453,7 @@ static int lp_uart_esp32_init(const struct device *dev)
 	return 0;
 }
 
-#endif /* CONFIG_SOC_ESP32C6_HPCORE || CONFIG_SOC_ESP32C5_HPCORE || CONFIG_SOC_ESP32P4_HPCORE */
+#endif /* HP core LP UART setup */
 
 static DEVICE_API(uart, lp_uart_esp32_api) = {
 	.poll_in = lp_uart_esp32_poll_in,
@@ -493,7 +503,7 @@ static const struct lp_uart_esp32_config lp_uart_esp32_cfg = {
 };
 
 #if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32C5_HPCORE) ||                    \
-	defined(CONFIG_SOC_ESP32P4_HPCORE)
+	defined(CONFIG_SOC_ESP32P4_HPCORE) || defined(CONFIG_SOC_ESP32S31_HPCORE)
 #define LP_UART_ESP32_INIT_FUNC lp_uart_esp32_init
 #else
 #define LP_UART_ESP32_INIT_FUNC NULL

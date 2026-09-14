@@ -540,6 +540,10 @@ int pwm_led_esp32_init(const struct device *dev)
 					     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
 					     &channel->clock_src_hz);
 
+		ledc_ll_enable_timer_power(data->hal.dev, channel->speed_mode, channel->timer_num,
+					   true);
+		ledc_ll_enable_channel_power(data->hal.dev, channel->speed_mode,
+					     channel->channel_num, true);
 		ledc_hal_bind_channel_timer(&data->hal, channel->speed_mode, channel->channel_num,
 					    channel->timer_num);
 		pwm_led_esp32_stop(data, channel, channel->inverted);
