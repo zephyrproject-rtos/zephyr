@@ -105,7 +105,6 @@ kobjects = OrderedDict(
         ("device", (None, False, False)),
         ("NET_SOCKET", (None, False, False)),
         ("net_if", (None, False, False)),
-        ("sys_mutex", ("CONFIG_SYS_MUTEX_IMPL_K_MUTEX", True, False)),
         ("k_futex", (None, True, False)),
         ("k_condvar", (None, False, True)),
         ("k_event", ("CONFIG_EVENTS", False, True)),
@@ -201,7 +200,6 @@ DW_OP_fbreg = 0x91
 DW_OP_addrx = 0xA1
 STACK_TYPE = "z_thread_stack_element"
 thread_counter = 0
-sys_mutex_counter = 0
 futex_counter = 0
 stack_counter = 0
 
@@ -574,17 +572,11 @@ def device_get_api_addr(elf, addr):
 
 def find_kobjects(elf, syms):
     global thread_counter
-    global sys_mutex_counter
     global futex_counter
     global stack_counter
 
     if not elf.has_dwarf_info():
         sys.exit("ELF file has no DWARF information")
-
-    # sys_mutex should only be considered a kobject if it is implemented
-    # via k_mutex
-    if "CONFIG_SYS_MUTEX_IMPL_K_MUTEX" not in syms:
-        del kobjects["sys_mutex"]
 
     app_smem_start = syms["_app_smem_start"]
     app_smem_end = syms["_app_smem_end"]
@@ -728,9 +720,6 @@ def find_kobjects(elf, syms):
             # permissions to other kernel objects
             ko.data = thread_counter
             thread_counter = thread_counter + 1
-        elif ko.type_obj.name == "sys_mutex":
-            ko.data = f"&kernel_mutexes[{sys_mutex_counter}]"
-            sys_mutex_counter += 1
         elif ko.type_obj.name == "k_futex":
             ko.data = f"&futex_data[{futex_counter}]"
             futex_counter += 1
@@ -826,14 +815,6 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 
 def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
     fp.write(header)
-    if sys_mutex_counter != 0:
-        fp.write(f"static struct k_mutex kernel_mutexes[{sys_mutex_counter}] = {{\n")
-        for i in range(sys_mutex_counter):
-            fp.write(f"Z_MUTEX_INITIALIZER(kernel_mutexes[{i}])")
-            if i != sys_mutex_counter - 1:
-                fp.write(", ")
-        fp.write("};\n")
-
     if futex_counter != 0:
         fp.write(f"static struct z_futex_data futex_data[{futex_counter}] = {{\n")
         for i in range(futex_counter):
@@ -846,9 +827,6 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
         "K_OBJ_THREAD": "thread_id",
         "K_OBJ_FUTEX": "futex_data",
     }
-
-    if "CONFIG_SYS_MUTEX_IMPL_K_MUTEX" in syms:
-        metadata_names["K_OBJ_SYS_MUTEX"] = "mutex"
 
     if "CONFIG_GEN_PRIV_STACKS" in syms:
         metadata_names["K_OBJ_THREAD_STACK_ELEMENT"] = "stack_data"

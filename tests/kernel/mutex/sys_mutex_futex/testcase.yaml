@@ -1,6 +1,6 @@
 tests:
   kernel.mutex.system.futex:
-    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_SYS_MUTEX_IMPL_FUTEX
+    filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude:
       - posix
     tags:

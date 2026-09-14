@@ -22,7 +22,7 @@ static K_THREAD_STACK_DEFINE(thread_high_stack1, STACKSIZE);
 static struct k_thread thread_high_data1;
 static K_THREAD_STACK_DEFINE(thread_high_stack2, STACKSIZE);
 static struct k_thread thread_high_data2;
-SYS_MUTEX_DEFINE(mutex);
+SYS_MUTEX_DEFINE_EXT(mutex, K_MUTEX_PRIO_INHERIT);
 static uint32_t flag[3];
 
 /* The order of threads getting mutex is judged by index

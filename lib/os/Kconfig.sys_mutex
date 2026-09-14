@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_MUTEX_PRIO_INHERIT
+	bool "Priority inheritance for sys_mutex"
+	depends on MULTITHREADING
+	select MUTEX_OPTIONS
+	select SYS_ELASTIPOOL
+	select SYS_HASH_MAP
+	select SYS_HASH_FUNC32
+	help
+	  Support the K_MUTEX_PRIO_INHERIT option of sys_mutex_init_ext() and
+	  SYS_MUTEX_DEFINE_EXT(). Such a mutex is backed by a kernel mutex that
+	  the kernel associates with the address of the user object, so every
+	  operation on it is a system call and the owner inherits the priority
+	  of the highest-priority waiter.
+
+if SYS_MUTEX_PRIO_INHERIT
+
+config SYS_MUTEX_PRIO_INHERIT_MIN
+	int "Minimum number of priority-inheritance sys_mutex objects"
+	default 0
+	help
+	  Number of kernel mutexes statically reserved for backing
+	  priority-inheritance sys_mutex objects.
+
+config SYS_MUTEX_PRIO_INHERIT_MAX
+	int "Maximum number of priority-inheritance sys_mutex objects"
+	default SYS_MUTEX_PRIO_INHERIT_MIN
+	help
+	  Maximum number of priority-inheritance sys_mutex objects in use at
+	  once. Backing kernel mutexes beyond SYS_MUTEX_PRIO_INHERIT_MIN come
+	  from the kernel heap.
+
+endif # SYS_MUTEX_PRIO_INHERIT

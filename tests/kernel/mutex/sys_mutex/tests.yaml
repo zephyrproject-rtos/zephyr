@@ -1,6 +1,8 @@
+common:
+  ignore_faults: true
 tests:
-  kernel.mutex.system.k_mutex:
-    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_SYS_MUTEX_IMPL_K_MUTEX
+  kernel.mutex.system:
+    filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude:
       - posix
     tags:

@@ -61,6 +61,9 @@ not_cancellation_points = {
     "k_futex_wake",         # like sem_post(), pthread_cond_signal(), pthread_mutex_unlock()
     "k_mutex_lock",         # like pthread_mutex_lock()
     "k_mutex_unlock",       # like pthread_mutex_unlock()
+    "z_sys_mutex_kernel_lock",
+    "z_sys_mutex_kernel_unlock",
+    "z_sys_mutex_kernel_destroy",
     "k_sem_give",           # like sem_post()
     "k_sig_action",         # like sigaction(); in both lists
     "k_sig_mask",           # like pthread_sigmask(), sigprocmask()

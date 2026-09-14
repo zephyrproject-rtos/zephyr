@@ -48,25 +48,26 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/ztest_error_hook.h>
 #include <zephyr/sys/mutex.h>
 
 #define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static ZTEST_DMEM int tc_rc = TC_PASS;         /* test case return code */
 
-ZTEST_BMEM SYS_MUTEX_DEFINE(private_mutex);
+ZTEST_DMEM SYS_MUTEX_DEFINE_EXT(private_mutex, K_MUTEX_PRIO_INHERIT);
 
 
-ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_1);
-ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_2);
-ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_3);
-ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_4);
+ZTEST_DMEM SYS_MUTEX_DEFINE_EXT(mutex_1, K_MUTEX_PRIO_INHERIT);
+ZTEST_DMEM SYS_MUTEX_DEFINE_EXT(mutex_2, K_MUTEX_PRIO_INHERIT);
+ZTEST_DMEM SYS_MUTEX_DEFINE_EXT(mutex_3, K_MUTEX_PRIO_INHERIT);
+ZTEST_DMEM SYS_MUTEX_DEFINE_EXT(mutex_4, K_MUTEX_PRIO_INHERIT);
 
 #ifdef CONFIG_USERSPACE
-static SYS_MUTEX_DEFINE(no_access_mutex);
+static SYS_MUTEX_DEFINE_EXT(no_access_mutex, K_MUTEX_PRIO_INHERIT);
 #endif
-static ZTEST_BMEM SYS_MUTEX_DEFINE(not_my_mutex);
-static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
+static ZTEST_DMEM SYS_MUTEX_DEFINE_EXT(not_my_mutex, K_MUTEX_PRIO_INHERIT);
+static ZTEST_DMEM SYS_MUTEX_DEFINE_EXT(bad_count_mutex, K_MUTEX_PRIO_INHERIT);
 
 #ifdef CONFIG_USERSPACE
 #define ZTEST_USER_OR_NOT ZTEST_USER
@@ -437,27 +438,9 @@ ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
 	TC_PRINT("Recursive locking tests successful\n");
 }
 
-/* We deliberately disable userspace, even on platforms that
- * support it, so that the alternate implementation of sys_mutex
- * (which is just a very thin wrapper to k_mutex) is exercised.
- * This requires us to not attempt to start the tests in user
- * mode, as this will otherwise fail an assertion in the thread code.
- */
 ZTEST(mutex_complex, test_supervisor_access)
 {
 	int rv;
-
-#ifdef CONFIG_USERSPACE
-	/* coverage for get_k_mutex checks */
-	rv = sys_mutex_lock((struct sys_mutex *)NULL, K_NO_WAIT);
-	zassert_true(rv == -EINVAL, "accepted bad mutex pointer");
-	rv = sys_mutex_lock((struct sys_mutex *)k_current_get(), K_NO_WAIT);
-	zassert_true(rv == -EINVAL, "accepted object that was not a mutex");
-	rv = sys_mutex_unlock((struct sys_mutex *)NULL);
-	zassert_true(rv == -EINVAL, "accepted bad mutex pointer");
-	rv = sys_mutex_unlock((struct sys_mutex *)k_current_get());
-	zassert_true(rv == -EINVAL, "accepted object that was not a mutex");
-#endif /* CONFIG_USERSPACE */
 
 	rv = sys_mutex_unlock(&not_my_mutex);
 	zassert_true(rv == -EPERM, "unlocked a mutex that wasn't owner");
@@ -468,12 +451,10 @@ ZTEST(mutex_complex, test_supervisor_access)
 ZTEST_USER_OR_NOT(mutex_complex, test_user_access)
 {
 #ifdef CONFIG_USERSPACE
-	int rv;
-
-	rv = sys_mutex_lock(&no_access_mutex, K_NO_WAIT);
-	zassert_true(rv == -EACCES, "accessed mutex not in memory domain");
-	rv = sys_mutex_unlock(&no_access_mutex);
-	zassert_true(rv == -EACCES, "accessed mutex not in memory domain");
+	/* the object itself is read before the kernel is entered */
+	ztest_set_fault_valid(true);
+	(void)sys_mutex_lock(&no_access_mutex, K_NO_WAIT);
+	ztest_test_fail();
 #else
 	ztest_test_skip();
 #endif /* CONFIG_USERSPACE */

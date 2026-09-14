@@ -193,8 +193,11 @@ management mechanism.
 User Mode Mutex API Reference
 *****************************
 
-:c:struct:`sys_mutex` behaves almost exactly like :c:struct:`k_mutex`, with the added advantage
-that a :c:struct:`sys_mutex` instance can reside in user memory. When user mode isn't
-enabled, :c:struct:`sys_mutex` behaves like :c:struct:`k_mutex`.
+A :c:struct:`sys_mutex` resides in user memory and is locked and unlocked with atomic
+operations on the object itself; the kernel is entered only to block on a
+contended mutex or to wake a waiter. A mutex created with
+:c:macro:`K_MUTEX_PRIO_INHERIT` is backed by a kernel mutex instead, so that
+its owner inherits the priority of the highest-priority waiter
+(:kconfig:option:`CONFIG_SYS_MUTEX_PRIO_INHERIT`).
 
 .. doxygengroup:: user_mutex_apis

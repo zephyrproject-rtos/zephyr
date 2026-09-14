@@ -3474,6 +3474,12 @@ struct k_lifo {
 #define K_MUTEX_ERRORCHECK 2
 
 /**
+ * Mutex option for priority inheritance: always in effect for a k_mutex, selects the
+ * kernel-backed implementation of a sys_mutex.
+ */
+#define K_MUTEX_PRIO_INHERIT BIT(3)
+
+/**
  * @brief Get an element from a LIFO queue.
  *
  * This routine removes a data item from @a LIFO in a "last in, first out"
