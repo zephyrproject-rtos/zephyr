@@ -170,7 +170,9 @@ static int fixed_rate_clk_init(const struct device *dev)
 		/* "touch" err to avoid a warning with asserts turned off */
 		ARG_UNUSED(err);
 		__ASSERT(err == CY_SYSCLK_SUCCESS, "Invalid clock selection");
+#if defined(CY_IP_M0S8WCO)
 		Cy_SysClk_ImoLock(CY_SYSCLK_IMO_LOCK_NONE);
+#endif
 		SystemCoreClockUpdate();
 #endif
 		break;
