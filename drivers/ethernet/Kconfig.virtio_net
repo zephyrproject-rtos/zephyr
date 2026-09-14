@@ -31,7 +31,7 @@ config ETH_VIRTIO_NET_MULTICAST_FILTER
 	  interface are programmed into the MAC table of the device with its
 	  receive filter commands, so only multicast sent to those addresses
 	  is delivered. This needs the VIRTIO_NET_F_CTRL_RX feature of the
-	  device. If disabled, the feature is not negotiated and the device
-	  delivers all multicast frames.
+	  device. If disabled, the device is asked to deliver all multicast
+	  frames instead.
 
 endif
