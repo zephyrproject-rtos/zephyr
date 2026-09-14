@@ -265,7 +265,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	for (size_t i = 0; i < ARRAY_SIZE(hal->hw->data_buf); ++i) {
 #if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C61) ||                   \
 	defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2) ||                \
-	defined(CONFIG_SOC_SERIES_ESP32P4)
+	defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
 		hal->hw->data_buf[i].val = 0;
 #else
 		hal->hw->data_buf[i] = 0;
