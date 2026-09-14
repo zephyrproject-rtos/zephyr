@@ -8,8 +8,8 @@ arch: arm
 toolchain:
   - gnuarmemb
   - zephyr
-ram: 192
-flash: 1012
+ram: 96
+flash: 556
 supported:
   - adc
   - gpio
