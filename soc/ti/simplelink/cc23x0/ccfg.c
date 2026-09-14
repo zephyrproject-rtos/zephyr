@@ -24,7 +24,7 @@
 #define CC23X0_BLDR_VTOR CC23_CCFG_FLASH_PROP(ti_bldr_vtor_flash)
 #endif
 
-#define CC23X0_P_APP_VTOR DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
+#define CC23X0_P_APP_VTOR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 
 #if CC23_CCFG_FLASH_PROP(ti_chip_erase) == 0
 #warning ti,chip-erase property is NOT PRESENT in your device tree, \
