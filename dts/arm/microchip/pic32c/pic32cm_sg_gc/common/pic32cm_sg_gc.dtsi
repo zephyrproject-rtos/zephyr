@@ -253,6 +253,23 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		/*
+		 * The analog comparator block. Both comparators live behind
+		 * one register file, one clock pair and one interrupt, so the
+		 * block is the node and the comparators are its children.
+		 */
+		ac0: ac@4482a000 {
+			compatible = "microchip,ac-g2";
+			reg = <0x4482a000 0x40>;
+			interrupts = <132 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_AC>;
+			clock-names = "mclk", "gclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 
