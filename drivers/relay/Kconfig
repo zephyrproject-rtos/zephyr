@@ -21,4 +21,6 @@ config RELAY_SHELL
 	  Enable shell commands to turn relays on and off and to read back their
 	  state, for any relay device in the system.
 
+source "drivers/relay/Kconfig.gpio"
+
 endif # RELAY
