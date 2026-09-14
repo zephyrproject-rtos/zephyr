@@ -606,10 +606,6 @@ static void uart_esp32_irq_rx_disable(const struct device *dev)
 
 	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
 	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
-
-#ifdef CONFIG_PM
-	uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
-#endif
 }
 
 static int uart_esp32_irq_tx_complete(const struct device *dev)
@@ -691,10 +687,6 @@ static inline void uart_esp32_async_timer_start(struct k_work_delayable *work, s
 static void uart_esp32_irq_rx_enable(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
-
-#ifdef CONFIG_PM
-	uart_esp32_pm_policy_state_lock_get(dev, RX_INT);
-#endif
 
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_FULL);
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
@@ -1140,6 +1132,10 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	 */
 	uart_hal_set_rxfifo_full_thr(&data->hal, 1);
 	uart_esp32_irq_rx_enable(dev);
+
+#ifdef CONFIG_PM
+	uart_esp32_pm_policy_state_lock_get(dev, RX_INT);
+#endif
 
 	err = dma_start(config->dma_dev, config->rx_dma_channel);
 	if (err) {
