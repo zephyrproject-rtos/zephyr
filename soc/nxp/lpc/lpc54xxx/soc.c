@@ -202,6 +202,15 @@ __weak void clock_init(void)
 			(CPU_FREQ / FSL_FEATURE_SDIF_MAX_SOURCE_CLOCK) + 1U, true);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay)
+	/*
+	 * The DMIC functional clock is the PDM bit clock: 12 MHz FRO divided by
+	 * 6 gives 2 MHz, within the range the on-board microphone supports.
+	 */
+	CLOCK_AttachClk(kFRO12M_to_DMIC);
+	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 6, false);
+#endif
+
 	/*
 	 * The M_CAN functional clock is the core clock divided by CANnCLKDIV,
 	 * which is halted out of reset. Divide by 11 -> 20 MHz at a 220 MHz

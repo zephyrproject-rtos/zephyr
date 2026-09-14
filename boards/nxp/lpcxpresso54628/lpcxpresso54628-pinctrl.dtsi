@@ -79,4 +79,13 @@
 			slew-rate = "standard";
 		};
 	};
+
+	/* On-board digital microphone: DMIC channel 1 clock/data (P1_2/P1_3). */
+	pinmux_dmic: pinmux_dmic {
+		group0 {
+			pinmux = <DMIC0_CLK1_PIO1_2>,
+				 <DMIC0_DATA1_PIO1_3>;
+			slew-rate = "standard";
+		};
+	};
 };
