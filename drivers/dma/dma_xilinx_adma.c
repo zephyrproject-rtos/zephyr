@@ -10,6 +10,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_xilinx_adma.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -33,6 +34,8 @@
 /* Control 0 register bit field definitions */
 #define XILINX_ADMA_OVR_FETCH     BIT(7)
 #define XILINX_ADMA_POINT_TYPE_SG BIT(6)
+#define XILINX_ADMA_MODE_MASK     GENMASK(5, 4)
+#define XILINX_ADMA_WRONLY_MASK   BIT(4)
 #define XILINX_ADMA_RATE_CTRL_EN  BIT(3)
 
 /* Control 1 register bit field definitions */
@@ -440,6 +443,12 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	if (dma_cfg->channel_direction == XILINX_ADMA_DIR_WRITE_ONLY &&
+	    (dma_cfg->head_block->next_block || current_block->source_address == 0)) {
+		LOG_ERR("Write-only mode requires a single block with a non-NULL pattern buffer");
+		return -EINVAL;
+	}
+
 	key = k_spin_lock(&data->lock);
 
 	if (!data->device_has_been_reset) {
@@ -526,6 +535,9 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 
 		val = adma_read_reg(&reg->chan_cntrl0);
 		val &= ~XILINX_ADMA_POINT_TYPE_SG;
+		if (dma_cfg->channel_direction == XILINX_ADMA_DIR_WRITE_ONLY) {
+			val = (val & ~XILINX_ADMA_MODE_MASK) | XILINX_ADMA_WRONLY_MASK;
+		}
 		adma_write_reg(val, &reg->chan_cntrl0);
 	}
 
@@ -557,14 +569,33 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 		adma_write_reg((dst_desc_addr >> XILINX_ADMA_WORD1_MSB_SHIFT),
 			       &reg->chan_dstdesc_msb);
 	} else {
-		adma_write_reg(((data->chan.src_addr) & XILINX_ADMA_WORD0_LSB_MASK),
-			       &reg->chan_srcdscr_wrd0);
-		addr = (uint64_t)data->chan.src_addr;
-		adma_write_reg(((addr >> XILINX_ADMA_WORD1_MSB_SHIFT) & XILINX_ADMA_WORD1_MSB_MASK),
-			       &reg->chan_srcdscr_wrd1);
+		if (dma_cfg->channel_direction == XILINX_ADMA_DIR_WRITE_ONLY) {
+			/*
+			 * In write-only mode there is no real source address: the
+			 * block's source_address instead points at an 8-byte (2 x
+			 * uint32_t) pattern buffer that the hardware repeatedly
+			 * writes to the destination. The pattern is duplicated into
+			 * all 4 WR_ONLY words since the hardware's repeat unit is
+			 * 16 bytes; leaving word2/3 unwritten corrupts every other
+			 * 8-byte half of the destination.
+			 */
+			uint32_t *pattern = (uint32_t *)(uintptr_t)data->chan.src_addr;
 
-		adma_write_reg(((data->chan.block) & XILINX_ADMA_WORD2_SIZE_MASK),
-			       &reg->chan_srcdscr_wrd2);
+			adma_write_reg(pattern[0], &reg->chan_wronly_wrd0);
+			adma_write_reg(pattern[1], &reg->chan_wronly_wrd1);
+			adma_write_reg(pattern[0], &reg->chan_wronly_wrd2);
+			adma_write_reg(pattern[1], &reg->chan_wronly_wrd3);
+		} else {
+			adma_write_reg(((data->chan.src_addr) & XILINX_ADMA_WORD0_LSB_MASK),
+				       &reg->chan_srcdscr_wrd0);
+			addr = (uint64_t)data->chan.src_addr;
+			adma_write_reg(((addr >> XILINX_ADMA_WORD1_MSB_SHIFT) &
+					XILINX_ADMA_WORD1_MSB_MASK),
+				       &reg->chan_srcdscr_wrd1);
+
+			adma_write_reg(((data->chan.block) & XILINX_ADMA_WORD2_SIZE_MASK),
+				       &reg->chan_srcdscr_wrd2);
+		}
 
 		adma_write_reg(((data->chan.dst_addr) & XILINX_ADMA_WORD0_LSB_MASK),
 			       &reg->chan_dstdscr_wrd0);
@@ -580,7 +611,9 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 			val |= XILINX_ADMA_DESC_CTRL_COHRNT;
 		}
 
-		adma_write_reg(val, &reg->chan_srcdscr_wrd3);
+		if (dma_cfg->channel_direction != XILINX_ADMA_DIR_WRITE_ONLY) {
+			adma_write_reg(val, &reg->chan_srcdscr_wrd3);
+		}
 		adma_write_reg(val, &reg->chan_dstdscr_wrd3);
 	}
 
