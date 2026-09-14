@@ -106,7 +106,7 @@ endchoice
 
 endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 
-if DT_HAS_NXP_XSPI_PSRAM_ENABLED
+if DT_HAS_NXP_XSPI_ENABLED
 
 config MEMC_MCUX_XSPI_INIT_XIP
 	bool "Initialize XSPI when using device for XIP"
@@ -118,15 +118,19 @@ config MEMC_MCUX_XSPI_INIT_XIP
 	  used for the XSPI are compatible with those needed for XIP from
 	  the flash device.
 
+config MEMC_MCUX_XSPI
+	bool
+	select PINCTRL
+
+endif # DT_HAS_NXP_XSPI_ENABLED
+
+if DT_HAS_NXP_XSPI_PSRAM_ENABLED
+
 config MEMC_MCUX_XSPI_PSRAM
 	bool "MCUX XSPI psram driver"
 	default y
 	select MEMC_MCUX_XSPI
 	help
 	  Enable the mcux xspi psram driver.
-
-config MEMC_MCUX_XSPI
-	bool
-	select PINCTRL
 
 endif # DT_HAS_NXP_XSPI_PSRAM_ENABLED
