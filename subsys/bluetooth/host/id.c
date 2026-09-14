@@ -1433,6 +1433,21 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 	return new_id;
 }
 
+static void id_conn_disconnect(struct bt_conn *conn, void *data)
+{
+	const uint8_t *id = data;
+	int err;
+
+	if (conn->id != *id) {
+		return;
+	}
+
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0 && err != -ENOTCONN) {
+		LOG_WRN("Failed to disconnect %p (err %d)", conn, err);
+	}
+}
+
 int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
 	int err;
@@ -1477,6 +1492,11 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 		}
 	}
 
+	/* bt_unpair() only disconnects bonded peers */
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		bt_conn_foreach(BT_CONN_TYPE_LE, id_conn_disconnect, &id);
+	}
+
 	err = id_create(id, addr, irk);
 	if (err) {
 		return err;
@@ -1514,6 +1534,11 @@ int bt_id_delete(uint8_t id)
 		if (err) {
 			return err;
 		}
+	}
+
+	/* bt_unpair() only disconnects bonded peers */
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		bt_conn_foreach(BT_CONN_TYPE_LE, id_conn_disconnect, &id);
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
