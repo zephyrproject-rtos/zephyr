@@ -10,11 +10,16 @@
 #include <esp_rom_sys.h>
 #include <hal/rtc_timer_ll.h>
 
-#if defined(SOC_RTC_TIMER_V2) && SOC_RTC_TIMER_V2
+#if (defined(SOC_RTC_TIMER_V2) && SOC_RTC_TIMER_V2) ||                                             \
+	(defined(SOC_RTC_TIMER_V3) && SOC_RTC_TIMER_V3)
 #define SOC_HAS_LP_TIMER 1
+#if defined(SOC_RTC_TIMER_V3) && SOC_RTC_TIMER_V3
+#include <soc/rtc_timer_struct.h>
+#else
 #include <soc/lp_timer_struct.h>
+#endif
 #if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C61) ||                   \
-	defined(CONFIG_SOC_SERIES_ESP32P4)
+	defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
 #define LP_TIMER_INT_ST_ALARM LP_TIMER.int_st.soc_wakeup_int_st
 #else
 #define LP_TIMER_INT_ST_ALARM LP_TIMER.int_st.alarm

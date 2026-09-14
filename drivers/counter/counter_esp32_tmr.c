@@ -161,7 +161,7 @@ static int counter_esp32_init(const struct device *dev)
 	timg_ll_enable_bus_clock(cfg->group, true);
 
 	/* Take a reference on the source so its PLL branch is ungated */
-#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
 	esp_clk_tree_enable_src(GPTIMER_CLK_SRC_DEFAULT, true);
 #endif
 
