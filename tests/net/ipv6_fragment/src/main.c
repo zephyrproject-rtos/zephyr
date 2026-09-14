@@ -2296,10 +2296,54 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	return NET_OK;
 }
 
+/* Builds a fragment from an IPv6 plus fragment header template followed by
+ * payload_len bytes of a running counter, positioned for
+ * net_ipv6_handle_fragment_hdr(). Copies the IPv6 header to hdr.
+ */
+static struct net_pkt *build_reass_fragment(const uint8_t *tmpl, size_t tmpl_len,
+					    uint16_t payload_len, uint8_t *data,
+					    struct net_ipv6_hdr *hdr)
+{
+	struct net_pkt_cursor backup;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_alloc_with_buffer(iface1, tmpl_len + payload_len,
+					NET_AF_UNSPEC, 0, ALLOC_TIMEOUT);
+	zassert_not_null(pkt, "packet");
+
+	net_pkt_set_family(pkt, NET_AF_INET6);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_cursor_init(pkt);
+
+	memcpy(hdr, tmpl, sizeof(struct net_ipv6_hdr));
+
+	ret = net_pkt_write(pkt, tmpl, sizeof(struct net_ipv6_hdr) + 1);
+	zassert_true(ret == 0, "IPv6 header append failed");
+
+	net_pkt_cursor_backup(pkt, &backup);
+
+	ret = net_pkt_write(pkt, tmpl + sizeof(struct net_ipv6_hdr) + 1,
+			    tmpl_len - sizeof(struct net_ipv6_hdr) - 1);
+	zassert_true(ret == 0, "IPv6 fragment header append failed");
+
+	while (payload_len--) {
+		ret = net_pkt_write_u8(pkt, (*data)++);
+		zassert_true(ret == 0, "IPv6 payload append failed");
+	}
+
+	net_pkt_set_ipv6_hdr_prev(pkt, offsetof(struct net_ipv6_hdr, nexthdr));
+	net_pkt_set_ipv6_fragment_start(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_overwrite(pkt, true);
+
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return pkt;
+}
+
 ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 {
 	struct net_ipv6_hdr ipv6_hdr;
-	struct net_pkt_cursor backup;
 	struct net_pkt *pkt1;
 	struct net_pkt *pkt2;
 	uint16_t payload1_len;
@@ -2313,83 +2357,19 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
 
-	/* Fragment 1 */
 	data = 0U;
 	payload1_len = NET_IPV6_MTU - sizeof(ipv6_reass_frag1);
 	payload2_len = test_recv_payload_len - payload1_len;
 
-	pkt1 = net_pkt_alloc_with_buffer(iface1, NET_IPV6_MTU, NET_AF_UNSPEC,
-					 0, ALLOC_TIMEOUT);
-	zassert_not_null(pkt1, "packet");
-
-	net_pkt_set_family(pkt1, NET_AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt1, sizeof(struct net_ipv6_hdr));
-	net_pkt_cursor_init(pkt1);
-
-	memcpy(&ipv6_hdr, ipv6_reass_frag1, sizeof(struct net_ipv6_hdr));
-
-	ret = net_pkt_write(pkt1, ipv6_reass_frag1,
-			    sizeof(struct net_ipv6_hdr) + 1);
-	zassert_true(ret == 0, "IPv6 header append failed");
-
-	net_pkt_cursor_backup(pkt1, &backup);
-
-	ret = net_pkt_write(pkt1,
-			    ipv6_reass_frag1 + sizeof(struct net_ipv6_hdr) + 1,
-			    sizeof(ipv6_reass_frag1) -
-			    sizeof(struct net_ipv6_hdr) - 1);
-	zassert_true(ret == 0, "IPv6 fragment header append failed");
-
-	while (payload1_len--) {
-		ret = net_pkt_write_u8(pkt1, data++);
-		zassert_true(ret == 0, "IPv6 header append failed");
-	}
-
-	net_pkt_set_ipv6_hdr_prev(pkt1, offsetof(struct net_ipv6_hdr, nexthdr));
-	net_pkt_set_ipv6_fragment_start(pkt1, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_overwrite(pkt1, true);
-
-	net_pkt_cursor_restore(pkt1, &backup);
+	pkt1 = build_reass_fragment(ipv6_reass_frag1, sizeof(ipv6_reass_frag1),
+				    payload1_len, &data, &ipv6_hdr);
 
 	ret = net_ipv6_handle_fragment_hdr(pkt1, &ipv6_hdr,
 					   NET_IPV6_NEXTHDR_FRAG);
 	zassert_true(ret == NET_OK, "IPv6 frag1 reassembly failed");
 
-	/* Fragment 2 */
-
-	pkt2 = net_pkt_alloc_with_buffer(iface1, payload2_len +
-					 sizeof(ipv6_reass_frag2),
-					 NET_AF_UNSPEC, 0, ALLOC_TIMEOUT);
-	zassert_not_null(pkt2, "packet");
-
-	net_pkt_set_family(pkt2, NET_AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt2, sizeof(struct net_ipv6_hdr));
-	net_pkt_cursor_init(pkt2);
-
-	memcpy(&ipv6_hdr, ipv6_reass_frag2, sizeof(struct net_ipv6_hdr));
-
-	ret = net_pkt_write(pkt2, ipv6_reass_frag2,
-			    sizeof(struct net_ipv6_hdr) + 1);
-	zassert_true(ret == 0, "IPv6 header append failed");
-
-	net_pkt_cursor_backup(pkt2, &backup);
-
-	ret = net_pkt_write(pkt2,
-			    ipv6_reass_frag2 + sizeof(struct net_ipv6_hdr) + 1,
-			    sizeof(ipv6_reass_frag2) -
-			    sizeof(struct net_ipv6_hdr) - 1);
-	zassert_true(ret == 0, "IPv6 fragment header append failed");
-
-	while (payload2_len--) {
-		ret = net_pkt_write_u8(pkt2, data++);
-		zassert_true(ret == 0, "IPv6 header append failed");
-	}
-
-	net_pkt_set_ipv6_hdr_prev(pkt2, offsetof(struct net_ipv6_hdr, nexthdr));
-	net_pkt_set_ipv6_fragment_start(pkt2, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_overwrite(pkt2, true);
-
-	net_pkt_cursor_restore(pkt2, &backup);
+	pkt2 = build_reass_fragment(ipv6_reass_frag2, sizeof(ipv6_reass_frag2),
+				    payload2_len, &data, &ipv6_hdr);
 
 	ret = net_ipv6_handle_fragment_hdr(pkt2, &ipv6_hdr,
 					   NET_IPV6_NEXTHDR_FRAG);
