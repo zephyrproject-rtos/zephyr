@@ -64,6 +64,13 @@ struct ieee802154_esp32_data {
 
 	/* Maximum energy (dBm) reported by the last HW energy detection. */
 	int8_t ed_scan_power;
+
+#if defined(CONFIG_IEEE802154_ESP32_SLEEP_ENABLE)
+	bool pm_lock_held;
+
+	/* Deferred PM policy update, submitted from the MAC ISR callbacks. */
+	struct k_work_delayable pm_work;
+#endif
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_ESP32_H_ */
