@@ -193,13 +193,11 @@ static DEVICE_API(regulator, api) = {
 	.count_voltages = regulator_nxp_vref_count_voltages,
 };
 
-static int regulator_nxp_vref_init(const struct device *dev)
+static int regulator_nxp_vref_configure_hw(const struct device *dev)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
 	int ret;
-
-	regulator_common_data_init(dev);
 
 	if (config->clock_dev) {
 		if (!device_is_ready(config->clock_dev)) {
@@ -245,6 +243,20 @@ static int regulator_nxp_vref_init(const struct device *dev)
 	 */
 	base->UTRIM &= ~VREF_UTRIM_TRIM2V1_MASK;
 #endif
+
+	return 0;
+}
+
+static int regulator_nxp_vref_init(const struct device *dev)
+{
+	int ret;
+
+	regulator_common_data_init(dev);
+
+	ret = regulator_nxp_vref_configure_hw(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return regulator_common_init(dev, false);
 }
