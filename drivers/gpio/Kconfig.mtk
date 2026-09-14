@@ -1,0 +1,27 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MT8188
+	bool "MediaTek MT8188 GPIO driver"
+	default y
+	depends on DT_HAS_MEDIATEK_MT8188_GPIO_ENABLED
+	help
+	  Enable the GPIO driver for MediaTek MT8188.
+
+	  Interrupts on these pins are delivered by the external interrupt
+	  controller, so INTC_MT8188_EINT is needed as well.  Both are enabled
+	  by the same devicetree, which requires every bank to name a
+	  controller.
+
+config GPIO_MT8188_INIT_PRIORITY
+	int "MediaTek MT8188 GPIO init priority"
+	default 41
+	depends on GPIO_MT8188
+	help
+	  Device driver initialization priority.
+
+	  Must be greater than INTC_INIT_PRIORITY: each bank registers with the
+	  external interrupt controller from its own init, so the controller has
+	  to have been initialised already.  The subsystem defaults for the two
+	  are both KERNEL_INIT_PRIORITY_DEFAULT, which would leave the order
+	  between them down to link order.
