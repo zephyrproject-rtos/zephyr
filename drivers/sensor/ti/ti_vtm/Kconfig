@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments Incorporated
+
+config TI_VTM
+	bool "TI Voltage and Thermal Management driver"
+	default y
+	depends on DT_HAS_TI_VTM_ENABLED
+	help
+	  Enable driver for TI VTM temperature monitoring.

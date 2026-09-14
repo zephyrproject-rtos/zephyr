@@ -174,3 +174,11 @@
 	interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
+
+&wkup_vtm0 {
+	interrupts = <GIC_SPI 151 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+		     <GIC_SPI 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+		     <GIC_SPI 153 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-names = "th1", "th2", "th0";
+	interrupt-parent = <&gic>;
+};
