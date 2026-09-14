@@ -20,6 +20,7 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &sercom4;
 		zephyr,shell-uart = &sercom4;
+		zephyr,canbus = &can0;
 	};
 
 	aliases {
@@ -148,6 +149,13 @@
 			gclkgen-src = "pll0-clkout0";
 			gclkgen-en = <1>;
 		};
+
+		gclkgen2 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN2>;
+			gclkgen-div-factor = <3>;
+			gclkgen-src = "pll0-clkout0";
+			gclkgen-en = <1>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
@@ -157,6 +165,18 @@
 		sercom1 {
 			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
 			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
+
+		can0 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_CAN0>;
+			gclkperiph-src = "gclk2";
+			gclkperiph-en = <1>;
+		};
+
+		can1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_CAN1>;
+			gclkperiph-src = "gclk2";
 			gclkperiph-en = <1>;
 		};
 	};
@@ -176,6 +196,16 @@
 
 		sercom1 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>;
+			mclk-en = <1>;
+		};
+
+		can0 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_CAN0>;
+			mclk-en = <1>;
+		};
+
+		can1 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_CAN1>;
 			mclk-en = <1>;
 		};
 	};
@@ -238,4 +268,24 @@ i2c0: &sercom1 {
 	dmas = <&dmac 2 8>, <&dmac 3 9>;
 	dma-names = "rx", "tx";
 	status = "okay";
+};
+
+&can0 {
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&can1 {
+	pinctrl-0 = <&can1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };
