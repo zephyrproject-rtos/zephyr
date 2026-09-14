@@ -136,3 +136,39 @@ tests:
       regex:
         - "Ping \\(on channel 21\\)"
         - "Pong \\(on channel 20\\)"
+
+  sample.drivers.mbox.frdm_imxrt1186.flash:
+    platform_allow:
+      - frdm_imxrt1186/mimxrt1186/cm33
+    integration_platforms:
+      - frdm_imxrt1186/mimxrt1186/cm33
+    extra_args:
+      - remote_EXTRA_DTC_OVERLAY_FILE="cm7_flash_boot.overlay"
+      - CONFIG_CM7_BOOT_FROM_FLASH=y
+      - remote_CONFIG_CM7_BOOT_FROM_FLASH=y
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Ping \\(on channel 1\\)"
+        - "Pong \\(on channel 0\\)"
+
+  sample.drivers.mbox.frdm_imxrt1186.hyperram:
+    platform_allow:
+      - frdm_imxrt1186/mimxrt1186/cm33
+    integration_platforms:
+      - frdm_imxrt1186/mimxrt1186/cm33
+    extra_args:
+      - remote_EXTRA_DTC_OVERLAY_FILE="cm7_code_hyperram.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="cm33_sram_dtcm.overlay"
+      - CONFIG_CM7_BOOT_FROM_FLASH=y
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Ping \\(on channel 1\\)"
+        - "Pong \\(on channel 0\\)"
