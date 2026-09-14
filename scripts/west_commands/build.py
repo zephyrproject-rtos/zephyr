@@ -457,14 +457,16 @@ class Build(Forceable):
 
         if found_test_metadata:
             args = []
-            if extra_conf_files:
-                args.append(f"EXTRA_CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+            # Both the extra conf files and the overlay confs are consumed
+            # through the single EXTRA_CONF_FILE variable, so they have to be
+            # merged into one argument. The overlay confs are applied last so
+            # that they can override what an extra conf file has set.
+            conf_files_arg = extra_conf_files + extra_overlay_confs
+            if conf_files_arg:
+                args.append(f"EXTRA_CONF_FILE=\"{';'.join(conf_files_arg)}\"")
 
             if extra_dtc_overlay_files:
                 args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
-
-            if extra_overlay_confs:
-                args.append(f"OVERLAY_CONFIG=\"{';'.join(extra_overlay_confs)}\"")
 
             if required_snippets:
                 args.append(f"SNIPPET=\"{';'.join(required_snippets)}\"")
@@ -716,7 +718,7 @@ class Build(Forceable):
         # This is important because users expect invocations like this
         # to Just Work:
         #
-        # west build -- -DOVERLAY_CONFIG=relative-path.conf
+        # west build -- -DEXTRA_CONF_FILE=relative-path.conf
         final_cmake_args = [
             f'-DWEST_PYTHON={pathlib.Path(sys.executable).as_posix()}',
             f'-DWEST_TOPDIR={pathlib.Path(str(west_topdir(self.source_dir))).as_posix()}',
