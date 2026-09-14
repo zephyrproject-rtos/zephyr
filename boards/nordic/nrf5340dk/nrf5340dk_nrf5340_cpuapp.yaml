@@ -6,7 +6,7 @@ toolchain:
   - gnuarmemb
   - zephyr
 ram: 448
-flash: 1024
+flash: 464
 supported:
   - arduino_gpio
   - arduino_i2c
