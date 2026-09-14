@@ -8,6 +8,12 @@ menu "System Monitoring Options"
 
 source "subsys/debug/thread_analyzer/Kconfig"
 
+config CRITICAL_SECTION_HOOKS
+	bool
+	help
+	  Enable IRQ and spinlock hooks. A consumer selects this option
+	  and implements the functions in critical_section_hooks.h.
+
 endmenu
 
 menu "Debugging Options"
