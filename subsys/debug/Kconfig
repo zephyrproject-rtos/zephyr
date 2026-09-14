@@ -8,6 +8,8 @@ menu "System Monitoring Options"
 
 source "subsys/debug/thread_analyzer/Kconfig"
 
+source "subsys/debug/critical_section_monitor/Kconfig"
+
 endmenu
 
 menu "Debugging Options"
