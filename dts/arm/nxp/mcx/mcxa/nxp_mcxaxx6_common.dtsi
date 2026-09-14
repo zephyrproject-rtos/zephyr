@@ -76,6 +76,21 @@
 		};
 	};
 
+	/*
+	 * Deep Power Down gates the entire CORE power domain (CPU, NVIC, and all
+	 * APB/AHB peripheral register blocks), so every peripheral inside it
+	 * comes back from reset. This domain hands the affected drivers a
+	 * TURN_OFF before the transition and a TURN_ON after it, which is what
+	 * lets them reconfigure their hardware on resume. It follows
+	 * &deeppowerdown, so it stays inert until the application enables that
+	 * state.
+	 */
+	core_domain: core-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&deeppowerdown>;
+	};
+
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
@@ -466,6 +481,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC1_CLK>;
+			power-domains = <&core_domain>;
 			/* In deep sleep mode, the hardware allows the converter to keep
 			 * running there (CTRL[DOZEN] = 0, bus clock gated, hardware
 			 * trigger and compare wakeup still live): that only holds while
@@ -496,6 +512,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC2_CLK>;
+			power-domains = <&core_domain>;
 			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
@@ -513,6 +530,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC3_CLK>;
+			power-domains = <&core_domain>;
 			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
@@ -530,6 +548,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC4_CLK>;
+			power-domains = <&core_domain>;
 			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
