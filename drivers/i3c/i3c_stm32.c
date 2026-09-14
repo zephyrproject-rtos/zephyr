@@ -1161,8 +1161,8 @@ static int i3c_stm32_do_daa(const struct device *dev)
 
 	if (data->msg_state == STM32_I3C_MSG_ERR) {
 		i3c_stm32_clear_err(dev, false);
-		ret = -EIO;
-		goto i3c_stm32_do_daa_ending;
+		LL_I3C_EnableIT_TXFNF(i3c);
+		return -EIO;
 	}
 
 i3c_stm32_do_daa_ending:
