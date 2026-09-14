@@ -1,0 +1,8 @@
+# ESP32-S31-DevKitC configuration
+
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32S31_DEVKITC
+	select SOC_ESP32S31_HPCORE if BOARD_ESP32S31_DEVKITC_ESP32S31_HPCORE
+	select SOC_ESP32S31_REV_0_0
