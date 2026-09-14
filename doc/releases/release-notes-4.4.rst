@@ -582,6 +582,10 @@ New APIs and options
     mailbox usage. Applications should be prepared to receive a NULL payload pointer
     in IPM callbacks when no data buffer is provided by the mailbox.
 
+* MIPI DSI
+
+  * :c:macro:`MIPI_DSI_MODE_HS_BLANKING`
+
 * Management
 
   * MCUmgr

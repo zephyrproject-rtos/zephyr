@@ -125,7 +125,12 @@ static int mipi_dsi_esp32_attach(const struct device *dev, uint8_t channel,
 		return -ENODEV;
 	}
 
-	bool low_power_cmds = (mdev->mode_flags & MIPI_DSI_MODE_LPM) != 0;
+	/* A peripheral that derives its clocks from the stream (a DSI to HDMI
+	 * bridge) needs the data lanes to stay in high speed through the
+	 * blanking periods, which leaves no room for low power commands.
+	 */
+	bool hs_blanking = (mdev->mode_flags & MIPI_DSI_MODE_HS_BLANKING) != 0;
+	bool low_power_cmds = (mdev->mode_flags & MIPI_DSI_MODE_LPM) != 0 && !hs_blanking;
 
 	mipi_dsi_esp32_set_command_speed(hal, low_power_cmds);
 
@@ -135,8 +140,9 @@ static int mipi_dsi_esp32_attach(const struct device *dev, uint8_t channel,
 
 	mipi_dsi_host_ll_dpi_set_pattern_type(hal->host, MIPI_DSI_PATTERN_NONE);
 
-	mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, true, true);
-	mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, true, true, true, true);
+	mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, !hs_blanking, !hs_blanking);
+	mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, !hs_blanking, !hs_blanking,
+						       !hs_blanking, !hs_blanking);
 	mipi_dsi_host_ll_dpi_enable_lp_command(hal->host, low_power_cmds);
 	mipi_dsi_host_ll_dpi_enable_frame_ack(hal->host, true);
 
