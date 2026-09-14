@@ -13,7 +13,7 @@ start_configuration || return $?
 start_docker \
     "/usr/local/sbin/mosquitto -v -c /usr/local/etc/mosquitto/mosquitto.conf" || return $?
 
-start_zephyr -DEXTRA_CONF_FILE=overlay-sample.conf "$overlay"
+start_zephyr -DEXTRA_CONF_FILE="overlay-sample.conf $zephyr_overlay"
 
 wait_zephyr
 result=$?
@@ -30,7 +30,7 @@ echo "Starting MQTT TLS test"
 start_docker \
     "/usr/local/sbin/mosquitto -v -c /usr/local/etc/mosquitto/mosquitto-tls.conf" || return $?
 
-start_zephyr -DEXTRA_CONF_FILE="overlay-tls.conf overlay-sample.conf" "$overlay"
+start_zephyr -DEXTRA_CONF_FILE="overlay-tls.conf overlay-sample.conf $zephyr_overlay"
 
 wait_zephyr
 result=$?
@@ -50,8 +50,8 @@ echo "Starting MQTT TLS + proxy test"
 start_docker "/usr/sbin/danted" || return $?
 
 start_zephyr \
-    -DEXTRA_CONF_FILE="overlay-tls.conf overlay-sample.conf overlay-socks5.conf" "$overlay" || \
-    return $?
+    -DEXTRA_CONF_FILE="overlay-tls.conf overlay-sample.conf overlay-socks5.conf $zephyr_overlay" \
+    || return $?
 
 wait_zephyr
 result=$?
