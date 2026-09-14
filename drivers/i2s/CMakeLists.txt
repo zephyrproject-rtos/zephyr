@@ -6,6 +6,7 @@ zephyr_library()
 
 zephyr_library_sources(i2s_common.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_RTIO i2s_rtio.c)
+zephyr_library_sources_ifdef(CONFIG_I2S_CONTINUITY i2s_continuity.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_I2S_AMBIQ i2s_ambiq.c)
