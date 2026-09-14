@@ -114,6 +114,7 @@
 #include <zephyr/drivers/timer/system_timer_lpm.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/div64.h>
 #include <zephyr/sys/util.h>
 
 #if (defined(TIMER_CORE_BACKEND_COMPARE_ORDERED) + \
@@ -365,12 +366,36 @@ static inline uint32_t timer_core_ticks_clamp(timer_core_ticks_t ticks)
 /* Tick count last returned by sys_clock_elapsed(). */
 static timer_core_ticks_t timer_core_last_elapsed;
 
+/*
+ * The conversions divide a 64-bit value by a 32-bit one, on every announce and
+ * arm. On a 32-bit target the div64 helpers multiply by a reciprocal instead of
+ * calling libgcc. The tick rate, and the cycles per tick where used, are build
+ * constants. A rate read at run time has its reciprocal set up in
+ * timer_core_init() and timer_core_rescale().
+ */
+#define TIMER_CORE_DIV_TPS(n) sys_div64_u32_const((n), CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define TIMER_CORE_MOD_TPS(n) sys_mod64_u32_const((n), CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define TIMER_CORE_DIV_CPT(n) sys_div64_u32_const((n), TIMER_CORE_CYC_PER_TICK)
+#if TIMER_CORE_RATE_IS_CONSTANT
+#define TIMER_CORE_RATE TIMER_CORE_CYCLES_PER_SEC
+#define TIMER_CORE_DIV_RATE(n) sys_div64_u32_const((n), TIMER_CORE_CYCLES_PER_SEC)
+#else /* !TIMER_CORE_RATE_IS_CONSTANT */
+/* The rate as of the last timer_core_init() or timer_core_rescale(). The
+ * conversions use it rather than the live rate, so that they agree with the
+ * reciprocal even if the rate changes without a rescale.
+ */
+static uint32_t timer_core_rate;
+static struct sys_div64_recip timer_core_rate_recip;
+#define TIMER_CORE_RATE timer_core_rate
+#define TIMER_CORE_DIV_RATE(n) sys_div64_recip_div((n), &timer_core_rate_recip)
+#endif /* TIMER_CORE_RATE_IS_CONSTANT */
+
 #if TIMER_CORE_TICK_IS_WHOLE
 
 /* Whole ticks in @p c cycles counted from tick zero. */
 static inline timer_core_ticks_t timer_core_ticks_at_cyc(uint64_t c)
 {
-	return (timer_core_ticks_t)(c / TIMER_CORE_CYC_PER_TICK);
+	return (timer_core_ticks_t)TIMER_CORE_DIV_CPT(c);
 }
 
 /* Cycles from the announce baseline to the tick @p span ticks past it. The
@@ -386,7 +411,12 @@ static inline timer_core_cycles_t timer_core_span_cycles(timer_core_ticks_t span
  */
 static inline timer_core_ticks_t timer_core_ticks_in(timer_core_cycles_t c)
 {
-	return (timer_core_ticks_t)(c / TIMER_CORE_CYC_PER_TICK);
+	/* A counter that fits one register divides in one instruction. */
+	if (sizeof(timer_core_cycles_t) <= sizeof(uint32_t)) {
+		return (timer_core_ticks_t)((uint32_t)c / (uint32_t)TIMER_CORE_CYC_PER_TICK);
+	}
+
+	return (timer_core_ticks_t)TIMER_CORE_DIV_CPT(c);
 }
 
 /* timer_core_ticks_in() for a span wider than the counter, which only the
@@ -394,7 +424,7 @@ static inline timer_core_ticks_t timer_core_ticks_in(timer_core_cycles_t c)
  */
 static inline uint64_t timer_core_ticks_in64(uint64_t c)
 {
-	return c / TIMER_CORE_CYC_PER_TICK;
+	return TIMER_CORE_DIV_CPT(c);
 }
 
 /* Move the announce baseline on by @p dticks, keeping it on a tick position. */
@@ -431,7 +461,7 @@ static inline void timer_core_advance_baseline(timer_core_ticks_t dticks)
 /* Ticks started by cycle @p c, counted from tick zero. */
 static inline timer_core_ticks_t timer_core_ticks_at_cyc(uint64_t c)
 {
-	return (timer_core_ticks_t)(c * CONFIG_SYS_CLOCK_TICKS_PER_SEC / TIMER_CORE_CYCLES_PER_SEC);
+	return (timer_core_ticks_t)TIMER_CORE_DIV_RATE(c * CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 }
 
 /* Cycles from the baseline to the start of tick last_tick + @p span:
@@ -440,10 +470,10 @@ static inline timer_core_ticks_t timer_core_ticks_at_cyc(uint64_t c)
  */
 static inline timer_core_cycles_t timer_core_span_cycles(timer_core_ticks_t span)
 {
-	uint64_t n = ((uint64_t)span * TIMER_CORE_CYCLES_PER_SEC) +
+	uint64_t n = ((uint64_t)span * TIMER_CORE_RATE) +
 		     ((CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - timer_core_last_rem);
 
-	return (timer_core_cycles_t)(n / CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	return (timer_core_cycles_t)TIMER_CORE_DIV_TPS(n);
 }
 
 /* Ticks started @p c cycles past the baseline. */
@@ -451,9 +481,8 @@ static inline timer_core_ticks_t timer_core_ticks_in(timer_core_cycles_t c)
 {
 	c = (timer_core_cycles_t)MIN((uint64_t)c, TIMER_CORE_MAX_CONVERTIBLE_CYCLES);
 
-	return (timer_core_ticks_t)((((uint64_t)c * CONFIG_SYS_CLOCK_TICKS_PER_SEC) +
-				     timer_core_last_rem) /
-				    TIMER_CORE_CYCLES_PER_SEC);
+	return (timer_core_ticks_t)TIMER_CORE_DIV_RATE(
+		((uint64_t)c * CONFIG_SYS_CLOCK_TICKS_PER_SEC) + timer_core_last_rem);
 }
 
 /* Move the baseline to the start of tick last_tick + @p dticks, n as in
@@ -461,12 +490,11 @@ static inline timer_core_ticks_t timer_core_ticks_in(timer_core_cycles_t c)
  */
 static inline void timer_core_advance_baseline(timer_core_ticks_t dticks)
 {
-	uint64_t n = ((uint64_t)dticks * TIMER_CORE_CYCLES_PER_SEC) +
+	uint64_t n = ((uint64_t)dticks * TIMER_CORE_RATE) +
 		     ((CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - timer_core_last_rem);
 
-	timer_core_last_cycle += n / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	timer_core_last_rem = (CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) -
-			      (uint32_t)(n % CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	timer_core_last_cycle += TIMER_CORE_DIV_TPS(n);
+	timer_core_last_rem = (CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - TIMER_CORE_MOD_TPS(n);
 	timer_core_last_tick += dticks;
 }
 
@@ -477,18 +505,16 @@ static inline uint64_t timer_core_ticks_in64(uint64_t c)
 {
 	c = MIN(c, TIMER_CORE_MAX_CONVERTIBLE_CYCLES);
 
-	return ((c * CONFIG_SYS_CLOCK_TICKS_PER_SEC) + timer_core_last_rem) /
-	       TIMER_CORE_CYCLES_PER_SEC;
+	return TIMER_CORE_DIV_RATE((c * CONFIG_SYS_CLOCK_TICKS_PER_SEC) + timer_core_last_rem);
 }
 
 static inline void timer_core_advance_baseline64(uint64_t dticks)
 {
-	uint64_t n = (dticks * TIMER_CORE_CYCLES_PER_SEC) +
+	uint64_t n = (dticks * TIMER_CORE_RATE) +
 		     ((CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - timer_core_last_rem);
 
-	timer_core_last_cycle += n / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	timer_core_last_rem = (CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) -
-			      (uint32_t)(n % CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	timer_core_last_cycle += TIMER_CORE_DIV_TPS(n);
+	timer_core_last_rem = (CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - TIMER_CORE_MOD_TPS(n);
 	timer_core_last_tick += dticks;
 }
 
@@ -881,8 +907,7 @@ uint64_t sys_clock_cycle_get_64(void)
  * time calls this with the clock lock held. @p cycles is its counter value at
  * the moment of the change, as timer_driver_cycle_get() would return it. The
  * driver passes it because its getter may not work then: cortex_m_systick's
- * does not while its counter is stopped. @p from_hz and @p to_hz are the rates
- * before and after the change.
+ * does not while its counter is stopped. @p to_hz is the new rate.
  *
  * Cycles map to ticks along a line whose slope is the rate. Ticks must not
  * jump, and the counter keeps counting, so the line at the new rate has to
@@ -891,34 +916,43 @@ uint64_t sys_clock_cycle_get_64(void)
  * past the start of last_tick is kept in cycles times TICKS_PER_SEC, as for
  * last_rem, so it converts between rates without rounding to whole cycles.
  */
-static inline void timer_core_rescale(uint64_t cycles, uint32_t to_hz, uint32_t from_hz)
+static inline void timer_core_rescale(uint64_t cycles, uint32_t to_hz)
 {
-	uint64_t since = MIN((cycles - timer_core_last_cycle) & TIMER_CORE_COUNTER_MASK,
-			     TIMER_CORE_MAX_CONVERTIBLE_CYCLES);
-	/* That time at the old rate: k whole ticks, and f into the next one. */
-	uint64_t span = (since * CONFIG_SYS_CLOCK_TICKS_PER_SEC) + timer_core_last_rem;
-	uint64_t k = span / from_hz;
-	uint64_t f = span - (k * from_hz);
-	/* The same time at the new rate. f < from_hz, so f * to_hz fits in 64
-	 * bits, and the scaled part stays under a tick: the new line has
-	 * exactly k ticks between the baseline and @p cycles.
+	/* A change before timer_core_init() has no reciprocal for the old rate,
+	 * and no baseline to keep: timer_core_init() starts it at the counter.
 	 */
-	uint64_t at_new = (k * to_hz) + ((f * to_hz) / from_hz);
+	if (timer_core_rate != 0U) {
+		uint64_t since = MIN((cycles - timer_core_last_cycle) & TIMER_CORE_COUNTER_MASK,
+				     TIMER_CORE_MAX_CONVERTIBLE_CYCLES);
+		/* That time at the old rate: k whole ticks, and f into the next
+		 * one.
+		 */
+		uint64_t span = (since * CONFIG_SYS_CLOCK_TICKS_PER_SEC) + timer_core_last_rem;
+		uint64_t k = TIMER_CORE_DIV_RATE(span);
+		uint64_t f = span - (k * TIMER_CORE_RATE);
+		/* The same time at the new rate. f < TIMER_CORE_RATE, so
+		 * f * to_hz fits in 64 bits, and the scaled part stays under a
+		 * tick: the new line has exactly k ticks between the baseline and
+		 * @p cycles.
+		 */
+		uint64_t at_new = (k * to_hz) + TIMER_CORE_DIV_RATE(f * to_hz);
 
-	__ASSERT(at_new / CONFIG_SYS_CLOCK_TICKS_PER_SEC <= TIMER_CORE_MAX_UNANNOUNCED_CYCLES,
-		 "the rate went up too far past the last announce for the counter to span");
+		__ASSERT(TIMER_CORE_DIV_TPS(at_new) <= TIMER_CORE_MAX_UNANNOUNCED_CYCLES,
+			 "the rate went up too far past the last announce for the counter "
+			 "to span");
 
-	/* The first whole cycle at or after the start of last_tick on the new line,
-	 * and how far past that start it is.
-	 */
-	timer_core_last_cycle = timer_core_last_cycle + since -
-				(at_new / CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-	timer_core_last_rem = at_new % CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+		/* The first whole cycle at or after the start of last_tick on the
+		 * new line, and how far past that start it is.
+		 */
+		timer_core_last_cycle = timer_core_last_cycle + since - TIMER_CORE_DIV_TPS(at_new);
+		timer_core_last_rem = TIMER_CORE_MOD_TPS(at_new);
+	}
 
 	/* Recompute what derives from the rate. The arm ceiling would otherwise
 	 * overstate the counter's span once the rate goes up.
-	 * TIMER_CORE_CYCLES_PER_SEC already returns the new rate.
 	 */
+	timer_core_rate = to_hz;
+	sys_div64_recip_init(&timer_core_rate_recip, to_hz);
 	timer_core_cyc_per_tick = to_hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 	timer_core_max_span_ticks = TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES);
 }
@@ -948,6 +982,8 @@ static inline void timer_core_init(void)
 #ifdef TIMER_CORE_PRECOMPUTE_CYC_PER_TICK
 	/* The rate is known now that the driver has set up the counter. */
 	timer_core_cyc_per_tick = TIMER_CORE_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	timer_core_rate = TIMER_CORE_CYCLES_PER_SEC;
+	sys_div64_recip_init(&timer_core_rate_recip, timer_core_rate);
 	timer_core_max_span_ticks = TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES);
 	/* The checks a constant rate gets at build time. */
 	__ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick rate");
