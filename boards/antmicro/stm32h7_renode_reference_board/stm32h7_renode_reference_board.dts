@@ -429,3 +429,11 @@ zephyr_udc0: &usbotg_fs {
 &iwdg {
 	status = "okay";
 };
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
