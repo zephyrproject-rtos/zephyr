@@ -1,0 +1,16 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_NXP_SPECIFIC_MPU_SETTINGS
+	bool "Board-provided static Arm MPU region table"
+	default y if CPU_CORTEX_M7
+	help
+	  Use the board's static Arm MPU region table instead of the generic
+	  SoC fallback. With the Cortex-M7 unmapped-region catch-all enabled,
+	  on-chip banks not in the table are unreachable unless an application
+	  claims them via a zephyr,memory-attr node. The table only describes
+	  the Cortex-M7 memory map, so a board sourcing this file gets it on
+	  its Cortex-M7 target only; the choice stays overridable.
