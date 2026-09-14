@@ -479,6 +479,11 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	uint32_t tx_stat;
 	int res;
 
+	if (total_len > NET_ETH_MAX_FRAME_SIZE) {
+		LOG_ERR("Frame too large: %u", total_len);
+		return -EMSGSIZE;
+	}
+
 	txcmd_a = (1/*is_first_segment*/ << 13) | (1/*is_last_segment*/ << 12)
 		  | total_len;
 	/* Use len as a tag */
