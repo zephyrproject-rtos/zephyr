@@ -141,3 +141,12 @@ API Reference
 **************
 
 .. doxygengroup:: condvar_apis
+
+User Mode Condition Variable API Reference
+******************************************
+
+A sys_condvar resides in user memory and is used together with a
+:c:struct:`sys_mutex`; the kernel is entered only to block a waiter or to
+wake one.
+
+.. doxygengroup:: user_condvar_apis

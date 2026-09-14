@@ -1,0 +1,12 @@
+common:
+  tags:
+    - kernel
+    - condvar
+  min_ram: 32
+tests:
+  kernel.condvar.sys_condvar:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: userspace
+  kernel.condvar.sys_condvar.nouser:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
