@@ -79,7 +79,7 @@ static void cache_get(struct log_cache *cache, uintptr_t id,
 ZTEST(test_log_cache, test_log_cache_basic)
 {
 	/* Space for 3 entries */
-	static uint8_t data[3 * ENTRY_SIZE(TEST_ENTRY_LEN)];
+	static uint8_t data[3 * ENTRY_SIZE(TEST_ENTRY_LEN)] __aligned(sizeof(uintptr_t));
 	static const struct log_cache_config config = {
 		.buf = data,
 		.buf_len = sizeof(data),
