@@ -215,6 +215,11 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
  * pending wake-source ISRs from this hook; the kernel idle path restores the
  * original interrupt state after PM resume housekeeping is complete.
  *
+ * @note The system timer has not been restarted yet, and a state that stopped
+ *       it leaves its count frozen. Nothing that waits on the system timer may
+ *       be called from this hook, k_busy_wait() in particular: it would never
+ *       return.
+ *
  * @note As with @ref pm_state_set, when system PM keeps interrupts locked
  *       across resume, this ordering covers only interrupts that
  *       arch_irq_lock() can mask. A zero-latency interrupt (IRQ_ZERO_LATENCY)
