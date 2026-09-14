@@ -59,7 +59,7 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
     ${radio_dir}/rail_lib/chip/efr32/sixg3xx
   )
 
-  zephyr_compile_definitions(
+  zephyr_library_compile_definitions(
     SL_RAIL_UTIL_PA_CONFIG_HEADER="sl_rail_util_pa_config.h"
   )
 
@@ -99,9 +99,6 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
     if(CONFIG_SOC_FAMILY_SILABS_S3)
       add_prebuilt_library(sxsymcrypt util/third_party/crypto_ip/libsxsymcrypt.a)
     endif()
-    zephyr_library_compile_definitions(
-      SL_CODE_COMPONENT_SLI_CRYPTO=sli_crypto
-    )
   endif()
 
   if(CONFIG_BT_SILABS_EFR32)
@@ -184,9 +181,9 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
     )
 
     if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
-      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=1)
+      zephyr_library_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=1)
     else()
-      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=0)
+      zephyr_library_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=0)
     endif()
 
     if(CONFIG_SOC_VENDOR_SILABS_DEVICE_IS_MODULE)
@@ -278,10 +275,10 @@ zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
 zephyr_compile_definitions(
   ${device_part_number}
   SL_COMPONENT_CATALOG_PRESENT=1
-  SL_CODE_COMPONENT_DEVICE_PERIPHERAL=peripheral
-  SL_CODE_COMPONENT_HAL_COMMON=hal_common
-  SL_CODE_COMPONENT_SYSTEM=system
 )
+
+# Add component catalog as preinclude to ensure SL_CODE_COMPONENT macros are always set
+zephyr_library_compile_options("SHELL:$<TARGET_PROPERTY:compiler,include_file> sl_component_catalog.h")
 
 zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
   ${service_dir}/device_manager/devices/sl_device_peripheral_hal_${device_prefix}xg${family_no}.c
@@ -335,10 +332,6 @@ if(CONFIG_SILABS_SISDK_SLEEPTIMER)
     ${service_dir}/sleeptimer/src/sl_sleeptimer_hal_sysrtc.c
     ${service_dir}/sleeptimer/src/sl_sleeptimer.c
   )
-  zephyr_compile_definitions(
-    SL_CODE_COMPONENT_SLEEPTIMER=sleeptimer
-    SL_CODE_COMPONENT_HAL_SYSRTC=hal_sysrtc
-  )
 endif()
 
 # Clock Manager
@@ -355,9 +348,6 @@ if(CONFIG_SILABS_SISDK_CLOCK_MANAGER)
   zephyr_library_sources(
     ${service_dir}/clock_manager/src/sl_clock_manager.c
     ${service_dir}/clock_manager/src/sl_clock_manager_init.c
-  )
-  zephyr_compile_definitions(
-    SL_CODE_COMPONENT_CLOCK_MANAGER=clock_manager
   )
 endif()
 
@@ -395,9 +385,6 @@ if(CONFIG_SILABS_SISDK_POWER_MANAGER)
     ${service_dir}/power_manager/src/common/sl_power_manager_em4.c
     ${service_dir}/power_manager/src/sleep_loop/sl_power_manager.c
   )
-  zephyr_compile_definitions(
-    SL_CODE_COMPONENT_POWER_MANAGER=power_manager
-  )
 endif()
 zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S3_SIX301
   ${service_dir}/power_manager/config/SIXG301
@@ -420,9 +407,6 @@ if(CONFIG_SILABS_SISDK_CORE)
   zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_CORE
     ${common_dir}/src/sl_core_cortexm.c
   )
-  zephyr_compile_definitions(
-    SL_CODE_COMPONENT_CORE=core
-  )
 endif()
 
 if(CONFIG_SILABS_SISDK_ACMP)
@@ -440,10 +424,6 @@ if(CONFIG_SILABS_SISDK_GPIO)
   zephyr_library_sources(
     ${driver_dir}/gpio/src/sl_gpio.c
     ${peripheral_dir}/src/sl_hal_gpio.c
-  )
-  zephyr_library_compile_definitions(
-    SL_CODE_COMPONENT_GPIO=gpio
-    SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
   )
 endif()
 
@@ -509,11 +489,6 @@ if(CONFIG_SILABS_SISDK_SE)
     ${security_dir}/sl_component/se_manager/src/sl_se_manager_extmem.c
     ${security_dir}/sl_component/se_manager/src/sli_se_manager_device_data.c
   )
-
-  zephyr_compile_definitions(
-    SL_CODE_COMPONENT_SE_MANAGER=se_manager
-    SL_CODE_COMPONENT_PSEC_OSAL=psec_osal
-  )
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE
@@ -526,13 +501,11 @@ zephyr_library_sources(
   src/sl_memory_manager_pool_shim.c
 )
 
-zephyr_library_sources_ifdef(
-  CONFIG_BUILD_ONLY_NO_BLOBS
+zephyr_library_sources_ifdef(CONFIG_BUILD_ONLY_NO_BLOBS
   src/blob_stubs.c
 )
 if(CONFIG_SOC_VENDOR_SILABS_DEVICE_IS_MODULE)
-  zephyr_library_sources_ifdef(
-    CONFIG_BUILD_ONLY_NO_BLOBS
+  zephyr_library_sources_ifdef(CONFIG_BUILD_ONLY_NO_BLOBS
     src/blob_stubs_module.c
   )
 endif()
