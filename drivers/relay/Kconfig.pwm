@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+config RELAY_PWM
+	bool "PWM relay driver"
+	default y
+	depends on DT_HAS_ZEPHYR_PWM_RELAY_ENABLED
+	select PWM
+	help
+	  Enable the hardware-agnostic PWM relay driver. Implements the relay API
+	  on top of a single standard Zephyr PWM channel and owns all relay state,
+	  hold-level and pull-in/hold current-profile logic.
+
+if RELAY_PWM
+
+config RELAY_PWM_INIT_PRIORITY
+	int "PWM relay init priority"
+	default 91
+	help
+	  Device initialization priority for the PWM relay. Must be greater than
+	  the PWM backend's init priority so the backend is ready first.
+
+endif # RELAY_PWM

@@ -21,10 +21,15 @@ functions in :zephyr_file:`include/zephyr/drivers/relay/relay.h`:
 Backends
 ********
 
-One devicetree-discoverable backend is provided:
+Two devicetree-discoverable backends are provided:
 
 - :dtcompatible:`zephyr,gpio-relay` for a relay switched by a single GPIO. The
   coil's active level comes from the flags in the ``gpios`` specifier.
+- :dtcompatible:`zephyr,pwm-relay` for a relay driven from a PWM channel. The
+  driver owns an optional pull-in/hold current profile: it can drive a stronger
+  pull-in pulse for ``pull-in-time-ms`` before dropping to ``hold-duty-percent``
+  to reduce holding current, and periodically re-pulse the coil every
+  ``refresh-interval-ms``. Each stage is opt-in and skipped when set to 0.
 
 Shell
 *****
