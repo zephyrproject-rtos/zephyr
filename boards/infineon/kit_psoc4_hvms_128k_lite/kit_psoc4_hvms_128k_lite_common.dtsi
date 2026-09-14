@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "kit_psoc4_hvms_128k_lite-pinctrl.dtsi"
+
+uart1: &scb1 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&peri_clk_div0>;
+	pinctrl-0 = <&p5_0_scb1_uart_tx &p5_1_scb1_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&peri_clk_div0 {
+	status = "okay";
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
