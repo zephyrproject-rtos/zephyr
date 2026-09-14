@@ -96,6 +96,10 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* Relay
+
+  * :dtcompatible:`zephyr,gpio-relay`
+
 New Samples
 ***********
 
