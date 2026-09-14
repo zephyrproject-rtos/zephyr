@@ -10,5 +10,6 @@ PWM, stepper motors, haptics, buzzers, and other actuators.
 
    haptics.rst
    pwm.rst
+   relay.rst
    stepper/index.rst
    buzzer.rst

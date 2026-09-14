@@ -613,6 +613,11 @@ New APIs and options
     API for hardware that generates and captures timed digital edges on a
     GPIO line.
 
+* Relay
+
+  * Added the :ref:`Relay <relay_api>` driver class, a hardware-agnostic
+    on/off relay output API.
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
