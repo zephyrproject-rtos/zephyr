@@ -16,17 +16,16 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net_buf.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/clock.h>
-#include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/clock.h>
@@ -46,24 +45,115 @@
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 #include "audio.h"
+#include "bap_usb.h"
 
 LOG_MODULE_REGISTER(bap_usb, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
 
-#define USB_LOG_RATE           (30U * MSEC_PER_SEC) /* 30 seconds */
-#define USB_ENQUEUE_COUNT      30U /* 30ms */
-#define USB_FRAME_DURATION_US  1000U
-#define USB_SAMPLE_CNT         ((USB_FRAME_DURATION_US * USB_SAMPLE_RATE) / USEC_PER_SEC)
-#define USB_BYTES_PER_SAMPLE   sizeof(int16_t)
-#define USB_MONO_FRAME_SIZE    (USB_SAMPLE_CNT * USB_BYTES_PER_SAMPLE)
-#define USB_CHANNELS           2U
-#define USB_STEREO_FRAME_SIZE  (USB_MONO_FRAME_SIZE * USB_CHANNELS)
+#define USB_LOG_RATE              (30U * MSEC_PER_SEC) /* 30 seconds */
+#define USB_FRAME_DURATION_US     1000U
+#define USB_SAMPLE_CNT            ((USB_FRAME_DURATION_US * BAP_USB_SAMPLE_RATE) / USEC_PER_SEC)
+#define USB_BYTES_PER_SAMPLE      sizeof(int16_t)
+#define USB_MONO_FRAME_SIZE       (USB_SAMPLE_CNT * USB_BYTES_PER_SAMPLE)
+#define USB_STEREO_FRAME_SIZE     (USB_MONO_FRAME_SIZE * BAP_USB_CHANNELS)
+#define USB_UAC2_SLOT_CNT         4U
+/* Number of microframes in a frame. At high speed a transfer covers a microframe rather than a
+ * frame, so an isochronous endpoint transfers an eighth of the samples per transfer.
+ */
+#define USB_MICROFRAMES_PER_FRAME 8U
+#define USB_HS_SAMPLE_CNT         (USB_SAMPLE_CNT / USB_MICROFRAMES_PER_FRAME)
+
+/* Both ring buffers hold interleaved stereo data, and all cursors into them are in USB frames
+ * (left+right sample pairs) rather than in samples or octets.
+ *
+ * liblc3 is set up with an output sample rate of BAP_USB_SAMPLE_RATE for every stream (see
+ * init_lc3_encoder() and init_lc3_decoder()), so a stream always produces and consumes PCM at
+ * BAP_USB_SAMPLE_RATE regardless of its configured LC3 sample rate. Streams thus only differ in how
+ * many USB frames a single LC3 frame covers: 120, 240, 360 or 480 for 2.5ms, 5ms, 7.5ms and 10ms
+ * frame durations respectively. USB transfers USB_SAMPLE_CNT (48) frames per SOF at full speed, or
+ * USB_HS_SAMPLE_CNT (6) frames per microframe at high speed.
+ *
+ * By sizing the ring buffers to a multiple of the least common multiple of all of those
+ * (LCM(6, 48, 120, 240, 360, 480) == 1440), and by keeping every cursor a multiple of its own
+ * step size, neither an LC3 frame nor a USB transfer can ever straddle the end of a ring buffer.
+ * That removes the need for any wrap handling, lets liblc3 operate directly on the ring buffers,
+ * and gives USB contiguous copy regions into and out of DMA staging slots.
+ *
+ * Note that the 44.1kHz LC3 configurations have non-integer frame durations (8.16ms and 10.88ms)
+ * which would break this. They cannot reach this code as stream_started_cb() rejects any
+ * frequency that is not 8, 16, 24, 32 or 48kHz, but supporting them would require revisiting the
+ * ring buffer sizing.
+ */
+#define USB_RING_ALIGN_FRAMES 1440U                        /* LCM(48, 120, 240, 360, 480) == 30ms */
+#define USB_RING_FRAMES       (USB_RING_ALIGN_FRAMES * 2U) /* 60ms */
+#define USB_RING_SAMPLES      (USB_RING_FRAMES * BAP_USB_CHANNELS)
+
+/* Maximum number of USB frames covered by a single LC3 frame */
+#define USB_MAX_FRAMES_PER_LC3_FRAME                                                               \
+	((LC3_MAX_FRAME_DURATION_US * BAP_USB_SAMPLE_RATE) / USEC_PER_SEC)
+
+BUILD_ASSERT((USB_RING_FRAMES % USB_RING_ALIGN_FRAMES) == 0U,
+	     "The ring buffers must be a multiple of USB_RING_ALIGN_FRAMES");
+BUILD_ASSERT((USB_RING_ALIGN_FRAMES % USB_SAMPLE_CNT) == 0U,
+	     "A USB transfer must never straddle the end of a ring buffer");
+BUILD_ASSERT((USB_RING_ALIGN_FRAMES % USB_HS_SAMPLE_CNT) == 0U,
+	     "A high speed USB transfer must never straddle the end of a ring buffer");
+BUILD_ASSERT((USB_RING_ALIGN_FRAMES % USB_MAX_FRAMES_PER_LC3_FRAME) == 0U,
+	     "An LC3 frame must never straddle the end of a ring buffer");
+BUILD_ASSERT((USB_STEREO_FRAME_SIZE % USB_BUF_GRANULARITY) == 0U,
+	     "USB transfers out of the ring buffers must be a multiple of the DMA granularity");
 
 #define IN_TERMINAL_ID  UAC2_ENTITY_ID(DT_NODELABEL(in_terminal))
 #define OUT_TERMINAL_ID UAC2_ENTITY_ID(DT_NODELABEL(out_terminal))
 
-#if defined CONFIG_BT_AUDIO_RX
+#if defined(CONFIG_BT_AUDIO_RX)
 static void usb_data_request(const struct device *dev);
+static void usb_in_terminal_update(bool microframes);
 #endif /* CONFIG_BT_AUDIO_RX */
+
+#if defined(CONFIG_BT_AUDIO_TX)
+static void usb_out_terminal_disabled(void);
+#endif /* CONFIG_BT_AUDIO_TX */
+
+size_t bap_usb_get_read_cnt(const struct shell_stream *sh_stream)
+{
+	return (USB_SAMPLE_CNT * sh_stream->lc3_frame_duration_us) / USEC_PER_MSEC;
+}
+
+/**
+ * Round @p frames down to a multiple of @p step, so that a cursor that is snapped to another
+ * cursor keeps the alignment that the ring buffer sizing relies on.
+ */
+static size_t usb_align_down(size_t frames, size_t step)
+{
+	__ASSERT(step != 0U, "Invalid step");
+	__ASSERT((USB_RING_FRAMES % step) == 0U, "Step %zu does not divide the ring buffer", step);
+
+	return frames - (frames % step);
+}
+
+/** Number of frames from @p from to @p to, going forwards through the ring buffer */
+static size_t usb_frames_between(size_t from, size_t to)
+{
+	if (to >= from) {
+		return to - from;
+	}
+
+	return to + (USB_RING_FRAMES - from);
+}
+
+/** Advance @p cursor by @p frames, wrapping around the end of the ring buffer */
+static size_t usb_advance(size_t cursor, size_t frames)
+{
+	cursor += frames;
+
+	if (cursor >= USB_RING_FRAMES) {
+		cursor -= USB_RING_FRAMES;
+	}
+
+	__ASSERT(cursor < USB_RING_FRAMES, "Invalid cursor %zu", cursor);
+
+	return cursor;
+}
 
 static bool in_terminal_enabled;
 static bool out_terminal_enabled;
@@ -71,13 +161,23 @@ static void usb_terminal_update_cb(const struct device *dev, uint8_t terminal, b
 				   bool microframes, void *user_data)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(microframes);
 	ARG_UNUSED(user_data);
+#if !defined(CONFIG_BT_AUDIO_RX)
+	ARG_UNUSED(microframes);
+#endif /* !CONFIG_BT_AUDIO_RX */
 
 	if (terminal == IN_TERMINAL_ID) {
+#if defined(CONFIG_BT_AUDIO_RX)
+		usb_in_terminal_update(microframes);
+#endif /* CONFIG_BT_AUDIO_RX */
 		in_terminal_enabled = enabled;
 	} else if (terminal == OUT_TERMINAL_ID) {
 		out_terminal_enabled = enabled;
+#if defined(CONFIG_BT_AUDIO_TX)
+		if (!enabled) {
+			usb_out_terminal_disabled();
+		}
+#endif /* CONFIG_BT_AUDIO_TX */
 	} else {
 		/* no-op */
 	}
@@ -95,68 +195,212 @@ static void usb_sof_cb(const struct device *dev, void *user_data)
 }
 
 #if defined CONFIG_BT_AUDIO_RX
-#define USB_IN_RING_BUF_SIZE (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
+/* Interleaved stereo ring buffer holding decoded audio on its way to the USB host.
+ *
+ * It has up to 2 producers (a single stream for each of the left and right channels, elected by
+ * stream_started_cb()) that each have their own write cursor, and a single consumer (the USB SOF
+ * handler). The buffer is written directly by liblc3, then USB SOF copies each transfer to
+ * usb_in_dma_slots for USB DMA.
+ */
+USB_STATIC_BUF_DEFINE(usb_in_ring_buf_mem, USB_RING_SAMPLES * USB_BYTES_PER_SAMPLE);
+static int16_t *const usb_in_ring_buf = (int16_t *)usb_in_ring_buf_mem;
+USB_STATIC_BUF_DEFINE(usb_in_dma_slot0, USB_STEREO_FRAME_SIZE);
+USB_STATIC_BUF_DEFINE(usb_in_dma_slot1, USB_STEREO_FRAME_SIZE);
+USB_STATIC_BUF_DEFINE(usb_in_dma_slot2, USB_STEREO_FRAME_SIZE);
+USB_STATIC_BUF_DEFINE(usb_in_dma_slot3, USB_STEREO_FRAME_SIZE);
+static uint8_t *const usb_in_dma_slots[USB_UAC2_SLOT_CNT] = {
+	usb_in_dma_slot0,
+	usb_in_dma_slot1,
+	usb_in_dma_slot2,
+	usb_in_dma_slot3,
+};
+static bool usb_in_dma_slot_busy[USB_UAC2_SLOT_CNT];
+static size_t usb_in_left_write_cursor;
+static size_t usb_in_right_write_cursor;
+static size_t usb_in_read_cursor;
+static bool usb_in_left_active;
+static bool usb_in_right_active;
+/* Number of USB frames in a single transfer to the host. This is the wMaxPacketSize of the IN
+ * endpoint, and is thus USB_SAMPLE_CNT when operating at full speed, but only an eighth of that
+ * at high speed where a transfer covers a microframe rather than a frame.
+ */
+static size_t usb_in_slot_frames = USB_SAMPLE_CNT;
+/* Number of consecutive underruns, used to bound how long a single starving channel may hold
+ * back a channel that is still producing data
+ */
+static size_t usb_in_underrun_cnt;
 
-struct decoded_sdu {
-	int16_t right_frames[MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
-	int16_t left_frames[MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
-	size_t right_frames_cnt;
-	size_t left_frames_cnt;
-	size_t mono_frames_cnt;
-	uint32_t ts;
-} decoded_sdu;
+/* Amount of data to keep between the read cursor and a write cursor, to absorb the jitter of the
+ * incoming SDUs. Also used as the target when a channel has to be resynchronized.
+ */
+#define USB_IN_TARGET_PREFILL_FRAMES (USB_MAX_FRAMES_PER_LC3_FRAME * 2U) /* 20ms */
 
-RING_BUF_DECLARE(usb_in_ring_buf, USB_IN_RING_BUF_SIZE);
-K_MEM_SLAB_DEFINE_STATIC(usb_in_buf_pool, ROUND_UP(USB_STEREO_FRAME_SIZE, UDC_BUF_GRANULARITY),
-			 USB_ENQUEUE_COUNT, UDC_BUF_ALIGN);
+/* Number of consecutive underruns after which a starving channel is sent as silence rather than
+ * blocking the channels that do produce data. A stream that stops without being deactivated would
+ * otherwise mute the other channel indefinitely.
+ */
+#define USB_IN_MAX_UNDERRUNS 100U /* 100 USB frames at full speed */
 
-/* USB consumer callback, called every 1ms, consumes data from ring-buffer */
+/* Store the transfer size that the connection speed implies, as the SOF callback is called once
+ * per microframe at high speed and thus consumes an eighth of the frames per call.
+ */
+static void usb_in_terminal_update(bool microframes)
+{
+	const size_t slot_frames =
+		(USBD_SUPPORTS_HIGH_SPEED && microframes) ? USB_HS_SAMPLE_CNT : USB_SAMPLE_CNT;
+
+	if (slot_frames != usb_in_slot_frames) {
+		usb_in_slot_frames = slot_frames;
+		/* Keep the read cursor aligned to the new transfer size, so that a transfer never
+		 * straddles the end of the ring buffer
+		 */
+		usb_in_read_cursor = usb_align_down(usb_in_read_cursor, slot_frames);
+	}
+}
+
+/** Number of frames that @p write_cursor is ahead of the USB read cursor */
+static size_t usb_in_chan_fill(size_t write_cursor)
+{
+	return usb_frames_between(usb_in_read_cursor, write_cursor);
+}
+
+static int16_t *usb_in_dma_slot_acquire(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(usb_in_dma_slot_busy); i++) {
+		if (!usb_in_dma_slot_busy[i]) {
+			usb_in_dma_slot_busy[i] = true;
+			return (int16_t *)usb_in_dma_slots[i];
+		}
+	}
+
+	return NULL;
+}
+
+static bool usb_in_dma_slot_release(void *buf)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(usb_in_dma_slot_busy); i++) {
+		if (buf == usb_in_dma_slots[i]) {
+			usb_in_dma_slot_busy[i] = false;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* USB consumer callback, called once per (micro)frame, consumes usb_in_slot_frames frames from
+ * the ring buffer
+ */
 static void usb_data_request(const struct device *dev)
 {
-	void *pcm_buf;
-	uint32_t size;
+	size_t slot_frames;
+	size_t slot_size;
+	size_t max_underruns;
+	int16_t *pcm_buf;
+	bool left_active;
+	bool right_active;
+	bool starving = false;
+	bool give_up;
+	bool have_data;
 	int err;
 
-	if (bap_get_rx_streaming_cnt() == 0) {
-		/* no-op as we have no streams that receive data */
-		return;
+	slot_frames = usb_in_slot_frames;
+	slot_size = slot_frames * BAP_USB_CHANNELS * USB_BYTES_PER_SAMPLE;
+	max_underruns = USB_IN_MAX_UNDERRUNS * (USB_SAMPLE_CNT / slot_frames);
+	left_active = usb_in_left_active;
+	right_active = usb_in_right_active;
+
+	/* A channel that has starved for too long is ignored entirely, so that a channel which
+	 * does produce data is not held back indefinitely. This bounds the effect of a producer
+	 * that stops without deactivating its channel.
+	 */
+	give_up = usb_in_underrun_cnt >= max_underruns;
+
+	if (left_active && usb_in_chan_fill(usb_in_left_write_cursor) < slot_frames) {
+		left_active = !give_up;
+		starving = true;
 	}
 
-	err = k_mem_slab_alloc(&usb_in_buf_pool, &pcm_buf, K_NO_WAIT);
-	if (err != 0) {
-		LOG_WRN("Could not allocate pcm_buf: %d", err);
-		return;
+	if (right_active && usb_in_chan_fill(usb_in_right_write_cursor) < slot_frames) {
+		right_active = !give_up;
+		starving = true;
 	}
 
-	/* This may fail without causing issues since usb_audio_data is 0-initialized */
-	size = ring_buf_get(&usb_in_ring_buf, pcm_buf, USB_STEREO_FRAME_SIZE);
-	if (size != USB_STEREO_FRAME_SIZE) {
-		/* If we could not fill the buffer, zero-fill the rest (possibly all) */
-		memset(((uint8_t *)pcm_buf) + size, 0, USB_STEREO_FRAME_SIZE - size);
-	}
+	/* Only consume data that every channel that is still considered active has produced */
+	have_data = (left_active || right_active) && (!starving || give_up);
 
-	if (size != 0U) {
+	if (have_data) {
+		const int16_t *src;
 		static size_t cnt;
+		int16_t *dma_buf;
 
-		cnt++;
-		LOG_INF_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Sending USB audio", cnt);
-	} else {
-		static size_t cnt;
+		src = &usb_in_ring_buf[usb_in_read_cursor * BAP_USB_CHANNELS];
 
-		cnt++;
-		LOG_INF_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Sending empty USB audio", cnt);
-	}
-
-	err = usbd_uac2_send(dev, IN_TERMINAL_ID, pcm_buf, USB_STEREO_FRAME_SIZE);
-	if (err != 0) {
-		static size_t cnt;
-
-		cnt++;
-		if ((cnt % 1000) == 0) {
-			LOG_ERR("Failed to send USB audio: %d (%zu)", err, cnt);
+		/* Acquire the slot before advancing, so that a failed acquire does not
+		 * silently drop a frame block (the current code advances first and then
+		 * returns, skipping data that was never sent).
+		 */
+		dma_buf = usb_in_dma_slot_acquire();
+		if (dma_buf == NULL) {
+			LOG_WRN_RATELIMIT("No available USB IN DMA slot");
+			return;
 		}
 
-		k_mem_slab_free(&usb_in_buf_pool, pcm_buf);
+		if (left_active != right_active) {
+			/* Duplicate the single active channel to both while copying */
+			const size_t off = left_active ? 0U : 1U;
+
+			for (size_t i = 0U; i < slot_frames; i++) {
+				const int16_t sample = src[(i * BAP_USB_CHANNELS) + off];
+
+				dma_buf[(i * BAP_USB_CHANNELS)] = sample;
+				dma_buf[(i * BAP_USB_CHANNELS) + 1U] = sample;
+			}
+		} else {
+			(void)memcpy(dma_buf, src, slot_size);
+		}
+
+		usb_in_read_cursor = usb_advance(usb_in_read_cursor, slot_frames);
+
+		if (!starving) {
+			usb_in_underrun_cnt = 0U;
+		}
+
+		pcm_buf = dma_buf;
+
+		cnt++;
+		LOG_DBG_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Sending USB audio", cnt);
+	} else {
+		static size_t cnt;
+		int16_t *dma_buf;
+
+		/* Underrun. Send silence and leave the read cursor alone, so that the data that is
+		 * still being decoded is not skipped.
+		 */
+		dma_buf = usb_in_dma_slot_acquire();
+		if (dma_buf == NULL) {
+			LOG_WRN_RATELIMIT("No available USB IN DMA slot for silence");
+			return;
+		}
+
+		pcm_buf = dma_buf;
+		(void)memset(pcm_buf, 0, slot_size);
+
+		usb_in_underrun_cnt++;
+		cnt++;
+		LOG_DBG_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Sending USB silence", cnt);
+	}
+
+	err = usbd_uac2_send(dev, IN_TERMINAL_ID, pcm_buf, slot_size);
+	if (err != 0) {
+		const int send_err = err;
+		static size_t cnt;
+
+		(void)usb_in_dma_slot_release(pcm_buf);
+
+		cnt++;
+		LOG_ERR_RATELIMIT_RATE(USB_LOG_RATE, "Failed to send USB audio: %d (%zu)", send_err,
+				       cnt);
 	}
 }
 
@@ -167,279 +411,326 @@ static void usb_buf_release_cb(const struct device *dev, uint8_t terminal, void 
 	ARG_UNUSED(terminal);
 	ARG_UNUSED(user_data);
 
-	k_mem_slab_free(&usb_in_buf_pool, buf);
+	(void)usb_in_dma_slot_release(buf);
 }
 
-static void bap_usb_send_frames_to_usb(void)
+static size_t usb_in_chan_offset(enum bt_audio_location chan_alloc)
 {
-	const bool is_left_only =
-		decoded_sdu.right_frames_cnt == 0U && decoded_sdu.mono_frames_cnt == 0U;
-	const bool is_right_only =
-		decoded_sdu.left_frames_cnt == 0U && decoded_sdu.mono_frames_cnt == 0U;
-	const bool is_mono_only =
-		decoded_sdu.left_frames_cnt == 0U && decoded_sdu.right_frames_cnt == 0U;
-	const bool is_single_channel = is_left_only || is_right_only || is_mono_only;
-	const size_t frame_cnt =
-		MAX(decoded_sdu.mono_frames_cnt,
-		    MAX(decoded_sdu.left_frames_cnt, decoded_sdu.right_frames_cnt));
-	static size_t cnt;
-
-	/* Send frames to USB - If we only have a single channel we mix it to stereo */
-	for (size_t i = 0U; i < frame_cnt; i++) {
-		static int16_t stereo_frame[LC3_MAX_NUM_SAMPLES_STEREO];
-		const int16_t *right_frame = decoded_sdu.right_frames[i];
-		const int16_t *left_frame = decoded_sdu.left_frames[i];
-		const int16_t *mono_frame = decoded_sdu.left_frames[i]; /* use left as mono */
-		static size_t fail_cnt;
-		uint32_t rb_size;
-
-		/* Not enough space to store data */
-		if (ring_buf_space_get(&usb_in_ring_buf) < sizeof(stereo_frame)) {
-			fail_cnt++;
-			LOG_WRN_RATELIMIT_RATE(USB_LOG_RATE,
-					       "[%zu] Could not send more than %zu frames to USB",
-					       fail_cnt, i);
-
-			break;
-		}
-
-		fail_cnt = 0U;
-
-		/* Generate the stereo frame
-		 *
-		 * If we only have single channel then we mix that to stereo
-		 */
-		for (int j = 0; j < LC3_MAX_NUM_SAMPLES_MONO; j++) {
-			if (is_single_channel) {
-				int16_t sample = 0;
-
-				/* Mix to stereo as LRLRLRLR */
-				if (is_left_only) {
-					sample = left_frame[j];
-				} else if (is_right_only) {
-					sample = right_frame[j];
-				} else if (is_mono_only) {
-					sample = mono_frame[j];
-				}
-
-				stereo_frame[j * 2] = sample;
-				stereo_frame[j * 2 + 1] = sample;
-			} else {
-				stereo_frame[j * 2] = left_frame[j];
-				stereo_frame[j * 2 + 1] = right_frame[j];
-			}
-		}
-
-		rb_size = ring_buf_put(&usb_in_ring_buf, (uint8_t *)stereo_frame,
-				       sizeof(stereo_frame));
-		if (rb_size != sizeof(stereo_frame)) {
-			LOG_WRN("Failed to put frame on USB ring buf");
-
-			break;
-		}
-	}
-
-	cnt++;
-	LOG_INF_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Sending %zu USB audio frame", cnt, frame_cnt);
-
-	bap_usb_clear_frames_to_usb();
+	return chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT ? 1U : 0U;
 }
 
-static bool ts_overflowed(uint32_t ts)
+static size_t *usb_in_get_write_cursor(enum bt_audio_location chan_alloc)
 {
-	/* If the timestamp is a factor of 10 in difference, then we assume that TS overflowed
-	 * We cannot simply check if `ts < decoded_sdu.ts` as that could also indicate old data
-	 */
-	return ((uint64_t)ts * 10 < decoded_sdu.ts);
+	if (chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT) {
+		return &usb_in_right_write_cursor;
+	}
+
+	/* Mono is stored in, and sent from, the left channel */
+	return &usb_in_left_write_cursor;
 }
 
-int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16_t *frame,
-			     size_t frame_size, uint32_t ts)
+void bap_usb_activate_in_chan(enum bt_audio_location chan_alloc)
 {
-	const bool is_left = (chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
-	const bool is_right = (chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
-	const bool is_mono = chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
-	const uint8_t ts_jitter_us = 100U; /* timestamps may have jitter */
+	const bool is_right = chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT;
 
-	static size_t cnt;
-
-	cnt++;
-	LOG_INF_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Adding USB audio frame", cnt);
-
-	if (frame_size > LC3_MAX_NUM_SAMPLES_MONO * sizeof(int16_t) || frame_size == 0U) {
-		LOG_DBG("Invalid frame of size %zu", frame_size);
-
-		return -EINVAL;
-	}
-
-	if (bt_audio_get_chan_count(chan_allocation) != 1) {
-		LOG_DBG("Invalid channel allocation %d", chan_allocation);
-
-		return -EINVAL;
-	}
-
-	if (((is_left || is_right) && decoded_sdu.mono_frames_cnt != 0U) ||
-	    (is_mono &&
-	     (decoded_sdu.left_frames_cnt != 0U || decoded_sdu.right_frames_cnt != 0U))) {
-		LOG_WRN("Cannot mix and match mono with left or right: %s: %u | %u | %u",
-			is_left    ? "is_left"
-			: is_right ? "is_right"
-				   : "is_mono",
-			decoded_sdu.mono_frames_cnt, decoded_sdu.left_frames_cnt,
-			decoded_sdu.right_frames_cnt);
-
-		return -EINVAL;
-	}
-
-	/* Check if the frame can be combined with a previous frame from another channel, of if
-	 * we have to send previous data to USB and then store the current frame
-	 *
-	 * This is done by comparing the timestamps of the frames, and in the case that they are the
-	 * same, there are additional checks to see if we have received more left than right frames,
-	 * in which case we also send existing data
-	 */
-
-	if (ts + ts_jitter_us < decoded_sdu.ts && !ts_overflowed(ts)) {
-		/* Old data, discard */
-		return -ENOEXEC;
-	} else if (ts > decoded_sdu.ts + ts_jitter_us || ts_overflowed(ts)) {
-		/* We are getting new data - Send existing data to ring buffer */
-		bap_usb_send_frames_to_usb();
-	} else { /* same timestamp */
-		bool send = false;
-
-		if (is_left && decoded_sdu.left_frames_cnt > decoded_sdu.right_frames_cnt) {
-			/* We are receiving left again before a right, send to USB */
-			send = true;
-		} else if (is_right && decoded_sdu.right_frames_cnt > decoded_sdu.left_frames_cnt) {
-			/* We are receiving right again before a left, send to USB */
-			send = true;
-		} else if (is_mono) {
-			/* always send mono as it comes */
-			send = true;
-		}
-
-		if (send) {
-			bap_usb_send_frames_to_usb();
-		}
-	}
-
-	if (is_left) {
-		if (decoded_sdu.left_frames_cnt >= ARRAY_SIZE(decoded_sdu.left_frames)) {
-			LOG_WRN("Could not add more left frames");
-
-			return -ENOMEM;
-		}
-
-		(void)memcpy(decoded_sdu.left_frames[decoded_sdu.left_frames_cnt], frame,
-			     frame_size);
-		decoded_sdu.left_frames_cnt++;
-	} else if (is_right) {
-		if (decoded_sdu.right_frames_cnt >= ARRAY_SIZE(decoded_sdu.right_frames)) {
-			LOG_WRN("Could not add more right frames");
-
-			return -ENOMEM;
-		}
-
-		(void)memcpy(decoded_sdu.right_frames[decoded_sdu.right_frames_cnt], frame,
-			     frame_size);
-		decoded_sdu.right_frames_cnt++;
-	} else if (is_mono) {
-		/* Use left as mono*/
-		if (decoded_sdu.mono_frames_cnt >= ARRAY_SIZE(decoded_sdu.left_frames)) {
-			LOG_WRN("Could not add more mono frames");
-
-			return -ENOMEM;
-		}
-
-		(void)memcpy(decoded_sdu.left_frames[decoded_sdu.mono_frames_cnt], frame,
-			     frame_size);
-		decoded_sdu.mono_frames_cnt++;
+	/* There is a */
+	if (is_right) {
+		usb_in_right_active = true;
+		usb_in_right_write_cursor = usb_in_read_cursor;
 	} else {
-		/* Unsupported channel */
-		LOG_DBG("Unsupported channel %d", chan_allocation);
-
-		return -EINVAL;
+		usb_in_left_active = true;
+		usb_in_left_write_cursor = usb_in_read_cursor;
 	}
 
-	decoded_sdu.ts = ts;
-
-	return 0;
+	LOG_INF("Activated USB IN channel 0x%08X", (uint32_t)chan_alloc);
 }
 
-void bap_usb_clear_frames_to_usb(void)
+void bap_usb_deactivate_in_chan(enum bt_audio_location chan_alloc)
 {
-	decoded_sdu.mono_frames_cnt = 0U;
-	decoded_sdu.right_frames_cnt = 0U;
-	decoded_sdu.left_frames_cnt = 0U;
-	decoded_sdu.ts = 0U;
+	const bool is_right = chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT;
+
+	if (is_right) {
+		usb_in_right_active = false;
+	} else {
+		usb_in_left_active = false;
+	}
+
+	usb_in_underrun_cnt = 0U;
+
+	LOG_INF("Deactivated USB IN channel 0x%08X", (uint32_t)chan_alloc);
+}
+
+/**
+ * Place a channel at USB_IN_TARGET_PREFILL_FRAMES ahead of the consumer, and fill the frames it
+ * skips over with silence so that the consumer never sends stale ring buffer content.
+ *
+ * The cursor is rounded up to a multiple of @p sample_cnt so that it stays at or ahead of the
+ * consumer, and so that the LC3 frames written from it never straddle the end of the ring buffer.
+ */
+static size_t usb_in_resync(enum bt_audio_location chan_alloc, size_t sample_cnt)
+{
+	const size_t chan_offset = usb_in_chan_offset(chan_alloc);
+	/* Snapshot the consumer state once; both are owned by the usbd thread */
+	const size_t read_cursor = usb_in_read_cursor;
+	const size_t slot_frames = usb_in_slot_frames;
+	/* The consumer may be copying the frames at read_cursor right now, so the
+	 * first frame this producer may touch is one transfer ahead of it.
+	 */
+	const size_t safe = usb_advance(read_cursor, slot_frames);
+	size_t cursor = usb_align_down(safe, sample_cnt);
+	size_t silence_cnt;
+
+	if (cursor != safe) {
+		cursor = usb_advance(cursor, sample_cnt);
+	}
+
+	cursor = usb_advance(cursor, usb_align_down(USB_IN_TARGET_PREFILL_FRAMES, sample_cnt));
+
+	silence_cnt = usb_frames_between(safe, cursor);
+	for (size_t i = 0U; i < silence_cnt; i++) {
+		const size_t frame = usb_advance(safe, i);
+
+		usb_in_ring_buf[(frame * BAP_USB_CHANNELS) + chan_offset] = 0;
+	}
+
+	return cursor;
+}
+
+int16_t *bap_usb_claim_in_frame(enum bt_audio_location chan_alloc, size_t sample_cnt)
+{
+	size_t *cursor = usb_in_get_write_cursor(chan_alloc);
+	int16_t *frame;
+	size_t fill;
+
+	if (sample_cnt == 0U || sample_cnt > USB_MAX_FRAMES_PER_LC3_FRAME ||
+	    (USB_RING_FRAMES % sample_cnt) != 0U) {
+		LOG_WRN_RATELIMIT("Invalid sample count %zu", sample_cnt);
+
+		return NULL;
+	}
+
+	fill = usb_in_chan_fill(*cursor);
+
+	/* Resynchronize the channel if it has fallen behind the consumer (which has already sent
+	 * silence for the data being decoded now), if it has run so far ahead that it is about to
+	 * overwrite data that has not been sent yet, or if it is not aligned to its own frame size
+	 * (which happens on the first frame after the channel was activated).
+	 *
+	 * The upper bound is inclusive, as a write cursor that ends up exactly at the read cursor
+	 * is indistinguishable from an empty ring buffer.
+	 */
+	if (fill < sample_cnt || fill >= (USB_RING_FRAMES - USB_MAX_FRAMES_PER_LC3_FRAME) ||
+	    (*cursor % sample_cnt) != 0U) {
+		*cursor = usb_in_resync(chan_alloc, sample_cnt);
+
+		LOG_WRN_RATELIMIT_RATE(USB_LOG_RATE,
+				       "Resynchronized USB IN channel 0x%08X (fill was %zu)",
+				       (uint32_t)chan_alloc, fill);
+	}
+
+	frame = &usb_in_ring_buf[(*cursor * BAP_USB_CHANNELS) + usb_in_chan_offset(chan_alloc)];
+
+	return frame;
+}
+
+void bap_usb_release_in_frame(enum bt_audio_location chan_alloc, size_t sample_cnt)
+{
+	size_t *cursor = usb_in_get_write_cursor(chan_alloc);
+	static size_t cnt;
+
+	*cursor = usb_advance(*cursor, sample_cnt);
+
+	cnt++;
+	LOG_DBG_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Added USB audio frame", cnt);
 }
 #endif /* CONFIG_BT_AUDIO_RX */
 
 #if defined(CONFIG_BT_AUDIO_TX)
-#define USB_OUT_RING_BUF_SIZE (USB_MONO_FRAME_SIZE * USB_ENQUEUE_COUNT)
-
-/* Allocate 3: 1 for USB to receive data to and 2 additional buffers to prevent out of memory
- * errors when USB host decides to perform rapid terminal enable/disable cycles.
+/* Interleaved stereo ring buffer holding audio received from the USB host.
+ *
+ * It has a single producer, where the USB OUT endpoint writes by DMA into
+ * usb_out_dma_slots and usb_data_recv_cb() copies those samples into this ring,
+ * and 0 or more consumers, one per TX stream, that each have their own read
+ * position and that may consume at different rates. The buffer is read directly
+ * by liblc3.
+ *
+ * All positions on this path are monotonic counts of USB frames rather than ring buffer indices.
+ * That makes the distance between the producer and a consumer unambiguous no matter how long a
+ * consumer has been idle, which in turn lets a stream be resynchronized lazily when it asks for
+ * data instead of eagerly on every received USB transfer.
  */
-K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, USB_STEREO_FRAME_SIZE, 3, UDC_BUF_ALIGN);
+USB_STATIC_BUF_DEFINE(usb_out_ring_buf_mem, USB_RING_SAMPLES * USB_BYTES_PER_SAMPLE);
+static int16_t *const usb_out_ring_buf = (int16_t *)usb_out_ring_buf_mem;
+USB_STATIC_BUF_DEFINE(usb_out_dma_slot0, USB_STEREO_FRAME_SIZE);
+USB_STATIC_BUF_DEFINE(usb_out_dma_slot1, USB_STEREO_FRAME_SIZE);
+USB_STATIC_BUF_DEFINE(usb_out_dma_slot2, USB_STEREO_FRAME_SIZE);
+USB_STATIC_BUF_DEFINE(usb_out_dma_slot3, USB_STEREO_FRAME_SIZE);
+static uint8_t *const usb_out_dma_slots[USB_UAC2_SLOT_CNT] = {
+	usb_out_dma_slot0,
+	usb_out_dma_slot1,
+	usb_out_dma_slot2,
+	usb_out_dma_slot3,
+};
+struct usb_out_dma_slot {
+	uint64_t pos;
+	size_t frame_cnt;
+	bool pending;
+};
+static struct usb_out_dma_slot usb_out_dma_slot_state[USB_UAC2_SLOT_CNT];
+/* Points to the oldest/uninitialized data */
+static uint64_t usb_out_write_pos;
+/* Position that has been handed to the USB stack but not yet received. The UAC2 class may have
+ * up to 2 transfers queued at a time, so this may be ahead of usb_out_write_pos.
+ */
+static uint64_t usb_out_pending_pos;
+/* Number of frames in a single USB transfer. This is the wMaxPacketSize of the OUT endpoint, and
+ * is thus USB_SAMPLE_CNT when operating at full speed, but only an eighth of that at high speed
+ * where a transfer covers a microframe rather than a frame.
+ */
+static size_t usb_out_slot_frames = USB_SAMPLE_CNT;
 
-static int16_t usb_out_left_ring_buffer[USB_OUT_RING_BUF_SIZE];
-static int16_t usb_out_right_ring_buffer[USB_OUT_RING_BUF_SIZE];
-static size_t write_index; /* Points to the oldest/uninitialized data */
+/* Amount of data a stream aims to keep between itself and the write position. Used when a stream
+ * starts, and when it has to be resynchronized because it was about to be overwritten.
+ */
+#define USB_OUT_TARGET_PREFILL_FRAMES (USB_MAX_FRAMES_PER_LC3_FRAME * 2U) /* 20ms */
 
-size_t bap_usb_get_read_cnt(const struct shell_stream *sh_stream)
+/* Largest amount of data a stream may wait for before it starts sending. Kept below the point
+ * where usb_out_stream_sync() resynchronizes the stream, so that the wait can always be satisfied.
+ */
+#define USB_OUT_MAX_PREFILL_FRAMES (USB_RING_FRAMES - (USB_MAX_FRAMES_PER_LC3_FRAME * 2U))
+
+uint8_t bap_usb_get_chan_offset(enum bt_audio_location chan_alloc)
 {
-	return (USB_SAMPLE_CNT * sh_stream->lc3_frame_duration_us) / USEC_PER_MSEC;
+	__ASSERT((chan_alloc == BT_AUDIO_LOCATION_MONO_AUDIO ||
+		  chan_alloc == BT_AUDIO_LOCATION_FRONT_LEFT ||
+		  chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT),
+		 "Invalid chan_alloc %d", chan_alloc);
+
+	return chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT ? 1U : 0U;
 }
 
-size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream)
+/** Ring buffer index of an absolute frame position */
+static size_t usb_ring_index(uint64_t pos)
 {
-	return USB_BYTES_PER_SAMPLE * bap_usb_get_read_cnt(sh_stream);
+	return (size_t)(pos % USB_RING_FRAMES);
 }
 
-static void stream_cb(struct shell_stream *sh_stream, void *user_data)
+/** Round an absolute position down to a multiple of @p step */
+static uint64_t usb_pos_align_down(uint64_t pos, size_t step)
 {
-	if (sh_stream->is_tx) {
-		const bool has_left =
-			(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
-		const bool has_right =
-			(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
-		const bool has_stereo = has_right && has_left;
-		const bool is_mono = sh_stream->lc3_chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
-		const size_t old_write_index = POINTER_TO_UINT(user_data);
-		const bool overflowed = write_index < old_write_index;
-		size_t read_idx;
+	__ASSERT(step != 0U, "Invalid step");
+	__ASSERT((USB_RING_FRAMES % step) == 0U, "Step %zu does not divide the ring buffer", step);
 
-		if (has_stereo) {
-			/* These should always be the same */
-			read_idx = MIN(sh_stream->tx.left_read_idx, sh_stream->tx.right_read_idx);
-		} else if (has_left || is_mono) {
-			read_idx = sh_stream->tx.left_read_idx;
-		} else if (has_right) {
-			read_idx = sh_stream->tx.right_read_idx;
-		} else {
-			/* Not a valid USB stream */
-			return;
-		}
+	return pos - (pos % step);
+}
 
-		/* If we are overwriting data that the stream is currently pointing to, then we
-		 * need to update the index so that the stream will point to the oldest valid data
+static void usb_out_terminal_disabled(void)
+{
+	/* Any queued transfers are discarded by the USB stack, so the slots that were handed out
+	 * become available again
+	 */
+	usb_out_pending_pos = usb_out_write_pos;
+	for (size_t i = 0U; i < ARRAY_SIZE(usb_out_dma_slot_state); i++) {
+		usb_out_dma_slot_state[i].pending = false;
+	}
+}
+
+/**
+ * Number of frames that @p sh_stream can still read before catching up with the producer,
+ * resynchronizing the stream first if the producer has overwritten data that it had not consumed
+ * yet.
+ *
+ * This is evaluated lazily when a stream asks for data rather than eagerly on every received USB
+ * transfer, so a stream that is not reading costs nothing until it actually wants a frame. Each
+ * stream is evaluated against its own margin, as they may consume at different rates, and a
+ * stream that is not reading at all must not hold back the producer.
+ */
+static size_t usb_out_stream_sync(struct shell_stream *sh_stream, size_t read_cnt)
+{
+	const uint64_t write_pos = usb_out_write_pos; /* take snapshot */
+	uint64_t avail;
+
+	if (sh_stream->tx.usb_read_pos >= write_pos) {
+		/* The stream was started at the next frame-aligned position at or after the
+		 * producer, so it may legitimately be ahead of it until the producer catches up.
 		 */
-		if (read_idx > old_write_index) {
-			if (read_idx < write_index || (overflowed && read_idx < write_index)) {
-				sh_stream->tx.left_read_idx = write_index;
-				sh_stream->tx.right_read_idx = write_index;
-			}
+		return 0U;
+	}
+
+	avail = write_pos - sh_stream->tx.usb_read_pos;
+
+	if (avail > (USB_RING_FRAMES - USB_MAX_FRAMES_PER_LC3_FRAME)) {
+		const uint64_t aligned = usb_pos_align_down(write_pos, read_cnt);
+		const uint64_t target = usb_align_down(USB_OUT_TARGET_PREFILL_FRAMES, read_cnt);
+
+		/* Drop the backlog and keep the most recent data, so that the stream does not
+		 * immediately fall behind again
+		 */
+		sh_stream->tx.usb_read_pos = (aligned > target) ? (aligned - target) : 0U;
+		avail = write_pos - sh_stream->tx.usb_read_pos;
+
+		LOG_WRN_RATELIMIT_RATE(USB_LOG_RATE,
+				       "Resynchronized USB OUT stream %p (avail was %zu)",
+				       (void *)sh_stream, (size_t)avail);
+	}
+
+	return (size_t)avail;
+}
+
+static int usb_out_dma_slot_index_by_buf(void *buf)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(usb_out_dma_slot_state); i++) {
+		if (buf == usb_out_dma_slots[i]) {
+			return (int)i;
 		}
 	}
+
+	return -1;
+}
+
+static int usb_out_dma_slot_index_free(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(usb_out_dma_slot_state); i++) {
+		if (!usb_out_dma_slot_state[i].pending) {
+			return (int)i;
+		}
+	}
+
+	return -1;
+}
+
+void bap_usb_tx_stream_started(struct shell_stream *sh_stream)
+{
+	const size_t read_cnt = bap_usb_get_read_cnt(sh_stream);
+
+	if (read_cnt == 0U) {
+		LOG_WRN("Invalid frame duration %u for stream %p", sh_stream->lc3_frame_duration_us,
+			(void *)sh_stream);
+		return;
+	}
+
+	__ASSERT((USB_RING_FRAMES % read_cnt) == 0U,
+		 "Read count %zu does not divide the ring buffer", read_cnt);
+
+	/* Start at the next frame-aligned position at or after the producer, so that only data
+	 * received after the stream started is sent, rather than at whatever the union with the
+	 * RX state left in the field.
+	 *
+	 * This rounds up rather than down: rounding down would place the read position behind the
+	 * producer whenever usb_out_write_pos is not a multiple of read_cnt, making the first LC3
+	 * frame contain up to read_cnt - 1 frames of data from before the stream started.
+	 * Positions are monotonic, so the stream may temporarily be ahead of the producer, which
+	 * usb_out_stream_sync() handles by reporting that no data is available yet.
+	 */
+	sh_stream->tx.usb_read_pos = ROUND_UP(usb_out_write_pos, read_cnt);
 }
 
 static void *usb_get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_t size,
 				 void *user_data)
 {
-	void *buf = NULL;
-	int ret;
+	size_t frame_cnt;
+	void *buf;
+	int slot_idx;
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(terminal);
@@ -449,12 +740,45 @@ static void *usb_get_recv_buf_cb(const struct device *dev, uint8_t terminal, uin
 		return NULL;
 	}
 
-	__ASSERT(size <= USB_STEREO_FRAME_SIZE, "%u was not <= %d", size, USB_STEREO_FRAME_SIZE);
+	/* The USB DMA may write up to size octets, so the slot handed out below must be that
+	 * large. size is the wMaxPacketSize of the endpoint and thus constant while the terminal
+	 * is enabled, which lets usb_data_recv_cb() commit the same amount.
+	 */
+	frame_cnt = size / (BAP_USB_CHANNELS * USB_BYTES_PER_SAMPLE);
+	if (frame_cnt == 0U || frame_cnt > USB_SAMPLE_CNT ||
+	    (size % (BAP_USB_CHANNELS * USB_BYTES_PER_SAMPLE)) != 0U ||
+	    (USB_RING_FRAMES % frame_cnt) != 0U) {
+		LOG_WRN_RATELIMIT("Unsupported receive buffer size %u", size);
 
-	ret = k_mem_slab_alloc(&usb_out_buf_pool, &buf, K_NO_WAIT);
-	if (ret != 0) {
-		LOG_WRN("Failed to allocate buffer: %d", ret);
+		return NULL;
 	}
+
+	if (frame_cnt != usb_out_slot_frames) {
+		/* Keep the positions aligned to the new transfer size. This rounds up rather than
+		 * down, as moving the producer backwards past a consumer would make the distance
+		 * computed by usb_out_stream_sync() underflow.
+		 */
+		usb_out_slot_frames = frame_cnt;
+		usb_out_pending_pos =
+			usb_pos_align_down(usb_out_write_pos + frame_cnt - 1U, frame_cnt);
+		usb_out_write_pos = usb_out_pending_pos;
+	}
+
+	slot_idx = usb_out_dma_slot_index_free();
+
+	if (slot_idx < 0) {
+		LOG_WRN_RATELIMIT("No available USB OUT DMA slot");
+		return NULL;
+	}
+
+	/* Hand out the next unused DMA-aligned slot. The slot is committed by
+	 * usb_data_recv_cb().
+	 */
+	usb_out_dma_slot_state[slot_idx].pos = usb_out_pending_pos;
+	usb_out_dma_slot_state[slot_idx].frame_cnt = frame_cnt;
+	usb_out_dma_slot_state[slot_idx].pending = true;
+	buf = usb_out_dma_slots[slot_idx];
+	usb_out_pending_pos += frame_cnt;
 
 	return buf;
 }
@@ -462,148 +786,92 @@ static void *usb_get_recv_buf_cb(const struct device *dev, uint8_t terminal, uin
 static void usb_data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, uint16_t size,
 			     void *user_data)
 {
-	const size_t old_write_index = write_index;
+	struct usb_out_dma_slot *slot;
+	const int16_t *src;
 	static size_t cnt;
-	int16_t *pcm;
+	size_t frame_cnt;
+	int16_t *dst;
+	int slot_idx;
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(terminal);
 	ARG_UNUSED(user_data);
 
-	if (!out_terminal_enabled || buf == NULL || size == 0U) {
-		k_mem_slab_free(&usb_out_buf_pool, buf);
+	if (buf == NULL) {
 		return;
 	}
 
-	pcm = (int16_t *)buf;
-
-	/* Split the data into left and right as LC3 uses LLLLRRRR instead of LRLRLRLR as USB
-	 *
-	 * Since the left and right buffer sizes are a factor of USB_SAMPLE_CNT, then we can always
-	 * add USB_SAMPLE_CNT in a single go without needing to check the remaining size as that
-	 * can be done once afterwards
+	/* The data has been written into the DMA-aligned slot already, so all that is left is to
+	 * make it available to the consumers. The host may send a short packet, in which case the
+	 * remainder of the slot is zero-filled; the entire slot is always committed so that the
+	 * positions keep the alignment that the ring buffer sizing relies on.
 	 */
-	for (size_t i = 0U, j = 0U; i < USB_SAMPLE_CNT; i++, j += USB_CHANNELS) {
-		usb_out_left_ring_buffer[write_index + i] = pcm[j];
-		usb_out_right_ring_buffer[write_index + i] = pcm[j + 1];
+	slot_idx = usb_out_dma_slot_index_by_buf(buf);
+	if (slot_idx < 0) {
+		LOG_WRN_RATELIMIT("Unknown USB OUT DMA slot %p", buf);
+		return;
 	}
 
-	write_index += USB_SAMPLE_CNT;
-
-	if (write_index == USB_OUT_RING_BUF_SIZE) {
-		/* Overflow so that we start overwriting oldest */
-		write_index = 0U;
+	slot = &usb_out_dma_slot_state[slot_idx];
+	if (!slot->pending) {
+		LOG_WRN_RATELIMIT("USB OUT DMA slot %d not pending", slot_idx);
+		return;
 	}
 
-	/* Update the read pointers of each stream to ensure that the new write index is not larger
-	 * than their read indexes
-	 */
-	bap_foreach_stream(stream_cb, UINT_TO_POINTER(old_write_index));
+	frame_cnt = MIN(size / (BAP_USB_CHANNELS * USB_BYTES_PER_SAMPLE), slot->frame_cnt);
+	if (frame_cnt < slot->frame_cnt) {
+		int16_t *pcm = (int16_t *)buf;
+
+		(void)memset(&pcm[frame_cnt * BAP_USB_CHANNELS], 0,
+			     (slot->frame_cnt - frame_cnt) * BAP_USB_CHANNELS *
+				     USB_BYTES_PER_SAMPLE);
+
+		LOG_DBG_RATELIMIT_RATE(USB_LOG_RATE, "Received short USB packet of %u octets",
+				       size);
+	}
+
+	__ASSERT(slot->pos == usb_out_write_pos, "Unexpected USB OUT position");
+
+	src = (const int16_t *)buf;
+	dst = &usb_out_ring_buf[usb_ring_index(slot->pos) * BAP_USB_CHANNELS];
+	(void)memcpy(dst, src, slot->frame_cnt * BAP_USB_CHANNELS * USB_BYTES_PER_SAMPLE);
+	usb_out_write_pos += slot->frame_cnt;
+	slot->pending = false;
 
 	cnt++;
 	LOG_DBG_RATELIMIT_RATE(USB_LOG_RATE, "USB Data received (count = %zu)", cnt);
-
-	k_mem_slab_free(&usb_out_buf_pool, buf);
 }
 
-bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream)
+const int16_t *bap_usb_get_frame_block(struct shell_stream *sh_stream)
 {
-	const bool has_left = (sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
-	const bool has_right =
-		(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
-	const bool has_stereo = has_right && has_left;
-	const bool is_mono = sh_stream->lc3_chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
-	const uint32_t read_cnt = bap_usb_get_read_cnt(sh_stream);
-	const uint32_t retrieve_cnt = read_cnt * sh_stream->lc3_frame_blocks_per_sdu;
-	static bool failed_last_time;
-	size_t read_idx;
-	size_t buffer_cnt;
+	const size_t read_cnt = bap_usb_get_read_cnt(sh_stream);
+	const int16_t *block;
 
-	if (has_stereo) {
-		/* These should always be the same */
-		read_idx = MIN(sh_stream->tx.left_read_idx, sh_stream->tx.right_read_idx);
-	} else if (has_left || is_mono) {
-		read_idx = sh_stream->tx.left_read_idx;
-	} else if (has_right) {
-		read_idx = sh_stream->tx.right_read_idx;
-	} else {
-		return false;
+	if (read_cnt == 0U) {
+		return NULL;
 	}
 
-	if (read_idx <= write_index) {
-		buffer_cnt = write_index - read_idx;
-	} else {
-		/* Handle the case where the read spans across the end of the buffer */
-		buffer_cnt = write_index + (USB_OUT_RING_BUF_SIZE - read_idx);
+	/* Resynchronize here rather than on every received USB transfer, so that the read position
+	 * is only touched when a frame block is actually wanted.
+	 */
+	if (usb_out_stream_sync(sh_stream, read_cnt) < read_cnt) {
+		LOG_WRN_RATELIMIT_RATE(USB_LOG_RATE, "No frame block available for stream %p",
+				       (void *)sh_stream);
+
+		return NULL;
 	}
 
-	if (buffer_cnt < retrieve_cnt) {
-		/* Not enough for a frame yet */
-		if (!failed_last_time) {
-			LOG_WRN("Ring buffer (%u/%u) does not contain enough for an entire SDU %u",
-				buffer_cnt, USB_OUT_RING_BUF_SIZE, retrieve_cnt);
-		}
+	__ASSERT((sh_stream->tx.usb_read_pos % read_cnt) == 0U,
+		 "Misaligned position %llu for read count %zu",
+		 (unsigned long long)sh_stream->tx.usb_read_pos, read_cnt);
 
-		failed_last_time = true;
+	/* The ring buffer size is a multiple of read_cnt, so the frame block never straddles the
+	 * end of the ring buffer and can be handed to liblc3 as-is.
+	 */
+	block = &usb_out_ring_buf[usb_ring_index(sh_stream->tx.usb_read_pos) * BAP_USB_CHANNELS];
+	sh_stream->tx.usb_read_pos += read_cnt;
 
-		return false;
-	}
-
-	failed_last_time = false;
-
-	return true;
-}
-
-/**
- * Reads @p size octets from src, handling wrapping and returns the new idx
- * (which is lower than @p idx in the case of wrapping)
- *
- * bap_usb_can_get_full_sdu should always be called before this to ensure that we are getting
- * valid data
- */
-static size_t usb_ring_buf_get(int16_t dest[], int16_t src[], size_t idx, size_t cnt)
-{
-	size_t new_idx;
-
-	if (idx >= USB_OUT_RING_BUF_SIZE) {
-		LOG_ERR("Invalid idx %zu", idx);
-
-		return 0;
-	}
-
-	if ((idx + cnt) < USB_OUT_RING_BUF_SIZE) {
-		/* Simply copy of the data and increment the index*/
-		memcpy(dest, &src[idx], cnt * USB_BYTES_PER_SAMPLE);
-		new_idx = idx + cnt;
-	} else {
-		/* Handle wrapping */
-		const size_t first_read_cnt = USB_OUT_RING_BUF_SIZE - idx;
-		const size_t second_read_cnt = cnt - first_read_cnt;
-
-		memcpy(dest, &src[idx], first_read_cnt * USB_BYTES_PER_SAMPLE);
-		memcpy(&dest[first_read_cnt], &src[0], second_read_cnt * USB_BYTES_PER_SAMPLE);
-
-		new_idx = second_read_cnt;
-	}
-
-	return new_idx;
-}
-
-void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location chan_alloc,
-		       int16_t buffer[])
-{
-	const bool is_left = (chan_alloc & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
-	const bool is_right = (chan_alloc & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
-	const bool is_mono = chan_alloc == BT_AUDIO_LOCATION_MONO_AUDIO;
-	const uint32_t read_cnt = bap_usb_get_read_cnt(sh_stream);
-
-	if (is_left || is_mono) {
-		sh_stream->tx.left_read_idx = usb_ring_buf_get(
-			buffer, usb_out_left_ring_buffer, sh_stream->tx.left_read_idx, read_cnt);
-	} else if (is_right) {
-		sh_stream->tx.right_read_idx = usb_ring_buf_get(
-			buffer, usb_out_right_ring_buffer, sh_stream->tx.right_read_idx, read_cnt);
-	}
+	return block;
 }
 #endif /* CONFIG_BT_AUDIO_TX */
 
