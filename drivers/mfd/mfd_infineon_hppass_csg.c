@@ -39,10 +39,12 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
 #include <infineon_kconfig.h>
+#include <infineon_hppass.h>
 #include <infineon_hppass_csg.h>
 #include <cy_device.h>
 #include <cy_sysclk.h>
@@ -290,6 +292,30 @@ static int ifx_hppass_csg_init(const struct device *dev)
 	return 0;
 } /* ifx_hppass_csg_init() */
 
+#ifdef CONFIG_PM_DEVICE
+/*
+ * Regular DeepSleep retains the CSG block configuration; only a genuine power
+ * loss (S2RAM warm boot) clears it, so the block is rebuilt from the TURN_ON
+ * path alone.
+ */
+static int ifx_hppass_csg_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		return ifx_hppass_csg_init(dev);
+#endif
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+} /* ifx_hppass_csg_pm_action() */
+#endif /* CONFIG_PM_DEVICE */
+
 #define IFX_CSG_INIT(n)                                                                            \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, infineon_dac_observe_blank_cycles, 0) <=                   \
 			(HPPASS_CSG_VDAC_OUT_BLANK_BLANK_CNT_Msk >>                                \
@@ -318,7 +344,10 @@ static int ifx_hppass_csg_init(const struct device *dev)
 		return ifx_hppass_csg_init(dev);                                                   \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ifx_hppass_csg_init_##n, NULL, &ifx_csg_data_##n,                 \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_hppass_csg_pm_action);                                     \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, ifx_hppass_csg_init_##n, PM_DEVICE_DT_INST_GET(n),                \
+			      &ifx_csg_data_##n,                                                   \
 			      &ifx_csg_config_##n, POST_KERNEL,                                    \
 			      CONFIG_MFD_INFINEON_HPPASS_CSG_INIT_PRIORITY, NULL);
 

@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,10 +27,12 @@
 #include <zephyr/drivers/dac.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
 #include <infineon_kconfig.h>
+#include <infineon_hppass_csg.h>
 #include <cy_device.h>
 
 #include "mfd_infineon_hppass_regs.h"
@@ -138,6 +140,30 @@ static int ifx_csg_dac_init(const struct device *dev)
 	return 0;
 } /* ifx_csg_dac_init() */
 
+#ifdef CONFIG_PM_DEVICE
+/*
+ * Regular DeepSleep retains the slice DAC_CFG and output value, so resume is a
+ * no-op.  Only a genuine power loss (S2RAM warm boot) clears them; the TURN_ON
+ * path reprograms them.  channel_setup_done is retained software state.
+ */
+static int ifx_csg_dac_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		return ifx_csg_dac_init(dev);
+#endif
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+} /* ifx_csg_dac_pm_action() */
+#endif /* CONFIG_PM_DEVICE */
+
 /* Compose DAC_CFG for one DAC child.  All advanced-mode fields stay zero. */
 #define IFX_CSG_DAC_CFG_INIT(node_id)                                                    \
 	FIELD_PREP(IFX_CSG_DAC_CFG_DEGLITCH, DT_PROP(node_id, deglitch))
@@ -157,7 +183,8 @@ static int ifx_csg_dac_init(const struct device *dev)
 	{                                                                                \
 		return ifx_csg_dac_init(dev);                                            \
 	}                                                                                \
-	DEVICE_DT_INST_DEFINE(n, ifx_csg_dac_init_##n, NULL,                             \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_csg_dac_pm_action);                              \
+	DEVICE_DT_INST_DEFINE(n, ifx_csg_dac_init_##n, PM_DEVICE_DT_INST_GET(n),         \
 			      &ifx_csg_dac_data_##n, &ifx_csg_dac_config_##n,            \
 			      POST_KERNEL,                                               \
 			      CONFIG_DAC_INFINEON_HPPASS_CSG_INIT_PRIORITY,              \
