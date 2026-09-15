@@ -182,11 +182,24 @@ static inline void arm_m_exc_tail(void)
 	 * our bookkeeping around EXC_RETURN, so do it early.
 	 */
 	void z_check_stack_sentinel(void);
-	void *isr_lr = (void *)*arm_m_exc_lr_ptr;
 
 	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {
 		z_check_stack_sentinel();
 	}
+
+#ifndef CONFIG_SMP
+	/* Fast path: with nothing new to run, return straight to the
+	 * interrupted thread instead of detouring through arm_m_exc_exit().
+	 * This is the same predicate z_sched_next_handle() evaluates there,
+	 * only earlier: a nested interrupt that readies a thread patches the
+	 * same (topmost) LR slot from its own tail, so no wakeup is lost.
+	 */
+	if (_kernel.ready_q.cache == _current) {
+		return;
+	}
+#endif
+
+	void *isr_lr = (void *)*arm_m_exc_lr_ptr;
 
 	if (isr_lr != arm_m_cs_ptrs.lr_fixup) {
 		/* We need to return to arm_m_exc_exit only if an exception is returning to thread
