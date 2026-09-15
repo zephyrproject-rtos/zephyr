@@ -59,8 +59,13 @@ static struct cpg_clk_info_table core_props[] = {
 				RCAR_CPG_KHZ(66660)),
 	RCAR_CORE_CLK_INFO_ITEM(R8A779G0_CLK_CL16M, RCAR_CPG_NONE, RCAR_CPG_NONE,
 				RCAR_CPG_KHZ(16660)),
+
+	RCAR_CORE_CLK_INFO_ITEM(R8A779G0_CLK_SD0H, 0x0870, CLK_SDSRC, RCAR_CPG_NONE),
+	RCAR_CORE_CLK_INFO_ITEM(R8A779G0_CLK_SD0, 0x0870, R8A779G0_CLK_SD0H, RCAR_CPG_NONE),
+
 	RCAR_CORE_CLK_INFO_ITEM(R8A779G0_CLK_SASYNCPERD1, RCAR_CPG_NONE, RCAR_CPG_NONE, 266666666),
 	RCAR_CORE_CLK_INFO_ITEM(CLK_PLL5, RCAR_CPG_NONE, RCAR_CPG_NONE, RCAR_CPG_MHZ(3200)),
+	RCAR_CORE_CLK_INFO_ITEM(CLK_SDSRC, 0x08A4, CLK_PLL5, RCAR_CPG_NONE),
 };
 
 /*
@@ -75,10 +80,72 @@ static struct cpg_clk_info_table mod_props[] = {
 	RCAR_MOD_CLK_INFO_ITEM(514, R8A779G0_CLK_SASYNCPERD1), /* HSCIF0 */
 	RCAR_MOD_CLK_INFO_ITEM(515, R8A779G0_CLK_SASYNCPERD1), /* HSCIF1 */
 	RCAR_MOD_CLK_INFO_ITEM(702, R8A779G0_CLK_S0D12_PER),   /* SCIF0 */
-	RCAR_MOD_CLK_INFO_ITEM(915, R8A779G0_CLK_CL16M),       /* GPIO0 group 0 */
-	RCAR_MOD_CLK_INFO_ITEM(916, R8A779G0_CLK_CL16M),       /* GPIO1 group 0 */
-	RCAR_MOD_CLK_INFO_ITEM(917, R8A779G0_CLK_CL16M),       /* GPIO2 group 0 */
+	RCAR_MOD_CLK_INFO_ITEM(706, R8A779G0_CLK_SD0),         /* SD0 */
+	RCAR_MOD_CLK_INFO_ITEM(915, R8A779G0_CLK_CL16M),       /* PFC0: gpio0-1 */
+	RCAR_MOD_CLK_INFO_ITEM(916, R8A779G0_CLK_CL16M),       /* PFC1: gpio2-3 */
+	RCAR_MOD_CLK_INFO_ITEM(917, R8A779G0_CLK_CL16M),       /* PFC2: gpio4-7 */
+	RCAR_MOD_CLK_INFO_ITEM(918, R8A779G0_CLK_CL16M),       /* PFC3: gpio8   */
 };
+
+static int r8a779g0_cpg_enable_disable_core(const struct device *dev,
+					    struct cpg_clk_info_table *clk_info, uint32_t enable)
+{
+	int ret = 0;
+	uint32_t reg;
+
+	switch (clk_info->module) {
+	case R8A779G0_CLK_SD0:
+		reg = sys_read32(DEVICE_MMIO_GET(dev) + clk_info->offset);
+		reg &= ~BIT(R8A779G0_CLK_SD0_STOP_BIT);
+		reg |= (!enable << R8A779G0_CLK_SD0_STOP_BIT);
+		break;
+	case R8A779G0_CLK_SD0H:
+		reg = sys_read32(DEVICE_MMIO_GET(dev) + clk_info->offset);
+		reg &= ~BIT(R8A779G0_CLK_SD0H_STOP_BIT);
+		reg |= (!enable << R8A779G0_CLK_SD0H_STOP_BIT);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	if (!ret) {
+		rcar_cpg_write(DEVICE_MMIO_GET(dev), clk_info->offset, reg);
+	}
+	return ret;
+}
+
+static int r8a779g0_cpg_core_clock_endisable(const struct device *dev, struct rcar_cpg_clk *clk,
+					     bool enable)
+{
+	struct cpg_clk_info_table *clk_info;
+	struct r8a779g0_cpg_mssr_data *data = dev->data;
+	k_spinlock_key_t key;
+
+	clk_info = rcar_cpg_find_clk_info_by_module_id(dev, clk->domain, clk->module);
+	if (!clk_info) {
+		return -EINVAL;
+	}
+
+	if (enable) {
+		if (clk->rate > 0) {
+			int ret;
+			uintptr_t rate = clk->rate;
+
+			ret = rcar_cpg_set_rate(dev, (clock_control_subsys_t)clk,
+						(clock_control_subsys_rate_t)rate);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	key = k_spin_lock(&data->cmn.lock);
+	r8a779g0_cpg_enable_disable_core(dev, clk_info, enable);
+	k_spin_unlock(&data->cmn.lock, key);
+
+	return 0;
+}
 
 int r8a779g0_cpg_mssr_on_off(const struct device *dev, clock_control_subsys_t sys, bool is_on)
 {
@@ -97,10 +164,7 @@ int r8a779g0_cpg_mssr_on_off(const struct device *dev, clock_control_subsys_t sy
 		ret = rcar_cpg_mstp_clock_endisable(DEVICE_MMIO_GET(dev), clk->module, is_on);
 		k_spin_unlock(&data->cmn.lock, key);
 	} else if (clk->domain == CPG_CORE) {
-		if (is_on && clk->rate > 0) {
-			ret = rcar_cpg_set_rate(dev, (clock_control_subsys_t)clk,
-						(clock_control_subsys_rate_t)(uintptr_t)clk->rate);
-		}
+		ret = r8a779g0_cpg_core_clock_endisable(dev, clk, is_on);
 	} else {
 		ret = -EINVAL;
 	}

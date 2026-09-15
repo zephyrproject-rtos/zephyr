@@ -88,6 +88,17 @@
 			#reset-cells = <1>;
 		};
 
+		mmc0: mmc@ee140000 {
+			compatible = "renesas,rcar-mmc";
+			reg = <0 0xee140000 0 0x2000>;
+			vmmc-supply = <&reg_3p3v>;
+			vqmmc-supply = <&reg_1p8v>;
+			interrupts = <GIC_SPI 440 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 706>, <&cpg CPG_CORE R8A779G0_CLK_SD0H>;
+			max-bus-freq = <200000000>;
+			status = "disabled";
+		};
+
 		pfc: pin-controller@e6050000 {
 			compatible = "renesas,rcar-pfc";
 			reg = <0 0xe6050000 0 0x16c>, <0 0xe6050800 0 0x16c>,
