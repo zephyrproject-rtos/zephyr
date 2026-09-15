@@ -25,6 +25,9 @@ enum lwan_flag {
 
 #define LWAN_MAX_CHANNELS	CONFIG_LORAWAN_NATIVE_MAX_CHANNELS
 
+/* A 242-byte downlink can contain at most 48 five-byte LinkADRReq commands. */
+#define LWAN_MAX_MAC_ANS_LEN	96U
+
 struct lwan_session {
 	/* Device address assigned during join */
 	uint32_t dev_addr;
@@ -57,10 +60,16 @@ struct lwan_mac_state {
 	bool adr_enabled;
 	/* Current TX power index (0 = region max; set by LinkADRReq) */
 	uint8_t tx_power_idx;
+	/* Repetitions for unconfirmed uplinks; zero uses the default of one. */
+	uint8_t nb_trans;
+	/* Answers are sent together, before requests and application data. */
+	uint8_t answers[LWAN_MAX_MAC_ANS_LEN];
+	uint8_t answers_len;
+	uint8_t ul_built_answers_len;
 
 	/* UL: a LinkCheckReq is queued and should ride on the next uplink */
 	bool link_check_pending;
-	/* UL: snapshot recorded by mac_cmd_build_ul_fopts() so a successful
+	/* UL: snapshot recorded by mac_cmd_build_ul_commands() so a successful
 	 * TX (commit) can drop the request while a failed TX (no commit)
 	 * leaves it queued for a retry
 	 */

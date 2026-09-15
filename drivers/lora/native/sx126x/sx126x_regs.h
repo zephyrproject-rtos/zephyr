@@ -180,6 +180,10 @@
 #define SX126X_RX_GAIN_POWER_SAVING         0x94
 #define SX126X_RX_GAIN_BOOSTED              0x96
 
+/* LoRa packet acquisition timeout */
+#define SX126X_REG_LORA_SYNC_TIMEOUT        0x0706
+#define SX126X_MAX_SYMBOL_TIMEOUT           248U
+
 /* TX Clamp Config (workaround for SX1262) */
 #define SX126X_REG_TX_CLAMP_CFG             0x08D8
 

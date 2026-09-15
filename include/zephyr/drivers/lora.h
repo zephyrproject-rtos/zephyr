@@ -149,6 +149,18 @@ struct lora_modem_config {
 	/** Length of the preamble */
 	uint16_t preamble_len;
 
+	/**
+	 * Maximum number of symbols to search for a packet in lora_recv().
+	 * Zero disables the symbol timeout. Once a packet is detected, reception
+	 * continues up to the overall timeout passed to lora_recv(). The driver
+	 * may round this value up to a supported number of symbols. This setting
+	 * does not apply to asynchronous or duty-cycled reception.
+	 *
+	 * Drivers that do not support this setting reject a nonzero value with
+	 * -ENOTSUP from lora_config().
+	 */
+	uint8_t rx_symbol_timeout;
+
 	/** TX-power in dBm to use for transmission */
 	int8_t tx_power;
 

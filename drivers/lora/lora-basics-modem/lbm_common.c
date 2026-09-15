@@ -105,6 +105,10 @@ int lbm_lora_config(const struct device *dev, const struct lora_modem_config *lo
 	ral_status_t status;
 	int ret;
 
+	if (lora_config->rx_symbol_timeout != 0U) {
+		return -ENOTSUP;
+	}
+
 	/* Perform deferred radio initialization on first config */
 	if (IS_ENABLED(CONFIG_LORA_BASICS_MODEM_DEFERRED_INIT) && !data->radio_initialized) {
 		ret = lbm_driver_radio_init(dev);

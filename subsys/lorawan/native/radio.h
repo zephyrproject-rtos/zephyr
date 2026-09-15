@@ -23,7 +23,7 @@ int radio_tx(const uint8_t *data, size_t len,
 
 /* RX: IQ inverted, CRC off; returns byte count, 0 on timeout, -EIO on error */
 int radio_rx(uint32_t freq, const struct lwan_dr_params *dr,
-	     uint32_t timeout_ms,
+	     uint8_t symbol_timeout, uint32_t timeout_ms,
 	     uint8_t *buf, uint8_t buf_size,
 	     int16_t *rssi, int8_t *snr);
 

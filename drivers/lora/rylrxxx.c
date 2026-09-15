@@ -328,6 +328,10 @@ static int rylr_config(const struct device *dev, const struct lora_modem_config 
 	int err = 0;
 	struct rylr_data *data = dev->data;
 
+	if (config->rx_symbol_timeout != 0U) {
+		return -ENOTSUP;
+	}
+
 	err = k_sem_take(&data->operation_sem, K_NO_WAIT);
 	if (err != 0) {
 		LOG_ERR("error taking operation semaphore: %d", err);

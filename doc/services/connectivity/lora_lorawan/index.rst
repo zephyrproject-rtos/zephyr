@@ -113,6 +113,18 @@ under :zephyr_file:`subsys/lorawan/native/Kconfig`:
 
 * :kconfig:option:`CONFIG_LORAWAN_NATIVE_DUTY_CYCLE`
 
+The native backend handles ``LinkADRReq`` channel masks, data rates, TX power and
+``NbTrans``, and queues ``LinkADRAns`` for the next uplink. Enable network control of
+data rate, power and repetitions with :c:func:`lorawan_enable_adr`. With ADR disabled,
+only compatible channel mask changes are applied. ADR backoff after loss of network
+connectivity is not implemented.
+
+MAC answers take priority over application data. If the pending commands cannot
+share an uplink with the application payload, :c:func:`lorawan_send` sends the
+commands separately and returns ``-EAGAIN``. Retry the application payload after
+checking :c:func:`lorawan_get_payload_sizes`, since the network may have changed
+the data rate.
+
 API Reference
 *************
 

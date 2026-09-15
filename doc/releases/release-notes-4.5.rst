@@ -616,6 +616,8 @@ New APIs and options
   * :c:func:`lora_recv_duty_cycle_async`
   * :c:func:`lora_energy_detect`
   * :c:func:`lora_rssi`
+  * :c:member:`lora_modem_config.rx_symbol_timeout` limits packet acquisition separately
+    from the overall receive timeout. Supported by the native SX126x and LR11xx drivers.
 
 * Management
 
