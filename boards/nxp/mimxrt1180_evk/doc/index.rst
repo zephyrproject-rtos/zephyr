@@ -150,7 +150,7 @@ For example, this overlay moves the CM33 ``zephyr,sram`` to DTCM:
 
 .. code-block:: none
 
-   boards/nxp/mimxrt1180_evk/cm33_sram_dtcm.overlay
+   boards/nxp/mimxrt1180_evk/dts/cm33_sram_dtcm.overlay
 
 Serial Port
 ===========
@@ -234,17 +234,17 @@ When building with west, you can specify this option on the command line:
 
    # For flash execution
    west build -b mimxrt1180_evk/mimxrt1189/cm33 <sample_path> --sysbuild -- \
-     -D<remote_app_name>_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay \
+     -D<remote_app_name>_EXTRA_DTC_OVERLAY_FILE=cm7_flash_boot.overlay \
      -DCONFIG_CM7_BOOT_FROM_FLASH=y -D<remote_app_name>_CONFIG_CM7_BOOT_FROM_FLASH=y
 
   west build -b mimxrt1180_evk/mimxrt1189/cm33 samples/drivers/mbox --sysbuild -- \
-     -Dremote_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay \
+     -Dremote_EXTRA_DTC_OVERLAY_FILE=cm7_flash_boot.overlay \
      -DCONFIG_CM7_BOOT_FROM_FLASH=y -Dremote_CONFIG_CM7_BOOT_FROM_FLASH=y
 
    # For HyperRAM execution
-   west build -b mimxrt1180_evk//cm33 samples/drivers/mbox --sysbuild -- \
-     -Dremote_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm7_code_hyperram.overlay \
-     -DEXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm33_sram_dtcm.overlay
+   west build -b mimxrt1180_evk/mimxrt1189/cm33 samples/drivers/mbox --sysbuild -- \
+     -Dremote_EXTRA_DTC_OVERLAY_FILE=cm7_code_hyperram.overlay \
+     -DEXTRA_DTC_OVERLAY_FILE=cm33_sram_dtcm.overlay
 
 Flash Boot Overlay
 ==================
@@ -254,7 +254,7 @@ the flash memory properly. The overlay file is located at:
 
 .. code-block:: none
 
-   boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay
+   boards/nxp/mimxrt1180_evk/dts/cm7_flash_boot.overlay
 
 This overlay configures the CM7 core to use the flash memory for code execution instead of ITCM.
 
@@ -266,7 +266,7 @@ overlay file is located at:
 
 .. code-block:: none
 
-   boards/nxp/mimxrt1180_evk/cm7_code_hyperram.overlay
+   boards/nxp/mimxrt1180_evk/dts/cm7_code_hyperram.overlay
 
 The MPU attributes for the board also need to be changed in this file:
 
