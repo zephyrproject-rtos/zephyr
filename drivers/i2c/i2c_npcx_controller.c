@@ -853,6 +853,13 @@ int npcx_i2c_ctrl_recover_bus(const struct device *dev)
 	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 	int ret = 0;
 
+	/*
+	 * The module might still stall SCL from a suspended transaction. Release
+	 * it first, otherwise the SCL/SDA levels below reflect our own driving
+	 * instead of the bus state.
+	 */
+	i2c_ctrl_hold_bus(dev, 0);
+
 	i2c_ctrl_bank_sel(dev, NPCX_I2C_BANK_NORMAL);
 
 	/*
