@@ -44,17 +44,19 @@ static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
 
 	switch (corner) {
 	case TOP_LEFT:
-		r = 0xFF;
+		r = (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		break;
 	case TOP_RIGHT:
-		g = 0xFF;
+		g = (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		break;
 	case BOTTOM_RIGHT:
-		b = 0xFF;
+		b = (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		break;
 	case BOTTOM_LEFT:
 	default:
-		r = grey; g = grey; b = grey;
+		r = grey & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
+		g = grey & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
+		b = grey & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		break;
 	}
 
@@ -86,17 +88,19 @@ static void fill_buffer_rgb888(enum corner corner, uint8_t grey, uint8_t *buf,
 
 	switch (corner) {
 	case TOP_LEFT:
-		r = 0xFF;
+		r = (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		break;
 	case TOP_RIGHT:
-		g = 0xFF;
+		g = (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		break;
 	case BOTTOM_RIGHT:
-		b = 0xFF;
+		b = (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		break;
 	case BOTTOM_LEFT:
 	default:
-		r = grey; g = grey; b = grey;
+		r = grey & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
+		g = grey & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
+		b = grey & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		break;
 	}
 
@@ -120,16 +124,16 @@ static uint16_t get_rgb565_color(enum corner corner, uint8_t grey)
 
 	switch (corner) {
 	case TOP_LEFT:
-		color = 0xF800u;
+		color = (0x1Fu & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY)) << 11;
 		break;
 	case TOP_RIGHT:
-		color = 0x07E0u;
+		color = (0x3Fu & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY)) << 5;
 		break;
 	case BOTTOM_RIGHT:
-		color = 0x001Fu;
+		color = 0x1Fu & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		break;
 	case BOTTOM_LEFT:
-		grey_5bit = grey & 0x1Fu;
+		grey_5bit = grey & 0x1Fu & (uint8_t)(CONFIG_SAMPLE_MASK_INTENSITY);
 		/* shift the green an extra bit, it has 6 bits */
 		color = grey_5bit << 11 | grey_5bit << (5 + 1) | grey_5bit;
 		break;
@@ -360,24 +364,24 @@ int sample_display_draw(void)
 	case PIXEL_FORMAT_ABGR_8888:
 	case PIXEL_FORMAT_RGBA_8888:
 	case PIXEL_FORMAT_BGRA_8888:
-		bg_color = 0xFFu;
+		bg_color = (uint8_t)(CONFIG_SAMPLE_INIT_INTENSITY);
 		fill_buffer_fnc = fill_buffer_argb8888;
 		break;
 	case PIXEL_FORMAT_RGB_888:
 	case PIXEL_FORMAT_BGR_888:
-		bg_color = 0xFFu;
+		bg_color = (uint8_t)(CONFIG_SAMPLE_INIT_INTENSITY);
 		fill_buffer_fnc = fill_buffer_rgb888;
 		break;
 	case PIXEL_FORMAT_RGB_565:
-		bg_color = 0xFFu;
+		bg_color = (uint8_t)(CONFIG_SAMPLE_INIT_INTENSITY);
 		fill_buffer_fnc = fill_buffer_rgb565;
 		break;
 	case PIXEL_FORMAT_RGB_565X:
-		bg_color = 0xFFu;
+		bg_color = (uint8_t)(CONFIG_SAMPLE_INIT_INTENSITY);
 		fill_buffer_fnc = fill_buffer_rgb565x;
 		break;
 	case PIXEL_FORMAT_L_8:
-		bg_color = 0xFFu;
+		bg_color = (uint8_t)(CONFIG_SAMPLE_INIT_INTENSITY);
 		fill_buffer_fnc = fill_buffer_l_8;
 		break;
 	case PIXEL_FORMAT_L_4:
@@ -385,15 +389,15 @@ int sample_display_draw(void)
 		fill_buffer_fnc = fill_buffer_l_4;
 		break;
 	case PIXEL_FORMAT_AL_88:
-		bg_color = 0x00u;
+		bg_color = (uint8_t)(~CONFIG_SAMPLE_INIT_INTENSITY);
 		fill_buffer_fnc = fill_buffer_al_88;
 		break;
 	case PIXEL_FORMAT_MONO01:
-		bg_color = 0xFFu;
+		bg_color = (uint8_t)(CONFIG_SAMPLE_INIT_INTENSITY);
 		fill_buffer_fnc = fill_buffer_mono01;
 		break;
 	case PIXEL_FORMAT_MONO10:
-		bg_color = 0x00u;
+		bg_color = (uint8_t)(~CONFIG_SAMPLE_INIT_INTENSITY);
 		fill_buffer_fnc = fill_buffer_mono10;
 		break;
 	default:
