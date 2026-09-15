@@ -1,0 +1,36 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Example input file for provision-raw command
+# Format: ID:hexdata (one per line)
+# Lines starting with # are comments
+# Empty or commented lines are ignored
+
+# Device UUID (ID=1, 16 bytes)
+1:12345678123412341234123456789abc
+
+# Authentication Token (ID=2, "HelloWorld" in ASCII)
+2:48656c6c6f576f726c64
+
+# Device Serial Number (ID=3, 8 bytes)
+3:0123456789ABCDEF
+
+# Configuration Flags (ID=10, 4 bytes)
+0x0A:01020304
+
+# Firmware Version (ID=11, "v1.0.0" in ASCII)
+11:76312e302e30
+
+# Device Type (ID=12, 2 bytes)
+12:AABB
+
+# Manufacturing Date (ID=13, 8 bytes - Unix timestamp)
+13:0000000065A4B2C0
+
+# Calibration Data (ID=20, 32 bytes of example data)
+20:0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20
+
+# Security Key (ID=100, 32 bytes)
+100:FFFEFDFCFBFAF9F8F7F6F5F4F3F2F1F0EFEEEDECEBEAE9E8E7E6E5E4E3E2E1E0
