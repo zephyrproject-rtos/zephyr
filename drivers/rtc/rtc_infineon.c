@@ -20,66 +20,66 @@ LOG_MODULE_REGISTER(ifx_cat1_rtc, CONFIG_RTC_LOG_LEVEL);
 
 #define DT_DRV_COMPAT infineon_rtc
 
-#define _IFX_CAT1_RTC_STATE_UNINITIALIZED 0
-#define _IFX_CAT1_RTC_STATE_ENABLED       1
-#define _IFX_CAT1_RTC_STATE_TIME_SET      2
+#define IFX_CAT1_RTC_STATE_UNINITIALIZED 0
+#define IFX_CAT1_RTC_STATE_ENABLED       1
+#define IFX_CAT1_RTC_STATE_TIME_SET      2
 
-#define _IFX_CAT1_RTC_INIT_CENTURY 2000
-#define _IFX_CAT1_RTC_TM_YEAR_BASE 1900
+#define IFX_CAT1_RTC_INIT_CENTURY 2000
+#define IFX_CAT1_RTC_TM_YEAR_BASE 1900
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
 #if defined(SRSS_BACKUP_NUM_BREG3) && (SRSS_BACKUP_NUM_BREG3 > 0)
-#define _IFX_CAT1_RTC_BREG (BACKUP->BREG_SET3[SRSS_BACKUP_NUM_BREG3 - 1])
+#define IFX_CAT1_RTC_BREG (BACKUP->BREG_SET3[SRSS_BACKUP_NUM_BREG3 - 1])
 #elif defined(SRSS_BACKUP_NUM_BREG2) && (SRSS_BACKUP_NUM_BREG2 > 0)
-#define _IFX_CAT1_RTC_BREG (BACKUP->BREG_SET2[SRSS_BACKUP_NUM_BREG2 - 1])
+#define IFX_CAT1_RTC_BREG (BACKUP->BREG_SET2[SRSS_BACKUP_NUM_BREG2 - 1])
 #elif defined(SRSS_BACKUP_NUM_BREG1) && (SRSS_BACKUP_NUM_BREG1 > 0)
-#define _IFX_CAT1_RTC_BREG (BACKUP->BREG_SET1[SRSS_BACKUP_NUM_BREG1 - 1])
+#define IFX_CAT1_RTC_BREG (BACKUP->BREG_SET1[SRSS_BACKUP_NUM_BREG1 - 1])
 #elif defined(SRSS_BACKUP_NUM_BREG0) && (SRSS_BACKUP_NUM_BREG0 > 0)
-#define _IFX_CAT1_RTC_BREG (BACKUP->BREG_SET0[SRSS_BACKUP_NUM_BREG0 - 1])
+#define IFX_CAT1_RTC_BREG (BACKUP->BREG_SET0[SRSS_BACKUP_NUM_BREG0 - 1])
 #endif
 #elif defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #if defined(SRSS_RTC_NUM_BREG3) && (SRSS_RTC_NUM_BREG3 > 0)
-#define _IFX_CAT1_RTC_BREG (RTC->BREG_SET3[SRSS_RTC_NUM_BREG3 - 1])
+#define IFX_CAT1_RTC_BREG (RTC->BREG_SET3[SRSS_RTC_NUM_BREG3 - 1])
 #elif defined(SRSS_RTC_NUM_BREG2) && (SRSS_RTC_NUM_BREG2 > 0)
-#define _IFX_CAT1_RTC_BREG (RTC->BREG_SET2[SRSS_RTC_NUM_BREG2 - 1])
+#define IFX_CAT1_RTC_BREG (RTC->BREG_SET2[SRSS_RTC_NUM_BREG2 - 1])
 #elif defined(SRSS_RTC_NUM_BREG1) && (SRSS_RTC_NUM_BREG1 > 0)
-#define _IFX_CAT1_RTC_BREG (RTC->BREG_SET1[SRSS_RTC_NUM_BREG1 - 1])
+#define IFX_CAT1_RTC_BREG (RTC->BREG_SET1[SRSS_RTC_NUM_BREG1 - 1])
 #elif defined(SRSS_RTC_NUM_BREG0) && (SRSS_RTC_NUM_BREG0 > 0)
-#define _IFX_CAT1_RTC_BREG (RTC->BREG_SET0[SRSS_RTC_NUM_BREG0 - 1])
+#define IFX_CAT1_RTC_BREG (RTC->BREG_SET0[SRSS_RTC_NUM_BREG0 - 1])
 #elif defined(SRSS_NUM_HIBDATA) && ((SRSS_NUM_HIBDATA) > 0)
-#define _IFX_CAT1_RTC_BREG (SRSS->PWR_HIB_DATA[SRSS_NUM_HIBDATA - 1])
+#define IFX_CAT1_RTC_BREG (SRSS->PWR_HIB_DATA[SRSS_NUM_HIBDATA - 1])
 #endif
 #endif
 
-#define _IFX_CAT1_RTC_BREG_CENTURY_Pos 0UL
-#define _IFX_CAT1_RTC_BREG_CENTURY_Msk 0x0000FFFFUL
-#define _IFX_CAT1_RTC_BREG_STATE_Pos   16UL
-#define _IFX_CAT1_RTC_BREG_STATE_Msk   0xFFFF0000UL
+#define IFX_CAT1_RTC_BREG_CENTURY_Pos 0UL
+#define IFX_CAT1_RTC_BREG_CENTURY_Msk 0x0000FFFFUL
+#define IFX_CAT1_RTC_BREG_STATE_Pos   16UL
+#define IFX_CAT1_RTC_BREG_STATE_Msk   0xFFFF0000UL
 
-static const uint32_t _IFX_CAT1_RTC_MAX_RETRY = 10;
-static const uint32_t _IFX_CAT1_RTC_RETRY_DELAY_MS = 1;
+static const uint32_t ifx_cat1_rtc_max_retry = 10;
+static const uint32_t ifx_cat1_rtc_retry_delay_ms = 1;
 
-static cy_stc_rtc_dst_t *_ifx_cat1_rtc_dst;
+static cy_stc_rtc_dst_t *ifx_cat1_rtc_dst;
 
 #ifdef CONFIG_PM
-static cy_en_syspm_status_t _ifx_cat1_rtc_syspm_callback(cy_stc_syspm_callback_params_t *params,
-							 cy_en_syspm_callback_mode_t mode)
+static cy_en_syspm_status_t ifx_cat1_rtc_syspm_callback(cy_stc_syspm_callback_params_t *params,
+							cy_en_syspm_callback_mode_t mode)
 {
 	return Cy_RTC_DeepSleepCallback(params, mode);
 }
 
-static cy_stc_syspm_callback_params_t _ifx_cat1_rtc_pm_cb_params = {NULL, NULL};
-static cy_stc_syspm_callback_t _ifx_cat1_rtc_pm_cb = {
-	.callback = &_ifx_cat1_rtc_syspm_callback,
+static cy_stc_syspm_callback_params_t ifx_cat1_rtc_pm_cb_params = {NULL, NULL};
+static cy_stc_syspm_callback_t ifx_cat1_rtc_pm_cb = {
+	.callback = &ifx_cat1_rtc_syspm_callback,
 	.type = CY_SYSPM_DEEPSLEEP,
-	.callbackParams = &_ifx_cat1_rtc_pm_cb_params,
+	.callbackParams = &ifx_cat1_rtc_pm_cb_params,
 };
 #endif /* CONFIG_PM */
 
-#define _IFX_CAT1_RTC_WAIT_ONE_MS() Cy_SysLib_Delay(_IFX_CAT1_RTC_RETRY_DELAY_MS);
+#define IFX_CAT1_RTC_WAIT_ONE_MS() Cy_SysLib_Delay(ifx_cat1_rtc_retry_delay_ms);
 
 /* Internal macro to validate RTC year parameter */
-#define IFX_CAT1_RTC_VALID_CENTURY(year) ((year) >= _IFX_CAT1_RTC_TM_YEAR_BASE)
+#define IFX_CAT1_RTC_VALID_CENTURY(year) ((year) >= IFX_CAT1_RTC_TM_YEAR_BASE)
 
 #define MAX_IFX_CAT1_CAL (60)
 
@@ -105,30 +105,30 @@ struct ifx_cat1_rtc_data {
 	struct k_spinlock lock;
 };
 
-static inline uint16_t _ifx_cat1_rtc_get_state(void)
+static inline uint16_t ifx_cat1_rtc_get_state(void)
 {
-	return _FLD2VAL(_IFX_CAT1_RTC_BREG_STATE, _IFX_CAT1_RTC_BREG);
+	return _FLD2VAL(IFX_CAT1_RTC_BREG_STATE, IFX_CAT1_RTC_BREG);
 }
 
-static inline void _ifx_cat1_rtc_set_state(uint16_t init)
+static inline void ifx_cat1_rtc_set_state(uint16_t init)
 {
-	_IFX_CAT1_RTC_BREG &= _IFX_CAT1_RTC_BREG_CENTURY_Msk;
-	_IFX_CAT1_RTC_BREG |= _VAL2FLD(_IFX_CAT1_RTC_BREG_STATE, init);
+	IFX_CAT1_RTC_BREG &= IFX_CAT1_RTC_BREG_CENTURY_Msk;
+	IFX_CAT1_RTC_BREG |= _VAL2FLD(IFX_CAT1_RTC_BREG_STATE, init);
 }
 
-static inline uint16_t _ifx_cat1_rtc_get_century(void)
+static inline uint16_t ifx_cat1_rtc_get_century(void)
 {
-	return _FLD2VAL(_IFX_CAT1_RTC_BREG_CENTURY, _IFX_CAT1_RTC_BREG);
+	return _FLD2VAL(IFX_CAT1_RTC_BREG_CENTURY, IFX_CAT1_RTC_BREG);
 }
 
-static inline void _ifx_cat1_rtc_set_century(uint16_t century)
+static inline void ifx_cat1_rtc_set_century(uint16_t century)
 {
-	_IFX_CAT1_RTC_BREG &= _IFX_CAT1_RTC_BREG_STATE_Msk;
-	_IFX_CAT1_RTC_BREG |= _VAL2FLD(_IFX_CAT1_RTC_BREG_CENTURY, century);
+	IFX_CAT1_RTC_BREG &= IFX_CAT1_RTC_BREG_STATE_Msk;
+	IFX_CAT1_RTC_BREG |= _VAL2FLD(IFX_CAT1_RTC_BREG_CENTURY, century);
 }
 
-static void _ifx_cat1_rtc_from_pdl_time(cy_stc_rtc_config_t *pdlTime, const int year,
-					struct rtc_time *z_time)
+static void ifx_cat1_rtc_from_pdl_time(cy_stc_rtc_config_t *pdlTime, const int year,
+				       struct rtc_time *z_time)
 {
 	CY_ASSERT(pdlTime != NULL);
 	CY_ASSERT(z_time != NULL);
@@ -137,7 +137,7 @@ static void _ifx_cat1_rtc_from_pdl_time(cy_stc_rtc_config_t *pdlTime, const int 
 	z_time->tm_min = (int)pdlTime->min;
 	z_time->tm_hour = (int)pdlTime->hour;
 	z_time->tm_mday = (int)pdlTime->date;
-	z_time->tm_year = (int)(year - _IFX_CAT1_RTC_TM_YEAR_BASE);
+	z_time->tm_year = (int)(year - IFX_CAT1_RTC_TM_YEAR_BASE);
 
 	/* The subtraction of 1 here is to translate between internal ifx_cat1 code and the Zephyr
 	 * driver.
@@ -158,19 +158,19 @@ static void _ifx_cat1_rtc_from_pdl_time(cy_stc_rtc_config_t *pdlTime, const int 
 	z_time->tm_nsec = 0;
 }
 
-static void _ifx_cat1_rtc_isr_handler(void)
+static void ifx_cat1_rtc_isr_handler(void)
 {
-	Cy_RTC_Interrupt(_ifx_cat1_rtc_dst, NULL != _ifx_cat1_rtc_dst);
+	Cy_RTC_Interrupt(ifx_cat1_rtc_dst, NULL != ifx_cat1_rtc_dst);
 }
 
-void _ifx_cat1_rtc_century_interrupt(void)
+void ifx_cat1_rtc_century_interrupt(void)
 {
 	/* The century is stored in its own register so when a "century interrupt"
 	 * occurs at a rollover. The current century is retrieved and 100 is added
 	 * to it and the register is reset to reflect the new century.
 	 * i.e. 1999->2000
 	 */
-	_ifx_cat1_rtc_set_century(_ifx_cat1_rtc_get_century() + 100);
+	ifx_cat1_rtc_set_century(ifx_cat1_rtc_get_century() + 100);
 }
 
 static int ifx_cat1_rtc_init(const struct device *dev)
@@ -179,34 +179,34 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 
 	Cy_SysClk_ClkBakSetSource(CY_SYSCLK_BAK_IN_CLKLF);
 
-	if (_ifx_cat1_rtc_get_state() == _IFX_CAT1_RTC_STATE_UNINITIALIZED) {
+	if (ifx_cat1_rtc_get_state() == IFX_CAT1_RTC_STATE_UNINITIALIZED) {
 		if (Cy_RTC_IsExternalResetOccurred()) {
-			_ifx_cat1_rtc_set_century(_IFX_CAT1_RTC_INIT_CENTURY);
+			ifx_cat1_rtc_set_century(IFX_CAT1_RTC_INIT_CENTURY);
 		}
 
 #ifdef CONFIG_PM
-		rslt = Cy_SysPm_RegisterCallback(&_ifx_cat1_rtc_pm_cb);
+		rslt = Cy_SysPm_RegisterCallback(&ifx_cat1_rtc_pm_cb);
 #endif /* CONFIG_PM */
 
 		if (rslt == CY_RSLT_SUCCESS) {
-			_ifx_cat1_rtc_set_state(_IFX_CAT1_RTC_STATE_ENABLED);
+			ifx_cat1_rtc_set_state(IFX_CAT1_RTC_STATE_ENABLED);
 		} else {
 			rslt = -EINVAL;
 		}
 
-	} else if (_ifx_cat1_rtc_get_state() == _IFX_CAT1_RTC_STATE_ENABLED ||
-		   _ifx_cat1_rtc_get_state() == _IFX_CAT1_RTC_STATE_TIME_SET) {
+	} else if (ifx_cat1_rtc_get_state() == IFX_CAT1_RTC_STATE_ENABLED ||
+		   ifx_cat1_rtc_get_state() == IFX_CAT1_RTC_STATE_TIME_SET) {
 
 		if (Cy_RTC_GetInterruptStatus() & CY_RTC_INTR_CENTURY) {
-			_ifx_cat1_rtc_century_interrupt();
+			ifx_cat1_rtc_century_interrupt();
 		}
 	}
 
 	Cy_RTC_ClearInterrupt(CY_RTC_INTR_CENTURY);
 	Cy_RTC_SetInterruptMask(CY_RTC_INTR_CENTURY);
 
-	_ifx_cat1_rtc_dst = NULL;
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), _ifx_cat1_rtc_isr_handler,
+	ifx_cat1_rtc_dst = NULL;
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), ifx_cat1_rtc_isr_handler,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
@@ -225,7 +225,7 @@ static int ifx_cat1_rtc_set_time(const struct device *dev, const struct rtc_time
 	 * driver.
 	 */
 	uint32_t mon = timeptr->tm_mon + 1;
-	uint32_t year = timeptr->tm_year + _IFX_CAT1_RTC_TM_YEAR_BASE;
+	uint32_t year = timeptr->tm_year + IFX_CAT1_RTC_TM_YEAR_BASE;
 	uint32_t year2digit = year % 100;
 
 	cy_rslt_t rslt;
@@ -239,28 +239,28 @@ static int ifx_cat1_rtc_set_time(const struct device *dev, const struct rtc_time
 	}
 	do {
 		if (retry != 0) {
-			_IFX_CAT1_RTC_WAIT_ONE_MS();
+			IFX_CAT1_RTC_WAIT_ONE_MS();
 		}
 
 		k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 		rslt = Cy_RTC_SetDateAndTimeDirect(sec, min, hour, day, mon, year2digit);
 		if (rslt == CY_RSLT_SUCCESS) {
-			_ifx_cat1_rtc_set_century((uint16_t)(year) - (uint16_t)(year2digit));
+			ifx_cat1_rtc_set_century((uint16_t)(year) - (uint16_t)(year2digit));
 		}
 
 		k_spin_unlock(&data->lock, key);
 		++retry;
-	} while (rslt == CY_RTC_INVALID_STATE && retry < _IFX_CAT1_RTC_MAX_RETRY);
+	} while (rslt == CY_RTC_INVALID_STATE && retry < ifx_cat1_rtc_max_retry);
 
 	retry = 0;
-	while (CY_RTC_BUSY == Cy_RTC_GetSyncStatus() && retry < _IFX_CAT1_RTC_MAX_RETRY) {
-		_IFX_CAT1_RTC_WAIT_ONE_MS();
+	while (CY_RTC_BUSY == Cy_RTC_GetSyncStatus() && retry < ifx_cat1_rtc_max_retry) {
+		IFX_CAT1_RTC_WAIT_ONE_MS();
 		++retry;
 	}
 
 	if (rslt == CY_RSLT_SUCCESS) {
-		_ifx_cat1_rtc_set_state(_IFX_CAT1_RTC_STATE_TIME_SET);
+		ifx_cat1_rtc_set_state(IFX_CAT1_RTC_STATE_TIME_SET);
 		return 0;
 	} else {
 		return -EINVAL;
@@ -273,7 +273,7 @@ static int ifx_cat1_rtc_get_time(const struct device *dev, struct rtc_time *time
 
 	cy_stc_rtc_config_t dateTime = {.hrFormat = CY_RTC_24_HOURS};
 
-	if (_ifx_cat1_rtc_get_state() != _IFX_CAT1_RTC_STATE_TIME_SET) {
+	if (ifx_cat1_rtc_get_state() != IFX_CAT1_RTC_STATE_TIME_SET) {
 		LOG_ERR("Valid time has not been set with rtc_set_time yet");
 		return -ENODATA;
 	}
@@ -281,11 +281,11 @@ static int ifx_cat1_rtc_get_time(const struct device *dev, struct rtc_time *time
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	Cy_RTC_GetDateAndTime(&dateTime);
-	const int year = (int)(dateTime.year + _ifx_cat1_rtc_get_century());
+	const int year = (int)(dateTime.year + ifx_cat1_rtc_get_century());
 
 	k_spin_unlock(&data->lock, key);
 
-	_ifx_cat1_rtc_from_pdl_time(&dateTime, year, timeptr);
+	ifx_cat1_rtc_from_pdl_time(&dateTime, year, timeptr);
 
 	return CY_RSLT_SUCCESS;
 }
