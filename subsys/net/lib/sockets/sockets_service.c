@@ -61,6 +61,50 @@ static void register_svc_close_events(const struct net_socket_service_desc *svc)
 	}
 }
 
+int z_impl_net_socket_service_deregister(const struct net_socket_service_desc *svc,
+				         int fd)
+{
+	int i, ret = -ENOENT;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (thread_status == SOCKET_SERVICE_THREAD_UNINITIALIZED) {
+		(void)k_condvar_wait(&wait_start, &lock, K_FOREVER);
+	} else if (thread_status != SOCKET_SERVICE_THREAD_RUNNING) {
+		NET_ERR("Socket service thread not running, service %p register fails.", svc);
+		ret = -EIO;
+		goto out;
+	}
+
+	if (STRUCT_SECTION_START(net_socket_service_desc) > svc ||
+		STRUCT_SECTION_END(net_socket_service_desc) <= svc) {
+		goto out;
+	}
+
+	for (i = 0; i < svc->pev_len; i++) {
+		if (i == svc->pev_len) {
+			NET_DBG("No file descriptor found in the socket service");
+			ret = -ENOMEM;
+			goto out;
+		}
+
+		if (svc->pev[i].event.fd == fd) {
+			svc->pev[i].event = (struct zsock_pollfd) {.fd = -1, .events = 0};
+			svc->pev[i].user_data = NULL;
+			break;
+		}
+	}
+
+	/* Tell the thread to re-read the variables */
+	zvfs_eventfd_write(ctx.events[0].fd, 1);
+	ret = 0;
+
+out:
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
 int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc,
 				       struct zsock_pollfd *fds, int len,
 				       void *user_data)
@@ -97,9 +141,27 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 			goto out;
 		}
 
-		for (i = 0; i < len; i++) {
-			svc->pev[i].event = fds[i];
-			svc->pev[i].user_data = user_data;
+		/* Register only one fds in the first empty slot */
+		/* This allows individual fds to be registered, each with its own user_data */
+		if (len == 1) {
+			for (i = 0; i <= svc->pev_len; i++) {
+				if (i == svc->pev_len) {
+					NET_DBG("Service is full with file descriptors");
+					ret = -ENOMEM;
+					goto out;
+				}
+
+				if (svc->pev[i].event.fd == -1) {
+					svc->pev[i].event = *fds;
+					svc->pev[i].user_data = user_data;
+					break;
+				}
+			}
+		} else {
+			for (i = 0; i < len; i++) {
+				svc->pev[i].event = fds[i];
+				svc->pev[i].user_data = user_data;
+			}
 		}
 	}
 
