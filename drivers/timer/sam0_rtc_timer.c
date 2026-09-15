@@ -41,44 +41,7 @@
 #define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC \
 			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-/* Maximum number of ticks. */
-#define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2)
-
-#ifdef CONFIG_TICKLESS_KERNEL
-
-/*
- * Due to the nature of clock synchronization, reading from or writing to some
- * RTC registers takes approximately six RTC_GCLK cycles. This constant defines
- * a safe threshold for the comparator.
- */
-#define TICK_THRESHOLD 7
-
-BUILD_ASSERT(CYCLES_PER_TICK > TICK_THRESHOLD,
-	     "CYCLES_PER_TICK must be greater than TICK_THRESHOLD for "
-	     "tickless mode");
-
-#else /* !CONFIG_TICKLESS_KERNEL */
-
-/*
- * For some reason, RTC does not generate interrupts when COMP == 0,
- * MATCHCLR == 1 and PRESCALER == 0. So we need to check that CYCLES_PER_TICK
- * is more than one.
- */
-BUILD_ASSERT(CYCLES_PER_TICK > 1,
-	     "CYCLES_PER_TICK must be greater than 1 for ticking mode");
-
-#endif /* CONFIG_TICKLESS_KERNEL */
-
-/* Tick/cycle count of the last announce call. */
-static volatile uint32_t rtc_last;
-
 #ifndef CONFIG_TICKLESS_KERNEL
-
-/* Current tick count. */
-static volatile uint32_t rtc_counter;
-
-/* Tick value of the next timeout. */
-static volatile uint32_t rtc_timeout;
 
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
@@ -144,101 +107,53 @@ static void rtc_reset(void)
 #endif
 }
 
+/*
+ * A free-running 32-bit counter and COMP[0] as an absolute compare, matching on
+ * equality: a COMPARE_EXACT backend.
+ */
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+#define TIMER_CORE_CYCLES_PER_SEC RTC_CLOCK_HW_CYCLES_PER_SEC
+#define TIMER_CORE_HAVE_CYCLE_GET_32
+
+static inline uint32_t timer_driver_cycle_get(void)
+{
+	return rtc_count();
+}
+
+static inline void timer_driver_set_compare(uint32_t cycles)
+{
+	RTC0->COMP[0].reg = cycles;
+
+	/* Wait for the write to cross into the RTC clock domain, so the counter
+	 * the core reads next cannot predate the compare going live (D21 14.3,
+	 * D20 13.3, L21 16.3.7, D5x 13.3.7). Every path leaves SYNCBUSY clear
+	 * on return, so none is owed on entry.
+	 */
+	rtc_sync();
+}
+
+#include "system_timer_generic.h"
+
+/*
+ * The RTC counts at RTC_CLOCK_HW_CYCLES_PER_SEC, which is not what the kernel
+ * has been told CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC is: that stays the CPU
+ * clock. The count is reported unscaled all the same, which is what this
+ * driver has always done, so k_cycle_get_32() keeps reading in RTC units here.
+ * Reconciling the two is a separate change.
+ */
+uint32_t sys_clock_cycle_get_32(void)
+{
+	return rtc_count();
+}
+
 static void rtc_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
 	/* Read and clear the interrupt flag register. */
-	uint16_t status = RTC0->INTFLAG.reg;
+	RTC0->INTFLAG.reg = RTC0->INTFLAG.reg;
 
-	RTC0->INTFLAG.reg = status;
-
-#ifdef CONFIG_TICKLESS_KERNEL
-
-	/* Read the current counter and announce the elapsed time in ticks. */
-	uint32_t count = rtc_count();
-
-	if (count != rtc_last) {
-		uint32_t ticks = (count - rtc_last) / CYCLES_PER_TICK;
-
-		sys_clock_announce(ticks);
-		rtc_last += ticks * CYCLES_PER_TICK;
-	}
-
-#else /* !CONFIG_TICKLESS_KERNEL */
-
-	if (status) {
-		/* RTC just ticked one more tick... */
-		if (++rtc_counter == rtc_timeout) {
-			sys_clock_announce(rtc_counter - rtc_last);
-			rtc_last = rtc_counter;
-		}
-	} else {
-		/* ISR was invoked directly from sys_clock_set_timeout. */
-		sys_clock_announce(0);
-	}
-
-#endif /* CONFIG_TICKLESS_KERNEL */
-}
-
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	ARG_UNUSED(idle);
-
-#ifdef CONFIG_TICKLESS_KERNEL
-
-	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
-
-	/* Compute number of RTC cycles until the next timeout. */
-	uint32_t count = rtc_count();
-	uint32_t timeout = ticks * CYCLES_PER_TICK + count % CYCLES_PER_TICK;
-
-	/* Round to the nearest tick boundary. */
-	timeout = DIV_ROUND_UP(timeout, CYCLES_PER_TICK) * CYCLES_PER_TICK;
-
-	if (timeout < TICK_THRESHOLD) {
-		timeout += CYCLES_PER_TICK;
-	}
-
-	rtc_sync();
-	RTC0->COMP[0].reg = count + timeout;
-
-#else /* !CONFIG_TICKLESS_KERNEL */
-
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		/* Disable comparator when the kernel has no pending timeout. */
-		rtc_timeout = rtc_counter;
-		return;
-	}
-
-	if (ticks < 1) {
-		ticks = 1;
-	}
-
-	/* Avoid race condition between reading counter and ISR incrementing
-	 * it.
-	 */
-	unsigned int key = irq_lock();
-
-	rtc_timeout = rtc_counter + ticks;
-	irq_unlock(key);
-
-#endif /* CONFIG_TICKLESS_KERNEL */
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-#ifdef CONFIG_TICKLESS_KERNEL
-	return (rtc_count() - rtc_last) / CYCLES_PER_TICK;
-#else
-	return rtc_counter - rtc_last;
-#endif
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	/* Just return the absolute value of RTC cycle counter. */
-	return rtc_count();
+	timer_core_announce();
 }
 
 #define ASSIGNED_CLOCKS_CELL_BY_NAME						\
@@ -274,9 +189,7 @@ static int sys_clock_driver_init(void)
 	/* Reset module to hardware defaults. */
 	rtc_reset();
 
-	rtc_last = 0U;
-
-	/* Configure RTC with 32-bit mode, configured prescaler and MATCHCLR. */
+	/* Configure RTC with 32-bit mode and the configured prescaler. */
 #ifdef RTC_MODE0_CTRL_MODE
 	uint16_t ctrl = RTC_MODE0_CTRL_MODE(0) | RTC_MODE0_CTRL_PRESCALER(0);
 #else
@@ -287,13 +200,6 @@ static int sys_clock_driver_init(void)
 	ctrl |= RTC_MODE0_CTRLA_COUNTSYNC;
 #endif
 
-#ifndef CONFIG_TICKLESS_KERNEL
-#ifdef RTC_MODE0_CTRL_MATCHCLR
-	ctrl |= RTC_MODE0_CTRL_MATCHCLR;
-#else
-	ctrl |= RTC_MODE0_CTRLA_MATCHCLR;
-#endif
-#endif
 	rtc_sync();
 #ifdef RTC_MODE0_CTRL_MODE
 	RTC0->CTRL.reg = ctrl;
@@ -301,17 +207,10 @@ static int sys_clock_driver_init(void)
 	RTC0->CTRLA.reg = ctrl;
 #endif
 
-#ifdef CONFIG_TICKLESS_KERNEL
-	/* Tickless kernel lets RTC count continually and ignores overflows. */
+	/* The RTC counts continually and overflows are ignored: the core masks
+	 * every delta to the counter's width.
+	 */
 	RTC0->INTENSET.reg = RTC_MODE0_INTENSET_CMP0;
-#else
-	/* Non-tickless mode uses comparator together with MATCHCLR. */
-	rtc_sync();
-	RTC0->COMP[0].reg = CYCLES_PER_TICK;
-	RTC0->INTENSET.reg = RTC_MODE0_INTENSET_OVF;
-	rtc_counter = 0U;
-	rtc_timeout = 0U;
-#endif
 
 	/* Enable RTC module. */
 	rtc_sync();
@@ -326,6 +225,8 @@ static int sys_clock_driver_init(void)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
 	irq_enable(DT_INST_IRQN(0));
+
+	timer_core_init();
 
 	return 0;
 }
