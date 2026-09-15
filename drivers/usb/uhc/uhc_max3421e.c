@@ -812,41 +812,6 @@ static int max3421e_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int max3421e_reset(const struct device *dev)
-{
-	const struct max3421e_config *config = dev->config;
-	int ret;
-
-	if (config->dt_rst.port) {
-		gpio_pin_set_dt(&config->dt_rst, 1);
-		gpio_pin_set_dt(&config->dt_rst, 0);
-	} else {
-		LOG_DBG("Reset MAX3421E using CHIPRES");
-		ret = max3421e_write_byte(dev, MAX3421E_REG_USBCTL, MAX3421E_CHIPRES);
-		ret |= max3421e_write_byte(dev, MAX3421E_REG_USBCTL, 0);
-
-		if (ret) {
-			return ret;
-		}
-	}
-
-	for (int i = 0; i < CONFIG_MAX3421E_OSC_WAIT_RETRIES; i++) {
-		uint8_t usbirq;
-
-		ret = max3421e_read(dev, MAX3421E_REG_USBIRQ,
-				    &usbirq, sizeof(usbirq));
-
-		LOG_DBG("USBIRQ 0x%02x", usbirq);
-		if (usbirq & MAX3421E_OSCOKIRQ) {
-			return 0;
-		}
-
-		k_msleep(3);
-	}
-
-	return -EIO;
-}
-
 static int max3421e_pinctl_setup(const struct device *dev)
 {
 	/* Full-Duplex SPI, INT pin edge active, GPX pin signals SOF */
@@ -871,6 +836,47 @@ static int max3421e_pinctl_setup(const struct device *dev)
 	}
 
 	return 0;
+}
+
+static int max3421e_reset(const struct device *dev)
+{
+	const struct max3421e_config *config = dev->config;
+	int ret;
+
+	if (config->dt_rst.port) {
+		gpio_pin_set_dt(&config->dt_rst, 1);
+		gpio_pin_set_dt(&config->dt_rst, 0);
+	} else {
+		LOG_DBG("Reset MAX3421E using CHIPRES");
+		ret = max3421e_write_byte(dev, MAX3421E_REG_USBCTL, MAX3421E_CHIPRES);
+		ret |= max3421e_write_byte(dev, MAX3421E_REG_USBCTL, 0);
+
+		if (ret) {
+			return ret;
+		}
+	}
+
+	/* Reset clears PINCTL; without FDUPSPI all reads return 0x00. */
+	ret = max3421e_pinctl_setup(dev);
+	if (ret) {
+		return ret;
+	}
+
+	for (int i = 0; i < CONFIG_MAX3421E_OSC_WAIT_RETRIES; i++) {
+		uint8_t usbirq;
+
+		ret = max3421e_read(dev, MAX3421E_REG_USBIRQ,
+				    &usbirq, sizeof(usbirq));
+
+		LOG_DBG("USBIRQ 0x%02x", usbirq);
+		if (usbirq & MAX3421E_OSCOKIRQ) {
+			return 0;
+		}
+
+		k_msleep(3);
+	}
+
+	return -EIO;
 }
 
 /*
