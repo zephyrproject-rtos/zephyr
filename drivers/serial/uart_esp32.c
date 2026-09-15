@@ -167,7 +167,7 @@ struct uart_esp32_data {
 };
 
 #if CONFIG_PM
-#define TX_POLL       BIT(0)
+#define TX_DRAIN      BIT(0)
 #define TX_INT_STREAM BIT(1)
 #define TX_ASYNC      BIT(2)
 #define RX_INT        BIT(3)
@@ -238,8 +238,8 @@ static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
 	}
 
 #if CONFIG_PM
-	if (!(data->pm_lock_bits & TX_POLL)) {
-		uart_esp32_pm_policy_state_lock_get(dev, TX_POLL);
+	if (!(data->pm_lock_bits & TX_DRAIN)) {
+		uart_esp32_pm_policy_state_lock_get(dev, TX_DRAIN);
 
 		/* Enable ISR to aid controlling power lock */
 		uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TX_DONE);
@@ -571,7 +571,24 @@ static void uart_esp32_irq_tx_disable(const struct device *dev)
 	uart_hal_disable_intr_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
 
 #ifdef CONFIG_PM
+	unsigned int key = irq_lock();
+
+	/*
+	 * The FIFO may still hold bytes to send. Arm TX_DONE, then check
+	 * if the transmitter is already idle: TX_DONE only fires at the
+	 * end of a transfer, so otherwise the interrupt never comes.
+	 */
+	uart_esp32_pm_policy_state_lock_get(dev, TX_DRAIN);
+	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TX_DONE);
+	uart_hal_ena_intr_mask(&data->hal, UART_INTR_TX_DONE);
+
+	if (uart_hal_is_tx_idle(&data->hal)) {
+		uart_esp32_pm_policy_state_lock_put(dev, TX_DRAIN);
+	}
+
 	uart_esp32_pm_policy_state_lock_put(dev, TX_INT_STREAM);
+
+	irq_unlock(key);
 #endif
 }
 
@@ -707,10 +724,8 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 
 #if CONFIG_PM
 	if (uart_intr_status & UART_INTR_TX_DONE) {
-		if (data->pm_lock_bits & TX_POLL) {
-			uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
-			uart_esp32_pm_policy_state_lock_put(dev, TX_POLL);
-		}
+		uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
+		uart_esp32_pm_policy_state_lock_put(dev, TX_DRAIN);
 	}
 #endif
 
