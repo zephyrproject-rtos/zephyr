@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Hsiu-Chi Tsai
+# SPDX-License-Identifier: Apache-2.0
+tests:
+  drivers.audio.es8311:
+    tags:
+      - drivers
+      - audio
+    filter: dt_compat_enabled("everest,es8311")
+    platform_allow:
+      - native_sim
