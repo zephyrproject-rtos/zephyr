@@ -53,8 +53,7 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 
 		(void)k_mutex_lock(lock, K_FOREVER);
 
-		result = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_PREPARE, pfd, &pev,
-						 pev_end);
+		result = zvfs_fdtable_call_poll_prepare(vtable, ctx, pfd, &pev, pev_end);
 		if (result == -EALREADY) {
 			/* If POLL_PREPARE returned with EALREADY, it means
 			 * it already detected that some socket is ready. In
@@ -136,8 +135,7 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 
 			(void)k_mutex_lock(lock, K_FOREVER);
 
-			result = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_UPDATE, pfd,
-							 &pev);
+			result = zvfs_fdtable_call_poll_update(vtable, ctx, pfd, &pev);
 			k_mutex_unlock(lock);
 
 			if (result == -EAGAIN) {
