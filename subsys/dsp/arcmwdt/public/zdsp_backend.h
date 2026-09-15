@@ -286,6 +286,77 @@ static inline void zdsp_not_u32(const DSP_DATA uint32_t *src, DSP_DATA uint32_t 
 	arm_not_u32(src, dst, block_size);
 }
 
+/*
+ * Transform (FFT) functions.
+ *
+ * These wrap the CMSIS-DSP transform routines (CONFIG_CMSIS_DSP is enabled for the ARC
+ * backend), so the buffers use plain pointers rather than the DSP_DATA/AGU qualifiers used
+ * by the MWDT basicmath routines above. The instance structures wrap the CMSIS-DSP
+ * instances so the public zdsp API never exposes a CMSIS type.
+ */
+struct zdsp_cfft_instance_q15 {
+	arm_cfft_instance_q15 arm;
+};
+
+static inline zdsp_status zdsp_cfft_init_q15(struct zdsp_cfft_instance_q15 *inst, uint16_t fft_len)
+{
+	return arm_cfft_init_q15(&inst->arm, fft_len) == ARM_MATH_SUCCESS ? ZDSP_STATUS_OK
+									  : ZDSP_STATUS_ERROR;
+}
+static inline void zdsp_cfft_q15(const struct zdsp_cfft_instance_q15 *inst, q15_t *p,
+				 uint8_t ifft_flag, uint8_t bit_reverse_flag)
+{
+	arm_cfft_q15(&inst->arm, p, ifft_flag, bit_reverse_flag);
+}
+
+struct zdsp_cfft_instance_f32 {
+	arm_cfft_instance_f32 arm;
+};
+
+static inline zdsp_status zdsp_cfft_init_f32(struct zdsp_cfft_instance_f32 *inst, uint16_t fft_len)
+{
+	return arm_cfft_init_f32(&inst->arm, fft_len) == ARM_MATH_SUCCESS ? ZDSP_STATUS_OK
+									  : ZDSP_STATUS_ERROR;
+}
+static inline void zdsp_cfft_f32(const struct zdsp_cfft_instance_f32 *inst, float32_t *p,
+				 uint8_t ifft_flag, uint8_t bit_reverse_flag)
+{
+	arm_cfft_f32(&inst->arm, p, ifft_flag, bit_reverse_flag);
+}
+
+struct zdsp_rfft_instance_q15 {
+	arm_rfft_instance_q15 arm;
+};
+
+static inline zdsp_status zdsp_rfft_init_q15(struct zdsp_rfft_instance_q15 *inst, uint32_t fft_len,
+					     uint32_t ifft_flag, uint32_t bit_reverse_flag)
+{
+	return arm_rfft_init_q15(&inst->arm, fft_len, ifft_flag, bit_reverse_flag) ==
+			       ARM_MATH_SUCCESS
+		       ? ZDSP_STATUS_OK
+		       : ZDSP_STATUS_ERROR;
+}
+static inline void zdsp_rfft_q15(const struct zdsp_rfft_instance_q15 *inst, q15_t *src, q15_t *dst)
+{
+	arm_rfft_q15(&inst->arm, src, dst);
+}
+
+struct zdsp_rfft_fast_instance_f32 {
+	arm_rfft_fast_instance_f32 arm;
+};
+
+static inline zdsp_status zdsp_rfft_fast_init_f32(struct zdsp_rfft_fast_instance_f32 *inst,
+						  uint16_t fft_len)
+{
+	return arm_rfft_fast_init_f32(&inst->arm, fft_len) == ARM_MATH_SUCCESS ? ZDSP_STATUS_OK
+									       : ZDSP_STATUS_ERROR;
+}
+static inline void zdsp_rfft_fast_f32(const struct zdsp_rfft_fast_instance_f32 *inst, float32_t *p,
+				      float32_t *out, uint8_t ifft_flag)
+{
+	arm_rfft_fast_f32(&inst->arm, p, out, ifft_flag);
+}
+
 #ifdef __cplusplus
 }
 #endif
