@@ -339,6 +339,7 @@ int shm_open(const char *name, int oflag, mode_t mode)
 	shm = shm_obj_find(key);
 	if ((shm != NULL) && shm->unlinked) {
 		/* we cannot open a shm object that has already been unlinked */
+		zvfs_free_fd(fd);
 		errno = EACCES;
 		return -1;
 	}
@@ -362,6 +363,7 @@ int shm_open(const char *name, int oflag, mode_t mode)
 			shm_obj_add(shm);
 		}
 	} else if (shm == NULL) {
+		zvfs_free_fd(fd);
 		errno = ENOENT;
 		return -1;
 	}
