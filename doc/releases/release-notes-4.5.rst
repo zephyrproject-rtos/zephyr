@@ -348,6 +348,14 @@ Deprecated APIs and options
   * The :c:struct:`_dmic_ops` struct has been deprecated. DMIC drivers are now expected to use the
     :c:macro:`DEVICE_API` macro to declare their driver API.
 
+* Flash
+
+  * The STM32 XSPI Flash driver (:dtcompatible:`st,stm32-xspi-nor`,
+    :kconfig:option:`CONFIG_FLASH_STM32_XSPI`) has been deprecated on the STM32H5 series in favor
+    of the STM32 XSPI Controller driver (:dtcompatible:`st,stm32-xspi-controller`,
+    :kconfig:option:`CONFIG_MSPI_STM32_XSPI`) paired with the Generic MSPI NOR Flash driver
+    (:dtcompatible:`jedec,nor`, :kconfig:option:`CONFIG_FLASH_MSPI_NOR`).
+
 * Fuel Gauge
 
   * Deprecated various fuel gauge property enums and union fields in favor of
