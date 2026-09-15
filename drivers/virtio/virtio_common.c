@@ -21,12 +21,8 @@ void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue
 
 			while (vq->last_used_idx != used_idx) {
 				uint16_t idx = vq->last_used_idx % vq->num;
-				uint16_t idx_le = sys_cpu_to_le16(idx);
-				uint16_t chain_head_le = vq->used->ring[idx_le].id;
-				uint16_t chain_head = sys_le16_to_cpu(chain_head_le);
-				uint32_t used_len = sys_le32_to_cpu(
-					vq->used->ring[idx_le].len
-				);
+				uint32_t chain_head = sys_le32_to_cpu(vq->used->ring[idx].id);
+				uint32_t used_len = sys_le32_to_cpu(vq->used->ring[idx].len);
 
 				/*
 				 * The used ring is written by the (untrusted) device.
@@ -63,10 +59,10 @@ void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue
 				 */
 				while (!last) {
 					uint16_t curr = next;
-					uint16_t curr_le = sys_cpu_to_le16(curr);
+					uint16_t flags = sys_le16_to_cpu(vq->desc[curr].flags);
 
-					next = vq->desc[curr_le].next;
-					last = !(vq->desc[curr_le].flags & VIRTQ_DESC_F_NEXT);
+					next = sys_le16_to_cpu(vq->desc[curr].next);
+					last = !(flags & VIRTQ_DESC_F_NEXT);
 					virtq_add_free_desc(vq, curr);
 				}
 
