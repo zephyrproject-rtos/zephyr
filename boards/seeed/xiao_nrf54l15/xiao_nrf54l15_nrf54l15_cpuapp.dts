@@ -175,5 +175,13 @@ dmic_dev: &pdm20 {
 	status = "okay";
 };
 
+&xo {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+};
+
 /* Include default memory partition configuration file */
 #include <vendor/nordic/nrf54l15_cpuapp_partition.dtsi>
