@@ -988,12 +988,9 @@ struct i3c_device_id {
  * This helper macro expands to a static initializer for a i3c_device_id
  * by populating the PID (Provisioned ID) field.
  *
- * @param pid Provisioned ID.
+ * @param pid_val Provisioned ID.
  */
-#define I3C_DEVICE_ID(pid)						\
-	{								\
-		.pid = pid						\
-	}
+#define I3C_DEVICE_ID(pid_val) {.pid = pid_val}
 
 /**
  * @brief Structure describing a I3C target device.
