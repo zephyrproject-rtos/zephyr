@@ -1,0 +1,86 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <Cherrence.sarip@analog.com>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * TMC522x stepper sample - I2C variant
+ */
+
+/ {
+	aliases {
+		stepper-drv = &tmc_stepper_driver;
+		stepper = &tmc_motion_controller;
+		tmc522x = &tmc522x_i2c;
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	tmc522x_i2c: tmc522x@60 {
+		compatible = "adi,tmc522x";
+		reg = <0x60>;
+		status = "okay";
+
+		/* Hardware enable pins */
+		drven-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+		sleepn-gpios = <&gpiof 10 GPIO_ACTIVE_HIGH>;
+		diag0-gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
+		diag1-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+
+		/* Global configuration */
+		clock-frequency = <DT_FREQ_M(16)>;
+		chopper-mode = "spreadcycle";
+		chm-mode = "spreadcycle";
+
+		/* Stepper driver configuration (stepper_drv API) */
+		tmc_stepper_driver: stepper_driver {
+			compatible = "adi,tmc522x-stepper-driver";
+			idx = <0>;
+			micro-step-res = <16>;
+			stallguard2-threshold = <0>;
+			status = "okay";
+
+			/* Current control settings */
+			ihold = <16>;
+			irun = <31>;
+			irundelay = <4>;
+			iholddelay = <3>;
+			tpowerdown = <10>;
+
+			/* Chopper configuration */
+			toff = <5>;
+			tbl = <3>;
+			hstrt = <7>;
+			hend = <3>;
+
+			/* Driver configuration */
+			fs-gain = <0>;
+			fs-sense = <0>;
+			global-scaler = <231>;
+		};
+
+		/* Motion controller configuration (stepper API) */
+		tmc_motion_controller: motion_controller {
+			compatible = "adi,tmc522x-stepper-ctrl";
+			idx = <0>;
+			status = "okay";
+
+			/* Basic ramp parameters */
+			vstart = <10>;
+			vstop = <10>;
+			v1 = <0>;
+			amax = <10000>;
+			vmax = <10000>;
+			dmax = <10000>;
+			d1 = <10000>;
+
+			/* S-curve ramp parameters */
+			a2 = <10000>;
+			v2 = <0>;
+			d2 = <10000>;
+		};
+	};
+};
