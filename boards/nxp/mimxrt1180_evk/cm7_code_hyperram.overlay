@@ -8,7 +8,6 @@
 / {
 	chosen {
 		zephyr,flash = &hyperram0;
-		zephyr,code-partition = &slot1_partition;
 	};
 };
 
