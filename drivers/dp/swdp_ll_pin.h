@@ -32,6 +32,10 @@ static ALWAYS_INLINE void pin_delay_asm(uint32_t delay)
 
 #include "swdp_ll_pin_stm32.h"
 
+#elif defined(CONFIG_SOC_FAMILY_MCXA)
+
+#include "swdp_ll_pin_mcx.h"
+
 #else
 
 #define CPU_CLOCK CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
