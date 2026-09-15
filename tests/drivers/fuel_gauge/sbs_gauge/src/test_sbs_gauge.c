@@ -203,6 +203,16 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_buffer_props__returns_ok)
 					      sizeof(chem)));
 }
 
+ZTEST_USER_F(sbs_gauge_new_api, test_set_buffer_prop__returns_enosys)
+{
+	/* The SBS gauge driver does not implement the set_buffer_property callback */
+	struct sbs_gauge_manufacturer_name mfg_name = {0};
+
+	zassert_equal(fuel_gauge_set_buffer_prop(fixture->dev, FUEL_GAUGE_MANUFACTURER_NAME,
+						 &mfg_name, sizeof(mfg_name)),
+		      -ENOSYS);
+}
+
 ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 {
 	uint32_t expected_uV = 5000 * 1000;
