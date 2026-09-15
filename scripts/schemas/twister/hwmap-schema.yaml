@@ -40,6 +40,8 @@ items:
       type: array
       items:
         type: string
+    run_with_fixture_only:
+      type: boolean
     flash_timeout:
       type: integer
     flash_with_test:
