@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Only a longer-named DT_HAS symbol is defined here; querying the shorter
+# DT_HAS_VND_FOO_DEVICE_ENABLED name must not substring-match it.
+
+config DTD_LONGER_GATE
+	bool "Gate for the longer-named driver"
+
+config DTD_LONGER_DRIVER
+	bool "Driver depending on a longer-named DT_HAS symbol"
+	default y
+	depends on DTD_LONGER_GATE && DT_HAS_VND_FOO_DEVICE_ENABLED_EXT
+
+config DT_HAS_VND_FOO_DEVICE_ENABLED_EXT
+	def_bool y
