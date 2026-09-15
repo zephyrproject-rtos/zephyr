@@ -297,6 +297,144 @@ def test_ranges():
         edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x2, length=0x2f00000210)
     ]
 
+def test_dma_ranges():
+    '''Tests for the dma-ranges property'''
+    # The fixtures mirror the 'ranges' ones cell for cell, and the devicetree
+    # specification gives the two properties the same layout, so the expected
+    # values here are the ones test_ranges above asserts for its counterparts.
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    assert edt.get_node("/dma-ranges-zero-cells/node").dma_ranges == []
+
+    # A child #address-cells of 0 with a non-empty property: the rows still
+    # parse, because the parent and the size cells make entry_cells non-zero,
+    # and the child address comes back as None. 'ranges' has no fixture for
+    # this shape either.
+    node = edt.get_node("/dma-ranges-zero-child-address-cells/node")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x0, child_bus_addr=None, parent_bus_cells=0x1, parent_bus_addr=0xa, length_cells=0x1, length=0xb),
+        edtlib.Range(node=node, child_bus_cells=0x0, child_bus_addr=None, parent_bus_cells=0x1, parent_bus_addr=0x1a, length_cells=0x1, length=0x1b),
+        edtlib.Range(node=node, child_bus_cells=0x0, child_bus_addr=None, parent_bus_cells=0x1, parent_bus_addr=0x2a, length_cells=0x1, length=0x2b)
+    ]
+
+    node = edt.get_node("/dma-ranges-zero-parent-cells/node")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0xa, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x0, length=None),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x0, length=None),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x0, length=None)
+    ]
+
+    node = edt.get_node("/dma-ranges-one-address-cells/node")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0xa, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x1, length=0xb),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x1, length=0x1b),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x1, length=0x2b)
+    ]
+
+    node = edt.get_node("/dma-ranges-one-address-two-size-cells/node")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0xa, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x2, length=0xb0000000c),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x2, length=0x1b0000001c),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x2, length=0x2b0000002c)
+    ]
+
+    node = edt.get_node("/dma-ranges-two-address-cells/node@1")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0xa0000000b, parent_bus_cells=0x1, parent_bus_addr=0xc, length_cells=0x1, length=0xd),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x1a0000001b, parent_bus_cells=0x1, parent_bus_addr=0x1c, length_cells=0x1, length=0x1d),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x2a0000002b, parent_bus_cells=0x1, parent_bus_addr=0x2c, length_cells=0x1, length=0x2d)
+    ]
+
+    node = edt.get_node("/dma-ranges-two-address-two-size-cells/node@1")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0xa0000000b, parent_bus_cells=0x1, parent_bus_addr=0xc, length_cells=0x2, length=0xd0000000e),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x1a0000001b, parent_bus_cells=0x1, parent_bus_addr=0x1c, length_cells=0x2, length=0x1d0000001e),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x2a0000002b, parent_bus_cells=0x1, parent_bus_addr=0x2c, length_cells=0x2, length=0x2d0000001d)
+    ]
+
+    node = edt.get_node("/dma-ranges-three-address-cells/node@1")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0xa0000000b0000000c, parent_bus_cells=0x2, parent_bus_addr=0xd0000000e, length_cells=0x1, length=0xf),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x1a0000001b0000001c, parent_bus_cells=0x2, parent_bus_addr=0x1d0000001e, length_cells=0x1, length=0x1f),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x1, length=0x2f)
+    ]
+
+    node = edt.get_node("/dma-ranges-three-address-two-size-cells/node@1")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0xa0000000b0000000c, parent_bus_cells=0x2, parent_bus_addr=0xd0000000e, length_cells=0x2, length=0xf00000010),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x1a0000001b0000001c, parent_bus_cells=0x2, parent_bus_addr=0x1d0000001e, length_cells=0x2, length=0x1f00000110),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x2, length=0x2f00000210)
+    ]
+
+def test_spec_defined_range_props():
+    '''ranges and dma-ranges need no declaration in the binding'''
+    # The devicetree specification defines both (2.3.8 and 2.3.9), so a node
+    # may carry either without its binding saying anything about them. There
+    # are two paths through _init_props and both have to agree:
+    #
+    #   a binding that declares properties -> _check_undeclared_props
+    #   no binding at all                  -> the assumed types
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    # spec-props.yaml declares a-prop and nothing else. Reaching this line at
+    # all is half the assertion: an undeclared property is an error, not a
+    # warning, so a regression here fails the whole load.
+    node = edt.get_node("/spec-defined-range-props/node")
+    assert str(node.binding_path).endswith("spec-props.yaml")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x0, parent_bus_cells=0x1, parent_bus_addr=0x10000000, length_cells=0x1, length=0x1000)
+    ]
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x0, parent_bus_cells=0x1, parent_bus_addr=0x20000000, length_cells=0x1, length=0x2000)
+    ]
+
+    # No compatible, so no binding: the assumed types decide instead, and both
+    # properties have to reach node.props -- that is what DT_NODE_HAS_PROP()
+    # is generated from.
+    node = edt.get_node("/spec-defined-range-props-no-binding/node")
+    assert node.binding_path is None
+    assert "ranges" in node.props
+    assert "dma-ranges" in node.props
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x0, parent_bus_cells=0x1, parent_bus_addr=0x30000000, length_cells=0x1, length=0x3000)
+    ]
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x0, parent_bus_cells=0x1, parent_bus_addr=0x40000000, length_cells=0x1, length=0x4000)
+    ]
+
+def test_range_prop_type_errs(tmp_path):
+    '''ranges and dma-ranges both have to be cell arrays'''
+    # A value that is not a cell array is as wrong for one as for the other.
+    # Left unchecked it is not rejected but sliced: the string below is
+    # twelve bytes, which is exactly one row of the three cells this node
+    # asks for, so it would come back as a Range holding its ASCII bytes.
+
+    dts_file = tmp_path / "error.dts"
+
+    dts = """
+/dts-v1/;
+
+/ {
+\t#address-cells = <1>;
+\t#size-cells = <1>;
+
+\tnode {
+\t\t#address-cells = <1>;
+\t\t#size-cells = <1>;
+\t\tPROP = "abcdefghijk";
+\t};
+};
+"""
+
+    for prop_name in ("ranges", "dma-ranges"):
+        verify_error(dts.replace("PROP", prop_name),
+                     dts_file,
+                     f"expected '{prop_name} = <...>;' in /node in {dts_file}, "
+                     f"not '{prop_name} = \"abcdefghijk\";' "
+                     "(see the devicetree specification)")
+
 def test_reg():
     '''Tests for the regs property'''
     with from_here():
