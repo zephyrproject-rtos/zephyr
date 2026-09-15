@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <vendor/nordic/nrf54l15_cpuflpr.dtsi>
+#include <vendor/nordic/nrf54l15_ipc_shared_ram.dtsi>
 #include "nrf93m1dk_nrf54l15-pinctrl.dtsi"
 
 / {

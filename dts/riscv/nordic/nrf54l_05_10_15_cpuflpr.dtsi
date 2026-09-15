@@ -24,7 +24,7 @@ clic: &cpuflpr_clic {};
 &cpuflpr {
 	cpuflpr_vevif_rx: mailbox {
 		compatible = "nordic,nrf-vevif-task-rx";
-		status = "disabled";
+		status = "okay";
 		interrupt-parent = <&cpuflpr_clic>;
 		interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>,
 			     <17 NRF_DEFAULT_IRQ_PRIORITY>,
@@ -45,7 +45,7 @@ clic: &cpuflpr_clic {};
 		#mbox-cells = <1>;
 		nordic,events = <1>;
 		nordic,events-mask = <0x00100000>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 
