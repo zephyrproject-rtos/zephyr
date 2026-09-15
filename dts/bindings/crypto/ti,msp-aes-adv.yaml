@@ -1,10 +1,10 @@
-# Copyright (c) 2026 Linumiz
+# Copyright (c) 2026 Texas Instruments Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Texas Instruments MSPM0 G series Advanced Encryption Standard (AES) Engine
+  Texas Instruments MSP Advanced Encryption Standard Advanced (AESADV) Engine
   This peripheral provides AES-128 and AES-256 encryption and decryption.
 
-compatible: "ti,mspm0-aes"
+compatible: "ti,msp-aes-adv"
 
 include: ti,msp-aes-common.yaml
