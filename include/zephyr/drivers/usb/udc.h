@@ -92,6 +92,8 @@ struct udc_ep_caps {
  * USB device controller endpoint status
  */
 struct udc_ep_stat {
+	/** Endpoint is claimed */
+	bool claimed;
 	/** Endpoint is enabled */
 	bool enabled;
 	/** Endpoint is halted (returning STALL PID) */
@@ -116,6 +118,8 @@ struct udc_ep_config {
 	struct udc_ep_caps caps;
 	/** Endpoint status */
 	struct udc_ep_stat stat;
+	/** Largest MPS within all interface settings */
+	uint16_t m_mps;
 	/** Endpoint address */
 	uint8_t addr;
 	/** Endpoint attributes */
@@ -525,14 +529,12 @@ static inline int udc_host_wakeup(const struct device *dev)
 }
 
 /**
- * @brief Try an endpoint configuration.
+ * @brief Test and claim an endpoint configuration.
  *
- * Try an endpoint configuration based on endpoint descriptor.
- * This function may modify wMaxPacketSize descriptor fields
- * of the endpoint. All properties of the descriptor,
- * such as direction, and transfer type, should be set correctly.
- * If wMaxPacketSize value is zero, it will be
- * updated to maximum buffer size of the endpoint.
+ * Test and claim an endpoint configuration based on endpoint descriptor.
+ * All properties of the descriptor, such as wMaxPacketSize, direction, and
+ * transfer type, should be set correctly. It does not claim an endpoint
+ * exclusively, as it may be called for alternate settings.
  *
  * @param[in] dev        Pointer to device struct of the driver instance
  * @param[in] ep         Endpoint address (same as bEndpointAddress)
@@ -545,11 +547,11 @@ static inline int udc_host_wakeup(const struct device *dev)
  * @retval -ENOTSUP endpoint configuration not supported
  * @retval -ENODEV no endpoints available
  */
-int udc_ep_try_config(const struct device *dev,
-		      const uint8_t ep,
-		      const uint8_t attributes,
-		      uint16_t *const mps,
-		      const uint8_t interval);
+int udc_ep_claim_config(const struct device *dev,
+			const uint8_t ep,
+			const uint8_t attributes,
+			const uint16_t mps,
+			const uint8_t interval);
 
 /**
  * @brief Configure and enable endpoint.

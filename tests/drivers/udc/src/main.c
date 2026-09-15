@@ -112,9 +112,9 @@ static void test_udc_ep_try_config(const struct device *dev,
 			ep = USB_EP_DIR_OUT | idx;
 		}
 
-		err = udc_ep_try_config(dev, ep,
-					ed->bmAttributes, &mps,
-					ed->bInterval);
+		err = udc_ep_claim_config(dev, ep,
+					  ed->bmAttributes, mps,
+					  ed->bInterval);
 
 		if (!err) {
 			ed->bEndpointAddress = ep;
@@ -123,22 +123,6 @@ static void test_udc_ep_try_config(const struct device *dev,
 	}
 
 	zassert_equal(err, 0, "Failed to test endpoint configuration");
-
-	if (ed->bmAttributes == USB_EP_TYPE_CONTROL ||
-	    ed->bmAttributes == USB_EP_TYPE_ISO) {
-		/*
-		 * Skip subsequent test since udc_ep_try_config() does not
-		 * update mps argument for control and iso endpoints.
-		 */
-		return;
-	}
-
-	mps = 0;
-	err = udc_ep_try_config(dev, ed->bEndpointAddress,
-				ed->bmAttributes, &mps,
-				ed->bInterval);
-	zassert_equal(err, 0, "Failed to test endpoint configuration");
-	zassert_not_equal(mps, 0, "Failed to test endpoint configuration");
 }
 
 static void test_udc_ep_enable(const struct device *dev,
@@ -380,9 +364,9 @@ static void test_udc_ep_mps(uint8_t type)
 		.wMaxPacketSize = sys_cpu_to_le16(0),
 		.bInterval = 0,
 	};
+	struct udc_device_caps caps;
 	const struct device *dev;
-	uint16_t out_supported = 0;
-	uint16_t in_supported = 0;
+	uint16_t supported = 0;
 	uint16_t out_ep = 0;
 	uint16_t in_ep = 0;
 	int err;
@@ -393,37 +377,61 @@ static void test_udc_ep_mps(uint8_t type)
 	err = udc_init(dev, test_udc_event_handler, &test_event_ctx);
 	zassert_ok(err, "Failed to initialize UDC driver");
 
-	err = udc_enable(dev);
-	zassert_ok(err, "Failed to enable UDC driver");
-
+	caps = udc_caps(dev);
 	if (type == USB_EP_TYPE_INTERRUPT) {
 		ed.bInterval = 1;
+		if (caps.hs) {
+			supported = 1024;
+		} else {
+			supported = 64;
+		}
+	}
+
+	if (type == USB_EP_TYPE_BULK) {
+		if (caps.hs) {
+			supported = 512;
+		} else {
+			supported = 64;
+		}
+	}
+
+	if (type == USB_EP_TYPE_ISO) {
+		if (caps.hs) {
+			supported = 256;
+		} else {
+			supported = 64;
+		}
 	}
 
 	for (uint8_t i = 1; i < 16U; i++) {
-		err = udc_ep_try_config(dev, i,
-					ed.bmAttributes, &out_supported,
-					ed.bInterval);
+		err = udc_ep_claim_config(dev, i,
+					  ed.bmAttributes, supported,
+					  ed.bInterval);
 		if (!err) {
 			out_ep = i;
 			break;
 		}
 	}
 
+	zassert_ok(err, "Failed to determine OUT MPS");
+
 	for (uint8_t i = 1; i < 16U; i++) {
-		err = udc_ep_try_config(dev, i | USB_EP_DIR_IN,
-					ed.bmAttributes, &in_supported,
-					ed.bInterval);
+		err = udc_ep_claim_config(dev, i | USB_EP_DIR_IN,
+					  ed.bmAttributes, supported,
+					  ed.bInterval);
 		if (!err) {
 			in_ep = i | USB_EP_DIR_IN;
 			break;
 		}
 	}
 
-	zassert_ok(err, "Failed to determine MPS");
+	zassert_ok(err, "Failed to determine IN MPS");
+
+	err = udc_enable(dev);
+	zassert_ok(err, "Failed to enable UDC driver");
 
 	for (int i = 0; i < ARRAY_SIZE(mps); i++) {
-		if (mps[i] > out_supported) {
+		if (mps[i] > supported) {
 			continue;
 		}
 
@@ -434,7 +442,7 @@ static void test_udc_ep_mps(uint8_t type)
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(mps); i++) {
-		if (mps[i] > in_supported) {
+		if (mps[i] > supported) {
 			continue;
 		}
 
