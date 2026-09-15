@@ -21,6 +21,7 @@ int icm42605_trigger_set(const struct device *dev,
 {
 	struct icm42605_data *drv_data = dev->data;
 	const struct icm42605_config *cfg = dev->config;
+	int ret;
 
 	if (trig->type != SENSOR_TRIG_DATA_READY
 	    && trig->type != SENSOR_TRIG_TAP
@@ -50,11 +51,19 @@ int icm42605_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (drv_data->sensor_started) {
+		/* The tap detection engine is only programmed as part of the
+		 * FIFO/APEX setup, so it has to be re-applied when a trigger is
+		 * registered while the sensor is already running.
+		 */
+		ret = icm42605_turn_on_fifo(dev);
+	} else {
+		ret = icm42605_turn_on_sensor(dev);
+	}
+
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 
-	icm42605_turn_on_sensor(dev);
-
-	return 0;
+	return ret;
 }
 
 static void icm42605_gpio_callback(const struct device *dev,
