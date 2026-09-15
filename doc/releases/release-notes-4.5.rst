@@ -569,6 +569,17 @@ New APIs and options
   * :c:enumerator:`PIXEL_FORMAT_YUYV`
   * :c:macro:`PANEL_PIXEL_FORMAT_YUYV`
 
+* DSP
+
+  * :c:func:`zdsp_cfft_init_q15`
+  * :c:func:`zdsp_cfft_q15`
+  * :c:func:`zdsp_cfft_init_f32`
+  * :c:func:`zdsp_cfft_f32`
+  * :c:func:`zdsp_rfft_init_q15`
+  * :c:func:`zdsp_rfft_q15`
+  * :c:func:`zdsp_rfft_fast_init_f32`
+  * :c:func:`zdsp_rfft_fast_f32`
+
 * Haptics
 
   * :c:enum:`haptics_monitor`
