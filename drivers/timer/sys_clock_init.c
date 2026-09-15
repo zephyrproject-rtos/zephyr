@@ -18,7 +18,7 @@
 
 /* Weak-linked noop defaults for optional driver interfaces*/
 
-void __weak sys_clock_set_timeout(uint32_t ticks, bool idle)
+void __weak sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(ticks);
 	ARG_UNUSED(idle);
@@ -38,7 +38,7 @@ void __weak sys_clock_no_timeout(void)
 	sys_clock_set_timeout(UINT32_MAX, false);
 }
 
-void __weak sys_clock_idle_enter(uint32_t ticks)
+void __weak sys_clock_idle_enter(sys_clock_ticks_t ticks)
 {
 	/* A driver that does not implement this hook may still key its
 	 * low-power handling on sys_clock_set_timeout()'s idle argument, so
