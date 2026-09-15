@@ -79,3 +79,6 @@ ZTEST_SUITE(i2s_states, NULL, setup, before, NULL, NULL);
 ZTEST_SUITE(i2s_dir_both_states, NULL, setup, before_dir_both, NULL, NULL);
 ZTEST_SUITE(i2s_dir_both_loopback, NULL, setup, before_dir_both, NULL, NULL);
 ZTEST_SUITE(i2s_errors, NULL, setup, before, NULL, NULL);
+#ifdef CONFIG_I2S_TEST_TDM_CHANNEL_MASKING
+ZTEST_SUITE(tdm_channel_masking, NULL, setup, before_dir_both, NULL, NULL);
+#endif

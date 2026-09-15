@@ -45,3 +45,10 @@ config I2S_TEST_ALLOW_VARIABLE_OFFSET
 	  If the data offset is not consistent between reads because of
 	  timing variations in the hardware, enable this option to
 	  always recalculate the offset.
+
+config I2S_TEST_TDM_CHANNEL_MASKING
+	bool "Run TDM channel masking tests"
+	default y if SOC_NRF54H20
+	help
+	  Enable the tdm_channel_masking test suite, which exercises the
+	  tdm_config.channel_disable_mask field.
