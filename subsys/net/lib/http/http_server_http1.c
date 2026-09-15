@@ -637,8 +637,18 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 				    struct http_client_ctx *client)
 {
+#ifdef CONFIG_HTTP_SERVER_STATIC_FS_CACHE_CONTROL
+#define HTTP_SERVER_STATIC_FS_CACHE_CONTROL_HEADER                                                 \
+	"Cache-Control: public, max-age="                                                 \
+	STRINGIFY(CONFIG_HTTP_SERVER_STATIC_FS_CACHE_CONTROL_MAX_AGE)                              \
+	"\r\n"
+#else
+#define HTTP_SERVER_STATIC_FS_CACHE_CONTROL_HEADER ""
+#endif
+
 #define RESPONSE_TEMPLATE_STATIC_FS                                                                \
 	"HTTP/1.1 200 OK\r\n"                                                                      \
+	HTTP_SERVER_STATIC_FS_CACHE_CONTROL_HEADER                                                 \
 	"Content-Length: %zd\r\n"                                                                  \
 	"Content-Type: %s%s%s\r\n\r\n"
 #define CONTENT_ENCODING_HEADER "\r\nContent-Encoding: "
@@ -681,8 +691,9 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 	/* get filename and content-type from url */
 	len = strlen(client->url_buffer);
 	if (len == 1) {
-		/* url is just the leading slash, use index.html as filename */
-		snprintk(fname, sizeof(fname), "%s/index.html", static_fs_detail->fs_path);
+		/* url is just the leading slash, serve configured index file */
+		snprintk(fname, sizeof(fname), "%s/" CONFIG_HTTP_SERVER_STATIC_FS_INDEX_FILE,
+			 static_fs_detail->fs_path);
 	} else {
 		http_server_get_content_type_from_extension(client->url_buffer, content_type,
 							    sizeof(content_type));
