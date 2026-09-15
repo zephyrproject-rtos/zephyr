@@ -116,9 +116,10 @@ struct bt_cap_initiator_cb {
 	 * - -ECONNRESET if connection dropped during procedure.
 	 * - -ENOTCONN if subprocedure could not be performed due to connection.
 	 * - -ECANCELED if cancelled by bt_cap_initiator_unicast_audio_cancel().
+	 * - -ESRCH if operation failed due to internal errors.
 	 *
-	 * @param conn Pointer to the connection where the error occurred. NULL if @p err is 0 or if
-	 *             cancelled by bt_cap_initiator_unicast_audio_cancel()
+	 * @param conn Pointer to the connection where the error occurred. NULL if @p err is 0,
+	 *             if @p err is -ESRCH or -ECANCELED.
 	 */
 	void (*unicast_start_complete)(int err, struct bt_conn *conn);
 
@@ -200,9 +201,10 @@ struct bt_cap_initiator_cb {
 	 * - -ECONNRESET if connection dropped during procedure.
 	 * - -ENOTCONN if subprocedure could not be performed due to connection.
 	 * - -ECANCELED if cancelled by bt_cap_initiator_unicast_audio_cancel().
+	 * - -ESRCH if operation failed due to internal errors.
 	 *
-	 * @param conn Pointer to the connection where the error occurred. NULL if @p err is 0 or if
-	 *             cancelled by bt_cap_initiator_unicast_audio_cancel()
+	 * @param conn Pointer to the connection where the error occurred. NULL if @p err is 0,
+	 *             if @p err is -ESRCH or -ECANCELED.
 	 */
 	void (*unicast_update_complete)(int err, struct bt_conn *conn);
 
@@ -222,9 +224,10 @@ struct bt_cap_initiator_cb {
 	 * - -ECONNRESET if connection dropped during procedure.
 	 * - -ENOTCONN if subprocedure could not be performed due to connection.
 	 * - -ECANCELED if cancelled by bt_cap_initiator_unicast_audio_cancel().
+	 * - -ESRCH if operation failed due to internal errors.
 	 *
-	 * @param conn Pointer to the connection where the error occurred. NULL if @p err is 0 or if
-	 *             cancelled by bt_cap_initiator_unicast_audio_cancel()
+	 * @param conn Pointer to the connection where the error occurred. NULL if @p err is 0,
+	 *             if @p err is -ESRCH or -ECANCELED.
 	 */
 	void (*unicast_stop_complete)(int err, struct bt_conn *conn);
 
@@ -687,6 +690,7 @@ int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb);
  * @retval -EBUSY if a CAP procedure is already in progress
  * @retval -EINVAL if any parameter is invalid
  * @retval -EALREADY All streams are already in the streaming state
+ * @retval -ESRCH Internal error; try again.
  */
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param);
 
@@ -705,6 +709,7 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
  * @retval -EBUSY CAP procedure is already in progress
  * @retval -EINVAL @p param contains invalid parameters
  * @retval -EALREADY Metadata is already set for all the streams
+ * @retval -ESRCH Internal error; try again.
  */
 int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param *param);
 
@@ -723,6 +728,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
  * @retval -EBUSY if a CAP procedure is already in progress
  * @retval -EINVAL if any parameter is invalid
  * @retval -EALREADY if no state changes will occur
+ * @retval -ESRCH Internal error; try again.
  */
 int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
 
@@ -1291,7 +1297,7 @@ struct bt_cap_commander_cb {
 	 *			bt_cap_commander_cancel()
 	 * @param err		0 on success, BT_GATT_ERR() with a
 	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
-	 *			by bt_cap_commander_cancel().
+	 *			by bt_cap_commander_cancel() or -ESRCH on internal errors.
 	 */
 	void (*broadcast_reception_start)(struct bt_conn *conn, int err);
 	/**
@@ -1302,7 +1308,7 @@ struct bt_cap_commander_cb {
 	 *			bt_cap_commander_cancel()
 	 * @param err		0 on success, BT_GATT_ERR() with a
 	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
-	 *			by bt_cap_commander_cancel().
+	 *			by bt_cap_commander_cancel() or -ESRCH on internal errors.
 	 */
 	void (*broadcast_reception_stop)(struct bt_conn *conn, int err);
 	/**
@@ -1313,7 +1319,7 @@ struct bt_cap_commander_cb {
 	 *			bt_cap_commander_cancel()
 	 * @param err		0 on success, BT_GATT_ERR() with a
 	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
-	 *			by bt_cap_commander_cancel().
+	 *			by bt_cap_commander_cancel() or -ESRCH on internal errors.
 	 */
 	void (*distribute_broadcast_code)(struct bt_conn *conn, int err);
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
