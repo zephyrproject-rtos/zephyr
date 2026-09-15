@@ -12,7 +12,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/irq_nextlevel.h>
 #include <zephyr/arch/arch_interface.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/sw_isr_table.h>
+#include <adsp_interrupt.h>
 #include "intc_cavs.h"
 
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
@@ -159,3 +161,83 @@ static const struct irq_next_level_api cavs_apis = {
 		DT_INST_INTC_GET_AGGREGATOR_LEVEL(n));
 
 DT_INST_FOREACH_STATUS_OKAY(CAVS_ICTL_INIT)
+
+/*
+ * The controllers own the multi-level interrupt routing of these SoCs, their
+ * own lines through the controller behind the core line and the other core
+ * lines directly, so they provide the root interrupt controller API.
+ */
+
+/* The controller behind a core interrupt line, NULL for a plain core line */
+static const struct device *cavs_ictl_dev(uint32_t core_irq)
+{
+	switch (core_irq) {
+	case DT_INST_IRQN(0):
+		return DEVICE_DT_INST_GET(0);
+	case DT_INST_IRQN(1):
+		return DEVICE_DT_INST_GET(1);
+	case DT_INST_IRQN(2):
+		return DEVICE_DT_INST_GET(2);
+	case DT_INST_IRQN(3):
+		return DEVICE_DT_INST_GET(3);
+	default:
+		return NULL;
+	}
+}
+
+void intc_root_enable(unsigned int irq)
+{
+	uint32_t core_irq = XTENSA_IRQ_NUMBER(irq);
+	const struct device *dev = cavs_ictl_dev(core_irq);
+
+	if (dev == NULL) {
+		xtensa_irq_enable(core_irq);
+		return;
+	}
+
+	if (!device_is_ready(dev)) {
+		return;
+	}
+
+	/* The core line first, then the line in the controller */
+	xtensa_irq_enable(core_irq);
+	irq_enable_next_level(dev, CAVS_IRQ_NUMBER(irq));
+}
+
+void intc_root_disable(unsigned int irq)
+{
+	uint32_t core_irq = XTENSA_IRQ_NUMBER(irq);
+	const struct device *dev = cavs_ictl_dev(core_irq);
+
+	if (dev == NULL) {
+		xtensa_irq_disable(core_irq);
+		return;
+	}
+
+	if (!device_is_ready(dev)) {
+		return;
+	}
+
+	irq_disable_next_level(dev, CAVS_IRQ_NUMBER(irq));
+
+	/* The core line too once none of the controller's lines is enabled */
+	if (irq_is_enabled_next_level(dev) == 0U) {
+		xtensa_irq_disable(core_irq);
+	}
+}
+
+int intc_root_is_enabled(unsigned int irq)
+{
+	uint32_t core_irq = XTENSA_IRQ_NUMBER(irq);
+	const struct device *dev = cavs_ictl_dev(core_irq);
+
+	if (dev == NULL) {
+		return xtensa_irq_is_enabled(core_irq);
+	}
+
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
+	return irq_line_is_enabled_next_level(dev, CAVS_IRQ_NUMBER(irq));
+}

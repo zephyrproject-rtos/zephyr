@@ -10,6 +10,7 @@ config ITE_IT51XXX_INTC
 	def_bool DT_HAS_ITE_IT51XXX_INTC_ENABLED
 	depends on DT_HAS_ITE_IT51XXX_INTC_ENABLED
 	select HAS_ITE_INTC
+	select INTC_ROOT
 	help
 	  This option mainly collects several interrupts from modules.
 	  Configurable level-triggered and dege-triggered mode.

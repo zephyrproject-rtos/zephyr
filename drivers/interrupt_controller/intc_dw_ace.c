@@ -12,7 +12,7 @@
 #include <zephyr/irq_nextlevel.h>
 #include <zephyr/arch/xtensa/irq.h>
 #include <zephyr/sw_isr_table.h>
-#include <zephyr/drivers/interrupt_controller/dw_ace.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <soc.h>
 #include <adsp_interrupt.h>
 #include <zephyr/irq.h>
@@ -81,10 +81,13 @@ static inline bool is_dw_irq(uint32_t irq)
 	return false;
 }
 
-void dw_ace_irq_enable(const struct device *dev, uint32_t irq)
+/*
+ * The controller owns the multi-level interrupt routing of these SoCs, its
+ * own lines through the controller and the core lines directly, so it
+ * provides the root interrupt controller API.
+ */
+void intc_root_enable(unsigned int irq)
 {
-	ARG_UNUSED(dev);
-
 	if (is_dw_irq(irq)) {
 		unsigned int num_cpus = arch_num_cpus();
 
@@ -97,10 +100,8 @@ void dw_ace_irq_enable(const struct device *dev, uint32_t irq)
 	}
 }
 
-void dw_ace_irq_disable(const struct device *dev, uint32_t irq)
+void intc_root_disable(unsigned int irq)
 {
-	ARG_UNUSED(dev);
-
 	if (is_dw_irq(irq)) {
 		unsigned int num_cpus = arch_num_cpus();
 
@@ -113,10 +114,8 @@ void dw_ace_irq_disable(const struct device *dev, uint32_t irq)
 	}
 }
 
-int dw_ace_irq_is_enabled(const struct device *dev, unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
-	ARG_UNUSED(dev);
-
 	if (is_dw_irq(irq)) {
 		return ACE_INTC[0].irq_inten_l & BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
@@ -125,23 +124,6 @@ int dw_ace_irq_is_enabled(const struct device *dev, unsigned int irq)
 
 	return false;
 }
-
-#ifdef CONFIG_DYNAMIC_INTERRUPTS
-int dw_ace_irq_connect_dynamic(const struct device *dev, unsigned int irq,
-				   unsigned int priority,
-				   void (*routine)(const void *parameter),
-				   const void *parameter, uint32_t flags)
-{
-	/* Simple architecture means that the Zephyr irq number and
-	 * the index into the ISR table are identical.
-	 */
-	ARG_UNUSED(dev);
-	ARG_UNUSED(flags);
-	ARG_UNUSED(priority);
-	z_isr_install(irq, routine, parameter);
-	return irq;
-}
-#endif
 
 static void dwint_isr(const void *arg)
 {
@@ -167,18 +149,8 @@ static int dw_ace_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dw_ace_v1_ictl_driver_api dw_ictl_ace_v1x_apis = {
-	.intr_enable = dw_ace_irq_enable,
-	.intr_disable = dw_ace_irq_disable,
-	.intr_is_enabled = dw_ace_irq_is_enabled,
-#ifdef CONFIG_DYNAMIC_INTERRUPTS
-	.intr_connect_dynamic = dw_ace_irq_connect_dynamic,
-#endif
-};
-
-DEVICE_DT_INST_DEFINE(0, dw_ace_init, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 &dw_ictl_ace_v1x_apis);
+DEVICE_DT_INST_DEFINE(0, dw_ace_init, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		      NULL);
 
 IRQ_PARENT_ENTRY_DEFINE(ace_intc, DEVICE_DT_INST_GET(0), DT_INST_IRQN(0),
 			INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(0)),

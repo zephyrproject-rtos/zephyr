@@ -9,6 +9,7 @@
 #include <hal_ch32fun.h>
 
 #include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -17,17 +18,18 @@
 #define SEVONPEND BIT(4)
 #define WFITOWFE  BIT(3)
 
-void arch_irq_enable(unsigned int irq)
+/* The PFIC is the root interrupt controller of the CH32 SoCs */
+void intc_root_enable(unsigned int irq)
 {
 	PFIC->IENR[irq / 32] = BIT(irq % 32);
 }
 
-void arch_irq_disable(unsigned int irq)
+void intc_root_disable(unsigned int irq)
 {
 	PFIC->IRER[irq / 32] = BIT(irq % 32);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
 	return ((PFIC->ISR[irq >> 5] & BIT(irq & 0x1F)) != 0);
 }

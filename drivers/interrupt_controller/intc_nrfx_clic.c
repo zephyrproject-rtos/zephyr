@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include <hal/nrf_vpr_clic.h>
 
@@ -32,3 +33,11 @@ void riscv_clic_irq_set_pending(uint32_t irq)
 {
 	nrf_vpr_clic_int_pending_set(NRF_VPRCLIC, irq);
 }
+
+#if defined(CONFIG_RISCV_HAS_CLIC)
+/* The CLIC is the root interrupt controller: alias its functions to the API names */
+FUNC_ALIAS(riscv_clic_irq_enable, intc_root_enable, void);
+FUNC_ALIAS(riscv_clic_irq_disable, intc_root_disable, void);
+FUNC_ALIAS(riscv_clic_irq_is_enabled, intc_root_is_enabled, int);
+FUNC_ALIAS(riscv_clic_irq_priority_set, intc_root_priority_set, void);
+#endif /* CONFIG_RISCV_HAS_CLIC */

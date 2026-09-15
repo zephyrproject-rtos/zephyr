@@ -7,7 +7,6 @@
 zephyr_library_sources(
   sram.c
   multiprocessing.c
-  irq.c
   power_down.S
   power.c
   boot.c

@@ -18,22 +18,52 @@
 #include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
+#if defined(CONFIG_INTC_ROOT)
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifdef _ASMLANGUAGE
+#if defined(CONFIG_INTC_ROOT)
+#define arch_irq_enable                     intc_root_enable
+#define arch_irq_disable                    intc_root_disable
+#define arch_irq_is_enabled                 intc_root_is_enabled
+#endif
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 GTEXT(z_soc_irq_get_active)
 GTEXT(z_soc_irq_eoi)
+#elif defined(CONFIG_INTC_ROOT)
+GTEXT(intc_root_get_active)
+GTEXT(intc_root_eoi)
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #else
 
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if defined(CONFIG_INTC_ROOT) && !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+
+/*
+ * The root interrupt controller driver provides the intc_root_* API:
+ * map the architecture interrupt control functions onto it directly.
+ */
+#define arch_irq_enable(irq)		intc_root_enable(irq)
+#define arch_irq_disable(irq)		intc_root_disable(irq)
+#define arch_irq_is_enabled(irq)	intc_root_is_enabled(irq)
+
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+#define arch_irq_clear_pending(irq)	intc_root_clear_pending(irq)
+#define arch_irq_set_pending(irq)	intc_root_set_pending(irq)
+#define arch_irq_is_pending(irq)	intc_root_is_pending(irq)
+#endif
+
+#define z_arm64_irq_priority_set(irq, prio, flags)	\
+	intc_root_priority_set(irq, prio, flags)
+
+#elif !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);

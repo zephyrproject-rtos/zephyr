@@ -6,6 +6,7 @@
 
 #include <soc.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-intc.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -88,7 +89,12 @@ void ite_intc_isr_clear(unsigned int irq)
 	sys_write8(BIT(i), intc_base + INTC_GRPNISR(g));
 }
 
-void ite_intc_irq_enable(unsigned int irq)
+/*
+ * The INTC is the root interrupt controller of the SoC: its lines are
+ * delivered through the CPU external interrupt line, so a line is enabled
+ * only when both are.
+ */
+void intc_root_enable(unsigned int irq)
 {
 	uint32_t g, i;
 	uint8_t en;
@@ -108,7 +114,7 @@ void ite_intc_irq_enable(unsigned int irq)
 	irq_unlock(key);
 }
 
-void ite_intc_irq_disable(unsigned int irq)
+void intc_root_disable(unsigned int irq)
 {
 	uint32_t g, i;
 	uint8_t en;
@@ -164,12 +170,12 @@ void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags)
 	sys_write8(BIT(i), intc_base + INTC_GRPNISR(g));
 }
 
-int ite_intc_irq_is_enable(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
 	uint32_t g, i;
 	uint8_t en;
 
-	if (irq > CONFIG_NUM_IRQS) {
+	if (riscv_cpu_irq_is_enabled(RISCV_IRQ_MEXT) == 0 || irq > CONFIG_NUM_IRQS) {
 		return 0;
 	}
 	g = irq / MAX_REGISR_IRQ_NUM;

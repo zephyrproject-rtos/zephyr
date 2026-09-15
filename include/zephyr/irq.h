@@ -17,6 +17,7 @@
 #ifndef _ASMLANGUAGE
 #include <limits.h>
 #include <stdbool.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
@@ -447,6 +448,16 @@ static ALWAYS_INLINE int k_irq_disconnect_dynamic(unsigned int irq, unsigned int
 	return irq_disconnect_dynamic(irq, priority, routine, parameter, flags);
 }
 
+/*
+ * Multi-level encoded IRQ numbers are not bounded by CONFIG_NUM_IRQS, and
+ * architectures without CONFIG_NUM_IRQS leave the check to the arch functions.
+ */
+#if defined(CONFIG_NUM_IRQS) && !defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+#define Z_IRQ_ASSERT_IN_RANGE(irq) __ASSERT((irq) < CONFIG_NUM_IRQS, "IRQ %u out of range", (irq))
+#else
+#define Z_IRQ_ASSERT_IN_RANGE(irq) ARG_UNUSED(irq)
+#endif
+
 #if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS) || defined(__DOXYGEN__)
 /**
  * @brief Clear the pending state of an IRQ.
@@ -461,6 +472,8 @@ static ALWAYS_INLINE int k_irq_disconnect_dynamic(unsigned int irq, unsigned int
  */
 static ALWAYS_INLINE void k_irq_clear_pending(unsigned int irq)
 {
+	Z_IRQ_ASSERT_IN_RANGE(irq);
+
 	arch_irq_clear_pending(irq);
 }
 
@@ -477,6 +490,8 @@ static ALWAYS_INLINE void k_irq_clear_pending(unsigned int irq)
  */
 static ALWAYS_INLINE void k_irq_set_pending(unsigned int irq)
 {
+	Z_IRQ_ASSERT_IN_RANGE(irq);
+
 	arch_irq_set_pending(irq);
 }
 
@@ -495,6 +510,8 @@ static ALWAYS_INLINE void k_irq_set_pending(unsigned int irq)
  */
 static ALWAYS_INLINE bool k_irq_is_pending(unsigned int irq)
 {
+	Z_IRQ_ASSERT_IN_RANGE(irq);
+
 	return arch_irq_is_pending(irq);
 }
 #endif /* CONFIG_ARCH_HAS_IRQ_PENDING_OPS */

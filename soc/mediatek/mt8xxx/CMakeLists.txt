@@ -1,7 +1,7 @@
 # Copyright 2023 The ChromiumOS Authors
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library_sources(soc.c irq.c)
+zephyr_library_sources(soc.c)
 
 zephyr_library_sources_ifndef(CONFIG_SOC_SERIES_MT8365 mbox.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_MT8365 ipi.c)

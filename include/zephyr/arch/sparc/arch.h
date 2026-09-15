@@ -23,6 +23,18 @@
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/arch/common/ffs.h>
 
+#if defined(CONFIG_INTC_ROOT)
+/*
+ * The root interrupt controller driver provides the intc_root_* API: map the
+ * architecture interrupt control functions onto it directly.
+ */
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
+
+#define arch_irq_enable(irq)		intc_root_enable(irq)
+#define arch_irq_disable(irq)		intc_root_disable(irq)
+#define arch_irq_is_enabled(irq)	intc_root_is_enabled(irq)
+#endif /* CONFIG_INTC_ROOT */
+
 #include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
 #include <soc.h>
@@ -54,6 +66,13 @@ extern "C" {
  * interrupt controller.
  */
 void z_irq_spurious(const void *unused);
+
+/*
+ * SPARC root interrupt controller entry path: acknowledge interrupt request
+ * level @a irl and return the interrupt source to dispatch. Provided by the
+ * root interrupt controller driver.
+ */
+int intc_root_sparc_get_source(int irl);
 
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \

@@ -148,7 +148,7 @@ static inline void z_xt_set_intset3(unsigned int arg)
 
 #ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
 
-/* for _soc_irq_*() */
+/* The SoC's multi-level IRQ number layout */
 #include <soc.h>
 
 #ifdef CONFIG_2ND_LEVEL_INTERRUPTS
@@ -166,15 +166,17 @@ static inline void z_xt_set_intset3(unsigned int arg)
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
 #endif /* CONFIG_2ND_LEVEL_INTERRUPTS */
 
-void z_soc_irq_init(void);
-void z_soc_irq_enable(unsigned int irq);
-void z_soc_irq_disable(unsigned int irq);
-int z_soc_irq_is_enabled(unsigned int irq);
+/*
+ * The aggregator driver that owns the multi-level routing is the root
+ * interrupt controller and provides the intc_root_* API: map the
+ * architecture interrupt control functions onto it directly.
+ */
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 
-#define arch_irq_enable(irq)	z_soc_irq_enable(irq)
-#define arch_irq_disable(irq)	z_soc_irq_disable(irq)
+#define arch_irq_enable(irq)	intc_root_enable(irq)
+#define arch_irq_disable(irq)	intc_root_disable(irq)
 
-#define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+#define arch_irq_is_enabled(irq)	intc_root_is_enabled(irq)
 
 #else
 

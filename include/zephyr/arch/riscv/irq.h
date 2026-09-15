@@ -55,24 +55,130 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#if defined(CONFIG_INTC_ROOT)
+/*
+ * The root interrupt controller driver provides the intc_root_* API:
+ * map the architecture interrupt control functions onto it directly.
+ */
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
+
+#define arch_irq_enable(irq)		intc_root_enable(irq)
+#define arch_irq_disable(irq)		intc_root_disable(irq)
+#define arch_irq_is_enabled(irq)	intc_root_is_enabled(irq)
+#elif defined(CONFIG_RISCV_PRIVILEGED)
+/* No root interrupt controller: the CPU interrupt lines are all there is */
+#define arch_irq_enable(irq)		riscv_cpu_irq_enable(irq)
+#define arch_irq_disable(irq)		riscv_cpu_irq_disable(irq)
+#define arch_irq_is_enabled(irq)	riscv_cpu_irq_is_enabled(irq)
+#else
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
+#endif /* CONFIG_INTC_ROOT */
 
-#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
-	defined(CONFIG_RISCV_HAS_AIA)
-extern void z_riscv_irq_priority_set(unsigned int irq,
-				     unsigned int prio,
-				     uint32_t flags);
+/*
+ * CPU interrupt lines: the bits of the mie CSR, sie in S-mode. With the AIA
+ * extension on RV32 the upper 32 lines are in mieh (sieh). A root interrupt
+ * controller driver uses these for the lines it does not aggregate.
+ */
+
+/**
+ * @brief Enable a CPU interrupt line
+ *
+ * @param irq CPU interrupt line
+ */
+static ALWAYS_INLINE void riscv_cpu_irq_enable(unsigned int irq)
+{
+#if defined(CONFIG_RISCV_S_MODE)
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	if (irq >= 32U) {
+		csr_set(sieh, BIT(irq - 32U));
+		return;
+	}
+#endif
+	csr_set(sie, 1UL << irq);
+#else
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	if (irq >= 32U) {
+		csr_set(mieh, BIT(irq - 32U));
+		return;
+	}
+#endif
+	csr_set(mie, 1UL << irq);
+#endif
+}
+
+/**
+ * @brief Disable a CPU interrupt line
+ *
+ * @param irq CPU interrupt line
+ */
+static ALWAYS_INLINE void riscv_cpu_irq_disable(unsigned int irq)
+{
+#if defined(CONFIG_RISCV_S_MODE)
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	if (irq >= 32U) {
+		csr_clear(sieh, BIT(irq - 32U));
+		return;
+	}
+#endif
+	csr_clear(sie, 1UL << irq);
+#else
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	if (irq >= 32U) {
+		csr_clear(mieh, BIT(irq - 32U));
+		return;
+	}
+#endif
+	csr_clear(mie, 1UL << irq);
+#endif
+}
+
+/**
+ * @brief Get the enable state of a CPU interrupt line
+ *
+ * @param irq CPU interrupt line
+ *
+ * @return 1 if the line is enabled, 0 otherwise
+ */
+static ALWAYS_INLINE int riscv_cpu_irq_is_enabled(unsigned int irq)
+{
+	unsigned long ie;
+
+#if defined(CONFIG_RISCV_S_MODE)
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	if (irq >= 32U) {
+		ie = csr_read(sieh);
+		return (ie & BIT(irq - 32U)) != 0UL ? 1 : 0;
+	}
+#endif
+	ie = csr_read(sie);
+#else
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	if (irq >= 32U) {
+		ie = csr_read(mieh);
+		return (ie & BIT(irq - 32U)) != 0UL ? 1 : 0;
+	}
+#endif
+	ie = csr_read(mie);
+#endif
+
+	return (ie & (1UL << irq)) != 0UL ? 1 : 0;
+}
+
+/* The PLIC, CLIC and AIA root interrupt controllers have a priority to set */
+#if defined(CONFIG_INTC_ROOT) && (defined(CONFIG_RISCV_HAS_PLIC) ||                                \
+				  defined(CONFIG_RISCV_HAS_CLIC) || defined(CONFIG_RISCV_HAS_AIA))
+#define z_riscv_irq_priority_set(i, p, f) intc_root_priority_set(i, p, f)
 #else
 #define z_riscv_irq_priority_set(i, p, f) /* Nothing */
-#endif /* CONFIG_RISCV_HAS_PLIC || CONFIG_RISCV_HAS_CLIC */
+#endif
 
-#ifdef CONFIG_RISCV_HAS_CLIC
+#ifdef CONFIG_CLIC_SMCLICSHV_EXT
 extern void z_riscv_irq_vector_set(unsigned int irq);
 #else
 #define z_riscv_irq_vector_set(i) /* Nothing */
-#endif /* CONFIG_RISCV_HAS_CLIC */
+#endif /* CONFIG_CLIC_SMCLICSHV_EXT */
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \

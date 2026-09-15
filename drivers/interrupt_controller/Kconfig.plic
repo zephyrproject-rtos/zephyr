@@ -7,6 +7,8 @@ config PLIC
 	depends on DT_HAS_SIFIVE_PLIC_1_0_0_ENABLED
 	select MULTI_LEVEL_INTERRUPTS
 	select 2ND_LEVEL_INTERRUPTS
+	# The SoC's PLIC is its root interrupt controller
+	select INTC_ROOT if RISCV_HAS_PLIC
 	help
 	  Platform Level Interrupt Controller provides support
 	  for external interrupt lines defined by the RISC-V SoC.

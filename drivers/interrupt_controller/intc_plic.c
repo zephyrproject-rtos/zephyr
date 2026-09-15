@@ -25,8 +25,10 @@
 #include <zephyr/shell/shell.h>
 
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #include <zephyr/irq.h>
+#include <zephyr/irq_multilevel.h>
 
 #define PLIC_BASE_ADDR(n) DT_INST_REG_ADDR(n)
 /*
@@ -386,6 +388,49 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 
 	sys_write32(priority, prio_addr);
 }
+
+#if defined(CONFIG_RISCV_HAS_PLIC)
+/*
+ * The PLIC is the root interrupt controller of the SoC. Level 2 lines are
+ * PLIC lines and handled here; level 1 lines are the CPU interrupt lines
+ * and go to the architecture.
+ */
+void intc_root_enable(unsigned int irq)
+{
+	if (irq_get_level(irq) == 2) {
+		riscv_plic_irq_enable(irq);
+	} else {
+		riscv_cpu_irq_enable(irq);
+	}
+}
+
+void intc_root_disable(unsigned int irq)
+{
+	if (irq_get_level(irq) == 2) {
+		riscv_plic_irq_disable(irq);
+	} else {
+		riscv_cpu_irq_disable(irq);
+	}
+}
+
+int intc_root_is_enabled(unsigned int irq)
+{
+	if (irq_get_level(irq) == 2) {
+		return riscv_plic_irq_is_enabled(irq);
+	}
+
+	return riscv_cpu_irq_is_enabled(irq);
+}
+
+void intc_root_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+	ARG_UNUSED(flags);
+
+	if (irq_get_level(irq) == 2) {
+		riscv_plic_set_priority(irq, prio);
+	}
+}
+#endif /* CONFIG_RISCV_HAS_PLIC */
 
 #ifdef CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT
 void riscv_plic_irq_set_pending(uint32_t irq)

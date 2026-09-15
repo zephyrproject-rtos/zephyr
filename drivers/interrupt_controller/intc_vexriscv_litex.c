@@ -12,6 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/types.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 
 #define IRQ_MASK		DT_INST_REG_ADDR_BY_NAME(0, irq_mask)
 #define IRQ_PENDING		DT_INST_REG_ADDR_BY_NAME(0, irq_pending)
@@ -68,17 +69,18 @@ static void vexriscv_litex_irq_handler(const void *device)
 	DT_FOREACH_STATUS_OKAY_NODE(LITEX_IRQ_ADD);
 }
 
-void arch_irq_enable(unsigned int irq)
+/* The LiteX controller is the root interrupt controller of the VexRiscv SoC */
+void intc_root_enable(unsigned int irq)
 {
 	vexriscv_litex_irq_setmask(vexriscv_litex_irq_getmask() | (1 << irq));
 }
 
-void arch_irq_disable(unsigned int irq)
+void intc_root_disable(unsigned int irq)
 {
 	vexriscv_litex_irq_setmask(vexriscv_litex_irq_getmask() & ~(1 << irq));
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
 	return vexriscv_litex_irq_getmask() & (1 << irq);
 }

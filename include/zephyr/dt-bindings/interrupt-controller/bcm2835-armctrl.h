@@ -21,8 +21,8 @@
  *
  *     0..31     reserved for the L1 ARM-local intc (only 0..9 used --
  *               see <zephyr/dt-bindings/interrupt-controller/bcm2836-l1.h>).
- *               IRQ 8 (L1 GPU IRQ) is the cascade entry; the SoC IRQ
- *               glue resolves it transparently inside z_soc_irq_get_active
+ *               IRQ 8 (L1 GPU IRQ) is the cascade entry; the L1 driver
+ *               resolves it transparently inside intc_root_get_active()
  *               so it is never seen by application ISRs.
  *
  *     32 + (bank << 5) + bit        -- ARMC peripheral IRQs:

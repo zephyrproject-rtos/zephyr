@@ -225,7 +225,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/irq.h>
-#include <zephyr/drivers/interrupt_controller/nxp_irqsteer.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/cache.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/logging/log.h>
@@ -694,17 +694,22 @@ static void nxp_irqstr_irq_enable_disable(uint32_t irq, bool enable)
 	}
 }
 
-void nxp_irqstr_irq_enable(uint32_t irq)
+/*
+ * IRQSTEER owns the multi-level interrupt routing of these SoCs: level 1
+ * lines are controlled directly and level 2 lines through the aggregator.
+ * It therefore provides the root interrupt controller API.
+ */
+void intc_root_enable(unsigned int irq)
 {
 	nxp_irqstr_irq_enable_disable(irq, true);
 }
 
-void nxp_irqstr_irq_disable(uint32_t irq)
+void intc_root_disable(unsigned int irq)
 {
 	nxp_irqstr_irq_enable_disable(irq, false);
 }
 
-int nxp_irqstr_irq_is_enabled(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
 	uint32_t parent_irq;
 	int i;
@@ -735,7 +740,7 @@ int nxp_irqstr_irq_is_enabled(unsigned int irq)
 }
 
 #if defined(CONFIG_ARM)
-void nxp_irqstr_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags)
+void intc_root_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	uint32_t level1_irq = irq;
 

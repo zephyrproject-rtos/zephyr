@@ -7,9 +7,8 @@
  *
  * Interrupts are handled by the native BCM283x controller pair --
  * brcm,bcm2836-l1-intc (per-core timers, mailboxes, PMU and the GPU
- * cascade) and brcm,bcm2835-armctrl-ic (the peripheral aggregator) --
- * driven through the arm64 custom-interrupt-controller hooks in
- * soc/brcm/bcm2710/soc_irq.c.
+ * cascade) and brcm,bcm2835-armctrl-ic (the peripheral aggregator). The
+ * L1 controller is the root interrupt controller the arch maps onto.
  */
 
 #include <mem.h>
