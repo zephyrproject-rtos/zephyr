@@ -109,6 +109,7 @@ choice LIBCPP_IMPLEMENTATION
 	prompt "C++ Standard Library Implementation"
 	default EXTERNAL_LIBCPP if REQUIRES_FULL_LIBCPP && NATIVE_BUILD
 	default LIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP && "$(TOOLCHAIN_HAS_LIBCXX)" = "y" && "$(TOOLCHAIN_VARIANT_COMPILER)" = "llvm"
+	default IAR_LIBCPP if REQUIRES_FULL_LIBCPP && IAR_LIBC
 	default GLIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP
 	default MINIMAL_LIBCPP
 
@@ -148,6 +149,14 @@ config ARCMWDT_LIBCPP
 	help
 	  Build with ARC MetaWare C++ Standard Library provided by the ARC
 	  MetaWare Development Tools (MWDT) toolchain.
+
+config IAR_LIBCPP
+	bool "IAR C++ Library"
+	depends on IAR_LIBC
+	select FULL_LIBCPP_SUPPORTED
+	help
+	  Build with the libc++ C++ Standard Library provided by the IAR
+	  toolchain.
 
 config EXTERNAL_LIBCPP
 	bool "External C++ standard library"

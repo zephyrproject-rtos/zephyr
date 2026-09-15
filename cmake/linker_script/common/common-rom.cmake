@@ -70,6 +70,9 @@ if(CONFIG_CPP)
 #		KEEP(*(SORT_BY_NAME(".init_array*")))
 #		__init_array_end = .;
 #	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+  zephyr_linker_section(NAME init_array KVMA RAM_REGION GROUP RODATA_REGION NOINPUT)
+  zephyr_linker_section_configure(SECTION init_array INPUT ".preinit_array*" KEEP SORT NAME)
+  zephyr_linker_section_configure(SECTION init_array INPUT ".init_array*" KEEP SORT NAME)
 endif()
 
 if(CONFIG_USERSPACE)

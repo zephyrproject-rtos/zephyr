@@ -115,16 +115,19 @@ set_compiler_property(TARGET compiler-cpp PROPERTY nostdincxx)
 # Required C++ flags when compiling C++ code
 set_property(TARGET compiler-cpp PROPERTY required --c++)
 
-# Compiler flags to use for specific C++ dialects
+# Compiler flags to use for specific C++ dialects.
+# ICCARM has no option for selecting the C++ dialect, --c++ always selects
+# C++17 (see the STD_CPP17 default in cmake/toolchain/iar/Kconfig.defconfig).
+# The C++ standard library is selected with CONFIG_IAR_LIBCPP, see target.cmake.
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp98)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp11)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp14)
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 --libc++)
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a --libc++)
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 --libc++)
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b --libc++)
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 --libc++)
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp26 --libc++)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp17)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp20)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp26)
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing)
