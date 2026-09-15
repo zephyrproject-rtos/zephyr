@@ -430,6 +430,11 @@ config SHELL_BACKEND_RPMSG
 
 if SHELL_BACKEND_RPMSG
 
+config SHELL_BACKEND_RPMSG_FORCE_TX_BLOCKING_MODE
+	bool "Force blocking mode for TX"
+	help
+	  Force the RPMsg shell backend to wait for an available TX buffer.
+
 config SHELL_PROMPT_RPMSG
 	string "Displayed prompt name"
 	default "ipc:~$ "
