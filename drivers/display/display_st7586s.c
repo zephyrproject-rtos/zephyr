@@ -223,7 +223,7 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
-	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, len %u", x, y, desc->pitch,
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, len %zu", x, y, desc->pitch,
 		desc->width, desc->height, expected_len);
 
 	ret = st7586s_set_window(dev, x, y, desc->width, desc->height);

@@ -741,7 +741,7 @@ static int it8951_write(const struct device *dev, const uint16_t x, const uint16
 	line_bytes = DIV_ROUND_UP(desc->width, 2U);
 	buf_len = line_bytes * desc->height;
 	if (desc->buf_size < buf_len) {
-		LOG_ERR("Invalid buffer size: %zu < %zu", desc->buf_size, buf_len);
+		LOG_ERR("Invalid buffer size: %zu < %zu", (size_t)desc->buf_size, buf_len);
 		return -EINVAL;
 	}
 
