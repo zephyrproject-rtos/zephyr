@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The deprecated NuMaker Ethernet driver talks to the PHY itself and supports
+ * neither an MDIO controller nor PTP, so those nodes stay disabled and the MAC
+ * takes over the MDIO pins and the PHY address.
+ */
+
+&phy {
+	status = "disabled";
+};
+
+&mdio {
+	status = "disabled";
+};
+
+&ptp_clock {
+	status = "disabled";
+};
+
+&emac {
+	pinctrl-0 = <&emac_default &emac_mdio_default>;
+	phy-addr = <0>;
+};

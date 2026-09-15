@@ -30,6 +30,7 @@ tests:
       - CONFIG_ETH_ESP32=n
       - CONFIG_ETH_NXP_ENET_QOS=n
       - CONFIG_ETH_XMC4XXX=n
+      - CONFIG_ETH_NUMAKER=n
     platform_allow:
       - stm32h735g_disco
       - nucleo_h753zi
@@ -43,7 +44,20 @@ tests:
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_mcxa577
       - frdm_mcxa577/mcxa577/t1s
+      - numaker_m55m1
+      - numaker_pfm_m467
       - xmc47_relax_kit
+
+  net.ethernet.build.numaker:
+    extra_args:
+      - platform:numaker_pfm_m467/m467:DTC_OVERLAY_FILE="app.overlay;m467_deprecated.overlay"
+      - platform:numaker_m55m1/m55m1xxx:DTC_OVERLAY_FILE="app.overlay;m55m1_deprecated.overlay"
+    extra_configs:
+      - CONFIG_ETH_NUMAKER=y
+      - CONFIG_WARN_DEPRECATED=n
+    platform_allow:
+      - numaker_m55m1
+      - numaker_pfm_m467
 
   net.ethernet.build.uart:
     extra_args: DTC_OVERLAY_FILE="uart_devices.overlay"
