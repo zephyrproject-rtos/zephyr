@@ -100,10 +100,6 @@ static void coredump_in_memory_backend_start(void)
 
 	*coredump_size = 0;
 
-	while (LOG_PROCESS()) {
-		;
-	}
-
 	LOG_PANIC();
 	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
 }
