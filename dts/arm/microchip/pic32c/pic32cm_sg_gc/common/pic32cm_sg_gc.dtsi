@@ -35,6 +35,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		adc_calib_otp: calib-otp@a007000 {
+			reg = <0x0a007000 0x188>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			#address-cells = <1>;
@@ -229,6 +233,22 @@
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM3>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM3_CORE>;
 			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		adc0: adc@44818000 {
+			compatible = "microchip,adc-g2";
+			reg = <0x44818000 0x16c>;
+			interrupts = <130 0>, <131 0>;
+			interrupt-names = "global", "core0";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_ADC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_ADC>;
+			clock-names = "mclk", "gclk";
+			nvm-calib = <&adc_calib_otp>;
+			num-channels = <12>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 
