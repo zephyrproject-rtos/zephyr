@@ -1,0 +1,51 @@
+# Copyright (c) 2026 Luke Bugbee <lbugbee@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: MFRC522 RFID Driver
+
+compatible: "nxp,mfrc522"
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    required: true
+    type: phandle-array
+
+  bit-rate:
+    type: int
+    default: 0
+    description: |
+          Transmission bit rate.
+    enum:
+      - 0 # BIT_RATE_106K
+      - 1 # BIT_RATE_212K
+      - 2 # BIT_RATE_424K
+      - 3 # BIT_RATE_848K
+
+  timer-prescaler:
+    type: int
+    default: 169
+    min: 0
+    max: 4095
+
+  timer-reload:
+    type: int
+    default: 1000
+    min: 0
+    max: 65535
+
+  miller-mod-width:
+    type: int
+    default: 38
+    description: |
+          Defines the width of miller modulation as multiples
+          of the carrier frequency.
+    min: 1
+    max: 255
+
+  rx-timeout-ms:
+    type: int
+    default: 36
+    description: |
+          Max time to wait for response from tag.
