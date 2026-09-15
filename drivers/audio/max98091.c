@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(maxim_max98091, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 struct max98091_config {
 	struct i2c_dt_spec i2c;
 	uint32_t mclk_freq;
+	uint32_t dmic_clk_frequency;
 };
 
 static void max98091_write_reg(const struct device *dev, uint8_t reg, uint8_t val)
@@ -56,7 +57,7 @@ static void max98091_update_reg(const struct device *dev, uint8_t reg, uint8_t m
 
 static void max98091_soft_reset(const struct device *dev)
 {
-	max98091_write_reg(dev, M98091_REG_SOFTWARE_RESET, 0x01);
+	max98091_write_reg(dev, M98091_REG_SOFTWARE_RESET, M98091_SWRESET_MASK);
 	k_msleep(20);
 }
 
@@ -229,6 +230,76 @@ static void max98091_configure_output(const struct device *dev)
 	max98091_out_mute_config(dev, AUDIO_CHANNEL_ALL, false);
 }
 
+/* Digital Microphone (DMIC12) Capture Configuration */
+static int max98091_configure_dmic12_capture(const struct device *dev,
+						    const struct audio_codec_cfg *cfg)
+{
+	const struct max98091_config *const dev_cfg = dev->config;
+	uint32_t dmic_clk_frequency = dev_cfg->dmic_clk_frequency;
+	uint8_t dmicclk_div;
+	uint8_t dmic_comp;
+	uint8_t dmic_freq;
+
+	if (dev_cfg->mclk_freq != 12288000 || cfg->dai_cfg.i2s.frame_clk_freq != 48000) {
+		LOG_ERR("AUDIO_ROUTE_CAPTURE only supports 12.288 MHz MCLK and 48 kHz sampling");
+		return -ENOTSUP;
+	}
+
+	/* Those are the recommended settings from the datasheet table 17 */
+	switch (dmic_clk_frequency) {
+	case 6144000:
+		dmicclk_div = M98091_DMICCLK_DIV2;
+		dmic_comp = M98091_DMIC_COMP_3;
+		dmic_freq = M98091_DMIC_FREQ_2;
+		break;
+	case 4096000:
+		dmicclk_div = M98091_DMICCLK_DIV3;
+		dmic_comp = M98091_DMIC_COMP_2;
+		dmic_freq = M98091_DMIC_FREQ_1;
+		break;
+	case 3072000:
+		dmicclk_div = M98091_DMICCLK_DIV4;
+		dmic_comp = M98091_DMIC_COMP_3;
+		dmic_freq = M98091_DMIC_FREQ_0;
+		break;
+	case 2457600:
+		dmicclk_div = M98091_DMICCLK_DIV5;
+		dmic_comp = M98091_DMIC_COMP_6;
+		dmic_freq = M98091_DMIC_FREQ_0;
+		break;
+	case 2048000:
+		dmicclk_div = M98091_DMICCLK_DIV6;
+		dmic_comp = M98091_DMIC_COMP_3;
+		dmic_freq = M98091_DMIC_FREQ_0;
+		break;
+	case 1536000:
+		dmicclk_div = M98091_DMICCLK_DIV8;
+		dmic_comp = M98091_DMIC_COMP_3;
+		dmic_freq = M98091_DMIC_FREQ_0;
+		break;
+	default:
+		LOG_ERR("Unsupported DMIC clock frequency");
+		return -ENOTSUP;
+	}
+
+	max98091_update_reg(dev, M98091_REG_DIGITAL_MIC_ENABLE,
+			     M98091_DMICCLK_MASK | M98091_DIGMICL_MASK | M98091_DIGMICR_MASK,
+			     dmicclk_div | M98091_DIGMICL_MASK | M98091_DIGMICR_MASK);
+	max98091_update_reg(dev, M98091_REG_DIGITAL_MIC_CONFIG,
+			     M98091_DMIC_COMP_MASK | M98091_DMIC_FREQ_MASK,
+			     dmic_comp | dmic_freq);
+
+	max98091_update_reg(dev, M98091_REG_IO_CONFIGURATION, M98091_SDOEN_MASK,
+			     M98091_SDOEN_MASK);
+	max98091_update_reg(dev, M98091_REG_FILTER_CONFIG,
+			     M98091_MODE_MASK | M98091_AHPF_MASK,
+			     M98091_MODE_MASK | M98091_AHPF_MASK);
+	max98091_update_reg(dev, M98091_REG_ADC_CONTROL, M98091_DITHER_MASK | M98091_OSR128_MASK,
+			     M98091_DITHER_MASK | M98091_OSR128_MASK);
+
+	return 0;
+}
+
 static void max98091_start_output(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -255,6 +326,7 @@ static int max98091_set_property(const struct device *dev, audio_property_t prop
 static int max98091_configure(const struct device *dev, struct audio_codec_cfg *cfg)
 {
 	const struct max98091_config *const dev_cfg = dev->config;
+	int ret = 0;
 
 	if (cfg->dai_type >= AUDIO_DAI_TYPE_INVALID) {
 		LOG_ERR("dai_type not supported");
@@ -290,6 +362,15 @@ static int max98091_configure(const struct device *dev, struct audio_codec_cfg *
 	case AUDIO_ROUTE_PLAYBACK:
 		max98091_configure_output(dev);
 		break;
+	case AUDIO_ROUTE_PLAYBACK_CAPTURE:
+		ret = max98091_configure_dmic12_capture(dev, cfg);
+		if (ret == 0) {
+			max98091_configure_output(dev);
+		}
+		break;
+	case AUDIO_ROUTE_CAPTURE:
+		ret = max98091_configure_dmic12_capture(dev, cfg);
+		break;
 	default:
 		LOG_DBG("Unsupported audio route selected");
 		break;
@@ -298,7 +379,7 @@ static int max98091_configure(const struct device *dev, struct audio_codec_cfg *
 	/* Bring the audio codec out of shutdown mode */
 	max98091_write_reg(dev, M98091_REG_DEVICE_SHUTDOWN, M98091_SHDNN_MASK);
 
-	return 0;
+	return ret;
 }
 
 static DEVICE_API(audio_codec, max98091_api) = {
@@ -332,7 +413,8 @@ static int max98091_init(const struct device *dev)
 #define MAX98091_INIT(inst)								\
 	static const struct max98091_config max98091_config_##inst = {			\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-		.mclk_freq = DT_INST_PROP(inst, mclk_frequency)};			\
+		.mclk_freq = DT_INST_PROP(inst, mclk_frequency),			\
+		.dmic_clk_frequency = DT_INST_PROP_OR(inst, dmic_clk_frequency, 0)};		\
 	DEVICE_DT_INST_DEFINE(inst, max98091_init, NULL, NULL, &max98091_config_##inst, \
 			      POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &max98091_api);
 
