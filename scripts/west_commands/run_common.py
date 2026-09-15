@@ -71,6 +71,11 @@ class SocBoardFilesProcessing:
     priority: int = IGNORED_RUN_ONCE_PRIORITY
     yaml: object = None
 
+
+def zephyr_base_abs_path(dir: Path, file: Path) -> Path:
+    return dir / file if dir.is_absolute() else ZEPHYR_BASE / dir / file
+
+
 def import_from_path(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
@@ -241,12 +246,14 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
             # once per unique board name.
             for directory in cache.get_list('SOC_DIRECTORIES'):
                 if directory not in processed_boards:
-                    check_files.append(SocBoardFilesProcessing(Path(directory) / 'soc.yml'))
+                    check_files.append(SocBoardFilesProcessing(
+                        zephyr_base_abs_path(Path(directory), Path('soc.yml'))))
                     processed_boards.add(directory)
 
             for directory in cache.get_list('BOARD_DIRECTORIES'):
                 if directory not in processed_boards:
-                    check_files.append(SocBoardFilesProcessing(Path(directory) / 'board.yml', True))
+                    check_files.append(SocBoardFilesProcessing(
+                        zephyr_base_abs_path(Path(directory), Path('board.yml')), True))
                     processed_boards.add(directory)
 
         for check in check_files:
