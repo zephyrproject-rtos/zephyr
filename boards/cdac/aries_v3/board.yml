@@ -1,0 +1,6 @@
+board:
+  name: aries_v3
+  full_name: ARIES v3.0 Development Board
+  vendor: cdac
+  socs:
+    - name: thejas32
