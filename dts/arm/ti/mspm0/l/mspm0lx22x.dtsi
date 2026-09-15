@@ -122,6 +122,46 @@
 				status = "disabled";
 			};
 		};
+
+		uart1: uart@4010a000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x4010a000 0x2000>;
+			interrupts = <16 0>;
+			current-speed = <9600>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			status = "disabled";
+		};
+
+		uart2: uart@40100000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40100000 0x2000>;
+			interrupts = <13 0>;
+			current-speed = <9600>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			status = "disabled";
+		};
+
+		uart3: uart@40102000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40102000 0x2000>;
+			interrupts = <14 0>;
+			current-speed = <9600>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			status = "disabled";
+		};
+
+		uart4: uart@40104000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40104000 0x2000>;
+			interrupts = <3 0>;
+			current-speed = <9600>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			status = "disabled";
+		};
 	};
 };
 
