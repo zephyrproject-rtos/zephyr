@@ -73,13 +73,13 @@ static int hy4245_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		ret = hy4245_read16(dev, HY4245_CMD_CURRENT, &raw);
 		val->current_ua = (int16_t)raw * 1000;
 		break;
-	case FUEL_GAUGE_REMAINING_CAPACITY_UAH:
+	case FUEL_GAUGE_REMAINING_CAPACITY:
 		ret = hy4245_read16(dev, HY4245_CMD_CAPACITY_REM, &raw);
-		val->remaining_capacity_uah = raw * 1000;
+		val->remaining_capacity = raw * 1000;
 		break;
-	case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
+	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
 		ret = hy4245_read16(dev, HY4245_CMD_CAPACITY_FULL, &raw);
-		val->full_charge_capacity_uah = raw * 1000;
+		val->full_charge_capacity = raw * 1000;
 		break;
 	case FUEL_GAUGE_AVG_CURRENT_UA:
 		ret = hy4245_read16(dev, HY4245_CMD_AVG_CURRENT, &raw);
