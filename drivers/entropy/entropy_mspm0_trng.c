@@ -14,6 +14,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/ring_buffer.h>
 
+LOG_MODULE_REGISTER(entropy_mspm0_trng, CONFIG_ENTROPY_LOG_LEVEL);
+
 #define TRNG_MSPM0_PWREN_MASK				BIT(0)
 #define TRNG_MSPM0_PWREN_KEY_MASK			GENMASK(31, 24)
 #define TRNG_MSPM0_PWREN_KEY				0x26
@@ -124,6 +126,7 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 				      TRNG_MSPM0_IIDX_HEALTH_FAIL_MASK);
 
 	if (status & TRNG_MSPM0_IIDX_HEALTH_FAIL_MASK) {
+		LOG_DBG("health test failed, restarting");
 		config->regs->iclr = TRNG_MSPM0_IIDX_HEALTH_FAIL_MASK |
 					TRNG_MSPM0_IIDX_CMD_DONE_MASK;
 		config->regs->ctl = (config->regs->ctl & ~TRNG_MSPM0_CTL_CMD_MASK) |
@@ -137,12 +140,14 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 		/* Run DIG test */
 		dig_test = entropy_mspm0_trng_run_dig_test(config->regs);
 		if (!dig_test) {
+			LOG_DBG("DIG test running");
 			return;
 		}
 
 		/* Run ANALOG test */
 		ana_test = entropy_mspm0_trng_run_ana_test(config->regs);
 		if (!ana_test) {
+			LOG_DBG("ANA test running");
 			return;
 		}
 
@@ -151,6 +156,7 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 		 * and set DECIM RATE, enable IRQ_CAPTURE_RDY
 		 */
 		if (dig_test && ana_test) {
+			LOG_DBG("Startup tests passed, enabling CAPTURED_RDY");
 			(void)config->regs->data_capture;
 			config->regs->iclr = TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 			config->regs->ctl = (config->regs->ctl &
@@ -171,6 +177,7 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 
 		/* If the ring buf is exhausted, disable the interrupt in IMASK */
 		if (bytes_written < TRNG_SAMPLE_SIZE) {
+			LOG_DBG("ring buffer full, disabling CAPTURED_RDY");
 			config->regs->imask &= ~TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 		}
 
@@ -195,6 +202,7 @@ static int entropy_mspm0_trng_get_entropy(const struct device *dev,
 		 * wait until the additional entropy is available in ring buf.
 		 */
 		if (bytes_read == 0U) {
+			LOG_DBG("ring buffer empty, waiting for entropy");
 			config->regs->imask |= TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 			k_sem_take(&data->sem_sync, K_FOREVER);
 			continue;
@@ -288,6 +296,7 @@ static int entropy_mspm0_trng_init(const struct device *dev)
 	config->regs->ctl = (config->regs->ctl & ~TRNG_MSPM0_CTL_CMD_MASK) |
 			     TRNG_MSPM0_CTL_CMD_NORM_FUNC;
 
+	LOG_DBG("TRNG init complete");
 	return 0;
 }
 
