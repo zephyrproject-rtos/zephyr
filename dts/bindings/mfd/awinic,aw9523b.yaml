@@ -12,3 +12,8 @@ bus: aw9523b
 properties:
   reg:
     required: true
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Set GPIO connected to the controller RSTN pin.
