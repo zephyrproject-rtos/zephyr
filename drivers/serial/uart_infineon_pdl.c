@@ -76,6 +76,8 @@ struct ifx_cat1_dma_stream_rx {
 	size_t offset;
 	size_t counter;
 	uint32_t timeout;
+	int64_t last_rx_ticks;
+	bool idle_armed;
 	size_t dma_transmitted_bytes;
 	struct k_work_delayable timeout_work;
 };
@@ -463,6 +465,10 @@ static int ifx_cat1_uart_fifo_read(const struct device *dev, uint8_t *rx_data, c
 	return (int)rx_length;
 }
 
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+
 void ifx_cat1_uart_enable_event(const struct device *dev, uint32_t event, bool enable)
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
@@ -527,6 +533,10 @@ void ifx_cat1_uart_enable_event(const struct device *dev, uint32_t event, bool e
 
 	irq_enable(config->irq_num);
 }
+
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 static void ifx_cat1_uart_irq_tx_enable(const struct device *dev)
 {
@@ -645,6 +655,14 @@ static void ifx_cat1_uart_irq_callback_set(const struct device *dev,
 	data->irq_cb_data = cb_data;
 }
 
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+
+#ifdef CONFIG_UART_ASYNC_API
+static void ifx_cat1_uart_async_rx_byte(struct ifx_cat1_uart_data *data);
+#endif
+
 static void ifx_cat1_uart_irq_handler(const struct device *dev)
 {
 	/*
@@ -656,7 +674,8 @@ static void ifx_cat1_uart_irq_handler(const struct device *dev)
 
 	/* Clear all interrupts that could have been configured */
 	CySCB_Type *base = config->reg_addr;
-	uint32_t locRxErr = (CY_SCB_UART_RECEIVE_ERR & Cy_SCB_GetRxInterruptStatusMasked(base));
+	uint32_t locRxStatus = Cy_SCB_GetRxInterruptStatusMasked(base);
+	uint32_t locRxErr = (CY_SCB_UART_RECEIVE_ERR & locRxStatus);
 	uint32_t locTxErr = (CY_SCB_UART_TRANSMIT_ERR & Cy_SCB_GetTxInterruptStatusMasked(base));
 	uint32_t rx_clear = locRxErr | CY_SCB_UART_RX_NOT_EMPTY;
 	uint32_t tx_clear = locTxErr | CY_SCB_UART_TX_EMPTY | CY_SCB_UART_TX_OVERFLOW |
@@ -665,15 +684,23 @@ static void ifx_cat1_uart_irq_handler(const struct device *dev)
 	Cy_SCB_ClearRxInterrupt(base, rx_clear);
 	Cy_SCB_ClearTxInterrupt(base, tx_clear);
 
+#ifdef CONFIG_UART_ASYNC_API
+	if ((locRxStatus & CY_SCB_UART_RX_NOT_EMPTY) != 0u) {
+		ifx_cat1_uart_async_rx_byte(data);
+	}
+#endif
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Call the callback with the callback data.
 	 * This does not guarantee a separate callback per event.
 	 */
 	if (data->irq_cb != NULL) {
 		data->irq_cb(dev, data->irq_cb_data);
 	}
+#endif
 }
 
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
 
 /* Default Counter configuration structure */
 static const cy_stc_scb_uart_config_t _uart_default_config = {
@@ -934,10 +961,17 @@ static inline void async_evt_rx_disabled(struct ifx_cat1_uart_data *data)
 {
 	struct uart_event event = {.type = UART_RX_DISABLED};
 
+	/* Stop taking byte timestamps: an RX that is not enabled must not keep
+	 * waking the CPU.
+	 */
+	ifx_cat1_uart_enable_event(data->async.uart_dev,
+				   (uint32_t)CY_SCB_UART_RECEIVE_NOT_EMTPY, 0);
+
 	data->async.dma_rx.buf = NULL;
 	data->async.dma_rx.buf_len = 0;
 	data->async.dma_rx.offset = 0;
 	data->async.dma_rx.counter = 0;
+	data->async.dma_rx.idle_armed = false;
 
 	if (data->async.cb) {
 		data->async.cb(data->async.uart_dev, &event, data->async.user_data);
@@ -965,6 +999,31 @@ static inline void async_evt_rx_stopped(struct ifx_cat1_uart_data *data,
 	rx->offset = data->async.dma_rx.counter;
 
 	data->async.cb(data->async.uart_dev, &event, data->async.user_data);
+}
+
+/* Called from the SCB ISR for every RX_NOT_EMPTY interrupt, to record when the line was last
+ * active. Hardware only ever sets INTR_RX.NOT_EMPTY and never clears it, so the DMA draining
+ * the RX FIFO cannot hide an arrival from the ISR.
+ *
+ * The idle timer is armed here only when it is not already running. Bytes that arrive while it
+ * runs just move last_rx_ticks, and the timer re-arms itself to the new deadline, so a burst
+ * costs one timer wakeup per timeout period instead of one per byte.
+ */
+static void ifx_cat1_uart_async_rx_byte(struct ifx_cat1_uart_data *data)
+{
+	struct ifx_cat1_dma_stream_rx *dma_rx = &data->async.dma_rx;
+
+	if ((dma_rx->buf_len == 0) || (dma_rx->timeout == SYS_FOREVER_US) ||
+	    (dma_rx->timeout == 0)) {
+		return;
+	}
+
+	dma_rx->last_rx_ticks = k_uptime_ticks();
+
+	if (!dma_rx->idle_armed) {
+		dma_rx->idle_armed = true;
+		k_work_reschedule(&dma_rx->timeout_work, K_USEC(dma_rx->timeout));
+	}
 }
 
 static int ifx_cat1_uart_async_rx_enable(const struct device *dev, uint8_t *rx_data,
@@ -1012,10 +1071,12 @@ static int ifx_cat1_uart_async_rx_enable(const struct device *dev, uint8_t *rx_d
 		goto unlock;
 	}
 
-	/* Configure timeout */
-	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
-		k_work_reschedule(&data->async.dma_rx.timeout_work, K_USEC(timeout));
-	}
+	/* Take byte arrival timestamps from the SCB, so idle detection does not have to poll
+	 * the DMA write pointer. The timer stays disarmed until the first byte arrives.
+	 */
+	data->async.dma_rx.idle_armed = false;
+	data->async.dma_rx.last_rx_ticks = k_uptime_ticks();
+	ifx_cat1_uart_enable_event(dev, (uint32_t)CY_SCB_UART_RECEIVE_NOT_EMTPY, 1);
 
 unlock:
 	irq_unlock(key);
@@ -1061,11 +1122,10 @@ static void dma_callback_rx_rdy(const struct device *dma_dev, void *arg, uint32_
 
 		async_evt_rx_buf_request(data);
 
-		if ((data->async.dma_rx.timeout != SYS_FOREVER_US) &&
-		    (data->async.dma_rx.timeout != 0)) {
-			k_work_reschedule(&data->async.dma_rx.timeout_work,
-					  K_USEC(data->async.dma_rx.timeout));
-		}
+		/* The new buffer starts empty, so there is nothing to time out on until the
+		 * next byte arrives and re-arms the timer from the ISR.
+		 */
+		data->async.dma_rx.idle_armed = false;
 
 	} else {
 		/* DMA error */
@@ -1091,10 +1151,26 @@ static void ifx_cat1_uart_async_rx_timeout(struct k_work *work)
 		CONTAINER_OF(dma_rx, struct ifx_cat1_uart_async, dma_rx);
 	struct ifx_cat1_uart_data *data = CONTAINER_OF(async, struct ifx_cat1_uart_data, async);
 	struct dma_status stat;
+	int64_t deadline;
+	int64_t now;
 
 	unsigned int key = irq_lock();
 
 	if (dma_rx->buf_len == 0) {
+		dma_rx->idle_armed = false;
+		irq_unlock(key);
+		return;
+	}
+
+	now = k_uptime_ticks();
+	deadline = dma_rx->last_rx_ticks + (int64_t)k_us_to_ticks_ceil32(dma_rx->timeout);
+
+	if (now < deadline) {
+		/* A byte arrived after this expiry was scheduled. Wait out the rest of the
+		 * inactivity period measured from that byte, so UART_RX_RDY is never reported
+		 * before the period the caller asked for has actually elapsed.
+		 */
+		k_work_reschedule(&dma_rx->timeout_work, K_TICKS(deadline - now));
 		irq_unlock(key);
 		return;
 	}
@@ -1102,17 +1178,17 @@ static void ifx_cat1_uart_async_rx_timeout(struct k_work *work)
 	if (dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat) == 0) {
 		size_t rx_rcv_len = dma_rx->buf_len - stat.pending_length;
 
-		if ((rx_rcv_len > 0) && (rx_rcv_len == dma_rx->counter)) {
+		if (rx_rcv_len > dma_rx->counter) {
 			dma_rx->counter = rx_rcv_len;
+		}
+
+		if (dma_rx->counter > dma_rx->offset) {
 			async_evt_rx_rdy(data);
-		} else {
-			dma_rx->counter = rx_rcv_len;
 		}
 	}
 
-	if ((dma_rx->timeout != SYS_FOREVER_US) && (dma_rx->timeout != 0)) {
-		k_work_reschedule(&dma_rx->timeout_work, K_USEC(dma_rx->timeout));
-	}
+	/* The line is idle. Leave the timer disarmed; the next byte re-arms it from the ISR. */
+	dma_rx->idle_armed = false;
 
 	irq_unlock(key);
 }
@@ -1357,7 +1433,7 @@ static int ifx_cat1_uart_init(const struct device *dev)
 					     &(data->context));
 
 	if (result == CY_RSLT_SUCCESS) {
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 		irq_enable(config->irq_num);
 #endif
 
@@ -1367,8 +1443,9 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	}
 #endif /* CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2 */
 
-#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_UART_INTERRUPT_DRIVEN && \
-	!CONFIG_INFINEON_INTC_SYSINTC)
+#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1C) &&                                                   \
+	(defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)) &&               \
+	!defined(CONFIG_INFINEON_INTC_SYSINTC)
 	/* Enable the UART interrupt */
 	enable_sys_int(config->irq_num, config->irq_priority,
 		       (void (*)(const void *))(void *)ifx_cat1_uart_irq_handler, &data->obj);
@@ -1521,7 +1598,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 #define PERI_INFO(n)
 #endif
 
-#if (CONFIG_UART_INTERRUPT_DRIVEN)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 #define INTERRUPT_DRIVEN_UART_INIT(n)                                                              \
 	void uart_handle_events_func_##n(void)                                                     \
 	{                                                                                          \
