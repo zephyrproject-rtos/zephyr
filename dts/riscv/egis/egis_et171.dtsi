@@ -78,7 +78,8 @@
 
 		syscon: syscon@f0100000 {
 			compatible = "syscon", "egis,et171-aosmu";
-			reg = <0xf0100000 0x1000>;
+			reg = <0xf0100000 0x1000
+			       0xf0e00000 0x1000>;
 			status = "disabled";
 		};
 
