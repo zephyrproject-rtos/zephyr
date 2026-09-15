@@ -414,8 +414,8 @@ static int i3c_write_from_buffer(const struct shell *sh, char *s_dev_name, char 
 	ret = i3c_write(desc, buf + MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
 			reg_addr_bytes + data_length);
 	if (ret < 0) {
-		shell_error(sh, "Failed to write to device: %s", tdev->name);
-		return -EIO;
+		shell_error(sh, "Failed to write to device: %s (error %d)", tdev->name, ret);
+		return ret;
 	}
 
 	return 0;
@@ -469,8 +469,8 @@ static int i3c_read_to_buffer(const struct shell *sh, char *s_dev_name, char *s_
 	ret = i3c_write_read(desc, reg_addr_buf + MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
 			     reg_addr_bytes, buf, buf_length);
 	if (ret < 0) {
-		shell_error(sh, "Failed to read from device: %s", tdev->name);
-		return -EIO;
+		shell_error(sh, "Failed to read from device: %s (error %d)", tdev->name, ret);
+		return ret;
 	}
 
 	return 0;
