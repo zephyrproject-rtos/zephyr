@@ -1,0 +1,231 @@
+/*
+ * Copyright (c) 2026 Sahaj Sarup
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_r8.dtsi>
+#include "tfpga_s3-pinctrl.dtsi"
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+
+/ {
+	model = "T-FPGA S3 PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		led0 = &blue_led;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		watchdog0 = &wdt0;
+		fuel-gauge0 = &fuel_gauge;
+		regulator0 = &axp2101;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+			label = "Blue - LED0";
+		};
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	axp2101: axp2101@34 {
+		compatible = "x-powers,axp2101";
+		reg = <0x34>;
+		int-gpios = <&gpio1 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+
+		regulators {
+			compatible = "x-powers,axp2101-regulator";
+			status = "okay";
+
+			/* 3v3 Board VDD */
+			dcdc1 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				regulator-always-on;
+				status = "okay";
+			};
+
+			dcdc2 {
+				regulator-boot-off;
+			};
+
+			dcdc3 {
+				regulator-boot-off;
+			};
+
+			/* 1v2 FPGA VCore */
+			dcdc4 {
+				regulator-min-microvolt = <1200000>;
+				regulator-init-microvolt = <1200000>;
+				regulator-max-microvolt = <1200000>;
+				regulator-boot-on;
+				status = "okay";
+			};
+
+			dcdc5 {
+				regulator-boot-off;
+			};
+
+			/* JTAG IO Bank fixed at 3v3 */
+			aldo1 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				status = "okay";
+			};
+
+			/* ESP32 <-> FPGA IO Bank 1 fixed at 3v3 */
+			aldo2 {
+				regulator-min-microvolt = <3300000>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				status = "okay";
+			};
+
+			/* FPGA IO BANK 2*/
+			aldo3 {
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-off;
+				status = "okay";
+			};
+
+			/* FPGA IO BANK 3*/
+			aldo4 {
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-off;
+				status = "okay";
+			};
+
+			/*VCC for PMOD P6 and P8 on the Carrier Board*/
+			bldo1 {
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-off;
+				status = "okay";
+			};
+
+			/*VCC for PMOD P3 and P5 on the Carrier Board*/
+			bldo2 {
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-off;
+				status = "okay";
+			};
+
+			cplusldo {
+				regulator-boot-off;
+			};
+
+			dldo1 {
+				regulator-boot-off;
+			};
+
+			dldo2 {
+				regulator-boot-off;
+			};
+		};
+
+		charger: charger {
+			compatible = "x-powers,axp2101-charger";
+			constant-charge-current-max-microamp = <300000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			charge-term-current-microamp = <100000>;
+			device-chemistry = "lithium-ion";
+			vbackup-enable;
+			ts-disable;
+			status = "okay";
+		};
+
+		fuel_gauge: fuel_gauge {
+			compatible = "x-powers,axp2101-fuel-gauge";
+		};
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&ipm0 {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
