@@ -1576,7 +1576,9 @@ static int clock_control_bl808_update_f32k(const struct device *dev)
 	return 0;
 }
 
-static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *dev)
+static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *dev,
+							   const enum bl808_clkid source,
+							   bool final)
 {
 	struct clock_control_bl808_data *data = dev->data;
 	volatile uint32_t tmp;
@@ -1590,11 +1592,11 @@ static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_SEL_UMSK;
 	tmp &= GLB_SF_CLK_SEL2_UMSK;
-	if (data->flashclk.source == bl808_clkid_clk_wifipll) {
+	if (source == bl808_clkid_clk_wifipll) {
 		clk = clock_control_bl808_get_hclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
-	} else if (data->flashclk.source == bl808_clkid_clk_crystal) {
+	} else if (source == bl808_clkid_clk_crystal) {
 		clk = clock_control_bl808_get_xclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
@@ -1607,12 +1609,12 @@ static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *
 	/* If flash controller will manage flash, set to standard speed
 	 * and let it set the divider.
 	 */
-#if defined(CONFIG_SOC_FLASH_BFLB)
-	clk = DIV_ROUND_CLOSEST(clk, BL808_TARGET_BASIC_CLOCK);
-	tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
-#else
-	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
-#endif
+	if (IS_ENABLED(CONFIG_SOC_FLASH_BFLB) || !final) {
+		clk = DIV_ROUND_CLOSEST(clk, BL808_TARGET_BASIC_CLOCK);
+		tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
+	} else {
+		tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
+	}
 
 	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
@@ -1690,7 +1692,7 @@ static __bflb_critfunc int clock_control_bl808_update_clocks(const struct device
 	clock_control_bl808_set_emi_clk(0, 1);
 	clock_control_bl808_set_mm_clks(bl808_clkid_clk_rc32m, 1, bl808_clkid_clk_rc32m, 1, 1);
 
-	clock_control_bl808_update_flash_clk(dev);
+	clock_control_bl808_update_flash_clk(dev, bl808_clkid_clk_rc32m, false);
 
 	ret = clock_control_bl808_update_f32k(dev);
 	if (ret < 0) {
@@ -1780,6 +1782,8 @@ static __bflb_critfunc int clock_control_bl808_update_clocks(const struct device
 	} else {
 		/* Root clock already set to RC32M */
 	}
+
+	clock_control_bl808_update_flash_clk(dev, data->flashclk.source, false);
 
 	ret = clock_control_bl808_clock_trim_32M();
 	if (ret < 0) {
