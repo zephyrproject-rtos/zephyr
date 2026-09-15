@@ -259,7 +259,7 @@ static int iproc_i2c_target_init(const struct device *dev, bool need_reset)
 	val = BIT(IE_S_RX_EVENT_SHIFT);
 	/* Enable interrupt register to indicate target Rx FIFO Full */
 	val |= BIT(IE_S_RX_FIFO_FULL_SHIFT);
-	/* Enable interrupt register to indicate a Master read transaction */
+	/* Enable interrupt register to indicate a controller read transaction */
 	val |= BIT(IE_S_RD_EN_SHIFT);
 	/* Enable interrupt register for the target BUSY command */
 	val |= BIT(IE_S_START_BUSY_SHIFT);
@@ -285,7 +285,7 @@ static int iproc_i2c_check_target_status(const struct device *dev)
 		if (val == S_CMD_STATUS_TIMEOUT) {
 			LOG_ERR("target random stretch time timeout");
 		} else if (val == S_CMD_STATUS_MASTER_ABORT) {
-			LOG_ERR("Master aborted read transaction");
+			LOG_ERR("Controller aborted read transaction");
 		}
 
 		/* re-initialize i2c for recovery */
@@ -314,15 +314,15 @@ static void iproc_i2c_target_read(const struct device *dev)
 		rx_data = ((val >> S_RX_DATA_SHIFT) & S_RX_DATA_MASK);
 
 		if (rx_status == I2C_TARGET_RX_START) {
-			/* Start of SMBUS Master write */
+			/* Start of SMBUS controller write */
 			target_cfg->callbacks->write_requested(target_cfg);
 			dd->rx_start_rcvd = true;
 			dd->target_read_complete = false;
 		} else if ((rx_status == I2C_TARGET_RX_DATA) && dd->rx_start_rcvd) {
-			/* Middle of SMBUS Master write */
+			/* Middle of SMBUS controller write */
 			target_cfg->callbacks->write_received(target_cfg, rx_data);
 		} else if ((rx_status == I2C_TARGET_RX_END) && dd->rx_start_rcvd) {
-			/* End of SMBUS Master write */
+			/* End of SMBUS controller write */
 			if (dd->target_rx_only) {
 				target_cfg->callbacks->write_received(target_cfg, rx_data);
 			}
@@ -346,7 +346,7 @@ static void iproc_i2c_target_rx(const struct device *dev)
 
 	if (!dd->target_rx_only && dd->target_read_complete) {
 		/*
-		 * In case of single byte master-read request,
+		 * In case of single byte controller-read request,
 		 * IS_S_TX_UNDERRUN_SHIFT event is generated before
 		 * IS_S_START_BUSY_SHIFT event. Hence start target data send
 		 * from first IS_S_TX_UNDERRUN_SHIFT event.
@@ -384,10 +384,10 @@ static void iproc_i2c_target_isr(const struct device *dev, uint32_t status)
 		sys_write32(val, base + IE_OFFSET);
 
 		if (status & BIT(IS_S_RD_EN_SHIFT)) {
-			/* Master-write-read request */
+			/* Controller-write-read request */
 			dd->target_rx_only = false;
 		} else {
-			/* Master-write request only */
+			/* Controller-write request only */
 			dd->target_rx_only = true;
 		}
 
@@ -407,10 +407,10 @@ static void iproc_i2c_target_isr(const struct device *dev, uint32_t status)
 	if (status & BIT(IS_S_TX_UNDERRUN_SHIFT)) {
 		dd->tx_underrun++;
 		if (dd->tx_underrun == 1) {
-			/* Start of SMBUS for Master Read */
+			/* Start of SMBUS for controller read */
 			target_cfg->callbacks->read_requested(target_cfg, &data);
 		} else {
-			/* Master read other than start */
+			/* Controller read other than start */
 			target_cfg->callbacks->read_processed(target_cfg, &data);
 		}
 
@@ -422,7 +422,7 @@ static void iproc_i2c_target_isr(const struct device *dev, uint32_t status)
 		sys_write32(BIT(IS_S_TX_UNDERRUN_SHIFT), base + IS_OFFSET);
 	}
 
-	/* Stop received from master in case of master read transaction */
+	/* Stop received from controller in case of controller read transaction */
 	if (status & BIT(IS_S_START_BUSY_SHIFT)) {
 		/*
 		 * Disable interrupt for TX FIFO becomes empty and
@@ -431,7 +431,7 @@ static void iproc_i2c_target_isr(const struct device *dev, uint32_t status)
 		dd->target_int_mask &= ~BIT(IE_S_TX_UNDERRUN_SHIFT);
 		sys_write32(dd->target_int_mask, base + IE_OFFSET);
 
-		/* End of SMBUS for Master Read */
+		/* End of SMBUS for controller read */
 		val = BIT(S_TX_WR_STATUS_SHIFT);
 		sys_write32(val, base + S_TX_OFFSET);
 
@@ -576,7 +576,7 @@ static int iproc_i2c_check_status(const struct device *dev, uint16_t dev_addr, s
 	}
 
 	if (rc < 0) {
-		/* flush both Master TX/RX FIFOs */
+		/* flush both controller TX/RX FIFOs */
 		val = BIT(M_FIFO_RX_FLUSH_SHIFT) | BIT(M_FIFO_TX_FLUSH_SHIFT);
 		sys_write32(val, base + M_FIFO_CTRL_OFFSET);
 	}
@@ -681,7 +681,7 @@ static int iproc_i2c_transfer_one(const struct device *dev, struct i2c_msg *msg,
 
 	tx_bytes = MIN(msg->len, (TX_RX_FIFO_SIZE - 1));
 	if (!(msg->flags & I2C_MSG_READ)) {
-		/* Fill master TX fifo */
+		/* Fill controller TX fifo */
 		for (uint32_t i = 0; i < tx_bytes; i++) {
 			val = msg->buf[i];
 			/* For the last byte, set MASTER_WR_STATUS bit */
@@ -706,7 +706,7 @@ static int iproc_i2c_transfer_one(const struct device *dev, struct i2c_msg *msg,
 	}
 
 	/*
-	 * Program master command register (0x30) with protocol type and set
+	 * Program controller command register (0x30) with protocol type and set
 	 * start_busy_command bit to initiate the write transaction
 	 */
 	val = BIT(M_CMD_START_BUSY_SHIFT);
@@ -752,13 +752,13 @@ static int iproc_i2c_transfer_one(const struct device *dev, struct i2c_msg *msg,
 	sys_write32(0, base + IE_OFFSET);
 
 	if (rc != 0) {
-		/* flush both Master TX/RX FIFOs */
+		/* flush both controller TX/RX FIFOs */
 		val = BIT(M_FIFO_RX_FLUSH_SHIFT) | BIT(M_FIFO_TX_FLUSH_SHIFT);
 		sys_write32(val, base + M_FIFO_CTRL_OFFSET);
 		return rc;
 	}
 
-	/* Check for Master Xfer status */
+	/* Check for controller Xfer status */
 	rc = iproc_i2c_check_status(dev, dev_addr, msg);
 
 	return rc;
@@ -835,7 +835,7 @@ static void iproc_i2c_send_data(const struct device *dev)
 	dd->tx_bytes += tx_bytes;
 }
 
-static void iproc_i2c_master_isr(const struct device *dev, uint32_t status)
+static void iproc_i2c_controller_isr(const struct device *dev, uint32_t status)
 {
 	struct iproc_i2c_data *dd = DEV_DATA(dev);
 
@@ -879,9 +879,9 @@ static void iproc_i2c_isr(void *arg)
 #endif
 
 	status &= ISR_MASK;
-	/* master events */
+	/* controller events */
 	if (status) {
-		iproc_i2c_master_isr(dev, status);
+		iproc_i2c_controller_isr(dev, status);
 		sys_write32(status, base + IS_OFFSET);
 	}
 }
