@@ -65,6 +65,15 @@ Boards
   32 bit CSR data width is supported. Designs that use an 8 bit CSR data width must be rebuilt with
   a 32 bit CSR data width. (:github:`124793`)
 
+* On :zephyr:board:`mimxrt1180_evk`, the optional DTS overlay files
+  (:file:`cm33_sram_dtcm.overlay`, :file:`cm7_code_hyperram.overlay`,
+  :file:`cm7_flash_boot.overlay`) and on :zephyr:board:`frdm_imxrt1186` the
+  :file:`cm33_sram_dtcm.overlay` file were moved from the board root directory into a
+  dedicated :file:`dts/` subdirectory. Out-of-tree applications that referenced these
+  files with an explicit path must update it to include the ``dts/`` component
+  (e.g. use :zephyr_file:`boards/nxp/mimxrt1180_evk/dts/cm7_flash_boot.overlay`
+  instead of :file:`boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay`).
+
 Device Drivers and Devicetree
 *****************************
 
