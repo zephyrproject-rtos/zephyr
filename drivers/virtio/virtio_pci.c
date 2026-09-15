@@ -610,7 +610,9 @@ static DEVICE_API(virtio, virtio_pci_driver_api) = {
 			DEVICE_DT_INST_GET(inst), 0                                             \
 		);                                                                          \
 		int ret = virtio_pci_init_common(dev);                                      \
-		irq_enable(DT_INST_IRQN(inst));                                             \
+		if (ret == 0) {                                                             \
+			irq_enable(DT_INST_IRQN(inst));                                     \
+		}                                                                           \
 		return ret;                                                                 \
 	}                                                                               \
 	DEVICE_DT_INST_DEFINE(                                                          \
