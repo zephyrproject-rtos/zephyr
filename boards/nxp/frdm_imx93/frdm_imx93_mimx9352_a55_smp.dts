@@ -1,0 +1,24 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "frdm_imx93_mimx9352_a55.dts"
+
+/ {
+	model = "NXP FRDM-IMX93 A55 SMP";
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-1.1";
+		method = "smc";
+	};
+};

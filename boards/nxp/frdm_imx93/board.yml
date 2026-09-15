@@ -5,5 +5,7 @@ board:
   socs:
   - name: mimx9352
     variants:
+    - name: smp
+      cpucluster: a55
     - name: ddr
       cpucluster: m33
