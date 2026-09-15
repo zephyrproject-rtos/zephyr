@@ -130,12 +130,25 @@ struct uhc_transfer {
 	uint8_t type;
 	/** Maximum packet size */
 	uint16_t mps;
-	/** Interval, used for periodic transfers only */
-	uint16_t interval;
+	/**
+	 * Tick interval converted from the bInterval, used for periodic transfers only.
+	 * For Low Speed and Full Speed interrupt endpoints its equal to bInterval * 8
+	 * For Full Speed isochronous endpoints its equal to 2^(bInterval - 1) * 8
+	 * For High Speed and Super Speed endpoints its equal to 2^(bInterval - 1)
+	 * 1 tick = 125 microseconds
+	 */
+	uint32_t interval;
+	/** Unconverted bInterval, used for periodic transfers only */
+	uint16_t bInterval;
 	/** Start frame, used for periodic transfers only */
-	uint16_t start_frame;
+	uint32_t start_frame;
 	/** Flag marks request buffer is queued */
 	unsigned int queued : 1;
+	/**
+	 * Flag marks if the transfer is currently in the active xfer dlist,
+	 *  which means that it is processed by the UHC driver
+	 */
+	unsigned int active : 1;
 	/** Control stage status, up to the driver to use it or not */
 	unsigned int stage : 2;
 	/**
@@ -252,6 +265,10 @@ struct uhc_data {
 	sys_dlist_t ctrl_xfers;
 	/** dlist for bulk transfers */
 	sys_dlist_t bulk_xfers;
+	/** dlist for periodic transfers, sorted in descending order by start_frame */
+	sys_dlist_t periodic_xfers;
+	/** dlist for transfers being scheduled in hardware */
+	sys_dlist_t active_xfers;
 	/** Callback to submit an UHC event to upper layer */
 	uhc_event_cb_t event_cb;
 	/** Opaque pointer to store higher layer context */

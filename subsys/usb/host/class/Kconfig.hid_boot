@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_HID_BOOT_CLASS
+	bool "USB host HID Boot class [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on INPUT
+	help
+	  USB Host HID Boot Class implementation.
+
+config USBH_HID_BOOT_INIT_PRIORITY
+	int "Host HID Boot initialization priority"
+	default 60
+	depends on USBH_HID_BOOT_CLASS
+	help
+	  priority used for initialization of HID Boot device class in the USB host subsystem.
+
+module = USBH_HID_BOOT
+module-str = usbh hid boot
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
