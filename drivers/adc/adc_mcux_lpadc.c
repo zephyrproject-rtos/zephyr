@@ -589,6 +589,13 @@ static int mcux_lpadc_pm_hold(const struct device *dev)
 		return err;
 	}
 
+	/*
+	 * The system-managed device sweep suspends devices that are not marked
+	 * busy. It and device runtime PM are mutually exclusive, so both are
+	 * covered by this one pair.
+	 */
+	pm_device_busy_set(dev);
+
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	if (((const struct mcux_lpadc_config *)dev->config)->pm_device_constraints) {
 		pm_policy_device_power_lock_get(dev);
@@ -611,6 +618,8 @@ static void mcux_lpadc_pm_release(const struct device *dev)
 		pm_policy_device_power_lock_put(dev);
 	}
 #endif
+
+	pm_device_busy_clear(dev);
 
 	/*
 	 * This can run from the watermark interrupt or the DMA callback, so the
