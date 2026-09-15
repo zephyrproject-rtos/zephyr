@@ -301,6 +301,38 @@ Boards may expose additional interface labels when a peripheral is wired to the
 STMod+ connector and enabled in the board devicetree.
 
 
+WisBlock
+--------
+
+This is a modular interface standard for add-on boards, developed by RAKwireless.
+It defines Core, Sensor, I/O and Power Slots, each accepting a module of the
+matching class through a 24-pin or 40-pin WisConnector.
+
+.. figure:: ../../../boards/shields/rakwireless_rak19007/doc/img/rakwireless_rak19007.webp
+   :align: center
+   :alt: RAK19007 Base Board
+   :width: 300px
+
+   RAK19007, an example of a WisBlock Base Board (Credit: RAKwireless)
+
+Relevant devicetree node labels:
+
+- ``wisblock_io`` See :dtcompatible:`wisblock-io-slot` for GPIO pin definitions.
+- ``wisblock_sensor_a`` See :dtcompatible:`wisblock-sensor-slot` for GPIO pin definitions.
+- ``wisblock_adc``
+- ``wisblock_pwm``
+- ``wisblock_i2c1``
+- ``wisblock_i2c2``
+- ``wisblock_i2s``
+- ``wisblock_pdm``
+- ``wisblock_spi``
+- ``wisblock_uart0``
+- ``wisblock_uart1``
+
+Note that Sensor Slots are labeled ``wisblock_sensor_a`` through
+``wisblock_sensor_f`` after the Slot they implement.
+
+
 Xiao
 ----
 

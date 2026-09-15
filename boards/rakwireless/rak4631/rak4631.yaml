@@ -1,5 +1,5 @@
 identifier: rak4631/nrf52840
-name: RAK4631-NRF52840
+name: RAK4631 WisBlock Core Module
 type: mcu
 arch: arm
 flash: 1024
@@ -14,7 +14,8 @@ supported:
   - gpio
   - i2c
   - pwm
-  - usb_device
   - watchdog
+  - netif:openthread
   - lora
-vendor: rak
+  - wisblock_io
+vendor: rakwireless
