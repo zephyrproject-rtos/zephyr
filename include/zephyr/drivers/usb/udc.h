@@ -666,6 +666,10 @@ bool udc_ep_queue_is_empty(const struct device *dev, const uint8_t ep);
  * all requests in the queue will passed as chained list of
  * the event variable buf. The endpoint queue is empty after that.
  *
+ * A transfer that the controller is already processing is cancelled as
+ * well, the data of a request released with -ECONNABORTED is not
+ * transferred.
+ *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] ep     Endpoint address
  *
