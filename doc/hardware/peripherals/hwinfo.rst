@@ -15,12 +15,18 @@ support different subset of flags. Use
 :c:func:`hwinfo_get_supported_reset_cause` to retrieve the flags that are
 supported by that device.
 
+Most implementations are SoC specific, reading the identifiers from vendor
+registers or memory. The generic :dtcompatible:`zephyr,hwinfo-nvmem` backend
+sources the device ID, and optionally the EUI-64, from NVMEM cells (see
+:ref:`nvmem`).
+
 Configuration Options
 *********************
 
 Related configuration options:
 
 * :kconfig:option:`CONFIG_HWINFO`
+* :kconfig:option:`CONFIG_HWINFO_NVMEM`
 
 API Reference
 *************
