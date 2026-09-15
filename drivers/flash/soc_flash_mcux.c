@@ -54,6 +54,10 @@ LOG_MODULE_REGISTER(flash_mcux);
 #endif
 #define FLASH_Erase   FLASH_EraseSector
 #define FLASH_Program FLASH_ProgramPhrase
+#elif defined(CONFIG_SOC_FAMILY_MCXL)
+#include "fsl_romapi.h"
+#define FLASH_Erase   FLASH_EraseSector
+#define FLASH_Program FLASH_ProgramPhrase
 #elif defined(CONFIG_MCUX_FLASH_K4_API)
 #include "fsl_k4_flash.h"
 #else
@@ -156,10 +160,13 @@ static void clear_flash_caches(void)
 	/* this bit clears the code cache */
 	*lpcac_ctrl |= BIT(1);
 }
-#elif CONFIG_SOC_FAMILY_MCXA
+#elif defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
 static void clear_flash_caches(void)
 {
-	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_DIS_LPCAC(1U);
+	/* Clear L1 low power cache. */
+	if ((SYSCON->LPCAC_CTRL & SYSCON_LPCAC_CTRL_DIS_LPCAC_MASK) == 0U) {
+		SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_CLR_LPCAC_MASK;
+	}
 }
 #elif defined(CONFIG_CACHE_NXP_LMEM_CACHE)
 static void clear_flash_caches(void)
