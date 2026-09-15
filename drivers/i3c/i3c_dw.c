@@ -339,6 +339,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DEV_CHAR_TABLE_LSB_PID(x)       ((x) & GENMASK(15, 0))
 #define DEV_CHAR_TABLE_LOC2(start, idx) ((DEV_CHAR_TABLE_LOC1(start, idx)) + 4)
 #define DEV_CHAR_TABLE_LOC3(start, idx) ((DEV_CHAR_TABLE_LOC1(start, idx)) + 8)
+#define DEV_CHAR_TABLE_LOC4(start, idx) ((DEV_CHAR_TABLE_LOC1(start, idx)) + 12)
+#define DEV_CHAR_TABLE_DYNAMIC_ADDR(x)  ((x) & GENMASK(7, 0))
 #define DEV_CHAR_TABLE_DCR(x)           ((x) & GENMASK(7, 0))
 #define DEV_CHAR_TABLE_BCR(x)           (((x) & GENMASK(15, 8)) >> 8)
 
@@ -2169,23 +2171,41 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint32_t tmp;
+	uint32_t dat_word;
+	uint32_t dct4_word;
+	uint32_t dct1_word;
+	uint32_t dct2_word;
+	uint32_t dct3_word;
+	uint32_t dat_patched;
 	uint64_t pid;
 	uint8_t dyn_addr;
+	uint8_t dyn_addr_parity;
 
-	/* retrieve dynamic address assigned */
-	tmp = sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
-	dyn_addr = (((tmp) & GENMASK(22, 16)) >> 16);
+	/* The IP records the DA it assigned in DCT.LOC4[7:0] (databook figure 2-14).
+	 * Read it from there rather than from the DAT entry the driver programmed.
+	 * The controller DCT stride is 16 bytes (LOC1..LOC4).
+	 */
+	dat_word = sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+	dct4_word = sys_read32(config->regs + DEV_CHAR_TABLE_LOC4(data->dctstartaddr, pos));
+	dyn_addr = DEV_CHAR_TABLE_DYNAMIC_ADDR(dct4_word);
 
 	/* retrieve pid */
-	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC1(data->dctstartaddr, pos));
-	pid = ((uint64_t)DEV_CHAR_TABLE_MSB_PID(tmp) << 16) + (DEV_CHAR_TABLE_LSB_PID(tmp) << 16);
-	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC2(data->dctstartaddr, pos));
-	pid |= DEV_CHAR_TABLE_LSB_PID(tmp);
+	dct1_word = sys_read32(config->regs + DEV_CHAR_TABLE_LOC1(data->dctstartaddr, pos));
+	pid = ((uint64_t)DEV_CHAR_TABLE_MSB_PID(dct1_word) << 16) +
+	      (DEV_CHAR_TABLE_LSB_PID(dct1_word) << 16);
+	dct2_word = sys_read32(config->regs + DEV_CHAR_TABLE_LOC2(data->dctstartaddr, pos));
+	pid |= DEV_CHAR_TABLE_LSB_PID(dct2_word);
 
-	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC3(data->dctstartaddr, pos));
-	uint8_t bcr = DEV_CHAR_TABLE_BCR(tmp);
-	uint8_t dcr = DEV_CHAR_TABLE_DCR(tmp);
+	dct3_word = sys_read32(config->regs + DEV_CHAR_TABLE_LOC3(data->dctstartaddr, pos));
+	uint8_t bcr = DEV_CHAR_TABLE_BCR(dct3_word);
+	uint8_t dcr = DEV_CHAR_TABLE_DCR(dct3_word);
+
+	/* Keep DAT dynamic address/parity aligned with the HW-assigned DA. */
+	dat_patched = dat_word;
+	dyn_addr_parity = odd_parity(dyn_addr) << 7;
+	dat_patched &= ~DEV_ADDR_TABLE_DYNAMIC_ADDR_MASK;
+	dat_patched |= DEV_ADDR_TABLE_DYNAMIC_ADDR(dyn_addr | dyn_addr_parity);
+	sys_write32(dat_patched, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 
 	/* lookup known pids */
 	const struct i3c_device_id i3c_id = I3C_DEVICE_ID(pid);
