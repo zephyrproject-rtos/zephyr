@@ -34,19 +34,28 @@ static uint32_t convert_gyr_fs_to_bitfield(uint32_t val, uint16_t *fs)
 
 static int icm42670_set_gyro_odr(struct icm42x70_data *drv_data, const struct sensor_value *val)
 {
+	uint16_t gyro_hz;
+	int err;
+
 	if (val->val1 <= 1600 && val->val1 >= 12) {
-		if (drv_data->gyro_hz == 0) {
-			inv_imu_set_gyro_frequency(
-				&drv_data->driver,
-				convert_freq_to_bitfield(val->val1, &drv_data->gyro_hz));
-			inv_imu_enable_gyro_low_noise_mode(&drv_data->driver);
-		} else {
-			inv_imu_set_gyro_frequency(
-				&drv_data->driver,
-				convert_freq_to_bitfield(val->val1, &drv_data->gyro_hz));
+		bool was_disabled = (drv_data->gyro_hz == 0);
+
+		err = inv_imu_set_gyro_frequency(&drv_data->driver,
+						 convert_freq_to_bitfield(val->val1, &gyro_hz));
+		if (err != 0) {
+			return -EIO;
+		}
+		drv_data->gyro_hz = gyro_hz;
+		if (was_disabled) {
+			if (inv_imu_enable_gyro_low_noise_mode(&drv_data->driver) != 0) {
+				return -EIO;
+			}
 		}
 	} else if (val->val1 == 0) {
-		inv_imu_disable_gyro(&drv_data->driver);
+		err = inv_imu_disable_gyro(&drv_data->driver);
+		if (err != 0) {
+			return -EIO;
+		}
 		drv_data->gyro_hz = val->val1;
 	} else {
 		LOG_ERR("Incorrect sampling value");
@@ -58,13 +67,19 @@ static int icm42670_set_gyro_odr(struct icm42x70_data *drv_data, const struct se
 static int icm42670_set_gyro_fs(struct icm42x70_data *drv_data, const struct sensor_value *val)
 {
 	int32_t val_dps = sensor_rad_to_degrees(val);
+	uint16_t gyro_fs;
+	int err;
 
 	if (val_dps > 2000 || val_dps < 250) {
 		LOG_ERR("Incorrect fullscale value");
 		return -EINVAL;
 	}
-	inv_imu_set_gyro_fsr(&drv_data->driver,
-			     convert_gyr_fs_to_bitfield(val_dps, &drv_data->gyro_fs));
+	err = inv_imu_set_gyro_fsr(&drv_data->driver,
+				   convert_gyr_fs_to_bitfield(val_dps, &gyro_fs));
+	if (err != 0) {
+		return -EIO;
+	}
+	drv_data->gyro_fs = gyro_fs;
 	LOG_DBG("Set gyro fullscale to: %d dps", drv_data->gyro_fs);
 	return 0;
 }
@@ -73,17 +88,20 @@ int icm42670_gyro_config(struct icm42x70_data *drv_data, enum sensor_attribute a
 			 const struct sensor_value *val)
 {
 	if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
-		icm42670_set_gyro_odr(drv_data, val);
+		return icm42670_set_gyro_odr(drv_data, val);
 
 	} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-		icm42670_set_gyro_fs(drv_data, val);
+		return icm42670_set_gyro_fs(drv_data, val);
 
 	} else if ((enum sensor_attribute_icm42x70)attr == SENSOR_ATTR_BW_FILTER_LPF) {
 		if (val->val1 > 180) {
 			LOG_ERR("Incorrect low pass filter bandwidth value");
 			return -EINVAL;
 		}
-		inv_imu_set_gyro_ln_bw(&drv_data->driver, convert_ln_bw_to_bitfield(val->val1));
+		if (inv_imu_set_gyro_ln_bw(&drv_data->driver,
+					   convert_ln_bw_to_bitfield(val->val1)) != 0) {
+			return -EIO;
+		}
 
 	} else {
 		LOG_ERR("Unsupported attribute");
