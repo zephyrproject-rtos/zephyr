@@ -10,6 +10,7 @@
 LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
 #include <errno.h>
+#include <string.h>
 #include <time.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
@@ -22,13 +23,64 @@ static K_WORK_DELAYABLE_DEFINE(sntp_resync_work_handle, sntp_resync_handler);
 #define RESYNC_INTERVAL K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL)
 #endif
 
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+static K_MUTEX_DEFINE(sntp_server_lock);
+
+/* Server set by the application. Written from any thread, under the lock. */
+static char sntp_server_cfg[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1];
+/* Copy of sntp_server_cfg taken when a DNS query is started */
+static char sntp_server_active[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1];
+#endif
+
 BUILD_ASSERT(
 	IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION) ||
+	IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME) ||
 	(sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) != 1),
-	"SNTP server has to be configured, unless DHCPv4 is used to set it");
+	"SNTP server has to be configured, unless DHCPv4 or net_config_sntp_set_server is used to set it");
+
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+int net_config_sntp_set_server(const char *server)
+{
+	if (server != NULL && strlen(server) > CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN) {
+		return -ENAMETOOLONG;
+	}
+
+	k_mutex_lock(&sntp_server_lock, K_FOREVER);
+	if (server != NULL) {
+		strncpy(sntp_server_cfg, server, CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN);
+		sntp_server_cfg[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN] = '\0';
+	} else {
+		sntp_server_cfg[0] = '\0';
+	}
+	k_mutex_unlock(&sntp_server_lock);
+
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
+	/* Use the new server right away. */
+	k_work_reschedule(&sntp_resync_work_handle, K_NO_WAIT);
+#endif
+
+	return 0;
+}
+
+static const char *sntp_runtime_server(void)
+{
+	k_mutex_lock(&sntp_server_lock, K_FOREVER);
+	strcpy(sntp_server_active, sntp_server_cfg);
+	k_mutex_unlock(&sntp_server_lock);
+
+	return sntp_server_active[0] != '\0' ? sntp_server_active : NULL;
+}
+#endif
 
 static int sntp_init_helper(struct sntp_time *tm)
 {
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+	const char *server = sntp_runtime_server();
+
+	if (server != NULL) {
+		return sntp_simple(server, CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
+	}
+#endif /* CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME */
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 	struct net_if *iface = net_if_get_default();
 
@@ -40,12 +92,16 @@ static int sntp_init_helper(struct sntp_time *tm)
 		return sntp_simple_addr((struct net_sockaddr *)&sntp_addr, sizeof(sntp_addr),
 					CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
 	}
+#endif /* NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION */
 	if (sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) == 1) {
 		/* Empty address, skip using SNTP via Kconfig defaults */
 		return -EINVAL;
 	}
-	LOG_INF("SNTP address not set by DHCPv4, using Kconfig defaults");
-#endif /* NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION */
+#if IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION) ||                            \
+	IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME)
+	LOG_INF("SNTP address not set by DHCPv4 or net_config_sntp_set_server, using Kconfig "
+		"defaults");
+#endif
 	return sntp_simple(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
 			   CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
 }
@@ -206,6 +262,7 @@ static void dns_result_cb(enum dns_resolve_status status,
 			  void *user_data)
 {
 	int ret;
+	const char *server = user_data;
 
 	if (status == DNS_EAI_CANCELED || status == DNS_EAI_FAIL) {
 		/* If IPv4 query failed, try IPv6. Otherwise, just schedule next retry. */
@@ -213,9 +270,9 @@ static void dns_result_cb(enum dns_resolve_status status,
 			sntp_addr.ss_family = NET_AF_INET6;
 			sntp_addrlen = 0;
 
-			ret = dns_get_addr_info(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
-						DNS_QUERY_TYPE_AAAA, NULL, dns_result_cb,
-						NULL, CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
+			ret = dns_get_addr_info(server, DNS_QUERY_TYPE_AAAA, NULL, dns_result_cb,
+						(void *)server,
+						CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
 			if (ret == 0) {
 				return;
 			}
@@ -267,7 +324,7 @@ static void dns_result_cb(enum dns_resolve_status status,
 	}
 }
 
-static int dns_query_async(void)
+static int dns_query_async(const char *server)
 {
 	enum dns_query_type type;
 	int ret;
@@ -284,9 +341,8 @@ static int dns_query_async(void)
 			type = DNS_QUERY_TYPE_AAAA;
 		}
 
-		ret = dns_get_addr_info(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
-					type, NULL, dns_result_cb,
-					NULL, CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
+		ret = dns_get_addr_info(server, type, NULL, dns_result_cb, (void *)server,
+					CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
 		if (ret < 0) {
 			LOG_ERR("Failed to initiate DNS query for SNTP server (%d)", ret);
 		}
@@ -295,8 +351,8 @@ static int dns_query_async(void)
 	}
 
 	/* Fallback for IP address string. */
-	if (net_ipaddr_parse(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
-			     sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) - 1,
+	if (net_ipaddr_parse(server,
+			     strlen(server),
 			     net_sad(&sntp_addr))) {
 		if (IS_ENABLED(CONFIG_NET_IPV4) && sntp_addr.ss_family == NET_AF_INET) {
 			sntp_addrlen = sizeof(struct net_sockaddr_in);
@@ -327,6 +383,14 @@ static void sntp_resync_handler(struct k_work *work)
 
 	ARG_UNUSED(work);
 
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+	const char *server = sntp_runtime_server();
+
+	if (server != NULL) {
+		ret = dns_query_async(server);
+		goto out;
+	}
+#endif /* CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME */
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 	struct net_if *iface = net_if_get_default();
 
@@ -345,18 +409,16 @@ static void sntp_resync_handler(struct k_work *work)
 		goto out;
 	}
 
+#endif
 	if (sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) == 1) {
 		/* Empty address, skip using SNTP via Kconfig defaults */
 		ret = -EINVAL;
 		goto out;
 	}
-#endif
 
-	ret = dns_query_async();
+	ret = dns_query_async(CONFIG_NET_CONFIG_SNTP_INIT_SERVER);
 
-#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 out:
-#endif
 	k_work_reschedule(&sntp_resync_work_handle,
 			  (ret < 0) ? RESYNC_FAILED_INTERVAL : RESYNC_INTERVAL);
 }

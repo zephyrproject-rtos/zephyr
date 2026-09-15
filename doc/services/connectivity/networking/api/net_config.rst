@@ -63,6 +63,27 @@ setup the system:
    ":kconfig:option:`CONFIG_NET_CONFIG_PEER_IPV4_ADDR`","Peer static IPv4 address. This is mainly
    useful in testing setups where the application can connect to a pre-defined host."
 
+SNTP clock initialization
+*************************
+
+If :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_INIT` is set, the library also
+initializes the system clock from an SNTP server, and optionally keeps
+it in sync with :kconfig:option:`CONFIG_NET_CONFIG_SNTP_INIT_RESYNC`.
+
+The server to query is looked up in the following order:
+
+1. The server set at runtime with :c:func:`net_config_sntp_set_server`. This
+   requires :kconfig:option:`CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME` and is
+   meant for applications that only learn which time server to use while
+   running, for example after provisioning.
+2. The server received via the DHCPv4 NTP server option, if
+   :kconfig:option:`CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION` is
+   set.
+3. :kconfig:option:`CONFIG_NET_CONFIG_SNTP_INIT_SERVER`, which must be set if
+   :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_INIT` is set but neither
+   :kconfig:option:`CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME` nor
+   :kconfig:option:`CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION` is enabled.
+
 Sample usage
 ************
 
