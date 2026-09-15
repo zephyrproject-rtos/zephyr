@@ -1433,7 +1433,7 @@ ZTEST(log_buffer, test_alloc_in_spinlock)
 {
 	struct mpsc_pbuf_buffer buffer;
 	struct test_data_var *packet;
-	struct k_spinlock l = {0};
+	struct k_spinlock l = {};
 
 	init(&buffer, 32, false);
 
