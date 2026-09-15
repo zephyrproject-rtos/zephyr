@@ -638,6 +638,10 @@ New APIs and options
 
   * :c:enumerator:`CELLULAR_MODEM_INFO_SERIAL_NUMBER`
 
+* Multimedia Pipeline
+
+  * :kconfig:option:`CONFIG_MPIPE` (see :ref:`mpipe`)
+
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
@@ -1925,6 +1929,13 @@ Libraries / Subsystems
     * The image management client now supports SHA-512 image digests. It can
       list and select images for testing or confirmation on targets built with
       :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512`.
+
+* Multimedia Pipeline
+
+  * Introducing :ref:`mpipe`, a new subsystem for building multimedia
+    applications out of reusable elements - sources, transforms and sinks -
+    linked together into a pipeline. It lets an application describe the media
+    flow it wants instead of driving each audio, video or display device itself.
 
 * Video
 
