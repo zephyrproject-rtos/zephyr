@@ -474,10 +474,18 @@ static int smsc_write_tx_fifo(const uint8_t *buf, uint32_t len, bool is_last)
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	uint16_t total_len = net_pkt_get_len(pkt);
-	static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE] __aligned(4);
+	/* smsc_write_tx_fifo() pads the last fragment up to a DWORD, so the
+	 * staging buffer is rounded up to keep those reads in bounds.
+	 */
+	static uint8_t tx_buf[ROUND_UP(NET_ETH_MAX_FRAME_SIZE, sizeof(uint32_t))] __aligned(4);
 	uint32_t txcmd_a, txcmd_b;
 	uint32_t tx_stat;
 	int res;
+
+	if (total_len > NET_ETH_MAX_FRAME_SIZE) {
+		LOG_ERR("Frame too large: %u", total_len);
+		return -EMSGSIZE;
+	}
 
 	txcmd_a = (1/*is_first_segment*/ << 13) | (1/*is_last_segment*/ << 12)
 		  | total_len;
