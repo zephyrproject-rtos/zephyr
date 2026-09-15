@@ -10,7 +10,6 @@ else()
   board_runner_args(stm32cubeprogrammer "--no-reset")
   board_runner_args(stm32cubeprogrammer "--tool-opt= mode=HOTPLUG ap=1")
   board_runner_args(stm32cubeprogrammer "--extload=MX25UM51245G_STM32N6570-NUCLEO.stldr")
-  board_runner_args(stm32cubeprogrammer "--download-address=0x70000000")
 endif()
 
 board_runner_args(stlink_gdbserver "--apid=1")
