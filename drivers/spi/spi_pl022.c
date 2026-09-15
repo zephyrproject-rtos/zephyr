@@ -330,10 +330,18 @@ static inline uint32_t spi_pl022_calc_postdiv(const uint32_t pclk,
 {
 	uint32_t postdiv;
 
-	for (postdiv = SCR_MAX + 1; postdiv > SCR_MIN + 1; --postdiv) {
-		if (pclk / (prescale * (postdiv - 1)) > baud) {
-			break;
-		}
+	/* The loop this replaces stopped at postdiv == 2, so SCR could never be 0 and the rate was
+	 * capped at pclk / (prescale * 2) - on an RP2040 with prescale 2 that
+	 * is pclk/4 = 31.25 MHz,
+	 * where the hardware can do pclk/2 = 62.5 MHz. Measured on an ST7789 panel: 6.1 MB/s on a
+	 * 60 kB write, i.e. an effective 51 MHz bit clock, which is impossible below 62.5 MHz.
+	 */
+	postdiv = DIV_ROUND_UP(pclk, prescale * baud);
+	if (postdiv < SCR_MIN + 1) {
+		postdiv = SCR_MIN + 1;
+	}
+	if (postdiv > SCR_MAX + 1) {
+		postdiv = SCR_MAX + 1;
 	}
 	return postdiv - 1;
 }
