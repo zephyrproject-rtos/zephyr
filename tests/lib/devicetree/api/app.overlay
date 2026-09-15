@@ -59,6 +59,14 @@
 			c = "bar", "baz";
 		};
 
+		test_uint64: uint64-holder {
+			compatible = "vnd,uint64-holder";
+			val-32 = <100000000>;	/* 0x5F5E100 - 1-cell value */
+			val-64 = <1 0>;		/* 4294967296 = 0x100000000 - 2-cell value */
+			/* val-with-default intentionally omitted to exercise default: 42 */
+			/* val-with-or intentionally omitted to exercise DT_PROP_OR fallback */
+		};
+
 		test_phandles: phandle-holder-0 {
 			/*
 			 * There should only be one vnd,phandle-holder in the entire DTS.

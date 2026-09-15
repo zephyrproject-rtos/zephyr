@@ -21,6 +21,7 @@
 #define TEST_NODELABEL	DT_NODELABEL(test_nodelabel)
 #define TEST_INST	DT_INST(0, vnd_gpio_device)
 #define TEST_ARRAYS	DT_NODELABEL(test_arrays)
+#define TEST_UINT64	DT_NODELABEL(test_uint64)
 #define TEST_PH		DT_NODELABEL(test_phandles)
 #define TEST_INTC	DT_NODELABEL(test_intc)
 #define TEST_INTC2	DT_NODELABEL(test_intc2)
@@ -2172,6 +2173,52 @@ ZTEST(devicetree_api, test_arrays)
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ARRAYS, c, 1), c[1]), "");
 
 	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, c), 2, "");
+}
+
+/*
+ * Compile-time check: uint64 is a scalar type so gen_defines.py must NOT
+ * emit a _LEN macro for it. If it did, the DT_PROP_LEN_OR expansion below
+ * would reference an undefined identifier and this file would fail to compile.
+ * The fact that this translation unit compiles is the proof.
+ *
+ * We use the absent property (val_with_or has no _EXISTS) so DT_PROP_LEN_OR
+ * safely returns the fallback without touching _LEN.
+ */
+BUILD_ASSERT(DT_PROP_LEN_OR(TEST_UINT64, val_with_or, 0) == 0,
+	     "absent uint64 property must have no _LEN macro");
+
+ZTEST(devicetree_api, test_uint64_prop)
+{
+	/*
+	 * 1-cell value: DT_PROP must return a plain scalar integer,
+	 * not a brace-initializer list.
+	 */
+	zassert_equal(DT_PROP(TEST_UINT64, val_32), 100000000, "");
+
+	/*
+	 * 2-cell value <1 0>: assembled as (1 << 32) | 0 = 4294967296.
+	 * Cast to uint64_t to avoid truncation on 32-bit hosts.
+	 */
+	zassert_equal((uint64_t)DT_PROP(TEST_UINT64, val_64),
+		      (uint64_t)UINT64_C(4294967296), "");
+
+	/* DT_PROP_OR: property present - must return the property value */
+	zassert_equal(DT_PROP_OR(TEST_UINT64, val_32, 0), 100000000, "");
+
+	/* DT_PROP_OR: property absent - must return the fallback */
+	zassert_equal(DT_PROP_OR(TEST_UINT64, val_with_or, 999), 999, "");
+
+	/* DT_NODE_HAS_PROP: present property must return 1 */
+	zassert_equal(DT_NODE_HAS_PROP(TEST_UINT64, val_32), 1, "");
+
+	/* DT_NODE_HAS_PROP: absent property must return 0 */
+	zassert_equal(DT_NODE_HAS_PROP(TEST_UINT64, val_with_or), 0, "");
+
+	/*
+	 * default: in binding is used when property is absent from DTS.
+	 * val-with-default has default: 42 and is not set in the overlay.
+	 */
+	zassert_equal(DT_PROP(TEST_UINT64, val_with_default), 42, "");
 }
 
 ZTEST(devicetree_api, test_foreach)
