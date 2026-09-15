@@ -222,10 +222,22 @@ static int init_configuration(struct usbd_context *const uds_ctx,
 			return ret;
 		}
 
-		ret = usbd_class_init(c_nd->c_data);
-		if (ret != 0) {
-			LOG_ERR("Failed to initialize class instance");
-			return ret;
+		/*
+		 * The same c_data may be shared by the FS and HS nodes, so its
+		 * init callback is guarded by a flag owned by the class data
+		 * itself: it must run once per class instance even though the
+		 * endpoint and interface assignment is done per node.
+		 */
+		if (!atomic_test_and_set_bit(&c_nd->c_data->state,
+					     USBD_CCTX_INITIALIZED)) {
+			ret = usbd_class_init(c_nd->c_data);
+			if (ret != 0) {
+				/* Roll back so that a later retry can init it */
+				atomic_clear_bit(&c_nd->c_data->state,
+						 USBD_CCTX_INITIALIZED);
+				LOG_ERR("Failed to initialize class instance");
+				return ret;
+			}
 		}
 
 		LOG_DBG("Init class node %p, descriptor length %zu",
