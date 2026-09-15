@@ -21,8 +21,23 @@
 #include <zephyr/toolchain.h>
 
 static struct bt_conn *default_conn;
+static K_MUTEX_DEFINE(conn_lock);
 
 static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
+
+/* Take a temporary reference on the current connection under conn_lock so a concurrent
+ * disconnect (which drops default_conn) cannot free it while a command uses it.
+ */
+static struct bt_conn *conn_get(void)
+{
+	struct bt_conn *conn;
+
+	k_mutex_lock(&conn_lock, K_FOREVER);
+	conn = (default_conn != NULL) ? bt_conn_ref(default_conn) : NULL;
+	k_mutex_unlock(&conn_lock);
+
+	return conn;
+}
 
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {
@@ -54,18 +69,35 @@ static struct bt_mcc_cb mcc_cb = {
 	.send_cmd = mcc_send_command_cb,
 };
 
+static void mcp_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(reason);
+
+	k_mutex_lock(&conn_lock, K_FOREVER);
+	if (conn == default_conn) {
+		bt_conn_drop(&default_conn);
+	}
+	k_mutex_unlock(&conn_lock);
+}
+
+BT_CONN_CB_DEFINE(mcp_conn_callbacks) = {
+	.disconnected = mcp_disconnected,
+};
+
 int mcp_ctlr_init(struct bt_conn *conn)
 {
 	int err;
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	default_conn = bt_conn_ref(conn);
+	k_mutex_unlock(&conn_lock);
 
 	err = bt_mcc_init(&mcc_cb);
 	if (err != 0) {
 		return err;
 	}
 
-	err = bt_mcc_discover_mcs(default_conn, true);
+	err = bt_mcc_discover_mcs(conn, true);
 	if (err == 0) {
 		err = k_sem_take(&sem_discovery_done, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
@@ -75,21 +107,23 @@ int mcp_ctlr_init(struct bt_conn *conn)
 
 int mcp_send_cmd(uint8_t mcp_opcode)
 {
-	int err;
+	struct bt_conn *conn = conn_get();
 	struct mpl_cmd cmd;
+	int err;
 
-	cmd.opcode = mcp_opcode;
-	cmd.use_param = false;
-
-	if (default_conn == NULL) {
+	if (conn == NULL) {
 		printk("MCP: No connection\n");
 		return -EINVAL;
 	}
 
-	err = bt_mcc_send_cmd(default_conn, &cmd);
+	cmd.opcode = mcp_opcode;
+	cmd.use_param = false;
+
+	err = bt_mcc_send_cmd(conn, &cmd);
 	if (err != 0) {
 		printk("MCP: Command failed: %d\n", err);
 	}
 
+	bt_conn_unref(conn);
 	return err;
 }

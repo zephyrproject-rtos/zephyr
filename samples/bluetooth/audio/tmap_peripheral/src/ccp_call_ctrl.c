@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <errno.h>
+
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/conn.h>
@@ -30,6 +32,21 @@ static char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 
 static struct bt_conn *default_conn;
+static K_MUTEX_DEFINE(conn_lock);
+
+/* Take a temporary reference on the current connection under conn_lock so a concurrent
+ * disconnect (which drops default_conn) cannot free it while a control command uses it.
+ */
+static struct bt_conn *conn_get(void)
+{
+	struct bt_conn *conn;
+
+	k_mutex_lock(&conn_lock, K_FOREVER);
+	conn = (default_conn != NULL) ? bt_conn_ref(default_conn) : NULL;
+	k_mutex_unlock(&conn_lock);
+
+	return conn;
+}
 
 static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool gtbs_found)
 {
@@ -155,13 +172,32 @@ struct bt_tbs_client_cb tbs_client_cb = {
 	.terminate_call = terminate_call_cb,
 };
 
+static void ccp_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(reason);
+
+	k_mutex_lock(&conn_lock, K_FOREVER);
+	if (conn == default_conn) {
+		bt_conn_drop(&default_conn);
+	}
+	k_mutex_unlock(&conn_lock);
+}
+
+BT_CONN_CB_DEFINE(ccp_conn_callbacks) = {
+	.disconnected = ccp_disconnected,
+};
+
 int ccp_call_ctrl_init(struct bt_conn *conn)
 {
 	int err;
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	default_conn = bt_conn_ref(conn);
+	k_mutex_unlock(&conn_lock);
+
 	err = bt_tbs_client_register_cb(&tbs_client_cb);
-	if (err != 0) {
+	if (err != 0 && err != -EEXIST) {
+		/* -EEXIST is expected when a later peer reconnects and re-runs init. */
 		return err;
 	}
 
@@ -177,24 +213,37 @@ int ccp_call_ctrl_init(struct bt_conn *conn)
 
 int ccp_originate_call(void)
 {
+	struct bt_conn *conn = conn_get();
 	int err;
 
-	err = bt_tbs_client_originate_call(default_conn, BT_TBS_GTBS_INDEX, remote_uri);
+	if (conn == NULL) {
+		return -ENOTCONN;
+	}
+
+	err = bt_tbs_client_originate_call(conn, BT_TBS_GTBS_INDEX, remote_uri);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		printk("TBS originate call failed: %d\n", err);
 	}
 
+	bt_conn_unref(conn);
 	return err;
 }
 
 int ccp_terminate_call(void)
 {
+	struct bt_conn *conn = conn_get();
 	int err;
 
-	err = bt_tbs_client_terminate_call(default_conn, BT_TBS_GTBS_INDEX, new_call_index);
+	if (conn == NULL) {
+		/* The peer disconnected before the terminate timer fired; nothing to do. */
+		return -ENOTCONN;
+	}
+
+	err = bt_tbs_client_terminate_call(conn, BT_TBS_GTBS_INDEX, new_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		printk("TBS terminate call failed: %d\n", err);
 	}
 
+	bt_conn_unref(conn);
 	return err;
 }
