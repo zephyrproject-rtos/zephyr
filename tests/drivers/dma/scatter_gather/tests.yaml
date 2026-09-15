@@ -28,6 +28,7 @@ tests:
       - pic32cz_ca80_cult
       - sixg301_rb4407a
       - kit_psc3m5_evk
+      - kit_psc3m6_eval/psc3m6ges3ahq1
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m55
       - kit_pse84_eval/pse846gps2dbzc4a/m33
