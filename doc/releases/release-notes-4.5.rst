@@ -90,6 +90,10 @@ Removed APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * All ``media_proxy_`` functions and definitions for Bluetooth have been removed.
+
   * Controller
 
     * ``CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP``
@@ -501,6 +505,8 @@ New APIs and options
     * :c:member:`bt_cap_initiator_cb.unicast_stop_disabled`
     * :c:member:`bt_cap_initiator_cb.unicast_stop_stopped`
     * :c:member:`bt_cap_initiator_cb.unicast_stop_released`
+    * ``bt_mcp_media_control_server_*`` APIs for controlling the local media player has
+      been added.
     * :c:func:`bt_vocs_client_free_instance`
 
   * Classic
