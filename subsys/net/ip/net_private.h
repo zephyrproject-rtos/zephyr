@@ -433,8 +433,8 @@ static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *st
 	}
 
 	while (buf) {
-		printk("%p[%ld/%u (%u/%u)]", buf, atomic_get(&pkt->atomic_ref),
-		       buf->len, net_buf_max_len(buf), buf->size);
+		printk("%p[%ld/%u (%zu/%u)]", buf, atomic_get(&pkt->atomic_ref),
+		       buf->len, net_buf_tailroom(buf), buf->size);
 
 		buf = buf->frags;
 		if (buf) {
