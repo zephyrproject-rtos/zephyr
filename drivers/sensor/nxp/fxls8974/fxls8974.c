@@ -145,7 +145,9 @@ static int fxls8974_set_odr(const struct device *dev,
 				const struct sensor_value *val, enum fxls8974_wake mode)
 {
 		const struct fxls8974_config *cfg = dev->config;
+		int ret;
 		uint8_t odr;
+		uint8_t was_active = FXLS8974_ACTIVE_OFF;
 		/* val int32 */
 		switch (val->val1) {
 		case 3200:
@@ -205,16 +207,36 @@ static int fxls8974_set_odr(const struct device *dev,
 
 		LOG_DBG("Set %s ODR to 0x%02x", (mode == FXLS8974_WAKE) ? "wake" : "sleep", odr);
 
-		/* Change the attribute and restore active mode. */
+		if (fxls8974_get_active(dev, &was_active)) {
+			LOG_ERR("Could not read active state before ODR change");
+			return -EIO;
+		}
+
+		if (was_active != FXLS8974_ACTIVE_OFF) {
+			if (fxls8974_set_active(dev, FXLS8974_ACTIVE_OFF)) {
+				LOG_ERR("Could not enter standby to change ODR");
+				return -EIO;
+			}
+		}
+
 		if (mode == FXLS8974_WAKE) {
-			return cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG3,
+			ret = cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG3,
 				FXLS8974_CTRLREG3_WAKE_ODR_MASK,
 				odr<<4);
 		} else {
-			return cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG3,
+			ret = cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG3,
 				FXLS8974_CTRLREG3_SLEEP_ODR_MASK,
 				odr);
 		}
+
+		if (was_active != FXLS8974_ACTIVE_OFF) {
+			if (fxls8974_set_active(dev, FXLS8974_ACTIVE_ON)) {
+				LOG_ERR("Could not restore active mode after ODR change");
+				return -EIO;
+			}
+		}
+
+		return ret;
 }
 
 static int fxls8974_attr_set(const struct device *dev,
