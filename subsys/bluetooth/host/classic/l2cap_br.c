@@ -5970,6 +5970,13 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 		} else {
 			br_chan->_sdu_len = net_buf_pull_le16(seg);
 		}
+
+		if (br_chan->_sdu_len > br_chan->rx.mtu) {
+			LOG_WRN("SDU exceeds MTU");
+			net_buf_drop(&br_chan->_sdu);
+			bt_l2cap_chan_disconnect(&br_chan->chan);
+			return -ESHUTDOWN;
+		}
 	}
 
 	if (!br_chan->_sdu) {
@@ -5982,7 +5989,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 		return -ESHUTDOWN;
 	}
 
-	if ((br_chan->_sdu->len + seg->len) > br_chan->_sdu_len) {
+	if ((net_buf_frags_len(br_chan->_sdu) + seg->len) > br_chan->_sdu_len) {
 		LOG_ERR("SDU length mismatch");
 		net_buf_drop(&br_chan->_sdu);
 		bt_l2cap_chan_disconnect(&br_chan->chan);
@@ -5999,10 +6006,11 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 		return -ESHUTDOWN;
 	}
 
-	LOG_DBG("chan %p len %zu / %zu", br_chan, br_chan->_sdu->len, br_chan->_sdu_len);
+	LOG_DBG("chan %p len %zu / %zu", br_chan, net_buf_frags_len(br_chan->_sdu),
+		br_chan->_sdu_len);
 
 	if ((sar == BT_L2CAP_CONTROL_SAR_UNSEG) || (sar == BT_L2CAP_CONTROL_SAR_END)) {
-		if (br_chan->_sdu->len < br_chan->_sdu_len) {
+		if (net_buf_frags_len(br_chan->_sdu) < br_chan->_sdu_len) {
 			LOG_ERR("SDU length mismatch");
 			net_buf_drop(&br_chan->_sdu);
 			bt_l2cap_chan_disconnect(&br_chan->chan);
