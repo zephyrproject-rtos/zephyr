@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: 2026 ELAN Microelectronics Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PB7 (MOSI) to PB6 (MISO) for external loopback. */
+&spi2 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
