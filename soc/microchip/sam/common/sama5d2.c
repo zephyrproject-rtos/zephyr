@@ -13,6 +13,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pmc_setup_sama5d2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
+#define nck(a) (a[ARRAY_SIZE(a) - 1].id + 1)
+
 static struct k_spinlock pmc_mck_lock;
 static struct k_spinlock pmc_pcr_lock;
 
@@ -143,6 +145,74 @@ static struct {
 	{ .n = "can1_clk",     .id = 57, .r = { .max = MHZ(83) }, },
 	{ .n = "ptc_clk",      .id = 58, },
 	{ .n = "classd_clk",   .id = 59, .r = { .max = MHZ(83) }, },
+};
+
+/*
+ * Generic clock (GCK) descriptors
+ *
+ * SAMA5D2 GCK parents (via PMC_PCR GCKCSS field, 3-bit):
+ *   0: Slow clock  (md_slck)
+ *   1: Main clock  (mainck)
+ *   2: PLLACK
+ *   3: UPLL clock
+ *   4: Main System Bus clock
+ *   3: Audio PLL clock
+ */
+static const struct {
+	const char *n;
+	uint8_t id;
+} sama5d2_gck[] = {
+	{ .n = "gmac_gclk",     .id = 5, },
+	{ .n = "xdmac0_gclk",   .id = 6, },
+	{ .n = "xdmac1_gclk",   .id = 7, },
+	{ .n = "icm_gclk",      .id = 8, },
+	{ .n = "aes_gclk",      .id = 9, },
+	{ .n = "aesb_gclk",     .id = 10, },
+	{ .n = "tdes_gclk",     .id = 11, },
+	{ .n = "sha_gclk",      .id = 12, },
+	{ .n = "mpddrc_gclk",   .id = 13, },
+	{ .n = "matrix1_gclk",  .id = 14, },
+	{ .n = "matrix0_gclk",  .id = 15, },
+	{ .n = "secumod_gclk",  .id = 16, },
+	{ .n = "hsmc_gclk",     .id = 17, },
+	{ .n = "pioa_gclk",     .id = 18, },
+	{ .n = "flexcom0_gclk", .id = 19, },
+	{ .n = "flexcom1_gclk", .id = 20, },
+	{ .n = "flexcom2_gclk", .id = 21, },
+	{ .n = "flexcom3_gclk", .id = 22, },
+	{ .n = "flexcom4_gclk", .id = 23, },
+	{ .n = "uart0_gclk",    .id = 24, },
+	{ .n = "uart1_gclk",    .id = 25, },
+	{ .n = "uart2_gclk",    .id = 26, },
+	{ .n = "uart3_gclk",    .id = 27, },
+	{ .n = "uart4_gclk",    .id = 28, },
+	{ .n = "twi0_gclk",     .id = 29, },
+	{ .n = "twi1_gclk",     .id = 30, },
+	{ .n = "sdmmc0_gclk",   .id = 31, },
+	{ .n = "sdmmc1_gclk",   .id = 32, },
+	{ .n = "spi0_gclk",     .id = 33, },
+	{ .n = "spi1_gclk",     .id = 34, },
+	{ .n = "tc0_gclk",      .id = 35, },
+	{ .n = "tc1_gclk",      .id = 36, },
+	{ .n = "pwm_gclk",      .id = 38, },
+	{ .n = "adc_gclk",      .id = 40, },
+	{ .n = "uhphs_gclk",    .id = 41, },
+	{ .n = "udphs_gclk",    .id = 42, },
+	{ .n = "ssc0_gclk",     .id = 43, },
+	{ .n = "ssc1_gclk",     .id = 44, },
+	{ .n = "lcdc_gclk",     .id = 45, },
+	{ .n = "isi_gclk",      .id = 46, },
+	{ .n = "trng_gclk",     .id = 47, },
+	{ .n = "pdmic_gclk",    .id = 48, },
+	{ .n = "securam_gclk",  .id = 51, },
+	{ .n = "qspi0_gclk",    .id = 52, },
+	{ .n = "qspi1_gclk",    .id = 53, },
+	{ .n = "i2sc0_gclk",    .id = 54, },
+	{ .n = "i2sc1_gclk",    .id = 55, },
+	{ .n = "can0_gclk",     .id = 56, },
+	{ .n = "can1_gclk",     .id = 57, },
+	{ .n = "ptc_gclk",      .id = 58, },
+	{ .n = "classd_gclk",   .id = 59, },
 };
 
 static int sam_pmc_register_master(const struct device *dev, struct pmc_data *sama5d2_pmc,
@@ -300,6 +370,37 @@ static int sam_pmc_register_peripheral(const struct device *dev, struct pmc_data
 	return 0;
 }
 
+static int sam_pmc_register_generated(const struct device *dev, struct pmc_data *sama5d2_pmc)
+{
+	const struct sam_pmc_cfg *cfg = dev->config;
+	uint32_t mux_table[] = {0, 1, 2, 3, 4, 5};
+	const struct device *parents[6];
+	struct device *clk;
+	int ret, i;
+
+	parents[0] = cfg->md_slck;
+	parents[1] = sama5d2_pmc->chws[PMC_MAIN];
+	parents[2] = sama5d2_pmc->chws[PMC_PLLA];
+	parents[3] = sama5d2_pmc->chws[PMC_UPLL];
+	parents[4] = sama5d2_pmc->chws[PMC_MCK];
+	parents[5] = sama5d2_pmc->chws[PMC_AUDIOPMCPLL];
+
+	for (i = 0; i < ARRAY_SIZE(sama5d2_gck); i++) {
+		ret = clk_register_generated((void *const)cfg->reg, &pmc_pcr_lock,
+					     &sama5d2_pcr_layout, sama5d2_gck[i].n, parents,
+					     mux_table, ARRAY_SIZE(parents), sama5d2_gck[i].id,
+					     NULL, 0, &clk);
+		if (ret) {
+			LOG_ERR("Register generated clock %d failed", i);
+			return ret;
+		}
+
+		sama5d2_pmc->ghws[sama5d2_gck[i].id] = clk;
+	}
+
+	return 0;
+}
+
 void sam_pmc_setup(const struct device *dev)
 {
 	const struct sam_pmc_cfg *cfg  = dev->config;
@@ -319,6 +420,12 @@ void sam_pmc_setup(const struct device *dev)
 
 	if (!td_slck || !md_slck || !main_xtal || !regmap) {
 		LOG_ERR("Incorrect parameters");
+		return;
+	}
+
+	if (CLK_CNT_SYSTEM != nck(sama5d2_systemck) ||
+	    CLK_CNT_PERIPH != nck(sama5d2_peripheral_clk) || CLK_CNT_GCK != nck(sama5d2_gck)) {
+		LOG_ERR("Incorrect definitions could make array for pmc clocks not enough");
 		return;
 	}
 
@@ -389,4 +496,11 @@ void sam_pmc_setup(const struct device *dev)
 	if (ret) {
 		return;
 	}
+
+	ret = sam_pmc_register_generated(dev, sama5d2_pmc);
+	if (ret) {
+		return;
+	}
+
+	LOG_DBG("SAMA5D2 PMC clocks registered successfully");
 }
