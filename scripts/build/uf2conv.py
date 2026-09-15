@@ -51,14 +51,14 @@ def convert_from_uf2(buf):
         block = buf[ptr : ptr + 512]
         hd = struct.unpack(b"<IIIIIIII", block[0:32])
         if hd[0] != UF2_MAGIC_START0 or hd[1] != UF2_MAGIC_START1:
-            print("Skipping block at " + ptr + "; bad magic")
+            print(f"Skipping block at {ptr}; bad magic")
             continue
         if hd[2] & 1:
             # NO-flash flag set; skip block
             continue
         datalen = hd[4]
         if datalen > 476:
-            raise AssertionError("Invalid UF2 data size at " + ptr)
+            raise AssertionError(f"Invalid UF2 data size at {ptr}")
         newaddr = hd[3]
         if (hd[2] & 0x2000) and (currfamilyid is None):
             currfamilyid = hd[7]
@@ -69,11 +69,11 @@ def convert_from_uf2(buf):
                 appstartaddr = newaddr
         padding = newaddr - curraddr
         if padding < 0:
-            raise AssertionError("Block out of order at " + ptr)
+            raise AssertionError(f"Block out of order at {ptr}")
         if padding > 10 * 1024 * 1024:
-            raise AssertionError("More than 10M of padding needed at " + ptr)
+            raise AssertionError(f"More than 10M of padding needed at {ptr}")
         if padding % 4 != 0:
-            raise AssertionError("Non-word padding size at " + ptr)
+            raise AssertionError(f"Non-word padding size at {ptr}")
         while padding > 0:
             padding -= 4
             outp.append(b"\x00\x00\x00\x00")
@@ -155,9 +155,11 @@ def convert_to_uf2(file_content):
 
 
 class Block:
-    def __init__(self, addr):
+    def __init__(self, addr, default_data=0xFF):
         self.addr = addr
-        self.bytes = bytearray(256)
+        # 0xFF is what erased flash reads as on most MCUs, so a byte the
+        # hex file does not mention is left as the device would have it.
+        self.bytes = bytearray([default_data] * 256)
 
     def encode(self, blockno, numblocks):
         global familyid
@@ -229,22 +231,18 @@ def to_str(b):
 def get_drives():
     drives = []
     if sys.platform == "win32":
+        # Removable (DriveType 2) FAT volumes, which is what a UF2
+        # bootloader presents. wmic used to answer this, but it was removed
+        # in Windows 11 24H2, so ask PowerShell for the same two properties.
         r = subprocess.check_output(
             [
-                "wmic",
-                "PATH",
-                "Win32_LogicalDisk",
-                "get",
-                "DeviceID,",
-                "VolumeName,",
-                "FileSystem,",
-                "DriveType",
+                "powershell",
+                "-Command",
+                '(Get-WmiObject Win32_LogicalDisk'
+                ' -Filter "DriveType=2 AND FileSystem=\'FAT\'").DeviceID',
             ]
         )
-        for line in to_str(r).split('\n'):
-            words = re.split(r'\s+', line)
-            if len(words) >= 3 and words[1] == "2" and words[2] == "FAT":
-                drives.append(words[0])
+        drives = [line.strip() for line in to_str(r).splitlines() if line.strip()]
     else:
         searchpaths = ["/media"]
         if sys.platform == "darwin":
@@ -255,7 +253,7 @@ def get_drives():
         for rootpath in searchpaths:
             if os.path.isdir(rootpath):
                 for d in os.listdir(rootpath):
-                    if os.path.isdir(rootpath):
+                    if os.path.isdir(os.path.join(rootpath, d)):
                         drives.append(os.path.join(rootpath, d))
 
     def has_info(d):
