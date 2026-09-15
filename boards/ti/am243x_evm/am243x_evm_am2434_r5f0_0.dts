@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <zephyr/dt-bindings/timer/ti-dmtimer.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <ti/am64x_r5f0_0.dtsi>
 #include "am243x_evm_am2434_r5f0_0-pinctrl.dtsi"
