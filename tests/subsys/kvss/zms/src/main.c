@@ -1397,6 +1397,12 @@ ZTEST_F(zms, test_zms_free_space)
 	ate_size = fixture->fs.ate_size;
 	write_block_size = fixture->fs.flash_parameters->write_block_size;
 	max_space_in_sector = fixture->fs.sector_size - ate_size * ZMS_MIN_ATE_NUM;
+
+	/* Skip for large (> 8 KiB) sectors, which make this test too slow. */
+	if (fixture->fs.sector_size > 8192) {
+		ztest_test_skip();
+	}
+
 	write_buf = k_malloc(max_space_in_sector + 1);
 
 	zassert_not_null(write_buf, "failed to allocate write buffer");
@@ -1633,6 +1639,12 @@ ZTEST_F(zms, test_zms_free_space_5sectors)
 	ate_size = fixture->fs.ate_size;
 	write_block_size = fixture->fs.flash_parameters->write_block_size;
 	max_space_in_sector = fixture->fs.sector_size - ate_size * ZMS_MIN_ATE_NUM;
+
+	/* Same slowness concern as test_zms_free_space; skip large sectors. */
+	if (fixture->fs.sector_size > 8192) {
+		ztest_test_skip();
+	}
+
 	write_buf = k_malloc(max_space_in_sector);
 
 	zassert_not_null(write_buf, "failed to allocate write buffer");
