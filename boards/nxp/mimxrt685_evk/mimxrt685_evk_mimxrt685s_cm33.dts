@@ -48,6 +48,12 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,crc = &crc;
+
+		/*
+		 * A flash partition carved out for the DSP (mimxrt685s/hifi4).
+		 * Keep in sync with the associated DT node for said domain.
+		 */
+		zephyr,code-dsp-partition = &dsp_partition;
 	};
 
 	gpio_keys {
@@ -319,14 +325,48 @@ i2s1: &flexcomm3 {
 					reg = <0x00320000 DT_SIZE_M(3)>;
 				};
 
-				storage_partition: partition@620000 {
+				/*
+				 * Holds the HiFi4 DSP remote image (see
+				 * zephyr,code-dsp-partition above). Base and
+				 * size MUST match the adsp_flash region in the
+				 * DSP remote devicetree
+				 * (dts/xtensa/nxp/nxp_rt685_hifi4.dtsi):
+				 * FlexSPI XIP 0x18000000 + 0x620000. The stock
+				 * storage partition is shrunk by this 512 KiB so
+				 * every partition stays 4 KiB aligned and
+				 * non-overlapping. Deliberately NOT an MCUboot
+				 * slot: an A/B upgrade would corrupt the DSP
+				 * payload parked there.
+				 */
+				dsp_partition: partition@620000 {
+					compatible = "zephyr,mapped-partition";
+					label = "dsp-image";
+					reg = <0x00620000 DT_SIZE_K(512)>;
+				};
+
+				storage_partition: partition@6a0000 {
 					compatible = "zephyr,mapped-partition";
 					label = "storage";
-					reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+					reg = <0x006a0000
+					       (DT_SIZE_M(58) - DT_SIZE_K(128) - DT_SIZE_K(512))>;
 				};
 			};
 		};
 	};
+};
+
+/*
+ * Carve the top of the on-chip SRAM out of the primary (CM33) domain so it is
+ * reserved for the HiFi4 DSP (adsp_text / adsp_data). This mirrors the DSP
+ * remote's linker regions in dts/xtensa/nxp/nxp_rt685_hifi4.dtsi; keep the two
+ * in sync. A CM33-only application simply runs with the smaller SRAM.
+ */
+&sram0 {
+	reg = <0x180000 DT_SIZE_K(2560)>;
+};
+
+&dsp {
+	status = "okay";
 };
 
 &gpio0 {
