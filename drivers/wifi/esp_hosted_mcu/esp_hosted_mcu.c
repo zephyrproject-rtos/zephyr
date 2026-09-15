@@ -202,7 +202,7 @@ static void esp_hosted_mcu_rx_data(const uint8_t *payload, uint16_t len, uint8_t
 	 * path, so never block here: a full pool must drop the frame rather than
 	 * stall the other protocol. The upper transports recover the loss.
 	 */
-	pkt = net_pkt_rx_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (pkt == NULL) {
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 		data->stats.errors.rx++;
