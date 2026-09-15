@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/wuc.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
@@ -179,6 +180,11 @@ static int sys_clock_driver_init(void)
 {
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
 	const struct tmr_cmsdk_apb_cfg *cfg = &cfg_inst0;
+	const struct wuc_dt_spec wuc = WUC_DT_SPEC_GET_OR(TIMER_NODE, {0});
+
+	if ((wuc.dev != NULL) && (wuc_enable_wakeup_source_dt(&wuc) != 0)) {
+		return -EIO;
+	}
 
 	data->last_elapsed = 0;
 	data->load = CYC_PER_TICK;
