@@ -1,0 +1,33 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_A_S32K344
+
+if SERIAL
+
+config UART_CONSOLE
+	default y
+
+endif # SERIAL
+
+if SPI
+
+config GPIO_INIT_PRIORITY
+	default 10
+
+config SPI_INIT_PRIORITY
+	default 10
+
+if WDT_NXP_FS26
+
+config WDT_NXP_FS26_INIT_PRIORITY
+	default 10
+
+endif # WDT_NXP_FS26
+
+endif # SPI
+
+config NET_L2_ETHERNET
+	default y if !NET_LOOPBACK && !NET_TEST
+
+endif # BOARD_FRDM_A_S32K344
