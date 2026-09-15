@@ -537,7 +537,7 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 		size_t offset = device_id >> data->indirect_dev_lvl2_width;
 
 		/* Check if DeviceID can fit in the Level 1 table */
-		if (offset > (1 << data->indirect_dev_lvl1_width)) {
+		if (offset >= (1 << data->indirect_dev_lvl1_width)) {
 			return -EINVAL;
 		}
 
