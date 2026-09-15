@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+# Copyright (c) 2026 Analog Devices
+# SPDX-License-Identifier: Apache-2.0
+
+choice INSTRUMENTATION_BACKEND
+
+config INSTRUMENTATION_BACKEND_TRACING_CORE
+	bool "Zephyr Tracing Core"
+	select TRACING
+	select INSTRUMENTATION_CTF_TIMER
+	help
+	  Instantly stream traces through Zephyr's global tracing
+	  infrastructure.
+
+endchoice
