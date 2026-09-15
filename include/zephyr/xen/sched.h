@@ -72,4 +72,20 @@ int xen_sched_shutdown_code(unsigned int reason);
  */
 int xen_sched_pin_override(int32_t pcpu);
 
+/**
+ * @brief Set up, update, or destroy a Xen domain watchdog timer.
+ *
+ * When @p id points to zero, Xen creates a watchdog with @p timeout and
+ * returns the new watchdog ID as the hypercall return value. This wrapper
+ * stores the new ID through @p id. When @p id points to a non-zero value,
+ * @p timeout updates that watchdog, and a zero timeout destroys it.
+ *
+ * @param[in,out] id Watchdog identifier.
+ * @param timeout Watchdog timeout value passed to Xen, in seconds.
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL @p id is NULL, or @p id points to zero and @p timeout is zero.
+ */
+int xen_sched_watchdog(uint32_t *id, uint32_t timeout);
+
 #endif /* ZEPHYR_INCLUDE_XEN_SCHED_H_ */
