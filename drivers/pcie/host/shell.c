@@ -307,7 +307,7 @@ static pcie_bdf_t get_bdf(char *str)
 		return PCIE_BDF_NONE;
 	}
 
-	bus = strtoul(tok, NULL, 16);
+	bus = strtoul(tok, NULL, 10);
 
 	tok = strtok_r(NULL, ".", &state);
 	if (tok == NULL) {
@@ -321,7 +321,7 @@ static pcie_bdf_t get_bdf(char *str)
 		return PCIE_BDF_NONE;
 	}
 
-	func = strtoul(tok, NULL, 16);
+	func = strtoul(tok, NULL, 10);
 
 	return PCIE_BDF(bus, dev, func);
 }
