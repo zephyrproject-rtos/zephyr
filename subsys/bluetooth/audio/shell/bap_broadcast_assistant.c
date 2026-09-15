@@ -465,14 +465,14 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 	unsigned long adv_sid;
 	int result;
 
-	result = bt_addr_le_from_str(argv[1], argv[2], &param.addr);
+	result = bt_addr_le_from_str(argv[1], &param.addr);
 	if (result) {
 		shell_error(sh, "Invalid peer address (err %d)", result);
 
 		return -ENOEXEC;
 	}
 
-	adv_sid = shell_strtoul(argv[3], 0, &result);
+	adv_sid = shell_strtoul(argv[2], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse adv_sid: %d", result);
 
@@ -487,14 +487,14 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 
 	param.adv_sid = adv_sid;
 
-	param.pa_sync = shell_strtobool(argv[4], 0, &result);
+	param.pa_sync = shell_strtobool(argv[3], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse adv_sid: %d", result);
 
 		return -ENOEXEC;
 	}
 
-	broadcast_id = shell_strtoul(argv[5], 0, &result);
+	broadcast_id = shell_strtoul(argv[4], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse broadcast_id: %d", result);
 
@@ -510,10 +510,10 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 	param.broadcast_id = broadcast_id;
 
 	/* TODO: Support multiple subgroups */
-	if (argc > 6) {
+	if (argc > 5) {
 		unsigned long bis_sync;
 
-		bis_sync = shell_strtoul(argv[6], 0, &result);
+		bis_sync = shell_strtoul(argv[5], 0, &result);
 		if (result) {
 			shell_error(sh, "Could not parse bis_sync: %d", result);
 
@@ -529,10 +529,10 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 		subgroup.bis_sync = bis_sync;
 	}
 
-	if (argc > 7) {
+	if (argc > 6) {
 		unsigned long pa_interval;
 
-		pa_interval = shell_strtoul(argv[7], 0, &result);
+		pa_interval = shell_strtoul(argv[6], 0, &result);
 		if (result) {
 			shell_error(sh, "Could not parse pa_interval: %d",
 				    result);
@@ -554,10 +554,10 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 		param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
 	}
 
-	if (argc > 8) {
+	if (argc > 7) {
 		size_t metadata_len;
 
-		metadata_len = hex2bin(argv[8], strlen(argv[8]),
+		metadata_len = hex2bin(argv[7], strlen(argv[7]),
 				       subgroup.metadata,
 				       sizeof(subgroup.metadata));
 
@@ -1272,11 +1272,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(scan_stop, NULL, "Stop scanning for BISs",
 		      cmd_bap_broadcast_assistant_scan_stop, 1, 0),
 	SHELL_CMD_ARG(add_src, NULL,
-		      "Add a source <address: XX:XX:XX:XX:XX:XX> "
-		      "<type: public/random> <adv_sid> <sync_pa> "
+		      "Add a source <address: P:XX:XX:XX:XX:XX:XX or "
+		      "R:XX:XX:XX:XX:XX:XX> <adv_sid> <sync_pa> "
 		      "<broadcast_id> [<sync_bis>] [<pa_interval>] "
 		      "[<metadata>]",
-		      cmd_bap_broadcast_assistant_add_src, 6, 3),
+		      cmd_bap_broadcast_assistant_add_src, 5, 3),
 	SHELL_CMD_ARG(add_broadcast_id, NULL,
 		      "Add a source by broadcast ID <broadcast_id> <sync_pa> "
 		      "[<sync_bis>] [<metadata>]",
