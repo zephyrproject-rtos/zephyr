@@ -160,6 +160,13 @@ toolchain:
   Twister filters out any test instance whose toolchain is not in this list, unless
   ``--force-toolchain`` is given. This list says which toolchains *may* build the
   board, it does not select one; see :ref:`twister_toolchain_selection`.
+toolchain_exclusive: [True|False] (default False)
+  When true, Twister will not append the architecture-based default toolchains
+  to the board's ``toolchain`` list. By default, Twister merges a set of
+  toolchains that are common for the board's architecture (for example,
+  ``host`` and ``llvm`` for ``posix``, or ``gnuarmemb`` and ``armclang`` for
+  ``arm``). Set this to true when a board's ``toolchain`` list is the complete
+  set of toolchains it supports and no defaults should be added.
 preferred_toolchain:
   The toolchain Twister should use for this platform when nothing else selects one.
   This is useful for boards that are nominally buildable with several toolchains but
