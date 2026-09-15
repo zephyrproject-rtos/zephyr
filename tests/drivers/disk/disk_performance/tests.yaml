@@ -4,6 +4,9 @@ common:
 tests:
   drivers.disk.disk_performance.sdhc:
     depends_on: sdhc
+    filter: >
+      dt_compat_enabled("zephyr,sdmmc-disk") or dt_compat_enabled("zephyr,mmc-disk")
+      or dt_compat_enabled("st,stm32-sdmmc")
     harness: ztest
     harness_config:
       fixture: fixture_sdhc
