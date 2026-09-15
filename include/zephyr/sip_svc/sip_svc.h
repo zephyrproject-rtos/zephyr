@@ -121,7 +121,10 @@ int sip_svc_open(void *ctrl, uint32_t c_token, k_timeout_t k_timeout);
 /**
  * @brief Client requests to close the channel on ARM SiP services.
  *
- * Client must close the channel immediately once complete.
+ * Client must close the channel immediately once complete. If a pre-close
+ * request is provided or pending transactions exist, this function waits for
+ * all associated transactions to complete and the client to reach IDLE state
+ * before returning success.
  *
  * @param ctrl Pointer to controller instance which provides ARM SiP services.
  * @param c_token Client's token
@@ -131,6 +134,7 @@ int sip_svc_open(void *ctrl, uint32_t c_token, k_timeout_t k_timeout);
  * @retval -EINVAL invalid arguments.
  * @retval -ENOTSUP error on sending pre_close_request.
  * @retval -EPROTO client is not in OPEN state.
+ * @retval -ETIMEDOUT timed out waiting for pending transactions to complete.
  */
 int sip_svc_close(void *ctrl, uint32_t c_token, struct sip_svc_request *pre_close_req);
 
