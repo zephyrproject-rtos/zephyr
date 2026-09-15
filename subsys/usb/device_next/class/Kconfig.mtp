@@ -1,0 +1,53 @@
+# Copyright (c) 2025 Mohamed ElShahawi (extremegtx@hotmail.com)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_MTP_CLASS
+	bool "USB MTP Class"
+	depends on FILE_SYSTEM
+	help
+	  USB Media Transfer Protocol Device Class support.
+	  Allow file transfer independent of storage file system.
+
+if USBD_MTP_CLASS
+
+config USBD_MTP_MAX_HANDLES
+	int "Max number of Object handles per Storage"
+	default 10
+	range 1 254
+	help
+	  Maximum number of objects to be handled by MTP, including
+	  stored, removed and added objects.
+
+config USBD_MTP_STORAGES_PER_INSTANCE
+	int "Max number of MTP storages"
+	default 1
+	range 1 254
+	help
+	  Maximum number of filesystem mount points that can be registered
+	  through USBD_MTP_DEFINE_INSTANCE().
+
+config USBD_MTP_DISABLE_WRITE_ACCESS
+	bool "Disable write access"
+	default n
+	help
+	  Disable write access MTP commands only. This means that the
+	  host will not be able to add, remove or modify objects on the
+	  device. Good for reducing code size if the device is only used for data retrieval.
+
+config USBD_MTP_DISABLE_DIRECTORIES
+	bool "Disable directory support"
+	default n
+	help
+	  Disable support for directories. This means that the host will not be able to
+	  create or remove directories on the device.
+	  Good for reducing code size if the device is only used for flat file storage.
+
+module = USBD_MTP
+module-str = usbd mtp
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif
