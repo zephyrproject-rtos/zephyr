@@ -282,15 +282,24 @@ static int lis2dux12_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec 
 				continue;
 			}
 
+			if (count + 1 >= max_count) {
+				/*
+				 * Not enough room for both samples of this 2X frame.
+				 * Since *fit is not advanced, the frame is decoded on
+				 * the next call.
+				 */
+				return count;
+			}
+
 			out->shift = accel_range[header->range];
 
 			out->readings[count].timestamp_delta =
 				(xl_count - 2) * accel_period_ns(edata->accel_odr,
 								 edata->accel_batch_odr);
 
-			x = *(int16_t *)&buffer[0];
-			y = *(int16_t *)&buffer[1];
-			z = *(int16_t *)&buffer[2];
+			x = (int16_t)((int8_t)buffer[1]) * 256;
+			y = (int16_t)((int8_t)buffer[2]) * 256;
+			z = (int16_t)((int8_t)buffer[3]) * 256;
 
 			out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
 			out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
@@ -301,9 +310,9 @@ static int lis2dux12_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec 
 				(xl_count - 1) * accel_period_ns(edata->accel_odr,
 								 edata->accel_batch_odr);
 
-			x = *(int16_t *)&buffer[3];
-			y = *(int16_t *)&buffer[4];
-			z = *(int16_t *)&buffer[5];
+			x = (int16_t)((int8_t)buffer[4]) * 256;
+			y = (int16_t)((int8_t)buffer[5]) * 256;
+			z = (int16_t)((int8_t)buffer[6]) * 256;
 			out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
 			out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
 			out->readings[count].z = Q31_SHIFT_MICROVAL(scale * z, out->shift);
