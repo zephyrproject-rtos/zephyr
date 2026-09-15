@@ -523,8 +523,10 @@ config WORKQUEUE_WORK_TIMEOUT
 	help
 	  If enabled, the workqueue will monitor the duration of each work item.
 	  If the work item handler takes longer than the specified time to
-	  execute, the work queue thread will be aborted, and an error will be
-	  logged.
+	  execute, an error will be logged, the work queue thread will be
+	  aborted, and a fatal error with reason K_ERR_WORK_TIMEOUT will be
+	  raised. The @kconfig{CONFIG_RESET_ON_FATAL_ERROR} option controls
+	  whether this results in a system reset or a halt.
 
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE

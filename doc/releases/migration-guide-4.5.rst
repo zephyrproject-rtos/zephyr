@@ -133,6 +133,17 @@ Kernel
   be used as futex address. The error -EINVAL can no longer happen on futex
   operations.
 
+* When :kconfig:option:`CONFIG_WORKQUEUE_WORK_TIMEOUT` is enabled and a work
+  item's handler exceeds its configured timeout, the work queue thread is
+  aborted and a fatal error with reason :c:enumerator:`K_ERR_WORK_TIMEOUT` is
+  now also raised. Previously, a non-essential queue's thread was aborted
+  silently, with no fatal error and no effect on the rest of the system.
+  Applications that relied on that silent behavior must now either accept the
+  new fatal-error escalation (optionally handling it with a
+  :c:func:`k_sys_fatal_error_handler` override) or enable
+  :kconfig:option:`CONFIG_RESET_ON_FATAL_ERROR` if a reboot rather than a halt
+  is desired.
+
 Boards
 ******
 
