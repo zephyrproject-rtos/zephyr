@@ -114,7 +114,8 @@ static void fll16m_work_handler(struct k_work *work)
 		int rc;
 
 		/* Bypass mode requires HFXO to be running first. */
-		sys_notify_init_callback(&dev_data->hfxo_cli.notify, hfxo_cb);
+		sys_notify_init_callback(&dev_data->hfxo_cli.notify,
+					 (sys_notify_generic_callback)hfxo_cb);
 		rc = nrf_clock_control_request(hfxo, NULL, &dev_data->hfxo_cli);
 		if (rc < 0) {
 			clock_config_update_end(&dev_data->clk_cfg, rc);

@@ -64,7 +64,7 @@ static int temp_nrf5_sample_fetch(const struct device *dev,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	sys_notify_init_callback(&cli.notify, hfclk_on_callback);
+	sys_notify_init_callback(&cli.notify, (sys_notify_generic_callback)hfclk_on_callback);
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	r = onoff_request(data->clk_mgr, &cli);
 #else

@@ -181,14 +181,14 @@ ZTEST(sys_notify_api, test_callback)
 	zassert_equal(rc, -EINVAL,
 		      "invalid not diagnosed");
 
-	sys_notify_init_callback(&notify, callback);
+	sys_notify_init_callback(&notify, (sys_notify_generic_callback)callback);
 	notify.method.callback = NULL;
 	rc = sys_notify_validate(&notify);
 	zassert_equal(rc, -EINVAL,
 		      "null callback not invalid");
 
 	memset(&notify, 0xac, sizeof(notify));
-	sys_notify_init_callback(&notify, callback);
+	sys_notify_init_callback(&notify, (sys_notify_generic_callback)callback);
 	rc = sys_notify_validate(&notify);
 	zassert_equal(rc, 0,
 		      "init_spinwait invalid");
