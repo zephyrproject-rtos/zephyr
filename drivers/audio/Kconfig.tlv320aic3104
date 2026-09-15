@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 DevItWise
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_TLV320AIC3104
+	bool "TLV320AIC3104 audio codec"
+	default y
+	depends on DT_HAS_TI_TLV320AIC3104_ENABLED
+	select I2C
+	select GPIO
+	help
+	  Texas Instruments TLV320AIC3104 low-power stereo audio codec.
+	  I2C control, supports volume and mute via the audio_codec API.
