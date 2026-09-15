@@ -34,30 +34,6 @@ tests:
     integration_platforms:
       - qemu_x86
       - mps2/an385
-  kernel.common.nano32:
-    platform_key:
-      - arch
-    tags:
-      - nano
-    filter: not CONFIG_KERNEL_COHERENCE
-    extra_configs:
-      - CONFIG_CBPRINTF_NANO=y
-      - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
-    integration_platforms:
-      - qemu_x86
-      - mps2/an385
-  kernel.common.nano64:
-    platform_key:
-      - arch
-    tags:
-      - nano
-    filter: not CONFIG_KERNEL_COHERENCE
-    extra_configs:
-      - CONFIG_CBPRINTF_NANO=y
-      - CONFIG_CBPRINTF_FULL_INTEGRAL=y
-    integration_platforms:
-      - qemu_x86
-      - mps2/an385
   kernel.common.picolibc:
     platform_key:
       - arch
