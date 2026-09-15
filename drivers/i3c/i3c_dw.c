@@ -1928,8 +1928,7 @@ static int dw_i3c_detach_device(const struct device *dev, struct i3c_device_desc
 	struct dw_i3c_i2c_dev_data *dw_i3c_device_data = desc->controller_priv;
 
 	if (dw_i3c_device_data == NULL) {
-		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
-		return -EINVAL;
+		return -EALREADY;
 	}
 
 	LOG_DBG("%s: Detaching %s", dev->name, desc->dev->name);
