@@ -10,7 +10,7 @@ tests:
     harness_config:
       type: one_line
       regex:
-        - "^.*?E: could not deliver notification to observer . Error code -12"
+        - "^.*?(?:E|<err> zbus): could not deliver notification to observer . Error code -12"
 
   message_bus.zbus.async_listeners_alloc_static:
     tags: zbus
@@ -26,7 +26,7 @@ tests:
     harness_config:
       type: one_line
       regex:
-        - "^.*?E: could not deliver notification to observer . Error code -12"
+        - "^.*?(?:E|<err> zbus): could not deliver notification to observer . Error code -12"
 
   message_bus.zbus.async_listeners.smp:
     tags: zbus
