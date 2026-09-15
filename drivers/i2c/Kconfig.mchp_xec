@@ -18,3 +18,53 @@ config I2C_XEC_V2
 	select PINCTRL
 	help
 	  Enable the Microchip XEC I2C V2 driver.
+
+config I2C_MCHP_XEC_V3_BM
+	bool "XEC Microchip I2Cv3 byte mode driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_I2C_V3_ENABLED && HAS_MCHP_MEC_I2C_SMB_V38
+	select PINCTRL
+	help
+	  Enable the Microchip XEC I2C version 3 byte mode driver.
+
+config I2C_MCHP_XEC_V3_BM_KWQ_STACK_SIZE
+	int "Microchip XEC I2C V3 custom kernel work queue stack size"
+	default 320
+	depends on I2C_MCHP_XEC_V3_BM
+	help
+	  Stack size in bytes of the I2Cv3 byte mode driver's custom kernel
+	  work queue.
+
+if I2C_MCHP_XEC_V3_BM
+
+config I2C_MCHP_XEC_V3_BM_KWQ_PRIORITY
+	int "Microchip XEC I2C V3 custom kernel work queue priority"
+	default 10
+	help
+	  Custom kernel work queue priority. Default is 10. Higher
+	  positive numbers are lower priority.
+
+config I2C_MCHP_XEC_V3_BM_STATE_CAPTURE
+	bool "MCHP XEC I2Cv3-BM driver state capture"
+	help
+	  Enable driver state capture for helping diagnosing I2C issues
+
+config I2C_MCHP_XEC_V3_BM_STATE_CAPTURE_SIZE
+	int
+	default 256
+	depends on I2C_MCHP_XEC_V3_BM_STATE_CAPTURE
+	help
+	  Size of state capture buffer in bytes. Default is 256.
+
+config I2C_MCHP_XEC_V3_BM_TARGET_BUFFER_SIZE
+	int "Microchip XEC I2Cv3 byte mode target RX staging buffer size"
+	default 256
+	help
+	  Size in bytes of the per-controller staging buffer used for I2C
+	  target (peripheral) receive when CONFIG_I2C_TARGET_BUFFER_MODE is
+	  enabled. Bytes an external host writes to a registered target are
+	  accumulated here and delivered to buf_write_received() in one call
+	  at STOP, so this must be at least the largest write the host will
+	  issue.
+
+endif # I2C_MCHP_XEC_V3_BM
