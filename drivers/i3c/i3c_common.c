@@ -884,6 +884,7 @@ static int i3c_bus_prepare_setdasa(const struct device *dev, const struct i3c_de
 		ret = i3c_bus_setdasa(desc, dynamic_addr);
 		if (ret != 0) {
 			LOG_ERR("SETDASA error on address 0x%x (%d)", desc->static_addr, ret);
+			return ret;
 		}
 	}
 
