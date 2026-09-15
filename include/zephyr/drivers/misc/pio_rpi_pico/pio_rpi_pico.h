@@ -23,6 +23,7 @@
  * @{
  */
 
+#include <zephyr/device.h>
 #include <zephyr/devicetree/gpio.h>
 
 #include <hardware/pio.h>
@@ -162,6 +163,66 @@ static inline PIO pio_rpi_pico_get_pio(const struct device *dev)
  * @retval -EBUSY if no state machines were available
  */
 int pio_rpi_pico_allocate_sm(const struct device *dev, size_t *sm);
+
+/* The interrupt API below is only implemented when CONFIG_PIO_RPI_PICO_IRQ is enabled. */
+
+/**
+ * @brief PIO interrupt handler prototype.
+ *
+ * A PIO block exposes two interrupt lines that are shared by all of its state
+ * machines, and therefore by every child device using that block. Handlers are
+ * called in interrupt context, in registration order, for every line assertion
+ * where at least one of the sources they registered for is pending.
+ *
+ * The interrupt sources used for the FIFO status flags are level sensitive:
+ * they stay asserted until the handler drains the RX FIFO or fills the TX FIFO,
+ * or until the source is masked out with pio_rpi_pico_irq_sources_set().
+ *
+ * @param dev Pointer to device structure for rpi_pio device instance
+ * @param ints Snapshot of the interrupt status register, taken once before
+ *             dispatching. Uses the PIO_INTR bit layout, so it may also
+ *             contain bits belonging to other handlers.
+ * @param user_data Opaque pointer supplied at registration
+ */
+typedef void (*pio_rpi_pico_irq_cb_t)(const struct device *dev, uint32_t ints, void *user_data);
+
+/**
+ * @brief Register an interrupt handler on one of the PIO interrupt lines.
+ *
+ * The handler stays registered for the lifetime of the system; there is no
+ * unregister call. Registering does not enable any interrupt source, use
+ * pio_rpi_pico_irq_sources_set() for that.
+ *
+ * @param dev Pointer to device structure for rpi_pio device instance
+ * @param irq_index Interrupt line to register on, 0 or 1
+ * @param source_mask Sources the handler is interested in, in the PIO_INTR bit
+ *                    layout. See pio_get_rx_fifo_not_empty_interrupt_source()
+ *                    and pio_get_tx_fifo_not_full_interrupt_source().
+ * @param cb Handler to call
+ * @param user_data Opaque pointer passed back to @p cb
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p irq_index is out of range, @p source_mask is empty or
+ *         @p cb is NULL
+ * @retval -ENOMEM if no handler slot was left on that line, see
+ *         CONFIG_PIO_RPI_PICO_MAX_IRQ_HANDLERS
+ */
+int pio_rpi_pico_register_irq(const struct device *dev, uint8_t irq_index, uint32_t source_mask,
+			      pio_rpi_pico_irq_cb_t cb, void *user_data);
+
+/**
+ * @brief Enable or disable interrupt sources on one of the PIO interrupt lines.
+ *
+ * Only the sources in @p source_mask are affected, sources belonging to other
+ * children of the same PIO block are left alone.
+ *
+ * @param dev Pointer to device structure for rpi_pio device instance
+ * @param irq_index Interrupt line to change, 0 or 1
+ * @param source_mask Sources to change, in the PIO_INTR bit layout
+ * @param enable true to unmask the sources, false to mask them
+ */
+void pio_rpi_pico_irq_sources_set(const struct device *dev, uint8_t irq_index,
+				  uint32_t source_mask, bool enable);
 
 /**
  * @}
