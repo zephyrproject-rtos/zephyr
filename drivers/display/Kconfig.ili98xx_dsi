@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ILI98XX_DSI
+	bool
+	help
+	  Hidden configuration entry for all ILI9XXX MIPI-DSI drivers.
+
+config ILI9806E_DSI
+	bool "ILI9806E_DSI display driver"
+	default y
+	depends on DT_HAS_ILITEK_ILI9806E_ENABLED
+	select MIPI_DSI
+	select ILI98XX_DSI
+	help
+	  Enable driver for ILI9806E_DSI display driver.
