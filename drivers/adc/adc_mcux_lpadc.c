@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/dt-bindings/regulator/nxp_vref.h>
 #include <zephyr/drivers/clock_control.h>
@@ -109,6 +110,7 @@ struct mcux_lpadc_data {
 	uint8_t channels_count;
 	bool use_dma;
 	uint32_t bandgap_channels;
+	atomic_t bandgap_held;
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	bool pm_lock_active;
 #endif
@@ -199,6 +201,53 @@ static int mcux_lpadc_channel_position(uint32_t mask, uint8_t ch)
 	return pos;
 }
 
+/* Bit 0 of mcux_lpadc_data.bandgap_held. */
+#define LPADC_BANDGAP_HELD_BIT 0
+
+/*
+ * The bandgap reference is needed while the converter is active and at least
+ * one configured channel selects it as its positive input. Those two conditions
+ * are owned by different callers -- the channel configuration by the ADC API,
+ * the power state by the PM callback -- so each of them evaluates the condition
+ * and calls this, which reconciles the regulator against a flag recording
+ * whether this driver is holding the reference.
+ *
+ * The flag is claimed before the regulator call, so at most one caller performs
+ * each transition. TURN_OFF leaves it alone: the device is suspended before it
+ * is turned off, and that is what releases the reference.
+ */
+static int mcux_lpadc_bandgap_set(const struct device *dev, bool needed)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	struct mcux_lpadc_data *data = dev->data;
+	int err;
+
+	if (config->bandgap_supply == NULL) {
+		return 0;
+	}
+
+	if (needed) {
+		if (atomic_test_and_set_bit(&data->bandgap_held, LPADC_BANDGAP_HELD_BIT)) {
+			return 0;
+		}
+
+		err = regulator_enable(config->bandgap_supply);
+		if (err < 0) {
+			atomic_clear_bit(&data->bandgap_held, LPADC_BANDGAP_HELD_BIT);
+		}
+	} else {
+		if (!atomic_test_and_clear_bit(&data->bandgap_held, LPADC_BANDGAP_HELD_BIT)) {
+			return 0;
+		}
+
+		err = regulator_disable(config->bandgap_supply);
+		if (err < 0) {
+			atomic_set_bit(&data->bandgap_held, LPADC_BANDGAP_HELD_BIT);
+		}
+	}
+
+	return err;
+}
 
 static int mcux_lpadc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
@@ -312,28 +361,26 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 
 	if (config->bandgap_supply != NULL) {
 		const uint32_t channel_mask = BIT(channel_cfg->channel_id);
-		const bool was_bandgap_channel = (data->bandgap_channels & channel_mask) != 0U;
-		const bool is_bandgap_channel =
-			channel_cfg->input_positive == config->bandgap_input;
+		enum pm_device_state state;
 
-		if (is_bandgap_channel && !was_bandgap_channel) {
-			if (data->bandgap_channels == 0U) {
-				err = regulator_enable(config->bandgap_supply);
-				if (err < 0) {
-					return err;
-				}
-			}
-
+		if (channel_cfg->input_positive == config->bandgap_input) {
 			data->bandgap_channels |= channel_mask;
-		} else if (!is_bandgap_channel && was_bandgap_channel) {
-			if (data->bandgap_channels == channel_mask) {
-				err = regulator_disable(config->bandgap_supply);
-				if (err < 0) {
-					return err;
-				}
-			}
-
+		} else {
 			data->bandgap_channels &= ~channel_mask;
+		}
+
+		/*
+		 * Re-evaluated here so that a channel configured on a running
+		 * converter takes effect at once. On a device that is not
+		 * active only the mask is updated, and the next resume applies
+		 * it.
+		 */
+		(void)pm_device_state_get(dev, &state);
+
+		err = mcux_lpadc_bandgap_set(dev, state == PM_DEVICE_STATE_ACTIVE &&
+						  data->bandgap_channels != 0U);
+		if (err < 0) {
+			return err;
 		}
 	}
 
@@ -910,7 +957,6 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 {
 	const struct mcux_lpadc_config *config = dev->config;
 	const struct device *regulator = config->ref_supplies;
-	const struct device *bandgap_supply = config->bandgap_supply;
 	struct mcux_lpadc_data *data = dev->data;
 	int err;
 
@@ -927,11 +973,9 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 			(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
 		}
 
-		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
-			err = regulator_enable(bandgap_supply);
-			if (err < 0) {
-				return err;
-			}
+		err = mcux_lpadc_bandgap_set(dev, data->bandgap_channels != 0U);
+		if (err < 0) {
+			return err;
 		}
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -959,11 +1003,9 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 			}
 		}
 
-		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
-			err = regulator_disable(bandgap_supply);
-			if (err < 0) {
-				return err;
-			}
+		err = mcux_lpadc_bandgap_set(dev, false);
+		if (err < 0) {
+			return err;
 		}
 
 		return 0;
