@@ -1711,15 +1711,6 @@ static void shell_log_process(const struct shell *sh)
 			}
 			z_shell_print_cmd(sh);
 			z_shell_op_cursor_position_synchronize(sh);
-		} else {
-			z_shell_print_prompt_and_cmd(sh);
-		}
-
-		/* Arbitrary delay added to ensure that prompt is
-		 * readable and can be used to enter further commands.
-		 */
-		if (sh->ctx->cmd_buff_len) {
-			k_msleep(15);
 		}
 
 	} while (processed && !k_event_test(&sh->ctx->signal_event, SHELL_SIGNAL_RXRDY));
@@ -1862,8 +1853,33 @@ void shell_thread(void *shell_handle, void *p2, void *p3)
 		shell_signal_handle(sh, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(sh, SHELL_SIGNAL_RXRDY, shell_process);
 		if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+			bool had_log = k_event_test(&sh->ctx->signal_event,
+						SHELL_SIGNAL_LOG_MSG);
+
 			shell_signal_handle(sh, SHELL_SIGNAL_LOG_MSG,
 					    shell_log_process);
+
+			/* Redraw the prompt once after a log batch is fully
+			 * drained, but only when no further log messages and no
+			 * pending user input (RXRDY) are queued. RXRDY
+			 * handling via shell_process/state_set already redraws
+			 * the prompt, so skip the redraw in that case to avoid
+			 * a double print.
+			 */
+			if (had_log &&
+			    !k_event_test(&sh->ctx->signal_event, SHELL_SIGNAL_LOG_MSG) &&
+			    !k_event_test(&sh->ctx->signal_event, SHELL_SIGNAL_RXRDY)) {
+				if (sh->ctx->readline_state != SHELL_READLINE_ACTIVE) {
+					z_shell_print_prompt_and_cmd(sh);
+				}
+
+				/* Arbitrary delay added to ensure that prompt is
+				 * readable and can be used to enter further commands.
+				 */
+				if (sh->ctx->cmd_buff_len) {
+					k_sleep(K_MSEC(15));
+				}
+			}
 		}
 
 		if (sh->iface->api->update) {
