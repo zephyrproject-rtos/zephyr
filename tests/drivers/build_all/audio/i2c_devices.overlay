@@ -55,6 +55,25 @@
 				reg = <0x4>;
 				status = "okay";
 			};
+
+			test_i2c_aw88298: aw88298@5 {
+				compatible = "awinic,aw88298";
+				status = "okay";
+				reg = <0x5>;
+			};
+
+			test_i2c_cs43l22: cs43l22@6 {
+				compatible = "cirrus,cs43l22";
+				status = "okay";
+				reg = <0x6>;
+				reset-gpios = <&test_gpio 1 0>;
+			};
+
+			test_i2c_wm8904: wm8904@7 {
+				compatible = "wolfson,wm8904";
+				status = "okay";
+				reg = <0x7>;
+			};
 		};
 	};
 };
