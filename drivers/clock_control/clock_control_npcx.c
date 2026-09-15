@@ -125,7 +125,7 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 
 /* Platform specific clock controller functions */
 #if defined(CONFIG_PM)
-void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
+void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant, bool is_unlimited)
 {
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	struct pmc_reg *const inst_pmc = HAL_PMC_INST(clk_dev);
@@ -138,6 +138,11 @@ void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
 		/* Add 'Instant Wake-up' flag if sleep time is within 200 ms */
 		if (is_instant) {
 			pm_flags |= BIT(NPCX_PMCSR_DI_INSTW);
+#ifdef CONFIG_NPCX_SOC_VARIANT_NPCXN
+			if (is_unlimited) {
+				pm_flags |= BIT(NPCX_PMCSR_UNLIMIT_INSTW);
+			}
+#endif
 		}
 	}
 
