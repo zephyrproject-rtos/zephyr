@@ -676,6 +676,7 @@ config BT_CTLR_PRIVACY
 	depends on BT_CTLR_PRIVACY_SUPPORT
 	select BT_CTLR_FILTER_ACCEPT_LIST if BT_LL_SW_SPLIT
 	select BT_RPA
+	select BT_SYSTEM_WORKQUEUE_COOP if BT_LL_SW_SPLIT
 	default y if BT_HCI_RAW || BT_SMP
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature

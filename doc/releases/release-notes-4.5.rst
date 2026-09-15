@@ -2032,6 +2032,14 @@ Devicetree
 Other notable changes
 *********************
 
+* Bluetooth
+
+  * :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_PRIORITY` is no longer forced to a
+    cooperative priority by :kconfig:option:`CONFIG_BT` alone. Only the components
+    that submit work to the system workqueue require it now, so a build without any
+    of them, such as an HCI raw image driving an external controller, can select a
+    preemptible priority again (:github:`119123`).
+
 * Build system
 
   * The minimum required CMake version has been raised to 3.28.0, a version satisfied by the CMake package in the

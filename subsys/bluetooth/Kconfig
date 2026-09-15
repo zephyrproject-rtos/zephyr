@@ -35,10 +35,17 @@ config BT_CUSTOM
 
 endchoice
 
-# The Bluetooth subsystem requires the system workqueue to execute at
-# a cooperative priority.
+config BT_SYSTEM_WORKQUEUE_COOP
+	bool
+	help
+	  Selected by the Bluetooth components that submit work to the system
+	  workqueue and rely on it running at a cooperative priority.
+
+	  A build that selects none of them keeps the system workqueue priority
+	  the application chose.
+
 config SYSTEM_WORKQUEUE_PRIORITY
-	range -256 -1
+	range -256 -1 if BT_SYSTEM_WORKQUEUE_COOP
 
 if BT_HCI
 

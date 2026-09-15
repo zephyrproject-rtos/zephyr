@@ -23,6 +23,7 @@ config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
 	select BT_UART
 	select EXPERIMENTAL
+	select BT_SYSTEM_WORKQUEUE_COOP
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_3WIRE_UART_ENABLED
 	help
@@ -138,6 +139,7 @@ config BT_STM32WB0
 	select USE_STM32_HAL_GPIO
 	select USE_STM32_HAL_RADIO
 	select USE_STM32_HAL_RADIO_TIMER
+	select BT_SYSTEM_WORKQUEUE_COOP
 	help
 	  ST STM32WB0 HCI Bluetooth interface
 
