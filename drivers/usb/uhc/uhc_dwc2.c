@@ -36,12 +36,12 @@ enum uhc_dwc2_event {
 	UHC_DWC2_EVENT_PORT_OVERCURRENT,
 	/* A queued transfer has been marked for cancellation */
 	UHC_DWC2_EVENT_DEQUEUE,
-	/* Port has pending channel event */
-	UHC_DWC2_EVENT_PORT_PEND_CHANNEL,
 	/* USB host stack requested suspend */
 	UHC_DWC2_EVENT_SUSPEND,
 	/* USB host stack requested resume or device initiated Remote Wakeup */
 	UHC_DWC2_EVENT_RESUME,
+	/* First of MAX_CHANNELS pending channel event bits, keep last */
+	UHC_DWC2_EVENT_PORT_PEND_CHANNEL,
 };
 
 enum uhc_dwc2_channel_event {
