@@ -262,14 +262,14 @@ int usbh_device_interface_set(struct usb_device *const udev,
 	/* Shutdown current interface alternate */
 	err = device_interface_modify(udev, EP_OP_DOWN, iface, cur_alt);
 	if (err) {
-		LOG_ERR("Failed to shutdown interface %u alternate %u", iface, alt);
+		LOG_ERR("Failed to shutdown interface %u alternate %u", iface, cur_alt);
 		goto error;
 	}
 
 	/* Setup new interface alternate */
 	err = device_interface_modify(udev, EP_OP_UP, iface, alt);
 	if (err) {
-		LOG_ERR("Failed to setup interface %u alternate %u", iface, cur_alt);
+		LOG_ERR("Failed to setup interface %u alternate %u", iface, alt);
 		goto error;
 	}
 
