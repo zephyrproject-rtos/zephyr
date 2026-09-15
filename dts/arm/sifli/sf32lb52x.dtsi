@@ -124,6 +124,7 @@
 			compatible = "sifli,sf32lb-lcdc";
 			reg = <0x50008000 0x1000>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_LCDC1>;
+			interrupts = <63 0>;
 			status = "disabled";
 
 			mipi-dbi {
@@ -364,6 +365,20 @@
 			sifli,cfg = <&cfg>;
 			#io-channel-cells = <1>;
 			status = "disabled";
+		};
+
+		gptim1: timers@50090000 {
+			compatible = "sifli,sf32lb-gptim";
+			reg = <0x50090000 0x1000>;
+			interrupts = <70 0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_GPTIM1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "sifli,sf32lb-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		gptim2: timers@500b0000 {
