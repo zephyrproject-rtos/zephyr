@@ -150,21 +150,26 @@ class Blobs(WestCommand):
 
     def handle_auto_cache(self, blob, auto_cache_dir) -> Path:
         """
-        This function guarantees that a given blob exists in the auto-cache.
-        It first checks whether the blob is already present. If so, it
-        returns the path of this cached blob. If the blob is not yet cached,
-        the blob is downloaded into the auto-cache directory and the path of
-        the freshly cached blob is returned.
+        Return the path of the blob inside the auto-cache directory,
+        downloading it there first if it is not already cached.
+
+        The path is returned whether or not the download matched the
+        checksum, so that a run with an auto-cache reaches verify_blob()
+        with the same file a run without one would have. Only a file that
+        does match is served to a later run.
         """
         cached_blob = self.get_cached_blob(blob, [auto_cache_dir])
         if cached_blob:
             return cached_blob
         name = Path(blob['path']).name
         sha256 = blob['sha256']
-        self.download_blob(blob, auto_cache_dir / f'{name}.{sha256}')
-        cached_blob = self.get_cached_blob(blob, [auto_cache_dir])
-        assert cached_blob, f'Blob {name} still not cached in auto-cache.'
-        return cached_blob
+        target = auto_cache_dir / f'{name}.{sha256}'
+        self.download_blob(blob, target)
+        # Not get_cached_blob() again: for a download that matched it would
+        # re-hash the whole file to arrive at this same path, and for one
+        # that did not it answers None -- the case verify_blob() has to be
+        # reached to report.
+        return target
 
     def get_cached_blob(self, blob, cache_dirs: list) -> Path | None:
         """
