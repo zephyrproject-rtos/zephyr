@@ -58,13 +58,24 @@ static inline uint64_t ctf_top_timestamp_get(void)
 	return timing_ns_get();
 }
 
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMER
+typedef uint64_t (*ctf_timestamp_get_t)(void);
+int ctf_set_timestamp_func(ctf_timestamp_get_t timestamp_getter);
+uint64_t ctf_timestamp_get(void);
+#else  /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */
+static inline uint64_t ctf_timestamp_get(void)
+{
+	return ctf_top_timestamp_get();
+}
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */
+
 #define CTF_EVENT(...)                                                                             \
 	{                                                                                          \
 		if (!is_tracing_enabled()) {                                                       \
 			return;                                                                    \
 		}                                                                                  \
 		int key = irq_lock();                                                              \
-		const uint64_t tstamp = ctf_top_timestamp_get();                                   \
+		const uint64_t tstamp = ctf_timestamp_get();                                       \
                                                                                                    \
 		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__)                                             \
 		irq_unlock(key);                                                                   \
