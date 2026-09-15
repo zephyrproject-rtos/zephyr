@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 Intel Corporation.
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +44,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_TURN_ON_FAILED,
 	/** Indicate if the device has claimed a power domain */
 	PM_DEVICE_FLAG_PD_CLAIMED,
+	/** Indicates that an asynchronous operation is releasing the power domain claim */
+	PM_DEVICE_FLAG_PD_RELEASING,
 	/**
 	 * Indicates whether or not the device is capable of waking the system
 	 * up.
