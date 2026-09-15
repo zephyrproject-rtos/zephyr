@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_HUB_CLASS
+	bool "USB host Hub Class support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  USB Host Hub Class implementation. Devices connected to the
+	  downstream ports of a hub are enumerated by the host stack.
+
+if USBH_HUB_CLASS
+
+config USBH_HUB_MAX_PORTS
+	int "Maximum number of downstream ports per hub"
+	range 1 15
+	default 8
+	help
+	  Downstream ports above this number are ignored.
+
+config USBH_HUB_STACK_SIZE
+	int "USB host hub work queue stack size"
+	default 2048
+	help
+	  Stack size of the work queue thread handling the hub port events
+	  and the enumeration of the devices connected to the hub ports.
+
+module = USBH_HUB
+module-str = usbh hub
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif # USBH_HUB_CLASS

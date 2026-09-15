@@ -68,7 +68,7 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 		return;
 	}
 
-	usbh_device_connect(ctx, udev);
+	(void)usbh_device_connect(ctx, udev);
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
