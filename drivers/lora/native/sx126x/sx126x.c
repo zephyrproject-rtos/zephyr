@@ -572,12 +572,8 @@ static void sx126x_dio1_callback(const struct device *dev)
 
 static void sx126x_set_rf_path(const struct device *dev, bool enable, bool tx)
 {
-	const struct sx126x_hal_config *config = dev->config;
-
 	sx126x_hal_set_antenna_enable(dev, enable);
-	if (!config->dio2_tx_enable) {
-		sx126x_hal_set_rf_switch(dev, enable, tx);
-	}
+	sx126x_hal_set_rf_switch(dev, enable, tx);
 }
 
 #ifdef CONFIG_PM_DEVICE

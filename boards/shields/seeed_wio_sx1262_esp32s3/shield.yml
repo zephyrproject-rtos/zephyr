@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: seeed_wio_sx1262_esp32s3
+  full_name: Wio-SX1262 for XIAO ESP32S3
+  vendor: seeed
+  supported_features:
+    - lora
+    - input
+    - led
