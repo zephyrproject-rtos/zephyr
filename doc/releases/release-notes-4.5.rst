@@ -569,6 +569,12 @@ New APIs and options
   * :c:enumerator:`PIXEL_FORMAT_YUYV`
   * :c:macro:`PANEL_PIXEL_FORMAT_YUYV`
 
+* Fuel Gauge
+
+  * :c:func:`fuel_gauge_set_buffer_prop` and the optional
+    :c:member:`fuel_gauge_driver_api.set_buffer_property` callback for writing variable
+    length buffer properties, symmetric to :c:func:`fuel_gauge_get_buffer_prop`.
+
 * Haptics
 
   * :c:enum:`haptics_monitor`
