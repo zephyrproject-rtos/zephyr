@@ -17,3 +17,25 @@
 		zephyr,flash = &flash0;
 	};
 };
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(200)>;
+};
+
+&mclk {
+	clocks = <&hsclk>;
+};
+
+&hsclk {
+	clocks = <&syspll>;
+	status = "okay";
+};
+
+&syspll {
+	status = "okay";
+};
+
+&hfxt {
+	clock-frequency = <DT_FREQ_M(48)>;
+	ti,xtal-startup-delay-us = <500>;
+};
