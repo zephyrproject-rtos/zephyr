@@ -125,7 +125,7 @@ static int write_value(const struct device *dev, off_t offset,
 		       flash_prg_t val)
 {
 	volatile flash_prg_t *flash = (flash_prg_t *)(
-		offset + FLASH_STM32_BASE_ADDRESS);
+		(uintptr_t)offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
 
