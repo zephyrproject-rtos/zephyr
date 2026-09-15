@@ -346,6 +346,11 @@ Boards
   On the dual-core ESP32, ``espressif/esp32/esp32_appcpu.dtsi`` no longer sets a flash either, so
   an APPCPU board dts has to declare the same flash as its PROCPU counterpart.
 
+* On NXP S32K148, the ENET nodes ``enet`` (:dtcompatible:`nxp,enet`), ``enet_mac``
+  (:dtcompatible:`nxp,enet-mac`), ``enet_mdio`` (:dtcompatible:`nxp,enet-mdio`) and
+  ``enet_ptp_clock`` (:dtcompatible:`nxp,enet-ptp-clock`) are now ``disabled`` by default instead
+  of ``okay``. Out-of-tree boards that use Ethernet must set ``status = "okay"`` on these nodes.
+
 Device Drivers and Devicetree
 *****************************
 
