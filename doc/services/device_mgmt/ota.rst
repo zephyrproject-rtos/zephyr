@@ -36,6 +36,17 @@ upgrade occurs.
 2. The `Golioth OTA documentation`_ includes complete information about the
    versioning process
 
+Plain HTTP download
+===================
+
+The :ref:`fota_http` library fetches a signed image from any HTTP server,
+writes it into the secondary slot and requests the swap. No management
+protocol or dedicated update server is needed. MCUboot verifies the image
+signature before the upgrade occurs.
+
+There is a :zephyr:code-sample:`fota-http` sample included in the Zephyr
+:zephyr:code-sample-category:`mgmt` section.
+
 Eclipse hawkBit™
 ================
 

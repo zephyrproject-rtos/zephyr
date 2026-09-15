@@ -1,0 +1,162 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FOTA_HTTP
+	bool "Firmware Over-the-Air over HTTP"
+	depends on NETWORKING
+	depends on NET_TCP
+	depends on NET_SOCKETS
+	depends on HTTP_CLIENT
+	depends on FLASH
+	depends on FLASH_MAP
+	depends on IMG_MANAGER
+	depends on MCUBOOT_IMG_MANAGER
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	select IMG_ERASE_PROGRESSIVELY
+	help
+	  Download a firmware image from an HTTP server and write it straight
+	  into the MCUboot slot that is not currently running, then request
+	  the bootloader to boot it on the next reset. No server side
+	  protocol is involved: any HTTP server able to serve a file works.
+
+	  The image is streamed to flash as it arrives, so its size is not
+	  limited by RAM. Only the MCUboot header is checked after the
+	  download. MCUboot validates the image signature before it is ever
+	  booted.
+
+if FOTA_HTTP
+
+config FOTA_HTTP_SHELL
+	bool "FOTA HTTP shell commands"
+	depends on SHELL
+	default y
+	help
+	  Register a "fota" shell command with download, cancel, apply,
+	  confirm, status and erase subcommands. Downloads run on the
+	  library thread so the shell stack size does not matter.
+
+config FOTA_HTTP_THREAD_STACK_SIZE
+	int "Stack size of the download thread"
+	default 8192 if FOTA_HTTP_TLS
+	default 4096
+	help
+	  Stack of the thread running fota_http_download_async(). A TLS
+	  handshake needs the larger value.
+
+config FOTA_HTTP_THREAD_PRIORITY
+	int "Priority of the download thread"
+	default 5
+
+config FOTA_HTTP_RECV_BUF_SIZE
+	int "HTTP receive buffer size"
+	default 2048
+	range 512 16384
+	help
+	  Buffer holding the response headers and the body data of one
+	  receive. A larger buffer means fewer receive calls per image.
+
+config FOTA_HTTP_URL_MAX_LEN
+	int "Maximum URL length"
+	default 256
+	range 64 1024
+	help
+	  Longest URL accepted, including any redirect target.
+
+config FOTA_HTTP_TIMEOUT_MS
+	int "HTTP request timeout in milliseconds"
+	default 60000
+	help
+	  Timeout for the whole transfer, not for a single fragment. Size it
+	  for the largest image expected over the slowest link in use.
+
+config FOTA_HTTP_MAX_REDIRECTS
+	int "Maximum number of HTTP redirects to follow"
+	default 3
+	range 0 10
+	help
+	  Follow 301, 302, 303, 307 and 308 responses up to this many times.
+	  Set 0 to treat any redirect as an error.
+
+config FOTA_HTTP_RESUME
+	bool "Resume interrupted downloads"
+	depends on STREAM_FLASH_PROGRESS
+	help
+	  Persist the download offset in settings so that a download
+	  interrupted by a power loss or a network error can continue where
+	  it stopped, using an HTTP Range request. Servers that ignore the
+	  Range header restart the transfer from zero.
+
+config FOTA_HTTP_RESUME_SAVE_INTERVAL
+	int "Bytes written between two progress saves"
+	depends on FOTA_HTTP_RESUME
+	default 65536
+	help
+	  Progress is also saved when a download fails, so this only bounds
+	  the data lost on a power cut. Smaller values wear the settings
+	  storage faster.
+
+config FOTA_HTTP_SHA256_CHECK
+	bool "Verify a caller supplied SHA-256 after the download"
+	select IMG_ENABLE_IMAGE_CHECK
+	help
+	  Compare the flash contents against the digest passed in
+	  fota_http_download_params. This catches a corrupted transfer
+	  before the reboot, it is not a substitute for the MCUboot
+	  signature check.
+
+config FOTA_HTTP_REJECT_DOWNGRADE
+	bool "Refuse images older than the running one"
+	help
+	  Compare the version in the downloaded image header with the
+	  running image and fail the download when it is older. This is a
+	  convenience check only, use the MCUboot downgrade prevention
+	  options for an enforced policy.
+
+config FOTA_HTTP_TLS
+	bool "Allow https URLs"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Accept https URLs. Register the CA certificate with
+	  fota_http_tls_add_ca() before the first download, or add it
+	  under FOTA_HTTP_TLS_SEC_TAG with tls_credential_add().
+
+if FOTA_HTTP_TLS
+
+choice FOTA_HTTP_TLS_VERSION
+	prompt "TLS protocol version"
+	default FOTA_HTTP_TLS_VERSION_1_2
+
+config FOTA_HTTP_TLS_VERSION_1_2
+	bool "TLS 1.2"
+
+config FOTA_HTTP_TLS_VERSION_1_3
+	bool "TLS 1.3"
+	depends on MBEDTLS_SSL_PROTO_TLS1_3
+
+endchoice
+
+config FOTA_HTTP_TLS_SEC_TAG
+	int "TLS security tag"
+	default 1
+	help
+	  Security tag under which the CA certificate, and optionally the
+	  client certificate and key, are registered. A download can pass
+	  its own tag list instead.
+
+config FOTA_HTTP_TLS_PEER_VERIFY
+	int "TLS peer verification level"
+	default 2
+	range 0 2
+	help
+	  0 disables verification, 1 makes it optional and 2 requires it.
+	  Lower values accept a server that cannot be authenticated, which
+	  lets anyone able to redirect the connection install their own
+	  firmware. Leave it at 2 for production.
+
+endif # FOTA_HTTP_TLS
+
+module = FOTA_HTTP
+module-str = fota_http
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # FOTA_HTTP

@@ -1,0 +1,24 @@
+common:
+  tags:
+    - net
+    - dfu
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  mgmt.fota_http:
+    timeout: 120
+  mgmt.fota_http.resume:
+    timeout: 120
+    extra_args:
+      - EXTRA_CONF_FILE="resume.conf"
+  mgmt.fota_http.ipv6:
+    timeout: 120
+    extra_args:
+      - EXTRA_CONF_FILE="ipv6.conf"
+  mgmt.fota_http.tls:
+    timeout: 120
+    extra_args:
+      - EXTRA_CONF_FILE="tls.conf"
