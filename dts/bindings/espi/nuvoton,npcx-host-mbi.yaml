@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCK Host Sub-Module - MBI (Mobile Bus Interface)
+
+compatible: "nuvoton,npcx-host-mbi"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Interrupt names for the MBI module. Must contain "shm_mbi" for
+      the SHM/MBI interrupt.

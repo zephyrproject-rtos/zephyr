@@ -1,0 +1,27 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCX Host Sub-Module - Shared Memory (SHM)
+
+compatible: "nuvoton,npcx-host-shm"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Interrupt names for the SHM module. Must contain "shm" for
+      the SHM semaphore interrupt.
+
+  ldn:
+    type: int
+    required: true
+    description: |
+      Logical Device Number for SHM module.
