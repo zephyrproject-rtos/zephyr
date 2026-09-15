@@ -18,15 +18,14 @@ GTEXT(__initialize)
 
 SECTION_FUNC(vectors, ivt)
 	.option norvc
-	/* Jump to 0x08000008, into the main flash zone where j __start is */
-	lui	x5, 0x8000
-	jr	0x8(x5)
-	j       __start
+	lui     a0, %hi(__start)
+	jr      %lo(__start)(a0)
 	.rept   CONFIG_VECTOR_TABLE_SIZE
 	.word	_isr_wrapper
 	.endr
 
 SECTION_FUNC(vectors, __start)
-	li 	a0, 0xf
+	la      a0, ivt
+	ori     a0, a0, 0xf
 	csrw	mtvec, a0
-	j	__initialize
+	tail	__initialize
