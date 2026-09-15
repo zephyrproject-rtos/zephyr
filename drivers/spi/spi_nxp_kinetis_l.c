@@ -62,8 +62,8 @@ static int spi_nxp_kinetis_l_configure(const struct device *dev, const struct sp
 		return -EINVAL;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 
