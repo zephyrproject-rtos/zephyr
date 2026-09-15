@@ -1,0 +1,23 @@
+common:
+  tags: lora
+  depends_on: lora
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "<inf> lora_cad: Scanner mode: probing channel with CAD"
+sample:
+  description: Demonstration of LoRa Channel Activity Detection (CAD)
+  name: LoRa CAD Sample
+tests:
+  sample.drivers.lora.cad.native:
+    build_only: true
+    extra_args:
+      - SHIELD=semtech_sx1261mb2bas
+    platform_allow:
+      - nrf52840dk/nrf52840
+  sample.drivers.lora.cad.native.stm32wl:
+    filter: dt_compat_enabled("st,stm32wl-subghz-radio")
+    build_only: true
+    integration_platforms:
+      - nucleo_wl55jc
