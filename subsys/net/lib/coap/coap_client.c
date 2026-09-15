@@ -1574,8 +1574,8 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 		err = coap_packet_init(
 			&pkt, internal_req->send_buf, sizeof(internal_req->send_buf), COAP_VERSION,
 			internal_req->coap_request.confirmable ? COAP_TYPE_CON : COAP_TYPE_NON_CON,
-			internal_req->observe_tkl, internal_req->observe_token, COAP_METHOD_GET,
-			mid);
+			internal_req->observe_tkl, internal_req->observe_token,
+			internal_req->coap_request.method, mid);
 
 		if (err == 0) {
 			err = coap_packet_set_path(&pkt, internal_req->coap_request.path);
