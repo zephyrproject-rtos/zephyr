@@ -171,6 +171,15 @@ struct bt_conn_sco {
 	/* Reference to the struct bt_sco_chan */
 	struct bt_sco_chan      *chan;
 
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	/* Queue from which conn will pull data */
+	struct k_fifo           tx_queue;
+	/* Queue for saving the pending data to be sent by the caller */
+	struct k_fifo           tx_pending;
+	/* Work to move data from tx_pending to tx_queue */
+	struct k_work           tx_worker;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
+
 	uint16_t                pkt_type;
 	uint8_t                 dev_class[3];
 	uint8_t                 link_type;
@@ -455,6 +464,9 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size);
 
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type);
+
+/* Invalid connection handle */
+#define BT_CONN_HANDLE_INVALID 0xffff
 
 static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 {
