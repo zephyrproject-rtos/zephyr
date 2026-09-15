@@ -5,7 +5,11 @@ description: Micro Crystal RV3028 RTC EEPROM driver
 
 compatible: "microcrystal,rv3028-eeprom"
 
-include: base.yaml
+include:
+  - name: eeprom-base.yaml
+    property-blocklist:
+      - size
+      - read-only
 
 examples:
   - |
