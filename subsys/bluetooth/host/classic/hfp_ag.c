@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/hfp_ag.h>
 #include <zephyr/bluetooth/classic/sdp.h>
+#include <zephyr/bluetooth/classic/sco.h>
 
 #include <host/hci_core.h>
 #include <host/conn_internal.h>

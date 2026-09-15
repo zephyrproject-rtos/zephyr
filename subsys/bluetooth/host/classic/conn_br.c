@@ -28,6 +28,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/classic/sco.h>
 
 #include <common/assert.h>
 #include <common/bt_str.h>

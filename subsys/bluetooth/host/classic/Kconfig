@@ -44,6 +44,38 @@ config BT_MAX_SCO_CONN
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
 
+config BT_VOICE_OVER_HCI
+	bool "Bluetooth Voice over HCI"
+	imply LIBSBC
+	help
+	  This option enables Voice over HCI transport.
+
+if BT_VOICE_OVER_HCI
+
+config BT_HCI_SCO_FLOW_CONTROL
+	bool "Controller to Host SCO flow control support"
+	default y
+	depends on BT_HCI_ACL_FLOW_CONTROL
+	help
+	  Enable support for throttling SCO buffers from the controller
+	  to the host.
+
+endif # BT_VOICE_OVER_HCI
+
+config BT_SCO_RX_BUF_COUNT
+	int "Maximum number of incoming SCO buffers"
+	default 4
+	range 1 $(UINT8_MAX)
+	help
+	  Number of buffers available for incoming SCO SDUs.
+
+config BT_SCO_RX_BUF_SIZE
+	int "Maximum supported size for SCO RX buffers"
+	default 255
+	range 1 $(UINT8_MAX)
+	help
+	  Maximum size for SCO RX buffers.
+
 config BT_ACCEPT_CONN_AS_CENTRAL
 	bool "Accept a new incoming ACL connection request as central role"
 	help

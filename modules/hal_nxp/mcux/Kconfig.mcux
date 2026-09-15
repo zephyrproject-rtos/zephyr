@@ -268,4 +268,11 @@ config BT_NXP_PCM_PINS_DIR_REVERSE
 	help
 	  If enabled, PCM pins direction for the Bluetooth module will be reversed.
 
+config BT_NXP_VOICE_OVER_HCI
+	bool "Voice over HCI for BT module"
+	depends on BT_H4_NXP_CTLR
+	default y if BT_VOICE_OVER_HCI
+	help
+	  If enabled, voice data can be sent over HCI for the Bluetooth module.
+
 rsource "mcux-sdk-ng/middleware/Kconfig"

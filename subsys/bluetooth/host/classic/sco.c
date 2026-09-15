@@ -13,9 +13,11 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/classic/sco.h>
 
 #include <common/bt_str.h>
 
@@ -23,6 +25,7 @@
 #include <host/hci_core.h>
 #include "br.h"
 #include <host/conn_internal.h>
+#include "host/buf_view.h"
 #include "sco_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_CONN_LOG_LEVEL
@@ -35,6 +38,52 @@ struct bt_sco_server *sco_server;
 
 static sys_slist_t sco_conn_cbs = SYS_SLIST_STATIC_INIT(&sco_conn_cbs);
 static sys_slist_t sco_hci_cbs = SYS_SLIST_STATIC_INIT(&sco_hci_cbs);
+
+#define sco(buf) ((struct bt_conn_rx *)net_buf_user_data(buf))
+
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+static atomic_ptr_t buf_rx_freed_cb;
+
+static void sco_in_pool_destroy(struct net_buf *buf)
+{
+	bt_sco_buf_rx_freed_cb_t cb;
+
+	cb = (bt_sco_buf_rx_freed_cb_t)atomic_ptr_get(&buf_rx_freed_cb);
+
+#if defined(CONFIG_BT_HCI_SCO_FLOW_CONTROL)
+	if (bt_dev.br.sco_c2h_fc_enabled) {
+		bt_hci_host_num_completed_packets(buf);
+	} else {
+		net_buf_destroy(buf);
+	}
+#else
+	net_buf_destroy(buf);
+#endif /* CONFIG_BT_HCI_SCO_FLOW_CONTROL */
+
+	if (cb != NULL) {
+		cb();
+	}
+}
+
+void bt_sco_buf_rx_freed_cb_set(bt_sco_buf_rx_freed_cb_t cb)
+{
+	atomic_ptr_set(&buf_rx_freed_cb, (void *)cb);
+}
+
+NET_BUF_POOL_FIXED_DEFINE(sco_rx_pool, BT_BUF_SCO_RX_COUNT, BT_BUF_SCO_RX_SIZE,
+			  sizeof(struct bt_conn_rx), sco_in_pool_destroy);
+
+struct net_buf *bt_sco_get_rx(k_timeout_t timeout)
+{
+	struct net_buf *buf = net_buf_alloc(&sco_rx_pool, timeout);
+
+	if (buf != NULL) {
+		net_buf_add_u8(buf, BT_HCI_H4_SCO);
+	}
+
+	return buf;
+}
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 
 int bt_sco_server_register(struct bt_sco_server *server)
 {
@@ -175,12 +224,22 @@ void bt_sco_connected(struct bt_conn *sco)
 void bt_sco_disconnected(struct bt_conn *sco)
 {
 	struct bt_sco_chan *chan;
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	struct net_buf *buf;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 
 	if (sco == NULL || sco->type != BT_CONN_TYPE_SCO) {
 		LOG_ERR("Invalid parameters: sco %p sco->type %u", sco, sco ? sco->type : 0);
 		return;
 	}
 	LOG_DBG("%p", sco);
+
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	while ((buf = k_fifo_get(&sco->sco.tx_queue, K_NO_WAIT)) != NULL) {
+		__ASSERT_NO_MSG(!bt_buf_has_view(buf));
+		net_buf_unref(buf);
+	}
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 
 	notify_disconnected(sco);
 
@@ -199,6 +258,9 @@ void bt_sco_disconnected(struct bt_conn *sco)
 	}
 
 	chan->sco = NULL;
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	chan->stream = NULL;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 }
 
 static uint8_t sco_server_check_security(struct bt_conn *conn)
@@ -548,3 +610,267 @@ int bt_sco_hci_cb_unregister(struct bt_sco_hci_cb *cb)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+void hci_sco(struct net_buf *buf)
+{
+	struct bt_hci_sco_hdr *hdr;
+	uint16_t handle;
+	uint8_t len;
+	struct bt_conn *sco;
+	uint8_t flags;
+
+	LOG_DBG("buf %p", buf);
+
+	if (buf->len < sizeof(*hdr)) {
+		LOG_ERR("Invalid HCI SCO packet size (%u)", buf->len);
+		net_buf_unref(buf);
+		return;
+	}
+
+	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
+	len = hdr->len;
+	handle = sys_le16_to_cpu(hdr->handle);
+	flags = bt_sco_flag(handle);
+
+	handle = bt_sco_handle(handle);
+
+	sco(buf)->handle = bt_acl_handle(handle);
+	sco(buf)->index = BT_CONN_INDEX_INVALID;
+
+	LOG_DBG("handle %u len %u flags %u", handle, len, flags);
+
+	if (buf->len != len) {
+		LOG_ERR("SCO data length mismatch (%u != %u)", buf->len, len);
+		net_buf_unref(buf);
+		return;
+	}
+
+	sco = bt_conn_lookup_handle(handle, BT_CONN_TYPE_SCO);
+	if (sco == NULL) {
+		LOG_ERR("Unable to find conn for handle %u", handle);
+		net_buf_unref(buf);
+		return;
+	}
+
+	sco(buf)->index = bt_conn_index(sco);
+
+	bt_conn_recv(sco, buf, flags);
+	bt_conn_unref(sco);
+}
+
+void bt_sco_recv(struct bt_conn *sco, struct net_buf *buf, uint8_t flags)
+{
+	struct bt_sco_stream *stream;
+
+	LOG_DBG("handle %u len %u flags 0x%02x", sco->handle, buf->len, flags);
+
+	if (sco->sco.chan == NULL) {
+		LOG_ERR("Could not lookup chan from receiving SCO");
+		goto done;
+	}
+
+	stream = sco->sco.chan->stream;
+	if (stream == NULL) {
+		LOG_DBG("Could not lookup stream from the receiving SCO");
+		goto done;
+	}
+
+	if ((stream->ops == NULL) || (stream->ops->recv == NULL)) {
+		LOG_DBG("Stream ops not registered");
+		goto done;
+	}
+
+	stream->ops->recv(stream, flags, buf);
+done:
+	net_buf_unref(buf);
+}
+
+int bt_sco_stream_cb_register(struct bt_sco_stream *stream, struct bt_sco_stream_ops *ops)
+{
+	if (stream == NULL || ops == NULL) {
+		return -EINVAL;
+	}
+
+	stream->ops = ops;
+
+	return 0;
+}
+
+int bt_sco_stream_cb_unregister(struct bt_sco_stream *stream)
+{
+	if (stream == NULL) {
+		return -EINVAL;
+	}
+
+	stream->ops = NULL;
+
+	return 0;
+}
+
+int bt_sco_stream_connect(struct bt_conn *sco, struct bt_sco_stream *stream)
+{
+	if (sco == NULL || stream == NULL) {
+		return -EINVAL;
+	}
+
+	if (sco->state != BT_CONN_CONNECTED) {
+		LOG_ERR("SCO conn is not connected");
+		return -ENOTCONN;
+	}
+
+	if ((sco->type != BT_CONN_TYPE_SCO) || (sco->sco.chan == NULL)) {
+		LOG_ERR("Invalid SCO connection or channel");
+		return -EINVAL;
+	}
+
+	if (sco->sco.chan->stream == stream) {
+		LOG_ERR("Stream has been connect");
+		return -EALREADY;
+	}
+
+	if (sco->sco.chan->stream != NULL) {
+		LOG_ERR("Any other stream has been connected");
+		return -EBUSY;
+	}
+
+	sco->sco.chan->stream = stream;
+	stream->sco = bt_conn_ref(sco);
+	return 0;
+}
+
+int bt_sco_stream_disconnect(struct bt_sco_stream *stream)
+{
+	if (stream == NULL) {
+		return -EINVAL;
+	}
+
+	if (stream->sco == NULL) {
+		LOG_ERR("Stream is not connected");
+		return -ENOTCONN;
+	}
+
+	if ((stream->sco->sco.chan != NULL) && (stream->sco->sco.chan->stream == stream)) {
+		stream->sco->sco.chan->stream = NULL;
+	}
+
+	bt_conn_unref(stream->sco);
+	stream->sco = NULL;
+	return 0;
+}
+
+static void bt_sco_stream_sent(struct bt_conn *sco, void *user_data, int err)
+{
+	struct bt_sco_stream *stream = user_data;
+
+	if (stream->sco == NULL || stream->ops == NULL) {
+		return;
+	}
+
+	__ASSERT(stream->sco == sco, "SCO is mismatched %p != %p", stream->sco, sco);
+
+	if (stream->ops->sent != NULL) {
+		stream->ops->sent(stream);
+	}
+}
+
+int bt_sco_stream_send(struct bt_sco_stream *stream, struct net_buf *buf)
+{
+	struct bt_conn *sco;
+
+	if (stream == NULL || buf == NULL) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("SCO Stream %p send data len %u", stream, buf->len);
+
+	if ((stream->sco == NULL) || (stream->sco->state != BT_CONN_CONNECTED)) {
+		LOG_ERR("Stream or SCO conn is not connected");
+		return -ENOTCONN;
+	}
+
+	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
+		LOG_ERR("not enough room in user_data %d < %d pool %u", buf->user_data_size,
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE, buf->pool_id);
+		return -EINVAL;
+	}
+
+	if (net_buf_headroom(buf) < sizeof(struct bt_hci_sco_hdr)) {
+		LOG_ERR("Not enough headroom for SCO header");
+		return -EINVAL;
+	}
+
+	if (buf->len > bt_dev.br.sco_mtu) {
+		LOG_ERR("SCO data length exceeds MTU (%u > %u)", buf->len, bt_dev.br.sco_mtu);
+		return -EMSGSIZE;
+	}
+
+	sco = stream->sco;
+
+	make_closure(buf->user_data, bt_sco_stream_sent, stream);
+	k_fifo_put(&sco->sco.tx_queue, buf);
+	/* Add sco to the data ready queue */
+	bt_conn_data_ready(sco);
+
+	return 0;
+}
+
+struct net_buf *sco_data_pull(struct bt_conn *conn, size_t amount, size_t *length)
+{
+	struct net_buf *buf = k_fifo_peek_head(&conn->sco.tx_queue);
+
+	if (buf == NULL) {
+		LOG_DBG("No data needs to be sent");
+		/* Service other connections */
+		bt_tx_irq_raise();
+
+		return NULL;
+	}
+
+	__ASSERT_NO_MSG(bt_conn_is_sco(conn));
+	__ASSERT_NO_MSG(conn->state == BT_CONN_CONNECTED);
+
+	if ((conn->sco.chan == NULL) || (conn->sco.chan->state != BT_SCO_STATE_CONNECTED)) {
+		LOG_DBG("channel has been disconnected");
+
+		/* Service other connections */
+		bt_tx_irq_raise();
+
+		return NULL;
+	}
+
+	if (bt_buf_has_view(buf)) {
+		/* This should not happen. conn.c should wait until the view is
+		 * destroyed before requesting more data.
+		 */
+		LOG_DBG("already have view");
+		return NULL;
+	}
+
+	buf = k_fifo_get(&conn->sco.tx_queue, K_NO_WAIT);
+
+	if (sco_has_data(conn)) {
+		/* Add sco to the data ready queue */
+		bt_conn_data_ready(conn);
+	}
+
+	*length = buf->len;
+	return buf;
+}
+
+void sco_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t *cb, void **ud)
+{
+	__ASSERT_NO_MSG(bt_conn_is_sco(conn));
+
+	*cb = closure_cb(buf->user_data);
+	*ud = closure_data(buf->user_data);
+	memset(buf->user_data, 0, buf->user_data_size);
+}
+
+bool sco_has_data(struct bt_conn *conn)
+{
+	__ASSERT_NO_MSG(bt_conn_is_sco(conn));
+
+	return k_fifo_peek_head(&conn->sco.tx_queue) != NULL;
+}
+#endif /* CONFIG_BT_VOICE_OVER_HCI */

@@ -49,6 +49,42 @@ extern "C" {
 #define BT_HCI_SYNC_HANDLE_INVALID      0xffff
 #define BT_HCI_PAWR_SUBEVENT_MAX        128
 
+/** SCO Packet Status Flag values: Good data */
+#define BT_HCI_SCO_CORRECTLY_RECEIVED   0x00
+/** SCO Packet Status Flag values: Possible errors */
+#define BT_HCI_SCO_POSSIBLY_INVALID     0x01
+/** SCO Packet Status Flag values: Lost data */
+#define BT_HCI_SCO_NO_DATA_RECEIVED     0x02
+/** SCO Packet Status Flag values: Partially lost  */
+#define BT_HCI_SCO_DATA_PARTIALLY_LOST  0x03
+
+/**
+ * @brief Extract SCO connection handle from packed handle value
+ * @param h Packed handle value containing both handle and flags
+ * @return SCO connection handle (12-bit value)
+ */
+#define bt_sco_handle(h) FIELD_GET(GENMASK(11, 0), (h))
+/**
+ * @brief Extract packet status flag from packed handle value
+ * @param h Packed handle value containing both handle and flags
+ * @return Packet status flag (2-bit value)
+ */
+#define bt_sco_flag(h) FIELD_GET(GENMASK(13, 12), (h))
+/**
+ * @brief Extract packet status flag from packed handle value (alias)
+ * @param h Packed handle value containing both handle and flags
+ * @return Packet status flag (2-bit value)
+ */
+#define bt_sco_flag_ps(h) bt_sco_flag(h)
+/**
+ * @brief Pack SCO connection handle and packet status into single value
+ * @param h SCO connection handle (12-bit value)
+ * @param ps Packet status flag (2-bit value)
+ * @return Packed handle value with status flag in upper bits
+ */
+#define bt_sco_handle_pack(h, ps) (FIELD_PREP(GENMASK(11, 0), (h)) | \
+	FIELD_PREP(GENMASK(13, 12), (ps)))
+
 /* Bluetooth spec v5.4 Vol 4, Part E - 5.4.3 HCI Synchronous Data Packets */
 struct bt_hci_sco_hdr {
 	uint16_t handle; /* 12 bit handle, 2 bit Packet Status Flag, 1 bit RFU */
@@ -906,10 +942,54 @@ struct bt_hci_cp_le_subrate_request {
 	uint16_t supervision_timeout;
 } __packed;
 
+/** Support HCI command: READ_SYNC_FLOW_ENABLE */
+#define BT_HCI_READ_SYNC_FLOW_ENABLE_SUPPORTED(supported_commands) \
+	BT_CMD_TEST((supported_commands), 10, 3)
+
+/** Synchronous Flow Control is disabled. */
+#define BT_HCI_SYNC_FLOW_DISABLE                0x00
+/** Synchronous Flow Control is enabled. */
+#define BT_HCI_SYNC_FLOW_ENABLE                 0x01
+/** HCI opcode for Read Synchronous Flow Control Enable. */
+#define BT_HCI_OP_READ_SYNC_FLOW_ENABLE         BT_OP(BT_OGF_BASEBAND, 0x002e) /* 0x0c2e */
+/** HCI command parameters for Read Synchronous Flow Control Enable. */
+struct bt_hci_rp_read_sync_flow_enable {
+	/** Status of the command */
+	uint8_t  status;
+	/** Synchronous Flow Control Enable */
+	uint8_t  sync_flow_enable;
+} __packed;
+
+/** Support HCI command: WRITE_SYNC_FLOW_ENABLE */
+#define BT_HCI_WRITE_SYNC_FLOW_ENABLE_SUPPORTED(supported_commands) \
+	BT_CMD_TEST((supported_commands), 10, 4)
+
+/** HCI opcode for Write Synchronous Flow Control Enable. */
+#define BT_HCI_OP_WRITE_SYNC_FLOW_ENABLE        BT_OP(BT_OGF_BASEBAND, 0x002f) /* 0x0c2f */
+/** HCI command parameters for Write Synchronous Flow Control Enable. */
+struct bt_hci_cp_write_sync_flow_enable {
+	/** Synchronous Flow Control Enable */
+	uint8_t  sync_flow_enable;
+} __packed;
+
+/** Controller to Host Flow Control: Disabled */
 #define BT_HCI_CTL_TO_HOST_FLOW_DISABLE         0x00
+/** Controller to Host Flow Control: Enabled */
 #define BT_HCI_CTL_TO_HOST_FLOW_ENABLE          0x01
+/** Controller to Host Flow Control: ACL on, SCO off */
+#define BT_HCI_CTL_TO_HOST_FLOW_ACL_ON_SCO_OFF  BT_HCI_CTL_TO_HOST_FLOW_ENABLE
+/** Controller to Host Flow Control: ACL off, SCO on */
+#define BT_HCI_CTL_TO_HOST_FLOW_ACL_OFF_SCO_ON  0x02
+/** Controller to Host Flow Control: ACL on, SCO on */
+#define BT_HCI_CTL_TO_HOST_FLOW_ACL_ON_SCO_ON   0x03
+/** HCI opcode for Set Controller To Host Flow Control. */
+
+/**
+ * @brief Set Controller To Host Flow Control command parameters
+ */
 #define BT_HCI_OP_SET_CTL_TO_HOST_FLOW          BT_OP(BT_OGF_BASEBAND, 0x0031) /* 0x0c31 */
 struct bt_hci_cp_set_ctl_to_host_flow {
+	/** Flow control enable setting */
 	uint8_t  flow_enable;
 } __packed;
 

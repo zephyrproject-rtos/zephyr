@@ -52,6 +52,10 @@ enum bt_buf_type {
 	BT_BUF_ISO_OUT = BIT(4),
 	/** Incoming ISO data */
 	BT_BUF_ISO_IN = BIT(5),
+	/** Outgoing SCO data */
+	BT_BUF_SCO_OUT = BIT(6),
+	/** Incoming SCO data */
+	BT_BUF_SCO_IN = BIT(7),
 };
 
 /** Direction of HCI packets. Only used for mapping H:4 to BT_BUF_* values. */
@@ -78,6 +82,9 @@ static inline uint8_t bt_buf_type_to_h4(enum bt_buf_type type)
 	case BT_BUF_ISO_IN:
 	case BT_BUF_ISO_OUT:
 		return BT_HCI_H4_ISO;
+	case BT_BUF_SCO_IN:
+	case BT_BUF_SCO_OUT:
+		return BT_HCI_H4_SCO;
 	case BT_BUF_EVT:
 		return BT_HCI_H4_EVT;
 	default:
@@ -103,6 +110,8 @@ static inline enum bt_buf_type bt_buf_type_from_h4(uint8_t h4_type, enum bt_buf_
 		return BT_BUF_EVT;
 	case BT_HCI_H4_ISO:
 		return dir == BT_BUF_OUT ? BT_BUF_ISO_OUT : BT_BUF_ISO_IN;
+	case BT_HCI_H4_SCO:
+		return dir == BT_BUF_OUT ? BT_BUF_SCO_OUT : BT_BUF_SCO_IN;
 	default:
 		return BT_BUF_TYPE_NONE;
 	}
@@ -128,6 +137,9 @@ static inline enum bt_buf_type bt_buf_type_from_h4(uint8_t h4_type, enum bt_buf_
 					  BT_HCI_ISO_SDU_TS_HDR_SIZE + \
 					  (size))
 
+/** Helper to calculate needed buffer size for HCI SCO packets. */
+#define BT_BUF_SCO_SIZE(size) BT_BUF_SIZE(BT_HCI_SCO_HDR_SIZE + (size))
+
 /** Data size needed for HCI ACL RX buffers */
 #define BT_BUF_ACL_RX_SIZE BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE)
 
@@ -141,6 +153,11 @@ static inline enum bt_buf_type bt_buf_type_from_h4(uint8_t h4_type, enum bt_buf_
 #define BT_BUF_ISO_RX_SIZE 0
 #define BT_BUF_ISO_RX_COUNT 0
 #endif /* CONFIG_BT_ISO */
+
+/** Data size needed for HCI SCO RX buffers */
+#define BT_BUF_SCO_RX_SIZE BT_BUF_SCO_SIZE(CONFIG_BT_SCO_RX_BUF_SIZE)
+/** Buffer count needed for HCI SCO RX */
+#define BT_BUF_SCO_RX_COUNT CONFIG_BT_SCO_RX_BUF_COUNT
 
 /* see Core Spec v6.0 vol.4 part E 7.4.5 */
 #define BT_BUF_ACL_RX_COUNT_MAX 65535
