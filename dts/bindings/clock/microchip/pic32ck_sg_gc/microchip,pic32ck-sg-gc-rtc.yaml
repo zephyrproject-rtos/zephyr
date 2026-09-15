@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CK_SG_GC RTC clock
+
+description: |
+  RTC clock configuration.
+
+include: [base.yaml]
+
+compatible: "microchip,pic32ck-sg-gc-rtc"
+
+properties:
+  "#clock-cells":
+    type: int
+    const: 1
+    description: |
+      clock subsystem
+
+  rtc-src:
+    type: int
+    default: 1
+    description: |
+      RTC clock source selection.
+
+      0: ulp32k
+      1: ulp1k
+      2: xosc32k
+      3: xosc1k
+
+clock-cells:
+  - subsystem
