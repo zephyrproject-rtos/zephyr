@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Route console/log to SCB1 (MiniProg4 VCOM, P9.2 TX / P9.3 RX).
+ *
+ * Included only by the DFU overlays that need SCB2 (KitProg3 VCOM) free for
+ * the mcumgr transport / serial recovery. Normal builds keep console on the
+ * board-default SCB2, leaving SCB1 available for other uses (e.g. I2C tests).
+ *
+ * Include-guarded so it stays safe even if two overlays that both pull it in
+ * are combined in a single build (belt-and-suspenders; the current DFU
+ * overlays each include it at most once per build).
+ */
+#ifndef KIT_PSE84_EVAL_CONSOLE_SCB1_DTSI
+#define KIT_PSE84_EVAL_CONSOLE_SCB1_DTSI
+
+uart1: &scb1 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+
+	clocks = <&peri0_group8_16bit_0>;
+
+	pinctrl-0 = <&p9_2_scb1_uart_tx &p9_3_scb1_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&peri0_group8_16bit_0 {
+	status = "okay";
+	clock-div = <1>;
+};
+
+&p9_2_scb1_uart_tx {
+	drive-push-pull;
+};
+
+&p9_3_scb1_uart_rx {
+	input-enable;
+};
+
+/ {
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+};
+
+#endif /* KIT_PSE84_EVAL_CONSOLE_SCB1_DTSI */
