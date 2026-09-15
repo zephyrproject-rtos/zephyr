@@ -1,12 +1,13 @@
-# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: aipi_eyes_s2
-name: AiPi-Eyes-S2 Multi-Functional Development Board
+identifier: aipi_eyes_s1/bl618m05q2i
+name: AiPi-Eyes-S1 Multi-Functional Development Board
 type: mcu
 arch: riscv
 ram: 480
+flash: 2040
 toolchain:
   - zephyr
 testing:
