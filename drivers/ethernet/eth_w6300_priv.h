@@ -1,4 +1,4 @@
-/* W6300 Stand-alone Ethernet Controller with SPI
+/* W6300 Stand-alone Ethernet Controller with SPI/QSPI
  *
  * Copyright (c) 2025 WIZnet Co., Ltd.
  *
@@ -10,12 +10,24 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/sys/util.h>
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <zephyr/drivers/spi.h>
+#endif
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi)
+#include <zephyr/drivers/mspi.h>
+#endif
+
+/*
+ * Instruction byte: MOD[7:6] selects the data line width used for the address
+ * and data phases, RWB[5] selects read or write, BSB[4:0] selects the block.
+ */
 #define W6300_SPI_MOD_SINGLE 0x00
+#define W6300_SPI_MOD_QUAD 0x02
 #define W6300_SPI_RWB_READ 0x00
 #define W6300_SPI_RWB_WRITE 0x01
 
@@ -85,14 +97,61 @@
 
 #define W6300_PKT_INFO_LEN 2
 #define W6300_ETH_MIN_FRAME_LEN 14
-#define W6300_DEFAULT_BSR_KB 4
+/*
+ * The driver runs socket 0 in MACRAW mode and does not use the other hardware
+ * sockets, so all 16 KB of TX/RX buffer memory is assigned to socket 0.
+ */
+#define W6300_NUM_SOCKETS 8
+#define W6300_SOCK0_BSR_KB 16
 #define W6300_BSR_TO_BYTES(val) ((uint16_t)(val) << 10)
+/*
+ * Returning the read pointer to the chip costs a Sn_RX_RD write, a RECV
+ * command and the command completion poll -- more bus traffic than reading a
+ * small frame.  Frames are consumed in batches and the pointer is handed back
+ * once per batch.  The caps bound how much of the chip's 16 KB receive buffer
+ * stays unreclaimed while a batch is in flight.
+ */
+#define W6300_RX_BATCH_MAX 8
+#define W6300_RX_BATCH_BYTES 8192
+
 #define W6300_CMD_TIMEOUT_MS 100
 #define W6300_CMD_POLL_US 10U
 #define W6300_TX_SEM_TIMEOUT_MS 10
 
-struct w6300_config {
+/*
+ * The W6300 speaks the same register protocol over a plain SPI bus and over
+ * an MSPI bus in quad (1-4-4) mode, so the register accessors are abstracted
+ * behind this per-instance operation table.  Which one an instance gets is
+ * decided by the bus its devicetree node hangs off.
+ */
+struct w6300_bus_io {
+	int (*init)(const struct device *dev);
+	int (*read)(const struct device *dev, uint8_t bsb, uint16_t addr,
+		    uint8_t *data, size_t len);
+	int (*write)(const struct device *dev, uint8_t bsb, uint16_t addr,
+		     uint8_t *data, size_t len);
+};
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi)
+struct w6300_mspi_bus {
+	const struct device *ctlr;
+	struct mspi_dev_id dev_id;
+	struct mspi_dev_cfg dev_cfg;
+};
+#endif
+
+union w6300_bus {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_dt_spec spi;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi)
+	struct w6300_mspi_bus mspi;
+#endif
+};
+
+struct w6300_config {
+	const struct w6300_bus_io *bus_io;
+	union w6300_bus bus;
 	struct gpio_dt_spec interrupt;
 	struct gpio_dt_spec reset;
 	struct net_eth_mac_config mac_cfg;
