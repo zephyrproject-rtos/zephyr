@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2026 MediaTek Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <mediatek/mt8188.dtsi>
+
+#include "mt8370_genio_510_evk-pinctrl.dtsi"
+
+/ {
+	model = "MediaTek Genio 510 EVK";
+	compatible = "mediatek,mt8370-genio-510-evk";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,sram = &dram;
+	};
+
+	/*
+	 * Zephyr is handed a single A55 core and the memory window below by the
+	 * hypervisor; the remaining cores and memory stay with the host.
+	 *
+	 * MT8390 has six A55 cores and MT8370 four, so cpu@400 and cpu@500 are
+	 * absent on the latter; disabling them here covers both parts.
+	 */
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+
+		cpu@100 {
+			status = "disabled";
+		};
+
+		cpu@200 {
+			status = "disabled";
+		};
+
+		cpu@400 {
+			status = "disabled";
+		};
+
+		cpu@500 {
+			status = "disabled";
+		};
+	};
+
+	dram: memory@8000 {
+		reg = <0x00008000 DT_SIZE_M(8)>;
+	};
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

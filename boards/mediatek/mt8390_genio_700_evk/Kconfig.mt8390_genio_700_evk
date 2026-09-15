@@ -1,0 +1,5 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MT8390_GENIO_700_EVK
+	select SOC_MT8188_A55 if BOARD_MT8390_GENIO_700_EVK_MT8188_A55
