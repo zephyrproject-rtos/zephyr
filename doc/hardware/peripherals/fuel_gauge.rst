@@ -21,7 +21,8 @@ in a batch using :c:func:`fuel_gauge_get_props`. Buffer properties, e.g. device 
 using :c:func:`fuel_gauge_get_buffer_prop`.
 
 Properties are set by the client one at a time using :c:func:`fuel_gauge_set_prop`, or set in a
-batch using :c:func:`fuel_gauge_set_props`.
+batch using :c:func:`fuel_gauge_set_props`. Buffer properties, e.g. a battery configuration image,
+are set by using :c:func:`fuel_gauge_set_buffer_prop`.
 
 
 Battery Cutoff
