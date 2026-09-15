@@ -90,8 +90,8 @@ The mandatory files are:
    the Kconfig ``SOC`` setting.
    If the ``soc.yml`` describes a SoC family and series, then those must also
    be defined in this file. Kconfig settings outside of the SoC tree must not be
-   selected. To select general Zephyr Kconfig settings the :file:`Kconfig` file
-   must be used.
+   selected. To select general Zephyr Kconfig settings the :file:`Kconfig`
+   file must be used.
 
 #. :file:`CMakeLists.txt`: CMake file loaded by the Zephyr build system. This
    CMake file can define additional include paths and/or source files to be used
@@ -140,6 +140,68 @@ Multiple SoCs and SoC series in a common folder can be described in the
              - name: <soc2>
          - name: <series-2-name>
            ...
+
+.. _soc_porting_base:
+
+SoCs built on another SoC
+=========================
+
+A build loads the Kconfig and CMake trees of the SoC it targets, so the Kconfig symbols and CMake
+variables of every other SoC are invisible to it. This keeps SoC namespaces isolated from each
+other and keeps the configuration step fast, as the trees of unrelated vendors are never parsed.
+
+Sometimes the same silicon is sold under more than one name. A System-in-Package or a module is
+often another vendor's die plus components that the boards using it describe in their devicetree,
+and a single vendor may market one die under several part numbers. Such a SoC needs no
+configuration of its own, and names the SoC it is built on:
+
+.. code-block:: yaml
+
+   socs:
+     - name: <soc>
+       base: <other-soc>
+
+The name resolves to its base before anything is loaded. A build targeting ``<soc>`` loads the
+tree of ``<other-soc>`` and nothing else, ``CONFIG_SOC`` is ``<other-soc>``, and the CPU clusters
+are the base's.
+
+The build system generates a promptless ``SOC_<SOC>`` symbol which selects the symbol of
+``<other-soc>``, so a board using ``<soc>`` selects ``SOC_<SOC>`` exactly as it would for any
+other SoC, and configuration and code can still ask which part is being built.
+
+``base`` may be declared in any SoC root, including one that does not own the SoC it names, so a
+vendor can describe a part built on someone else's die without modifying their tree. Naming a SoC
+that cannot be found, and declaring the same SoC on two different bases, are both errors.
+
+.. important::
+
+   ``base`` is not inheritance. The directory holding a SoC declared with ``base`` is never
+   sourced, so there is nowhere to put configuration that would have to be ordered against the
+   base: the base's settings are simply the settings of the build. Nothing is overridden and
+   nothing propagates. The generated ``SOC_<SOC>`` symbol names the part and enables the base,
+   and carries nothing else.
+
+   ``base`` must also name a SoC that is not itself declared with ``base``, so resolution is always
+   one step deep. Composing SoCs, chaining them, or using several instances of one SoC are all out
+   of scope.
+
+A SoC declared with ``base`` cannot be extended, since it owns nothing to extend; extend the SoC
+it is built on instead. Extensions of that SoC do apply, so a CPU cluster added to it from another
+SoC root is available here too, and that root's tree is loaded as well.
+
+When a board pairs SoCs that are independent of each other, rather than being built on one of
+them, declare that in the board's :file:`board.yml` instead, see :ref:`board_porting_requires`.
+
+Use ``base`` only when the SoC carries no configuration. A part that needs its own configuration is
+a SoC in its own right and should be described as one, in the tree of whatever it configures.
+
+.. note::
+
+   As a last resort, setting the CMake variable ``HWM_LOAD_ALL_SOCS`` loads every SoC from every
+   SoC root, for example ``west build -b <board> -- -DHWM_LOAD_ALL_SOCS=y``. This restores the
+   legacy behaviour where all SoC trees are visible to each other, at the cost of a slower and
+   more memory hungry configuration step. It exists for out-of-tree users who cannot express their
+   dependencies yet and should not be relied on by in-tree SoCs.
 
 
 Write your SoC devicetree

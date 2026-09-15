@@ -1,2 +1,6 @@
+# The Myra is an Antmicro System-in-Package built on an STMicroelectronics STM32G491RE die. The
+# package adds components such as FRAM, which are described in the devicetree of the boards using
+# it, so it needs no SoC configuration of its own.
 socs:
   - name: myra
+    base: stm32g491xx
