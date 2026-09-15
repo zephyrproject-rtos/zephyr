@@ -17,7 +17,10 @@
 	};
 };
 
-&spi0 {
+#define SPI_LOOPBACK_FAST_HZ 2500000
+#define SPI_LOOPBACK_REG 2
+
+spi_loopback: &spi0 {
 	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -25,21 +28,11 @@
 	dmas = <&dma0 1 RZ_DMA_PERIPH_TO_MEM>,
 	       <&dma0 0 RZ_DMA_MEM_TO_PERIPH>;
 	dma-names = "rx", "tx";
-
-	slow@2 {
-		compatible = "test-spi-loopback-slow";
-		reg = <2>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@2 {
-		compatible = "test-spi-loopback-fast";
-		reg = <2>;
-		spi-max-frequency = <2500000>;
-	};
 };
 
 &dma0 {
 	status = "okay";
 	dma-buf-addr-alignment = <1>;
 };
+
+#include "../spi-loopback.dtsi"

@@ -6,16 +6,6 @@
 
 /* External Loopback: Short MOSI & MISO */
 
-&spi0 {
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
+spi_loopback: &spi0 {};
 
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <16000000>;
-	};
-};
+#include "../spi-loopback.dtsi"

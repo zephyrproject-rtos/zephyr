@@ -6,16 +6,8 @@
 
 /* Short P1.3 (SPI0/MISO) with P1.4 (SPI0/MOSI) */
 
-&lpspi0 {
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
+#define SPI_LOOPBACK_FAST_HZ 9000000
 
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <9000000>;
-	};
-};
+spi_loopback: &lpspi0 {};
+
+#include "../spi-loopback.dtsi"

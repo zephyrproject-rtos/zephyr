@@ -4,22 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&spi1 {
+spi_loopback: &spi1 {
 	dmas = <&dmamux1 0 11 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
 	       <&dmamux1 7 10 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <16000000>;
-	};
 };
 
 &dma1 {
@@ -33,3 +21,5 @@
 &dmamux1 {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"
