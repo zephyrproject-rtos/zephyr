@@ -29,52 +29,75 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
-
+/*
+ * Note the #ifdef USB_OTG_HS (HAL2) / #ifdef PCD_SPEED_HIGH (HAL1) check.
+ * This is necessary because the High-Speed definitions are not provided
+ * if the hardware is not HS-capable but we need values for them anyways.
+ * Define them as one-plus/two-plus the full-speed value, to ensure they
+ * are never equal to the FS value which must remain unique in all cases.
+ *
+ * For HAL1, we can check for PCD_SPEED_HIGH directly because it's a macro.
+ * For HAL2, use "OTG_HS exists" check instead of #ifdef checks because
+ * the HAL_PCD_SPEED_* definitions are now enum values instead of macros.
+ * This is not the case of HAL_PCD_SNG_BUF which is still a macro in HAL2,
+ * so we still check for that one using #ifdef.
+ */
 #ifdef CONFIG_STM32_HAL2
 typedef hal_pcd_handle_t		stm32_pcd_handle_t;
 
-#define STM32_PCD_DRD_FS		HAL_PCD_DRD_FS
 #define STM32_PCD_EP_TYPE_CTRL		HAL_PCD_EP_TYPE_CTRL
 #define STM32_PCD_EP_TYPE_ISOC		HAL_PCD_EP_TYPE_ISOC
 #define STM32_PCD_EP_TYPE_BULK		HAL_PCD_EP_TYPE_BULK
 #define STM32_PCD_EP_TYPE_INTR		HAL_PCD_EP_TYPE_INTR
+
+#ifdef HAL_PCD_SNG_BUF
 #define STM32_PCD_SNG_BUF		HAL_PCD_SNG_BUF
 #define STM32_PCD_DBL_BUF		HAL_PCD_DBL_BUF
+#endif /* HAL_PCD_SNG_BUF */
+
 #define STM32_PCD_SPEED_FS		HAL_PCD_SPEED_FS
-#define STM32_PCD_PHY_EXTERNAL_ULPI	HAL_PCD_PHY_EXTERNAL_ULPI
+#ifdef USB_OTG_HS
+#define STM32_PCD_SPEED_HS_IN_FS	HAL_PCD_SPEED_HS_IN_FS
+#define STM32_PCD_SPEED_HS		HAL_PCD_SPEED_HS
+#else
+#define STM32_PCD_SPEED_HS_IN_FS	((int)HAL_PCD_SPEED_FS + 1)
+#define STM32_PCD_SPEED_HS		((int)HAL_PCD_SPEED_FS + 2)
+#endif /* USB_OTG_HS */
+
 #define STM32_PCD_PHY_EMBEDDED_FS	HAL_PCD_PHY_EMBEDDED_FS
+#ifdef USB_OTG_HS
+#define STM32_PCD_PHY_EXTERNAL_ULPI	HAL_PCD_PHY_EXTERNAL_ULPI
 #define STM32_PCD_PHY_EMBEDDED_HS	HAL_PCD_PHY_EMBEDDED_HS
+#else /* USB_OTG_HS */
+#define STM32_PCD_PHY_EXTERNAL_ULPI	((int)HAL_PCD_PHY_EMBEDDED_FS + 1)
+#define STM32_PCD_PHY_EMBEDDED_HS	((int)HAL_PCD_PHY_EMBEDDED_FS + 2)
+#endif /* USB_OTG_HS */
 #else /* CONFIG_STM32_HAL2 */
 typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
 
-#ifdef USB_DRD_FS
-#define STM32_PCD_DRD_FS		USB_DRD_FS
-#endif /* USB_DRD_FS */
 #define STM32_PCD_EP_TYPE_CTRL		EP_TYPE_CTRL
 #define STM32_PCD_EP_TYPE_ISOC		EP_TYPE_ISOC
 #define STM32_PCD_EP_TYPE_BULK		EP_TYPE_BULK
 #define STM32_PCD_EP_TYPE_INTR		EP_TYPE_INTR
+
 #ifdef PCD_SNG_BUF
 #define STM32_PCD_SNG_BUF		PCD_SNG_BUF
 #define STM32_PCD_DBL_BUF		PCD_DBL_BUF
 #endif /* PCD_SNG_BUF */
+
 #define STM32_PCD_SPEED_FS		PCD_SPEED_FULL
+#ifdef PCD_SPEED_HIGH
+#define STM32_PCD_SPEED_HS_IN_FS	PCD_SPEED_HIGH_IN_FULL
+#define STM32_PCD_SPEED_HS		PCD_SPEED_HIGH
+#else /* PCD_SPEED_HIGH */
+#define STM32_PCD_SPEED_HS_IN_FS	(PCD_SPEED_FULL + 1)
+#define STM32_PCD_SPEED_HS		(PCD_SPEED_FULL + 2)
+#endif /* PCD_SPEED_HIGH */
+
 #define STM32_PCD_PHY_EXTERNAL_ULPI	PCD_PHY_ULPI
 #define STM32_PCD_PHY_EMBEDDED_FS	PCD_PHY_EMBEDDED
 #define STM32_PCD_PHY_EMBEDDED_HS	PCD_PHY_UTMI
 #endif /* CONFIG_STM32_HAL2 */
-
-/*
- * The STM32 HAL does not provide PCD_SPEED_HIGH and PCD_SPEED_HIGH_IN_FULL
- * on series which lack HS-capable hardware. Provide dummy definitions for
- * these series to remove checks elsewhere in the driver. The exact value
- * of the dummy definitions in insignificant, as long as they are not equal
- * to PCD_SPEED_FULL (which is always provided).
- */
-#if !defined(PCD_SPEED_HIGH)
-#define PCD_SPEED_HIGH		(STM32_PCD_SPEED_FS + 1)
-#define PCD_SPEED_HIGH_IN_FULL	(PCD_SPEED_HIGH + 1)
-#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #define DT_DRV_COMPAT st_stm32_otghs
@@ -120,9 +143,9 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
  * Evaluates to 1 if 'usb_node' uses an embedded FS PHY or has
  * the 'maximum-speed' property set to 'full-speed', 0 otherwise.
  */
-#define UDC_STM32_NODE_LIMITED_TO_FS(usb_node)					\
-	UTIL_OR(IS_EQ(UDC_STM32_NODE_PHY_ITFACE(usb_node), PHY_PCD_EMBEDDED),	\
-		UTIL_AND(DT_NODE_HAS_PROP(usb_node, maximum_speed),		\
+#define UDC_STM32_NODE_LIMITED_TO_FS(usb_node)						\
+	UTIL_OR(IS_EQ(UDC_STM32_NODE_PHY_ITFACE(usb_node), STM32_PCD_PHY_EMBEDDED_FS),	\
+		UTIL_AND(DT_NODE_HAS_PROP(usb_node, maximum_speed),			\
 			DT_ENUM_HAS_VALUE(usb_node, maximum_speed, full_speed)))
 
 /*
@@ -137,8 +160,8 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
 	COND_CODE_0(USB_STM32_NODE_IS_HS_CAPABLE(usb_node),		\
 		(STM32_PCD_SPEED_FS),					\
 	(COND_CODE_1(UDC_STM32_NODE_LIMITED_TO_FS(usb_node),		\
-		(PCD_SPEED_HIGH_IN_FULL),				\
-		(PCD_SPEED_HIGH))))
+		(STM32_PCD_SPEED_HS_IN_FS),				\
+		(STM32_PCD_SPEED_HS))))
 
 /*
  * Returns max packet size allowed for endpoints of 'usb_node'
@@ -148,7 +171,7 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
  * 1024 bytes in High-Speed, 1023 bytes in Full-Speed
  */
 #define UDC_STM32_NODE_EP_MPS(node_id)					\
-	((UDC_STM32_NODE_SPEED(node_id) == PCD_SPEED_HIGH) ? 1024U : 1023U)
+	((UDC_STM32_NODE_SPEED(node_id) == STM32_PCD_SPEED_HS) ? 1024U : 1023U)
 
 
 /*
@@ -266,7 +289,7 @@ static stm32_status_t hal_udc_set_endpoint_receive(stm32_pcd_handle_t *hpcd, uin
 #endif /* CONFIG_STM32_HAL2 */
 }
 
-#if defined(USB) || defined(STM32_PCD_DRD_FS)
+#if defined(USB) || defined(USB_DRD_FS)
 static stm32_status_t hal_udc_pma_config(stm32_pcd_handle_t *hpcd, uint16_t ep_addr,
 					 uint16_t ep_kind, uint32_t pma_address)
 {
@@ -276,7 +299,7 @@ static stm32_status_t hal_udc_pma_config(stm32_pcd_handle_t *hpcd, uint16_t ep_a
 	return HAL_PCDEx_PMAConfig(hpcd, ep_addr, ep_kind, pma_address);
 #endif /* CONFIG_STM32_HAL2 */
 }
-#endif /* USB || STM32_PCD_DRD_FS */
+#endif /* USB || USB_DRD_FS */
 
 static stm32_status_t hal_udc_set_device_address(stm32_pcd_handle_t *hpcd, uint8_t address)
 {
@@ -1439,9 +1462,11 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 #ifdef CONFIG_STM32_HAL2
 	hal_pcd_device_speed_t speed = HAL_PCD_GetDeviceSpeed(&priv->pcd);
 
+#ifdef USB_OTG_HS
 	if (speed == HAL_PCD_DEVICE_SPEED_HS) {
 		return UDC_BUS_SPEED_HS;
 	}
+#endif /* USB_OTG_HS */
 
 	if (speed == HAL_PCD_DEVICE_SPEED_FS) {
 		return UDC_BUS_SPEED_FS;
@@ -1458,7 +1483,7 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 	}
 
 	if (priv->pcd.Init.speed == PCD_SPEED_HIGH_IN_FULL ||
-	    priv->pcd.Init.speed == STM32_PCD_SPEED_FS) {
+	    priv->pcd.Init.speed == PCD_SPEED_FULL) {
 		return UDC_BUS_SPEED_FS;
 	}
 #endif /* CONFIG_STM32_HAL2 */
@@ -1525,7 +1550,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
-	if (cfg->selected_speed == PCD_SPEED_HIGH) {
+	if (cfg->selected_speed == STM32_PCD_SPEED_HS) {
 		data->caps.hs = true;
 	}
 
