@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/mcxa/nxp_mcxa5x_ns.dtsi>
+
+/*
+ * MCXA556 has 1 MiB of flash.
+ */
+&flash {
+	reg = <0 DT_SIZE_M(1)>;
+	ranges = <0x0 0x0 DT_SIZE_M(1)>;
+};
+
+/*
+ * MCXA556 has 384 KiB of RAM.
+ */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(384)>;
+};
+
+/delete-node/ &flexcan0;
+/delete-node/ &flexcan1;
+/delete-node/ &t1s;
+/delete-node/ &dac0;
+/delete-node/ &dac1;
+/delete-node/ &tsi0;
+/delete-node/ &enet;
