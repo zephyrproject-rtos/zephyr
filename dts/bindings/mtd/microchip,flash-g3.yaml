@@ -1,7 +1,14 @@
 # Copyright (c) 2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Microchip G3 series of Flash
+title: Microchip NVMCTRL G3 Flash
+
+description: |
+  Microchip NVMCTRL G3 Flash driver.
+
+  Supports the following hardware modules:
+    - FCW_03433 (PIC32CK SG/GC, PIC32CZ CA) - Quad Double Word (32 B)
+    - FCW_04971 (PIC32CM SG/GC) - Quad Word (16 B)
 
 compatible: "microchip,flash-g3"
 
@@ -41,7 +48,11 @@ examples:
 properties:
   write-block-size-quad-dw:
     type: int
-    description: address alignment required by quad double word flash write operations
+    required: true
+    description: |
+      Size in bytes of a quad write operation.
+      32 bytes (Quad Double Word) on FCW_03433 (PIC32CK SG/GC, PIC32CZ CA),
+      16 bytes (Quad Word) on FCW_04971 (PIC32CM SG/GC).
   write-block-size-row:
     type: int
     description: address alignment required by row flash write operations
