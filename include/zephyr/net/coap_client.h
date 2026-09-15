@@ -193,6 +193,11 @@ struct coap_client_internal_request {
 	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
 	uint8_t send_buf[MAX_COAP_MSG_LEN];
 
+	/* A block-wise receive is in progress, so recv_blk_ctx is valid and
+	 * further requests of this exchange are continuation retrievals.
+	 */
+	bool recv_blockwise;
+
 	/* For GETs with observe option set */
 	bool is_observe;
 	int last_response_id;

@@ -227,7 +227,7 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 {
 	int ret = 0;
 	int i;
-	bool block2 = false;
+	bool block2 = internal_req->recv_blockwise;
 
 	memset(internal_req->send_buf, 0, sizeof(internal_req->send_buf));
 
@@ -265,9 +265,13 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 		}
 	}
 
-	/* Blockwise receive ongoing, request next block. */
-	if (internal_req->recv_blk_ctx.current > 0) {
-		block2 = true;
+	/* Blockwise receive ongoing, request the current block. The context
+	 * position does not tell: it is zero both before any transfer and
+	 * after a truncated response, where the retry must carry a block2
+	 * option so the server switches to a block-wise response instead of
+	 * repeating the truncated one.
+	 */
+	if (block2) {
 		ret = coap_append_block2_option(&internal_req->request,
 						&internal_req->recv_blk_ctx);
 
@@ -1288,6 +1292,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	block_option = coap_get_option_int(response, COAP_OPTION_BLOCK2);
 	if (block_option > 0 || response_truncated) {
 		blockwise_transfer = true;
+		internal_req->recv_blockwise = true;
 		last_block = response_truncated ? false : !GET_MORE(block_option);
 		block_num = (block_option > 0) ? GET_BLOCK_NUM(block_option) : 0;
 
@@ -1304,6 +1309,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		}
 		coap_next_block(response, &internal_req->recv_blk_ctx);
 	} else {
+		internal_req->recv_blockwise = false;
 		internal_req->offset = 0;
 		last_block = true;
 	}
