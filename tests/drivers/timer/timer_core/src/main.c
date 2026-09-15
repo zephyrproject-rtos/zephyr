@@ -252,7 +252,7 @@ void z_sys_clock_lpm_init(void)
 {
 }
 
-void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
+void sys_clock_announce_locked(sys_clock_ticks_t ticks, k_spinlock_key_t key)
 {
 	ARG_UNUSED(key);
 
@@ -690,6 +690,19 @@ ZTEST(timer_core, test_far_deadline_walks)
 	 * Tickless only: a tickful kernel sets no deadline.
 	 */
 	uint64_t start_tick;
+	/* The longest wait the interface carries. With long waits that is what
+	 * the kernel may ask for, so the deadline math must not overflow on it.
+	 */
+#if defined(CONFIG_SYSTEM_CLOCK_LONG_WAIT)
+	sys_clock_ticks_t far = SYS_CLOCK_MAX_WAIT;
+#else
+	sys_clock_ticks_t far = UINT32_MAX;
+#endif
+	/* tc_now counts every cycle since the reset in 64 bits, so the walk
+	 * stops before that count wraps. Only a 64-bit counter armed out to its
+	 * limit gets near: it walks two arms.
+	 */
+	uint64_t arms = MIN(12U * TC_ARMS_PER_TICK, UINT64_MAX / TIMER_CORE_MAX_ARM_CYCLES);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		ztest_test_skip();
@@ -698,10 +711,10 @@ ZTEST(timer_core, test_far_deadline_walks)
 	tc_reset(1, false);
 	start_tick = timer_core_last_tick;
 
-	for (uint32_t arm = 0; arm < (12U * TC_ARMS_PER_TICK); arm++) {
+	for (uint64_t arm = 0; arm < arms; arm++) {
 		uint64_t before = timer_core_last_tick;
 
-		sys_clock_set_timeout(UINT32_MAX, false);
+		sys_clock_set_timeout(far, false);
 		zassert_not_equal(tc_fire, TC_NEVER, "timer left unarmed mid-walk");
 
 		tc_now = tc_fire;
@@ -743,6 +756,31 @@ ZTEST(timer_core, test_recovery_announce)
 	zassert_equal(timer_core_last_tick - before, (uint64_t)TC_TICK_RATE * 600U,
 		      "recovered %llu ticks from ten minutes of cycles",
 		      (unsigned long long)(timer_core_last_tick - before));
+	tc_check_baseline();
+}
+
+ZTEST(timer_core, test_recovery_announce_past_32_bits)
+{
+	/* A recovered span of more ticks than 32 bits hold. The baseline takes
+	 * all of it. The kernel is told all of it when the announce interface
+	 * carries 64-bit ticks, and UINT32_MAX ticks otherwise.
+	 */
+	uint64_t seconds = ((uint64_t)UINT32_MAX / TC_TICK_RATE) + 1U;
+	uint64_t before;
+	uint64_t moved;
+
+	tc_reset(1, false);
+	before = timer_core_last_tick;
+
+	timer_core_announce_cycles64_from(sys_clock_lock(), TC_CYCLE_RATE * seconds);
+
+	moved = timer_core_last_tick - before;
+	zassert_true(moved > UINT32_MAX, "the baseline moved only %llu ticks",
+		     (unsigned long long)moved);
+	zassert_equal(tc_announced,
+		      IS_ENABLED(CONFIG_SYSTEM_CLOCK_LONG_WAIT) ? moved : (uint64_t)UINT32_MAX,
+		      "announced %llu of the %llu ticks recovered",
+		      (unsigned long long)tc_announced, (unsigned long long)moved);
 	tc_check_baseline();
 }
 

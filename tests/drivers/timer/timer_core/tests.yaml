@@ -134,6 +134,24 @@ tests:
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
       - CONFIG_TEST_COUNTER_WIDTH=64
       - CONFIG_TEST_COUNTER_NONATOMIC=y
+  # 64-bit ticks on the system clock interface, so the kernel can ask for waits
+  # and be told of spans past 32 bits. A 64-bit counter at an exact ratio as on
+  # arm_arch_timer and riscv_machine_timer, then at one the tick rate does not
+  # divide.
+  drivers.timer.core.long_wait:
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYSTEM_CLOCK_LONG_WAIT=y
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=10000000
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100
+      - CONFIG_TEST_COUNTER_WIDTH=64
+  drivers.timer.core.long_wait_inexact:
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYSTEM_CLOCK_LONG_WAIT=y
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=64
   # A counter that can read behind a value already seen.
   drivers.timer.core.nonmonotonic:
     extra_configs:
