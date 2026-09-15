@@ -14,6 +14,24 @@
 			compatible = "ti,mspm0-pinctrl";
 			reg = <0x400cc000 0x400>;
 		};
+
+		xbar1: xbar@40468000 {
+			compatible = "ti,am13e230-xbar-in";
+			reg = <0x40468000 0x1000>;
+
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+			status = "disabled";
+		};
+
+		xbar2: xbar@4046a000 {
+			compatible = "ti,am13e230-xbar-out";
+			reg = <0x4046a000 0x1000>;
+
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+			status = "disabled";
+		};
 	};
 
 	cpus {

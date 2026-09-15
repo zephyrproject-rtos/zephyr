@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI AM13E230 Input XBAR peripheral binding.
+
+  Routes a GPIO pin (raw GPIO number, TRM Table 20-9) into one of the 28
+  INPUTXBAR channels. A consumer selects the channel via the control cell.
+
+  The trailing mux-states cell is packed with
+  AM13E230_XBAR_IN_STATE(pin, raw) from
+  <zephyr/dt-bindings/mux/ti_am13e230_xbar_in.h> - each GPIO's signal
+  reaches the Input X-BAR through a RAW_INPUTSELECT_Pn mux (TRM Figure
+  20-1): raw=1 selects the raw pad signal, raw=0 (reset default) selects
+  the signal after the GPIO peripheral module processes it. This SoC has
+  no GPIO driver yet, so raw=1 is the only usable value today; raw=0
+  becomes meaningful once an AM13E GPIO driver exists.
+
+    &xbar1 {
+            status = "okay";
+    };
+
+    my_consumer {
+            mux-states = <&xbar1 CHANNEL AM13E230_XBAR_IN_STATE(GPIO_NUMBER, 1)>;
+    };
+
+  Or drive it at runtime instead of fixing it in devicetree:
+
+    my_consumer {
+            mux-controls = <&xbar1 CHANNEL>;
+    };
+
+    mux_control_set(dev, AM13E230_XBAR_IN_STATE(gpio_number, 1));
+
+compatible: "ti,am13e230-xbar-in"
+
+include: [base.yaml, mux-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#mux-control-cells":
+    const: 1
+
+  "#mux-state-cells":
+    const: 2
+
+mux-control-cells:
+  - channel
+
+mux-state-cells:
+  - channel
+  - pin
