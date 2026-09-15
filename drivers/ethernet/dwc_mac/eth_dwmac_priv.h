@@ -161,6 +161,11 @@ struct dwmac_priv {
 	struct k_thread rx_refill_thread;
 
 	struct k_spinlock spinlock;
+
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
+	/* given by the MAC interrupt when an MDIO transaction completes */
+	struct k_sem mdio_done;
+#endif
 };
 
 /*
