@@ -92,7 +92,7 @@ static uint8_t *mono_vtile_buf_p[DT_ZEPHYR_DISPLAYS_COUNT] = {NULL};
 #if defined(CONFIG_LV_Z_VDB_CUSTOM_SECTION)
 #define LV_BUF_SECTION	Z_GENERIC_SECTION(.lvgl_buf)
 #elif defined(CONFIG_LV_Z_VDB_ZEPHYR_REGION)
-#define LV_BUF_SECTION	Z_GENERIC_SECTION(CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME)
+#define LV_BUF_SECTION	__attribute__((section(CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME)))
 #else
 #define LV_BUF_SECTION
 #endif
