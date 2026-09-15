@@ -107,7 +107,7 @@ K_SEM_DEFINE(log_process_thread_sem, 0, 1);
 
 static atomic_t initialized;
 static bool panic_mode;
-static bool backend_attached;
+static atomic_t backend_attached;
 static atomic_t buffered_cnt;
 static atomic_t dropped_cnt;
 static k_tid_t proc_tid;
@@ -547,14 +547,16 @@ void unordered_notify(void)
 
 void z_log_notify_backend_enabled(void)
 {
+	atomic_val_t was_attached = atomic_set(&backend_attached, 1);
+
 	/* Wakeup logger thread after attaching first backend. It might be
-	 * blocked with log messages pending.
+	 * blocked with log messages pending. Flag is set before giving the
+	 * semaphore so that the woken up thread sees the backend as attached
+	 * and does not skip processing and go back to sleep.
 	 */
-	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) && !backend_attached) {
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) && was_attached == 0) {
 		k_sem_give(&log_process_thread_sem);
 	}
-
-	backend_attached = true;
 }
 
 static inline bool z_log_unordered_pending(void)
@@ -571,7 +573,7 @@ bool z_impl_log_process(void)
 	k_timeout_t backoff = K_NO_WAIT;
 	union log_msg_generic *msg;
 
-	if (!backend_attached) {
+	if (atomic_get(&backend_attached) == 0) {
 		return false;
 	}
 
