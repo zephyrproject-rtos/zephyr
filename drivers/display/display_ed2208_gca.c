@@ -235,7 +235,7 @@ static int ed2208_gca_write(const struct device *dev, const uint16_t x, const ui
 	}
 
 	if (buf == NULL || desc->buf_size < buf_len) {
-		LOG_ERR("Invalid buffer: %p (%zu < %zu)", buf, desc->buf_size, buf_len);
+		LOG_ERR("Invalid buffer: %p (%zu < %zu)", buf, (size_t)desc->buf_size, buf_len);
 		return -EINVAL;
 	}
 
