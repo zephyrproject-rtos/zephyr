@@ -179,7 +179,7 @@ SECTIONS
 		*(.jcr)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-#if DT_PROP(DT_NODELABEL(code_flash), programming_enable)
+#if DT_PROP(DT_NODELABEL(code_flash_ctrl), programming_enable)
 	SECTION_PROLOGUE(.pfram,ALIGN(4),)
 	{
 		_PFRAM_start = .;
@@ -267,7 +267,7 @@ SECTIONS
 
 	__data_region_end = .;
 
-#if DT_PROP(DT_NODELABEL(code_flash), programming_enable)
+#if DT_PROP(DT_NODELABEL(code_flash_ctrl), programming_enable)
 
 	.rpfram ALIGN(4): AT(_PFRAM_start)
 	{
