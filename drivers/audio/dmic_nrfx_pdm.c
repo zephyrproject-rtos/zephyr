@@ -91,6 +91,16 @@ BUILD_ASSERT((AUXPLL_FREQUENCY_SETTING == NRF_AUXPLL_FREQ_DIV_AUDIO_48K) ||
 
 #endif
 
+/* Allow using custom ratio only if its supported by hardware.
+ * Also, provided mechanism of calculating custom ratio assumes
+ * presence of prescaler mechanism in PDM.
+ */
+#if CONFIG_AUDIO_DMIC_NRFX_PDM_CUSTOM_RATIO && NRF_PDM_HAS_CUSTOM_RATIO && NRF_PDM_HAS_PRESCALER
+#define USE_CUSTOM_RATIO 1
+#else
+#define USE_CUSTOM_RATIO 0
+#endif
+
 struct dmic_nrfx_pdm_drv_data {
 	nrfx_pdm_t pdm;
 #if CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL || DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
@@ -266,6 +276,124 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 	}
 }
 
+#if USE_CUSTOM_RATIO
+#include <math.h>
+
+#define CUSTOM_RATIO_MIN (2 * (PDM_FILTER_CTRL_DECRATIO_Min + 1))
+#define CUSTOM_RATIO_MAX (2 * (PDM_FILTER_CTRL_DECRATIO_Max + 1))
+
+static bool is_better(nrfx_pdm_output_t const *output_config,
+		      uint16_t ratio, uint16_t prescaler,
+		      uint32_t *best_diff)
+{
+	if (ratio < CUSTOM_RATIO_MIN || ratio > CUSTOM_RATIO_MAX) {
+		return false;
+	}
+
+	uint32_t actual_rate = output_config->base_clock_freq / prescaler / ratio;
+	uint32_t diff = actual_rate >= output_config->sampling_rate ?
+			actual_rate - output_config->sampling_rate :
+			output_config->sampling_rate - actual_rate;
+
+	if (diff < *best_diff) {
+		*best_diff = diff;
+		return true;
+	}
+
+	return false;
+}
+
+static int custom_ratio_calculate(nrfx_pdm_output_t const *output_config,
+				  nrfx_pdm_prescalers_t *prescalers)
+{
+	uint16_t ratio;
+	uint32_t best_diff = UINT32_MAX;
+	uint32_t total_ratio = output_config->base_clock_freq / output_config->sampling_rate;
+	uint16_t prescaler_min = output_config->base_clock_freq /
+				 output_config->output_freq_max + 1;
+	uint16_t prescaler_max = output_config->base_clock_freq / output_config->output_freq_min;
+
+	for (uint16_t prescaler = prescaler_min; prescaler < prescaler_max; prescaler++) {
+		ratio = total_ratio / prescaler;
+
+		/* Ratio rounded down. */
+		if (is_better(output_config, ratio, prescaler, &best_diff)) {
+			prescalers->prescaler = prescaler;
+			prescalers->custom_ratio.ratio = ratio;
+
+			if (best_diff == 0) {
+				break;
+			}
+		}
+
+		/* Ratio rounded up. */
+		if (is_better(output_config, ratio++, prescaler, &best_diff)) {
+			prescalers->prescaler = prescaler;
+			prescalers->custom_ratio.ratio = ratio;
+
+			if (best_diff == 0) {
+				break;
+			}
+		}
+	}
+
+	if (best_diff == UINT32_MAX) {
+		return -EINVAL;
+	}
+
+	/* Use selected ratio for filter configuration calculations. */
+	ratio = prescalers->custom_ratio.ratio;
+
+	static const struct
+	{
+		nrf_pdm_filter_cic_t cic_enum;
+		uint16_t cic_high;
+
+	} cics[] = {
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_0,  32  },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_1,  36  },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_2,  42  },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_3,  48  },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_4,  54  },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_5,  64  },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_6,  72  },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_7,  84  },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_8,  96  },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_9,  110 },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_10, 128 },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_11, 146 },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_12, 168 },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_13, 194 },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_14, 222 },
+		{ NRF_PDM_FILTER_CIC_MSB_RANGE_15, 256 }
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(cics); i++) {
+		if (ratio <= cics[i].cic_high) {
+			prescalers->custom_ratio.filter_msb = cics[i].cic_enum;
+			break;
+		}
+	}
+
+	/* Compensation gain needs to be set using 0.5 dB steps with additional 0.25 step.
+	 * To calculate it, following formula has to be used :
+	 * gainCIC = OSR^5, where OSR is Oversampling Ratio
+	 * closePow2 - floor(log2(gainCIC)) + 1, which is an equivalent of LOG2CEIL(gainCIC)
+	 * gainComp = -20 * log10(gainCIC / (2^closePow2)) dB
+	 */
+	uint64_t gain_cic = (uint64_t)ratio * ratio * ratio * ratio * ratio;
+	uint8_t close_pow2 = LOG2CEIL(gain_cic);
+	double gain_comp = -20.0 * log10((double)gain_cic / (1ULL << close_pow2));
+	uint8_t steps = gain_comp * 4;
+
+	prescalers->custom_ratio.compensation_gain = steps / 2;
+	prescalers->custom_ratio.minor_compensation_gain = steps % 2;
+	prescalers->ratio = NRF_PDM_RATIO_CUSTOM;
+
+	return 0;
+}
+#endif
+
 static int dmic_nrfx_pdm_configure(const struct device *dev,
 				   struct dmic_cfg *config)
 {
@@ -367,7 +495,12 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 		.output_freq_max = config->io.max_pdm_clk_freq
 	};
 
-	if (nrfx_pdm_prescalers_calc(&output_config, &nrfx_cfg.prescalers) != 0) {
+#if USE_CUSTOM_RATIO
+	err = custom_ratio_calculate(&output_config, &nrfx_cfg.prescalers);
+#else
+	err = nrfx_pdm_prescalers_calc(&output_config, &nrfx_cfg.prescalers);
+#endif
+	if (err != 0) {
 		LOG_ERR("Cannot find suitable PDM clock configuration.");
 		return -EINVAL;
 	}
