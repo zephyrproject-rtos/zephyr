@@ -15,6 +15,9 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pinctrl.h>
+#ifdef CONFIG_ADC_STREAM
+#include <zephyr/rtio/work.h>
+#endif
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
@@ -2122,10 +2125,11 @@ static int adc_stm32_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_ADC_STREAM
-static void adc_stm32_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+static void adc_stm32_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 {
-	struct adc_stm32_data *data = dev->data;
 	const struct adc_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = read_cfg->adc;
+	struct adc_stm32_data *data = dev->data;
 	int rc;
 
 	data->sqe = iodev_sqe;
@@ -2137,6 +2141,19 @@ static void adc_stm32_submit_stream(const struct device *dev, struct rtio_iodev_
 	if (rc < 0) {
 		LOG_ERR("Error starting conversion (%d)", rc);
 	}
+}
+
+static void adc_stm32_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_work_req *req = rtio_work_req_alloc();
+
+	if (req == NULL) {
+		LOG_ERR("No RTIO work items available");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
+
+	rtio_work_req_submit(req, iodev_sqe, adc_stm32_submit_fetch);
 }
 
 static int adc_stm32_decoder_get_frame_count(const uint8_t *buffer, uint32_t channel,
