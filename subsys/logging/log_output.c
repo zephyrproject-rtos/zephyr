@@ -318,6 +318,7 @@ static int ids_print(const struct log_output *output,
 		     bool func_on,
 		     bool thread_on,
 		     bool core_on,
+		     bool unordered,
 		     const char *domain,
 		     const char *source,
 		     k_tid_t tid,
@@ -325,6 +326,10 @@ static int ids_print(const struct log_output *output,
 		     uint32_t level)
 {
 	int total = 0;
+
+	if (unordered) {
+		total += print_formatted(output, "<!> ");
+	}
 
 	if (level_on) {
 		total += print_formatted(output, "<%s> ", severity[level]);
@@ -623,6 +628,7 @@ static uint32_t prefix_print(const struct log_output *output,
 	bool core_on = IS_ENABLED(CONFIG_LOG_CORE_ID_PREFIX) &&
 			 (flags & LOG_OUTPUT_FLAG_CORE);
 	bool source_off = flags & LOG_OUTPUT_FLAG_SKIP_SOURCE;
+	bool unordered = flags & LOG_OUTPUT_UNORDERED;
 	const char *tag = IS_ENABLED(CONFIG_LOG) ? z_log_get_tag() : NULL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
@@ -658,7 +664,7 @@ static uint32_t prefix_print(const struct log_output *output,
 		color_prefix(output, colors_on, level);
 	}
 
-	length += ids_print(output, level_on, func_on, thread_on, core_on, domain,
+	length += ids_print(output, level_on, func_on, thread_on, core_on, unordered, domain,
 			    source_off ? NULL : source, tid, core_id, level);
 
 	return length;
@@ -733,6 +739,10 @@ void log_output_msg_process(const struct log_output *output,
 	size_t plen, dlen;
 	uint8_t *package = log_msg_get_package(msg, &plen);
 	uint8_t *data = log_msg_get_data(msg, &dlen);
+
+	if (msg->hdr.desc.valid == 0) {
+		flags |= LOG_OUTPUT_UNORDERED;
+	}
 
 	log_output_process(output, timestamp, dname, sname, (k_tid_t)log_msg_get_tid(msg),
 			   log_msg_get_core_id(msg), level,

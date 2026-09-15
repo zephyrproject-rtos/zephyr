@@ -1,0 +1,32 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_IPC_SERVICE
+	bool "IPC service backend"
+	select LOG_MSG_APPEND_RO_STRING_LOC
+
+if LOG_BACKEND_IPC_SERVICE
+
+config LOG_BACKEND_IPC_SERVICE_ZERO_COPY
+	bool "Use zero copy sending"
+	default y if IPC_SERVICE_BACKEND_ICBMSG || IPC_SERVICE_BACKEND_RPMSG
+	help
+	  Use zero copy sending for sending log messages.
+
+config LOG_BACKEND_IPC_SERVICE_STRING_ACCESS
+	bool "Main core has access to local RO strings"
+	help
+	  Enable if core that processes messages has access to local read-only strings.
+	  It allows to reduce processing and message size as read-only strings are not copied
+	  into the IPC message.
+
+config LOG_BACKEND_IPC_SERVICE_DROPPED_NOTIFY_DELAY_MS
+	int "Delay of the dropped messages notification (milliseconds)"
+	default 1000
+	help
+	  Dropped messages are not reported immediately. The first drop schedules the
+	  notification with that delay and drops that occur in the meantime only increment
+	  the counter. When the notification executes, a single message with the accumulated
+	  number of dropped messages is sent to the remote.
+
+endif

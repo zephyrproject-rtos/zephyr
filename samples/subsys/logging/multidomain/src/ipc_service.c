@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/cpu_load.h>
 LOG_MODULE_DECLARE(app);
 
 #define STACKSIZE	4096
@@ -52,6 +53,7 @@ static void sample_entry(void *dummy0, void *dummy1, void *dummy2)
 	unsigned char message = 0;
 	struct ipc_ept ept;
 	int ret;
+	int load = 0;
 
 	LOG_INF("Multidomain logging HOST demo started");
 
@@ -73,7 +75,11 @@ static void sample_entry(void *dummy0, void *dummy1, void *dummy2)
 
 	k_sem_take(&bound_sem, K_FOREVER);
 
-	while (message < 100) {
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		(void)cpu_load_get(true);
+	}
+
+	while (message < 20) {
 		ret = ipc_service_send(&ept, &message, sizeof(message));
 		if (ret < 0) {
 			LOG_ERR("send_message(%d) failed with ret %d", message, ret);
@@ -85,6 +91,14 @@ static void sample_entry(void *dummy0, void *dummy1, void *dummy2)
 
 		LOG_INF("HOST [1]: %d", message);
 		message++;
+
+		k_msleep(10);
+		if (message % 10 == 0) {
+			if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+				load = cpu_load_get(true);
+				LOG_INF("CPU load: %d.%d%%", load / 10, load % 10);
+			}
+		}
 	}
 
 	LOG_INF("Multidomain logging HOST demo ended.");
