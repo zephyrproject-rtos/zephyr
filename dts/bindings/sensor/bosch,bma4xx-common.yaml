@@ -7,3 +7,6 @@ properties:
     description: |
       Identifies pin for the INT1 signal on the sensor.  The sensor
       INT2,3,4 signals are not supported by the driver.
+
+      The driver configures INT1 as a push-pull output whose active level
+      follows the polarity flag of this property.
