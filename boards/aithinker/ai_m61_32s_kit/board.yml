@@ -4,13 +4,13 @@ board:
   vendor: aithinker
   revision:
     format: custom
-    default: "DEFAULT"
+    default: "BLOFN8IR4"
     exact: true
     revisions:
-      - name: "ALL"
-      - name: "DEFAULT"
+      - name: "BLIFN8IR4"
+      - name: "BLOFN8IR4"
   socs:
-    - name: bl618m05q2i # ALL revision is bl618m65q2i, Kconfig repairs this 'error'
+    - name: bl618m05q2i # BLIFN8IR4 revision is bl618m65q2i, Kconfig repairs this 'error'
       variants:
         - name: "safe_overclock"
         - name: "unsafe_overclock"

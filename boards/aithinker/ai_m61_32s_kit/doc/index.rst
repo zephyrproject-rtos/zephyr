@@ -34,7 +34,7 @@ This board provides demonstration configurations for the overclocking of the BL6
 - ``ai_m61_32s_kit/bl618m05q2i/safe_overclock`` demonstrates 120MHz BCLK and 480MHz core clock on both variants. This nets a Coremark score up to 1600.
 - ``ai_m61_32s_kit/bl618m05q2i/unsafe_overclock`` demonstrates 120MHz or 106MHz BCLK and 640MHz core clock with higher core voltages. This nets a Coremark score up to 2100.
 
-If you are using the ALL variant, please use :``ai_m61_32s_kit@ALL``.
+Please check you are using the correct variant, either BLIFN8IR4(All or not) or BLOFN8IR4.
 
 When overclocking, DMA and DMA-using drivers will not work properly.
 

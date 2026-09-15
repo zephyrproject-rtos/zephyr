@@ -19,7 +19,7 @@
 	regulator-init-microvolt = <1250000>;
 };
 
-/* With the settings used for their flash (Dual Out mode), the ALL and non-ALL revisions
+/* With the settings used for their flash (Dual Out mode), the BLIFN8IR4 and BLOFN8IR4 revisions
  * need different flash clock settings to work properly at 640MHz FCLK.
  */
 &clk_bclk {
