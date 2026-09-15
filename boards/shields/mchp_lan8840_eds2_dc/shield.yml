@@ -1,0 +1,9 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mchp_lan8840_eds2_dc
+  full_name: LAN8840 EDS2 Daughter Card
+  vendor: microchip
+  supported_features:
+    - ethernet
