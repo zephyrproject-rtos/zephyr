@@ -1,0 +1,17 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mcx_n9xx_evk/mcxn947/cpu0/ns
+name: NXP MCX-N9XX-EVK (CPU0) (Non-Secure)
+type: mcu
+arch: arm
+ram: 128
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported: []
+vendor: nxp
