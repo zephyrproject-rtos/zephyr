@@ -5597,6 +5597,34 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 	return 0;
 }
 
+static void gatt_cancel(struct bt_conn *conn, void *params, bool run_completion)
+{
+	struct bt_att_req *req;
+	bt_att_func_t func = NULL;
+
+	bt_dev_lock();
+
+	/* att_handle_rsp() processes the request state on the RX workqueue
+	 * without the host lock, relying on cooperative scheduling: hold the
+	 * scheduler lock as well so that it cannot preempt a preemptible
+	 * caller mid-cancel.
+	 */
+	k_sched_lock();
+
+	req = bt_att_find_req_by_user_data(conn, params);
+	if (req) {
+		func = req->func;
+		bt_att_req_cancel(conn, req);
+	}
+
+	k_sched_unlock();
+	bt_dev_unlock();
+
+	if (run_completion && func) {
+		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
+	}
+}
+
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
@@ -5633,9 +5661,13 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	/* Attempt to cancel if write is pending */
+	/* Cancel any in-flight CCC write silently: its completion shares this
+	 * params and must not run once we unsubscribe. gatt_cancel() drops the
+	 * request without invoking it, so clear WRITE_PENDING in its place.
+	 */
 	if (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
-		bt_gatt_cancel(conn, params);
+		gatt_cancel(conn, params, false);
+		atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
 	}
 
 	if (!has_subscription) {
@@ -5664,30 +5696,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 
 void bt_gatt_cancel(struct bt_conn *conn, void *params)
 {
-	struct bt_att_req *req;
-	bt_att_func_t func = NULL;
-
-	bt_dev_lock();
-
-	/* att_handle_rsp() processes the request state on the RX workqueue
-	 * without the host lock, relying on cooperative scheduling: hold the
-	 * scheduler lock as well so that it cannot preempt a preemptible
-	 * caller mid-cancel.
-	 */
-	k_sched_lock();
-
-	req = bt_att_find_req_by_user_data(conn, params);
-	if (req) {
-		func = req->func;
-		bt_att_req_cancel(conn, req);
-	}
-
-	k_sched_unlock();
-	bt_dev_unlock();
-
-	if (func) {
-		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
-	}
+	gatt_cancel(conn, params, true);
 }
 
 #if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
