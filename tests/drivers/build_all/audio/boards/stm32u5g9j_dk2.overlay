@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmic0 = &pdm0;
+	};
+};
+
+/*
+ * MDF1:
+ * PLL3_Q selected as input audio clock.
+ *
+ * f_PLL3 = 500 MHz (16 MHz * 125 / 4)
+ * f_PLL3Q = 500 MHz
+ */
+&pll3 {
+	div-q = <1>;
+};
+
+&mdf1 {
+	clocks = <&rcc STM32_CLOCK(AHB1, 3)>,
+		 <&rcc STM32_SRC_PLL3_Q MDF1_SEL(2)>;
+	clock-names = "pclk", "aclk";
+	status = "okay";
+
+	pdm0: filter@40025080 {
+		pinctrl-0 = <&mdf1_cck0_pb8
+			     &mdf1_sdi0_pb1>;
+		pinctrl-names = "default";
+		filter-order = <4>;
+		st,reshape-filter-decimation = <4>;
+		st,highpass-filter-cutoff = <0>;
+		status = "okay";
+	};
+};
