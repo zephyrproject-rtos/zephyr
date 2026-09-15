@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(pmc_setup_sama5d2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 static struct k_spinlock pmc_mck_lock;
+static struct k_spinlock pmc_pcr_lock;
 
 /* Clock count constants */
 enum clock_count {
@@ -67,6 +68,81 @@ static const struct {
 	{ .n = "pck0", .p = "prog0", .id = PMC_SCER_PCK0_Pos, .parent_idx = CLK_OFFSET_PROG + 0 },
 	{ .n = "pck1", .p = "prog1", .id = PMC_SCER_PCK1_Pos, .parent_idx = CLK_OFFSET_PROG + 1 },
 	{ .n = "pck2", .p = "prog2", .id = PMC_SCER_PCK2_Pos, .parent_idx = CLK_OFFSET_PROG + 2 },
+};
+
+/*
+ * Peripheral clock PCR layout
+ */
+static const struct clk_pcr_layout sama5d2_pcr_layout = {
+	.offset      = PMC_PCR_REG_OFST,
+	.cmd         = PMC_PCR_CMD_Msk,
+	.gckcss_mask = PMC_PCR_GCKCSS_Msk,
+	.pid_mask    = PMC_PCR_PID_Msk,
+};
+
+/*
+ * Peripheral clock descriptors
+ *
+ * ref: SAMA5D2 datasheet (DS60001476J) Table 18-9 (Peripheral Identifiers).
+ * The clock parents are MCK (AHB 64-bit MATRIX system) or MCK2 (AHB 32-bit MATRIX system).
+ */
+static struct {
+	const char *n;
+	struct clk_range r;
+	uint8_t id;
+	bool in_h64mx;
+} sama5d2_peripheral_clk[] = {
+	{ .n = "gmac_clk",     .id = 5, },
+	{ .n = "xdmac0_clk",   .id = 6,  .in_h64mx = true, },
+	{ .n = "xdmac1_clk",   .id = 7,  .in_h64mx = true, },
+	{ .n = "icm_clk",      .id = 8, },
+	{ .n = "aes_clk",      .id = 9,  .in_h64mx = true, },
+	{ .n = "aesb_clk",     .id = 10, .in_h64mx = true, },
+	{ .n = "tdes_clk",     .id = 11, },
+	{ .n = "sha_clk",      .id = 12, .in_h64mx = true, },
+	{ .n = "mpddrc_clk",   .id = 13, .in_h64mx = true, },
+	{ .n = "matrix1_clk",  .id = 14, },
+	{ .n = "matrix0_clk",  .id = 15, },
+	{ .n = "secumod_clk",  .id = 16, },
+	{ .n = "hsmc_clk",     .id = 17, },
+	{ .n = "pioa_clk",     .id = 18, },
+	{ .n = "flexcom0_clk", .id = 19, },
+	{ .n = "flexcom1_clk", .id = 20, },
+	{ .n = "flexcom2_clk", .id = 21, },
+	{ .n = "flexcom3_clk", .id = 22, },
+	{ .n = "flexcom4_clk", .id = 23, },
+	{ .n = "uart0_clk",    .id = 24, },
+	{ .n = "uart1_clk",    .id = 25, },
+	{ .n = "uart2_clk",    .id = 26, },
+	{ .n = "uart3_clk",    .id = 27, },
+	{ .n = "uart4_clk",    .id = 28, },
+	{ .n = "twi0_clk",     .id = 29, },
+	{ .n = "twi1_clk",     .id = 30, },
+	{ .n = "sdmmc0_clk",   .id = 31, .in_h64mx = true, .r = { .max = MHZ(208) }, },
+	{ .n = "sdmmc1_clk",   .id = 32, .in_h64mx = true, .r = { .max = MHZ(208) }, },
+	{ .n = "spi0_clk",     .id = 33, },
+	{ .n = "spi1_clk",     .id = 34, },
+	{ .n = "tc0_clk",      .id = 35, .r = { .max = MHZ(166) }, },
+	{ .n = "tc1_clk",      .id = 36, .r = { .max = MHZ(166) }, },
+	{ .n = "pwm_clk",      .id = 38, },
+	{ .n = "adc_clk",      .id = 40, .r = { .max = MHZ(83) }, },
+	{ .n = "uhphs_clk",    .id = 41, },
+	{ .n = "udphs_clk",    .id = 42, },
+	{ .n = "ssc0_clk",     .id = 43, .r = { .max = MHZ(83) }, },
+	{ .n = "ssc1_clk",     .id = 44, .r = { .max = MHZ(83) }, },
+	{ .n = "lcdc_clk",     .id = 45, .in_h64mx = true, },
+	{ .n = "isi_clk",      .id = 46, .in_h64mx = true, },
+	{ .n = "trng_clk",     .id = 47, },
+	{ .n = "pdmic_clk",    .id = 48, .r = { .max = MHZ(83) }, },
+	{ .n = "securam_clk",  .id = 51, },
+	{ .n = "qspi0_clk",    .id = 52, .in_h64mx = true, },
+	{ .n = "qspi1_clk",    .id = 53, .in_h64mx = true, },
+	{ .n = "i2sc0_clk",    .id = 54, .r = { .max = MHZ(83) }, },
+	{ .n = "i2sc1_clk",    .id = 55, .r = { .max = MHZ(83) }, },
+	{ .n = "can0_clk",     .id = 56, .r = { .max = MHZ(83) }, },
+	{ .n = "can1_clk",     .id = 57, .r = { .max = MHZ(83) }, },
+	{ .n = "ptc_clk",      .id = 58, },
+	{ .n = "classd_clk",   .id = 59, .r = { .max = MHZ(83) }, },
 };
 
 static int sam_pmc_register_master(const struct device *dev, struct pmc_data *sama5d2_pmc,
@@ -192,6 +268,38 @@ static int sam_pmc_register_system(const struct device *dev, struct pmc_data *sa
 	return 0;
 }
 
+static int sam_pmc_register_peripheral(const struct device *dev, struct pmc_data *sama5d2_pmc)
+{
+	const struct sam_pmc_cfg *cfg = dev->config;
+	struct device *parent;
+	struct device *clk;
+	int ret, i;
+
+	for (i = 0; i < ARRAY_SIZE(sama5d2_peripheral_clk); i++) {
+		if (sama5d2_peripheral_clk[i].in_h64mx) {
+			parent = sama5d2_pmc->chws[PMC_MCK];
+		} else {
+			parent = sama5d2_pmc->chws[PMC_MCK2];
+		}
+
+		ret = clk_register_peripheral((void *const)cfg->reg, &pmc_pcr_lock,
+					      &sama5d2_pcr_layout,
+					      sama5d2_peripheral_clk[i].n,
+					      parent,
+					      sama5d2_peripheral_clk[i].id,
+					      NULL,
+					      &clk);
+		if (ret) {
+			LOG_ERR("Register peripheral clock %d failed", i);
+			return ret;
+		}
+
+		sama5d2_pmc->phws[sama5d2_peripheral_clk[i].id] = clk;
+	}
+
+	return 0;
+}
+
 void sam_pmc_setup(const struct device *dev)
 {
 	const struct sam_pmc_cfg *cfg  = dev->config;
@@ -273,6 +381,11 @@ void sam_pmc_setup(const struct device *dev)
 	}
 
 	ret = sam_pmc_register_system(dev, sama5d2_pmc);
+	if (ret) {
+		return;
+	}
+
+	ret = sam_pmc_register_peripheral(dev, sama5d2_pmc);
 	if (ret) {
 		return;
 	}
