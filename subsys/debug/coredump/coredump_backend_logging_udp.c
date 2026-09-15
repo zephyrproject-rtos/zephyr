@@ -13,6 +13,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_config.h>
 #include <zephyr/net/socket.h>
 #if defined(CONFIG_NET_CONNECTION_MANAGER)
 #include <zephyr/net/conn_mgr_monitor.h>
@@ -231,7 +232,10 @@ NET_MGMT_REGISTER_EVENT_HANDLER(coredump_udp_l4_events, NET_EVENT_L4_CONNECTED,
 				coredump_udp_l4_handler, NULL);
 #else
 
-/* Fallback when conn_mgr is off: run after net_config SYS_INIT (prio 95). */
+/* Fallback when conn_mgr is off: opening the socket at boot needs the
+ * network configured, so run after the automatic network configuration
+ * when it is enabled.
+ */
 static int coredump_udp_presocket_init(void)
 {
 	int r;
@@ -247,7 +251,10 @@ static int coredump_udp_presocket_init(void)
 	return 0;
 }
 
-SYS_INIT(coredump_udp_presocket_init, APPLICATION, 99);
+#define SYS_ANCHOR_coredump_udp_presocket                                      \
+	SYS_ANCHOR_AFTER_IF(CONFIG_NET_CONFIG_AUTO_INIT, SYS_ANCHOR_net_config,\
+			    coredump_udp_presocket)
+SYS_INIT_ANCHORED(coredump_udp_presocket, coredump_udp_presocket_init, APPLICATION);
 
 #endif /* CONFIG_NET_CONNECTION_MANAGER */
 
