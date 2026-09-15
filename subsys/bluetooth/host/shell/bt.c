@@ -109,7 +109,9 @@ static ATOMIC_DEFINE(adv_opt, SHELL_ADV_OPT_NUM);
 #if defined(CONFIG_BT_EXT_ADV)
 uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
-static ATOMIC_DEFINE(adv_set_opt, SHELL_ADV_OPT_NUM)[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
+static ATOMIC_DEFINE(adv_set_opt[CONFIG_BT_EXT_ADV_MAX_ADV_SET], SHELL_ADV_OPT_NUM);
+BUILD_ASSERT(ARRAY_SIZE(adv_set_opt) == CONFIG_BT_EXT_ADV_MAX_ADV_SET,
+	     "adv_set_opt must have one bitmap per advertising set");
 #endif /* CONFIG_BT_EXT_ADV */
 #endif /* CONFIG_BT_BROADCASTER */
 
