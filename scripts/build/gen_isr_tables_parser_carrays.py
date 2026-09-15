@@ -135,6 +135,11 @@ typedef void (* ISR)(const void *);
         else:
             swt = None
 
+        # Pre-pass: derive which CPU lines need the 2nd-level dispatcher and
+        # which level-2 sources are 3rd-level aggregators, with their densely
+        # allocated windows.
+        self.__config.note_multilevel_topology(intlist["interrupts"])
+
         # Process intlist and write to the tables created
         for irq, flags, func, param in intlist["interrupts"]:
             if self.__config.test_isr_direct(flags):
@@ -253,6 +258,39 @@ typedef void (* ISR)(const void *);
 
         fp.write("};\n")
 
+    def __write_l3_window_table(self, fp):
+        """Emit the 3rd-level aggregator windows.
+
+        The generator owns this allocation because it is the only stage that
+        sees every connected flag, so it is the only stage that can derive an
+        aggregator's status-register mask and pack the windows densely. The SoC
+        interrupt controller reads the table back and joins it with the
+        devicetree, which supplies the status-register address.
+
+        Emitted whenever the configuration supports 3rd-level interrupts, even
+        with nothing connected: a devicetree that declares an aggregator no
+        handler ever attaches to is a misconfiguration the driver should report
+        against an empty table, not an undefined-symbol link failure.
+        """
+        windows = self.__config.l3_windows
+
+        if not windows:
+            fp.write("/* No 3rd-level aggregator has a handler connected. */\n")
+            fp.write("const struct z_isr_l3_window z_isr_l3_windows[1] = { { 0 } };\n")
+            fp.write("const size_t z_isr_l3_window_num = 0;\n\n")
+            return
+
+        fp.write(f"const struct z_isr_l3_window z_isr_l3_windows[{len(windows)}] = {{\n")
+        for (line, src), group in windows:
+            catch_all = "true" if group["catch_all"] else "false"
+            fp.write(
+                f"\t{{ .mask = {group['mask']:#010x}, .win_base = {group['win_base']},"
+                f" .l2_src = {src}, .catch_all = {catch_all} }},"
+                f" /* CPU line {line} */\n"
+            )
+        fp.write("};\n")
+        fp.write(f"const size_t z_isr_l3_window_num = {len(windows)};\n\n")
+
     def write_isr_switch_start(self, fp):
         fp.write("void __sw_isr_table ")
         fp.write("get_isr_entry(int irq_index, struct _isr_table_entry *entry)\n")
@@ -278,6 +316,22 @@ typedef void (* ISR)(const void *);
         isr = self.__config.swt_shared_handler
         self.write_isr_case_block(fp, i, isr, arg)
 
+    def write_isr_case_l1_dispatcher(self, fp, i):
+        fp.write(f"\t\tcase {i}:\n")
+        fp.write("\t\t{\n")
+        fp.write(f"\t\t\tentry->isr = (ISR){self.__config.swt_l2_dispatcher};\n")
+        fp.write(f"\t\t\tentry->arg = (const void *){i:#x};\n")
+        fp.write("\t\t\tbreak;\n")
+        fp.write("\t\t}\n")
+
+    def write_isr_case_l3_dispatcher(self, fp, i, group):
+        fp.write(f"\t\tcase {i}:\n")
+        fp.write("\t\t{\n")
+        fp.write(f"\t\t\tentry->isr = (ISR){self.__config.swt_l3_dispatcher};\n")
+        fp.write(f"\t\t\tentry->arg = (const void *){group['index']:#x};\n")
+        fp.write("\t\t\tbreak;\n")
+        fp.write("\t\t}\n")
+
     def write_isr_case_default_block(self, fp):
         fp.write("\t\tdefault:\n")
         fp.write("\t\t{\n")
@@ -289,10 +343,27 @@ typedef void (* ISR)(const void *);
         fp.write("}\n")
 
     def write_isr_table_switch(self, fp):
+        if any(
+            len(self.__swt[i]) == 0 and self.__config.get_l1_dispatcher_line(i)
+            for i in range(self.__nv)
+        ):
+            fp.write(f"extern void {self.__config.swt_l2_dispatcher}(const void *);\n\n")
+        if self.__config.l3_windows:
+            fp.write(f"extern void {self.__config.swt_l3_dispatcher}(const void *);\n\n")
+        if self.__config.emits_l3_windows():
+            self.__write_l3_window_table(fp)
+
         self.write_isr_switch_start(fp)
 
         for i in range(self.__nv):
             if len(self.__swt[i]) == 0:
+                group = self.__config.get_l3_dispatcher_slot(i)
+                if self.__config.get_l1_dispatcher_line(i):
+                    # CPU line that must vector through the 2nd-level dispatcher
+                    self.write_isr_case_l1_dispatcher(fp, i)
+                elif group is not None:
+                    # Level-2 source that is a 3rd-level aggregator
+                    self.write_isr_case_l3_dispatcher(fp, i, group)
                 # Unused interrupt - default will be used
                 continue
             elif len(self.__swt[i]) == 1:
@@ -305,6 +376,18 @@ typedef void (* ISR)(const void *);
         self.write_isr_case_default_block(fp)
 
     def write_isr_table_array(self, fp):
+        # Declare the flat-layout dispatchers if any slot of the table is going
+        # to reference them (see get_l1_dispatcher_line / get_l3_dispatcher_slot).
+        if any(
+            len(self.__swt[i]) == 0 and self.__config.get_l1_dispatcher_line(i)
+            for i in range(self.__nv)
+        ):
+            fp.write(f"extern void {self.__config.swt_l2_dispatcher}(const void *);\n\n")
+        if self.__config.l3_windows:
+            fp.write(f"extern void {self.__config.swt_l3_dispatcher}(const void *);\n\n")
+        if self.__config.emits_l3_windows():
+            self.__write_l3_window_table(fp)
+
         if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
             fp.write("const ")
         fp.write(f"struct _isr_table_entry __sw_isr_table _sw_isr_table[{self.__nv}] = {{\n")
@@ -314,9 +397,22 @@ typedef void (* ISR)(const void *);
 
         for i in range(self.__nv):
             if len(self.__swt[i]) == 0:
-                # Not used interrupt
-                param = "0x0"
-                func = self.__config.swt_spurious_handler
+                group = self.__config.get_l3_dispatcher_slot(i)
+                if self.__config.get_l1_dispatcher_line(i):
+                    # CPU line that must vector through the 2nd-level
+                    # dispatcher: its slot carries the dispatcher, keyed on the
+                    # line number
+                    param = f"{i:#x}"
+                    func = self.__config.swt_l2_dispatcher
+                elif group is not None:
+                    # Level-2 source that is a 3rd-level aggregator: its slot
+                    # carries the status-register demux, keyed on the window
+                    param = f"{group['index']:#x}"
+                    func = self.__config.swt_l3_dispatcher
+                else:
+                    # Not used interrupt
+                    param = "0x0"
+                    func = self.__config.swt_spurious_handler
             elif len(self.__swt[i]) == 1:
                 # Single interrupt
                 param = f"{self.__swt[i][0][0]:#x}"
@@ -331,10 +427,22 @@ typedef void (* ISR)(const void *);
             else:
                 func_as_string = func
 
+            if i == 0:
+                fp.write("\t/* V: level 1, CPU interrupt lines */\n")
             if level2_offset is not None and i == level2_offset:
-                fp.write(f"\t/* Level 2 interrupts start here (offset: {level2_offset}) */\n")
+                fp.write(
+                    f"\t/* S: level 2 interrupt sources start here (offset: {level2_offset}) */\n"
+                )
             if level3_offset is not None and i == level3_offset:
-                fp.write(f"\t/* Level 3 interrupts start here (offset: {level3_offset}) */\n")
+                fp.write(
+                    f"\t/* P: level 3 peripheral signals start here (offset: {level3_offset}) */\n"
+                )
+            for (line, src), group in self.__config.l3_windows:
+                if i == group["win_base"]:
+                    fp.write(
+                        f"\t/* P-window {group['index']}: level-2 source {src} on CPU line"
+                        f" {line}, status mask {group['mask']:#010x} */\n"
+                    )
 
             fp.write(f"\t{{(const void *){param}, (ISR){func_as_string}}}, /* {i} */\n")
         fp.write("};\n")

@@ -191,6 +191,24 @@ BUILD_ASSERT(offsetof(struct _isr_table_entry, isr)
         else:
             swt = None
 
+        # Pre-pass: derive which CPU lines need the 2nd-level dispatcher and
+        # which level-2 sources are 3rd-level aggregators.
+        self.__config.note_multilevel_topology(intlist["interrupts"])
+
+        # The interrupt-matrix layout places the 2nd- and 3rd-level
+        # dispatchers into otherwise empty table slots, which this parser has no
+        # way to express: a slot here is named by the linker section holding its
+        # handler, and the dispatchers have no such section. Refuse rather than
+        # silently emit a table with spurious handlers where the dispatchers
+        # should be.
+        if self.__config.l3_windows or any(
+            self.__config.get_l1_dispatcher_line(i) for i in range(nvec)
+        ):
+            self.__log.error(
+                "CONFIG_ISR_TABLES_LOCAL_DECLARATION does not support the"
+                " interrupt-matrix layout (CONFIG_INTERRUPT_MATRIX_LAYOUT)."
+            )
+
         # Process intlist and write to the tables created
         for irq, flags, sname in intlist["interrupts"]:
             if self.__config.test_isr_direct(flags):
