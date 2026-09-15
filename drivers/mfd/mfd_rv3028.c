@@ -224,7 +224,7 @@ int mfd_rv3028_read_regs(const struct device *dev, uint8_t addr, void *buf, size
 
 	err = i2c_write_read_dt(&config->i2c, &addr, sizeof(addr), buf, len);
 	if (err) {
-		LOG_ERR("failed to read reg addr 0x%02x, len %d (err %d)", addr, len, err);
+		LOG_ERR("failed to read reg addr 0x%02x, len %zu (err %d)", addr, len, err);
 		return err;
 	}
 
@@ -247,7 +247,7 @@ int mfd_rv3028_write_regs(const struct device *dev, uint8_t addr, const void *bu
 
 	err = i2c_write_dt(&config->i2c, block, sizeof(block));
 	if (err) {
-		LOG_ERR("failed to write reg addr 0x%02x, len %d (err %d)", addr, len, err);
+		LOG_ERR("failed to write reg addr 0x%02x, len %zu (err %d)", addr, len, err);
 		return err;
 	}
 
