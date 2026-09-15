@@ -117,6 +117,7 @@ endforeach()
 
 if(EXISTS ${APP_DIR}/Kconfig.sysbuild)
   set(KCONFIG_ROOT ${APP_DIR}/Kconfig.sysbuild)
+  file(TO_CMAKE_PATH "${KCONFIG_ROOT}" KCONFIG_ROOT)
 endif()
 
 # Apply any EXTRA_CONF_FILE variables from snippets
