@@ -1020,6 +1020,84 @@ static void mcux_lpadc_isr(const struct device *dev)
 	}
 }
 
+/*
+ * Bring the converter up from reset: clock, configuration, calibration and the
+ * watermark interrupt.
+ */
+static int mcux_lpadc_configure_hw(const struct device *dev)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	struct mcux_lpadc_data *data = dev->data;
+	ADC_Type *base = config->base;
+	lpadc_config_t adc_config;
+	int err;
+
+	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (err && err != -ENOSYS) {
+		/* Real error occurred */
+		LOG_ERR("Failed to configure clock: %d", err);
+		return err;
+	}
+
+	LPADC_GetDefaultConfig(&adc_config);
+
+	adc_config.enableAnalogPreliminary = true;
+	adc_config.referenceVoltageSource = config->voltage_ref;
+	adc_config.enableInDozeMode = !config->stop_in_low_power;
+
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) && FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
+	adc_config.conversionAverageMode = config->calibration_average;
+#endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
+
+#if !(DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_power_level))
+	adc_config.powerLevelMode = config->power_level;
+#endif
+
+	LPADC_Init(base, &adc_config);
+
+	/* Do ADC calibration. */
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CALOFS) && FSL_FEATURE_LPADC_HAS_CTRL_CALOFS
+#if defined(FSL_FEATURE_LPADC_HAS_OFSTRIM) && FSL_FEATURE_LPADC_HAS_OFSTRIM
+	/* Request offset calibration. */
+#if defined(CONFIG_LPADC_DO_OFFSET_CALIBRATION) && CONFIG_LPADC_DO_OFFSET_CALIBRATION
+	LPADC_DoOffsetCalibration(base);
+#else
+#if defined(FSL_FEATURE_LPADC_OFSTRIM_COUNT) && (FSL_FEATURE_LPADC_OFSTRIM_COUNT == 1U)
+	LPADC_SetOffsetValue(base, config->offset_a);
+#else
+	LPADC_SetOffsetValue(base, config->offset_a, config->offset_b);
+#endif /* FSL_FEATURE_LPADC_OFSTRIM_COUNT */
+#endif /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
+#endif /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
+	/* Request gain calibration.
+	 * A 1us delay is required between offset calibration and gain
+	 * calibration. Without it, the gain calibration request is not
+	 * accepted by the hardware, causing LPADC_FinishAutoCalibration()
+	 * to spin forever on GCC[RDY]. See GitHub issue #105652.
+	 */
+	k_busy_wait(1U);
+	LPADC_PrepareAutoCalibration(base);
+	LPADC_FinishAutoCalibration(base);
+#endif /* FSL_FEATURE_LPADC_HAS_CTRL_CALOFS */
+
+#if (defined(FSL_FEATURE_LPADC_HAS_CFG_CALOFS) && FSL_FEATURE_LPADC_HAS_CFG_CALOFS)
+	/* Do auto calibration. */
+	LPADC_DoAutoCalibration(base);
+#endif /* FSL_FEATURE_LPADC_HAS_CFG_CALOFS */
+
+	/* Enable the watermark interrupt if not using DMA or if DMA setup failed */
+	if (!IS_ENABLED(CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN) || !data->use_dma) {
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+		LPADC_EnableInterrupts(base, kLPADC_FIFO0WatermarkInterruptEnable);
+#else
+		LPADC_EnableInterrupts(base, kLPADC_FIFOWatermarkInterruptEnable);
+#endif
+		config->irq_config_func(dev);
+	}
+
+	return 0;
+}
+
 #if CONFIG_PM_DEVICE
 static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_action action)
 {
@@ -1088,8 +1166,6 @@ static int mcux_lpadc_init(const struct device *dev)
 {
 	const struct mcux_lpadc_config *config = dev->config;
 	struct mcux_lpadc_data *data = dev->data;
-	ADC_Type *base = config->base;
-	lpadc_config_t adc_config;
 	int err;
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -1119,59 +1195,7 @@ static int mcux_lpadc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
-	if (err && err != -ENOSYS) {
-		/* Real error occurred */
-		LOG_ERR("Failed to configure clock: %d", err);
-		return err;
-	}
-
-	LPADC_GetDefaultConfig(&adc_config);
-
-	adc_config.enableAnalogPreliminary = true;
-	adc_config.referenceVoltageSource = config->voltage_ref;
-	adc_config.enableInDozeMode = !config->stop_in_low_power;
-
-#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) && FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
-	adc_config.conversionAverageMode = config->calibration_average;
-#endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
-
-#if !(DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_power_level))
-	adc_config.powerLevelMode = config->power_level;
-#endif
-
-	LPADC_Init(base, &adc_config);
-
-	/* Do ADC calibration. */
-#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CALOFS) && FSL_FEATURE_LPADC_HAS_CTRL_CALOFS
-#if defined(FSL_FEATURE_LPADC_HAS_OFSTRIM) && FSL_FEATURE_LPADC_HAS_OFSTRIM
-	/* Request offset calibration. */
-#if defined(CONFIG_LPADC_DO_OFFSET_CALIBRATION) && CONFIG_LPADC_DO_OFFSET_CALIBRATION
-	LPADC_DoOffsetCalibration(base);
-#else
-#if defined(FSL_FEATURE_LPADC_OFSTRIM_COUNT) && (FSL_FEATURE_LPADC_OFSTRIM_COUNT == 1U)
-	LPADC_SetOffsetValue(base, config->offset_a);
-#else
-	LPADC_SetOffsetValue(base, config->offset_a, config->offset_b);
-#endif /* FSL_FEATURE_LPADC_OFSTRIM_COUNT */
-#endif /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
-#endif /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
-	/* Request gain calibration.
-	 * A 1us delay is required between offset calibration and gain
-	 * calibration. Without it, the gain calibration request is not
-	 * accepted by the hardware, causing LPADC_FinishAutoCalibration()
-	 * to spin forever on GCC[RDY]. See GitHub issue #105652.
-	 */
-	k_busy_wait(1U);
-	LPADC_PrepareAutoCalibration(base);
-	LPADC_FinishAutoCalibration(base);
-#endif /* FSL_FEATURE_LPADC_HAS_CTRL_CALOFS */
-
-#if (defined(FSL_FEATURE_LPADC_HAS_CFG_CALOFS) && FSL_FEATURE_LPADC_HAS_CFG_CALOFS)
-	/* Do auto calibration. */
-	LPADC_DoAutoCalibration(base);
-#endif /* FSL_FEATURE_LPADC_HAS_CFG_CALOFS */
-
+	data->dev = dev;
 	data->use_dma = false;
 
 #if defined(CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN)
@@ -1183,25 +1207,16 @@ static int mcux_lpadc_init(const struct device *dev)
 	}
 #endif
 
-	/* Enable the watermark interrupt if not using DMA or if DMA setup failed */
-	if (!IS_ENABLED(CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN) || !data->use_dma) {
-#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
-		LPADC_EnableInterrupts(base, kLPADC_FIFO0WatermarkInterruptEnable);
-#else
-		LPADC_EnableInterrupts(base, kLPADC_FIFOWatermarkInterruptEnable);
-#endif
-		config->irq_config_func(dev);
+	err = mcux_lpadc_configure_hw(dev);
+	if (err < 0) {
+		return err;
 	}
-
-	data->dev = dev;
 
 	/* Initialize OPAMP gain control context */
 	data->current_gain_index = 0U;
 	data->desired_gain_index = -1;
 
 	adc_context_unlock_unconditionally(&data->ctx);
-
-
 
 #if CONFIG_PM_DEVICE
 	/* Disable LPADC here, in pm_device_driver_init,
@@ -1217,8 +1232,6 @@ static int mcux_lpadc_init(const struct device *dev)
 #else
 	return 0;
 #endif
-
-	return 0;
 }
 
 static DEVICE_API(adc, mcux_lpadc_driver_api) = {
