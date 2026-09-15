@@ -66,7 +66,13 @@ set(CMAKE_SYSTEM_NAME Generic)
 #   CMAKE_SYSTEM_NAME-compiler-CMAKE_SYSTEM_PROCESSOR.cmake file,
 #   which can be used to modify settings like compiler flags etc. for
 #   the target
-set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
+if("${ARCH}" STREQUAL "posix")
+  # For the POSIX architecture, let's set it to the actual target host architecture
+  include(${ARCH_DIR}/posix/target_arch.cmake)
+  set(CMAKE_SYSTEM_PROCESSOR ${NATIVE_TARGET_ARCH})
+else()
+  set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
+endif()
 
 # https://cmake.org/cmake/help/latest/variable/CMAKE_SYSTEM_VERSION.html:
 #   When the CMAKE_SYSTEM_NAME variable is set explicitly to enable cross
