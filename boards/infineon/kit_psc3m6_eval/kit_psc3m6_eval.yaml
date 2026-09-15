@@ -19,6 +19,7 @@ supported:
   - uart
   - clock_control
   - pinctrl
+  - dma
   - rtc
   - watchdog
   - arduino_gpio
