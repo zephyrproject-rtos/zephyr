@@ -18,7 +18,6 @@ config MODEM_RECEIVER
 	bool "Modem receiver helper driver"
 	depends on SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
-	select RING_BUFFER
 	help
 	  This driver allows modem drivers to communicate over UART with custom
 	  defined protocols. Driver doesn't inspect received data and all
@@ -64,7 +63,6 @@ config MODEM_CONTEXT_VERBOSE_DEBUG
 
 config MODEM_IFACE_UART
 	bool "UART-based modem interface"
-	select RING_BUFFER
 	help
 	  To configure this layer for use, create a modem_iface_uart_data
 	  object and pass it's reference to modem_iface_uart_init()

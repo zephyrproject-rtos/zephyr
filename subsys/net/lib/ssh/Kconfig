@@ -7,7 +7,6 @@ config SSH_SERVER
 	select EXPERIMENTAL
 	select ZVFS
 	select ZVFS_EVENTFD
-	select RING_BUFFER
 	select NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
 	  SSH-2 server support.
@@ -18,7 +17,6 @@ config SSH_CLIENT
 	select EXPERIMENTAL
 	select ZVFS
 	select ZVFS_EVENTFD
-	select RING_BUFFER
 	select NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
 	  SSH-2 client support.
