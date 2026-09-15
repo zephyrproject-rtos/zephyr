@@ -27,3 +27,10 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+
+  drivers.audio.dmic.build:
+    platform_allow:
+      - arduino_giga_r1/stm32h747xx/m7
+      - arduino_nicla_vision/stm32h747xx/m7
+      - stm32f769i_disco
+      - stm32l476g_disco
