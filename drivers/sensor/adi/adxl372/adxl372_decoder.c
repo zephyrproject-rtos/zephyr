@@ -147,6 +147,7 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 
 		buffer = sample_end;
 		*fit = (uintptr_t)sample_end;
+		sample_num++;
 		count++;
 	}
 	data->header.reading_count = count;

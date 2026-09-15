@@ -74,7 +74,7 @@ void adxl372_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		(const struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
 	struct adxl372_data *data = (struct adxl372_data *)dev->data;
 	const struct adxl372_dev_config *cfg_372 = dev->config;
-	uint8_t int_value = (uint8_t)~ADXL372_INT1_MAP_FIFO_FULL_MSK;
+	uint8_t int_value = 0;
 	uint8_t fifo_full_irq = 0;
 
 	int rc = gpio_pin_interrupt_configure_dt(&cfg_372->interrupt, GPIO_INT_DISABLE);
@@ -341,7 +341,7 @@ static void adxl372_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 
 	bool fifo_full_irq = false;
 
-	if ((fifo_wmark_cfg != NULL) && (fifo_full_cfg != NULL) &&
+	if (((fifo_wmark_cfg != NULL) || (fifo_full_cfg != NULL)) &&
 	    FIELD_GET(ADXL372_INT1_MAP_FIFO_FULL_MSK, status1)) {
 		fifo_full_irq = true;
 	}
@@ -371,7 +371,15 @@ static void adxl372_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		return;
 	}
 
-	enum sensor_stream_data_opt data_opt = MIN(fifo_wmark_cfg->opt, fifo_full_cfg->opt);
+	enum sensor_stream_data_opt data_opt;
+
+	if ((fifo_wmark_cfg != NULL) && (fifo_full_cfg == NULL)) {
+		data_opt = fifo_wmark_cfg->opt;
+	} else if ((fifo_wmark_cfg == NULL) && (fifo_full_cfg != NULL)) {
+		data_opt = fifo_full_cfg->opt;
+	} else {
+		data_opt = MIN(fifo_wmark_cfg->opt, fifo_full_cfg->opt);
+	}
 
 	if (data_opt == SENSOR_STREAM_DATA_NOP || data_opt == SENSOR_STREAM_DATA_DROP) {
 		uint8_t *buf;
