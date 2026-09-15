@@ -395,11 +395,30 @@ static void hid_vcu_disconnect_work(struct k_work *work)
 	}
 }
 
+static void hid_intr_conn_work_handler(struct k_work *work)
+{
+	struct bt_hid_device *hid = CONTAINER_OF(work, struct bt_hid_device, intr_conn_work);
+	int err;
+
+	/* The session may have been torn down while this work was pending. */
+	if (hid->state != BT_HID_STATE_INTR_CONNECTING) {
+		LOG_DBG("state %d, not INTR_CONNECTING, skip INTR connect", hid->state);
+		return;
+	}
+
+	err = bt_l2cap_chan_connect(hid->ctrl_session.br_chan.chan.conn,
+				    &hid->intr_session.br_chan.chan, BT_L2CAP_PSM_HID_INTR);
+	if (err != 0) {
+		LOG_ERR("INTR connect failed (%d)", err);
+		hid->state = BT_HID_STATE_DISCONNECTING;
+		bt_l2cap_chan_disconnect(&hid->ctrl_session.br_chan.chan);
+	}
+}
+
 static void bt_hid_l2cap_ctrl_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_hid_device *hid = HID_DEVICE_BY_CTRL_CHAN(chan);
 	__maybe_unused enum bt_hid_channel_type chtype;
-	int err;
 
 	chtype = HID_CHAN_TYPE(chan);
 
@@ -417,16 +436,8 @@ static void bt_hid_l2cap_ctrl_connected(struct bt_l2cap_chan *chan)
 		return;
 	}
 
-	err = bt_l2cap_chan_connect(hid->ctrl_session.br_chan.chan.conn,
-				    &hid->intr_session.br_chan.chan, BT_L2CAP_PSM_HID_INTR);
-	if (err != 0) {
-		LOG_ERR("INTR connect failed");
-		hid->state = BT_HID_STATE_DISCONNECTING;
-		bt_l2cap_chan_disconnect(&hid->ctrl_session.br_chan.chan);
-		return;
-	}
-
 	hid->state = BT_HID_STATE_INTR_CONNECTING;
+	bt_work_submit(&hid->intr_conn_work);
 }
 
 static void bt_hid_l2cap_intr_connected(struct bt_l2cap_chan *chan)
@@ -657,12 +668,14 @@ static void bt_hid_session_init(struct bt_hid_device *hid, enum bt_hid_role role
 
 	k_work_init_delayable(&hid->intr_timeout, hid_intr_timeout_handler);
 	k_work_init_delayable(&hid->vcu_disconnect, hid_vcu_disconnect_work);
+	k_work_init(&hid->intr_conn_work, hid_intr_conn_work_handler);
 }
 
 static void bt_hid_device_cleanup(struct bt_hid_device *hid)
 {
 	k_work_cancel_delayable(&hid->intr_timeout);
 	k_work_cancel_delayable(&hid->vcu_disconnect);
+	k_work_cancel(&hid->intr_conn_work);
 
 	/* HID spec v1.1.2 Section 2.1.2: default protocol mode is Report
 	 * Protocol Mode. Reset on disconnect for next connection.
