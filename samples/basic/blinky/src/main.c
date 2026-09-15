@@ -14,9 +14,10 @@
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
-/*
- * A build error on this line means your board is unsupported.
- * See the sample documentation for information on how to fix this.
+/* A missing or disabled "led0" alias is rejected at configuration time.
+ * A build error on this line means the alias resolves to a node without
+ * a usable "gpios" property. See the sample documentation for information
+ * on how to fix this.
  */
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
