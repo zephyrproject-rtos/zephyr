@@ -144,6 +144,15 @@ config TRACING_CTF_TIMESTAMP
 	  Timestamp prefix will be added to the beginning of CTF
 	  event internally.
 
+config TRACING_CTF_TIMESTAMP_64
+	bool "64-bit cycle counter timestamp for CTF events"
+	default n
+	depends on TRACING_CTF && TRACING_CTF_TIMESTAMP
+	help
+	  Use sys_clock_cycle_get_64() as the CTF event timestamp instead of
+	  the default 32-bit nanosecond value. Avoids the ~4.29 s counter
+	  rollover. Required by the circular RAM backend.
+
 choice TRACING_METHOD_CHOICE
 	prompt "Tracing Method"
 	default TRACING_ASYNC
@@ -253,6 +262,21 @@ config TRACING_BACKEND_NAME
 	default "tracing_backend_ram" if TRACING_BACKEND_RAM
 	default "tracing_backend_semihost" if TRACING_BACKEND_SEMIHOST
 	default "tracing_backend_adsp_memory_window" if TRACING_BACKEND_ADSP_MEMORY_WINDOW
+	
+config TRACING_CTF_CIRCULAR_RAM
+	bool "Circular (overwrite-oldest) CTF RAM capture"
+	default y
+	depends on TRACING_CTF && TRACING_SYNC && TRACING_BACKEND_RAM
+	select TRACING_CTF_TIMESTAMP_64
+	help
+	  Flight-recorder style circular RAM capture. This is not a tracing
+	  backend: CTF_GATHER_FIELDS() writes complete CTF events directly to the
+	  circular buffer. The buffer is divided
+	  into TRACING_BACKEND_RAM_PACKET_COUNT equal-size CTF packets; when
+	  the active packet is full the next slot overwrites the oldest, so
+	  the most recent events are always retained. Requires TRACING_SYNC
+	  (one complete CTF event per write() call); the async path delivers
+	  arbitrary byte runs and cannot preserve CTF packet boundaries.
 
 config RAM_TRACING_BUFFER_SIZE
 	int "Ram Tracing buffer size"
@@ -261,6 +285,17 @@ config RAM_TRACING_BUFFER_SIZE
 	help
 	  Size of the RAM trace buffer. Trace will be discarded if the
 	  length is exceeded.
+
+config TRACING_BACKEND_RAM_PACKET_COUNT
+	int "Number of rotating CTF packets in circular RAM capture"
+	default 32
+	range 2 256
+	depends on TRACING_CTF_CIRCULAR_RAM
+	help
+	  Number of equal-size packet slots. Each slot is
+	  RAM_TRACING_BUFFER_SIZE / TRACING_BACKEND_RAM_PACKET_COUNT bytes.
+	  RAM_TRACING_BUFFER_SIZE must be a multiple of this value and a slot
+	  must hold the CTF packet header plus TRACING_PACKET_MAX_SIZE bytes.
 
 config TRACING_HANDLE_HOST_CMD
 	bool "Host command handle"
