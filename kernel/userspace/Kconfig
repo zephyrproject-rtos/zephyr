@@ -37,6 +37,27 @@ config BOUNDS_CHECK_BYPASS_MITIGATION
 	  in from untrusted sources (user mode threads). When disabled, these
 	  macros do nothing.
 
+choice SYS_MUTEX_IMPL
+	prompt "Implementation for sys_mutex"
+	default SYS_MUTEX_IMPL_FUTEX if CURRENT_THREAD_USE_TLS && !ATOMIC_OPERATIONS_C
+	default SYS_MUTEX_IMPL_K_MUTEX
+	help
+	  Choose which implementation to use for sys_mutex.
+
+config SYS_MUTEX_IMPL_K_MUTEX
+	bool "Via k_mutex"
+	help
+	  Implement sys_mutex via a k_mutex instance.
+
+config SYS_MUTEX_IMPL_FUTEX
+	bool "Via futex"
+	help
+	  Implement sys_mutex via atomics and futex. This allows locking and
+	  unlocking uncontended mutexes without syscalls provided that the current
+	  thread pointer and atomics work without syscalls.
+
+endchoice
+
 
 rsource "Kconfig.mem_domain"
 endif
