@@ -1,9 +1,11 @@
-# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2019-2026 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
 # Common fields for EEPROM devices
 
 include: base.yaml
+
+class: eeprom
 
 properties:
   size:
