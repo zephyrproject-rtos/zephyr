@@ -45,3 +45,10 @@ config CODEC_RX_THREAD_PRIO
 	default 4
 	help
 	  Controls the CODEC RX thread priority
+
+config APP_VOICE_OVER_HCI
+	bool
+	default BT_VOICE_OVER_HCI
+	imply LIBSBC if BT_HFP_HF_CODEC_MSBC
+	help
+	  Enables voice over HCI transport for handsfree application.

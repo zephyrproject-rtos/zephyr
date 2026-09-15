@@ -170,6 +170,11 @@ struct bt_conn_sco {
 	/* Reference to the struct bt_sco_chan */
 	struct bt_sco_chan      *chan;
 
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	/** Queue from which conn will pull data */
+	struct k_fifo           tx_queue;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
+
 	uint16_t                pkt_type;
 	uint8_t                 dev_class[3];
 	uint8_t                 link_type;
