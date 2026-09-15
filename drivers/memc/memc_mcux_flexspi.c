@@ -295,15 +295,15 @@ int memc_flexspi_transfer(const struct device *dev,
 	flexspi_transfer_t tmp;
 	struct memc_flexspi_data *data = dev->data;
 	status_t status;
-	uint32_t seq_off, addr_offset = 0U;
-	int i;
+	uint32_t seq_off;
 
-	/* Calculate sequence offset and address offset based on port */
+	/*
+	 * Calculate sequence offset based on port. The port address offset
+	 * is applied by FLEXSPI_TransferBlocking() in the HAL, which adds the
+	 * sizes of all preceding ports from FLSHCR0.
+	 */
 	seq_off = data->port_luts[transfer->port].lut_offset /
 				MEMC_FLEXSPI_CMD_PER_SEQ;
-	for (i = 0; i < transfer->port; i++) {
-		addr_offset += data->size[i];
-	}
 
 	/*
 	 * Lock IRQs while an IP command is active. If an ISR fires and its handler
@@ -313,11 +313,10 @@ int memc_flexspi_transfer(const struct device *dev,
 #if CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	unsigned int key = irq_lock();
 #endif
-	if ((seq_off != 0) || (addr_offset != 0)) {
-		/* Adjust device address and sequence index for transfer */
+	if (seq_off != 0) {
+		/* Adjust sequence index for transfer */
 		memcpy(&tmp, transfer, sizeof(tmp));
 		tmp.seqIndex += seq_off;
-		tmp.deviceAddress += addr_offset;
 		status = FLEXSPI_TransferBlocking(base, &tmp);
 	} else {
 		/* Transfer does not need adjustment */
