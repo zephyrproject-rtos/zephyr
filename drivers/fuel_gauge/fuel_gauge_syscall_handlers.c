@@ -81,6 +81,19 @@ static inline int z_vrfy_fuel_gauge_get_buffer_prop(const struct device *dev,
 
 #include <zephyr/syscalls/fuel_gauge_get_buffer_prop_mrsh.c>
 
+static inline int z_vrfy_fuel_gauge_set_buffer_prop(const struct device *dev,
+						    fuel_gauge_prop_t prop, const void *src,
+						    size_t src_len)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FUEL_GAUGE));
+
+	K_OOPS(K_SYSCALL_MEMORY_READ(src, src_len));
+
+	return z_impl_fuel_gauge_set_buffer_prop(dev, prop, src, src_len);
+}
+
+#include <zephyr/syscalls/fuel_gauge_set_buffer_prop_mrsh.c>
+
 static inline int z_vrfy_fuel_gauge_battery_cutoff(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_DRIVER_FUEL_GAUGE(dev, battery_cutoff));
