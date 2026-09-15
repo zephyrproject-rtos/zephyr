@@ -221,6 +221,16 @@
 				status = "okay";
 			};
 		};
+
+		qspi: spi@e000d000 {
+			compatible = "xlnx,zynq-qspi";
+			reg = <0xe000d000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 
 	slcr: slcr@f8000000 {
