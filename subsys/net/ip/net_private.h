@@ -78,6 +78,13 @@ extern enum net_verdict net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
 
 extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
 
+/* Return the NET_ETH_MCAST_FILTER_COUNT L2 multicast addresses tracked in
+ * the VLAN context of the interface, NULL if the interface is not a VLAN
+ * interface. The entries are protected by the mcast_lock of the Ethernet L2.
+ */
+struct net_eth_mcast_addr;
+extern struct net_eth_mcast_addr *net_eth_vlan_mcast_addrs(struct net_if *iface);
+
 #if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
 extern void net_stats_prometheus_init(struct net_if *iface);
 #else

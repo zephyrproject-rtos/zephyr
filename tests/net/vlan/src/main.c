@@ -1144,6 +1144,97 @@ ZTEST(net_vlan, test_vlan_mcast_filter)
 	zassert_false(eth_filter_data.set, "Filter not disabled");
 }
 
+/* The groups joined on a VLAN interface follow it when it is detached from
+ * and attached to an Ethernet interface, and they can be joined and left
+ * also while the interface is detached.
+ */
+ZTEST(net_vlan, test_vlan_mcast_filter_detach)
+{
+	static const struct net_eth_addr mcast_addr = {
+		{ 0x01, 0x00, 0x5e, 0x00, 0x00, 0x02 }
+	};
+	static const uint16_t tags[] = {
+		VLAN_TAG_1, VLAN_TAG_2, VLAN_TAG_3, VLAN_TAG_4, VLAN_TAG_5
+	};
+	bool enabled_here[ARRAY_SIZE(tags)] = { false };
+	struct net_if *main_iface, *iface;
+	int ret;
+
+	if (NET_VLAN_MAX_COUNT == 0) {
+		ztest_test_skip();
+	}
+
+	main_iface = eth_interfaces[0];
+
+	/* Occupy every VLAN interface so that re-enabling the tag below
+	 * always lands on the interface that was just disabled.
+	 */
+	for (size_t i = 0; i < ARRAY_SIZE(tags); i++) {
+		ret = net_eth_vlan_enable(main_iface, tags[i]);
+		zassert_true(ret == 0 || ret == -EALREADY,
+			     "Cannot enable %d (%d)", tags[i], ret);
+		enabled_here[i] = (ret == 0);
+	}
+
+	iface = net_eth_get_vlan_iface(main_iface, VLAN_TAG_5);
+	zassert_not_null(iface, "No interface for tag %d", VLAN_TAG_5);
+
+	memset(&eth_filter_data, 0, sizeof(eth_filter_data));
+
+	/* A group joined while attached is removed from the filter of the
+	 * Ethernet interface when the VLAN interface detaches.
+	 */
+	ret = net_eth_mcast_addr_add(iface, &mcast_addr);
+	zassert_ok(ret, "Cannot join the group (%d)", ret);
+	zexpect_equal(eth_filter_data.count, 1, "Filter not programmed");
+
+	ret = net_eth_vlan_disable(main_iface, VLAN_TAG_5);
+	zassert_ok(ret, "Cannot disable %d (%d)", VLAN_TAG_5, ret);
+
+	zexpect_equal(eth_filter_data.count, 2, "Filter not removed on detach");
+	zexpect_false(eth_filter_data.set, "Filter not disabled");
+	zexpect_mem_equal(eth_filter_data.mac_address.addr, mcast_addr.addr,
+			  sizeof(mcast_addr.addr), "Wrong address removed");
+
+	/* The group can be left and joined again while detached, and there
+	 * is nothing to program.
+	 */
+	ret = net_eth_mcast_addr_rm(iface, &mcast_addr);
+	zassert_ok(ret, "Cannot leave the group while detached (%d)", ret);
+
+	ret = net_eth_mcast_addr_add(iface, &mcast_addr);
+	zassert_ok(ret, "Cannot join the group while detached (%d)", ret);
+
+	zexpect_equal(eth_filter_data.count, 2, "Filter programmed while detached");
+
+	/* The group is pushed to the filter of the Ethernet interface when
+	 * the VLAN interface attaches again.
+	 */
+	ret = net_eth_vlan_enable(main_iface, VLAN_TAG_5);
+	zassert_ok(ret, "Cannot enable %d (%d)", VLAN_TAG_5, ret);
+	zexpect_equal_ptr(net_eth_get_vlan_iface(main_iface, VLAN_TAG_5), iface,
+			  "Tag %d not on the same interface", VLAN_TAG_5);
+
+	zexpect_equal(eth_filter_data.count, 3, "Filter not programmed on attach");
+	zexpect_true(eth_filter_data.set, "Filter not enabled");
+	zexpect_equal_ptr(eth_filter_data.iface, main_iface,
+			  "Filter programmed for a wrong interface");
+	zexpect_mem_equal(eth_filter_data.mac_address.addr, mcast_addr.addr,
+			  sizeof(mcast_addr.addr), "Wrong address filtered");
+
+	/* Leave the group and give the interfaces back */
+	ret = net_eth_mcast_addr_rm(iface, &mcast_addr);
+	zexpect_ok(ret, "Cannot leave the group (%d)", ret);
+	zexpect_equal(eth_filter_data.count, 4, "Filter not removed");
+
+	for (size_t i = 0; i < ARRAY_SIZE(tags); i++) {
+		if (enabled_here[i]) {
+			ret = net_eth_vlan_disable(main_iface, tags[i]);
+			zexpect_ok(ret, "Cannot disable %d (%d)", tags[i], ret);
+		}
+	}
+}
+
 static bool add_peer_neighbor(struct net_if *iface, struct net_in6_addr *addr,
 			      uint8_t *lladdr)
 {
