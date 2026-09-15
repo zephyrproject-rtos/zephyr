@@ -46,15 +46,13 @@ def test_dump_json_is_object():
 
 
 def test_check_scripts():
-    import check_completion
-
     ir, errors = generate.collect_ir()
     assert not errors
     rendered = generate.render(ir)
     if "scripts/west_commands/completion/generate.py" in BASH_SCRIPT.read_text(encoding="utf-8"):
-        assert check_completion.check_scripts(rendered) == []
+        assert generate.check_scripts(rendered) == []
     else:
-        stale = check_completion.check_scripts(rendered)
+        stale = generate.check_scripts(rendered)
         assert len(stale) > 0
 
 
