@@ -609,6 +609,69 @@ A real life example for Mbed TLS module could look like this:
    PURL field must follow the PURL specification provided by `Github
    <https://github.com/package-url/purl-spec/blob/master/PURL-SPECIFICATION.rst>`_.
 
+.. _modules-vulnerability-assessments:
+
+Vulnerability assessments (VEX)
+===============================
+
+An external reference makes a module's vulnerabilities *discoverable*, but a scanner matching a
+CPE reports every CVE ever recorded against that project, including ones already fixed at the
+module's current revision and ones that never applied to the way the module uses the code. The
+``vulnerability-assessments`` field lets a module answer those findings once, in the module
+itself, instead of leaving every downstream user to redo the analysis.
+
+Each entry is a `VEX`_ (Vulnerability Exploitability eXchange) statement about one vulnerability:
+
+.. code-block:: yaml
+
+   security:
+     external-references:
+       - cpe:2.3:a:vendor:product:1.2.3:*:*:*:*:*:*:*
+     vulnerability-assessments:
+       - vulnerability: CVE-2024-12345
+         status: fixed
+         status-notes: Backported upstream commit abc1234.
+         references:
+           - https://github.com/vendor/product/security/advisories/GHSA-xxxx-yyyy-zzzz
+       - vulnerability: CVE-2024-54321
+         status: not_affected
+         justification: vulnerable_code_not_in_execute_path
+         impact-statement: >
+           The affected parser is only reachable from the server role, which this
+           module never enables.
+
+``vulnerability`` and ``status`` are required. ``status`` is one of:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Status
+     - Meaning
+   * - ``not_affected``
+     - The vulnerability does not apply to this module as it ships.
+   * - ``affected``
+     - The module is affected and users should act.
+   * - ``fixed``
+     - This revision of the module contains the fix.
+   * - ``under_investigation``
+     - Impact is not known yet.
+
+The remaining fields depend on the status, and are rejected when they do not match it:
+
+- ``justification`` and ``impact-statement`` explain a ``not_affected`` claim. At least one of
+  the two is required, since a bare "not affected" is not actionable. ``justification`` is the
+  machine-readable reason, one of ``component_not_present``, ``vulnerable_code_not_present``,
+  ``vulnerable_code_not_in_execute_path``,
+  ``vulnerable_code_cannot_be_controlled_by_adversary`` or
+  ``inline_mitigations_already_exist``. ``impact-statement`` is the prose explanation.
+- ``action-statement`` says what a user should do about an ``affected`` vulnerability, and is
+  required for that status.
+- ``status-notes`` records how the status was reached, for any status.
+- ``references`` lists URLs backing the assessment, such as advisories or fixing commits.
+
+.. _VEX: https://www.cisa.gov/sites/default/files/2023-04/minimum-requirements-for-vex_508c.pdf
+
 
 Build system integration
 ========================
