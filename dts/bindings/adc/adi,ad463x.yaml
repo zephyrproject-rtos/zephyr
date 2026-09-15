@@ -1,0 +1,167 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices AD463x family precision SAR ADCs (offload-mode driver).
+
+  Covers AD4630-24, AD4630-20, AD4630-16, AD4631-24, AD4631-20, AD4631-16,
+  AD4632-24, AD4632-20, and AD4632-16. The driver assumes an offload-capable
+  data path consisting of an ADI AXI SPI Engine (with offload module),
+  an ADI AXI DMAC for DEV-to-MEM capture, an ADI AXI CLKGEN for the SPI
+  reference / capture clock, and an ADI AXI PWMGEN to generate the CNV
+  trigger. The device is a SPI child of the AXI SPI Engine controller
+  (register access uses the standard SPI API; the offload path is driven
+  through the engine's vendor extension). The DMAC, CLKGEN and PWMGEN are
+  referenced through the standard "dmas", "clocks" and "pwms" specifiers.
+
+  Reset / CNV / PGIA control GPIOs are optional; on the Digilent Zedboard
+  AD4630_FMC reference design these are wired to Zynq EMIO bits that the
+  Zephyr GPIO controller does not expose, so platform code performs the
+  reset pulse. When the GPIOs are present in DT, the driver uses them.
+
+compatible: "adi,ad463x"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+on-bus: spi
+
+io-channel-cells:
+  - input
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+
+  adi,part:
+    type: string
+    required: true
+    enum:
+      - "ad4630-24"
+      - "ad4630-20"
+      - "ad4630-16"
+      - "ad4631-24"
+      - "ad4631-20"
+      - "ad4631-16"
+      - "ad4632-24"
+      - "ad4632-20"
+      - "ad4632-16"
+    description: AD463x part variant.
+
+  dmas:
+    required: true
+    description: |
+      DMA specifier for the AXI DMAC capturing offload samples. One entry;
+      the channel cell selects the DMAC channel (matches HDL wiring).
+
+  dma-names:
+    required: true
+    description: Must contain "rx" for the DEV-to-MEM capture channel.
+
+  clocks:
+    required: true
+    description: Clock specifier for the AXI CLKGEN providing the SPI ref clock.
+
+  pwms:
+    type: phandle-array
+    required: true
+    description: |
+      PWM specifier for the AXI PWMGEN generating the CNV trigger. The channel
+      cell selects the PWMGEN output used for CNV (matches HDL wiring).
+
+  adi,vref-microvolts:
+    type: int
+    default: 5000000
+    description: External reference voltage in microvolts (default 5.0 V).
+
+  adi,axi-clkgen-rate-hz:
+    type: int
+    default: 160000000
+    description: AXI CLKGEN output rate in Hz used for SPI capture.
+
+  adi,sample-rate-hz:
+    type: int
+    default: 2000000
+    description: |
+      Conversion rate driven by the PWMGEN CNV channel. Must be within the
+      AD463x maximum throughput for the chosen output / lane mode.
+
+  adi,lane-mode:
+    type: string
+    enum:
+      - "one"
+      - "two"
+      - "four"
+      - "shared"
+    default: "one"
+    description: |
+      Output lane mode (REG_MODES bits[7:6]).
+      one = 1 lane / channel; two = 2 lanes / channel; four = 4 lanes / channel;
+      shared = shared 2-channel.
+
+  adi,clock-mode:
+    type: string
+    enum:
+      - "spi-compat"
+      - "echo"
+      - "master"
+    default: "spi-compat"
+    description: Output clock mode (REG_MODES bits[5:4]).
+
+  adi,output-mode:
+    type: string
+    enum:
+      - "24-diff"
+      - "16-diff-8-com"
+      - "24-diff-8-com"
+      - "30-avg-diff"
+      - "32-pattern"
+    default: "24-diff"
+    description: |
+      Output data mode (REG_MODES bits[2:0]). Combined with the chosen part
+      this dictates the real ADC precision.
+
+  adi,data-rate:
+    type: string
+    enum:
+      - "sdr"
+      - "ddr"
+    default: "sdr"
+    description: Data-rate mode (REG_MODES bit[3]). DDR is invalid with SPI-compatible clock mode.
+
+  adi,avg-frame-len:
+    type: int
+    default: 0
+    description: |
+      Hardware averaging filter length. 0 disables averaging (default).
+      1–16 enables the chip's 30-AVERAGED_DIFF output mode and accumulates
+      that many consecutive conversions into a single 30-bit result, trading
+      effective sample rate for lower noise. When non-zero, adi,output-mode
+      must be set to "30-avg-diff".
+
+  adi,skip-reg-config:
+    type: boolean
+    description: |
+      When true, the driver skips writing the lane / clock / output-mode
+      registers and trusts the chip's power-up defaults. Useful on HDL
+      builds where reg-mode SPI is unreliable. The driver still issues
+      EXIT_CFG_MODE before the first capture.
+
+  reset-gpios:
+    type: phandle-array
+    description: Active-low RESET_N. Optional; pulsed by the driver when present.
+
+  cnv-gpios:
+    type: phandle-array
+    description: |
+      Optional CNV pin GPIO. When present and the platform exposes a CNV
+      pin separate from the PWMGEN-driven trigger, the driver will hold it
+      LOW during register access. Most FPGA-carrier designs leave this
+      unwired — CNV comes solely from PWMGEN.
+
+  pgia-gpios:
+    type: phandle-array
+    description: |
+      Optional 2-entry array (A0, A1) for PGIA gain selection on parts that
+      have a PGIA (ADAQ4216, ADAQ4224). Not used for the AD4630/4631/4632
+      variants currently supported by this driver.
