@@ -2179,13 +2179,10 @@ void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_START);
 	proc_param = get_next_proc_param(active_proc);
 	if (proc_param == NULL) {
-		/* If proc_param is NULL then this step is a no-op.
-		 * May happen if we have sink streams only, mark subproc_initiated to treat
-		 * this similar to sources and then just wait for notification from server
-		 */
-		active_proc->subproc_initiated = true;
+		LOG_WRN("proc is not done, but could not get next proc_param");
 
-		bt_cap_common_unlock_proc();
+		bt_cap_common_abort_proc(NULL, -ESRCH);
+		cap_initiator_unicast_audio_proc_complete(active_proc);
 
 		return;
 	}
@@ -2204,6 +2201,11 @@ void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 
 			return;
 		}
+	} else {
+		/* May happen if we have sink streams only, mark subproc_initiated to treat
+		 * this similar to sources and then just wait for notification from server
+		 */
+		active_proc->subproc_initiated = true;
 	}
 
 	bt_cap_common_unlock_proc();
