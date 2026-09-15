@@ -16,6 +16,7 @@ config SPI_SAM
 if SPI_SAM
 config SPI_SAM_DMA
 	bool "SPI SAM DMA Support"
+	default y if SPI_DMA
 	default y if SPI_RTIO
 	select DMA
 	help
