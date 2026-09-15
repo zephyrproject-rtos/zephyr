@@ -117,6 +117,24 @@ static int dummy_codec_stop(const struct device *dev, audio_dai_dir_t dir)
 	return 0;
 }
 
+static void dummy_codec_start_output(const struct device *dev)
+{
+	(void)dummy_codec_start(dev, AUDIO_DAI_DIR_TX);
+}
+
+static void dummy_codec_stop_output(const struct device *dev)
+{
+	(void)dummy_codec_stop(dev, AUDIO_DAI_DIR_TX);
+}
+
+/* Properties take effect as they are set, so there is nothing to apply */
+static int dummy_codec_apply_properties(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return 0;
+}
+
 static int dummy_codec_write(const struct device *dev, uint8_t *data, size_t data_size)
 {
 	struct dummy_codec_data *dummy_data = dev->data;
@@ -142,7 +160,10 @@ static int dummy_codec_init(const struct device *dev)
 
 static DEVICE_API(audio_codec, dummy_codec_api) = {
 	.configure = dummy_codec_configure,
+	.start_output = dummy_codec_start_output,
+	.stop_output = dummy_codec_stop_output,
 	.set_property = dummy_codec_set_property,
+	.apply_properties = dummy_codec_apply_properties,
 	.start = dummy_codec_start,
 	.stop = dummy_codec_stop,
 	.write = dummy_codec_write,
