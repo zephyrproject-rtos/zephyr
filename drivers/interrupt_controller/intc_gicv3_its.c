@@ -194,7 +194,7 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 				 * entry size.
 				 */
 				lvl2_width = fls_z(page_size / entry_size) - 1;
-				device_ids -= lvl2_width + 1;
+				device_ids -= lvl2_width;
 
 				entry_size = GITS_LVL1_ENTRY_SIZE;
 
@@ -209,6 +209,11 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 			break;
 		default:
 			continue;
+		}
+
+		if (page_cnt > GITS_BASER_SIZE_MASK + 1UL) {
+			LOG_ERR("ITS table requires too many pages: %zu", page_cnt);
+			return -EINVAL;
 		}
 
 		LOG_INF("Allocating %s table of %ldx%ldK pages (%ld bytes entry)",
