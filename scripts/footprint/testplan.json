@@ -1,0 +1,299 @@
+{
+  "testsuites": [
+    {
+      "name": "benchmark.kernel.footprints.default",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.userspace",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.default",
+      "platform": "disco_l475_iot1/stm32l475xx",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.userspace",
+      "platform": "disco_l475_iot1/stm32l475xx",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.default",
+      "platform": "nrf5340dk/nrf5340/cpuapp",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.default",
+      "platform": "nrf51dk/nrf51822",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.default",
+      "platform": "hifive1_revb/fe310_g002",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.default",
+      "platform": "intel_ehl_crb/elkhart_lake",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.userspace",
+      "platform": "intel_ehl_crb/elkhart_lake",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.pm",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.pm",
+      "platform": "disco_l475_iot1/stm32l475xx",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.pm",
+      "platform": "it8xxx2_evb/it81302bx",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "benchmark.kernel.footprints.pm",
+      "platform": "iotdk/arc_iot",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.net.sockets.echo_client",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.net.sockets.echo_client.802154.rf2xx.arduino",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.net.sockets.echo_client.mcr20a",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.net.sockets.echo_server",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.net.sockets.echo_server.802154.rf2xx.arduino",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.net.sockets.echo_server.mcr20a",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.net.sockets.echo_server.usbd_cdc_ncm",
+      "platform": "frdm_k64f/mk64f12",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.beacon-coex",
+      "platform": "nrf52840dk/nrf52840",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.central_hr.bt_ll_sw_split.extended",
+      "platform": "nrf52840dk/nrf52840",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.central_hr.bt_ll_sw_split.phy_coded",
+      "platform": "nrf52840dk/nrf52840",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.mesh_demo",
+      "platform": "bbc_microbit/nrf51822",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.audio.unicast_client",
+      "platform": "nrf5340dk/nrf5340/cpuapp",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.audio.unicast_server",
+      "platform": "nrf5340dk/nrf5340/cpuapp",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_broadcast.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_receive.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.bis.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_central.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_peripheral.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.cis.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.df.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.df.no_phy_coded.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.mesh.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_broadcast.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_receive.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.bis.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_central.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_peripheral.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.cis.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.df.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.df.no_phy_coded.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.mesh.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_broadcast.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_receive.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.bis.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_central.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso_peripheral.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.cis.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.iso.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.df.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.df.no_phy_coded.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    },
+    {
+      "name": "sample.bluetooth.hci_ipc.mesh.bt_ll_sw_split",
+      "platform": "nrf5340dk/nrf5340/cpunet",
+      "toolchain": "zephyr/gnu"
+    }
+  ]
+}
