@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX Clock Generation Circuit PLL Clock out line
+
+compatible: "renesas,rx-cgc-pll-out"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  freq:
+    type: int
+
+  div:
+    required: true
+    type: int
+
+  mul:
+    type: array
+    description: |
+      Multiple to calculate the PLL frequency from the input clock frequency
+      This array type is used for FSP configuration to set values into register.
+      It contains both the integer and the fractional part.
+      Note: for PLL child node (P, Q, R), the multiple should be set to <1 0>.
+
+  "#clock-cells":
+    const: 0
