@@ -14,8 +14,11 @@ intended for use in assembly code.
 
 import argparse
 import os
+import re
+import subprocess
 import sys
 
+from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -26,6 +29,22 @@ def get_symbol_table(obj):
             return section
 
     raise LookupError("Could not find symbol table")
+
+
+def iter_macho_absolute_symbols(path):
+    output = subprocess.check_output(["nm", path], text=True)
+    for line in output.splitlines():
+        match = re.match(r"^([0-9a-fA-F]+)\s+([A-Za-z])\s+(\S+)$", line.strip())
+        if not match:
+            continue
+
+        value, sym_type, name = match.groups()
+        if sym_type != "A":
+            continue
+        if not name.endswith(("_OFFSET", "_SIZEOF")):
+            continue
+
+        yield name, int(value, 16)
 
 
 def gen_offset_header(input_file, output_file):
@@ -43,19 +62,23 @@ def gen_offset_header(input_file, output_file):
 #define {include_guard}\n\n"""
     )
 
-    obj = ELFFile(input_file)
-    for sym in get_symbol_table(obj).iter_symbols():
-        if isinstance(sym.name, bytes):
-            sym.name = str(sym.name, 'ascii')
+    try:
+        obj = ELFFile(input_file)
+        for sym in get_symbol_table(obj).iter_symbols():
+            if isinstance(sym.name, bytes):
+                sym.name = str(sym.name, 'ascii')
 
-        if not sym.name.endswith(('_OFFSET', '_SIZEOF')):
-            continue
-        if sym.entry['st_shndx'] != 'SHN_ABS':
-            continue
-        if sym.entry['st_info']['bind'] != 'STB_GLOBAL':
-            continue
+            if not sym.name.endswith(('_OFFSET', '_SIZEOF')):
+                continue
+            if sym.entry['st_shndx'] != 'SHN_ABS':
+                continue
+            if sym.entry['st_info']['bind'] != 'STB_GLOBAL':
+                continue
 
-        output_file.write(f"#define {sym.name} 0x{sym.entry['st_value']:x}\n")
+            output_file.write(f"#define {sym.name} 0x{sym.entry['st_value']:x}\n")
+    except ELFError:
+        for name, value in iter_macho_absolute_symbols(input_file.name):
+            output_file.write(f"#define {name} 0x{value:x}\n")
 
     output_file.write(f"\n#endif /* {include_guard} */\n")
 

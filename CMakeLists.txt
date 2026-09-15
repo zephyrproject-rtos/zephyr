@@ -2159,6 +2159,14 @@ if(CONFIG_LLEXT)
 endif()
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
+  set(check_init_priorities_supported TRUE)
+
+  if(CMAKE_HOST_APPLE AND TARGET native_runner_executable)
+    # The host toolchain emits Mach-O binaries for Apple native_sim builds,
+    # while check_init_priorities.py is currently ELF-only.
+    set(check_init_priorities_supported FALSE)
+  endif()
+
   set(check_init_priorities_input
       $<IF:$<TARGET_EXISTS:native_runner_executable>,${BYPRODUCT_KERNEL_EXE_NAME},${BYPRODUCT_KERNEL_ELF_NAME}>
   )
@@ -2171,7 +2179,7 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
       $<$<TARGET_EXISTS:native_runner_executable>:native_runner_executable>
   )
 
-  if(CONFIG_CHECK_INIT_PRIORITIES)
+  if(CONFIG_CHECK_INIT_PRIORITIES AND check_init_priorities_supported)
     if(TARGET native_runner_executable)
       add_custom_command(TARGET native_runner_executable POST_BUILD
                          COMMAND ${check_init_priorities_command}
@@ -2181,12 +2189,14 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
     endif()
   endif()
 
-  add_custom_target(
-    initlevels
-    COMMAND ${check_init_priorities_command} --initlevels
-    DEPENDS ${check_init_priorities_dependencies}
-    USES_TERMINAL
-  )
+  if(check_init_priorities_supported)
+    add_custom_target(
+      initlevels
+      COMMAND ${check_init_priorities_command} --initlevels
+      DEPENDS ${check_init_priorities_dependencies}
+      USES_TERMINAL
+    )
+  endif()
 endif()
 
 # Generate signed (MCUboot or other) related artifacts as needed. Priority is:

@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <net/if.h>
+#include <time.h>
 #include <inttypes.h>
 #include <nsi_tracing.h>
 
@@ -40,7 +41,6 @@
  */
 int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only)
 {
-	struct ifreq ifr;
 	int fd, ret = -EINVAL;
 
 	fd = open(dev_name, O_RDWR | O_CLOEXEC);
@@ -48,9 +48,10 @@ int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only)
 		return -errno;
 	}
 
-	(void)memset(&ifr, 0, sizeof(ifr));
-
 #ifdef __linux
+	struct ifreq ifr;
+
+	(void)memset(&ifr, 0, sizeof(ifr));
 	ifr.ifr_flags = (tun_only ? IFF_TUN : IFF_TAP) | IFF_NO_PI;
 
 	strncpy(ifr.ifr_name, if_name, IFNAMSIZ - 1);
@@ -61,6 +62,9 @@ int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only)
 		close(fd);
 		return ret;
 	}
+#else
+	(void)if_name;
+	(void)tun_only;
 #endif
 
 	return fd;
@@ -116,6 +120,25 @@ int eth_wait_data(int fd)
 	return -EAGAIN;
 }
 
+int eth_clock_gettime(uint64_t *second, uint32_t *nanosecond)
+{
+	struct timespec tp;
+	int ret;
+
+#ifdef __APPLE__
+	ret = clock_gettime(CLOCK_MONOTONIC, &tp);
+#else
+	ret = clock_gettime(CLOCK_MONOTONIC_RAW, &tp);
+#endif
+	if (ret < 0) {
+		return -errno;
+	}
+
+	*second = (uint64_t)tp.tv_sec;
+	*nanosecond = (uint32_t)tp.tv_nsec;
+
+	return 0;
+}
 int eth_promisc_mode(const char *if_name, bool enable)
 {
 	return ssystem("ip link set dev %s promisc %s",

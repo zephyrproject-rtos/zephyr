@@ -14,6 +14,7 @@
 #define ZEPHYR_INCLUDE_STATS_STATS_H_
 
 #include <stddef.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -127,7 +128,11 @@ struct stats_name_map {
 	uint16_t snm_off;
 	const char *snm_name;
 	/** @endcond */
-} __attribute__((packed));
+}
+#if !defined(__APPLE__)
+__packed
+#endif
+;
 
 /**
  * @brief Store metadata for one statistics group.

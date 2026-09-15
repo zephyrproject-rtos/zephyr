@@ -116,9 +116,16 @@ struct init_entry {
  * linker scripts to sort them according to the specified
  * level/priority/sub-priority.
  */
+#if defined(__APPLE__)
+#define Z_INIT_ENTRY_SECTION(level, prio, sub_prio)                                                \
+	__attribute__((__section__(                                                                \
+		"__DATA,zi" STRINGIFY(INIT_LEVEL_ORD(level)) "_" STRINGIFY(prio) "_"            \
+		STRINGIFY(sub_prio))))
+#else
 #define Z_INIT_ENTRY_SECTION(level, prio, sub_prio)                                                \
 	__attribute__((__section__(                                                                \
 		".z_init_" #level "_P_" STRINGIFY(prio) "_SUB_" STRINGIFY(sub_prio)"_")))
+#endif
 
 /** @endcond */
 

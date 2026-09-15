@@ -13,6 +13,22 @@
 extern "C" {
 #endif
 
+#if defined(__APPLE__)
+#define NATIVE_TASK_MACHO_SEC_LEVEL_PRE_BOOT_1 "natt0_"
+#define NATIVE_TASK_MACHO_SEC_LEVEL_PRE_BOOT_2 "natt1_"
+#define NATIVE_TASK_MACHO_SEC_LEVEL_PRE_BOOT_3 "natt2_"
+#define NATIVE_TASK_MACHO_SEC_LEVEL_FIRST_SLEEP "natt3_"
+#define NATIVE_TASK_MACHO_SEC_LEVEL_ON_EXIT "natt4_"
+#define NATIVE_TASK_MACHO_SEC_LEVEL_ON_EXIT_PRE "natt4p_"
+#define NATIVE_TASK_MACHO_SEC_LEVEL(level) NATIVE_TASK_MACHO_SEC_LEVEL_(level)
+#define NATIVE_TASK_MACHO_SEC_LEVEL_(level) _CONCAT(NATIVE_TASK_MACHO_SEC_LEVEL_, level)
+#define NATIVE_TASK_SECTION(level, prio) \
+	__attribute__((__section__("__DATA," NATIVE_TASK_MACHO_SEC_LEVEL(level) STRINGIFY(prio))))
+#else
+#define NATIVE_TASK_SECTION(level, prio) \
+	__attribute__((__section__(".native_" #level STRINGIFY(prio) "_task")))
+#endif
+
 /**
  * NATIVE_TASK
  *
@@ -40,7 +56,7 @@ extern "C" {
  */
 #define NATIVE_TASK(fn, level, prio)	\
 	static void (* const _CONCAT(__native_task_, fn))() __used __noasan \
-	__attribute__((__section__(".native_" #level STRINGIFY(prio) "_task")))\
+	NATIVE_TASK_SECTION(level, prio) \
 	= fn
 
 
