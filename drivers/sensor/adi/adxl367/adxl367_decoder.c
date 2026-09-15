@@ -5,9 +5,8 @@
  */
 
 #include "adxl367.h"
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-
-#ifdef CONFIG_ADXL367_STREAM
 
 #define ADXL367_COMPLEMENT		0xC000
 /* Scale factor is the same for all ranges. */
@@ -19,6 +18,14 @@
 #define ADXL367_TEMP_SENSITIVITY		54 /* LSB/C */
 #define ADXL367_TEMP_BIAS_TEST_CONDITION 25 /*C*/
 
+static const uint32_t range_to_shift[] = {
+	[ADXL367_2G_RANGE] = 5,
+	[ADXL367_4G_RANGE] = 6,
+	[ADXL367_8G_RANGE] = 7,
+};
+
+#ifdef CONFIG_ADXL367_STREAM
+
 static const uint32_t accel_period_ns[] = {
 	[ADXL367_ODR_12P5HZ] = UINT32_C(10000000000) / 125,
 	[ADXL367_ODR_25HZ] = UINT32_C(1000000000) / 25,
@@ -26,12 +33,6 @@ static const uint32_t accel_period_ns[] = {
 	[ADXL367_ODR_100HZ] = UINT32_C(1000000000) / 100,
 	[ADXL367_ODR_200HZ] = UINT32_C(1000000000) / 200,
 	[ADXL367_ODR_400HZ] = UINT32_C(1000000000) / 400,
-};
-
-static const uint32_t range_to_shift[] = {
-	[ADXL367_2G_RANGE] = 5,
-	[ADXL367_4G_RANGE] = 6,
-	[ADXL367_8G_RANGE] = 7,
 };
 
 enum adxl367_12b_packet_start {
@@ -695,40 +696,73 @@ static int adxl367_decoder_get_frame_count(const uint8_t *buffer,
 	return ret;
 }
 
+/*
+ * data->xyz.x/y/z and data->raw_temp are already sign-extended 14-bit values
+ * (see adxl367_get_accel_data()/adxl367_get_temp_data() in adxl367.c), i.e.
+ * the same representation as the FIFO/stream helpers' post-extension
+ * data_in -- so the same q31 math applies directly, without re-parsing a
+ * buffer or re-doing the BIT(13)/ADXL367_COMPLEMENT sign extension.
+ */
+static inline void adxl367_accel_convert_q31_sample(q31_t *out, int16_t data_in)
+{
+	*out = data_in * SENSOR_QSCALE_FACTOR;
+}
+
+static inline void adxl367_temp_convert_q31_sample(q31_t *out, int16_t data_in)
+{
+	*out = (q31_t)(((int64_t)(data_in - ADXL367_TEMP_25C) * ADXL367_TEMP_QSCALE)
+			/ ADXL367_TEMP_SENSITIVITY
+			+ (int64_t)ADXL367_TEMP_BIAS_TEST_CONDITION * ADXL367_TEMP_QSCALE);
+}
+
 static int adxl367_decode_sample(const struct adxl367_sample_data *data,
 	struct sensor_chan_spec chan_spec, uint32_t *fit, uint16_t max_count, void *data_out)
 {
-	struct sensor_value *out = (struct sensor_value *) data_out;
+	uint64_t now_ns = k_ticks_to_ns_floor64(k_uptime_ticks());
 
 	if (*fit > 0) {
 		return -ENOTSUP;
 	}
 
-	switch (chan_spec.chan_type) {
-	case SENSOR_CHAN_ACCEL_X: /* Acceleration on the X axis, in m/s^2. */
-		adxl367_accel_convert(out, data->xyz.x, data->xyz.range);
-		break;
-	case SENSOR_CHAN_ACCEL_Y: /* Acceleration on the Y axis, in m/s^2. */
-		adxl367_accel_convert(out, data->xyz.y, data->xyz.range);
-		break;
-	case SENSOR_CHAN_ACCEL_Z: /* Acceleration on the Z axis, in m/s^2. */
-		adxl367_accel_convert(out, data->xyz.z, data->xyz.range);
-		break;
-	case SENSOR_CHAN_ACCEL_XYZ: /* Acceleration on the XYZ axis, in m/s^2. */
-		adxl367_accel_convert(out++, data->xyz.x, data->xyz.range);
-		adxl367_accel_convert(out++, data->xyz.y, data->xyz.range);
-		adxl367_accel_convert(out, data->xyz.z, data->xyz.range);
-		break;
-	case SENSOR_CHAN_DIE_TEMP: /* Temperature in degrees Celsius. */
-		adxl367_temp_convert(out, data->raw_temp);
-		break;
-	default:
-		return -ENOTSUP;
+	if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+		struct sensor_q31_data *out = (struct sensor_q31_data *)data_out;
+
+		memset(out, 0, sizeof(*out));
+		out->header.base_timestamp_ns = now_ns;
+		out->header.reading_count = 1;
+		out->shift = 8;
+		adxl367_temp_convert_q31_sample(&out->readings[0].temperature, data->raw_temp);
+	} else {
+		struct sensor_three_axis_data *out = (struct sensor_three_axis_data *)data_out;
+
+		memset(out, 0, sizeof(*out));
+		out->header.base_timestamp_ns = now_ns;
+		out->header.reading_count = 1;
+		out->shift = range_to_shift[data->xyz.range];
+
+		switch (chan_spec.chan_type) {
+		case SENSOR_CHAN_ACCEL_X: /* Acceleration on the X axis, in m/s^2. */
+			adxl367_accel_convert_q31_sample(&out->readings[0].x, data->xyz.x);
+			break;
+		case SENSOR_CHAN_ACCEL_Y: /* Acceleration on the Y axis, in m/s^2. */
+			adxl367_accel_convert_q31_sample(&out->readings[0].y, data->xyz.y);
+			break;
+		case SENSOR_CHAN_ACCEL_Z: /* Acceleration on the Z axis, in m/s^2. */
+			adxl367_accel_convert_q31_sample(&out->readings[0].z, data->xyz.z);
+			break;
+		case SENSOR_CHAN_ACCEL_XYZ: /* Acceleration on the XYZ axis, in m/s^2. */
+			adxl367_accel_convert_q31_sample(&out->readings[0].x, data->xyz.x);
+			adxl367_accel_convert_q31_sample(&out->readings[0].y, data->xyz.y);
+			adxl367_accel_convert_q31_sample(&out->readings[0].z, data->xyz.z);
+			break;
+		default:
+			return -ENOTSUP;
+		}
 	}
 
 	*fit = 1;
 
-	return 0;
+	return 1;
 }
 
 static int adxl367_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
