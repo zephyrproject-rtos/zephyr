@@ -21,42 +21,38 @@ LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 #define DT_DRV_COMPAT nordic_nrf_twi
 
 struct i2c_nrfx_twi_rtio_data {
-	nrfx_twi_t twi;
-	uint32_t dev_config;
+	struct i2c_nrfx_twi_common_data common;
 	bool twi_enabled;
 	struct i2c_rtio *ctx;
+	struct k_work recovery_work;
 };
 
-/* Enforce dev_config matches the same offset as the common structure,
+/* Enforce twi and dev_config matches the same offset as the common structure,
  * otherwise common API won't be compatible with i2c_nrfx_twi_rtio.
  */
-BUILD_ASSERT(
-	offsetof(struct i2c_nrfx_twi_rtio_data, dev_config) ==
-	offsetof(struct i2c_nrfx_twi_common_data, dev_config)
-);
+BUILD_ASSERT(offsetof(struct i2c_nrfx_twi_rtio_data, common) == 0);
 
 static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status);
 
 static int i2c_nrfx_twi_rtio_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf,
 				       size_t buf_len, uint16_t i2c_addr)
 {
-	struct i2c_nrfx_twi_common_data *data = dev->data;
-	struct i2c_nrfx_twi_rtio_data *const dev_data = dev->data;
-	struct i2c_rtio *ctx = dev_data->ctx;
+	struct i2c_nrfx_twi_rtio_data *data = dev->data;
+	struct i2c_rtio *ctx = data->ctx;
 	int ret = 0;
 	bool more_msgs = (rtio_txn_next(ctx->txn_curr) != NULL) &&
 			 ((ctx->txn_curr->next->sqe.iodev_flags & RTIO_IODEV_I2C_RESTART) == 0);
 
 	/** Enabling while already enabled ends up in a failed assertion: skip it. */
-	if (!dev_data->twi_enabled) {
-		nrfx_twi_enable(&data->twi);
-		dev_data->twi_enabled = true;
+	if (!data->twi_enabled) {
+		nrfx_twi_enable(&data->common.twi);
+		data->twi_enabled = true;
 	}
 
 	ret = i2c_nrfx_twi_msg_transfer(dev, flags, buf, buf_len, i2c_addr, more_msgs);
 	if (ret != 0) {
-		nrfx_twi_disable(&data->twi);
-		dev_data->twi_enabled = false;
+		nrfx_twi_disable(&data->common.twi);
+		data->twi_enabled = false;
 	}
 
 	return ret;
@@ -71,8 +67,8 @@ static void i2c_nrfx_twi_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, voi
 
 static bool i2c_nrfx_twi_rtio_start(const struct device *dev, int *status)
 {
-	struct i2c_nrfx_twi_rtio_data *const dev_data = dev->data;
-	struct i2c_rtio *ctx = dev_data->ctx;
+	struct i2c_nrfx_twi_rtio_data *data = dev->data;
+	struct i2c_rtio *ctx = data->ctx;
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 	struct rtio_iodev_sqe *iodev_sqe;
@@ -97,8 +93,11 @@ static bool i2c_nrfx_twi_rtio_start(const struct device *dev, int *status)
 		*status = i2c_nrfx_twi_configure(dev, sqe->i2c_config);
 		return false;
 	case RTIO_OP_I2C_RECOVER:
-		*status = i2c_nrfx_twi_recover_bus(dev);
-		return false;
+		error = k_work_submit(&data->recovery_work);
+		if (error < 0) {
+			break;
+		}
+		return true;
 	case RTIO_OP_AWAIT:
 		iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
 		rtio_iodev_sqe_await_signal(iodev_sqe, i2c_nrfx_twi_rtio_sqe_signaled,
@@ -128,7 +127,7 @@ static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status)
 	if (i2c_rtio_complete(ctx, status)) {
 		(void)i2c_rtio_run_sync_start_async(dev, ctx, i2c_nrfx_twi_rtio_start);
 	} else {
-		nrfx_twi_disable(&data->twi);
+		nrfx_twi_disable(&data->common.twi);
 		data->twi_enabled = false;
 	}
 }
@@ -156,6 +155,15 @@ static int i2c_nrfx_twi_rtio_recover_bus(const struct device *dev)
 		dev->data)->ctx;
 
 	return i2c_rtio_recover(ctx);
+}
+
+static void i2c_nrfx_twi_rtio_recovery_work_fn(struct k_work *work)
+{
+	struct i2c_nrfx_twi_rtio_data *data = CONTAINER_OF(work, struct i2c_nrfx_twi_rtio_data,
+							   recovery_work);
+	const struct device *dev = data->ctx->dt_spec.bus;
+
+	i2c_nrfx_twi_rtio_complete(dev, i2c_nrfx_twi_rtio_recover_bus(dev));
 }
 
 static void event_handler(nrfx_twi_event_t const *p_event, void *p_context)
@@ -189,31 +197,38 @@ static DEVICE_API(i2c, i2c_nrfx_twi_rtio_driver_api) = {
 
 #define I2C_NRFX_TWI_RTIO_DEVICE(idx)                                                             \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(DT_DRV_INST(idx));                                    \
+												  \
 	BUILD_ASSERT(I2C_FREQUENCY(DT_DRV_INST(idx)) !=                                           \
 			I2C_NRFX_TWI_INVALID_FREQUENCY,                                           \
 			"Wrong I2C " #idx " frequency setting in dts");                           \
+												  \
 	I2C_RTIO_DEFINE(_i2c##idx##_twi_rtio,                                                     \
 			DT_INST_PROP_OR(idx, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),                   \
 			DT_INST_PROP_OR(idx, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));                  \
+												  \
 	static struct i2c_nrfx_twi_rtio_data twi_##idx##_data = {                                 \
-		.twi = NRFX_TWI_INSTANCE(DT_INST_REG_ADDR(idx)),	                          \
+		.common.twi = NRFX_TWI_INSTANCE(DT_INST_REG_ADDR(idx)),	                          \
 		.ctx = &_i2c##idx##_twi_rtio,                                                     \
 	};                                                                                        \
+												  \
 	static int twi_##idx##_init(const struct device *dev)                                     \
 	{                                                                                         \
 		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),                        \
-				nrfx_twi_irq_handler, &twi_##idx##_data.twi, 0);                  \
+				nrfx_twi_irq_handler, &twi_##idx##_data.common.twi, 0);           \
 		const struct i2c_nrfx_twi_config *config = dev->config;                           \
-		const struct i2c_nrfx_twi_rtio_data *dev_data = dev->data;                        \
+		struct i2c_nrfx_twi_rtio_data *dev_data = dev->data;                              \
 		int err = pinctrl_apply_state(config->pcfg,                                       \
 						PINCTRL_STATE_DEFAULT);                           \
 		if (err < 0) {                                                                    \
 			return err;                                                               \
 		}                                                                                 \
 		i2c_rtio_init(dev_data->ctx, dev);                                                \
+		k_work_init(&dev_data->recovery_work, i2c_nrfx_twi_rtio_recovery_work_fn);        \
 		return i2c_nrfx_twi_init(dev);                                                    \
 	}                                                                                         \
+												  \
 	PINCTRL_DT_INST_DEFINE(idx);                                                              \
+												  \
 	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {                           \
 		.config = {                                                                       \
 			.skip_gpio_cfg = true,                                                    \
@@ -223,7 +238,9 @@ static DEVICE_API(i2c, i2c_nrfx_twi_rtio_driver_api) = {
 		.event_handler = event_handler,                                                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                      \
 	};                                                                                        \
+												  \
 	PM_DEVICE_DT_INST_DEFINE(idx, twi_nrfx_pm_action);                                        \
+												  \
 	I2C_DEVICE_DT_INST_DEFINE(idx,                                                            \
 			twi_##idx##_init,                                                         \
 			PM_DEVICE_DT_INST_GET(idx),                                               \

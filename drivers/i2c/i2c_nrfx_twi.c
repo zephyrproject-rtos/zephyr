@@ -20,20 +20,16 @@ LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 #define DT_DRV_COMPAT nordic_nrf_twi
 
 struct i2c_nrfx_twi_data {
-	nrfx_twi_t twi;
-	uint32_t dev_config;
+	struct i2c_nrfx_twi_common_data common;
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile int res;
 };
 
-/* Enforce dev_config matches the same offset as the common structure,
+/* Enforce twi and dev_config matches the same offset as the common structure,
  * otherwise common API won't be compatible with i2c_nrfx_twi.
  */
-BUILD_ASSERT(
-	offsetof(struct i2c_nrfx_twi_data, dev_config) ==
-	offsetof(struct i2c_nrfx_twi_common_data, dev_config)
-);
+BUILD_ASSERT(offsetof(struct i2c_nrfx_twi_data, common) == 0);
 
 static int i2c_nrfx_twi_transfer(const struct device *dev,
 				 struct i2c_msg *msgs,
@@ -47,7 +43,7 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 	/* Dummy take on completion_sync sem to be sure that it is empty */
 	k_sem_take(&data->completion_sync, K_NO_WAIT);
 
-	nrfx_twi_enable(&data->twi);
+	nrfx_twi_enable(&data->common.twi);
 
 	for (size_t i = 0; i < num_msgs; i++) {
 		bool more_msgs = ((i < (num_msgs - 1)) &&
@@ -79,7 +75,7 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 			 * to make sure everything has been done to restore the
 			 * bus from this error.
 			 */
-			nrfx_twi_disable(&data->twi);
+			nrfx_twi_disable(&data->common.twi);
 			(void)i2c_nrfx_twi_recover_bus(dev);
 			ret = -ETIMEDOUT;
 			break;
@@ -91,7 +87,7 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 		}
 	}
 
-	nrfx_twi_disable(&data->twi);
+	nrfx_twi_disable(&data->common.twi);
 	k_sem_give(&data->transfer_sync);
 
 	return ret;
@@ -131,14 +127,14 @@ static DEVICE_API(i2c, i2c_nrfx_twi_driver_api) = {
 	BUILD_ASSERT(I2C_FREQUENCY(DT_DRV_INST(idx)) != I2C_NRFX_TWI_INVALID_FREQUENCY,           \
 			"Wrong I2C " #idx " frequency setting in dts");                           \
 	static struct i2c_nrfx_twi_data twi_##idx##_data = {                                      \
-		.twi = NRFX_TWI_INSTANCE(DT_INST_REG_ADDR(idx)),                                  \
+		.common.twi = NRFX_TWI_INSTANCE(DT_INST_REG_ADDR(idx)),                           \
 		.transfer_sync = Z_SEM_INITIALIZER(twi_##idx##_data.transfer_sync, 1, 1),         \
 		.completion_sync = Z_SEM_INITIALIZER(twi_##idx##_data.completion_sync, 0, 1)      \
 	};                                                                                        \
 	static int twi_##idx##_init(const struct device *dev)                                     \
 	{                                                                                         \
 		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), nrfx_twi_irq_handler,  \
-				&twi_##idx##_data.twi, 0);                                        \
+				&twi_##idx##_data.common.twi, 0);                                 \
 		const struct i2c_nrfx_twi_config *config = dev->config;                           \
 		int err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);               \
 		if (err < 0) {                                                                    \
