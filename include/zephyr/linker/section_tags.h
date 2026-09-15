@@ -64,20 +64,20 @@
 #define __nocache_noinit __noinit
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-/* The kernel's own stacks land in .noinit, and so in the RAMABLE_REGION the
- * linker builds from the 'zephyr,sram' chosen node. A part whose zephyr,sram is
- * external memory therefore takes every push and pop over that bus, and nothing
- * below the kernel can redirect it: the tag is applied where the stack object is
- * declared, not where the linker places it.
+/* The kernel's own stacks and heap land in .noinit, and so in the RAMABLE_REGION
+ * the linker builds from the 'zephyr,sram' chosen node. A part whose zephyr,sram
+ * is external memory therefore takes every push, pop and allocation over that
+ * bus, and nothing below the kernel can redirect it: the tag is applied where
+ * the object is declared, not where the linker places it.
  *
- * A board retargets them by pointing 'zephyr,kernel-stacks' at a memory region
- * node. The section that node names is already generated wherever
- * LINKER_DT_SECTIONS() is emitted: it is NOLOAD, which is the noinit semantics
- * stacks need, and it lives in a region of fixed length, so a region too small
- * for every stack fails the link rather than the boot. No memory type is
- * hardcoded -- a board points the chosen at a TCM, an internal SRAM bank or any
- * other region node -- and without the chosen the tag keeps the definition it
- * had.
+ * A board retargets one of them by pointing 'zephyr,kernel-stacks' or
+ * 'zephyr,kernel-heap' at a memory region node. The section that node names is
+ * already generated wherever LINKER_DT_SECTIONS() is emitted: it is NOLOAD,
+ * which is the noinit semantics both need, and it lives in a region of fixed
+ * length, so a region too small for what is placed in it fails the link rather
+ * than the boot. No memory type is hardcoded -- a board points the chosen at a
+ * TCM, an internal SRAM bank or any other region node -- and without the chosen
+ * each tag keeps the definition it had.
  */
 #define Z_DT_CHOSEN_REGION_SECTION(chosen)                                                         \
 	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(DT_CHOSEN(chosen)))
@@ -110,6 +110,23 @@ BUILD_ASSERT(DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_kernel_stacks), zephyr_memory_reg
 #define __kstackmem __noinit
 #endif
 #endif /* CONFIG_KERNEL_COHERENCE */
+
+/* The system heap: the CONFIG_COMMON_LIBC_MALLOC malloc() arena and the
+ * k_malloc()/k_heap pool sized by CONFIG_HEAP_MEM_POOL_SIZE. A K_HEAP_DEFINE()
+ * anywhere else keeps its own placement. Under CONFIG_USERSPACE the arena
+ * belongs to the z_malloc_partition app-memory section the MPU opens to user
+ * threads, so moving it would break that isolation and only the pool follows
+ * the chosen.
+ */
+#if defined(DT_CHOSEN_zephyr_kernel_heap_EXISTS)
+BUILD_ASSERT(DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_kernel_heap), zephyr_memory_region),
+	     "The 'zephyr,kernel-heap' chosen node must have a 'zephyr,memory-region' property");
+#define __heapmem	      Z_DT_CHOSEN_REGION_SECTION(zephyr_kernel_heap)
+#define __heapmem_named(name) __heapmem
+#else
+#define __heapmem	      __noinit
+#define __heapmem_named(name) __noinit_named(name)
+#endif
 
 #if defined(CONFIG_LINKER_USE_BOOT_SECTION)
 #define __boot_func	Z_GENERIC_DOT_SECTION(BOOT_TEXT_SECTION_NAME)
