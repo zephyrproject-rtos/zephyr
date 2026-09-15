@@ -1,0 +1,58 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Twister runs a bounded 1-hour campaign here, gated behind `slow: true` in
+# keeping with every other >=3600s test in the tree (see
+# tests/kernel/timer/cycle64, which documents the fast-PR + slow-nightly
+# split this follows).  Unbounded campaigns are driven by fuzz_scripts/,
+# following tests/bsim: twister owns building and bounded runs, scripts own
+# indefinite execution.
+
+common:
+  tags:
+    - net
+    - mqtt
+    - fuzz
+  depends_on: netif
+  toolchain_allow: llvm      # libFuzzer ships with clang; this is required
+  platform_allow: native_sim/native/64
+
+tests:
+  # PR gate.  Proves the target links AND boots.  Twister matches the
+  # banner, waits 2s, then terminates the process; because the harness is
+  # then marked terminated, the nonzero exit code from a process that never
+  # exits on its own is correctly ignored.  That is why a never-exiting
+  # binary can pass a console scenario.
+  net.mqtt.fuzz.smoke:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "MQTT fuzzer starting"
+    timeout: 60
+
+  # Nightly / `twister --enable-slow`.  A real 1-hour campaign with
+  # sanitizers on.  pytest is required because -max_total_time cannot come
+  # from tests.yaml -- there is no schema field for it, and twister's
+  # BinaryHandler only ever appends --seed and CLI-remainder extra args.
+  net.mqtt.fuzz.campaign:
+    slow: true
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_campaign.py"
+      pytest_args:
+        - "--fuzz-max-total-time=3300"   # 55 min; leaves 5 min for triage
+        - "--fuzz-max-len=4096"
+    extra_configs:
+      - CONFIG_ASAN=y
+      - CONFIG_UBSAN=y
+      - CONFIG_ASSERT=y
+    timeout: 3600
+
+  # Coverage build variant: exercised by the gcov/lcov flow in the README,
+  # build-only so the config cannot bitrot.
+  net.mqtt.fuzz.coverage.build:
+    build_only: true
+    extra_configs:
+      - CONFIG_COVERAGE=y
