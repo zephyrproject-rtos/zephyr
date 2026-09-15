@@ -1444,7 +1444,7 @@ Disk:
     - drivers.disk
     - sd
 
-Display drivers:
+Display controllers:
   status: maintained
   maintainers:
     - JarmouniA
@@ -2411,7 +2411,7 @@ Documentation Infrastructure:
   tests:
     - drivers.mfd
 
-"Drivers: MIPI DBI":
+"Drivers: MIPI-DBI":
   status: maintained
   maintainers:
     - danieldegrasse
@@ -2426,7 +2426,7 @@ Documentation Infrastructure:
     - include/zephyr/dt-bindings/mipi_dbi/
     - tests/drivers/mipi_dbi/
   labels:
-    - "area: Display Controller"
+    - "area: MIPI-DBI"
   tests:
     - drivers.mipi_dbi
 
