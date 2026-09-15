@@ -168,7 +168,7 @@ For example, this overlay moves the CM33 ``zephyr,sram`` to DTCM:
 
 .. code-block:: none
 
-   boards/nxp/frdm_imxrt1186/cm33_sram_dtcm.overlay
+   boards/nxp/frdm_imxrt1186/dts/cm33_sram_dtcm.overlay
 
 Ethernet
 ========
