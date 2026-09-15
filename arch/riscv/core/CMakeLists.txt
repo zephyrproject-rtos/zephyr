@@ -38,6 +38,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_RISCV_USER_STRING_NLEN_VALIDATE userspace.c)
 zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
 zephyr_library_sources_ifdef(CONFIG_ARCH_STACKWALK stacktrace.c)
+zephyr_library_sources_ifdef(CONFIG_RISCV_ISA_EXT_ZICBOM cache_zicbo.c)
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 
