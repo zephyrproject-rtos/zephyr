@@ -299,11 +299,6 @@ static int bt_nxp_set_calibration_data_annex100(void)
 #endif /* CONFIG_HCI_NXP_SET_CAL_DATA */
 
 #if defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
-/* Currently, we cannot use nxp_bt_send_vs_command because the controller
- * fails to send the command complete event expected by Zephyr Host stack.
- * To workaround it, we directly send the message using our PLATFORM API.
- * This will be reworked once it is fixed on the controller side.
- */
 static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 {
 	uint8_t bleDeviceAddress[BT_ADDR_SIZE] = {0};
