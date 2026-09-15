@@ -236,6 +236,13 @@ config LLEXT_VENEERS
 	  Disable only if all external symbol calls are known to be in range
 	  or if -mlong-calls is used.
 
+config LLEXT_SEMIHOST_LOADER
+	bool "Semihost loader for extensions"
+	depends on SEMIHOST
+	help
+	  When enabled, extensions can be loaded via semihosting interface, which
+	  is useful for development and debugging purposes.
+
 config LLEXT_EXPERIMENTAL
 	bool "LLEXT experimental functionality"
 	help

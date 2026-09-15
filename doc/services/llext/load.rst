@@ -23,6 +23,11 @@ needed by the :c:func:`llext_load` function. Several loaders are already provide
    as the :c:struct:`llext_fs_loader`. The path to the file must be provided
    when creating the loader with the :c:macro:`LLEXT_FS_LOADER` macro.
 
+ * An implementation that uses semihosting to read from a file in the host
+   filesystem is available as the :c:struct:`llext_semihost_loader`. The path
+   to the file must be provided when creating the loader with the
+   :c:macro:`LLEXT_SEMIHOST_LOADER` macro.
+
 The extensions are loaded with a call to the :c:func:`llext_load` function,
 passing in the extension name and the configured loader. Once that completes
 successfully, the extension is loaded into memory and is ready to be used.
