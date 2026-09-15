@@ -3,6 +3,7 @@
  * Copyright (c) 2023 Syslinbit
  * Copyright (c) 2024 STMicroelectronics
  * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * Copyright (c) 2026 Anders Frandsen <anfran@anfran.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -122,6 +123,15 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 /* Timeout in microseconds used to wait for flags */
 #define RTC_TIMEOUT 1000
 
+#ifdef CONFIG_SOC_SERIES_STM32WL3X
+/*
+ * The calendar resynchronizes in one to two RTCCLK cycles, but the first
+ * synchronization after reset also waits out the slow clock settling,
+ * measured at 35 to 40 ms on the NUCLEO-WL33CC1 with its 32.768 kHz LSE.
+ */
+#define RTC_SYNC_TIMEOUT 100000
+#endif /* CONFIG_SOC_SERIES_STM32WL3X */
+
 #ifdef STM32_RTC_ALARM_ENABLED
 #define RTC_STM32_ALARMS_COUNT	DT_INST_PROP(0, alarms_count)
 
@@ -171,8 +181,11 @@ struct rtc_stm32_data {
 static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
 {
 #if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
-	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI */
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32WL3X)
+	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI.
+	 * The STM32WL3 series has no EXTI, and its SYSCFG external interrupt
+	 * controller has no RTC alarm input.
+	 */
 #else
 	int ret;
 
@@ -186,8 +199,11 @@ static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
 static inline void exti_clear_rtc_alarm_flag(uint32_t line_num)
 {
 #if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
-	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI */
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32WL3X)
+	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI.
+	 * The STM32WL3 series has no EXTI, and its SYSCFG external interrupt
+	 * controller has no RTC alarm input.
+	 */
 #else
 	if (stm32_exti_is_pending(line_num)) {
 		stm32_exti_clear_pending(line_num);
@@ -197,12 +213,38 @@ static inline void exti_clear_rtc_alarm_flag(uint32_t line_num)
 
 #endif /* STM32_RTC_ALARM_ENABLED */
 
+#ifdef CONFIG_SOC_SERIES_STM32WL3X
+/*
+ * Clear BYPSHAD and wait for RSF to rise to avoid the silicon errata
+ * ES0612 Rev 8 2.9.2:
+ * "Calendar initialization may fail in case of consecutive INIT mode entry"
+ *
+ * The prescribed workaround is to "clear the BYPSHAD bit (if set) then wait
+ * for RSF to rise, before entering the initialization mode again". It is done
+ * here on entry rather than on exit so that it also covers calendar register
+ * writes made between two initialization mode entries. BYPSHAD is restored in
+ * rtc_stm32_exit_init_mode().
+ */
+static void rtc_stm32_sync_shadow_regs(void)
+{
+	STM32_RTC_DisableBypassShadowReg(STM32_ARG(RTC));
+	LL_RTC_ClearFlag_RS(STM32_ARG(RTC));
+
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RS(STM32_ARG(RTC)), RTC_SYNC_TIMEOUT, NULL)) {
+		LOG_WRN("calendar resynchronization timed out");
+	}
+}
+#endif /* CONFIG_SOC_SERIES_STM32WL3X */
+
 static int rtc_stm32_enter_init_mode(void)
 {
 	int status = 0;
 
 	/* Check if the Initialization mode is set */
 	if (LL_RTC_IsActiveFlag_INIT(STM32_ARG(RTC)) == 0U) {
+#ifdef CONFIG_SOC_SERIES_STM32WL3X
+		rtc_stm32_sync_shadow_regs();
+#endif /* CONFIG_SOC_SERIES_STM32WL3X */
 		/* Set the Initialization mode */
 		LL_RTC_EnableInitMode(STM32_ARG(RTC));
 		if (!WAIT_FOR(LL_RTC_IsActiveFlag_INIT(STM32_ARG(RTC)), RTC_TIMEOUT, NULL)) {
@@ -210,6 +252,15 @@ static int rtc_stm32_enter_init_mode(void)
 		}
 	}
 	return status;
+}
+
+static void rtc_stm32_exit_init_mode(void)
+{
+	LL_RTC_DisableInitMode(STM32_ARG(RTC));
+
+#ifdef CONFIG_SOC_SERIES_STM32WL3X
+	STM32_RTC_EnableBypassShadowReg(STM32_ARG(RTC));
+#endif /* CONFIG_SOC_SERIES_STM32WL3X */
 }
 
 static int rtc_stm32_configure(const struct device *dev)
@@ -238,7 +289,7 @@ static int rtc_stm32_configure(const struct device *dev)
 			LL_RTC_SetAsynchPrescaler(STM32_ARG(RTC, cfg->async_prescaler));
 		}
 
-		LL_RTC_DisableInitMode(STM32_ARG(RTC));
+		rtc_stm32_exit_init_mode();
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
@@ -494,10 +545,10 @@ static int rtc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if defined(CONFIG_SOC_SERIES_STM32WB0X) || defined(CONFIG_SOC_SERIES_STM32WL3X)
 	/**
-	 * The STM32WB0 series has no bit for clock gating of RTC's APB
-	 * interface. On the other hand, the RTCEN bit that would control
+	 * The STM32WB0 and STM32WL3 series have no bit for clock gating of
+	 * RTC's APB interface. On the other hand, the RTCEN bit that would control
 	 * whether the RTC IP is clock gated or not exists, and has been
 	 * placed in APB0ENR. The call to clock_control_on() that just
 	 * completed should have set this bit to 1.
@@ -522,7 +573,7 @@ static int rtc_stm32_init(const struct device *dev)
 	while (--i > 0) {
 		/* Do nothing - loop itself burns enough cycles */
 	}
-#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+#endif /* CONFIG_SOC_SERIES_STM32WB0X || CONFIG_SOC_SERIES_STM32WL3X */
 
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	/* Must be configured before selecting the RTC clock source */
@@ -627,7 +678,7 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	}
 
 	/* Exit Initialization mode */
-	LL_RTC_DisableInitMode(STM32_ARG(RTC));
+	rtc_stm32_exit_init_mode();
 
 	/* Enable the write protection for RTC registers */
 	LL_RTC_EnableWriteProtection(STM32_ARG(RTC));

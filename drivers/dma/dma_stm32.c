@@ -831,8 +831,10 @@ static void dma_stm32_config_irq_0(const struct device *dev)
 	/* All DMAs have at least one IRQ line */
 	DMA_STM32_IRQ_CONNECT(0, 0);
 
-	/* On STM32WB0 series, there is a single IRQ line for all channels */
-#if !defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* On STM32WB0 and STM32WL3 series, there is a single IRQ line
+	 * for all channels
+	 */
+#if !defined(CONFIG_SOC_SERIES_STM32WB0X) && !defined(CONFIG_SOC_SERIES_STM32WL3X)
 	/* On other series, the sharing follows a pattern:
 	 *	IRQn (X+0) is not shared (assigned to DMA1 channel 1)
 	 *	IRQn (X+1) is shared by DMA1 channels 2 and 3
@@ -849,7 +851,7 @@ static void dma_stm32_config_irq_0(const struct device *dev)
 #if DT_INST_IRQ_HAS_IDX(0, 3)
 	DMA_STM32_IRQ_CONNECT(0, 3);
 #endif /* DT_INST_IRQ_HAS_IDX(0, 3) */
-#endif /* !CONFIG_SOC_SERIES_STM32WB0X */
+#endif /* !CONFIG_SOC_SERIES_STM32WB0X && !CONFIG_SOC_SERIES_STM32WL3X */
 #endif /* !CONFIG_DMA_STM32_SHARED_IRQS */
 }
 

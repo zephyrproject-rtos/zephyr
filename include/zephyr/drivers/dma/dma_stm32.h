@@ -33,8 +33,12 @@
 #define STM32_DMA_STREAM_OFFSET 0
 #endif /* ! CONFIG_DMA_STM32_V1 */
 
-/* macro for dma slot (only for dma-v1 or dma-v2 types) */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis)
+/* macro for dma slot (only for dma-v1 or dma-v2 types)
+ * On dma-v2bis the requests are ORed and there is no selection,
+ * unless the SoC has a DMAMUX: the slot then holds the request line ID.
+ */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dmamux)
 #define STM32_DMA_SLOT(id, dir, slot) 0
 #define STM32_DMA_SLOT_BY_IDX(id, idx, slot) 0
 #else
