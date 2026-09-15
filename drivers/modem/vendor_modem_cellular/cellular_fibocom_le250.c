@@ -33,7 +33,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CCID", ccid_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2", 1000));
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU)
+					",10,3,30,10,2",
+					1000));
 
 MODEM_CHAT_SCRIPT_DEFINE(fibocom_le250_init_chat_script, fibocom_le250_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
