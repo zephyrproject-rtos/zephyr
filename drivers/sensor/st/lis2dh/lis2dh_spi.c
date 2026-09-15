@@ -52,10 +52,6 @@ static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr,
 	};
 
 
-	if (len > 64) {
-		return -EIO;
-	}
-
 	if (len > 1) {
 		buffer_tx[0] |= LIS2DH_SPI_AUTOINC;
 	}
@@ -87,10 +83,6 @@ static int lis2dh_raw_write(const struct device *dev, uint8_t reg_addr,
 		.count = 2
 	};
 
-
-	if (len > 64) {
-		return -EIO;
-	}
 
 	if (len > 1) {
 		buffer_tx[0] |= LIS2DH_SPI_AUTOINC;
@@ -133,8 +125,12 @@ static int lis2dh_spi_update_reg(const struct device *dev, uint8_t reg_addr,
 				  uint8_t mask, uint8_t value)
 {
 	uint8_t tmp_val;
+	int status;
 
-	lis2dh_raw_read(dev, reg_addr, &tmp_val, 1);
+	status = lis2dh_raw_read(dev, reg_addr, &tmp_val, 1);
+	if (status < 0) {
+		return status;
+	}
 	tmp_val = (tmp_val & ~mask) | (value & mask);
 
 	return lis2dh_raw_write(dev, reg_addr, &tmp_val, 1);

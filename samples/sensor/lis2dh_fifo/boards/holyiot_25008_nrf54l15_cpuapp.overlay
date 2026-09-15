@@ -1,0 +1,9 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lis2dh {
+	fifo-watermark = <16>;
+};
