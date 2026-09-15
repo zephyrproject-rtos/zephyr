@@ -297,6 +297,9 @@ under their original filename or with a SHA-256 suffix (``<filename>.<sha>``).
 If found, the blob is copied from the cache to the blob path; otherwise
 it is downloaded from its URL(s) to the blob path.
 
+``west blobs fetch`` also honors git's URL rewrite rules (``insteadOf``), so
+HTTP/HTTPS blob URLs may be fetched from a configured mirror when one matches.
+
 .. _west-twister:
 
 Twister wrapper: ``west twister``

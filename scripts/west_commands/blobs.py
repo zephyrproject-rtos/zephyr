@@ -6,6 +6,7 @@ import argparse
 import os
 import re
 import shutil
+import subprocess
 import sys
 import textwrap
 from pathlib import Path
@@ -192,6 +193,28 @@ class Blobs(WestCommand):
                     return candidate_path
         return None
 
+    def get_rewritten_url(self, original_url):
+        try:
+            # Use git's URL rewrite rules (insteadOf) to determine
+            # if a mirror is defined.
+            result = subprocess.run(
+                ["git", "ls-remote", "--get-url", original_url],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            rewritten_url = result.stdout.strip()
+            # Ignore SSH rewrite rules since blob downloads require HTTP/HTTPS.
+            if rewritten_url.startswith("git@") or rewritten_url.startswith("ssh://"):
+                return None
+            # No insteadOf rule matched this url.
+            if rewritten_url == original_url:
+                return None
+            return rewritten_url
+        except Exception:
+            # Any failure is ignored and treated as no rewrite rule matching.
+            return None
+
     def download_blob(self, blob, path):
         '''Download a blob from its url to a given path.
 
@@ -203,6 +226,14 @@ class Blobs(WestCommand):
         urls = blob['url']
         if not isinstance(urls, list):
             urls = (urls,)
+
+        mirror_urls = []
+        for url in urls:
+            mirror_url = self.get_rewritten_url(url)
+            if mirror_url:
+                mirror_urls.append(mirror_url)
+            mirror_urls.append(url)
+        urls = mirror_urls
 
         downloaded = False
         for i, url in enumerate(urls):
