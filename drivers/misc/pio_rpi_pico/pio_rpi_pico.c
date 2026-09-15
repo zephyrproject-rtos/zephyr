@@ -18,6 +18,9 @@ struct pio_rpi_pico_config {
 	const struct device *clk_dev;
 	clock_control_subsys_t clk_id;
 	const struct reset_dt_spec reset;
+#if PICO_PIO_USE_GPIO_BASE
+	uint8_t gpio_base;
+#endif
 };
 
 int pio_rpi_pico_allocate_sm(const struct device *dev, size_t *sm)
@@ -49,8 +52,20 @@ static int pio_rpi_pico_init(const struct device *dev)
 		return ret;
 	}
 
+#if PICO_PIO_USE_GPIO_BASE
+	if (pio_set_gpio_base(config->pio, config->gpio_base) != PICO_OK) {
+		return -EINVAL;
+	}
+#endif
+
 	return 0;
 }
+
+#if PICO_PIO_USE_GPIO_BASE
+#define RPI_PICO_PIO_GPIO_BASE(idx) .gpio_base = DT_INST_PROP_OR(idx, gpio_base, 0),
+#else
+#define RPI_PICO_PIO_GPIO_BASE(idx)
+#endif
 
 #define RPI_PICO_PIO_INIT(idx)                                                                     \
 	static const struct pio_rpi_pico_config pio_rpi_pico_config_##idx = {                      \
@@ -58,6 +73,7 @@ static int pio_rpi_pico_init(const struct device *dev)
 		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                                \
 		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(0, clocks, 0, clk_id),        \
 		.reset = RESET_DT_SPEC_INST_GET(idx),                                              \
+		RPI_PICO_PIO_GPIO_BASE(idx)                                                        \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, &pio_rpi_pico_init, NULL, NULL, &pio_rpi_pico_config_##idx,     \
