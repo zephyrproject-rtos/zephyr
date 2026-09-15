@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/abov32-pinctrl.h>
+
+&pinctrl {
+	/*
+	 * USART10 Pin Configuration (PB0: TX, PB1: RX, ALT1), per the default
+	 * debug console pin mapping in debug_a31c15x.h (DEBUG_UART_ID=0,
+	 * DEBUG_PORT_ID=1/PORT B, TX pin 0, RX pin 1, ALT 1).
+	 */
+	usart10_default: usart10_default {
+		group1 {
+			pinmux = <ABOV_PINMUX(1, 0, 1)>, /* PB0 - USART10_TX (ALT1) */
+				 <ABOV_PINMUX(1, 1, 1)>; /* PB1 - USART10_RX (ALT1) */
+		};
+	};
+
+};

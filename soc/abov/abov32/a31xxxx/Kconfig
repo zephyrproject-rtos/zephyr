@@ -1,0 +1,17 @@
+# Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# All A31xxxx series share the same Cortex-M0+ core, so the capability
+# selects live here once instead of being repeated in every series' Kconfig.
+config SOC_PRODUCT_LINE_A31XXXX
+	bool
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select SOC_EARLY_INIT_HOOK
+
+config SOC_PRODUCT_LINE
+	default "a31xxxx" if SOC_PRODUCT_LINE_A31XXXX
+
+orsource "*/Kconfig"

@@ -1,0 +1,44 @@
+# Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ABOV32 Port Control Unit (PCU) pin controller.
+
+  Pin state child nodes use the pinmux property, encoded with the
+  ABOV_PINMUX(port, pin, alt) macro from
+  include/zephyr/dt-bindings/pinctrl/abov32-pinctrl.h, e.g.:
+
+    uart0_default: uart0_default {
+        group1 {
+            pinmux = <ABOV_PINMUX(5, 0, 4)>, /* PF0 - UART0_TX (ALT4) */
+                     <ABOV_PINMUX(5, 1, 4)>; /* PF1 - UART0_RX (ALT4) */
+        };
+    };
+
+compatible: "abov,abov32-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: ABOV32 pin group configuration.
+
+  child-binding:
+    description: ABOV32 pin configuration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+          - drive-open-drain
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin encoded with the ABOV_PINMUX(port, pin, alt) macro.

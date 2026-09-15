@@ -1,0 +1,11 @@
+# Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common identity for every A31xxxx series (a31c15x, a31t51x, ...): they all
+# belong to the ABOV32 family. Series-specific Kconfig.soc files select this
+# instead of SOC_FAMILY_ABOV32 directly.
+config SOC_PRODUCT_LINE_A31XXXX
+	bool
+	select SOC_FAMILY_ABOV32
+
+rsource "*/Kconfig.soc"

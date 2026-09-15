@@ -1,0 +1,14 @@
+# Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config USART_ABOV32
+	bool "ABOV32 USART serial driver"
+	default y
+	depends on DT_HAS_ABOV_ABOV32_USART_ENABLED
+	select PINCTRL
+	select CLOCK_CONTROL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the asynchronous (UART mode) driver for the ABOV32 USART
+	  peripheral, built on the ABOV HLL USART API (hll_usart.h).

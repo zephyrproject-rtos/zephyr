@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/clock/abov32-clock.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			clock-frequency = <48000000>;
+		};
+
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(32)>;
+	};
+
+	soc {
+		flash_controller: flash-controller@40080000 {
+			compatible = "abov,abov32-flash-controller";
+			reg = <0x40080000 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(256)>;
+			};
+		};
+
+		pinctrl: pinctrl@40090000 {
+			compatible = "abov,abov32-pinctrl";
+			reg = <0x40090000 0x1000>;
+		};
+
+		gpioe: gpio@40090400 {
+			compatible = "abov,abov32-gpio";
+			reg = <0x40090400 0x100>;
+			/* GPIOEF_IRQn is shared between Port E and Port F. */
+			interrupts = <13 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+		};
+
+		gpiof: gpio@40090500 {
+			compatible = "abov,abov32-gpio";
+			reg = <0x40090500 0x100>;
+			/* GPIOEF_IRQn is shared between Port E and Port F. */
+			interrupts = <13 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+		};
+
+		cctl: cctl@40000000 {
+			compatible = "abov,abov32-cctl";
+			reg = <0x40000000 0x400>;
+			#clock-cells = <1>;
+			/* A31C15x's HSI is 48 MHz (see startup_a31c15x.h's HSI_CLOCK). */
+			hsi-frequency = <48000000>;
+		};
+
+		usart10: usart@40001000 {
+			compatible = "abov,abov32-usart";
+			reg = <0x40001000 0x100>;
+			interrupts = <16 0>;
+			clocks = <&cctl ABOV32_CLOCK_PCLK>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

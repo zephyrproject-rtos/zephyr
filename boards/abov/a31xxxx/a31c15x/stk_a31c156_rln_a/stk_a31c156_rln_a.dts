@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <abov/a31xxxx/a31c15x/abov_a31c15x.dtsi>
+#include "stk_a31c156_rln_a-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "ABOV STK-A31C156-RLN-A Starter Kit";
+	compatible = "abov,stk-a31c156-rln-a";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart10;
+		zephyr,shell-uart = &usart10;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpioe 0 GPIO_ACTIVE_LOW>;
+			label = "STK LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+			label = "STK LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpioe 2 GPIO_ACTIVE_LOW>;
+			label = "STK LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+			label = "STK LED 3";
+		};
+		led4: led_4 {
+			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+			label = "STK LED 4";
+		};
+		led5: led_5 {
+			gpios = <&gpioe 5 GPIO_ACTIVE_LOW>;
+			label = "STK LED 5";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpiof 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "STK Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: button_1 {
+			gpios = <&gpiof 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "STK Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		led4 = &led4;
+		led5 = &led5;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+};
+
+&usart10 {
+	status = "okay";
+	current-speed = <38400>;
+	pinctrl-0 = <&usart10_default>;
+	pinctrl-names = "default";
+};
