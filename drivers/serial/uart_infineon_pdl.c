@@ -1342,9 +1342,9 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	data->scb_config.txFifoTriggerLevel = 1;
 #endif
 
-#if defined(CONFIG_INFINEON_INTC_SYSINTC)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	irq_enable(config->irq_num);
-#endif /* CONFIG_INFINEON_INTC_SYSINTC */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 	/* Connect this SCB to the peripheral clock */
@@ -1357,7 +1357,9 @@ static int ifx_cat1_uart_init(const struct device *dev)
 					     &(data->context));
 
 	if (result == CY_RSLT_SUCCESS) {
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		irq_enable(config->irq_num);
+#endif
 
 		Cy_SCB_UART_Enable(config->reg_addr);
 	} else {
