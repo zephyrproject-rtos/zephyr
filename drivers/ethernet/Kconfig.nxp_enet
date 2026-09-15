@@ -23,6 +23,36 @@ config ETH_NXP_ENET
 
 if ETH_NXP_ENET
 
+config ETH_NXP_ENET_RX_RECV_ZERO_COPY
+	bool "Hand net buffers straight to the receive DMA"
+	depends on NET_BUF_FIXED_DATA_SIZE
+	help
+	  Give the receive DMA its buffers out of the network buffer pool and
+	  hand them to the stack as they are, instead of copying every frame
+	  into a driver buffer and then into the packet. That takes two copies
+	  of every received frame off the CPU.
+
+	  Every descriptor takes one buffer of NET_BUF_DATA_SIZE, and a frame
+	  larger than that spreads over as many as it needs. The driver checks
+	  the SDK's constraints on size, alignment and pool depth at build
+	  time.
+
+	  Set NET_BUF_DATA_SIZE to hold a whole frame. Splitting one across
+	  several small buffers costs an allocation and a cache invalidation
+	  per buffer, and caps the ring at ETH_NXP_ENET_RX_BUFFERS times that
+	  size, which measures slower than copying.
+
+if ETH_NXP_ENET_RX_RECV_ZERO_COPY
+
+# ENET_RX_MIN_BUFFERSIZE and ENET_BUFF_ALIGNMENT in the SDK
+configdefault NET_BUF_DATA_SIZE
+	default 256
+
+configdefault NET_BUF_ALIGNMENT
+	default 64
+
+endif # ETH_NXP_ENET_RX_RECV_ZERO_COPY
+
 config ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
 	bool "Use DTCM for hardware DMA buffers"
 	# ERR050396: ENET writes to TCM require CACHE_ENET to be cleared, while
@@ -43,10 +73,18 @@ config ETH_NXP_ENET_HW_ACCELERATION
 
 config ETH_NXP_ENET_RX_BUFFERS
 	int "Number of RX buffers for ethernet driver"
+	default 16 if ETH_NXP_ENET_RX_RECV_ZERO_COPY
 	default 6
 	range 6 16
 	help
 	  Set the number of RX buffers provided to the NXP ENET driver.
+
+	  With ETH_NXP_ENET_RX_RECV_ZERO_COPY each one holds NET_BUF_DATA_SIZE
+	  bytes rather than a whole frame, so a frame takes several.
+
+	  Either way, size the ring to hold more bytes than the TCP receive
+	  window: a burst that overruns it costs frames at the MAC, and those
+	  take the sending window down with them.
 
 config ETH_NXP_ENET_TX_BUFFERS
 	int "Number of TX buffers for ethernet driver"
