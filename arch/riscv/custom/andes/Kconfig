@@ -85,3 +85,28 @@ config RISCV_CUSTOM_CSR_ANDES_HSP
 	help
 	  This option enables the Andes V5 StackSafe hardware stack protection,
 	  in order to support custom stack guard.
+
+config CPU_HAS_ANDES_VECTORED_PLIC
+	bool
+	help
+	  The AndesCore supports Vectored PLIC extension.
+
+config RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC
+	bool "Andes V5 Vectored PLIC extension"
+	depends on CPU_HAS_ANDES_VECTORED_PLIC
+	depends on !(SMP || 64BIT)
+	select GEN_IRQ_VECTOR_TABLE
+	select RISCV_SOC_CONTEXT_SAVE
+	select RISCV_SOC_HAS_CUSTOM_MCAUSE
+	help
+	  This option enables the Andes V5 Vectored PLIC extension.
+	  Note that in order to use this extension, the SOC must implement
+	  __soc_save_context and __soc_restore_context, and call
+	  andes_plic_save_context and andes_plic_restore_context from each
+	  implementation, respectively.
+
+	  64 bit systems are not supported, because the vectored PLIC mode requires
+	  4 byte addresses per entry and the Zephyr IRQ table uses 8 byte addresses.
+
+config SW_ISR_TABLE_ENTRY_FUNCTION
+	default "_andes_plic_isr_wrapper" if RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC

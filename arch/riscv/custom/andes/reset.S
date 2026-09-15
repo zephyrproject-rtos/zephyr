@@ -6,12 +6,18 @@
 #include <andes_csr.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/arch/riscv/arch.h>
+
+#define PLIC_BASE_ADDR DT_REG_ADDR(DT_INST(0, sifive_plic_1_0_0))
 
 /* exports */
 GTEXT(__reset)
 
 /* imports */
 GTEXT(__initialize)
+#ifdef CONFIG_RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC
+GTEXT(_irq_vector_table)
+#endif
 
 SECTION_FUNC(reset, __reset)
 
@@ -62,6 +68,21 @@ cache_enable_finish:
 	/* Enable misaligned access and non-blocking load */
 	li t0, (1 << 8) | (1 << 6)
 	csrs NDS_MMISC_CTL, t0
+
+#ifdef CONFIG_RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC
+	/* Enable VEC_PLIC bit for Vectored PLIC extension. */
+	csrsi NDS_MMISC_CTL, 2
+
+	/* Enabled VECTORED bit in feature enable register */
+	li t0, PLIC_BASE_ADDR
+	lw t1, 0(t0)
+	ori t1, t1, 2
+	sw t1, 0(t0)
+
+	/* Set mtvec to the generated vector table. */
+	la t0, _irq_vector_table
+	csrw mtvec, t0
+#endif
 
 	/* Jump to __initialize */
 	call __initialize

@@ -640,7 +640,8 @@ config ARCH_DEVICE_STATE_ALIGN
 choice IRQ_VECTOR_TABLE_TYPE
 	prompt "IRQ vector table type"
 	depends on GEN_IRQ_VECTOR_TABLE
-	default IRQ_VECTOR_TABLE_JUMP_BY_CODE if (RISCV && !RISCV_HAS_CLIC)
+	default IRQ_VECTOR_TABLE_JUMP_BY_CODE if \
+		(RISCV && !RISCV_HAS_CLIC && !RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC)
 	default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
 
 config IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
@@ -715,6 +716,14 @@ config GEN_IRQ_START_VECTOR
 	  will be subtracted from CONFIG_NUM_IRQS to properly size them.
 	  This is a hidden option which needs to be set per architecture and
 	  left alone.
+
+config SW_ISR_TABLE_ENTRY_FUNCTION
+	string
+	depends on GEN_SW_ISR_TABLE
+	help
+	  Specify the function to be used for entries in the software ISR table.
+	  This can be used by systems that require custom interrupt handling
+	  to wrap or replace the default architecture _isr_wrapper function.
 
 config IRQ_OFFLOAD
 	bool "IRQ offload"
