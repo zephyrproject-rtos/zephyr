@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sd/sd.h>
 #include <zephyr/sd/sdio.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/disk.h>
