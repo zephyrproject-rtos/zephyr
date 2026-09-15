@@ -232,7 +232,7 @@ static ALWAYS_INLINE void z_arm_clear_faults(void)
  */
 static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_t exc_return)
 {
-#ifdef CONFIG_DEBUG_COREDUMP
+#ifdef CONFIG_CORTEX_M_DEBUG_SAVE_FAULT_SP
 	z_arm_coredump_fault_sp = POINTER_TO_UINT(esf);
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* Gdb expects a stack pointer that does not include the exception stack frame in order to
