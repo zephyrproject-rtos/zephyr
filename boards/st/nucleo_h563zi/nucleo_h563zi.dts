@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include "nucleo_h563zi-common.dtsi"
+#include "nucleo_h563zi_common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32H563ZI-NUCLEO board";

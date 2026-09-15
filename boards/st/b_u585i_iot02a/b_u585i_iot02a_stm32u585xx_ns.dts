@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "b_u585i_iot02a-common.dtsi"
+#include "b_u585i_iot02a_common.dtsi"
 
 / {
 	model = "STMicroelectronics B-U585I-IOT02A discovery kit";

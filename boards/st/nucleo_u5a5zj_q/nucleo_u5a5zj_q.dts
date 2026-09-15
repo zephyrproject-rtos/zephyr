@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "nucleo_u5a5zj_q-common.dtsi"
+#include "nucleo_u5a5zj_q_common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32U5A5ZJ-NUCLEO-Q board";

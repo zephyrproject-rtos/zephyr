@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "stm32wba65i_dk1-common.dtsi"
+#include "stm32wba65i_dk1_common.dtsi"
 #include <mem.h>
 
 / {

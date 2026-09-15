@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include "nucleo_h7s3l8-common.dtsi"
+#include "nucleo_h7s3l8_common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32H7S3L8-NUCLEO board";
