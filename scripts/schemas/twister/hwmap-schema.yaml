@@ -56,6 +56,70 @@ items:
         post_flash_timeout:
           type: integer
       additionalProperties: false
+    hooks:
+      type: object
+      properties:
+        pre:
+          type: object
+          properties:
+            script:
+              type: string
+            args:
+              type: array
+              items:
+                type: string
+            timeout:
+              type: integer
+              minimum: 1
+          required:
+            - script
+          additionalProperties: false
+        post:
+          type: object
+          properties:
+            script:
+              type: string
+            args:
+              type: array
+              items:
+                type: string
+            timeout:
+              type: integer
+              minimum: 1
+          required:
+            - script
+          additionalProperties: false
+        pre_flash:
+          type: object
+          properties:
+            script:
+              type: string
+            args:
+              type: array
+              items:
+                type: string
+            timeout:
+              type: integer
+              minimum: 1
+          required:
+            - script
+          additionalProperties: false
+        post_flash:
+          type: object
+          properties:
+            script:
+              type: string
+            args:
+              type: array
+              items:
+                type: string
+            timeout:
+              type: integer
+              minimum: 1
+          required:
+            - script
+          additionalProperties: false
+      additionalProperties: false
     west_flash_cmd:
       type: string
   required:
