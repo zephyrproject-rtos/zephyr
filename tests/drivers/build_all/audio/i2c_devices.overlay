@@ -55,6 +55,13 @@
 				reg = <0x4>;
 				status = "okay";
 			};
+
+			test_i2c_nau8540: nau8540@5 {
+				compatible = "nuvoton,nau8540";
+				reg = <0x5>;
+				status = "okay";
+				csb-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };

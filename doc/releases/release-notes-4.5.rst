@@ -1153,6 +1153,7 @@ New Drivers
 
 * Audio
 
+  * :dtcompatible:`nuvoton,nau8540` (:github:`119117`)
   * :dtcompatible:`st,stm32-dfsdm` (:github:`108302`)
   * :dtcompatible:`st,stm32-dfsdm-dmic` (:github:`108302`)
   * :dtcompatible:`ti,tas2563` (:github:`103148`)
