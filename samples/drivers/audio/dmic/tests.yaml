@@ -32,6 +32,8 @@ tests:
       - apollo510_evb
       - stm32f769i_disco
       - arduino_giga_r1/stm32h747xx/m7
+      - stm32l476g_disco
+      - stm32n6570_dk/stm32n657xx/sb
     harness: console
     harness_config:
       type: multi_line
