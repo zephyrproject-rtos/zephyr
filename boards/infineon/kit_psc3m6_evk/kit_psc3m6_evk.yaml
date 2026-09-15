@@ -17,4 +17,5 @@ supported:
   - uart
   - clock_control
   - pinctrl
+  - rtc
 vendor: infineon
