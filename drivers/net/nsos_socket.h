@@ -85,6 +85,38 @@ struct nsos_mid_timeval {
 	int64_t tv_usec;
 };
 
+/* Family-neutral multicast group descriptors. Decoupled from the Zephyr and
+ * host mreq layouts so neither ABI leaks across the nsos boundary.
+ */
+struct nsos_mid_ip_mreqn {
+	uint8_t imr_multiaddr[4]; /* Group address, network byte order */
+	uint8_t imr_address[4];   /* Local interface address, network byte order */
+	int32_t imr_ifindex;      /* Host interface index */
+};
+
+struct nsos_mid_ipv6_mreq {
+	uint8_t ipv6mr_multiaddr[16]; /* Group address, network byte order */
+	int32_t ipv6mr_ifindex;       /* Host interface index */
+};
+
+/** @} */
+
+/**
+ * @name IPv4 level options (NSOS_MID_IPPROTO_IP)
+ * @{
+ */
+/** Set the IPv4 multicast time-to-live value for the socket. */
+#define NSOS_MID_IP_MULTICAST_TTL 33
+
+/** Set the IPv4 multicast loop bit for the socket. */
+#define NSOS_MID_IP_MULTICAST_LOOP 34
+
+/** Join an IPv4 multicast group. */
+#define NSOS_MID_IP_ADD_MEMBERSHIP 35
+
+/** Set the outgoing interface for IPv4 multicast. */
+#define NSOS_MID_IP_MULTICAST_IF 32
+
 /** @} */
 
 /**
@@ -111,8 +143,14 @@ struct nsos_mid_timeval {
 /** Set the unicast hop limit for the socket. */
 #define NSOS_MID_IPV6_UNICAST_HOPS	16
 
+/** Set the outgoing interface for IPv6 multicast. */
+#define NSOS_MID_IPV6_MULTICAST_IF 17
+
 /** Set the multicast hop limit for the socket. */
 #define NSOS_MID_IPV6_MULTICAST_HOPS 18
+
+/** Set the multicast loop bit for the socket. */
+#define NSOS_MID_IPV6_MULTICAST_LOOP 19
 
 /** Join IPv6 multicast group. */
 #define NSOS_MID_IPV6_ADD_MEMBERSHIP 20
