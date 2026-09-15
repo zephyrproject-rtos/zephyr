@@ -44,7 +44,7 @@ static K_MUTEX_DEFINE(mcumgr_img_client_grp_mutex);
 static const char smp_images_str[] = "images";
 #define IMAGES_STR_LEN (sizeof(smp_images_str) - 1)
 
-static bool image_digest_len_valid(size_t hash_len)
+static bool image_digest_len_is_valid(size_t hash_len)
 {
 	return hash_len == IMG_MGMT_DATA_SHA_LEN || hash_len == IMG_MGMT_CLIENT_HASH_MAX_LEN;
 }
@@ -131,7 +131,7 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 			goto out;
 		}
 		/* Check that mandatory parameters have decoded */
-		if (!image_digest_len_valid(hash.len) || !version.len ||
+		if (!image_digest_len_is_valid(hash.len) || !version.len ||
 		    !zcbor_map_decode_bulk_key_found(list_res_decode, ARRAY_SIZE(list_res_decode),
 						     "slot")) {
 			LOG_ERR("Missing mandatory parameters");
@@ -465,7 +465,7 @@ int img_mgmt_client_state_write(struct img_mgmt_client *client, const char *hash
 	bool ok;
 
 	if ((hash == NULL && hash_len != 0) ||
-	    (hash != NULL && !image_digest_len_valid(hash_len))) {
+	    (hash != NULL && !image_digest_len_is_valid(hash_len))) {
 		return MGMT_ERR_EINVAL;
 	}
 
