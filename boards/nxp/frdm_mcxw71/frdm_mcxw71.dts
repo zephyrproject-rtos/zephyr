@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -260,5 +260,9 @@ arduino_i2c: &lpi2c1 {};
 };
 
 &crc {
+	status = "okay";
+};
+
+&sema42 {
 	status = "okay";
 };
