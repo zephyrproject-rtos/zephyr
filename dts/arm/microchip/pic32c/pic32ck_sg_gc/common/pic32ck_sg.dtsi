@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		pinctrl: pinctrl@44801000 {
+			ranges = <0x0 0x44801000 0x200>;
+		};
+	};
+};

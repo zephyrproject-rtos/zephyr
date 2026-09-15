@@ -41,6 +41,8 @@ description: |
         group1 {
           /* configure PA6 as USART0 TX and PA8 as USART0 CTS */
           pinmux = <PA5D_SERCOM0_PAD1>, <PA6D_SERCOM0_PAD2>;
+          /* pins are assigned to the secure domain by default */
+          non-secure-enable = <0>;
         };
         /* group 2 */
         group2 {
@@ -48,6 +50,8 @@ description: |
           pinmux = <PA4D_SERCOM0_PAD0>, <PA7D_SERCOM0_PAD3>;
           /* both PA5 and PA7 have pull-up enabled */
           bias-pull-up;
+          /* pins are assigned to the non-secure domain */
+          non-secure-enable = <1>;
         };
       };
     };
@@ -76,6 +80,9 @@ description: |
       - "slow8"
       - "slow12"
   - slew-limit-en: Enable internal slew rate limit for the pin configured as an output.
+  - non-secure-enable: Assign the pin to the non-secure domain.
+      - 0: Pin is assigned to the secure domain. [Default]
+      - 1: Pin is assigned to the non-secure domain.
 
   To link pin configurations with a device, use a pinctrl-N property for some
   number N, like this example you could place in your board's DTS file:
@@ -115,6 +122,7 @@ child-binding:
           - input-enable
           - output-enable
           - drive-open-drain
+          - non-secure-enable
 
     properties:
       pinmux:
@@ -163,3 +171,13 @@ child-binding:
             0: Output Driver Slew Rate Limit is disabled.
             1: Output Driver Slew Rate Limit is enabled.
           Only applicable to pic32cm pl family
+      non-secure-enable:
+        type: int
+        enum:
+          - 0
+          - 1
+        default: 0
+        description: |
+          Assigns the pin to the secure or non-secure domain.
+            0: Pin is assigned to the secure domain. [Default]
+            1: Pin is assigned to the non-secure domain.
