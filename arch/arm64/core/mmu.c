@@ -665,8 +665,19 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table, uintptr_t v
 
 		if (step != level_size) {
 			/* boundary falls in the middle of this pte */
-			__ASSERT(is_table_desc(src_table[i], level),
-				 "can't have partial block pte here");
+			if (!is_table_desc(src_table[i], level)) {
+				/*
+				 * The source maps this entry whole while the
+				 * range covers only part of it, which is what
+				 * a partition inside a larger kernel block
+				 * looks like. Split it so the walk can go
+				 * finer, the way set_mapping() splits a block
+				 * a new mapping lands inside of.
+				 */
+				if (!expand_to_table(&src_table[i], level)) {
+					return -ENOMEM;
+				}
+			}
 			if (!is_table_desc(dst_table[i], level)) {
 				/* we need more fine grained boundaries */
 				if (!expand_to_table(&dst_table[i], level)) {
