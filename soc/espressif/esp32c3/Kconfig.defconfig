@@ -3,8 +3,59 @@
 
 if SOC_SERIES_ESP32C3
 
+# Multi-level interrupts: L1 = intc (CPU line), L2 = <periph>_intmux (INTMUX
+# source -> CPU line). One flat 2nd-level aggregator spanning every INTMUX
+# source (ETS_MAX_INTR_SOURCE = 62). CPU lines occupy table slots 0..31, so the
+# source window starts at 32, level-3 window at 94; NUM_IRQS = 94 + 32.
 config NUM_IRQS
+	default 126
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
 	default 32
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 32
+
+# Level-3: the RTC_CNTL peripherals share RTC_CORE_INTR_SOURCE and are demuxed
+# by rtc_intc (see the SoC dtsi). Window base is the end of the level-2 window.
+config 3RD_LEVEL_INTERRUPTS
+	default y
+
+config 3RD_LEVEL_INTERRUPT_BITS
+	default 8
+
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 1
+
+# Upper bound on a flag's bit number, and the slots reserved per aggregator.
+config MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	default 32
+
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 94
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 62
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+# That single aggregator is the interrupt matrix, so its window is indexed by
+# the source number rather than by an aggregator slot.
+config INTERRUPT_MATRIX_LAYOUT
+	default y
 
 config MAIN_STACK_SIZE
 	default 2048
