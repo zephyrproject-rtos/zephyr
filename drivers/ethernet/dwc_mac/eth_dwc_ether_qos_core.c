@@ -47,6 +47,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  */
 #define TX_AVAIL_WAIT K_MSEC(1)
 
+/*
+ * Grace period for each step of stopping transmission and reception.
+ * Draining a 16 KiB TX FIFO at 10 mbps takes about 13ms.
+ */
+#define STOP_TIMEOUT_US (100U * USEC_PER_MSEC)
+
 /* descriptor index iterators */
 #define INC_WRAP(idx, size) ((idx) = ((idx) + 1) % (size))
 
@@ -595,11 +601,88 @@ static int dwmac_set_config(const struct device *dev,
 	return ret;
 }
 
+static void dwmac_start_tx_rx(const struct device *dev)
+{
+	uint32_t reg_val;
+
+	/* the DMA has to be running before the MAC is enabled */
+	reg_val = DWMAC_REG_READ(DMA_CHn_TX_CTRL(0));
+	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0), reg_val | DMA_CHn_TX_CTRL_St);
+	reg_val = DWMAC_REG_READ(DMA_CHn_RX_CTRL(0));
+	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0), reg_val | DMA_CHn_RX_CTRL_SR);
+	reg_val = DWMAC_REG_READ(MAC_CONF);
+	DWMAC_REG_WRITE(MAC_CONF, reg_val | MAC_CONF_TE | MAC_CONF_RE);
+}
+
+static bool dwmac_tx_dma_stopped(const struct device *dev)
+{
+	return FIELD_GET(DMA_DEBUG_STATUS0_TPS0, DWMAC_REG_READ(DMA_DEBUG_STATUS0)) ==
+	       DMA_DEBUG_STATUS0_TPS0_STOPPED;
+}
+
+static bool dwmac_tx_queue_drained(const struct device *dev)
+{
+	uint32_t reg_val = DWMAC_REG_READ(MTL_TXQn_DEBUG(0));
+
+	return ((reg_val & MTL_TXQn_DEBUG_TXQSTS) == 0U) &&
+	       (FIELD_GET(MTL_TXQn_DEBUG_TRCSTS, reg_val) != MTL_TXQn_DEBUG_TRCSTS_READ);
+}
+
+static bool dwmac_mac_idle(const struct device *dev)
+{
+	return (DWMAC_REG_READ(MAC_DEBUG) & (MAC_DEBUG_TFCSTS | MAC_DEBUG_TPESTS |
+					     MAC_DEBUG_RFCFCSTS | MAC_DEBUG_RPESTS)) == 0U;
+}
+
+static bool dwmac_rx_queue_drained(const struct device *dev)
+{
+	return (DWMAC_REG_READ(MTL_RXQn_DEBUG(0)) &
+		(MTL_RXQn_DEBUG_PRXQ | MTL_RXQn_DEBUG_RXQSTS)) == 0U;
+}
+
+/*
+ * The MAC configuration must only be changed while the MAC neither transmits
+ * nor receives. Stop both directions in the order the reference manual
+ * gives. The DMA channels keep their descriptor position and resume from
+ * there once started again.
+ */
+static void dwmac_stop_tx_rx(const struct device *dev)
+{
+	uint32_t reg_val;
+
+	/* the TX DMA completes the packet it is fetching before it stops */
+	reg_val = DWMAC_REG_READ(DMA_CHn_TX_CTRL(0));
+	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0), reg_val & ~DMA_CHn_TX_CTRL_St);
+	if (!WAIT_FOR(dwmac_tx_dma_stopped(dev), STOP_TIMEOUT_US, k_msleep(1))) {
+		LOG_WRN("TX DMA did not stop");
+	}
+
+	/* let the MAC transmit what is left in the TX queue */
+	if (!WAIT_FOR(dwmac_tx_queue_drained(dev), STOP_TIMEOUT_US, k_msleep(1))) {
+		LOG_WRN("TX queue did not drain");
+	}
+
+	/* the MAC completes the packet it is transmitting or receiving */
+	reg_val = DWMAC_REG_READ(MAC_CONF);
+	DWMAC_REG_WRITE(MAC_CONF, reg_val & ~(MAC_CONF_TE | MAC_CONF_RE));
+	if (!WAIT_FOR(dwmac_mac_idle(dev), STOP_TIMEOUT_US, k_msleep(1))) {
+		LOG_WRN("MAC did not become idle");
+	}
+
+	/* let the RX DMA move what is left in the RX queue to memory */
+	if (!WAIT_FOR(dwmac_rx_queue_drained(dev), STOP_TIMEOUT_US, k_msleep(1))) {
+		LOG_WRN("RX queue did not drain");
+	}
+	reg_val = DWMAC_REG_READ(DMA_CHn_RX_CTRL(0));
+	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0), reg_val & ~DMA_CHn_RX_CTRL_SR);
+}
+
 static void phy_link_state_changed(const struct device *phy_dev,
 				   struct phy_link_state *state,
 				   void *user_data)
 {
 	uint32_t reg_val;
+	uint32_t cur_val;
 	const struct device *dev = (const struct device *)user_data;
 	struct dwmac_priv *p = dev->data;
 
@@ -607,6 +690,7 @@ static void phy_link_state_changed(const struct device *phy_dev,
 
 	if (state->is_up) {
 		reg_val = DWMAC_REG_READ(MAC_CONF);
+		cur_val = reg_val;
 
 		switch (state->speed) {
 		case LINK_HALF_10BASE:
@@ -638,7 +722,21 @@ static void phy_link_state_changed(const struct device *phy_dev,
 			reg_val &= ~MAC_CONF_DM;
 		}
 
-		DWMAC_REG_WRITE(MAC_CONF, reg_val);
+		/*
+		 * TX and RX are started on the first link up. Afterwards the PHY
+		 * may report a new speed or duplex mode without a link down in
+		 * between, so the MAC can still be busy at this point.
+		 */
+		if ((cur_val & (MAC_CONF_TE | MAC_CONF_RE)) == 0U) {
+			DWMAC_REG_WRITE(MAC_CONF, reg_val);
+			dwmac_start_tx_rx(dev);
+		} else if (reg_val != cur_val) {
+			dwmac_stop_tx_rx(dev);
+			DWMAC_REG_WRITE(MAC_CONF, reg_val & ~(MAC_CONF_TE | MAC_CONF_RE));
+			dwmac_start_tx_rx(dev);
+		} else {
+			/* nothing changed */
+		}
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
@@ -683,17 +781,6 @@ static void dwmac_iface_init(struct net_if *iface)
 		DWMAC_REG_WRITE(MAC_PKT_FILTER, 0);
 	}
 
-	if (cfg->phy_dev != NULL) {
-		/* Do not start the interface until PHY link is up */
-		net_if_carrier_off(iface);
-
-		if (device_is_ready(cfg->phy_dev)) {
-			phy_link_callback_set(cfg->phy_dev, phy_link_state_changed, (void *)dev);
-		} else {
-			LOG_ERR("PHY device not ready");
-		}
-	}
-
 	/*
 	 * Semaphores are used to represent number of available descriptors.
 	 * The total is one less than ring size in order to always have
@@ -713,15 +800,6 @@ static void dwmac_iface_init(struct net_if *iface)
 			K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(&p->rx_refill_thread, "dwmac_rx_refill");
 
-	/* start up TX/RX */
-	reg_val = DWMAC_REG_READ(DMA_CHn_TX_CTRL(0));
-	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0), reg_val | DMA_CHn_TX_CTRL_St);
-	reg_val = DWMAC_REG_READ(DMA_CHn_RX_CTRL(0));
-	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0), reg_val | DMA_CHn_RX_CTRL_SR);
-	reg_val = DWMAC_REG_READ(MAC_CONF);
-	reg_val |= MAC_CONF_CST | MAC_CONF_TE | MAC_CONF_RE;
-	DWMAC_REG_WRITE(MAC_CONF, reg_val);
-
 	/* unmask IRQs */
 	DWMAC_REG_WRITE(DMA_CHn_IRQ_ENABLE(0),
 		  DMA_CHn_IRQ_ENABLE_TIE |
@@ -730,6 +808,28 @@ static void dwmac_iface_init(struct net_if *iface)
 		  DMA_CHn_IRQ_ENABLE_FBEE |
 		  DMA_CHn_IRQ_ENABLE_CDEE |
 		  DMA_CHn_IRQ_ENABLE_AIE);
+
+	reg_val = DWMAC_REG_READ(MAC_CONF);
+	DWMAC_REG_WRITE(MAC_CONF, reg_val | MAC_CONF_CST);
+
+	if (cfg->phy_dev != NULL) {
+		/* Do not start the interface until PHY link is up */
+		net_if_carrier_off(iface);
+
+		if (device_is_ready(cfg->phy_dev)) {
+			/*
+			 * TX/RX are started by the link callback, which may already
+			 * run from here, so everything else has to be set up by now.
+			 */
+			phy_link_callback_set(cfg->phy_dev, phy_link_state_changed,
+					      (void *)dev);
+		} else {
+			LOG_ERR("PHY device not ready");
+		}
+	} else {
+		/* start up TX/RX */
+		dwmac_start_tx_rx(dev);
+	}
 
 	LOG_DBG("done");
 }

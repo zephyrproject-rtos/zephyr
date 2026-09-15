@@ -589,6 +589,11 @@ extern const struct ethernet_api dwmac_api;
 
 #define MAC_DEBUG				0x0114
 
+#define MAC_DEBUG_TFCSTS			GENMASK(18, 17)
+#define MAC_DEBUG_TPESTS			BIT(16)
+#define MAC_DEBUG_RFCFCSTS			GENMASK(2, 1)
+#define MAC_DEBUG_RPESTS			BIT(0)
+
 /* 17.1.53 */
 
 #define MAC_HW_FEATURE0				0x011c
@@ -964,6 +969,10 @@ extern const struct ethernet_api dwmac_api;
 
 #define MTL_TXQn_DEBUG(n)			(0x0d08 + 0x40 * (n))
 
+#define MTL_TXQn_DEBUG_TXQSTS			BIT(4)
+#define MTL_TXQn_DEBUG_TRCSTS			GENMASK(2, 1)
+#define MTL_TXQn_DEBUG_TRCSTS_READ		1U
+
 /* 17.4.4 */
 
 #define MTL_TXQn_ETS_CTRL(n)			(0x0d10 + 0x40 * (n))
@@ -1013,6 +1022,9 @@ extern const struct ethernet_api dwmac_api;
 /* 17.3.9, 17.4.13 */
 
 #define MTL_RXQn_DEBUG(n)			(0x0d38 + 0x40 * (n))
+
+#define MTL_RXQn_DEBUG_PRXQ			GENMASK(29, 16)
+#define MTL_RXQn_DEBUG_RXQSTS			GENMASK(5, 4)
 
 /* 17.3.10, 17.4.14 */
 
@@ -1076,6 +1088,9 @@ extern const struct ethernet_api dwmac_api;
 /* 17.5.4 */
 
 #define DMA_DEBUG_STATUS0			0x100c
+
+#define DMA_DEBUG_STATUS0_TPS0			GENMASK(15, 12)
+#define DMA_DEBUG_STATUS0_TPS0_STOPPED		0U
 
 /* 17.5.5 */
 
