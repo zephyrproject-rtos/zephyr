@@ -9,6 +9,8 @@ supported:
   - uart
   - gpio
   - i2c
+  - display
+  - mipi_dsi
 testing:
   ignore_tags:
     - bluetooth

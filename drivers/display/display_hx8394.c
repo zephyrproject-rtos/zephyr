@@ -592,7 +592,7 @@ static int hx8394_init(const struct device *dev)
 	ret_tx = hx8394_mipi_tx(config->mipi_dsi, config->channel,
 			     enable_extension, sizeof(enable_extension));
 	if (ret_tx < 0) {
-		LOG_ERR("hx8394_mipi_tx error, %d", ret_tx);
+		LOG_ERR("hx8394_mipi_tx error, %zu", ret_tx);
 		return -EIO;
 	}
 
@@ -601,7 +601,7 @@ static int hx8394_init(const struct device *dev)
 	ret_tx = hx8394_mipi_tx(config->mipi_dsi, config->channel,
 			     setmipi, sizeof(setmipi));
 	if (ret_tx < 0) {
-		LOG_ERR("hx8394_mipi_tx error, %d", ret_tx);
+		LOG_ERR("hx8394_mipi_tx error, %zu", ret_tx);
 		return -EIO;
 	}
 
@@ -609,7 +609,7 @@ static int hx8394_init(const struct device *dev)
 	ret_tx = hx8394_mipi_tx(config->mipi_dsi, config->channel,
 			     address_config, sizeof(address_config));
 	if (ret_tx < 0) {
-		LOG_ERR("hx8394_mipi_tx error, %d", ret_tx);
+		LOG_ERR("hx8394_mipi_tx error, %zu", ret_tx);
 		return -EIO;
 	}
 
