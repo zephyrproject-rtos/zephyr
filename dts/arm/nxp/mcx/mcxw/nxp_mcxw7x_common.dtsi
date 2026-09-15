@@ -590,6 +590,15 @@
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
 	};
+
+	sema42: sema42@3f000 {
+		compatible = "nxp,sema42";
+		reg = <0x3f000 0x40>;
+		domain-id = <0>;
+		num-locks = <16>;
+		#hwlock-cells = <1>;
+		status = "disabled";
+	};
 };
 
 &fast_peripheral0 {
