@@ -128,6 +128,12 @@ struct dma_block_config {
 	uint16_t source_gather_count;
 	/** Number of bytes to be transferred for this block */
 	uint32_t block_size;
+	/**
+	 * Signed offset added to the source address after every minor loop. Only
+	 * applied when @ref source_minor_loop_offset_en is set. Ignored by
+	 * controllers that do not implement a source minor-loop offset.
+	 */
+	int32_t source_minor_loop_offset;
 	/** Pointer to next block in a transfer list */
 	struct dma_block_config *next_block;
 	/** Enable source gathering when set to 1 */
@@ -163,8 +169,13 @@ struct dma_block_config {
 	 * - 0b1 source request postponed until destination request happens
 	 */
 	uint16_t  flow_control_mode : 1;
+	/**
+	 * Enable the source minor-loop offset (@ref source_minor_loop_offset)
+	 * when set to 1. Left at 0 by every existing caller.
+	 */
+	uint16_t  source_minor_loop_offset_en : 1;
 
-	uint16_t  _reserved :          3;
+	uint16_t  _reserved :          2;
 };
 
 /** The DMA callback event has occurred at the completion of a transfer list */
