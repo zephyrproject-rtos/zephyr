@@ -570,8 +570,8 @@ static int i3c_renesas_ra_configure(const struct device *dev, enum i3c_config_ty
 
 		/* Set this device as master role */
 		fsp_err = R_I3C_DeviceCfgSet(data->fsp_ctrl, data->fsp_master_cfg);
-		if (ret) {
-			LOG_ERR("Failed to init i3c controller, err=%d", ret);
+		if (fsp_err != FSP_SUCCESS) {
+			LOG_ERR("Failed to init i3c controller, err=%d", fsp_err);
 			ret = -EIO;
 			goto configure_exit;
 		}
