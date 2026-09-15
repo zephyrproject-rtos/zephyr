@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+manifest:
+  projects:
+    - name: meshcore
+      url: https://github.com/meshcore-dev/MeshCore
+      revision: bbb58cceb852a9190b46d5f6984e8e5140e6991e
+      path: modules/lib/meshcore
