@@ -2,9 +2,10 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=48000000
 CONFIG_GPIO=y
 CONFIG_BUILD_OUTPUT_HEX=y
-# Since the board has little memory (32k), stack sizes are lowered
-# so that the application has more RAM for itself.
-CONFIG_MAIN_STACK_SIZE=512
+# The Cortex-M0+ has no dedicated exception stack: exception handlers and
+# main-thread work share this stack. Keep sufficient headroom for ztest's
+# final UART summary and post-test scheduling on the 32 KiB SRAM device.
+CONFIG_MAIN_STACK_SIZE=1024
 CONFIG_ISR_STACK_SIZE=768
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
