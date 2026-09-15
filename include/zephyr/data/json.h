@@ -649,6 +649,13 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *   since partial parsing may have corrupted the lexer state, making it unsafe
  *   to continue with other descriptors.
  *
+ * @warning Only members present in the document are written; an omitted
+ * member keeps whatever the target held before the call, so the struct must
+ * be initialised beforehand. The returned bitmap covers top-level descriptors
+ * only - not sub-object members or array elements past the decoded count -
+ * and is indexed by descriptor position, not document order. On a negative
+ * return, members decoded before the failure may already be written.
+ *
  * @param json Pointer to JSON-encoded value to be parsed
  * @param len Length of JSON-encoded value
  * @param descr Pointer to the descriptor array
