@@ -1250,6 +1250,9 @@
 	trgmux: trgmux@80000 {
 		compatible = "nxp,trgmux";
 		reg = <0x80000 0xbc>;
+		clocks = <&mc_cgm MCUX_TRGMUX_CLK>;
+		#mux-control-cells = <2>;
+		#mux-state-cells = <3>;
 		status = "disabled";
 	};
 

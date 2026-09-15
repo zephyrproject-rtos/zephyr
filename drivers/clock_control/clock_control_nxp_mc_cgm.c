@@ -339,6 +339,11 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 		CLOCK_EnableClock(kCLOCK_TempSensor);
 		return 0;
 #endif
+#if defined(CONFIG_MUX_NXP_TRGMUX)
+	case MCUX_TRGMUX_CLK:
+		CLOCK_EnableClock(kCLOCK_Trgmux);
+		return 0;
+#endif
 #if defined(MC_CGM_HAS_EMAC)
 	case MCUX_EMACRX_CLK:
 		return mc_cgm_emac_attach(&mc_cgm_emac_rx_clk);
@@ -373,6 +378,11 @@ static int mc_cgm_clock_control_off(const struct device *dev, clock_control_subs
 #if defined(CONFIG_NXP_TEMPSENSE)
 	case MCUX_TEMPSENSE_CLK:
 		CLOCK_DisableClock(kCLOCK_TempSensor);
+		return 0;
+#endif
+#if defined(CONFIG_MUX_NXP_TRGMUX)
+	case MCUX_TRGMUX_CLK:
+		CLOCK_DisableClock(kCLOCK_Trgmux);
 		return 0;
 #endif
 #if defined(MC_CGM_HAS_EMAC)

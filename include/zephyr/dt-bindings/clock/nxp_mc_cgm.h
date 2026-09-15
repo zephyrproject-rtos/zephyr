@@ -107,6 +107,8 @@
 #define MCUX_STM0_CLK MCUX_MC_CGM_CLK_ID(0x2B, 0x00)
 #define MCUX_STM1_CLK MCUX_MC_CGM_CLK_ID(0x2B, 0x01)
 
+#define MCUX_TRGMUX_CLK MCUX_MC_CGM_CLK_ID(0x2D, 0x00)
+
 /* --------------------- Partition 2 clock --------------------- */
 #define MCUX_QSPISF_CLK MCUX_MC_CGM_CLK_ID(0x2C, 0x00)
 #define MCUX_EMACRX_CLK MCUX_MC_CGM_CLK_ID(0x2C, 0x01)
