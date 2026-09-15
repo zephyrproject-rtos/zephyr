@@ -378,7 +378,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	union frame *f = NULL;
 	struct hw_frame_base *base = sp;
 	bool padded = (base->apsr & XPSR_STACK_ALIGN);
-	uint32_t fpscr;
+	uint32_t fpscr = 0;
 
 	if (fpu && IS_ENABLED(CONFIG_FPU)) {
 		uint32_t dummy = 0;
