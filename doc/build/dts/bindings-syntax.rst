@@ -184,6 +184,15 @@ vendor. In these cases, there is no vendor prefix. One example is the
 :dtcompatible:`gpio-leds` compatible which is commonly used to describe board
 LEDs connected to GPIOs.
 
+.. note::
+
+    The ``compatible`` key should not be used inside a ``child-binding``.
+
+    To enforce a specific value as the ``compatible`` of a node's children,
+    use the :ref:`const key <dt-bindings-properties>` on the ``compatible``
+    *property* in the ``child-binding`` and describe the properties of that
+    compatible in a distinct binding file instead.
+
 .. _dt-bindings-properties:
 
 Properties
