@@ -7,6 +7,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/authentication/fido2/fido2.h>
+#include <zephyr/authentication/fido2/fido2_transport.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/bluetooth/conn.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(led0), okay)
 #include <zephyr/drivers/gpio.h>
@@ -35,6 +40,54 @@ static void blink_expiry(struct k_timer *timer)
 K_TIMER_DEFINE(blink_timer, blink_expiry, NULL);
 #endif
 
+#ifdef CONFIG_FIDO2_TRANSPORT_BLE
+/*
+ * The FIDO service UUID must be present in the advertising data. This sample
+ * always advertises in pairing mode, so the General Discoverable flag is set.
+ */
+static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(FIDO2_BLE_SERVICE_UUID_VAL)),
+};
+
+/*
+ * FIDO service data in the scan response makes pairing mode discoverable to
+ * clients that do not expose the GAP discoverable flags to applications.
+ */
+static const uint8_t fido_service_data[] = {
+	BT_UUID_16_ENCODE(FIDO2_BLE_SERVICE_UUID_VAL),
+	FIDO2_BLE_SERVICE_DATA_PAIRING_MODE,
+};
+
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_SVC_DATA16, fido_service_data, sizeof(fido_service_data)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1U),
+};
+
+static int start_advertising(void)
+{
+	int err;
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	if (err != 0) {
+		LOG_ERR("Failed to start FIDO2 Bluetooth LE advertising: %d", err);
+		return err;
+	}
+
+	LOG_INF("FIDO2 Bluetooth LE advertising started");
+	return 0;
+}
+
+static void connection_recycled(void)
+{
+	(void)start_advertising();
+}
+
+BT_CONN_CB_DEFINE(sample_conn_callbacks) = {
+	.recycled = connection_recycled,
+};
+#endif /* CONFIG_FIDO2_TRANSPORT_BLE */
+
 #ifdef CONFIG_FIDO2_TRANSPORT_USB_HID
 struct usbd_context *sample_usbd;
 
@@ -60,7 +113,7 @@ static void msg_cb(struct usbd_context *const usbd_ctx, const struct usbd_msg *c
 		}
 	}
 }
-#endif
+#endif /* CONFIG_FIDO2_TRANSPORT_USB_HID */
 
 static const char *fido2_state_to_str(enum fido2_runtime_state state)
 {
@@ -120,7 +173,7 @@ int main(void)
 			LOG_WRN("Failed to configure led0: %d", ret);
 		}
 	}
-#endif
+#endif /* HAS_STATUS_LED */
 
 	ret = fido2_set_state_callback(fido2_state_changed, NULL);
 	if (ret) {
@@ -142,13 +195,36 @@ int main(void)
 			return ret;
 		}
 	}
-#endif
+#endif /* CONFIG_FIDO2_TRANSPORT_USB_HID */
 
 	ret = fido2_start();
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("FIDO2 start failed: %d", ret);
 		return ret;
 	}
+
+	LOG_INF("FIDO2 started");
+
+#ifdef CONFIG_FIDO2_TRANSPORT_BLE
+	ret = bt_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Bluetooth init failed: %d", ret);
+		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		ret = settings_load();
+		if (ret != 0) {
+			LOG_ERR("Failed to load Bluetooth settings: %d", ret);
+			return ret;
+		}
+	}
+
+	ret = start_advertising();
+	if (ret != 0) {
+		return ret;
+	}
+#endif /* CONFIG_FIDO2_TRANSPORT_BLE */
 
 	LOG_INF("FIDO2 authenticator ready");
 	k_sleep(K_FOREVER);
