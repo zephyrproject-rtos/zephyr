@@ -26,6 +26,10 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 struct settings_nvs_read_fn_arg {
 	struct nvs_fs *fs;
 	uint16_t id;
+	/* First read failure, so the loader can tell a value that failed
+	 * to read from one the handler simply ignored.
+	 */
+	ssize_t rd_rc;
 };
 
 static int settings_nvs_load(struct settings_store *cs,
@@ -48,6 +52,10 @@ static ssize_t settings_nvs_read_fn(void *back_end, void *data, size_t len)
 	rd_fn_arg = (struct settings_nvs_read_fn_arg *)back_end;
 
 	rc = nvs_read(rd_fn_arg->fs, rd_fn_arg->id, data, len);
+	if ((rc < 0) && (rd_fn_arg->rd_rc >= 0)) {
+		rd_fn_arg->rd_rc = rc;
+	}
+
 	if (rc > (ssize_t)len) {
 		/* nvs_read signals that not all bytes were read
 		 * align read len to what was requested
@@ -203,6 +211,7 @@ static int settings_nvs_load(struct settings_store *cs,
 		name[rc1] = '\0';
 		read_fn_arg.fs = &cf->cf_nvs;
 		read_fn_arg.id = name_id + NVS_NAME_ID_OFFSET;
+		read_fn_arg.rd_rc = 0;
 
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
 		settings_nvs_cache_add(cf, name, name_id);
@@ -215,6 +224,33 @@ static int settings_nvs_load(struct settings_store *cs,
 			(void *)arg);
 		if (ret) {
 			break;
+		}
+
+		if (read_fn_arg.rd_rc < 0) {
+			/* Value entry failed to read back (e.g. NVS data CRC
+			 * rejected it). The probe above can't catch this - NVS
+			 * only checks the CRC on a full read, so it surfaces
+			 * only once a handler reads the value itself.
+			 */
+			LOG_ERR("Settings entry %u did not read back (%zd), deleting", name_id,
+				read_fn_arg.rd_rc);
+
+			nvs_delete(&cf->cf_nvs, name_id);
+			nvs_delete(&cf->cf_nvs, name_id + NVS_NAME_ID_OFFSET);
+
+			if (name_id == cf->last_name_id) {
+				cf->last_name_id--;
+				nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID, &cf->last_name_id,
+					  sizeof(uint16_t));
+			}
+
+			/* Cache count is left alone: the deleted name already
+			 * took a cache slot, possibly evicting another, which
+			 * can't be undone. Lowering the count would let
+			 * SETTINGS_NVS_CACHE_OVFL() claim full coverage while
+			 * an evicted name is missing, turning a miss into a
+			 * false absence proof. Overcounting only costs a scan.
+			 */
 		}
 	}
 	return ret;
