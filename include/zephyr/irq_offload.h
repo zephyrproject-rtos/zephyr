@@ -15,28 +15,44 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup isr_apis
+ * @{
+ */
+
+/**
+ * @brief Function type run in interrupt context by irq_offload()
+ *
+ * @param parameter The argument passed to irq_offload()
+ */
 typedef void (*irq_offload_routine_t)(const void *parameter);
 
 /**
  * @brief Run a function in interrupt context
  *
  * This function synchronously runs the provided function in interrupt
- * context, passing in the supplied device. Useful for test code
+ * context, passing in the supplied parameter. Useful for test code
  * which needs to show that kernel objects work correctly in interrupt
  * context.
  *
- * Additionally, when CONFIG_IRQ_OFFLOAD_NESTED is set by the
+ * Additionally, when @kconfig{CONFIG_IRQ_OFFLOAD_NESTED} is set by the
  * architecture, this routine works to synchronously invoke a nested
  * interrupt when called from an ISR context (i.e. when k_is_in_isr()
  * is true).  Note that not all platforms will have hardware support
  * for this capability, and even on those some interrupts may be
  * running at unpreemptible priorities.
  *
+ * @kconfig_dep{CONFIG_IRQ_OFFLOAD}
+ *
  * @param routine The function to run
  * @param parameter Argument to pass to the function when it is run as an
  * interrupt
  */
 void irq_offload(irq_offload_routine_t routine, const void *parameter);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
