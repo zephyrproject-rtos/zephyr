@@ -329,7 +329,7 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 	/* Switch to safe clock source (SIRC) before reconfiguring FIRC */
 	scg_sys_clk_config_t sys_clk_safe_config_source = {
 #if DT_INST_NODE_HAS_PROP(0, sys_clk_div_plat)
-		.divPlat = (uint32_t)kSCG_SysClkDivBy1,
+		.divCore1 = (uint32_t)kSCG_SysClkDivBy1,
 #endif
 		.divSlow = (uint32_t)kSCG_SysClkDivBy4,
 		.divBus = (uint32_t)kSCG_SysClkDivBy1,
@@ -395,7 +395,7 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 	/* Configure system clock with user-defined settings */
 	scg_sys_clk_config_t sys_clk_config = {
 #if DT_INST_NODE_HAS_PROP(0, sys_clk_div_plat)
-		.divPlat = (config->sys_clk_div_plat - 1),
+		.divCore1 = (config->sys_clk_div_plat - 1),
 #endif
 		.divSlow = (config->sys_clk_div_slow - 1),
 		.divBus = (config->sys_clk_div_bus - 1),
