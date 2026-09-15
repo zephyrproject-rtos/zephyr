@@ -28,3 +28,9 @@ tests:
     extra_args: EXTRA_CONF_FILE="sink.conf;net_pkt.conf;ipv6.conf"
   sample.net.rtp.source_net_pkt_ipv6:
     extra_args: EXTRA_CONF_FILE="source.conf;net_pkt.conf;ipv6.conf"
+  sample.net.rtp.sink_sockets_srtp:
+    extra_args: EXTRA_CONF_FILE="sink.conf;srtp.conf"
+  sample.net.rtp.source_sockets_srtp:
+    extra_args: EXTRA_CONF_FILE="source.conf;srtp.conf"
+  sample.net.rtp.source_net_pkt_srtp:
+    extra_args: EXTRA_CONF_FILE="source.conf;net_pkt.conf;srtp.conf"
