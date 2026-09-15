@@ -30,6 +30,13 @@
 		};
 	};
 
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc NRF_SAADC_VDDHDIV5>;
+		output-ohms = <1>;
+		full-ohms = <5>;
+	};
+
 	pwmleds {
 		compatible = "pwm-leds";
 
