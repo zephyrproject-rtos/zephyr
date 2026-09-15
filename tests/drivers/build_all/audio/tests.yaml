@@ -20,6 +20,10 @@ tests:
       - native_sim
       - native_sim/native/64
 
+  drivers.audio.build.sam:
+    platform_allow:
+      - sam_v71_xult/samv71q21
+
   drivers.audio.build.spi:
     extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
     extra_configs:
