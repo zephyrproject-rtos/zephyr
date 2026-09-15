@@ -122,6 +122,18 @@ resetwait:
 	/* Mask all exceptions */
 	msr	DAIFSet, #0xf
 
+#ifdef CONFIG_FWARGS_HANDLER_HOOK
+	/*
+	 * Preserve boot firmware arguments before the reset path starts using
+	 * x0-x3 as scratch registers. Store them to memory only after the
+	 * primary CPU path is selected.
+	 */
+	mov	x19, x0
+	mov	x20, x1
+	mov	x21, x2
+	mov	x22, x3
+#endif
+
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 
 	/*
@@ -189,6 +201,12 @@ secondary_core:
 
 primary_core:
 #endif
+#ifdef CONFIG_FWARGS_HANDLER_HOOK
+	ldr	x0, =z_arm64_fwargs
+	stp	x19, x20, [x0]
+	stp	x21, x22, [x0, #16]
+#endif
+
 	/* load primary stack and entry point */
 	ldr	x24, =(z_interrupt_stacks + __z_interrupt_stack_SIZEOF)
 	ldr	x25, =z_prep_c

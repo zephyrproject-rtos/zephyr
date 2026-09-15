@@ -53,6 +53,7 @@ config ARM64
 	bool
 	select ARCH_IS_SET
 	select 64BIT
+	select ARCH_HAS_FWARGS_HANDLER_HOOK
 	select ARCH_SUPPORTS_COREDUMP
 	select HAS_ARM_SMCCC
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
@@ -934,6 +935,12 @@ config ARCH_HAS_CPU_IDLE_HOOKS
 
 	  It is a prerequisite for the idle-hook CPU load backend
 	  (CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK).
+
+config ARCH_HAS_FWARGS_HANDLER_HOOK
+	bool
+	help
+	  This option is selected by architectures that support calling a firmware
+	  argument handler hook during initialization.
 
 config ARCH_SUPPORTS_COREDUMP
 	bool
