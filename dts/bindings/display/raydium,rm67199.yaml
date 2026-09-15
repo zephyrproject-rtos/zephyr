@@ -10,6 +10,8 @@ compatible: "raydium,rm67199"
 
 include: [mipi-dsi-device.yaml]
 
+class: display
+
 properties:
   reset-gpios:
     type: phandle-array
