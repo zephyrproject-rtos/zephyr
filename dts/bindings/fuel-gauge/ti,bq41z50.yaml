@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Open Device Partnership and Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments BQ41Z50 battery pack manager with Impedance Track
+  fuel gauge. For more info visit
+  https://www.ti.com/product/BQ41Z50
+
+compatible: "ti,bq41z50"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]
