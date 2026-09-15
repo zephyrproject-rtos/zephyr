@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Same virtual controller pair as native_sim, run at High-Speed so that the
+ * suite also covers the High-Speed descriptors and a 512 byte bulk MPS.
+ */
+#include "native_sim.overlay"
+
+&zephyr_udc0 {
+	maximum-speed = "high-speed";
+};
