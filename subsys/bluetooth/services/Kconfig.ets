@@ -6,6 +6,7 @@
 menuconfig BT_ETS
 	bool "GATT Elapsed Time service [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select BT_SYSTEM_WORKQUEUE_COOP
 	help
 	  Enable Bluetooth Elapsed Time Service (ETS).
 	  This service provides a time service for embedded devices that either:

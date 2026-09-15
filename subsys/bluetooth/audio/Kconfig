@@ -10,6 +10,7 @@
 menuconfig BT_AUDIO
 	bool "Bluetooth Audio support"
 	depends on UTF8
+	select BT_SYSTEM_WORKQUEUE_COOP
 	help
 	  This option enables Bluetooth Audio support. The specific
 	  features that are available may depend on other features

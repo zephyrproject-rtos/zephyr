@@ -7,6 +7,7 @@ menuconfig BT_MESH
 	bool "Bluetooth Mesh support"
 	depends on BT_OBSERVER && BT_BROADCASTER
 	select POLL
+	select BT_SYSTEM_WORKQUEUE_COOP
 	help
 	  This option enables Bluetooth Mesh support. The specific
 	  features that are available may depend on other features
