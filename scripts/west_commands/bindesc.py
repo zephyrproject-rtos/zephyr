@@ -47,7 +47,9 @@ def convert_from_uf2(cmd, buf):
             cmd.die(f'Non-word padding size at {ptr}')
         while padding > 0:
             padding -= 4
-            outp += b'\x00\x00\x00\x00'
+            # outp holds bytes objects for the b''.join() below; += would
+            # extend it with the ints that iterating one yields instead.
+            outp.append(b'\x00\x00\x00\x00')
         outp.append(block[32 : 32 + datalen])
         curraddr = newaddr + datalen
     return b''.join(outp)
