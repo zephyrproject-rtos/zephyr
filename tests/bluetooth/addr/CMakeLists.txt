@@ -13,4 +13,5 @@ target_sources(app PRIVATE
   src/test_bt_addr_le_eq.c
   src/test_bt_addr_from_str.c
   src/test_bt_addr_le_resolve.c
+  src/test_bt_addr_le_is_resolved.c
 )
