@@ -73,10 +73,3 @@ potentiometer: Analog.Potentiometer @ adcM1S2 2
 
 rcc:
     hseFrequency: 25_000_000
-
-sysbus:
-    init:
-        Tag <0x58024800 4> "PWR_CR1_DBP_SET" 0x100
-        Tag <0x58024808 4> "PWR_CR2_BREN_SET" 0x1
-        Tag <0x58024818 4> "D3CR.VOSRDY" 0x2000
-        Tag <0x58026410 4> "HSEM_UNLOCK" 0x80000000 overridePeripheralAccesses=True
