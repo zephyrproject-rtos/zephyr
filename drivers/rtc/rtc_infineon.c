@@ -248,6 +248,7 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 	cy_rslt_t rslt = CY_RSLT_SUCCESS;
 	k_spinlock_key_t key;
 	uint16_t state;
+	int ret = 0;
 
 	Cy_SysClk_ClkBakSetSource(CY_SYSCLK_BAK_IN_CLKLF);
 
@@ -269,7 +270,7 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 		if (rslt == CY_RSLT_SUCCESS) {
 			ifx_cat1_rtc_set_state(IFX_CAT1_RTC_STATE_ENABLED);
 		} else {
-			rslt = -EINVAL;
+			ret = -EINVAL;
 		}
 
 	} else if (state == IFX_CAT1_RTC_STATE_ENABLED || state == IFX_CAT1_RTC_STATE_TIME_SET) {
@@ -287,7 +288,7 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
-	return rslt;
+	return ret;
 }
 
 static int ifx_cat1_rtc_set_time(const struct device *dev, const struct rtc_time *timeptr)
