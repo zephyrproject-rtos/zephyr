@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* i2s-node0 is both the transmitter and the receiver */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s0;
+	};
+};
+
+&pinctrl {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
