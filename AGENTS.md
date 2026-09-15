@@ -114,6 +114,11 @@ trip. Fix the cause, never work around a check.
   change: `doc/releases/migration-guide-X.Y.rst` and `doc/releases/release-notes-X.Y.rst`, where
   `X.Y` is the next release (`VERSION` shows `X.(Y-1).99` during development). Stable APIs
   follow `doc/develop/api/api_lifecycle.rst`.
+- A stable API (version 1.0.0 or above) bumps its version in the same PR, in the `@version`
+  tag of the header's Doxygen group (`doc/develop/api/overview.rst`): patch for bug fixes
+  only; minor for new or deprecated public functionality, or optionally for substantial
+  private changes, resetting patch to 0; major for a compatibility break, resetting minor
+  and patch to 0.
 - Backports to `v*-branch` are opened by a bot when a maintainer adds `backport vX.Y-branch`
   labels after merge. Do not open manual backport PRs unless the bot failed. Every backport PR
   body must contain a `Fixes #N` line resolving to a real issue
