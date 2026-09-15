@@ -2209,6 +2209,11 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 
 			sys_slist_append(&data->common.attached_dev.devices.i3c,
 					 &target->node);
+		} else if (target->controller_priv == NULL) {
+			/* Slot released before ENTDAA: bind to the one it just used. */
+			data->dw_i3c_i2c_priv_data[pos].id = pos;
+			target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
+			data->free_pos &= ~BIT(pos);
 		} else {
 			struct dw_i3c_i2c_dev_data *priv = target->controller_priv;
 
@@ -2288,12 +2293,28 @@ static int dw_i3c_do_daa(const struct device *dev)
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
+	struct i3c_device_desc *desc;
 	uint32_t olddevs, newdevs;
 	uint8_t p, idx, last_addr = 0;
 	int32_t pos, addr, ret;
 
 	if (!dw_i3c_is_current_controller(dev)) {
 		return -EACCES;
+	}
+
+	/* Release stale DAT slots kept for SETDASA after RSTDAA so
+	 * ENTDAA starts from a clean slate.
+	 */
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+		struct dw_i3c_i2c_dev_data *priv = desc->controller_priv;
+
+		if (priv == NULL || desc->dynamic_addr != 0U) {
+			continue;
+		}
+		sys_write32(0, config->regs +
+				       DEV_ADDR_TABLE_LOC(data->datstartaddr, priv->id));
+		data->free_pos |= BIT(priv->id);
+		desc->controller_priv = NULL;
 	}
 
 	olddevs = ~(data->free_pos);
