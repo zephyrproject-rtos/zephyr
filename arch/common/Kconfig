@@ -19,7 +19,7 @@ config SEMIHOST
 
 config ISR_TABLE_SHELL
 	bool "Shell command to dump the ISR tables"
-	depends on GEN_SW_ISR_TABLE
+	depends on GEN_SW_ISR_TABLE_ARRAY
 	depends on SHELL
 	help
 	  This option enables a shell command to dump the ISR tables.
