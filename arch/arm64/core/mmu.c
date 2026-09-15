@@ -1562,11 +1562,12 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain)
  * what they map alone. Entries with nothing mapped are left untouched:
  * access can only be granted to memory that is actually mapped.
  */
-static void remap_mapping(uint64_t *table, uintptr_t virt, size_t size,
-			  uint64_t attr_desc, unsigned int level)
+static int remap_mapping(uint64_t *table, uintptr_t virt, size_t size,
+			 uint64_t attr_desc, unsigned int level)
 {
 	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
 	uint64_t *pte, *subtable;
+	int ret;
 
 	for ( ; size; virt += step, size -= step) {
 		step = level_size - (virt & (level_size - 1));
@@ -1580,13 +1581,22 @@ static void remap_mapping(uint64_t *table, uintptr_t virt, size_t size,
 		}
 
 		if (step != level_size && is_block_desc(*pte)) {
-			/* need to split this block mapping */
-			expand_to_table(pte, level);
+			/*
+			 * Need to split this block mapping. Without a table to
+			 * split it into, the attributes would land on the whole
+			 * block, granting access beyond the requested range.
+			 */
+			if (!expand_to_table(pte, level)) {
+				return -ENOMEM;
+			}
 		}
 
 		if (is_table_desc(*pte, level)) {
 			subtable = pte_desc_table(*pte);
-			remap_mapping(subtable, virt, step, attr_desc, level + 1);
+			ret = remap_mapping(subtable, virt, step, attr_desc, level + 1);
+			if (ret != 0) {
+				return ret;
+			}
 			continue;
 		}
 
@@ -1595,6 +1605,8 @@ static void remap_mapping(uint64_t *table, uintptr_t virt, size_t size,
 		*pte = (*pte & ~mask) | (attr_desc & mask);
 		debug_show_pte(pte, level);
 	}
+
+	return 0;
 }
 
 /*
@@ -1617,11 +1629,13 @@ static int private_map(struct arm_mmu_ptables *ptables, const char *name,
 		 "address/size are not page aligned\n");
 
 	ret = privatize_page_range(ptables, &kernel_ptables, virt, size, name);
-	__ASSERT(ret == 0, "privatize_page_range() returned %d", ret);
+	if (ret != 0) {
+		return ret;
+	}
 
 	key = k_spin_lock(&xlat_lock);
-	remap_mapping(ptables->base_xlat_table, virt, size, attr_desc,
-		      BASE_XLAT_LEVEL);
+	ret = remap_mapping(ptables->base_xlat_table, virt, size, attr_desc,
+			    BASE_XLAT_LEVEL);
 	k_spin_unlock(&xlat_lock, key);
 
 	invalidate_tlb_all();
