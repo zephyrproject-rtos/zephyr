@@ -845,6 +845,22 @@ Flash
   of determining flash bank sizes using ``reg`` size cells. No changes need be made to the
   devicetree save for removing the aforementioned property. (:github:`114971`)
 
+* The :dtcompatible:`st,stm32-xspi-nor` driver selected by
+  :kconfig:option:`CONFIG_FLASH_STM32_XSPI` is deprecated on the STM32H5 series and scheduled for
+  removal in Zephyr 5.0. Move to :kconfig:option:`CONFIG_MSPI_STM32_XSPI` with
+  :kconfig:option:`CONFIG_FLASH_MSPI_NOR`: retag the :dtcompatible:`st,stm32-xspi` controller as
+  :dtcompatible:`st,stm32-xspi-controller` and give it a ``clock-frequency``, then replace its
+  :dtcompatible:`st,stm32-xspi-nor` child with a :dtcompatible:`st,nor` device, renaming
+
+  * ``ospi-max-frequency`` -> ``mspi-max-frequency``
+  * ``spi-bus-width`` -> ``mspi-io-mode``
+  * ``data-rate`` -> ``mspi-data-rate``
+
+  and adding the required ``st,mem-type`` plus the command set the old driver took from SFDP
+  (``read-command``, ``write-command``, ``rx-dummy``, ``command-length``). ``four-byte-opcodes``
+  has no equivalent, as an octal ``mspi-io-mode`` already implies 4-byte addressing;
+  :zephyr_file:`boards/st/stm32h573i_dk/stm32h573i_dk-common.dtsi` shows the result.
+
 Fuel Gauge
 ==========
 
