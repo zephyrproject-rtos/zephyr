@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Axon Enterprise, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  harness: ztest
+  tags:
+    - drivers
+    - eeprom
+
+tests:
+  drivers.eeprom.at2x_9bit_addr:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+  drivers.eeprom.at2x_9bit_addr.shield.x_nucleo_eeprma2:
+    tags:
+      - shield
+    depends_on:
+      - arduino_spi
+    extra_args:
+      - SHIELD=x_nucleo_eeprma2
+      - DTC_OVERLAY_FILE="./boards/x_nucleo_eeprma2.overlay"
+    harness_config:
+      fixture: fixture_shield_x_nucleo_eeprma2
+    integration_platforms:
+      - nucleo_f070rb
