@@ -50,21 +50,6 @@
 #define SPI_NOR_WRITEOC_NONE 0xFF
 
 #ifdef CONFIG_FLASH_STM32_XSPI_DMA
-/* Lookup table to set dma priority from the DTS */
-static const uint32_t table_priority[] = {
-	DMA_LOW_PRIORITY_LOW_WEIGHT,
-	DMA_LOW_PRIORITY_MID_WEIGHT,
-	DMA_LOW_PRIORITY_HIGH_WEIGHT,
-	DMA_HIGH_PRIORITY,
-};
-
-/* Lookup table to set dma channel direction from the DTS */
-static const uint32_t table_direction[] = {
-	DMA_MEMORY_TO_MEMORY,
-	DMA_MEMORY_TO_PERIPH,
-	DMA_PERIPH_TO_MEMORY,
-};
-
 struct stream {
 	DMA_TypeDef *reg;
 	const struct device *dev;
