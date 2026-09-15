@@ -353,7 +353,13 @@ config SHELL_AUTOSTART
 	bool "Auto-start shell at boot"
 	default y
 	help
-	  If enabled, shell will be automatically started.
+	  If enabled, shell is started by the shell thread when it is
+	  scheduled for the first time. The shell log backend is enabled at
+	  the same moment. Logs and printk() output routed through the logger
+	  before that are buffered in deferred mode and lost in immediate mode.
+
+	  Disable this option and call shell_start() from the application,
+	  e.g. from a SYS_INIT() hook, to control when the shell starts.
 
 config SHELL_CMDS_RETURN_VALUE
 	bool "Retval command"
