@@ -257,6 +257,13 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 	 * double-spill).  But all registers are restored fully
 	 * (because we might be switching to an interrupt-saved frame)
 	 */
+#ifdef CONFIG_USE_SWITCH
+	/* Remember the frame the restore below pops, so the save path can
+	 * hand it straight back if an interrupt lands mid-restore.
+	 */
+	_current->arch.restore_handle = (uint32_t)switch_to;
+#endif
+
 	register uint32_t r4 __asm__("r4") = (uint32_t)switch_to;
 	register uint32_t r5 __asm__("r5") = (uint32_t)switched_from;
 	__asm__ volatile(_R7_CLOBBER_OPT("push {r7};")

@@ -384,6 +384,9 @@ __used __attribute__((naked)) void arm_m_switch_restore(void)
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_USE_SWITCH)
 		"  msr control, r8;" /* Now we can drop privilege */
 #endif
+		/* Nothing above this point has consumed the frame. */
+		".global arm_m_switch_restore_pop;"
+		"arm_m_switch_restore_pop:;"
 #ifdef CONFIG_BUILTIN_STACK_GUARD
 		"  pop {r1-r2};"
 		"  msr psplim, r1;"
@@ -398,6 +401,31 @@ __used __attribute__((naked)) void arm_m_switch_restore(void)
 		"  pop {r0-r12, lr};"
 		"  pop {pc};");
 }
+
+/* First instruction of arm_m_switch_restore() that consumes the frame. */
+extern char arm_m_switch_restore_pop;
+
+/* Reports whether an interrupted PC shows the thread suspended inside
+ * arm_m_switch_restore() with the frame still whole, that is, before the
+ * restore had popped anything from it.
+ *
+ * The range is inclusive of the first pop, because the stacked PC is the
+ * instruction that has not run yet, and that is the common case: the restore
+ * unmasks one or two instructions earlier, so an already-pending interrupt is
+ * taken with the pop as its return address and SP still at the base.
+ */
+static bool restore_frame_whole(uint32_t pc)
+{
+	uint32_t start = (uint32_t)arm_m_switch_restore & ~1U;
+	uint32_t pop = (uint32_t)&arm_m_switch_restore_pop & ~1U;
+
+	return ((pc & ~1U) - start) <= (pop - start);
+}
+
+/* Somewhere harmless for the exit fixup to dump r4-r11 when they do not
+ * belong to the thread being saved.
+ */
+static uint32_t cs_discard[8];
 
 /* Converts, in-place, a CPU-spilled ("hardware") exception entry
  * frame to our ("zephyr") switch handle format such that the thread
@@ -423,6 +451,23 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 				 "bic %0, %0, #4;"
 				 "msr control, %0;"
 				 : "+r"(dummy));
+	}
+
+	if (restore_frame_whole(base->pc)) {
+		/* Suspended part way through popping its own switch frame.
+		 * That restore only ever reads the frame, so the frame is
+		 * still a complete and unmodified description of the thread:
+		 * hand the very same one back instead of building a second
+		 * one below it, and being interrupted here costs no stack no
+		 * matter how often it happens.
+		 *
+		 * Nothing may be written into that frame from the registers.
+		 * ldm is interruptible-continuable on Cortex-M, so r4-r11 can
+		 * be half loaded at this point, and the values that are still
+		 * missing are precisely the ones the frame already holds.
+		 */
+		arm_m_cs_ptrs.out = cs_discard;
+		return (void *)th->arch.restore_handle;
 	}
 
 	/* Detects interrupted ICI/IT instructions and rigs up thread
