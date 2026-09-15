@@ -9,6 +9,7 @@ endif()
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_AC057TC1	display_ac057tc1.c)
+zephyr_library_sources_ifdef(CONFIG_ADV7535 display_adv7535.c)
 zephyr_library_sources_ifdef(CONFIG_CO5300 display_co5300.c)
 zephyr_library_sources_ifdef(CONFIG_DISPLAY_CHARLIEPLEX_LED_MATRIX display_charlieplex_led_matrix.c)
 zephyr_library_sources_ifdef(CONFIG_DISPLAY_COLOR_DITHER color_dither.c)

@@ -1,0 +1,60 @@
+# Copyright (C) 2026, Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Analog Devices ADV7535 MIPI DSI to HDMI bridge
+
+description: |
+  The ADV7535 is an I2C-controlled bridge that converts MIPI DSI video to HDMI.
+  Its CEC/DSI register map uses a secondary I2C address, and the bridge attaches
+  to a MIPI DSI host selected by phandle.
+
+compatible: "adi,adv7535"
+
+include: i2c-device.yaml
+
+properties:
+  adi,addr-cec:
+    type: int
+    required: true
+    description: Seven-bit address of the CEC/DSI register map.
+
+  mipi-dsi:
+    type: phandle
+    required: true
+    description: MIPI DSI host controller connected to the bridge.
+
+  data-lanes:
+    type: int
+    required: true
+    const: 4
+    description: Number of MIPI DSI data lanes.
+
+  pixel-format:
+    type: int
+    required: true
+    const: 0
+    description: Pixel format from dt-bindings/mipi_dsi/mipi_dsi.h.
+
+  display-timing:
+    type: phandle
+    required: true
+    description: Timing node owned by the upstream display controller.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+
+    i2c {
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      hdmi-bridge@3d {
+        compatible = "adi,adv7535";
+        reg = <0x3d>;
+        adi,addr-cec = <0x3b>;
+        mipi-dsi = <&mipi_dsi>;
+        data-lanes = <4>;
+        pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+        display-timing = <&hdmi_timing>;
+      };
+    };
