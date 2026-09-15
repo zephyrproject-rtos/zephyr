@@ -227,6 +227,39 @@
 /** @endcond */
 
 /**
+ * @brief Get the symbol marking the end of a memory region's section
+ *
+ * The section generated for a ``zephyr,memory-region`` node ends at this
+ * symbol, so what lies between it and the end of the node's ``reg`` is the
+ * memory the linker left unused in the region.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *    test_sram: sram@20010000 {
+ *        compatible = "zephyr,memory-region", "mmio-sram";
+ *        reg = <0x20010000 0x1000>;
+ *        zephyr,memory-region = "FOOBAR";
+ *    };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    #define NODE DT_NODELABEL(test_sram)
+ *
+ *    extern char LINKER_DT_NODE_REGION_END_SYM(NODE)[];   // __FOOBAR_end
+ *
+ *    size_t unused = DT_REG_ADDR(NODE) + DT_REG_SIZE(NODE) -
+ *                    POINTER_TO_UINT(LINKER_DT_NODE_REGION_END_SYM(NODE));
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return the name of the symbol at the end of the node's section
+ */
+#define LINKER_DT_NODE_REGION_END_SYM(node_id) _DT_SECTION_END(node_id)
+
+/**
  * @brief Generate linker memory regions from the device tree nodes with
  *        compatible 'zephyr,memory-region'
  *
