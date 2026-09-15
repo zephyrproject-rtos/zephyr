@@ -68,6 +68,20 @@ Related configuration options:
 * :kconfig:option:`CONFIG_W1`
 * :kconfig:option:`CONFIG_W1_NET`
 
+Shell commands
+**************
+
+.. zephyr:shell-module:: w1
+   :kconfig: CONFIG_W1_SHELL
+   :depends: CONFIG_W1
+
+   The ``w1`` command allows resetting a 1-Wire bus, searching for the devices connected to it, and
+   exchanging bits, bytes and blocks of data with them, which is useful when bringing up 1-Wire
+   peripherals.
+
+.. rubric:: Command reference
+
+.. zephyr:shell-command-reference::
 
 W1 Serial Driver
 ****************

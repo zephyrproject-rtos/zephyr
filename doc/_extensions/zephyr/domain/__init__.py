@@ -20,6 +20,9 @@ Directives
   of the board documented in the current page.
 - ``zephyr:board-supported-runners::`` - Shows a table of supported runners for the board documented
   in the current page.
+- ``zephyr:shell-module::`` - Documents a shell module (a root command and its subcommands).
+- ``zephyr:shell-command-reference::`` - Shows the reference of the commands of a shell module.
+- ``zephyr:shell-module-listing::`` - Shows a table of all the documented shell modules.
 
 Roles
 -----
@@ -28,11 +31,17 @@ Roles
 - ``:zephyr:code-sample-category:`` - References a code sample category.
 - ``:zephyr:board:`` - References a board.
 - ``:zephyr:board-catalog:`` - References the board catalog page, optionally with filter parameters.
+- ``:zephyr:shell-command:`` - References a shell command documented with ``zephyr:shell-module``.
 
 """
 
 import json
+import os
+import re
+import shutil
+import subprocess
 import sys
+import textwrap
 from collections.abc import Iterable, Iterator
 from os import path
 from pathlib import Path
@@ -1225,6 +1234,416 @@ class BoardSupportedRunnersDirective(SphinxDirective):
         return result_nodes
 
 
+# -- Shell modules -------------------------------------------------------------------------------
+
+SHELL_COMMAND_TREE_APP = ZEPHYR_BASE / "doc" / "_scripts" / "shell_command_tree"
+SHELL_COMMAND_TREE_BEGIN = "--- shell-command-tree-begin ---"
+SHELL_COMMAND_TREE_END = "--- shell-command-tree-end ---"
+SHELL_DEFAULT_PLATFORM = "native_sim/native/64"
+
+# (kconfig, depends, platform) -> root commands (or None when extraction failed), so that the
+# firmware is only built and run once per process even if a module is documented several times.
+_shell_command_trees: dict[tuple[str, tuple[str, ...], str], list[dict] | None] = {}
+
+
+class ShellModuleListingNode(nodes.Element):
+    pass
+
+
+def _shell_module_id(name: str) -> str:
+    return f"shell-module-{nodes.make_id(name)}"
+
+
+def _shell_command_id(command: str) -> str:
+    return f"shell-command-{nodes.make_id(command)}"
+
+
+def _iter_shell_commands(tree: dict, prefix: str = "") -> Iterator[tuple[str, dict]]:
+    """Yield ``(full command, command data)`` for the command tree ``tree``, depth-first."""
+    full_name = f"{prefix} {tree['name']}".strip()
+    yield full_name, tree
+    for sub in tree.get("subcommands", []):
+        yield from _iter_shell_commands(sub, full_name)
+
+
+def _shell_command_help(cmd: dict) -> tuple[str, str]:
+    """Return the ``(description, details)`` of a command from its (structured or not) help."""
+    if "description" in cmd or "usage" in cmd:
+        return cmd.get("description", "").strip(), ""
+
+    # Plain help strings often bundle a description with usage details on the following lines.
+    description, _, details = cmd.get("help", "").strip().partition("\n")
+    return description.strip(), textwrap.dedent(details).strip("\n")
+
+
+def _extract_shell_command_tree(
+    app: Sphinx, kconfig: str, depends: list[str], platform: str, location: tuple[str, int]
+) -> list[dict] | None:
+    """Build and run the ``shell_command_tree`` application for a shell module.
+
+    The application (see doc/_scripts/shell_command_tree) is built through twister for
+    ``platform`` with ``kconfig`` and ``depends`` enabled, and prints the tree of shell commands
+    it embeds as JSON on its console.
+
+    Returns the list of root commands, or None (after emitting a warning) if the tree could not be
+    extracted.
+    """
+    key = (kconfig, tuple(depends), platform)
+    if key in _shell_command_trees:
+        return _shell_command_trees[key]
+
+    # Twister creates the output directory (and moves an existing one aside), so only make sure
+    # that leftovers from a previous run cannot be picked up.
+    outdir = Path(app.outdir).parent / "shell_command_tree" / nodes.make_id(f"{platform}-{kconfig}")
+    shutil.rmtree(outdir, ignore_errors=True)
+
+    twister_cmd = [
+        sys.executable,
+        str(ZEPHYR_BASE / "scripts" / "twister"),
+        "--testsuite-root",
+        str(SHELL_COMMAND_TREE_APP),
+        "--platform",
+        platform,
+        "--outdir",
+        str(outdir),
+        "--disable-warnings-as-errors",
+        *[f"--extra-args={option}=y" for option in (*depends, kconfig)],
+    ]
+    env = {**os.environ, "ZEPHYR_BASE": str(ZEPHYR_BASE)}
+
+    logger.info(f"Extracting the shell command tree for {kconfig} on {platform}...")
+    logger.debug(f"Command: {' '.join(twister_cmd)}")
+
+    commands = None
+    try:
+        result = subprocess.run(
+            twister_cmd, capture_output=True, text=True, cwd=ZEPHYR_BASE, env=env, timeout=1800
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        logger.warning(
+            f"Could not run twister to extract the shell command tree for {kconfig} on "
+            f"{platform}: {exc}",
+            location=location,
+        )
+    else:
+        handler_logs = list(outdir.rglob("handler.log"))
+        output = (
+            handler_logs[0].read_text(errors="replace").replace("\r", "") if handler_logs else ""
+        )
+        match = re.search(
+            rf"{re.escape(SHELL_COMMAND_TREE_BEGIN)}\n(.*?)\n{re.escape(SHELL_COMMAND_TREE_END)}",
+            output,
+            re.DOTALL,
+        )
+
+        if match is None:
+            build_logs = list(outdir.rglob("build.log"))
+            details = build_logs[0].read_text(errors="replace") if build_logs else result.stdout
+            logger.warning(
+                f"Could not extract the shell command tree for {kconfig} on {platform} (twister "
+                f"exited with code {result.returncode}). Last lines of the log:\n"
+                + "\n".join(details.splitlines()[-20:]),
+                location=location,
+            )
+        else:
+            try:
+                commands = json.loads(match.group(1))["commands"]
+            except (ValueError, KeyError, TypeError) as exc:
+                logger.warning(
+                    f"Could not parse the shell command tree for {kconfig} on {platform}: {exc}",
+                    location=location,
+                )
+
+    _shell_command_trees[key] = commands
+    return commands
+
+
+class ShellModuleDirective(SphinxDirective):
+    """Documents a shell module (a root command and its subcommands).
+
+    Renders the (optional) content as the description of the module, followed by the standard
+    instructions for enabling it, building an application with it and getting help. The tree of
+    commands of the module is extracted from an actual firmware build and registered in the
+    domain, so that ``zephyr:shell-command-reference`` can render it and
+    ``:zephyr:shell-command:`` references can be validated.
+    """
+
+    required_arguments = 1  # root command
+    optional_arguments = 0
+    has_content = True
+    option_spec = {
+        "kconfig": directives.unchanged_required,
+        "depends": directives.unchanged,
+        "platform": directives.unchanged,
+    }
+
+    def run(self):
+        name = self.arguments[0].strip()
+        kconfig = self.options["kconfig"].strip()
+        depends = self.options.get("depends", "").split()
+        platform = self.options.get("platform", SHELL_DEFAULT_PLATFORM).strip()
+        location = (self.env.docname, self.lineno)
+
+        modules = self.env.domaindata["zephyr"]["shell-modules"]
+        if name in modules and modules[name]["docname"] != self.env.docname:
+            logger.warning(
+                f"Shell module {name} is already documented in {modules[name]['docname']}.",
+                location=location,
+            )
+            return []
+
+        tree = None
+        generated = False
+        if self.config.zephyr_generate_shell_reference:
+            commands = _extract_shell_command_tree(
+                self.env.app, kconfig, depends, platform, location
+            )
+            if commands is not None:
+                generated = True
+                tree = next((cmd for cmd in commands if cmd["name"] == name), None)
+                if tree is None:
+                    logger.warning(
+                        f"No {name} shell command is available with {kconfig} enabled on "
+                        f"{platform}. Available commands: "
+                        + ", ".join(cmd["name"] for cmd in commands),
+                        location=location,
+                    )
+
+        description_nodes = self.parse_content_to_nodes()
+
+        module = {
+            "name": name,
+            "docname": self.env.docname,
+            "id": _shell_module_id(name),
+            "kconfig": kconfig,
+            "depends": depends,
+            "platform": platform,
+            # first paragraph, used as summary by zephyr:shell-module-listing
+            "description": description_nodes[0] if description_nodes else nodes.paragraph(),
+            "generated": generated,
+            "tree": tree,
+        }
+        modules[name] = module
+
+        # Register the root command and, when available, the whole tree. The reference directive
+        # replaces the module anchor by the anchor of each individual command it renders.
+        commands = self.env.domaindata["zephyr"]["shell-commands"]
+        for full_name, cmd in _iter_shell_commands(tree if tree else {"name": name}):
+            commands[full_name] = {
+                "name": full_name,
+                "module": name,
+                "docname": self.env.docname,
+                "id": module["id"],
+                "description": _shell_command_help(cmd)[0],
+            }
+
+        return [
+            nodes.target("", "", ids=[module["id"]]),
+            *description_nodes,
+            *self._render_overview(module),
+        ]
+
+    def _render_overview(self, module: dict) -> list[nodes.Node]:
+        name = module["name"]
+        options = ["CONFIG_SHELL", *module["depends"], module["kconfig"]]
+        board = module["platform"].split("/")[0]
+
+        lines = [
+            f"To use the ``{name}`` command, the following :ref:`Kconfig <kconfig>` options must "
+            "be enabled:",
+            "",
+            *[f"* :kconfig:option:`{option}`" for option in options],
+            "",
+            f"For example, to build the :zephyr:code-sample:`hello_world` sample for the "
+            f":zephyr:board:`{board}` board with the ``{name}`` command enabled:",
+            "",
+            ".. zephyr-app-commands::",
+            "   :zephyr-app: samples/hello_world",
+            f"   :board: {module['platform']}",
+            f"   :gen-args: {' '.join(f'-D{option}=y' for option in options)}",
+            "   :goals: build",
+            "",
+            "See the :ref:`shell documentation <shell_api>` for general instructions on how to "
+            "connect to and interact with the shell. Built-in help is available by passing "
+            f"``-h`` or ``--help`` to the ``{name}`` command or any of its subcommands (unless "
+            ":kconfig:option:`CONFIG_SHELL_HELP` is disabled), and all subcommands support tab "
+            "completion of their arguments.",
+        ]
+
+        tree = module["tree"]
+        if tree is not None and any(
+            cmd.get("accepts_device_names") for _, cmd in _iter_shell_commands(tree)
+        ):
+            lines += [
+                "",
+                ".. tip::",
+                "",
+                "   Subcommands operating on a device take its name as their first argument, "
+                "which also supports tab completion. A list of all devices available can be "
+                "obtained using the ``device list`` shell command when "
+                ":kconfig:option:`CONFIG_DEVICE_SHELL` is enabled.",
+            ]
+
+        stringlist = StringList(lines, source=self.env.docname)
+        with switch_source_input(self.state, stringlist):
+            return nested_parse_to_nodes(self.state, stringlist)
+
+
+class ShellCommandReferenceDirective(SphinxDirective):
+    """Renders the reference of all the commands of a shell module documented with
+    ``zephyr:shell-module`` (in the same document unless the module is given as argument)."""
+
+    required_arguments = 0
+    optional_arguments = 1
+    has_content = False
+
+    def run(self):
+        location = (self.env.docname, self.lineno)
+        modules = self.env.domaindata["zephyr"]["shell-modules"]
+
+        if self.arguments:
+            name = self.arguments[0].strip()
+            module = modules.get(name)
+            if module is None:
+                logger.warning(
+                    f"Shell module {name} must be documented with zephyr:shell-module before "
+                    "its command reference can be rendered.",
+                    location=location,
+                )
+                return []
+        else:
+            candidates = [m for m in modules.values() if m["docname"] == self.env.docname]
+            if len(candidates) != 1:
+                logger.warning(
+                    "zephyr:shell-command-reference needs exactly one zephyr:shell-module in the "
+                    "same document, or the name of the shell module as argument.",
+                    location=location,
+                )
+                return []
+            module = candidates[0]
+
+        if not module["generated"]:
+            return [
+                nodes.note(
+                    "",
+                    nodes.paragraph(
+                        text=f"The reference of the {module['name']} shell commands was not "
+                        "generated in this build."
+                    ),
+                )
+            ]
+
+        tree = module["tree"]
+        if tree is None:
+            # The module directive already warned about the missing command
+            return []
+
+        # Document the subcommands, or the root command itself if it does not have any
+        entries = list(_iter_shell_commands(tree))
+        if len(entries) > 1:
+            entries = entries[1:]
+
+        commands = self.env.domaindata["zephyr"]["shell-commands"]
+        reference = nodes.definition_list(classes=["shell-command-reference"])
+
+        for full_name, cmd in entries:
+            cmd_id = _shell_command_id(full_name)
+            commands[full_name] = {
+                **commands.get(full_name, {"name": full_name, "module": module["name"]}),
+                "docname": self.env.docname,
+                "id": cmd_id,
+            }
+
+            description, details = _shell_command_help(cmd)
+            usage = cmd.get("usage", "")
+
+            item = nodes.definition_list_item()
+            item += nodes.term("", "", nodes.literal(text=full_name), ids=[cmd_id])
+
+            definition = nodes.definition()
+            if description:
+                definition += nodes.paragraph(text=description)
+
+            if usage:
+                first, _, rest = usage.strip("\n").partition("\n")
+                details = f"{full_name} {first.strip()}"
+                rest = textwrap.dedent(rest).strip("\n")
+                if rest:
+                    details += "\n" + textwrap.indent(rest, "  ")
+
+            if details:
+                definition += nodes.literal_block(details, details, language="text")
+
+            item += definition
+            reference += item
+
+        return [reference]
+
+
+class ShellModuleListingDirective(SphinxDirective):
+    """Shows a table of all the shell modules documented with ``zephyr:shell-module``."""
+
+    has_content = False
+    required_arguments = 0
+    optional_arguments = 0
+
+    def run(self):
+        return [ShellModuleListingNode()]
+
+
+class ProcessShellModuleListingNode(SphinxPostTransform):
+    default_priority = 5  # needs to run *before* ReferencesResolver
+
+    def run(self, **kwargs: Any) -> None:
+        matcher = NodeMatcher(ShellModuleListingNode)
+
+        for node in self.document.traverse(matcher):
+            modules = self.env.domaindata["zephyr"]["shell-modules"]
+
+            table = nodes.table(classes=["shell-module-listing"])
+            tgroup = nodes.tgroup(cols=3)
+            table += tgroup
+            for width in (2, 5, 3):
+                tgroup += nodes.colspec(colwidth=width)
+
+            thead = nodes.thead()
+            tgroup += thead
+            header = nodes.row()
+            for title in ("Command", "Description", "Kconfig option"):
+                header += nodes.entry("", nodes.paragraph(text=title))
+            thead += header
+
+            tbody = nodes.tbody()
+            tgroup += tbody
+            for module in sorted(modules.values(), key=lambda m: m["name"]):
+                row = nodes.row()
+
+                link = make_refnode(
+                    self.env.app.builder,
+                    self.env.docname,
+                    module["docname"],
+                    module["id"],
+                    nodes.literal(text=module["name"]),
+                )
+                row += nodes.entry("", nodes.paragraph("", "", link))
+
+                row += nodes.entry("", module["description"].deepcopy())
+
+                kconfig_xref = addnodes.pending_xref(
+                    "",
+                    refdomain="kconfig",
+                    reftype="option",
+                    reftarget=module["kconfig"],
+                    refwarn=True,
+                )
+                kconfig_xref += nodes.literal(text=module["kconfig"])
+                row += nodes.entry("", nodes.paragraph("", "", kconfig_xref))
+
+                tbody += row
+
+            node.replace_self(table)
+
+
 class ZephyrDomain(Domain):
     """Zephyr domain"""
 
@@ -1236,6 +1655,7 @@ class ZephyrDomain(Domain):
         "code-sample-category": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "board": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "board-catalog": XRefRole(innernodeclass=nodes.inline, warn_dangling=False),
+        "shell-command": XRefRole(innernodeclass=nodes.literal, warn_dangling=True),
     }
 
     directives = {
@@ -1246,12 +1666,17 @@ class ZephyrDomain(Domain):
         "board": BoardDirective,
         "board-supported-hw": BoardSupportedHardwareDirective,
         "board-supported-runners": BoardSupportedRunnersDirective,
+        "shell-module": ShellModuleDirective,
+        "shell-command-reference": ShellCommandReferenceDirective,
+        "shell-module-listing": ShellModuleListingDirective,
     }
 
     object_types: dict[str, ObjType] = {
         "code-sample": ObjType("code sample", "code-sample"),
         "code-sample-category": ObjType("code sample category", "code-sample-category"),
         "board": ObjType("board", "board"),
+        "shell-module": ObjType("shell module", "shell-command"),
+        "shell-command": ObjType("shell command", "shell-command"),
     }
 
     initial_data: dict[str, Any] = {
@@ -1269,6 +1694,8 @@ class ZephyrDomain(Domain):
         "socs": {},
         "archs": {},
         "runners": {},
+        "shell-modules": {},  # root command -> shell module data
+        "shell-commands": {},  # full command (e.g. "gpio conf") -> shell command data
     }
 
     def clear_doc(self, docname: str) -> None:
@@ -1296,9 +1723,16 @@ class ZephyrDomain(Domain):
             if board_data.get("docname") == docname:
                 board_data.pop("docname", None)
 
+        for key in ("shell-modules", "shell-commands"):
+            self.data[key] = {
+                name: data for name, data in self.data[key].items() if data["docname"] != docname
+            }
+
     def merge_domaindata(self, docnames: list[str], otherdata: dict) -> None:
         self.data["code-samples"].update(otherdata["code-samples"])
         self.data["code-samples-categories"].update(otherdata["code-samples-categories"])
+        self.data["shell-modules"].update(otherdata["shell-modules"])
+        self.data["shell-commands"].update(otherdata["shell-commands"])
 
         # self.data["boards"] contains all the boards right from builder-inited time, but it still
         # potentially needs merging since a board's docname property is set by BoardDirective to
@@ -1363,6 +1797,27 @@ class ZephyrDomain(Domain):
                     1,
                 )
 
+        for module in self.data["shell-modules"].values():
+            yield (
+                module["name"],
+                module["name"],
+                "shell-module",
+                module["docname"],
+                module["id"],
+                1,
+            )
+
+        for command in self.data["shell-commands"].values():
+            if command["name"] not in self.data["shell-modules"]:
+                yield (
+                    command["name"],
+                    command["name"],
+                    "shell-command",
+                    command["docname"],
+                    command["id"],
+                    1,
+                )
+
     # used by Sphinx Immaterial theme
     def get_object_synopses(self) -> Iterator[tuple[tuple[str, str], str]]:
         for _, code_sample in self.data["code-samples"].items():
@@ -1371,6 +1826,9 @@ class ZephyrDomain(Domain):
                 code_sample["description"].astext(),
             )
 
+        for module in self.data["shell-modules"].values():
+            yield ((module["docname"], module["id"]), module["description"].astext())
+
     def resolve_xref(self, env, fromdocname, builder, type, target, node, contnode):
         if type == "code-sample":
             elem = self.data["code-samples"].get(target)
@@ -1378,6 +1836,8 @@ class ZephyrDomain(Domain):
             elem = self.data["code-samples-categories"].get(target)
         elif type == "board":
             elem = self.data["boards"].get(target)
+        elif type == "shell-command":
+            return self._resolve_shell_command_xref(builder, fromdocname, target, contnode)
         elif type == "board-catalog":
             catalog_docname = self.data["board_catalog_docname"]
             if catalog_docname is None:
@@ -1410,6 +1870,22 @@ class ZephyrDomain(Domain):
                 contnode,
                 elem["description"].astext() if type == "code-sample" else None,
             )
+
+    def _resolve_shell_command_xref(self, builder, fromdocname, target, contnode):
+        target = " ".join(target.split())
+        command = self.data["shell-commands"].get(target)
+
+        if command is None:
+            # When the command tree of the module was not extracted in this build, references to
+            # its subcommands cannot be validated: link to the module instead.
+            module = self.data["shell-modules"].get(target.split(" ")[0]) if target else None
+            if module is None or module["generated"]:
+                return None
+            command = module
+
+        return make_refnode(
+            builder, fromdocname, command["docname"], command["id"], contnode, command["name"]
+        )
 
     def add_code_sample(self, code_sample):
         self.data["code-samples"][code_sample["id"]] = code_sample
@@ -1536,6 +2012,7 @@ def setup(app):
     app.add_config_value("zephyr_generate_hw_features", False, "env")
     app.add_config_value("zephyr_hw_features_vendor_filter", [], "env", types=[list[str]])
     app.add_config_value("zephyr_hw_features_twister_extra_flags", [], "env", types=[list[str]])
+    app.add_config_value("zephyr_generate_shell_reference", True, "env", types=[bool])
 
     app.add_domain(ZephyrDomain)
 
@@ -1546,6 +2023,7 @@ def setup(app):
     app.add_post_transform(ProcessCodeSampleListingNode)
     app.add_post_transform(CodeSampleCategoriesTocPatching)
     app.add_post_transform(ProcessRelatedCodeSamplesNode)
+    app.add_post_transform(ProcessShellModuleListingNode)
 
     app.connect(
         "builder-inited",
