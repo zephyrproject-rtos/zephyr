@@ -19,6 +19,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #if LPUART_ASYNC_ENABLE
 #include <zephyr/drivers/dma.h>
 #endif
@@ -86,6 +87,7 @@ struct mcux_lpuart_config {
 	 */
 	bool rx_dma_live_reload;
 #endif /* LPUART_ASYNC_ENABLE */
+	struct reset_dt_spec reset_spec;
 };
 
 #if LPUART_ASYNC_ENABLE
@@ -1597,6 +1599,13 @@ static int mcux_lpuart_init(const struct device *dev)
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
+	if (config->reset_spec.dev != NULL) {
+		err = reset_line_deassert_dt(&config->reset_spec);
+		if (err != 0) {
+			return err;
+		}
+	}
+
 	uart_api_config->baudrate = config->baud_rate;
 	uart_api_config->parity = config->parity;
 	uart_api_config->stop_bits = UART_CFG_STOP_BITS_1;
@@ -1803,6 +1812,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.rx_invert = DT_INST_PROP(n, rx_invert),	                      \
 	.tx_invert = DT_INST_PROP(n, tx_invert),	                      \
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
+	.reset_spec = RESET_DT_SPEC_INST_GET_OR(n, {}),                       \
 	MCUX_LPUART_IRQ_INIT(n) \
 	RX_DMA_CONFIG(n)        \
 	TX_DMA_CONFIG(n)        \
