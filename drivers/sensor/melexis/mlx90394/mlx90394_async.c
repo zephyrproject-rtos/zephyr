@@ -101,6 +101,11 @@ void mlx90394_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	struct mlx90394_data *data = dev->data;
 	uint64_t cycles;
 
+	if (k_work_delayable_is_pending(&data->async_fetch_work)) {
+		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
+		return;
+	}
+
 	rc = mlx90394_trigger_measurement_internal(dev, cfg->channels->chan_type);
 	if (rc != 0) {
 		LOG_ERR("Failed to trigger measurement");
