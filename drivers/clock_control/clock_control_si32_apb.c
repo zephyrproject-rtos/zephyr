@@ -14,22 +14,12 @@
 
 #include <SI32_CLKCTRL_A_Type.h>
 #include <si32_device.h>
+#include "common_helpers.h"
 
 struct clock_control_si32_apb_config {
 	const struct device *clock_dev;
 	uint32_t divider;
 };
-
-static int clock_control_si32_apb_on(const struct device *dev, clock_control_subsys_t sys)
-{
-	return -ENOTSUP;
-}
-
-static int clock_control_si32_apb_off(const struct device *dev, clock_control_subsys_t sys)
-{
-
-	return -ENOTSUP;
-}
 
 static int clock_control_si32_apb_get_rate(const struct device *dev, clock_control_subsys_t sys,
 					   uint32_t *rate)
@@ -47,8 +37,8 @@ static int clock_control_si32_apb_get_rate(const struct device *dev, clock_contr
 }
 
 static DEVICE_API(clock_control, clock_control_si32_apb_api) = {
-	.on = clock_control_si32_apb_on,
-	.off = clock_control_si32_apb_off,
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = clock_control_si32_apb_get_rate,
 };
 

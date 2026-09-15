@@ -14,6 +14,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util_macro.h>
+#include "common_helpers.h"
 
 #include <hal_ch32fun.h>
 
@@ -235,6 +236,7 @@ static void clock_control_wch_h41x_init_480m(void)
 
 static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 	.on = clock_control_wch_rcc_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = clock_control_wch_rcc_get_rate,
 };
 

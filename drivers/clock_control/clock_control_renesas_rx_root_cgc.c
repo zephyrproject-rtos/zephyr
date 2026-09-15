@@ -11,16 +11,7 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/drivers/clock_control/renesas_rx_cgc.h>
-
-static int clock_control_renesas_rx_root_on(const struct device *dev, clock_control_subsys_t sys)
-{
-	return -ENOTSUP;
-}
-
-static int clock_control_renesas_rx_root_off(const struct device *dev, clock_control_subsys_t sys)
-{
-	return -ENOTSUP;
-}
+#include "common_helpers.h"
 
 static int clock_control_renesas_rx_root_get_rate(const struct device *dev,
 						  clock_control_subsys_t sys, uint32_t *rate)
@@ -38,8 +29,8 @@ static int clock_control_renesas_rx_root_get_rate(const struct device *dev,
 }
 
 static DEVICE_API(clock_control, clock_control_renesas_rx_root_api) = {
-	.on = clock_control_renesas_rx_root_on,
-	.off = clock_control_renesas_rx_root_off,
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = clock_control_renesas_rx_root_get_rate,
 };
 

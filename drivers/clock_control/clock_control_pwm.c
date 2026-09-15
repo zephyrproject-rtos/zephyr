@@ -14,6 +14,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/kernel.h>
+#include "common_helpers.h"
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -131,6 +132,7 @@ static int clock_control_pwm_init(const struct device *dev)
 
 static DEVICE_API(clock_control, clock_control_pwm_api) = {
 	.on = clock_control_pwm_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = clock_control_pwm_get_rate,
 	.set_rate = clock_control_pwm_set_rate,
 };

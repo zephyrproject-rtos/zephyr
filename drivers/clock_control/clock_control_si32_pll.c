@@ -15,6 +15,7 @@
 #include <SI32_CLKCTRL_A_Type.h>
 #include <SI32_PLL_A_Type.h>
 #include <si32_device.h>
+#include "common_helpers.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <zephyr/logging/log.h>
@@ -86,12 +87,6 @@ static int clock_control_si32_pll_on(const struct device *dev, clock_control_sub
 	return 0;
 }
 
-static int clock_control_si32_pll_off(const struct device *dev, clock_control_subsys_t sys)
-{
-
-	return -ENOTSUP;
-}
-
 static int clock_control_si32_pll_get_rate(const struct device *dev, clock_control_subsys_t sys,
 					   uint32_t *rate)
 {
@@ -115,7 +110,7 @@ static int clock_control_si32_pll_set_rate(const struct device *dev, clock_contr
 
 static DEVICE_API(clock_control, clock_control_si32_pll_api) = {
 	.on = clock_control_si32_pll_on,
-	.off = clock_control_si32_pll_off,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = clock_control_si32_pll_get_rate,
 	.set_rate = clock_control_si32_pll_set_rate,
 };

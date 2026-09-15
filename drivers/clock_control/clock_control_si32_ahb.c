@@ -15,6 +15,7 @@
 #include <SI32_CLKCTRL_A_Type.h>
 #include <SI32_FLASHCTRL_A_Type.h>
 #include <si32_device.h>
+#include "common_helpers.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <zephyr/logging/log.h>
@@ -25,17 +26,6 @@ struct clock_control_si32_ahb_config {
 	uint32_t freq;
 };
 
-static int clock_control_si32_ahb_on(const struct device *dev, clock_control_subsys_t sys)
-{
-	return -ENOTSUP;
-}
-
-static int clock_control_si32_ahb_off(const struct device *dev, clock_control_subsys_t sys)
-{
-
-	return -ENOTSUP;
-}
-
 static int clock_control_si32_ahb_get_rate(const struct device *dev, clock_control_subsys_t sys,
 					   uint32_t *rate)
 {
@@ -45,8 +35,8 @@ static int clock_control_si32_ahb_get_rate(const struct device *dev, clock_contr
 }
 
 static DEVICE_API(clock_control, clock_control_si32_ahb_api) = {
-	.on = clock_control_si32_ahb_on,
-	.off = clock_control_si32_ahb_off,
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = clock_control_si32_ahb_get_rate,
 };
 

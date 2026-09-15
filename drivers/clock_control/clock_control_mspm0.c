@@ -127,12 +127,12 @@ static DL_SYSCTL_SYSPLLConfig clock_mspm0_cfg_syspll = {
 
 static int clock_mspm0_on(const struct device *dev, clock_control_subsys_t sys)
 {
-	return 0;
+	return -ENOSYS;
 }
 
 static int clock_mspm0_off(const struct device *dev, clock_control_subsys_t sys)
 {
-	return 0;
+	return -ENOSYS;
 }
 
 static int clock_mspm0_get_rate(const struct device *dev,

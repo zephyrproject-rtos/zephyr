@@ -14,22 +14,13 @@
 #include <zephyr/dt-bindings/clock/scg_k4.h>
 #include <soc.h>
 #include <fsl_clock.h>
+#include "common_helpers.h"
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_scg);
 
 #define MCUX_SCG_CLOCK_NODE(name) DT_INST_CHILD(0, name)
-
-static int mcux_scg_k4_on(const struct device *dev, clock_control_subsys_t sub_system)
-{
-	return 0;
-}
-
-static int mcux_scg_k4_off(const struct device *dev, clock_control_subsys_t sub_system)
-{
-	return 0;
-}
 
 static int mcux_scg_k4_get_rate(const struct device *dev, clock_control_subsys_t sub_system,
 				uint32_t *rate)
@@ -80,8 +71,8 @@ static int mcux_scg_k4_get_rate(const struct device *dev, clock_control_subsys_t
 }
 
 static DEVICE_API(clock_control, mcux_scg_driver_api) = {
-	.on = mcux_scg_k4_on,
-	.off = mcux_scg_k4_off,
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = mcux_scg_k4_get_rate,
 };
 

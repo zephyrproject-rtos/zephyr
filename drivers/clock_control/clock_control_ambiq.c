@@ -112,14 +112,6 @@ static inline int ambiq_clock_configure(const struct device *dev, clock_control_
 	return ret;
 }
 
-static int ambiq_clock_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* Nothing to do.*/
-	return 0;
-}
-
 static DEVICE_API(clock_control, ambiq_clock_driver_api) = {
 	.on = ambiq_clock_on,
 	.off = ambiq_clock_off,
@@ -132,8 +124,7 @@ static DEVICE_API(clock_control, ambiq_clock_driver_api) = {
 	static const struct ambiq_clock_config ambiq_clock_config##n = {                           \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                        \
-	DEVICE_DT_INST_DEFINE(n, ambiq_clock_init, NULL, NULL, &ambiq_clock_config##n,             \
-			      POST_KERNEL, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                     \
-			      &ambiq_clock_driver_api);
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &ambiq_clock_config##n, POST_KERNEL,            \
+			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &ambiq_clock_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_CLOCK_INIT)
