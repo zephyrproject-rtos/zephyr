@@ -74,6 +74,7 @@ class Bindesc(WestCommand):
             self.bindesc_gen_tag(self.TYPE_UINT, 0x803): 'APP_VERSION_PATCHLEVEL',
             self.bindesc_gen_tag(self.TYPE_UINT, 0x804): 'APP_VERSION_NUMBER',
             self.bindesc_gen_tag(self.TYPE_STR, 0x805): 'APP_BUILD_VERSION',
+            self.bindesc_gen_tag(self.TYPE_STR, 0x806): 'APP_MANIFEST_GIT_DESC',
             self.bindesc_gen_tag(self.TYPE_STR, 0x900): 'KERNEL_VERSION_STRING',
             self.bindesc_gen_tag(self.TYPE_UINT, 0x901): 'KERNEL_VERSION_MAJOR',
             self.bindesc_gen_tag(self.TYPE_UINT, 0x902): 'KERNEL_VERSION_MINOR',
