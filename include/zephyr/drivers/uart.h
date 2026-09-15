@@ -32,6 +32,31 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Framing error reporting behavior.
+ *
+ * Describes how the UART hardware reports framing errors relative to
+ * byte reads via uart_fifo_read() and uart_err_check().
+ *
+ * Set via the framing-error-reporting devicetree property on the UART
+ * controller node. See uart-controller.yaml for detailed descriptions.
+ *
+ * Values are named to match the DT enum strings so they can be read
+ * with DT_STRING_TOKEN(node, framing_error_reporting).
+ */
+enum uart_framing_error_reporting {
+	/** @brief Errors track FIFO head, visible before read. */
+	FIFO_HEAD,
+	/** @brief Errors reflect most recently read byte. */
+	LAST_READ,
+	/** @brief Sticky flag, cleared on check, multiple bytes buffered. */
+	STICKY_MULTIPLE,
+	/** @brief Sticky flag, cleared on check, single byte buffered. */
+	STICKY_SINGLE,
+	/** @brief Errors captured in ISR, cleared on check. */
+	ISR_SAVED,
+};
+
 /** @brief Line control signals. */
 enum uart_line_ctrl {
 	UART_LINE_CTRL_BAUD_RATE = BIT(0), /**< Baud rate */
