@@ -389,6 +389,129 @@ class TestMaintainerAreaStrategy:
 
 
 # ---------------------------------------------------------------------------
+# DtsBindingStrategy
+# ---------------------------------------------------------------------------
+
+
+class TestDtsBindingStrategy:
+    """Unit tests for DtsBindingStrategy."""
+
+    def test_deleted_binding_uses_old_compatible(self, tmp_path):
+        binding = "dts/bindings/test/vendor,old.yaml"
+
+        # Simulate the deleted binding as it existed in the base revision.
+        repo = mock.MagicMock()
+        repo.git.show.return_value = textwrap.dedent(
+            """
+            description: Old device
+            compatible: "vendor,old"
+            """
+        )
+
+        strategy = tp.DtsBindingStrategy(
+            zephyr_base=str(tmp_path),
+            repo=repo,
+            commits="base..HEAD",
+        )
+
+        test_dir = tmp_path / "tests" / "drivers" / "old_device"
+        strategy._find_test_dirs_for_compat = mock.Mock(return_value={test_dir})
+
+        calls, handled = strategy.analyze([binding])
+
+        repo.git.show.assert_called_once_with(f"base:{binding}")
+
+        strategy._find_test_dirs_for_compat.assert_called_once_with("vendor,old")
+
+        assert len(calls) == 1
+        assert calls[0].testsuite_roots == ["tests/drivers/old_device"]
+        assert handled == {binding}
+
+    def test_changed_binding_uses_old_and_new_compatibles(self, tmp_path):
+        binding = "dts/bindings/test/vendor,device.yaml"
+
+        # Current revision has the new compatible.
+        binding_path = tmp_path / binding
+        binding_path.parent.mkdir(parents=True)
+        binding_path.write_text(
+            textwrap.dedent(
+                """
+                description: Device
+                compatible: "vendor,new"
+                """
+            )
+        )
+
+        # Base revision had the old compatible.
+        repo = mock.MagicMock()
+        repo.git.show.return_value = textwrap.dedent(
+            """
+            description: Device
+            compatible: "vendor,old"
+            """
+        )
+
+        strategy = tp.DtsBindingStrategy(
+            zephyr_base=str(tmp_path),
+            repo=repo,
+            commits="base..HEAD",
+        )
+
+        old_test_dir = tmp_path / "tests" / "drivers" / "old_device"
+        new_test_dir = tmp_path / "tests" / "drivers" / "new_device"
+
+        def find_test_dirs(compat):
+            if compat == "vendor,old":
+                return {old_test_dir}
+            if compat == "vendor,new":
+                return {new_test_dir}
+            return set()
+
+        strategy._find_test_dirs_for_compat = mock.Mock(side_effect=find_test_dirs)
+
+        calls, handled = strategy.analyze([binding])
+
+        repo.git.show.assert_called_once_with(f"base:{binding}")
+
+        assert {call.testsuite_roots[0] for call in calls} == {
+            "tests/drivers/old_device",
+            "tests/drivers/new_device",
+        }
+
+        assert handled == {binding}
+
+    def test_current_binding_works_without_commit_range(self, tmp_path):
+        binding = "dts/bindings/test/vendor,device.yaml"
+
+        binding_path = tmp_path / binding
+        binding_path.parent.mkdir(parents=True)
+        binding_path.write_text(
+            textwrap.dedent(
+                """
+                description: Device
+                compatible: "vendor,current"
+                """
+            )
+        )
+
+        strategy = tp.DtsBindingStrategy(
+            zephyr_base=str(tmp_path),
+        )
+
+        test_dir = tmp_path / "tests" / "drivers" / "current_device"
+
+        strategy._find_test_dirs_for_compat = mock.Mock(return_value={test_dir})
+
+        calls, handled = strategy.analyze([binding])
+
+        strategy._find_test_dirs_for_compat.assert_called_once_with("vendor,current")
+
+        assert len(calls) == 1
+        assert calls[0].testsuite_roots == ["tests/drivers/current_device"]
+        assert handled == {binding}
+
+
+# ---------------------------------------------------------------------------
 # BoilerplateFilter
 # ---------------------------------------------------------------------------
 
