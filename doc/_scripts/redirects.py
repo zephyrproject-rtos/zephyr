@@ -277,6 +277,7 @@ REDIRECTS = (
     ('samples/bluetooth/hap_ha/README', 'samples/bluetooth/audio/hap_ha/README'),
     ('samples/bluetooth/pbp_public_broadcast_sink/README', 'samples/bluetooth/audio/pbp_public_broadcast_sink/README'),
     ('samples/bluetooth/pbp_public_broadcast_source/README', 'samples/bluetooth/audio/pbp_public_broadcast_source/README'),
+    ('samples/bluetooth/peripheral_hids/README', 'samples/bluetooth/peripheral_hogp/README'),
     ('samples/bluetooth/peripheral_iso/README', 'samples/bluetooth/iso_peripheral/README'),
     ('samples/bluetooth/tmap_bmr/README', 'samples/bluetooth/audio/tmap_bmr/README'),
     ('samples/bluetooth/tmap_bms/README', 'samples/bluetooth/audio/tmap_bms/README'),
