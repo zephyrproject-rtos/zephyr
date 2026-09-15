@@ -134,9 +134,7 @@ config X86
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_SUPPORTS_ROM_OFFSET
-	# Only the 32-bit (ia32) interrupt stub emits the ISR entry hook that
-	# closes the idle window; intel64 does not have one yet.
-	select ARCH_HAS_CPU_IDLE_HOOKS if !X86_64
+	select ARCH_HAS_CPU_IDLE_HOOKS
 	# Only the 32-bit (ia32) variant implements the direct interrupt hooks.
 	select ARCH_HAS_DIRECT_INTERRUPTS if !X86_64
 	help
