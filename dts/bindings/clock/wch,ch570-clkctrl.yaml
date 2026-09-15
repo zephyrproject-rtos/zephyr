@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH570/CH572 Clock Control
+
+compatible: "wch,ch570-clkctrl"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  clock-divider:
+    default: 5
+    type: int
+    enum: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+           20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+    description: |
+      Clock division factor. The resulting clock frequency must not exceed 100 MHz.
+      Note: Only used when the PLL or HSE is selected as the source clock.
+      When the LSI is selected, the clock divider is ignored.
+
+  hse-bias-current-percent:
+    default: 100
+    type: int
+    enum:
+      - 75
+      - 100
+      - 125
+      - 150
+    description: |
+      External crystal oscillator bias current as a percentage of the nominal value.
+
+  hse-load-capacitance-pf:
+    type: int
+    default: 16
+    enum:
+      - 6
+      - 8
+      - 10
+      - 12
+      - 14
+      - 16
+      - 18
+      - 20
+    description: |
+      Internal load capacitance for the external crystal oscillator, in pF.
+
+clock-cells:
+  - id
+
+examples:
+  - |
+    clkctrl {
+      #clock-cells = <1>;
+      compatible = "wch,ch570-clkctrl";
+      reg = <0x40001008 0x100>;
+      clocks = <&pll>; /* PLL source clock */
+      clock-divider = <6>; /* 100 MHz maximum */
+      hse-bias-current-percent = <125>;
+      hse-load-capacitance-pf = <18>;
+      status = "okay";
+    };
+  - |
+    clkctrl {
+      #clock-cells = <1>;
+      compatible = "wch,ch570-clkctrl";
+      reg = <0x40001008 0x100>;
+      clocks = <&clk_hse>; /* HSE source clock (32 MHz) */
+      clock-divider = <32>; /* final system frequency: 1 MHz */
+      hse-bias-current-percent = <125>;
+      hse-load-capacitance-pf = <6>;
+      status = "okay";
+    };
+  - |
+    clkctrl {
+      #clock-cells = <1>;
+      compatible = "wch,ch570-clkctrl";
+      reg = <0x40001008 0x100>;
+      clocks = <&clk_lsi>; /* LSI source clock (between 24 KHz and 42 KHz) */
+      status = "okay";
+    };
