@@ -9,6 +9,7 @@ Non-volatile memory, flash storage, EEPROM, and memory controllers.
    :maxdepth: 1
 
    flash.rst
+   flash_simulator.rst
    eeprom/index.rst
    sdhc.rst
    bbram.rst
