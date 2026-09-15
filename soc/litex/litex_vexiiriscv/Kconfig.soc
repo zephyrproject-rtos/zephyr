@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES
+	default "litex_vexiiriscv" if SOC_SERIES_LITEX_VEXIIRISCV
+
+config SOC_SERIES_LITEX_VEXIIRISCV
+	bool
+	select SOC_FAMILY_LITEX
+
+config SOC_LITEX_VEXIIRISCV
+	bool
+	select SOC_SERIES_LITEX_VEXIIRISCV
+
+config SOC
+	default "litex_vexiiriscv" if SOC_LITEX_VEXIIRISCV
