@@ -658,6 +658,17 @@ Digital Microphone
   have been updated. Application code using :c:func:`dmic_configure`, :c:func:`dmic_trigger`, and
   :c:func:`dmic_read` is not impacted.
 
+Disk
+====
+
+* :kconfig:option:`CONFIG_NVME_REQUEST_TIMEOUT` is documented and ranged in
+  seconds. The NVMe request timeout path previously compared that value against
+  :c:func:`k_uptime_get_32` milliseconds without converting, so the default of
+  ``5`` expired after about 5 ms instead of 5 seconds. The driver now converts
+  with ``MSEC_PER_SEC`` before scheduling and expiry checks. Review any
+  non-default setting if the application depended on the former short timeout
+  behavior. (:github:`117809`)
+
 Display
 =======
 
