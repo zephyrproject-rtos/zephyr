@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "BMC sample"
+
+config BMC_SAMPLE_WEB
+	bool "Serve the product dashboard"
+	default y
+	depends on BMC_HTTP
+	help
+	  Attach the dashboard, its branding and the /webui/features endpoint
+	  to the BMC HTTP services.
+
+config BMC_SAMPLE_GENERATE_CERTS
+	bool "Generate a self-signed TLS certificate at build time"
+	default y
+	depends on BMC_HTTPS
+	select TLS_CREDENTIALS
+	help
+	  Run the scripts under certs/ to produce a throwaway server
+	  certificate and register it under CONFIG_BMC_HTTPS_SEC_TAG. Requires
+	  openssl and bash on the build host.
+
+source "Kconfig.zephyr"
