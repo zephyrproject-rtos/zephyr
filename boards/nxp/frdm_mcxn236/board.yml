@@ -4,3 +4,5 @@ board:
   vendor: nxp
   socs:
   - name: mcxn236
+    variants:
+    - name: ns

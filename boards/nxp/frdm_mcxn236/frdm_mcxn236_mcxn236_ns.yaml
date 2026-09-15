@@ -1,0 +1,17 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxn236/mcxn236/ns
+name: NXP FRDM-MCXN236 (Non-Secure)
+type: mcu
+arch: arm
+ram: 160
+flash: 432
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported: []
+vendor: nxp
