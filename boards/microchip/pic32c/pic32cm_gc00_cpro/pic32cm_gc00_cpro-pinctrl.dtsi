@@ -20,4 +20,10 @@
 				 <PD0D_SERCOM1_PAD1>;  /* SCL */
 		};
 	};
+
+	ac0_comp0_default: ac0_comp0_default {
+		group1 {
+			pinmux = <PB0B_AC_AIN2>;	/* Arduino A3 */
+		};
+	};
 };

@@ -82,6 +82,9 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+  drivers.comparator.gpio_loopback.mchp_ac_g2:
+    platform_allow:
+      - pic32cm_gc00_cpro
   drivers.comparator.gpio_loopback.ite:
     platform_allow:
       - it51xxx_evb/it51526aw
