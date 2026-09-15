@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * STM32H5/H7/H7RS/MP13 specific glue.
+ * STM32C5/H5/H7/H7RS/MP13 specific glue.
  */
 
 #include <zephyr/logging/log.h>
@@ -56,7 +56,17 @@ struct eth_stm32_dwc_config {
 			     (IS_ENABLED(CONFIG_SOC_SERIES_STM32MP13X) && ETH_STM32_IS_RGMII(n)),  \
 		     "Unsupported PHY connection type")
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32C5X)
+
+#define ETH_STM32_SELECT_PHY_INTERFACE(n)                                                          \
+	do {                                                                                       \
+		HAL_RCC_SBS_EnableClock();                                                         \
+		LL_SBS_SetETHPHYInterface(LL_SBS_PERIPH_ETH1,                                      \
+					  ETH_STM32_IS_RMII(n) ? LL_SBS_ETHPHY_ITF_RMII            \
+							       : LL_SBS_ETHPHY_ITF_GMII_MII);      \
+	} while (0)
+
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
 
 #define ETH_STM32_SELECT_PHY_INTERFACE(n)                                                          \
 	do {                                                                                       \
@@ -284,7 +294,7 @@ int dwmac_platform_init(const struct device *dev)
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                  \
 			.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),                          \
-			.mac_clk = ETH_STM32_PCLKEN_SUBSYS(n, 0),                                  \
+			.mac_clk = ETH_STM32_PCLKEN_SUBSYS(n, ETH_STM32_MAC_CLK_IDX(n)),           \
 			IF_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC, (ETH_STM32_DWMAC_PTP_CONFIG(n)))      \
 	}
 
