@@ -207,5 +207,13 @@
 			clk-dst = <0x600>;
 			status = "disabled";
 		};
+
+		rtc0: rtc@52220000 {
+			compatible = "infineon,rtc";
+			reg = <0x52220000 0xff0c>;
+			interrupts = <33 4>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
 	};
 };
