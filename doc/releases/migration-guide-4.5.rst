@@ -1752,6 +1752,11 @@ USB
   ``void *``, so that a class can keep its array of descriptor pointers in ROM. Out-of-tree
   classes must update the return type of their handler. (:github:`118251`)
 
+* ``CONFIG_USBD_CDC_ACM_BUF_POOL`` has been removed. The CDC ACM implementation
+  now allocates bulk IN and OUT transfer buffers from per-instance pools. The
+  device tree properties ``tx-fifo-size`` or ``rx-fifo-size`` determine the
+  pool sizes.
+
 Video
 =====
 
