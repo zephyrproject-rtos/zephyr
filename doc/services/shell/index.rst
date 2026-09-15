@@ -889,6 +889,29 @@ This feature is activated by: :kconfig:option:`CONFIG_SHELL_LOG_BACKEND` set to 
 	RTT (:kconfig:option:`CONFIG_LOG_BACKEND_RTT`), which are available earlier
 	during system initialization.
 
+.. note::
+	The shell log backend is enabled by :c:func:`shell_start`. With
+	:kconfig:option:`CONFIG_SHELL_AUTOSTART` set to ``y`` this happens in the
+	shell thread, when it is scheduled for the first time. The shell thread runs
+	at a low priority by default, so this moment depends on when higher priority
+	threads, including the main thread executing system initialization, block or
+	finish. Log messages and ``printk()`` output routed through the logger
+	(:kconfig:option:`CONFIG_LOG_PRINTK`) issued before that point are handled by
+	the logging core, not by the shell:
+
+	* In deferred mode (:kconfig:option:`CONFIG_LOG_MODE_DEFERRED`) they are
+	  buffered and printed once the shell starts, as long as they fit in
+	  :kconfig:option:`CONFIG_LOG_BUFFER_SIZE`.
+	* In immediate mode (:kconfig:option:`CONFIG_LOG_MODE_IMMEDIATE`) they are
+	  lost, because there is no active backend to output them.
+
+	If the application needs early output on the shell, set
+	:kconfig:option:`CONFIG_SHELL_AUTOSTART` to ``n`` and call
+	:c:func:`shell_start` explicitly, for example from a :c:macro:`SYS_INIT`
+	hook with a priority higher than the shell backend initialization priority
+	(e.g. :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL_INIT_PRIORITY`).
+	Alternatively, do not route ``printk()`` through the logger.
+
 RTT Backend Channel Selection
 *****************************
 
