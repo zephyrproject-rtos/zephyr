@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <cmsis_core.h>
+#include <zephyr/interrupt_util.h>
 #include <zephyr/sys/barrier.h>
 
 #define EXECUTION_TRACE_LENGTH 6
@@ -89,51 +90,6 @@ void isr_b_handler(const void *args)
 	execution_trace_add(STEP_ISR_B_END);
 }
 
-static int find_unused_irq(int start)
-{
-	int i;
-
-	for (i = start - 1; i >= 0; i--) {
-		if (NVIC_GetEnableIRQ(i) == 0) {
-			/*
-			 * Interrupts configured statically with IRQ_CONNECT(.)
-			 * are automatically enabled. NVIC_GetEnableIRQ()
-			 * returning false, here, implies that the IRQ line is
-			 * either not implemented or it is not enabled, thus,
-			 * currently not in use by Zephyr.
-			 */
-
-			/* Set the NVIC line to pending. */
-			NVIC_SetPendingIRQ(i);
-
-			if (NVIC_GetPendingIRQ(i)) {
-				/*
-				 * If the NVIC line is pending, it is
-				 * guaranteed that it is implemented; clear the
-				 * line.
-				 */
-				NVIC_ClearPendingIRQ(i);
-
-				if (!NVIC_GetPendingIRQ(i)) {
-					/*
-					 * If the NVIC line can be successfully
-					 * un-pended, it is guaranteed that it
-					 * can be used for software interrupt
-					 * triggering. Return the NVIC line
-					 * number.
-					 */
-					break;
-				}
-			}
-		}
-	}
-
-	zassert_true(i >= 0, "No available IRQ line to configure as zero-latency\n");
-
-	TC_PRINT("Available IRQ line: %u\n", i);
-	return i;
-}
-
 ZTEST(arm_irq_zero_latency_levels, test_arm_zero_latency_levels)
 {
 	/*
@@ -147,8 +103,8 @@ ZTEST(arm_irq_zero_latency_levels, test_arm_zero_latency_levels)
 	}
 
 	/* Determine two NVIC IRQ lines that are not currently in use. */
-	irq_a = find_unused_irq(CONFIG_NUM_IRQS);
-	irq_b = find_unused_irq(irq_a);
+	irq_a = get_available_nvic_line(CONFIG_NUM_IRQS);
+	irq_b = get_available_nvic_line(irq_a);
 
 	/* Configure IRQ A as zero-latency interrupt with prio 1 */
 	arch_irq_connect_dynamic(irq_a, IRQ_A_PRIO, isr_a_handler, NULL, IRQ_ZERO_LATENCY);
