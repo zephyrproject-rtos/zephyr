@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 Panoramix Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "aipi_eyes.dtsi"
+
+/ {
+	model = "AiPi-Eyes-S2 Multi-Functional Development Board";
+};
