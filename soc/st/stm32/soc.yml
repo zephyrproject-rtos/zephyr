@@ -86,6 +86,7 @@ family:
     socs:
     - name: stm32f722xx
     - name: stm32f723xx
+    - name: stm32f730xx
     - name: stm32f745xx
     - name: stm32f746xx
     - name: stm32f750xx
