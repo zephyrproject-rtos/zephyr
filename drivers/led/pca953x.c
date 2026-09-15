@@ -16,7 +16,7 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pca953x, CONFIG_LED_LOG_LEVEL);
+LOG_MODULE_REGISTER(led_pca953x, CONFIG_LED_LOG_LEVEL);
 
 #define PCA953X_ENGINES 2U
 
