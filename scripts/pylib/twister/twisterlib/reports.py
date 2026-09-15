@@ -403,8 +403,9 @@ class JsonReport:
                 suite["status"] = TwisterStatus.NOTRUN
                 suite["reason"] = instance.reason
             else:
+                # Not run yet, as in a test plan saved before running:
+                # there is no reason to give.
                 suite["status"] = TwisterStatus.NONE
-                suite["reason"] = 'Unknown Instance status'
 
             if instance.status != TwisterStatus.NONE:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
