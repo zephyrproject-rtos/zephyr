@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/tracing/tracking.h>
 
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -203,6 +204,10 @@ retry:
 
 out:
 	k_spin_unlock(&timer_lock, key);
+
+	if (ret == 0) {
+		sys_track_k_timer_deinit(timer);
+	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, ret);
 
