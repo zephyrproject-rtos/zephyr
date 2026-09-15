@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
-# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -51,3 +51,6 @@ family:
   - name: psoc4100smax
     socs:
     - name: cy8c4149azi_s598
+  - name: psoc4100splus
+    socs:
+    - name: cy8c4147azi_s475
