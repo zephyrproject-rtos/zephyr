@@ -290,6 +290,14 @@ Deprecated APIs and options
   * The :c:struct:`audio_codec_api` struct has been deprecated. Audio codec drivers are now
     expected to use the :c:macro:`DEVICE_API` macro to declare their driver API.
 
+* Bluetooth
+
+  * The :kconfig:option:`CONFIG_BT_CUSTOM` stack selection has been deprecated. It dates from the
+    time when a whole Bluetooth Host could be offloaded behind the Zephyr Bluetooth API and has no
+    user in the tree; HCI transports are regular device drivers. The HCI-based stack,
+    :kconfig:option:`CONFIG_BT_HCI`, is the only selection left in the tree; the choice itself
+    stays as the extension point for out-of-tree stacks.
+
 * Build system
 
   * The ``zephyr_file_copy()`` CMake function has been deprecated. Use the native
