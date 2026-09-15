@@ -6,6 +6,7 @@
  * @file zephyr/dsp/basicmath.h
  *
  * @brief Public APIs for DSP basicmath
+ * @ingroup math_dsp_basic
  */
 
 #ifndef ZEPHYR_INCLUDE_DSP_BASICMATH_H_
