@@ -22,7 +22,7 @@ config LOG_BACKEND_UART_BUFFER_SIZE
 	default 1
 	help
 	  In deferred logging mode, sets the maximum number of bytes which can be buffered in
-	  RAM before log_output_flush is automatically called on the UART backend.  The buffer
+	  RAM before log_output_flush is automatically called on the UART backend. The buffer
 	  will also be flushed after each log message.
 
 	  In immediate logging mode, processed log messages are not buffered and are always
@@ -35,6 +35,32 @@ config LOG_BACKEND_UART_AUTOSTART
 	  When enabled automatically start the UART logging backend on
 	  application start. When disabled, the application needs to start
 	  the backend manually using log_backend_enable().
+
+config LOG_BACKEND_UART_SUSPEND_ON_IDLE
+	bool "Suspend UART when log queue is empty"
+	depends on PM_DEVICE
+	depends on !PM_DEVICE_RUNTIME
+	depends on !LOG_MODE_IMMEDIATE
+	depends on !SHELL_BACKEND_SERIAL
+	help
+	  Suspend the UART device via PM_DEVICE_ACTION_SUSPEND whenever the
+	  deferred log processing thread finishes draining the log queue
+	  (LOG_BACKEND_EVT_PROCESS_THREAD_DONE), and resume it automatically
+	  before the next log message is transmitted.
+
+	  This prevents the UART clock from keeping the SoC out of its deepest
+	  sleep states during log inactivity, reducing idle current from the
+	  mA range to uA range on typical SoCs.
+
+	  This option is the non-runtime-PM alternative to the
+	  pm_device_runtime_put_async() path already present in this backend.
+	  Enable it on platforms where CONFIG_PM_DEVICE is available but
+	  CONFIG_PM_DEVICE_RUNTIME is not configured for the console UART.
+
+	  Warning: do not enable this if CONFIG_PRINTK or any other subsystem
+	  writes directly to the console UART outside of the logging subsystem.
+	  Suspending the UART will cause those writes to fail silently or
+	  fault the system.
 
 backend = UART
 backend-str = uart
