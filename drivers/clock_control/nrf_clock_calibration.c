@@ -7,11 +7,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-#include <nrfx_clock.h>
-#else
 #include <nrfx_clock_lfclk.h>
-#endif
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 
@@ -159,11 +155,8 @@ static void cal_lf_callback(struct onoff_manager *mgr,
 /* Start actual HW calibration assuming that HFCLK XTAL is on. */
 static void start_hw_cal(void)
 {
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-	nrfx_clock_calibration_start();
-#else
 	nrfx_clock_lfclk_calibration_start();
-#endif
+
 	calib_skip_cnt = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP;
 }
 
