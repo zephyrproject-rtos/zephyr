@@ -221,6 +221,7 @@ family:
   - name: stm32mp1x
     socs:
     - name: stm32mp157cxx
+    - name: stm32mp157fxx
   - name: stm32mp13x
     socs:
     - name: stm32mp133fxx
