@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <zephyr/drivers/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
@@ -278,7 +279,8 @@ static inline int tmag5273_attr_set_xyz_meas_range(const struct device *dev,
 	uint8_t regdata;
 	uint16_t range;
 
-	if (val->val1 >= range_high) {
+	/* the attribute is expressed in G, while the range constants are in mT */
+	if (val->val1 >= (int32_t)range_high * CONV_FACTOR_MT_TO_GS) {
 		regdata = TMAG5273_XYZ_MEAS_RANGE_HIGH;
 		range = range_high;
 	} else {
@@ -321,9 +323,9 @@ static inline int tmag5273_attr_get_xyz_meas_range(const struct device *dev,
 	}
 
 	if ((regdata & TMAG5273_MEAS_RANGE_XYZ_MSK) == TMAG5273_XYZ_MEAS_RANGE_HIGH) {
-		val->val1 = tmag5273_range_high(drv_data->version);
+		val->val1 = (int32_t)tmag5273_range_high(drv_data->version) * CONV_FACTOR_MT_TO_GS;
 	} else {
-		val->val1 = tmag5273_range_low(drv_data->version);
+		val->val1 = (int32_t)tmag5273_range_low(drv_data->version) * CONV_FACTOR_MT_TO_GS;
 	}
 
 	val->val2 = 0;
@@ -838,7 +840,7 @@ static inline void tmag5273_temperature_convert(int64_t raw_value, struct sensor
 static inline void tmag5273_angle_convert(int16_t raw_value, struct sensor_value *angle)
 {
 	angle->val1 = (raw_value >> 4) & 0x1FF;
-	angle->val2 = ((raw_value & 0xF) * 1000000) >> 1;
+	angle->val2 = (raw_value & 0xF) * 62500;
 }
 
 /**
@@ -871,25 +873,50 @@ static int tmag5273_channel_get(const struct device *dev, enum sensor_channel ch
 
 	const bool all_mag_axis = (chan == SENSOR_CHAN_MAGN_XYZ) || (chan == SENSOR_CHAN_ALL);
 
-	if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_X) &&
-	    (all_mag_axis || (chan == SENSOR_CHAN_MAGN_X))) {
-		tmag5273_channel_b_field_convert(drv_data->x_sample, drv_data->xyz_range,
-						 val + val_offset);
-		val_offset++;
-	}
+	if (all_mag_axis) {
+		if (drv_cfg->axis == TMAG5273_MAG_CH_EN_NONE) {
+			return -ENOTSUP;
+		}
 
-	if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_Y) &&
-	    (all_mag_axis || (chan == SENSOR_CHAN_MAGN_Y))) {
-		tmag5273_channel_b_field_convert(drv_data->y_sample, drv_data->xyz_range,
-						 val + val_offset);
-		val_offset++;
-	}
+		/* the sensor API mandates the order val[0] = X, val[1] = Y, val[2] = Z,
+		 * therefore deactivated axis read back as zero
+		 */
+		memset(val, 0, 3 * sizeof(struct sensor_value));
 
-	if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_Z) &&
-	    (all_mag_axis || (chan == SENSOR_CHAN_MAGN_Z))) {
-		tmag5273_channel_b_field_convert(drv_data->z_sample, drv_data->xyz_range,
-						 val + val_offset);
-		val_offset++;
+		if (drv_cfg->axis & TMAG5273_MAG_CH_EN_X) {
+			tmag5273_channel_b_field_convert(drv_data->x_sample, drv_data->xyz_range,
+							 &val[0]);
+		}
+
+		if (drv_cfg->axis & TMAG5273_MAG_CH_EN_Y) {
+			tmag5273_channel_b_field_convert(drv_data->y_sample, drv_data->xyz_range,
+							 &val[1]);
+		}
+
+		if (drv_cfg->axis & TMAG5273_MAG_CH_EN_Z) {
+			tmag5273_channel_b_field_convert(drv_data->z_sample, drv_data->xyz_range,
+							 &val[2]);
+		}
+
+		val_offset = 3;
+	} else {
+		if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_X) && (chan == SENSOR_CHAN_MAGN_X)) {
+			tmag5273_channel_b_field_convert(drv_data->x_sample, drv_data->xyz_range,
+							 val + val_offset);
+			val_offset++;
+		}
+
+		if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_Y) && (chan == SENSOR_CHAN_MAGN_Y)) {
+			tmag5273_channel_b_field_convert(drv_data->y_sample, drv_data->xyz_range,
+							 val + val_offset);
+			val_offset++;
+		}
+
+		if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_Z) && (chan == SENSOR_CHAN_MAGN_Z)) {
+			tmag5273_channel_b_field_convert(drv_data->z_sample, drv_data->xyz_range,
+							 val + val_offset);
+			val_offset++;
+		}
 	}
 
 	if (drv_cfg->temperature && (chan == SENSOR_CHAN_DIE_TEMP)) {
@@ -1094,6 +1121,14 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 		return -EIO;
 	}
 
+	/* REG_MAG_GAIN_CONFIG */
+	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MAG_GAIN_CONFIG,
+				       drv_cfg->mag_gain_correction);
+	if (retval < 0) {
+		LOG_ERR("error setting MAG_GAIN_CONFIG %d", retval);
+		return -EIO;
+	}
+
 	/* the 3001 Variant has REG_CONFIG_3 instead of REG_T_CONFIG. No need for temp enable. */
 	if (version == TMAG5273_VER_TMAG3001X1 || version == TMAG5273_VER_TMAG3001X2) {
 		return 0;
@@ -1108,13 +1143,6 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_T_CONFIG, regdata);
 	if (retval < 0) {
 		LOG_ERR("error setting SENSOR_CONFIG_2 %d", retval);
-		return -EIO;
-	}
-
-	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MAG_GAIN_CONFIG,
-				       drv_cfg->mag_gain_correction);
-	if (retval < 0) {
-		LOG_ERR("error setting MAG_GAIN_CONFIG %d", retval);
 		return -EIO;
 	}
 
@@ -1306,21 +1334,21 @@ static DEVICE_API(sensor, tmag5273_driver_api) = {
 };
 
 #define TMAG5273_DT_X_AXIS_BIT(axis_dts)                                                           \
-	((((axis_dts & TMAG5273_DT_AXIS_X) == TMAG5273_DT_AXIS_X) ||                               \
+	((((axis_dts <= TMAG5273_DT_AXIS_XYZ) && (axis_dts & TMAG5273_DT_AXIS_X)) ||               \
 	  (axis_dts == TMAG5273_DT_AXIS_XYX) || (axis_dts == TMAG5273_DT_AXIS_YXY) ||              \
 	  (axis_dts == TMAG5273_DT_AXIS_XZX))                                                      \
 		 ? TMAG5273_MAG_CH_EN_X                                                            \
 		 : 0)
 
 #define TMAG5273_DT_Y_AXIS_BIT(axis_dts)                                                           \
-	((((axis_dts & TMAG5273_DT_AXIS_Y) == TMAG5273_DT_AXIS_Y) ||                               \
+	((((axis_dts <= TMAG5273_DT_AXIS_XYZ) && (axis_dts & TMAG5273_DT_AXIS_Y)) ||               \
 	  (axis_dts == TMAG5273_DT_AXIS_XYX) || (axis_dts == TMAG5273_DT_AXIS_YXY) ||              \
 	  (axis_dts == TMAG5273_DT_AXIS_YZY))                                                      \
 		 ? TMAG5273_MAG_CH_EN_Y                                                            \
 		 : 0)
 
 #define TMAG5273_DT_Z_AXIS_BIT(axis_dts)                                                           \
-	((((axis_dts & TMAG5273_DT_AXIS_Z) == TMAG5273_DT_AXIS_Z) ||                               \
+	((((axis_dts <= TMAG5273_DT_AXIS_XYZ) && (axis_dts & TMAG5273_DT_AXIS_Z)) ||               \
 	  (axis_dts == TMAG5273_DT_AXIS_YZY) || (axis_dts == TMAG5273_DT_AXIS_XZX))                \
 		 ? TMAG5273_MAG_CH_EN_Z                                                            \
 		 : 0)
