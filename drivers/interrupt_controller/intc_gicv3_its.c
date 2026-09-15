@@ -194,7 +194,7 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 				 * entry size.
 				 */
 				lvl2_width = fls_z(page_size / entry_size) - 1;
-				device_ids -= lvl2_width + 1;
+				device_ids -= lvl2_width;
 
 				entry_size = GITS_LVL1_ENTRY_SIZE;
 
