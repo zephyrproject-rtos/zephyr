@@ -1,0 +1,11 @@
+#Copyright (c) 2026 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: Apache-2.0
+
+
+config MP_PLUGIN_IPC
+	bool "IPC Source and Sink plugins"
+	default n
+	depends on IPC_SERVICE
+	help
+	  Enable IPC plugins for Multi-Processor framework to bridge the
+	  pipeline across processors using Zephyr IPC Service.
