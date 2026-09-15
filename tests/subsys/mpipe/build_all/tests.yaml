@@ -7,3 +7,13 @@ tests:
     build_only: true
     platform_allow:
       - native_sim/native/64
+
+  mpipe.disp.build:
+    tags:
+      - subsys
+      - mpipe
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MPIPE_DISP=y
