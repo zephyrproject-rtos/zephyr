@@ -7,6 +7,7 @@
 #include <xen/public/xen.h>
 #include <xen/public/memory.h>
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/events.h>
 #include <zephyr/xen/generic.h>
