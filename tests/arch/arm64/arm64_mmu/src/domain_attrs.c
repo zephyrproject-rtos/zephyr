@@ -31,6 +31,11 @@ extern int arm64_mmu_pte_get(struct arm_mmu_ptables *ptables, uintptr_t virt, ui
 
 #define MEMTYPE_MASK	(PTE_BLOCK_DESC_MEMTYPE(7) | PTE_BLOCK_DESC_INNER_SHARE)
 
+/* somewhere else again, to soak up the translation table pool */
+#define HOG_VIRT	0x700000000
+#define HOG_PHYS	0x323230000
+#define HOG_LIMIT	(4 * CONFIG_MAX_XLAT_TABLES)
+
 static struct k_mem_domain test_domain;
 
 static uint64_t kernel_pte(uintptr_t virt)
@@ -214,6 +219,50 @@ ZTEST(arm64_mmu_domain, test_partition_over_part_of_a_block)
 
 	(void)k_mem_domain_remove_partition(&test_domain, &test_part);
 	test_part.size = 0;
+	(void)arch_mem_unmap((void *)virt, block_size);
+}
+
+/*
+ * Splitting a block needs a table. With the pool empty the partition cannot
+ * be confined to its own range, and applying it to the whole block would
+ * hand the domain access well past the partition, so the add has to fail.
+ */
+ZTEST(arm64_mmu_domain, test_partition_over_block_without_tables)
+{
+	size_t block_size = (CONFIG_MMU_PAGE_SIZE / sizeof(uint64_t)) * CONFIG_MMU_PAGE_SIZE;
+	uintptr_t virt = ROUND_DOWN(TEST_VIRT, block_size);
+	uintptr_t phys = ROUND_DOWN(TEST_PHYS, block_size);
+	uintptr_t outside = virt + block_size - CONFIG_MMU_PAGE_SIZE;
+	struct k_mem_partition part = {
+		.start = virt,
+		.size = CONFIG_MMU_PAGE_SIZE,
+		.attr = K_MEM_PARTITION_P_RW_U_RW,
+	};
+	unsigned int level;
+	uint64_t desc;
+	int hogged = 0;
+
+	zassert_ok(arch_mem_map((void *)virt, phys, block_size, K_MEM_PERM_RW));
+
+	/* take what the table pool has left, a page per block so each needs its own */
+	while (hogged < HOG_LIMIT &&
+	       arch_mem_map((void *)(HOG_VIRT + (uintptr_t)hogged * block_size), HOG_PHYS,
+			    CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW) == 0) {
+		hogged++;
+	}
+	zassert_true(hogged < HOG_LIMIT, "table pool never ran out");
+
+	zassert_not_equal(k_mem_domain_add_partition(&test_domain, &part), 0,
+			  "partition applied with no table to split the block with");
+
+	zassert_ok(arm64_mmu_pte_get(&test_domain.arch.ptables, outside, &desc, &level));
+	zassert_true((desc & PTE_BLOCK_DESC_AP_ELx) == 0,
+		     "EL0 access granted to the whole block");
+
+	while (hogged-- > 0) {
+		(void)arch_mem_unmap((void *)(HOG_VIRT + (uintptr_t)hogged * block_size),
+				     CONFIG_MMU_PAGE_SIZE);
+	}
 	(void)arch_mem_unmap((void *)virt, block_size);
 }
 
