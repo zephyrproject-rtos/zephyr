@@ -93,8 +93,8 @@ static bt_addr_le_t peer_addr;
 #define NAME_LEN 30
 
 #define BUF_ALLOC_TIMEOUT   (50) /* milliseconds */
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+#define SDU_SIZE            120U
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, BT_ISO_SDU_BUF_SIZE(SDU_SIZE),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static bool data_cb(struct bt_data *data, void *user_data)
@@ -394,7 +394,7 @@ static void test_cis_central(void)
 	printk("success.\n");
 
 	for (int i = 0; i < CONFIG_BT_ISO_MAX_CHAN; i++) {
-		iso_tx[i].sdu = CONFIG_BT_ISO_TX_MTU;
+		iso_tx[i].sdu = SDU_SIZE;
 		iso_tx[i].phy = BT_GAP_LE_PHY_2M;
 		if (IS_ENABLED(CONFIG_TEST_FT_SKIP_SUBEVENTS)) {
 			iso_tx[i].rtn = 2U;
@@ -552,7 +552,9 @@ static void test_cis_central(void)
 		for (uint16_t seq_num = 0U; seq_num < SEQ_NUM_MAX; seq_num++) {
 
 			for (int chan = 0; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
-				uint8_t iso_data[CONFIG_BT_ISO_TX_MTU] = { 0, };
+				uint8_t iso_data[SDU_SIZE] = {
+					0,
+				};
 				struct net_buf *buf;
 				int ret;
 
@@ -686,7 +688,7 @@ static void test_cis_peripheral(void)
 	printk("success.\n");
 
 	for (int i = 0; i < CONFIG_BT_ISO_MAX_CHAN; i++) {
-		iso_tx_p[i].sdu = CONFIG_BT_ISO_TX_MTU;
+		iso_tx_p[i].sdu = SDU_SIZE;
 		iso_tx_p[i].phy = BT_GAP_LE_PHY_2M;
 		if (IS_ENABLED(CONFIG_TEST_FT_SKIP_SUBEVENTS)) {
 			iso_tx_p[i].rtn = 2U;
@@ -775,7 +777,9 @@ static void test_cis_peripheral(void)
 	if (IS_ENABLED(CONFIG_TEST_FT_CEN_SKIP_SUBEVENTS)) {
 		for (uint16_t seq_num = 0U; seq_num < SEQ_NUM_MAX; seq_num++) {
 			for (int chan = 0; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
-				uint8_t iso_data[CONFIG_BT_ISO_TX_MTU] = { 0, };
+				uint8_t iso_data[SDU_SIZE] = {
+					0,
+				};
 				struct net_buf *buf;
 				int ret;
 

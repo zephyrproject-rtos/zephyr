@@ -124,7 +124,7 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_rx = {
-	.sdu = CONFIG_BT_ISO_TX_MTU,
+	.sdu = CONFIG_BT_ISO_RX_MTU,
 };
 
 static struct bt_iso_chan_qos iso_qos = {
