@@ -1,9 +1,8 @@
-# Copyright 2025 Linumiz GmbH
 # Copyright 2026 BeagleBoard.org Foundation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Texas Instruments MSPM0 RTC
+description: Texas Instruments MSPM0 RTC A
 
-compatible: "ti,mspm0-rtc"
+compatible: "ti,mspm0-rtc-a"
 
 include: ti,mspm0-rtc-base.yaml

@@ -5,8 +5,6 @@
  *
  */
 
-#define DT_DRV_COMPAT ti_mspm0_rtc
-
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/rtc.h>
@@ -437,26 +435,27 @@ static DEVICE_API(rtc, rtc_ti_mspm0_driver_api) = {
 #endif /* CONFIG_RTC_ALARM */
 };
 
-#define RTC_TI_MSPM0_DEVICE_INIT(n)						\
+#define RTC_TI_MSPM0_DEVICE_INIT(n, is_rtc_x)                                                      \
 	IF_ENABLED(CONFIG_RTC_ALARM,						\
 	(static void ti_mspm0_config_irq_##n(void)				\
 	{									\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
 			    rtc_ti_mspm0_isr, DEVICE_DT_INST_GET(n), 0);	\
 		irq_enable(DT_INST_IRQN(n));					\
-	}))									\
-										\
-	static struct rtc_ti_mspm0_data rtc_data_##n;				\
-										\
-	static struct rtc_ti_mspm0_config rtc_config_##n = {			\
-		.regs		 = (RTC_Regs *)DT_INST_REG_ADDR(n),		\
-		.rtc_x		 = DT_INST_PROP(n, ti_rtc_x),			\
+	}))                                                        \
+                                                                                                   \
+	static struct rtc_ti_mspm0_data rtc_data_##n;                                              \
+                                                                                                   \
+	static struct rtc_ti_mspm0_config rtc_config_##n = {                                       \
+		.regs = (RTC_Regs *)DT_INST_REG_ADDR(n),                                           \
+		.rtc_x = is_rtc_x,                                                                 \
 		IF_ENABLED(CONFIG_RTC_ALARM,					\
-		(.irq_config_func = ti_mspm0_config_irq_##n,))			\
-	};									\
-										\
-DEVICE_DT_INST_DEFINE(n, &rtc_ti_mspm0_init, NULL, &rtc_data_##n,		\
-		      &rtc_config_##n, PRE_KERNEL_1,				\
-		      CONFIG_RTC_INIT_PRIORITY, &rtc_ti_mspm0_driver_api);
+		(.irq_config_func = ti_mspm0_config_irq_##n,)) };        \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &rtc_ti_mspm0_init, NULL, &rtc_data_##n, &rtc_config_##n,         \
+			      PRE_KERNEL_1, CONFIG_RTC_INIT_PRIORITY, &rtc_ti_mspm0_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(RTC_TI_MSPM0_DEVICE_INIT);
+/* Third argument = !has power enable register */
+DT_FOREACH_STATUS_OKAY_VARGS(ti_mspm0_rtc, RTC_TI_MSPM0_DEVICE_INIT, false)
+DT_FOREACH_STATUS_OKAY_VARGS(ti_mspm0_rtc_a, RTC_TI_MSPM0_DEVICE_INIT, true);
+DT_FOREACH_STATUS_OKAY_VARGS(ti_mspm0_rtc_b, RTC_TI_MSPM0_DEVICE_INIT, true);
