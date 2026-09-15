@@ -520,6 +520,12 @@ void ull_periph_latency_cancel(struct ll_conn *conn, uint16_t handle)
 				      0, 0, 0, 0, 1, 0,
 				      ticker_update_latency_cancel_op_cb,
 				      (void *)conn);
+		if ((ticker_status == TICKER_STATUS_FAILURE) &&
+		    (conn->lll.handle == LLL_HANDLE_INVALID)) {
+			conn->periph.latency_cancel = 0U;
+			return;
+		}
+
 		LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
 			      (ticker_status == TICKER_STATUS_BUSY));
 	}
@@ -680,7 +686,9 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 {
 	struct ll_conn *conn = param;
 
-	LL_ASSERT_ERR(ticker_status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      ((ticker_status == TICKER_STATUS_FAILURE) &&
+		       (conn->lll.handle == LLL_HANDLE_INVALID)));
 
 	conn->periph.latency_cancel = 0U;
 }
