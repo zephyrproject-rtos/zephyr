@@ -1029,6 +1029,7 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 		if (ret2 != 0) {
 			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u",
 				__func__, addr, buf_sz);
+			ret = ret2;
 			emit_stop = true;
 
 			goto out_one_xfer;
