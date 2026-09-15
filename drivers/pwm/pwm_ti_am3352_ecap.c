@@ -5,6 +5,7 @@
 
 #include <zephyr/irq.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/drivers/mux.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/clock_control.h>
@@ -12,6 +13,10 @@
 
 #ifdef CONFIG_CLOCK_CONTROL_TISCI
 #include <zephyr/drivers/clock_control/tisci_clock_control.h>
+#endif
+
+#ifdef CONFIG_CLOCK_CONTROL_MSPM0
+#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
 #endif
 
 LOG_MODULE_REGISTER(ti_ecap);
@@ -22,7 +27,8 @@ struct ti_ecap_regs {
 	uint8_t RESERVED_1[0x10];        /**< Reserved, offset: 0x00 - 0x10 */
 	volatile uint32_t CAP3;          /**< Capture-3 Register, offset: 0x10 */
 	volatile uint32_t CAP4;          /**< Capture-4 Register, offset: 0x14 */
-	uint8_t RESERVED_2[0x10];        /**< Reserved, offset: 0x18 - 0x28 */
+	uint8_t RESERVED_2[0xC];         /**< Reserved, offset: 0x18 - 0x24 */
+	volatile uint32_t ECCTL0;        /**< Input mux select, AM13E-only, offset: 0x24 */
 	volatile uint32_t ECCTL;         /**< ECAP Control Register, offset: 0x28 */
 	volatile uint32_t ECINT_EN_FLG;  /**< ECAP Interrupt Enable & Flag Register, offset: 0x2C */
 	volatile uint32_t ECINT_CLR_FRC; /**< ECAP Interrupt Clear & Force Register, offset: 0x30 */
@@ -58,6 +64,9 @@ struct ti_ecap_regs {
 #define TI_ECAP_ECINT_CLR_CEVT4  BIT(4)
 #define TI_ECAP_ECINT_CLR_INT    BIT(0)
 
+/* ECAP Input Mux Select Register (ECCTL0, AM13E-only) */
+#define TI_ECAP_ECCTL0_INPUTSEL_MASK GENMASK(6, 0)
+
 #define DEV_CFG(dev)  ((const struct ti_ecap_cfg *)(dev)->config)
 #define DEV_DATA(dev) ((struct ti_ecap_data *)(dev)->data)
 #define DEV_REGS(dev) ((struct ti_ecap_regs *)DEVICE_MMIO_GET(dev))
@@ -70,6 +79,14 @@ struct ti_ecap_capture_data {
 	bool continuous;
 };
 
+/* One crossbar routing applied through the mux subsystem at init, decoded
+ * from a "mux-states" phandle-array entry.
+ */
+struct ti_ecap_mux_entry {
+	const struct device *dev;
+	const struct mux_state *state;
+};
+
 struct ti_ecap_cfg {
 	DEVICE_MMIO_ROM;
 	void (*irq_config_func)();
@@ -77,6 +94,10 @@ struct ti_ecap_cfg {
 	clock_control_subsys_t clock_subsys;
 	uint32_t clock_frequency;
 	const struct pinctrl_dev_config *pcfg;
+	const struct ti_ecap_mux_entry *mux_entries;
+	uint8_t mux_entries_count;
+	bool has_input_xbar;
+	uint8_t input_xbar_channel;
 };
 
 struct ti_ecap_data {
@@ -239,6 +260,7 @@ static int ti_ecap_configure_capture(const struct device *dev, uint32_t channel,
 static int ti_ecap_init(const struct device *dev)
 {
 	const struct ti_ecap_cfg *cfg = DEV_CFG(dev);
+	struct ti_ecap_regs *regs;
 	int ret;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -247,6 +269,27 @@ static int ti_ecap_init(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Fail to configure pinctrl\n");
 		return ret;
+	}
+
+	for (uint8_t i = 0; i < cfg->mux_entries_count; i++) {
+		const struct ti_ecap_mux_entry *entry = &cfg->mux_entries[i];
+
+		if (!device_is_ready(entry->dev)) {
+			LOG_ERR("xbar device not ready");
+			return -ENODEV;
+		}
+
+		ret = mux_state_apply(entry->dev, entry->state);
+		if (ret < 0) {
+			LOG_ERR("failed to apply mux state %d: %d", i, ret);
+			return ret;
+		}
+	}
+
+	if (cfg->has_input_xbar) {
+		regs = DEV_REGS(dev);
+		regs->ECCTL0 = (regs->ECCTL0 & ~TI_ECAP_ECCTL0_INPUTSEL_MASK) |
+			       FIELD_PREP(TI_ECAP_ECCTL0_INPUTSEL_MASK, cfg->input_xbar_channel);
 	}
 
 	cfg->irq_config_func();
@@ -313,24 +356,63 @@ static DEVICE_API(pwm, ti_ecap_api) = {
 	), (COND_CODE_1(CONFIG_CLOCK_CONTROL_ARM_SCMI,                                             \
 		(static const clock_control_subsys_t ti_ecap_clk_subsys_##n =                    \
 			(clock_control_subsys_t)DT_INST_PHA(n, clocks, name);                      \
-	), (BUILD_ASSERT(0, "Unsupported clock controller");))))
+	), (COND_CODE_1(CONFIG_CLOCK_CONTROL_MSPM0,                                                \
+		(static const struct mspm0_sys_clock ti_ecap_mspm0_sys_clock_##n =                \
+			MSPM0_CLOCK_SUBSYS_FN(n);                                                  \
+		static const clock_control_subsys_t ti_ecap_clk_subsys_##n =                     \
+			(clock_control_subsys_t)&ti_ecap_mspm0_sys_clock_##n;                     \
+	), (BUILD_ASSERT(0, "Unsupported clock controller");))))))
+
+/* One entry per "mux-states" phandle-array element: applies the crossbar
+ * routing (Input or Output XBAR) named by that entry through the mux
+ * subsystem.
+ */
+#define TI_ECAP_MUX_ENTRY(node_id, prop, idx)                                                      \
+	{                                                                                          \
+		.dev = MUX_STATE_DT_DEV_GET_BY_IDX(node_id, idx),                                  \
+		.state = MUX_STATE_DT_GET_BY_IDX(node_id, idx),                                    \
+	}
+
+#define TI_ECAP_MUX_ENTRIES_DEFINE(n)                                                              \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, mux_states),                                          \
+		   (MUX_STATE_DT_INST_SPEC_DEFINE_ALL(n);                                         \
+		    static const struct ti_ecap_mux_entry ti_ecap_mux_entries_##n[] = {          \
+			    DT_INST_FOREACH_PROP_ELEM_SEP(n, mux_states, TI_ECAP_MUX_ENTRY,      \
+							   (,))};))
+
+/* If a "mux-states" entry is named "input", its control cell is the Input
+ * XBAR channel that feeds this eCAP's own ECCTL0.INPUTSEL field - a
+ * separate mux internal to the eCAP, indexing into its own 128-entry table
+ * (INPUTXBAR1-16 occupy indices 0-15), not the crossbar's own addressing.
+ */
+#define TI_ECAP_MUX_ENTRIES_INIT(n)                                                                \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states),                                         \
+		    (.mux_entries = ti_ecap_mux_entries_##n,                                      \
+		     .mux_entries_count = ARRAY_SIZE(ti_ecap_mux_entries_##n),), ()) \
+	COND_CODE_1(DT_INST_PROP_HAS_NAME(n, mux_states, input),                                  \
+		    (.has_input_xbar = true,                                                      \
+		     .input_xbar_channel = DT_INST_PHA_BY_NAME(n, mux_states, input, channel),), ())
 
 #define TI_ECAP_INIT(n)                                                                            \
-	TI_ECAP_DEFINE_CLK_SUBSYS(n);                                                            \
+	TI_ECAP_DEFINE_CLK_SUBSYS(n);                                                              \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	TI_ECAP_MUX_ENTRIES_DEFINE(n);                                                             \
 	static void ti_ecap_irq_config_func_##n(void)                                              \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ti_ecap_isr,                \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
+		IRQ_CONNECT(                                                                       \
+			DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ti_ecap_isr,                    \
+			DEVICE_DT_INST_GET(n),                                                     \
+			COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),                            \
+					(DT_INST_IRQ(n, flags)), (0)));    \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
 	static struct ti_ecap_cfg ti_ecap_config_##n = {                                           \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = ti_ecap_clk_subsys_##n,                                          \
+		.clock_subsys = ti_ecap_clk_subsys_##n,                                            \
 		.irq_config_func = ti_ecap_irq_config_func_##n,                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-	};                                                                                         \
+		TI_ECAP_MUX_ENTRIES_INIT(n)};                                                      \
                                                                                                    \
 	static struct ti_ecap_data ti_ecap_data_##n;                                               \
                                                                                                    \

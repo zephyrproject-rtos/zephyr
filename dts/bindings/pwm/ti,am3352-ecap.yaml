@@ -1,9 +1,35 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI SOC ECAP based PWM controller
+description: |
+  TI SOC ECAP based PWM controller
 
-include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+  On SoCs where the eCAP's pins are reachable only through a crossbar
+  (e.g. AM13E), reference the crossbar via "mux-states" instead of adding
+  SoC-specific pinmux logic to this driver:
+
+    &ecap0 {
+            pinctrl-0 = <&my_apwm_pin>;
+            pinctrl-names = "default";
+
+            mux-states = <&xbar_out AM13E230_XBAR_OUT_CTRL(idx, group, bit) 1>;
+            mux-state-names = "output";
+    };
+
+    &ecap1 {
+            pinctrl-0 = <&my_capture_pin>;
+            pinctrl-names = "default";
+
+            mux-states = <&xbar_in CHANNEL AM13E230_XBAR_IN_STATE(GPIO_NUMBER, 1)>;
+            mux-state-names = "input";
+    };
+
+  A "mux-states" entry named "input" additionally feeds this eCAP's own
+  ECCTL0.INPUTSEL field (AM13E-only) with that entry's crossbar channel,
+  since ECCTL0 is a mux internal to the eCAP, separate from the crossbar
+  itself.
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml, mux-consumer.yaml]
 
 compatible: "ti,am3352-ecap"
 

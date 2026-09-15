@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI AM13E230 Output XBAR peripheral binding.
+
+  mux-control-cells is a single packed cell built with the
+  AM13E230_XBAR_OUT_CTRL(idx, group, bit) macro from
+  <zephyr/dt-bindings/mux/ti_am13e230_xbar_out.h> — idx selects which of
+  the 8 physical OUTPUTXBARx outputs, group/bit select one of the 64
+  one-hot source-select bits (G0SEL/G1SEL) for that output.
+
+  state=1 ORs the bit in (select the source), state=0 clears it
+  (deselect); mux_control_set() always addresses exactly one bit:
+
+    #include <zephyr/dt-bindings/mux/ti_am13e230_xbar_out.h>
+
+    &xbar2 {
+            status = "okay";
+    };
+
+    my_consumer {
+            mux-controls = <&xbar2 AM13E230_XBAR_OUT_CTRL(idx, group, bit)>;
+    };
+
+    mux_control_set(dev, 1);   /* select this source   */
+    mux_control_set(dev, 0);   /* deselect this source */
+
+  Or fix the source statically in devicetree:
+
+    my_consumer {
+            mux-states = <&xbar2 AM13E230_XBAR_OUT_CTRL(idx, group, bit) 1>;
+    };
+
+  mux_control_disconnect() clears BOTH G0SEL and G1SEL for the output
+  named by idx (the group/bit portion of the control cell is ignored).
+
+compatible: "ti,am13e230-xbar-out"
+
+include: [base.yaml, mux-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#mux-control-cells":
+    const: 1
+
+  "#mux-state-cells":
+    const: 2
+
+mux-control-cells:
+  - select
+
+mux-state-cells:
+  - select
+  - enable
