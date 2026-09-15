@@ -1,24 +1,20 @@
-identifier: w5500_evb_pico2/rp2350a/m33
-name: Wiznet W5500 Evaluation Board with RP2350
+identifier: motion_2350_pro/rp2350a/hazard3_0
+name: Cytron Motion 2350 Pro (Hazard3)
 type: mcu
-arch: arm
+arch: riscv
 flash: 2048
 ram: 520
 toolchain:
   - zephyr
-  - gnuarmemb
 supported:
   - adc
   - clock
   - counter
   - dma
+  - flash
   - gpio
   - hwinfo
   - i2c
-  - pico_gpio
-  - pico_i2c
-  - pico_serial
-  - pico_spi
   - pwm
   - spi
   - uart

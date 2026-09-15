@@ -1,11 +1,12 @@
-identifier: rpi_pico2/rp2350a/hazard3
-name: Raspberry Pi Pico 2 (Hazard3)
+identifier: rpi_pico2/rp2350a/m33_0/w
+name: Raspberry Pi Pico 2 (Cortex-M33) WiFi
 type: mcu
-arch: riscv
+arch: arm
 flash: 4096
 ram: 520
 toolchain:
   - zephyr
+  - gnuarmemb
 supported:
   - adc
   - clock
@@ -21,5 +22,5 @@ supported:
   - pwm
   - spi
   - uart
-  - usbd
   - watchdog
+  - wifi

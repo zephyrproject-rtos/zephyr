@@ -6,9 +6,9 @@ board:
     - name: rp2350a
       variants:
         - name: w
-          cpucluster: m33
+          cpucluster: m33_0
           variants:
             - name: mcuboot
-              cpucluster: m33
+              cpucluster: m33_0
         - name: mcuboot
-          cpucluster: m33
+          cpucluster: m33_0

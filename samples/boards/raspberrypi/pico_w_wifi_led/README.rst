@@ -18,14 +18,14 @@ Requirements
 This sample requires a board with an Infineon CYW43439 WiFi chip:
 
 - Raspberry Pi Pico W (``rpi_pico/rp2040/w``)
-- Raspberry Pi Pico 2 W (``rpi_pico2/rp2350a/m33/w``)
+- Raspberry Pi Pico 2 W (``rpi_pico2/rp2350a/m33_0/w``)
 
 Building and Running
 ********************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/raspberrypi/pico_w_wifi_led
-   :board: rpi_pico2/rp2350a/m33/w
+   :board: rpi_pico2/rp2350a/m33_0/w
    :goals: build flash
 
 Sample Output
