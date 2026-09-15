@@ -92,6 +92,10 @@ void tracing_trigger_output(bool before_put_is_empty);
  */
 bool is_tracing_thread(void);
 
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMER
+int tracing_set_ctf_timestamp_func(uint64_t (*ctf_timestamp_func)(void));
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */
+
 #ifdef __cplusplus
 }
 #endif

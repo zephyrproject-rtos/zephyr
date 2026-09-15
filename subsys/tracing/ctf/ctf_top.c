@@ -20,6 +20,24 @@ struct rtio_sqe;
 struct rtio_cqe;
 struct rtio_iodev_sqe;
 
+#if defined(CONFIG_TRACING_CTF_TIMESTAMP) && defined(CONFIG_TRACING_CTF_CONFIGURABLE_TIMER)
+static ctf_timestamp_get_t ctf_timestamp_func = ctf_top_timestamp_get;
+
+int ctf_set_timestamp_func(ctf_timestamp_get_t timestamp_getter)
+{
+	if (timestamp_getter == NULL) {
+		return -EINVAL;
+	}
+	ctf_timestamp_func = timestamp_getter;
+	return 0;
+}
+
+uint64_t ctf_timestamp_get(void)
+{
+	return ctf_timestamp_func();
+}
+#endif /* CONFIG_TRACING_CTF_TIMESTAMP && CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */
+
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {
 	const char *tname = k_thread_name_get(thread);
