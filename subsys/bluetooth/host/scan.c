@@ -721,8 +721,9 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	bool unresolved_directed =
 		info->direct_addr != NULL && info->direct_addr->type == BT_ADDR_LE_UNRESOLVED;
 
-	LOG_DBG("%s event %u, len %u, rssi %d dBm", bt_addr_le_str(addr), info->adv_type, len,
-		info->rssi);
+	LOG_DBG("%s%s event %u, len %u, rssi %d dBm", bt_addr_le_str(addr),
+		bt_addr_le_is_resolved(addr) ? " (resolved)" : "",
+		info->adv_type, len, info->rssi);
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
 	    explicit_scan && (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0U &&
