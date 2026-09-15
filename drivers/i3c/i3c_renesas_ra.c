@@ -1003,7 +1003,8 @@ static int i3c_renesas_ra_i3c_transfer(const struct device *dev, struct i3c_devi
 	target_index = i3c_renesas_ra_device_index_find(
 		dev, (target->dynamic_addr) ? target->dynamic_addr : target->static_addr, false);
 	if (target_index < 0) {
-		return -ENODEV;
+		ret = -ENODEV;
+		goto i3c_xfer_exit;
 	}
 
 	/* Select target index and bitrate mode */
