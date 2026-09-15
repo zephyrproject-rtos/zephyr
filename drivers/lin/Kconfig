@@ -1,0 +1,45 @@
+# LIN configuration options
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LIN
+	bool "Local Interconnect Network (LIN) drivers"
+	help
+	  LIN (Local Interconnect Network) driver subsystem.
+
+if LIN
+
+module = LIN
+module-str = LIN
+source "subsys/logging/Kconfig.template.log_config"
+
+config LIN_INIT_PRIORITY
+	int "LIN driver init priority"
+	default 80
+	help
+	  LIN driver device initialization priority.
+
+config LIN_AUTO_SYNCHRONIZATION
+	bool "LIN auto synchronization"
+	default y
+	help
+	  Enable automatic synchronization of LIN frames. If disabled, the driver will not handle
+	  frame synchronization.
+
+# zephyr-keep-sorted-start
+source "drivers/lin/renesas/ra/Kconfig.renesas_ra"
+# zephyr-keep-sorted-stop
+
+config LIN_TRANSCEIVER
+	bool "LIN transceiver drivers"
+	default y
+	depends on DT_HAS_LIN_TRANSCEIVER_GPIO_ENABLED
+
+if LIN_TRANSCEIVER
+
+source "drivers/lin/transceiver/Kconfig"
+
+endif # LIN_TRANSCEIVER
+
+endif # LIN

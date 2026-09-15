@@ -325,6 +325,11 @@ config USE_RA_FSP_DRW
 	help
 	  Enable RA FSP DRW driver
 
+config USE_RA_FSP_SCI_B_LIN
+	bool
+	help
+	  Enable RA FSP SCI-B LIN driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
