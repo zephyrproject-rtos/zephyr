@@ -1,0 +1,44 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DEVICE_SUPPORT_REQUIRED
+	bool
+	default y if (BT || ENABLE_PMU_BUCK_MODE || IEEE802154)
+
+config FPU
+	default y if (BT || PM || CRYPTO || ENTROPY_GENERATOR || IEEE802154)
+
+config IDLE_STACK_SIZE
+	default 1024 if PM
+	default 512 if BT
+
+config MAIN_STACK_SIZE
+	default 3072 if BT
+	default 4096 if IEEE802154
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096 if BT
+
+config BT_RX_STACK_SIZE
+	default 3072 if BT
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n if BT
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config BT_BUF_ACL_TX_COUNT
+	default 10 if BT
+
+config BT_BUF_EVT_RX_COUNT
+	default 11 if BT
+
+# To avoid error logs being printed periodically when BT does not allowed entering sleep mode
+config PM_DEVICE_LOG_LEVEL
+	default 0 if PM
+
+config ENABLE_PMU_BUCK_MODE
+	default y if PM
+
+rsource "*/Kconfig.defconfig"

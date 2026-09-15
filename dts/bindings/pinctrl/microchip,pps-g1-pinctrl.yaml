@@ -1,0 +1,97 @@
+# Copyright (c) 2025 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MICROCHIP Pinctrl container node
+
+  The Microchip PIC32CX_BZ2 pin controller is a singleton node responsible for controlling
+  pin function selection and pin properties. For example, you can use this node
+  to route SERCOM0 as UART were RX to pin PAD1 and enable the pull-up resistor
+  on the pin.
+
+  The node has the 'pinctrl' node label set in your SoC's devicetree, so you can
+  modify it like this:
+
+    &pinctrl {
+            /* your modifications go here */
+    };
+
+  All device pin configurations should be placed in child nodes of the 'pinctrl'
+  node, as shown in this example:
+
+    /** You can put this in places like a <board>-pinctrl.dtsi file in
+      * your board directory, or a devicetree overlay in your application.
+      */
+
+    /** include pre-defined combinations for the SoC variant used by the board */
+    #include <dt-bindings/pic32c/pic32cx_bz/bz25/pic32cx1012bz25048-pinctrl.h>
+
+    &pinctrl {
+      /* configuration for the usart0 "default" state */
+      sercom0_uart_default: sercom0_uart_default {
+        /* group 1 */
+        group1 {
+          /* configure PA5 as USART1 RX and PA6 as USART1 TX */
+          pinmux = <PA5_SCOM1P0_IN>, <PA6_SCOM1P1_OUT>;
+        };
+        /* group 2 */
+        group2 {
+          pinmux = <PA7_SCOM0P0_IN>, <PA8_SCOM0P2_IN>;
+          /* both Pins have pull-up enabled (Input) */
+          bias-pull-up;
+          input-enable;
+        };
+         /* group 2 */
+        group3 {
+          pinmux = <PA3_SCOM0P2_OUT>, <PA4_SCOM1P0_OUT>;
+          /* both Pins have open-drain enabled (Output) */
+          drive-open-drain;
+          output-enable;
+        };
+      };
+    };
+
+  To link pin configurations with a device, use a pinctrl-N property for some
+  number N, like this example you could place in your board's DTS file:
+
+    #include "board-pinctrl.dtsi"
+
+    &usart0 {
+          pinctrl-0 = <&usart0_default>;
+          pinctrl-names = "default";
+    };
+
+compatible: "microchip,pps-g1-pinctrl"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+child-binding:
+  description: |
+    Each child node defines the configuration for a particular state.
+  child-binding:
+    description: |
+      The grandchild nodes group pins that share the same pin configuration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+          - drive-open-drain
+          - input-enable
+          - output-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using pre-defined macros or, alternatively, using the
+          MCHP_PINMUX utility macros depending on the pinmux model used by the
+          SoC series.

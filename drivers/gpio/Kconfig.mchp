@@ -7,3 +7,10 @@ config GPIO_MCHP_PORT_G1
 	depends on DT_HAS_MICROCHIP_PORT_G1_GPIO_ENABLED
 	help
 	  This option enables GPIO driver for group (g1) of PORT peripherals.
+
+config GPIO_MCHP_G2
+	bool "Microchip GPIO_G2 driver"
+	default y
+	depends on DT_HAS_MICROCHIP_GPIO_G2_ENABLED
+	help
+	  This option enables GPIO driver for group (g2) of PORT peripherals.

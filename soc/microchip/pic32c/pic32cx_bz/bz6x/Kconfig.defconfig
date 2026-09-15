@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config NUM_IRQS
+	default 58
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config FLASH_LOAD_OFFSET
+	default 0x200
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
