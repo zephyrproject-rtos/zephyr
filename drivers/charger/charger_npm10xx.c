@@ -116,18 +116,20 @@ LOG_MODULE_REGISTER(npm10xx_charger, CONFIG_CHARGER_LOG_LEVEL);
 #define CHRG_COMPSTAT_ITERM_Msk     (BIT_MASK(1U) << 7)
 
 /* STATUS (0x50) */
-#define CHRG_STATUS_STATE_Msk         (BIT_MASK(3U) << 0)
+#define CHRG_STATUS_STATE_Msk         (BIT_MASK(4U) << 0)
 #define CHRG_STATUS_STATE_IDLE        0U
 #define CHRG_STATUS_STATE_TRICKLE     1U
-#define CHRG_STATUS_STATE_FAST        2U
-#define CHRG_STATUS_STATE_THROTTLE    3U
-#define CHRG_STATUS_STATE_COMPLETED   4U
-#define CHRG_STATUS_STATE_LOWVTERM    5U
-#define CHRG_STATUS_STATE_DISCHARGING 6U
-#define CHRG_STATUS_STATE_ERROR       7U
-#define CHRG_STATUS_DIETEMP_Msk       (BIT_MASK(1U) << 3)
-#define CHRG_STATUS_SUPPLEMENT_Msk    (BIT_MASK(1U) << 4)
-#define CHRG_STATUS_DROPOUT_Msk       (BIT_MASK(1U) << 5)
+#define CHRG_STATUS_STATE_CC          2U
+#define CHRG_STATUS_STATE_CV_THROTTLE 3U
+#define CHRG_STATUS_STATE_CC_THROTTLE 4U
+#define CHRG_STATUS_STATE_CV          5U
+#define CHRG_STATUS_STATE_COMPLETED   6U
+#define CHRG_STATUS_STATE_CMPLTD_NTC  7U
+#define CHRG_STATUS_STATE_DISCHARGING 8U
+#define CHRG_STATUS_STATE_ERROR       9U
+#define CHRG_STATUS_DIETEMP_Msk       (BIT_MASK(1U) << 4)
+#define CHRG_STATUS_SUPPLEMENT_Msk    (BIT_MASK(1U) << 5)
+#define CHRG_STATUS_DROPOUT_Msk       (BIT_MASK(1U) << 6)
 #define CHRG_STATUS_ILIMDISCHARGE_Msk (BIT_MASK(1U) << 7)
 
 /* ERRORREASON (0x53) */
@@ -253,7 +255,7 @@ static int npm10xx_charger_get_prop(const struct device *dev, const charger_prop
 			break;
 		case CHRG_STATUS_STATE_COMPLETED:
 			/* fall through */
-		case CHRG_STATUS_STATE_LOWVTERM:
+		case CHRG_STATUS_STATE_CMPLTD_NTC:
 			val->status = CHARGER_STATUS_FULL;
 			break;
 		case CHRG_STATUS_STATE_DISCHARGING:
@@ -275,10 +277,15 @@ static int npm10xx_charger_get_prop(const struct device *dev, const charger_prop
 		case CHRG_STATUS_STATE_TRICKLE:
 			val->charge_type = CHARGER_CHARGE_TYPE_TRICKLE;
 			break;
-		case CHRG_STATUS_STATE_FAST:
+		case CHRG_STATUS_STATE_CC:
 			val->charge_type = CHARGER_CHARGE_TYPE_FAST;
 			break;
-		case CHRG_STATUS_STATE_THROTTLE:
+		case CHRG_STATUS_STATE_CV:
+			/* fall-through */
+		case CHRG_STATUS_STATE_CV_THROTTLE:
+			val->charge_type = CHARGER_CHARGE_TYPE_STANDARD;
+			break;
+		case CHRG_STATUS_STATE_CC_THROTTLE:
 			val->charge_type = CHARGER_CHARGE_TYPE_LONGLIFE;
 			break;
 		default:

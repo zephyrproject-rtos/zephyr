@@ -76,12 +76,7 @@ LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 #define RESET_TASKS_CLR           BIT(6)
 
 /* CONFIG (0xDF) */
-#define RESET_CONFIG_BOOTMON       BIT(0)
-#define RESET_CONFIG_PWRWAIT_MASK  (BIT_MASK(2) << 1)
-#define RESET_CONFIG_PWRWAIT_350MS (0U << 1)
-#define RESET_CONFIG_PWRWAIT_250MS (1U << 1)
-#define RESET_CONFIG_PWRWAIT_150MS (2U << 1)
-#define RESET_CONFIG_PWRWAIT_50MS  (3U << 1)
+#define RESET_CONFIG_TPWRDN_MASK (BIT_MASK(2) << 1)
 
 /* POFWARNTHR (0xE0) */
 #define RESET_POFWARNTHR_LVL_MASK (BIT_MASK(4) << 0)
@@ -628,11 +623,8 @@ static inline int mfd_npm10xx_longpress_cfg(const struct device *dev)
 	int ret;
 	uint8_t reg;
 
-	if (config->lp_reset_src == RESET_LONGPRESS_PINSEL_NONE) {
-		return 0;
-	}
-
-	if (config->lp_reset_src != RESET_LONGPRESS_PINSEL_SHPHLD) {
+	if (config->lp_reset_src == RESET_LONGPRESS_PINSEL_GPIO ||
+	    config->lp_reset_src == RESET_LONGPRESS_PINSEL_BOTH) {
 		ret = mfd_npm10xx_pin_configure(dev, config->lp_reset_gpio.pin, NPM10_PIN_LP_RESET,
 						config->lp_reset_gpio.flags | GPIO_INPUT);
 		if (ret < 0) {
@@ -751,9 +743,9 @@ static int mfd_npm10xx_init(const struct device *dev)
 	}
 
 	if (config->pwr_cycle_delay < UINT8_MAX) {
-		reg = FIELD_PREP(RESET_CONFIG_PWRWAIT_MASK, config->pwr_cycle_delay);
-
-		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_CONFIG, reg);
+		reg = FIELD_PREP(RESET_CONFIG_TPWRDN_MASK, config->pwr_cycle_delay);
+		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_RESET_CONFIG,
+					     RESET_CONFIG_TPWRDN_MASK, reg);
 		if (ret < 0) {
 			return ret;
 		}
