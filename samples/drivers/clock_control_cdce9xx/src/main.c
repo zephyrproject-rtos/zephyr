@@ -25,7 +25,7 @@ static int cmd_clock_on(const struct shell *p_shell_ctx, size_t argc, char **p_a
 {
 	if (argc == 2) {
 		int which = strtol(p_argv[1], NULL, 10);
-		int rc = clock_control_on(clock_dev, (clock_control_subsys_t)which);
+		int rc = clock_control_on(clock_dev, INT_TO_POINTER(which));
 
 		shell_print(p_shell_ctx, "on for output %d = %d\n", which, rc);
 	}
@@ -37,7 +37,7 @@ static int cmd_clock_off(const struct shell *p_shell_ctx, size_t argc, char **p_
 {
 	if (argc == 2) {
 		int which = strtol(p_argv[1], NULL, 10);
-		int rc = clock_control_off(clock_dev, (clock_control_subsys_t)which);
+		int rc = clock_control_off(clock_dev, INT_TO_POINTER(which));
 
 		shell_print(p_shell_ctx, "off for output %d = %d\n", which, rc);
 	}
@@ -50,12 +50,12 @@ static int cmd_get_rate(const struct shell *p_shell_ctx, size_t argc, char **p_a
 	if (argc == 2) {
 		int which = strtol(p_argv[1], NULL, 10);
 		uint32_t rate;
-		int rc = clock_control_get_rate(clock_dev, (clock_control_subsys_t)which, &rate);
+		int rc = clock_control_get_rate(clock_dev, INT_TO_POINTER(which), &rate);
 
 		if (rc == 0) {
 			shell_print(p_shell_ctx, "rate on output %d = %d\n", which, rate);
 		} else {
-			shell_print(p_shell_ctx, "clock_control_get_rate returnd %d\n", rc);
+			shell_print(p_shell_ctx, "clock_control_get_rate returned %d\n", rc);
 		}
 	}
 
@@ -67,7 +67,7 @@ static int cmd_get_status(const struct shell *p_shell_ctx, size_t argc, char **p
 	if (argc == 2) {
 		int which = strtol(p_argv[1], NULL, 10);
 		enum clock_control_status status =
-			clock_control_get_status(clock_dev, (clock_control_subsys_t)which);
+			clock_control_get_status(clock_dev, INT_TO_POINTER(which));
 
 		shell_print(p_shell_ctx, "status on output %d = %d\n", which, (int)status);
 	}
@@ -80,8 +80,8 @@ static int cmd_set_rate(const struct shell *p_shell_ctx, size_t argc, char **p_a
 	if (argc == 3) {
 		int which = strtol(p_argv[1], NULL, 10);
 		int rate = strtol(p_argv[2], NULL, 10);
-		int rc = clock_control_set_rate(clock_dev, (clock_control_subsys_t)which,
-						(clock_control_subsys_rate_t)rate);
+		int rc = clock_control_set_rate(clock_dev, INT_TO_POINTER(which),
+						INT_TO_POINTER(rate));
 
 		shell_print(p_shell_ctx, "clock_control_set_rate returned %d\n", rc);
 	}
