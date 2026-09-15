@@ -20,8 +20,9 @@ void bt_addr_le_copy_resolved(bt_addr_le_t *dst, const bt_addr_le_t *src);
  *
  * @warning The parameter is not a regular application-layer @ref bt_addr_le_t.
  * It must be the address field taken directly from an HCI LE event structure.
- * In those events, the address "type" uses the Identity Address values to
- * indicate that resolution has occurred; this function only checks that bit.
+ * In those events, the address "type" uses the Identity Address values
+ * (@c BT_ADDR_LE_PUBLIC_ID and @c BT_ADDR_LE_RANDOM_ID) to indicate that
+ * resolution has occurred; this function checks for exactly those two values.
  * Do not use this with any @ref bt_addr_le_t obtained from Zephyr host APIs.
  *
  * The complete (at time of writing) list of events that contain at least one field like this:
@@ -42,7 +43,8 @@ void bt_addr_le_copy_resolved(bt_addr_le_t *dst, const bt_addr_le_t *src);
  * @retval true The Controller resolved the address (the on-air RPA matched an
  * IRK in the Controller's resolve list)
  * @retval false The address was not resolved by the Controller (resolution
- * disabled or no match)
+ * disabled or no match), or the field holds one of the LE Extended Advertising
+ * Report sentinels @c BT_ADDR_LE_UNRESOLVED or @c BT_ADDR_LE_ANONYMOUS
  *
  * @see bt_addr_le_copy_resolved() to convert a HCI event address type to a
  * regular @ref bt_addr_le_t.
