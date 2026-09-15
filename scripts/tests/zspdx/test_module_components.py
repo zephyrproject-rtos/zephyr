@@ -7,6 +7,7 @@
 import pytest
 from conftest import DEPS_DOCUMENT
 from spdx_tools.spdx.model.relationship import RelationshipType
+from zspdx.model import ExternalReferenceType
 
 MODULE = {
     "name": "mymodule",
@@ -16,6 +17,14 @@ MODULE = {
 
 PURL_ZEPHYR_PREFIX = "pkg:github/zephyrproject-rtos/zephyr"
 PURL_MODULE_PREFIX = "pkg:github/vendor/mymodule"
+
+# A Zephyr checkout taken from somewhere other than the upstream repository, so that
+# the purl built from the remote is told apart from the upstream fallback.
+ZEPHYR_FORK_COMMIT = "2" * 40
+ZEPHYR_FORK = {"remote": "https://github.com/vendor/zephyr", "revision": ZEPHYR_FORK_COMMIT}
+PURL_FORK_PREFIX = "pkg:github/vendor/zephyr"
+
+CPE_ZEPHYR_PREFIX = "cpe:2.3:o:zephyrproject:zephyr:"
 
 
 @pytest.fixture
@@ -94,6 +103,127 @@ class TestPackageProvenance:
         assert any(p.endswith(f"@{MODULE['revision']}") for p in purls), (
             f"mymodule-deps purl should include the revision, got {purls}"
         )
+
+
+class TestZephyrIdentity:
+    """Tests for the version, purl and CPE the walker derives for Zephyr itself.
+
+    The same identity is applied to the 'zephyr-sources' and 'zephyr-deps'
+    components; only the latter is built without a west workspace, so it stands in
+    for both here. Every case below is a checkout state the SBOM application test
+    cannot reach, since it only ever sees the tree it runs in.
+    """
+
+    @pytest.fixture
+    def zephyr_tree(self, tmp_path):
+        """Factory for a checkout whose VERSION file names a given version."""
+
+        def _tree(version):
+            release, _, extra = version.partition("-")
+            major, minor, patchlevel = release.split(".")
+            tree = tmp_path / f"zephyr-{version}"
+            tree.mkdir()
+            (tree / "VERSION").write_text(
+                f"VERSION_MAJOR = {major}\nVERSION_MINOR = {minor}\n"
+                f"PATCHLEVEL = {patchlevel}\nEXTRAVERSION = {extra}\n"
+            )
+            return str(tree)
+
+        return _tree
+
+    @staticmethod
+    def zephyr_component(walker_graph, meta):
+        return walker_graph([], zephyr=meta).get_component("zephyr-deps")
+
+    @staticmethod
+    def locators(component, reference_type):
+        return [
+            ref.locator
+            for ref in component.external_references
+            if ref.reference_type is reference_type
+        ]
+
+    @pytest.mark.parametrize(
+        ("tags", "tree_version", "version", "cpe"),
+        [
+            pytest.param(
+                ["v4.3.0"],
+                "4.4.99",
+                "4.3.0",
+                f"{CPE_ZEPHYR_PREFIX}4.3.0:-:*:*:*:*:*:*",
+                id="release-tag",
+            ),
+            pytest.param(
+                ["v4.4.0-rc3"],
+                "4.4.99",
+                "4.4.0-rc3",
+                f"{CPE_ZEPHYR_PREFIX}4.4.0:rc3:*:*:*:*:*:*",
+                id="release-candidate-tag",
+            ),
+            pytest.param(
+                ["sdk-0.17.0"],
+                "4.4.99",
+                "4.4.99",
+                f"{CPE_ZEPHYR_PREFIX}4.4.99:-:*:*:*:*:*:*",
+                id="unrelated-tag",
+            ),
+            pytest.param(
+                [], "4.4.99", "4.4.99", f"{CPE_ZEPHYR_PREFIX}4.4.99:-:*:*:*:*:*:*", id="untagged"
+            ),
+            pytest.param(
+                [],
+                "4.4.0-rc3",
+                "4.4.0-rc3",
+                f"{CPE_ZEPHYR_PREFIX}4.4.0:rc3:*:*:*:*:*:*",
+                id="release-branch",
+            ),
+        ],
+    )
+    def test_version_and_cpe(self, walker_graph, zephyr_tree, tags, tree_version, version, cpe):
+        """A release tag names the version; anything else falls back to the VERSION file.
+
+        The CPE follows that version, with a pre-release qualifier moved into the CPE
+        'update' field, where NVD keeps it.
+        """
+        meta = {**ZEPHYR_FORK, "tags": tags, "path": zephyr_tree(tree_version)}
+        component = self.zephyr_component(walker_graph, meta)
+        assert component.version == version
+        assert self.locators(component, ExternalReferenceType.CPE23) == [cpe]
+
+    @pytest.mark.parametrize(
+        ("meta", "purl"),
+        [
+            pytest.param({"tags": ["v4.3.0"]}, f"{PURL_FORK_PREFIX}@v4.3.0", id="release-tag"),
+            pytest.param(
+                {"tags": ["sdk-0.17.0"]},
+                f"{PURL_FORK_PREFIX}@{ZEPHYR_FORK_COMMIT}",
+                id="unrelated-tag",
+            ),
+            pytest.param({}, f"{PURL_FORK_PREFIX}@{ZEPHYR_FORK_COMMIT}", id="untagged"),
+            pytest.param(
+                {"revision": f"{ZEPHYR_FORK_COMMIT}-off"},
+                f"{PURL_FORK_PREFIX}@{ZEPHYR_FORK_COMMIT}",
+                id="unconfirmed-revision",
+            ),
+            pytest.param(
+                {"remote": ""},
+                f"{PURL_ZEPHYR_PREFIX}@{ZEPHYR_FORK_COMMIT}",
+                id="no-remote",
+            ),
+        ],
+    )
+    def test_purl(self, walker_graph, zephyr_tree, meta, purl):
+        """The purl follows the checkout, pinned to whatever can be fetched again.
+
+        A release tag pins it when the revision carries one, the commit does
+        otherwise, and a revision west could not confirm ('-dirty', '-off') is pinned
+        by the commit it names. A checkout recording no remote -- west only records
+        one when the repository has exactly one -- falls back to upstream Zephyr.
+        """
+        component = self.zephyr_component(
+            walker_graph, {**ZEPHYR_FORK, **meta, "path": zephyr_tree("4.4.99")}
+        )
+        assert self.locators(component, ExternalReferenceType.PURL) == [purl]
 
 
 class TestModuleRelationships:
