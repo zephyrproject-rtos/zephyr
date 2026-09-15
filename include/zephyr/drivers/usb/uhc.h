@@ -271,7 +271,7 @@ struct uhc_data {
  */
 static inline bool uhc_is_initialized(const struct device *dev)
 {
-	struct uhc_data *data = dev->data;
+	struct uhc_data *data = (struct uhc_data *)dev->data;
 
 	return atomic_test_bit(&data->status, UHC_STATUS_INITIALIZED);
 }
@@ -285,7 +285,7 @@ static inline bool uhc_is_initialized(const struct device *dev)
  */
 static inline bool uhc_is_enabled(const struct device *dev)
 {
-	struct uhc_data *data = dev->data;
+	struct uhc_data *data = (struct uhc_data *)dev->data;
 
 	return atomic_test_bit(&data->status, UHC_STATUS_ENABLED);
 }
@@ -594,7 +594,7 @@ int uhc_shutdown(const struct device *dev);
  */
 static inline struct uhc_device_caps uhc_caps(const struct device *dev)
 {
-	struct uhc_data *data = dev->data;
+	struct uhc_data *data = (struct uhc_data *)dev->data;
 
 	return data->caps;
 }
@@ -611,7 +611,7 @@ static inline struct uhc_device_caps uhc_caps(const struct device *dev)
  */
 static inline const void *uhc_get_event_ctx(const struct device *dev)
 {
-	struct uhc_data *data = dev->data;
+	struct uhc_data *data = (struct uhc_data *)dev->data;
 
 	return data->event_ctx;
 }
