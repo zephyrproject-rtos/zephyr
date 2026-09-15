@@ -9,6 +9,7 @@ application logic, load code at runtime, and model sensors.
 .. toctree::
    :maxdepth: 1
 
+   applet/index.rst
    llext/index.rst
    sensing/index.rst
    smf/index.rst
