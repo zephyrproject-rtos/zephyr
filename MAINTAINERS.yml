@@ -2530,6 +2530,7 @@ Documentation Infrastructure:
     - SeppoTakalo
     - zafersn
     - wkhadgar
+    - JordanYates
   files:
     - drivers/modem/
     - tests/drivers/build_all/modem/
