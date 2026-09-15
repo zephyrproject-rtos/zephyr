@@ -18,10 +18,10 @@
 #include <stdio.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "nsi_host_trampolines.h"
-#include "nsi_errno.h"
-#include "soc.h"
-#include "cmdline.h" /* native_sim command line options header */
+#include <nsi_host_trampolines.h>
+#include <nsi_errno.h>
+#include <soc.h>
+#include <cmdline.h> /* native_sim command line options header */
 #include "userchan_bottom.h"
 
 #include <zephyr/bluetooth/bluetooth.h>

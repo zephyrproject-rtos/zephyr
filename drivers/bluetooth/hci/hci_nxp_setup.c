@@ -26,7 +26,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_nxp_ctlr);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #define DT_DRV_COMPAT nxp_bt_hci_uart
 

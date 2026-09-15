@@ -28,9 +28,9 @@ LOG_MODULE_REGISTER(bt_apollox_driver);
 #include <soc.h>
 #include "apollox_blue.h"
 #if (CONFIG_SOC_SERIES_APOLLO4X)
-#include "am_devices_cooper.h"
+#include <am_devices_cooper.h>
 #elif (CONFIG_SOC_SERIES_APOLLO3X)
-#include "am_apollo3_bt_support.h"
+#include <am_apollo3_bt_support.h>
 #endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 #define HCI_SPI_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ambiq_bt_hci_spi)
