@@ -53,20 +53,6 @@ LOG_MODULE_REGISTER(cdce9xx, CONFIG_CDCE9XX_LOG_LEVEL);
 #define PLL_INDEX(x)    (((int)x / 2) - 1)
 #define OUTPUT_INDEX(x) ((int)x - (int)CLOCK_CONTROL_TI_CDCE9XX_Y2)
 
-/* Calculate "x * n / d". */
-/* clang-format off */
-#define mult_frac(x, n, d)                                                                         \
-	({                                                                                         \
-		__typeof__(x) x_ = (x);                                                            \
-		__typeof__(n) n_ = (n);                                                            \
-		__typeof__(d) d_ = (d);                                                            \
-                                                                                                   \
-		__typeof__(x_) q = x_ / d_;                                                        \
-		__typeof__(x_) r = x_ % d_;                                                        \
-		q * n_ + r * n_ / d_;                                                             \
-	})
-/* clang-format on */
-
 struct cdce9xx_pll_dts_config {
 	uint16_t m;
 	uint16_t n;
@@ -118,32 +104,32 @@ static int cdce9xx_read(const struct device *dev, uint8_t reg_addr, uint8_t *reg
 	return i2c_write_read_dt(&cfg->bus, &cmd, sizeof(cmd), reg_data, sizeof(*reg_data));
 }
 
-static int cdce9xx_write(const struct device *dev, uint8_t addr, uint8_t reg_data)
+static int cdce9xx_write(const struct device *dev, uint8_t reg_addr, uint8_t reg_data)
 {
 	const struct cdce9xx_dts_config *cfg = dev->config;
 	uint8_t tx_buf[2];
 
-	tx_buf[0] = CDCE9XX_CMD_BYTE | addr;
+	tx_buf[0] = CDCE9XX_CMD_BYTE | reg_addr;
 	tx_buf[1] = reg_data;
 
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
-static int cdce9xx_update(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val)
+static int cdce9xx_update(const struct device *dev, uint8_t reg_addr, uint8_t mask, uint8_t val)
 {
 	uint8_t content = 0;
-	int rc = cdce9xx_read(dev, addr, &content);
+	int rc = cdce9xx_read(dev, reg_addr, &content);
 
 	if (rc < 0) {
-		LOG_ERR("Failed to read 0x%02x!", addr);
+		LOG_ERR("Failed to read 0x%02x!", reg_addr);
 		return rc;
 	}
 
 	if (FIELD_GET(mask, content) != val) {
 		content = FIELD_REPLACE(content, mask, val);
-		rc = cdce9xx_write(dev, addr, content);
+		rc = cdce9xx_write(dev, reg_addr, content);
 		if (rc < 0) {
-			LOG_ERR("Failed to update reg 0x%02x with 0x%02x!", addr, content);
+			LOG_ERR("Failed to update reg 0x%02x with 0x%02x!", reg_addr, content);
 			return rc;
 		}
 	}
@@ -178,23 +164,29 @@ static void dump_current_state(const struct device *dev)
 	cdce9xx_read(dev, 0x17, &reg_content);
 	LOG_DBG("Pdiv3: %d", (uint8_t)FIELD_GET(CDCE9XX_PLL_SECOND_PDIV, reg_content));
 
-	cdce9xx_read(dev, 0x24, &reg_content);
-	LOG_DBG("PLL2 multiplexer: %s, %d Hz", reg_content & CDCE9XX_PLL_MUX ? "bypass" : "enabled",
-		data->pll[1].vco_rate);
-	LOG_DBG("Y4 multiplexer: %s", reg_content & CDCE9XX_FIRST_OUT_MUX ? "Pdiv4" : "Pdiv2");
-	LOG_DBG("Y5 multiplexer: %s", y5_mux[FIELD_GET(CDCE9XX_SECOND_OUT_MUX, reg_content)]);
-	cdce9xx_read(dev, 0x26, &reg_content);
-	LOG_DBG("Pdiv4: %d", (uint8_t)FIELD_GET(CDCE9XX_PLL_FIRST_PDIV, reg_content));
-	cdce9xx_read(dev, 0x27, &reg_content);
-	LOG_DBG("Pdiv5: %d", (uint8_t)FIELD_GET(CDCE9XX_PLL_SECOND_PDIV, reg_content));
+	if (cfg->num_plls > 1) { /* dump state of second pll only for devices with second pll. */
+		cdce9xx_read(dev, 0x24, &reg_content);
+		LOG_DBG("PLL2 multiplexer: %s, %d Hz",
+			reg_content & CDCE9XX_PLL_MUX ? "bypass" : "enabled",
+			data->pll[1].vco_rate);
+		LOG_DBG("Y4 multiplexer: %s",
+			reg_content & CDCE9XX_FIRST_OUT_MUX ? "Pdiv4" : "Pdiv2");
+		LOG_DBG("Y5 multiplexer: %s",
+			y5_mux[FIELD_GET(CDCE9XX_SECOND_OUT_MUX, reg_content)]);
+		cdce9xx_read(dev, 0x26, &reg_content);
+		LOG_DBG("Pdiv4: %d", (uint8_t)FIELD_GET(CDCE9XX_PLL_FIRST_PDIV, reg_content));
+		cdce9xx_read(dev, 0x27, &reg_content);
+		LOG_DBG("Pdiv5: %d", (uint8_t)FIELD_GET(CDCE9XX_PLL_SECOND_PDIV, reg_content));
+	}
 #endif
 }
 
 static inline bool is_sys_valid(uint32_t num_plls, clock_control_subsys_t sys)
 {
 	return ((sys == CLOCK_CONTROL_TI_CDCE9XX_Y1) ||
-		(sys >= CLOCK_CONTROL_TI_CDCE9XX_Y2 &&
-		 (uint32_t)sys < ((num_plls * 2) + (uint32_t)CLOCK_CONTROL_TI_CDCE9XX_Y2)));
+		(POINTER_TO_UINT(sys) >= POINTER_TO_UINT(CLOCK_CONTROL_TI_CDCE9XX_Y2) &&
+		 POINTER_TO_UINT(sys) <
+			 ((num_plls * 2) + POINTER_TO_UINT(CLOCK_CONTROL_TI_CDCE9XX_Y2))));
 }
 
 static int set_y1_output_div(const struct device *dev, uint16_t pdiv1)
@@ -204,7 +196,9 @@ static int set_y1_output_div(const struct device *dev, uint16_t pdiv1)
 	int rc = -EINVAL;
 
 	if (pdiv1 <= CDCE9XX_PDIV1_MAX) {
-		/* Enable Y1 and apply pdiv from dts. */
+		/* Set divider for Y1 and enable PLLs, even if the divider for Y1 is set to 0. We
+		 * might need the PLLs for the other outputs.
+		 */
 		y1_ctrl =
 			FIELD_PREP(CDCE9XX_Y1_CTRL_ST0, CDCE9XX_OUTPUT_STATE_ENABLED) |
 			FIELD_PREP(CDCE9XX_Y1_CTRL_ST1, CDCE9XX_OUTPUT_STATE_ENABLED) |
@@ -248,7 +242,10 @@ static int set_output_pdiv(const struct device *dev, struct cdce9xx_output *outp
 			LOG_ERR("Write CDCE9XX_REG_PLL_SECOND_PDIV_OFFSET failed: %d", rc);
 		}
 	}
-	output->pdiv = pdiv;
+
+	if (rc == 0) {
+		output->pdiv = pdiv;
+	}
 
 	return rc;
 }
@@ -441,7 +438,15 @@ static int reset_device(const struct device *dev)
 	/* Disable outputs (Y2, Y3, ...). */
 	for (int i = 0; i < (int)cfg->num_plls; i++) {
 		set_output_pdiv(dev, &data->output[i * 2], 0);
+		if (rc < 0) {
+			LOG_ERR("Failed to set first output divider on PLL %d!", i);
+			return rc;
+		}
 		set_output_pdiv(dev, &data->output[i * 2 + 1], 0);
+		if (rc < 0) {
+			LOG_ERR("Failed to set second output divider on PLL %d!", i);
+			return rc;
+		}
 	}
 	return 0;
 }
@@ -484,6 +489,50 @@ static uint8_t pdiv_calc_divider(uint32_t vco_rate, uint32_t rate)
 	return (uint8_t)divider;
 }
 
+/* calculate p = max(0, 4 - int(log2 (n/m))) */
+static uint8_t pll_calc_p(uint16_t n, uint16_t m)
+{
+	uint8_t p;
+	uint16_t r = n / m;
+
+	if (r >= 16) {
+		return 0;
+	}
+	p = 4;
+	while (r > 1) {
+		r >>= 1;
+		--p;
+	}
+	return p;
+}
+
+static bool verify_hardware_constraints(uint16_t m, uint16_t n)
+{
+	uint16_t r;
+	uint8_t q;
+	uint8_t p;
+	uint16_t nn;
+
+	/* According to data sheet: */
+	/* p = max(0, 4 - int(log2 (n/m))) */
+	p = pll_calc_p(n, m);
+	/* nn = n * 2^p */
+	nn = n * BIT(p);
+	/* q = int(nn/m) */
+	q = nn / m;
+	if ((q < 16) || (q > 63)) {
+		LOG_DBG("%s invalid q=%d", __func__, q);
+		return false;
+	}
+	r = nn - (m * q);
+	if (r > 511) {
+		LOG_DBG("%s invalid r=%d", __func__, r);
+		return false;
+	}
+
+	return true;
+}
+
 static uint32_t pll_calc_rounded_rate(uint32_t root_rate, uint32_t rate, uint16_t *m_out,
 				      uint16_t *n_out)
 {
@@ -508,7 +557,8 @@ static uint32_t pll_calc_rounded_rate(uint32_t root_rate, uint32_t rate, uint16_
 
 			uint64_t actual_rate = ((uint64_t)root_rate * n) / m;
 
-			if (actual_rate < CDCE9XX_VCO_MIN_HZ || actual_rate > CDCE9XX_VCO_MAX_HZ) {
+			if (actual_rate < CDCE9XX_VCO_MIN_HZ || actual_rate > CDCE9XX_VCO_MAX_HZ ||
+			    verify_hardware_constraints(m, n) == false) {
 				continue;
 			}
 
@@ -541,13 +591,13 @@ static uint32_t clk_calc_best_vco_rate(uint32_t root_rate, uint32_t rate,
 				       struct cdce9xx_pll_config *pll_config)
 {
 	uint32_t best_rate_error = rate;
-	uint16_t pdiv_min;
-	uint16_t pdiv_max;
-	uint16_t pdiv_best;
-	uint16_t pdiv_now;
+	uint32_t pdiv_min;
+	uint32_t pdiv_max;
+	uint32_t pdiv_best;
+	uint32_t pdiv_now;
 
-	pdiv_min = (uint16_t)max(CDCE9XX_PDIV_MIN, DIV_ROUND_UP(CDCE9XX_VCO_MIN_HZ, rate));
-	pdiv_max = (uint16_t)min(CDCE9XX_PDIV_MAX, CDCE9XX_VCO_MAX_HZ / rate);
+	pdiv_min = (uint32_t)max(CDCE9XX_PDIV_MIN, DIV_ROUND_UP(CDCE9XX_VCO_MIN_HZ, rate));
+	pdiv_max = (uint32_t)min(CDCE9XX_PDIV_MAX, CDCE9XX_VCO_MAX_HZ / rate);
 
 	if (pdiv_min > pdiv_max) {
 		return 0; /* No can do? */
@@ -581,7 +631,7 @@ static uint32_t clk_calc_best_vco_rate(uint32_t root_rate, uint32_t rate,
 		}
 	}
 
-	return rate * pdiv_best;
+	return (uint32_t)(rate * (uint16_t)pdiv_best);
 }
 
 static uint8_t pll_calculate_parameter(uint32_t root_rate, uint32_t rate,
@@ -590,7 +640,8 @@ static uint8_t pll_calculate_parameter(uint32_t root_rate, uint32_t rate,
 	uint32_t vco_rate = pll_config->vco_rate;
 	uint16_t divider = pdiv_calc_divider(vco_rate, rate);
 
-	if (vco_rate / divider != rate || pll_config->m == 0 || pll_config->n == 0) {
+	if (divider == 0U || vco_rate / divider != rate || pll_config->m == 0U ||
+	    pll_config->n == 0U) {
 		vco_rate = clk_calc_best_vco_rate(root_rate, rate, pll_config);
 		divider = pdiv_calc_divider(vco_rate, rate);
 	}
@@ -609,36 +660,16 @@ static uint8_t pll_calculate_parameter(uint32_t root_rate, uint32_t rate,
 	return (uint8_t)divider;
 }
 
-/* calculate p = max(0, 4 - int(log2 (n/m))) */
-static uint8_t pll_calc_p(uint16_t n, uint16_t m)
-{
-	uint8_t p;
-	uint16_t r = n / m;
-
-	if (r >= 16) {
-		return 0;
-	}
-	p = 4;
-	while (r > 1) {
-		r >>= 1;
-		--p;
-	}
-	return p;
-}
-
 /* Returns VCO range bits for VCO1_0_RANGE */
 static uint8_t pll_calc_range_bits(uint32_t vco_rate, uint16_t n, uint16_t m)
 {
-	unsigned long rate = vco_rate;
-
-	rate = mult_frac(vco_rate, (uint32_t)n, (uint32_t)m);
-	if (rate >= 175000000) {
+	if (vco_rate >= 175000000) {
 		return 0x3;
 	}
-	if (rate >= 150000000) {
+	if (vco_rate >= 150000000) {
 		return 0x02;
 	}
-	if (rate >= 125000000) {
+	if (vco_rate >= 125000000) {
 		return 0x01;
 	}
 	return 0x00;
@@ -681,37 +712,35 @@ static int configure_pll(const struct device *dev, const struct cdce9xx_pll_conf
 		if (rc != 0) {
 			return rc;
 		}
-		/* According to data sheet: */
-		/* p = max(0, 4 - int(log2 (n/m))) */
-		p = pll_calc_p(n, m);
-		/* nn = n * 2^p */
-		nn = n * BIT(p);
-		/* q = int(nn/m) */
-		q = nn / m;
-		if ((q < 16) || (q > 63)) {
-			LOG_DBG("%s invalid q=%d", __func__, q);
-			return -EINVAL;
-		}
-		r = nn - (m * q);
-		if (r > 511) {
-			LOG_DBG("%s invalid r=%d", __func__, r);
-			return -EINVAL;
-		}
-		LOG_DBG("%s n=%d m=%d p=%d q=%d r=%d", __func__, n, m, p, q, r);
-		/* Encode into register bits. */
-		pll[0] = n >> 4;
-		pll[1] = ((n & 0x0F) << 4) | ((r >> 5) & 0x0F);
-		pll[2] = ((r & 0x1F) << 3) | ((q >> 3) & 0x07);
-		pll[3] = ((q & 0x07) << 5) | (p << 2) |
-			 pll_calc_range_bits(pll_config->vco_rate, n, m);
-		/* Write to registers. */
-		for (uint32_t i = 0; i < ARRAY_SIZE(pll); ++i) {
-			rc = cdce9xx_write(dev, reg_ofs + CDCE9XX_REG_PLL_0_N_11_4_OFFSET + i,
-					   pll[i]);
-			if (rc != 0) {
-				return rc;
+
+		if (verify_hardware_constraints(m, n) == true) {
+			/* According to data sheet: */
+			/* p = max(0, 4 - int(log2 (n/m))) */
+			p = pll_calc_p(n, m);
+			/* nn = n * 2^p */
+			nn = n * BIT(p);
+			/* q = int(nn/m) */
+			q = nn / m;
+			r = nn - (m * q);
+			LOG_DBG("%s n=%d m=%d p=%d q=%d r=%d", __func__, n, m, p, q, r);
+			/* Encode into register bits. */
+			pll[0] = n >> 4;
+			pll[1] = ((n & 0x0F) << 4) | ((r >> 5) & 0x0F);
+			pll[2] = ((r & 0x1F) << 3) | ((q >> 3) & 0x07);
+			pll[3] = ((q & 0x07) << 5) | (p << 2) |
+				 pll_calc_range_bits(pll_config->vco_rate, n, m);
+			/* Write to registers. */
+			for (uint32_t i = 0; i < ARRAY_SIZE(pll); ++i) {
+				rc = cdce9xx_write(
+					dev, reg_ofs + CDCE9XX_REG_PLL_0_N_11_4_OFFSET + i, pll[i]);
+				if (rc != 0) {
+					return rc;
+				}
 			}
+		} else {
+			return -EINVAL;
 		}
+
 		pll_state &= ~CDCE9XX_PLL_MUX;
 		pll_state = FIELD_REPLACE(pll_state, CDCE9XX_PLL_ST1, 3);
 		pll_state = FIELD_REPLACE(pll_state, CDCE9XX_PLL_ST0, 3);
@@ -791,8 +820,8 @@ static int configure_pll_from_dts(const struct device *dev)
 		if (pll_dts->n != 0 && pll_dts->m != 0) {
 			pll->m = pll_dts->m;
 			pll->n = pll_dts->n;
-			pll->vco_rate = (uint32_t)((cfg->input_freq * pll_dts->n) / pll_dts->m);
-			pll->reg_base = pll_dts->reg_base;
+			pll->vco_rate =
+				(uint32_t)((uint64_t)(cfg->input_freq * pll_dts->n) / pll_dts->m);
 			LOG_DBG("pll%d: n %d, m %d, first_div %d, second_div %d", i + 1, pll_dts->n,
 				pll_dts->m, pll_dts->first_div, pll_dts->second_div);
 			rc = configure_pll(dev, pll);
@@ -875,6 +904,7 @@ static int cdce9xx_init(const struct device *dev)
 	k_mutex_init(&data->mutex);
 
 	for (int i = 0; i < cfg->num_plls; i++) {
+		/* Copy the reg_base from the const dts to the data struct. */
 		data->pll[i].reg_base = cfg->plls_dts[i].reg_base;
 		data->output[i * 2 + 0].sys =
 			(clock_control_subsys_t)((int)CLOCK_CONTROL_TI_CDCE9XX_Y2 + (i * 2 + 0));
@@ -953,8 +983,7 @@ static int cdce9xx_off(const struct device *dev, clock_control_subsys_t sys)
 
 	if (sys == CLOCK_CONTROL_TI_CDCE9XX_Y1) {
 		if (cfg->keep_y1_enabled == false) {
-			set_y1_output_div(dev, 0);
-			rc = 0;
+			rc = set_y1_output_div(dev, 0);
 		}
 	} else if (is_sys_valid(cfg->num_plls, sys)) {
 		struct cdce9xx_output *output = &data->output[OUTPUT_INDEX(sys)];
@@ -1036,12 +1065,12 @@ static int y1_set_rate(const struct device *dev, uint32_t rate)
 static int set_pll_output(const struct device *dev, struct cdce9xx_output *output,
 			  uint32_t vco_rate, uint8_t divider)
 {
-	output->rate = vco_rate / divider;
 	int rc = set_output_pdiv(dev, output, divider);
 
 	if (rc < 0) {
 		return rc;
 	}
+	output->rate = vco_rate / divider;
 	return set_output_mux(dev, output);
 }
 
@@ -1054,17 +1083,19 @@ static bool verify_common_vco_rate(uint32_t lcm_vco_rate, uint32_t rate_a, uint3
 		vco_rate_ok = false;
 	} else {
 		divider = pdiv_calc_divider(lcm_vco_rate, rate_a);
-		if (divider == 0) {
+		/* Make sure we have a perfect commont vco rate. */
+		if (divider == 0 || rate_a * divider != lcm_vco_rate) {
 			vco_rate_ok = false;
 		} else {
 			divider = pdiv_calc_divider(lcm_vco_rate, rate_b);
-			if (divider == 0) {
+			/* Make sure we have a perfect commont vco rate. */
+			if (divider == 0 || rate_b * divider != lcm_vco_rate) {
 				vco_rate_ok = false;
 			}
 		}
 	}
 
-	LOG_INF("lco_freq %u Hz can%sbe divided to get %u and %u", lcm_vco_rate,
+	LOG_INF("lco_voc_rate %u Hz can%sbe divided to get %u and %u", lcm_vco_rate,
 		vco_rate_ok == true ? " " : " not ", rate_a, rate_b);
 
 	return vco_rate_ok;
@@ -1117,7 +1148,6 @@ static int pll_output_set_rate(const struct device *dev, clock_control_subsys_t 
 			if (rc < 0) {
 				return rc;
 			}
-			other_output->rate = pll->vco_rate / divider;
 			other_output->pll_owner = true;
 
 			rc = set_pll_output(dev, other_output, pll->vco_rate, divider);
@@ -1135,8 +1165,6 @@ static int pll_output_set_rate(const struct device *dev, clock_control_subsys_t 
 		return -EINVAL;
 	}
 
-	output->req_rate = rate;
-
 	/* PLL is not in use or used only by current output. */
 	if (pll->vco_rate == 0 || other_output->rate == 0) {
 		pll->vco_rate = pll_config.vco_rate;
@@ -1153,11 +1181,11 @@ static int pll_output_set_rate(const struct device *dev, clock_control_subsys_t 
 		memset(&pll_config, 0, sizeof(pll_config));
 
 		/* Try to find a common multiple vco_rate with perfect dividers for both outputs. */
-		uint32_t lcm_vco_rate =
-			get_common_vco_rate(cfg->input_freq, rate, other_output->rate, &pll_config);
+		uint32_t lcm_vco_rate = get_common_vco_rate(cfg->input_freq, rate,
+							    other_output->req_rate, &pll_config);
 
 		bool lcm_vco_rate_ok =
-			verify_common_vco_rate(lcm_vco_rate, rate, other_output->rate);
+			verify_common_vco_rate(lcm_vco_rate, rate, other_output->req_rate);
 
 		/* If that does not work, make sure the owner of the PLL gets the right vco_rate. */
 		if (lcm_vco_rate_ok == false) {
@@ -1166,7 +1194,7 @@ static int pll_output_set_rate(const struct device *dev, clock_control_subsys_t 
 
 			/* Prefer PLL owner when calculating the vco frequency. */
 			if (other_output->pll_owner) {
-				pll_calculate_parameter(cfg->input_freq, other_output->rate,
+				pll_calculate_parameter(cfg->input_freq, other_output->req_rate,
 							&pll_config);
 			} else {
 				pll_calculate_parameter(cfg->input_freq, rate, &pll_config);
@@ -1185,16 +1213,20 @@ static int pll_output_set_rate(const struct device *dev, clock_control_subsys_t 
 
 		/* Configure the output for which set_request was invoked. */
 		divider = pdiv_calc_divider(pll->vco_rate, rate);
-		output->rate = pll->vco_rate / divider;
 		rc = set_pll_output(dev, output, pll->vco_rate, divider);
 		if (rc < 0) {
 			return rc;
 		}
 		/* Reconfigure the output for the second output of this PLL. */
-		divider = pdiv_calc_divider(pll->vco_rate, other_output->rate);
-		other_output->rate = pll->vco_rate / divider;
+		divider = pdiv_calc_divider(pll->vco_rate, other_output->req_rate);
 		rc = set_pll_output(dev, other_output, pll->vco_rate, divider);
 	}
+
+	/* All operations succeeded. */
+	if (rc == 0) {
+		output->req_rate = rate;
+	}
+
 	return rc;
 }
 
@@ -1204,7 +1236,7 @@ static int cdce9xx_set_rate(const struct device *dev, clock_control_subsys_t sys
 	const struct cdce9xx_dts_config *cfg = dev->config;
 	struct cdce9xx_data *data = (struct cdce9xx_data *)dev->data;
 	int rc = 0;
-	uint32_t rate = (uint32_t)rate_param;
+	uint32_t rate = POINTER_TO_UINT(rate_param);
 
 	if (sys == CLOCK_CONTROL_TI_CDCE9XX_ALL) {
 		return -ENOTSUP;
@@ -1274,7 +1306,7 @@ static DEVICE_API(clock_control, cdce9xx_clock_driver_api) = {
 #define PLL_OR_ZERO(inst, pll_name, register_base)                    \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, pll_name)),        \
 		    (PLL_INIT(DT_INST_CHILD(inst, pll_name), register_base)), \
-		    ({0}))
+		    ({.reg_base = register_base}))
 
 /* Lookup tables: number_plls (1..4) -> "does this variant have PLLn?" as a bare 0/1 token. */
 #define CDCE9XX_HAS_PLL2_1 0
