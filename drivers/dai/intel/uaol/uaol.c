@@ -322,6 +322,25 @@ static const struct dai_properties *dai_uaol_get_properties(const struct device 
 	return prop;
 }
 
+static int dai_uaol_get_properties_copy(const struct device *dev,
+					enum dai_dir dir, int stream_id,
+					struct dai_properties *prop)
+{
+	const struct dai_properties *kernel_prop = dai_uaol_get_properties(dev, dir, stream_id);
+
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	if (!kernel_prop) {
+		return -ENOENT;
+	}
+
+	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
+
+	return 0;
+}
+
 static int dai_uaol_trigger(const struct device *dev, enum dai_dir dir, enum dai_trigger_cmd cmd)
 {
 	struct dai_intel_uaol_data *dp = dev->data;
@@ -383,6 +402,7 @@ static DEVICE_API(dai, dai_intel_uaol_api_funcs) = {
 	.config_set		= dai_uaol_config_set,
 	.config_get		= dai_uaol_config_get,
 	.get_properties		= dai_uaol_get_properties,
+	.get_properties_copy	= dai_uaol_get_properties_copy,
 	.trigger		= dai_uaol_trigger,
 	.config_update		= dai_uaol_config_update,
 };
