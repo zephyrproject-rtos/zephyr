@@ -50,7 +50,16 @@ family:
   - name: mcxaxx7
     socs:
     - name: mcxa537
+    - name: mcxa536
+    - name: mcxa557
+    - name: mcxa556
+    - name: mcxa567
+    - name: mcxa566
     - name: mcxa577
+    - name: mcxa457
+    - name: mcxa456
+    - name: mcxa287
+    - name: mcxa286
 - name: mcxw
   series:
   - name: mcxw2xx
@@ -128,7 +137,25 @@ runners:
       - qualifiers:
         - mcxa537
       - qualifiers:
+        - mcxa536
+      - qualifiers:
+        - mcxa557
+      - qualifiers:
+        - mcxa556
+      - qualifiers:
+        - mcxa567
+      - qualifiers:
+        - mcxa566
+      - qualifiers:
         - mcxa577
+      - qualifiers:
+        - mcxa457
+      - qualifiers:
+        - mcxa456
+      - qualifiers:
+        - mcxa287
+      - qualifiers:
+        - mcxa286
       - qualifiers:
         - mcxw716c
       - qualifiers:
@@ -200,7 +227,25 @@ runners:
       - qualifiers:
         - mcxa537
       - qualifiers:
+        - mcxa536
+      - qualifiers:
+        - mcxa557
+      - qualifiers:
+        - mcxa556
+      - qualifiers:
+        - mcxa567
+      - qualifiers:
+        - mcxa566
+      - qualifiers:
         - mcxa577
+      - qualifiers:
+        - mcxa457
+      - qualifiers:
+        - mcxa456
+      - qualifiers:
+        - mcxa287
+      - qualifiers:
+        - mcxa286
       - qualifiers:
         - mcxw716c
       - qualifiers:
