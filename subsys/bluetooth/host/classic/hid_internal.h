@@ -124,6 +124,7 @@ struct bt_hid_device {
 
 	struct k_work_delayable intr_timeout;
 	struct k_work_delayable vcu_disconnect;
+	struct k_work intr_conn_work;
 };
 
 /** @brief Type of a Control channel request the HID Host can issue.

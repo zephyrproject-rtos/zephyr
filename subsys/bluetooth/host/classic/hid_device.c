@@ -82,9 +82,35 @@ static struct bt_hid_device *hid_allocate(void)
 	return NULL;
 }
 
-static struct bt_hid_device *hid_find(const struct bt_conn *conn, uint8_t state)
+/* Find the instance whose Control channel belongs to this conn.
+ *
+ * HID spec v1.1.2 Section 5.2.1 only requires that the Control channel has been
+ * established before the Interrupt channel. A remote host commonly sends the
+ * INTR L2CAP CONNECT_REQ as soon as it has seen the CTRL CONNECT_RSP, i.e.
+ * before the CTRL channel finishes its L2CAP configuration and the local
+ * "connected" callback runs. Matching on the ctrl_connected flag (set only in
+ * that callback) - or on a single state enum value - therefore races the INTR
+ * CONNECT_REQ and wrongly rejects it with -ENOTCONN.
+ *
+ * Accept the INTR CONNECT_REQ for any state in which a CTRL session for this
+ * conn is being set up but not yet torn down, i.e. the half-open range
+ * [CTRL_CONNECTING, DISCONNECTING):
+ *
+ *   - DISCONNECTED rejected: no CTRL session exists for this conn yet.
+ *   - CTRL_CONNECTING .. CONNECTED accepted: covers the window where the
+ *     remote sends the INTR CONNECT_REQ after the CTRL CONNECT_RSP but before
+ *     (or just after) the local CTRL "connected" callback advances the state.
+ *   - DISCONNECTING rejected: the CTRL session is being torn down, so a new
+ *     INTR channel must not be attached to it.
+ *
+ * The INTR "connected" callback still gates the completed HID connection on
+ * ctrl_connected, so accepting early here only lets L2CAP configuration
+ * proceed; it never reports a HID connection before CTRL is actually up.
+ */
+static struct bt_hid_device *hid_find_ctrl_connected(const struct bt_conn *conn)
 {
-	if (hid_device_conn.state != state) {
+	if ((hid_device_conn.state < BT_HID_STATE_CTRL_CONNECTING) ||
+	    (hid_device_conn.state >= BT_HID_STATE_DISCONNECTING)) {
 		return NULL;
 	}
 
@@ -395,11 +421,44 @@ static void hid_vcu_disconnect_work(struct k_work *work)
 	}
 }
 
+static void hid_intr_conn_work_handler(struct k_work *work)
+{
+	struct bt_hid_device *hid = CONTAINER_OF(work, struct bt_hid_device, intr_conn_work);
+	int err;
+
+	/* Deferred out of bt_hid_l2cap_ctrl_connected(): a channel connect
+	 * started from the L2CAP connected callback context returns success but
+	 * its CONN_REQ never reaches the air, leaving the HID connection stuck in
+	 * INTR_CONNECTING forever (which in turn makes every later connect fail
+	 * with -EBUSY). Issue the INTR connect from the system workqueue instead.
+	 *
+	 * Guard against a race with bt_hid_device_cleanup(): cleanup calls
+	 * k_work_cancel(), but if this handler is already executing the cancel
+	 * is a no-op. Cleanup already reset state to DISCONNECTED; overwriting
+	 * it here with DISCONNECTING would leave the single HID instance stuck
+	 * in a non-DISCONNECTED state so that every subsequent L2CAP accept
+	 * (including the very next page from PTS in DRE scenarios) gets
+	 * rejected with -EBUSY. Skip the connect if the state no longer
+	 * indicates we are the owner of a pending INTR setup.
+	 */
+	if (hid->state != BT_HID_STATE_INTR_CONNECTING) {
+		LOG_DBG("intr_conn_work: state %d, not INTR_CONNECTING, skipping", hid->state);
+		return;
+	}
+
+	err = bt_l2cap_chan_connect(hid->ctrl_session.br_chan.chan.conn,
+				    &hid->intr_session.br_chan.chan, BT_L2CAP_PSM_HID_INTR);
+	if (err != 0) {
+		LOG_ERR("INTR connect failed (%d)", err);
+		hid->state = BT_HID_STATE_DISCONNECTING;
+		bt_l2cap_chan_disconnect(&hid->ctrl_session.br_chan.chan);
+	}
+}
+
 static void bt_hid_l2cap_ctrl_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_hid_device *hid = HID_DEVICE_BY_CTRL_CHAN(chan);
 	__maybe_unused enum bt_hid_channel_type chtype;
-	int err;
 
 	chtype = HID_CHAN_TYPE(chan);
 
@@ -417,16 +476,12 @@ static void bt_hid_l2cap_ctrl_connected(struct bt_l2cap_chan *chan)
 		return;
 	}
 
-	err = bt_l2cap_chan_connect(hid->ctrl_session.br_chan.chan.conn,
-				    &hid->intr_session.br_chan.chan, BT_L2CAP_PSM_HID_INTR);
-	if (err != 0) {
-		LOG_ERR("INTR connect failed");
-		hid->state = BT_HID_STATE_DISCONNECTING;
-		bt_l2cap_chan_disconnect(&hid->ctrl_session.br_chan.chan);
-		return;
-	}
-
+	/* The INTR connect is deferred to the system workqueue: a channel
+	 * connect issued directly from this connected callback returns success
+	 * but its CONN_REQ never goes on air.
+	 */
 	hid->state = BT_HID_STATE_INTR_CONNECTING;
+	k_work_submit(&hid->intr_conn_work);
 }
 
 static void bt_hid_l2cap_intr_connected(struct bt_l2cap_chan *chan)
@@ -657,12 +712,14 @@ static void bt_hid_session_init(struct bt_hid_device *hid, enum bt_hid_role role
 
 	k_work_init_delayable(&hid->intr_timeout, hid_intr_timeout_handler);
 	k_work_init_delayable(&hid->vcu_disconnect, hid_vcu_disconnect_work);
+	k_work_init(&hid->intr_conn_work, hid_intr_conn_work_handler);
 }
 
 static void bt_hid_device_cleanup(struct bt_hid_device *hid)
 {
 	k_work_cancel_delayable(&hid->intr_timeout);
 	k_work_cancel_delayable(&hid->vcu_disconnect);
+	k_work_cancel(&hid->intr_conn_work);
 
 	/* HID spec v1.1.2 Section 2.1.2: default protocol mode is Report
 	 * Protocol Mode. Reset on disconnect for next connection.
@@ -695,10 +752,14 @@ static int hid_l2cap_intr_accept(struct bt_conn *conn, struct bt_l2cap_server *s
 {
 	struct bt_hid_device *hid;
 
-	/* HID spec v1.1.2 Section 5.2.1: the control channel must be fully
+	/* HID spec v1.1.2 Section 5.2.1: the control channel must be
 	 * established (and belong to this conn) before the interrupt channel.
+	 * Accept over the whole [CTRL_CONNECTING, DISCONNECTING) state range
+	 * rather than a single state value, so the accept is not rejected due
+	 * to a benign state advance between the CTRL connected callback and the
+	 * arrival of the INTR CONNECT_REQ (see hid_find_ctrl_connected()).
 	 */
-	hid = hid_find(conn, BT_HID_STATE_CTRL_CONNECTED);
+	hid = hid_find_ctrl_connected(conn);
 	if (hid == NULL) {
 		LOG_ERR("CTRL channel not connected");
 		return -ENOTCONN;
