@@ -10,6 +10,9 @@
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
+#ifdef CONFIG_MIPI_DBI_SPI_SHARED_DC
+#include <zephyr/drivers/pinctrl.h>
+#endif
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
@@ -67,6 +70,10 @@ struct mipi_dbi_spi_config {
 	const struct gpio_dt_spec reset;
 	/* Minimum transfer bits */
 	const uint8_t xfr_min_bits;
+#ifdef CONFIG_MIPI_DBI_SPI_SHARED_DC
+	/* Pin control of the bus, when the D/C pad is shared with it */
+	const struct pinctrl_dev_config *bus_pincfg;
+#endif
 };
 
 struct mipi_dbi_spi_data {
@@ -291,6 +298,119 @@ out:
 
 #endif /* MIPI_DBI_SPI_WRITE_16BIT_REQUIRED */
 
+static inline bool mipi_dbi_has_pin(const struct gpio_dt_spec *spec)
+{
+	return spec->port != NULL;
+}
+
+/* A caller that asked to keep the bus or the CS line held owns it across
+ * calls, so the ownership taken for the pad must not be dropped underneath
+ * it. Only the ownership this driver took on its own is given back.
+ */
+static inline bool mipi_dbi_spi_owns_bus(const struct mipi_dbi_config *dbi_config)
+{
+	return (dbi_config->config.operation & (SPI_LOCK_ON | SPI_HOLD_ON_CS)) != 0;
+}
+
+#ifdef CONFIG_MIPI_DBI_SPI_SHARED_DC
+
+static inline bool mipi_dbi_spi_dc_is_shared(const struct device *dev)
+{
+	const struct mipi_dbi_spi_config *config = dev->config;
+
+	return config->bus_pincfg != NULL && mipi_dbi_has_pin(&config->cmd_data);
+}
+
+/* Take the bus before touching the pad. The pad carries a bus signal, so
+ * re-muxing it while another client owns the bus would corrupt that client's
+ * transfer. Owning the bus first makes the mux change and the transfers that
+ * follow one uninterruptible interval.
+ */
+static int mipi_dbi_spi_claim_cmd_data(const struct device *dev, struct spi_config *bus_config)
+{
+	const struct mipi_dbi_spi_config *config = dev->config;
+	int ret;
+
+	if (!mipi_dbi_spi_dc_is_shared(dev)) {
+		return 0;
+	}
+
+	ret = spi_acquire(config->spi_dev, bus_config);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT);
+	if (ret < 0) {
+		(void)spi_release(config->spi_dev, bus_config);
+		return ret;
+	}
+
+	return 0;
+}
+
+/* Hand the pad back to the bus and drop the ownership taken when it was
+ * claimed. Claiming it as a GPIO output rebinds the pin to the GPIO matrix,
+ * so the pad is first disconnected to stop driving it, and re-applying the
+ * bus pin control state then restores the peripheral signal routing.
+ *
+ * The pad has to be handed back even when the caller keeps the bus, since
+ * the bus cannot carry its own signal while the pad is muxed away from it.
+ */
+static int mipi_dbi_spi_release_cmd_data(const struct device *dev, struct spi_config *bus_config,
+					 bool keep_bus)
+{
+	const struct mipi_dbi_spi_config *config = dev->config;
+	int ret;
+
+	if (!mipi_dbi_spi_dc_is_shared(dev)) {
+		return 0;
+	}
+
+	ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_DISCONNECTED);
+
+	if (pinctrl_apply_state(config->bus_pincfg, PINCTRL_STATE_DEFAULT) < 0 && ret == 0) {
+		ret = -EIO;
+	}
+
+	if (keep_bus) {
+		return ret;
+	}
+
+	if (spi_release(config->spi_dev, bus_config) < 0 && ret == 0) {
+		ret = -EIO;
+	}
+
+	return ret;
+}
+
+#else
+
+static inline bool mipi_dbi_spi_dc_is_shared(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return false;
+}
+
+static inline int mipi_dbi_spi_claim_cmd_data(const struct device *dev,
+					      struct spi_config *bus_config)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(bus_config);
+	return 0;
+}
+
+static inline int mipi_dbi_spi_release_cmd_data(const struct device *dev,
+						struct spi_config *bus_config, bool keep_bus)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(bus_config);
+	ARG_UNUSED(keep_bus);
+	return 0;
+}
+
+#endif /* CONFIG_MIPI_DBI_SPI_SHARED_DC */
+
 static int mipi_dbi_spi_write_helper(const struct device *dev,
 				     const struct mipi_dbi_config *dbi_config,
 				     bool cmd_present, uint8_t cmd,
@@ -298,10 +418,29 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
 	struct mipi_dbi_spi_data *data = dev->data;
+	struct mipi_dbi_config bus_dbi_config;
+	bool keep_bus = mipi_dbi_spi_owns_bus(dbi_config);
+	int rel;
 	int ret = 0;
 
 	ret = k_mutex_lock(&data->lock, K_FOREVER);
 	if (ret < 0) {
+		return ret;
+	}
+
+	/* The transfers have to run under the ownership taken by the claim,
+	 * so they are issued with the lock bit set on a local copy.
+	 */
+	bus_dbi_config = *dbi_config;
+	if (mipi_dbi_spi_dc_is_shared(dev)) {
+		bus_dbi_config.config.operation |= SPI_LOCK_ON;
+		dbi_config = &bus_dbi_config;
+	}
+
+	ret = mipi_dbi_spi_claim_cmd_data(dev, &bus_dbi_config.config);
+	if (ret < 0) {
+		LOG_ERR("Could not claim command/data GPIO (%d)", ret);
+		k_mutex_unlock(&data->lock);
 		return ret;
 	}
 
@@ -341,6 +480,13 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 	ret = -ENOTSUP;
 
 out:
+	rel = mipi_dbi_spi_release_cmd_data(dev, &bus_dbi_config.config, keep_bus);
+	if (rel < 0) {
+		LOG_ERR("Could not hand the command/data pad back (%d)", rel);
+		if (ret == 0) {
+			ret = rel;
+		}
+	}
 	k_mutex_unlock(&data->lock);
 	return ret;
 }
@@ -510,10 +656,22 @@ static int mipi_dbi_spi_command_read(const struct device *dev,
 	struct mipi_dbi_spi_data *data = dev->data;
 	int ret = 0;
 
+	/* A shared pad cannot carry a 4 wire read at all, and the read
+	 * helpers drop the bus themselves, which would hand it over while
+	 * the pad is still muxed away from it. Reads are therefore refused
+	 * on a shared pad whatever the mode, before anything is claimed, so
+	 * that a request which cannot be served leaves the bus untouched.
+	 */
+	if (mipi_dbi_spi_dc_is_shared(dev)) {
+		LOG_ERR("Reads unsupported when the D/C pin is shared with the bus");
+		return -ENOTSUP;
+	}
+
 	ret = k_mutex_lock(&data->lock, K_FOREVER);
 	if (ret < 0) {
 		return ret;
 	}
+
 	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
 	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
 		ret = mipi_dbi_spi_read_helper_3wire(dev, dbi_config,
@@ -539,11 +697,6 @@ out:
 }
 
 #endif /* MIPI_DBI_SPI_READ_REQUIRED */
-
-static inline bool mipi_dbi_has_pin(const struct gpio_dt_spec *spec)
-{
-	return spec->port != NULL;
-}
 
 static int mipi_dbi_spi_reset(const struct device *dev, k_timeout_t delay)
 {
@@ -645,10 +798,12 @@ static int mipi_dbi_spi_init(const struct device *dev)
 		if (!gpio_is_ready_dt(&config->cmd_data)) {
 			return -ENODEV;
 		}
-		ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT);
-		if (ret < 0) {
-			LOG_ERR("Could not configure command/data GPIO (%d)", ret);
-			return ret;
+		if (!mipi_dbi_spi_dc_is_shared(dev)) {
+			ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT);
+			if (ret < 0) {
+				LOG_ERR("Could not configure command/data GPIO (%d)", ret);
+				return ret;
+			}
 		}
 	}
 
@@ -681,7 +836,38 @@ static DEVICE_API(mipi_dbi, mipi_dbi_spi_driver_api) = {
 #endif
 };
 
+#ifdef CONFIG_MIPI_DBI_SPI_SHARED_DC
+/* A shared pad can only be handed back if the node owns a D/C pin to hand
+ * back and the bus it belongs to is described with pin control. A pad shared
+ * with the MISO line also cannot carry a read, so the display has to be
+ * write-only.
+ */
+#define MIPI_DBI_SPI_SHARED_DC_ASSERT(n)					\
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, dc_gpios),			\
+		     "dc-gpios-shared requires dc-gpios");			\
+	BUILD_ASSERT(DT_INST_PROP(n, write_only),				\
+		     "dc-gpios-shared requires a write-only display");		\
+	BUILD_ASSERT(DT_NODE_HAS_PROP(DT_INST_PHANDLE(n, spi_dev), pinctrl_0),	\
+		     "dc-gpios-shared requires pin control on the SPI bus");
+
+#define MIPI_DBI_SPI_BUS_PINCFG_DECLARE(n)					\
+	COND_CODE_1(DT_INST_PROP(n, dc_gpios_shared),				\
+		    (MIPI_DBI_SPI_SHARED_DC_ASSERT(n)				\
+		     PINCTRL_DT_DEV_CONFIG_DECLARE(				\
+			     DT_INST_PHANDLE(n, spi_dev));),			\
+		    ())
+#define MIPI_DBI_SPI_BUS_PINCFG(n)						\
+	COND_CODE_1(DT_INST_PROP(n, dc_gpios_shared),				\
+		    (.bus_pincfg = PINCTRL_DT_DEV_CONFIG_GET(			\
+			     DT_INST_PHANDLE(n, spi_dev)),),			\
+		    ())
+#else
+#define MIPI_DBI_SPI_BUS_PINCFG_DECLARE(n)
+#define MIPI_DBI_SPI_BUS_PINCFG(n)
+#endif
+
 #define MIPI_DBI_SPI_INIT(n)							\
+	MIPI_DBI_SPI_BUS_PINCFG_DECLARE(n)					\
 	static const struct mipi_dbi_spi_config					\
 	    mipi_dbi_spi_config_##n = {						\
 		    .spi_dev = DEVICE_DT_GET(					\
@@ -689,7 +875,8 @@ static DEVICE_API(mipi_dbi, mipi_dbi_spi_driver_api) = {
 		    .cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),	\
 		    .tearing_effect = GPIO_DT_SPEC_INST_GET_OR(n, te_gpios, {}),  \
 		    .reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),	\
-		    .xfr_min_bits = DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) \
+		    .xfr_min_bits = DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits), \
+		    MIPI_DBI_SPI_BUS_PINCFG(n)					\
 	};									\
 	static struct mipi_dbi_spi_data mipi_dbi_spi_data_##n;			\
 										\
