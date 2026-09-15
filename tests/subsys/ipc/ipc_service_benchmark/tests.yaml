@@ -20,6 +20,7 @@ tests:
       - remote_FILE_SUFFIX=icmsg
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
       - remote_CONFIG_MBOX=y
+      - platform:nrf54l:ipc_service_benchmark_SNIPPET=nordic-flpr
     extra_configs:
       - CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
       - CONFIG_MBOX=y
@@ -43,6 +44,7 @@ tests:
       - FILE_SUFFIX=icbmsg
       - remote_FILE_SUFFIX=icbmsg
       - remote_CONFIG_MBOX=y
+      - platform:nrf54l:ipc_service_benchmark_SNIPPET=nordic-flpr
     extra_configs:
       - CONFIG_MBOX=y
       - CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY=-3

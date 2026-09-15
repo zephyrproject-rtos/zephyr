@@ -169,12 +169,16 @@ ipc0: &cpuapp_cpurad_ipc {
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpuppr_ipc_shm>;
 	rx-region = <&cpuppr_cpuapp_ipc_shm>;
+	tx-blocks = <15>;
+	rx-blocks = <15>;
 };
 
 &cpuapp_cpuflpr_ipc {
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpuflpr_ipc_shm>;
 	rx-region = <&cpuflpr_cpuapp_ipc_shm>;
+	tx-blocks = <15>;
+	rx-blocks = <15>;
 };
 
 &cpuapp_dma_region {

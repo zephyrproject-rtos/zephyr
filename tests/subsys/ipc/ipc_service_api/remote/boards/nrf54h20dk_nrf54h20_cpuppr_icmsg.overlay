@@ -4,25 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-ipc0: &cpuapp_cpuppr_ipc {
-	status = "okay";
-};
-
-/ {
-	aliases {
-		dut-ipc = &cpuapp_cpuppr_ipc;
-		watchdog0 = &wdt131;
-	};
-};
-
-&cpuppr_vevif {
-	status = "okay";
-};
-
-&cpuapp_bellboard {
-	status = "okay";
-};
-
-&wdt131 {
-	status = "okay";
+&cpuapp_cpuppr_ipc {
+	compatible = "zephyr,ipc-icmsg";
+	/delete-property/ tx-blocks;
+	/delete-property/ rx-blocks;
 };
