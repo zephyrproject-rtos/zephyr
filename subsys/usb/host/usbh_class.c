@@ -139,7 +139,7 @@ void usbh_class_probe_device(struct usb_device *const udev)
 
 	filter_data.vid = udev->dev_desc.idVendor;
 	filter_data.pid = udev->dev_desc.idProduct;
-	filter_data.class = udev->dev_desc.bDeviceClass;
+	filter_data.class_code = udev->dev_desc.bDeviceClass;
 	filter_data.sub = udev->dev_desc.bDeviceSubClass;
 	filter_data.proto = udev->dev_desc.bDeviceProtocol;
 
@@ -182,7 +182,7 @@ bool usbh_class_is_matching(const struct usbh_class_filter *const filter_rules,
 		}
 
 		if (rule->flags & USBH_CLASS_MATCH_CODE_TRIPLE &&
-		    (filter_data->class != rule->class || filter_data->sub != rule->sub ||
+		    (filter_data->class_code != rule->class_code || filter_data->sub != rule->sub ||
 		     filter_data->proto != rule->proto)) {
 			continue;
 		}
