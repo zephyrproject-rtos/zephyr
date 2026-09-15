@@ -81,6 +81,7 @@ static int gnss_nmea_generic_resume(const struct device *dev)
 	return ret;
 }
 
+#if CONFIG_PM_DEVICE
 static int gnss_nmea_generic_suspend(const struct device *dev)
 {
 	struct gnss_nmea_generic_data *data = dev->data;
@@ -88,6 +89,7 @@ static int gnss_nmea_generic_suspend(const struct device *dev)
 	modem_chat_release(&data->chat);
 	return modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 }
+#endif
 
 static DEVICE_API(gnss, gnss_api) = {
 };
