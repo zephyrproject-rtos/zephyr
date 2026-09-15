@@ -9,3 +9,40 @@ config SAMPLE_TFM_FWU_COMPONENT_ID
 	help
 	  The PSA Firmware Update component ID that the application
 	  operates on.
+
+config SAMPLE_TFM_MCUBOOT_SIGNATURE_TYPE
+	string "The signature type used to sign the secure and non-secure firmware images."
+	default "EC-P256"
+	help
+	  The signature type used for TF-M MCUboot.
+
+choice SAMPLE_TFM_MCUBOOT_ENCRYPTION
+	prompt "Image encryption key-wrapping scheme in BL2"
+	default SAMPLE_TFM_MCUBOOT_ENCRYPTION_NONE
+	help
+	  Selects whether MCUboot (BL2) expects encrypted images and, if so,
+	  which algorithm wraps the per-image AES content-encryption key.
+
+config SAMPLE_TFM_MCUBOOT_ENCRYPTION_NONE
+	bool "Disabled"
+
+config SAMPLE_TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	bool "RSA-OAEP"
+
+endchoice
+
+choice SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_LEN
+	prompt "Image encryption AES key length"
+	depends on !SAMPLE_TFM_MCUBOOT_ENCRYPTION_NONE
+	default SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_LEN_128
+	help
+	  Length of the AES content-encryption key used to encrypt the image
+	  payload.
+
+config SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_LEN_128
+	bool "128-bit"
+
+config SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_LEN_256
+	bool "256-bit"
+
+endchoice

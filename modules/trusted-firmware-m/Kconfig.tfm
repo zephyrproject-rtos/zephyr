@@ -355,6 +355,71 @@ config TFM_PUBLIC_KEY_FORMAT_HASH
 
 endchoice
 
+choice TFM_MCUBOOT_ENCRYPTION
+	prompt "Image encryption key-wrapping scheme in BL2"
+	default TFM_MCUBOOT_ENCRYPTION_NONE
+	help
+	  Selects whether MCUboot (BL2) expects encrypted images and, if so,
+	  which algorithm wraps the per-image AES content-encryption key that
+	  is stored in the image TLV area. Maps to the TF-M options
+	  MCUBOOT_ENC_IMAGES and MCUBOOT_ENCRYPT_RSA/MCUBOOT_ENCRYPT_KW.
+
+config TFM_MCUBOOT_ENCRYPTION_NONE
+	bool "Disabled"
+	help
+	  Image encryption is disabled. Images are signed but not encrypted.
+
+config TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	bool "RSA-OAEP"
+	help
+	  Wrap the AES content-encryption key using RSA-OAEP.
+	  Corresponds to TF-M MCUBOOT_ENCRYPT_RSA option.
+
+endchoice
+
+choice TFM_MCUBOOT_ENCRYPTION_KEY_LEN
+	prompt "Image encryption AES key length"
+	depends on !TFM_MCUBOOT_ENCRYPTION_NONE
+	default TFM_MCUBOOT_ENCRYPTION_KEY_LEN_128
+	help
+	  Length of the AES content-encryption key used to encrypt the image
+	  payload. Maps to TF-M MCUBOOT_ENC_KEY_LEN option.
+
+config TFM_MCUBOOT_ENCRYPTION_KEY_LEN_128
+	bool "128-bit"
+
+config TFM_MCUBOOT_ENCRYPTION_KEY_LEN_256
+	bool "256-bit"
+
+endchoice
+
+config TFM_MCUBOOT_ENC_KEY_LEN
+	int
+	default 128 if TFM_MCUBOOT_ENCRYPTION_KEY_LEN_128
+	default 256 if TFM_MCUBOOT_ENCRYPTION_KEY_LEN_256
+
+config TFM_MCUBOOT_ENCRYPTION_KEY_FILE_S
+	string "Path to key used to encrypt secure firmware images"
+	depends on !TFM_MCUBOOT_ENCRYPTION_NONE
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-rsa2048-pub.pem" if TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	default ""
+	help
+	  The path and filename for the key file that should be used by the BL2
+	  bootloader when encrypting secure firmware images. For RSA-OAEP this is
+	  the RSA public key that wraps the AES content-encryption key. This key
+	  file is also used for merged secure + non-secure builds
+	  (TFM_MCUBOOT_IMAGE_NUMBER == 1).
+
+config TFM_MCUBOOT_ENCRYPTION_KEY_FILE_NS
+	string "Path to key used to encrypt non-secure firmware images"
+	depends on !TFM_MCUBOOT_ENCRYPTION_NONE
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-rsa2048-pub.pem" if TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	default ""
+	help
+	  The path and filename for the key file that should be used by the BL2
+	  bootloader when encrypting non-secure firmware images. For RSA-OAEP this
+	  is the RSA public key that wraps the AES content-encryption key.
+
 config TFM_MCUBOOT_IMAGE_NUMBER
 	int "Granularity of FW updates of TFM and app"
 	range 1 2

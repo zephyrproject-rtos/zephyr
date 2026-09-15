@@ -19,4 +19,16 @@ common:
       - "Swapped application booted on .*"
       - "FWU completed successfully"
 tests:
-  sample.tfm.fwu: {}
+  sample.tfm.fwu:
+    extra_args:
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_NONE=y
+  sample.tfm.fwu.enc.rsa2048.aes128:
+    extra_args:
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_SIGNATURE_TYPE="RSA-2048"
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_RSA_OAEP=y
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_LEN_128=y
+  sample.tfm.fwu.enc.rsa2048.aes256:
+    extra_args:
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_SIGNATURE_TYPE="RSA-2048"
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_RSA_OAEP=y
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_LEN_256=y
