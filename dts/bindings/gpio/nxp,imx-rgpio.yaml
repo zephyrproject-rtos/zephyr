@@ -11,6 +11,16 @@ properties:
   reg:
     required: true
 
+  clocks:
+    description: |
+      Clock gate for this port, when the SoC has one that software must open.
+
+      Optional: on SoCs where the RGPIO block is permanently clocked from its
+      subsystem bus clock, leave it out and the driver makes no clock call. On
+      SoCs that gate it -- the i.MX RT266x parts, for example, come out of reset
+      with the RGPIO gate closed -- the driver opens the gate during init, so it
+      must be given here rather than opened from board code.
+
   pinmux:
     type: phandles
     description: |

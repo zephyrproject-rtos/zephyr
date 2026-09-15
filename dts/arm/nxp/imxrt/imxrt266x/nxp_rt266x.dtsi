@@ -1,0 +1,2161 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/*
+ * i.MX RT266x shared peripheral tree. The CPU, its TCMs and its NVIC
+ * configuration are in nxp_rt266x_cm85.dtsi.
+ *
+ * System SRAM declared here (RM 3.2 Table 6, system memory map (CM85)):
+ *
+ *   SRAM0  0x22000000   256K
+ *   SRAM1  0x22040000   256K
+ *   SRAM2  0x22080000   256K
+ *
+ * The core-local ITCM and DTCM are declared in the per-core file. The data
+ * sheet's "1.5M SRAM" is the die total across the subsystem memory controllers;
+ * these 768 KB are what the CM85 map exposes as general-purpose.
+ *
+ * No zephyr,memory-attr here: MPU regions come only from the generic
+ * arm_mpu_regions.c (FLASH_0/SRAM_0 from the chosen nodes). Adding memory-attr
+ * would program them from devicetree as well, and on ARMv8-M two enabled regions
+ * over the same address are UNPREDICTABLE and fault when the MPU is enabled. A
+ * memory that is neither chosen node does need it -- see the board files.
+ */
+
+/*
+ * Family feature axes (IMXRT2660EC Table 3, per part in Table 2):
+ *
+ *              NPU (Neutron N256)   Display and Graphics
+ *   MIMXRT2660        no                    no
+ *   MIMXRT2661        yes                   no
+ *   MIMXRT2662        no                    yes
+ *   MIMXRT2663        yes                   yes
+ *
+ * Zephyr has no NPU binding, so that axis has no devicetree delta. On the
+ * display axis only the parallel CSI has a binding, so it is the only node a
+ * part removes.
+ *
+ * The memory and peripheral apertures this file's nodes sit in are declared by
+ * the part file a board includes, which is what selects the secure or
+ * non-secure view; this file is not usable on its own.
+ */
+
+/*
+ * System SRAM. Offsets from the memory aperture, so these are the non-secure
+ * addresses. The core-local TCMs are in the per-core file.
+ */
+&memory {
+	sram0: memory@22000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x22000000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "SRAM0";
+	};
+
+	sram1: memory@22040000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x22040000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "SRAM1";
+	};
+
+	sram2: memory@22080000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x22080000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "SRAM2";
+	};
+};
+
+/*
+ * i.MX RT266x peripheral definitions shared by the whole die. Core-private nodes
+ * are in the per-core file.
+ *
+ * All peripheral nodes use the non-secure (NS) peripheral base aliases
+ * (0x4xxxxxxx). This matches the SoC pinctrl data generated into hal_nxp
+ * (nxp/imxrt/imxrt266x/pinctrl/, one file per part and package; this board's
+ * part uses mimxrt2663cvvaa-pinctrl.dtsi), whose pinmux tuples bake the NS
+ * IOMUXC register addresses (MAIN 0x421Cxxxx, WAKE 0x4622xxxx, VBAT
+ * 0x4636xxxx). The secure aliases (0x5xxxxxxx) are offset by +0x10000000 from
+ * these.
+ *
+ * Register/interrupt values are taken from the device header:
+ *   devices/RT/RT2660/MIMXRT2663/MIMXRT2663_COMMON.h
+ * Clock IDs are the LPCG enum values from that device's fsl_clock.h, exposed
+ * via <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>.
+ *
+ * Peripherals are left "disabled" by default; boards enable what they use.
+ */
+
+&peripheral {
+	/*
+	 * CGU analog block -- the clocks this SoC *generates*, as against the CCM
+	 * below, which *distributes* them. The two are different classes and are
+	 * modelled differently: nothing calls clock_control on the sources here,
+	 * because their bring-up is hazard-ordered and strongly SoC-specific, so the
+	 * SoC layer owns them (soc_clock.c) and this node plus its children is a
+	 * description of the hardware and a data table that C reads by node label.
+	 * The CCM below is the clock_control abstraction and keeps its own shape.
+	 *
+	 * Values are the reference Over Drive Run tree; a board overrides what its
+	 * hardware dictates -- the crystal above all, which is a board fact rather
+	 * than a SoC one.
+	 *
+	 * Children are ordered by bring-up dependency rather than by address, which
+	 * is the order the comments below read in. Each reg is an offset inside this
+	 * block from the CGUANA_Type register map, split into control and status
+	 * groups (plus a calibration group on the AVPLLs) because the block reserves
+	 * address space between them. Offsets rather than absolute addresses, so this
+	 * one file serves both the secure and non-secure views through `ranges`.
+	 */
+	cguana: clock-generation@40500000 {
+		compatible = "nxp,imx-cguana";
+		reg = <0x40500000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x40500000 0x10000>;
+
+		sxosc: sxosc@20a0 {
+			compatible = "nxp,imx-cguana-sxosc", "nxp,imx-clock-source";
+			reg = <0x20a0 0x4>, <0x20a8 0x4>;
+			reg-names = "ctrl", "status";
+			#clock-cells = <0>;
+			clock-frequency = <24000000>;
+			/*
+			 * TBD (board / hardware team): these trim values are the
+			 * ones the SDK ships and are not measured. gm-sel is 4
+			 * here while the reference manual's crystal table
+			 * recommends 3 for a 24 MHz crystal, and the load
+			 * capacitance trim has not been checked against the
+			 * board's crystal and stray capacitance. Everything
+			 * derived from the crystal inherits any error.
+			 */
+			nxp,gm-sel = <4>;
+			nxp,cap-trim = <16>, <16>;
+		};
+
+		fro192m: fro192m@2060 {
+			compatible = "nxp,imx-cguana-fro192m", "nxp,imx-clock-source";
+			reg = <0x2060 0x4>, <0x206c 0x4>;
+			reg-names = "ctrl", "status";
+			#clock-cells = <0>;
+			clock-frequency = <192000000>;
+		};
+
+		fro12m: fro12m@2080 {
+			compatible = "nxp,imx-cguana-fro12m", "nxp,imx-clock-source";
+			reg = <0x2080 0x4>, <0x208c 0x4>;
+			reg-names = "ctrl", "status";
+			#clock-cells = <0>;
+			clock-frequency = <12000000>;
+		};
+
+		/* 24 MHz x 33 = 792 MHz, within the low VCO band. */
+		core_pll: core-pll@20c0 {
+			compatible = "nxp,imx-cguana-core-pll", "nxp,imx-clock-source";
+			reg = <0x20c0 0xc>, <0x20d8 0x4>;
+			reg-names = "ctrl", "status";
+			#clock-cells = <0>;
+			clocks = <&sxosc>;
+			nxp,loop-div = <33>;
+			clock-frequency = <792000000>;
+		};
+
+		/*
+		 * 2 GHz VCO. The fractional outputs are what the compute and bus
+		 * roots run from, so this is where the CPU frequency is decided:
+		 * selector 8 on the second output is 2000 * 4 / 8 = 1000 MHz,
+		 * which reaches CMPT cpu_clk through PLL_PFDX and MAIN_ROOTCLK.
+		 */
+		main_pll: main-pll@20f0 {
+			compatible = "nxp,imx-cguana-frac-pll", "nxp,imx-clock-source";
+			reg = <0x20f0 0x14>, <0x2114 0x4>;
+			reg-names = "ctrl", "status";
+			#clock-cells = <0>;
+			clocks = <&sxosc>;
+			nxp,vco-frequency = <2000000000>;
+			nxp,int-divs = <5>, <8>, <10>, <20>;
+			nxp,frac-div-sels = <12>, <8>, <10>;
+		};
+
+		/*
+		 * 2 GHz VCO. The external memories run from this one: the clock
+		 * bring-up moves XSPI0 and XSPI1 onto its DIV4 output so that
+		 * flash and PSRAM stop depending on the main PLL and the main
+		 * PLL can then be reconfigured.
+		 */
+		sys_pll: sys-pll@2130 {
+			compatible = "nxp,imx-cguana-frac-pll", "nxp,imx-clock-source";
+			reg = <0x2130 0x14>, <0x2154 0x4>;
+			reg-names = "ctrl", "status";
+			#clock-cells = <0>;
+			clocks = <&sxosc>;
+			nxp,vco-frequency = <2000000000>;
+			nxp,int-divs = <5>, <8>, <10>, <20>;
+			nxp,frac-div-sels = <8>, <8>, <16>;
+		};
+
+		/*
+		 * Audio and Video PLLs. Locked fresh on the crystal after the
+		 * reference hand-over. Audio: band 6, post-divide 16 -> 49.152
+		 * MHz. Video: band 5, post-divide 11, fractional numerator
+		 * 0x181B4E82 -> 70.64 MHz.
+		 */
+		avpll_audio: avpll-audio@2170 {
+			compatible = "nxp,imx-cguana-avpll", "nxp,imx-clock-source";
+			reg = <0x2170 0x10>, <0x2188 0x8>, <0x2190 0x4>;
+			reg-names = "ctrl", "cal", "status";
+			#clock-cells = <0>;
+			clocks = <&sxosc>;
+			nxp,cco-band-sel = <6>;
+			nxp,post-div-ratio = <16>;
+		};
+
+		avpll_video: avpll-video@21b0 {
+			compatible = "nxp,imx-cguana-avpll", "nxp,imx-clock-source";
+			reg = <0x21b0 0x10>, <0x21c8 0x8>, <0x21d0 0x4>;
+			reg-names = "ctrl", "cal", "status";
+			#clock-cells = <0>;
+			clocks = <&sxosc>;
+			nxp,cco-band-sel = <5>;
+			nxp,post-div-ratio = <11>;
+			nxp,dnum = <0x181b4e82>;
+		};
+	};
+
+	/*
+	 * Clock distribution: seven CCM instances, one per subsystem. The HAL reaches
+	 * all of them through one flat identifier space, so any instance resolves any
+	 * specifier and every consumer names the CGU one, which carries the `ccm` label.
+	 * A root is declared under the instance that owns it; nothing enforces that, so
+	 * a misplaced root still works while describing the hardware wrongly.
+	 *
+	 * A root carries two numbers, neither derived from the other: reg is its
+	 * register block in this instance (N * 0x10 for RM 20.8.1's CLOCK_ROOT<N>), and
+	 * nxp,root-id is the flat identifier the HAL dispatches on.
+	 *
+	 * Two consequences of one device per instance, worth knowing before adding a
+	 * root here:
+	 *
+	 *   - Order across instances is not controllable from this file: device init
+	 *     order at equal priority follows the devicetree dependency ordinal, not
+	 *     the order written here. Roots needing a fixed relative order must share
+	 *     an instance, where devicetree order does govern. The instances are listed
+	 *     by address because rearranging them buys nothing.
+	 *   - Root programming is not atomic across instances. Nothing at PRE_KERNEL_1
+	 *     consumes these roots today; the CMPT SysTick root is read at PRE_KERNEL_2.
+	 */
+	main_ccm: clock-controller@40060000 {
+		compatible = "nxp,imx-ccm-rev3";
+		reg = <0x40060000 0x4000>;
+		#clock-cells = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x40060000 0x4000>;
+	};
+
+	/*
+	 * Steady-state clock roots, at their Over Drive Run values. Every
+	 * mux/divider is a devicetree value, so a board or application
+	 * overlay retargets a root without touching C.
+	 *
+	 * Who programs a root -> how it appears here:
+	 *
+	 *   Programmed by      When            Node here
+	 *   -----------------  --------------  ----------------------
+	 *   CCM controller     PRE_KERNEL_1    plain node
+	 *                      init loop
+	 *   SoC bring-up       soc_early_      plain node too -- the SoC
+	 *   (soc_clock.c)      init_hook       reads it by label and
+	 *                                      programs it early; the
+	 *                                      controller re-applies the
+	 *                                      same value later, which is
+	 *                                      idempotent
+	 *   Boot ROM, or       before the      node marked
+	 *   soc_clock.c by     controller's    nxp,preconfigured
+	 *   hand from ITCM     init loop runs  (controller skips it)
+	 *   Owning peripheral  device init     no node -- inline "source"
+	 *                      (its driver)    clocks entry on the device
+	 *
+	 * The marker means "the controller must not touch this", not
+	 * "someone else also touches this" -- hence exactly one marked
+	 * root here, sysplldiv4_rootclk. It feeds the XIP flash and the
+	 * PSRAM, and the controller's init loop runs from that flash, so it
+	 * must not write the slice for a value already correct. It stays a
+	 * controller child because both XSPI instances source from it and a
+	 * peripheral node carries only one "source" cell. A board booting
+	 * from another medium can /delete-property/ the marker: the boot
+	 * medium is a board fact, not a SoC fact.
+	 *
+	 * Scope: the PLL-distribution/PFD layer, the core and bus roots,
+	 * and the peripheral roots this baseline uses. Unused SDK-residue
+	 * roots are added per use.
+	 */
+	ccm: syscon_ccm: clock-controller@40510000 {
+		compatible = "nxp,imx-ccm-rev3";
+		reg = <0x40510000 0x4000>;
+		#clock-cells = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x40510000 0x4000>;
+
+		/* PLL-distribution and PFD layer -- feeds the core, bus and XSPI roots. */
+		/* CLOCK_ROOT3 */
+		mainpll_divx_rootclk: clock-root@30 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x30 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINPLL_DIVX>;
+			clock-mux = <IMX_CCM_MUX_MAINPLL_DIVX_MAINPLL_DIV5>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT4 */
+		syspll_divx_rootclk: clock-root@40 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x40 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLL_DIVX>;
+			clock-mux = <IMX_CCM_MUX_SYSPLL_DIVX_SYSPLL_DIV5>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT5 */
+		pll_pfdx_rootclk: clock-root@50 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x50 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_PLL_PFDX>;
+			clock-mux = <IMX_CCM_MUX_PLL_PFDX_MAINPLL_DIVOUT1>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT6 */
+		media_pfdx_rootclk: clock-root@60 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x60 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MEDIA_PFDX>;
+			clock-mux = <IMX_CCM_MUX_MEDIA_PFDX_SYSPLL_DIVOUT1>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT7 */
+		mainpfdx_rootclk: clock-root@70 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x70 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINPFDX_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_MAINPFDX_SYSPLL_DIVOUT1>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT8 */
+		commpfdx_rootclk: clock-root@80 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x80 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_COMMPFDX_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_COMMPFDX_COREPLL_OUT>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT9 */
+		maindivx_rootclk: clock-root@90 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x90 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINDIVX_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_MAINDIVX_MAINPLL_DIV5>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT21 */
+		sysplldiv4_rootclk: clock-root@150 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x150 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLLDIV4_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_SYSPLLDIV4_SYSPLL_DIV4>;
+			clock-div = <1>;
+			nxp,preconfigured;
+		};
+
+		/* CLOCK_ROOT22 */
+		sysplldiv5_rootclk: clock-root@160 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x160 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLLDIV5_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_SYSPLLDIV5_SYSPLL_DIV5>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT23 */
+		sysplldivx_rootclk: clock-root@170 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x170 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLLDIVX_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_SYSPLLDIVX_SYSPLL_DIV5>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT24 */
+		mainplldivx_rootclk: clock-root@180 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x180 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINPLLDIVX_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_MAINPLLDIVX_MAINPLL_DIV5>;
+			clock-div = <1>;
+		};
+
+		/*
+		 * Core and bus roots (30-36). MAIN_ROOTCLK feeds the CM85 core
+		 * through its divider (1000 MHz) and the MAIN bus through its
+		 * second divider (333 MHz), so it uniquely sets clock-second-div.
+		 */
+		/* CLOCK_ROOT30 */
+		main_rootclk: clock-root@1e0 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x1e0 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAIN_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_CGU_MAIN_PLL_PFDX>;
+			clock-div = <1>;
+			clock-second-div = <3>;
+		};
+
+		/* CLOCK_ROOT31 */
+		npu_rootclk: clock-root@1f0 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x1f0 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_NPU_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_NPU_COREPLL_OUT>;
+			clock-div = <1>;
+		};
+
+		/* CLOCK_ROOT32 */
+		mediabus_rootclk: clock-root@200 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x200 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MEDIABUS_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_MEDIABUS_PLL_PFDX>;
+			clock-div = <3>;
+		};
+
+		/* CLOCK_ROOT33 */
+		audiobus_rootclk: clock-root@210 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x210 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_AUDIOBUS_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_AUDIOBUS_MAINPLL_DIVX>;
+			clock-div = <2>;
+		};
+
+		/* CLOCK_ROOT34 */
+		commbus_rootclk: clock-root@220 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x220 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_COMMBUS_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_COMMBUS_MAINPLL_DIVX>;
+			clock-div = <2>;
+		};
+
+		/* CLOCK_ROOT35 */
+		wakebus_rootclk: clock-root@230 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x230 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_WAKEBUS_ROOTCLK>;
+			clock-mux = <IMX_CCM_MUX_WAKEBUS_MAINPLL_DIVX>;
+			clock-div = <10>;
+		};
+
+		/* CLOCK_ROOT36 */
+		syscon_pdmain_rootclk: clock-root@240 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x240 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSCON_PDMAIN_CLK>;
+			clock-mux = <IMX_CCM_MUX_SYSCON_PDMAIN_SYSPLL_DIV10>;
+			clock-div = <1>;
+		};
+
+		/* Peripheral distribution root used by the console LPUART. */
+		/* CLOCK_ROOT40 */
+		peri3_rootclk: clock-root@280 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x280 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_PERI_ROOTCLK3>;
+			clock-mux = <IMX_CCM_MUX_PERI3_MAINPLL_DIVX>;
+			clock-div = <1>;
+		};
+	};
+
+	cmpt_ccm: clock-controller@44060000 {
+		compatible = "nxp,imx-ccm-rev3";
+		reg = <0x44060000 0x4000>;
+		#clock-cells = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x44060000 0x4000>;
+
+		/* CLOCK_ROOT3 */
+		cmpt_systick0_rootclk: clock-root@30 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x30 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CMPT_SYSTICK_CLK0>;
+			clock-mux = <IMX_CCM_MUX_SYSTICK0_SXOSC>;
+			clock-div = <1>;
+		};
+	};
+
+	wake_ccm: clock-controller@46060000 {
+		compatible = "nxp,imx-ccm-rev3";
+		reg = <0x46060000 0x4000>;
+		#clock-cells = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x46060000 0x4000>;
+	};
+
+	audio_ccm: clock-controller@48060000 {
+		compatible = "nxp,imx-ccm-rev3";
+		reg = <0x48060000 0x4000>;
+		#clock-cells = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x48060000 0x4000>;
+	};
+
+	comm_ccm: clock-controller@4a060000 {
+		compatible = "nxp,imx-ccm-rev3";
+		reg = <0x4a060000 0x4000>;
+		#clock-cells = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x4a060000 0x4000>;
+	};
+
+	media_ccm: clock-controller@4c060000 {
+		compatible = "nxp,imx-ccm-rev3";
+		reg = <0x4c060000 0x4000>;
+		#clock-cells = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x4c060000 0x4000>;
+	};
+
+	/*
+	 * MAIN IOMUXC (NS alias 0x421C0000). The generated SoC pinctrl nodes are
+	 * attached to this &iomuxc anchor. The child pinctrl node provides the
+	 * pin configuration driver compatible.
+	 */
+	iomuxc: pinctrl@421c0000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x421c0000 0x10000>;
+
+		pinctrl: pinctrl {
+			status = "okay";
+			compatible = "nxp,mcux-rt266x-pinctrl";
+		};
+	};
+
+	/*
+	 * WAKE IOMUXC (0x46220000, PD_WAKE domain). This is a distinct IOMUXC
+	 * instance from MAIN; the generated pinctrl nodes for pads in the WAKE
+	 * domain are attached to the &iomuxc_wake anchor. Its function clock is
+	 * a separate LPCG gate (WAKE__IOMUXC) enabled by the pinctrl driver.
+	 */
+	iomuxc_wake: pinctrl@46220000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x46220000 0x10000>;
+
+		pinctrl_wake: pinctrl {
+			status = "okay";
+			compatible = "nxp,mcux-rt266x-pinctrl";
+		};
+	};
+
+	/*
+	 * VBAT IOMUXC (0x46360000, VBAT domain). A third IOMUXC instance for
+	 * always-on VBAT-domain pads (RTC tamper, PMIC mode, VBAT GPIO). The
+	 * VBAT domain is always powered and has no dedicated IOMUXC clock gate.
+	 */
+	iomuxc_vbat: pinctrl@46360000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x46360000 0x10000>;
+
+		pinctrl_vbat: pinctrl {
+			status = "okay";
+			compatible = "nxp,mcux-rt266x-pinctrl";
+		};
+	};
+
+	/* LPUART (HSP domain), IRQ 184..189 */
+	lpuart0: hsp_lpuart_0: serial@42190000 {
+		compatible = "nxp,lpuart";
+		reg = <0x42190000 0x4000>;
+		interrupts = <184 0>;
+		/* "gate" = the peripheral gate, and the root the rate is read
+		 * from; "source" = this node owns that root's mux/dividers.
+		 * PERI3 (400 MHz) / 5 = 80 MHz.
+		 */
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPUART0,
+					   IMX_CCM_ROOT_MAIN_LPUART0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART0_FCLK,
+						IMX_CCM_MUX_LPUART0_PERI3, 5, 1)>;
+		status = "disabled";
+	};
+
+	lpuart1: hsp_lpuart_1: serial@421a0000 {
+		compatible = "nxp,lpuart";
+		reg = <0x421a0000 0x4000>;
+		interrupts = <185 0>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPUART1,
+					   IMX_CCM_ROOT_MAIN_LPUART1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART1_FCLK,
+						IMX_CCM_MUX_LPUART1_PERI3, 5, 1)>;
+		status = "disabled";
+	};
+
+	lpuart2: hsp_lpuart_2: serial@421b0000 {
+		compatible = "nxp,lpuart";
+		reg = <0x421b0000 0x4000>;
+		interrupts = <186 0>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPUART2,
+					   IMX_CCM_ROOT_MAIN_LPUART2_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART2_FCLK,
+						IMX_CCM_MUX_LPUART2_PERI3, 5, 1)>;
+		status = "disabled";
+	};
+
+	lpuart3: hsp_lpuart_3: serial@42950000 {
+		compatible = "nxp,lpuart";
+		reg = <0x42950000 0x4000>;
+		interrupts = <187 0>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPUART3,
+					   IMX_CCM_ROOT_MAIN_LPUART3_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART3_FCLK,
+						IMX_CCM_MUX_LPUART3_PERI3, 5, 1)>;
+		status = "disabled";
+	};
+
+	lpuart4: hsp_lpuart_4: serial@42960000 {
+		compatible = "nxp,lpuart";
+		reg = <0x42960000 0x4000>;
+		interrupts = <188 0>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPUART4,
+					   IMX_CCM_ROOT_MAIN_LPUART4_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART4_FCLK,
+						IMX_CCM_MUX_LPUART4_PERI3, 5, 1)>;
+		status = "disabled";
+	};
+
+	lpuart5: hsp_lpuart_5: serial@42970000 {
+		compatible = "nxp,lpuart";
+		reg = <0x42970000 0x4000>;
+		interrupts = <189 0>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPUART5,
+					   IMX_CCM_ROOT_MAIN_LPUART5_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART5_FCLK,
+						IMX_CCM_MUX_LPUART5_PERI3, 5, 1)>;
+		status = "disabled";
+	};
+
+	lpuart6: wake_lpuart_0: serial@461f0000 {
+		compatible = "nxp,lpuart";
+		reg = <0x461f0000 0x4000>;
+		interrupts = <238 0>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPUART0,
+					   IMX_CCM_ROOT_WAKE_LPUART0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPUART0_FCLK,
+						IMX_CCM_MUX_WAKE_LPUART0_PERI7, 1, 1)>;
+		status = "disabled";
+	};
+
+	lpuart7: wake_lpuart_1: serial@46200000 {
+		compatible = "nxp,lpuart";
+		reg = <0x46200000 0x4000>;
+		interrupts = <239 0>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPUART1,
+					   IMX_CCM_ROOT_WAKE_LPUART1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPUART1_FCLK,
+						IMX_CCM_MUX_WAKE_LPUART1_PERI7, 1, 1)>;
+		status = "disabled";
+	};
+
+	/*
+	 * RGPIO (HSP domain). Each instance exposes two NVIC channels (CH0/CH1);
+	 * both are listed. GPIO ports are numbered to match the SDK GPIO0..4.
+	 */
+	/*
+	 * RGPIO ports are left "disabled" by default (matching every other
+	 * peripheral here); a board enables the ports it uses AND must supply the
+	 * per-port "pinmux" list the nxp,imx-rgpio driver needs to mux pads to
+	 * their GPIO alt-function.
+	 */
+	gpio0: hsp_gpio_0: gpio@43800000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43800000 0x4000>;
+		interrupts = <190 0>, <191 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO0,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio1: hsp_gpio_1: gpio@43810000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43810000 0x4000>;
+		interrupts = <192 0>, <193 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO1,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio2: hsp_gpio_2: gpio@43820000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43820000 0x4000>;
+		interrupts = <194 0>, <195 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO2,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio3: hsp_gpio_3: gpio@43830000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43830000 0x4000>;
+		interrupts = <196 0>, <197 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO3,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio4: hsp_gpio_4: gpio@43840000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43840000 0x4000>;
+		interrupts = <198 0>, <199 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO4,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	/*
+	 * WAKE-domain RGPIO instance (WAKE__GPIO, NS alias 0x46210000 from
+	 * MIMXRT2663_COMMON.h; the secure alias is 0x56210000). This is a
+	 * separate RGPIO from the HSP gpio0..4 above and hosts the on-board
+	 * WAKE buttons. Two NVIC channels: WAKE_GPIO_CH0 = 240, CH1 = 241.
+	 */
+	gpio6: wake_gpio: gpio@46210000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x46210000 0x4000>;
+		interrupts = <240 0>, <241 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_RGPIO0,
+					   IMX_CCM_ROOT_WAKE_WAKE_CLK)>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio5: vbat_gpio: gpio@46350000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x46350000 0x4000>;
+		interrupts = <252 0>, <253 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	/* LPI2C (HSP domain), IRQ 175/176 */
+	lpi2c0: hsp_lpi2c_0: i2c@42140000 {
+		compatible = "nxp,lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x42140000 0x4000>;
+		interrupts = <175 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPI2C0,
+					   IMX_CCM_ROOT_MAIN_LPI2C0_FCLK)>;
+		status = "disabled";
+	};
+
+	lpi2c1: hsp_lpi2c_1: i2c@42910000 {
+		compatible = "nxp,lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x42910000 0x4000>;
+		interrupts = <176 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPI2C1,
+					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>;
+		status = "disabled";
+	};
+
+	lpi2c2: wake_lpi2c_0: i2c@461c0000 {
+		compatible = "nxp,lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x461c0000 0x4000>;
+		interrupts = <235 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPI2C0,
+					   IMX_CCM_ROOT_WAKE_LPI2C0_FCLK)>;
+		status = "disabled";
+	};
+
+	lpi2c3: wake_lpi2c_1: i2c@461d0000 {
+		compatible = "nxp,lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x461d0000 0x4000>;
+		interrupts = <236 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPI2C1,
+					   IMX_CCM_ROOT_WAKE_LPI2C1_FCLK)>;
+		status = "disabled";
+	};
+
+	/* LPSPI (HSP domain), IRQ 179..183 */
+	lpspi0: hsp_lpspi_0: spi@42160000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42160000 0x4000>;
+		interrupts = <179 0>;
+		clock-names = "gate";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPSPI0,
+					   IMX_CCM_ROOT_MAIN_LPSPI0_FCLK)>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	lpspi1: hsp_lpspi_1: spi@42170000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42170000 0x4000>;
+		interrupts = <180 0>;
+		clock-names = "gate";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPSPI1,
+					   IMX_CCM_ROOT_MAIN_LPSPI1_FCLK)>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	lpspi2: hsp_lpspi_2: spi@42180000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42180000 0x4000>;
+		interrupts = <181 0>;
+		clock-names = "gate";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPSPI2,
+					   IMX_CCM_ROOT_MAIN_LPSPI2_FCLK)>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	lpspi3: hsp_lpspi_3: spi@42930000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42930000 0x4000>;
+		interrupts = <182 0>;
+		clock-names = "gate";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPSPI3,
+					   IMX_CCM_ROOT_MAIN_LPSPI3_FCLK)>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	lpspi4: hsp_lpspi_4: spi@42940000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42940000 0x4000>;
+		interrupts = <183 0>;
+		clock-names = "gate";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPSPI4,
+					   IMX_CCM_ROOT_MAIN_LPSPI4_FCLK)>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	lpspi5: wake_lpspi: spi@461e0000 {
+		compatible = "nxp,lpspi";
+		reg = <0x461e0000 0x4000>;
+		interrupts = <237 0>;
+		clock-names = "gate";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPSPI,
+					   IMX_CCM_ROOT_WAKE_LPSPI0_FCLK)>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	/* I3C (HSP domain), IRQ 174 */
+	i3c0: hsp_i3c: i3c@42130000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x42130000 0x1000>;
+		interrupts = <174 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_I3C0,
+					   IMX_CCM_ROOT_MAIN_I3C0_FCLK)>;
+		clk-divider = <2>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		#address-cells = <3>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i3c1: wake_i3c: i3c@461b0000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x461b0000 0x1000>;
+		interrupts = <234 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_I3C0,
+					   IMX_CCM_ROOT_WAKE_I3C0_FCLK)>;
+		clk-divider = <2>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		#address-cells = <3>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	/* FlexCAN (HSP domain). Each has a common + error IRQ. */
+	flexcan0: hsp_flexcan_0: can@420f0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x420f0000 0x10000>;
+		interrupts = <165 0>, <166 0>;
+		interrupt-names = "common", "error";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_CAN0,
+					   IMX_CCM_ROOT_MAIN_FLEXCAN0_FCLK)>;
+		clk-source = <0>;
+		clock-names = "clksrc0";
+		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	flexcan1: hsp_flexcan_1: can@42100000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x42100000 0x10000>;
+		interrupts = <167 0>, <168 0>;
+		interrupt-names = "common", "error";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_CAN1,
+					   IMX_CCM_ROOT_MAIN_FLEXCAN1_FCLK)>;
+		clk-source = <0>;
+		clock-names = "clksrc0";
+		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	flexcan2: hsp_flexcan_2: can@428f0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x428f0000 0x10000>;
+		interrupts = <169 0>, <170 0>;
+		interrupt-names = "common", "error";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_CAN2,
+					   IMX_CCM_ROOT_MAIN_FLEXCAN2_FCLK)>;
+		clk-source = <0>;
+		clock-names = "clksrc0";
+		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	/* FlexIO (HSP domain), IRQ 171..173 */
+	flexio0: hsp_flexio_0: flexio@42110000 {
+		compatible = "nxp,flexio";
+		reg = <0x42110000 0x4000>;
+		interrupts = <171 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXIO0,
+					   IMX_CCM_ROOT_MAIN_FLEXIO0_FCLK)>;
+		status = "disabled";
+	};
+
+	flexio1: hsp_flexio_1: flexio@42120000 {
+		compatible = "nxp,flexio";
+		reg = <0x42120000 0x4000>;
+		interrupts = <172 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXIO1,
+					   IMX_CCM_ROOT_MAIN_FLEXIO1_FCLK)>;
+		status = "disabled";
+	};
+
+	flexio2: hsp_flexio_2: flexio@42900000 {
+		compatible = "nxp,flexio";
+		reg = <0x42900000 0x4000>;
+		interrupts = <173 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXIO2,
+					   IMX_CCM_ROOT_MAIN_FLEXIO2_FCLK)>;
+		status = "disabled";
+	};
+
+	/*
+	 * eFlexPWM (HSP domain). Each module has four sub-modules plus a fault
+	 * interrupt: EFLEXPWM0 channels = IRQ 117..120, fault = 121, etc.
+	 */
+	flexpwm0: hsp_flexpwm_0: pwm@42080000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x42080000 0x4000>;
+		interrupts = <121 0>;
+
+		flexpwm0_pwm0: flexpwm0_pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <117 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM0,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm0_pwm1: flexpwm0_pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <118 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM0,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm0_pwm2: flexpwm0_pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <119 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM0,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm0_pwm3: flexpwm0_pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <120 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM0,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+	};
+
+	flexpwm1: hsp_flexpwm_1: pwm@42090000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x42090000 0x4000>;
+		interrupts = <126 0>;
+
+		flexpwm1_pwm0: flexpwm1_pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <122 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM1,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm1_pwm1: flexpwm1_pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <123 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM1,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm1_pwm2: flexpwm1_pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <124 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM1,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm1_pwm3: flexpwm1_pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <125 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM1,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+	};
+
+	flexpwm2: hsp_flexpwm_2: pwm@42870000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x42870000 0x4000>;
+		interrupts = <131 0>;
+
+		flexpwm2_pwm0: flexpwm2_pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <127 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM2,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm2_pwm1: flexpwm2_pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <128 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM2,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm2_pwm2: flexpwm2_pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <129 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM2,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm2_pwm3: flexpwm2_pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <130 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM2,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+	};
+
+	flexpwm3: hsp_flexpwm_3: pwm@42880000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x42880000 0x4000>;
+		interrupts = <136 0>;
+
+		flexpwm3_pwm0: flexpwm3_pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <132 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM3,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm3_pwm1: flexpwm3_pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <133 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM3,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm3_pwm2: flexpwm3_pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <134 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM3,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm3_pwm3: flexpwm3_pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <135 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM3,
+						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+	};
+
+	/*
+	 * QuadTPM0 (HSP domain). Four channels share the hsp_qtpm0 gate; channel
+	 * interrupts are IRQ 137..140.
+	 */
+	tpm0: hsp_tpm_0: pwm@420a0000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x420a0000 0x88>;
+		interrupts = <137 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTPM0,
+					   IMX_CCM_ROOT_MAIN_QTPM0_FCLK)>;
+		prescaler = <16>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	tpm1: hsp_tpm_1: pwm@420a4000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x420a4000 0x88>;
+		interrupts = <138 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTPM0,
+					   IMX_CCM_ROOT_MAIN_QTPM0_FCLK)>;
+		prescaler = <16>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	tpm2: hsp_tpm_2: pwm@420a8000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x420a8000 0x88>;
+		interrupts = <139 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTPM0,
+					   IMX_CCM_ROOT_MAIN_QTPM0_FCLK)>;
+		prescaler = <16>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	tpm3: hsp_tpm_3: pwm@420ac000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x420ac000 0x88>;
+		interrupts = <140 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTPM0,
+					   IMX_CCM_ROOT_MAIN_QTPM0_FCLK)>;
+		prescaler = <16>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	tpm4: wake_tpm_0: pwm@46150000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x46150000 0x88>;
+		interrupts = <224 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_QTPM,
+					   IMX_CCM_ROOT_WAKE_QTPM0_FCLK)>;
+		prescaler = <16>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	tpm5: wake_tpm_1: pwm@46154000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x46154000 0x88>;
+		interrupts = <225 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_QTPM,
+					   IMX_CCM_ROOT_WAKE_QTPM0_FCLK)>;
+		prescaler = <16>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	tpm6: wake_tpm_2: pwm@46158000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x46158000 0x88>;
+		interrupts = <226 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_QTPM,
+					   IMX_CCM_ROOT_WAKE_QTPM0_FCLK)>;
+		prescaler = <16>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	tpm7: wake_tpm_3: pwm@4615c000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x4615c000 0x88>;
+		interrupts = <227 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_QTPM,
+					   IMX_CCM_ROOT_WAKE_QTPM0_FCLK)>;
+		prescaler = <16>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	/* QuadTimer (HSP domain), IRQ 149..152 */
+	qtmr0: hsp_qtmr_0: timer@421e0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x421e0000 0x4000>;
+		interrupts = <149 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER0,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+
+		qtmr0_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+
+		qtmr0_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+
+		qtmr0_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+
+		qtmr0_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr1: hsp_qtmr_1: timer@421f0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x421f0000 0x4000>;
+		interrupts = <150 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER1,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+
+		qtmr1_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+
+		qtmr1_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+
+		qtmr1_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+
+		qtmr1_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr2: hsp_qtmr_2: timer@429e0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x429e0000 0x4000>;
+		interrupts = <151 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER2,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+
+		qtmr2_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+
+		qtmr2_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+
+		qtmr2_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+
+		qtmr2_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr3: hsp_qtmr_3: timer@429f0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x429f0000 0x4000>;
+		interrupts = <152 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER3,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+
+		qtmr3_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+
+		qtmr3_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+
+		qtmr3_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+
+		qtmr3_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	/* EQDC / quadrature decoder (HSP domain), IRQ 153..156 */
+	qdec0: hsp_eqdc_0: qdec@420c0000 {
+		compatible = "nxp,mcux-qdec";
+		reg = <0x420c0000 0x4000>;
+		interrupts = <153 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC0,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		status = "disabled";
+	};
+
+	qdec1: hsp_eqdc_1: qdec@420d0000 {
+		compatible = "nxp,mcux-qdec";
+		reg = <0x420d0000 0x4000>;
+		interrupts = <154 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC1,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		status = "disabled";
+	};
+
+	qdec2: hsp_eqdc_2: qdec@428c0000 {
+		compatible = "nxp,mcux-qdec";
+		reg = <0x428c0000 0x4000>;
+		interrupts = <155 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC2,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		status = "disabled";
+	};
+
+	qdec3: hsp_eqdc_3: qdec@428d0000 {
+		compatible = "nxp,mcux-qdec";
+		reg = <0x428d0000 0x4000>;
+		interrupts = <156 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC3,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		status = "disabled";
+	};
+
+	/* LPIT (HSP domain), IRQ 115/116 */
+	lpit0: hsp_lpit_0: lpit@42070000 {
+		compatible = "nxp,lpit";
+		reg = <0x42070000 0x1000>;
+		interrupts = <115 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPIT0,
+					   IMX_CCM_ROOT_MAIN_LPIT0_FCLK)>;
+		max-load-value = <0xffffffff>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		lpit0_channel0: lpit_channel@0 {
+			compatible = "nxp,lpit-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+
+		lpit0_channel1: lpit_channel@1 {
+			compatible = "nxp,lpit-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+
+		lpit0_channel2: lpit_channel@2 {
+			compatible = "nxp,lpit-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+
+		lpit0_channel3: lpit_channel@3 {
+			compatible = "nxp,lpit-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
+
+	lpit1: hsp_lpit_1: lpit@42860000 {
+		compatible = "nxp,lpit";
+		reg = <0x42860000 0x1000>;
+		interrupts = <116 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPIT1,
+					   IMX_CCM_ROOT_MAIN_LPIT1_FCLK)>;
+		max-load-value = <0xffffffff>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		lpit1_channel0: lpit_channel@0 {
+			compatible = "nxp,lpit-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+
+		lpit1_channel1: lpit_channel@1 {
+			compatible = "nxp,lpit-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+
+		lpit1_channel2: lpit_channel@2 {
+			compatible = "nxp,lpit-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+
+		lpit1_channel3: lpit_channel@3 {
+			compatible = "nxp,lpit-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
+
+	/* LPTMR (WAKE domain), IRQ 222/223 */
+	lptmr1: wake_lptmr_0: timer@46130000 {
+		compatible = "nxp,lptmr";
+		reg = <0x46130000 0x1000>;
+		interrupts = <222 0>;
+		clock-frequency = <DT_FREQ_M(80)>;
+		prescale-glitch-filter-bypass;
+		clk-source = <0>;
+		resolution = <32>;
+		status = "disabled";
+	};
+
+	lptmr2: wake_lptmr_1: timer@46140000 {
+		compatible = "nxp,lptmr";
+		reg = <0x46140000 0x1000>;
+		interrupts = <223 0>;
+		clock-frequency = <DT_FREQ_M(80)>;
+		prescale-glitch-filter-bypass;
+		clk-source = <0>;
+		resolution = <32>;
+		status = "disabled";
+	};
+
+	lptmr0: vbat_lptmr: timer@46330000 {
+		compatible = "nxp,lptmr";
+		reg = <0x46330000 0x1000>;
+		interrupts = <250 0>;
+		clock-frequency = <DT_FREQ_M(80)>;
+		prescale-glitch-filter-bypass;
+		clk-source = <0>;
+		resolution = <32>;
+		status = "disabled";
+	};
+
+	/* Analog comparators (WAKE domain), IRQ 216..219 */
+	acmp0: wake_acmp_0: comparator@460d0000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x460d0000 0x10000>;
+		interrupts = <216 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_ACMP0,
+					   IMX_CCM_ROOT_WAKE_ACMP0_FCLK)>;
+		status = "disabled";
+	};
+
+	acmp1: wake_acmp_1: comparator@460e0000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x460e0000 0x10000>;
+		interrupts = <217 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_ACMP1,
+					   IMX_CCM_ROOT_WAKE_ACMP1_FCLK)>;
+		status = "disabled";
+	};
+
+	acmp2: wake_acmp_2: comparator@460f0000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x460f0000 0x10000>;
+		interrupts = <218 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_ACMP2,
+					   IMX_CCM_ROOT_WAKE_ACMP2_FCLK)>;
+		status = "disabled";
+	};
+
+	acmp3: wake_acmp_3: comparator@46100000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x46100000 0x10000>;
+		interrupts = <219 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_ACMP3,
+					   IMX_CCM_ROOT_WAKE_ACMP3_FCLK)>;
+		status = "disabled";
+	};
+
+	/* External watchdog monitor (WAKE domain), IRQ 220 */
+	ewm0: wake_ewm: ewm@46110000 {
+		compatible = "nxp,ewm";
+		reg = <0x46110000 0x10000>;
+		interrupts = <220 0>;
+		clk-divider = <0x2>;
+		status = "disabled";
+	};
+
+	adc0: hsp_adc_0: adc@42050000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x42050000 0x304>;
+		interrupts = <112 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_ADC0,
+					   IMX_CCM_ROOT_MAIN_ADC0_FCLK)>;
+		voltage-ref = <1>;
+		calibration-average = <128>;
+		power-level = <0>;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+		status = "disabled";
+	};
+
+	adc1: hsp_adc_1: adc@42850000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x42850000 0x304>;
+		interrupts = <113 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_ADC1,
+					   IMX_CCM_ROOT_MAIN_ADC1_FCLK)>;
+		voltage-ref = <1>;
+		calibration-average = <128>;
+		power-level = <0>;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+		status = "disabled";
+	};
+
+	dac0: hsp_dac: dac@42060000 {
+		compatible = "nxp,lpdac";
+		reg = <0x42060000 0x1000>;
+		interrupts = <114 0>;
+		#io-channel-cells = <1>;
+		status = "disabled";
+	};
+
+	crc: hsp_crc: crc@42980000 {
+		compatible = "nxp,crc";
+		reg = <0x42980000 0x1000>;
+		status = "disabled";
+	};
+
+	/* eDMA3 (MAIN domain) version 4. Channels 0..31 = IRQ 29..60. */
+	edma0: main_edma3: dma-controller@400e0000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
+		reg = <0x400e0000 0x20000>;
+		dma-channels = <32>;
+		/* eDMA3 takes the Mux1 request set, whose highest source is 200. */
+		dma-requests = <201>;
+		no-error-irq;
+		interrupts = <29 0>, <30 0>, <31 0>, <32 0>,
+			     <33 0>, <34 0>, <35 0>, <36 0>,
+			     <37 0>, <38 0>, <39 0>, <40 0>,
+			     <41 0>, <42 0>, <43 0>, <44 0>,
+			     <45 0>, <46 0>, <47 0>, <48 0>,
+			     <49 0>, <50 0>, <51 0>, <52 0>,
+			     <53 0>, <54 0>, <55 0>, <56 0>,
+			     <57 0>, <58 0>, <59 0>, <60 0>;
+		status = "disabled";
+	};
+
+	edma1: main_edma5: dma-controller@40300000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma";
+		nxp,version = <5>;
+		reg = <0x40300000 0x20000>;
+		dma-channels = <16>;
+		/* eDMA5 takes the Mux0 request set, whose highest source is 76. */
+		dma-requests = <77>;
+		no-error-irq;
+		interrupts = <61 0>, <62 0>, <63 0>, <64 0>,
+			     <65 0>, <66 0>, <67 0>, <68 0>,
+			     <69 0>, <70 0>, <71 0>, <72 0>,
+			     <73 0>, <74 0>, <75 0>, <76 0>;
+		status = "disabled";
+	};
+
+	edma2: wake_edma3: dma-controller@46270000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
+		reg = <0x46270000 0x20000>;
+		dma-channels = <8>;
+		/* The WAKE eDMA takes the Mux3 request set, highest source 37. */
+		dma-requests = <38>;
+		no-error-irq;
+		interrupts = <208 0>, <209 0>, <210 0>, <211 0>,
+			     <212 0>, <213 0>, <214 0>, <215 0>;
+		status = "disabled";
+	};
+
+	edma3: audio_edma3: dma-controller@48170000 {
+		#dma-cells = <2>;
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
+		reg = <0x48170000 0x20000>;
+		dma-channels = <8>;
+		/* The AUDIO eDMA takes the Mux2 request set, highest source 22. */
+		dma-requests = <23>;
+		no-error-irq;
+		interrupts = <271 0>, <272 0>, <273 0>, <274 0>,
+			     <275 0>, <276 0>, <277 0>, <278 0>;
+		status = "disabled";
+	};
+
+	/* USDHC (COMM domain), IRQ 307/308 */
+	usdhc0: comm_usdhc_0: memory-controller@4a080000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x4a080000 0x10000>;
+		interrupts = <307 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_USDHC0,
+					   IMX_CCM_ROOT_COMM_USDHC0_FCLK)>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <DT_FREQ_M(208)>;
+		min-bus-freq = <DT_FREQ_K(400)>;
+		status = "disabled";
+	};
+
+	usdhc1: comm_usdhc_1: memory-controller@4a090000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x4a090000 0x10000>;
+		interrupts = <308 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_USDHC1,
+					   IMX_CCM_ROOT_COMM_USDHC1_FCLK)>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <DT_FREQ_M(208)>;
+		min-bus-freq = <DT_FREQ_K(400)>;
+		status = "disabled";
+	};
+
+	/* USB OTG (COMM domain) - EHCI controller, IRQ 304 */
+	usb0: comm_usbc: usbd@4a0a0000 {
+		compatible = "nxp,ehci";
+		reg = <0x4a0a0000 0x200>;
+		interrupts = <304 0>;
+		interrupt-names = "usb_otg";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_USB0,
+					   IMX_CCM_ROOT_COMM_USB0_PHYCLK)>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usbphy0: comm_usbphy: usb-phy@4a0f0000 {
+		compatible = "nxp,usbphy";
+		reg = <0x4a0f0000 0x1000>;
+		status = "disabled";
+	};
+
+	/* SAI (AUDIO domain), IRQ 256..258 */
+	sai0: audio_sai_0: sai@480c0000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x480c0000 0x10000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI0,
+					   IMX_CCM_ROOT_AUDIO_SAI0_MCLK0)>;
+		interrupts = <256 0>;
+		nxp,tx-channel = <1>;
+		status = "disabled";
+	};
+
+	sai1: audio_sai_1: sai@480d0000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x480d0000 0x10000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI1,
+					   IMX_CCM_ROOT_AUDIO_SAI1_MCLK0)>;
+		interrupts = <257 0>;
+		nxp,tx-channel = <1>;
+		status = "disabled";
+	};
+
+	sai2: audio_sai_2: sai@480e0000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x480e0000 0x10000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI2,
+					   IMX_CCM_ROOT_AUDIO_SAI2_MCLK0)>;
+		interrupts = <258 0>;
+		nxp,tx-channel = <1>;
+		status = "disabled";
+	};
+
+	/* Ethernet 1G MAC (COMM domain), IRQ 299/300/301/302 */
+	enet: comm_enet: ethernet@4a0d0000 {
+		compatible = "nxp,enet";
+		reg = <0x4a0d0000 0x10000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH0,
+					   IMX_CCM_ROOT_COMM_ETH0_TRXCLK)>;
+		status = "disabled";
+
+		enet_mac: ethernet {
+			compatible = "nxp,enet-mac";
+			interrupts = <299 0>, <300 0>;
+			interrupt-names = "TX", "RX";
+			nxp,mdio = <&enet_mdio>;
+			ptp-clock = <&enet_ptp_clock>;
+			status = "disabled";
+		};
+
+		enet_mdio: mdio {
+			compatible = "nxp,enet-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		enet_ptp_clock: ptp_clock {
+			compatible = "nxp,enet-ptp-clock";
+			interrupts = <302 0>;
+			interrupt-names = "IEEE1588_TMR";
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH0,
+						   IMX_CCM_ROOT_COMM_ETH0_TRXCLK)>;
+			status = "disabled";
+		};
+	};
+
+	enet_qos: comm_enet_qos: ethernet@4a0c0000 {
+		compatible = "nxp,enet-qos";
+		reg = <0x4a0c0000 0x10000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH1,
+					   IMX_CCM_ROOT_COMM_ETH1_TRXCLK)>;
+		status = "disabled";
+
+		enet_qos_mac: ethernet {
+			compatible = "nxp,enet-qos-mac", "snps,dwmac";
+			interrupts = <296 0>, <297 0>, <298 0>;
+			interrupt-names = "mac", "tx", "rx";
+			status = "disabled";
+		};
+
+		enet_qos_mdio: mdio {
+			compatible = "nxp,enet-qos-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	/*
+	 * Parallel CSI (MEDIA__CSI, NS alias 0x4C090000, MEDIA_CSI_IRQn = 326),
+	 * described by the existing nxp,imx-csi binding.
+	 *
+	 * It is the only "Display and Graphics" peripheral with an applicable
+	 * Zephyr binding today, so it is the only node the per-part overlays
+	 * delete.
+	 */
+	csi: media_csi: csi@4c090000 {
+		compatible = "nxp,imx-csi";
+		reg = <0x4c090000 0x1000>;
+		interrupts = <326 0>;
+		status = "disabled";
+	};
+
+	/*
+	 * XSPI controllers. Each instance has two AHB-mapped windows: the
+	 * direct window at XSPI<n>_AMBA_BASE_NS and an LLC-cached alias
+	 * 0x08000000 above it (MEM_XSPI<n>_LLC_START in fsl_memory.h):
+	 *
+	 *   XSPI0   direct 0x60000000   LLC-cached 0x68000000
+	 *   XSPI1   direct 0x80000000   LLC-cached 0x88000000
+	 *
+	 * reg[1] is the direct window, which is what the device linker script
+	 * XIPs from and therefore what CONFIG_FLASH_BASE_ADDRESS must resolve
+	 * to (see soc/nxp/common/Kconfig.xspi_xip, which reads reg index 1 of
+	 * the chosen flash node's grandparent). A board that places data in an
+	 * external memory through the cached alias uses the +0x08000000
+	 * address for that memory node, and then the LLC must be initialized
+	 * before those accesses.
+	 */
+
+	/*
+	 * The FlexSPI follower (COMM__FLEXSPI_FLR @ 0x4A0E0000, IRQ 303) is a
+	 * peripheral-mode interface rather than a NOR controller, and has no
+	 * Zephyr binding; it is deliberately not declared.
+	 */
+};
+
+&xspi0 {
+	compatible = "nxp,xspi";
+	interrupts = <82 0>;
+	/*
+	 * The functional clock root belongs to this instance, not to the
+	 * controller node: nothing else muxes from it, so the peripheral
+	 * owns it (path-2). The declared values are the steady state --
+	 * SYSPLLDIV4 (500 MHz) / 2 = 250 MHz, second divider 2 giving a
+	 * 125 MHz SCK, close to the ROM's ~120 MHz operating point.
+	 *
+	 * These values are currently duplicated: soc_clock.c writes this
+	 * root by hand from ITCM inside the PLL hand-over window, while
+	 * XIP is parked, because the switch cuts the clock of the memory
+	 * that window's caller executes from. That write does not read
+	 * this node, so editing the cell alone changes what get_rate
+	 * reports without changing the hardware -- keep the two in step.
+	 *
+	 * The XSPI driver does not call clock_control_configure() yet.
+	 * Doing so means switching the clock of the memory the code is
+	 * executing from, which needs the controller quiesced and
+	 * disabled and the switching code resident in on-chip RAM -- that
+	 * belongs in this driver when the feature lands, and is why the
+	 * instance stays disabled for now.
+	 */
+	clock-names = "gate", "source";
+	clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_XSPI0,
+				   IMX_CCM_ROOT_MAIN_XSPI0_FCLK_DIVIDED)>,
+		 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_XSPI0_FCLK_DIVIDED,
+					IMX_CCM_MUX_XSPI0_SYSPLLDIV4, 2, 2)>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "disabled";
+};
+
+&xspi1 {
+	compatible = "nxp,xspi";
+	interrupts = <83 0>;
+	/*
+	 * Same ownership as xspi0, and the same duplication with
+	 * soc_clock.c's in-window write: SYSPLLDIV4 (500 MHz) / 1, second
+	 * divider 2, giving a 250 MHz SCK. That frequency is not free to
+	 * change -- the ROM's DLL calibration for the Xccela PSRAM is tied
+	 * to it, so a different value leaves the DDR read strobe
+	 * misaligned.
+	 */
+	clock-names = "gate", "source";
+	clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_XSPI1,
+				   IMX_CCM_ROOT_MAIN_XSPI1_FCLK_DIVIDED)>,
+		 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_XSPI1_FCLK_DIVIDED,
+					IMX_CCM_MUX_XSPI1_SYSPLLDIV4, 1, 2)>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "disabled";
+};
+
+/*
+ * GPIO pin count and pad mux, kept out of the node bodies so the peripheral
+ * definitions stay readable. Both are SoC facts, not board configuration: the
+ * same 151 pads on every part and both packages. The pinmux property is
+ * positional -- the Nth phandle is that port's pin N -- and the lists are
+ * generated from hal_nxp's canonical pinctrl file, whose pin nodes a board brings
+ * in with its per-part include. Note gpio5 is VBAT and gpio6 is WAKE.
+ */
+
+&gpio0 {
+	ngpios = <28>;
+	pinmux = <&main__iomuxc_pio2_0_hsp_gpio0_gpio0>,
+		 <&main__iomuxc_pio2_1_hsp_gpio0_gpio1>,
+		 <&main__iomuxc_pio2_2_hsp_gpio0_gpio2>,
+		 <&main__iomuxc_pio2_3_hsp_gpio0_gpio3>,
+		 <&main__iomuxc_pio2_4_hsp_gpio0_gpio4>,
+		 <&main__iomuxc_pio2_5_hsp_gpio0_gpio5>,
+		 <&main__iomuxc_pio2_6_hsp_gpio0_gpio6>,
+		 <&main__iomuxc_pio2_7_hsp_gpio0_gpio7>,
+		 <&main__iomuxc_pio2_8_hsp_gpio0_gpio8>,
+		 <&main__iomuxc_pio2_9_hsp_gpio0_gpio9>,
+		 <&main__iomuxc_pio2_10_hsp_gpio0_gpio10>,
+		 <&main__iomuxc_pio2_11_hsp_gpio0_gpio11>,
+		 <&main__iomuxc_pio2_12_hsp_gpio0_gpio12>,
+		 <&main__iomuxc_pio2_13_hsp_gpio0_gpio13>,
+		 <&main__iomuxc_pio2_14_hsp_gpio0_gpio14>,
+		 <&main__iomuxc_pio2_15_hsp_gpio0_gpio15>,
+		 <&main__iomuxc_pio2_16_hsp_gpio0_gpio16>,
+		 <&main__iomuxc_pio2_17_hsp_gpio0_gpio17>,
+		 <&main__iomuxc_pio2_18_hsp_gpio0_gpio18>,
+		 <&main__iomuxc_pio2_19_hsp_gpio0_gpio19>,
+		 <&main__iomuxc_pio2_20_hsp_gpio0_gpio20>,
+		 <&main__iomuxc_pio2_21_hsp_gpio0_gpio21>,
+		 <&main__iomuxc_pio2_22_hsp_gpio0_gpio22>,
+		 <&main__iomuxc_pio2_23_hsp_gpio0_gpio23>,
+		 <&main__iomuxc_pio2_24_hsp_gpio0_gpio24>,
+		 <&main__iomuxc_pio2_25_hsp_gpio0_gpio25>,
+		 <&main__iomuxc_pio2_26_hsp_gpio0_gpio26>,
+		 <&main__iomuxc_pio2_27_hsp_gpio0_gpio27>;
+};
+
+&gpio1 {
+	ngpios = <32>;
+	pinmux = <&main__iomuxc_pio3_0_hsp_gpio1_gpio0>,
+		 <&main__iomuxc_pio3_1_hsp_gpio1_gpio1>,
+		 <&main__iomuxc_pio3_2_hsp_gpio1_gpio2>,
+		 <&main__iomuxc_pio3_3_hsp_gpio1_gpio3>,
+		 <&main__iomuxc_pio3_4_hsp_gpio1_gpio4>,
+		 <&main__iomuxc_pio3_5_hsp_gpio1_gpio5>,
+		 <&main__iomuxc_pio3_6_hsp_gpio1_gpio6>,
+		 <&main__iomuxc_pio3_7_hsp_gpio1_gpio7>,
+		 <&main__iomuxc_pio3_8_hsp_gpio1_gpio8>,
+		 <&main__iomuxc_pio3_9_hsp_gpio1_gpio9>,
+		 <&main__iomuxc_pio3_10_hsp_gpio1_gpio10>,
+		 <&main__iomuxc_pio3_11_hsp_gpio1_gpio11>,
+		 <&main__iomuxc_pio3_12_hsp_gpio1_gpio12>,
+		 <&main__iomuxc_pio3_13_hsp_gpio1_gpio13>,
+		 <&main__iomuxc_pio3_14_hsp_gpio1_gpio14>,
+		 <&main__iomuxc_pio3_15_hsp_gpio1_gpio15>,
+		 <&main__iomuxc_pio3_16_hsp_gpio1_gpio16>,
+		 <&main__iomuxc_pio3_17_hsp_gpio1_gpio17>,
+		 <&main__iomuxc_pio3_18_hsp_gpio1_gpio18>,
+		 <&main__iomuxc_pio3_19_hsp_gpio1_gpio19>,
+		 <&main__iomuxc_pio3_20_hsp_gpio1_gpio20>,
+		 <&main__iomuxc_pio3_21_hsp_gpio1_gpio21>,
+		 <&main__iomuxc_pio3_22_hsp_gpio1_gpio22>,
+		 <&main__iomuxc_pio3_23_hsp_gpio1_gpio23>,
+		 <&main__iomuxc_pio3_24_hsp_gpio1_gpio24>,
+		 <&main__iomuxc_pio3_25_hsp_gpio1_gpio25>,
+		 <&main__iomuxc_pio3_26_hsp_gpio1_gpio26>,
+		 <&main__iomuxc_pio3_27_hsp_gpio1_gpio27>,
+		 <&main__iomuxc_pio3_28_hsp_gpio1_gpio28>,
+		 <&main__iomuxc_pio3_29_hsp_gpio1_gpio29>,
+		 <&main__iomuxc_pio3_30_hsp_gpio1_gpio30>,
+		 <&main__iomuxc_pio3_31_hsp_gpio1_gpio31>;
+};
+
+&gpio2 {
+	ngpios = <28>;
+	pinmux = <&main__iomuxc_pio4_0_hsp_gpio2_gpio0>,
+		 <&main__iomuxc_pio4_1_hsp_gpio2_gpio1>,
+		 <&main__iomuxc_pio4_2_hsp_gpio2_gpio2>,
+		 <&main__iomuxc_pio4_3_hsp_gpio2_gpio3>,
+		 <&main__iomuxc_pio4_4_hsp_gpio2_gpio4>,
+		 <&main__iomuxc_pio4_5_hsp_gpio2_gpio5>,
+		 <&main__iomuxc_pio4_6_hsp_gpio2_gpio6>,
+		 <&main__iomuxc_pio4_7_hsp_gpio2_gpio7>,
+		 <&main__iomuxc_pio4_8_hsp_gpio2_gpio8>,
+		 <&main__iomuxc_pio4_9_hsp_gpio2_gpio9>,
+		 <&main__iomuxc_pio4_10_hsp_gpio2_gpio10>,
+		 <&main__iomuxc_pio4_11_hsp_gpio2_gpio11>,
+		 <&main__iomuxc_pio4_12_hsp_gpio2_gpio12>,
+		 <&main__iomuxc_pio4_13_hsp_gpio2_gpio13>,
+		 <&main__iomuxc_pio4_14_hsp_gpio2_gpio14>,
+		 <&main__iomuxc_pio4_15_hsp_gpio2_gpio15>,
+		 <&main__iomuxc_pio4_16_hsp_gpio2_gpio16>,
+		 <&main__iomuxc_pio4_17_hsp_gpio2_gpio17>,
+		 <&main__iomuxc_pio4_18_hsp_gpio2_gpio18>,
+		 <&main__iomuxc_pio4_19_hsp_gpio2_gpio19>,
+		 <&main__iomuxc_pio4_20_hsp_gpio2_gpio20>,
+		 <&main__iomuxc_pio4_21_hsp_gpio2_gpio21>,
+		 <&main__iomuxc_pio4_22_hsp_gpio2_gpio22>,
+		 <&main__iomuxc_pio4_23_hsp_gpio2_gpio23>,
+		 <&main__iomuxc_pio4_24_hsp_gpio2_gpio24>,
+		 <&main__iomuxc_pio4_25_hsp_gpio2_gpio25>,
+		 <&main__iomuxc_pio4_26_hsp_gpio2_gpio26>,
+		 <&main__iomuxc_pio4_27_hsp_gpio2_gpio27>;
+};
+
+&gpio3 {
+	ngpios = <21>;
+	pinmux = <&main__iomuxc_pio5_0_hsp_gpio3_gpio0>,
+		 <&main__iomuxc_pio5_1_hsp_gpio3_gpio1>,
+		 <&main__iomuxc_pio5_2_hsp_gpio3_gpio2>,
+		 <&main__iomuxc_pio5_3_hsp_gpio3_gpio3>,
+		 <&main__iomuxc_pio5_4_hsp_gpio3_gpio4>,
+		 <&main__iomuxc_pio5_5_hsp_gpio3_gpio5>,
+		 <&main__iomuxc_pio5_6_hsp_gpio3_gpio6>,
+		 <&main__iomuxc_pio5_7_hsp_gpio3_gpio7>,
+		 <&main__iomuxc_pio5_8_hsp_gpio3_gpio8>,
+		 <&main__iomuxc_pio5_9_hsp_gpio3_gpio9>,
+		 <&main__iomuxc_pio5_10_hsp_gpio3_gpio10>,
+		 <&main__iomuxc_pio5_11_hsp_gpio3_gpio11>,
+		 <&main__iomuxc_pio5_12_hsp_gpio3_gpio12>,
+		 <&main__iomuxc_pio5_13_hsp_gpio3_gpio13>,
+		 <&main__iomuxc_pio5_14_hsp_gpio3_gpio14>,
+		 <&main__iomuxc_pio5_15_hsp_gpio3_gpio15>,
+		 <&main__iomuxc_pio5_16_hsp_gpio3_gpio16>,
+		 <&main__iomuxc_pio5_17_hsp_gpio3_gpio17>,
+		 <&main__iomuxc_pio5_18_hsp_gpio3_gpio18>,
+		 <&main__iomuxc_pio5_19_hsp_gpio3_gpio19>,
+		 <&main__iomuxc_pio5_20_hsp_gpio3_gpio20>;
+};
+
+&gpio4 {
+	ngpios = <25>;
+	pinmux = <&main__iomuxc_pio6_0_hsp_gpio4_gpio0>,
+		 <&main__iomuxc_pio6_1_hsp_gpio4_gpio1>,
+		 <&main__iomuxc_pio6_2_hsp_gpio4_gpio2>,
+		 <&main__iomuxc_pio6_3_hsp_gpio4_gpio3>,
+		 <&main__iomuxc_pio6_4_hsp_gpio4_gpio4>,
+		 <&main__iomuxc_pio6_5_hsp_gpio4_gpio5>,
+		 <&main__iomuxc_pio6_6_hsp_gpio4_gpio6>,
+		 <&main__iomuxc_pio6_7_hsp_gpio4_gpio7>,
+		 <&main__iomuxc_pio6_8_hsp_gpio4_gpio8>,
+		 <&main__iomuxc_pio6_9_hsp_gpio4_gpio9>,
+		 <&main__iomuxc_pio6_10_hsp_gpio4_gpio10>,
+		 <&main__iomuxc_pio6_11_hsp_gpio4_gpio11>,
+		 <&main__iomuxc_pio6_12_hsp_gpio4_gpio12>,
+		 <&main__iomuxc_pio7_0_hsp_gpio4_gpio13>,
+		 <&main__iomuxc_pio7_1_hsp_gpio4_gpio14>,
+		 <&main__iomuxc_pio7_2_hsp_gpio4_gpio15>,
+		 <&main__iomuxc_pio7_3_hsp_gpio4_gpio16>,
+		 <&main__iomuxc_pio7_4_hsp_gpio4_gpio17>,
+		 <&main__iomuxc_pio7_5_hsp_gpio4_gpio18>,
+		 <&main__iomuxc_pio7_6_hsp_gpio4_gpio19>,
+		 <&main__iomuxc_pio7_7_hsp_gpio4_gpio20>,
+		 <&main__iomuxc_pio7_8_hsp_gpio4_gpio21>,
+		 <&main__iomuxc_pio7_9_hsp_gpio4_gpio22>,
+		 <&main__iomuxc_pio7_10_hsp_gpio4_gpio23>,
+		 <&main__iomuxc_pio7_11_hsp_gpio4_gpio24>;
+};
+
+&gpio5 {
+	ngpios = <6>;
+	pinmux = <&vbat__iomuxc_pio0_0_vbat_gpio0_gpio0>,
+		 <&vbat__iomuxc_pio0_1_vbat_gpio0_gpio1>,
+		 <&vbat__iomuxc_pio0_2_vbat_gpio0_gpio2>,
+		 <&vbat__iomuxc_pio0_3_vbat_gpio0_gpio3>,
+		 <&vbat__iomuxc_pio0_4_vbat_gpio0_gpio4>,
+		 <&vbat__iomuxc_pio0_5_vbat_gpio0_gpio5>;
+};
+
+&gpio6 {
+	ngpios = <11>;
+	pinmux = <&wake__iomuxc_pio1_0_wake_gpio0_gpio0>,
+		 <&wake__iomuxc_pio1_1_wake_gpio0_gpio1>,
+		 <&wake__iomuxc_pio1_2_wake_gpio0_gpio2>,
+		 <&wake__iomuxc_pio1_3_wake_gpio0_gpio3>,
+		 <&wake__iomuxc_pio1_4_wake_gpio0_gpio4>,
+		 <&wake__iomuxc_pio1_5_wake_gpio0_gpio5>,
+		 <&wake__iomuxc_pio1_6_wake_gpio0_gpio6>,
+		 <&wake__iomuxc_pio1_7_wake_gpio0_gpio7>,
+		 <&wake__iomuxc_pio1_8_wake_gpio0_gpio8>,
+		 <&wake__iomuxc_pio1_9_wake_gpio0_gpio9>,
+		 <&wake__iomuxc_pio1_10_wake_gpio0_gpio10>;
+};

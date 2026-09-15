@@ -9,3 +9,5 @@ Pwm
 FILE
 NRF_GPIO_Type
 EIM_Type
+S3MU_Type
+LLC_Type
