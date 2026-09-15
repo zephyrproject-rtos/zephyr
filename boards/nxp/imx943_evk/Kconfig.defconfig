@@ -3,6 +3,9 @@
 
 if SOC_MIMX94398_A55
 
+config MAX_THREAD_BYTES
+	default 3 if USERSPACE
+
 if ETH_NXP_IMX_NETC
 
 config GIC_V3_ITS
