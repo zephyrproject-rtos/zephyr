@@ -728,6 +728,24 @@ static enum net_l2_flags l2_flags_get(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_IP)
+/* Tell the L2 that the IP level has started or stopped using a multicast
+ * address, so that the receive filter of the device can be updated.
+ */
+static int net_if_mcast_ip_addr_update(struct net_if *iface,
+				       const struct net_addr *addr, bool add)
+{
+	NET_ASSERT(iface != NULL);
+	NET_ASSERT(addr != NULL);
+
+#if defined(CONFIG_NET_L2_ETHERNET)
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) ||
+	    net_eth_is_vlan_interface(iface)) {
+		return net_eth_mcast_ip_addr_update(iface, addr, add);
+	}
+#endif
+	return -ENOTSUP;
+}
+
 /* Return how many bits are shared between two IP addresses */
 static uint8_t get_ipaddr_diff(const uint8_t *src, const uint8_t *dst, int addr_len)
 {
@@ -2502,6 +2520,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 {
 	struct net_if_mcast_addr *ifmaddr = NULL;
 	struct net_if_ipv6 *ipv6;
+	int ret;
 
 	if (iface == NULL || addr == NULL) {
 		return NULL;
@@ -2538,6 +2557,15 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		net_if_maddr_ref_init(&ipv6->mcast[i]);
 
 		memcpy(&ipv6->mcast[i].address.in6_addr, addr, 16);
+
+		ret = net_if_mcast_ip_addr_update(iface, &ipv6->mcast[i].address, true);
+		if ((ret < 0) && (ret != -ENOTSUP)) {
+			NET_DBG("Failed to add multicast address %s to iface %d (%p)",
+				net_sprint_ipv6_addr(addr), net_if_get_by_iface(iface),
+				iface);
+			ipv6->mcast[i].is_used = false;
+			goto out;
+		}
 
 		NET_DBG("[%zu] interface %d (%p) address %s added", i,
 			net_if_get_by_iface(iface), iface,
@@ -2599,6 +2627,8 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct net_in6_addr *addr)
 		}
 
 		ipv6->mcast[i].is_used = false;
+
+		(void)net_if_mcast_ip_addr_update(iface, &ipv6->mcast[i].address, false);
 
 		NET_DBG("[%zu] interface %d (%p) address %s removed",
 			i, net_if_get_by_iface(iface), iface,
@@ -5471,6 +5501,7 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 						const struct net_in_addr *addr)
 {
 	struct net_if_mcast_addr *maddr = NULL;
+	int ret;
 
 	if (iface == NULL || addr == NULL) {
 		return NULL;
@@ -5505,6 +5536,16 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 		maddr->sources_len = 0;
 #endif
+		ret = net_if_mcast_ip_addr_update(iface, &maddr->address, true);
+		if ((ret < 0) && (ret != -ENOTSUP)) {
+			NET_DBG("Failed to add multicast address %s to iface %d (%p)",
+				net_sprint_ipv4_addr(addr), net_if_get_by_iface(iface),
+				iface);
+			maddr->is_used = false;
+			maddr = NULL;
+			goto out;
+		}
+
 		net_if_maddr_ref_init(maddr);
 
 		NET_DBG("interface %d (%p) address %s added",
@@ -5554,6 +5595,8 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct net_in_addr *addr)
 	}
 
 	maddr->is_used = false;
+
+	(void)net_if_mcast_ip_addr_update(iface, &maddr->address, false);
 
 	NET_DBG("interface %d (%p) address %s removed",
 		net_if_get_by_iface(iface), iface, net_sprint_ipv4_addr(addr));
