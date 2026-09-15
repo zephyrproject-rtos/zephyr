@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <errno.h>
 #include <string.h>
 #include <zephyr/display/cfb.h>
 #include <zephyr/sys/byteorder.h>
@@ -29,7 +30,7 @@ static inline uint8_t byte_reverse(uint8_t b)
 }
 
 struct char_framebuffer {
-	/** Pointer to a buffer in RAM */
+	/** Pointer to a buffer in RAM. NULL when structure is not yet/not anymore initialized. */
 	uint8_t *buf;
 
 	/** Size of the framebuffer */
@@ -67,6 +68,15 @@ struct char_framebuffer {
 };
 
 static struct char_framebuffer char_fb;
+
+static inline bool cfb_framebuffer_init_is_done(const struct char_framebuffer *const fb)
+{
+	if (!fb->buf) {
+		return false;
+	}
+
+	return true;
+}
 
 static inline const uint8_t *get_glyph_ptr(const struct cfb_font *fptr, uint8_t c)
 {
@@ -457,7 +467,11 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 	const struct cfb_font *fptr;
 	size_t len;
 
-	if (!fb->fonts || !fb->buf) {
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
+
+	if (!fb->fonts) {
 		return -ENODEV;
 	}
 
@@ -482,6 +496,10 @@ int cfb_draw_point(const struct device *dev, const struct cfb_position *pos)
 {
 	struct char_framebuffer *fb = &char_fb;
 
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
+
 	draw_point(fb, pos->x, pos->y);
 
 	return 0;
@@ -492,6 +510,10 @@ int cfb_draw_line(const struct device *dev, const struct cfb_position *start,
 {
 	struct char_framebuffer *fb = &char_fb;
 
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
+
 	draw_line(fb, start->x, start->y, end->x, end->y);
 
 	return 0;
@@ -501,6 +523,10 @@ int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
 		  const struct cfb_position *end)
 {
 	struct char_framebuffer *fb = &char_fb;
+
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
 
 	draw_line(fb, start->x, start->y, end->x, start->y);
 	draw_line(fb, end->x, start->y, end->x, end->y);
@@ -516,6 +542,10 @@ int cfb_draw_circle(const struct device *dev, const struct cfb_position *center,
 	uint16_t x = 0;
 	int16_t y = -radius;
 	int16_t p = -radius;
+
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
 
 	/* Using the Midpoint Circle Algorithm */
 	while (x < -y) {
@@ -554,7 +584,13 @@ int cfb_invert_area(const struct device *dev, int16_t x, int16_t y,
 		    uint16_t width, uint16_t height)
 {
 	const struct char_framebuffer *fb = &char_fb;
-	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
+	bool need_reverse;
+
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
+
+	need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
 
 	if ((x + width) < 0 || x >= fb->x_res) {
 		return 0;
@@ -669,6 +705,10 @@ int cfb_invert_area(const struct device *dev, int16_t x, int16_t y,
 
 static int cfb_invert(const struct char_framebuffer *fb)
 {
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
+
 	for (size_t i = 0; i < fb->x_res * fb->y_res / 8U; i++) {
 		fb->buf[i] = ~fb->buf[i];
 	}
@@ -680,7 +720,7 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 {
 	const struct char_framebuffer *fb = &char_fb;
 
-	if (!fb->buf) {
+	if (!cfb_framebuffer_init_is_done(fb)) {
 		return -ENODEV;
 	}
 
@@ -697,6 +737,10 @@ int cfb_framebuffer_invert(const struct device *dev)
 {
 	struct char_framebuffer *fb = &char_fb;
 
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
+
 	fb->inverted = !fb->inverted;
 
 	return 0;
@@ -710,7 +754,7 @@ int cfb_framebuffer_finalize(const struct device *dev)
 
 	__ASSERT_NO_MSG(DEVICE_API_IS(display, dev));
 
-	if (!fb->buf) {
+	if (!cfb_framebuffer_init_is_done(fb)) {
 		return -ENODEV;
 	}
 
@@ -735,6 +779,10 @@ int cfb_get_display_parameter(const struct device *dev,
 			       enum cfb_display_param param)
 {
 	const struct char_framebuffer *fb = &char_fb;
+
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
 
 	switch (param) {
 	case CFB_DISPLAY_HEIGHT:
@@ -761,6 +809,10 @@ int cfb_framebuffer_set_font(const struct device *dev, uint8_t idx)
 {
 	struct char_framebuffer *fb = &char_fb;
 
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
+
 	if (idx >= fb->numof_fonts) {
 		return -EINVAL;
 	}
@@ -774,6 +826,10 @@ int cfb_get_font_size(const struct device *dev, uint8_t idx, uint8_t *width,
 		      uint8_t *height)
 {
 	const struct char_framebuffer *fb = &char_fb;
+
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
 
 	if (idx >= fb->numof_fonts) {
 		return -EINVAL;
@@ -792,7 +848,13 @@ int cfb_get_font_size(const struct device *dev, uint8_t idx, uint8_t *width,
 
 int cfb_set_kerning(const struct device *dev, int8_t kerning)
 {
-	char_fb.kerning = kerning;
+	struct char_framebuffer *fb = &char_fb;
+
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
+
+	fb->kerning = kerning;
 
 	return 0;
 }
@@ -800,6 +862,10 @@ int cfb_set_kerning(const struct device *dev, int8_t kerning)
 int cfb_get_numof_fonts(const struct device *dev)
 {
 	const struct char_framebuffer *fb = &char_fb;
+
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		return -ENODEV;
+	}
 
 	return fb->numof_fonts;
 }
@@ -811,6 +877,11 @@ int cfb_framebuffer_init(const struct device *dev)
 	struct display_capabilities cfg;
 
 	__ASSERT_NO_MSG(DEVICE_API_IS(display, dev));
+
+	if (cfb_framebuffer_init_is_done(fb)) {
+		LOG_ERR("Framebuffer already initialized");
+		return -EALREADY;
+	}
 
 	api->get_capabilities(dev, &cfg);
 
@@ -840,13 +911,17 @@ int cfb_framebuffer_init(const struct device *dev)
 	return 0;
 }
 
-void cfb_framebuffer_deinit(const struct device *dev)
+int cfb_framebuffer_deinit(const struct device *dev)
 {
 	struct char_framebuffer *fb = &char_fb;
 
-	if (fb->buf) {
-		k_free(fb->buf);
-		fb->buf = NULL;
+	if (!cfb_framebuffer_init_is_done(fb)) {
+		LOG_ERR("Framebuffer not initialized");
+		return -EALREADY;
 	}
 
+	k_free(fb->buf);
+	fb->buf = NULL;
+
+	return 0;
 }

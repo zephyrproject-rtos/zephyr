@@ -11,3 +11,14 @@ tests:
     tags: shield
   sample.display.cfb_shell.ssd16xx:
     platform_allow: reel_board
+    harness: shell
+    harness_config:
+      shell_commands:
+        - command: "cfb get_param all"
+          expected: ".*Failed to get parameter height: -19.*"
+        - command: "cfb init"
+          expected: ".*Framebuffer initialized: ssd16xxfb@0.*"
+        - command: "cfb init"
+          expected: ".*Framebuffer initialization failed: -120.*"
+        - command: "cfb get_param all"
+          expected: ".*param: cols=250.*"
