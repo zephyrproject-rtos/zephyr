@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "stm32h750b_dk-common.dtsi"
+#include "stm32h750b_dk_common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32H750B DISCOVERY KIT";

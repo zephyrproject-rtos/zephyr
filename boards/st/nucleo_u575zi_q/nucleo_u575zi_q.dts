@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "nucleo_u575zi_q-common.dtsi"
+#include "nucleo_u575zi_q_common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32U575ZI-NUCLEO-Q board";
