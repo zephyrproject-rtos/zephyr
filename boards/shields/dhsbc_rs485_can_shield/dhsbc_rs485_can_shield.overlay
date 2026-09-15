@@ -1,0 +1,55 @@
+/*
+ * Copyright (C) 2026 DH electronics GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&raspberrypi_serial {
+	status = "okay";
+	current-speed = <9600>;
+
+	modbus0: modbus0 {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+		de-gpios = <&raspberrypi_header 5 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&raspberrypi_header 24 GPIO_ACTIVE_LOW>;
+	};
+};
+
+/*
+ * CAN lines are not specified by the Raspberry Pi connector.
+ * Therefore CAN transceiver nodes must be provided by each board-specific
+ * overlay.
+ */
+
+/* The Modbus RTU server example expects three LEDs but this shield does not
+ * have any. But the shield routes all Raspberry Pi pins to the outside so that
+ * LEDs can be connected to pin headers.
+ */
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		led_0: led_0 {
+			gpios = <&raspberrypi_header 25 GPIO_ACTIVE_HIGH>;
+			label = "LD0";
+		};
+
+		led_1: led_1 {
+			gpios = <&raspberrypi_header 26 GPIO_ACTIVE_HIGH>;
+			label = "LD1";
+		};
+
+		led_2: led_2 {
+			gpios = <&raspberrypi_header 27 GPIO_ACTIVE_HIGH>;
+			label = "LD2";
+		};
+	};
+
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+		led2 = &led_2;
+	};
+};
