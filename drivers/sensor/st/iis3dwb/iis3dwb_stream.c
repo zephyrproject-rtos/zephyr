@@ -241,7 +241,7 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 		memset(buf, 0, buf_len);
 		rx_data->header.is_fifo = 1;
 		rx_data->header.timestamp = iis3dwb->timestamp;
-		rx_data->header.int_status = iis3dwb->fifo_status[0];
+		rx_data->header.int_status = iis3dwb->fifo_status[1];
 		rx_data->fifo_count = 0;
 		rx_data->fifo_mode_sel = 0;
 
@@ -295,7 +295,7 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 			.is_fifo = 1,
 			.range = iis3dwb->range,
 			.timestamp = iis3dwb->timestamp,
-			.int_status = iis3dwb->fifo_status[0],
+			.int_status = iis3dwb->fifo_status[1],
 		},
 		.fifo_count = fifo_count,
 		.accel_batch_odr = iis3dwb->accel_batch_odr,
@@ -380,8 +380,9 @@ static void iis3dwb_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe, i
 		return;
 	}
 
-	if (data_ready->opt == SENSOR_STREAM_DATA_NOP ||
-	    data_ready->opt == SENSOR_STREAM_DATA_DROP) {
+	if (data_ready != NULL &&
+	    (data_ready->opt == SENSOR_STREAM_DATA_NOP ||
+	     data_ready->opt == SENSOR_STREAM_DATA_DROP)) {
 		uint8_t *buf;
 		uint32_t buf_len;
 
@@ -406,6 +407,8 @@ static void iis3dwb_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe, i
 		rtio_iodev_sqe_ok(iis3dwb->streaming_sqe, 0);
 		iis3dwb->streaming_sqe = NULL;
 		gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+
+		return;
 	}
 
 	/*
@@ -528,10 +531,8 @@ void iis3dwb_stream_irq_handler(const struct device *dev)
 		 */
 		rtio_read_regs_async(iis3dwb->rtio_ctx, iis3dwb->iodev, RTIO_BUS_SPI, &fifo_regs,
 				     iis3dwb->streaming_sqe, dev, iis3dwb_read_fifo_cb);
-	}
-
-	/* handle drdy trigger */
-	if (iis3dwb->trig_cfg.int_drdy) {
+	} else if (iis3dwb->trig_cfg.int_drdy) {
+		/* handle drdy trigger */
 		iis3dwb->status = 0;
 
 		struct rtio_regs fifo_regs;
