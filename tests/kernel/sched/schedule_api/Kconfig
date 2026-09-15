@@ -1,0 +1,13 @@
+# Copyright (c) 2026 GlobalFoundries
+# SPDX-License-Identifier: Apache-2.0
+
+# The time-slice tests need a tick period longer than a thread handoff, so ask
+# for 1 ms instead of a much finer native tick.
+#
+# A default, not a prj*.conf assignment, so that boards pinning a slower tick
+# in their _defconfig keep it. Slower is always safe; 1 ms is not, for example
+# on the 1 MHz ARC nsim SMP boards where a tick is only 1000 cycles.
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+source "Kconfig.zephyr"
