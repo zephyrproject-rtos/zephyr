@@ -105,6 +105,7 @@
 			reg = <0x40020000 0x14>;
 			interrupts = <5 0>;
 			status = "okay";
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			fsec = <0xfe>;
@@ -115,6 +116,9 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <DT_SIZE_K(1)>;
 				write-block-size = <4>;
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

@@ -122,6 +122,7 @@
 			interrupt-names = "command-complete", "read-collision";
 			status = "okay";
 
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -130,6 +131,9 @@
 				reg = <0 DT_SIZE_K(512)>;
 				erase-block-size = <DT_SIZE_K(2)>;
 				write-block-size = <4>;
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

@@ -412,6 +412,7 @@
 		interrupts = <12 0>;
 		status = "disabled";
 
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -420,6 +421,9 @@
 			reg = <0 DT_SIZE_M(2)>;
 			erase-block-size = <DT_SIZE_K(8)>;
 			write-block-size = <16>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		uuid: uuid@1100000 {

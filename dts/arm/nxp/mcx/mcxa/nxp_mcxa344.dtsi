@@ -297,6 +297,7 @@
 			reg = <0x40095000 0x1000>;
 			interrupts = <12 0>;
 
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -305,6 +306,9 @@
 				reg = <0 DT_SIZE_K(256)>;
 				erase-block-size = <8192>;
 				write-block-size = <128>;
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 
 			uuid: uuid@1100800 {
