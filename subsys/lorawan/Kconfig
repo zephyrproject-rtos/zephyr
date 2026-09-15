@@ -21,7 +21,6 @@ menu "LoRaWAN Regions"
 
 config LORAWAN_REGION_AS923
 	bool "Asia 923MHz Frequency band"
-	depends on !LORA_MODULE_BACKEND_NATIVE
 
 config LORAWAN_REGION_AU915
 	bool "Australia 915MHz Frequency band"
