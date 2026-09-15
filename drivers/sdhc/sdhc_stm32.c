@@ -31,6 +31,10 @@ BUILD_ASSERT((CONFIG_SDHC_BUFFER_ALIGNMENT % sizeof(uint32_t)) == 0U);
 
 #define SDIO_OCR_SDIO_S18R BIT(24) /* SDIO OCR bit indicating support for 1.8V switching */
 
+#ifndef SDMMC_FIFO_SIZE
+#define SDMMC_FIFO_SIZE 32U
+#endif
+
 /* Set IDMA buffer address: adapts to series with IDMABASER vs IDMABASE0 */
 #if defined(SDMMC_IDMABASER_IDMABASER)
 #define SDHC_STM32_IDMA_SET_BUFFER(instance, addr) ((instance)->IDMABASER = (uint32_t)(addr))
@@ -509,7 +513,7 @@ static uint32_t handle_r1_errors(uint32_t resp)
 static uint32_t handle_r5_errors(uint32_t resp)
 {
 	uint32_t err = 0;
-
+#ifdef SDMMC_SDIO_R5_ERRORBITS
 	if ((resp & SDMMC_SDIO_R5_ERRORBITS) == 0U) {
 		return 0;
 	}
@@ -530,16 +534,20 @@ static uint32_t handle_r5_errors(uint32_t resp)
 	if (err == 0) {
 		err = SDMMC_ERROR_GENERAL_UNKNOWN_ERR;
 	}
+#else
+	ARG_UNUSED(resp);
+#endif /* SDMMC_SDIO_R5_ERRORBITS */
 	return err;
 }
 
 static uint32_t handle_r6_errors(uint32_t resp)
 {
 	uint32_t err = 0;
-
+#ifdef SDMMC_SDIO_R5_ERRORBITS
 	if ((resp & SDMMC_SDIO_R5_ERRORBITS) == 0U) {
 		return 0;
 	}
+#endif
 	if (resp & SDMMC_R6_ILLEGAL_CMD) {
 		err |= SDMMC_ERROR_ILLEGAL_CMD;
 	}
@@ -927,7 +935,13 @@ static void sdhc_stm32_config_sdio_dpsm(SDMMC_TypeDef *instance, bool is_block_m
 	}
 
 	config->TransferDir = is_write ? SDMMC_TRANSFER_DIR_TO_CARD : SDMMC_TRANSFER_DIR_TO_SDMMC;
-	config->TransferMode = is_block_mode ? SDMMC_TRANSFER_MODE_BLOCK : SDMMC_TRANSFER_MODE_SDIO;
+	#ifdef SDMMC_TRANSFER_MODE_SDIO
+		config->TransferMode = is_block_mode ? SDMMC_TRANSFER_MODE_BLOCK :
+						       SDMMC_TRANSFER_MODE_SDIO;
+	#else
+		config->TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+	#endif
+
 	config->DPSM = SDMMC_DPSM_DISABLE;
 }
 
