@@ -47,6 +47,13 @@ struct lbm_lora_data_common {
 	/* Current LoRa parameters */
 	ral_lora_mod_params_t mod_params;
 	ral_lora_pkt_params_t pkt_params;
+#ifdef CONFIG_LORA_GFSK
+	/* Current GFSK parameters */
+	ral_gfsk_mod_params_t gfsk_mod_params;
+	ral_gfsk_pkt_params_t gfsk_pkt_params;
+	/* Whether those, rather than the LoRa ones, describe the radio */
+	bool gfsk;
+#endif
 	/* Operation complete worker */
 	struct k_work_delayable op_done_work;
 	/* RX state storage */
@@ -71,6 +78,8 @@ struct lbm_lora_data_common {
 	enum lbm_modem_mode modem_mode;
 	/* Radio initialization state */
 	bool radio_initialized;
+	/* Whether the stored parameters still describe the radio */
+	bool configured;
 };
 
 /**
@@ -144,6 +153,17 @@ static inline int lbm_optional_dio1_irq_configure_dt(const struct gpio_dt_spec *
 }
 
 /* Common LBM implementation of the LoRa API */
+#ifdef CONFIG_LORA_GFSK
+/**
+ * @brief Set the radio up for GFSK
+ *
+ * @param dev  LoRa device
+ * @param gfsk Configuration to apply
+ * @return 0 on success, negative on error
+ */
+int lbm_lora_config_gfsk(const struct device *dev, const struct lora_gfsk_config *gfsk);
+#endif
+
 extern const struct lora_driver_api lbm_lora_api;
 
 /**

@@ -20,6 +20,14 @@
 #define STATE_BUSY      1
 #define STATE_CLEANUP   2
 
+/* The library reaches the FSK modem through its SX126x radio only: the SX127x
+ * one leaves the sync word and the whitening alone, so a frame it sent would
+ * match nothing. HAS_SEMTECH_SX126X is what puts that radio in the build.
+ */
+#if defined(CONFIG_LORA_GFSK) && defined(CONFIG_HAS_SEMTECH_SX126X)
+#define SX12XX_GFSK 1
+#endif
+
 LOG_MODULE_REGISTER(sx12xx_common, CONFIG_LORA_LOG_LEVEL);
 
 struct sx12xx_rx_params {
@@ -36,6 +44,14 @@ static struct sx12xx_data {
 	void *async_user_data;
 	RadioEvents_t events;
 	struct lora_modem_config tx_cfg;
+	/* Modem the last configuration set the radio up for */
+	RadioModems_t modem;
+#ifdef SX12XX_GFSK
+	/* Kept for airtime the way tx_cfg is, the LoRa one saying nothing
+	 * about a GFSK frame
+	 */
+	struct lora_gfsk_config tx_gfsk_cfg;
+#endif
 	atomic_t modem_usage;
 	struct sx12xx_rx_params rx_params;
 } dev_data;
@@ -225,6 +241,18 @@ uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len)
 {
 	uint32_t bw_idx;
 
+#ifdef SX12XX_GFSK
+	if (dev_data.modem == MODEM_FSK) {
+		/* Under FSK the datarate argument carries the bit rate and
+		 * the bandwidth is not read at all.
+		 */
+		return Radio.TimeOnAir(MODEM_FSK, 0, dev_data.tx_gfsk_cfg.bitrate, 0,
+				       dev_data.tx_gfsk_cfg.preamble_len,
+				       dev_data.tx_gfsk_cfg.fixed_len, data_len,
+				       !dev_data.tx_gfsk_cfg.packet_crc_disable);
+	}
+#endif /* SX12XX_GFSK */
+
 	/* Translate bandwidth to loramac-node index, default to 0 if invalid */
 	if (sx12xx_get_bandwidth_idx(dev_data.tx_cfg.bandwidth, &bw_idx) < 0) {
 		bw_idx = 0;
@@ -236,6 +264,17 @@ uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len)
 			       dev_data.tx_cfg.coding_rate,
 			       dev_data.tx_cfg.preamble_len,
 			       0, data_len, !dev_data.tx_cfg.packet_crc_disable);
+}
+
+/* Whether the modem in use has been given a transmit configuration */
+static bool have_tx_config(void)
+{
+#ifdef SX12XX_GFSK
+	if (dev_data.modem == MODEM_FSK) {
+		return dev_data.tx_gfsk_cfg.frequency != 0;
+	}
+#endif
+	return dev_data.tx_cfg.frequency != 0;
 }
 
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
@@ -250,7 +289,7 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 	int ret;
 
 	/* Validate that we have a TX configuration */
-	if (!dev_data.tx_cfg.frequency) {
+	if (!have_tx_config()) {
 		return -EINVAL;
 	}
 
@@ -290,7 +329,7 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 	/* Store signal */
 	dev_data.operation_done = async;
 
-	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
+	Radio.SetMaxPayloadLength(dev_data.modem, data_len);
 
 	Radio.Send(data, data_len);
 
@@ -321,7 +360,7 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	dev_data.rx_params.rssi = rssi;
 	dev_data.rx_params.snr = snr;
 
-	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
+	Radio.SetMaxPayloadLength(dev_data.modem, 255);
 	Radio.Rx(0);
 
 	ret = k_poll(&evt, 1, timeout);
@@ -369,7 +408,7 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 	dev_data.async_user_data = user_data;
 
 	/* Start reception */
-	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
+	Radio.SetMaxPayloadLength(dev_data.modem, 255);
 	Radio.Rx(0);
 
 	return 0;
@@ -394,6 +433,7 @@ int sx12xx_lora_config(const struct device *dev,
 	}
 
 	Radio.SetChannel(config->frequency);
+	dev_data.modem = MODEM_LORA;
 
 	if (config->tx) {
 		/* Store TX config locally for airtime calculations */
@@ -421,6 +461,69 @@ int sx12xx_lora_config(const struct device *dev,
 	return 0;
 }
 
+#ifdef SX12XX_GFSK
+/* What the library writes to the radio without asking, in RadioSetTxConfig()
+ * and RadioSetRxConfig(). A caller wanting anything else is turned down rather
+ * than handed a link that quietly will not carry.
+ */
+static const uint8_t fsk_sync_word[] = {0xC1, 0x94, 0xC1};
+
+int sx12xx_lora_config_gfsk(const struct device *dev, const struct lora_gfsk_config *config)
+{
+	bool crc = !config->packet_crc_disable;
+	/* The library states its FSK bandwidths across one sideband and
+	 * doubles them for the radio, where this API states them across both.
+	 * It reads the bandwidth in either direction, unlike its LoRa setup,
+	 * and turns an unset one into the narrowest filter it has.
+	 */
+	uint32_t bw_ssb = config->bandwidth / 2;
+
+	if (config->bitrate == 0) {
+		LOG_ERR("GFSK bit rate must be set");
+		return -EINVAL;
+	}
+
+	if (config->pulse_shape != LORA_GFSK_PULSE_SHAPE_BT_1_0) {
+		LOG_ERR("loramac-node shapes the FSK pulse at BT 1.0 only");
+		return -ENOTSUP;
+	}
+
+	if (!config->whitening) {
+		LOG_ERR("loramac-node whitens every FSK payload");
+		return -ENOTSUP;
+	}
+
+	if (config->sync_word_len != sizeof(fsk_sync_word) ||
+	    memcmp(config->sync_word, fsk_sync_word, sizeof(fsk_sync_word)) != 0) {
+		LOG_ERR("loramac-node fixes the FSK sync word at C194C1");
+		return -ENOTSUP;
+	}
+
+	/* Ensure available, decremented after configuration */
+	if (!modem_acquire(&dev_data)) {
+		return -EBUSY;
+	}
+
+	Radio.SetChannel(config->frequency);
+	dev_data.modem = MODEM_FSK;
+
+	if (config->tx) {
+		/* Store TX config locally for airtime calculations */
+		dev_data.tx_gfsk_cfg = *config;
+		Radio.SetTxConfig(MODEM_FSK, config->tx_power, config->freq_deviation, bw_ssb,
+				  config->bitrate, 0, config->preamble_len, config->fixed_len, crc,
+				  0, 0, false, 4000);
+	} else {
+		Radio.SetRxConfig(MODEM_FSK, bw_ssb, config->bitrate, 0, bw_ssb,
+				  config->preamble_len, 0, config->fixed_len, config->payload_len,
+				  crc, false, 0, false, true);
+	}
+
+	modem_release(&dev_data);
+	return 0;
+}
+#endif /* SX12XX_GFSK */
+
 int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 			int8_t tx_power,
 			uint16_t duration)
@@ -442,7 +545,7 @@ int sx12xx_lora_rssi(const struct device *dev, int16_t *rssi)
 	 * already in progress. The bus access itself is serialised one layer
 	 * down.
 	 */
-	*rssi = Radio.Rssi(MODEM_LORA);
+	*rssi = Radio.Rssi(dev_data.modem);
 
 	return 0;
 }

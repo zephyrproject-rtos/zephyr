@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/util.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,6 +27,16 @@ static struct lora_modem_config modem_config = {
 	.preamble_len = 8,
 	.tx_power = 4,
 };
+
+#ifdef CONFIG_LORA_GFSK
+static struct lora_gfsk_config gfsk_config = {
+	.frequency = 0,
+	.tx_power = 4,
+};
+
+/* Which of the two the radio was last asked to be set up for */
+static bool gfsk_selected;
+#endif /* CONFIG_LORA_GFSK */
 
 static int parse_long(long *out, const struct shell *sh, const char *arg)
 {
@@ -85,6 +96,17 @@ static int parse_freq(uint32_t *out, const struct shell *sh, const char *arg)
 	return 0;
 }
 
+/* Both configurations carry the direction, and an operation names it before
+ * the radio is set up.
+ */
+static void lora_set_direction(bool tx)
+{
+	modem_config.tx = tx;
+#ifdef CONFIG_LORA_GFSK
+	gfsk_config.tx = tx;
+#endif
+}
+
 static const struct device *get_modem(const struct shell *sh)
 {
 	const struct device *dev;
@@ -108,6 +130,23 @@ static const struct device *get_configured_modem(const struct shell *sh)
 	if (!dev) {
 		return NULL;
 	}
+
+#ifdef CONFIG_LORA_GFSK
+	if (gfsk_selected) {
+		if (gfsk_config.frequency == 0) {
+			shell_error(sh, "No frequency specified.");
+			return NULL;
+		}
+
+		ret = lora_config_gfsk(dev, &gfsk_config);
+		if (ret < 0) {
+			shell_error(sh, "LoRa GFSK config failed: %d", ret);
+			return NULL;
+		}
+
+		return dev;
+	}
+#endif /* CONFIG_LORA_GFSK */
 
 	if (modem_config.frequency == 0) {
 		shell_error(sh, "No frequency specified.");
@@ -229,8 +268,137 @@ static int cmd_lora_conf(const struct shell *sh, size_t argc, char **argv)
 		}
 	}
 
+	IF_ENABLED(CONFIG_LORA_GFSK, (gfsk_selected = false;))
+
 	return 0;
 }
+
+#ifdef CONFIG_LORA_GFSK
+static int lora_gfsk_conf_dump(const struct shell *sh)
+{
+	static const char *const shapes[] = {"none", "Gaussian BT 0.3", "Gaussian BT 0.5",
+					     "Gaussian BT 0.7", "Gaussian BT 1.0"};
+
+	shell_print(sh, "  Frequency: %" PRIu32 " Hz", gfsk_config.frequency);
+	shell_print(sh, "  TX power: %" PRIi8 " dBm", gfsk_config.tx_power);
+	shell_print(sh, "  Bit rate: %" PRIu32 " bit/s", gfsk_config.bitrate);
+	shell_print(sh, "  Frequency deviation: %" PRIu32 " Hz", gfsk_config.freq_deviation);
+	shell_print(sh, "  Bandwidth: %" PRIu32 " Hz (both sidebands)", gfsk_config.bandwidth);
+	shell_print(sh, "  Pulse shape: %s", shapes[gfsk_config.pulse_shape]);
+	shell_print(sh, "  Sync word length: %" PRIu8 " bytes", gfsk_config.sync_word_len);
+	shell_print(sh, "  Whitening: %s", gfsk_config.whitening ? "on" : "off");
+	shell_print(sh, "  Preamble length: %" PRIu16 " bytes", gfsk_config.preamble_len);
+
+	return 0;
+}
+
+static int lora_gfsk_conf_set(const struct shell *sh, const char *param, const char *value)
+{
+	long lval;
+
+	if (!strcmp("freq", param)) {
+		if (parse_freq(&gfsk_config.frequency, sh, value) < 0) {
+			return -EINVAL;
+		}
+	} else if (!strcmp("tx-power", param)) {
+		if (parse_long_range(&lval, sh, value, "tx-power", INT8_MIN, INT8_MAX) < 0) {
+			return -EINVAL;
+		}
+		gfsk_config.tx_power = lval;
+	} else if (!strcmp("bitrate", param)) {
+		if (parse_long_range(&lval, sh, value, "bitrate", 1, INT32_MAX) < 0) {
+			return -EINVAL;
+		}
+		gfsk_config.bitrate = lval;
+	} else if (!strcmp("fdev", param)) {
+		if (parse_long_range(&lval, sh, value, "fdev", 1, INT32_MAX) < 0) {
+			return -EINVAL;
+		}
+		gfsk_config.freq_deviation = lval;
+	} else if (!strcmp("bw", param)) {
+		if (parse_long_range(&lval, sh, value, "bw", 1, INT32_MAX) < 0) {
+			return -EINVAL;
+		}
+		gfsk_config.bandwidth = lval;
+	} else if (!strcmp("pulse-shape", param)) {
+		if (!strcmp("none", value)) {
+			gfsk_config.pulse_shape = LORA_GFSK_PULSE_SHAPE_NONE;
+		} else if (!strcmp("0.3", value)) {
+			gfsk_config.pulse_shape = LORA_GFSK_PULSE_SHAPE_BT_0_3;
+		} else if (!strcmp("0.5", value)) {
+			gfsk_config.pulse_shape = LORA_GFSK_PULSE_SHAPE_BT_0_5;
+		} else if (!strcmp("0.7", value)) {
+			gfsk_config.pulse_shape = LORA_GFSK_PULSE_SHAPE_BT_0_7;
+		} else if (!strcmp("1.0", value)) {
+			gfsk_config.pulse_shape = LORA_GFSK_PULSE_SHAPE_BT_1_0;
+		} else {
+			shell_error(sh, "Invalid pulse shape: %s", value);
+			return -EINVAL;
+		}
+	} else if (!strcmp("sync-word", param)) {
+		size_t len = hex2bin(value, strlen(value), gfsk_config.sync_word,
+				     sizeof(gfsk_config.sync_word));
+
+		if (len == 0 && strlen(value) != 0) {
+			shell_error(sh, "Invalid sync word: %s", value);
+			return -EINVAL;
+		}
+		gfsk_config.sync_word_len = len;
+	} else if (!strcmp("whitening", param)) {
+		if (parse_long_range(&lval, sh, value, "whitening", 0, 1) < 0) {
+			return -EINVAL;
+		}
+		gfsk_config.whitening = lval != 0;
+	} else if (!strcmp("pre-len", param)) {
+		if (parse_long_range(&lval, sh, value, "pre-len", 0, UINT16_MAX) < 0) {
+			return -EINVAL;
+		}
+		gfsk_config.preamble_len = lval;
+	} else {
+		shell_error(sh, "Unknown parameter '%s'", param);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int cmd_lora_conf_gfsk(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc < 2) {
+		return lora_gfsk_conf_dump(sh);
+	}
+
+	for (int i = 1; i < argc; i += 2) {
+		if (i + 1 >= argc) {
+			shell_error(sh, "'%s' expects an argument", argv[i]);
+			return -EINVAL;
+		}
+
+		ret = lora_gfsk_conf_set(sh, argv[i], argv[i + 1]);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	gfsk_selected = true;
+
+	return 0;
+}
+#else
+/* SHELL_COND_CMD names the handler whether or not the command is built, so
+ * there has to be one to name.
+ */
+static int cmd_lora_conf_gfsk(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_LORA_GFSK */
 
 static int cmd_lora_send(const struct shell *sh,
 			size_t argc, char **argv)
@@ -238,7 +406,7 @@ static int cmd_lora_send(const struct shell *sh,
 	int ret;
 	const struct device *dev;
 
-	modem_config.tx = true;
+	lora_set_direction(true);
 	dev = get_configured_modem(sh);
 	if (!dev) {
 		return -ENODEV;
@@ -262,7 +430,7 @@ static int cmd_lora_recv(const struct shell *sh, size_t argc, char **argv)
 	int16_t rssi;
 	int8_t snr;
 
-	modem_config.tx = false;
+	lora_set_direction(false);
 	dev = get_configured_modem(sh);
 	if (!dev) {
 		return -ENODEV;
@@ -395,24 +563,28 @@ static int cmd_lora_energy_detect(const struct shell *sh, size_t argc, char **ar
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_lora,
 	SHELL_CMD(config, NULL,
 		  SHELL_HELP("Configure the LoRa radio",
 			     "[freq <Hz>] [tx-power <dBm>] [bw <kHz>] [sf <int>] [cr <int>] "
 			     "[pre-len <int>]"),
 		  cmd_lora_conf),
-	SHELL_CMD_ARG(send, NULL,
-		      SHELL_HELP("Send a LoRa packet", "<data>"),
-		      cmd_lora_send, 2, 0),
-	SHELL_CMD_ARG(recv, NULL,
-		      SHELL_HELP("Receive a LoRa packet", "[timeout (ms)]"),
+	SHELL_COND_CMD(CONFIG_LORA_GFSK, config_gfsk, NULL,
+		       SHELL_HELP("Configure the GFSK modem",
+				  "[freq <Hz>] [tx-power <dBm>] [bitrate <bit/s>] [fdev <Hz>] "
+				  "[bw <Hz, both sidebands>] "
+				  "[pulse-shape <none|0.3|0.5|0.7|1.0>] [sync-word <hex>] "
+				  "[whitening <0|1>] [pre-len <bytes>]"),
+		       cmd_lora_conf_gfsk),
+	SHELL_CMD_ARG(send, NULL, SHELL_HELP("Send a LoRa packet", "<data>"), cmd_lora_send, 2, 0),
+	SHELL_CMD_ARG(recv, NULL, SHELL_HELP("Receive a LoRa packet", "[timeout (ms)]"),
 		      cmd_lora_recv, 1, 1),
 	SHELL_CMD_ARG(test_cw, NULL,
 		      SHELL_HELP("Send a continuous wave",
 				 "<freq (Hz)> <power (dBm)> <duration (s)>"),
 		      cmd_lora_test_cw, 4, 0),
-	SHELL_CMD_ARG(rssi, NULL,
-		      SHELL_HELP("Read the instantaneous RSSI", "No arguments"),
+	SHELL_CMD_ARG(rssi, NULL, SHELL_HELP("Read the instantaneous RSSI", "No arguments"),
 		      cmd_lora_rssi, 1, 0),
 	SHELL_CMD_ARG(energy_detect, NULL,
 		      SHELL_HELP("Energy-detection carrier sense",
