@@ -38,6 +38,14 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 #define DISPLAY_NODE(n) DT_INVALID_NODE
 #endif
 
+/* Every selected node must be a display controller, whether it comes from the
+ * "zephyr,displays" list or from the chosen node.
+ */
+#define DISPLAY_NODE_CLASS_ASSERT(n)                                                               \
+	BUILD_ASSERT(DT_NODE_HAS_CLASS(DISPLAY_NODE(n), display),                                  \
+		     "LVGL display " #n " is not a display controller node");
+FOR_EACH(DISPLAY_NODE_CLASS_ASSERT, (), LV_DISPLAYS_IDX_LIST)
+
 #define IS_MONOCHROME_DISPLAY                                                                      \
 	UTIL_OR(IS_EQ(CONFIG_LV_Z_BITS_PER_PIXEL, 1), IS_EQ(CONFIG_LV_COLOR_DEPTH_1, 1))
 
