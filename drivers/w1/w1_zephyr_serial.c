@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT zephyr_w1_serial
 
 /**
- * @brief 1-Wire Bus Master driver using Zephyr serial interface.
+ * @brief 1-Wire bus controller driver using Zephyr serial interface.
  *
  * This driver implements the 1-Wire interface using an uart.
  * The driver uses a uart peripheral with a baudrate of 115.2 kBd to send
- * and receive data bits and a baurade of 9.6 kBd for slave reset and
+ * and receive data bits and a baurade of 9.6 kBd for peripheral reset and
  * presence detection as suggested for normal speed operating mode in:
  * https://www.analog.com/en/resources/technical-articles/using-a-uart-to-implement-a-1wire-bus-master.html
  * For overdrive speed communication baudrates of 1 MBd and 115.2 kBd
@@ -46,8 +46,8 @@ LOG_MODULE_REGISTER(w1_serial, CONFIG_W1_LOG_LEVEL);
 #define W1_SERIAL_OD_RESET_BYTE 0xE0
 
 struct w1_serial_config {
-	/** w1 master config, common to all drivers */
-	struct w1_master_config master_config;
+	/** w1 controller config, common to all drivers */
+	struct w1_controller_config controller_config;
 	/** UART device used for 1-Wire communication */
 	const struct device *uart_dev;
 	/** Baud rate for overdrive speed data communication */
@@ -57,8 +57,8 @@ struct w1_serial_config {
 };
 
 struct w1_serial_data {
-	/** w1 master data, common to all drivers */
-	struct w1_master_data master_data;
+	/** w1 controller data, common to all drivers */
+	struct w1_controller_data controller_data;
 	struct uart_config uart_cfg;
 	bool overdrive_active;
 };
@@ -118,7 +118,7 @@ static int serial_tx_rx_byte(const struct device *dev, uint8_t tx_byte, uint8_t 
 	*rx_byte = 0;
 	for (int i = 0; i < 8; ++i) {
 		/*
-		 * rx-byte different from 0xFF indicates that a slave has
+		 * rx-byte different from 0xFF indicates that a peripheral has
 		 * pulled line low to transmit a 0 bit, otherwise a 1 bit.
 		 */
 		*rx_byte |= (uint8_t)(byte_representation[i] == 0xFF) << i;
@@ -260,7 +260,8 @@ static int w1_serial_init(const struct device *dev)
 
 	data->overdrive_active = false;
 
-	LOG_DBG("w1-serial initialized, with %d slave devices", cfg->master_config.slave_count);
+	LOG_DBG("w1-serial initialized, with %d peripheral devices",
+		cfg->controller_config.peripheral_count);
 	return 0;
 }
 
@@ -276,7 +277,7 @@ static DEVICE_API(w1, w1_serial_driver_api) = {
 #define W1_ZEPHYR_SERIAL_INIT(inst)                                                                \
 	static const struct w1_serial_config w1_serial_cfg_##inst = {                              \
 		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
-		.master_config.slave_count = W1_INST_SLAVE_COUNT(inst),                            \
+		.controller_config.peripheral_count = W1_INST_PERIPHERAL_COUNT(inst),              \
 		.od_data_baud = DT_INST_PROP(inst, overdrive_data_baud),                           \
 		.od_reset_baud = DT_INST_PROP(inst, overdrive_reset_baud),                         \
 	};                                                                                         \

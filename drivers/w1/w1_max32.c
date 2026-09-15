@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(w1_max32, CONFIG_W1_LOG_LEVEL);
 
 struct max32_w1_config {
-	struct w1_master_config w1_config;
+	struct w1_controller_config w1_config;
 	mxc_owm_regs_t *regs;
 	const struct pinctrl_dev_config *pctrl;
 	const struct device *clock;
@@ -27,7 +27,7 @@ struct max32_w1_config {
 };
 
 struct max32_w1_data {
-	struct w1_master_data w1_data;
+	struct w1_controller_data w1_data;
 	uint8_t reg_device_config;
 };
 
@@ -58,7 +58,7 @@ static int api_read_bit(const struct device *dev)
 	ret = MXC_OWM_ReadBit();
 	if (ret < 0) {
 		if (MXC_OWM_GetPresenceDetect() == 0) {
-			/* if no slave connected to the bus, read bits shall be logical ones */
+			/* if no peripheral connected to the bus, read bits shall be logical ones */
 			ret = 1;
 		} else {
 			return -EIO;
@@ -75,7 +75,7 @@ static int api_write_bit(const struct device *dev, bool bit)
 	ret = MXC_OWM_WriteBit(bit);
 	if (ret < 0) {
 		if (MXC_OWM_GetPresenceDetect() == 0) {
-			/* if no slave connected to the bus, write shall success */
+			/* if no peripheral connected to the bus, write shall success */
 			ret = 0;
 		} else {
 			return -EIO;
@@ -92,7 +92,7 @@ static int api_read_byte(const struct device *dev)
 	ret = MXC_OWM_ReadByte();
 	if (ret < 0) {
 		if (MXC_OWM_GetPresenceDetect() == 0) {
-			/* if no slave connected to the bus, read bits shall be logical ones */
+			/* if no peripheral connected to the bus, read bits shall be logical ones */
 			ret = 0xff;
 		} else {
 			return -EIO;
@@ -109,7 +109,7 @@ static int api_write_byte(const struct device *dev, uint8_t byte)
 	ret = MXC_OWM_WriteByte(byte);
 	if (ret < 0) {
 		if (MXC_OWM_GetPresenceDetect() == 0) {
-			/* if no slave connected to the bus, write shall success */
+			/* if no peripheral connected to the bus, write shall success */
 			ret = 0;
 		} else {
 			return -EIO;
@@ -189,7 +189,7 @@ static DEVICE_API(w1, w1_max32_driver_api) = {
 #define MAX32_W1_INIT(_num)                                                                        \
 	PINCTRL_DT_INST_DEFINE(_num);                                                              \
 	static const struct max32_w1_config max32_w1_config_##_num = {                             \
-		.w1_config.slave_count = W1_INST_SLAVE_COUNT(_num),                                \
+		.w1_config.peripheral_count = W1_INST_PERIPHERAL_COUNT(_num),                      \
 		.regs = (mxc_owm_regs_t *)DT_INST_REG_ADDR(_num),                                  \
 		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                     \
 		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                                 \
