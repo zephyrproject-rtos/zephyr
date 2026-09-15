@@ -21,4 +21,17 @@ config ETH_VIRTIO_NET_RX_BUFFERS
 	int "VIRTIO network device receive buffers"
 	default 4
 
+config ETH_VIRTIO_NET_MULTICAST_FILTER
+	bool "Multicast destination address filtering"
+	default y
+	depends on NET_L2_ETHERNET
+	help
+	  Enable support for multicast destination address filtering in the
+	  device. The multicast MAC addresses the Ethernet L2 tracks for the
+	  interface are programmed into the MAC table of the device with its
+	  receive filter commands, so only multicast sent to those addresses
+	  is delivered. This needs the VIRTIO_NET_F_CTRL_RX feature of the
+	  device. If disabled, the device is asked to deliver all multicast
+	  frames instead.
+
 endif
