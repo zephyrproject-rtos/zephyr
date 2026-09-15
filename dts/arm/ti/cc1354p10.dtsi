@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <ti/cc13x4_cc26x4.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(256)>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ccfg_mem: memory@50000000 {
+			reg = <0x50000000 0x800>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ti_ccfg_partition: partition@50000000 {
+				compatible = "zephyr,memory-region";
+				reg = <0x50000000 0x800>;
+				zephyr,memory-region = "FLASH_CCFG";
+			};
+		};
+	};
+};
