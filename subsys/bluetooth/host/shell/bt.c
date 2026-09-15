@@ -1486,9 +1486,10 @@ static int cmd_id_create(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (argc > 1) {
-		err = bt_addr_le_from_str(argv[1], "random", &addr);
+		err = bt_addr_le_from_str(argv[1], &addr);
 		if (err) {
 			shell_error(sh, "Invalid address");
+			return err;
 		}
 	} else {
 		bt_addr_le_copy(&addr, BT_ADDR_LE_ANY);
@@ -1519,7 +1520,7 @@ static int cmd_id_reset(const struct shell *sh, size_t argc, char *argv[])
 	id = strtol(argv[1], NULL, 10);
 
 	if (argc > 2) {
-		err = bt_addr_le_from_str(argv[2], "random", &addr);
+		err = bt_addr_le_from_str(argv[2], &addr);
 		if (err) {
 			shell_print(sh, "Invalid address");
 			return err;
@@ -2230,14 +2231,15 @@ static int cmd_directed_adv(const struct shell *sh,
 	bt_addr_le_t addr;
 	struct bt_le_adv_param param;
 
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
-	param = *BT_LE_ADV_CONN_DIR(&addr);
+	err = bt_addr_le_from_str(argv[1], &addr);
 	if (err) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 		return err;
 	}
 
-	for (size_t argn = 3; argn < argc; argn++) {
+	param = *BT_LE_ADV_CONN_DIR(&addr);
+
+	for (size_t argn = 2; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "low")) {
@@ -2329,16 +2331,16 @@ static bool parse_and_set_adv_param(size_t argc, char *argv[], struct bt_le_adv_
 		} else if (!strcmp(arg, "directed")) {
 			static bt_addr_le_t addr;
 
-			if ((argn + 2) >= argc) {
+			if ((argn + 1) >= argc) {
 				return false;
 			}
 
-			if (bt_addr_le_from_str(argv[argn + 1], argv[argn + 2], &addr)) {
+			if (bt_addr_le_from_str(argv[argn + 1], &addr) != 0) {
 				return false;
 			}
 
 			param->peer = &addr;
-			argn += 2;
+			argn++;
 		} else {
 			return false;
 		}
@@ -3040,7 +3042,7 @@ static int cmd_per_adv_sync_create(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	err = bt_addr_le_from_str(argv[1], argv[2], &create_params.addr);
+	err = bt_addr_le_from_str(argv[1], &create_params.addr);
 	if (err) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 		return -ENOEXEC;
@@ -3050,9 +3052,9 @@ static int cmd_per_adv_sync_create(const struct shell *sh, size_t argc,
 	create_params.timeout = 1000; /* 10 seconds */
 	create_params.skip = 10;
 
-	create_params.sid = strtol(argv[3], NULL, 16);
+	create_params.sid = strtol(argv[2], NULL, 16);
 
-	for (int j = 4; j < argc; j++) {
+	for (int j = 3; j < argc; j++) {
 		if (!strcmp(argv[j], "aoa")) {
 			options |= BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOA;
 		} else if (!strcmp(argv[j], "aod_1us")) {
@@ -3777,11 +3779,7 @@ static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 			return -ENOENT;
 		}
 	} else {
-		if (argc < 3U) {
-			return SHELL_CMD_HELP_PRINTED;
-		}
-
-		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+		err = bt_addr_le_from_str(argv[1], &addr);
 		if (err) {
 			*ercd = err;
 			return -EINVAL;
@@ -3789,7 +3787,7 @@ static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
 	}
 
 #if defined(CONFIG_BT_EXT_ADV)
-	for (size_t argn = 3; argn < argc; argn++) {
+	for (size_t argn = 2; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "coded")) {
@@ -3889,17 +3887,17 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 	struct bt_conn *conn;
 	int err;
 
-	if (default_conn && argc < 3) {
+	if (default_conn && argc < 2) {
 		conn = bt_conn_ref(default_conn);
 	} else {
 		bt_addr_le_t addr;
 
-		if (argc < 3) {
+		if (argc < 2) {
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}
 
-		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+		err = bt_addr_le_from_str(argv[1], &addr);
 		if (err) {
 			shell_error(sh, "Invalid peer address (err %d)", err);
 			return err;
@@ -3930,7 +3928,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 	bt_addr_le_t addr;
 	int err;
 
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], &addr);
 	if (err) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 		return err;
@@ -4006,17 +4004,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		}
 		break;
 	case 2:
-		addr.type = BT_ADDR_LE_PUBLIC;
-		err = bt_addr_from_str(argv[1], &addr.a);
-		if (err) {
-			shell_error(sh, "Invalid peer address (err %d)", err);
-			return err;
-		}
-		conn = bt_conn_lookup_addr_le(selected_id, &addr);
-		break;
-	case 3:
-		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
-
+		err = bt_addr_le_from_str(argv[1], &addr);
 		if (err) {
 			shell_error(sh, "Invalid peer address (err %d)", err);
 			return err;
@@ -4255,7 +4243,7 @@ static int cmd_oob_remote(const struct shell *sh, size_t argc,
 	int err;
 	bt_addr_le_t addr;
 
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], &addr);
 	if (err) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 		return err;
@@ -4263,10 +4251,10 @@ static int cmd_oob_remote(const struct shell *sh, size_t argc,
 
 	bt_addr_le_copy(&oob_remote.addr, &addr);
 
-	if (argc == 5) {
-		hex2bin(argv[3], strlen(argv[3]), oob_remote.le_sc_data.r,
+	if (argc == 4) {
+		hex2bin(argv[2], strlen(argv[2]), oob_remote.le_sc_data.r,
 			sizeof(oob_remote.le_sc_data.r));
-		hex2bin(argv[4], strlen(argv[4]), oob_remote.le_sc_data.c,
+		hex2bin(argv[3], strlen(argv[3]), oob_remote.le_sc_data.c,
 			sizeof(oob_remote.le_sc_data.c));
 		bt_le_oob_set_sc_flag(true);
 	} else {
@@ -4303,13 +4291,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 
-	if (argc < 3) {
-		shell_print(sh, "Both address and address type needed");
-		return -ENOEXEC;
-	} else {
-		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
-	}
-
+	err = bt_addr_le_from_str(argv[1], &addr);
 	if (err) {
 		shell_print(sh, "Invalid address");
 		return err;
@@ -4929,7 +4911,7 @@ static int cmd_fal_add(const struct shell *sh, size_t argc, char *argv[])
 	bt_addr_le_t addr;
 	int err;
 
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], &addr);
 	if (err) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 		return err;
@@ -4949,7 +4931,7 @@ static int cmd_fal_rem(const struct shell *sh, size_t argc, char *argv[])
 	bt_addr_le_t addr;
 	int err;
 
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], &addr);
 	if (err) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 		return err;
@@ -5411,7 +5393,8 @@ static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 #define HELP_NONE "[none]"
 #define HELP_ONOFF "<on, off>"
 #define HELP_ADDR "<address: XX:XX:XX:XX:XX:XX>"
-#define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
+#define HELP_ADDR_LE "<address: P:XX:XX:XX:XX:XX:XX or R:XX:XX:XX:XX:XX:XX>"
+#define HELP_ADDR_LE_STATIC "[<static random address: R:XX:XX:XX:XX:XX:XX>]"
 
 #if defined(CONFIG_BT_EXT_ADV)
 #define EXT_ADV_SCAN_OPT " [coded] [no-1m]"
@@ -5466,8 +5449,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_HCI)
 	SHELL_CMD_ARG(hci-cmd, NULL, "<ogf> <ocf> [data]", cmd_hci_cmd, 3, 1),
 #endif
-	SHELL_CMD_ARG(id-create, NULL, HELP_ADDR, cmd_id_create, 1, 1),
-	SHELL_CMD_ARG(id-reset, NULL, "<id> "HELP_ADDR, cmd_id_reset, 2, 1),
+	SHELL_CMD_ARG(id-create, NULL, HELP_ADDR_LE_STATIC, cmd_id_create, 1, 1),
+	SHELL_CMD_ARG(id-reset, NULL, "<id> "HELP_ADDR_LE_STATIC, cmd_id_reset, 2, 1),
 	SHELL_CMD_ARG(id-delete, NULL, "<id>", cmd_id_delete, 2, 0),
 	SHELL_CMD_ARG(id-show, NULL, HELP_NONE, cmd_id_show, 1, 0),
 	SHELL_CMD_ARG(id-select, NULL, "<id>", cmd_id_select, 2, 0),
@@ -5553,7 +5536,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low] "
 		      "[identity] [dir-rpa]",
-		      cmd_directed_adv, 3, 6),
+		      cmd_directed_adv, 2, 6),
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_EXT_ADV)
 	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 11),
@@ -5590,7 +5573,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(per-adv-sync-create, NULL,
 		      HELP_ADDR_LE " <sid> [skip <count>] [timeout <ms>] [aoa] "
 		      "[aod_1us] [aod_2us] [cte_only]",
-		      cmd_per_adv_sync_create, 4, 6),
+		      cmd_per_adv_sync_create, 3, 6),
 	SHELL_CMD_ARG(per-adv-sync-delete, NULL, "[<index>]",
 		      cmd_per_adv_sync_delete, 1, 1),
 	SHELL_CMD_ARG(per-adv-sync-select, NULL, "[sync]", cmd_per_adv_sync_select, 1, 1),
@@ -5623,9 +5606,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(connect-name, NULL, "<name filter>",
 		      cmd_connect_le_name, 2, 0),
 #endif /* CONFIG_BT_CENTRAL */
-	SHELL_CMD_ARG(disconnect, NULL, HELP_ADDR_LE, cmd_disconnect, 1, 2),
-	SHELL_CMD_ARG(select, NULL, HELP_ADDR_LE, cmd_select, 3, 0),
-	SHELL_CMD_ARG(info, NULL, HELP_ADDR_LE, cmd_info, 1, 2),
+	SHELL_CMD_ARG(disconnect, NULL, HELP_ADDR_LE, cmd_disconnect, 1, 1),
+	SHELL_CMD_ARG(select, NULL, HELP_ADDR_LE, cmd_select, 2, 0),
+	SHELL_CMD_ARG(info, NULL, HELP_ADDR_LE, cmd_info, 1, 1),
 	SHELL_CMD_ARG(conn-update, NULL, "<min> <max> <latency> <timeout>",
 		      cmd_conn_update, 5, 0),
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
@@ -5641,7 +5624,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_chan_map, 2, 1),
 #endif /* CONFIG_BT_CENTRAL */
 	SHELL_CMD_ARG(oob, NULL, HELP_NONE, cmd_oob, 1, 0),
-	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR_LE"]", cmd_clear, 2, 1),
+	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR_LE"]", cmd_clear, 2, 0),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 4, "
 				      "LE: 1 - 4> [force-pair]",
@@ -5672,11 +5655,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
 	SHELL_CMD_ARG(oob-remote, NULL,
 		      HELP_ADDR_LE" <oob rand> <oob confirm>",
-		      cmd_oob_remote, 3, 2),
+		      cmd_oob_remote, 2, 2),
 	SHELL_CMD_ARG(oob-clear, NULL, HELP_NONE, cmd_oob_clear, 1, 0),
 #if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
-	SHELL_CMD_ARG(fal-add, NULL, HELP_ADDR_LE, cmd_fal_add, 3, 0),
-	SHELL_CMD_ARG(fal-rem, NULL, HELP_ADDR_LE, cmd_fal_rem, 3, 0),
+	SHELL_CMD_ARG(fal-add, NULL, HELP_ADDR_LE, cmd_fal_add, 2, 0),
+	SHELL_CMD_ARG(fal-rem, NULL, HELP_ADDR_LE, cmd_fal_rem, 2, 0),
 	SHELL_CMD_ARG(fal-clear, NULL, HELP_NONE, cmd_fal_clear, 1, 0),
 
 #if defined(CONFIG_BT_CENTRAL)

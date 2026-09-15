@@ -674,19 +674,19 @@ static int cmd_resubscribe(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], &addr);
 	if (err) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 		return -ENOEXEC;
 	}
 
-	subscribe_params.ccc_handle = strtoul(argv[3], NULL, 16);
-	subscribe_params.value_handle = strtoul(argv[4], NULL, 16);
+	subscribe_params.ccc_handle = strtoul(argv[2], NULL, 16);
+	subscribe_params.value_handle = strtoul(argv[3], NULL, 16);
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.notify = notify_func;
 	SET_CHAN_OPT_ANY(subscribe_params);
 
-	if (argc > 5 && !strcmp(argv[5], "ind")) {
+	if (argc > 4 && !strcmp(argv[4], "ind")) {
 		subscribe_params.value = BT_GATT_CCC_INDICATE;
 	}
 
@@ -1332,7 +1332,7 @@ int cmd_att_mtu(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #define HELP_NONE "[none]"
-#define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
+#define HELP_ADDR_LE "<address: P:XX:XX:XX:XX:XX:XX or R:XX:XX:XX:XX:XX:XX>"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 #if defined(CONFIG_BT_GATT_CLIENT)
@@ -1359,7 +1359,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 	SHELL_CMD_ARG(subscribe, NULL, "<CCC handle> <value handle> [ind]",
 		      cmd_subscribe, 3, 1),
 	SHELL_CMD_ARG(resubscribe, NULL, HELP_ADDR_LE" <CCC handle> "
-		      "<value handle> [ind]", cmd_resubscribe, 5, 1),
+		      "<value handle> [ind]", cmd_resubscribe, 4, 1),
 	SHELL_CMD_ARG(write, NULL, "<handle> <offset> <data>", cmd_write, 4, 0),
 	SHELL_CMD_ARG(write-without-response, NULL,
 		      "<handle> <data> [length] [repeat]",
