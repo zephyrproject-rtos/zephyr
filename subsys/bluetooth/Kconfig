@@ -28,10 +28,14 @@ config BT_HCI
 	  HCI driver in between.
 
 config BT_CUSTOM
-	bool "Custom"
+	bool "Custom [DEPRECATED]"
+	select DEPRECATED
 	help
-	  Select a custom, non-HCI based stack. If you're not sure what
-	  this is, you probably want the HCI-based stack instead.
+	  Select a custom, non-HCI based stack. Deprecated: the option dates
+	  from the time when a whole Bluetooth Host could be offloaded behind
+	  the Zephyr Bluetooth API, nothing in the tree selects it, and HCI
+	  transports are regular device drivers. Out-of-tree stacks add their
+	  own entry to the choice instead.
 
 endchoice
 
