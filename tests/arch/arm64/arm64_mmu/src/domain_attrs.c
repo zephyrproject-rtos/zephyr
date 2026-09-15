@@ -154,4 +154,67 @@ ZTEST(arm64_mmu_domain, test_partition_over_unmapped_range)
 		      -ENOENT, "unmapped range gained a domain entry %#llx", desc);
 }
 
+/*
+ * Removing a partition hands the range back to what the kernel has for it,
+ * so the domain ends up with the kernel entry again.
+ */
+ZTEST(arm64_mmu_domain, test_partition_remove_restores_entry)
+{
+	zassert_ok(arch_mem_map((void *)TEST_VIRT, TEST_PHYS, TEST_SIZE, K_MEM_PERM_RW));
+
+	uint64_t kdesc = kernel_pte(TEST_VIRT);
+
+	add_partition(TEST_VIRT, TEST_SIZE, K_MEM_PARTITION_P_RW_U_RW);
+	zassert_not_equal(domain_pte(TEST_VIRT), kdesc, "partition did not change the entry");
+
+	zassert_ok(k_mem_domain_remove_partition(&test_domain, &test_part));
+	test_part.size = 0;
+
+	zassert_equal(domain_pte(TEST_VIRT), kdesc,
+		      "entry %#llx after removal, expected %#llx", domain_pte(TEST_VIRT), kdesc);
+}
+
+/*
+ * A partition covering part of a block has to split it in the domain, and
+ * only the covered part becomes reachable from EL0. The kernel keeps its
+ * block: the split belongs to the domain.
+ */
+ZTEST(arm64_mmu_domain, test_partition_over_part_of_a_block)
+{
+	size_t block_size = (CONFIG_MMU_PAGE_SIZE / sizeof(uint64_t)) * CONFIG_MMU_PAGE_SIZE;
+	uintptr_t virt = ROUND_DOWN(TEST_VIRT, block_size);
+	uintptr_t phys = ROUND_DOWN(TEST_PHYS, block_size);
+	uintptr_t outside = virt + block_size - CONFIG_MMU_PAGE_SIZE;
+	unsigned int klevel, level;
+	uint64_t kdesc;
+
+	zassert_ok(arch_mem_map((void *)virt, phys, block_size, K_MEM_PERM_RW));
+	zassert_ok(arm64_mmu_pte_get(NULL, virt, &kdesc, &klevel));
+
+	add_partition(virt, CONFIG_MMU_PAGE_SIZE, K_MEM_PARTITION_P_RW_U_RW);
+
+	uint64_t covered, uncovered;
+
+	zassert_ok(arm64_mmu_pte_get(&test_domain.arch.ptables, virt, &covered, &level));
+	zassert_true(level > klevel, "block not split: level %u, kernel level %u", level, klevel);
+	zassert_true((covered & PTE_BLOCK_DESC_AP_ELx) != 0, "covered page has no EL0 access");
+	zassert_equal(covered & PTE_PHYSADDR_MASK, phys, "covered page moved");
+
+	zassert_ok(arm64_mmu_pte_get(&test_domain.arch.ptables, outside, &uncovered, &level));
+	zassert_true((uncovered & PTE_BLOCK_DESC_AP_ELx) == 0,
+		     "EL0 access leaked to the rest of the block");
+	zassert_equal(uncovered & PTE_PHYSADDR_MASK, phys + block_size - CONFIG_MMU_PAGE_SIZE,
+		      "rest of the block moved");
+
+	uint64_t kdesc_after;
+
+	zassert_ok(arm64_mmu_pte_get(NULL, virt, &kdesc_after, &level));
+	zassert_equal(kdesc_after, kdesc, "kernel entry changed by a domain partition");
+	zassert_equal(level, klevel, "kernel block was split");
+
+	(void)k_mem_domain_remove_partition(&test_domain, &test_part);
+	test_part.size = 0;
+	(void)arch_mem_unmap((void *)virt, block_size);
+}
+
 ZTEST_SUITE(arm64_mmu_domain, NULL, NULL, before, after, NULL);
