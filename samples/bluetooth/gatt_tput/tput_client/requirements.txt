@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+# BLE library for the cross-platform throughput client (tput_client.py)
+bleak>=0.21
