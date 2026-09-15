@@ -1,6 +1,6 @@
 # Synaptics SR100 Astra Machina Micro (RDK) Board configuration options
 
-# Copyright (c) 2025 Synaptics Inc.
+# SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_SR100_RDK
@@ -8,7 +8,7 @@ if BOARD_SR100_RDK
 if SERIAL
 
 config UART_INTERRUPT_DRIVEN
-	default y
+	default y if BOARD_SR100_RDK_SR100_M55
 
 endif # SERIAL
 

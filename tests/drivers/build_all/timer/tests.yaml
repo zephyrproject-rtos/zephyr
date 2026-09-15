@@ -9,4 +9,4 @@ tests:
       - CONFIG_CORTEX_M_SYSTICK=n
       - CONFIG_CMSDK_APB_TIMER=y
     platform_allow:
-      - sr100_rdk/sr100
+      - sr100_rdk/sr100/m55

@@ -65,8 +65,30 @@ To build an application, use the standard Zephyr command. Here is an example for
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sr100_rdk
+   :board: sr100_rdk/sr100/m55
    :goals: build
+
+System Build (Sysbuild)
+=======================
+
+The SR100 board supports composing a multi-image firmware using sysbuild on the
+M55 launcher target ``sr100_rdk/sr100/m55``.
+
+Dual-core build (M55 + M4)
+--------------------------
+
+Build ``samples/hello_world`` for M55 and ``samples/subsys/shell/shell_module``
+for M4 in one sysbuild invocation:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: sr100_rdk/sr100/m55
+   :goals: build
+   :west-args: --sysbuild -- -DSR100_M4_APP_DIR=$ZEPHYR_BASE/samples/subsys/shell/shell_module
+
+With this configuration, the SR100 bootloader will load both firmware images,
+start the M55 core and the M55 firmware will automatically take the M4 core
+out of reset.
 
 Flashing
 ========
@@ -83,7 +105,7 @@ Next, run the ``west debugserver`` command.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sr100_rdk
+   :board: sr100_rdk/sr100/m55
    :goals: debugserver
 
 Now, in a separate terminal, run the flashing script provided by Synaptics:

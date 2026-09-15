@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SR100_RDK
+
+config SR100_INCLUDE_M4_IMAGE
+	bool "Include M4 image in SR100 sysbuild"
+	default y
+	help
+	  Build the M4 companion image as part of the SR100 sysbuild. When
+	  enabled, sysbuild adds the M4 image and enforces M4-first
+	  configure/flash order relative to the M55 application image.
+
+endif # BOARD_SR100_RDK

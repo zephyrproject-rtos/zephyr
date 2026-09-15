@@ -1,10 +1,15 @@
-identifier: sr100_rdk
+identifier: sr100_rdk/sr100/m55
 name: Synaptics SR100 RDK
 type: mcu
 arch: arm
+ram: 128
+flash: 128
 toolchain:
   - zephyr
 supported:
   - gpio
+  - i2c
+  - spi
   - uart
+  - usb
 vendor: syna
