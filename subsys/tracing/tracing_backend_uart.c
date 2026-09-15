@@ -68,9 +68,11 @@ static void uart_isr(const struct device *dev, void *user_data)
 #endif
 
 static void tracing_backend_uart_output(
-	const struct tracing_backend *backend,
+	const struct tracing_backend *backend, uint8_t stream_id,
 	uint8_t *data, uint32_t length)
 {
+	ARG_UNUSED(stream_id);
+
 	for (uint32_t i = 0; i < length; i++) {
 		uart_poll_out(tracing_uart_dev, data[i]);
 	}

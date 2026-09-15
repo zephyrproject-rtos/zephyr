@@ -12,9 +12,12 @@
 
 static int tracing_fd = -1;
 
-static void tracing_backend_semihost_output(const struct tracing_backend *backend, uint8_t *data,
+static void tracing_backend_semihost_output(const struct tracing_backend *backend,
+					    uint8_t stream_id, uint8_t *data,
 					    uint32_t length)
 {
+	ARG_UNUSED(stream_id);
+
 	semihost_write(tracing_fd, data, length);
 }
 
