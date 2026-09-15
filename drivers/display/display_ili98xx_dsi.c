@@ -272,3 +272,8 @@ static int ili98xx_dsi_init(const struct device *dev)
 #include "display_ili9806e_dsi.h"
 DT_INST_FOREACH_ILI98XX_DSI_STATUS_OKAY(9806e);
 #endif
+
+#ifdef CONFIG_ILI9881C_DSI
+#include "display_ili9881c_dsi.h"
+DT_INST_FOREACH_ILI98XX_DSI_STATUS_OKAY(9881c);
+#endif
