@@ -119,7 +119,10 @@ void bt_addr_le_copy_resolved(bt_addr_le_t *dst, const bt_addr_le_t *src)
 
 bool bt_addr_le_is_resolved(const bt_addr_le_t *addr)
 {
-	return (addr->type & ADDR_RESOLVED_BITMASK) != 0;
+	/* Bit 1 alone is not enough: the anonymous (0xff) and unresolved (0xfe)
+	 * sentinels have it set too.
+	 */
+	return addr->type == BT_ADDR_LE_PUBLIC_ID || addr->type == BT_ADDR_LE_RANDOM_ID;
 }
 
 #if defined(CONFIG_BT_PRIVACY)
