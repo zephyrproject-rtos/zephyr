@@ -99,9 +99,24 @@
 			reg = <0x4000000 DT_SIZE_K(8)>;
 		};
 
-		sram0: memory@20000000 {
+		/*
+		 * Reserve the low 16 KB of SRAM (SRAM A0/A1/A2) so Zephyr's
+		 * general allocator never places .data/.bss there. The SGI PKC
+		 * engine uses the 8 KB PKC workarea (SRAM A1 + A2) at 0x20002000.
+		 * Without this carve-out that window overlaps Zephyr .bss and
+		 * the PKC engine and Zephyr corrupt each other's RAM.
+		 * This mirrors the SDK __pkc__ linker carve-out (__ram_offset__
+		 * = 0x4000).
+		 */
+		pkc_ram: memory@20002000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20002000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "PKC_RAM";
+		};
+
+		sram0: memory@20004000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(240)>;
+			reg = <0x20004000 DT_SIZE_K(224)>;
 		};
 
 		porta: pinmux@400bc000 {

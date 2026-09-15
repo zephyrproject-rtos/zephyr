@@ -1,0 +1,13 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "modules/hal_nxp/nxp_crypto_hal/Kconfig.els_pkc"
+source "modules/hal_nxp/nxp_crypto_hal/Kconfig.psa_crypto_driver"
+source "modules/hal_nxp/nxp_crypto_hal/Kconfig.sgi_pkc"
+
+config TF_PSA_CRYPTO_DISPATCH_DIR
+	string
+	default "$(ZEPHYR_HAL_NXP_MODULE_DIR)/nxp_crypto_hal/mbedtls/dispatch"
+	help
+	  Override the TF-PSA-Crypto dispatch directory to point at the NXP
+	  crypto HAL mbedtls dispatch sources.
