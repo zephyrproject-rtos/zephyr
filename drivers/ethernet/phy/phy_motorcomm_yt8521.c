@@ -14,6 +14,9 @@
 LOG_MODULE_REGISTER(phy_motorcomm_yt85xx, CONFIG_PHY_LOG_LEVEL);
 
 #include <errno.h>
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#include <zephyr/drivers/gpio.h>
+#endif
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -26,6 +29,8 @@ LOG_MODULE_REGISTER(phy_motorcomm_yt85xx, CONFIG_PHY_LOG_LEVEL);
 
 #define PHY_ID_YT8521 (0x0000011A)
 #define PHY_ID_YT8531 (0x0000E91A)
+
+#define ANY_RESET_GPIO   DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 
 /* PHY Specific Status Register */
 #define SPEC_STATUS_REG_DUPLEX_MASK (1U << 13)
@@ -74,6 +79,11 @@ struct mc_ytphy_config {
 	uint8_t rx_delay_sel;
 	uint8_t tx_delay_sel;
 	enum phy_link_speed default_speeds;
+#if ANY_RESET_GPIO
+	const struct gpio_dt_spec reset_gpio;
+	uint32_t reset_assert_duration_us;
+	uint32_t reset_deassertion_timeout_ms;
+#endif
 };
 
 struct mc_ytphy_data {
@@ -163,22 +173,53 @@ static int mc_ytphy_modify_ext(const struct device *dev, uint16_t reg, uint16_t 
 	return mc_ytphy_modify(dev, YTPHY_PAGE_DATA, mask, set);
 }
 
-static int mc_ytphy_soft_reset(const struct device *dev)
+static int mc_ytphy_reset(const struct device *dev)
 {
+	const struct mc_ytphy_config *config = dev->config;
 	int max_cnt = 500; /* max time of reset ~500ms */
 	uint32_t data;
 	int ret;
 
+#if ANY_RESET_GPIO
+
+	if (config->reset_gpio.port) {
+		/* Assert reset */
+		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+		if (ret) {
+			return ret;
+		}
+
+		/* Hold reset for the minimum time specified by datasheet */
+		k_busy_wait(config->reset_assert_duration_us);
+
+		/* Deassert reset */
+		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+		if (ret) {
+			return ret;
+		}
+
+		/* Wait for circuits settling time before accessing registers */
+		k_msleep(config->reset_deassertion_timeout_ms);
+
+		goto finalize_reset;
+	}
+#endif /* ANY_RESET_GPIO */
+
+	/* Software reset via MDIO */
 	ret = mc_ytphy_modify(dev, MII_BMCR, 0, MII_BMCR_RESET);
 	if (ret) {
 		return ret;
 	}
 
+#if ANY_RESET_GPIO
+finalize_reset:
+#endif
 	while (max_cnt--) {
 		k_msleep(1);
 
 		ret = mc_ytphy_read(dev, MII_BMCR, &data);
 		if (ret) {
+			LOG_ERR("Error reading phy (%d) register", config->phy_addr);
 			break;
 		}
 
@@ -528,6 +569,7 @@ static int mc_ytphy_get_id(const struct device *dev, uint32_t *phy_id)
 
 static int mc_ytphy_init(const struct device *dev)
 {
+	const struct mc_ytphy_config *config = dev->config;
 	struct mc_ytphy_data *const data = dev->data;
 	int ret;
 
@@ -536,6 +578,16 @@ static int mc_ytphy_init(const struct device *dev)
 	data->state.is_up = false;
 	data->dev = dev;
 	data->cb = NULL;
+
+#if ANY_RESET_GPIO
+	/* Configure reset pin */
+	if (config->reset_gpio.port) {
+		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif /* ANY_RESET_GPIO */
 
 	if (mc_ytphy_get_id(dev, NULL)) {
 		return -EIO;
@@ -547,8 +599,9 @@ static int mc_ytphy_init(const struct device *dev)
 	mc_ytphy_modify_ext(dev, YTPHY_SYNCE_CFG_REG, YT8521_SCR_SYNCE_ENABLE, 0);
 
 	/* Reset PHY */
-	ret = mc_ytphy_soft_reset(dev);
+	ret = mc_ytphy_reset(dev);
 	if (ret) {
+		LOG_ERR("Failed to reset phy (%d)", config->phy_addr);
 		return -EIO;
 	}
 
@@ -592,6 +645,15 @@ static DEVICE_API(ethphy, mc_ytphy_driver_api) = {
 	.write = mc_ytphy_write,
 };
 
+#if ANY_RESET_GPIO
+#define MC_YTPHY_RESET_GPIO(n)                                                                     \
+	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                           \
+	.reset_assert_duration_us = DT_INST_PROP_OR(n, reset_assert_duration_us, 10000),       \
+	.reset_deassertion_timeout_ms = DT_INST_PROP_OR(n, reset_deassertion_timeout_ms, 30),
+#else
+#define MC_YTPHY_RESET_GPIO(n)
+#endif
+
 #define MC_YTPHY_CONFIG(n)                                                                         \
 	static const struct mc_ytphy_config mc_ytphy_config_##n = {                                \
 		.phy_addr = DT_INST_REG_ADDR(n),                                                   \
@@ -599,6 +661,7 @@ static DEVICE_API(ethphy, mc_ytphy_driver_api) = {
 		.rx_delay_sel = DT_INST_PROP_OR(n, motorcomm_rx_delay_sel, 0),                     \
 		.tx_delay_sel = DT_INST_PROP_OR(n, motorcomm_tx_delay_sel, 0),                     \
 		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),                             \
+		MC_YTPHY_RESET_GPIO(n)                                                             \
 	};
 
 #define MC_YTPHY_DATA(n)                                                                           \
