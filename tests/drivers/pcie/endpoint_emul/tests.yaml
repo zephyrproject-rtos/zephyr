@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.pcie.endpoint_emul:
+    tags:
+      - drivers
+      - pcie
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    filter: dt_compat_enabled("zephyr,pcie-ep-emul")
