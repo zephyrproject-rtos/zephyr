@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Canonical Limited
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pinecil_v2
+name: Pine64 Pinecil v2
+type: mcu
+arch: riscv
+ram: 132
+flash: 992
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - uart
+  - usbd
+  - watchdog
+  - entropy
+  - pinctrl
+  - dma
+  - crypto
+  - counter
+vendor: pine64
