@@ -6,7 +6,9 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 1024
+supported:
+  - netif:eth
+  - ptp_clock
 testing:
   ignore_tags:
-    - net
     - bluetooth
