@@ -53,6 +53,13 @@ config XEN_EVENTS
 	help
 	  Xen event channels driver.
 
+config XEN_FLASK
+	bool "XSM FLASK driver"
+	help
+	  Support XSM FLASK hypercall interface, which allows to work with Xen security policy
+	  and to assign security labels to domains.
+
+
 endmenu
 
 endif # XEN
