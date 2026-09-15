@@ -209,6 +209,7 @@ static int acp_host_dma_start(const struct device *dev, uint32_t channel)
 	}
 	if (chan->state != ACP_DMA_PREPARED && chan->state != ACP_DMA_SUSPENDED) {
 		ret = -EINVAL;
+		goto out;
 	}
 	chan->state = ACP_DMA_ACTIVE;
 	/* Clear DMAChRun before starting the DMA Ch */
