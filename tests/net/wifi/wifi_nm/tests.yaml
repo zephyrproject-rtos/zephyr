@@ -3,6 +3,11 @@ common:
 tests:
   net.wifi:
     min_ram: 32
+    # The hostap supplicant uses "%d" for size_t in several printf calls, which
+    # warns (and, under -Werror, fails) on 64-bit builds. Skip the combination
+    # of a 64-bit target and the supplicant being compiled; 64-bit targets that
+    # do not pull in the supplicant still build fine.
+    filter: not (CONFIG_64BIT and CONFIG_WIFI_NM_WPA_SUPPLICANT)
     extra_args:
       # Will be ignored for other platforms
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
