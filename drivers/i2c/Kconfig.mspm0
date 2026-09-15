@@ -34,4 +34,14 @@ config MSPM0_I2C_MAX_DISPATCH_MSGS
 	  on the number of dispatchable messages supported by the
 	  driver.
 
+config I2C_MSPM0_DMA
+	bool "MSPM0 I2C DMA support"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_TI_MSPM0_I2C),dmas)
+	select DMA
+	help
+	  Use the MSPM0 DMA controller to service the I2C TX/RX FIFO-trigger
+	  event instead of the CPU. Only takes effect for instances that
+	  specify "dmas"/"dma-names" in devicetree; other instances keep the
+	  existing interrupt-driven FIFO refill.
+
 endif # I2C_MSPM0
