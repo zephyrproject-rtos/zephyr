@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2026 NXP
+
+config VIDEO_MCUX_PNGDEC
+	bool "MCUX PNG Decoder"
+	default y
+	depends on DT_HAS_NXP_PNGDEC_ENABLED
+	help
+	  Enable MCUX PNG decoder video device driver.
