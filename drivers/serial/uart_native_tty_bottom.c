@@ -258,13 +258,6 @@ static inline void native_tty_data_bits_get(const struct termios *ter,
 	}
 }
 
-int native_tty_poll_bottom(int fd)
-{
-	struct pollfd pfd = { .fd = fd, .events = POLLIN };
-
-	return poll(&pfd, 1, 0);
-}
-
 int native_tty_open_tty_bottom(const char *pathname)
 {
 	int fd = open(pathname, O_RDWR | O_NOCTTY | O_CLOEXEC);
