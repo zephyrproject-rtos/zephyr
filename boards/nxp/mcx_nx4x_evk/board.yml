@@ -7,8 +7,13 @@ boards:
         variants:
           - name: qspi
             cpucluster: 'cpu0'
+          - name: ns
+            cpucluster: 'cpu0'
   - name: mcx_n5xx_evk
     full_name: MCX-N5XX-EVK
     vendor: nxp
     socs:
       - name: mcxn547
+        variants:
+          - name: ns
+            cpucluster: 'cpu0'
