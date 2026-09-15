@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Simon Maurer <mail@maurer.systems>
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_RPMSG
+	bool "OpenAMP RPMsg log backend"
+	depends on REMOTEPROC
+	help
+	  Enable a logging backend that transmits log output over an
+	  RPMsg channel using OpenAMP.
+
+	  If the RPMsg channel is not yet available, logs are written
+	  to the RAM console as a fallback.
+
+	  Note:
+	  The host (e.g. Linux) must send an initial message on the
+	  RPMsg channel to establish the connection before log output
+	  is transmitted.
+
+if LOG_BACKEND_RPMSG
+
+backend = RPMSG
+backend-str = rpmsg
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_RPMSG
