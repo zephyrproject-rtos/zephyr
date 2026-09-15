@@ -71,7 +71,19 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval,
 uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				uint8_t const *const data);
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable);
-
+uint8_t ll_adv_sync_param_set_v2(uint8_t handle, uint16_t interval, uint16_t flags,
+				  uint8_t num_subevents, uint8_t subevent_interval,
+				  uint8_t response_slot_delay, uint8_t response_slot_spacing,
+				  uint8_t num_response_slots);
+/* Periodic Advertising with Responses (PAwR) Interfaces */
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+uint8_t ll_adv_sync_subevent_data_set(uint8_t handle,
+				      uint8_t subevent,
+				      uint8_t response_slot_start,
+				      uint8_t response_slot_count,
+				      uint8_t subevent_data_len,
+				      uint8_t *subevent_data);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 /* Advertising Enable  and Disable Interfaces */
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -118,7 +130,15 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 uint8_t ll_sync_create_cancel(void **rx);
 uint8_t ll_sync_terminate(uint16_t handle);
 uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable);
-
+/* Periodic Advertising Sync with Responses (PAwR) Interfaces */
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_RSP)
+uint8_t ll_sync_subevent_set(uint16_t handle, uint16_t periodic_adv_properties,
+			      uint8_t num_subevents, const uint8_t *subevents);
+uint8_t ll_sync_response_data_set(uint16_t handle, uint16_t request_event,
+				   uint8_t request_subevent, uint8_t response_subevent,
+				   uint8_t response_slot, uint8_t response_data_len,
+				   const uint8_t *response_data);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_RSP */
 /* Periodic Advertising Sync Transfer Interfaces */
 uint8_t ll_sync_transfer(uint16_t conn_handle, uint16_t service_data, uint16_t sync_handle);
 uint8_t ll_adv_sync_set_info_transfer(uint16_t conn_handle, uint16_t service_data,

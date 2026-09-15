@@ -20,6 +20,10 @@ if(CONFIG_BT_BROADCASTER)
     lll/lll_adv_sync.c
     )
   zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_ADV_PERIODIC_RSP
+    lll/lll_adv_sync_rsp.c
+    )
+  zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_ADV_ISO
     lll/lll_adv_iso.c
     )
