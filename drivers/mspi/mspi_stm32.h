@@ -208,11 +208,6 @@ struct mspi_stm32_data {
 #endif
 };
 
-extern const uint32_t mspi_stm32_table_priority[];
-extern const uint32_t mspi_stm32_table_direction[];
-extern const uint32_t mspi_stm32_table_src_size[];
-extern const uint32_t mspi_stm32_table_dest_size[];
-
 #if defined(CONFIG_MSPI_TIMING)
 struct mspi_stm32_timing_cfg {
 	uint8_t turnaround_cycles; /* Turnaround cycles included in device latency.
