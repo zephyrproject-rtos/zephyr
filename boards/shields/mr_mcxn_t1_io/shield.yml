@@ -1,0 +1,12 @@
+# Copyright (c) 2026 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mr_mcxn_t1_io
+  full_name: MR-MCXN-T1-IO
+  vendor: nxp
+  supported_features:
+    - adc
+    - i2c
+    - pwm
+    - serial
