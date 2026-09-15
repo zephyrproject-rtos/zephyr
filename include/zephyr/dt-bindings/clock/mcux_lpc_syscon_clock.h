@@ -261,4 +261,7 @@
 /** External (system oscillator / CLK_IN) clock rate identifier. */
 #define MCUX_EXT_CLK MCUX_LPC_CLK_ID(0x45, 0x00)
 
+/** eSPI peripheral clock identifier. */
+#define MCUX_ESPI0_CLK MCUX_LPC_CLK_ID(0x46, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
