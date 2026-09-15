@@ -302,6 +302,16 @@ LinkServer west runner   ``--probe`` option to pass the probe index.
    you would like to single step from the start of their application, you
    will need to add a breakpoint at ``main`` or the reset handler manually.
 
+5. That breakpoint, and any other GDB command, can be installed automatically
+   with ``--gdb-init``, which this runner appends to the GDB client for
+   ``west debug`` and ``west attach``, e.g.:
+
+   .. code-block:: console
+
+      west debug --runner=linkserver --gdb-init 'b main'
+
+   See :ref:`gdb-init-runner-option`.
+
 .. _jlink-debug-host-tools:
 .. _runner_jlink:
 
@@ -332,6 +342,41 @@ drivers. RTT Viewer and SystemView can be downloaded separately, but are not
 required.
 
 Note that the J-Link GDB server does not yet support Zephyr RTOS-awareness.
+
+.. _gdb-init-runner-option:
+
+Passing Extra GDB Commands
+--------------------------
+
+The ``jlink`` runner accepts ``--gdb-init``, which appends a command to the GDB
+client started by ``west debug`` and ``west attach``. The option can be given
+multiple times and the commands run in the order given, last of everything the
+runner sends to GDB and before the target is resumed. Since they are only
+appended, they cannot change the runner's own connect, load and reset sequence.
+``west flash``, ``west reset``, ``west rtt`` and ``west debugserver`` are
+unaffected.
+
+For example, to enable J-Link semihosting for the duration of a debug session:
+
+.. code-block:: console
+
+   west debug -r jlink --gdb-init 'monitor semihosting enable' \
+     --gdb-init 'monitor semihosting basedir .'
+
+The same commands can be made the default for a board by adding them to its
+:file:`board.cmake`:
+
+.. code-block:: cmake
+
+   board_runner_args(jlink "--gdb-init=monitor semihosting enable")
+
+Note that ``--gdb-init`` only reaches the GDB client. Options for the J-Link GDB
+server itself are passed with ``--tool-opt``, and J-Link Commander commands run
+while flashing are passed with ``--pre-script-cmd``.
+
+The ``linkserver``, ``openocd`` and ``intel_cyclonev`` runners accept the same
+option. Which commands it applies to, and where the commands are inserted, is up
+to each runner.
 
 .. _openocd-debug-host-tools:
 .. _runner_openocd:
