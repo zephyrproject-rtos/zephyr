@@ -70,6 +70,30 @@
 			fifo-depth = <16>;
 		};
 
+		/*
+		 * xlnx_zynq_sdhc.c is polling-only (v1) -- no `interrupts`
+		 * property here on purpose, not just omitted. SDIO0/1's real
+		 * GIC_SPI numbers were only ever inferred from the "+23
+		 * between controller 0 and 1" pairing every other duplicated
+		 * peripheral in this file uses (i2c0/1: 25/48, spi0/1: 26/49,
+		 * uart0/1: 27/50, gem0/1 irq_0: 22/45), never cross-checked
+		 * against a captured factory DTB on real silicon -- shipping
+		 * an unverified `interrupts` property that nothing consumes
+		 * yet is worse than adding it once IRQ support actually lands
+		 * and someone verifies the numbers for real.
+		 */
+		sdhci0: sdhci@e0100000 {
+			compatible = "xlnx,zynq-8.9a";
+			reg = <0xe0100000 0x1000>;
+			status = "disabled";
+		};
+
+		sdhci1: sdhci@e0101000 {
+			compatible = "xlnx,zynq-8.9a";
+			reg = <0xe0101000 0x1000>;
+			status = "disabled";
+		};
+
 		gem0: ethernet@e000b000 {
 			compatible = "xlnx,gem";
 			status = "disabled";

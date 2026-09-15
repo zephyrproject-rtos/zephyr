@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 David Paul-Beier
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* See tests/drivers/sdhc/boards/zybo.overlay for why SDIO0, not SDIO1. */
+/ {
+	aliases {
+		sdhc0 = &sdhci0;
+	};
+};
+
+&sdhci0 {
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
