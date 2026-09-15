@@ -660,6 +660,39 @@ int fs_stat(const char *path, struct fs_dirent *entry);
 int fs_statvfs(const char *path, struct fs_statvfs *stat);
 
 /**
+ * @brief Normalize a path
+ *
+ * Produces the normalized form of @p path: repeated and trailing path
+ * separators are collapsed, and "." and ".." components are resolved
+ * textually. The mount table is not consulted, so @p path need not name a
+ * mounted file system, and Zephyr does not support symbolic links, so no
+ * link resolution is performed.
+ *
+ * A ".." is resolved against the preceding component, and one that would
+ * climb above the leading "/" resolves to "/", as it does on a POSIX
+ * system. A caller that has to keep a path inside a particular subtree
+ * checks the normalized result against it.
+ *
+ * @p path and @p buf may be the same buffer, to normalize a path in place.
+ * When they are different buffers, they must not overlap.
+ *
+ * On error the contents of @p buf are unspecified. That matters for the
+ * in-place case: a rejected path leaves the caller's own buffer modified.
+ *
+ * @param path Absolute path to normalize
+ * @param buf Buffer to receive the normalized, null-terminated path
+ * @param len Size of @p buf, in bytes
+ *
+ * @retval 0 on success;
+ * @retval -EINVAL when @p path is not an absolute path, or when @p buf is
+ *	   NULL or @p len is zero;
+ * @retval -ENAMETOOLONG when @p buf is too small to hold the normalized
+ *	   path, or any prefix of it produced before a ".." was resolved;
+ * @retval <0 another negative errno code on error.
+ */
+int fs_normalize_path(const char *path, char *buf, size_t len);
+
+/**
  * @brief Create fresh file system
  *
  * @param fs_type Type of file system to create.
