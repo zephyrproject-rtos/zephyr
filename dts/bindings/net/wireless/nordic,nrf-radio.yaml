@@ -119,6 +119,9 @@ properties:
 
   fem:
     type: phandle
+    target-compatibles:
+      - "radio-fem-two-ctrl-pins"
+      - "nordic,nrf21540-fem"
     description: |
       Phandle linking the RADIO node to its external front-end module.
 
