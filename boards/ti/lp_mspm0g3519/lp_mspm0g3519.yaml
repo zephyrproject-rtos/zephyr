@@ -12,6 +12,7 @@ supported:
   - uart
   - gpio
   - can
+  - counter
   - dac
   - spi
   - vref
