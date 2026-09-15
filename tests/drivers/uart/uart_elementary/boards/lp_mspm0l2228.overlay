@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* TX (PB4) and RX (PB5) must be connected together for loopback */
+/* RTS (PB3) and CTS (PB8) must be connected together for flow control */
+
+/ {
+	soc {
+		dut: uart1: uart@4010a000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x4010a000 0x2000>;
+			interrupts = <16 0>;
+			current-speed = <115200>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			pinctrl-0 = <&uart1_tx_pb04 &uart1_rx_pb05 &uart1_rts_pb03 &uart1_cts_pb08>;
+			pinctrl-names = "default";
+			hw-flow-control;
+			status = "okay";
+		};
+	};
+};

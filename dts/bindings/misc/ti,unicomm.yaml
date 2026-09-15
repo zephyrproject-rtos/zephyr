@@ -1,0 +1,20 @@
+# Copyright 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments Unified Communication Peripheral
+
+compatible: "ti,unicomm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  unicomm-fixed-mode:
+    type: boolean
+    description: |
+      Guards against an invalid write to IPMODE on UNICOMMs that have only one mode.

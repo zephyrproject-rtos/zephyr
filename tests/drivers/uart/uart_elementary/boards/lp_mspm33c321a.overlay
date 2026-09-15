@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* TX (PB12/PINCM29) and RX (PB13/PINCM30) must be connected together for loopback */
+/* RTS (PB14/PINCM31) and CTS (PB28/PINCM65) must be connected together for flow control */
+
+&pinctrl {
+	pb12_uc13_0_tx: pb12_uc13_0_tx {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	pb13_uc13_0_rx: pb13_uc13_0_rx {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	pb14_uc13_0_rts: pb14_uc13_0_rts {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	pb28_uc13_0_cts: pb28_uc13_0_cts {
+		pinmux = <MSP_PINMUX(65, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+};
+
+&unicomm13_0 {
+	status = "okay";
+};
+
+dut: &unicomm13_0_uart {
+	pinctrl-0 = <&pb12_uc13_0_tx &pb13_uc13_0_rx &pb14_uc13_0_rts &pb28_uc13_0_cts>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	hw-flow-control;
+	status = "okay";
+};
