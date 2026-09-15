@@ -62,4 +62,13 @@ config MSPI_STM32_XSPI
 	help
 	  Enable XSPI driver for STM32 family of processors.
 
+config HEAP_MEM_POOL_ADD_SIZE_MSPI_STM32_XSPI
+	int "Heap memory pool size for the STM32 XSPI controller"
+	depends on MSPI_STM32_XSPI && MSPI_DMA
+	default 8192
+	help
+	  The XSPI driver receives every DMA packet into a bounce buffer taken
+	  from the system heap for the length of that packet, so the heap has
+	  to hold the largest read the application issues.
+
 endif # MSPI_STM32_CONTROLLER
