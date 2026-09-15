@@ -6,7 +6,7 @@
 DT_STM32_XSPI_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_XSPI),dmas)
 
 config FLASH_STM32_XSPI
-	bool "STM32 XSPI Flash driver"
+	bool "STM32 XSPI Flash driver [DEPRECATED on STM32H5]"
 	default y
 	depends on DT_HAS_ST_STM32_XSPI_ENABLED && DT_HAS_ST_STM32_XSPI_NOR_ENABLED
 	select USE_STM32_HAL_XSPI
@@ -17,8 +17,13 @@ config FLASH_STM32_XSPI
 	select FLASH_HAS_EXPLICIT_ERASE
 	select PINCTRL
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_XSPI_NOR),reset-gpios)
+	select DEPRECATED if SOC_SERIES_STM32H5X
 	help
 	  Enable XSPI-NOR support on the STM32 family of processors.
+
+	  On the STM32H5 series this driver is deprecated in favor of the
+	  MSPI STM32 XSPI driver (MSPI_STM32_XSPI) and is scheduled for
+	  removal in Zephyr 5.0.
 
 if FLASH_STM32_XSPI
 
