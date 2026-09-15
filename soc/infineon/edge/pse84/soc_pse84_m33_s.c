@@ -88,6 +88,14 @@ void soc_early_init_hook(void)
 
 	/* Initializes the system */
 	SystemInit();
+
+	/*
+	 * On a wakeup from Hibernate the SRSS keeps the GPIOs frozen across the
+	 * cold reset until firmware releases them.
+	 */
+	if (Cy_SysPm_IoIsFrozen()) {
+		Cy_SysPm_IoUnfreeze();
+	}
 }
 
 void soc_late_init_hook(void)
