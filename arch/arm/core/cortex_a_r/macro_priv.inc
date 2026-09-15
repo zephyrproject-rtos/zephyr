@@ -47,6 +47,27 @@
         and \rreg0, #TPIDRURO_CURR_CPU
 .endm
 
+/*
+ * DWARF for GDB at an AArch32 abort vector (no ESF yet).
+ * LR_abt/und is faulting PC plus 8 (data) or 4 (prefetch), not a C RA.
+ * SP is the exception-mode stack; previous SP is restored after exception_entry.
+ *
+ * DW_CFA_val_expression r15, DW_OP_breg14 -N  =>  PC = LR - N
+ */
+.macro cfi_aarch32_dabt_frame
+	.cfi_signal_frame
+	.cfi_return_column 15
+	.cfi_undefined 13
+	.cfi_escape 0x16, 0x0f, 0x02, 0x7e, 0x78
+.endm
+
+.macro cfi_aarch32_pabt_frame
+	.cfi_signal_frame
+	.cfi_return_column 15
+	.cfi_undefined 13
+	.cfi_escape 0x16, 0x0f, 0x02, 0x7e, 0x7c
+.endm
+
 .macro z_arm_cortex_ar_enter_exc
 	/*
 	 * Store r0-r3, r12, lr into the stack to construct an exception
