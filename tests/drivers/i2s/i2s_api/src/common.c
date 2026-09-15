@@ -238,3 +238,34 @@ int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 
 	return TC_PASS;
 }
+
+int i2s_check_state(const struct device *dev_i2s, enum i2s_dir dir, enum i2s_state expected_state,
+		    k_timeout_t timeout)
+{
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+	enum i2s_state state;
+
+	do {
+		state = i2s_get_state(dev_i2s, dir);
+
+		if (state == expected_state) {
+			return TC_PASS;
+		}
+
+		if (state == I2S_STATE_UNKNOWN) {
+			TC_PRINT("State check skipped: driver does not report state for dir %d\n",
+				 dir);
+			return TC_PASS;
+		}
+
+		if (state != I2S_STATE_STOPPING) {
+			break;
+		}
+
+		k_sleep(K_MSEC(1));
+	} while (!sys_timepoint_expired(end));
+
+	TC_PRINT("Unexpected state for dir %d: got %d, expected %d\n", dir, state, expected_state);
+
+	return -TC_FAIL;
+}
