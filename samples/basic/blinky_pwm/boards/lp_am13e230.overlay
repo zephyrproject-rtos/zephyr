@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led0 {
+			pwms = <&ecap0 0 PWM_MSEC(100) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
