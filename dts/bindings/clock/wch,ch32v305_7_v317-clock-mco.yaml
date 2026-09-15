@@ -1,0 +1,37 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+compatible: "wch,ch32v305_7_v317-clock-mco"
+
+description: |
+  CH32 Microcontroller Clock Output (MCO)
+
+  Used to output a clock signal from the MCU to a GPIO pin.
+
+  For the device:
+    - CH32V305
+    - CH32V307
+    - CH32V317
+    - CH32F205
+    - CH32F207
+
+include:
+  - name: "wch,ch32-clock-mco.yaml"
+
+properties:
+  source:
+    type: string
+    required: true
+    description: |
+      Clock Source to output onto the mco pin
+    enum:
+      - "sysclk"
+      - "hsi"
+      - "hse"
+      - "pll/2"
+      - "pll2"
+      - "pll3/2"
+      - "xt1"
+      - "pll3"

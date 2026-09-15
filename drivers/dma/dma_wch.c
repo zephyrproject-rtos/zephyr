@@ -35,7 +35,7 @@ struct dma_wch_config {
 	struct dma_wch_regs *regs;
 	uint32_t num_channels;
 	const struct device *clock_dev;
-	uint8_t clock_id;
+	uint32_t clock_id;
 	void (*irq_config_func)(const struct device *dev);
 };
 

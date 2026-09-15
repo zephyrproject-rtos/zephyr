@@ -49,7 +49,7 @@ enum pwm_wch_gptm_features {
 struct pwm_wch_gptm_config {
 	TIM_TypeDef *regs;
 	const struct device *clock_dev;
-	uint8_t clock_id;
+	uint32_t clock_id;
 	uint16_t prescaler;
 	const struct pinctrl_dev_config *pin_cfg;
 	uint8_t features;
