@@ -149,6 +149,16 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonUART);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lpcmp0))
+	CLOCK_EnableClock(kCLOCK_GateAonAPB);
+	CLOCK_AttachClk(kFROdiv4_to_AON_CMP0);
+	CLOCK_SetClockDiv(kCLOCK_DIVAonACMP0CLK0, 1U);
+	CLOCK_SetClockDiv(kCLOCK_DIVAonACMP0CLK1, 1U);
+	CLOCK_EnableClock(kCLOCK_GateAonACMP0);
+	CLOCK_EnableClock(kCLOCK_GateAonACMP0RR);
+	RESET_ReleasePeripheralReset(kAonACMP0_RST_SHIFT_RSTn);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr0)) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr1))
 	CLOCK_AttachClk(kFROdiv4_to_AON_TMR);
