@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nuvoton NAU88C10 mono audio codec
+
+description: |
+  The codec has a single ADC and a single DAC channel and only uses the left
+  slot of the audio interface, whatever the number of channels the controller
+  sends.
+
+compatible: "nuvoton,nau88c10"
+
+include: [i2c-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  mic-single-ended:
+    type: boolean
+    description: |
+      The microphone is wired to MIC+ only and MIC- is left unconnected. By
+      default the microphone is assumed to be wired differentially across MIC+
+      and MIC-.
