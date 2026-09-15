@@ -36,6 +36,7 @@ static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "supp_main.h"
 #include "supp_api.h"
 #include "supp_events.h"
+#include "supp_pmksa.h"
 
 #include "includes.h"
 #include "common.h"
@@ -111,6 +112,12 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.nan_cfg = supplicant_nan_cfg,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 	.pmksa_flush = supplicant_pmksa_flush,
+#if defined(CONFIG_WIFI_MGMT_PMKSA_EXPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+	.pmksa_get = supplicant_pmksa_get,
+#endif
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+	.pmksa_flush_external = supplicant_pmksa_flush_external,
+#endif
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
 #endif
@@ -269,7 +276,19 @@ static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
 						NET_EVENT_WIFI_CMD_SUPPLICANT,
 						(void *)txt, len);
 		}
-	} else if (strncmp(txt, "RRM-NEIGHBOR-REP-RECEIVED", 25) == 0) {
+	}
+#if defined(CONFIG_WIFI_MGMT_PMKSA_EXPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+	else if (strncmp(txt, "PMKSA-CACHE-ADDED", 17) == 0 ||
+		 strncmp(txt, "PMKSA-CACHE-REMOVED", 19) == 0) {
+		enum net_event_wifi_cmd pmksa_event;
+
+		if (supplicant_pmksa_event_command(txt, &pmksa_event) == 0) {
+			supplicant_send_wifi_mgmt_event(wpa_s->ifname, pmksa_event, (void *)txt,
+							len);
+		}
+	}
+#endif
+	else if (strncmp(txt, "RRM-NEIGHBOR-REP-RECEIVED", 25) == 0) {
 		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
 						NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED,
 						(void *)txt, len);
@@ -545,6 +564,9 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	}
 
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+	supplicant_pmksa_flush_external_locked(wpa_s, NULL);
+#endif
 	zephyr_wpa_ctrl_deinit(wpa_s);
 	k_mutex_unlock(&wpa_supplicant_mutex);
 

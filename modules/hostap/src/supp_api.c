@@ -18,6 +18,12 @@
 #include "common/ieee802_11_common.h"
 #include "wpa_supplicant/config.h"
 #include "wpa_supplicant_i.h"
+#include "supp_pmksa.h"
+#if defined(SUPPLICANT_PMKSA_CACHE_REAL) &&                                                        \
+	(defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) || defined(CONFIG_WIFI_MGMT_PMKSA_EXPORT))
+#include "wpa.h"
+#include "pmksa_cache.h"
+#endif
 #include "driver_i.h"
 
 #include "supp_main.h"
@@ -80,9 +86,40 @@ struct wpa_supp_api_ctrl {
 	int connection_timeout; /* in seconds */
 	struct k_work_sync sync;
 	bool terminate;
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT)
+	bool pmksa_entries_supplied;
+	enum wifi_pmksa_cache_usage pmksa_cache_usage;
+#endif
 };
 
 static struct wpa_supp_api_ctrl wpas_api_ctrl;
+
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+static void supplicant_pmksa_connection_result_locked(struct wpa_supplicant *wpa_s,
+						      enum wifi_conn_status status)
+{
+	struct rsn_pmksa_cache_entry *current = NULL;
+
+	if (wpa_s != NULL && wpa_s->wpa != NULL) {
+		current = pmksa_cache_get_current(wpa_s->wpa);
+	}
+
+	wpas_api_ctrl.pmksa_cache_usage = supplicant_pmksa_usage_result(
+		wpas_api_ctrl.pmksa_entries_supplied, status == WIFI_STATUS_CONN_SUCCESS, current);
+
+	if (status != WIFI_STATUS_CONN_SUCCESS && wpas_api_ctrl.pmksa_entries_supplied &&
+	    wpa_s != NULL && wpa_s->current_ssid != NULL) {
+		supplicant_pmksa_flush_external_locked(wpa_s, wpa_s->current_ssid);
+	}
+}
+
+void supplicant_pmksa_connection_result(struct wpa_supplicant *wpa_s, enum wifi_conn_status status)
+{
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	supplicant_pmksa_connection_result_locked(wpa_s, status);
+	k_mutex_unlock(&wpa_supplicant_mutex);
+}
+#endif
 
 static void supp_shell_connect_status(struct k_work *work);
 
@@ -187,6 +224,9 @@ static void supp_shell_connect_status(struct k_work *work)
 				goto out;
 			}
 
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+			supplicant_pmksa_connection_result_locked(wpa_s, WIFI_STATUS_CONN_TIMEOUT);
+#endif
 			supplicant_send_wifi_mgmt_conn_status(wpa_s,
 							      WIFI_STATUS_CONN_TIMEOUT);
 			status = CONNECTION_FAILURE;
@@ -713,6 +753,10 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	char *chan_list = NULL;
 	struct net_eth_addr mac = {0};
 	int ret = 0;
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+	struct wpa_ssid *ssid = NULL;
+	bool pmksa_imported = false;
+#endif
 	uint8_t ssid_null_terminated[WIFI_SSID_MAX_LEN + 1];
 	uint8_t psk_null_terminated[WIFI_PSK_MAX_LEN + 1];
 	uint8_t sae_null_terminated[WIFI_SAE_PSWD_MAX_LEN + 1];
@@ -1370,6 +1414,13 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		goto out;
 	}
 
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+	ssid = wpa_config_get_network(wpa_s->conf, resp.network_id);
+	if (ssid != NULL) {
+		pmksa_imported = supplicant_pmksa_import_entries(wpa_s, ssid, params->pmksa_entries,
+								 params->pmksa_entry_count) != 0U;
+	}
+#endif
 
 	memcpy((void *)&mac, params->bssid, WIFI_MAC_ADDR_LEN);
 	if (net_eth_is_addr_broadcast(&mac) ||
@@ -1404,6 +1455,10 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 	memset(&last_wifi_conn_params, 0, sizeof(struct wifi_connect_req_params));
 	memcpy((void *)&last_wifi_conn_params, params, sizeof(struct wifi_connect_req_params));
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT)
+	last_wifi_conn_params.pmksa_entries = NULL;
+	last_wifi_conn_params.pmksa_entry_count = 0U;
+#endif
 	return 0;
 
 rem_net:
@@ -1412,6 +1467,11 @@ rem_net:
 	}
 
 out:
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+	if (pmksa_imported) {
+		supplicant_pmksa_flush_external_locked(wpa_s, ssid);
+	}
+#endif
 	return ret;
 }
 
@@ -1533,6 +1593,12 @@ int supplicant_connect(const struct device *dev __unused, struct net_if *iface,
 	wpas_api_ctrl.iface = iface;
 	wpas_api_ctrl.requested_op = CONNECT;
 	wpas_api_ctrl.connection_timeout = params->timeout;
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT)
+	wpas_api_ctrl.pmksa_entries_supplied = params->pmksa_entry_count != 0U;
+	wpas_api_ctrl.pmksa_cache_usage = wpas_api_ctrl.pmksa_entries_supplied
+						  ? WIFI_PMKSA_CACHE_USAGE_UNKNOWN
+						  : WIFI_PMKSA_CACHE_USAGE_NOT_ATTEMPTED;
+#endif
 
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
@@ -1627,6 +1693,9 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 	}
 
 	status->state = wpa_s->wpa_state; /* 1-1 Mapping */
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT)
+	status->pmksa_cache_usage = wpas_api_ctrl.pmksa_cache_usage;
+#endif
 
 	if (wpa_s->wpa_state >= WPA_ASSOCIATED) {
 		struct wpa_ssid *ssid = wpa_s->current_ssid;
@@ -1845,6 +1914,54 @@ out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
 	return ret;
 }
+
+#if defined(CONFIG_WIFI_MGMT_PMKSA_EXPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+int supplicant_pmksa_get(const struct device *dev __unused, struct net_if *iface,
+			 struct wifi_pmksa_cache_query *query)
+{
+	struct wpa_supplicant *wpa_s;
+	struct os_reltime now;
+	int ret;
+
+	if (query == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	wpa_s = get_wpa_s_handle(iface);
+	if (wpa_s == NULL || wpa_s->wpa == NULL || wpa_s->wpa_state != WPA_COMPLETED ||
+	    wpa_s->current_ssid == NULL) {
+		ret = -ENOTCONN;
+		goto out;
+	}
+
+	os_get_reltime(&now);
+	ret = supplicant_pmksa_query_entries(
+		wpa_sm_pmksa_cache_head(wpa_s->wpa), wpa_s->current_ssid,
+		wpa_s->current_ssid->ft_eap_pmksa_caching, &now, query);
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return ret;
+}
+#endif
+
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(SUPPLICANT_PMKSA_CACHE_REAL)
+int supplicant_pmksa_flush_external(const struct device *dev __unused, struct net_if *iface)
+{
+	struct wpa_supplicant *wpa_s;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	wpa_s = get_wpa_s_handle(iface);
+	if (wpa_s == NULL) {
+		k_mutex_unlock(&wpa_supplicant_mutex);
+		return -ENODEV;
+	}
+
+	supplicant_pmksa_flush_external_locked(wpa_s, NULL);
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return 0;
+}
+#endif
 
 int supplicant_11k_cfg(const struct device *dev, struct net_if *iface,
 		       struct wifi_11k_params *params)

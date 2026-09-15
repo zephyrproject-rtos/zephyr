@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Siddhant Modi
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  # Hostap's POSIX dependencies prevent a runnable native_sim executable.
+  platform_allow:
+    - qemu_riscv32
+  tags:
+    - wifi
+tests:
+  net.wifi.pmksa_hostap:
+    extra_args: EXTRA_CONF_FILE=import_export.conf
+  net.wifi.pmksa_hostap.import_only:
+    extra_args: EXTRA_CONF_FILE=import.conf
+  net.wifi.pmksa_hostap.export_only:
+    extra_args: EXTRA_CONF_FILE=export.conf
+  net.wifi.pmksa_hostap.stubs:
+    build_only: true
+    extra_args: EXTRA_CONF_FILE=stub.conf
