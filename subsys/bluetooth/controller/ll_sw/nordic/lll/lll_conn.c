@@ -45,6 +45,7 @@
 
 static int init_reset(void);
 static void isr_done(void *param);
+static uint16_t max_rx_octets_get(struct lll_conn *lll);
 static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			     uint8_t *is_rx_enqueue,
 			     struct node_tx **tx_release, uint8_t *is_done);
@@ -374,8 +375,9 @@ void lll_conn_isr_rx(void *param)
 		err = isr_rx_pdu(lll, pdu_data_rx, &is_rx_enqueue, &tx_release,
 				 &is_done);
 		if (err) {
-			/* Disable radio trx switch on MIC failure for both
-			 * central and peripheral, and close the radio event.
+			/* Disable radio trx switch on MIC or length failure for
+			 * both central and peripheral, and close the radio
+			 * event.
 			 */
 			radio_isr_set(isr_done, param);
 			radio_disable();
@@ -847,16 +849,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	pdu_data_rx = (void *)node_rx->pdu;
 	pdu_data_rx->len = 0U;
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	max_rx_octets = lll->dle.eff.max_rx_octets;
-#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
-	max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
-#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
-
-	if ((PDU_DC_CTRL_RX_SIZE_MAX > PDU_DC_PAYLOAD_SIZE_MIN) &&
-	    (max_rx_octets < PDU_DC_CTRL_RX_SIZE_MAX)) {
-		max_rx_octets = PDU_DC_CTRL_RX_SIZE_MAX;
-	}
+	max_rx_octets = max_rx_octets_get(lll);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	phy = lll->phy_rx;
@@ -1090,6 +1083,25 @@ static inline bool ctrl_pdu_len_check(uint8_t len)
 
 }
 
+static uint16_t max_rx_octets_get(struct lll_conn *lll)
+{
+	uint16_t max_rx_octets;
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	max_rx_octets = lll->dle.eff.max_rx_octets;
+#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
+	ARG_UNUSED(lll);
+	max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+
+	if ((PDU_DC_CTRL_RX_SIZE_MAX > PDU_DC_PAYLOAD_SIZE_MIN) &&
+	    (max_rx_octets < PDU_DC_CTRL_RX_SIZE_MAX)) {
+		max_rx_octets = PDU_DC_CTRL_RX_SIZE_MAX;
+	}
+
+	return max_rx_octets;
+}
+
 static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			     uint8_t *is_rx_enqueue,
 			     struct node_tx **tx_release, uint8_t *is_done)
@@ -1251,6 +1263,17 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				mic_state = LLL_CONN_MIC_PASS;
 			}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+			/* Discard the received PDU, whether unencrypted or the
+			 * decrypted, with length that exceeds the configured
+			 * maximum receive data length used to setup the radio
+			 * packet reception. Encrypted PDUs include the MIC in
+			 * their on-air length, hence the check is performed here
+			 * after decryption.
+			 */
+			if (pdu_data_rx->len > max_rx_octets_get(lll)) {
+				return -EINVAL;
+			}
 
 			/* Enqueue non-empty PDU */
 			*is_rx_enqueue = 1U;
