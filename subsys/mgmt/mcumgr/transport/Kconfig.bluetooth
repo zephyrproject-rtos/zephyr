@@ -12,6 +12,7 @@
 menuconfig MCUMGR_TRANSPORT_BT
 	bool "Bluetooth MCUmgr SMP transport"
 	depends on BT_PERIPHERAL
+	select BT_SYSTEM_WORKQUEUE_COOP
 	help
 	  Enables handling of SMP commands received over Bluetooth.
 

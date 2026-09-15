@@ -9,6 +9,7 @@ config BT_OTS
 	select BT_GATT_DYNAMIC_DB
 	select BT_SMP
 	select EXPERIMENTAL
+	select BT_SYSTEM_WORKQUEUE_COOP
 	help
 	  Enable Object Transfer Service.
 
