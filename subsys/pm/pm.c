@@ -209,9 +209,9 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	 * sys_clock_idle_exit(). A real deadline is brought forward to
 	 * accommodate the time the CPU needs to fully wake up.
 	 */
-	uint32_t idle_ticks = (ticks == K_TICKS_FOREVER)
+	sys_clock_ticks_t idle_ticks = (ticks == K_TICKS_FOREVER)
 		? SYS_CLOCK_IDLE_FOREVER
-		: (uint32_t)MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks);
+		: (sys_clock_ticks_t)MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks);
 
 	key = sys_clock_lock();
 	sys_clock_idle_enter(idle_ticks);

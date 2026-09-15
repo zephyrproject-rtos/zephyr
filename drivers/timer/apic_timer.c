@@ -55,7 +55,7 @@ static void isr(const void *arg)
 	sys_clock_announce(1);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	return 0U;
 }

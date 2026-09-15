@@ -66,7 +66,7 @@ uint32_t sys_clock_cycle_get_32(void)
 /*
  * Since we're not tickless, this is identically zero.
  */
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	return 0;
 }
