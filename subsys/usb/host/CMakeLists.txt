@@ -14,6 +14,10 @@ zephyr_library_sources(
   usbh_class.c
 )
 
+if(CONFIG_USBH_SHELL OR CONFIG_USBH_HUB_CLASS)
+  zephyr_library_sources(usbh_ch11.c)
+endif()
+
 zephyr_library_sources_ifdef(
   CONFIG_USBH_SHELL
   usbh_shell.c
@@ -22,6 +26,11 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
   CONFIG_USBH_VIDEO_CLASS
   class/usbh_uvc.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_HUB_CLASS
+  class/usbh_hub.c
 )
 
 zephyr_library_sources_ifdef(

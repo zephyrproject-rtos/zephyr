@@ -14,6 +14,7 @@
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
+#include "usbh_ch11.h"
 #include "usbh_desc.h"
 
 #include <zephyr/logging/log.h>
@@ -637,7 +638,7 @@ static int cmd_feature_set_ppwr(const struct shell *sh,
 
 	port = strtol(argv[2], NULL, 10);
 
-	err = usbh_req_set_hcfs_ppwr(udev, port);
+	err = usbh_req_set_hcfs_port_power(udev, port);
 	if (err) {
 		shell_error(sh, "host: Failed to set ppwr feature");
 	} else {
@@ -671,7 +672,7 @@ static int cmd_feature_set_prst(const struct shell *sh,
 
 	port = strtol(argv[2], NULL, 10);
 
-	err = usbh_req_set_hcfs_prst(udev, port);
+	err = usbh_req_set_hcfs_port_reset(udev, port);
 	if (err) {
 		shell_error(sh, "host: Failed to set prst feature");
 	} else {
