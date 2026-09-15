@@ -524,6 +524,16 @@ uint32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 	return z_impl_log_filter_set(NULL, domain_id, src_id, level);
 }
 #include <zephyr/syscalls/log_filter_set_mrsh.c>
+
+uint32_t z_vrfy_log_frontend_filter_set(int16_t source_id, uint32_t level)
+{
+	K_OOPS(K_SYSCALL_VERIFY_MSG((uint32_t)source_id < log_src_cnt_get(Z_LOG_LOCAL_DOMAIN_ID),
+		"Invalid log source id"));
+	K_OOPS(K_SYSCALL_VERIFY_MSG((level <= LOG_LEVEL_DBG), "Invalid log level"));
+
+	return z_impl_log_frontend_filter_set(source_id, level);
+}
+#include <zephyr/syscalls/log_frontend_filter_set_mrsh.c>
 #endif
 
 static void link_filter_set(const struct log_link *link,
