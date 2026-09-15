@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/cache.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/usb/usb_ch9.h>
@@ -62,6 +63,7 @@ enum uhc_dwc2_channel_event {
 };
 
 #define EPSIZE_BULK_FS			64U
+#define EPSIZE_BULK_HS			512U
 
 /* Mask to clear HPRT register */
 #define USB_DWC2_HPRT_W1C_MSK		(USB_DWC2_HPRT_PRTENA |			\
@@ -485,9 +487,17 @@ static int dwc2_set_fifo_sizes(struct usb_dwc2_reg *const base)
 {
 	const uint32_t ghwcfg2 = sys_read32((mem_addr_t)&base->ghwcfg2);
 	const uint32_t ghwcfg3 = sys_read32((mem_addr_t)&base->ghwcfg3);
-	/* TODO: Check the FIFO setting on hardware, that supports HS */
-	const uint32_t nptx_largest = EPSIZE_BULK_FS / 4;
-	const uint32_t ptx_largest = 256 / 4;
+	const uint32_t hprt = sys_read32((mem_addr_t)&base->hprt);
+	/* The TX FIFOs and the shared RX FIFO each have to hold a whole packet,
+	 * whose size depends on the speed the port came up at. A receive FIFO
+	 * sized for a smaller packet cannot absorb back-to-back IN packets and
+	 * overruns under a sustained stream.
+	 */
+	const bool high_speed =
+		usb_dwc2_get_hprt_prtspd(hprt) == USB_DWC2_HPRT_PRTSPD_HIGH;
+	const uint32_t largest = (high_speed ? EPSIZE_BULK_HS : EPSIZE_BULK_FS) / 4;
+	const uint32_t nptx_largest = largest;
+	const uint32_t ptx_largest = largest;
 	const uint32_t dfifodepth = FIELD_GET(USB_DWC2_GHWCFG3_DFIFODEPTH_MASK, ghwcfg3);
 	const uint32_t numhstchnl = FIELD_GET(USB_DWC2_GHWCFG2_NUMHSTCHNL_MASK, ghwcfg2);
 	uint32_t fifo_available = dfifodepth - (numhstchnl + 1);
@@ -746,6 +756,7 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 		actual_len = ch->length - remaining;
 
 		if (usb_reqtype_is_to_host(setup)) {
+			sys_cache_data_invd_range(net_buf_tail(xfer->buf), actual_len);
 			net_buf_add(xfer->buf, actual_len);
 
 			LOG_DBG("Control DATA IN completed, prog=%u, rem=%u, act=%u, tailroom=%zu",
@@ -782,7 +793,13 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 
 	/* TODO: Configure split transaction if needed */
 
-	/* TODO: sync CACHE */
+	if (dma_addr != NULL && size > 0) {
+		if (next_dir_is_in) {
+			sys_cache_data_invd_range(dma_addr, size);
+		} else {
+			sys_cache_data_flush_range(dma_addr, size);
+		}
+	}
 
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
 	hcchar |= USB_DWC2_HCCHAR_CHENA;
@@ -839,8 +856,12 @@ static uint32_t ch_handle_in_bulk_control(struct uhc_dwc2_channel *ch, uint32_t 
 				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REINIT);
 			}
 		} else {
-			/* TODO: Add handling for other cases */
-			LOG_WRN("IN halted, unhandled HCINT 0x%08x", hcint);
+			/* The channel halted without reporting a reason. Fail the
+			 * transfer instead of leaving the caller waiting.
+			 */
+			LOG_ERR("IN channel%d halted, HCINT 0x%08x", ch->index, hcint);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_ERROR);
 		}
 	} else if (hcint & (USB_DWC2_HCINT_ACK | USB_DWC2_HCINT_NAK | USB_DWC2_HCINT_DTGERR)) {
 		ch->error_count = 0;
@@ -894,8 +915,12 @@ static inline uint32_t ch_handle_out_bulk_control(struct uhc_dwc2_channel *ch, u
 				}
 			}
 		} else {
-			/* TODO: Add handling for other cases */
-			LOG_WRN("OUT halted, unhandled HCINT 0x%08x", hcint);
+			/* The channel halted without reporting a reason. Fail the
+			 * transfer instead of leaving the caller waiting.
+			 */
+			LOG_ERR("OUT channel%d halted, HCINT 0x%08x", ch->index, hcint);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_ERROR);
 		}
 	} else if (hcint & USB_DWC2_HCINT_ACK) {
 		ch->error_count = 1;
@@ -1141,6 +1166,7 @@ static void ch_complete_bulk(const struct device *dev, struct uhc_dwc2_channel *
 
 		/* Device may send a short packet, use the actual length */
 		actual_len = ch->length - remaining;
+		sys_cache_data_invd_range(net_buf_tail(xfer->buf), actual_len);
 		net_buf_add(xfer->buf, actual_len);
 	}
 
@@ -1261,7 +1287,7 @@ static void ch_start_control(struct uhc_dwc2_channel *ch)
 	hcint = sys_read32((mem_addr_t)&ch->regs->hcint);
 	sys_write32(hcint, (mem_addr_t)&ch->regs->hcint);
 
-	/* TODO: Sync CACHE */
+	sys_cache_data_flush_range(xfer->setup_pkt, sizeof(struct usb_setup_packet));
 
 	/* Start transfer */
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
@@ -1302,6 +1328,14 @@ static void ch_start_bulk(struct uhc_dwc2_channel *ch)
 
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
 	sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
+
+	if (ch->length > 0) {
+		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+			sys_cache_data_invd_range(dma_addr, ch->length);
+		} else {
+			sys_cache_data_flush_range(dma_addr, ch->length);
+		}
+	}
 
 	/* Start transfer */
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
