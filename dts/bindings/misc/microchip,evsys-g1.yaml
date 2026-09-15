@@ -1,0 +1,88 @@
+# Copyright (c) 2026 Muhammed Asif P
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip Event System module
+
+description: |
+  Microchip Event System module group g1
+
+  The Event System (EVSYS) allows autonomous, low-latency and configurable
+  communication between peripherals. Several peripherals can be configured to
+  generate and/or respond to signals known as events. The exact condition to
+  generate an event, or the action taken upon receiving an event, is specific
+  to each peripheral.Peripherals that respond to events are called event users.
+  Peripherals that generate events are called event generators. A peripheral can
+  have one or more event generators and can have one or more event users.
+  Communication is made without CPU intervention and without consuming system
+  resources such as bus or RAM bandwidth. This reduces the load on the CPU and
+  other system resources, compared to a traditional interrupt-based system.
+
+  This binding supports the evsys of following versions:
+   - id="U2504" version="1.0.0"
+
+compatible: "microchip,evsys-g1"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  max-channels:
+    type: int
+    default: 32
+    description: |
+      Maximum number of channels supported by this EVSYS instance.
+
+child-binding:
+  description: |
+    EVSYS provider child (event generator) node
+
+    Can add as many evgen child nodes as needed.
+    The limitation is the max-channels property of the evsys node.
+    Each evgen child node must have a unique channel number.
+
+  properties:
+    channel:
+      type: int
+      description: |
+        Channel number assigned to this generator.
+      required: true
+
+    event-generator:
+      type: int
+      description: |
+        Event generator identifier (see dt-bindings header for values).
+      required: true
+
+    event-users:
+      type: array
+      min-len: 1
+      description: |
+        Array of event user numeric identifiers associated with this
+        generator. Each entry is an integer value matching an EVSYS event
+        user (see dt-bindings header values). This allows a single
+        generator to target multiple users.
+
+examples:
+- |
+  The following example shows a single evgen child node with channel 0,
+  event generator EVSYS_MCHP_EVGEN_EIC_EXTINT15 and two event users
+  EVSYS_MCHP_EVUSER_PORT_EV0 and EVSYS_MCHP_EVUSER_PORT_EV1.
+  The channel number must be unique for each evgen child node.
+
+  &evsys {
+    status = "okay";
+
+    evgen0 {
+      channel = <0>;
+      event-generator = <EVSYS_MCHP_EVGEN_EIC_EXTINT15>;
+      event-users = <EVSYS_MCHP_EVUSER_PORT_EV0 EVSYS_MCHP_EVUSER_PORT_EV1>;
+    };
+  };

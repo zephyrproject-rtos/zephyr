@@ -17,6 +17,7 @@ supported:
   - dac
   - dma
   - entropy
+  - evsys
   - flash
   - gpio
   - hwinfo

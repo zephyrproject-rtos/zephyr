@@ -56,6 +56,15 @@ struct gpio_mchp_data {
 
 	/* Variable used for enabling or disabling debounce */
 	gpio_port_pins_t debounce;
+
+	/* Variable used for enabling or disabling event generation */
+	gpio_port_pins_t evgen_enable;
+
+	/* Each port can have atmost 4 input event pins. This variable is used to monitor and assign
+	 * the input event pins as per request. Each bit corresponds to each an input event pin
+	 * which is configured due to which event can be triggered for the particular port.
+	 */
+	uint8_t input_event_pin;
 #ifdef CONFIG_INTC_MCHP_EIC_G1
 	/* provided by gpio_utils
 	 * callbacks are stored here for each pins
@@ -63,6 +72,17 @@ struct gpio_mchp_data {
 	sys_slist_t callbacks;
 #endif /*CONFIG_INTC_MCHP_EIC_G1*/
 };
+
+#ifdef CONFIG_MCHP_EVSYS_G1
+union gpio_evctrl_config {
+	struct {
+		uint8_t pin_num: 5;
+		uint8_t evact: 2;
+		uint8_t enable: 1;
+	} bits;
+	uint8_t val;
+};
+#endif /*CONFIG_MCHP_EVSYS_G1*/
 
 /******************************************************************************
  * @brief Helper functions
@@ -311,6 +331,87 @@ static int gpio_configure_output(port_group_registers_t *gpio_reg, gpio_pin_t pi
 	return retval;
 }
 
+#ifdef CONFIG_MCHP_EVSYS_G1
+/**
+ * @brief Configure GPIO event control for a pin.
+ *
+ * Configures a GPIO pin to perform a specified action when an event is
+ * received. An available event control slot is allocated for the port and
+ * configured with the requested event action.
+ *
+ * @param[in] dev   Pointer to the GPIO device instance.
+ * @param[in] pin   GPIO pin to configure for event control.
+ * @param[in] flags GPIO configuration flags specifying the event action.
+ *
+ * @return 0        If the GPIO event control is successfully configured.
+ * @return -EBUSY   If all available event control slots for the port are in use.
+ * @return -ENOTSUP If the specified event action is not supported.
+ */
+static int gpio_mchp_evctrl_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
+{
+	const struct gpio_mchp_config *config = dev->config;
+	port_group_registers_t *gpio_reg = config->gpio_regs;
+	struct gpio_mchp_data *data = dev->data;
+	uint8_t input_event_pin = data->input_event_pin;
+	union gpio_evctrl_config evctrl_cfg;
+	/* Each port has PORT_EV_NUM of events which can be enabled */
+	uint8_t free_event_pin;
+	uint32_t val32;
+	int ret_val;
+
+	ret_val = 0;
+	for (free_event_pin = 0; free_event_pin < PORT_EV_NUM; free_event_pin++) {
+		if ((input_event_pin & BIT(free_event_pin)) == 0) {
+			break;
+		}
+	}
+	if (free_event_pin >= PORT_EV_NUM) {
+		LOG_ERR("Maximum number of events per port is reached port : %d",
+			config->gpio_port_id);
+		return -EBUSY;
+	}
+
+	evctrl_cfg.bits.enable = (uint8_t)true;
+	evctrl_cfg.bits.pin_num = pin;
+
+	/* This mask is generated based on the custom flags created in `microchip-port-g1-gpio.h` */
+	flags &= GENMASK(6, 3);
+
+	switch (flags) {
+	case MCHP_GPIO_OUT_ON_EVENT:
+		evctrl_cfg.bits.evact = PORT_EVCTRL_EVACT0_OUT_Val;
+		break;
+	case MCHP_GPIO_SET_ON_EVENT:
+		evctrl_cfg.bits.evact = PORT_EVCTRL_EVACT0_SET_Val;
+		break;
+	case MCHP_GPIO_CLR_ON_EVENT:
+		evctrl_cfg.bits.evact = PORT_EVCTRL_EVACT0_CLR_Val;
+		break;
+	case MCHP_GPIO_TGL_ON_EVENT:
+		evctrl_cfg.bits.evact = PORT_EVCTRL_EVACT0_TGL_Val;
+		break;
+	default:
+		LOG_ERR("Unsupported/Invalid action");
+		ret_val = -ENOTSUP;
+		break;
+	}
+	if (ret_val < 0) {
+		return ret_val;
+	}
+	/* The multiplying and shifting is done so that the value of evctrl_cfg_val will be kept in
+	 * respective input event pin's location inside the 32 bit register
+	 */
+	val32 = gpio_reg->PORT_EVCTRL;
+	val32 &= ~(UINT8_MAX << (free_event_pin * 8));
+	val32 |= (evctrl_cfg.val << (free_event_pin * 8));
+	gpio_reg->PORT_EVCTRL = val32;
+
+	data->input_event_pin |= BIT(free_event_pin);
+
+	return 0;
+}
+#endif /*CONFIG_MCHP_EVSYS_G1*/
+
 /******************************************************************************
  * @brief API functions
  *****************************************************************************/
@@ -326,6 +427,9 @@ static int gpio_configure_output(port_group_registers_t *gpio_reg, gpio_pin_t pi
 static int gpio_mchp_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_mchp_config *config = dev->config;
+#ifdef CONFIG_MCHP_EVSYS_G1
+	struct gpio_mchp_data *gpio_data = dev->data;
+#endif /* CONFIG_MCHP_EVSYS_G1 */
 	port_group_registers_t *gpio_reg = config->gpio_regs;
 	gpio_flags_t io_flags = flags & (GPIO_INPUT | GPIO_OUTPUT);
 	int retval = 0;
@@ -359,8 +463,22 @@ static int gpio_mchp_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 		}
 	} else if (flags & GPIO_INPUT) {
 		retval = gpio_configure_input(gpio_reg, pin, flags);
+
+#ifdef CONFIG_MCHP_EVSYS_G1
+		if (flags & MCHP_GPIO_EVGEN_ENABLE) {
+			gpio_data->evgen_enable = BIT(pin);
+		}
+#endif /* CONFIG_MCHP_EVSYS_G1 */
 	} else if (flags & GPIO_OUTPUT) {
 		retval = gpio_configure_output(gpio_reg, pin, flags);
+
+#ifdef CONFIG_MCHP_EVSYS_G1
+
+		if (flags & (MCHP_GPIO_SET_ON_EVENT | MCHP_GPIO_OUT_ON_EVENT |
+			     MCHP_GPIO_CLR_ON_EVENT | MCHP_GPIO_TGL_ON_EVENT)) {
+			retval = gpio_mchp_evctrl_config(dev, pin, flags);
+		}
+#endif /* CONFIG_MCHP_EVSYS_G1 */
 	} else {
 		/* Catch-all for unexpected flag combinations */
 		retval = -ENOTSUP;
@@ -610,6 +728,7 @@ static int gpio_mchp_pin_interrupt_configure(const struct device *dev, gpio_pin_
 	eic_pin_config.port_id = gpio_config->gpio_port_id;
 	eic_pin_config.pin_num = pin;
 	eic_pin_config.debounce = (gpio_data->debounce & BIT(pin)) ? true : false;
+	eic_pin_config.evgen_enable = (gpio_data->evgen_enable & BIT(pin)) ? true : false;
 	eic_pin_config.port_addr = gpio_config->gpio_regs;
 	eic_pin_config.eic_line_callback = gpio_mchp_callback;
 	eic_pin_config.gpio_data = gpio_data;

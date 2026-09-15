@@ -8,6 +8,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/clock/mchp_sam_d5x_e5x_clock.h>
+#include <zephyr/dt-bindings/misc/mchp_evsys_g1_sam_d5x_e5x.h>
+#include <zephyr/dt-bindings/gpio/microchip-port-g1-gpio.h>
 
 / {
 	aliases {
@@ -270,6 +272,42 @@
 			dma-channels = <32>;
 			dma-alignment = <16>;
 			#dma-cells = <2>;
+		};
+
+		evsys: evsys@4100e000 {
+			compatible = "microchip,evsys-g1";
+			reg = <0x4100e000 0x2000>;
+			interrupts = <36 0>, <37 0>, <38 0>, <39 0>, <40 0>;
+			interrupt-names = "evd0_ovr0", "evd1_ovr1", "evd2_ovr2",
+					  "evd3_ovr3", "evd4_11_ovr4_11";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_EVSYS>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS2>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS3>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS4>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS5>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS6>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS7>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS8>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS9>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS10>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EVSYS11>;
+			clock-names = "mclk-evsys",
+				      "gclk-evsys0",
+				      "gclk-evsys1",
+				      "gclk-evsys2",
+				      "gclk-evsys3",
+				      "gclk-evsys4",
+				      "gclk-evsys5",
+				      "gclk-evsys6",
+				      "gclk-evsys7",
+				      "gclk-evsys8",
+				      "gclk-evsys9",
+				      "gclk-evsys10",
+				      "gclk-evsys11";
+			max-channels = <32>;
+			status = "disabled";
 		};
 
 		sercom2: sercom@41012000 {
