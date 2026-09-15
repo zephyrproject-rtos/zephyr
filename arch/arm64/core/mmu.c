@@ -1149,6 +1149,44 @@ static struct arm_mmu_ptables kernel_ptables;
 static sys_slist_t domain_list;
 #endif
 
+#ifdef CONFIG_TEST
+/*
+ * Walk @a ptables down to the leaf descriptor covering @a virt and report it
+ * with the level it was found at. Returns -ENOENT when nothing maps that
+ * address. Passing NULL for @a ptables walks the kernel tables.
+ *
+ * Test hook: the descriptors are what tell a domain-private mapping apart
+ * from the kernel entry it was built over, and nothing else in this file
+ * exposes them.
+ */
+int arm64_mmu_pte_get(struct arm_mmu_ptables *ptables, uintptr_t virt, uint64_t *desc,
+		      unsigned int *level)
+{
+	uint64_t *table;
+	unsigned int l = BASE_XLAT_LEVEL;
+
+	if (ptables == NULL) {
+		ptables = &kernel_ptables;
+	}
+	table = ptables->base_xlat_table;
+
+	for (;;) {
+		uint64_t pte = table[XLAT_TABLE_VA_IDX(virt, l)];
+
+		if (is_free_desc(pte)) {
+			return -ENOENT;
+		}
+		if (!is_table_desc(pte, l)) {
+			*desc = pte;
+			*level = l;
+			return 0;
+		}
+		table = pte_desc_table(pte);
+		l++;
+	}
+}
+#endif /* CONFIG_TEST */
+
 /*
  * @brief MMU default configuration
  *
