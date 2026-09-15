@@ -256,3 +256,7 @@ zephyr_udc0: &usb {
 		 <&rcc STM32_SRC_HSI48 CLK48_SEL(1)>;
 	status = "okay";
 };
+
+&aes {
+	status = "okay";
+};

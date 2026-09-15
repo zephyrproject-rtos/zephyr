@@ -10,13 +10,14 @@ flash: 2048
 supported:
   - arduino_gpio
   - arduino_i2c
-  - i2c
+  - bluetooth
+  - crypto
+  - gpio
   - hts221
+  - i2c
   - lps22hb
   - lsm6dsl
   - pwm
-  - gpio
-  - bluetooth
   - spi
   - vl53l0x
   - watchdog

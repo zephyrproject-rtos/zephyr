@@ -12,6 +12,7 @@ supported:
   - bluetooth
   - counter
   - crc
+  - crypto
   - dac
   - dma
   - gpio
