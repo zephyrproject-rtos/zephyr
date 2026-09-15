@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 NXP
+ * Copyright (c) 2026 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +11,28 @@
 #include <zephyr/irq.h>
 #include <errno.h>
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+#include <fsl_syscon.h>
+#else
 #include <fsl_inputmux.h>
+#endif
 #include <soc.h>
+
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+/*
+ * Hardware limitation: On LPC84x, PINT channels 6 and 7 share NVIC vectors
+ * with UART3 and UART4 respectively. Enabling both will cause spurious ISR calls.
+ */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pint))
+BUILD_ASSERT(!(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3))),
+	     "Hardware conflict: PINT (channel 6) and UART3 share IRQ 30. Both cannot be enabled simultaneously.");
+BUILD_ASSERT(!(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4))),
+	     "Hardware conflict: PINT (channel 7) and UART4 share IRQ 31. Both cannot be enabled simultaneously.");
+#endif
+#endif
 
 #define DT_DRV_COMPAT nxp_pint
 
@@ -41,6 +60,12 @@ static uint8_t pin_pint_id[DT_INST_PROP(0, num_inputs)];
 /* Attaches pin to PINT IRQ slot using INPUTMUX */
 static void attach_pin_to_pint(uint8_t pin, uint8_t pint_slot)
 {
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+	syscon_connection_t conn =
+		(syscon_connection_t)(pin + ((uint32_t)PINTSEL_ID << SYSCON_SHIFT));
+
+	SYSCON_AttachSignal(SYSCON, pint_slot, conn);
+#else
 	INPUTMUX_Init(INPUTMUX);
 
 	/* Three parameters here- INPUTMUX base, the ID of the PINT slot,
@@ -53,6 +78,7 @@ static void attach_pin_to_pint(uint8_t pin, uint8_t pint_slot)
 	 * saves power.
 	 */
 	INPUTMUX_Deinit(INPUTMUX);
+#endif
 }
 
 /**
@@ -213,6 +239,19 @@ static int intc_nxp_pm_action(const struct device *dev, enum pm_device_action ac
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
+#if DT_INST_NODE_HAS_PROP(0, clocks)
+		{
+			const struct device *clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
+
+			if (device_is_ready(clock_dev)) {
+				int err = clock_control_on(clock_dev,
+					(clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, name));
+				if (err < 0) {
+					return err;
+				}
+			}
+		}
+#endif
 		PINT_Init(pint_base);
 		break;
 	default:
