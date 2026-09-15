@@ -123,6 +123,23 @@ static void adxl345_fifo_flush_rtio(const struct device *dev)
 	rtio_submit(data->rtio_ctx, 0);
 }
 
+static void adxl345_fifo_stop_rtio(const struct device *dev)
+{
+	struct adxl345_dev_data *data = dev->data;
+	uint8_t fifo_config;
+
+	fifo_config = (ADXL345_FIFO_CTL_TRIGGER_MODE(data->fifo_config.fifo_trigger) |
+		       ADXL345_FIFO_CTL_MODE_MODE(ADXL345_FIFO_BYPASSED) |
+		       ADXL345_FIFO_CTL_SAMPLES_MODE(data->fifo_config.fifo_samples));
+
+	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
+	const uint8_t reg_addr_w2[2] = {ADXL345_FIFO_CTL_REG, fifo_config};
+
+	rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM, reg_addr_w2,
+					2, NULL);
+	rtio_submit(data->rtio_ctx, 0);
+}
+
 static void adxl345_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
 				 int result, void *arg)
 {
@@ -394,6 +411,29 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	int rc;
 
 	if (data->sqe == NULL) {
+		/* INT_SOURCE is read-to-clear; without this read the edge-triggered
+		 * IRQ never fires again. Runs in ISR context, so use RTIO instead of
+		 * the blocking adxl345_reg_read_byte().
+		 */
+		struct rtio_sqe *write_int_source_addr = rtio_sqe_acquire(data->rtio_ctx);
+		struct rtio_sqe *read_int_source_reg = rtio_sqe_acquire(data->rtio_ctx);
+		uint8_t reg = ADXL345_REG_READ(ADXL345_INT_SOURCE);
+
+		rtio_sqe_prep_tiny_write(write_int_source_addr, data->iodev, RTIO_PRIO_NORM,
+					 &reg, 1, NULL);
+		write_int_source_addr->flags |= RTIO_SQE_TRANSACTION;
+		rtio_sqe_prep_read(read_int_source_reg, data->iodev, RTIO_PRIO_NORM,
+				    &data->int_source_scratch, 1, NULL);
+		if (cfg->bus_type == ADXL345_BUS_I2C) {
+			read_int_source_reg->iodev_flags |=
+				RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		}
+		rtio_submit(data->rtio_ctx, 0);
+		/* No consumer draining the FIFO - stop it, or it just refills and
+		 * re-fires this handler forever. submit_stream() restarts it.
+		 */
+		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
+		adxl345_fifo_stop_rtio(dev);
 		data->fifo_watermark_irq = 0;
 		return;
 	}
