@@ -34,6 +34,11 @@ zephyr_library_sources_ifdef(
   hci/hci.c
   )
 
+zephyr_library_sources_ifdef(
+  CONFIG_BT_HCI_VS_FATAL_ERROR
+  hci/hci_vs_err.c
+  )
+
 if(CONFIG_BT_BROADCASTER)
   zephyr_library_sources(
     ll_sw/ull_adv.c
