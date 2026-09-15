@@ -503,7 +503,6 @@ static void uc81xx_get_capabilities(const struct device *dev,
 {
 	const struct uc81xx_config *config = dev->config;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;

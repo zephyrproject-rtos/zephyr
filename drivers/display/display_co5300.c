@@ -283,7 +283,6 @@ static void co5300_get_capabilities(const struct device *dev,
 	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 |

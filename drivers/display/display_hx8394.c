@@ -516,7 +516,6 @@ static void hx8394_get_capabilities(const struct device *dev,
 {
 	const struct hx8394_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
 	capabilities->supported_pixel_formats = config->pixel_format;
