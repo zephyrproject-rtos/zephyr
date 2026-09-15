@@ -689,6 +689,17 @@ def main():
         full_list_of_sections: dict[SectionKind, list[OutputSection]] = defaultdict(list)
 
         for filename, symbol_filter in files:
+            if filename.endswith('.a'):
+                archive_name = Path(filename).name
+                for kind in SectionKind:
+                    full_list_of_sections[kind].extend(
+                        (
+                            OutputSection(f"{archive_name}:*", f".{kind.value}"),
+                            OutputSection(f"{archive_name}:*", f".{kind.value}.*"),
+                        )
+                    )
+                continue
+
             obj_filename = get_obj_filename(all_obj_files, filename)
             # the obj file wasn't found. Probably not compiled.
             if not obj_filename:
