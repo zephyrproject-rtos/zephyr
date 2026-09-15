@@ -281,7 +281,6 @@ static int virtio_pci_init_virtqueues(
 
 	int ret = 0;
 	int created_queues = 0;
-	int activated_queues = 0;
 
 	for (int i = 0; i < num_queues; i++) {
 		data->common_cfg->queue_select = sys_cpu_to_le16(i);
@@ -295,17 +294,24 @@ static int virtio_pci_init_virtqueues(
 		}
 		created_queues++;
 
+		if (queue_size == 0U) {
+			continue;
+		}
+
 		ret = virtio_pci_set_virtqueue(dev, i, &data->virtqueues[i]);
 		if (ret != 0) {
 			goto fail;
 		}
-		activated_queues++;
 	}
 
 	return 0;
 
 fail:
-	for (int j = 0; j < activated_queues; j++) {
+	for (int j = 0; j < created_queues; j++) {
+		if (data->virtqueues[j].num == 0U) {
+			continue;
+		}
+
 		data->common_cfg->queue_select = sys_cpu_to_le16(j);
 		barrier_dmem_fence_full();
 		data->common_cfg->queue_enable = sys_cpu_to_le16(0);
