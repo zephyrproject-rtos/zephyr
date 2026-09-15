@@ -399,6 +399,7 @@ external_content_contents = [
     (ZEPHYR_BASE / "doc", "[!_]*"),
     (ZEPHYR_BASE, "tests/**/*.pts"),
     (ZEPHYR_BASE, "cmake/modules"),
+    (ZEPHYR_BASE, "share/sysbuild/cmake/modules"),
 ]
 if not SKIP_EXTERNAL_CONTENT:
     external_content_contents += [

@@ -145,11 +145,14 @@ As mentioned above, you can run sysbuild via ``west build`` or ``cmake``.
 
       .. tip::
 
-         The environment variables, ``CMAKE_BUILD_PARALLEL_LEVEL`` and ``VERBOSE``, can be used to
-         control the build process when using sysbuild with CMake and ninja.
+         The environment variables
+         :cmake:envvar:`CMAKE_BUILD_PARALLEL_LEVEL <envvar:CMAKE_BUILD_PARALLEL_LEVEL>` and
+         :cmake:envvar:`VERBOSE <envvar:VERBOSE>` can be used to control the build process
+         when using sysbuild with CMake and ninja.
 
-         To set number of jobs for ninja for all sysbuild images, set the CMAKE_BUILD_PARALLEL_LEVEL
-         environment variable and invoke the build with ``cmake --build``, for example:
+         To set number of jobs for ninja for all sysbuild images, set the
+         :cmake:envvar:`CMAKE_BUILD_PARALLEL_LEVEL <envvar:CMAKE_BUILD_PARALLEL_LEVEL>` environment
+         variable and invoke the build with ``cmake --build``, for example:
 
          .. code-block:: shell
 
@@ -507,18 +510,18 @@ target to execute and it will run.
 Adding Zephyr applications to sysbuild
 **************************************
 
-You can use the ``ExternalZephyrProject_Add()`` function to add Zephyr
+You can use the :cmake:command:`ExternalZephyrProject_Add` function to add Zephyr
 applications as sysbuild domains. Call this CMake function from your
 application's :file:`sysbuild.cmake` file, or any other CMake file you know will
 run as part sysbuild CMake invocation.
 
-A variant image can also added using the ``ExternalZephyrVariantProject_Add()`` function which
-will duplicate an existing image in the sysbuild project, and allows for slight differences in
-configuration. An example use case for this feature is to change the chosen flash node of an image
-but having the rest of the configuration identical to the base image. When this is used, neither
-sysbuild itself nor the image will have the extra Kconfig targets made for it such as menuconfig,
-guiconfig, hardenconfig or traceconfig, as the base image can be used for viewing/adjusting
-these instead.
+A variant image can also added using the :cmake:command:`ExternalZephyrVariantProject_Add`
+function which will duplicate an existing image in the sysbuild project, and allows for slight
+differences in configuration. An example use case for this feature is to change the chosen flash
+node of an image but having the rest of the configuration identical to the base image. When this
+is used, neither sysbuild itself nor the image will have the extra Kconfig targets made for it
+such as menuconfig, guiconfig, hardenconfig or traceconfig, as the base image can be used for
+viewing/adjusting these instead.
 
 Targeting the same board
 ========================
@@ -783,10 +786,10 @@ images used by ``west flash``; this could be used if a specific flashing order
 is required by an SoC, a _runner_, or something else.
 
 By default, sysbuild will configure and flash applications in the order that
-they are added, as ``ExternalZephyrProject_Add()`` calls are processed by CMake.
-You can use the ``sysbuild_add_dependencies()`` function to make adjustments to
+they are added, as :cmake:command:`ExternalZephyrProject_Add` calls are processed by CMake.
+You can use the :cmake:command:`sysbuild_add_dependencies` function to make adjustments to
 this order, according to your needs. Its usage is similar to the standard
-``add_dependencies()`` function in CMake.
+:cmake:command:`add_dependencies() <command:add_dependencies>` function in CMake.
 
 Here is an example of adding configuration dependencies for ``my_sample``:
 
@@ -833,16 +836,15 @@ Adding non-Zephyr applications to sysbuild
 ******************************************
 
 You can include non-Zephyr applications in a multi-image build using the
-standard CMake module `ExternalProject`_. Please refer to the CMake
-documentation for usage details.
+standard CMake module :cmake:module:`ExternalProject <module:ExternalProject>`.
+Please refer to the CMake documentation for usage details.
 
-When using ``ExternalProject``, the non-Zephyr application will be built as
-part of the sysbuild build invocation, but ``west flash`` or ``west debug``
-will not be aware of the application. Instead, you must manually flash and
-debug the application.
+When using :cmake:module:`ExternalProject <module:ExternalProject>`, the
+non-Zephyr application will be built as part of the sysbuild build invocation,
+but ``west flash`` or ``west debug`` will not be aware of the application.
+Instead, you must manually flash and debug the application.
 
 .. _MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr
-.. _ExternalProject: https://cmake.org/cmake/help/latest/module/ExternalProject.html
 
 .. _sysbuild_var_override:
 
@@ -908,8 +910,8 @@ can be added.
 Sysbuild and CMake presets
 **************************
 
-`CMake presets <https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html>`_ can be used with
-Sysbuild but not all preset macros will work as expected.
+:cmake:manual:`CMake presets <manual:cmake-presets(7)>` can be used with Sysbuild but not all
+preset macros will work as expected.
 
 .. note::
 

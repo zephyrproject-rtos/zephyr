@@ -2,24 +2,30 @@
 #
 # Copyright (c) 2024, Nordic Semiconductor ASA
 
-# Convert Zephyr roots to absolute paths to be used by sysbuild.
-#
-# This CMake module will convert all relative paths in existing ROOT lists to
-# absolute path relative from APP_DIR.
-#
-# Optional variables:
-# - ARCH_ROOT:       CMake list of arch roots containing arch implementations
-# - SOC_ROOT:        CMake list of SoC roots containing SoC implementations
-# - BOARD_ROOT:      CMake list of board roots containing board and shield implementations
-# - MODULE_EXT_ROOT: CMake list of module external roots containing module glue code
-# - SCA_ROOT:        CMake list of SCA roots containing static code analysis integration code
-#
-# If a root is defined it will check the list of paths in the root and convert
-# any relative path to absolute path and update the root list.
-# If a root is undefined it will still be undefined when this module has loaded.
-#
-# Converted paths are placed in the CMake cache so that they are propagated
-# correctly to image builds.
+#[=======================================================================[.rst:
+sysbuild_root
+#############
+
+Convert Zephyr roots to absolute paths to be used by sysbuild.
+
+This module converts all relative paths in the following root lists to absolute paths, relative
+from :cmake:variable:`APP_DIR`:
+
+* :cmake:variable:`ARCH_ROOT`
+* :cmake:variable:`BOARD_ROOT`
+* :cmake:variable:`MODULE_EXT_ROOT`
+* :cmake:variable:`SCA_ROOT`
+* :cmake:variable:`SNIPPET_ROOT`
+* :cmake:variable:`SOC_ROOT`
+
+If a root is defined, this module checks the list of paths in the root, converts any relative path
+to an absolute path, and updates the root list. If a root is undefined, it is still undefined once
+this module has loaded.
+
+Converted paths are placed in the CMake cache so that they are propagated correctly to image
+builds.
+
+#]=======================================================================]
 
 include_guard(GLOBAL)
 
