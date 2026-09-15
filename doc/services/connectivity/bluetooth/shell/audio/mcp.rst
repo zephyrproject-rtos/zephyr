@@ -113,7 +113,7 @@ Setup
 
    uart:~$ bt advertise on
    Advertising started
-   Connected: F6:58:DC:27:F3:57 (random)
+   Connected: R:F6:58:DC:27:F3:57
 
 
 When connected
@@ -401,9 +401,9 @@ Setup
    uart:~$ mpl init
    [Large amounts of debug output]
 
-   uart:~$ bt connect F9:33:3B:67:D2:A7 (random)
+   uart:~$ bt connect R:F9:33:3B:67:D2:A7
    Connection pending
-   Connected: F9:33:3B:67:D2:A7 (random)
+   Connected: R:F9:33:3B:67:D2:A7
 
 
 When connected

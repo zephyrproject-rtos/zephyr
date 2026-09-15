@@ -86,26 +86,38 @@ int bt_addr_from_str(const char *str, bt_addr_t *addr)
 	return 0;
 }
 
-int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr)
+int bt_addr_le_from_str(const char *str, bt_addr_le_t *addr)
 {
+	uint8_t type;
 	int err;
 
-	err = bt_addr_from_str(str, &addr->a);
+	/* Parse a null-terminated string in the "P:XX:XX:XX:XX:XX:XX" (public)
+	 * or "R:XX:XX:XX:XX:XX:XX" (random) format produced by
+	 * bt_addr_le_to_str().
+	 */
+	switch (str[0]) {
+	case 'P':
+	case 'p':
+		type = BT_ADDR_LE_PUBLIC;
+		break;
+	case 'R':
+	case 'r':
+		type = BT_ADDR_LE_RANDOM;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (str[1] != ':') {
+		return -EINVAL;
+	}
+
+	err = bt_addr_from_str(&str[2], &addr->a);
 	if (err < 0) {
 		return err;
 	}
 
-	if (!strcmp(type, "public") || !strcmp(type, "(public)")) {
-		addr->type = BT_ADDR_LE_PUBLIC;
-	} else if (!strcmp(type, "random") || !strcmp(type, "(random)")) {
-		addr->type = BT_ADDR_LE_RANDOM;
-	} else if (!strcmp(type, "public-id") || !strcmp(type, "(public-id)")) {
-		addr->type = BT_ADDR_LE_PUBLIC_ID;
-	} else if (!strcmp(type, "random-id") || !strcmp(type, "(random-id)")) {
-		addr->type = BT_ADDR_LE_RANDOM_ID;
-	} else {
-		return -EINVAL;
-	}
+	addr->type = type;
 
 	return 0;
 }
