@@ -75,11 +75,13 @@
 	sysmgr: sysmgr@10d12000 {
 		compatible = "syscon";
 		reg = <0x10d12000 0x1000>;
+		status = "okay";
 	};
 
 	clock: clock@10d10000 {
 		compatible = "intel,agilex5-clock";
 		reg = <0x10d10000 0x1000>;
+		sysmgr = <&sysmgr>;
 		#clock-cells = <1>;
 	};
 
