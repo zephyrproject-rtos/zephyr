@@ -1,0 +1,12 @@
+common:
+  tags:
+    - net
+    - gptp
+    - precision_timing
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+tests:
+  net.gptp.clock_update: {}

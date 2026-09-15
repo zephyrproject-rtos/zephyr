@@ -3,6 +3,7 @@
 
 menuconfig NET_GPTP
 	bool "IEEE 802.1AS (gPTP) support"
+	select PRECISION_TIMING if NET_GPTP_USE_DEFAULT_CLOCK_UPDATE
 	select PTP_CLOCK
 	select NET_L2_PTP_TIMESTAMPING
 	help
