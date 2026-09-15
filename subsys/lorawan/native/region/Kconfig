@@ -18,13 +18,14 @@ config LORAWAN_NATIVE_DUTY_CYCLE
 
 config LORAWAN_NATIVE_MAX_CHANNELS
 	int
+	default 24 if LORAWAN_REGION_AS923
 	default 24 if LORAWAN_REGION_KR920
 	default 16
 	help
 	  Sizes the per-session channel table.  Not user-tunable: the value
 	  is dictated by the selected region(s): EU868 asks for 16 channels,
-	  KR920 for 24.  Regions with larger channel plans will extend this
-	  config with further 'default N if LORAWAN_REGION_X' lines when they
-	  land.
+	  AS923 and KR920 for 24.  Regions with larger channel plans will
+	  extend this config with further 'default N if LORAWAN_REGION_X'
+	  lines when they land.
 
 endif # LORA_MODULE_BACKEND_NATIVE
