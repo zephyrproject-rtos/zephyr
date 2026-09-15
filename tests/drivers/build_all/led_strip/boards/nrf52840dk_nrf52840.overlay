@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ * Copyright (c) 2026 Dev It Wise
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&pinctrl {
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 3)>;
+		};
+	};
+};
+
+/* Left disabled on purpose: the strip below claims the instance. */
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+};
+
+/ {
+	test_ws2812_nrf_pwm: led-strip {
+		compatible = "worldsemi,ws2812-nrf-pwm";
+		status = "okay";
+		generator = <&pwm1>;
+
+		chain-length = <8>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+	};
+};
