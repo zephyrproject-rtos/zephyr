@@ -35,6 +35,7 @@
 			compatible = "nxp,enet";
 			reg = <0x40079000 0x628>;
 			clocks = <&clock NXP_S32_ENET_CLK>;
+			status = "disabled";
 
 			enet_mac: ethernet {
 				compatible = "nxp,enet-mac";
@@ -43,18 +44,21 @@
 				nxp,mdio = <&enet_mdio>;
 				ptp-clock = <&enet_ptp_clock>;
 				phy-connection-type = "rmii";
+				status = "disabled";
 			};
 
 			enet_mdio: mdio {
 				compatible = "nxp,enet-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 
 			enet_ptp_clock: ptp_clock {
 				compatible = "nxp,enet-ptp-clock";
 				interrupts = <72 0>;
 				clocks = <&clock NXP_S32_ENET_CLK>;
+				status = "disabled";
 			};
 		};
 	};
