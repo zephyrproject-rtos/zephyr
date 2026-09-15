@@ -140,6 +140,12 @@ struct btp_bap_broadcast_assistant_scan_stop_cmd {
 	bt_addr_le_t address;
 } __packed;
 
+struct btp_bap_subgroup {
+	uint32_t bis_sync;
+	uint8_t metadata_len;
+	uint8_t metadata[];
+} __packed;
+
 #define BTP_BAP_ADD_BROADCAST_SRC		0x14U
 struct btp_bap_add_broadcast_src_cmd {
 	bt_addr_le_t address;
@@ -149,7 +155,7 @@ struct btp_bap_add_broadcast_src_cmd {
 	uint8_t padv_sync;
 	uint16_t padv_interval;
 	uint8_t num_subgroups;
-	uint8_t subgroups[];
+	struct btp_bap_subgroup subgroups[];
 } __packed;
 
 #define BTP_BAP_REMOVE_BROADCAST_SRC		0x15U
@@ -165,7 +171,7 @@ struct btp_bap_modify_broadcast_src_cmd {
 	uint8_t padv_sync;
 	uint16_t padv_interval;
 	uint8_t num_subgroups;
-	uint8_t subgroups[];
+	struct btp_bap_subgroup subgroups[];
 } __packed;
 
 #define BTP_BAP_SET_BROADCAST_CODE		0x17U
@@ -210,7 +216,7 @@ struct btp_bap_scan_delegator_add_src_cmd {
 	uint8_t pa_sync_state;
 	uint8_t big_encryption;
 	uint8_t num_subgroups;
-	uint8_t subgroups[];
+	struct btp_bap_subgroup subgroups[];
 } __packed;
 struct btp_bap_scan_delegator_add_src_rp {
 	uint8_t src_id;
