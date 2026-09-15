@@ -98,6 +98,8 @@ enum {
 	BT_CONN_CTE_REQ_ENABLED,              /* CTE request procedure is enabled */
 	BT_CONN_CTE_RSP_ENABLED,              /* CTE response procedure is enabled */
 
+	BT_CONN_TX_DISCONNECT_PENDING,        /* TX work should disconnect instead of notify */
+
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
 };
