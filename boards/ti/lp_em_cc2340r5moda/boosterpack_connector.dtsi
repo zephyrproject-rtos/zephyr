@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	boosterpack_header: connector {
+		compatible = "ti,boosterpack-header";
+		#gpio-cells = <2>;
+		gpio-map = <4 0 &gpio0 18 0>,
+				<6 0 &gpio0 12 0>,
+				<11 0 &gpio0 6 0>,
+				<12 0 &gpio0 24 0>,
+				<15 0 &gpio0 20 0>,
+				<23 0 &gpio0 11 0>,
+				<33 0 &gpio0 17 0>,
+				<34 0 &gpio0 16 0>,
+				<39 0 &gpio0 21 0>,
+				<40 0 &gpio0 8 0>;
+	};
+};

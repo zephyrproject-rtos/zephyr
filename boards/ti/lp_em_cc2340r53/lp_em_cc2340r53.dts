@@ -1,0 +1,209 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc2340r53.dtsi>
+#include "boosterpack_connector.dtsi"
+#include "lp_em_cc2340r53-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
+
+/ {
+	model = "TI CC2340R53 LaunchPad";
+	compatible = "ti,lp_em_cc2340r53";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &btn0;
+		sw1 = &btn1;
+		pwm-led0 = &pwm_green;
+		pwm-led1 = &pwm_red;
+		watchdog0 = &wdt0;
+		mcuboot-led0 = &led1;
+		mcuboot-button0 = &btn1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_green: pwm_led_0 {
+			pwms = <&pwm6 0 1000 PWM_POLARITY_NORMAL>;
+			label = "Green PWM LED";
+		};
+
+		pwm_red: pwm_led_1 {
+			pwms = <&pwm5 2 1000 PWM_POLARITY_NORMAL>;
+			label = "Red PWM LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		btn0: btn_0 {
+			gpios = <&gpio0 10 BTN_GPIO_FLAGS>;
+			label = "Button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn1: btn_1 {
+			gpios = <&gpio0 9 BTN_GPIO_FLAGS>;
+			label = "Button 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	lfxosc: lf_xosc {
+		compatible = "ti,cc23x0-lf-xosc";
+	};
+};
+
+/delete-node/ &slot0_partition;
+
+&flash0 {
+	partitions {
+		/* 40 KiB (0xa000) for MCUboot */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000a000>;
+		};
+
+		/* 228 KiB (0x39000) per slot for the application */
+		slot0_partition: partition@a000 {
+			label = "image-0";
+			reg = <0x0000a000 0x00039000>;
+		};
+
+		slot1_partition: partition@43000 {
+			label = "image-1";
+			reg = <0x00043000 0x00039000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_sck_default
+		     &spi0_mosi_default
+		     &spi0_miso_default
+		     &spi0_cs_default>;
+	pinctrl-1 = <&spi0_sck_sleep
+		     &spi0_mosi_sleep
+		     &spi0_miso_sleep
+		     &spi0_cs_sleep>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+	mx25r80: mx25r8035f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+		size = <0x800000>;
+		jedec-id = [c2 28 14];
+		sfdp-bfp = [
+			 e5 20 f1 ff  ff ff 7f 00  44 eb 08 6b  08 3b 04 bb
+			 ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			 10 d8 00 ff  23 72 f5 00  82 ed 04 b7  44 83 38 44
+			 30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
+		];
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_default
+		     &i2c0_sda_default>;
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+};
+
+&aes {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_ch0
+		     &adc0_ch2
+		     &adc0_ch3
+		     &adc0_ch4
+		     &adc0_ch6
+		     &adc0_ch8>;
+	pinctrl-names = "default";
+};
+
+&dma {
+	status = "okay";
+};
+
+&lgpt1 {
+	clk-prescale = <0>;
+	status = "okay";
+};
+
+&lgpt2 {
+	clk-prescale = <0>;
+	status = "okay";
+};
+
+&pwm5 {
+	pinctrl-0 = <&pwm5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pwm6 {
+	pinctrl-0 = <&pwm6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&rtc0 {
+	status = "okay";
+};

@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/cc23x0-pinctrl.h>
+
+&pinctrl {
+	/* UART0 */
+	uart0_tx_default: uart0_tx_default {
+		pinmux = <6 DIO6_UART0_TXD>;
+		bias-disable;
+	};
+
+	uart0_rx_default: uart0_rx_default {
+		pinmux = <20 DIO20_UART0_RXD>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	uart0_rts_default: uart0_rts_default {
+		pinmux = <8 DIO8_UART0_RTS>;
+		bias-disable;
+	};
+	uart0_cts_default: uart0_cts_default {
+		pinmux = <2 DIO2_UART0_CTS>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/* SPI0 */
+
+	/* SPI SCLK: Can be connected to DIO18 by connecting pins 3 and 5 on header P6  */
+	spi0_sck_default: spi0_sck_default {
+		pinmux = <18 DIO18_SPI0_SCLK>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_mosi_default: spi0_mosi_default {
+		pinmux = <12 DIO12_SPI0_MOSI>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	/* SPI MISO: Can be connected to DIO21 by connecting pins 2 and 4 on header P2 */
+	spi0_miso_default: spi0_miso_default {
+		pinmux = <21 DIO21_SPI0_MISO>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_cs_default: spi0_cs_default {
+		pinmux = <11 DIO11_GPIO11>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_sck_sleep: spi0_sck_sleep {
+		pinmux = <18 DIO18_GPIO18>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_mosi_sleep: spi0_mosi_sleep {
+		pinmux = <12 DIO12_GPIO12>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_miso_sleep: spi0_miso_sleep {
+		pinmux = <21 DIO21_GPIO21>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_cs_sleep: spi0_cs_sleep {
+		pinmux = <11 DIO11_GPIO11>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_flash_cs: spi0_flash_cs {
+		pinmux = <11 DIO11_GPIO11>;
+		bias-pull-up;
+	};
+
+	/* I2C0 */
+
+	/* I2C SCL: Can be connected to DIO24 by connecting pins 2 and 4 on header P6 */
+	i2c0_scl_default: i2c0_scl_default {
+		pinmux = <24 DIO24_I2C0_SCL>;
+		bias-pull-up;
+		drive-open-drain;
+		input-enable;
+	};
+
+	/* I2C SDA: Can be connected to DIO8 by connecting pins 3 and 5 on header P2 */
+	i2c0_sda_default: i2c0_sda_default {
+		pinmux = <8 DIO8_I2C0_SDA>;
+		bias-pull-up;
+		drive-open-drain;
+		input-enable;
+	};
+
+	/* LGPT0 - PWM */
+	pwm0_default: lgpt0_chan0_default {
+		pinmux = <8 DIO8_T0_C0N>;
+		bias-disable;
+	};
+
+	/* LGPT0 - PWM */
+	pwm1_default: lgpt1_chan1_default {
+		pinmux = <21 DIO21_T1_C1N>;
+		bias-disable;
+	};
+
+	/* LGPT1 ch2 capture input for PWM loopback test (DIO16, T1_C2) */
+	pwm5_capture: lgpt1_chan2_capture {
+		pinmux = <16 DIO16_T1_C2>;
+		bias-disable;
+		input-enable;
+	};
+};
