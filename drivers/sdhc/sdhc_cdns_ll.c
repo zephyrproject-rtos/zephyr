@@ -25,13 +25,8 @@ LOG_MODULE_REGISTER(sdhc_cdns_ll, CONFIG_SDHC_LOG_LEVEL);
 #define SDMMC_DMA_MAX_BUFFER_SIZE		(64 * 1024)
 #define CDNSMMC_ADDRESS_MASK			(CONFIG_SDHC_BUFFER_ALIGNMENT - 1)
 
-#define SRS10_VAL_READ	(ADMA2_32 | HS_EN | DT_WIDTH)
-#define SRS10_VAL_SW	(ADMA2_32 | DT_WIDTH)
-#define SRS11_VAL_GEN	(READ_CLK | CDNS_SRS11_ICE | CDNS_SRS11_ICS | CDNS_SRS11_SDCE)
-#define SRS11_VAL_CID	(CDNS_SRS11_ICE | CDNS_SRS11_ICS | CDNS_SRS11_SDCE)
-#define SRS15_VAL_GEN	(CDNS_SRS15_BIT_AD_64 | CDNS_SRS15_HV4E | CDNS_SRS15_V18SE)
+#define SRS15_VAL_GEN	(CDNS_SRS15_HV4E | CDNS_SRS15_V18SE)
 #define SRS15_VAL_RD_WR	(SRS15_VAL_GEN | CDNS_SRS15_SDR104 | CDNS_SRS15_PVE)
-#define SRS15_VAL_CID	(CDNS_SRS15_HV4E | CDNS_SRS15_V18SE)
 
 #define CARD_REG_TIME_DELAY_US			100000
 #define WAIT_ICS_TIME_DELAY_US			5000
@@ -172,6 +167,9 @@ static int sdhc_cdns_program_phy_reg(struct sdhc_cdns_combo_phy *sdhc_cdns_combo
 	uint32_t value = 0;
 	int ret = 0;
 
+	/* Step 1, switch on DLL_RESET */
+	sys_clear_bits(cdns_params.reg_base + SDHC_CDNS_HRS09, CDNS_HRS09_PHY_SW_RESET);
+
 	/*
 	 * program PHY_DQS_TIMING_REG
 	 * This register controls the DQS related timing
@@ -248,10 +246,9 @@ static int sdhc_cdns_program_phy_reg(struct sdhc_cdns_combo_phy *sdhc_cdns_combo
 	sys_write32(value, cdns_params.reg_base + SDHC_CDNS_HRS05);
 
 	/* switch off DLL_RESET */
+	sys_set_bits(cdns_params.reg_base + SDHC_CDNS_HRS09, CDNS_HRS09_PHY_SW_RESET);
 	do {
-		value = sys_read32(cdns_params.reg_base + SDHC_CDNS_HRS09);
-		value |= CDNS_HRS09_PHY_SW_RESET;
-		sys_write32(value, cdns_params.reg_base + SDHC_CDNS_HRS09);
+		k_usleep(10);
 		value = sys_read32(cdns_params.reg_base + SDHC_CDNS_HRS09);
 	/* polling PHY_INIT_COMPLETE */
 	} while ((value & CDNS_HRS09_PHY_INIT_COMP) != CDNS_HRS09_PHY_INIT_COMP);
@@ -356,13 +353,13 @@ static int sdhc_cdns_prepare(uint32_t dma_start_addr, uintptr_t dma_buff,
 	return 0;
 }
 
-static int sdhc_cdns_host_set_clk(int clk)
+static int sdhc_cdns_set_clk(uint32_t clk)
 {
 	uint32_t sdclkfsval = 0;
 	uint32_t dtcvval = 0xe;
 	int ret = 0;
 
-	sdclkfsval = (cdns_params.clk_rate / 2000) / clk;
+	sdclkfsval = (cdns_params.clk_rate / 2) / clk;
 	sys_write32(0, cdns_params.reg_base + SDHC_CDNS_SRS11);
 	sys_write32(((dtcvval << CDNS_SRS11_DTCV) | (sdclkfsval << CDNS_SRS11_SDCLKFS) |
 		CDNS_SRS11_ICE), cdns_params.reg_base + SDHC_CDNS_SRS11);
@@ -372,21 +369,14 @@ static int sdhc_cdns_host_set_clk(int clk)
 		return ret;
 	}
 
-	/* Enable DLL reset */
-	sys_clear_bit(cdns_params.reg_base + SDHC_CDNS_HRS09, 0);
-	/* Set extended_wr_mode */
-	sys_write32(((sys_read32(cdns_params.reg_base + SDHC_CDNS_HRS09)
-		& 0xFFFFFFF7) | CDNS_HRS09_EXT_WR_MODE), (cdns_params.reg_base
-		+ SDHC_CDNS_HRS09));
-	/* Release DLL reset */
-	sys_set_bits(cdns_params.reg_base + SDHC_CDNS_HRS09, CDNS_HRS09_RDCMD_EN_BIT |
-					CDNS_HRS09_RDDATA_EN_BIT);
-
 	sys_write32(((dtcvval << CDNS_SRS11_DTCV) | (sdclkfsval << CDNS_SRS11_SDCLKFS)
 			| CDNS_SRS11_ICE | CDNS_SRS11_SDCE),
 			cdns_params.reg_base + SDHC_CDNS_SRS11);
 
-	sys_write32(0xFFFFFFFF, cdns_params.reg_base + SDHC_CDNS_SRS13);
+	ret = sdhc_cdns_wait_ics(WAIT_ICS_TIME_DELAY_US, cdns_params.reg_base + SDHC_CDNS_SRS11);
+	if (ret != 0) {
+		return ret;
+	}
 
 	return 0;
 }
@@ -412,7 +402,7 @@ static int sdhc_cdns_set_ios(unsigned int clk, unsigned int width)
 
 	/* Perform clock configuration when SD clock is not gated */
 	if (clk != 0) {
-		ret = sdhc_cdns_host_set_clk(clk);
+		ret = sdhc_cdns_set_clk(clk);
 		if (ret != 0) {
 			LOG_ERR("%s: Clock configuration failed", __func__);
 			return ret;
@@ -423,108 +413,21 @@ static int sdhc_cdns_set_ios(unsigned int clk, unsigned int width)
 }
 
 /* Programming HRS register for initialisation */
-static int sdhc_cdns_init_hrs_io(struct sdhc_cdns_combo_phy *sdhc_cdns_combo_phy_reg,
-	struct sdhc_cdns_sdmmc *sdhc_cdns_sdmmc_reg)
+static void sdhc_cdns_init_hrs_io(struct sdhc_cdns_sdmmc *sdhc_cdns_sdmmc_reg)
 {
-	uint32_t value = 0;
-	int ret = 0;
+	uint32_t value;
 
-	/*
-	 * program HRS09, register 42
-	 * PHY Control and Status Register
-	 */
-	value = (CDNS_HRS09_RDDATA_EN(sdhc_cdns_sdmmc_reg->sdhc_rddata_en))
-		| (CDNS_HRS09_RDCMD_EN(sdhc_cdns_sdmmc_reg->sdhc_rdcmd_en))
-		| (CDNS_HRS09_EXTENDED_WR(sdhc_cdns_sdmmc_reg->sdhc_extended_wr_mode))
-		| (CDNS_HRS09_EXT_RD_MODE(sdhc_cdns_sdmmc_reg->sdhc_extended_rd_mode));
-	sys_write32(value, cdns_params.reg_base + SDHC_CDNS_HRS09);
+	value = (CDNS_HRS09_EXT_RD_MODE | CDNS_HRS09_EXT_WR_MODE |
+		CDNS_HRS09_RDCMD_EN_BIT | CDNS_HRS09_RDDATA_EN_BIT);
+	sys_set_bits(cdns_params.reg_base + SDHC_CDNS_HRS09, value);
 
-	/*
-	 * program HRS10, register 43
-	 * Host Controller SDCLK start point adjustment
-	 */
-	value = (SDHC_HRS10_HCSDCLKADJ(sdhc_cdns_sdmmc_reg->sdhc_hcsdclkadj));
+	value = SDHC_HRS10_HCSDCLKADJ(sdhc_cdns_sdmmc_reg->sdhc_hcsdclkadj);
 	sys_write32(value, cdns_params.reg_base + SDHC_CDNS_HRS10);
 
-	/*
-	 * program HRS16, register 48
-	 * CMD/DAT output delay
-	 */
-	value = (CDNS_HRS16_WRDATA1_SDCLK_DLY(sdhc_cdns_sdmmc_reg->sdhc_wrdata1_sdclk_dly))
-		| (CDNS_HRS16_WRDATA0_SDCLK_DLY(sdhc_cdns_sdmmc_reg->sdhc_wrdata0_sdclk_dly))
-		| (CDNS_HRS16_WRCMD1_SDCLK_DLY(sdhc_cdns_sdmmc_reg->sdhc_wrcmd1_sdclk_dly))
-		| (CDNS_HRS16_WRCMD0_SDCLK_DLY(sdhc_cdns_sdmmc_reg->sdhc_wrcmd0_sdclk_dly))
-		| (CDNS_HRS16_WRDATA1_DLY(sdhc_cdns_sdmmc_reg->sdhc_wrdata1_dly))
-		| (CDNS_HRS16_WRDATA0_DLY(sdhc_cdns_sdmmc_reg->sdhc_wrdata0_dly))
-		| (CDNS_HRS16_WRCMD1_DLY(sdhc_cdns_sdmmc_reg->sdhc_wrcmd1_dly))
-		| (CDNS_HRS16_WRCMD0_DLY(sdhc_cdns_sdmmc_reg->sdhc_wrcmd0_dly));
-	sys_write32(value, cdns_params.reg_base + SDHC_CDNS_HRS16);
+	sys_write32(0, cdns_params.reg_base + SDHC_CDNS_HRS16);
 
-	/*
-	 * program HRS07, register 40
-	 * IO Delay Information Register
-	 */
-	value = (CDNS_HRS07_RW_COMPENSATE(sdhc_cdns_sdmmc_reg->sdhc_rw_compensate))
-		| (CDNS_HRS07_IDELAY_VAL(sdhc_cdns_sdmmc_reg->sdhc_idelay_val));
+	value = (CDNS_HRS07_RW_COMPENSATE(sdhc_cdns_sdmmc_reg->sdhc_rw_compensate));
 	sys_write32(value, cdns_params.reg_base + SDHC_CDNS_HRS07);
-
-	return ret;
-}
-
-static int sdhc_cdns_set_clk(struct sdhc_cdns_params *cdn_sdmmc_dev_type_params)
-{
-	uint32_t dtcvval, sdclkfsval;
-	int ret = 0;
-
-	dtcvval = DTC_VAL;
-	sdclkfsval = 0;
-
-	/* Condition for Default speed mode and SDR12 and SDR_BC */
-	if ((cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == SD_DS) ||
-		(cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == SD_UHS_SDR12) ||
-		(cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == EMMC_SDR_BC)) {
-		sdclkfsval = 4;
-	} else if ((cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == SD_HS) ||
-		(cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == SD_UHS_SDR25) ||
-		(cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == SD_UHS_DDR50) ||
-		(cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == EMMC_SDR)) {
-		sdclkfsval = 2;
-	} else if ((cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == SD_UHS_SDR50) ||
-		(cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == EMMC_DDR) ||
-		(cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == EMMC_HS400) ||
-		(cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == EMMC_HS400ES)) {
-		sdclkfsval = 1;
-	} else if ((cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == SD_UHS_SDR104) ||
-		(cdn_sdmmc_dev_type_params->cdn_sdmmc_dev_type == EMMC_HS200)) {
-		sdclkfsval = 0;
-	}
-
-	/* Disabling SD clock enable */
-	sys_write32(0, cdns_params.reg_base + SDHC_CDNS_SRS11);
-	sys_write32((dtcvval << CDNS_SRS11_DTCV) |
-		(sdclkfsval << CDNS_SRS11_SDCLKFS) | CDNS_SRS11_ICE,
-			cdns_params.reg_base + SDHC_CDNS_SRS11);
-	ret = sdhc_cdns_wait_ics(WAIT_ICS_TIME_DELAY_US, cdns_params.reg_base + SDHC_CDNS_SRS11);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Enable DLL reset */
-	sys_clear_bit(cdns_params.reg_base + SDHC_CDNS_HRS09, 0);
-	/* Set extended_wr_mode */
-	sys_write32(((sys_read32(cdns_params.reg_base + SDHC_CDNS_HRS09) &
-			0xFFFFFFF7) | CDNS_HRS09_EXT_WR_MODE), (cdns_params.reg_base
-			+ SDHC_CDNS_HRS09));
-	/* Release DLL reset */
-	sys_set_bits(cdns_params.reg_base + SDHC_CDNS_HRS09, CDNS_HRS09_RDCMD_EN_BIT |
-					CDNS_HRS09_RDDATA_EN_BIT);
-
-	sys_write32((dtcvval << CDNS_SRS11_DTCV) | (sdclkfsval << CDNS_SRS11_SDCLKFS) |
-		CDNS_SRS11_ICE | CDNS_SRS11_SDCE, cdns_params.reg_base
-		+ SDHC_CDNS_SRS11);
-
-	sys_write32(0xFFFFFFFF, cdns_params.reg_base + SDHC_CDNS_SRS13);
-	return 0;
 }
 
 static int sdhc_cdns_reset(void)
@@ -534,7 +437,7 @@ static int sdhc_cdns_reset(void)
 	sys_clear_bits(cdns_params.reg_base + SDHC_CDNS_SRS11, 0xFFFF);
 
 	/* Software reset */
-	sys_set_bit(cdns_params.reg_base + SDHC_CDNS_HRS00, CDNS_HRS00_SWR);
+	sys_set_bits(cdns_params.reg_base + SDHC_CDNS_HRS00, CDNS_HRS00_SWR);
 
 	/* Wait status command response ready */
 	timeout = CARD_REG_TIME_DELAY_US;
@@ -543,9 +446,6 @@ static int sdhc_cdns_reset(void)
 		LOG_ERR("Software reset is not completed...timedout");
 		return -ETIMEDOUT;
 	}
-
-	/* Step 1, switch on DLL_RESET */
-	sys_clear_bit(cdns_params.reg_base + SDHC_CDNS_HRS09, CDNS_HRS09_PHY_SW_RESET);
 
 	return 0;
 }
@@ -560,11 +460,7 @@ static int sdhc_cdns_init(void)
 		return ret;
 	}
 
-	ret = sdhc_cdns_init_hrs_io(&sdhc_cdns_combo_phy_reg_info, &sdhc_cdns_sdmmc_reg_info);
-	if (ret != 0U) {
-		LOG_ERR("Configuration for HRS IO reg failed");
-		return ret;
-	}
+	sdhc_cdns_init_hrs_io(&sdhc_cdns_sdmmc_reg_info);
 
 	ret = sdhc_cdns_card_present();
 	if (ret != CARD_PRESENT) {
@@ -578,11 +474,23 @@ static int sdhc_cdns_init(void)
 		return ret;
 	}
 
-	ret = sdhc_cdns_set_clk(&cdns_params);
+	ret = sdhc_cdns_set_clk(SDMMC_CLOCK_400KHZ);
 	if (ret != 0U) {
 		LOG_ERR("Host controller set clk failed");
 		return ret;
 	}
+
+	/* Set ADMA2 (32-bit Address) DMA mode */
+	sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS10, ADMA2_32);
+
+	/* Clear Interrupt status */
+	sys_write32(UINT32_MAX, cdns_params.reg_base + SDHC_CDNS_SRS13);
+
+	/* Enable Interrupts */
+	sys_write32(RESET_SRS14, cdns_params.reg_base + SDHC_CDNS_SRS14);
+
+	/* Set Host Version 4.0 and 1.8V Signal Level */
+	sys_write32(CDNS_SRS15_HV4E | CDNS_SRS15_V18SE, cdns_params.reg_base + SDHC_CDNS_SRS15);
 
 	return 0;
 }
@@ -604,34 +512,22 @@ static int sdhc_cdns_send_cmd(struct sdmmc_cmd *cmd, struct sdhc_data *data)
 		switch (cmd->cmd_idx) {
 		case SD_SWITCH:
 			op = CDNS_SRS03_DATA_PRSNT;
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS10, SRS10_VAL_SW);
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS11, SRS11_VAL_GEN);
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS15, SRS15_VAL_GEN);
 			break;
 
 		case SD_WRITE_SINGLE_BLOCK:
 		case SD_READ_SINGLE_BLOCK:
 			op = CDNS_SRS03_DATA_PRSNT;
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS10, SRS10_VAL_READ);
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS11, SRS11_VAL_GEN);
 			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS15, SRS15_VAL_RD_WR);
-			sys_write32(CDNS_SRS00_SAAR, cdns_params.reg_base + SDHC_CDNS_SRS00);
 			break;
 
 		case SD_WRITE_MULTIPLE_BLOCK:
 		case SD_READ_MULTIPLE_BLOCK:
 			op = CDNS_SRS03_DATA_PRSNT | AUTO_CMD23 | CDNS_SRS03_MULTI_BLK_READ;
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS10, SRS10_VAL_READ);
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS11, SRS11_VAL_GEN);
 			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS15, SRS15_VAL_RD_WR);
-			sys_write32(CDNS_SRS00_SAAR, cdns_params.reg_base + SDHC_CDNS_SRS00);
 			break;
 
 		case SD_APP_SEND_SCR:
 			op = CDNS_SRS03_DATA_PRSNT;
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS10, ADMA2_32);
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS11, SRS11_VAL_GEN);
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS15, SRS15_VAL_GEN);
 			break;
 
 		default:
@@ -641,19 +537,13 @@ static int sdhc_cdns_send_cmd(struct sdmmc_cmd *cmd, struct sdhc_data *data)
 	} else {
 		switch (cmd->cmd_idx) {
 		case SD_GO_IDLE_STATE:
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS11, SRS11_VAL_CID);
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS15, CDNS_SRS15_HV4E);
 			break;
 
 		case SD_ALL_SEND_CID:
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS11, SRS11_VAL_CID);
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS15, SRS15_VAL_CID);
 			break;
 
 		case SD_SEND_IF_COND:
 			op = CDNS_SRS03_CMD_IDX_CHK_EN;
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS11, SRS11_VAL_GEN);
-			sys_set_bits(cdns_params.reg_base + SDHC_CDNS_SRS15, CDNS_SRS15_HV4E);
 			break;
 
 		case SD_STOP_TRANSMISSION:
