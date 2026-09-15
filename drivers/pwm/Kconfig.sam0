@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_SAM0_TCC
-	bool "Atmel SAM0 MCU Family TCC PWM Driver"
+	bool "Atmel SAM0 MCU Family TCC PWM driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM0_TCC_PWM_ENABLED
 	select PINCTRL

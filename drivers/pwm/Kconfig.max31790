@@ -5,7 +5,7 @@
 #
 
 config PWM_MAX31790
-	bool "MAX31790 6-channel I2C-bus PWM controller"
+	bool "MAX31790 6-channel I2C-bus PWM driver"
 	default y
 	depends on DT_HAS_MAXIM_MAX31790_PWM_ENABLED
 	select MFD
