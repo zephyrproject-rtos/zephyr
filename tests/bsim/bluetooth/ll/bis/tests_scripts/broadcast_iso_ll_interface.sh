@@ -18,6 +18,6 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_bis_prj_conf_overlay-ll_interfa
   -v=${verbosity_level} -s=${simulation_id} -RealEncryption=1 -d=1 -testid=broadcast
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=2 -sim_length=30e6 $@
+  -D=2 -sim_length=32e6 $@
 
 wait_for_background_jobs
