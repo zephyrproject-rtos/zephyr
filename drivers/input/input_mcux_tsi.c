@@ -17,13 +17,6 @@
 
 LOG_MODULE_REGISTER(input_mcux_tsi, CONFIG_INPUT_LOG_LEVEL);
 
-/*
- * channel_mask is a uint32_t, so only channels 0..31 are addressable even on
- * SoCs whose TSI has more than 32 channels (e.g. MCXA577 = 70). Clamp the
- * usable width so the state array and mask checks never exceed 32 channels.
- */
-#define MCUX_TSI_MAX_CHANNELS MIN(FSL_FEATURE_TSI_CHANNEL_COUNT, 32)
-
 struct tsi_channel_state {
 	uint16_t baseline;
 	uint16_t counter;
@@ -43,7 +36,8 @@ struct mcux_tsi_config {
 	uint8_t num_channels;
 	uint8_t input_code_count;
 	const uint16_t *input_codes;
-	uint32_t channel_mask;
+	const uint32_t *channel_mask;
+	uint8_t channel_mask_words;
 
 	/* Touch detection parameters */
 	int16_t touch_threshold;
@@ -56,11 +50,12 @@ struct mcux_tsi_config {
 struct mcux_tsi_data {
 	const struct device *dev;
 
-	/* Channel states */
-	struct tsi_channel_state channels[MCUX_TSI_MAX_CHANNELS];
+	/* Channel states, indexed by mcux_tsi_channel_to_input_index(), one per enabled channel */
+	struct tsi_channel_state *channels;
 
-	/* Current scanning channel */
+	/* Current scanning channel, and its precomputed index into channels[]/input_codes[] */
 	uint8_t current_channel;
+	int current_code_idx;
 
 	/* Scan control */
 	struct k_work_delayable scan_work;
@@ -68,13 +63,36 @@ struct mcux_tsi_data {
 	struct k_sem scan_sem;
 };
 
+static bool mcux_tsi_channel_enabled(const struct mcux_tsi_config *config, uint8_t channel)
+{
+	uint8_t word = channel / 32U;
+	uint8_t bit = channel % 32U;
+
+	if (word >= config->channel_mask_words) {
+		return false;
+	}
+
+	return (config->channel_mask[word] & BIT(bit)) != 0U;
+}
+
+static uint32_t mcux_tsi_enabled_channel_count(const struct mcux_tsi_config *config)
+{
+	uint32_t count = 0U;
+
+	for (uint8_t w = 0; w < config->channel_mask_words; w++) {
+		count += POPCOUNT(config->channel_mask[w]);
+	}
+
+	return count;
+}
+
 static int mcux_tsi_channel_to_input_index(const struct mcux_tsi_config *config, uint8_t channel)
 {
 	int index = 0;
 
 	/* Count how many enabled channels come before this channel in channel_mask */
 	for (uint8_t i = 0; i < channel; i++) {
-		if (config->channel_mask & BIT(i)) {
+		if (mcux_tsi_channel_enabled(config, i)) {
 			index++;
 		}
 	}
@@ -87,7 +105,7 @@ static int mcux_tsi_get_next_channel(const struct mcux_tsi_config *config, int c
 	for (int i = 0; i < config->num_channels; i++) {
 		int ch = (current + 1 + i) % config->num_channels;
 
-		if (config->channel_mask & BIT(ch)) {
+		if (mcux_tsi_channel_enabled(config, ch)) {
 			return ch;
 		}
 	}
@@ -95,11 +113,11 @@ static int mcux_tsi_get_next_channel(const struct mcux_tsi_config *config, int c
 	return -1;
 }
 
-static void mcux_tsi_process_channel(const struct device *dev, uint8_t channel_idx)
+static void mcux_tsi_process_channel(const struct device *dev, int code_idx)
 {
 	const struct mcux_tsi_config *config = dev->config;
 	struct mcux_tsi_data *data = dev->data;
-	struct tsi_channel_state *ch = &data->channels[channel_idx];
+	struct tsi_channel_state *ch = &data->channels[code_idx];
 
 	/* Determine touch state with hysteresis */
 	if (!ch->active && ch->delta > (int16_t)config->touch_threshold) {
@@ -110,18 +128,16 @@ static void mcux_tsi_process_channel(const struct device *dev, uint8_t channel_i
 
 	/* Report state change */
 	if (ch->active != ch->prev_active) {
-		/* Get the input code index based on channel_mask mapping */
-		int code_idx = mcux_tsi_channel_to_input_index(config, channel_idx);
 		uint16_t code = config->input_codes[code_idx];
 
 		input_report_key(dev, code, ch->active ? 1 : 0, true, K_FOREVER);
 
 		if (ch->active) {
-			LOG_DBG("Channel %d touched (code=%d, delta=%d)",
-				channel_idx, code, ch->delta);
+			LOG_DBG("Code idx %d touched (code=%d, delta=%d)",
+				code_idx, code, ch->delta);
 		} else {
-			LOG_DBG("Channel %d released (code=%d, delta=%d)",
-				channel_idx, code, ch->delta);
+			LOG_DBG("Code idx %d released (code=%d, delta=%d)",
+				code_idx, code, ch->delta);
 		}
 
 		ch->prev_active = ch->active;
@@ -140,10 +156,10 @@ static void mcux_tsi_isr(const struct device *dev)
 	if (status & kTSI_EndOfScanFlag) {
 		/* Read counter value */
 		uint16_t counter = TSI_GetCounter(base);
-		uint8_t ch_idx = data->current_channel;
+		int code_idx = data->current_code_idx;
 
-		if (ch_idx < MCUX_TSI_MAX_CHANNELS) {
-			struct tsi_channel_state *ch = &data->channels[ch_idx];
+		if (code_idx < config->input_code_count) {
+			struct tsi_channel_state *ch = &data->channels[code_idx];
 
 			/* Update channel data */
 			ch->counter = counter;
@@ -167,11 +183,12 @@ static void mcux_tsi_process_work_handler(struct k_work *work)
 {
 	struct mcux_tsi_data *data = CONTAINER_OF(work, struct mcux_tsi_data, process_work);
 	const struct device *dev = data->dev;
-	uint8_t ch_idx = data->current_channel;
+	const struct mcux_tsi_config *config = dev->config;
+	int code_idx = data->current_code_idx;
 
 	/* Process channel data in work handler instead of ISR */
-	if (ch_idx < MCUX_TSI_MAX_CHANNELS) {
-		mcux_tsi_process_channel(dev, ch_idx);
+	if (code_idx < config->input_code_count) {
+		mcux_tsi_process_channel(dev, code_idx);
 	}
 }
 
@@ -192,7 +209,20 @@ static void mcux_tsi_scan_work_handler(struct k_work *work)
 		return;
 	}
 
+	int next_code_idx = mcux_tsi_channel_to_input_index(config, next_ch);
+
+	/*
+	 * current_channel and current_code_idx must be updated together: the ISR reads
+	 * both without recomputing, so a stale/late scan-complete interrupt (see the
+	 * timeout handling below) landing between the two writes would pair a new
+	 * channel with a stale index.
+	 */
+	unsigned int key = irq_lock();
+
 	data->current_channel = next_ch;
+	data->current_code_idx = next_code_idx;
+
+	irq_unlock(key);
 
 	/* Start scan */
 	TSI_SetSelfCapMeasuredChannel(base, next_ch);
@@ -223,17 +253,15 @@ static int mcux_tsi_init(const struct device *dev)
 	int ret;
 	tsi_calibration_data_t cal_data;
 
-	uint32_t mask = config->channel_mask;
-	uint8_t enabled_channels = POPCOUNT(mask);
+	uint32_t enabled_channels = mcux_tsi_enabled_channel_count(config);
 
-	/*
-	 * Valid channel bits are 0..MCUX_TSI_MAX_CHANNELS-1. GENMASK is used
-	 * instead of BIT_MASK because MCUX_TSI_MAX_CHANNELS can be 32, and
-	 * BIT_MASK(32) would shift a 32-bit long by its full width (UB).
-	 */
-	if (mask & ~GENMASK(MCUX_TSI_MAX_CHANNELS - 1, 0)) {
-		LOG_ERR("Channel mask 0x%x exceeds %u channels", mask, MCUX_TSI_MAX_CHANNELS);
-		return -EINVAL;
+	for (unsigned int ch = FSL_FEATURE_TSI_CHANNEL_COUNT;
+	     ch < (unsigned int)config->channel_mask_words * 32U; ch++) {
+		if (mcux_tsi_channel_enabled(config, (uint8_t)ch)) {
+			LOG_ERR("Channel %u exceeds %d channels", ch,
+				FSL_FEATURE_TSI_CHANNEL_COUNT);
+			return -EINVAL;
+		}
 	}
 
 	if (enabled_channels == 0) {
@@ -291,15 +319,17 @@ static int mcux_tsi_init(const struct device *dev)
 	TSI_SelfCapCalibrate(base, &cal_data);
 
 	/* Initialize channel states */
-	for (uint8_t i = 0; i < MCUX_TSI_MAX_CHANNELS; i++) {
-		if (config->channel_mask & BIT(i)) {
-			data->channels[i].baseline = cal_data.calibratedData[i];
-			data->channels[i].counter = 0;
-			data->channels[i].delta = 0;
-			data->channels[i].active = false;
-			data->channels[i].prev_active = false;
+	for (uint8_t i = 0; i < config->num_channels; i++) {
+		if (mcux_tsi_channel_enabled(config, i)) {
+			int idx = mcux_tsi_channel_to_input_index(config, i);
 
-			LOG_DBG("Channel %d baseline: %d", i, data->channels[i].baseline);
+			data->channels[idx].baseline = cal_data.calibratedData[i];
+			data->channels[idx].counter = 0;
+			data->channels[idx].delta = 0;
+			data->channels[idx].active = false;
+			data->channels[idx].prev_active = false;
+
+			LOG_DBG("Channel %d baseline: %d", i, data->channels[idx].baseline);
 		}
 	}
 
@@ -322,6 +352,9 @@ static int mcux_tsi_init(const struct device *dev)
 	static const uint16_t mcux_tsi_input_codes_##n[] =			\
 		DT_INST_PROP(n, input_codes);					\
 										\
+	static const uint32_t mcux_tsi_channel_mask_##n[] =			\
+		DT_INST_PROP(n, channel_mask);					\
+										\
 	static void mcux_tsi_irq_config_##n(const struct device *dev)		\
 	{									\
 		IRQ_CONNECT(DT_INST_IRQN(n),					\
@@ -339,10 +372,11 @@ static int mcux_tsi_init(const struct device *dev)
 			DT_INST_CLOCKS_CELL(n, name),				\
 		.irq_config_func = mcux_tsi_irq_config_##n,			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.num_channels = MCUX_TSI_MAX_CHANNELS,			\
+		.num_channels = FSL_FEATURE_TSI_CHANNEL_COUNT,			\
 		.input_code_count = DT_INST_PROP_LEN(n, input_codes),		\
 		.input_codes = mcux_tsi_input_codes_##n,			\
-		.channel_mask = DT_INST_PROP(n, channel_mask),			\
+		.channel_mask = mcux_tsi_channel_mask_##n,			\
+		.channel_mask_words = DT_INST_PROP_LEN(n, channel_mask),	\
 		.touch_threshold = (int16_t)DT_INST_PROP(n, touch_threshold),	\
 		.release_threshold = (int16_t)DT_INST_PROP_OR(n,		\
 			release_threshold,					\
@@ -350,7 +384,12 @@ static int mcux_tsi_init(const struct device *dev)
 		.scan_period_ms = DT_INST_PROP(n, scan_period_ms),		\
 	};									\
 										\
-	static struct mcux_tsi_data mcux_tsi_data_##n;				\
+	static struct tsi_channel_state					\
+		mcux_tsi_channels_##n[DT_INST_PROP_LEN(n, input_codes)];	\
+										\
+	static struct mcux_tsi_data mcux_tsi_data_##n = {			\
+		.channels = mcux_tsi_channels_##n,				\
+	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			      mcux_tsi_init,					\
