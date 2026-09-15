@@ -28,4 +28,7 @@ config I2S_HAS_PLL_SETTING
 configdefault DCACHE_LINE_SIZE
 	default 256
 
+config NOCACHE_MEMORY
+	default y
+
 endif # SOC_MIMXRT798S_HIFI4
