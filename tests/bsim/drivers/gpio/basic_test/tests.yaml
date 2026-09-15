@@ -8,4 +8,4 @@ tests:
       - nrf52_bsim # This one is sufficient to test the driver, others are also likely to work
     harness: bsim
     harness_config:
-      bsim_exe_name: tests_bsim_drivers_gpio_file_backend_prj_conf
+      bsim_exe_name: tests_bsim_drivers_gpio_basic_test_prj_conf
