@@ -87,9 +87,12 @@ endchoice
 
 config ADC_MCUX_ADC16_ENABLE_EDMA
 	bool "EDMA for adc driver"
-	depends on DMA_MCUX_EDMA
+	default y if ADC_DMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_KINETIS_ADC16),dmas)
+	select DMA
 	help
-	  Enable the MCUX ADC16 driver.
+	  Transfer the samples through the EDMA channel the devicetree wires
+	  to the controller.
 
 if ADC_MCUX_ADC16_ENABLE_EDMA
 
@@ -124,6 +127,7 @@ config LPADC_CHANNEL_COUNT
 
 config ADC_MCUX_LPADC_DMA_DRIVEN
 	bool "Use DMA to transfer data"
+	default y if ADC_DMA
 	select DMA
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPC_LPADC),dmas) && \
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPC_LPADC),dma-names)
