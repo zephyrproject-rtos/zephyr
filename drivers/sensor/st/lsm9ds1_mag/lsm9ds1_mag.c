@@ -385,24 +385,39 @@ static int lsm9ds1_mag_init(const struct device *dev)
 	.mag_odr = DT_INST_PROP(inst, mag_odr), .mag_range = DT_INST_PROP(inst, mag_range),
 
 /*
+ * Instantiation macros used when a device is on an SPI bus.
+ */
+
+#define LSM9DS1_MAG_SPI_OP                                                                         \
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+
+#define LSM9DS1_MAG_CONFIG_SPI(inst)                                                               \
+	{STMEMSC_CTX_SPI_INCR(&lsm9ds1_mag_config_##inst.stmemsc_cfg),                             \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LSM9DS1_MAG_SPI_OP),                    \
+		 },                                                                                \
+	 LSM9DS1_MAG_CONFIG_COMMON(inst)}
+
+/*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
 #define LSM9DS1_MAG_CONFIG_I2C(inst)                                                               \
-	{                                                                                          \
-		STMEMSC_CTX_I2C(&lsm9ds1_mag_config_##inst.stmemsc_cfg),                           \
-		.stmemsc_cfg =                                                                     \
-			{                                                                          \
-				.i2c = I2C_DT_SPEC_INST_GET(inst),                                 \
-			},                                                                         \
-		LSM9DS1_MAG_CONFIG_COMMON(inst)                                                    \
-	}
+	{STMEMSC_CTX_I2C(&lsm9ds1_mag_config_##inst.stmemsc_cfg),                                  \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 LSM9DS1_MAG_CONFIG_COMMON(inst)}
 
 #define LSM9DS1_MAG_DEFINE(inst)                                                                   \
 	static struct lsm9ds1_mag_data lsm9ds1_mag_data_##inst = {.mag_gain = 0,                   \
 								  .powered_down = 0};              \
                                                                                                    \
-	static struct lsm9ds1_mag_config lsm9ds1_mag_config_##inst = LSM9DS1_MAG_CONFIG_I2C(inst); \
+	static struct lsm9ds1_mag_config lsm9ds1_mag_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),\
+									  (LSM9DS1_MAG_CONFIG_SPI(inst)),\
+									  (LSM9DS1_MAG_CONFIG_I2C(inst)));          \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm9ds1_mag_init, NULL, &lsm9ds1_mag_data_##inst,       \
 				     &lsm9ds1_mag_config_##inst, POST_KERNEL,                      \
