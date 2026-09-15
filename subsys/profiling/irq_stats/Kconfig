@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config IRQ_STATS
+	bool "Per-interrupt statistics"
+	depends on ARCH_SUPPORTS_IRQ_STATS
+	help
+	  Collect per-interrupt statistics from the interrupt dispatch
+	  path: invocation count, total handler CPU cycles and the
+	  longest single invocation, per software ISR table index and
+	  per CPU. Zephyr's equivalent of /proc/interrupts. Adds two
+	  cycle counter reads and a few words of bookkeeping to every
+	  interrupt dispatched through the software ISR table.
+	  Caution: the counters use NUM_IRQS * MP_MAX_NUM_CPUS * 16
+	  bytes of RAM.
+
+if IRQ_STATS
+
+config IRQ_STATS_SHELL
+	bool "irqstats shell command"
+	depends on SHELL
+	default y
+	help
+	  Provide the "irqstats" shell command to show and reset the
+	  collected statistics.
+
+config IRQ_STATS_MAX_NESTING
+	int "Maximum tracked interrupt nesting depth"
+	default 8
+	range 1 32
+	help
+	  Depth of the per-CPU stack used to track nested interrupts.
+	  Interrupts nested deeper than this are still dispatched
+	  normally but not measured.
+
+endif
