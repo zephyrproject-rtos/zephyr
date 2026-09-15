@@ -322,21 +322,38 @@ static int parse_sensor_value(const char *val_str, struct sensor_value *out)
 		return 0;
 	}
 
-	/* Parse the decimal portion */
-	value = strtoul(decimal_pos + 1, &endptr, 0);
-	if (*endptr != '\0') {
+	/* Parse the decimal portion into micro-units. The digits are accumulated one at a
+	 * time so that the leading zeros are kept: '.000001' is 1 micro-unit, not 1e5.
+	 */
+	const char *decimal_str = decimal_pos + 1;
+	int32_t micro = 0;
+	int digits = 0;
+
+	if (*decimal_str == '\0') {
 		return -EINVAL;
 	}
-	while (value < 100000) {
-		value *= 10;
+
+	for (; *decimal_str != '\0'; decimal_str++) {
+		if (!isdigit((unsigned char)*decimal_str)) {
+			return -EINVAL;
+		}
+		if (digits < 6) {
+			micro = (micro * 10) + (*decimal_str - '0');
+			digits++;
+		} else if (*decimal_str != '0') {
+			/* Finer than the micro-unit resolution of struct sensor_value */
+			return -EINVAL;
+		}
 	}
-	if (value > INT32_C(999999)) {
-		return -EINVAL;
+
+	/* Left align the digits that were given, so '.5' becomes 500000 */
+	while (digits < 6) {
+		micro *= 10;
+		digits++;
 	}
-	out->val2 = (int32_t)value;
-	if (is_negative) {
-		out->val2 *= -1;
-	}
+
+	out->val2 = is_negative ? -micro : micro;
+
 	return 0;
 }
 
