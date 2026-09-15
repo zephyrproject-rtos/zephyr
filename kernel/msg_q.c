@@ -177,20 +177,33 @@ static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 			}
 		}
 		if (pending_thread == NULL) {
+			size_t msg_size = msgq->msg_size;
+			char *slot;
+
 			__ASSERT_NO_MSG((msgq->write_ptr >= msgq->buffer_start) &&
 					(msgq->write_ptr <= (msgq->buffer_end - 1)) &&
 					((size_t)(uintptr_t)(msgq->buffer_end - msgq->write_ptr) >=
 						msgq->msg_size));
+			/*
+			 * Pick the slot and update the ring state from
+			 * registers first: the compiler cannot tell that the
+			 * copy leaves the queue fields alone, so copying last
+			 * saves it re-reading them afterwards.
+			 */
 			if (put_at_back) {
 				/*
 				 * to write a message to the back of the queue,
-				 * copy the message and increment write_ptr
+				 * take the slot write_ptr points at and
+				 * advance write_ptr past it
 				 */
-				(void)memcpy(msgq->write_ptr, (char *)data, msgq->msg_size);
-				msgq->write_ptr += msgq->msg_size;
-				if (msgq->write_ptr == msgq->buffer_end) {
-					msgq->write_ptr = msgq->buffer_start;
+				char *next;
+
+				slot = msgq->write_ptr;
+				next = slot + msg_size;
+				if (next == msgq->buffer_end) {
+					next = msgq->buffer_start;
 				}
+				msgq->write_ptr = next;
 			} else {
 				/*
 				 * to write a message to the head of the queue,
@@ -198,13 +211,15 @@ static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 				 * space at the front of the queue) then copy
 				 * the message to the newly created space.
 				 */
-				if (msgq->read_ptr == msgq->buffer_start) {
-					msgq->read_ptr = msgq->buffer_end;
+				slot = msgq->read_ptr;
+				if (slot == msgq->buffer_start) {
+					slot = msgq->buffer_end;
 				}
-				msgq->read_ptr -= msgq->msg_size;
-				(void)memcpy(msgq->read_ptr, (char *)data, msgq->msg_size);
+				slot -= msg_size;
+				msgq->read_ptr = slot;
 			}
 			msgq->used_msgs++;
+			(void)memcpy(slot, data, msg_size);
 			resched = msgq_handle_poll_events(msgq);
 		}
 		result = 0;
@@ -311,13 +326,18 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, get, msgq, timeout);
 
 	if (msgq->used_msgs > 0U) {
-		/* take first available message from queue */
-		(void)memcpy((char *)data, msgq->read_ptr, msgq->msg_size);
-		msgq->read_ptr += msgq->msg_size;
-		if (msgq->read_ptr == msgq->buffer_end) {
-			msgq->read_ptr = msgq->buffer_start;
+		size_t msg_size = msgq->msg_size;
+		char *slot = msgq->read_ptr;
+		char *next = slot + msg_size;
+
+		/* drop the message from the queue, then copy it out */
+		if (next == msgq->buffer_end) {
+			next = msgq->buffer_start;
 		}
+		msgq->read_ptr = next;
 		msgq->used_msgs--;
+
+		(void)memcpy(data, slot, msg_size);
 
 		/* sanity-check write_ptr in case we hand the slot to a sender */
 		__ASSERT_NO_MSG((msgq->write_ptr >= msgq->buffer_start) &&
@@ -397,7 +417,7 @@ int z_impl_k_msgq_peek(struct k_msgq *msgq, void *data)
 
 	if (msgq->used_msgs > 0U) {
 		/* take first available message from queue */
-		(void)memcpy((char *)data, msgq->read_ptr, msgq->msg_size);
+		(void)memcpy(data, msgq->read_ptr, msgq->msg_size);
 		result = 0;
 	} else {
 		/* don't wait for a message to become available */
