@@ -56,6 +56,12 @@ LOG_MODULE_REGISTER(coredump, CONFIG_DEBUG_COREDUMP_LOG_LEVEL);
 #define HEADER_SCRAMBLE_SIZE	ROUND_UP(sizeof(struct flash_hdr_t),	\
 					 DEVICE_ERASE_BLOCK_SIZE)
 
+/*
+ * we need to align with flash write block size
+ * always round up the header size to the next multiple
+ */
+#define HEADER_BLOCK_SIZE ROUND_UP(sizeof(struct flash_hdr_t), FLASH_WRITE_SIZE)
+
 #define HDR_VER			1
 
 #define FLASH_BACKEND_SEM_TIMEOUT (k_is_in_isr() ? K_NO_WAIT : K_FOREVER)
@@ -275,7 +281,7 @@ static int process_stored_dump(data_read_cb_t cb, void *cb_arg)
 
 	backend_ctx.checksum = 0;
 
-	offset = ROUND_UP(sizeof(struct flash_hdr_t), FLASH_WRITE_SIZE);
+	offset = HEADER_BLOCK_SIZE;
 	ret = data_read(offset, NULL, hdr.size, cb, cb_arg);
 
 	if (ret == 0) {
@@ -344,7 +350,7 @@ static int get_stored_dump(off_t off, uint8_t *dst, size_t len)
 	}
 
 	/* Start reading the data, skip write-aligned header */
-	off += ROUND_UP(sizeof(struct flash_hdr_t), FLASH_WRITE_SIZE);
+	off += HEADER_BLOCK_SIZE;
 
 	ret = data_read(off, dst, len, NULL, NULL);
 	if (ret == 0) {
@@ -432,7 +438,7 @@ static void coredump_flash_backend_start(void)
 		 * The header size is rounded up so the beginning of coredump
 		 * is aligned to write size (for easier read and seek).
 		 */
-		header_size = ROUND_UP(sizeof(struct flash_hdr_t), FLASH_WRITE_SIZE);
+		header_size = HEADER_BLOCK_SIZE;
 		offset = backend_ctx.flash_area->fa_off + header_size;
 
 		ret = stream_flash_init(&backend_ctx.stream_ctx, flash_dev,
@@ -460,11 +466,9 @@ static void coredump_flash_backend_start(void)
 static void coredump_flash_backend_end(void)
 {
 	int ret;
+	uint8_t hdr_buf[HEADER_BLOCK_SIZE];
 
-	struct flash_hdr_t hdr = {
-		.id = {'C', 'D'},
-		.hdr_version = HDR_VER,
-	};
+	struct flash_hdr_t *hdr = (struct flash_hdr_t *)hdr_buf;
 
 	if (backend_ctx.flash_area == NULL) {
 		return;
@@ -478,12 +482,15 @@ static void coredump_flash_backend_end(void)
 	}
 
 	/* Write header */
-	hdr.size = stream_flash_bytes_written(&backend_ctx.stream_ctx);
-	hdr.checksum = backend_ctx.checksum;
-	hdr.error = backend_ctx.error;
-	hdr.flags = 0;
+	hdr->id[0] = 'C';
+	hdr->id[1] = 'D';
+	hdr->hdr_version = HDR_VER;
+	hdr->size = stream_flash_bytes_written(&backend_ctx.stream_ctx);
+	hdr->checksum = backend_ctx.checksum;
+	hdr->error = backend_ctx.error;
+	hdr->flags = 0;
 
-	ret = flash_area_write(backend_ctx.flash_area, 0, (void *)&hdr, sizeof(hdr));
+	ret = flash_area_write(backend_ctx.flash_area, 0, hdr_buf, sizeof(hdr_buf));
 	if (ret != 0) {
 		LOG_ERR("Cannot write coredump header!");
 		backend_ctx.error = ret;
