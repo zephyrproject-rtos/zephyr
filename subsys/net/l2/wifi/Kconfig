@@ -190,3 +190,79 @@ config WIFI_MGMT_BSS_MAX_IDLE_TIME
 	  equal to true, then the non-S1G AP may choose the non-AP STA’s
 	  preferred maximum idle period. The non-S1G AP indicates its chosen
 	  value to the non-S1G STA in the (Re)Association Response frame.
+
+config WIFI_MGMT_LOCATION
+	bool "Wi-Fi location services (FTM/802.11az based)"
+	help
+	  Public API for Wi-Fi positioning: ranging (distance) and location
+	  (LCI/civic coordinates).
+
+if WIFI_MGMT_LOCATION
+
+config WIFI_MGMT_RANGING
+	bool "Ranging (distance measurement)"
+	default y
+	help
+	  Distance measurement to peers using FTM. This is the optional ranging
+	  subset of the location feature.
+
+config WIFI_MGMT_RANGING_INITIATOR
+	bool "Ranging initiator role"
+	depends on WIFI_MGMT_RANGING
+	default y
+	help
+	  Enable the requests that start and cancel a ranging session. Disable
+	  this on a device that only answers ranging requests from its peers.
+
+config WIFI_MGMT_RANGING_RESPONDER
+	bool "Ranging responder role"
+	depends on WIFI_MGMT_RANGING
+	help
+	  Enable the request that turns the local FTM responder role on and off,
+	  allowing peers to measure their distance to this device.
+
+config WIFI_MGMT_RANGING_MAX_PEERS
+	int "Maximum peers per ranging session"
+	depends on WIFI_MGMT_RANGING
+	default 4
+	range 1 8
+	help
+	  Sizes the per-session peer array. The usable maximum is driver
+	  dependent; nRF71 firmware honours up to 4 peers. Set this to match the
+	  driver in use.
+
+config WIFI_MGMT_RANGING_11AZ
+	bool "802.11az ranging (NTB/TB)"
+	depends on WIFI_MGMT_RANGING
+	help
+	  Reserve the 802.11az modes in the public API. Support is driver
+	  dependent; on nRF71 it is not yet functional (802.11mc only) and
+	  selecting an 11az mode returns -ENOTSUP until firmware support lands.
+
+config WIFI_MGMT_LOCATION_LCI
+	bool "Geospatial location (LCI, RFC 6225)"
+	default y
+	help
+	  Decode and report geospatial coordinates from an LCI report, carried
+	  in the Measurement Report element as measurement type 8. Adds the
+	  latitude, longitude and altitude fields to struct wifi_location.
+
+config WIFI_MGMT_LOCATION_CIVIC
+	bool "Civic location (RFC 4776)"
+	help
+	  Decode and report a civic address (country code plus the raw civic
+	  address TLVs) from a Location Civic report, carried in the Measurement
+	  Report element as measurement type 11. Adds a
+	  WIFI_MGMT_LOCATION_CIVIC_MAX_LEN sized buffer to struct wifi_location.
+
+config WIFI_MGMT_LOCATION_CIVIC_MAX_LEN
+	int "Maximum civic report length in bytes"
+	depends on WIFI_MGMT_LOCATION_CIVIC
+	default 100
+	range 1 255
+	help
+	  Sizes the raw civic address TLV buffer in struct wifi_location_civic.
+	  A report longer than this is truncated. Capped at 255 because the
+	  accompanying addr_len field is a single octet.
+
+endif # WIFI_MGMT_LOCATION
