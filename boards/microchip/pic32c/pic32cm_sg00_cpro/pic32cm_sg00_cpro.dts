@@ -16,8 +16,9 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &program_flash;
-		zephyr,code-partition = &code_partition;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &nvmctrl;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &sercom4;
 		zephyr,shell-uart = &sercom4;
 	};
@@ -60,36 +61,50 @@
 	};
 };
 
-&boot_flash {
+&flash0 {
 	partitions {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 
+		/*
+		 * MCUboot partition layout for PIC32CM SG00 (16 KB BFM, 512 KB PFM):
+		 *
+		 * Offsets relative to flash0 base (0x08000000):
+		 *
+		 *   boot:    0x0000000 - 0x0003FFF  (16 KB)  - MCUboot in BFM
+		 *   [gap]:   0x0004000 - 0x3FFFFFF  (unimplemented)
+		 *   slot0:   0x4000000 - 0x403BFFF  (240 KB) - primary image in PFM
+		 *   slot1:   0x403C000 - 0x4077FFF  (240 KB) - upgrade image in PFM
+		 *   storage: 0x4078000 - 0x407FFFF  (32 KB)  - scratch / NV storage
+		 */
+
+		/* 16 KB for MCUboot in BFM */
 		boot_partition: partition@0 {
-			label = "boot_flash";
+			label = "mcuboot";
 			compatible = "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(16)>;
 		};
-	};
-};
 
-&program_flash {
-	partitions {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		code_partition: partition@0 {
-			label = "program_flash";
+		/* 240 KB for slot0 (primary image) in PFM */
+		slot0_partition: partition@4000000 {
+			label = "image-0";
 			compatible = "zephyr,mapped-partition";
-			reg = <0x0 DT_SIZE_K(496)>;
+			reg = <0x4000000 DT_SIZE_K(240)>;
 		};
 
-		storage_partition: partition@7c000 {
+		/* 240 KB for slot1 (upgrade image) in PFM */
+		slot1_partition: partition@403c000 {
+			label = "image-1";
+			compatible = "zephyr,mapped-partition";
+			reg = <0x403c000 DT_SIZE_K(240)>;
+		};
+
+		/* 32 KB for storage partition in PFM */
+		storage_partition: partition@4078000 {
 			label = "storage";
 			compatible = "zephyr,mapped-partition";
-			reg = <0x7c000 DT_SIZE_K(16)>;
+			reg = <0x4078000 DT_SIZE_K(32)>;
 		};
 	};
 };
