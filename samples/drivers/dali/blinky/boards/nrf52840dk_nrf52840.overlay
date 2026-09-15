@@ -2,10 +2,18 @@
  * Copyright 2025 by Markus Becker
  * SPDX-License-Identifier: Apache-2.0
  *
- * You need to include the following shields:
- * arduino_uno_click
- * mikroe_dali_2_click
- *
+ * add DALI 2 Click (MIKROE-2672)
+ * via Arduino UNO click shield (MIKROE-1581)
+ * to Nordic nRF52840DK (pca10056)
+ * DALI 2 Click
+ *   DALI TX 2
+ *   DALI RX 15
+ * Arduino UNO click shield (slot 1)
+ *   DALI TX 2 > A3
+ *   DALI RX 15 > D2
+ * nRF52840DK
+ *   DALI TX A3 > P0.29
+ *   DALI RX D2 > P1.03
  */
 
 &mikroe_dali2_click {
