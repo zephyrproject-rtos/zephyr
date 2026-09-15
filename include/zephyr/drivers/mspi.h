@@ -148,8 +148,20 @@ enum mspi_bus_event_cb_mask {
  * @brief MSPI transfer modes
  */
 enum mspi_xfer_mode {
+	/** @brief The controller moves the data with programmed IO */
 	MSPI_PIO,
+	/** @brief The controller moves the data with a DMA engine */
 	MSPI_DMA,
+	/** @brief The controller services the packets through the memory
+	 * mapped region set up with mspi_memmap_config().
+	 *
+	 * Only valid for packets that access the memory array of the
+	 * peripheral, and only once memory mapping has been enabled for
+	 * that peripheral. Controllers that cannot service the packets
+	 * this way return -ENOTSUP without touching the bus, so that the
+	 * requester can fall back to MSPI_PIO or MSPI_DMA.
+	 */
+	MSPI_MEMMAP,
 };
 
 /**
@@ -686,12 +698,17 @@ static inline int z_impl_mspi_get_channel_status(const struct device *controller
  * if the callback had been registered. Or not to trigger any callback at all
  * with MSPI_BUS_NO_CB even if the callbacks are already registered.
  *
+ * When @see mspi_xfer requests MSPI_MEMMAP, the packets are to be serviced
+ * through the memory mapped region set up with mspi_memmap_config(). This is
+ * an optional capability, so the requester should be prepared to repeat the
+ * transfer with MSPI_PIO or MSPI_DMA when -ENOTSUP is returned.
+ *
  * @param controller Pointer to the device structure for the driver instance.
  * @param dev_id Pointer to the device ID structure from a device.
  * @param req Content of the request and request specific settings.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP
+ * @retval -ENOTSUP requested transfer mode not supported by the controller.
  * @retval -EIO General input / output error, failed to send over the bus.
  */
 __syscall int mspi_transceive(const struct device *controller,

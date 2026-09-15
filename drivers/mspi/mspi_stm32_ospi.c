@@ -977,6 +977,11 @@ static int mspi_stm32_ospi_transceive(const struct device *controller,
 		return -ESTALE;
 	}
 
+	if (xfer->xfer_mode == MSPI_MEMMAP) {
+		LOG_ERR("transceive : memory mapped transfers are not supported");
+		return -ENOTSUP;
+	}
+
 	/* Need to map the xfer to the data context */
 	dev_data->ctx.xfer = *xfer;
 

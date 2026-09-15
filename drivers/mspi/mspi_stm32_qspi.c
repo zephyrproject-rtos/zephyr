@@ -1137,6 +1137,9 @@ static int mspi_stm32_qspi_transceive(const struct device *controller,
 		LOG_ERR("DMA mode not enabled (CONFIG_MSPI_DMA not set)");
 		return -ENOTSUP;
 #endif
+	case MSPI_MEMMAP:
+		LOG_ERR("Memory mapped transfers are not supported");
+		return -ENOTSUP;
 	default:
 		LOG_ERR("Invalid transfer mode: %d", xfer->xfer_mode);
 		return -EINVAL;

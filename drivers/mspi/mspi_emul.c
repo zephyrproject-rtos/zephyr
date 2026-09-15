@@ -313,7 +313,12 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
  */
 static inline int mspi_xfer_check(const struct mspi_xfer *xfer)
 {
-	if (xfer->xfer_mode > MSPI_DMA) {
+	if (xfer->xfer_mode == MSPI_MEMMAP) {
+		LOG_ERR("%u, MSPI_MEMMAP not supported.", __LINE__);
+		return -ENOTSUP;
+	}
+
+	if (xfer->xfer_mode > MSPI_MEMMAP) {
 		LOG_ERR("%u, Invalid xfer xfer_mode.", __LINE__);
 		return -EINVAL;
 	}

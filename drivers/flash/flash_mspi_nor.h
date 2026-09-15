@@ -134,6 +134,9 @@ struct flash_mspi_nor_data {
 	uint32_t enter_dpd_cycle;
 #endif
 	bool chip_initialized;
+#if defined(CONFIG_MSPI_MEMMAP)
+	bool no_memmap_write;
+#endif
 	const struct mspi_dev_cfg *read_cfg;
 	struct mspi_dev_cfg mspi_dev_read_cfg;
 	const struct mspi_dev_cfg *write_cfg;
