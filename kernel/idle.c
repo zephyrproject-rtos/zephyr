@@ -54,10 +54,17 @@ void idle(void *unused1, void *unused2, void *unused3)
 		bool system_suspended = false;
 
 		if (!k_is_pre_kernel()) {
-			/* Value preserving: the helper returns either at most
-			 * SYS_CLOCK_MAX_WAIT (== INT32_MAX) or K_TICKS_FOREVER.
+			/* Clamp the next timeout to INT32_MAX since it may go above
+			 * that in systems supporting CONFIG_SYSTEM_CLOCK_LONG_WAIT.
+			 * For the purposes of idle calculation values above INT32_MAX
+			 * will not change the decision path.
 			 */
-			_kernel.idle = (int32_t)z_get_next_timeout_expiry();
+			k_ticks_t next_to = z_get_next_timeout_expiry();
+
+			if (next_to != K_TICKS_FOREVER && next_to > INT32_MAX) {
+				next_to = INT32_MAX;
+			}
+			_kernel.idle = (int32_t)next_to;
 
 			/*
 			 * Call the suspend hook function of the soc interface
