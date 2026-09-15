@@ -1,0 +1,61 @@
+# SPDX-FIle-CopyrightText: Copyright Panoramix Labs
+# SPDX-License-Identifier: Apache-2.0
+
+title: 24-pin FPC camera connector
+
+description: |
+  De-facto standard FPC connector used by multiple camera modules. The ESP-CAM by Ai-Thinker made it
+  popular, but is not tied to a particular vendor. It is a loose standard, and (often compatible)
+  variations exist.
+
+  The most frequent 24-pin connector has a 0.5mm pitch and a single row of 24 pin.
+
+  Zephyr uses the pinout of the camera module, (also used by some PCB schematics).
+  See <zephyr/dt-bindings/gpio/dvp-24pin-connector.h> for pin description.
+
+    8-bit variant           10-bit variant
+
+    1                        1
+    2   AGND                 2   AGND
+    3   SDA                  3   SDA
+    4   AVDD                 4   AVDD
+    5   SCL                  5   SCL
+    6   RST                  6   RST
+    7   VSYNC                7   VSYNC
+    8   PWDN                 8   PWDN
+    9   HSYNC                9   HSYNC
+    10  DVDD                 10  DVDD
+    11  IOVDD                11  IOVDD
+    12  D7                   12  D9
+    13  MCLK                 13  MCLK
+    14  D6                   14  D8
+    15  GND                  15  GND
+    16  D5                   16  D7
+    17  PCLK                 17  PCLK
+    18  D4                   18  D6
+    19  D0                   19  D2
+    20  D3                   20  D5
+    21  D1                   21  D3
+    22  D2                   22  D4
+    23                       23  D1
+    24                       24  D0
+
+  Mind that the I/O voltage are not compatible between every module and every system.
+
+  In some variants, the last two pins are set to the first DVP signals, then ranging from 1 to 10.
+
+  The following node labels can be used in devicetree:
+
+  - dvp_24pin_interface: the video interface that receives the video feed and use with the
+    zephyr,camera chosen node.
+
+  - dvp_24pin_i2c: the I2C device of the devkit on which the camera module is instantiated.
+
+  - dvp_24pin_connector: the GPIO nexus using the dvp-24pin-connector that defines the camera pins
+    ('reset' (RST), 'power-down' (PWDN)...)
+
+  - Provide a clock at the correct frequency fed into the MCLK signal of the camera module.
+
+compatible: "dvp-24pin-connector"
+
+include: [gpio-nexus.yaml, base.yaml]
