@@ -1,0 +1,78 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Microchip Capacitive Touch Driver"
+
+config INPUT_MCHP_TOUCH
+	bool "Microchip capacitive touch driver support"
+	default y
+	depends on DT_HAS_MICROCHIP_PTC_CONTROLLER_ENABLED
+	depends on INPUT
+	help
+	  Provides support for the Microchip capacitive touch driver.
+
+if INPUT_MCHP_TOUCH
+
+config INPUT_MCHP_TOUCH_THREAD_STACK_SIZE
+	int "Touch driver thread stack size"
+	default 310
+	help
+	  Specifies the stack size, in bytes, for the capacitive touch
+	  driver thread. The minimum supported value is 310 bytes.
+
+config INPUT_MCHP_TOUCH_THREAD_PRIORITY
+	int "Touch driver thread priority"
+	default 7
+	help
+	  Specifies the priority of the capacitive touch driver thread.
+
+config INPUT_MCHP_TOUCH_EN_BTTN_MODULE
+	bool "Touch button module support"
+	default y
+	help
+	  Provides touch button functionality.
+
+config INPUT_MCHP_TOUCH_EN_FREQ_HOP
+	bool "Frequency hopping support"
+	default y
+	help
+	  Provides frequency hopping for the capacitive touch driver.
+
+config INPUT_MCHP_TOUCH_EN_FREQ_AUTO_TUNE
+	bool "Frequency-hopping auto-tuning support"
+	default y
+	depends on INPUT_MCHP_TOUCH_EN_FREQ_HOP
+	help
+	  Provides automatic tuning for frequency hopping.
+
+config INPUT_MCHP_TOUCH_EN_SCROLLER
+	bool "Touch scroller module support"
+	depends on DT_HAS_MICROCHIP_PTC_SCROLLER_ENABLED
+	help
+	  Provides touch scroller functionality.
+
+config INPUT_MCHP_SCROLLER_TOUCH_EVENT
+	bool "Scroller touch-detection event reporting"
+	default y
+	depends on INPUT_MCHP_TOUCH_EN_SCROLLER
+	help
+	  When this option is selected, the scroller reports two events
+	  one event indicates that the scroller is being touched, and
+	  the other reports the scroller position.
+	  Each event has a different code defined in the device tree.
+	  The touch-detection event uses the node-specific code,
+	  while the position event uses the scroller-node-specific code.
+	  When this option is not selected, only the scroller-position event
+	  is reported using the scroller-node-specific code.
+
+config INPUT_MCHP_TOUCH_DATASTREAMER
+	bool "Touch Datastreamer [UNI-DIRECTION]"
+	default y
+	depends on SERIAL
+	help
+	  Provides touch data for visualization in MPLAB Data Visualizer.
+	  Supports unidirectional data streaming only. Tuning is not supported.
+
+endif # INPUT_MCHP_TOUCH
+
+endmenu
