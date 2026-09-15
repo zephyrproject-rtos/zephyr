@@ -554,4 +554,31 @@ ZTEST(flash_driver, test_flash_copy)
 			      page_info.size - (page_info.size / 4), buf, sizeof(buf), -EINVAL);
 }
 
+ZTEST(flash_driver, test_write_from_unaligned_source)
+{
+	/* Source deliberately offset by 1 byte so it is not word-aligned. */
+	static uint8_t __aligned(4) backing[EXPECTED_SIZE + 1];
+	uint8_t *src = &backing[1];
+	uint8_t read_buf[EXPECTED_SIZE];
+	int rc;
+
+	for (int i = 0; i < EXPECTED_SIZE; i++) {
+		src[i] = (uint8_t)(i + 1);
+	}
+
+	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
+		rc = flash_erase(flash_dev, page_info.start_offset,
+			(page_info.size * ((EXPECTED_SIZE + page_info.size - 1) / page_info.size)));
+		zassert_equal(rc, 0, "Flash memory not properly erased");
+	}
+
+	rc = flash_write(flash_dev, page_info.start_offset, src, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "flash_write from unaligned source failed: %d", rc);
+
+	rc = flash_read(flash_dev, page_info.start_offset, read_buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "flash_read failed: %d", rc);
+
+	zassert_mem_equal(read_buf, src, EXPECTED_SIZE, "read-back mismatch (unaligned source)");
+}
+
 ZTEST_SUITE(flash_driver, NULL, NULL, flash_driver_before, NULL, NULL);
