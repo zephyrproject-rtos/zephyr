@@ -13,6 +13,7 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #include <zephyr/random/random.h>
 #include <string.h>
 
@@ -193,7 +194,7 @@ static int hwsim_mgmt_ap_enable(const struct device *dev, struct net_if *iface,
 
 	memcpy(radio->bssid, lla->addr, HWSIM_ETH_ALEN);
 	radio->channel = params->channel;
-	radio->freq_mhz = 2407 + (params->channel * 5);
+	radio->freq_mhz = wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, params->channel);
 	radio->ssid_len = params->ssid_length;
 	memcpy(radio->ssid, params->ssid, params->ssid_length);
 	radio->security = (uint8_t)params->security;
