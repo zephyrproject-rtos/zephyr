@@ -9,6 +9,12 @@ zephyr_sources_ifdef(
   arm_mpu_regions.c
   soc.c
 )
+
+zephyr_sources_ifdef(
+  CONFIG_CPU_CORTEX_R52_TCM_INIT
+  ${CMAKE_CURRENT_SOURCE_DIR}/../common/r52_tcm_config.S
+)
+
 zephyr_sources_ifdef(
   CONFIG_ARM_MMU
   arm_mmu_regions.c
