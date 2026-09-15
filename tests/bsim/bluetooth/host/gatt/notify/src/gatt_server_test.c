@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Xiaomi Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,6 +100,22 @@ static void long_subscribe(const struct bt_gatt_attr *attr, uint16_t value)
 	printk("Long notifications %s\n", notif_enabled ? "enabled" : "disabled");
 }
 
+static uint8_t write_chrc_data[CHRC_SIZE];
+
+static ssize_t write_test_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			       const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	printk("Write chrc\n");
+
+	if (offset + len > sizeof(write_chrc_data)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	memcpy(write_chrc_data + offset, buf, len);
+
+	return len;
+}
+
 BT_GATT_SERVICE_DEFINE(test_svc, BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 		       BT_GATT_CHARACTERISTIC(TEST_CHRC_UUID,
 					      BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ,
@@ -108,7 +125,10 @@ BT_GATT_SERVICE_DEFINE(test_svc, BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 		       BT_GATT_CHARACTERISTIC(TEST_LONG_CHRC_UUID,
 					      BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ,
 					      BT_GATT_PERM_READ, read_long_test_chrc, NULL, NULL),
-		       BT_GATT_CCC(long_subscribe, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
+		       BT_GATT_CCC(long_subscribe, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+		       BT_GATT_CHARACTERISTIC(TEST_WRITE_CHRC_UUID,
+					      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP,
+					      BT_GATT_PERM_WRITE, NULL, write_test_chrc, NULL));
 
 static volatile size_t num_notifications_sent;
 
