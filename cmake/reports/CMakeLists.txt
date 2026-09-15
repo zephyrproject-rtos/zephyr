@@ -5,6 +5,11 @@ set(flag_for_rom_report rom)
 set(flag_for_footprint all)
 set(report_depth 99)
 
+if(KCONFIG_VARIANT_SOURCE)
+  # A variant build should not create report targets, those belongs in the main image.
+  return()
+endif()
+
 if(DEFINED ZEPHYR_WORKSPACE)
   set(workspace_arg "--workspace=${ZEPHYR_WORKSPACE}")
 elseif(DEFINED WEST_TOPDIR)
@@ -12,7 +17,7 @@ elseif(DEFINED WEST_TOPDIR)
 endif()
 
 foreach(report ram rom)
-  add_custom_target(
+  zephyr_custom_target_shared(
     ${report}_report
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/footprint/size_report
@@ -28,7 +33,7 @@ foreach(report ram rom)
     USES_TERMINAL
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
-  add_custom_target(
+  zephyr_custom_target_shared(
     ${report}_plot
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/footprint/plot.py
@@ -39,7 +44,7 @@ foreach(report ram rom)
     )
 endforeach()
 
-add_custom_target(
+zephyr_custom_target_shared(
   footprint
   DEPENDS ram_report rom_report
   )
