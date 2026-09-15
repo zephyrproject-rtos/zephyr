@@ -65,16 +65,17 @@
 	};
 };
 
-&adc1 {
+&adc12_common {
 	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 		 <&rcc STM32_SRC_HSIK ADCDAC_SEL(3)>;
 	status = "okay";
 };
 
+&adc1 {
+	status = "okay";
+};
+
 &adc2 {
-	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
-		 <&rcc STM32_SRC_HSIK ADCDAC_SEL(3)>;
-	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc2_in12_ph4 &adc2_in13_ph5>; /* Arduino A1 & A2 */
 	pinctrl-names = "default";
 	status = "okay";

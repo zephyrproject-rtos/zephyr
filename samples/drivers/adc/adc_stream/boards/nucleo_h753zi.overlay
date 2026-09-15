@@ -20,12 +20,16 @@
 	status = "okay";
 };
 
-&adc1 {
+&adc12_common {
 	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
 		 <&rcc STM32_SRC_CKPER ADC_SEL(2)>;
 	clock-names = "adcx", "adc_ker";
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <256>;
+	status = "okay";
+};
+
+&adc1 {
 	pinctrl-0 = <&adc1_inp15_pa3 &adc1_inp16_pa0>;
 	#address-cells = <1>;
 	#size-cells = <0>;

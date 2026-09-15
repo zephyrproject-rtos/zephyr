@@ -284,19 +284,27 @@ zephyr_udc0: &usbotg_fs {
 
 #include <../boards/common/usb/cdc_acm_serial.dtsi>
 
+&adc12_common {
+	st,adc-prescaler = <4>;
+	st,adc-clock-source = "ASYNC";
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in15_pb0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
+	status = "okay";
+};
+
+&adc4_common {
 	st,adc-prescaler = <4>;
+	st,adc-clock-source = "ASYNC";
 	status = "okay";
 };
 
 &adc4 {
 	pinctrl-0 = <&adc4_in19_pb1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <4>;
 	status = "okay";
 };
 

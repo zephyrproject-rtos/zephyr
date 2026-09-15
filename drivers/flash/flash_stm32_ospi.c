@@ -2654,12 +2654,12 @@ static void flash_stm32_ospi_irq_config_func(const struct device *dev);
 PINCTRL_DT_DEFINE(STM32_OSPI_NODE);
 
 static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
-	.pclken = STM32_CLOCK_INFO_BY_NAME(STM32_OSPI_NODE, ospix),
+	.pclken = STM32_DT_CLOCK_INFO_BY_NAME(STM32_OSPI_NODE, ospix),
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_ker)
-	.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_OSPI_NODE, ospi_ker),
+	.pclken_ker = STM32_DT_CLOCK_INFO_BY_NAME(STM32_OSPI_NODE, ospi_ker),
 #endif
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
-	.pclken_mgr = STM32_CLOCK_INFO_BY_NAME(STM32_OSPI_NODE, ospi_mgr),
+	.pclken_mgr = STM32_DT_CLOCK_INFO_BY_NAME(STM32_OSPI_NODE, ospi_mgr),
 #endif
 	.irq_config = flash_stm32_ospi_irq_config_func,
 	.flash_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
