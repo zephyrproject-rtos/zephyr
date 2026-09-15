@@ -549,6 +549,19 @@ int ifx_autanalog_pause_autonomous_control(const struct device *dev)
 	return 0;
 }
 
+int ifx_autanalog_fw_trigger(const struct device *dev, uint8_t trigger)
+{
+	ARG_UNUSED(dev);
+
+	if (trigger > CY_AUTANALOG_FW_TRIGGER3) {
+		return -EINVAL;
+	}
+
+	Cy_AutAnalog_FwTrigger((cy_en_autanalog_fw_trigger_t)trigger);
+
+	return 0;
+}
+
 /**
  * @brief Shared ISR for the AutAnalog subsystem
  *
@@ -662,9 +675,10 @@ int ifx_autanalog_init(void)
 			},                                                                     \
 		.timer =                                                                       \
 			{                                                                      \
-				.enable = false,                                               \
-				.clkSrc = CY_AUTANALOG_TIMER_CLK_LP,                           \
-				.period = 0U,                                                  \
+				.enable = DT_INST_PROP(n, ac_timer_enable),                    \
+				.clkSrc = (cy_en_autanalog_timer_clk_src_t)                    \
+					DT_INST_PROP(n, ac_timer_clk_src),                         \
+				.period = (uint16_t)DT_INST_PROP(n, ac_timer_period),          \
 			},                                                                     \
 	};                                                                                     \
                                                                                                \
@@ -720,11 +734,21 @@ DT_INST_FOREACH_STATUS_OKAY(IFX_AUTANALOG_MFD_INIT)
 /**
  * Start the Autonomous Controller after all child drivers have initialized
  * and loaded their configurations.
+ *
+ * When any autanalog instance is marked ac-app-managed, the AC start is
+ * deferred to the application to start it after configuring its channels.
  */
+#define IFX_AC_APP_MANAGED_ENTRY(n) DT_INST_PROP(n, ac_app_managed) ||
+#define IFX_ANY_AC_APP_MANAGED      (DT_INST_FOREACH_STATUS_OKAY(IFX_AC_APP_MANAGED_ENTRY) 0)
+
 static int ifx_autanalog_start_ac(void)
 {
+#if IFX_ANY_AC_APP_MANAGED
+	LOG_DBG("AutAnalog AC start deferred (ac-app-managed)");
+#else
 	Cy_AutAnalog_StartAutonomousControl();
 	LOG_DBG("AutAnalog AC started");
+#endif
 	return 0;
 }
 
