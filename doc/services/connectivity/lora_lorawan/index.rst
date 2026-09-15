@@ -113,6 +113,31 @@ under :zephyr_file:`subsys/lorawan/native/Kconfig`:
 
 * :kconfig:option:`CONFIG_LORAWAN_NATIVE_DUTY_CYCLE`
 
+The native backend supports :kconfig:option:`CONFIG_LORAWAN_NVM_SETTINGS` with
+:kconfig:option:`CONFIG_SETTINGS_NVS`. It restores the next unused DevNonce during
+:c:func:`lorawan_start` and persists a reservation before each OTAA join request.
+The caller's ``otaa.dev_nonce`` is ignored in this mode. A failed join still
+consumes its reserved nonce. Sessions are not restored; join again after reboot.
+
+The counter is stored as a four-byte little-endian value at
+``lorawan/nvm/DevNonce``. Values 0 through 65535 are the next unused nonce;
+65536 marks exhaustion. One counter is shared across device identities and is
+never reset automatically. Once exhausted, :c:func:`lorawan_join` returns
+``-EOVERFLOW`` without transmitting. Stop retrying joins; rebooting does not clear
+exhaustion. To restart the counter, reprovision the device and Join Server with a
+new JoinEUI and root keys, and reinitialize the stored counter as part of that
+provisioning. Changing credentials alone does not reset this device-wide counter.
+Never erase the counter and reuse nonces with the previous join credentials.
+
+Storage errors also prevent transmission; after a failed write, reboot to reload
+storage before trying again.
+
+Preserve this record across firmware updates. Missing or erased records are
+indistinguishable from a new device and initialize the counter to zero. Before
+enabling managed nonces on an existing device, migrate its next unused nonce or
+provision a new device identity and key. With :kconfig:option:`CONFIG_LORAWAN_NVM_NONE`,
+the application must persist and supply its own DevNonce before each join attempt.
+
 API Reference
 *************
 
