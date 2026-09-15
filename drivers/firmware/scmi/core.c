@@ -184,7 +184,7 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 	}
 
 	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
-	if (ret < 0) {
+	if ((ret < 0) && (ret != -EMSGSIZE)) {
 		LOG_ERR("failed to read message reply: %d", ret);
 		goto out_release_mutex;
 	}
