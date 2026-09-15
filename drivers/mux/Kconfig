@@ -43,6 +43,7 @@ rsource "Kconfig.nxp_inputmux"
 rsource "Kconfig.nxp_trgmux"
 rsource "Kconfig.nxp_xbar"
 rsource "Kconfig.ti_am13e230_xbar_in"
+rsource "Kconfig.ti_am13e230_xbar_out"
 # zephyr-keep-sorted-stop
 
 endif # MUX
