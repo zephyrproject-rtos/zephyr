@@ -303,7 +303,8 @@ static int ac057tc1_write(const struct device *dev, const uint16_t x, const uint
 	buf_len = DIV_ROUND_UP(desc->width, 2U) * desc->height;
 
 	if (buf == NULL || desc->buf_size < buf_len) {
-		LOG_ERR("Invalid buffer: buf=%p size=%u expected=%u", buf, desc->buf_size, buf_len);
+		LOG_ERR("Invalid buffer: buf=%p size=%u expected=%zu", buf, desc->buf_size,
+			buf_len);
 		return -EINVAL;
 	}
 

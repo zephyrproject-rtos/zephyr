@@ -288,7 +288,7 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
-	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %zu", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
 	cmd_data[0] = config->column_offset + (x >> align_shift);
