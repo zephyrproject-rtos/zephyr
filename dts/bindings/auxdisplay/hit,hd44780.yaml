@@ -41,13 +41,14 @@ properties:
       contain 8 entries ascending from DB0 to DB7, for 4-bit interface
       displays, the first 4 must be set as `<0>`
 
-  brightness-gpios:
-    type: phandle-array
-    description: Optional GPIO used for controlling the brightness (contrast)
-
   backlight-gpios:
     type: phandle-array
     description: Optional GPIO used for enabling the backlight
+
+  brightness-dac:
+    type: phandle-array
+    specifier-space: io-channel
+    description: Optional DAC channel for controlling the brightness (contrast)
 
   line-addresses:
     type: uint8-array
