@@ -655,6 +655,7 @@ static int nxp_wifi_start_ap(const struct device *dev,
 		       strlen(NXP_WIFI_UAP_NETWORK_NAME));
 
 		memcpy(nxp_wlan_uap_network.ssid, params->ssid, params->ssid_length);
+		nxp_wlan_uap_network.ssid_protection = params->ssid_protection;
 
 		if (params->channel == WIFI_CHANNEL_ANY) {
 			nxp_wlan_uap_network.channel = 0;
@@ -1151,6 +1152,8 @@ static int nxp_wifi_connect(const struct device *dev,
 		memcpy(nxp_wlan_network.ssid, params->ssid, params->ssid_length);
 
 		nxp_wlan_network.ssid_specific = 1;
+
+		nxp_wlan_network.ssid_protection = params->ssid_protection;
 
 		if (params->channel == WIFI_CHANNEL_ANY) {
 			nxp_wlan_network.channel = 0;
