@@ -56,6 +56,10 @@ NSI_LINKER?=${NSI_CC}
 NSI_AR?=ar
 #  Objcopy program (it is unlikely you'll need to change this)
 NSI_OBJCOPY?=objcopy
+#  Objdump program (it is unlikely you'll need to change this)
+NSI_OBJDUMP?=objdump
+#  Sed program (it is unlikely you'll need to change this)
+NSI_SED?=sed
 
 #  Build debug switch (by default enabled)
 NSI_DEBUG?=-g
@@ -135,7 +139,7 @@ ${NSI_BUILD_PATH}/%.loc_cpusw.o: /% ${NSI_CONFIG_FILE}
 	  false; \
 	fi
 	@if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
-	${NSI_OBJCOPY} --localize-hidden $< $@ -w --localize-symbol=_* ${NSI_LOCALIZE_OPTIONS}
+	${NSI_OBJCOPY} -w -G 'nsif_*' $$(${NSI_OBJDUMP} -t -j .native_sim_if.data $< 2>/dev/null | ${NSI_SED} -n '/\.native_sim_if\.data.* [a-zA-Z0-9_][^ ]*$$/s/.* \([^ ]*\)$$/-G \1/p') $< $@
 
 ${NSI_EXE}: ${NSI_BUILD_PATH}/${RUNNER_LIB} ${LOCALIZED_EMBSW} ${NSI_EXTRA_LIBS} \
  ${NSI_BUILD_PATH}/linker_script.ld
