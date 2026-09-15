@@ -10,6 +10,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <fsl_clock.h>
 
 LOG_MODULE_REGISTER(pinctrl_nxp_port, CONFIG_PINCTRL_LOG_LEVEL);
@@ -51,6 +52,49 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 	return 0;
 }
 
+static int pinctrl_mcux_clock_on(const struct device *dev)
+{
+	const struct pinctrl_mcux_config *config = dev->config;
+	int err;
+
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (err) {
+		LOG_ERR("failed to enable clock (err %d)", err);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int pinctrl_mcux_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * The pin-mux registers only answer while the block is clocked,
+		 * and the gate comes back closed once the domain has been
+		 * powered down. Re-open it here: every driver that re-applies
+		 * its pinctrl state on the way back up writes through these
+		 * registers, and would fault on an unclocked block.
+		 */
+		return pinctrl_mcux_clock_on(dev);
+
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/*
+		 * The pad configuration is state, not activity: it has to hold
+		 * for as long as the block is powered, whatever the rest of the
+		 * SoC is doing, and it survives on its own once it is powered
+		 * back up by TURN_ON.
+		 */
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int pinctrl_mcux_init(const struct device *dev)
 {
 	const struct pinctrl_mcux_config *config = dev->config;
@@ -61,13 +105,20 @@ static int pinctrl_mcux_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	/*
+	 * Drivers apply their pin state from their own initialisation, and none
+	 * of them claims this device first, so the gate has to be open before
+	 * any of them runs. Do it here rather than leaving it to TURN_ON: the
+	 * block is powered at boot, but a device sitting in a power domain is
+	 * only handed TURN_ON once something resumes the domain, which for a
+	 * domain that only tracks SoC power states may be much later or never.
+	 */
+	err = pinctrl_mcux_clock_on(dev);
 	if (err) {
-		LOG_ERR("failed to enable clock (err %d)", err);
-		return -EINVAL;
+		return err;
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, pinctrl_mcux_pm_action);
 }
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_sim))
@@ -91,9 +142,11 @@ static int pinctrl_mcux_init(const struct device *dev)
 				PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n),	\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(n, pinctrl_mcux_pm_action);		\
+									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &pinctrl_mcux_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(n),			\
 			    NULL, &pinctrl_mcux_##n##_config,		\
 			    PRE_KERNEL_1,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
