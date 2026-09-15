@@ -7,6 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_
 
+#include <stdint.h>
+
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/devicetree/dma.h>
 
@@ -104,5 +107,93 @@
 #define STM32_DMA_GET_INSTANCE(reg, channel)				\
 		STM32_DMA_GET_CHANNEL_INSTANCE((reg), (channel) - STM32_DMA_STREAM_OFFSET);
 #endif
+
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER) || defined(__DOXYGEN__)
+
+/*
+ * Stream-based STM32 DMA controllers can alternate between two memory buffers
+ * on their own (DMA_SxCR DBM/CT). Compared to plain circular mode, the buffers
+ * are two independent addresses rather than the two halves of one allocation,
+ * and the address of the buffer that the stream is not currently using may be
+ * replaced without stopping the transfer.
+ *
+ * The stream must first be set up with dma_config() in cyclic mode; the buffer
+ * described by head_block becomes memory target 0. Both buffers are always the
+ * size given to dma_config(), as the stream has a single item counter.
+ */
+
+/** Memory target 0 of a double-buffered stream (DMA_SxM0AR). */
+#define STM32_DMA_MEM_TARGET_0 0U
+/** Memory target 1 of a double-buffered stream (DMA_SxM1AR). */
+#define STM32_DMA_MEM_TARGET_1 1U
+
+/**
+ * @brief Enable hardware double buffer mode on a stream.
+ *
+ * The stream must have been configured in cyclic mode and must be stopped, as
+ * the hardware only accepts the DBM bit while the stream is disabled.
+ *
+ * @param dev     DMA device.
+ * @param id      Stream to configure, numbered as in the devicetree.
+ * @param buffer1 Address of memory target 1. Must meet the same size and
+ *                alignment constraints as the buffer passed to dma_config().
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p id or @p buffer1 is invalid.
+ * @retval -ENOTSUP if the stream is not cyclic or is memory-to-memory.
+ * @retval -EBUSY if the stream is running.
+ */
+int dma_stm32_double_buffer_enable(const struct device *dev, uint32_t id, uint32_t buffer1);
+
+/**
+ * @brief Disable hardware double buffer mode on a stream.
+ *
+ * The stream keeps its configuration and runs as a plain circular transfer on
+ * memory target 0.
+ *
+ * @param dev DMA device.
+ * @param id  Stream to configure, numbered as in the devicetree.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p id is invalid.
+ * @retval -EBUSY if the stream is running.
+ */
+int dma_stm32_double_buffer_disable(const struct device *dev, uint32_t id);
+
+/**
+ * @brief Get the memory target a double-buffered stream is currently filling.
+ *
+ * The other target is the one that just completed, so it is the one that is
+ * safe to consume and to hand back to dma_stm32_double_buffer_set_target().
+ *
+ * @param dev DMA device.
+ * @param id  Stream to query, numbered as in the devicetree.
+ *
+ * @retval STM32_DMA_MEM_TARGET_0 or STM32_DMA_MEM_TARGET_1 on success.
+ * @retval -EINVAL if @p id is invalid.
+ * @retval -ENOTSUP if double buffer mode is not enabled on the stream.
+ */
+int dma_stm32_double_buffer_get_target(const struct device *dev, uint32_t id);
+
+/**
+ * @brief Point a memory target of a double-buffered stream at a new buffer.
+ *
+ * Only the target that the stream is not currently filling may be changed; the
+ * transfer is not interrupted.
+ *
+ * @param dev    DMA device.
+ * @param id     Stream to configure, numbered as in the devicetree.
+ * @param target STM32_DMA_MEM_TARGET_0 or STM32_DMA_MEM_TARGET_1.
+ * @param buffer Address of the new buffer.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p id, @p target or @p buffer is invalid.
+ * @retval -ENOTSUP if double buffer mode is not enabled on the stream.
+ * @retval -EBUSY if @p target is the one the stream is currently filling.
+ */
+int dma_stm32_double_buffer_set_target(const struct device *dev, uint32_t id,
+				       uint32_t target, uint32_t buffer);
+
+#endif /* CONFIG_DMA_STM32_DOUBLE_BUFFER */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_ */
