@@ -706,7 +706,14 @@ int modbus_serial_init(struct modbus_context *ctx,
 
 void modbus_serial_disable(struct modbus_context *ctx)
 {
+	if (IS_ENABLED(CONFIG_MODBUS_SERIAL_ASYNC_API)) {
+		uart_tx_abort(ctx->cfg->dev);
+	}
+
 	modbus_serial_tx_off(ctx);
 	modbus_serial_rx_off(ctx);
-	k_timer_stop(&ctx->cfg->rtu_timer);
+
+	if (!IS_ENABLED(CONFIG_MODBUS_SERIAL_ASYNC_API)) {
+		k_timer_stop(&ctx->cfg->rtu_timer);
+	}
 }
