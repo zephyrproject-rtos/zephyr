@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Infineon IPC MBOX sample application"
+
+config MBOX_SAMPLE_CORE_A
+	bool "Build this image for core A of the mailbox pair"
+	help
+	  Selects which end of the two-core ping-pong this image is built for.
+	  Set it on exactly one core of the pair; the other core is core B. This
+	  keeps the sample device-agnostic instead of keying off a specific CPU.
+
+source "Kconfig.zephyr"
