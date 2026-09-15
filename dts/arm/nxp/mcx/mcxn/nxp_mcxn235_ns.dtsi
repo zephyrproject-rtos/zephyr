@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_mcxn23x_ns.dtsi"
+
+/*
+ * MCXN235 has 512 KiB of flash vs MCXN236's 1 MiB
+ * (FSL_FEATURE_SYSCON_FLASH_SIZE_BYTES: 524288 vs 1048576 in the vendor
+ * feature headers). No peripheral differences are modeled in this
+ * devicetree for the two parts.
+ */
+&flash {
+	reg = <0 DT_SIZE_K(512)>;
+};
+
+/*
+ * MCXN235 has 192 KiB of RAM vs MCXN236's 352 KiB: the tightly-coupled RAMX
+ * region is 32 KiB instead of 96 KiB, and the main SRAM region (RAMA-RAME)
+ * is 160 KiB instead of 256 KiB.
+ */
+&sramx {
+	reg = <0x4000000 DT_SIZE_K(32)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(160)>;
+};

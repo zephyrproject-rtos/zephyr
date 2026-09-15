@@ -5,11 +5,20 @@ family:
     cpuclusters:
     - name: cpu0
     - name: cpu1
+  - name: mcxn946
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
   - name: mcxn547
     cpuclusters:
     - name: cpu0
     - name: cpu1
+  - name: mcxn546
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
   - name: mcxn236
+  - name: mcxn235
 - name: mcxc
   socs:
   - name: mcxc141
@@ -89,10 +98,18 @@ runners:
         - mcxn947/cpu0
         - mcxn947/cpu1
       - qualifiers:
+        - mcxn946/cpu0
+        - mcxn946/cpu1
+      - qualifiers:
         - mcxn547/cpu0
         - mcxn547/cpu1
       - qualifiers:
+        - mcxn546/cpu0
+        - mcxn546/cpu1
+      - qualifiers:
         - mcxn236
+      - qualifiers:
+        - mcxn235
       - qualifiers:
         - mcxc141
       - qualifiers:
@@ -161,10 +178,18 @@ runners:
         - mcxn947/cpu0
         - mcxn947/cpu1
       - qualifiers:
+        - mcxn946/cpu0
+        - mcxn946/cpu1
+      - qualifiers:
         - mcxn547/cpu0
         - mcxn547/cpu1
       - qualifiers:
+        - mcxn546/cpu0
+        - mcxn546/cpu1
+      - qualifiers:
         - mcxn236
+      - qualifiers:
+        - mcxn235
       - qualifiers:
         - mcxc141
       - qualifiers:
