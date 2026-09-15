@@ -4,6 +4,7 @@ common:
 tests:
   drivers.disk.disk_performance.sdhc:
     depends_on: sdhc
+    filter: CONFIG_DISK_DRIVER_SDMMC or CONFIG_DISK_DRIVER_MMC
     harness: ztest
     harness_config:
       fixture: fixture_sdhc
