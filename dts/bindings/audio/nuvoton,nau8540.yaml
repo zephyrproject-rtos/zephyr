@@ -1,0 +1,48 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NAU85L40 / NAU85L40B 4-channel analog microphone ADC.
+
+  Control is over I2C (16-bit register address and 16-bit value). PCM audio
+  is produced on I2S. The default I2C address is 0x1c when CSB is low, or
+  0x1d when CSB is high.
+
+  https://www.nuvoton.com/products/smart-home-audio/audio-converters/audio-adcs/nau85l40b/
+
+compatible: "nuvoton,nau8540"
+
+include: [i2c-device.yaml, power.yaml]
+
+properties:
+  reg:
+    required: true
+
+  csb-gpios:
+    type: phandle-array
+    description: |
+      Optional CSB / GPIO strap that selects the I2C address LSB. The driver
+      drives this pin to match the reg property (low = 0x1c, high = 0x1d)
+      before the first I2C access. On RAK18040 this is MIC_CTR (WisBlock IO1)
+      and must stay high for analog microphone bias.
+
+  clock-source:
+    type: string
+    default: "FLL-FS"
+    enum:
+      - "FLL-FS"
+      - "INTERNAL"
+    description: |
+      SYSCLK source after configure().
+      - "FLL-FS": on-chip FLL locked to the I2S frame clock (host I2S master).
+      - "INTERNAL": free-running DCO, no I2S clock required for analog bring-up.
+      The default is FLL-FS because the typical use is a host I2S master that
+      supplies FS; INTERNAL is for boards that have no I2S clocks wired.
+
+  adc-channels:
+    type: int
+    default: 3
+    description: |
+      Bit mask of analog ADC channels to enable (bit0 = CH1 ... bit3 = CH4).
+      The default enables CH1 and CH2, which matches a stereo analog
+      microphone module such as RAK18040 + RAK18041.

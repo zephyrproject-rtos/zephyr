@@ -1,0 +1,12 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_NAU8540
+	bool "NAU8540 Audio Codec driver"
+	default y
+	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NAU8540),csb-gpios)
+	depends on DT_HAS_NUVOTON_NAU8540_ENABLED
+	help
+	  Enable the I2C control driver for the Nuvoton NAU85L40 / NAU85L40B
+	  analog microphone ADC. PCM audio is produced on I2S.
