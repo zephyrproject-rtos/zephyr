@@ -66,7 +66,7 @@ int usbh_req_setup(struct usb_device *const udev,
 	uint8_t ep = usb_reqtype_is_to_device(&req) ? 0x00 : 0x80;
 	int ret;
 
-	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL);
+	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL, K_NO_WAIT);
 	if (!xfer) {
 		return -ENOMEM;
 	}
