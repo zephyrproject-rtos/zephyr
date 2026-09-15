@@ -21,6 +21,18 @@ Boards that by default use SD card for storage: ``arduino_mkrzero``, ``esp_wrove
 ``mimxrt1050_evk``, ``nrf52840_blip`` and  ``olimexino_stm32``. The sample should be able
 to run with any other board that has "zephyr,sdmmc-disk" DT node enabled.
 
+Requirements for USB mass storage support
+*****************************************
+
+This type of configuration accesses a USB mass storage device, such as a flash
+drive or a card reader, through the USB host Mass Storage class driver. It
+requires a board with a USB host controller and a port able to supply VBUS to
+the attached device, and a "zephyr,usb-msc-disk" DT node enabled. The sample
+brings up the host controller itself and waits for the medium to become ready
+before mounting it. The medium must hold a FAT file system in its first
+partition. Currently the following boards are supported:
+``esp32p4x_function_ev_board/esp32p4/hpcore``
+
 Requirements for setting up FAT FS on SoC flash
 ***********************************************
 

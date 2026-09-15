@@ -28,6 +28,7 @@ config UHC_BUF_COUNT
 config UHC_BUF_POOL_SIZE
 	int "Memory available for buffers"
 	range 64 32768
+	default 8192 if USBH_MSC
 	default 1024
 	help
 	  Total amount of memory available for UHC buffers.
