@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Fuyu Fei
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Davicom DM9000 integrated MII management (MDIO) controller.
+
+  The DM9000 reaches its integrated 10/100 PHY through the EPCR/EPAR/EPDR
+  registers of the parent controller rather than through a dedicated MDC/MDIO
+  pin pair, so this node has no register block of its own and must be a child
+  of the davicom,dm9000 controller node. It exists only to describe the
+  integrated PHY as an "ethernet-phy" node on an MDIO bus so the generic
+  phy_mii driver can manage it.
+
+compatible: "davicom,dm9000-mdio"
+
+include: mdio-controller.yaml
