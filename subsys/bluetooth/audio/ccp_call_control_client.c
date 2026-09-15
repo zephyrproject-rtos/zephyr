@@ -501,6 +501,10 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 	ARG_UNUSED(conn);
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	/* We register the callbacks in the connected callback. That way we ensure that they are
 	 * registered before any procedures are completed or we receive any notifications, while
 	 * registering them as late as possible
@@ -529,9 +533,15 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+	struct bt_ccp_call_control_client *client;
 
 	ARG_UNUSED(reason);
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
+	client = get_client_by_conn(conn);
 
 	/* client->conn may be NULL */
 	if (client->conn == conn) {

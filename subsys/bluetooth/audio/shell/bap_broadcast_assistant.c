@@ -65,6 +65,10 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
 	ARG_UNUSED(reason);
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	(void)memset(&broadcast_assistant_recv_states[bt_conn_index(conn)], 0,
 		     sizeof(broadcast_assistant_recv_states[0]));
 }
