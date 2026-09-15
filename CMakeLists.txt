@@ -693,6 +693,10 @@ elseif(NOT ZEPHYR_GIT_INDEX)
   endif()
 endif()
 
+if(DEFINED APP_BUILD_VERSION)
+  set(app_build_version_argument "-DAPP_BUILD_VERSION=${APP_BUILD_VERSION}")
+endif()
+
 if(ZEPHYR_GIT_INDEX)
   set(git_dependency ${ZEPHYR_GIT_INDEX})
 endif()
@@ -725,7 +729,7 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
       -DVERSION_TYPE=APP
       -DVERSION_FILE=${APPLICATION_SOURCE_DIR}/VERSION
       -DAPP_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:app_version_h,APP_VERSION_CUSTOMIZATION>"
-      ${build_version_argument}
+      ${app_build_version_argument}
       -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
     DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
       $<TARGET_PROPERTY:app_version_h,APP_VERSION_DEPENDS>
