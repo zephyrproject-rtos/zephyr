@@ -2284,6 +2284,7 @@ Documentation Infrastructure:
     - include/zephyr/drivers/i3c/
     - doc/hardware/peripherals/i3c.rst
     - tests/drivers/build_all/i3c/
+    - tests/drivers/i3c/
   file-groups:
     - name: I3C driver
       defer-to-other-areas: true
