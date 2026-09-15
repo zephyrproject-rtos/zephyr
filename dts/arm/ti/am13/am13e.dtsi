@@ -7,6 +7,7 @@
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
 
 / {
 	soc {
@@ -30,6 +31,24 @@
 
 			#mux-control-cells = <1>;
 			#mux-state-cells = <2>;
+			status = "disabled";
+		};
+
+		ecap0: ecap@40440000 {
+			compatible = "ti,am3352-ecap";
+			reg = <0x40440000 0x40>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		ecap1: ecap@40441000 {
+			compatible = "ti,am3352-ecap";
+			reg = <0x40441000 0x40>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};
