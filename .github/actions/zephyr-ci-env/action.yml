@@ -56,6 +56,7 @@ runs:
         west forall -c 'git reset --hard HEAD'
 
         echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+        echo "HEXAGON_TOOLCHAIN_PATH=/opt/toolchains/hexagon/host" >> $GITHUB_ENV
 
     - name: Check Environment
       if: inputs.run-checks == 'true'
