@@ -640,3 +640,51 @@ void pq_dot_prod_f32(const float32_t *src_a, const float32_t *src_b,
 
 	*dst = sum;
 }
+
+/*
+ * Transform (FFT) functions.
+ *
+ * The FFT engine works in fixed point, so unlike the arithmetic operations
+ * above the machine format is Q31 rather than float (ref: NXP SDK
+ * fsl_powerquad_cmsis.c, PQ_SET_FFT_Q15_CONFIG).
+ */
+static const pq_config_t pq_fft_q15_config = {
+	.inputAFormat = kPQ_16Bit,
+	.inputAPrescale = 0,
+	.inputBFormat = kPQ_16Bit,
+	.inputBPrescale = 0,
+	.outputFormat = kPQ_16Bit,
+	.outputPrescale = 0,
+	.tmpFormat = kPQ_32Bit,
+	.tmpPrescale = 0,
+	.machineFormat = kPQ_32Bit,
+	.tmpBase = PQ_TMP_BASE,
+};
+
+void pq_cfft_q15(uint32_t fft_len, q15_t *p, uint8_t ifft_flag)
+{
+	const q15_t *hw_src = soc_powerquad_remap_addr(p);
+
+	k_mutex_lock(&pq_mutex, K_FOREVER);
+	PQ_SetConfig(PQ_BASE, &pq_fft_q15_config);
+
+	if (ifft_flag != 0U) {
+		PQ_TransformIFFT(PQ_BASE, fft_len, (void *)hw_src, (void *)p);
+	} else {
+		PQ_TransformCFFT(PQ_BASE, fft_len, (void *)hw_src, (void *)p);
+	}
+
+	PQ_WaitDone(PQ_BASE);
+	k_mutex_unlock(&pq_mutex);
+}
+
+void pq_rfft_q15(uint32_t fft_len, const q15_t *src, q15_t *dst)
+{
+	const q15_t *hw_src = soc_powerquad_remap_addr(src);
+
+	k_mutex_lock(&pq_mutex, K_FOREVER);
+	PQ_SetConfig(PQ_BASE, &pq_fft_q15_config);
+	PQ_TransformRFFT(PQ_BASE, fft_len, (void *)hw_src, (void *)dst);
+	PQ_WaitDone(PQ_BASE);
+	k_mutex_unlock(&pq_mutex);
+}
