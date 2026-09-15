@@ -9,6 +9,10 @@
 #include <zephyr/dt-bindings/gpio/m2-memory-connector.h>
 
 / {
+	aliases {
+		ext-nor0 = &m2mem_flash;
+	};
+
 	m2mem_leds: m2mem-leds {
 		compatible = "gpio-leds";
 
