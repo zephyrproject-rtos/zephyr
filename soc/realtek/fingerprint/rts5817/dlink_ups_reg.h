@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2025 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_SOC_ARM_REALTEK_RTS5817_DLINK_UPS_REG_H_
+#define ZEPHYR_SOC_ARM_REALTEK_RTS5817_DLINK_UPS_REG_H_
+
+#include <zephyr/sys/util.h>
+
+#define R_UPS_ANA_CFG0    0x0000
+#define R_UPS_ANA_CFG1    0x0004
+#define R_UPS_ANA_CFG2    0x0008
+#define R_UPS_ANA_CFG3    0x000C
+#define R_UPS_ANA_CFG4    0x0010
+#define R_UPS_ANA_CFG5    0x0014
+#define R_UPS_ANA_CFG6    0x0018
+#define R_UPS_ANA_CFG7    0x001C
+#define R_UPS_ANA_STATUS  0x0020
+#define R_UPS_PWR_DAT_OUT 0x0024
+
+/* Bits of R_UPS_ANA_CFG0 (0X0000) */
+#define DEEP_SLEEP_MASK BIT(0)
+#define CK_WR_POR_MASK  BIT(8)
+#define CK_WR_BG_MASK   BIT(16)
+
+/* Bits of R_UPS_ANA_CFG1 (0X0004) */
+#define PWR_SD_DAT_OFFSET 0
+#define PWR_SD_DAT_MASK   GENMASK(31, 0)
+
+/* Bits of R_UPS_ANA_CFG2 (0X0008) */
+#define PWR_STOR_CK_MASK BIT(0)
+
+/* Bits of R_UPS_ANA_CFG3 (0X000C) */
+#define REG_BG_R1_TUNE_L_OFFSET 0
+#define REG_BG_R1_TUNE_L_MASK   GENMASK(2, 0)
+#define REG_BG33_OFFSET          8
+#define REG_BG33_MASK            GENMASK(10, 8)
+#define REG_400K_FSEL_MASK       BIT(16)
+
+/* Bits of R_UPS_ANA_CFG4 (0X0010) */
+#define REG_REXT_AUTOK_MASK     BIT(0)
+#define REG_REXT_ADJR_OFFSET    8
+#define REG_REXT_ADJR_MASK      GENMASK(12, 8)
+#define REG_LVD_DEG_OFFSET      16
+#define REG_LVD_DEG_MASK        GENMASK(17, 16)
+#define REG_BG_R2_TUNE_L_OFFSET 24
+#define REG_BG_R2_TUNE_L_MASK   GENMASK(26, 24)
+
+/* Bits of R_UPS_ANA_CFG5 (0X0014) */
+#define REG_TUNED11_OFFSET   0
+#define REG_TUNED11_MASK     GENMASK(2, 0)
+#define REG_REXT_TESTEN_MASK BIT(8)
+#define REG_REXT_FREE_MASK   BIT(16)
+#define REG_REXT_FCAL_MASK   BIT(24)
+
+/* Bits of R_UPS_ANA_CFG6 (0X0018) */
+#define REG_VREF_LDO2_H_OFFSET  0
+#define REG_VREF_LDO2_H_MASK    GENMASK(2, 0)
+#define REG_VBG_TUNE_L_OFFSET   8
+#define REG_VBG_TUNE_L_MASK     GENMASK(10, 8)
+#define REG_VBATPOR_VR_L_OFFSET 16
+#define REG_VBATPOR_VR_L_MASK   GENMASK(18, 16)
+#define REG_VBATPOR_VF_L_OFFSET 24
+#define REG_VBATPOR_VF_L_MASK   GENMASK(26, 24)
+
+/* Bits of R_UPS_ANA_CFG7 (0X001C) */
+#define WAKEUP2_FLG_CLR_MASK BIT(0)
+#define WAKEUP1_FLG_CLR_MASK BIT(8)
+#define REG_VRPOR_OFFSET     16
+#define REG_VRPOR_MASK       GENMASK(17, 16)
+
+/* Bits of R_UPS_ANA_STATUS (0X0020) */
+#define WAKE2_O_MASK      BIT(0)
+#define WAKE1_O_MASK      BIT(1)
+#define WAKEUP2_FLG_MASK  BIT(2)
+#define WAKEUP1_FLG_MASK  BIT(3)
+#define REXT_KCODE_OFFSET 16
+#define REXT_KCODE_MASK   GENMASK(20, 16)
+#define REXT_DBG_OFFSET   24
+#define REXT_DBG_MASK     GENMASK(26, 24)
+
+/* Bits of R_UPS_PWR_DAT_OUT (0X0024) */
+#define PWR_DAT_OUT_OFFSET 0
+#define PWR_DAT_OUT_MASK   GENMASK(31, 0)
+
+#endif /* ZEPHYR_SOC_ARM_REALTEK_RTS5817_DLINK_UPS_REG_H_ */

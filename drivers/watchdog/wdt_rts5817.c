@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/pm/device.h>
 #include "wdt_rts5817.h"
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
@@ -136,6 +137,23 @@ static int rts_fp_wdt_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int rts_fp_wdt_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		rts_fp_wdt_init(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(wdt, rts_fp_wdt_driver_api) = {
 	.setup = rts_fp_wdt_setup,
 	.disable = rts_fp_wdt_disable,
@@ -147,8 +165,10 @@ const struct rts_fp_wdt_config rts_fp_config = {
 	.base = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &rts_fp_wdt_init, NULL, NULL, &rts_fp_config, PRE_KERNEL_1,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &rts_fp_wdt_driver_api);
+PM_DEVICE_DT_INST_DEFINE(0, rts_fp_wdt_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, &rts_fp_wdt_init, PM_DEVICE_DT_INST_GET(0), NULL, &rts_fp_config,
+		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &rts_fp_wdt_driver_api);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "Only one watchdog instance can be supported");

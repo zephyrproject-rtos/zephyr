@@ -14,3 +14,23 @@ config SOC_RTS5817
 	select XIP
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select SOC_EARLY_INIT_HOOK
+	select HAS_PM
+	select HAS_PM_S2RAM_CUSTOM_MARKING
+
+config SOC_RTS5817_PM_SUSPEND_IDLE_LOWER_FREQ
+	bool "Lower CPU/bus clock frequency during suspend-to-idle"
+	depends on SOC_RTS5817 && PM
+	default y
+	help
+	  When entering the suspend-to-idle power state, drop the CPU/bus
+	  (RTS_FP_CLK_BUS) clock to SOC_RTS5817_PM_SUSPEND_IDLE_BUS_FREQ in
+	  order to reduce power, and restore the previous frequency on wakeup.
+
+config SOC_RTS5817_PM_SUSPEND_IDLE_BUS_FREQ
+	int "CPU/bus clock frequency (Hz) during suspend-to-idle"
+	depends on SOC_RTS5817_PM_SUSPEND_IDLE_LOWER_FREQ
+	default 30000000
+	help
+	  Target CPU/bus clock frequency while in suspend-to-idle. Must be one
+	  of the discrete rates supported by the bus clock driver:
+	  16, 20, 24, 30, 40, 48, 60, 80, 96, 120, 160 or 240 MHz.
