@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "fanstel_ev_bm15_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,code-partition = &cpuflpr_code_partition;
+		zephyr,flash = &cpuflpr_rram;
+		zephyr,sram = &cpuflpr_sram;
+	};
+};
+
+&grtc {
+	owned-channels = <3 4>;
+	status = "okay";
+};
+
+&uart30 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};
