@@ -8,3 +8,14 @@ tests:
       - i3c
     harness_config:
       fixture: i3c_loopback
+  pmci.mctp.i3c.ping_pong_ibi:
+    platform_allow:
+      - nucleo_u385rg_q
+    tags:
+      - mctp
+      - i3c
+    extra_configs:
+      - CONFIG_I3C_USE_IBI=y
+      - CONFIG_MCTP_I3C_CONTROLLER_POLLING=n
+    harness_config:
+      fixture: i3c_loopback

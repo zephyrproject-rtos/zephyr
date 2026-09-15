@@ -56,6 +56,9 @@ LOG_MODULE_REGISTER(i3c_stm32, CONFIG_I3C_LOG_LEVEL);
 
 #define STM32_I3C_TRANSFER_TIMEOUT K_MSEC(100)
 
+/* The IBI data register holds a single 32-bit word */
+#define STM32_I3C_IBI_MAX_PAYLOAD_SIZE 4U
+
 #ifdef CONFIG_I3C_STM32_DMA
 K_HEAP_DEFINE(stm32_i3c_fifo_heap, CONFIG_I3C_STM32_DMA_FIFO_HEAP_SIZE);
 #endif
@@ -174,7 +177,13 @@ struct i3c_stm32_data {
 		uint8_t addr[4];  /* List of target addresses */
 		uint8_t num_addr; /* Number of valid addresses */
 	} ibi;
-	bool hj_pm_lock;           /* Used as flag for setting pm */
+	bool hj_pm_lock; /* Used as flag for setting pm */
+#ifdef CONFIG_I3C_TARGET
+	/* Signals completion of an IBI raised by us as a target */
+	struct k_sem ibi_sem;
+	/* Set by the error ISR when the IBI in flight did not complete */
+	bool ibi_err;
+#endif /*CONFIG_I3C_TARGET*/
 #endif
 
 #ifdef CONFIG_I3C_TARGET
@@ -1627,11 +1636,22 @@ static void i3c_stm32_target_init(const struct device *dev, uint8_t mipi_instanc
 	/* Disable optional target-side features */
 	LL_I3C_DisableControllerRoleReq(i3c);
 	LL_I3C_DisableHotJoin(i3c);
-	LL_I3C_DisableIBI(i3c);
 
 	/* Configure baseline target capabilities and protocol defaults. */
-	LL_I3C_SetDeviceIBIPayload(i3c, LL_I3C_IBI_NO_ADDITIONAL_DATA);
+#ifdef CONFIG_I3C_USE_IBI
+	/*
+	 * Allow IBIs; the controller may still gate them at runtime via
+	 * ENEC/DISEC. IBIEN is only writable while the peripheral is disabled.
+	 */
+	LL_I3C_EnableIBI(i3c);
+
+	/* Advertise in the BCR that our IBIs carry a Mandatory Data Byte */
+	LL_I3C_SetDeviceIBIPayload(i3c, LL_I3C_IBI_ADDITIONAL_DATA);
 	LL_I3C_ConfigNbIBIAddData(i3c, LL_I3C_PAYLOAD_1_BYTE);
+#else
+	LL_I3C_DisableIBI(i3c);
+	LL_I3C_SetDeviceIBIPayload(i3c, LL_I3C_IBI_NO_ADDITIONAL_DATA);
+#endif /* CONFIG_I3C_USE_IBI */
 	LL_I3C_SetGrpAddrHandoffSupport(i3c, LL_I3C_HANDOFF_GRP_ADDR_NOT_SUPPORTED);
 	LL_I3C_SetDataTurnAroundTime(i3c, LL_I3C_TURNAROUND_TIME_TSCO_LESS_12NS);
 	LL_I3C_SetMiddleByteTurnAround(i3c, 0);
@@ -1644,13 +1664,18 @@ static void i3c_stm32_target_init(const struct device *dev, uint8_t mipi_instanc
 	/* Enable I3C block */
 	LL_I3C_Enable(i3c);
 
-	/* Disable Interrupts */
+	/* Enable Interrupts */
 	LL_I3C_EnableIT_DAUPD(i3c);
 	LL_I3C_EnableIT_FC(i3c);
 	LL_I3C_EnableIT_RXFNE(i3c);
 	LL_I3C_EnableIT_TXFNF(i3c);
 	LL_I3C_EnableIT_ERR(i3c);
 	LL_I3C_EnableIT_WKP(i3c);
+
+#ifdef CONFIG_I3C_USE_IBI
+	/* Signals that an IBI we requested has finished on the bus */
+	LL_I3C_EnableIT_IBIEND(i3c);
+#endif /* CONFIG_I3C_USE_IBI */
 
 	data->msg_state = STM32_I3C_MSG_IDLE;
 	data->sf_state = STM32_I3C_SF_IDLE;
@@ -1666,6 +1691,12 @@ static int i3c_stm32_init(const struct device *dev)
 	int ret;
 
 	k_mutex_init(&data->bus_mutex);
+
+#if defined(CONFIG_I3C_USE_IBI) && defined(CONFIG_I3C_TARGET)
+	/* Given by the IBIEND/error ISR in either role; empty so a request blocks */
+	k_sem_init(&data->ibi_sem, 0, 1);
+#endif /* CONFIG_I3C_USE_IBI && CONFIG_I3C_TARGET */
+
 	config->irq_config_func(dev);
 
 #ifdef CONFIG_I3C_TARGET
@@ -2128,6 +2159,14 @@ static void i3c_stm32_event_isr(void *arg)
 		i3c_stm32_isr_controller_ibi(dev);
 	}
 #endif /*CONFIG_I3C_CONTROLLER*/
+
+#ifdef CONFIG_I3C_TARGET
+	/* Our IBI finished. Clear the sticky flag or the ISR re-fires forever */
+	if (LL_I3C_IsActiveFlag_IBIEND(i3c) && LL_I3C_IsEnabledIT_IBIEND(i3c)) {
+		LL_I3C_ClearFlag_IBIEND(i3c);
+		k_sem_give(&data->ibi_sem);
+	}
+#endif /*CONFIG_I3C_TARGET*/
 #endif /*CONFIG_I3C_USE_IBI*/
 
 	if (LL_I3C_IsActiveFlag_WKP(i3c)) {
@@ -2164,8 +2203,17 @@ static int i3c_stm32_error(void *arg)
 
 	k_sem_give(&data->device_sync_sem);
 
-	(void)pm_device_runtime_put(dev);
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+#if defined(CONFIG_I3C_USE_IBI) && defined(CONFIG_I3C_TARGET)
+	/* A NACKed/aborted IBI never raises IBIEND; release the waiter here */
+	data->ibi_err = true;
+	k_sem_give(&data->ibi_sem);
+#endif /* CONFIG_I3C_USE_IBI && CONFIG_I3C_TARGET */
+
+	/* Only controller transfers take a PM reference; the target waiter frees its own */
+	if (ll_i3c_is_in_controller_mode(i3c)) {
+		(void)pm_device_runtime_put(dev);
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
 
 	return 1;
 }
@@ -2331,6 +2379,102 @@ int i3c_stm32_ibi_disable(const struct device *dev, struct i3c_device_desc *targ
 }
 #endif /* CONFIG_I3C_CONTROLLER*/
 
+#ifdef CONFIG_I3C_TARGET
+/* Loads the payload and asks the hardware to start an IBI, without waiting for it */
+static int i3c_stm32_target_ibi_start_tir(const struct device *dev, struct i3c_ibi *request)
+{
+	const struct i3c_stm32_config *config = dev->config;
+	I3C_TypeDef *i3c = config->i3c;
+	uint32_t payload = 0;
+
+	/* Without a dynamic address there is nothing to arbitrate with */
+	if (LL_I3C_GetOwnDynamicAddress(i3c) == 0U) {
+		LOG_ERR("No dynamic address assigned, cannot raise an IBI");
+		return -EINVAL;
+	}
+
+	/* IBIEN tracks the controller's current permission (set/cleared by ENEC/DISEC) */
+	if (!LL_I3C_IsEnabledIBI(i3c)) {
+		LOG_ERR("IBIs are currently disabled by the controller");
+		return -EACCES;
+	}
+
+	if (request->payload_len > STM32_I3C_IBI_MAX_PAYLOAD_SIZE) {
+		LOG_ERR("IBI payload of %u bytes exceeds the %u byte limit", request->payload_len,
+			STM32_I3C_IBI_MAX_PAYLOAD_SIZE);
+		return -ENOMEM;
+	}
+
+	/* The payload must match the MDB capability we advertised in the BCR */
+	if (LL_I3C_GetDeviceIBIPayload(i3c) == LL_I3C_IBI_ADDITIONAL_DATA) {
+		if ((request->payload == NULL) || (request->payload_len == 0U)) {
+			LOG_ERR("IBI requires a mandatory data byte");
+			return -EINVAL;
+		}
+	} else if (request->payload_len != 0U) {
+		LOG_ERR("IBI must not carry a payload");
+		return -EINVAL;
+	}
+
+	/* IBIDR is little endian, so the mandatory data byte goes in the LSB */
+	for (uint8_t i = 0; i < request->payload_len; i++) {
+		payload |= (uint32_t)request->payload[i] << (i * 8U);
+	}
+
+	LL_I3C_SetIBIPayload(i3c, payload);
+
+	/* Kicks off the IBI; bus arbitration then runs in hardware */
+	LL_I3C_TargetHandleMessage(i3c, LL_I3C_TARGET_MTYPE_IBI, request->payload_len);
+
+	return 0;
+}
+
+static int i3c_stm32_target_ibi_raise(const struct device *dev, struct i3c_ibi *request)
+{
+	struct i3c_stm32_data *data = dev->data;
+	int ret;
+
+	if (request == NULL) {
+		return -EINVAL;
+	}
+
+	/* Hot-join and controller-role requests are not supported yet */
+	if (request->ibi_type != I3C_IBI_TARGET_INTR) {
+		return -ENOTSUP;
+	}
+
+	/* Only one IBI in flight: there is a single IBIDR register */
+	k_mutex_lock(&data->bus_mutex, K_FOREVER);
+
+	/* Drop a stale completion from a prior timed-out request */
+	k_sem_reset(&data->ibi_sem);
+	data->ibi_err = false;
+
+	/* Keep the peripheral out of suspend while we wait */
+	(void)pm_device_runtime_get(dev);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+	ret = i3c_stm32_target_ibi_start_tir(dev, request);
+	if (ret == 0) {
+		/* Timeout-bounded: the controller decides when (or whether) to answer */
+		if (k_sem_take(&data->ibi_sem, STM32_I3C_TRANSFER_TIMEOUT) != 0) {
+			LOG_ERR("IBI request timed out");
+			ret = -ETIMEDOUT;
+		} else if (data->ibi_err) {
+			LOG_ERR("IBI request failed on the bus");
+			ret = -EIO;
+		}
+	}
+
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	(void)pm_device_runtime_put(dev);
+
+	k_mutex_unlock(&data->bus_mutex);
+
+	return ret;
+}
+#endif /* CONFIG_I3C_TARGET */
+
 #endif /* CONFIG_I3C_USE_IBI */
 
 #ifdef CONFIG_I3C_STM32_DMA
@@ -2445,6 +2589,9 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 	.ibi_enable = i3c_stm32_ibi_enable,
 	.ibi_disable = i3c_stm32_ibi_disable,
 #endif /*CONFIG_I3C_CONTROLLER*/
+#ifdef CONFIG_I3C_TARGET
+	.ibi_raise = i3c_stm32_target_ibi_raise,
+#endif /*CONFIG_I3C_TARGET*/
 #endif /*CONFIG_I3C_USE_IBI*/
 #ifdef CONFIG_I3C_RTIO
 	.iodev_submit = i3c_iodev_submit_fallback,
