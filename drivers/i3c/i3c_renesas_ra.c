@@ -1095,8 +1095,9 @@ static int i3c_renesas_ra_init(const struct device *dev)
 	}
 
 	/* Configure bus */
-	if (i3c_configure(dev, I3C_CONFIG_CONTROLLER, &data->common.ctrl_config)) {
-		LOG_ERR("Failed to configure bus");
+	ret = i3c_configure(dev, I3C_CONFIG_CONTROLLER, &data->common.ctrl_config);
+	if (ret) {
+		LOG_ERR("Failed to configure bus, err=%d", ret);
 		return ret;
 	}
 
