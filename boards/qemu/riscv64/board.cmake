@@ -9,7 +9,12 @@ qemu_riscv_cpu_from_dt(qemu_riscv_cpu)
 qemu_riscv_binary_suffix(QEMU_BINARY_SUFFIX)
 
 if(CONFIG_RISCV_S_MODE)
-  string(APPEND qemu_riscv_cpu ",s=on,u=on,pmp=on,priv_spec=v1.12.0,sv39=on")
+  # rv64i with sv39=on is broken in QEMU 10.x; use the full rv64 model instead.
+  if(CONFIG_RISCV_MMU_SV48)
+    set(qemu_riscv_cpu "rv64,s=on,u=on,pmp=on,priv_spec=v1.12.0,sv48=on")
+  else()
+    set(qemu_riscv_cpu "rv64,s=on,u=on,pmp=on,priv_spec=v1.12.0,sv39=on")
+  endif()
 endif()
 
 set(QEMU_CPU_TYPE "${qemu_riscv_cpu}")
