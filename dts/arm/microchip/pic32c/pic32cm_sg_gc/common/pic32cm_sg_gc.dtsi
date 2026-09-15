@@ -42,7 +42,10 @@
 		};
 
 		nvmctrl: nvmctrl@44004000 {
-			reg = <0x44004000 0x2000>;
+			compatible = "microchip,nvmctrl-g4";
+			reg = <0x44004000 0x80>, <0x44002000 0x6c>;
+			reg-names = "fcw", "fcr";
+			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
@@ -61,6 +64,8 @@
 
 			program_flash: flash@c000000 {
 				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <16>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};

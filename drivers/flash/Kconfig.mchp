@@ -50,3 +50,14 @@ config FLASH_MCHP_NVMCTRL_G3
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable Microchip's G3 Non-Volatile Memory Controller for Flash operations.
+
+config FLASH_MCHP_NVMCTRL_G4
+	bool "Microchip G4 Flash Driver for NVMCTRL"
+	default y
+	depends on DT_HAS_MICROCHIP_NVMCTRL_G4_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable the Microchip G4 flash driver, for the FCW and FCR flash
+	  controllers of PIC32CM SG and GC.
