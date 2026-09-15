@@ -15,4 +15,10 @@ config IDLE_STACK_SIZE
 config LINKER_USE_RELAX
 	default n if XIP
 
+configdefault OTP
+	default y if DT_HAS_EGIS_ET171_OTP_ENABLED
+
+configdefault NVMEM
+	default y if DT_HAS_EGIS_ET171_OTP_ENABLED
+
 endif # SOC_EGIS_ET171
