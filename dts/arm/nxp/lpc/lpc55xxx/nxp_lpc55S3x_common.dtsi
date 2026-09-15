@@ -667,6 +667,19 @@
 		clocks = <&syscon MCUX_POWERQUAD_CLK>;
 		status = "disabled";
 	};
+
+	i3c0: i3c@16000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x16000 0x1000>;
+		interrupts = <62 0>;
+		clocks = <&syscon MCUX_I3C_CLK>;
+		clk-divider = <6>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
 };
 
 &nvic {
