@@ -1,0 +1,33 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Board pinctrl for the MIMXRT2660-EVK.
+ *
+ * The <&main__iomuxc_*> / <&wake__iomuxc_*> nodes are generated per-part into
+ * hal_nxp, under dts/nxp/imxrt/imxrt266x/pinctrl/; each carries the combined
+ * IOMUXC PIO register (mux == config) and the daisy register for that pad.
+ *
+ * Any pad the peripheral has to read back needs input-enable (the IBENA bit):
+ * without it the pad receiver stays off and the peripheral sees a stuck level.
+ *
+ * drive-strength exists only on the PIO5/PIO6/PIO7 pads, so groups on PIO0..PIO4
+ * leave it out rather than carry a no-op.
+ */
+
+#include <nxp/imxrt/imxrt266x/pinctrl/mimxrt2663cvvaa-pinctrl.dtsi>
+
+&pinctrl {
+	/* Debug console: LPUART0 on PIO3_30 (TXD) / PIO3_31 (RXD). */
+	pinmux_lpuart0: pinmux_lpuart0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio3_30_hsp_lpuart0_txd>,
+				 <&main__iomuxc_pio3_31_hsp_lpuart0_rxd>;
+			slew-rate = "high";
+			input-enable;
+		};
+	};
+};
