@@ -60,7 +60,7 @@ static inline struct k_spinlock *sem_spinlock_get(struct k_sem *sem)
 }
 
 #ifdef CONFIG_OBJ_CORE_SEM
-static struct k_obj_type obj_type_sem;
+K_OBJ_TYPE_DEFINE(z_obj_type_sem, k_sem, K_OBJ_TYPE_SEM_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_SEM */
 
 int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
@@ -87,7 +87,7 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	k_object_init(sem);
 
 #ifdef CONFIG_OBJ_CORE_SEM
-	k_obj_core_init_and_link(K_OBJ_CORE(sem), &obj_type_sem);
+	k_obj_core_init_and_link(K_OBJ_CORE(sem), &z_obj_type_sem);
 #endif /* CONFIG_OBJ_CORE_SEM */
 
 	return 0;
@@ -224,7 +224,3 @@ static inline unsigned int z_vrfy_k_sem_count_get(struct k_sem *sem)
 #include <zephyr/syscalls/k_sem_count_get_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_SEM
-K_OBJ_TYPE_DEFINE(obj_type_sem, k_sem, K_OBJ_TYPE_SEM_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_SEM */
