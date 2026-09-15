@@ -29,6 +29,7 @@ source "drivers/auxdisplay/Kconfig.nxp_slcd"
 source "drivers/auxdisplay/Kconfig.pt6314"
 source "drivers/auxdisplay/Kconfig.serlcd"
 source "drivers/auxdisplay/Kconfig.tm1637"
+source "drivers/auxdisplay/Kconfig.us2066"
 # zephyr-keep-sorted-stop
 
 endif # AUXDISPLAY

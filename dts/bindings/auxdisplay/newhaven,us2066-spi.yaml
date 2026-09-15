@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2026 Jasper Jonker
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Newhaven Display US2066 LCD (SPI)
+
+description: |
+  Newhaven Display US2066 character LCD using its SPI interface.
+
+compatible: "newhaven,us2066-spi"
+
+include:
+  - name: spi-device.yaml
+  - name: newhaven,us2066.yaml

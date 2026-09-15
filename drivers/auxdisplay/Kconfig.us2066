@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Jasper Jonker
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_US2066
+	bool "Newhaven Display US2066 LCD driver"
+	default y
+	select GPIO
+	select I2C if DT_HAS_NEWHAVEN_US2066_I2C_ENABLED
+	select SPI if DT_HAS_NEWHAVEN_US2066_SPI_ENABLED
+	depends on DT_HAS_NEWHAVEN_US2066_I2C_ENABLED || DT_HAS_NEWHAVEN_US2066_SPI_ENABLED
+	help
+	  Enable driver for Newhaven Display US2066 character LCDs.
