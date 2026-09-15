@@ -10,3 +10,14 @@ properties:
 
   interrupts:
     required: true
+
+  microchip,debounce-time-us:
+    type: int
+    description: |
+      Requested debounce time in microseconds for all EIC lines.
+      This enables the DPRESCALER + DEBOUNCEN hardware debouncer.
+      Requires a slow EIC clock (e.g., GCLK1 @ OSCULP32K) configured
+      via CONFIG_GPIO_SAM0_HW_DEBOUNCE. The driver calculates the
+      best PRESCALER/STATES combination from the actual GCLK frequency.
+      Only available on variants with DPRESCALER registers (N-variants,
+      SAMD5x/E5x series).
