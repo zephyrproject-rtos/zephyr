@@ -68,6 +68,7 @@
 
 	soc {
 		fmu: memory-controller@50020000 {
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "nxp,msf1";
@@ -79,6 +80,8 @@
 				compatible = "soc-nv-flash";
 				write-block-size = <16>;
 				erase-block-size = <DT_SIZE_K(8)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 
 			ifr0: flash@2000000 {
