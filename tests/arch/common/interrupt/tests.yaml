@@ -53,6 +53,8 @@ tests:
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
     arch_exclude:
+      # m68k cannot trigger maskable interrupts from software
+      - m68k
       # test needs 2 working interrupt lines
       - xtensa
       # TODO: make test work on this arch
@@ -83,6 +85,8 @@ tests:
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
     arch_exclude:
+      # m68k cannot trigger maskable interrupts from software
+      - m68k
       # test needs 2 working interrupt lines
       - xtensa
       # TODO: make test work on this arch
