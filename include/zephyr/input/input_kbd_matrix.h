@@ -42,10 +42,17 @@ typedef uint16_t kbd_row_t;
 #define PRIkbdrow "04" PRIx16
 #else
 typedef uint8_t kbd_row_t;
+/** Hexadecimal printf format specifier for a row entry */
 #define PRIkbdrow "02" PRIx8
 #endif
 
 #if defined(CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC) || defined(__DOXYGEN__)
+/**
+ * @brief Qualifier for the actual key mask.
+ *
+ * Empty if @kconfig{CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC} is enabled, so
+ * that the mask can be changed at runtime, `const` otherwise.
+ */
 #define INPUT_KBD_ACTUAL_KEY_MASK_CONST
 /**
  * @brief Enables or disables a specific row, column combination in the actual
@@ -114,29 +121,44 @@ struct input_kbd_matrix_api {
  * This structure **must** be placed first in the driver's config structure.
  */
 struct input_kbd_matrix_common_config {
+	/** Pointer to the keyboard matrix driver API structure. */
 	const struct input_kbd_matrix_api *api;
+	/** Number of rows in the keyboard matrix. */
 	uint8_t row_size;
+	/** Number of columns in the keyboard matrix. */
 	uint8_t col_size;
+	/** Poll period between matrix scans, in microseconds, 0 to never exit poll mode. */
 	uint32_t poll_period_us;
+	/** Poll period between matrix scans when the matrix is stable, in microseconds. */
 	uint32_t stable_poll_period_us;
+	/** Time to wait before going from polling back to idle state, in milliseconds. */
 	uint32_t poll_timeout_ms;
+	/** Debouncing time for a key press event, in microseconds. */
 	uint32_t debounce_down_us;
+	/** Debouncing time for a key release event, in microseconds. */
 	uint32_t debounce_up_us;
+	/** Delay between setting the column output and reading the row values, in microseconds. */
 	uint32_t settle_time_us;
+	/** Whether the ghost key checking has to be performed. */
 	bool ghostkey_check;
+	/** Keyboard scanning mask, tells which rows actually exist for each column. */
 	INPUT_KBD_ACTUAL_KEY_MASK_CONST kbd_row_t *actual_key_mask;
 
+	/** @cond INTERNAL_HIDDEN */
 	/* extra data pointers */
 	kbd_row_t *matrix_stable_state;
 	kbd_row_t *matrix_unstable_state;
 	kbd_row_t *matrix_previous_state;
 	kbd_row_t *matrix_new_state;
 	uint8_t *scan_cycle_idx;
+	/** @endcond */
 };
 
+/** @cond INTERNAL_HIDDEN */
 #define INPUT_KBD_MATRIX_DATA_NAME(node_id, name) \
 	_CONCAT(__input_kbd_matrix_, \
 		_CONCAT(name, DEVICE_DT_NAME_GET(node_id)))
+/** @endcond */
 
 /**
  * @brief Defines the common keyboard matrix support data from devicetree,
@@ -253,6 +275,7 @@ struct input_kbd_matrix_common_config {
  * This structure **must** be placed first in the driver's data structure.
  */
 struct input_kbd_matrix_common_data {
+	/** @cond INTERNAL_HIDDEN */
 	/* Track previous cycles, used for debouncing. */
 	uint32_t scan_clk_cycle[INPUT_KBD_MATRIX_SCAN_OCURRENCES];
 	uint8_t scan_cycles_idx;
@@ -266,6 +289,7 @@ struct input_kbd_matrix_common_data {
 
 	K_KERNEL_STACK_MEMBER(thread_stack,
 			      CONFIG_INPUT_KBD_MATRIX_THREAD_STACK_SIZE);
+	/** @endcond */
 };
 
 /**
