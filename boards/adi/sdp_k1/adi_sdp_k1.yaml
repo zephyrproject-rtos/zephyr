@@ -9,4 +9,5 @@ ram: 320
 flash: 2048
 supported:
   - gpio
+  - spi
 vendor: adi
