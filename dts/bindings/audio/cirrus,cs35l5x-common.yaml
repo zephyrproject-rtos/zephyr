@@ -1,0 +1,28 @@
+# Copyright 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Active low signal used to reset the device to default state.
+
+  vdd-p-supply:
+    type: phandle
+    description: VDD_P low-voltage supply regulator.
+
+  vdd-io-supply:
+    type: phandle
+    description: VDD_IO digital interface supply regulator.
+
+  vdd-a-supply:
+    type: phandle
+    description: VDD_A analog supply regulator.
+
+  vdd-b-supply:
+    type: phandle
+    description: VDD_B speaker boost supply regulator.
+
+  vdd-amp-supply:
+    type: phandle
+    description: VDD_AMP amplifier output stage supply regulator.
