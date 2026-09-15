@@ -289,7 +289,7 @@ static int st75256_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
-	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %zu", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
 	if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
