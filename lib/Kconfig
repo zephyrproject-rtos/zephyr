@@ -9,6 +9,8 @@ source "lib/cpp/Kconfig"
 
 menu "Additional libraries"
 
+source "lib/delta/Kconfig"
+
 source "lib/hash/Kconfig"
 
 source "lib/heap/Kconfig"
