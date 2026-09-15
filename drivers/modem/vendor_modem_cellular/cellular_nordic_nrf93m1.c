@@ -49,7 +49,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	nordic_nrf93m1_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+IFC?", nordic_nrf93m1_ifc_matches),
 	MODEM_CHAT_SCRIPT_CMD_RESP_COND("AT+IFC=2,2", ok_match, nrf93m1_ifc_required),
-	MODEM_CHAT_SCRIPT_CMD_RESP_NONE_COND("", 100, nrf93m1_ifc_required),
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE_COND("", 100, nrf93m1_ifc_required));
+
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_init_chat_script, nordic_nrf93m1_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	nordic_nrf93m1_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN=0", cgsn_sn_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN=1", cgsn_imei_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
@@ -58,8 +64,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), ok_match));
 
-MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_init_chat_script, nordic_nrf93m1_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_configuration_chat_script,
+			 nordic_nrf93m1_configuration_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
 
 /* Differs from common `iccid_match` only in the % vs + prefix */
 MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(nrf93m1_iccid_match, "%ICCID: ", "",
@@ -167,6 +174,7 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &nordic_nrf93m1_init_chat_script,
+		.configuration = &nordic_nrf93m1_configuration_chat_script,
 		.network = &nordic_nrf93m1_network_chat_script,
 		.dial = &nordic_nrf93m1_dial_chat_script,
 		.periodic = &nordic_nrf93m1_periodic_chat_script,

@@ -15,9 +15,14 @@ MODEM_CHAT_MATCHES_DEFINE(nordic_nrf91_slm_unsol, MODEM_CELLULAR_COMMON_UNSOL_MA
 MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(xiccid_match, "%XICCID: ", "", modem_cellular_chat_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(uicc_initialized, "%XSIM: 1", "", NULL);
 
-/* clang-format off */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_init_chat_script_cmds,
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_init_chat_script, nordic_nrf91_slm_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+/* clang-format off */
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN", imei_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
@@ -31,8 +36,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_init_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT#XCMUX=1", ok_match));
 /* clang-format on */
 
-MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_init_chat_script, nordic_nrf91_slm_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_configuration_chat_script,
+			 nordic_nrf91_slm_configuration_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_network_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
@@ -61,6 +67,7 @@ static const struct modem_cellular_vendor_config nrf91_slm_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &nordic_nrf91_slm_init_chat_script,
+		.configuration = &nordic_nrf91_slm_configuration_chat_script,
 		.network = &nordic_nrf91_slm_network_chat_script,
 		.dial = &nordic_nrf91_slm_dial_chat_script,
 		.shutdown = &nordic_nrf91_slm_shutdown_chat_script,
