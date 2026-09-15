@@ -90,6 +90,9 @@ struct i3c_renesas_ra_data {
 	bool bus_configured;     /* true if bus had been configured */
 	bool skip_address_phase; /* true to skip address phase handle */
 	uint8_t address_phase_count;
+	uint8_t daa_pending_count;
+	int32_t daa_error;
+	struct i3c_device_desc *daa_pending[I3C_RENESAS_RA_DATBAS_NUM];
 };
 
 struct i3c_renesas_ra_config {
@@ -207,11 +210,68 @@ static int i3c_renesas_ra_device_index_request(const struct device *dev, uint8_t
 	return index;
 }
 
+static int i3c_renesas_ra_defer_daa_attach(const struct device *dev,
+					   struct i3c_device_desc *target)
+{
+	struct i3c_renesas_ra_data *data = dev->data;
+
+	for (int i = 0; i < data->daa_pending_count; i++) {
+		if (data->daa_pending[i] == target) {
+			return 0;
+		}
+	}
+
+	if (data->daa_pending_count >= I3C_RENESAS_RA_DATBAS_NUM) {
+		return -ENOSPC;
+	}
+
+	data->daa_pending[data->daa_pending_count++] = target;
+
+	return 0;
+}
+
+static void i3c_renesas_ra_attach_deferred_daa_devices(
+	const struct device *dev)
+{
+	struct i3c_renesas_ra_data *data = dev->data;
+
+	for (int i = 0; i < data->daa_pending_count; i++) {
+		struct i3c_device_desc *target =
+			data->daa_pending[i];
+
+		if (i3c_is_i3c_device_attached(target)) {
+			continue;
+		}
+
+		sys_slist_append(&data->common.attached_dev.devices.i3c,
+			&target->node);
+	}
+
+	data->daa_pending_count = 0;
+}
+
+static void i3c_renesas_ra_discard_deferred_daa_devices(const struct device *dev)
+{
+	struct i3c_renesas_ra_data *data = dev->data;
+
+	for (uint8_t i = 0U; i < data->daa_pending_count; i++) {
+		struct i3c_device_desc *target = data->daa_pending[i];
+
+		/* The DAA address helper only accepts targets without a dynamic address. */
+		target->dynamic_addr = 0U;
+		if (!i3c_is_i3c_device_attached(target) && i3c_device_desc_in_pool(target)) {
+			i3c_device_desc_free(target);
+		}
+	}
+
+	data->daa_pending_count = 0U;
+}
+
 static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 						i3c_slave_info_t const *daa_rx)
 {
 	struct i3c_renesas_ra_data *data = dev->data;
-	struct i3c_device_desc *target;
+	struct i3c_device_desc *target = NULL;
 	int target_index = -1;
 	uint8_t dyn_addr = 0;
 	int ret = 0;
@@ -224,21 +284,28 @@ static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 	/* Find device in the device list, assign a dynamic address */
 	ret = i3c_dev_list_daa_addr_helper(dev, pid, false, false, &target, &dyn_addr);
 	if (ret) {
+		if (target != NULL && !i3c_is_i3c_device_attached(target) &&
+		    i3c_device_desc_in_pool(target)) {
+			i3c_device_desc_free(target);
+		}
 		LOG_DBG("Assign new DA error");
 		goto add_phase_exit;
 	}
 
 	if (target != NULL) {
+		ret = i3c_renesas_ra_defer_daa_attach(dev, target);
+		if (ret != 0) {
+			if (!i3c_is_i3c_device_attached(target) &&
+			    i3c_device_desc_in_pool(target)) {
+				i3c_device_desc_free(target);
+			}
+			goto add_phase_exit;
+		}
+
 		/* Update target descriptor */
 		target->dynamic_addr = dyn_addr;
 		target->bcr = daa_rx->bcr;
 		target->dcr = daa_rx->dcr;
-
-		int aret = i3c_attach_i3c_device(target);
-
-		if (aret != 0 && aret != -EALREADY) {
-			LOG_ERR("Failed to attach target");
-		}
 	}
 
 	/* Request index for this target */
@@ -284,6 +351,7 @@ add_phase_exit:
 		LOG_DBG("Attach DA[0x%02X] to DAT%d (no target descriptor)", dyn_addr,
 			target_index);
 	} else {
+		data->daa_error = ret;
 		LOG_DBG("DAA address phase error");
 	}
 }
@@ -297,7 +365,7 @@ static void i3c_renesas_ra_hal_callback(i3c_callback_args_t const *const p_args)
 
 	switch (p_args->event) {
 	case I3C_EVENT_ENTDAA_ADDRESS_PHASE:
-		if (!data->skip_address_phase) {
+		if (!data->skip_address_phase && data->daa_error == 0) {
 			i3c_renesas_ra_handle_address_phase(dev, p_args->p_slave_info);
 			data->address_phase_count++;
 		}
@@ -753,6 +821,9 @@ static int i3c_renesas_ra_do_daa(const struct device *dev)
 {
 	const struct i3c_renesas_ra_config *config = dev->config;
 	struct i3c_renesas_ra_data *data = dev->data;
+	struct i3c_addr_slots saved_addr_slots;
+	struct i3c_renesas_ra_dev_info saved_device_info[I3C_RENESAS_RA_DATBAS_NUM];
+	i3c_device_table_cfg_t saved_dat[I3C_RENESAS_RA_DATBAS_NUM];
 	fsp_err_t fsp_err = FSP_SUCCESS;
 	int ret = 0;
 
@@ -762,8 +833,22 @@ static int i3c_renesas_ra_do_daa(const struct device *dev)
 	uint32_t num_dev = (config->common.dev_list.num_i3c) ? config->common.dev_list.num_i3c : 1;
 	uint32_t start_index = 0;
 
+	/* Keep the pre-DAA state until the address assignment is confirmed. */
+	saved_addr_slots = data->common.attached_dev.addr_slots;
+	memcpy(saved_device_info, data->device_info, sizeof(saved_device_info));
+	for (uint32_t i = 0U; i < I3C_RENESAS_RA_DATBAS_NUM; i++) {
+		fsp_err = R_I3C_MasterDeviceTableGet(data->fsp_ctrl, i, &saved_dat[i]);
+		if (fsp_err != FSP_SUCCESS) {
+			ret = -EIO;
+			goto daa_unlock;
+		}
+	}
+
 	/* Start DAA without address assignment to get device info */
 	data->address_phase_count = 0;
+	data->daa_pending_count = 0;
+	data->daa_error = 0;
+	k_sem_reset(&data->daa_end);
 	data->skip_address_phase = false;
 	fsp_err = R_I3C_DynamicAddressAssignmentStart(data->fsp_ctrl, I3C_CCC_ENTDAA, start_index,
 						      num_dev);
@@ -773,8 +858,13 @@ static int i3c_renesas_ra_do_daa(const struct device *dev)
 	}
 
 	ret = k_sem_take(&data->daa_end, I3C_RENESAS_RA_TRANSFER_TIMEOUT);
-	if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
+	if (ret != 0) {
+		ret = (ret == -EAGAIN) ? -ETIMEDOUT : ret;
+		goto daa_exit;
+	}
+
+	if (data->daa_error != 0) {
+		ret = data->daa_error;
 		goto daa_exit;
 	}
 
@@ -793,8 +883,8 @@ static int i3c_renesas_ra_do_daa(const struct device *dev)
 	}
 
 	ret = k_sem_take(&data->daa_end, I3C_RENESAS_RA_TRANSFER_TIMEOUT);
-	if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
+	if (ret != 0) {
+		ret = (ret == -EAGAIN) ? -ETIMEDOUT : ret;
 		goto daa_exit;
 	}
 
@@ -806,6 +896,38 @@ static int i3c_renesas_ra_do_daa(const struct device *dev)
 	goto daa_exit;
 
 daa_exit:
+	data->skip_address_phase = true;
+	if (ret == 0) {
+		i3c_renesas_ra_attach_deferred_daa_devices(dev);
+	} else {
+		if (ret == -ETIMEDOUT) {
+			/* Stop the timed-out transfer before restoring DAT and allowing a retry. */
+			int recovery_ret = i3c_renesas_ra_configure(
+				dev, I3C_CONFIG_CONTROLLER, &data->common.ctrl_config);
+
+			if (recovery_ret != 0) {
+				LOG_ERR("Failed to recover controller after DAA timeout: %d",
+					 recovery_ret);
+			}
+			k_sem_reset(&data->daa_end);
+		}
+
+		i3c_renesas_ra_discard_deferred_daa_devices(dev);
+		data->common.attached_dev.addr_slots = saved_addr_slots;
+		memcpy(data->device_info, saved_device_info, sizeof(saved_device_info));
+		for (uint32_t i = 0U; i < I3C_RENESAS_RA_DATBAS_NUM; i++) {
+			if (saved_device_info[i].active != 0U) {
+				fsp_err = R_I3C_MasterDeviceTableSet(data->fsp_ctrl, i,
+								   &saved_dat[i]);
+			} else {
+				fsp_err = R_I3C_MasterDeviceTableReset(data->fsp_ctrl, i);
+			}
+			if (fsp_err != FSP_SUCCESS) {
+				LOG_ERR("Failed to restore DAT%u after DAA", i);
+			}
+		}
+	}
+daa_unlock:
 	k_mutex_unlock(&data->bus_lock);
 
 	LOG_DBG("DAA %s", ret ? "failed" : "complete");
