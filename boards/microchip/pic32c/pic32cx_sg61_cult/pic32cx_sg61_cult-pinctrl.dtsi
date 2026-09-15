@@ -89,4 +89,11 @@
 				 <PA15L_GMAC_GRXER>;
 		};
 	};
+
+	usb_udc_default: usb_udc_default {
+		group1 {
+			pinmux = <PA25H_USB_DP>,
+				 <PA24H_USB_DM>;
+		};
+	};
 };
