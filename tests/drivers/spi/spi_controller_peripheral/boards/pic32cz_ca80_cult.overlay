@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/* Connect the SERCOM0 MOSI (PB24) to SERCOM2 MOSI (PC8) */
+/* Connect the SERCOM0 MISO (PD27) to SERCOM2 MISO (PC11) */
+/* Connect the SERCOM0 SCK  (PD25) to SERCOM2 SCK  (PC9)  */
+/* Connect the SERCOM0 CS   (PD26) to SERCOM2 CS   (PC10) */
+
+&portd {
+	status = "okay";
+};
+
+&sercom8 {
+	compatible = "microchip,sercom-g1-spi";
+	dipo = <3>;
+	dopo = <0>;
+	interrupts = <111 2>, <112 2>, <113 2>, <114 2>, <115 2>, <116 2>, <117 2>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	cs-gpios = <&portd 26 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&sercom8_spi_cs_gpio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+	};
+};
+
+dut_spis: &sercom2 {
+	dipo = <0>;
+	dopo = <2>;
+};
+
+&pinctrl {
+	sercom8_spi_cs_gpio: sercom8_spi_cs_gpio {
+		group1 {
+			pinmux = <PD24D_SERCOM8_PAD0>, /* MOSI */
+				 <PD27D_SERCOM8_PAD3>, /* MISO */
+				 <PD25D_SERCOM8_PAD1>; /* SCK  */
+		};
+	};
+};
