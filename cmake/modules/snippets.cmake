@@ -109,6 +109,32 @@ function(zephyr_process_snippets)
   endif()
   include(${snippets_generated})
 
+  # A board extends a requested snippet with the devicetree overlays
+  # and Kconfig fragments found in <board dir>/snippets/<snippet>/,
+  # named like any other board configuration file.
+  set(board_snippet_files)
+  if(DEFINED BOARD_DIRECTORIES)
+    foreach(snippet_name IN LISTS SNIPPET_AS_LIST)
+      foreach(board_dir IN LISTS BOARD_DIRECTORIES)
+        set(board_snippet_dir ${board_dir}/snippets/${snippet_name})
+        if(NOT IS_DIRECTORY ${board_snippet_dir})
+          continue()
+        endif()
+        zephyr_file(CONF_FILES ${board_snippet_dir}
+                    DTS board_snippet_dts
+                    KCONF board_snippet_conf
+        )
+        foreach(file IN LISTS board_snippet_dts)
+          zephyr_set(EXTRA_DTC_OVERLAY_FILE ${file} SCOPE snippets APPEND)
+        endforeach()
+        foreach(file IN LISTS board_snippet_conf)
+          zephyr_set(EXTRA_CONF_FILE ${file} SCOPE snippets APPEND)
+        endforeach()
+        list(APPEND board_snippet_files ${board_snippet_dts} ${board_snippet_conf})
+      endforeach()
+    endforeach()
+  endif()
+
   # Create the 'snippets' target. Each snippet is printed in a
   # separate command because build system files are not fond of
   # newlines.
@@ -131,6 +157,7 @@ function(zephyr_process_snippets)
     CMAKE_CONFIGURE_DEPENDS
     ${snippets_py}
     ${SNIPPET_PATHS}            #  generated variable
+    ${board_snippet_files}
     )
 endfunction()
 

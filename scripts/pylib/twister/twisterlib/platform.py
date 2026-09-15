@@ -63,6 +63,7 @@ class Platform:
         self.name = ""
         self.aliases = []
         self.normalized_name = ""
+        self.board_dirs = []
         # if sysbuild to be used by default on a given platform
         self.sysbuild = False
         self.twister = True
@@ -105,6 +106,7 @@ class Platform:
         """
         self.name = target
         self.aliases = aliases
+        self.board_dirs = [str(d) for d in board.directories]
 
         self.normalized_name = self.name.replace("/", "_")
         self.sysbuild = variant_data.get("sysbuild", data.get("sysbuild", self.sysbuild))
