@@ -1,0 +1,161 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP AHB SRAM Controller (SRAMC).
+
+  Controller for an external asynchronous parallel SRAM (or SRAM-like FPGA)
+  interface. The SRAMCR0/SRAMCR1 configuration registers physically reside in
+  the BLK_CTRL_WAKEUPMIX block, so this node references that block through the
+  "nxp,blk-ctrl" phandle instead of mapping the same registers with its own
+  "reg" (the BLK_CTRL_WAKEUPMIX block is already described by the
+  "nxp,imx-blkctrl-wakeup" node).
+
+  Each chip-select (up to 4, each up to 128 KB) that carries an external SRAM
+  is described as an "mmio-sram" child node whose "reg" is the CS memory window
+  (e.g. CS0 at 0x43880000 on i.MX RT118x). Example:
+
+    sramc: sramc {
+        compatible = "nxp,sramc";
+        nxp,blk-ctrl = <&blkctrl_wakeup>;
+        pinctrl-0 = <&pinmux_sramc>;
+        pinctrl-names = "default";
+        port-size = "16-bit";
+        address-mode = "admux";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        status = "okay";
+
+        ext_sram: sram@43880000 {
+            compatible = "mmio-sram";
+            reg = <0x43880000 DT_SIZE_K(128)>;
+        };
+    };
+
+compatible: "nxp,sramc"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  nxp,blk-ctrl:
+    type: phandle
+    required: true
+    description: |
+      Reference to the BLK_CTRL_WAKEUPMIX block node that hosts the SRAMCR0 and
+      SRAMCR1 configuration registers. The driver takes the controller base
+      address from this referenced node.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+  turnaround-time:
+    type: int
+    default: 1
+    min: 0
+    max: 15
+    description: Turnaround time TA. Actual = (TA+1) * granularity.
+
+  address-hold-time:
+    type: int
+    default: 1
+    min: 0
+    max: 15
+    description: Address hold time AH. Actual = (AH+1) * granularity.
+
+  address-setup-time:
+    type: int
+    default: 4
+    min: 0
+    max: 15
+    description: Address setup time AS. Actual = AS * granularity.
+
+  ce-hold-time:
+    type: int
+    default: 1
+    min: 0
+    max: 15
+    description: Chip-enable hold time CEH. Actual = CEH * granularity.
+
+  ce-setup-time:
+    type: int
+    default: 1
+    min: 0
+    max: 15
+    description: Chip-enable setup time CES. Actual = CES * granularity.
+
+  adv-polarity:
+    type: string
+    default: "active-low"
+    enum:
+      - "active-low"
+      - "active-high"
+    description: ADV# signal polarity.
+
+  address-mode:
+    type: string
+    default: "admux"
+    enum:
+      - "admux"       # Address/Data multiplexed
+      - "non-admux"   # Address/Data non-multiplexed
+    description: SRAM address mode.
+
+  port-size:
+    type: string
+    default: "16-bit"
+    enum:
+      - "8-bit"
+      - "16-bit"
+    description: External SRAM data port width.
+
+  bus-timeout-enable:
+    type: boolean
+    description: Enable AHB bus timeout (BTOEN).
+
+  bus-timeout-counter:
+    type: int
+    default: 0
+    min: 0
+    max: 255
+    description: AHB bus timeout wait cycles BTO. Timeout = BTO * 1024 hclk.
+
+  # --- SRAMCR1 timing ---
+  prescaler:
+    type: string
+    default: "prescaler-4"
+    enum:
+      - "prescaler-1" # granularity 1 hclk cycle
+      - "prescaler-2" # granularity 2 hclk cycles
+      - "prescaler-3" # granularity 3 hclk cycles
+      - "prescaler-4" # granularity 4 hclk cycles
+    description: Prescaler that sets the timing granularity.
+
+  read-enable-high-time:
+    type: int
+    default: 9
+    min: 0
+    max: 15
+    description: Read-enable (OE#) high time REH. Actual = (REH+1) * granularity.
+
+  read-enable-low-time:
+    type: int
+    default: 16
+    min: 0
+    max: 63
+    description: Read-enable (OE#) low time REL. Actual = (REL+1) * granularity.
+
+  write-enable-high-time:
+    type: int
+    default: 10
+    min: 0
+    max: 15
+    description: Write-enable (WE#) high time WEH. Actual = (WEH+1) * granularity.
+
+  write-enable-low-time:
+    type: int
+    default: 31
+    min: 0
+    max: 63
+    description: Write-enable (WE#) low time WEL. Actual = (WEL+1) * granularity.
