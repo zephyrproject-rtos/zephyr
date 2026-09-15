@@ -71,6 +71,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.force = force
         self.recover = bool(recover)
         self.dry_run = bool(dry_run)
+        self.erase_prepended = False
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -129,6 +130,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         # Propagate the chosen device ID to next runner
         if args.dev_id is None:
             args.dev_id = previous_runner.dev_id
+
+        # Propagate if an erase has been queued by a previous runner
+        args.erase_prepended = previous_runner.erase_prepended
 
     def ensure_snr(self):
         # dev_id can be None, str or list of str
@@ -329,6 +333,40 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         else:
             raise RuntimeError(f"Invalid erase mode: {mode}")
 
+    def _read_ctrl_ap_register(self, address):
+        raise NotImplementedError
+
+    def _get_nrf71_erase_required(self):
+
+        NRF7120_CTRL_AP_INFO_PARTNO = 0x30
+        NRF7120_CTRL_AP_INFO_HWREVISION = 0x34
+        NRF7120_PARTNO = 0x44
+        NRF7120E_PARTNO = 0x2C
+        NRF7120_HWREVISION_1_0 = 0x0
+
+        try:
+            partno = self._read_ctrl_ap_register(
+                NRF7120_CTRL_AP_INFO_PARTNO)
+            hwrevision = self._read_ctrl_ap_register(
+                NRF7120_CTRL_AP_INFO_HWREVISION)
+        except RuntimeError as err:
+            self.logger.warning(
+                f'Unable to read nRF71 device information for {self.dev_id}; '
+                f'defaulting to erase all required: {err}')
+            return True
+
+        self.logger.debug(
+            f'nRF71 device information for {self.dev_id}: '
+            f'partno=0x{partno:x} hwrevision=0x{hwrevision:x}')
+        return ((partno in (NRF7120_PARTNO, NRF7120E_PARTNO)) and
+                hwrevision == NRF7120_HWREVISION_1_0)
+
+    def nrf71_erase(self):
+        if (self._get_nrf71_erase_required() and self.erase_prepended is False):
+            self.exec_op('erase', kind='all', defer=True)
+            self.erase_prepended = True
+        return 'ERASE_NONE'
+
     def program_hex(self):
         # Get the command use to actually program self.hex_.
         self.logger.info(f'Flashing file: {self.hex_}')
@@ -363,8 +401,10 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 erase_arg = 'ERASE_ALL'
             elif self.erase_mode:
                 erase_arg = erase_mode
-            elif self.family in ('nrf54l', 'nrf71'):
+            elif self.family == 'nrf54l':
                 erase_arg = 'ERASE_NONE'
+            elif self.family == 'nrf71':
+                erase_arg = self.nrf71_erase()
             else:
                 erase_arg = 'ERASE_RANGES_TOUCHED_BY_FIRMWARE'
 
