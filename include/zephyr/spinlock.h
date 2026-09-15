@@ -104,7 +104,7 @@ struct k_spinlock {
 bool z_spin_lock_valid(struct k_spinlock *l);
 bool z_spin_unlock_valid(struct k_spinlock *l);
 void z_spin_lock_set_owner(struct k_spinlock *l);
-void z_spin_lock_transfer_owner(struct k_spinlock *l);
+void z_spin_lock_transfer_owner(struct k_spinlock *l, struct k_thread *thread);
 void z_assert_can_swap(unsigned int key, struct k_spinlock *swap_lock);
 void z_spin_validate_reset(bool lock_held);
 extern const uint8_t z_spinlock_abort_sentinel;

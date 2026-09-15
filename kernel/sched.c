@@ -674,7 +674,12 @@ struct k_thread *z_swap_next_thread(void)
 }
 
 #ifdef CONFIG_USE_SWITCH
-/* Just a wrapper around z_current_thread_set(xxx) with tracing */
+/* Just a wrapper around z_current_thread_set(xxx) with tracing.
+ *
+ * _current is not guaranteed to report @a new_thread until the switch to it
+ * has happened: see z_current_thread_set(). Code between this call and the
+ * switch must use @a new_thread directly.
+ */
 static inline void set_current(struct k_thread *new_thread)
 {
 	/* If the new thread is the same as the current thread, we
@@ -754,7 +759,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			 * confused when the "wrong" thread tries to
 			 * release the lock.
 			 */
-			z_sched_spinlock_transfer_owner();
+			z_sched_spinlock_transfer_owner(new_thread);
 
 			/* A queued (runnable) old/current thread
 			 * needs to be added back to the run queue
@@ -784,10 +789,12 @@ void *z_get_next_switch_handle(void *interrupted)
 	}
 	return ret;
 #else
-	z_sched_usage_switch(_kernel.ready_q.cache);
+	struct k_thread *next = _kernel.ready_q.cache;
+
+	z_sched_usage_switch(next);
 	_current->switch_handle = interrupted;
-	set_current(_kernel.ready_q.cache);
-	return _current->switch_handle;
+	set_current(next);
+	return next->switch_handle;
 #endif /* CONFIG_SMP */
 }
 #endif /* CONFIG_USE_SWITCH */
