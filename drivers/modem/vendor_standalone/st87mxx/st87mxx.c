@@ -1210,8 +1210,8 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 						mdata.context_id, sock->id, len);
 		if (ret < 0) {
 			LOG_ERR("Failed to build send command!!");
-			errno = ENOMEM;
-			return -1;
+			ret = -ENOMEM;
+			goto exit;
 		}
 
 		ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
@@ -1228,43 +1228,53 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 		break;
 
 	case NET_SOCK_DGRAM:
+		/* A datagram send always needs an explicit destination. */
+		if (dest_addr == NULL) {
+			LOG_ERR("Missing destination address!!");
+			ret = -EDESTADDRREQ;
+			goto exit;
+		}
 
-	/* Get the destination port. */
-	if (dest_addr->sa_family == NET_PF_INET6) {
-		dst_port = net_ntohs(net_sin6(dest_addr)->sin6_port);
-	} else if (dest_addr->sa_family == NET_PF_INET) {
-		dst_port = net_ntohs(net_sin(dest_addr)->sin_port);
-	} else {
-	}
+		/* Get the destination port. */
+		if (dest_addr->sa_family == NET_PF_INET6) {
+			dst_port = net_ntohs(net_sin6(dest_addr)->sin6_port);
+		} else if (dest_addr->sa_family == NET_PF_INET) {
+			dst_port = net_ntohs(net_sin(dest_addr)->sin_port);
+		} else {
+			LOG_ERR("Unsupported address family %d!!", dest_addr->sa_family);
+			ret = -EAFNOSUPPORT;
+			goto exit;
+		}
 
-	ret = modem_context_sprint_ip_addr(dest_addr, ip_str, sizeof(ip_str));
-	if (ret != 0) {
-		LOG_ERR("Failed to format IP!");
-		errno = ENOMEM;
-		return -1;
-	}
+		ret = modem_context_sprint_ip_addr(dest_addr, ip_str, sizeof(ip_str));
+		if (ret != 0) {
+			LOG_ERR("Failed to format IP!");
+			ret = -ENOMEM;
+			goto exit;
+		}
 
-	ret = snprintk(send_buf_udp, sizeof(send_buf_udp), "AT#IPSENDUDP=%d,%d,%s,%d,%d,%d,%zu",
-			mdata.context_id, sock->id, ip_str, dst_port, 0, 1, len);
-	if (ret < 0) {
-		LOG_ERR("Failed to build send command!!");
-		errno = ENOMEM;
-		return -1;
-	}
+		ret = snprintk(send_buf_udp, sizeof(send_buf_udp),
+			       "AT#IPSENDUDP=%d,%d,%s,%d,%d,%d,%zu",
+			       mdata.context_id, sock->id, ip_str, dst_port, 0, 1, len);
+		if (ret < 0) {
+			LOG_ERR("Failed to build send command!!");
+			ret = -ENOMEM;
+			goto exit;
+		}
 
-	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
-				NULL, 0U, send_buf_udp, NULL, K_NO_WAIT);
+		ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
+					    NULL, 0U, send_buf_udp, NULL, K_NO_WAIT);
 
-	if (ret < 0) {
-		LOG_ERR("Failed to send AT#IPSENDUDP command!!");
-		goto exit;
-	}
+		if (ret < 0) {
+			LOG_ERR("Failed to send AT#IPSENDUDP command!!");
+			goto exit;
+		}
 
-	/* Wait for the OK. */
-	k_sem_reset(&mdata.sem_response);
-	ret = k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
+		/* Wait for the OK. */
+		k_sem_reset(&mdata.sem_response);
+		ret = k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
 
-	break;
+		break;
 
 	default:
 		break;
