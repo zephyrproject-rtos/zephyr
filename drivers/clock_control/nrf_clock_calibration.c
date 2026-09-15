@@ -15,7 +15,11 @@
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+#else
+LOG_MODULE_DECLARE(clock_control_lfclk, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+#endif
 
 /**
  * Terms:
