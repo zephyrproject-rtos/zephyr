@@ -77,7 +77,10 @@ struct pmc_reg {
 	volatile uint8_t PMCSR;
 	volatile uint8_t reserved1[2];
 	/* 0x003: Enable in Sleep Control */
-	volatile uint8_t ENIDL_CTL;
+	union {
+		volatile uint8_t ENSLP_CTL;
+		volatile uint8_t ENIDL_CTL; /* Deprecated name of ENSLP_CTL */
+	};
 	/* 0x004: Disable in Idle Control */
 	volatile uint8_t DISIDL_CTL;
 	/* 0x005: Disable in Idle Control 1 */
@@ -104,11 +107,13 @@ struct pmc_reg {
 #define NPCX_PMCSR_NWBI            3
 #define NPCX_PMCSR_OHFC            6
 #define NPCX_PMCSR_OLFC            7
-#define NPCX_DISIDL_CTL_RAM_DID    5
-#define NPCX_ENIDL_CTL_ADC_LFSL    7
-#define NPCX_ENIDL_CTL_LP_WK_CTL   6
-#define NPCX_ENIDL_CTL_PECI_ENI    2
-#define NPCX_ENIDL_CTL_ADC_ACC_DIS 1
+#define NPCX_DISIDL_CTL_RAM_DID         5
+#define NPCX_ENSLP_CTL_ADC_LFSL         7
+#define NPCX_ENSLP_CTL_LP_WK_CTL        6
+#define NPCX_ENSLP_CTL_PECI_ENI         2
+#define NPCX_ENSLP_CTL_ADC_ACC_DIS      1
+/* Implemented from SOC_SERIES_NPCX4 onwards */
+#define NPCX_ENSLP_CTL_ESPI_FMCLK_ENSLP 0
 
 /* Macro functions for Development and Debugger Interface (DDI) registers */
 #define NPCX_DBGCTRL(base)   (*(volatile uint8_t *)(base + 0x004))
@@ -2278,5 +2283,11 @@ struct lct_reg {
 #define NPCX_LCTCONT_LCT_CLK_EN   6
 #define NPCX_LCTCONT_LCT_VSBY_PWR 7
 #define NPCX_LCTSTAT_LCTEVST      0
+
+/* Deprecated ENIDL_CTL names of the ENSLP_CTL register fields */
+#define NPCX_ENIDL_CTL_ADC_LFSL    NPCX_ENSLP_CTL_ADC_LFSL
+#define NPCX_ENIDL_CTL_LP_WK_CTL   NPCX_ENSLP_CTL_LP_WK_CTL
+#define NPCX_ENIDL_CTL_PECI_ENI    NPCX_ENSLP_CTL_PECI_ENI
+#define NPCX_ENIDL_CTL_ADC_ACC_DIS NPCX_ENSLP_CTL_ADC_ACC_DIS
 
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
