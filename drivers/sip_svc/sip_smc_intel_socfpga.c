@@ -138,14 +138,25 @@ static int intel_sip_smc_plat_async_res_res(const struct device *dev, struct arm
 
 	__ASSERT((res && buf && size && trans_id), "invalid parameters\n");
 
-	if (((long)res->a0) <= SMC_STATUS_OKAY) {
+	switch (res->a0) {
+	case SMC_STATUS_OKAY:
 		/* Extract transaction id from mailbox response header */
 		*trans_id = SIP_SVC_MB_HEADER_GET_TRANS_ID(resp[0]);
 		/* The final length should include both header and body */
 		*size = (SIP_SVC_MB_HEADER_GET_LENGTH(resp[0]) + 1) * 4;
-	} else {
+		break;
+	case SMC_STATUS_BUSY:
+	case SMC_STATUS_NO_RESPONSE:
+		/* No response yet, keep polling */
 		LOG_INF("There is no valid polling response %ld", (long)res->a0);
 		return -EINPROGRESS;
+	default:
+		/* Terminal statuses (REJECT, ERROR, INVALID, ...): polling
+		 * will never produce a response for the pending jobs, so
+		 * report the error instead of returning -EINPROGRESS forever.
+		 */
+		LOG_ERR("Terminal SMC status %ld while polling responses", (long)res->a0);
+		return -EIO;
 	}
 
 	LOG_INF("Got a valid polling response");
