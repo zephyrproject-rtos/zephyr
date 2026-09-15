@@ -1699,3 +1699,10 @@ test_i2c_pmsa003i: pmsa003i@dc {
 	reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 	set-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 };
+
+test_i2c_lps22hx: lps22hx@dd {
+	compatible = "st,lps22hx";
+	reg = <0xdd>;
+	drdy-gpios = <&test_gpio 0 0>;
+	odr = <LPS22HH_DT_ODR_75HZ>;
+};
