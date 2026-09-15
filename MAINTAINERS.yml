@@ -339,6 +339,17 @@ ARM arch:
     - arch
     - kernel
 
+ARM arch (pre-Cortex):
+  status: maintained
+  maintainers:
+    - jetpax
+  files-regex:
+    - ^arch/arm/core/armv6/
+  labels:
+    - "area: ARM"
+  tests:
+    - arch.arm
+
 ARM64 arch:
   status: maintained
   maintainers:
