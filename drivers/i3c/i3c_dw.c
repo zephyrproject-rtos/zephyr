@@ -1422,7 +1422,7 @@ static void ibis_handle(const struct device *dev)
 	int32_t i;
 
 	nibis = sys_read32(config->regs + QUEUE_STATUS_LEVEL);
-	nibis = QUEUE_STATUS_IBI_BUF_BLR(nibis);
+	nibis = QUEUE_STATUS_IBI_STATUS_CNT(nibis);
 	for (i = 0; i < nibis; i++) {
 		ibi_stat = sys_read32(config->regs + IBI_QUEUE_STATUS);
 		if (IBI_TYPE_SIRQ(ibi_stat)) {
@@ -2622,7 +2622,7 @@ static int dw_i3c_recover_bus(const struct device *dev)
 	/* Drain any pending IBIs so the controller is not blocked by
 	 * an unread IBI queue when we try to resume.
 	 */
-	nibis = QUEUE_STATUS_IBI_BUF_BLR(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
+	nibis = QUEUE_STATUS_IBI_STATUS_CNT(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
 	while (nibis--) {
 		(void)sys_read32(config->regs + IBI_QUEUE_STATUS);
 	}
