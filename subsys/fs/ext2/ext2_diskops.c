@@ -264,7 +264,7 @@ int ext2_fetch_block_group(struct ext2_data *fs, uint32_t group)
 	LOG_DBG("ngroups:%d", ngroups);
 	LOG_DBG("cur_group:%d fetch_group:%d", bg->num, group);
 
-	if (group > ngroups) {
+	if (group >= ngroups) {
 		return -ERANGE;
 	}
 
@@ -364,8 +364,16 @@ int ext2_fetch_bg_bbitmap(struct ext2_bgroup *bg)
 static int32_t get_itable_entry(struct ext2_data *fs, uint32_t ino)
 {
 	int rc;
-	uint32_t ino_group = (ino - 1) / fs->sblock.s_inodes_per_group;
-	uint32_t ino_index = (ino - 1) % fs->sblock.s_inodes_per_group;
+	uint32_t ino_group;
+	uint32_t ino_index;
+
+	if (ino < 1 || ino > fs->sblock.s_inodes_count ||
+	    fs->sblock.s_inodes_per_group == 0 || fs->sblock.s_inode_size == 0) {
+		return -EINVAL;
+	}
+
+	ino_group = (ino - 1) / fs->sblock.s_inodes_per_group;
+	ino_index = (ino - 1) % fs->sblock.s_inodes_per_group;
 
 	LOG_DBG("ino_group:%d ino_index:%d", ino_group, ino_index);
 
@@ -1010,6 +1018,10 @@ int32_t ext2_alloc_inode(struct ext2_data *fs)
 		return r;
 	}
 
+	if ((uint32_t)r >= fs->sblock.s_inodes_count) {
+		return -ENOSPC;
+	}
+
 	/* Add 1 because inodes are counted from 1 not 0. */
 	global_idx = group * fs->sblock.s_inodes_per_group + r + 1;
 
@@ -1118,9 +1130,17 @@ int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory)
 	LOG_DBG("Free inode %d", ino);
 
 	int rc;
-	uint32_t group = (ino - 1) / fs->sblock.s_inodes_per_group;
-	uint32_t bitmap_off = (ino - 1) % fs->sblock.s_inodes_per_group;
+	uint32_t group;
+	uint32_t bitmap_off;
 	uint32_t set;
+
+	if (ino < 1 || ino > fs->sblock.s_inodes_count ||
+	    fs->sblock.s_inodes_per_group == 0) {
+		return -EINVAL;
+	}
+
+	group = (ino - 1) / fs->sblock.s_inodes_per_group;
+	bitmap_off = (ino - 1) % fs->sblock.s_inodes_per_group;
 
 	rc = ext2_fetch_block_group(fs, group);
 	if (rc < 0) {
