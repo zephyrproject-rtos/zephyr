@@ -25,6 +25,7 @@ struct stts22h_config {
 	const struct i2c_dt_spec i2c;
 #ifdef CONFIG_STTS22H_TRIGGER
 	const struct gpio_dt_spec int_gpio;
+	const uint8_t int_mode;
 #endif
 	uint8_t temp_hi;
 	uint8_t temp_lo;
