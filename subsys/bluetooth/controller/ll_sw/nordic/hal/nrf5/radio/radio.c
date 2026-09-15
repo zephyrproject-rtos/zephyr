@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/sys/byteorder.h>
@@ -1196,7 +1197,7 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 
 	nrf_timer_int_enable(EVENT_TIMER, TIMER_INTENSET_COMPARE2_Msk);
 
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	k_irq_clear_pending(TIMER0_IRQn);
 
 	irq_enable(TIMER0_IRQn);
 
@@ -2530,7 +2531,7 @@ uint32_t radio_ccm_is_done(void)
 		cpu_sleep();
 	}
 	nrf_ccm_int_disable(NRF_CCM, CCM_INTENCLR_ENDCRYPT_Msk);
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_CCM));
+	k_irq_clear_pending(nrfx_get_irq_number(NRF_CCM));
 
 	return (NRF_CCM->EVENTS_ERROR == 0);
 }
@@ -2742,7 +2743,7 @@ uint32_t radio_ar_has_match(void)
 
 	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
 
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+	k_irq_clear_pending(nrfx_get_irq_number(NRF_AAR));
 
 	if (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) {
 		return 1U;
@@ -2782,7 +2783,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_NOTRESOLVED);
 
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+	k_irq_clear_pending(nrfx_get_irq_number(NRF_AAR));
 
 	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
 
@@ -2792,7 +2793,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 
 	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
 
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+	k_irq_clear_pending(nrfx_get_irq_number(NRF_AAR));
 
 	retval = (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) ?
 		 1U : 0U;

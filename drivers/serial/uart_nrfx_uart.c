@@ -846,7 +846,7 @@ static void uart_nrfx_irq_tx_enable(const struct device *dev)
 		/* Due to HW limitation first TXDRDY interrupt shall be
 		 * triggered by the software.
 		 */
-		NVIC_SetPendingIRQ(IRQN);
+		k_irq_set_pending(IRQN);
 	}
 	irq_unlock(key);
 }
