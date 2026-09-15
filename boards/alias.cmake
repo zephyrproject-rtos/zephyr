@@ -6,3 +6,4 @@
 # Example:
 # set(plank/foo_BOARD_ALIAS plank/bar)
 set(myra_sip_baseboard/myra_BOARD_ALIAS myra_sip_baseboard/stm32g491xx)
+set(osd32mp1_brk/osd32mp15x_BOARD_ALIAS osd32mp1_brk/stm32mp157cxx)
