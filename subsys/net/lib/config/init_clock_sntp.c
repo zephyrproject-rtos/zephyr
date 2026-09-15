@@ -108,7 +108,7 @@ static int sntp_set_clocks(struct sntp_time *ts)
 	return ret;
 }
 
-int net_init_clock_via_sntp(void)
+int net_config_init_clock_via_sntp(void)
 {
 	struct sntp_time ts;
 	int res = sntp_init_helper(&ts);
