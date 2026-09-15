@@ -193,7 +193,7 @@ fpu_sve_trap:
 #endif
 
 	cmp	x1, #0x15 /* 0x15 = SVC */
-	bne	inv
+	bne	not_svc
 
 	/* Demux the SVC call */
 	and	x1, x0, #0xff
@@ -263,6 +263,51 @@ svc_from_user:
 oops:
 	mov	x0, sp
 	b	z_arm64_do_kernel_oops
+
+not_svc:
+#ifdef CONFIG_GDBSTUB
+	/*
+	 * Debug exceptions taken to EL1:
+	 *  0x30/0x31 - hardware breakpoint
+	 *  0x32/0x33 - software step
+	 *  0x34/0x35 - watchpoint
+	 *  0x3c      - BRK instruction
+	 */
+	cmp	x1, #0x30
+	b.lt	inv
+	cmp	x1, #0x35
+	b.le	gdb_debug_exc
+	cmp	x1, #0x3c
+	b.ne	inv
+
+gdb_debug_exc:
+	/* Save GPRs not in arch_esf (x19–x29) before entering C gdbstub */
+	adrp	x2, gdb_esf_extra_regs
+	add	x2, x2, :lo12:gdb_esf_extra_regs
+	stp	x19, x20, [x2]
+	stp	x21, x22, [x2, #16]
+	stp	x23, x24, [x2, #32]
+	stp	x25, x26, [x2, #48]
+	stp	x27, x28, [x2, #64]
+	str	x29, [x2, #80]
+
+	mov	x0, sp
+	/* GDB_EXCEPTION_BREAKPOINT */
+	mov	x1, #5
+	bl	z_gdb_entry
+
+	/* Restore possibly GDB-modified x19–x29 */
+	adrp	x2, gdb_esf_extra_regs
+	add	x2, x2, :lo12:gdb_esf_extra_regs
+	ldp	x19, x20, [x2]
+	ldp	x21, x22, [x2, #16]
+	ldp	x23, x24, [x2, #32]
+	ldp	x25, x26, [x2, #48]
+	ldp	x27, x28, [x2, #64]
+	ldr	x29, [x2, #80]
+
+	b	z_arm64_exit_exc
+#endif /* CONFIG_GDBSTUB */
 
 inv:
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
