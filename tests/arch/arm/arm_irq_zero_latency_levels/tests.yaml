@@ -1,6 +1,8 @@
 common:
+  # The test connects an ISR with arch_irq_connect_dynamic(), so it needs the
+  # CONFIG_DYNAMIC_INTERRUPTS set by prj.conf to have taken effect.
   filter: (CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE) and
-    not CONFIG_SOC_FAMILY_NORDIC_NRF
+    not CONFIG_SOC_FAMILY_NORDIC_NRF and CONFIG_DYNAMIC_INTERRUPTS
   tags:
     - arm
     - interrupt
