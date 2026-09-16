@@ -28,6 +28,14 @@ config PLIC_SUPPORTS_TRIG_TYPE
 	  Enabled when the PLIC supports multiple trigger types,
 	  such as level, edge, etc.
 
+config PLIC_SUPPORTS_VECTORED_MODE
+	bool
+	default y
+	depends on DT_HAS_ANDESTECH_NCEPLIC100_ENABLED && \
+		RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC
+	help
+	  Enabled when the PLIC supports vectored mode.
+
 if PLIC_SUPPORTS_TRIG_TYPE
 
 config PLIC_TRIG_TYPE_REG_OFFSET

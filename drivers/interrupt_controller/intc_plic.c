@@ -620,6 +620,20 @@ static int plic_init(const struct device *dev)
 	}
 #endif
 
+#ifdef CONFIG_PLIC_SUPPORTS_VECTORED_MODE
+	/*
+	 * Vectored mode is only supported by the PLIC connected to the
+	 * machine external interrupt.
+	 */
+	if (config->irq == RISCV_IRQ_MEXT) {
+		/*
+		 * Enable vectored mode in the Andes PLIC Feature Enable
+		 * Register (PLIC base address + offset 0x0).
+		 */
+		sys_write32(BIT(1), config->prio);
+	}
+#endif /* CONFIG_PLIC_SUPPORTS_VECTORED_MODE */
+
 	/* Configure IRQ for PLIC driver */
 	config->irq_config_func();
 
