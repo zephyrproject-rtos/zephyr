@@ -8,7 +8,6 @@
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_
 
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
@@ -127,7 +126,7 @@ struct eth_stm32_dma_desc {
 /* Device constant configuration parameters */
 struct eth_stm32_hal_dev_cfg {
 	void (*config_func)(void);
-	const struct stm32_pclken *pclken;
+	const struct clock_dt_spec *const *pclken;
 	uint8_t pclken_cnt;
 #ifdef CONFIG_PTP_CLOCK_STM32_HAL
 	/* Index of the clock that feeds the PTP addend calculation */

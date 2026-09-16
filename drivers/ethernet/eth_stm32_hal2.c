@@ -5,7 +5,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -74,7 +73,7 @@ static struct eth_stm32_hal_dev_data eth0_data = {.heth = {.instance = HAL_ETH1}
 struct eth_stm32_hal_dev_cfg {
 	void (*config_func)(void);
 	struct net_eth_mac_config mac_config;
-	const struct stm32_pclken *pclken;
+	const struct clock_dt_spec *const *pclken;
 	size_t pclken_cnt;
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -498,15 +497,9 @@ static int eth_initialize(const struct device *dev)
 	k_sem_init(&dev_data->tx_int_sem, 0, 1);
 	k_event_init(&dev_data->rx_event);
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Set up gated and source clocks */
 	for (size_t n = 0; n < cfg->pclken_cnt; n++) {
-		ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				       (clock_control_subsys_t)&cfg->pclken[n]);
+		ret = clock_control_on_dt(cfg->pclken[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
@@ -605,7 +598,7 @@ static void eth0_irq_config(void)
 
 PINCTRL_DT_INST_DEFINE(0);
 
-static const struct stm32_pclken eth0_pclken[] = STM32_DT_CLOCKS(DT_DRV_INST(0));
+static const struct clock_dt_spec *const eth0_pclken[] = CLOCK_DT_INST_SPECS_INIT(0);
 
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
