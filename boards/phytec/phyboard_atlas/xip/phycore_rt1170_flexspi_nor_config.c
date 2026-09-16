@@ -10,8 +10,8 @@
 #if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR)
 __attribute__((section(".boot_hdr.conf"), used))
 
-#define FLASH_DUMMY_CYCLES 0x09
-#define FLASH_DUMMY_VALUE  0x09
+#define FLASH_DUMMY_CYCLES 0x06
+#define FLASH_DUMMY_VALUE  0x06
 
 const flexspi_nor_config_t qspi_flash_config = {
 	.mem_config = {
