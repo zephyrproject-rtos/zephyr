@@ -126,7 +126,7 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 	int ret;
 	struct websocket_request config = {0};
 	struct ocpp_upstream_info *ui = &ctx->ui;
-	struct net_sockaddr_storage addr_buf;
+	struct net_sockaddr_storage addr_buf = { 0 };
 	struct net_sockaddr *addr = net_sad(&addr_buf);
 	int addr_size;
 
