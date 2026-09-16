@@ -54,6 +54,26 @@
 	};
 };
 
+/ {
+	soc {
+		/*
+		 * Parallel trace port. Disabled by default; enable with the
+		 * cat1-trace snippet (or set status to "okay") on the secure
+		 * CM33 image, which owns the HSIOM pins.
+		 */
+		trace_port: trace-port {
+			compatible = "infineon,cat1-trace";
+			pinctrl-0 = <&p7_4_debug600_trace_clock
+				     &p7_0_debug600_trace_data0
+				     &p7_1_debug600_trace_data1
+				     &p7_2_debug600_trace_data2
+				     &p7_3_debug600_trace_data3>;
+			pinctrl-names = "default";
+			status = "disabled";
+		};
+	};
+};
+
 &gpio_prt0 {
 	status = "okay";
 };
