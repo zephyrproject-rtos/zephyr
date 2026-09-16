@@ -146,7 +146,9 @@
 	pinctrl-names = "default";
 };
 
-zephyr_udc0: &usbd {};
+zephyr_udc0: &usbd {
+	status = "okay";
+};
 
 &pwm {
 	pinctrl-0 = <&pwm_ch4b_default>;
