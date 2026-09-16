@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Dent IoT
+# SPDX-License-Identifier: Apache-2.0
+
+config PULSE_IO_STM32_TIMER_DMA
+	bool "STM32 Pulse IO backend (timer + DMA to GPIO)"
+	default y
+	depends on DT_HAS_ST_STM32_TIMER_PULSE_IO_ENABLED
+	select DMA
+	select GPIO
+	help
+	  Pulse IO backend for STM32 that generates timed edges on an
+	  arbitrary GPIO pin by driving the GPIO port's BSRR register via
+	  DMA, triggered by a timer update event.
+

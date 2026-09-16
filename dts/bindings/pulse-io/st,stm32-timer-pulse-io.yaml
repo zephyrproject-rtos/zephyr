@@ -1,0 +1,82 @@
+# Copyright (c) 2026 Dent IoT
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Pulse IO channel (timer + DMA-to-GPIO).
+
+  A vendor Pulse IO backend that generates jitter-free timed edges on an
+  arbitrary GPIO pin using a timer's update event to trigger a DMA transfer
+  of set/reset words to the GPIO port's BSRR register.
+
+  One node describes a single channel: one timer instance, one DMA stream,
+  and one target GPIO pin. The node is a Pulse IO controller exposing a
+  single channel (index 0); a consumer such as worldsemi,ws2812-pulse-io
+  references it with `pulse-ios = <&node 0>`. To drive multiple strips on
+  multiple pins, instantiate several such nodes, each with its own timer
+  and DMA stream so the transfers can run concurrently.
+
+  The pin needs no alternate function: the wire is driven by writing the
+  GPIO port's set/reset register (BSRR) via DMA, which works on any pin.
+  The timer instance, DMA stream/request, and target GPIO port and pin are
+  all configured in the device tree, so the binding is not tied to a
+  particular timer instance or pin.
+
+  Note that on STM32F405/407 only DMA2 can reach GPIO (DMA1 has no AHB1
+  tap); timer instances routed to DMA1 (TIM6/TIM7) therefore cannot be
+  used with this backend on those parts. TIM1 (DMA2 stream5/channel6 =
+  TIM1_UP) or TIM8 (DMA2 stream1/channel7 = TIM8_UP) are the usual choices.
+
+compatible: "st,stm32-timer-pulse-io"
+
+include: [base.yaml, pulse-io-controller.yaml]
+
+properties:
+  timer:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the st,stm32-timers node whose update event triggers the
+      DMA transfer. The backend derives the TIM_TypeDef register base and
+      its clock/reset from this node.
+
+  dmas:
+    type: phandle-array
+    required: true
+    description: |
+      DMA channel/stream specifier for the timer's update-DMA request, in
+      the SoC's dma-controller cell format. For st,stm32-dma-v1 this is
+      four cells: channel, slot (the TIMx_UP DMA request id),
+      channel-config (STM32_DMA_* flags: memory-to-peripheral, memory
+      increment, 32-bit width), and features.
+
+  dma-names:
+    type: string-array
+    required: true
+    description: Must contain "tx".
+
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The GPIO port and pin driven by this channel, as a standard GPIO
+      specifier (`<&gpioX pin flags>`). The backend resolves the port's
+      BSRR register address and the set/reset bit from this specifier; no
+      alternate function is required on the pin.
+
+  st,prescaler:
+    type: int
+    default: 0
+    description: |
+      Timer prescaler value loaded into TIMx_PSC. The backend configures
+      the auto-reload register from the requested resolution; the
+      prescaler is left to the integrator so the timer clock can be divided
+      to a sane range (e.g. keep ARR > 1 for the desired tick).
+
+  buffer-size:
+    type: int
+    default: 0
+    description: |
+      Maximum number of DMA words (uint32_t) the channel can transmit in a
+      single submission. 0 selects a build-time default sized for a single
+      WS2812 pixel chain of chain-length LEDs.
