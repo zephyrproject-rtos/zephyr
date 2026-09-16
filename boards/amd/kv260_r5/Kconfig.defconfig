@@ -13,4 +13,7 @@ config COMPILER_ISA_THUMB2
 
 endif
 
+configdefault ISR_STACK_SIZE
+	default 512
+
 endif # BOARD_KV260_R5
