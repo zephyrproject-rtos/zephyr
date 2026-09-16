@@ -10,3 +10,7 @@ set(psc3m6_dir ${template_dir}/files)
 zephyr_include_directories(${psc3m6_dir})
 zephyr_include_directories(${psc3m6_dir}/devices/include)
 zephyr_library_sources(${psc3m6_dir}/system_psc3_x6.c)
+
+# Skip the BSP's deep-sleep-RAM warmboot code: it needs the MTB startup file
+# and linker script that Zephyr replaces.
+zephyr_library_compile_definitions(CYBSP_SKIP_PM_REGISTRATION)
