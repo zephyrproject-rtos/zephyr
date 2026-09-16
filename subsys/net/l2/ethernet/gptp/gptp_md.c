@@ -163,7 +163,8 @@ static int gptp_set_md_sync_receive(int port,
 
 	sync_rcv->upstream_tx_time -= delay_asymmetry_rated;
 
-	sync_rcv->rate_ratio = net_ntohl(fup->tlv.cumulative_scaled_rate_offset);
+	sync_rcv->rate_ratio =
+		(double)(int32_t)net_ntohl((uint32_t)fup->tlv.cumulative_scaled_rate_offset);
 	sync_rcv->rate_ratio /= GPTP_POW2_41;
 	sync_rcv->rate_ratio += 1;
 
@@ -174,7 +175,7 @@ static int gptp_set_md_sync_receive(int port,
 	sync_rcv->last_gm_phase_change.low =
 		net_ntohll(fup->tlv.last_gm_phase_change.low);
 	sync_rcv->last_gm_freq_change =
-		net_ntohl(fup->tlv.scaled_last_gm_freq_change);
+		(double)(int32_t)net_ntohl((uint32_t)fup->tlv.scaled_last_gm_freq_change);
 
 	return 0;
 }
