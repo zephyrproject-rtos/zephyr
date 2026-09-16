@@ -40,6 +40,12 @@
 
 &sercom2 {
 	compatible = "microchip,sercom-g1-i2c";
+	/* Clear the SPI setup the board DTS applies to this SERCOM. */
+	/delete-property/ dipo;
+	/delete-property/ dopo;
+	/delete-property/ cs-gpios;
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <I2C_BITRATE_FAST>;
