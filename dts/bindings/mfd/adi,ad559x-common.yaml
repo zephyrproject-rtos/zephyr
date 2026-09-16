@@ -7,3 +7,12 @@ properties:
   reset-gpios:
     type: phandle-array
     description: RESET pin
+
+  reset-recovery-time-us:
+    type: int
+    default: 250
+    description: |
+      Time to wait after releasing reset-gpios before communicating with the
+      device, in microseconds. Defaults to the chip's datasheet
+      reset-recovery time. Boards whose reset line has extra settling time
+      (e.g. external RC filtering) should override this with a larger value.
