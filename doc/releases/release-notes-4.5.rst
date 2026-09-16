@@ -185,6 +185,11 @@ Removed APIs and options
 
     * ``zephyr,memory-region-mpu``
 
+* Ethernet
+
+    * The NuMaker Ethernet driver with ``CONFIG_ETH_NUMAKER`` is superseded by
+      :kconfig:option:`CONFIG_ETH_NUMAKER_DWC_ETHER_1000`. See the migration guide.
+
 * LLEXT
 
     * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``

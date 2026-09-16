@@ -746,6 +746,13 @@ Ethernet
   :dtcompatible:`nxp,enet-mac` need to be moved from the MAC node to the parent Ethernet controller
   node. (:github:`107352`)
 
+* The NuMaker Ethernet driver has been removed together with ``CONFIG_ETH_NUMAKER``. The NuMaker
+  EMAC is now driven by :kconfig:option:`CONFIG_ETH_NUMAKER_DWC_ETHER_1000`, the generic Synopsys
+  DesignWare MAC driver, which needs the MDIO controller and the PHY in devicetree. Out-of-tree
+  boards have to enable the ``mdio`` node with the MDC and MDIO pins in its pinctrl state, add
+  their PHY to it and point the ``emac`` node at it with ``phy-handle``. The ``phy-addr``
+  property of :dtcompatible:`nuvoton,numaker-ethernet` has been removed.
+
 * ``port_generate_random_mac`` of the :c:struct:`dsa_api` got removed. Also
   :c:struct:`dsa_port_config` now uses :c:struct:`net_eth_mac_config` to set the MAC address.
   ``mac_addr`` and ``use_random_mac_addr`` members of :c:struct:`dsa_port_config` were removed.
