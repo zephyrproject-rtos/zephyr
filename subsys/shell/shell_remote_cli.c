@@ -130,10 +130,11 @@ void shell_remote_cli_cbpprintf(const struct shell *sh, enum shell_vt100_color c
 #ifdef CONFIG_MULTITHREADING
 	err = k_sem_take(&sh_remote->sem, K_MSEC(CONFIG_SHELL_REMOTE_TIMEOUT_MS));
 #else
-	uint32_t t = k_uptime_get_32();
+	uint64_t start = k_uptime_ticks();
+	uint64_t ticks = k_ms_to_ticks_ceil64(CONFIG_SHELL_REMOTE_TIMEOUT_MS);
 
 	while (sh_remote->processed == false) {
-		if (k_uptime_get_32() - t > CONFIG_SHELL_REMOTE_TIMEOUT_MS) {
+		if (k_uptime_ticks() - start > ticks) {
 			err = -ETIMEDOUT;
 			break;
 		}
