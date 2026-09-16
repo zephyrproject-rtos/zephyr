@@ -63,16 +63,17 @@ if(CONFIG_SOC_SERIES_MCXW7XX)
 endif()
 
 if(CONFIG_SOC_SERIES_MCXW2XX)
-    if(CONFIG_BT)
-        set(CONFIG_MCUX_COMPONENT_driver.ostimer ON)
-        set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework ON)
-        set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform ON)
-        set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.mcxw23 ON)
-        set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.ble ON)
-        zephyr_compile_definitions(
-            gPlatformUseTimerManager_d=0
-        )
-    endif()
+  if(CONFIG_BT)
+    set(CONFIG_MCUX_COMPONENT_driver.ostimer ON)
+    set(CONFIG_MCUX_COMPONENT_driver.trng ON)
+    set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework ON)
+    set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform ON)
+    set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.mcxw23 ON)
+    set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.ble ON)
+    zephyr_compile_definitions(
+      gPlatformUseTimerManager_d=0
+    )
+  endif()
 endif()
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework)
