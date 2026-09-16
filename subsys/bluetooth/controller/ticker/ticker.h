@@ -266,6 +266,8 @@ struct ticker_ext {
 	uint8_t is_jitter_in_window:1; /* Jitter in slot window, maintaining
 					* the average periodic interval
 					*/
+	uint8_t unforce:1;             /* Start with force flag unset
+					*/
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
