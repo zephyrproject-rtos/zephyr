@@ -472,8 +472,12 @@ static inline bool dw_i3c_is_current_controller(const struct device *dev)
 }
 
 #ifdef CONFIG_I3C_CONTROLLER
-static uint8_t get_free_pos(uint32_t free_pos)
+static int get_free_pos(uint32_t free_pos)
 {
+	if (free_pos == 0U) {
+		return -ENOSPC;
+	}
+
 	return find_lsb_set(free_pos) - 1;
 }
 
@@ -998,11 +1002,11 @@ static int dw_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_dev
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint8_t pos;
+	int pos;
 
 	pos = get_free_pos(data->free_pos);
 	if (pos < 0) {
-		return -ENOSPC;
+		return pos;
 	}
 
 	data->dw_i3c_i2c_priv_data[pos].id = pos;
@@ -1874,12 +1878,12 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint8_t pos = get_free_pos(data->free_pos);
+	int pos = get_free_pos(data->free_pos);
 	uint8_t addr = desc->dynamic_addr ? desc->dynamic_addr : desc->static_addr;
 
 	if (pos < 0) {
 		LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
-		return -ENOSPC;
+		return pos;
 	}
 
 	data->dw_i3c_i2c_priv_data[pos].id = pos;
