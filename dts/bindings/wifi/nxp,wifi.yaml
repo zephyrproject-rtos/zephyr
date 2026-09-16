@@ -51,24 +51,36 @@ child-binding:
         Net antenna gain in the 2.4 GHz band, in 0.25 dBi units.
         Defaults to 0 (isotropic / unknown antenna, no derating applied),
         the safe assumption when a board does not characterize its antenna.
+        range [-127, 127].
 
     antenna-gain-5ghz-sb1:
       type: int
       default: 0
       description: |
-        Net antenna gain in 5 GHz sub-band 1 5180 MHz, in 0.25 dBi units.
-        Defaults to 0 (no derating), see antenna-gain-2g4hz.
+        Net antenna gain in 5 GHz sub-band 1 up to 5170 MHz, in 0.25 dBi units.
+        Defaults to 0 (no derating), see antenna-gain-2ghz.
+        range [-127, 127].
 
     antenna-gain-5ghz-sb2:
       type: int
       default: 0
       description: |
-        Net antenna gain in 5 GHz sub-band 2 5600 MHz, in 0.25 dBi units.
-        Defaults to 0 (no derating), see antenna-gain-2g4hz.
+        Net antenna gain in 5 GHz sub-band 2 up to 5320 MHz, in 0.25 dBi units.
+        Defaults to 0 (no derating), see antenna-gain-2ghz.
+        range [-127, 127].
 
     antenna-gain-5ghz-sb3:
       type: int
       default: 0
       description: |
-        Net antenna gain in 5 GHz sub-band 3 5825 MHz, in 0.25 dBi units.
-        Defaults to 0 (no derating), see antenna-gain-2g4hz.
+        Net antenna gain in 5 GHz sub-band 3 up to 5720 MHz, in 0.25 dBi units.
+        Defaults to 0 (no derating), see antenna-gain-2ghz.
+        range [-127, 127].
+
+    antenna-gain-5ghz-sb4:
+      type: int
+      default: 0
+      description: |
+        Net antenna gain in 5 GHz sub-band 4 up to 5935 MHz, in 0.25 dBi units.
+        Defaults to 0 (no derating), see antenna-gain-2ghz.
+        range [-127, 127].
