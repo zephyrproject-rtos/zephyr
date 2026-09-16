@@ -2195,8 +2195,8 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 	.bus_suspend = uhc_dwc2_bus_suspend,
 	.bus_resume = uhc_dwc2_bus_resume,
 	/* EP related */
-	.ep_enqueue = uhc_dwc2_enqueue,
-	.ep_dequeue = uhc_dwc2_dequeue,
+	.pipe_enqueue = uhc_dwc2_enqueue,
+	.pipe_dequeue = uhc_dwc2_dequeue,
 };
 
 #define UHC_DWC2_DT_INST_REG_ADDR(n)						\

@@ -127,40 +127,40 @@ static int alloc_device_address(struct usb_device *const udev, uint8_t *const ad
 	return -ENOENT;
 }
 
-enum ep_op {
-	EP_OP_TEST, /* Verify endpoint descriptor */
-	EP_OP_UP,   /* Enable endpoint and update endpoint pointers */
-	EP_OP_DOWN, /* Disable endpoint and update endpoint pointers */
+enum pipe_op {
+	PIPE_OP_TEST, /* Verify endpoint descriptor */
+	PIPE_OP_UP,   /* Enable endpoint and update endpoint pointers */
+	PIPE_OP_DOWN, /* Disable endpoint and update endpoint pointers */
 };
 
-static void assign_ep_desc_ptr(struct usb_device *const udev,
+static void assign_pipe_desc_ptr(struct usb_device *const udev,
 			       const uint8_t ep, void *const ptr)
 {
 	uint8_t idx = USB_EP_GET_IDX(ep) & 0xF;
 
 	if (USB_EP_DIR_IS_IN(ep)) {
-		udev->ep_in[idx].desc = ptr;
+		udev->pipe_in[idx].desc = ptr;
 	} else {
-		udev->ep_out[idx].desc = ptr;
+		udev->pipe_out[idx].desc = ptr;
 	}
 }
 
-static int handle_ep_op(struct usb_device *const udev,
-			const enum ep_op op, const uint8_t ep,
+static int handle_pipe_op(struct usb_device *const udev,
+			const enum pipe_op op, const uint8_t ep,
 			struct usb_ep_descriptor *const ep_desc)
 {
 	switch (op) {
-	case EP_OP_TEST:
+	case PIPE_OP_TEST:
 		break;
-	case EP_OP_UP:
+	case PIPE_OP_UP:
 		if (ep_desc == NULL) {
 			return -ENOTSUP;
 		}
 
-		assign_ep_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
+		assign_pipe_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
 		break;
-	case EP_OP_DOWN:
-		assign_ep_desc_ptr(udev, ep, NULL);
+	case PIPE_OP_DOWN:
+		assign_pipe_desc_ptr(udev, ep, NULL);
 		break;
 	}
 
@@ -168,7 +168,7 @@ static int handle_ep_op(struct usb_device *const udev,
 }
 
 static int device_interface_modify(struct usb_device *const udev,
-				   const enum ep_op op,
+				   const enum pipe_op op,
 				   const uint8_t iface, const uint8_t alt)
 {
 	struct usb_cfg_descriptor *cfg_desc = udev->cfg_desc;
@@ -203,7 +203,7 @@ static int device_interface_modify(struct usb_device *const udev,
 
 		if (dhp->bDescriptorType == USB_DESC_ENDPOINT && found_iface) {
 			ep_desc = (struct usb_ep_descriptor *)dhp;
-			err = handle_ep_op(udev, op, ep_desc->bEndpointAddress, ep_desc);
+			err = handle_pipe_op(udev, op, ep_desc->bEndpointAddress, ep_desc);
 			if (err) {
 				return err;
 			}
@@ -253,21 +253,21 @@ int usbh_device_interface_set(struct usb_device *const udev,
 	}
 
 	/* Test if interface and interface alternate exist */
-	err = device_interface_modify(udev, EP_OP_TEST, iface, alt);
+	err = device_interface_modify(udev, PIPE_OP_TEST, iface, alt);
 	if (err) {
 		LOG_ERR("No interface %u with alternate %u", iface, alt);
 		goto error;
 	}
 
 	/* Shutdown current interface alternate */
-	err = device_interface_modify(udev, EP_OP_DOWN, iface, cur_alt);
+	err = device_interface_modify(udev, PIPE_OP_DOWN, iface, cur_alt);
 	if (err) {
 		LOG_ERR("Failed to shutdown interface %u alternate %u", iface, cur_alt);
 		goto error;
 	}
 
 	/* Setup new interface alternate */
-	err = device_interface_modify(udev, EP_OP_UP, iface, alt);
+	err = device_interface_modify(udev, PIPE_OP_UP, iface, alt);
 	if (err) {
 		LOG_ERR("Failed to setup interface %u alternate %u", iface, alt);
 		goto error;
@@ -336,7 +336,7 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 				ep_desc->bEndpointAddress, ep_desc->wMaxPacketSize);
 
 			if (if_desc != NULL && if_desc->bAlternateSetting == 0) {
-				assign_ep_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
+				assign_pipe_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
 			}
 		}
 
@@ -354,8 +354,8 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 static void reset_configuration(struct usb_device *const udev)
 {
 	/* Reset all endpoint pointers */
-	memset(udev->ep_in, 0, sizeof(udev->ep_in));
-	memset(udev->ep_out, 0, sizeof(udev->ep_out));
+	memset(udev->pipe_in, 0, sizeof(udev->pipe_in));
+	memset(udev->pipe_out, 0, sizeof(udev->pipe_out));
 
 	/* Reset all interface pointers */
 	memset(udev->ifaces, 0, sizeof(udev->ifaces));

@@ -140,7 +140,7 @@ const void *usbh_desc_get_endpoint(const struct usb_device *const udev, const ui
 {
 	uint8_t idx = USB_EP_GET_IDX(ep) & 0xf;
 
-	return USB_EP_DIR_IS_IN(ep) ? udev->ep_in[idx].desc : udev->ep_out[idx].desc;
+	return USB_EP_DIR_IS_IN(ep) ? udev->pipe_in[idx].desc : udev->pipe_out[idx].desc;
 }
 
 int usbh_desc_fill_filter(const struct usb_desc_header *const desc,

@@ -10,7 +10,7 @@
 struct uhc_mcux_data {
 	const struct device *dev;
 	const usb_host_controller_interface_t *mcux_if;
-	/* TODO: Maybe make it to link with udev->ep_in and udev->ep_out */
+	/* TODO: Maybe make it to link with udev->pipe_in and udev->pipe_out */
 	usb_host_pipe_t *mcux_eps[USB_HOST_CONFIG_MAX_PIPES];
 	uint16_t mcux_eps_interval[USB_HOST_CONFIG_MAX_PIPES];
 	usb_host_instance_t mcux_host;

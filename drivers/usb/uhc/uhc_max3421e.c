@@ -1118,8 +1118,8 @@ static DEVICE_API(uhc, max3421e_uhc_api) = {
 	.bus_suspend = max3421e_bus_suspend,
 	.bus_resume = max3421e_bus_resume,
 
-	.ep_enqueue = max3421e_enqueue,
-	.ep_dequeue = max3421e_dequeue,
+	.pipe_enqueue = max3421e_enqueue,
+	.pipe_dequeue = max3421e_dequeue,
 };
 
 #define MAX3421E_DEFINE(id)                                                      \

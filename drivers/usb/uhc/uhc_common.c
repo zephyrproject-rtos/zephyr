@@ -117,9 +117,9 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		struct usb_ep_descriptor *ep_desc;
 
 		if (USB_EP_DIR_IS_IN(ep)) {
-			ep_desc = udev->ep_in[ep_idx].desc;
+			ep_desc = udev->pipe_in[ep_idx].desc;
 		} else {
-			ep_desc = udev->ep_out[ep_idx].desc;
+			ep_desc = udev->pipe_out[ep_idx].desc;
 		}
 
 		if (ep_desc == NULL) {
@@ -220,7 +220,7 @@ int uhc_xfer_buf_add(const struct device *dev,
 	return ret;
 }
 
-int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
+int uhc_pipe_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	int ret;
@@ -229,23 +229,22 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 
 	if (!uhc_is_initialized(dev)) {
 		ret = -EPERM;
-		goto ep_enqueue_error;
+		goto pipe_enqueue_error;
 	}
 
 	xfer->queued = 1;
-	ret = api->ep_enqueue(dev, xfer);
+	ret = api->pipe_enqueue(dev, xfer);
 	if (ret) {
 		xfer->queued = 0;
 	}
 
-
-ep_enqueue_error:
+pipe_enqueue_error:
 	api->unlock(dev);
 
 	return ret;
 }
 
-int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
+int uhc_pipe_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	int ret;
@@ -254,13 +253,13 @@ int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 
 	if (!uhc_is_initialized(dev)) {
 		ret = -EPERM;
-		goto ep_dequeue_error;
+		goto pipe_dequeue_error;
 	}
 
-	ret = api->ep_dequeue(dev, xfer);
+	ret = api->pipe_dequeue(dev, xfer);
 	xfer->queued = 0;
 
-ep_dequeue_error:
+pipe_dequeue_error:
 	api->unlock(dev);
 
 	return ret;

@@ -63,7 +63,10 @@ struct usb_host_interface {
 	uint8_t alternate;
 };
 
-struct usb_host_ep {
+/**
+ * @brief USB host pipe, the controller side of a device endpoint
+ */
+struct usb_host_pipe {
 	/** Pointer to the endpoint descriptor */
 	struct usb_ep_descriptor *desc;
 };
@@ -92,10 +95,10 @@ struct usb_device {
 	void *cfg_desc;
 	/** Pointers to device interfaces */
 	struct usb_host_interface ifaces[UHC_INTERFACES_MAX + 1];
-	/** Pointers to device OUT endpoints */
-	struct usb_host_ep ep_out[16];
-	/** Pointers to device IN endpoints */
-	struct usb_host_ep ep_in[16];
+	/** Pipes of the device OUT endpoints */
+	struct usb_host_pipe pipe_out[16];
+	/** Pipes of the device IN endpoints */
+	struct usb_host_pipe pipe_in[16];
 };
 
 /**
@@ -307,10 +310,8 @@ __subsystem struct uhc_driver_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
-	int (*ep_enqueue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
-	int (*ep_dequeue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
+	int (*pipe_enqueue)(const struct device *dev, struct uhc_transfer *const xfer);
+	int (*pipe_dequeue)(const struct device *dev, struct uhc_transfer *const xfer);
 };
 /**
  * @endcond
@@ -512,7 +513,7 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  */
-int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
+int uhc_pipe_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Remove a USB host controller transfers from queue
@@ -525,7 +526,7 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  */
-int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
+int uhc_pipe_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Initialize USB host controller

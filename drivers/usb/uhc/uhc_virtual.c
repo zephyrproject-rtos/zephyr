@@ -647,8 +647,8 @@ static DEVICE_API(uhc, uhc_vrt_api) = {
 	.bus_suspend = uhc_vrt_bus_suspend,
 	.bus_resume = uhc_vrt_bus_resume,
 
-	.ep_enqueue = uhc_vrt_enqueue,
-	.ep_dequeue = uhc_vrt_dequeue,
+	.pipe_enqueue = uhc_vrt_enqueue,
+	.pipe_dequeue = uhc_vrt_dequeue,
 };
 
 #define DT_DRV_COMPAT zephyr_uhc_virtual
