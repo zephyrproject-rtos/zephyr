@@ -16,4 +16,12 @@ endif # RISCV
 config DUMP_INTC_TABLE
 	bool "Enable to dump the content of intc table"
 
+config TEST_ISR_TABLE_PLACEMENT
+	bool "Build the tests in isr_table_placement.c"
+	help
+	  Check the slot gen_isr_tables.py places a statically connected handler
+	  in against the slot z_get_sw_isr_table_idx() resolves it to at runtime.
+	  Needs the aggregator offsets that the scenario enabling this sets, so
+	  it is off by default.
+
 source "Kconfig.zephyr"
