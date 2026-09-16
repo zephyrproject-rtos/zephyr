@@ -82,7 +82,7 @@
 };
 
 &enetc_psi0 {
-	local-mac-address = [00 00 00 01 02 00];
+	zephyr,random-mac-address;
 	pinctrl-0 = <&eth4_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy4>;
@@ -91,7 +91,7 @@
 
 /* Internal port */
 &enetc_psi1 {
-	local-mac-address = [00 00 00 01 03 00];
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
