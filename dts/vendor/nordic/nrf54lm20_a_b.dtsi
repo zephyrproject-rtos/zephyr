@@ -673,6 +673,7 @@
 				interrupts = <232 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				clocks = <&pclk32m>;
+				clock-names = "pclk";
 			};
 
 			i2c23: i2c@ed000 {

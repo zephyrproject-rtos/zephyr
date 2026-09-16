@@ -1725,7 +1725,8 @@
 				reg = <0x992000 0x1000>;
 				interrupts = <402 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
-				clocks = <&fll16m>;
+				clocks = <&fll16m>, <&audiopll>;
+				clock-names = "pclk", "aclk";
 				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
 							 <NRF_FUN_TDM_MCK>;
 			};
@@ -1738,7 +1739,8 @@
 				reg = <0x997000 0x1000>;
 				interrupts = <407 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
-				clocks = <&fll16m>;
+				clocks = <&fll16m>, <&audiopll>;
+				clock-names = "pclk", "aclk";
 				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
 							 <NRF_FUN_TDM_MCK>;
 			};
