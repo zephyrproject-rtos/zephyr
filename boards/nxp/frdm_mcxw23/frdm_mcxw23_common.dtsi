@@ -17,6 +17,7 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,uart-pipe = &flexcomm0;
+		zephyr,bt-c2h-uart = &flexcomm0;
 		zephyr,flash-controller = &iap;
 		zephyr,crc = &crc;
 	};
