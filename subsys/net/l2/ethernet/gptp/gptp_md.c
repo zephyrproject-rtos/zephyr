@@ -163,7 +163,9 @@ static int gptp_set_md_sync_receive(int port,
 
 	sync_rcv->upstream_tx_time -= delay_asymmetry_rated;
 
-	sync_rcv->rate_ratio = net_ntohl(fup->tlv.cumulative_scaled_rate_offset);
+	int32_t signed_cumulative_scaled_rate_offset =
+		(int32_t)net_ntohl(fup->tlv.cumulative_scaled_rate_offset);
+	sync_rcv->rate_ratio = (double)signed_cumulative_scaled_rate_offset;
 	sync_rcv->rate_ratio /= GPTP_POW2_41;
 	sync_rcv->rate_ratio += 1;
 
