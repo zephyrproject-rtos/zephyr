@@ -1,0 +1,42 @@
+# Copyright 2026 Sacra Systems Private Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Device-tree binding for the Texas Instruments ADS1262.
+
+description: |
+  Texas Instruments ADS1262 32-bit Precision ADC
+
+  ADS1262 — 32-bit 38.4 kSPS single-channel delta-sigma ADC
+    • ADC1: 32-bit, up to 38.4 kSPS, 10-channel MUX, PGA (1..32)
+    • No ADC2, no GPIO, no AC excitation, no TDAC
+    • SPI interface, DRDY interrupt output
+
+  Example DTS node:
+
+  &spi1 {
+      cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+
+      ads1262: adc@0 {
+          compatible = "ti,ads1262";
+          reg = <0>;
+          spi-max-frequency = <10000000>;
+
+          drdy-gpios  = <&gpiob 0 GPIO_ACTIVE_LOW>;
+          reset-gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+      };
+  };
+
+compatible: "ti,ads1262"
+
+include:
+  - name: spi-device.yaml
+  - name: adc-controller.yaml
+  - name: ti,ads126x-common.yaml
+
+properties:
+  chip-id:
+    type: int
+    default: 0        # ADS126X_CHIP_ADS1262 = 0  (set fixed by this binding)
+    description: |
+      Identifies the chip variant to the driver.  Fixed to 0 (ADS1262).
+      Do not override.

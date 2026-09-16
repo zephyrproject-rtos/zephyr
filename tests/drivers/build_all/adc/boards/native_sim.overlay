@@ -625,6 +625,22 @@
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 			};
+
+			test_spi_ads1262: ads1262@33 {
+				compatible = "ti,ads1262";
+				reg = <0x33>;
+				spi-max-frequency = <1000000>;
+				drdy-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ads1263: ads1263@34 {
+				compatible = "ti,ads1263";
+				reg = <0x34>;
+				spi-max-frequency = <1000000>;
+				drdy-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+				#io-channel-cells = <1>;
+			};
 		};
 	};
 };
