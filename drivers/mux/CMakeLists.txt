@@ -13,4 +13,6 @@ zephyr_library_sources_ifdef(CONFIG_MUX_GPIO          mux_gpio.c)
 zephyr_library_sources_ifdef(CONFIG_MUX_NXP_INPUTMUX  mux_nxp_inputmux.c)
 zephyr_library_sources_ifdef(CONFIG_MUX_NXP_TRGMUX    mux_nxp_trgmux.c)
 zephyr_library_sources_ifdef(CONFIG_MUX_NXP_XBAR      mux_nxp_xbar.c)
+zephyr_library_sources_ifdef(CONFIG_MUX_TI_AM13E230_XBAR_IN  mux_ti_am13e230_xbar_in.c)
+zephyr_library_sources_ifdef(CONFIG_MUX_TI_AM13E230_XBAR_OUT mux_ti_am13e230_xbar_out.c)
 # zephyr-keep-sorted-stop

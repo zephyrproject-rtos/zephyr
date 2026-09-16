@@ -9,6 +9,31 @@
 #include <freq.h>
 
 / {
+	soc {
+		pinctrl: pin-controller@400cc000 {
+			compatible = "ti,mspm0-pinctrl";
+			reg = <0x400cc000 0x400>;
+		};
+
+		xbar1: xbar@40468000 {
+			compatible = "ti,am13e230-xbar-in";
+			reg = <0x40468000 0x1000>;
+
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+			status = "disabled";
+		};
+
+		xbar2: xbar@4046a000 {
+			compatible = "ti,am13e230-xbar-out";
+			reg = <0x4046a000 0x1000>;
+
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+			status = "disabled";
+		};
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -25,6 +50,118 @@
 		mpu: mpu@e000ed90 {
 			compatible = "arm,armv8m-mpu";
 			reg = <0xe000ed90 0x40>;
+		};
+	};
+
+	ckm: clock-module {
+		compatible = "ti,mspm0-ckm";
+		#clock-cells = <1>;
+		sysctl = <&sysctl>;
+		factoryregion = <&factoryregion>;
+		fri = <&fri>;
+	};
+
+	oscillators: oscillators {
+		hfxt: hfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			status = "disabled";
+		};
+
+		lfxt: lfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			status = "disabled";
+		};
+
+		lfosc: lfosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <32768>;
+		};
+
+		sysosc: sysosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+	};
+
+	clocks: clocks {
+		hfclk: hfclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+
+		hsclk: hsclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+
+		lfclk: lfclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			clocks = <&lfosc>;
+		};
+
+		ulpclk: ulpclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+		};
+
+		mclk: mclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			clocks = <&sysosc>;
+		};
+
+		mclk_div_2: mclk_div_2 {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			clk-div = <2>;
+		};
+
+		mclk_div_4: mclk_div_4 {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			clk-div = <4>;
+		};
+
+		canclk: canclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+
+		syspll: syspll {
+			compatible = "ti,mspm0-pll";
+			clocks = <&sysosc>;
+			p-div = <2>;
+			q-div = <25>;
+			clk1-div = <2>;
+			clk0-div = <2>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	soc {
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+			status = "okay";
+		};
+
+		factoryregion: syscon@60111000 {
+			compatible = "syscon";
+			reg = <0x60111000 0x80>;
+		};
+
+		fri: syscon@40028000 {
+			compatible = "syscon";
+			reg = <0x40028000 0x2000>;
 		};
 	};
 };

@@ -5,6 +5,7 @@
  */
 
 #include "am13e.dtsi"
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
 
 / {
 	#address-cells = <1>;
