@@ -884,7 +884,7 @@ static inline int display_register_event_cb(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	api->get_capabilities(dev, &caps);
+	display_get_capabilities(dev, &caps);
 	if (!caps.supported_events) {
 		return -ENOSYS;
 	}
