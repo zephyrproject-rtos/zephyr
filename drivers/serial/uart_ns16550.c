@@ -2015,12 +2015,17 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 		    (DT_INST_IRQ(n, flags)),                                  \
 		    (0))
 
+#define UART_NS16550_IRQ_PRIORITY(n) \
+	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, priority),                        \
+		    (DT_INST_IRQ(n, priority)),                               \
+		    (0))
+
 /* IO-port or MMIO based UART */
 #define UART_NS16550_IRQ_CONFIG(n)                                            \
 	static void uart_ns16550_irq_config_func##n(const struct device *dev) \
 	{                                                                     \
 		ARG_UNUSED(dev);                                              \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	      \
+		IRQ_CONNECT(DT_INST_IRQN(n), UART_NS16550_IRQ_PRIORITY(n),    \
 			    uart_ns16550_isr, DEVICE_DT_INST_GET(n),	      \
 			    UART_NS16550_IRQ_FLAGS(n));			      \
 		irq_enable(DT_INST_IRQN(n));                                  \
@@ -2038,7 +2043,7 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 			return;                                               \
 		}                                                             \
 		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq,	      \
-				     DT_INST_IRQ(n, priority),		      \
+				     UART_NS16550_IRQ_PRIORITY(n),	      \
 				    (void (*)(const void *))uart_ns16550_isr, \
 				    DEVICE_DT_INST_GET(n),                    \
 				    UART_NS16550_IRQ_FLAGS(n));               \
