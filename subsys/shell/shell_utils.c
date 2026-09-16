@@ -59,14 +59,14 @@ static inline bool is_section_cmd(const union shell_cmd_entry *entry)
 
 /* Calculates relative line number of given position in buffer */
 static uint32_t line_num_with_buffer_offset_get(struct shell_multiline_cons *cons,
-					     uint16_t buffer_pos)
+						uint16_t buffer_pos)
 {
 	return ((buffer_pos + cons->name_len) / cons->terminal_wid);
 }
 
 /* Calculates column number of given position in buffer */
 static uint32_t col_num_with_buffer_offset_get(struct shell_multiline_cons *cons,
-					    uint16_t buffer_pos)
+					       uint16_t buffer_pos)
 {
 	/* columns are counted from 1 */
 	return (1 + ((buffer_pos + cons->name_len) % cons->terminal_wid));
@@ -76,16 +76,16 @@ int32_t z_column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
 					      uint16_t offset1,
 					      uint16_t offset2)
 {
-	return col_num_with_buffer_offset_get(cons, offset2)
-			- col_num_with_buffer_offset_get(cons, offset1);
+	return col_num_with_buffer_offset_get(cons, offset2) -
+	       col_num_with_buffer_offset_get(cons, offset1);
 }
 
 int32_t z_row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
 					   uint16_t offset1,
 					   uint16_t offset2)
 {
-	return line_num_with_buffer_offset_get(cons, offset2)
-		- line_num_with_buffer_offset_get(cons, offset1);
+	return line_num_with_buffer_offset_get(cons, offset2) -
+	       line_num_with_buffer_offset_get(cons, offset1);
 }
 
 void z_shell_multiline_data_calc(struct shell_multiline_cons *cons,
@@ -199,7 +199,7 @@ static char make_argv(char **ppcmd, uint8_t c)
 			}
 		}
 
-		if (!quote && isspace((int) c) != 0) {
+		if (!quote && isspace((int)c) != 0) {
 			break;
 		}
 
@@ -224,7 +224,7 @@ char z_shell_make_argv(size_t *argc, const char **argv, char *cmd,
 			break;
 		}
 
-		if (isspace((int) c) != 0) {
+		if (isspace((int)c) != 0) {
 			*cmd++ = '\0';
 			continue;
 		}
@@ -251,7 +251,7 @@ void z_shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern)
 
 	if (pattern_addr > buff) {
 		if (*(pattern_addr - 1) == ' ') {
-			pattern_len++; /* space needs to be removed as well */
+			pattern_len++;  /* space needs to be removed as well */
 			pattern_addr--; /* set pointer to space */
 		}
 	}
@@ -324,7 +324,6 @@ const struct shell_static_entry *z_shell_cmd_get(
 			} else {
 				entry_list = parent->subcmd->entry;
 			}
-
 
 			if (entry_list[idx].syntax != NULL) {
 				res = &entry_list[idx];
@@ -526,9 +525,6 @@ int shell_set_root_cmd(const char *cmd)
 	return 0;
 }
 
-
-
-
 void z_shell_spaces_trim(char *str)
 {
 	uint16_t len = z_shell_strlen(str);
@@ -573,7 +569,7 @@ static void buffer_trim(char *buff, uint16_t *buff_len)
 		return;
 	}
 
-	while (isspace((int) buff[*buff_len - 1U]) != 0) {
+	while (isspace((int)buff[*buff_len - 1U]) != 0) {
 		*buff_len -= 1U;
 		if (*buff_len == 0U) {
 			buff[0] = '\0';
@@ -585,9 +581,8 @@ static void buffer_trim(char *buff, uint16_t *buff_len)
 	/* Counting whitespace characters starting from beginning of the
 	 * command.
 	 */
-	while (isspace((int) buff[i++]) != 0) {
+	while (isspace((int)buff[i++]) != 0) {
 	}
-
 
 	/* Removing counted whitespace characters. */
 	if (--i > 0) {
@@ -620,17 +615,12 @@ static const struct device *shell_device_internal(size_t idx,
 	size_t prefix_len = (prefix != NULL) ? strlen(prefix) : 0;
 
 	while (dev < dev_end) {
-		if ((status == SHELL_DEVICE_STATUS_ANY
-		     || (status == SHELL_DEVICE_STATUS_READY &&
-			 device_is_ready(dev))
-		     || (status == SHELL_DEVICE_STATUS_NON_READY &&
-			 !device_is_ready(dev)))
-		    && (dev->name != NULL)
-		    && (strlen(dev->name) != 0)
-		    && ((prefix == NULL)
-			|| (strncmp(prefix, dev->name,
-				    prefix_len) == 0))
-		    && (filter == NULL || filter(dev))) {
+		if ((status == SHELL_DEVICE_STATUS_ANY ||
+		     (status == SHELL_DEVICE_STATUS_READY && device_is_ready(dev)) ||
+		     (status == SHELL_DEVICE_STATUS_NON_READY && !device_is_ready(dev))) &&
+		    (dev->name != NULL) && (strlen(dev->name) != 0) &&
+		    ((prefix == NULL) || (strncmp(prefix, dev->name, prefix_len) == 0)) &&
+		    (filter == NULL || filter(dev))) {
 			if (match_idx == idx) {
 				return dev;
 			}
