@@ -27,4 +27,8 @@ module = RADIO
 module-str = Radio
 source "subsys/logging/Kconfig.template.log_config"
 
+# zephyr-keep-sorted-start
+source "drivers/radio/Kconfig.silabs"
+# zephyr-keep-sorted-stop
+
 endif
