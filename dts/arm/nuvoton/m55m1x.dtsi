@@ -375,6 +375,7 @@
 			phy-addr = <0>;
 			clocks = <&pcc NUMAKER_EMAC0_MODULE 0 0>;
 			snps,perfect-filter-entries = <9>;
+			phy-connection-type = "rmii";
 			status = "disabled";
 		};
 
