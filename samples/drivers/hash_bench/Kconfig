@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config HASH_BENCH_IO_ALIGNMENT_BYTES
+	int "Alignment (bytes) for hash bench IO buffers"
+	default 4
+	help
+	  Alignment (in bytes) applied to the hash bench input and output
+	  buffers. Some crypto drivers require IO buffers handed to them to
+	  be cache-line aligned so that the driver's cache-maintenance
+	  operations do not corrupt unrelated data sharing a partial cache
+	  line. Boards whose crypto driver has this requirement should
+	  override this value (typically to the D-Cache line size) via a
+	  board overlay.
