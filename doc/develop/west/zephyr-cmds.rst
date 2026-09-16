@@ -297,6 +297,44 @@ under their original filename or with a SHA-256 suffix (``<filename>.<sha>``).
 If found, the blob is copied from the cache to the blob path; otherwise
 it is downloaded from its URL(s) to the blob path.
 
+One or more download mirrors can be configured via the ``blobs.mirrors``
+config option. Its value maps a remote URL prefix to one or more mirror URL
+prefixes, and can be written in any of the following JSON forms.
+
+A JSON object mapping a remote URL prefix to a mirror URL prefix::
+
+  west config blobs.mirrors '{"https://github.com/": "https://example.com/github-mirror/"}'
+
+A JSON list, where each element is a JSON object mapping exactly one remote
+URL prefix to a mirror URL prefix::
+
+  west config blobs.mirrors '[
+    {"https://github1.com/": "https://example.com/github1-mirror/"},
+    {"https://github2.com/": "https://example.com/github2-mirror/"}
+  ]'
+
+A JSON object mapping a remote URL prefix to a list of mirror URL prefixes,
+tried in list order::
+
+  west config blobs.mirrors '{
+    "https://github.com/": [
+      "https://example.com/github1-mirror/",
+      "https://example.com/github2-mirror/"
+    ]
+  }'
+
+Mirror URLs must use the ``http://`` or ``https://`` scheme (matched
+case-insensitively); other schemes (such as ``ssh://``) cannot be used to
+download blobs.
+
+For each blob URL, every mirror whose remote URL prefix matches
+(case-insensitively) is tried, ordered so that the *longest* (most
+specific) matching remote URL prefix is tried first (like git's
+``insteadOf``); mirrors for shorter, less specific matches are tried
+afterward. Mirrors configured for the same remote URL prefix are tried in
+the order they are listed. The original URL is tried last, as a fallback
+if every mirror fails.
+
 .. _west-twister:
 
 Twister wrapper: ``west twister``

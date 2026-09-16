@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -30,6 +31,8 @@ class Blobs(WestCommand):
             description='Work with binary blobs',
             accepts_unknown_args=False,
         )
+        # Sentinel: not yet loaded from config, as opposed to loaded-but-empty.
+        self._mirrors = None
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
@@ -192,8 +195,96 @@ class Blobs(WestCommand):
                     return candidate_path
         return None
 
+    def get_mirrors(self):
+        '''Read and validate the 'blobs.mirrors' config option.
+
+        Returns a list of (remote, mirror) URL prefix pairs, in config
+        order. Invalid configuration is a fatal error.
+        '''
+        if not self.has_config:
+            return []
+
+        mirrors = self.config.get('blobs.mirrors')
+        if mirrors is None:
+            return []
+
+        expected_format = textwrap.dedent('''\
+            one of the following:
+              a JSON object mapping a remote URL prefix to a mirror URL prefix, e.g.
+                '{"https://github.com/": "https://example.com/github-mirror/"}'
+              a JSON list, each element mapping one remote URL prefix to a mirror, e.g.
+                '[{"https://github1.com/": "https://example.com/github1-mirror/"}, {"https://github2.com/": "https://example.com/github2-mirror/"}]'
+              a JSON object mapping a remote URL prefix to a list of mirrors, e.g.
+                '{"https://github.com/": ["https://example.com/github1-mirror/", "https://example.com/github2-mirror/"]}\'''')  # noqa: E501
+
+        try:
+            parsed_mirrors = json.loads(mirrors)
+        except (TypeError, json.JSONDecodeError) as e:
+            self.die(
+                f"Invalid 'blobs.mirrors' configuration {mirrors!r}: "
+                f"not valid JSON ({e}); expected {expected_format}"
+            )
+
+        valid_mirrors = []
+
+        def add_mirror(remote, mirror):
+            if not isinstance(mirror, str):
+                self.die(
+                    f"Invalid 'blobs.mirrors' entry {remote!r}: {mirror!r}: "
+                    f"expected {expected_format}"
+                )
+            if not mirror.lower().startswith(('http://', 'https://')):
+                self.die(
+                    f"Invalid 'blobs.mirrors' entry {remote!r}: {mirror!r}: "
+                    "mirror URL must use the 'http://' or 'https://' scheme"
+                )
+            valid_mirrors.append((remote, mirror))
+
+        def add_remote(remote, mirrors_value):
+            if isinstance(mirrors_value, list):
+                for mirror in mirrors_value:
+                    add_mirror(remote, mirror)
+            else:
+                add_mirror(remote, mirrors_value)
+
+        if isinstance(parsed_mirrors, dict):
+            # {"<remote>": "<mirror>"} or {"<remote>": ["<mirror>", ...]}
+            for remote, mirrors_value in parsed_mirrors.items():
+                add_remote(remote, mirrors_value)
+        elif isinstance(parsed_mirrors, list):
+            # [{"<remote>": "<mirror>"}, ...] (each object has a single key)
+            for entry in parsed_mirrors:
+                if not isinstance(entry, dict) or len(entry) != 1:
+                    self.die(f"Invalid 'blobs.mirrors' entry {entry!r}: expected {expected_format}")
+                remote, mirrors_value = next(iter(entry.items()))
+                add_remote(remote, mirrors_value)
+        else:
+            self.die(
+                f"Invalid 'blobs.mirrors' configuration {mirrors!r}: expected {expected_format}"
+            )
+
+        return valid_mirrors
+
+    def get_valid_mirrors(self, url):
+        '''Return the mirror URL(s) for every remote URL prefix in
+        self._mirrors that matches *url*, ordered so that the longest
+        (most specific) remote URL prefix comes first (like git's
+        "insteadOf"). Returns [] if none match.
+        '''
+        if self._mirrors is None:
+            self._mirrors = self.get_mirrors()
+
+        matches = [
+            (remote, mirror)
+            for remote, mirror in self._mirrors
+            if url.lower().startswith(remote.lower())
+        ]
+        matches.sort(key=lambda match: len(match[0]), reverse=True)
+
+        return [mirror + url[len(remote) :] for remote, mirror in matches]
+
     def download_blob(self, blob, path):
-        '''Download a blob from its url to a given path.
+        '''Download a blob from its urls and url mirrors to a given path.
 
         Each URL is tried in order until one provides a download with a
         matching checksum. A download whose checksum does not match is
@@ -203,6 +294,13 @@ class Blobs(WestCommand):
         urls = blob['url']
         if not isinstance(urls, list):
             urls = (urls,)
+
+        # Try each mirror before the original URL it was configured for.
+        urls_with_mirrors = []
+        for url in urls:
+            urls_with_mirrors.extend(self.get_valid_mirrors(url))
+            urls_with_mirrors.append(url)
+        urls = urls_with_mirrors
 
         downloaded = False
         for i, url in enumerate(urls):
