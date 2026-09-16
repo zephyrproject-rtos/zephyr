@@ -139,6 +139,16 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 		return -ENOMEM;
 	}
 
+	/*
+	 * The window value is derived by subtracting the lower window bound from
+	 * the timeout, so reject an inverted window before it underflows.
+	 */
+	if (cfg->window.min > cfg->window.max) {
+		LOG_ERR("Invalid window: min %u is above max %u", cfg->window.min,
+			cfg->window.max);
+		return -EINVAL;
+	}
+
 	ret = mcux_wwdt_get_clock_frequency(dev, &clock_freq);
 	if (ret) {
 		return ret;
