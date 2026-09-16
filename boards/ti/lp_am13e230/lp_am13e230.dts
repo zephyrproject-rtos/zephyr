@@ -7,6 +7,9 @@
 /dts-v1/;
 
 #include <ti/am13/am13e23019.dtsi>
+#include <ti/am13/am13e23019-pinctrl.dtsi>
+#include <zephyr/dt-bindings/mux/ti_am13e230_xbar_in.h>
+#include <zephyr/dt-bindings/mux/ti_am13e230_xbar_out.h>
 
 / {
 	model = "TI AM13E230X Launchpad";
@@ -16,4 +19,69 @@
 		zephyr,sram = &sram0_1_2;
 		zephyr,flash = &flash0;
 	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(200)>;
+};
+
+&mclk {
+	clocks = <&hsclk>;
+};
+
+&hsclk {
+	clocks = <&syspll>;
+	status = "okay";
+};
+
+&syspll {
+	status = "okay";
+};
+
+&hfxt {
+	clock-frequency = <DT_FREQ_M(48)>;
+	ti,xtal-startup-delay-us = <500>;
+};
+
+/* PB4, plain GPIO function: the Input X-BAR reads pins by raw GPIO
+ * number, so the eCAP1 capture pin just needs the digital input buffer.
+ */
+&gpio_pb4 {
+	input-enable;
+};
+
+&xbar1 {
+	status = "okay";
+};
+
+&xbar2 {
+	status = "okay";
+};
+
+&ecap0 {
+	status = "okay";
+	interrupts = <29 0>;
+
+	pinctrl-0 = <&outputxbar8_pb3>;
+	pinctrl-names = "default";
+
+	/* ECAP0 -> OUTPUTXBAR8 (idx 7) -> G1SEL bit 4 -> PB3 */
+	mux-states = <&xbar2 AM13E230_XBAR_OUT_CTRL(7, 1, 4) 1>;
+	mux-state-names = "output";
+};
+
+&ecap1 {
+	status = "okay";
+	interrupts = <30 0>;
+
+	pinctrl-0 = <&gpio_pb4>;
+	pinctrl-names = "default";
+
+	/*
+	 * PB4 -> GPIO36 -> INPUTXBAR1 (channel 0) -> ECAP1 ECCTL0.INPUTSEL.
+	 * raw=1: no AM13E GPIO driver exists yet, so the GPIO-module-
+	 * processed path (raw=0) never carries a live signal.
+	 */
+	mux-states = <&xbar1 0 AM13E230_XBAR_IN_STATE(36, 1)>;
+	mux-state-names = "input";
 };
