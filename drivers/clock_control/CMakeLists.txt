@@ -8,6 +8,7 @@ if(CONFIG_CLOCK_CONTROL_RENESAS_RZA2M_CPG)
 endif()
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
+  zephyr_library_sources(clock_stm32_dt.c)
   zephyr_library_sources_ifdef(CONFIG_CLOCK_STM32_MUX clock_stm32_mux.c)
   zephyr_library_sources_ifdef(CONFIG_CLOCK_STM32_MCO clock_stm32_mco.c)
   if(CONFIG_SOC_SERIES_STM32MP1X)
