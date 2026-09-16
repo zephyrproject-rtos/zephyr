@@ -53,4 +53,6 @@ config RISCV_AIA
 	depends on (!RISCV_S_MODE && RISCV_ISA_EXT_SMAIA) || \
 			(RISCV_S_MODE && RISCV_ISA_EXT_SSAIA)
 	select MULTI_LEVEL_INTERRUPTS
+	# The SoC's AIA is its root interrupt controller
+	select INTC_ROOT if RISCV_HAS_AIA
 	select 2ND_LEVEL_INTERRUPTS

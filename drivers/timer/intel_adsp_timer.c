@@ -6,7 +6,6 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
-#include <zephyr/drivers/interrupt_controller/dw_ace.h>
 
 #include <cavs-idc.h>
 #include <adsp_shim.h>

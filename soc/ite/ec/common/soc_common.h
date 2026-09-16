@@ -39,10 +39,7 @@ void ite_intc_save_and_disable_interrupts(void);
 /* Restore interrupt state of soc-level from ier_setting[], use with care. */
 void ite_intc_restore_interrupts(void);
 
-extern void ite_intc_irq_enable(unsigned int irq);
-extern void ite_intc_irq_disable(unsigned int irq);
 extern ite_irq_t ite_intc_get_irq_num(void);
-extern int ite_intc_irq_is_enable(unsigned int irq);
 extern void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags);
 extern void ite_intc_isr_clear(unsigned int irq);
 void ite_intc_init(void);

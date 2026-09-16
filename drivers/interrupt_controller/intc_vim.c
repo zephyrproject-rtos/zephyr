@@ -11,7 +11,9 @@
 
 #include <zephyr/arch/arm/irq.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/drivers/interrupt_controller/intc_vim.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -20,7 +22,8 @@
 
 LOG_MODULE_REGISTER(vim);
 
-unsigned int z_vim_irq_get_active(void)
+/* The VIM is the root interrupt controller of the K3 Cortex-R5 cores */
+unsigned int intc_root_get_active(void)
 {
 	uint32_t irq_group_num, irq_bit_num;
 	uint32_t actirq, vec_addr;
@@ -51,14 +54,16 @@ unsigned int z_vim_irq_get_active(void)
 	return (actirq & VIM_ACTIRQ_NUM_MASK);
 }
 
-void z_vim_irq_eoi(unsigned int irq)
+void intc_root_eoi(unsigned int irq)
 {
 	sys_write32(0, VIM_IRQVEC);
 }
 
-void z_vim_irq_init(void)
+static int vim_init(const struct device *dev)
 {
 	uint32_t num_of_irqs = sys_read32(VIM_INFO) & VIM_INFO_INTERRUPTS_MASK;
+
+	ARG_UNUSED(dev);
 
 	__ASSERT(CONFIG_NUM_IRQS <= num_of_irqs,
 		 "Zephyr configured with more interrupts (%d) than what hardware supports "
@@ -70,9 +75,13 @@ void z_vim_irq_init(void)
 	for (int i = 0; i <= VIM_MAX_GROUP_NUM; i++) {
 		sys_write32(VIM_GRP_INTR_EN_CLR_MSK_MASK, VIM_INTR_EN_CLR(i));
 	}
+
+	return 0;
 }
 
-void z_vim_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+DEVICE_DT_INST_DEFINE(0, vim_init, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+
+void intc_root_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	uint32_t irq_group_num, irq_bit_num, regval;
 
@@ -99,7 +108,7 @@ void z_vim_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	sys_write32(regval, VIM_INTTYPE(irq_group_num));
 }
 
-void z_vim_irq_enable(unsigned int irq)
+void intc_root_enable(unsigned int irq)
 {
 	uint32_t irq_group_num, irq_bit_num;
 
@@ -114,7 +123,7 @@ void z_vim_irq_enable(unsigned int irq)
 	sys_write32(BIT(irq_bit_num), VIM_INTR_EN_SET(irq_group_num));
 }
 
-void z_vim_irq_disable(unsigned int irq)
+void intc_root_disable(unsigned int irq)
 {
 	uint32_t irq_group_num, irq_bit_num;
 
@@ -129,7 +138,7 @@ void z_vim_irq_disable(unsigned int irq)
 	sys_write32(BIT(irq_bit_num), VIM_INTR_EN_CLR(irq_group_num));
 }
 
-int z_vim_irq_is_enabled(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
 	uint32_t irq_group_num, irq_bit_num, regval;
 

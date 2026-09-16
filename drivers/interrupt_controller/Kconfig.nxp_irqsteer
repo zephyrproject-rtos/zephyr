@@ -6,6 +6,8 @@ config NXP_IRQSTEER
 	default y
 	depends on DT_HAS_NXP_IRQSTEER_INTC_ENABLED
 	depends on MULTI_LEVEL_INTERRUPTS
+	# IRQSTEER owns the multi-level routing: it provides the root API
+	select INTC_ROOT if !ARM_CUSTOM_INTERRUPT_CONTROLLER
 	help
 		The IRQSTEER INTC provides support for MUX-ing
 		multiple interrupts from peripheral to one or

@@ -17,7 +17,7 @@
 #define DT_DRV_COMPAT gaisler_irqmp
 
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/interrupt_controller/intc_irqmp.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/device.h>
 
 /*
@@ -59,7 +59,8 @@ static int get_irqmp_eirq(void)
 	return DT_INST_PROP(0, eirq);
 }
 
-void intc_irqmp_irq_enable(unsigned int source)
+/* The IRQMP is the root interrupt controller of LEON systems */
+void intc_root_enable(unsigned int source)
 {
 	volatile struct irqmp_regs *regs = get_irqmp_regs();
 	volatile uint32_t *pimask = &regs->pimask[0];
@@ -71,7 +72,7 @@ void intc_irqmp_irq_enable(unsigned int source)
 	arch_irq_unlock(key);
 }
 
-void intc_irqmp_irq_disable(unsigned int source)
+void intc_root_disable(unsigned int source)
 {
 	volatile struct irqmp_regs *regs = get_irqmp_regs();
 	volatile uint32_t *pimask = &regs->pimask[0];
@@ -83,7 +84,7 @@ void intc_irqmp_irq_disable(unsigned int source)
 	arch_irq_unlock(key);
 }
 
-int intc_irqmp_irq_is_enabled(unsigned int source)
+int intc_root_is_enabled(unsigned int source)
 {
 	volatile struct irqmp_regs *regs = get_irqmp_regs();
 	volatile uint32_t *pimask = &regs->pimask[0];
@@ -91,7 +92,7 @@ int intc_irqmp_irq_is_enabled(unsigned int source)
 	return !!(*pimask & (1U << source));
 }
 
-int intc_irqmp_get_source(int irl)
+int intc_root_sparc_get_source(int irl)
 {
 	volatile struct irqmp_regs *regs = get_irqmp_regs();
 	const int eirq = get_irqmp_eirq();

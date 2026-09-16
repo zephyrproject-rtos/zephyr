@@ -6,6 +6,7 @@ config SWERV_PIC
 	bool "Cadence SweRV Programmable Interrupt Controller (PIC)"
 	default y
 	depends on DT_HAS_CDNS_SWERV_PIC_ENABLED || DT_HAS_SWERV_PIC_ENABLED
+	select INTC_ROOT
 	help
 	  Programmable Interrupt Controller for the Cadence SweRV RISC-V CPU.
 

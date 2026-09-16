@@ -15,7 +15,7 @@ description: |
     64..95   = GPU PEND1    (PEND1 bits 0..31)
     96..127  = GPU PEND2    (PEND2 bits 0..31)
   (See <zephyr/dt-bindings/interrupt-controller/bcm2835-armctrl.h>
-  for the symbolic constants, and soc/brcm/bcm2710/soc_irq.c +
+  for the symbolic constants, and
   drivers/interrupt_controller/intc_bcm2835_armctrl.c for the
   decode that maps these numbers to the bank-0 shortcut bits +
   PEND1 / PEND2 registers.)

@@ -21,6 +21,4 @@ if(CONFIG_SMP OR CONFIG_MP_MAX_NUM_CPUS GREATER 1)
     zephyr_library_sources(multiprocessing.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL irq.c)
-
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/include/xtensa-cavs-linker.ld CACHE INTERNAL "")

@@ -20,6 +20,7 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/irq.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 #include <zephyr/sys/sys_io.h>
 
 #define SWERV_PIC_MAX_NUM	CONFIG_NUM_IRQS
@@ -194,53 +195,38 @@ static int swerv_pic_init(const struct device *dev)
 	return 0;
 }
 
-void arch_irq_enable(unsigned int irq)
+/*
+ * The PIC is the root interrupt controller of the SweRV cores. Lines above
+ * the generic ones are PIC lines and handled here; the generic ones are the
+ * CPU interrupt lines and go to the architecture.
+ */
+void intc_root_enable(unsigned int irq)
 {
-	uint32_t mie;
-
 	if (irq > CONFIG_SWERV_PIC_MAX_GENERIC_IRQ) {
 		swerv_pic_irq_enable(irq);
 		return;
 	}
 
-	/*
-	 * CSR mie register is updated using atomic instruction csrrs
-	 * (atomic read and set bits in CSR register)
-	 */
-	__asm__ volatile ("csrrs %0, mie, %1\n"
-			  : "=r" (mie)
-			  : "r" (1 << irq));
+	riscv_cpu_irq_enable(irq);
 }
 
-void arch_irq_disable(unsigned int irq)
+void intc_root_disable(unsigned int irq)
 {
-	uint32_t mie;
-
 	if (irq > CONFIG_SWERV_PIC_MAX_GENERIC_IRQ) {
 		swerv_pic_irq_disable(irq);
 		return;
 	}
 
-	/*
-	 * Use atomic instruction csrrc to disable device interrupt in mie CSR.
-	 * (atomic read and clear bits in CSR register)
-	 */
-	__asm__ volatile ("csrrc %0, mie, %1\n"
-			  : "=r" (mie)
-			  : "r" (1 << irq));
-};
+	riscv_cpu_irq_disable(irq);
+}
 
-int arch_irq_is_enabled(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
-	uint32_t mie;
-
 	if (irq > CONFIG_SWERV_PIC_MAX_GENERIC_IRQ) {
 		return swerv_pic_irq_is_enabled(irq);
 	}
 
-	__asm__ volatile ("csrr %0, mie" : "=r" (mie));
-
-	return !!(mie & (1 << irq));
+	return riscv_cpu_irq_is_enabled(irq);
 }
 
 DEVICE_DT_INST_DEFINE(0, swerv_pic_init, NULL,  NULL,  NULL,
