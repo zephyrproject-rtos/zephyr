@@ -21,11 +21,6 @@
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma/dma_bee.h>
 #include <zephyr/drivers/dma.h>
-#if defined(CONFIG_SOC_SERIES_RTL87X2G)
-#include <rtl_gdma.h>
-#elif defined(CONFIG_SOC_SERIES_RTL8752H)
-#include <rtl876x_gdma.h>
-#endif
 #endif
 
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
