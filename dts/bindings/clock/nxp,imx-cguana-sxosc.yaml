@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Crystal oscillator in an NXP i.MX CGU analog block (CGUANA).
+
+  This is the board's crystal, and the reference the PLLs lock to. Declaring it
+  here is what lets a board state its own crystal frequency and trim without
+  editing SoC or board C code.
+
+      sxosc: sxosc {
+              compatible = "nxp,imx-cguana-sxosc";
+              clock-frequency = <24000000>;
+              nxp,gm-sel = <4>;
+              nxp,cap-trim = <16>, <16>;
+              #clock-cells = <0>;
+      };
+
+compatible: "nxp,imx-cguana-sxosc"
+
+include: [base.yaml, fixed-clock.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      The source's register groups inside the parent nxp,imx-cguana block, as
+      offsets: "ctrl" and "status". Split rather than one span, because
+      the block reserves address space between the groups.
+
+  reg-names:
+    required: true
+
+  nxp,mode:
+    type: string
+    default: "crystal"
+    enum:
+      - "crystal"
+      - "ac-slave"
+      - "dc-bypass"
+      - "dc-bypass-no-detect"
+    description: |
+      Oscillator drive mode. "crystal" drives a crystal on XTAL1/XTAL2; the
+      bypass modes take an external clock instead.
+
+  nxp,gm-sel:
+    type: int
+    default: 3
+    description: |
+      Transconductance select for the oscillator amplifier. The right value
+      depends on the crystal's equivalent series resistance; the reference
+      manual's crystal table gives a recommended value per frequency, and 3 is
+      the recommendation for a 24 MHz crystal.
+
+  nxp,cap-trim:
+    type: array
+    description: |
+      On-chip load-capacitance trim for XTAL1 and XTAL2, in that order, each
+      0..63. Must match the board's crystal load capacitance and stray
+      capacitance, and both pins normally take the same value unless the
+      schematic specifies an asymmetric load.
+
+      Omit it to leave the reset default. A board that supplies a value it has
+      not had measured should say so, because an untrimmed load shows up as a
+      frequency error in everything derived from this crystal.
+
+  nxp,det-trim:
+    type: int
+    default: 0
+    description: |
+      Amplitude-detector trim. Leave at 0 unless the hardware team specifies
+      otherwise for start-up margin.
+
+  nxp,div2-enable:
+    type: boolean
+    description: |
+      Halve the oscillator output. Without it the output is the crystal
+      frequency named in clock-frequency.

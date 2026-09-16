@@ -1,0 +1,54 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MIMXRT2663, non-secure view: the identity mapping, since the shared
+ * tree records non-secure addresses. This file alone does not produce a
+ * non-secure image -- the core resets into Secure state, so an NSPE needs
+ * secure-side code to program the SAU and branch to it.
+ *
+ * This is also the view MIMXRT266x_COMMON.h yields for a build without -mcmse,
+ * so devicetree and the SDK headers agree. It is the view to use until this port
+ * builds as secure firmware.
+ *
+ * A board includes this file to pick both the part and the view. The
+ * apertures are declared here because their base is what the view selects;
+ * the shared tree places its nodes inside them by offset.
+ *
+ * MIMXRT2663 has both the NPU and the display block, so no nodes are
+ * removed (family table in nxp_rt266x.dtsi).
+ */
+
+#include <mem.h>
+
+/ {
+	soc {
+		/* ITCM at 0x0, DTCM at 0x20000000, SRAM0..2 at 0x22000000 */
+		memory: memory@0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x0 0x30000000>;
+		};
+
+		peripheral: peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x40000000 0x40000000 0x10000000>;
+		};
+
+		/* Two apertures per node: control registers and the XIP window. */
+		xspi0: main_xspi_0: spi@40460000 {
+			reg = <0x40460000 0x1000>, <0x60000000 DT_SIZE_M(128)>;
+		};
+
+		xspi1: main_xspi_1: spi@40470000 {
+			reg = <0x40470000 0x1000>, <0x80000000 DT_SIZE_M(128)>;
+		};
+	};
+};
+
+#include "nxp_rt266x_cm85.dtsi"
+#include "nxp_rt266x.dtsi"
