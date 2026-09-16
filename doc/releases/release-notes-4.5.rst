@@ -1714,6 +1714,7 @@ New Drivers
 * :abbr:`RTC (Real Time Clock)`
 
   * :dtcompatible:`ite,it8xxx2-rtc` (:github:`106350`)
+  * :dtcompatible:`microchip,mcp7940n` (:github:`102197`)
   * :dtcompatible:`microchip,rtc-mss` (:github:`110842`)
   * :dtcompatible:`microchip,xec-hibtimer` (:github:`111476`)
   * :dtcompatible:`microchip,xec-rtc` (:github:`106116`)
