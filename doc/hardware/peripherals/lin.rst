@@ -51,9 +51,11 @@ Zephyr LIN controller support following LIN features:
 Samples
 *******
 
-We have a sample demonstrating the use of Zephyr LIN controller API:
+We have samples demonstrating the use of Zephyr LIN controller API:
 
 * :zephyr:code-sample:`lin-ncv7430`: Demonstrates how to use the LIN API in commander mode.
+* :zephyr:code-sample:`lin-ncv7430-responder`: Demonstrates how to use the LIN API in responder
+  mode by mocking the NCV7430 LED Controller.
 
 LIN Transceivers
 ****************
