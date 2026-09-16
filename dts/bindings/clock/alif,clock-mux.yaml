@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Alif clock source multiplexer
+
+  Describes which input a clock multiplexer is switched to. The node has no
+  register of its own; it records the selection so that consumers of the
+  multiplexer output can resolve its rate. The selection must match the state
+  the hardware is actually in, unless a driver programs the multiplexer from
+  it.
+
+  The first user is the S32K_CLK multiplexer, which selects between the LFRC
+  and the LFXO oscillator. It is configured outside zephyr and for example,
+  a board whose S32K_CLK runs from the LFXO records that with:
+
+      &clk_s32k {
+              clocks = <&clk_lfxo>;
+      };
+
+compatible: "alif,clock-mux"
+
+include:
+  - name: base.yaml
+    property-allowlist:
+      - status
+      - compatible
+      - clocks
+
+properties:
+  clocks:
+    required: true
+    description: The input the multiplexer is switched to.
