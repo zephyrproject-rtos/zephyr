@@ -220,6 +220,86 @@ int uhc_xfer_buf_add(const struct device *dev,
 	return ret;
 }
 
+int uhc_pipe_enable(const struct device *dev, struct usb_device *const udev, const uint8_t ep)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	struct usb_host_pipe *pipe;
+	int ret = 0;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto pipe_enable_error;
+	}
+
+	pipe = uhc_get_udev_pipe(udev, ep);
+	if (pipe->enabled) {
+		LOG_WRN("Endpoint 0x%02x is already enabled", ep);
+		ret = -EALREADY;
+		goto pipe_enable_error;
+	}
+
+	if ((USB_EP_GET_IDX(ep) == 0U) ? (pipe->control_mps == 0U) : (pipe->desc == NULL)) {
+		LOG_ERR("Endpoint 0x%02x is not configured", ep);
+		ret = -EINVAL;
+		goto pipe_enable_error;
+	}
+
+	/* A driver may need the device to configure the endpoint */
+	pipe->udev = udev;
+
+	if (api->pipe_enable != NULL) {
+		ret = api->pipe_enable(dev, pipe);
+	}
+
+	if (ret == 0) {
+		pipe->enabled = true;
+	} else {
+		pipe->udev = NULL;
+	}
+
+pipe_enable_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_pipe_disable(const struct device *dev, struct usb_device *const udev, const uint8_t ep)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	struct usb_host_pipe *pipe;
+	int ret = 0;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto pipe_disable_error;
+	}
+
+	pipe = uhc_get_udev_pipe(udev, ep);
+	if (!pipe->enabled) {
+		ret = -EALREADY;
+		goto pipe_disable_error;
+	}
+
+	if (api->pipe_disable != NULL) {
+		ret = api->pipe_disable(dev, pipe);
+	}
+
+	if (ret == 0) {
+		pipe->enabled = false;
+		pipe->controller_pipe = NULL;
+		pipe->udev = NULL;
+	}
+
+pipe_disable_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
 int uhc_pipe_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);

@@ -59,6 +59,29 @@ static inline int uhc_unlock_internal(const struct device *dev)
 }
 
 /**
+ * @brief Get USB device endpoint address by pipe.
+ *
+ * @param[in] udev Pointer to USB device instance
+ * @param[in] pipe Pointer to the pipe of the endpoint
+ *
+ * @return Endpoint address on success, negative errno code on error.
+ * @retval -EINVAL Pipe does not belong to the device
+ */
+static inline int uhc_get_udev_ep(struct usb_device *const udev,
+				  const struct usb_host_pipe *const pipe)
+{
+	if (IS_ARRAY_ELEMENT(udev->pipe_in, pipe)) {
+		return (int)ARRAY_INDEX(udev->pipe_in, pipe) | USB_EP_DIR_IN;
+	}
+
+	if (IS_ARRAY_ELEMENT(udev->pipe_out, pipe)) {
+		return (int)ARRAY_INDEX(udev->pipe_out, pipe) | USB_EP_DIR_OUT;
+	}
+
+	return -EINVAL;
+}
+
+/**
  * @brief Helper function to return UHC transfer to a higher level.
  *
  * Function to dequeue transfer and send UHC event to a higher level.
