@@ -160,6 +160,9 @@ config MBEDTLS_MD_C
 config MBEDTLS_ASN1_PARSE_C
 	bool "Support for ASN1 parser functions"
 
+config MBEDTLS_ASN1_WRITE_C
+	bool "Support for ASN1 write functions"
+
 config MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
 	bool "Remove usage of standard libc functions"
 	help
@@ -253,8 +256,15 @@ config MBEDTLS_PK_PARSE_C
 
 config MBEDTLS_PK_WRITE_C
 	bool "The generic public (asymmetric) key writer"
+	select MBEDTLS_ASN1_WRITE_C
 	help
 	  Enable generic public key write functions.
+
+config MBEDTLS_PK_C
+	bool
+	default y if MBEDTLS_PK_PARSE_C || MBEDTLS_PK_WRITE_C
+	# PK also DER-encodes the raw ECDSA signatures that PSA Crypto produces.
+	select MBEDTLS_ASN1_WRITE_C if (PSA_WANT_ALG_ECDSA || PSA_WANT_ALG_DETERMINISTIC_ECDSA)
 
 config MBEDTLS_X509_USE_C
 	bool "X.509 core for using certificates"
