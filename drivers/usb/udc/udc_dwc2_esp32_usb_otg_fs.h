@@ -83,7 +83,6 @@ static inline int esp32_usb_otg_init(const struct device *dev,
 		gpio_ll_set_drive_capability(GPIO_LL_GET_HW(0), cfg->phy_dp_pin, GPIO_DRIVE_CAP_3);
 	}
 
-	// TODO: do we need to set ESP_INTR_FLAG_INTRDISABLED flag after all?
 	IRQ_CONNECT(cfg->irq, IRQ_DEFAULT_PRIORITY, udc_dwc2_isr_handler, dev,
 		    ESP_INTR_FLAG_INTRDISABLED);
 
