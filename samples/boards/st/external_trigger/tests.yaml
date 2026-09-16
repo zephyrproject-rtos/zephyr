@@ -1,0 +1,20 @@
+sample:
+  name: STM32 external trigger
+tests:
+  sample.boards.stm32.external_trigger:
+    depends_on:
+      - adc
+      - counter
+    tags:
+      - drivers
+      - adc
+      - counter
+    platform_allow:
+      - nucleo_l4r5zi
+      - nucleo_u575zi_q
+      - nucleo_u575zi_q
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Finished sampling for 2 seconds"
