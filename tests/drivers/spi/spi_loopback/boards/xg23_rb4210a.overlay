@@ -6,7 +6,10 @@
 
 #include <zephyr/dt-bindings/pinctrl/silabs/xg23-pinctrl.h>
 
-&eusart1 {
+#define SPI_LOOPBACK_FAST_HZ 10000000
+#define SPI_LOOPBACK_REG 1
+
+spi_loopback: &eusart1 {
 	dmas = <&dma0 DMA_REQSEL_EUSART1TXFL>,
 	       <&dma0 DMA_REQSEL_EUSART1RXFL>;
 	dma-names = "tx", "rx";
@@ -16,20 +19,10 @@
 	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@1 {
-		compatible = "test-spi-loopback-fast";
-		reg = <1>;
-		spi-max-frequency = <10000000>;
-	};
 };
 
 &dma0 {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"
