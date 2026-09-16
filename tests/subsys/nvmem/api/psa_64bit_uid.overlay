@@ -1,0 +1,14 @@
+/**
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026, Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Exercise the widening of cell addresses into 64-bit PSA storage UIDs with
+ * a non-zero high word. The ZMS store reserves bits 30 and 31 of the UID for
+ * the caller ID, so the low word stays below 2^30.
+ */
+&test_nvmem0 {
+	uid-base = <0x1 0x0>;
+};
