@@ -3,7 +3,9 @@
 
 identifier: esp32c3_devkitc/esp32c3/qemu
 name: ESP32-C3 (Espressif QEMU)
-type: mcu
+type: qemu
+simulation:
+  - name: espressif_qemu
 arch: riscv
 toolchain:
   - zephyr
