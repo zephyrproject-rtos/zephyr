@@ -472,6 +472,29 @@ static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
 }
 
 /**
+ * @brief Prepare a read op submission that discards received data
+ *
+ * Useful for bus operations (e.g. SPI) that must clock the bus
+ * to receive dummy or padding frames, while discarding the data.
+ *
+ * @param sqe Submission queue entry
+ * @param iodev RTIO device
+ * @param prio Priority
+ * @param len Length in bytes to discard
+ * @param userdata Userdata associated with the request
+ */
+static inline void rtio_sqe_prep_read_discard(struct rtio_sqe *sqe,
+					      const struct rtio_iodev *iodev,
+					      int8_t prio,
+					      uint32_t len,
+					      void *userdata)
+{
+	__ASSERT_NO_MSG(len > 0);
+
+	_rtio_sqe_prep_read(sqe, iodev, prio, NULL, len, userdata);
+}
+
+/**
  * @brief Prepare a read op submission with context's mempool
  *
  * @see rtio_sqe_prep_read()
