@@ -23,6 +23,18 @@ config MFD_SILABS_NCP_BUS_SPI
 	depends on GPIO
 	select SPI_ASYNC
 
+config MFD_SILABS_NCP_BUS_SDIO
+	bool "Silicon Labs NCP over SDIO"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_SILABS_NCP),sd)
+	depends on SDHC
+	depends on SDIO_STACK
+
+config MFD_SILABS_NCP_SDIO_POLL_INTERVAL_MS
+	int "Polling interval when the host controller has no card interrupt"
+	depends on MFD_SILABS_NCP_BUS_SDIO
+	default 10
+
 config MFD_SILABS_NCP_INIT_PRIORITY
 	int "Initialization priority"
 	default 86

@@ -11,9 +11,12 @@
 #ifndef ZEPHYR_DRIVERS_MFD_MFD_SILABS_NCP_H_
 #define ZEPHYR_DRIVERS_MFD_MFD_SILABS_NCP_H_
 
+#include <string.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/mfd/silabs_ncp.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include "sl_cpc.h"
 #include "sl_cpc_bus.h"
@@ -69,6 +72,38 @@ static inline void mfd_silabs_ncp_drop_rx_frame(sl_cpc_frame_t *frame)
 		frame->payload = NULL;
 	}
 	sli_cpc_frame_put_ref(&frame);
+}
+
+/* Copy a contiguous buffer into a payload chain */
+static inline void mfd_silabs_ncp_copy_to_chain(sl_cpc_buf_t *payload, const uint8_t *src,
+						uint16_t len)
+{
+	sl_cpc_buf_t *buf = payload;
+
+	while (buf && len > 0) {
+		uint16_t chunk = MIN(buf->len, len);
+
+		memcpy(buf->ptr, src, chunk);
+		src += chunk;
+		len -= chunk;
+		buf = (sl_cpc_buf_t *)buf->node.node;
+	}
+}
+
+/* Copy a payload chain into a contiguous buffer */
+static inline void mfd_silabs_ncp_copy_from_chain(uint8_t *dst, const sl_cpc_buf_t *payload,
+						  uint16_t len)
+{
+	const sl_cpc_buf_t *buf = payload;
+
+	while (buf && len > 0) {
+		uint16_t chunk = MIN(buf->len, len);
+
+		memcpy(dst, buf->ptr, chunk);
+		dst += chunk;
+		len -= chunk;
+		buf = (const sl_cpc_buf_t *)buf->node.node;
+	}
 }
 
 #endif /* ZEPHYR_DRIVERS_MFD_MFD_SILABS_NCP_H_ */
