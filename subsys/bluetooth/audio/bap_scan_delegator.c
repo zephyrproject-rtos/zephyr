@@ -1149,15 +1149,6 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
-		/* If the BIS sync request is different than what was previously was requested, or
-		 * different than what we are current synced to, we set bis_sync_change_requested to
-		 * let the application know that the state may need a change
-		 */
-		if (internal_state->requested_bis_sync[i] != requested_bis_sync[i] ||
-		    internal_state->state.subgroups[i].bis_sync != requested_bis_sync[i]) {
-			bis_sync_change_requested = true;
-		}
-
 		if (!valid_bis_sync_request(requested_bis_sync[i], aggregated_bis_syncs)) {
 			err = k_mutex_unlock(&internal_state->mutex);
 			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
@@ -1166,6 +1157,16 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 		aggregated_bis_syncs |= requested_bis_sync[i];
+
+		/* If the BIS sync request is different than what was previously was requested, or
+		 * different than what we are current synced to, we set bis_sync_change_requested to
+		 * let the application know that the state may need a change
+		 */
+		if (requested_bis_sync[i] == BT_BAP_BIS_SYNC_NO_PREF ||
+		    internal_state->requested_bis_sync[i] != requested_bis_sync[i] ||
+		    internal_state->state.subgroups[i].bis_sync != requested_bis_sync[i]) {
+			bis_sync_change_requested = true;
+		}
 
 		subgroup->metadata_len = net_buf_simple_pull_u8(buf);
 
