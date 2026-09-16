@@ -1035,7 +1035,8 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				interrupts = <402 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
+				clocks = <&fll16m>, <&audiopll>;
+				clock-names = "pclk", "aclk";
 				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
 							 <NRF_FUN_TDM_MCK>;
 				status = "disabled";
@@ -1070,7 +1071,8 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				interrupts = <407 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
+				clocks = <&fll16m>, <&audiopll>;
+				clock-names = "pclk", "aclk";
 				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
 							 <NRF_FUN_TDM_MCK>;
 				status = "disabled";
