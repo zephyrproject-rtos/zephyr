@@ -82,6 +82,10 @@ tests:
     platform_allow: qemu_x86
     integration_platforms:
       - qemu_x86
+  drivers.flash.common.pic32cm_sg_gc:
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
+    platform_allow:
+      - pic32cm_sg00_cpro
   drivers.flash.common.no_explicit_erase:
     platform_allow:
       - nrf54l15dk/nrf54l05/cpuapp
