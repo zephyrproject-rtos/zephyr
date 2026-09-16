@@ -495,7 +495,7 @@ static int max3421e_hrslt_success(const struct device *dev)
 
 		LOG_INF("bc %u tr %u", bc, net_buf_tailroom(buf));
 
-		if (bc < xfer->mps || !net_buf_tailroom(buf)) {
+		if (bc < uhc_get_udev_ep_mps(xfer->udev, xfer->ep) || !net_buf_tailroom(buf)) {
 			LOG_INF("hrslt bulk in %u, %u", bc, len);
 			if (xfer->ep == USB_CONTROL_EP_IN) {
 				xfer->stage = UHC_CONTROL_STAGE_STATUS;

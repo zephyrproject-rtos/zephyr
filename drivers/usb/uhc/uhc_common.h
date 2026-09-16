@@ -59,6 +59,67 @@ static inline int uhc_unlock_internal(const struct device *dev)
 }
 
 /**
+ * @brief Get USB device endpoint maximum packet size.
+ *
+ * The value is the raw bMaxPacketSize field of the endpoint descriptor, or
+ * bMaxPacketSize0 of the device descriptor for endpoint 0.
+ *
+ * @param[in] udev Pointer to USB device instance
+ * @param[in] ep   Endpoint address
+ *
+ * @return Maximum packet size of the endpoint, 0 if it is not configured.
+ */
+static inline uint16_t uhc_get_udev_ep_mps(struct usb_device *const udev, const uint8_t ep)
+{
+	struct usb_host_pipe *pipe = uhc_get_udev_pipe(udev, ep);
+
+	if (USB_EP_GET_IDX(ep) == 0U) {
+		return pipe->control_mps;
+	}
+
+	return pipe->desc != NULL ? pipe->desc->wMaxPacketSize : 0U;
+}
+
+/**
+ * @brief Get USB device endpoint interval.
+ *
+ * @param[in] udev Pointer to USB device instance
+ * @param[in] ep   Endpoint address
+ *
+ * @return Endpoint interval, 0 for a control endpoint or if it is not
+ *         configured.
+ */
+static inline uint8_t uhc_get_udev_ep_interval(struct usb_device *const udev, const uint8_t ep)
+{
+	struct usb_host_pipe *pipe = uhc_get_udev_pipe(udev, ep);
+
+	if (USB_EP_GET_IDX(ep) == 0U) {
+		return 0U;
+	}
+
+	return pipe->desc != NULL ? pipe->desc->bInterval : 0U;
+}
+
+/**
+ * @brief Get USB device endpoint transfer type.
+ *
+ * @param[in] udev Pointer to USB device instance
+ * @param[in] ep   Endpoint address
+ *
+ * @return Endpoint transfer type, USB_EP_TYPE_CONTROL for endpoint 0.
+ */
+static inline uint8_t uhc_get_udev_ep_type(struct usb_device *const udev, const uint8_t ep)
+{
+	struct usb_host_pipe *pipe = uhc_get_udev_pipe(udev, ep);
+
+	if ((USB_EP_GET_IDX(ep) == 0U) || (pipe->desc == NULL)) {
+		return USB_EP_TYPE_CONTROL;
+	}
+
+	return pipe->desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
+}
+
+/**
  * @brief Get USB device endpoint address by pipe.
  *
  * @param[in] udev Pointer to USB device instance

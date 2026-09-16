@@ -164,12 +164,6 @@ struct uhc_transfer {
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */
 	uint8_t ep;
-	/** Endpoint type */
-	uint8_t type;
-	/** Maximum packet size */
-	uint16_t mps;
-	/** Interval, used for periodic transfers only */
-	uint16_t interval;
 	/** Start frame, used for periodic transfers only */
 	uint16_t start_frame;
 	/** Flag marks request buffer is queued */

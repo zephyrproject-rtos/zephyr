@@ -96,13 +96,9 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    void *const cb,
 				    void *const cb_priv)
 {
-	uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_transfer *xfer = NULL;
 	struct usb_host_pipe *pipe;
-	uint16_t mps;
-	uint16_t interval;
-	uint8_t type;
 
 	api->lock(dev);
 
@@ -116,19 +112,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		goto xfer_alloc_error;
 	}
 
-	if (ep_idx == 0) {
-		interval = 0;
-		type = USB_EP_TYPE_CONTROL;
-		mps = udev->dev_desc.bMaxPacketSize0;
-	} else {
-		struct usb_ep_descriptor *ep_desc = pipe->desc;
-
-		mps = ep_desc->wMaxPacketSize;
-		interval = ep_desc->bInterval;
-		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
-	}
-
-	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, mps, cb);
+	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, uhc_get_udev_ep_mps(udev, ep), cb);
 
 	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, K_NO_WAIT)) {
 		LOG_ERR("Failed to allocate transfer");
@@ -137,9 +121,6 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 
 	memset(xfer, 0, sizeof(struct uhc_transfer));
 	xfer->ep = ep;
-	xfer->mps = mps;
-	xfer->interval = interval;
-	xfer->type = type;
 	xfer->udev = udev;
 	xfer->cb = cb;
 	xfer->priv = cb_priv;
