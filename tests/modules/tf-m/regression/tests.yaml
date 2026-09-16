@@ -5,6 +5,10 @@ common:
   modules:
     - tf-m-tests
   filter: CONFIG_BUILD_WITH_TFM and not CONFIG_TFM_LOG_LEVEL_SILENCE
+  platform_exclude:
+    # TF-M's ST port rejects the Crypto test suites when the Platform, PS or ITS
+    # suites are built as well (memory constraints), and this suite needs all of them.
+    - stm32l562e_dk/stm32l562xx/ns
   integration_platforms:
     - mps2/an521/cpu0/ns
   harness: console
@@ -24,6 +28,10 @@ tests:
   tfm.regression.ipc.lvl1:
     platform_exclude:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      # Only supports the SFN backend: TF-M's ADI port leaves the IPC test
+      # partitions out, so the IPC test suite has no service to talk to.
+      - max32657evkit/max32657/ns
+      - max32658evkit/max32658/ns
     extra_args:
       - CONFIG_TFM_IPC=y
       - CONFIG_TFM_ISOLATION_LEVEL=1
@@ -41,6 +49,11 @@ tests:
     timeout: 200
 
   tfm.regression.ipc.lvl2:
+    platform_exclude:
+      # Only supports the SFN backend: TF-M's ADI port leaves the IPC test
+      # partitions out, so the IPC test suite has no service to talk to.
+      - max32657evkit/max32657/ns
+      - max32658evkit/max32658/ns
     extra_args:
       - CONFIG_TFM_IPC=y
       - CONFIG_TFM_ISOLATION_LEVEL=2
