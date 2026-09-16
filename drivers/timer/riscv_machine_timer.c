@@ -75,6 +75,20 @@ static uint64_t mtime(void)
 #define TIMER_CORE_HAVE_CYCLE_GET_64
 #define TIMER_CORE_COUNTER_WIDTH 64
 
+/*
+ * QEMU's icount mode without sleep, the qemu_riscv* default, advances the
+ * virtual clock straight to the next armed deadline whenever the guest idles,
+ * and its ACLINT model has no unarmed state: any mtimecmp value is a deadline.
+ * With nothing pending the kernel asks for SYS_CLOCK_MAX_WAIT ticks, 248 days
+ * at 100 Hz, and a few hundred such idle periods saturate QEMU's signed 64-bit
+ * nanosecond clock, after which no timer fires again. Bound the reach to one
+ * second there: an idle guest then costs one wakeup per virtual second, and
+ * the clock takes days of wall time to saturate instead of milliseconds.
+ */
+#ifdef CONFIG_QEMU_TARGET
+#define TIMER_CORE_ALARM_MAX_CYCLES ((uint64_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
+#endif
+
 static inline uint64_t timer_driver_cycle_get(void)
 {
 	return mtime();
