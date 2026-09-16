@@ -698,7 +698,7 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 	bool next_dir_is_in;
 	uint16_t size = 0;
 	uint32_t pkt_cnt;
-	uint8_t *dma_addr = NULL;
+	mem_addr_t dma_addr = 0;
 	uint32_t hcchar;
 	uint32_t hctsiz;
 	uint16_t remaining;
@@ -726,7 +726,7 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 				LOG_DBG("Control DATA IN prog=%u, tailroom=%zu",
 					size, net_buf_tailroom(xfer->buf));
 
-				dma_addr = net_buf_tail(xfer->buf);
+				dma_addr = (mem_addr_t)(net_buf_tail(xfer->buf));
 			} else {
 				size = xfer->buf->len;
 
@@ -736,7 +736,7 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 				LOG_HEXDUMP_DBG(xfer->buf->data, xfer->buf->len,
 						"Control DATA OUT:");
 
-				dma_addr = xfer->buf->data;
+				dma_addr = (mem_addr_t)(xfer->buf->data);
 			}
 		}
 	} else {
@@ -1273,7 +1273,7 @@ static void ch_start_control(struct uhc_dwc2_channel *ch)
 static void ch_start_bulk(struct uhc_dwc2_channel *ch)
 {
 	struct uhc_transfer *const xfer = ch->xfer;
-	uint8_t *dma_addr;
+	mem_addr_t dma_addr = 0;
 	uint32_t pkt_cnt;
 	uint32_t hctsiz;
 	uint32_t hcchar;
@@ -1283,13 +1283,13 @@ static void ch_start_bulk(struct uhc_dwc2_channel *ch)
 	if (USB_EP_DIR_IS_IN(xfer->ep)) {
 		/* For IN, receive into the buffer tailroom */
 		ch->length = net_buf_tailroom(xfer->buf);
-		dma_addr = net_buf_tail(xfer->buf);
+		dma_addr = (mem_addr_t)(net_buf_tail(xfer->buf));
 
 		LOG_DBG("BULK IN, tailroom=%u", ch->length);
 	} else {
 		/* For Out, data size is the size of the data in buffer */
 		ch->length = xfer->buf->len;
-		dma_addr = xfer->buf->data;
+		dma_addr = (mem_addr_t)(xfer->buf->data);
 
 		LOG_HEXDUMP_DBG(xfer->buf->data, ch->length, "BULK OUT");
 	}
