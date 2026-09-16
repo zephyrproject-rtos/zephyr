@@ -435,6 +435,7 @@
 			antenna-gain-5ghz-sb1 = <0>;
 			antenna-gain-5ghz-sb2 = <0>;
 			antenna-gain-5ghz-sb3 = <0>;
+			antenna-gain-5ghz-sb4 = <0>;
 		};
 	};
 
