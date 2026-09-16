@@ -358,6 +358,96 @@ ZTEST(k_pipe_concurrency, test_pipe_zero_size_read_write)
 	k_thread_join(tid, K_FOREVER);
 }
 
+#ifdef CONFIG_POLL
+static struct k_poll_event poll_event;
+static int poll_rc;
+static struct k_thread poll_threads[3];
+static K_THREAD_STACK_ARRAY_DEFINE(poll_stacks, 3, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
+
+static void thread_poll(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	poll_rc = k_poll(&poll_event, 1, K_MSEC(partial_wait_time));
+}
+
+static void thread_poll_read(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg3);
+
+	zassert_equal(k_pipe_read(arg1, arg2, DUMMY_DATA_SIZE, K_FOREVER), DUMMY_DATA_SIZE,
+		      "Failed to read from the pipe");
+}
+
+static void thread_poll_write(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg3);
+
+	zassert_equal(k_pipe_write(arg1, arg2, DUMMY_DATA_SIZE, K_FOREVER), DUMMY_DATA_SIZE,
+		      "Failed to write to the pipe");
+}
+
+ZTEST(k_pipe_concurrency, test_pipe_poll_direct_transfer)
+{
+	k_tid_t poll_tid;
+	k_tid_t reader_tid;
+	k_tid_t writer_tid;
+	uint8_t input[DUMMY_DATA_SIZE];
+	uint8_t output[DUMMY_DATA_SIZE] = {};
+
+#ifdef CONFIG_KERNEL_COHERENCE
+	ztest_test_skip();
+#endif
+
+	memset(input, 0xAA, sizeof(input));
+	poll_rc = -EINVAL;
+	k_pipe_init(&pipe, NULL, 0);
+	k_poll_event_init(&poll_event, K_POLL_TYPE_PIPE_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
+			  &pipe);
+
+	poll_tid = k_thread_create(&poll_threads[0], poll_stacks[0],
+				   K_THREAD_STACK_SIZEOF(poll_stacks[0]), thread_poll, NULL, NULL,
+				   NULL, K_PRIO_COOP(0), 0, K_NO_WAIT);
+	reader_tid = k_thread_create(&poll_threads[1], poll_stacks[1],
+				     K_THREAD_STACK_SIZEOF(poll_stacks[1]), thread_poll_read,
+				     &pipe, output, NULL, K_PRIO_COOP(1), 0, K_NO_WAIT);
+	writer_tid = k_thread_create(&poll_threads[2], poll_stacks[2],
+				     K_THREAD_STACK_SIZEOF(poll_stacks[2]), thread_poll_write,
+				     &pipe, input, NULL, K_PRIO_COOP(1), 0, K_NO_WAIT);
+
+	k_thread_join(poll_tid, K_FOREVER);
+	k_thread_join(reader_tid, K_FOREVER);
+	k_thread_join(writer_tid, K_FOREVER);
+
+	zassert_equal(poll_rc, -EAGAIN, "Poller woken although no data reached the pipe");
+	zassert_mem_equal(input, output, sizeof(input), "Unexpected data received from pipe");
+}
+
+ZTEST(k_pipe_concurrency, test_pipe_poll_write_with_data)
+{
+	k_tid_t writer_tid;
+	static uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t data[DUMMY_DATA_SIZE] = {};
+	int rc;
+
+	k_pipe_init(&pipe, buffer, sizeof(buffer));
+	k_poll_event_init(&poll_event, K_POLL_TYPE_PIPE_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
+			  &pipe);
+
+	writer_tid = k_thread_create(&poll_threads[0], poll_stacks[0],
+				     K_THREAD_STACK_SIZEOF(poll_stacks[0]), thread_poll_write,
+				     &pipe, data, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	rc = k_poll(&poll_event, 1, K_MSEC(partial_wait_time));
+	k_thread_join(writer_tid, K_FOREVER);
+
+	zassert_equal(rc, 0, "Poller not woken although data reached the pipe");
+	zassert_equal(poll_event.state, K_POLL_STATE_PIPE_DATA_AVAILABLE,
+		      "Poll event does not report available data");
+}
+#endif /* CONFIG_POLL */
+
 /**
  * @}
  */
