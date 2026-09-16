@@ -27,6 +27,10 @@ enum hash_algo {
 	CRYPTO_HASH_ALGO_SHA256 = 2, /**< SHA-256 algorithm. */
 	CRYPTO_HASH_ALGO_SHA384 = 3, /**< SHA-384 algorithm. */
 	CRYPTO_HASH_ALGO_SHA512 = 4, /**< SHA-512 algorithm. */
+	CRYPTO_HASH_ALGO_SHA3_224 = 5, /**< SHA3-224 algorithm. */
+	CRYPTO_HASH_ALGO_SHA3_256 = 6, /**< SHA3-256 algorithm. */
+	CRYPTO_HASH_ALGO_SHA3_384 = 7, /**< SHA3-384 algorithm. */
+	CRYPTO_HASH_ALGO_SHA3_512 = 8, /**< SHA3-512 algorithm. */
 };
 
 /* Forward declarations */
