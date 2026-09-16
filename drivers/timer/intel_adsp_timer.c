@@ -166,6 +166,22 @@ static void irq_init(void)
 
 void smp_timer_init(void)
 {
+#if defined(CONFIG_ZTEST) && defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
+	/* Some tests are restricted to running on 1 CPU only.
+	 * These tests would hold other CPUs spinning with interrupts
+	 * disabled. As sys_clock_driver_init() is only called on
+	 * core #0, if core #0 is not the one running the tests and
+	 * simply spinning with interrupts locked, we would not be
+	 * getting any timer interrupts, resulting in hung tests.
+	 * So just for testing, we enable timer interrupt for all
+	 * cores.
+	 */
+	int cpu = arch_curr_cpu()->id;
+
+	ACE_DINT[cpu].ie[ACE_INTL_TTS] |= BIT(COMPARATOR_IDX + 1);
+
+	irq_enable(TIMER_IRQ);
+#endif /* CONFIG_ZTEST && CONFIG_SOC_SERIES_INTEL_ADSP_ACE */
 }
 
 static int sys_clock_driver_init(void)
