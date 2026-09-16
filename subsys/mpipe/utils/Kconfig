@@ -1,0 +1,75 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MPIPE_PLAYER
+	bool "Multimedia Pipeline player helper"
+	depends on MPIPE
+	imply SHELL
+	imply SERIAL
+	imply UART_CONSOLE
+	help
+	  Enable the mpipe_player control layer: a reusable, media-player-like
+	  helper that owns the run-time lifecycle of a pipeline (play, pause,
+	  stop, replay, quit). When SHELL is enabled it also registers
+	  interactive shell commands ("player play|pause|stop|replay|quit|status"
+	  and the single-letter shortcuts p/s/r/q).
+
+if MPIPE_PLAYER
+
+config MPIPE_PLAYER_WORKER_STACK_SIZE
+	int "Player worker thread stack size"
+	default 6144
+	help
+	  Stack size (in bytes) for the player worker thread that serializes
+	  pipeline state changes.
+
+	  Capability negotiation runs on this thread and recurses from the source
+	  down to the sinks. Each element keeps a few capabilities live while it
+	  negotiates, roughly 800 bytes, so budget that much per element. The
+	  default suits chains of up to about seven elements; raise it for longer
+	  pipelines.
+
+config MPIPE_PLAYER_WORKER_PRIORITY
+	int "Player worker thread priority"
+	default 5
+	help
+	  Scheduling priority for the player worker thread.
+
+config MPIPE_PLAYER_CMD_QUEUE_DEPTH
+	int "Player command queue depth"
+	default 8
+	help
+	  Number of pending commands the player can buffer. Posting never
+	  blocks, so a command asked for once the queue is full is dropped
+	  and reported.
+
+config MPIPE_PLAYER_DUMP_ON_STATE_CHANGE
+	bool "Dump the pipeline on every state change and every error"
+	depends on MPIPE_DUMP
+	help
+	  Print the pipeline after each state the player drives it to, and
+	  whenever an element reports an error.
+
+	  The dump is taken once the transition has finished, never between
+	  two of them, so it delays nothing: a failure stops the pipeline
+	  where it broke and the graph is still that failure's graph.
+
+	  It goes to the console rather than the shell, since no shell
+	  instance exists at that point. Extract a graph from a capture with:
+
+	    sed -n '/^digraph/,/^}/p' log > pipe.dot
+
+endif # MPIPE_PLAYER
+
+config MPIPE_DUMP_MAX_ELEMENTS
+	int "Maximum number of elements a dump can index"
+	depends on MPIPE_DUMP
+	range 2 256
+	default 32
+	help
+	  A dump flattens nested bins, so it can hold more elements than one
+	  bin's MPIPE_BIN_MAX_CHILDREN. An element past this limit is left out
+	  of the graph and the dump is marked truncated.
