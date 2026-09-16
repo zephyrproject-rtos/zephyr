@@ -16,9 +16,8 @@
 struct esp32_usb_otg_hs_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	unsigned int irq;
+	void (*irq_configure)(void);
 };
 
 struct esp32_usb_otg_hs_data {
@@ -44,11 +43,20 @@ static inline int esp32_usb_otg_hs_init(const struct device *dev,
 		return ret;
 	}
 
-	/* keep the interrupt disabled to avoid a spurious event during enumeration */
-	ret = esp_intr_alloc(cfg->irq_source,
-			     ESP_INTR_FLAG_INTRDISABLED | ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-			     (intr_handler_t)udc_dwc2_isr_handler, (void *)dev, &data->int_handle);
+	/* Connect only - IRQ_CONNECT leaves the line masked, which is what
+	 * ESP_INTR_FLAG_INTRDISABLED bought: no spurious event during
+	 * enumeration. Pre-multilevel path, kept for reference:
+	 *
+	 * ret = esp_intr_alloc(cfg->irq_source,
+	 *                      ESP_INTR_FLAG_INTRDISABLED |
+	 *                              ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+	 *                              ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+	 *                      (intr_handler_t)udc_dwc2_isr_handler, (void *)dev,
+	 *                      &data->int_handle);
+	 */
+	ARG_UNUSED(dev);
+	ARG_UNUSED(data);
+	cfg->irq_configure();
 
 	return ret;
 }
@@ -99,7 +107,11 @@ static inline int esp32_usb_otg_hs_shutdown(const struct esp32_usb_otg_hs_config
 					    struct esp32_usb_otg_hs_data *data)
 {
 	usb_utmi_hal_disable();
-	esp_intr_free(data->int_handle);
+	/* Statically connected, so there is nothing to free - just mask it.
+	 * Was: esp_intr_free(data->int_handle);
+	 */
+	ARG_UNUSED(data);
+	irq_disable(cfg->irq);
 
 	return clock_control_off(cfg->clock_dev, cfg->clock_subsys);
 }
@@ -108,23 +120,28 @@ static inline int esp32_usb_otg_hs_shutdown(const struct esp32_usb_otg_hs_config
 #define UDC_DWC2_IRQ_DT_INST_DEFINE(n)                                                             \
 	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)                         \
 	{                                                                                          \
-		esp_intr_enable(usb_otg_data_##n.int_handle);                                      \
+		irq_enable(DT_INST_IRQN_BY_IDX(n, 0));                                             \
 	}                                                                                          \
                                                                                                    \
 	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)                        \
 	{                                                                                          \
-		esp_intr_disable(usb_otg_data_##n.int_handle);                                     \
+		irq_disable(DT_INST_IRQN_BY_IDX(n, 0));                                            \
 	}
 #endif
 
 #define QUIRK_ESP32_USB_OTG_HS_INST(n)                                                             \
                                                                                                    \
+	static void esp32_usb_otg_hs_irq_configure_##n(void)                                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, 0), IRQ_DEFAULT_PRIORITY,                       \
+			    udc_dwc2_isr_handler, DEVICE_DT_INST_GET(n), 0);                       \
+	}                                                                                          \
+                                                                                                   \
 	static const struct esp32_usb_otg_hs_config usb_otg_hs_config_##n = {                      \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, offset),            \
-		.irq_source = DT_INST_IRQ_BY_IDX(n, 0, irq),                                       \
-		.irq_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),                                \
-		.irq_flags = DT_INST_IRQ_BY_IDX(n, 0, flags),                                      \
+		.irq = DT_INST_IRQN_BY_IDX(n, 0),                                                  \
+		.irq_configure = esp32_usb_otg_hs_irq_configure_##n,                               \
 	};                                                                                         \
                                                                                                    \
 	static struct esp32_usb_otg_hs_data usb_otg_data_##n;                                      \
