@@ -143,14 +143,25 @@ static DEVICE_API(clock_control, eth_xmc_clock_api) = {
 DEVICE_DEFINE(eth_xmc_clock, "eth_xmc_clock", NULL, NULL, NULL, NULL,
 	      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &eth_xmc_clock_api);
 
+static const struct clock_dt_spec xmc_mac_clk = {
+	.dev = DEVICE_GET(eth_xmc_clock),
+	.subsys = (clock_control_subsys_t)XMC_ETH_MAC_CLK,
+};
+
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+static const struct clock_dt_spec xmc_ptp_clk = {
+	.dev = DEVICE_GET(eth_xmc_clock),
+	.subsys = (clock_control_subsys_t)XMC_ETH_PTP_CLK,
+};
+#endif
+
 static const struct dwmac_config dwmac_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
-	.clock = DEVICE_GET(eth_xmc_clock),
-	.mac_clk = (clock_control_subsys_t)XMC_ETH_MAC_CLK,
+	.mac_clk = &xmc_mac_clk,
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
-	.ptp_clk = (clock_control_subsys_t)XMC_ETH_PTP_CLK,
+	.ptp_clk = &xmc_ptp_clk,
 #endif
 };
 

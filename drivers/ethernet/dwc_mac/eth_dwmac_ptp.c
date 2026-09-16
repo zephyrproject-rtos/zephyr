@@ -143,7 +143,7 @@ static int dwmac_ptp_init(const struct device *dev)
 	uint64_t temp;
 	int ret;
 
-	ret = clock_control_get_rate(eth_cfg->clock, eth_cfg->ptp_clk, &ptp_clk_rate);
+	ret = clock_control_get_rate_dt(eth_cfg->ptp_clk, &ptp_clk_rate);
 	if (ret < 0) {
 		return -EIO;
 	}
