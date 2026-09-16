@@ -49,6 +49,10 @@ CREATE_FLAG(flag_remove_source_rejected);
 
 static volatile uint32_t g_broadcast_id;
 static bool reject_control_op;
+static bool no_pref_regression_test;
+static bool no_pref_failed_state_seen;
+static uint8_t bis_sync_req_cnt;
+static uint32_t bis_sync_req_history[3U];
 
 struct sync_state {
 	uint8_t src_id;
@@ -250,6 +254,11 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 		state->recv_state = recv_state;
 	}
 
+	if (no_pref_regression_test && recv_state->num_subgroups > 0U &&
+	    recv_state->subgroups[0].bis_sync == BT_BAP_BIS_SYNC_FAILED) {
+		no_pref_failed_state_seen = true;
+	}
+
 	SET_FLAG(flag_recv_state_updated);
 }
 
@@ -348,11 +357,18 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
 	struct sync_state *state;
-	bool sync_bis;
+	bool sync_bis = false;
 
 	ARG_UNUSED(conn);
 
 	LOG_INF("BIS sync request received for %p", recv_state);
+
+	if (no_pref_regression_test && bis_sync_req_cnt < ARRAY_SIZE(bis_sync_req_history)) {
+		bis_sync_req_history[bis_sync_req_cnt] = bis_sync_req[0];
+	}
+
+	bis_sync_req_cnt++;
+
 	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
 		if (bis_sync_req[i]) {
 			sync_bis = true;
@@ -369,6 +385,14 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 	(void)memcpy(state->bis_sync_req, bis_sync_req,
 		     sizeof(state->bis_sync_req));
+
+	if (no_pref_regression_test) {
+		for (size_t i = 0U; i < ARRAY_SIZE(state->bis_sync_req); i++) {
+			state->bis_sync_req[i] = BT_BAP_BIS_SYNC_FAILED;
+		}
+
+		return bt_bap_scan_delegator_set_bis_sync_state(state->src_id, state->bis_sync_req);
+	}
 
 	if (sync_bis) {
 		SET_FLAG(flag_bis_sync_requested);
@@ -979,6 +1003,36 @@ static void test_main_server_sync_server_rem(void)
 	PASS("BAP Scan Delegator Server Sync Server Remove passed\n");
 }
 
+static void test_main_client_sync_no_pref(void)
+{
+	int err;
+
+	no_pref_regression_test = true;
+	no_pref_failed_state_seen = false;
+	bis_sync_req_cnt = 0U;
+	(void)memset(bis_sync_req_history, 0, sizeof(bis_sync_req_history));
+
+	err = common_init();
+	if (err != 0) {
+		FAIL("common init failed (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_broadcast_source_added);
+	WAIT_FOR_COND(no_pref_failed_state_seen);
+	WAIT_FOR_COND(bis_sync_req_cnt >= 3U);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(bis_sync_req_history); i++) {
+		if (bis_sync_req_history[i] != BT_BAP_BIS_SYNC_NO_PREF) {
+			FAIL("Unexpected BIS sync request[%zu]: 0x%08x\n", i, bis_sync_req_history[i]);
+			return;
+		}
+	}
+
+	WAIT_FOR_FLAG(flag_broadcast_source_removed);
+	PASS("BAP Scan Delegator Client Sync NO_PREF passed\n");
+}
+
 static const struct bst_test_instance test_scan_delegator[] = {
 	{
 		.test_id = "bap_scan_delegator_client_sync",
@@ -997,6 +1051,12 @@ static const struct bst_test_instance test_scan_delegator[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_server_rem,
+	},
+	{
+		.test_id = "bap_scan_delegator_client_sync_no_pref",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_client_sync_no_pref,
 	},
 	BSTEST_END_MARKER
 };
