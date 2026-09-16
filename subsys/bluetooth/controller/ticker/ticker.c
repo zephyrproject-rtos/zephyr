@@ -2299,7 +2299,9 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			if (ticker_ticks_slot != 0U) {
 				instance->ticker_id_slot_previous = id_expired;
 				instance->ticks_slot_previous = ticker_ticks_slot;
-				instance->ticks_slot_previous_forced = ticker->force;
+				instance->ticks_slot_previous_forced =
+					((ticker->force != 0U) || (ticker->ticks_periodic == 0U)) ?
+					1U : 0U;
 			}
 
 #if defined(CONFIG_BT_TICKER_EXT)
@@ -2371,6 +2373,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				 */
 				ticker->req = ticker->ack;
 
+				/* Retain force value */
 				force = ticker->force;
 			} else {
 				uint16_t lazy_periodic;
@@ -2568,6 +2571,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 					   uint32_t ticks_current)
 {
 	struct ticker_user_op_start *start = (void *)&user_op->params.start;
+	uint8_t force;
 
 #if defined(CONFIG_BT_TICKER_LOW_LAT)
 	/* Must expire is not supported in compatibility mode */
@@ -2594,13 +2598,18 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #if defined(CONFIG_BT_TICKER_EXT)
 	ticker->ext_data = start->ext_data;
 
+	if (false) {
+
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
-	if (ticker->ext_data) {
+	} else if (ticker->ext_data) {
 		ticker->ext_data->ticks_drift = 0U;
 		ticker->ext_data->dir_drift_in_window = 0U;
 		ticker->ext_data->has_drift_in_window = 0U;
-	}
+		force = (ticker->ext_data->unforce == 0U) ? 1U : 0U;
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+	} else {
+		force = 1U;
+	}
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	if (ticker->ext_data) {
@@ -2621,6 +2630,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 #else /* !CONFIG_BT_TICKER_EXT */
 	ARG_UNUSED(instance);
+	force = 1U;
 #endif /* !CONFIG_BT_TICKER_EXT */
 #endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
@@ -2650,7 +2660,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 	ticks_to_expire_prep(ticker, ticks_current, start->ticks_at_start);
 
 	ticker->lazy_current = 0U;
-	ticker->force = 1U;
+	ticker->force = force;
 
 	return TICKER_STATUS_SUCCESS;
 }
