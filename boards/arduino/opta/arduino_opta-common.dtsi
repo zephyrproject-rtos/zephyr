@@ -94,10 +94,6 @@
 	smps-output-voltage = "1V8";
 };
 
-&rtc {
-	status = "okay";
-};
-
 &mailbox {
 	status = "okay";
 };
