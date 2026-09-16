@@ -151,3 +151,6 @@ uint8_t tester_unregister_sdp(void);
 
 uint8_t tester_init_rfcomm(void);
 uint8_t tester_unregister_rfcomm(void);
+
+uint8_t tester_init_ftp(void);
+uint8_t tester_unregister_ftp(void);
