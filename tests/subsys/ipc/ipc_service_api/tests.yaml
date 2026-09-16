@@ -110,9 +110,7 @@ tests:
       - remote_FILE_SUFFIX=icbmsg
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
       - SB_CONFIG_REMOTE_NRF54H20_CPUFLPR_CORE=y
-    required_snippets:
-      - nordic-log-stm
-      - nordic-flpr
+      - ipc_service_api_SNIPPET=nordic-flpr
     extra_configs:
       - CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
   ipc.ipc_service_api.icmsg.no_multithreading:
