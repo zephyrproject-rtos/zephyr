@@ -612,13 +612,13 @@ static const struct device *shell_device_internal(size_t idx,
 	const struct device *dev;
 	size_t len = z_device_get_all_static(&dev);
 	const struct device *dev_end = dev + len;
-	size_t prefix_len = (prefix != NULL) ? strlen(prefix) : 0;
+	size_t prefix_len = z_shell_strlen(prefix);
 
 	while (dev < dev_end) {
 		if ((status == SHELL_DEVICE_STATUS_ANY ||
 		     (status == SHELL_DEVICE_STATUS_READY && device_is_ready(dev)) ||
 		     (status == SHELL_DEVICE_STATUS_NON_READY && !device_is_ready(dev))) &&
-		    (dev->name != NULL) && (strlen(dev->name) != 0) &&
+		    (z_shell_strlen(dev->name) != 0) &&
 		    ((prefix == NULL) || (strncmp(prefix, dev->name, prefix_len) == 0)) &&
 		    (filter == NULL || filter(dev))) {
 			if (match_idx == idx) {

@@ -173,7 +173,7 @@ static void cmd_get(struct shell_remote_cli *sh_remote, const struct shell_remot
 	}
 
 	syntax_len = strlen(entry->syntax);
-	help_len = entry->help ? strlen(entry->help) : 0;
+	help_len = z_shell_strlen(entry->help);
 	msg_len = offsetof(struct shell_remote_msg_cmd, data) + syntax_len + help_len + 2;
 	LOG_DBG("Command get parent:%s, syntax:%s len:%d, help_len:%d, syntax_len:%d",
 		msg->parent ? msg->parent->syntax : "NULL", entry->syntax, msg_len, help_len,
