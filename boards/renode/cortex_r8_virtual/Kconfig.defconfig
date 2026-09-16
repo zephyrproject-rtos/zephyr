@@ -1,0 +1,8 @@
+#
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+configdefault ISR_STACK_SIZE
+	default 512
