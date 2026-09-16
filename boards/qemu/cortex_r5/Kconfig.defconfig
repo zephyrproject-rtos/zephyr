@@ -21,4 +21,7 @@ endchoice
 
 endif
 
+configdefault ISR_STACK_SIZE
+	default 512
+
 endif # BOARD_QEMU_CORTEX_R5
