@@ -152,28 +152,6 @@ static inline uint16_t flash_reg_to_raw(const struct flash_reg *reg)
 	return raw;
 }
 
-#if STM32_QSPI_USE_DMA
-static const uint32_t table_m_size[] = {
-	LL_DMA_MDATAALIGN_BYTE,
-	LL_DMA_MDATAALIGN_HALFWORD,
-	LL_DMA_MDATAALIGN_WORD,
-};
-
-static const uint32_t table_p_size[] = {
-	LL_DMA_PDATAALIGN_BYTE,
-	LL_DMA_PDATAALIGN_HALFWORD,
-	LL_DMA_PDATAALIGN_WORD,
-};
-
-/* Lookup table to set dma priority from the DTS */
-static const uint32_t table_priority[] = {
-	DMA_PRIORITY_LOW,
-	DMA_PRIORITY_MEDIUM,
-	DMA_PRIORITY_HIGH,
-	DMA_PRIORITY_VERY_HIGH,
-};
-#endif /* STM32_QSPI_USE_DMA */
-
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct stream {
@@ -1558,6 +1536,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	/* Proceed to the minimum Zephyr DMA driver init */
 	dma_cfg->user_data = &hdma;
+	dma_cfg->channel_direction = PERIPHERAL_TO_MEMORY;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
 	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, dma_cfg);
@@ -1565,27 +1544,13 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Proceed to the HAL DMA driver init */
-	if (dma_cfg->source_data_size != dma_cfg->dest_data_size) {
-		LOG_ERR("Source and destination data sizes not aligned");
-		return -EINVAL;
+	ret = dma_stm32_zcfg_to_halcfg(dev_data->dma.dev, dma_cfg, &hdma.Init,
+				       DMA_ADDR_ADJ_NO_CHANGE, DMA_ADDR_ADJ_INCREMENT);
+	if (ret < 0) {
+		return ret;
 	}
 
-	int index = find_lsb_set(dma_cfg->source_data_size) - 1;
-
-	hdma.Init.PeriphDataAlignment = table_p_size[index];
-	hdma.Init.MemDataAlignment = table_m_size[index];
-	hdma.Init.PeriphInc = DMA_PINC_DISABLE;
-	hdma.Init.MemInc = DMA_MINC_ENABLE;
-	hdma.Init.Mode = DMA_NORMAL;
-	hdma.Init.Priority = table_priority[dma_cfg->channel_priority];
 	hdma.Instance = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
-#ifdef CONFIG_DMA_STM32_V1
-	/* TODO: Not tested in this configuration */
-	hdma.Init.Channel = dma_cfg->dma_slot;
-#else
-	hdma.Init.Request = dma_cfg->dma_slot;
-#endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&dev_data->hqspi, hdma, hdma);
