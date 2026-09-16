@@ -151,6 +151,16 @@ tests:
     extra_configs:
       - CONFIG_NRF_SYS_EVENT=y
       - CONFIG_SOC_NRF_FORCE_CONSTLAT=y
+  drivers.uart.uart_elementary.lp_mspm:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+      - lp_mspm33c321a
+    integration_platforms:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+      - lp_mspm33c321a
   drivers.uart.uart_elementary.build_gd32:
     build_only: true
     harness: ""
