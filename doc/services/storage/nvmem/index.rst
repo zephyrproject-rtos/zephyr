@@ -17,6 +17,15 @@ An NVMEM provider is a driver that exposes NVMEM cells. For example, an EEPROM
 driver can be an NVMEM provider. The NVMEM provider is responsible for reading
 and writing data to the underlying hardware.
 
+Devices implementing one of the memory device APIs the subsystem supports are
+NVMEM providers as-is: the subsystem accesses their cells through those APIs.
+Devices whose purpose is to expose NVMEM cells implement the NVMEM
+provider driver API instead, see :c:struct:`nvmem_provider_driver_api`. Such
+provider drivers live in :zephyr_file:`drivers/nvmem_provider`. The cell's
+devicetree reg address is passed to them unmodified and does not have to be a
+byte offset into a flat memory space; the byte offset within the cell is
+passed separately.
+
 NVMEM Cell
 ==========
 
@@ -37,6 +46,7 @@ Configuration
 * :kconfig:option:`CONFIG_NVMEM_EEPROM`: Enables NVMEM support for EEPROM devices.
 * :kconfig:option-regex:`CONFIG_NVMEM_FLASH.*`: Configure NVMEM support for flash devices.
 * :kconfig:option-regex:`CONFIG_NVMEM_OTP.*`: Configure NVMEM support for OTP devices.
+* :kconfig:option:`CONFIG_NVMEM_PROVIDER`: Enables the NVMEM provider drivers.
 
 Devicetree Bindings
 *******************
@@ -76,3 +86,8 @@ API Reference
 *************
 
 .. doxygengroup:: nvmem_interface
+
+Provider Driver API Reference
+=============================
+
+.. doxygengroup:: nvmem_provider_interface

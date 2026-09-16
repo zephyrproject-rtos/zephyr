@@ -4297,8 +4297,10 @@ NVMEM:
     - henrikbrixandersen
   files:
     - doc/services/storage/nvmem/
+    - drivers/nvmem_provider/
     - dts/bindings/nvmem/
     - include/zephyr/devicetree/nvmem.h
+    - include/zephyr/drivers/nvmem_provider.h
     - include/zephyr/nvmem.h
     - subsys/nvmem/
     - tests/subsys/nvmem/
