@@ -8,7 +8,11 @@ Overview
 
 A simple sample that to demo audio speaker play, and mic to speaker loopback functions.
 
-It plays a 1 kHz sine wave tone with 16-bit width and 16 kSPS rate.
+It plays a sine wave tone with 16-bit width and 16 kSPS rate. The tone is
+generated at runtime, so its frequency can be changed with
+:kconfig:option:`CONFIG_SAMPLE_TONE_HZ`. The default 440 Hz is the reference
+pitch of the A4 note, so the tone can be checked against a guitar tuner or a
+tuning fork.
 
 Building and Running
 ********************

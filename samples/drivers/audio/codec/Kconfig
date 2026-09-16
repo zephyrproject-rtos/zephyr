@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SAMPLE_TONE_HZ
+	int "Playback tone frequency in Hz"
+	range 20 7999
+	default 440
+	help
+	  Frequency of the sine tone the sample plays. It must stay below
+	  8000 Hz, half the 16 kHz sample rate. The default 440 Hz is the
+	  reference pitch of the A4 note, so the tone can be checked against
+	  a guitar tuner or a tuning fork.
