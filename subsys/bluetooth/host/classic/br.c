@@ -253,6 +253,7 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 
 	sco_conn->handle = handle;
 	sco_conn->sco.air_mode = evt->air_mode;
+	sco_conn->sco.interval = evt->tx_interval;
 
 	if (sco_conn->sco.link_type != evt->link_type) {
 		LOG_WRN("link type mismatch %u != %u", sco_conn->sco.link_type, evt->link_type);

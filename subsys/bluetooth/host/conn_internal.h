@@ -180,6 +180,8 @@ struct bt_conn_sco {
 	uint8_t                 link_type;
 	/* Reference to BT_HCI_CODING_FORMAT_* */
 	uint8_t                 air_mode;
+	/* Transmission interval */
+	uint8_t                 interval;
 };
 
 struct bt_conn_iso {
