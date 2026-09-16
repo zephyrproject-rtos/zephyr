@@ -959,6 +959,7 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 				      const uint8_t *tx_buf, uint8_t *rx_buf, uint32_t buf_len)
 {
 	struct spi_stm32_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
 	const uint8_t dfs = bits2bytes(config->operation);
 	const uint32_t size = buf_len / dfs;
 	bool use_dma = false;
@@ -978,10 +979,34 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 
 	data->ctx.tx_buf = tx_buf;
 	data->ctx.rx_buf = rx_buf;
-	data->ctx.tx_len = tx_buf != NULL ? size : 0;
-	data->ctx.rx_len = rx_buf != NULL ? size : 0;
-	data->ctx.tx_count = tx_buf != NULL ? 1 : 0;
-	data->ctx.rx_count = rx_buf != NULL ? 1 : 0;
+
+	switch (rtio_ctx->txn_curr->sqe.op) {
+	case RTIO_OP_RX:
+		data->ctx.tx_len = 0;
+		data->ctx.tx_count = 0;
+		data->ctx.rx_len = size;
+		data->ctx.rx_count = 1;
+		break;
+	case RTIO_OP_TX:
+	case RTIO_OP_TINY_TX:
+		data->ctx.tx_len = size;
+		data->ctx.tx_count = 1;
+		data->ctx.rx_len = 0;
+		data->ctx.rx_count = 0;
+		break;
+	case RTIO_OP_TXRX:
+		data->ctx.tx_len = size;
+		data->ctx.tx_count = 1;
+		data->ctx.rx_len = size;
+		data->ctx.rx_count = 1;
+		break;
+	default:
+		data->ctx.tx_len = 0;
+		data->ctx.tx_count = 0;
+		data->ctx.rx_len = 0;
+		data->ctx.rx_count = 0;
+		break;
+	}
 
 	data->ctx.sync_status = 0;
 	data->ctx.owner = config;
