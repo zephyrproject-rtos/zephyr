@@ -11,6 +11,9 @@
 # RPMSG-Lite integration Kconfig is present, it will provide the user-facing
 # definitions.
 
+config ZEPHYR_RPMSG_LITE_MODULE
+	bool
+
 config RPMSGLITE
 	bool
 
