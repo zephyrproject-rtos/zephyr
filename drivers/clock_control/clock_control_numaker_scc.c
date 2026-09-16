@@ -179,6 +179,10 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			return -ENOTSUP;
 		}
 		break;
+	case EMAC0_MODULE:
+		/* The EMAC has no clock source selection, it runs off HCLK. */
+		*source_rate = CLK_GetHCLKFreq();
+		break;
 #elif defined(CONFIG_SOC_SERIES_M2L31X)
 	case CANFD0_MODULE:
 	case CANFD1_MODULE:
@@ -249,6 +253,10 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 				(uint64_t)clk_modidx_real, clksrc_idx);
 			return -ENOTSUP;
 		}
+		break;
+	case EMAC0_MODULE:
+		/* The EMAC has no clock source selection, it runs off HCLK0. */
+		*source_rate = CLK_GetHCLK0Freq();
 		break;
 #elif defined(CONFIG_SOC_SERIES_M333X)
 	case CANFD0_MODULE:
