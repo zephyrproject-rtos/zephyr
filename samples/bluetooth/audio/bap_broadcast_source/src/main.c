@@ -20,10 +20,12 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
@@ -200,9 +202,133 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(CONFIG_
 static int16_t send_pcm_data[MAX_NUM_SAMPLES];
 static uint16_t seq_num;
 static bool stopping;
+static uint8_t acl_conn_count;
 
 static K_SEM_DEFINE(sem_started, 0U, 1U);
 static K_SEM_DEFINE(sem_stopped, 0U, 1U);
+
+#define LED1_NODE DT_ALIAS(led0)
+#define LED2_NODE DT_ALIAS(led1)
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE) || DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+#define LED_BLINK_INTERVAL K_MSEC(250)
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+static const struct gpio_dt_spec led_iso = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
+static struct k_work_delayable led_iso_work;
+static bool led_iso_is_on;
+static bool led_iso_blinking;
+static bool led_iso_ready;
+
+static void led_iso_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (!led_iso_blinking) {
+		return;
+	}
+
+	led_iso_is_on = !led_iso_is_on;
+	(void)gpio_pin_set_dt(&led_iso, (int)led_iso_is_on);
+	(void)k_work_reschedule(&led_iso_work, LED_BLINK_INTERVAL);
+}
+
+static void led_iso_blink_set(bool enable)
+{
+	if (!led_iso_ready) {
+		return;
+	}
+
+	led_iso_blinking = enable;
+
+	if (!enable) {
+		(void)k_work_cancel_delayable(&led_iso_work);
+		led_iso_is_on = false;
+		(void)gpio_pin_set_dt(&led_iso, 0);
+		return;
+	}
+
+	(void)k_work_reschedule(&led_iso_work, K_NO_WAIT);
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
+#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+static const struct gpio_dt_spec led_acl = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
+static struct k_work_delayable led_acl_work;
+static bool led_acl_is_on;
+static bool led_acl_blinking;
+static bool led_acl_ready;
+
+static void led_acl_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (!led_acl_blinking) {
+		return;
+	}
+
+	led_acl_is_on = !led_acl_is_on;
+	(void)gpio_pin_set_dt(&led_acl, (int)led_acl_is_on);
+	(void)k_work_reschedule(&led_acl_work, LED_BLINK_INTERVAL);
+}
+
+static void led_acl_blink_set(bool enable)
+{
+	if (!led_acl_ready) {
+		return;
+	}
+
+	led_acl_blinking = enable;
+
+	if (!enable) {
+		(void)k_work_cancel_delayable(&led_acl_work);
+		led_acl_is_on = false;
+		(void)gpio_pin_set_dt(&led_acl, 0);
+		return;
+	}
+
+	(void)k_work_reschedule(&led_acl_work, K_NO_WAIT);
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
+
+static void leds_init(void)
+{
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	if (gpio_is_ready_dt(&led_iso)) {
+		int err;
+
+		err = gpio_pin_configure_dt(&led_iso, GPIO_OUTPUT_INACTIVE);
+		if (err == 0) {
+			k_work_init_delayable(&led_iso_work, led_iso_work_handler);
+			led_iso_ready = true;
+		}
+	}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
+#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+	if (gpio_is_ready_dt(&led_acl)) {
+		int err;
+
+		err = gpio_pin_configure_dt(&led_acl, GPIO_OUTPUT_INACTIVE);
+		if (err == 0) {
+			k_work_init_delayable(&led_acl_work, led_acl_work_handler);
+			led_acl_ready = true;
+		}
+	}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
+}
+
+#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+static void update_acl_led(void)
+{
+	led_acl_blink_set(acl_conn_count > 0U);
+}
+#else
+static void update_acl_led(void)
+{
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
 
 #define BROADCAST_SOURCE_LIFETIME 120U /* seconds */
 
@@ -555,12 +681,22 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 static void source_started_cb(struct bt_bap_broadcast_source *source)
 {
 	printk("Broadcast source %p started\n", source);
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	led_iso_blink_set(true);
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
 	k_sem_give(&sem_started);
 }
 
 static void source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason)
 {
 	printk("Broadcast source %p stopped with reason 0x%02X\n", source, reason);
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	led_iso_blink_set(false);
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
 	k_sem_give(&sem_stopped);
 }
 
@@ -637,6 +773,8 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	}
 
 	printk("Connected to %s (broadcast continues)\n", addr);
+	acl_conn_count++;
+	update_acl_led();
 
 	/* When one advertising set produces a connection, the other stays
 	 * advertising. Re-start any advertising set the stack stopped so a
@@ -651,6 +789,10 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 	printk("Disconnected from %s (reason 0x%02X)\n", addr, reason);
+	if (acl_conn_count > 0U) {
+		acl_conn_count--;
+	}
+	update_acl_led();
 
 	/* Restart the connectable advertising sets so the central can
 	 * reconnect. Both sets are restarted; -EALREADY is treated as OK for
@@ -732,6 +874,8 @@ int main(void)
 		printk("Failed to set 128 MHz (err %d)\n", err);
 	}
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
+
+	leds_init();
 
 	err = bt_enable(NULL);
 	if (err != 0) {
