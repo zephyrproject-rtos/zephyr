@@ -1,0 +1,280 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32p4/esp32p4.dtsi>
+#include "esp32p4_wifi6_touch_lcd_4_3_esp32p4_hpcore-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+#include <espressif/partitions_0x2000_default_32M.dtsi>
+
+/ {
+	model = "Waveshare ESP32-P4-WIFI6-Touch-LCD-4.3 HP Core";
+	compatible = "espressif,esp32p4";
+
+	chosen {
+		zephyr,sram = &sramhp;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp_hosted_mcu_hci;
+		zephyr,display = &dsi_display;
+		zephyr,touch = &gt911;
+	};
+
+	aliases {
+		sdhc0 = &sdhc0;
+		sw0 = &boot_button;
+		watchdog0 = &wdt0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		boot_button: button {
+			label = "Boot Button";
+			gpios = <&gpio1 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(32)>;
+	ranges = <0x0 0x0 DT_SIZE_M(32)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(32)>;
+};
+
+/* v3.x silicon: valid CPU frequencies are 100/200/400 MHz */
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	gt911: touch-controller@5d {
+		compatible = "goodix,gt911";
+		status = "okay";
+		reg = <0x5d>;
+		/*
+		 * The INT line is not routed to the SoC, so the address is the
+		 * one the panel straps and the driver polls the controller.
+		 */
+		alt-addr = <0x14>;
+		reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		screen-width = <480>;
+		screen-height = <800>;
+	};
+};
+
+/* ES8311 codec and ES7210 echo canceller, for which there is no driver yet. */
+&i2s0 {
+	status = "disabled";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&coretemp {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&dma_axi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
+&sdhc {
+	sdhc0: sdhc@0 {
+		status = "okay";
+		bus-width = <4>;
+		max-bus-freq = <40000000>;
+		clk-pin = <43>;
+		cmd-pin = <44>;
+		d0-pin = <39>;
+		d1-pin = <40>;
+		d2-pin = <41>;
+		d3-pin = <42>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+
+	sdhc1: sdhc@1 {
+		status = "okay";
+		bus-width = <4>;
+		max-bus-freq = <40000000>;
+		clk-pin = <18>;
+		cmd-pin = <19>;
+		d0-pin = <14>;
+		d1-pin = <15>;
+		d2-pin = <16>;
+		d3-pin = <17>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		esp_hosted_mcu: esp-hosted-mcu@0 {
+			compatible = "espressif,esp-hosted-mcu";
+			reg = <0>;
+			/* GPIO54: ESP32-C6 CHIP_PU */
+			reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+
+			esp_hosted_mcu_wifi: wifi {
+				compatible = "espressif,esp-hosted-mcu-wifi";
+				status = "okay";
+			};
+
+			esp_hosted_mcu_hci: bt-hci {
+				compatible = "espressif,esp-hosted-mcu-bt-hci";
+				status = "okay";
+			};
+		};
+	};
+};
+
+&ldo {
+	status = "okay";
+
+	ldo1@1 {
+		regulator-init-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	ldo2@2 {
+		regulator-init-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	/* VDD_MIPI_DPHY */
+	ldo3@3 {
+		regulator-init-microvolt = <2500000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	ldo4@4 {
+		regulator-init-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&mipi_dsi {
+	status = "okay";
+	phy-clock = <500000000>;
+	dpi-clock-frequency = <30000000>;
+
+	st7701: panel-controller@0 {
+		compatible = "sitronix,st7701";
+		reg = <0>;
+		data-lanes = <2>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+		width = <480>;
+		height = <800>;
+		reset-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		/* GPIO33 enables the AP3032 backlight boost converter. */
+		bl-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+
+		/*
+		 * Panel settings that differ from the driver defaults. The
+		 * line setting is left out because the value derived from the
+		 * 800 line height is the one the panel needs.
+		 */
+		bk3-ef = [ef 08];
+		porctrl = [c1 0d 02];
+		invsel = [c2 17 08];
+		cc-control = [cc 10];
+		vrhs = <0x5d>;
+		vcom = <0x4e>;
+		vgls = <0x4e>;
+		pwctlr2 = <0x21>;
+		pvgamctrl = [b0 40 c9 94 0e 10 05 0b 09 08 26 04 52 10 69 6b 69];
+		nvgamctrl = [b1 40 d2 98 0c 92 07 09 08 07 25 02 0e 0c 6e 78 55];
+		gip-e0 = [e0 00 3a 02];
+		gip-e1 = [e1 04 a0 00 a0 05 a0 00 a0 00 40 40];
+		gip-e2 = [e2 30 00 40 40 32 a0 00 a0 00 a0 00 a0 00];
+		gip-e3 = [e3 00 00 33 33];
+		gip-e4 = [e4 44 44];
+		gip-e5 = [e5 09 2e a0 a0 0b 30 a0 a0 05 2a a0 a0 07 2c a0 a0];
+		gip-e6 = [e6 00 00 33 33];
+		gip-e7 = [e7 44 44];
+		gip-e8 = [e8 08 2d a0 a0 0a 2f a0 a0 04 29 a0 a0 06 2b a0 a0];
+		gip-eb = [eb 00 00 4e 4e 00 00 00];
+		gip-ec = [ec 08 01];
+		gip-ed = [ed b0 2b 98 a4 56 7f ff ff ff ff f7 65 4a 89 b2 0b];
+		gip-ef = [ef 08 08 08 45 3f 54];
+
+		display-timings {
+			compatible = "zephyr,panel-timing";
+			hsync-len = <12>;
+			hback-porch = <42>;
+			hfront-porch = <42>;
+			vsync-len = <8>;
+			vback-porch = <2>;
+			vfront-porch = <60>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			de-active = <1>;
+			pixelclk-active = <0>;
+		};
+	};
+};
+
+&dsi_display {
+	status = "okay";
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	width = <480>;
+	height = <800>;
+};
