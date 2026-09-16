@@ -45,6 +45,9 @@ tests:
       - CONFIG_LORAWAN_REGION_EU868=y
       - CONFIG_LORAWAN_REGION_US915=y
   sample.lorawan.class_a.native:
+    # The native backend only drives SX126x, the STM32WL sub-GHz radio and
+    # LR11xx; the other lora boards carry an SX127x it has no driver for.
+    filter: CONFIG_LORA_SX126X_NATIVE or CONFIG_LORA_LR11XX_NATIVE
     extra_configs:
       - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
       - CONFIG_LORAWAN_REGION_EU868=y
