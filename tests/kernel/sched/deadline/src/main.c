@@ -89,7 +89,7 @@ ZTEST(suite_deadline, test_deadline)
 				worker_stacks[i], STACK_SIZE,
 				worker, INT_TO_POINTER(i), NULL, NULL,
 				K_LOWEST_APPLICATION_THREAD_PRIO,
-				0, K_NO_WAIT);
+				0, K_FOREVER);
 
 		/* Positive-definite number with the bottom 8 bits
 		 * masked off to prevent aliasing where "very close"
@@ -111,14 +111,20 @@ ZTEST(suite_deadline, test_deadline)
 
 	zassert_true(n_exec == 0, "threads ran too soon");
 
-	/* Similarly do the deadline setting in one quick pass to
-	 * minimize aliasing with "now"
+	/*
+	 * Assign all worker deadlines before making the workers runnable.
+	 * Updating already-queued workers could temporarily mix their initial
+	 * zero deadlines with absolute cycle deadlines.
 	 */
 	for (i = 0; i < NUM_THREADS; i++) {
 		k_thread_deadline_set(&worker_threads[i], thread_deadlines[i]);
 	}
 
 	zassert_true(n_exec == 0, "threads ran too soon");
+
+	for (i = 0; i < NUM_THREADS; i++) {
+		k_thread_start(&worker_threads[i]);
+	}
 
 	k_sleep(K_MSEC(100));
 
