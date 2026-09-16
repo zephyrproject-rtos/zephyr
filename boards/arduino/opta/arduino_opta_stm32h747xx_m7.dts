@@ -68,6 +68,12 @@ zephyr_udc0: &usbotg_fs {
 	clock-frequency = <DT_FREQ_M(400)>;
 };
 
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;
