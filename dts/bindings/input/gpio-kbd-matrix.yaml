@@ -19,7 +19,8 @@ properties:
     type: phandle-array
     required: true
     description: |
-      GPIO for the keyboard matrix rows, up to 8 different GPIOs. All row GPIO
+      GPIO for the keyboard matrix rows, up to 8 or 16 different GPIOs
+      depending on CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW. All row GPIO
       pins must have interrupt support if idle-mode is set to "interrupt"
       (default).
 
