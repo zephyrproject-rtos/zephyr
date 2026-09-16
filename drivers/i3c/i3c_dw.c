@@ -475,9 +475,18 @@ static inline bool dw_i3c_is_current_controller(const struct device *dev)
 }
 
 #ifdef CONFIG_I3C_CONTROLLER
-static uint8_t get_free_pos(uint32_t free_pos)
+static int get_free_pos(uint32_t free_pos)
 {
+	if (free_pos == 0U) {
+		return -ENOSPC;
+	}
+
 	return find_lsb_set(free_pos) - 1;
+}
+
+static bool dw_i3c_cmd_count_valid(const struct dw_i3c_data *data, size_t ncmds)
+{
+	return ncmds <= ARRAY_SIZE(data->xfer.cmds) && ncmds <= data->cmdfifodepth;
 }
 
 /**
@@ -831,7 +840,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 		return -EACCES;
 	}
 
-	if (num_msgs > data->cmdfifodepth) {
+	if (!dw_i3c_cmd_count_valid(data, num_msgs)) {
 		return -ENOTSUP;
 	}
 
@@ -1001,11 +1010,11 @@ static int dw_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_dev
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint8_t pos;
+	int pos;
 
 	pos = get_free_pos(data->free_pos);
 	if (pos < 0) {
-		return -ENOSPC;
+		return pos;
 	}
 
 	data->dw_i3c_i2c_priv_data[pos].id = pos;
@@ -1056,7 +1065,7 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 		return -EACCES;
 	}
 
-	if (num_msgs > data->cmdfifodepth) {
+	if (!dw_i3c_cmd_count_valid(data, num_msgs)) {
 		return -ENOTSUP;
 	}
 
@@ -1879,12 +1888,12 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint8_t pos = get_free_pos(data->free_pos);
+	int pos = get_free_pos(data->free_pos);
 	uint8_t addr = desc->dynamic_addr ? desc->dynamic_addr : desc->static_addr;
 
 	if (pos < 0) {
 		LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
-		return -ENOSPC;
+		return pos;
 	}
 
 	data->dw_i3c_i2c_priv_data[pos].id = pos;
@@ -2048,6 +2057,27 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		return -EACCES;
 	}
 
+	if (payload == NULL) {
+		return -EINVAL;
+	}
+
+	if (!i3c_ccc_is_payload_broadcast(payload)) {
+		size_t ncmds = payload->targets.num_targets;
+
+		if (payload->targets.payloads == NULL || ncmds == 0U) {
+			LOG_ERR("%s: Invalid direct CCC target payload", dev->name);
+			return -EINVAL;
+		}
+
+		if (!dw_i3c_cmd_count_valid(data, ncmds)) {
+			LOG_ERR("%s: Invalid direct CCC target count %zu "
+				"(driver max %zu, command FIFO depth %u)",
+				dev->name, ncmds, ARRAY_SIZE(data->xfer.cmds),
+				(unsigned int)data->cmdfifodepth);
+			return -ENOTSUP;
+		}
+	}
+
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
 		LOG_DBG("%s: Mutex err (%d)", dev->name, ret);
@@ -2079,13 +2109,8 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 			cmd->tx_len = payload->ccc.data_len;
 		}
 	} else {
-		if (!(payload->targets.payloads)) {
-			LOG_ERR("%s: Direct CCC Payload structure Empty", dev->name);
-			ret = -EINVAL;
-			goto error;
-		}
 		xfer->ncmds = payload->targets.num_targets;
-		for (i = 0; i < payload->targets.num_targets; i++) {
+		for (i = 0; i < xfer->ncmds; i++) {
 			cmd = &xfer->cmds[i];
 			/* Look up position, SETDASA will perform the look up by static addr */
 			pos = get_i3c_addr_pos(dev, payload->targets.payloads[i].addr,
