@@ -15,8 +15,13 @@ typedef hal_hash_handle_t	stm32_hash_handle_t;
 typedef HASH_HandleTypeDef	stm32_hash_handle_t;
 #endif /* CONFIG_STM32_HAL2 */
 
+#if defined(STM32_HASH_USE_SHA3)
+/* Max digest length: SHA3-512 = 64 bytes */
+#define STM32_HASH_MAX_DIGEST_SIZE (64)
+#else
 /* Max digest length: SHA256 = 32 bytes */
 #define STM32_HASH_MAX_DIGEST_SIZE (32)
+#endif
 
 struct crypto_stm32_hash_config {
 	HASH_TypeDef *base;
