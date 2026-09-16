@@ -11,7 +11,7 @@ supported:
   - dma
   - entropy
   - adc
-  - octospi
+  - mspi
   - can
   - canfd
   - netif:eth
