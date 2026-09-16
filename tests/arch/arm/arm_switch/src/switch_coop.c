@@ -1,10 +1,14 @@
-/* Copyright 2025 The ChromiumOS Authors
+/*
+ * SPDX-FileCopyrightText: 2025 The ChromiumOS Authors
+ * SPDX-FileCopyrightText: 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/ztest.h>
 #include <kernel_arch_func.h>
+#include "vector_hijack.h"
 
 #ifdef CONFIG_MULTITHREADING
 #error "Test does not work with CONFIG_MULTITHREADING=y"
@@ -91,8 +95,10 @@ void my_svc(void)
 	printk("   arm_m_exc_tail() has been called\n");
 }
 
-ZTEST(arm_m_switch, test_smoke)
+ZTEST(arm_switch_coop, test_smoke)
 {
+	vector_hijack(my_svc);
+
 	void *psplim;
 
 	__asm__ volatile("mrs %0, psplim" : "=r"(psplim));
@@ -165,41 +171,4 @@ ZTEST(arm_m_switch, test_smoke)
 	}
 }
 
-/* Makes a copy of the vector table in writable RAM (it's generally in
- * a ROM section), redirects it, and hooks the SVC interrupt with our
- * own code above so we can catch direct interrupts.
- */
-void *vector_hijack(void)
-{
-	static uint32_t __aligned(1024) vectors[256];
-	uint32_t *vtor_p = (void *)0xe000ed08;
-	uint32_t *vtor = (void *)*vtor_p;
-
-	printk("VTOR @%p\n", vtor);
-	if (vtor == NULL) {
-		/* mps2/an385 doesn't set this up, don't know why */
-		printk("VTOR not set up by SOC, skipping case\n");
-		ztest_test_skip();
-		return NULL;
-	}
-
-	/* Vector count: _vector_start/end set by the linker. */
-	int nv = (&_vector_end[0] - &_vector_start[0]) / sizeof(uint32_t);
-
-	for (int i = 0; i < nv; i++) {
-		vectors[i] = vtor[i];
-	}
-	*vtor_p = (uint32_t)&vectors[0];
-	vtor = (void *)*vtor_p;
-	printk("VTOR now @%p\n", vtor);
-
-	/* And hook the SVC call with our own function above, allowing
-	 * us direct access to interrupt entry
-	 */
-	vtor[11] = (int)my_svc;
-	printk("vtor[11] == %p (my_svc == %p)\n", (void *)vtor[11], my_svc);
-
-	return NULL;
-}
-
-ZTEST_SUITE(arm_m_switch, NULL, vector_hijack, NULL, NULL, NULL);
+ZTEST_SUITE(arm_switch_coop, NULL, NULL, NULL, NULL, NULL);
