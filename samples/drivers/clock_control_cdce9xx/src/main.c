@@ -79,7 +79,15 @@ static int cmd_set_rate(const struct shell *p_shell_ctx, size_t argc, char **p_a
 {
 	if (argc == 3) {
 		int which = strtol(p_argv[1], NULL, 10);
-		int rate = strtol(p_argv[2], NULL, 10);
+		int err = 0;
+		unsigned long parsed_rate = shell_strtoul(p_argv[2], 10, &err);
+
+		if (err != 0 || parsed_rate > UINT32_MAX) {
+			shell_error(p_shell_ctx, "Invalid rate: %s", p_argv[2]);
+			return (err != 0) ? err : -ERANGE;
+		}
+
+		uint32_t rate = (uint32_t)parsed_rate;
 		int rc = clock_control_set_rate(clock_dev, INT_TO_POINTER(which),
 						INT_TO_POINTER(rate));
 
