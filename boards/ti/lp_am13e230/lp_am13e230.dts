@@ -8,6 +8,7 @@
 
 #include <ti/am13/am13e23019.dtsi>
 #include <ti/am13/am13e23019-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	model = "TI AM13E230X Launchpad";
@@ -17,4 +18,39 @@
 		zephyr,sram = &sram0_1_2;
 		zephyr,flash = &flash0;
 	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
 };

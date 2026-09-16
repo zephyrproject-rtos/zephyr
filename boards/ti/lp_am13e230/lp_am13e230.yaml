@@ -6,4 +6,6 @@ toolchain:
   - zephyr
 ram: 96
 flash: 512
+supported:
+  - gpio
 vendor: ti
