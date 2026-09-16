@@ -153,6 +153,7 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 {
 	int rc;
 	size_t written = 0;
+	size_t added;
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
 	bool need_resched = false;
@@ -198,12 +199,16 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 			}
 		}
 
+		added = ring_buf_put(&pipe->buf, &data[written], len - written);
+
 #ifdef CONFIG_POLL
-		need_resched |= z_handle_obj_poll_events(&pipe->poll_events,
-							 K_POLL_STATE_PIPE_DATA_AVAILABLE);
+		if (added != 0) {
+			need_resched |= z_handle_obj_poll_events(&pipe->poll_events,
+								 K_POLL_STATE_PIPE_DATA_AVAILABLE);
+		}
 #endif /* CONFIG_POLL */
 
-		written += ring_buf_put(&pipe->buf, &data[written], len - written);
+		written += added;
 		if (likely(written == len)) {
 			rc = written;
 			break;
