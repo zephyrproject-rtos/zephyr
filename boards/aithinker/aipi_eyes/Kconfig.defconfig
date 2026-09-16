@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_AIPI_EYES_S2
+if BOARD_AIPI_EYES_S1 || BOARD_AIPI_EYES_S2
 
 configdefault CONSOLE
 	default y
