@@ -180,7 +180,7 @@ void bt_mesh_rpl_clear(void)
 
 	atomic_set_bit(rpl_flags, PENDING_CLEAR);
 
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_RESET_PENDING);
 }
 
 static struct bt_mesh_rpl *bt_mesh_rpl_find(uint16_t src)
@@ -216,9 +216,9 @@ void bt_mesh_rpl_reset(void)
 	 * any other ones (which are valid) as old.
 	 */
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		int i;
+		bool dirty = false;
 
-		for (i = 0; i < ARRAY_SIZE(replay_list); i++) {
+		for (int i = 0; i < ARRAY_SIZE(replay_list); i++) {
 			struct bt_mesh_rpl *rpl = &replay_list[i];
 
 			if (!rpl->src) {
@@ -230,11 +230,12 @@ void bt_mesh_rpl_reset(void)
 			 */
 			atomic_set_bit_to(store, i, !rpl->old_iv);
 			rpl->old_iv = !rpl->old_iv;
+			dirty = true;
 		}
 
-		if (i != 0) {
+		if (dirty) {
 			atomic_set_bit(rpl_flags, PENDING_RESET);
-			bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
+			bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_RESET_PENDING);
 		}
 	} else {
 		int shift = 0;
@@ -360,6 +361,7 @@ void bt_mesh_rpl_pending_store(uint16_t addr)
 
 	if (addr == BT_MESH_ADDR_ALL_NODES) {
 		bt_mesh_settings_store_cancel(BT_MESH_SETTINGS_RPL_PENDING);
+		bt_mesh_settings_store_cancel(BT_MESH_SETTINGS_RPL_RESET_PENDING);
 	}
 
 	clr = atomic_test_and_clear_bit(rpl_flags, PENDING_CLEAR);
