@@ -5656,6 +5656,11 @@ Rockchip Platforms:
     - dts/arm/rockchip/
     - dts/arm64/rockchip/
     - soc/rockchip/
+    - drivers/*/*rk35*
+    - drivers/*/*rockchip*
+    - drivers/*/*/*rockchip*
+    - dts/bindings/*/rockchip,*
+    - include/zephyr/dt-bindings/*/*rk35*
   labels:
     - "platform: Rockchip"
 
