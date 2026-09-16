@@ -199,6 +199,45 @@ This is entirely done by the power management subsystem. Instead, drivers are
 responsible for implementing any hardware-specific tasks needed to handle state
 changes.
 
+Externally Controlled Power Domains
+***********************************
+
+Some power domains are not switched by software. Their rail is controlled
+externally and the domain device only senses it, for example through a GPIO,
+and reports the change to the devices on that domain. The reference
+implementation is :dtcompatible:`power-domain-gpio-monitor`.
+
+Sensing the rail does not exempt the domain from the ``Device actions x
+states`` graph above. A device cannot be moved from
+:c:enumerator:`PM_DEVICE_STATE_ACTIVE` straight to
+:c:enumerator:`PM_DEVICE_STATE_OFF`, so an externally controlled domain that
+observes power loss must notify each device on the domain with
+:c:enumerator:`PM_DEVICE_ACTION_SUSPEND` before
+:c:enumerator:`PM_DEVICE_ACTION_TURN_OFF`. When power returns, the domain
+notifies its devices with :c:enumerator:`PM_DEVICE_ACTION_TURN_ON`, which
+publishes :c:enumerator:`PM_DEVICE_STATE_SUSPENDED` so a later resume can
+bring the device back up.
+
+Because the rail is already gone by the time the domain observes it, these
+notifications force the transition rather than request it. A device driver
+whose suspend hook fails is still recorded as suspended and then turned off,
+so that the tracked state keeps matching the physical one.
+
+If :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` is enabled, power loss also
+invalidates every outstanding runtime reference to the devices on the domain,
+because the hardware they were holding a reference for is no longer powered.
+Their usage counters are reset, and a pending asynchronous suspend is
+reconciled before ``OFF`` is published, so a device is never left in
+:c:enumerator:`PM_DEVICE_STATE_SUSPENDING` after the rail has dropped. A
+:c:func:`pm_device_runtime_get` call that arrives while the domain claim is
+being released waits for the release to finish and then fails with ``-EAGAIN``,
+since the device it asked for is off.
+
+Domain devices must deliver these notifications from thread context. Sensing
+the rail typically happens in an interrupt handler, so the domain driver has to
+defer the notification, for example by submitting work, rather than running
+device PM hooks from the handler.
+
 Device Model with Device Power Management Support
 *************************************************
 
