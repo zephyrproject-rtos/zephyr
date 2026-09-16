@@ -178,19 +178,18 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	 * callback-at-expiry behavior used by callback-only flows.
 	 * Other reset modes still require an early warning callback.
 	 */
-	if (cfg->callback) {
+	if (cfg->callback != NULL) {
 		if (CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0) {
-			data->callback = cfg->callback;
 			data->wwdt_config.warningValue =
 				CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG;
-		} else if ((cfg->flags & WDT_FLAG_RESET_MASK) == WDT_FLAG_RESET_NONE) {
-			data->callback = cfg->callback;
-		} else {
+		} else if ((cfg->flags & WDT_FLAG_RESET_MASK) != WDT_FLAG_RESET_NONE) {
 			LOG_ERR("Callback without warning requires WDT_FLAG_RESET_NONE or "
 				"CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0");
 			return -ENOTSUP;
 		}
 	}
+
+	data->callback = cfg->callback;
 
 	data->timeout_valid = true;
 	LOG_DBG("Installed timeout (timeoutValue = %d)",
