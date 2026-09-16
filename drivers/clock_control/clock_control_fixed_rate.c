@@ -74,5 +74,6 @@ static int fixed_rate_clk_init(const struct device *dev)
 		PRE_KERNEL_1,                                                         \
 		CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                                   \
 		&fixed_rate_clk_api                                                   \
-	);
+	);                                                                            \
+	CLOCK_DT_DEFINE_CONSUMERS_NODATA(DT_DRV_INST(idx))
 DT_INST_FOREACH_STATUS_OKAY(FIXED_CLK_INIT)
