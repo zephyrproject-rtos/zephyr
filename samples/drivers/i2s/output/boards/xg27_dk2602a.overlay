@@ -1,0 +1,48 @@
+/*
+ * xG27-DK2602A: USART0 I2S TX for samples/drivers/i2s/output.
+ * PC0 TX, PC1 RX, PC2 BCLK, PB2 WS. Delete on-board MX25 on USART0.
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/xg27-pinctrl.h>
+#include <zephyr/dt-bindings/dma/silabs/xg27-dma.h>
+
+&dma0 {
+	status = "okay";
+};
+
+/ {
+	aliases {
+		i2s-tx = &usart0;
+	};
+};
+
+&pinctrl {
+	usart0_i2s_default: usart0_i2s_default {
+		group0 {
+			pins = <USART0_TX_PC0>, <USART0_CLK_PC2>, <USART0_CS_PB2>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART0_RX_PC1>;
+			input-enable;
+		};
+	};
+};
+
+/delete-node/ &mx25r80;
+
+&usart0 {
+	compatible = "silabs,usart-i2s";
+	/delete-property/ cs-gpios;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&usart0_i2s_default>;
+	pinctrl-names = "default";
+	dmas = <&dma0 DMA_REQSEL_USART0TXBL>,
+	       <&dma0 DMA_REQSEL_USART0TXBLRIGHT>,
+	       <&dma0 DMA_REQSEL_USART0RXDATAV>;
+	dma-names = "txbl", "txblright", "rx";
+};
