@@ -815,6 +815,30 @@ static int mspi_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 		return ret;
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/*
+	 * Assume the DMA is HPDMA because GPDMA does not have request line from XSPI.
+	 * Allocate source/destination port based on transfer direction:
+	 *  - XSPI is only accessible by HPDMA port 1
+	 *  - SRAM is only accessible by HPDMA port 0
+	 */
+	if (mspi_stm32_table_direction[dma_stream->cfg.channel_direction]
+			== DMA_PERIPH_TO_MEMORY) {
+		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT1 |
+			DMA_DEST_ALLOCATED_PORT0;
+	} else if (mspi_stm32_table_direction[dma_stream->cfg.channel_direction]
+			== DMA_MEMORY_TO_PERIPH) {
+		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
+			DMA_DEST_ALLOCATED_PORT1;
+	} else {
+		LOG_ERR("DMA direction %d is not valid",
+			mspi_stm32_table_direction[dma_stream->cfg.channel_direction]);
+		return -EINVAL;
+	}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
+		DMA_DEST_ALLOCATED_PORT0;
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 	/*
 	 * HAL expects a valid DMA channel.
 	 * The channel is from 0 to 7 because of the STM32_DMA_STREAM_OFFSET
