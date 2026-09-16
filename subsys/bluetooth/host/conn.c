@@ -3060,6 +3060,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		info->sco.air_mode = conn->sco.air_mode;
 		info->sco.link_type = conn->sco.link_type;
 		info->sco.mtu = bt_dev.br.sco_mtu;
+		info->sco.interval = conn->sco.interval;
 		return 0;
 #endif
 #if defined(CONFIG_BT_ISO)

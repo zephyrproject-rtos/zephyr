@@ -1180,6 +1180,7 @@ struct bt_conn_sco_info {
 	uint8_t link_type; /**< SCO link type */
 	uint8_t air_mode;  /**< SCO air mode (codec type) */
 	uint8_t mtu;       /**< SCO MTU over HCI */
+	uint8_t interval;  /**< SCO transmission interval in slots */
 };
 
 enum {
