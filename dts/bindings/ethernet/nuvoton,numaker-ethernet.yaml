@@ -22,8 +22,3 @@ properties:
 
   clocks:
     required: true
-
-  phy-addr:
-    type: int
-    description: Address of the phy controller
-    required: true
