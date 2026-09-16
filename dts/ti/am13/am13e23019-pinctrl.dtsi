@@ -4562,4 +4562,8 @@
 	/omit-if-no-ref/ outputxbar8_pd11: outputxbar8_pd11 {
 		pinmux = <MSP_PINMUX(108, 16)>;
 	};
+
+	non_bonded: non_bonded {
+		pinmux = <MSP_PINMUX(1, 0)>;
+	};
 };
