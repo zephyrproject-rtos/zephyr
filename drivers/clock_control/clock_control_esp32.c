@@ -225,3 +225,8 @@ DEVICE_DT_DEFINE(DT_NODELABEL(clock),
 		 PRE_KERNEL_1,
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_esp32_api);
+
+#define ESP32_CLOCK_DT_SUBSYS(node_id, idx)                                                       \
+	((clock_control_subsys_t)DT_CLOCKS_CELL_BY_IDX(node_id, idx, offset))
+
+CLOCK_DT_DEFINE_CONSUMERS(DT_NODELABEL(clock), ESP32_CLOCK_DT_SUBSYS)
