@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
@@ -53,8 +52,8 @@ struct eth_stm32_dwc_config {
 	struct dwmac_config dwmac;
 	const struct pinctrl_dev_config *pcfg;
 	const struct reset_dt_spec reset;
-	const struct stm32_pclken *pclken;
-	size_t pclken_cnt;
+	const struct clock_dt_spec *const *clks;
+	size_t clks_cnt;
 	/* Selects the PHY interface of this MAC outside of the MAC itself */
 	void (*select_phy_interface)(void);
 	int (*platform_init)(const struct device *dev);
@@ -255,8 +254,8 @@ int dwmac_bus_init(const struct device *dev)
 
 	cfg->select_phy_interface();
 
-	for (size_t n = 0; n < cfg->pclken_cnt; n++) {
-		ret = clock_control_on(cfg->dwmac.clock, (clock_control_subsys_t)&cfg->pclken[n]);
+	for (size_t n = 0; n < cfg->clks_cnt; n++) {
+		ret = clock_control_on_dt(cfg->clks[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
@@ -303,18 +302,15 @@ int dwmac_platform_init(const struct device *dev)
 	return cfg->platform_init(dev);
 }
 
-#define ETH_STM32_PCLKEN_SUBSYS(n, idx) ((clock_control_subsys_t)(eth##n##_pclken + (idx)))
-
 #define ETH_STM32_DWMAC_PTP_CONFIG(n)                                                              \
 	.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_INST_CHILD(n, ptp_clock)),                           \
-	.ptp_clk = ETH_STM32_PCLKEN_SUBSYS(n, ETH_STM32_PTP_CLK_IDX(n)),
+	.ptp_clk = CLOCK_DT_INST_GET_BY_IDX(n, ETH_STM32_PTP_CLK_IDX(n)),
 
 #define ETH_STM32_DWMAC_CONFIG(n)                                                                  \
 	{                                                                                          \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                  \
-			.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),                          \
-			.mac_clk = ETH_STM32_PCLKEN_SUBSYS(n, ETH_STM32_MAC_CLK_IDX(n)),           \
+			.mac_clk = CLOCK_DT_INST_GET_BY_IDX(n, ETH_STM32_MAC_CLK_IDX(n)),          \
 			IF_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC, (ETH_STM32_DWMAC_PTP_CONFIG(n)))      \
 	}
 
@@ -323,7 +319,7 @@ int dwmac_platform_init(const struct device *dev)
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
-	static const struct stm32_pclken eth##n##_pclken[] = STM32_DT_INST_CLOCKS(n);              \
+	static const struct clock_dt_spec *const eth##n##_clks[] = CLOCK_DT_INST_SPECS_INIT(n);   \
                                                                                                    \
 	/* Descriptor rings in uncached memory */                                                  \
 	static struct dwmac_dma_desc eth##n##_tx_descs[NB_TX_DESCS] __desc_mem;                    \
@@ -355,8 +351,8 @@ int dwmac_platform_init(const struct device *dev)
 		.dwmac = ETH_STM32_DWMAC_CONFIG(n),                                                \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
-		.pclken = eth##n##_pclken,                                                         \
-		.pclken_cnt = ARRAY_SIZE(eth##n##_pclken),                                         \
+		.clks = eth##n##_clks,                                                             \
+		.clks_cnt = ARRAY_SIZE(eth##n##_clks),                                             \
 		.select_phy_interface = eth##n##_select_phy_interface,                             \
 		.platform_init = eth##n##_platform_init,                                           \
 	};                                                                                         \
