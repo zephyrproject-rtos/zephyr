@@ -85,13 +85,7 @@ int dwmac_bus_init(const struct device *dev)
 	STM32_CONFIGURE_ETH_PHY_MODE();
 
 	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
-		if (IN_RANGE(pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
-			ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&pclken[n]);
-		} else {
-			ret = clock_control_configure(cfg->clock,
-						      (clock_control_subsys_t)&pclken[n], NULL);
-		}
-
+		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&pclken[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
