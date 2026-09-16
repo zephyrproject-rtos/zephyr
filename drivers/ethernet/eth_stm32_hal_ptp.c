@@ -293,10 +293,7 @@ static int ptp_stm32_init(const struct device *dev)
 	eth_stm32_ptp_enable_timestamping(heth);
 
 	/* Query the MAC timestamp reference clock rate */
-	clock_control_subsys_t rate_clk = (void *)&eth_cfg->pclken[eth_cfg->rate_pclken_idx];
-
-	ret = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE), rate_clk,
-				     &ptp_clk_rate);
+	ret = clock_control_get_rate_dt(eth_cfg->pclken[eth_cfg->rate_pclken_idx], &ptp_clk_rate);
 	if (ret) {
 		LOG_ERR("Failed to query PTP reference clock");
 		return -EIO;
