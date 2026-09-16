@@ -34,8 +34,9 @@ LOG_MODULE_REGISTER(cdce9xx, CONFIG_CDCE9XX_LOG_LEVEL);
 
 #define FIELD_REPLACE(reg, mask, value) (((reg) & ~(mask)) | FIELD_PREP(mask, value))
 
-#define CDCE9XX_VCO_MIN_HZ 80U * 1000U * 1000U
-#define CDCE9XX_VCO_MAX_HZ 230U * 1000U * 1000U
+#define CDCE9XX_CRYSTAL_MAX_HZ 32U * 1000U * 1000U
+#define CDCE9XX_VCO_MIN_HZ     80U * 1000U * 1000U
+#define CDCE9XX_VCO_MAX_HZ     230U * 1000U * 1000U
 
 #define CDCE9XX_N_MIN 1U
 #define CDCE9XX_N_MAX 4095U
@@ -437,12 +438,12 @@ static int reset_device(const struct device *dev)
 
 	/* Disable outputs (Y2, Y3, ...). */
 	for (int i = 0; i < (int)cfg->num_plls; i++) {
-		set_output_pdiv(dev, &data->output[i * 2], 0);
+		rc = set_output_pdiv(dev, &data->output[i * 2], 0);
 		if (rc < 0) {
 			LOG_ERR("Failed to set first output divider on PLL %d!", i);
 			return rc;
 		}
-		set_output_pdiv(dev, &data->output[i * 2 + 1], 0);
+		rc = set_output_pdiv(dev, &data->output[i * 2 + 1], 0);
 		if (rc < 0) {
 			LOG_ERR("Failed to set second output divider on PLL %d!", i);
 			return rc;
@@ -509,7 +510,7 @@ static uint8_t pll_calc_p(uint16_t n, uint16_t m)
 static bool verify_hardware_constraints(uint16_t m, uint16_t n)
 {
 	uint16_t r;
-	uint8_t q;
+	uint16_t q;
 	uint8_t p;
 	uint16_t nn;
 
@@ -593,8 +594,8 @@ static uint32_t clk_calc_best_vco_rate(uint32_t root_rate, uint32_t rate,
 	uint32_t best_rate_error = rate;
 	uint32_t pdiv_min;
 	uint32_t pdiv_max;
-	uint32_t pdiv_best;
 	uint32_t pdiv_now;
+	uint32_t best_pll_rate = 0;
 
 	pdiv_min = (uint32_t)max(CDCE9XX_PDIV_MIN, DIV_ROUND_UP(CDCE9XX_VCO_MIN_HZ, rate));
 	pdiv_max = (uint32_t)min(CDCE9XX_PDIV_MAX, CDCE9XX_VCO_MAX_HZ / rate);
@@ -603,7 +604,6 @@ static uint32_t clk_calc_best_vco_rate(uint32_t root_rate, uint32_t rate,
 		return 0; /* No can do? */
 	}
 
-	pdiv_best = pdiv_min;
 	for (pdiv_now = pdiv_min; pdiv_now <= pdiv_max; ++pdiv_now) {
 		uint16_t m;
 		uint16_t n;
@@ -619,8 +619,8 @@ static uint32_t clk_calc_best_vco_rate(uint32_t root_rate, uint32_t rate,
 		rate_error = actual_rate > rate ? actual_rate - rate : rate - actual_rate;
 
 		if (rate_error < best_rate_error) {
-			pdiv_best = pdiv_now;
 			best_rate_error = rate_error;
+			best_pll_rate = pll_rate;
 			pll_config->m = m;
 			pll_config->n = n;
 		}
@@ -631,7 +631,7 @@ static uint32_t clk_calc_best_vco_rate(uint32_t root_rate, uint32_t rate,
 		}
 	}
 
-	return (uint32_t)(rate * (uint16_t)pdiv_best);
+	return best_pll_rate;
 }
 
 static uint8_t pll_calculate_parameter(uint32_t root_rate, uint32_t rate,
@@ -647,7 +647,8 @@ static uint8_t pll_calculate_parameter(uint32_t root_rate, uint32_t rate,
 	}
 
 	if (divider > 0 && vco_rate > 0) {
-		LOG_DBG("vco_rate: %u, m: %u, n: %u", vco_rate, pll_config->m, pll_config->n);
+		LOG_DBG("vco_rate: %u, m: %u, n: %u, div: %u", vco_rate, pll_config->m,
+			pll_config->n, divider);
 		pll_config->vco_rate = vco_rate;
 	} else {
 		LOG_INF("Cannot provide vco_rate for requested rate: %u", rate);
@@ -695,7 +696,7 @@ static int configure_pll(const struct device *dev, const struct cdce9xx_pll_conf
 	uint8_t reg_ofs = pll_config->reg_base;
 	int rc = 0;
 
-	if ((!m || !n) || (m == n)) {
+	if (!m || !n) {
 		rc = disable_pll(dev, pll_config);
 	} else {
 		uint8_t pll_state = 0;
@@ -818,10 +819,15 @@ static int configure_pll_from_dts(const struct device *dev)
 		bool owner_set = false;
 
 		if (pll_dts->n != 0 && pll_dts->m != 0) {
+			uint64_t vco_rate = ((uint64_t)cfg->input_freq * pll_dts->n) / pll_dts->m;
+
+			if (vco_rate < CDCE9XX_VCO_MIN_HZ || vco_rate > CDCE9XX_VCO_MAX_HZ) {
+				return -EINVAL;
+			}
+
 			pll->m = pll_dts->m;
 			pll->n = pll_dts->n;
-			pll->vco_rate =
-				(uint32_t)((uint64_t)(cfg->input_freq * pll_dts->n) / pll_dts->m);
+			pll->vco_rate = (uint32_t)vco_rate;
 			LOG_DBG("pll%d: n %d, m %d, first_div %d, second_div %d", i + 1, pll_dts->n,
 				pll_dts->m, pll_dts->first_div, pll_dts->second_div);
 			rc = configure_pll(dev, pll);
@@ -979,6 +985,10 @@ static int cdce9xx_off(const struct device *dev, clock_control_subsys_t sys)
 	struct cdce9xx_data *data = (struct cdce9xx_data *)dev->data;
 	int rc = -EINVAL;
 
+	/* This is a driver for an external PLL, so there is no way to provide a non-blocking
+	 * implementation that returns the result of the operation. We have to access the device via
+	 * I2C.
+	 */
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	if (sys == CLOCK_CONTROL_TI_CDCE9XX_Y1) {
@@ -1095,7 +1105,7 @@ static bool verify_common_vco_rate(uint32_t lcm_vco_rate, uint32_t rate_a, uint3
 		}
 	}
 
-	LOG_INF("lco_voc_rate %u Hz can%sbe divided to get %u and %u", lcm_vco_rate,
+	LOG_INF("lcm_loc_rate %u Hz can%sbe divided to get %u and %u", lcm_vco_rate,
 		vco_rate_ok == true ? " " : " not ", rate_a, rate_b);
 
 	return vco_rate_ok;
@@ -1274,40 +1284,6 @@ static DEVICE_API(clock_control, cdce9xx_clock_driver_api) = {
 };
 
 /* clang-format off */
-#define CHECK_KEEP_Y1_ENABLED(inst) \
-	BUILD_ASSERT(!DT_INST_PROP(inst, keep_y1_enabled) || DT_INST_NODE_HAS_PROP(inst, pdiv1), \
-		     "pdiv1 must be configured when keep-y1-enabled is set")
-
-#define CHECK_PLL_DIVIDER_COUNT(pll_node) \
-	BUILD_ASSERT(DT_NODE_HAS_PROP(pll_node, first_divider) || \
-			     DT_NODE_HAS_PROP(pll_node, second_divider), \
-		     "PLL requires at least one divider");
-
-#define CHECK_PLL_NAMES(inst) \
-	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst)) == \
-			     (DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(inst), pll1)) + \
-			      DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(inst), pll2)) + \
-			      DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(inst), pll3)) + \
-			      DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(inst), pll4))), \
-		     "Only child nodes named 'pll1', 'pll2', 'pll3', 'pll4' are allowed");
-
-#define CHECK_INST_PLLS(inst) DT_INST_FOREACH_CHILD(inst, CHECK_PLL_DIVIDER_COUNT)
-
-#define PLL_INIT(node_id, register_base) \
-	{                                                         \
-		.reg_base = register_base,                            \
-		.n = DT_PROP_OR(node_id, clock_mult, 0),              \
-		.m = DT_PROP_OR(node_id, clock_div, 0),               \
-		.ssc = DT_ENUM_IDX_OR(node_id, ssc, 0),               \
-		.first_div = DT_PROP_OR(node_id, first_divider, 0),   \
-		.second_div = DT_PROP_OR(node_id, second_divider, 0), \
-	}
-
-#define PLL_OR_ZERO(inst, pll_name, register_base)                    \
-	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, pll_name)),        \
-		    (PLL_INIT(DT_INST_CHILD(inst, pll_name), register_base)), \
-		    ({.reg_base = register_base}))
-
 /* Lookup tables: number_plls (1..4) -> "does this variant have PLLn?" as a bare 0/1 token. */
 #define CDCE9XX_HAS_PLL2_1 0
 #define CDCE9XX_HAS_PLL2_2 1
@@ -1331,49 +1307,112 @@ static DEVICE_API(clock_control, cdce9xx_clock_driver_api) = {
 #define CDCE9XX_HAS_PLL3(n) UTIL_CAT(CDCE9XX_HAS_PLL3_, n)
 #define CDCE9XX_HAS_PLL4(n) UTIL_CAT(CDCE9XX_HAS_PLL4_, n)
 
-#define CDCE9XX_DEFINE(inst, number_plls)                                       \
-	CHECK_KEEP_Y1_ENABLED(inst);                                                \
-	CHECK_INST_PLLS(inst);                                                      \
-	CHECK_PLL_NAMES(inst);                                                      \
-                                                                                \
-	static const struct cdce9xx_dts_config cdce9xx_config_##inst = {            \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                      \
-		.input_clock_type = DT_INST_ENUM_IDX(inst, input_clock_type),           \
-		.input_freq = DT_INST_PROP(inst, input_frequency),                      \
-		.xtal_load_pf = DT_INST_PROP(inst, xtal_load_pf),                       \
-		.keep_y1_enabled = DT_INST_PROP(inst, keep_y1_enabled),                 \
-		.pdiv1 = DT_INST_PROP_OR(inst, pdiv1, 0),                               \
-		.num_plls = number_plls,                                                \
-		.plls_dts = {PLL_OR_ZERO(inst, pll1, CDCE9XX_PLL1_REG_START)            \
-					IF_ENABLED(CDCE9XX_HAS_PLL2(number_plls), \
-				   (, PLL_OR_ZERO(inst, pll2, CDCE9XX_PLL2_REG_START))) \
-					IF_ENABLED(CDCE9XX_HAS_PLL3(number_plls), \
-				   (, PLL_OR_ZERO(inst, pll3, CDCE9XX_PLL3_REG_START))) \
-					IF_ENABLED(CDCE9XX_HAS_PLL4(number_plls), \
-				   (, PLL_OR_ZERO(inst, pll4, CDCE9XX_PLL4_REG_START))) }, \
-	};  \
-                                                                                \
-	struct cdce9xx_pll_config pll_##inst[number_plls];                          \
-	struct cdce9xx_output output_##inst[number_plls * 2];                       \
-                                                           \
-	static struct cdce9xx_data cdce9xx_data_##inst = {.pll = pll_##inst,  \
-							  .output = output_##inst}; \
-                                                                                \
-	DEVICE_DT_INST_DEFINE(   \
-		inst, cdce9xx_init, NULL, &cdce9xx_data_##inst, &cdce9xx_config_##inst, \
+#define CHECK_KEEP_Y1_ENABLED(inst) \
+	BUILD_ASSERT(!DT_INST_PROP(inst, keep_y1_enabled) || DT_INST_NODE_HAS_PROP(inst, pdiv1), \
+		     "pdiv1 must be configured when keep-y1-enabled is set")
+
+#define CHECK_PLL_DIVIDER_COUNT(pll_node) \
+	BUILD_ASSERT(DT_NODE_HAS_PROP(pll_node, first_divider) || \
+			     DT_NODE_HAS_PROP(pll_node, second_divider), \
+		     "PLL requires at least one divider");
+
+
+#define CHECK_INST_PLLS(inst) DT_INST_FOREACH_CHILD(inst, CHECK_PLL_DIVIDER_COUNT)
+
+#define CHECK_PLL_PARAMETER(pll_node, inst)	\
+	BUILD_ASSERT(	\
+		((uint64_t)DT_PROP(pll_node, clock_mult) *	\
+				DT_INST_PROP(inst, input_frequency)) /	\
+				DT_PROP(pll_node, clock_div) >= CDCE9XX_VCO_MIN_HZ &&	\
+		((uint64_t)DT_PROP(pll_node, clock_mult) * \
+				DT_INST_PROP(inst, input_frequency)) /	\
+				DT_PROP(pll_node, clock_div) <= CDCE9XX_VCO_MAX_HZ,	\
+		"pll config invalid: fvco from input_frequency, m, n "	\
+		"is outside 80 MHz ... 230 MHz")
+
+#define CHECK_PLL_CONFIG(inst) DT_INST_FOREACH_CHILD_VARGS(inst, CHECK_PLL_PARAMETER, inst)
+
+#define CHECK_PLL_NAMES(inst, number_plls) \
+	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst)) == \
+			     (DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(inst), pll1)) + \
+			      (DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(inst), pll2))	\
+				  && CDCE9XX_HAS_PLL2(number_plls)) + \
+			      (DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(inst), pll3))	\
+				  && CDCE9XX_HAS_PLL3(number_plls))+ \
+			      (DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(inst), pll4))	\
+				  && CDCE9XX_HAS_PLL4(number_plls))), \
+		     "Only child nodes named 'pll1', 'pll2', 'pll3', 'pll4' are allowed." \
+			  "Check that your device supports the configured pll"	\
+			  "(e.g. CDCE913 has no pll2)")
+
+#define CHECK_INPUT_FREQ(inst)	\
+	BUILD_ASSERT(DT_INST_PROP(inst, input_frequency) < CDCE9XX_CRYSTAL_MAX_HZ \
+				|| DT_INST_ENUM_HAS_VALUE(inst, input_clock_type, lvcmos), \
+				"Frequency above 32 MHz only for lvcmos input clock type")
+
+#define PLL_INIT(node_id, register_base)	\
+	{	\
+		.reg_base = register_base,	\
+		.n = DT_PROP_OR(node_id, clock_mult, 0),	\
+		.m = DT_PROP_OR(node_id, clock_div, 0),	\
+		.ssc = DT_ENUM_IDX_OR(node_id, ssc, 0),	\
+		.first_div = DT_PROP_OR(node_id, first_divider, 0),	\
+		.second_div = DT_PROP_OR(node_id, second_divider, 0),	\
+	}
+
+#define PLL_OR_ZERO(inst, pll_name, register_base)	\
+	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, pll_name)),	\
+		    (PLL_INIT(DT_INST_CHILD(inst, pll_name), register_base)), \
+		    ({.reg_base = register_base}))
+
+#define CDCE9XX_DEFINE(inst, number_plls, type)	\
+	CHECK_KEEP_Y1_ENABLED(inst);	\
+	CHECK_INST_PLLS(inst);	\
+	CHECK_PLL_CONFIG(inst);	\
+	CHECK_INPUT_FREQ(inst);	\
+	CHECK_PLL_NAMES(inst, number_plls);	\
+    \
+	static const struct cdce9xx_dts_config CONCAT(cdce9xx_config_, type, _, inst) = {	\
+		.bus = I2C_DT_SPEC_INST_GET(inst),	\
+		.input_clock_type = DT_INST_ENUM_IDX(inst, input_clock_type),	\
+		.input_freq = DT_INST_PROP(inst, input_frequency),	\
+		.xtal_load_pf = DT_INST_PROP(inst, xtal_load_pf),	\
+		.keep_y1_enabled = DT_INST_PROP(inst, keep_y1_enabled),	\
+		.pdiv1 = DT_INST_PROP_OR(inst, pdiv1, 0),	\
+		.num_plls = number_plls,	\
+		.plls_dts = {PLL_OR_ZERO(inst, pll1, CDCE9XX_PLL1_REG_START)	\
+					IF_ENABLED(CDCE9XX_HAS_PLL2(number_plls),	\
+				   (, PLL_OR_ZERO(inst, pll2, CDCE9XX_PLL2_REG_START)))	\
+					IF_ENABLED(CDCE9XX_HAS_PLL3(number_plls),	\
+				   (, PLL_OR_ZERO(inst, pll3, CDCE9XX_PLL3_REG_START)))	\
+					IF_ENABLED(CDCE9XX_HAS_PLL4(number_plls),	\
+				   (, PLL_OR_ZERO(inst, pll4, CDCE9XX_PLL4_REG_START))) },	\
+	};	\
+	\
+	static struct cdce9xx_pll_config CONCAT(pll_, type, _, inst)[number_plls];	\
+	static struct cdce9xx_output CONCAT(output_, type, _, inst)[number_plls * 2];	\
+	\
+	static struct cdce9xx_data CONCAT(cdce9xx_data_, type, _, inst) = {	\
+		.pll = CONCAT(pll_, type, _, inst),	\
+		.output = CONCAT(output_, type, _, inst)};	\
+	\
+	DEVICE_DT_INST_DEFINE(	\
+		inst, cdce9xx_init, NULL,	\
+		&CONCAT(cdce9xx_data_, type, _, inst),	\
+		&CONCAT(cdce9xx_config_, type, _, inst),	\
 		POST_KERNEL, CONFIG_CLOCK_CONTROL_TI_CDCE9XX_PRIORITY, &cdce9xx_clock_driver_api);
 
 /* clang-format on */
 
 #define DT_DRV_COMPAT ti_cdce913
-DT_INST_FOREACH_STATUS_OKAY_VARGS(CDCE9XX_DEFINE, 1)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(CDCE9XX_DEFINE, 1, cdce913)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_cdce925
-DT_INST_FOREACH_STATUS_OKAY_VARGS(CDCE9XX_DEFINE, 2)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(CDCE9XX_DEFINE, 2, cdce925)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_cdce937
-DT_INST_FOREACH_STATUS_OKAY_VARGS(CDCE9XX_DEFINE, 3)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(CDCE9XX_DEFINE, 3, cdce937)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_cdce949
-DT_INST_FOREACH_STATUS_OKAY_VARGS(CDCE9XX_DEFINE, 4)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(CDCE9XX_DEFINE, 4, cdce949)
 #undef DT_DRV_COMPAT
