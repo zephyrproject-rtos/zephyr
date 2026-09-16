@@ -452,6 +452,51 @@ config BT_HFP_AG_INBAND_RINGTONE
 
 endif # BT_HFP_AG
 
+config BT_BNEP
+	bool "Bluetooth BNEP protocol support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth Network Encapsulation Protocol (BNEP)
+	  support over L2CAP.
+
+config BT_PAN
+	bool "Bluetooth PAN profile support [EXPERIMENTAL]"
+	select BT_BNEP
+	select EXPERIMENTAL
+	help
+	  This option enables the Bluetooth Personal Area Networking (PAN)
+	  profile.
+
+if BT_PAN
+
+choice BT_PAN_ROLE
+	prompt "Bluetooth PAN role"
+	default BT_PAN_PANU
+
+config BT_PAN_PANU
+	bool "PAN User (PANU)"
+	help
+	  Enable PAN User role. PANU connects to a Network Access Point.
+
+config BT_PAN_NAP
+	bool "Network Access Point (NAP)"
+	help
+	  Enable Network Access Point role. NAP provides network access to
+	  PAN Users.
+
+endchoice
+
+config BT_PAN_NET
+	bool "Bluetooth PAN network interface [EXPERIMENTAL]"
+	select NET_L2_ETHERNET
+	select NET_IPV4
+	select EXPERIMENTAL
+	help
+	  Enable a Zephyr network interface that bridges IP traffic over the
+	  Bluetooth PAN profile.
+
+endif # BT_PAN
+
 config BT_AVDTP
 	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
 	select EXPERIMENTAL

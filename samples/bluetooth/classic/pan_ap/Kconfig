@@ -1,0 +1,6 @@
+# Copyright (c) 2025
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth PAN Access Point sample"
+
+source "Kconfig.zephyr"
