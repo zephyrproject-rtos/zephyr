@@ -66,6 +66,7 @@ struct gpio_mspm0_data {
 #define GPIOA_NODE DT_NODELABEL(gpioa)
 #define GPIOB_NODE DT_NODELABEL(gpiob)
 #define GPIOC_NODE DT_NODELABEL(gpioc)
+#define GPIOD_NODE DT_NODELABEL(gpiod)
 
 static int gpio_mspm0_port_get_raw(const struct device *port, uint32_t *value)
 {
@@ -268,6 +269,7 @@ static void gpio_mspm0_isr(const struct device *port)
 		DEVICE_DT_GET_OR_NULL(GPIOA_NODE),
 		DEVICE_DT_GET_OR_NULL(GPIOB_NODE),
 		DEVICE_DT_GET_OR_NULL(GPIOC_NODE),
+		DEVICE_DT_GET_OR_NULL(GPIOD_NODE),
 	};
 
 	for (uint8_t i = 0; i < ARRAY_SIZE(dev_list); i++) {
@@ -399,3 +401,7 @@ GPIO_DEVICE_INIT_MSPM0(b);
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioc), okay)
 GPIO_DEVICE_INIT_MSPM0(c);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioc), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiod), okay)
+GPIO_DEVICE_INIT_MSPM0(d);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiod), okay) */
