@@ -38,6 +38,21 @@ struct fd_entry *zvfs_fd_entry_get(int fd);
 struct fd_entry *zvfs_fd_syscall_verify(int fd);
 
 struct k_process;
+#if defined(CONFIG_ZVFS_FDTABLE) && defined(CONFIG_ZVFS_FS) && defined(CONFIG_PROCESS)
+/* the caller's process working directory buffer; NULL shares the boot directory */
+char *z_zvfs_proc_cwd(void);
+#else
+static inline char *z_zvfs_proc_cwd(void)
+{
+	return NULL;
+}
+#endif
+
+#ifdef CONFIG_ZVFS_FS
+/* snapshot the caller's working directory into @a buf */
+void z_zvfs_cwd_copy(char *buf, size_t size);
+#endif /* CONFIG_ZVFS_FS */
+
 #if defined(CONFIG_ZVFS_FDTABLE) && defined(CONFIG_SYS_PROCESS)
 /* give @a child its own descriptor table: a copy of the caller's */
 int z_zvfs_fds_clone(struct k_process *child, k_tid_t leader);

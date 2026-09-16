@@ -97,6 +97,10 @@ BUILD_ASSERT(CONFIG_ZVFS_PROC_OPEN_MAX <= ZVFS_OPEN_SIZE,
 /* a process's descriptor table; kernel processes share the boot table */
 struct zvfs_proc_fds {
 	sys_dnode_t node;
+#ifdef CONFIG_ZVFS_FS
+	/* the process's working directory, a copy of its parent's at clone */
+	char cwd[CONFIG_ZVFS_PATH_MAX];
+#endif /* CONFIG_ZVFS_FS */
 	struct fd_slot slots[ZVFS_PROC_OPEN_SIZE];
 #ifdef CONFIG_ZVFS_MLOCK
 	/* zvfs_mlock(ZVFS_MLOCK_FUTURE) is in force: new mappings are locked */
@@ -167,6 +171,23 @@ static struct fd_slot *fd_slots(void)
 
 	return fd_slots_n(&unused);
 }
+
+#if defined(CONFIG_PROCESS) && defined(CONFIG_ZVFS_FS)
+char *z_zvfs_proc_cwd(void)
+{
+	/* as fd_slots_n(): only syscall paths, in kernel mode, see the caller's table */
+	if (!k_is_user_context()) {
+		k_tid_t self = k_current_get();
+		struct k_process *proc = (self == NULL) ? NULL : self->process;
+
+		if ((proc != NULL) && (proc->fds != NULL)) {
+			return ((struct zvfs_proc_fds *)proc->fds)->cwd;
+		}
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_PROCESS && CONFIG_ZVFS_FS */
 
 static int fd_entry_ref(struct fd_entry *entry)
 {
@@ -712,6 +733,9 @@ int z_zvfs_fds_clone(struct k_process *child, k_tid_t leader)
 	}
 	memset(t, 0, sizeof(*t));
 	sys_dnode_init(&t->node);
+#ifdef CONFIG_ZVFS_FS
+	z_zvfs_cwd_copy(t->cwd, sizeof(t->cwd));
+#endif /* CONFIG_ZVFS_FS */
 
 	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
 	parent = fd_slots_n(&n);

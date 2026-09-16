@@ -7,9 +7,10 @@
  * @file
  * @brief ZVFS current working directory.
  *
- * Zephyr is a single process, so the working directory is a single
- * system-wide string, as POSIX defines it per-process. The lock is held only
- * to snapshot or store the string, never across a file system operation.
+ * Each process owns its working directory, a copy of its parent's at clone,
+ * as POSIX defines it; threads that belong to no process share the boot
+ * directory. The lock is held only to snapshot or store the string, never
+ * across a file system operation.
  */
 
 #include <errno.h>
@@ -24,8 +25,24 @@
 
 #include "zvfs_fs_priv.h"
 
-static char zvfs_cwd[CONFIG_ZVFS_PATH_MAX] = "/";
+static char zvfs_boot_cwd[CONFIG_ZVFS_PATH_MAX] = "/";
 static K_MUTEX_DEFINE(zvfs_cwd_lock);
+
+/* the caller's working directory: its process's, or the boot directory */
+static char *cwd_ptr(void)
+{
+	char *cwd = z_zvfs_proc_cwd();
+
+	return (cwd != NULL) ? cwd : zvfs_boot_cwd;
+}
+
+void z_zvfs_cwd_copy(char *buf, size_t size)
+{
+	k_mutex_lock(&zvfs_cwd_lock, K_FOREVER);
+	strncpy(buf, cwd_ptr(), size - 1);
+	buf[size - 1] = '\0';
+	k_mutex_unlock(&zvfs_cwd_lock);
+}
 
 /*
  * Resolution is purely lexical: '.', '..', and repeated '/' are collapsed
@@ -49,13 +66,16 @@ int zvfs_resolve_path(const char *in, char *out, size_t outsz)
 	}
 
 	if (in[0] != '/') {
+		const char *cwd;
+
 		k_mutex_lock(&zvfs_cwd_lock, K_FOREVER);
-		o = strlen(zvfs_cwd);
+		cwd = cwd_ptr();
+		o = strlen(cwd);
 		if (o >= outsz) {
 			k_mutex_unlock(&zvfs_cwd_lock);
 			return -ENAMETOOLONG;
 		}
-		memcpy(out, zvfs_cwd, o + 1);
+		memcpy(out, cwd, o + 1);
 		k_mutex_unlock(&zvfs_cwd_lock);
 
 		if (o == 1) {
@@ -137,7 +157,7 @@ int z_impl_zvfs_chdir(const char *path)
 	}
 
 	k_mutex_lock(&zvfs_cwd_lock, K_FOREVER);
-	strcpy(zvfs_cwd, r);
+	strcpy(cwd_ptr(), r);
 	k_mutex_unlock(&zvfs_cwd_lock);
 
 	return 0;
@@ -178,7 +198,7 @@ int z_impl_zvfs_fchdir(int fd)
 	}
 
 	k_mutex_lock(&zvfs_cwd_lock, K_FOREVER);
-	strcpy(zvfs_cwd, desc->path);
+	strcpy(cwd_ptr(), desc->path);
 	k_mutex_unlock(&zvfs_cwd_lock);
 
 	return 0;
@@ -199,6 +219,7 @@ static int z_vrfy_zvfs_fchdir(int fd)
 int z_impl_zvfs_getcwd(char *buf, size_t size)
 {
 	size_t len;
+	const char *cwd;
 
 	if (buf == NULL || size == 0) {
 		errno = EINVAL;
@@ -206,13 +227,14 @@ int z_impl_zvfs_getcwd(char *buf, size_t size)
 	}
 
 	k_mutex_lock(&zvfs_cwd_lock, K_FOREVER);
-	len = strlen(zvfs_cwd);
+	cwd = cwd_ptr();
+	len = strlen(cwd);
 	if (len >= size) {
 		k_mutex_unlock(&zvfs_cwd_lock);
 		errno = ERANGE;
 		return -1;
 	}
-	memcpy(buf, zvfs_cwd, len + 1);
+	memcpy(buf, cwd, len + 1);
 	k_mutex_unlock(&zvfs_cwd_lock);
 
 	return 0;
