@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# The file is named after the bus of the binding ("sd"), as the binding
+# checks require, although the co-processor speaks SDIO.
+
+description: |
+  Silicon Labs network co-processor (NCP) connected over SDIO.
+
+  The NCP runs the Silicon Labs CPC (Co-Processor Communication) protocol in
+  the secondary role. This node is the CPC primary. Every radio protocol
+  offered by the co-processor (Bluetooth LE, Bluetooth Classic, Wi-Fi,
+  802.15.4, ...) is exposed by a child node bound to a CPC endpoint.
+
+  The node is a child of the SD host controller the co-processor is wired
+  to. The co-processor uses SDIO function 1.
+
+  Example:
+
+    &sdhc0 {
+        ncp: ncp {
+            compatible = "silabs,ncp";
+            reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        };
+    };
+
+compatible: "silabs,ncp"
+
+include: sd-device.yaml
+
+properties:
+  wake-gpios:
+    type: phandle-array
+    description: |
+      Optional wake line driven by the host to wake the co-processor from
+      sleep before a transaction.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional reset line of the co-processor. It is pulsed during
+      initialization.
