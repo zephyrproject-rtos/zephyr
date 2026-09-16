@@ -32,9 +32,9 @@
 };
 
 &sercom6 {
-	eeprom1: eeprom@56 {
+	eeprom1: eeprom@58 {
 		compatible = "zephyr,i2c-target-eeprom";
-		reg = <0x56>;
+		reg = <0x58>;
 		size = <256>;
 	};
 };
