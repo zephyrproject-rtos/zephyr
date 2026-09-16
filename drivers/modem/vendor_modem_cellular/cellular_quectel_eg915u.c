@@ -13,6 +13,15 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCHES_DEFINE(quectel_eg915u_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	quectel_eg915u_set_baudrate_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR=" STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE),
+				   ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_set_baudrate_chat_script,
+			 quectel_eg915u_set_baudrate_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 1);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	quectel_eg915u_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPIN?", ok_match),
@@ -57,6 +66,7 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_periodic_chat_script,
 static const struct modem_cellular_vendor_config quectel_eg915u_vendor = {
 	/* clang-format off */
 	.scripts = {
+		.set_baudrate = &quectel_eg915u_set_baudrate_chat_script,
 		.init = &quectel_eg915u_init_chat_script,
 		.dial = &quectel_eg915u_dial_chat_script,
 		.periodic = &quectel_eg915u_periodic_chat_script,
