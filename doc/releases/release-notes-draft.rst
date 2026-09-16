@@ -111,6 +111,13 @@ Libraries / Subsystems
       :c:enumerator:`ETHERNET_HW_STP_PORT_STATE` capability and takes the port state and FDB
       flushes from the protocol.
 
+* NVMEM
+
+  * NVMEM cells can be backed by PSA Secure Storage entries, so that provisioned data such as
+    serial numbers or pre-shared keys is read and written through the NVMEM API. Devices other
+    than memory devices can provide NVMEM cells by implementing the new NVMEM provider driver
+    API. See :ref:`nvmem`.
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per
