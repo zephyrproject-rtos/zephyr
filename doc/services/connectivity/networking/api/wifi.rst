@@ -260,6 +260,22 @@ To enable and build with Wi-Fi NAN support:
 
     $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
 
+Shell commands
+**************
+
+.. zephyr:shell-module:: wifi
+   :kconfig: CONFIG_NET_L2_WIFI_SHELL
+   :depends: CONFIG_NETWORKING CONFIG_WIFI
+
+   The ``wifi`` command allows scanning for and connecting to Wi-Fi networks, configuring the access
+   point mode, power save and Target Wake Time (TWT) features, and inspecting the status and
+   statistics of a Wi-Fi interface. It is the interface offered by the :zephyr:code-sample:`wifi-shell`
+   sample.
+
+.. rubric:: Command reference
+
+.. zephyr:shell-command-reference::
+
 API Reference
 *************
 
