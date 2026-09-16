@@ -350,6 +350,10 @@ csi_interface: &dcmipp {
 	status = "okay";
 };
 
+&hash {
+	status = "okay";
+};
+
 &mac1 {
 	pinctrl-0 = <&eth2_txd0_pf7
 		     &eth2_txd1_pg11
