@@ -56,6 +56,22 @@ config ETH_XMC_DWC_ETHER_1000
 	help
 	  This enables the Synopsys DesignWare MAC driver for XMC4XXX SoCs.
 
+config ETH_NUMAKER_DWC_ETHER_1000
+	bool "Driver for DWC Ethernet MAC-based Nuvoton NuMaker"
+	depends on !ETH_NUMAKER
+	depends on SOC_SERIES_M46X || SOC_SERIES_M55M1X
+	depends on DT_HAS_NUVOTON_NUMAKER_ETHERNET_ENABLED
+	select ETH_DWC_ETHER_1000_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
+	select RESET
+	select CLOCK_CONTROL
+	select HWINFO
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on Nuvoton NuMaker
+	  M467 and M55M1 SoCs.
+
 config ETH_NXP_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based NXP"
 	depends on !ETH_NXP_ENET_QOS
