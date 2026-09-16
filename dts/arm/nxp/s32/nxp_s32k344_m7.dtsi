@@ -654,6 +654,11 @@
 		emac0: ethernet@40480000 {
 			reg = <0x40480000 0x4000>;
 			compatible = "nxp,s32-gmac", "snps,dwmac";
+			clocks = <&clock NXP_S32_AIPS_PLAT_CLK>,
+				 <&clock NXP_S32_EMAC0_TX_CLK>,
+				 <&clock NXP_S32_EMAC0_RX_CLK>,
+				 <&clock NXP_S32_EMAC0_TS_CLK>;
+			clock-names = "mac", "tx", "rx", "ptp";
 			interrupts = <105 0>, <106 0>, <107 0>, <108 0>;
 			interrupt-names = "common", "tx", "rx", "safety";
 			snps,multicast-filter-bins = <64>;
@@ -670,7 +675,6 @@
 
 			ptp_clock: ptp-clock {
 				compatible = "snps,dwmac-ptp-clock";
-				status = "disabled";
 			};
 		};
 
