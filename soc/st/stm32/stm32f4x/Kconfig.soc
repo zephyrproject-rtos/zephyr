@@ -10,6 +10,10 @@ config SOC_SERIES_STM32F4X
 config SOC_SERIES
 	default "stm32f4x" if SOC_SERIES_STM32F4X
 
+config SOC_STM32F401XB
+	bool
+	select SOC_SERIES_STM32F4X
+
 config SOC_STM32F401XC
 	bool
 	select SOC_SERIES_STM32F4X
@@ -103,6 +107,7 @@ config SOC_STM32F479XX
 	select SOC_SERIES_STM32F4X
 
 config SOC
+	default "stm32f401xb" if SOC_STM32F401XB
 	default "stm32f401xc" if SOC_STM32F401XC
 	default "stm32f401xd" if SOC_STM32F401XD
 	default "stm32f401xe" if SOC_STM32F401XE
