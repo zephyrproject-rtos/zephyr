@@ -188,8 +188,11 @@ config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 	bool "LF clock calibration"
 	depends on !SOC_SERIES_NRF91X
 	depends on $(dt_nodelabel_enabled,hfxo)
-	depends on $(dt_node_str_prop_equals,$(dt_nodelabel_path,lfclk),k32src,rc) || \
-	CLOCK_CONTROL_NRF_K32SRC_RC
+	# The legacy driver takes the LF source from Kconfig, the new one from
+	# the lfclk devicetree node.
+	depends on CLOCK_CONTROL_NRF_K32SRC_RC || \
+		(!CLOCK_CONTROL_NRF && \
+		$(dt_node_str_prop_equals,$(dt_nodelabel_path,lfclk),k32src,rc))
 	default y if !SOC_NRF53_CPUNET_ENABLE
 	help
 	  If calibration is disabled when RC is used for low frequency clock then
