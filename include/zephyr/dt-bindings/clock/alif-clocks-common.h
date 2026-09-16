@@ -108,6 +108,10 @@
 #define ALIF_PARENT_CLK_SYST_HCLK   0x1U
 /** System APB clock (SYST_PCLK) */
 #define ALIF_PARENT_CLK_SYST_PCLK   0x2U
+/** Always-on 32 kHz clock (S32K_CLK), sourced from the LFXO or LFRC oscillator */
+#define ALIF_PARENT_CLK_S32K        0x3U
+/** Always-on 128 kHz clock (128K_CLK), derived from the LFRC oscillator */
+#define ALIF_PARENT_CLK_128K        0x4U
 
 /** @} */
 
