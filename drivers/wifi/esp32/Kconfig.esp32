@@ -411,6 +411,34 @@ config ESP32_WIFI_EVENT_QUEUE_SIZE
 	  layer (see NET_MGMT_EVENT_QUEUE_SIZE and NET_MGMT_EVENT_QUEUE_TIMEOUT).
 	  Raise this depth at the cost of more RAM if drops are ever seen.
 
+choice ESP32_WIFI_STA_POWER_SAVE_MODE
+	prompt "Station power save mode"
+	default ESP32_WIFI_STA_POWER_SAVE_MIN_MODEM
+	help
+	  Power save mode applied to the station interface when the driver
+	  starts. It can still be changed at runtime with the Wi-Fi power
+	  save management request.
+
+config ESP32_WIFI_STA_POWER_SAVE_MIN_MODEM
+	bool "Minimum modem sleep"
+	help
+	  The station wakes up to receive the beacon every DTIM period.
+
+config ESP32_WIFI_STA_POWER_SAVE_MAX_MODEM
+	bool "Maximum modem sleep"
+	help
+	  The station wakes up to receive the beacon every listen interval.
+	  The interval defaults to 3 beacon intervals and can be set with
+	  the Wi-Fi power save management request.
+
+config ESP32_WIFI_STA_POWER_SAVE_NONE
+	bool "None"
+	help
+	  The modem never sleeps. Lowest latency and highest throughput at
+	  the cost of a continuous active current.
+
+endchoice # ESP32_WIFI_STA_POWER_SAVE_MODE
+
 config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
 	int "Minimum active time"
 	range 8 60
