@@ -13,7 +13,7 @@ supported:
   - gpio
   - memc
   - netif:eth
-  - octospi
+  - mspi
   - ptp_clock
   - rtc
   - sdhc
