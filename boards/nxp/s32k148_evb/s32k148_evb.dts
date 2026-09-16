@@ -186,12 +186,20 @@
 	pinctrl-names = "default";
 };
 
+/*
+ * The board has no on-board Ethernet PHY: it takes a daughter card through the
+ * expansion connector. Keep the MAC and MDIO disabled so that a bare board does
+ * not instantiate a driver with no phy-handle; the nxp_adtja1101 shield enables
+ * them and supplies the PHY.
+ */
 &enet_mac {
+	status = "disabled";
 	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
 };
 
 &enet_mdio {
+	status = "disabled";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
 };
