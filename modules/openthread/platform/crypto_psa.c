@@ -9,6 +9,7 @@
 #include <psa/crypto.h>
 
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 #if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_OPENTHREAD_CRYPTO_PSA)
 #include <zephyr/settings/settings.h>
@@ -131,6 +132,44 @@ void otPlatCryptoInit(void)
 	__ASSERT_EVAL((void)settings_subsys_init(), int err = settings_subsys_init(), !err,
 		      "Failed to initialize settings");
 #endif
+}
+
+static otError import_literal_aes_key(psa_key_id_t *key_ref, const otCryptoKey *key)
+{
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t status;
+
+	if (key->mKey == NULL) {
+		return OT_ERROR_INVALID_ARGS;
+	}
+
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+	psa_set_key_algorithm(&attributes, PSA_ALG_ECB_NO_PADDING);
+	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+	psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
+
+	status = psa_import_key(&attributes, key->mKey, key->mKeyLength, key_ref);
+	psa_reset_key_attributes(&attributes);
+
+	return psaToOtError(status);
+}
+
+static otError destroy_literal_key(psa_key_id_t *key_ref)
+{
+	psa_status_t status;
+
+	if (*key_ref == PSA_KEY_ID_NULL) {
+		return OT_ERROR_NONE;
+	}
+
+	status = psa_destroy_key(*key_ref);
+	if (status != PSA_SUCCESS) {
+		return psaToOtError(status);
+	}
+
+	*key_ref = PSA_KEY_ID_NULL;
+
+	return OT_ERROR_NONE;
 }
 
 otError otPlatCryptoImportKey(otCryptoKeyRef *aKeyRef, otCryptoKeyType aKeyType,
@@ -449,15 +488,28 @@ otError otPlatCryptoAesInit(otCryptoContext *aContext)
 otError otPlatCryptoAesSetKey(otCryptoContext *aContext, const otCryptoKey *aKey)
 {
 	psa_key_id_t *key_ref;
+	otError error;
 
 	if (aKey == NULL || !checkContext(aContext, sizeof(psa_key_id_t))) {
 		return OT_ERROR_INVALID_ARGS;
 	}
 
 	key_ref = aContext->mContext;
-	*key_ref = aKey->mKeyRef;
 
-	return OT_ERROR_NONE;
+	if (IS_ENABLED(CONFIG_OPENTHREAD_PLATFORM_KEY_REF)) {
+		*key_ref = aKey->mKeyRef;
+		return OT_ERROR_NONE;
+	}
+
+	/* Literal key: the context only holds a key ID, so import the key
+	 * material as a volatile PSA key owned by this context.
+	 */
+	error = destroy_literal_key(key_ref);
+	if (error != OT_ERROR_NONE) {
+		return error;
+	}
+
+	return import_literal_aes_key(key_ref, aKey);
 }
 
 otError otPlatCryptoAesEncrypt(otCryptoContext *aContext, const uint8_t *aInput, uint8_t *aOutput)
@@ -480,6 +532,14 @@ otError otPlatCryptoAesEncrypt(otCryptoContext *aContext, const uint8_t *aInput,
 
 otError otPlatCryptoAesFree(otCryptoContext *aContext)
 {
+	if (!checkContext(aContext, sizeof(psa_key_id_t))) {
+		return OT_ERROR_INVALID_ARGS;
+	}
+
+	if (!IS_ENABLED(CONFIG_OPENTHREAD_PLATFORM_KEY_REF)) {
+		return destroy_literal_key(aContext->mContext);
+	}
+
 	return OT_ERROR_NONE;
 }
 
