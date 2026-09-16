@@ -37,8 +37,29 @@
 	};
 };
 
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	hse-bypass;
+	status = "okay";
+};
+
+&clk_hsi {
+	hsi-div = <1>;
+	status = "okay";
+};
+
 &clk_hsi48 {
 	/* HSI48 required for USB */
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <160>;
+	div-p = <2>;
+	div-q = <10>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 
