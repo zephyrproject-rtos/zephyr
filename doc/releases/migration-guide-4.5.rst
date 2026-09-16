@@ -863,6 +863,10 @@ ESPI
     :dtcompatible:`microchip,xec-espi-host-dev`. Out-of-tree boards that override or add
     host-device child nodes for these SoCs must set ``ldn`` on each.
 
+* The board power node compatible of the :zephyr:code-sample:`espi` sample has been renamed from
+  ``intel-rvp,board-power`` to ``intel,rvp-board-power``. Out-of-tree board overlays for this
+  sample must use the new compatible.
+
 Ethernet
 ========
 
