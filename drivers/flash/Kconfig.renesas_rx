@@ -5,7 +5,7 @@
 
 config SOC_FLASH_RENESAS_RX
 	bool "RX flash driver"
-	depends on DT_HAS_RENESAS_RX_FLASH_ENABLED
+	depends on DT_HAS_RENESAS_RX_FLASH_CONTROLLER_ENABLED
 	default y
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
@@ -18,7 +18,7 @@ if SOC_FLASH_RENESAS_RX
 
 config FLASH_RENESAS_RX_BGO_ENABLED
 	bool "RX flash BGO feature"
-	default $(dt_nodelabel_bool_prop,data_flash,bgo-enable)
+	default $(dt_nodelabel_bool_prop,data_flash_ctrl,bgo-enable)
 	help
 	  Renesas RX flash BGO (Background Operation) feature
 	  for RX series. This feature allows the flash driver to
@@ -38,6 +38,6 @@ config RX_FLASH_TYPE5
 	depends on SOC_SERIES_RX26T
 	default y
 	help
-	  RX flash driver type 1
+	  RX flash driver type 5
 
 endif

@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX Flash Command Interface
+
+compatible: "renesas,rx-flashif"
+
+include: flash-controller.yaml
+
+properties:
+  interrupts:
+    description: |
+      IRQ number and priority to use for Flash controller.
+
+  interrupt-names:
+    enum:
+      - "frdyi"
+    description: |
+      Interrupts must be given corresponding names so that the driver can recognize them.
