@@ -1,0 +1,22 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip ATECC608A true random number generator.
+
+  This is a child of a "microchip,atecc608a" node and uses the on-chip Random
+  command as a Zephyr entropy source. The device configuration zone must be
+  locked; an unlocked part returns a fixed test pattern instead of entropy.
+
+    atecc608a: atecc608a@60 {
+            compatible = "microchip,atecc608a";
+            reg = <0x60>;
+
+            atecc608a_trng: atecc608a_trng {
+                    compatible = "microchip,atecc608a-trng";
+            };
+    };
+
+compatible: "microchip,atecc608a-trng"
+
+include: base.yaml

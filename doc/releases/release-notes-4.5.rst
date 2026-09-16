@@ -1592,6 +1592,7 @@ New Drivers
   * :dtcompatible:`infineon,mxcrypto` (:github:`108439`)
   * :dtcompatible:`infineon,mxcryptolite` (:github:`109693`)
   * :dtcompatible:`m5stack,m5pm1` (:github:`109961`)
+  * :dtcompatible:`microchip,atecc608a` (:github:`119243`)
   * :dtcompatible:`ti,tla2528` (:github:`110722`)
 
 * :abbr:`MUX (Multiplexer)`
@@ -1690,6 +1691,7 @@ New Drivers
 * :abbr:`RNG (Random Number Generator)`
 
   * :dtcompatible:`brcm,bcm2835-rng` (:github:`110191`)
+  * :dtcompatible:`microchip,atecc608a-trng` (:github:`119243`)
   * :dtcompatible:`microchip,trng-g2-entropy` (:github:`108155`)
   * :dtcompatible:`realtek,ameba-trng` (:github:`106670`)
   * :dtcompatible:`realtek,bee-trng` (:github:`105335`)
