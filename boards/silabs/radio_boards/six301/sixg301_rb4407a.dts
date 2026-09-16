@@ -8,6 +8,7 @@
 #include <silabs/six301/simg301m104lil.dtsi>
 #include <silabs/six301/clock-hfxo.dtsi>
 #include <silabs/six301/clock-socpll.dtsi>
+#include <zephyr/dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
@@ -76,6 +77,37 @@
 		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
+	joystick {
+		compatible = "adc-keys";
+		io-channels = <&adc0 0>;
+		keyup-threshold-mv = <3300>;
+
+		down-key {
+			press-thresholds-mv = <1650>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		enter-key {
+			press-thresholds-mv = <3>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		left-key {
+			press-thresholds-mv = <1980>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		right-key {
+			press-thresholds-mv = <2533>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+
+		up-key {
+			press-thresholds-mv = <2831>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -104,6 +136,28 @@
 		compatible = "regulator-fixed";
 		enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 		regulator-name = "rht-enable";
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	channel@0 {
+		reg = <0x0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <ADC_INPUT_PC6>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
 	};
 };
 
