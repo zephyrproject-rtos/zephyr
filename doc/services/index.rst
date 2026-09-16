@@ -108,7 +108,7 @@ different platforms.
 
          security
 
-   .. grid-item-card:: :ref:`Device Management <device_management_services>`
+   .. grid-item-card:: :ref:`Device Management <device_mgmt>`
       :class-card: sd-index-card
 
       .. rst-class:: sd-index-watermark
@@ -118,7 +118,7 @@ different platforms.
       .. toctree::
          :maxdepth: 2
 
-         device_management
+         device_mgmt/index
 
    .. grid-item-card:: :ref:`Algorithms & Data <algorithms_services>`
       :class-card: sd-index-card
