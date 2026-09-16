@@ -6,5 +6,3 @@ config NXP_MULTICORE
 	bool "NXP Multicore Manager support"
 	help
 	  Includes NXP Multicore Manager support.
-
-osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/mcux-sdk-ng/middleware/mcuxsdk-middleware-multicore/rpmsg-lite/zephyr/Kconfig"
