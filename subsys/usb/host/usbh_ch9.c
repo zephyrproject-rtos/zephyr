@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/usb/usbh.h>
 #include <zephyr/usb/usb_ch9.h>
+#include <zephyr/usb/usb_hub.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net_buf.h>
 
@@ -55,6 +56,18 @@ int usbh_req_setup(struct usb_device *const udev,
 		   const uint16_t wLength,
 		   struct net_buf *const buf)
 {
+	/*
+	 * One global binary sem for all EP0 control completions. A late callback
+	 * after timeout/dequeue, or any double-completion bug, can leave count=1.
+	 * The next wait would return immediately while the new xfer is still
+	 * in flight (stale xfer->err, early usbh_xfer_free) — typical symptom:
+	 * logs stop right after a successful control transfer.
+	 */
+	while (k_sem_take(&ch9_req_sync, K_NO_WAIT) == 0) {
+		LOG_WRN("ch9: drained stray control-transfer sync token before req0x%02x",
+			bRequest);
+	}
+
 	struct usb_setup_packet req = {
 		.bmRequestType = bmRequestType,
 		.bRequest = bRequest,
@@ -92,18 +105,21 @@ int usbh_req_setup(struct usb_device *const udev,
 		goto buf_alloc_err;
 	}
 
-	if (k_sem_take(&ch9_req_sync, K_MSEC(SETUP_REQ_TIMEOUT)) != 0) {
-		ret = usbh_xfer_dequeue(udev, xfer);
-		if (ret != 0) {
-			LOG_ERR("Failed to cancel transfer");
-			return ret;
-		}
+	LOG_DBG("usbh: ch9: waiting xfer (req=0x%02x wLength=%u)", bRequest, wLength);
 
-		LOG_ERR("Timeout");
-		return -ETIMEDOUT;
+	if (k_sem_take(&ch9_req_sync, K_MSEC(SETUP_REQ_TIMEOUT)) != 0) {
+		/*
+		 * ep_enqueue blocks until the TD completes; this timeout means the
+		 * usbh_thread callback did not run. Try Stop EP cancel if still active.
+		 */
+		(void)usbh_xfer_dequeue(udev, xfer);
+		LOG_ERR("ch9: timeout waiting for completion callback (req=0x%02x)", bRequest);
+		ret = -ETIMEDOUT;
+		goto buf_alloc_err;
 	}
 
 	ret = xfer->err;
+	LOG_DBG("usbh: ch9: xfer done (req=0x%02x err=%d)", bRequest, ret);
 
 buf_alloc_err:
 	usbh_xfer_free(udev, xfer);
@@ -225,7 +241,7 @@ int usbh_req_get_cfg(struct usb_device *const udev,
 int usbh_req_set_alt(struct usb_device *const udev,
 		     const uint8_t iface, const uint8_t alt)
 {
-	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
+	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_DEVICE << 7) |
 				      USB_REQTYPE_RECIPIENT_INTERFACE;
 	const uint8_t bRequest = USB_SREQ_SET_INTERFACE;
 	const uint16_t wValue = alt;
@@ -282,32 +298,185 @@ int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep)
 			      NULL);
 }
 
+#if IS_ENABLED(CONFIG_USBH_HUB)
+
+static uint8_t hub_req_bm(const uint8_t recipient, const bool to_host)
+{
+	return (to_host ? USB_REQTYPE_DIR_TO_HOST : USB_REQTYPE_DIR_TO_DEVICE) << 7 |
+	       USB_REQTYPE_TYPE_CLASS << 5 | recipient;
+}
+
+int usbh_req_get_hcfs_port_status(struct usb_device *const hub, const uint8_t port,
+				  uint16_t *const portstatus, uint16_t *const portchange)
+{
+	struct usb_port_status ps;
+	struct net_buf *buf;
+	int ret;
+
+	if (hub == NULL || portstatus == NULL || portchange == NULL) {
+		return -EINVAL;
+	}
+
+	buf = usbh_xfer_buf_alloc(hub, sizeof(ps));
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = usbh_req_setup(hub, hub_req_bm(USB_REQTYPE_RECIPIENT_OTHER, true),
+			     USB_HCREQ_GET_STATUS, 0, port, sizeof(ps), buf);
+	if (ret == 0 && buf->len >= sizeof(ps)) {
+		memcpy(&ps, buf->data, sizeof(ps));
+		*portstatus = sys_le16_to_cpu(ps.wPortStatus);
+		*portchange = sys_le16_to_cpu(ps.wPortChange);
+	}
+
+	usbh_xfer_buf_free(hub, buf);
+
+	return ret;
+}
+
+int usbh_req_get_hcfs_hub_status(struct usb_device *const hub, uint16_t *const hubstatus,
+				 uint16_t *const hubchange)
+{
+	struct usb_hub_status hs;
+	struct net_buf *buf;
+	int ret;
+
+	if (hub == NULL || hubstatus == NULL || hubchange == NULL) {
+		return -EINVAL;
+	}
+
+	buf = usbh_xfer_buf_alloc(hub, sizeof(hs));
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = usbh_req_setup(hub, hub_req_bm(USB_REQTYPE_RECIPIENT_DEVICE, true),
+			     USB_HCREQ_GET_STATUS, 0, 0, sizeof(hs), buf);
+	if (ret == 0 && buf->len >= sizeof(hs)) {
+		memcpy(&hs, buf->data, sizeof(hs));
+		*hubstatus = sys_le16_to_cpu(hs.wHubStatus);
+		*hubchange = sys_le16_to_cpu(hs.wHubChange);
+	}
+
+	usbh_xfer_buf_free(hub, buf);
+
+	return ret;
+}
+
+int usbh_req_set_hcfs_port_feature(struct usb_device *const hub, const uint8_t port,
+				   const uint8_t feature)
+{
+	return usbh_req_setup(hub, hub_req_bm(USB_REQTYPE_RECIPIENT_OTHER, false),
+			      USB_HCREQ_SET_FEATURE, feature, port, 0, NULL);
+}
+
+int usbh_req_clear_hcfs_port_feature(struct usb_device *const hub, const uint8_t port,
+				     const uint8_t feature)
+{
+	return usbh_req_setup(hub, hub_req_bm(USB_REQTYPE_RECIPIENT_OTHER, false),
+			      USB_HCREQ_CLEAR_FEATURE, feature, port, 0, NULL);
+}
+
+int usbh_req_clear_hcfs_hub_feature(struct usb_device *const hub, const uint8_t feature)
+{
+	return usbh_req_setup(hub, hub_req_bm(USB_REQTYPE_RECIPIENT_DEVICE, false),
+			      USB_HCREQ_CLEAR_FEATURE, feature, 0, 0, NULL);
+}
+
+int usbh_req_desc_hub(struct usb_device *const hub, const uint16_t len, void *const desc)
+{
+	const uint8_t bmRequestType = hub_req_bm(USB_REQTYPE_RECIPIENT_DEVICE, true);
+	const uint8_t bRequest = USB_HCREQ_GET_DESCRIPTOR;
+	const uint16_t wValue = (USB_DT_HUB << 8);
+	struct net_buf *buf;
+	int ret;
+
+	if (hub == NULL || desc == NULL || len == 0U) {
+		return -EINVAL;
+	}
+
+	buf = usbh_xfer_buf_alloc(hub, len);
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = usbh_req_setup(hub, bmRequestType, bRequest, wValue, 0, len, buf);
+	if (ret == 0 && buf->len > 0U) {
+		memcpy(desc, buf->data, MIN((size_t)buf->len, (size_t)len));
+	}
+
+	usbh_xfer_buf_free(hub, buf);
+
+	return ret;
+}
+
+int usbh_hub_port_reset(struct usb_device *const hub, const uint8_t port, const uint32_t reset_ms)
+{
+	uint16_t portstatus;
+	uint16_t portchange;
+	int ret;
+	unsigned int tries;
+
+	if (hub == NULL || port == 0U) {
+		return -EINVAL;
+	}
+
+	ret = usbh_req_set_hcfs_port_feature(hub, port, USB_HCFS_PORT_RESET);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (reset_ms > 0U) {
+		k_msleep(reset_ms);
+	}
+
+	for (tries = 0U; tries < 20U; tries++) {
+		ret = usbh_req_get_hcfs_port_status(hub, port, &portstatus, &portchange);
+		if (ret != 0) {
+			return ret;
+		}
+
+		if ((portchange & USB_PORT_STAT_C_RESET) != 0U) {
+			break;
+		}
+
+		k_msleep(10);
+	}
+
+	return usbh_req_clear_hcfs_port_feature(hub, port, USB_HCFS_C_PORT_RESET);
+}
+
+#endif /* CONFIG_USBH_HUB */
+
 int usbh_req_set_hcfs_ppwr(struct usb_device *const udev,
 			   const uint8_t port)
 {
-	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
-				      USB_REQTYPE_TYPE_CLASS << 5 |
+#if IS_ENABLED(CONFIG_USBH_HUB)
+	return usbh_req_set_hcfs_port_feature(udev, port, USB_HCFS_PORT_POWER);
+#else
+	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 | USB_REQTYPE_TYPE_CLASS << 5 |
 				      USB_REQTYPE_RECIPIENT_OTHER << 0;
 	const uint8_t bRequest = USB_HCREQ_SET_FEATURE;
 	const uint16_t wValue = USB_HCFS_PORT_POWER;
 	const uint16_t wIndex = port;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, wIndex, 0,
-			      NULL);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, wIndex, 0, NULL);
+#endif
 }
 
 int usbh_req_set_hcfs_prst(struct usb_device *const udev,
 			   const uint8_t port)
 {
-	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
-				      USB_REQTYPE_TYPE_CLASS << 5 |
+#if IS_ENABLED(CONFIG_USBH_HUB)
+	return usbh_req_set_hcfs_port_feature(udev, port, USB_HCFS_PORT_RESET);
+#else
+	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 | USB_REQTYPE_TYPE_CLASS << 5 |
 				      USB_REQTYPE_RECIPIENT_OTHER << 0;
 	const uint8_t bRequest = USB_HCREQ_SET_FEATURE;
 	const uint16_t wValue = USB_HCFS_PORT_RESET;
 	const uint16_t wIndex = port;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, wIndex, 0,
-			      NULL);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, wIndex, 0, NULL);
+#endif
 }

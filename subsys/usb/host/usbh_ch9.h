@@ -62,6 +62,28 @@ int usbh_req_set_sfs_halt(struct usb_device *const udev, const uint8_t ep);
 
 int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep);
 
+#if IS_ENABLED(CONFIG_USBH_HUB)
+
+int usbh_req_get_hcfs_port_status(struct usb_device *const hub, const uint8_t port,
+				  uint16_t *const portstatus, uint16_t *const portchange);
+
+int usbh_req_get_hcfs_hub_status(struct usb_device *const hub, uint16_t *const hubstatus,
+				 uint16_t *const hubchange);
+
+int usbh_req_set_hcfs_port_feature(struct usb_device *const hub, const uint8_t port,
+				   const uint8_t feature);
+
+int usbh_req_clear_hcfs_port_feature(struct usb_device *const hub, const uint8_t port,
+				     const uint8_t feature);
+
+int usbh_req_clear_hcfs_hub_feature(struct usb_device *const hub, const uint8_t feature);
+
+int usbh_req_desc_hub(struct usb_device *const hub, const uint16_t len, void *const desc);
+
+int usbh_hub_port_reset(struct usb_device *const hub, const uint8_t port, const uint32_t reset_ms);
+
+#endif /* CONFIG_USBH_HUB */
+
 int usbh_req_set_hcfs_ppwr(const struct usb_device *udev,
 			   const uint8_t port);
 
