@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2026 Dent IoT
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drives the on-board WS2812 (NeoPixel) on the Adafruit Feather STM32F405
+ * Express. The NeoPixel data line is on PC0, which has no usable alternate
+ * functions, so it is driven by the STM32 pulse_io backend using a timer
+ * update event triggering DMA writes to GPIOC->BSRR. No pin AF is needed.
+ *
+ * Timer: TIM1 (APB2, 168 MHz). TIM1_UP routes to DMA2 stream5/channel6.
+ * DMA2 (unlike DMA1 on F405/407) can reach the GPIO AHB1 port.
+ *
+ * Copy this overlay alongside your build (e.g. into a sample's boards/
+ * directory, or pass with --overlay) and build for
+ * adafruit_feather_stm32f405.
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+
+	/* STM32 pulse_io channel: TIM1 update -> DMA2 -> GPIOC BSRR (PC0) */
+	pulseio0: pulse-io-0 {
+		compatible = "st,stm32-timer-pulse-io";
+		#pulse-io-cells = <1>;
+		timer = <&timers1>;
+		dmas = <&dma2 5 6
+			(STM32_DMA_MEMORY_TO_PERIPH |
+			 STM32_DMA_MEM_INC |
+			 STM32_DMA_PERIPH_32BITS |
+			 STM32_DMA_MEM_32BITS |
+			 STM32_DMA_PRIORITY_HIGH)
+			0>;
+		dma-names = "tx";
+
+		/* PC0 = on-board NeoPixel data line */
+		gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+		/*
+		 * TIM1 is on APB2 at 168 MHz. With prescaler 0 the timer
+		 * ticks at 168 MHz; for a 10 MHz resolution the backend
+		 * programs ARR = 16, giving ~10.5 MHz per cell tick
+		 * (close enough to ws2812_pulse_io's 10 MHz assumption).
+		 */
+		st,prescaler = <0>;
+		buffer-size = <4096>;
+		status = "okay";
+	};
+
+	led_strip: ws2812 {
+		compatible = "worldsemi,ws2812-pulse-io";
+		pulse-ios = <&pulseio0 0>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+		reset-delay = <300>;
+	};
+};
+
+/* Enable TIM1 (defined in stm32f4.dtsi, disabled by default). */
+&timers1 {
+	st,prescaler = <0>;
+	status = "okay";
+};
+
+/* Enable DMA2 (only DMA2 can reach GPIO on F405/407). */
+&dma2 {
+	status = "okay";
+};
