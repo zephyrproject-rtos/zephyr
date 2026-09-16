@@ -22,6 +22,13 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 
 #define DEFAULT_LOG_MSG_INTERVAL (0x7F)
 
+/* Sanity bounds for message intervals advertised by a remote PTP Instance. The
+ * values are used as shift counts when arming the timers, so they must never be
+ * adopted unchecked.
+ */
+#define PTP_LOG_MSG_INTERVAL_MIN (-10)
+#define PTP_LOG_MSG_INTERVAL_MAX 22
+
 #define PORT_DELAY_REQ_CLEARE_TO (3 * NSEC_PER_SEC)
 
 #define PORT_LINK_UP	     BIT(0)
@@ -567,8 +574,19 @@ static void port_sync_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 		return;
 	}
 
-	if (port->port_ds.log_sync_interval != msg->header.log_msg_interval) {
-		port->port_ds.log_sync_interval = msg->header.log_msg_interval;
+	/* The interval is only specified for multicast Sync messages. For unicast
+	 * ones it is not applicable, because it is subject to unicast negotiation,
+	 * and the field carries 0x7F (IEEE 1588-2019 Table 42).
+	 */
+	if ((msg->header.flags[0] & PTP_MSG_UNICAST_FLAG) == 0 &&
+	    msg->header.log_msg_interval != DEFAULT_LOG_MSG_INTERVAL) {
+		if (IN_RANGE(msg->header.log_msg_interval,
+			     PTP_LOG_MSG_INTERVAL_MIN, PTP_LOG_MSG_INTERVAL_MAX)) {
+			port->port_ds.log_sync_interval = msg->header.log_msg_interval;
+		} else {
+			LOG_WRN("Port %d ignoring bogus Sync interval 2^%d",
+				port->port_ds.id.port_number, msg->header.log_msg_interval);
+		}
 	}
 
 	msg->header.correction += port->port_ds.delay_asymmetry;
@@ -687,6 +705,20 @@ static void port_delay_resp_msg_process(struct ptp_port *port, struct ptp_msg *m
 
 	sys_slist_remove(&port->delay_req_list, prev, &req->node);
 	ptp_msg_unref(req);
+
+	if (msg->header.log_msg_interval == DEFAULT_LOG_MSG_INTERVAL) {
+		/* 0x7F means the interval is not applicable, because it is subject
+		 * to unicast negotiation (IEEE 1588-2019 Table 42).
+		 */
+		return;
+	}
+
+	if (msg->header.log_msg_interval < PTP_LOG_MSG_INTERVAL_MIN ||
+	    msg->header.log_msg_interval > PTP_LOG_MSG_INTERVAL_MAX) {
+		LOG_WRN("Port %d ignoring bogus Delay_Req interval 2^%d",
+			port->port_ds.id.port_number, msg->header.log_msg_interval);
+		return;
+	}
 
 	port->port_ds.log_min_delay_req_interval = msg->header.log_msg_interval;
 }
