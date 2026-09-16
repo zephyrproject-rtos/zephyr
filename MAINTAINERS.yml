@@ -7748,6 +7748,8 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+  collaborators:
+    - kurtjd
   files: []
   labels:
     - "area: Rust"
