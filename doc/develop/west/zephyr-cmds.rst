@@ -297,6 +297,32 @@ under their original filename or with a SHA-256 suffix (``<filename>.<sha>``).
 If found, the blob is copied from the cache to the blob path; otherwise
 it is downloaded from its URL(s) to the blob path.
 
+One or more download mirrors can be configured via the ``blobs.mirrors``
+config option. Its value is a JSON object that contains one or more
+key-value pairs, where each key is a remote URL prefix (a string) and each
+value is either a single mirror URL prefix (a string) or a list of mirror
+URL prefixes (an array of strings).
+
+A single mirror for a remote URL prefix::
+
+  west config blobs.mirrors '{"https://github.com/": "https://example.com/github-mirror/"}'
+
+More than one mirror for the same remote URL prefix, tried in list order::
+
+  west config blobs.mirrors '{
+    "https://github.com/": [
+      "https://example.com/github1-mirror/",
+      "https://example.com/github2-mirror/"
+    ]
+  }'
+
+For each blob URL, every mirror whose remote URL prefix matches is tried,
+ordered so that the *longest* (most specific) matching remote URL prefix is
+tried first (like git's ``insteadOf``); mirrors for shorter, less specific
+matches are tried afterward. Mirrors configured for the same remote URL
+prefix are tried in the order they are listed. The original URL is tried
+last, as a fallback if every mirror fails.
+
 .. _west-twister:
 
 Twister wrapper: ``west twister``
