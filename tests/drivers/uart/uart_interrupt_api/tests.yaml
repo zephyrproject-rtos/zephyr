@@ -5,3 +5,16 @@ tests:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     vendor_allow:
       - adi
+  drivers.uart.interrupt_api.lp_mspm:
+    tags:
+      - uart
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    harness: ztest
+    platform_allow:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+      - lp_mspm33c321a
+    integration_platforms:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+      - lp_mspm33c321a
