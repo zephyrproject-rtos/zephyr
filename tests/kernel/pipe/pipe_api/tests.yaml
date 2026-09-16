@@ -2,4 +2,8 @@ tests:
   kernel.pipe.api:
     tags:
       - kernel
-      - userspace
+  kernel.pipe.api.poll:
+    extra_configs:
+      - CONFIG_POLL=y
+    tags:
+      - kernel
