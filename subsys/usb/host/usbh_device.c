@@ -129,26 +129,33 @@ static int alloc_device_address(struct usb_device *const udev, uint8_t *const ad
 
 enum pipe_op {
 	PIPE_OP_TEST, /* Verify endpoint descriptor */
-	PIPE_OP_UP,   /* Enable endpoint and update endpoint pointers */
-	PIPE_OP_DOWN, /* Disable endpoint and update endpoint pointers */
+	PIPE_OP_UP,   /* Enable pipe and update endpoint pointers */
+	PIPE_OP_DOWN, /* Disable pipe and update endpoint pointers */
 };
 
-static void assign_pipe_desc_ptr(struct usb_device *const udev,
-			       const uint8_t ep, void *const ptr)
+static void assign_pipe_desc_ptr(struct usb_device *const udev, const uint8_t ep, void *const ptr)
 {
-	uint8_t idx = USB_EP_GET_IDX(ep) & 0xF;
+	struct usb_host_pipe *pipe = uhc_get_udev_pipe(udev, ep);
 
-	if (USB_EP_DIR_IS_IN(ep)) {
-		udev->pipe_in[idx].desc = ptr;
+	if (USB_EP_GET_IDX(ep) == 0U) {
+		/* Endpoint 0 has no descriptor, only its maximum packet size
+		 * is of interest to a controller.
+		 */
+		pipe->control_mps =
+			ptr != NULL ? ((struct usb_ep_descriptor *)ptr)->wMaxPacketSize : 0U;
 	} else {
-		udev->pipe_out[idx].desc = ptr;
+		pipe->desc = ptr;
 	}
 }
 
-static int handle_pipe_op(struct usb_device *const udev,
-			const enum pipe_op op, const uint8_t ep,
-			struct usb_ep_descriptor *const ep_desc)
+static int handle_pipe_op(struct usb_device *const udev, const enum pipe_op op, const uint8_t ep,
+			  struct usb_ep_descriptor *const ep_desc)
 {
+	struct usbh_context *const uhs_ctx = udev->ctx;
+	struct usb_host_pipe *pipe = uhc_get_udev_pipe(udev, ep);
+	struct usb_host_pipe saved_pipe;
+	int err;
+
 	switch (op) {
 	case PIPE_OP_TEST:
 		break;
@@ -157,9 +164,21 @@ static int handle_pipe_op(struct usb_device *const udev,
 			return -ENOTSUP;
 		}
 
-		assign_pipe_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
+		saved_pipe = *pipe;
+		assign_pipe_desc_ptr(udev, ep, ep_desc);
+
+		err = uhc_pipe_enable(uhs_ctx->dev, udev, ep);
+		if (err != 0) {
+			*pipe = saved_pipe;
+			return err;
+		}
 		break;
 	case PIPE_OP_DOWN:
+		err = uhc_pipe_disable(uhs_ctx->dev, udev, ep);
+		if (err != 0) {
+			return err;
+		}
+
 		assign_pipe_desc_ptr(udev, ep, NULL);
 		break;
 	}
@@ -167,8 +186,42 @@ static int handle_pipe_op(struct usb_device *const udev,
 	return 0;
 }
 
-static int device_interface_modify(struct usb_device *const udev,
-				   const enum pipe_op op,
+static int enable_control_pipe(struct usb_device *const udev)
+{
+	struct usb_ep_descriptor ep_desc = {
+		.wMaxPacketSize = udev->dev_desc.bMaxPacketSize0,
+	};
+
+	return handle_pipe_op(udev, PIPE_OP_UP, USB_CONTROL_EP_OUT, &ep_desc);
+}
+
+static int disable_control_pipe(struct usb_device *const udev)
+{
+	return handle_pipe_op(udev, PIPE_OP_DOWN, USB_CONTROL_EP_OUT, NULL);
+}
+
+static void disable_config_pipes(struct usb_device *const udev)
+{
+	k_mutex_lock(&udev->mutex, K_FOREVER);
+
+	for (uint8_t i = 1; i < ARRAY_SIZE(udev->pipe_out); i++) {
+		(void)handle_pipe_op(udev, PIPE_OP_DOWN, USB_EP_DIR_OUT | i, NULL);
+		(void)handle_pipe_op(udev, PIPE_OP_DOWN, USB_EP_DIR_IN | i, NULL);
+	}
+
+	k_mutex_unlock(&udev->mutex);
+}
+
+static void disable_all_pipes(struct usb_device *const udev)
+{
+	disable_config_pipes(udev);
+
+	k_mutex_lock(&udev->mutex, K_FOREVER);
+	(void)disable_control_pipe(udev);
+	k_mutex_unlock(&udev->mutex);
+}
+
+static int device_interface_modify(struct usb_device *const udev, const enum pipe_op op,
 				   const uint8_t iface, const uint8_t alt)
 {
 	struct usb_cfg_descriptor *cfg_desc = udev->cfg_desc;
@@ -357,8 +410,12 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 
 static void reset_configuration(struct usb_device *const udev)
 {
-	/* Reset all endpoint pointers */
-	memset(udev->pipe_in, 0, sizeof(udev->pipe_in));
+	disable_config_pipes(udev);
+
+	/* Reset the endpoint pointers, the control pipe stays enabled
+	 * because the configuration is changed with control transfers.
+	 */
+	memset(&udev->pipe_in[1], 0, sizeof(udev->pipe_in) - sizeof(udev->pipe_in[0]));
 	memset(udev->pipe_out, 0, sizeof(udev->pipe_out));
 
 	/* Reset all interface pointers */
@@ -538,7 +595,7 @@ int usbh_device_init(struct usb_device *const udev)
 		err = uhc_bus_reset(uhs_ctx->dev);
 		if (err) {
 			LOG_ERR("Failed to signal bus reset");
-			return err;
+			goto error;
 		}
 	}
 
@@ -547,6 +604,12 @@ int usbh_device_init(struct usb_device *const udev)
 	 * device descriptor is read.
 	 */
 	udev->dev_desc.bMaxPacketSize0 = 8;
+	err = enable_control_pipe(udev);
+	if (err != 0) {
+		LOG_ERR("Failed to enable control pipe");
+		goto error;
+	}
+
 	err = usbh_req_desc_dev(udev, 8, &udev->dev_desc);
 	if (err) {
 		LOG_ERR("Failed to read device descriptor");
@@ -556,6 +619,21 @@ int usbh_device_init(struct usb_device *const udev)
 	err = validate_device_mps0(udev);
 	if (err) {
 		goto error;
+	}
+
+	if (udev->dev_desc.bMaxPacketSize0 != 8) {
+		/* Re-enable the control pipe with the mps0 of the device */
+		err = disable_control_pipe(udev);
+		if (err != 0) {
+			LOG_ERR("Failed to disable control pipe");
+			goto error;
+		}
+
+		err = enable_control_pipe(udev);
+		if (err != 0) {
+			LOG_ERR("Failed to enable control pipe");
+			goto error;
+		}
 	}
 
 	err = alloc_device_address(udev, &new_addr);
@@ -610,6 +688,7 @@ void usbh_device_connect(struct usbh_context *const ctx,
 			ctx->root = NULL;
 		}
 
+		disable_all_pipes(udev);
 		usbh_device_free(udev);
 		return;
 	}
@@ -643,6 +722,7 @@ void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
 		ctx->root = NULL;
 	}
 
+	disable_all_pipes(udev);
 	usbh_device_free(udev);
 
 	LOG_DBG("Device removed");

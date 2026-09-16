@@ -99,6 +99,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_transfer *xfer = NULL;
+	struct usb_host_pipe *pipe;
 	uint16_t mps;
 	uint16_t interval;
 	uint8_t type;
@@ -109,23 +110,18 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		goto xfer_alloc_error;
 	}
 
+	pipe = uhc_get_udev_pipe(udev, ep);
+	if (!pipe->enabled) {
+		LOG_ERR("Endpoint 0x%02x is not enabled", ep);
+		goto xfer_alloc_error;
+	}
+
 	if (ep_idx == 0) {
 		interval = 0;
 		type = USB_EP_TYPE_CONTROL;
 		mps = udev->dev_desc.bMaxPacketSize0;
 	} else {
-		struct usb_ep_descriptor *ep_desc;
-
-		if (USB_EP_DIR_IS_IN(ep)) {
-			ep_desc = udev->pipe_in[ep_idx].desc;
-		} else {
-			ep_desc = udev->pipe_out[ep_idx].desc;
-		}
-
-		if (ep_desc == NULL) {
-			LOG_ERR("Endpoint 0x%02x is not configured", ep);
-			goto xfer_alloc_error;
-		}
+		struct usb_ep_descriptor *ep_desc = pipe->desc;
 
 		mps = ep_desc->wMaxPacketSize;
 		interval = ep_desc->bInterval;
@@ -312,6 +308,11 @@ int uhc_pipe_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 		goto pipe_enqueue_error;
 	}
 
+	if (!uhc_get_udev_pipe(xfer->udev, xfer->ep)->enabled) {
+		ret = -ENODEV;
+		goto pipe_enqueue_error;
+	}
+
 	xfer->queued = 1;
 	ret = api->pipe_enqueue(dev, xfer);
 	if (ret) {
@@ -333,6 +334,11 @@ int uhc_pipe_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 
 	if (!uhc_is_initialized(dev)) {
 		ret = -EPERM;
+		goto pipe_dequeue_error;
+	}
+
+	if (!uhc_get_udev_pipe(xfer->udev, xfer->ep)->enabled) {
+		ret = -ENODEV;
 		goto pipe_dequeue_error;
 	}
 
