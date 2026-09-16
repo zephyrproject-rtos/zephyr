@@ -28,6 +28,7 @@ struct crypto_stm32_hash_data {
 	stm32_hash_handle_t hhash;
 	struct k_sem device_sem;
 	struct k_sem session_sem;
+	struct k_sem complete_sem;
 };
 
 struct crypto_stm32_hash_session {
