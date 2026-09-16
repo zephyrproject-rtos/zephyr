@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <nxp/mcx/mcxn/nxp_mcxn547.dtsi>
 #include "mcx_n5xx_evk.dtsi"
 #include "mcx_nx4x_evk_cpu0.dtsi"
 
