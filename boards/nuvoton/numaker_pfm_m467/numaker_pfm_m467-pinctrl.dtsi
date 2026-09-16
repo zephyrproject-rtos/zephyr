@@ -33,12 +33,10 @@
 		};
 	};
 
-	/* EMAC multi-function pins for MDIO, TX, REFCLK, RX pins */
+	/* EMAC multi-function pins for TX, REFCLK, RX and PPS pins */
 	emac_default: emac_default {
 		group0 {
-			pinmux = <PE8MFP_EMAC0_RMII_MDC>,
-				 <PE9MFP_EMAC0_RMII_MDIO>,
-				 <PE10MFP_EMAC0_RMII_TXD0>,
+			pinmux = <PE10MFP_EMAC0_RMII_TXD0>,
 				 <PE11MFP_EMAC0_RMII_TXD1>,
 				 <PE12MFP_EMAC0_RMII_TXEN>,
 				 <PC8MFP_EMAC0_RMII_REFCLK>,
@@ -47,6 +45,14 @@
 				 <PA7MFP_EMAC0_RMII_CRSDV>,
 				 <PA6MFP_EMAC0_RMII_RXERR>,
 				 <PB6MFP_EMAC0_PPS>;
+		};
+	};
+
+	/* EMAC multi-function pins for the MDIO bus */
+	emac_mdio_default: emac_mdio_default {
+		group0 {
+			pinmux = <PE8MFP_EMAC0_RMII_MDC>,
+				 <PE9MFP_EMAC0_RMII_MDIO>;
 		};
 	};
 
