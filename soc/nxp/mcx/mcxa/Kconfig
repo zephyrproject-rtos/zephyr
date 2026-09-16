@@ -62,3 +62,23 @@ config SOC_SERIES_MCXAXX7
 config SOC_MCXA_EARLY_SRAM_ECC_INIT
 	bool
 	select SOC_EARLY_RESET_HOOK
+
+if SOC_FAMILY_MCXA
+
+config SOC_FAMILY_MCXA_DEBUG_IN_LOW_POWER
+	bool "Keep the debug logic enabled in low power modes"
+	depends on PM
+	help
+	  Leave the debug logic operational while the core is in a low power
+	  mode (CMC DBGCTL[SOD] cleared) so that a debug probe keeps its
+	  connection across suspend and resume, at the cost of a higher low
+	  power current.
+
+	  Say n to shut the debug logic off on low power entry. A suspended
+	  target can then no longer be halted, inspected or reflashed without
+	  a reset.
+
+	  Power modes that gate the whole core power domain, such as Deep Power
+	  Down, lose the debug logic regardless of this option.
+
+endif # SOC_FAMILY_MCXA
