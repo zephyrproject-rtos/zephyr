@@ -88,11 +88,8 @@ static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 static K_SEM_DEFINE(sem_stream_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stream_stopped, 0U, ARRAY_SIZE(streams));
 
-/* Create a mask for the maximum BIS we can sync to using the number of streams
- * we have. We add an additional 1 since the bis indexes start from 1 and not
- * 0.
- */
-static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams) + 1U);
+/* Create a mask for the maximum BIS we can sync to using the number of streams we have. */
+static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams));
 static uint32_t bis_index_bitfield;
 
 static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
@@ -258,7 +255,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 		return;
 	}
 
-	if (requested_bis_sync == 0U) {
+	if (requested_bis_sync == 0U || requested_bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
 		bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
 	} else {
 		if ((requested_bis_sync & base_bis_index_bitfield) != requested_bis_sync) {

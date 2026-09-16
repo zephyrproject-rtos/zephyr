@@ -54,6 +54,7 @@ struct sync_state {
 	uint8_t src_id;
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	bool pa_syncing;
+	bool bis_sync_requested;
 	struct k_work_delayable pa_timer;
 	struct bt_le_per_adv_sync *pa_sync;
 	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
@@ -348,18 +349,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
 	struct sync_state *state;
-	bool sync_bis;
 
 	ARG_UNUSED(conn);
-
-	LOG_INF("BIS sync request received for %p", recv_state);
-	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
-		if (bis_sync_req[i]) {
-			sync_bis = true;
-		}
-
-		LOG_DBG("  [%d]: 0x%08x", i, bis_sync_req[i]);
-	}
 
 	state = sync_state_get(recv_state);
 	if (state == NULL) {
@@ -367,10 +358,20 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 		return -1;
 	}
 
+	LOG_INF("BIS sync request received for %p", recv_state);
+
+	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+		if (bis_sync_req[i] != 0U) {
+			state->bis_sync_requested = true;
+		}
+
+		LOG_DBG("  [%d]: 0x%08x", i, bis_sync_req[i]);
+	}
+
 	(void)memcpy(state->bis_sync_req, bis_sync_req,
 		     sizeof(state->bis_sync_req));
 
-	if (sync_bis) {
+	if (state->bis_sync_requested) {
 		SET_FLAG(flag_bis_sync_requested);
 	} else {
 		SET_FLAG(flag_bis_sync_term_requested);
@@ -979,6 +980,94 @@ static void test_main_server_sync_server_rem(void)
 	PASS("BAP Scan Delegator Server Sync Server Remove passed\n");
 }
 
+static void test_main_client_sync_no_pref(void)
+{
+	int err;
+
+	err = common_init();
+	if (err != 0) {
+		FAIL("common init failed (err %d)\n", err);
+		return;
+	}
+
+	/* Wait for broadcast assistant to tell us to BIS sync */
+	LOG_INF("Waiting for flag_bis_sync_requested");
+	WAIT_FOR_AND_CLEAR_FLAG(flag_bis_sync_requested);
+
+	ARRAY_FOR_EACH_PTR(sync_states, sync_state) {
+		if (!sync_state->bis_sync_requested) {
+			continue;
+		}
+
+		ARRAY_FOR_EACH(sync_state->bis_sync_req, i) {
+			if (sync_state->bis_sync_req[i] == 0) {
+				continue;
+			}
+
+			if (sync_state->bis_sync_req[i] != BT_BAP_BIS_SYNC_NO_PREF) {
+				FAIL("Unexpected bis_sync_req: 0x%08X",
+				     sync_state->bis_sync_req[i]);
+				return;
+			}
+
+			sync_state->bis_sync_req[i] = BT_BAP_BIS_SYNC_FAILED;
+		}
+	}
+
+	ARRAY_FOR_EACH_PTR(sync_states, sync_state) {
+		if (!sync_state->bis_sync_requested) {
+			continue;
+		}
+		/* We don't actually need to sync to the BIG/BISes */
+		err = bt_bap_scan_delegator_set_bis_sync_state(sync_state->src_id,
+							       sync_state->bis_sync_req);
+		if (err != 0) {
+			FAIL("Unexpected failure from bt_bap_scan_delegator_set_bis_sync_state: %d",
+			     err);
+			return;
+		}
+	}
+
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
+	ARRAY_FOR_EACH_PTR(sync_states, sync_state) {
+		if (!sync_state->bis_sync_requested) {
+			continue;
+		}
+
+		ARRAY_FOR_EACH(sync_state->bis_sync_req, i) {
+			if (sync_state->bis_sync_req[i] == 0) {
+				continue;
+			}
+
+			if (sync_state->bis_sync_req[i] != BT_BAP_BIS_SYNC_NO_PREF) {
+				FAIL("Unexpected bis_sync_req: 0x%08X",
+				     sync_state->bis_sync_req[i]);
+				return;
+			}
+
+			/* Set sync state to any non-0 value */
+			sync_state->bis_sync_req[i] = BIT(i);
+		}
+	}
+
+	ARRAY_FOR_EACH_PTR(sync_states, sync_state) {
+		if (!sync_state->bis_sync_requested) {
+			continue;
+		}
+		/* Set sync state to any non-0 value */
+		err = bt_bap_scan_delegator_set_bis_sync_state(sync_state->src_id,
+							       sync_state->bis_sync_req);
+		if (err != 0) {
+			FAIL("Unexpected failure from bt_bap_scan_delegator_set_bis_sync_state: %d",
+			     err);
+			return;
+		}
+	}
+
+	WAIT_FOR_FLAG(flag_broadcast_source_removed);
+	PASS("BAP Scan Delegator Client Sync NO_PREF passed\n");
+}
+
 static const struct bst_test_instance test_scan_delegator[] = {
 	{
 		.test_id = "bap_scan_delegator_client_sync",
@@ -998,8 +1087,13 @@ static const struct bst_test_instance test_scan_delegator[] = {
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_server_rem,
 	},
-	BSTEST_END_MARKER
-};
+	{
+		.test_id = "bap_scan_delegator_client_sync_no_pref",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_client_sync_no_pref,
+	},
+	BSTEST_END_MARKER};
 
 struct bst_test_list *test_scan_delegator_install(struct bst_test_list *tests)
 {

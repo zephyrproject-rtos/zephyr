@@ -1828,22 +1828,36 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 			break;
 		}
 
-		big_sync_bitfield |= bis_synced[i];
+		if (bis_synced[i] == BT_BAP_BIS_SYNC_FAILED) {
+			big_sync_bitfield = BT_BAP_BIS_SYNC_FAILED;
+			if (big_sync_bitfield != BT_BAP_BIS_SYNC_FAILED) {
+				LOG_DBG("Subgroup[%u]: Invalid combination of "
+					"0x%08X and BT_BAP_BIS_SYNC_FAILED (0x%08X)",
+					i, big_sync_bitfield, BT_BAP_BIS_SYNC_FAILED);
+				return -EINVAL;
+			}
+		} else {
+			if (big_sync_bitfield == BT_BAP_BIS_SYNC_FAILED) {
+				LOG_DBG("Subgroup[%u]: Invalid combination of "
+					"BT_BAP_BIS_SYNC_FAILED (0x%08X) and 0x%08X",
+					i, BT_BAP_BIS_SYNC_FAILED, bis_synced[i]);
+				return -EINVAL;
+			}
+			big_sync_bitfield |= bis_synced[i];
 
-		if (bis_synced[i] == BT_BAP_BIS_SYNC_NO_PREF ||
-		    !bits_subset_of(bis_synced[i],
-				    internal_state->requested_bis_sync[i])) {
-			err = k_mutex_unlock(&internal_state->mutex);
-			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+			if (!bits_subset_of(bis_synced[i], internal_state->requested_bis_sync[i])) {
+				err = k_mutex_unlock(&internal_state->mutex);
+				__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-			LOG_DBG("Subgroup[%u] invalid bis_sync value 0x%08X for 0x%08X", i,
-				bis_synced[i], internal_state->requested_bis_sync[i]);
-			return -EINVAL;
+				LOG_DBG("Subgroup[%u] invalid bis_sync value 0x%08X for 0x%08X", i,
+					bis_synced[i], internal_state->requested_bis_sync[i]);
+				return -EINVAL;
+			}
 		}
 	}
 
 	if (internal_state->state.pa_sync_state != BT_BAP_PA_STATE_SYNCED &&
-	    big_sync_bitfield != 0U) {
+	    big_sync_bitfield != 0U && big_sync_bitfield != BT_BAP_BIS_SYNC_FAILED) {
 		err = k_mutex_unlock(&internal_state->mutex);
 		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
