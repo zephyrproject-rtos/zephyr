@@ -286,6 +286,14 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	case IMX_CCM_ENET1G_CLK:
 #if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 		clock_root = kCLOCK_Root_WakeupAxi;
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
+		if (clock_name == IMX_CCM_ENET_PLL) {
+			clock_root = kCLOCK_Root_Enet_Timer1;
+		} else if (clock_name == IMX_CCM_ENET1G_PLL) {
+			clock_root = kCLOCK_Root_Enet_Timer2;
+		} else {
+			clock_root = kCLOCK_Root_Bus;
+		}
 #else
 		clock_root = kCLOCK_Root_Bus;
 #endif
