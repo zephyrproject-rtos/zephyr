@@ -8,6 +8,11 @@ zephyr_system_include_directories(include)
 
 zephyr_sources(
   cpp_virtual.c
-  cpp_vtable.cpp
   cpp_new.cpp
 )
+
+# The IAR compiler reserves the __cxxabiv1 type_info class names, the vtables
+# are provided by the IAR C++ runtime library.
+if(NOT ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "iar")
+  zephyr_sources(cpp_vtable.cpp)
+endif()

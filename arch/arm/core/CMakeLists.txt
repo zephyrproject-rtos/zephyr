@@ -16,7 +16,10 @@ zephyr_library_sources(
   nmi_on_reset.S
 )
 
-zephyr_library_sources_ifdef(CONFIG_CPP __aeabi_atexit.c)
+# The IAR C++ runtime library provides __aeabi_atexit
+if(CONFIG_CPP AND NOT CONFIG_IAR_LIBCPP)
+  zephyr_library_sources(__aeabi_atexit.c)
+endif()
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)

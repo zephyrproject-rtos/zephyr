@@ -64,6 +64,15 @@ tests:
     extra_configs:
       - CONFIG_ARCMWDT_LIBC=y
       - CONFIG_ARCMWDT_LIBCPP=y
+  # IAR C++ Standard Library (libc++)
+  cpp.libcxx.iarlib:
+    toolchain_allow: iar
+    tags: cpp
+    extra_configs:
+      - CONFIG_IAR_LIBC=y
+      - CONFIG_IAR_LIBCPP=y
+    integration_platforms:
+      - mps2/an385
   # Host C++ Standard Library
   cpp.libcxx.host:
     arch_allow: posix

@@ -42,6 +42,10 @@
 #include <zephyr/arch/common/init.h>
 #include <scheduler.h>
 
+#ifdef CONFIG_STATIC_INIT_IAR
+#include <iar_dynamic_init.h>
+#endif
+
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* the only struct z_kernel instance */
@@ -307,6 +311,10 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_STATIC_INIT_GNU
 	z_static_init_gnu();
 #endif /* CONFIG_STATIC_INIT_GNU */
+
+#ifdef CONFIG_STATIC_INIT_IAR
+	__iar_dynamic_initialization();
+#endif /* CONFIG_STATIC_INIT_IAR */
 
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);
