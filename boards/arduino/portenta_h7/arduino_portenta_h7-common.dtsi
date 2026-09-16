@@ -37,6 +37,14 @@
 	};
 };
 
+/*
+ * Use the always-available LSI as default 32K clock source.
+ * Overlays for revisions with the XTAL will replace it with LSE.
+ */
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(25)>;
 	hse-bypass;
@@ -156,6 +164,8 @@ zephyr_i2c: &i2c1 {
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

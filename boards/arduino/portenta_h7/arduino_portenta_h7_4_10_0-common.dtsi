@@ -1,0 +1,25 @@
+/**
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * This file is intended to be included by the revision overlays.
+ */
+
+/*
+ * Board revision 4.10 is equipped with a LSE crystal.
+ * Disable LSI which is used by default and enable
+ * the LSE as 32K clock source instead.
+ */
+&clk_lsi {
+	status = "disabled";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+/* Use LSE as RTC clock source instead of LSI */
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+};
