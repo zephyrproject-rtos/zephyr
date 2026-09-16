@@ -11,6 +11,8 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/sys/crc.h>
 
+#define ETH_STM32_MAC_CLK_IDX(n) DT_PHA_ELEM_IDX_BY_NAME(DT_DRV_INST(n), clocks, stm_eth)
+
 #define ETH_STM32_PTP_CLK_IDX(n)                                                                   \
 	DT_PHA_ELEM_IDX_BY_NAME(                                                                   \
 		DT_DRV_INST(n), clocks,                                                            \
