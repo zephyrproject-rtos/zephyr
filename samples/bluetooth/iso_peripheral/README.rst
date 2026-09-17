@@ -39,7 +39,7 @@ After flashing, check the following:
 
 2. Observe that the central device connects and sets up an isochronous channel.
 
-      Connected E8:DC:8D:B3:47:69 (random)
+      Connected R:E8:DC:8D:B3:47:69
       Incoming request from 0x20002260
       ISO Channel 0x20000698 connected
 

@@ -67,7 +67,7 @@ packets::
    [00:00:10.281,555] <inf> iso_connected: Registering ISO server
    [00:00:10.281,555] <inf> iso_connected: Starting advertising
    [00:00:10.282,684] <inf> iso_connected: Waiting for ACL connection
-   [00:00:16.711,517] <inf> iso_connected: Connected: FA:4C:4B:DB:D3:89 (public)
+   [00:00:16.711,517] <inf> iso_connected: Connected: P:FA:4C:4B:DB:D3:89
    [00:00:16.711,669] <inf> iso_connected: Waiting for ISO connection
    [00:00:16.802,856] <inf> iso_connected: Incoming ISO request
    [00:00:16.802,856] <inf> iso_connected: Returning instance 0
@@ -99,11 +99,11 @@ packets::
    Change ISO settings (y/N)?
    [00:00:03.277,893] <inf> iso_connected: Scan started
    [00:00:03.277,893] <inf> iso_connected: Waiting for advertiser
-   [00:00:03.899,963] <inf> iso_connected: Found peripheral with address F4:5A:12:BF:4F:2C (public) (RSSI -24)
+   [00:00:03.899,963] <inf> iso_connected: Found peripheral with address P:F4:5A:12:BF:4F:2C (RSSI -24)
    [00:00:03.900,024] <inf> iso_connected: Stopping scan
    [00:00:03.908,020] <inf> iso_connected: Scan stopped
    [00:00:03.908,020] <inf> iso_connected: Connecting
-   [00:00:04.007,232] <inf> iso_connected: Connected: F4:5A:12:BF:4F:2C (public)
+   [00:00:04.007,232] <inf> iso_connected: Connected: P:F4:5A:12:BF:4F:2C
    [00:00:04.007,354] <inf> iso_connected: Binding ISO
    [00:00:04.007,812] <inf> iso_connected: Connecting ISO channels
    [00:00:04.312,744] <inf> iso_connected: ISO Channel 0x20002934 connected
