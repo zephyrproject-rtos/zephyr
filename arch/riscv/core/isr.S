@@ -117,6 +117,9 @@
 GDATA(_sw_isr_table)
 GDATA(_kernel)
 GTEXT(__soc_handle_irq)
+#ifdef CONFIG_IRQ_DISPATCH_WRAPPER
+GTEXT(irq_dispatch)
+#endif
 GTEXT(z_riscv_fault)
 GTEXT(z_irq_spurious)
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -800,6 +803,14 @@ on_irq_stack:
 	jal ra, __soc_handle_irq
 
 #if defined CONFIG_GEN_SW_ISR_TABLE
+#ifdef CONFIG_IRQ_DISPATCH_WRAPPER
+	/*
+	 * With the shared dispatch wrapper enabled, call irq_dispatch(idx)
+	 * so it can do the table lookup and accounting.  a0 already holds
+	 * the slot index computed above.
+	 */
+	call irq_dispatch
+#else
 	/*
 	 * Call corresponding registered function in _sw_isr_table.
 	 * (table is 2-word wide, we should shift index accordingly)
@@ -813,15 +824,19 @@ on_irq_stack:
 
 	/* Load ISR function address in register t1 */
 	lr t1, RV_REGSIZE(t0)
+
+	/* Call ISR function */
+	jalr ra, t1, 0
+#endif
 #else
 	/* Load spurious interrupt function in case _sw_isr_table does not exist */
 	la t1, z_irq_spurious
 	/* NULL as parameter */
 	li a0, 0
-#endif
 
 	/* Call ISR function */
 	jalr ra, t1, 0
+#endif
 
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_exit

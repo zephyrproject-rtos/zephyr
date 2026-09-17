@@ -603,6 +603,72 @@ config SHARED_IRQ_MAX_NUM_CLIENTS
 	  This option controls the maximum number of clients allowed
 	  per shared interrupt. Set this according to your needs.
 
+config IRQ_DISPATCH_WRAPPER
+	bool
+	depends on GEN_SW_ISR_TABLE
+	# Only arch/riscv/core/isr.S calls irq_dispatch(). Extend this
+	# "depends on" when another architecture gains the same call.
+	depends on RISCV
+	# Similarly, under MULTI_LEVEL_INTERRUPTS only the PLIC driver calls
+	# irq_dispatch() for level-2 IRQs. Extend this condition when adding
+	# support for another aggregator.
+	depends on !MULTI_LEVEL_INTERRUPTS || PLIC
+	select DYNAMIC_INTERRUPTS
+	help
+	  Internal symbol selected by features that wrap dispatch of
+	  _sw_isr_table entries with a shared accounting path
+	  (IRQ_STORM_DETECTION).  _sw_isr_table itself is left
+	  untouched; callers use irq_dispatch() instead of indexing into
+	  the table directly.  Selects DYNAMIC_INTERRUPTS.
+
+config IRQ_STORM_DETECTION
+	bool "Detect runaway interrupt sources"
+	depends on GEN_SW_ISR_TABLE
+	depends on RISCV
+	depends on !MULTI_LEVEL_INTERRUPTS || PLIC
+	select IRQ_DISPATCH_WRAPPER
+	help
+	  Rate-limit interrupts through the shared dispatch wrapper.  If a
+	  line fires more than IRQ_STORM_THRESHOLD times within
+	  IRQ_STORM_WINDOW_MS, it is masked via irq_disable() and
+	  z_irq_storm_on_disable() is invoked.  Useful for catching
+	  drivers that forget to acknowledge a level-triggered source.
+
+	  z_irq_storm_on_disable() is a no-op unless
+	  IRQ_STORM_CUSTOM_ON_DISABLE_HOOK is also enabled.  Selects
+	  IRQ_DISPATCH_WRAPPER.
+
+config IRQ_STORM_CUSTOM_ON_DISABLE_HOOK
+	bool "Application-provided storm hook"
+	depends on IRQ_STORM_DETECTION
+	help
+	  Skip the built-in no-op definition of z_irq_storm_on_disable()
+	  so the application can supply its own, e.g. to schedule a
+	  delayed re-enable, escalate to a fault handler, or log to a
+	  flight recorder.  Leave disabled to keep the default no-op.
+
+config IRQ_STORM_THRESHOLD
+	int "Interrupt count per window that triggers a storm"
+	depends on IRQ_STORM_DETECTION
+	default 100000
+	range 100 10000000
+	help
+	  Number of interrupts on a single IRQ line, within
+	  IRQ_STORM_WINDOW_MS, that flags the line as stuck.  Default
+	  100000 mirrors the Linux kernel's spurious-IRQ heuristic.
+
+config IRQ_STORM_WINDOW_MS
+	int "Storm detection window (milliseconds)"
+	depends on IRQ_STORM_DETECTION
+	default 1000
+	range 10 $(UINT32_MAX)
+	help
+	  Sliding window in milliseconds over which IRQ_STORM_THRESHOLD
+	  is evaluated.  The counter is reset whenever the window rolls
+	  over, so isolated bursts that span windows do not accumulate.
+	  The upper bound matches the uint32_t used to store the window
+	  start timestamp in struct storm_state.
+
 config GEN_ISR_TABLES
 	bool "Use generated IRQ tables"
 	help

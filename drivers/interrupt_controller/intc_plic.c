@@ -16,6 +16,9 @@
 #include <stdlib.h>
 
 #include "sw_isr_common.h"
+#ifdef CONFIG_IRQ_DISPATCH_WRAPPER
+#include "irq_dispatch.h"
+#endif
 
 #include <zephyr/debug/symtab.h>
 #include <zephyr/kernel.h>
@@ -507,7 +510,9 @@ static void plic_irq_handler(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
+#ifndef CONFIG_IRQ_DISPATCH_WRAPPER
 	const struct _isr_table_entry *ite;
+#endif
 	uint32_t cpu_id = arch_curr_cpu()->id;
 	/* Get the IRQ number generating the interrupt */
 	const uint32_t local_irq = sys_read32(claim_complete_addr);
@@ -565,9 +570,18 @@ static void plic_irq_handler(const struct device *dev)
 	}
 #endif /* CONFIG_PLIC_SUPPORTS_TRIG_EDGE */
 
+#ifdef CONFIG_IRQ_DISPATCH_WRAPPER
+	/*
+	 * With the shared dispatch wrapper enabled, route through
+	 * irq_dispatch() instead of calling config->isr_table[local_irq]
+	 * directly.
+	 */
+	irq_dispatch((unsigned int)(config->isr_table - _sw_isr_table) + local_irq);
+#else
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = &config->isr_table[local_irq];
 	ite->isr(ite->arg);
+#endif
 
 	/*
 	 * Write to claim_complete register to indicate to
