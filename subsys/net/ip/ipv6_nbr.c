@@ -3409,7 +3409,11 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 
 	net_ipv6_nbr_lock();
 
-	if (nbr != NULL) {
+	/* Without SLLAO the entry stays unresolved. Sending the pending
+	 * packets now would only queue them again, so leave them to the
+	 * NS reply timeout.
+	 */
+	if (nbr != NULL && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
 		nbr_send_pending(net_ipv6_nbr_data(nbr));
 	}
 
