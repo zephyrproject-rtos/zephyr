@@ -304,6 +304,29 @@ static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 	}
 }
 
+/* Send the queued packets of a neighbor whose link address is known. */
+static void nbr_send_pending(struct net_ipv6_nbr_data *data)
+{
+	struct net_pkt *pkt;
+
+	while (!k_fifo_is_empty(&data->pending_queue)) {
+		pkt = k_fifo_get(&data->pending_queue, K_FOREVER);
+
+		NET_DBG("Sending pending pkt %p to %s", pkt,
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
+
+		/* Reference taken when queued */
+		net_pkt_unref(pkt);
+
+		if (net_send_data(pkt) < 0) {
+			NET_DBG("Cannot send pkt %p", pkt);
+			net_pkt_unref(pkt);
+		}
+	}
+
+	data->send_ns = 0;
+}
+
 static inline void nbr_free(struct net_nbr *nbr)
 {
 	NET_DBG("nbr %p", nbr);
@@ -3403,22 +3426,7 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 	net_ipv6_nbr_lock();
 
 	if (nbr != NULL) {
-		while (!k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
-			struct net_pkt *pending;
-
-			pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
-					     K_FOREVER);
-
-			NET_DBG("Sending pending pkt %p to %s",
-				pending,
-				net_sprint_ipv6_addr(&NET_IPV6_HDR(pending)->dst));
-
-			if (net_send_data(pending) < 0) {
-				net_pkt_unref(pending);
-			}
-		}
-
-		nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
+		nbr_send_pending(net_ipv6_nbr_data(nbr));
 	}
 
 	net_ipv6_nbr_unlock();
