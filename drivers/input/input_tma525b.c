@@ -218,14 +218,14 @@ static void tma525b_isr_handler(const struct device *dev, struct gpio_callback *
 {
 	struct tma525b_data *data = CONTAINER_OF(cb, struct tma525b_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #else
 static void tma525b_timer_handler(struct k_timer *timer)
 {
 	struct tma525b_data *data = CONTAINER_OF(timer, struct tma525b_data, timer);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #endif
 

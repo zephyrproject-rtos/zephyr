@@ -244,7 +244,7 @@ static int ch9350l_queue_frame(struct ch9350l_data *dev_data, uint8_t *data, siz
 		LOG_WRN("Frame dropped, queue full");
 	}
 
-	k_work_submit(&dev_data->work);
+	input_work_submit(&dev_data->work);
 
 	return ret;
 }
