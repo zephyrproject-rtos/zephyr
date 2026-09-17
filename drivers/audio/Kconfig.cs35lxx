@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_CS35LXX
+	def_bool DT_HAS_CIRRUS_CS35L56_ENABLED || \
+		DT_HAS_CIRRUS_CS35L57_ENABLED
+
+if AUDIO_CODEC_CS35LXX
+
+config AUDIO_CODEC_CS35LXX_I2C
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS35L56),i2c) || \
+		$(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS35L57),i2c)
+	select I2C
+
+config AUDIO_CODEC_CS35LXX_SPI
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS35L56),spi) || \
+		$(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS35L57),spi)
+	select SPI
+
+endif # AUDIO_CODEC_CS35LXX
