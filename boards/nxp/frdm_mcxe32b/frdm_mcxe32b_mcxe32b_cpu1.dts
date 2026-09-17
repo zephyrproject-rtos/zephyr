@@ -1,0 +1,81 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/mcxe/nxp_mcxe32b.dtsi>
+#include "frdm_mcxe32b-pinctrl.dtsi"
+
+/ {
+	compatible = "nxp,mcxe32b";
+	model = "NXP FRDM_MCXE32B board";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,itcm = &itcm1;
+		zephyr,dtcm = &dtcm1;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &cpu1_code_partition;
+		zephyr,console = &lpuart_5;
+		zephyr,shell-uart = &lpuart_5;
+	};
+};
+
+/ {
+	cpus {
+		/delete-node/ cpu@0;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpu1_code_partition: partition@200000 {
+			/* Offset 0x200000 (2048K) into the 3920K flash node leaves
+			 * 1872K, so the partition must not exceed that or it runs
+			 * past the end of flash0.
+			 */
+			reg = <0x00200000 DT_SIZE_K(1872)>;
+			label = "cpu1-code-partition";
+		};
+	};
+};
+
+&core1 {
+	clock-frequency = <DT_FREQ_M(160)>;
+};
+
+&lpuart_5 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart_5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mc_rgm {
+	status = "okay";
+};
+
+&firc {
+	firc-div = "UnDiv";
+	status = "okay";
+};
+
+&fxosc {
+	freq = <16000000>;
+	workmode = "crystal";
+	delay = <49>;
+	overdrive = <12>;
+	status = "okay";
+};
+
+&stm_0 {
+	prescaler = <1>;
+	status = "okay";
+};

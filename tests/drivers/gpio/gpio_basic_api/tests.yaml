@@ -92,6 +92,7 @@ tests:
       - frdm_mcxe247
       - frdm_mcxa577
       - frdm_mcxe31b
+      - frdm_mcxe32b/mcxe32b/cpu0
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
@@ -111,6 +112,7 @@ tests:
     platform_allow:
       - frdm_mcxa577
       - frdm_mcxe31b
+      - frdm_mcxe32b/mcxe32b/cpu0
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
