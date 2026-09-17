@@ -50,6 +50,7 @@ struct lr11xx_data {
 	/* RX completion via message queue */
 	struct k_msgq rx_msgq;
 	struct lr11xx_rx_result rx_result;
+	bool rx_sync;
 
 	/* RX data buffer (shared between IRQ handler and recv) */
 	uint8_t rx_buf[LR11XX_MAX_PAYLOAD_LEN];

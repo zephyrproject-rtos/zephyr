@@ -50,6 +50,7 @@ struct sx126x_data {
 	/* RX completion via message queue */
 	struct k_msgq rx_msgq;
 	struct sx126x_rx_result rx_result;
+	bool rx_sync;
 
 	/* RX data buffer (shared between IRQ handler and recv) */
 	uint8_t rx_buf[SX126X_MAX_PAYLOAD_LEN];
