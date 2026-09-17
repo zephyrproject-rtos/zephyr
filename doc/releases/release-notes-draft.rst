@@ -222,6 +222,12 @@ Libraries / Subsystems
       the cache, and new events report added and removed entries. The hostap backend
       implements import, export, and selective flush. (:github:`115470`)
 
+* Profiling
+
+  * Added a :ref:`performance event subsystem <profiling-perf>` with provider-based event
+    discovery, standalone event counting sessions, supervisor-only C APIs, and optional
+    ``perf list`` and ``perf stat`` shell commands.
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per
