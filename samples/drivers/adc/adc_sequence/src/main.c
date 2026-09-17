@@ -7,24 +7,26 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/kernel.h>
 
-/* ADC node from the devicetree. */
-#define ADC_NODE DT_ALIAS(adc0)
+#define CHANNEL_NODE_SPEC_AND_COMMA(node_id) ADC_DT_SPEC_FROM_CHANNEL_NODE(node_id),
 
-/* Auxiliary macro to obtain channel vref, if available. */
-#define CHANNEL_VREF(node_id) DT_PROP_OR(node_id, zephyr_vref_mv, 0)
+/*
+ * Every channel node of an enabled ADC controller; the sequence reads those
+ * on the controller of the first one.
+ */
+static const struct adc_dt_spec adc_channels[] = {
+	ADC_DT_FOREACH_CHANNEL_NODE(CHANNEL_NODE_SPEC_AND_COMMA)
+};
+
+BUILD_ASSERT(ARRAY_SIZE(adc_channels) > 0, "No ADC channel described in devicetree");
 
 /* Data of ADC device specified in devicetree. */
-static const struct device *adc = DEVICE_DT_GET(ADC_NODE);
-
-/* Data array of ADC channels for the specified ADC. */
-static const struct adc_channel_cfg channel_cfgs[] = {
-	DT_FOREACH_CHILD_SEP(ADC_NODE, ADC_CHANNEL_CFG_DT, (,))};
+#define adc (adc_channels[0].dev)
 
 /* Data array of ADC channel voltage references. */
-static uint32_t vrefs_mv[] = {DT_FOREACH_CHILD_SEP(ADC_NODE, CHANNEL_VREF, (,))};
+static uint32_t vrefs_mv[ARRAY_SIZE(adc_channels)];
 
-/* Get the number of channels defined on the DTS. */
-#define CHANNEL_COUNT ARRAY_SIZE(channel_cfgs)
+/* Upper bound of the channels in the sequence. */
+#define CHANNEL_COUNT ARRAY_SIZE(adc_channels)
 
 int main(void)
 {
@@ -57,15 +59,20 @@ int main(void)
 		return 0;
 	}
 
-	/* Configure channels individually prior to sampling. */
+	/* Configure the channels of the first controller prior to sampling. */
 	for (size_t i = 0U; i < CHANNEL_COUNT; i++) {
-		sequence.channels |= BIT(channel_cfgs[i].channel_id);
-		err = adc_channel_setup(adc, &channel_cfgs[i]);
+		if (adc_channels[i].dev != adc) {
+			continue;
+		}
+		sequence.channels |= BIT(adc_channels[i].channel_id);
+		err = adc_channel_setup_dt(&adc_channels[i]);
 		if (err < 0) {
 			printf("Could not setup channel #%d (%d)\n", i, err);
 			return 0;
 		}
-		if ((vrefs_mv[i] == 0) && (channel_cfgs[i].reference == ADC_REF_INTERNAL)) {
+		vrefs_mv[i] = adc_channels[i].vref_mv;
+		if ((vrefs_mv[i] == 0) &&
+		    (adc_channels[i].channel_cfg.reference == ADC_REF_INTERNAL)) {
 			vrefs_mv[i] = adc_ref_internal(adc);
 		}
 	}
@@ -84,11 +91,15 @@ int main(void)
 			continue;
 		}
 
-		for (size_t channel_index = 0U; channel_index < CHANNEL_COUNT; channel_index++) {
+		for (size_t channel_index = 0U, sample_slot = 0U; channel_index < CHANNEL_COUNT;
+		     channel_index++) {
 			int32_t val_mv;
 
+			if (adc_channels[channel_index].dev != adc) {
+				continue;
+			}
 			printf("- %s, channel %" PRId32 ", %" PRId32 " sequence samples:\n",
-			       adc->name, channel_cfgs[channel_index].channel_id,
+			       adc->name, adc_channels[channel_index].channel_id,
 			       CONFIG_SEQUENCE_SAMPLES);
 			for (size_t sample_index = 0U; sample_index < CONFIG_SEQUENCE_SAMPLES;
 			     sample_index++) {
@@ -100,22 +111,22 @@ int main(void)
 				 * complement value.
 				 * Also reduce the resolution by 1 for the conversion
 				 */
-				if (channel_cfgs[channel_index].differential) {
+				if (adc_channels[channel_index].channel_cfg.differential) {
 #ifdef CONFIG_SEQUENCE_32BITS_REGISTERS
 					val_mv = (int32_t)
-						channel_reading[sample_index][channel_index];
+						channel_reading[sample_index][sample_slot];
 #else
 					val_mv = (int32_t)((int16_t)channel_reading[sample_index]
 										   [channel_index]);
 #endif
 					res -= 1;
 				} else {
-					val_mv = channel_reading[sample_index][channel_index];
+					val_mv = channel_reading[sample_index][sample_slot];
 				}
 				printf("- - %" PRId32, val_mv);
-				err = adc_raw_to_millivolts(vrefs_mv[channel_index],
-							    channel_cfgs[channel_index].gain,
-							    res, &val_mv);
+				err = adc_raw_to_millivolts(
+					vrefs_mv[channel_index],
+					adc_channels[channel_index].channel_cfg.gain, res, &val_mv);
 
 				/* conversion to mV may not be supported, skip if not */
 				if ((err < 0) || vrefs_mv[channel_index] == 0) {
@@ -124,6 +135,7 @@ int main(void)
 					printf(" = %" PRId32 "mV\n", val_mv);
 				}
 			}
+			sample_slot++;
 		}
 	}
 

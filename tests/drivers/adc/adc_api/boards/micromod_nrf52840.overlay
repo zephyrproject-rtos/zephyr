@@ -1,7 +1,0 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright (c) 2024 Jerónimo Agulló <jeronimoagullo97@gmail.com>
- */
-
-#include "nordic,nrf-saadc-common.dtsi"
