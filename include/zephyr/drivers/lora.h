@@ -16,7 +16,7 @@
  * @brief Interfaces for LoRa transceivers.
  * @defgroup lora_interface LoRa
  * @since 2.2
- * @version 0.9.0
+ * @version 0.10.0
  * @ingroup io_interfaces
  * @{
  */
@@ -268,9 +268,9 @@ typedef int (*lora_api_send_async)(const struct device *dev,
  *
  * @see lora_recv() for argument descriptions.
  */
-typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data,
-			     uint8_t size,
-			     k_timeout_t timeout, int16_t *rssi, int8_t *snr);
+typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data, uint8_t size,
+			     k_timeout_t packet_search_timeout, k_timeout_t packet_rx_timeout,
+			     int16_t *rssi, int8_t *snr);
 
 /**
  * @brief Callback API for receiving data asynchronously over LoRa
@@ -440,24 +440,58 @@ static inline int lora_send_async(const struct device *dev,
 /**
  * @brief Receive data over LoRa
  *
- * @note This is a blocking call.
+ * Reception has two phases. First, @p packet_search_timeout limits the time
+ * spent waiting for a preamble. Once a preamble is detected, a fresh
+ * @p packet_rx_timeout starts. The search deadline no longer applies, so a
+ * packet detected near its end has the full reception budget available.
+ * Further preamble detections do not extend the reception budget.
+ *
+ * Pass K_NO_WAIT for @p packet_search_timeout to skip the separate search phase.
+ * In this mode, @p packet_rx_timeout starts when reception starts and bounds the
+ * entire operation, including preamble acquisition. This mode is supported by
+ * drivers that cannot report preamble detection.
+ *
+ * The following timelines are not to scale:
+ * @verbatim
+ *                       Start       Search deadline
+ * No preamble:            |---------------X
+ * Packet completes:       |---------D----------R
+ * Incomplete packet:      |---------D----------------X
+ *                                  |<-- RX budget -->|
+ *
+ * Search budget: packet_search_timeout, from start to preamble detection
+ * RX budget: packet_rx_timeout, from the first detected preamble
+ * D: preamble detected   R: packet received   X: timeout
+ * @endverbatim
+ *
+ * @note This is a blocking call. Driver setup, scheduling and cleanup can add
+ *       to its duration beyond the time spent waiting for reception.
  * @note When cad.mode is LORA_CAD_MODE_RX, performs CAD before receiving.
  *       Returns 0 immediately if no activity is detected.
  *
- * @param dev       LoRa device
- * @param data      Buffer to hold received data
- * @param size      Size of the buffer to hold the received data. Max size
-		    allowed is 255.
- * @param timeout   Duration to wait for a packet.
- * @param rssi      RSSI of received data
- * @param snr       SNR of received data
- * @return Length of the data received on success, negative on error
+ * @param dev LoRa device.
+ * @param data Buffer to hold received data.
+ * @param size Size of the buffer to hold the received data. Maximum is 255.
+ * @param packet_search_timeout Time to wait for the first preamble after starting
+ *                              reception. K_FOREVER waits indefinitely. K_NO_WAIT
+ *                              skips this phase and starts the reception budget
+ *                              immediately.
+ * @param packet_rx_timeout Time allowed to finish reception after detecting the
+ *                          first preamble, or after starting reception if the
+ *                          search phase is skipped. K_FOREVER waits indefinitely.
+ *                          K_NO_WAIT only accepts an already completed packet.
+ * @param rssi RSSI of received data.
+ * @param snr SNR of received data.
+ * @return Length of the data received on success, negative on error.
+ * @retval -EAGAIN A search or reception deadline expired.
+ * @retval -ENOTSUP The driver requires K_NO_WAIT for @p packet_search_timeout.
  */
-static inline int lora_recv(const struct device *dev, uint8_t *data,
-			    uint8_t size,
-			    k_timeout_t timeout, int16_t *rssi, int8_t *snr)
+static inline int lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
+			    k_timeout_t packet_search_timeout, k_timeout_t packet_rx_timeout,
+			    int16_t *rssi, int8_t *snr)
 {
-	return DEVICE_API_GET(lora, dev)->recv(dev, data, size, timeout, rssi, snr);
+	return DEVICE_API_GET(lora, dev)->recv(dev, data, size, packet_search_timeout,
+					     packet_rx_timeout, rssi, snr);
 }
 
 /**
