@@ -215,6 +215,22 @@ static ALWAYS_INLINE int sys_test_and_clear_bit(mem_addr_t addr,
 	return ret;
 }
 
+static ALWAYS_INLINE void sys_set_bits(mem_addr_t addr, unsigned int mask)
+{
+	__asm__ volatile("orl %1, %0"
+			 : "+m" (*(volatile uint32_t *) (addr))
+			 : "ir" (mask)
+			 : "memory");
+}
+
+static ALWAYS_INLINE void sys_clear_bits(mem_addr_t addr, unsigned int mask)
+{
+	__asm__ volatile("andl %1, %0"
+			 : "+m" (*(volatile uint32_t *) (addr))
+			 : "ir" (~mask)
+			 : "memory");
+}
+
 #define sys_bitfield_set_bit sys_set_bit
 #define sys_bitfield_clear_bit sys_clear_bit
 #define sys_bitfield_test_bit sys_test_bit
