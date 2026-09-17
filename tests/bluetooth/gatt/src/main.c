@@ -539,6 +539,16 @@ ZTEST(test_gatt, test_gatt_ccc_write_cb)
 }
 
 /*
+ * Only Mbed TLS exposes the PSA key slot count. With TF-M providing the PSA
+ * core the count is not visible to the non-secure image.
+ */
+#if defined(CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT)
+#define TEST_PSA_KEY_SLOT_COUNT CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT
+#else
+#define TEST_PSA_KEY_SLOT_COUNT 0
+#endif
+
+/*
  * Test for PSA key memory leak
  *
  * Using dynamic registration/deregistration to test for PSA key memory leak.
@@ -555,7 +565,7 @@ ZTEST(test_gatt, test_gatt_ccc_write_cb)
 ZTEST(test_gatt, test_gatt_db_hash_psa_dynamic_register_no_leak)
 {
 
-	if (!IS_ENABLED(CONFIG_BT_GATT_CACHING)) {
+	if (!IS_ENABLED(CONFIG_BT_GATT_CACHING) || TEST_PSA_KEY_SLOT_COUNT == 0) {
 		ztest_test_skip();
 	}
 
@@ -564,7 +574,7 @@ ZTEST(test_gatt, test_gatt_db_hash_psa_dynamic_register_no_leak)
 	 * leaks at least one key, which guarantees that we will hit PSA_ERROR_INSUFFICIENT_MEMORY
 	 * with +1 after all slots are occupied by leakages.
 	 */
-	int iterations = CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT + 1;
+	int iterations = TEST_PSA_KEY_SLOT_COUNT + 1;
 
 	/*
 	 * Wait for the db_hash work to complete; DB_HASH_TIMEOUT is 10ms so 30ms should be enough
