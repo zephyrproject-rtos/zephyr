@@ -6,7 +6,3 @@ description: ITE IT51XXX Crypto SHA accelerator.
 compatible: "ite,it51xxx-sha"
 
 include: base.yaml
-
-properties:
-  reg:
-    required: true
