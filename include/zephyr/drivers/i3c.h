@@ -492,6 +492,12 @@ struct i3c_config_controller {
 	} scl_od_min;
 
 	/**
+	 * Requested minimum Clock After Start condition (tCAS) hold time
+	 * in nanoseconds.
+	 */
+	uint32_t tcas_min_ns;
+
+	/**
 	 * Bit mask of supported HDR modes (0 - 7).
 	 *
 	 * This can be used to enable or disable HDR mode
