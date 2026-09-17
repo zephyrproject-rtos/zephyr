@@ -1131,6 +1131,29 @@ static inline void ifaddr_set_valid(struct net_if_addr *ifaddr)
 #endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4_ACD */
 
 #if defined(CONFIG_NET_IPV6)
+/* Returns the interface owning the address with its lock held, or NULL. */
+static struct net_if *ipv6_ifaddr_iface_lock(struct net_if_addr *ifaddr)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		struct net_if_ipv6 *ipv6;
+
+		net_if_lock(iface);
+
+		ipv6 = iface->config.ip.ipv6;
+		if (ipv6 != NULL) {
+			ARRAY_FOR_EACH(ipv6->unicast, i) {
+				if (&ipv6->unicast[i] == ifaddr) {
+					return iface;
+				}
+			}
+		}
+
+		net_if_unlock(iface);
+	}
+
+	return NULL;
+}
+
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 {
 	int ret = 0;
@@ -1616,7 +1639,13 @@ static void dad_timeout(struct k_work *work)
 			net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 			ifaddr->ifindex);
 
+		if (iface == NULL) {
+			continue;
+		}
+
+		net_if_lock(iface);
 		ifaddr_set_valid(ifaddr);
+		net_if_unlock(iface);
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_SUCCEED,
 						iface,
@@ -2047,17 +2076,15 @@ out:
 
 static void address_expired(struct net_if_addr *ifaddr)
 {
+	struct net_if *iface;
+
 	NET_DBG("IPv6 address %s is expired",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
-	STRUCT_SECTION_FOREACH(net_if, iface) {
-		ARRAY_FOR_EACH(iface->config.ip.ipv6->unicast, i) {
-			if (&iface->config.ip.ipv6->unicast[i] == ifaddr) {
-				net_if_ipv6_addr_rm(iface,
-					&iface->config.ip.ipv6->unicast[i].address.in6_addr);
-				return;
-			}
-		}
+	iface = ipv6_ifaddr_iface_lock(ifaddr);
+	if (iface != NULL) {
+		net_if_ipv6_addr_rm(iface, &ifaddr->address.in6_addr);
+		net_if_unlock(iface);
 	}
 }
 
@@ -2268,9 +2295,10 @@ static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(
 #include <zephyr/syscalls/net_if_ipv6_addr_lookup_by_index_mrsh.c>
 #endif
 
-void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
-				      uint32_t vlifetime)
+void net_if_ipv6_addr_update_lifetime_locked(struct net_if_addr *ifaddr,
+					     uint32_t vlifetime)
 {
+	/* Lock order: interface lock, then the global lock. */
 	k_mutex_lock(&lock, K_FOREVER);
 
 	NET_DBG("Updating expire time of %s by %u secs",
@@ -2285,6 +2313,21 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 	address_start_timer(ifaddr, vlifetime);
 
 	k_mutex_unlock(&lock);
+}
+
+void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
+				      uint32_t vlifetime)
+{
+	struct net_if *iface;
+
+	iface = ipv6_ifaddr_iface_lock(ifaddr);
+	if (iface == NULL) {
+		return;
+	}
+
+	net_if_ipv6_addr_update_lifetime_locked(ifaddr, vlifetime);
+
+	net_if_unlock(iface);
 }
 
 static struct net_if_addr *ipv6_addr_find(struct net_if *iface,
@@ -2330,7 +2373,7 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 			net_sprint_ipv6_addr(addr),
 			vlifetime);
 
-		net_if_ipv6_addr_update_lifetime(ifaddr, vlifetime);
+		net_if_ipv6_addr_update_lifetime_locked(ifaddr, vlifetime);
 	} else {
 		ifaddr->is_infinite = true;
 	}

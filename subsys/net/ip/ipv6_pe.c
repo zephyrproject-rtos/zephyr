@@ -204,7 +204,8 @@ static bool ipv6_pe_prefix_update_lifetimes(struct net_if_ipv6 *ipv6,
 			break;
 		}
 
-		net_if_ipv6_addr_update_lifetime(&ipv6->unicast[i], vlifetime);
+		net_if_ipv6_addr_update_lifetime_locked(&ipv6->unicast[i],
+							vlifetime);
 
 		/* RFC 8981 ch 3.5, "... at most one temporary address per
 		 * prefix should be in a non-deprecated state at any given
