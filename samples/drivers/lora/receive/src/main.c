@@ -73,7 +73,7 @@ int main(void)
 	LOG_INF("Synchronous reception");
 	for (int i = 0; i < 4; i++) {
 		/* Block until data arrives */
-		len = lora_recv(lora_dev, data, MAX_DATA_LEN, K_FOREVER,
+		len = lora_recv(lora_dev, data, MAX_DATA_LEN, K_NO_WAIT, K_FOREVER,
 				&rssi, &snr);
 		if (len < 0) {
 			LOG_ERR("LoRa receive failed");

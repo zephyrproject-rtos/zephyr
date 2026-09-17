@@ -102,8 +102,11 @@ Native Backend
 --------------
 
 The native backend is selected with
-:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE` and has additional options
-under :zephyr_file:`subsys/lorawan/native/Kconfig`:
+:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`.
+
+It uses the native SX126x or LR11xx LoRa drivers.
+
+Additional options are available under :zephyr_file:`subsys/lorawan/native/Kconfig`:
 
 * :kconfig:option:`CONFIG_LORAWAN_NATIVE_ENGINE_STACK_SIZE`
 

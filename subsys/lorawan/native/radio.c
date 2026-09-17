@@ -128,7 +128,7 @@ uint32_t radio_airtime_params(uint8_t sf, uint16_t bw_khz, uint8_t frame_len)
 }
 
 int radio_rx(uint32_t freq, const struct lwan_dr_params *dr,
-	     uint32_t timeout_ms,
+	     uint32_t search_timeout_ms, uint32_t packet_timeout_ms,
 	     uint8_t *buf, uint8_t buf_size,
 	     int16_t *rssi, int8_t *snr)
 {
@@ -145,7 +145,12 @@ int radio_rx(uint32_t freq, const struct lwan_dr_params *dr,
 	}
 
 	ret = lora_recv(radio_dev, buf, buf_size,
-			K_MSEC(timeout_ms), rssi, snr);
+			K_MSEC(search_timeout_ms), K_MSEC(packet_timeout_ms), rssi, snr);
+	if (ret == -ENOTSUP) {
+		/* Disabling the search limit can leave idle RX1 open past RX2. */
+		LOG_ERR("LoRa driver does not support two-stage RX timeouts");
+		return ret;
+	}
 	if (ret < 0) {
 		if (ret == -EAGAIN) {
 			LOG_DBG("RX timeout: freq=%u sf=%u", freq, dr->sf);
