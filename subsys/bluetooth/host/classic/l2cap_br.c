@@ -83,6 +83,12 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_FEAT_CONNLESS_ENABLE_MASK 0
 #endif /* CONFIG_BT_L2CAP_CONNLESS */
 
+#if defined(CONFIG_BT_L2CAP_QOS)
+#define L2CAP_FEAT_QOS_ENABLE_MASK L2CAP_FEAT_QOS_MASK
+#else
+#define L2CAP_FEAT_QOS_ENABLE_MASK 0
+#endif /* CONFIG_BT_L2CAP_QOS */
+
 #if defined(CONFIG_BT_L2CAP_RET)
 #define L2CAP_FEAT_RET_ENABLE_MASK L2CAP_FEAT_RET_MASK
 #else
@@ -127,7 +133,8 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 	(L2CAP_FEAT_FIXED_CHAN_MASK | L2CAP_FEAT_RET_ENABLE_MASK |                             \
 	 L2CAP_FEAT_FC_ENABLE_MASK | L2CAP_FEAT_ENH_RET_ENABLE_MASK |                          \
 	 L2CAP_FEAT_STREAM_ENABLE_MASK | L2CAP_FEAT_FCS_ENABLE_MASK |                          \
-	 L2CAP_FEAT_EXT_WIN_SIZE_ENABLE_MASK | L2CAP_FEAT_CONNLESS_ENABLE_MASK)
+	 L2CAP_FEAT_EXT_WIN_SIZE_ENABLE_MASK | L2CAP_FEAT_CONNLESS_ENABLE_MASK |               \
+	 L2CAP_FEAT_QOS_ENABLE_MASK)
 
 enum {
 	/* Connection oriented channels flags */
@@ -4180,6 +4187,7 @@ static uint16_t l2cap_br_conf_opt_qos(struct bt_l2cap_chan *chan, struct net_buf
 
 	if (opt_qos->service_type == BT_L2CAP_QOS_TYPE_GUARANTEED) {
 		result = BT_L2CAP_CONF_UNACCEPT;
+		opt_qos->service_type = BT_L2CAP_QOS_TYPE_BEST_EFFORT;
 		/* Set to default value */
 		opt_qos->flags = 0x00;
 		/* do not care */
@@ -4782,6 +4790,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 			if (result != BT_L2CAP_CONF_SUCCESS) {
 				goto send_rsp;
 			}
+			l2cap_br_conf_add_opt(rsp_buf, opt);
 			break;
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 		case BT_L2CAP_CONF_OPT_RET_FC:
