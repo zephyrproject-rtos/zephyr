@@ -67,6 +67,15 @@ properties:
       The default value is from Section 4.3.11.2 & Table 50 of the I3C
       Basic Specification v1.2 (16-Dec-2024).
 
+  tcas-min-ps:
+    type: int
+    default: 38400
+    description: |
+      Minimum Clock After Start condition (tCAS) hold time in picoseconds,
+      i.e. how long SCL stays high after SDA falls for a START or a
+      repeated START.  Default from section 6.2 & Table 58 of the I3C Basic
+      Specification v1.0 (19-Jul-2018)
+
   disable-bus-init:
     type: boolean
     description: |

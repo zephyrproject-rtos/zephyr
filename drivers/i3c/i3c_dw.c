@@ -360,7 +360,6 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_I2C_FM_TLOW_MIN_NS  1300
 #define I3C_BUS_I2C_FMP_TLOW_MIN_NS 500
 #define I3C_BUS_THIGH_MAX_NS        41
-#define I3C_BUS_TCAS_PS             38400
 #define I3C_PERIOD_NS               1000000000ULL
 #define I3C_PERIOD_PS               I3C_PERIOD_NS * 1000ULL
 
@@ -1850,8 +1849,7 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 		sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) | DEV_CTRL_I2C_SLAVE_PRESENT,
 			    dw_i3c_regs(dev) + DEVICE_CTRL);
 	} else {
-		/* Pure bus: Set bus free timing to t_cas of 38.4ns */
-		free_cnt = DIV_ROUND_UP(I3C_BUS_TCAS_PS * (uint64_t)core_rate, I3C_PERIOD_PS);
+		free_cnt = DIV_ROUND_UP(ctrl_cfg->tcas_min_ps * (uint64_t)core_rate, I3C_PERIOD_PS);
 		sys_write32(BUS_I3C_MST_FREE(free_cnt), dw_i3c_regs(dev) + BUS_FREE_TIMING);
 		sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) &
 				    ~DEV_CTRL_I2C_SLAVE_PRESENT,
@@ -3098,6 +3096,7 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
 		.common.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(n, od_thigh_min_ns),         \
 		.common.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(n, od_tlow_min_ns),           \
+		.common.ctrl_config.tcas_min_ps = DT_INST_PROP(n, tcas_min_ps),                    \
 	};                                                                                         \
 	static const struct dw_i3c_config dw_i3c_cfg_##n = {                                       \
 		DEVICE_MMIO_NAMED_ROM_INIT(regs, DT_DRV_INST(n)),                                  \
@@ -3177,6 +3176,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_HAS_MCHP_MEC_I3C),
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
 		.common.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(n, od_thigh_min_ns),         \
 		.common.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(n, od_tlow_min_ns),           \
+		.common.ctrl_config.tcas_min_ps = DT_INST_PROP(n, tcas_min_ps),                    \
 	};                                                                                         \
 	static const struct dw_i3c_config xec_i3c_cfg_##n = {                                      \
 		DEVICE_MMIO_NAMED_ROM_INIT(regs, DT_DRV_INST(n)),                                  \
