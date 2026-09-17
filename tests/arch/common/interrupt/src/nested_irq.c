@@ -91,6 +91,19 @@
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
+#elif defined(CONFIG_RISCV_NESTED_INTERRUPTS) && defined(CONFIG_CLIC)
+/*
+ * The CLIC lines that software can trigger depend on the SoC. The test is
+ * skipped on other SoCs. A larger priority gives a higher level, which
+ * preempts a lower one.
+ */
+#if defined(CONFIG_SOC_AE350_INTERRUPT_TYPE_CLIC)
+#define IRQ0_LINE	19
+#define IRQ1_LINE	20
+#endif
+
+#define IRQ0_PRIO	1
+#define IRQ1_PRIO	2
 #elif defined(CONFIG_RISCV_NESTED_INTERRUPTS)
 /*
  * Otherwise use the supervisor software and timer interrupts, which an
@@ -120,6 +133,16 @@
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	0
+#endif
+
+/*
+ * A CLIC only lets software set the pending bit of an edge triggered
+ * interrupt, the one of a level triggered interrupt follows its input.
+ */
+#if defined(CONFIG_RISCV_HAS_CLIC)
+#define IRQ_TRIG_FLAGS	1 /* rising edge */
+#else
+#define IRQ_TRIG_FLAGS	0
 #endif
 
 /* Everywhere else an ISR runs with interrupts already enabled */
@@ -209,8 +232,8 @@ ZTEST(interrupt_feature, test_nested_isr)
 
 	/* Connect and enable test IRQs */
 #if defined(IRQ0_LINE) && defined(IRQ1_LINE)
-	IRQ_CONNECT(IRQ0_LINE, IRQ0_PRIO, isr0, 0, 0);
-	IRQ_CONNECT(IRQ1_LINE, IRQ1_PRIO, isr1, 0, 0);
+	IRQ_CONNECT(IRQ0_LINE, IRQ0_PRIO, isr0, 0, IRQ_TRIG_FLAGS);
+	IRQ_CONNECT(IRQ1_LINE, IRQ1_PRIO, isr1, 0, IRQ_TRIG_FLAGS);
 #else
 	arch_irq_connect_dynamic(irq_line_0, IRQ0_PRIO, isr0, NULL, 0);
 	arch_irq_connect_dynamic(irq_line_1, IRQ1_PRIO, isr1, NULL, 0);
