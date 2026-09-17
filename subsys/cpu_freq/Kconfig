@@ -9,7 +9,7 @@ config HAS_CPU_FREQ
 	  CPU frequency scaling.
 
 menuconfig CPU_FREQ
-	bool "CPU Frequency Scaling Subsystem"
+	bool "CPU Frequency Scaling Subsystem [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  CPU Frequency scaling subsystem

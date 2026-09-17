@@ -11,7 +11,7 @@ menuconfig COUNTER
 if COUNTER
 
 config COUNTER_CAPTURE
-	bool "Counter capture"
+	bool "Counter capture [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	depends on COUNTER_SUPPORTS_CAPTURE
 	help

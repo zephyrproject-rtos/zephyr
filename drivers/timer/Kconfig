@@ -42,7 +42,7 @@ config SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE
 	  value.
 
 config SYSTEM_CLOCK_SLOPPY_IDLE
-	bool "Timer allowed to skew uptime clock during idle"
+	bool "Timer allowed to skew uptime clock during idle [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  When true, the kernel may let the system uptime count drift while

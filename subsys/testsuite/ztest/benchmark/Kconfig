@@ -3,13 +3,13 @@
 
 menu "benchmarking options"
 config ZTEST_BENCHMARK
-	bool "ztest benchmarking features"
+	bool "ztest benchmarking features [EXPERIMENTAL]"
 	select TIMING_FUNCTIONS
 	select REQUIRES_FULL_LIBC
 	select REQUIRES_FLOAT_PRINTF
 	select EXPERIMENTAL
 	help
-		Enable features for benchmarking purposes.
+	  Enable features for benchmarking purposes.
 
 if ZTEST_BENCHMARK
 

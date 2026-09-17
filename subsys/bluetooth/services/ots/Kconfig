@@ -71,7 +71,7 @@ endif # BT_OTS
 #### Object Transfer Service Client ################################
 
 config BT_OTS_CLIENT
-	bool "Object Transfer Service Client [Experimental]"
+	bool "Object Transfer Service Client [EXPERIMENTAL]"
 	select BT_L2CAP_DYNAMIC_CHANNEL
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC

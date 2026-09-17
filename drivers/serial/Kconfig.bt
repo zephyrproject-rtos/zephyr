@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_BT
-	bool "UART over NUS Bluetooth LE"
+	bool "UART over NUS Bluetooth LE [EXPERIMENTAL]"
 	depends on BT_ZEPHYR_NUS
 	depends on DT_HAS_ZEPHYR_NUS_UART_ENABLED
 	select UART_INTERRUPT_DRIVEN

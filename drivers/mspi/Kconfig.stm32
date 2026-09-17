@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MSPI_STM32_CONTROLLER
-	bool "STM32 MSPI Controller drivers"
+	bool "STM32 MSPI Controller drivers [EXPERIMENTAL]"
 	depends on DT_HAS_ST_STM32_OSPI_CONTROLLER_ENABLED || \
 	           DT_HAS_ST_STM32_QSPI_CONTROLLER_ENABLED || \
 	           DT_HAS_ST_STM32_XSPI_CONTROLLER_ENABLED
