@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MFD_SILABS_NCP
+	bool "Silicon Labs network co-processor (CPC primary)"
+	default y
+	depends on DT_HAS_SILABS_NCP_ENABLED
+	select SILABS_CPC
+	select EXPERIMENTAL
+	help
+	  Enable the driver for Silicon Labs network co-processors. The host
+	  runs the CPC (Co-Processor Communication) protocol in the primary
+	  role. Child nodes expose the radio protocols offered by the
+	  co-processor.
+
+if MFD_SILABS_NCP
+
+config MFD_SILABS_NCP_INIT_PRIORITY
+	int "Initialization priority"
+	default 86
+	help
+	  Priority of the silabs,ncp devices. Must be greater than the
+	  priority of the bus they sit on (SPI_INIT_PRIORITY,
+	  SDHC_INIT_PRIORITY) and lower than the priority of the child
+	  drivers that open CPC endpoints.
+
+config MFD_SILABS_NCP_RX_FRAME_POOL_COUNT
+	int "Number of RX frames of a CPC bus"
+	default 20
+
+config MFD_SILABS_NCP_TX_FRAME_POOL_COUNT
+	int "Number of TX frames of a CPC bus"
+	default 20
+
+config MFD_SILABS_NCP_TX_QUEUE_SIZE
+	int "Number of frames the transport can queue for transmission"
+	default 8
+
+config MFD_SILABS_NCP_RX_QUEUE_SIZE
+	int "Number of RX frames pre-allocated by the transport"
+	default 4
+
+endif # MFD_SILABS_NCP
