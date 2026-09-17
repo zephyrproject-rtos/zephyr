@@ -594,6 +594,27 @@ static void mqtt_sn_do_searchgw(struct mqtt_sn_client *client)
 }
 
 /**
+ * @brief Internal function to send a CONNECT message.
+ *
+ * Resends the will/clean-session flags stashed by mqtt_sn_connect(), so a
+ * retry is byte-for-byte identical to the original attempt.
+ *
+ * @param client
+ */
+static void mqtt_sn_do_connect(struct mqtt_sn_client *client)
+{
+	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_CONNECT};
+
+	p.params.connect.clean_session = client->connect.clean_session;
+	p.params.connect.will = client->connect.will;
+	p.params.connect.duration = CONFIG_MQTT_SN_KEEPALIVE;
+	p.params.connect.client_id.data = client->client_id.data;
+	p.params.connect.client_id.size = client->client_id.size;
+
+	encode_and_send(client, &p, 0);
+}
+
+/**
  * @brief Internal function to send a PINGREQ message.
  *
  * @param client
@@ -733,6 +754,60 @@ static int process_will_message_update(struct mqtt_sn_client *client, int64_t *n
 		LOG_DBG("Sending WILLMSGUPD");
 		mqtt_sn_do_will_message_update(client);
 		client->will_message_update.last_attempt = now;
+		next_attempt = now + T_RETRY_MSEC;
+	}
+
+	if (*next_cycle == 0 || next_attempt < *next_cycle) {
+		*next_cycle = next_attempt;
+	}
+	LOG_DBG("next_cycle: %lld", *next_cycle);
+
+	return 0;
+}
+
+/**
+ * @brief Housekeeping task for a pending CONNECT.
+ *
+ * Unlike every other confirmable message, CONNECT used to be sent exactly
+ * once with no timeout, so a single lost CONNACK hung the client forever.
+ * This mirrors process_will_topic_update()'s pattern to give it the same
+ * T_RETRY/N_RETRY handling as everything else.
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ *
+ * @retval 0 on success
+ * @retval -ETIMEDOUT when the CONNECT ran out of retries
+ */
+static int process_connect(struct mqtt_sn_client *client, int64_t *next_cycle)
+{
+	const int64_t now = k_uptime_get();
+	int64_t next_attempt;
+
+	if (!client->connect.in_progress) {
+		return 0;
+	}
+
+	if (now == 0) {
+		next_attempt = 1;
+	} else if (client->connect.last_attempt == 0) {
+		next_attempt = 0;
+	} else {
+		next_attempt = client->connect.last_attempt + T_RETRY_MSEC;
+	}
+
+	if (next_attempt <= now) {
+		if (!client->connect.retries--) {
+			LOG_WRN("CONNECT ran out of retries");
+			client->connect.in_progress = false;
+			mqtt_sn_disconnect_internal(client);
+			return -ETIMEDOUT;
+		}
+
+		LOG_DBG("Sending CONNECT");
+		mqtt_sn_do_connect(client);
+		client->connect.last_attempt = now;
+		client->last_ping = now;
 		next_attempt = now + T_RETRY_MSEC;
 	}
 
@@ -1117,6 +1192,11 @@ static void process_work(struct k_work *wrk)
 
 	process_pubs_qos_m1(client);
 
+	err = process_connect(client, &next_cycle);
+	if (err) {
+		return;
+	}
+
 	if (client->state == MQTT_SN_CLIENT_ACTIVE) {
 		err = process_will_topic_update(client, &next_cycle);
 		if (err) {
@@ -1235,8 +1315,6 @@ int mqtt_sn_search(struct mqtt_sn_client *client, uint8_t radius)
 
 int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session)
 {
-	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_CONNECT};
-
 	if (!client) {
 		return -EINVAL;
 	}
@@ -1250,15 +1328,23 @@ int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session
 		mqtt_sn_topic_destroy_all(client);
 	}
 
-	p.params.connect.clean_session = clean_session;
-	p.params.connect.will = will;
-	p.params.connect.duration = CONFIG_MQTT_SN_KEEPALIVE;
-	p.params.connect.client_id.data = client->client_id.data;
-	p.params.connect.client_id.size = client->client_id.size;
+	/*
+	 * Hand off to process_connect() instead of sending directly: CONNECT
+	 * needs the same T_RETRY/N_RETRY handling as every other confirmable
+	 * message, since a single lost CONNACK previously hung the client
+	 * forever with no way to recover.
+	 */
+	client->connect.in_progress = true;
+	client->connect.retries = N_RETRY;
+	client->connect.last_attempt = 0;
+	client->connect.will = will;
+	client->connect.clean_session = clean_session;
 
 	client->last_ping = k_uptime_get();
 
-	return encode_and_send(client, &p, 0);
+	k_work_schedule(&client->process_work, K_NO_WAIT);
+
+	return 0;
 }
 
 int mqtt_sn_disconnect(struct mqtt_sn_client *client)
@@ -1546,6 +1632,9 @@ static void handle_gwinfo(struct mqtt_sn_client *client, struct mqtt_sn_param_gw
 static void handle_connack(struct mqtt_sn_client *client, struct mqtt_sn_param_connack *p)
 {
 	struct mqtt_sn_evt evt = {.type = MQTT_SN_EVT_CONNECTED};
+
+	/* The CONNECT/CONNACK round trip is over either way - stop retrying it. */
+	client->connect.in_progress = false;
 
 	if (p->ret_code == MQTT_SN_CODE_ACCEPTED) {
 		LOG_INF("MQTT_SN client connected");

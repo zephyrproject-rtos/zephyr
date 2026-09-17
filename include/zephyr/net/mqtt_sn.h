@@ -268,6 +268,27 @@ struct mqtt_sn_will_update {
 };
 
 /**
+ * State for a pending CONNECT, retried like every other confirmable message
+ * instead of being sent only once.
+ */
+struct mqtt_sn_connect_retry {
+	/** A CONNECT is in progress, waiting for CONNACK */
+	bool in_progress;
+
+	/** Number of retries for failed CONNECT attempts */
+	uint8_t retries;
+
+	/** Timestamp of the last CONNECT attempt */
+	int64_t last_attempt;
+
+	/** Will flag from the pending mqtt_sn_connect() call, resent on retry */
+	bool will;
+
+	/** Clean session flag from the pending mqtt_sn_connect() call, resent on retry */
+	bool clean_session;
+};
+
+/**
  * Structure describing an MQTT-SN client.
  */
 struct mqtt_sn_client {
@@ -334,6 +355,9 @@ struct mqtt_sn_client {
 
 	/** Radius of the next GWINFO transmission */
 	uint8_t radius_gwinfo;
+
+	/** State for a pending CONNECT retry */
+	struct mqtt_sn_connect_retry connect;
 
 	/** State for will topic updates */
 	struct mqtt_sn_will_update will_topic_update;
