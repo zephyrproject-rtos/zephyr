@@ -50,6 +50,11 @@ static ssize_t decode_payload_length(struct net_buf_simple *buf)
 
 	length = net_buf_simple_pull_u8(buf);
 	if (length == MQTT_SN_LENGTH_FIELD_EXTENDED_PREFIX) {
+		if (buf->len < sizeof(uint16_t)) {
+			LOG_ERR("Truncated extended length field");
+			return -EPROTO;
+		}
+
 		length = net_buf_simple_pull_be16(buf);
 		length_field_s = 3;
 	}
