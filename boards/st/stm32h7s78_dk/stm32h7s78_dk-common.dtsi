@@ -95,6 +95,19 @@
 		rtc = &rtc;
 	};
 
+	/*
+	 * 11.025/22.05/44.1/88.2kHz:
+	 * PLL2.Q / 24 = 271MHz / 24 = 11.2917MHz.
+	 *
+	 * 8/16/32/48/96kHz:
+	 * PLL2.Q / 22 = 271MHz / 22 = 12.3182MHz.
+	 */
+	wm8904_fll_ref: i2s6-mclk {
+		compatible = "fixed-clock";
+		clock-frequency = <11291666>;
+		#clock-cells = <0>;
+	};
+
 	ext_flash_mem: memory@70000000 {
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(128)>;
@@ -273,6 +286,9 @@ st_cam_i2c: &i2c1 {
 		compatible = "wolfson,wm8904";
 		reg = <0x1a>;
 		input-pga-select = <1>;
+		clocks = <&wm8904_fll_ref>;
+		clock-names = "mclk";
+		clock-source = "FLL";
 		wolfson,mic-bias-voltage = "avdd-9-10";
 		status = "okay";
 	};
