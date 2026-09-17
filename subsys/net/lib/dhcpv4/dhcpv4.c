@@ -474,6 +474,19 @@ static void dhcpv4_generate_xid(struct net_if *iface)
 	iface->config.dhcpv4.xid = sys_rand32_get();
 }
 
+/* Wait before restarting the configuration, so that a server that refuses
+ * cannot drive a loop, and so that a segment full of clients refused at once
+ * does not come back in lockstep. Must be invoked with lock held.
+ */
+static uint32_t dhcpv4_set_restart_timeout(struct net_if_dhcpv4 *dhcpv4)
+{
+	uint32_t timeout = DHCPV4_RESTART_DELAY + (sys_rand8_get() % 3U);
+
+	dhcpv4_set_timeout(dhcpv4, timeout);
+
+	return timeout;
+}
+
 /* Must be invoked with lock held */
 static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 {
@@ -957,7 +970,15 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 		break;
 	case NET_DHCPV4_DECLINE:
 		dhcpv4_send_decline(iface);
-		__fallthrough;
+
+		if (!dhcpv4_entered_selecting(iface)) {
+			return UINT32_MAX;
+		}
+
+		/* A host that answers every probe would otherwise drive a
+		 * decline loop as fast as the server hands out addresses.
+		 */
+		return dhcpv4_set_restart_timeout(&iface->config.dhcpv4);
 	case NET_DHCPV4_INIT:
 		return dhcpv4_restart_with_discover(iface);
 	case NET_DHCPV4_SELECTING:
@@ -1703,9 +1724,19 @@ static void dhcpv4_handle_msg_nak(struct net_if *iface)
 		if (memcmp(&iface->config.dhcpv4.request_server_addr,
 			   &iface->config.dhcpv4.response_src_addr,
 			   sizeof(iface->config.dhcpv4.request_server_addr)) == 0) {
+			bool requesting = iface->config.dhcpv4.state ==
+					  NET_DHCPV4_REQUESTING;
+
 			LOG_DBG("NAK from requesting server %s, restart config",
 				net_sprint_ipv4_addr(&iface->config.dhcpv4.request_server_addr));
-			dhcpv4_enter_selecting(iface);
+			/* A server that offers and then refuses would otherwise
+			 * drive a discover loop as fast as it answers. A NAK in
+			 * the other two states leaves the discover the client
+			 * already has in flight to its own schedule.
+			 */
+			if (dhcpv4_entered_selecting(iface) && requesting) {
+				(void)dhcpv4_set_restart_timeout(&iface->config.dhcpv4);
+			}
 		} else {
 			LOG_DBG("NAK from non-requesting server %s, ignore it",
 				net_sprint_ipv4_addr(&iface->config.dhcpv4.response_src_addr));
@@ -1719,7 +1750,10 @@ static void dhcpv4_handle_msg_nak(struct net_if *iface)
 	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
 		/* Restart the configuration process. */
-		dhcpv4_enter_selecting(iface);
+		if (dhcpv4_entered_selecting(iface)) {
+			dhcpv4_immediate_timeout(&iface->config.dhcpv4);
+		}
+
 		break;
 	}
 }

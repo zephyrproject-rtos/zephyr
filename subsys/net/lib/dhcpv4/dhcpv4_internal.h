@@ -120,6 +120,12 @@ struct dhcp_msg {
  */
 #define DHCPV4_RENEW_REBIND_TIMEOUT_MIN 60
 
+/* Delay before restarting the configuration after a NAK or a decline
+ * (in seconds).
+ * RFC2131 3.1
+ */
+#define DHCPV4_RESTART_DELAY 10
+
 #if defined(CONFIG_NET_DHCPV4)
 
 int net_dhcpv4_init(void);
