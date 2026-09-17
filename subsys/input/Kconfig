@@ -68,6 +68,38 @@ config INPUT_THREAD_STACK_SIZE
 
 endif # INPUT_MODE_THREAD
 
+config INPUT_DEDICATED_WORKQUEUE
+	bool "Use a dedicated workqueue for input drivers"
+	depends on MULTITHREADING
+	help
+	  Use a dedicated workqueue for input drivers instead of the system
+	  workqueue.
+
+	  This is useful on systems where the system workqueue is heavily loaded
+	  or runs long-running tasks that could delay time-sensitive input
+	  processing such as button debouncing, matrix scanning, or touch
+	  polling.
+
+	  Enabling this option isolates input work items from system workqueue
+	  contention and allows independent tuning of thread priority and stack
+	  size, at the cost of extra RAM for the dedicated thread stack.
+
+if INPUT_DEDICATED_WORKQUEUE
+
+config INPUT_DEDICATED_WORKQUEUE_STACK_SIZE
+	int "Input dedicated workqueue stack size"
+	default 1024
+	help
+	  Stack size for the dedicated input workqueue thread.
+
+config INPUT_DEDICATED_WORKQUEUE_PRIORITY
+	int "Input dedicated workqueue priority"
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  Thread priority for the dedicated input workqueue thread.
+
+endif # INPUT_DEDICATED_WORKQUEUE
+
 config INPUT_EVENT_DUMP
 	bool "Log all input events"
 	depends on LOG
