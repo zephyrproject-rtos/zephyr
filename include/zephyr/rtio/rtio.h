@@ -52,7 +52,7 @@ extern "C" {
  * @brief RTIO
  * @defgroup rtio RTIO
  * @since 3.2
- * @version 0.2.0
+ * @version 0.3.0
  * @ingroup os_services
  * @{
  */
