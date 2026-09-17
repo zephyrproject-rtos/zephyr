@@ -737,6 +737,44 @@ static void dhcpv4_remove_addr(struct net_if *iface, const struct net_in_addr *a
 	}
 }
 
+/* Put back the gateway the interface carried before this client installed
+ * its own. Must be invoked with lock held.
+ */
+static void dhcpv4_remove_gw(struct net_if *iface)
+{
+	struct net_if_dhcpv4 *dhcpv4 = &iface->config.dhcpv4;
+
+	if (dhcpv4->gw.s_addr == NET_INADDR_ANY) {
+		return;
+	}
+
+	/* Anyone who has replaced it since keeps it. */
+	if (net_if_ipv4_get_gw(iface).s_addr == dhcpv4->gw.s_addr) {
+		net_if_ipv4_set_gw(iface, &dhcpv4->gw_before);
+	}
+
+	dhcpv4->gw.s_addr = NET_INADDR_ANY;
+	dhcpv4->gw_before.s_addr = NET_INADDR_ANY;
+}
+
+/* Drop what the replies configured beside the address. They do so before any
+ * lease is granted, so this runs whether or not one was.
+ * Must be invoked with lock held.
+ */
+static void dhcpv4_drop_config(struct net_if *iface)
+{
+	dhcpv4_remove_gw(iface);
+
+	/* DNS servers are removed by interface index, so only those added
+	 * with one can go.
+	 */
+	if (IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)) {
+		dns_resolve_remove_source(dns_resolve_get_default(),
+					  net_if_get_by_iface(iface),
+					  DNS_SOURCE_DHCPV4);
+	}
+}
+
 /* Give up whatever lease is held and enter @p state, taking @p addr off the
  * interface if the lease had granted it. The removals follow the state change,
  * so that a callback on them sees the new state; @p addr is read before that,
@@ -760,6 +798,11 @@ static void dhcpv4_leave_lease(struct net_if *iface, enum net_dhcpv4_state state
 		net_mgmt_event_notify(NET_EVENT_IPV4_DHCP_STOP, iface);
 	}
 
+	dhcpv4_drop_config(iface);
+
+	/* The address goes last: its removal is the event an application is
+	 * most likely to act on, and by then the rest is already gone.
+	 */
 	if (bound) {
 		dhcpv4_remove_addr(iface, &leased);
 	}
@@ -1188,7 +1231,23 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 			NET_DBG("options_router: %s",
 				net_sprint_ipv4_addr(&router));
+
+			if (router.s_addr == NET_INADDR_ANY) {
+				NET_DBG("options_router, names no router");
+				break;
+			}
+
+			/* Whatever is there now is what to put back, unless
+			 * this client is the one that put it there.
+			 */
+			if (net_if_ipv4_get_gw(iface).s_addr !=
+			    iface->config.dhcpv4.gw.s_addr) {
+				iface->config.dhcpv4.gw_before =
+					net_if_ipv4_get_gw(iface);
+			}
+
 			net_if_ipv4_set_gw(iface, &router);
+			iface->config.dhcpv4.gw = router;
 			router_present = true;
 
 			break;
@@ -1528,10 +1587,12 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 	return false;
 
 end:
-	if (*msg_type == NET_DHCPV4_MSG_TYPE_OFFER && !router_present) {
-		struct net_in_addr any = NET_INADDR_ANY_INIT;
-
-		net_if_ipv4_set_gw(iface, &any);
+	/* Only in SELECTING is an offer acted on, and only such an offer says
+	 * anything about the network the client is about to join.
+	 */
+	if (*msg_type == NET_DHCPV4_MSG_TYPE_OFFER && !router_present &&
+	    iface->config.dhcpv4.state == NET_DHCPV4_SELECTING) {
+		dhcpv4_remove_gw(iface);
 	}
 
 	if (*msg_type == NET_DHCPV4_MSG_TYPE_ACK) {
@@ -1846,17 +1907,6 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 					   ? NET_DHCPV4_INIT_REBOOT
 					   : NET_DHCPV4_INIT,
 					   &iface->config.dhcpv4.requested_ip);
-
-			/* Remove DNS servers as interface is gone. We only need to
-			 * do this for this interface. If using global setting, the
-			 * DNS servers are removed automatically when the interface
-			 * comes back up.
-			 */
-			if (IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)) {
-				dns_resolve_remove_source(dns_resolve_get_default(),
-							  net_if_get_by_iface(iface),
-							  DNS_SOURCE_DHCPV4);
-			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) &&
 		   (mgmt_event == NET_EVENT_IF_UP)) {
@@ -1912,6 +1962,8 @@ static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
 		net_sprint_ipv4_addr(addr));
 
 	iface->config.dhcpv4.state = NET_DHCPV4_DECLINE;
+
+	dhcpv4_drop_config(iface);
 
 	if (mgmt_event == NET_EVENT_IPV4_ACD_CONFLICT) {
 		/* Need to remove address explicitly in this case. */
@@ -2156,12 +2208,6 @@ void net_dhcpv4_stop(struct net_if *iface)
 
 		dhcpv4_leave_lease(iface, NET_DHCPV4_DISABLED,
 				   &iface->config.dhcpv4.requested_ip);
-
-		if (IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)) {
-			dns_resolve_remove_source(dns_resolve_get_default(),
-						  net_if_get_by_iface(iface),
-						  DNS_SOURCE_DHCPV4);
-		}
 
 		break;
 	}
