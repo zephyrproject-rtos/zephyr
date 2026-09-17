@@ -11,3 +11,7 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_PROFILING_PERF_EVENTS
   core.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_PROFILING_PERF_EVENTS_SHELL
+  shell.c
+)
