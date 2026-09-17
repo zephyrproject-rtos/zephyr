@@ -518,6 +518,15 @@
 
 				status = "okay";
 			};
+
+			test_mipi_dbi_axs15231b: axs15231b@29 {
+				compatible = "axstechnology,axs15231b";
+				status = "okay";
+				mipi-max-frequency = <DT_FREQ_M(23)>;
+				duplex = <SPI_HALF_DUPLEX>;
+				height = <560>;
+				width = <172>;
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
