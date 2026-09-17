@@ -35,6 +35,10 @@
 #define RV_SCRATCH   sscratch
 #define RV_CAUSE     scause
 #define RV_EPC       sepc
+#define RV_IE        sie
+#define RV_IRQ_SOFT  IRQ_S_SOFT
+#define RV_IRQ_TIMER IRQ_S_TIMER
+#define RV_IRQ_EXT   IRQ_S_EXT
 #define RV_STATUS    sstatus
 #define RV_TVAL      stval
 #define STATUS_IE    SSTATUS_SIE
@@ -52,6 +56,10 @@
 #define RV_SCRATCH   mscratch
 #define RV_CAUSE     mcause
 #define RV_EPC       mepc
+#define RV_IE        mie
+#define RV_IRQ_SOFT  IRQ_M_SOFT
+#define RV_IRQ_TIMER IRQ_M_TIMER
+#define RV_IRQ_EXT   IRQ_M_EXT
 #define RV_STATUS    mstatus
 #define RV_TVAL      mtval
 #define STATUS_IE    MSTATUS_IEN
@@ -780,6 +788,45 @@ is_interrupt:
 
 on_irq_stack:
 
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/*
+	 * Mask this interrupt and the lower priority ones, so only a higher
+	 * priority interrupt can preempt the ISR. Masking itself keeps an ISR
+	 * that re-enables interrupts from being re-entered by its own source,
+	 * such as the timer in a tickful kernel.
+	 *
+	 * Priority follows the interrupt number, except that the software
+	 * interrupt ranks above the timer one. The external interrupt does
+	 * not mask itself, its controller handles that.
+	 *
+	 * The masked bits are saved on the interrupt stack and unmasked right
+	 * after the ISR, before any thread switch.
+	 */
+	csrr t0, RV_CAUSE
+	li t1, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
+	and t0, t0, t1
+	li t2, 1
+	sll t2, t2, t0
+	li t1, RV_IRQ_EXT
+	beq t0, t1, 1f
+	add t2, t2, t2
+1:
+	addi t2, t2, -1
+	li t1, RV_IRQ_TIMER
+	bne t0, t1, 2f
+	andi t2, t2, ~BIT(RV_IRQ_SOFT)
+	j 3f
+2:
+	li t1, RV_IRQ_SOFT
+	bne t0, t1, 3f
+	ori t2, t2, BIT(RV_IRQ_TIMER)
+3:
+	csrrc t1, RV_IE, t2
+	and t2, t2, t1
+	addi sp, sp, -16
+	sr t2, 0(sp)
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	call __soc_handle_all_irqs
 #else
@@ -828,6 +875,13 @@ on_irq_stack:
 #endif
 
 #endif
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* The ISR returns with interrupts disabled, so this cannot trap yet */
+	lr t1, 0(sp)
+	addi sp, sp, 16
+	csrs RV_IE, t1
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
 irq_done:
 	/* Decrement _current_cpu->nested */
