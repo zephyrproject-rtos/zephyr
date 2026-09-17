@@ -10,6 +10,12 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/adc/ads1x2s14-adc.h>
+
+#define TEST_ADS112S14_ACQ_TIME                                                                    \
+	ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS,                                                           \
+		     ADS1X2S14_DATA_RATE(ADS1X2S14_SPEED_MODE_2, ADS1X2S14_DR_20SPS))
+
 / {
 	test {
 		#address-cells = <1>;
@@ -663,11 +669,52 @@
 				#io-channel-cells = <1>;
 			};
 
+			test_spi_ads112s14: ads112s14@37 {
+				compatible = "ti,ads112s14";
+				reg = <0x37>;
+				spi-max-frequency = <1000000>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				idac1-current-microamp = <100>;
+				idac2-current-microamp = <100>;
+
+				channel@0 {
+					reg = <0>;
+					zephyr,gain = "ADC_GAIN_1";
+					zephyr,reference = "ADC_REF_INTERNAL";
+					zephyr,acquisition-time = <TEST_ADS112S14_ACQ_TIME>;
+					zephyr,differential;
+					zephyr,input-positive = <0>;
+					zephyr,input-negative = <1>;
+					zephyr,current-source-pin = [02 03];
+				};
+			};
+
 			test_spi_mcp3550_60: mcp3550-60@38 {
 				compatible = "microchip,mcp3550-60";
 				reg = <0x38>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
+			};
+
+			test_spi_ads122s14: ads122s14@38 {
+				compatible = "ti,ads122s14";
+				reg = <0x38>;
+				spi-max-frequency = <1000000>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				internal-reference-mv = <2500>;
+				global-chop;
+
+				channel@0 {
+					reg = <0>;
+					zephyr,gain = "ADC_GAIN_16";
+					zephyr,reference = "ADC_REF_INTERNAL";
+					zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+					zephyr,input-positive = <2>;
+				};
 			};
 
 			test_spi_mcp3551: mcp3551@39 {
