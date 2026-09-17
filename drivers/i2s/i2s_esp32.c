@@ -208,10 +208,7 @@ static void i2s_esp32_queue_drop(const struct device *dev, enum i2s_dir dir)
 static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir);
 static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir);
 
-/*
- * Clear the I2S start bits, but only once no direction is transferring any
- * more: in full duplex the peer direction still needs the shared clock.
- */
+/* Clear shared control bits only after both directions stop. */
 static void IRAM_ATTR i2s_esp32_stop_if_idle(const struct device *dev)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
@@ -223,6 +220,9 @@ static void IRAM_ATTR i2s_esp32_stop_if_idle(const struct device *dev)
 
 	i2s_hal_rx_stop(hal);
 	i2s_hal_tx_stop(hal);
+#if !SOC_GDMA_SUPPORTED
+	i2s_ll_enable_dma(hal->dev, false);
+#endif /* !SOC_GDMA_SUPPORTED */
 }
 
 #if I2S_ESP32_IS_DIR_EN(rx)
@@ -445,7 +445,6 @@ static void IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 	esp_intr_disable(stream->data->irq_handle);
 	i2s_hal_rx_stop_link(hal);
 	i2s_hal_rx_disable_intr(hal);
-	i2s_hal_rx_disable_dma(hal);
 	i2s_hal_clear_intr_status(hal, I2S_LL_RX_EVENT_MASK | I2S_LL_EVENT_RX_DSCR_ERR);
 #endif /* SOC_GDMA_SUPPORTED */
 
@@ -690,7 +689,6 @@ static void IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 	esp_intr_disable(stream->data->irq_handle);
 	i2s_hal_tx_stop_link(hal);
 	i2s_hal_tx_disable_intr(hal);
-	i2s_hal_tx_disable_dma(hal);
 	i2s_hal_clear_intr_status(hal, I2S_LL_TX_EVENT_MASK | I2S_LL_EVENT_TX_DSCR_ERR);
 #endif /* SOC_GDMA_SUPPORTED */
 
