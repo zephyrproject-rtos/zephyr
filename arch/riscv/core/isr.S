@@ -35,6 +35,8 @@
 #define RV_SCRATCH   sscratch
 #define RV_CAUSE     scause
 #define RV_EPC       sepc
+#define RV_IE        sie
+#define RV_IEH       sieh
 #define RV_STATUS    sstatus
 #define RV_TVAL      stval
 #define STATUS_IE    SSTATUS_SIE
@@ -52,6 +54,8 @@
 #define RV_SCRATCH   mscratch
 #define RV_CAUSE     mcause
 #define RV_EPC       mepc
+#define RV_IE        mie
+#define RV_IEH       mieh
 #define RV_STATUS    mstatus
 #define RV_TVAL      mtval
 #define STATUS_IE    MSTATUS_IEN
@@ -146,6 +150,33 @@ GTEXT(__soc_handle_all_irqs)
 GTEXT(z_riscv_custom_stack_guard_enable)
 GTEXT(z_riscv_custom_stack_guard_disable)
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
+
+#if defined(CONFIG_RISCV_NESTED_INTERRUPTS) && !defined(CONFIG_RISCV_HAS_CLIC)
+/*
+ * The interrupts each standard interrupt masks, in the priority order of the
+ * RISC-V privileged architecture specification: MEI > MSI > MTI > SEI > SSI >
+ * STI > LCOFI. MEI and SEI do not mask themselves, letting the next level
+ * interrupt controller decide what may preempt.
+ */
+.balign 4
+SECTION_VAR(RODATA, riscv_irq_mask_table)
+	.word 0x0000	/*  0: Reserved */
+	.word 0x2022	/*  1: SSI masks SSI, STI, LCOFI */
+	.word 0x0000	/*  2: Reserved */
+	.word 0x22aa	/*  3: MSI masks MSI, MTI, SEI, SSI, STI, LCOFI */
+	.word 0x0000	/*  4: Reserved */
+	.word 0x2020	/*  5: STI masks STI, LCOFI */
+	.word 0x0000	/*  6: Reserved */
+	.word 0x22a2	/*  7: MTI masks MTI, SEI, SSI, STI, LCOFI */
+	.word 0x0000	/*  8: Reserved */
+	.word 0x2022	/*  9: SEI masks SSI, STI, LCOFI */
+	.word 0x0000	/* 10: Reserved */
+	.word 0x22aa	/* 11: MEI masks MSI, MTI, SEI, SSI, STI, LCOFI */
+	.word 0x0000	/* 12: Reserved */
+	.word 0x2000	/* 13: LCOFI masks LCOFI */
+	.word 0x0000	/* 14: Reserved */
+	.word 0x0000	/* 15: Reserved */
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS && !CONFIG_RISCV_HAS_CLIC */
 
 /* exports */
 GTEXT(_isr_wrapper)
@@ -780,6 +811,58 @@ is_interrupt:
 
 on_irq_stack:
 
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/*
+	 * Mask this interrupt and the lower priority ones, so only a higher
+	 * priority one can preempt the ISR. The masked bits are saved on the
+	 * interrupt stack and restored right after the ISR.
+	 */
+	csrr t0, RV_CAUSE
+	li t1, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
+	and t0, t0, t1
+	addi sp, sp, -16
+#if !defined(CONFIG_64BIT) && \
+	(defined(CONFIG_RISCV_ISA_EXT_SMAIA) || defined(CONFIG_RISCV_ISA_EXT_SSAIA))
+	/*
+	 * On RV32 with AIA, interrupt IDs 32–63 use mieh/sieh.
+	 * Mask the current and all lower-numbered interrupts in both mie/sie
+	 * and mieh/sieh.
+	 */
+	addi t1, t0, -32
+	bltz t1, 1f
+	li t2, 2
+	sll t2, t2, t1
+	addi t2, t2, -1
+	csrrc t1, RV_IEH, t2
+	and t2, t2, t1
+	sr t2, RV_REGSIZE(sp)
+	li t2, -1
+	j 3f
+1:
+	sr zero, RV_REGSIZE(sp)
+#endif
+	/*
+	 * A standard interrupt takes its mask from the table above. IDs 16 and
+	 * above are platform ones, so assume their IRQ number is the priority
+	 * and preemption level.
+	 */
+	li t1, 15
+	bgtu t0, t1, 2f
+	la t1, riscv_irq_mask_table
+	slli t0, t0, 2
+	add t1, t1, t0
+	lw t2, 0(t1)
+	j 3f
+2:
+	li t2, 2
+	sll t2, t2, t0
+	addi t2, t2, -1
+3:
+	csrrc t1, RV_IE, t2
+	and t2, t2, t1
+	sr t2, 0(sp)
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	call __soc_handle_all_irqs
 #else
@@ -828,6 +911,18 @@ on_irq_stack:
 #endif
 
 #endif
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* The ISR returns with interrupts disabled, so this cannot trap yet */
+	lr t1, 0(sp)
+	csrs RV_IE, t1
+#if !defined(CONFIG_64BIT) && \
+	(defined(CONFIG_RISCV_ISA_EXT_SMAIA) || defined(CONFIG_RISCV_ISA_EXT_SSAIA))
+	lr t1, RV_REGSIZE(sp)
+	csrs RV_IEH, t1
+#endif
+	addi sp, sp, 16
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
 irq_done:
 	/* Decrement _current_cpu->nested */
