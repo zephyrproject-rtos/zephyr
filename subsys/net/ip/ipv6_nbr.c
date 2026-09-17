@@ -414,6 +414,7 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data;
 	struct net_pkt *pending;
+	int ret;
 	int i;
 
 	ARG_UNUSED(work);
@@ -459,61 +460,60 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 			continue;
 		}
 
-		while (!k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
-			enum net_verdict verdict;
-
-			/* Remove the first pending packet from the queue
-			 * and unref it. If there are more pending packets,
-			 * they will be processed in the next round.
+		if (nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
+			/* Resolved in the meantime, for example by an RA or
+			 * a received NS. Send the pending packets.
 			 */
-			pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
-					     K_FOREVER);
+			nbr_send_pending(data);
+			continue;
+		}
 
-			NET_DBG("NS nbr %p pending %p timeout to %s", nbr, pending,
-				net_sprint_ipv6_addr(&NET_IPV6_HDR(pending)->dst));
+		/* Drop the oldest pending packet. */
+		pending = k_fifo_get(&data->pending_queue, K_FOREVER);
 
-			NET_DBG("Dropping pending pkt %p", pending);
+		NET_DBG("NS nbr %p pending %p timeout to %s", nbr, pending,
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pending)->dst));
 
-			/* This gets rid of the reference that was
-			 * added when the packet was put into the pending queue.
+		NET_DBG("Dropping pending pkt %p", pending);
+
+		/* Reference taken when queued */
+		net_pkt_unref(pending);
+
+		/* Reference handed over by the sender */
+		net_pkt_unref(pending);
+
+		if (!k_fifo_is_empty(&data->pending_queue)) {
+			struct net_in6_addr src;
+
+			/* Solicit again for the remaining packets, which
+			 * stay queued in their original order. Use the
+			 * source address of the next one, as the first NS did.
 			 */
-			net_pkt_unref(pending);
+			pending = k_fifo_peek_head(&data->pending_queue);
+			net_ipv6_addr_copy_raw(src.s6_addr, NET_IPV6_HDR(pending)->src);
 
-			/* To unref the original pkt allocation */
-			net_pkt_unref(pending);
+			ret = net_ipv6_send_ns(nbr->iface, NULL,
+					       net_pkt_forwarding(pending) ? NULL : &src,
+					       NULL, &data->addr, false);
+			if (ret == 0) {
+				data->send_ns = k_uptime_get();
 
-			/* If there are no more pending packets, we can
-			 * unref the neighbor.
-			 */
-			if (k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
-				net_nbr_unref(nbr);
+				if (!k_work_delayable_remaining_get(&ipv6_ns_reply_timer)) {
+					k_work_reschedule(&ipv6_ns_reply_timer,
+							  K_MSEC(NS_REPLY_TIMEOUT));
+				}
 
-				NET_DBG("Dropping neighbor %p", nbr);
-				break;
-			}
-
-			/* If there are more pending packets, we need to
-			 * reschedule the work so that we can process them and
-			 * send a new NS.
-			 */
-			pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
-					     K_FOREVER);
-
-			verdict = net_ipv6_prepare_for_send(pending);
-			if (verdict == NET_DROP) {
-				/* The ref when added to the pending queue */
-				net_pkt_unref(pending);
-
-				/* To unref the original pkt allocation */
-				net_pkt_unref(pending);
-
-				/* Get next packet from the list */
 				continue;
 			}
 
-			/* Now wait timeout again */
-			break;
+			NET_DBG("Cannot send NS (%d), dropping pending packets", ret);
+
+			nbr_clear_ns_pending(data);
 		}
+
+		NET_DBG("Dropping neighbor %p", nbr);
+
+		net_nbr_unref(nbr);
 	}
 
 	net_ipv6_nbr_unlock();
