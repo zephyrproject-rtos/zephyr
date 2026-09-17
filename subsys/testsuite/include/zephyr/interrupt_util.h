@@ -188,6 +188,28 @@ static inline void trigger_irq(int irq)
 
 	__asm__ volatile("csrrs %0, sip, %1\n" : "=r"(sip) : "r"(1 << irq));
 }
+#elif defined(CONFIG_RISCV_HAS_AIA)
+#include <zephyr/irq_multilevel.h>
+#include <zephyr/drivers/interrupt_controller/riscv_aplic.h>
+
+/*
+ * An APLIC source can be set pending by number, which an MSI mode domain then
+ * forwards to the hart's interrupt file, so this covers both delivery modes.
+ * Only an edge or detached source can be set this way.
+ */
+static inline void trigger_irq(int irq)
+{
+	unsigned int level = irq_get_level(irq);
+
+	if (level == 1) {
+		uint32_t mip;
+
+		__asm__ volatile("csrrs %0, mip, %1\n" : "=r"(mip) : "r"(1 << irq));
+	} else {
+		sys_write32(irq_from_level_2(irq),
+			    DT_REG_ADDR(DT_NODELABEL(aplic)) + APLIC_SETIPNUM);
+	}
+}
 #elif defined(CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT)
 #include <zephyr/irq_multilevel.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
