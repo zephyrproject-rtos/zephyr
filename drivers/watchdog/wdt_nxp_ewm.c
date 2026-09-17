@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_ewm
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/irq.h>
 
@@ -18,6 +19,8 @@ LOG_MODULE_REGISTER(wdt_nxp_ewm);
 struct nxp_ewm_config {
 	EWM_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	bool is_input_enabled;
 	bool is_input_active_high;
 	uint8_t clk_sel;
@@ -139,6 +142,27 @@ static int nxp_ewm_init(const struct device *dev)
 	const struct nxp_ewm_config *config = dev->config;
 	EWM_Type *base = config->base;
 
+	if (config->clock_dev != NULL) {
+		int err;
+
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("Clock controller not ready");
+			return -ENODEV;
+		}
+
+		err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+		if (err < 0 && err != -ENOSYS) {
+			LOG_ERR("Failed to configure EWM clock: %d", err);
+			return err;
+		}
+
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err < 0) {
+			LOG_ERR("Failed to enable EWM clock: %d", err);
+			return err;
+		}
+	}
+
 #if DT_INST_NODE_HAS_PROP(0, clk_sel)
 	/* Set clock select value for CLKCTRL register */
 	switch (config->clk_sel) {
@@ -182,12 +206,22 @@ static DEVICE_API(wdt, nxp_ewm_api) = {
 	.clk_sel = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clk_sel),	\
 					(DT_INST_ENUM_IDX(n, clk_sel)),	\
 					(CLK_SEL_DEFAULT)),
+
+/* Only SoCs that gate the EWM describe a clock for it. */
+#define EWM_CONFIG_CLOCK_INIT(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),				\
+		(.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
+		 .clock_subsys =						\
+			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),),	\
+		(.clock_dev = NULL,))
+
 #define WDT_EWM_INIT(n)							\
 	static void nxp_ewm_config_func_##n(const struct device *dev);	\
 									\
 	static const struct nxp_ewm_config nxp_ewm_config_##n = {	\
 		.base = (EWM_Type *)DT_INST_REG_ADDR(n),		\
 		.irq_config_func = nxp_ewm_config_func_##n,		\
+		EWM_CONFIG_CLOCK_INIT(n)				\
 		.is_input_enabled = DT_INST_PROP(n, input_trigger_en),	\
 		.is_input_active_high =					\
 			DT_INST_PROP(n, input_trigger_active_high),	\
