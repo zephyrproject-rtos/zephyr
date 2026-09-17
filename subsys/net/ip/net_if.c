@@ -2277,7 +2277,10 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 		vlifetime);
 
-	ifaddr_set_valid(ifaddr);
+	/* An address in DAD stays tentative until DAD completes. */
+	if (ifaddr->addr_state != NET_ADDR_TENTATIVE) {
+		ifaddr_set_valid(ifaddr);
+	}
 
 	address_start_timer(ifaddr, vlifetime);
 
