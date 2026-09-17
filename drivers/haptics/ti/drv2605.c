@@ -631,12 +631,12 @@ static DEVICE_API(haptics, drv2605_driver_api) = {
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {}),                           \
 		.in_trig_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, in_trig_gpios, {}),                 \
-		.feedback_brake_factor = DT_INST_ENUM_IDX(inst, feedback_brake_factor),            \
-		.loop_gain = DT_INST_ENUM_IDX(inst, loop_gain),                                    \
-		.actuator_mode = DT_INST_ENUM_IDX(inst, actuator_mode),                            \
-		.rated_voltage = DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, vib_rated_mv)),      \
+		.feedback_brake_factor = DT_INST_ENUM_IDX(inst, ti_feedback_brake_factor),         \
+		.loop_gain = DT_INST_ENUM_IDX(inst, ti_loop_gain),                                 \
+		.actuator_mode = DT_INST_ENUM_IDX(inst, ti_actuator_mode),                         \
+		.rated_voltage = DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, ti_vib_rated_mv)),   \
 		.overdrive_clamp_voltage =                                                         \
-			DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, vib_overdrive_mv)),           \
+			DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, ti_vib_overdrive_mv)),        \
 	};                                                                                         \
                                                                                                    \
 	static struct drv2605_data drv2605_data_##inst = {                                         \
