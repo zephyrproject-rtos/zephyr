@@ -1209,6 +1209,7 @@ static void ipv6_addr_rm_all(struct net_if *iface, struct net_if_ipv6 *ipv6)
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		struct net_if_addr *ifaddr = &ipv6->unicast[i];
 		struct net_in6_addr addr;
+		int ret;
 
 		if (!ifaddr->is_used) {
 			continue;
@@ -1219,9 +1220,9 @@ static void ipv6_addr_rm_all(struct net_if *iface, struct net_if_ipv6 *ipv6)
 		/* Drop every reference so that the slot is released even if
 		 * someone still holds one.
 		 */
-		while (ifaddr->is_used) {
-			(void)net_if_ipv6_addr_rm(iface, &addr);
-		}
+		do {
+			ret = net_if_addr_unref(iface, NET_AF_INET6, &addr, NULL);
+		} while (ret > 0);
 	}
 }
 
@@ -4129,6 +4130,7 @@ static void ipv4_addr_rm_all(struct net_if *iface, struct net_if_ipv4 *ipv4)
 	ARRAY_FOR_EACH(ipv4->unicast, i) {
 		struct net_if_addr *ifaddr = &ipv4->unicast[i].ipv4;
 		struct net_in_addr addr;
+		int ret;
 
 		if (!ifaddr->is_used) {
 			continue;
@@ -4139,9 +4141,9 @@ static void ipv4_addr_rm_all(struct net_if *iface, struct net_if_ipv4 *ipv4)
 		/* Drop every reference so that the slot is released even if
 		 * someone still holds one.
 		 */
-		while (ifaddr->is_used) {
-			(void)net_if_ipv4_addr_rm(iface, &addr);
-		}
+		do {
+			ret = net_if_addr_unref(iface, NET_AF_INET, &addr, NULL);
+		} while (ret > 0);
 
 		ipv4->unicast[i].netmask.s_addr = 0;
 	}
