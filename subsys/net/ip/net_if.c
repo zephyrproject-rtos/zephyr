@@ -1870,7 +1870,7 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 }
 
 static struct net_if_addr *ipv6_addr_find(struct net_if *iface,
-					  struct in6_addr *addr)
+					  const struct in6_addr *addr)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 
@@ -2022,6 +2022,17 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 	ipv6 = iface->config.ip.ipv6;
 	if (!ipv6) {
+		result = false;
+		goto out;
+	}
+
+	ifaddr = ipv6_addr_find(iface, addr);
+	if (ifaddr != NULL && !ifaddr->is_added) {
+		/* The remaining references belong to the users of the
+		 * address, only they may release them.
+		 */
+		NET_DBG("Address %s already removed",
+			net_sprint_ipv6_addr(addr));
 		result = false;
 		goto out;
 	}
@@ -4182,7 +4193,7 @@ bool z_vrfy_net_if_ipv4_set_gw_by_index(int index,
 #endif /* CONFIG_USERSPACE */
 
 static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
-					  struct in_addr *addr)
+					  const struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 
@@ -4439,6 +4450,17 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 
 	ipv4 = iface->config.ip.ipv4;
 	if (!ipv4) {
+		result = false;
+		goto out;
+	}
+
+	ifaddr = ipv4_addr_find(iface, addr);
+	if (ifaddr != NULL && !ifaddr->is_added) {
+		/* The remaining references belong to the users of the
+		 * address, only they may release them.
+		 */
+		NET_DBG("Address %s already removed",
+			net_sprint_ipv4_addr(addr));
 		result = false;
 		goto out;
 	}
