@@ -7713,6 +7713,8 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+  collaborators:
+    - felipebalbi
   files: []
   labels:
     - "area: Rust"
