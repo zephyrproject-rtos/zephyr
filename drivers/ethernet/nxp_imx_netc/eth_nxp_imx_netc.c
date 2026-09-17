@@ -544,6 +544,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	status_t result;
 	int ret;
 	ep_tx_opt opt = {0};
+	int req_ts = 0;
 
 	__ASSERT(pkt, "Packet pointer is NULL");
 
@@ -580,6 +581,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	if (net_pkt_is_tx_timestamping(pkt) &&
 	    (netc_eth_get_ptp_clock(dev, data->iface) != NULL)) {
 		opt.flags |= kEP_TX_OPT_REQ_TS;
+		req_ts = 1;
 	}
 #endif
 
@@ -608,6 +610,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
 		if (net_pkt_is_tx_timestamping(pkt)) {
 			txDesc[0].standard.flags |= NETC_SI_TXDESCRIP_RD_TSR_MASK;
+			req_ts = 1;
 		}
 #endif
 		txbd = &txDesc[0];
@@ -633,7 +636,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	/* Busy-wait for this frame's completion, then read its egress timestamp. */
-	if ((opt.flags & (uint32_t)kEP_TX_OPT_REQ_TS) != 0U) {
+	if (req_ts == 1) {
 		netc_tx_frame_info_t *frame_info;
 		k_timepoint_t deadline = sys_timepoint_calc(NETC_TIMEOUT);
 		bool stamped = false;
@@ -642,13 +645,16 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 			frame_info = EP_ReclaimTxDescCommon(&data->handle,
 							    &data->handle.txBdRing[0], 0, true);
 			if (frame_info != NULL) {
-				if (frame_info->isTsAvail) {
+				/* Endpoint timestamp */
+				if (frame_info->isTsAvail &&
+					((opt.flags & (uint32_t)kEP_TX_OPT_REQ_TS) != 0U)) {
 					netc_eth_pkt_get_timestamp(pkt, cfg->ptp_clock,
 								   frame_info->timestamp);
 					net_if_add_tx_timestamp(pkt);
 					stamped = true;
 				}
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
+				/* DSA conduit timestamp */
 				if (eth_ctx->dsa_port == DSA_CONDUIT_PORT &&
 				    frame_info->isTxTsIdAvail) {
 					dsa_netc_port_txtsid(net_if_get_device(iface_dst),
