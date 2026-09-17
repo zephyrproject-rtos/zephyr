@@ -298,6 +298,7 @@ static int init(const struct shell_transport *transport,
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 	common->smp.buf_pool = &smp_shell_rx_pool;
 	k_fifo_init(&common->smp.buf_ready);
+	common->smp.uart = common;
 #endif
 
 	ret = pm_device_runtime_get(common->dev);

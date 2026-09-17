@@ -19,6 +19,7 @@
  * @{
  */
 
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
@@ -34,6 +35,7 @@ struct smp_shell_data {
 	struct k_fifo buf_ready;
 	struct net_buf *buf;
 	atomic_t esc_state;
+	const struct shell_uart_common *uart;
 };
 
 /**
