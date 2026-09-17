@@ -65,7 +65,7 @@ Peripheral:
 
         *** Booting Zephyr OS build zephyr-v3.3.0-1872-g6fac3c7581dc ***
         <inf> ead_peripheral_sample: Advertising data size: 64
-        Passkey for 46:04:2E:6F:80:12 (random): 059306
+        Passkey for R:46:04:2E:6F:80:12: 059306
         Confirm passkey by pressing button at gpio@50000000 pin 11...
         Passkey confirmed.
         <inf> ead_peripheral_sample: Advertising data size: 64
@@ -76,7 +76,7 @@ Central:
 .. code-block:: console
 
         *** Booting Zephyr OS build zephyr-v3.3.0-1872-g6fac3c7581dc ***
-        Passkey for 6C:7F:67:C2:8B:29 (random): 059306
+        Passkey for R:6C:7F:67:C2:8B:29: 059306
         Confirm passkey by pressing button at gpio@50000000 pin 11...
         Passkey confirmed.
         <inf> ead_central_sample: Received data size: 64

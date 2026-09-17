@@ -39,13 +39,13 @@ After flashing, check the following:
 
       Bluetooth initialized
       Scanning successfully started
-      Device found: D3:3A:5D:F5:73:33 (random) (RSSI -78)
-      Device found: 70:7B:F4:2B:76:AD (random) (RSSI -68)
-      Device found: 65:CF:20:0D:CB:9D (random) (RSSI -82)
+      Device found: R:D3:3A:5D:F5:73:33 (RSSI -78)
+      Device found: R:70:7B:F4:2B:76:AD (RSSI -68)
+      Device found: R:65:CF:20:0D:CB:9D (RSSI -82)
 
 2. Observe that the device connects.
 
-      Connected: 65:CF:20:0D:CB:9D (random)
+      Connected: R:65:CF:20:0D:CB:9D
 
 3. Observe that the ISO channel is connected.
 
