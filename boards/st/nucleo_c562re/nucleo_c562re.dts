@@ -249,3 +249,11 @@ zephyr_udc0: &usb {
 	phys = <&can_phy0>;
 	status = "okay";
 };
+
+&aes {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};
