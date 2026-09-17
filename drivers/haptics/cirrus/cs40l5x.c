@@ -2231,7 +2231,7 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 
 #define HAPTICS_CS40L5X_VALID_TRIGGER(inst)                                                        \
 	IS_EQ(DT_INST_NODE_HAS_PROP(inst, trigger_gpios),                                          \
-	      DT_INST_NODE_HAS_PROP(inst, trigger_mapping))
+	      DT_INST_NODE_HAS_PROP(inst, cirrus_trigger_mapping))
 
 #define HAPTICS_CS40L5X_BUILD_ASSERTS(inst)                                                        \
 	BUILD_ASSERT(HAPTICS_CS40L5X_VALID_TRIGGER(inst),                                          \
@@ -2239,7 +2239,7 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 	COND_CODE_1(UTIL_AND(HAPTICS_CS40L5X_VALID_TRIGGER(inst),				   \
 			DT_INST_NODE_HAS_PROP(inst, trigger_gpios)),				   \
 		(BUILD_ASSERT(IS_EQ(DT_INST_PROP_LEN(inst, trigger_gpios),			   \
-			DT_INST_PROP_LEN(inst, trigger_mapping)),				   \
+			DT_INST_PROP_LEN(inst, cirrus_trigger_mapping)),			   \
 			"length of trigger_mapping must equal length of trigger_gpios");),	   \
 		(EMPTY)										   \
 	)
@@ -2255,23 +2255,23 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 									   (,))}), (NULL))
 
 #define HAPTICS_CS40L5X_TRIGGER_MAPPING(inst)                                                      \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trigger_mapping),				   \
-		    ((int[])DT_INST_PROP(inst, trigger_mapping)), (NULL))
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, cirrus_trigger_mapping),			   \
+		    ((int[])DT_INST_PROP(inst, cirrus_trigger_mapping)), (NULL))
 
 #define HAPTICS_CS40L5X_FLASH_DEVICE(inst)                                                         \
 	DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_PARTITION(DT_INST_PHANDLE(inst, flash_storage)))
 
 #define HAPTICS_CS40L5X_FLASH_OFFSET(inst)                                                         \
-	PARTITION_NODE_OFFSET(DT_INST_PHANDLE(inst, flash_storage)) +                        \
-		DT_INST_PROP_OR(inst, flash_offset, 0)
+	PARTITION_NODE_OFFSET(DT_INST_PHANDLE(inst, cirrus_flash_storage)) +                       \
+		DT_INST_PROP_OR(inst, cirrus_flash_offset, 0)
 
 #define HAPTICS_CS40L5X_FLASH(inst)                                                                \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, flash_storage),	\
-		(COND_CODE_1(DT_PARTITION_EXISTS(DT_INST_PHANDLE(inst, flash_storage)),	   \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, cirrus_flash_storage),				   \
+		(COND_CODE_1(DT_PARTITION_EXISTS(DT_INST_PHANDLE(inst, cirrus_flash_storage)),	   \
 			(.flash = HAPTICS_CS40L5X_FLASH_DEVICE(inst),				   \
 			 .flash_offset = HAPTICS_CS40L5X_FLASH_OFFSET(inst),),			   \
-			(.flash = DEVICE_DT_GET(DT_INST_PHANDLE(inst, flash_storage)),		   \
-			 .flash_offset = DT_INST_PROP_OR(inst, flash_offset, 0),))),		   \
+			(.flash = DEVICE_DT_GET(DT_INST_PHANDLE(inst, cirrus_flash_storage)),	   \
+			 .flash_offset = DT_INST_PROP_OR(inst, cirrus_flash_offset, 0),))),	   \
 		(.flash = NULL, .flash_offset = 0,))
 
 #define HAPTICS_CS40L5X_BUS(inst)                                                                  \
@@ -2287,7 +2287,7 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 	.trigger_gpios = HAPTICS_CS40L5X_TRIGGER_GPIOS(inst),                                      \
 	.trigger_mapping = HAPTICS_CS40L5X_TRIGGER_MAPPING(inst),                                  \
 	.num_triggers = DT_INST_PROP_LEN_OR(inst, trigger_gpios, 0),                               \
-	.external_boost = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, external_boost)),            \
+	.external_boost = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, cirrus_external_boost)),     \
 	LOG_INSTANCE_PTR_INIT(log, DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(inst)), inst)               \
 		HAPTICS_CS40L5X_BUS(inst) HAPTICS_CS40L5X_FLASH(inst)
 

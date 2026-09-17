@@ -5,4 +5,4 @@ description: CS40L27 haptic driver on I2C bus
 
 compatible: "cirrus,cs40l27"
 
-include: ["i2c-device.yaml", "cirrus,cs40l26-base.yaml"]
+include: ["i2c-device.yaml", "cirrus,cs40lxx.yaml"]

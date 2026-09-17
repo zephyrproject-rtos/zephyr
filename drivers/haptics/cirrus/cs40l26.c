@@ -1696,8 +1696,8 @@ __maybe_unused static int cs40l26_deinit(const struct device *dev)
 									   (,))}), (NULL))
 
 #define HAPTICS_CS40L26_TRIGGER_MAPPING(inst)                                                      \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trigger_mapping),				   \
-		    ((int[])DT_INST_PROP(inst, trigger_mapping)), (NULL))
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, cirrus_trigger_mapping),			   \
+		    ((int[])DT_INST_PROP(inst, cirrus_trigger_mapping)), (NULL))
 
 #define HAPTICS_CS40L26_BUS(inst)                                                                  \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
@@ -1706,19 +1706,21 @@ __maybe_unused static int cs40l26_deinit(const struct device *dev)
 			.io_bus.io = &cs40lxx_io_spi,))
 
 #define HAPTICS_CS40L26_FLASH_DEVICE(inst)                                                         \
-	DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_FIXED_PARTITION(DT_INST_PHANDLE(inst, flash_storage)))
+	DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_FIXED_PARTITION(DT_INST_PHANDLE(inst,			   \
+									  cirrus_flash_storage)))
 
 #define HAPTICS_CS40L26_FLASH_OFFSET(inst)                                                         \
-	PARTITION_NODE_OFFSET(DT_INST_PHANDLE(inst, flash_storage)) +                              \
-		DT_INST_PROP_OR(inst, flash_offset, 0)
+	PARTITION_NODE_OFFSET(DT_INST_PHANDLE(inst, cirrus_flash_storage)) +                       \
+		DT_INST_PROP_OR(inst, cirrus_flash_offset, 0)
 
 #define HAPTICS_CS40L26_FLASH(inst)                                                                \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, flash_storage),	\
-		(COND_CODE_1(DT_FIXED_PARTITION_EXISTS(DT_INST_PHANDLE(inst, flash_storage)),	   \
+		(COND_CODE_1(DT_FIXED_PARTITION_EXISTS(DT_INST_PHANDLE(inst,			   \
+								       cirrus_flash_storage)),	   \
 			(.flash = HAPTICS_CS40L26_FLASH_DEVICE(inst),				   \
 			 .flash_offset = HAPTICS_CS40L26_FLASH_OFFSET(inst),),			   \
-			(.flash = DEVICE_DT_GET(DT_INST_PHANDLE(inst, flash_storage)),		   \
-			 .flash_offset = DT_INST_PROP_OR(inst, flash_offset, 0),))),		   \
+			(.flash = DEVICE_DT_GET(DT_INST_PHANDLE(inst, cirrus_flash_storage)),	   \
+			 .flash_offset = DT_INST_PROP_OR(inst, cirrus_flash_offset, 0),))),	   \
 		(.flash = NULL, .flash_offset = 0,))
 
 #define HAPTICS_CS40L26_CONFIG(inst, name, id)                                                     \

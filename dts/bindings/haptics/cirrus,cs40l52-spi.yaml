@@ -5,4 +5,4 @@ description: CS40L52 haptic driver on SPI bus
 
 compatible: "cirrus,cs40l52"
 
-include: ["spi-device.yaml", "cirrus,cs40l5x-base.yaml"]
+include: ["spi-device.yaml", "cirrus,cs40lxx.yaml", "cirrus,cs40l5x.yaml"]
