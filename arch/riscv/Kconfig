@@ -396,6 +396,7 @@ config GEN_ISR_TABLES
 
 config GEN_SW_ISR_TABLE
 	default y
+	depends on GEN_ISR_TABLES
 	select USE_ISR_WRAPPER
 
 config GEN_IRQ_VECTOR_TABLE
