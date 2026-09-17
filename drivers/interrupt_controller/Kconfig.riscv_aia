@@ -5,6 +5,7 @@ config RISCV_IMSIC
 	bool "RISC-V IMSIC (Incoming Message-Signaled Interrupt Controller)"
 	default y if DT_HAS_RISCV_IMSIC_ENABLED
 	depends on RISCV && RISCV_ISA_EXT_SMCSRIND
+	select RISCV_HAS_NESTED_INTERRUPTS if !RISCV_S_MODE
 	help
 	  RISC-V Incoming Message-Signaled Interrupt Controller (IMSIC).
 	  Provides per-hart interrupt files for MSI delivery in RISC-V AIA.
