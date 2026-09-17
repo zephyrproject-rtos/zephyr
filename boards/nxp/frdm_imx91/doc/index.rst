@@ -76,8 +76,8 @@ uSDHC (SD or eMMC Interface on A55)
 i.MX 91 processor has three ultra secured digital host controller (uSDHC) modules
 for SD/eMMC interface support. On the FRDM-IMX91 board, the uSDHC2 interface of
 the processor connects to the MicroSD card slot (P13), and uSDHC1 interface connects
-to the eMMC memory (located at the SOM board). DTS overlay file "usdhc1.overlay" and
-"usdhc2.overlay" are provided to enable specified the uSDHC controller.
+to the eMMC memory (located at the SOM board). uSDHC1 is enabled by default, and
+"usdhc2.overlay" is provided to enable uSDHC2 interface.
 
 Currently it rely on U-boot or Linux to boot Zephyr, so Zephyr need to use different
 uSDHC controller from U-boot or Linux to avoid resource conflict. For example, if
@@ -89,7 +89,6 @@ which uses uSDHC1 for testing:
    :host-os: unix
    :board: frdm_imx91/mimx9131
    :goals: build
-   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=usdhc1.overlay
 
 And if FRDM-IMX91 board boots from MMC which uses uSDHC1, Zephyr can use SD Card which uses
 uSDHC2 for testing:
