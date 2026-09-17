@@ -4107,6 +4107,21 @@ static bool bt_att_chan_req_cancel(struct bt_att_chan *chan,
 		return false;
 	}
 
+#if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
+	/* A request waiting for a security retry has already had its error
+	 * response consumed and its timeout stopped, so neither a response
+	 * nor a timeout is left to clear the placeholder: release the bearer
+	 * now and let the next queued request use it.
+	 */
+	if (req->retrying) {
+		chan->req = NULL;
+		bt_att_req_free(req);
+		att_req_send_process(chan->att);
+
+		return true;
+	}
+#endif /* CONFIG_BT_ATT_RETRY_ON_SEC_ERR */
+
 	chan->req = &cancel;
 
 	bt_att_req_free(req);
