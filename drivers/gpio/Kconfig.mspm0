@@ -8,5 +8,6 @@ config GPIO_MSPM0
 	default y
 	depends on DT_HAS_TI_MSPM0_GPIO_ENABLED
 	select PINCTRL
+	select SHARED_INTERRUPTS
 	help
 	  Enable the TI MSPM0 GPIO driver.
