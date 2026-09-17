@@ -12,7 +12,9 @@
  * Run the nested interrupt test for the supported platforms only.
  */
 #if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_ARC) || \
-	defined(CONFIG_GIC) || defined(CONFIG_NRFX_CLIC)
+	defined(CONFIG_GIC) || defined(CONFIG_NRFX_CLIC) || \
+	(defined(CONFIG_RISCV_NESTED_INTERRUPTS) && !defined(CONFIG_RISCV_S_MODE) && \
+	 !defined(CONFIG_RISCV_HAS_CLIC))
 #define TEST_NESTED_ISR
 #endif
 
@@ -80,6 +82,25 @@
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
+#elif defined(CONFIG_RISCV_NESTED_INTERRUPTS)
+/*
+ * Otherwise use the supervisor software and timer interrupts, which an
+ * M-mode kernel leaves unused and can set pending in mip. They are ordered
+ * by the specification, which ranks the software interrupt above the timer
+ * interrupt, so the priorities are not used.
+ */
+#define IRQ0_LINE	IRQ_S_TIMER
+#define IRQ1_LINE	IRQ_S_SOFT
+
+#define IRQ0_PRIO	0
+#define IRQ1_PRIO	0
+
+/*
+ * A local interrupt has no controller driver to enable interrupts for its
+ * ISR, so isr0 does it itself.
+ */
+#define ISR0_UNLOCK_IRQ()	arch_irq_unlock(RV_STATUS_IE)
+#define ISR0_LOCK_IRQ()		((void)arch_irq_lock())
 #else
 /*
  * For all the other platforms, use the last two available IRQ lines for
@@ -90,6 +111,12 @@
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	0
+#endif
+
+/* Everywhere else an ISR runs with interrupts already enabled */
+#ifndef ISR0_UNLOCK_IRQ
+#define ISR0_UNLOCK_IRQ()
+#define ISR0_LOCK_IRQ()
 #endif
 
 #ifdef TEST_NESTED_ISR
@@ -120,6 +147,8 @@ void isr0(const void *param)
 	/* Set verification token */
 	isr0_result = ISR0_TOKEN;
 
+	ISR0_UNLOCK_IRQ();
+
 	/* Trigger nested IRQ 1 */
 	trigger_irq(irq_line_1);
 
@@ -128,6 +157,8 @@ void isr0(const void *param)
 
 	/* Validate nested ISR result token */
 	zassert_equal(isr1_result, ISR1_TOKEN, "isr1 did not execute");
+
+	ISR0_LOCK_IRQ();
 
 	k_str_out_count("ISR0: Leave\n");
 }
