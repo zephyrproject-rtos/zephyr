@@ -20,8 +20,7 @@ config CLOCK_CONTROL_NRF_ONOFF
 	  this config can be disabled to reduce image size.
 
 menuconfig CLOCK_CONTROL_NRF
-	bool "NRF Clock controller support"
-	default n
+	bool "NRF Clock controller support [DEPRECATED]"
 	depends on DT_HAS_NORDIC_NRF_CLOCK_ENABLED
 	select ONOFF
 	select NRFX_CLOCK if !CLOCK_CONTROL_NRF_FORCE_ALT
