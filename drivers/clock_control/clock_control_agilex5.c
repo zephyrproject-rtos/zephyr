@@ -8,6 +8,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
 #include <zephyr/logging/log.h>
+#include "common_helpers.h"
 
 #include "clock_control_agilex5_ll.h"
 
@@ -78,6 +79,8 @@ static int clock_get_rate(const struct device *dev, clock_control_subsys_t sub_s
 }
 
 static DEVICE_API(clock_control, clock_api) = {
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = clock_get_rate,
 };
 

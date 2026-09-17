@@ -13,22 +13,11 @@
 #include <zephyr/dt-bindings/clock/kinetis_mcg.h>
 #include <soc.h>
 #include <fsl_clock.h>
+#include "common_helpers.h"
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_mcg);
-
-static int mcux_mcg_on(const struct device *dev,
-		       clock_control_subsys_t sub_system)
-{
-	return 0;
-}
-
-static int mcux_mcg_off(const struct device *dev,
-			clock_control_subsys_t sub_system)
-{
-	return 0;
-}
 
 static int mcux_mcg_get_rate(const struct device *dev,
 			     clock_control_subsys_t sub_system,
@@ -56,8 +45,8 @@ static int mcux_mcg_get_rate(const struct device *dev,
 }
 
 static DEVICE_API(clock_control, mcux_mcg_driver_api) = {
-	.on = mcux_mcg_on,
-	.off = mcux_mcg_off,
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = mcux_mcg_get_rate,
 };
 

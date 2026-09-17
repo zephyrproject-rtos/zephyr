@@ -10,26 +10,11 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include "common_helpers.h"
 
 struct clock_control_ra_subclk_cfg {
 	uint32_t rate;
 };
-
-static int clock_control_renesas_ra_subclk_on(const struct device *dev, clock_control_subsys_t sys)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sys);
-
-	return -ENOTSUP;
-}
-
-static int clock_control_renesas_ra_subclk_off(const struct device *dev, clock_control_subsys_t sys)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sys);
-
-	return -ENOTSUP;
-}
 
 static int clock_control_renesas_ra_subclk_get_rate(const struct device *dev,
 						    clock_control_subsys_t sys, uint32_t *rate)
@@ -44,8 +29,8 @@ static int clock_control_renesas_ra_subclk_get_rate(const struct device *dev,
 }
 
 static DEVICE_API(clock_control, clock_control_renesas_ra_subclk_api) = {
-	.on = clock_control_renesas_ra_subclk_on,
-	.off = clock_control_renesas_ra_subclk_off,
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = clock_control_renesas_ra_subclk_get_rate,
 };
 
