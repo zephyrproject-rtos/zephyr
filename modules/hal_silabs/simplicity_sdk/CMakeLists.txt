@@ -480,6 +480,14 @@ if(CONFIG_SILABS_SISDK_SE)
     ${security_dir}/sl_component/se_manager/inc
   )
 
+  if(CONFIG_MULTITHREADING)
+    zephyr_library_compile_definitions(SL_SE_MANAGER_THREADING=1)
+    dt_nodelabel(se_path NODELABEL "se")
+    if(DEFINED se_path)
+      zephyr_library_compile_definitions(SL_SE_MANAGER_YIELD_WHILE_WAITING_FOR_COMMAND_COMPLETION=1)
+    endif()
+  endif()
+
   zephyr_library_sources(
     ${security_dir}/sl_component/se_manager/src/sl_se_manager.c
     ${security_dir}/sl_component/se_manager/src/sl_se_manager_util.c
