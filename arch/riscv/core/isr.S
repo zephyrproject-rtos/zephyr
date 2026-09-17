@@ -811,7 +811,7 @@ is_interrupt:
 
 on_irq_stack:
 
-#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+#if defined(CONFIG_RISCV_NESTED_INTERRUPTS) && !defined(CONFIG_RISCV_HAS_CLIC)
 	/*
 	 * Mask this interrupt and the lower priority ones, so only a higher
 	 * priority one can preempt the ISR. The masked bits are saved on the
@@ -861,7 +861,7 @@ on_irq_stack:
 	csrrc t1, RV_IE, t2
 	and t2, t2, t1
 	sr t2, 0(sp)
-#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS && !CONFIG_RISCV_HAS_CLIC */
 
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	call __soc_handle_all_irqs
@@ -912,7 +912,7 @@ on_irq_stack:
 
 #endif
 
-#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+#if defined(CONFIG_RISCV_NESTED_INTERRUPTS) && !defined(CONFIG_RISCV_HAS_CLIC)
 	/* The ISR returns with interrupts disabled, so this cannot trap yet */
 	lr t1, 0(sp)
 	csrs RV_IE, t1
@@ -922,7 +922,7 @@ on_irq_stack:
 	csrs RV_IEH, t1
 #endif
 	addi sp, sp, 16
-#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS && !CONFIG_RISCV_HAS_CLIC */
 
 irq_done:
 	/* Decrement _current_cpu->nested */
