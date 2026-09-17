@@ -1,5 +1,7 @@
 common:
-  platform_allow: native_sim
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
   tags: pm
 tests:
   pm.system: {}
