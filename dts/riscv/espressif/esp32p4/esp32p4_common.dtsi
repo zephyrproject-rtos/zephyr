@@ -599,6 +599,16 @@
 			status = "disabled";
 		};
 
+		ppa: ppa@50087000 {
+			compatible = "espressif,esp32-ppa";
+			reg = <0x50087000 DT_SIZE_K(4)>,
+			      <0x50088000 DT_SIZE_K(4)>;
+			reg-names = "ppa", "dma2d";
+			interrupts = <DMA2D_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		dma_axi: dma@5008a000 {
 			compatible = "espressif,esp32-gdma";
 			reg = <0x5008a000 DT_SIZE_K(4)>;
