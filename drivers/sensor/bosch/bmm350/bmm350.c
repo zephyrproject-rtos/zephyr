@@ -1078,6 +1078,38 @@ static DEVICE_API(sensor, bmm350_api_funcs) = {
 #endif
 };
 
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(bosch_bmm350, i3c)
+/* The BMM350 defaults to I2C mode after a reset, and swaps to I3C mode when
+ * addressed via a CCC.
+ *
+ * During standard start-up of an I3C controller using this sensor, the
+ * controller will issue a SETDASA to the sensor, which tells it to go into I3C
+ * mode.  Several INIT_PRIORITYs later, the sensor itself will initialize
+ * through bmm350_init_chip, performing the soft reset and swapping it to I2C
+ * mode.  Redo the SETDASA to ourselves here so the sensor stays I3C.
+ */
+static int bmm350_i3c_restore_dynamic_addr(const struct device *dev)
+{
+	const struct bmm350_config *config = dev->config;
+	const struct i3c_iodev_data *iodev_data = config->bus.rtio.iodev->data;
+	struct i3c_device_desc *desc;
+	uint8_t dynamic_addr;
+
+	desc = i3c_device_find(iodev_data->bus, &config->bus.rtio.i3c.id);
+	if (desc == NULL) {
+		return -ENODEV;
+	}
+
+	/* The target dropped its dynamic address in the reset; the descriptor
+	 * has to agree before SETDASA will be accepted again.
+	 */
+	dynamic_addr = desc->dynamic_addr;
+	desc->dynamic_addr = 0U;
+
+	return i3c_bus_setdasa(desc, dynamic_addr);
+}
+#endif
+
 static int bmm350_init_chip(const struct device *dev)
 {
 	const struct bmm350_config *config = dev->config;
@@ -1106,6 +1138,16 @@ static int bmm350_init_chip(const struct device *dev)
 		goto err_poweroff;
 	}
 	k_usleep(BMM350_SOFT_RESET_DELAY);
+
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(bosch_bmm350, i3c)
+	if (config->bus.rtio.type == BMM350_BUS_TYPE_I3C) {
+		ret = bmm350_i3c_restore_dynamic_addr(dev);
+		if (ret != 0) {
+			LOG_ERR("failed to restore I3C mode after soft reset (%d)", ret);
+			goto err_poweroff;
+		}
+	}
+#endif
 	/* Read chip ID (can only be read in sleep mode)*/
 	if (bmm350_reg_read(dev, BMM350_REG_CHIP_ID, &chip_id[0], sizeof(chip_id)) < 0) {
 		LOG_ERR("failed reading chip id");
