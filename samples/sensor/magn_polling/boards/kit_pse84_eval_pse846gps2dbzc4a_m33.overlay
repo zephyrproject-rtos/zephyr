@@ -1,0 +1,68 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ */
+
+/ {
+	aliases {
+		magn0 = &bmm350;
+	};
+};
+
+/* CFGOUT3 mode is mandatory on the I3C pads: without it the ACK detector
+ * cannot sample SDA and every transfer reports ADDRESS_NACK.
+ */
+&p3_0_i3c0_i3c_scl {
+	infineon,cfgout3-mode;
+	infineon,cfgout3-pullup-ohms = <1100>;
+	bias-pull-up;
+};
+
+&p3_1_i3c0_i3c_sda {
+	infineon,cfgout3-mode;
+	infineon,cfgout3-pullup-ohms = <1100>;
+	bias-pull-up;
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+/* CLK_HF[13] is 100 MHz; divide by two for a 50 MHz I3C core clock. */
+&peri0_group9_8bit_0 {
+	status = "okay";
+	clock-div = <2>;
+};
+
+&i3c0 {
+	status = "okay";
+	clocks = <&peri0_group9_8bit_0>;
+	pinctrl-0 = <&p3_0_i3c0_i3c_scl &p3_1_i3c0_i3c_sda>;
+	pinctrl-names = "default";
+	i3c-scl-hz = <1000000>;
+	i2c-scl-hz = <400000>;
+	primary-controller-da = <0x08>;
+
+	/* The BMM350 datasheet requires 160ns per Table 14, far above the
+	 * binding default of 24ns.
+	 * t_low set to 600ns to give margin over the FM+ I2C minimum of 500ns -
+	 * this sensor starts in I2C mode until it gets DAA'd, after which it
+	 * transitions into I3C mode
+	 */
+	od-thigh-min-ns = <160>;
+	od-tlow-min-ns = <600>;
+
+	/* While in I2C mode, it applies an I2C spike filter, so it discards a
+	 * START shorter than 120 ns (determined through testing) and the 38.4ns
+	 * I3C minimum loses the very first broadcast
+	 */
+	tcas-min-ns = <260>;
+
+	bmm350: bmm350@150000077010331000 {
+		compatible = "bosch,bmm350";
+		reg = <0x15 0x00000770 0x10331000>;
+		/* Observed to only answer to the static address, despite
+		 * ACK'ing SETDASA */
+		assigned-address = <0x15>;
+	};
+};
