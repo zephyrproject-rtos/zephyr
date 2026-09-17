@@ -351,7 +351,7 @@ static void cy8cmbr3xxx_isr_handler(const struct device *dev, struct gpio_callba
 {
 	struct cy8cmbr3xxx_data *data = CONTAINER_OF(cb, struct cy8cmbr3xxx_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 
 static void cy8cmbr3xxx_reset(const struct device *dev)

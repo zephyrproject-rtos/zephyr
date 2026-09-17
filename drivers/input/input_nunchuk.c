@@ -122,7 +122,7 @@ static void nunchuk_poll(struct k_work *work)
 	}
 
 	if (data->interval_ms.ticks != 0) {
-		k_work_reschedule(dwork, data->interval_ms);
+		input_work_reschedule(dwork, data->interval_ms);
 	}
 }
 
@@ -134,7 +134,7 @@ int nunchuk_read(const struct device *dev)
 		return -EALREADY;
 	}
 
-	k_work_reschedule(&data->work, K_NO_WAIT);
+	input_work_reschedule(&data->work, K_NO_WAIT);
 	return 0;
 }
 
@@ -195,7 +195,7 @@ static int nunchuk_init(const struct device *dev)
 
 	k_work_init_delayable(&data->work, nunchuk_poll);
 	if (data->interval_ms.ticks != 0) {
-		return k_work_reschedule(&data->work, data->interval_ms);
+		return input_work_reschedule(&data->work, data->interval_ms);
 	}
 
 	return 0;

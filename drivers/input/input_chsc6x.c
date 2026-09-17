@@ -117,7 +117,7 @@ static void chsc6x_isr_handler(const struct device *dev, struct gpio_callback *c
 {
 	struct chsc6x_data *data = CONTAINER_OF(cb, struct chsc6x_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 
 static int chsc6x_chip_init(const struct device *dev)

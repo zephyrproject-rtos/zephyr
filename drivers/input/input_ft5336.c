@@ -167,14 +167,14 @@ static void ft5336_isr_handler(const struct device *dev,
 {
 	struct ft5336_data *data = CONTAINER_OF(cb, struct ft5336_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #else
 static void ft5336_timer_handler(struct k_timer *timer)
 {
 	struct ft5336_data *data = CONTAINER_OF(timer, struct ft5336_data, timer);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #endif
 

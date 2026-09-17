@@ -130,8 +130,8 @@ static void esp32_touch_handle_active(const struct device *dev)
 				&dev_cfg->channel_data[i];
 
 			channel_data->status = channel_status;
-			(void)k_work_reschedule(&channel_data->work,
-						K_MSEC(dev_cfg->debounce_interval_ms));
+			(void)input_work_reschedule(&channel_data->work,
+						    K_MSEC(dev_cfg->debounce_interval_ms));
 		}
 	}
 }

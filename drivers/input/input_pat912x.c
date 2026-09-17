@@ -133,7 +133,7 @@ static void pat912x_motion_work_handler(struct k_work *work)
 	}
 
 	/* Trigger one more scan in case more data is available. */
-	k_work_submit(&data->motion_work);
+	input_work_submit(&data->motion_work);
 }
 
 static void pat912x_motion_handler(const struct device *gpio_dev,
@@ -143,7 +143,7 @@ static void pat912x_motion_handler(const struct device *gpio_dev,
 	struct pat912x_data *data = CONTAINER_OF(
 			cb, struct pat912x_data, motion_cb);
 
-	k_work_submit(&data->motion_work);
+	input_work_submit(&data->motion_work);
 }
 
 int pat912x_set_resolution(const struct device *dev,
@@ -284,7 +284,7 @@ static int pat912x_init(const struct device *dev)
 	}
 
 	/* Trigger an initial read to clear any pending motion status.*/
-	k_work_submit(&data->motion_work);
+	input_work_submit(&data->motion_work);
 
 	ret = pm_device_runtime_enable(dev);
 	if (ret < 0) {

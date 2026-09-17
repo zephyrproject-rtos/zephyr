@@ -155,7 +155,7 @@ static void mcux_tsi_isr(const struct device *dev)
 
 		/* Signal scan complete and schedule processing work */
 		k_sem_give(&data->scan_sem);
-		k_work_submit(&data->process_work);
+		input_work_submit(&data->process_work);
 	}
 
 	if (status & kTSI_OutOfRangeFlag) {
@@ -205,14 +205,14 @@ static void mcux_tsi_scan_work_handler(struct k_work *work)
 	}
 
 	/* Schedule next scan */
-	k_work_schedule(&data->scan_work, K_MSEC(config->scan_period_ms));
+	input_work_schedule(&data->scan_work, K_MSEC(config->scan_period_ms));
 }
 
 static void mcux_tsi_start_scan(const struct device *dev)
 {
 	struct mcux_tsi_data *data = dev->data;
 
-	k_work_schedule(&data->scan_work, K_NO_WAIT);
+	input_work_schedule(&data->scan_work, K_NO_WAIT);
 }
 
 static int mcux_tsi_init(const struct device *dev)
