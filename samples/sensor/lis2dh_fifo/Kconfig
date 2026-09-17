@@ -1,0 +1,14 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+menu "LIS2DH FIFO sample"
+
+config LIS2DH_FIFO_HW_TEST
+	bool "Enable the finite hardware FIFO self-test"
+	help
+	  Validate decoded frame counts and timestamp ordering while the sample
+	  runs. The test prints PASS after ten valid FIFO batches.
+
+endmenu

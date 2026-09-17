@@ -753,6 +753,10 @@ New APIs and options
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_IS_CONFIGURABLE`
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE_IS_CONFIGURABLE`
 
+* Sensor
+
+  * Added LIS2DH FIFO streaming through the Sensor Async API, including
+    watermark and full triggers, RTIO delivery, and decoder support.
 
 * USB Type-C
 
