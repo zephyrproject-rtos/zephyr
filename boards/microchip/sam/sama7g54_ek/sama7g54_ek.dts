@@ -292,7 +292,7 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_gmac1_default>;
-	phy-connection-type = "mii";
+	phy-connection-type = "rmii";
 	phy-handle = <&gmac1_phy>;
 	ref-clk-source = "external";
 
