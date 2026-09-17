@@ -10,6 +10,9 @@
 #include <zephyr/usb/usbh.h>
 #include <zephyr/drivers/usb/uhc.h>
 
+/** Value of usb_host_interface.alternate before any alternate is selected */
+#define USBH_IFACE_ALT_NONE	UINT8_MAX
+
 /* Callback type to be used for e.g. synchronous requests */
 typedef int (*usbh_udev_cb_t)(struct usb_device *const udev,
 			      struct uhc_transfer *const xfer);

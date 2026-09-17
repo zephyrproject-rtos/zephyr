@@ -259,11 +259,15 @@ int usbh_device_interface_set(struct usb_device *const udev,
 		goto error;
 	}
 
-	/* Shutdown current interface alternate */
-	err = device_interface_modify(udev, PIPE_OP_DOWN, iface, cur_alt);
-	if (err) {
-		LOG_ERR("Failed to shutdown interface %u alternate %u", iface, cur_alt);
-		goto error;
+	/* Shutdown current interface alternate, skip when this is the
+	 * first time an alternate is selected for this interface.
+	 */
+	if (cur_alt != USBH_IFACE_ALT_NONE) {
+		err = device_interface_modify(udev, PIPE_OP_DOWN, iface, cur_alt);
+		if (err) {
+			LOG_ERR("Failed to shutdown interface %u alternate %u", iface, cur_alt);
+			goto error;
+		}
 	}
 
 	/* Setup new interface alternate */
@@ -359,6 +363,9 @@ static void reset_configuration(struct usb_device *const udev)
 
 	/* Reset all interface pointers */
 	memset(udev->ifaces, 0, sizeof(udev->ifaces));
+	for (uint8_t i = 0; i < ARRAY_SIZE(udev->ifaces); i++) {
+		udev->ifaces[i].alternate = USBH_IFACE_ALT_NONE;
+	}
 
 	udev->actual_cfg = 0;
 	udev->state = USB_STATE_ADDRESSED;
