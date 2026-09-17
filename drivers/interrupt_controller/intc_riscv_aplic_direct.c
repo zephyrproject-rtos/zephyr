@@ -163,7 +163,8 @@ void aplic_irq_handler(const struct device *dev)
 
 	/* Claim the interrupt - Clears pending bit if possible */
 	const uint32_t claimi_offset = aplic_claimi_off(arch_proc_id());
-	const uint32_t local_irq = rd32(cfg->base, claimi_offset) >> APLIC_INTERRUPT_IDENTITY_SHIFT;
+	const uint32_t claimi = rd32(cfg->base, claimi_offset);
+	const uint32_t local_irq = claimi >> APLIC_INTERRUPT_IDENTITY_SHIFT;
 
 	/*
 	 * Save IRQ in save_irq. To be used, if need be, by
@@ -171,6 +172,11 @@ void aplic_irq_handler(const struct device *dev)
 	 * as IRQ number held by the claim_complete register is
 	 * cleared upon read.
 	 */
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	const uint32_t outer_irq = save_irq[arch_curr_cpu()->id];
+	const struct device *outer_dev = save_dev[arch_curr_cpu()->id];
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 	save_irq[arch_curr_cpu()->id] = local_irq;
 	save_dev[arch_curr_cpu()->id] = dev;
 
@@ -183,9 +189,31 @@ void aplic_irq_handler(const struct device *dev)
 		z_irq_spurious(NULL);
 	}
 
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	const uint32_t thres_offset = aplic_ithreshold_off(arch_proc_id());
+	const uint32_t outer_thres = rd32(cfg->base, thres_offset);
+
+	/*
+	 * The threshold masks this priority number and above, so only a more
+	 * urgent source can preempt. It also holds back a level triggered
+	 * source, which the claim does not clear.
+	 */
+	wr32(cfg->base, thres_offset, claimi & APLIC_IPRIO_MASK);
+	arch_irq_unlock(RV_STATUS_IE);
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = &cfg->isr_table[local_irq];
 	ite->isr(ite->arg);
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* Undo the above in the opposite order */
+	(void)arch_irq_lock();
+	wr32(cfg->base, thres_offset, outer_thres);
+
+	save_irq[arch_curr_cpu()->id] = outer_irq;
+	save_dev[arch_curr_cpu()->id] = outer_dev;
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 }
 
 int aplic_direct_init(const struct device *dev)
