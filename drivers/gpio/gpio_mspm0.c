@@ -51,6 +51,11 @@ struct gpio_mspm0_config {
 	 * A value of 0 marks a non-bonded (package-absent) pin.
 	 */
 	const uint32_t *pinmux;
+	/*
+	 * Per-instance IRQ registration — needed on SoCs where each GPIO port
+	 * has a dedicated NVIC vector
+	 */
+	void (*irq_config_func)(const struct device *dev);
 };
 
 struct gpio_mspm0_data {
@@ -260,30 +265,28 @@ static uint32_t gpio_mspm0_get_pending_int(const struct device *port)
 	return sys_read32(config->base + GPIO_IIDX);
 }
 
-static void gpio_mspm0_isr(const struct device *port)
+static void gpio_mspm0_isr(const void *arg)
 {
-	struct gpio_mspm0_data *data;
-	const struct gpio_mspm0_config *config;
-	const struct device *dev_list[] = {
+	ARG_UNUSED(arg);
+
+	static const struct device *const dev_list[] = {
 		DEVICE_DT_GET_OR_NULL(GPIOA_NODE),
 		DEVICE_DT_GET_OR_NULL(GPIOB_NODE),
 		DEVICE_DT_GET_OR_NULL(GPIOC_NODE),
 	};
 
 	for (uint8_t i = 0; i < ARRAY_SIZE(dev_list); i++) {
-		uint32_t status;
-
 		if (dev_list[i] == NULL) {
 			continue;
 		}
 
-		data = dev_list[i]->data;
-		config = dev_list[i]->config;
+		const struct gpio_mspm0_config *config = dev_list[i]->config;
+		uint32_t status = sys_read32(config->base + GPIO_MIS);
 
-		status = sys_read32(config->base + GPIO_MIS);
-
-		sys_write32(status, config->base + GPIO_ICLR);
 		if (status != 0) {
+			sys_write32(status, config->base + GPIO_ICLR);
+			struct gpio_mspm0_data *data = dev_list[i]->data;
+
 			gpio_fire_callbacks(&data->callbacks, dev_list[i], status);
 		}
 	}
@@ -292,23 +295,16 @@ static void gpio_mspm0_isr(const struct device *port)
 static int gpio_mspm0_init(const struct device *dev)
 {
 	const struct gpio_mspm0_config *cfg = dev->config;
-	static bool init_irq = true;
 
-	/* Reset and enable GPIO banks */
+	/* Reset and enable this GPIO port */
 	sys_write32(GPIO_MSPM0_RSTCTL_KEY_UNLOCK_W | GPIO_MSPM0_RSTCTL_RESETSTKYCLR_CLR |
 			    GPIO_MSPM0_RSTCTL_RESETASSERT_ASSERT,
 		    cfg->base + GPIO_RSTCTL);
 	sys_write32(GPIO_MSPM0_PWREN_KEY_UNLOCK_W | GPIO_MSPM0_PWREN_ENABLE_ENABLE,
 		    cfg->base + GPIO_PWREN);
 
-	/* All the interrupt port share the same irq number, do it once */
-	if (init_irq) {
-		init_irq = false;
-
-		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), gpio_mspm0_isr,
-			    DEVICE_DT_INST_GET(0), 0);
-		irq_enable(DT_INST_IRQN(0));
-	}
+	/* Register this port's NVIC vector. */
+	cfg->irq_config_func(dev);
 
 	return 0;
 }
@@ -368,6 +364,13 @@ static DEVICE_API(gpio, gpio_mspm0_driver_api) = {
 	DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx, pinmux),
 
 #define GPIO_DEVICE_INIT(n, __suffix, __base_addr)                                                 \
+	static void gpio_mspm0_irq_config_##__suffix(const struct device *dev)                     \
+	{                                                                                          \
+		ARG_UNUSED(dev);                                                                   \
+		IRQ_CONNECT(DT_IRQ_BY_IDX(n, 0, irq), DT_IRQ_BY_IDX(n, 0, priority),               \
+			    gpio_mspm0_isr, DEVICE_DT_GET(n), 0);                                  \
+		irq_enable(DT_IRQ_BY_IDX(n, 0, irq));                                              \
+	}                                                                                          \
 	static const uint32_t gpio##__suffix##_pinmux[] = {                                        \
 		DT_FOREACH_PROP_ELEM(n, pinmux, GPIO_MSPM0_PINMUX_ELEM)};                          \
 	static const struct gpio_mspm0_config gpio_mspm0_cfg_##__suffix = {                        \
@@ -378,6 +381,7 @@ static DEVICE_API(gpio, gpio_mspm0_driver_api) = {
 			},                                                                         \
 		.base = (mem_addr_t)__base_addr,                                                   \
 		.pinmux = gpio##__suffix##_pinmux,                                                 \
+		.irq_config_func = gpio_mspm0_irq_config_##__suffix,                               \
 	};                                                                                         \
 	static struct gpio_mspm0_data gpio_mspm0_data_##__suffix;                                  \
 	DEVICE_DT_DEFINE(n, gpio_mspm0_init, NULL, &gpio_mspm0_data_##__suffix,                    \
