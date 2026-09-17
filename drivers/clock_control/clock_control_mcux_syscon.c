@@ -183,6 +183,23 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_SOC_SERIES_MCXW2XX)
+	if ((uint32_t)sub_system == MCUX_FRO_1M_CLK) {
+		CLOCK_Enable1MFRO(true);
+	}
+#endif
+
+#if defined(CONFIG_SOC_SERIES_MCXW2XX) && DT_HAS_COMPAT_STATUS_OKAY(nxp_anactrl_freqme)
+	if ((uint32_t)sub_system == MCUX_ANALOG_CTRL_CLK) {
+		/* The ANACTRL freq-measure register block has its own gate
+		 * (kCLOCK_Freqme) in addition to the analog-control gate; both
+		 * must be enabled for FREQ_ME_CTRL to be writable.
+		 */
+		CLOCK_EnableClock(kCLOCK_AnalogCtrl);
+		CLOCK_EnableClock(kCLOCK_Freqme);
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
@@ -538,6 +555,14 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 	case MCUX_EXT_CLK:
 		*rate = CLOCK_GetSysOscFreq();
+		break;
+#endif
+#if defined(CONFIG_SOC_SERIES_MCXW2XX)
+	case MCUX_MAIN_CLK:
+		*rate = CLOCK_GetCoreSysClkFreq();
+		break;
+	case MCUX_FRO_1M_CLK:
+		*rate = CLOCK_GetFro1MFreq();
 		break;
 #endif
 
