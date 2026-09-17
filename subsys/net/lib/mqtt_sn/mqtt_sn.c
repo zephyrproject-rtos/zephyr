@@ -1080,8 +1080,20 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 			LOG_WRN("Ping ran out of retries");
 			mqtt_sn_disconnect_internal(client);
 			gw = SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateways, gw, next);
-			LOG_DBG("Removing non-responsive GW 0x%02x", gw->gw_id);
-			mqtt_sn_gw_destroy(client, gw);
+			/*
+			 * Only drop a discovered gateway (bounded adv_timer, same
+			 * sentinel process_advertise() already checks) here. A
+			 * manually pinned one (adv_timer == -1, from mqtt_sn_add_gw())
+			 * has no other way to ever be re-learned - a static-gateway
+			 * client would be left with no address to reconnect to at all,
+			 * only recoverable by accident if that gateway happens to also
+			 * broadcast an unsolicited ADVERTISE. Also guards against a
+			 * NULL gw if the list was already empty.
+			 */
+			if (gw != NULL && gw->adv_timer != -1) {
+				LOG_DBG("Removing non-responsive GW 0x%02x", gw->gw_id);
+				mqtt_sn_gw_destroy(client, gw);
+			}
 			return -ETIMEDOUT;
 		}
 

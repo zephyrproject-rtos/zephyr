@@ -36,6 +36,28 @@ static APP_BMEM uint8_t tx_buf[CONFIG_NET_SAMPLE_MQTT_SN_BUFFER_SIZE];
 static APP_BMEM uint8_t rx_buf[CONFIG_NET_SAMPLE_MQTT_SN_BUFFER_SIZE];
 
 static APP_BMEM bool mqtt_sn_connected;
+static APP_BMEM bool subscribed;
+
+static void reconnect_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	/*
+	 * Deferred to its own work item rather than calling mqtt_sn_connect()
+	 * directly from evt_cb(): that callback runs synchronously inside
+	 * mqtt_sn_disconnect_internal(), which cancels client->process_work
+	 * immediately afterwards. A reconnect scheduled inline there raced
+	 * against that cancel and lost - connect.in_progress got armed but
+	 * process_connect() never ran to act on it, sometimes for many minutes,
+	 * until something unrelated (e.g. the gateway's own periodic ADVERTISE)
+	 * happened to schedule client->process_work again. Submitting to the
+	 * system workqueue here instead guarantees this runs strictly after
+	 * mqtt_sn_disconnect_internal() (and its cancel) has fully returned.
+	 */
+	mqtt_sn_connect(&mqtt_client, false, true);
+}
+
+K_WORK_DEFINE(reconnect_work, reconnect_work_handler);
 
 static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 {
@@ -47,6 +69,16 @@ static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 	case MQTT_SN_EVT_DISCONNECTED: /* Disconnected */
 		LOG_INF("MQTT-SN event EVT_DISCONNECTED");
 		mqtt_sn_connected = false;
+		subscribed = false;
+		/*
+		 * Nothing reconnects on its own - not the network layer, not the
+		 * MQTT-SN client. Try again here, whatever the cause (lost
+		 * keepalive, gateway restart, a rejected CONNECT). Reuses the same
+		 * clean_session=true a fresh connect always used, which also drops
+		 * any topics registered under the old session so they get
+		 * re-registered instead of publishing against stale topic IDs.
+		 */
+		k_work_submit(&reconnect_work);
 		break;
 	case MQTT_SN_EVT_ASLEEP: /* Entered ASLEEP state */
 		LOG_INF("MQTT-SN event EVT_ASLEEP");
@@ -78,7 +110,6 @@ static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 
 static int do_work(void)
 {
-	static APP_BMEM bool subscribed;
 	static APP_BMEM int64_t ts;
 	static APP_DMEM struct mqtt_sn_data topic_p = MQTT_SN_DATA_STRING_LITERAL("/uptime");
 	static APP_DMEM struct mqtt_sn_data topic_s = MQTT_SN_DATA_STRING_LITERAL("/number");
