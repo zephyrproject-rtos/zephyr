@@ -68,6 +68,7 @@ void z_mips_enter_irq(uint32_t ipending)
 	z_irq_do_offload();
 #endif
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 	while (ipending) {
 		int index;
 		const struct _isr_table_entry *ite;
@@ -87,6 +88,10 @@ void z_mips_enter_irq(uint32_t ipending)
 			sys_trace_isr_exit();
 		}
 	}
+#else
+	ARG_UNUSED(ipending);
+	z_irq_spurious(NULL);
+#endif
 
 	_current_cpu->nested--;
 
