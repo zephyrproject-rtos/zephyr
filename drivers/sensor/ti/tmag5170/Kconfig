@@ -1,6 +1,7 @@
 # Texas Instruments TMAG5170 high-precision, linear 3D Hall-effect sensor with SPI bus interface
 
 # Copyright (c) 2023 Michal Morsisko
+# Copyright (c) 2026 Swarovski Optik AG & Co. KG
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig TMAG5170
@@ -8,6 +9,9 @@ menuconfig TMAG5170
 	default y
 	depends on DT_HAS_TI_TMAG5170_ENABLED
 	select SPI
+	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_TI_TMAG5170),spi)
+	select RTIO
+	select RTIO_OP_DELAY if SENSOR_ASYNC_API
 	help
 	  Enable driver for TMAG5170 Hall-effect sensor driver
 
