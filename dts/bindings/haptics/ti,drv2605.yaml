@@ -10,13 +10,13 @@ compatible: "ti,drv2605"
 include: i2c-device.yaml
 
 properties:
-  actuator-mode:
+  ti,actuator-mode:
     required: true
     type: string
     enum:
       - "ERM"
       - "LRA"
-  feedback-brake-factor:
+  ti,feedback-brake-factor:
     type: string
     enum:
       - "1X"
@@ -32,7 +32,7 @@ properties:
       Selects the feedback gain ratio between braking gain and driving gain.
       According to the datasheet, a value of 2 ("3X") is valid for most
       actuators.
-  loop-gain:
+  ti,loop-gain:
     type: string
     enum:
       - "LOW"
@@ -43,7 +43,7 @@ properties:
     description: |
       Selects a loop gain for the feedback control. According to the datasheet,
       a value of 2 ("HIGH") is valid for most actuators.
-  vib-rated-mv:
+  ti,vib-rated-mv:
     type: int
     default: 1362
     min: 0
@@ -51,7 +51,7 @@ properties:
     description: |
       Sets the reference voltage for full-scale output during closed-loop
       operation. Defaults to the device reset value.
-  vib-overdrive-mv:
+  ti,vib-overdrive-mv:
     type: int
     default: 3075
     min: 0
