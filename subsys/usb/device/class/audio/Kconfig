@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config USB_DEVICE_AUDIO
-	bool "USB Audio Device Class Driver"
+	bool "USB Audio Device Class Driver [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select USB_COMPOSITE_DEVICE
 	help

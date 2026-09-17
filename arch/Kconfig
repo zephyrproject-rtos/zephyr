@@ -603,7 +603,7 @@ config DYNAMIC_INTERRUPTS
 	  on some architectures increase code size.
 
 config SHARED_INTERRUPTS
-	bool "Set this to enable support for shared interrupts"
+	bool "Set this to enable support for shared interrupts [EXPERIMENTAL]"
 	depends on GEN_SW_ISR_TABLE
 	select EXPERIMENTAL
 	help
