@@ -15,6 +15,14 @@ menuconfig MFD_SILABS_NCP
 
 if MFD_SILABS_NCP
 
+config MFD_SILABS_NCP_BUS_SPI
+	bool "Silicon Labs NCP over SPI"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_SILABS_NCP),spi)
+	depends on SPI
+	depends on GPIO
+	select SPI_ASYNC
+
 config MFD_SILABS_NCP_INIT_PRIORITY
 	int "Initialization priority"
 	default 86
