@@ -87,7 +87,7 @@ static void double_tap_cb(struct input_event *evt, void *user_data)
 			input_report_key(dev, cfg->double_tap_codes[i], 0, true, K_FOREVER);
 		} else {
 			atomic_set(&entry->first_tap, FIRST_TAP_PRESSED);
-			k_work_schedule(&entry->work, K_MSEC(cfg->double_tap_delay_ms));
+			input_work_schedule(&entry->work, K_MSEC(cfg->double_tap_delay_ms));
 		}
 	} else {
 		(void)atomic_cas(&entry->first_tap, FIRST_TAP_PRESSED, FIRST_TAP_RELEASED);
