@@ -15,6 +15,14 @@ config NET_SAMPLE_COAP_SERVER_SERVICE_PORT
 	default 5684 if NET_SAMPLE_COAPS_SERVICE
 	default 5683
 
+config NET_SAMPLE_COAP_MAX_LARGE_TRANSFERS
+	int "Maximum concurrent clients per /large* endpoint"
+	default 4
+
+config NET_SAMPLE_COAP_LARGE_TRANSFER_TIMEOUT_SEC
+	int "Idle time before a stalled /large* transfer's slot can be reused"
+	default 30
+
 if NET_SAMPLE_COAPS_SERVICE
 
 config NET_SAMPLE_PSK_HEADER_FILE
