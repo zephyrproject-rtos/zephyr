@@ -1866,7 +1866,6 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	struct net_linkaddr lladdr = { 0 };
 	bool lladdr_changed = false;
 	struct net_linkaddr *cached_lladdr;
-	struct net_pkt *pending;
 	struct net_nbr *nbr;
 	bool point_to_point = net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_POINTOPOINT);
 
@@ -2020,22 +2019,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 send_pending:
 	/* Next send any pending messages to the peer. */
-	while (!k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
-		pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
-				     K_FOREVER);
-
-		NET_DBG("Sending pending %p to lladdr %s", pending,
-			net_sprint_ll_addr(cached_lladdr->addr, cached_lladdr->len));
-
-		if (net_send_data(pending) < 0) {
-			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
-
-			NET_DBG("Cannot send pkt %p, clearing pending queue", pending);
-			break;
-		}
-
-		net_pkt_unref(pending);
-	}
+	nbr_send_pending(net_ipv6_nbr_data(nbr));
 
 	net_ipv6_nbr_unlock();
 	return true;
