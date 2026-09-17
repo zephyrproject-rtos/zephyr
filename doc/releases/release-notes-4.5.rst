@@ -1435,6 +1435,7 @@ New Drivers
 * Fuel gauge
 
   * :dtcompatible:`adi,adp5360-fuel-gauge` (:github:`105258`)
+  * :dtcompatible:`adi,ltc2941`
 
 * :abbr:`GNSS (Global Navigation Satellite System)`
 

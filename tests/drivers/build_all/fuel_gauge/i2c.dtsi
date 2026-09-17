@@ -68,3 +68,10 @@ adp5360@8 {
 		status = "okay";
 	};
 };
+
+ltc2941@9 {
+	compatible = "adi,ltc2941";
+	reg = <0x9>;
+	status = "okay";
+	rsense-milliohms = <50>;
+};
