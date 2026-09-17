@@ -101,6 +101,61 @@ static void handle_conn_free(const struct gppi_ext_msg *msg)
 	nrfx_gppi_domain_conn_free(msg->conn_free.handle);
 }
 
+#ifdef CONFIG_SOC_VENDOR_NORDIC_GPPI_EXT_ALLOCATOR_DEFER_CONN_REQ
+struct gppi_ext_conn_req {
+	struct gppi_ext_allocator_data *data;
+	struct gppi_ext_msg msg;
+};
+
+K_MSGQ_DEFINE_STATIC_TYPE(conn_msgq, struct gppi_ext_conn_req,
+			  CONFIG_SOC_VENDOR_NORDIC_GPPI_EXT_ALLOCATOR_DEFER_CONN_REQ_CNT);
+
+static void conn_work_handler(struct k_work *work)
+{
+	struct gppi_ext_conn_req req;
+
+	ARG_UNUSED(work);
+
+	while (k_msgq_get(&conn_msgq, &req, K_NO_WAIT) == 0) {
+		if (req.msg.id == GPPI_CONN_ALLOC) {
+			handle_conn_alloc(req.data, &req.msg);
+		} else {
+			handle_conn_free(&req.msg);
+		}
+	}
+}
+
+static K_WORK_DEFINE(conn_work, conn_work_handler);
+#endif
+
+/* Connection requests may result in IRONSIDE calls which block, so they must not be executed
+ * in the IPC receive callback which may run in the interrupt context.
+ */
+static bool defer_conn_msg(struct gppi_ext_allocator_data *data, const struct gppi_ext_msg *msg,
+			   size_t len)
+{
+#ifdef CONFIG_SOC_VENDOR_NORDIC_GPPI_EXT_ALLOCATOR_DEFER_CONN_REQ
+	struct gppi_ext_conn_req req = {.data = data};
+	int ret;
+
+	memcpy(&req.msg, msg, MIN(len, sizeof(req.msg)));
+
+	ret = k_msgq_put(&conn_msgq, &req, K_NO_WAIT);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
+
+	(void)k_work_submit(&conn_work);
+
+	return true;
+#else
+	ARG_UNUSED(data);
+	ARG_UNUSED(msg);
+	ARG_UNUSED(len);
+
+	return false;
+#endif
+}
+
 static void handle_group_alloc(struct gppi_ext_allocator_data *data, const struct gppi_ext_msg *msg)
 {
 	struct gppi_ext_msg rsp;
@@ -145,14 +200,6 @@ static void ep_recv(const void *data, size_t len, void *priv)
 	const struct gppi_ext_msg *msg = data;
 	struct gppi_ext_allocator_data *srv_data = priv;
 
-	if (IS_ENABLED(CONFIG_IRONSIDE_SE_CALL) &&
-	    ((msg->id == GPPI_CONN_ALLOC) || (msg->id == GPPI_CONN_FREE))) {
-		/* If ironside is used then IPC callback must be in the thread context.
-		 * Adding assert to detect if any IPC appears that uses interrupt context.
-		 */
-		__ASSERT_NO_MSG(!k_is_in_irq());
-	}
-
 	if (len < offsetof(struct gppi_ext_msg, conn_alloc)) {
 		return;
 	}
@@ -163,14 +210,18 @@ static void ep_recv(const void *data, size_t len, void *priv)
 			return;
 		}
 
-		handle_conn_alloc(srv_data, msg);
+		if (!defer_conn_msg(srv_data, msg, len)) {
+			handle_conn_alloc(srv_data, msg);
+		}
 		break;
 	case GPPI_CONN_FREE:
 		if (len < GPPI_EXT_MSG_LEN(conn_free)) {
 			return;
 		}
 
-		handle_conn_free(msg);
+		if (!defer_conn_msg(srv_data, msg, len)) {
+			handle_conn_free(msg);
+		}
 		break;
 	case GPPI_GROUP_ALLOC:
 		if (len < GPPI_EXT_MSG_LEN(group_alloc)) {

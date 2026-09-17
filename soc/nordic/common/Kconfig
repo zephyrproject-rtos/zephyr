@@ -148,6 +148,26 @@ config GPPI_EXT_ALLOCATOR
 	  Enable GPPI external allocator server role. Server registers an IPC
 	  endpoint used for cross-core GPPI resource allocation.
 
+config SOC_VENDOR_NORDIC_GPPI_EXT_ALLOCATOR_DEFER_CONN_REQ
+	bool
+	depends on GPPI_EXT_ALLOCATOR
+	depends on MULTITHREADING
+	depends on IRONSIDE_SE_CALL
+	default y
+	help
+	  Handle connection allocation and free requests in the system workqueue
+	  instead of directly in the IPC receive callback. Needed when connection
+	  management may block (for example when it results in IRONSIDE calls)
+	  because the IPC receive callback may run in the interrupt context.
+
+config SOC_VENDOR_NORDIC_GPPI_EXT_ALLOCATOR_DEFER_CONN_REQ_CNT
+	int "Number of GPPI external allocator connection requests pending in the queue"
+	default 4
+	depends on SOC_VENDOR_NORDIC_GPPI_EXT_ALLOCATOR_DEFER_CONN_REQ
+	help
+	  Number of connection requests that can be queued for the deferred
+	  handling. Requests received when the queue is full are dropped.
+
 config GPPI_EXT_ALLOCATOR_CLI
 	bool "GPPI external allocator client"
 	depends on IPC_SERVICE
