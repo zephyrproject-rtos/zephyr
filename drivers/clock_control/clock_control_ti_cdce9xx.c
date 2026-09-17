@@ -869,6 +869,29 @@ static int configure_pll_from_dts(const struct device *dev)
 			if (rc != 0) {
 				return rc;
 			}
+		} else {
+			output = &data->output[2 * i];
+			rc = set_output_pdiv(dev, output, 0);
+			if (rc != 0) {
+				return rc;
+			}
+			rc = set_output_mux(dev, output);
+			if (rc != 0) {
+				return rc;
+			}
+
+			output = &data->output[2 * i + 1];
+			rc = set_output_pdiv(dev, output, 0);
+			if (rc != 0) {
+				return rc;
+			}
+			if (owner_set == false) {
+				output->pll_owner = true;
+			}
+			rc = set_output_mux(dev, output);
+			if (rc != 0) {
+				return rc;
+			}
 		}
 	}
 
@@ -1105,7 +1128,7 @@ static bool verify_common_vco_rate(uint32_t lcm_vco_rate, uint32_t rate_a, uint3
 		}
 	}
 
-	LOG_INF("lcm_loc_rate %u Hz can%sbe divided to get %u and %u", lcm_vco_rate,
+	LOG_INF("lcm_vco_rate %u Hz can%sbe divided to get %u and %u", lcm_vco_rate,
 		vco_rate_ok == true ? " " : " not ", rate_a, rate_b);
 
 	return vco_rate_ok;
