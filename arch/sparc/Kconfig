@@ -21,6 +21,7 @@ config GEN_IRQ_VECTOR_TABLE
 
 config GEN_SW_ISR_TABLE
 	default y
+	depends on GEN_ISR_TABLES
 
 config NUM_IRQS
 	int
