@@ -304,7 +304,8 @@ int lbm_lora_send(const struct device *dev, uint8_t *msg, uint32_t msg_len)
 	return ret;
 }
 
-int lbm_lora_recv(const struct device *dev, uint8_t *msg, uint8_t msg_len, k_timeout_t timeout,
+int lbm_lora_recv(const struct device *dev, uint8_t *msg, uint8_t msg_len,
+		  k_timeout_t packet_search_timeout, k_timeout_t packet_rx_timeout,
 		  int16_t *rssi, int8_t *snr)
 {
 	const struct lbm_lora_config_common *config = dev->config;
@@ -314,6 +315,10 @@ int lbm_lora_recv(const struct device *dev, uint8_t *msg, uint8_t msg_len, k_tim
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &done);
 	ral_status_t status;
 	int ret;
+
+	if (!K_TIMEOUT_EQ(packet_search_timeout, K_NO_WAIT)) {
+		return -ENOTSUP;
+	}
 
 	/* Ensure available, decremented by op_done_work_handler or on timeout */
 	if (!modem_acquire(dev)) {
@@ -348,7 +353,7 @@ int lbm_lora_recv(const struct device *dev, uint8_t *msg, uint8_t msg_len, k_tim
 	}
 
 	/* Wait for the packet to be received */
-	ret = k_poll(&evt, 1, timeout);
+	ret = k_poll(&evt, 1, packet_rx_timeout);
 	if (ret < 0) {
 		if (modem_release(dev)) {
 			LOG_INF("Receive timeout");
