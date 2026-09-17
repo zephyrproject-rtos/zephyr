@@ -29,7 +29,10 @@ COAP_SERVICE_DEFINE(coap_server, NULL, &coap_port, COAP_SERVICE_AUTOSTART);
 #include "certificate.h"
 
 static const sec_tag_t sec_tag_list_verify_none[] = {
+#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) || \
+	defined(CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)
 		SERVER_CERTIFICATE_TAG,
+#endif
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
 		PSK_TAG,
 #endif
@@ -46,6 +49,8 @@ static int setup_dtls(void)
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	int err;
 
+#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) || \
+	defined(CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)
 #if defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC)
 	err = tls_credential_add(SERVER_CERTIFICATE_TAG,
 				 TLS_CREDENTIAL_CA_CERTIFICATE,
@@ -73,6 +78,7 @@ static int setup_dtls(void)
 		LOG_ERR("Failed to register private key: %d", err);
 		return err;
 	}
+#endif /* ECDHE_RSA or ECDHE_ECDSA enabled */
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
 	err = tls_credential_add(PSK_TAG,
