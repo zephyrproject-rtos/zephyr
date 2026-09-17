@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SILABS_CPC
+	bool
+	select CMSIS_RTOS_V2
+	select THREAD_NAME
+	select THREAD_STACK_INFO
+	select THREAD_MONITOR
+	select INIT_STACKS
+	select SILABS_SISDK_SLIST if HAS_SILABS_SISDK
+	help
+	  Build the Silicon Labs CPC (Co-Processor Communication) core in the
+	  primary role. Selected by drivers that talk to a Silicon Labs
+	  co-processor over CPC.
+
+	  The core runs on top of the CMSIS RTOS v2 API. The application must
+	  set NUM_PREEMPT_PRIORITIES to at least 56 and size the CMSIS_V2_*
+	  pools (one thread per bus, mutexes and semaphores for each bus and
+	  endpoint).
