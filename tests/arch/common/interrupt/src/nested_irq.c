@@ -104,6 +104,16 @@
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
+#elif defined(CONFIG_RISCV_NESTED_INTERRUPTS) && defined(CONFIG_RISCV_HAS_AIA)
+/*
+ * In AIA a smaller number is more urgent. MSI mode orders by identity only,
+ * so IRQ1 gets both the smaller priority and the smaller source number.
+ */
+#define IRQ0_LINE	(IRQ_TO_L2(10) | CONFIG_2ND_LVL_INTR_00_OFFSET)
+#define IRQ1_LINE	(IRQ_TO_L2(9) | CONFIG_2ND_LVL_INTR_00_OFFSET)
+
+#define IRQ0_PRIO	2
+#define IRQ1_PRIO	1
 #elif defined(CONFIG_RISCV_NESTED_INTERRUPTS)
 /*
  * Otherwise use the supervisor software and timer interrupts, which an
@@ -138,9 +148,13 @@
 /*
  * A CLIC only lets software set the pending bit of an edge triggered
  * interrupt, the one of a level triggered interrupt follows its input.
+ * An APLIC source is edge triggered, so that software can set it pending.
  */
 #if defined(CONFIG_RISCV_HAS_CLIC)
 #define IRQ_TRIG_FLAGS	1 /* rising edge */
+#elif defined(CONFIG_RISCV_HAS_AIA)
+#include <zephyr/drivers/interrupt_controller/riscv_aplic.h>
+#define IRQ_TRIG_FLAGS	APLIC_SM_EDGE_RISE
 #else
 #define IRQ_TRIG_FLAGS	0
 #endif
