@@ -116,6 +116,14 @@ Additional options are available under :zephyr_file:`subsys/lorawan/native/Kconf
 
 * :kconfig:option:`CONFIG_LORAWAN_NATIVE_DUTY_CYCLE`
 
+Enable adaptive data rate (ADR) with :c:func:`lorawan_enable_adr` to let the network
+adjust the data rate, transmit power and number of transmissions. Automatic data
+rate backoff after loss of network connectivity is not yet supported.
+
+A :c:func:`lorawan_send` call may return ``-EAGAIN`` when it must first send network
+control messages. Retry the application payload after checking
+:c:func:`lorawan_get_payload_sizes`, since the network may have changed the data rate.
+
 API Reference
 *************
 

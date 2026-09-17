@@ -19,17 +19,15 @@ LOG_MODULE_REGISTER(lorawan_native, CONFIG_LORAWAN_LOG_LEVEL);
 
 #define LWAN_MAX_APP_PAYLOAD		242
 #define LWAN_DEFAULT_MAX_PAYLOAD	51
-#define LWAN_MAX_CONF_TRIES		15
+#define LWAN_MAX_NB_TRANS		15
 
 static struct {
 	lorawan_battery_level_cb_t battery_cb;
-	lorawan_dr_changed_cb_t dr_changed_cb;
 } api_state;
 
 struct lwan_ctx lwan_ctx = {
 	.channel_count = LWAN_MAX_CHANNELS,
 	.current_dr = LORAWAN_DR_0,
-	.conf_tries = 1,
 	.dl_callbacks = SYS_SLIST_STATIC_INIT(&lwan_ctx.dl_callbacks),
 };
 
@@ -161,9 +159,7 @@ int lorawan_join(const struct lorawan_join_config *config)
 	if (ret == 0) {
 		LOG_INF("Successfully joined network");
 
-		if (api_state.dr_changed_cb != NULL) {
-			api_state.dr_changed_cb(lwan_ctx.current_dr);
-		}
+		mac_cmd_notify_dr_changed(lwan_ctx.current_dr);
 	} else {
 		LOG_WRN("Join failed: %d", ret);
 	}
@@ -305,7 +301,7 @@ int lorawan_set_conf_msg_tries(uint8_t tries)
 	};
 	struct lwan_req msg = LWAN_REQ(LWAN_REQ_SET_CONF_MSG_TRIES, &tries_req);
 
-	if (tries == 0 || tries > LWAN_MAX_CONF_TRIES) {
+	if (tries == 0 || tries > LWAN_MAX_NB_TRANS) {
 		return -EINVAL;
 	}
 
@@ -348,7 +344,7 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb)
 
 void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb)
 {
-	api_state.dr_changed_cb = cb;
+	mac_cmd_set_dr_changed_cb(cb);
 }
 
 void lorawan_register_link_check_ans_callback(lorawan_link_check_ans_cb_t cb)

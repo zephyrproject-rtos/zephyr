@@ -206,7 +206,7 @@ static void mac_do_set_conf_msg_tries(struct lwan_ctx *ctx,
 {
 	const struct lwan_set_conf_msg_tries_req *tries_req = req->data;
 
-	ctx->conf_tries = tries_req->tries;
+	ctx->mac.nb_trans = tries_req->tries;
 	engine_signal_result(req, 0);
 }
 
