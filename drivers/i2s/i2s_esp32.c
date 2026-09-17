@@ -409,7 +409,7 @@ static void IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 	i2s_hal_rx_stop_link(hal);
 	i2s_hal_rx_disable_intr(hal);
 	i2s_hal_rx_disable_dma(hal);
-	i2s_hal_clear_intr_status(hal, I2S_INTR_MAX);
+	i2s_hal_clear_intr_status(hal, I2S_LL_RX_EVENT_MASK | I2S_LL_EVENT_RX_DSCR_ERR);
 #endif /* SOC_GDMA_SUPPORTED */
 
 	/* Cleared before the status test: a failed stop must not strand STOPPING. */
@@ -652,7 +652,7 @@ static void IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 	i2s_hal_tx_stop_link(hal);
 	i2s_hal_tx_disable_intr(hal);
 	i2s_hal_tx_disable_dma(hal);
-	i2s_hal_clear_intr_status(hal, I2S_INTR_MAX);
+	i2s_hal_clear_intr_status(hal, I2S_LL_TX_EVENT_MASK | I2S_LL_EVENT_TX_DSCR_ERR);
 #endif /* SOC_GDMA_SUPPORTED */
 
 	/* Cleared before the status test: a failed stop must not strand STOPPING. */
