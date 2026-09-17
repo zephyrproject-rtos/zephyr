@@ -616,6 +616,12 @@ New APIs and options
 
 * Kernel
 
+  * Device MMIO register access helpers combining the region lookup with the
+    ``sys_io.h`` accessors: :c:macro:`DEVICE_MMIO_READ32`,
+    :c:macro:`DEVICE_MMIO_WRITE32`, :c:macro:`DEVICE_MMIO_SET_BIT` and the
+    other width and bit variants, with :c:macro:`DEVICE_MMIO_NAMED_READ32` and
+    :c:macro:`DEVICE_MMIO_TOPLEVEL_READ32` style counterparts for named and
+    top-level regions
   * :c:func:`k_thread_runtime_stats_is_enabled`
   * :c:func:`atomic_test_and_set_bit_to`
   * :c:macro:`K_MSGQ_DEFINE_STATIC`
