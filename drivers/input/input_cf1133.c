@@ -253,14 +253,14 @@ static void cf1133_isr_handler(const struct device *dev, struct gpio_callback *c
 {
 	struct cf1133_data *data = CONTAINER_OF(cb, struct cf1133_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #else
 static void cf1133_timer_handler(struct k_timer *timer)
 {
 	struct cf1133_data *data = CONTAINER_OF(timer, struct cf1133_data, timer);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #endif
 
