@@ -605,6 +605,13 @@ New APIs and options
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_NODE`
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST`
 
+* Input
+
+  * :kconfig:option:`CONFIG_INPUT_DEDICATED_WORKQUEUE`
+  * :c:func:`input_work_submit`
+  * :c:func:`input_work_schedule`
+  * :c:func:`input_work_reschedule`
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
