@@ -8,12 +8,12 @@
 
 / {
 	aliases {
-		eeprom-9bit = &eeprom9;
+		eeprom-1 = &spi_eeprom;
 	};
 };
 
 &spi0 {
-	eeprom9: eeprom@0 {
+	spi_eeprom: eeprom@0 {
 		compatible = "atmel,at25";
 		reg = <0x0>;
 		size = <512>;
