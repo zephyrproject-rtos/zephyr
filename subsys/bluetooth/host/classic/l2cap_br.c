@@ -4150,23 +4150,9 @@ static uint16_t l2cap_br_conf_opt_qos(struct bt_l2cap_chan *chan, struct net_buf
 {
 	uint16_t result = BT_L2CAP_CONF_SUCCESS;
 	struct bt_l2cap_conf_opt_qos *opt_qos;
-	struct bt_l2cap_chan *chan_sig;
-	struct bt_l2cap_br *br_chan_sig;
 
-	chan_sig = bt_l2cap_br_lookup_rx_cid(chan->conn, BT_L2CAP_CID_BR_SIG);
-	if (!chan_sig) {
-		LOG_WRN("Ignoring data for unknown channel ID 0x%04x", BT_L2CAP_CID_BR_SIG);
-		result = BT_L2CAP_CONF_REJECT;
-		goto done;
-	}
-
-	br_chan_sig = CONTAINER_OF(chan_sig, struct bt_l2cap_br, chan.chan);
-	if (((br_chan_sig->info_feat_mask & L2CAP_FEAT_QOS_MASK) == 0) ||
-	    ((L2CAP_EXTENDED_FEAT_MASK & L2CAP_FEAT_QOS_MASK) == 0)) {
-		LOG_WRN("Unsupported extended flow spec");
-		result = BT_L2CAP_CONF_REJECT;
-		goto done;
-	}
+	/* QoS validation does not require channel-specific state. */
+	ARG_UNUSED(chan);
 
 	if (len != sizeof(*opt_qos)) {
 		LOG_ERR("qos frame length %zu invalid", len);
@@ -4178,8 +4164,23 @@ static uint16_t l2cap_br_conf_opt_qos(struct bt_l2cap_chan *chan, struct net_buf
 
 	LOG_DBG("QOS Type %u", opt_qos->service_type);
 
+	/* L2CAP implementations are only required to support Best Effort
+	 * service; support for any other service type is optional
+	 * (Core spec Vol 3, Part A, 5.3). Guaranteed service is therefore
+	 * marked unacceptable and Best Effort is counter-proposed with default
+	 * values so the negotiation converges. Rejecting a Best Effort QoS
+	 * option outright would stall the channel in the config state.
+	 */
 	if (opt_qos->service_type == BT_L2CAP_QOS_TYPE_GUARANTEED) {
 		result = BT_L2CAP_CONF_UNACCEPT;
+
+		/* Counter-propose Best Effort. The peer retries its Configuration
+		 * Request based on this proposal, so the service type in the
+		 * unaccepted option must be changed to a type that is acceptable,
+		 * otherwise the peer keeps re-proposing Guaranteed and the
+		 * negotiation never converges.
+		 */
+		opt_qos->service_type = BT_L2CAP_QOS_TYPE_BEST_EFFORT;
 		/* Set to default value */
 		opt_qos->flags = 0x00;
 		/* do not care */
@@ -4782,6 +4783,12 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 			if (result != BT_L2CAP_CONF_SUCCESS) {
 				goto send_rsp;
 			}
+			/* Core spec Vol 3, Part A, 5.3: a positive Configuration
+			 * Response must echo the QoS option that was present in
+			 * the request with the agreed values, otherwise the peer
+			 * keeps re-sending its Configuration Request.
+			 */
+			l2cap_br_conf_add_opt(rsp_buf, opt);
 			break;
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 		case BT_L2CAP_CONF_OPT_RET_FC:
