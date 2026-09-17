@@ -74,6 +74,13 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Input
+
+  * :kconfig:option:`CONFIG_INPUT_DEDICATED_WORKQUEUE`
+  * ``input_work_submit()``
+  * ``input_work_schedule()``
+  * ``input_work_reschedule()``
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
