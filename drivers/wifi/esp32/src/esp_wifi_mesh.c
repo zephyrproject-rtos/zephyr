@@ -330,20 +330,25 @@ int esp_wifi_mesh_get_routing_table(struct esp_wifi_mesh_addr *macs, size_t max,
 	return 0;
 }
 
-static void notify_app(enum esp_wifi_mesh_event event, int reason)
+static void notify_app_with_layer(enum esp_wifi_mesh_event event, int reason, int layer)
 {
 	if (app_event_cb == NULL) {
 		return;
 	}
 
 	struct esp_wifi_mesh_event_info info = {
-		.layer = esp_mesh_get_layer(),
+		.layer = (layer >= 0) ? layer : esp_mesh_get_layer(),
 		.is_root = esp_mesh_is_root(),
 		.routing_table_size = esp_mesh_get_routing_table_size(),
 		.reason = reason,
 	};
 
 	app_event_cb(event, &info);
+}
+
+static void notify_app(enum esp_wifi_mesh_event event, int reason)
+{
+	notify_app_with_layer(event, reason, -1);
 }
 
 /* Translate the vendor mesh events into the Zephyr-native callback. */
@@ -387,6 +392,13 @@ static void mesh_event_handler(void *arg, esp_event_base_t base, int32_t event_i
 	case MESH_EVENT_ROUTING_TABLE_REMOVE:
 		notify_app(ESP_WIFI_MESH_EVENT_ROUTING_TABLE_CHANGE, 0);
 		break;
+	case MESH_EVENT_LAYER_CHANGE: {
+		mesh_event_layer_change_t *layer_change = event_data;
+
+		notify_app_with_layer(ESP_WIFI_MESH_EVENT_LAYER_CHANGE, 0,
+				  layer_change != NULL ? layer_change->new_layer : -1);
+		break;
+	}
 	case MESH_EVENT_TODS_STATE: {
 		mesh_event_toDS_state_t *state = event_data;
 
