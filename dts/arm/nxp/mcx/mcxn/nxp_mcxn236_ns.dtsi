@@ -5,3 +5,12 @@
  */
 
 #include "nxp_mcxn23x_ns.dtsi"
+
+/*
+ * MCXN236 has 1 MiB of flash. Explicit non-secure identity ranges for
+ * flash, mirroring the secure-alias override in nxp_mcxn236.dtsi.
+ */
+&flash {
+	reg = <0 DT_SIZE_M(1)>;
+	ranges = <0x0 0x0 DT_SIZE_M(1)>;
+};
