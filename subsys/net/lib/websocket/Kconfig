@@ -29,6 +29,18 @@ config WEBSOCKET_MAX_CONTEXTS
 	help
 	  How many Websockets can be created in the system.
 
+config WEBSOCKET_DEDICATED_HEAP
+	bool "Use a dedicated heap for websockets"
+	help
+	  Use a dedicated heap for websocket-internal allocations.
+
+config WEBSOCKET_DEDICATED_HEAP_SIZE
+	int "Size of the dedicated websocket heap"
+	depends on WEBSOCKET_DEDICATED_HEAP
+	default 4096
+	help
+	  Size of the dedicated websocket heap (in bytes).
+
 module = NET_WEBSOCKET
 module-dep = NET_LOG
 module-str = Log level for Websocket
