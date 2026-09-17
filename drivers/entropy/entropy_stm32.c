@@ -113,6 +113,16 @@ struct entropy_stm32_rng_dev_data {
 	atomic_t filling_pools;		/* 1 when pools filling is in progress, 0 otherwise */
 	atomic_t pm_locked;		/* 1 when PM is locked for pool refill, 0 otherwise */
 
+	/*
+	 * Keeps track of how many times the RNG has been enabled.
+	 * When non-zero, the RNG HSEM should be held if applicable.
+	 * Notably used in get_entropy_isr() to implement re-entrancy.
+	 * This field is protected by uc_lock which must be a spinlock
+	 * to prevent races with ISRs; a mere atomic_t is not sufficient.
+	 */
+	uint32_t use_count;
+	struct k_spinlock uc_lock;
+
 	RNG_POOL_DEFINE(isr, CONFIG_ENTROPY_STM32_ISR_POOL_SIZE);
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_STM32_THR_POOL_SIZE);
 };
@@ -156,6 +166,7 @@ static void entropy_stm32_hsem_release(void)
 }
 
 /* Note API quirk: on uniprocessor, this returns false! */
+__maybe_unused
 static bool entropy_stm32_hsem_is_owned(void)
 {
 	return z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID);
@@ -235,9 +246,21 @@ static void release_rng(void)
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_cfg->rng;
+	uint32_t old_use_count;
+	k_spinlock_key_t key;
 	int res = 0;
 
 	ASSERT_RNG_HSEM_OWNED();
+
+	key = k_spin_lock(&entropy_stm32_rng_data.uc_lock);
+	old_use_count = entropy_stm32_rng_data.use_count;
+	entropy_stm32_rng_data.use_count--;
+
+	if (old_use_count != 1) {
+		/* We're not the last; keep HSEM held and RNG enabled. */
+		k_spin_unlock(&entropy_stm32_rng_data.uc_lock, key);
+		return;
+	}
 
 	LL_RNG_Disable(rng);
 #if defined(CONFIG_SOC_STM32WB09XX)
@@ -268,10 +291,8 @@ static void release_rng(void)
 #endif /* CONFIG_STM32_HAL2 */
 
 	if (pka_clock_enabled && LL_PKA_IsEnabled(PKA)) {
-		entropy_stm32_hsem_release();
-
 		/* PKA needs RNG clock, so exit here if in use */
-		return;
+		goto done;
 	}
 #endif /* PKA && !CONFIG_SOC_SERIES_STM32WB0X */
 
@@ -301,7 +322,9 @@ static void release_rng(void)
 		__ASSERT_NO_MSG(res == 0);
 	}
 
+done: __maybe_unused
 	entropy_stm32_hsem_release();
+	k_spin_unlock(&entropy_stm32_rng_data.uc_lock, key);
 }
 
 /* This function acquires the HSEM (on applicable series) for RNG access */
@@ -311,28 +334,47 @@ static void acquire_rng(void)
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_cfg->rng;
 	__maybe_unused int res;
+	uint32_t old_use_count;
+	k_spinlock_key_t key;
 
-	entropy_stm32_hsem_acquire();
+	key = k_spin_lock(&entropy_stm32_rng_data.uc_lock);
+	old_use_count = entropy_stm32_rng_data.use_count;
+	entropy_stm32_rng_data.use_count++;
 
-	/* Enabling the RNG clock is not expected to fail */
-	res = clock_control_on(dev_cfg->clock, (clock_control_subsys_t)&dev_cfg->pclken[0]);
-	__ASSERT_NO_MSG(res == 0);
+	if (old_use_count == 0) {
+		ASSERT_RNG_HSEM_NOT_OWNED();
+
+		entropy_stm32_hsem_acquire();
+
+		/* Enabling the RNG clock is not expected to fail */
+		res = clock_control_on(dev_cfg->clock, (clock_control_subsys_t)&dev_cfg->pclken[0]);
+		__ASSERT_NO_MSG(res == 0);
 
 #if defined(CONFIG_SOC_STM32WB09XX)
-	/**
-	 * STM32WB09 RNG clock domain runs at (16 MHz / CLKDIV).
-	 * CLKDIV is 256 after reset which makes the RNG runs VERY slow.
-	 * Configure CLKDIV=1 to ensure RNG runs at an acceptable speed.
-	 */
-	LL_RNG_SetSamplingClockEnableDivider(rng, 0);
+		/**
+		 * STM32WB09 RNG clock domain runs at (16 MHz / CLKDIV).
+		 * CLKDIV is 256 after reset which makes the RNG runs VERY slow.
+		 * Configure CLKDIV=1 to ensure RNG runs at an acceptable speed.
+		 */
+		LL_RNG_SetSamplingClockEnableDivider(rng, 0);
 #endif
 #if HAS_MULTICORE_SHARED_RNG
-	/* RNG configuration could have been changed by the other core */
-	configure_rng();
+		/* RNG configuration could have been changed by the other core */
+		configure_rng();
 #endif /* HAS_MULTICORE_SHARED_RNG */
 
-	LL_RNG_Enable(rng);
-	ll_rng_enable_it(rng);
+		LL_RNG_Enable(rng);
+		ll_rng_enable_it(rng);
+	} else {
+		/*
+		 * If use count is non-zero, we should be holders
+		 * of the RNG HSEM and the TRNG should be enabled.
+		 */
+		ASSERT_RNG_HSEM_OWNED();
+		__ASSERT(LL_RNG_IsEnabled(rng), "RNG should be enabled");
+	}
+
+	k_spin_unlock(&entropy_stm32_rng_data.uc_lock, key);
 }
 
 static int entropy_stm32_got_error(RNG_TypeDef *rng)
@@ -845,45 +887,44 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 	}
 
 	if (len) {
-		/**
-		 * On TRNG without interrupt line, we cannot allow reentrancy,
-		 * so we have to suspend all interrupts. Otherwise, only suspend
-		 * it until we have established ourselves as owner of the TRNG
-		 * to prevent race with a higher priority interrupt handler.
-		 */
-		unsigned int key = irq_lock();
-		bool rng_already_acquired = false;
 #if !IRQLESS_TRNG
-		int irq_enabled = irq_is_enabled(IRQN);
+		/**
+		 * Disable RNG interrupt at NVIC level to ensure this driver's ISR
+		 * cannot preempt us: it would steal random bits our caller wants
+		 * as soon as possible!
+		 *
+		 * It's unnecessary to disable interrupts while doing this because
+		 * modifying NVIC configuration itself is atomic:
+		 * - if we get preempted after irq_disable() completes, higher
+		 *   priority ISRs will see the interrupt is already disabled and
+		 *   leave the re-enabling duty to us, which we will do
+		 *
+		 * - if we get preempted before irq_disable(), higher priority ISRs
+		 *   will disable the IRQ themselves and re-enable it when done;
+		 *   slightly wasteful, but does not cause issues since we will
+		 *   eventually manage to irq_disable() after regaining control.
+		 */
+		int rng_irq_enabled = irq_is_enabled(IRQN);
 
-		rng_already_acquired = (irq_enabled != 0);
 		irq_disable(IRQN);
-		irq_unlock(key);
 #endif /* !IRQLESS_TRNG */
 
-		/* Do not release if IRQ is enabled. RNG will be released in ISR
-		 * when the pools are full. On TRNG without interrupt line, the
-		 * default value of false ensures TRNG is always released.
+		/*
+		 * Ensure the RNG is enabled then poll for entropy.
+		 * We don't need to mask interrupts while polling
+		 * because re-entrant calls will merely increment
+		 * the RNG's use count temporarily, but can never
+		 * make it reach zero since any ISR which completes
+		 * acquire_rng() owns a reference, and any ISR which
+		 * doesn't will eventually call it.
 		 */
-		if (entropy_stm32_hsem_is_owned()) {
-			rng_already_acquired = true;
-		}
-		if (!rng_already_acquired) {
-			acquire_rng();
-		}
-
+		acquire_rng();
 		cnt = generate_from_isr(buf, len);
+		release_rng();
 
-		/* Restore the state of the RNG lock and IRQ */
-		if (!rng_already_acquired) {
-			release_rng();
-		}
-
-#if IRQLESS_TRNG
-		/* Exit critical section */
-		irq_unlock(key);
-#else
-		if (irq_enabled) {
+#if !IRQLESS_TRNG
+		/* Re-enable RNG interrupt at NVIC level if applicable */
+		if (rng_irq_enabled) {
 			irq_enable(IRQN);
 		}
 #endif /* !IRQLESS_TRNG */
