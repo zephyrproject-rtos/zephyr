@@ -16,6 +16,15 @@ menuconfig CLOCK_CONTROL
 
 if CLOCK_CONTROL
 
+config CLOCK_CONTROL_SHELL
+	bool "Clock Control Shell"
+	depends on SHELL
+	help
+	  Enable Clock Control Shell.
+
+	  The Clock Control shell supports invocation of the Clock Control
+	  API operations.
+
 config CLOCK_CONTROL_INIT_PRIORITY
 	int "Clock control init priority"
 	default KERNEL_INIT_PRIORITY_OBJECTS

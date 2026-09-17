@@ -1,6 +1,28 @@
 # Copyright (c) 2026 Carl Zeiss Meditec AG
 # SPDX-License-Identifier: Apache-2.0
 
+description: |
+  CDCE9xx: Flexible Low Power LVCMOS Clock Generator with SSC Support for EMI Reduction.
+
+  Example configuration for a cdce913:
+
+  &i2c {
+      cdce913: cdce913@64 {
+          compatible = "ti,cdce913";
+          reg = <0x64>;
+          input-clock-type = "vcxo";
+          input-frequency = <27000000>;
+
+          pll1 {
+              clock-mult = <10>;     /* multiplier of the pll n */
+              clock-div = <2>;       /* divider of the pll m */
+              ssc = "center-0.25";
+              first-divider = <10>;  /* divider for the first output of pll1 (Y2) */
+              second-divider = <5>;  /* divider for the second output of pll1 (Y3) */
+        };
+      };
+  };
+
 properties:
   input-clock-type:
     type: string
