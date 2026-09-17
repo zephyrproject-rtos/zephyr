@@ -64,7 +64,7 @@ The receiver will output statistics for overall (since boot), current sync
    Receiver role
    [00:00:05.784,698] <inf> iso_broadcast_receiver: Scan started
    [00:00:05.784,698] <inf> iso_broadcast_receiver: Waiting for periodic advertiser
-   [00:00:05.793,304] <inf> iso_broadcast_receiver: Found broadcaster with address 28:3B:AD:F5:EE:0C (random) (RSSI -33)
+   [00:00:05.793,304] <inf> iso_broadcast_receiver: Found broadcaster with address R:28:3B:AD:F5:EE:0C (RSSI -33)
    [00:00:05.793,334] <inf> iso_broadcast_receiver: Periodic advertiser found
    [00:00:05.793,701] <inf> iso_broadcast_receiver: Scan stopped
    [00:00:05.793,701] <inf> iso_broadcast_receiver: Creating Periodic Advertising Sync

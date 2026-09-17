@@ -153,7 +153,7 @@ Sample output
    <inf> gatt_svc: status -> 0
    <inf> wifi_ble_prov: no stored credentials; waiting for provisioning over BLE
    <inf> gatt_svc: advertising as 'Zephyr Wi-Fi Provisioning'
-   <inf> wifi_ble_prov: connected: 4F:0D:14:E8:76:98 (random)
+   <inf> wifi_ble_prov: connected: R:4F:0D:14:E8:76:98
    <inf> wifi_prov: connecting using stored credentials
    <inf> gatt_svc: status -> 2
    <inf> wifi_prov: Wi-Fi connected
