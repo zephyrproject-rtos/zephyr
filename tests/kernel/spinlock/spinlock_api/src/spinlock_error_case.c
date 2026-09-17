@@ -166,19 +166,14 @@ ZTEST(spinlock, test_spinlock_lock_time_limit)
 		return;
 	}
 
-
-
 	TC_PRINT("testing lock time limit, limit is %d!\n", CONFIG_SPIN_LOCK_TIME_LIMIT);
-
 
 	key = k_spin_lock(&timeout_lock);
 
-	/* spin here a while, the spin lock limit is in terms of system clock
-	 * not core clock. So a multiplier is needed here to ensure things
-	 * go well past the time limit.
+	/* Backdate only this lock so the timeout check does not depend on CPU
+	 * speed or require holding interrupts off for the configured limit.
 	 */
-	for (volatile int i = 0; i < CONFIG_SPIN_LOCK_TIME_LIMIT*10; i++) {
-	}
+	timeout_lock.lock_time -= CONFIG_SPIN_LOCK_TIME_LIMIT;
 
 	set_assert_valid(true, false);
 	k_spin_unlock(&timeout_lock, key);
