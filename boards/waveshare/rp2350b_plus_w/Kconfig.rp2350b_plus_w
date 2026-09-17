@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Matheus de Alencar
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RP2350B_PLUS_W
+	select SOC_RP2350B_HAZARD3 if BOARD_RP2350B_PLUS_W_RP2350B_HAZARD3
+	select SOC_RP2350B_M33 if BOARD_RP2350B_PLUS_W_RP2350B_M33
