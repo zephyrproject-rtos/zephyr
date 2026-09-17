@@ -12,7 +12,7 @@ compatible: "titanmec,tm6605"
 include: i2c-device.yaml
 
 properties:
-  default-effect:
+  titanmec,default-effect:
     type: int
     default: 47
     description: |
