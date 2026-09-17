@@ -8,6 +8,7 @@ tests:
   net.vlan.separate_net_buf:
     extra_configs:
       - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=n
+      - CONFIG_ZTEST_STACK_SIZE=2048
   net.vlan.header_reserved:
     extra_configs:
       - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=y
