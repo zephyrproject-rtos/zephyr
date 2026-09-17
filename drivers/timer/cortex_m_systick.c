@@ -581,5 +581,14 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_SMP
+void smp_timer_init(void)
+{
+	/* No-op: this driver keeps a single system clock, owned by the CPU
+	 * that started it, so a secondary has nothing to set up.
+	 */
+}
+#endif /* CONFIG_SMP */
+
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
 	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
