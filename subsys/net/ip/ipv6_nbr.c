@@ -288,8 +288,12 @@ static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 		pkt = k_fifo_get(&data->pending_queue, K_FOREVER);
 
 		NET_DBG("Releasing pending pkt %p (ref %ld)",
-			pkt, atomic_get(&pkt->atomic_ref) - 1);
+			pkt, atomic_get(&pkt->atomic_ref) - 2);
 
+		/* Reference taken when queued */
+		net_pkt_unref(pkt);
+
+		/* Reference handed over by the sender */
 		net_pkt_unref(pkt);
 	}
 }
