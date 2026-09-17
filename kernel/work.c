@@ -15,6 +15,7 @@
 #include <zephyr/spinlock.h>
 #include <errno.h>
 #include <ksched.h>
+#include <kernel_internal.h>
 #include <scheduler.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
@@ -899,6 +900,33 @@ void k_work_queue_start(struct k_work_q *queue,
 
 	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 }
+
+/* Start the work queues defined with K_WORK_QUEUE_DEFINE(). Runs once the
+ * kernel is up, before POST_KERNEL device init, so drivers may submit work to
+ * them from their init functions.
+ */
+static void work_queue_static_init(void)
+{
+	STRUCT_SECTION_FOREACH(z_static_work_q_data, data) {
+		const struct k_work_queue_config cfg = {
+#ifdef CONFIG_THREAD_NAME
+			.name = data->init_name,
+#endif /* CONFIG_THREAD_NAME */
+			.no_yield = data->init_no_yield,
+			/* Static work queues are essential, so they cannot be stopped. */
+			.essential = true,
+#ifdef CONFIG_WORKQUEUE_WORK_TIMEOUT
+			.work_timeout_ms = data->init_work_timeout_ms,
+#endif /* CONFIG_WORKQUEUE_WORK_TIMEOUT */
+		};
+
+		k_work_queue_init(data->init_queue);
+		k_work_queue_start(data->init_queue, data->init_stack, data->init_stack_size,
+				   data->init_prio, &cfg);
+	}
+}
+
+K_KERNEL_INIT_POST(work_queue_static_init);
 
 int k_work_queue_drain(struct k_work_q *queue,
 		       bool plug)
