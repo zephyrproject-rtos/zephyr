@@ -255,11 +255,12 @@ static struct k_sem wait_data;
 static bool recv_cb_called;
 struct net_if_addr *ifaddr_record;
 static struct test_ns_handler *ns_handler;
-static int pkt_num;
+static atomic_t pkt_num;
 
 #define WAIT_TIME 250
 #define WAIT_TIME_LONG CONFIG_NET_IPV6_NS_TIMEOUT
-#define WAIT_TIME_NS_TIMEOUT (WAIT_TIME_LONG + WAIT_TIME)
+/* Upper bound for one NS reply timeout to fire, sizes polling budgets. */
+#define WAIT_TIME_NS_TIMEOUT (WAIT_TIME_LONG + WAIT_TIME_LONG / 2)
 #define SENDING 93244
 #define MY_PORT 1969
 #define PEER_PORT 16233
@@ -481,7 +482,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 	icmp = get_icmp_hdr(pkt);
 
-	pkt_num++;
+	atomic_inc(&pkt_num);
 
 	/* Reply with RA message */
 	if (icmp->type == NET_ICMPV6_RS) {
@@ -986,6 +987,39 @@ static void expect_nd_ns(struct net_pkt *pkt, void *user_data)
 	}
 }
 
+/* Poll a packet counter until it reaches the expected value. Returns false
+ * on timeout or if the counter went past it.
+ */
+static bool wait_for_count(atomic_t *count, int expected, int32_t timeout_ms)
+{
+	int64_t end = k_uptime_get() + timeout_ms;
+
+	while (k_uptime_get() <= end) {
+		if (atomic_get(count) >= expected) {
+			return atomic_get(count) == expected;
+		}
+
+		k_sleep(K_MSEC(10));
+	}
+
+	return false;
+}
+
+static bool wait_for_pending_queue_empty(struct net_nbr *nbr, int32_t timeout_ms)
+{
+	int64_t end = k_uptime_get() + timeout_ms;
+
+	while (k_uptime_get() <= end) {
+		if (k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
+			return true;
+		}
+
+		k_sleep(K_MSEC(10));
+	}
+
+	return false;
+}
+
 extern int net_ipv6_nbr_test_cancel(void);
 
 ZTEST(net_ipv6, test_send_neighbor_discovery)
@@ -1014,7 +1048,7 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 	(void)net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr);
 
 	/* Make sure we can queue two packets */
-	pkt_num = 0;
+	atomic_clear(&pkt_num);
 
 	avail_buf_count = atomic_get(&tx_data->avail_count);
 	avail_pkt_count = k_mem_slab_num_free_get(tx);
@@ -1027,7 +1061,8 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
 
 	/* At this point we should have sent one NS and queued one packet. */
-	zassert_equal(pkt_num, 1, "Unexpected number of packets sent (%d)", pkt_num);
+	zassert_equal(atomic_get(&pkt_num), 1, "Unexpected number of packets sent (%ld)",
+		      atomic_get(&pkt_num));
 
 	zassert_ok(k_sem_take(&ctx.wait_ns, K_MSEC(WAIT_TIME)),
 		   "Timeout while waiting for expected NS");
@@ -1042,7 +1077,8 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 	/* Packet count should now be 3, one for the first NS and two
 	 * for the queued packets.
 	 */
-	zassert_equal(pkt_num, 3, "Unexpected number of packets sent (%d)", pkt_num);
+	zassert_equal(atomic_get(&pkt_num), 3, "Unexpected number of packets sent (%ld)",
+		      atomic_get(&pkt_num));
 
 	/* Third attempt (neighbor valid) should give no NS. */
 	verdict = send_msg(&my_addr, &test_router_addr);
@@ -1051,7 +1087,8 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 		      "Should not get NS");
 
 	/* Packet count should be 4 as we sent one more packet. */
-	zassert_equal(pkt_num, 4, "Unexpected number of packets sent (%d)", pkt_num);
+	zassert_equal(atomic_get(&pkt_num), 4, "Unexpected number of packets sent (%ld)",
+		      atomic_get(&pkt_num));
 
 	/* If there are anything pending by the NS reply timer, then
 	 * 1 is returned. A pending timer does not imply that a TX packet or
@@ -1071,19 +1108,13 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 
 ZTEST(net_ipv6, test_send_neighbor_discovery_timeout)
 {
-	static struct test_nd_context ctx = {
-		.exp_ns_addr = &test_router_addr,
-		.reply = true
-	};
 	enum net_verdict verdict;
 	struct net_nbr *nbr;
-
-	k_sem_init(&ctx.wait_ns, 0, 1);
 
 	(void)net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr);
 
 	/* Make sure we can queue two packets */
-	pkt_num = 0;
+	atomic_clear(&pkt_num);
 
 	verdict = send_msg(&my_addr, &test_router_addr);
 	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
@@ -1093,20 +1124,17 @@ ZTEST(net_ipv6, test_send_neighbor_discovery_timeout)
 	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
 
 	/* At this point we should have sent one NS and queued one packet. */
-	zassert_equal(pkt_num, 1, "Unexpected number of packets sent (%d)", pkt_num);
+	zassert_equal(atomic_get(&pkt_num), 1, "Unexpected number of packets sent (%ld)",
+		      atomic_get(&pkt_num));
 
-	k_sleep(K_MSEC(10));
-
-	zassert_not_ok(k_sem_take(&ctx.wait_ns, K_MSEC(WAIT_TIME_NS_TIMEOUT)),
-		       "Timeout while waiting for expected NS");
+	/* The NS reply timeout drops one packet and sends a new NS for the
+	 * other one, so the packet count reaches 2.
+	 */
+	zassert_true(wait_for_count(&pkt_num, 2, 2 * WAIT_TIME_LONG),
+		     "Unexpected number of packets sent (%ld)", atomic_get(&pkt_num));
 
 	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &test_router_addr);
 	zassert_not_null(nbr, "Neighbor not found.");
-
-	/* Packet count should be 2, one for the first NS and second for the
-	 * timeouted NS packet.
-	 */
-	zassert_equal(pkt_num, 2, "Unexpected number of packets sent (%d)", pkt_num);
 
 	(void)net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr);
 }
@@ -1322,15 +1350,14 @@ ZTEST(net_ipv6, test_send_neighbor_discovery_timeout_many_pending)
 		      atomic_get(&ctx.ns_count));
 
 	/* First timeout: one packet dropped, two left, a new NS expected. */
-	k_sleep(K_MSEC(WAIT_TIME_NS_TIMEOUT));
+	zassert_true(wait_for_count(&ctx.ns_count, 2, 2 * WAIT_TIME_LONG),
+		     "No NS sent after timeout with packets queued (%ld)",
+		     atomic_get(&ctx.ns_count));
 
 	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &test_router_addr);
 	zassert_not_null(nbr, "Neighbor not found.");
 	zassert_false(k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue),
 		      "Pending queue should not be empty yet");
-	zassert_equal(atomic_get(&ctx.ns_count), 2,
-		      "No NS sent after timeout with packets queued (%ld)",
-		      atomic_get(&ctx.ns_count));
 	zassert_not_equal(net_ipv6_nbr_data(nbr)->send_ns, 0,
 			  "NS timeout not armed although packets are queued");
 
@@ -1367,7 +1394,7 @@ ZTEST(net_ipv6, test_send_neighbor_discovery_timeout_resolved)
 
 	atomic_clear(&ctx.ns_count);
 	ns_handler = &handler;
-	pkt_num = 0;
+	atomic_clear(&pkt_num);
 
 	tx_pool_snapshot(&before);
 
@@ -1382,16 +1409,17 @@ ZTEST(net_ipv6, test_send_neighbor_discovery_timeout_resolved)
 	zassert_not_null(nbr, "Neighbor not found.");
 	zassert_not_equal(nbr->idx, NET_NBR_LLADDR_UNKNOWN, "Link address not set");
 
-	k_sleep(K_MSEC(WAIT_TIME_NS_TIMEOUT));
+	/* The NS reply timeout sends the queued packets. */
+	zassert_true(wait_for_pending_queue_empty(nbr, 2 * WAIT_TIME_LONG),
+		     "Pending queue not drained");
 
 	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &test_router_addr);
 	zassert_not_null(nbr, "Neighbor not found.");
-	zassert_true(k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue),
-		     "Pending queue not drained");
 
 	/* Everything but the NS packets must have gone out. */
-	zassert_equal(pkt_num - atomic_get(&ctx.ns_count), 2, "Pending packets not sent (%ld)",
-		      pkt_num - atomic_get(&ctx.ns_count));
+	zassert_equal(atomic_get(&pkt_num) - atomic_get(&ctx.ns_count), 2,
+		      "Pending packets not sent (%ld)",
+		      atomic_get(&pkt_num) - atomic_get(&ctx.ns_count));
 
 	assert_tx_pool_restored(&before);
 
