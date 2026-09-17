@@ -1,11 +1,14 @@
-.. zephyr:board:: stm32mp157c_dk2
+.. zephyr:board:: stm32mp157_dk2
 
 Overview
 ********
 
 The STM32MP157-DK2 Discovery board leverages the capacities of the STM32MP157
-multi-core processor,composed of a dual Cortex®-A7 and a single Cortex®-M4 core.
+multi-core processor, composed of a dual Cortex®-A7 and a single Cortex®-M4 core.
 Zephyr OS is ported to run on the Cortex®-M4 core.
+
+The board target is ``stm32mp157_dk2/stm32mp157cxx`` for the STM32MP157C-DK2
+(Cortex®-A7 up to 650 MHz).
 
 - Common features:
 
@@ -22,7 +25,7 @@ Zephyr OS is ported to run on the Cortex®-M4 core.
   - Audio CODEC, with a stereo headset jack, including analog microphone input
   - 4 user LEDs
   - 2 user and reset push-buttons, 1 wake-up button
-  - 5 V / 3 A USB Type-CTM power supply input (not provided)
+  - 5 V / 3 A USB Type-C™ power supply input (not provided)
   - Board connectors:
 
     - Ethernet RJ45
@@ -32,7 +35,7 @@ Zephyr OS is ported to run on the Cortex®-M4 core.
     - Stereo headset jack including analog microphone input
     - microSD card
     - GPIO expansion connector (Raspberry Pi® shields capability)
-    - ArduinoTM Uno V3 expansion connectors
+    - Arduino™ Uno V3 expansion connectors
     - On-board ST-LINK/V2-1 debugger/programmer with USB re-enumeration
       capability: Virtual COM port and debug port
 
@@ -44,7 +47,7 @@ Zephyr OS is ported to run on the Cortex®-M4 core.
   - Bluetooth® Low Energy 4.1
 
 More information about the board can be found at the
-`STM32P157C Discovery website`_.
+`STM32MP157C-DK2 website`_.
 
 Hardware
 ********
@@ -74,7 +77,6 @@ The STM32MP157 SoC provides the following hardware capabilities:
 - Security/safety:
 
   - Secure boot, TrustZone® peripherals with Cortex®-M4 resources isolation
-
 
 - Clock management:
 
@@ -143,10 +145,10 @@ The STM32MP157 SoC provides the following hardware capabilities:
   - 8-Kbyte embedded trace buffer
   - 3072-bit fuses including 96-bit unique ID, up to 1184-bit available for user
 
-More information about STM32P157C can be found here:
+More information about STM32MP157 can be found here:
 
-- `STM32MP157C on www.st.com`_
-- `STM32MP157C reference manual`_
+- `STM32MP157 on www.st.com`_
+- `STM32MP157 reference manual`_
 
 Supported Features
 ==================
@@ -156,8 +158,8 @@ Supported Features
 Connections and IOs
 ===================
 
-STM32MP157C-DK2 Discovery Board schematic is available here:
-`STM32MP157C Discovery board schematics`_.
+STM32MP157-DK2 Discovery Board schematic is available here:
+`STM32MP157 Discovery board schematics`_.
 
 
 Default Zephyr Peripheral Mapping:
@@ -178,28 +180,28 @@ must match the configured mlhclk_ck frequency.
 Serial Port
 -----------
 
-The STM32MP157C-DK2 Discovery board has 8 U(S)ARTs.
+The STM32MP157-DK2 Discovery board has 8 U(S)ARTs.
 The Zephyr console output is assigned by default to the RAM console to be dumped
 by the Linux Remoteproc Framework on Cortex®-A7 core. In order to keep the UART7
 free for future serial interactions with Arduino shield, the Zephyr UART console
-output is USART3 and is disabled by default. UART console can be enable through
-board's devicetree and stm32mp157c_dk2_defconfig board file (or prj.conf
-project files), and will disable existing RAM console output. Default UART
-console settings are 115200 8N1.
+output is USART3 and is disabled by default. UART console can be enabled through
+the board's devicetree and the board ``_defconfig`` file (or prj.conf project
+files), and will disable the existing RAM console output. Default UART console
+settings are 115200 8N1.
 
 Programming and Debugging
 *************************
 
 .. zephyr:board-supported-runners::
 
-The STM32MP157C doesn't have QSPI flash for the Cortex®-M4  and it needs to be
-started by the Cortex®-A7 core. The Cortex®-A7 core is responsible to load the
-Cortex®-M4 binary application into the RAM, and get the Cortex®-M4 out of reset.
-The Cortex®-A7 can perform these steps at bootloader level or after the Linux
-system has booted.
+The STM32MP157 doesn't have QSPI flash for the Cortex®-M4 and it needs to be
+started by the Cortex®-A7 core. The Cortex®-A7 core is responsible for loading
+the Cortex®-M4 binary application into RAM, and getting the Cortex®-M4 out of
+reset. The Cortex®-A7 can perform these steps at bootloader level or after the
+Linux system has booted.
 
 The Cortex®-M4 can use up to 2 different RAMs. The program pointer starts at
-address 0x00000000 (RETRAM), the vector table should be loaded at this address
+address 0x00000000 (RETRAM), the vector table should be loaded at this address.
 These are the memory mappings for Cortex®-A7 and Cortex®-M4:
 
 +------------+-----------------------+------------------------+----------------+
@@ -213,49 +215,42 @@ These are the memory mappings for Cortex®-A7 and Cortex®-M4:
 +------------+-----------------------+------------------------+----------------+
 
 
-Refer to `stm32mp157c boot Cortex-M4 firmware`_ wiki page for instruction
+Refer to `stm32mp157 boot Cortex-M4 firmware`_ wiki page for instructions
 to load and start the Cortex-M4 firmware.
+
+.. code-block:: console
+
+  west build -b stm32mp157_dk2/stm32mp157cxx samples/hello_world
 
 Debugging
 =========
 
-You can debug an application using OpenOCD and GDB. The Solution proposed below
-is based on the attach to a preloaded firmware, available only for a Linux
-environment. The firmware must first be loaded by the Cortex®-A7. Developer
+You can debug an application using OpenOCD and GDB. The solution proposed below
+is based on attaching to a preloaded firmware, available only for a Linux
+environment. The firmware must first be loaded by the Cortex®-A7. The developer
 then attaches the debugger to the running Zephyr using OpenOCD.
 
-Principle is to attach to the firmware already loaded by the Linux.
+The principle is to attach to the firmware already loaded by Linux.
 
-- Build the sample:
-
-.. code-block:: console
-
-  west build -b stm32mp157c_dk2 samples/hello_world
-
-- Copy the firmware on the target filesystem, load it and start it (`stm32mp157c boot Cortex-M4 firmware`_).
+- Copy the firmware on the target filesystem, load it and start it
+  (`stm32mp157 boot Cortex-M4 firmware`_).
 - Attach to the target:
 
 .. code-block:: console
 
   west attach
 
-.. _STM32P157C Discovery website:
-   https://www.st.com/content/st_com/en/products/evaluation-tools/product-evaluation-tools/mcu-mpu-eval-tools/stm32-mcu-mpu-eval-tools/stm32-discovery-kits/stm32mp157c-dk2.html
+.. _STM32MP157C-DK2 website:
+   https://www.st.com/en/evaluation-tools/stm32mp157c-dk2.html
 
-.. _STM32MP157C Discovery board User Manual:
-   https://www.st.com/resource/en/user_manual/dm00591354.pdf
+.. _STM32MP157 Discovery board schematics:
+   https://www.st.com/resource/en/schematic_pack/mb1272-dk2-c03-schematic.pdf
 
-.. _STM32MP157C Discovery board schematics:
-   https://www.st.com/resource/en/schematic_pack/mb1272-dk2-c01_schematic.pdf
+.. _STM32MP157 on www.st.com:
+   https://www.st.com/en/microcontrollers-microprocessors/stm32mp157.html
 
-.. _STM32MP157C on www.st.com:
-   https://www.st.com/content/st_com/en/products/microcontrollers-microprocessors/stm32-arm-cortex-mpus/stm32mp1-series/stm32mp157/stm32mp157c.html
-
-.. _STM32MP157C reference manual:
+.. _STM32MP157 reference manual:
    https://www.st.com/resource/en/reference_manual/DM00327659.pdf
 
-.. _stm32mp1 developer package:
-   https://wiki.st.com/stm32mpu/index.php/STM32MP1_Developer_Package#Installing_the_SDK
-
-.. _stm32mp157c boot Cortex-M4 firmware:
+.. _stm32mp157 boot Cortex-M4 firmware:
    https://wiki.st.com/stm32mpu/index.php/Linux_remoteproc_framework_overview#How_to_use_the_framework

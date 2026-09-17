@@ -13,4 +13,4 @@ tests:
       - lpcxpresso55s16
       - pan1781_evb
       - pan1782_evb
-      - stm32mp157c_dk2
+      - stm32mp157_dk2/stm32mp157cxx
