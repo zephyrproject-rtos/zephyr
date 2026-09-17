@@ -68,6 +68,13 @@ static void iso_rx_freed_cb(void)
 }
 #endif
 
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+static void sco_rx_freed_cb(void)
+{
+	buf_rx_freed_notify(BT_BUF_SCO_IN);
+}
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
+
 /* Pool for RX HCI buffers that are always freed by `bt_recv`
  * before it returns.
  *
@@ -85,7 +92,7 @@ NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static void acl_in_pool_destroy(struct net_buf *buf)
 {
-	bt_hci_host_num_completed_packets(buf);
+	bt_hci_host_num_completed_packets(buf, BT_BUF_ACL_IN);
 	buf_rx_freed_notify(BT_BUF_ACL_IN);
 }
 
@@ -155,6 +162,10 @@ void bt_buf_rx_freed_cb_set(bt_buf_rx_freed_cb_t cb)
 #if defined(CONFIG_BT_ISO_RX)
 	bt_iso_buf_rx_freed_cb_set(cb != NULL ? iso_rx_freed_cb : NULL);
 #endif
+
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	bt_sco_buf_rx_freed_cb_set(cb != NULL ? sco_rx_freed_cb : NULL);
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 }
 
 struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,

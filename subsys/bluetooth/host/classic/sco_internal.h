@@ -322,3 +322,9 @@ void sco_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_
 
 /* Check if there is any data pending for sending. */
 bool sco_has_data(struct bt_conn *conn);
+
+/** A callback used to notify about freed buffer in the iso rx pool. */
+typedef void (*bt_sco_buf_rx_freed_cb_t)(void);
+
+/** Set rx buffer freed callback */
+void bt_sco_buf_rx_freed_cb_set(bt_sco_buf_rx_freed_cb_t cb);
