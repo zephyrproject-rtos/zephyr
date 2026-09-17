@@ -125,9 +125,14 @@ static void z_hexagon_interrupt_handler(struct event_context *ctx)
 	z_hexagon_isr_nesting++;
 
 	/* Call ISR from SW ISR table */
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 	const struct _isr_table_entry *entry = &_sw_isr_table[irq_num];
 
 	entry->isr(entry->arg);
+#else
+	ARG_UNUSED(irq_num);
+	z_irq_spurious(NULL);
+#endif
 
 	z_hexagon_isr_nesting--;
 
