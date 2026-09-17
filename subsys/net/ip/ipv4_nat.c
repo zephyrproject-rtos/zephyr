@@ -298,6 +298,8 @@ static struct net_nat4_entry *conn_track_create(struct net_pkt *pkt,
 		}
 	}
 
+	LOG_ERR("Failed to add nat4 entry");
+
 	return NULL;
 
 new_entry:
