@@ -1042,6 +1042,7 @@ static int get_i3c_addr_pos(const struct device *dev, uint8_t addr, bool sa)
 	}
 
 	dw_i3c_device_data = desc->controller_priv;
+	__ASSERT((dw_i3c_device_data != NULL), "Known device with no DAT slot bound");
 
 	return dw_i3c_device_data->id;
 }
