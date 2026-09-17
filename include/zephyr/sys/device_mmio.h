@@ -354,6 +354,185 @@ static inline void device_unmap(mm_reg_t virt_addr, size_t size)
 #else
 #define DEVICE_MMIO_GET(dev)	(DEVICE_MMIO_ROM_PTR(dev)->addr)
 #endif
+
+/**
+ * @brief Read a byte from a register of a device's MMIO region
+ *
+ * @see sys_read8()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @return the byte read
+ */
+#define DEVICE_MMIO_READ8(dev, offset) sys_read8(DEVICE_MMIO_GET(dev) + (offset))
+
+/**
+ * @brief Read 16 bits from a register of a device's MMIO region
+ *
+ * @see sys_read16()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @return the 16 bits read
+ */
+#define DEVICE_MMIO_READ16(dev, offset) sys_read16(DEVICE_MMIO_GET(dev) + (offset))
+
+/**
+ * @brief Read 32 bits from a register of a device's MMIO region
+ *
+ * @see sys_read32()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @return the 32 bits read
+ */
+#define DEVICE_MMIO_READ32(dev, offset) sys_read32(DEVICE_MMIO_GET(dev) + (offset))
+
+/**
+ * @brief Read 64 bits from a register of a device's MMIO region
+ *
+ * @see sys_read64()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @return the 64 bits read
+ */
+#define DEVICE_MMIO_READ64(dev, offset) sys_read64(DEVICE_MMIO_GET(dev) + (offset))
+
+/**
+ * @brief Write a byte to a register of a device's MMIO region
+ *
+ * @see sys_write8()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the byte to write
+ */
+#define DEVICE_MMIO_WRITE8(dev, offset, value) \
+	sys_write8((value), DEVICE_MMIO_GET(dev) + (offset))
+
+/**
+ * @brief Write 16 bits to a register of a device's MMIO region
+ *
+ * @see sys_write16()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the 16 bits to write
+ */
+#define DEVICE_MMIO_WRITE16(dev, offset, value) \
+	sys_write16((value), DEVICE_MMIO_GET(dev) + (offset))
+
+/**
+ * @brief Write 32 bits to a register of a device's MMIO region
+ *
+ * @see sys_write32()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the 32 bits to write
+ */
+#define DEVICE_MMIO_WRITE32(dev, offset, value) \
+	sys_write32((value), DEVICE_MMIO_GET(dev) + (offset))
+
+/**
+ * @brief Write 64 bits to a register of a device's MMIO region
+ *
+ * @see sys_write64()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the 64 bits to write
+ */
+#define DEVICE_MMIO_WRITE64(dev, offset, value) \
+	sys_write64((value), DEVICE_MMIO_GET(dev) + (offset))
+
+/**
+ * @brief Set a bit in a register of a device's MMIO region
+ *
+ * @see sys_set_bit()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to set (from 0 to 31)
+ */
+#define DEVICE_MMIO_SET_BIT(dev, offset, bit) \
+	sys_set_bit(DEVICE_MMIO_GET(dev) + (offset), (bit))
+
+/**
+ * @brief Clear a bit in a register of a device's MMIO region
+ *
+ * @see sys_clear_bit()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to clear (from 0 to 31)
+ */
+#define DEVICE_MMIO_CLEAR_BIT(dev, offset, bit) \
+	sys_clear_bit(DEVICE_MMIO_GET(dev) + (offset), (bit))
+
+/**
+ * @brief Test a bit in a register of a device's MMIO region
+ *
+ * @see sys_test_bit()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to test (from 0 to 31)
+ * @return 0 if the bit is cleared, non-0 otherwise
+ */
+#define DEVICE_MMIO_TEST_BIT(dev, offset, bit) \
+	sys_test_bit(DEVICE_MMIO_GET(dev) + (offset), (bit))
+
+/**
+ * @brief Test a bit in a register of a device's MMIO region and set it
+ *
+ * @see sys_test_and_set_bit()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to test and set (from 0 to 31)
+ * @return 0 if the bit was cleared, non-0 otherwise
+ */
+#define DEVICE_MMIO_TEST_AND_SET_BIT(dev, offset, bit) \
+	sys_test_and_set_bit(DEVICE_MMIO_GET(dev) + (offset), (bit))
+
+/**
+ * @brief Test a bit in a register of a device's MMIO region and clear it
+ *
+ * @see sys_test_and_clear_bit()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to test and clear (from 0 to 31)
+ * @return 0 if the bit was cleared, non-0 otherwise
+ */
+#define DEVICE_MMIO_TEST_AND_CLEAR_BIT(dev, offset, bit) \
+	sys_test_and_clear_bit(DEVICE_MMIO_GET(dev) + (offset), (bit))
+
+/**
+ * @brief Set the masked bits in a register of a device's MMIO region
+ *
+ * @see sys_set_bits()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param mask the bit mask of a 32 bits data to set
+ */
+#define DEVICE_MMIO_SET_BITS(dev, offset, mask) \
+	sys_set_bits(DEVICE_MMIO_GET(dev) + (offset), (mask))
+
+/**
+ * @brief Clear the masked bits in a register of a device's MMIO region
+ *
+ * @see sys_clear_bits()
+ *
+ * @param dev Device object
+ * @param offset Register offset from the start of the MMIO region
+ * @param mask the bit mask of a 32 bits data to clear
+ */
+#define DEVICE_MMIO_CLEAR_BITS(dev, offset, mask) \
+	sys_clear_bits(DEVICE_MMIO_GET(dev) + (offset), (mask))
 /** @} */
 
 /**
@@ -607,6 +786,204 @@ static inline void device_unmap(mm_reg_t virt_addr, size_t size)
 		((DEVICE_MMIO_NAMED_ROM_PTR((dev), name))->addr)
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
+/**
+ * @brief Read a byte from a register of a named MMIO region
+ *
+ * @see sys_read8()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @return the byte read
+ */
+#define DEVICE_MMIO_NAMED_READ8(dev, name, offset) \
+	sys_read8(DEVICE_MMIO_NAMED_GET((dev), name) + (offset))
+
+/**
+ * @brief Read 16 bits from a register of a named MMIO region
+ *
+ * @see sys_read16()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @return the 16 bits read
+ */
+#define DEVICE_MMIO_NAMED_READ16(dev, name, offset) \
+	sys_read16(DEVICE_MMIO_NAMED_GET((dev), name) + (offset))
+
+/**
+ * @brief Read 32 bits from a register of a named MMIO region
+ *
+ * @see sys_read32()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @return the 32 bits read
+ */
+#define DEVICE_MMIO_NAMED_READ32(dev, name, offset) \
+	sys_read32(DEVICE_MMIO_NAMED_GET((dev), name) + (offset))
+
+/**
+ * @brief Read 64 bits from a register of a named MMIO region
+ *
+ * @see sys_read64()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @return the 64 bits read
+ */
+#define DEVICE_MMIO_NAMED_READ64(dev, name, offset) \
+	sys_read64(DEVICE_MMIO_NAMED_GET((dev), name) + (offset))
+
+/**
+ * @brief Write a byte to a register of a named MMIO region
+ *
+ * @see sys_write8()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the byte to write
+ */
+#define DEVICE_MMIO_NAMED_WRITE8(dev, name, offset, value) \
+	sys_write8((value), DEVICE_MMIO_NAMED_GET((dev), name) + (offset))
+
+/**
+ * @brief Write 16 bits to a register of a named MMIO region
+ *
+ * @see sys_write16()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the 16 bits to write
+ */
+#define DEVICE_MMIO_NAMED_WRITE16(dev, name, offset, value) \
+	sys_write16((value), DEVICE_MMIO_NAMED_GET((dev), name) + (offset))
+
+/**
+ * @brief Write 32 bits to a register of a named MMIO region
+ *
+ * @see sys_write32()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the 32 bits to write
+ */
+#define DEVICE_MMIO_NAMED_WRITE32(dev, name, offset, value) \
+	sys_write32((value), DEVICE_MMIO_NAMED_GET((dev), name) + (offset))
+
+/**
+ * @brief Write 64 bits to a register of a named MMIO region
+ *
+ * @see sys_write64()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the 64 bits to write
+ */
+#define DEVICE_MMIO_NAMED_WRITE64(dev, name, offset, value) \
+	sys_write64((value), DEVICE_MMIO_NAMED_GET((dev), name) + (offset))
+
+/**
+ * @brief Set a bit in a register of a named MMIO region
+ *
+ * @see sys_set_bit()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to set (from 0 to 31)
+ */
+#define DEVICE_MMIO_NAMED_SET_BIT(dev, name, offset, bit) \
+	sys_set_bit(DEVICE_MMIO_NAMED_GET((dev), name) + (offset), (bit))
+
+/**
+ * @brief Clear a bit in a register of a named MMIO region
+ *
+ * @see sys_clear_bit()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to clear (from 0 to 31)
+ */
+#define DEVICE_MMIO_NAMED_CLEAR_BIT(dev, name, offset, bit) \
+	sys_clear_bit(DEVICE_MMIO_NAMED_GET((dev), name) + (offset), (bit))
+
+/**
+ * @brief Test a bit in a register of a named MMIO region
+ *
+ * @see sys_test_bit()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to test (from 0 to 31)
+ * @return 0 if the bit is cleared, non-0 otherwise
+ */
+#define DEVICE_MMIO_NAMED_TEST_BIT(dev, name, offset, bit) \
+	sys_test_bit(DEVICE_MMIO_NAMED_GET((dev), name) + (offset), (bit))
+
+/**
+ * @brief Test a bit in a register of a named MMIO region and set it
+ *
+ * @see sys_test_and_set_bit()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to test and set (from 0 to 31)
+ * @return 0 if the bit was cleared, non-0 otherwise
+ */
+#define DEVICE_MMIO_NAMED_TEST_AND_SET_BIT(dev, name, offset, bit) \
+	sys_test_and_set_bit(DEVICE_MMIO_NAMED_GET((dev), name) + (offset), (bit))
+
+/**
+ * @brief Test a bit in a register of a named MMIO region and clear it
+ *
+ * @see sys_test_and_clear_bit()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to test and clear (from 0 to 31)
+ * @return 0 if the bit was cleared, non-0 otherwise
+ */
+#define DEVICE_MMIO_NAMED_TEST_AND_CLEAR_BIT(dev, name, offset, bit) \
+	sys_test_and_clear_bit(DEVICE_MMIO_NAMED_GET((dev), name) + (offset), (bit))
+
+/**
+ * @brief Set the masked bits in a register of a named MMIO region
+ *
+ * @see sys_set_bits()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param mask the bit mask of a 32 bits data to set
+ */
+#define DEVICE_MMIO_NAMED_SET_BITS(dev, name, offset, mask) \
+	sys_set_bits(DEVICE_MMIO_NAMED_GET((dev), name) + (offset), (mask))
+
+/**
+ * @brief Clear the masked bits in a register of a named MMIO region
+ *
+ * @see sys_clear_bits()
+ *
+ * @param dev Device object
+ * @param name Member name for MMIO information
+ * @param offset Register offset from the start of the MMIO region
+ * @param mask the bit mask of a 32 bits data to clear
+ */
+#define DEVICE_MMIO_NAMED_CLEAR_BITS(dev, name, offset, mask) \
+	sys_clear_bits(DEVICE_MMIO_NAMED_GET((dev), name) + (offset), (mask))
+
 /** @} */
 
 /**
@@ -775,6 +1152,189 @@ static inline void device_unmap(mm_reg_t virt_addr, size_t size)
 #define DEVICE_MMIO_TOPLEVEL_GET(name)	\
 		((mm_reg_t)Z_TOPLEVEL_ROM_NAME(name).addr)
 #endif
+
+/**
+ * @brief Read a byte from a register of a top-level MMIO region
+ *
+ * @see sys_read8()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @return the byte read
+ */
+#define DEVICE_MMIO_TOPLEVEL_READ8(name, offset) \
+	sys_read8(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset))
+
+/**
+ * @brief Read 16 bits from a register of a top-level MMIO region
+ *
+ * @see sys_read16()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @return the 16 bits read
+ */
+#define DEVICE_MMIO_TOPLEVEL_READ16(name, offset) \
+	sys_read16(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset))
+
+/**
+ * @brief Read 32 bits from a register of a top-level MMIO region
+ *
+ * @see sys_read32()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @return the 32 bits read
+ */
+#define DEVICE_MMIO_TOPLEVEL_READ32(name, offset) \
+	sys_read32(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset))
+
+/**
+ * @brief Read 64 bits from a register of a top-level MMIO region
+ *
+ * @see sys_read64()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @return the 64 bits read
+ */
+#define DEVICE_MMIO_TOPLEVEL_READ64(name, offset) \
+	sys_read64(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset))
+
+/**
+ * @brief Write a byte to a register of a top-level MMIO region
+ *
+ * @see sys_write8()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the byte to write
+ */
+#define DEVICE_MMIO_TOPLEVEL_WRITE8(name, offset, value) \
+	sys_write8((value), DEVICE_MMIO_TOPLEVEL_GET(name) + (offset))
+
+/**
+ * @brief Write 16 bits to a register of a top-level MMIO region
+ *
+ * @see sys_write16()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the 16 bits to write
+ */
+#define DEVICE_MMIO_TOPLEVEL_WRITE16(name, offset, value) \
+	sys_write16((value), DEVICE_MMIO_TOPLEVEL_GET(name) + (offset))
+
+/**
+ * @brief Write 32 bits to a register of a top-level MMIO region
+ *
+ * @see sys_write32()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the 32 bits to write
+ */
+#define DEVICE_MMIO_TOPLEVEL_WRITE32(name, offset, value) \
+	sys_write32((value), DEVICE_MMIO_TOPLEVEL_GET(name) + (offset))
+
+/**
+ * @brief Write 64 bits to a register of a top-level MMIO region
+ *
+ * @see sys_write64()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param value the 64 bits to write
+ */
+#define DEVICE_MMIO_TOPLEVEL_WRITE64(name, offset, value) \
+	sys_write64((value), DEVICE_MMIO_TOPLEVEL_GET(name) + (offset))
+
+/**
+ * @brief Set a bit in a register of a top-level MMIO region
+ *
+ * @see sys_set_bit()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to set (from 0 to 31)
+ */
+#define DEVICE_MMIO_TOPLEVEL_SET_BIT(name, offset, bit) \
+	sys_set_bit(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset), (bit))
+
+/**
+ * @brief Clear a bit in a register of a top-level MMIO region
+ *
+ * @see sys_clear_bit()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to clear (from 0 to 31)
+ */
+#define DEVICE_MMIO_TOPLEVEL_CLEAR_BIT(name, offset, bit) \
+	sys_clear_bit(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset), (bit))
+
+/**
+ * @brief Test a bit in a register of a top-level MMIO region
+ *
+ * @see sys_test_bit()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to test (from 0 to 31)
+ * @return 0 if the bit is cleared, non-0 otherwise
+ */
+#define DEVICE_MMIO_TOPLEVEL_TEST_BIT(name, offset, bit) \
+	sys_test_bit(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset), (bit))
+
+/**
+ * @brief Test a bit in a register of a top-level MMIO region and set it
+ *
+ * @see sys_test_and_set_bit()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to test and set (from 0 to 31)
+ * @return 0 if the bit was cleared, non-0 otherwise
+ */
+#define DEVICE_MMIO_TOPLEVEL_TEST_AND_SET_BIT(name, offset, bit) \
+	sys_test_and_set_bit(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset), (bit))
+
+/**
+ * @brief Test a bit in a register of a top-level MMIO region and clear it
+ *
+ * @see sys_test_and_clear_bit()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param bit the designated bit to test and clear (from 0 to 31)
+ * @return 0 if the bit was cleared, non-0 otherwise
+ */
+#define DEVICE_MMIO_TOPLEVEL_TEST_AND_CLEAR_BIT(name, offset, bit) \
+	sys_test_and_clear_bit(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset), (bit))
+
+/**
+ * @brief Set the masked bits in a register of a top-level MMIO region
+ *
+ * @see sys_set_bits()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param mask the bit mask of a 32 bits data to set
+ */
+#define DEVICE_MMIO_TOPLEVEL_SET_BITS(name, offset, mask) \
+	sys_set_bits(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset), (mask))
+
+/**
+ * @brief Clear the masked bits in a register of a top-level MMIO region
+ *
+ * @see sys_clear_bits()
+ *
+ * @param name Name of the top-level MMIO region
+ * @param offset Register offset from the start of the MMIO region
+ * @param mask the bit mask of a 32 bits data to clear
+ */
+#define DEVICE_MMIO_TOPLEVEL_CLEAR_BITS(name, offset, mask) \
+	sys_clear_bits(DEVICE_MMIO_TOPLEVEL_GET(name) + (offset), (mask))
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_SYS_DEVICE_MMIO_H */
