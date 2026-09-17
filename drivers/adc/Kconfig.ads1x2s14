@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADS1X2S14
+	bool "Texas Instruments ADS112S14/ADS122S14 ADC driver"
+	default y
+	depends on DT_HAS_TI_ADS112S14_ENABLED || DT_HAS_TI_ADS122S14_ENABLED
+	select SPI
+	select ADC_CONFIGURABLE_INPUTS
+	select ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	help
+	  Enable the driver for the Texas Instruments ADS112S14 (16-bit) and
+	  ADS122S14 (24-bit) delta-sigma ADCs with eight multiplexed analog
+	  inputs, PGA, internal voltage reference and two excitation current
+	  sources, connected via SPI.
+
+if ADC_ADS1X2S14 && ADC_ASYNC
+
+config ADC_ADS1X2S14_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 512
+	help
+	  Size of the stack of the per-device thread that performs the
+	  conversions when asynchronous reads are enabled.
+
+config ADC_ADS1X2S14_ACQUISITION_THREAD_PRIO
+	int "Priority of the ADC data acquisition thread"
+	default 0
+	help
+	  Priority of the per-device thread that performs the conversions
+	  when asynchronous reads are enabled.
+
+endif # ADC_ADS1X2S14 && ADC_ASYNC
