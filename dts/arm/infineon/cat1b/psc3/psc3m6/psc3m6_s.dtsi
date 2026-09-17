@@ -215,5 +215,12 @@
 			alarms-count = <2>;
 			status = "disabled";
 		};
+
+		watchdog0: watchdog@5220c000 {
+			compatible = "infineon,watchdog";
+			reg = <0x5220c000 0x10>;
+			interrupts = <36 4>;
+			status = "disabled";
+		};
 	};
 };
