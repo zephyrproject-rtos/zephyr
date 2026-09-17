@@ -77,17 +77,27 @@ int i2c_bitbang_get_config(struct i2c_bitbang *context, uint32_t *config)
 	return 0;
 }
 
-static void i2c_set_scl(struct i2c_bitbang *context, int state)
+static int i2c_set_scl(struct i2c_bitbang *context, int state)
 {
 	context->io->set_scl(context->io_context, state);
 #ifdef CONFIG_I2C_GPIO_CLOCK_STRETCHING
 	if (state == 1) {
 		/* Wait for target to release the clock */
-		WAIT_FOR(context->io->get_scl(context->io_context) != 0,
-			 CONFIG_I2C_GPIO_CLOCK_STRETCHING_TIMEOUT_US,
-			 ;);
+		if (!WAIT_FOR(context->io->get_scl(context->io_context) != 0,
+			      CONFIG_I2C_GPIO_CLOCK_STRETCHING_TIMEOUT_US,
+			      ;)) {
+			return -ETIMEDOUT;
+		}
 	}
 #endif
+	return 0;
+}
+
+static void i2c_release_lines(struct i2c_bitbang *context)
+{
+	/* A held SCL cannot produce STOP. Release both lines without waiting again. */
+	context->io->set_scl(context->io_context, 1);
+	context->io->set_sda(context->io_context, 1);
 }
 
 static void i2c_set_sda(struct i2c_bitbang *context, int state)
@@ -109,8 +119,9 @@ static void i2c_delay(unsigned int cycles_to_wait)
 	}
 }
 
-static void i2c_start(struct i2c_bitbang *context)
+static int i2c_start(struct i2c_bitbang *context)
 {
+	int ret;
 	if (!i2c_get_sda(context)) {
 		/*
 		 * SDA is already low, so we need to do something to make it
@@ -118,7 +129,10 @@ static void i2c_start(struct i2c_bitbang *context)
 		 */
 		i2c_set_scl(context, 0);
 		i2c_delay(context->delays[T_LOW]);
-		i2c_set_scl(context, 1);
+		ret = i2c_set_scl(context, 1);
+		if (ret < 0) {
+			return ret;
+		}
 		i2c_delay(context->delays[T_SU_STA]);
 	}
 	i2c_set_sda(context, 0);
@@ -126,80 +140,110 @@ static void i2c_start(struct i2c_bitbang *context)
 
 	i2c_set_scl(context, 0);
 	i2c_delay(context->delays[T_LOW]);
+	return 0;
 }
 
-static void i2c_repeated_start(struct i2c_bitbang *context)
+static int i2c_repeated_start(struct i2c_bitbang *context)
 {
+	int ret;
 	i2c_set_sda(context, 1);
-	i2c_set_scl(context, 1);
+	ret = i2c_set_scl(context, 1);
+	if (ret < 0) {
+		return ret;
+	}
 	i2c_delay(context->delays[T_HIGH]);
 
 	i2c_delay(context->delays[T_SU_STA]);
-	i2c_start(context);
+	return i2c_start(context);
 }
 
-static void i2c_stop(struct i2c_bitbang *context)
+static int i2c_stop(struct i2c_bitbang *context)
 {
+	int ret;
 	i2c_set_sda(context, 0);
 	i2c_delay(context->delays[T_LOW]);
 
-	i2c_set_scl(context, 1);
+	ret = i2c_set_scl(context, 1);
+	if (ret < 0) {
+		return ret;
+	}
 	i2c_delay(context->delays[T_HIGH]);
 
 	i2c_delay(context->delays[T_SU_STP]);
 	i2c_set_sda(context, 1);
 	i2c_delay(context->delays[T_BUF]); /* In case we start again too soon */
+	return 0;
 }
 
-static void i2c_write_bit(struct i2c_bitbang *context, int bit)
+static int i2c_write_bit(struct i2c_bitbang *context, int bit)
 {
+	int ret;
 	/* SDA hold time is zero, so no need for a delay here */
 	i2c_set_sda(context, bit);
-	i2c_set_scl(context, 1);
+	ret = i2c_set_scl(context, 1);
+	if (ret < 0) {
+		return ret;
+	}
 	i2c_delay(context->delays[T_HIGH]);
 	i2c_set_scl(context, 0);
 	i2c_delay(context->delays[T_LOW]);
+	return 0;
 }
 
-static bool i2c_read_bit(struct i2c_bitbang *context)
+static int i2c_read_bit(struct i2c_bitbang *context, bool *bit)
 {
-	bool bit;
+	int ret;
 
 	/* SDA hold time is zero, so no need for a delay here */
 	i2c_set_sda(context, 1); /* Stop driving low, so target has control */
 
-	i2c_set_scl(context, 1);
+	ret = i2c_set_scl(context, 1);
+	if (ret < 0) {
+		return ret;
+	}
 	i2c_delay(context->delays[T_HIGH]);
 
-	bit = i2c_get_sda(context);
+	*bit = i2c_get_sda(context);
 
 	i2c_set_scl(context, 0);
 	i2c_delay(context->delays[T_LOW]);
-	return bit;
+	return 0;
 }
 
-static bool i2c_write_byte(struct i2c_bitbang *context, uint8_t byte)
+static int i2c_write_byte(struct i2c_bitbang *context, uint8_t byte)
 {
 	uint8_t mask = 1 << 7;
+	bool nack;
+	int ret;
 
 	do {
-		i2c_write_bit(context, byte & mask);
+		ret = i2c_write_bit(context, byte & mask);
+		if (ret < 0) {
+			return ret;
+		}
 	} while (mask >>= 1);
 
-	/* Return inverted ACK bit, i.e. 'true' for ACK, 'false' for NACK */
-	return !i2c_read_bit(context);
+	ret = i2c_read_bit(context, &nack);
+	return ret < 0 ? ret : (nack ? -EIO : 0);
 }
 
-static uint8_t i2c_read_byte(struct i2c_bitbang *context)
+static int i2c_read_byte(struct i2c_bitbang *context, uint8_t *value)
 {
 	unsigned int byte = 1U;
+	bool bit;
+	int ret;
 
 	do {
 		byte <<= 1;
-		byte |= i2c_read_bit(context);
+		ret = i2c_read_bit(context, &bit);
+		if (ret < 0) {
+			return ret;
+		}
+		byte |= bit;
 	} while (!(byte & (1 << 8)));
 
-	return byte;
+	*value = byte;
+	return 0;
 }
 
 int i2c_bitbang_transfer(struct i2c_bitbang *context,
@@ -209,18 +253,25 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 	uint8_t *buf, *buf_end;
 	unsigned int flags;
 	int result = -EIO;
+	int stop_result;
 
 	/* We want an initial Start condition */
 	flags = I2C_MSG_RESTART;
 
 	/* Make sure we're in a good state so target recognises the Start */
-	i2c_set_scl(context, 1);
+	result = i2c_set_scl(context, 1);
+	if (result < 0) {
+		goto abort;
+	}
 	flags |= I2C_MSG_STOP;
 
 	do {
 		/* Stop flag from previous message? */
 		if (flags & I2C_MSG_STOP) {
-			i2c_stop(context);
+			result = i2c_stop(context);
+			if (result < 0) {
+				goto abort;
+			}
 		}
 
 		/* Forget old flags except start flag */
@@ -228,9 +279,15 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 
 		/* Start condition? */
 		if (flags & I2C_MSG_RESTART) {
-			i2c_start(context);
+			result = i2c_start(context);
+			if (result < 0) {
+				goto abort;
+			}
 		} else if (msgs->flags & I2C_MSG_RESTART) {
-			i2c_repeated_start(context);
+			result = i2c_repeated_start(context);
+			if (result < 0) {
+				goto abort;
+			}
 		}
 
 		/* Get flags for new message */
@@ -241,8 +298,9 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 			unsigned int byte0 = target_address << 1;
 
 			byte0 |= (flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
-			if (!i2c_write_byte(context, byte0)) {
-				goto finish; /* No ACK received */
+			result = i2c_write_byte(context, byte0);
+			if (result < 0) {
+				goto finish;
 			}
 			flags &= ~I2C_MSG_RESTART;
 		}
@@ -253,15 +311,23 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 		if ((flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			/* Read */
 			while (buf < buf_end) {
-				*buf++ = i2c_read_byte(context);
+				result = i2c_read_byte(context, buf);
+				if (result < 0) {
+					goto abort;
+				}
+				buf++;
 				/* ACK the byte, except for the last one */
-				i2c_write_bit(context, buf == buf_end);
+				result = i2c_write_bit(context, buf == buf_end);
+				if (result < 0) {
+					goto abort;
+				}
 			}
 		} else {
 			/* Write */
 			while (buf < buf_end) {
-				if (!i2c_write_byte(context, *buf++)) {
-					goto finish; /* No ACK received */
+				result = i2c_write_byte(context, *buf++);
+				if (result < 0) {
+					goto finish;
 				}
 			}
 		}
@@ -274,14 +340,27 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 	/* Complete without error */
 	result = 0;
 finish:
-	i2c_stop(context);
+	if (result == -ETIMEDOUT) {
+		goto abort;
+	}
+	stop_result = i2c_stop(context);
+	if (stop_result < 0) {
+		if (result == 0) {
+			result = stop_result;
+		}
+		goto abort;
+	}
 
+	return result;
+abort:
+	i2c_release_lines(context);
 	return result;
 }
 
 int i2c_bitbang_recover_bus(struct i2c_bitbang *context)
 {
 	int i;
+	int ret;
 
 	/*
 	 * The I2C-bus specification and user manual (NXP UM10204
@@ -300,16 +379,28 @@ int i2c_bitbang_recover_bus(struct i2c_bitbang *context)
 	 */
 
 	/* Start condition */
-	i2c_start(context);
+	ret = i2c_start(context);
+	if (ret < 0) {
+		goto abort;
+	}
 
 	/* 9 cycles of SCL with SDA held high */
 	for (i = 0; i < 9; i++) {
-		i2c_write_bit(context, 1);
+		ret = i2c_write_bit(context, 1);
+		if (ret < 0) {
+			goto abort;
+		}
 	}
 
 	/* Another start condition followed by a stop condition */
-	i2c_repeated_start(context);
-	i2c_stop(context);
+	ret = i2c_repeated_start(context);
+	if (ret < 0) {
+		goto abort;
+	}
+	ret = i2c_stop(context);
+	if (ret < 0) {
+		goto abort;
+	}
 
 	/* Check if bus is clear */
 	if (i2c_get_sda(context)) {
@@ -317,6 +408,9 @@ int i2c_bitbang_recover_bus(struct i2c_bitbang *context)
 	} else {
 		return -EBUSY;
 	}
+abort:
+	i2c_release_lines(context);
+	return ret;
 }
 
 void i2c_bitbang_init(struct i2c_bitbang *context,
