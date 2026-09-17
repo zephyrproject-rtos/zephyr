@@ -848,6 +848,7 @@ class KconfigCheck(ComplianceTest):
         self.check_soc_name_sync(kconf)
         self.check_no_undef_outside_kconfig(kconf)
         self.check_disallowed_defconfigs(kconf)
+        self.check_deprecated_experimental_in_prompt(kconf)
 
     def get_modules(self, _module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
         """
@@ -1682,6 +1683,93 @@ flagged.
 
 {undef_desc}""")
 
+    def check_deprecated_experimental_in_prompt(self, kconf):
+        # Checks that deprecated Kconfigs end with ` [DEPRECATED]` in the prompt string and that
+        # experimental Kconfigs end with ` [EXPERIMENTAL]` in the prompt string (if they have them)
+
+        for node in kconf.node_iter():
+            # Skip Kconfig nodes not in-tree (will present an absolute path)
+            if os.path.isabs(node.filename):
+                continue
+
+            # 'kconfiglib' is global
+            # pylint: disable=undefined-variable
+
+            if (
+                not isinstance(node.item, kconfiglib.Symbol)
+                or not node.prompt
+                or not node.prompt[0]
+            ):
+                continue
+
+            if node.item.type != kconfiglib.BOOL:
+                if node.prompt[0][-15:] == " [EXPERIMENTAL]":
+                    self.failure(f"""
+Non-bool Kconfig '{node.item.name}' prompt wrongfully has ` [EXPERIMENTAL]` string at the end.
+Please check Kconfig guidelines.
+""")
+
+                continue
+
+            selects_deprecated = False
+            deprecated_kconfig = kconf.syms['DEPRECATED']
+            selects_experimental = False
+            experimental_kconfig = kconf.syms['EXPERIMENTAL']
+
+            for select_node in node.orig_selects:
+                if select_node[0] == deprecated_kconfig:
+                    selects_deprecated = True
+
+                    i = 1
+                    while i < len(select_node):
+                        if isinstance(select_node[i], tuple):
+                            self.failure(f"""
+Deprecated Kconfig '{node.item.name}' selects DEPRECATED using if conditions, it must only
+outright select DEPRECATED.
+Please check Kconfig guidelines.
+""")
+                            break
+                        i = i + 1
+                    break
+                if select_node[0] == experimental_kconfig:
+                    selects_experimental = True
+
+                    i = 1
+                    while i < len(select_node):
+                        if isinstance(select_node[i], tuple):
+                            self.failure(f"""
+Experimental Kconfig '{node.item.name}' selects EXPERIMENTAL using if conditions, it must only
+outright select EXPERIMENTAL.
+Please check Kconfig guidelines.
+""")
+                            break
+                        i = i + 1
+                    break
+
+            if selects_deprecated is False and node.prompt[0][-13:] == " [DEPRECATED]":
+                self.failure(f"""
+Non-deprecated Kconfig '{node.item.name}' prompt wrongfully has ` [DEPRECATED]` string at the end.
+Please check Kconfig guidelines.
+""")
+
+            if selects_experimental is False and node.prompt[0][-15:] == " [EXPERIMENTAL]":
+                self.failure(f"""
+Non-experimental Kconfig '{node.item.name}' prompt wrongfully has ` [EXPERIMENTAL]` string at the
+end. Please check Kconfig guidelines.
+""")
+
+            if selects_deprecated is True and node.prompt[0][-13:] != " [DEPRECATED]":
+                self.failure(f"""
+Deprecated Kconfig '{node.item.name}' prompt lacks ` [DEPRECATED]` string at the end. Please
+check Kconfig guidelines.
+""")
+
+            if selects_experimental is True and node.prompt[0][-15:] != " [EXPERIMENTAL]":
+                self.failure(f"""
+Experimental Kconfig '{node.item.name}' prompt lacks ` [EXPERIMENTAL]` string at the end. Please
+check Kconfig guidelines.
+""")
+
 
 class KconfigBasicCheck(KconfigCheck):
     """
@@ -1745,6 +1833,9 @@ Probable causes of the undefined symbol warnings above:
   Move the reference to the Kconfig or Kconfig.defconfig file of the board or
   SoC instead, as those files are only loaded in the full Zephyr Kconfig tree.
 - The symbol name is misspelled, or the file defining it is not sourced."""
+
+    def check_deprecated_experimental_in_prompt(self, kconf):
+        return
 
 
 class SysbuildKconfigCheck(KconfigCheck):
