@@ -35,6 +35,6 @@ config REMOTE_BOARD
 	default "nucleo_h755zi_q/stm32h755xx/m4" if $(BOARD) = "nucleo_h755zi_q"
 	default "ophelia4ev/cpuflpr" if $(BOARD) = "ophelia4ev"
 	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"
-	default "versal2_rpu" if $(BOARD) = "versal2_rpu"
-	default "versalnet_rpu" if $(BOARD) = "versalnet_rpu"
+	default "versal2_rpu" if SOC_AMD_VERSAL2_RPU
+	default "versalnet_rpu" if SOC_AMD_VERSALNET_RPU
 	default "nrf7120dk/nrf7120/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "nrf7120dk/nrf7120/cpuapp"
