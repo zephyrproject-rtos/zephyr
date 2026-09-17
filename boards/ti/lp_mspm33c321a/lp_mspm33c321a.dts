@@ -25,3 +25,11 @@
 &sram0 {
 	status = "okay";
 };
+
+&timg8_0 {
+	status = "okay";
+
+	counterg8_0: counterg8_0 {
+		status = "okay";
+	};
+};
