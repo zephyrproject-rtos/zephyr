@@ -10,3 +10,14 @@ tests:
       - profiling
     integration_platforms:
       - native_sim
+  profiling.perf_events.shell:
+    tags:
+      - perf
+      - profiling
+      - shell
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_PROFILING_PERF_EVENTS_SHELL=y
+    integration_platforms:
+      - native_sim

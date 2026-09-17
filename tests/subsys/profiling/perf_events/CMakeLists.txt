@@ -8,3 +8,6 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(profiling_perf_events)
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_PROFILING_PERF_EVENTS_SHELL app PRIVATE
+  src/shell.c
+)
