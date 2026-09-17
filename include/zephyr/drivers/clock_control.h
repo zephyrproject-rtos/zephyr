@@ -358,4 +358,6 @@ static inline int clock_control_configure(const struct device *dev,
  * @}
  */
 
+#include <zephyr/drivers/clock_control/clock_dt.h>
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_H_ */

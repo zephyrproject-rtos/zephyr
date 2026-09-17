@@ -71,21 +71,30 @@ BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, resets) || IS_ENABLED(CONFIG_SOC_SERIES_MC
 static const struct reset_dt_spec eth_reset = RESET_DT_SPEC_INST_GET_OR(0, {0});
 
 /* The mc_cgm clock cell is itself named "name", hence the repetition. */
-#define NXP_ETH_CLOCK_SUBSYS(clk)                                                                 \
-	(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, clk, name)
+#define NXP_ETH_CLOCK_SPEC(clk)                                                                   \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),                                      \
+		.subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, clk, name),       \
+	}
 
-static const clock_control_subsys_t eth0_clocks[] = {
 #if defined(CONFIG_SOC_SERIES_MCXE31X)
-	NXP_ETH_CLOCK_SUBSYS(tx),
-	NXP_ETH_CLOCK_SUBSYS(rx),
+static const struct clock_dt_spec eth0_tx_clk = NXP_ETH_CLOCK_SPEC(tx);
+static const struct clock_dt_spec eth0_rx_clk = NXP_ETH_CLOCK_SPEC(rx);
 #endif
-	NXP_ETH_CLOCK_SUBSYS(ptp),
-	NXP_ETH_CLOCK_SUBSYS(mac),
+static const struct clock_dt_spec eth0_ptp_clk = NXP_ETH_CLOCK_SPEC(ptp);
+static const struct clock_dt_spec eth0_mac_clk = NXP_ETH_CLOCK_SPEC(mac);
+
+static const struct clock_dt_spec *const eth0_clocks[] = {
+#if defined(CONFIG_SOC_SERIES_MCXE31X)
+	&eth0_tx_clk,
+	&eth0_rx_clk,
+#endif
+	&eth0_ptp_clk,
+	&eth0_mac_clk,
 };
 
-int dwmac_bus_init(const struct device *dev)
+int dwmac_bus_init(const struct device *dev __unused)
 {
-	const struct dwmac_config *cfg = dev->config;
 	int ret;
 
 	/*
@@ -110,7 +119,7 @@ int dwmac_bus_init(const struct device *dev)
 	 * again.
 	 */
 	for (size_t n = 0; n < ARRAY_SIZE(eth0_clocks); n++) {
-		ret = clock_control_off(cfg->clock, eth0_clocks[n]);
+		ret = clock_control_off_dt(eth0_clocks[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to disable ethernet clock #%zu (%d)", n, ret);
 			return ret;
@@ -145,7 +154,7 @@ int dwmac_bus_init(const struct device *dev)
 	 * PHY drives into the SoC, which is why the pads are muxed first.
 	 */
 	for (size_t n = 0; n < ARRAY_SIZE(eth0_clocks); n++) {
-		ret = clock_control_on(cfg->clock, eth0_clocks[n]);
+		ret = clock_control_on_dt(eth0_clocks[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to enable ethernet clock #%zu (%d)", n, ret);
 			return ret;
@@ -269,11 +278,10 @@ int dwmac_platform_init(const struct device *dev)
 static const struct dwmac_config dwmac_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 	.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phy_handle)),
-	.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.mac_clk = NXP_ETH_CLOCK_SUBSYS(mac),
+	.mac_clk = &eth0_mac_clk,
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
-	.ptp_clk = NXP_ETH_CLOCK_SUBSYS(ptp),
+	.ptp_clk = &eth0_ptp_clk,
 #endif
 };
 

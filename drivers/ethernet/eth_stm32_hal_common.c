@@ -95,15 +95,7 @@ static int eth_initialize(const struct device *dev)
 
 	/* Set up gated and source clocks */
 	for (size_t n = 0; n < cfg->pclken_cnt; n++) {
-		if (IN_RANGE(cfg->pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
-			ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					       (clock_control_subsys_t)&cfg->pclken[n]);
-		} else {
-			ret = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-						      (clock_control_subsys_t)&cfg->pclken[n],
-						      NULL);
-		}
-
+		ret = clock_control_on_dt(cfg->pclken[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
@@ -319,7 +311,7 @@ static const struct ethernet_api eth_api = {
 #define ETH_STM32_HAL_COMMON_PINCTRL_DEFN(n) PINCTRL_DT_INST_DEFINE(n)
 
 #define ETH_STM32_HAL_COMMON_PCLK_DEFN(n)                                                          \
-	static const struct stm32_pclken eth##n##_pclken[] = STM32_DT_CLOCKS(DT_DRV_INST(n))
+	static const struct clock_dt_spec *const eth##n##_pclken[] = CLOCK_DT_INST_SPECS_INIT(n)
 
 #define ETH_STM32_HAL_COMMON_CFG_DEFN(n)                                                           \
 	static const struct eth_stm32_hal_dev_cfg eth##n##_config = {                              \

@@ -117,11 +117,10 @@ struct dwmac_dma_desc {
 struct dwmac_config {
 	DEVICE_MMIO_ROM;
 	const struct device *phy_dev;
-	const struct device *clock;
-	const clock_control_subsys_t mac_clk;
+	const struct clock_dt_spec *mac_clk;
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	const struct device *ptp_clock;
-	const clock_control_subsys_t ptp_clk;
+	const struct clock_dt_spec *ptp_clk;
 #endif
 };
 

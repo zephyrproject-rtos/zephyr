@@ -50,7 +50,7 @@ int dwmac_bus_init(const struct device *dev)
 	const struct pinctrl_dev_config *pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 	int ret;
 
-	ret = clock_control_on(cfg->clock, cfg->mac_clk);
+	ret = clock_control_on_dt(cfg->mac_clk);
 	if (ret < 0 && ret != -EALREADY) {
 		LOG_ERR("Failed to setup ethernet clock");
 		return ret;
@@ -93,7 +93,7 @@ int dwmac_bus_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
-	ret = clock_control_on(cfg->clock, cfg->ptp_clk);
+	ret = clock_control_on_dt(cfg->ptp_clk);
 	if (ret < 0 && ret != -EALREADY) {
 		LOG_ERR("Failed to setup PTP reference clock");
 		return ret;
@@ -163,11 +163,10 @@ int dwmac_platform_init(const struct device *dev)
 static const struct dwmac_config dwmac_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
-	.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.mac_clk = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
+	.mac_clk = CLOCK_DT_INST_GET(0),
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
-	.ptp_clk = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, ptp, offset),
+	.ptp_clk = CLOCK_DT_INST_GET_BY_NAME(0, ptp),
 #endif
 };
 
