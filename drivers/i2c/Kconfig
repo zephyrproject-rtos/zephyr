@@ -100,7 +100,7 @@ config I2C_BUS_RECOVERY
 	bool "Allows I2C bus recovery support"
 
 config I2C_RTIO
-	bool "I2C RTIO API"
+	bool "I2C RTIO API [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select RTIO
 	select RTIO_WORKQ

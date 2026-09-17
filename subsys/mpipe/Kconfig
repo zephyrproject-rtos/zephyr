@@ -5,7 +5,7 @@
 #
 
 menuconfig MPIPE
-	bool "Multimedia Pipeline framework"
+	bool "Multimedia Pipeline framework [EXPERIMENTAL]"
 	imply THREAD_NAME
 	select NET_BUF
 	select ZBUS

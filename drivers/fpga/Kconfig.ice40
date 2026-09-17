@@ -21,7 +21,7 @@ config ICE40_FPGA_SPI
 	  Enable support for the Lattice iCE40 fpga SPI driver.
 
 config ICE40_FPGA_BITBANG
-	bool "Lattice iCE40 fpga driver GPIO bitbang"
+	bool "Lattice iCE40 fpga driver GPIO bitbang [EXPERIMENTAL]"
 	default y
 	select EXPERIMENTAL
 	depends on DT_HAS_LATTICE_ICE40_FPGA_BITBANG_ENABLED
