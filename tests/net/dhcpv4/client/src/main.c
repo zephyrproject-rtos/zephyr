@@ -704,7 +704,6 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		if (discovers_to_drop > 0) {
 			/* Say nothing, so that the client retransmits. */
 			discovers_to_drop--;
-			net_pkt_unref(pkt);
 			return 0;
 		}
 
