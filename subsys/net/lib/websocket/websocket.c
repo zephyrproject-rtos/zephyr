@@ -54,6 +54,28 @@ static const struct socket_op_vtable websocket_fd_op_vtable;
 int verify_sent_and_received_msg(struct net_msghdr *msg, bool split_msg);
 #endif
 
+#if defined(CONFIG_WEBSOCKET_DEDICATED_HEAP)
+K_HEAP_DEFINE(websocket_heap, CONFIG_WEBSOCKET_DEDICATED_HEAP_SIZE);
+#endif
+
+static inline void *websocket_alloc(const size_t size)
+{
+#if defined(CONFIG_WEBSOCKET_DEDICATED_HEAP)
+	return k_heap_alloc(&websocket_heap, size, K_NO_WAIT);
+#else
+	return k_malloc(size);
+#endif
+}
+
+static inline void websocket_free(void *ptr)
+{
+#if defined(CONFIG_WEBSOCKET_DEDICATED_HEAP)
+	k_heap_free(&websocket_heap, ptr);
+#else
+	k_free(ptr);
+#endif
+}
+
 static const char *opcode2str(enum websocket_opcode opcode)
 {
 	switch (opcode) {
@@ -772,7 +794,7 @@ int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 		header[hdr_len++] |= ctx->masking_value;
 
 		if ((payload != NULL) && (payload_len > 0)) {
-			data_to_send = k_malloc(payload_len);
+			data_to_send = websocket_alloc(payload_len);
 			if (!data_to_send) {
 				return -ENOMEM;
 			}
@@ -794,7 +816,7 @@ int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 
 quit:
 	if (data_to_send != payload) {
-		k_free(data_to_send);
+		websocket_free(data_to_send);
 	}
 
 	/* Do no math with 0 and error codes */

@@ -22,3 +22,10 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+  net.socket.websocket.dedicated_heap:
+    min_ram: 21
+    tags:
+      - net
+      - websocket
+    extra_configs:
+      - CONFIG_WEBSOCKET_DEDICATED_HEAP=y
