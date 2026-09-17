@@ -635,6 +635,7 @@ static int send_sco(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 #if defined(CONFIG_BT_VOICE_OVER_HCI)
 	struct bt_hci_sco_hdr *hdr;
+	int err;
 
 	switch (flags) {
 	case FRAG_SINGLE:
@@ -650,7 +651,31 @@ static int send_sco(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 	net_buf_push_u8(buf, BT_HCI_H4_SCO);
 
-	return bt_send(buf);
+	err = bt_send(buf);
+	if (err != 0) {
+		return err;
+	}
+
+	if (bt_dev.br.sco_h2c_fc_enabled) {
+		return 0;
+	}
+
+	/*
+	 * The current TX completion mechanism relies on NoCP events; however, when
+	 * `bt_dev.br.sco_h2c_fc_enabled` is false, it indicates that the controller does not
+	 * support host-to-controller SCO data flow control, meaning the controller will not
+	 * generate NoCP events. Consequently, once the available credits are exhausted, subsequent
+	 * data cannot be transmitted.
+	 * Since the node for the current transmission is already added to `conn->tx_pending`
+	 * before `send_sco()` is called, and given that `bt_send()` returns successfully,
+	 * `bt_conn_tx_complete()` can be invoked here to immediately and proactively signal the
+	 * completion of the current transmission operation.
+	 *
+	 * Note: This operation relies on the precondition that the node for the current
+	 * transmission has already been added to `conn->tx_pending` before `send_sco()` is called.
+	 */
+	bt_conn_tx_complete(conn, 1);
+	return 0;
 #else
 	return -ENOTSUP;
 #endif /* CONFIG_BT_VOICE_OVER_HCI */
