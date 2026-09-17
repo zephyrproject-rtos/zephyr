@@ -1,0 +1,105 @@
+# Copyright (c) 2026 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties of the Texas Instruments ADS112S14 (16-bit) and
+  ADS122S14 (24-bit) delta-sigma ADCs with eight multiplexed inputs.
+
+  The channel acquisition time selects the speed mode and the digital
+  filter setting. Use the ADC_ACQ_TIME_TICKS unit with a value built by
+  the ADS1X2S14_DATA_RATE() macro. ADC_ACQ_TIME_DEFAULT is speed mode 0
+  with OSR 16, the device reset configuration.
+
+  zephyr,current-source-pin selects the analog inputs driven by IDAC1 and
+  IDAC2 (0 = AIN0 to 7 = AIN7) while the channel is converted. Channels
+  without it convert with both IDACs switched off.
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  internal-reference-mv:
+    type: int
+    enum:
+      - 1250
+      - 2500
+    default: 1250
+    description: |
+      Voltage of the internal reference in millivolts, used by channels
+      with ADC_REF_INTERNAL. ADC_REF_EXTERNAL0 selects the REFP/REFN
+      inputs, ADC_REF_VDD_1 the analog supply. 2500 requires an analog
+      supply of at least 2.7 V. The default is the device reset value.
+
+  idac1-current-microamp:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 10
+      - 20
+      - 30
+      - 40
+      - 50
+      - 60
+      - 70
+      - 80
+      - 90
+      - 100
+      - 200
+      - 300
+      - 400
+      - 500
+      - 600
+      - 700
+      - 800
+      - 900
+      - 1000
+    default: 0
+    description: |
+      Output current of excitation current source IDAC1 in microamperes,
+      0 disables it. Both IDACs share one unit current (1 uA or 10 uA), so
+      idac1-current-microamp and idac2-current-microamp must either both be
+      from 0, 1, 10, 20, ..., 100 or both from 0, 10, 100, 200, ..., 1000.
+      The default is the device reset value.
+
+  idac2-current-microamp:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 10
+      - 20
+      - 30
+      - 40
+      - 50
+      - 60
+      - 70
+      - 80
+      - 90
+      - 100
+      - 200
+      - 300
+      - 400
+      - 500
+      - 600
+      - 700
+      - 800
+      - 900
+      - 1000
+    default: 0
+    description: |
+      Output current of excitation current source IDAC2 in microamperes,
+      0 disables it. See idac1-current-microamp for the allowed combinations.
+      The default is the device reset value.
+
+  global-chop:
+    type: boolean
+    description: |
+      Enable global-chop mode. The device averages two conversions with
+      alternating input polarity to cancel its internal offset voltage, which
+      doubles the conversion time.
+
+io-channel-cells:
+  - input
