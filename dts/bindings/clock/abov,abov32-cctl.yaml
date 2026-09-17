@@ -98,7 +98,9 @@ properties:
   mclk-source:
     type: int
     default: 1
-    description: Main clock source, one of the ABOV32_CLOCK_* identifiers (default ABOV32_CLOCK_HSI).
+    description: |
+      Main clock source, one of the ABOV32_CLOCK_* identifiers (default
+      ABOV32_CLOCK_HSI).
 
   mclk-pre-div:
     type: int

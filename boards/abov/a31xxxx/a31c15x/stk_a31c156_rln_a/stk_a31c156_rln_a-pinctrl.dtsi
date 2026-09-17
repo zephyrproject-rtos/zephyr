@@ -17,5 +17,4 @@
 				 <ABOV_PINMUX(1, 1, 1)>; /* PB1 - USART10_RX (ALT1) */
 		};
 	};
-
 };

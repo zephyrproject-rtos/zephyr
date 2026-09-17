@@ -20,7 +20,6 @@
 			reg = <0>;
 			clock-frequency = <DT_FREQ_M(48)>;
 		};
-
 	};
 
 	sram0: memory@20000000 {

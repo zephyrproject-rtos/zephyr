@@ -23,26 +23,32 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpioe 0 GPIO_ACTIVE_LOW>;
 			label = "STK LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
 			label = "STK LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpioe 2 GPIO_ACTIVE_LOW>;
 			label = "STK LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
 			label = "STK LED 3";
 		};
+
 		led4: led_4 {
 			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
 			label = "STK LED 4";
 		};
+
 		led5: led_5 {
 			gpios = <&gpioe 5 GPIO_ACTIVE_LOW>;
 			label = "STK LED 5";
@@ -51,11 +57,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpiof 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "STK Button 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpiof 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "STK Button 1";
