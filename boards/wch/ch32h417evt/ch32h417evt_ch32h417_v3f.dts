@@ -17,3 +17,15 @@
 		zephyr,flash = &flash0;
 	};
 };
+
+/*
+ * The V3F waker core runs without clock control, so the GPIO ports, whose
+ * driver needs the RCC device to ungate them, cannot work here.
+ */
+&gpioa {
+	status = "disabled";
+};
+
+&gpiob {
+	status = "disabled";
+};
