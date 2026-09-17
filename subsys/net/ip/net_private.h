@@ -281,6 +281,12 @@ struct sock_obj {
 /* This is needed by ipv6_pe.c when privacy extension support is enabled */
 void net_if_ipv6_start_dad(struct net_if *iface,
 			   struct net_if_addr *ifaddr);
+
+/* Same as net_if_ipv6_addr_update_lifetime() for a caller that already
+ * holds the lock of the interface owning the address.
+ */
+void net_if_ipv6_addr_update_lifetime_locked(struct net_if_addr *ifaddr,
+					     uint32_t vlifetime);
 #endif
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
