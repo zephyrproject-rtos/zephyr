@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "event/internal.h"
+
 /*
  * Return the number of captured frames, zero when the buffer is too small,
  * or a negative errno when the current sample should be skipped.
@@ -233,10 +235,14 @@ static void perf_dwork_handler(struct k_work *work)
 	} else {
 		shell_print(perf_data_ptr->sh, "Perf done!");
 	}
+
+	z_perf_session_release(PERF_SESSION_RECORD);
 }
 
 static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 {
+	int ret;
+
 	if (k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_warn(sh, "Perf is running");
 		return -EINPROGRESS;
@@ -254,6 +260,12 @@ static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 	if (argc >= 4) {
 		target_thread = (k_tid_t)strtoul(argv[3], NULL, 16);
 		shell_print(sh, "Tracing thread: %p", target_thread);
+	}
+
+	ret = z_perf_session_claim(PERF_SESSION_RECORD);
+	if (ret != 0) {
+		shell_warn(sh, "Perf is running");
+		return -EINPROGRESS;
 	}
 
 	perf_data.sh = sh;
@@ -279,7 +291,7 @@ static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 static int cmd_perf_clear(const struct shell *sh, size_t argc, char **argv)
 {
 	if (sh != NULL) {
-		if (k_work_delayable_is_pending(&perf_data.dwork)) {
+		if (z_perf_session_is_active() || k_work_delayable_is_pending(&perf_data.dwork)) {
 			shell_warn(sh, "Perf is running");
 			return -EINPROGRESS;
 		}
@@ -294,7 +306,7 @@ static int cmd_perf_clear(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_perf_info(const struct shell *sh, size_t argc, char **argv)
 {
-	if (k_work_delayable_is_pending(&perf_data.dwork)) {
+	if (z_perf_session_is_active() || k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_print(sh, "Perf is running");
 	}
 
@@ -306,7 +318,7 @@ static int cmd_perf_info(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 {
-	if (k_work_delayable_is_pending(&perf_data.dwork)) {
+	if (z_perf_session_is_active() || k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_warn(sh, "Perf is running");
 		return -EINPROGRESS;
 	}
