@@ -14,7 +14,7 @@
 	compatible = "nxp,mcxn236", "nxp,mcx";
 
 	chosen {
-		zephyr,sram = &non_secure_ram;
+		zephyr,sram = &sram0;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmu;
 		zephyr,code-partition = &slot0_ns_partition;
@@ -27,22 +27,15 @@
 		zephyr,crc = &crc;
 		zephyr,entropy = &trng;
 	};
+};
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		secure_ram: partition@20000000 {
-			label = "secure-memory";
-			reg = <0x20000000 DT_SIZE_K(32)>;
-		};
-
-		non_secure_ram: partition@20008000 {
-			label = "non-secure-memory";
-			reg = <0x20008000 DT_SIZE_K(160)>;
-		};
-	};
+/*
+ * frdm_mcxn236.dtsi allocates 192K to sram0. Of that, the first 32K are
+ * owned by the secure image; only the remaining 160K are available to this
+ * non-secure image.
+ */
+&sram0 {
+	reg = <0x20008000 DT_SIZE_K(160)>;
 };
 
 &flash {

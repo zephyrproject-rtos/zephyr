@@ -18,7 +18,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &non_secure_ram;
+		zephyr,sram = &sram0;
 		zephyr,flash = &flash;
 		zephyr,code-partition = &slot0_ns_partition;
 		zephyr,flash-controller = &fmu;
@@ -28,23 +28,15 @@
 		zephyr,canbus = &flexcan0;
 		zephyr,entropy = &trng;
 	};
+};
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		/* RAM split used by TFM */
-		secure_ram: partition@20000000 {
-			label = "secure-memory";
-			reg = <0x20000000 DT_SIZE_K(196)>;
-		};
-
-		non_secure_ram: partition@20030000 {
-			label = "non-secure-memory";
-			reg = <0x20030000 DT_SIZE_K(128)>;
-		};
-	};
+/*
+ * mcx_nx4x_evk_cpu0.dtsi allocates the first 320K of sram0 to cpu0. Of that,
+ * the first 192K are owned by the secure image; only the remaining 128K are
+ * available to this non-secure image.
+ */
+&sram0 {
+	reg = <0x20030000 DT_SIZE_K(128)>;
 };
 
 &flash {
