@@ -95,6 +95,8 @@ static uint8_t willmsgupd[] = { 8, 0x1C, 'm', 'y', 'w', 'i', 'l', 'l' };
 static uint8_t willtopicresp[] = { 3, 0x1B, 0 };
 /* willmsgresp */
 static uint8_t willmsgresp[] = { 3, 0x1D, 0 };
+/* disconnect with a 3-octet length field */
+static uint8_t disconnect_ext_len[] = { 0x01, 0x00, 4, 0x18 };
 
 static struct mqtt_sn_decode_test decode_tests[] = {
 	{
@@ -282,6 +284,12 @@ static struct mqtt_sn_decode_test decode_tests[] = {
 			.type = MQTT_SN_MSG_TYPE_WILLMSGRESP,
 		}
 	},
+	{
+		MQTT_SN_DECODE_TEST(disconnect_ext_len),
+		.expected = (struct mqtt_sn_param){
+			.type = MQTT_SN_MSG_TYPE_DISCONNECT,
+		}
+	},
 };
 
 static ZTEST(mqtt_sn_packet, test_mqtt_packet_decode)
@@ -306,6 +314,39 @@ static ZTEST(mqtt_sn_packet, test_mqtt_packet_decode)
 		LOG_HEXDUMP_DBG(&decode_tests[i].expected, sizeof(param), "Expected data");
 		zassert_mem_equal(&param, &decode_tests[i].expected, sizeof(param), "in test %zu",
 				  i);
+	}
+}
+
+/* Extended length prefix with the 16-bit length missing or cut short */
+static uint8_t truncated_ext_len_1[] = { 0x01 };
+static uint8_t truncated_ext_len_2[] = { 0x01, 0x00 };
+
+static struct {
+	uint8_t *data;
+	size_t datasz;
+	char *name;
+} truncated_tests[] = {
+	{ MQTT_SN_DECODE_TEST(truncated_ext_len_1) },
+	{ MQTT_SN_DECODE_TEST(truncated_ext_len_2) },
+};
+
+static ZTEST(mqtt_sn_packet, test_mqtt_packet_decode_truncated_length)
+{
+	struct net_buf_simple msg;
+	struct mqtt_sn_param param;
+	int err;
+
+	for (size_t i = 0; i < ARRAY_SIZE(truncated_tests); i++) {
+		TC_PRINT("%s - test %zu: %s\n", __func__, i, truncated_tests[i].name);
+		memset(&param, 0, sizeof(param));
+		net_buf_simple_init_with_data(&msg, truncated_tests[i].data,
+					      truncated_tests[i].datasz);
+
+		err = mqtt_sn_decode_msg(&msg, &param);
+		zassert_equal(err, -EPROTO, "Unexpected error %d in test %zu", err, i);
+		/* Only the prefix octet may have been consumed */
+		zassert_equal(msg.len, truncated_tests[i].datasz - 1,
+			      "Decoder read past the buffer in test %zu (len %u)", i, msg.len);
 	}
 }
 
