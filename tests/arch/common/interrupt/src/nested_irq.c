@@ -7,6 +7,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/interrupt_util.h>
+#include <zephyr/irq_multilevel.h>
 
 /*
  * Run the nested interrupt test for the supported platforms only.
@@ -79,6 +80,16 @@
  */
 #define IRQ0_LINE	VPR_VEVIF_IRQ(VPR_VEVIF_LAST_IDX)
 #define IRQ1_LINE	VPR_VEVIF_IRQ(UTIL_DEC(VPR_VEVIF_LAST_IDX))
+
+#define IRQ0_PRIO	1
+#define IRQ1_PRIO	2
+#elif defined(CONFIG_RISCV_NESTED_INTERRUPTS) && defined(CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT)
+/*
+ * PLIC sources are second level interrupts behind the machine external
+ * interrupt. A larger priority number is more urgent.
+ */
+#define IRQ0_LINE	(IRQ_TO_L2(14) | RISCV_IRQ_MEXT)
+#define IRQ1_LINE	(IRQ_TO_L2(15) | RISCV_IRQ_MEXT)
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
