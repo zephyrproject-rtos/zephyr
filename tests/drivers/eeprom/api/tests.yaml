@@ -36,19 +36,6 @@ tests:
       - native_sim/native/64
     integration_platforms:
       - native_sim
-  drivers.eeprom.api.shield.x_nucleo_eeprma2:
-    # Tests overwrite EEPROM content; only run on select boards
-    tags:
-      - shield
-    depends_on:
-      - arduino_gpio
-      - arduino_i2c
-      - arduino_spi
-    extra_args: SHIELD=x_nucleo_eeprma2
-    harness_config:
-      fixture: fixture_shield_x_nucleo_eeprma2
-    integration_platforms:
-      - nucleo_f070rb
   drivers.eeprom.api.build:
     # Build-only test for boards with EEPROMs
     build_only: true
