@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "nucleo_n657x0_q_common.dtsi"
+#include "nucleo_n657x0_q-common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32N657X0-Q-NUCLEO board";

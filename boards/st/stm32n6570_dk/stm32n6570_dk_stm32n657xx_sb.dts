@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "stm32n6570_dk_common.dtsi"
+#include "stm32n6570_dk-common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32N6570 Discovery Kit board";
