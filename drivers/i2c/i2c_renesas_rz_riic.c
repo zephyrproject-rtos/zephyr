@@ -636,7 +636,9 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	I2C_RZ_IRQ_CONNECT(index, tei, iic_master_tei_isr);
 
 #define I2C_RZ_EXTENDED_CFG(index)                                                                 \
-	static riic_master_extended_cfg_t g_i2c_controller##index##_extend = {};
+	static riic_master_extended_cfg_t g_i2c_controller##index##_extend = {                     \
+		.p_reg = (void *)DT_INST_REG_ADDR(index),                                          \
+	};
 #endif /* CONFIG_I2C_RENESAS_RZ_IIC */
 
 #define I2C_RZ_RIIC_INIT(index)                                                                    \
@@ -651,7 +653,7 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 		.p_transfer_tx = NULL,                                                             \
 		.p_transfer_rx = NULL,                                                             \
 		.p_callback = i2c_rz_riic_callback,                                                \
-		.p_context = DEVICE_DT_GET(DT_DRV_INST(index)),                                    \
+		.p_context = (void *)DEVICE_DT_GET(DT_DRV_INST(index)),                            \
 		.rxi_irq = DT_INST_IRQ_BY_NAME(index, rxi, irq),                                   \
 		.txi_irq = DT_INST_IRQ_BY_NAME(index, txi, irq),                                   \
 		.tei_irq = DT_INST_IRQ_BY_NAME(index, tei, irq),                                   \

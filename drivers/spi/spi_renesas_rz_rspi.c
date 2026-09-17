@@ -242,7 +242,7 @@ static int spi_rz_rspi_configure(const struct device *dev, const struct spi_conf
 	/* Add callback, which will be called when transfer completed or error occur. */
 	data->fsp_config->p_callback = spi_callbacks;
 	/* Data is passed into spi_callbacks. */
-	data->fsp_config->p_context = dev;
+	data->fsp_config->p_context = (void *)dev;
 	/* Open module RSPI. */
 	err = config->fsp_api->open(data->fsp_ctrl, data->fsp_config);
 	if (err != FSP_SUCCESS) {

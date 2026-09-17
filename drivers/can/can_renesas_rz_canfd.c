@@ -1007,7 +1007,7 @@ DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_rz_canfd_global), can_ren
 		.tx_irq = DT_INST_IRQ_BY_NAME(index, ch_trx, irq),                                 \
 		.p_extend = &g_canfd_ch##index##_extern_cfg,                                       \
 		.p_bit_timing = &g_canfd_ch##index##_bit_timing_cfg,                               \
-		.p_context = DEVICE_DT_INST_GET(index),                                            \
+		.p_context = (void *)DEVICE_DT_INST_GET(index),                                    \
 		.p_callback = can_renesas_rz_fsp_cb,                                               \
 	};                                                                                         \
 	static struct can_renesas_rz_data can_renesas_rz_data##index = {                           \

@@ -433,8 +433,6 @@ static DEVICE_API(flash, flash_renesas_rz_qspi_driver_api) = {
 #define DT_DRV_COMPAT renesas_rz_qspi_xspi
 
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
-#define XSPI_QSPI_MEMORY_SIZE(size_bytes)                                                          \
-	((xspi_qspi_memory_size_t)(((size_bytes) / (1 * 1024 * 1024)) - 1))
 
 #define RZ_QSPI_XSPI_SOC_NV_FLASH_COMPAT(node_id)                                                  \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
@@ -458,12 +456,12 @@ static DEVICE_API(flash, flash_renesas_rz_qspi_driver_api) = {
 	static const xspi_qspi_extended_cfg_t g_qspi##n##_extended_cfg = {                         \
 		.unit = DT_PROP(DT_INST_PARENT(n), unit),                                          \
 		.chip_select = XSPI_QSPI_CHIP_SELECT_##n,                                          \
-		.memory_size =                                                                     \
-			XSPI_QSPI_MEMORY_SIZE(DT_REG_SIZE(RZ_QSPI_XSPI_SOC_NV_FLASH_NODE(n))),     \
+		.memory_size = (uint32_t)(DT_REG_SIZE(RZ_QSPI_XSPI_SOC_NV_FLASH_NODE(n))),         \
 		.p_timing_settings = &g_qspi##n##_timing_settings,                                 \
 		.prefetch_en =                                                                     \
 			(xspi_qspi_prefetch_function_t)XSPI_QSPI_CFG_UNIT_##n##_PREFETCH_FUNCTION, \
 		.p_address_space = &g_qspi##n##_address_space_settings,                            \
+		.p_reg = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),                                   \
 	};                                                                                         \
 	static spi_flash_cfg_t g_qspi##n##_cfg = {                                                 \
 		.spi_protocol = SPI_FLASH_PROTOCOL_1S_1S_1S,                                       \
@@ -535,6 +533,7 @@ DT_INST_FOREACH_STATUS_OKAY(FLASH_RENESAS_RZ_QSPI_XSPI_DEFINE)
 			},                                                                         \
 		.io_fix_mask = (0u << 2) | (1u << 3),                                              \
 		.io_fix_value = (1u << 2) | (1u << 3),                                             \
+		.p_reg = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),                                   \
 	};                                                                                         \
 	static spi_flash_cfg_t g_qspi##n##_cfg = {                                                 \
 		.spi_protocol = SPI_FLASH_PROTOCOL_EXTENDED_SPI,                                   \

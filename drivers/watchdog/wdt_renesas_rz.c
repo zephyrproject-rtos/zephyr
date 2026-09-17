@@ -168,8 +168,7 @@ static int wdt_rz_timeout_calculate(const struct device *dev, const struct wdt_t
 	if (config->window.max >= best_period_ms) {
 		window_start_idx = 3;
 	} else {
-		window_start_idx =
-			((config->window.max * 4 + best_period_ms) / best_period_ms) - 1;
+		window_start_idx = ((config->window.max * 4 + best_period_ms) / best_period_ms) - 1;
 	}
 
 	if (config->window.min > best_period_ms) {
@@ -385,18 +384,24 @@ static DEVICE_API(wdt, wdt_rz_api) = {
 };
 
 #ifndef CONFIG_WDT_RENESAS_RZ_USE_ICU
-static wdt_extended_cfg_t g_wdt_extend_cfg = {
-	.overflow_ipl = DT_IRQ(DT_NODELABEL(wdt0), priority),
-	.overflow_irq = DT_IRQ(DT_NODELABEL(wdt0), irq),
-};
-#define WDT_RZ_CONFIG_EXTEND &g_wdt_extend_cfg
+#define WDT_RZ_EXTEND_CFG_DEFINE(inst)                                                             \
+	static wdt_extended_cfg_t g_wdt_extend_cfg_##inst = {                                      \
+		.overflow_ipl = DT_INST_IRQ(inst, priority),                                       \
+		.overflow_irq = DT_INST_IRQ(inst, irq),                                            \
+	}
+#define WDT_RZ_EXTEND_CFG_GET(inst) (&g_wdt_extend_cfg_##inst)
 #define WDT_RZ_INIT_WORK_QUEUE
 #else
-#define WDT_RZ_CONFIG_EXTEND   NULL
-#define WDT_RZ_INIT_WORK_QUEUE k_work_init(&data->interrupt_work, wdt_rz_interrupt_work)
+#define WDT_RZ_EXTEND_CFG_DEFINE(inst)                                                             \
+	static wdt_extended_cfg_t g_wdt_extend_cfg_##inst = {                                      \
+		.p_reg = (void *)DT_INST_REG_ADDR(inst),                                           \
+	}
+#define WDT_RZ_EXTEND_CFG_GET(inst) (&g_wdt_extend_cfg_##inst)
+#define WDT_RZ_INIT_WORK_QUEUE      k_work_init(&data->interrupt_work, wdt_rz_interrupt_work)
 #endif
 
 #define WDT_RZ_INIT(inst)                                                                          \
+	WDT_RZ_EXTEND_CFG_DEFINE(inst);                                                            \
 	static wdt_cfg_t g_wdt_##inst##_cfg = {                                                    \
 		.timeout = WDT_TIMEOUT_16384,                                                      \
 		.clock_division = WDT_CLOCK_DIVISION_8192,                                         \
@@ -406,7 +411,7 @@ static wdt_extended_cfg_t g_wdt_extend_cfg = {
 		.stop_control = WDT_STOP_CONTROL_DISABLE,                                          \
 		.p_callback = wdt_rz_callback,                                                     \
 		.p_context = (void *)DEVICE_DT_INST_GET(inst),                                     \
-		.p_extend = WDT_RZ_CONFIG_EXTEND,                                                  \
+		.p_extend = WDT_RZ_EXTEND_CFG_GET(inst),                                           \
 	};                                                                                         \
                                                                                                    \
 	static wdt_instance_ctrl_t g_wdt##inst##_ctrl;                                             \
