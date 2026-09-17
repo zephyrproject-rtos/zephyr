@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: frdm_mcxe32b/mcxe32b/cpu1
+name: NXP FRDM-MCXE32B (CPU1)
+type: mcu
+arch: arm
+ram: 144
+flash: 1872
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - serial
+vendor: nxp
