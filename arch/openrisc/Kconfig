@@ -19,6 +19,7 @@ config GEN_IRQ_VECTOR_TABLE
 
 config GEN_SW_ISR_TABLE
 	default y
+	depends on GEN_ISR_TABLES
 
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP

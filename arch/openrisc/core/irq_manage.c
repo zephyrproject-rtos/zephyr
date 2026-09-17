@@ -21,6 +21,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 	z_openrisc_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 static ALWAYS_INLINE void enter_irq(unsigned int irq)
 {
 	if (IS_ENABLED(CONFIG_TRACING_ISR)) {
@@ -35,14 +36,21 @@ static ALWAYS_INLINE void enter_irq(unsigned int irq)
 		sys_trace_isr_exit();
 	}
 }
+#endif
 
 void z_openrisc_enter_irq(unsigned int irq)
 {
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 	enter_irq(irq);
+#else
+	ARG_UNUSED(irq);
+	z_irq_spurious(NULL);
+#endif
 }
 
 void z_openrisc_handle_irqs(void)
 {
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 	uint32_t picsr;
 
 	/* Iteratively process every interrupt flag */
@@ -58,6 +66,9 @@ void z_openrisc_handle_irqs(void)
 	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {
 		z_check_stack_sentinel();
 	}
+#else
+	z_irq_spurious(NULL);
+#endif
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
