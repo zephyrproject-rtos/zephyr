@@ -375,13 +375,35 @@ static int rfcomm_send(struct bt_rfcomm_session *session, struct net_buf *buf)
 	return rfcomm_send_cb(session, buf, NULL, NULL);
 }
 
+static struct net_buf *rfcomm_create_pdu(uint16_t len)
+{
+	struct net_buf *buf;
+
+	buf = bt_l2cap_create_pdu_timeout(NULL, 0, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_WRN("net buffer allocation failure");
+		return NULL;
+	}
+
+	if (net_buf_tailroom(buf) < len) {
+		LOG_WRN("Tail room too small (%zu < %u)", net_buf_tailroom(buf), len);
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	return buf;
+}
+
 static int rfcomm_send_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 {
 	struct bt_rfcomm_hdr *hdr;
 	struct net_buf *buf;
 	uint8_t cr, fcs;
 
-	buf = bt_l2cap_create_pdu(NULL, 0);
+	buf = rfcomm_create_pdu(sizeof(*hdr) + sizeof(fcs));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_CMD_CR(session->role);
@@ -403,7 +425,10 @@ static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 	LOG_DBG("dlci %d", dlci);
 
-	buf = bt_l2cap_create_pdu(NULL, 0);
+	buf = rfcomm_create_pdu(sizeof(*hdr) + sizeof(fcs));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_CMD_CR(session->role);
@@ -418,25 +443,37 @@ static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
 {
+	int err;
+
 	if (session->dlcs) {
 		return;
 	}
 
 	session->state = BT_RFCOMM_STATE_DISCONNECTING;
-	rfcomm_send_disc(session, 0);
-	k_work_reschedule(&session->rtx_work, RFCOMM_DISC_TIMEOUT);
+	err = rfcomm_send_disc(session, 0);
+	if (err == 0) {
+		k_work_reschedule(&session->rtx_work, RFCOMM_DISC_TIMEOUT);
+	} else {
+		LOG_ERR("Failed to send disc on session %p (%d)", session, err);
+		k_work_reschedule(&session->rtx_work, K_NO_WAIT);
+	}
 }
 
-static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_session *session,
-					   uint8_t cr, uint8_t type,
-					   uint8_t len)
+static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_session *session, uint8_t cr,
+					   uint8_t type, uint8_t len)
 {
 	struct bt_rfcomm_hdr *hdr;
 	struct bt_rfcomm_msg_hdr *msg_hdr;
 	struct net_buf *buf;
+	uint16_t total_len;
 	uint8_t hdr_cr;
 
-	buf = bt_l2cap_create_pdu(NULL, 0);
+	total_len = len + sizeof(*hdr) + sizeof(*msg_hdr) + sizeof(uint8_t);
+
+	buf = rfcomm_create_pdu(total_len);
+	if (buf == NULL) {
+		return NULL;
+	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr_cr = BT_RFCOMM_UIH_CR(session->role);
@@ -454,6 +491,7 @@ static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_session *session,
 static void rfcomm_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
+	int err;
 
 	LOG_DBG("Session %p", session);
 
@@ -463,7 +501,18 @@ static void rfcomm_connected(struct bt_l2cap_chan *chan)
 			   BT_RFCOMM_HDR_SIZE - BT_RFCOMM_FCS_SIZE;
 
 	if (session->state == BT_RFCOMM_STATE_CONNECTING) {
-		rfcomm_send_sabm(session, 0);
+		err = rfcomm_send_sabm(session, 0);
+		if (err != 0) {
+			LOG_ERR("Failed to send sabm on session %p (%d)", session, err);
+			goto disconnect;
+		}
+	}
+	return;
+
+disconnect:
+	err = bt_l2cap_chan_disconnect(chan);
+	if (err < 0) {
+		LOG_ERR("Failed to disconnect RFCOMM session (err %d)", err);
 	}
 }
 
@@ -558,7 +607,10 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 
 	LOG_DBG("dlci %d", dlci);
 
-	buf = bt_l2cap_create_pdu(NULL, 0);
+	buf = rfcomm_create_pdu(sizeof(*hdr) + sizeof(fcs));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
@@ -641,6 +693,20 @@ static void rfcomm_sent(struct bt_conn *conn, void *user_data, int err)
 	}
 }
 
+static void rfcomm_dlc_disconn(struct bt_rfcomm_dlc *dlc)
+{
+	int err;
+
+	dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
+	err = rfcomm_send_disc(dlc->session, dlc->dlci);
+	if (err == 0) {
+		k_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
+	} else {
+		LOG_ERR("Failed to send disc on DLC %p (%d)", dlc, err);
+		k_work_reschedule(&dlc->rtx_work, K_NO_WAIT);
+	}
+}
+
 static void rfcomm_dlc_tx_worker(struct k_work *work)
 {
 	struct bt_rfcomm_dlc *dlc = CONTAINER_OF(work, struct bt_rfcomm_dlc, tx_work);
@@ -701,8 +767,7 @@ disconnect:
 	}
 
 	if (dlc->state == BT_RFCOMM_STATE_DISCONNECTING) {
-		rfcomm_send_disc(dlc->session, dlc->dlci);
-		k_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
+		rfcomm_dlc_disconn(dlc);
 	} else {
 		rfcomm_dlc_destroy(dlc);
 	}
@@ -716,7 +781,10 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	struct net_buf *buf;
 	uint8_t cr, fcs;
 
-	buf = bt_l2cap_create_pdu(NULL, 0);
+	buf = rfcomm_create_pdu(sizeof(*hdr) + sizeof(fcs));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_RESP_CR(session->role);
@@ -737,8 +805,10 @@ static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr,
 	struct net_buf *buf;
 	uint8_t fcs;
 
-	buf = rfcomm_make_uih_msg(dlc->session, cr, BT_RFCOMM_MSC,
-				  sizeof(*msc));
+	buf = rfcomm_make_uih_msg(dlc->session, cr, BT_RFCOMM_MSC, sizeof(*msc));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	msc = net_buf_add(buf, sizeof(*msc));
 	/* cr bit should be always 1 in MSC */
@@ -758,8 +828,10 @@ static int rfcomm_send_rls(struct bt_rfcomm_dlc *dlc, uint8_t cr,
 	struct net_buf *buf;
 	uint8_t fcs;
 
-	buf = rfcomm_make_uih_msg(dlc->session, cr, BT_RFCOMM_RLS,
-				  sizeof(*rls));
+	buf = rfcomm_make_uih_msg(dlc->session, cr, BT_RFCOMM_RLS, sizeof(*rls));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	rls = net_buf_add(buf, sizeof(*rls));
 	/* cr bit should be always 1 in RLS */
@@ -779,6 +851,9 @@ static int rfcomm_send_rpn(struct bt_rfcomm_session *session, uint8_t cr,
 	uint8_t fcs;
 
 	buf = rfcomm_make_uih_msg(session, cr, BT_RFCOMM_RPN, sizeof(*rpn));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	net_buf_add_mem(buf, rpn, sizeof(*rpn));
 
@@ -827,6 +902,9 @@ static int rfcomm_send_test(struct bt_rfcomm_session *session, uint8_t cr, uint8
 	uint8_t fcs;
 
 	buf = rfcomm_make_uih_msg(session, cr, BT_RFCOMM_TEST, len);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	net_buf_add_mem(buf, pattern, len);
 
@@ -841,8 +919,10 @@ static int rfcomm_send_nsc(struct bt_rfcomm_session *session, uint8_t cmd_type)
 	struct net_buf *buf;
 	uint8_t fcs;
 
-	buf = rfcomm_make_uih_msg(session, BT_RFCOMM_MSG_RESP_CR,
-				  BT_RFCOMM_NSC, sizeof(cmd_type));
+	buf = rfcomm_make_uih_msg(session, BT_RFCOMM_MSG_RESP_CR, BT_RFCOMM_NSC, sizeof(cmd_type));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	net_buf_add_u8(buf, cmd_type);
 
@@ -858,6 +938,9 @@ static int rfcomm_send_fcon(struct bt_rfcomm_session *session, uint8_t cr)
 	uint8_t fcs;
 
 	buf = rfcomm_make_uih_msg(session, cr, BT_RFCOMM_FCON, 0);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
@@ -871,6 +954,9 @@ static int rfcomm_send_fcoff(struct bt_rfcomm_session *session, uint8_t cr)
 	uint8_t fcs;
 
 	buf = rfcomm_make_uih_msg(session, cr, BT_RFCOMM_FCOFF, 0);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
@@ -880,6 +966,8 @@ static int rfcomm_send_fcoff(struct bt_rfcomm_session *session, uint8_t cr)
 
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
+	int err;
+
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
 
 	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR, BT_RFCOMM_DEFAULT_V24_SIG);
@@ -893,7 +981,10 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
 		LOG_DBG("CFC not supported %p", dlc);
-		rfcomm_send_fcon(dlc->session, BT_RFCOMM_MSG_CMD_CR);
+		err = rfcomm_send_fcon(dlc->session, BT_RFCOMM_MSG_CMD_CR);
+		if (err != 0) {
+			LOG_ERR("Failed to send fcon command on dlc %p (%d)", dlc, err);
+		}
 		/* Use tx_credits as binary sem for MSC FC */
 		k_sem_init(&dlc->tx_credits, 0, 1);
 	}
@@ -956,12 +1047,17 @@ static void rfcomm_dlc_drop(struct bt_rfcomm_dlc *dlc)
 
 static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 {
+	int err;
+
 	LOG_DBG("dlc %p", dlc);
 
 	switch (dlc->state) {
 	case BT_RFCOMM_STATE_SECURITY_PENDING:
 		if (dlc->role == BT_RFCOMM_ROLE_ACCEPTOR) {
-			rfcomm_send_dm(dlc->session, dlc->dlci);
+			err = rfcomm_send_dm(dlc->session, dlc->dlci);
+			if (err != 0) {
+				LOG_ERR("Failed to send dm on DLC %p (%d)", dlc, err);
+			}
 		}
 		__fallthrough;
 	case BT_RFCOMM_STATE_INIT:
@@ -970,8 +1066,7 @@ static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 	case BT_RFCOMM_STATE_CONNECTING:
 	case BT_RFCOMM_STATE_CONFIG:
 		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
-		rfcomm_send_disc(dlc->session, dlc->dlci);
-		k_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
+		rfcomm_dlc_disconn(dlc);
 		break;
 	case BT_RFCOMM_STATE_CONNECTED:
 		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
@@ -990,6 +1085,8 @@ static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 
 static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 {
+	int err;
+
 	if (!dlci) {
 		if (rfcomm_send_ua(session, dlci) < 0) {
 			return;
@@ -1001,12 +1098,16 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 		enum security_result result;
 
 		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-		if (!dlc) {
+		if (dlc == NULL) {
 			dlc = rfcomm_dlc_accept(session, dlci);
-			if (!dlc) {
-				rfcomm_send_dm(session, dlci);
-				return;
+		}
+
+		if (dlc == NULL) {
+			err = rfcomm_send_dm(session, dlci);
+			if (err != 0) {
+				LOG_ERR("Failed to send dm to %u (%d)", dlci, err);
 			}
+			return;
 		}
 
 		result = rfcomm_dlc_security(dlc);
@@ -1018,7 +1119,10 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 			break;
 		case RFCOMM_SECURITY_REJECT:
 		default:
-			rfcomm_send_dm(session, dlci);
+			err = rfcomm_send_dm(session, dlci);
+			if (err != 0) {
+				LOG_ERR("Failed to send dm on DLC %p (%d)", dlc, err);
+			}
 			rfcomm_dlc_drop(dlc);
 			return;
 		}
@@ -1041,6 +1145,9 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	uint8_t fcs;
 
 	buf = rfcomm_make_uih_msg(dlc->session, cr, BT_RFCOMM_PN, sizeof(*pn));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	LOG_DBG("mtu %x", dlc->mtu);
 
@@ -1081,7 +1188,10 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 
 	LOG_DBG("Dlc %p credits %d", dlc, credits);
 
-	buf = bt_l2cap_create_pdu(NULL, 0);
+	buf = rfcomm_create_pdu(sizeof(*hdr) + sizeof(credits) + sizeof(fcs));
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	cr = BT_RFCOMM_UIH_CR(dlc->session->role);
@@ -1098,6 +1208,7 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 
 static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
 {
+	int err;
 	enum security_result result;
 
 	LOG_DBG("dlc %p", dlc);
@@ -1107,8 +1218,11 @@ static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
 	case RFCOMM_SECURITY_PASSED:
 		dlc->mtu = MIN(dlc->mtu, dlc->session->mtu);
 		dlc->state = BT_RFCOMM_STATE_CONFIG;
-		rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
-		break;
+		err = rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
+		if (err != 0) {
+			LOG_ERR("Failed to send pn on DLC %p (%d)", dlc, err);
+		}
+		return err;
 	case RFCOMM_SECURITY_PENDING:
 		dlc->state = BT_RFCOMM_STATE_SECURITY_PENDING;
 		break;
@@ -1194,6 +1308,7 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 	struct bt_rfcomm_msc *msc;
 	struct bt_rfcomm_dlc *dlc;
 	uint8_t dlci;
+	int err;
 
 	if (buf->len < sizeof(*msc)) {
 		LOG_WRN("Malformed MSC command %u < %zu", buf->len, sizeof(*msc));
@@ -1234,7 +1349,10 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 		}
 	}
 
-	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_RESP_CR, msc->v24_signal);
+	err = rfcomm_send_msc(dlc, BT_RFCOMM_MSG_RESP_CR, msc->v24_signal);
+	if (err != 0) {
+		LOG_ERR("Failed to send msc on DLC %p (%d)", dlc, err);
+	}
 }
 
 static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
@@ -1243,6 +1361,7 @@ static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
 	struct bt_rfcomm_rls *rls;
 	uint8_t dlci;
 	struct bt_rfcomm_dlc *dlc;
+	int err;
 
 	if (buf->len < sizeof(*rls)) {
 		LOG_WRN("Malformed RLS command %u < %zu", buf->len, sizeof(*rls));
@@ -1265,7 +1384,10 @@ static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
 	}
 
 	/* As per the ETSI same line status has to returned in the response */
-	rfcomm_send_rls(dlc, BT_RFCOMM_MSG_RESP_CR, rls->line_status);
+	err = rfcomm_send_rls(dlc, BT_RFCOMM_MSG_RESP_CR, rls->line_status);
+	if (err != 0) {
+		LOG_ERR("Failed to send rls on DLC %p (%d)", dlc, err);
+	}
 }
 
 static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
@@ -1274,6 +1396,7 @@ static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
 	struct bt_rfcomm_rpn rsp;
 	uint8_t dlci;
 	uint8_t data_bits, stop_bits, parity_bits;
+	int err;
 
 	if (!cr) {
 		/* Ignore if its a response */
@@ -1291,7 +1414,10 @@ static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
 		rsp = *rpn;
 		/* Accept all the values proposed by the sender */
 		rsp.param_mask = sys_cpu_to_le16(BT_RFCOMM_RPN_PARAM_MASK_ALL);
-		rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, &rsp);
+		err = rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, &rsp);
+		if (err != 0) {
+			LOG_ERR("Failed to send rpn setting rsp (%d)", err);
+		}
 		return;
 	}
 
@@ -1318,7 +1444,50 @@ static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
 	rsp.line_settings = BT_RFCOMM_SET_LINE_SETTINGS(data_bits, stop_bits, parity_bits);
 	rsp.param_mask = sys_cpu_to_le16(BT_RFCOMM_RPN_PARAM_MASK_ALL);
 
-	rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, &rsp);
+	err = rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, &rsp);
+	if (err != 0) {
+		LOG_ERR("Failed to send rpn getting rsp (%d)", err);
+	}
+}
+
+static void rfcomm_handle_test(struct bt_rfcomm_session *session, struct net_buf *buf, uint8_t cr)
+{
+	int err;
+
+	if (!cr) {
+		return;
+	}
+
+	if (buf->len > UINT8_MAX) {
+		LOG_WRN("TEST command too long %u > %u", buf->len, UINT8_MAX);
+		return;
+	}
+
+	err = rfcomm_send_test(session, BT_RFCOMM_MSG_RESP_CR, buf->data, buf->len);
+	if (err != 0) {
+		LOG_ERR("Failed to send test rsp on session %p (%d)", session, err);
+	}
+}
+
+static void rfcomm_dlc_connect(struct bt_rfcomm_session *session, struct bt_rfcomm_dlc *dlc)
+{
+	int err;
+	uint8_t state;
+
+	state = dlc->state;
+	dlc->state = BT_RFCOMM_STATE_CONNECTING;
+	err = rfcomm_send_sabm(session, dlc->dlci);
+	if (err == 0) {
+		return;
+	}
+
+	LOG_ERR("Failed to send sabm on DLC %p (%d)", dlc, err);
+
+	dlc->state = state;
+	err = rfcomm_dlc_close(dlc);
+	if (err != 0) {
+		LOG_ERR("Failed to close DLC %p state %u (%d)", dlc, state, err);
+	}
 }
 
 static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
@@ -1326,6 +1495,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 {
 	struct bt_rfcomm_pn *pn;
 	struct bt_rfcomm_dlc *dlc;
+	int err;
 
 	if (buf->len < sizeof(*pn)) {
 		LOG_WRN("Malformed PN command %u < %zu", buf->len, sizeof(*pn));
@@ -1342,13 +1512,19 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 
 		if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
 			LOG_ERR("Invalid mtu %d", pn->mtu);
-			rfcomm_send_dm(session, pn->dlci);
+			err = rfcomm_send_dm(session, pn->dlci);
+			if (err != 0) {
+				LOG_ERR("Failed to send dm to %u (%d)", pn->dlci, err);
+			}
 			return;
 		}
 
 		dlc = rfcomm_dlc_accept(session, pn->dlci);
-		if (!dlc) {
-			rfcomm_send_dm(session, pn->dlci);
+		if (dlc == NULL) {
+			err = rfcomm_send_dm(session, pn->dlci);
+			if (err != 0) {
+				LOG_ERR("Failed to send dm to %u (%d)", pn->dlci, err);
+			}
 			return;
 		}
 
@@ -1367,7 +1543,10 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		}
 
 		dlc->state = BT_RFCOMM_STATE_CONFIG;
-		rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+		err = rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+		if (err != 0) {
+			LOG_ERR("Failed to send pn rsp on DLC %p (%d)", dlc, err);
+		}
 		/* Cancel idle timer if any */
 		k_work_cancel_delayable(&session->rtx_work);
 	} else {
@@ -1379,7 +1558,10 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 				return;
 			}
 			dlc->mtu = MIN(dlc->mtu, sys_le16_to_cpu(pn->mtu));
-			rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+			err = rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
+			if (err != 0) {
+				LOG_ERR("Failed to send pn rsp on DLC %p (%d)", dlc, err);
+			}
 		} else {
 			if (dlc->state != BT_RFCOMM_STATE_CONFIG) {
 				return;
@@ -1396,8 +1578,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 				session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;
 			}
 
-			dlc->state = BT_RFCOMM_STATE_CONNECTING;
-			rfcomm_send_sabm(session, dlc->dlci);
+			rfcomm_dlc_connect(session, dlc);
 		}
 	}
 }
@@ -1405,17 +1586,24 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 {
 	struct bt_rfcomm_dlc *dlc;
+	int err;
 
 	LOG_DBG("Dlci %d", dlci);
 
 	if (dlci) {
 		dlc = rfcomm_dlcs_remove_dlci(session->dlcs, dlci);
-		if (!dlc) {
-			rfcomm_send_dm(session, dlci);
+		if (dlc == NULL) {
+			err = rfcomm_send_dm(session, dlci);
+			if (err != 0) {
+				LOG_ERR("Failed to send dm to %u (%d)", dlci, err);
+			}
 			return;
 		}
 
-		rfcomm_send_ua(session, dlci);
+		err = rfcomm_send_ua(session, dlci);
+		if (err != 0) {
+			LOG_ERR("Failed to send ua on DLC %p (%d)", dlc, err);
+		}
 		rfcomm_dlc_disconnect(dlc);
 
 		if (!session->dlcs) {
@@ -1425,7 +1613,10 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 	} else {
 		/* Cancel idle timer */
 		k_work_cancel_delayable(&session->rtx_work);
-		rfcomm_send_ua(session, 0);
+		err = rfcomm_send_ua(session, 0);
+		if (err != 0) {
+			LOG_ERR("Failed to send ua to DLCI0 (%d)", err);
+		}
 		rfcomm_session_disconnected(session);
 	}
 }
@@ -1434,6 +1625,7 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session, struct net_buf 
 {
 	struct bt_rfcomm_msg_hdr *hdr;
 	uint8_t msg_type, len, cr;
+	int err;
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Too small RFCOMM message");
@@ -1466,16 +1658,7 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session, struct net_buf 
 		rfcomm_handle_rpn(session, buf, cr);
 		break;
 	case BT_RFCOMM_TEST:
-		if (!cr) {
-			break;
-		}
-
-		if (buf->len > UINT8_MAX) {
-			LOG_WRN("TEST command too long %u > %u", buf->len, UINT8_MAX);
-			return;
-		}
-
-		rfcomm_send_test(session, BT_RFCOMM_MSG_RESP_CR, buf->data, buf->len);
+		rfcomm_handle_test(session, buf, cr);
 		break;
 	case BT_RFCOMM_FCON:
 		if (session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
@@ -1491,7 +1674,10 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session, struct net_buf 
 		 * of this session in sem_take().
 		 */
 		k_sem_give(&session->fc);
-		rfcomm_send_fcon(session, BT_RFCOMM_MSG_RESP_CR);
+		err = rfcomm_send_fcon(session, BT_RFCOMM_MSG_RESP_CR);
+		if (err != 0) {
+			LOG_ERR("Failed to send fcon rsp on session %p (%d)", session, err);
+		}
 		rfcomm_dlcs_tx_trigger(session->dlcs);
 		break;
 	case BT_RFCOMM_FCOFF:
@@ -1511,11 +1697,17 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session, struct net_buf 
 		 * the semaphore.
 		 */
 		k_sem_take(&session->fc, K_NO_WAIT);
-		rfcomm_send_fcoff(session, BT_RFCOMM_MSG_RESP_CR);
+		err = rfcomm_send_fcoff(session, BT_RFCOMM_MSG_RESP_CR);
+		if (err != 0) {
+			LOG_ERR("Failed to send fcoff rsp on session %p (%d)", session, err);
+		}
 		break;
 	default:
 		LOG_WRN("Unknown/Unsupported RFCOMM Msg type 0x%02x", msg_type);
-		rfcomm_send_nsc(session, hdr->type);
+		err = rfcomm_send_nsc(session, hdr->type);
+		if (err != 0) {
+			LOG_ERR("Failed to send nsc rsp on session %p (%d)", session, err);
+		}
 		break;
 	}
 }
@@ -1546,13 +1738,17 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session, struct net_buf
 			       uint8_t pf)
 {
 	struct bt_rfcomm_dlc *dlc;
+	int err = 0;
 
 	LOG_DBG("dlci %d, pf %d", dlci, pf);
 
 	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-	if (!dlc) {
+	if (dlc == NULL) {
 		LOG_ERR("Data recvd in non existing DLC");
-		rfcomm_send_dm(session, dlci);
+		err = rfcomm_send_dm(session, dlci);
+		if (err != 0) {
+			LOG_ERR("Failed to send dm to %u (%d)", dlci, err);
+		}
 		return;
 	}
 
@@ -1710,6 +1906,7 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
 	struct bt_conn *conn = chan->conn;
 	struct bt_rfcomm_dlc *dlc, *next;
+	int err;
 
 	LOG_DBG("session %p status 0x%02x encr 0x%02x", session, hci_status, conn->encrypt);
 
@@ -1727,12 +1924,18 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 		}
 
 		if (dlc->role == BT_RFCOMM_ROLE_ACCEPTOR) {
-			rfcomm_send_ua(session, dlc->dlci);
+			err = rfcomm_send_ua(session, dlc->dlci);
+			if (err != 0) {
+				LOG_ERR("Failed to send ua on DLC %p (%d)", dlc, err);
+			}
 			rfcomm_dlc_connected(dlc);
 		} else {
 			dlc->mtu = MIN(dlc->mtu, session->mtu);
 			dlc->state = BT_RFCOMM_STATE_CONFIG;
-			rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
+			err = rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
+			if (err != 0) {
+				LOG_ERR("Failed to send pn on DLC %p (%d)", dlc, err);
+			}
 		}
 	}
 }
@@ -1750,6 +1953,7 @@ static void rfcomm_session_rtx_timeout(struct k_work *work)
 	case BT_RFCOMM_STATE_DISCONNECTING:
 		session->state = BT_RFCOMM_STATE_DISCONNECTED;
 		if (bt_l2cap_chan_disconnect(&session->br_chan.chan) < 0) {
+			LOG_ERR("Failed to disconnect RFCOMM session %p", session);
 			session->state = BT_RFCOMM_STATE_IDLE;
 		}
 		break;
