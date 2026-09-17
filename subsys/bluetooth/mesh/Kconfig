@@ -798,7 +798,6 @@ config BT_MESH_ACCESS_LAYER_MSG
 
 config BT_MESH_MODEL_VND_MSG_CID_FORCE
 	bool "Force vendor model to use opcodes with matching CID [DEPRECATED]"
-	default n
 	select DEPRECATED
 	help
 	  This option forces vendor models to only use opcodes with a CID field

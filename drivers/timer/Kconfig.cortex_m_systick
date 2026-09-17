@@ -50,25 +50,25 @@ if CORTEX_M_SYSTICK
 # Scheduled for removal in Zephyr 4.6.0.
 
 config CORTEX_M_SYSTICK_LPM_TIMER_NONE
-	bool "[DEPRECATED] SysTick LPM timer: none"
+	bool "SysTick LPM timer: none [DEPRECATED]"
 	select DEPRECATED
 	help
 	  Deprecated. Use CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE instead.
 
 config CORTEX_M_SYSTICK_LPM_TIMER_COUNTER
-	bool "[DEPRECATED] SysTick LPM timer: counter"
+	bool "SysTick LPM timer: counter [DEPRECATED]"
 	select DEPRECATED
 	help
 	  Deprecated. Use CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER instead.
 
 config CORTEX_M_SYSTICK_LPM_TIMER_HOOKS
-	bool "[DEPRECATED] SysTick LPM timer: hooks"
+	bool "SysTick LPM timer: hooks [DEPRECATED]"
 	select DEPRECATED
 	help
 	  Deprecated. Use CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS instead.
 
 config CORTEX_M_SYSTICK_RESET_BY_LPM
-	bool "[DEPRECATED] SysTick reset by LPM"
+	bool "SysTick reset by LPM [DEPRECATED]"
 	select DEPRECATED
 	select SYSTEM_TIMER_RESET_BY_LPM
 	help

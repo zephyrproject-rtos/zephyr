@@ -37,7 +37,7 @@ config JSON_DOUBLE_PRECISION
 	  for a double.
 
 config RING_BUFFER
-	bool "[DEPRECATED] Restore legacy claim/finish and item ring buffer APIs"
+	bool "Restore legacy claim/finish and item ring buffer APIs [DEPRECATED]"
 	select DEPRECATED
 	help
 	  This option is deprecated and slated for removal. It switches the ring
