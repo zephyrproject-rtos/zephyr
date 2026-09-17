@@ -25,6 +25,7 @@
 #include <stddef.h>
 
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
 #include <sys/types.h>
@@ -268,6 +269,26 @@ struct mqtt_sn_will_update {
 };
 
 /**
+ * Structure for storing pending CONNECT state.
+ */
+struct mqtt_sn_connect_retry {
+	/** State of the pending CONNECT (enum mqtt_sn_connect_state). */
+	atomic_t state;
+
+	/** Number of retries for failed CONNECT attempts */
+	uint8_t retries;
+
+	/** Timestamp of the last CONNECT attempt */
+	int64_t last_attempt;
+
+	/** Will flag from the pending mqtt_sn_connect() call, resent on retry */
+	bool will;
+
+	/** Clean session flag from the pending mqtt_sn_connect() call, resent on retry */
+	bool clean_session;
+};
+
+/**
  * Structure describing an MQTT-SN client.
  */
 struct mqtt_sn_client {
@@ -335,6 +356,9 @@ struct mqtt_sn_client {
 	/** Radius of the next GWINFO transmission */
 	uint8_t radius_gwinfo;
 
+	/** State for a pending CONNECT retry */
+	struct mqtt_sn_connect_retry connect;
+
 	/** State for will topic updates */
 	struct mqtt_sn_will_update will_topic_update;
 
@@ -398,11 +422,15 @@ int mqtt_sn_search(struct mqtt_sn_client *client, uint8_t radius);
 /**
  * @brief Connect the client.
  *
+ * A failed send is retried. The outcome is only visible via
+ * @ref MQTT_SN_EVT_CONNECTED or @ref MQTT_SN_EVT_DISCONNECTED.
+ *
  * @param client            The MQTT-SN client to connect.
  * @param will              Flag indicating if a Will message should be sent.
  * @param clean_session     Flag indicating if a clean session should be started.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @return 0 on success, -EINVAL on invalid arguments, or -EALREADY if a
+ * CONNECT is already in progress.
  */
 int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session);
 
