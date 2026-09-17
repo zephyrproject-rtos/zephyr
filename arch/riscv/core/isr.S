@@ -114,7 +114,9 @@
 	.endm
 
 /* imports */
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 GDATA(_sw_isr_table)
+#endif
 GDATA(_kernel)
 GTEXT(__soc_handle_irq)
 GTEXT(z_riscv_fault)
