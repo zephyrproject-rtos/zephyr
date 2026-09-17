@@ -206,10 +206,10 @@ static void gpio_qdec_sample_timer_timeout(struct k_timer *timer)
 	irq_unlock(key);
 
 	if (abs(data->acc) >= cfg->steps_per_period) {
-		k_work_submit(&data->event_work);
+		input_work_submit(&data->event_work);
 	}
 
-	k_work_reschedule(&data->idle_work, K_MSEC(cfg->idle_timeout_ms));
+	input_work_reschedule(&data->idle_work, K_MSEC(cfg->idle_timeout_ms));
 }
 
 static void gpio_qdec_event_worker(struct k_work *work)
