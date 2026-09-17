@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MONITOR_NXP_ANACTRL
+	bool "NXP ANACTRL frequency measure driver"
+	default y
+	depends on DT_HAS_NXP_ANACTRL_FREQME_ENABLED
+	select MUX
+	select MUX_NXP_INPUTMUX
+	help
+	  clock_monitor back-end for the NXP ANACTRL frequency-measurement
+	  block. Hardware is a single FREQ_ME_CTRL register with no interrupt
+	  and no threshold registers, so only one-shot MEASURE mode is supported,
+	  polled from a workqueue. Clocks are routed via the INPUTMUX mux subsystem.
