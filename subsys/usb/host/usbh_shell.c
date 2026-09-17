@@ -12,6 +12,9 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usbh.h>
 #include <zephyr/usb/usb_ch9.h>
+#if IS_ENABLED(CONFIG_USBH_MSC_DISK)
+#include <zephyr/usb/usb_msc_disk.h>
+#endif
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
@@ -930,7 +933,18 @@ static void device_list_driver_str(const struct usb_device *udev, const char *cl
 
 static void device_list_volume_str(struct usb_device *udev, char *buf, size_t buflen)
 {
+<<<<<<< HEAD
 	ARG_UNUSED(udev);
+=======
+#if IS_ENABLED(CONFIG_USBH_MSC_DISK)
+	int ret;
+
+	ret = usb_msc_disk_format_device_volumes(udev, buf, buflen);
+	if (ret >= 0) {
+		return;
+	}
+#endif
+>>>>>>> 6f14c52b646f (usb: host: add MSC class and multi-device volume naming)
 
 	snprintk(buf, buflen, "-");
 }

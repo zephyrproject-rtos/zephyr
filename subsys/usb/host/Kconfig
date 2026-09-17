@@ -55,6 +55,7 @@ config USBH_MAX_UHC_MSG
 
 rsource "Kconfig.usbip"
 rsource "Kconfig.hub"
+rsource "Kconfig.msc"
 rsource "class/Kconfig"
 
 config USBH_USB2_ENUM_SCHEME
