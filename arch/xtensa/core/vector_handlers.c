@@ -28,6 +28,14 @@ extern char xtensa_arch_kernel_oops_epc[];
 extern void xtensa_lazy_hifi_save(uint8_t *regs);
 extern void xtensa_lazy_hifi_load(uint8_t *regs);
 
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(xtensa_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(xtensa_user_string_nlen),
+};
+#endif /* CONFIG_USERSPACE */
+
 #if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 #define LAZY_COPROCESSOR_LOCK
 
@@ -722,6 +730,20 @@ void *xtensa_excint1_c(void *esf)
 			bsa->exccause = cause;
 		}
 
+#if defined(CONFIG_USERSPACE)
+		/* If the faulting address is from one of the known
+		 * exceptions that should not be fatal, return to
+		 * the fixup address.
+		 */
+		for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
+			if ((pc >= exceptions[i].start) && (pc < exceptions[i].end)) {
+				bsa->pc = (uintptr_t)exceptions[i].fixup;
+
+				goto fixup_out;
+			}
+		}
+#endif /* CONFIG_USERSPACE */
+
 skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
 			print_fatal_exception(print_stack, is_dblexc, depc);
@@ -769,6 +791,9 @@ skip_checks:
 		_current_cpu->nested = 1;
 	}
 
+#if defined(CONFIG_USERSPACE)
+fixup_out:
+#endif
 #if defined(CONFIG_XTENSA_MMU)
 	if (is_dblexc) {
 		XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);

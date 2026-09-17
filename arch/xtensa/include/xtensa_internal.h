@@ -110,6 +110,24 @@ bool xtensa_exc_load_store_ring_error_check(void *bsa_p);
  * @retval false otherwise
  */
 bool xtensa_buffer_is_kernel_readable(const void *addr, size_t size);
+
+/**
+ * @brief Safely take the length of a potentially bad string
+ *
+ * This should be called by arch_user_string_nlen() after we have verified
+ * that the memory page(s) with the string have correct permission for
+ * kernel mode access. This is simply to avoid infinite data TLB misses.
+ * After that, the string might still fault when we try to count
+ * the number of characters, which this function provides.
+ *
+ * @see arch_user_string_nlen
+ *
+ * @param s String to measure
+ * @param maxsize Max length of the string
+ * @param err Error value to write
+ * @return Length of the string, not counting NULL byte, up to maxsize
+ */
+size_t xtensa_user_string_nlen(const char *s, size_t maxsize, int *err_arg);
 #endif /* CONFIG_USERSPACE */
 
 /**
