@@ -191,3 +191,5 @@ if(CONFIG_CLOCK_CONTROL_NRF_COMMON AND NOT (CONFIG_SOC_SERIES_NRF54H OR CONFIG_S
   zephyr_linker_sources(SECTIONS clock_control_nrf_irq_handlers.ld)
   zephyr_iterable_section(NAME clock_control_nrf_irq_handler KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SHELL clock_control_shell.c)

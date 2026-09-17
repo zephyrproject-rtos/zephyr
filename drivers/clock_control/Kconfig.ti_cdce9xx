@@ -3,6 +3,7 @@
 
 config CLOCK_CONTROL_TI_CDCE9XX
 	bool "TI Low Power Clock Generator CDCE9xx"
+	default y
 	depends on DT_HAS_TI_CDCE913_ENABLED || \
 				DT_HAS_TI_CDCE925_ENABLED || \
 				DT_HAS_TI_CDCE937_ENABLED || \
