@@ -2450,6 +2450,17 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct net_in6_addr *addr)
 		goto out;
 	}
 
+	ifaddr = ipv6_addr_find(iface, addr);
+	if (ifaddr != NULL && !ifaddr->is_added) {
+		/* The remaining references belong to the users of the
+		 * address, only they may release them.
+		 */
+		NET_DBG("Address %s already removed",
+			net_sprint_ipv6_addr(addr));
+		result = false;
+		goto out;
+	}
+
 	ret = net_if_addr_unref(iface, NET_AF_INET6, addr, &ifaddr);
 	if (ret > 0) {
 		NET_DBG("Address %s still in use (ref %d)",
@@ -5388,6 +5399,17 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct net_in_addr *addr)
 
 	ipv4 = iface->config.ip.ipv4;
 	if (!ipv4) {
+		result = false;
+		goto out;
+	}
+
+	ifaddr = ipv4_addr_find(iface, addr);
+	if (ifaddr != NULL && !ifaddr->is_added) {
+		/* The remaining references belong to the users of the
+		 * address, only they may release them.
+		 */
+		NET_DBG("Address %s already removed",
+			net_sprint_ipv4_addr(addr));
 		result = false;
 		goto out;
 	}
