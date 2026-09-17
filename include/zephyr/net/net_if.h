@@ -575,6 +575,12 @@ struct net_if_dhcpv4 {
 	/** Number of attempts made for REQUEST and RENEWAL messages */
 	uint8_t attempts;
 
+	/** Gateway the client installed, unspecified if it installed none */
+	struct net_in_addr gw;
+
+	/** Gateway the interface carried before the client installed its own */
+	struct net_in_addr gw_before;
+
 	/** The address of the server the request is sent to */
 	struct net_in_addr request_server_addr;
 
