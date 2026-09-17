@@ -136,8 +136,23 @@ static int sys_clock_driver_init(void)
 	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
 		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
 	arm_arch_timer_init();
-	timer_core_init();
+
+	/*
+	 * Start the counter before the core seeds its announce baseline from
+	 * it. Otherwise the baseline is taken from a stopped counter, and if
+	 * enabling makes the count restart (QEMU's Cortex-A9 global timer
+	 * model does: it reports the time since machine start while disabled
+	 * and resets to zero on enable) the baseline is ahead of the counter
+	 * for the first few milliseconds. Every elapsed computation in that
+	 * window wraps to the full tick range, so a timeout added then is
+	 * queued about 2^32 ticks out and never expires.
+	 *
+	 * The compare is not armed yet, so keep its interrupt masked until the
+	 * core programs the first deadline, which unmasks it.
+	 */
+	arm_arch_timer_set_irq_mask(true);
 	arm_arch_timer_enable(true);
+	timer_core_init();
 	irq_enable(ARM_ARCH_TIMER_IRQ);
 
 	return 0;
