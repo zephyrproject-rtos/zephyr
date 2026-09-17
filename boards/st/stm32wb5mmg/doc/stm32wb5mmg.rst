@@ -268,9 +268,9 @@ Rest the board and you should see the following messages on the console:
    Starting Observer Demo
    Started scanning...
    Exiting main thread.
-   Device found: 2C:98:F3:64:58:06 (random) (RSSI -82), type 3, AD data len 31
-   Device found: CE:5B:9A:87:69:4F (random) (RSSI -80), type 3, AD data len 8
-   Device found: 7B:1E:DD:38:23:E1 (random) (RSSI -85), type 0, AD data len 17
+   Device found: R:2C:98:F3:64:58:06 (RSSI -82), type 3, AD data len 31
+   Device found: R:CE:5B:9A:87:69:4F (RSSI -80), type 3, AD data len 8
+   Device found: R:7B:1E:DD:38:23:E1 (RSSI -85), type 0, AD data len 17
 
 
 Debugging
