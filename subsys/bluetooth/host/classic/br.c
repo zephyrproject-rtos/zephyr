@@ -919,6 +919,75 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	}
 }
 
+#define SCO_H2C_FC_ENABLED(_fc) ((_fc) == BT_HCI_SYNC_FLOW_ENABLE)
+
+static int read_sync_flow_control_enable(void)
+{
+	struct net_buf *buf;
+	struct net_buf *rsp = NULL;
+	struct bt_hci_rp_read_sync_flow_enable *rp;
+	int err;
+
+	/* Do nothing if command not supported by the controller */
+	if (!BT_HCI_READ_SYNC_FLOW_ENABLE_SUPPORTED(bt_dev.supported_commands)) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_SYNC_FLOW_ENABLE, buf, &rsp);
+	if (err != 0) {
+		return err;
+	}
+
+	if (rsp == NULL) {
+		return -EIO;
+	}
+
+	if (rsp->len < sizeof(*rp)) {
+		net_buf_unref(rsp);
+		return -ENODATA;
+	}
+
+	rp = (void *)rsp->data;
+	if (rp->status != BT_HCI_ERR_SUCCESS) {
+		net_buf_unref(rsp);
+		return -EIO;
+	}
+
+	bt_dev.br.sco_h2c_fc_enabled = SCO_H2C_FC_ENABLED(rp->sync_flow_enable);
+	net_buf_unref(rsp);
+	return 0;
+}
+
+static int write_sync_flow_control_enable(uint8_t sync_flow_enable)
+{
+	struct net_buf *buf;
+	struct bt_hci_cp_write_sync_flow_enable *cp;
+	int err;
+
+	/* Do nothing if command not supported by the controller */
+	if (!BT_HCI_WRITE_SYNC_FLOW_ENABLE_SUPPORTED(bt_dev.supported_commands)) {
+		return read_sync_flow_control_enable();
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->sync_flow_enable = sync_flow_enable;
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SYNC_FLOW_ENABLE, buf, NULL);
+
+	if (err == 0) {
+		bt_dev.br.sco_h2c_fc_enabled = SCO_H2C_FC_ENABLED(sync_flow_enable);
+	}
+	return err;
+}
+
 int bt_br_init(void)
 {
 	struct net_buf *buf;
@@ -1059,6 +1128,15 @@ int bt_br_init(void)
 		if (err) {
 			return err;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
+		bt_dev.br.sco_h2c_fc_enabled = false;
+		err = write_sync_flow_control_enable(BT_HCI_SYNC_FLOW_ENABLE);
+		if (err != 0) {
+			LOG_WRN("Failed to enable SCO Host-to-Controller flow control (%d)", err);
+		}
+		LOG_DBG("SCO H2C flow control: %s", bt_dev.br.sco_h2c_fc_enabled ? "on" : "off");
 	}
 
 	return 0;

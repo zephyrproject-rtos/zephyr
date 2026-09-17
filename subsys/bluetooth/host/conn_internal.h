@@ -512,6 +512,11 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 #define BT_CONN_INDEX_INVALID 0xff
 struct bt_conn *bt_conn_lookup_index(uint8_t index);
 
+/* Helpers for identifying & looking up connections based on the index to
+ * the SCO connection list.
+ */
+struct bt_conn *bt_conn_lookup_index_sco(uint8_t index);
+
 /* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state
  */
@@ -659,3 +664,6 @@ void bt_conn_tx_processor(void);
  * - unref the conn when popping the conn from the slist
  */
 void bt_conn_data_ready(struct bt_conn *conn);
+
+/* CONN TX complete process */
+void bt_conn_tx_complete(struct bt_conn *conn, uint16_t count);
