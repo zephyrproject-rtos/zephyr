@@ -15,6 +15,7 @@
 #include <zephyr/spinlock.h>
 #include <errno.h>
 #include <ksched.h>
+#include <kernel_internal.h>
 #include <scheduler.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
@@ -839,21 +840,28 @@ void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *
 	work_queue_main(queue, NULL, NULL);
 }
 
-void k_work_queue_start(struct k_work_q *queue,
-			k_thread_stack_t *stack,
-			size_t stack_size,
-			int prio,
-			const struct k_work_queue_config *cfg)
+/* Start a work queue on its dedicated thread.
+ *
+ * @param queue the queue to start
+ * @param stack the stack of the work queue thread
+ * @param stack_size the size of @p stack in bytes
+ * @param prio the priority of the work queue thread
+ * @param cfg optional configuration, or NULL for the defaults
+ * @param name thread name used when @p cfg does not provide one, or NULL
+ */
+static void work_queue_start(struct k_work_q *queue, k_thread_stack_t *stack, size_t stack_size,
+			     int prio, const struct k_work_queue_config *cfg, const char *name)
 {
 	__ASSERT_NO_MSG(queue);
 	__ASSERT_NO_MSG(stack);
 	__ASSERT_NO_MSG(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
 
-	/* In future, this whole function will be deprecated, but for now, we
-	 * have to use the `thread` field to create a new thread in it.
+	/* In future, the `thread` field will be removed, but for now, we
+	 * have to use it to create a new thread in it.
 	 */
 	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 
+	struct k_thread *thread = &queue->thread;
 	uint32_t flags = K_WORK_QUEUE_STARTED;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, start, queue);
@@ -872,16 +880,20 @@ void k_work_queue_start(struct k_work_q *queue,
 	 */
 	flags_set(&queue->flags, flags);
 
-	(void)k_thread_create(&queue->thread, stack, stack_size,
+	(void)k_thread_create(thread, stack, stack_size,
 			      work_queue_main, queue, NULL, NULL,
 			      prio, 0, K_FOREVER);
 
 	if ((cfg != NULL) && (cfg->name != NULL)) {
-		k_thread_name_set(&queue->thread, cfg->name);
+		name = cfg->name;
+	}
+
+	if (name != NULL) {
+		k_thread_name_set(thread, name);
 	}
 
 	if ((cfg != NULL) && (cfg->essential)) {
-		queue->thread.base.user_options |= K_ESSENTIAL;
+		thread->base.user_options |= K_ESSENTIAL;
 	}
 
 #if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
@@ -892,13 +904,38 @@ void k_work_queue_start(struct k_work_q *queue,
 	}
 #endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
-	k_thread_start(&queue->thread);
-	queue->thread_id = &queue->thread;
+	k_thread_start(thread);
+	queue->thread_id = thread;
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, start, queue);
 
 	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 }
+
+void k_work_queue_start(struct k_work_q *queue,
+			k_thread_stack_t *stack,
+			size_t stack_size,
+			int prio,
+			const struct k_work_queue_config *cfg)
+{
+	work_queue_start(queue, stack, stack_size, prio, cfg, NULL);
+}
+
+/* Start the work queues defined with K_WORK_QUEUE_DEFINE(). Runs once the
+ * kernel is up, before POST_KERNEL device init, so drivers may submit work to
+ * them from their init functions.
+ */
+static void work_queue_static_init(void)
+{
+	STRUCT_SECTION_FOREACH(_static_work_q_data, data) {
+		SYS_PORT_TRACING_OBJ_INIT(k_work_queue, data->init_queue);
+		work_queue_start(data->init_queue, data->init_stack, data->init_stack_size,
+				 data->init_prio, data->init_cfg,
+				 COND_CODE_1(CONFIG_THREAD_NAME, (data->init_name), (NULL)));
+	}
+}
+
+K_KERNEL_INIT_POST(work_queue_static_init);
 
 int k_work_queue_drain(struct k_work_q *queue,
 		       bool plug)

@@ -4921,6 +4921,60 @@ static inline k_tid_t k_work_queue_thread_get(struct k_work_q *queue)
 	return queue->thread_id;
 }
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+struct _static_work_q_data {
+	struct k_work_q *init_queue;
+	k_thread_stack_t *init_stack;
+	size_t init_stack_size;
+	int init_prio;
+	const struct k_work_queue_config *init_cfg;
+#ifdef CONFIG_THREAD_NAME
+	const char *init_name;
+#endif
+};
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Statically define and initialize a work queue.
+ *
+ * This defines the work queue and a kernel stack of @p stack_size bytes for
+ * its thread. The kernel starts the work queue thread once the kernel is up,
+ * before POST_KERNEL device and SYS_INIT initialization, so work may be
+ * submitted to the queue from any POST_KERNEL or later initialization
+ * function.
+ *
+ * The work queue thread runs only in kernel mode. If CONFIG_THREAD_NAME is
+ * enabled, it is named after @p name unless @p cfg provides a name.
+ *
+ * The work queue can be accessed outside the module where it is defined
+ * using:
+ *
+ * @code extern struct k_work_q <name>; @endcode
+ *
+ * @param name Name of the work queue.
+ * @param stack_size Stack size in bytes.
+ * @param prio Priority of the work queue thread.
+ * @param cfg Pointer to optional additional configuration parameters, or
+ *        @c NULL for the defaults documented in k_work_queue_config. The
+ *        configuration is read when the work queue is started, so it and the
+ *        values it references must have static storage duration.
+ */
+#define K_WORK_QUEUE_DEFINE(name, stack_size, prio, cfg)                                           \
+	static K_KERNEL_STACK_DEFINE(_k_work_q_stack_##name, stack_size);                          \
+	struct k_work_q name;                                                                      \
+	static const STRUCT_SECTION_ITERABLE(_static_work_q_data, _k_work_q_data_##name) = {       \
+		.init_queue = &name,                                                               \
+		.init_stack = _k_work_q_stack_##name,                                              \
+		.init_stack_size = K_KERNEL_STACK_SIZEOF(_k_work_q_stack_##name),                  \
+		.init_prio = (prio),                                                               \
+		.init_cfg = (cfg),                                                                 \
+		IF_ENABLED(CONFIG_THREAD_NAME, (.init_name = STRINGIFY(name),))                    \
+	}
+
 /** @} */
 
 struct k_work_user;
