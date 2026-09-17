@@ -147,7 +147,7 @@ static void ctsu_scan_callback(ctsu_callback_args_t *p_arg)
 		return;
 	}
 
-	k_work_submit(&data->data_process_work);
+	input_work_submit(&data->data_process_work);
 }
 
 static void process_data(struct k_work *work)
@@ -209,7 +209,7 @@ static void timer_callback(struct k_timer *timer)
 {
 	struct renesas_rx_ctsu_data *data =
 		CONTAINER_OF(timer, struct renesas_rx_ctsu_data, scan_timer);
-	k_work_submit(&data->scan_work);
+	input_work_submit(&data->scan_work);
 }
 
 static void trigger_scan(struct k_work *work)

@@ -247,7 +247,7 @@ static void bee_keyscan_isr(const struct device *dev)
 		bee_keyscan_process_matrix(dev, data->new_press_num, data->new_keys);
 		KeyScan_INTMask(keyscan, KEYSCAN_INT_SCAN_END, DISABLE);
 #else
-		k_work_submit(&data->work);
+		input_work_submit(&data->work);
 #endif
 	}
 
