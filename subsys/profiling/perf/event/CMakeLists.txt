@@ -11,3 +11,7 @@ zephyr_library_sources_ifdef(CONFIG_PROFILING_PERF_EVENTS
 zephyr_library_sources_ifdef(CONFIG_PROFILING_PERF_EVENT_PROVIDER_CPU
   providers/cpu.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_PROFILING_PERF_EVENTS_SHELL
+  shell.c
+)
