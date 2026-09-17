@@ -2975,7 +2975,7 @@ ZTEST(net_ipv6, test_z_privacy_extension_03_get_addr)
 	}
 }
 
-static void inject_bad_nd_message(struct net_if *iface, const uint8_t *data, size_t len)
+static void inject_nd_message(struct net_if *iface, const uint8_t *data, size_t len)
 {
 	struct net_eth_hdr hdr;
 	struct net_pkt *pkt;
@@ -3012,7 +3012,7 @@ static void test_nd_packet_drop(const uint8_t *data, size_t len)
 			    sizeof(ipv6_nd_before)),
 		   "Failed to retrieve stats");
 
-	inject_bad_nd_message(iface, data, len);
+	inject_nd_message(iface, data, len);
 
 	for (int i = 0; i < 20; i++) {
 		/* Give the packet some time to propagate into the stack. */
@@ -3029,6 +3029,35 @@ static void test_nd_packet_drop(const uint8_t *data, size_t len)
 
 	zassert_equal(ipv6_nd_before.drop + 1, ipv6_nd_after.drop,
 		      "ND packet drop count did not increase");
+}
+
+static void test_nd_packet_accept(const uint8_t *data, size_t len)
+{
+	struct net_stats_ipv6_nd ipv6_nd_before = {0};
+	struct net_stats_ipv6_nd ipv6_nd_after = {0};
+	struct net_if *iface = TEST_NET_IF;
+
+	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6_ND, NULL, &ipv6_nd_before,
+			    sizeof(ipv6_nd_before)),
+		   "Failed to retrieve stats");
+
+	inject_nd_message(iface, data, len);
+
+	for (int i = 0; i < 20; i++) {
+		/* Give the packet some time to propagate into the stack. */
+		k_msleep(10);
+
+		zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6_ND, NULL, &ipv6_nd_after,
+				    sizeof(ipv6_nd_after)),
+			   "Failed to retrieve stats");
+
+		if (ipv6_nd_before.recv < ipv6_nd_after.recv) {
+			break;
+		}
+	}
+
+	zassert_equal(ipv6_nd_before.recv + 1, ipv6_nd_after.recv, "ND packet was not received");
+	zassert_equal(ipv6_nd_before.drop, ipv6_nd_after.drop, "ND packet was dropped");
 }
 
 /* Minimal ICMPv6 RA with bad hop limit */
@@ -3100,6 +3129,75 @@ ZTEST(net_ipv6, test_na_with_bad_hop_limit)
 	 * which should be dropped.
 	 */
 	test_nd_packet_drop(icmpv6_na_bad_hop_limit, sizeof(icmpv6_na_bad_hop_limit));
+}
+
+/* RA carrying only the fixed header, RFC 4861 section 6.1.2 minimum length. */
+static const unsigned char icmpv6_ra_no_options[] = {
+/* IPv6 header starts here */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x10, 0x3a, 0xff,
+	0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x02, 0x60, 0x97, 0xff, 0xfe, 0x07, 0x69, 0xea,
+	0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* ICMPv6 RA header starts here */
+	0x86, 0x00, 0x72, 0xd6, 0x00, 0x00, 0x07, 0x08,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+ZTEST(net_ipv6, test_ra_no_options)
+{
+	struct net_if *iface = TEST_NET_IF;
+	struct net_if_router *router;
+	bool had_router;
+
+	had_router = net_if_ipv6_router_lookup(iface, &test_router_addr) != NULL;
+
+	test_nd_packet_accept(icmpv6_ra_no_options, sizeof(icmpv6_ra_no_options));
+
+	router = net_if_ipv6_router_lookup(iface, &test_router_addr);
+	zassert_not_null(router, "Router not added from RA without options");
+
+	if (!had_router) {
+		net_if_ipv6_router_rm(router);
+		(void)net_ipv6_nbr_rm(iface, &test_router_addr);
+	}
+}
+
+/* Solicited NA carrying only the fixed header, RFC 4861 section 7.1.2 minimum
+ * length. The Target Link-Layer Address option may be omitted when replying to
+ * a unicast NS (section 4.4).
+ */
+static const unsigned char icmpv6_na_no_options[] = {
+/* IPv6 header starts here */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x18, 0x3a, 0xff,
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* ICMPv6 NA header starts here, solicited flag set */
+	0x88, 0x00, 0xae, 0x7c, 0x40, 0x00, 0x00, 0x00,
+/* Target Address */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+};
+
+ZTEST(net_ipv6, test_na_no_options)
+{
+	struct net_nbr *nbr;
+
+	add_neighbor();
+
+	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &peer_addr);
+	zassert_not_null(nbr, "Neighbor %s not found in cache\n", net_sprint_ipv6_addr(&peer_addr));
+
+	net_ipv6_nbr_data(nbr)->state = NET_IPV6_NBR_STATE_STALE;
+
+	test_nd_packet_accept(icmpv6_na_no_options, sizeof(icmpv6_na_no_options));
+
+	zassert_equal(net_ipv6_nbr_data(nbr)->state, NET_IPV6_NBR_STATE_REACHABLE,
+		      "Solicited NA without options did not confirm reachability");
+
+	rm_neighbor();
 }
 
 /* A malicious Router Advertisement can carry a tiny Reachable Time. Verify the
