@@ -232,6 +232,28 @@ In addition the queue identity and certain behavior related to thread
 rescheduling can be controlled by the optional final parameter; see
 :c:func:`k_work_queue_start()` for details.
 
+Alternatively, a workqueue can be defined at compile time by calling
+:c:macro:`K_WORK_QUEUE_DEFINE`. The macro defines the stack area and the
+:c:struct:`k_work_q` automatically, and the kernel starts the workqueue
+thread once the kernel is up, before POST_KERNEL device initialization.
+Work items can therefore be submitted to such a workqueue
+from any POST_KERNEL or later initialization function, which is not the
+case for threads defined with :c:macro:`K_THREAD_DEFINE`, as those are only
+started after the APPLICATION initialization level. The workqueue thread runs
+in kernel mode only and is essential, so the workqueue cannot be stopped.
+
+The following code has the same effect as the code segment above, except
+that the workqueue thread is named after the workqueue. The last parameter
+corresponds to the ``no_yield`` member of :c:struct:`k_work_queue_config`,
+and an optional further parameter to its ``work_timeout_ms`` member:
+
+.. code-block:: c
+
+    #define MY_STACK_SIZE 512
+    #define MY_PRIORITY 5
+
+    K_WORK_QUEUE_DEFINE(my_work_q, MY_STACK_SIZE, MY_PRIORITY, false);
+
 The following API can be used to interact with a workqueue:
 
 * :c:func:`k_work_queue_drain()` can be used to block the caller until the
