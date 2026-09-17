@@ -856,9 +856,9 @@ ZTEST(net_ipv6, test_send_ns_extra_options)
 	iface = TEST_NET_IF;
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(icmpv6_ns_invalid),
-					NET_AF_UNSPEC, 0, K_FOREVER);
+					NET_AF_UNSPEC, 0, K_MSEC(WAIT_TIME));
 
-	NET_ASSERT(pkt, "Out of TX packets");
+	zassert_not_null(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, icmpv6_ns_invalid, sizeof(icmpv6_ns_invalid));
 	net_pkt_lladdr_clear(pkt);
@@ -879,9 +879,9 @@ ZTEST(net_ipv6, test_send_ns_no_options)
 	iface = TEST_NET_IF;
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(icmpv6_ns_no_sllao),
-					NET_AF_UNSPEC, 0, K_FOREVER);
+					NET_AF_UNSPEC, 0, K_MSEC(WAIT_TIME));
 
-	NET_ASSERT(pkt, "Out of TX packets");
+	zassert_not_null(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, icmpv6_ns_no_sllao, sizeof(icmpv6_ns_no_sllao));
 	net_pkt_lladdr_clear(pkt);
@@ -932,9 +932,9 @@ ZTEST_P(net_ipv6, test_ipv6_ext_hdr_len_bounds)
 	struct net_pkt *pkt;
 	struct net_if *iface = TEST_NET_IF;
 
-	pkt = net_pkt_alloc_with_buffer(iface, tc->len, NET_AF_INET6, 0, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, tc->len, NET_AF_INET6, 0, K_MSEC(WAIT_TIME));
 
-	NET_ASSERT(pkt, "Out of TX packets");
+	zassert_not_null(pkt, "Out of TX packets");
 
 	zassert_ok(net_pkt_write(pkt, tc->data, tc->len), "Failed to write packet");
 	net_pkt_cursor_init(pkt);
@@ -1832,9 +1832,9 @@ ZTEST(net_ipv6, test_hbho_message)
 	iface = TEST_NET_IF;
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho),
-					NET_AF_UNSPEC, 0, K_FOREVER);
+					NET_AF_UNSPEC, 0, K_MSEC(WAIT_TIME));
 
-	NET_ASSERT(pkt, "Out of TX packets");
+	zassert_not_null(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, ipv6_hbho, sizeof(ipv6_hbho));
 	net_pkt_lladdr_clear(pkt);
@@ -1883,9 +1883,9 @@ ZTEST(net_ipv6, test_hbho_message_1)
 	iface = TEST_NET_IF;
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_1),
-					NET_AF_UNSPEC, 0, K_FOREVER);
+					NET_AF_UNSPEC, 0, K_MSEC(WAIT_TIME));
 
-	NET_ASSERT(pkt, "Out of TX packets");
+	zassert_not_null(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, ipv6_hbho_1, sizeof(ipv6_hbho_1));
 
@@ -1943,9 +1943,9 @@ ZTEST(net_ipv6, test_hbho_message_2)
 	iface = TEST_NET_IF;
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_2),
-					NET_AF_UNSPEC, 0, K_FOREVER);
+					NET_AF_UNSPEC, 0, K_MSEC(WAIT_TIME));
 
-	NET_ASSERT(pkt, "Out of TX packets");
+	zassert_not_null(pkt, "Out of TX packets");
 
 
 	net_pkt_write(pkt, ipv6_hbho_2, sizeof(ipv6_hbho_2));
@@ -2106,9 +2106,9 @@ ZTEST(net_ipv6, test_hbho_message_3)
 	iface = TEST_NET_IF;
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_3),
-					NET_AF_UNSPEC, 0, K_FOREVER);
+					NET_AF_UNSPEC, 0, K_MSEC(WAIT_TIME));
 
-	NET_ASSERT(pkt, "Out of TX packets");
+	zassert_not_null(pkt, "Out of TX packets");
 
 	net_pkt_write(pkt, ipv6_hbho_3, sizeof(ipv6_hbho_3));
 	net_pkt_lladdr_clear(pkt);
@@ -2469,10 +2469,8 @@ static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
 	struct net_pkt *pkt;
 
 	pkt = net_pkt_alloc_with_buffer(iface, strlen(payload),
-					NET_AF_INET6, NET_IPPROTO_UDP, K_FOREVER);
-	if (!pkt) {
-		return NULL;
-	}
+					NET_AF_INET6, NET_IPPROTO_UDP, K_MSEC(WAIT_TIME));
+	zassert_not_null(pkt, "Out of TX packets");
 
 	if (net_ipv6_create(pkt, local_addr, remote_addr)) {
 		printk("Cannot create IPv6  pkt %p", pkt);
