@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cirrus Logic haptic drivers
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    max-len: 1
+    description: Host GPIO pin mapped to CS40Lxx reset pin.
+
+  int-gpios:
+    type: phandle-array
+    max-len: 1
+    description: Host GPIO pin mapped to CS40Lxx interrupt pin.
+
+  trigger-gpios:
+    type: phandle-array
+    description: Host GPIO pins mapped to CS40Lxx trigger pins.
+
+  cirrus,trigger-mapping:
+    type: array
+    description: For each GPIO provided to 'trigger-gpios',
+      provide the corresponding CS40Lxx pin number.
+
+  cirrus,flash-storage:
+    type: phandle
+    description: Flash storage for CS40Lxx calibration data. Must
+      be a phandle to a flash device or fixed partition.
+
+  cirrus,flash-offset:
+    type: int
+    description: Register offset to store and load CS40Lxx calibration data.
