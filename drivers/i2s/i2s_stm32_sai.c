@@ -337,6 +337,8 @@ static int sai_sub_dma_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_DMA_STM32U5)
+	hdma->Init.SrcBurstLength = 1;
+	hdma->Init.DestBurstLength = 1;
 	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
 #endif
 
