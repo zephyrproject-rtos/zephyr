@@ -147,7 +147,7 @@ manifest:
       groups:
         - fs
     - name: hal_abov
-      url: git@github.com:abovsemiconductor/zephyr_hal.git
+      url: https://github.com/abovsemiconductor/zephyr_hal.git
       revision: main
       path: modules/hal/abov32
       groups:
