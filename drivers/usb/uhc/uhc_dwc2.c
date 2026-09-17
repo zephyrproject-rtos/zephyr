@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT snps_dwc2
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/byteorder.h>
@@ -746,6 +747,7 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 		actual_len = ch->length - remaining;
 
 		if (usb_reqtype_is_to_host(setup)) {
+			sys_cache_data_invd_range(net_buf_tail(xfer->buf), actual_len);
 			net_buf_add(xfer->buf, actual_len);
 
 			LOG_DBG("Control DATA IN completed, prog=%u, rem=%u, act=%u, tailroom=%zu",
@@ -782,7 +784,13 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 
 	/* TODO: Configure split transaction if needed */
 
-	/* TODO: sync CACHE */
+	if (size > 0U) {
+		if (next_dir_is_in) {
+			sys_cache_data_flush_and_invd_range(dma_addr, size);
+		} else {
+			sys_cache_data_flush_range(dma_addr, size);
+		}
+	}
 
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
 	hcchar |= USB_DWC2_HCCHAR_CHENA;
@@ -1141,6 +1149,7 @@ static void ch_complete_bulk(const struct device *dev, struct uhc_dwc2_channel *
 
 		/* Device may send a short packet, use the actual length */
 		actual_len = ch->length - remaining;
+		sys_cache_data_invd_range(net_buf_tail(xfer->buf), actual_len);
 		net_buf_add(xfer->buf, actual_len);
 	}
 
@@ -1261,7 +1270,7 @@ static void ch_start_control(struct uhc_dwc2_channel *ch)
 	hcint = sys_read32((mem_addr_t)&ch->regs->hcint);
 	sys_write32(hcint, (mem_addr_t)&ch->regs->hcint);
 
-	/* TODO: Sync CACHE */
+	sys_cache_data_flush_range(xfer->setup_pkt, sizeof(struct usb_setup_packet));
 
 	/* Start transfer */
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
@@ -1302,6 +1311,12 @@ static void ch_start_bulk(struct uhc_dwc2_channel *ch)
 
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
 	sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
+
+	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		sys_cache_data_flush_and_invd_range(dma_addr, ch->length);
+	} else {
+		sys_cache_data_flush_range(dma_addr, ch->length);
+	}
 
 	/* Start transfer */
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
