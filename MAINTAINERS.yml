@@ -1330,6 +1330,7 @@ Debug:
     - mrkhldn
   files:
     - include/zephyr/debug/
+    - include/zephyr/profiling/
     - subsys/debug/
     - tests/subsys/debug/
     - scripts/coredump/
