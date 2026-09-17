@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Matheus de Alencar
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 16384

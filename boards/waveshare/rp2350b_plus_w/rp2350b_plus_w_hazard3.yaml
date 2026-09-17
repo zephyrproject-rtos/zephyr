@@ -1,0 +1,20 @@
+identifier: rp2350b_plus_w/rp2350b/hazard3
+name: Waveshare RP2350B Plus W (Hazard3)
+type: mcu
+arch: riscv
+flash: 16384
+ram: 520
+toolchain:
+  - zephyr
+supported:
+  - clock
+  - counter
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - usbd
+  - watchdog
