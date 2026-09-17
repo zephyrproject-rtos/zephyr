@@ -118,6 +118,26 @@ uint32_t i2s_esp32_get_source_clk_freq(i2s_clock_src_t clk_src)
 	return clk_freq;
 }
 
+/* RX and TX share clocks, so the peripheral is idle only after both stop. */
+static bool IRAM_ATTR i2s_esp32_hw_busy(const struct device *dev)
+{
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (dev_cfg->rx.data != NULL && dev_cfg->rx.data->transferring) {
+		return true;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (dev_cfg->tx.data != NULL && dev_cfg->tx.data->transferring) {
+		return true;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+
+	return false;
+}
+
 static esp_err_t i2s_esp32_calculate_clock(const struct i2s_config *i2s_cfg, uint8_t channel_length,
 					   i2s_hal_clock_info_t *i2s_hal_clock_info)
 {
@@ -187,6 +207,23 @@ static void i2s_esp32_queue_drop(const struct device *dev, enum i2s_dir dir)
 
 static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir);
 static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir);
+
+/*
+ * Clear the I2S start bits, but only once no direction is transferring any
+ * more: in full duplex the peer direction still needs the shared clock.
+ */
+static void IRAM_ATTR i2s_esp32_stop_if_idle(const struct device *dev)
+{
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+	const i2s_hal_context_t *hal = &dev_cfg->hal;
+
+	if (i2s_esp32_hw_busy(dev)) {
+		return;
+	}
+
+	i2s_hal_rx_stop(hal);
+	i2s_hal_tx_stop(hal);
+}
 
 #if I2S_ESP32_IS_DIR_EN(rx)
 
@@ -431,6 +468,8 @@ static void IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 	stream->data->mem_block = NULL;
 #endif /* SOC_GDMA_SUPPORTED */
 	stream->data->mem_block_len = 0;
+
+	i2s_esp32_stop_if_idle(dev);
 }
 
 #endif /* I2S_ESP32_IS_DIR_EN(rx) */
@@ -674,6 +713,8 @@ static void IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 	stream->data->mem_block = NULL;
 #endif /* SOC_GDMA_SUPPORTED */
 	stream->data->mem_block_len = 0;
+
+	i2s_esp32_stop_if_idle(dev);
 }
 
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
