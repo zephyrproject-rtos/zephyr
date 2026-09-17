@@ -55,6 +55,14 @@
 				reg = <0x4>;
 				status = "okay";
 			};
+
+			test_i2c_cs42l51: cs42l51@5 {
+				compatible = "cirrus,cs42l51";
+				status = "okay";
+				reg = <0x5>;
+				reset-gpios = <&test_gpio 0 0>;
+				input-channel = <1>;
+			};
 		};
 	};
 };
