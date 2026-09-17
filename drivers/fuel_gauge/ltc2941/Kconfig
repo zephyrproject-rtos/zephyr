@@ -1,0 +1,11 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config FUEL_GAUGE_LTC2941
+	depends on DT_HAS_ADI_LTC2941_ENABLED
+	bool "LTC2941 Fuel Gauge"
+	default y
+	select I2C
+	help
+	  Enable the LTC2941 coulomb counter / fuel gauge driver from Analog
+	  Devices.
