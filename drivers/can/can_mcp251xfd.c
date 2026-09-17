@@ -227,6 +227,11 @@ static void mcp251xfd_rxobj_to_canframe(struct mcp251xfd_rxobj *src, struct can_
 
 	dst->dlc = FIELD_GET(MCP251XFD_OBJ_FLAGS_DLC_MASK, src->flags);
 
+	/* A classic CAN frame with a DLC greater than 8 carries 8 data bytes */
+	if ((dst->flags & CAN_FRAME_FDF) == 0U && dst->dlc > CAN_MAX_DLC) {
+		dst->dlc = CAN_MAX_DLC;
+	}
+
 #if defined(CONFIG_CAN_RX_TIMESTAMP)
 	dst->timestamp = sys_le32_to_cpu(src->timestamp);
 #endif
