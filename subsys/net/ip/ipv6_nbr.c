@@ -1072,24 +1072,23 @@ try_send:
 
 	net_ipv6_addr_copy_raw(src_ip.s6_addr, ip_hdr->src);
 
+	iface = net_pkt_iface(pkt);
+
+	NET_DBG("pkt %p (buffer %p) will be sent later to iface %p/%d",
+		pkt, pkt->buffer, iface, net_if_get_by_iface(iface));
+
 	/* We need to send NS and wait for NA before sending the packet. If the packet was
 	 * forwarded from another interface do not use the original source address.
+	 * The packet belongs to the neighbor pending queue from here on, or is
+	 * released on error, so it must not be touched afterwards.
 	 */
-	ret = net_ipv6_send_ns(net_pkt_iface(pkt), pkt,
+	ret = net_ipv6_send_ns(iface, pkt,
 			       net_pkt_forwarding(pkt) ? NULL : &src_ip,
 			       NULL, nexthop, false);
 	if (ret < 0) {
-		/* In case of an error, the NS send function will unref
-		 * the pkt.
-		 */
 		NET_DBG("Cannot send NS (%d) iface %p/%d",
-			ret, net_pkt_iface(pkt),
-			net_if_get_by_iface(net_pkt_iface(pkt)));
+			ret, iface, net_if_get_by_iface(iface));
 	}
-
-	NET_DBG("pkt %p (buffer %p) will be sent later to iface %p/%d",
-		pkt, pkt->buffer, net_pkt_iface(pkt),
-		net_if_get_by_iface(net_pkt_iface(pkt)));
 
 	return NET_CONTINUE;
 #else
