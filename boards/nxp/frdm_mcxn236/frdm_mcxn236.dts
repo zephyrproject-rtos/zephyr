@@ -30,15 +30,16 @@
 
 &flash {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Partition sizes must be aligned
 		 * to the flash memory sector size of 8KB.
 		 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
@@ -47,16 +48,19 @@
 		 * the slot sizes must be equal.
 		 */
 		slot0_partition: partition@14000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(440)>;
 		};
 
 		slot1_partition: partition@84000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x0084000 DT_SIZE_K(440)>;
 		};
 
 		storage_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
 		};
