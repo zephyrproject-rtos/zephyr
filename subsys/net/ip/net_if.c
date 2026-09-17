@@ -1121,6 +1121,15 @@ void net_if_mcast_monitor(struct net_if *iface,
 #define net_if_mcast_monitor(...)
 #endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
 
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4_ACD)
+/* A valid address is preferred while added and deprecated once removed. */
+static inline void ifaddr_set_valid(struct net_if_addr *ifaddr)
+{
+	ifaddr->addr_state = ifaddr->is_added ? NET_ADDR_PREFERRED :
+						NET_ADDR_DEPRECATED;
+}
+#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4_ACD */
+
 #if defined(CONFIG_NET_IPV6)
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 {
@@ -1607,7 +1616,7 @@ static void dad_timeout(struct k_work *work)
 			net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 			ifaddr->ifindex);
 
-		ifaddr->addr_state = NET_ADDR_PREFERRED;
+		ifaddr_set_valid(ifaddr);
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_SUCCEED,
 						iface,
@@ -2268,7 +2277,7 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 		vlifetime);
 
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
+	ifaddr_set_valid(ifaddr);
 
 	address_start_timer(ifaddr, vlifetime);
 
@@ -2351,6 +2360,12 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		if (!ifaddr->is_added) {
 			atomic_inc(&ifaddr->atomic_ref);
 			ifaddr->is_added = true;
+			/* Undo the demotion done on removal. An address still
+			 * in DAD stays tentative until DAD completes.
+			 */
+			if (ifaddr->addr_state == NET_ADDR_DEPRECATED) {
+				ifaddr->addr_state = NET_ADDR_PREFERRED;
+			}
 		}
 
 		goto out;
@@ -2467,6 +2482,13 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct net_in6_addr *addr)
 			net_sprint_ipv6_addr(addr), ret);
 		result = false;
 		ifaddr->is_added = false;
+		/* Existing users keep the address, source selection picks
+		 * it only as a last resort. An address still in DAD stays
+		 * tentative until DAD completes.
+		 */
+		if (ifaddr->addr_state == NET_ADDR_PREFERRED) {
+			ifaddr->addr_state = NET_ADDR_DEPRECATED;
+		}
 		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
@@ -5139,7 +5161,7 @@ void net_if_ipv4_acd_succeeded(struct net_if *iface, struct net_if_addr *ifaddr)
 		net_sprint_ipv4_addr(&ifaddr->address.in_addr),
 		ifaddr->ifindex);
 
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
+	ifaddr_set_valid(ifaddr);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ACD_SUCCEED, iface,
 					&ifaddr->address.in_addr,
@@ -5290,6 +5312,12 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		if (!ifaddr->is_added) {
 			atomic_inc(&ifaddr->atomic_ref);
 			ifaddr->is_added = true;
+			/* Undo the demotion done on removal. An address still
+			 * in ACD stays tentative until ACD completes.
+			 */
+			if (ifaddr->addr_state == NET_ADDR_DEPRECATED) {
+				ifaddr->addr_state = NET_ADDR_PREFERRED;
+			}
 		}
 
 		goto out;
@@ -5420,6 +5448,13 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct net_in_addr *addr)
 			net_sprint_ipv4_addr(addr), ret);
 		result = false;
 		ifaddr->is_added = false;
+		/* Existing users keep the address, it is no longer offered
+		 * as a source for new connections. An address still in ACD
+		 * stays tentative until ACD completes.
+		 */
+		if (ifaddr->addr_state == NET_ADDR_PREFERRED) {
+			ifaddr->addr_state = NET_ADDR_DEPRECATED;
+		}
 		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
