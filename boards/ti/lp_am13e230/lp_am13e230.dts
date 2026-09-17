@@ -9,6 +9,7 @@
 #include <ti/am13/am13e23019.dtsi>
 #include <ti/am13/am13e23019-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "TI AM13E230X Launchpad";
@@ -22,6 +23,17 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		sw0 = &btn_s2;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		btn_s2: btn_s2 {
+			gpios = <&gpiob 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "S2 Wake";
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 
 	leds {
