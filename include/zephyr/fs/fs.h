@@ -609,6 +609,22 @@ int fs_mount(struct fs_mount_t *mp);
 int fs_unmount(struct fs_mount_t *mp);
 
 /**
+ * @brief Unmount filesystem by mount-point path
+ *
+ * Looks up an active mount at @a mnt_point and calls @ref fs_unmount.
+ *
+ * @since 4.3
+ *
+ * @param mnt_point Mount point path (e.g. ``/USB:``)
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @a mnt_point is NULL or invalid
+ * @retval -ENOENT if no mount exists at @a mnt_point
+ * @retval negative errno from the file system unmount operation
+ */
+int fs_unmount_path(const char *mnt_point);
+
+/**
  * @brief Get path of mount point at index
  *
  * This function iterates through the list of mount points and returns
