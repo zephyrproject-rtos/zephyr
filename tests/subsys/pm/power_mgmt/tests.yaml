@@ -6,3 +6,6 @@ tests:
   pm.system.no.device.pm:
     extra_args:
       - CONF_FILE="no-device-pm.conf"
+  pm.system.custom.ticks.hook:
+    extra_args:
+      - CONF_FILE="custom-ticks.conf"
