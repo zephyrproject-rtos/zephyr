@@ -10,6 +10,14 @@
 	};
 };
 
+&usdhc1 {
+	status = "disabled";
+
+	mmc {
+		status = "disabled";
+	};
+};
+
 &usdhc2 {
 	status = "okay";
 
