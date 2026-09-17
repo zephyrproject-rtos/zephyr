@@ -46,6 +46,15 @@ void soc_early_init_hook(void)
 	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
 		soc_radio_init();
 	}
+
+#if defined(CONFIG_SILABS_SISDK_SE) && defined(CONFIG_MULTITHREADING) &&                           \
+	DT_IRQ_HAS_NAME(DT_NODELABEL(se), sembrx)
+	/* The SE Manager signals the thread waiting for mailbox command completion from
+	 * this handler. It enables the interrupt itself in sl_se_init().
+	 */
+	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(se), sembrx, irq),
+		    DT_IRQ_BY_NAME(DT_NODELABEL(se), sembrx, priority), SEMBRX_IRQHandler, NULL, 0);
+#endif
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
