@@ -270,4 +270,19 @@
 /** eSPI peripheral clock identifier. */
 #define MCUX_ESPI0_CLK MCUX_LPC_CLK_ID(0x46, 0x00)
 
+/** ANACTRL (analog control) peripheral gate clock identifier. */
+#define MCUX_ANALOG_CTRL_CLK MCUX_LPC_CLK_ID(0x47, 0x00)
+
+/** 1 MHz FRO. */
+#define MCUX_FRO_1M_CLK MCUX_LPC_CLK_ID(0x49, 0x00)
+
+/** FRO 32 MHz. */
+#define MCUX_FRO_HF_FREQM_CLK MCUX_LPC_CLK_ID(0x4A, 0x00)
+
+/** FRO 12 MHz. */
+#define MCUX_FRO_12M_FREQM_CLK MCUX_LPC_CLK_ID(0x4B, 0x00)
+
+/** 32 MHz crystal. */
+#define MCUX_XTAL32M_FREQM_CLK MCUX_LPC_CLK_ID(0x4C, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_CLOCK_H_ */
