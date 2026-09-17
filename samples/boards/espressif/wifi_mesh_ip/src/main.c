@@ -64,6 +64,9 @@ static void mesh_event(enum esp_wifi_mesh_event event, const struct esp_wifi_mes
 	case ESP_WIFI_MESH_EVENT_ROUTING_TABLE_CHANGE:
 		LOG_INF("routing table size %d", info->routing_table_size);
 		break;
+	case ESP_WIFI_MESH_EVENT_LAYER_CHANGE:
+		LOG_INF("layer changed to %d", info->layer);
+		break;
 	case ESP_WIFI_MESH_EVENT_TODS_REACHABLE:
 		LOG_INF("root external network reachable");
 		break;
