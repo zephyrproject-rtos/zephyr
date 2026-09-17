@@ -23,6 +23,21 @@ config PROFILING_PERF_EVENTS_MAX_EVENTS
 	help
 	  Maximum number of events that can be measured in one stat session.
 
+config PROFILING_PERF_EVENTS_NAME_MAX
+	int "Maximum shell event name length"
+	default 64
+	range 8 128
+	help
+	  Maximum canonical event name length, including the NUL terminator,
+	  retained by the perf stat shell frontend.
+
+config PROFILING_PERF_EVENTS_SHELL
+	bool "Perf counter session shell commands"
+	depends on SHELL
+	help
+	  Add perf list and perf stat commands and stat result buffering to the
+	  existing perf shell command.
+
 config PROFILING_PERF_EVENT_PROVIDER_CPU
 	bool "CPU performance counter provider"
 	help

@@ -13,6 +13,8 @@
 #include "provider.h"
 #include <zephyr/sys/util.h>
 
+struct shell;
+
 /** Callback used to report a registered performance event provider. */
 typedef int (*z_perf_provider_list_cb_t)(const struct perf_event_provider *provider,
 					 void *user_data);
@@ -46,6 +48,34 @@ static inline void z_perf_session_release(enum perf_session_type type)
 static inline bool z_perf_session_is_active(void)
 {
 	return false;
+}
+#endif
+
+#if defined(CONFIG_PROFILING_PERF_EVENTS_SHELL)
+/** Return whether a completed stat session result is retained. */
+bool z_perf_stat_shell_has_result(void);
+
+/** Print the retained stat result to @p sh and discard it when @p clear is true. */
+int z_perf_stat_shell_print_result(const struct shell *sh, bool clear);
+
+/** Discard the retained stat result without affecting an active session. */
+void z_perf_stat_shell_clear_result(void);
+#else
+static inline bool z_perf_stat_shell_has_result(void)
+{
+	return false;
+}
+
+static inline int z_perf_stat_shell_print_result(const struct shell *sh, bool clear)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(clear);
+
+	return -ENOENT;
+}
+
+static inline void z_perf_stat_shell_clear_result(void)
+{
 }
 #endif
 
