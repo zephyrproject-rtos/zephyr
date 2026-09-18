@@ -300,6 +300,9 @@ int card_read_cid(struct sd_card *card, uint32_t *cid)
 	if (ret) {
 		return ret;
 	}
+#if defined(CONFIG_SD_RETAIN_CID)
+	memcpy(card->cid, cid, sizeof(card->cid));
+#endif
 
 #if defined(CONFIG_MMC_STACK)
 	if (card->type == CARD_MMC) {
@@ -888,6 +891,16 @@ int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 		ret = sdhc_set_io(card->sdhc, &card->bus_io);
 		break;
 	case DISK_IOCTL_GET_CARD_CID:
+#if defined(CONFIG_SD_RETAIN_CID)
+		/* An initialized card is in transfer state and no longer answers
+		 * ALL_SEND_CID; hand out the copy taken during identification.
+		 */
+		if (card->status == CARD_INITIALIZED) {
+			memcpy(buf, card->cid, sizeof(card->cid));
+			ret = 0;
+			break;
+		}
+#endif
 		ret = card_read_cid(card, buf);
 		break;
 	default:
