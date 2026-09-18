@@ -1954,6 +1954,10 @@ New Drivers
   * :dtcompatible:`microchip,udphs-g1-udc` (:github:`99620`)
   * :dtcompatible:`nordic,nrf-usbhs-bc12` (:github:`106759`)
 
+* Video
+
+  * :dtcompatible:`zephyr,native-sim-video-fifo` (:github:`119658`)
+
 * Wakeup Controller
 
   * :dtcompatible:`nxp,sleepcon-wuc` (:github:`113447`)
