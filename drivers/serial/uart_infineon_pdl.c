@@ -301,7 +301,9 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 		return -EINVAL;
 	}
 
-	/* Set baud rate */
+	/* Disable, reprogram, then re-enable so the new rate takes effect. */
+	(void)ifx_cat1_utils_peri_pclk_disable_divider(config->clk_dst, &(data->clock));
+
 	if ((data->clock.block & 0x02) == 0) {
 		status = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &(data->clock),
 							      divider - 1);
@@ -309,6 +311,9 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 		status = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &(data->clock),
 								   divider - 1, 0);
 	}
+
+	/* A failed set leaves the register unchanged, so this re-enables the old rate. */
+	(void)ifx_cat1_utils_peri_pclk_enable_divider(config->clk_dst, &(data->clock));
 
 	if (status < 0) {
 		return status;
