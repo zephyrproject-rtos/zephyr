@@ -78,6 +78,16 @@ static int mcux_tpm_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static int mcux_tpm_reset(const struct device *dev)
+{
+	TPM_Type *base = get_base(dev);
+
+	/* Writing any value to CNT resets the counter to its initial value. */
+	base->CNT = 0;
+
+	return 0;
+}
+
 static int mcux_tpm_set_alarm(const struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
@@ -286,6 +296,7 @@ static DEVICE_API(counter, mcux_tpm_driver_api) = {
 	.start = mcux_tpm_start,
 	.stop = mcux_tpm_stop,
 	.get_value = mcux_tpm_get_value,
+	.reset = mcux_tpm_reset,
 	.set_alarm = mcux_tpm_set_alarm,
 	.cancel_alarm = mcux_tpm_cancel_alarm,
 	.set_top_value = mcux_tpm_set_top_value,
