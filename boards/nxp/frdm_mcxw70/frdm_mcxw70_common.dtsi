@@ -22,7 +22,6 @@
 	chosen {
 		zephyr,flash = &flw;
 		zephyr,flash-controller = &fmu_0;
-		zephyr,code-partition = &code_partition;
 		zephyr,sram = &stcm0;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;

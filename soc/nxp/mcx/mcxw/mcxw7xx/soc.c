@@ -27,6 +27,20 @@ extern void nxp_nbu_init(void);
 extern char z_main_stack[];
 extern char _flash_used[];
 
+/*
+ * On MCXW70, when building MCUboot itself, imageLength must span the entire
+ * boot_partition plus slot0_partition so that the ROM's flash protection
+ * window covers both regions.  Both sizes are taken from the devicetree at
+ * compile time, making the value independent of the actual binary size.
+ */
+#if defined(CONFIG_SOC_MCXW70AC) && defined(CONFIG_MCUBOOT) && \
+	DT_NODE_EXISTS(DT_NODELABEL(boot_partition)) && \
+	DT_NODE_EXISTS(DT_NODELABEL(slot0_partition))
+#define IMAGE_LENGTH_OVERRIDE \
+	(DT_REG_SIZE(DT_NODELABEL(boot_partition)) + \
+	 DT_REG_SIZE(DT_NODELABEL(slot0_partition)))
+#endif
+
 extern void z_arm_reset(void);
 extern void z_arm_nmi(void);
 extern void z_arm_hard_fault(void);
@@ -59,7 +73,11 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 #else
 	z_arm_exc_spurious,
 #endif                                               /* CONFIG_ARM_SECURE_FIRMWARE */
-	(void (*)())((uintptr_t)_flash_used),        /* 0x20, imageLength. */
+#ifdef IMAGE_LENGTH_OVERRIDE
+	(void (*)())(IMAGE_LENGTH_OVERRIDE),         /* 0x20, imageLength. */
+#else
+	(void (*)())((uintptr_t)_flash_used),
+#endif
 	0,                                           /* 0x24, imageType (Plain Image) */
 	0,                                           /* 0x28, authBlockOffset/crcChecksum */
 	z_arm_svc,                                   /* 0x2C */
