@@ -32,6 +32,25 @@
 		};
 	};
 
+	/* Flash write-protect pin function groups; board selects one via pinctrl-0. */
+	/omit-if-no-ref/ fiu0_wp_int_fl: periph-fiu0-wp-int-fl {
+		wp {
+			pinmux = <&pin_scfg_wp_int_fl>;
+		};
+	};
+
+	/omit-if-no-ref/ fiu0_wp_gpio55: periph-fiu0-wp-gpio55 {
+		wp {
+			pinmux = <&pin_gpio55_wp_gpio55>;
+		};
+	};
+
+	/omit-if-no-ref/ fiu0_wp_gpio76: periph-fiu0-wp-gpio76 {
+		wp {
+			pinmux = <&pin_gpio76_wp_gpio76>;
+		};
+	};
+
 	/* PSPI interfaces */
 	/omit-if-no-ref/ pspi1_clk_gpio66_67_70_73_76_77: periph-pspi1 {
 		clk {

@@ -1833,4 +1833,9 @@
 		nuvoton,pull-up-reg = <NPCM_SCFG_DEVPU0 4>; /* SMB3A_PUE */
 		nuvoton,low-voltage-reg = <NPCM_SCFG_LV_CTL1 1>; /* SCL3A_LV */
 	};
+
+	/* Flash write protect via internal flash (WP_INT_FL): DEV_CTL3.WP_INT_FL */
+	/omit-if-no-ref/ pin_scfg_wp_int_fl: pin-scfg-wp-int-fl {
+		nuvoton,alts = <NPCM_SCFG_DEV_CTL3 0 1>;
+	};
 };
