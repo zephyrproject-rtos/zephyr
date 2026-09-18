@@ -1692,7 +1692,8 @@ void z_impl_k_thread_suspend(k_tid_t thread)
 	/* Special case "suspend the current thread" as it doesn't
 	 * need the async complexity below.
 	 */
-	if (!IS_ENABLED(CONFIG_SMP) && (thread == _current) && !arch_is_in_isr()) {
+	if (!IS_ENABLED(CONFIG_SMP) &&
+	    likely((thread == _current) && !arch_is_in_isr())) {
 		z_thread_suspend_current(thread);
 		return;
 	}
