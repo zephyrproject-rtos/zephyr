@@ -417,6 +417,21 @@ static int supplicant_register_iface_type(struct net_if *iface)
 	return 0;
 }
 
+static int zephyr_wpa_ctrl_set_dev_name(struct wpa_supplicant *wpa_s, const char *ifname)
+{
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	if (strlen(WIFI_P2P_DEVICE_NAME) > 0) {
+		wpa_s->conf->device_name = os_strdup(WIFI_P2P_DEVICE_NAME);
+		if (wpa_s->conf->device_name == NULL) {
+			LOG_ERR("Failed to set P2P device name for %s", ifname);
+			return -ENOMEM;
+		}
+	}
+#endif
+
+	return 0;
+}
+
 static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant *wpa_s;
@@ -450,6 +465,11 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	wpa_s->conf->filter_ssids = 1;
 	wpa_s->conf->ap_scan = 1;
+
+	ret = zephyr_wpa_ctrl_set_dev_name(wpa_s, ifname);
+	if (ret != 0) {
+		goto out;
+	}
 
 	/* Default interface, kick start supplicant */
 	if (get_iface_count(ctx) > 0) {
