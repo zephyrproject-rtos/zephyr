@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <soc.h>
 #include <stm32_bitops.h>
+#include <stm32_common.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_exti.h>
 #include <stm32_ll_gpio.h>
@@ -347,7 +348,7 @@ static int gpio_stm32_config(const struct device *dev,
 			return -EINVAL;
 		}
 
-		err = stm32_gpiomgr_enable_wakeup_pin(cfg->port, pin, flags);
+		err = stm32_pwrc_enable_wakeup_pin(cfg->port, pin, flags);
 		if (err == -ENODEV) {
 			LOG_ERR("No wake-up pin found associated to GPIO%c pin %d",
 				('A' + cfg->port), pin);
