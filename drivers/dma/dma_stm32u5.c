@@ -586,17 +586,25 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Support only the same data width for source and dest */
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("source and dest data size differ.");
+		/* This is not a strict error, but migth point to an issue.
+		 * Mismatch can be used by peripherals that require 32-bit access,
+		 * but produce 16-bit value (e.g. ADC, DAC)
+		 */
+		LOG_INF("source and dest data size differ.");
+	}
+
+	if (config->dest_data_size != 4U &&
+	    config->dest_data_size != 2U &&
+	    config->dest_data_size != 1U) {
+		LOG_ERR("dest unit size error, %d", config->dest_data_size);
 		return -EINVAL;
 	}
 
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
 	    config->source_data_size != 1U) {
-		LOG_ERR("source and dest unit size error, %d",
-			config->source_data_size);
+		LOG_ERR("source unit size error, %d", config->source_data_size);
 		return -EINVAL;
 	}
 
