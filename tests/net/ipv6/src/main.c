@@ -1209,6 +1209,11 @@ static void ra_message(void)
 		      "Router %s should be here\n",
 		      net_sprint_ipv6_addr(&test_router_addr));
 
+	/* The Retrans Timer field of icmpv6_ra[] is 0x00000101 ms. */
+	zexpect_equal(net_if_ipv6_get_retrans_timer(TEST_NET_IF), 0x101U,
+		      "Wrong retransmit timer %u",
+		      net_if_ipv6_get_retrans_timer(TEST_NET_IF));
+
 	/* Check if autoconf address was added correctly. */
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(TEST_NET_IF,
 						  &test_ra_autoconf_addr);
