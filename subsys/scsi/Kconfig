@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# SCSI mid-layer configuration
+# Transport-neutral command execution, sense handling, and device probe.
+# Transports (e.g. USB MSC, UFS) implement scsi_driver_api.
+
+menuconfig SCSI
+	bool "SCSI mid-layer"
+	default n
+	help
+	  Enable the transport-neutral SCSI mid-layer in subsys/scsi/: CDB
+	  builders, synchronous command execution, sense parsing, and device
+	  probe. This subsystem does not depend on USB, UFS, or any other
+	  storage transport.
+
+	  Transports implement scsi_driver_api (exec, optional reset/get_max_lun)
+	  and bind struct scsi_device. In-tree consumers include USB Mass Storage
+	  (host and device) and UFS.
+
+if SCSI
+
+config SCSI_TUR_RETRY_COUNT
+	int "TEST UNIT READY retries during probe"
+	default 5
+	help
+	  Number of times to retry TEST UNIT READY when the device returns
+	  NOT READY (typical for removable media after insertion).
+
+config SCSI_TUR_RETRY_DELAY_MS
+	int "Delay between TEST UNIT READY retries (ms)"
+	default 100
+	help
+	  Milliseconds to wait between TEST UNIT READY retries during probe.
+
+config SCSI_SYNC_CACHE_RETRY_COUNT
+	int "SYNCHRONIZE CACHE retries on I/O error"
+	default 5
+	help
+	  Number of times to retry SCSI SYNCHRONIZE CACHE (10) when the device
+	  returns CHECK CONDITION or a transport I/O error. Some USB thumb
+	  drives briefly stall on cache flush; retries improve FatFs fs_sync().
+
+config SCSI_SYNC_CACHE_RETRY_DELAY_MS
+	int "Delay between SYNCHRONIZE CACHE retries (ms)"
+	default 100
+	help
+	  Milliseconds to wait between SYNCHRONIZE CACHE retries.
+
+# Define the SCSI subsystem as a module
+module = SCSI
+module-str = scsi
+
+# Include additional logging configuration for SCSI subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SCSI
