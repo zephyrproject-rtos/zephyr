@@ -781,6 +781,12 @@ static int ifx_cat1_uart_async_tx(const struct device *dev, const uint8_t *tx_da
 
 	unsigned int key = irq_lock();
 
+	/* Reject an overlapping transfer; buf_len is the session's own ownership flag. */
+	if (data->async.dma_tx.buf_len != 0) {
+		err = -EBUSY;
+		goto exit;
+	}
+
 	/* Store information about data buffer need to send */
 	data->async.dma_tx.buf = tx_data;
 	data->async.dma_tx.buf_len = tx_data_size;
