@@ -74,8 +74,16 @@ static inline int z_vrfy_bbram_read(const struct device *dev, size_t offset,
 static inline int z_vrfy_bbram_write(const struct device *dev, size_t offset,
 				     size_t size, const uint8_t *data)
 {
+	int ret;
+
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_BBRAM));
 	K_OOPS(K_SYSCALL_MEMORY_READ(data, size));
+
+	ret = bbram_verify_range(dev, offset, size);
+	if (ret != 0) {
+		return ret;
+	}
+
 	return z_impl_bbram_write(dev, offset, size, data);
 }
 #include <zephyr/syscalls/bbram_write_mrsh.c>
