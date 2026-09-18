@@ -63,3 +63,11 @@ config KNX_L_DATA_CON_TIMEOUT_MS
 	  meaningfully delayed by an in-flight low-priority retry loop.
 
 endif # NCN5130
+
+config KNX_LOOPBACK
+	bool "KNX loopback L1 driver (for unit testing)"
+	depends on KNX_STACK
+	help
+	  Software loopback: knx_l1_send_frame() replays the frame back into
+	  Ph_Data__ind immediately.  Use instead of NCN5130 on native_sim or
+	  when no physical KNX bus is available.
