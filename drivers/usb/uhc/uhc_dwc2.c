@@ -794,11 +794,11 @@ static inline void ch_process_control(const struct device *dev,
 
 	/* TODO: Configure split transaction if needed */
 
-	if (dma_addr != NULL && size > 0) {
+	if (dma_addr != 0 && size > 0) {
 		if (next_dir_is_in) {
-			sys_cache_data_invd_range(dma_addr, size);
+			sys_cache_data_invd_range((void *)dma_addr, size);
 		} else {
-			sys_cache_data_flush_range(dma_addr, size);
+			sys_cache_data_flush_range((void *)dma_addr, size);
 		}
 	}
 
@@ -1300,7 +1300,7 @@ static void ch_start_control(const struct device *dev,
 	hcint = sys_read32((mem_addr_t)&ch->regs->hcint);
 	sys_write32(hcint, (mem_addr_t)&ch->regs->hcint);
 
-	sys_cache_data_flush_range(xfer->setup_pkt, sizeof(struct usb_setup_packet));
+	sys_cache_data_flush_range((void *)dma_addr, sizeof(struct usb_setup_packet));
 
 	/* Start transfer */
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
@@ -1346,9 +1346,9 @@ static void ch_start_bulk(const struct device *dev,
 
 	if (ch->length > 0) {
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
-			sys_cache_data_invd_range(dma_addr, ch->length);
+			sys_cache_data_invd_range((void *)dma_addr, ch->length);
 		} else {
-			sys_cache_data_flush_range(dma_addr, ch->length);
+			sys_cache_data_flush_range((void *)dma_addr, ch->length);
 		}
 	}
 
