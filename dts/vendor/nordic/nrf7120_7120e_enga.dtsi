@@ -795,7 +795,7 @@
 			};
 
 			gpio4: gpio@d8800 {
-				compatible = "nordic,nrf-gpio";
+				compatible = "nordic,nrf71-p4-gpio", "nordic,nrf-gpio";
 				reg = <0xd8800 0x200>;
 				gpio-controller;
 				#gpio-cells = <2>;
