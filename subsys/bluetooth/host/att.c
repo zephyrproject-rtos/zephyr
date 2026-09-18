@@ -3308,6 +3308,7 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 }
 
 #if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
 static uint8_t att_req_retry(struct bt_att_chan *att_chan)
 {
 	struct bt_att_req *req = att_chan->req;
@@ -3338,6 +3339,7 @@ static uint8_t att_req_retry(struct bt_att_chan *att_chan)
 
 	return BT_ATT_ERR_SUCCESS;
 }
+#endif /* CONFIG_BT_ATT_RETRY_ON_SEC_ERR */
 
 static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 				  uint8_t hci_status)
@@ -3345,7 +3347,6 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 	struct bt_conn *conn = le_chan->chan.conn;
-	uint8_t err;
 
 	LOG_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x %s", le_chan, conn,
 		conn->handle, conn->sec_level, hci_status, bt_hci_err_to_str(hci_status));
@@ -3360,10 +3361,12 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 	 * outstanding request about security failure.
 	 */
 	if (hci_status) {
+#if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
 		if (att_chan->req && att_chan->req->retrying) {
 			att_handle_rsp(att_chan, NULL, 0,
 				       BT_ATT_ERR_AUTHENTICATION);
 		}
+#endif /* CONFIG_BT_ATT_RETRY_ON_SEC_ERR */
 
 		return;
 	}
@@ -3373,6 +3376,9 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 	if (conn->sec_level == BT_SECURITY_L1) {
 		return;
 	}
+
+#if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
+	uint8_t err;
 
 	if (!(att_chan->req && att_chan->req->retrying)) {
 		return;
@@ -3385,6 +3391,7 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 		LOG_DBG("Retry failed (%d)", err);
 		att_handle_rsp(att_chan, NULL, 0, err);
 	}
+#endif /* CONFIG_BT_ATT_RETRY_ON_SEC_ERR */
 }
 #endif /* CONFIG_BT_SMP */
 
