@@ -39,6 +39,14 @@ config INPUT_FT5336_INTERRUPT
 	help
 	  Enable interrupt support (requires GPIO).
 
+config INPUT_FT5336_MAX_TOUCH_POINTS
+	int "Maximum number of touch points"
+	default 1
+	range 1 5
+	help
+	  Maximum number of touch points to be handled. Multitouch slot
+	  events are not reported when set to 1.
+
 config INPUT_FT5336_PM_MODE_MONITOR
 	bool "Use monitor mode for PM suspend"
 	depends on PM_DEVICE
