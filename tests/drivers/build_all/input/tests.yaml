@@ -18,6 +18,14 @@ tests:
       - CONFIG_INPUT_GT911_INTERRUPT=y
       - CONFIG_INPUT_TMA525B_INTERRUPT=y
 
+  drivers.input.touchscreen_multitouch:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_INPUT_FT5336_MAX_TOUCH_POINTS=5
+      - CONFIG_INPUT_GT911_MAX_TOUCH_POINTS=5
+      - CONFIG_INPUT_TMA525B_MAX_TOUCH_POINTS=4
+
   drivers.input.kbd_16_bit:
     platform_allow:
       - native_sim
