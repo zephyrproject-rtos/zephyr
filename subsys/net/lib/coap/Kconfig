@@ -239,6 +239,7 @@ endif # COAP_OVER_RELIABLE_TRANSPORT
 config COAP_SERVER
 	bool "CoAP server support"
 	select NET_SOCKETS
+	select NET_CONTEXT_RECV_PKTINFO if NET_UDP
 	select ZVFS
 	select ZVFS_EVENTFD
 	help

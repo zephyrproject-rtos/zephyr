@@ -177,6 +177,9 @@ struct tls_session_context {
 	/* DTLS peer address length. */
 	net_socklen_t dtls_peer_addrlen;
 
+	/* The local address this session's data came in on (server side only). */
+	struct net_sockaddr_storage dtls_local_addr;
+
 	/* DTLS session expiry time (server only). */
 	k_timepoint_t session_expiry;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
@@ -1160,15 +1163,62 @@ static void dtls_peer_address_get(struct tls_session_context *session_ctx,
 static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
+	struct net_sockaddr_storage *local_addr = NULL;
 	ssize_t sent;
 
 	if (tls_ctx->options.role == MBEDTLS_SSL_IS_SERVER) {
 		dtls_server_refresh_session_timeout(tls_ctx->active_session);
+
+		if (tls_ctx->active_session->dtls_local_addr.ss_family != NET_AF_UNSPEC) {
+			local_addr = &tls_ctx->active_session->dtls_local_addr;
+		}
 	}
 
-	sent = zsock_sendto(tls_ctx->sock, buf, len, ZSOCK_MSG_DONTWAIT,
-			    net_sad(&tls_ctx->active_session->dtls_peer_addr),
-			    tls_ctx->active_session->dtls_peer_addrlen);
+	if (local_addr != NULL) {
+		/* A union keeps this properly aligned for net_cmsghdr, not just a byte array. */
+		union {
+			struct net_cmsghdr hdr;
+			uint8_t buf[NET_CMSG_SPACE(sizeof(struct net_in6_pktinfo))];
+		} cmsg_storage = { 0 };
+		uint8_t *cmsg_buf = cmsg_storage.buf;
+		struct net_cmsghdr *cmsg = &cmsg_storage.hdr;
+		struct net_iovec io_vec = { .iov_base = (void *)buf, .iov_len = len };
+		struct net_msghdr msg = {
+			.msg_name = net_sad(&tls_ctx->active_session->dtls_peer_addr),
+			.msg_namelen = tls_ctx->active_session->dtls_peer_addrlen,
+			.msg_iov = &io_vec,
+			.msg_iovlen = 1,
+			.msg_control = cmsg_buf,
+			.msg_controllen = sizeof(cmsg_storage.buf),
+		};
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && local_addr->ss_family == NET_AF_INET6) {
+			struct net_in6_pktinfo info = {
+				.ipi6_addr = ((struct net_sockaddr_in6 *)local_addr)->sin6_addr,
+			};
+
+			cmsg->cmsg_level = NET_IPPROTO_IPV6;
+			cmsg->cmsg_type = ZSOCK_IPV6_PKTINFO;
+			cmsg->cmsg_len = NET_CMSG_LEN(sizeof(info));
+			memcpy(NET_CMSG_DATA(cmsg), &info, sizeof(info));
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && local_addr->ss_family == NET_AF_INET) {
+			struct net_in_pktinfo info = {
+				.ipi_spec_dst = ((struct net_sockaddr_in *)local_addr)->sin_addr,
+			};
+
+			cmsg->cmsg_level = NET_IPPROTO_IP;
+			cmsg->cmsg_type = ZSOCK_IP_PKTINFO;
+			cmsg->cmsg_len = NET_CMSG_LEN(sizeof(info));
+			memcpy(NET_CMSG_DATA(cmsg), &info, sizeof(info));
+		}
+
+		sent = zsock_sendmsg(tls_ctx->sock, &msg, ZSOCK_MSG_DONTWAIT);
+	} else {
+		sent = zsock_sendto(tls_ctx->sock, buf, len, ZSOCK_MSG_DONTWAIT,
+				    net_sad(&tls_ctx->active_session->dtls_peer_addr),
+				    tls_ctx->active_session->dtls_peer_addrlen);
+	}
+
 	if (sent < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_WRITE;
@@ -1180,11 +1230,62 @@ static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 	return sent;
 }
 
+/* Get the local address a DTLS packet came in on, from IPV6_PKTINFO/IP_PKTINFO.
+ * If that address turns out to be multicast, we leave it unset instead of
+ * storing it. That way the reply just goes out through plain sendto(), and
+ * the OS picks a normal address to send it from - replying "from" a
+ * multicast address wouldn't make sense.
+ */
+static void dtls_server_local_addr_from_cmsg(struct net_msghdr *msg,
+					     struct net_sockaddr_storage *local_addr)
+{
+	struct net_cmsghdr *cmsg;
+
+	local_addr->ss_family = NET_AF_UNSPEC;
+
+	for (cmsg = NET_CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = NET_CMSG_NXTHDR(msg, cmsg)) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) && cmsg->cmsg_level == NET_IPPROTO_IPV6 &&
+		    cmsg->cmsg_type == ZSOCK_IPV6_PKTINFO &&
+		    cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_in6_pktinfo))) {
+			struct net_in6_pktinfo *info =
+				(struct net_in6_pktinfo *)NET_CMSG_DATA(cmsg);
+			struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)local_addr;
+
+			if (!net_ipv6_is_addr_mcast(&info->ipi6_addr)) {
+				addr6->sin6_family = NET_AF_INET6;
+				addr6->sin6_addr = info->ipi6_addr;
+			}
+			return;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV4) && cmsg->cmsg_level == NET_IPPROTO_IP &&
+		    cmsg->cmsg_type == ZSOCK_IP_PKTINFO &&
+		    cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_in_pktinfo))) {
+			struct net_in_pktinfo *info = (struct net_in_pktinfo *)NET_CMSG_DATA(cmsg);
+			struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)local_addr;
+
+			if (!net_ipv4_is_addr_mcast(&info->ipi_addr)) {
+				addr4->sin_family = NET_AF_INET;
+				addr4->sin_addr = info->ipi_addr;
+			}
+			return;
+		}
+	}
+}
+
 static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
 	net_socklen_t addrlen = sizeof(struct net_sockaddr_storage);
 	struct net_sockaddr_storage addr = { 0 };
+	struct net_sockaddr_storage local_addr = { 0 };
+	union {
+		struct net_cmsghdr hdr;
+		uint8_t buf[NET_CMSG_SPACE(sizeof(struct net_in6_pktinfo))];
+	} cmsg_storage = { 0 };
+	uint8_t *cmsg_buf = cmsg_storage.buf;
+	struct net_iovec io_vec;
+	struct net_msghdr msg;
 	int err;
 	ssize_t received;
 	uint8_t tmp_buf;
@@ -1211,13 +1312,29 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 		return MBEDTLS_ERR_SSL_WANT_READ;
 	}
 
-	/* If the session matches, read the actual packet. */
-	received = zsock_recvfrom(tls_ctx->sock, buf, len,
-				  ZSOCK_MSG_DONTWAIT, net_sad(&addr), &addrlen);
+	/* If the session matches, use recvmsg() to read the packet and its local address. */
+	memset(cmsg_buf, 0, sizeof(cmsg_storage.buf));
+
+	io_vec.iov_base = buf;
+	io_vec.iov_len = len;
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_name = net_sad(&addr);
+	msg.msg_namelen = sizeof(addr);
+	msg.msg_iov = &io_vec;
+	msg.msg_iovlen = 1;
+	msg.msg_control = cmsg_buf;
+	msg.msg_controllen = sizeof(cmsg_storage.buf);
+
+	received = zsock_recvmsg(tls_ctx->sock, &msg, ZSOCK_MSG_DONTWAIT);
 	if (received < 0) {
 		NET_ERR("DTLS server RX: failure %d", errno);
 		return MBEDTLS_ERR_NET_RECV_FAILED;
 	}
+
+	addrlen = msg.msg_namelen;
+	dtls_server_local_addr_from_cmsg(&msg, &local_addr);
+	tls_ctx->active_session->dtls_local_addr = local_addr;
 
 	dtls_server_refresh_session_timeout(tls_ctx->active_session);
 
