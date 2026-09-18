@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/drivers/bluetooth.h>
+#include <zephyr/drivers/bluetooth/hci_lockstep.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
@@ -37,6 +38,12 @@ LOG_MODULE_REGISTER(psoc6_bless);
 #define CYBLE_STACK_SIZE (CY_BLE_STACK_RAM_SIZE + 4096)
 
 #define PSOC6_BLESS_OP_SET_PUBLIC_ADDR BT_OP(BT_OGF_VS, 0x1a0)
+
+struct psoc6_bless_data {
+	/* bt_hci_driver_data must be first */
+	struct bt_hci_driver_data common;
+	struct bt_hci_lockstep lockstep;
+};
 
 static K_SEM_DEFINE(psoc6_bless_rx_sem, 0, 1);
 static K_SEM_DEFINE(psoc6_bless_operation_sem, 1, 1);
@@ -97,6 +104,7 @@ static void psoc6_bless_isr_handler(const struct device *dev)
 static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct psoc6_bless_data *data = dev->data;
 	cy_stc_ble_hci_tx_packet_info_t *hci_rx = NULL;
 	struct net_buf *buf = NULL;
 	size_t buf_tailroom = 0;
@@ -136,32 +144,26 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 		return;
 	}
 	net_buf_add_mem(buf, hci_rx->data, hci_rx->dataLength);
+
+	/* Responses to the driver's own commands, sent while opening */
+	if (bt_hci_lockstep_feed(&data->lockstep, buf->data, buf->len)) {
+		net_buf_unref(buf);
+		return;
+	}
+
 	bt_hci_recv(dev, buf);
 }
 
-static int psoc6_bless_open(const struct device *dev)
+static int psoc6_bless_send_raw(const struct device *dev, const uint8_t *pkt, size_t len)
 {
-	k_tid_t tid;
-
-	tid = k_thread_create(&psoc6_bless_rx_thread_data, psoc6_bless_rx_thread_stack,
-			      K_KERNEL_STACK_SIZEOF(psoc6_bless_rx_thread_stack),
-			      psoc6_bless_rx_thread, NULL, NULL, NULL,
-			      K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
-	k_thread_name_set(tid, "psoc6_bless_rx_thread");
-
-	return 0;
-}
-
-static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
-{
-	cy_stc_ble_hci_tx_packet_info_t hci_tx_pkt = {0};
+	cy_stc_ble_hci_tx_packet_info_t hci_tx_pkt = {
+		.packetType = pkt[0],
+		.dataLength = len - sizeof(uint8_t),
+		.data = (uint8_t *)&pkt[sizeof(uint8_t)],
+	};
 	cy_en_ble_api_result_t result;
 
 	ARG_UNUSED(dev);
-
-	hci_tx_pkt.packetType = net_buf_pull_u8(buf);
-	hci_tx_pkt.dataLength = buf->len;
-	hci_tx_pkt.data = buf->data;
 
 	if (k_sem_take(&psoc6_bless_operation_sem, K_MSEC(BLE_LOCK_TMOUT_MS)) != 0) {
 		LOG_ERR("Failed to acquire BLE DRV Semaphore");
@@ -169,54 +171,83 @@ static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
 	}
 
 	result = Cy_BLE_SoftHciSendAppPkt(&hci_tx_pkt);
-	if (result != CY_BLE_SUCCESS) {
-		LOG_ERR("Error in sending packet reason %d\r\n", result);
-	}
 
 	k_sem_give(&psoc6_bless_operation_sem);
-
-	net_buf_unref(buf);
 
 	/* Unblock psoc6 bless rx thread to process controller events
 	 * (by calling Cy_BLE_ProcessEvents function)
 	 */
 	k_sem_give(&psoc6_bless_rx_sem);
+
+	if (result != CY_BLE_SUCCESS) {
+		LOG_ERR("Error in sending packet reason %d", result);
+		return -EIO;
+	}
+
 	return 0;
 }
 
-static int psoc6_bless_setup(const struct device *dev, const struct bt_hci_setup_params *params)
+/**
+ * @brief Set the controller's public address from the SFLASH device address
+ * @param data Driver data
+ * @return 0 on success, negative errno on failure
+ */
+static int psoc6_bless_set_public_addr(struct psoc6_bless_data *data)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(params);
-	struct net_buf *buf;
-	int err;
-	uint8_t *addr = (uint8_t *)&SFLASH_BLE_DEVICE_ADDRESS[0];
-	uint8_t hci_data[] = {
+	const uint8_t *addr = (const uint8_t *)&SFLASH_BLE_DEVICE_ADDRESS[0];
+	const uint8_t hci_data[] = {
 		addr[5], addr[4], addr[3], addr[2], addr[1], addr[0], BT_ADDR_LE_PUBLIC,
 	};
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
-		return -ENOMEM;
-	}
+	BT_HCI_PKT_CMD_DEFINE(cmd, sizeof(hci_data));
 
-	/* Add data part of packet */
-	net_buf_add_mem(buf, hci_data, sizeof(hci_data));
+	(void)net_buf_simple_add_mem(&cmd, hci_data, sizeof(hci_data));
 
-	err = bt_hci_cmd_send_sync(PSOC6_BLESS_OP_SET_PUBLIC_ADDR, buf, NULL);
-	if (err) {
+	return bt_hci_lockstep_cmd_send_sync(&data->lockstep, PSOC6_BLESS_OP_SET_PUBLIC_ADDR,
+					     &cmd, NULL);
+}
+
+static int psoc6_bless_open(const struct device *dev)
+{
+	struct psoc6_bless_data *data = dev->data;
+	k_tid_t tid;
+	int err;
+
+	tid = k_thread_create(&psoc6_bless_rx_thread_data, psoc6_bless_rx_thread_stack,
+			      K_KERNEL_STACK_SIZEOF(psoc6_bless_rx_thread_stack),
+			      psoc6_bless_rx_thread, NULL, NULL, NULL,
+			      K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(tid, "psoc6_bless_rx_thread");
+
+	err = psoc6_bless_set_public_addr(data);
+	if (err != 0) {
+		/* The caller may try again, and k_thread_create() on a thread
+		 * that is still running is a fault of its own.
+		 */
+		k_thread_abort(tid);
 		return err;
 	}
 
 	return 0;
 }
 
+static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
+{
+	int err;
+
+	err = psoc6_bless_send_raw(dev, buf->data, buf->len);
+	if (err != 0) {
+		return err;
+	}
+
+	net_buf_unref(buf);
+	return 0;
+}
+
 static int psoc6_bless_hci_init(const struct device *dev)
 {
+	struct psoc6_bless_data *data = dev->data;
 	cy_en_ble_api_result_t result;
-
-	ARG_UNUSED(dev);
 
 	/* Connect BLE interrupt to ISR */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), psoc6_bless_isr_handler, 0, 0);
@@ -241,18 +272,18 @@ static int psoc6_bless_hci_init(const struct device *dev)
 	/* Enables BLE Low-power mode (LPM)*/
 	Cy_BLE_EnableLowPowerMode();
 
+	bt_hci_lockstep_init(&data->lockstep, dev, psoc6_bless_send_raw);
+
 	return 0;
 }
 
 static DEVICE_API(bt_hci, drv) = {
 	.open = psoc6_bless_open,
 	.send = psoc6_bless_send,
-	.setup = psoc6_bless_setup,
 };
 
 #define PSOC6_BLESS_DEVICE_INIT(inst) \
-	static struct bt_hci_driver_data psoc6_bless_data_##inst = { \
-	}; \
+	static struct psoc6_bless_data psoc6_bless_data_##inst; \
 	static const struct bt_hci_driver_config psoc6_bless_config_##inst = \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
 	DEVICE_DT_INST_DEFINE(inst, psoc6_bless_hci_init, NULL, &psoc6_bless_data_##inst, \
