@@ -158,3 +158,15 @@ which includes some Kconfig extensions:
   .. note::
     The *named choices* feature originates from Linux, but it is no longer supported in Linux
     since kernel release 6.9, and has thus become a Kconfiglib language extension.
+
+- The Python module that provides preprocessor functions
+  (:zephyr_file:`scripts/kconfig/kconfigfunctions.py`, or the module named by the
+  ``KCONFIG_FUNCTIONS`` environment variable) can define a function
+  ``prompt_hook(kconf, node, prompt)``. Kconfiglib calls it for every menu node with a prompt
+  once the Kconfig tree has been parsed, and uses the string it returns as the prompt instead of
+  the text written in the Kconfig file. The text as written stays available as
+  ``node.orig_prompt``.
+
+  Zephyr uses this hook to append ``[EXPERIMENTAL]`` and ``[DEPRECATED]`` to the prompt of
+  symbols that select :kconfig:option:`CONFIG_EXPERIMENTAL` or
+  :kconfig:option:`CONFIG_DEPRECATED`, see :ref:`kconfig_experimental_deprecated`.

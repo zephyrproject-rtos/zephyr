@@ -37,6 +37,13 @@ Build System
 * :kconfig:option:`CONFIG_LEGACY_GENERATED_INCLUDE_PATH` has been deprecated, and disabled by
   default, includes must now be prefixed with ``zephyr/`` for zephyr files.
 
+* The Kconfig tools (``menuconfig``, ``guiconfig``, the documentation) now append
+  ``[EXPERIMENTAL]`` and ``[DEPRECATED]`` to the prompt of every symbol that selects
+  ``EXPERIMENTAL`` or ``DEPRECATED``, including symbols in out-of-tree Kconfig files. A prompt
+  that already contains the exact tag is left as is; other spellings such as ``(experimental)``
+  are shown twice. Remove hand-written tags from the prompts of ``bool`` and ``tristate`` symbols
+  and select the marker symbol instead. See :ref:`kconfig_experimental_deprecated`.
+
 * CMake variables ``SOC_NAME``, ``SOC_SERIES``, ``SOC_FAMILY`` and ``SOC_V2_DIR`` have been
   deprecated as they duplicate variables already, the replacement variables are as follows:
   :kconfig:option:`CONFIG_SOC`, :kconfig:option:`CONFIG_SOC_SERIES`,

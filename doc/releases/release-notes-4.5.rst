@@ -2027,6 +2027,10 @@ Other notable changes
     Ubuntu 24.04 LTS package repositories. See the :ref:`migration guide <migration_4.5>` for
     options if your distribution ships an older version.
 
+  * The ``[EXPERIMENTAL]`` and ``[DEPRECATED]`` suffixes of Kconfig prompts are now derived from
+    ``select EXPERIMENTAL`` and ``select DEPRECATED`` by the Kconfig tools and must no longer be
+    written in the prompt. See :ref:`kconfig_experimental_deprecated`.
+
 * Kernel
 
   * :kconfig:option:`CONFIG_SCHED_CPU_MASK` no longer depends on
