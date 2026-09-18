@@ -94,7 +94,7 @@ int bt_apollo_controller_deinit(void);
  *
  * @return 0 on success or negative error number on failure.
  */
-int bt_apollo_vnd_setup(void);
+int bt_apollo_vnd_setup(struct bt_hci_lockstep *ls);
 
 /**
  * @brief Check if vendor specific receiving handling is ongoing.
