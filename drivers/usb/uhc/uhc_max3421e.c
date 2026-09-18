@@ -557,7 +557,9 @@ static void max3421e_handle_condet(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
+	uint8_t new_mode = priv->mode;
 	enum uhc_event_type type = UHC_EVT_ERROR;
+	bool is_low_speed;
 
 	if (atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET)) {
 		/* NOTE: Resetting the bus triggers a spurious condet event */
@@ -565,23 +567,38 @@ static void max3421e_handle_condet(const struct device *dev)
 	}
 
 	/*
-	 * JSTATUS:KSTATUS 0:0 - SE0
-	 * JSTATUS:KSTATUS 0:1 - K   (Resume)
-	 * JSTATUS:KSTATUS 1:0 - J   (Idle)
+	 * JSTATUS:KSTATUS 0:0 = SE0 = No device present
+	 * JSTATUS:KSTATUS 1:1 = SE1 = illegal state
+	 * JSTATUS:KSTATUS 0:1 =  K  = Device connected at a different speed than the current one
+	 * JSTATUS:KSTATUS 1:0 =  J  = Device connected at the same speed
 	 */
-	if (jk == 0) {
-		/* Device disconnected */
+	switch (jk) {
+	case 0:
+		LOG_INF("Device disconnected");
 		type = UHC_EVT_DEV_REMOVED;
+		new_mode &= ~MAX3421E_SOFKAENAB;
+		break;
+	case MAX3421E_KSTATUS:
+		/* Need to switch speed */
+		new_mode ^= MAX3421E_LOWSPEED;
+		__fallthrough;
+	case MAX3421E_JSTATUS:
+		new_mode |= MAX3421E_SOFKAENAB;
+
+		is_low_speed = new_mode & MAX3421E_LOWSPEED;
+		type = is_low_speed ? UHC_EVT_DEV_CONNECTED_LS : UHC_EVT_DEV_CONNECTED_FS;
+		LOG_INF("%s Device connected", is_low_speed ? "LS" : "FS");
+		break;
+	case (MAX3421E_JSTATUS | MAX3421E_KSTATUS):
+		LOG_ERR("Illegal USB Bus state");
+		type = UHC_EVT_ERROR;
+		break;
 	}
 
-	if (jk == MAX3421E_JSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_FS;
-	}
-
-	if (jk == MAX3421E_KSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_LS;
+	if (priv->mode != new_mode) {
+		LOG_DBG("Changing mode. New Mode: %02x; Old Mode:%02x ", new_mode, priv->mode);
+		max3421e_write_byte(dev, MAX3421E_REG_MODE, new_mode);
+		priv->mode = new_mode;
 	}
 
 	uhc_submit_event(dev, type, 0);
