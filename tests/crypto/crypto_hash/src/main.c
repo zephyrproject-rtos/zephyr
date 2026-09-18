@@ -34,6 +34,8 @@
 #define CRYPTO_DEV_COMPAT infineon_mxcryptolite_crypto
 #elif CONFIG_CRYPTO_INFINEON_MXCRYPTO
 #define CRYPTO_DEV_COMPAT infineon_mxcrypto_crypto
+#elif CONFIG_CRYPTO_IT51XXX_SHA
+#define CRYPTO_DEV_COMPAT ite_it51xxx_sha
 #else
 #error "You need to enable one crypto device"
 #endif
