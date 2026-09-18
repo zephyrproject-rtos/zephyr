@@ -559,6 +559,11 @@ static void max3421e_handle_condet(const struct device *dev)
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
 	enum uhc_event_type type = UHC_EVT_ERROR;
 
+	if (atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET)) {
+		/* NOTE: Resetting the bus triggers a spurious condet event */
+		return;
+	}
+
 	/*
 	 * JSTATUS:KSTATUS 0:0 - SE0
 	 * JSTATUS:KSTATUS 0:1 - K   (Resume)
