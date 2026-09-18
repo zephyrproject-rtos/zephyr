@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_mini_n8.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include "glyph_s3-pinctrl.dtsi"
 #include <espressif/partitions_0x0_default_8M.dtsi>
 
@@ -90,4 +90,9 @@
 
 &wifi {
 	status = "okay";
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+	ranges = <0x0 0x0 DT_SIZE_M(8)>;
 };
