@@ -38,8 +38,13 @@ struct fake_transport {
 	const uint8_t *rsp;
 	size_t rsp_len;
 	bool rsp_in_send;
+	/* Reset the helper from within send, before the response is fed */
+	bool reset_in_send;
 	bool rsp_from_isr;
 	bool rsp_fed_in_isr;
+	/* Reset the helper from the work item instead of feeding from it */
+	bool reset_from_work;
+	bool reset_in_isr;
 	unsigned int sends;
 	struct k_work_delayable rsp_work;
 };
@@ -62,6 +67,14 @@ static void feed_canned_rsp_isr(const void *arg)
 	feed_canned_rsp(xport);
 }
 
+static void reset_isr(const void *arg)
+{
+	struct fake_transport *xport = (struct fake_transport *)arg;
+
+	xport->reset_in_isr = k_is_in_isr();
+	bt_hci_lockstep_reset(&xport->ls);
+}
+
 static int fake_send(const struct device *dev, const uint8_t *pkt, size_t len)
 {
 	struct fake_transport *xport = dev->data;
@@ -70,6 +83,10 @@ static int fake_send(const struct device *dev, const uint8_t *pkt, size_t len)
 	(void)memcpy(xport->sent, pkt, len);
 	xport->sent_len = len;
 	xport->sends++;
+
+	if (xport->reset_in_send) {
+		bt_hci_lockstep_reset(&xport->ls);
+	}
 
 	/* A transport may deliver packets before it reports a failure */
 	if (xport->rsp != NULL && xport->rsp_in_send) {
@@ -84,7 +101,11 @@ static void rsp_work_handler(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct fake_transport *xport = CONTAINER_OF(dwork, struct fake_transport, rsp_work);
 
-	if (xport->rsp_from_isr) {
+	if (xport->reset_from_work && xport->rsp_from_isr) {
+		irq_offload(reset_isr, xport);
+	} else if (xport->reset_from_work) {
+		bt_hci_lockstep_reset(&xport->ls);
+	} else if (xport->rsp_from_isr) {
 		irq_offload(feed_canned_rsp_isr, xport);
 	} else {
 		feed_canned_rsp(xport);
@@ -575,6 +596,153 @@ static ZTEST(bt_hci_lockstep, test_timeout_uses_credit)
 
 	send_test_cmd(&xport, &cmd, &rsp, 0);
 	zassert_equal(xport.sends, 2);
+}
+
+/* A controller reset by other means than an HCI command allows a command
+ * again without announcing it, which is what bt_hci_lockstep_reset() is for.
+ */
+static ZTEST(bt_hci_lockstep, test_reset_restores_the_allowance)
+{
+	struct fake_transport xport;
+
+	BT_HCI_PKT_CMD_DEFINE(cmd, 1);
+	NET_BUF_SIMPLE_DEFINE(rsp, 8);
+
+	fake_transport_init(&xport);
+
+	send_test_cmd(&xport, &cmd, &rsp, -EAGAIN);
+	zassert_equal(xport.sends, 1);
+
+	bt_hci_lockstep_reset(&xport.ls);
+
+	/* The send function and the timeout survive the reset */
+	zassert_true(K_TIMEOUT_EQ(xport.ls.timeout, K_MSEC(100)));
+
+	xport.rsp = cc_ok_rsp;
+	xport.rsp_len = sizeof(cc_ok_rsp);
+	xport.rsp_in_send = true;
+
+	send_test_cmd(&xport, &cmd, &rsp, 0);
+	zassert_equal(xport.sends, 2);
+	zassert_equal(rsp.len, 3);
+}
+
+/* A driver resets the helper every time it reopens its transport, so the
+ * operation has to survive being repeated.
+ */
+static ZTEST(bt_hci_lockstep, test_reset_is_repeatable)
+{
+	struct fake_transport xport;
+
+	BT_HCI_PKT_CMD_DEFINE(cmd, 1);
+	NET_BUF_SIMPLE_DEFINE(rsp, 8);
+
+	fake_transport_init(&xport);
+
+	bt_hci_lockstep_reset(&xport.ls);
+	bt_hci_lockstep_reset(&xport.ls);
+
+	xport.rsp = cc_ok_rsp;
+	xport.rsp_len = sizeof(cc_ok_rsp);
+	xport.rsp_in_send = true;
+
+	send_test_cmd(&xport, &cmd, &rsp, 0);
+	zassert_equal(rsp.len, 3);
+}
+
+/* A reset abandons the outstanding command: its response is no longer
+ * consumed, and its sender fails when its timeout has run out and not earlier,
+ * so that the response cannot be taken for that of the next command. The
+ * helper is ready for that one afterwards.
+ */
+static ZTEST(bt_hci_lockstep, test_reset_abandons_the_command_in_progress)
+{
+	struct fake_transport xport;
+	int64_t start;
+
+	BT_HCI_PKT_CMD_DEFINE(cmd, 1);
+	NET_BUF_SIMPLE_DEFINE(rsp, 8);
+
+	fake_transport_init(&xport);
+
+	xport.rsp = cc_ok_rsp;
+	xport.rsp_len = sizeof(cc_ok_rsp);
+	xport.rsp_in_send = true;
+	xport.reset_in_send = true;
+
+	start = k_uptime_get();
+	send_test_cmd(&xport, &cmd, &rsp, -EAGAIN);
+	zassert_true(k_uptime_get() - start >= 100, "Returned before the timeout");
+	zassert_equal(xport.sends, 1);
+	zassert_equal(rsp.len, 0);
+
+	xport.reset_in_send = false;
+
+	send_test_cmd(&xport, &cmd, &rsp, 0);
+	zassert_equal(xport.sends, 2);
+	zassert_equal(rsp.len, 3);
+}
+
+/* A send that is waiting for the controller to allow its command goes ahead
+ * when a reset restores the allowance, as when a recovery path resets a
+ * controller that has stopped responding.
+ */
+static ZTEST(bt_hci_lockstep, test_reset_releases_a_send_waiting_for_the_allowance)
+{
+	struct fake_transport xport;
+
+	BT_HCI_PKT_CMD_DEFINE(cmd, 1);
+	NET_BUF_SIMPLE_DEFINE(rsp, 8);
+
+	fake_transport_init(&xport);
+
+	/* Leaves the helper without an allowance */
+	xport.rsp = cc_ok_no_credit_rsp;
+	xport.rsp_len = sizeof(cc_ok_no_credit_rsp);
+	xport.rsp_in_send = true;
+
+	send_test_cmd(&xport, &cmd, &rsp, 0);
+	zassert_equal(xport.sends, 1);
+
+	xport.rsp = cc_ok_rsp;
+	xport.rsp_len = sizeof(cc_ok_rsp);
+	xport.reset_from_work = true;
+	k_work_schedule(&xport.rsp_work, K_MSEC(20));
+
+	send_test_cmd(&xport, &cmd, &rsp, 0);
+	zassert_equal(xport.sends, 2);
+	zassert_equal(rsp.len, 3);
+}
+
+/* The same from an ISR, which is where a driver may learn that its controller
+ * has been reset.
+ */
+static ZTEST(bt_hci_lockstep, test_reset_from_isr)
+{
+	struct fake_transport xport;
+
+	BT_HCI_PKT_CMD_DEFINE(cmd, 1);
+	NET_BUF_SIMPLE_DEFINE(rsp, 8);
+
+	fake_transport_init(&xport);
+
+	/* Leaves the helper without an allowance */
+	xport.rsp = cc_ok_no_credit_rsp;
+	xport.rsp_len = sizeof(cc_ok_no_credit_rsp);
+	xport.rsp_in_send = true;
+
+	send_test_cmd(&xport, &cmd, &rsp, 0);
+
+	xport.rsp = cc_ok_rsp;
+	xport.rsp_len = sizeof(cc_ok_rsp);
+	xport.reset_from_work = true;
+	xport.rsp_from_isr = true;
+	k_work_schedule(&xport.rsp_work, K_MSEC(20));
+
+	send_test_cmd(&xport, &cmd, &rsp, 0);
+	zassert_true(xport.reset_in_isr);
+	zassert_equal(xport.sends, 2);
+	zassert_equal(rsp.len, 3);
 }
 
 static ZTEST(bt_hci_lockstep, test_allowance_revoked_before_send)
