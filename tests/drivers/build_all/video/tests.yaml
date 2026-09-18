@@ -46,13 +46,9 @@ tests:
   drivers.video.mcux_pngdec.build:
     platform_allow:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
-    extra_args:
-      - EXTRA_DTC_OVERLAY_FILE="boards/mimxrt700_evk_mimxrt798s_cm33_cpu0_disable_camera.overlay"
   drivers.video.mcux_jpegdec.build:
     platform_allow:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
-    extra_args:
-      - EXTRA_DTC_OVERLAY_FILE="boards/mimxrt700_evk_mimxrt798s_cm33_cpu0_disable_camera.overlay"
   drivers.video.stm32_dcmi.build:
     platform_allow:
       - stm32h7b3i_dk
