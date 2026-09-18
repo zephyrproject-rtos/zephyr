@@ -144,7 +144,7 @@ static void lvgl_log(lv_log_level_t level, const char *buf)
 		LOG_DBG("%s", buf + (sizeof("[Trace] ") - 1));
 		break;
 	case LV_LOG_LEVEL_USER:
-		LOG_INF("%s", buf + (sizeof("[User] ") - 1));
+		LOG_PRINTK("%s", buf + (sizeof("[User] ") - 1));
 		break;
 	}
 }
