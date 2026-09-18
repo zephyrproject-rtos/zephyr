@@ -945,9 +945,15 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 
 		proc_param = broadcast_reception_get_next_proc_param(active_proc);
 		if (proc_param == NULL) {
-			LOG_WRN("proc is not done, but could not get next proc_param");
+			/* Recount the done count to check if there are any remove operation to be
+			 * done at all or if we have completed the procedure
+			 */
+			broadcast_reception_update_proc_done_cnt(active_proc);
+			if (!bt_cap_common_proc_is_done()) {
+				LOG_WRN("proc is not done, but could not get next proc_param");
+				bt_cap_common_abort_proc(NULL, -EAGAIN);
+			}
 
-			bt_cap_common_abort_proc(NULL, -EAGAIN);
 			cap_commander_proc_complete(active_proc);
 
 			return;
@@ -1142,6 +1148,11 @@ static void cap_commander_ba_mod_src_cb(struct bt_conn *conn, int err)
 		 * removing them
 		 */
 		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC);
+
+		/* Recount the done count to check if there are any remove operation to be
+		 * done at all or if we have completed the procedure
+		 */
+		broadcast_reception_update_proc_done_cnt(active_proc);
 
 		/* The servers may actually remove the sources themselves, so verify that we
 		 * haven't received empty (removed) receive states yet after setting the new
