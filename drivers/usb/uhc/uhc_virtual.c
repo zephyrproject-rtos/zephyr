@@ -33,6 +33,8 @@ LOG_MODULE_REGISTER(uhc_vrt, CONFIG_UHC_DRIVER_LOG_LEVEL);
 #define UHC_VRT_XFER_TIMEOUT K_MSEC(1)
 
 struct uhc_vrt_config {
+	k_thread_stack_t *thread_stack;
+	size_t stack_size;
 };
 
 struct uhc_vrt_slot {
@@ -50,7 +52,7 @@ struct uhc_vrt_frame {
 struct uhc_vrt_data {
 	const struct device *dev;
 	struct uvb_node *host_node;
-	struct k_work work;
+	struct k_thread thread_data;
 	struct k_fifo fifo;
 	struct uhc_transfer *last_xfer;
 	struct uvb_packet *last_pkt;
@@ -92,7 +94,6 @@ static void vrt_event_submit(const struct device *dev,
 	event->type = type;
 	event->pkt = (struct uvb_packet *const)data;
 	k_fifo_put(&priv->fifo, event);
-	k_work_submit(&priv->work);
 }
 
 static int vrt_advert_pkt(struct uhc_vrt_data *const priv,
@@ -465,15 +466,20 @@ static void vrt_xfer_cleanup_cancelled(const struct device *dev)
 	}
 }
 
-static void xfer_work_handler(struct k_work *work)
+static void uhc_vrt_thread_handler(void *arg1, void *arg2, void *arg3)
 {
-	struct uhc_vrt_data *priv = CONTAINER_OF(work, struct uhc_vrt_data, work);
-	const struct device *dev = priv->dev;
-	struct uhc_vrt_event *ev;
+	const struct device *dev = arg1;
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	while ((ev = k_fifo_get(&priv->fifo, K_NO_WAIT)) != NULL) {
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	while (true) {
+		struct uhc_vrt_event *ev;
 		bool schedule = false;
 		int err;
+
+		ev = k_fifo_get(&priv->fifo, K_FOREVER);
 
 		switch (ev->type) {
 		case UHC_VRT_EVT_SOF:
@@ -679,6 +685,7 @@ static int uhc_vrt_unlock(const struct device *dev)
 static int uhc_vrt_driver_preinit(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	const struct uhc_vrt_config *config = dev->config;
 	struct uhc_data *data = dev->data;
 
 	priv->dev = dev;
@@ -686,8 +693,14 @@ static int uhc_vrt_driver_preinit(const struct device *dev)
 
 	priv->host_node->priv = dev;
 	k_fifo_init(&priv->fifo);
-	k_work_init(&priv->work, xfer_work_handler);
 	k_timer_init(&priv->sof_timer, sof_timer_handler, NULL);
+
+	k_thread_create(&priv->thread_data, config->thread_stack,
+			config->stack_size, uhc_vrt_thread_handler,
+			(void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_UHC_VIRTUAL_THREAD_PRIORITY),
+			K_ESSENTIAL, K_NO_WAIT);
+	k_thread_name_set(&priv->thread_data, dev->name);
 
 	LOG_DBG("Virtual UHC pre-initialized");
 
@@ -714,11 +727,16 @@ static DEVICE_API(uhc, uhc_vrt_api) = {
 #define DT_DRV_COMPAT zephyr_uhc_virtual
 
 #define UHC_VRT_DEVICE_DEFINE(n)						\
+	K_THREAD_STACK_DEFINE(uhc_vrt_stack_area_##n,				\
+			       CONFIG_UHC_VIRTUAL_STACK_SIZE);			\
+										\
 	UVB_HOST_NODE_DEFINE(uhc_bc_##n,					\
 			     DT_NODE_FULL_NAME(DT_DRV_INST(n)),			\
 			     uhc_vrt_uvb_cb);					\
 										\
 	static const struct uhc_vrt_config uhc_vrt_config_##n = {		\
+		.thread_stack = uhc_vrt_stack_area_##n,				\
+		.stack_size = K_THREAD_STACK_SIZEOF(uhc_vrt_stack_area_##n),	\
 	};									\
 										\
 	static struct uhc_vrt_data uhc_priv_##n = {				\
