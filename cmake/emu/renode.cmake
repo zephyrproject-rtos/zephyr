@@ -18,11 +18,17 @@ if(EXISTS ${resc_overlay_file})
   message(STATUS "Found Renode script overlay: ${resc_overlay_file}")
 endif()
 
+# Check if executed by Twister
+if(DEFINED TC_RUNID AND DEFINED RENODE_UART)
+  set(TWISTER_OVERLAY showAnalyzer ${RENODE_UART} RawStdoutAnalyzer)
+  message(STATUS "Detected Twister run, attaching RawStdoutAnalyzer for ${RENODE_UART}")
+endif()
+
 add_custom_target(run_renode
   COMMAND
   ${RENODE}
   ${RENODE_FLAGS}
-  -e '$$elf=@${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}\; include @${RENODE_SCRIPT}\; ${RENODE_OVERLAY} s'
+  -e '$$elf=@${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}\; include @${RENODE_SCRIPT}\; ${RENODE_OVERLAY} ${TWISTER_OVERLAY}\; s'
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
   DEPENDS ${logical_target_for_zephyr_elf}
   USES_TERMINAL
