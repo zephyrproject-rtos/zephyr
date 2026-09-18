@@ -25,3 +25,7 @@
 &sram0 {
 	status = "okay";
 };
+
+&dma0 {
+	status = "okay";
+};
