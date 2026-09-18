@@ -1000,10 +1000,25 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct eth_sam_d
 	/* Default (RMII) is defined at atmel,gmac-common.yaml file */
 	switch (cfg->phy_conn_type) {
 	case 0: /* mii */
+#if defined(GMAC_UR_MIM_MII)
+		gmac->GMAC_UR = GMAC_UR_MIM_MII;
+#if defined(GMAC_NCR_MIIONRGMII_Msk)
+		gmac->GMAC_NCR |= GMAC_NCR_MIIONRGMII_Msk;
+#endif /* GMAC_NCR_MIIONRGMII_Msk */
+#elif defined(GMAC_UR_RMII)
+		gmac->GMAC_UR = GMAC_UR_RMII(0);
+#else
 		gmac->GMAC_UR = 0x1;
+#endif
 		break;
 	case 1: /* rmii */
+#if defined(GMAC_UR_MIM_RMII)
+		gmac->GMAC_UR = GMAC_UR_MIM_RMII;
+#elif defined(GMAC_UR_RMII)
+		gmac->GMAC_UR = GMAC_UR_RMII(1);
+#else
 		gmac->GMAC_UR = 0x0;
+#endif
 		break;
 #ifdef GMAC_UR_MIM_RGMII
 	case 3: /* rgmii */
