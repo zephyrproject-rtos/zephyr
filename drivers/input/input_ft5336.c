@@ -8,6 +8,8 @@
 
 #define DT_DRV_COMPAT focaltech_ft5336
 
+#include <string.h>
+
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
@@ -47,6 +49,9 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
 /* REG_Pn_XH and REG_Pn_YH: Position */
 #define POSITION_H_MSK		0x0FU
 
+/* Size of a single touch point register block. */
+#define TOUCH_POINT_SIZE	6U
+
 /* REG_G_PMODE: Power Consume Mode */
 #define PMOD_MONITOR            0x01U
 #define PMOD_HIBERNATE		0x03U
@@ -63,6 +68,16 @@ struct ft5336_config {
 #endif
 };
 
+/** FT5336 touch point. */
+struct ft5336_touch_point {
+	/** Track ID. */
+	uint8_t id;
+	/** Position along the controller X axis. */
+	uint16_t row;
+	/** Position along the controller Y axis. */
+	uint16_t col;
+};
+
 /** FT5336 data. */
 struct ft5336_data {
 	/** Device pointer. */
@@ -76,14 +91,27 @@ struct ft5336_data {
 	/** Timer (polling mode). */
 	struct k_timer timer;
 #endif
-	/** Last pressed state. */
-	bool pressed_old;
+	/** Number of touch points reported by the previous scan. */
+	uint8_t prev_count;
+	/** Touch points reported by the previous scan. */
+	struct ft5336_touch_point prev_points[CONFIG_INPUT_FT5336_MAX_TOUCH_POINTS];
 
 	/** Initial valid read state */
 	bool got_valid_read;
 };
 
 INPUT_TOUCH_STRUCT_CHECK(struct ft5336_config);
+
+static void ft5336_report_touch(const struct device *dev, const struct ft5336_touch_point *point,
+				bool pressed)
+{
+	if (CONFIG_INPUT_FT5336_MAX_TOUCH_POINTS > 1) {
+		input_report_abs(dev, INPUT_ABS_MT_SLOT, point->id, true, K_FOREVER);
+	}
+
+	input_touchscreen_report_pos(dev, point->col, point->row, K_FOREVER);
+	input_report_key(dev, INPUT_BTN_TOUCH, pressed ? 1 : 0, true, K_FOREVER);
+}
 
 static int ft5336_process(const struct device *dev)
 {
@@ -92,9 +120,10 @@ static int ft5336_process(const struct device *dev)
 
 	int r;
 	uint8_t points;
-	uint8_t coords[4U];
-	uint16_t row, col;
-	bool pressed;
+	uint8_t count = 0;
+	uint8_t i, j;
+	uint8_t coords[CONFIG_INPUT_FT5336_MAX_TOUCH_POINTS * TOUCH_POINT_SIZE];
+	struct ft5336_touch_point cur_points[CONFIG_INPUT_FT5336_MAX_TOUCH_POINTS];
 
 	if (!data->got_valid_read) {
 		r = i2c_reg_read_byte_dt(&config->bus, REG_DEVICE_MODE, &points);
@@ -111,45 +140,60 @@ static int ft5336_process(const struct device *dev)
 		return r;
 	}
 
-	points = FIELD_GET(TOUCH_POINTS_MSK, points);
+	points = MIN(FIELD_GET(TOUCH_POINTS_MSK, points), CONFIG_INPUT_FT5336_MAX_TOUCH_POINTS);
+
 	if (points != 0) {
-		/* Any number of touches still counts as one touch. All touch
-		 * points except the first are ignored. Obtain first point
-		 * X, Y coordinates from:
-		 * REG_P1_XH, REG_P1_XL, REG_P1_YH, REG_P1_YL.
+		/*
+		 * Obtain the X, Y coordinates and the track ID of each reported
+		 * point from REG_Pn_XH, REG_Pn_XL, REG_Pn_YH and REG_Pn_YL.
 		 * We ignore the Event Flag because Zephyr only cares about
 		 * pressed / not pressed and not press down / lift up
 		 */
-		r = i2c_burst_read_dt(&config->bus, REG_P1_XH, coords, sizeof(coords));
+		r = i2c_burst_read_dt(&config->bus, REG_P1_XH, coords, points * TOUCH_POINT_SIZE);
 		if (r < 0) {
 			return r;
 		}
+	}
 
-		row = ((coords[0] & POSITION_H_MSK) << 8U) | coords[1];
-		col = ((coords[2] & POSITION_H_MSK) << 8U) | coords[3];
+	for (i = 0; i < points; i++) {
+		const uint8_t *coord = &coords[i * TOUCH_POINT_SIZE];
+		uint16_t row = ((coord[0] & POSITION_H_MSK) << 8U) | coord[1];
+		uint16_t col = ((coord[2] & POSITION_H_MSK) << 8U) | coord[3];
+		uint8_t touch_id = FIELD_GET(TOUCH_ID_MSK, coord[2]);
 
-		uint8_t touch_id = FIELD_GET(TOUCH_ID_MSK, coords[2]);
-
-		if (touch_id != TOUCH_ID_INVALID) {
-			pressed = true;
-			LOG_DBG("points: %d, touch_id: %d, row: %d, col: %d",
-				 points, touch_id, row, col);
-		} else {
-			pressed = false;
+		if (touch_id == TOUCH_ID_INVALID) {
 			LOG_WRN("bad TOUCH_ID: row: %d, col: %d", row, col);
+			continue;
 		}
-	} else  {
-		/* no touch = no press */
-		pressed = false;
+
+		LOG_DBG("points: %d, touch_id: %d, row: %d, col: %d", points, touch_id, row, col);
+
+		cur_points[count].id = touch_id;
+		cur_points[count].row = row;
+		cur_points[count].col = col;
+		count++;
 	}
 
-	if (pressed) {
-		input_touchscreen_report_pos(dev, col, row, K_FOREVER);
-		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
-	} else if (data->pressed_old && !pressed) {
-		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
+	/* touch events */
+	for (i = 0; i < count; i++) {
+		ft5336_report_touch(dev, &cur_points[i], true);
 	}
-	data->pressed_old = pressed;
+
+	/* release events */
+	for (i = 0; i < data->prev_count; i++) {
+		for (j = 0; j < count; j++) {
+			if (data->prev_points[i].id == cur_points[j].id) {
+				break;
+			}
+		}
+
+		if (j == count) {
+			ft5336_report_touch(dev, &data->prev_points[i], false);
+		}
+	}
+
+	memcpy(data->prev_points, cur_points, count * sizeof(cur_points[0]));
+	data->prev_count = count;
 
 	return 0;
 }
