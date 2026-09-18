@@ -3,7 +3,7 @@
 
 config NCN5130
 	bool "ON Semiconductor NCN5130 KNX TP1 transceiver"
-	depends on UART_ASYNC_API && KNX_STACK
+	depends on DT_HAS_ONNN_NCN5130_ENABLED && UART_ASYNC_API && KNX_STACK
 	select UART_WIDE_DATA
 	select UART_USE_RUNTIME_CONFIGURE
 	help
@@ -63,3 +63,14 @@ config KNX_L_DATA_CON_TIMEOUT_MS
 	  meaningfully delayed by an in-flight low-priority retry loop.
 
 endif # NCN5130
+
+# One-directional on purpose: a mutual !X dependency would be a Kconfig
+# dependency loop. With both requested, NCN5130 wins and Kconfig reports the
+# loopback request as an unmet dependency.
+config KNX_LOOPBACK
+	bool "KNX loopback L1 driver (for unit testing)"
+	depends on KNX_STACK && !NCN5130
+	help
+	  Software loopback: send_frame() replays the frame back into the
+	  registered data_ind callback immediately.  Use instead of NCN5130 on
+	  native_sim or when no physical KNX bus is available.
