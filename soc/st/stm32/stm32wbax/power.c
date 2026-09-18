@@ -8,6 +8,7 @@
 #include <zephyr/pm/pm.h>
 #include <soc.h>
 #include <stm32_bitops.h>
+#include <stm32_common.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -316,6 +317,19 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 #if defined(CONFIG_PM_S2RAM)
 	if (state == PM_STATE_SUSPEND_TO_RAM) {
+#if defined(CONFIG_STM32_WKUP_PINS) && defined(CONFIG_GPIO_STM32)
+		if (standby_entered) {
+			/*
+			 * Trigger GPIO interrupts corresponding to wake-up events.
+			 *
+			 * Only do so if we did enter Standby mode and cut off power
+			 * to the GPIO controllers; otherwise, they remain active
+			 * and trigger their own interrupt line if an event occurs.
+			 */
+			stm32_pwrc_dispatch_wakeup_gpio_irqs();
+		}
+#endif /* CONFIG_STM32_WKUP_PINS && CONFIG_GPIO_STM32 */
+
 		/*
 		 * The full post-standby re-initialization sequence has been
 		 * done, this flag can be cleaned.
