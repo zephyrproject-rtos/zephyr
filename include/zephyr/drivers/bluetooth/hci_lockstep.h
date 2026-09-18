@@ -114,11 +114,9 @@ struct bt_hci_lockstep {
  *
  *  To be called once, typically from the driver's device initialization
  *  function: the helper can then be used every time the transport is opened,
- *  without its semaphore being re-initialized. Initializing the helper again
- *  restores the initial allowance of one command, for a controller reset by
- *  other means than an HCI command; the helper must be idle at that point,
- *  with no bt_hci_lockstep_cmd_send_sync() or bt_hci_lockstep_feed() call in
- *  progress, so the driver's receive path is stopped first.
+ *  without its semaphore being re-initialized. A controller that has been
+ *  reset by other means than an HCI command is followed with
+ *  bt_hci_lockstep_reset(), not with another call to this function.
  *
  *  @param ls   Lockstep helper.
  *  @param dev  HCI device, passed to @p send.
@@ -126,6 +124,26 @@ struct bt_hci_lockstep {
  */
 void bt_hci_lockstep_init(struct bt_hci_lockstep *ls, const struct device *dev,
 			  bt_hci_lockstep_send_t send);
+
+/** @brief Restore the initial state of a lockstep helper.
+ *
+ *  Restores the initial allowance of one command, for a controller that has
+ *  been reset by other means than an HCI command, so that the helper no longer
+ *  waits for an allowance the reset controller will not announce. The transport
+ *  send function and @ref bt_hci_lockstep.timeout are left as they are.
+ *
+ *  The helper must be idle, with no bt_hci_lockstep_cmd_send_sync() or
+ *  bt_hci_lockstep_feed() call in progress, so the driver's receive path is
+ *  stopped first and stays stopped until this returns.
+ *
+ *  Packets the controller sent before the reset are not to be fed afterwards:
+ *  the helper cannot tell them from the responses to what follows, so a stale
+ *  response to the same opcode would pass for the new one, and a stale command
+ *  response allowing no command would revoke the restored allowance.
+ *
+ *  @param ls Lockstep helper.
+ */
+void bt_hci_lockstep_reset(struct bt_hci_lockstep *ls);
 
 /** @brief Feed a received HCI packet to a lockstep helper.
  *
