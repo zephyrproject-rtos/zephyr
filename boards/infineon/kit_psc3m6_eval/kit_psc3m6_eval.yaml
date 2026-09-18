@@ -23,6 +23,7 @@ supported:
   - dma
   - rtc
   - watchdog
+  - spi
   - arduino_gpio
   - arduino_i2c
   - arduino_serial
