@@ -2562,6 +2562,12 @@ Modules
 lvgl
 ====
 
+* LVGL was updated from v9.5 to v9.6. Out-of-tree users must replace the
+  ``CONFIG_LV_COLOR_DEPTH_*`` options with the corresponding
+  ``CONFIG_LV_COLOR_FORMAT_*`` options, and ``CONFIG_LV_USE_PXP`` with
+  ``CONFIG_LV_USE_DRAW_PXP``. See the `LVGL migration guide
+  <https://lvgl.io/docs/open/changelog/migration-v9-6>`_ for other changes.
+
 * The ``zephyr,lvgl-pointer-input`` devicetree binding marks the ``swap-xy``, ``invert-x``, and
   ``invert-y`` properties as **deprecated**. Users should instead add the corresponding
   touchscreen properties ``swapped-x-y``, ``inverted-x``, and ``inverted-y`` to the underlying
