@@ -38,6 +38,8 @@ struct xtensa_backtrace_frame_t {
 	uint32_t pc;       /* PC of the current frame */
 	uint32_t sp;       /* SP of the current frame */
 	uint32_t next_pc;  /* PC of the current frame's caller */
+	uint32_t mask;     /* Address space mask applied to a return address */
+	int cause;         /* EXCCAUSE value of the exception being reported */
 };
 
 /**
@@ -69,7 +71,10 @@ void xtensa_backtrace_get_start(uint32_t *pc,
  * stack frame(i-1) on the same call stack (i.e. the caller of frame(i)).
  * This function is meant to be called iteratively when doing a backtrace.
  *
- * Entry Conditions: Frame structure containing valid SP and next_pc
+ * Entry Conditions: Frame structure containing valid SP, next_pc, mask and
+ * cause. The mask selects the code region encoded in the top two bits of a
+ * return address and is SoC specific; when called outside of an exception,
+ * set it to XTENSA_BACKTRACE_DEFAULT_PC_MASK and set cause to 0.
  * Exit Conditions:
  *  - Frame structure updated with SP and PC of frame(i-1).
  *    next_pc now points to frame(i-2).
