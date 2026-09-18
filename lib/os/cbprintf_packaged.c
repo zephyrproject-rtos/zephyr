@@ -54,6 +54,26 @@ static int cbprintf_via_va_list(cbprintf_cb out,
 {
 	return 0;
 }
+#elif defined(__APPLE__) && defined(__aarch64__)
+
+BUILD_ASSERT(sizeof(va_list) == sizeof(char *),
+	     "va_list on macOS arm64 is expected to be a single pointer");
+
+static int cbprintf_via_va_list(cbprintf_cb out,
+				cbvprintf_external_formatter_func formatter,
+				void *ctx,
+				const char *fmt, void *buf)
+{
+	union {
+		va_list ap;
+		char *ptr;
+	} u;
+
+	u.ptr = buf;
+
+	return formatter(out, ctx, fmt, u.ap);
+}
+
 #elif defined(__aarch64__)
 /*
  * Reference:
