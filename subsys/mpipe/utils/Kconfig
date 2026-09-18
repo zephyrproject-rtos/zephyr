@@ -19,6 +19,18 @@ config MPIPE_PLAYER
 
 if MPIPE_PLAYER
 
+config MPIPE_PLAYER_NUM
+	int "Number of players the application can have at once"
+	range 1 255
+	default 1
+	help
+	  Each player owns a worker thread, so this sizes a pool of worker
+	  stacks. A pipeline that streams needs an mpipe thread of its own as
+	  well: MPIPE_THREADS_NUM must cover every pipeline playing at once.
+
+	  The shell commands take the id of the pipeline to act on; without
+	  one they act on every player.
+
 config MPIPE_PLAYER_WORKER_STACK_SIZE
 	int "Player worker thread stack size"
 	default 6144
