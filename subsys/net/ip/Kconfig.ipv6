@@ -103,13 +103,26 @@ config NET_IF_UNICAST_IPV6_ADDR_COUNT
 	int "Max number of unicast IPv6 addresses per network interface"
 	default 6 if NET_L2_OPENTHREAD
 	default 3 if NET_LOOPBACK
+	default 3 if NET_DHCPV6 && NET_IPV6_ND
 	default 2
+	help
+	  This tells how many unicast IPv6 addresses can be assigned to a
+	  network interface at the same time. When both a DHCPv6 client
+	  and SLAAC are active, the interface will typically hold at least
+	  3 unicast addresses: the link-local address, the SLAAC-derived
+	  global address, and the DHCPv6-assigned global address.
 
 config NET_IF_MCAST_IPV6_ADDR_COUNT
 	int "Max number of multicast IPv6 addresses per network interface"
 	default 8 if NET_L2_OPENTHREAD
 	default 4 if PTP_DELAY_MECHANISM_P2P && PTP_UDP_IPV6_PROTOCOL
+	default 4 if NET_DHCPV6
 	default 3
+	help
+	  This tells how many multicast IPv6 addresses can be joined by a
+	  network interface at the same time. Each unicast address requires
+	  joining its solicited-node multicast group, on top of the all-nodes
+	  multicast address and any additional groups needed by e.g. mDNS.
 
 config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_IPV6
 	int
