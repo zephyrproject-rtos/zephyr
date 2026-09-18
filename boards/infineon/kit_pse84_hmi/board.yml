@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: kit_pse84_hmi
+  full_name: PSOC™ Edge E84 HMI Kit
+  vendor: infineon
+  socs:
+  - name: pse846gps2dbzc4a
