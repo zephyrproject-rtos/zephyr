@@ -1,0 +1,9 @@
+tests:
+  knx.layer7_application:
+    tags:
+      - knx
+      - application
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

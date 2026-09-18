@@ -1,0 +1,5 @@
+tests:
+  knx.l4_state_machine:
+    tags:
+      - knx
+    type: unit
