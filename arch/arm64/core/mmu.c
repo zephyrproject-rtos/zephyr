@@ -1119,6 +1119,30 @@ static uint64_t get_tcr(int el)
 	return tcr;
 }
 
+/*
+ * With the MMU off, this core's stack writes went straight to memory, so a
+ * cached line covering its boot stack may be stale. Only the slot holding sp
+ * is invalidated: other slots may be live stacks of running cores, with
+ * dirty lines an invalidate would discard.
+ */
+static ALWAYS_INLINE void invalidate_boot_stack(void)
+{
+	uintptr_t sp;
+	size_t i;
+
+	__asm__ volatile("mov %0, sp" : "=r"(sp));
+
+	/* sp - 1: an empty stack has sp at its slot top, i.e. the next slot's base */
+	i = (sp - 1U - (uintptr_t)z_interrupt_stacks) / sizeof(z_interrupt_stacks[0]);
+	if (i >= ARRAY_SIZE(z_interrupt_stacks)) {
+		return;
+	}
+
+	/* MMU off: prior stack writes must complete before DC IVAC */
+	barrier_dmem_fence_full();
+	(void)sys_cache_data_invd_range(z_interrupt_stacks[i], sizeof(z_interrupt_stacks[i]));
+}
+
 static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 {
 	ARG_UNUSED(flags);
@@ -1131,6 +1155,9 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 
 	/* Ensure these changes are seen before MMU is enabled */
 	barrier_isync_fence_full();
+
+	/* Must happen before the data cache turns on below */
+	invalidate_boot_stack();
 
 	/* Enable the MMU and data cache */
 	val = read_sctlr_el1();
