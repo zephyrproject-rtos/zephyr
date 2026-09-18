@@ -892,7 +892,12 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 		return -EINVAL;
 	}
 
-	if (!port_in_use(proto, net_ntohs(*(inst->port)), addr4, addr6)) {
+	/* An offloaded interface binds the service outside the Zephyr stack,
+	 * so net_context cannot see the port. Skip the check there and
+	 * advertise. Native interfaces still verify the binding.
+	 */
+	if (!net_if_is_offloaded(iface) &&
+	    !port_in_use(proto, net_ntohs(*(inst->port)), addr4, addr6)) {
 		/* Service is not yet bound, so do not advertise */
 		return -EHOSTDOWN;
 	}
@@ -981,10 +986,10 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	return offset;
 }
 
-int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst,
+int dns_sd_handle_service_type_enum(struct net_if *iface, const struct dns_sd_rec *inst,
 				    const struct net_in_addr *addr4,
-				    const struct net_in6_addr *addr6,
-				    uint8_t *buf, uint16_t buf_size)
+				    const struct net_in6_addr *addr6, uint8_t *buf,
+				    uint16_t buf_size)
 {
 	static const char query[] = { "\x09_services\x07_dns-sd\x04_udp\x05local" };
 	/* offset of '.local' in the above */
@@ -1017,7 +1022,11 @@ int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst,
 		return -EINVAL;
 	}
 
-	if (!port_in_use(proto, net_ntohs(*(inst->port)), addr4, addr6)) {
+	/* Same as dns_sd_handle_ptr_query(): skip the bind check on
+	 * offloaded interfaces where net_context cannot see the port.
+	 */
+	if (!net_if_is_offloaded(iface) &&
+	    !port_in_use(proto, net_ntohs(*(inst->port)), addr4, addr6)) {
 		/* Service is not yet bound, so do not advertise */
 		NET_DBG("service not bound");
 		return -EHOSTDOWN;

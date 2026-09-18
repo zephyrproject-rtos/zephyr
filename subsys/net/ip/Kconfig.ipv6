@@ -101,6 +101,7 @@ config NET_IF_MAX_IPV6_COUNT
 
 config NET_IF_UNICAST_IPV6_ADDR_COUNT
 	int "Max number of unicast IPv6 addresses per network interface"
+	default 4 if NET_NATIVE_OFFLOADED_SOCKETS
 	default 6 if NET_L2_OPENTHREAD
 	default 3 if NET_LOOPBACK
 	default 2
