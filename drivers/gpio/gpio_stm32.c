@@ -432,8 +432,8 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		/* Level-sensitive interrupts are only supported on STM32WB0. */
-		if (!IS_ENABLED(CONFIG_SOC_SERIES_STM32WB0X)) {
+		/* Level-sensitive interrupts are only supported on specific series. */
+		if (!DT_HAS_COMPAT_STATUS_OKAY(st_stm32wb0_gpio_intc)) {
 			err = -ENOTSUP;
 			goto exit;
 		} else {
