@@ -33,6 +33,9 @@ We are pleased to announce the release of Zephyr version 4.5.0.
 
 Major enhancements with this release include:
 
+**Infineon TriCore support**
+  Zephyr now supports the :zephyr:board-catalog:`Infineon TriCore architecture <#arch=tricore>`.
+
 **New driver classes**
 
   Zephyr 4.5 adds several new driver APIs, including:
