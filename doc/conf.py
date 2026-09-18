@@ -510,5 +510,7 @@ def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/custom.js")
+
+    tags.add(f"host_{sys.platform}")
     # RTD theme hard codes a Font Awesome link icon in its setup() code, but we want no icon
     app.connect("config-inited", _set_html_permalinks_icon, priority=900)
