@@ -111,6 +111,18 @@ uart4: &scb4 {
 	pinctrl-names = "default";
 };
 
+/* SPI (SCB2: P7.0 CLK, P7.1 MOSI, P7.2 MISO, P7.3 CS via GPIO) */
+spi2: &scb2 {
+	compatible = "infineon,spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&peri0_group4_16bit_0>;
+	pinctrl-0 = <&p7_0_scb2_spi_m_clk &p7_1_scb2_spi_m_mosi
+		     &p7_2_scb2_spi_m_miso>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt7 3 GPIO_ACTIVE_LOW>;
+};
+
 /* Peripheral clock dividers */
 &peri0_group4_8bit_0 {
 	status = "okay";
@@ -120,6 +132,11 @@ uart4: &scb4 {
 &peri0_group4_8bit_1 {
 	status = "okay";
 	clock-div = <86>;
+};
+
+&peri0_group4_16bit_0 {
+	status = "okay";
+	clock-div = <4>;
 };
 
 &watchdog0 {
