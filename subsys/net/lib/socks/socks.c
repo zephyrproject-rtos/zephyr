@@ -68,6 +68,59 @@ end:
 	net_pkt_unref(pkt);
 }
 
+/* Build the address part of a SOCKS5 CONNECT request.
+ *
+ * The address type is selected from the destination, not from the proxy: the
+ * request encodes the destination independently of the address family that is
+ * used to reach the proxy itself.
+ *
+ * Return the total request length, or a negative error value.
+ */
+static int socks5_encode_dest(struct socks5_command_request *req,
+			      const struct net_sockaddr *dest,
+			      net_socklen_t dest_len)
+{
+	if (dest->sa_family == NET_AF_INET) {
+		const struct net_sockaddr_in *d4 =
+			(const struct net_sockaddr_in *)dest;
+
+		if (dest_len < sizeof(struct net_sockaddr_in)) {
+			return -EINVAL;
+		}
+
+		req->r.atyp = SOCKS5_ATYP_IPV4;
+
+		memcpy(&req->ipv4_addr.addr, &d4->sin_addr,
+		       sizeof(req->ipv4_addr.addr));
+
+		req->ipv4_addr.port = d4->sin_port;
+
+		return sizeof(struct socks5_command_request_common)
+			+ sizeof(struct socks5_ipv4_addr);
+	}
+
+	if (dest->sa_family == NET_AF_INET6) {
+		const struct net_sockaddr_in6 *d6 =
+			(const struct net_sockaddr_in6 *)dest;
+
+		if (dest_len < sizeof(struct net_sockaddr_in6)) {
+			return -EINVAL;
+		}
+
+		req->r.atyp = SOCKS5_ATYP_IPV6;
+
+		memcpy(&req->ipv6_addr.addr, &d6->sin6_addr,
+		       sizeof(req->ipv6_addr.addr));
+
+		req->ipv6_addr.port = d6->sin6_port;
+
+		return sizeof(struct socks5_command_request_common)
+			+ sizeof(struct socks5_ipv6_addr);
+	}
+
+	return -EAFNOSUPPORT;
+}
+
 static int socks5_tcp_connect(struct net_context *ctx,
 			      const struct net_sockaddr *proxy,
 			      net_socklen_t proxy_len,
@@ -104,17 +157,19 @@ static int socks5_tcp_connect(struct net_context *ctx,
 			       &method_rsp);
 	if (ret < 0) {
 		LOG_ERR("Could not receive negotiation response");
-		return ret;
+		goto error;
 	}
 
 	if (method_rsp.ver != SOCKS5_PKT_MAGIC) {
 		LOG_ERR("Invalid negotiation response magic");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error;
 	}
 
 	if (method_rsp.method != SOCKS5_AUTH_METHOD_NOAUTH) {
 		LOG_ERR("Invalid negotiation response");
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		goto error;
 	}
 
 	/* Negotiation complete - now connect to destination */
@@ -122,34 +177,12 @@ static int socks5_tcp_connect(struct net_context *ctx,
 	cmd_req.r.cmd = SOCKS5_CMD_CONNECT;
 	cmd_req.r.rsv = SOCKS5_PKT_RSV;
 
-	if (proxy->sa_family == NET_AF_INET) {
-		const struct net_sockaddr_in *d4 =
-			(struct net_sockaddr_in *)dest;
-
-		cmd_req.r.atyp = SOCKS5_ATYP_IPV4;
-
-		memcpy(&cmd_req.ipv4_addr.addr,
-		       (uint8_t *)&d4->sin_addr,
-		       sizeof(cmd_req.ipv4_addr.addr));
-
-		cmd_req.ipv4_addr.port = d4->sin_port;
-
-		size = sizeof(struct socks5_command_request_common)
-			+ sizeof(struct socks5_ipv4_addr);
-	} else if (proxy->sa_family == NET_AF_INET6) {
-		const struct net_sockaddr_in6 *d6 =
-			(struct net_sockaddr_in6 *)dest;
-
-		cmd_req.r.atyp = SOCKS5_ATYP_IPV6;
-
-		memcpy(&cmd_req.ipv6_addr.addr,
-		       (uint8_t *)&d6->sin6_addr,
-		       sizeof(cmd_req.ipv6_addr.addr));
-
-		cmd_req.ipv6_addr.port = d6->sin6_port;
-
-		size = sizeof(struct socks5_command_request_common)
-			+ sizeof(struct socks5_ipv6_addr);
+	size = socks5_encode_dest(&cmd_req, dest, dest_len);
+	if (size < 0) {
+		LOG_ERR("Cannot encode destination address (family %d, len %u)",
+			dest->sa_family, dest_len);
+		ret = size;
+		goto error;
 	}
 
 	ret = net_context_sendto(ctx, (uint8_t *)&cmd_req, size,
@@ -157,7 +190,7 @@ static int socks5_tcp_connect(struct net_context *ctx,
 				 ctx->user_data);
 	if (ret < 0) {
 		LOG_ERR("Could not send CONNECT command");
-		return ret;
+		goto error;
 	}
 
 	ret = net_context_recv(ctx, socks5_cmd_rsp_cb,
@@ -165,17 +198,19 @@ static int socks5_tcp_connect(struct net_context *ctx,
 			       &cmd_rsp);
 	if (ret < 0) {
 		LOG_ERR("Could not receive CONNECT response");
-		return ret;
+		goto error;
 	}
 
 	if (cmd_rsp.r.ver != SOCKS5_PKT_MAGIC) {
 		LOG_ERR("Invalid CONNECT response");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error;
 	}
 
 	if (cmd_rsp.r.rep != SOCKS5_CMD_RESP_SUCCESS) {
 		LOG_ERR("Unable to connect to destination");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error;
 	}
 
 	/* Verifying the rest is not required */
@@ -183,6 +218,17 @@ static int socks5_tcp_connect(struct net_context *ctx,
 	LOG_DBG("Connection through SOCKS5 proxy successful");
 
 	return 0;
+
+error:
+	/* The response callbacks above were handed pointers to this stack
+	 * frame and net_context_recv() leaves them installed. On success the
+	 * caller replaces them right away, but on error nothing does, so drop
+	 * them here. Otherwise closing the socket later makes the TCP stack
+	 * call back into a frame that is long gone.
+	 */
+	(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
+
+	return ret;
 }
 
 int net_socks5_connect(struct net_context *ctx, const struct net_sockaddr *addr,
