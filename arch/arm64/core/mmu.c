@@ -1119,6 +1119,18 @@ static uint64_t get_tcr(int el)
 	return tcr;
 }
 
+/*
+ * A stale cache line covering a boot stack, once the data cache turns on,
+ * would be read back in place of the value actually written there, faulting
+ * on return. Covers every CPU rather than just the caller's, since the
+ * current CPU id is not available here on the primary core.
+ */
+static void invalidate_boot_stacks(void)
+{
+	sys_cache_data_invd_range((void *)z_interrupt_stacks,
+				  sizeof(z_interrupt_stacks));
+}
+
 static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 {
 	ARG_UNUSED(flags);
@@ -1131,6 +1143,9 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 
 	/* Ensure these changes are seen before MMU is enabled */
 	barrier_isync_fence_full();
+
+	/* Must happen before the data cache turns on below */
+	invalidate_boot_stacks();
 
 	/* Enable the MMU and data cache */
 	val = read_sctlr_el1();
