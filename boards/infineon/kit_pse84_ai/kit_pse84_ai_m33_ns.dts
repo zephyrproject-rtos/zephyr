@@ -12,6 +12,7 @@
 
 #include "kit_pse84_ai_common.dtsi"
 #include "kit_pse84_ai_memory_map.dtsi"
+#include "kit_pse84_ai_memory_map_rram.dtsi"
 
 / {
 	model = "kit_pse84_ai";
