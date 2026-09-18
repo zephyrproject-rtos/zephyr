@@ -578,6 +578,12 @@
 			status = "disabled";
 		};
 
+		iwdt: iwdt@40083200 {
+			compatible = "renesas,ra-iwdt";
+			reg = <0x40083200 0x8>;
+			status = "disabled";
+		};
+
 		eth: ethernet@40114100 {
 			compatible = "renesas,ra-ethernet";
 			reg = <0x40114100 0xfc>;
