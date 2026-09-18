@@ -199,10 +199,12 @@ config LV_DRAW_BUF_ALIGN
 	default 32
 
 # Necessary for the LV_Z_USE_OSAL
-config DYNAMIC_THREAD
+configdefault DYNAMIC_THREAD
 	default y
-config DYNAMIC_THREAD_POOL_SIZE
-	default 1
+configdefault DYNAMIC_THREAD_POOL_SIZE
+	default 1 if !LV_USE_NEMA_GFX
+	default 2 if LV_USE_NEMA_GFX
+
 config DYNAMIC_THREAD_STACK_SIZE
 	default 8192
 
