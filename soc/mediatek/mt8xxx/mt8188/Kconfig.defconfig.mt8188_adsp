@@ -3,6 +3,8 @@
 
 if SOC_MT8188_ADSP
 
+rsource "../common/adsp/Kconfig.defconfig"
+
 config NUM_2ND_LEVEL_AGGREGATORS
 	default 1
 
