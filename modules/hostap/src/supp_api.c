@@ -3112,6 +3112,10 @@ out:
 }
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+BUILD_ASSERT(sizeof(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME) - 1 <=
+			WIFI_P2P_DEVICE_NAME_MAX_LEN,
+			"CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME too long");
+
 static inline void extract_value(const char *src, char *dest, size_t dest_size)
 {
 	size_t i = 0;
@@ -3719,6 +3723,44 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 				   "P2P persistent_remove: invalid id %d",
 				   params->persistent_remove.id);
 			return -EINVAL;
+		}
+		ret = 0;
+		break;
+	}
+	case WIFI_P2P_SET_DEV_NAME: {
+		const char *device_name = WIFI_P2P_DEVICE_NAME;
+
+		if (!wpa_s->global->p2p) {
+			wpa_printf(MSG_ERROR, "P2P_SET_DEV_NAME command failed");
+			return -EIO;
+		}
+		if (strlen(params->device_name) > 0) {
+			device_name = params->device_name;
+		}
+		os_free(wpa_s->conf->device_name);
+		wpa_s->conf->device_name = os_strdup(device_name);
+		if (wpa_s->conf->device_name == NULL) {
+			return -ENOMEM;
+		}
+		wpa_s->conf->changed_parameters |= CFG_CHANGED_DEVICE_NAME;
+		wpa_supplicant_update_config(wpa_s);
+		ret = 0;
+		break;
+	}
+	case WIFI_P2P_STATUS: {
+		snprintk(cmd_buf, sizeof(cmd_buf), "P2P_STATUS");
+		if (params->status.buf == NULL ||
+		    params->status.buf_size < WIFI_P2P_STATUS_BUF_SIZE) {
+			wpa_printf(MSG_ERROR,
+				   "P2P_STATUS: buffer missing or too small (%zu < %d)",
+				   params->status.buf_size, WIFI_P2P_STATUS_BUF_SIZE);
+			return -EINVAL;
+		}
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+						      cmd_buf, params->status.buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_STATUS command failed: %d", ret);
+			return -EIO;
 		}
 		ret = 0;
 		break;
