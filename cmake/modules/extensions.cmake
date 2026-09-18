@@ -2561,6 +2561,7 @@ function(zephyr_constants_library)
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_offset_header.py
     -i $<TARGET_OBJECTS:${lib_name}>
     -o ${output_path}
+    --nm ${CMAKE_NM}
     DEPENDS ${lib_name} $<TARGET_OBJECTS:${lib_name}>
   )
   add_custom_target(${target_name} DEPENDS ${output_path})
