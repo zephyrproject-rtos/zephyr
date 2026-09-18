@@ -320,8 +320,9 @@ config BT_HCI_SET_PUBLIC_ADDR
 
 config BT_HCI_SETUP
 	bool
+	select DEPRECATED
 	help
-	  Enable the HCI vendor-specific Setup function.
+	  Enable the HCI vendor-specific Setup function [DEPRECATED].
 
 	  This option has to be enabled when the BT Controller requires execution
 	  of the vendor-specific commands sequence to initialize the BT Controller
@@ -330,6 +331,13 @@ config BT_HCI_SETUP
 	  The user should generally avoid changing it via menuconfig or in
 	  configuration files. This option are enabled by the vendor-specific
 	  HCI extension, where the Setup function is implemented.
+
+	  Deprecated: a driver performs its vendor-specific initialization in
+	  open() instead, over its own transport, with the helpers of
+	  hci_pkt.h and hci_lockstep.h, and takes the public address from
+	  bt_hci_get_public_addr(). That works in every build type, where
+	  setup() is host code in the driver's vtable and has nowhere to run
+	  without a Host. See the 4.5 migration guide.
 
 config BT_DRV_TX_STACK_SIZE
 	int

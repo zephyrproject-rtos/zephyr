@@ -295,6 +295,15 @@ Deprecated APIs and options
   * The :c:struct:`audio_codec_api` struct has been deprecated. Audio codec drivers are now
     expected to use the :c:macro:`DEVICE_API` macro to declare their driver API.
 
+* Bluetooth
+
+  * The HCI driver ``setup()`` op, :c:func:`bt_hci_setup`,
+    :c:struct:`bt_hci_setup_params` and :kconfig:option:`CONFIG_BT_HCI_SETUP` have
+    been deprecated. A driver performs its vendor-specific initialization inside
+    :c:member:`bt_hci_driver_api.open` instead, over its own transport, using the
+    helpers of :file:`hci_pkt.h` and :file:`hci_lockstep.h`, and takes the public
+    address from :c:func:`bt_hci_get_public_addr`. See the migration guide.
+
 * Build system
 
   * The ``zephyr_file_copy()`` CMake function has been deprecated. Use the native
