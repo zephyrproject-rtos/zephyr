@@ -20,6 +20,7 @@
 		led1 = &user_led1;
 		sw0 = &user_bt0;
 		sw1 = &user_bt1;
+		watchdog0 = &watchdog0;
 	};
 
 	leds {
@@ -119,4 +120,8 @@ uart4: &scb4 {
 &peri0_group4_8bit_1 {
 	status = "okay";
 	clock-div = <86>;
+};
+
+&watchdog0 {
+	status = "okay";
 };
