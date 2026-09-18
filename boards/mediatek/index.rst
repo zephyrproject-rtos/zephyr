@@ -74,7 +74,7 @@ my mt8186 device named "steelix":
    ... # build output
    ...
    user@dev_host:~$ scp build/zephyr/zephyr.img root@steelix:
-   user@dev_host:~$ scp soc/mediatek/mt8xxx/mtk_adsp_load.py root@steelix:
+   user@dev_host:~$ scp soc/mediatek/mt8xxx/common/adsp/mtk_adsp_load.py root@steelix:
    user@dev_host:~$ ssh steelix
 
    root@steelix:~ # ./mtk_adsp_load.py load zephyr.img
