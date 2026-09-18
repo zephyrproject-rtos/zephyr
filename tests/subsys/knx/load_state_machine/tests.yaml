@@ -1,0 +1,10 @@
+tests:
+  knx.load_state_machine:
+    tags:
+      - knx
+      - load_state
+      - run_state
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
