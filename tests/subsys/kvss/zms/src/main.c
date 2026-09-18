@@ -133,6 +133,62 @@ ZTEST_F(zms, test_zms_write)
 	execute_long_pattern_write(TEST_DATA_ID, &fixture->fs);
 }
 
+/*
+ * zms_recover_last_ate() scans allocation table slots downwards from the end
+ * of a sector. As it finds external-data ATEs, their offset and aligned data
+ * length establish the lower bound of that scan: slots below this boundary
+ * belong to the data area and must not be interpreted as ATEs.
+ *
+ * An inline-data ATE following an external-data ATE must preserve that lower
+ * bound. This test creates that sequence, embeds a CRC-valid ATE-shaped
+ * pattern in the payload, and verifies that recovery does not scan far enough
+ * to let the payload alter the recovered data write address.
+ */
+ZTEST_F(zms, test_zms_mount_fake_ate)
+{
+	struct zms_ate fake_ate;
+	uint8_t data[64];
+	uint32_t inline_data = 0;
+	int err;
+	ssize_t len;
+
+	err = zms_mount(&fixture->fs);
+	zassert_ok(err, "zms_mount failed: %d", err);
+
+	/* Fill the data record with erased bytes, then embed a valid-looking ATE. */
+	memset(data, fixture->fs.flash_parameters->erase_value, sizeof(data));
+	memset(&fake_ate, 0, sizeof(fake_ate));
+	fake_ate.cycle_cnt = fixture->fs.sector_cycle;
+	fake_ate.len = 256;
+	fake_ate.id = 0x01000100;
+	fake_ate.offset = UINT32_MAX;
+	fake_ate.crc8 = crc8_ccitt(0xff,
+				  (uint8_t *)&fake_ate + SIZEOF_FIELD(struct zms_ate, crc8),
+				  sizeof(fake_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
+	memcpy(data + sizeof(fake_ate), &fake_ate, sizeof(fake_ate));
+
+	len = zms_write(&fixture->fs, TEST_DATA_ID, data, sizeof(data));
+	zassert_equal(len, sizeof(data), "zms_write failed: %zd", len);
+
+	/*
+	 * The newer inline-data ATE is visited after the external-data ATE during
+	 * the downward scan. It verifies that this inline ATE preserves the data
+	 * boundary established by the external-data ATE.
+	 */
+	len = zms_write(&fixture->fs, TEST_DATA_ID + 1, &inline_data, sizeof(inline_data));
+	zassert_equal(len, sizeof(inline_data), "zms_write of inline data failed: %zd", len);
+
+	/* Simulate a reboot so recovery, rather than the live cursors, is used. */
+	memset(&fixture->fs, 0, sizeof(fixture->fs));
+	(void)setup();
+	err = zms_mount(&fixture->fs);
+	zassert_ok(err, "zms_mount after reboot failed: %d", err);
+
+	zassert_equal(fixture->fs.data_wra, sizeof(data),
+		      "data payload was mistaken for an ATE: data_wra=%llx",
+		      fixture->fs.data_wra);
+}
+
 #ifdef CONFIG_TEST_ZMS_SIMULATOR
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg, const char *name,
 				      uint16_t off)
