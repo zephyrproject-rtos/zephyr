@@ -460,6 +460,20 @@ static int can_sock_close_vmeth(void *obj)
 	return ret;
 }
 
+static int can_sock_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	return zvfs_fdtable_call_poll_prepare(&sock_fd_op_vtable.fd_vtable,
+				obj, pfd, pev, pev_end);
+}
+
+static int can_sock_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	return zvfs_fdtable_call_poll_update(&sock_fd_op_vtable.fd_vtable,
+				obj, pfd, pev);
+}
+
 static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
@@ -716,6 +730,8 @@ static const struct socket_op_vtable can_sock_fd_op_vtable = {
 		.write = can_sock_write_vmeth,
 		.close = can_sock_close_vmeth,
 		.ioctl = can_sock_ioctl_vmeth,
+		.poll_prepare = can_sock_poll_prepare_vmeth,
+		.poll_update = can_sock_poll_update_vmeth,
 	},
 	.bind = can_sock_bind_vmeth,
 	.connect = can_sock_connect_vmeth,
