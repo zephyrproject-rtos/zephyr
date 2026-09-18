@@ -1146,10 +1146,10 @@ struct bt_cap_handover_broadcast_to_unicast_param {
 	 */
 	struct bt_cap_broadcast_source *broadcast_source;
 
-	/* Parameters for the unicast group to be created */
+	/** Parameters for the unicast group to be created */
 	struct bt_cap_unicast_group_param *unicast_group_param;
 
-	/* Parameters for starting the unicast audio */
+	/** Parameters for starting the unicast audio */
 	struct bt_cap_unicast_audio_start_param *unicast_start_param;
 };
 
