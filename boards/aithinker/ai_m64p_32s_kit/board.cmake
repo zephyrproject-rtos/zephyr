@@ -10,7 +10,7 @@ board_runner_args(openocd --gdb-init "mem 0x90000000 0x90040000 ro")
 board_runner_args(openocd --gdb-init "mem 0x80000000 0x88000000 ro")
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 
-board_runner_args(bflb_mcu_tool --chipname bl616cl)
-include(${ZEPHYR_BASE}/boards/common/bflb_mcu_tool.board.cmake)
+board_runner_args(bflb_flash_command --chipname bl616cl)
+include(${ZEPHYR_BASE}/boards/common/bflb_flash_command.board.cmake)
 
-board_set_flasher(bflb_mcu_tool)
+board_set_flasher(bflb_flash_command)
