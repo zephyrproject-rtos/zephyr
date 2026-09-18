@@ -3246,7 +3246,7 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 
 	if (retrans_timer) {
 		net_if_ipv6_set_retrans_timer(net_pkt_iface(pkt),
-					      ra_hdr->retrans_timer);
+					      retrans_timer);
 	}
 
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_ra_hdr));
