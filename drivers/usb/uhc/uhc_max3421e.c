@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -553,11 +554,26 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 	return ret;
 }
 
+static ALWAYS_INLINE int max3421e_mode_update(const struct device *dev, const uint8_t mode)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	if (mode == priv->mode) {
+		return 0;
+	}
+
+	priv->mode = mode;
+
+	return max3421e_write_byte(dev, MAX3421E_REG_MODE, priv->mode);
+}
+
 static void max3421e_handle_condet(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
+	uint8_t mode = priv->mode;
 	enum uhc_event_type type = UHC_EVT_ERROR;
+	int ret;
 
 	if (atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET)) {
 		/* NOTE: Resetting the bus triggers a spurious condet event */
@@ -565,24 +581,37 @@ static void max3421e_handle_condet(const struct device *dev)
 	}
 
 	/*
-	 * JSTATUS:KSTATUS 0:0 - SE0
-	 * JSTATUS:KSTATUS 0:1 - K   (Resume)
-	 * JSTATUS:KSTATUS 1:0 - J   (Idle)
+	 * The meaning of J/K depends on the LOWSPEED bit (AN3785, "SAMPLEBUS
+	 * JSTATUS, KSTATUS"). J is the idle state of a device at the current
+	 * speed, K the idle state of a device at the other speed, in which
+	 * case LOWSPEED should be toggled.
 	 */
 	if (jk == 0) {
-		/* Device disconnected */
+		LOG_INF("Device disconnected");
 		type = UHC_EVT_DEV_REMOVED;
+		mode &= ~MAX3421E_SOFKAENAB;
 	}
 
 	if (jk == MAX3421E_JSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_FS;
+		mode |= MAX3421E_SOFKAENAB;
+		type = (mode & MAX3421E_LOWSPEED) != 0U ? UHC_EVT_DEV_CONNECTED_LS
+							: UHC_EVT_DEV_CONNECTED_FS;
+		LOG_INF("%s Device connected", (mode & MAX3421E_LOWSPEED) != 0U ? "LS" : "FS");
 	}
 
 	if (jk == MAX3421E_KSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_LS;
+		mode ^= MAX3421E_LOWSPEED;
+		mode |= MAX3421E_SOFKAENAB;
+		type = (mode & MAX3421E_LOWSPEED) != 0U ? UHC_EVT_DEV_CONNECTED_LS
+							: UHC_EVT_DEV_CONNECTED_FS;
+		LOG_INF("%s Device connected", (mode & MAX3421E_LOWSPEED) != 0U ? "LS" : "FS");
 	}
+
+	ret = max3421e_mode_update(dev, mode);
+	if (unlikely(ret)) {
+		type = UHC_EVT_ERROR;
+	}
+
 
 	uhc_submit_event(dev, type, 0);
 }
