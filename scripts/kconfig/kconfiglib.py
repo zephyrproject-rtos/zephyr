@@ -534,6 +534,46 @@ lead to a crash.
 Preferably, user-defined functions should be stateless.
 
 
+Prompt hook defined in Python
+-----------------------------
+
+The same module can define a function named 'prompt_hook' that is called once
+for every menu node with a prompt (symbols, choices, menus, comments and the
+'mainmenu' entry) after all Kconfig files have been parsed and the menu tree
+has been finalized:
+
+  def prompt_hook(kconf, node, prompt):
+      # kconf:
+      #   Kconfig instance
+      #
+      # node:
+      #   MenuNode instance. All properties are final, so e.g. node.item,
+      #   node.item.selects and node.dep can be inspected. Do not modify the
+      #   node.
+      #
+      # prompt:
+      #   The prompt text, after preprocessor expansion
+      #
+      # Returns the text to use as the prompt
+      ...
+
+The returned string replaces the text in MenuNode.prompt. The text as written
+in the Kconfig file stays available in MenuNode.orig_prompt, and str(node)
+uses it too. Kconfig.write_config() writes the text of MenuNode.prompt of
+menus and comments in the comment headers of the .config file.
+
+A typical use is to append a marker to the prompt of symbols that select some
+symbol, so that the marker cannot go out of sync with the selection:
+
+  def prompt_hook(kconf, node, prompt):
+      deprecated = kconf.syms.get("DEPRECATED")
+      if deprecated is not None and \
+         any(target is deprecated
+             for target, _, _ in getattr(node.item, "selects", ())):
+          return prompt + " [DEPRECATED]"
+      return prompt
+
+
 Feedback
 ========
 
@@ -809,6 +849,7 @@ class Kconfig(object):
     __slots__ = (
         "_encoding",
         "_functions",
+        "_prompt_hook",
         "_set_match",
         "_srctree_prefix",
         "_unset_match",
@@ -1015,14 +1056,16 @@ class Kconfig(object):
             "warning-if": (_warning_if_fn, 2, 2),
         }
 
-        # Add any user-defined preprocessor functions
+        # Add any user-defined preprocessor functions and prompt hook
+        self._prompt_hook = None
         try:
-            self._functions.update(
-                importlib.import_module(
-                    os.getenv("KCONFIG_FUNCTIONS", "kconfigfunctions")
-                ).functions)
+            fn_mod = importlib.import_module(
+                os.getenv("KCONFIG_FUNCTIONS", "kconfigfunctions"))
         except ImportError:
             pass
+        else:
+            self._functions.update(fn_mod.functions)
+            self._prompt_hook = getattr(fn_mod, "prompt_hook", None)
 
         # This determines whether previously unseen symbols are registered.
         # They shouldn't be if we parse expressions after parsing, as part of
@@ -1089,6 +1132,10 @@ class Kconfig(object):
 
         self.unique_defined_syms = _ordered_unique(self.defined_syms)
         self.unique_choices = _ordered_unique(self.choices)
+
+        # Let the user-defined prompt hook rewrite prompt texts. This needs the
+        # finalized tree, since the hook may look at any property of the node.
+        self._run_prompt_hook()
 
         # Do sanity checks. Some of these depend on everything being finalized.
         self._check_sym_sanity()
@@ -3594,6 +3641,35 @@ class Kconfig(object):
                 sym.defaults.insert(inserted + idx, default)
                 inserted += 1
 
+    def _run_prompt_hook(self):
+        # Passes every prompt text through the prompt_hook() function of the
+        # user-defined functions module, if it defines one. See the module
+        # docstring. The original text is kept in MenuNode._src_prompt so that
+        # MenuNode.orig_prompt and str(node) still reflect the Kconfig source.
+
+        if self._prompt_hook is None:
+            return
+
+        # node_iter() skips the top node, which holds the 'mainmenu' prompt
+        self._hook_prompt(self.top_node)
+        for node in self.node_iter():
+            self._hook_prompt(node)
+
+    def _hook_prompt(self, node):
+        if not node.prompt:
+            return
+
+        text, cond = node.prompt
+        new_text = self._prompt_hook(self, node, text)
+        if new_text.__class__ is not str:
+            raise KconfigError(
+                "prompt_hook() returned {!r} for the prompt {!r}, expected a "
+                "string".format(new_text, text))
+
+        if new_text != text:
+            node._src_prompt = text
+            node.prompt = (new_text, cond)
+
     def _finalize_node(self, node, visible_if):
         # Finalizes a menu node and its children:
         #
@@ -5616,6 +5692,11 @@ class MenuNode(object):
       the Symbol or Choice instance. For menus and comments, the prompt holds
       the text.
 
+      The string is the text to display. It differs from the text in the
+      Kconfig file if the prompt hook of the user-defined functions module
+      changed it (see the module docstring). orig_prompt holds the text as
+      written.
+
     defaults:
       The 'default' properties for this particular menu node. See
       symbol.defaults.
@@ -5642,7 +5723,8 @@ class MenuNode(object):
       These work the like the corresponding attributes without orig_*, but omit
       any dependencies propagated from 'depends on' and surrounding 'if's (the
       direct dependencies, stored in MenuNode.dep). These also strip any
-      location information.
+      location information. orig_prompt also holds the prompt text as written
+      in the Kconfig file, before any change made by the prompt hook.
 
       One use for this is generating less cluttered documentation, by only
       showing the direct dependencies in one place.
@@ -5735,6 +5817,10 @@ class MenuNode(object):
         "selects",
         "implies",
         "ranges",
+
+        # Prompt text as written in the Kconfig file, if the prompt hook
+        # changed it. None otherwise.
+        "_src_prompt",
     )
 
     def __init__(self):
@@ -5745,6 +5831,8 @@ class MenuNode(object):
         self.selects = []
         self.implies = []
         self.ranges = []
+
+        self._src_prompt = None
 
     @property
     def filename(self):
@@ -5767,7 +5855,8 @@ class MenuNode(object):
         """
         if not self.prompt:
             return None
-        return (self.prompt[0], self._strip_dep(self.prompt[1]))
+        return (self.prompt[0] if self._src_prompt is None else self._src_prompt,
+                self._strip_dep(self.prompt[1]))
 
     @property
     def orig_defaults(self):
@@ -5913,7 +6002,7 @@ class MenuNode(object):
 
     def _menu_comment_node_str(self, sc_expr_str_fn):
         s = '{} "{}"'.format("menu" if self.item is MENU else "comment",
-                             self.prompt[0])
+                             self.orig_prompt[0])
 
         if self.dep is not self.kconfig.y:
             s += "\n\tdepends on {}".format(expr_str(self.dep, sc_expr_str_fn))
@@ -5958,7 +6047,7 @@ class MenuNode(object):
                 # Symbol defined without a type (which generates a warning)
                 prefix = "prompt"
 
-            indent_add_cond(prefix + ' "{}"'.format(escape(self.prompt[0])),
+            indent_add_cond(prefix + ' "{}"'.format(escape(self.orig_prompt[0])),
                             self.orig_prompt[1])
 
         if sc.__class__ is Symbol:
