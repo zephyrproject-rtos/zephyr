@@ -353,6 +353,7 @@ void gpio_bflb_common_config_internal(const struct device *dev,
 	uint32_t cfg;
 	uint32_t tmp;
 
+#if defined(CONFIG_SOC_SERIES_BL61X)
 	/* disable RC32K muxing */
 	if (pin == 16) {
 		*(volatile uint32_t *)(HBN_BASE + HBN_PAD_CTRL_0_OFFSET)
@@ -361,6 +362,7 @@ void gpio_bflb_common_config_internal(const struct device *dev,
 		*(volatile uint32_t *)(HBN_BASE + HBN_PAD_CTRL_0_OFFSET)
 			&= ~(1 << (HBN_REG_EN_AON_CTRL_GPIO_POS + 1));
 	}
+#endif
 
 	cfg = sys_read32(GPIO_BFLB_PIN_REG(base, pin, sect));
 
