@@ -1,0 +1,25 @@
+tests:
+  # Full stack on the software loopback L1 driver: compiled and booted.
+  knx.stack.loopback:
+    tags:
+      - knx
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+  # Same sources with the real NCN5130 driver (needs its DT node, UART async,
+  # 16-bit DMA widths): compile-only, since it needs the transceiver.
+  knx.stack.ncn5130:
+    tags:
+      - knx
+    build_only: true
+    platform_allow:
+      - knxboardv5
+    extra_args:
+      - CONFIG_KNX_LOOPBACK=n
+      - CONFIG_NCN5130=y
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_SETTINGS_NVS=y
+      - CONFIG_NVS=y
+      - CONFIG_FLASH=y
