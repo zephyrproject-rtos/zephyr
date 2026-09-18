@@ -1,0 +1,127 @@
+.. _knx_ncn5130:
+
+NCN5130 transceiver driver
+#############################
+
+The `onsemi NCN5130 <https://www.onsemi.com/products/interfaces/interface-ics/ncn5130>`_
+is a KNX TP1 bus coupler and transceiver. It exposes several host interfaces
+(SPI, 8-bit UART, 9-bit UART) selected by pin strapping; this Zephyr driver
+(:kconfig:option:`CONFIG_NCN5130`, :zephyr_file:`drivers/knx/ncn5130-uart.c`)
+implements the **9-bit UART link at 38400 bit/s**.
+
+Strapping (datasheet Table 9): ``TREQ``, ``MODE1``, ``MODE2`` and
+``SCK``/``UC2`` tied to GND, ``CSB``/``UC1`` tied to VDD, selects exactly
+this mode.
+
+Why 9-bit UART
+****************
+
+The chip transmits KNX octets as 9-bit words: the 9th bit is nominally even
+parity, but the transceiver *deliberately* corrupts it to flag a KNX bus
+error on that octet, so parity must be computed and checked in software
+rather than by the UART hardware. This driver therefore requires:
+
+* :kconfig:option:`CONFIG_UART_ASYNC_API` (the driver is DMA-async), and
+* :kconfig:option:`CONFIG_UART_WIDE_DATA`, automatically selected by
+  :kconfig:option:`CONFIG_NCN5130` — it is what makes the ``uart_*_u16()``
+  async API available, since a 9-bit word does not fit in a ``uint8_t``.
+
+Devicetree
+************
+
+The driver binds to a node with compatible ``onnn,ncn5130``, whose one
+required property, ``uart``, points at the UART actually wired to the
+transceiver:
+
+.. code-block:: dts
+
+   / {
+           ncn5130: ncn5130 {
+                   compatible = "onnn,ncn5130";
+                   uart = <&lpuart1>;
+                   status = "okay";
+           };
+   };
+
+   &lpuart1 {
+           current-speed = <38400>;
+           pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
+           pinctrl-names = "default";
+           status = "okay";
+
+           dmas = <&dmamux1 2 0x23 (STM32_DMA_PERIPH_TX | STM32_DMA_MEM_16BITS |
+                                    STM32_DMA_PERIPH_16BITS)>,
+                  <&dmamux1 1 0x22 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS |
+                                    STM32_DMA_PERIPH_16BITS)>;
+           dma-names = "tx", "rx";
+   };
+
+.. warning::
+
+   **The DMA transfer width lives in the UART node's own devicetree, not in
+   the driver.** Whatever driver services the UART underneath (e.g.
+   ``uart_stm32.c``) takes its DMA source/destination widths only from the
+   ``dmas`` channel-config cell — it does not derive them from the 9-bit
+   data width the NCN5130 driver configures at runtime. If the UART node's
+   ``dmas`` property doesn't carry the 16-bit memory *and* peripheral flags
+   shown above, the link *appears* to work but silently corrupts both
+   directions: RX needs two characters to fill one 16-bit buffer and
+   returns only the first (every second octet dropped, and bit 8 of one
+   octet is read as bit 0 of the next), while TX emits the parity bit as a
+   separate character, which the transceiver reports back as a receive
+   error. The symptom is short, CRC-failing "frames" with constant 9th-bit
+   mismatches. Get this property wrong and every KNX frame the driver sends
+   or receives is corrupted, even though the driver itself never sees an
+   error.
+
+Two more low-level gotchas, if working on the driver itself:
+
+* ``uart_*_u16()`` lengths are in **words**, but the async
+  ``UART_RX_RDY`` event reports ``offset``/``len`` in **bytes**.
+* Never reintroduce ``U_FrameState.ind`` decoding — the chip cannot emit it
+  in 9-bit mode (SPI/8-bit-UART only), and its detection mask matches 16 of
+  256 possible byte values, so "supporting" it just swallows real traffic.
+
+Kconfig
+*********
+
+.. list-table::
+   :header-rows: 1
+
+   * - Option
+     - Purpose
+   * - :kconfig:option:`CONFIG_NCN5130`
+     - Enable the driver. Depends on :kconfig:option:`CONFIG_UART_ASYNC_API`
+       and :kconfig:option:`CONFIG_KNX_STACK`; selects
+       :kconfig:option:`CONFIG_UART_WIDE_DATA` and
+       :kconfig:option:`CONFIG_UART_USE_RUNTIME_CONFIGURE`.
+   * - :kconfig:option:`CONFIG_KNX_L_DATA_CON_TIMEOUT_MS`
+     - How long ``knx_l1_send_frame()`` waits for the transceiver to report
+       ``L_Data.con`` before treating the send as failed and retrying.
+   * - :kconfig:option:`CONFIG_NCN5130_TRACE_RX`
+     - Bring-up aid: log every received 9-bit word with its parity
+       verdict. ISR-context logging, far too slow for real bus traffic —
+       bring-up only.
+   * - :kconfig:option:`CONFIG_NCN5130_STATS_INTERVAL_MS`
+     - Periodically log receive counters (total words, 9th-bit mismatches,
+       ``UART_RX_STOPPED`` events). A climbing mismatch count usually means
+       the receiver has lost byte synchronization, not that the bus is
+       noisy.
+
+What the driver does *not* do
+********************************
+
+Frame delimiting, FCS computation and length validation are **not** the
+driver's job — ``U_FrameState.ind`` (which would provide delimiting in
+other host-interface modes) cannot occur in 9-bit UART mode. Instead, the
+driver detects end-of-frame from bus silence and hands raw octets up; L2
+(:zephyr_file:`subsys/knx/layer2_data_link.c`) computes and checks the FCS
+and frame length.
+
+Testing without a bus
+************************
+
+:kconfig:option:`CONFIG_KNX_LOOPBACK` (:zephyr_file:`drivers/knx/knx_loopback.c`)
+implements the same L1 driver contract by replaying every transmitted frame
+straight back into ``Ph_Data__ind``. Use it on ``native_sim``, or on real
+hardware with no bus connected, to exercise L2 and above without an NCN5130.
