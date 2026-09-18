@@ -28,11 +28,8 @@ SoC Power Management (CONFIG_PM) enabled but the DBGMCU is still enabled \
 in STOP modes due to internal oscillators that remain active.")
 endif()
 
-if(CONFIG_PINCTRL_STM32 OR CONFIG_GPIO_STM32)
-  zephyr_sources(gpioport_mgr.c)
-endif()
-
 zephyr_sources_ifdef(CONFIG_DCACHE stm32_cache.c)
 zephyr_sources_ifdef(CONFIG_POWEROFF poweroff_common.c)
 
 zephyr_sources_ifdef(CONFIG_STM32_BACKUP_PROTECTION stm32_backup_domain.c)
+zephyr_sources_ifdef(CONFIG_STM32_GPIOPORT_MGR gpioport_mgr.c)

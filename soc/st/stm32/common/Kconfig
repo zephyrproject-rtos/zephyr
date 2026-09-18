@@ -40,6 +40,11 @@ config SWJ_ANALOG_PRIORITY
 	  This priority must be greater than GPIO_INIT_PRIORITY and lower than
 	  UART_INIT_PRIORITY.
 
+config STM32_GPIOPORT_MGR
+	bool
+	help
+	  Enable the STM32 GPIO port manager module.
+
 config STM32_WKUP_PINS
 	bool "STM32 PWR Wake-up Pins"
 	depends on DT_HAS_ST_STM32_PWR_WKUPCTRL_ENABLED
