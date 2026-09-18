@@ -25,6 +25,8 @@ The board included peripherals:
 - 100M Ethernet RJ45 port with an IC+ IP101GR PHY (RMII: clk=50, tx_en=49,
   txd0=34, txd1=35, crs_dv=28, rxd0=29, rxd1=30; SMI: mdc=31, mdio=52;
   reset=GPIO51, PHY address 1), with a reserved PoE module header
+- On-board ESP32-C6 acting as a Wi-Fi and Bluetooth radio co-processor,
+  reached over SDIO
 - 2-lane MIPI CSI camera connector
 - 2-lane MIPI DSI display connector
 - ES8311 audio codec with speaker PA, microphone and 3.5mm headphone jack
@@ -37,9 +39,28 @@ The board included peripherals:
 - Boot (GPIO35) and reset buttons
 
 Three internal LDO regulators are configured as always-on: ``ldo1`` and
-``ldo4`` at 3.3 V, and ``ldo2`` at 1.8 V. MIPI DSI/CSI, I2S audio and the
-ESP32-C6 SDIO wireless co-processor are not enabled in this initial board
-port.
+``ldo4`` at 3.3 V, and ``ldo2`` at 1.8 V. MIPI DSI/CSI and I2S audio.
+
+Wi-Fi and Bluetooth
+===================
+
+The ESP32-P4 has no radio of its own. Wireless connectivity is provided by the
+on-board ESP32-C6, which runs the esp-hosted-mcu co-processor firmware and is
+reached over SDIO. On this board the ESP32-C6 sits on SDIO slot 1 of the SDMMC
+controller and the microSD socket on slot 0; the two slots share the single
+controller, which serialises transactions between them. The ESP32-C6 reset line
+is driven by a host GPIO.
+
+The Zephyr esp-hosted-mcu driver exposes the co-processor as a standard Wi-Fi
+interface and, when Bluetooth is enabled, as an HCI controller, both carried
+over the same SDIO link. Because the radio firmware runs on a separate chip, the
+ESP32-C6 must be flashed with an esp-hosted-mcu firmware build whose major
+version matches the one the host driver expects (currently the 3.x line; see the
+``ESP_HOSTED_MCU_FW_VERSION_*`` Kconfig options). The driver queries the running
+firmware version at start-up and logs a warning when the major version differs.
+
+The co-processor firmware, the supported chipsets and transports, and the
+protocol design are documented in the upstream `ESP-Hosted-MCU`_ project.
 
 .. include:: ../../../espressif/common/soc-esp32p4-features.rst
    :start-after: espressif-soc-esp32p4-features
@@ -70,3 +91,4 @@ References
 
 .. _`Waveshare ESP32-P4-WIFI6-Dev-Kit Wiki`: https://docs.waveshare.com/ESP32-P4-WIFI6-DEV-KIT
 .. _`Waveshare ESP32-P4-WIFI6-Dev-Kit Schematic`: https://www.waveshare.net/w/upload/3/39/ESP32-P4-WIFI6-DEV-KIT-datasheet.pdf
+.. _`ESP-Hosted-MCU`: https://github.com/espressif/esp-hosted-mcu
