@@ -189,6 +189,7 @@
 /* Group 20 */
 #define IT51XXX_IRQ_SMB_E      160
 #define IT51XXX_IRQ_SMB_F      161
+#define IT51XXX_IRQ_CRYPTO     162
 #define IT51XXX_IRQ_WU40       163
 #define IT51XXX_IRQ_WU45       166
 /* Group 21 */
