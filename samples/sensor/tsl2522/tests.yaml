@@ -1,0 +1,21 @@
+sample:
+  name: TLS2522 Light Sensor Sample
+common:
+  filter: dt_alias_exists("light-sensor")
+tests:
+  sample.sensor.light_tls2522:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "lux:"
+    tags:
+      - drivers
+      - sensor
+      - light
+    integration_platforms:
+      - frdm_mcxn947/mcxn947/cpu0
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+    extra_args:
+      - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD="mikroe_ambient_25_click"
