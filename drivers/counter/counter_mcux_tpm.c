@@ -8,6 +8,9 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
+#ifdef CONFIG_COUNTER_CAPTURE
+#include <zephyr/drivers/pinctrl.h>
+#endif /* CONFIG_COUNTER_CAPTURE */
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
@@ -16,9 +19,20 @@
 
 LOG_MODULE_REGISTER(mcux_tpm, CONFIG_COUNTER_LOG_LEVEL);
 
+#ifdef CONFIG_COUNTER_CAPTURE
+#define TPM_CAPTURE_VALID_FLAGS (COUNTER_CAPTURE_BOTH_EDGES | COUNTER_CAPTURE_SINGLE_SHOT)
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 struct mcux_tpm_channel_data {
 	counter_alarm_callback_t alarm_callback;
 	void *alarm_user_data;
+#ifdef CONFIG_COUNTER_CAPTURE
+	counter_capture_cb_t capture_callback;
+	void *capture_user_data;
+	tpm_input_capture_edge_t capture_edge;
+	counter_capture_flags_t capture_flags;
+	bool capture_single_shot;
+#endif /* CONFIG_COUNTER_CAPTURE */
 };
 
 #define DEV_CFG(_dev) ((const struct mcux_tpm_config *)(_dev)->config)
@@ -34,6 +48,9 @@ struct mcux_tpm_config {
 
 	tpm_clock_source_t tpm_clock_source;
 	tpm_clock_prescale_t prescale;
+#ifdef CONFIG_COUNTER_CAPTURE
+	const struct pinctrl_dev_config *pincfg;
+#endif /* CONFIG_COUNTER_CAPTURE */
 	void (*irq_config_func)(void);
 };
 
@@ -107,6 +124,13 @@ static int mcux_tpm_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -EBUSY;
 	}
 
+#ifdef CONFIG_COUNTER_CAPTURE
+	if (data->channels[chan_id].capture_callback != NULL) {
+		LOG_ERR("channel already configured for capture");
+		return -EBUSY;
+	}
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 	if (ticks > (top_value)) {
 		return -EINVAL;
 	}
@@ -145,14 +169,163 @@ static int mcux_tpm_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
+#ifdef CONFIG_COUNTER_CAPTURE
+static bool mcux_tpm_capture_is_enabled(TPM_Type *base, uint8_t chan_id)
+{
+	uint32_t cnsc = base->CONTROLS[chan_id].CnSC;
+
+	/*
+	 * Input capture is selected when MSnB:MSnA is 00 and ELSnB:ELSnA is not 00,
+	 * so the channel mode bits are the only state needed to tell whether capture
+	 * is currently armed in hardware.
+	 */
+	return ((cnsc & (TPM_CnSC_MSA_MASK | TPM_CnSC_MSB_MASK)) == 0U) &&
+	       ((cnsc & (TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK)) != 0U);
+}
+
+static int mcux_tpm_capture_edge(counter_capture_flags_t flags, tpm_input_capture_edge_t *edge)
+{
+	if ((flags & ~TPM_CAPTURE_VALID_FLAGS) != 0U) {
+		return -EINVAL;
+	}
+
+	if ((flags & COUNTER_CAPTURE_BOTH_EDGES) == COUNTER_CAPTURE_BOTH_EDGES) {
+		*edge = kTPM_RiseAndFallEdge;
+	} else if ((flags & COUNTER_CAPTURE_FALLING_EDGE) != 0U) {
+		*edge = kTPM_FallingEdge;
+	} else if ((flags & COUNTER_CAPTURE_RISING_EDGE) != 0U) {
+		*edge = kTPM_RisingEdge;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int mcux_tpm_capture_configure(const struct device *dev, uint8_t chan_id,
+				      counter_capture_flags_t flags, counter_capture_cb_t cb,
+				      void *user_data)
+{
+	struct mcux_tpm_data *data = dev->data;
+	tpm_input_capture_edge_t edge;
+	int ret;
+
+	if (chan_id >= DEV_CFG(dev)->info.channels) {
+		LOG_ERR("Invalid channel id");
+		return -EINVAL;
+	}
+
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (data->channels[chan_id].alarm_callback != NULL) {
+		LOG_ERR("channel %u already configured for alarm", chan_id);
+		return -EBUSY;
+	}
+
+	if (mcux_tpm_capture_is_enabled(get_base(dev), chan_id)) {
+		LOG_ERR("capture channel %u is enabled", chan_id);
+		return -EBUSY;
+	}
+
+	ret = mcux_tpm_capture_edge(flags, &edge);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->channels[chan_id].capture_callback = cb;
+	data->channels[chan_id].capture_user_data = user_data;
+	data->channels[chan_id].capture_edge = edge;
+	data->channels[chan_id].capture_flags = flags & COUNTER_CAPTURE_BOTH_EDGES;
+	data->channels[chan_id].capture_single_shot = (flags & COUNTER_CAPTURE_SINGLE_SHOT) != 0U;
+
+	return 0;
+}
+
+static int mcux_tpm_enable_capture(const struct device *dev, uint8_t chan_id)
+{
+	TPM_Type *base = get_base(dev);
+	struct mcux_tpm_data *data = dev->data;
+	struct mcux_tpm_channel_data *channel;
+
+	if (chan_id >= DEV_CFG(dev)->info.channels) {
+		LOG_ERR("Invalid channel id");
+		return -EINVAL;
+	}
+
+	channel = &data->channels[chan_id];
+	if (channel->alarm_callback != NULL) {
+		LOG_ERR("channel %u already configured for alarm", chan_id);
+		return -EBUSY;
+	}
+
+	if (channel->capture_callback == NULL) {
+		LOG_ERR("capture callback not configured for channel %u", chan_id);
+		return -EINVAL;
+	}
+
+	if (mcux_tpm_capture_is_enabled(base, chan_id)) {
+		return -EBUSY;
+	}
+
+	TPM_ClearStatusFlags(base, BIT(chan_id));
+	TPM_SetupInputCapture(base, (tpm_chnl_t)chan_id, channel->capture_edge);
+	TPM_EnableInterrupts(base, BIT(chan_id));
+
+	return 0;
+}
+
+static int mcux_tpm_disable_capture(const struct device *dev, uint8_t chan_id)
+{
+	TPM_Type *base = get_base(dev);
+	struct mcux_tpm_data *data = dev->data;
+
+	if (chan_id >= DEV_CFG(dev)->info.channels) {
+		LOG_ERR("Invalid channel id");
+		return -EINVAL;
+	}
+
+	TPM_DisableInterrupts(base, BIT(chan_id));
+	(void)TPM_DisableChannel(base, (tpm_chnl_t)chan_id);
+	TPM_ClearStatusFlags(base, BIT(chan_id));
+
+	data->channels[chan_id].capture_callback = NULL;
+	data->channels[chan_id].capture_user_data = NULL;
+	data->channels[chan_id].capture_flags = 0U;
+	data->channels[chan_id].capture_single_shot = false;
+
+	return 0;
+}
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 void mcux_tpm_isr(const struct device *dev)
 {
 	TPM_Type *base = get_base(dev);
 	struct mcux_tpm_data *data = dev->data;
 	uint32_t current = TPM_GetCurrentTimerCount(base);
 	uint32_t status;
+#ifdef CONFIG_COUNTER_CAPTURE
+	uint32_t capture_ticks[TPM_CONTROLS_COUNT] = {0};
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 	status = TPM_GetStatusFlags(base);
+
+#ifdef CONFIG_COUNTER_CAPTURE
+	/*
+	 * Sample CnV before CHF is cleared. Every selected edge latches the counter
+	 * into CnV, and the reference manual only guarantees that a CHF interrupt is
+	 * not lost across the clearing sequence, not that CnV still holds the value
+	 * this interrupt was raised for.
+	 */
+	for (uint8_t chan = 0; chan < DEV_CFG(dev)->info.channels; chan++) {
+		if ((status & BIT(chan)) != 0U &&
+		    (data->channels[chan].capture_callback != NULL)) {
+			capture_ticks[chan] = TPM_GetChannelValue(base, (tpm_chnl_t)chan);
+		}
+	}
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 	TPM_ClearStatusFlags(base, status);
 	barrier_dsync_fence_full();
 
@@ -167,6 +340,35 @@ void mcux_tpm_isr(const struct device *dev)
 			alarm_callback(dev, chan, current, alarm_user_data);
 		}
 	}
+
+#ifdef CONFIG_COUNTER_CAPTURE
+	for (uint8_t chan = 0; chan < DEV_CFG(dev)->info.channels; chan++) {
+		counter_capture_cb_t capture_callback;
+		counter_capture_flags_t capture_flags;
+		void *capture_user_data;
+
+		if ((status & BIT(chan)) == 0U) {
+			continue;
+		}
+
+		capture_callback = data->channels[chan].capture_callback;
+		if (capture_callback == NULL) {
+			continue;
+		}
+
+		capture_user_data = data->channels[chan].capture_user_data;
+		capture_flags = data->channels[chan].capture_flags;
+
+		if (data->channels[chan].capture_single_shot) {
+			capture_flags |= COUNTER_CAPTURE_SINGLE_SHOT;
+			(void)mcux_tpm_disable_capture(dev, chan);
+		} else {
+			capture_flags |= COUNTER_CAPTURE_CONTINUOUS;
+		}
+
+		capture_callback(dev, chan, capture_flags, capture_ticks[chan], capture_user_data);
+	}
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 	if ((status & kTPM_TimeOverflowFlag) && data->top_callback) {
 		data->top_callback(dev, data->top_user_data);
@@ -250,9 +452,25 @@ static int mcux_tpm_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_COUNTER_CAPTURE
+	if (config->pincfg != NULL) {
+		int pinctrl_err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+
+		if (pinctrl_err != 0) {
+			return pinctrl_err;
+		}
+	}
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 	for (uint8_t chan = 0; chan < DEV_CFG(dev)->info.channels; chan++) {
 		data->channels[chan].alarm_callback = NULL;
 		data->channels[chan].alarm_user_data = NULL;
+#ifdef CONFIG_COUNTER_CAPTURE
+		data->channels[chan].capture_callback = NULL;
+		data->channels[chan].capture_user_data = NULL;
+		data->channels[chan].capture_flags = 0U;
+		data->channels[chan].capture_single_shot = false;
+#endif /* CONFIG_COUNTER_CAPTURE */
 	}
 
 	int err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
@@ -303,11 +521,29 @@ static DEVICE_API(counter, mcux_tpm_driver_api) = {
 	.get_pending_int = mcux_tpm_get_pending_int,
 	.get_top_value = mcux_tpm_get_top_value,
 	.get_freq = mcux_tpm_get_freq,
+#ifdef CONFIG_COUNTER_CAPTURE
+	.capture_configure = mcux_tpm_capture_configure,
+	.enable_capture = mcux_tpm_enable_capture,
+	.disable_capture = mcux_tpm_disable_capture,
+#endif /* CONFIG_COUNTER_CAPTURE */
 };
 
 #define TO_TPM_PRESCALE_DIVIDE(val) _DO_CONCAT(kTPM_Prescale_Divide_, val)
 
+#ifdef CONFIG_COUNTER_CAPTURE
+#define TPM_PINCTRL_DEFINE(n)							\
+	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default),			\
+		   (PINCTRL_DT_INST_DEFINE(n);))
+#define TPM_PINCTRL_INIT(n)							\
+	.pincfg = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0),		\
+			      (PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),
+#else
+#define TPM_PINCTRL_DEFINE(n)
+#define TPM_PINCTRL_INIT(n)
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 #define TPM_DEVICE_INIT_MCUX(n)							\
+	TPM_PINCTRL_DEFINE(n)							\
 	static struct mcux_tpm_data mcux_tpm_data_ ## n;			\
 	static void mcux_tpm_irq_config_ ## n(void);				\
 										\
@@ -325,6 +561,7 @@ static DEVICE_API(counter, mcux_tpm_driver_api) = {
 					(TPM_Type *)DT_INST_REG_ADDR(n)),	\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
 		},								\
+		TPM_PINCTRL_INIT(n)						\
 		.irq_config_func = mcux_tpm_irq_config_ ## n,			\
 	};									\
 										\
