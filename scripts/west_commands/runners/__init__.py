@@ -27,6 +27,7 @@ def _import_runner_module(runner_name):
 _names = [
     # zephyr-keep-sorted-start
     'amebaflash',
+    'bflb_flash_command',
     'bflb_mcu_tool',
     'blackmagicprobe',
     'bossac',
