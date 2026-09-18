@@ -488,6 +488,40 @@ Here are more details on the peripherals that are currently provided with this b
 .. _SDL2:
    https://www.libsdl.org
 
+.. _nsim_per_video_fifo:
+
+**Video capture driver**
+  A video capture driver is provided that reads raw frames from a named pipe
+  (FIFO) on the host, and presents them through the :ref:`video_api` as an
+  ordinary ``zephyr,camera`` device. This makes it possible to feed an
+  application with frames coming from a real webcam, a video file, or a
+  generated test pattern, without any camera hardware.
+
+  The device is instantiated by the :ref:`snippet-video-native-fifo` snippet, or
+  by a devicetree node with the ``zephyr,native-sim-video-fifo`` compatible. The
+  frame geometry and the pixel format are fixed by the devicetree: the host
+  writer is responsible for any scaling and pixel format conversion, for
+  instance with ``ffmpeg``:
+
+  .. code-block:: console
+
+     $ ffmpeg -f v4l2 -i /dev/video0 \
+         -vf "scale=320:240:force_original_aspect_ratio=increase,crop=320:240,fps=10" \
+         -pix_fmt rgb565le -f rawvideo -y /tmp/zephyr-cam.fifo
+
+  By default the FIFO path is taken from the ``fifo-path`` devicetree property.
+  Each instance exposes its own command line override in the form
+  ``--<device>=<path>``. For a node named ``video-fifo`` this is
+  ``--video-fifo=<path>``.
+
+  The FIFO is created if it does not exist yet. If the path exists but is not a
+  FIFO, the driver prints an error from the native simulator runner side and
+  refuses to start streaming. The FIFO is opened non-blocking and polled from a
+  work item, so the simulation is never blocked: while no host writer is
+  attached, no frame is delivered. If a writer disconnects in the middle of a
+  frame, the incomplete frame is discarded so that the next writer resumes on a
+  frame boundary.
+
 .. _nsim_per_flash_simu:
 
 **EEPROM simulator**
