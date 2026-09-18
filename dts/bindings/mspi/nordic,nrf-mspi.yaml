@@ -6,3 +6,50 @@ description: Nordic MSPI Interface using SSI IP
 compatible: "nordic,nrf-mspi"
 
 include: snps,designware-ssi.yaml
+
+properties:
+  nordic,hspadctrl:
+    type: phandle
+    description: |
+      GPIO port whose base address is shared with the GPIOHSPADCTRL peripheral
+      that provides the elastic buffer for this MSPI instance. The referenced
+      node must have the hspadctrl-supported property.
+
+  nordic,hspadctrl-index:
+    type: int
+    min: 0
+    max: 1
+    description: |
+      Index of the GPIOHSPADCTRL.CTRL register that provides the elastic buffer
+      for this MSPI instance.
+
+  nordic,enable-elastic-buffer:
+    type: boolean
+    description: |
+      Enable the elastic buffer in GPIOHSPADCTRL for this MSPI instance. The
+      buffer samples incoming data with a feedback clock that has passed
+      through a replica pad, which cancels the pad delay variation over
+      process, voltage and temperature. Requires nordic,hspadctrl, and the
+      nordic,eb-rx-delay and rx-sample-delay (snps,designware-ssi.yaml)
+      properties to be set.
+
+      The driver programs the buffer with the same clock polarity and phase
+      as the MSPI core, which covers a board round trip delay of up to one
+      SCK period with CPHA=0, but only up to half an SCK period with CPHA=1.
+      Covering up to a full period with CPHA=1 takes the buffer programmed
+      with CPOL and CPHA swapped plus a wait cycle inserted into the
+      transfer, which is not supported yet.
+
+  nordic,eb-rx-delay:
+    type: int
+    min: 0
+    max: 7
+    description: |
+      Value for GPIOHSPADCTRL.CTRL[n].RXDELAY, in clock cycles of the MSPI
+      core clock. Determines how long the elastic buffer waits before handing
+      captured data over to the core clock domain. Only has an effect if
+      nordic,enable-elastic-buffer is set. Chosen together with rx-sample-delay
+      (snps,designware-ssi.yaml): the core has to sample after the buffer has
+      released the data but before the next SCK cycle overwrites it, so
+      rx-sample-delay belongs in [nordic,eb-rx-delay + 3, nordic,eb-rx-delay
+      + 2 + the SCK period in core clock cycles]. Recommended to be set to 7.

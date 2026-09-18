@@ -105,6 +105,68 @@ static inline int vendor_specific_xip_disable(const struct device *dev,
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_mspi)
 #include <nrfx.h>
 
+/* Elastic buffer support. Used to handle PVT variation on the MSPI PADs when
+ * in Controller mode.
+ */
+/* Check whether an nrf_mspi peripheral uses elatstic buffer and is controller */
+#define NRF_MSPI_EB_ENABLED(inst)					       \
+	UTIL_AND(DT_INST_PROP_OR(inst, nordic_enable_elastic_buffer, 0),	       \
+		 DT_INST_ENUM_HAS_VALUE(inst, op_mode,			       \
+					mspi_op_mode_controller))
+#define NRF_MSPI_EB_OR(inst) NRF_MSPI_EB_ENABLED(inst) ||
+#define NRF_MSPI_EB_USED (DT_INST_FOREACH_STATUS_OKAY(NRF_MSPI_EB_OR) 0)
+
+/* Check the correct PORT is being used */
+#define NRF_MSPI_EB_ADDR(inst)						       \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, nordic_hspadctrl),	       \
+		(DT_REG_ADDR(DT_INST_PHANDLE(inst, nordic_hspadctrl))), (0))
+
+#define NRF_MSPI_EB_SUPPORTED(inst)					       \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, nordic_hspadctrl),	       \
+		(DT_PROP(DT_INST_PHANDLE(inst, nordic_hspadctrl),	       \
+			 hspadctrl_supported)), (0))
+
+#define NRF_MSPI_EB_ASSERT_PSEL(node_id, prop, idx, port)		       \
+	BUILD_ASSERT((DT_PROP_BY_IDX(node_id, prop, idx) & NRF_PIN_MSK) ==     \
+		      NRF_PIN_DISCONNECTED ||				       \
+		     NRF_PIN_NUMBER_TO_PORT(				       \
+			DT_PROP_BY_IDX(node_id, prop, idx) & NRF_PIN_MSK)      \
+		      == (port),					       \
+		"nordic,enable-elastic-buffer needs every MSPI pin routed to the GPIO"\
+		" port that nordic,hspadctrl points at");
+
+#define NRF_MSPI_EB_ASSERT_PINS(inst)					       \
+	IF_ENABLED(UTIL_AND(DT_INST_PINCTRL_HAS_IDX(inst, 0),		       \
+			    DT_INST_NODE_HAS_PROP(inst, nordic_hspadctrl)),    \
+		(DT_FOREACH_CHILD_VARGS(DT_INST_PHANDLE(inst, pinctrl_0),      \
+					DT_FOREACH_PROP_ELEM_VARGS, psels,     \
+					NRF_MSPI_EB_ASSERT_PSEL,		       \
+					DT_PROP(DT_INST_PHANDLE(inst,	       \
+						nordic_hspadctrl), port))))
+
+#define NRF_MSPI_EB_DATA_INIT(inst)					       \
+	IF_ENABLED(NRF_MSPI_EB_ENABLED(inst),				       \
+		(.eb_regs = (NRF_GPIOHSPADCTRL_Type *)NRF_MSPI_EB_ADDR(inst),   \
+		 .eb_index = DT_INST_PROP_OR(inst, nordic_hspadctrl_index, 0), \
+		 .eb_rx_delay = DT_INST_PROP_OR(inst, nordic_eb_rx_delay, 0),))
+
+#define NRF_MSPI_EB_ASSERTS(inst)					       \
+	IF_ENABLED(NRF_MSPI_EB_ENABLED(inst), (				       \
+		BUILD_ASSERT(NRF_MSPI_EB_SUPPORTED(inst),		       \
+			"nordic,enable-elastic-buffer needs nordic,hspadctrl to point"\
+			" at a GPIO port that has hspadctrl-supported");       \
+		BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, nordic_hspadctrl_index)\
+			     && DT_INST_NODE_HAS_PROP(inst, nordic_eb_rx_delay)\
+			     && DT_INST_NODE_HAS_PROP(inst, rx_sample_delay),  \
+			"nordic,enable-elastic-buffer needs nordic,hspadctrl-index,"  \
+			" nordic,eb-rx-delay and rx-sample-delay");	       \
+		NRF_MSPI_EB_ASSERT_PINS(inst)))
+
+#if NRF_MSPI_EB_USED
+/* Apply the elastic buffer configuration. */
+static void nrf_mspi_eb_apply(const struct device *dev, bool check_delays);
+#endif
+
 static inline void vendor_specific_init(const struct device *dev)
 {
 	const struct mspi_dw_config *config = dev->config;
@@ -119,7 +181,11 @@ static inline void vendor_specific_init(const struct device *dev)
 
 static inline void vendor_specific_dev_config(const struct device *dev)
 {
+#if NRF_MSPI_EB_USED
+	nrf_mspi_eb_apply(dev, true);
+#else
 	ARG_UNUSED(dev);
+#endif
 }
 
 static inline void vendor_specific_suspend(const struct device *dev)
@@ -137,6 +203,13 @@ static inline void vendor_specific_resume(const struct device *dev)
 
 	preg->ENABLE = 1;
 
+#if NRF_MSPI_EB_USED
+	/* GPIOHSPADCTRL is a separate peripheral and pinctrl puts the pads into
+	 * their sleep state while suspended, so the buffer is set up again
+	 * rather than assumed to have kept its configuration.
+	 */
+	nrf_mspi_eb_apply(dev, false);
+#endif
 }
 
 static inline void vendor_specific_irq_clear(const struct device *dev)
@@ -203,24 +276,114 @@ typedef struct {
 
 /* Number of jobs needed for transmit transaction */
 #define MAX_NUM_JOBS 5
+#endif /* defined(CONFIG_MSPI_DMA) */
 
 /* Vendor-specific data structure for Nordic MSPI */
 typedef struct {
-	MSPI_TRANSFER_LIST_Type *transfer_list;
-	EVDMA_JOB_Type *joblist;
+	/* NULL when this instance does not use the elastic buffer */
+	NRF_GPIOHSPADCTRL_Type *eb_regs;
+	uint8_t eb_index;
+	uint8_t eb_rx_delay;
+#if defined(CONFIG_MSPI_DMA)
+	struct {
+		MSPI_TRANSFER_LIST_Type *transfer_list;
+		EVDMA_JOB_Type *joblist;
+	};
+#endif
 } nordic_mspi_vendor_data_t;
 
 /* Static allocation macros for vendor-specific data */
-#define VENDOR_SPECIFIC_DATA_DEFINE(inst) \
-	static MSPI_TRANSFER_LIST_Type mspi_dw_##inst##_transfer_list; \
-	static EVDMA_JOB_Type mspi_dw_##inst##_joblist[MAX_NUM_JOBS]; \
+#define VENDOR_SPECIFIC_DATA_DEFINE(inst)				       \
+	IF_ENABLED(CONFIG_MSPI_DMA,					       \
+		(static MSPI_TRANSFER_LIST_Type mspi_dw_##inst##_transfer_list; \
+		 static EVDMA_JOB_Type mspi_dw_##inst##_joblist[MAX_NUM_JOBS];))\
+	NRF_MSPI_EB_ASSERTS(inst)					       \
 	static const nordic_mspi_vendor_data_t mspi_dw_##inst##_vendor_data = { \
-		.transfer_list = &mspi_dw_##inst##_transfer_list, \
-		.joblist = &mspi_dw_##inst##_joblist[0] \
+		IF_ENABLED(CONFIG_MSPI_DMA,				       \
+			(.transfer_list = &mspi_dw_##inst##_transfer_list,      \
+			 .joblist = &mspi_dw_##inst##_joblist[0],))	       \
+		NRF_MSPI_EB_DATA_INIT(inst)				       \
 	};
 
 #define VENDOR_SPECIFIC_DATA_GET(inst) (void *)&mspi_dw_##inst##_vendor_data
 
+#if NRF_MSPI_EB_USED
+/* Apply the elastic buffer configuration. */
+static void nrf_mspi_eb_apply(const struct device *dev, bool check_delays)
+{
+	const struct mspi_dw_config *config = dev->config;
+	const nordic_mspi_vendor_data_t *vendor_data =
+		(const nordic_mspi_vendor_data_t *)config->vendor_specific_data;
+	struct mspi_dw_data *dev_data = dev->data;
+	uint32_t sck_phase;
+	uint32_t ctrl;
+	bool cpol;
+	bool cpha;
+
+	/* Elastic buffer only used if in Controller mode */
+	if (vendor_data->eb_regs == NULL || config->op_mode != MSPI_OP_MODE_CONTROLLER) {
+		return;
+	}
+
+	cpol = (dev_data->ctrlr0 & CTRLR0_SCPOL_BIT) != 0;
+	cpha = (dev_data->ctrlr0 & CTRLR0_SCPH_BIT) != 0;
+
+	/* The feedback clock is always used inverted, so the buffer takes the
+	 * edge opposite to the one the configured polarity and phase sample on,
+	 * which is the rising edge when the two agree. The polarity and phase
+	 * themselves are programmed to match the core.
+	 */
+	sck_phase = (cpol == cpha) ? GPIOHSPADCTRL_CTRL_SCKPHASE_Falling
+				   : GPIOHSPADCTRL_CTRL_SCKPHASE_Rising;
+
+	ctrl = FIELD_PREP(GPIOHSPADCTRL_CTRL_RXDELAY_Msk, vendor_data->eb_rx_delay) |
+	       FIELD_PREP(GPIOHSPADCTRL_CTRL_SCKPHASE_Msk, sck_phase) |
+	       FIELD_PREP(GPIOHSPADCTRL_CTRL_OUTPUTCPOL_Msk, cpol) |
+	       FIELD_PREP(GPIOHSPADCTRL_CTRL_OUTPUTCHPA_Msk, cpha) |
+	       FIELD_PREP(GPIOHSPADCTRL_CTRL_CSNPOL_Msk, GPIOHSPADCTRL_CTRL_CSNPOL_LOW) |
+	       GPIOHSPADCTRL_CTRL_SCKFBPADEN_Msk;
+
+	vendor_data->eb_regs->CTRL[vendor_data->eb_index] = ctrl;
+
+	/* DATAENABLE/SCKEN must be set in a separate AHB transaction */
+	ctrl |= FIELD_PREP(GPIOHSPADCTRL_CTRL_DATAENABLE_Msk,
+			   GPIOHSPADCTRL_CTRL_DATAENABLE_Enabled) |
+		GPIOHSPADCTRL_CTRL_SCKEN_Msk;
+
+	vendor_data->eb_regs->CTRL[vendor_data->eb_index] = ctrl;
+
+	if (!check_delays) {
+		return;
+	}
+
+	/* With CPHA set, the buffer only covers a round trip delay of up to half
+	 * an SCK period. A full period needs CPOL and CPHA swapped relative to
+	 * the core plus a wait cycle inserted, which is not implemented.
+	 */
+	if (cpha) {
+		LOG_WRN("Elastic buffer with CPHA=1 currently only covers a round trip "
+			"delay of up to half an SCK period");
+	}
+
+	/* The core has to sample after the buffer has released the data, which
+	 * takes RXDELAY plus two cycles of fixed pipeline, but before the next
+	 * SCK cycle overwrites it.
+	 */
+	if (dev_data->baudr != 0) {
+		uint32_t rsd_min = vendor_data->eb_rx_delay + 3;
+		uint32_t rsd_max = vendor_data->eb_rx_delay + 2 + dev_data->baudr;
+
+		if (dev_data->rx_sample_dly < rsd_min || dev_data->rx_sample_dly > rsd_max) {
+			LOG_WRN("RX sample delay %u outside [%u, %u] expected "
+				"for elastic buffer delay %u",
+				dev_data->rx_sample_dly, rsd_min, rsd_max,
+				vendor_data->eb_rx_delay);
+		}
+	}
+}
+#endif /* NRF_MSPI_EB_USED */
+
+#if defined(CONFIG_MSPI_DMA)
 static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
