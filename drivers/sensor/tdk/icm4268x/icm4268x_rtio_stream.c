@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2026 RAKwireless Technology Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,6 +114,8 @@ static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 
 	switch (drv_data->cfg.variant) {
 	case ICM4268X_VARIANT_ICM42688:
+		case ICM4268X_VARIANT_IIM42652:
+			/* IIM-42652 FS tables match ICM-42688 */
 		accel_fs_hr = ICM42688_DT_ACCEL_FS_16;
 		gyro_fs_hr = ICM42688_DT_GYRO_FS_2000;
 		break;
