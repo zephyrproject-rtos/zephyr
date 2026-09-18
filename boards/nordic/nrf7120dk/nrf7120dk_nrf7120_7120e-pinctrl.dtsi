@@ -126,7 +126,7 @@
 				<NRF_PSEL(MSPI_IO1, 2, 2)>,
 				<NRF_PSEL(MSPI_IO2, 2, 3)>,
 				<NRF_PSEL(MSPI_IO3, 2, 4)>;
-			nordic,drive-mode = <NRF_DRIVE_H0H1>;
+			nordic,drive-mode = <NRF_DRIVE_E0E1>;
 		};
 	};
 
@@ -150,7 +150,7 @@
 				<NRF_PSEL(MSPI_IO1, 2, 8)>,
 				<NRF_PSEL(MSPI_IO2, 2, 9)>,
 				<NRF_PSEL(MSPI_IO3, 2, 10)>;
-			nordic,drive-mode = <NRF_DRIVE_H0H1>;
+			nordic,drive-mode = <NRF_DRIVE_E0E1>;
 		};
 	};
 

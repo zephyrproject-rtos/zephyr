@@ -120,10 +120,13 @@
 	pinctrl-0 = <&mspi00_default>;
 	pinctrl-1 = <&mspi00_sleep>;
 	pinctrl-names = "default", "sleep";
+	nordic,enable-elastic-buffer;
 };
 
 &mspi01 {
 	pinctrl-0 = <&mspi01_default>;
 	pinctrl-1 = <&mspi01_sleep>;
 	pinctrl-names = "default", "sleep";
+	/* Only needed when in Controller mode */
+	nordic,enable-elastic-buffer;
 };
