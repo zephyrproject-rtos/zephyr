@@ -363,6 +363,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DEV_ADDR_TABLE_LEGACY_I2C_DEV    BIT(31)
 #define DEV_ADDR_TABLE_DYNAMIC_ADDR_MASK GENMASK(23, 16)
 #define DEV_ADDR_TABLE_DYNAMIC_ADDR(x)   (((x) << 16) & GENMASK(23, 16))
+#define DEV_ADDR_TABLE_DYNAMIC_ADDR_GET(x) (((x) & GENMASK(22, 16)) >> 16)
 #define DEV_ADDR_TABLE_MR_REJECT         BIT(14)
 #define DEV_ADDR_TABLE_SIR_REJECT        BIT(13)
 #define DEV_ADDR_TABLE_IBI_WITH_DATA     BIT(12)
@@ -3088,6 +3089,7 @@ static int add_slave_from_daa(const struct device *dev, int32_t dct_idx, int32_t
 	uint32_t dct3_word;
 	uint32_t dat_patched;
 	uint64_t pid;
+	uint8_t dat_dyn_addr;
 	uint8_t dyn_addr;
 	uint8_t dyn_addr_parity;
 
@@ -3100,7 +3102,11 @@ static int add_slave_from_daa(const struct device *dev, int32_t dct_idx, int32_t
 	dat_word = sys_read32(dw_i3c_regs(dev) + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 	dct4_word = sys_read32(dw_i3c_regs(dev) +
 			       DEV_CHAR_TABLE_LOC4(data->dctstartaddr, dct_idx));
-	dyn_addr = DEV_CHAR_TABLE_DYNAMIC_ADDR(dct4_word);
+	dat_dyn_addr = DEV_ADDR_TABLE_DYNAMIC_ADDR_GET(dat_word);
+	/* Databook 6.1.54 calls LOC4[7:0] only "Dynamic Address assigned", unlike the
+	 * DAT field which is documented as carrying parity, so mask to the address.
+	 */
+	dyn_addr = DEV_CHAR_TABLE_DYNAMIC_ADDR(dct4_word) & GENMASK(6, 0);
 
 	/* retrieve pid */
 	dct1_word = sys_read32(dw_i3c_regs(dev) +
@@ -3115,6 +3121,17 @@ static int add_slave_from_daa(const struct device *dev, int32_t dct_idx, int32_t
 			       DEV_CHAR_TABLE_LOC3(data->dctstartaddr, dct_idx));
 	uint8_t bcr = DEV_CHAR_TABLE_BCR(dct3_word);
 	uint8_t dcr = DEV_CHAR_TABLE_DCR(dct3_word);
+
+	/* The n-th winning device takes the address the driver programmed at DEV_INDEX+n
+	 * and the DCT records that same address, so a mismatch means this DCT entry belongs
+	 * to a different DAT slot.
+	 */
+	if (dyn_addr != dat_dyn_addr) {
+		LOG_ERR("%s: DAA pairing error: DAT slot %d offered DA 0x%02x, DCT index "
+			"%d reports DA 0x%02x for PID 0x%012llx",
+			dev->name, pos, dat_dyn_addr, dct_idx, dyn_addr, pid);
+		return -EIO;
+	}
 
 	/* Keep DAT dynamic address/parity aligned with the HW-assigned DA. */
 	dat_patched = dat_word;
@@ -3367,7 +3384,13 @@ static int dw_i3c_do_daa(const struct device *dev)
 		if (newdevs & BIT(idx)) {
 			struct i3c_device_desc *added = NULL;
 
-			add_slave_from_daa(dev, dct_idx, idx, &added);
+			/* A pairing error invalidates the rest of this round's
+			 * DCT-to-DAT mapping, so stop instead of mis-binding more.
+			 */
+			ret = add_slave_from_daa(dev, dct_idx, idx, &added);
+			if (ret != 0) {
+				break;
+			}
 			dct_idx++;
 
 			/* Silence this target only: DAA also runs at runtime for a
@@ -3395,7 +3418,7 @@ static int dw_i3c_do_daa(const struct device *dev)
 		}
 	}
 
-	return 0;
+	return ret;
 }
 #endif /* CONFIG_I3C_CONTROLLER */
 
