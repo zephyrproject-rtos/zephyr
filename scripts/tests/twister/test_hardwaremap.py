@@ -262,6 +262,7 @@ def test_hardwaremap_load():
     map_file = \
 """
 - id: id0
+  probe_id: pid0
   platform: p0
   product: pr0
   runner: r0
@@ -304,6 +305,7 @@ def test_hardwaremap_load():
 
     expected = {
         'id0': {
+            'probe_id': 'pid0',
             'platform': 'p0',
             'product': 'pr0',
             'runner': 'r0',
@@ -317,6 +319,7 @@ def test_hardwaremap_load():
             'serial_pty': None,
         },
         'id1': {
+            'probe_id': None,
             'platform': 'p1',
             'product': 'pr1',
             'runner': 'r1',
