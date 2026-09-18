@@ -143,7 +143,7 @@ class TwisterHarnessConfig:
                 serial_configs=serial_configs,
                 runner=config.option.runner or test_params.runner or dut.runner,
                 runner_params=runner_params or dut.runner_params,
-                id=config.option.device_id or dut.id,
+                id=config.option.device_id or dut.probe_id or dut.id,
                 product=config.option.device_product or dut.product,
                 flash_before=config.option.flash_before or test_params.flash_before or dut.flash_before,
                 west_flash_extra_args=west_flash_extra_args,
