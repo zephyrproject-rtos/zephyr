@@ -1901,12 +1901,13 @@ static int _api_xip_config(const struct device *dev,
 		ctrl.write |= FIELD_PREP(XIP_WRITE_CTRL_WAIT_CYCLES_MASK,
 					 params->tx_dummy);
 
-		/* Make sure the baud rate and serial clock phase/polarity
-		 * registers are configured properly. They may not be if
-		 * non-XIP transfers have not been performed yet.
+		/* Make sure the baud rate, serial clock phase/polarity and RX
+		 * sample delay registers are configured properly. They may not
+		 * be if non-XIP transfers have not been performed yet.
 		 */
 		write_ctrlr0(dev, dev_data->ctrlr0);
 		write_baudr(dev, dev_data->baudr);
+		write_rx_sample_dly(dev, dev_data->rx_sample_dly);
 
 		write_xip_incr_inst(dev, params->read_cmd);
 		write_xip_wrap_inst(dev, params->read_cmd);
