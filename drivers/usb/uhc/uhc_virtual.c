@@ -224,14 +224,14 @@ static void vrt_assemble_frame(const struct device *dev)
 			continue;
 		}
 
-		if (tmp->interval) {
+		if (tmp->bInterval) {
 			if (tmp->start_frame != priv->frame_number) {
 				continue;
 			}
 
-			tmp->start_frame = priv->frame_number + tmp->interval;
+			tmp->start_frame = priv->frame_number + tmp->bInterval;
 			LOG_DBG("Interrupt transfer s.f. %u f.n. %u interval %u",
-				tmp->start_frame, priv->frame_number, tmp->interval);
+				tmp->start_frame, priv->frame_number, tmp->bInterval);
 		}
 
 		bm |= BIT(idx);
@@ -544,10 +544,10 @@ static int uhc_vrt_enqueue(const struct device *dev,
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	if (xfer->interval) {
-		xfer->start_frame = priv->frame_number + xfer->interval;
+	if (xfer->bInterval) {
+		xfer->start_frame = priv->frame_number + xfer->bInterval;
 		LOG_DBG("New interrupt transfer s.f. %u f.n. %u interval %u",
-			xfer->start_frame, priv->frame_number, xfer->interval);
+			xfer->start_frame, priv->frame_number, xfer->bInterval);
 	}
 
 	uhc_xfer_append(dev, xfer);

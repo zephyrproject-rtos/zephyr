@@ -1543,7 +1543,7 @@ static void ch_schedule_interrupt(const struct device *dev,
 		 */
 
 		/* TODO: Consider the High-speed microframes as well, only Full-speed for now */
-		ch->data->scheduled_frame = (ch->data->scheduled_frame + xfer->interval) &
+		ch->data->scheduled_frame = (ch->data->scheduled_frame + xfer->bInterval) &
 					     PERIODIC_FRAME_MASK;
 		ch->data->periodic_scheduled = true;
 	}
@@ -1918,7 +1918,7 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 	int ret;
 
 	LOG_DBG("addr=%u, ep=%02Xh, mps=%d, int=%d, start_frame=%d, stage=%d, no_status=%d",
-		xfer->udev->addr, xfer->ep, xfer->mps, xfer->interval,
+		xfer->udev->addr, xfer->ep, xfer->mps, xfer->bInterval,
 		xfer->start_frame, xfer->stage, xfer->no_status);
 
 	switch (xfer->type) {

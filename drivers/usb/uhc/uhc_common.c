@@ -141,6 +141,40 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 	net_buf_unref(buf);
 }
 
+static uint32_t uhc_xfer_bInterval_to_microframe(const struct usb_device *const udev,
+					       uint16_t bInterval, uint8_t ep_type)
+{
+	if (bInterval == 0) {
+		return 0;
+	}
+
+	switch (udev->speed) {
+	case USB_SPEED_SPEED_SS:
+	case USB_SPEED_SPEED_HS:
+		bInterval = CLAMP(bInterval, 1, 16);
+		return 1U << (bInterval - 1);
+	case USB_SPEED_SPEED_FS:
+		/*
+		 * ISO FS uses 2^(bInterval - 1) * 1ms
+		 * unlike ISO HS which uses 2^(bInterval - 1) * 125microseconds
+		 * INT FS does it the same as INT LS
+		 * See USB 2.0 Specification 5.6.4 and 5.7.4
+		 */
+		if (ep_type == USB_EP_TYPE_ISO) {
+			bInterval = CLAMP(bInterval, 1, 16);
+			return (1U << (bInterval - 1)) * 8;
+		}
+		bInterval = CLAMP(bInterval, 1, 255);
+		return bInterval * 8;
+	case USB_SPEED_SPEED_LS:
+	case USB_SPEED_UNKNOWN:
+		bInterval = CLAMP(bInterval, 10, 255);
+		return bInterval * 8;
+	}
+
+	return 0;
+}
+
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
@@ -151,7 +185,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_transfer *xfer = NULL;
 	uint16_t mps;
-	uint16_t interval;
+	uint16_t bInterval;
 	uint8_t type;
 
 	api->lock(dev);
@@ -161,7 +195,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	}
 
 	if (ep_idx == 0) {
-		interval = 0;
+		bInterval = 0;
 		type = USB_EP_TYPE_CONTROL;
 		mps = udev->dev_desc.bMaxPacketSize0;
 	} else {
@@ -179,7 +213,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		}
 
 		mps = ep_desc->wMaxPacketSize;
-		interval = ep_desc->bInterval;
+		bInterval = ep_desc->bInterval;
 		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
 	}
 
@@ -194,7 +228,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	sys_ref_init(&xfer->ref);
 	xfer->ep = ep;
 	xfer->mps = mps;
-	xfer->interval = interval;
+	xfer->interval = uhc_xfer_bInterval_to_microframe(udev, bInterval, type);
+	xfer->bInterval = bInterval;
 	xfer->type = type;
 	xfer->udev = udev;
 	xfer->cb = cb;
@@ -275,6 +310,11 @@ int uhc_xfer_buf_add(const struct device *dev,
 	api->unlock(dev);
 
 	return ret;
+}
+
+void uhc_xfer_set_interval(struct uhc_transfer *const xfer, uint16_t bInterval) {
+	xfer->bInterval = bInterval;
+	xfer->interval = uhc_xfer_bInterval_to_microframe(xfer->udev, bInterval, xfer->type);
 }
 
 int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
