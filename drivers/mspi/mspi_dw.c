@@ -1017,6 +1017,8 @@ static int _api_dev_config(const struct device *dev,
 		dev_data->max_clocks_per_ce = 0;
 	}
 
+	vendor_specific_dev_config(dev, param_mask, cfg);
+
 	return 0;
 }
 
