@@ -1416,6 +1416,8 @@
 		sha256: crypto@f03b00 {
 			compatible = "ite,it51xxx-sha";
 			reg = <0x00f03b00 0x6>;
+			interrupts = <IT51XXX_IRQ_CRYPTO IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
 			status = "disabled";
 		};
 
