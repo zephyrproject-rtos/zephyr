@@ -1,0 +1,27 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_CDNS
+	bool "Cadence SDHC driver"
+	default y
+	depends on DT_HAS_CDNS_SDHC_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select CACHE_MANAGEMENT if DCACHE
+	select EVENTS
+	help
+	  Enable SD/EMMC host controller driver
+
+if SDHC_CDNS
+
+config SDHC_CDNS_DESC_SIZE
+	int "Max descriptor SIZE"
+	default 32
+	help
+	  Set max number of descriptors supported
+
+# Cadence SDHC DMA buffers require cache-line alignment
+config SDHC_BUFFER_ALIGNMENT
+	default DCACHE_LINE_SIZE if DCACHE
+	default 32
+
+endif
