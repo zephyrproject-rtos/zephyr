@@ -683,6 +683,45 @@ ZTEST(dns_resolve, test_dns_query_ipv4_cancel)
 	verify_cancelled();
 }
 
+ZTEST(dns_resolve, test_dns_close_cancels_pending_query)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int expected_status = DNS_EAI_CANCELED;
+	int ret;
+
+	k_sem_reset(&wait_data);
+	timeout_query = true;
+
+	ret = dns_get_addr_info(NAME4, DNS_QUERY_TYPE_A, NULL, dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status), DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create pending IPv4 query");
+
+	k_yield();
+	zassert_not_equal(k_work_delayable_busy_get(&ctx->queries[0].timer), 0,
+			  "DNS query timer was not armed");
+
+	ret = dns_resolve_close(ctx);
+	zassert_equal(ret, 0, "Cannot close DNS resolver context");
+
+	ret = k_sem_take(&wait_data, K_NO_WAIT);
+	zassert_equal(ret, 0, "Close did not cancel the pending DNS query");
+
+	verify_cancelled();
+	timeout_query = false;
+
+	ret = dns_resolve_init_default(ctx);
+	zassert_equal(ret, 0, "Cannot reinitialize DNS resolver context");
+	zassert_equal(ctx->state, DNS_RESOLVE_CONTEXT_ACTIVE,
+		      "DNS resolver context is not active after reinitialization");
+
+	/* The canceled query's timer must not fire after the context is reused. */
+	k_sem_reset(&wait_data);
+	k_msleep(DNS_TIMEOUT + THREAD_SLEEP);
+	zassert_equal(k_sem_take(&wait_data, K_NO_WAIT), -EBUSY,
+		      "Stale DNS query callback after context reinitialization");
+	verify_cancelled();
+}
+
 ZTEST(dns_resolve, test_dns_query_ipv6_cancel)
 {
 	int expected_status = DNS_EAI_CANCELED;
