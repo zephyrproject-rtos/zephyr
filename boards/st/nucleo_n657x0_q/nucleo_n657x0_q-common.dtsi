@@ -17,6 +17,8 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
 		spi-flash0 = &mx25um51245g;
 	};
 
