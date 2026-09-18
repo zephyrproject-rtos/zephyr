@@ -3,6 +3,7 @@
 zephyr_sources(
   soc.c
   ../common/loader.c
+  ../common/soc_ptr_check.c
   )
 
 zephyr_include_directories(.)

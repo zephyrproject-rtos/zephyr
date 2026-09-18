@@ -16,6 +16,8 @@ else()
 
 endif()
 
+zephyr_sources(../common/soc_ptr_check.c)
+
 zephyr_include_directories(.)
 
 zephyr_sources_ifndef(CONFIG_BOOTLOADER_MCUBOOT hw_init.c)
