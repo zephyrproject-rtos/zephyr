@@ -589,6 +589,7 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 
 	flexio_camera: flexio-camera {
 		compatible = "nxp,flexio-camera";
+		status = "disabled";
 		pinctrl-0 = <&pinmux_flexio_camera>;
 		pinctrl-names = "default";
 		data-pin-start = <6>;  /* D0=FLEXIO_IO6 .. D7=FLEXIO_IO13 */
@@ -602,7 +603,7 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 
 		port {
 			dvp_20pin_ep_in: endpoint {
-				remote-endpoint-label = "ov7670_ep_out";
+				remote-endpoint-label = "";
 			};
 		};
 	};
