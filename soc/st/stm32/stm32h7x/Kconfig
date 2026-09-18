@@ -19,7 +19,6 @@ config SOC_SERIES_STM32H7X
 	# Software options
 	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	select SOC_EARLY_INIT_HOOK
-	select SOC_RESET_HOOK if CPU_CORTEX_M7
 	# STM32-specific options
 	select HAS_STM32CUBE
 	select USE_STM32_HAL_CORTEX
