@@ -13,13 +13,23 @@
 		reg = <0x24000000 0x100000>;
 	};
 
-	rram {
+	rram_controller: rram_controller@42200000 {
+		compatible = "infineon,rram-controller";
+		reg = <0x42200000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
+		status = "disabled";
 
-		rram: rram@22000000 {
+		rram0: rram0@22000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x22000000 DT_SIZE_K(512)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x22000000 DT_SIZE_K(512)>;
+			write-block-size = <16>;
+			erase-block-size = <16>;
+			status = "disabled";
 		};
 	};
 
