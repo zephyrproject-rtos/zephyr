@@ -447,6 +447,8 @@ int supplicant_config_params(const struct device *dev, struct net_if *iface,
 			     struct wifi_config_params *params);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+#define WIFI_P2P_DEVICE_NAME CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME
+
 /**
  * @brief P2P operation
  *
