@@ -1,8 +1,20 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+config LITEX_SOC_CTRL
+	bool "LiteX SoC controller"
+	default y
+	depends on DT_HAS_LITEX_SOC_CONTROLLER_ENABLED
+	depends on REBOOT
+	select USE_LITEX_CSR
+	help
+	  The LiteX SoC controller CSR, used to reset the SoC. This lives outside
+	  the LiteX SoC family so that it is also available when the LiteX
+	  peripherals are attached to a hardcore such as the Gowin AE350.
+
 config USE_LITEX_CSR
 	bool
+	default y if SOC_FAMILY_LITEX
 	help
 	  Indicate accessing LiteX CSR bus.
 
