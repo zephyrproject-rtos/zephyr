@@ -2170,6 +2170,13 @@ Other notable changes
     cycle-counter read plus an absolute-compare arm. See the
     :ref:`migration guide <migration_4.5>` for how to use it (:github:`115844`).
 
+* Networking
+
+  * The DHCPv4 client now takes the leased address, the lease's DNS servers and
+    the gateway it installed off the interface on every path that gives a lease
+    up, and waits about ten seconds before restarting after a refused request
+    or a declined address.
+
 * Wi-Fi
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
