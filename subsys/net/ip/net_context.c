@@ -2397,6 +2397,39 @@ static int context_setup_udp_options(struct net_context *context,
 }
 #endif /* CONFIG_NET_UDP_OPTIONS */
 
+static bool get_msg_src_addr_hint(const struct net_msghdr *msg, net_sa_family_t family,
+				  struct net_in6_addr *src6, struct net_in_addr *src4)
+{
+	struct net_cmsghdr *cmsg;
+
+	if (msg == NULL || msg->msg_control == NULL) {
+		return false;
+	}
+
+	for (cmsg = NET_CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = NET_CMSG_NXTHDR(msg, cmsg)) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6 &&
+		    cmsg->cmsg_level == NET_IPPROTO_IPV6 && cmsg->cmsg_type == ZSOCK_IPV6_PKTINFO &&
+		    cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_in6_pktinfo))) {
+			struct net_in6_pktinfo *info =
+				(struct net_in6_pktinfo *)NET_CMSG_DATA(cmsg);
+
+			*src6 = info->ipi6_addr;
+			return true;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET &&
+		    cmsg->cmsg_level == NET_IPPROTO_IP && cmsg->cmsg_type == ZSOCK_IP_PKTINFO &&
+		    cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_in_pktinfo))) {
+			struct net_in_pktinfo *info = (struct net_in_pktinfo *)NET_CMSG_DATA(cmsg);
+
+			*src4 = info->ipi_spec_dst;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int context_setup_udp_packet(struct net_context *context,
 				    net_sa_family_t family,
 				    struct net_pkt *pkt,
@@ -2409,20 +2442,37 @@ static int context_setup_udp_packet(struct net_context *context,
 {
 	int ret = -EINVAL;
 	uint16_t dst_port = 0U;
+	struct net_in6_addr src6;
+	struct net_in_addr src4;
+	bool have_src = get_msg_src_addr_hint(msg, family, &src6, &src4);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 		struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)dst_addr;
 
 		dst_port = addr6->sin6_port;
 
-		ret = context_create_ipv6_new(context, pkt, NULL,
+		/* Only honor the hint if the address is still owned by this
+		 * packet's interface; otherwise fall back to normal source
+		 * selection, e.g. if it was removed by a rebind in the meantime.
+		 */
+		if (have_src &&
+		    net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt), &src6) == NULL) {
+			have_src = false;
+		}
+
+		ret = context_create_ipv6_new(context, pkt, have_src ? &src6 : NULL,
 					      &addr6->sin6_addr, dont_fragment);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)dst_addr;
 
 		dst_port = addr4->sin_port;
 
-		ret = context_create_ipv4_new(context, pkt, NULL,
+		if (have_src &&
+		    net_if_ipv4_addr_lookup_by_iface(net_pkt_iface(pkt), &src4) == NULL) {
+			have_src = false;
+		}
+
+		ret = context_create_ipv4_new(context, pkt, have_src ? &src4 : NULL,
 					      &addr4->sin_addr, dont_fragment);
 	}
 
