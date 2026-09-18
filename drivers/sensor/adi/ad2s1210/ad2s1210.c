@@ -865,6 +865,10 @@ static int ad2s1210_init(const struct device *dev) /* cppcheck-suppress unusedFu
 
 /** Macro used to initialize one ad2s1210 driver instance */
 #define AD2S1210_INIT(i)                                                                           \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(i, resolution_gpios, AD2S1210_RES_PIN_MAX_VAL) ==         \
+			     AD2S1210_RES_PIN_MAX_VAL,                                             \
+		     "resolution-gpios must be exactly two lines, RES0 then RES1");                \
+                                                                                                   \
 	static struct ad2s1210_data ad2s1210_data_##i;                                             \
                                                                                                    \
 	static const struct ad2s1210_config ad2s1210_config_##i = {                                \
