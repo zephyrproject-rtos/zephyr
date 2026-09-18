@@ -364,11 +364,12 @@ void gpio_bflb_common_config_internal(const struct device *dev,
 
 	cfg = sys_read32(GPIO_BFLB_PIN_REG(base, pin, sect));
 
+	cfg &= ~(GLB_REG_GPIO_0_OE_MSK | GLB_REG_GPIO_0_IE_MSK);
+
 	if ((flags & GPIO_INPUT) != 0) {
 		cfg |= GLB_REG_GPIO_0_IE_MSK;
-		cfg &= GLB_REG_GPIO_0_OE_UMSK;
-	} else if ((flags & GPIO_OUTPUT) != 0) {
-		cfg &= GLB_REG_GPIO_0_IE_UMSK;
+	}
+	if ((flags & GPIO_OUTPUT) != 0) {
 		cfg |= GLB_REG_GPIO_0_OE_MSK;
 		tmp = sys_read32(GPIO_BFLB_PIN_SET_REG(base, GLB_GPIO_CFG136_OFFSET, sect));
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
@@ -379,8 +380,9 @@ void gpio_bflb_common_config_internal(const struct device *dev,
 			tmp &= ~(1U << pin);
 			sys_write32(tmp, GPIO_BFLB_PIN_SET_REG(base, GLB_GPIO_CFG136_OFFSET, sect));
 		}
-	} else {
-		/* Hi-Z */
+	}
+	/* Hi-Z */
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == 0) {
 		cfg &= ~(GLB_REG_GPIO_0_OE_MSK | GLB_REG_GPIO_0_IE_MSK);
 		cfg &= GLB_REG_GPIO_0_PD_UMSK;
 		cfg |= GLB_REG_GPIO_0_PU_MSK;
