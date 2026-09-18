@@ -12,7 +12,7 @@
 };
 
 &adc1 {
-	dmas = <&gpdma1 0 7 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_32BITS | STM32_DMA_PERIPH_32BITS)>;
+	dmas = <&gpdma1 0 7 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_32BITS)>;
 	dma-names = "gpdma";
 
 	#address-cells = <1>;
