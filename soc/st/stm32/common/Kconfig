@@ -98,7 +98,6 @@ config STM32_NEOCHROM_GPU2D
 	depends on DT_HAS_ST_NEOCHROM_GPU2D_ENABLED
 	select RESET
 	select USE_STM32_HAL_GPU2D
-	default y
 	help
 	  Enable support for STM32 NeoChrom GPU2D accelerator.
 	  This driver provides low-level access to the GPU2D hardware
