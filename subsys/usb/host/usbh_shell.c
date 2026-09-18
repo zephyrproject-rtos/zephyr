@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,9 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usbh.h>
+#if defined(CONFIG_USBH_DFU_CLASS)
+#include <zephyr/usb/class/usbh_dfu.h>
+#endif
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
@@ -867,6 +871,363 @@ static int cmd_device_info(const struct shell *sh,
 	return 0;
 }
 
+#if defined(CONFIG_USBH_DFU_CLASS)
+
+#ifndef MAX_PATH_LEN
+#define MAX_PATH_LEN 64
+#endif
+
+#include <zephyr/sys/crc.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
+#include <zephyr/storage/flash_map.h>
+
+#if DT_NODE_EXISTS(PARTITION_NODE)
+FS_FSTAB_DECLARE_ENTRY(PARTITION_NODE);
+#else  /* PARTITION_NODE */
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(dfufw_storage);
+static struct fs_mount_t lfs_storage_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &dfufw_storage,
+	.storage_dev = (void *)PARTITION_ID(dfufw_partition),
+	.mnt_point = "/lfs",
+	.flags = FS_MOUNT_FLAG_READ_ONLY,
+};
+#endif /* PARTITION_NODE */
+
+struct fs_mount_t *mountpoint =
+#if DT_NODE_EXISTS(PARTITION_NODE)
+	&FS_FSTAB_ENTRY(PARTITION_NODE)
+#else
+	&lfs_storage_mnt
+#endif
+	;
+
+static int littlefs_mount(struct fs_mount_t *mp, const struct shell *sh)
+{
+	int rc;
+
+	/* Do not mount if auto-mount has been enabled */
+#if (!DT_NODE_EXISTS(PARTITION_NODE) ||                                                            \
+	(!(FSTAB_ENTRY_DT_MOUNT_FLAGS(PARTITION_NODE) & FS_MOUNT_FLAG_AUTOMOUNT)))
+	rc = fs_mount(mp);
+	if (rc < 0) {
+		shell_error(sh, "FAIL: mount id %" PRIuPTR " at %s: %d\n",
+			    (uintptr_t)mp->storage_dev, mp->mnt_point, rc);
+		return rc;
+	}
+	shell_print(sh, "%s mount: %d\n", mp->mnt_point, rc);
+#else
+	shell_print(sh, "%s automounted\n", mp->mnt_point);
+#endif
+
+	return 0;
+}
+
+int cmd_dfu_upload_cb(void *upload_arg, char *data, const size_t len)
+{
+	const struct shell *sh = (const struct shell *)upload_arg;
+
+	if (len) {
+		shell_print(sh, "Upload chunk:");
+		shell_hexdump(sh, data, len);
+	} else {
+		shell_print(sh, "Upload is done");
+	}
+
+	return 0;
+}
+
+static int cmd_dfu_upload(const struct shell *sh, size_t argc, char **argv)
+{
+	struct usbh_dfu_settings dfu_settings = {0};
+	static const struct device *dev;
+	uint8_t alternate_idx;
+	int err;
+
+	dev = DEVICE_DT_GET(DT_NODELABEL(any_dfu_device));
+
+	alternate_idx = strtol(argv[1], NULL, 10);
+	dfu_settings.alternate_idx = alternate_idx;
+
+	err = usbh_dfu_settings(dev, &dfu_settings);
+	if (err) {
+		shell_error(sh, "DFU settings error %d", err);
+		return err;
+	}
+
+	err = usbh_dfu_upload(dev, cmd_dfu_upload_cb, (void *)sh);
+	if (err) {
+		shell_error(sh, "DFU UPLOAD error %d", err);
+		return err;
+	}
+
+	return err;
+}
+
+struct shell_dfu_dnload_ctx {
+	const struct shell *sh;
+	size_t block_nr;
+	size_t cursor;
+	size_t track_block;
+	size_t track_len;
+	struct fs_file_t *file;
+	size_t fw_len;
+};
+
+struct dfu_suffix {
+	uint16_t bcdDevice;
+	uint16_t idProduct;
+	uint16_t idVendor;
+	uint16_t bcdDFU;
+	uint8_t ucDfuSignature[3];
+	uint8_t bLength;
+	uint32_t dwCRC;
+} __packed;
+
+int cmd_dfu_dnload_cb(void *upload_arg, char *data, const size_t data_len)
+{
+	struct shell_dfu_dnload_ctx *sdd_ctx = (struct shell_dfu_dnload_ctx *)upload_arg;
+	int read_len = data_len;
+
+	/* No more FW data to send */
+	if (sdd_ctx->track_len >= sdd_ctx->fw_len) {
+		return 0;
+	}
+
+	read_len = MIN(read_len, sdd_ctx->fw_len - sdd_ctx->track_len);
+
+	/* Pass USB data to fs_read function */
+	read_len = fs_read(sdd_ctx->file, data, read_len);
+	if (unlikely(read_len < 0)) {
+		shell_print(sdd_ctx->sh, "Error while reading file, block: %d, total bytes: %d",
+			    sdd_ctx->track_block, sdd_ctx->track_len);
+	} else if (read_len == 0) {
+		shell_print(sdd_ctx->sh, "File read completed, blocks: %d, total bytes: %d",
+			    sdd_ctx->track_block, sdd_ctx->track_len);
+	} else {
+		sdd_ctx->track_len += read_len;
+		shell_print(sdd_ctx->sh, "Downloading block: %d, total bytes: %d",
+			    sdd_ctx->track_block, sdd_ctx->track_len);
+		shell_hexdump(sdd_ctx->sh, data, read_len);
+		sdd_ctx->track_block++;
+	}
+
+	/* Return number of copied data */
+	return read_len;
+}
+
+static int cmd_dfu_file_len(struct fs_file_t *file)
+{
+	int err = fs_seek(file, 0, FS_SEEK_END);
+
+	if (err < 0) {
+		return err;
+	}
+
+	return fs_tell(file);
+}
+
+static bool cmd_dfu_has_valid_suffix(struct dfu_suffix *suffix, struct fs_file_t *file,
+				     size_t file_len, const struct shell *sh,
+				     const struct device *dev)
+{
+	uint32_t crc_hash = 0;
+	uint8_t crc_buf[16];
+	int err, read_len, remaining_bytes;
+
+	/* Not even a suffix */
+	if (file_len < 16) {
+		shell_error(sh, "File is too small to contain DFU suffix");
+		return false;
+	}
+
+	/* Seek to suffix */
+	err = fs_seek(file, file_len - sizeof(struct dfu_suffix), FS_SEEK_SET);
+	if (err < 0) {
+		shell_error(sh, "Cannot seek to DFU suffix");
+		return false;
+	}
+
+	/* Load suffix */
+	err = fs_read(file, suffix, (sizeof(struct dfu_suffix)));
+	if (err < 0) {
+		shell_error(sh, "Cannot load DFU suffix");
+		return false;
+	}
+
+	/* Basic suffix check */
+	if (suffix->ucDfuSignature[0] != 'U' || suffix->ucDfuSignature[1] != 'F' ||
+	    suffix->ucDfuSignature[2] != 'D' ||
+	    (suffix->bLength < 16 || suffix->bLength > file_len)) {
+		shell_error(sh, "DFU signature does not match");
+		return false;
+	}
+
+	err = usbh_dfu_match_vid_pid(dev, suffix->idVendor, suffix->idProduct);
+	if (err < 0) {
+		shell_error(sh, "match_vid_pid call failed");
+		return false;
+	} else if (err == 0) {
+		shell_error(sh, "idVendor %x or idProduct %x does not match", suffix->idVendor,
+			    suffix->idProduct);
+		return false;
+	}
+
+	/* Calculate CRC */
+	err = fs_seek(file, 0, FS_SEEK_SET);
+	remaining_bytes = file_len - 4;
+	while (remaining_bytes > 0) {
+		read_len = MIN(sizeof(crc_buf), remaining_bytes);
+		err = fs_read(file, crc_buf, read_len);
+		if (err < 0) {
+			shell_error(sh, "Cannot read the FW file");
+			return false;
+		}
+		crc_hash = crc32_ieee_update(crc_hash, crc_buf, read_len);
+		remaining_bytes -= read_len;
+	}
+	crc_hash ^= 0xFFFFFFFF;
+
+	if (crc_hash != suffix->dwCRC) {
+		shell_error(sh, "DFU Suffix CRC does not match");
+		return false;
+	}
+
+	return true;
+}
+
+static bool cmd_dfu_filename_has_dfu_extension(char *filename)
+{
+	size_t len = strlen(filename);
+
+	if (len < 4) {
+		return false;
+	}
+
+	return ((filename[len - 4] == '.') &&
+		(filename[len - 3] == 'd' || filename[len - 3] == 'D') &&
+		(filename[len - 2] == 'f' || filename[len - 2] == 'F') &&
+		(filename[len - 1] == 'u' || filename[len - 1] == 'U'));
+}
+
+static int cmd_dfu_dnload(const struct shell *sh, size_t argc, char **argv)
+{
+	char fw_filename[MAX_PATH_LEN];
+	struct shell_dfu_dnload_ctx sdd = {0};
+	struct usbh_dfu_settings dfu_settings = {0};
+	static const struct device *dev;
+	uint8_t alternate_idx;
+	struct fs_statvfs sbuf;
+	struct fs_file_t file;
+	struct dfu_suffix suffix = {0};
+	int err, file_len;
+
+	dev = DEVICE_DT_GET(DT_NODELABEL(any_dfu_device));
+
+	err = littlefs_mount(mountpoint, sh);
+	if (err < 0) {
+		shell_error(sh, "Cannot find mountpoint");
+		return err;
+	}
+
+	snprintf(fw_filename, sizeof(fw_filename), "%s/%s", mountpoint->mnt_point, argv[2]);
+
+	err = fs_statvfs(mountpoint->mnt_point, &sbuf);
+	if (err != 0) {
+		shell_error(sh, "Cannot not access filesystem");
+		goto err_umount;
+	}
+
+	fs_file_t_init(&file);
+	err = fs_open(&file, fw_filename, FS_O_READ);
+	if (err != 0) {
+		shell_error(sh, "Cannot not find file: %s", fw_filename);
+		goto err_umount;
+	}
+
+	file_len = cmd_dfu_file_len(&file);
+	if (file_len < 0) {
+		shell_error(sh, "Invalid file size %s : %d", fw_filename, file_len);
+		goto err_umount;
+	}
+
+	/* Validate dfu suffix only for files with .dfu extension */
+	if (cmd_dfu_filename_has_dfu_extension(fw_filename)) {
+		if (cmd_dfu_has_valid_suffix(&suffix, &file, file_len, sh, dev)) {
+			shell_print(sh, "Filename %s has valid DFU suffix", fw_filename);
+			file_len = (file_len - suffix.bLength);
+		} else {
+			shell_print(sh, "Filename %s has invalid DFU suffix, aborting",
+				    fw_filename);
+			goto err_umount;
+		}
+	} else {
+		shell_print(sh, "Ordinary file %s, uploading as it is", fw_filename);
+	}
+
+	err = fs_seek(&file, 0, FS_SEEK_SET);
+
+	alternate_idx = strtol(argv[1], NULL, 10);
+	dfu_settings.alternate_idx = alternate_idx;
+	/* The Zephyr DFU device incorrectly reports the 'dfuMANIFEST-SYNC' state
+	 * in GetStatus after the ZeroPacket download. According to the specification,
+	 * it should report the 'dfuMANIFEST' state.
+	 */
+	dfu_settings.quirks = USBH_DFU_QUIRK_IGNORE_DNLOAD_COMPLETE_CHECK;
+
+	/* Prepare download callback context */
+	sdd.sh = sh;
+	sdd.track_block = 0;
+	sdd.track_len = 0;
+	sdd.file = &file;
+	sdd.fw_len = file_len;
+
+	err = usbh_dfu_settings(dev, &dfu_settings);
+	if (err) {
+		shell_error(sh, "DFU settings error %d", err);
+		goto err_close_file;
+	}
+
+	err = usbh_dfu_dnload(dev, cmd_dfu_dnload_cb, (void *)&sdd);
+	if (err) {
+		shell_error(sh, "DFU DNLOAD error %d", err);
+		goto err_close_file;
+	}
+
+err_close_file:
+	(void)fs_close(&file);
+
+err_umount:
+	(void)fs_unmount(mountpoint);
+
+	return err;
+}
+
+static int cmd_dfurt_enter_dfu(const struct shell *sh, size_t argc, char **argv)
+{
+	struct usbh_dfu_settings dfu_settings = {0};
+	static const struct device *dev;
+	int err;
+
+	dev = DEVICE_DT_GET(DT_NODELABEL(any_dfurt_device));
+
+	err = usbh_dfurt_settings(dev, &dfu_settings);
+	if (err) {
+		shell_error(sh, "DFURT settings error %d", err);
+		return err;
+	}
+
+	err = usbh_dfurt_enter_dfu(dev);
+	if (err) {
+		shell_error(sh, "DFURT enter dfu error %d", err);
+		return err;
+	}
+
+	return err;
+}
+#endif /* defined(USBH_DFU_CLASS) */
+
 static int cmd_bus_suspend(const struct shell *sh,
 			   size_t argc, char **argv)
 {
@@ -1182,6 +1543,22 @@ SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
 		cmd_device_interface, 4, 0),
 	SHELL_CMD_ARG(descriptor, &desc_cmds, "Descriptor commands",
 		      NULL, 2, 0),
+#if defined(CONFIG_USBH_DFU_CLASS)
+	SHELL_CMD_ARG(dfu_upload, NULL,
+		      SHELL_HELP("Upload firmware from Device to Host",
+				 "<alt>\n"
+				 "alt: Alternate setting number, usually 0 [dec]"),
+		      cmd_dfu_upload, 2, 0),
+	SHELL_CMD_ARG(dfu_dnload, NULL,
+		      SHELL_HELP("Download firmware from Host to Device",
+				 "<alt> <text>\n"
+				 "alt: Alternate setting number, usually 0 [dec]\n"
+				 "filename: Filename of FW file [str]"),
+		      cmd_dfu_dnload, 3, 0),
+	SHELL_CMD_ARG(dfurt_enter_dfu, NULL,
+		      SHELL_HELP("Switch DFU-realtime device to DFU mode", ""), cmd_dfurt_enter_dfu,
+		      1, 0),
+#endif /* defined(CONFIG_USBH_DFU_CLASS) */
 	SHELL_CMD_ARG(feature-set, &feature_set_cmds, "Set Feature commands",
 		      NULL, 2, 0),
 	SHELL_CMD_ARG(feature-clear, &feature_clear_cmds, "Clear Feature commands",
