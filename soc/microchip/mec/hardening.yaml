@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Microchip MEC SoCs.
+
+rules:
+  SOC_MEC1501_DEBUG_DISABLED:
+    value: y
+    rationale: |
+      Disables the SoC's debug interface, preventing an attacker with physical access from attaching
+      a debugger to inspect or modify the running firmware.
+    references: [CWE-1244]

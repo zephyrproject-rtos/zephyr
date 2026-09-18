@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for eSPI drivers.
+
+rules:
+  ESPI_PERIPHERAL_DEBUG_PORT_80:
+    value: n
+    rationale: |
+      Exposes the host's POST-code debug port through the eSPI peripheral, giving an observer a side
+      channel into host boot progress.
+    references: [CWE-200]
