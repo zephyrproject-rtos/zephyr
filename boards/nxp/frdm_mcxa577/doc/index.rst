@@ -92,6 +92,13 @@ The board has a 10/100 Mbit external Ethernet PHY (MII interface). MII avoids
 ERR053383, under which ENET can intermittently fail to receive in RMII mode, so
 the Rev B pilot board is reworked for MII.
 
+The MII signals reach the external PHY only after the following solder-jumper
+rework (this rework is not applicable to 10BASE-T1S mode):
+
+- Short 2-3 (and disconnect 1-2) of SJ13 (TXD2), SJ14 (TXD3), SJ16 (RXD2),
+  SJ17 (RXD3), SJ18 (COL), SJ19 (CRS).
+- Disconnect 1-2 and 2-3 of SJ15 (RX_CLK) and SJ44 (RXER).
+
 The ENET MAC, MDIO bus and PHY are **disabled by default** so that ordinary
 samples keep the on-board MCU-Link VCOM console on LPUART1. This is necessary
 because MII needs P1_8/P1_9 (ENET0_TXD2/TXD3, the only balls that carry those
