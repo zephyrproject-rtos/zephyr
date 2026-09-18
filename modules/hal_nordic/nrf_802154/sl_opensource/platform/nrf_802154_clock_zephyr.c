@@ -47,16 +47,13 @@ static void hfclk_on_callback(struct onoff_manager *mgr,
 	nrf_802154_clock_hfclk_ready();
 }
 
-#if (defined(CONFIG_CLOCK_CONTROL_NRF) || defined(CONFIG_CLOCK_CONTROL_NRF_COMMON)) &&             \
-	!(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92))
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
+
 void nrf_802154_clock_hfclk_start(void)
 {
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	__ASSERT_NO_MSG(mgr != NULL);
-#endif
 
 	sys_notify_init_callback(&hfclk_cli.notify, hfclk_on_callback);
 
@@ -68,35 +65,20 @@ void nrf_802154_clock_hfclk_start(void)
 		nrf_sys_event_request_global_constlat();
 	}
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	int ret = onoff_request(mgr, &hfclk_cli);
-#else
-	const struct device *clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
-							     (nordic_nrf_clock_hfclk),
-							     (nordic_nrf_clock_xo)));
 
-	int ret = nrf_clock_control_request(clk_dev, NULL, &hfclk_cli);
-#endif
 	__ASSERT_NO_MSG(ret >= 0);
 	(void)ret;
 }
 
 void nrf_802154_clock_hfclk_stop(void)
 {
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	__ASSERT_NO_MSG(mgr != NULL);
 
 	int ret = onoff_cancel_or_release(mgr, &hfclk_cli);
-#else
-	const struct device *clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
-							     (nordic_nrf_clock_hfclk),
-							     (nordic_nrf_clock_xo)));
 
-	int ret = nrf_clock_control_cancel_or_release(clk_dev, NULL, &hfclk_cli);
-#endif
 	__ASSERT_NO_MSG(ret >= 0);
 	(void)ret;
 
@@ -107,13 +89,31 @@ void nrf_802154_clock_hfclk_stop(void)
 	hfclk_is_running = false;
 }
 
-#elif DT_NODE_HAS_STATUS(DT_NODELABEL(hfxo), okay) && \
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(hfxo), nordic_nrf54h_hfxo)
+#else /* CONFIG_CLOCK_CONTROL_NRF */
+
+#ifndef CONFIG_HAS_NORDIC_MULTI_OPTION_CLOCKS
+#define CLK_DEV                                                                                    \
+	DEVICE_DT_GET_ONE(                                                                         \
+		COND_CODE_1(NRF_CLOCK_HAS_HFCLK, (nordic_nrf_clock_hfclk), (nordic_nrf_clock_xo)))
+#else
+#define CLK_DEV DEVICE_DT_GET(DT_NODELABEL(hfxo))
+#endif
 
 void nrf_802154_clock_hfclk_start(void)
 {
 	sys_notify_init_callback(&hfclk_cli.notify, hfclk_on_callback);
-	int ret = nrf_clock_control_request(DEVICE_DT_GET(DT_NODELABEL(hfxo)), NULL, &hfclk_cli);
+
+#ifndef CONFIG_HAS_NORDIC_MULTI_OPTION_CLOCKS
+	/*
+	 * todo: replace constlat request with PM policy API when
+	 * controlling the event latency becomes possible.
+	 */
+	if (IS_ENABLED(CONFIG_NRF_802154_CONSTLAT_CONTROL)) {
+		nrf_sys_event_request_global_constlat();
+	}
+#endif
+
+	int ret = nrf_clock_control_request(CLK_DEV, NULL, &hfclk_cli);
 
 	__ASSERT_NO_MSG(ret >= 0);
 	(void)ret;
@@ -121,11 +121,17 @@ void nrf_802154_clock_hfclk_start(void)
 
 void nrf_802154_clock_hfclk_stop(void)
 {
-	int ret = nrf_clock_control_cancel_or_release(DEVICE_DT_GET(DT_NODELABEL(hfxo)),
-						      NULL, &hfclk_cli);
+	int ret = nrf_clock_control_cancel_or_release(CLK_DEV, NULL, &hfclk_cli);
 
 	__ASSERT_NO_MSG(ret >= 0);
 	(void)ret;
-}
 
+#ifndef CONFIG_HAS_NORDIC_MULTI_OPTION_CLOCKS
+	if (IS_ENABLED(CONFIG_NRF_802154_CONSTLAT_CONTROL)) {
+		nrf_sys_event_release_global_constlat();
+	}
 #endif
+
+	hfclk_is_running = false;
+}
+#endif /* CONFIG_CLOCK_CONTROL_NRF */
