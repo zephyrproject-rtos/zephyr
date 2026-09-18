@@ -136,6 +136,18 @@ static void ll_pwr_enable_wake_up_line(uint32_t ll_wkup_line)
 #endif
 }
 
+#define WKUP_PIN_DESCRIPTOR_INIT(gpio_ctlr, _pin_num, flags, wkup_line_idx)	\
+	{									\
+		.port_idx = GET_GPIO_PORT_BY_NODE(gpio_ctlr),			\
+		.pin_num = _pin_num,						\
+		.line_idx = wkup_line_idx,					\
+		.src_select = flags & STM32_PWR_WKUP_LINE_SRC_MASK,		\
+	}
+
+static const struct wkup_pin_desc wkup_pins[] = {
+FOR_EACH_CHILD_NODE_GPIO(WKUP_CTLR, wkup_gpios, WKUP_PIN_DESCRIPTOR_INIT, (,))
+};
+
 /**
  * @brief Searches for the descriptor of a given wake-up pin.
  *
@@ -145,18 +157,6 @@ static void ll_pwr_enable_wake_up_line(uint32_t ll_wkup_line)
  */
 static const struct wkup_pin_desc *search_pin_descriptor(uint32_t port_idx, gpio_pin_t pin_num)
 {
-#define WKUP_PIN_DESCRIPTOR_INIT(gpio_ctlr, _pin_num, flags, wkup_line_idx)	\
-	{									\
-		.port_idx = GET_GPIO_PORT_BY_NODE(gpio_ctlr),			\
-		.pin_num = _pin_num,						\
-		.line_idx = wkup_line_idx,					\
-		.src_select = flags & STM32_PWR_WKUP_LINE_SRC_MASK,		\
-	}
-
-	static const struct wkup_pin_desc wkup_pins[] = {
-	FOR_EACH_CHILD_NODE_GPIO(WKUP_CTLR, wkup_gpios, WKUP_PIN_DESCRIPTOR_INIT, (,))
-	};
-
 	for (int i = 0; i < ARRAY_SIZE(wkup_pins); i++) {
 		const struct wkup_pin_desc *desc = &wkup_pins[i];
 
