@@ -2806,6 +2806,28 @@ Modules
 lvgl
 ====
 
+* LVGL was updated from v9.5 to v9.6. See the `LVGL migration guide
+  <https://lvgl.io/docs/open/changelog/migration-v9-6>`_ for the changes of LVGL itself.
+
+* The LVGL color format is now selected by the Zephyr owned ``LV_Z_COLOR_FORMAT`` Kconfig choice.
+  The ``LV_COLOR_DEPTH`` and ``LV_COLOR_FORMAT_DEFAULT`` choices of the LVGL module no longer have
+  an effect. Replace the options as follows, in ``.conf`` files as well as in ``Kconfig.defconfig``
+  files overriding the choice default (``choice LV_COLOR_DEPTH`` becomes
+  ``choice LV_Z_COLOR_FORMAT``):
+
+  * ``CONFIG_LV_COLOR_DEPTH_1`` -> :kconfig:option:`CONFIG_LV_Z_COLOR_FORMAT_I1`
+  * ``CONFIG_LV_COLOR_DEPTH_8`` -> :kconfig:option:`CONFIG_LV_Z_COLOR_FORMAT_L8`
+  * ``CONFIG_LV_COLOR_DEPTH_16`` -> :kconfig:option:`CONFIG_LV_Z_COLOR_FORMAT_RGB565`
+  * ``CONFIG_LV_COLOR_DEPTH_24`` -> :kconfig:option:`CONFIG_LV_Z_COLOR_FORMAT_RGB888`
+  * ``CONFIG_LV_COLOR_DEPTH_32`` -> :kconfig:option:`CONFIG_LV_Z_COLOR_FORMAT_XRGB8888`
+
+  The RGB565 (big-endian) and ARGB8888 formats are available as
+  :kconfig:option:`CONFIG_LV_Z_COLOR_FORMAT_RGB565_SWAPPED` and
+  :kconfig:option:`CONFIG_LV_Z_COLOR_FORMAT_ARGB8888`. The build fails if a non-default color
+  format is still selected in the LVGL module Kconfig and differs from the Zephyr option.
+
+* ``CONFIG_LV_USE_PXP`` was replaced by ``CONFIG_LV_USE_DRAW_PXP``.
+
 * The ``zephyr,lvgl-pointer-input`` devicetree binding marks the ``swap-xy``, ``invert-x``, and
   ``invert-y`` properties as **deprecated**. Users should instead add the corresponding
   touchscreen properties ``swapped-x-y``, ``inverted-x``, and ``inverted-y`` to the underlying
