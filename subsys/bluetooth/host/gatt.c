@@ -2566,11 +2566,15 @@ static struct bt_att_req *gatt_req_alloc(bt_att_func_t func, void *params,
 		return NULL;
 	}
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
 	req->att_op = op;
 	req->len = len;
 	req->encode = encode;
-#endif
+#else
+	ARG_UNUSED(encode);
+	ARG_UNUSED(op);
+	ARG_UNUSED(len);
+#endif /* CONFIG_BT_ATT_RETRY_ON_SEC_ERR */
 	req->func = func;
 	req->user_data = params;
 
