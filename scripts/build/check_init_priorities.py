@@ -32,7 +32,9 @@ from elftools.elf.sections import SymbolTableSection
 
 # This is needed to load edt.pickle files.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dts", "python-devicetree", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "pylib", "build_helpers"))
 from devicetree import edtlib  # noqa: F401
+from macho_parser import MachOFile  # noqa: E402
 
 # Prefix used for "struct device" reference initialized based on devicetree
 # entries with a known ordinal.
@@ -127,15 +129,24 @@ class ZephyrInitLevels:
 
     def __init__(self, file_path, elf_file):
         self.file_path = file_path
-        self._elf = ELFFile(elf_file)
+        self._macho = None
+        if MachOFile.is_macho(elf_file):
+            self._macho = MachOFile(elf_file)
+            self._elf = None
+            self._relocatable = False
+        else:
+            self._elf = ELFFile(elf_file)
+            self._relocatable = self._elf.header.e_type == "ET_REL"
+        self._relocs = {}
         # In a relocatable file (e.g. the native_sim zephyr.elf) symbol
         # values are section offsets, so symbols from different sections
         # collide at the same value. Address symbols by (section, offset)
         # there and resolve pointers through the relocation entries.
-        self._relocatable = self._elf.header.e_type == "ET_REL"
-        self._relocs = {}
         self._load_objects()
-        self._load_level_addr()
+        if self._macho is not None:
+            self._macho_init_entries = self._macho.init_entries()
+        else:
+            self._load_level_addr()
         self._process_initlevels()
 
     def _sym_addr(self, sym):
@@ -162,6 +173,21 @@ class ZephyrInitLevels:
         """Initialize the object table."""
         self._objects = {}
         self._object_addr = {}
+
+        if self._macho is not None:
+            for symbol in self._macho.symbols():
+                if not symbol.name or symbol.size == 0:
+                    continue
+                if symbol.name.startswith("__init_order_") and symbol.address in self._objects:
+                    continue
+
+                self._objects[symbol.address] = (
+                    symbol.name,
+                    symbol.size,
+                    symbol.section_index,
+                )
+                self._object_addr[symbol.name] = symbol.address
+            return
 
         for section in self._elf.iter_sections():
             if not isinstance(section, SymbolTableSection):
@@ -242,6 +268,9 @@ class ZephyrInitLevels:
         return relocs
 
     def _initlevel_pointer(self, addr, idx, shidx):
+        if self._macho is not None:
+            return self._macho.read_pointer(addr, idx, shidx)
+
         elfclass = self._elf.elfclass
         if elfclass == 32:
             ptrsize = 4
@@ -284,6 +313,10 @@ class ZephyrInitLevels:
         self.initlevels = {}
         self.initlevel_entries = {}
 
+        if self._macho is not None:
+            self._process_macho_initlevels()
+            return
+
         for i, level in enumerate(_DEVICE_INIT_LEVELS):
             start = self._init_level_addr[level]
             if i + 1 == len(_DEVICE_INIT_LEVELS):
@@ -323,6 +356,34 @@ class ZephyrInitLevels:
 
                 addr = self._addr_add(addr, size)
                 priority += 1
+
+    def _process_macho_initlevels(self):
+        """Process init entries from Mach-O sections."""
+        for level_index, level in enumerate(_DEVICE_INIT_LEVELS):
+            self.initlevels[level] = []
+            self.initlevel_entries[level] = []
+
+            for priority, symbol in enumerate(self._macho_init_entries[level_index]):
+                if symbol.address not in self._objects:
+                    raise ValueError(f"no symbol at addr {symbol.address:016x}")
+
+                obj, _, shidx = self._objects[symbol.address]
+                arg0_name = self._object_name(self._initlevel_pointer(symbol.address, 0, shidx))
+                arg1_name = self._object_name(self._initlevel_pointer(symbol.address, 1, shidx))
+
+                ordinal = self._device_ord_from_name(arg1_name)
+                if ordinal:
+                    dev_addr = self._object_addr[arg1_name]
+                    _, _, shidx = self._objects[dev_addr]
+                    arg0_name = self._object_name(
+                        self._initlevel_pointer(dev_addr, DEVICE_INIT_OFFSET, shidx)
+                    )
+
+                    prio = Priority(level, priority)
+                    self.devices[ordinal] = (prio, arg0_name)
+
+                self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
+                self.initlevel_entries[level].append((symbol.address, arg0_name))
 
 
 class MapInitPriorities:
