@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Extends &it8300_external_gpio (declared by the board or application) with the
+ * 5 hardware register groups, matching the datasheet's actual pin/register
+ * layout:
+ *
+ *   Group A: A0-A7    (8 pins) GPCR 0x10-0x17
+ *   Group B: B0-B6    (7 pins) GPCR 0x18-0x1E
+ *   Group C: C0-C6    (7 pins) GPCR 0x20-0x26
+ *   Group D: D0-D5    (6 pins) GPCR 0x08-0x0D
+ *   Group E: E0,E2-E6 (6 pins) GPCR 0x32,0x34-0x38 - the register is 7 slots
+ *            wide (0x32-0x38); slot 1 (0x33/"E1") is not wired to any pin,
+ *            expressed below as ngpios=7 + gpio-reserved-ranges.
+ *
+ */
+
+&it8300_external_gpio {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	ioex_it8300_gpa: gpio@1 {
+		compatible = "ite,it8300-gpio";
+		reg = <0x01 1   /* PDRG */
+		       0x06 1   /* GPISR */
+		       0x10 8   /* GPCR */
+		       0x29 1   /* PDMR */
+		       0x39 1>; /* OODER */
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+	};
+
+	ioex_it8300_gpb: gpio@2 {
+		compatible = "ite,it8300-gpio";
+		reg = <0x02 1   /* PDRG */
+		       0x07 1   /* GPISR */
+		       0x18 7   /* GPCR */
+		       0x2a 1   /* PDMR */
+		       0x3a 1>; /* OODER */
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <7>;
+	};
+
+	ioex_it8300_gpc: gpio@3 {
+		compatible = "ite,it8300-gpio";
+		reg = <0x03 1   /* PDRG */
+		       0x28 1   /* GPISR */
+		       0x20 7   /* GPCR */
+		       0x2b 1   /* PDMR */
+		       0x3b 1>; /* OODER */
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <7>;
+	};
+
+	ioex_it8300_gpd: gpio@4 {
+		compatible = "ite,it8300-gpio";
+		reg = <0x04 1   /* PDRG */
+		       0x2e 1   /* GPISR */
+		       0x08 6   /* GPCR */
+		       0x2c 1   /* PDMR */
+		       0x3c 1>; /* OODER */
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <6>;
+	};
+
+	ioex_it8300_gpe: gpio@5 {
+		compatible = "ite,it8300-gpio";
+		reg = <0x05 1   /* PDRG */
+		       0x2f 1   /* GPISR */
+		       0x32 7   /* GPCR: 0x32-0x38, slot 1 (0x33/E1) unused */
+		       0x2d 1   /* PDMR */
+		       0x3d 1>; /* OODER */
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <7>;
+		/* E1 does not physically exist */
+		gpio-reserved-ranges = <1 1>;
+	};
+};
