@@ -70,6 +70,7 @@ clock: clock@5000 {
 	hfclk: hfclk {
 		compatible = "nordic,nrf-clock-hfclk";
 		status = "okay";
+		supported-clock-frequencies = <DT_FREQ_M(128) DT_FREQ_M(64)>;
 	};
 
 	lfclk: lfclk {
@@ -80,6 +81,7 @@ clock: clock@5000 {
 	hfclk192m: hfclk192m {
 		compatible = "nordic,nrf-clock-hfclk192m";
 		status = "okay";
+		supported-clock-frequencies = <DT_FREQ_M(192) DT_FREQ_M(96) DT_FREQ_M(48)>;
 	};
 
 	hfclkaudio: hfclkaudio {
