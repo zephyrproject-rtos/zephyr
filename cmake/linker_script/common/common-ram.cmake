@@ -29,7 +29,7 @@ if(CONFIG_PM_DEVICE)
   zephyr_iterable_section(NAME pm_device_slots GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
-zephyr_iterable_section(NAME log_dynamic GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
+zephyr_iterable_section(NAME log_dynamic GROUP DATA_REGION GC_ALLOWED ${XIP_ALIGN_WITH_INPUT})
 
 if(CONFIG_USERSPACE)
   set(K_OBJECTS_GROUP "K_OBJECTS_IN_DATA_REGION")
