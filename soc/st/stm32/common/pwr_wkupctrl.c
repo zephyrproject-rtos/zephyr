@@ -7,6 +7,7 @@
 
 #include <soc.h>
 #include <stm32_bitops.h>
+#include <stm32_common.h>
 #include <stm32_gpio_shared.h>
 #include <stm32_ll_pwr.h>
 
@@ -361,7 +362,7 @@ static void configure_wkup_line_source(uint32_t wkup_line_idx, uint8_t src_selec
 }
 
 /* Private API entrypoint */
-int stm32_gpiomgr_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags)
+int stm32_pwrc_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct wkup_pin_desc *pin_desc = search_pin_descriptor(port_idx, pin);
 
