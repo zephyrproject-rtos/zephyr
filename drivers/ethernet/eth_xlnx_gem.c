@@ -68,7 +68,14 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev);
 static void eth_xlnx_gem_set_mac_address(const struct device *dev);
 static void eth_xlnx_gem_set_initial_dmacr(const struct device *dev);
 static void eth_xlnx_gem_configure_buffers(const struct device *dev);
+static int eth_xlnx_gem_init_rx_ring_buffers(const struct device *dev);
+static int eth_xlnx_gem_count_tx_bds_reqd(const struct device *dev, struct net_pkt *pkt,
+					  uint8_t *bds_reqd);
+static int eth_xlnx_gem_program_tx_bds(const struct device *dev, struct net_pkt *pkt,
+					 uint8_t first_bd_idx, uint8_t *curr_bd_idx);
 static void eth_xlnx_gem_tx_release_pkt(const struct device *dev, uint8_t first_bd_idx);
+static void eth_xlnx_gem_tx_recover_failed_send(const struct device *dev, uint8_t first_bd_idx,
+						uint8_t bds_reqd);
 static void eth_xlnx_gem_rx_pending_work(struct k_work *item);
 static void eth_xlnx_gem_handle_rx_pending(const struct device *dev);
 static void eth_xlnx_gem_tx_done_work(struct k_work *item);
@@ -120,6 +127,12 @@ DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_BUFFER_SIZE_CHECK)
 
 #endif /* CONFIG_DCACHE */
 
+#define ETH_XLNX_GEM_RX_BUF_SIZE_CHECK(port) \
+BUILD_ASSERT(CONFIG_NET_BUF_DATA_SIZE >= DT_INST_PROP(port, rx_buffer_size), \
+	     "CONFIG_NET_BUF_DATA_SIZE must be >= rx-buffer-size for GEM " #port);
+
+DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_RX_BUF_SIZE_CHECK)
+
 /**
  * @brief Release the net_pkt held for a completed TX frame
  * Drops the extra reference taken in eth_xlnx_gem_send() for the frame
@@ -142,6 +155,251 @@ static void eth_xlnx_gem_tx_release_pkt(const struct device *dev, uint8_t first_
 		net_pkt_unref(pkt);
 		dev_data->tx_pkts[first_bd_idx] = NULL;
 	}
+}
+
+/**
+ * @brief Roll back TX BD reservation after send() failed before STARTTX
+ *
+ * Restores @c free_bds and @c next_to_use and releases the net_pkt reference
+ * stored at @a first_bd_idx. Called from eth_xlnx_gem_send() when BD
+ * programming fails after the ring slot and pkt ref were reserved.
+ *
+ * @param dev Pointer to the GEM device
+ * @param first_bd_idx Index of the first TX BD reserved for the failed frame
+ * @param bds_reqd Number of BDs that were reserved for the failed frame
+ */
+static void eth_xlnx_gem_tx_recover_failed_send(const struct device *dev, uint8_t first_bd_idx,
+						uint8_t bds_reqd)
+{
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+
+	if (dev_conf->defer_txd_to_queue) {
+		k_sem_take(&(dev_data->tx_bd_ring.ring_sem), K_FOREVER);
+	} else {
+		sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
+			    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_IDR_OFFSET);
+	}
+
+	dev_data->tx_bd_ring.free_bds += bds_reqd;
+	dev_data->tx_bd_ring.next_to_use = first_bd_idx;
+	eth_xlnx_gem_tx_release_pkt(dev, first_bd_idx);
+
+	if (dev_conf->defer_txd_to_queue) {
+		k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
+	} else {
+		sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
+			    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_IER_OFFSET);
+	}
+}
+
+/**
+ * @brief Count TX buffer descriptors required for a net_pkt
+ *
+ * Walks each net_buf fragment and counts how many TX BDs are needed, assuming
+ * each BD carries at most dev_conf->tx_buffer_size bytes.
+ *
+ * @param dev Pointer to the GEM device
+ * @param pkt Packet to transmit
+ * @param bds_reqd Out: number of TX BDs required for @a pkt
+ * @retval 0 on success
+ * @retval -EINVAL if a fragment cannot be mapped for DMA
+ */
+static int eth_xlnx_gem_count_tx_bds_reqd(const struct device *dev, struct net_pkt *pkt,
+					  uint8_t *bds_reqd)
+{
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	uint8_t bd_count = 0U;
+
+	/* Count BDs per net_buf fragment; each BD carries at most tx_buffer_size bytes */
+	NET_PKT_FRAG_FOR_EACH(pkt, tx_frag) {
+		uint16_t bytes_left_in_frag = tx_frag->len;
+		uint16_t bd_payload_len;
+
+		/* Reject empty fragments that cannot be mapped for DMA */
+		if (tx_frag->data == NULL || tx_frag->len == 0U) {
+			LOG_ERR("%s cannot TX, empty fragment in pkt %p", dev->name, pkt);
+#ifdef CONFIG_NET_STATISTICS_ETHERNET
+			DEV_DATA(dev)->stats.errors.tx++;
+#endif
+			return -EINVAL;
+		}
+
+		/* Split this fragment into tx_buffer_size-sized BD slots */
+		while (bytes_left_in_frag > 0U) {
+			/* Reserve one BD for the next slice of this fragment */
+			bd_count++;
+			bd_payload_len = MIN(bytes_left_in_frag, dev_conf->tx_buffer_size);
+			bytes_left_in_frag -= bd_payload_len;
+		}
+	}
+
+	*bds_reqd = bd_count;
+
+	return 0;
+}
+
+/**
+ * @brief Program TX buffer descriptors from net_pkt fragment memory
+ *
+ * Walks each net_buf fragment and programs one TX BD per tx_buffer_size chunk.
+ * Sets BD address and payload length; does not set LAST or clear USED bits.
+ *
+ * @param dev Pointer to the GEM device
+ * @param pkt Packet to transmit
+ * @param first_bd_idx Index of the first TX BD reserved for this frame
+ * @param curr_bd_idx Out: index after the last programmed BD
+ * @retval 0 on success
+ * @retval -EIO if a fragment DMA address is not 32-bit word aligned
+ */
+static int eth_xlnx_gem_program_tx_bds(const struct device *dev, struct net_pkt *pkt,
+				       uint8_t first_bd_idx, uint8_t *curr_bd_idx)
+{
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	uint32_t reg_ctrl;
+	uint32_t reg_val;
+	uint32_t frag_byte_off;
+	uint8_t bd_idx = first_bd_idx;
+
+	/* Walk each net_buf fragment in the packet */
+	NET_PKT_FRAG_FOR_EACH(pkt, tx_frag) {
+		frag_byte_off = 0U;
+
+		/* One BD per tx_buffer_size chunk of this fragment */
+		while (frag_byte_off < tx_frag->len) {
+			/* Payload bytes for this BD (capped by DT tx-buffer-size) */
+			uint16_t bd_buf_len = MIN((uint16_t)(tx_frag->len - frag_byte_off),
+						  dev_conf->tx_buffer_size);
+			/* DMA source address in stack net_buf memory */
+			uint32_t bd_buf_addr = (uint32_t)(uintptr_t)(tx_frag->data + frag_byte_off);
+
+			/* GEM requires 32-bit word-aligned DMA addresses */
+			if ((bd_buf_addr & 0x3U) != 0U) {
+				LOG_ERR("%s TX frag addr 0x%08x not word-aligned",
+					dev->name, bd_buf_addr);
+				return -EIO;
+			}
+
+			reg_ctrl = POINTER_TO_UINT(&dev_data->tx_bd_ring.first_bd[bd_idx].ctrl);
+			/* Fill BD addr: tell hardware where to read TX data */
+			dev_data->tx_bd_ring.first_bd[bd_idx].addr = bd_buf_addr;
+
+			/* Fill BD length in ctrl; preserve WRAP and USED (LAST set in send()) */
+			reg_val = sys_read32(reg_ctrl) &
+				  (ETH_XLNX_GEM_TX_BD_WRAP_BIT | ETH_XLNX_GEM_TX_BD_USED_BIT);
+			reg_val |= bd_buf_len;
+			sys_write32(reg_val, reg_ctrl);
+
+#ifdef CONFIG_DCACHE
+			/* Flush and invalidate CPU cache so DMA sees the fragment data */
+			sys_cache_data_flush_and_invd_range(
+				tx_frag->data + frag_byte_off, bd_buf_len);
+#endif
+			frag_byte_off += bd_buf_len;
+			/* Advance to next reserved BD slot in the ring */
+			bd_idx = (bd_idx + 1U) % dev_conf->tx_bd_count;
+		}
+	}
+
+	/* Index after the last programmed BD (used by send() to set LAST) */
+	*curr_bd_idx = bd_idx;
+
+	return 0;
+}
+
+/**
+ * @brief Reserve an RX buffer for one BD slot (DMA into stack net_buf)
+ *
+ * Reserves a net_buf from the stack RX pool and programs RX BD @a bd_idx so
+ * the GEM DMA engine can write the next received frame into rx_new_reserved_buf->data.
+ * The buffer pointer is tracked in @c dev_data->rx_bufs[bd_idx] until the
+ * frame is received and handed to the stack in eth_xlnx_gem_handle_rx_pending().
+ *
+ * Called at iface init (via eth_xlnx_gem_init_rx_ring_buffers()) and after each
+ * frame is processed to repopulate the BD slot.
+ *
+ *
+ * @param dev Pointer to the GEM device
+ * @param bd_idx Index of the RX BD slot to fill (0 .. rx_bd_count - 1)
+ * @retval 0 on success
+ * @retval -ENOMEM if no RX net_buf is available from the stack pool
+ * @retval -EINVAL if rx_new_reserved_buf->data is not 32-bit word aligned (GEM requirement)
+ */
+static int eth_xlnx_gem_reserve_rx_bd_buffer(const struct device *dev, uint8_t bd_idx)
+{
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	struct eth_xlnx_gem_bd *bd = &dev_data->rx_bd_ring.first_bd[bd_idx];
+	struct net_buf *rx_new_reserved_buf;
+	uint32_t addr;
+
+	/* Reserve an RX buffer from the networking stack pool for this BD slot */
+	rx_new_reserved_buf = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
+	if (rx_new_reserved_buf == NULL) {
+		LOG_ERR("%s RX BD %u: buffer alloc failed", dev->name, bd_idx);
+		return -ENOMEM;
+	}
+
+	/* GEM requires 32-bit aligned buffer addresses in the BD addr field */
+	addr = (uint32_t)(uintptr_t)rx_new_reserved_buf->data;
+	if ((addr & 0x3U) != 0U) {
+		LOG_ERR("%s RX BD %u: buffer addr 0x%08x not word-aligned", dev->name,
+			bd_idx, addr);
+		/* Return unusable buffer to the RX pool */
+		net_buf_unref(rx_new_reserved_buf);
+		return -EINVAL;
+	}
+
+	/* Save for eth_xlnx_gem_handle_rx_pending(); DMA writes frame into this net_buf */
+	dev_data->rx_bufs[bd_idx] = rx_new_reserved_buf;
+	/* No frame received yet; length set in handle_rx_pending() */
+	rx_new_reserved_buf->len = 0U;
+
+	/* Clear USED/WRAP bits from address field */
+	addr &= ETH_XLNX_GEM_RX_BD_BUFFER_ADDR_MASK;
+	if (bd_idx == (dev_conf->rx_bd_count - 1U)) {
+		/* Last BD in ring: set wrap for hardware */
+		addr |= ETH_XLNX_GEM_RX_BD_WRAP_BIT;
+	}
+
+	/* Tell GEM where to DMA the next frame for this slot */
+	bd->addr = addr;
+	/* Clear control word; frame length filled by hardware on receive */
+	bd->ctrl = 0U;
+
+	return 0;
+}
+
+/**
+ * @brief Initialize net_buf buffers for every RX BD in the ring
+ *
+ * Fills the entire RX BD ring with reserved stack buffers so the GEM can
+ * start receiving as soon as RX is enabled. Called once from
+ * eth_xlnx_gem_iface_init() after the network interface is set up.
+ *
+ * On success, @c rx_bd_count buffers are permanently loaned from
+ * CONFIG_NET_BUF_RX_COUNT until frames arrive and are reserved individually.
+ *
+ * @param dev Pointer to the GEM device
+ * @retval 0 if all BD slots were initialized successfully
+ * @retval -ENOMEM or -EINVAL from eth_xlnx_gem_reserve_rx_bd_buffer() on first failure
+ */
+static int eth_xlnx_gem_init_rx_ring_buffers(const struct device *dev)
+{
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
+	uint8_t idx;
+	int ret;
+
+	for (idx = 0; idx < dev_conf->rx_bd_count; idx++) {
+		/* Reserve one buffer per ring slot */
+		ret = eth_xlnx_gem_reserve_rx_bd_buffer(dev, idx);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
 }
 
 /**
@@ -248,6 +506,12 @@ static void eth_xlnx_gem_iface_init(struct net_if *iface)
 	/* Initialize TX-related semaphores */
 	k_sem_init(&dev_data->tx_bd_ring.ring_sem, 1, 1);
 
+	ret = eth_xlnx_gem_init_rx_ring_buffers(dev);
+	if (ret != 0) {
+		LOG_ERR("%s: RX ring buffer init failed (%d)", dev->name, ret);
+		return;
+	}
+
 	/* Initialize the device's interrupt */
 	dev_conf->config_func(dev);
 
@@ -336,15 +600,16 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 /**
  * @brief GEM data send function
  * Queues a frame for transmission without blocking for TX complete.
- * Packet data is copied into the static DMA buffer pool; the driver
- * holds a net_pkt reference until the TX-complete handler runs.
+ * DMA reads net_pkt fragment data directly; the driver holds a net_pkt
+ * reference until the TX-complete handler runs.
  *
  * @param dev Pointer to the device data
  * @param pkt Pointer to the data packet to be sent
  * @retval -EINVAL in case of invalid parameters, e.g. zero data length
  * @retval -EIO in case of:
  *         (1) the attempt to TX data while no free BDs are available
- *             in the DMA memory area
+ *             in the DMA memory area,
+ *         (2) invalid fragment layout for DMA
  * @retval 0 if the packet was queued for transmission successfully
  */
 static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
@@ -353,18 +618,14 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
 
 	uint16_t tx_data_length;
-	uint16_t tx_data_remaining;
-	void *tx_buffer_offs;
-
-	uint8_t bds_reqd;
+	uint8_t bds_reqd = 0U;
 	uint8_t curr_bd_idx;
 	uint8_t first_bd_idx;
-
 	mem_addr_t reg_ctrl;
 	uint32_t reg_val;
 
-	tx_data_length = tx_data_remaining = net_pkt_get_len(pkt);
-	if (tx_data_length == 0) {
+	tx_data_length = net_pkt_get_len(pkt);
+	if (tx_data_length == 0U) {
 		LOG_ERR("%s cannot TX, zero packet length", dev->name);
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 		dev_data->stats.errors.tx++;
@@ -383,12 +644,14 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	 * is performed within the ISR, protect against interruptions by
 	 * disabling the TX done interrupt source.
 	 */
-	bds_reqd = (uint8_t)((tx_data_length + (dev_conf->tx_buffer_size - 1)) /
-		   dev_conf->tx_buffer_size);
+	if (eth_xlnx_gem_count_tx_bds_reqd(dev, pkt, &bds_reqd) != 0) {
+		return -EINVAL;
+	}
 
 	if (dev_conf->defer_txd_to_queue) {
 		k_sem_take(&(dev_data->tx_bd_ring.ring_sem), K_FOREVER);
 	} else {
+		/* Disable transmit complete interrupt(GEM Int_Disable Register) */
 		sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
 			    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_IDR_OFFSET);
 	}
@@ -402,6 +665,7 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 		if (dev_conf->defer_txd_to_queue) {
 			k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
 		} else {
+			/* Re-enable transmit complete interrupt(GEM Int_Enable Register) */
 			sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
 				    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_IER_OFFSET);
 		}
@@ -412,7 +676,6 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	curr_bd_idx = first_bd_idx = dev_data->tx_bd_ring.next_to_use;
-	reg_ctrl = POINTER_TO_UINT(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 
 	dev_data->tx_bd_ring.next_to_use = (first_bd_idx + bds_reqd) %
 					  dev_conf->tx_bd_count;
@@ -428,40 +691,14 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 			    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_IER_OFFSET);
 	}
 
-	/*
-	 * Scatter the contents of the network packet's buffer to
-	 * one or more DMA buffers.
-	 */
-	net_pkt_cursor_init(pkt);
-	do {
-		/* Calculate the base pointer of the target TX buffer */
-		tx_buffer_offs = (void *)(dev_data->first_tx_buffer +
-				 (dev_conf->tx_buffer_size * curr_bd_idx));
+	if (eth_xlnx_gem_program_tx_bds(dev, pkt, first_bd_idx, &curr_bd_idx) != 0) {
+		goto tx_abort;
+	}
 
-		/* Copy packet data to DMA buffer */
-		net_pkt_read(pkt, (void *)tx_buffer_offs,
-			     (tx_data_remaining < dev_conf->tx_buffer_size) ?
-			     tx_data_remaining : dev_conf->tx_buffer_size);
-
-		/* Update current BD's control word */
-		reg_val = sys_read32(reg_ctrl) & (ETH_XLNX_GEM_TX_BD_WRAP_BIT |
-			  ETH_XLNX_GEM_TX_BD_USED_BIT);
-		reg_val |= (tx_data_remaining < dev_conf->tx_buffer_size) ?
-			   tx_data_remaining : dev_conf->tx_buffer_size;
-		sys_write32(reg_val, reg_ctrl);
-
-		if (tx_data_remaining > dev_conf->tx_buffer_size) {
-			/* Switch to next BD */
-			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->tx_bd_count;
-			reg_ctrl = POINTER_TO_UINT(
-				&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
-		}
-
-		tx_data_remaining -= (tx_data_remaining < dev_conf->tx_buffer_size) ?
-				     tx_data_remaining : dev_conf->tx_buffer_size;
-	} while (tx_data_remaining > 0);
-
-	/* Set the 'last' bit in the current BD's control word */
+	/* LAST BD is the one before curr_bd_idx wrapped */
+	curr_bd_idx = (curr_bd_idx == 0U) ? (dev_conf->tx_bd_count - 1U) : (curr_bd_idx - 1U);
+	reg_ctrl = POINTER_TO_UINT(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
+	reg_val = sys_read32(reg_ctrl);
 	reg_val |= ETH_XLNX_GEM_TX_BD_LAST_BIT;
 
 	/*
@@ -469,18 +706,12 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	 * transmission. In accordance with chapter 16.3.8 of the
 	 * Zynq-7000 TRM, the 'used' bits shall be cleared in reverse
 	 * order, so that the 'used' bit of the first BD is cleared
-	 * last just before the transmission is started. If applicable,
-	 * flush all involved TX BDs' buffers from the L1 cache to
-	 * regular memory along the way.
+	 * last just before the transmission is started.
 	 */
 	reg_val &= ~ETH_XLNX_GEM_TX_BD_USED_BIT;
 	sys_write32(reg_val, reg_ctrl);
-#ifdef CONFIG_DCACHE
-	sys_cache_data_flush_and_invd_range((void *)(dev_data->first_tx_buffer +
-					    (dev_conf->tx_buffer_size * curr_bd_idx)),
-					    dev_conf->tx_buffer_size);
-#endif
 
+	/* Clear TX BD USED bit on each earlier BD in reverse order */
 	while (curr_bd_idx != first_bd_idx) {
 		curr_bd_idx = (curr_bd_idx != 0) ? (curr_bd_idx - 1) :
 			      (dev_conf->tx_bd_count - 1);
@@ -488,11 +719,6 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 		reg_val = sys_read32(reg_ctrl);
 		reg_val &= ~ETH_XLNX_GEM_TX_BD_USED_BIT;
 		sys_write32(reg_val, reg_ctrl);
-#ifdef CONFIG_DCACHE
-		sys_cache_data_flush_and_invd_range((void *)(dev_data->first_tx_buffer +
-						    (dev_conf->tx_buffer_size * curr_bd_idx)),
-						    dev_conf->tx_buffer_size);
-#endif
 	}
 
 	/* Set the start TX bit in the gem.net_ctrl register */
@@ -508,6 +734,13 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	LOG_DBG("%s TX started pkt %p", dev->name, pkt);
 
 	return 0;
+
+tx_abort:
+	eth_xlnx_gem_tx_recover_failed_send(dev, first_bd_idx, bds_reqd);
+#ifdef CONFIG_NET_STATISTICS_ETHERNET
+	dev_data->stats.errors.tx++;
+#endif
+	return -EIO;
 }
 
 /**
@@ -1193,29 +1426,9 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_INIT_BD_RING)
 
 	/*
-	 * Set initial RX BD data -> comp. Zynq-7000 TRM, Chapter 16.3.5,
-	 * "Receive Buffer Descriptor List". For RX BDs, the 'used' and
-	 * 'wrap' bits are located at [1:0] in the address word. The 'used'
-	 * bit must be cleared for all BDs, indicating that the controller
-	 * can place packet data in the associated buffer. In the last BD,
-	 * the 'wrap' bit must be set.
+	 * RX BDs are filled with reserved net_buf buffers from
+	 * eth_xlnx_gem_init_rx_ring_buffers() during iface init.
 	 */
-	bdptr = dev_data->rx_bd_ring.first_bd;
-
-	for (buf_iter = 0; buf_iter < (dev_conf->rx_bd_count - 1); buf_iter++) {
-		uint32_t addr = (uint32_t)POINTER_TO_UINT(dev_data->first_rx_buffer) +
-				(buf_iter * dev_conf->rx_buffer_size);
-		/* Clear 'used' bit -> BD is owned by the controller */
-		bdptr->addr = addr & ~(ETH_XLNX_GEM_RX_BD_USED_BIT | ETH_XLNX_GEM_RX_BD_WRAP_BIT);
-		bdptr->ctrl = 0x00000000;
-		++bdptr;
-	}
-
-	uint32_t last_rx_addr = (uint32_t)POINTER_TO_UINT(dev_data->first_rx_buffer) +
-				(buf_iter * dev_conf->rx_buffer_size);
-	bdptr->addr = (((uint32_t)last_rx_addr) & ~ETH_XLNX_GEM_RX_BD_USED_BIT) |
-		      ETH_XLNX_GEM_RX_BD_WRAP_BIT;
-	bdptr->ctrl = 0x00000000;
 
 	/*
 	 * Set initial TX BD data -> comp. Zynq-7000 TRM, Chapter 16.3.5,
@@ -1228,15 +1441,13 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	bdptr = dev_data->tx_bd_ring.first_bd;
 
 	for (buf_iter = 0; buf_iter < (dev_conf->tx_bd_count - 1); buf_iter++) {
-		bdptr->addr = (uint32_t)POINTER_TO_UINT(dev_data->first_tx_buffer) +
-			      (buf_iter * dev_conf->tx_buffer_size);
+		bdptr->addr = 0U;
 		bdptr->ctrl = ETH_XLNX_GEM_TX_BD_USED_BIT;
 		dev_data->tx_pkts[buf_iter] = NULL;
 		++bdptr;
 	}
 
-	bdptr->addr = (uint32_t)POINTER_TO_UINT(dev_data->first_tx_buffer) +
-		      (buf_iter * (uint32_t)dev_conf->tx_buffer_size);
+	bdptr->addr = 0U;
 	bdptr->ctrl = (ETH_XLNX_GEM_TX_BD_WRAP_BIT | ETH_XLNX_GEM_TX_BD_USED_BIT);
 	dev_data->tx_pkts[buf_iter] = NULL;
 
@@ -1261,7 +1472,7 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	/* Set free count/current index in the RX/TX BD ring data */
 	dev_data->rx_bd_ring.next_to_process = 0;
 	dev_data->rx_bd_ring.next_to_use     = 0;
-	dev_data->rx_bd_ring.free_bds        = dev_conf->rx_bd_count;
+	dev_data->rx_bd_ring.free_bds        = 0;
 	dev_data->tx_bd_ring.next_to_process = 0;
 	dev_data->tx_bd_ring.next_to_use     = 0;
 	dev_data->tx_bd_ring.free_bds        = dev_conf->tx_bd_count;
@@ -1317,10 +1528,8 @@ static void eth_xlnx_gem_rx_pending_work(struct k_work *item)
  * is set in the controller's interrupt status register (gem.intr_status).
  * No further RX data pending interrupts will be triggered until this
  * handler has been executed, which eventually clears the corresponding
- * interrupt status bit. This function acquires the incoming packet
- * data from the DMA memory area via the RX buffer descriptors and copies
- * the data to a packet which will then be handed over to the network
- * stack.
+ * interrupt status bit. Received frames are handed to the stack directly
+ * from the pre-reserved net_buf RX buffers without a driver-owned pool.
  *
  * @param dev Pointer to the device data
  */
@@ -1333,10 +1542,10 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 	uint32_t reg_val;
 	uint8_t first_bd_idx;
 	uint8_t last_bd_idx;
-	uint8_t	curr_bd_idx;
+	uint8_t curr_bd_idx;
 	uint32_t rx_data_length;
-	uint32_t rx_data_remaining;
 	struct net_pkt *pkt;
+	struct net_buf *recvd_buf;
 
 	/*
 	 * TODO Evaluate error flags from RX status register word
@@ -1381,11 +1590,10 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		do {
 			reg_ctrl = POINTER_TO_UINT(
 				&dev_data->rx_bd_ring.first_bd[last_bd_idx].ctrl);
-			reg_val  = sys_read32(reg_ctrl);
-			rx_data_length = rx_data_remaining =
-					 (reg_val & ETH_XLNX_GEM_RX_BD_FRAME_LENGTH_MASK);
+			reg_val = sys_read32(reg_ctrl);
+			rx_data_length = (reg_val & ETH_XLNX_GEM_RX_BD_FRAME_LENGTH_MASK);
 			if ((reg_val & ETH_XLNX_GEM_RX_BD_END_OF_FRAME_BIT) == 0) {
-				last_bd_idx = (last_bd_idx + 1) % dev_conf->rx_bd_count;
+				last_bd_idx = (last_bd_idx + 1U) % dev_conf->rx_bd_count;
 			}
 		} while ((reg_val & ETH_XLNX_GEM_RX_BD_END_OF_FRAME_BIT) == 0);
 
@@ -1396,73 +1604,75 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		dev_data->rx_bd_ring.next_to_process = (last_bd_idx + 1) %
 						      dev_conf->rx_bd_count;
 
-		/*
-		 * Allocate a destination packet from the network stack
-		 * now that the total frame length is known.
-		 */
-		pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface, rx_data_length,
-						   NET_AF_UNSPEC, 0, K_NO_WAIT);
-		if (pkt == NULL) {
-			LOG_ERR("RX packet buffer alloc failed: %u bytes",
-				rx_data_length);
+		/* Take the reserved RX buffer containing the frame written by DMA */
+		recvd_buf = dev_data->rx_bufs[first_bd_idx];
+		if (recvd_buf == NULL) {
+			LOG_ERR("%s RX BD %u has no buffer", dev->name, first_bd_idx);
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 			dev_data->stats.errors.rx++;
-			dev_data->stats.error_details.rx_no_buffer_count++;
+#endif
+			reg_addr = POINTER_TO_UINT(
+				&dev_data->rx_bd_ring.first_bd[first_bd_idx].addr);
+			reg_val = sys_read32(reg_addr);
+			reg_val &= ~ETH_XLNX_GEM_RX_BD_USED_BIT;
+			sys_write32(reg_val, reg_addr);
+			(void)eth_xlnx_gem_reserve_rx_bd_buffer(dev, first_bd_idx);
+			continue;
+		}
+
+		/* Clear slot; reserve_rx_bd_buffer() assigns a new buffer here */
+		dev_data->rx_bufs[first_bd_idx] = NULL;
+
+#ifdef CONFIG_DCACHE
+		sys_cache_data_invd_range(recvd_buf->data, rx_data_length);
+#endif
+		recvd_buf->len = rx_data_length;
+
+		/* Allocate an empty RX net_pkt; payload is attached below via net_pkt_frag_add() */
+		pkt = net_pkt_rx_alloc_on_iface(dev_data->iface, K_NO_WAIT);
+		if (pkt == NULL) {
+			LOG_ERR("%s RX pkt alloc failed for BD %u", dev->name, first_bd_idx);
+			net_buf_unref(recvd_buf);
+#ifdef CONFIG_NET_STATISTICS_ETHERNET
+			dev_data->stats.errors.rx++;
+#endif
+			reg_addr = POINTER_TO_UINT(
+				&dev_data->rx_bd_ring.first_bd[first_bd_idx].addr);
+			reg_val = sys_read32(reg_addr);
+			reg_val &= ~ETH_XLNX_GEM_RX_BD_USED_BIT;
+			sys_write32(reg_val, reg_addr);
+			(void)eth_xlnx_gem_reserve_rx_bd_buffer(dev, first_bd_idx);
+			continue;
+		}
+
+		/* Attach the DMA net_buf as the packet fragment (no copy) */
+		net_pkt_frag_add(pkt, recvd_buf);
+		/* Reset read/write cursor to the start of the attached fragment */
+		net_pkt_cursor_init(pkt);
+
+		/* Clear USED so the GEM may reuse this RX BD slot */
+		reg_addr = POINTER_TO_UINT(&dev_data->rx_bd_ring.first_bd[first_bd_idx].addr);
+		reg_val = sys_read32(reg_addr);
+		reg_val &= ~ETH_XLNX_GEM_RX_BD_USED_BIT;
+		sys_write32(reg_val, reg_addr);
+
+		/* Pass the RX packet to the network stack */
+		if (net_recv_data(dev_data->iface, pkt) < 0) {
+			LOG_ERR("%s RX hand-over failed for pkt %p", dev->name, pkt);
+			net_pkt_unref(pkt);
+#ifdef CONFIG_NET_STATISTICS_ETHERNET
+			dev_data->stats.errors.rx++;
+#endif
+		} else {
+#ifdef CONFIG_NET_STATISTICS_ETHERNET
+			dev_data->stats.bytes.received += rx_data_length;
+			dev_data->stats.pkts.rx++;
 #endif
 		}
 
-		/*
-		 * Copy data from all involved RX buffers into the allocated
-		 * packet's data buffer. If we don't have a packet buffer be-
-		 * cause none are available, we still have to iterate over all
-		 * involved BDs in order to properly release them for re-use
-		 * by the controller.
-		 */
-		do {
-			if (pkt != NULL) {
-#ifdef CONFIG_DCACHE
-				sys_cache_data_invd_range(
-					UINT_TO_POINTER(
-					dev_data->rx_bd_ring.first_bd[curr_bd_idx].addr &
-					ETH_XLNX_GEM_RX_BD_BUFFER_ADDR_MASK),
-					dev_conf->rx_buffer_size);
-#endif
-				net_pkt_write(pkt, UINT_TO_POINTER(
-					      dev_data->rx_bd_ring.first_bd[curr_bd_idx].addr &
-					      ETH_XLNX_GEM_RX_BD_BUFFER_ADDR_MASK),
-					      (rx_data_remaining < dev_conf->rx_buffer_size) ?
-					      rx_data_remaining : dev_conf->rx_buffer_size);
-			}
-			rx_data_remaining -= (rx_data_remaining < dev_conf->rx_buffer_size) ?
-					     rx_data_remaining : dev_conf->rx_buffer_size;
-
-			/*
-			 * The entire packet data of the current BD has been
-			 * processed, on to the next BD -> preserve the RX BD's
-			 * 'wrap' bit & address, but clear the 'used' bit.
-			 */
-			reg_addr = POINTER_TO_UINT(
-				&dev_data->rx_bd_ring.first_bd[curr_bd_idx].addr);
-			reg_val	 = sys_read32(reg_addr);
-			reg_val &= ~ETH_XLNX_GEM_RX_BD_USED_BIT;
-			sys_write32(reg_val, reg_addr);
-
-			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->rx_bd_count;
-		} while (curr_bd_idx != ((last_bd_idx + 1) % dev_conf->rx_bd_count));
-
-		/* Propagate the received packet to the network stack */
-		if (pkt != NULL) {
-			if (net_recv_data(dev_data->iface, pkt) < 0) {
-				LOG_ERR("%s RX packet hand-over to IP stack failed",
-					dev->name);
-				net_pkt_unref(pkt);
-			}
-#ifdef CONFIG_NET_STATISTICS_ETHERNET
-			else {
-				dev_data->stats.bytes.received += rx_data_length;
-				dev_data->stats.pkts.rx++;
-			}
-#endif
+		/* Refill this BD with a new stack net_buf for the next RX DMA */
+		if (eth_xlnx_gem_reserve_rx_bd_buffer(dev, first_bd_idx) != 0) {
+			LOG_ERR("%s failed to reserve RX BD %u buffer", dev->name, first_bd_idx);
 		}
 	}
 
