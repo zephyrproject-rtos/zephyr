@@ -14,6 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/bluetooth.h>
+#include <zephyr/drivers/bluetooth/hci_lockstep.h>
 #include <zephyr/bluetooth/hci.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
@@ -97,6 +98,12 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len, void *rx, uint32_
 	}
 	return spi_transceive_dt(&spi_bus, &spi_tx, &spi_rx);
 }
+
+struct ambiq_data {
+	/* bt_hci_driver_data must be first */
+	struct bt_hci_driver_data common;
+	struct bt_hci_lockstep lockstep;
+};
 
 static int spi_send_packet(uint8_t *data, uint16_t len)
 {
@@ -287,6 +294,7 @@ static struct net_buf *bt_hci_acl_recv(uint8_t *data, size_t len)
 static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
+	struct ambiq_data *data = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -313,6 +321,13 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 				break;
 			}
 
+			/* Responses to the driver's own commands, sent while
+			 * opening
+			 */
+			if (bt_hci_lockstep_feed(&data->lockstep, &rxmsg[0], len)) {
+				break;
+			}
+
 			switch (rxmsg[PACKET_TYPE]) {
 			case BT_HCI_H4_EVT:
 				buf = bt_hci_evt_recv(&rxmsg[PACKET_TYPE + PACKET_TYPE_SIZE],
@@ -336,17 +351,23 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int bt_apollo_send(const struct device *dev, struct net_buf *buf)
+static int bt_apollo_send_raw(const struct device *dev, const uint8_t *pkt, size_t len)
 {
-	int ret;
+	ARG_UNUSED(dev);
 
-	if (buf->len > SPI_MAX_TX_MSG_LEN) {
+	if (len > SPI_MAX_TX_MSG_LEN) {
 		LOG_ERR("Message too long");
 		return -EINVAL;
 	}
 
-	/* Send the SPI packet */
-	ret = spi_send_packet(buf->data, buf->len);
+	return spi_send_packet((uint8_t *)pkt, (uint16_t)len);
+}
+
+static int bt_apollo_send(const struct device *dev, struct net_buf *buf)
+{
+	int ret;
+
+	ret = bt_apollo_send_raw(dev, buf->data, buf->len);
 	if (ret != 0) {
 		return ret;
 	}
@@ -358,6 +379,7 @@ static int bt_apollo_send(const struct device *dev, struct net_buf *buf)
 
 static int bt_apollo_open(const struct device *dev)
 {
+	struct ambiq_data *data = dev->data;
 	int ret;
 
 	ret = bt_hci_transport_setup(spi_bus.bus);
@@ -370,7 +392,25 @@ static int bt_apollo_open(const struct device *dev)
 			(k_thread_entry_t)bt_spi_rx_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
-	return bt_apollo_controller_init(spi_send_packet);
+	ret = bt_apollo_controller_init(spi_send_packet);
+	if (ret == 0) {
+		ret = bt_apollo_vnd_setup(&data->lockstep);
+	}
+
+	if (ret != 0) {
+		/* A failed open() is not followed by close(), so undo what this
+		 * function started. The SPI semaphore is held across the abort
+		 * so that the RX thread cannot be stopped while it owns it, and
+		 * the caller may try again: k_thread_create() on a thread that
+		 * is still running is a fault of its own.
+		 */
+		k_sem_take(&sem_spi_available, K_FOREVER);
+		k_thread_abort(&spi_rx_thread_data);
+		(void)bt_apollo_controller_deinit();
+		k_sem_give(&sem_spi_available);
+	}
+
+	return ret;
 }
 
 static int bt_apollo_close(const struct device *dev)
@@ -388,29 +428,16 @@ static int bt_apollo_close(const struct device *dev)
 	return ret;
 }
 
-static int bt_apollo_setup(const struct device *dev, const struct bt_hci_setup_params *params)
-{
-	ARG_UNUSED(params);
-
-	int ret;
-
-	ret = bt_apollo_vnd_setup();
-
-	return ret;
-}
-
 static DEVICE_API(bt_hci, drv) = {
 	.open = bt_apollo_open,
 	.close = bt_apollo_close,
 	.send = bt_apollo_send,
-	.setup = bt_apollo_setup,
 };
 
 static int bt_apollo_init(const struct device *dev)
 {
+	struct ambiq_data *data = dev->data;
 	int ret;
-
-	ARG_UNUSED(dev);
 
 	if (!device_is_ready(spi_bus.bus)) {
 		LOG_ERR("SPI device not ready");
@@ -422,13 +449,15 @@ static int bt_apollo_init(const struct device *dev)
 		return ret;
 	}
 
+	bt_hci_lockstep_init(&data->lockstep, dev, bt_apollo_send_raw);
+
 	LOG_DBG("BT HCI initialized");
 
 	return 0;
 }
 
 #define HCI_DEVICE_INIT(inst)                                                                      \
-	static struct bt_hci_driver_data hci_data_##inst = {};                                     \
+	static struct ambiq_data hci_data_##inst;                                                  \
 	static const struct bt_hci_driver_config hci_config_##inst =                               \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
 	DEVICE_DT_INST_DEFINE(inst, bt_apollo_init, NULL, &hci_data_##inst, &hci_config_##inst,    \
