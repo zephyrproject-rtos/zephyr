@@ -38,6 +38,15 @@ FUNC_NORETURN void stm32_enter_poweroff(void);
  * @retval <0 Unspecified error
  */
 int stm32_pwrc_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags);
+
+#if defined(CONFIG_GPIO_STM32)
+/**
+ * @brief Dispatches the GPIO interrupts associated with active wake-up lines.
+ *
+ * This function should be called from the SoC-specific pm_state_exit_post_ops().
+ */
+void stm32_pwrc_dispatch_wakeup_gpio_irqs(void);
+#endif /* CONFIG_GPIO_STM32 */
 #endif /* defined(CONFIG_STM32_WKUP_PINS) */
 
 #endif /* ZEPHYR_SOC_ST_STM32_COMMON_STM32_COMMON_H_ */
