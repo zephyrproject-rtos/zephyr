@@ -1,0 +1,33 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Native simulator video source reading raw frames from a host named pipe (FIFO).
+
+  The application selects the frame format through the video API, and the host
+  writer must produce frames of exactly that format.
+
+  See the native_sim board documentation for how to feed the FIFO and for the
+  details of the driver behaviour.
+
+compatible: "zephyr,native-sim-video-fifo"
+
+include: base.yaml
+
+properties:
+  fifo-path:
+    type: string
+    description: |
+      Path of the host named pipe to read the frames from. The FIFO is created
+      if it does not exist yet. Defaults to /tmp/zephyr-<device>-<pid>.fifo. It
+      can be overridden at runtime with the --<device>=<path> command line
+      option.
+
+  poll-interval-ms:
+    type: int
+    default: 10
+    description: |
+      Delay before reading the host FIFO again when it did not provide a
+      complete frame, either because no writer is attached or because the
+      writer is slower than the driver. This does not limit the frame rate:
+      the driver reads again immediately after a frame is completed.
