@@ -238,6 +238,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 
 #define DEV_CHAR_TABLE_POINTER      0x60
 #define DEVICE_CHAR_TABLE_ADDR(x)   ((x) & GENMASK(11, 0))
+#define DEV_CHAR_TABLE_PRESENT_INDEX_MASK GENMASK(23, 19)
 #define VENDOR_SPECIFIC_REG_POINTER 0x6c
 
 #define SLV_MIPI_ID_VALUE                      0x70
@@ -3076,7 +3077,7 @@ error:
  *
  * @return 0 on success, or a negative error code on failure.
  */
-static int add_slave_from_daa(const struct device *dev, int32_t pos,
+static int add_slave_from_daa(const struct device *dev, int32_t dct_idx, int32_t pos,
 			      struct i3c_device_desc **desc_out)
 {
 	struct dw_i3c_data *data = dev->data;
@@ -3097,17 +3098,21 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos,
 	 * The controller DCT stride is 16 bytes (LOC1..LOC4).
 	 */
 	dat_word = sys_read32(dw_i3c_regs(dev) + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
-	dct4_word = sys_read32(dw_i3c_regs(dev) + DEV_CHAR_TABLE_LOC4(data->dctstartaddr, pos));
+	dct4_word = sys_read32(dw_i3c_regs(dev) +
+			       DEV_CHAR_TABLE_LOC4(data->dctstartaddr, dct_idx));
 	dyn_addr = DEV_CHAR_TABLE_DYNAMIC_ADDR(dct4_word);
 
 	/* retrieve pid */
-	dct1_word = sys_read32(dw_i3c_regs(dev) + DEV_CHAR_TABLE_LOC1(data->dctstartaddr, pos));
+	dct1_word = sys_read32(dw_i3c_regs(dev) +
+			       DEV_CHAR_TABLE_LOC1(data->dctstartaddr, dct_idx));
 	pid = ((uint64_t)DEV_CHAR_TABLE_MSB_PID(dct1_word) << 16) +
 	      (DEV_CHAR_TABLE_LSB_PID(dct1_word) << 16);
-	dct2_word = sys_read32(dw_i3c_regs(dev) + DEV_CHAR_TABLE_LOC2(data->dctstartaddr, pos));
+	dct2_word = sys_read32(dw_i3c_regs(dev) +
+			       DEV_CHAR_TABLE_LOC2(data->dctstartaddr, dct_idx));
 	pid |= DEV_CHAR_TABLE_LSB_PID(dct2_word);
 
-	dct3_word = sys_read32(dw_i3c_regs(dev) + DEV_CHAR_TABLE_LOC3(data->dctstartaddr, pos));
+	dct3_word = sys_read32(dw_i3c_regs(dev) +
+			       DEV_CHAR_TABLE_LOC3(data->dctstartaddr, dct_idx));
 	uint8_t bcr = DEV_CHAR_TABLE_BCR(dct3_word);
 	uint8_t dcr = DEV_CHAR_TABLE_DCR(dct3_word);
 
@@ -3228,6 +3233,7 @@ static int dw_i3c_do_daa(const struct device *dev)
 	enum dw_i3c_retry_action retry_action;
 	uint32_t olddevs, newdevs;
 	uint8_t p, idx, last_addr = 0;
+	int32_t dct_idx = 0;
 	int64_t timeout_ms;
 	int64_t deadline;
 	bool retried_after_recover = false;
@@ -3298,6 +3304,13 @@ static int dw_i3c_do_daa(const struct device *dev)
 		      COMMAND_PORT_DEV_COUNT(data->maxdevs - pos) | COMMAND_PORT_DEV_INDEX(pos) |
 		      COMMAND_PORT_CMD(I3C_CCC_ENTDAA) | COMMAND_PORT_ADDR_ASSGN_CMD;
 
+	/* The IP writes this round's entries from the current DCT index upwards,
+	 * independently of DEV_INDEX, and never rewinds it on its own.
+	 */
+	sys_write32(sys_read32(dw_i3c_regs(dev) + DEV_CHAR_TABLE_POINTER) &
+			    ~DEV_CHAR_TABLE_PRESENT_INDEX_MASK,
+		    dw_i3c_regs(dev) + DEV_CHAR_TABLE_POINTER);
+
 	while (true) {
 		k_sem_reset(&data->sem_xfer);
 		start_xfer(dev);
@@ -3354,7 +3367,8 @@ static int dw_i3c_do_daa(const struct device *dev)
 		if (newdevs & BIT(idx)) {
 			struct i3c_device_desc *added = NULL;
 
-			add_slave_from_daa(dev, idx, &added);
+			add_slave_from_daa(dev, dct_idx, idx, &added);
+			dct_idx++;
 
 			/* Silence this target only: DAA also runs at runtime for a
 			 * hot join, where a broadcast would clear these events on
