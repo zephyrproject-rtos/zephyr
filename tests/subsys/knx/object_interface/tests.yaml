@@ -1,0 +1,5 @@
+tests:
+  knx.object_interface:
+    tags:
+      - knx
+    type: unit
