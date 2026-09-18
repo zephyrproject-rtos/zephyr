@@ -7,6 +7,10 @@
 #include <renesas/ra/ra0/ra0xx.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 
+/delete-node/ &i2c01;
+/delete-node/ &i2c10;
+/delete-node/ &i2c21;
+
 / {
 	soc {
 		sram0: memory@20004000 {
