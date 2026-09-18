@@ -74,6 +74,11 @@ bool wifi_nm_iface_is_sap(struct net_if *iface)
 	return wifi_nm_get_type_iface(iface) & BIT(WIFI_TYPE_SAP);
 }
 
+bool wifi_nm_iface_is_p2p(struct net_if *iface)
+{
+	return wifi_nm_get_type_iface(iface) & BIT(WIFI_TYPE_P2P);
+}
+
 int wifi_nm_register_mgd_iface(struct wifi_nm_instance *nm, struct net_if *iface)
 {
 	if (!nm || !iface) {
