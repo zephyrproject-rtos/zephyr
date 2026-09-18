@@ -70,7 +70,7 @@ struct chip_sha256_ctx {
 	uint32_t total_len;
 } __aligned(256);
 
-Z_GENERIC_SECTION(.__sha256_ram_block) struct chip_sha256_ctx chip_ctx;
+Z_GENERIC_SECTION(.__hwcrypto_dlm_block) struct chip_sha256_ctx chip_ctx;
 
 struct it51xxx_sha_config {
 	mm_reg_t base;

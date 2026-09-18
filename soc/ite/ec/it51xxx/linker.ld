@@ -79,10 +79,13 @@
 #define RAM_BASE DT_CHOSEN_SRAM_ADDR
 #define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
-/* The IT515XX series must use the address range 0x83E000 to 0x83EFFF to calculate SHA */
-#ifdef CONFIG_SOC_IT51XXX_SHA256_HW_ACCELERATE
-#define SHA256_DLM_BASE   (RAM_BASE + CONFIG_SOC_IT515XX_SHA256_DLM_OFFSET)
-#define SHA256_DLM_LENGTH KB(4)
+/*
+ * The IT51XXX hardware crypto engine uses 4 KiB DLM region starting
+ * at CONFIG_SOC_IT515XX_HW_CRYPTO_OFFSET.
+ */
+#ifdef CONFIG_SOC_IT51XXX_HW_CRYPTO_ACCELERATE
+#define HWCRYPTO_DLM_BASE   (RAM_BASE + CONFIG_SOC_IT515XX_HW_CRYPTO_OFFSET)
+#define HWCRYPTO_DLM_LENGTH KB(4)
 #endif
 
 #ifdef CONFIG_RISCV_PMP
@@ -110,8 +113,8 @@ MEMORY
 #endif
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
 
-#ifdef CONFIG_SOC_IT51XXX_SHA256_HW_ACCELERATE
-	SHA256_DLM (rw) : ORIGIN = SHA256_DLM_BASE, LENGTH = SHA256_DLM_LENGTH
+#ifdef CONFIG_SOC_IT51XXX_HW_CRYPTO_ACCELERATE
+	HWCRYPTO_DLM (rw) : ORIGIN = HWCRYPTO_DLM_BASE, LENGTH = HWCRYPTO_DLM_LENGTH
 #endif
 
 #if defined(CONFIG_LINKER_DEVNULL_MEMORY)
@@ -465,19 +468,19 @@ GROUP_END(DTCM)
 
     GROUP_END(RAMABLE_REGION)
 
-#ifdef CONFIG_SOC_IT51XXX_SHA256_HW_ACCELERATE
-	GROUP_START(SHA256_DLM)
+#ifdef CONFIG_SOC_IT51XXX_HW_CRYPTO_ACCELERATE
+	GROUP_START(HWCRYPTO_DLM)
 
-		SECTION_PROLOGUE(it515xx_sha256_ram, (NOLOAD),)
+		SECTION_PROLOGUE(it515xx_hwcrypto_dlm, (NOLOAD),)
 		{
-			__sha256_ram_block_start = .;
-			KEEP(*(.__sha256_ram_block))
+			__hwcrypto_dlm_block_start = .;
+			KEEP(*(.__hwcrypto_dlm_block))
 
-			ASSERT((ABSOLUTE(__sha256_ram_block_start) & 0xfff) == 0, \
-				"SHA256 DLM block must be 4KB aligned");
-		} GROUP_LINK_IN(SHA256_DLM)
+			ASSERT((ABSOLUTE(__hwcrypto_dlm_block_start) & 0xfff) == 0, \
+				"HWCRYPTO DLM block must be 4KB aligned");
+		} GROUP_LINK_IN(HWCRYPTO_DLM)
 
-	GROUP_END(SHA256_DLM)
+	GROUP_END(HWCRYPTO_DLM)
 #endif
 
 #include <zephyr/linker/debug-sections.ld>
