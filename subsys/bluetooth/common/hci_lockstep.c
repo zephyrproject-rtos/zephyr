@@ -49,21 +49,46 @@ LOG_MODULE_REGISTER(bt_hci_lockstep);
 /* The response has been delivered to the sender */
 #define PHASE_DONE       BIT(3)
 
+static void lockstep_state_reset(struct bt_hci_lockstep *ls)
+{
+	ls->rsp = NULL;
+	ls->opcode = BT_OP_NOP;
+	/* The controller allows one command (Core Specification 6.3, Vol 4,
+	 * Part E, Section 4.4).
+	 */
+	ls->state = CREDIT_AVAILABLE;
+	ls->status = BT_HCI_ERR_SUCCESS;
+}
+
 void bt_hci_lockstep_init(struct bt_hci_lockstep *ls, const struct device *dev,
 			  bt_hci_lockstep_send_t send)
 {
 	*ls = (struct bt_hci_lockstep){
 		.dev = dev,
 		.send = send,
-		.opcode = BT_OP_NOP,
-		/* Initially the controller allows one command (Core
-		 * Specification 6.3, Vol 4, Part E, Section 4.4).
-		 */
-		.state = CREDIT_AVAILABLE,
-		.status = BT_HCI_ERR_SUCCESS,
 		.timeout = LOCKSTEP_CMD_TIMEOUT,
 	};
+	lockstep_state_reset(ls);
 	k_sem_init(&ls->changed, 0, 1);
+}
+
+void bt_hci_lockstep_reset(struct bt_hci_lockstep *ls)
+{
+	k_spinlock_key_t key;
+
+	/* Under the lock, so that a packet being fed meanwhile sees the state
+	 * either before or after the reset.
+	 */
+	key = k_spin_lock(&ls->lock);
+	lockstep_state_reset(ls);
+	k_spin_unlock(&ls->lock, key);
+
+	/* A change of state like any other: a sender waiting for the controller
+	 * to allow its command finds that it does. Given rather than reset,
+	 * which would take the wakeup away from a sender that has seen the old
+	 * state and is about to wait, and fail one that already waits.
+	 */
+	k_sem_give(&ls->changed);
 }
 
 bool bt_hci_lockstep_feed(struct bt_hci_lockstep *ls, const uint8_t *pkt, size_t len)
