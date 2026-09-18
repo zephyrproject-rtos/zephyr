@@ -308,6 +308,12 @@ Deprecated APIs and options
     :kconfig:option:`CONFIG_BT_HCI`, is the only selection left in the tree; the choice itself
     stays as the extension point for out-of-tree stacks.
 
+  * The HCI driver ``setup()`` op, :c:func:`bt_hci_setup`,
+    :c:struct:`bt_hci_setup_params` and :kconfig:option:`CONFIG_BT_HCI_SETUP` have
+    been deprecated. A driver performs its vendor-specific initialization inside
+    :c:member:`bt_hci_driver_api.open` instead, over its own transport. See the
+    migration guide.
+
 * Build system
 
   * The ``zephyr_file_copy()`` CMake function has been deprecated. Use the native
