@@ -6368,7 +6368,7 @@ endmacro()
 .. cmake:signature::
    zephyr_iterable_section(NAME <name> [GROUP <group>]
                            [VMA <region|group>] [LMA <region|group>]
-                           [ALIGN_WITH_INPUT] [SUBALIGN <alignment>])
+                           [ALIGN_WITH_INPUT] [GC_ALLOWED] [SUBALIGN <alignment>])
    :break: verbatim
 
    Define an output section which will set up an iterable area of equally-sized data structures. For
@@ -6420,6 +6420,10 @@ endmacro()
      The alignment difference between VMA and LMA is kept
      in tact for this section.
 
+   ``GC_ALLOWED``
+     Allow unreferenced entries to be removed by linker garbage collection. By default, all entries
+     are retained even when they are not referenced directly.
+
    ``NUMERIC``
      Use numeric sorting.
 
@@ -6434,11 +6438,12 @@ endmacro()
 
 function(zephyr_iterable_section)
   # ToDo - Should we use ROM, RAM, etc as arguments ?
-  set(options     "ALIGN_WITH_INPUT;NUMERIC")
+  set(options     "ALIGN_WITH_INPUT;GC_ALLOWED;NUMERIC")
   set(single_args "GROUP;LMA;NAME;SUBALIGN;VMA")
   set(multi_args  "")
   set(subalign "")
   set(align_input)
+  set(keep KEEP)
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
   if(NOT DEFINED SECTION_NAME)
@@ -6453,6 +6458,10 @@ function(zephyr_iterable_section)
 
   if(SECTION_ALIGN_WITH_INPUT)
     set(align_input ALIGN_WITH_INPUT)
+  endif()
+
+  if(SECTION_GC_ALLOWED)
+    set(keep)
   endif()
 
   if(SECTION_NUMERIC)
@@ -6475,7 +6484,7 @@ function(zephyr_iterable_section)
     SECTION ${SECTION_NAME}_area
     INPUT "${INPUT}"
     SYMBOLS _${SECTION_NAME}_list_start _${SECTION_NAME}_list_end
-    KEEP SORT NAME
+    ${keep} SORT NAME
   )
 endfunction()
 
