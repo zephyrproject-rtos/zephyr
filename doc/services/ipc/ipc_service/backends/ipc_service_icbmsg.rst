@@ -38,8 +38,6 @@ The data sending process is following:
   They can allocate, send data and receive data.
 * A block index with the beginning of the message is written to the producer queue.
   Information about the priority of the endpoint is appended to the block index.
-  :kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_ICBMSG_MAX_ACTIVE_COUNT` defines number of slots in the queue.
-  Mailbox notification is send to the receiver.
 * The receiver reads the producer queue. Higher prioriy messages are processed first.
   It can hold the data as long as desired.
   Again, other threads are not blocked as long as there are enough free blocks for them.
@@ -55,8 +53,6 @@ The backend is configured using Kconfig and devicetree.
 There are following Kconfig options:
 
 :kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP` - maximum number of registered endpoints.
-
-:kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_ICBMSG_MAX_ACTIVE_COUNT` - number of slots in the queues.
 
 :kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT` - support for deregistration and closing.
 
@@ -169,7 +165,8 @@ The algorithm:
 
 #. Calculate the minimum size required for the control area:
 
-   * for each queue there is :kconfig:option:`IPC_SERVICE_BACKEND_ICBMSG_MAX_ACTIVE_COUNT` bytes and 8 byte queue header.
+   * for each queue there is ``n`` bytes for slots and 8 byte queue header.
+     Number of slots is derived from the highest ``tx-blocks`` or ``rx-blocks`` value.
    * Typically control data takes less than 64 bytes per direction.
 
 #. Calculate available size for block area. Note that the actual size may be smaller because of block alignment:
