@@ -19,8 +19,17 @@
 
 		flexspi: spi@400c8000 {
 			reg = <0x400c8000 0x1000>, <0x80000000 DT_SIZE_M(8)>;
+			reg-names = "reg_base", "ahb";
 		};
 	};
 };
 
 #include "nxp_mcxnx4x_common.dtsi"
+
+/*
+ * Explicit non-secure identity ranges for flash, mirroring the
+ * secure-alias override in nxp_mcxn54x.dtsi.
+ */
+&flash {
+	ranges = <0x0 0x0 0x4000000>;
+};

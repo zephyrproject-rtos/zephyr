@@ -17,3 +17,11 @@
 };
 
 #include "nxp_mcxn23x_common.dtsi"
+
+/*
+ * Explicit non-secure identity ranges for flash, mirroring the
+ * secure-alias override in nxp_mcxn23x.dtsi.
+ */
+&flash {
+	ranges = <0x0 0x0 0x4000000>;
+};

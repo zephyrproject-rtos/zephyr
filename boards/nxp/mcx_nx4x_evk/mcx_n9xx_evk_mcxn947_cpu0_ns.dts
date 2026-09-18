@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,11 +7,11 @@
 /dts-v1/;
 
 #include <nxp/mcx/mcxn/nxp_mcxn947_ns.dtsi>
-#include "frdm_mcxn947_mcxn947_cpu0.dtsi"
+#include "mcx_n9xx_evk.dtsi"
+#include "mcx_nx4x_evk_cpu0.dtsi"
 
 / {
-	model = "NXP FRDM_N94 board";
-	compatible = "nxp,mcxn947", "nxp,mcx";
+	model = "NXP MCX-N9XX-EVK board";
 
 	cpus {
 		/delete-node/ cpu@1;
@@ -31,9 +31,9 @@
 };
 
 /*
- * frdm_mcxn947_mcxn947_cpu0.dtsi allocates the first 320K of sram0 to cpu0.
- * Of that, the first 192K are owned by the secure image; only the remaining
- * 128K are available to this non-secure image.
+ * mcx_nx4x_evk_cpu0.dtsi allocates the first 320K of sram0 to cpu0. Of that,
+ * the first 192K are owned by the secure image; only the remaining 128K are
+ * available to this non-secure image.
  */
 &sram0 {
 	reg = <0x20030000 DT_SIZE_K(128)>;
@@ -50,9 +50,9 @@
 		/*
 		 * All partition sizes must be aligned to the flash memory sector size (8 KB).
 		 *
-		 * This flash layout must exactly match the upstream TF-M layout defined in
-		 * the platform-specific `flash_layout.h`. Any modification to the layout
-		 * must be applied consistently in both `flash_layout.h` and this file.
+		 * This layout is compatible with the requirements given in TF-M
+		 * configuration, but does not currently build with TF-M. It might
+		 * require adjustment depending on evolutions on TF-M.
 		 *
 		 * BL2 / MCUBoot
 		 */
@@ -89,28 +89,15 @@
 			label = "image-1-non-secure";
 			reg = <0x000e0000 DT_SIZE_K(256)>;  /* 256 KB */
 		};
-
-		/* Protected Storage (PS) */
-		tfm_ps_partition: partition@120000 {
-			compatible = "zephyr,mapped-partition";
-			label = "tfm-ps";
-			reg = <0x00120000 DT_SIZE_K(16)>;   /* 16 KB */
-		};
-
-		/* Internal Trusted Storage (ITS) */
-		tfm_its_partition: partition@124000 {
-			compatible = "zephyr,mapped-partition";
-			label = "tfm-its";
-			reg = <0x00124000 DT_SIZE_K(16)>;   /* 16 KB */
-		};
-
-		/* OTP / NV counters */
-		tfm_otp_partition: partition@128000 {
-			compatible = "zephyr,mapped-partition";
-			label = "tfm-otp";
-			reg = <0x00128000 DT_SIZE_K(8)>;    /* 8 KB */
-		};
 	};
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
 };
 
 &fmu {

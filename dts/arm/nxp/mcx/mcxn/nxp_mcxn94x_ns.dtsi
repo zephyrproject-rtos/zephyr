@@ -15,10 +15,6 @@
 
 		peripheral: peripheral@40000000 {
 			ranges = <0x0 0x40000000 0x10000000>;
-
-			ftfe: flash-controller@43000 {
-				ranges = <0x0 0x10000000 0x4000000>;
-			};
 		};
 
 		flexspi: spi@400c8000 {
@@ -29,3 +25,11 @@
 };
 
 #include "nxp_mcxn94x_common.dtsi"
+
+/*
+ * Explicit non-secure identity ranges for flash, mirroring the
+ * secure-alias override in nxp_mcxn94x.dtsi.
+ */
+&flash {
+	ranges = <0x0 0x0 0x4000000>;
+};

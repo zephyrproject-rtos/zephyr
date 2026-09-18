@@ -15,10 +15,6 @@
 
 		peripheral: peripheral@50000000 {
 			ranges = <0x0 0x50000000 0x10000000>;
-
-			ftfe: flash-controller@43000 {
-				ranges = <0x0 0x10000000 0x4000000>;
-			};
 		};
 
 		flexspi: spi@500c8000 {
@@ -36,4 +32,13 @@
  */
 &fmu {
 	status = "okay";
+};
+
+/*
+ * Secure flash is accessed through the secure alias of the flash
+ * controller's AHB window, mirroring the peripheral/sram secure
+ * ranges above. The non-secure dtsi leaves this identity-mapped.
+ */
+&flash {
+	ranges = <0x0 0x10000000 0x4000000>;
 };
