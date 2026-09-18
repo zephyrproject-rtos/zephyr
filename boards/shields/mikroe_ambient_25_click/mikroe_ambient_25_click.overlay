@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Carl Zeiss Meditec AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		light-sensor = &tls2522_mikroe_ambient_25_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	tls2522_mikroe_ambient_25_click: tsl2522@39 {
+		compatible = "ams,tsl2522";
+		reg = <0x39>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+	};
+};
