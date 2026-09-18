@@ -19,6 +19,9 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_context.h>
+#if defined(CONFIG_NET_IPV6_IID_STABLE) || defined(CONFIG_NET_IPV6_PE)
+#include <psa/crypto.h>
+#endif
 
 #include "icmpv6.h"
 #include "nbr.h"
@@ -548,6 +551,18 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	return NET_DROP;
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
+
+#if defined(CONFIG_NET_IPV6_IID_STABLE) || defined(CONFIG_NET_IPV6_PE)
+/**
+ * @brief Get the HMAC key used to derive interface identifiers, generating
+ * it on first use.
+ *
+ * @param cached Caller's key id, PSA_KEY_ID_NULL until the key exists.
+ *
+ * @return The key id, or PSA_KEY_ID_NULL if the key could not be generated.
+ */
+psa_key_id_t net_ipv6_iid_key_get(psa_key_id_t *cached);
+#endif /* CONFIG_NET_IPV6_IID_STABLE || CONFIG_NET_IPV6_PE */
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 void net_ipv6_init(void);
