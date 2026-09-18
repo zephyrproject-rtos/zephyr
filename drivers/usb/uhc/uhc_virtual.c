@@ -24,6 +24,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc_vrt, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
+/*
+ * SOF is generated once per microframe (125 us). A real USB frame number
+ * only advances every 8th microframe, and wraps at 0x7ff (USB 2.0 8.4.3).
+ */
+#define UHC_FRAME_NUMBER(sof_count) (((sof_count) >> 3) & 0x7FFU)
 #define FRAME_MAX_TRANSFERS 16
 
 /*
@@ -60,7 +65,7 @@ struct uhc_vrt_data {
 	struct uhc_vrt_frame frame;
 	struct k_timer sof_timer;
 	k_timeout_t sof_period;
-	uint16_t frame_number;
+	uint16_t sof_count;
 	uint8_t req;
 };
 
@@ -253,13 +258,13 @@ static void vrt_assemble_frame(const struct device *dev)
 		}
 
 		if (tmp->interval) {
-			if (tmp->start_frame != priv->frame_number) {
+			if (tmp->start_frame != priv->sof_count) {
 				continue;
 			}
 
-			tmp->start_frame = priv->frame_number + tmp->interval;
+			tmp->start_frame = priv->sof_count + tmp->interval;
 			LOG_DBG("Interrupt transfer s.f. %u f.n. %u interval %u",
-				tmp->start_frame, priv->frame_number, tmp->interval);
+				tmp->start_frame, priv->sof_count, tmp->interval);
 		}
 
 		bm |= BIT(idx);
@@ -483,7 +488,13 @@ static void uhc_vrt_thread_handler(void *arg1, void *arg2, void *arg3)
 
 		switch (ev->type) {
 		case UHC_VRT_EVT_SOF:
-			priv->frame_number++;
+			priv->sof_count++;
+			err = uvb_advert(priv->host_node, UVB_EVT_SOF,
+					 INT_TO_POINTER(UHC_FRAME_NUMBER(priv->sof_count)));
+			if (unlikely(err)) {
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
+			}
+
 			vrt_xfer_cleanup_cancelled(dev);
 			vrt_xfer_check_timeout(dev);
 			vrt_assemble_frame(dev);
@@ -613,9 +624,9 @@ static int uhc_vrt_enqueue(const struct device *dev,
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
 	if (xfer->interval) {
-		xfer->start_frame = priv->frame_number + xfer->interval;
+		xfer->start_frame = priv->sof_count + xfer->interval;
 		LOG_DBG("New interrupt transfer s.f. %u f.n. %u interval %u",
-			xfer->start_frame, priv->frame_number, xfer->interval);
+			xfer->start_frame, priv->sof_count, xfer->interval);
 	}
 
 	uhc_xfer_append(dev, xfer);
