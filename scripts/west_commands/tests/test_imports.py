@@ -25,6 +25,7 @@ def test_runner_imports():
         # zephyr-keep-sorted-start
         'amebaflash',
         'arc-nsim',
+        'bflb_flash_command',
         'bflb_mcu_tool',
         'blackmagicprobe',
         'bossac',
