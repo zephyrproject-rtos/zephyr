@@ -1,0 +1,46 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_SCSI
+	bool "Generic disk_access backend over SCSI mid-layer"
+	depends on SCSI
+	help
+	  Register a disk_access volume backed by a bound struct scsi_device.
+	  Transport-agnostic: used by USB MSC, UFS, or application code that
+	  binds a SCSI device and calls scsi_disk_register().
+
+if DISK_DRIVER_SCSI
+
+config SCSI_DISK_BOUNCE_BUF
+	bool "Bounce buffer for unaligned disk I/O"
+	default n
+	help
+	  When application buffers are not aligned to CONFIG_SCSI_DISK_BUF_ALIGN,
+	  copy through a static internal bounce buffer (same model as the SD
+	  card buffer). Each struct scsi_disk embeds CONFIG_SCSI_DISK_BOUNCE_SIZE
+	  bytes; no heap is used.
+
+	  Enable for host-side FatFs or other disk_access users that may pass
+	  unaligned buffers. USB device Mass Storage (USBD_MSC_CLASS) only
+	  selects the SCSI mid-layer for CDB helpers and does not enable
+	  DISK_DRIVER_SCSI, so device-only builds do not allocate this buffer.
+
+config SCSI_DISK_BOUNCE_SIZE
+	int "Bounce buffer size in bytes"
+	default 4096
+	depends on SCSI_DISK_BOUNCE_BUF
+	help
+	  Size of the internal bounce buffer used for unaligned I/O.
+
+config SCSI_DISK_BUF_ALIGN
+	int "Minimum buffer alignment for direct SCSI I/O"
+	default 4
+	help
+	  Buffers aligned to this boundary are passed directly to the SCSI
+	  mid-layer; others use the bounce buffer when enabled.
+
+module = SCSI_DISK
+module-str = scsi_disk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_SCSI

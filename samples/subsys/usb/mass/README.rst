@@ -11,6 +11,11 @@ This sample app demonstrates use of a USB Mass Storage driver by the Zephyr
 project. This very simple driver enumerates a board with either RAM or FLASH
 into an USB disk.
 
+The device class enables :kconfig:option:`CONFIG_SCSI` through
+:kconfig:option:`CONFIG_USBD_MSC_CLASS` so SCSI command handling shares CDB
+helpers from the mid-layer (see :ref:`scsi_midlayer`). No extra
+``CONFIG_SCSI=y`` line is required in :file:`prj.conf`.
+
 Requirements
 ************
 
