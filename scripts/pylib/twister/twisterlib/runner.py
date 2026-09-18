@@ -52,6 +52,7 @@ if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
 from domains import Domains
+from macho_parser import MachOFile
 from twisterlib.coverage import run_coverage_instance
 from twisterlib.environment import TwisterEnv
 from twisterlib.harness import Harness, HarnessImporter
@@ -1054,6 +1055,19 @@ class ProjectBuilder(FilterBuilder):
                 logger.error(f"Failed to demangle '{symbol_name}': {e}")
         return symbol_name
 
+    @staticmethod
+    def image_symbol_names(image_file):
+        """Yield the symbol names of a built image, ELF or Mach-O."""
+        with open(image_file, "rb") as image_fp:
+            if MachOFile.is_macho(image_fp):
+                yield from (symbol.name for symbol in MachOFile(image_fp).symbols())
+                return
+
+            elf = ELFFile(image_fp)
+            for section in elf.iter_sections():
+                if isinstance(section, SymbolTableSection):
+                    yield from (symbol.name for symbol in section.iter_symbols())
+
     def determine_testcases(self, results):
         logger.debug(f"Determine test cases for test suite: {self.instance.testsuite.id}")
 
@@ -1061,37 +1075,32 @@ class ProjectBuilder(FilterBuilder):
         detected_cases = []
 
         elf_file = self.instance.get_elf_file()
-        with open(elf_file, "rb") as elf_fp:
-            elf = ELFFile(elf_fp)
-
-            for section in elf.iter_sections():
-                if isinstance(section, SymbolTableSection):
-                    for sym in section.iter_symbols():
-                        # It is only meant for new ztest fx
-                        # because only new ztest fx exposes test functions precisely.
-                        m_ = new_ztest_unit_test_regex.search(sym.name)
-                        if not m_:
-                            continue
-                        # Demangle C++ symbols
-                        m_ = new_ztest_unit_test_regex.search(self.demangle(sym.name))
-                        if not m_:
-                            continue
-                        # The 1st capture group is new ztest suite name.
-                        # The 2nd capture group is new ztest unit test name.
-                        new_ztest_suite = m_[1]
-                        if self.trace and \
-                           new_ztest_suite not in self.instance.testsuite.ztest_suite_names:
-                            # This can happen if a ZTEST_SUITE name is macro-generated
-                            # in the test source files, e.g. based on DT information.
-                            logger.debug(
-                                f"Unexpected Ztest suite '{new_ztest_suite}' is "
-                                f"not present in: {self.instance.testsuite.ztest_suite_names}"
-                            )
-                        test_func_name = m_[2].replace("test_", "", 1)
-                        testcase_id = self.instance.testsuite.compose_case_name(
-                            f"{new_ztest_suite}.{test_func_name}"
-                        )
-                        detected_cases.append(testcase_id)
+        for symbol_name in self.image_symbol_names(elf_file):
+            # It is only meant for new ztest fx
+            # because only new ztest fx exposes test functions precisely.
+            m_ = new_ztest_unit_test_regex.search(symbol_name)
+            if not m_:
+                continue
+            # Demangle C++ symbols
+            m_ = new_ztest_unit_test_regex.search(self.demangle(symbol_name))
+            if not m_:
+                continue
+            # The 1st capture group is new ztest suite name.
+            # The 2nd capture group is new ztest unit test name.
+            new_ztest_suite = m_[1]
+            if self.trace and \
+               new_ztest_suite not in self.instance.testsuite.ztest_suite_names:
+                # This can happen if a ZTEST_SUITE name is macro-generated
+                # in the test source files, e.g. based on DT information.
+                logger.debug(
+                    f"Unexpected Ztest suite '{new_ztest_suite}' is "
+                    f"not present in: {self.instance.testsuite.ztest_suite_names}"
+                )
+            test_func_name = m_[2].replace("test_", "", 1)
+            testcase_id = self.instance.testsuite.compose_case_name(
+                f"{new_ztest_suite}.{test_func_name}"
+            )
+            detected_cases.append(testcase_id)
 
         logger.debug(
             f"Test instance {self.instance.name} already has {len(self.instance.testcases)} "
