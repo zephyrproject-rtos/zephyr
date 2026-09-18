@@ -3,8 +3,10 @@
 
 set(zephyr_build_path ${APPLICATION_BINARY_DIR}/zephyr)
 
-target_link_options(native_simulator INTERFACE
-  "-T ${ZEPHYR_BASE}/boards/native/common/natsim_linker_script.ld")
+if(NOT CMAKE_HOST_APPLE)
+  target_link_options(native_simulator INTERFACE
+    "-T ${ZEPHYR_BASE}/boards/native/common/natsim_linker_script.ld")
+endif()
 
 if(SYSROOT_DIR)
   message(NOTICE "Appending --sysroot=${SYSROOT_DIR} to native_simulator")
@@ -22,6 +24,19 @@ if("${LINKER}" STREQUAL "lld")
   target_link_options(native_simulator INTERFACE "-fuse-ld=lld")
 endif()
 
+if(CMAKE_HOST_APPLE)
+  # Mach-O cannot sort sections by name at link time, so the native simulator is
+  # handed an order file instead. Tell it how to find Zephyr's own ordered
+  # symbols and which section holds the constructors it must not let dyld run.
+  find_program(CMAKE_NMEDIT nmedit REQUIRED)
+  list(APPEND nsi_config_content
+    "NSI_NMEDIT:=${CMAKE_NMEDIT}"
+    "NSI_ORDER_HELPERS:=${ZEPHYR_BASE}/scripts/build/gen_macho_order.py"
+    "NSI_EMBSW_CTOR_SECTION:=zinit_array"
+    "NSI_EMBSW_CTOR_ID_EXPR:=s/^___zephyr_init_array_start_\\([0-9][0-9]*\\)$$/\\1/p"
+  )
+endif()
+
 set(nsi_config_content
   ${nsi_config_content}
   "NSI_AR:=${CMAKE_AR}"
@@ -29,6 +44,8 @@ set(nsi_config_content
   "NSI_BUILD_PATH:=${zephyr_build_path}/NSI"
   "NSI_CC:=$<$<BOOL:${launcher}>:${launcher} >${CMAKE_C_COMPILER}"
   "NSI_OBJCOPY:=${CMAKE_OBJCOPY}"
+  "NSI_PYTHON:=${PYTHON_EXECUTABLE}"
+  "NSI_NM:=${CMAKE_NM}"
   "NSI_EMBEDDED_CPU_SW:=${zephyr_build_path}/${KERNEL_ELF_NAME} ${CONFIG_NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS}"
   "NSI_EXE:=${zephyr_build_path}/${KERNEL_EXE_NAME}"
   "NSI_EXTRA_SRCS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_SOURCES>,\ >"
