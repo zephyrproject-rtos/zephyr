@@ -70,6 +70,17 @@ static const struct spi_buf_set spi_rx = {.buffers = &spi_rx_buf, .count = 1};
 static K_SEM_DEFINE(sem_irq, 0, 1);
 static K_SEM_DEFINE(sem_spi_available, 1, 1);
 
+/* Whether the transport is open, and a count of how often that has changed.
+ * open() and close() update both while holding sem_spi_available, so that a
+ * send finds out, once it owns the semaphore, that the controller is down, or
+ * that it has been down since the send began although the transport is open
+ * again. The count is atomic because a send notes it before it has the
+ * semaphore: what counts is the session the call began in, not the one in
+ * which it first gets the semaphore.
+ */
+static bool transport_open;
+static atomic_t transport_session;
+
 void bt_packet_irq_isr(const struct device *unused1, struct gpio_callback *unused2,
 		       uint32_t unused3)
 {
@@ -100,12 +111,21 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len, void *rx, uint32_
 
 static int spi_send_packet(uint8_t *data, uint16_t len)
 {
+	atomic_val_t session = atomic_get(&transport_session);
 	int ret;
 	uint16_t fail_count = 0;
 
 	do {
 		/* Wait for SPI bus to be available */
 		k_sem_take(&sem_spi_available, K_FOREVER);
+
+		/* The semaphore is free between the attempts, so close() may
+		 * have run while this call waited for it or slept.
+		 */
+		if (!transport_open || atomic_get(&transport_session) != session) {
+			k_sem_give(&sem_spi_available);
+			return -ENETDOWN;
+		}
 
 		/* Send the SPI packet to controller */
 		ret = bt_apollo_spi_send(data, len, bt_spi_transceive);
@@ -365,6 +385,18 @@ static int bt_apollo_open(const struct device *dev)
 		return ret;
 	}
 
+	/* A new session, which the controller initialization below already
+	 * sends in, through spi_send_packet().
+	 */
+	ret = k_sem_take(&sem_spi_available, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
+
+	transport_open = true;
+	(void)atomic_inc(&transport_session);
+	k_sem_give(&sem_spi_available);
+
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack, K_KERNEL_STACK_SIZEOF(spi_rx_stack),
 			(k_thread_entry_t)bt_spi_rx_thread, (void *)dev, NULL, NULL,
@@ -377,15 +409,42 @@ static int bt_apollo_close(const struct device *dev)
 {
 	int ret;
 
-	ret = bt_apollo_controller_deinit();
-	if (ret) {
+	/* The SPI semaphore is held while the controller is taken down and the
+	 * RX thread is stopped, so that neither happens in the middle of a
+	 * transfer and the thread is not stopped owning a semaphore that
+	 * k_thread_abort() does not give back.
+	 */
+	ret = k_sem_take(&sem_spi_available, K_FOREVER);
+	if (ret != 0) {
 		return ret;
 	}
 
-	/* Stop RX thread */
-	k_thread_abort(&spi_rx_thread_data);
+	ret = bt_apollo_controller_deinit();
+	if (ret != 0) {
+		k_sem_give(&sem_spi_available);
+		return ret;
+	}
 
-	return ret;
+	/* A send that is waiting for the semaphore, or sleeping between its
+	 * attempts, gives up instead of talking to a controller that is down,
+	 * or to the one a later open() brings up.
+	 */
+	transport_open = false;
+	(void)atomic_inc(&transport_session);
+
+	/* Stop RX thread */
+	if (k_current_get() == (k_tid_t)&spi_rx_thread_data) {
+		/* close() from the receive callback aborts the calling thread,
+		 * which does not return here, so nothing may be held across it.
+		 */
+		k_sem_give(&sem_spi_available);
+		k_thread_abort(&spi_rx_thread_data);
+	} else {
+		k_thread_abort(&spi_rx_thread_data);
+		k_sem_give(&sem_spi_available);
+	}
+
+	return 0;
 }
 
 static int bt_apollo_setup(const struct device *dev, const struct bt_hci_setup_params *params)
