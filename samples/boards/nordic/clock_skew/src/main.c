@@ -10,9 +10,6 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/counter.h>
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-#include <nrfx_clock.h>
-#else
 #include <hal/nrf_clock.h>
 #include <nrfx_clock_lfclk.h>
 
@@ -23,7 +20,7 @@
 #else
 #error "HF clock not enabled"
 #endif
-#endif
+
 
 #define UPDATE_INTERVAL_S 10
 
@@ -118,13 +115,13 @@ static void show_clocks(const char *tag)
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	clkstat = clock_control_get_status(clock0, CLOCK_CONTROL_NRF_SUBSYS_LF);
-	running = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK,
-				       &src.lf);
+	running = nrfx_clock_lfclk_running_check(&src.lf);
 	printk("%s: LFCLK[%s]: %s %s ; ", tag, clkstat_s[clkstat],
 	       running ? "Running" : "Off", lfsrc_s[src.lf]);
 	clkstat = clock_control_get_status(clock0, CLOCK_CONTROL_NRF_SUBSYS_HF);
-	running = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_HFCLK,
-				       &src.hf);
+	running = COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
+		(nrfx_clock_hfclk_running_check),
+		(nrfx_clock_xo_running_check))(&src.hf);
 	printk("HFCLK[%s]: %s %s\n", clkstat_s[clkstat],
 	       running ? "Running" : "Off", hfsrc_s[src.hf]);
 #else
