@@ -484,6 +484,12 @@ static void uhc_vrt_thread_handler(void *arg1, void *arg2, void *arg3)
 		switch (ev->type) {
 		case UHC_VRT_EVT_SOF:
 			priv->frame_number++;
+			err = uvb_advert(priv->host_node, UVB_EVT_SOF,
+					 INT_TO_POINTER(priv->frame_number));
+			if (unlikely(err)) {
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
+			}
+
 			vrt_xfer_cleanup_cancelled(dev);
 			vrt_xfer_check_timeout(dev);
 			vrt_assemble_frame(dev);
