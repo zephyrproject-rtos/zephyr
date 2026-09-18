@@ -572,6 +572,40 @@ exit:
 	return ret;
 }
 
+static int websocket_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+					struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	struct websocket_context *ctx = obj;
+	const struct fd_op_vtable *vtable;
+	void *core_obj;
+
+	core_obj = zvfs_get_fd_obj_and_vtable(ctx->real_sock,
+					(const struct fd_op_vtable **)&vtable,
+					NULL);
+	if (core_obj == NULL) {
+		return -EBADF;
+	}
+
+	return zvfs_fdtable_call_poll_prepare(vtable, core_obj, pfd, pev, pev_end);
+}
+
+static int websocket_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+				       struct k_poll_event **pev)
+{
+	struct websocket_context *ctx = obj;
+	const struct fd_op_vtable *vtable;
+	void *core_obj;
+
+	core_obj = zvfs_get_fd_obj_and_vtable(ctx->real_sock,
+					(const struct fd_op_vtable **)&vtable,
+					NULL);
+	if (core_obj == NULL) {
+		return -EBADF;
+	}
+
+	return zvfs_fdtable_call_poll_update(vtable, core_obj, pfd, pev);
+}
+
 static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	struct websocket_context *ctx = obj;
@@ -1415,6 +1449,8 @@ static const struct socket_op_vtable websocket_fd_op_vtable = {
 		.write = websocket_write_vmeth,
 		.close = websocket_close_vmeth,
 		.ioctl = websocket_ioctl_vmeth,
+		.poll_prepare = websocket_poll_prepare_vmeth,
+		.poll_update = websocket_poll_update_vmeth,
 	},
 	.sendto = websocket_sendto_ctx,
 	.recvfrom = websocket_recvfrom_ctx,
