@@ -20,6 +20,7 @@ zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_JPEGDEC video_mcux_jpegdec.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX video_mcux_mipi_csi2rx.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_SDMA video_mcux_smartdma.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MT9M114 mt9m114.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_NATIVE_SIM_FIFO video_native_sim_fifo.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_OV2640 ov2640.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_OV5640 ov5640.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_OV5642 ov5642.c)
@@ -89,6 +90,10 @@ if(CONFIG_VIDEO_SW_GENERATOR)
             ${ZEPHYR_BINARY_DIR}/include/generated/video_sw_generator_h264.inc
         )
     endif()
+endif()
+
+if(CONFIG_VIDEO_NATIVE_SIM_FIFO)
+  target_sources(native_simulator INTERFACE video_native_sim_fifo_bottom.c)
 endif()
 
 zephyr_linker_sources(DATA_SECTIONS video.ld)
