@@ -15,6 +15,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
+#include <zephyr/math/ilog2.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
@@ -324,42 +325,37 @@ static void configure_wkup_pin_pupd(const struct wkup_pin_desc *pin_desc, uint32
 #endif /* !HAS_WKUP_PINS_PUPD */
 }
 
+#if HAS_MUXED_WKUP_LINES
 /**
- * @brief Sets the signal source for a given wake-up line.
+ * @brief Set the signal source selection for a given wake-up line.
+ *
  * @param wkup_line_idx Wake-up line index (the `n` in `WKUPn`)
  * @param src_selection Source selection value
  *
- * @note No effect if the target SoC has no source selection mux.
- *
  * @internal
- * This function replaces the <tt>LL_PWR_SetWakeUpPinSignal<N>Selection()</tt>
- * family of functions. It is more efficient, easier to use and portable
- * across all applicable series because there is no naming disparity...
+ * This is used instead of <tt>LL_PWR_SetWakeUpPinSignal<N>Selection()</tt>
+ * functions which are slow because they have to compute the wake-up line index
+ * (which we already know!) and cumbersome as there is one distinct function to
+ * select each of the possible sources, instead of a unique one which accepts a
+ * "source selection" parameter. As icing on the cake, the functions' names are
+ * different on STM32U3 so we would need #ifdef-pasta to use them too...
+ * Writing our own version using raw register accesses avoids all these issues.
+ *
+ * As of writing, a single implementation is sufficient as all series with multiple
+ * sources per wake-up line share the same register layout. This might need to be
+ * extended in the future.
  * @endinternal
  */
-static void configure_wkup_line_source(uint32_t wkup_line_idx, uint8_t src_selection)
+static void set_wkup_line_source(uint32_t wkup_line_idx, uint8_t src_selection)
 {
-#if HAS_MUXED_WKUP_LINES
-	/*
-	 * Replacement for the LL_PWR_SetWakeUpPinSignal<N>Selection() family
-	 * of functions; they have a huge overhead as they re-compute the
-	 * wake-up line index (which we already know!) and are a pain to use
-	 * as they don't accept a "source selection" argument - instead, there
-	 * is one function to select each possible source. Finally, the function
-	 * naming is different on STM32U3 for whatever reason, so we'd ALSO need
-	 * #ifdef quirks for that series... raw register access avoids all that.
-	 *
-	 * As of writing, a single implementation is sufficient as all series
-	 * with multiple sources per wake-up line share the same register layout.
-	 * This might need to be extended in the future.
-	 */
-	const uint32_t shift = (wkup_line_idx - 1) * 2U;
+	const uint32_t wusel_width =  ilog2_compile_time_const_u32(PWR_WUCR3_WUSEL1_Msk + 1);
+	const uint32_t shift = ((wkup_line_idx - 1) * wusel_width) - PWR_WUCR3_WUSEL1_Pos;
 
 	stm32_reg_modify_bits(&PWR->WUCR3,
 			      PWR_WUCR3_WUSEL1_Msk << shift,
 			      src_selection << shift);
-#endif /* HAS_MUXED_WKUP_LINES */
 }
+#endif /* HAS_MUXED_WKUP_LINES */
 
 /* Private API entrypoint */
 int stm32_pwrc_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags)
@@ -385,7 +381,9 @@ int stm32_pwrc_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t
 #endif /* !DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl) */
 
 	configure_wkup_pin_pupd(pin_desc, port_idx, pin, flags & (GPIO_PULL_UP | GPIO_PULL_DOWN));
-	configure_wkup_line_source(pin_desc->line_idx, pin_desc->src_select);
+#if HAS_MUXED_WKUP_LINES
+	set_wkup_line_source(pin_desc->line_idx, pin_desc->src_select);
+#endif /* HAS_MUXED_WKUP_LINES */
 
 	ll_pwr_enable_wake_up_line(ll_wakeup_line);
 
