@@ -1,0 +1,87 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence SD Host Controller (SD6HC)
+
+compatible: "cdns,sd6hc"
+
+include: ["cdns,sdhc.yaml"]
+
+properties:
+  cdns,phy-cfg-sd-ds:
+    type: array
+    description: |
+      Combo PHY settings for SD default speed and UHS-I SDR12: <DQS timing,
+      gate/loopback control, DLL slave control, DQ timing, DLL master
+      control>. Overrides the driver default.
+
+  cdns,phy-cfg-sd-hs:
+    type: array
+    description: |
+      Combo PHY settings for SD/eMMC high speed and UHS-I SDR25: <DQS timing,
+      gate/loopback control, DLL slave control, DQ timing, DLL master
+      control>. Overrides the driver default.
+
+  cdns,phy-cfg-emmc-sdr:
+    type: array
+    description: |
+      Combo PHY settings for UHS-I SDR50: <DQS timing, gate/loopback control,
+      DLL slave control, DQ timing, DLL master control>. Overrides the driver
+      default.
+
+  cdns,phy-cfg-emmc-ddr:
+    type: array
+    description: |
+      Combo PHY settings for UHS-I DDR50 and eMMC DDR52: <DQS timing,
+      gate/loopback control, DLL slave control, DQ timing, DLL master
+      control>. Overrides the driver default.
+
+  cdns,phy-cfg-emmc-hs200:
+    type: array
+    description: |
+      Combo PHY settings for UHS-I SDR104 and eMMC HS200: <DQS timing,
+      gate/loopback control, DLL slave control, DQ timing, DLL master
+      control>. Overrides the driver default.
+
+  cdns,phy-cfg-emmc-hs400:
+    type: array
+    description: |
+      Combo PHY settings for eMMC HS400: <DQS timing, gate/loopback control,
+      DLL slave control, DQ timing, DLL master control>. Overrides the driver
+      default.
+
+  cdns,ctrl-cfg-sd-ds:
+    type: array
+    description: |
+      Controller settings for SD default speed and UHS-I SDR12: <HRS09 HRS10
+      HRS16 HRS07>. Overrides the driver default.
+
+  cdns,ctrl-cfg-sd-hs:
+    type: array
+    description: |
+      Controller settings for SD/eMMC high speed and UHS-I SDR25: <HRS09 HRS10
+      HRS16 HRS07>. Overrides the driver default.
+
+  cdns,ctrl-cfg-emmc-sdr:
+    type: array
+    description: |
+      Controller settings for UHS-I SDR50: <HRS09 HRS10 HRS16 HRS07>.
+      Overrides the driver default.
+
+  cdns,ctrl-cfg-emmc-ddr:
+    type: array
+    description: |
+      Controller settings for UHS-I DDR50 and eMMC DDR52: <HRS09 HRS10 HRS16
+      HRS07>. Overrides the driver default.
+
+  cdns,ctrl-cfg-emmc-hs200:
+    type: array
+    description: |
+      Controller settings for UHS-I SDR104 and eMMC HS200: <HRS09 HRS10 HRS16
+      HRS07>. Overrides the driver default.
+
+  cdns,ctrl-cfg-emmc-hs400:
+    type: array
+    description: |
+      Controller settings for eMMC HS400: <HRS09 HRS10 HRS16 HRS07>. Overrides
+      the driver default.
