@@ -157,9 +157,11 @@ static void w6100_clear_pending(const struct device *dev)
 {
 	uint8_t slir;
 
-	w6100_spi_read(dev, W6100_SLIR, &slir, 1);
+	if (w6100_spi_read(dev, W6100_SLIR, &slir, 1) < 0) {
+		return;
+	}
 
-	/* SLIRCLR is write-1-to-clear; nothing to do when slir == 0 */
+	/* SLIRCLR is write-1-to-clear, so a zero SLIR needs no write */
 	if (slir != 0U) {
 		w6100_spi_write(dev, W6100_SLIRCLR, &slir, 1);
 	}
@@ -217,7 +219,11 @@ static int w6100_init(const struct device *dev)
 	}
 
 	/* check retry time value */
-	w6100_spi_read(dev, W6100_RTR, rtr, 2);
+	err = w6100_spi_read(dev, W6100_RTR, rtr, 2);
+	if (err != 0) {
+		LOG_ERR("Failed to read RTR register: %d", err);
+		return err;
+	}
 	if (sys_get_be16(rtr) != RTR_DEFAULT) {
 		LOG_ERR("Unable to read RTR register");
 		return -ENODEV;

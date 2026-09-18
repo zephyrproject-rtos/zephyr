@@ -29,11 +29,15 @@ int wiznet_command(const struct device *dev, uint8_t cmd)
 	const struct wiznet_config *cfg = dev->config;
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(WIZNET_CMD_TIMEOUT_MS));
 	uint8_t reg;
+	int ret;
 
 	wiznet_write(dev, cfg->regs->s0_cr, &cmd, 1);
 	while (true) {
-		wiznet_read(dev, cfg->regs->s0_cr, &reg, 1);
-		if (!reg) {
+		ret = wiznet_read(dev, cfg->regs->s0_cr, &reg, 1);
+		if (ret < 0) {
+			return ret;
+		}
+		if (reg == 0U) {
 			break;
 		}
 		if (sys_timepoint_expired(end)) {
@@ -104,7 +108,10 @@ int wiznet_tx(const struct device *dev, struct net_pkt *pkt)
 	uint8_t off[2];
 	int ret;
 
-	wiznet_read(dev, cfg->regs->s0_tx_wr, off, 2);
+	ret = wiznet_read(dev, cfg->regs->s0_tx_wr, off, 2);
+	if (ret < 0) {
+		return ret;
+	}
 	offset = sys_get_be16(off);
 
 	if (net_pkt_read(pkt, ctx->buf, len)) {
@@ -141,14 +148,18 @@ void wiznet_rx(const struct device *dev)
 	uint16_t read_len;
 	uint16_t reader;
 
-	wiznet_read(dev, cfg->regs->s0_rx_rsr, tmp, 2);
+	if (wiznet_read(dev, cfg->regs->s0_rx_rsr, tmp, 2) < 0) {
+		return;
+	}
 	rx_buf_len = sys_get_be16(tmp);
 
 	if (rx_buf_len == 0) {
 		return;
 	}
 
-	wiznet_read(dev, cfg->regs->s0_rx_rd, tmp, 2);
+	if (wiznet_read(dev, cfg->regs->s0_rx_rd, tmp, 2) < 0) {
+		return;
+	}
 	off = sys_get_be16(tmp);
 
 	if (wiznet_readbuf(dev, off, header, 2) < 0) {
@@ -187,7 +198,11 @@ void wiznet_rx(const struct device *dev)
 			frame_len = read_len;
 		}
 
-		wiznet_readbuf(dev, reader, data_ptr, frame_len);
+		if (wiznet_readbuf(dev, reader, data_ptr, frame_len) < 0) {
+			eth_stats_update_errors_rx(ctx->iface);
+			net_pkt_unref(pkt);
+			return;
+		}
 		net_buf_add(pkt_buf, frame_len);
 		reader += (uint16_t)frame_len;
 
@@ -214,7 +229,9 @@ static uint8_t wiznet_check_for_ir(const struct device *dev)
 		cfg->ops->clear_pending(dev);
 	}
 
-	wiznet_read(dev, cfg->regs->s0_ir, &ir, 1);
+	if (wiznet_read(dev, cfg->regs->s0_ir, &ir, 1) < 0) {
+		return 0U;
+	}
 
 	if (ir != 0U) {
 		wiznet_write(dev, cfg->regs->s0_irclr, &ir, 1);
@@ -357,8 +374,12 @@ int wiznet_set_config(const struct device *dev, struct net_if *iface __unused,
 		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
 			uint8_t mr = cfg->regs->s0_mr_mf_bit;
 			uint8_t mode;
+			int ret;
 
-			wiznet_read(dev, cfg->regs->s0_mr, &mode, 1);
+			ret = wiznet_read(dev, cfg->regs->s0_mr, &mode, 1);
+			if (ret < 0) {
+				return ret;
+			}
 
 			if (config->promisc_mode) {
 				if (!(mode & BIT(mr))) {
