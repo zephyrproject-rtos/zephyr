@@ -1048,7 +1048,8 @@ config DEPRECATED
 	bool
 	help
 	  Symbol that must be selected by a feature or module if it is
-	  considered to be deprecated.
+	  considered to be deprecated. The prompt of a symbol selecting it is
+	  shown with a " [DEPRECATED]" suffix.
 	  When adding this to an option, remember to follow the instructions in
 	  https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
 
@@ -1065,7 +1066,8 @@ config EXPERIMENTAL
 	bool
 	help
 	  Symbol that must be selected by a feature if it is considered to be
-	  at an experimental implementation stage.
+	  at an experimental implementation stage. The prompt of a symbol
+	  selecting it is shown with an " [EXPERIMENTAL]" suffix.
 
 config WARN_EXPERIMENTAL
 	bool
