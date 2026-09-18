@@ -98,8 +98,8 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			poll_timeout = k_ticks_to_ms_floor32(timeout.ticks);
 		}
 
-		return zvfs_fdtable_call_ioctl(offl_vtable, offl_ctx, ZFD_IOCTL_POLL_OFFLOAD, fds,
-					       nfds, poll_timeout);
+		return zvfs_fdtable_call_poll_offload(offl_vtable, offl_ctx, fds,
+					nfds, poll_timeout);
 	}
 
 	timeout = sys_timepoint_timeout(end);

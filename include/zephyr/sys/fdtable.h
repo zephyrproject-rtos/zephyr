@@ -100,6 +100,8 @@ struct fd_op_vtable {
 			    struct k_poll_event *pev_end);
 	/** Update poll results for an object. */
 	int (*poll_update)(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev);
+	/** Poll using an offloaded implementation. */
+	int (*poll_offload)(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout);
 };
 
 /**
@@ -355,6 +357,28 @@ static inline int zvfs_fdtable_call_poll_update(const struct fd_op_vtable *vtabl
 		return vtable->poll_update(obj, pfd, pev);
 	}
 	return zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE, pfd, pev);
+}
+
+/**
+ * @brief Call the poll offload vmethod on an object.
+ *
+ * Falls back to ZFD_IOCTL_POLL_OFFLOAD if the vmethod is not implemented.
+ *
+ * @param vtable vtable containing poll operation implementations
+ * @param obj Object to perform offloaded polling on
+ * @param fds Poll file descriptors
+ * @param nfds Number of poll file descriptors
+ * @param timeout Poll timeout in milliseconds
+ *
+ * @return Result from the poll offload operation
+ */
+static inline int zvfs_fdtable_call_poll_offload(const struct fd_op_vtable *vtable, void *obj,
+						struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	if (vtable->poll_offload != NULL) {
+		return vtable->poll_offload(obj, fds, nfds, timeout);
+	}
+	return zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_OFFLOAD, fds, nfds, timeout);
 }
 
 /**
