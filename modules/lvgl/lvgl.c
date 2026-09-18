@@ -143,9 +143,16 @@ static void lvgl_log(lv_log_level_t level, const char *buf)
 	case LV_LOG_LEVEL_TRACE:
 		LOG_DBG("%s", buf + (sizeof("[Trace] ") - 1));
 		break;
-	case LV_LOG_LEVEL_USER:
-		LOG_PRINTK("%s", buf + (sizeof("[User] ") - 1));
+	case LV_LOG_LEVEL_USER: {
+		static const char prefix[] = "[User] ";
+
+		if (strncmp(buf, prefix, sizeof(prefix) - 1) == 0) {
+			LOG_PRINTK("%s", buf + (sizeof(prefix) - 1));
+		} else {
+			LOG_PRINTK("%s", buf);
+		}
 		break;
+	}
 	}
 }
 #endif
