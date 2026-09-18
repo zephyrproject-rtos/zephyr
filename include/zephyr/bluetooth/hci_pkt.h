@@ -101,6 +101,25 @@ extern "C" {
 #define BT_HCI_PKT_CMD_DEFINE_STATIC(_name, _max_param_len)                                        \
 	Z_BT_HCI_PKT_CMD_DEFINE(_name, _max_param_len, static)
 
+/** @brief Define a buffer for an HCI command packet holding given parameters.
+ *
+ *  Same as BT_HCI_PKT_CMD_DEFINE(), with the @p _len parameter bytes at
+ *  @p _data already added, for the common case of a command whose parameters
+ *  the caller holds in one piece. The buffer holds exactly those parameters.
+ *
+ *  Expands to definitions followed by a statement, so it belongs in a block
+ *  and not at file scope.
+ *
+ *  @param _name Name of the net_buf_simple object.
+ *  @param _data Parameter bytes to add.
+ *  @param _len  Number of parameter bytes at @p _data. A constant expression,
+ *               as for BT_HCI_PKT_CMD_DEFINE(), and used more than once by
+ *               the macro.
+ */
+#define BT_HCI_PKT_CMD_DEFINE_WITH_DATA(_name, _data, _len)                                        \
+	Z_BT_HCI_PKT_CMD_DEFINE(_name, _len,);                                                     \
+	(void)net_buf_simple_add_mem(&_name, (_data), (_len))
+
 /** @brief Reset a buffer for a new HCI command packet.
  *
  *  Empties @p buf and reserves headroom for bt_hci_pkt_push_cmd_hdr(), so

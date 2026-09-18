@@ -315,4 +315,35 @@ ZTEST(bt_hci_pkt, test_parse_cmd_rsp_no_status)
 	zassert_equal(rsp.rp_len, 0);
 }
 
+ZTEST(bt_hci_pkt, test_cmd_define_with_data)
+{
+	static const uint8_t params[] = { 0x5a, 0xa5, 0x11 };
+	static const uint8_t expected[] = { BT_HCI_H4_CMD, 0x01, 0xfc, 0x03, 0x5a, 0xa5, 0x11 };
+
+	BT_HCI_PKT_CMD_DEFINE_WITH_DATA(cmd, params, sizeof(params));
+
+	zassert_equal(cmd.len, sizeof(params));
+	zassert_mem_equal(cmd.data, params, sizeof(params));
+
+	zassert_equal(bt_hci_pkt_push_cmd_hdr(&cmd, TEST_OPCODE), 0);
+	zassert_equal(cmd.len, sizeof(expected));
+	zassert_mem_equal(cmd.data, expected, sizeof(expected));
+}
+
+ZTEST(bt_hci_pkt, test_cmd_define_with_data_struct)
+{
+	const struct bt_hci_cp_set_event_mask params = {
+		.events = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 },
+	};
+
+	BT_HCI_PKT_CMD_DEFINE_WITH_DATA(cmd, &params, sizeof(params));
+
+	zassert_equal(cmd.len, sizeof(params));
+	zassert_mem_equal(cmd.data, &params, sizeof(params));
+
+	zassert_equal(bt_hci_pkt_push_cmd_hdr(&cmd, BT_HCI_OP_SET_EVENT_MASK), 0);
+	zassert_equal(cmd.len, BT_HCI_PKT_CMD_SIZE(sizeof(params)));
+	zassert_equal(cmd.data[0], BT_HCI_H4_CMD);
+}
+
 ZTEST_SUITE(bt_hci_pkt, NULL, NULL, NULL, NULL, NULL);
