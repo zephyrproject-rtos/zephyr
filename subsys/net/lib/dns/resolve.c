@@ -2888,6 +2888,11 @@ static int dns_resolve_close_locked(struct dns_resolve_context *ctx)
 
 	ctx->state = DNS_RESOLVE_CONTEXT_DEACTIVATING;
 
+	/* Cancel any queries still in flight so their timers are unlinked
+	 * from the kernel timeout list before this context is torn down
+	 */
+	dns_resolve_cancel_all(ctx);
+
 	/* ctx->net_ctx is never used in "deactivating" state. Additionally
 	 * following code is guaranteed to be executed only by one thread at a
 	 * time, due to required "active" -> "deactivating" state change. This
@@ -3013,8 +3018,6 @@ static int do_dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 
 	if (ctx->state == DNS_RESOLVE_CONTEXT_ACTIVE &&
 	    (do_close || ctx->init_called == 0)) {
-		dns_resolve_cancel_all(ctx);
-
 		err = dns_resolve_close_locked(ctx);
 		if (err) {
 			goto unlock;
