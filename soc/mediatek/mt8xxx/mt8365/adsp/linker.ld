@@ -2,4 +2,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../../linker.ld"
+#include "../../common/adsp/linker.ld"
