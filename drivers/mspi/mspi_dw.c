@@ -121,6 +121,7 @@ struct mspi_dw_config {
 	uint8_t max_queued_dummy_bytes;
 	uint8_t tx_fifo_threshold;
 	uint8_t rx_fifo_threshold;
+	uint8_t rx_sample_dly;
 #ifdef CONFIG_MSPI_DMA
 	uint8_t dma_tx_data_level;
 	uint8_t dma_rx_data_level;
@@ -2077,6 +2078,7 @@ static int dev_init(const struct device *dev)
 
 	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_SSI_IS_MST_BIT,
 				       dev_config->op_mode == MSPI_OP_MODE_CONTROLLER);
+	dev_data->rx_sample_dly = dev_config->rx_sample_dly;
 
 	dev_config->irq_config();
 
@@ -2187,7 +2189,8 @@ static DEVICE_API(mspi, drv_api) = {
 				7 * TX_FIFO_DEPTH(inst) / 8 - 1),	\
 	.rx_fifo_threshold =						\
 		DT_INST_PROP_OR(inst, rx_fifo_threshold,		\
-				1 * RX_FIFO_DEPTH(inst) / 8 - 1)
+				1 * RX_FIFO_DEPTH(inst) / 8 - 1),	\
+	.rx_sample_dly = DT_INST_PROP_OR(inst, rx_sample_delay_initial, 0)
 
 #define MSPI_DW_DMA_DATA_LEVELS(inst)					\
 	.dma_tx_data_level =						\
