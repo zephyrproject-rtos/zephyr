@@ -2864,6 +2864,10 @@ static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
 
 	if (argc == 1) {
 		params.oper = WIFI_WPS_PBC;
+	} else if (argc == 3 &&
+		   (strcmp(argv[1], "-i") == 0 ||
+		   strcmp(argv[1], "--iface") == 0)) {
+		params.oper = WIFI_WPS_PBC;
 	} else {
 		shell_help(sh);
 		return -ENOEXEC;
@@ -2886,9 +2890,18 @@ static int cmd_wifi_wps_pin(const struct shell *sh, size_t argc, char *argv[])
 
 	if (argc == 1) {
 		params.oper = WIFI_WPS_PIN_GET;
-	} else if (argc == 2) {
+	} else if (argc == 2 &&
+		   strcmp(argv[1], "-i") != 0 && strcmp(argv[1], "--iface") != 0) {
 		params.oper = WIFI_WPS_PIN_SET;
 		strncpy(params.pin, argv[1], WIFI_WPS_PIN_MAX_LEN);
+	} else if (argc == 3 &&
+		   (strcmp(argv[1], "-i") == 0 || strcmp(argv[1], "--iface") == 0)) {
+		params.oper = WIFI_WPS_PIN_GET;
+	} else if (argc == 4 &&
+		   (strcmp(argv[1], "-i") == 0 || strcmp(argv[1], "--iface") == 0)) {
+		/* wifi wps_pin -i <index> <pin> */
+		params.oper = WIFI_WPS_PIN_SET;
+		strncpy(params.pin, argv[3], WIFI_WPS_PIN_MAX_LEN);
 	} else {
 		shell_help(sh);
 		return -ENOEXEC;
