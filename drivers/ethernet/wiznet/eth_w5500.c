@@ -197,7 +197,11 @@ static int w5500_init(const struct device *dev)
 		return err;
 	}
 
-	w5500_spi_read(dev, W5500_RTR, rtr, 2);
+	err = w5500_spi_read(dev, W5500_RTR, rtr, 2);
+	if (err != 0) {
+		LOG_ERR("Failed to read RTR register: %d", err);
+		return err;
+	}
 	if (sys_get_be16(rtr) != RTR_DEFAULT) {
 		LOG_ERR("Unable to read RTR register");
 		return -ENODEV;
