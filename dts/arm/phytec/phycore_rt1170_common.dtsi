@@ -115,13 +115,17 @@
 			reg = <0x0 DT_SIZE_M(16)>;
 			erase-block-size = <4096>;
 			write-block-size = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			partitions {
-				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 
 				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
 				};
@@ -130,16 +134,19 @@
 				 * this is intended for use with the swap move algorithm
 				 */
 				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-0";
 					reg = <0x00020000 0x301000>;
 				};
 
 				slot1_partition: partition@321000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-1";
 					reg = <0x00321000 0x300000>;
 				};
 
 				storage_partition: partition@621000 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0x00621000 DT_SIZE_K(1984)>;
 				};
