@@ -178,23 +178,38 @@ static struct net_pkt_alloc net_pkt_allocs[MAX_NET_PKT_ALLOCS];
 static void net_pkt_alloc_add(void *alloc_data, bool is_pkt,
 			      const char *func, int line)
 {
+	int slot = -1;
 	int i;
 
+	/* Reuse the free record of this address if there is one, so that
+	 * net_pkt_alloc_find() never sees a stale free of it.
+	 */
 	for (i = 0; i < MAX_NET_PKT_ALLOCS; i++) {
 		if (net_pkt_allocs[i].in_use) {
 			continue;
 		}
 
-		net_pkt_allocs[i].in_use = true;
-		net_pkt_allocs[i].is_pkt = is_pkt;
-		net_pkt_allocs[i].alloc_data = alloc_data;
-		net_pkt_allocs[i].func_alloc = func;
-		net_pkt_allocs[i].line_alloc = line;
-		net_pkt_allocs[i].func_free = NULL;
-		net_pkt_allocs[i].line_free = 0;
+		if (net_pkt_allocs[i].alloc_data == alloc_data) {
+			slot = i;
+			break;
+		}
 
+		if (slot < 0) {
+			slot = i;
+		}
+	}
+
+	if (slot < 0) {
 		return;
 	}
+
+	net_pkt_allocs[slot].in_use = true;
+	net_pkt_allocs[slot].is_pkt = is_pkt;
+	net_pkt_allocs[slot].alloc_data = alloc_data;
+	net_pkt_allocs[slot].func_alloc = func;
+	net_pkt_allocs[slot].line_alloc = line;
+	net_pkt_allocs[slot].func_free = NULL;
+	net_pkt_allocs[slot].line_free = 0;
 }
 
 static void net_pkt_alloc_del(void *alloc_data, const char *func, int line)
