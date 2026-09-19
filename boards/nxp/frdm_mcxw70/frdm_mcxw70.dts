@@ -8,19 +8,67 @@
 #include <nxp/mcx/mcxw/nxp_mcxw70.dtsi>
 #include "frdm_mcxw70_common.dtsi"
 
+/ {
+	chosen {
+		zephyr,code-partition = &flw_slot0_partition;
+	};
+};
+
+/*
+ * All image slots and storage are placed in the physical flash node so
+ * MCUboot's flash_area_read() and flash_area_write() target the correct
+ * physical addresses for hash/signature verification or update operations.
+ *
+ * *IMPORTANT* - MCUboot placement offset depends on NBU FW size plus
+ *               padding for 32kB alignment.
+ *             - Slot0 partition must immediately follow the bootloader
+ *               partition.
+ *
+ * Physical flash offsets (from base 0x10000000):
+ *   0x000000  352 kB   NBU radio firmware (no partition record)
+ *   0x058000   64 kB   MCUboot (accessed via FLW)
+ *   0x068000  512 kB   image-0  primary slot
+ *   0x0E8000  512 kB   image-1  secondary slot
+ *   0x168000   24 kB   storage  NVM
+ */
+
 &flash {
 	partitions {
 		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		storage_partition: partition@17a000 {
+		slot0_partition: partition@68000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x68000 DT_SIZE_K(512)>;
+		};
+
+		slot1_partition: partition@e8000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0xe8000 DT_SIZE_K(512)>;
+		};
+
+		storage_partition: partition@168000 {
 			compatible = "zephyr,mapped-partition";
 			label = "storage";
-			reg = <0x17a000 DT_SIZE_K(24)>;
+			reg = <0x168000 DT_SIZE_K(24)>;
 		};
 	};
 };
+
+/*
+ * FLW (Flash Logical Window, base 0x800000)
+ *
+ * The FLW hardware window skips the NBU region and maps the application
+ * code area starting at physical address determined by the following:
+ *
+ *     FLW_zero_offset -> flash_base_addr + NBU_size + 32kB padding
+ *
+ * flw_slot0_partition - Only a dummy partition to link application to FLW area.
+ *                       Not used by the bootloader.
+ */
 
 &flw {
 	partitions {
@@ -28,10 +76,16 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		code_partition: partition@0 {
+		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "code";
-			reg = <0x0 DT_SIZE_K(1160)>;
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		flw_slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x10000 DT_SIZE_K(512)>;
 		};
 	};
 };
