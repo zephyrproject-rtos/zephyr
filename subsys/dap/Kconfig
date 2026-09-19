@@ -17,6 +17,24 @@ config CMSIS_DAP_PACKET_COUNT
 	help
 	  Maximum packet buffers for request and response data.
 
+config CMSIS_DAP_SWJ_PINS_MAX_WAIT_MS
+	int "Upper bound for the DAP_SWJ_Pins wait, in milliseconds"
+	default 3000
+	range 1 10000
+	help
+	  DAP_SWJ_Pins takes a 32-bit microsecond wait from the host, so a
+	  conformant host may legally ask the probe to wait over an hour.
+	  That wait is served on the thread that dispatches endpoint
+	  completions, so for its whole duration no other USB function of
+	  the device is serviced.
+
+	  The default matches the ARM CMSIS-DAP reference implementation,
+	  which caps this wait at 3 000 000 us in DAP.c. Composite devices
+	  that share the transport with other functions should set it far
+	  lower: a device buffering one 512-byte ring of a 115200-baud
+	  stream loses data after about 44 ms of stall, and 40 ms measured
+	  clean where 50 ms did not.
+
 config CMSIS_DAP_PROBE_VENDOR
 	string "Probe vendor"
 	default "Zephyr"
