@@ -2909,11 +2909,12 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 	const struct bt_audio_codec_cfg *codec_cfg = bap_stream->codec_cfg;
 
 	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+#if defined(CONFIG_BT_AUDIO_TX)
 		if (sh_stream->is_tx) {
 			atomic_set(&sh_stream->tx.lc3_enqueue_cnt, PRIME_COUNT);
 			sh_stream->tx.lc3_sdu_cnt = 0U;
 		}
-
+#endif /* CONFIG_BT_AUDIO_TX */
 		ret = bt_audio_codec_cfg_get_freq(codec_cfg);
 		if (ret >= 0) {
 			ret = bt_audio_codec_cfg_freq_to_freq_hz(ret);
@@ -3056,7 +3057,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 #endif
 }
 
-#if defined(CONFIG_LIBLC3)
+#if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_RX)
 static void update_usb_streams_cb(struct shell_stream *sh_stream, void *user_data)
 {
 	ARG_UNUSED(user_data);
@@ -3101,7 +3102,7 @@ static void update_usb_streams(struct shell_stream *sh_stream)
 		}
 	}
 }
-#endif /* CONFIG_LIBLC3 */
+#endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_RX */
 
 static void clear_stream_data(struct shell_stream *sh_stream)
 {
@@ -3133,11 +3134,11 @@ static void clear_stream_data(struct shell_stream *sh_stream)
 	}
 #endif
 
-#if defined(CONFIG_LIBLC3)
+#if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_RX)
 	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		update_usb_streams(sh_stream);
 	}
-#endif /* CONFIG_LIBLC3 */
+#endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_RX */
 
 	/* Shall be done after update_usb_streams */
 	sh_stream->is_rx = sh_stream->is_tx = false;
