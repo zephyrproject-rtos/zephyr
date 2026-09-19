@@ -885,11 +885,11 @@ struct stm32_pclken {
 /* Get STM32 clock information for an indexed clock phandle in a DT node */
 #define STM32_CLOCK_INFO(clk_index, node_id)					\
 	{									\
-		.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
 		.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) &		\
 		       GENMASK(STM32_CLOCK_DIV_SHIFT - 1, 0),			\
 		.div = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) >>	\
 		       STM32_CLOCK_DIV_SHIFT,					\
+		.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
 	}
 
 /* Get an array of STM32 clocks information for clocks listed in a DT node */
@@ -914,11 +914,11 @@ struct stm32_pclken {
 /* Get STM32 clock information for a named clock phandle in DT node */
 #define STM32_CLOCK_INFO_BY_NAME(node_id, name)				\
 	{								\
-		.enr = DT_CLOCKS_CELL_BY_NAME(node_id, name, bits),	\
 		.bus = DT_CLOCKS_CELL_BY_NAME(node_id, name, bus) &	\
 		       GENMASK(STM32_CLOCK_DIV_SHIFT - 1, 0),		\
 		.div = DT_CLOCKS_CELL_BY_NAME(node_id, name, bus) >>	\
 		       STM32_CLOCK_DIV_SHIFT,				\
+		.enr = DT_CLOCKS_CELL_BY_NAME(node_id, name, bits),	\
 	}
 
 /* Get STM32 clock information for named clock phandle in a @c DT_DRV_COMPAT instance node */
