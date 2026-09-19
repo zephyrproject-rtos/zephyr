@@ -357,6 +357,11 @@ Boards
 * The Silabs Kconfig option ``CONFIG_SOC_SILABS_PM_LOW_INTERRUPT_LATENCY``
   has been renamed to :kconfig:option:`CONFIG_SOC_VENDOR_SILABS_PM_LOW_INTERRUPT_LATENCY`.
 
+* The b_u585i_iot02a disco kit is now adopting the mspi controller model. This is the
+  second step of the migration to mspi stm32 support. For that board, declare the ospi
+  node as ``st,stm32-ospi-controller`` compatible. The stm32u5 device DTS will be updated
+  once all the target boards are changed.
+
 Device Drivers and Devicetree
 *****************************
 
