@@ -3,7 +3,7 @@
 
 config BBRAM_MICROCHIP_MCP7940N
 	bool "Microchip MCP7940N SRAM BBRAM driver"
-	default y
+	default y if !RTC
 	depends on DT_HAS_MICROCHIP_MCP7940N_ENABLED
 	select I2C
 	help
