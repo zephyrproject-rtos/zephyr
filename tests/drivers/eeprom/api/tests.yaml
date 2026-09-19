@@ -26,6 +26,16 @@ tests:
       - native_sim/native/64
     integration_platforms:
       - native_sim
+  drivers.eeprom.api.w_at25_emul:
+    # Tests overwrite EEPROM content, only run on select boards
+    extra_args:
+      - DTC_OVERLAY_FILE=at25_emul.overlay
+      - EXTRA_CONF_FILE=at25_emul.conf
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
   drivers.eeprom.api.build:
     # Build-only test for boards with EEPROMs
     build_only: true

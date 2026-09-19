@@ -51,6 +51,16 @@ config EEPROM_AT2X_EMUL
 	  At present it only supports 8-bit addressing. The size of the EEPROM
 	  is given by the 'size' property. See the binding for further details.
 
+config EEPROM_AT25_EMUL
+	bool "Emulate an Atmel AT25 SPI chip"
+	depends on EMUL
+	depends on SPI
+	help
+	  This is an emulator for the Atmel AT25 series of SPI-attached EEPROMs.
+
+	  It supports 8, 9, 16 and 24-bit addressing. The size of the EEPROM
+	  is given by the 'size' property. See the binding for further details.
+
 config EEPROM_AT24
 	bool "I2C EEPROMs compatible with Atmel's AT24 family"
 	default y
