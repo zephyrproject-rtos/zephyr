@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32p4/esp32p4.dtsi>
+#include <espressif/esp32p4/esp32p4_rev3.dtsi>
 #include "esp32p4_wifi6_dev_kit_esp32p4_hpcore-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x2000_default_16M.dtsi>
