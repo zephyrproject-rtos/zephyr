@@ -5,10 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <stdint.h>
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_PTR_H
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_PTR_H
 
- #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_PTR_H
- #define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_PTR_H
+#include <stdbool.h>
+#include <stdint.h>
 
 /**
  * @defgroup xtensa_ptr_apis Xtensa Pointer Validating APIs
@@ -19,7 +20,7 @@
 /**
  * @brief Checks whether the given sp value is a valid stack address
  *
- * @param stack address value
+ * @param sp Stack address value
  *
  * @return
  *      - True if the address parameter is valid for stack
@@ -30,13 +31,13 @@ bool xtensa_soc_stack_ptr_is_sane(uint32_t sp);
 /**
  * @brief Checks whether the given pointer is executable
  *
- * @param pointer
+ * @param p Pointer to check
  *
  * @return
- *      - True if the pointer is not executable
+ *      - True if the pointer is executable
  *      - False otherwise
  */
-bool xtensa_soc_ptr_is_executable(const void *p);
+bool xtensa_soc_ptr_executable(const void *p);
 
 /**
  * @}
