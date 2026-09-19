@@ -14,9 +14,13 @@ backend) and renders it graphically on the console - a lightweight,
 terminal-only take on tools such as SEGGER SystemView or Eclipse Trace Compass.
 
 The viewer focuses on visualization. Most of the screen is a Gantt-style time
-graph with one lane per thread (plus lanes for the idle thread and for ISRs);
-coloured bars show which thread is running over time and the transitions
-between them are the context switches. A movable time cursor (the playhead)
+graph in two sections. The upper one is grouped by CPU: a row per CPU showing
+how busy it was, with the threads that executed on it nested underneath, each
+shaded by how much of the interval it held that CPU. A thread that migrates
+appears under every CPU it ran on, so its work is seen moving between the
+groups. The lower section has one lane per thread covering all CPUs, where
+coloured bars show the thread's state over time and the transitions between
+running and ready are the context switches. A movable time cursor (the playhead)
 selects a point in the trace, with a small info strip beneath the chart that
 can be toggled off to give the graph the whole screen. A metrics panel fills
 the area below the lanes with a CPU-busy gauge, context-switch / event rates
@@ -35,6 +39,12 @@ from the TSDL ``metadata`` file that ships next to the tracing subsystem
 events added there; a built-in fallback table covers the core scheduling events
 so the time graph still works even when the metadata file cannot be found.
 
+A capture taken on an SMP system holds one stream per CPU, and on a backend
+carrying a single link those streams arrive interleaved. The raw capture can be
+opened directly - there is no need to split it first - and every CPU is shown.
+``--cpu`` narrows the display to one of them. Captures predating the packet
+framing are still read as-is.
+
 Usage::
 
     # interactive viewer (a terminal/TTY is required)
@@ -48,9 +58,13 @@ Usage::
 
     # point at a specific metadata file
     ./trace_viewer.py build/tracing.bin --metadata path/to/metadata
+
+    # narrow an SMP capture to a single CPU
+    ./trace_viewer.py build/tracing.bin --cpu 1
 """
 
 import argparse
+import collections
 import os
 import re
 import struct
@@ -79,6 +93,23 @@ def safe_open(path, mode, **kwargs):
 #   <packed, byte-aligned event specific fields>
 HDR = struct.Struct("<QH")
 HDR_NO_TS = struct.Struct("<H")
+
+# Events are gathered into fixed-size CTF packets, one sequence of them per CPU.
+# A packet opens with these two structures, is filled with records up to
+# content_size, and is padded out to packet_size.
+#
+#   struct packet_header  { uint32_t magic; uint32_t stream_id; }
+#   struct packet_context { uint64_t timestamp_begin, timestamp_end;
+#                           uint32_t content_size, packet_size, events_discarded;
+#                           uint8_t  cpu_id; }
+#
+# Older traces have no framing at all and are just records back to back; both
+# layouts are accepted, decided by whether the stream opens with the magic.
+PACKET_MAGIC = 0xC1FC1FC1
+PACKET_MAGIC_BYTES = struct.pack("<I", PACKET_MAGIC)
+PKT_HEADER = struct.Struct("<II")
+PKT_CONTEXT = struct.Struct("<QQIIIB")
+PKT_PREFIX = PKT_HEADER.size + PKT_CONTEXT.size
 
 # Map a TSDL integer typedef to a struct format character and byte size.
 TYPES = {
@@ -260,25 +291,50 @@ def find_metadata(binary_path, override):
 
 
 class Event:
-    __slots__ = ("ts", "eid", "name", "fields")
+    __slots__ = ("ts", "eid", "name", "fields", "cpu")
 
-    def __init__(self, ts, eid, name, fields):
+    def __init__(self, ts, eid, name, fields, cpu=0):
         self.ts = ts
         self.eid = eid
         self.name = name
         self.fields = fields
+        self.cpu = cpu
+
+
+# A lane is one row of the time graph. The chart has two sections: the CPU
+# section, whose rows are occupancy (how much of each column the row held that
+# CPU), and the thread section, whose rows are the familiar per-thread state
+# timeline covering every CPU.
+#
+#   Lane("cpu",   cpu, None) - the CPU itself: its utilization
+#   Lane("occ",   cpu, tid)  - a thread, over the time it ran on that CPU
+#   Lane("isr",   cpu, None) - ISR activity on that CPU
+#   Lane("state", None, tid) - a thread's state across all CPUs
+Lane = collections.namedtuple("Lane", "kind cpu tid")
+
+LANE_OCCUPANCY = ("cpu", "occ", "isr")
 
 
 class Trace:
     """Parsed trace: ordered events plus reconstructed running timeline."""
 
     def __init__(self):
+        self.reset()
+
+    def reset(self):
+        """Empty the trace in place.
+
+        Deliberately not a fresh object: the front-ends hold on to the Trace for
+        the lifetime of the display, and rebuilding it on every live update
+        would leave them rendering an orphan.
+        """
         self.events = []
         self.threads = {}  # tid -> {name, prio, stack_base, stack_size}
-        self.segments = []  # (start_ts, end_ts, tid) running thread spans
-        self.isr_spans = []  # (start_ts, end_ts) ISR active spans
+        self.segments = []  # (start_ts, end_ts, tid, cpu) running thread spans
+        self.isr_spans = []  # (start_ts, end_ts, cpu) ISR active spans
         self.states = {}  # tid -> [(start, end, state, reason), ...]
         self.state_starts = {}  # tid -> [start, ...] (for bisect)
+        self.cpus = set()  # every CPU seen in the trace
         self.t0 = 0
         self.t1 = 0
 
@@ -286,6 +342,9 @@ class Trace:
         return self.threads.setdefault(
             tid, {"name": "", "prio": None, "stack_base": None, "stack_size": None}
         )
+
+    def cpu_list(self):
+        return sorted(self.cpus) if self.cpus else [0]
 
 
 class TraceReader:
@@ -303,7 +362,7 @@ class TraceReader:
     next feed.
     """
 
-    def __init__(self, defs, has_ts=True):
+    def __init__(self, defs, has_ts=True, cpu=None):
         self.defs = defs
         self.has_ts = has_ts
         self.hdr = HDR if has_ts else HDR_NO_TS
@@ -311,19 +370,46 @@ class TraceReader:
         self._buf = b""  # undecoded bytes (possibly a partial record)
         self._fake_ts = 0
         self._desync = False
+        # None until the first bytes say whether this trace is packetized.
+        self._packetized = None
+        # CPU whose stream is being followed, and everything seen in the trace.
+        self.cpu = cpu
+        self.cpus_seen = set()
+        # cpu -> events the target dropped on that CPU. The packet context
+        # carries a running total per stream, so the last value seen for a
+        # CPU is that CPU's total.
+        self.discarded = {}
         # Some platforms back the CTF timestamp with a free-running cycle
         # counter that wraps, giving a sawtooth instead of a monotonic clock.
         # Unwrap it: every time the raw value jumps backwards, add the previous
         # raw value as an offset so the timeline stays monotonic. For a trace
         # whose timestamps are already monotonic this is a no-op.
-        self._prev_raw = None
-        self._ts_off = 0
-        # running-thread / ISR incremental state
-        self._cur_tid = None
-        self._seg_start = None
-        self._isr_depth = 0
-        self._isr_start = None
-        # per-thread state-machine incremental state
+        # Unwrapping is per CPU: each CPU's stream is monotonic on its own, but
+        # the streams are independent, so a shared "went backwards" test would
+        # read the interleaving of two CPUs as a wrap on every other event.
+        self._prev_raw = {}  # cpu -> last raw timestamp
+        self._ts_off = {}  # cpu -> accumulated unwrap offset
+        # Every decoded event, (ts, eid, name, fields, cpu). Kept so the trace
+        # can be rebuilt in timestamp order: CPUs are decoded from separate
+        # streams and so arrive interleaved, while the per-thread state machine
+        # only makes sense fed in time order.
+        self._raw = []
+        self._reset_derived()
+
+    def _reset_derived(self):
+        """Clear everything replayed from the decoded events."""
+        if getattr(self, "tr", None) is None:
+            self.tr = Trace()
+        else:
+            self.tr.reset()
+        # running-thread / ISR state, per CPU
+        self._cur_tid = {}  # cpu -> tid
+        self._seg_start = {}  # cpu -> ts
+        self._isr_depth = {}  # cpu -> nesting depth
+        self._isr_start = {}  # cpu -> ts
+        # per-thread state-machine state (a thread is ready/blocked/asleep
+        # regardless of CPU, and runs on only one at a time, so this stays
+        # global rather than per CPU)
         self._st_cur = {}  # tid -> [state, since, reason]
         self._st_hint = {}  # tid -> (state, reason)
         self._running = None
@@ -397,9 +483,10 @@ class TraceReader:
             if tid is not None and tid not in self._st_cur:
                 self._st_set(tid, ts, ST_RDY)
 
-    def _consume(self, ts, eid, name, fields):
+    def _consume(self, ts, eid, name, fields, cpu=0):
         tr = self.tr
-        tr.events.append(Event(ts, eid, name, fields))
+        tr.events.append(Event(ts, eid, name, fields, cpu))
+        tr.cpus.add(cpu)
         if len(tr.events) == 1:
             tr.t0 = ts
         tr.t1 = ts
@@ -416,39 +503,43 @@ class TraceReader:
                 t["stack_base"] = fields.get("stack_base")
                 t["stack_size"] = fields.get("stack_size")
 
-        # Running-thread timeline from context switches.
+        # Running-thread timeline from context switches, tracked per CPU: each
+        # CPU has its own current thread, and a thread migrating between them
+        # simply closes a segment on one and opens one on the other.
         if eid == THREAD_SWITCHED_IN:
-            if self._cur_tid is not None and self._seg_start is not None:
-                tr.segments.append((self._seg_start, ts, self._cur_tid))
-            self._cur_tid = tid
-            self._seg_start = ts
+            cur = self._cur_tid.get(cpu)
+            start = self._seg_start.get(cpu)
+            if cur is not None and start is not None:
+                tr.segments.append((start, ts, cur, cpu))
+            self._cur_tid[cpu] = tid
+            self._seg_start[cpu] = ts
         elif eid == THREAD_SWITCHED_OUT:
-            if self._cur_tid is not None and self._seg_start is not None:
-                tr.segments.append((self._seg_start, ts, self._cur_tid))
-            self._cur_tid = None
-            self._seg_start = None
+            cur = self._cur_tid.get(cpu)
+            start = self._seg_start.get(cpu)
+            if cur is not None and start is not None:
+                tr.segments.append((start, ts, cur, cpu))
+            self._cur_tid[cpu] = None
+            self._seg_start[cpu] = None
 
         # ISR overlay spans (nested enters collapse to one active span).
         if eid == ISR_ENTER:
-            if self._isr_depth == 0:
-                self._isr_start = ts
-            self._isr_depth += 1
+            if self._isr_depth.get(cpu, 0) == 0:
+                self._isr_start[cpu] = ts
+            self._isr_depth[cpu] = self._isr_depth.get(cpu, 0) + 1
         elif eid in (ISR_EXIT, ISR_EXIT_TO_SCHEDULER):
-            if self._isr_depth > 0:
-                self._isr_depth -= 1
-                if self._isr_depth == 0 and self._isr_start is not None:
-                    tr.isr_spans.append((self._isr_start, ts))
-                    self._isr_start = None
+            if self._isr_depth.get(cpu, 0) > 0:
+                self._isr_depth[cpu] -= 1
+                if self._isr_depth[cpu] == 0 and self._isr_start.get(cpu) is not None:
+                    tr.isr_spans.append((self._isr_start[cpu], ts, cpu))
+                    self._isr_start[cpu] = None
 
         self._state_machine(ts, name, fields, tid)
 
-    def _decode_buf(self):
-        data = self._buf
-        off = 0
-        n = len(data)
+    def _decode_records(self, data, off, end, cpu=0):
+        """Decode records in data[off:end]. Returns (events, offset reached)."""
         hsz = self.hdr.size
         new = 0
-        while off + hsz <= n:
+        while off + hsz <= end:
             if self.has_ts:
                 ts, eid = self.hdr.unpack_from(data, off)
             else:
@@ -461,22 +552,101 @@ class TraceReader:
                 self._desync = True
                 break
             rec = hsz + edef.size
-            if off + rec > n:
+            if off + rec > end:
                 break  # incomplete trailing record; wait for more
             if ts is None:
                 ts = self._fake_ts
                 self._fake_ts += 1
             else:
-                if self._prev_raw is not None and ts < self._prev_raw:
-                    self._ts_off += self._prev_raw  # counter wrapped
-                self._prev_raw = ts
-                ts += self._ts_off
+                prev = self._prev_raw.get(cpu)
+                if prev is not None and ts < prev:
+                    self._ts_off[cpu] = self._ts_off.get(cpu, 0) + prev  # wrapped
+                self._prev_raw[cpu] = ts
+                ts += self._ts_off.get(cpu, 0)
             fields, _ = edef.decode(data, off + hsz)
             off += rec
-            self._consume(ts, eid, edef.name, fields)
+            self._raw.append((ts, eid, edef.name, fields, cpu))
             new += 1
+        return new, off
+
+    def _decode_packets(self):
+        data = self._buf
+        off = 0
+        n = len(data)
+        new = 0
+
+        while off + PKT_PREFIX <= n:
+            magic, _stream_id = PKT_HEADER.unpack_from(data, off)
+            if magic != PACKET_MAGIC:
+                nxt = data.find(PACKET_MAGIC_BYTES, off + 1)
+                self._desync = True
+                if nxt < 0:
+                    off = n
+                    break
+                off = nxt
+                continue
+
+            (_ts_begin, _ts_end, content_bits, packet_bits, discarded,
+             cpu) = PKT_CONTEXT.unpack_from(data, off + PKT_HEADER.size)
+            psize = packet_bits // 8
+            csize = content_bits // 8
+
+            if psize < PKT_PREFIX or csize < PKT_PREFIX or csize > psize:
+                # The magic was a coincidence in the middle of event data.
+                nxt = data.find(PACKET_MAGIC_BYTES, off + 1)
+                self._desync = True
+                if nxt < 0:
+                    off = n
+                    break
+                off = nxt
+                continue
+
+            if off + psize > n:
+                break  # incomplete trailing packet; wait for more
+
+            self.cpus_seen.add(cpu)
+            self.discarded[cpu] = discarded
+
+            # Every CPU is decoded; self.cpu, when set, narrows the display to
+            # one of them rather than the decode.
+            if self.cpu is None or cpu == self.cpu:
+                got, _ = self._decode_records(data, off + PKT_PREFIX, off + csize, cpu)
+                new += got
+
+            off += psize
+
         self._buf = data[off:]
         return new
+
+    def _decode_buf(self):
+        if self._packetized is None:
+            if len(self._buf) < PKT_HEADER.size:
+                return 0
+            (magic,) = struct.unpack_from("<I", self._buf, 0)
+            self._packetized = magic == PACKET_MAGIC
+
+        if self._packetized:
+            return self._decode_packets()
+
+        new, off = self._decode_records(self._buf, 0, len(self._buf))
+        self._buf = self._buf[off:]
+        return new
+
+    def _replay(self):
+        """Rebuild the trace from every decoded event, in timestamp order.
+
+        CPUs are decoded from separate streams and so reach the reader
+        interleaved, while a thread's state timeline only makes sense assembled
+        in time order - a thread can be woken by one CPU and switched in by
+        another. Sorting and replaying keeps that correct no matter how the
+        packets happened to arrive. The sort is over an almost-ordered list, so
+        it is cheap, and a single-CPU trace is already in order and replays
+        unchanged.
+        """
+        self._raw.sort(key=lambda r: r[0])
+        self._reset_derived()
+        for ts, eid, name, fields, cpu in self._raw:
+            self._consume(ts, eid, name, fields, cpu)
 
     def feed(self, data):
         """Decode as many complete records as `data` (appended) allows.
@@ -486,15 +656,35 @@ class TraceReader:
         if not data:
             return 0
         self._buf += data
-        self._drop_provisional()
         new = self._decode_buf()
-        self._add_provisional()
+        if new:
+            self._replay()
+            self._add_provisional()
         return new
 
 
-def parse_trace(path, defs, has_ts=True):
+def _report_cpus(reader):
+    """Warn about anything the display leaves out."""
+    if reader.cpu is not None:
+        others = sorted(c for c in reader.cpus_seen if c != reader.cpu)
+        if others:
+            sys.stderr.write(
+                f"note: restricted to CPU {reader.cpu}; this trace also has "
+                f"{', '.join(str(c) for c in others)} (drop --cpu to see them all)\n"
+            )
+    dropped = {c: n for c, n in reader.discarded.items() if n}
+    if dropped:
+        per_cpu = ", ".join(f"{n} on CPU {c}" for c, n in sorted(dropped.items()))
+        sys.stderr.write(
+            f"warning: the target discarded {sum(dropped.values())} event(s) "
+            f"({per_cpu}) for want of a free packet; this trace is incomplete. "
+            "Raise CONFIG_TRACING_CTF_PACKETS_PER_CPU to capture them.\n"
+        )
+
+
+def parse_trace(path, defs, has_ts=True, cpu=None):
     """Read a complete trace file in one shot (non-live path)."""
-    reader = TraceReader(defs, has_ts)
+    reader = TraceReader(defs, has_ts, cpu)
     with safe_open(path, "rb") as fh:
         reader.feed(fh.read())
     return reader.tr
@@ -597,12 +787,47 @@ def thread_running_at(tr, ts):
 def lane_order(tr):
     """Return thread ids ordered for display (most-active first)."""
     busy = {}
-    for s, e, tid in tr.segments:
+    for s, e, tid, _cpu in tr.segments:
         busy[tid] = busy.get(tid, 0) + max(0, e - s)
     # Threads that ran, busiest first; then any known-but-idle threads.
     ran = sorted(busy, key=lambda t: -busy[t])
     others = [t for t in tr.threads if t not in busy]
     return ran + others
+
+
+def cpu_lane_order(tr):
+    """Return the display lanes: each CPU followed by the threads that ran on it.
+
+    A thread that migrates appears under every CPU it ran on, showing only the
+    intervals it spent there, so a row always answers "what was this CPU doing"
+    without having to read the other rows.
+    """
+    busy = {}  # cpu -> {tid: ns}
+    for s, e, tid, cpu in tr.segments:
+        busy.setdefault(cpu, {})[tid] = busy.get(cpu, {}).get(tid, 0) + max(0, e - s)
+    isr_cpus = {cpu for _s, _e, cpu in tr.isr_spans}
+
+    lanes = []
+    for cpu in tr.cpu_list():
+        lanes.append(Lane("cpu", cpu, None))
+        # Real work first, busiest first; the idle thread sinks to the bottom of
+        # the group, where it reads as the leftovers rather than dominating.
+        for tid in sorted(
+            busy.get(cpu, {}), key=lambda t: (is_idle_thread(tr, t), -busy[cpu][t])
+        ):
+            lanes.append(Lane("occ", cpu, tid))
+        if cpu in isr_cpus:
+            lanes.append(Lane("isr", cpu, None))
+    return lanes
+
+
+def all_lanes(tr):
+    """CPU-grouped occupancy lanes, a divider, then a state lane per thread."""
+    return (
+        cpu_lane_order(tr)
+        + [Lane("sep", None, None)]
+        + [Lane("state", None, tid) for tid in lane_order(tr)]
+    )
 
 
 def thread_label(tr, tid):
@@ -612,6 +837,17 @@ def thread_label(tr, tid):
         # by name only, otherwise show the handle.
         name = "(unnamed)"
     return name
+
+
+def lane_label(tr, lane):
+    """Label for a lane, indented so threads read as nested under their CPU."""
+    if lane.kind == "cpu":
+        return f"CPU {lane.cpu}"
+    if lane.kind == "isr":
+        return "  [ISR]"
+    if lane.kind == "sep":
+        return "THREADS"
+    return f"  {thread_label(tr, lane.tid)}"
 
 
 def fmt_time(ns):
@@ -654,10 +890,10 @@ def render_rows(tr, order, view0, view1, width):
             if cov > 0:
                 acc[c] = min(1.0, acc[c] + cov)
 
-    for s, e, tid in tr.segments:
+    for s, e, tid, _cpu in tr.segments:
         if tid in rows:
             paint(rows[tid], s, e)
-    for s, e in tr.isr_spans:
+    for s, e, _cpu in tr.isr_spans:
         paint(isr_row, s, e)
 
     def to_chars(acc):
@@ -672,6 +908,80 @@ def render_rows(tr, order, view0, view1, width):
 
     char_rows = {tid: to_chars(acc) for tid, acc in rows.items()}
     return char_rows, to_chars(isr_row)
+
+
+def is_idle_thread(tr, tid):
+    """Whether a thread is one of the per-CPU idle threads."""
+    return thread_label(tr, tid).startswith("idle")
+
+
+# Shading for the CPU section: how much of a column's time bucket the row
+# occupied that CPU for. Reading occupancy as a fraction rather than a yes/no
+# keeps the rows meaningful at any zoom - a brief slice stays visible as a light
+# cell instead of either vanishing or painting the whole column solid.
+OCC_SHADES = " ░▒▓█"
+
+
+def occ_glyph(frac):
+    if frac <= 0.0:
+        return " "
+    return OCC_SHADES[min(4, 1 + int(frac * 3.999))]
+
+
+def render_cpu_occupancy(tr, lanes, view0, view1, width):
+    """Return {lane: [fraction per column]} for the CPU-grouped lanes.
+
+    A CPU row is that CPU's utilization: the share of each column it spent
+    running something other than its idle thread. A thread row beneath it is
+    the share of the column that thread held *that* CPU, so a migrating thread
+    reads as work moving from one group to the other. Only occupancy appears
+    here; what a thread does while off-CPU is a property of the thread, not of
+    a CPU, and is shown in the per-thread section instead.
+    """
+    span = max(1, view1 - view0)
+    col_ns = span / width
+
+    def cover(acc, s, e):
+        if e < view0 or s > view1:
+            return
+        s = max(s, view0)
+        e = min(e, view1)
+        c0 = (s - view0) / col_ns
+        c1 = (e - view0) / col_ns
+        lo = max(0, min(width - 1, int(c0)))
+        hi = max(lo, min(width - 1, int(c1)))
+        for c in range(lo, hi + 1):
+            ov = min(c + 1, c1) - max(c, c0)
+            if ov > 0:
+                acc[c] = min(1.0, acc[c] + ov)
+            elif c == lo:
+                # The thread did hold the CPU here, but for less than the clock
+                # could resolve - on some platforms consecutive events share a
+                # timestamp entirely. Keep it visible as the faintest shade
+                # rather than dropping the row to blank.
+                acc[c] = max(acc[c], 0.01)
+
+    out = {lane: [0.0] * width for lane in lanes if lane.kind in LANE_OCCUPANCY}
+    thread_lane = {(ln.cpu, ln.tid): ln for ln in out if ln.kind == "occ"}
+    cpu_lane = {ln.cpu: ln for ln in out if ln.kind == "cpu"}
+    isr_lane = {ln.cpu: ln for ln in out if ln.kind == "isr"}
+
+    for s, e, tid, cpu in tr.segments:
+        lane = thread_lane.get((cpu, tid))
+        if lane is not None:
+            cover(out[lane], s, e)
+        # The CPU's own row counts real work only, so it reads as utilization
+        # rather than simply "powered on".
+        lane = cpu_lane.get(cpu)
+        if lane is not None and not is_idle_thread(tr, tid):
+            cover(out[lane], s, e)
+
+    for s, e, cpu in tr.isr_spans:
+        lane = isr_lane.get(cpu)
+        if lane is not None:
+            cover(out[lane], s, e)
+
+    return out
 
 
 def render_state_rows(tr, lanes, view0, view1, width):
@@ -760,57 +1070,90 @@ def window_stats(tr, view0, view1):
 
 
 def run_text(tr, width):
-    order = lane_order(tr)
-    label_w = max([len("THREAD")] + [len(thread_label(tr, t)) for t in order]) + 1
-    label_w = min(label_w, 18)
+    lanes = cpu_lane_order(tr)
+    threads = lane_order(tr)
+    header = "CPU / THREAD"
+    label_w = max([len(header)] + [len(lane_label(tr, ln)) for ln in lanes]) + 1
+    label_w = min(label_w, 22)
     tl_w = max(20, width - label_w - 12)
 
     print(
         f"Zephyr CTF trace  ({len(tr.events)} events, "
-        f"{len(tr.threads)} threads, "
+        f"{len(tr.threads)} threads, {len(tr.cpus)} CPU(s), "
         f"{fmt_time(tr.t1 - tr.t0)} span)"
     )
     print(f"t0 = {fmt_time(tr.t0)}   t1 = {fmt_time(tr.t1)}")
     print()
 
-    state_rows = render_state_rows(tr, order, tr.t0, tr.t1, tl_w)
-    _, isr_row = render_rows(tr, [], tr.t0, tr.t1, tl_w)
+    occ = render_cpu_occupancy(tr, lanes, tr.t0, tr.t1, tl_w)
+    state_rows = render_state_rows(tr, threads, tr.t0, tr.t1, tl_w)
 
     def lbl(s):
         s = s[: label_w - 1]
         return s.ljust(label_w)
 
+    axis = "".join("|" if i % 10 == 0 else "." for i in range(tl_w))
+    span_lbl = fmt_time(tr.t1 - tr.t0)
+    ruler = " " * label_w + "0" + " " * (tl_w - len(span_lbl) - 1) + span_lbl
+
+    print("CPU occupancy   shade = share of the interval spent on that CPU:")
+    print("  " + "  ".join(f"{occ_glyph(f)} {int(f * 100)}%" for f in (0.2, 0.4, 0.7, 1.0)))
+    print("A thread appears under every CPU it ran on, so migration reads as work")
+    print("moving between the groups.")
+    print()
+    print(ruler)
+    print(lbl(header) + axis)
+    first = True
+    for lane in lanes:
+        if lane.kind == "cpu" and not first:
+            print()
+        first = False
+        print(lbl(lane_label(tr, lane)) + "".join(occ_glyph(f) for f in occ[lane]))
+
+    print()
     legend = "  ".join(
         f"{STATE_GLYPH[s]}={STATE_NAME[s]}" for s in (ST_RUN, ST_RDY, ST_BLK, ST_SLP, ST_SUS)
     )
-    print("states: " + legend)
+    print("Thread states (across all CPUs)   " + legend)
     print()
-    axis = "".join("|" if i % 10 == 0 else "." for i in range(tl_w))
-    print(
-        " " * label_w
-        + "0"
-        + " " * (tl_w - len(fmt_time(tr.t1 - tr.t0)) - 1)
-        + fmt_time(tr.t1 - tr.t0)
-    )
+    print(ruler)
     print(lbl("THREAD") + axis)
-    for tid in order:
+    for tid in threads:
         cells = state_rows[tid]
         if all(c is None for c in cells):
             continue
         line = "".join(STATE_GLYPH.get(c, " ") if c else " " for c in cells)
-        print(lbl(thread_label(tr, tid)) + line)
-    if any(c != " " for c in isr_row):
-        print(lbl("[ISR]") + "".join(isr_row))
+        print(lbl("  " + thread_label(tr, tid)) + line)
+
+    # Where each thread actually ran, so migration is visible as a number
+    # rather than only as bars appearing under two CPUs.
+    ran_on = {}
+    for s, e, tid, cpu in tr.segments:
+        ran_on.setdefault(tid, {})
+        ran_on[tid][cpu] = ran_on[tid].get(cpu, 0) + max(0, e - s)
+
+    def cpu_summary(tid):
+        per = ran_on.get(tid)
+        if not per:
+            return "-"
+        total = sum(per.values()) or 1
+        return " ".join(f"{c}:{100 * v // total}%" for c, v in sorted(per.items()))
 
     print()
     print("Threads")
-    print(f"  {'handle':<12}{'name':<18}{'prio':>5}  {'stack_base':<12}{'stack_sz':>9}")
-    for tid in order:
+    print(
+        f"  {'handle':<12}{'name':<18}{'prio':>5}  {'stack_base':<12}"
+        f"{'stack_sz':>9}  {'cpus':<16}"
+    )
+    for tid in threads:
         t = tr.threads[tid]
         prio = "" if t["prio"] is None else str(t["prio"])
         sb = "" if t["stack_base"] is None else f"0x{t['stack_base']:08x}"
         ss = "" if t["stack_size"] is None else str(t["stack_size"])
-        print(f"  0x{tid:08x}  {thread_label(tr, tid):<18}{prio:>5}  {sb:<12}{ss:>9}")
+        print(
+            f"  0x{tid:08x}  {thread_label(tr, tid):<18}{prio:>5}  {sb:<12}{ss:>9}"
+            f"  {cpu_summary(tid):<16}"
+        )
 
     # Event histogram by type.
     print()
@@ -867,7 +1210,7 @@ def run_curses(stdscr, reader, fh=None):
         curses.init_pair(22, curses.COLOR_WHITE, curses.COLOR_BLUE)  # selected
         curses.init_pair(23, curses.COLOR_BLACK, curses.COLOR_GREEN)  # play
 
-    order = lane_order(tr)
+    order = all_lanes(tr)
     ts_list = [ev.ts for ev in tr.events]
 
     full_span = max(1, tr.t1 - tr.t0)
@@ -890,7 +1233,10 @@ def run_curses(stdscr, reader, fh=None):
     # Live follow: when reading a file that is still being written, keep the
     # view pinned to the latest events. Panning/zooming detaches; 'f' re-pins.
     live_follow = live
-    nthreads = len(tr.threads)
+    # Lanes are rebuilt when either count changes: a secondary CPU comes
+    # online partway through boot, so the CPU set grows during a live trace
+    # just as the thread set does.
+    lane_sig = (len(tr.threads), len(tr.cpus))
 
     def clampview():
         nonlocal view0, view1
@@ -928,16 +1274,34 @@ def run_curses(stdscr, reader, fh=None):
                 chunk = fh.read()
             except OSError:
                 chunk = b""
+            prev_span = max(0, tr.t1 - tr.t0)
             if reader.feed(chunk):
-                ts_list.extend(ev.ts for ev in tr.events[len(ts_list) :])
+                # Rebuilt rather than extended: the trace is reassembled in
+                # timestamp order on every update, so a late packet from
+                # another CPU can land events before the end of the list.
+                ts_list[:] = [ev.ts for ev in tr.events]
+                was_empty = full_span <= 1
                 full_span = max(1, tr.t1 - tr.t0)
-                if len(tr.threads) != nthreads:
-                    nthreads = len(tr.threads)
-                    order = lane_order(tr)
+                if was_empty:
+                    # Following a trace that had not started yet: the autoplay
+                    # rate was derived from an empty span and would be useless.
+                    speed = max(1.0, full_span / 20.0)
+                if (len(tr.threads), len(tr.cpus)) != lane_sig:
+                    lane_sig = (len(tr.threads), len(tr.cpus))
+                    order = all_lanes(tr)
             if live_follow and tr.t1 > tr.t0:
-                span = max(100, view1 - view0)
-                view1 = tr.t1
-                view0 = max(tr.t0, view1 - span)
+                # A window that was showing the whole trace keeps showing the
+                # whole trace as it grows; one the user has zoomed into keeps
+                # its width and rides the live edge. Without this a viewer
+                # started before the application produced anything is stuck
+                # with the width of an empty trace, which reads as being zoomed
+                # in to nothing.
+                if (view1 - view0) >= prev_span:
+                    view0, view1 = tr.t0, tr.t1
+                else:
+                    keep = max(100, view1 - view0)
+                    view1 = tr.t1
+                    view0 = max(tr.t0, view1 - keep)
                 cursor_ns = float(tr.t1)
                 log_scroll = len(tr.events)  # keep log view at the newest row
 
@@ -1204,55 +1568,77 @@ def _draw_gantt(
     panel_h = 5 if show_info else 0
     lanes_top = 3
     overhead = lanes_top + panel_h + 1  # +1 footer
-    visible = [
-        t for t in order if any(tt == t and s <= view1 and e >= view0 for s, e, tt in tr.segments)
-    ] or order
+    def lane_in_view(ln):
+        if ln.kind in ("cpu", "isr", "sep"):
+            return True
+        for s, e, tid, cpu in tr.segments:
+            if tid != ln.tid or s > view1 or e < view0:
+                continue
+            if ln.kind == "occ" and cpu != ln.cpu:
+                continue
+            return True
+        return False
+
+    visible = [ln for ln in order if lane_in_view(ln)] or order
     max_lanes = max(1, h - overhead - 1)  # -1 for the events row
     view_lanes = visible[:max_lanes]
     sel_row = max(0, min(sel_row, len(view_lanes) - 1)) if view_lanes else 0
 
-    state_rows = render_state_rows(tr, view_lanes, view0, view1, tl_w)
-    _, isr_row = render_rows(tr, [], view0, view1, tl_w)
+    occ_rows = render_cpu_occupancy(
+        tr, [ln for ln in view_lanes if ln.kind in LANE_OCCUPANCY], view0, view1, tl_w
+    )
+    state_rows = render_state_rows(
+        tr, [ln.tid for ln in view_lanes if ln.kind == "state"], view0, view1, tl_w
+    )
     cursor_col = int((cursor_ns - view0) / max(1, span) * tl_w)
     cursor_col = max(0, min(tl_w - 1, cursor_col))
 
     row_y = lanes_top
-    for idx, tid in enumerate(view_lanes):
+    for idx, lane in enumerate(view_lanes):
         sel = idx == sel_row
-        lbl = thread_label(tr, tid)[: label_w - 1].ljust(label_w)
+        lbl = lane_label(tr, lane)[: label_w - 1].ljust(label_w)
         lblattr = (
             curses.color_pair(22)
             if (sel and use_color)
-            else (curses.A_BOLD if sel else curses.A_NORMAL)
+            else (curses.A_BOLD if sel or lane.kind == "cpu" else curses.A_NORMAL)
         )
         stdscr.addstr(row_y, 0, lbl, lblattr)
-        # Draw each lane as runs of same-state glyphs, coloured per state.
-        cells = state_rows[tid]
+
+        # A divider between the CPU section and the per-thread section; it
+        # carries no bars of its own.
+        if lane.kind == "sep":
+            stdscr.addstr(row_y, label_w, "-" * tl_w, curses.A_DIM)
+            row_y += 1
+            continue
+
+        # Occupancy lanes are shaded by how much of the column they held the
+        # CPU for; state lanes keep the per-state glyph and colour.
+        if lane.kind in LANE_OCCUPANCY:
+            cells = [occ_glyph(f) for f in occ_rows[lane]]
+            attrs = [st_attr(ST_RUN)] * tl_w
+        else:
+            states = state_rows[lane.tid]
+            cells = [STATE_GLYPH.get(s, " ") if s else " " for s in states]
+            attrs = [st_attr(s) for s in states]
+
         c = 0
         while c < tl_w:
-            st = cells[c]
             run = c + 1
-            while run < tl_w and cells[run] == st:
+            while run < tl_w and cells[run] == cells[c] and attrs[run] == attrs[c]:
                 run += 1
-            glyph = STATE_GLYPH.get(st, " ") if st else " "
-            if glyph != " ":
-                stdscr.addstr(row_y, label_w + c, glyph * (run - c), st_attr(st))
+            if cells[c] != " ":
+                stdscr.addstr(row_y, label_w + c, cells[c] * (run - c), attrs[c])
             c = run
         # Playhead marker.
-        st = cells[cursor_col] if cursor_col < len(cells) else None
-        mark = STATE_GLYPH.get(st, "|") if st else "|"
+        mark = cells[cursor_col] if cursor_col < len(cells) else "|"
+        if mark == " ":
+            mark = "|"
         stdscr.addstr(
             row_y,
             label_w + cursor_col,
             mark,
             curses.color_pair(21) if use_color else curses.A_REVERSE,
         )
-        row_y += 1
-
-    if any(c != " " for c in isr_row) and row_y < h - panel_h - 1:
-        stdscr.addstr(row_y, 0, "[ISR]".ljust(label_w), curses.A_BOLD)
-        iattr = curses.color_pair(20) if use_color else curses.A_REVERSE
-        stdscr.addstr(row_y, label_w, "".join(isr_row)[:tl_w], iattr)
         row_y += 1
 
     if show_events and row_y < h - panel_h - 1:
@@ -1291,7 +1677,7 @@ def _draw_gantt(
                 w,
                 view0,
                 view1,
-                view_lanes,
+                [ln.tid for ln in view_lanes if ln.kind == "state"] or lane_order(tr),
                 ev_lo,
                 ev_hi,
                 curses,
@@ -1323,7 +1709,8 @@ def _draw_gantt(
         )
         py += 1
         # Selected lane: its state and, when blocked, why.
-        sel_tid = view_lanes[sel_row] if view_lanes else None
+        sel_lane = view_lanes[sel_row] if view_lanes else None
+        sel_tid = sel_lane.tid if sel_lane is not None else None
         if sel_tid is not None:
             t = tr.threads[sel_tid]
             prio = "-" if t["prio"] is None else str(t["prio"])
@@ -1348,10 +1735,16 @@ def _draw_metrics(stdscr, tr, y0, y1, w, view0, view1, lanes, ev_lo, ev_hi, curs
     lanes: a CPU-busy gauge, context-switch / event rates, and per-thread
     stacked utilization bars (run/ready/blocked/sleep)."""
     per, span = window_stats(tr, view0, view1)
-    idle_ids = {t for t in tr.threads if tr.threads[t].get("name") == "idle"}
-    run_total = sum(a.get(ST_RUN, 0) for a in per.values())
-    idle_run = sum(per.get(t, {}).get(ST_RUN, 0) for t in idle_ids)
-    busy = max(0.0, min(1.0, (run_total - idle_run) / span))
+    # Utilization is computed per CPU straight from the running segments: the
+    # per-thread state totals cover every CPU at once, so on SMP they would add
+    # up to more than one CPU's worth of time.
+    busy_per_cpu = {}
+    for s, e, tid, cpu in tr.segments:
+        if e <= view0 or s >= view1 or is_idle_thread(tr, tid):
+            continue
+        busy_per_cpu[cpu] = busy_per_cpu.get(cpu, 0) + (min(e, view1) - max(s, view0))
+    cpus = tr.cpu_list()
+    busy = max(0.0, min(1.0, sum(busy_per_cpu.values()) / (span * max(1, len(cpus)))))
     switches = sum(1 for ev in tr.events[ev_lo:ev_hi] if ev.eid == THREAD_SWITCHED_IN)
     nev = ev_hi - ev_lo
     secs = span / 1e9
@@ -1374,12 +1767,23 @@ def _draw_metrics(stdscr, tr, y0, y1, w, view0, view1, lanes, ev_lo, ev_hi, curs
     if y >= y1:
         return
     gw = 14
-    head = f" CPU {busy * 100:3.0f}% "
+    label = " CPU" if len(cpus) == 1 else " ALL"
+    head = f"{label} {busy * 100:3.0f}% "
     stdscr.addstr(y, 0, head, curses.A_BOLD)
     bar(y, len(head), gw, [(ST_RUN, busy)])
+    # With more than one CPU, break the gauge down so an unbalanced load is
+    # visible rather than averaged away.
+    per_cpu = ""
+    if len(cpus) > 1:
+        per_cpu = "  " + " ".join(
+            f"cpu{c} {100 * busy_per_cpu.get(c, 0) / span:3.0f}%" for c in cpus
+        )
     sw_rate = f"{switches / secs:.0f}/s" if secs > 0 else "-"
     ev_rate = f"{nev / secs:.0f}/s" if secs > 0 else "-"
-    tail = f"  ctxsw {switches} ({sw_rate})  events {nev} ({ev_rate})  window {fmt_time(span)}"
+    tail = (
+        f"{per_cpu}  ctxsw {switches} ({sw_rate})  events {nev} ({ev_rate})"
+        f"  window {fmt_time(span)}"
+    )
     stdscr.addstr(y, len(head) + gw, tail[: max(0, w - len(head) - gw - 1)])
     y += 1
 
@@ -1441,6 +1845,14 @@ def main():
         help="trace was built without CONFIG_TRACING_CTF_TIMESTAMP",
     )
     ap.add_argument(
+        "--cpu",
+        type=int,
+        default=None,
+        help="CPU whose stream to display (default: the first one seen). "
+        "Only meaningful for a trace captured on an SMP system, where each "
+        "CPU produces its own stream",
+    )
+    ap.add_argument(
         "-f",
         "--follow",
         action="store_true",
@@ -1463,9 +1875,13 @@ def main():
         if args.text or not sys.stdout.isatty():
             sys.stderr.write("--follow requires an interactive terminal\n")
             return 1
-        return _run_follow(args.binary, defs, has_ts)
+        return _run_follow(args.binary, defs, has_ts, args.cpu)
 
-    tr = parse_trace(args.binary, defs, has_ts=has_ts)
+    reader = TraceReader(defs, has_ts, args.cpu)
+    with safe_open(args.binary, "rb") as fh:
+        reader.feed(fh.read())
+    tr = reader.tr
+    _report_cpus(reader)
     if not tr.events:
         sys.stderr.write("no events decoded; is this a CTF trace? try --no-timestamp\n")
         return 1
@@ -1475,17 +1891,13 @@ def main():
         run_text(tr, width)
         return 0
 
-    reader = TraceReader(defs, has_ts)
-    with safe_open(args.binary, "rb") as fh:
-        reader.feed(fh.read())
-
     import curses
 
     curses.wrapper(run_curses, reader)
     return 0
 
 
-def _run_follow(path, defs, has_ts):
+def _run_follow(path, defs, has_ts, cpu=None):
     """Open the trace, catch up on existing bytes, then follow it live."""
     import curses
     import time
@@ -1497,7 +1909,7 @@ def _run_follow(path, defs, has_ts):
             deadline = True
         time.sleep(0.3)
 
-    reader = TraceReader(defs, has_ts)
+    reader = TraceReader(defs, has_ts, cpu)
     fh = safe_open(path, "rb")
     try:
         reader.feed(fh.read())  # catch up on whatever already exists
