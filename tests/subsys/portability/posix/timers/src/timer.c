@@ -186,7 +186,7 @@ ZTEST(posix_timers, test_TIMER_ABSTIME_reference_clock)
 	zassert_equal(exp_count, 1, "TIMER_ABSTIME fired %d times, expected 1", exp_count);
 }
 
-ZTEST(posix_timers, test_TIMER_ABSTIME_no_uint32_truncation)
+ZTEST(posix_timers, test_TIMER_ABSTIME_large_timeout)
 {
 	struct sigevent sig = {0};
 	struct itimerspec value;
@@ -199,26 +199,36 @@ ZTEST(posix_timers, test_TIMER_ABSTIME_no_uint32_truncation)
 
 	zassert_ok(timer_create(CLOCK_REALTIME, &sig, &timerid));
 
-	/*Set CLOCK_REALTIME to a large value to trigger uint32_t overflow in ts_to_ms()*/
+	/*
+	 * TIMER_ABSTIME at a large CLOCK_REALTIME value with a 5 s offset.
+	 * Guards two timeout conversion bugs on 32-bit time_t toolchains:
+	 * - uint32 truncation: storing absolute milliseconds in a uint32_t
+	 *   instead of the relative wait from timespec_to_timeoutms()
+	 * - time_t overflow: tv_sec * NSEC_PER_SEC wraps in 32-bit math
+	 *   unless widened to int64_t before scaling (needs a multi-second
+	 *   offset; same-second offsets cancel in the subtraction)
+	 * After 2 s the timer must still be pending; after 5.5 s it must
+	 * have fired once.
+	 */
 	zassert_ok(clock_gettime(CLOCK_REALTIME, &orig));
 	ref.tv_sec = 1700000000;
 	ref.tv_nsec = 0;
 	zassert_ok(clock_settime(CLOCK_REALTIME, &ref));
 
-	/*Set TIMER_ABSTIME to ref + 200 ms*/
+	/* Set TIMER_ABSTIME to ref + 5 s */
 	value.it_interval.tv_sec = 0;
 	value.it_interval.tv_nsec = 0;
-	value.it_value.tv_sec = ref.tv_sec;
-	value.it_value.tv_nsec = 200 * NSEC_PER_MSEC;
+	value.it_value.tv_sec = ref.tv_sec + 5;
+	value.it_value.tv_nsec = 0;
 	zassert_ok(timer_settime(timerid, TIMER_ABSTIME, &value, NULL));
 	zassert_ok(clock_settime(CLOCK_REALTIME, &orig));
 
-	/*Verify the timer has not fired before the absolute expiry*/
-	k_sleep(K_MSEC(100));
-	zassert_equal(exp_count, 0, "TIMER_ABSTIME fired too early");
+	/* A broken build fires early; a correct 5 s timeout has not fired yet */
+	k_sleep(K_MSEC(2000));
+	zassert_equal(exp_count, 0, "TIMER_ABSTIME fired too early: tv_sec overflow not widened");
 
-	/*Verify the timer fired after the absolute expiry*/
-	k_sleep(K_MSEC(300));
+	/* A correct build fires exactly once at the 5 s absolute expiry */
+	k_sleep(K_MSEC(3500));
 	zassert_equal(exp_count, 1, "TIMER_ABSTIME fired %d times, expected 1", exp_count);
 }
 
