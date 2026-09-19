@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Enables one AXI IIC core so the configure()/get_config() test can run.
+ * Only the controller under test is needed - no target device and no
+ * loopback partner.
+ */
+
+/ {
+	/*
+	 * The generic versal2_rpu board selects uart1 as the console. The
+	 * VEK385 design this test runs against uses uart0 (serial@f1920000).
+	 */
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	axi_iic_clk: axi-iic-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+	};
+};
+
+&axi_iic0 {
+	status = "okay";
+	clocks = <&axi_iic_clk>;
+	clock-frequency = <100000>;
+};
