@@ -347,7 +347,6 @@ SECTIONS
         KEEP(*(.gnu.attributes))
     }
 
-    /DISCARD/ : { *(.note.GNU-stack) }
 
 /* Output section descriptions are needed for these sections to suppress
  * warnings when "--orphan-handling=warn" is set for lld.
