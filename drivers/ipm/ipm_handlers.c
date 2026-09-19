@@ -37,3 +37,14 @@ static inline int z_vrfy_ipm_set_enabled(const struct device *dev, int enable)
 	return z_impl_ipm_set_enabled(dev, enable);
 }
 #include <zephyr/syscalls/ipm_set_enabled_mrsh.c>
+
+static inline void z_vrfy_ipm_complete(const struct device *dev)
+{
+	/* complete is an optional op, and the struct member is absent
+	 * entirely when CONFIG_IPM_CALLBACK_ASYNC=n, so check the object
+	 * rather than the op.
+	 */
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_IPM));
+	z_impl_ipm_complete(dev);
+}
+#include <zephyr/syscalls/ipm_complete_mrsh.c>
