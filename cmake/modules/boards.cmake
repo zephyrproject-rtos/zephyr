@@ -105,27 +105,34 @@ function(parse_board_components board_in name_out revision_out qualifiers_out)
   set(${qualifiers_out} ${CMAKE_MATCH_4}  PARENT_SCOPE)
 endfunction()
 
+include(${ZEPHYR_BASE}/boards/alias.cmake)
+zephyr_get(ZEPHYR_BOARD_ALIASES)
+if(DEFINED ZEPHYR_BOARD_ALIASES)
+  include(${ZEPHYR_BOARD_ALIASES})
+endif()
+
+string(REGEX REPLACE "(@[^@/]+)" "" alias_check "${BOARD}")
+set(revision "${CMAKE_MATCH_1}")
+while(alias_check)
+  if(DEFINED ${alias_check}_BOARD_ALIAS)
+    set(board_alias "${${alias_check}_BOARD_ALIAS}")
+    message(STATUS "Aliased BOARD=${BOARD} changed to ${board_alias}")
+    set(BOARD "${board_alias}")
+    if(revision)
+      string(REGEX REPLACE "@[^/]*" "" BOARD "${BOARD}")
+      string(REGEX REPLACE "^([^/]+)" "\\1${revision}" BOARD "${BOARD}")
+    endif()
+    set(BOARD "${BOARD}${extra_board_qualifier}")
+    break()
+  endif()
+  string(REGEX REPLACE "(/([^/]*)|([^/]+))$" "" alias_check "${alias_check}")
+  set(extra_board_qualifier "/${CMAKE_MATCH_2}${extra_board_qualifier}")
+endwhile()
+
 parse_board_components(
   BOARD
   BOARD BOARD_REVISION BOARD_QUALIFIERS
 )
-
-zephyr_get(ZEPHYR_BOARD_ALIASES)
-if(DEFINED ZEPHYR_BOARD_ALIASES)
-  include(${ZEPHYR_BOARD_ALIASES})
-  if(${BOARD}_BOARD_ALIAS)
-    set(BOARD_ALIAS ${BOARD} CACHE STRING "Board alias, provided by user")
-    parse_board_components(
-      ${BOARD}_BOARD_ALIAS
-      BOARD BOARD_ALIAS_REVISION BOARD_ALIAS_QUALIFIERS
-    )
-    message(STATUS "Aliased BOARD=${BOARD_ALIAS} changed to ${BOARD}")
-    if(NOT DEFINED BOARD_REVISION)
-      set(BOARD_REVISION ${BOARD_ALIAS_REVISION})
-    endif()
-    set(BOARD_QUALIFIERS ${BOARD_ALIAS_QUALIFIERS}/${BOARD_QUALIFIERS})
-  endif()
-endif()
 
 include(${ZEPHYR_BASE}/boards/deprecated.cmake)
 if(${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED)
