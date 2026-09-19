@@ -1916,7 +1916,14 @@ class GitDiffCheck(ComplianceTest):
         offending_lines = []
         # Use regex to filter out unnecessay output
         # Reason: `--check` is mutually exclusive with `--name-only` and `-s`
-        p = re.compile(r"\S+\: .*\.")
+        # A problem is reported as "<path>:<line>: <message>", and the line it
+        # is about is echoed after it with a '+' in front, which is what the
+        # leading [^+] rules out. The message is not always a sentence: the
+        # whitespace ones end in a period, "leftover conflict marker" does
+        # not, so matching on one would drop the check this class is named
+        # for. Nothing else is assumed about the path, which git prints as
+        # it finds it -- unquoted, and free to begin with a dot or a space.
+        p = re.compile(r"^[^+\n].*?:\d+: .+$", re.MULTILINE)
 
         for shaidx in get_shas(COMMIT_RANGE):
             # Ignore non-zero return status code
