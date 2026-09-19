@@ -386,20 +386,31 @@ int ext2_init_fs(struct ext2_data *fs)
 int ext2_close_fs(struct ext2_data *fs)
 {
 	int ret = 0;
+	int rc;
+	int32_t i = 0;
 
 	/* Close all open inodes */
-	for (int32_t i = 0; i < fs->open_inodes; ++i) {
-		if (fs->inode_pool[i] != NULL) {
-			ext2_inode_drop(fs->inode_pool[i]);
+	while (i < fs->open_inodes) {
+		struct ext2_inode *inode = fs->inode_pool[i];
+
+		rc = ext2_inode_drop(inode);
+		if (rc < 0) {
+			if (ret == 0) {
+				ret = rc;
+			}
+			i++;
+		} else if (fs->inode_pool[i] == inode) {
+			/* The pool entry was not removed, so advance past it. */
+			i++;
 		}
 	}
 
 	/* To save file system as correct it must be writable and without errors */
 	if (!(fs->flags & (EXT2_DATA_FLAGS_RO | EXT2_DATA_FLAGS_ERR))) {
 		fs->sblock.s_state = EXT2_VALID_FS;
-		ret = ext2_commit_superblock(fs);
-		if (ret < 0) {
-			return ret;
+		rc = ext2_commit_superblock(fs);
+		if (rc < 0 && ret == 0) {
+			ret = rc;
 		}
 	}
 
@@ -408,10 +419,11 @@ int ext2_close_fs(struct ext2_data *fs)
 	ext2_drop_block(fs->bgroup.inode_bitmap);
 	ext2_drop_block(fs->bgroup.block_bitmap);
 
-	if (fs->backend_ops->sync(fs) < 0) {
-		return -EIO;
+	rc = fs->backend_ops->sync(fs);
+	if (rc < 0 && ret == 0) {
+		ret = -EIO;
 	}
-	return 0;
+	return ret;
 }
 
 int ext2_close_struct(struct ext2_data *fs)
