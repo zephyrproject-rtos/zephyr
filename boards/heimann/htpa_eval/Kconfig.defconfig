@@ -20,3 +20,6 @@ configdefault MEMC
 
 configdefault SOC_PREP_HOOK
 	default y
+
+config SPI_SAM_DMA
+	default y
