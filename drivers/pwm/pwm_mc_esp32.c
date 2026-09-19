@@ -42,6 +42,9 @@ LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
 #define DUTY_MODE_FORCE_LOW   2
 #define DUTY_MODE_FORCE_HIGH  3
 
+/* Use tenths of permille instead of percents for higher resolution */
+#define DUTY_REF (10000U)
+
 #ifdef CONFIG_PWM_CAPTURE
 #define SKIP_IRQ_NUM        4U
 #define CAP_INT_MASK        7U
@@ -117,7 +120,7 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 
 	if (channel->duty == 0) {
 		duty_mode = channel->inverted ? DUTY_MODE_FORCE_HIGH : DUTY_MODE_FORCE_LOW;
-	} else if (channel->duty == 100) {
+	} else if (channel->duty == DUTY_REF) {
 		duty_mode = channel->inverted ? DUTY_MODE_FORCE_LOW : DUTY_MODE_FORCE_HIGH;
 	} else {
 		duty_mode = channel->inverted ? DUTY_MODE_ACTIVE_LOW : DUTY_MODE_ACTIVE_HIGH;
@@ -125,7 +128,8 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 
 	uint32_t timer_clk_hz = data->mcpwm_clk_hz / config->prescale / channel->prescale;
 
-	set_duty = (timer_clk_hz / channel->freq) * channel->duty / 100;
+	set_duty = (uint32_t)(((uint64_t)timer_clk_hz * channel->duty) /
+			      ((uint64_t)channel->freq * DUTY_REF));
 	mcpwm_ll_operator_connect_timer(data->hal.dev, channel->operator_id, channel->timer_id);
 	mcpwm_ll_operator_set_compare_value(data->hal.dev, channel->operator_id,
 					    channel->generator_id, set_duty);
@@ -211,7 +215,7 @@ static int mcpwm_esp32_get_cycles_per_sec(const struct device *dev, uint32_t cha
 	if (channel->idx >= CAPTURE_CHANNEL_IDX) {
 #if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
 		/* Capture prescaler is disabled by default (equals 1) */
-		*cycles = (uint64_t)data->mcpwm_clk_hz / (config->prescale + 1) / 1;
+		*cycles = (uint64_t)data->mcpwm_clk_hz / config->prescale / 1;
 #else
 		*cycles = (uint64_t)APB_CLK_FREQ;
 #endif
@@ -219,8 +223,7 @@ static int mcpwm_esp32_get_cycles_per_sec(const struct device *dev, uint32_t cha
 	}
 #endif /* CONFIG_PWM_CAPTURE */
 
-	*cycles =
-		(uint64_t)data->mcpwm_clk_hz / (config->prescale + 1) / (channel->prescale + 1);
+	*cycles = (uint64_t)data->mcpwm_clk_hz / config->prescale / channel->prescale;
 
 	return 0;
 }
@@ -255,7 +258,7 @@ static int mcpwm_esp32_set_cycles(const struct device *dev, uint32_t channel_idx
 		return ret;
 	}
 
-	channel->duty = DIV_ROUND_CLOSEST((uint64_t)pulse_cycles * 100ULL, period_cycles);
+	channel->duty = DIV_ROUND_CLOSEST((uint64_t)pulse_cycles * DUTY_REF, period_cycles);
 
 	channel->inverted = (flags & PWM_POLARITY_INVERTED);
 
@@ -623,15 +626,16 @@ static DEVICE_API(pwm, mcpwm_esp32_api) = {
 
 #ifdef CONFIG_PWM_CAPTURE
 #define IRQ_CONFIG_FUNC(idx)                                                                       \
-	static int mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                    \
+	static int mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                     \
 	{                                                                                          \
-		int ret;                                                                   \
-		ret = esp_intr_alloc(DT_INST_IRQ_BY_IDX(idx, 0, irq),                      \
-				ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |          \
-				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)) |          \
-					ESP_INTR_FLAG_IRAM,                                        \
-				(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);               \
-		return ret;                                                                \
+		int ret;                                                                           \
+		ret = esp_intr_alloc(                                                              \
+			DT_INST_IRQ_BY_IDX(idx, 0, irq),                                           \
+			ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |                  \
+				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)) |           \
+				ESP_INTR_FLAG_IRAM,                                                \
+			(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);                       \
+		return ret;                                                                        \
 	}
 #define CAPTURE_INIT(idx) .irq_config_func = mcpwm_esp32_irq_config_func_##idx
 #else
@@ -656,9 +660,9 @@ static DEVICE_API(pwm, mcpwm_esp32_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
 		.prescale = DT_INST_PROP(idx, prescale),                                           \
-		.prescale_timer0 = DT_INST_PROP_OR(idx, prescale_timer0, 0),                       \
-		.prescale_timer1 = DT_INST_PROP_OR(idx, prescale_timer1, 0),                       \
-		.prescale_timer2 = DT_INST_PROP_OR(idx, prescale_timer2, 0),                       \
+		.prescale_timer0 = DT_INST_PROP_OR(idx, prescale_timer0, 1),                       \
+		.prescale_timer1 = DT_INST_PROP_OR(idx, prescale_timer1, 1),                       \
+		.prescale_timer2 = DT_INST_PROP_OR(idx, prescale_timer2, 1),                       \
 		CAPTURE_INIT(idx)};                                                                \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(idx, mcpwm_esp32_pm_action);                                      \
