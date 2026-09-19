@@ -17,7 +17,7 @@
 	status = "okay";
 
 	nrf70: nrf7000-spi@0 {
-		compatible = "nordic,nrf7000-spi";
+		compatible = "nordic,nrf7000";
 		status = "okay";
 
 #include "nrf7002eb2_common.overlay"
