@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ameba Ledc
+
+compatible: "realtek,ameba-ledc"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  chain-length:
+    type: int
+    required: true
+
+  output-rgb-mode:
+    type: int
+    required: true
+
+  wait-data-timeout:
+    type: int
+    required: true
+
+  data-tx-time0h:
+    type: int
+    required: true
+
+  data-tx-time0l:
+    type: int
+    required: true
+
+  data-tx-time1h:
+    type: int
+    required: true
+
+  data-tx-time1l:
+    type: int
+    required: true
+
+  refresh-time:
+    type: int
+    required: true
+
+  color-mapping:
+    type: array
+    required: true
