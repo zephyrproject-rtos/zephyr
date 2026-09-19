@@ -22,7 +22,7 @@
 #include <stdbool.h>
 
 #ifdef CONFIG_OBJ_CORE_STACK
-static struct k_obj_type obj_type_stack;
+K_OBJ_TYPE_DEFINE(z_obj_type_stack, k_stack, K_OBJ_TYPE_STACK_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_STACK */
 
 void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
@@ -38,7 +38,7 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 	k_object_init(stack);
 
 #ifdef CONFIG_OBJ_CORE_STACK
-	k_obj_core_init_and_link(K_OBJ_CORE(stack), &obj_type_stack);
+	k_obj_core_init_and_link(K_OBJ_CORE(stack), &z_obj_type_stack);
 #endif /* CONFIG_OBJ_CORE_STACK */
 }
 
@@ -89,6 +89,7 @@ int z_stack_cleanup(struct k_stack *stack, __maybe_unused bool locked)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, cleanup, stack);
 
 	int ret = 0;
+	bool freed = false;
 	k_spinlock_key_t key = k_spin_lock(&stack->lock);
 
 	CHECKIF(locked && (z_waitq_head_locked(&stack->wait_q) != NULL)) {
@@ -105,10 +106,17 @@ int z_stack_cleanup(struct k_stack *stack, __maybe_unused bool locked)
 		k_free(stack->base);
 		stack->base = NULL;
 		stack->flags &= ~K_STACK_FLAG_ALLOC;
+		freed = true;
 	}
 
 out:
 	k_spin_unlock(&stack->lock, key);
+
+#ifdef CONFIG_OBJ_CORE_STACK
+	if (freed) {
+		k_obj_core_unlink(K_OBJ_CORE(stack));
+	}
+#endif /* CONFIG_OBJ_CORE_STACK */
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, ret);
 
 	return ret;
@@ -213,7 +221,3 @@ static inline int z_vrfy_k_stack_pop(struct k_stack *stack,
 }
 #include <zephyr/syscalls/k_stack_pop_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_STACK
-K_OBJ_TYPE_DEFINE(obj_type_stack, k_stack, K_OBJ_TYPE_STACK_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_STACK */

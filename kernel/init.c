@@ -146,8 +146,6 @@ K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks,
 extern void idle(void *unused1, void *unused2, void *unused3);
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
-static struct k_obj_type obj_type_cpu;
-
 #ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
 static struct k_obj_core_stats_desc  cpu_stats_desc = {
 	.raw_size = sizeof(struct k_cycle_stats),
@@ -162,10 +160,10 @@ static struct k_obj_core_stats_desc  cpu_stats_desc = {
 /* CPU object cores have no static instances to walk; each CPU links its own
  * object core in z_init_cpu(). Register the type only.
  */
-K_OBJ_TYPE_DEFINE_TYPE_ONLY(obj_type_cpu, _cpu, K_OBJ_TYPE_CPU_ID,
+K_OBJ_TYPE_DEFINE_TYPE_ONLY(z_obj_type_cpu, _cpu, K_OBJ_TYPE_CPU_ID,
 			    &cpu_stats_desc);
 #else
-K_OBJ_TYPE_DEFINE_TYPE_ONLY(obj_type_cpu, _cpu, K_OBJ_TYPE_CPU_ID, NULL);
+K_OBJ_TYPE_DEFINE_TYPE_ONLY(z_obj_type_cpu, _cpu, K_OBJ_TYPE_CPU_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
 #endif /* CONFIG_OBJ_CORE_SYSTEM */
 
@@ -411,7 +409,7 @@ void z_init_cpu(int id)
 #endif
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
-	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel.cpus[id]), &obj_type_cpu);
+	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel.cpus[id]), &z_obj_type_cpu);
 #ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
 	k_obj_core_stats_register(K_OBJ_CORE(&_kernel.cpus[id]),
 				  _kernel.cpus[id].usage,

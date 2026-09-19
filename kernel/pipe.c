@@ -13,7 +13,7 @@
 #include <scheduler.h>
 
 #ifdef CONFIG_OBJ_CORE_PIPE
-static struct k_obj_type obj_type_pipe;
+K_OBJ_TYPE_DEFINE(z_obj_type_pipe, k_pipe, K_OBJ_TYPE_PIPE_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_PIPE */
 
 static inline bool pipe_closed(struct k_pipe *pipe)
@@ -90,7 +90,7 @@ void z_impl_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size
 	sys_dlist_init(&pipe->poll_events);
 #endif /* CONFIG_POLL */
 #ifdef CONFIG_OBJ_CORE_PIPE
-	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &z_obj_type_pipe);
 #endif /* CONFIG_OBJ_CORE_PIPE */
 	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe, buffer, buffer_size);
 }
@@ -349,7 +349,3 @@ void z_vrfy_k_pipe_close(struct k_pipe *pipe)
 }
 #include <zephyr/syscalls/k_pipe_close_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_PIPE
-K_OBJ_TYPE_DEFINE(obj_type_pipe, k_pipe, K_OBJ_TYPE_PIPE_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_PIPE */

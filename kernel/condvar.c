@@ -13,7 +13,7 @@
 #include <zephyr/init.h>
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR
-static struct k_obj_type obj_type_condvar;
+K_OBJ_TYPE_DEFINE(z_obj_type_condvar, k_condvar, K_OBJ_TYPE_CONDVAR_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_CONDVAR */
 
 static struct k_spinlock condvar_lock;
@@ -24,7 +24,7 @@ int z_impl_k_condvar_init(struct k_condvar *condvar)
 	k_object_init(condvar);
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR
-	k_obj_core_init_and_link(K_OBJ_CORE(condvar), &obj_type_condvar);
+	k_obj_core_init_and_link(K_OBJ_CORE(condvar), &z_obj_type_condvar);
 #endif /* CONFIG_OBJ_CORE_CONDVAR */
 
 	SYS_PORT_TRACING_OBJ_INIT(k_condvar, condvar, 0);
@@ -146,7 +146,3 @@ int z_vrfy_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 }
 #include <zephyr/syscalls/k_condvar_wait_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_CONDVAR
-K_OBJ_TYPE_DEFINE(obj_type_condvar, k_condvar, K_OBJ_TYPE_CONDVAR_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_CONDVAR */
