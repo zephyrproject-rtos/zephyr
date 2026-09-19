@@ -10,15 +10,23 @@
 
 /*
  * The API tests below drive a real MIPI DBI controller, so they are only built
- * where the "mipi_dbi" node is enabled (see the filter in tests.yaml).
+ * where the "mipi_dbi" node is enabled (see tests.yaml).
  */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mipi_dbi))
 
+#if DT_NODE_HAS_COMPAT(DT_NODELABEL(mipi_dbi), zephyr_mipi_dbi_bitbang)
+BUILD_ASSERT(DT_PROP_LEN(DT_NODELABEL(mipi_dbi), data_gpios) == 8,
+	     "the bit-banged fixture must declare an eight-bit data bus");
+#endif
+
 static const uint8_t modes[] = {
 	MIPI_DBI_MODE_8080_BUS_8_BIT,
+/* A bit-banged controller drives only the width its data-gpios lists. */
+#if !DT_NODE_HAS_COMPAT(DT_NODELABEL(mipi_dbi), zephyr_mipi_dbi_bitbang)
 #ifndef MULTIPLE_INSTANCES
 	MIPI_DBI_MODE_8080_BUS_9_BIT,
 	MIPI_DBI_MODE_8080_BUS_16_BIT,
+#endif
 #endif
 };
 
@@ -31,7 +39,7 @@ static const struct device *const devices[] = {DEVICE_DT_GET(DT_NODELABEL(mipi_d
 ZTEST(mipi_dbi_api, test_mipi_dbi_command_write)
 {
 	int ret;
-	struct mipi_dbi_config config;
+	struct mipi_dbi_config config = {0};
 
 	uint8_t cmd = 0xff;
 	uint8_t data[] = {0x00, 0xff, 0x00, 0xff};
@@ -40,7 +48,7 @@ ZTEST(mipi_dbi_api, test_mipi_dbi_command_write)
 		for (int j = 0; j < ARRAY_SIZE(modes); ++j) {
 			config.mode = modes[j];
 			ret = mipi_dbi_command_write(devices[i], &config, cmd, data, sizeof(data));
-			zassert_equal(ret, 0, "Expected 0 but was %u", ret);
+			zassert_equal(ret, 0, "Expected 0 but was %d", ret);
 		}
 	}
 }
@@ -48,7 +56,7 @@ ZTEST(mipi_dbi_api, test_mipi_dbi_command_write)
 ZTEST(mipi_dbi_api, test_mipi_dbi_command_write_cmd_only)
 {
 	int ret;
-	struct mipi_dbi_config config;
+	struct mipi_dbi_config config = {0};
 
 	uint8_t cmd = 0xff;
 
@@ -56,7 +64,7 @@ ZTEST(mipi_dbi_api, test_mipi_dbi_command_write_cmd_only)
 		for (int j = 0; j < ARRAY_SIZE(modes); ++j) {
 			config.mode = modes[j];
 			ret = mipi_dbi_command_write(devices[i], &config, cmd, NULL, 0);
-			zassert_equal(ret, 0, "Expected 0 but was %u", ret);
+			zassert_equal(ret, 0, "Expected 0 but was %d", ret);
 		}
 	}
 }
@@ -64,8 +72,12 @@ ZTEST(mipi_dbi_api, test_mipi_dbi_command_write_cmd_only)
 ZTEST(mipi_dbi_api, test_mipi_dbi_write_display)
 {
 	int ret;
-	struct mipi_dbi_config config;
-	struct display_buffer_descriptor descriptor;
+	struct mipi_dbi_config config = {0};
+	struct display_buffer_descriptor descriptor = {
+		.width = 2,
+		.height = 1,
+		.pitch = 2,
+	};
 
 	uint8_t data[] = {0x00, 0xff, 0x00, 0xff};
 
@@ -76,7 +88,7 @@ ZTEST(mipi_dbi_api, test_mipi_dbi_write_display)
 			config.mode = modes[j];
 			ret = mipi_dbi_write_display(devices[i], &config, data, &descriptor,
 						      PIXEL_FORMAT_RGB_565);
-			zassert_equal(ret, 0, "Expected 0 but was %u", ret);
+			zassert_equal(ret, 0, "Expected 0 but was %d", ret);
 		}
 	}
 }
@@ -86,10 +98,8 @@ ZTEST(mipi_dbi_api, test_mipi_dbi_reset)
 	int ret;
 
 	for (int i = 0; i < ARRAY_SIZE(devices); ++i) {
-		for (int j = 0; j < ARRAY_SIZE(modes); ++j) {
-			ret = mipi_dbi_reset(devices[i], 100);
-			zassert_equal(ret, 0, "Expected 0 but was %u", ret);
-		}
+		ret = mipi_dbi_reset(devices[i], 100);
+		zassert_equal(ret, 0, "Expected 0 but was %d", ret);
 	}
 }
 
