@@ -31,7 +31,7 @@ config SYSCON_GENERIC
 
 config SYSCON_INIT_PRIORITY
 	int "SYSCON (System Controller) driver init priority"
-	default 50
+	default 20
 	help
 	  This option controls the priority of the syscon device
 	  initialization. Higher priority ensures that the device is
