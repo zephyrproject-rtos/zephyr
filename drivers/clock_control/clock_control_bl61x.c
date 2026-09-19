@@ -52,6 +52,7 @@ LOG_MODULE_REGISTER(clock_control_bl61x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define BL61X_TARGET_BASIC_CLOCK	MHZ(40)
 
 #define CRYSTAL_FREQ_TO_ID(freq) CONCAT(CRYSTAL_ID_FREQ_, freq)
+#define CRYSTAL_FREQ DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency)
 
 #define ROOT_CLK_RANGE_DELIM	MHZ(500)
 
@@ -66,6 +67,8 @@ LOG_MODULE_REGISTER(clock_control_bl61x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #else
 #define CLK_AT_LEAST_MUL 32
 #endif
+
+#define TARGET_TIMEBASE_FREQ DT_PROP(DT_PATH(cpus), timebase_frequency)
 
 #define USBPLL_SDMIN	0x28000
 #define SSCDIV_SDMIN	0x28000
@@ -887,7 +890,7 @@ static __ramfunc uint32_t clock_control_bl61x_get_xclk(const struct device *dev)
 	if (tmp == 0) {
 		return BFLB_RC32M_FREQUENCY;
 	} else if (tmp == 1) {
-		return DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency);
+		return CRYSTAL_FREQ;
 	} else {
 		return 0;
 	}
@@ -895,7 +898,11 @@ static __ramfunc uint32_t clock_control_bl61x_get_xclk(const struct device *dev)
 
 static uint32_t clock_control_bl61x_mtimer_get_xclk_src_div(const struct device *dev)
 {
-	return (clock_control_bl61x_get_xclk(dev) / 1000 / 1000 - 1);
+	if (clock_control_bl61x_get_xclk(dev) < TARGET_TIMEBASE_FREQ) {
+		LOG_ERR("Timebase frequency is invalid for this configuration");
+		return 0;
+	}
+	return (clock_control_bl61x_get_xclk(dev) / TARGET_TIMEBASE_FREQ - 1);
 }
 
 /* Almost always CPU, AXI bus, SRAM Memory, Cache, use HCLK query instead */
@@ -1717,7 +1724,7 @@ static int clock_control_bl61x_get_rate(const struct device *dev, clock_control_
 	} else if  ((enum bl61x_clkid)sys == bl61x_clkid_clk_bclk) {
 		*rate = clock_control_bl61x_get_bclk(dev);
 	} else if  ((enum bl61x_clkid)sys == bl61x_clkid_clk_crystal) {
-		*rate = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency);
+		*rate = CRYSTAL_FREQ;
 	} else if  ((enum bl61x_clkid)sys == bl61x_clkid_clk_160mux) {
 		if (data->wifipll.enabled || data->aupll.enabled) {
 			*rate = clock_control_bl61x_get_160m(dev);
@@ -1766,8 +1773,7 @@ static DEVICE_API(clock_control, clock_control_bl61x_api) = {
 };
 
 static const struct clock_control_bl61x_config clock_control_bl61x_config = {
-	.crystal_id = CRYSTAL_FREQ_TO_ID(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal),
-						 clock_frequency)),
+	.crystal_id = CRYSTAL_FREQ_TO_ID(CRYSTAL_FREQ),
 };
 
 static struct clock_control_bl61x_data clock_control_bl61x_data = {
@@ -1864,6 +1870,11 @@ BUILD_ASSERT(CLK_SRC_IS(f32k, xtal32k)
 
 BUILD_ASSERT(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m),
 		     clock_frequency) == BFLB_RC32M_FREQUENCY, "RC32M must be 32M");
+
+BUILD_ASSERT(TARGET_TIMEBASE_FREQ > KHZ(40)
+	     && TARGET_TIMEBASE_FREQ <=
+	     (CRYSTAL_FREQ > BFLB_RC32M_FREQUENCY ? CRYSTAL_FREQ : BFLB_RC32M_FREQUENCY),
+	     "Timebase frequency should be greater than 40 KHz and <= than the fastest XCLK");
 
 DEVICE_DT_INST_DEFINE(0, clock_control_bl61x_init, NULL, &clock_control_bl61x_data,
 		      &clock_control_bl61x_config, PRE_KERNEL_1,
