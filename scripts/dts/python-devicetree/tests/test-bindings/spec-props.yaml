@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: |
+  Declares a property of its own and says nothing about ranges, so a node
+  using it goes through _check_undeclared_props: every property it carries
+  has to be either declared here or on the list of properties the devicetree
+  specification defines.
+
+compatible: "spec-props"
+
+properties:
+  a-prop:
+    type: int
