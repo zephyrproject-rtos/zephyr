@@ -150,6 +150,27 @@ static int dummy_codec_write(const struct device *dev, uint8_t *data, size_t dat
 	return 0;
 }
 
+/*
+ * Mandatory ops. This codec has no output stage to gate and no registers to
+ * commit, so they succeed without doing anything.
+ */
+static void dummy_codec_start_output(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static void dummy_codec_stop_output(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static int dummy_codec_apply_properties(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return 0;
+}
+
 static int dummy_codec_init(const struct device *dev)
 {
 	struct dummy_codec_data *data = dev->data;
