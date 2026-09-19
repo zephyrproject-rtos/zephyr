@@ -441,6 +441,7 @@ test_spi_ad2s1210: ad2s1210@35 {
 	spi-max-frequency = <0>;
 	sample-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 	mode-gpios = <&test_gpio 1 GPIO_ACTIVE_HIGH>, <&test_gpio 2 GPIO_ACTIVE_HIGH>;
+	resolution-gpios = <&test_gpio 3 GPIO_ACTIVE_HIGH>, <&test_gpio 4 GPIO_ACTIVE_HIGH>;
 	reset-gpios = <&test_gpio 7 GPIO_ACTIVE_LOW>;
 	clock-frequency = <8192000>;
 };
