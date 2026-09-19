@@ -36,6 +36,28 @@ properties:
 
     enum: [0, 1, 2, 3, 4, 5, 6, 7]
 
+  lpfp-bandwidth:
+    type: int
+    default: 0
+    description: |
+        Internal low-pass filter bandwidth selection (CTRL_REG1 lpfp_cfg).
+        Value 0 disables the filter; 2 and 3 select ODR/9 and ODR/20
+        bandwidths respectively.
+
+        - 0  # LPS22HH_DT_LPF_DISABLED
+        - 2  # LPS22HH_DT_LPF_ODR_DIV_9
+        - 3  # LPS22HH_DT_LPF_ODR_DIV_20
+
+    enum: [0, 2, 3]
+
+  low-noise:
+    type: boolean
+    description: |
+        Enable the LOW_NOISE mode (CTRL_REG2 LOW_NOISE_EN). Reduces the RMS
+        noise at the cost of higher supply current. Only effective when the
+        output data rate is lower than 100 Hz and, per the datasheet, must be
+        changed while the device is in power-down mode.
+
 examples:
   - |
     #include <zephyr/dt-bindings/sensor/lps22hh.h>

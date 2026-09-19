@@ -36,6 +36,20 @@
 #define LPS22HH_DT_ODR_200HZ			7 /**< 200 Hz */
 /** @} */
 
+/**
+ * @name Low-pass filter bandwidth options
+ *
+ * Values for the `lpfp-bandwidth` devicetree property. The two-bit lpfp_cfg
+ * field in CTRL_REG1 packs the enable bit together with the bandwidth:
+ * 0 disables the filter (the ST HAL labels it ODR/2), 2 and 3 select
+ * ODR/9 and ODR/20 respectively.
+ * @{
+ */
+#define LPS22HH_DT_LPF_DISABLED			0 /**< Low-pass filter off */
+#define LPS22HH_DT_LPF_ODR_DIV_9		2 /**< Bandwidth = ODR/9 */
+#define LPS22HH_DT_LPF_ODR_DIV_20		3 /**< Bandwidth = ODR/20 */
+/** @} */
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_LPS22HH_H_ */
