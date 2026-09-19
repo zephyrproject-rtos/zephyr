@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Hsiu-Chi Tsai
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_ES8311
+	bool "Everest Semiconductor ES8311 audio codec"
+	default y
+	depends on DT_HAS_EVEREST_ES8311_ENABLED
+	select I2C
+	help
+	  Enable the ES8311 mono ADC/DAC with I2C control and standard I2S:
+	  two 16-bit slots, MSB first, normal clock polarity. The codec must
+	  receive continuous bit and frame clocks from the I2S controller.
+
+	  Set audio_codec_cfg.mclk_freq to the external MCLK frequency at
+	  256 times the sample rate. Supported rates are 8000, 11025, 12000,
+	  16000, 22050, 24000, 32000, 44100 and 48000 Hz. Zero selects BCLK
+	  multiplication, limited to 32000, 44100 and 48000 Hz by the 1 MHz
+	  multiplier-input minimum for 3.3 V operation.
+
+	  Input and output volume use whole dB, clamped to -95 through +32 dB.
+	  Capture uses differential MIC1, a DT-selected PGA gain and a fixed
+	  +24 dB digital scale before input volume. Output uses headphone mode.
+
+	  Configuration leaves both directions muted. Start the I2S transport
+	  before audio_codec_start(); a stopped direction applies its cached
+	  volume and mute on start. Use audio_codec_apply_properties() for
+	  running directions. A failed property unmute stops each direction
+	  rolled back to mute; call audio_codec_start() to retry.
+
+	  Check audio_codec_stop() before stopping I2S clocks. The application
+	  manages regulators, clocks and external amplifiers; device PM is not
+	  implemented. Supplies must be available before initialization, or use
+	  zephyr,deferred-init and device_init() after enabling them. Muting
+	  cannot be guaranteed when I2C fails; validate analog settling and
+	  power transitions on the board.
