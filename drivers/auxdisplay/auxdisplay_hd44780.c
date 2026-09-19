@@ -11,19 +11,29 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/auxdisplay.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/dac.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(auxdisplay_hd44780, CONFIG_AUXDISPLAY_LOG_LEVEL);
 
-#define AUXDISPLAY_HD44780_BACKLIGHT_MIN 0
-#define AUXDISPLAY_HD44780_BACKLIGHT_MAX 1
+/* Helper macros */
+#define HAS_BRIGHTNESS_DAC(inst) DT_INST_NODE_HAS_PROP(inst, brightness_dac) ||
+#define HAS_ANY_BRIGHTNESS_DAC DT_INST_FOREACH_STATUS_OKAY(HAS_BRIGHTNESS_DAC) 0
 
-#define AUXDISPLAY_HD44780_CUSTOM_CHARACTERS 8
-#define AUXDISPLAY_HD44780_CUSTOM_CHARACTER_WIDTH 5
-#define AUXDISPLAY_HD44780_CUSTOM_CHARACTER_HEIGHT 8
+/* Capabilities */
+#define HD44780_BRIGHTNESS_MIN 0
+#define HD44780_BRIGHTNESS_MAX 100
 
+#define HD44780_BACKLIGHT_MIN 0
+#define HD44780_BACKLIGHT_MAX 1
+
+#define HD44780_CUSTOM_CHARACTERS 8
+#define HD44780_CUSTOM_CHARACTER_WIDTH 5
+#define HD44780_CUSTOM_CHARACTER_HEIGHT 8
+
+/* Modes */
 enum {
 	AUXDISPLAY_HD44780_MODE_4_BIT = 0,
 	AUXDISPLAY_HD44780_MODE_8_BIT = 1,
@@ -58,6 +68,7 @@ struct auxdisplay_hd44780_data {
 	uint8_t direction;
 	bool display_shift;
 	bool backlight_state;
+	uint8_t brightness;
 };
 
 struct auxdisplay_hd44780_config {
@@ -67,6 +78,7 @@ struct auxdisplay_hd44780_config {
 	struct gpio_dt_spec e_gpio;
 	struct gpio_dt_spec db_gpios[8];
 	struct gpio_dt_spec backlight_gpio;
+	struct dac_dt_spec brightness_dac;
 	uint8_t line_addresses[4];
 	uint16_t enable_line_rise_delay;
 	uint16_t enable_line_fall_delay;
@@ -290,12 +302,28 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 		gpio_pin_set_dt(&config->backlight_gpio, 0);
 	}
 
+#if HAS_ANY_BRIGHTNESS_DAC
+	if (config->brightness_dac.dev) {
+		if (!dac_is_ready_dt(&config->brightness_dac)) {
+			LOG_ERR("Brightness DAC device not ready");
+			return -ENODEV;
+		}
+
+		rc = dac_channel_setup_dt(&config->brightness_dac);
+		if (rc < 0) {
+			LOG_ERR("Failed to setup brightness DAC: %d", rc);
+			return rc;
+		}
+	}
+#endif
+
 	data->character_x = 0;
 	data->character_y = 0;
 	data->backlight_state = false;
 	data->cursor_enabled = false;
 	data->position_blink_enabled = false;
 	data->direction = AUXDISPLAY_DIRECTION_RIGHT;
+	data->brightness = 0;
 
 	if (config->boot_delay != 0) {
 		/* Boot delay is set, wait for a period of time for the LCD to become ready to
@@ -472,6 +500,51 @@ static int auxdisplay_hd44780_cursor_position_get(const struct device *dev, int1
 	return 0;
 }
 
+#if HAS_ANY_BRIGHTNESS_DAC
+static int auxdisplay_hd44780_brightness_get(const struct device *dev, uint8_t *brightness)
+{
+	const struct auxdisplay_hd44780_config *config = dev->config;
+	const struct auxdisplay_hd44780_data *data = dev->data;
+
+	if (!config->brightness_dac.dev) {
+		return -ENOTSUP;
+	}
+
+	*brightness = data->brightness;
+	return 0;
+}
+
+static int auxdisplay_hd44780_brightness_set(const struct device *dev, uint8_t brightness)
+{
+	const struct auxdisplay_hd44780_config *config = dev->config;
+	struct auxdisplay_hd44780_data *data = dev->data;
+
+	const uint32_t resolution = config->brightness_dac.channel_cfg.resolution;
+	const uint32_t dac_value_max = (1 << resolution) - 1;
+	uint32_t dac_value;
+	int rc;
+
+	if (!config->brightness_dac.dev) {
+		return -ENOTSUP;
+	}
+
+	if (brightness > HD44780_BRIGHTNESS_MAX) {
+		return -EINVAL;
+	}
+
+	dac_value = brightness * dac_value_max / HD44780_BRIGHTNESS_MAX;
+	rc = dac_write_value_dt(&config->brightness_dac, dac_value);
+
+	if (rc < 0) {
+		LOG_ERR("Failed to set brightness: %d", rc);
+		return rc;
+	}
+
+	data->brightness = brightness;
+	return 0;
+}
+#endif
+
 static int auxdisplay_hd44780_backlight_get(const struct device *dev, uint8_t *backlight)
 {
 	const struct auxdisplay_hd44780_config *config = dev->config;
@@ -609,16 +682,32 @@ static DEVICE_API(auxdisplay, auxdisplay_hd44780_auxdisplay_api) = {
 	.cursor_position_get = auxdisplay_hd44780_cursor_position_get,
 	.capabilities_get = auxdisplay_hd44780_capabilities_get,
 	.clear = auxdisplay_hd44780_clear,
+#if HAS_ANY_BRIGHTNESS_DAC
+	.brightness_get = auxdisplay_hd44780_brightness_get,
+	.brightness_set = auxdisplay_hd44780_brightness_set,
+#endif
 	.backlight_get = auxdisplay_hd44780_backlight_get,
 	.backlight_set = auxdisplay_hd44780_backlight_set,
 	.custom_character_set = auxdisplay_hd44780_custom_character_set,
 	.write = auxdisplay_hd44780_write,
 };
 
+/* Returns desired value if brightness is enabled, otherwise returns not supported value */
+#define BRIGHTNESS_CHECK(inst, value)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, brightness_dac), (value),	\
+		    (AUXDISPLAY_LIGHT_NOT_SUPPORTED))
+
 /* Returns desired value if backlight is enabled, otherwise returns not supported value */
 #define BACKLIGHT_CHECK(inst, value)							\
 	COND_CODE_1(DT_PROP_HAS_IDX(DT_DRV_INST(inst), backlight_gpios, 0), (value),	\
 		    (AUXDISPLAY_LIGHT_NOT_SUPPORTED))
+
+/* Returns the DAC configuration for contrast/brightness if available */
+#define BRIGHTNESS_DAC_GET(inst)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, brightness_dac),			\
+		    (DAC_DT_SPEC_STRUCT(DT_INST_PHANDLE(inst, brightness_dac),		\
+					DT_INST_PHA(inst, brightness_dac, output))),	\
+		    ({0}))
 
 #define AUXDISPLAY_HD44780_DEVICE(inst)								\
 	static struct auxdisplay_hd44780_data auxdisplay_hd44780_data_##inst;			\
@@ -627,15 +716,13 @@ static DEVICE_API(auxdisplay, auxdisplay_hd44780_auxdisplay_api) = {
 			.columns = DT_INST_PROP(inst, columns),					\
 			.rows = DT_INST_PROP(inst, rows),					\
 			.mode = DT_INST_ENUM_IDX(inst, mode),					\
-			.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\
-			.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\
-			.backlight.minimum = BACKLIGHT_CHECK(inst,				\
-							     AUXDISPLAY_HD44780_BACKLIGHT_MIN),	\
-			.backlight.maximum = BACKLIGHT_CHECK(inst,				\
-							     AUXDISPLAY_HD44780_BACKLIGHT_MAX),	\
-			.custom_characters = AUXDISPLAY_HD44780_CUSTOM_CHARACTERS,		\
-			.custom_character_width = AUXDISPLAY_HD44780_CUSTOM_CHARACTER_WIDTH,	\
-			.custom_character_height = AUXDISPLAY_HD44780_CUSTOM_CHARACTER_HEIGHT,	\
+			.brightness.minimum = BRIGHTNESS_CHECK(inst, HD44780_BRIGHTNESS_MIN),	\
+			.brightness.maximum = BRIGHTNESS_CHECK(inst, HD44780_BRIGHTNESS_MAX),	\
+			.backlight.minimum = BACKLIGHT_CHECK(inst, HD44780_BACKLIGHT_MIN),	\
+			.backlight.maximum = BACKLIGHT_CHECK(inst, HD44780_BACKLIGHT_MAX),	\
+			.custom_characters = HD44780_CUSTOM_CHARACTERS,				\
+			.custom_character_width = HD44780_CUSTOM_CHARACTER_WIDTH,		\
+			.custom_character_height = HD44780_CUSTOM_CHARACTER_HEIGHT,		\
 		},										\
 		.rs_gpio = GPIO_DT_SPEC_INST_GET(inst, register_select_gpios),			\
 		.rw_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, read_write_gpios, {0}),		\
@@ -648,11 +735,12 @@ static DEVICE_API(auxdisplay, auxdisplay_hd44780_auxdisplay_api) = {
 		.db_gpios[5] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 5),		\
 		.db_gpios[6] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 6),		\
 		.db_gpios[7] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 7),		\
+		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, backlight_gpios, {0}),		\
+		.brightness_dac = BRIGHTNESS_DAC_GET(inst),					\
 		.line_addresses[0] = DT_INST_PROP_BY_IDX(inst, line_addresses, 0),		\
 		.line_addresses[1] = DT_INST_PROP_BY_IDX(inst, line_addresses, 1),		\
 		.line_addresses[2] = DT_INST_PROP_BY_IDX(inst, line_addresses, 2),		\
 		.line_addresses[3] = DT_INST_PROP_BY_IDX(inst, line_addresses, 3),		\
-		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, backlight_gpios, {0}),		\
 		.enable_line_rise_delay = DT_INST_PROP(inst, enable_line_rise_delay_ns),	\
 		.enable_line_fall_delay = DT_INST_PROP(inst, enable_line_fall_delay_ns),	\
 		.rs_line_delay = DT_INST_PROP(inst, rs_line_delay_ns),				\
