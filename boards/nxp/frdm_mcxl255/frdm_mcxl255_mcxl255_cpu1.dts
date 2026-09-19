@@ -59,3 +59,7 @@
 	pinctrl-0 = <&pinmux_aon_kpp0>;
 	pinctrl-names = "default";
 };
+
+&aon_lpcmp0 {
+	status = "okay";
+};
