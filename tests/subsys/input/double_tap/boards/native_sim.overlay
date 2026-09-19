@@ -18,4 +18,13 @@
 		double-tap-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
 		double-tap-delay-ms = <300>;
 	};
+
+	double_tap_single: doubletap-single {
+		input = <&fake_input_device>;
+		compatible = "zephyr,input-double-tap";
+		input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
+		single-tap-codes = <INPUT_KEY_A>, <INPUT_KEY_B>;
+		double-tap-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
+		double-tap-delay-ms = <300>;
+	};
 };
