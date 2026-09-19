@@ -639,6 +639,32 @@ static int rt1715_dev_init(const struct device *dev)
 		return -EIO;
 	}
 
+	if (cfg->vconn_ctrl_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->vconn_ctrl_gpio)) {
+			LOG_ERR("VCONN control GPIO is not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->vconn_ctrl_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("Failed to configure VCONN control GPIO: %d", ret);
+			return ret;
+		}
+	}
+
+	if (cfg->vconn_disc_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->vconn_disc_gpio)) {
+			LOG_ERR("VCONN discharge GPIO is not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->vconn_disc_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("Failed to configure VCONN discharge GPIO: %d", ret);
+			return ret;
+		}
+	}
+
 	/* Resets the chip */
 	ret = tcpci_write_reg8(&cfg->bus, RT1715_REG_SW_RST, RT1715_REG_SW_RST_EN);
 	if (ret != 0) {
