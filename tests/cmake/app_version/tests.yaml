@@ -3,3 +3,5 @@ tests:
     tags: version
     integration_platforms:
       - native_sim
+    extra_args:
+      - 'APP_BUILD_VERSION=user app version'
