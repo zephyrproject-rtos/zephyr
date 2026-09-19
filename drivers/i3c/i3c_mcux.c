@@ -1982,6 +1982,19 @@ static int mcux_i3c_init(const struct device *dev)
 		goto err_out;
 	}
 
+	/*
+	 * On parts that gate the I3C bus pull-ups behind a dedicated pin
+	 * (e.g. NXP MCX N's I3Cn_PUR), the SDA/SCL lines have only just
+	 * been released by the pinctrl state above and need time to rise
+	 * to a valid high through those pull-ups. Touching the controller
+	 * (I3C_MasterInit(), mcux_i3c_recover_bus() or the first broadcast
+	 * CCC in i3c_bus_init()) while the lines are still low latches the
+	 * controller into a non-IDLE state that the K_FOREVER wait in the
+	 * transfer path never recovers from, so POST_KERNEL device init
+	 * hangs before the console is up. Let the bus settle first.
+	 */
+	k_busy_wait(1000);
+
 	k_mutex_init(&data->lock);
 	k_condvar_init(&data->condvar);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
