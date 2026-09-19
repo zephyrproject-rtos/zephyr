@@ -60,6 +60,10 @@ static int transceive_packet(const struct device *dev, union r502a_packet *tx_pa
 		uart_irq_rx_enable(cfg->dev);
 		if (k_sem_take(&drv_data->uart_rx_sem, K_MSEC(1500)) != 0) {
 			LOG_ERR("Rx data timeout");
+			uart_irq_rx_disable(cfg->dev);
+			k_sem_reset(&drv_data->uart_rx_sem);
+			drv_data->rx_buf.data = NULL;
+			drv_data->rx_buf.len = 0;
 			return -ETIMEDOUT;
 		}
 	}
@@ -168,6 +172,11 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 		}
 
 		if (uart_irq_rx_ready(dev)) {
+			if (drv_data->rx_buf.data == NULL) {
+				uart_irq_rx_disable(dev);
+				break;
+			}
+
 			len = uart_fifo_read(dev, &drv_data->rx_buf.data[offset],
 								drv_data->pkt_len);
 			offset += len;
@@ -182,6 +191,16 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 				drv_data->pkt_len = sys_get_be16(
 							&drv_data->rx_buf.data[R502A_PKG_LEN_IDX]
 							);
+
+				/* Body must fit in the caller's packet buffer */
+				if (drv_data->pkt_len < R502A_CHECKSUM_LEN ||
+				    drv_data->pkt_len > CONFIG_R502A_DATA_PKT_SIZE) {
+					LOG_ERR("Invalid packet length %u", drv_data->pkt_len);
+					uart_irq_rx_disable(dev);
+					k_sem_give(&drv_data->uart_rx_sem);
+					break;
+				}
+
 				continue;
 			}
 
