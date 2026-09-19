@@ -12,6 +12,11 @@
 #include <zephyr/drivers/sip_svc/sip_svc_agilex_smc.h>
 #include <zephyr/drivers/sip_svc/sip_svc_driver.h>
 #include <zephyr/internal/syscall_handler.h>
+#include <zephyr/cache.h>
+
+#if defined(CONFIG_SOC_AGILEX5)
+#include <zephyr/drivers/sip_svc/sip_svc_agilex_mbox_ddr.h>
+#endif
 
 #include <zephyr/logging/log.h>
 
@@ -66,9 +71,14 @@ static uint32_t intel_sip_smc_plat_format_trans_id(const struct device *dev, uin
 						   uint32_t trans_idx)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(client_idx);
 
-	/* Combine the transaction id and client id to get the job id*/
-	return (((client_idx & 0xF) << 4) | (trans_idx & 0xF));
+	/*
+	 * Encode TF-A mailbox client/job in the SMC a1 byte and mailbox
+	 * header byte at offset 24. TF-A SIP SVC V3 async poll matches
+	 * responses on MBOX_ATF_CLIENT_ID, not the sip_svc client index.
+	 */
+	return (((SIP_SVC_MBOX_ATF_CLIENT_ID & 0xF) << 4) | (trans_idx & 0xF));
 }
 
 static uint32_t intel_sip_smc_plat_get_trans_idx(const struct device *dev, uint32_t trans_id)
@@ -97,6 +107,7 @@ static void intel_sip_smc_plat_update_trans_id(const struct device *dev,
 	if ((void *)request->a2 != NULL) {
 		data = (uint32_t *)request->a2;
 		SIP_SVC_MB_HEADER_SET_TRANS_ID(data[0], trans_id);
+		sys_cache_data_flush_range(data, request->a3);
 	}
 }
 
@@ -110,7 +121,13 @@ static void intel_sip_smc_plat_free_async_memory(const struct device *dev,
 	 * process the async request.
 	 */
 	if (request->a2) {
+#if defined(CONFIG_SOC_AGILEX5)
+		if (!sip_svc_is_mbox_ddr_buffer((void *)request->a2)) {
+			k_free((void *)request->a2);
+		}
+#else
 		k_free((void *)request->a2);
+#endif
 	}
 }
 
@@ -120,6 +137,8 @@ static int intel_sip_smc_plat_async_res_req(const struct device *dev, unsigned l
 					    unsigned long *a7, char *buf, size_t size)
 {
 	ARG_UNUSED(dev);
+
+	sys_cache_data_flush_range(buf, size);
 
 	/* Fill in SMC parameter to read mailbox response */
 	*a0 = SMC_FUNC_ID_MAILBOX_POLL_RESPONSE;
@@ -135,10 +154,22 @@ static int intel_sip_smc_plat_async_res_res(const struct device *dev, struct arm
 {
 	ARG_UNUSED(dev);
 	uint32_t *resp = (uint32_t *)buf;
+	size_t inv_len;
 
 	__ASSERT((res && buf && size && trans_id), "invalid parameters\n");
 
 	if (((long)res->a0) <= SMC_STATUS_OKAY) {
+		/*
+		 * TF-A returned OK with a3==0 for header-only
+		 * mailbox responses (e.g. CANCEL). Invalidate at least the
+		 * header word so EL1 does not reuse a stale cached header.
+		 */
+		inv_len = res->a3;
+		if (inv_len < sizeof(uint32_t)) {
+			inv_len = sizeof(uint32_t);
+		}
+		sys_cache_data_invd_range(resp, inv_len);
+
 		/* Extract transaction id from mailbox response header */
 		*trans_id = SIP_SVC_MB_HEADER_GET_TRANS_ID(resp[0]);
 		/* The final length should include both header and body */
