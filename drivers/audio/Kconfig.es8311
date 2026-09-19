@@ -33,3 +33,13 @@ config AUDIO_CODEC_ES8311
 	  zephyr,deferred-init and device_init() after enabling them. Muting
 	  cannot be guaranteed when I2C fails; validate analog settling and
 	  power transitions on the board.
+
+config EMUL_ES8311
+	bool "Everest ES8311 audio codec emulator"
+	default y
+	depends on EMUL
+	# The emulator uses the codec subsystem's log level.
+	depends on AUDIO_CODEC_ES8311
+	help
+	  I2C emulator for the Everest ES8311 audio codec, for native_sim driver
+	  unit tests.
