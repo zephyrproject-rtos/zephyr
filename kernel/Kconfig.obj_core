@@ -11,6 +11,9 @@ menuconfig OBJ_CORE
 	  together and for that information to be easily retrieved by
 	  automated means.
 
+	  Linked objects must remain valid for as long as they are linked
+	  (see the Object Cores documentation for details).
+
 if OBJ_CORE
 config OBJ_CORE_CONDVAR
 	bool "Integrate condition variables into object core framework"
