@@ -383,7 +383,24 @@ static int bt_apollo_close(const struct device *dev)
 	}
 
 	/* Stop RX thread */
-	k_thread_abort(&spi_rx_thread_data);
+	if (k_current_get() == (k_tid_t)&spi_rx_thread_data) {
+		/* close() from the receive callback aborts the calling thread,
+		 * which does not return here, so nothing may be held across it.
+		 */
+		k_thread_abort(&spi_rx_thread_data);
+	} else {
+		/* The SPI semaphore is held across the abort so that the thread
+		 * cannot be stopped in the middle of a transfer, owning a
+		 * semaphore that k_thread_abort() does not give back.
+		 */
+		ret = k_sem_take(&sem_spi_available, K_FOREVER);
+		if (ret != 0) {
+			return ret;
+		}
+
+		k_thread_abort(&spi_rx_thread_data);
+		k_sem_give(&sem_spi_available);
+	}
 
 	return ret;
 }
