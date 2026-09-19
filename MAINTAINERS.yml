@@ -723,7 +723,6 @@ Bluetooth HCI:
   maintainers:
     - jhedberg
   collaborators:
-    - alwa-nordic
     - hermabe
     - Thalley
     - sjanc
@@ -750,7 +749,6 @@ Bluetooth Host:
   maintainers:
     - jhedberg
   collaborators:
-    - alwa-nordic
     - hermabe
     - sjanc
     - Thalley
