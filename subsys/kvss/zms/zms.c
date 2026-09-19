@@ -456,10 +456,12 @@ static int zms_flash_erase_sector(struct zms_fs *fs, uint64_t addr)
 		return rc;
 	}
 
+#if !defined(CONFIG_ZMS_NO_ERASE_VERIFY)
 	if (zms_flash_cmp_const(fs, addr, fs->flash_parameters->erase_value, fs->sector_size)) {
 		LOG_ERR("Failure while erasing the sector at offset 0x%lx", (long)offset);
 		rc = -ENXIO;
 	}
+#endif
 
 	return rc;
 }
@@ -1470,6 +1472,7 @@ static int zms_init(struct zms_fs *fs)
 		 * For devices that needs erase this should be filled with erase_value.
 		 */
 		if (ebw_required) {
+#if !defined(CONFIG_ZMS_NO_ERASE_VERIFY)
 			size_t byte;
 
 			for (byte = 0; byte < sizeof(last_ate); byte++) {
@@ -1483,6 +1486,13 @@ static int zms_init(struct zms_fs *fs)
 				/* found ff empty location */
 				break;
 			}
+#else
+			/* Erase value not readable: use ATE CRC check instead. */
+			if (!zms_ate_valid(fs, &last_ate)) {
+				/* found empty location */
+				break;
+			}
+#endif
 		} else {
 			if (!zms_ate_valid(fs, &last_ate)) {
 				/* found empty location */
