@@ -358,8 +358,21 @@ struct bt_dev_le {
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t         mtu;
-	struct k_sem  pkts;
+	struct k_sem     pkts;
+
+	/* Max controller's acceptable SCO packet length */
+	uint8_t          sco_mtu;
+	struct k_sem     sco_pkts;
+
 	uint16_t         esco_pkt_type;
+
+	/* The flag if the SCO flow control from host to controller is enabled */
+	bool             sco_h2c_fc_enabled;
+
+#if defined(CONFIG_BT_HCI_SCO_FLOW_CONTROL)
+	/* The flag if the SCO flow control from controller to host is enabled */
+	bool             sco_c2h_fc_enabled;
+#endif /* CONFIG_BT_HCI_SCO_FLOW_CONTROL */
 };
 
 /* The theoretical max for these is 8 and 64, but there's no point

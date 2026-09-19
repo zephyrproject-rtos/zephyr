@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/classic/sco.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
@@ -27,6 +28,7 @@
 #include "conn_internal.h"
 #include "hci_core.h"
 #include "iso_internal.h"
+#include "classic/sco_internal.h"
 
 LOG_MODULE_REGISTER(bt_buf, CONFIG_BT_LOG_LEVEL);
 
@@ -65,6 +67,13 @@ static void iso_rx_freed_cb(void)
 	buf_rx_freed_notify(BT_BUF_ISO_IN);
 }
 #endif
+
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+static void sco_rx_freed_cb(void)
+{
+	buf_rx_freed_notify(BT_BUF_SCO_IN);
+}
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 
 /* Pool for RX HCI buffers that are always freed by `bt_recv`
  * before it returns.
@@ -119,11 +128,15 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 {
 	struct net_buf *buf;
 
-	__ASSERT(type == BT_BUF_EVT || type == BT_BUF_ACL_IN ||
-		 type == BT_BUF_ISO_IN, "Invalid buffer type requested");
+	__ASSERT(type == BT_BUF_EVT || type == BT_BUF_ACL_IN || type == BT_BUF_ISO_IN ||
+		 type == BT_BUF_SCO_IN, "Invalid buffer type requested");
 
 	if (IS_ENABLED(CONFIG_BT_ISO_RX) && type == BT_BUF_ISO_IN) {
 		return bt_iso_get_rx(timeout);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI) && type == BT_BUF_SCO_IN) {
+		return bt_sco_get_rx(timeout);
 	}
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -149,6 +162,10 @@ void bt_buf_rx_freed_cb_set(bt_buf_rx_freed_cb_t cb)
 #if defined(CONFIG_BT_ISO_RX)
 	bt_iso_buf_rx_freed_cb_set(cb != NULL ? iso_rx_freed_cb : NULL);
 #endif
+
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	bt_sco_buf_rx_freed_cb_set(cb != NULL ? sco_rx_freed_cb : NULL);
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 }
 
 struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
