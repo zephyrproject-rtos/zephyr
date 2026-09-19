@@ -11,4 +11,5 @@ toolchain:
 ram: 524288
 supported:
   - gpio
+  - sdhc
 vendor: digilent
