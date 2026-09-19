@@ -76,10 +76,11 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		    (thread == k_current_get()) ? "*" : " ",
 		    thread,
 		    tname ? tname : "NA");
-	/* Raw backend scheduling field: delta-ticks for the dlist backend,
-	 * absolute expiry tick for the min-heap backend.
+	/* Raw backend scheduling field: delta-ticks or encoded slot for the
+	 * delta-list, wheel and bucket backends, absolute expiry tick for the
+	 * min-heap and skip-list backends.
 	 */
-#if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
+#if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP) || defined(CONFIG_TIMEOUT_BACKEND_SKIPLIST)
 	int64_t timeout_raw = (int64_t)thread->base.timeout.abs_ticks;
 #else
 	int64_t timeout_raw = (int64_t)thread->base.timeout.dticks;
