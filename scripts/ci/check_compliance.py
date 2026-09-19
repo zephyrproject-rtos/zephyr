@@ -848,6 +848,7 @@ class KconfigCheck(ComplianceTest):
         self.check_soc_name_sync(kconf)
         self.check_no_undef_outside_kconfig(kconf)
         self.check_disallowed_defconfigs(kconf)
+        self.check_deprecated_in_prompt(kconf)
 
     def get_modules(self, _module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
         """
@@ -1682,6 +1683,45 @@ flagged.
 
 {undef_desc}""")
 
+    def check_deprecated_in_prompt(self, kconf):
+        # Checks that deprecated Kconfigs end with ` [DEPRECATED]` in the prompt string (if they
+        # have one)
+
+        for node in kconf.node_iter():
+            # Skip Kconfig nodes not in-tree (will present an absolute path)
+            if os.path.isabs(node.filename):
+                continue
+
+            # 'kconfiglib' is global
+            # pylint: disable=undefined-variable
+
+            # Only process boolean symbols with a prompt
+            if (
+                not isinstance(node.item, kconfiglib.Symbol)
+                or node.item.type != kconfiglib.BOOL
+                or not node.prompt
+                or not node.prompt[0]
+                or len(node.selects) == 0
+            ):
+                continue
+
+            selects_deprecated = False
+            deprecated_kconfig = kconf.syms['DEPRECATED']
+
+            for select_node in node.selects:
+                if select_node[0] == deprecated_kconfig:
+                    selects_deprecated = True
+                    break
+
+            if selects_deprecated is False:
+                continue
+
+            if node.prompt[0][-13:] != " [DEPRECATED]":
+                self.failure(f"""
+Deprecated Kconfig '{node.item.name}' prompt lacks ` [DEPRECATED]` string at the end. Please
+check Kconfig guidelines.
+""")
+                continue
 
 class KconfigBasicCheck(KconfigCheck):
     """
