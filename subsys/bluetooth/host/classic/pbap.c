@@ -23,6 +23,8 @@
 #include <zephyr/bluetooth/classic/goep.h>
 #include <zephyr/bluetooth/classic/pbap.h>
 
+#include <mbedtls/constant_time.h>
+
 #include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
