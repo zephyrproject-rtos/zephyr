@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - bmc
+    - http
+    - mgmt
+    - net
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+tests:
+  subsys.mgmt.bmc.http_connection:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
