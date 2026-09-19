@@ -48,7 +48,7 @@
 		clocks = <&root_clock1>;
 	};
 
-	gpio0: gpio@9f000 {
+	aon_gpio0: gpio@9f000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x9f000 0x1000>;

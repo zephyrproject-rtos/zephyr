@@ -8,6 +8,7 @@
 
 #include <nxp/mcx/mcxl/nxp_mcxl255_cm0.dtsi>
 #include "frdm_mcxl255-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -22,6 +23,17 @@
 
 	aliases {
 		rtc = &rtc;
+		sw0 = &user_button_sw5;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_sw5: button_sw5 {
+			label = "User SW5";
+			gpios = <&aon_gpio0 9 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 };
 
@@ -48,6 +60,10 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_aon_lpi2c0>;
 	pinctrl-names = "default";
+};
+
+&aon_gpio0 {
+	status = "okay";
 };
 
 &mbox_b {
