@@ -144,6 +144,44 @@ ZTEST(uart_async_rx, test_rx_late_consume)
 	zassert_equal(claim_len, 0);
 }
 
+ZTEST(uart_async_rx, test_rx_reclaim_empty_completed_buffers)
+{
+	uint8_t storage[40];
+	uint8_t *allocated[4];
+	uint8_t *claim_buf;
+	struct uart_async_rx async_rx;
+	const struct uart_async_rx_config config = {
+		.buffer = storage,
+		.length = sizeof(storage),
+		.buf_cnt = ARRAY_SIZE(allocated),
+	};
+	int err;
+
+	err = uart_async_rx_init(&async_rx, &config);
+	zassert_ok(err);
+
+	for (size_t i = 0; i < ARRAY_SIZE(allocated); i++) {
+		allocated[i] = uart_async_rx_buf_req(&async_rx);
+		zassert_not_null(allocated[i]);
+	}
+	zassert_is_null(uart_async_rx_buf_req(&async_rx));
+
+	for (size_t i = 0; i < ARRAY_SIZE(allocated); i++) {
+		uart_async_rx_on_buf_rel(&async_rx, allocated[i]);
+	}
+
+	claim_buf = allocated[0];
+	zassert_equal(uart_async_rx_data_claim(&async_rx, &claim_buf, 0), 0);
+	zassert_equal(claim_buf, allocated[0]);
+	zassert_is_null(uart_async_rx_buf_req(&async_rx));
+
+	zassert_equal(uart_async_rx_data_claim(&async_rx, &claim_buf, 1), 0);
+
+	for (size_t i = 0; i < ARRAY_SIZE(allocated); i++) {
+		zassert_equal(uart_async_rx_buf_req(&async_rx), allocated[i]);
+	}
+}
+
 struct test_async_rx {
 	struct uart_async_rx async_rx;
 	atomic_t pending_req;
