@@ -41,7 +41,7 @@
 };
 
 &spi2 {
-	status = "disabled";
+	status = "okay";
 	pinctrl-0 = <&spi2_sck_pb5 &spi2_miso_pb6 &spi2_mosi_pb7>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
