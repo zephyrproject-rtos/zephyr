@@ -117,8 +117,8 @@ extern "C" {
  *
  * @brief Macro for getting ID of current module.
  */
-#define LOG_CURRENT_MODULE_ID() (__log_level != 0 ? \
-	log_const_source_id(__log_current_const_data) : 0U)
+#define LOG_CURRENT_MODULE_ID()                                                                    \
+	(__log_level != 0 ? log_const_source_id(__log_current_data->const_data) : 0U)
 
 /* Set of defines that are set to 1 if function name prefix is enabled for given level. */
 #define Z_LOG_FUNC_PREFIX_0 0
@@ -253,14 +253,17 @@ extern "C" {
 		}                                                                                  \
 	}))
 
-/** @brief Get current module data that is used for source id retrieving.
+/** @brief Get log source data from its anchor.
  *
  * If runtime filtering is used then pointer to dynamic data is returned and else constant
  * data is used.
  */
-#define Z_LOG_CURRENT_DATA()                                                                       \
+#define Z_LOG_SOURCE_DATA(_anchor)                                                                 \
 	COND_CODE_1(CONFIG_LOG_RUNTIME_FILTERING, \
-			(__log_current_dynamic_data), (__log_current_const_data))
+			((_anchor)->dynamic_data), ((_anchor)->const_data))
+
+/** @brief Get current module data that is used for source id retrieving. */
+#define Z_LOG_CURRENT_DATA() Z_LOG_SOURCE_DATA(__log_current_data)
 
 /*****************************************************************************/
 /****************** Definitions used by minimal logging *********************/
@@ -297,7 +300,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	}
 }
 
-#define Z_LOG_INST(_inst) COND_CODE_1(CONFIG_LOG, (_inst), NULL)
+#define Z_LOG_INST(_inst) COND_CODE_1(CONFIG_LOG, (Z_LOG_SOURCE_DATA(_inst)), NULL)
 
 /* If strings are removed from the binary then there is a risk of creating invalid
  * cbprintf package if %p is used with character pointer which is interpreted as
