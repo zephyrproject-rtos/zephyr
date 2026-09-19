@@ -39,6 +39,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_RT_RTL8211F_PHYSR_LINKSPEED_100M  (1U)
 #define PHY_RT_RTL8211F_PHYSR_LINKSPEED_1000M (2U)
 
+/* 1000BASE-T control register (MII reg 0x9) manual master/slave bits. */
+#define PHY_RT_RTL8211F_1KTCR_MS_MANUAL_EN_MASK BIT(12)
+#define PHY_RT_RTL8211F_1KTCR_MS_VALUE_MASK     BIT(11)
+
 #define PHY_RT_RTL8211F_PAGSR_REG (0x1F)
 
 #define PHY_RT_RTL8211F_PAGE_MIICR_ADDR   (0xD08)
@@ -385,6 +389,33 @@ static int phy_rt_rtl8211f_cfg_link(const struct device *dev, enum phy_link_spee
 		LOG_ERR("Error setting C1KT register for phy (%d)", config->addr);
 		goto done;
 	}
+
+#if defined(CONFIG_PHY_REALTEK_RTL8211F_FORCE_MASTER)
+	/* Force a fixed 1000BASE-T master role. Only useful on a fixed
+	 * point-to-point link where auto master/slave resolution fails to
+	 * converge and the link flaps.
+	 */
+	if (PHY_LINK_IS_SPEED_1000M(speeds)) {
+		uint32_t c1kt = 0;
+
+		ret = phy_rt_rtl8211f_read(dev, MII_1KTCR, &c1kt);
+		if (ret) {
+			LOG_ERR("Error reading phy (%d) 1000BASE-T control register",
+				config->addr);
+			goto done;
+		}
+
+		c1kt |= PHY_RT_RTL8211F_1KTCR_MS_MANUAL_EN_MASK |
+			PHY_RT_RTL8211F_1KTCR_MS_VALUE_MASK;
+
+		ret = phy_rt_rtl8211f_write(dev, MII_1KTCR, c1kt);
+		if (ret) {
+			LOG_ERR("Error writing phy (%d) 1000BASE-T control register",
+				config->addr);
+			goto done;
+		}
+	}
+#endif /* CONFIG_PHY_REALTEK_RTL8211F_FORCE_MASTER */
 
 	/* (Re)start autonegotiation */
 	ret = phy_rt_rtl8211f_restart_autonegotiation(dev);
