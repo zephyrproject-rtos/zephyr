@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Jan Philipp Schmale <jan-philipp.schmale@teratron.de>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,fido2-hid = &fido2_hid;
+		zephyr,fido2-up-input = &{/buttons};
+	};
+};
+
+&zephyr_udc0 {
+	status = "okay";
+
+	fido2_hid: fido2_hid {
+		compatible = "zephyr,hid-device";
+		in-report-size = <64>;
+		in-polling-period-us = <1000>;
+	};
+};
