@@ -203,4 +203,17 @@
 			drive-strength = "high";
 		};
 	};
+
+
+	pdm2_default: pdm2_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_PDM, 5, 2)>; /* PDMDAT2 */
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_PDM, 8, 12)>; /* PDMCLK2 */
+			drive-strength = "medium";
+		};
+	};
+
 };
