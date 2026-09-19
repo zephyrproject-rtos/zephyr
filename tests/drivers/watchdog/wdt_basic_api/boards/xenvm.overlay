@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&xen_wdt {
+	num-channels = <2>;
+};
