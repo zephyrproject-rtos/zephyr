@@ -404,6 +404,7 @@ void HAL_PCD_SOFCallback(stm32_pcd_handle_t *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
+	udc_update_sof_stamp(priv->dev, 0);
 	udc_submit_sof_event(priv->dev);
 }
 
