@@ -2085,6 +2085,19 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 	}
 }
 
+static bool all_streams_streaming(const struct bt_cap_common_proc *active_proc)
+{
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		if (!bt_cap_initiator_stream_is_in_state(
+			    &active_proc->proc_param.initiator[i].stream->bap_stream,
+			    BT_BAP_EP_STATE_STREAMING)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
@@ -2179,13 +2192,27 @@ void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_START);
 	proc_param = get_next_proc_param(active_proc);
 	if (proc_param == NULL) {
-		/* If proc_param is NULL then this step is a no-op.
-		 * May happen if we have sink streams only, mark subproc_initiated to treat
-		 * this similar to sources and then just wait for notification from server
+		/* Check if all streams are in the streaming state, and if so, then
+		 * complete, otherwise fail. The CIS connect event may come after the ASE
+		 * state if we are doing Sink streams only
+		 * If CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK is not enabled, we always treat this as
+		 * an error
 		 */
-		active_proc->subproc_initiated = true;
 
-		bt_cap_common_unlock_proc();
+		if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) &&
+		    all_streams_streaming(active_proc)) {
+			/* In the case of sink streams only, we treat this as we would treat source
+			 * streams, except that we will go directly to the started step here
+			 */
+			active_proc->subproc_initiated = true;
+			bt_cap_common_unlock_proc();
+			bt_cap_initiator_started(active_proc->proc_param.initiator[0].stream);
+		} else {
+			LOG_WRN("proc is not done, but could not get next proc_param");
+
+			bt_cap_common_abort_proc(NULL, -ESRCH);
+			cap_initiator_unicast_audio_proc_complete(active_proc);
+		}
 
 		return;
 	}
@@ -2204,6 +2231,11 @@ void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 
 			return;
 		}
+	} else {
+		/* May happen if remaining streams are sink only. Mark subproc_initiated to treat
+		 * this similar to sources and then just wait for notification from server
+		 */
+		active_proc->subproc_initiated = true;
 	}
 
 	bt_cap_common_unlock_proc();
