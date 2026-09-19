@@ -27,4 +27,9 @@ config XIP
 config USE_DT_CODE_PARTITION
 	default y
 
+# syscon provides the reference clock for the clock controller, so it must
+# initialize before CLOCK_CONTROL_INIT_PRIORITY (KERNEL_INIT_PRIORITY_OBJECTS).
+config SYSCON_INIT_PRIORITY
+	default 20
+
 endif # SOC_SERIES_HYDROGEN

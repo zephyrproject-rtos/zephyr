@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <aesc/elemrv-h.dtsi>
+#include <zephyr/dt-bindings/clock/aesc-clock-controller.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "elemrv_flask_h-pinctrl.dtsi"
 
@@ -97,7 +98,7 @@
 };
 
 &uart0 {
-	clock-frequency = <DT_FREQ_M(50)>;
+	clocks = <&clkctrl HYDROGEN_CLK_SYSTEM>;
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_default
 		     &uart0_rx_default
