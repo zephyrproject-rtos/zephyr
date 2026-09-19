@@ -1197,8 +1197,11 @@ class TestPlan:
 
                             # If the "appends" key is present with at least one entry then this
                             # snippet applies to all boards and further platform-specific checks
-                            # are not required
-                            if found_snippets[this_snippet].appends:
+                            # are not required. The same holds for a snippet without any
+                            # settings of its own: boards extend it from their own directory
+                            # and it is empty for the others.
+                            if found_snippets[this_snippet].appends or \
+                               not found_snippets[this_snippet].board2appends:
                                 continue
 
                             for this_board in found_snippets[this_snippet].board2appends:
@@ -1210,6 +1213,14 @@ class TestPlan:
                                 elif this_board == plat.name:
                                     matched_snippet_board = True
                                     break
+
+                            # A board or its SoC may also provide its part of
+                            # the snippet from its own directory.
+                            if matched_snippet_board is False:
+                                matched_snippet_board = any(
+                                    os.path.isdir(os.path.join(d, 'snippets', this_snippet))
+                                    for d in plat.board_dirs + plat.soc_dirs
+                                )
 
                             if matched_snippet_board is False:
                                 instance.add_filter("Snippet not supported", Filters.PLATFORM)
