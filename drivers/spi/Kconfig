@@ -22,6 +22,32 @@ config SPI_SHELL
 	  The currently SPI shell supports simple SPI write/read (transceive)
 	  operation.
 
+config SPI_DMA
+	bool "Requests DMA-driven SPI transfers"
+	help
+	  Request for DMA-backed SPI transfers.
+	  Enabled by application or SPI device driver; each SPI driver that supports DMA
+	  enables its own implementation symbol (SPI_*_DMA) in response, and
+	  drivers without DMA support simply ignore it.
+
+	  This only requests DMA, but it can't disable it: drivers that use DMA
+	  by default keep doing so when this is left disabled. To force a
+	  driver out of DMA mode, clear its own SPI_*_DMA symbol instead.
+
+config SPI_INTERRUPT_DRIVEN
+	bool "Requests interrupt-driven SPI transfers"
+	help
+	  Request for interrupt-driven SPI transfers.
+	  Enabled by application or SPI device driver; each SPI driver that
+	  supports an interrupt-driven mode enables its own implementation
+	  symbol (SPI_*_INTERRUPT) in response, and drivers without one
+	  ignore it.
+
+	  This only requests interrupt-driven transfers, but it can't disable
+	  them: drivers that are interrupt driven by default keep being so
+	  when this is left disabled. To force a driver out of interrupt mode,
+	  clear its own SPI_*_INTERRUPT symbol instead.
+
 config SPI_ASYNC
 	bool "Asynchronous call support"
 	depends on MULTITHREADING

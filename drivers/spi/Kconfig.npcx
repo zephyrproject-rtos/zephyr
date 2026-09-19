@@ -13,6 +13,7 @@ menuconfig SPI_NPCX_SPIP
 
 config SPI_NPCX_SPIP_INTERRUPT
 	bool "NPCX SPIP Interrupt Support"
+	default y if SPI_INTERRUPT_DRIVEN
 	depends on SPI_NPCX_SPIP
 	help
 	  Enable Interrupt support for the SPI Driver of NPCX chip.

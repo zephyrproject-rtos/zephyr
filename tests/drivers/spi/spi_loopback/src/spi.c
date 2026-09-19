@@ -987,17 +987,18 @@ ZTEST(spi_loopback, test_spi_async_call)
 	memset(large_buffer_rx, 0, sizeof(large_buffer_rx));
 
 	zassert_ok(pm_device_runtime_get(spec->bus));
-	k_sem_give(&start_async);
 
 	int ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		TC_PRINT("Skipping ASYNC test");
 		pm_device_runtime_put(spec->bus);
+		ztest_test_skip();
 		return;
 	}
 
 	zassert_false(ret, "SPI transceive failed, code %d", ret);
+	k_sem_give(&start_async);
 
 	k_sem_take(&caller, K_FOREVER);
 	pm_device_runtime_put(spec->bus);
@@ -1034,7 +1035,7 @@ ZTEST(spi_loopback, test_spi_transceive_cb)
 	zassert_ok(pm_device_runtime_get(spec->bus));
 	int ret = spi_transceive_cb(spec->bus, &spec->config, &tx, &rx, spi_async_cb, &cb_sem);
 
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		TC_PRINT("spi_transceive_cb not supported, skipping\n");
 		zassert_ok(pm_device_runtime_put(spec->bus));
 		ztest_test_skip();
