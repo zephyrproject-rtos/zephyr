@@ -107,7 +107,9 @@ enum lorawan_message_type {
  * @brief  LoRaWAN downlink flags.
  */
 enum lorawan_dl_flags {
+	/** The network server has more downlink data queued */
 	LORAWAN_DATA_PENDING = BIT(0),
+	/** The network time was updated from the network server */
 	LORAWAN_TIME_UPDATED = BIT(1),
 };
 
