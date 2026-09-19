@@ -449,6 +449,10 @@ should know about.
   fragments and devicetree overlays (if these files exists, otherwise will fallback to
   the name without the prefix). See :ref:`application-file-suffixes` for details.
 
+* :makevar:`KCONFIG_WARNING_AS_ERROR`: Treat every Kconfig warning as an error,
+  including the ones which are only printed by default. See
+  :ref:`kconfig_warning_as_error` for details.
+
 .. note::
 
    You can use a :ref:`cmake_build_config_package` to share common settings for
