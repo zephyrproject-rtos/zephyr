@@ -963,7 +963,7 @@ endif()
 add_custom_command(
   OUTPUT
   include/generated/zephyr/syscall_dispatch.c
-  include/generated/zephyr/syscall_exports_llext.c
+  syscall_exports_llext.c
   syscall_weakdefs_llext.c
   ${syscall_list_h}
   # Also, some files are written to include/generated/zephyr/syscalls/
@@ -973,7 +973,7 @@ add_custom_command(
   --json-file        ${syscalls_json}                     # Read this file
   --base-output      include/generated/zephyr/syscalls    # Write to this dir
   --syscall-dispatch include/generated/zephyr/syscall_dispatch.c # Write this file
-  --syscall-exports-llext  include/generated/zephyr/syscall_exports_llext.c
+  --syscall-exports-llext  syscall_exports_llext.c # compiled by the LLEXT subsystem
   --syscall-weakdefs-llext syscall_weakdefs_llext.c # compiled in CMake library 'syscall_weakdefs'
   --syscall-list     ${syscall_list_h}
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
@@ -1011,8 +1011,15 @@ set(DEVICE_API_LINKER_SECTIONS_CMAKE
     ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.cmake
 )
 
+set(DEVICE_API_EXPORTS_LLEXT
+    ${CMAKE_CURRENT_BINARY_DIR}/device_api_exports_llext.c
+)
+
 add_custom_command(
-  OUTPUT ${DEVICE_API_LD_SECTIONS} ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+  OUTPUT
+    ${DEVICE_API_LD_SECTIONS}
+    ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+    ${DEVICE_API_EXPORTS_LLEXT}
   COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
@@ -1021,6 +1028,7 @@ add_custom_command(
     --tag __subsystem
     --ld-output ${DEVICE_API_LD_SECTIONS}
     --cmake-output ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+    --llext-output ${DEVICE_API_EXPORTS_LLEXT}
   DEPENDS
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
     ${struct_tags_json}
@@ -1104,7 +1112,7 @@ else()
   set(NO_WHOLE_ARCHIVE_LIBS kernel)
 endif()
 
-if(CONFIG_LLEXT)
+if(CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_SYSCALL)
   # LLEXT exports symbols for all syscalls, including unimplemented ones.
   # Weak definitions for these must be added at the end of the link order
   # to avoid shadowing actual implementations.
