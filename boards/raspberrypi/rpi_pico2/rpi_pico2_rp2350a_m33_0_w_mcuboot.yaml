@@ -1,11 +1,12 @@
-identifier: pico_plus2/rp2350b/hazard3
-name: Pimoroni Pico Plus 2 (Hazard3)
+identifier: rpi_pico2/rp2350a/m33_0/w/mcuboot
+name: Raspberry Pi Pico 2 (Cortex-M33) WiFi - MCUboot
 type: mcu
-arch: riscv
-flash: 16384
-ram: 8192
+arch: arm
+flash: 4096
+ram: 520
 toolchain:
   - zephyr
+  - gnuarmemb
 supported:
   - adc
   - clock
@@ -20,5 +21,6 @@ supported:
   - pico_spi
   - pwm
   - spi
-  - usbd
   - uart
+  - watchdog
+  - wifi

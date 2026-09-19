@@ -1,8 +1,8 @@
-identifier: motion_2350_pro/rp2350a/m33
-name: Cytron Motion 2350 Pro (Cortex M33)
+identifier: rpi_pico2/rp2350a/m33_0
+name: Raspberry Pi Pico 2 (Cortex-M33)
 type: mcu
 arch: arm
-flash: 2048
+flash: 4096
 ram: 520
 toolchain:
   - zephyr
@@ -11,11 +11,16 @@ supported:
   - adc
   - clock
   - counter
+  - crypto
   - dma
-  - flash
+  - entropy
   - gpio
   - hwinfo
   - i2c
+  - pico_gpio
+  - pico_i2c
+  - pico_serial
+  - pico_spi
   - pwm
   - spi
   - uart

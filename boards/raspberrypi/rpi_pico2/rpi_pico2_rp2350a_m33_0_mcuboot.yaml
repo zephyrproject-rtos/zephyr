@@ -1,4 +1,4 @@
-identifier: rpi_pico2/rp2350a/m33/mcuboot
+identifier: rpi_pico2/rp2350a/m33_0/mcuboot
 name: Raspberry Pi Pico 2 (Cortex-M33) - MCUboot
 type: mcu
 arch: arm
