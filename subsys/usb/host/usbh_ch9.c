@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -310,4 +311,69 @@ int usbh_req_set_hcfs_prst(struct usb_device *const udev,
 	return usbh_req_setup(udev,
 			      bmRequestType, bRequest, wValue, wIndex, 0,
 			      NULL);
+}
+
+int usbh_req_desc_bos(struct usb_device *udev, size_t len,
+		      struct usb_bos_descriptor *const bos_desc)
+{
+	struct net_buf *netbuf;
+	int ret;
+
+	if (len < sizeof(*bos_desc)) {
+		return -EINVAL;
+	}
+
+	netbuf = usbh_xfer_buf_alloc(udev, len);
+	if (netbuf == NULL) {
+		return -ENOMEM;
+	}
+	ret = usbh_req_desc(udev, USB_DESC_BOS, 0, 0, len, netbuf);
+	if (ret == 0) {
+		if (netbuf->len == len) {
+			memcpy(bos_desc, netbuf->data, len);
+			bos_desc->wTotalLength = sys_le16_to_cpu(bos_desc->wTotalLength);
+			if ((bos_desc->bLength != sizeof(*bos_desc)) ||
+			    (bos_desc->wTotalLength < sizeof(*bos_desc))) {
+				ret = -EBADMSG;
+			}
+		} else {
+			ret = -EBADMSG;
+		}
+	}
+	usbh_xfer_buf_free(udev, netbuf);
+
+	return ret;
+}
+
+int usbh_req_desc_string(struct usb_device *udev, size_t len,
+			 struct usb_string_descriptor *const str_desc, uint8_t str_id,
+			 uint16_t lang_code)
+{
+	/* NOTE: sizeof(usb_string_descriptor) cannot be used */
+	const size_t string_hdr_len = 2;
+	struct net_buf *netbuf;
+	int ret = 0;
+
+	if (len < string_hdr_len) {
+		return -EINVAL;
+	}
+
+	netbuf = usbh_xfer_buf_alloc(udev, len);
+	if (netbuf == NULL) {
+		return -ENOMEM;
+	}
+	ret = usbh_req_desc(udev, USB_DESC_STRING, str_id, lang_code, len, netbuf);
+	if (ret == 0) {
+		if (netbuf->len == len) {
+			memcpy(str_desc, netbuf->data, len);
+			if (str_desc->bLength < string_hdr_len) {
+				ret = -EBADMSG;
+			}
+		} else {
+			ret = -EBADMSG;
+		}
+	}
+	usbh_xfer_buf_free(udev, netbuf);
+
+	return ret;
 }
