@@ -32,6 +32,9 @@ class HarnessPytestConfig:
     twister_fixtures: list[str] = field(default_factory=list)
     required_builds: list[str] = field(default_factory=list)
     duts: list[CompoundHardwareData] = field(default_factory=list)
+    # What the sidecar attached to this instance reports about the resource it
+    # provisioned (see Sidecar.pytest_params), exposed to tests by the plugin.
+    sidecar_params: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert dataclass to dictionary for YAML serialization."""
