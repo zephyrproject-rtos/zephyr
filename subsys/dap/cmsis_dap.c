@@ -243,9 +243,19 @@ static uint16_t dap_delay(struct dap_link_context *const ctx,
 {
 	uint16_t delay = sys_get_le16(&request[0]);
 
-	LOG_DBG("dap delay %u ms", delay);
+	LOG_DBG("dap delay %u us", delay);
 
-	k_busy_wait(delay * USEC_PER_MSEC);
+	/* The DAP_Delay parameter is in microseconds, so it must not be
+	 * scaled by USEC_PER_MSEC. Sleep once the delay is long enough for
+	 * sleeping to be accurate; below a millisecond, busy-waiting is the
+	 * only way to be accurate. The worst legal delay is 65535 us, so no
+	 * clamp is needed here.
+	 */
+	if (delay < USEC_PER_MSEC) {
+		k_busy_wait(delay);
+	} else {
+		k_usleep(delay);
+	}
 	response[0] = DAP_OK;
 
 	return 1U;
