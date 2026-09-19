@@ -411,7 +411,6 @@ SECTIONS
   /* stack */
   _end = ALIGN (8);
 
-  /DISCARD/ : { *(.note.GNU-stack) }
   _heap_sentry = SDRAM0_BASE + SDRAM0_SIZE;
   __stack = SDRAM0_BASE + SDRAM0_SIZE + CONFIG_RT595_ADSP_STACK_SIZE;
   .comment  0 :  { *(.comment) }

@@ -349,7 +349,6 @@ SECTIONS {
 		/* Discard all destructors */
 		*(.dtors*)
 		*(.fini*)
-		*(.note.GNU-stack)
 		*(.got.plt)
 		*(.igot.plt)
 		*(.got)
