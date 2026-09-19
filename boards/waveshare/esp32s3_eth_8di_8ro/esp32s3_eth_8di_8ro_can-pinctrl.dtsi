@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Benjamin Schilling <benjamin.schilling33@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	twai_default: twai_default {
+		group1 {
+			pinmux = <TWAI_TX_GPIO17>,
+				 <TWAI_RX_GPIO18>;
+		};
+	};
+};
