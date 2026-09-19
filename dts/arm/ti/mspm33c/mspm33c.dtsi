@@ -73,6 +73,158 @@
 				#gpio-cells = <2>;
 			};
 		};
+
+		timg4_0: timg4_0@400c0000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x400c0000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			interrupts = <21 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg4_0: counterg4_0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg4_1: timg4_1@400c2000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x400c2000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			interrupts = <22 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg4_1: counterg4_1 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg4_2: timg4_2@40180000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40180000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+			interrupts = <35 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg4_2: counterg4_2 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg4_3: timg4_3@40182000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40182000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+			interrupts = <36 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg4_3: counterg4_3 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg8_0: timg8_0@40184000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40184000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+			interrupts = <23 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg8_0: counterg8_0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg8_1: timg8_1@40186000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40186000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+			interrupts = <37 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg8_1: counterg8_1 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg12_0: timg12_0@40188000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40188000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+			interrupts = <24 0>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg12_0: counterg12_0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <32>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		tima0_0: tima0_0@40010000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40010000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			interrupts = <20 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			countera0_0: countera0_0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <4>;
+				status = "disabled";
+			};
+		};
+
+		tima0_1: tima0_1@40012000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40012000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			interrupts = <34 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			countera0_1: countera0_1 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <4>;
+				status = "disabled";
+			};
+		};
 	};
 };
 
