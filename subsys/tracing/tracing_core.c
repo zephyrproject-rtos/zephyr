@@ -21,6 +21,9 @@
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
 #include <zephyr/timing/timing.h>
 #endif
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMER
+#include <ctf_top.h>
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */
 
 #define TRACING_CMD_ENABLE  "enable"
 #define TRACING_CMD_DISABLE "disable"
@@ -233,3 +236,10 @@ int tracing_backends_flush(void)
 
 	return ret;
 }
+
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMER
+int tracing_set_ctf_timestamp_func(uint64_t (*ctf_timestamp_func)(void))
+{
+	return ctf_set_timestamp_func(ctf_timestamp_func);
+}
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */
