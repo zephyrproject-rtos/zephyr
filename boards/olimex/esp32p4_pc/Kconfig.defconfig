@@ -6,4 +6,9 @@ if BOARD_ESP32P4_PC_ESP32P4_HPCORE
 configdefault ETH_DRIVER
 	default y
 
+# The 1280x720 framebuffers need 2.7 MB each and the display driver
+# allocates two of them for tear-free updates.
+configdefault ESP_SPIRAM_HEAP_SIZE
+	default 8388608 if DISPLAY_ESP32_DSI
+
 endif # BOARD_ESP32P4_PC_ESP32P4_HPCORE
