@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: TPS6287x regulator
+
+compatible: "ti,tps6287x"
+
+include:
+  - name: i2c-device.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-init-microvolt
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+      - regulator-ramp-delay
+      - regulator-always-on
+      - regulator-boot-on
+      - regulator-initial-mode
+      - regulator-allowed-modes
+      - regulator-active-discharge
+
+properties:
+  input-voltage-microvolt:
+    type: int
+    min: 2700000
+    max: 6000000
+    required: true
+    description: |
+      Provide the input voltage to the device in order to calculate the
+      maximum output voltage. For proper operation, the input voltage
+      needs to be at least 1.4V above the selected output voltage
+
+  regulator-init-microvolt:
+    required: true
+
+  # Keep the order of the enums, the driver relies on it!
+  regulator-ramp-delay:
+    type: int
+    default: 1250
+    enum:
+      - 10000
+      - 5000
+      - 1250
+      - 500
+
+  enable-ssc:
+    type: boolean
+    description: |
+      Enable the spread spectrum clocking function that can reduce
+      electromagnetic interference
+
+  enable-hiccup-mode:
+    type: boolean
+    description: |
+      Enable hiccup mode (overcurrent protection)
