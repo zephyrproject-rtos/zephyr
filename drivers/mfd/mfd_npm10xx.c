@@ -477,6 +477,20 @@ int mfd_npm10xx_timer_status_get(const struct device *dev, bool *busy)
 	return 0;
 }
 
+int mfd_npm10xx_scratch_read(const struct device *dev, uint8_t *val)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+
+	return i2c_reg_read_byte_dt(&config->i2c, NPM10_RESET_SCRATCH0, val);
+}
+
+int mfd_npm10xx_scratch_write(const struct device *dev, uint8_t val)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+
+	return i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_SCRATCH0, val);
+}
+
 static inline bool pin_config_allowed(uint8_t old_usage, uint8_t new_usage)
 {
 	if (old_usage == NPM10_PIN_USAGE_UNUSED) {
