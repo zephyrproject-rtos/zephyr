@@ -115,6 +115,7 @@ extern char _heap_sentry[];
 # endif /* else ALLOCATE_HEAP_AT_STARTUP */
 
 Z_LIBC_DATA static struct sys_heap z_malloc_heap;
+static uintptr_t z_malloc_heap_end;
 
 #if defined(CONFIG_SYS_HEAP_KASAN_MALLOC) && defined(HEAP_STATIC)
 #include <zephyr/sys/heap_kasan.h>
@@ -239,8 +240,14 @@ static int malloc_prepare(void)
 #endif
 
 	sys_heap_init(&z_malloc_heap, heap_base, heap_size);
+	z_malloc_heap_end = POINTER_TO_UINT(heap_base) + heap_size;
 
 	return 0;
+}
+
+uintptr_t z_libc_heap_end(void)
+{
+	return z_malloc_heap_end;
 }
 
 void *realloc(void *ptr, size_t requested_size)
