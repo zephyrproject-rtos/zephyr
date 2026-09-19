@@ -339,6 +339,7 @@ ibm	International Business Machines (IBM)
 iclegend	Iclegend Microelectronics Co., Ltd.
 icplus	IC Plus Corp.
 idt	Integrated Device Technologies, Inc.
+ie  Icy Electronics
 ifi	Ingenieurburo Fur Ic-Technologie (I/F/I)
 ilitek	ILI Technology Corporation (ILITEK)
 img	Imagination Technologies Ltd.
