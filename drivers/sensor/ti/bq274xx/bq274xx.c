@@ -37,8 +37,14 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 /* Time to wait for CFGUP bit to be set, up to 1 second according to the
  * technical reference manual, keep some headroom like the Linux driver.
  */
-#define BQ274XX_CFGUP_DELAY K_MSEC(25)
-#define BQ274XX_CFGUP_MAX_TRIES 100
+#define BQ274XX_CFGUP_DELAY     K_MSEC(500)
+#define BQ274XX_CFGUP_MAX_TRIES 4
+
+/* Datasheet (Sec 8.11) requires minimum 66 µs bus-free time (t_BUF)
+ * between the STOP condition of the write and the START of the read.
+ * 70 µs provides a safe, deterministic margin.
+ */
+#define BQ274XX_CMD_DELAY 70
 
 /* Time to set pin in order to exit shutdown mode */
 #define PIN_DELAY_TIME K_MSEC(1)
@@ -112,6 +118,8 @@ static int bq274xx_ctrl_reg_write(const struct device *dev, uint16_t subcommand)
 		LOG_ERR("Failed to write into control register");
 		return -EIO;
 	}
+
+	k_usleep(BQ274XX_CMD_DELAY);
 
 	return 0;
 }
@@ -487,6 +495,13 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		if (ret < 0) {
 			return ret;
 		}
+	} else {
+
+		ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_EXIT_CFGUPDATE);
+		if (ret < 0) {
+			LOG_ERR("Failed to exit configuration mode");
+			return ret;
+		}
 	}
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SEALED);
@@ -587,6 +602,7 @@ static int bq274xx_channel_get(const struct device *dev, enum sensor_channel cha
 static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct bq274xx_data *data = dev->data;
+	int64_t now = k_uptime_get();
 	int ret = -ENOTSUP;
 
 	if (!data->configured) {
@@ -596,6 +612,18 @@ static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel ch
 		}
 	}
 
+	/* The BQ274xx updates measurements once per second.
+	 * To comply with the 2 commands/second limit and avoid watchdog resets,
+	 * we skip I2C transactions if a fetch occurred within the last 1000 ms.
+	 */
+	if (data->last_fetch_ms != 0 && (now - data->last_fetch_ms) < 1000) {
+		return -ENOTTY;
+	}
+
+	/* Recommendation: In your application code, try to avoid calling SENSOR_CHAN_ALL.
+	 * Instead, call fetch for the specific channels you need.
+	 * to eliminate any risk of back-to-back I2C violations.
+	 */
 	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_VOLTAGE) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_VOLTAGE,
 					   &data->voltage);
@@ -696,17 +724,17 @@ static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel ch
 	}
 
 	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_STATE_OF_HEALTH) {
-		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_SOH,
-					   &data->state_of_health);
-
-		data->state_of_health = (data->state_of_health) & 0x00FF;
+		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_SOH, &data->state_of_health);
 
 		if (ret < 0) {
 			LOG_ERR("Failed to read state of health");
 			return -EIO;
 		}
+
+		data->state_of_health = (data->state_of_health) & 0x00FF;
 	}
 
+	data->last_fetch_ms = now;
 	return ret;
 }
 
