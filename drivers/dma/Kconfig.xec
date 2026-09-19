@@ -22,4 +22,24 @@ config DMA_MCHP_XEC_DMAC_MAX_CHANNELS
 	  The number of channels this instance of the DMAC
 	  controller supports.
 
+config DMA_MCHP_XEC_MAX_BLOCKS_PER_CHAN
+	int "Maximum DMA blocks per channel"
+	default 1
+	range 1 16
+	help
+	  Maximum number of dma_block_config entries the driver will
+	  cache from a multi-block dma_config call. The XEC central DMA
+	  hardware programs one block at a time; the driver chains the
+	  remaining blocks in its ISR by ABORTing the channel, rewriting
+	  MSA/MEA/DEVA from the cached block, and re-issuing RUN. Each
+	  cached block costs roughly 16 bytes per channel.
+
+	  Set this to 1 (the default) to preserve historical single-block
+	  behavior bit-for-bit and the lowest RAM footprint. Increase it
+	  when a peripheral driver needs ping-pong or scatter-style
+	  transfers on the same START-to-STOP transaction (for example,
+	  streaming target-mode RX in the I2Cv3-NL driver when the host
+	  may write a payload larger than the per-instance receive
+	  buffer).
+
 endif # DMA_MCHP_XEC
