@@ -105,8 +105,8 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, const struct modem_pip
  * @param pipe Pipe instance
  * @param timeout Timeout waiting for pipe to open
  *
- * @retval 0 if pipe was successfully opened or was already open
- * @retval -errno code otherwise
+ * @return 0 if pipe was successfully opened or was already open, negative errno
+ *         value otherwise
  *
  * @warning Be cautious when using this synchronous version of the call.
  * It may block the calling thread, which in the case of the system workqueue
@@ -122,8 +122,8 @@ int modem_pipe_open(struct modem_pipe *pipe, k_timeout_t timeout);
  * @note The MODEM_PIPE_EVENT_OPENED event is invoked immediately if pipe is
  * already opened.
  *
- * @retval 0 if pipe open was called successfully or pipe was already open
- * @retval -errno code otherwise
+ * @return 0 if pipe open was called successfully or pipe was already open,
+ *         negative errno value otherwise
  */
 int modem_pipe_open_async(struct modem_pipe *pipe);
 
@@ -146,8 +146,8 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
  * @param frags Array of data fragments to transmit
  * @param num_frags Number of fragments in @a frags
  *
- * @return Number of bytes placed in pipe (0 if pipe closed)
- * @retval -errno code on error
+ * @return Number of bytes placed in pipe (0 if pipe closed), negative errno
+ *         value on error
  *
  * @warning This call must be non-blocking
  */
@@ -161,8 +161,8 @@ int modem_pipe_transmit_chain(struct modem_pipe *pipe, const struct modem_pipe_d
  * @param buf Data to transmit
  * @param size Number of bytes to transmit
  *
- * @return Number of bytes placed in pipe (0 if pipe closed)
- * @retval -errno code on error
+ * @return Number of bytes placed in pipe (0 if pipe closed), negative errno
+ *         value on error
  *
  * @warning This call must be non-blocking
  */
@@ -183,8 +183,8 @@ static inline int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *bu
  * @param buf Destination for received data; must not be already in use in a modem module.
  * @param size Capacity of destination for received data
  *
- * @return Number of bytes received from pipe (0 if pipe closed)
- * @retval -errno code on error
+ * @return Number of bytes received from pipe (0 if pipe closed), negative errno
+ *         value on error
  *
  * @warning This call must be non-blocking
  */
@@ -203,8 +203,8 @@ void modem_pipe_release(struct modem_pipe *pipe);
  * @param pipe Pipe instance
  * @param timeout Timeout waiting for pipe to close
  *
- * @retval 0 if pipe open was called closed or pipe was already closed
- * @retval -errno code otherwise
+ * @return 0 if pipe open was called closed or pipe was already closed, negative
+ *         errno value otherwise
  *
  * @warning Be cautious when using this synchronous version of the call.
  * It may block the calling thread, which in the case of the system workqueue
@@ -220,8 +220,8 @@ int modem_pipe_close(struct modem_pipe *pipe, k_timeout_t timeout);
  * @note The MODEM_PIPE_EVENT_CLOSED event is invoked immediately if pipe is
  * already closed.
  *
- * @retval 0 if pipe close was called successfully or pipe was already closed
- * @retval -errno code otherwise
+ * @return 0 if pipe close was called successfully or pipe was already closed,
+ *         negative errno value otherwise
  */
 int modem_pipe_close_async(struct modem_pipe *pipe);
 
