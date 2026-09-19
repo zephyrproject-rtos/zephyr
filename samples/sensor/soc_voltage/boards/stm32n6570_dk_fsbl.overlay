@@ -1,0 +1,35 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 STMicroelectronics
+ */
+
+/ {
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
+		io-channels = <&adc2 16>;
+		status = "okay";
+	};
+
+	vddcore: vddcore {
+		compatible = "st,stm32-vddcore";
+		io-channels = <&adc2 17>;
+		status = "okay";
+	};
+
+	aliases {
+		volt-sensor0 = &vbat;
+		volt-sensor1 = &vddcore;
+	};
+};
+
+&adc2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
+		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
+	clock-names = "adcx", "adc_ker";
+	vref-mv = <1800>;
+	status = "okay";
+};
