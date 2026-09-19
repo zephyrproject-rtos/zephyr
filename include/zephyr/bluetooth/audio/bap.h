@@ -1821,9 +1821,10 @@ struct bt_bap_unicast_client_cb {
 			enum bt_bap_ascs_reason reason);
 
 	/**
-	 * @brief Remote Published Audio Capability (PAC) record discovered
+	 * @brief Remote Published Audio Capability (PAC) record read
 	 *
-	 * Called when a PAC record has been discovered as part of the discovery procedure.
+	 * Called when a PAC record has been read as part of the discovery procedure,
+	 * or the server sends a notification indicating a PAC record change.
 	 *
 	 * The @p codec is only valid while in the callback, so the values must be stored by the
 	 * receiver if future use is wanted.
