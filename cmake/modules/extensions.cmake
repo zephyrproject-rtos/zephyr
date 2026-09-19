@@ -1055,7 +1055,7 @@ function(generate_inc_file_for_target
   # But first create a unique name for the custom target
   generate_unique_target_name_from_filename(${generated_file} generated_target_name)
 
-  add_custom_target(${generated_target_name} DEPENDS ${generated_file})
+  add_custom_target(${generated_target_name} DEPENDS ${generated_file} SOURCES ${source_file})
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
 endfunction()
 
