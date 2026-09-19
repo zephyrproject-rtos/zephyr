@@ -2,6 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+config WIFI_BFLB_WIFI6
+	def_bool DT_HAS_BFLB_WIFI6_ENABLED
+	select BFLB_WL80211_SHIM
+	imply WIFI_NM_WPA_SUPPLICANT_WEP
+	imply WIFI_NM_WPA_SUPPLICANT_AP
+	help
+	  Common support for the wifi6 MACSW firmware blob driver
+	  (BL61x, BL616CL).
+
 choice WIFI_BFLB_WIFI6_MACSW_VARIANT
 	prompt "MACSW firmware variant"
 	default WIFI_BFLB_WIFI6_MACSW_DEFAULT

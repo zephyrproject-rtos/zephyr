@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalo Lab 'WiFi4' WiFi MAC, the 802.11n blob-HW pair on BL60x
+
+compatible: "bflb,wifi4"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
+    description: |
+      WiFi MAC, IPC and RF interrupts.
+      Four entries required: "wifi" (MAC), "wifi-ipc" (IPC mailbox),
+      "rf-top0" and "rf-top1" (RF calibration).
+
+  interrupt-names:
+    required: true
+
+  pwr-table-11b:
+    type: array
+    description: |
+      TX power targets for 802.11b rates (1, 2, 5.5, 11 Mbps).
+      4 entries, units are dBm.
+
+  pwr-table-11g:
+    type: array
+    description: |
+      TX power targets for 802.11g rates (6..54 Mbps).
+      8 entries, units are dBm.
+
+  pwr-table-11n:
+    type: array
+    description: |
+      TX power targets for 802.11n HT20 (MCS 0-7).
+      8 entries, units are dBm.
