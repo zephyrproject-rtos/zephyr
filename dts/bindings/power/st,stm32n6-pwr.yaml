@@ -1,0 +1,56 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32H7 power controller
+
+compatible: "st,stm32n6-pwr"
+
+include: "st,stm32-pwr.yaml"
+
+properties:
+  power-supply:
+    type: string
+    required: true
+    description: |
+      Power supply configuration
+
+      This property specifies the voltage regulators configuration
+      and indicates how the core domain voltage (Vcore) is generated.
+      Refer to your product's Datasheet and Reference Manual for details.
+
+      WARNING: If this property's value does not match the target board's
+      hardware configuration, the product will deadlock during boot which
+      prevents debugging or re-programming. If such a situation occurs,
+      configure the product to start execution in System memory instead
+      then erase the firmware with incorrect configuration.
+
+      internal-smps: Internal SMPS supply
+        Internal SMPS is enabled and generates Vcore.
+
+      external-smps: External SMPS supply
+        An external supply provides Vcore; internal SMPS is disabled.
+    enum:
+      - "internal-smps"
+      - "external-smps"
+
+  external-smps-scaling:
+    type: string
+    description: |
+      This property specifies how the external voltage is controlled.
+      It is ignored when internal-smps supply is selected.
+
+      fixed-low: External supply provides fixed 0.8V
+        CPU frequency limited to 600MHz
+      fixed-high: External supply provides fixed 0.89V
+      dynamic: dedicated pin used to toggle between 0.8V and 0.89V.
+    required: true
+    enum:
+      - "fixed-low"
+      - "fixed-high"
+      - "dynamic"
+
+  external-smps-pin:
+    type: int
+    description: |
+      This property describes pin that controls extenral voltage.
+      Used only when external-smps-scaling is set to dynamic.

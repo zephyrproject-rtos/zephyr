@@ -312,6 +312,13 @@
 				};
 			};
 
+			pwr: power@56024800 {
+				compatible = "st,stm32n6-pwr";
+				reg = <0x56024800 0x400>;
+				power-supply = "internal-smps";
+				external-smps-scaling = "fixed-low";
+			};
+
 			ramcfg_sram3_axi: ramcfg@52023100 {
 				compatible = "st,stm32n6-ramcfg";
 				#address-cells = <1>;
