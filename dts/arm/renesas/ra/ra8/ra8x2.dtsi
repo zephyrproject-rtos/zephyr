@@ -904,6 +904,33 @@
 			status = "disabled";
 		};
 
+		pdm0: pdm@40256100 {
+			compatible = "renesas,ra-pdm";
+			reg = <0x40256100 0x100>;
+			channel = <0>;
+			clocks = <&pclkb MSTPC 24>, <&moco>;
+			clock-names = "pclk", "pdmifclk";
+			status = "disabled";
+		};
+
+		pdm1: pdm@40256200 {
+			compatible = "renesas,ra-pdm";
+			reg = <0x40256200 0x100>;
+			channel = <1>;
+			clocks = <&pclkb MSTPC 24>, <&moco>;
+			clock-names = "pclk", "pdmifclk";
+			status = "disabled";
+		};
+
+		pdm2: pdm@40256300 {
+			compatible = "renesas,ra-pdm";
+			reg = <0x40256300 0x100>;
+			channel = <2>;
+			clocks = <&pclkb MSTPC 24>, <&moco>;
+			clock-names = "pclk", "pdmifclk";
+			status = "disabled";
+		};
+
 		sdram: sdram-controller@40003c00 {
 			compatible = "renesas,ra-sdram";
 			#address-cells = <1>;
