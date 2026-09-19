@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma {
+	dma-channels = <2>;
+	status = "okay";
+};
+
+tst_dma0: &dma {};
