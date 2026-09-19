@@ -8,7 +8,8 @@ Overview
 This feature will allow relocating .text, .rodata, .data, and .bss sections from
 required files and place them in the required memory region. The memory region
 and file are given to the :ref:`gen_relocate_app.py` script in the form
-of a string. This script is always invoked from inside cmake.
+of a string. This script is always invoked from inside cmake and depends on the
+exported CMake compile commands.
 
 This script provides a robust way to re-order the memory contents without
 actually having to modify the code.  In simple terms this script will do the job
@@ -30,7 +31,7 @@ An example of such a file is:
      SRAM1:/home/xyz/zephyr/samples/hello_world/src/main2.c,
 
 This script is invoked with the following parameters:
-``python3 gen_relocate_app.py -i input_file -o generated_linker -c generated_code``
+``python3 gen_relocate_app.py -f compile_commands.json -i input_file -o generated_linker -c generated_code``
 
 Kconfig :kconfig:option:`CONFIG_CODE_DATA_RELOCATION` option,  when enabled in
 ``prj.conf``, will invoke the script and do the required relocation.
