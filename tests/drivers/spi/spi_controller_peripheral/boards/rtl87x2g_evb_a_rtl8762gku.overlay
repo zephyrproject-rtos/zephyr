@@ -9,7 +9,14 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
-	dmas = <&dma0 0 18 0x10021>, <&dma0 1 19 0xa>;
+	dmas = <&dma0 0 BEE_DMA_HANDSHAKE_SPI1_TX
+		(BEE_DMA_M2P | BEE_DMA_SRC_INC | BEE_DMA_DST_FIXED | BEE_DMA_SRC_WIDTH_8BIT |
+		 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
+		 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(1))>,
+	       <&dma0 1 BEE_DMA_HANDSHAKE_SPI1_RX
+		(BEE_DMA_P2M | BEE_DMA_SRC_FIXED | BEE_DMA_DST_INC | BEE_DMA_SRC_WIDTH_8BIT |
+		 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
+		 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(0))>;
 	dma-names = "tx", "rx";
 
 	dut_spi_dt: test-spi-dev@0 {
@@ -21,7 +28,14 @@
 
 dut_spis: &spi0_slave {
 	status = "okay";
-	dmas = <&dma0 2 20 0x10021>, <&dma0 3 21 0xa>;
+	dmas = <&dma0 2 BEE_DMA_HANDSHAKE_SPI_SLAVE_TX
+		(BEE_DMA_M2P | BEE_DMA_SRC_INC | BEE_DMA_DST_FIXED | BEE_DMA_SRC_WIDTH_8BIT |
+		 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
+		 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(1))>,
+	       <&dma0 3 BEE_DMA_HANDSHAKE_SPI_SLAVE_RX
+		(BEE_DMA_P2M | BEE_DMA_SRC_FIXED | BEE_DMA_DST_INC | BEE_DMA_SRC_WIDTH_8BIT |
+		 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
+		 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(0))>;
 	dma-names = "tx", "rx";
 	pinctrl-0 = <&spi0_slave_default>;
 	pinctrl-names = "default";
