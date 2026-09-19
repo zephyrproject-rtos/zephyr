@@ -639,6 +639,14 @@ zephyr_jpegenc: &jpeg {
 	status = "okay";
 };
 
+&cryp {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };

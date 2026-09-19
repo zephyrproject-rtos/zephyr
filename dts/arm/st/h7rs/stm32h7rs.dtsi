@@ -1120,6 +1120,15 @@
 			status = "disabled";
 		};
 
+		hash: crypto@48020400 {
+			compatible = "st,stm32-hash";
+			reg = <0x48020400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 1)>;
+			resets = <&rctl STM32_RESET(AHB3, 1)>;
+			interrupts = <36 0>;
+			status = "disabled";
+		};
+
 		mac: ethernet@40028000 {
 			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x40028000 0x8000>;

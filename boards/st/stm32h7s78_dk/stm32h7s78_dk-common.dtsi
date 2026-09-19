@@ -510,3 +510,11 @@ zephyr_jpegenc: &jpeg {
 &gpu2d {
 	status = "okay";
 };
+
+&cryp {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};
