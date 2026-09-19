@@ -411,6 +411,7 @@ static void w6300_update_link_status(const struct device *dev)
 	}
 
 	if (physr & W6300_PHYSR_LNK) {
+		ctx->link_down_samples = 0;
 		if (!ctx->state.is_up) {
 			ctx->state.is_up = true;
 			net_eth_carrier_on(ctx->iface);
@@ -433,6 +434,11 @@ static void w6300_update_link_status(const struct device *dev)
 		}
 	} else {
 		if (ctx->state.is_up) {
+			if (++ctx->link_down_samples < W6300_LINK_DOWN_SAMPLES) {
+				return;
+			}
+
+			ctx->link_down_samples = 0;
 			ctx->state.is_up = false;
 			ctx->state.speed = 0;
 			net_eth_carrier_off(ctx->iface);

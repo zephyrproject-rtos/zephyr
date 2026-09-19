@@ -99,7 +99,10 @@ struct w6300_config {
 	const struct device *phy_dev;
 };
 
+#define W6300_LINK_DOWN_SAMPLES 3
+
 struct w6300_runtime {
+	uint8_t link_down_samples;
 	struct net_if *iface;
 
 	K_KERNEL_STACK_MEMBER(thread_stack,
