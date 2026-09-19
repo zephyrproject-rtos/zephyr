@@ -16,19 +16,23 @@
 
 #include <hardware/flash.h>
 
+#include "flash_priv.h"
+
 LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 
 #define DT_DRV_COMPAT raspberrypi_pico_flash_controller
 
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
+
 #define PAGE_SIZE   256
-#define SECTOR_SIZE DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
+#define SECTOR_SIZE DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 #define ERASE_VALUE 0xff
-#define FLASH_SIZE  KB(CONFIG_FLASH_SIZE)
+#define FLASH_SIZE  DT_REG_SIZE(SOC_NV_FLASH_NODE)
 
 #ifdef CONFIG_FLASH_RPI_PICO_READ_UNTRANSLATED
 #define PICO_FLASH_READ_BASE XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE
 #else
-#define PICO_FLASH_READ_BASE CONFIG_FLASH_BASE_ADDRESS
+#define PICO_FLASH_READ_BASE DT_REG_ADDR(SOC_NV_FLASH_NODE)
 #endif
 
 static const struct flash_parameters flash_rpi_parameters = {
