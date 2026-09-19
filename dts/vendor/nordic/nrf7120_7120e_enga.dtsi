@@ -374,6 +374,7 @@
 				#gpio-cells = <2>;
 				port = <2>;
 				ngpios = <12>;
+				hspadctrl-supported;
 				status = "disabled";
 			};
 
@@ -415,6 +416,14 @@
 				dma-transmit-data-level = <8>;
 				dma-receive-data-level = <8>;
 				concurrent-memmap-support;
+				nordic,hspadctrl = <&gpio2>;
+				nordic,hspadctrl-index = <0>;
+				/* This EB/rx-delay configuration is always recommended unless
+				 * CPOL=1 and your delay is less than half SCK period. This
+				 * currently isn't supported.
+				 */
+				nordic,eb-rx-delay = <7>;
+				rx-sample-delay = <11>;
 				status = "disabled";
 			};
 
@@ -430,6 +439,14 @@
 				packet-data-limit = <65536>;
 				dma-transmit-data-level = <8>;
 				dma-receive-data-level = <8>;
+				nordic,hspadctrl = <&gpio2>;
+				nordic,hspadctrl-index = <1>;
+				/* This EB/rx-delay configuration is always recommended unless
+				 * CPOL=1 and your delay is less than half SCK period. This
+				 * currently isn't supported.
+				 */
+				nordic,eb-rx-delay = <7>;
+				rx-sample-delay = <11>;
 				status = "disabled";
 			};
 
