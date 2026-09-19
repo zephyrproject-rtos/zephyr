@@ -20,7 +20,7 @@
  * @defgroup bt_hci_api Bluetooth HCI
  *
  * @since 3.7
- * @version 0.2.0
+ * @version 0.3.0
  *
  * @ingroup bluetooth
  * @{
@@ -38,6 +38,11 @@
 extern "C" {
 #endif
 
+/** @brief Parameters of the setup() driver API op.
+ *
+ *  @deprecated Together with the op itself, see bt_hci_setup(). A driver takes
+ *              the public address from bt_hci_get_public_addr() instead.
+ */
 struct bt_hci_setup_params {
 	/** The public identity address to give to the controller. This field is used when the
 	 *  driver selects @kconfig{CONFIG_BT_HCI_SET_PUBLIC_ADDR} to indicate that it supports
@@ -143,6 +148,20 @@ typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
 struct bt_hci_driver_data {
 	/** Callback for the driver to deliver data received from the controller to the host. */
 	bt_hci_recv_t recv;
+#if defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR) || defined(__DOXYGEN__)
+	/** Public identity address to configure in the controller.
+	 *
+	 *  Set with bt_hci_set_public_addr(), read with bt_hci_get_public_addr().
+	 *
+	 *  @kconfig_dep{CONFIG_BT_HCI_SET_PUBLIC_ADDR}
+	 */
+	bt_addr_t public_addr;
+	/** Whether @ref public_addr holds an address.
+	 *
+	 *  @kconfig_dep{CONFIG_BT_HCI_SET_PUBLIC_ADDR}
+	 */
+	bool public_addr_set;
+#endif /* CONFIG_BT_HCI_SET_PUBLIC_ADDR */
 };
 
 /**
@@ -166,6 +185,8 @@ typedef int (*bt_hci_api_send_t)(const struct device *dev, struct net_buf *buf);
 /**
  * @brief Callback API for HCI vendor-specific setup.
  * See bt_hci_setup() for argument description
+ *
+ * @deprecated See bt_hci_setup().
  */
 typedef int (*bt_hci_api_setup_t)(const struct device *dev,
 				  const struct bt_hci_setup_params *param);
@@ -190,6 +211,8 @@ __subsystem struct bt_hci_driver_api {
 	/**
 	 * @driver_ops_optional @copybrief bt_hci_setup
 	 * @kconfig_dep{CONFIG_BT_HCI_SETUP}
+	 *
+	 * @deprecated See bt_hci_setup().
 	 */
 	bt_hci_api_setup_t setup;
 #endif /* CONFIG_BT_HCI_SETUP */
@@ -344,6 +367,15 @@ static inline int bt_hci_send(const struct device *dev, struct net_buf *buf)
  * @note @kconfig{CONFIG_BT_HCI_SETUP} must be selected for this
  * field to be available.
  *
+ * @deprecated A driver performs its vendor-specific initialization inside
+ *             open(), over its own transport, with the helpers of hci_pkt.h
+ *             and hci_lockstep.h, and takes the public address from
+ *             bt_hci_get_public_addr(). Unlike setup(), that works in every
+ *             build type, including one without a Bluetooth Host. The op, this
+ *             function, @ref bt_hci_setup_params and
+ *             @kconfig{CONFIG_BT_HCI_SETUP} are removed two releases after
+ *             this one; see the 4.5 migration guide.
+ *
  * @return 0 on success or negative POSIX error number on failure.
  */
 static inline int bt_hci_setup(const struct device *dev, struct bt_hci_setup_params *params)
@@ -357,6 +389,41 @@ static inline int bt_hci_setup(const struct device *dev, struct bt_hci_setup_par
 	return api->setup(dev, params);
 }
 #endif
+
+/**
+ * @brief Set the public identity address for the controller.
+ *
+ * Stores the public address the driver should configure in the controller.
+ *
+ * The Bluetooth Host calls this before bt_hci_open() when the application has
+ * created a public identity with bt_id_create(). A controller-only application
+ * can likewise call it before opening the transport.
+ *
+ * The driver reads the address with bt_hci_get_public_addr() and applies it
+ * while opening the transport, or in its setup() implementation.
+ *
+ * @kconfig_dep{CONFIG_BT_HCI_SET_PUBLIC_ADDR}
+ *
+ * @param dev  HCI device
+ * @param addr Public address, or @c BT_ADDR_NONE to clear a previously set one.
+ */
+void bt_hci_set_public_addr(const struct device *dev, const bt_addr_t *addr);
+
+/**
+ * @brief Get the public identity address the driver is to configure.
+ *
+ * Returns the address stored with bt_hci_set_public_addr(), for the driver to
+ * write into the controller while opening the transport. It does not query
+ * the controller.
+ *
+ * @kconfig_dep{CONFIG_BT_HCI_SET_PUBLIC_ADDR}
+ *
+ * @param dev HCI device
+ *
+ * @return The address set with bt_hci_set_public_addr(), or @c BT_ADDR_NONE
+ *         when none has been set.
+ */
+const bt_addr_t *bt_hci_get_public_addr(const struct device *dev);
 
 /**
  * @}
