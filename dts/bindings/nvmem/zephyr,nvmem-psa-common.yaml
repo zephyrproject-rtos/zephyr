@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties for PSA Secure Storage NVMEM providers.
+
+properties:
+  uid-base:
+    type: array
+    default: [0, 0]
+    min-len: 2
+    max-len: 2
+    description: |
+      64-bit base added to each cell's reg address to form the PSA storage
+      UID, as <HIGH32 LOW32>. With the default of 0 the cell's reg address
+      is the UID itself.
+
+      UID 0 is invalid in PSA Secure Storage, so the base and the cell
+      addresses must not both be zero.

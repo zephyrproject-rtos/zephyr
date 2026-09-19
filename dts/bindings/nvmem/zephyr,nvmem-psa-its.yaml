@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NVMEM provider backed by PSA Internal Trusted Storage (ITS).
+
+  Each NVMEM cell in the child nvmem-layout node maps to one ITS entry whose
+  UID is the cell's reg address plus the optional uid-base property. This
+  allows entries that already exist, for example ones written by another
+  component or during provisioning, to be consumed as NVMEM cells. A cell is
+  a window over the start of its entry; the entry may be larger than the
+  cell.
+
+  The read-only cell property is enforced by the NVMEM API only; entries are
+  never created with PSA_STORAGE_FLAG_WRITE_ONCE, which would be
+  irreversible. See the NVMEM subsystem documentation for the access
+  semantics.
+
+compatible: "zephyr,nvmem-psa-its"
+
+include: zephyr,nvmem-psa-common.yaml
+
+examples:
+  - |
+    psa_its: nvmem-psa-its {
+        compatible = "zephyr,nvmem-psa-its";
+
+        nvmem-layout {
+            compatible = "fixed-layout";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            /* Pre-shared key at ITS UID 0x2b001000, provisioned elsewhere */
+            device_psk: device-psk@2b001000 {
+                reg = <0x2b001000 16>;
+                read-only;
+                #nvmem-cell-cells = <0>;
+            };
+        };
+    };
