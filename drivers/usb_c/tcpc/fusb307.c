@@ -689,6 +689,19 @@ static int fusb307_dev_init(const struct device *dev)
 		return -EIO;
 	}
 
+	if (cfg->vconn_disc_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->vconn_disc_gpio)) {
+			LOG_ERR("VCONN discharge GPIO is not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->vconn_disc_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure VCONN discharge GPIO: %d", ret);
+			return ret;
+		}
+	}
+
 	/* Resets the chip */
 	ret = tcpci_write_reg8(&cfg->bus, FUSB307_REG_RESET, FUSB307_REG_RESET_SW_RST);
 	if (ret != 0) {
