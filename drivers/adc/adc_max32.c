@@ -15,6 +15,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 
+#ifdef CONFIG_ADC_MAX32_STREAM
+#include <zephyr/rtio/work.h>
+#endif
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_max32, CONFIG_ADC_LOG_LEVEL);
 
@@ -245,26 +248,42 @@ static int start_read_stream(const struct device *dev, const struct adc_sequence
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-void adc_max32_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+static void adc_max32_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 {
-	struct max32_adc_data *data = (struct max32_adc_data *)dev->data;
 	const struct adc_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = read_cfg->adc;
+	struct max32_adc_data *data = (struct max32_adc_data *)dev->data;
 	int rc;
 
-	if (data->no_mem == 1) {
-		data->no_mem = 0;
-		return;
-	}
 	data->sqe = iodev_sqe;
 
 	adc_context_lock(&data->ctx, false, NULL);
 	rc = start_read_stream(dev, read_cfg->sequence);
-
 	adc_context_release(&data->ctx, rc);
 
 	if (rc < 0) {
 		LOG_ERR("Error starting conversion (%d)", rc);
 	}
+}
+
+void adc_max32_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct max32_adc_data *data = (struct max32_adc_data *)dev->data;
+	struct rtio_work_req *req;
+
+	if (data->no_mem == 1) {
+		data->no_mem = 0;
+		return;
+	}
+
+	req = rtio_work_req_alloc();
+	if (req == NULL) {
+		LOG_ERR("No RTIO work items available");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
+
+	rtio_work_req_submit(req, iodev_sqe, adc_max32_submit_fetch);
 }
 
 static const uint32_t adc_max32_resolution[] = {
