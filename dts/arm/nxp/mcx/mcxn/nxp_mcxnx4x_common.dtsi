@@ -91,6 +91,21 @@
 		};
 	};
 
+	/*
+	 * Deep Power Down gates the entire CORE power domain (CPU, NVIC, and all
+	 * APB/AHB peripheral register blocks), so every peripheral inside it
+	 * comes back from reset. This domain hands the affected drivers a
+	 * TURN_OFF before the transition and a TURN_ON after it, which is what
+	 * lets them reconfigure their hardware on resume. It follows
+	 * &deeppowerdown, so it stays inert until the application enables that
+	 * state.
+	 */
+	core_domain: core-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&deeppowerdown>;
+	};
+
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
@@ -223,36 +238,42 @@
 		compatible = "nxp,port-pinmux";
 		reg = <0x116000 0x1000>;
 		clocks = <&syscon MCUX_PORT0_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	portb: pinmux@117000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0x117000 0x1000>;
 		clocks = <&syscon MCUX_PORT1_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	portc: pinmux@118000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0x118000 0x1000>;
 		clocks = <&syscon MCUX_PORT2_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	portd: pinmux@119000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0x119000 0x1000>;
 		clocks = <&syscon MCUX_PORT3_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	porte: pinmux@11a000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0x11a000 0x1000>;
 		clocks = <&syscon MCUX_PORT4_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	portf: pinmux@42000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0x42000 0x1000>;
 		clocks = <&syscon MCUX_PORT5_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	gpio0: gpio@96000 {
@@ -1162,6 +1183,7 @@
 		nxp,bandgap-startup-time-us = <20>;
 		regulator-min-microvolt = <1000000>;
 		regulator-max-microvolt = <2100000>;
+		power-domains = <&core_domain>;
 	};
 
 	lpadc0: adc@10d000 {

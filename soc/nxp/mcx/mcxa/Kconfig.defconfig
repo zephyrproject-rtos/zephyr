@@ -31,10 +31,36 @@ config RESET
 
 if PM
 
+DT_CHOSEN_SYSTEM_TIMER_COMPANION := zephyr,system-timer-companion
+
+# Every low-power state this SoC offers gates the core clock, and with it
+# SysTick, so a sleep is only measurable if timekeeping is handed over to the
+# companion timer named by /chosen/zephyr,system-timer-companion. That timer is
+# driven through the Counter API, which nothing else in a PM build selects, and
+# without it the companion choice silently falls back to none: the kernel keeps
+# arming SysTick, the wakeup never arrives and the sleep never ends.
+configdefault COUNTER
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_SYSTEM_TIMER_COMPANION))
+
 configdefault SYSTEM_TIMER_RESET_BY_LPM
 	default y
 
 endif # PM
+
+if PM_DEVICE
+
+# The core domain node relays a SoC power state change to every driver that
+# names it in power-domains, so they get the TURN_OFF and TURN_ON they need to
+# survive Deep Power Down.
+configdefault POWER_DOMAIN
+	default y
+
+# Resuming the swept devices runs on the idle thread, and re-initializing a
+# peripheral from its TURN_ON handler needs more room than the default.
+configdefault IDLE_STACK_SIZE
+	default 512
+
+endif # PM_DEVICE
 
 if HAS_MCUX_SYSCON_LPCAC
 
