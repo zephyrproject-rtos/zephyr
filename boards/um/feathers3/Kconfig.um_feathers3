@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-FileCopyrightText: Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UM_FEATHERS3
+	select SOC_ESP32S3_WROOM_N16R8
+	select SOC_ESP32S3_PROCPU if BOARD_UM_FEATHERS3_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_UM_FEATHERS3_ESP32S3_APPCPU
