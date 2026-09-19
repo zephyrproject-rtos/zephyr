@@ -25,6 +25,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USBH_UAC2_CLASS
+  class/usbh_uac2.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_USBIP
   usbip.c
 )
