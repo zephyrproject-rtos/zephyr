@@ -266,9 +266,9 @@ static void transfer_buf_abort(const struct device *dev)
 
 static size_t transfer_buf_chunk_limit(const struct device *dev, size_t chunk_len)
 {
-	ARG_UNUSED(dev);
+	const struct spi_nrfx_common_config *dev_config = dev->config;
 
-	return MIN(chunk_len, SPI_NRFX_DMM_BUF_SIZE);
+	return MIN(chunk_len, dev_config->dmm_buffer_size);
 }
 
 static int transfer_buf_prepare(const struct device *dev,
