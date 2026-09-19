@@ -29,12 +29,25 @@ extern "C" {
  * @kconfig_dep{CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER,CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS}
  *
  * This interface is used when a system timer low-power companion is configured.
+ * It is not available when CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE=y.
  *
  * If CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS is selected, SoC/platform-specific code
  * provides the implementation of all hooks; otherwise, the implementation is provided
  * by the system timer subsystem.
  * @{
  */
+
+/**
+ * @brief Low-power companion initialization hook
+ *
+ * System timer drivers must call this function during their initialization.
+ *
+ * @note This is an internal kernel/platform interface. Application code must
+ * not call it.
+ *
+ * @note Implementation of this function by the platform code is optional.
+ */
+void z_sys_clock_lpm_init(void);
 
 /**
  * @brief Prepare low-power companion timer before entry in low-power state
