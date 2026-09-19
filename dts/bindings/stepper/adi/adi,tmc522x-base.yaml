@@ -1,0 +1,108 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <Cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Trinamic TMC522x stepper motor controller (MFD parent binding)
+
+  This is the Multi-Function Device (MFD) parent binding for TMC522x family:
+  - TMC5221 (SPI variant) - use adi,tmc522x-spi.yaml
+  - TMC5222 (I2C variant) - use adi,tmc522x-i2c.yaml
+
+  The TMC522x uses split stepper API architecture with separate child devices:
+  - adi,tmc522x-stepper: Motion control (stepper API)
+  - adi,tmc522x-stepper-drv: Driver configuration (stepper_drv API)
+
+  Do not use this file directly - use adi,tmc522x-spi.yaml or adi,tmc522x-i2c.yaml.
+
+include:
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - poscmp-enable
+      - test-mode
+      - lock-gconf
+
+properties:
+  # Clock Configuration
+  clock-frequency:
+    type: int
+    default: 16000000
+    description: |
+      The frequency of the clock signal provided to the TMC522x.
+      This is used for velocity and acceleration calculations.
+      Default is 16 MHz internal oscillator.
+
+  # GPIO Hardware Enable Pins (CRITICAL for operation)
+  drven-gpios:
+    type: phandle-array
+    description: |
+      Driver enable pin (active high). REQUIRED for motor operation.
+      Enables the power stage when high. Must be set HIGH to enable motor outputs.
+
+  sleepn-gpios:
+    type: phandle-array
+    description: |
+      Sleep/wake pin (active high). REQUIRED for chip operation.
+      Must be set high for normal operation. If not specified in devicetree,
+      the SLEEPN pin MUST be tied to VDD in hardware.
+      Per datasheet: Set SLEEPN=1 before accessing registers, wait 10ms.
+
+  # Interrupt/Diagnostic Pins (Optional)
+  diag0-gpios:
+    type: phandle-array
+    description: |
+      GPIO connection for DIAG0 interrupt pin (StallGuard event).
+      This pin is configured as active-low push-pull output by the chip.
+
+  diag1-gpios:
+    type: phandle-array
+    description: |
+      GPIO connection for DIAG1 interrupt pin (Position reached event).
+      This pin is configured as active-low push-pull output by the chip.
+
+  interrupt-gpios:
+    type: phandle-array
+    description: |
+      GPIO connections for DIAG0 and DIAG1 interrupt pins.
+      - DIAG0: StallGuard event (motor stall detection)
+      - DIAG1: Position reached event (target position achieved)
+
+  interrupt-names:
+    type: string-array
+    enum:
+      - "stallguard"
+      - "pos-reached"
+    description: |
+      Names for the interrupt GPIOs. Must match the order of interrupt-gpios.
+
+  # Motor Physical Parameters
+  step-angle-millidegrees:
+    type: int
+    default: 1800
+    description: |
+      Motor step angle in millidegrees (1/1000 degree).
+      Common values:
+        1800 = 1.8° per step (200 steps/revolution) - NEMA standard
+        900  = 0.9° per step (400 steps/revolution) - high precision
+
+  # Global Chopper Mode Selection
+  chopper-mode:
+    type: string
+    default: "spreadcycle"
+    description: |
+      High-level chopper mode selection (EN_PWM_MODE in GCONF register).
+      - "spreadcycle": Current chopping mode (default)
+      - "stealthchop": Voltage PWM mode (silent operation)
+    enum:
+      - "spreadcycle"
+      - "stealthchop"
+
+  chm-mode:
+    type: string
+    default: "spreadcycle"
+    description: |
+      CHM bit configuration in CHOPCONF register (only applies to spreadcycle).
+      - "spreadcycle": SpreadCycle adaptive hysteresis mode (CHM=0, recommended)
+      - "classic": Classic constant off-time mode (CHM=1)
+    enum:
+      - "spreadcycle"
+      - "classic"

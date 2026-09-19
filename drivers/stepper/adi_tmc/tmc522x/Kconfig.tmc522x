@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <Cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMC522X
+	bool "Activate trinamic TMC522x stepper driver"
+	depends on DT_HAS_ADI_TMC522X_ENABLED
+	select GPIO
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC522X),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC522X),spi)
+	select STEPPER_ADI_TMC_I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC522X),i2c)
+	select STEPPER_ADI_TMC_SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC522X),spi)
+	default y
+	help
+	  Driver for TMC522x family stepper motor controllers:
+	  - TMC5221 (SPI variant)
+	  - TMC5222 (I2C variant)
+	  Automatically selects the appropriate bus driver based on devicetree
+	  configuration. Provides register read/write access via SPI or I2C interface.
+	  Uses the common Trinamic bus abstraction layer.
+
+if STEPPER_ADI_TMC522X
+
+config STEPPER_ADI_TMC522X_STEPPER_CTRL
+	bool "Activate trinamic TMC522x motion controller"
+	depends on DT_HAS_ADI_TMC522X_STEPPER_CTRL_ENABLED
+	default y
+
+config STEPPER_ADI_TMC522X_STEPPER_DRIVER
+	bool "Activate trinamic TMC522x stepper driver"
+	depends on DT_HAS_ADI_TMC522X_STEPPER_DRIVER_ENABLED
+	default y
+
+config TMC522X_BUS_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC522X),spi)
+
+config TMC522X_BUS_I2C
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC522X),i2c)
+
+module = TMC522X
+module-str = tmc522x
+source "drivers/stepper/adi_tmc/Kconfig.tmc_rampgen_template"
+
+endif # STEPPER_ADI_TMC522X

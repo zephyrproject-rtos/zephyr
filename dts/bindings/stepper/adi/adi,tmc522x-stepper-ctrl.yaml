@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <Cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "adi,tmc522x-stepper-ctrl"
+
+include:
+  - name: adi,trinamic-ramp-generator.yaml
+    property-allowlist:
+      - vstart
+      - a1
+      - v1
+      - amax
+      - vmax
+      - dmax
+      - d1
+      - vstop
+
+properties:
+  idx:
+    type: int
+    required: true
+    description: |
+      Motor index (0-based). For TMC522x with single motor, use 0.
+
+  a2:
+    type: int
+    default: 0
+    description: |
+      Second phase acceleration (TMC522x two-phase ramp) in [µsteps/ta²](unsigned)
+
+  v2:
+    type: int
+    default: 0
+    description: |
+      Second phase velocity threshold (TMC522x two-phase ramp) in [µsteps/t] (unsigned)
+
+  d2:
+    type: int
+    default: 0
+    description: |
+      Second phase deceleration (TMC522x two-phase ramp) in [µsteps/ta²](unsigned)

@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <Cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: TMC522x Stepper Sample
+tests:
+  sample.drivers.stepper.tmc522x.spi:
+    harness: stepper
+    tags: stepper
+    platform_allow: nucleo_f413zh
+    depends_on: spi
+    extra_args: DTC_OVERLAY_FILE=boards/nucleo_f413zh_spi.overlay
+  sample.drivers.stepper.tmc522x.i2c:
+    harness: stepper
+    tags: stepper
+    platform_allow: nucleo_f413zh
+    depends_on: i2c
+    extra_args: DTC_OVERLAY_FILE=boards/nucleo_f413zh_i2c.overlay

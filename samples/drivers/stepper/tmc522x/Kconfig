@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <Cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TMC522x sample application"
+
+config STEPS_PER_REV
+	int "Steps per revolution"
+	default 200
+
+config PING_PONG_N_REV
+	int "Change direction every N revolutions"
+	default 1
+
+source "Kconfig.zephyr"
