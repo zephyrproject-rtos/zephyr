@@ -11,6 +11,7 @@
  */
 
 /* GCLK Gen 0 -> GCLK_MAIN @ OSC48M
+ * GCLK Gen 1 -> EIC      @ OSCULP32K (for HW debounce, optional)
  * GCLK Gen 2 -> WDT       @ reserved
  * GCLK Gen 0 -> ADC       @ OSC48M
  * GCLK Gen 4 -> RTC       @ reserved
@@ -49,6 +50,13 @@ static void gclks_init(void)
 	GCLK->GENCTRL[0].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M)
 			     | GCLK_GENCTRL_DIV(1)
 			     | GCLK_GENCTRL_GENEN;
+
+#ifdef CONFIG_GPIO_SAM0_HW_DEBOUNCE
+	/* GCLK1 @ OSCULP32K (32.768 kHz) for EIC hardware debouncer */
+	GCLK->GENCTRL[1].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSCULP32K)
+			     | GCLK_GENCTRL_DIV(1)
+			     | GCLK_GENCTRL_GENEN;
+#endif
 }
 
 void soc_reset_hook(void)
