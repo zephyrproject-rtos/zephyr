@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * dtdoctor_disabled is the target of the deliberately-failing builds in
+ * e2e/test_dtdoctor.py; the chosen entry and alias below must show up in its
+ * diagnosis. dtdoctor_enabled exercises the "enabled but no driver" path
+ * (vnd,dtdoctor-device deliberately has no driver).
+ */
+/ {
+	chosen {
+		dtdoctor,dev = &dtdoctor_disabled;
+	};
+
+	aliases {
+		dtdoctor-dev = &dtdoctor_disabled;
+	};
+
+	dtdoctor_disabled: dtdoctor-disabled-device {
+		compatible = "vnd,dtdoctor-device";
+		status = "disabled";
+	};
+
+	dtdoctor_enabled: dtdoctor-enabled-device {
+		compatible = "vnd,dtdoctor-device";
+		status = "okay";
+	};
+};
