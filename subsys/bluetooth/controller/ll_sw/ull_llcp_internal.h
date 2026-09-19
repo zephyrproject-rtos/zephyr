@@ -304,7 +304,7 @@ struct proc_ctx {
 			uint8_t  c_bn;
 			uint8_t  c_ft;
 			uint8_t  p_ft;
-			uint8_t  aa[4];
+			uint8_t  aa[PDU_ACCESS_ADDR_SIZE];
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 		} cis_create;
 
