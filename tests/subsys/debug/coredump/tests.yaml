@@ -51,3 +51,20 @@ tests:
         - "E: #CD:4([dD])([0-9a-fA-F]+)"
         - "E: #CD:END#"
         - "k_sys_fatal_error_handler"
+  debug.coredump.cortex_m_save_fault_stack_pointer:
+    tags: coredump
+    ignore_faults: true
+    ignore_qemu_crash: true
+    filter: CONFIG_CPU_CORTEX_M
+    extra_configs:
+      - CONFIG_DEBUG_COREDUMP=n
+      - CONFIG_CORTEX_M_DEBUG_SAVE_FAULT_SP=y
+    arch_allow: arm
+    integration_platforms:
+      - mps2/an385
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Coredump: (.*)"
+        - "k_sys_fatal_error_handler"
