@@ -35,3 +35,7 @@ properties:
   index:
     type: int
     description: Index of the TCPWM channel
+
+  clock-frequency:
+    type: int
+    description: Opearating frequency for tcpwm instances
