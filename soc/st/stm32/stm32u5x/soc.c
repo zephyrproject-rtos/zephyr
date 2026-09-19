@@ -32,6 +32,44 @@ LOG_MODULE_REGISTER(soc);
 #define SELECTED_POWER_SUPPLY LL_PWR_SMPS_SUPPLY
 #endif
 
+/*
+ * Time out for the VCORE regulator switch, expressed the way ST's
+ * HAL_PWREx_ConfigSupply() expresses it: a microsecond budget scaled by the
+ * core clock into a bounded loop count. This code runs before the kernel and
+ * before any clock configuration, so no timer API is available yet.
+ */
+#define REGULATOR_SWITCH_TIMEOUT_US 50U
+
+/*
+ * RM0456 requires PWR_SVMSR.REGS to be polled after writing PWR_CR3.REGSEL:
+ * the switch is not instantaneous, and until REGS agrees with REGSEL the
+ * supply actually feeding VCORE is the previous one. Without this wait the
+ * clock driver goes straight on to raise the voltage scaling range, enable the
+ * EPOD booster and lock the PLL against a regulator that may still be in
+ * transition.
+ */
+static void stm32_wait_regulator_supply(uint32_t supply)
+{
+	uint32_t timeout =
+		((REGULATOR_SWITCH_TIMEOUT_US * (SystemCoreClock / 1000U)) / 1000U) + 1U;
+	const uint32_t expected = (supply == LL_PWR_SMPS_SUPPLY) ? 1U : 0U;
+
+	while ((LL_PWR_IsActiveFlag_REGULATOR() != expected) && (timeout != 0U)) {
+		timeout--;
+	}
+
+	if (LL_PWR_IsActiveFlag_REGULATOR() != expected) {
+		/*
+		 * The requested regulator never reported ready - on a board
+		 * wired for the LDO, or one whose SMPS network is not fitted,
+		 * SMPS can never become ready. Fall back to the LDO, which is
+		 * the reset default and always available, rather than proceed
+		 * against a supply whose state is unknown.
+		 */
+		LL_PWR_SetRegulatorSupply(LL_PWR_LDO_SUPPLY);
+	}
+}
+
 extern void stm32_power_init(void);
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -73,6 +111,7 @@ void soc_early_init_hook(void)
 
 	/* Power Configuration */
 	LL_PWR_SetRegulatorSupply(SELECTED_POWER_SUPPLY);
+	stm32_wait_regulator_supply(SELECTED_POWER_SUPPLY);
 
 #if CONFIG_PM
 	stm32_power_init();
