@@ -34,9 +34,6 @@ struct gpio_aw9523b_config {
 	const struct device *mfd_dev;
 	struct i2c_dt_spec i2c;
 	bool port0_push_pull;
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-	struct gpio_dt_spec reset_gpio;
-#endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	struct gpio_dt_spec int_gpio;
 	gpio_callback_handler_t int_cb;
@@ -422,35 +419,6 @@ static int gpio_aw9523b_init(const struct device *dev)
 end_init_int_gpio:
 #endif
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-	if (!config->reset_gpio.port) {
-		goto end_hw_reset;
-	}
-
-	if (!gpio_is_ready_dt(&config->reset_gpio)) {
-		LOG_ERR("%s: Reset GPIO not ready", dev->name);
-		return -ENODEV;
-	}
-
-	err = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
-	if (err) {
-		LOG_ERR("%s: Failed to configure reset pin %d (%d)", dev->name,
-			config->reset_gpio.pin, err);
-		return err;
-	}
-
-	k_busy_wait(AW9523B_RESET_PULSE_WIDTH);
-
-	err = gpio_pin_set_dt(&config->reset_gpio, 0);
-	if (err) {
-		LOG_ERR("%s: Failed to set 0 reset pin %d (%d)", dev->name, config->reset_gpio.pin,
-			err);
-		return err;
-	}
-
-end_hw_reset:
-#endif
-
 	if (!device_is_ready(config->i2c.bus)) {
 		return -ENODEV;
 	}
@@ -494,9 +462,6 @@ end_hw_reset:
 		IF_ENABLED(DT_INST_PROP_HAS_IDX(inst, int_gpios, 0), (                             \
 			   .int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                     \
 			   .int_cb = gpio_aw9523b_int_handler,                                     \
-		))                                                                                 \
-		IF_ENABLED(DT_INST_PROP_HAS_IDX(inst, reset_gpios, 0), (                           \
-			   .reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                 \
 		))                                                                                 \
 	};                                                                                         \
 												   \
