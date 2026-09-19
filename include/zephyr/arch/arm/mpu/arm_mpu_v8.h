@@ -148,7 +148,7 @@
 #define MPU_MAIR_INDEX_SRAM         1
 #define MPU_MAIR_ATTR_SRAM_NOCACHE  MPU_CACHE_ATTRIBUTES_SRAM_NOCACHE
 #define MPU_MAIR_INDEX_SRAM_NOCACHE 2
-#define MPU_MAIR_ATTR_DEVICE        DEVICE_nGnRnE
+#define MPU_MAIR_ATTR_DEVICE        DEVICE_nGnRE
 #define MPU_MAIR_INDEX_DEVICE       3
 /* Flash region(s): Attribute-0
  * SRAM region(s): Attribute-1
