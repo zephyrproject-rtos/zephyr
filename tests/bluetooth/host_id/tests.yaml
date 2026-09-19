@@ -1,12 +1,16 @@
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
 tests:
-  bluetooth.host_id:
-    extra_args:
-      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
-    platform_allow:
-      - native_sim
-      - native_sim/native/64
-    integration_platforms:
-      - native_sim
-    tags:
-      - bluetooth
-      - host
+  bluetooth.host_id: {}
+  bluetooth.host_id.public_addr:
+    extra_configs:
+      - CONFIG_BT_HCI_SET_PUBLIC_ADDR=y
