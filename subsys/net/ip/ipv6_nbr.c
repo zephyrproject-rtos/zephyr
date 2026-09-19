@@ -2058,10 +2058,8 @@ static enum net_verdict handle_na_input(struct net_icmp_ctx *ctx,
 	net_ipv6_addr_copy_raw(na_tgt.s6_addr, na_hdr->tgt);
 	net_ipv6_addr_copy_raw(na_dst.s6_addr, ip_hdr->dst);
 
-	if (length < (sizeof(struct net_ipv6_hdr) +
-		      sizeof(struct net_icmp_hdr) +
-		      sizeof(struct net_icmpv6_na_hdr) +
-		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
+	if (length < (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_na_hdr))) {
 		goto drop;
 	}
 
@@ -3199,10 +3197,8 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 
 	net_ipv6_addr_copy_raw(ra_src.s6_addr, ip_hdr->src);
 
-	if (length < (sizeof(struct net_ipv6_hdr) +
-		      sizeof(struct net_icmp_hdr) +
-		      sizeof(struct net_icmpv6_ra_hdr) +
-		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
+	if (length < (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_ra_hdr))) {
 		goto drop;
 	}
 
