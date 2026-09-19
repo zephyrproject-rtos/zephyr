@@ -154,6 +154,12 @@
 		compatible = "microchip,pic32cm-sg-gc-gclkperiph";
 		#clock-cells = <1>;
 
+		adc {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
+
 		sercom1 {
 			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
 			gclkperiph-src = "gclk0";
@@ -173,6 +179,11 @@
 	mclkperiph: mclkperiph {
 		compatible = "microchip,pic32cm-sg-gc-mclkperiph";
 		#clock-cells = <1>;
+
+		adc {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_ADC>;
+			mclk-en = <1>;
+		};
 
 		sercom1 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>;
@@ -219,5 +230,26 @@ i2c0: &sercom1 {
 	pinctrl-names = "default";
 	dmas = <&dmac 2 6>, <&dmac 3 7>;
 	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+/*
+ * gclk0 is 72 MHz, the control clock ceiling, so ctrl-clock-div stays 0.
+ * adc-div-ratio 2 gives TAD = 55.6 ns. Data sheet Table 40-28, ADC_59:
+ * at least 64 TAD for a source up to 5 kOhm at 12 bit. VR300 on AIN11 is a
+ * 10 kOhm divider between 3.3 V and GND with its wiper wired straight to
+ * the pad, so its source impedance peaks at 2.5 kOhm, inside that row.
+ * sample-count 62 gives a (62 + 2) = 64 TAD = 3.56 us sampling window.
+ *
+ * VREFH on PA09 takes no pinctrl entry: it is an analog pad function with
+ * no mux position, since PA09's only ADC mux assignment is AIN6, not
+ * VREFH. The pad resets Hi-Z with its digital input buffer off, which is
+ * exactly what the reference input needs.
+ */
+&adc0 {
+	adc-div-ratio = <2>;
+	sample-count = <62>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
