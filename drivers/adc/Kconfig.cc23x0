@@ -11,6 +11,7 @@ config ADC_CC23X0
 
 config ADC_CC23X0_DMA_DRIVEN
 	bool "DMA support for TI CC23X0 ADC devices"
+	default y if ADC_DMA
 	depends on ADC_CC23X0
 	select DMA
 	help
