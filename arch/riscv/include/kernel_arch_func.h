@@ -79,6 +79,18 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #ifdef CONFIG_RISCV_USER_COUNTER_ACCESS
 	z_riscv_counteren_init();
 #endif
+#if defined(CONFIG_RISCV_LANDING_PADS) && !defined(CONFIG_RISCV_S_MODE)
+	csr_set(mseccfg, MSECCFG_MLPE);
+#elif defined(CONFIG_RISCV_LANDING_PADS)
+
+#if defined(CONFIG_RISCV_S_MODE_EXTERNAL_SBI)
+/* TODO: Implement SBI FWFT call once FWFT extension is supported in M-mode SBI runtime */
+#endif
+
+#if defined(CONFIG_USERSPACE)
+	csr_set(senvcfg, SENVCFG_LPE);
+#endif
+#endif
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 	z_riscv_custom_stack_guard_init();
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
