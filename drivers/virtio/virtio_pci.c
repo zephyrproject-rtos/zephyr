@@ -322,19 +322,21 @@ fail:
 static bool virtio_pci_map_cap(pcie_bdf_t bdf, struct virtio_pci_cap *cap, void **virt_ptr)
 {
 	struct pcie_bar mbar;
+	uint32_t offset = sys_le32_to_cpu(cap->offset);
+	uint32_t length = sys_le32_to_cpu(cap->length);
 
 	if (!pcie_get_mbar(bdf, cap->bar, &mbar)) {
 		LOG_ERR("no mbar for capability type %d found", cap->cfg_type);
 		return false;
 	}
-	assert(mbar.phys_addr + cap->offset + cap->length <= mbar.phys_addr + mbar.size);
+	assert(mbar.phys_addr + offset + length <= mbar.phys_addr + mbar.size);
 
 #ifdef CONFIG_MMU
 	k_mem_map_phys_bare(
-		(uint8_t **)virt_ptr, mbar.phys_addr + cap->offset, cap->length, K_MEM_PERM_RW
+		(uint8_t **)virt_ptr, mbar.phys_addr + offset, length, K_MEM_PERM_RW
 	);
 #else
-	*virt_ptr = (void *)(mbar.phys_addr + cap->offset);
+	*virt_ptr = (void *)(mbar.phys_addr + offset);
 #endif
 
 	return true;
