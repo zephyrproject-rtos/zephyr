@@ -115,6 +115,27 @@ Console
 The Zephyr on BeagleY-AI Cortex-R5F uses UART 1 (HAT pins 8-TX, 10-RX)
 as console.
 
+Debugging
+*********
+
+The board supports self-hosted OpenOCD debugging. In this flow, OpenOCD runs
+on Linux on the board and uses the TI K3 ``dmem`` adapter to access the SoC
+debug fabric. To debug a binary, utilize the ``debug`` build target from the
+board:
+
+.. zephyr-app-commands::
+   :app: <my_app>
+   :board: beagley_ai/j722s/main_r5f0_0
+   :maybe-skip-config:
+   :goals: debug
+
+For the MCU domain R5F, use ``beagley_ai/j722s/mcu_r5f0_0`` instead.
+
+.. hint::
+   To utilize this feature, use an OpenOCD version with TI K3 J722S self-hosted
+   support. Older package-manager versions may not include the required scripts.
+   Ensure that the Linux system running OpenOCD allows access to ``/dev/mem``.
+
 References
 **********
 * `BeagleY-AI Homepage <https://beagley.ai>`_
