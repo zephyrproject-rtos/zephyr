@@ -8,6 +8,7 @@
 #include <zephyr/drivers/mspi_emul.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/ztest.h>
+#include <zephyr/cache.h>
 
 #define MSPI_BUS_NODE                 DT_ALIAS(mspi0)
 
@@ -21,14 +22,8 @@ static const struct device *mspi_devices[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, DEVICE_DT_GET, (,))
 };
 
-#if CONFIG_DCACHE
-static uint8_t expected[MSPI_FLASH_TEST_SIZE]__aligned(CONFIG_DCACHE_LINE_SIZE);
-static uint8_t actual[MSPI_FLASH_TEST_SIZE]__aligned(CONFIG_DCACHE_LINE_SIZE);
-#else
-static uint8_t expected[MSPI_FLASH_TEST_SIZE];
-static uint8_t actual[MSPI_FLASH_TEST_SIZE];
-#endif
-
+static uint8_t expected[MSPI_FLASH_TEST_SIZE] __dcacheline_aligned;
+static uint8_t actual[MSPI_FLASH_TEST_SIZE] __dcacheline_aligned;
 
 static void prepare_test_pattern(uint32_t pattern_index, uint8_t *buff, uint32_t len)
 {
