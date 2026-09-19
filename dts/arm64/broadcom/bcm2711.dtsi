@@ -279,6 +279,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x228ddd50>;
 			ghwcfg4 = <0x1ff00020>;
+			g-rx-fifo-size = <788>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <512 512 512 512 512 256 256>;
 			status = "disabled";
 		};
 	};
