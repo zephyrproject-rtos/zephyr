@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Disable SCB4 (Bluetooth HCI UART).
+ * Include this overlay when a non-Bluetooth core (e.g. CM55 running Blinky)
+ * is built in a dual-core setup. This prevents the core from resetting the
+ * UART hardware and breaking the Bluetooth connection on the host core.
+ */
+&scb4 {
+	status = "disabled";
+};
