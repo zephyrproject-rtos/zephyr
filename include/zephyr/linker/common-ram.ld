@@ -155,3 +155,10 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #ifdef CONFIG_USERSPACE
 	PLACE_SYMBOL_HERE(_static_kernel_objects_end);
 #endif
+
+	/*
+	 * Discard ELF sections flagging stack executable status
+	 * Place this here to avoid needing to change numerous
+	 * target linker scripts
+	 */
+	/DISCARD/ : { *(.note.GNU-stack) }
