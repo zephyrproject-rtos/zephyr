@@ -43,6 +43,8 @@ Major enhancements with this release include:
 
   Zephyr 4.5 adds several new subsystem APIs, including:
 
+  - :ref:`Precision timing <precision_timing>` for shared checked time arithmetic, clock operations,
+    and PI control
   - :ref:`Video <video_api>` for controlling video drivers
 
 An overview of the changes required or recommended when migrating your application from Zephyr
