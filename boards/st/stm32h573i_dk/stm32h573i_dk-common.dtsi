@@ -375,7 +375,6 @@
 		mspi-hardware-ce-num = <0>;
 		st,mem-type = "macronix";
 		command-length = "INSTR_2_BYTE";
-		jedec-id = [c2 85 3a];
 
 		/* external flash mapping */
 		#address-cells = <1>;
