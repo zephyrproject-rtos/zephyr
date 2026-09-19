@@ -822,6 +822,12 @@ class TestPlan:
                     elif status == TwisterStatus.NOTRUN and instance.run and self.options.test_only:
                         instance.status = TwisterStatus.NONE
                         instance.reason = None
+                    elif status == TwisterStatus.NONE:
+                        # Not run yet: whatever reason the plan carries
+                        # (older twister versions wrote a placeholder)
+                        # must not survive into this run's results.
+                        instance.status = status
+                        instance.reason = None
                     else:
                         instance.status = status
                         instance.reason = reason
