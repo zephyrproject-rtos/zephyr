@@ -370,5 +370,4 @@ SECTIONS
     KEEP (*(.debug.xt.callgraph .debug.xt.callgraph.* .gnu.linkonce.xt.callgraph.*))
   }
 
-  /DISCARD/ : { *(.note.GNU-stack) }
 }

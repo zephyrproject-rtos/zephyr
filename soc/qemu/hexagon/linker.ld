@@ -279,7 +279,7 @@ SECTIONS
     #include <snippets-sections.ld>
 
     #include <zephyr/linker/debug-sections.ld>
-    /DISCARD/ : { *(.note.GNU-stack) *(.hexagon.attributes) }
+    /DISCARD/ : { *(.hexagon.attributes) }
 
 /* Output section descriptions are needed for these sections to suppress
  * warnings when "--orphan-handling=warn" is set for lld.

@@ -431,7 +431,6 @@ GROUP_END(DTCM)
 
 #include <zephyr/linker/debug-sections.ld>
 
-    /DISCARD/ : { *(.note.GNU-stack) }
 
     SECTION_PROLOGUE(.riscv.attributes, 0,)
 	{
