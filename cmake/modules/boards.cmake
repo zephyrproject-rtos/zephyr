@@ -241,11 +241,22 @@ elseif(BOARD_DIR)
           "Please run a pristine build."
   )
 else()
-  message("No board named '${BOARD}' found. Did you mean:\n")
-  execute_process(${list_boards_commands} --fuzzy-match ${BOARD})
-  message("\nRun 'west boards' for the full list.")
   unset(CACHED_BOARD CACHE)
-  message(FATAL_ERROR "Invalid BOARD; see above.")
+  execute_process(
+    ${list_boards_commands} --fuzzy-match ${BOARD}
+    OUTPUT_VARIABLE fuzzymatch_boards
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  set(board_hint "")
+  if(NOT "${fuzzymatch_boards}" STREQUAL "")
+    set(board_hint " Did you mean:\n${fuzzymatch_boards}")
+  endif()
+
+  message(FATAL_ERROR
+    "No board named '${BOARD}' found."
+    "${board_hint}\n"
+    "Run 'west boards' for the full list."
+  )
 endif()
 
 cmake_path(IS_PREFIX ZEPHYR_BASE "${BOARD_DIR}" NORMALIZE in_zephyr_tree)
