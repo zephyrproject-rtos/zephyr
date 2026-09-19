@@ -1,0 +1,8 @@
+# Copyright (c) The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault MAX_THREAD_BYTES
+	default 5 if MP_MAX_NUM_CPUS > 4
+	default 3
+
+source "Kconfig.zephyr"
