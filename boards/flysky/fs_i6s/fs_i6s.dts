@@ -212,6 +212,12 @@
 	apb1-prescaler = <1>;
 };
 
+&adc1_common {
+	st,adc-prescaler = <4>;
+	st,adc-clock-source = "SYNC";
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc_in0_pa0 &adc_in1_pa1
 		     &adc_in2_pa2 &adc_in3_pa3
@@ -223,16 +229,10 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
-
 	dmas = <&dma1 1
 		(STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC | STM32_DMA_PRIORITY_HIGH |
 		 STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
 	dma-names = "dmamux";
-
-	vref-mv = <3300>;
 
 	channel@0 {
 		reg = <0>;

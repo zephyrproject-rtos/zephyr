@@ -156,12 +156,15 @@
 	current-speed = <115200>;
 };
 
+&adc12_common {
+	st,adc-prescaler = <4>;
+	st,adc-clock-source = "SYNC";
+	status = "okay";
+};
+
 &adc2 {
 	pinctrl-0 = <&adc2_in12_pb2>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
-
 	#address-cells = <1>;
 	#size-cells = <0>;
 

@@ -165,11 +165,14 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&adc4_common {
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
 &adc4 {
 	pinctrl-0 = <&adc4_in8_pa1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <4>;
 	status = "okay";
 };
 

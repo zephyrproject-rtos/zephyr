@@ -76,8 +76,13 @@
 	status = "okay";
 };
 
-&adc1 {
+&adc12_common {
 	clocks = <&rcc STM32_CLOCK(AHB1, 5)>, <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
+	clock-names = "adcx", "adc_ker";
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };
 

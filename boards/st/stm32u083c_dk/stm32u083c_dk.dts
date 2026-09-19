@@ -86,16 +86,19 @@
 	apb1-prescaler = <1>;
 };
 
-&adc1 {
-	pinctrl-0 = <&adc1_in0_pc0 &adc1_in1_pc1>;
-	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
+&adc1_common {
 	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
 		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
 	clock-names = "adcx", "adc_ker";
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
-	vref-mv = <3300>;
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pc0 &adc1_in1_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac1 {
