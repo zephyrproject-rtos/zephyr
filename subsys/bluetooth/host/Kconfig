@@ -294,6 +294,27 @@ config BT_LIM_ADV_TIMEOUT
 	  Appendix A (NORMATIVE): TIMERS AND CONSTANTS it's required to be no more
 	  than 180s.
 
+config BT_CONN_ACCEPT_TIMEOUT
+	hex "Bluetooth Connection Accept Timeout"
+	depends on BT_CLASSIC || BT_ISO_PERIPHERAL
+	default 0x1f40
+	range 0x00a0 0xb540
+	help
+	  This option sets the connection accept timeout, that is how long the
+	  controller waits for the host to accept or reject an incoming BR/EDR
+	  connection or LE CIS request before rejecting it itself. Value is
+	  selected as (N * 0.625) ms. It is only programmed if the controller
+	  reports support for HCI_Write_Connection_Accept_Timeout.
+
+	  The host answers BR/EDR connection requests and CIS requests
+	  synchronously from its RX context, so this timeout only comes into
+	  play when the host itself is stalled.
+
+	  The bounds are the mandatory range from Core Specification 6.3,
+	  Vol 4, Part E, Section 6.7. Lower values down to 0x0001 are allowed
+	  by the specification but need not be supported. The controller shares
+	  this parameter with the LE CIS request timeout.
+
 config BT_CONN_TX_USER_DATA_SIZE
 	int
 	default 32 if 64BIT
