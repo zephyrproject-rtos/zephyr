@@ -788,19 +788,19 @@ static inline void ch_process_control(const struct device *dev,
 		usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
 		usb_dwc2_set_hctsiz_xfersize(size);
 
+	if (dma_addr != 0 && size > 0) {
+		if (next_dir_is_in) {
+			sys_cache_data_invd_range((void *)dma_addr, size);
+		} else {
+			sys_cache_data_flush_range((void *)dma_addr, size);
+		}
+	}
+
 	uhc_dwc2_quirk_dma_addr_xlate(dev, &dma_addr);
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
 	sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
 
 	/* TODO: Configure split transaction if needed */
-
-	if (dma_addr != NULL && size > 0) {
-		if (next_dir_is_in) {
-			sys_cache_data_invd_range(dma_addr, size);
-		} else {
-			sys_cache_data_flush_range(dma_addr, size);
-		}
-	}
 
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
 	hcchar |= USB_DWC2_HCCHAR_CHENA;
@@ -1290,6 +1290,7 @@ static void ch_start_control(const struct device *dev,
 	LOG_HEXDUMP_DBG(setup, 8, "SETUP");
 
 	dma_addr = (mem_addr_t)(xfer->setup_pkt);
+	sys_cache_data_flush_range((void *)dma_addr, sizeof(struct usb_setup_packet));
 	uhc_dwc2_quirk_dma_addr_xlate(dev, &dma_addr);
 
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
@@ -1299,8 +1300,6 @@ static void ch_start_control(const struct device *dev,
 
 	hcint = sys_read32((mem_addr_t)&ch->regs->hcint);
 	sys_write32(hcint, (mem_addr_t)&ch->regs->hcint);
-
-	sys_cache_data_flush_range(xfer->setup_pkt, sizeof(struct usb_setup_packet));
 
 	/* Start transfer */
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
@@ -1340,17 +1339,17 @@ static void ch_start_bulk(const struct device *dev,
 		usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
 		usb_dwc2_set_hctsiz_xfersize(ch->length);
 
+	if (ch->length > 0) {
+		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+			sys_cache_data_invd_range((void *)dma_addr, ch->length);
+		} else {
+			sys_cache_data_flush_range((void *)dma_addr, ch->length);
+		}
+	}
+
 	uhc_dwc2_quirk_dma_addr_xlate(dev, &dma_addr);
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
 	sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
-
-	if (ch->length > 0) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
-			sys_cache_data_invd_range(dma_addr, ch->length);
-		} else {
-			sys_cache_data_flush_range(dma_addr, ch->length);
-		}
-	}
 
 	/* Start transfer */
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
