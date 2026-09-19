@@ -16,6 +16,8 @@
 #define DATA_SIZE (DT_REG_SIZE(DT_NODELABEL(adsp_data)))
 #define RESET_BASE (DT_REG_ADDR(DT_NODELABEL(adsp_reset)))
 #define RESET_SIZE (DT_REG_SIZE(DT_NODELABEL(adsp_reset)))
+#define FLASH_BASE (DT_REG_ADDR(DT_NODELABEL(adsp_flash)))
+#define FLASH_SIZE (DT_REG_SIZE(DT_NODELABEL(adsp_flash)))
 
 #if TEXT_BASE == 0 || TEXT_SIZE == 0
 #error "Text memory region is improperly defined - missing adsp_text in DT?"
@@ -27,6 +29,10 @@
 
 #if RESET_BASE == 0 || RESET_SIZE == 0
 #error "Reset memory region is improperly defined - missing adsp_reset in DT?"
+#endif
+
+#if FLASH_BASE == 0 || FLASH_SIZE == 0
+#error "Flash memory region is improperly defined - missing adsp_flash in DT?"
 #endif
 
 /* The reset vector address in SRAM and its size. */
