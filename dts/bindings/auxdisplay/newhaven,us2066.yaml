@@ -1,0 +1,116 @@
+#
+# Copyright (c) 2026 Jasper Jonker
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Newhaven Display US2066 LCD common properties
+
+compatible: "newhaven,us2066"
+
+include: [auxdisplay-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: Optional GPIO connected to Reset (RST) of display
+
+  columns:
+    type: int
+    required: true
+    description: Number of character columns
+
+  rows:
+    type: int
+    required: true
+    description: |
+      Number of character rows (1, 2, 3, or 4 lines).
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+
+  io-voltage-mv:
+    type: int
+    description: I/O voltage level in millivolts (3300 or 5000)
+    default: 3300
+    enum:
+      - 3300
+      - 5000
+
+  contrast:
+    type: int
+    description: Display contrast level (0-255)
+    default: 127
+
+  clock-divider:
+    type: int
+    description: Display clock divide ratio (1-16)
+    default: 1
+
+  clock-freq:
+    type: int
+    description: Oscillator frequency setting (0-15)
+    default: 7
+
+  phase1-period:
+    type: int
+    description: Phase 1 period in DCLKs (0=2 DCLKs, 1-15=1-15 DCLKs, up to 32 total)
+    default: 1
+
+  phase2-period:
+    type: int
+    description: Phase 2 period in DCLKs (1-15, 0 is invalid)
+    default: 15
+
+  vcomh-level:
+    type: int
+    description: VCOMH deselect level (0=0.65Vcc, 1=0.71Vcc, 2=0.77Vcc, 3=0.83Vcc, 4=1.0Vcc)
+    default: 4
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+
+  font-width:
+    type: int
+    description: Character font width in dots (5 or 6)
+    default: 5
+    enum:
+      - 5
+      - 6
+
+  cursor-invert:
+    type: boolean
+    description: Enable black/white inverting of cursor position
+
+  display-rotate-180:
+    type: boolean
+    description: |
+      Rotate display 180 degrees (hardware limitation: uses BDS bit only).
+      Useful when display is mounted upside down.
+      Note: This sets BDS which empirically produces a 180-degree rotation.
+
+  display-mirror-horizontal:
+    type: boolean
+    description: |
+      Mirror display horizontally (left-right flip only).
+      Hardware note: Sets both BDS and BDC bits to achieve horizontal mirroring.
+      This is a hardware quirk - single BDC bit has no effect on this display.
+
+  cursor-direction-left:
+    type: boolean
+    description: |
+      Cursor movement direction after writing a character (RE=0, I/D bit).
+      true: cursor moves left, DDRAM address decrements
+      false: cursor moves right, DDRAM address increments (default)
+
+  display-shift-on-write:
+    type: boolean
+    description: |
+      Enable automatic display shift when writing characters (RE=0, S bit).
+      true: entire display shifts on each character write (marquee effect)
+      false: only cursor moves, display content stays in place (default)
