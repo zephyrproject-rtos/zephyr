@@ -765,6 +765,21 @@ class TestPlan:
             if not matched_quarantine and self.options.quarantine_verify:
                 instance.add_filter("Not under quarantine", Filters.CMD_LINE)
 
+    def native_host_supported(self):
+        """Return whether native platforms can be built and run on this host.
+
+        macOS support is experimental and has to be opted into with
+        NATIVE_SIM_EXPERIMENTAL_MACOS, the same way a plain build does.
+        """
+        if sys.platform == 'linux':
+            return True
+
+        if sys.platform != 'darwin':
+            return False
+
+        return any('NATIVE_SIM_EXPERIMENTAL_MACOS=ON' in arg
+                   for arg in self.options.extra_args)
+
     def load_from_file(self, file, filter_platform=None):
         if filter_platform is None:
             filter_platform = []
@@ -1134,7 +1149,7 @@ class TestPlan:
                         "Environment ({}) not satisfied".format(", ".join(plat.env)),
                         Filters.ENVIRONMENT
                     )
-                if plat.type == 'native' and sys.platform != 'linux':
+                if plat.type == 'native' and not self.native_host_supported():
                     instance.add_filter("Native platform requires Linux", Filters.ENVIRONMENT)
 
                 if not force_toolchain \

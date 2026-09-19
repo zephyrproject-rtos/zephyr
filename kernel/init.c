@@ -195,6 +195,23 @@ static void z_device_state_init(void)
 	}
 }
 
+/* Execute one init entry using the common initialization semantics. */
+void z_sys_init_run_entry(const struct init_entry *entry, unsigned int level)
+{
+	const struct device *dev = entry->dev;
+	int result = 0;
+
+	sys_trace_sys_init_enter(entry, level);
+	if (dev != NULL) {
+		if ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) == 0U) {
+			result = do_device_init(dev);
+		}
+	} else {
+		result = entry->init_fn();
+	}
+	sys_trace_sys_init_exit(entry, level, result);
+}
+
 /**
  * @brief Execute all the init entry initialization functions at a given level
  *
@@ -208,6 +225,9 @@ static void z_device_state_init(void)
  */
 static void z_sys_init_run_level(enum init_level level)
 {
+#ifdef __APPLE__
+	arch_sys_init_run_level((unsigned int)level);
+#else
 	static const struct init_entry *levels[] = {
 		__init_EARLY_start,
 		__init_PRE_KERNEL_1_start,
@@ -223,28 +243,20 @@ static void z_sys_init_run_level(enum init_level level)
 	const struct init_entry *entry;
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
-		const struct device *dev = entry->dev;
-		int result = 0;
-
-		sys_trace_sys_init_enter(entry, level);
-		if (dev != NULL) {
-			if ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) == 0U) {
-				result = do_device_init(dev);
-			}
-		} else {
-			result = entry->init_fn();
-		}
-		sys_trace_sys_init_exit(entry, level, result);
+		z_sys_init_run_entry(entry, (unsigned int)level);
 	}
+#endif
 }
 
 #ifdef CONFIG_STATIC_INIT_GNU
 
-extern void (*__zephyr_init_array_start[])();
-extern void (*__zephyr_init_array_end[])();
-
 static void z_static_init_gnu(void)
 {
+#ifdef __APPLE__
+	arch_static_init_gnu();
+#else
+	extern void (*__zephyr_init_array_start[])();
+	extern void (*__zephyr_init_array_end[])();
 	void	(**fn)();
 
 	for (fn = __zephyr_init_array_start; fn != __zephyr_init_array_end; fn++) {
@@ -254,6 +266,7 @@ static void z_static_init_gnu(void)
 		}
 		(**fn)();
 	}
+#endif
 }
 
 #endif

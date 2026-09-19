@@ -327,6 +327,7 @@ function(ExternalZephyrProject_Add)
     Python3_EXECUTABLE # Temporary export. Waiting for #87083 and extensions.cmake to be cleaned up.
     TC_RUNID           # Test run id, consumed at configure time by subsys/testsuite/ztest.
     ZEPHYR_BASE
+    NATIVE_SIM_EXPERIMENTAL_MACOS
   )
 
   set(sysbuild_cache_file ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}_sysbuild_cache.txt)

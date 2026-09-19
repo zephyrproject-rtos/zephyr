@@ -58,8 +58,35 @@ This port is designed and tested to run in Linux.
 
 .. note::
 
-   The POSIX architecture is known to **not** work on macOS due to
-   fundamental differences between macOS and other typical Unixes.
+   Experimental support for macOS hosts is available for the 64 bit native_sim
+   target. It must be enabled explicitly, as it is not covered by CI and is far
+   less complete than the Linux support:
+
+   .. code-block:: console
+
+      west build -b native_sim/native/64 samples/hello_world -- \
+        -DNATIVE_SIM_EXPERIMENTAL_MACOS=ON -DZEPHYR_TOOLCHAIN_VARIANT=host
+
+   Building without that option, or for a 32 bit target, fails with an error.
+
+   The Mach-O object format cannot sort sections by name at link time, and its
+   section names are limited to 16 characters. Iterable sections are therefore
+   mapped to generated short names, one section per logical section, and their
+   contents are ordered with a linker order file instead. As a consequence:
+
+   * A section cannot be made unique per file or per use, so anything relying on
+     :c:macro:`__in_section_unique` getting its own output section behaves
+     differently than on ELF.
+   * A device API class which is extended by another class, through
+     ``DEVICE_API_EXTENDS()``, does not cover the extending classes: each class
+     has its own section, and a section cannot hold another one. So
+     ``DEVICE_API_IS()`` returns false for a device with an extending API, as
+     ``tests/kernel/device`` reports.
+   * ld64 materialises an output section for every section boundary symbol and
+     runs out of section indexes after 127 of them, which is well below the
+     number of iterable sections Zephyr has. The bounds are therefore emitted
+     only for the sections the built image references, which is read back out of
+     it before the runner is linked.
 
 .. note::
 

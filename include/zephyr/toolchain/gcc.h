@@ -100,8 +100,14 @@
 
 #define ALIAS_OF(of) __attribute__((alias(#of)))
 
+#if defined(__APPLE__)
+#include <zephyr/toolchain/apple.h>
+#else
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() ALIAS_OF(real_func)
+#define FUNC_ALIAS_ARGS(real_func, new_alias, return_type, args) \
+	return_type new_alias args ALIAS_OF(real_func)
+#endif
 
 #if TOOLCHAIN_GCC_VERSION < 40500
 #define __builtin_unreachable() __builtin_trap()
@@ -199,6 +205,7 @@ do {                                                                    \
 /* Double indirection to ensure section names are expanded before
  * stringification
  */
+#if !defined(__APPLE__)
 #define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
 #define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
 
@@ -216,6 +223,7 @@ do {                                                                    \
 	__attribute__((section("." Z_STRINGIFY(a)		\
 				"." __FILE__			\
 				"." Z_STRINGIFY(b))))
+#endif
 
 #ifndef __in_section_unique
 #define __in_section_unique(seg) ___in_section_unique(seg, __COUNTER__)
@@ -325,7 +333,7 @@ do {                                                                    \
 #define __no_optimization __attribute__((optimize("-O0")))
 #endif
 
-#ifndef __weak
+#if !defined(__APPLE__) && !defined(__weak)
 #define __weak __attribute__((__weak__))
 #endif
 
@@ -589,6 +597,16 @@ do {                                                                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",%object")
 
+#elif defined(CONFIG_ARCH_POSIX) && defined(__APPLE__)
+
+#define GEN_ABSOLUTE_SYM(name, value)               \
+	__asm__ __volatile__(".globl\t" #name "\n\t.equ\t" #name \
+		",%c0" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__ __volatile__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value)
+
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM64) \
 	|| defined(CONFIG_ARCH_POSIX) /*&& (__x86_64 or __i*86 or __aarch64__)*/ \
 	|| defined(CONFIG_X86)
@@ -674,7 +692,8 @@ do {                                                                    \
  * @return X rounded up to the next power of two
  */
 #define Z_POW2_CEIL(x) \
-	((x) <= 2UL ? (x) : (1UL << (8 * sizeof(long) - __builtin_clzl((x) - 1))))
+	((x) <= 2UL ? (x) : \
+	 (1UL << (8 * sizeof(long) - __builtin_clzl(((x) <= 2UL ? 1UL : (x) - 1)))))
 
 /**
  * @brief Check whether or not a value is a power of 2

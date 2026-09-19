@@ -16,40 +16,8 @@ and _ext_end symbols are used for runtime range checks and iteration.
 """
 
 import argparse
-import json
 
-
-def parse_tagged_items(filepath: str, tag: str):
-    """Parse tagged items from JSON. Each entry is either a string or an object
-    with "name" and "extends" keys.
-
-    Returns:
-        items: list of all item names (strings)
-        parent_children: dict mapping parent item to sorted list of child items
-        children: set of items that are children
-    """
-    with open(filepath) as fp:
-        raw = json.load(fp)[tag]
-
-    items = []
-    parent_children = {}
-    children = set()
-
-    for entry in raw:
-        if isinstance(entry, str):
-            items.append(entry)
-        else:
-            name = entry["name"]
-            parent = entry["extends"]
-            items.append(name)
-            parent_children.setdefault(parent, []).append(name)
-            children.add(name)
-
-    # Sort children for deterministic output
-    for parent in parent_children:
-        parent_children[parent].sort()
-
-    return items, parent_children, children
+from iter_sections import parse_tagged_items
 
 
 def walk_tree_ld(fp, item, parent_children, indent="\t"):

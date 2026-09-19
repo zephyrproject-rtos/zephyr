@@ -1005,9 +1005,15 @@ __syscall int device_deinit(const struct device *dev);
  *
  * @param dev_id Device identifier.
  */
+#if defined(__APPLE__)
+#define Z_DEVICE_STATE_SECTION __attribute__((__section__("__DATA,zdevstate")))
+#else
+#define Z_DEVICE_STATE_SECTION __attribute__((__section__(".z_devstate")))
+#endif
+
 #define Z_DEVICE_STATE_DEFINE(dev_id)                                          \
 	static Z_DECL_ALIGN(struct device_state) Z_DEVICE_STATE_NAME(dev_id)   \
-		__attribute__((__section__(".z_devstate")))
+		Z_DEVICE_STATE_SECTION
 
 /**
  * @brief Device flags obtained from DT.
@@ -1351,7 +1357,9 @@ device_get_dt_nodelabels(const struct device *dev)
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			.init_fn = NULL,                                                           \
 			.dev = (const struct device *)&DEVICE_NAME_GET(dev_id),                    \
-		}
+		};                                                                                 \
+	Z_INIT_ENTRY_ORDER_ALIAS(DEVICE_NAME_GET(dev_id), level, prio,                             \
+				 Z_DEVICE_INIT_SUB_PRIO(node_id))
 
 /**
  * @brief Define a @ref device and all other required objects.
