@@ -476,6 +476,61 @@ int net_route_ipv6_decrement_hop_limit(struct net_pkt *pkt)
 	return 0;
 }
 
+#if defined(CONFIG_NET_IPV6_ND)
+/* Start neighbor discovery for an unresolved next hop and queue the packet so
+ * that it is transmitted once the Neighbor Advertisement arrives, mirroring the
+ * unknown-neighbor handling in net_ipv6_prepare_for_send().
+ *
+ * net_ipv6_send_ns() takes ownership of pkt (queued on success, released on
+ * error), so on return the caller must treat pkt as consumed.
+ */
+static int net_route_ipv6_resolve_and_queue(struct net_pkt *pkt,
+					    const struct net_in6_addr *nexthop,
+					    struct net_if *out_iface)
+{
+	struct net_if *orig_iface = net_pkt_orig_iface(pkt);
+	bool forwarding;
+	int ret;
+
+	if (orig_iface != NULL) {
+		forwarding = IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
+			     orig_iface != out_iface;
+		net_pkt_set_forwarding(pkt, forwarding);
+	} else {
+		forwarding = net_pkt_forwarding(pkt);
+	}
+
+	/* The queued packet is later flushed via net_send_data() directly (see
+	 * the NA handling in ipv6_nbr.c), so it must be fully prepared here. In
+	 * particular the hop limit has to be decremented now, because the
+	 * resend path does not re-enter this function.
+	 */
+	if (forwarding) {
+		ret = net_route_ipv6_decrement_hop_limit(pkt);
+		if (ret < 0) {
+			/* Leave pkt for the caller to drop (single unref). */
+			return ret;
+		}
+	}
+
+	net_pkt_set_iface(pkt, out_iface);
+
+	(void)net_linkaddr_copy(net_pkt_lladdr_src(pkt),
+				net_pkt_lladdr_if(pkt));
+	net_linkaddr_clear(net_pkt_lladdr_dst(pkt));
+
+	/* Queue pkt and solicit the neighbor. When forwarding, let the outgoing
+	 * interface select the NS source address (pass NULL)
+	 */
+	(void)net_ipv6_send_ns(out_iface, pkt, NULL, NULL, nexthop, false);
+
+	/* pkt is now owned by the ND pending queue (or was already freed on an
+	 * NS error); report success so the caller does not unref it.
+	 */
+	return 0;
+}
+#endif /* CONFIG_NET_IPV6_ND */
+
 int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nexthop)
 {
 	struct net_linkaddr *lladdr = NULL;
@@ -493,9 +548,17 @@ int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nextho
 	nbr = net_ipv6_nbr_lookup(NULL, nexthop);
 	if (nbr == NULL) {
 		if (net_route_ll_addr_supported(out_iface)) {
+#if defined(CONFIG_NET_IPV6_ND)
+			/* Next hop not resolved yet: run ND and queue the
+			 * packet instead of dropping it.
+			 */
+			return net_route_ipv6_resolve_and_queue(pkt, nexthop,
+								out_iface);
+#else
 			NET_DBG("Cannot find %s neighbor",
 				net_sprint_ipv6_addr(nexthop));
 			return -ENOENT;
+#endif /* CONFIG_NET_IPV6_ND */
 		}
 	} else {
 		out_iface = nbr->iface;
