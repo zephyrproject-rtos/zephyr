@@ -1121,7 +1121,39 @@ void net_if_mcast_monitor(struct net_if *iface,
 #define net_if_mcast_monitor(...)
 #endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
 
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4_ACD)
+/* A valid address is preferred while added and deprecated once removed. */
+static inline void ifaddr_set_valid(struct net_if_addr *ifaddr)
+{
+	ifaddr->addr_state = ifaddr->is_added ? NET_ADDR_PREFERRED :
+						NET_ADDR_DEPRECATED;
+}
+#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4_ACD */
+
 #if defined(CONFIG_NET_IPV6)
+/* Returns the interface owning the address with its lock held, or NULL. */
+static struct net_if *ipv6_ifaddr_iface_lock(struct net_if_addr *ifaddr)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		struct net_if_ipv6 *ipv6;
+
+		net_if_lock(iface);
+
+		ipv6 = iface->config.ip.ipv6;
+		if (ipv6 != NULL) {
+			ARRAY_FOR_EACH(ipv6->unicast, i) {
+				if (&ipv6->unicast[i] == ifaddr) {
+					return iface;
+				}
+			}
+		}
+
+		net_if_unlock(iface);
+	}
+
+	return NULL;
+}
+
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 {
 	int ret = 0;
@@ -1209,6 +1241,7 @@ static void ipv6_addr_rm_all(struct net_if *iface, struct net_if_ipv6 *ipv6)
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		struct net_if_addr *ifaddr = &ipv6->unicast[i];
 		struct net_in6_addr addr;
+		int ret;
 
 		if (!ifaddr->is_used) {
 			continue;
@@ -1219,9 +1252,9 @@ static void ipv6_addr_rm_all(struct net_if *iface, struct net_if_ipv6 *ipv6)
 		/* Drop every reference so that the slot is released even if
 		 * someone still holds one.
 		 */
-		while (ifaddr->is_used) {
-			(void)net_if_ipv6_addr_rm(iface, &addr);
-		}
+		do {
+			ret = net_if_addr_unref(iface, NET_AF_INET6, &addr, NULL);
+		} while (ret > 0);
 	}
 }
 
@@ -1531,8 +1564,14 @@ static void dad_timeout(struct k_work *work)
 			net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 			ifaddr->ifindex);
 
-		ifaddr->addr_state = NET_ADDR_PREFERRED;
 		iface = net_if_get_by_index(ifaddr->ifindex);
+		if (iface == NULL) {
+			continue;
+		}
+
+		net_if_lock(iface);
+		ifaddr_set_valid(ifaddr);
+		net_if_unlock(iface);
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_SUCCEED,
 						iface,
@@ -1963,17 +2002,15 @@ out:
 
 static void address_expired(struct net_if_addr *ifaddr)
 {
+	struct net_if *iface;
+
 	NET_DBG("IPv6 address %s is expired",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
-	STRUCT_SECTION_FOREACH(net_if, iface) {
-		ARRAY_FOR_EACH(iface->config.ip.ipv6->unicast, i) {
-			if (&iface->config.ip.ipv6->unicast[i] == ifaddr) {
-				net_if_ipv6_addr_rm(iface,
-					&iface->config.ip.ipv6->unicast[i].address.in6_addr);
-				return;
-			}
-		}
+	iface = ipv6_ifaddr_iface_lock(ifaddr);
+	if (iface != NULL) {
+		net_if_ipv6_addr_rm(iface, &ifaddr->address.in6_addr);
+		net_if_unlock(iface);
 	}
 }
 
@@ -2184,20 +2221,39 @@ static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(
 #include <zephyr/syscalls/net_if_ipv6_addr_lookup_by_index_mrsh.c>
 #endif
 
-void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
-				      uint32_t vlifetime)
+void net_if_ipv6_addr_update_lifetime_locked(struct net_if_addr *ifaddr,
+					     uint32_t vlifetime)
 {
+	/* Lock order: interface lock, then the global lock. */
 	k_mutex_lock(&lock, K_FOREVER);
 
 	NET_DBG("Updating expire time of %s by %u secs",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 		vlifetime);
 
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
+	/* An address in DAD stays tentative until DAD completes. */
+	if (ifaddr->addr_state != NET_ADDR_TENTATIVE) {
+		ifaddr_set_valid(ifaddr);
+	}
 
 	address_start_timer(ifaddr, vlifetime);
 
 	k_mutex_unlock(&lock);
+}
+
+void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
+				      uint32_t vlifetime)
+{
+	struct net_if *iface;
+
+	iface = ipv6_ifaddr_iface_lock(ifaddr);
+	if (iface == NULL) {
+		return;
+	}
+
+	net_if_ipv6_addr_update_lifetime_locked(ifaddr, vlifetime);
+
+	net_if_unlock(iface);
 }
 
 static struct net_if_addr *ipv6_addr_find(struct net_if *iface,
@@ -2243,7 +2299,7 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 			net_sprint_ipv6_addr(addr),
 			vlifetime);
 
-		net_if_ipv6_addr_update_lifetime(ifaddr, vlifetime);
+		net_if_ipv6_addr_update_lifetime_locked(ifaddr, vlifetime);
 	} else {
 		ifaddr->is_infinite = true;
 	}
@@ -2276,6 +2332,12 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		if (!ifaddr->is_added) {
 			atomic_inc(&ifaddr->atomic_ref);
 			ifaddr->is_added = true;
+			/* Undo the demotion done on removal. An address still
+			 * in DAD stays tentative until DAD completes.
+			 */
+			if (ifaddr->addr_state == NET_ADDR_DEPRECATED) {
+				ifaddr->addr_state = NET_ADDR_PREFERRED;
+			}
 		}
 
 		goto out;
@@ -2375,12 +2437,30 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct net_in6_addr *addr)
 		goto out;
 	}
 
+	ifaddr = ipv6_addr_find(iface, addr);
+	if (ifaddr != NULL && !ifaddr->is_added) {
+		/* The remaining references belong to the users of the
+		 * address, only they may release them.
+		 */
+		NET_DBG("Address %s already removed",
+			net_sprint_ipv6_addr(addr));
+		result = false;
+		goto out;
+	}
+
 	ret = net_if_addr_unref(iface, NET_AF_INET6, addr, &ifaddr);
 	if (ret > 0) {
 		NET_DBG("Address %s still in use (ref %d)",
 			net_sprint_ipv6_addr(addr), ret);
 		result = false;
 		ifaddr->is_added = false;
+		/* Existing users keep the address, source selection picks
+		 * it only as a last resort. An address still in DAD stays
+		 * tentative until DAD completes.
+		 */
+		if (ifaddr->addr_state == NET_ADDR_PREFERRED) {
+			ifaddr->addr_state = NET_ADDR_DEPRECATED;
+		}
 		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
@@ -4129,6 +4209,7 @@ static void ipv4_addr_rm_all(struct net_if *iface, struct net_if_ipv4 *ipv4)
 	ARRAY_FOR_EACH(ipv4->unicast, i) {
 		struct net_if_addr *ifaddr = &ipv4->unicast[i].ipv4;
 		struct net_in_addr addr;
+		int ret;
 
 		if (!ifaddr->is_used) {
 			continue;
@@ -4139,9 +4220,9 @@ static void ipv4_addr_rm_all(struct net_if *iface, struct net_if_ipv4 *ipv4)
 		/* Drop every reference so that the slot is released even if
 		 * someone still holds one.
 		 */
-		while (ifaddr->is_used) {
-			(void)net_if_ipv4_addr_rm(iface, &addr);
-		}
+		do {
+			ret = net_if_addr_unref(iface, NET_AF_INET, &addr, NULL);
+		} while (ret > 0);
 
 		ipv4->unicast[i].netmask.s_addr = 0;
 	}
@@ -5052,7 +5133,7 @@ void net_if_ipv4_acd_succeeded(struct net_if *iface, struct net_if_addr *ifaddr)
 		net_sprint_ipv4_addr(&ifaddr->address.in_addr),
 		ifaddr->ifindex);
 
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
+	ifaddr_set_valid(ifaddr);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ACD_SUCCEED, iface,
 					&ifaddr->address.in_addr,
@@ -5203,6 +5284,12 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		if (!ifaddr->is_added) {
 			atomic_inc(&ifaddr->atomic_ref);
 			ifaddr->is_added = true;
+			/* Undo the demotion done on removal. An address still
+			 * in ACD stays tentative until ACD completes.
+			 */
+			if (ifaddr->addr_state == NET_ADDR_DEPRECATED) {
+				ifaddr->addr_state = NET_ADDR_PREFERRED;
+			}
 		}
 
 		goto out;
@@ -5316,12 +5403,30 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct net_in_addr *addr)
 		goto out;
 	}
 
+	ifaddr = ipv4_addr_find(iface, addr);
+	if (ifaddr != NULL && !ifaddr->is_added) {
+		/* The remaining references belong to the users of the
+		 * address, only they may release them.
+		 */
+		NET_DBG("Address %s already removed",
+			net_sprint_ipv4_addr(addr));
+		result = false;
+		goto out;
+	}
+
 	ret = net_if_addr_unref(iface, NET_AF_INET, addr, &ifaddr);
 	if (ret > 0) {
 		NET_DBG("Address %s still in use (ref %d)",
 			net_sprint_ipv4_addr(addr), ret);
 		result = false;
 		ifaddr->is_added = false;
+		/* Existing users keep the address, it is no longer offered
+		 * as a source for new connections. An address still in ACD
+		 * stays tentative until ACD completes.
+		 */
+		if (ifaddr->addr_state == NET_ADDR_PREFERRED) {
+			ifaddr->addr_state = NET_ADDR_DEPRECATED;
+		}
 		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
