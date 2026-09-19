@@ -8,14 +8,15 @@
 /dts-v1/;
 #include <arm/infineon/cat1b/mpns/psc3m5fds2afq1_s.dtsi>
 #include <arm/infineon/cat1b/psc3/system_clocks.dtsi>
-#include <arm/infineon/cat1b/psc3/psc3_partition.dtsi>
 #include "kit_psc3m5_evk-common.dtsi"
 #include "kit_psc3m5_evk-pinctrl.dtsi"
+#include "kit_psc3m5_evk-partitions.dtsi"
 
 / {
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &flash_controller;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
