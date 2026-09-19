@@ -674,7 +674,8 @@ do {                                                                    \
  * @return X rounded up to the next power of two
  */
 #define Z_POW2_CEIL(x) \
-	((x) <= 2UL ? (x) : (1UL << (8 * sizeof(long) - __builtin_clzl((x) - 1))))
+	((x) <= 2UL ? (x) : \
+	 (1UL << (8 * sizeof(long) - __builtin_clzl(((x) <= 2UL ? 1UL : (x) - 1)))))
 
 /**
  * @brief Check whether or not a value is a power of 2
