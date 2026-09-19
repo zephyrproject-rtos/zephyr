@@ -1,0 +1,10 @@
+tests:
+  arch.arm64.spin_table:
+    arch_allow: arm64
+    platform_allow:
+      - qemu_cortex_a72
+    tags:
+      - arm64
+      - spin_table
+      - drivers
+    filter: CONFIG_PM_CPU_OPS_SPIN_TABLE
