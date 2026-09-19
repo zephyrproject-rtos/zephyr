@@ -11,7 +11,6 @@
  */
 
 #include <string.h>
-#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
@@ -21,6 +20,7 @@
 #include <ipi.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/arm64/mm.h>
+#include <zephyr/arch/cache.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/exception.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
@@ -129,8 +129,20 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		/* store mpid last as this is our synchronization point */
 		arm64_cpu_boot_params.mpid = cpu_mpid;
 
-		sys_cache_data_flush_range((void *)&arm64_cpu_boot_params,
-					  sizeof(arm64_cpu_boot_params));
+#if defined(CONFIG_DCACHE)
+		/*
+		 * The secondary core starts with the MMU and the data cache
+		 * disabled, so the parameters have to reach the point of
+		 * coherency before it is released.
+		 */
+		if (arch_dcache_flush_range((void *)&arm64_cpu_boot_params,
+					    sizeof(arm64_cpu_boot_params)) != 0) {
+			printk("Failed to clean the boot parameters to memory\n");
+			k_panic();
+		}
+#else
+#error "arm64 SMP requires CONFIG_DCACHE to clean the boot parameters"
+#endif
 
 		if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
 			printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
