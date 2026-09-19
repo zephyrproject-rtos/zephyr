@@ -58,8 +58,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMI", cgmi_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0," QUECTEL_BG770_CMUX_PORT_SPEED ",127",
-						   ok_match));
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0," QUECTEL_BG770_CMUX_PORT_SPEED
+				   "," STRINGIFY(CONFIG_MODEM_CMUX_MTU),
+				   ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg770_init_chat_script, quectel_bg770_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
