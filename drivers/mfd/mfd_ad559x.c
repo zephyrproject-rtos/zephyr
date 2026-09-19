@@ -73,6 +73,8 @@ static int mfd_ad559x_init(const struct device *dev)
 		if (ret < 0) {
 			return ret;
 		}
+
+		k_busy_wait(config->reset_recovery_time_us);
 	}
 
 	ret = mfd_add559x_software_reset(dev);
@@ -102,6 +104,7 @@ static int mfd_ad559x_init(const struct device *dev)
 	static struct mfd_ad559x_data mfd_ad559x_data_##inst;                                      \
 	static const struct mfd_ad559x_config mfd_ad559x_config_##inst = {                         \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
+		.reset_recovery_time_us = DT_INST_PROP(inst, reset_recovery_time_us),              \
 		MFD_AD559X_DEFINE_BUS(inst),                                                       \
 	};                                                                                         \
                                                                                                    \
