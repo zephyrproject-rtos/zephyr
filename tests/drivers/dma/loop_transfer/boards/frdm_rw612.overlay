@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-tst_dma0: &dma0 {};
-
-tst_dma1: &gdma {};
+/ {
+	zephyr,user {
+		dma-test-devs = <&dma0>, <&gdma>;
+	};
+};
