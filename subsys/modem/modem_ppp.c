@@ -237,6 +237,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
 				atomic_set_bit(&ppp->state, MODEM_PPP_STATE_DEAD_BIT);
 				net_if_carrier_off(ppp->iface);
+				ppp_mgmt_raise_phase_dead_event(ppp->iface);
 			}
 			break;
 		}

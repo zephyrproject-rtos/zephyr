@@ -876,6 +876,32 @@ ZTEST(cellular_on_demand_connect, test_09_ppp_dead_while_awaiting_registration)
 		     modem_fsm_state());
 }
 
+/* An in-band NO CARRIER is how a module reports the network dropping the call.
+ * modem_ppp parses it off the PPP channel, so the DCE emits it verbatim.
+ */
+ZTEST(cellular_on_demand_connect, test_10_in_band_no_carrier_while_awaiting_registration)
+{
+	int dials;
+	int csq;
+
+	park_in_await_dial();
+	atomic_set(&emu_registered, 0);
+	csq = atomic_get(&csq_count);
+	zassert_true(wait_for_csq(csq + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
+		     "periodic script did not poll while parked");
+
+	admit_iface();
+	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_AWAIT_REGISTERED, 20000),
+		     "modem did not rest in AWAIT_REGISTERED, state is %d", modem_fsm_state());
+	dials = atomic_get(&atd_count);
+
+	dce_send(dce_dlci2_pipe, "\r\nNO CARRIER\r\n");
+
+	zassert_true(wait_for_atd(dials + 1, 20000),
+		     "in-band NO CARRIER in AWAIT_REGISTERED did not re-dial, state is %d",
+		     modem_fsm_state());
+}
+
 static void *suite_setup(void)
 {
 	common_setup();
