@@ -118,6 +118,13 @@ The LPC55S36 SoC has 8 FLEXCOMM interfaces for serial
 communication. One is configured as USART for the console and the
 remaining are not used.
 
+I3C
+===
+
+The LPC55S36 SoC has one I3C module.
+Mind that the I3C and SWD signals/pins going to the on-board MCU-Link are shared.
+It is recommended to short jumper JP27 to isolate MCU-Link from driving the shared signals.
+
 Programming and Debugging
 *************************
 
