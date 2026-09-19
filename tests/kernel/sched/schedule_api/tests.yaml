@@ -21,6 +21,7 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=y
       - CONFIG_TIMESLICE_PER_THREAD=y
+      - CONFIG_ZTEST_STACK_SIZE=2048
   kernel.scheduler.multiq:
     extra_args: CONF_FILE=prj_multiq.conf
     extra_configs:
