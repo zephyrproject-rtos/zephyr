@@ -28,9 +28,12 @@ Supported Features
 Connections and IOs
 ====================
 
-UART0 is used as the default console. It is available on PB4 (RXD) and PB7
+UART1 is used as the default console. It is available on PA8 (RXD) and PA9
 (TXD), which is the peripheral's default pin location after reset, so no pin
-remapping is required.
+remapping is required. This leaves UART0's default pins, PB4 and PB7, free
+for other uses.
+
+The board's blue LED is connected to PB4 and is available as ``led0``.
 
 Programming and Debugging
 **************************
