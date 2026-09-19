@@ -165,6 +165,8 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "hangup";
 	case MODEM_CELLULAR_EVENT_MODEM_REBOOTING:
 		return "modem rebooting";
+	case MODEM_CELLULAR_EVENT_DELAY_STARTUP:
+		return "delay startup";
 	}
 
 	return "";
@@ -859,6 +861,11 @@ static void modem_cellular_start_timer(struct modem_cellular_data *data, k_timeo
 	k_work_schedule(&data->timeout_work, timeout);
 }
 
+static void modem_cellular_update_timer(struct modem_cellular_data *data, k_timeout_t timeout)
+{
+	k_work_reschedule(&data->timeout_work, timeout);
+}
+
 static void modem_cellular_stop_timer(struct modem_cellular_data *data)
 {
 	k_work_cancel_delayable(&data->timeout_work);
@@ -1211,6 +1218,10 @@ static void modem_cellular_await_power_on_event_handler(struct modem_cellular_da
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
+		break;
+	case MODEM_CELLULAR_EVENT_DELAY_STARTUP:
+		/* Delay requested, restart the timer */
+		modem_cellular_update_timer(data, K_MSEC(config->vendor->startup_time_ms));
 		break;
 	case MODEM_CELLULAR_EVENT_MODEM_READY:
 		/* disable the timer and fall through, as we are ready to proceed */
@@ -2995,6 +3006,14 @@ void modem_cellular_notify_modem_rebooting(const struct device *dev)
 
 	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_MODEM_REBOOTING);
 }
+
+void modem_cellular_delay_startup(const struct device *dev)
+{
+	struct modem_cellular_data *data = dev->data;
+
+	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DELAY_STARTUP);
+}
+
 
 int modem_cellular_pm_action(const struct device *dev, enum pm_device_action action)
 {
