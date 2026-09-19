@@ -1,0 +1,34 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_RENESAS_RA_PDM
+	bool "Renesas RA PDM-IF digital microphone driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_PDM_ENABLED
+	select USE_RA_FSP_PDM
+	select PINCTRL
+	help
+	  Enable the digital microphone driver for the Renesas RA Pulse Density
+	  Modulation Interface.
+
+if AUDIO_DMIC_RENESAS_RA_PDM
+
+config AUDIO_DMIC_RENESAS_RA_PDM_BLOCK_SAMPLES
+	int "Largest capture block (samples)"
+	default 512
+	range 8 4096
+	help
+	  Longest block, in samples, that dmic_configure() may ask for. Each
+	  channel keeps two blocks of this size, four bytes per sample, for the
+	  interface to fill while the completed one is converted.
+
+config AUDIO_DMIC_RENESAS_RA_PDM_BLOCK_COUNT
+	int "Capture blocks queued to the application"
+	default 4
+	range 2 32
+	help
+	  Depth of the queue holding converted blocks waiting for dmic_read().
+	  Blocks are dropped once it fills, so it has to cover the longest the
+	  reader can be held off.
+
+endif # AUDIO_DMIC_RENESAS_RA_PDM
