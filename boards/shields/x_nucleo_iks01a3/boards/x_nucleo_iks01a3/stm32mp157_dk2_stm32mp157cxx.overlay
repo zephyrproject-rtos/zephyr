@@ -5,7 +5,7 @@
  */
 
 /*
- * On stm32mp157c_dk2 pin A3 is not mapped on a GPIO pin.
+ * On stm32mp157_dk2 pin A3 is not mapped on a GPIO pin.
  * Delete this optional property for shield/board compatibility
  */
 
