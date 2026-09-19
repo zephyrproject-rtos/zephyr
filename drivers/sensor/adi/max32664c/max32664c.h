@@ -185,8 +185,8 @@ struct max32664c_data {
 
 	enum max32664c_device_mode op_mode; /**< Current device mode */
 
-	uint8_t motion_time;              /**< Motion time in milliseconds */
-	uint8_t motion_threshold;         /**< Motion threshold in milli-g */
+	uint16_t motion_time;             /**< Motion time in milliseconds */
+	uint16_t motion_threshold;        /**< Motion threshold in milli-g */
 	uint8_t led_current[3];           /**< LED current in mA */
 	uint8_t min_integration_time_idx;
 	uint8_t min_sampling_rate_idx;
