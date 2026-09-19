@@ -248,9 +248,10 @@ class HardwareMap:
         duts = scl.yaml_load_verify(map_file, hwm_schema)
         for dut in duts:
             pre_script = dut.get('pre_script')
-            script_param = dut.get('script_param')
             post_script = dut.get('post_script')
+            pre_flash_script = dut.get('pre_flash_script')
             post_flash_script = dut.get('post_flash_script')
+            script_param = dut.get('script_param')
             flash_timeout = dut.get('flash_timeout') or self.options.device_flash_timeout
             flash_with_test = dut.get('flash_with_test')
             if flash_with_test is None:
@@ -288,10 +289,11 @@ class HardwareMap:
                               serial_baud=serial_baud,
                               connected=connected,
                               pre_script=pre_script,
-                              flash_before=flash_before,
                               post_script=post_script,
+                              pre_flash_script=pre_flash_script,
                               post_flash_script=post_flash_script,
                               script_param=script_param,
+                              flash_before=flash_before,
                               flash_timeout=flash_timeout,
                               flash_with_test=flash_with_test,
                               west_flash_cmd=west_flash_cmd)
