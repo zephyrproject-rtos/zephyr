@@ -575,6 +575,8 @@ New APIs and options
   * :kconfig:option:`CONFIG_RISCV_SOC_SYSCALL_CLOSE_ECALL` (RISC-V SoC hook to leave the
     ecall exception before the user-mode syscall body runs, for SoCs that cannot deliver a
     fault raised by the body while that exception is open)
+  * :c:func:`semihost_exit` and :c:func:`semihost_debugger_attached` (report an exit reason
+    and status to the host through semihosting, see :ref:`semihost_guide`)
 
 * Audio
 
