@@ -108,6 +108,60 @@ static const clock_ip_name_t i2c_clk_root[] = {
 };
 #endif
 
+#if defined(CONFIG_PWM_NXP_IPWM) && defined(CONFIG_SOC_SERIES_IMX8M)
+static const clock_root_control_t pwm_clk_root[] = {
+	kCLOCK_RootPwm1,
+	kCLOCK_RootPwm2,
+	kCLOCK_RootPwm3,
+	kCLOCK_RootPwm4,
+};
+
+static const clock_ip_name_t pwm_clocks[] = {
+	kCLOCK_Pwm1,
+	kCLOCK_Pwm2,
+	kCLOCK_Pwm3,
+	kCLOCK_Pwm4,
+};
+
+/*
+ * Resolve the source feeding a PWMn_CLK_ROOT, before its pre/post dividers.
+ *
+ * The mux options are identical for all four instances except entry 5, which is
+ * EXT_CLK_1 on PWM1/PWM2 and EXT_CLK_2 on PWM3/PWM4. Either way it is a board
+ * input whose rate the SoC cannot report, so it is rejected rather than guessed.
+ */
+static int pwm_root_source_rate(clock_root_control_t root, uint32_t *rate)
+{
+	switch (CLOCK_GetRootMux(root)) {
+	case 0: /* 24M_REF_CLK */
+		*rate = MHZ(24);
+		break;
+	case 1: /* SYSTEM_PLL2_DIV10 */
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll2Ctrl) / 10;
+		break;
+	case 2: /* SYSTEM_PLL1_DIV5 */
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) / 5;
+		break;
+	case 3: /* SYSTEM_PLL1_DIV20 */
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) / 20;
+		break;
+	case 4: /* SYSTEM_PLL3_CLK */
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll3Ctrl);
+		break;
+	case 6: /* SYSTEM_PLL1_DIV10 */
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) / 10;
+		break;
+	case 7: /* VIDEO_PLL1_CLK */
+		*rate = CLOCK_GetPllFreq(kCLOCK_VideoPll1Ctrl);
+		break;
+	default: /* EXT_CLK_x */
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PWM_NXP_IPWM && CONFIG_SOC_SERIES_IMX8M */
+
 #if defined(CONFIG_CAN_MCUX_FLEXCAN) && defined(CONFIG_SOC_MIMX8ML8)
 static const clock_ip_name_t flexcan_clk_root[] = {
 	kCLOCK_RootFlexCan1,
@@ -185,6 +239,15 @@ static int mcux_ccm_on(const struct device *dev,
 		return 0;
 #endif
 
+#if defined(CONFIG_PWM_NXP_IPWM) && defined(CONFIG_SOC_SERIES_IMX8M)
+	case IMX_CCM_PWM1_CLK:
+	case IMX_CCM_PWM2_CLK:
+	case IMX_CCM_PWM3_CLK:
+	case IMX_CCM_PWM4_CLK:
+		CLOCK_EnableClock(pwm_clocks[instance]);
+		return 0;
+#endif
+
 #if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
 	case IMX_CCM_AUD_PLL_DIV_CLK0:
 		/* ungate PLL parent */
@@ -253,6 +316,15 @@ static int mcux_ccm_off(const struct device *dev,
 	case IMX_CCM_XBAR2_CLK:
 	case IMX_CCM_XBAR3_CLK:
 		CLOCK_DisableClock(xbar_clocks[instance]);
+		return 0;
+#endif
+
+#if defined(CONFIG_PWM_NXP_IPWM) && defined(CONFIG_SOC_SERIES_IMX8M)
+	case IMX_CCM_PWM1_CLK:
+	case IMX_CCM_PWM2_CLK:
+	case IMX_CCM_PWM3_CLK:
+	case IMX_CCM_PWM4_CLK:
+		CLOCK_DisableClock(pwm_clocks[instance]);
 		return 0;
 #endif
 
@@ -605,6 +677,33 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				(CLOCK_GetRootPostDivider(i2c_clk_root[instance])) /
 				5; /* SYSTEM PLL1 DIV5 */
 		}
+
+	} break;
+#endif
+
+#if defined(CONFIG_PWM_NXP_IPWM) && defined(CONFIG_SOC_SERIES_IMX8M)
+	case IMX_CCM_PWM1_CLK:
+	case IMX_CCM_PWM2_CLK:
+	case IMX_CCM_PWM3_CLK:
+	case IMX_CCM_PWM4_CLK:
+	{
+		uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+		clock_root_control_t root;
+		int err;
+
+		if (instance >= ARRAY_SIZE(pwm_clk_root)) {
+			return -EINVAL;
+		}
+
+		root = pwm_clk_root[instance];
+
+		err = pwm_root_source_rate(root, rate);
+		if (err < 0) {
+			return err;
+		}
+
+		*rate /= CLOCK_GetRootPreDivider(root);
+		*rate /= CLOCK_GetRootPostDivider(root);
 
 	} break;
 #endif
