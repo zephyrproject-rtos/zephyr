@@ -252,7 +252,6 @@ SECTION_PROLOGUE(.x86shadowstack.arr,,)
 	*(.igot.plt)
 	*(.iplt)
 	*(.plt)
-	*(.note.GNU-stack)
 	*(.rel.*)
 	*(.rela.*)
 	}

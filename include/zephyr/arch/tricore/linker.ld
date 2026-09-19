@@ -299,7 +299,6 @@ GROUP_END(DTCM)
 #include <zephyr/linker/debug-sections.ld>
 
 	/DISCARD/ : { *(.callinfo) }
-	/DISCARD/ : { *(.note.GNU-stack) }
 
 	/* Output sections silence lld's "--orphan-handling=warn". */
 #if defined(CONFIG_LLVM_USE_LLD)

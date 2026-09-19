@@ -52,6 +52,11 @@ SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	#include <snippets-rwdata.ld>
 } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+.note.GNU-stack :
+{
+  KEEP(*(.note.GNU-stack))
+}
+
 #include <zephyr/linker/common-ram.ld>
 
 /* Located in generated directory. This file is populated by the
