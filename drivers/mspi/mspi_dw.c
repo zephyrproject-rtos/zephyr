@@ -1726,6 +1726,11 @@ static int api_transceive(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (req->xfer_mode == MSPI_MEMMAP) {
+		LOG_ERR("Memory mapped transfers are not supported");
+		return -ENOTSUP;
+	}
+
 	if (req->async) {
 		if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 			LOG_ERR("Asynchronous transfers require multithreading");
