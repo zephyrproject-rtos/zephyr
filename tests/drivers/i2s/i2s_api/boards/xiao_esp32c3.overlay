@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* i2s-node0 is the transmitter/receiver */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s;
+	};
+};
+
+&pinctrl {
+	i2s_default: i2s_default {
+		group1 {
+			pinmux = <I2S_O_WS_GPIO6>,
+				 <I2S_O_BCK_GPIO7>;
+		};
+
+		group2 {
+			pinmux = <I2S_O_SD_GPIO8>;
+			input-enable;
+		};
+
+		group3 {
+			pinmux = <I2S_I_SD_GPIO8>;
+			output-enable;
+		};
+	};
+};
+
+&i2s {
+	status = "okay";
+	pinctrl-0 = <&i2s_default>;
+	pinctrl-names = "default";
+
+	dmas = <&dma 2>, <&dma 3>;
+	dma-names = "rx", "tx";
+};
+
+&dma {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "disabled";
+};
+
+&spi2 {
+	status = "disabled";
+};
