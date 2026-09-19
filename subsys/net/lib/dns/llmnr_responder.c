@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 
 #include <zephyr/net/mld.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_config.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/dns_resolve.h>
@@ -714,4 +715,10 @@ static int llmnr_responder_init(void)
 	return init_listener();
 }
 
-SYS_INIT(llmnr_responder_init, APPLICATION, CONFIG_LLMNR_RESPONDER_INIT_PRIO);
+/* Answering queries needs addresses: run after the automatic network
+ * configuration when it is enabled.
+ */
+#define SYS_ANCHOR_llmnr_responder                                             \
+	SYS_ANCHOR_AFTER_IF(CONFIG_NET_CONFIG_AUTO_INIT, SYS_ANCHOR_net_config,\
+			    llmnr_responder)
+SYS_INIT_ANCHORED(llmnr_responder, llmnr_responder_init, APPLICATION);

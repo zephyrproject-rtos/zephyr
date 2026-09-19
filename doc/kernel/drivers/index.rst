@@ -393,26 +393,25 @@ Initialization Levels
 Drivers may depend on other drivers being initialized first, or require
 the use of kernel services. :c:func:`DEVICE_DEFINE()` and related APIs
 allow the user to specify at what time during the boot sequence the init
-function will be executed. Any driver will specify one of three
+function will be executed. Any driver will specify one of two
 initialization levels:
 
-``PRE_KERNEL_1``
-        Used for devices that have no dependencies, such as those that rely
-        solely on hardware present in the processor/SOC. These devices cannot
-        use any kernel services during configuration, since the kernel services are
-        not yet available. The interrupt subsystem will be configured however
-        so it's OK to set up interrupts. Init functions at this level run on the
-        interrupt stack.
-
-``PRE_KERNEL_2``
-        Used for devices that rely on the initialization of devices initialized
-        as part of the ``PRE_KERNEL_1`` level. These devices cannot use any kernel
-        services during configuration, since the kernel services are not yet
-        available. Init functions at this level run on the interrupt stack.
+``PRE_KERNEL``
+        Used for devices that are initialized before the kernel is up, such
+        as those that rely solely on hardware present in the processor/SOC
+        or on other ``PRE_KERNEL`` devices initialized with a lower priority
+        value. These devices cannot use any kernel services during
+        configuration, since the kernel services are not yet available. The
+        interrupt subsystem will be configured however so it's OK to set up
+        interrupts. Init functions at this level run on the interrupt stack.
 
 ``POST_KERNEL``
         Used for devices that require kernel services during configuration.
         Init functions at this level run in context of the kernel main task.
+
+The deprecated ``PRE_KERNEL_1`` and ``PRE_KERNEL_2`` tokens are still accepted
+for compatibility; see :ref:`sys_init_api` for what they do and how to migrate
+away from them.
 
 Within each initialization level you may specify a priority level, relative to
 other devices in the same initialization level. The priority level is specified
@@ -421,6 +420,20 @@ initialization.  The priority level must be a decimal integer literal without
 leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``\#define MY_INIT_PRIO 32``); symbolic expressions are *not* permitted (e.g.
 ``CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5``).
+
+Instead of a hand-picked priority, a device can be ordered automatically by its
+devicetree dependencies with :c:macro:`DEVICE_DT_DEFINE_AUTO`, which takes no
+priority argument and initializes the device after the devices its node depends
+on, such as its bus or its interrupt parent:
+
+.. code-block:: c
+
+   DEVICE_DT_INST_DEFINE_AUTO(0, my_init, NULL, &data, &config,
+                              POST_KERNEL, &my_api);
+
+See :ref:`sys_init_api` for the complete boot sequence, the initialization
+levels that only :c:macro:`SYS_INIT` entries may use, and the other ways of
+expressing an initialization dependency.
 
 Drivers and other system utilities can determine whether startup is
 still in pre-kernel states by using the :c:func:`k_is_pre_kernel`
@@ -449,8 +462,11 @@ System Drivers
 
 In some cases you may just need to run a function at boot. For such cases, the
 :c:macro:`SYS_INIT` can be used. This macro does not take any config or runtime
-data structures and there isn't a way to later get a device pointer by name. The
-same device policies for initialization level and priority apply.
+data structures and there isn't a way to later get a device pointer by name.
+Initialization levels and priorities work the same way, except that a
+:c:macro:`SYS_INIT` entry may also use the ``EARLY``, ``APPLICATION`` and
+``PRE_MAIN`` levels, and may be ordered by a declared dependency instead of a
+priority. See :ref:`sys_init_api`.
 
 Inspecting the initialization sequence
 **************************************
@@ -462,7 +478,9 @@ level and priority.
 
 Sometimes it's useful to inspect the final sequence of initialization function
 call as produced by the linker. To do that, use the ``initlevels`` CMake
-target, for example ``west build -t initlevels``.
+target, for example ``west build -t initlevels``. The build also validates that
+sequence against the devicetree dependencies and the declared initialization
+dependencies; see :ref:`sys_init_api`.
 
 Error handling
 **************
