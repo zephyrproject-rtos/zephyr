@@ -48,6 +48,20 @@ const struct device *z_get_sw_isr_device_from_irq(unsigned int irq);
  */
 unsigned int z_get_sw_isr_irq_from_device(const struct device *dev);
 
+#if defined(CONFIG_IRQ_DISPATCH_WRAPPER) && defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+/**
+ * @brief Map an ISR-table slot to its zephyr IRQ number (multilevel case).
+ *
+ * Inverse of @c z_get_sw_isr_table_idx().  Includes any aggregator-local
+ * IRQ bits.  Defined in multilevel_irq.c.
+ *
+ * @param idx Slot index (0 .. IRQ_TABLE_SIZE-1).
+ *
+ * @return Encoded zephyr IRQ, or 0 if @p idx is out of range.
+ */
+unsigned int z_multilevel_idx_to_irq(unsigned int idx);
+#endif /* CONFIG_IRQ_DISPATCH_WRAPPER && CONFIG_MULTI_LEVEL_INTERRUPTS */
+
 #ifdef __cplusplus
 }
 #endif
