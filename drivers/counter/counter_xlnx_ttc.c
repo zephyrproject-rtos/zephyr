@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/device_mmio.h>
 
 LOG_MODULE_REGISTER(counter_ttc, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -102,23 +103,28 @@ LOG_MODULE_REGISTER(counter_ttc, CONFIG_COUNTER_LOG_LEVEL);
 #define TTC_NUM_INSTANCES           DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)
 #define TTC_INSTANCE_STORAGE_SIZE   MAX(TTC_NUM_INSTANCES, 1)
 
-/* Global device array for shared interrupt handling */
+#define DEV_CFG(dev)  ((const struct ttc_config *)(dev)->config)
+#define DEV_DATA(dev) ((struct ttc_data *)(dev)->data)
+
+/* Global device array for shared interrupt handling and MMIO mapping reuse */
 static const struct device *ttc_devices[TTC_INSTANCE_STORAGE_SIZE];
 
 /*
- * Runtime tracking of registered IRQs to avoid duplicate registration.
- * Each entry stores an IRQ number that has been connected, or 0 if unused.
- * This allows shared IRQs across TTC instances to be registered only once.
+ * IRQ numbers already passed to irq_connect_dynamic(). Occupied slots are
+ * ttc_registered_irqs[0 .. ttc_registered_irq_count). 0 is a valid IRQ
+ * number; unused slots are not indicated by a sentinel.
  */
 static uint32_t ttc_registered_irqs[TTC_INSTANCE_STORAGE_SIZE];
 static uint8_t ttc_registered_irq_count;
 
 /*
- * Protects global IRQ registration state (ttc_registered_irqs[],
- * ttc_registered_irq_count).
+ * Protects global state shared across TTC instances during initialization:
+ * - ttc_devices[] registration/lookup (sibling detection for MMIO mapping
+ *   reuse, and shared-IRQ dispatch in ttc_isr())
+ * - ttc_registered_irqs[] / ttc_registered_irq_count
  *
  * Required to serialize access during device initialization on SMP,
- * as multiple TTC instances may attempt to register IRQs concurrently.
+ * as multiple TTC instances may attempt to initialize concurrently.
  */
 static struct k_spinlock ttc_irq_reg_lock;
 
@@ -129,7 +135,13 @@ static struct k_spinlock ttc_irq_reg_lock;
  */
 struct ttc_config {
 	struct counter_config_info info;
-	uintptr_t base;
+
+	DEVICE_MMIO_NAMED_ROM(ttc_mmio);
+	uintptr_t block_id; /* Physical base address of the parent TTC IP block. Used only
+			     * to identify sibling channels (same block, shared IRQ, and
+			     * candidates for MMIO mapping reuse). Register access always
+			     * goes through ttc_get_base(), never through this field.
+			     */
 	uint32_t clock_freq;
 	uint32_t irq_num;
 	uint32_t irq_priority;
@@ -143,6 +155,7 @@ struct ttc_config {
  * @brief TTC device runtime data structure
  */
 struct ttc_data {
+	DEVICE_MMIO_NAMED_RAM(ttc_mmio);
 	counter_alarm_callback_t alarm_callbacks[TTC_MAX_CHANNELS];
 	counter_top_callback_t top_callback;
 	void *alarm_user_data[TTC_MAX_CHANNELS];
@@ -151,9 +164,23 @@ struct ttc_data {
 	uint32_t guard_period;
 	atomic_t late_alarm_pending;
 	bool guard_period_set;
+	/* Serializes ctrl/int_en register read-modify-write between thread context and the ISR. */
+	struct k_spinlock lock;
 };
 
 /* ==================== HELPER FUNCTIONS ==================== */
+
+/**
+ * @brief Get mapped MMIO base address for a TTC device
+ * @param dev Pointer to device structure
+ * @return Base address to use for register access (VA on MMU builds,
+ *         physical address on non-MMU builds)
+ */
+
+static inline uintptr_t ttc_get_base(const struct device *dev)
+{
+	return DEVICE_MMIO_NAMED_GET(dev, ttc_mmio);
+}
 
 /**
  * @brief Calculate register offset for specific timer
@@ -164,32 +191,6 @@ struct ttc_data {
 static uint32_t ttc_get_register_offset(uint8_t timer_id, uint32_t base_offset)
 {
 	return base_offset + (timer_id * 4);
-}
-
-/**
- * @brief Read TTC register
- * @param dev Pointer to device structure
- * @param offset Register offset
- * @return Register value
- */
-static inline uint32_t ttc_read_reg(const struct device *dev, uint32_t offset)
-{
-	const struct ttc_config *config = dev->config;
-
-	return sys_read32(config->base + offset);
-}
-
-/**
- * @brief Write TTC register
- * @param dev Pointer to device structure
- * @param offset Register offset
- * @param value Value to write
- */
-static inline void ttc_write_reg(const struct device *dev, uint32_t offset, uint32_t value)
-{
-	const struct ttc_config *config = dev->config;
-
-	sys_write32(value, config->base + offset);
 }
 
 /**
@@ -269,14 +270,19 @@ static void ttc_set_alarm_pending(const struct device *dev, uint8_t chan_id)
 static int ttc_start(const struct device *dev)
 {
 	const struct ttc_config *config = dev->config;
+	struct ttc_data *data = dev->data;
 	uint32_t ctrl_offset;
 	uint32_t ctrl_val;
+	k_spinlock_key_t key;
 
 	ctrl_offset = ttc_get_register_offset(config->timer_id, TTC_COUNTER_CONTROL_1);
-	ctrl_val = ttc_read_reg(dev, ctrl_offset);
+
+	key = k_spin_lock(&data->lock);
+	ctrl_val = sys_read32(ttc_get_base(dev) + ctrl_offset);
 	ctrl_val |= TTC_CNT_CTRL_RST;
 	ctrl_val &= ~TTC_CNT_CTRL_DIS;
-	ttc_write_reg(dev, ctrl_offset, ctrl_val);
+	sys_write32(ctrl_val, ttc_get_base(dev) + ctrl_offset);
+	k_spin_unlock(&data->lock, key);
 
 	LOG_DBG("Started TTC timer %d", config->timer_id);
 
@@ -291,13 +297,18 @@ static int ttc_start(const struct device *dev)
 static int ttc_stop(const struct device *dev)
 {
 	const struct ttc_config *config = dev->config;
+	struct ttc_data *data = dev->data;
 	uint32_t ctrl_offset;
 	uint32_t ctrl_val;
+	k_spinlock_key_t key;
 
 	ctrl_offset = ttc_get_register_offset(config->timer_id, TTC_COUNTER_CONTROL_1);
-	ctrl_val = ttc_read_reg(dev, ctrl_offset);
+
+	key = k_spin_lock(&data->lock);
+	ctrl_val = sys_read32(ttc_get_base(dev) + ctrl_offset);
 	ctrl_val |= TTC_CNT_CTRL_DIS;
-	ttc_write_reg(dev, ctrl_offset, ctrl_val);
+	sys_write32(ctrl_val, ttc_get_base(dev) + ctrl_offset);
+	k_spin_unlock(&data->lock, key);
 
 	LOG_DBG("Stopped TTC timer %d", config->timer_id);
 
@@ -320,7 +331,7 @@ static int ttc_get_value(const struct device *dev, uint32_t *ticks)
 	}
 
 	value_offset = ttc_get_register_offset(config->timer_id, TTC_COUNTER_VALUE_1);
-	*ticks = ttc_read_reg(dev, value_offset);
+	*ticks = sys_read32(ttc_get_base(dev) + value_offset);
 
 	return 0;
 }
@@ -353,13 +364,11 @@ static int ttc_set_top_value(const struct device *dev, const struct counter_top_
 	uint32_t int_en_offset;
 	uint32_t ctrl_val;
 	uint32_t int_en_val;
+	k_spinlock_key_t key;
 
 	if (!cfg) {
 		return -EINVAL;
 	}
-
-	int_en_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_ENABLE_1);
-	int_en_val = ttc_read_reg(dev, int_en_offset);
 
 	if (cfg->ticks == 0 || cfg->ticks > config->info.max_top_value) {
 		LOG_ERR("Invalid top value %u", cfg->ticks);
@@ -369,25 +378,41 @@ static int ttc_set_top_value(const struct device *dev, const struct counter_top_
 	LOG_DBG("Setting top value to %u", cfg->ticks);
 
 	interval_offset = ttc_get_register_offset(config->timer_id, TTC_INTERVAL_COUNTER_1);
-	ttc_write_reg(dev, interval_offset, cfg->ticks);
 	ctrl_offset = ttc_get_register_offset(config->timer_id, TTC_COUNTER_CONTROL_1);
-	ctrl_val = ttc_read_reg(dev, ctrl_offset);
+	int_en_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_ENABLE_1);
+
+	key = k_spin_lock(&data->lock);
+
+	for (int i = 0; i < TTC_MAX_CHANNELS; i++) {
+		if (data->alarm_callbacks[i] != NULL) {
+			k_spin_unlock(&data->lock, key);
+			return -EBUSY;
+		}
+	}
+
+	sys_write32(cfg->ticks, ttc_get_base(dev) + interval_offset);
+	ctrl_val = sys_read32(ttc_get_base(dev) + ctrl_offset);
 	ctrl_val |= TTC_CNT_CTRL_INT;
 
 	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
 		ctrl_val |= TTC_CNT_CTRL_RST;
 	}
 
-	ttc_write_reg(dev, ctrl_offset, ctrl_val);
+	sys_write32(ctrl_val, ttc_get_base(dev) + ctrl_offset);
 
 	data->top_value = cfg->ticks;
 	data->top_callback = cfg->callback;
 	data->top_user_data = cfg->user_data;
 
+	int_en_val = sys_read32(ttc_get_base(dev) + int_en_offset);
 	if (cfg->callback) {
 		int_en_val |= TTC_INT_IV;
-		ttc_write_reg(dev, int_en_offset, int_en_val);
+	} else {
+		int_en_val &= ~TTC_INT_IV;
 	}
+	sys_write32(int_en_val, ttc_get_base(dev) + int_en_offset);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -495,6 +520,7 @@ static int ttc_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	struct ttc_data *data = dev->data;
 	uint32_t int_en_offset;
 	uint32_t int_en_val;
+	k_spinlock_key_t key;
 
 	if (chan_id >= TTC_MAX_CHANNELS) {
 		return -ENOTSUP;
@@ -502,13 +528,20 @@ static int ttc_cancel_alarm(const struct device *dev, uint8_t chan_id)
 
 	LOG_DBG("Cancelling alarm %d", chan_id);
 
+	int_en_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_ENABLE_1);
+
+	key = k_spin_lock(&data->lock);
+
 	data->alarm_callbacks[chan_id] = NULL;
 	data->alarm_user_data[chan_id] = NULL;
 
-	int_en_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_ENABLE_1);
-	int_en_val = ttc_read_reg(dev, int_en_offset);
+	atomic_and(&data->late_alarm_pending, ~BIT(chan_id));
+
+	int_en_val = sys_read32(ttc_get_base(dev) + int_en_offset);
 	int_en_val &= ~ttc_get_interrupt_bit(chan_id);
-	ttc_write_reg(dev, int_en_offset, int_en_val);
+	sys_write32(int_en_val, ttc_get_base(dev) + int_en_offset);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -529,6 +562,7 @@ static int ttc_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t int_en_val;
 	uint32_t ctrl_val;
 	bool program_match;
+	k_spinlock_key_t key;
 	int ret;
 
 	if (chan_id >= TTC_MAX_CHANNELS) {
@@ -539,49 +573,55 @@ static int ttc_set_alarm(const struct device *dev, uint8_t chan_id,
 	if (!alarm_cfg || !alarm_cfg->callback) {
 		return -EINVAL;
 	}
-
+	key = k_spin_lock(&data->lock);
 	if (data->alarm_callbacks[chan_id] != NULL) {
+		k_spin_unlock(&data->lock, key);
 		return -EBUSY;
 	}
 
 	/* Get current counter value - needed for both relative and absolute alarms */
 	ret = ttc_get_value(dev, &current_ticks);
 	if (ret != 0) {
+		k_spin_unlock(&data->lock, key);
 		return ret;
 	}
 
 	ret = ttc_compute_alarm_ticks(dev, alarm_cfg, current_ticks, &alarm_ticks);
 	if (ret != 0) {
+		k_spin_unlock(&data->lock, key);
 		return ret;
 	}
 
 	ret = ttc_handle_late_alarm(dev, chan_id, alarm_cfg, current_ticks,
 				    alarm_ticks, &program_match);
 	if (ret != 0 || !program_match) {
+		k_spin_unlock(&data->lock, key);
 		return ret;
 	}
 
 	match_offset = ttc_get_match_register(config->timer_id, chan_id);
 	if (match_offset == 0) {
+		k_spin_unlock(&data->lock, key);
 		return -ENOTSUP;
 	}
 
+	ctrl_offset = ttc_get_register_offset(config->timer_id, TTC_COUNTER_CONTROL_1);
+	int_en_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_ENABLE_1);
+
 	/* Write match register */
-	ttc_write_reg(dev, match_offset, alarm_ticks);
+	sys_write32(alarm_ticks, ttc_get_base(dev) + match_offset);
 	data->alarm_callbacks[chan_id] = alarm_cfg->callback;
 	data->alarm_user_data[chan_id] = alarm_cfg->user_data;
 
-	ctrl_offset = ttc_get_register_offset(config->timer_id,
-					      TTC_COUNTER_CONTROL_1);
-	ctrl_val = ttc_read_reg(dev, ctrl_offset);
+	ctrl_val = sys_read32(ttc_get_base(dev) + ctrl_offset);
 	ctrl_val |= TTC_CNT_CTRL_MATCH;
-	ttc_write_reg(dev, ctrl_offset, ctrl_val);
+	sys_write32(ctrl_val, ttc_get_base(dev) + ctrl_offset);
 
-	int_en_offset = ttc_get_register_offset(config->timer_id,
-						TTC_INTERRUPT_ENABLE_1);
-	int_en_val = ttc_read_reg(dev, int_en_offset);
+	int_en_val = sys_read32(ttc_get_base(dev) + int_en_offset);
 	int_en_val |= ttc_get_interrupt_bit(chan_id);
-	ttc_write_reg(dev, int_en_offset, int_en_val);
+	sys_write32(int_en_val, ttc_get_base(dev) + int_en_offset);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -635,7 +675,7 @@ static uint32_t ttc_get_pending_int(const struct device *dev)
 	int_reg_offset = ttc_get_register_offset(config->timer_id,
 						 TTC_INTERRUPT_REGISTER_1);
 
-	return ttc_read_reg(dev, int_reg_offset) ? 1 : 0;
+	return sys_read32(ttc_get_base(dev) + int_reg_offset) ? 1 : 0;
 }
 
 /* ==================== INTERRUPT HANDLER ==================== */
@@ -652,6 +692,7 @@ static void ttc_process_timer_interrupt(const struct device *dev, uint32_t int_s
 	uint32_t current_ticks;
 	uint32_t int_en_offset;
 	uint32_t int_en_val;
+	k_spinlock_key_t key;
 
 	/* Check for software-triggered late alarms */
 	uint32_t sw_pending = atomic_and(&data->late_alarm_pending, 0);
@@ -660,6 +701,8 @@ static void ttc_process_timer_interrupt(const struct device *dev, uint32_t int_s
 	if ((int_status & TTC_INT_IV) && data->top_callback) {
 		data->top_callback(dev, data->top_user_data);
 	}
+
+	int_en_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_ENABLE_1);
 
 	/* Handle match interrupts (hardware or software-triggered) */
 	for (int i = 0; i < TTC_MAX_CHANNELS; i++) {
@@ -678,11 +721,11 @@ static void ttc_process_timer_interrupt(const struct device *dev, uint32_t int_s
 			data->alarm_callbacks[i](dev, i, current_ticks,
 						data->alarm_user_data[i]);
 
-			int_en_offset = ttc_get_register_offset(config->timer_id,
-								TTC_INTERRUPT_ENABLE_1);
-			int_en_val = ttc_read_reg(dev, int_en_offset);
+			key = k_spin_lock(&data->lock);
+			int_en_val = sys_read32(ttc_get_base(dev) + int_en_offset);
 			int_en_val &= ~match_bit;
-			ttc_write_reg(dev, int_en_offset, int_en_val);
+			sys_write32(int_en_val, ttc_get_base(dev) + int_en_offset);
+			k_spin_unlock(&data->lock, key);
 
 			data->alarm_callbacks[i] = NULL;
 			data->alarm_user_data[i] = NULL;
@@ -691,39 +734,47 @@ static void ttc_process_timer_interrupt(const struct device *dev, uint32_t int_s
 }
 
 /**
- * @brief TTC Interrupt Service Routine
+ * @brief TTC interrupt service routine
  *
- * Checks all timer interrupt status registers within the TTC IP block.
- * For shared interrupts, processes all pending timers.
- * For dedicated interrupts, only the triggered timer will have status set.
+ * Walks TTC counter instances that belong to the same physical IP block
+ * (block_id). Register access uses each instance's mapped base
+ * (ttc_get_base()), which may differ from block_id on MMU builds.
  *
- * @param dev Pointer to device structure
+ * Shared IRQ: all timers in the block may have status set.
+ * Dedicated IRQ: typically only the firing timer has status set; software
+ * late alarms can still have int_status == 0.
+ *
+ * @param arg Device that was bound at irq_connect_dynamic()
  */
-static void ttc_isr(const struct device *dev)
+static void ttc_isr(const void *arg)
 {
+	const struct device *dev = arg;
 	const struct ttc_config *config = dev->config;
-	uintptr_t base = config->base;
 	uint32_t int_reg_offset;
 	uint32_t int_status;
 
-	/* Iterate through all registered TTC counter instances */
 	for (uint8_t idx = 0; idx < TTC_NUM_INSTANCES; idx++) {
 		const struct device *timer_dev = ttc_devices[idx];
+		const struct ttc_config *timer_cfg;
 
 		if (timer_dev == NULL) {
 			continue;
 		}
-		const struct ttc_config *timer_cfg = timer_dev->config;
-		/* Only process devices belonging to the same TTC IP block (same base address) */
-		if (timer_cfg->base != base) {
+
+		timer_cfg = timer_dev->config;
+
+		/* Same physical TTC IP, not necessarily the same mapped VA. */
+		if (timer_cfg->block_id != config->block_id) {
 			continue;
 		}
+
 		int_reg_offset = ttc_get_register_offset(timer_cfg->timer_id,
 							 TTC_INTERRUPT_REGISTER_1);
-		int_status = sys_read32(base + int_reg_offset);
+		int_status = sys_read32(ttc_get_base(timer_dev) + int_reg_offset);
+
 		/*
-		 * Process timer interrupt even if int_status is 0, because there might be
-		 * software-triggered late alarms pending (via arm_gic_irq_set_pending).
+		 * Still process if int_status is 0: late alarms are marked
+		 * in software and pended with arm_gic_irq_set_pending().
 		 */
 		ttc_process_timer_interrupt(timer_dev, int_status);
 	}
@@ -797,31 +848,46 @@ static int ttc_init(const struct device *dev)
 	uint32_t clk_ctrl_val;
 	uint32_t ctrl_val;
 	k_spinlock_key_t key;
+	bool need_map = true;
 	bool need_connect = false;
 
 	memset(data, 0, sizeof(*data));
-	clk_ctrl_offset = ttc_get_register_offset(config->timer_id, TTC_CLOCK_CONTROL_1);
-	clk_ctrl_val = 0;
-
-	if (config->prescaler_present && config->prescaler <= TTC_MAX_PRESCALER) {
-		clk_ctrl_val |= TTC_CLK_CTRL_PS_EN;
-		clk_ctrl_val |= (config->prescaler << TTC_CLK_CTRL_PS_V_SHIFT) &
-				TTC_CLK_CTRL_PS_V_MASK;
-	}
-
-	ttc_write_reg(dev, clk_ctrl_offset, clk_ctrl_val);
-
-	ctrl_offset = ttc_get_register_offset(config->timer_id, TTC_COUNTER_CONTROL_1);
-	ctrl_val = TTC_CNT_CTRL_DIS | TTC_CNT_CTRL_RST;
-	ttc_write_reg(dev, ctrl_offset, ctrl_val);
-
-	int_reg_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_REGISTER_1);
-	(void)ttc_read_reg(dev, int_reg_offset);
-
-	int_en_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_ENABLE_1);
-	ttc_write_reg(dev, int_en_offset, 0);
-
 	key = k_spin_lock(&ttc_irq_reg_lock);
+	/*
+	 * Multiple channels (timer_id 0/1/2) of the same physical TTC block
+	 * share an identical MMIO region. Only the first channel to
+	 * initialize needs to actually map it; later sibling channels
+	 * reuse that mapping's virtual address instead of creating a
+	 * redundant page-table mapping for the same physical range.
+	 */
+	for (uint8_t i = 0; i < TTC_NUM_INSTANCES; i++) {
+		const struct device *sibling = ttc_devices[i];
+		const struct ttc_config *sibling_cfg;
+
+		if (sibling == NULL) {
+			continue;
+		}
+
+		sibling_cfg = sibling->config;
+
+		if (sibling_cfg->block_id == config->block_id) {
+#ifdef DEVICE_MMIO_IS_IN_RAM
+			uintptr_t sibling_base = ttc_get_base(sibling);
+			/*
+			 * Reuse the sibling mapping only once it exists. The sibling
+			 * registers itself in ttc_devices[] before it maps, so its
+			 * base can still be 0 here; mapping again is harmless.
+			 */
+			if (sibling_base != 0) {
+				*DEVICE_MMIO_NAMED_RAM_PTR(dev, ttc_mmio) = sibling_base;
+				need_map = false;
+			}
+#else
+			need_map = false;
+#endif /* DEVICE_MMIO_IS_IN_RAM */
+			break;
+		}
+	}
 
 	/*
 	 * Register this device in the global array used for shared
@@ -847,6 +913,30 @@ static int ttc_init(const struct device *dev)
 	}
 
 	k_spin_unlock(&ttc_irq_reg_lock, key);
+	if (need_map) {
+		DEVICE_MMIO_NAMED_MAP(dev, ttc_mmio, K_MEM_CACHE_NONE);  /* before any reg access */
+	}
+	clk_ctrl_offset = ttc_get_register_offset(config->timer_id, TTC_CLOCK_CONTROL_1);
+	clk_ctrl_val = 0;
+
+	if (config->prescaler_present && config->prescaler <= TTC_MAX_PRESCALER) {
+		clk_ctrl_val |= TTC_CLK_CTRL_PS_EN;
+		clk_ctrl_val |= (config->prescaler << TTC_CLK_CTRL_PS_V_SHIFT) &
+				TTC_CLK_CTRL_PS_V_MASK;
+	}
+
+	sys_write32(clk_ctrl_val, ttc_get_base(dev) + clk_ctrl_offset);
+
+	ctrl_offset = ttc_get_register_offset(config->timer_id, TTC_COUNTER_CONTROL_1);
+	ctrl_val = TTC_CNT_CTRL_DIS | TTC_CNT_CTRL_RST;
+
+	sys_write32(ctrl_val, ttc_get_base(dev) + ctrl_offset);
+
+	int_reg_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_REGISTER_1);
+	(void)sys_read32(ttc_get_base(dev) + int_reg_offset);
+
+	int_en_offset = ttc_get_register_offset(config->timer_id, TTC_INTERRUPT_ENABLE_1);
+	sys_write32(0, ttc_get_base(dev) + int_en_offset);
 
 	/*
 	 * Perform IRQ connection outside the critical section
@@ -854,7 +944,7 @@ static int ttc_init(const struct device *dev)
 	 */
 	if (need_connect) {
 		irq_connect_dynamic(config->irq_num, config->irq_priority,
-				    (void (*)(const void *))ttc_isr, dev, 0);
+				    ttc_isr, dev, 0);
 		irq_enable(config->irq_num);
 	}
 
@@ -876,14 +966,6 @@ static int ttc_init(const struct device *dev)
 #define TTC_DEVICE_INIT(n) \
 	static struct ttc_data ttc_data_##n; \
 	static const struct ttc_config ttc_config_##n = { \
-		.base = DT_REG_ADDR(TTC_PARENT(n)), \
-		.clock_freq = DT_PROP(TTC_PARENT(n), clock_frequency), \
-		.prescaler_present = DT_INST_NODE_HAS_PROP(n, prescaler), \
-		.prescaler = DT_INST_PROP_OR(n, prescaler, 0), \
-		.irq_num = DT_INST_IRQN(n), \
-		.irq_priority = DT_INST_IRQ(n, priority), \
-		.timer_id = DT_REG_ADDR(DT_DRV_INST(n)), \
-		.device_idx = n, \
 		.info = { \
 			.max_top_value = \
 				GENMASK(DT_PROP(TTC_PARENT(n), timer_width) - 1, 0), \
@@ -892,6 +974,15 @@ static int ttc_init(const struct device *dev)
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP, \
 			.channels = TTC_MAX_CHANNELS, \
 		}, \
+		DEVICE_MMIO_NAMED_ROM_INIT(ttc_mmio, TTC_PARENT(n)), \
+		.clock_freq = DT_PROP(TTC_PARENT(n), clock_frequency), \
+		.prescaler_present = DT_INST_NODE_HAS_PROP(n, prescaler), \
+		.prescaler = DT_INST_PROP_OR(n, prescaler, 0), \
+		.irq_num = DT_INST_IRQN(n), \
+		.irq_priority = DT_INST_IRQ(n, priority), \
+		.block_id = DT_REG_ADDR(TTC_PARENT(n)), \
+		.timer_id = DT_REG_ADDR(DT_DRV_INST(n)), \
+		.device_idx = n, \
 	}; \
 	DEVICE_DT_INST_DEFINE(n, ttc_init, NULL, \
 			      &ttc_data_##n, &ttc_config_##n, \
