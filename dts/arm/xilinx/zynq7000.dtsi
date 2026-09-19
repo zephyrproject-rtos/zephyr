@@ -3,12 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <mem.h>
 #include <arm/armv7-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
 
 / {
+	sdhci_ref_clk: sdhci-ref-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(200)>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		interrupt-parent = <&gic>;
 
@@ -220,6 +227,24 @@
 				ngpios = <32>;
 				status = "okay";
 			};
+		};
+
+		sdhc0: mmc@e0100000 {
+			compatible = "xlnx,versal-8.9a";
+			reg = <0xe0100000 0x1000>;
+			status = "disabled";
+			clocks = <&sdhci_ref_clk>;
+			interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+		};
+
+		sdhc1: mmc@e0101000 {
+			compatible = "xlnx,versal-8.9a";
+			reg = <0xe0101000 0x1000>;
+			status = "disabled";
+			clocks = <&sdhci_ref_clk>;
+			interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
 		};
 	};
 
