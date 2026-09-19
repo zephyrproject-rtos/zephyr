@@ -19,6 +19,10 @@ config LV_DPI_DEF
 config LV_Z_FLUSH_THREAD
 	default y
 
+choice LV_COLOR_FORMAT_DEFAULT
+	default LV_COLOR_FORMAT_RGB565
+endchoice
+
 endif # LVGL
 
 endif # SHIELD_ZC143AC72MIPI
