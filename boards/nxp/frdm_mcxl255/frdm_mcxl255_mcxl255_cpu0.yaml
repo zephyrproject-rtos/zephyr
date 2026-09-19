@@ -20,4 +20,5 @@ supported:
   - watchdog
   - mbox
   - input
+  - wuc
 vendor: nxp
