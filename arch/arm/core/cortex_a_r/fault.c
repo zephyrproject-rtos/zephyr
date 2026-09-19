@@ -292,6 +292,7 @@ bool z_arm_fault_undef_instruction(struct arch_esf *esf)
 			  K_ERR_ARM_UNDEFINED_INSTRUCTION;
 
 	/* Invoke kernel fatal exception handler */
+	z_arm_set_fault_sp(esf, 0);
 	z_arm_fatal_error(reason, esf);
 
 	/* All undefined instructions are treated as fatal for now */
@@ -344,6 +345,7 @@ bool z_arm_fault_prefetch(struct arch_esf *esf)
 	}
 
 	/* Invoke kernel fatal exception handler */
+	z_arm_set_fault_sp(esf, 0);
 	z_arm_fatal_error(reason, esf);
 
 	/* All prefetch aborts are treated as fatal for now */
@@ -431,6 +433,7 @@ bool z_arm_fault_data(struct arch_esf *esf)
 	}
 
 	/* Invoke kernel fatal exception handler */
+	z_arm_set_fault_sp(esf, 0);
 	z_arm_fatal_error(reason, esf);
 
 	/* All data aborts are treated as fatal for now */

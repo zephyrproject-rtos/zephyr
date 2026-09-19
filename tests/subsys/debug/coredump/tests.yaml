@@ -9,6 +9,8 @@ tests:
       - posix
     integration_platforms:
       - qemu_x86
+      - qemu_cortex_r5
+      - qemu_cortex_a9
     harness: console
     harness_config:
       type: multi_line

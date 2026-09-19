@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from gdbstubs.arch.arm64 import GdbStub_ARM64
+from gdbstubs.arch.arm_cortex_a_r import GdbStub_ARM_CortexAR
 from gdbstubs.arch.arm_cortex_m import GdbStub_ARM_CortexM
 from gdbstubs.arch.risc_v import GdbStub_RISC_V
 from gdbstubs.arch.x86 import GdbStub_x86
@@ -20,6 +21,7 @@ class TgtCode:
     RISC_V = 4
     XTENSA = 5
     ARM64 = 6
+    ARM_CORTEX_A_R = 7
 
 
 def get_gdbstub(logfile, elffile):
@@ -39,5 +41,7 @@ def get_gdbstub(logfile, elffile):
         stub = GdbStub_Xtensa(logfile=logfile, elffile=elffile)
     elif tgt_code == TgtCode.ARM64:
         stub = GdbStub_ARM64(logfile=logfile, elffile=elffile)
+    elif tgt_code == TgtCode.ARM_CORTEX_A_R:
+        stub = GdbStub_ARM_CortexAR(logfile=logfile, elffile=elffile)
 
     return stub
