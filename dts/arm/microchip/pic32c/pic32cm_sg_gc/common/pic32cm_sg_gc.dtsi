@@ -35,6 +35,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		hwinfo: device_id@a0071e0 {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x0a0071e0 0x4>,
+			      <0x0a0071e4 0x4>,
+			      <0x0a0071e8 0x4>,
+			      <0x0a0071ec 0x4>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			#address-cells = <1>;
@@ -252,6 +260,11 @@
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM5_CORE>;
 			clock-names = "mclk", "gclk";
 			status = "disabled";
+		};
+
+		rstc: rstc@45004000 {
+			compatible = "microchip,rstc-g1-reset";
+			reg = <0x45004000 0x8>;
 		};
 	};
 };

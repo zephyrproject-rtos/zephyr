@@ -13,8 +13,10 @@ supported:
   - clock_control
   - dma
   - gpio
+  - hwinfo
   - i2c
   - pinctrl
+  - reset
   - uart
   - watchdog
 vendor: microchip
