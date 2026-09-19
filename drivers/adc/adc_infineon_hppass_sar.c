@@ -26,6 +26,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
@@ -215,6 +216,12 @@ struct ifx_hppass_sar_adc_data {
 	uint32_t enabled_channels;
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
+#ifdef CONFIG_PM_S2RAM
+	/* Shadow of SAR SAMP_GAIN; SAR_Init() does not restore it, replayed on
+	 * S2RAM warm boot (regular DeepSleep retains it).
+	 */
+	uint32_t samp_gain;
+#endif
 };
 
 /*
@@ -678,9 +685,50 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 	samp_gain |= (sampler_gain << gain_shift);
 	sys_write32(samp_gain, ctrl_base + IFX_HPPASS_SAR_SAMP_GAIN);
 
+#ifdef CONFIG_PM_S2RAM
+	data->samp_gain = samp_gain;
+#endif
+
 	data->enabled_channels |= BIT(channel_cfg->channel_id);
 
 	adc_context_release(&data->ctx, 0);
+
+	return 0;
+}
+
+/**
+ * @brief (Re)program the SAR core registers
+ *
+ * Loads SFLASH calibration/config and, in async mode, arms the Group 0 result
+ * interrupt and connects its ISR.  Shared by init and the S2RAM warm-boot path.
+ */
+static int ifx_hppass_sar_adc_hw_reinit(const struct device *dev)
+{
+	const struct ifx_hppass_sar_adc_config *cfg = dev->config;
+	cy_stc_hppass_sar_t sar_cfg;
+
+	ifx_init_pdl_struct(&sar_cfg, cfg);
+
+	/*
+	 * Cy_HPPASS_SAR_Init() loads SFLASH calibration and fills the
+	 * calOffsetMirror[] table that cross-talk compensation reads, so it must stay.
+	 */
+	if (Cy_HPPASS_SAR_Init(&sar_cfg) != CY_RSLT_SUCCESS) {
+		LOG_ERR("Failed to initialize HPPASS SAR ADC");
+		return -EIO;
+	}
+
+#if defined(CONFIG_ADC_ASYNC)
+	/*
+	 * Group 0 result interrupt drives async completions: arm the peripheral
+	 * mask and (re)connect/enable the NVIC line.  irq_func() is idempotent,
+	 * so this is safe on both cold init and S2RAM warm boot (where the NVIC
+	 * enable is otherwise lost).
+	 */
+	sys_write32(IFX_HPPASS_SAR_INTR_RESULT_GROUP_0,
+		    cfg->ctrl_base + IFX_HPPASS_SAR_RESULT_INTR_MASK);
+	cfg->irq_func();
+#endif /* CONFIG_ADC_ASYNC */
 
 	return 0;
 }
@@ -692,7 +740,7 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 {
 	const struct ifx_hppass_sar_adc_config *cfg = dev->config;
 	struct ifx_hppass_sar_adc_data *data = dev->data;
-	cy_stc_hppass_sar_t sar_cfg;
+	int ret;
 
 	data->dev = dev;
 
@@ -708,31 +756,83 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ifx_init_pdl_struct(&sar_cfg, cfg);
-
-	/*
-	 * Cy_HPPASS_SAR_Init() copies SFLASH calibration into
-	 * SAR_CALOFFST[0..3]/CALGAINC/CALGAINF and populates the PDL
-	 * calOffsetMirror[] table.  The cross-talk compensation in
-	 * ifx_hppass_sar_configure_group() reads that table via
-	 * Cy_HPPASS_SAR_CrossTalkAdjust(), so this call must stay.
-	 */
-	if (Cy_HPPASS_SAR_Init(&sar_cfg) != CY_RSLT_SUCCESS) {
-		LOG_ERR("Failed to initialize HPPASS SAR ADC");
-		return -EIO;
+	ret = ifx_hppass_sar_adc_hw_reinit(dev);
+	if (ret != 0) {
+		return ret;
 	}
-
-#if defined(CONFIG_ADC_ASYNC)
-	/* Group 0 result interrupt drives async completions. */
-	sys_write32(IFX_HPPASS_SAR_INTR_RESULT_GROUP_0,
-		    cfg->ctrl_base + IFX_HPPASS_SAR_RESULT_INTR_MASK);
-	cfg->irq_func();
-#endif /* CONFIG_ADC_ASYNC */
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_S2RAM)
+/*
+ * Replay per-channel state (RESULT_MASK, CHAN_CFG, SAMP_GAIN) that
+ * channel_setup() programmed; SAR_Init() does not restore it and the app does
+ * not re-run channel_setup() after wake.  No-op at cold init.  Only needed
+ * after S2RAM power loss; regular DeepSleep retains this state.
+ */
+static void ifx_hppass_sar_adc_replay_channels(const struct device *dev)
+{
+	const struct ifx_hppass_sar_adc_config *cfg = dev->config;
+	struct ifx_hppass_sar_adc_data *data = dev->data;
+	mem_addr_t ctrl_base = cfg->ctrl_base;
+	uint32_t enabled = data->enabled_channels;
+
+	if (enabled == 0U) {
+		return;
+	}
+
+	for (uint32_t ch = 0U; ch < HPPASS_SAR_ADC_MAX_CHANNELS; ch++) {
+		if ((enabled & BIT(ch)) != 0U) {
+			/* channel_setup() always programs the zero default. */
+			sys_write32(0U, ctrl_base + IFX_HPPASS_SAR_CHAN_CFG(ch));
+		}
+	}
+
+	sys_write32(sys_read32(ctrl_base + IFX_HPPASS_SAR_RESULT_MASK) | enabled,
+		    ctrl_base + IFX_HPPASS_SAR_RESULT_MASK);
+	sys_write32(data->samp_gain, ctrl_base + IFX_HPPASS_SAR_SAMP_GAIN);
+}
+#endif /* CONFIG_PM_S2RAM */
+
+/*
+ * DeepSleep retains the SAR config and the MFD parent restores the calibration,
+ * so this child only refuses to suspend mid-conversion.  A full power loss
+ * (S2RAM) reloads the SAR core and replays per-channel state.
+ */
+static int ifx_hppass_sar_adc_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Refuse while a conversion is in flight. */
+		if (Cy_HPPASS_SAR_IsBusy()) {
+			return -EBUSY;
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Config retained; the MFD parent restored the SAR calibration. */
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON: {
+		int ret = ifx_hppass_sar_adc_hw_reinit(dev);
+
+		if (ret != 0) {
+			return ret;
+		}
+		ifx_hppass_sar_adc_replay_channels(dev);
+		break;
+	}
+#endif
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_ADC_ASYNC
 #define ADC_IFX_HPPASS_SAR_DRIVER_API(n)                                                           \
@@ -828,7 +928,9 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 		ADC_CONTEXT_INIT_LOCK(ifx_hppass_sar_adc_data_##n, ctx),                           \
 		ADC_CONTEXT_INIT_SYNC(ifx_hppass_sar_adc_data_##n, ctx),                           \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &ifx_hppass_sar_adc_init, NULL, &ifx_hppass_sar_adc_data_##n,     \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_hppass_sar_adc_pm_action);                                 \
+	DEVICE_DT_INST_DEFINE(n, &ifx_hppass_sar_adc_init, PM_DEVICE_DT_INST_GET(n),               \
+			      &ifx_hppass_sar_adc_data_##n,                                        \
 			      &ifx_hppass_sar_adc_config_##n, POST_KERNEL,                         \
 			      CONFIG_ADC_INFINEON_HPPASS_SAR_INIT_PRIORITY,                        \
 			      &adc_ifx_hppass_sar_driver_api_##n);                                 \
