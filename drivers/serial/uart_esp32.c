@@ -54,9 +54,6 @@
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 #define UHCI0 UHCI
 #endif
-#include <hal/gdma_ll.h>
-#include <hal/gdma_hal.h>
-#include <hal/dma_types.h>
 #include <esp_memory_utils.h>
 #include <soc/soc_caps.h>
 #endif
@@ -738,26 +735,31 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	const struct device *uart_dev = user_data;
 	const struct uart_esp32_config *config = uart_dev->config;
 	struct uart_esp32_data *data = uart_dev->data;
-	gdma_hal_context_t *dma_hal = dma_dev->data;
+	struct dma_status stat;
 	struct uart_event evt = {0};
-	dma_descriptor_t *desc;
 	size_t rx_bytes;
 	unsigned int key = irq_lock();
 
-	/*
-	 * Read actual transferred bytes from DMA descriptor.
-	 * Direct LL calls used because this ISR context requires IRAM-safe code.
-	 * Note: We SET rx_counter (not add) because the UART ISR also increments
-	 * rx_counter on RXFIFO_FULL interrupts, and the DMA descriptor contains
-	 * the authoritative byte count.
+	/* Read the transferred byte count back from the DMA descriptor. The
+	 * driver reports it through dma_get_status(), which resolves the
+	 * descriptor for both the AHB and AXI controllers and reads the
+	 * hardware-written fields through the uncached alias.
+	 * The counter is SET rather than incremented because the UART ISR also
+	 * bumps rx_counter on RXFIFO_FULL interrupts, and the descriptor holds
+	 * the authoritative count.
 	 */
-	desc = (dma_descriptor_t *)gdma_ll_rx_get_success_eof_desc_addr(dma_hal->dev,
-									config->rx_dma_channel / 2);
-	if (desc) {
-		rx_bytes = desc->dw0.length;
+	if (dma_get_status(config->dma_dev, config->rx_dma_channel, &stat) == 0) {
+		rx_bytes = stat.total_copied;
 	} else {
-		/* Fallback to full buffer if descriptor unavailable */
+		/* The channel is not configured; assume the buffer filled */
 		rx_bytes = data->async.rx_len;
+	}
+
+	/* total_copied accumulates across the descriptor list, so clamp it to
+	 * what is left of the buffer before it becomes an event length.
+	 */
+	if (rx_bytes > data->async.rx_len - data->async.rx_offset) {
+		rx_bytes = data->async.rx_len - data->async.rx_offset;
 	}
 
 	data->async.rx_counter = data->async.rx_offset + rx_bytes;
@@ -779,10 +781,9 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 		return;
 	}
 
-	/* Notify RX_RDY */
-	sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-					    data->async.rx_counter - data->async.rx_offset);
-
+	/* Notify RX_RDY. The DMA driver already dropped the cache over the
+	 * buffer before raising the completion.
+	 */
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
 	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
@@ -941,6 +942,14 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	}
 
 	key = irq_lock();
+
+	/* The transfer can be torn down between the work item being scheduled
+	 * and it running, leaving no buffer to report against.
+	 */
+	if (data->async.rx_buf == NULL) {
+		irq_unlock(key);
+		return;
+	}
 
 	/* Update rx_counter with actual DMA progress */
 	data->async.rx_counter = rx_count;
@@ -1104,6 +1113,11 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	data->async.rx_buf = buf;
 	data->async.rx_len = len;
 	data->async.rx_timeout = timeout;
+	/* A previous transfer may have left the window part way through the
+	 * buffer, which would make this one report the wrong offset.
+	 */
+	data->async.rx_counter = 0;
+	data->async.rx_offset = 0;
 
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.dma_callback = uart_esp32_dma_rx_done;
@@ -1126,15 +1140,6 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	uart_hal_set_rxfifo_full_thr(&data->hal, 1);
 	uart_esp32_irq_rx_enable(dev);
 
-	err = dma_start(config->dma_dev, config->rx_dma_channel);
-	if (err) {
-		LOG_ERR("Error starting Rx DMA (%d)", err);
-#ifdef CONFIG_PM
-		uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
-#endif
-		goto unlock;
-	}
-
 	uhci_ll_rx_set_packet_threshold(data->uhci_dev, len);
 
 	/*
@@ -1151,6 +1156,15 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	} else {
 		data->uhci_dev->conf0.len_eof_en = 1;
 		data->uhci_dev->conf0.uart_idle_eof_en = 1;
+	}
+
+	err = dma_start(config->dma_dev, config->rx_dma_channel);
+	if (err) {
+		LOG_ERR("Error starting Rx DMA (%d)", err);
+#ifdef CONFIG_PM
+		uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
+#endif
+		goto unlock;
 	}
 
 	/**
