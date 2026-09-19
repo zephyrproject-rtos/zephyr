@@ -5,10 +5,14 @@ description: |
   Input double tap pseudo-device
 
   Listens for key events as an input and produces key events as output
-  corresponding to double taps.
+  corresponding to double taps, and optionally to single taps.
 
   Can optionally be associated to a specific device to listen for events
   only from that device.
+
+  A single tap is reported once the double tap delay expires without a second
+  press, and only if the key has been released in the meantime, so that holding
+  a key down does not generate a single tap event.
 
 compatible: "zephyr,input-double-tap"
 
@@ -23,6 +27,11 @@ properties:
     required: true
     description: |
       Array of input event key codes (INPUT_KEY_* or INPUT_BTN_*).
+
+  single-tap-codes:
+    type: array
+    description: |
+      Array of key codes to be generated for single taps (INPUT_KEY_* or INPUT_BTN_*).
 
   double-tap-codes:
     type: array
@@ -43,6 +52,7 @@ examples:
             input = <&buttons>;
             compatible = "zephyr,input-double-tap";
             input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
+            single-tap-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
             double-tap-codes = <INPUT_KEY_A>, <INPUT_KEY_B>;
             double-tap-delay-ms = <300>;
     };

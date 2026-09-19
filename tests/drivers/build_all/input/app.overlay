@@ -173,6 +173,7 @@
 			input = <&double_tap>;
 			compatible = "zephyr,input-double-tap";
 			input-codes = <0>;
+			single-tap-codes = <0>;
 			double-tap-codes = <0>;
 			double-tap-delay-ms = <0>;
 		};
