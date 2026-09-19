@@ -39,6 +39,7 @@
 #include "stream_rx.h"
 #include "usb.h"
 #include "hw_codec.h"
+#include "i2s_play.h"
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 	     "Either SCAN_SELF or SCAN_OFFLOAD must be enabled");
@@ -167,11 +168,17 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 	int err;
 
 	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
+#if DT_HAS_ALIAS(i2s_codec_tx) && defined(CONFIG_I2S) && defined(CONFIG_AUDIO_CODEC)
+		if (i2s_play_start(bap_stream->codec_cfg) != 0) {
+			return;
+		}
+#else
 		err = hw_codec_open();
 		if (err != 0) {
 			printk("Audio codec open failed (err %d)\n", err);
 			return;
 		}
+#endif
 	}
 
 	err = bt_iso_chan_get_info(bap_stream->iso, &info);
@@ -205,10 +212,14 @@ static void stream_stopped_cb(struct bt_bap_stream *bap_stream, uint8_t reason)
 	}
 
 	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
+#if DT_HAS_ALIAS(i2s_codec_tx) && defined(CONFIG_I2S) && defined(CONFIG_AUDIO_CODEC)
+		i2s_play_stop();
+#else
 		err = hw_codec_close();
 		if (err != 0) {
 			printk("Audio codec close failed (err %d)\n", err);
 		}
+#endif
 	}
 }
 
@@ -926,6 +937,16 @@ static int init(void)
 	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 		usb_init();
 	}
+
+#if DT_HAS_ALIAS(i2s_codec_tx) && defined(CONFIG_I2S) && defined(CONFIG_AUDIO_CODEC)
+	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
+		err = i2s_play_init();
+		if (err != 0) {
+			printk("i2s initialisation failed (err %d)\n", err);
+			return err;
+		}
+	}
+#endif
 
 	return 0;
 }
