@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Analog Devices Inc.
+ * Copyright (c) 2026 Daniel Kampert
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -581,6 +582,87 @@ static int adxl372_attr_set_odr(const struct device *dev,
 	return ret;
 }
 
+/**
+ * Set the Wake-Up Mode rate from a SENSOR_ATTR_SAMPLING_FREQUENCY value.
+ * Only meaningful while the device is in ADXL372_WAKE_UP mode.
+ * @param dev - The device structure.
+ * @param val - Requested frequency, in Hz.
+ *		Rounded to the slowest supported wake-up rate that is still at
+ *		least this fast: ADXL372_WUR_52ms, ADXL372_WUR_104ms,
+ *		ADXL372_WUR_208ms, ADXL372_WUR_512ms, ADXL372_WUR_2048ms,
+ *		ADXL372_WUR_4096ms, ADXL372_WUR_8192ms, ADXL372_WUR_24576ms.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int adxl372_attr_set_wur(const struct device *dev, const struct sensor_value *val)
+{
+	static const uint16_t wur_period_ms[] = {
+		[ADXL372_WUR_52ms] = 52,     [ADXL372_WUR_104ms] = 104,
+		[ADXL372_WUR_208ms] = 208,   [ADXL372_WUR_512ms] = 512,
+		[ADXL372_WUR_2048ms] = 2048, [ADXL372_WUR_4096ms] = 4096,
+		[ADXL372_WUR_8192ms] = 8192, [ADXL372_WUR_24576ms] = 24576,
+	};
+	struct adxl372_data *data = dev->data;
+	int64_t micro_hz = (int64_t)val->val1 * 1000000LL + val->val2;
+	int64_t period_ms;
+	enum adxl372_wakeup_rate wur = ADXL372_WUR_52ms;
+	int ret;
+
+	if (micro_hz <= 0) {
+		return -EINVAL;
+	}
+
+	/* period_ms = ceil(1000 / freq_hz), with freq_hz = micro_hz / 1e6 */
+	period_ms = (1000000000LL + micro_hz - 1) / micro_hz;
+
+	for (size_t i = ARRAY_SIZE(wur_period_ms) - 1; i >= 0; i--) {
+		if (wur_period_ms[i] <= period_ms) {
+			wur = (enum adxl372_wakeup_rate)i;
+			break;
+		}
+	}
+
+	ret = adxl372_set_wakeup_rate(dev, wur);
+	if (ret == 0) {
+		data->wur = wur;
+	}
+
+	return ret;
+}
+
+/**
+ * Set the mode of operation from a SENSOR_ATTR_CONFIGURATION value.
+ * @param dev - The device structure.
+ * @param val - Mode of operation, in val->val1.
+ *		Accepted values: ADXL372_STANDBY
+ *				 ADXL372_WAKE_UP
+ *				 ADXL372_INSTANT_ON
+ *				 ADXL372_FULL_BW_MEASUREMENT
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int adxl372_attr_set_op_mode(const struct device *dev, const struct sensor_value *val)
+{
+	struct adxl372_data *data = dev->data;
+	enum adxl372_op_mode op_mode = (enum adxl372_op_mode)val->val1;
+	int ret;
+
+	switch (op_mode) {
+	case ADXL372_STANDBY:
+	case ADXL372_WAKE_UP:
+	case ADXL372_INSTANT_ON:
+	case ADXL372_FULL_BW_MEASUREMENT:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	ret = adxl372_set_op_mode(dev, op_mode);
+	if (ret == 0) {
+		data->op_mode = op_mode;
+	}
+
+	return ret;
+}
+
 static int adxl372_attr_set_thresh(const struct device *dev,
 				   enum sensor_channel chan,
 				   enum sensor_attribute attr,
@@ -631,12 +713,19 @@ static int adxl372_attr_set(const struct device *dev,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
+	struct adxl372_data *data = dev->data;
+
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		if (data->op_mode == ADXL372_WAKE_UP) {
+			return adxl372_attr_set_wur(dev, val);
+		}
 		return adxl372_attr_set_odr(dev, chan, attr, val);
 	case SENSOR_ATTR_UPPER_THRESH:
 	case SENSOR_ATTR_LOWER_THRESH:
 		return adxl372_attr_set_thresh(dev, chan, attr, val);
+	case SENSOR_ATTR_CONFIGURATION:
+		return adxl372_attr_set_op_mode(dev, val);
 	default:
 		return -ENOTSUP;
 	}
@@ -763,6 +852,7 @@ static int adxl372_probe(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+	data->wur = cfg->wur;
 
 	ret = adxl372_set_autosleep(dev, cfg->autosleep);
 	if (ret) {
@@ -824,6 +914,7 @@ static int adxl372_probe(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+	data->op_mode = cfg->op_mode;
 
 	return adxl372_set_act_proc_mode(dev, data->act_proc_mode);
 }
@@ -881,31 +972,22 @@ static int adxl372_init(const struct device *dev)
 #define ADXL372_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL372_TRIGGER */
 
-#define ADXL372_CONFIG(inst)								\
-		.bw = DT_INST_PROP(inst, bw),						\
-		.hpf = DT_INST_PROP(inst, hpf),						\
-		.odr = DT_INST_PROP(inst, odr),						\
-		.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),	\
-		.th_mode = ADXL372_INSTANT_ON_LOW_TH,					\
-		.autosleep = false,							\
-		.wur = ADXL372_WUR_52ms,						\
-		.activity_th.thresh = CONFIG_ADXL372_ACTIVITY_THRESHOLD / 100,		\
-		.activity_th.referenced =						\
-			IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE),	\
-		.activity_th.enable = 1,						\
-		.activity_time = CONFIG_ADXL372_ACTIVITY_TIME,				\
-		.inactivity_th.thresh = CONFIG_ADXL372_INACTIVITY_THRESHOLD / 100,	\
-		.inactivity_th.referenced =						\
-			IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE),	\
-		.inactivity_th.enable = 1,						\
-		.inactivity_time = CONFIG_ADXL372_INACTIVITY_TIME,			\
-		.filter_settle = ADXL372_FILTER_SETTLE_370,				\
-		.fifo_config.fifo_mode =						\
-			DT_INST_PROP_OR(inst, fifo_mode, ADXL372_FIFO_BYPASSED),	\
-		.fifo_config.fifo_format = ADXL372_XYZ_FIFO,				\
-		.fifo_config.fifo_samples =						\
-			DT_INST_PROP_OR(inst, fifo_watermark, 0x80),			\
-		.op_mode = ADXL372_FULL_BW_MEASUREMENT,					\
+#define ADXL372_CONFIG(inst)                                                                       \
+	.bw = DT_INST_PROP(inst, bw), .hpf = DT_INST_PROP(inst, hpf),                              \
+	.odr = DT_INST_PROP(inst, odr),                                                            \
+	.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),                       \
+	.th_mode = ADXL372_INSTANT_ON_LOW_TH, .autosleep = false, .wur = ADXL372_WUR_52ms,         \
+	.activity_th.thresh = CONFIG_ADXL372_ACTIVITY_THRESHOLD / 100,                             \
+	.activity_th.referenced = IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE),   \
+	.activity_th.enable = 1, .activity_time = CONFIG_ADXL372_ACTIVITY_TIME,                    \
+	.inactivity_th.thresh = CONFIG_ADXL372_INACTIVITY_THRESHOLD / 100,                         \
+	.inactivity_th.referenced = IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE), \
+	.inactivity_th.enable = 1, .inactivity_time = CONFIG_ADXL372_INACTIVITY_TIME,              \
+	.filter_settle = ADXL372_FILTER_SETTLE_370,                                                \
+	.fifo_config.fifo_mode = DT_INST_PROP_OR(inst, fifo_mode, ADXL372_FIFO_BYPASSED),          \
+	.fifo_config.fifo_format = ADXL372_XYZ_FIFO,                                               \
+	.fifo_config.fifo_samples = DT_INST_PROP_OR(inst, fifo_watermark, 0x80),                   \
+	.op_mode = (enum adxl372_op_mode)DT_INST_PROP(inst, op_mode),
 
 #define ADXL372_CONFIG_SPI(inst)					\
 	{								\
