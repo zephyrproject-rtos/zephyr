@@ -234,6 +234,7 @@ struct dw_dma_chan_data {
 	void *blkuser_data;
 	dma_callback_t dma_tfrcallback;
 	void *tfruser_data;
+	bool error_callback_dis;
 };
 
 /* use array to get burst_elems for specific slot number setting.

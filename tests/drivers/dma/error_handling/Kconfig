@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA Error Handling Test"
+
+source "Kconfig.zephyr"
+
+config TEST_DMA_ERROR_HANDLING
+	bool "Test DMA error handling"
+	default y
+	depends on DMA && DMA_EMUL
