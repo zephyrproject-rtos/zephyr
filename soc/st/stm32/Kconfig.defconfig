@@ -181,7 +181,7 @@ endchoice
 # Use 32-byte alignment for all buffers as required by DMA2D.
 # This conveniently also matches the data cache line size,
 # ensuring safe D$ flush/invalidate operations.
-if DT_HAS_ST_STM32_DMA2D_ENABLED
+if DT_HAS_ST_STM32_DMA2D_ENABLED && LV_USE_DRAW_DMA2D
 
 config LV_ATTRIBUTE_MEM_ALIGN_SIZE
 	default 32
@@ -199,23 +199,22 @@ config LV_DRAW_BUF_ALIGN
 	default 32
 
 # Necessary for the LV_Z_USE_OSAL
-config DYNAMIC_THREAD
+configdefault DYNAMIC_THREAD
 	default y
-config DYNAMIC_THREAD_POOL_SIZE
-	default 1
+configdefault DYNAMIC_THREAD_POOL_SIZE
+	default 1 if !LV_USE_NEMA_GFX
+	default 2 if LV_USE_NEMA_GFX
+
 config DYNAMIC_THREAD_STACK_SIZE
 	default 8192
 
 config LV_Z_USE_OSAL
 	default y
 
-config LV_USE_DRAW_DMA2D
-	default y
-
 config LV_USE_DRAW_DMA2D_INTERRUPT
 	default y
 
-endif # DT_HAS_ST_STM32_DMA2D_ENABLED
+endif # DT_HAS_ST_STM32_DMA2D_ENABLED && LV_USE_DRAW_DMA2D
 
 endif # STM32_LTDC && LVGL
 
