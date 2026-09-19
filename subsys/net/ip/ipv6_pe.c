@@ -217,6 +217,9 @@ static bool ipv6_pe_prefix_update_lifetimes(struct net_if_ipv6 *ipv6,
 	return false;
 }
 
+/* RFC 8981 ch 3.3.2 requires a secret distinct from the stable IID one */
+static psa_key_id_t secret_key_id = PSA_KEY_ID_NULL;
+
 /* RFC 8981 ch 3.3.2 */
 static int gen_temporary_iid(struct net_if *iface,
 			     const struct net_in6_addr *prefix,
@@ -225,14 +228,11 @@ static int gen_temporary_iid(struct net_if *iface,
 			     uint8_t *temporary_iid,
 			     size_t temporary_iid_len)
 {
-	psa_key_id_t key_id;
-	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
 	psa_mac_operation_t mac_op = PSA_MAC_OPERATION_INIT;
+	psa_key_id_t key_id;
 	psa_status_t status;
 	uint8_t digest[32];
 	size_t digest_len;
-	static bool once;
-	static uint8_t secret_key[16]; /* Min 128 bits, RFC 8981 ch 3.3.2 */
 	struct {
 		struct net_in6_addr prefix;
 		uint32_t current_time;
@@ -254,27 +254,9 @@ static int gen_temporary_iid(struct net_if *iface,
 	memcpy(buf.mac, net_if_get_link_addr(iface)->addr,
 	       MIN(sizeof(buf.mac), net_if_get_link_addr(iface)->len));
 
-	if (!once) {
-		/* The secret key must not be guessable, otherwise the
-		 * generated temporary IIDs could be predicted and the
-		 * privacy extension would not provide any protection.
-		 * RFC 8981 ch 3.3.2
-		 */
-		if (sys_csrand_get(secret_key, sizeof(secret_key)) != 0) {
-			NET_ERR("Cannot generate secret key for temporary IID");
-			return -EIO;
-		}
-
-		once = true;
-	}
-
-	psa_set_key_type(&key_attr, PSA_KEY_TYPE_HMAC);
-	psa_set_key_algorithm(&key_attr, PSA_ALG_HMAC(PSA_ALG_SHA_256));
-	psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_SIGN_MESSAGE);
-	status = psa_import_key(&key_attr, secret_key, sizeof(secret_key), &key_id);
-	if (status != PSA_SUCCESS) {
-		NET_DBG("Cannot %s hmac (%d)", "import key", status);
-		goto err;
+	key_id = net_ipv6_iid_key_get(&secret_key_id);
+	if (key_id == PSA_KEY_ID_NULL) {
+		return -EIO;
 	}
 
 	status = psa_mac_sign_setup(&mac_op, key_id, PSA_ALG_HMAC(PSA_ALG_SHA_256));
@@ -299,7 +281,6 @@ static int gen_temporary_iid(struct net_if *iface,
 
 err:
 	psa_mac_abort(&mac_op);
-	psa_destroy_key(key_id);
 
 	return (status == PSA_SUCCESS) ? 0 : -EIO;
 }
