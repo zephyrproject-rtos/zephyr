@@ -1,0 +1,19 @@
+# Kconfig options of the HID Service test
+#
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Test configuration"
+
+config TEST_HIDS_SECURITY_REQUEST
+	bool "The HID Device requests security when a Host connects"
+	default y
+	help
+	  Use the Peripheral Security Request procedure to inform the HID Host
+	  of the security requirements of the HID Device, as recommended by
+	  the HID over GATT Profile. The client side of the test never initiates
+	  pairing, so building the test with this disabled has to make it fail.
+
+endmenu
+
+source "Kconfig.zephyr"
