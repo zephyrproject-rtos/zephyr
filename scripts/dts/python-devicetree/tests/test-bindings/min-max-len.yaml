@@ -27,3 +27,8 @@ properties:
     type: uint8-array
     min-len: 2
     max-len: 4
+
+  interrupts:
+    type: array
+    min-len: 2
+    max-len: 3
