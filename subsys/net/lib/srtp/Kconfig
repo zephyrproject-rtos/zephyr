@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 Sayed Naser Moravej
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SRTP
+	bool "Secure Real-time Transport Protocol (SRTP) [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select LIBSRTP
+	select RTP
+	select RTP_TRANSPORT_SOCKET
+	help
+	  RFC 3711 Secure Real-time Transport Protocol implementation.
+
+if SRTP
+
+module = SRTP
+module-dep = NET_LOG
+module-str = Log level for SRTP
+module-help = Enable logs for the SRTP stack.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_SRTP_KEY
+	string "SRTP master key."
+	default "c1eec3717da76195bb878578790af71c4ee9f859e197a414a78d5abc7451"
+	help
+	  This key in hexadecimal which is used by the application. You can override it in prj.conf
+	  or via menuconfig / guiconfig.
+
+config SRTP_REPLAY_PROTECTION
+	bool "Enable replay protection"
+	default y
+	help
+	  Enable SRTP packet replay protection.
+
+config SRTP_REPLAY_WINDOW_SIZE
+	int "Replay protection window size"
+	default 64
+	range 32 1024
+	depends on SRTP_REPLAY_PROTECTION
+	help
+	  Size of the replay protection window.
+
+config SRTP_MAX_MASTER_KEYS
+	int "Maximum number of master keys"
+	default 4
+	range 1 16
+	help
+	  Maximum number of master keys stored by the SRTP library.
+
+endif # SRTP
