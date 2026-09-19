@@ -16,6 +16,7 @@ menuconfig WIFI_BFLB
 	select WIFI_NM_WPA_SUPPLICANT_WEP
 	select WIFI_NM_WPA_SUPPLICANT_AP
 	select BFLB_WL80211_SHIM
+	select BFLB_PHYRF
 	select NET_SOCKETS
 	help
 	  Enable Bouffalo Lab WiFi driver using the MACSW blob.
