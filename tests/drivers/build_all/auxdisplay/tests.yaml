@@ -2,7 +2,7 @@ common:
   build_only: true
   tags:
     - drivers
-    - rtc
+    - auxdisplay
 tests:
   drivers.auxdisplay.build.gpio:
     extra_args: DTC_OVERLAY_FILE="gpio_devices.overlay"
@@ -32,3 +32,6 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+  drivers.auxdisplay.build.mspm0_lcd:
+    platform_allow:
+      - lp_mspm0l2228
