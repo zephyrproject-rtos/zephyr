@@ -4,9 +4,11 @@
 
 config USBD_MSC_CLASS
 	bool "USB Mass Storage Device class support"
+	select SCSI
 	select DISK_ACCESS
 	help
-	  USB Mass Storage device class support.
+	  USB Mass Storage device class support. Uses the SCSI mid-layer
+	  (subsys/scsi) for shared CDB helpers.
 
 if USBD_MSC_CLASS
 
