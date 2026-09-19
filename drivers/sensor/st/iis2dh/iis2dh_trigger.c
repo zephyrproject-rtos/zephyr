@@ -25,15 +25,16 @@ LOG_MODULE_DECLARE(IIS2DH, CONFIG_SENSOR_LOG_LEVEL);
 static int iis2dh_enable_drdy(const struct device *dev,
 			      enum sensor_trigger_type type, int enable)
 {
-	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	iis2dh_ctrl_reg3_t reg3;
 
 	/* set interrupt for pin INT1 */
-	iis2dh_pin_int1_config_get(iis2dh->ctx, &reg3);
+	iis2dh_pin_int1_config_get(ctx, &reg3);
 
 	reg3.i1_drdy1 = enable;
 
-	return iis2dh_pin_int1_config_set(iis2dh->ctx, &reg3);
+	return iis2dh_pin_int1_config_set(ctx, &reg3);
 }
 
 /**
@@ -45,6 +46,7 @@ int iis2dh_trigger_set(const struct device *dev,
 {
 	struct iis2dh_data *iis2dh = dev->data;
 	const struct iis2dh_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int16_t raw[3];
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
@@ -58,7 +60,7 @@ int iis2dh_trigger_set(const struct device *dev,
 		iis2dh->drdy_trig = trig;
 		if (state) {
 			/* dummy read: re-trigger interrupt */
-			iis2dh_acceleration_raw_get(iis2dh->ctx, raw);
+			iis2dh_acceleration_raw_get(ctx, raw);
 		}
 		return iis2dh_enable_drdy(dev, SENSOR_TRIG_DATA_READY, state);
 	default:
@@ -140,6 +142,7 @@ int iis2dh_init_interrupt(const struct device *dev)
 {
 	struct iis2dh_data *iis2dh = dev->data;
 	const struct iis2dh_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
@@ -177,7 +180,7 @@ int iis2dh_init_interrupt(const struct device *dev)
 	}
 
 	/* enable drdy on int1 in pulse mode */
-	if (iis2dh_int1_pin_notification_mode_set(iis2dh->ctx, IIS2DH_INT1_PULSED)) {
+	if (iis2dh_int1_pin_notification_mode_set(ctx, IIS2DH_INT1_PULSED)) {
 		return -EIO;
 	}
 
