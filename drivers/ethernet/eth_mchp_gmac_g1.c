@@ -987,11 +987,6 @@ static struct net_stats_eth *eth_mchp_get_stats(const struct device *dev,
 	eth_stats->tx_timeout_count = 0;
 	eth_stats->unknown_protocol = 0;
 
-#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
-	eth_stats->vendor.key = NULL;
-	eth_stats->vendor.value = 0;
-#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
-
 	return eth_stats;
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
