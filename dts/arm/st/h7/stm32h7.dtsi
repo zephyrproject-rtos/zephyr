@@ -50,13 +50,13 @@
 	};
 
 	itcm: memory@0 {
-		compatible = "zephyr,memory-region", "arm,itcm";
+		compatible = "zephyr,memory-region", "arm,itcm-ecc";
 		reg = <0x00000000 DT_SIZE_K(64)>;
 		zephyr,memory-region = "ITCM";
 	};
 
 	dtcm: memory@20000000 {
-		compatible = "zephyr,memory-region", "arm,dtcm";
+		compatible = "zephyr,memory-region", "arm,dtcm-ecc";
 		reg = <0x20000000 DT_SIZE_K(128)>;
 		zephyr,memory-region = "DTCM";
 	};

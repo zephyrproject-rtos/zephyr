@@ -26,6 +26,9 @@ GDATA(z_main_stack)
 #if defined(CONFIG_DEBUG_THREAD_INFO)
 GDATA(z_sys_post_kernel)
 #endif
+#if defined(CONFIG_CPU_HAS_TCM_ECC)
+GTEXT(cpu_tcm_init)
+#endif
 #if defined(CONFIG_SOC_RESET_HOOK)
 GTEXT(soc_reset_hook)
 #endif
@@ -161,6 +164,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #if defined(CONFIG_SOC_RESET_HOOK)
     bl soc_reset_hook
+#endif
+
+#if defined(CONFIG_CPU_HAS_TCM_ECC)
+    bl cpu_tcm_init
 #endif
 
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
