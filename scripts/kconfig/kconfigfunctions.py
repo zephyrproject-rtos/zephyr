@@ -12,6 +12,8 @@ import re
 import sys
 from pathlib import Path
 
+import kconfiglib
+
 ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
                                 "python-devicetree", "src"))
@@ -1435,3 +1437,34 @@ functions = {
         "dec": (inc_dec, 1, 255),
         "dec_hex": (inc_dec, 1, 255),
 }
+
+
+# Prompt suffixes for symbols that select one of these marker symbols. The
+# markers are defined in Kconfig.zephyr and share/sysbuild/Kconfig. The order
+# of the tuple is the order of the suffixes in the prompt.
+_PROMPT_TAGS = (
+    ("EXPERIMENTAL", "[EXPERIMENTAL]"),
+    ("DEPRECATED", "[DEPRECATED]"),
+)
+
+
+def prompt_hook(kconf, node, prompt):
+    """
+    Called by kconfiglib for every menu node with a prompt once the Kconfig
+    tree is parsed. Appends " [EXPERIMENTAL]" and " [DEPRECATED]" to the prompt
+    of symbols that select EXPERIMENTAL and DEPRECATED, unless the prompt
+    already contains the tag. The selection is what marks a symbol; the tag in
+    the prompt is derived from it.
+    """
+    sym = node.item
+    if not isinstance(sym, kconfiglib.Symbol):
+        return prompt
+
+    for marker, tag in _PROMPT_TAGS:
+        marker_sym = kconf.syms.get(marker)
+        if marker_sym is None or tag in prompt:
+            continue
+        if any(target is marker_sym for target, _, _ in sym.selects):
+            prompt += " " + tag
+
+    return prompt

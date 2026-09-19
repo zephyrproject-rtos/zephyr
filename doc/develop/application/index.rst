@@ -661,8 +661,9 @@ Experimental features
 ~~~~~~~~~~~~~~~~~~~~~
 
 Zephyr is a project under constant development and thus there are features that
-are still in early stages of their development cycle. Such features will be
-marked ``[EXPERIMENTAL]`` in their Kconfig title.
+are still in early stages of their development cycle. Such features select
+:kconfig:option:`CONFIG_EXPERIMENTAL`, and their Kconfig prompt is shown with an
+``[EXPERIMENTAL]`` suffix in the configuration tools and in the documentation.
 
 The :kconfig:option:`CONFIG_WARN_EXPERIMENTAL` setting can be used to enable warnings
 at CMake configure time if any experimental feature is enabled.
