@@ -235,7 +235,7 @@
 		compatible = "realtek,rtl8211f";
 		reg = <2>;
 		int-gpios = <&ioportc 13 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&ioport8 13 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&ioport8 13 GPIO_ACTIVE_LOW>;
 		realtek,rgmii-delay = "rxid";
 		status = "okay";
 	};
@@ -260,7 +260,7 @@
 		compatible = "realtek,rtl8211f";
 		reg = <1>;
 		int-gpios = <&ioport1 7 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&ioporta 10 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&ioporta 10 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
 };
