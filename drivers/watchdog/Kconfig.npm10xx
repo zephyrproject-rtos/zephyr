@@ -16,4 +16,4 @@ config WDT_NPM10XX_INIT_PRIORITY
 	default 85
 	help
 	  Initialization priority for the nPM10xx Watchdog driver.
-	  It must be greater than MFD_NPM10XX_INIT_PRIORITY.
+	  It must be greater than MFD_INIT_PRIORITY.
