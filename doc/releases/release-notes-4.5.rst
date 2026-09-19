@@ -1955,6 +1955,9 @@ Libraries / Subsystems
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
+  * The native SX126x driver now implements Channel Activity Detection
+    (:c:func:`lora_cad`, :c:func:`lora_cad_async`), including Listen Before
+    Talk on send and a CAD gate on receive.
 
 * Management
 
