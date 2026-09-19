@@ -813,9 +813,6 @@ static int adin2111_read_tx_space(const struct device *dev, uint32_t *space)
 static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct adin2111_port_config *cfg = dev->config;
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	struct adin2111_port_data *data = dev->data;
-#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 	const struct device *adin = cfg->adin;
 	struct adin2111_data *ctx = cfg->adin->data;
 	size_t pkt_len = net_pkt_get_len(pkt);
