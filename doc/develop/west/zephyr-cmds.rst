@@ -77,9 +77,8 @@ Software bill of materials: ``west spdx``
 
 This command generates a Software Bill of Materials (SBOM) for a Zephyr build as a set of `SPDX`_
 documents. It records the source files that went into the build, the build artifacts they produced,
-and the relationships between them. ``SPDX-License-Identifier`` comments found in source files are
-scanned and filled into the documents, together with file hashes and (best-effort) copyright
-notices.
+and the relationships between them. The license and copyright of every file are scanned and filled
+into the documents, together with file hashes.
 
 .. _west-spdx-versions:
 
@@ -151,13 +150,18 @@ For SPDX 3.0, every document declares conformance to the Core, Software and Simp
 profiles, and :file:`build.jsonld` additionally declares the :ref:`Build profile
 <west-spdx-build-profile>` that captures how the artifacts were produced.
 
-Each file in the bill-of-materials is scanned, so that its hashes (SHA256, SHA1, and MD5)
-can be recorded, along with any detected licenses if an
-``SPDX-License-Identifier`` comment appears in the file.
+Every file in the bill-of-materials is scanned so that its hashes (SHA256, SHA1 and MD5) can be
+recorded, together with its license and copyright.
 
-Copyright notices are extracted using the third-party :command:`reuse` tool from the REUSE group.
-When found, these notices are added to SPDX documents as ``FileCopyrightText`` fields (SPDX 2.x)
-or copyright properties (SPDX 3.0).
+Both are resolved with the third-party :command:`reuse` tool from the REUSE group, so ``west spdx``
+honours every way the `REUSE specification`_ allows them to be declared: an
+``SPDX-License-Identifier`` and ``SPDX-FileCopyrightText`` comment in the file itself, a
+:file:`.license` file sitting next to it, or a :file:`REUSE.toml` at the root of the repository
+annotating whole sets of paths at once. That last form is the only way to license a file that
+cannot hold a comment of its own, binary blobs in particular.
+
+What is found is written out as ``LicenseInfoInFile``, ``LicenseConcluded`` and
+``FileCopyrightText`` (SPDX 2.x), or as the element's license and copyright properties (SPDX 3.0).
 
 .. note::
    Copyright extraction uses heuristics that may not capture complete notice text, so
@@ -236,6 +240,8 @@ Command-line options
    The generation of SBOM documents for the ``native_sim`` platform is currently not supported.
 
 .. _SPDX: https://spdx.dev/
+
+.. _REUSE specification: https://reuse.software/spec/
 
 .. _SPDX 3.0 Build profile:
    https://spdx.github.io/spdx-spec/v3.0.1/model/Build/Build/
