@@ -6,6 +6,7 @@
  * @file zephyr/dsp/basicmath_f16.h
  *
  * @brief Public APIs for DSP basicmath for 16 bit floating point
+ * @ingroup math_dsp_basic
  */
 
 #ifndef ZEPHYR_INCLUDE_DSP_BASICMATH_F16_H_
