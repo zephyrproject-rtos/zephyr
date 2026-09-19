@@ -19,8 +19,6 @@ void __weak arch_cpu_idle(void)
 
 void __weak arch_cpu_atomic_idle(unsigned int key)
 {
-	sys_trace_idle();
+	/* No WAIT: a request taken right after ENABLE would be missed */
 	irq_unlock(key);
-
-	__asm volatile("wait");
 }
