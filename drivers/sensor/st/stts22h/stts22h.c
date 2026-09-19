@@ -256,7 +256,8 @@ static int stts22h_init(const struct device *dev)
 		.temp_lo = DT_INST_PROP(inst, temperature_lo_threshold),			\
 		.odr = DT_INST_PROP(inst, sampling_rate),					\
 		IF_ENABLED(CONFIG_STTS22H_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),	\
+			    .int_mode = DT_INST_PROP(inst, int_gpio_config),))			\
 	};											\
 												\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, stts22h_init, NULL,					\
