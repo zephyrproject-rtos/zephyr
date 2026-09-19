@@ -926,6 +926,18 @@ static ssize_t packet_sock_write_vmeth(void *obj, const void *buffer,
 	return zpacket_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
+static int packet_sock_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+					  struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	return sock_fd_op_vtable.fd_vtable.poll_prepare(obj, pfd, pev, pev_end);
+}
+
+static int packet_sock_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+					 struct k_poll_event **pev)
+{
+	return sock_fd_op_vtable.fd_vtable.poll_update(obj, pfd, pev);
+}
+
 static int packet_sock_ioctl_vmeth(void *obj, unsigned int request,
 				   va_list args)
 {
@@ -1015,6 +1027,8 @@ static const struct fd_op_vtable packet_sock_fd_vtable = {
 	.write = packet_sock_write_vmeth,
 	.close2 = packet_sock_close2_vmeth,
 	.ioctl = packet_sock_ioctl_vmeth,
+	.poll_prepare = packet_sock_poll_prepare_vmeth,
+	.poll_update = packet_sock_poll_update_vmeth,
 };
 
 static const struct socket_op_vtable packet_sock_fd_op_vtable = {

@@ -901,12 +901,48 @@ pollin_done:
 	return res;
 }
 
+static int spair_poll_prepare(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev,
+			      struct k_poll_event *pev_end)
+{
+	int res;
+	struct spair *const spair = (struct spair *)obj;
+
+	if (spair == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	res = k_sem_take(&spair->sem, K_FOREVER);
+	__ASSERT(res == 0, "failed to take local sem: %d", res);
+
+	res = zsock_poll_prepare_ctx(spair, pfd, pev, pev_end);
+	k_sem_give(&spair->sem);
+
+	return res;
+}
+
+static int spair_poll_update(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	int res;
+	struct spair *const spair = (struct spair *)obj;
+
+	if (spair == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	res = k_sem_take(&spair->sem, K_FOREVER);
+	__ASSERT(res == 0, "failed to take local sem: %d", res);
+
+	res = zsock_poll_update_ctx(spair, pfd, pev);
+	k_sem_give(&spair->sem);
+
+	return res;
+}
+
 static int spair_ioctl(void *obj, unsigned int request, va_list args)
 {
 	int res;
-	struct zsock_pollfd *pfd;
-	struct k_poll_event **pev;
-	struct k_poll_event *pev_end;
 	int flags = 0;
 	bool have_local_sem = false;
 	struct spair *const spair = (struct spair *)obj;
@@ -962,23 +998,6 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 			*nbytes = spair_read_avail(spair);
 
 			res = 0;
-			goto out;
-		}
-
-		case ZFD_IOCTL_POLL_PREPARE: {
-			pfd = va_arg(args, struct zsock_pollfd *);
-			pev = va_arg(args, struct k_poll_event **);
-			pev_end = va_arg(args, struct k_poll_event *);
-
-			res = zsock_poll_prepare_ctx(obj, pfd, pev, pev_end);
-			goto out;
-		}
-
-		case ZFD_IOCTL_POLL_UPDATE: {
-			pfd = va_arg(args, struct zsock_pollfd *);
-			pev = va_arg(args, struct k_poll_event **);
-
-			res = zsock_poll_update_ctx(obj, pfd, pev);
 			goto out;
 		}
 
@@ -1183,6 +1202,8 @@ static const struct socket_op_vtable spair_fd_op_vtable = {
 		.write = spair_write,
 		.close2 = spair_close,
 		.ioctl = spair_ioctl,
+		.poll_prepare = spair_poll_prepare,
+		.poll_update = spair_poll_update,
 	},
 	.bind = spair_bind,
 	.connect = spair_connect,

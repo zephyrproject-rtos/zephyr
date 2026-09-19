@@ -1886,6 +1886,17 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 	return 0;
 }
 
+static int sock_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev,
+				   struct k_poll_event *pev_end)
+{
+	return zsock_poll_prepare_ctx(obj, pfd, pev, pev_end);
+}
+
+static int sock_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	return zsock_poll_update_ctx(obj, pfd, pev);
+}
+
 static enum tcp_conn_option get_tcp_option(int optname)
 {
 	switch (optname) {
@@ -3637,6 +3648,8 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 		.write = sock_write_vmeth,
 		.close2 = sock_close2_vmeth,
 		.ioctl = sock_ioctl_vmeth,
+		.poll_prepare = sock_poll_prepare_vmeth,
+		.poll_update = sock_poll_update_vmeth,
 	},
 	.shutdown = sock_shutdown_vmeth,
 	.bind = sock_bind_vmeth,
