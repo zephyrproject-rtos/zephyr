@@ -325,11 +325,20 @@ config SRAM_BASE_ADDRESS
 config XIP
 	bool "Execute in place"
 	help
-	  This option allows zephyr to operate with its text and read-only
-	  sections residing in ROM (or similar read-only memory). Not all boards
-	  support this option so it must be used with care; you must also
-	  supply a linker command file when building your image. Enabling this
-	  option increases both the code and data footprint of the image.
+	  Execute application code directly from non-volatile storage
+	  (e.g. Flash/MRAM) without copying it to RAM first. Not all targets
+	  support this option, so it must be used with care.
+
+	  When enabled, the linker aligns Load Memory Addresses (LMA) with Virtual
+	  Memory Addresses (VMA) for code (.text) and read-only data (.rodata)
+	  sections, so they are fetched directly from their storage location.
+	  Mutable initialized data (.data) is still copied to RAM during
+	  early boot sequence. This reduces RAM usage at the cost of slower
+	  execution compared to running from RAM.
+
+	  Applications that are relocated to RAM before being run (such as
+	  those built for RAM-loading bootloader modes) should have this
+	  option disabled.
 
 
 if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX || HEXAGON || TRICORE
