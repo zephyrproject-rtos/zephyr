@@ -1,0 +1,8 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+name: nxp-wifi-hosted-mcu
+description: |
+  Enables NXP Wi-Fi configuration for hosted MCU.
+append:
+  EXTRA_CONF_FILE: nxp-wifi-hosted-mcu.conf

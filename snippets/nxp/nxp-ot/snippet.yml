@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+name: nxp-ot
+description: Enables NXP OpenThread support.
+append:
+  EXTRA_CONF_FILE: nxp-ot.conf
+
+boards:
+  /.*rw612.*/:
+    append:
+      EXTRA_CONF_FILE: boards/rw612.conf
+  /.*mcxw72.*/:
+    append:
+      EXTRA_CONF_FILE: boards/mcxw72.conf
