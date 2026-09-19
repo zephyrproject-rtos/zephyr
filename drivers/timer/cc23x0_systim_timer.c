@@ -52,7 +52,7 @@ static int sys_clock_driver_init(void);
 /*
  * Set system clock timeout.
  */
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -67,7 +67,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC) = now_tick + timeout;
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	/* Get current value as early as possible */
 	uint32_t current_systim_count = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
@@ -101,7 +101,7 @@ void systim_isr(const void *arg)
 		elapsed_systim = (UINT32_MAX - last_systim_count) + current_systim_count;
 	}
 
-	int32_t elapsed_ticks = elapsed_systim / TICK_PERIOD_MICRO_SEC;
+	sys_clock_ticks_t elapsed_ticks = elapsed_systim / TICK_PERIOD_MICRO_SEC;
 
 	sys_clock_announce(elapsed_ticks);
 
