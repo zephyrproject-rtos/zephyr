@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Arkadiusz Grzelka
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.lsm6dsl:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - native_sim
