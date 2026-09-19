@@ -195,7 +195,6 @@ struct bt_mesh_dfu_srv {
 		uint8_t idx;
 		uint16_t timeout_base;
 		uint16_t meta;
-		bool self_update;
 	} update;
 	/** @endcond */
 };

@@ -915,12 +915,16 @@ static void dfd_srv_find_cb(const struct bt_mesh_model *mod,
 	}
 }
 
-void bt_mesh_dfd_srv_self_applied(void)
+void bt_mesh_dfd_srv_self_applied(struct bt_mesh_dfu_srv *dfu_srv)
 {
 	struct bt_mesh_dfd_srv *srv = NULL;
 
 	bt_mesh_model_foreach(dfd_srv_find_cb, &srv);
 	if (!srv || srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE) {
+		return;
+	}
+
+	if (self_target_dfu_srv(srv) != dfu_srv) {
 		return;
 	}
 
@@ -1194,7 +1198,10 @@ static int dfd_srv_model_start(const struct bt_mesh_model *mod)
 		struct bt_mesh_dfu_srv *dfu_srv = self_target_dfu_srv(srv);
 
 		if (dfu_srv && dfu_srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
-			bt_mesh_dfu_srv_applied(dfu_srv);
+			/* Settle the phase without notifying, so the Confirm
+			 * step below decides the outcome.
+			 */
+			bt_mesh_dfu_srv_apply_settle(dfu_srv);
 		}
 	}
 

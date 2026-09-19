@@ -292,12 +292,12 @@ static int target_dfu_apply(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_df
 
 	ASSERT_TRUE(expect_dfu_apply);
 
-	if (self_update_apply_err && srv->update.self_update) {
+	if (self_update_apply_err) {
 		k_sem_give(&dfu_ended);
 		return -EIO;
 	}
 
-	if (self_update_apply_fail && srv->update.self_update) {
+	if (self_update_apply_fail) {
 		/* Emulate power loss before the image swap: unlike the
 		 * self_update_reboot_emulation path below, target_fw_ver_curr
 		 * is deliberately NOT bumped, so the node keeps reporting the
@@ -307,7 +307,7 @@ static int target_dfu_apply(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_df
 		return 0;
 	}
 
-	if (self_update_reboot_emulation && srv->update.self_update) {
+	if (self_update_reboot_emulation) {
 		/* Simulate reboot in the middle of self-update apply:
 		 * install the new firmware image (bump the reported FWID) but
 		 * do NOT call bt_mesh_dfu_srv_applied(). The DFU Server's
