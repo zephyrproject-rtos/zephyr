@@ -171,7 +171,7 @@ static void cmsdk_apb_timer_isr(const void *arg)
 	}
 
 	cfg->timer->intclear = TIMER_CTRL_INT_CLEAR;
-	NVIC_ClearPendingIRQ(TIMER_IRQ);
+	k_irq_clear_pending(TIMER_IRQ);
 	sys_clock_announce_locked(ticks, key);
 }
 
