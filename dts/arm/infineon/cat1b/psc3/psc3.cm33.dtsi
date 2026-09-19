@@ -1,9 +1,8 @@
 /*
- * copyright (c) (2016-2025), Cypress Semiconductor Corporation
- * (an Infineon company) or an affiliate of Cypress Semiconductor Corporation.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
- *
  */
 
 #include <arm/armv8-m.dtsi>
@@ -18,22 +17,55 @@
 			compatible = "arm,cortex-m33";
 			reg = <0>;
 			clock-frequency = <180000000>;
-			cpu-power-states = <&sleep &deepsleep>;
+			cpu-power-states = <&sleep &deepsleep &deepsleep_ram>;
 		};
 
 		power-states {
 			sleep: sleep {
 				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				min-residency-us = <1000000>;
+				power-state-name = "runtime-idle";
+				min-residency-us = <0>;
 			};
 
 			deepsleep: deepsleep {
 				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100>;
+				exit-latency-us = <20>;
+			};
+
+			deepsleep_ram: deepsleep_ram {
+				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
 				min-residency-us = <2000000>;
+				exit-latency-us = <2000>;
+				status = "disabled";
+			};
+
+			deepsleep_off: deepsleep_off {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				substate-id = <1>;
+				status = "disabled";
+			};
+
+			hibernate: hibernate {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				substate-id = <0>;
+				status = "disabled";
 			};
 		};
+	};
+
+	/*
+	 * Dedicated Hibernate wakeup sources.  Disabled by default; a board or
+	 * application enables this node and selects the trigger(s) it needs.  The
+	 * The pin-to-pad mapping is fixed in silicon: PIN0 = P2.0, PIN1 = P9.0.
+	 */
+	hibernate_wakeup: hibernate-wakeup {
+		compatible = "infineon,hibernate-wakeup";
+		status = "disabled";
 	};
 };
 
