@@ -539,13 +539,21 @@ is made within the init function:
    {
       ...
       /* Write some data to the MMIO region */
-      sys_write32(0xDEADBEEF, DEVICE_MMIO_GET(dev));
+      DEVICE_MMIO_WRITE32(dev, 0, 0xDEADBEEF);
       ...
    }
 
 The particular expansion of these macros depends on configuration. On
 a device with no MMU or PCI-e, ``DEVICE_MMIO_MAP`` and
 ``DEVICE_MMIO_RAM`` expand to nothing.
+
+The ``DEVICE_MMIO_READ*``, ``DEVICE_MMIO_WRITE*`` and ``DEVICE_MMIO_*_BIT*``
+macros combine ``DEVICE_MMIO_GET()`` with the corresponding ``sys_io.h``
+accessor (:c:func:`sys_read32`, :c:func:`sys_write32`, :c:func:`sys_set_bit`
+and so on), taking the device and a register offset from the start of the
+region. ``DEVICE_MMIO_NAMED_*`` and
+``DEVICE_MMIO_TOPLEVEL_*`` variants exist for the named and top-level regions
+described below.
 
 Device Model Drivers with multiple MMIO regions
 ===============================================
@@ -601,8 +609,8 @@ For example:
    {
       ...
       /* Write some data to the MMIO regions */
-      sys_write32(0xDEADBEEF, DEVICE_MMIO_GET(dev, grault));
-      sys_write32(0xF0CCAC1A, DEVICE_MMIO_GET(dev, corge));
+      DEVICE_MMIO_NAMED_WRITE32(dev, grault, 0, 0xDEADBEEF);
+      DEVICE_MMIO_NAMED_WRITE32(dev, corge, 0, 0xF0CCAC1A);
       ...
    }
 
@@ -660,7 +668,7 @@ for example:
 
    void some_function(...)
       ...
-      sys_write32(DEVICE_MMIO_TOPLEVEL_GET(my_regs), 0xDEADBEEF);
+      DEVICE_MMIO_TOPLEVEL_WRITE32(my_regs, 0, 0xDEADBEEF);
       ...
    }
 
