@@ -32,9 +32,17 @@ LOG_MODULE_REGISTER(net_test, CONFIG_SOCKS_LOG_LEVEL);
 
 #define DEST_PORT 4242
 
+/* What the destination "sends" once the proxy has relayed the connection. The
+ * client must see exactly this and nothing else, whatever the reply looked
+ * like on the wire.
+ */
+#define TEST_PAYLOAD "socks5-payload"
+#define TEST_PAYLOAD_LEN (sizeof(TEST_PAYLOAD) - 1)
+
 #define PROXY_STACK_SIZE 2048
 #define PROXY_RECV_TIMEOUT_US 300000
 #define PROXY_DONE_TIMEOUT K_SECONDS(2)
+#define THREAD_SETTLE_MS 50
 
 /* VER + CMD + RSV + ATYP, then the address and the port */
 #define REQUEST_IPV4_SIZE (4 + 4 + 2)
@@ -65,10 +73,89 @@ static int client_sock = -1;
  */
 static bool proxy_reject_auth;
 
+/* How the proxy puts the CONNECT reply on the wire. The reply carries a bound
+ * address whose length depends on its address type, and a proxy is free to
+ * split it across segments or to pack relayed data in behind it, so the client
+ * has to consume exactly the reply and no more.
+ */
+enum proxy_reply_mode {
+	PROXY_REPLY_IPV4,	/* 10 bytes, one write */
+	PROXY_REPLY_IPV6,	/* 22 bytes, one write */
+	PROXY_REPLY_DOMAIN,	/* variable length bound address */
+	PROXY_REPLY_SPLIT,	/* header first, bound address in a later segment */
+	PROXY_REPLY_COALESCED,	/* reply and relayed data in one write */
+};
+
+static enum proxy_reply_mode proxy_reply_mode;
+
+/* Send TEST_PAYLOAD after the reply, as the destination would */
+static bool proxy_send_payload;
+
 /* Each test uses its own proxy port so that a lingering TCP connection from
  * the previous test cannot make bind() fail.
  */
 static uint16_t proxy_port = 1080;
+
+/* Build and send the CONNECT reply the way the current mode asks for. The
+ * bound address is all zeroes; only its length and framing matter here.
+ */
+static void proxy_send_reply(int sock)
+{
+	uint8_t rsp[4 + 1 + 8 + 2 + TEST_PAYLOAD_LEN];
+	size_t len = 4;
+	int nodelay = 1;
+
+	rsp[0] = SOCKS5_PKT_MAGIC;
+	rsp[1] = SOCKS5_CMD_RESP_SUCCESS;
+	rsp[2] = SOCKS5_PKT_RSV;
+
+	switch (proxy_reply_mode) {
+	case PROXY_REPLY_IPV6:
+		rsp[3] = SOCKS5_ATYP_IPV6;
+		len += 16 + 2;
+		break;
+	case PROXY_REPLY_DOMAIN:
+		rsp[3] = SOCKS5_ATYP_DOMAINNAME;
+		rsp[4] = 8;
+		len += 1 + 8 + 2;
+		break;
+	default:
+		rsp[3] = SOCKS5_ATYP_IPV4;
+		len += 4 + 2;
+		break;
+	}
+
+	if (proxy_reply_mode != PROXY_REPLY_DOMAIN) {
+		memset(&rsp[4], 0, len - 4);
+	} else {
+		memset(&rsp[5], 0, len - 5);
+	}
+
+	if (proxy_reply_mode == PROXY_REPLY_COALESCED) {
+		memcpy(&rsp[len], TEST_PAYLOAD, TEST_PAYLOAD_LEN);
+		(void)zsock_send(sock, rsp, len + TEST_PAYLOAD_LEN, 0);
+		return;
+	}
+
+	if (proxy_reply_mode == PROXY_REPLY_SPLIT) {
+		/* Put the header and the bound address in separate segments,
+		 * which is what a proxy that writes them separately produces.
+		 */
+		(void)zsock_setsockopt(sock, NET_IPPROTO_TCP,
+				       ZSOCK_TCP_NODELAY, &nodelay,
+				       sizeof(nodelay));
+		(void)zsock_send(sock, rsp, 4, 0);
+		k_msleep(THREAD_SETTLE_MS);
+		(void)zsock_send(sock, &rsp[4], len - 4, 0);
+	} else {
+		(void)zsock_send(sock, rsp, len, 0);
+	}
+
+	if (proxy_send_payload) {
+		k_msleep(THREAD_SETTLE_MS);
+		(void)zsock_send(sock, TEST_PAYLOAD, TEST_PAYLOAD_LEN, 0);
+	}
+}
 
 static void proxy_thread_fn(void *p1, void *p2, void *p3)
 {
@@ -77,10 +164,6 @@ static void proxy_thread_fn(void *p1, void *p2, void *p3)
 	};
 	static const uint8_t method_rsp_reject[] = {
 		SOCKS5_PKT_MAGIC, SOCKS5_AUTH_METHOD_NONEG
-	};
-	static const uint8_t cmd_rsp[] = {
-		SOCKS5_PKT_MAGIC, SOCKS5_CMD_RESP_SUCCESS, SOCKS5_PKT_RSV,
-		SOCKS5_ATYP_IPV4, 0, 0, 0, 0, 0, 0
 	};
 	struct timeval timeo = {
 		.tv_sec = 0,
@@ -129,7 +212,7 @@ static void proxy_thread_fn(void *p1, void *p2, void *p3)
 	ret = zsock_recv(sock, proxy.cmd_req, sizeof(proxy.cmd_req), 0);
 	if (ret > 0) {
 		proxy.cmd_req_len = ret;
-		(void)zsock_send(sock, cmd_rsp, sizeof(cmd_rsp), 0);
+		proxy_send_reply(sock);
 	}
 
 close:
@@ -428,6 +511,92 @@ ZTEST(net_socks5, test_proxy_rejects_auth)
 		      "negotiation", proxy.cmd_req_len);
 }
 
+/* After a successful CONNECT the socket carries the relayed stream and nothing
+ * else. Whatever the bound address in the reply looked like must not show up
+ * here, and data the proxy sent must not have been dropped with it.
+ */
+static void expect_payload_only(void)
+{
+	struct timeval timeo = {
+		.tv_sec = 0,
+		.tv_usec = PROXY_RECV_TIMEOUT_US,
+	};
+	uint8_t buf[64];
+	int ret;
+
+	(void)zsock_setsockopt(client_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO,
+			       &timeo, sizeof(timeo));
+
+	ret = zsock_recv(client_sock, buf, sizeof(buf), 0);
+	zassert_equal(ret, (int)TEST_PAYLOAD_LEN,
+		      "received %d bytes, expected %d", ret,
+		      (int)TEST_PAYLOAD_LEN);
+	zexpect_mem_equal(buf, TEST_PAYLOAD, TEST_PAYLOAD_LEN,
+			  "relayed data does not match");
+}
+
+static void connect_through_proxy_v4(void)
+{
+	struct net_sockaddr_in dest;
+	int ret;
+
+	proxy_setup_v4();
+	make_dest_v4(&dest);
+
+	ret = zsock_connect(client_sock, (struct net_sockaddr *)&dest,
+			    sizeof(dest));
+	zassert_equal(ret, 0, "connect failed (%d)", errno);
+}
+
+/* The reply header and its bound address arrive in separate segments. The
+ * bound address bytes belong to the reply, not to the stream.
+ */
+ZTEST(net_socks5, test_reply_split)
+{
+	proxy_reply_mode = PROXY_REPLY_SPLIT;
+	proxy_send_payload = true;
+
+	connect_through_proxy_v4();
+	expect_payload_only();
+	proxy_wait();
+}
+
+/* The proxy packs the relayed data in behind the reply. Consuming the reply
+ * must not take the data with it.
+ */
+ZTEST(net_socks5, test_reply_coalesced)
+{
+	proxy_reply_mode = PROXY_REPLY_COALESCED;
+
+	connect_through_proxy_v4();
+	expect_payload_only();
+	proxy_wait();
+}
+
+/* An IPv6 bound address makes the reply 22 bytes rather than 10 */
+ZTEST(net_socks5, test_reply_bnd_ipv6)
+{
+	proxy_reply_mode = PROXY_REPLY_IPV6;
+	proxy_send_payload = true;
+
+	connect_through_proxy_v4();
+	expect_payload_only();
+	proxy_wait();
+}
+
+/* RFC 1928 allows a domain name as the bound address, so its length is only
+ * known after the length byte has been read.
+ */
+ZTEST(net_socks5, test_reply_bnd_domain)
+{
+	proxy_reply_mode = PROXY_REPLY_DOMAIN;
+	proxy_send_payload = true;
+
+	connect_through_proxy_v4();
+	expect_payload_only();
+	proxy_wait();
+}
+
 static void before(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -435,6 +604,8 @@ static void before(void *arg)
 	memset(&proxy, 0, sizeof(proxy));
 	k_sem_reset(&proxy_done);
 	proxy_reject_auth = false;
+	proxy_reply_mode = PROXY_REPLY_IPV4;
+	proxy_send_payload = false;
 
 	proxy_port++;
 }
