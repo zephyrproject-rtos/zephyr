@@ -7,6 +7,7 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 
 #include <hal_ch32fun.h>
@@ -14,7 +15,6 @@
 struct uart_wch_config {
 	UART_TypeDef *regs;
 	const struct pinctrl_dev_config *pin_cfg;
-	uint32_t clock_frequency;
 	uint32_t current_speed;
 	uint8_t parity;
 	uint8_t stop_bits;
@@ -23,6 +23,8 @@ struct uart_wch_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
+	const struct device *clock_dev;
+	uint8_t clock_id;
 };
 
 struct uart_wch_data {
@@ -30,23 +32,41 @@ struct uart_wch_data {
 	void *user_data;
 };
 
-static uint16_t uart_wch_get_baud_rate_divisor_latch(const struct uart_wch_config *config)
+static int uart_wch_get_baud_rate_divisor_latch(const struct device *dev, uint32_t *rate)
 {
-	uint32_t dl;
+	const struct uart_wch_config *config = dev->config;
+	uint32_t dl, sys_freq;
+	clock_control_subsys_t clock_sys;
+	int err;
+
+	clock_sys = (clock_control_subsys_t)(uintptr_t)config->clock_id;
+	err = clock_control_get_rate(config->clock_dev, clock_sys, &sys_freq);
+	if (err != 0) {
+		return err;
+	}
 
 	/* Compute divisor latch value rounded to nearest integer */
-	dl = 20 * config->clock_frequency / config->prescaler_divisor / 16 / config->current_speed;
+	dl = 20 * sys_freq / config->prescaler_divisor / 16 / config->current_speed;
 	dl = (dl + 5) / 10;
+	*rate = dl;
 
-	return (uint16_t)dl;
+	return 0;
 }
 
 static int uart_wch_init(const struct device *dev)
 {
 	const struct uart_wch_config *config = dev->config;
 	UART_TypeDef *regs = config->regs;
-	int err;
+	clock_control_subsys_t clock_sys;
 	uint8_t lcr = config->regs->LCR;
+	uint32_t dl;
+	int err;
+
+	clock_sys = (clock_control_subsys_t)(uintptr_t)config->clock_id;
+	err = clock_control_on(config->clock_dev, clock_sys);
+	if (err != 0) {
+		return err;
+	}
 
 	/* LCR: Set stop bit field */
 	lcr &= ~RB_LCR_STOP_BIT;
@@ -108,7 +128,12 @@ static int uart_wch_init(const struct device *dev)
 	regs->IER = RB_IER_TXD_EN;
 	regs->LCR = lcr;
 
-	regs->DL = uart_wch_get_baud_rate_divisor_latch(config);
+	err = uart_wch_get_baud_rate_divisor_latch(dev, &dl);
+	if (err != 0) {
+		return err;
+	}
+
+	regs->DL = dl;
 	regs->DIV = config->prescaler_divisor;
 
 	err = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);
@@ -371,13 +396,14 @@ static DEVICE_API(uart, uart_wch_driver_api) = {
 	static struct uart_wch_data uart_wch_##idx##_data;                                         \
 	static const struct uart_wch_config uart_wch_##idx##_config = {                            \
 		.regs = (UART_TypeDef *)DT_INST_REG_ADDR(idx),                                     \
-		.clock_frequency = DT_PROP(DT_NODELABEL(cpu0), clock_frequency),                   \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                    \
 		.current_speed = DT_INST_PROP(idx, current_speed),                                 \
 		.parity = DT_INST_ENUM_IDX(idx, parity),                                           \
 		.stop_bits = DT_INST_ENUM_IDX(idx, stop_bits),                                     \
 		.data_bits = DT_INST_ENUM_IDX(idx, data_bits),                                     \
 		.prescaler_divisor = DT_INST_PROP(idx, prescaler_divisor),                         \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
+		.clock_id = DT_INST_CLOCKS_CELL(idx, id),                                          \
 		UART_WCH_IRQ_HANDLER_FUNC(idx)};                                                   \
 	DEVICE_DT_INST_DEFINE(idx, &uart_wch_init, NULL, &uart_wch_##idx##_data,                   \
 			      &uart_wch_##idx##_config, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
