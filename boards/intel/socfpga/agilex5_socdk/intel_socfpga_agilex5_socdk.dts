@@ -55,6 +55,22 @@
 	current-speed = <115200>;
 };
 
+&qspi {
+	status = "okay";
+
+	flash0: flash@0 {
+		compatible = "micron,mt25qu02g";
+		reg = <0>;
+		size = <DT_SIZE_M(256*8)>; /* in bits */
+		sector-size = <65536>;
+		subsector-size = <4096>;
+		page-size = <256>;
+		address-byte = <2>;
+		bytes-per-block = <16>;
+		status = "okay";
+	};
+};
+
 &xgmac0 {
 	full-duplex-mode-en;
 	num-dma-ch = <1>;
