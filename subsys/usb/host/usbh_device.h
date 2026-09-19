@@ -10,6 +10,9 @@
 #include <zephyr/usb/usbh.h>
 #include <zephyr/drivers/usb/uhc.h>
 
+/** Value of usb_host_interface.alternate before any alternate is selected */
+#define USBH_IFACE_ALT_NONE	UINT8_MAX
+
 /* Callback type to be used for e.g. synchronous requests */
 typedef int (*usbh_udev_cb_t)(struct usb_device *const udev,
 			      struct uhc_transfer *const xfer);
@@ -103,7 +106,7 @@ static inline int usbh_xfer_enqueue(const struct usb_device *udev,
 {
 	struct usbh_context *const ctx = udev->ctx;
 
-	return uhc_ep_enqueue(ctx->dev, xfer);
+	return uhc_pipe_enqueue(ctx->dev, xfer);
 }
 
 static inline int usbh_xfer_dequeue(const struct usb_device *udev,
@@ -111,7 +114,7 @@ static inline int usbh_xfer_dequeue(const struct usb_device *udev,
 {
 	struct usbh_context *const ctx = udev->ctx;
 
-	return uhc_ep_dequeue(ctx->dev, xfer);
+	return uhc_pipe_dequeue(ctx->dev, xfer);
 }
 
 #endif /* ZEPHYR_INCLUDE_USBH_DEVICE_H */
