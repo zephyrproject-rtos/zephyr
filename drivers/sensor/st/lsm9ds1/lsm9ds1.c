@@ -669,25 +669,39 @@ static int lsm9ds1_init(const struct device *dev)
 	.gyro_range = DT_INST_PROP(inst, gyro_range),
 
 /*
+ * Instantiation macros used when a device is on an SPI bus.
+ */
+
+#define LSM9DS1_SPI_OP (SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+
+#define LSM9DS1_CONFIG_SPI(inst)                                                                   \
+	{STMEMSC_CTX_SPI(&lsm9ds1_config_##inst.stmemsc_cfg),                                      \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LSM9DS1_SPI_OP),                        \
+		 },                                                                                \
+	 LSM9DS1_CONFIG_COMMON(inst)}
+
+/*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
 #define LSM9DS1_CONFIG_I2C(inst)                                                                   \
-	{                                                                                          \
-		STMEMSC_CTX_I2C(&lsm9ds1_config_##inst.stmemsc_cfg),                               \
-		.stmemsc_cfg =                                                                     \
-			{                                                                          \
-				.i2c = I2C_DT_SPEC_INST_GET(inst),                                 \
-			},                                                                         \
-		LSM9DS1_CONFIG_COMMON(inst)                                                        \
-	}
+	{STMEMSC_CTX_I2C(&lsm9ds1_config_##inst.stmemsc_cfg),                                      \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 LSM9DS1_CONFIG_COMMON(inst)}
 
 #define LSM9DS1_DEFINE(inst)                                                                       \
 	static struct lsm9ds1_data lsm9ds1_data_##inst = {                                         \
 		.acc_gain = 0,                                                                     \
 	};                                                                                         \
                                                                                                    \
-	static struct lsm9ds1_config lsm9ds1_config_##inst = LSM9DS1_CONFIG_I2C(inst);             \
+	static struct lsm9ds1_config lsm9ds1_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),\
+									  (LSM9DS1_CONFIG_SPI(inst)),\
+									  (LSM9DS1_CONFIG_I2C(inst)));                  \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, lsm9ds1_pm_action);                                         \
                                                                                                    \
