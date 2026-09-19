@@ -1,0 +1,8 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MT8188_A55
+	select ARM64
+	select CPU_CORTEX_A55
+	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME if ARM_ARCH_TIMER

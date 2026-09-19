@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 MediaTek Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/mt8188-pinctrl.h>
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <PINMUX_PIN_33__FUNC_O_UTXD1>,
+				 <PINMUX_PIN_34__FUNC_I1_URXD1>;
+		};
+	};
+};
