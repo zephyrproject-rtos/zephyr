@@ -26,5 +26,4 @@
 &mmuart1 {
 	status = "okay";
 	current-speed = <115200>;
-	clock-frequency = <150000000>;
 };
