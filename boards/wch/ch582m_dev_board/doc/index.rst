@@ -28,7 +28,7 @@ Supported Features
 Connections and IOs
 ====================
 
-UART0 is used as the default console. It is available on PB4 (RXD) and PB7
+UART1 is used as the default console. It is available on PA8 (RXD) and PA9
 (TXD), which is the peripheral's default pin location after reset, so no pin
 remapping is required.
 

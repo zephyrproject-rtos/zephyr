@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch582m-pinctrl.h>
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group1 {
+			drive-push-pull;
+			output-high;
+			pinmux = <CH582M_PINMUX_DEFINE(CH582M_PINCTRL_PORT_A, 9)>;
+		};
+
+		group2 {
+			bias-pull-up;
+			pinmux = <CH582M_PINMUX_DEFINE(CH582M_PINCTRL_PORT_A, 8)>;
+		};
+	};
+};

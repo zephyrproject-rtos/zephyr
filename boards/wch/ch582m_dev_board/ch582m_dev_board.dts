@@ -6,25 +6,46 @@
 
 /dts-v1/;
 #include <wch/ch58/ch582m.dtsi>
+#include "ch582m_dev_board-pinctrl.dtsi"
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	compatible = "wch,ch582m-dev-board";
 	model = "wch,ch582m-dev-board";
 
 	chosen {
-		zephyr,console = &uart0;
+		zephyr,console = &uart1;
 		zephyr,flash = &flash0;
-		zephyr,serial = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,serial = &uart1;
+		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
 	};
 };
 
 /*
- * UART0 defaults to RXD/TXD on PB4/PB7 out of reset (R32_PIN_CONFIG
- * RB_PIN_UART0 == 0), so no pin remapping is required to use the console.
+ * UART1 defaults to RXD1/TXD1 on PA8/PA9 out of reset (R32_PIN_CONFIG
+ * RB_PIN_UART1 == 0), which leaves PB4/PB7 (UART0's default pins) free for
+ * other uses, such as the on-board LED, so no alternate-function remapping
+ * is required. The pinctrl state below only configures the electrical
+ * characteristics of PA8/PA9 (RX pull-up, TX push-pull drive), matching the
+ * vendor SDK's GPIOA_ModeCfg() setup for UART1.
  */
-&uart0 {
+&uart1 {
 	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
