@@ -251,3 +251,15 @@ arducam_ffc_40pin_dvp_xclk: &cam_clock {};
 		status = "okay";
 	};
 };
+
+/*
+ * The two PDM microphones on the underside share one data line and one clock,
+ * and are told apart by the edge each drives: MIC1 has SELECT tied low and
+ * MIC2 high. Only MIC1 is described, so the channel reads the rising edge.
+ */
+&pdm2 {
+	pinctrl-0 = <&pdm2_default>;
+	pinctrl-names = "default";
+	interrupts = <37 1>, <38 1>;
+	interrupt-names = "dat", "err";
+};

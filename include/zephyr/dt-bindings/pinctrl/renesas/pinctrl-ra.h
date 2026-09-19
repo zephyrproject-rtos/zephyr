@@ -34,8 +34,8 @@
  *   @c CTSU
  * - Timers: @c AGT, @c GPT0, @c GPT1
  * - Serial: @c SCI_0 ... @c SCI_9, @c SPI, @c I2C, @c I3C
- * - Connectivity: @c CANFD, @c QSPI, @c OSPI, @c SSIE, @c USBFS, @c USBHS,
- *   @c SDHI, @c ETH_MII, @c ETH_RMII, @c ETH_RGMII
+ * - Connectivity: @c CANFD, @c QSPI, @c OSPI, @c SSIE, @c PDM, @c USBFS,
+ *   @c USBHS, @c SDHI, @c ETH_MII, @c ETH_RMII, @c ETH_RGMII
  * - Graphics / capture: @c GLCDC, @c CEU
  * - System: @c HIZ_JTAG_SWD, @c CLKOUT_RTC, @c ETHPHYCLK, @c BUS
  *
@@ -111,6 +111,7 @@
 #define RA_PSEL_OSPI         0x1c /** OSPI function. */
 #define RA_PSEL_CTSU         0x0c /** CTSU function. */
 #define RA_PSEL_CEU          0xf  /** CEU function. */
+#define RA_PSEL_PDM          0x1b /** PDM-IF function. */
 
 /** @} */
 
