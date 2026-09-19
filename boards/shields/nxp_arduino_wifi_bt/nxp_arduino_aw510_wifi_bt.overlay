@@ -28,3 +28,12 @@
 		};
 	};
 };
+
+&usdhc0 {
+	status = "okay";
+
+	nxp_wifi: nxp_wifi {
+		compatible = "nxp,wifi";
+		status = "okay";
+	};
+};

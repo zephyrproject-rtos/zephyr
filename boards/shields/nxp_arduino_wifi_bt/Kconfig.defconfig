@@ -10,6 +10,28 @@ endchoice
 
 endif # SHIELD_NXP_ARDUINO_AW510_WIFI_BT && BT
 
+# Set default NXP Wi-Fi module when shield is used with Wi-Fi
+if SHIELD_NXP_ARDUINO_AW510_WIFI_BT && WIFI
+
+config WIFI_NXP
+	default y
+
+config WIFI_NM_WPA_SUPPLICANT_11AX
+	default n
+
+config WIFI_NM_WPA_SUPPLICANT_11AC
+	default n
+
+choice NXP_WIFI_PART
+	default NXP_IW416
+endchoice
+
+choice NXP_IW416_MODULE
+	default NXP_IW416_AW_AM510_USD
+endchoice
+
+endif # SHIELD_NXP_ARDUINO_AW510_WIFI_BT && WIFI
+
 # Configure stack sizes for IW416 module when BT is enabled
 if BT && (BT_NXP_IW416 || NXP_IW416)
 
