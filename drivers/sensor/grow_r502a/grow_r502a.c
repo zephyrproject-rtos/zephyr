@@ -70,7 +70,7 @@ static int transceive_packet(const struct device *dev, union r502a_packet *tx_pa
 static int r502a_validate_rx_packet(union r502a_packet *rx_packet)
 {
 	uint16_t recv_cks = 0, calc_cks = 0;
-	uint8_t cks_start_idx;
+	uint16_t cks_start_idx;
 
 	if (sys_be16_to_cpu(rx_packet->start) == R502A_STARTCODE) {
 		LOG_DBG("startcode matched 0x%X", sys_be16_to_cpu(rx_packet->start));
@@ -103,7 +103,8 @@ static int r502a_validate_rx_packet(union r502a_packet *rx_packet)
 
 	const uint16_t packet_len = sys_be16_to_cpu(rx_packet->len);
 
-	if (packet_len < R502A_CHECKSUM_LEN || packet_len > CONFIG_R502A_DATA_PKT_SIZE) {
+	if (packet_len < R502A_CHECKSUM_LEN ||
+	    packet_len > (R502A_MAX_BUF_SIZE - R502A_HEADER_LEN)) {
 		LOG_ERR("Invalid packet length %d", packet_len);
 		return -EINVAL;
 	}
@@ -1209,6 +1210,7 @@ static int grow_r502a_led_set_color(const struct device *dev, uint32_t led,
 static int grow_r502a_led_on(const struct device *dev, uint32_t led)
 {
 	struct grow_r502a_data *drv_data = dev->data;
+	int ret;
 
 	if (!drv_data->led_color) {
 		drv_data->led_color = R502A_LED_COLOR_BLUE;
@@ -1219,16 +1221,27 @@ static int grow_r502a_led_on(const struct device *dev, uint32_t led)
 		.color_idx = drv_data->led_color,
 	};
 
-	return fps_led_control(dev, &led_ctrl);
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+	ret = fps_led_control(dev, &led_ctrl);
+	k_mutex_unlock(&drv_data->lock);
+
+	return ret;
 }
 
 static int grow_r502a_led_off(const struct device *dev, uint32_t led)
 {
+	struct grow_r502a_data *drv_data = dev->data;
+	int ret;
+
 	struct r502a_led_params led_ctrl = {
 		.ctrl_code = R502A_LED_CTRL_OFF_ALWAYS,
 	};
 
-	return fps_led_control(dev, &led_ctrl);
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+	ret = fps_led_control(dev, &led_ctrl);
+	k_mutex_unlock(&drv_data->lock);
+
+	return ret;
 }
 
 static DEVICE_API(led, grow_r502a_leds_api) = {
