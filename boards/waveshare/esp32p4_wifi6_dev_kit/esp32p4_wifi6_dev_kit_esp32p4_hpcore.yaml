@@ -15,6 +15,7 @@ supported:
   - i2c
   - input
   - netif:eth
+  - netif:wifi
   - ptp_clock
   - sdhc
   - uart

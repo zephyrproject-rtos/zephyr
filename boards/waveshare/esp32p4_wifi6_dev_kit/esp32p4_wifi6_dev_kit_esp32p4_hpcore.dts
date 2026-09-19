@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp_hosted_mcu_hci;
 	};
 
 	aliases {
@@ -140,19 +141,35 @@ zephyr_udc0: &usb_otg {
 		};
 	};
 
-	/* ESP32-C6 wireless co-processor over SDIO (kept disabled until
-	 * there is a driver binding for it; pins follow the schematic:
-	 * clk=18, cmd=19, d0-d3=14-17, with 51K pull-ups on the C6 side).
-	 */
 	sdhc1: sdhc@1 {
-		status = "disabled";
+		status = "okay";
 		bus-width = <4>;
+		max-bus-freq = <DT_FREQ_M(40)>;
 		clk-pin = <18>;
 		cmd-pin = <19>;
 		d0-pin = <14>;
 		d1-pin = <15>;
 		d2-pin = <16>;
 		d3-pin = <17>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		esp_hosted_mcu: esp-hosted-mcu@0 {
+			compatible = "espressif,esp-hosted-mcu";
+			reg = <0>;
+			reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+
+			esp_hosted_mcu_wifi: wifi {
+				compatible = "espressif,esp-hosted-mcu-wifi";
+				status = "okay";
+			};
+
+			esp_hosted_mcu_hci: bt-hci {
+				compatible = "espressif,esp-hosted-mcu-bt-hci";
+				status = "okay";
+			};
+		};
 	};
 };
 
