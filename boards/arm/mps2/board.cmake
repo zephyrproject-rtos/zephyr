@@ -60,6 +60,11 @@ elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG
     set(CPU0_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/zephyr/boards/arm/mps2/empty_cpu0-prefix/src/empty_cpu0-build/zephyr)
     set(QEMU_KERNEL_OPTION "-device;loader,file=${CPU0_BINARY_DIR}/zephyr.elf")
     list(APPEND QEMU_EXTRA_FLAGS "-device;loader,file=${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}")
+  elseif(CONFIG_BOARD_MPS2_AN521_CPU0_NS AND ARM_VENEERS_LIB_DIR)
+    # Sysbuild TrustZone (no TFM): load Secure image as primary kernel,
+    # NS image as secondary. ARM_VENEERS_LIB_DIR points to the Secure build dir.
+    set(QEMU_KERNEL_OPTION "-device;loader,file=${ARM_VENEERS_LIB_DIR}/zephyr/zephyr.elf")
+    list(APPEND QEMU_EXTRA_FLAGS "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr/zephyr.elf")
   endif()
 endif()
 
