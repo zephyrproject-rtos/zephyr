@@ -20,4 +20,5 @@ supported:
   - watchdog
   - mbox
   - input
+  - adc
 vendor: nxp
