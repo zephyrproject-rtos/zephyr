@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y
+
+# Required by the external SWD flasher used to program this board; not
+# needed once a JTAG/SWD runner is added to board.cmake.
+CONFIG_BUILD_OUTPUT_HEX=y
