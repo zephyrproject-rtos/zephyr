@@ -615,6 +615,12 @@ Frontend using ARM Coresight STM (System Trace Macrocell)
 
 For more details about logging using ARM Coresight STM see :ref:`logging_cs_stm`.
 
+Frontend using IPC service
+--------------------------
+
+Frontend which sends log messages to another domain over the IPC service. For more details
+see :ref:`logging_multidomain_ipc`.
+
 .. _logging_strings:
 
 Logging strings
@@ -639,43 +645,35 @@ system. Two approaches can be used to structure this logging system:
   as logs are presented on independent outputs.
 * Use a multi-domain logging system where log messages from each domain end up in one root domain,
   where they are processed exactly as in a single domain case.
-  In this approach, log messages are passed between domains using a connection between domains
-  created from the backend on one side and linked to the other.
+  In this approach, log messages are passed between domains over a connection created from
+  a backend (or a frontend) on the remote side and a link on the root side.
 
-  The Log link is an interface introduced in this multi-domain approach. The Log link is
-  responsible for receiving any log message from another domain, creating a copy, and
-  putting that local log message copy (including remote data) into the message queue.
-  This specific log link implementation matches the complementary backend implementation
-  to allow log messages exchange and logger control like configuring filtering, getting log
-  source names, and so on.
+  The Log link is the interface used on the root side of such a connection. A link is
+  responsible for receiving log messages from a remote domain, providing them to the logging
+  core (:c:func:`log_link_get_msg`, :c:func:`log_link_put_msg`) and handling logger control
+  requests like configuring filtering or getting log source names. How received messages are
+  stored is up to the link implementation. A link implementation matches the complementary
+  backend or frontend implementation on the remote side.
 
-There are three types of domains in a multi-domain system:
+Multi-domain support in the root domain is enabled with
+:kconfig:option:`CONFIG_LOG_MULTIDOMAIN`.
 
-* The *end domain* has the logging core implementation and a cross-domain
-  backend. It can also have other backends in parallel.
-* The *relay domain* has one or more links to other domains but does not
-  have backends that output logs to the user. It has a cross-domain backend either to
-  another relay or to the root domain.
-* The *root domain* has one or multiple links and a backend that outputs logs
-  to the user.
+There are two types of domains in a multi-domain system:
+
+* The *remote domain* has the logging core implementation and a cross-domain backend or
+  frontend. When a cross-domain backend is used, the domain can also have other backends
+  in parallel, for example a local UART backend.
+* The *root domain* has one link per remote domain and backends that output logs to the user.
+  Messages received over a link are processed like locally created messages.
+
+Each link handles exactly one remote domain and messages are not relayed through intermediate
+domains, so every remote domain is connected directly to the root domain.
 
 See the following image for an example of a multi-domain setup:
 
-.. figure:: images/multidomain.png
+.. figure:: images/multidomain.svg
 
     Multi-domain example
-
-In this architecture, a link can handle multiple domains.
-For example, let's consider an SoC with two ARM Cortex-M33 cores with TrustZone: cores A and B (see
-the example illustrated above). There are four domains in the system, as
-each core has both a Secure and a Nonsecure domain. If *core A nonsecure* (A_NS) is the
-root domain, it has two links: one to *core A secure* (A_NS-A_S) and one to
-*core B nonsecure* (A_NS-B_NS). *B_NS* domain has one link, to *core B secure*
-*B_NS-B_S*), and a backend to *A_NS*.
-
-Since in all instances there is a standard logging subsystem, it is always possible
-to have multiple backends and simultaneously output messages to them. An example of this is shown
-in the illustration above as a dotted UART backend on the *B_NS* domain.
 
 Domain ID
 ---------
@@ -684,31 +682,19 @@ The source of each log message can be identified by the following fields in the 
 ``source_id`` and ``domain_id``.
 
 The value assigned to the ``domain_id`` is relative. Whenever a domain creates a log message,
-it sets its ``domain_id`` to ``0``.
-When a message crosses the domain, ``domain_id`` changes as it is increased by the link offset.
-The link offset is assigned during the initialization, where the logger core is iterating
-over all the registered links and assigned offsets.
+it sets its ``domain_id`` to ``0``. The message keeps that value while it is transferred to the
+root domain. When the root domain takes the message from a link, it adds the link domain offset
+to the ``domain_id``.
 
-The first link has the offset set to 1.
-The following offset equals the previous link offset plus the number of domains in the previous
-link.
+Domain offsets are assigned when links are activated, in the order in which links are registered.
+The first link has the offset set to ``1`` and each following link gets the next value. Since a
+link handles a single domain, the ``domain_id`` of a remote domain equals the index of its link
+incremented by one.
 
-The following example is shown below, where
-the assigned ``domain_ids`` are shown for each domain:
-
-.. figure:: images/domain_ids.png
-
-    Domain IDs assigning example
-
-Let's consider a log message created on the *B_S* domain:
-
-1. Initially, it has its ``domain_id`` set to ``0``.
-#. When the *B_NS-B_S* link receives the message, it increases the ``domain_id``
-   to ``1`` by adding the *B_NS-B_S* offset.
-#. The message is passed to *A_NS*.
-#. When the *A_NS-B_NS* link receives the message, it adds the offset (``2``) to the ``domain_id``.
-   The message ends up with the ``domain_id`` set to ``3``, which uniquely identifies the message
-   originator.
+The name reported for a domain is :kconfig:option:`CONFIG_LOG_DOMAIN_NAME` for the local domain
+and the link name for a remote domain. Domain names are added to the message prefix when
+:kconfig:option:`CONFIG_LOG_DOMAIN_NAME_PREFIX` is enabled, which is implied by
+:kconfig:option:`CONFIG_LOG_MULTIDOMAIN`.
 
 Cross-domain log message
 ------------------------
@@ -718,6 +704,14 @@ cannot access directly the data in another domain. For this reason, the backend 
 partially process the message before it is passed to another domain. Partial
 processing can include converting a string package to a *fully self-contained*
 version (copying read-only strings to the package body).
+
+If the root domain can access the memory of the remote domain, that conversion is not needed.
+:kconfig:option:`CONFIG_LOG_BACKEND_IPC_SERVICE_STRING_ACCESS` and
+:kconfig:option:`CONFIG_LOG_FRONTEND_IPC_STRING_ACCESS` are used in the remote domain to
+indicate that read-only strings do not need to be included in the log message, which reduces
+the processing time and the message size. The remote domain then also shares the addresses of
+its log source table and its read-only log strings, so the root domain reads source names
+directly instead of requesting them over the cross-domain connection.
 
 Each domain can have a different timestamp source in terms of frequency and
 offset. Logging does not perform any timestamp conversion.
@@ -730,7 +724,7 @@ filtering for each backend in the system. In the multi-domain case, the originat
 the log message is not aware of the number of backends in the root domain.
 
 As such, to filter logs in multiple domains, each source requires a runtime
-filtering setting in each domain on the way to the root domain. As the number of
+filtering setting in the remote domain and in the root domain. As the number of
 sources in other domains is not known during the compilation, the runtime filtering
 of remote sources must use dynamically allocated memory (one word per
 source). When a backend in the root domain changes the filtering of the module from a
@@ -743,22 +737,69 @@ Message ordering
 ----------------
 
 Logging does not provide any mechanism for synchronizing timestamps across multiple
-domains:
+domains. When picking the next message to process, the root domain compares the oldest message
+in the local buffer with the oldest message provided by each link and processes the one with
+the earliest timestamp. Ordering is therefore maintained only if all domains share the same
+timestamp source or if there is an out-of-bound mechanism that recalculates timestamps.
 
-* If domains have different timestamp sources, messages will be
-  processed in the order of arrival to the buffer in the root domain.
-* If domains have the same timestamp source or if there is an out-of-bound mechanism that
-  recalculates timestamps, there are 2 options:
+Since a remote message arrives with a delay, processing is deferred by
+:kconfig:option:`CONFIG_LOG_PROCESSING_LATENCY_US` to give remote messages a chance to arrive
+before an already available local message is processed. A higher value increases the chances
+of maintaining correct ordering at the cost of increased processing latency.
 
-  * Messages are processed as they arrive in the buffer in the root domain.
-    Messages are unordered but they can be sorted by the host as the timestamp
-    indicates the time of the message generation.
-  * Links have dedicated buffers. During processing, the head of each buffer is checked
-    and the oldest message is processed first.
+If a message with a timestamp older than the previously processed one is still found, the
+message is marked as unordered. Backends which use :ref:`log_output` for formatting prefix such
+message with ``<!>``.
 
-    With this approach, it is possible to maintain the order of the messages at the cost
-    of a suboptimal memory utilization (since the buffer is not shared) and increased processing
-    latency (see :kconfig:option:`CONFIG_LOG_PROCESSING_LATENCY_US`).
+.. _logging_multidomain_ipc:
+
+Logging over IPC service
+------------------------
+
+Zephyr provides a cross-domain link, backend and frontend implemented on top of the
+:ref:`ipc_service`. They exchange log messages and control requests over an endpoint named
+``logging``. The IPC instance used for logging is taken from the ``zephyr,log-ipc`` chosen node.
+If that node is not present, the only IPC instance found in the devicetree is used. Instances of
+the link, the backend and the frontend are created by the logging subsystem, so no application
+code is needed.
+
+In the root domain, :kconfig:option:`CONFIG_LOG_LINK_IPC_SERVICE` adds a link named ``cpu1``.
+Messages received from the remote domain are stored in one of two ways:
+
+* If :kconfig:option:`CONFIG_LOG_LINK_IPC_SERVICE_RX_HOLD` is enabled (default when the IPC
+  service backend supports holding of RX buffers), messages are processed in place in the IPC
+  RX buffers, which are released once all the messages they contain are processed. Pointers to
+  the held buffers are kept in a queue of
+  :kconfig:option:`CONFIG_LOG_LINK_IPC_SERVICE_RX_HOLD_QUEUE_SIZE` entries. The queue should not
+  be too long because holding RX buffers may block other endpoints of the IPC instance.
+* Otherwise, messages are copied into a dedicated packet buffer of
+  :kconfig:option:`CONFIG_LOG_LINK_IPC_SERVICE_BUFFER_SIZE` bytes.
+
+In the remote domain, messages can be sent to the root domain either by a backend or by
+a frontend:
+
+* :kconfig:option:`CONFIG_LOG_BACKEND_IPC_SERVICE` sends messages when they are processed by
+  the logging core, which in deferred mode is the log processing thread. If the IPC service
+  backend supports the zero copy API, the outgoing message is created directly in the IPC TX
+  buffer (:kconfig:option:`CONFIG_LOG_BACKEND_IPC_SERVICE_ZERO_COPY`).
+* :kconfig:option:`CONFIG_LOG_FRONTEND_IPC` sends messages in the context of the logging API
+  call, which means that messages are not buffered locally and the log processing thread is not
+  used. Multiple messages are packed into a single IPC packet of
+  :kconfig:option:`CONFIG_LOG_FRONTEND_IPC_PACKET_SIZE` bytes, which is sent when it is full or
+  when :kconfig:option:`CONFIG_LOG_FRONTEND_IPC_MSG_TIMEOUT` expires. Messages created before
+  the endpoint is bound are kept in a buffer of
+  :kconfig:option:`CONFIG_LOG_FRONTEND_IPC_EARLY_BUFFER_SIZE` bytes. The frontend can only be
+  used with an IPC service backend which supports the zero copy API and sending from any
+  context with interrupts locked. If that is not the case, use the logging backend.
+
+Both of them can skip copying read-only strings into the transferred message when the root
+domain can access the memory of the remote domain
+(:kconfig:option:`CONFIG_LOG_BACKEND_IPC_SERVICE_STRING_ACCESS` and
+:kconfig:option:`CONFIG_LOG_FRONTEND_IPC_STRING_ACCESS`, see `Cross-domain log message`_).
+Both of them also count messages that could not be sent and report the number to the root
+domain, where it is printed as a warning.
+
+See the :zephyr:code-sample:`logging_multidomain` sample for a complete setup.
 
 Logging backends
 ================
@@ -1073,6 +1114,11 @@ Logger backend interface
 ========================
 
 .. doxygengroup:: log_backend
+
+Log link interface
+==================
+
+.. doxygengroup:: log_link
 
 Logger output formatting
 ========================

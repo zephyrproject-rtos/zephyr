@@ -1,20 +1,41 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config LOG_MULTIDOMAIN_LINK
-	bool
-	select LOG_TIMESTAMP_64BIT
-
 config LOG_LINK_IPC_SERVICE
 	bool "IPC service link"
 	depends on LOG_MULTIDOMAIN
-	select LOG_MULTIDOMAIN_LINK
+
+config LOG_LINK_IPC_SERVICE_RX_HOLD
+	bool "Use IPC service RX buffer holding"
+	default y if IPC_SERVICE_BACKEND_ICBMSG || IPC_SERVICE_BACKEND_RPMSG
+	help
+	  Use IPC service RX buffer holding feature.
+
+config LOG_LINK_IPC_SERVICE_DROPPED_MSG_TIMEOUT
+	int "IPC service dropped message timeout"
+	default 1000
+	help
+	  Timeout for dropped message notification.
+
+if LOG_LINK_IPC_SERVICE_RX_HOLD
+
+config LOG_LINK_IPC_SERVICE_RX_HOLD_QUEUE_SIZE
+	int "IPC service RX buffer holding queue size"
+	default 16
+	help
+	  Size of the queue for keeping pointers to the IPC service RX buffer.
+	  Messages are dropped is queue is full. Queue size should not be too large
+	  as it can drain all IPC RX buffers and block other IPC endpoints.
+
+endif # LOG_LINK_IPC_SERVICE_RX_HOLD
+
+if !LOG_LINK_IPC_SERVICE_RX_HOLD
 
 config LOG_LINK_IPC_SERVICE_BUFFER_SIZE
 	int "Dedicated buffer size"
 	depends on LOG_LINK_IPC_SERVICE
 	default 2048
 	help
-	  Dedicated buffer allows to maintain ordering of processed messages.
-	  If 0, main buffer is used and messages are processed in the order of
-	  arrival.
+	  Buffer for holding messages arriving from IPC service.
+
+endif # LOG_LINK_IPC_SERVICE_RX_HOLD
