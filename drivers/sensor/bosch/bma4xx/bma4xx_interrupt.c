@@ -69,7 +69,23 @@ int bma4xx_init_interrupt(const struct device *dev)
 int bma4xx_enable_interrupt1(const struct device *dev, struct bma4xx_runtime_config *new_cfg)
 {
 	struct bma4xx_data *data = dev->data;
+	const struct bma4xx_config *cfg = dev->config;
+	uint8_t io_ctrl = BMA4XX_BIT_INT1_IO_CTRL_OUTPUT_EN;
 	uint8_t value = 0;
+	int ret;
+
+	/* The INT1 pad is disabled after reset. Enable it as a push-pull output whose active
+	 * level follows the polarity declared for int1-gpios, so that the edge-to-active GPIO
+	 * interrupt armed by the streaming code sees the assertion edge.
+	 */
+	if ((cfg->gpio_interrupt.dt_flags & GPIO_ACTIVE_LOW) == 0) {
+		io_ctrl |= BMA4XX_BIT_INT1_IO_CTRL_LVL;
+	}
+
+	ret = data->hw_ops->write_reg(dev, BMA4XX_REG_INT1_IO_CTRL, io_ctrl);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (new_cfg->interrupt1_fifo_wm) {
 		value |= FIELD_PREP(BMA4XX_BIT_INT_MAP_DATA_INT1_FWM, 1);
