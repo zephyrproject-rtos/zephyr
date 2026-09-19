@@ -56,6 +56,7 @@ tests:
     timeout: 120
     platform_allow:
       - frdm_mcxa577
+      - frdm_mcxa287
     harness_config:
       type: one_line
       regex:
@@ -95,5 +96,6 @@ tests:
     timeout: 300
     platform_allow:
       - frdm_mcxa577
+      - frdm_mcxa287
     extra_configs:
       - CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_BUTTON=y
