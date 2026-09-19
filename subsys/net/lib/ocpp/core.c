@@ -212,7 +212,8 @@ int ocpp_authorize(ocpp_session_handle_t hndl, char *idtag,
 		}
 	}
 
-	strncpy(sh->idtag, idtag, sizeof(sh->idtag));
+	strncpy(sh->idtag, idtag, sizeof(sh->idtag) - 1);
+	sh->idtag[sizeof(sh->idtag) - 1] = '\0';
 	ui = &ctx->ui;
 	fn = ctx->cfn[PDU_AUTHORIZE];
 	ret = fn(buf, sizeof(buf), sh);
