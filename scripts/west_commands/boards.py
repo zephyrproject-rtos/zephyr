@@ -99,12 +99,7 @@ class Boards(WestCommand):
                 continue
 
             if args.all_targets:
-                all_targets += [f"{board.name}/{qualifier}"
-                                for qualifier in list_boards.board_v2_qualifiers(board)]
-                if board.revisions:
-                    all_targets += [f"{board.name}@{revision.name}/{qualifier}"
-                                    for qualifier in list_boards.board_v2_qualifiers(board)
-                                    for revision in board.revisions]
+                all_targets += [target.name() for target in list_boards.board_v2_targets(board)]
             else:
                 if board.revisions:
                     revisions_list = ','.join([rev.name for rev in board.revisions])
