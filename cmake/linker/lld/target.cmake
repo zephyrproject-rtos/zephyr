@@ -33,12 +33,20 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     set(linker_script_dep "")
   endif()
 
-  zephyr_get_include_directories_for_lang(C current_includes)
+  # Pass the include directories via a response file to keep this
+  # preprocessing command within the host command-line length limit.
+  # See zephyr_include_directories_response_file() for details.
+  string(MAKE_C_IDENTIFIER "${linker_pass_define}" linker_pass_tag)
+  set(linker_includes_rsp
+    ${PROJECT_BINARY_DIR}/include/generated/linker_includes_${linker_pass_tag}.rsp
+  )
+  zephyr_include_directories_response_file(C "${linker_includes_rsp}" current_includes)
 
   add_custom_command(
     OUTPUT ${linker_script_gen}
     DEPENDS
     ${LINKER_SCRIPT}
+    ${linker_includes_rsp}
     ${extra_dependencies}
     # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
     ${linker_script_dep}
