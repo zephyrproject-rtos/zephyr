@@ -176,7 +176,6 @@ SECTIONS
 
 #include <zephyr/linker/debug-sections.ld>
 
-    /DISCARD/ : { *(.note.GNU-stack) }
     /DISCARD/ : { *(.gnu_debuglink) }
     /DISCARD/ : { *(.gnu.lto_*) }
 
