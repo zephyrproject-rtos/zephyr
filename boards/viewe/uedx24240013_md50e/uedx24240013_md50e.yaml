@@ -1,0 +1,15 @@
+identifier: uedx24240013_md50e/esp32c3
+name: VIEWE UEDX24240013-MD50E
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - spi
+  - watchdog
+  - entropy
+  - input
+  - display
+vendor: viewe

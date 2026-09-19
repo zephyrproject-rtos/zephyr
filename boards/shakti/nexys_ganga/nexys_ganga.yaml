@@ -1,0 +1,10 @@
+identifier: nexys_ganga/ganga
+name: Nexys Video (Ganga SoC)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 262144
+supported:
+  - uart
+vendor: shakti
