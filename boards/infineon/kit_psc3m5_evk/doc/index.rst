@@ -103,6 +103,44 @@ Default Zephyr Peripheral Mapping
 +-----------+-----------------+----------------------------+
 | P2.0      | GPIO            | Button SW2                 |
 +-----------+-----------------+----------------------------+
+| P9.0      | SCB0 I2C SCL    | MikroBUS I2C               |
++-----------+-----------------+----------------------------+
+| P9.2      | SCB0 I2C SDA    | MikroBUS I2C               |
++-----------+-----------------+----------------------------+
+| P7.0      | SCB2 SPI CLK    | MikroBUS SPI               |
++-----------+-----------------+----------------------------+
+| P7.1      | SCB2 SPI MOSI   | MikroBUS SPI               |
++-----------+-----------------+----------------------------+
+| P7.2      | SCB2 SPI MISO   | MikroBUS SPI               |
++-----------+-----------------+----------------------------+
+| P9.5      | GPIO            | MikroBUS SPI CS            |
++-----------+-----------------+----------------------------+
+| P3.3      | SCB4 UART TX    | MikroBUS UART              |
++-----------+-----------------+----------------------------+
+| P3.2      | SCB4 UART RX    | MikroBUS UART              |
++-----------+-----------------+----------------------------+
+
+MikroBUS Connector
+------------------
+
+The board exposes one MikroBUS slot (``mikrobus_header``) with the following
+aliases pre-configured:
+
+- ``mikrobus_i2c`` — SCB0 I2C, P9.0 (SCL) / P9.2 (SDA), 100 kHz
+- ``mikrobus_spi`` — SCB2 SPI, P7.0 (CLK) / P7.1 (MOSI) / P7.2 (MISO),
+  GPIO CS on P9.5; SCB oversampling >= 4 caps the maximum rate at
+  CLK_HF2 / 4 = 20 MHz
+- ``mikrobus_serial`` — SCB4 UART, P3.3 (TX) / P3.2 (RX), 115200 8N1
+- ``mikrobus_adc`` — AN pin mapped to ``adc0`` channel 4
+  (PASS[0].SAR[0].CH[4])
+
+Connector pin limitations:
+
+- **AN (slot 0):** Wired to PASS[0].SAR[0].CH[4]; ADC input only, no GPIO.
+- **RST (slot 1):** Wired to XRES_L_MCU (device reset); not usable as a
+  software-controlled GPIO.
+- **PWM (slot 6, P5.1):** Routed to P5.1 but no TCPWM channel is assigned
+  in the board configuration; available as GPIO only.
 
 System Clock
 ============
