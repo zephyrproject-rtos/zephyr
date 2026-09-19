@@ -217,28 +217,42 @@ static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 	       ((offset % slab->info.block_size) == 0);
 }
 
-int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
+/* Caller holds the lock and has checked the free list is not empty. */
+static ALWAYS_INLINE void slab_take_block(struct k_mem_slab *slab, void **mem)
+{
+	*mem = slab->free_list;
+	slab->free_list = *(char **)(slab->free_list);
+	slab->info.num_used++;
+	__ASSERT((slab->free_list == NULL &&
+		  slab->info.num_used == slab->info.num_blocks) ||
+		 slab_ptr_is_good(slab, slab->free_list),
+		 "slab corruption detected");
+
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+	slab->info.max_used = max(slab->info.num_used, slab->info.max_used);
+#endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */
+}
+
+/* Put a block back on the free list. The caller holds the lock. */
+static ALWAYS_INLINE void slab_put_block(struct k_mem_slab *slab, void *mem)
+{
+	*(char **) mem = slab->free_list;
+	slab->free_list = (char *) mem;
+	slab->info.num_used--;
+}
+
+/* Only ever tail called, so the fast path needs no frame. The caller drops the
+ * lock first, hence the re-check here.
+ */
+static int __noinline slab_alloc_slow(struct k_mem_slab *slab, void **mem,
+				      k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 	int result;
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, alloc, slab, timeout);
-
 	if (slab->free_list != NULL) {
 		/* take a free block */
-		*mem = slab->free_list;
-		slab->free_list = *(char **)(slab->free_list);
-		slab->info.num_used++;
-		__ASSERT((slab->free_list == NULL &&
-			  slab->info.num_used == slab->info.num_blocks) ||
-			 slab_ptr_is_good(slab, slab->free_list),
-			 "slab corruption detected");
-
-#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
-		slab->info.max_used = max(slab->info.num_used,
-					  slab->info.max_used);
-#endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */
-
+		slab_take_block(slab, mem);
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT) ||
 		   !IS_ENABLED(CONFIG_MULTITHREADING)) {
@@ -266,6 +280,47 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 	return result;
 }
 
+int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
+{
+	k_spinlock_key_t key = k_spin_lock(&slab->lock);
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, alloc, slab, timeout);
+
+	if (unlikely(slab->free_list == NULL)) {
+		k_spin_unlock(&slab->lock, key);
+
+		return slab_alloc_slow(slab, mem, timeout);
+	}
+
+	/* take a free block */
+	slab_take_block(slab, mem);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, alloc, slab, timeout, 0);
+
+	k_spin_unlock(&slab->lock, key);
+
+	return 0;
+}
+
+/* Only ever tail called. The lock is handed over, not dropped, so the free list
+ * is still empty here.
+ */
+static void __noinline slab_free_slow(struct k_mem_slab *slab, void *mem,
+				      k_spinlock_key_t key)
+{
+	if (z_sched_wake(&slab->wait_q, 0, mem)) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
+		z_reschedule(&slab->lock, key);
+		return;
+	}
+
+	slab_put_block(slab, mem);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
+
+	k_spin_unlock(&slab->lock, key);
+}
+
 void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 {
 	if (!slab_ptr_is_good(slab, mem)) {
@@ -278,15 +333,11 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
 	if (unlikely(slab->free_list == NULL) && IS_ENABLED(CONFIG_MULTITHREADING)) {
-		if (z_sched_wake(&slab->wait_q, 0, mem)) {
-			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
-			z_reschedule(&slab->lock, key);
-			return;
-		}
+		slab_free_slow(slab, mem, key);
+		return;
 	}
-	*(char **) mem = slab->free_list;
-	slab->free_list = (char *) mem;
-	slab->info.num_used--;
+
+	slab_put_block(slab, mem);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
 
