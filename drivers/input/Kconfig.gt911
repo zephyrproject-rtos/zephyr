@@ -24,8 +24,10 @@ config INPUT_GT911_PERIOD_MS
 
 config INPUT_GT911_INTERRUPT
 	bool "Interrupt"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_GOODIX_GT911),irq-gpios)
 	help
-	  Enable interrupt support (requires GPIO).
+	  Enable interrupt support (requires GPIO). Only available when a
+	  controller has its interrupt pin routed; the driver polls otherwise.
 
 config INPUT_GT911_MAX_TOUCH_POINTS
 	int "Touch Number"

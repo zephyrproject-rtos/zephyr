@@ -10,6 +10,12 @@ include: [i2c-device.yaml, touchscreen-common.yaml]
 properties:
   irq-gpios:
     type: phandle-array
+    description: |
+      Interrupt pin. It is held low across the reset sequence to make the
+      controller select its primary I2C address. Leave it out on a board that
+      does not route the pin. The address is then whatever the panel straps,
+      so name the other one in alt-addr. CONFIG_INPUT_GT911_INTERRUPT requires
+      this property.
   reset-gpios:
     type: phandle-array
   alt-addr:
