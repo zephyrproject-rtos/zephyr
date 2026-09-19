@@ -77,7 +77,8 @@
 
 		ir: interrupt_controller@f0037000 {
 			compatible = "infineon,aurix-ir";
-			reg = <0xf0037000 0x10000 0xf0038000 0x10000>;
+			reg = <0xf0037000 0x1000 0xf0038000 0x2000>;
+			reg-names = "ir", "src";
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
