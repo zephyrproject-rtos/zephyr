@@ -159,6 +159,12 @@
 			gclkperiph-src = "gclk0";
 			gclkperiph-en = <1>;
 		};
+
+		tcc1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_TCC1>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
 	};
 
 	mclkdomain: mclkdomain {
@@ -176,6 +182,11 @@
 
 		sercom1 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>;
+			mclk-en = <1>;
+		};
+
+		tcc1 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_TCC1>;
 			mclk-en = <1>;
 		};
 	};
@@ -219,5 +230,15 @@ i2c0: &sercom1 {
 	pinctrl-names = "default";
 	dmas = <&dmac 2 6>, <&dmac 3 7>;
 	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+/*
+ * gclk0 runs at 72 MHz and the counter is 16 bits wide, so at DIV1 it wraps
+ * in under a millisecond. DIV1024 gives a top value of about 0.93 s.
+ */
+&tcc1 {
+	compatible = "microchip,tcc-g1-counter";
+	prescaler = <1024>;
 	status = "okay";
 };
