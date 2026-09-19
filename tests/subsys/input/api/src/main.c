@@ -188,4 +188,61 @@ ZTEST(input_api, test_report_apis)
 
 #endif /* CONFIG_INPUT_MODE_THREAD */
 
+static K_SEM_DEFINE(work_sem, 0, 1);
+static k_tid_t last_work_tid;
+
+static void test_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	last_work_tid = k_current_get();
+	k_sem_give(&work_sem);
+}
+
+ZTEST(input_api, test_workqueue)
+{
+	struct k_work work;
+	struct k_work_delayable dwork;
+	int ret;
+
+	k_work_init(&work, test_work_handler);
+	k_work_init_delayable(&dwork, test_work_handler);
+
+	k_sem_reset(&work_sem);
+	last_work_tid = NULL;
+	ret = input_work_submit(&work);
+	zassert_equal(ret, 1);
+	ret = k_sem_take(&work_sem, K_MSEC(100));
+	zassert_equal(ret, 0);
+	if (IS_ENABLED(CONFIG_INPUT_DEDICATED_WORKQUEUE)) {
+		zassert_not_equal(last_work_tid, k_work_queue_thread_get(&k_sys_work_q));
+	} else {
+		zassert_equal(last_work_tid, k_work_queue_thread_get(&k_sys_work_q));
+	}
+
+	k_sem_reset(&work_sem);
+	last_work_tid = NULL;
+	ret = input_work_schedule(&dwork, K_MSEC(10));
+	zassert_equal(ret, 1);
+	ret = k_sem_take(&work_sem, K_MSEC(100));
+	zassert_equal(ret, 0);
+	if (IS_ENABLED(CONFIG_INPUT_DEDICATED_WORKQUEUE)) {
+		zassert_not_equal(last_work_tid, k_work_queue_thread_get(&k_sys_work_q));
+	} else {
+		zassert_equal(last_work_tid, k_work_queue_thread_get(&k_sys_work_q));
+	}
+
+	k_sem_reset(&work_sem);
+	last_work_tid = NULL;
+	ret = input_work_reschedule(&dwork, K_MSEC(10));
+	zassert_equal(ret, 1);
+	ret = k_sem_take(&work_sem, K_MSEC(100));
+	zassert_equal(ret, 0);
+	if (IS_ENABLED(CONFIG_INPUT_DEDICATED_WORKQUEUE)) {
+		zassert_not_equal(last_work_tid, k_work_queue_thread_get(&k_sys_work_q));
+	} else {
+		zassert_equal(last_work_tid, k_work_queue_thread_get(&k_sys_work_q));
+	}
+}
+
 ZTEST_SUITE(input_api, NULL, NULL, NULL, NULL, NULL);

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -103,3 +104,42 @@ K_THREAD_DEFINE(input,
 		INPUT_THREAD_PRIORITY, 0, 0);
 
 #endif /* CONFIG_INPUT_MODE_THREAD */
+
+#ifdef CONFIG_INPUT_DEDICATED_WORKQUEUE
+
+static struct k_work_q input_work_q;
+static K_KERNEL_STACK_DEFINE(input_work_q_stack,
+			     CONFIG_INPUT_DEDICATED_WORKQUEUE_STACK_SIZE);
+
+int input_work_submit(struct k_work *work)
+{
+	return k_work_submit_to_queue(&input_work_q, work);
+}
+
+int input_work_schedule(struct k_work_delayable *dwork, k_timeout_t delay)
+{
+	return k_work_schedule_for_queue(&input_work_q, dwork, delay);
+}
+
+int input_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
+{
+	return k_work_reschedule_for_queue(&input_work_q, dwork, delay);
+}
+
+static int input_work_q_init(void)
+{
+	static const struct k_work_queue_config cfg = {
+		.name = "input_workq",
+	};
+
+	k_work_queue_init(&input_work_q);
+	k_work_queue_start(&input_work_q, input_work_q_stack,
+			   K_KERNEL_STACK_SIZEOF(input_work_q_stack),
+			   CONFIG_INPUT_DEDICATED_WORKQUEUE_PRIORITY, &cfg);
+
+	return 0;
+}
+
+SYS_INIT(input_work_q_init, POST_KERNEL, 0);
+
+#endif /* CONFIG_INPUT_DEDICATED_WORKQUEUE */

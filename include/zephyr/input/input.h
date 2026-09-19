@@ -169,6 +169,70 @@ struct input_callback {
 #define INPUT_CALLBACK_DEFINE(_dev, _callback, _user_data)                     \
 	INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, _callback)
 
+#if defined(CONFIG_INPUT_DEDICATED_WORKQUEUE) || defined(__DOXYGEN__)
+
+/**
+ * @brief Submit a work item to the input workqueue.
+ *
+ * Submits a work item to the dedicated input workqueue if
+ * @kconfig{CONFIG_INPUT_DEDICATED_WORKQUEUE} is enabled, or to the system
+ * workqueue otherwise.
+ *
+ * @param work Pointer to the work item.
+ *
+ * @return Same as @ref k_work_submit_to_queue.
+ */
+int input_work_submit(struct k_work *work);
+
+/**
+ * @brief Schedule a delayable work item to the input workqueue.
+ *
+ * Schedules a delayable work item to the dedicated input workqueue if
+ * @kconfig{CONFIG_INPUT_DEDICATED_WORKQUEUE} is enabled, or to the system
+ * workqueue otherwise.
+ *
+ * @param dwork Pointer to the delayable work item.
+ * @param delay The time to wait before submitting the work item.
+ *
+ * @return Same as @ref k_work_schedule_for_queue.
+ */
+int input_work_schedule(struct k_work_delayable *dwork, k_timeout_t delay);
+
+/**
+ * @brief Reschedule a delayable work item to the input workqueue.
+ *
+ * Reschedules a delayable work item to the dedicated input workqueue if
+ * @kconfig{CONFIG_INPUT_DEDICATED_WORKQUEUE} is enabled, or to the system
+ * workqueue otherwise.
+ *
+ * @param dwork Pointer to the delayable work item.
+ * @param delay The time to wait before submitting the work item.
+ *
+ * @return Same as @ref k_work_reschedule_for_queue.
+ */
+int input_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay);
+
+#else /* CONFIG_INPUT_DEDICATED_WORKQUEUE */
+
+static inline int input_work_submit(struct k_work *work)
+{
+	return k_work_submit(work);
+}
+
+static inline int input_work_schedule(struct k_work_delayable *dwork,
+				      k_timeout_t delay)
+{
+	return k_work_schedule(dwork, delay);
+}
+
+static inline int input_work_reschedule(struct k_work_delayable *dwork,
+					k_timeout_t delay)
+{
+	return k_work_reschedule(dwork, delay);
+}
+
+#endif /* CONFIG_INPUT_DEDICATED_WORKQUEUE */
+
 #ifdef __cplusplus
 }
 #endif

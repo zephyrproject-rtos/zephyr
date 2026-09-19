@@ -110,7 +110,7 @@ static __maybe_unused void gpio_keys_poll_pins(struct k_work *work)
 		gpio_keys_poll_pin(dev, i);
 	}
 
-	k_work_reschedule(dwork, K_MSEC(cfg->debounce_interval_ms));
+	input_work_reschedule(dwork, K_MSEC(cfg->debounce_interval_ms));
 }
 
 static __maybe_unused void gpio_keys_change_deferred(struct k_work *work)
@@ -145,7 +145,7 @@ static void gpio_keys_interrupt(const struct device *dev, struct gpio_callback *
 	ARG_UNUSED(dev); /* GPIO device pointer. */
 	ARG_UNUSED(pins);
 
-	k_work_reschedule(&pin_data->work, K_MSEC(cfg->debounce_interval_ms));
+	input_work_reschedule(&pin_data->work, K_MSEC(cfg->debounce_interval_ms));
 }
 
 static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
@@ -212,7 +212,7 @@ static int gpio_keys_init(const struct device *dev)
 
 	if (cfg->polling_mode) {
 		/* use pin 0 work to poll all the pins periodically */
-		k_work_reschedule(&pin_data[0].work, K_MSEC(cfg->debounce_interval_ms));
+		input_work_reschedule(&pin_data[0].work, K_MSEC(cfg->debounce_interval_ms));
 	}
 
 	ret = pm_device_runtime_enable(dev);
@@ -298,8 +298,8 @@ static int gpio_keys_pm_action(const struct device *dev,
 			}
 
 			if (cfg->polling_mode) {
-				k_work_reschedule(&pin_data[0].work,
-						  K_MSEC(cfg->debounce_interval_ms));
+				input_work_reschedule(&pin_data[0].work,
+						      K_MSEC(cfg->debounce_interval_ms));
 			} else {
 				pin_data[i].cb_data.pin_state = gpio_pin_get_dt(gpio);
 				ret = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_BOTH);

@@ -226,14 +226,14 @@ static void gt911_isr_handler(const struct device *dev, struct gpio_callback *cb
 {
 	struct gt911_data *data = CONTAINER_OF(cb, struct gt911_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #else
 static void gt911_timer_handler(struct k_timer *timer)
 {
 	struct gt911_data *data = CONTAINER_OF(timer, struct gt911_data, timer);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #endif
 

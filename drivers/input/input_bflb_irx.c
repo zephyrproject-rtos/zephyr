@@ -378,14 +378,14 @@ static void bflb_irx_isr(const struct device *dev)
 			tmp = sys_read32(cfg->reg + IRRX_INT_STS_OFFSET);
 			tmp |= IR_CR_IRRX_FRDY_MASK | IR_CR_IRRX_END_MASK;
 			sys_write32(tmp, cfg->reg + IRRX_INT_STS_OFFSET);
-			k_work_schedule(&data->fetch_work, K_NO_WAIT);
+			input_work_schedule(&data->fetch_work, K_NO_WAIT);
 		} else {
 			tmp = sys_read32(cfg->reg + IRRX_CONFIG_OFFSET);
 			tmp |= IR_CR_IRRX_EN;
 			sys_write32(tmp, cfg->reg + IRRX_CONFIG_OFFSET);
 		}
 	} else {
-		k_work_schedule(&data->fetch_work, K_NO_WAIT);
+		input_work_schedule(&data->fetch_work, K_NO_WAIT);
 	}
 }
 #else
@@ -405,7 +405,7 @@ static void bflb_irx_isr(const struct device *dev)
 	sys_write32(tmp, cfg->reg + IRRX_INT_STS_OFFSET);
 
 	/* Don't do processing in ISR */
-	k_work_schedule(&data->fetch_work, K_NO_WAIT);
+	input_work_schedule(&data->fetch_work, K_NO_WAIT);
 }
 
 #endif

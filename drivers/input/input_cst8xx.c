@@ -206,14 +206,14 @@ static void cst8xx_isr_handler(const struct device *dev, struct gpio_callback *c
 {
 	struct cst8xx_data *data = CONTAINER_OF(cb, struct cst8xx_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #else
 static void cst8xx_timer_handler(struct k_timer *timer)
 {
 	struct cst8xx_data *data = CONTAINER_OF(timer, struct cst8xx_data, timer);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #endif
 

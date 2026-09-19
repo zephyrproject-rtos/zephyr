@@ -430,7 +430,7 @@ static void stmpe811_work_handler(struct k_work *work)
 	 * IRQ is edge-triggered, so otherwise it would never be triggered again.
 	 */
 	if (gpio_pin_get_dt(&config->int_gpio)) {
-		k_work_submit(&data->processing_work);
+		input_work_submit(&data->processing_work);
 	}
 }
 
@@ -439,7 +439,7 @@ static void stmpe811_interrupt_handler(const struct device *dev, struct gpio_cal
 {
 	struct stmpe811_data *data = CONTAINER_OF(cb, struct stmpe811_data, int_gpio_cb);
 
-	k_work_submit(&data->processing_work);
+	input_work_submit(&data->processing_work);
 }
 
 static int stmpe811_verify_chip_id(const struct device *dev)

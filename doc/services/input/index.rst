@@ -34,6 +34,15 @@ to only receive events from a specific device. If there's no actual device
 associated with the event, it can be set to ``NULL``, in which case only
 subscribers with no device filter will receive the event.
 
+Input drivers that use work items for deferred processing or periodic polling
+should submit them using :c:func:`input_work_submit`,
+:c:func:`input_work_schedule`, and :c:func:`input_work_reschedule`. By default
+these use the system workqueue, or a dedicated input workqueue if
+:kconfig:option:`CONFIG_INPUT_DEDICATED_WORKQUEUE` is enabled. A dedicated
+workqueue prevents long-running system workqueue tasks from delaying
+time-sensitive input processing such as button debouncing or matrix scanning, at
+the cost of extra memory for the thread stack.
+
 Application API
 ***************
 
