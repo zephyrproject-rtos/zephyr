@@ -1,0 +1,23 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/*
+		 * Keep test RAM in internal OCRAM so SEMC reset/reconfigure
+		 * does not invalidate the active stack/data region.
+		 */
+		zephyr,sram = &ocram;
+	};
+};
+
+&semc {
+	status = "okay";
+};
+
+&sdram0 {
+	status = "okay";
+};

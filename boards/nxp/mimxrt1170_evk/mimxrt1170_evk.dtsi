@@ -347,3 +347,40 @@ arduino_spi: &lpspi1 {
 	pinctrl-0 = <&pinmux_micfil>;
 	pinctrl-names = "default";
 };
+
+/*
+ * SEMC is kept disabled by default: enabling it would make the memc driver
+ * software-reset the controller on init, which would clear the SDRAM
+ * configuration programmed by the ROM boot code (XMCD) while the kernel runs
+ * from SDRAM. sdram0 stays enabled as the board's default zephyr,sram node.
+ * Applications that want the memc driver to own the controller must enable
+ * &semc (sdram0 is already enabled) and keep the active RAM outside SDRAM.
+ */
+&semc {
+	status = "disabled";
+	nxp,dqs-pad-loopback;
+
+	sdram0: sdram@80000000 {
+		/* Winbond W9825G6KH-5I */
+		compatible = "nxp,mcux-semc-sdram";
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(64)>;
+		cs = <0>;
+		clk-frequency = <198000000>;
+		port-size = <32>;
+		burst-length = <8>;
+		column-bits = <9>;
+		cas-latency = <3>;
+		t-precharge-to-act-ns = <15>;
+		t-act-to-readwrite-ns = <15>;
+		t-refresh-recovery-ns = <70>;
+		t-write-recovery-ns = <10>;
+		t-cke-off-ns = <42>;
+		t-act-to-precharge-ns = <40>;
+		t-self-ref-recovery-ns = <70>;
+		t-refresh-to-refresh-ns = <60>;
+		t-act-to-act-ns = <10>;
+		refresh-period-ns-per-row = <7812>;
+		delay-chain = <6>;
+	};
+};
