@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <fsl_clock.h>
 
@@ -36,6 +37,7 @@ static PORT_Type *ports[] = {
 struct pinctrl_mcux_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	struct reset_dt_spec reset_spec;
 };
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
@@ -59,6 +61,14 @@ static int pinctrl_mcux_init(const struct device *dev)
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
+	}
+
+	if (config->reset_spec.dev != NULL) {
+		err = reset_line_deassert_dt(&config->reset_spec);
+		if (err != 0) {
+			LOG_ERR("failed to deassert reset (err %d)", err);
+			return err;
+		}
 	}
 
 	err = clock_control_on(config->clock_dev, config->clock_subsys);
@@ -89,6 +99,7 @@ static int pinctrl_mcux_init(const struct device *dev)
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys = (clock_control_subsys_t)		\
 				PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n),	\
+		.reset_spec = RESET_DT_SPEC_INST_GET_OR(n, {}),	\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
