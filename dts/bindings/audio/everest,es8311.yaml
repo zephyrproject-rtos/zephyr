@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Hsiu-Chi Tsai
+# SPDX-License-Identifier: Apache-2.0
+
+title: Everest Semiconductor ES8311 Audio Codec
+
+description: |
+  Mono ADC/DAC with an I2C control interface and an I2S/PCM audio interface.
+  The CE pin selects the 7-bit I2C address, 0x18 or 0x19. The microphone
+  input is differential MIC1P/MIC1N; the output is OUTP/OUTN.
+
+compatible: "everest,es8311"
+
+include:
+  - name: i2c-device.yaml
+    property-blocklist:
+      - supply-gpios
+      - vin-supply
+
+properties:
+  everest,mono-dac-source:
+    type: string
+    enum:
+      - "left"
+      - "right"
+    default: "left"
+    description: Stereo I2S slot used by the mono DAC.
+
+  everest,mic-pga-gain-db:
+    type: int
+    enum: [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
+    default: 0
+    description: |
+      Analog microphone PGA gain in dB, before ADC conversion. Digital
+      volume adjustment cannot recover a signal clipped at this stage.

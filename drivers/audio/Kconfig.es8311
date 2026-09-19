@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Hsiu-Chi Tsai
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_ES8311
+	bool "Everest Semiconductor ES8311 audio codec"
+	default y
+	depends on DT_HAS_EVEREST_ES8311_ENABLED
+	select I2C
+	help
+	  Enable support for the Everest Semiconductor ES8311 mono audio codec,
+	  controlled over I2C. The part has an I2S/PCM audio port; this driver
+	  currently supports standard I2S only, at 16-bit word size, and rejects
+	  anything else from audio_codec_configure().
