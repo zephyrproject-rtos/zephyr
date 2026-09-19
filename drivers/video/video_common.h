@@ -43,7 +43,7 @@
  * @param id Control ID to initialize
  * @param range Value range of the control
  *
- * @retval 0 on succes
+ * @retval 0 on success
  * @return Negative error code on failure
  */
 int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
@@ -58,7 +58,7 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
  * @param def Default index in @p menu
  * @param menu Array of strings in which the control value is the index, NULL terminated
  *
- * @retval 0 on succes
+ * @retval 0 on success
  * @return Negative error code on failure
  */
 int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
@@ -74,9 +74,7 @@ int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint
  * @param menu Array of integers in which the control value is the index
  * @param menu_len Number of elements in @p menu
  *
- * @retval 0 on succes
- * @return Negative error code on failure
- */
+ * @retval 0 on success
 int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
 			     uint8_t def, const int64_t menu[], size_t menu_len);
 
@@ -86,7 +84,7 @@ int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, 
  * @param ctrls Pointer to the first video control
  * @param sz Number of video controls to cluster together
  *
- * @retval 0 on succes
+ * @retval 0 on success
  * @return Negative error code on failure
  */
 int video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz);
