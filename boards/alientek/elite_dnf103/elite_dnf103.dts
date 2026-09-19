@@ -1,0 +1,262 @@
+/*
+ * Copyright (c) 2026 Wang Yixiang
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f1/stm32f103Xe.dtsi>
+#include <st/f1/stm32f103z(c-d-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STM32F103 Elite Development Board";
+	compatible = "alientek,elite_dnf103";
+
+	zephyr,user {
+		rs485-de-gpios = <&gpiod 7 (GPIO_ACTIVE_HIGH)>;
+		nrf-ce-gpios = <&gpiog 8 (GPIO_ACTIVE_HIGH)>;
+		nrf-cs-gpios = <&gpiog 7 (GPIO_ACTIVE_LOW)>;
+		nrf-irq-gpios = <&gpiog 6 (GPIO_ACTIVE_LOW)>;
+		io-channels = <&adc1 0>, <&dac1 1>;
+		io-channel-names = "stm_adc", "stm_dac";
+	};
+
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+		sw0 = &key_0;
+		sw1 = &key_1;
+		buzzer0 = &beep;
+		at24c02 = &w24c02;
+		nm25q128 = &nm25q128;
+		ssd1306 = &oled_096;
+		dht11 = &dht11;
+		ds18b20 = &ds18b20;
+		lf0038 = &ir_remote;
+	};
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_0: led_0 {
+			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_1: led_1 {
+			gpios = <&gpioe 5 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		wk_up: wk_up {
+			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+
+		key_0: key_0 {
+			gpios = <&gpioe 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		key_1: key_1 {
+			gpios = <&gpioe 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	beep: beep {
+		compatible = "gpio-buzzer";
+		gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	};
+
+	i2c_sw: i2c_sw {
+		compatible = "gpio-i2c";
+		scl-gpios = <&gpiod 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		sda-gpios = <&gpiog 13 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		clock-frequency = <100000>;
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		oled_096: ssd1306@3c {
+			compatible = "solomon,ssd1306";
+			reg = <0x3c>;
+			width = <128>;
+			height = <64>;
+			segment-offset = <0>;
+			page-offset = <0>;
+			display-offset = <0>;
+			multiplex-ratio = <63>;
+			prechargep = <0x22>;
+			segment-remap;
+			com-invdir;
+		};
+		/* ov7725 no fifo driver*/
+	};
+
+	ds18b20: w1 {
+		compatible = "zephyr,w1-gpio";
+		gpios = <&gpiog 11 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		status = "disabled";
+	};
+
+	dht11: dht11 {
+		compatible = "aosong,dht";
+		dio-gpios = <&gpiog 11 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		status = "disabled";
+	};
+
+	/* LF0038GKLL-1 and VS1838B are devices of the same type, and their drivers can be reused. */
+	ir_remote: ir-receiver {
+		compatible = "vishay,vs1838b";
+		data-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	/*
+	 * Zephyr has no I2S, FSMC or SDIO support for the STM32F1 series, so
+	 * the board's FSMC (external memory) and SDIO (microSD) interfaces
+	 * cannot be described in this devicetree.
+	 */
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0>;
+	pinctrl-names = "default";
+	status = "disabled";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&can1 {
+	pinctrl-0 = <&can_tx_pa12 &can_rx_pa11>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dac1 {
+	pinctrl-0 = <&dac_out1_pa4>;
+	pinctrl-names = "default";
+	status = "disabled";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@1 {
+		reg = <1>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	w24c02: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+		status = "okay";
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_master_pb13 &spi2_miso_master_pb14 &spi2_mosi_master_pb15>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW)>;
+	status = "okay";
+
+	nm25q128: nm25q128@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(18)>;
+		/* 134217728 bits = 16 MiB */
+		size = <0x8000000>;
+		jedec-id = [52 21 18];
+		status = "okay";
+	};
+};
