@@ -40,6 +40,7 @@ static size_t capture_head;
 static bool capture_wrapped;
 static bool capturing;
 
+#if defined(CONFIG_PRINTK) || defined(TC_CAPTURE_LOG_BACKEND)
 static void capture_append(char c)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -55,6 +56,7 @@ static void capture_append(char c)
 
 	k_spin_unlock(&lock, key);
 }
+#endif /* CONFIG_PRINTK || TC_CAPTURE_LOG_BACKEND */
 
 /*
  * Copy the captured bytes in order into dst (up to dst_size) and return the
