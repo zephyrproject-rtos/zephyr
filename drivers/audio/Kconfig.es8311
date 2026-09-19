@@ -11,3 +11,13 @@ config AUDIO_CODEC_ES8311
 	  controlled over I2C. The part has an I2S/PCM audio port; this driver
 	  currently supports standard I2S only, at 16-bit word size, and rejects
 	  anything else from audio_codec_configure().
+
+config EMUL_ES8311
+	bool "Everest ES8311 audio codec emulator"
+	default y
+	depends on EMUL
+	# The emulator uses the codec subsystem's log level.
+	depends on AUDIO_CODEC_ES8311
+	help
+	  I2C emulator for the Everest ES8311 audio codec, for native_sim driver
+	  unit tests.
