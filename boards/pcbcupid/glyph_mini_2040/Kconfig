@@ -1,0 +1,9 @@
+# Copyright (c) 2024 PCB Cupid
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GLYPH_MINI_2040
+	select RP2_FLASH_W25Q080
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_GLYPH_MINI_2040
