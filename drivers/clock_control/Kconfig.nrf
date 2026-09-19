@@ -20,8 +20,7 @@ config CLOCK_CONTROL_NRF_ONOFF
 	  this config can be disabled to reduce image size.
 
 menuconfig CLOCK_CONTROL_NRF
-	bool "NRF Clock controller support"
-	default n
+	bool "NRF Clock controller support [DEPRECATED]"
 	depends on DT_HAS_NORDIC_NRF_CLOCK_ENABLED
 	select ONOFF
 	select NRFX_CLOCK if !CLOCK_CONTROL_NRF_FORCE_ALT
@@ -264,7 +263,7 @@ endif # CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
 endif # CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
 config CLOCK_CONTROL_NRF_HFINT_CALIBRATION
-	bool "HFINT clock calibration"
+	bool "HFINT clock calibration [EXPERIMENTAL]"
 	depends on DT_HAS_NORDIC_NRF54L_HFXO_ENABLED
 	depends on !TRUSTED_EXECUTION_NONSECURE
 	select CLOCK_CONTROL_NRF_ONOFF

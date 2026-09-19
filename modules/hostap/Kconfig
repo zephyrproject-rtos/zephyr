@@ -126,7 +126,7 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS
 	  systems as it can compromise network security.
 
 config WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
-	bool "Print PMK once per successful handshake"
+	bool "Print PMK once per successful handshake [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Prints the PMK (as a hex string) once per completed 4-way handshake,
@@ -214,7 +214,7 @@ config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
 	  unless LEGACY_CRYPTO is set explicitly.
 
 config WIFI_NM_WPA_SUPPLICANT_WEP
-	bool "WEP support (deprecated)"
+	bool "WEP support [DEPRECATED]"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	select DEPRECATED
 	select NOT_SECURE

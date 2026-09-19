@@ -269,7 +269,7 @@ endif # CPU_HAS_MMU
 if CPU_HAS_MPU
 
 config XTENSA_MPU
-	bool "Xtensa MPU Support"
+	bool "Xtensa MPU Support [EXPERIMENTAL]"
 	select MPU
 	select SRAM_REGION_PERMISSIONS
 	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
