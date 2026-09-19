@@ -59,6 +59,8 @@ enum esp_wifi_mesh_event {
 	ESP_WIFI_MESH_EVENT_FIND_NETWORK,
 	/** The routing table changed (see routing_table_size in the info). */
 	ESP_WIFI_MESH_EVENT_ROUTING_TABLE_CHANGE,
+	/** This node's mesh layer (tree depth) changed (see layer in the info). */
+	ESP_WIFI_MESH_EVENT_LAYER_CHANGE,
 	/** The root external-network (toDS) path became reachable. */
 	ESP_WIFI_MESH_EVENT_TODS_REACHABLE,
 	/** The root external-network (toDS) path became unreachable. */
