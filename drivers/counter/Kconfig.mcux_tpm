@@ -1,11 +1,13 @@
 # MCUXpresso SDK TPM
 
-# Copyright 2023-2024 NXP
+# Copyright 2023-2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config COUNTER_MCUX_TPM
 	bool "MCUX TPM counter driver"
 	default y
 	depends on DT_HAS_NXP_TPM_TIMER_ENABLED
+	select COUNTER_SUPPORTS_CAPTURE
+	select PINCTRL if COUNTER_CAPTURE
 	help
 	  Enable support for mcux Timer PWM Module (TPM) counter driver.
