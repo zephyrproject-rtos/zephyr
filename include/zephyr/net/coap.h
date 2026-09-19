@@ -225,6 +225,9 @@ enum coap_response_code {
 #define COAP_TOKEN_MAX_LEN 8UL
 #define COAP_FIXED_HEADER_SIZE 4UL
 
+/** Maximum length of the ETag option value (@rfc{7252,section-5.10.6}) */
+#define COAP_ETAG_MAX_LEN 8UL
+
 /* CoAP TCP header constants (RFC 8323) */
 /* Len/TKL + Code */
 #define COAP_TCP_BASIC_HEADER_SIZE        (2)
