@@ -37,7 +37,10 @@ static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 		CONTAINER_OF(switched_from, struct k_thread, switch_handle);
 
 	/* Use syscall for context switch and restore */
-	__asm("syscall " STRINGIFY(TRICORE_SYSCALL_SWITCH) ::"a"(to), "a"(from));
+	__asm__ volatile("syscall " STRINGIFY(TRICORE_SYSCALL_SWITCH)
+					      :
+					      : "a"(to), "a"(from)
+					      : "memory");
 }
 
 #endif /* _ASMLANGUAGE */
