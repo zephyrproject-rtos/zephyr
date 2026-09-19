@@ -117,7 +117,11 @@ void mcux_qtmr_timer_handler(const struct device *dev, uint32_t status)
 		counter_alarm_callback_t alarm_cb = data->alarm_callback;
 
 		data->alarm_callback = NULL;
-		alarm_cb(dev, config->channel, current, data->alarm_user_data);
+		/* each QTMR channel is exposed as its own counter device, so 0 is the
+		 * only alarm channel this driver accepts. Report that rather than the
+		 * hardware channel from the dts.
+		 */
+		alarm_cb(dev, 0, current, data->alarm_user_data);
 	}
 
 	if ((status & kQTMR_OverflowFlag) && data->top_callback) {
