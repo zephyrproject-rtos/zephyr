@@ -100,9 +100,12 @@ struct mspi_ambiq_timing_scan {
 
 #define MSPI_AMBIQ_TIMING_CONFIG_MASK(n) DT_INST_PROP(n, ambiq_timing_config_mask)
 
+#if defined(CONFIG_SOC_APOLLO3_BLUE)
+#define MSPI_AMBIQ_PORT(n) ((DT_REG_ADDR(DT_INST_BUS(n)) - MSPI_BASE) / 0x1000UL)
+#else
 #define MSPI_AMBIQ_PORT(n) ((DT_REG_ADDR(DT_INST_BUS(n)) - MSPI0_BASE) /                          \
 				(MSPI1_BASE - MSPI0_BASE))
-
+#endif
 
 int mspi_ambiq_timing_scan(const struct device           *dev,
 			   const struct device           *bus,
