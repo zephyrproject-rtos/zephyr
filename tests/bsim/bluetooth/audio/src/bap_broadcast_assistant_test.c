@@ -904,6 +904,11 @@ static void test_main_client_sync_incorrect_code(void)
 	test_bass_add_source();
 	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U));
 	WAIT_FOR_FLAG(flag_broadcast_code_requested);
+	if (recv_state.subgroups[0].metadata_len == 0U) {
+		FAIL("Metadata lost when the broadcast code was requested\n");
+		return;
+	}
+
 	test_bass_broadcast_code(INCORRECT_BROADCAST_CODE);
 	WAIT_FOR_FLAG(flag_incorrect_broadcast_code);
 

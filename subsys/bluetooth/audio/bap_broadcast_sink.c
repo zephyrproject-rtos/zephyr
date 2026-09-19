@@ -875,7 +875,7 @@ static void update_recv_state_encryption(const struct bt_bap_broadcast_sink *sin
 	mod_src_param.num_subgroups = recv_state->num_subgroups;
 	(void)memcpy(mod_src_param.subgroups,
 		     recv_state->subgroups,
-		     sizeof(recv_state->num_subgroups));
+		     sizeof(recv_state->subgroups));
 
 	err = bt_bap_scan_delegator_mod_src(&mod_src_param);
 	if (err != 0) {
