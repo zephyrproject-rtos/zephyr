@@ -13,6 +13,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,ocm = &ocm;
+		zephyr,canbus = &can0;
 	};
 
 	adma_ref_clk: adma-ref-clk {
@@ -24,6 +25,12 @@
 	sdhci_ref_clk: sdhci-ref-clk {
 		compatible = "fixed-clock";
 		clock-frequency = <200000000>;
+		#clock-cells = <0>;
+	};
+
+	canclk: can-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <160000000>;
 		#clock-cells = <0>;
 	};
 };
@@ -121,4 +128,9 @@
 
 &ttc0_timer2 {
 	status = "okay";
+};
+
+&can0 {
+	status = "okay";
+	clocks = <&canclk>;
 };
