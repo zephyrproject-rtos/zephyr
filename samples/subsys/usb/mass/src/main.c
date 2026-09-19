@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usbd_msc.h>
+#include <zephyr/storage/disk_access.h>
 #include <zephyr/fs/fs.h>
 #include <stdio.h>
 
@@ -109,6 +110,32 @@ static int mount_app_fs(struct fs_mount_t *mnt)
 	return rc;
 }
 
+static void init_disk(void)
+{
+	int rc = 0;
+
+	if (IS_ENABLED(CONFIG_DISK_DRIVER_FLASH)) {
+		rc = disk_access_ioctl("NAND", DISK_IOCTL_CTRL_INIT, NULL);
+		if (rc < 0) {
+			LOG_ERR("Failed to initialize NAND disk: %d", rc);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_DISK_DRIVER_RAM)) {
+		rc = disk_access_ioctl("RAM", DISK_IOCTL_CTRL_INIT, NULL);
+		if (rc < 0) {
+			LOG_ERR("Failed to initialize RAM disk: %d", rc);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_DISK_DRIVER_SDMMC)) {
+		rc = disk_access_ioctl("SD", DISK_IOCTL_CTRL_INIT, NULL);
+		if (rc < 0 && rc != -ENODEV) {
+			LOG_ERR("Failed to initialize SD disk: %d", rc);
+		}
+	}
+}
+
 static void setup_disk(void)
 {
 	struct fs_mount_t *mp = &fs_mnt;
@@ -189,6 +216,7 @@ int main(void)
 {
 	int ret;
 
+	init_disk();
 	setup_disk();
 
 	sample_usbd = sample_usbd_init_device(NULL);
