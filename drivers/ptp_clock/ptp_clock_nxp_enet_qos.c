@@ -194,13 +194,7 @@ static int ptp_clock_nxp_enet_qos_init(const struct device *dev)
 	 * nanosecond rollover in digital logic
 	 */
 	data->base->MAC_TIMESTAMP_CONTROL =
-		ENET_MAC_TIMESTAMP_CONTROL_TSENA_MASK | ENET_MAC_TIMESTAMP_CONTROL_TSIPV4ENA_MASK |
-		ENET_MAC_TIMESTAMP_CONTROL_TSIPV6ENA_MASK |
-		ENET_MAC_TIMESTAMP_CONTROL_TSENALL_MASK |
-		ENET_MAC_TIMESTAMP_CONTROL_TSEVNTENA_MASK |
-		ENET_MAC_TIMESTAMP_CONTROL_SNAPTYPSEL_MASK |
-		ENET_MAC_TIMESTAMP_CONTROL_TSCTRLSSR(1) |
-		ENET_MAC_TIMESTAMP_CONTROL_TSVER2ENA_MASK | ENET_MAC_TIMESTAMP_CONTROL_TSIPENA_MASK;
+		ENET_MAC_TIMESTAMP_CONTROL_TSENA_MASK | ENET_MAC_TIMESTAMP_CONTROL_TSCTRLSSR(1);
 
 	/* Step 2: initialize system time to zero (coarse mode — completes quickly) */
 	data->base->MAC_SYSTEM_TIME_NANOSECONDS_UPDATE = 0;
@@ -224,6 +218,19 @@ static int ptp_clock_nxp_enet_qos_init(const struct device *dev)
 	data->base->MAC_TIMESTAMP_CONTROL |= ENET_MAC_TIMESTAMP_CONTROL_TSADDREG_MASK;
 	while (data->base->MAC_TIMESTAMP_CONTROL & ENET_MAC_TIMESTAMP_CONTROL_TSADDREG_MASK) {
 	}
+
+	/*
+	 * Program the packet timestamp filters after the fine-update timebase is ready.
+	 * Enabling them during coarse-mode initialization can leave RX capture inactive
+	 * even though MAC_TIMESTAMP_CONTROL reads back with the capture bits set.
+	 */
+	data->base->MAC_TIMESTAMP_CONTROL |=
+		ENET_MAC_TIMESTAMP_CONTROL_TSIPV4ENA_MASK |
+		ENET_MAC_TIMESTAMP_CONTROL_TSIPV6ENA_MASK |
+		ENET_MAC_TIMESTAMP_CONTROL_TSENALL_MASK |
+		ENET_MAC_TIMESTAMP_CONTROL_TSEVNTENA_MASK |
+		ENET_MAC_TIMESTAMP_CONTROL_SNAPTYPSEL_MASK |
+		ENET_MAC_TIMESTAMP_CONTROL_TSVER2ENA_MASK | ENET_MAC_TIMESTAMP_CONTROL_TSIPENA_MASK;
 
 	/* Allow the timestamp configuration to propagate to the MAC clock domain. */
 	k_busy_wait(10);
