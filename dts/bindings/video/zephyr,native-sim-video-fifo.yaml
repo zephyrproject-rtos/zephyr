@@ -1,0 +1,58 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Native simulator video source reading raw frames from a host named pipe (FIFO).
+
+  A host process feeds the FIFO with raw frames of exactly width * height *
+  bytes-per-pixel bytes, for instance with ffmpeg:
+
+    ffmpeg -f v4l2 -i /dev/video0 \
+      -vf "scale=320:240:force_original_aspect_ratio=increase,crop=320:240,fps=10" \
+      -pix_fmt rgb565le -f rawvideo -y /tmp/zephyr-cam.fifo
+
+  The format is fixed: the host writer is responsible for any scaling and
+  pixel format conversion.
+
+compatible: "zephyr,native-sim-video-fifo"
+
+include: base.yaml
+
+properties:
+  fifo-path:
+    type: string
+    default: "/tmp/zephyr-cam.fifo"
+    description: |
+      Path of the host named pipe to read the frames from. The FIFO is created
+      if it does not exist yet. It can be overridden at runtime with the
+      --<device-name>=<path> command line option.
+
+  width:
+    type: int
+    required: true
+    description: Frame width in pixels.
+
+  height:
+    type: int
+    required: true
+    description: Frame height in pixels.
+
+  pixel-format:
+    type: string
+    required: true
+    enum:
+      - "RGB565"
+      - "YUYV"
+      - "GREY"
+    description: |
+      Pixel format of the frames provided by the host writer. RGB565 is
+      little-endian, matching the ffmpeg rgb565le format. YUYV matches the
+      ffmpeg yuyv422 format and GREY matches the ffmpeg gray format.
+
+  poll-interval-ms:
+    type: int
+    default: 10
+    description: |
+      Delay between two polls of the host FIFO when no complete frame was
+      received. Polling continues immediately after a frame is completed, so
+      this does not limit the frame rate.
