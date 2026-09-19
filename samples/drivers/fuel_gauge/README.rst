@@ -44,9 +44,9 @@ Sample output
    [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_CYCLE_COUNT" is not supported
    [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_CONNECT_STATE" is not supported
    [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_FLAGS" is not supported
-   [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH" is not supported
+   [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_FULL_CHARGE_CAPACITY" is not supported
    [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_PRESENT_STATE" is not supported
-   [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_REMAINING_CAPACITY_UAH" is not supported
+   [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_REMAINING_CAPACITY" is not supported
    [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS" is not supported
    [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_RUNTIME_TO_FULL_MINS" is not supported
    [00:00:00.116,000] <inf> app: Property "FUEL_GAUGE_SBS_MFR_ACCESS" is not supported
