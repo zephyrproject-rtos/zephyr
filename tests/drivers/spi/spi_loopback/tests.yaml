@@ -40,6 +40,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cz_ca80_cult
     integration_platforms:
       - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
@@ -63,6 +64,7 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cz_ca80_cult
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
     platform_allow:
