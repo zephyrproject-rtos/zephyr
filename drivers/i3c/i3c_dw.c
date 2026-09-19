@@ -334,6 +334,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DEV_ADDR_TABLE_MR_REJECT         BIT(14)
 #define DEV_ADDR_TABLE_SIR_REJECT        BIT(13)
 #define DEV_ADDR_TABLE_IBI_WITH_DATA     BIT(12)
+#define DEV_ADDR_TABLE_STATIC_ADDR_MASK  GENMASK(6, 0)
 #define DEV_ADDR_TABLE_STATIC_ADDR(x)    ((x) & GENMASK(6, 0))
 #define DEV_ADDR_TABLE_LOC(start, idx)   ((start) + ((idx) << 2))
 
@@ -380,6 +381,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 
 #define DW_I3C_MAX_DEVS         32
 #define DW_I3C_MAX_CMD_BUF_SIZE 16
+/* Databook Table 2-4: TIDs 0x8-0xf are reserved for controller-generated commands. */
+#define DW_I3C_MAX_TID          8
 
 /* Snps I3C/I2C Device Private Data */
 struct dw_i3c_i2c_dev_data {
@@ -658,6 +661,7 @@ static void dw_i3c_end_xfer(const struct device *dev)
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
 	uint32_t nresp, resp;
+	uint32_t seen_tids = 0U;
 	int i, ret = 0;
 #ifdef CONFIG_I3C_TARGET
 	uint32_t rx_data;
@@ -678,9 +682,14 @@ static void dw_i3c_end_xfer(const struct device *dev)
 			continue;
 		}
 
+		if (tid >= xfer->ncmds) {
+			continue;
+		}
+
 		cmd = &xfer->cmds[tid];
 		cmd->rx_len = RESPONSE_PORT_DATA_LEN(resp);
 		cmd->error = RESPONSE_PORT_ERR_STATUS(resp);
+		seen_tids |= BIT(tid);
 #ifdef CONFIG_I3C_TARGET
 		/* if we are in target mode */
 		if (!dw_i3c_is_current_controller(dev)) {
@@ -709,7 +718,11 @@ static void dw_i3c_end_xfer(const struct device *dev)
 #endif /* CONFIG_I3C_TARGET */
 	}
 
-	for (i = 0; i < nresp; i++) {
+	for (i = 0; i < xfer->ncmds; i++) {
+		if ((seen_tids & BIT(i)) == 0U) {
+			continue;
+		}
+
 		switch (xfer->cmds[i].error) {
 		case RESPONSE_NO_ERROR:
 			break;
@@ -2055,6 +2068,7 @@ static uint8_t odd_parity(uint8_t p)
  */
 static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *payload)
 {
+	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
@@ -2062,6 +2076,12 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	if (!dw_i3c_is_current_controller(dev)) {
 		return -EACCES;
+	}
+
+	if (payload->targets.num_targets > DW_I3C_MAX_TID) {
+		LOG_ERR("%s: CCC 0x%02x has %zu targets, only %u can be tagged", dev->name,
+			payload->ccc.id, payload->targets.num_targets, DW_I3C_MAX_TID);
+		return -ENOTSUP;
 	}
 
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
@@ -2102,41 +2122,85 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		}
 		xfer->ncmds = payload->targets.num_targets;
 		for (i = 0; i < payload->targets.num_targets; i++) {
+			struct i3c_ccc_target_payload *tgt = &payload->targets.payloads[i];
+			bool is_addr_assign_cmd = (payload->ccc.id == I3C_CCC_SETDASA);
+
 			cmd = &xfer->cmds[i];
+
 			/* Look up position, SETDASA will perform the look up by static addr */
-			pos = get_i3c_addr_pos(dev, payload->targets.payloads[i].addr,
+			pos = get_i3c_addr_pos(dev, tgt->addr,
 					       payload->ccc.id == I3C_CCC_SETDASA);
 			if (pos < 0) {
 				LOG_ERR("%s: Invalid Slave address with pos %d", dev->name, pos);
 				ret = -ENOSPC;
 				goto error;
 			}
-			cmd->buf = payload->targets.payloads[i].data;
 
-			cmd->cmd_hi =
-				COMMAND_PORT_ARG_DATA_LEN(payload->targets.payloads[i].data_len) |
-				COMMAND_PORT_TRANSFER_ARG;
-			cmd->cmd_lo = COMMAND_PORT_CP | COMMAND_PORT_DEV_INDEX(pos) |
-				      COMMAND_PORT_ROC | COMMAND_PORT_CMD(payload->ccc.id);
+			if (is_addr_assign_cmd) {
+				uint32_t dat_loc = DEV_ADDR_TABLE_LOC(data->datstartaddr, pos);
+				uint32_t dat;
+				uint8_t db;
+
+				if (tgt->data_len != 1 || tgt->data == NULL) {
+					ret = -EINVAL;
+					goto error;
+				}
+
+				/* DA arrives left-shifted; the DAT wants it raw + parity. */
+				db = tgt->data[0] >> 1;
+				db |= odd_parity(db) << 7;
+
+				/* Only the address fields change; the rest of the entry
+				 * carries IBI policy set when the device was attached.
+				 */
+				dat = sys_read32(config->regs + dat_loc);
+				dat &= ~(DEV_ADDR_TABLE_DYNAMIC_ADDR_MASK |
+					 DEV_ADDR_TABLE_STATIC_ADDR_MASK);
+				dat |= DEV_ADDR_TABLE_DYNAMIC_ADDR(db) |
+				       DEV_ADDR_TABLE_STATIC_ADDR(tgt->addr);
+				sys_write32(dat, config->regs + dat_loc);
+
+				cmd->buf = NULL;
+				cmd->cmd_hi = COMMAND_PORT_TRANSFER_ARG;
+				cmd->cmd_lo = COMMAND_PORT_ROC | COMMAND_PORT_TID(i) |
+					      COMMAND_PORT_DEV_COUNT(1) |
+					      COMMAND_PORT_DEV_INDEX(pos) |
+					      COMMAND_PORT_CMD(payload->ccc.id) |
+					      COMMAND_PORT_ADDR_ASSGN_CMD;
+				cmd->tx_len = tgt->data_len;
+				cmd->rx_len = 0;
+			} else {
+				cmd->buf = tgt->data;
+
+				cmd->cmd_hi = COMMAND_PORT_ARG_DATA_LEN(tgt->data_len) |
+					      COMMAND_PORT_TRANSFER_ARG;
+				cmd->cmd_lo = COMMAND_PORT_CP | COMMAND_PORT_TID(i) |
+					      COMMAND_PORT_DEV_INDEX(pos) |
+					      COMMAND_PORT_ROC | COMMAND_PORT_CMD(payload->ccc.id);
+
+				/* The defining byte rides in payload->ccc; the target
+				 * payload is the data phase and may be any length.
+				 */
+				if (payload->ccc.data_len == 1) {
+					cmd->cmd_lo |= COMMAND_PORT_DBP;
+					cmd->cmd_hi |= COMMAND_PORT_ARG_DB(payload->ccc.data[0]);
+				} else if (payload->ccc.data_len > 1) {
+					LOG_ERR("%s: direct CCCs defining byte >1", dev->name);
+					ret = -EINVAL;
+					goto error;
+				}
+			}
+
 			/* last command queue with multiple targets must have TOC set */
 			if (i == (payload->targets.num_targets - 1)) {
 				cmd->cmd_lo |= COMMAND_PORT_TOC;
 			}
-			/* If there is a defining byte for direct CCC */
-			if (payload->ccc.data_len == 1) {
-				cmd->cmd_lo |= COMMAND_PORT_DBP;
-				cmd->cmd_hi |= COMMAND_PORT_ARG_DB(payload->ccc.data[0]);
-			} else if (payload->ccc.data_len > 1) {
-				LOG_ERR("%s: direct CCCs defining byte >1", dev->name);
-				ret = -EINVAL;
-				goto error;
-			}
 
-			if (payload->targets.payloads[i].rnw) {
+			if (!is_addr_assign_cmd && tgt->rnw) {
 				cmd->cmd_lo |= COMMAND_PORT_READ_TRANSFER;
-				cmd->rx_len = payload->targets.payloads[i].data_len;
-			} else {
-				cmd->tx_len = payload->targets.payloads[i].data_len;
+				cmd->rx_len = tgt->data_len;
+			} else if (!is_addr_assign_cmd) {
+				cmd->tx_len = tgt->data_len;
 			}
 		}
 	}
