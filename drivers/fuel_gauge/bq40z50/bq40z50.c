@@ -49,10 +49,16 @@ struct bq40z50_data {
 static int bq40z50_i2c_read(const struct device *dev, uint8_t reg_addr, uint8_t *value, size_t len)
 {
 	const struct bq40z50_config *cfg = dev->config;
-	int ret = i2c_burst_read_dt(&cfg->i2c, reg_addr, value, len);
+	int ret = i2c_write_dt(&cfg->i2c, &reg_addr, 1);
 
 	if (ret) {
-		LOG_ERR("i2c_burst_read_dt failed for address %d: %d", reg_addr, ret);
+		LOG_ERR("i2c_write_dt failed for address %d: %d", reg_addr, ret);
+		return ret;
+	}
+	k_usleep(100);
+	ret = i2c_read_dt(&cfg->i2c, value, len);
+	if (ret) {
+		LOG_ERR("i2c_read_dt failed for address %d: %d", reg_addr, ret);
 	}
 	return ret;
 }
