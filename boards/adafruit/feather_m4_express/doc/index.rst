@@ -75,7 +75,7 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-The Feather ships with a the BOSSA compatible UF2 bootloader.  The
+The Feather ships with the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 
 Additionally, if :kconfig:option:`CONFIG_USB_CDC_ACM` is enabled then the
