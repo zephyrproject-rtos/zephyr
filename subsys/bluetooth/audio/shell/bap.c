@@ -3272,6 +3272,11 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	struct bt_bap_broadcast_source_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
 	uint32_t broadcast_id = 0U;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	uint16_t max_pdu = 0U;
+	uint8_t bn = 0U;
+	uint8_t nse = 0U;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 	size_t i;
 	int err;
 
@@ -3332,6 +3337,124 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				return -ENOEXEC;
 			}
 		}
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		else if (strcmp(arg, "irc") == 0) {
+			unsigned long val;
+
+			i++;
+			if (i == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = strtoul(argv[i], NULL, 0);
+			if (val < BT_ISO_IRC_MIN || val > BT_ISO_IRC_MAX) {
+				shell_error(sh, "Invalid IRC %lu (range %u-%u)",
+					    val, BT_ISO_IRC_MIN, BT_ISO_IRC_MAX);
+
+				return -ENOEXEC;
+			}
+
+			create_param.irc = (uint8_t)val;
+		} else if (strcmp(arg, "pto") == 0) {
+			unsigned long val;
+
+			i++;
+			if (i == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = strtoul(argv[i], NULL, 0);
+			if (val < BT_ISO_PTO_MIN || val > BT_ISO_PTO_MAX) {
+				shell_error(sh, "Invalid PTO %lu (range %u-%u)",
+					    val, BT_ISO_PTO_MIN, BT_ISO_PTO_MAX);
+
+				return -ENOEXEC;
+			}
+
+			create_param.pto = (uint8_t)val;
+		} else if (strcmp(arg, "iso_interval") == 0) {
+			unsigned long val;
+
+			i++;
+			if (i == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = strtoul(argv[i], NULL, 0);
+			if (val < BT_ISO_ISO_INTERVAL_MIN || val > BT_ISO_ISO_INTERVAL_MAX) {
+				shell_error(sh, "Invalid ISO interval %lu (range %u-%u)",
+					    val, BT_ISO_ISO_INTERVAL_MIN,
+					    BT_ISO_ISO_INTERVAL_MAX);
+
+				return -ENOEXEC;
+			}
+
+			create_param.iso_interval = (uint16_t)val;
+		} else if (strcmp(arg, "nse") == 0) {
+			unsigned long val;
+
+			i++;
+			if (i == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = strtoul(argv[i], NULL, 0);
+			if (val < BT_ISO_NSE_MIN || val > BT_ISO_NSE_MAX) {
+				shell_error(sh, "Invalid NSE %lu (range %u-%u)", val,
+					    BT_ISO_NSE_MIN, BT_ISO_NSE_MAX);
+
+				return -ENOEXEC;
+			}
+
+			nse = (uint8_t)val;
+		} else if (strcmp(arg, "bn") == 0) {
+			unsigned long val;
+
+			i++;
+			if (i == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = strtoul(argv[i], NULL, 0);
+			if (val < BT_ISO_BN_MIN || val > BT_ISO_BN_MAX) {
+				shell_error(sh, "Invalid BN %lu (range %u-%u)", val,
+					    BT_ISO_BN_MIN, BT_ISO_BN_MAX);
+
+				return -ENOEXEC;
+			}
+
+			bn = (uint8_t)val;
+		} else if (strcmp(arg, "max_pdu") == 0) {
+			unsigned long val;
+
+			i++;
+			if (i == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = strtoul(argv[i], NULL, 0);
+			if (val < BT_ISO_BROADCAST_PDU_MIN || val > BT_ISO_PDU_MAX) {
+				shell_error(sh, "Invalid max PDU %lu (range %u-%u)", val,
+					    BT_ISO_BROADCAST_PDU_MIN, BT_ISO_PDU_MAX);
+
+				return -ENOEXEC;
+			}
+
+			max_pdu = (uint16_t)val;
+		}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 		i++;
 	}
@@ -3346,6 +3469,22 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	shell_print(sh, "Generated broadcast_id 0x%06X", broadcast_id);
 
 	copy_broadcast_source_preset(&default_source, named_preset);
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	if (create_param.irc != 0U || create_param.iso_interval != 0U || nse != 0U || bn != 0U ||
+	    max_pdu != 0U) {
+		if (create_param.irc == 0U || create_param.iso_interval == 0U || nse == 0U ||
+		    bn == 0U || max_pdu == 0U) {
+			shell_error(sh, "irc, iso_interval, nse, bn and max_pdu must be set together");
+
+			return -ENOEXEC;
+		}
+
+		default_source.qos.num_subevents = nse;
+		default_source.qos.burst_number = bn;
+		default_source.qos.max_pdu = max_pdu;
+	}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	(void)memset(stream_params, 0, sizeof(stream_params));
 	for (i = 0U; i < ARRAY_SIZE(stream_params); i++) {
@@ -4261,8 +4400,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) ? 2 : 0),
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	SHELL_CMD_ARG(select_broadcast, NULL, "<stream>", cmd_select_broadcast_source, 2, 0),
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	SHELL_CMD_ARG(create_broadcast, NULL,
+		      "[preset <preset_name>] [enc <broadcast_code>] "
+		      "[irc <irc>] [pto <pto>] [iso_interval <iso_interval>] "
+		      "[nse <nse>] [bn <bn>] [max_pdu <max_pdu>]",
+		      cmd_create_broadcast, 1, 16),
+#else
 	SHELL_CMD_ARG(create_broadcast, NULL, "[preset <preset_name>] [enc <broadcast_code>]",
 		      cmd_create_broadcast, 1, 2),
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 	SHELL_CMD_ARG(start_broadcast, NULL, "", cmd_start_broadcast, 1, 0),
 	SHELL_CMD_ARG(stop_broadcast, NULL, "", cmd_stop_broadcast, 1, 0),
 	SHELL_CMD_ARG(delete_broadcast, NULL, "", cmd_delete_broadcast, 1, 0),
