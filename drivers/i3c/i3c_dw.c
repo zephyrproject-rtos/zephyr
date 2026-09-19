@@ -360,9 +360,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_I2C_FM_TLOW_MIN_NS  1300
 #define I3C_BUS_I2C_FMP_TLOW_MIN_NS 500
 #define I3C_BUS_THIGH_MAX_NS        41
-#define I3C_BUS_TCAS_PS             38400
 #define I3C_PERIOD_NS               1000000000ULL
-#define I3C_PERIOD_PS               I3C_PERIOD_NS * 1000ULL
 
 #define I3C_BUS_MAX_I3C_SCL_RATE     12900000
 #define I3C_BUS_TYP_I3C_SCL_RATE     12500000
@@ -1857,8 +1855,7 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 		sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_I2C_SLAVE_PRESENT,
 			    config->regs + DEVICE_CTRL);
 	} else {
-		/* Pure bus: Set bus free timing to t_cas of 38.4ns */
-		free_cnt = DIV_ROUND_UP(I3C_BUS_TCAS_PS * (uint64_t)core_rate, I3C_PERIOD_PS);
+		free_cnt = DIV_ROUND_UP(ctrl_cfg->tcas_min_ns * (uint64_t)core_rate, I3C_PERIOD_NS);
 		sys_write32(BUS_I3C_MST_FREE(free_cnt), config->regs + BUS_FREE_TIMING);
 		sys_write32(sys_read32(config->regs + DEVICE_CTRL) & ~DEV_CTRL_I2C_SLAVE_PRESENT,
 			    config->regs + DEVICE_CTRL);
@@ -3074,6 +3071,7 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
 		.common.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(n, od_thigh_min_ns),         \
 		.common.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(n, od_tlow_min_ns),           \
+		.common.ctrl_config.tcas_min_ns = DT_INST_PROP(n, tcas_min_ns),                    \
 	};                                                                                         \
 	static const struct dw_i3c_config dw_i3c_cfg_##n = {                                       \
 		.regs = DT_INST_REG_ADDR(n),                                                       \
@@ -3153,6 +3151,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_HAS_MCHP_MEC_I3C),
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
 		.common.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(n, od_thigh_min_ns),         \
 		.common.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(n, od_tlow_min_ns),           \
+		.common.ctrl_config.tcas_min_ns = DT_INST_PROP(n, tcas_min_ns),                    \
 	};                                                                                         \
 	static const struct dw_i3c_config xec_i3c_cfg_##n = {                                      \
 		.regs = DT_INST_REG_ADDR(n),                                                       \
