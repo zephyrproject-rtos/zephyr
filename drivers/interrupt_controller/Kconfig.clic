@@ -26,6 +26,8 @@ config NRFX_CLIC
 	default y
 	depends on DT_HAS_NORDIC_NRF_CLIC_ENABLED
 	select GEN_IRQ_VECTOR_TABLE
+	# Dispatch goes through the generic RISC-V _isr_wrapper
+	select GEN_SW_ISR_TABLE_SWITCH_SUPPORTED
 	help
 	  Interrupt controller for Nordic VPR cores.
 

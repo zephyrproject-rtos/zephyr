@@ -34,6 +34,21 @@ tests:
     extra_configs:
       - CONFIG_QEMU_ICOUNT=y
       - CONFIG_MINIMAL_LIBC=y
+  arch.interrupt.isr_table_switch:
+    platform_exclude:
+      - qemu_cortex_m0
+      # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
+      # interrupt controller pair in interrupt_util.h yet.
+      - rpi_zero_2w
+    filter: >
+      not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_GEN_SW_ISR_TABLE_SWITCH_SUPPORTED
+    extra_configs:
+      # A generated switch-case table cannot be patched at runtime, which also
+      # rules out the shared interrupt support
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+    integration_platforms:
+      - mps2/an385
   arch.shared_interrupt:
     platform_exclude:
       # excluded because of failures during test_prevent_interruption

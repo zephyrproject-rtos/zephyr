@@ -72,6 +72,24 @@ tests:
     extra_configs:
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
 
+  arch.interrupt.gen_isr_table.switch.arm:
+    platform_allow: qemu_cortex_m3
+    filter: CONFIG_GEN_ISR_TABLES and CONFIG_GEN_SW_ISR_TABLE_SWITCH_SUPPORTED
+    extra_configs:
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+      # A generated switch-case table cannot be patched at runtime
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+  arch.interrupt.gen_isr_table.switch.riscv:
+    arch_allow: riscv
+    filter: CONFIG_GEN_ISR_TABLES and CONFIG_GEN_SW_ISR_TABLE_SWITCH_SUPPORTED
+    extra_configs:
+      # A generated switch-case table cannot be patched at runtime
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuflpr
+
   arch.interrupt.gen_isr_table.arc:
     arch_allow: arc
     filter: CONFIG_RGF_NUM_BANKS > 1

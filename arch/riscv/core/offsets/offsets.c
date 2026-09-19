@@ -156,4 +156,11 @@ GEN_OFFSET_SYM(_cpu_context_t, mie);
 GEN_OFFSET_SYM(_cpu_context_t, sp);
 #endif /* CONFIG_PM_S2RAM */
 
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+GEN_ABSOLUTE_SYM(__isr_table_entry_arg_OFFSET, offsetof(struct _isr_table_entry, arg));
+GEN_ABSOLUTE_SYM(__isr_table_entry_isr_OFFSET, offsetof(struct _isr_table_entry, isr));
+GEN_ABSOLUTE_SYM(__isr_table_entry_STACK_SIZEOF,
+	ROUND_UP(sizeof(struct _isr_table_entry), ARCH_STACK_PTR_ALIGN));
+#endif /* CONFIG_GEN_SW_ISR_TABLE_SWITCH */
+
 GEN_ABS_SYM_END
