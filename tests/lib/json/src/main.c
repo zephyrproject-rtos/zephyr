@@ -2057,7 +2057,7 @@ ZTEST(lib_json_test, test_json_encode_bounds_check)
 		JSON_OBJ_DESCR_PRIM(struct number, val, JSON_TOK_NUMBER),
 	};
 	/* Encodes to {"val":0}\0 for a total of 10 bytes */
-	uint8_t buf[10];
+	char buf[10];
 	ssize_t ret = json_obj_encode_buf(descr, ARRAY_SIZE(descr),
 					  &str, buf, 10);
 	zassert_equal(ret, 0, "Encoding failed despite large enough buffer");
