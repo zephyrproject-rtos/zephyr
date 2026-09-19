@@ -6,11 +6,11 @@
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
+#include <zephyr/arch/cache.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <ipi.h>
 #include "boot.h"
-#include <zephyr/cache.h>
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/platform/hooks.h>
@@ -154,12 +154,22 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	/* store mpid last as this is our synchronization point */
 	arm_cpu_boot_params.mpid = cpu_mpid;
 
-	sys_cache_data_flush_range(
+#if defined(CONFIG_DCACHE)
+	/*
+	 * The secondary core starts with the MMU and the data cache disabled,
+	 * so the parameters have to reach the point of coherency before it is
+	 * released.  The arch operations only exist with d-cache support.
+	 */
+	if (arch_dcache_flush_range(
 			(void *)&arm_cpu_boot_params,
-			sizeof(arm_cpu_boot_params));
+			sizeof(arm_cpu_boot_params)) != 0) {
+		printk("Failed to clean the boot parameters to memory\n");
+		k_panic();
+	}
 
 	/* barrier to guarantee completion of the cache flush above. */
 	barrier_dsync_fence_full();
+#endif
 
 #ifdef CONFIG_PM_CPU_OPS
 	/*
