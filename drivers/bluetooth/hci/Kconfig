@@ -194,7 +194,6 @@ config BT_PSOC6_BLESS
 	default y
 	depends on DT_HAS_INFINEON_BLESS_HCI_ENABLED
 	depends on ZEPHYR_HAL_INFINEON_MODULE_BLOBS
-	select BT_HCI_SETUP
 	help
 	  PSOC 6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
