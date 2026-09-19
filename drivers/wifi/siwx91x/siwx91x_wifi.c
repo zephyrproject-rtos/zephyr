@@ -447,11 +447,7 @@ static int map_sdk_region_to_zephyr_channel_info(const sli_wifi_set_region_ap_re
 
 	for (int idx = 0; idx < *num_channels; idx++) {
 		channel = first_channel + idx;
-		freq = 2407 + channel * 5;
-
-		if (freq > 2472) {
-			freq = 2484; /* channel 14 */
-		}
+		freq = wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, channel);
 
 		z_chan_info[idx].center_frequency = freq;
 		z_chan_info[idx].max_power = sdk_reg->channel_info[0].max_tx_power;
