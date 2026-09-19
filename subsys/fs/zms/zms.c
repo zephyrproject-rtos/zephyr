@@ -625,9 +625,12 @@ static int zms_recover_last_ate(struct zms_fs *fs, uint64_t *addr, uint64_t *dat
 			return rc;
 		}
 		if (zms_ate_valid(fs, &end_ate)) {
-			/* found a valid ate, update data_end_addr and *addr */
-			data_end_addr &= ADDR_SECT_MASK;
+			/* Found a valid ATE.
+			 * Unconditionally update ATE write address.
+			 * Only update data end address for entry with data.
+			 */
 			if (end_ate.len > ZMS_DATA_IN_ATE_SIZE) {
+				data_end_addr &= ADDR_SECT_MASK;
 				data_end_addr += end_ate.offset + zms_al_size(fs, end_ate.len);
 				*data_wra = data_end_addr;
 			}
