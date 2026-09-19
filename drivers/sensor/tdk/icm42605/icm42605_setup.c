@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 TDK Invensense
+ * Copyright 2026 Ahmed Ashraf NourEldeen <a.programmer55559@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +11,7 @@
 
 #include "icm42605.h"
 #include "icm42605_reg.h"
-#include "icm42605_spi.h"
+#include "icm42605_bus.h"
 
 LOG_MODULE_DECLARE(ICM42605, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -20,7 +21,7 @@ int icm42605_set_fs(const struct device *dev, uint16_t a_sf, uint16_t g_sf)
 	uint8_t databuf;
 	int result;
 
-	result = inv_spi_read(&cfg->spi, REG_ACCEL_CONFIG0, &databuf, 1);
+	result = icm42605_reg_read(cfg, REG_ACCEL_CONFIG0, &databuf, 1);
 	if (result) {
 		return result;
 	}
@@ -28,9 +29,9 @@ int icm42605_set_fs(const struct device *dev, uint16_t a_sf, uint16_t g_sf)
 
 	databuf |= a_sf;
 
-	result = inv_spi_single_write(&cfg->spi, REG_ACCEL_CONFIG0, &databuf);
+	result = icm42605_reg_write(cfg, REG_ACCEL_CONFIG0, &databuf);
 
-	result = inv_spi_read(&cfg->spi, REG_GYRO_CONFIG0, &databuf, 1);
+	result = icm42605_reg_read(cfg, REG_GYRO_CONFIG0, &databuf, 1);
 
 	if (result) {
 		return result;
@@ -39,7 +40,7 @@ int icm42605_set_fs(const struct device *dev, uint16_t a_sf, uint16_t g_sf)
 	databuf &= ~BIT_GYRO_FSR;
 	databuf |= g_sf;
 
-	result = inv_spi_single_write(&cfg->spi, REG_GYRO_CONFIG0, &databuf);
+	result = icm42605_reg_write(cfg, REG_GYRO_CONFIG0, &databuf);
 
 	if (result) {
 		return result;
@@ -54,13 +55,12 @@ int icm42605_set_odr(const struct device *dev, uint16_t a_rate, uint16_t g_rate)
 	uint8_t databuf;
 	int result;
 
-	if (a_rate > 8000 || g_rate > 8000 ||
-	    a_rate < 1 || g_rate < 12) {
+	if (a_rate > 8000 || g_rate > 8000 || a_rate < 1 || g_rate < 12) {
 		LOG_ERR("Not supported frequency");
 		return -ENOTSUP;
 	}
 
-	result = inv_spi_read(&cfg->spi, REG_ACCEL_CONFIG0, &databuf, 1);
+	result = icm42605_reg_read(cfg, REG_ACCEL_CONFIG0, &databuf, 1);
 
 	if (result) {
 		return result;
@@ -96,7 +96,7 @@ int icm42605_set_odr(const struct device *dev, uint16_t a_rate, uint16_t g_rate)
 		databuf |= BIT_ACCEL_ODR_1;
 	}
 
-	result = inv_spi_single_write(&cfg->spi, REG_ACCEL_CONFIG0, &databuf);
+	result = icm42605_reg_write(cfg, REG_ACCEL_CONFIG0, &databuf);
 
 	if (result) {
 		return result;
@@ -104,7 +104,7 @@ int icm42605_set_odr(const struct device *dev, uint16_t a_rate, uint16_t g_rate)
 
 	LOG_DBG("Write Accel ODR 0x%X", databuf);
 
-	result = inv_spi_read(&cfg->spi, REG_GYRO_CONFIG0, &databuf, 1);
+	result = icm42605_reg_read(cfg, REG_GYRO_CONFIG0, &databuf, 1);
 
 	if (result) {
 		return result;
@@ -136,7 +136,7 @@ int icm42605_set_odr(const struct device *dev, uint16_t a_rate, uint16_t g_rate)
 
 	LOG_DBG("Write GYRO ODR 0x%X", databuf);
 
-	result = inv_spi_single_write(&cfg->spi, REG_GYRO_CONFIG0, &databuf);
+	result = icm42605_reg_write(cfg, REG_GYRO_CONFIG0, &databuf);
 	if (result) {
 		return result;
 	}
@@ -150,7 +150,7 @@ int icm42605_sensor_init(const struct device *dev)
 	int result = 0;
 	uint8_t v;
 
-	result = inv_spi_read(&cfg->spi, REG_WHO_AM_I, &v, 1);
+	result = icm42605_reg_read(cfg, REG_WHO_AM_I, &v, 1);
 
 	if (result) {
 		return result;
@@ -158,7 +158,7 @@ int icm42605_sensor_init(const struct device *dev)
 
 	LOG_DBG("WHO AM I : 0x%X", v);
 
-	result = inv_spi_read(&cfg->spi, REG_DEVICE_CONFIG, &v, 1);
+	result = icm42605_reg_read(cfg, REG_DEVICE_CONFIG, &v, 1);
 
 	if (result) {
 		LOG_DBG("read REG_DEVICE_CONFIG_REG failed");
@@ -167,7 +167,7 @@ int icm42605_sensor_init(const struct device *dev)
 
 	v |= BIT_SOFT_RESET;
 
-	result = inv_spi_single_write(&cfg->spi, REG_DEVICE_CONFIG, &v);
+	result = icm42605_reg_write(cfg, REG_DEVICE_CONFIG, &v);
 
 	if (result) {
 		LOG_ERR("write REG_DEVICE_CONFIG failed");
@@ -179,7 +179,7 @@ int icm42605_sensor_init(const struct device *dev)
 
 	v = BIT_GYRO_AFSR_MODE_HFS | BIT_ACCEL_AFSR_MODE_HFS | BIT_CLK_SEL_PLL;
 
-	result = inv_spi_single_write(&cfg->spi, REG_INTF_CONFIG1, &v);
+	result = icm42605_reg_write(cfg, REG_INTF_CONFIG1, &v);
 
 	if (result) {
 		LOG_ERR("write REG_INTF_CONFIG1 failed");
@@ -190,14 +190,14 @@ int icm42605_sensor_init(const struct device *dev)
 	    BIT_TMST_TO_REGS_EN |
 	    BIT_TMST_EN;
 
-	result = inv_spi_single_write(&cfg->spi, REG_TMST_CONFIG, &v);
+	result = icm42605_reg_write(cfg, REG_TMST_CONFIG, &v);
 
 	if (result) {
 		LOG_ERR("Write REG_TMST_CONFIG failed");
 		return result;
 	}
 
-	result = inv_spi_read(&cfg->spi, REG_INTF_CONFIG0, &v, 1);
+	result = icm42605_reg_read(cfg, REG_INTF_CONFIG0, &v, 1);
 
 	if (result) {
 		LOG_ERR("Read REG_INTF_CONFIG0 failed");
@@ -208,7 +208,7 @@ int icm42605_sensor_init(const struct device *dev)
 
 	v |= BIT_UI_SIFS_DISABLE_I2C;
 
-	result = inv_spi_single_write(&cfg->spi, REG_INTF_CONFIG0, &v);
+	result = icm42605_reg_write(cfg, REG_INTF_CONFIG0, &v);
 
 	if (result) {
 		LOG_ERR("Write REG_INTF_CONFIG failed");
@@ -216,13 +216,13 @@ int icm42605_sensor_init(const struct device *dev)
 	}
 
 	v = 0;
-	result = inv_spi_single_write(&cfg->spi, REG_INT_CONFIG1, &v);
+	result = icm42605_reg_write(cfg, REG_INT_CONFIG1, &v);
 
 	if (result) {
 		return result;
 	}
 
-	result = inv_spi_single_write(&cfg->spi, REG_PWR_MGMT0, &v);
+	result = icm42605_reg_write(cfg, REG_PWR_MGMT0, &v);
 
 	if (result) {
 		return result;
@@ -243,70 +243,70 @@ int icm42605_turn_on_fifo(const struct device *dev)
 	uint8_t v = 0;
 
 	v = BIT_FIFO_MODE_BYPASS;
-	result = inv_spi_single_write(&cfg->spi, REG_FIFO_CONFIG, &v);
+	result = icm42605_reg_write(cfg, REG_FIFO_CONFIG, &v);
 	if (result) {
 		return result;
 	}
 
 	v = 0;
-	result = inv_spi_single_write(&cfg->spi, REG_FIFO_CONFIG1, &v);
+	result = icm42605_reg_write(cfg, REG_FIFO_CONFIG1, &v);
 	if (result) {
 		return result;
 	}
 
-	result = inv_spi_read(&cfg->spi, REG_FIFO_COUNTH, burst_read, 2);
+	result = icm42605_reg_read(cfg, REG_FIFO_COUNTH, burst_read, 2);
 	if (result) {
 		return result;
 	}
 
-	result = inv_spi_read(&cfg->spi, REG_FIFO_DATA, burst_read, 3);
+	result = icm42605_reg_read(cfg, REG_FIFO_DATA, burst_read, 3);
 	if (result) {
 		return result;
 	}
 
 	v = BIT_FIFO_MODE_STREAM;
-	result = inv_spi_single_write(&cfg->spi, REG_FIFO_CONFIG, &v);
+	result = icm42605_reg_write(cfg, REG_FIFO_CONFIG, &v);
 	if (result) {
 		return result;
 	}
 
-	result = inv_spi_single_write(&cfg->spi, REG_FIFO_CONFIG1, &fifo_en);
+	result = icm42605_reg_write(cfg, REG_FIFO_CONFIG1, &fifo_en);
 	if (result) {
 		return result;
 	}
 
-	result = inv_spi_single_write(&cfg->spi, REG_INT_SOURCE0, &int0_en);
+	result = icm42605_reg_write(cfg, REG_INT_SOURCE0, &int0_en);
 	if (result) {
 		return result;
 	}
 
 	if (drv_data->tap_en) {
 		v = BIT_TAP_ENABLE;
-		result = inv_spi_single_write(&cfg->spi, REG_APEX_CONFIG0, &v);
+		result = icm42605_reg_write(cfg, REG_APEX_CONFIG0, &v);
 		if (result) {
 			return result;
 		}
 
 		v = BIT_DMP_INIT_EN;
-		result = inv_spi_single_write(&cfg->spi, REG_SIGNAL_PATH_RESET, &v);
+		result = icm42605_reg_write(cfg, REG_SIGNAL_PATH_RESET, &v);
 		if (result) {
 			return result;
 		}
 
 		v = BIT_BANK_SEL_4;
-		result = inv_spi_single_write(&cfg->spi, REG_BANK_SEL, &v);
+		result = icm42605_reg_write(cfg, REG_BANK_SEL, &v);
 		if (result) {
 			return result;
 		}
 
 		v = BIT_INT_STATUS_TAP_DET;
-		result = inv_spi_single_write(&cfg->spi, REG_INT_SOURCE6, &v);
+		result = icm42605_reg_write(cfg, REG_INT_SOURCE6, &v);
 		if (result) {
 			return result;
 		}
 
 		v = BIT_BANK_SEL_0;
-		result = inv_spi_single_write(&cfg->spi, REG_BANK_SEL, &v);
+		result = icm42605_reg_write(cfg, REG_BANK_SEL, &v);
 		if (result) {
 			return result;
 		}
@@ -326,58 +326,58 @@ int icm42605_turn_off_fifo(const struct device *dev)
 	uint8_t v = 0;
 
 	v = BIT_FIFO_MODE_BYPASS;
-	result = inv_spi_single_write(&cfg->spi, REG_FIFO_CONFIG, &v);
+	result = icm42605_reg_write(cfg, REG_FIFO_CONFIG, &v);
 	if (result) {
 		return result;
 	}
 
 	v = 0;
-	result = inv_spi_single_write(&cfg->spi, REG_FIFO_CONFIG1, &v);
+	result = icm42605_reg_write(cfg, REG_FIFO_CONFIG1, &v);
 	if (result) {
 		return result;
 	}
 
-	result = inv_spi_read(&cfg->spi, REG_FIFO_COUNTH, burst_read, 2);
+	result = icm42605_reg_read(cfg, REG_FIFO_COUNTH, burst_read, 2);
 	if (result) {
 		return result;
 	}
 
-	result = inv_spi_read(&cfg->spi, REG_FIFO_DATA, burst_read, 3);
+	result = icm42605_reg_read(cfg, REG_FIFO_DATA, burst_read, 3);
 	if (result) {
 		return result;
 	}
 
-	result = inv_spi_single_write(&cfg->spi, REG_INT_SOURCE0, &int0_en);
+	result = icm42605_reg_write(cfg, REG_INT_SOURCE0, &int0_en);
 	if (result) {
 		return result;
 	}
 
 	if (drv_data->tap_en) {
 		v = 0;
-		result = inv_spi_single_write(&cfg->spi, REG_APEX_CONFIG0, &v);
+		result = icm42605_reg_write(cfg, REG_APEX_CONFIG0, &v);
 		if (result) {
 			return result;
 		}
 
-		result = inv_spi_single_write(&cfg->spi, REG_SIGNAL_PATH_RESET, &v);
+		result = icm42605_reg_write(cfg, REG_SIGNAL_PATH_RESET, &v);
 		if (result) {
 			return result;
 		}
 
 		v = BIT_BANK_SEL_4;
-		result = inv_spi_single_write(&cfg->spi, REG_BANK_SEL, &v);
+		result = icm42605_reg_write(cfg, REG_BANK_SEL, &v);
 		if (result) {
 			return result;
 		}
 
 		v = 0;
-		result = inv_spi_single_write(&cfg->spi, REG_INT_SOURCE6, &v);
+		result = icm42605_reg_write(cfg, REG_INT_SOURCE6, &v);
 		if (result) {
 			return result;
 		}
 
 		v = BIT_BANK_SEL_0;
-		result = inv_spi_single_write(&cfg->spi, REG_BANK_SEL, &v);
+		result = icm42605_reg_write(cfg, REG_BANK_SEL, &v);
 		if (result) {
 			return result;
 		}
@@ -393,7 +393,6 @@ int icm42605_turn_on_sensor(const struct device *dev)
 	uint8_t v = 0;
 	int result = 0;
 
-
 	if (drv_data->sensor_started) {
 		LOG_ERR("Sensor already started");
 		return -EALREADY;
@@ -406,7 +405,7 @@ int icm42605_turn_on_sensor(const struct device *dev)
 	v |= BIT_ACCEL_MODE_LNM;
 	v |= BIT_GYRO_MODE_LNM;
 
-	result = inv_spi_single_write(&cfg->spi, REG_PWR_MGMT0, &v);
+	result = icm42605_reg_write(cfg, REG_PWR_MGMT0, &v);
 	if (result) {
 		return result;
 	}
@@ -429,12 +428,12 @@ int icm42605_turn_off_sensor(const struct device *dev)
 	uint8_t v = 0;
 	int result = 0;
 
-	result = inv_spi_read(&cfg->spi, REG_PWR_MGMT0, &v, 1);
+	result = icm42605_reg_read(cfg, REG_PWR_MGMT0, &v, 1);
 
 	v &= ~BIT_ACCEL_MODE_LNM;
 	v &= ~BIT_GYRO_MODE_LNM;
 
-	result = inv_spi_single_write(&cfg->spi, REG_PWR_MGMT0, &v);
+	result = icm42605_reg_write(cfg, REG_PWR_MGMT0, &v);
 	if (result) {
 		return result;
 	}
