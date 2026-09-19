@@ -1,0 +1,35 @@
+# Copyright 2026 Sacra Systems Private Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Common binding properties for the TI ADS1262 / ADS1263 ADC family.
+# Included by ti,ads1262.yaml and ti,ads1263.yaml — do not use directly.
+
+properties:
+
+  # ------------------------------------------------------------------
+  # SPI bus (required)
+  # ------------------------------------------------------------------
+  reg:
+    required: true
+
+  spi-max-frequency:
+    required: true
+    # ADS126x supports up to 20 MHz
+
+  drdy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Active-low DRDY interrupt output from the ADC.
+      When asserted (low), a conversion result is ready.
+
+  # ------------------------------------------------------------------
+  # Optional control GPIO
+  # ------------------------------------------------------------------
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Active-low hardware /RESET line.  When present the driver
+      asserts this GPIO for ≥10 µs during init.
+      If omitted a software RESET command is issued instead.
