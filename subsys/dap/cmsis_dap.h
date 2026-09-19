@@ -126,11 +126,54 @@
 #define DP_RESEND				0x08U
 #define DP_RDBUFF				0x0CU
 
+/* SWO transport (DAP_SWO_Transport) */
+#define DAP_SWO_TRANSPORT_NONE			0U
+#define DAP_SWO_TRANSPORT_CMD			1U
+#define DAP_SWO_TRANSPORT_EP			2U
+
+/* SWO mode (DAP_SWO_Mode) */
+#define DAP_SWO_MODE_OFF			0U
+#define DAP_SWO_MODE_UART			1U
+#define DAP_SWO_MODE_MANCHESTER			2U
+
+/* SWO trace status (DAP_SWO_Status, DAP_SWO_Data) */
+#define DAP_SWO_STATUS_ACTIVE			BIT(0)
+#define DAP_SWO_STATUS_ERROR			BIT(6)
+#define DAP_SWO_STATUS_OVERRUN			BIT(7)
+
 #define DAP_MBMSG_REGISTER_IFACE		0x0U
 #define DAP_MBMSG_FROM_IFACE			0x1U
 #define DAP_MBMSG_FROM_CONTROLLER		0x2U
 
 uint32_t dap_link_execute_cmd(struct dap_link_context *const dap_link_ctx,
 			      const uint8_t *request, uint8_t *response);
+
+#ifdef CONFIG_DAP_SWO
+/* SWO core, subsystem internal (dap_swo.c) */
+void dap_swo_init(struct dap_link_context *const ctx);
+void dap_swo_stream_bind(struct dap_link_context *const ctx,
+			 void (*kick)(void));
+uint32_t dap_swo_read(struct dap_link_context *const ctx,
+		      uint8_t *dst, uint32_t max_len);
+void dap_swo_stream_error(struct dap_link_context *const ctx);
+void dap_swo_capture_stop(struct dap_link_context *const ctx);
+uint16_t dap_swo_transport_cmd(struct dap_link_context *const ctx,
+			       const uint8_t *const request,
+			       uint8_t *const response);
+uint16_t dap_swo_mode_cmd(struct dap_link_context *const ctx,
+			  const uint8_t *const request,
+			  uint8_t *const response);
+uint16_t dap_swo_baudrate_cmd(struct dap_link_context *const ctx,
+			      const uint8_t *const request,
+			      uint8_t *const response);
+uint16_t dap_swo_control_cmd(struct dap_link_context *const ctx,
+			     const uint8_t *const request,
+			     uint8_t *const response);
+uint16_t dap_swo_status_cmd(struct dap_link_context *const ctx,
+			    uint8_t *const response);
+uint16_t dap_swo_data_cmd(struct dap_link_context *const ctx,
+			  const uint8_t *const request,
+			  uint8_t *const response);
+#endif /* CONFIG_DAP_SWO */
 
 #endif	/* ZEPHYR_INCLUDE_CMSIS_DAP_H_ */
