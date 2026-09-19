@@ -27,6 +27,7 @@ config ARC
 	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_DIRECTED_IPIS
 	select ARCH_HAS_DIRECT_INTERRUPTS
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED if SMP
 	help
 	  ARC architecture
 
