@@ -1,0 +1,6 @@
+board:
+  name: lp_em_cc1354p10_1
+  full_name: Texas Instruments LP_EM_CC1354P10_1 Launchpad
+  vendor: ti
+  socs:
+  - name: cc1354p10

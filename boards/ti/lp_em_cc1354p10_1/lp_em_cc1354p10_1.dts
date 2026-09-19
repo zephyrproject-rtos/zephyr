@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <ti/cc1354p10.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "TI LP-EM-CC1354P10_1";
+	compatible = "ti,lp-em-cc1354p10-1";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &flash_controller;
+	};
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partitions";
+			label = "mcuboot";
+			reg = <0x00000000 0x0000a000>;
+		};
+
+		slot0_partition: partition@a000 {
+			compatible = "zephyr,mapped-partitions";
+			label = "image-0";
+			reg = <0x0000a000 0x00076000>;
+		};
+
+		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partitions";
+			label = "image-1";
+			reg = <0x00080000 0x00076000>;
+		};
+
+		storage_partition: partition@f6000 {
+			compatible = "zephyr,mapped-partitions";
+			label = "storage";
+			reg = <0x000f6000 0x0000a000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&rtc {
+	status = "okay";
+};
