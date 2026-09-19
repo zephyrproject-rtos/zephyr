@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Build-only wiring for native_sim: point the i2s-codec-tx alias at the
+ * board's emulated I2S TX controller so the real LC3 -> I2S playback path in
+ * common/audio_playback.c is compile-checked by CI. This scenario is build_only,
+ * so CI builds the playback path but does not execute it. native_sim already
+ * provides the audio_codec (zephyr,dummy-codec) node the helper looks up by label.
+ */
+
+/ {
+	aliases {
+		i2s-codec-tx = &i2s_tx0;
+	};
+};
