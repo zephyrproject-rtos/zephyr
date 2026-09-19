@@ -28,6 +28,7 @@ class DeviceSerialConfig:
 class DeviceConfig:
     type: str
     build_dir: Path
+    dut: HardwareData = field(default_factory=HardwareData)
     current_build_dir: Path | None = None
     app_build_dir: Path | None = None
     base_timeout: float = 60.0  # [s]
@@ -42,9 +43,6 @@ class DeviceConfig:
     west_flash_extra_args: list[str] = field(default_factory=list, repr=False)
     flash_command: str = ''
     name: str = ''
-    pre_script: Path | None = None
-    post_script: Path | None = None
-    post_flash_script: Path | None = None
     fixtures: list[str] = None
     extra_test_args: str = ''
     west_flash_cmd: str = ''
@@ -133,6 +131,7 @@ class TwisterHarnessConfig:
                 )
 
             device = DeviceConfig(
+                dut=dut,
                 dut_number=dut_number,
                 type=device_type,
                 build_dir=build_dir,
@@ -149,9 +148,6 @@ class TwisterHarnessConfig:
                 west_flash_extra_args=west_flash_extra_args,
                 west_flash_cmd=config.option.west_flash_cmd or test_params.west_flash_cmd or dut.west_flash_cmd,
                 flash_command=flash_command,
-                pre_script=get_path(config.option.pre_script) or get_path(dut.pre_script),
-                post_script=get_path(config.option.post_script) or get_path(dut.post_script),
-                post_flash_script=get_path(config.option.post_flash_script) or get_path(dut.post_flash_script),
                 fixtures=config.option.fixtures or test_params.twister_fixtures or dut.fixtures,
                 extra_test_args=config.option.extra_test_args or test_params.extra_test_args,
             )
