@@ -4,6 +4,12 @@
 config SDHC_STM32_SDMMC
 	bool "STM32 SDMMC driver (SD/SDIO)"
 	depends on DT_HAS_ST_STM32_SDMMC_ENABLED
+	# STM32F1/F2/F4/F7/L1 series use a different IP not supported by this driver
+	depends on !SOC_SERIES_STM32F1 && !SOC_SERIES_STM32F2 && !SOC_SERIES_STM32F4 \
+		&& !SOC_SERIES_STM32F7 && !SOC_SERIES_STM32L1
+	# While the base STM32L4 series uses the same IP as F1/F2/etc,
+	# the STM32L4+ series/line does not and is supported by this driver.
+	depends on !SOC_SERIES_STM32L4 || SOC_LINE_STM32L4PLUS
 	# Legacy SDMMC and SDHC STM32 drivers share the same DT binding.
 	# Keep them mutually exclusive so only one is built.
 	depends on !SDMMC_STM32
