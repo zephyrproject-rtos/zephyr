@@ -202,6 +202,7 @@ struct adxl345_dev_data {
 	struct rtio_iodev *iodev;
 	uint8_t status1;
 	uint8_t fifo_ent[1];
+	uint8_t int_source_scratch;
 	uint64_t timestamp;
 	struct rtio *r_cb;
 	uint8_t fifo_watermark_irq;
