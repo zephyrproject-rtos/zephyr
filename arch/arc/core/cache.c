@@ -410,7 +410,7 @@ static void dcache_invalidate_lines(void *start_addr_ptr, size_t size)
 		__builtin_arc_nop();
 		start_addr += sys_dcache_line_size;
 	} while (start_addr < end_addr);
-	irq_unlock(key); /* -exit critical section- */
+	arch_irq_unlock(key); /* -exit critical section- */
 }
 
 static void dcache_flush_and_invalidate_lines(void *start_addr_ptr, size_t size)
@@ -436,7 +436,7 @@ static void dcache_flush_and_invalidate_lines(void *start_addr_ptr, size_t size)
 		__builtin_arc_nop();
 		start_addr += sys_dcache_line_size;
 	} while (start_addr < end_addr);
-	irq_unlock(key); /* -exit critical section- */
+	arch_irq_unlock(key); /* -exit critical section- */
 }
 
 #endif /* CONFIG_ARC_DCACHE_REGION_OPERATIONS */
