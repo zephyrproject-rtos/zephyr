@@ -7,6 +7,9 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/rtp.h>
+#ifdef CONFIG_SRTP
+#include <zephyr/net/srtp.h>
+#endif
 #include <zephyr/ztest.h>
 
 #include "sine.h"
@@ -28,6 +31,22 @@
 
 static RTP_SESSION_DEFINE(test_rtp_session, 0);
 
+#ifdef CONFIG_SRTP
+/* clang-format off */
+static const uint8_t srtp_master_key[SRTP_AES_256_KEY_LEN] = {
+	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+	0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+};
+static const uint8_t srtp_master_salt[SRTP_MASTER_SALT_LEN] = {
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+	0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d,
+};
+/* clang-format on */
+static struct srtp_session_ctx srtp_ctx;
+#endif /* CONFIG_SRTP */
+
 K_SEM_DEFINE(rtp_rx_sem, 0, 1);
 
 #ifdef CONFIG_RTP_TRANSPORT_NET_PKT
@@ -38,7 +57,12 @@ K_SEM_DEFINE(rtp_rx_sem, 0, 1);
 
 static int n_received;
 static void *payload = (void *)sine_100_48000_8_mono;
+#ifdef CONFIG_SRTP
+/* Keep room for the SRTP trailer within the loopback MTU */
+static size_t payload_len = sizeof(sine_100_48000_8_mono) - SRTP_MAX_TRAILER_LEN;
+#else
 static size_t payload_len = sizeof(sine_100_48000_8_mono);
+#endif
 
 /* Data is mono and 8bit, so payload_len equals number of samples */
 #define DELTA_TS payload_len
@@ -184,14 +208,92 @@ ZTEST(rtp_tests, test_loopback)
 	zassert_ok(k_sem_take(&rtp_rx_sem, RX_TIMEOUT));
 }
 
-static void *rtp_tests_setup(void)
+static struct net_sockaddr_storage test_sockaddr;
+
+/* Initialize the session (and SRTP when enabled); also used to verify
+ * re-initialization of an SRTP protected session.
+ */
+static void test_session_init(void)
 {
-	struct net_sockaddr_storage test_sockaddr = {};
 	struct net_if *iface;
 
 	iface = net_if_lookup_by_dev(device_get_binding("lo"));
 	zassert_not_null(iface);
 
+	zassert_ok(rtp_session_init(&test_rtp_session, iface, (struct net_sockaddr *)&test_sockaddr,
+				    RTP_ROLE_BOTH, PAYLOAD_TYPE, rtp_cb, NULL, TRANSPORT_TYPE));
+
+#ifdef CONFIG_SRTP
+	struct srtp_policy policy = {
+#if defined(CONFIG_RTP_LOOPBACK_TEST_SRTP_GCM_256)
+		.cipher = SRTP_CIPHER_AES_256_GCM,
+		.auth = SRTP_AUTH_NULL,
+		.master_key_len = SRTP_AES_256_KEY_LEN,
+		.master_salt_len = SRTP_AES_GCM_SALT_LEN,
+#elif defined(CONFIG_RTP_LOOPBACK_TEST_SRTP_GCM)
+		.cipher = SRTP_CIPHER_AES_128_GCM,
+		.auth = SRTP_AUTH_NULL,
+		.master_key_len = SRTP_AES_128_KEY_LEN,
+		.master_salt_len = SRTP_AES_GCM_SALT_LEN,
+#else
+		.cipher = SRTP_CIPHER_AES_128_CM,
+		.auth = SRTP_AUTH_HMAC_SHA1_80,
+		.master_key_len = SRTP_AES_128_KEY_LEN,
+		.master_salt_len = SRTP_MASTER_SALT_LEN,
+#endif
+		.master_key = srtp_master_key,
+		.master_salt = srtp_master_salt,
+	};
+
+	zassert_ok(rtp_session_set_srtp(&test_rtp_session, &policy, &policy, &srtp_ctx));
+#endif /* CONFIG_SRTP */
+}
+
+#ifdef CONFIG_SRTP
+ZTEST(rtp_tests, test_srtp_lifecycle)
+{
+	uint16_t seq_before;
+
+	zassert_ok(rtp_session_start(&test_rtp_session));
+
+	k_sem_reset(&rtp_rx_sem);
+	n_received = 0;
+	first_packet = true;
+	padding = false;
+	header_extension = false;
+	marker = false;
+	zero_payload = false;
+
+	zassert_ok(rtp_session_send_simple(&test_rtp_session, payload, payload_len, DELTA_TS));
+	zassert_ok(k_sem_take(&rtp_rx_sem, RX_TIMEOUT));
+
+	/* Restarting without re-initialization preserves the sequence number,
+	 * keeping the SRTP packet index monotonic under the same master key.
+	 */
+	seq_before = test_rtp_session.sequence_number;
+	zassert_ok(rtp_session_stop(&test_rtp_session));
+	zassert_ok(rtp_session_start(&test_rtp_session));
+	zassert_equal(test_rtp_session.sequence_number, seq_before);
+
+	first_packet = true;
+	zassert_ok(rtp_session_send_simple(&test_rtp_session, payload, payload_len, DELTA_TS));
+	zassert_ok(k_sem_take(&rtp_rx_sem, RX_TIMEOUT));
+
+	/* Re-initialization clears the installed SRTP context, so it can be
+	 * installed again for the new SSRC.
+	 */
+	zassert_ok(rtp_session_stop(&test_rtp_session));
+	test_session_init();
+	zassert_ok(rtp_session_start(&test_rtp_session));
+
+	first_packet = true;
+	zassert_ok(rtp_session_send_simple(&test_rtp_session, payload, payload_len, DELTA_TS));
+	zassert_ok(k_sem_take(&rtp_rx_sem, RX_TIMEOUT));
+}
+#endif /* CONFIG_SRTP */
+
+static void *rtp_tests_setup(void)
+{
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct net_sockaddr_in *sockaddr_in = (struct net_sockaddr_in *)&test_sockaddr;
 		struct net_in_addr test_in_addr;
@@ -212,8 +314,7 @@ static void *rtp_tests_setup(void)
 		sockaddr_in6->sin6_port = net_htons(RTP_PORT);
 	}
 
-	zassert_ok(rtp_session_init(&test_rtp_session, iface, (struct net_sockaddr *)&test_sockaddr,
-				    RTP_ROLE_BOTH, PAYLOAD_TYPE, rtp_cb, NULL, TRANSPORT_TYPE));
+	test_session_init();
 
 	return NULL;
 }
