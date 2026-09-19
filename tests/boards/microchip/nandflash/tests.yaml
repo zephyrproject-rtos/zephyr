@@ -1,0 +1,11 @@
+tests:
+  boards.microchip.nandflash:
+    tags:
+      - drivers
+      - flash
+    depends_on:
+      - flash
+    filter: CONFIG_FLASH_MCHP_NAND_G1
+    harness: ztest
+    platform_allow:
+      - sama7d65_curiosity
