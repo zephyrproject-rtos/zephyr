@@ -563,7 +563,13 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len, void *
 	struct btp_bap_broadcast_source_setup_rp *rp = rsp;
 	uint32_t broadcast_id = 0U;
 
-	ARG_UNUSED(cmd_len);
+	if ((cmd_len < sizeof(*cp)) || (cmd_len != sizeof(*cp) + cp->cc_ltvs_len)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->cc_ltvs_len > sizeof(codec_cfg.data)) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err != 0) {
@@ -1930,20 +1936,60 @@ uint8_t btp_bap_broadcast_assistant_scan_stop(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_VAL(err);
 }
 
+/* Parses subgroups 'array' from BTP command and fills up struct bt_bap_bass_subgroup
+ * array. Return false on if provided data is not valid or if exceeds subgroup capacity.
+ */
+static bool btp2subgroups(uint8_t bcnt, const struct btp_bap_subgroup *bsubgroup,
+			 uint8_t cnt, struct bt_bap_bass_subgroup *subgroup,
+			 uint16_t data_len)
+{
+	if (bcnt > cnt) {
+		return false;
+	}
+
+	for (unsigned int i = 0U; i < bcnt; i++) {
+		if (data_len < sizeof(*bsubgroup)) {
+			return false;
+		}
+
+		data_len -= sizeof(*bsubgroup);
+
+		if (data_len < bsubgroup->metadata_len) {
+			return false;
+		}
+
+		data_len -= bsubgroup->metadata_len;
+
+		if (bsubgroup->metadata_len > sizeof(subgroup[i].metadata)) {
+			return false;
+		}
+
+		subgroup[i].bis_sync = sys_le32_to_cpu(bsubgroup->bis_sync);
+		subgroup[i].metadata_len = bsubgroup->metadata_len;
+		memcpy(subgroup[i].metadata, bsubgroup->metadata, subgroup[i].metadata_len);
+
+		bsubgroup = (const void *)(bsubgroup->metadata + bsubgroup->metadata_len);
+	}
+
+	return data_len == 0U;
+}
+
 uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len, void *rsp,
 					    uint16_t *rsp_len)
 {
 	int err;
-	const uint8_t *ptr;
 	struct bt_conn *conn;
 	const struct btp_bap_add_broadcast_src_cmd *cp = cmd;
 	struct bt_bap_broadcast_assistant_add_src_param param = {0};
 
-	ARG_UNUSED(cmd_len);
 	ARG_UNUSED(rsp);
 	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
+
+	if (cmd_len < sizeof(*cp)) {
+		return BTP_STATUS_FAILED;
+	}
 
 	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
 	bt_addr_le_copy(&param.addr, &cp->broadcaster_address);
@@ -1951,20 +1997,13 @@ uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len, v
 	param.pa_sync = cp->padv_sync > 0 ? true : false;
 	param.broadcast_id = sys_get_le24(cp->broadcast_id);
 	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
-	param.num_subgroups = MIN(cp->num_subgroups, CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+	param.num_subgroups = cp->num_subgroups;
 	param.subgroups = delegator_subgroups;
 
-	ptr = cp->subgroups;
-	for (uint8_t i = 0U; i < param.num_subgroups; i++) {
-		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
-
-		subgroup->bis_sync = sys_get_le32(ptr);
-
-		ptr += sizeof(subgroup->bis_sync);
-		subgroup->metadata_len = *ptr;
-		ptr += sizeof(subgroup->metadata_len);
-		memcpy(subgroup->metadata, ptr, subgroup->metadata_len);
-		ptr += subgroup->metadata_len;
+	if (!btp2subgroups(cp->num_subgroups, cp->subgroups,
+			   ARRAY_SIZE(delegator_subgroups), delegator_subgroups,
+			   cmd_len - sizeof(*cp))) {
+		return BTP_STATUS_FAILED;
 	}
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -2014,35 +2053,30 @@ uint8_t btp_bap_broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len
 					       uint16_t *rsp_len)
 {
 	int err;
-	const uint8_t *ptr;
 	struct bt_conn *conn;
 	const struct btp_bap_modify_broadcast_src_cmd *cp = cmd;
 	struct bt_bap_broadcast_assistant_mod_src_param param = {0};
 
-	ARG_UNUSED(cmd_len);
 	ARG_UNUSED(rsp);
 	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
+	if (cmd_len < sizeof(*cp)) {
+		return BTP_STATUS_FAILED;
+	}
+
 	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
 	param.src_id = cp->src_id;
 	param.pa_sync = cp->padv_sync > 0 ? true : false;
 	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
-	param.num_subgroups = MIN(cp->num_subgroups, CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+	param.num_subgroups = cp->num_subgroups;
 	param.subgroups = delegator_subgroups;
 
-	ptr = cp->subgroups;
-	for (uint8_t i = 0U; i < param.num_subgroups; i++) {
-		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
-
-		subgroup->bis_sync = sys_get_le32(ptr);
-
-		ptr += sizeof(subgroup->bis_sync);
-		subgroup->metadata_len = *ptr;
-		ptr += sizeof(subgroup->metadata_len);
-		memcpy(subgroup->metadata, ptr, subgroup->metadata_len);
-		ptr += subgroup->metadata_len;
+	if (!btp2subgroups(cp->num_subgroups, cp->subgroups,
+			   ARRAY_SIZE(delegator_subgroups), delegator_subgroups,
+			   cmd_len - sizeof(*cp))) {
+		return BTP_STATUS_FAILED;
 	}
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -2140,14 +2174,9 @@ uint8_t btp_bap_scan_delegator_add_src(const void *cmd, uint16_t cmd_len, void *
 	const struct btp_bap_scan_delegator_add_src_cmd *cp = cmd;
 	struct btp_bap_scan_delegator_add_src_rp *rp = rsp;
 	struct bt_bap_scan_delegator_add_src_param param = {0};
-	struct net_buf_simple buf;
 	int err;
 
 	if (cmd_len < sizeof(*cp)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (cp->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2162,29 +2191,10 @@ uint8_t btp_bap_scan_delegator_add_src(const void *cmd, uint16_t cmd_len, void *
 	param.broadcast_id = sys_get_le24(cp->broadcast_id);
 	param.num_subgroups = cp->num_subgroups;
 
-	net_buf_simple_init_with_data(&buf, (void *)cp->subgroups, cmd_len - sizeof(*cp));
 
-	for (uint8_t i = 0U; i < param.num_subgroups; i++) {
-		struct bt_bap_bass_subgroup *subgroup = &param.subgroups[i];
-
-		/* If remaining data is less than the necessary subgroup fields, return failed */
-		if (buf.len < sizeof(subgroup->bis_sync) + sizeof(subgroup->metadata_len)) {
-			return BTP_STATUS_FAILED;
-		}
-
-		subgroup->bis_sync = net_buf_simple_pull_le32(&buf);
-		subgroup->metadata_len = net_buf_simple_pull_u8(&buf);
-
-		if (subgroup->metadata_len > sizeof(subgroup->metadata) ||
-		    subgroup->metadata_len > buf.len) {
-			return BTP_STATUS_FAILED;
-		}
-
-		memcpy(subgroup->metadata, net_buf_simple_pull_mem(&buf, subgroup->metadata_len),
-		       subgroup->metadata_len);
-	}
-
-	if (buf.len != 0U) {
+	if (!btp2subgroups(cp->num_subgroups, cp->subgroups,
+			   ARRAY_SIZE(param.subgroups), param.subgroups,
+			   cmd_len - sizeof(*cp))) {
 		return BTP_STATUS_FAILED;
 	}
 
