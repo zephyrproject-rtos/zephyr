@@ -1,0 +1,11 @@
+/*
+ * Copyright (C) 2026 Muhammed Asif P
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+/ {
+	aliases {
+		evsys0 = &evsys;
+	};
+};
