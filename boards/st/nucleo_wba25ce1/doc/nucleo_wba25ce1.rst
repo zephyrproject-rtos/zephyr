@@ -149,8 +149,11 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Secure bootloader
+=================
+
 STM32 OEMxROT integration
-=========================
+-------------------------
 
 STM32CubeWBA provides an external secure bootloader called STM32 OEMiROT
 that takes advantage of the secure features of the STM32WBA25CE1
@@ -159,6 +162,20 @@ details on this bootloader.
 
 Integration of this bootloader in the Zephyr build environment is available
 in the external `STM32 OEMxROT module`_.
+
+.. include:: ../../common/doc/stm32_common_doc.rst
+  :start-after: stm32wba_default_zephyr_bootloader_start
+  :end-before: stm32wba_default_zephyr_bootloader_end
+
+Low Power
+=========
+
+.. |stm32wba_lp_board_name| replace:: Nucleo WBA25CE1
+.. |stm32wba_lp_board_target| replace:: nucleo_wba25ce1
+
+.. include:: ../../common/doc/stm32_common_doc.rst
+  :start-after: stm32wba_low_power_start
+  :end-before: stm32wba_low_power_end
 
 Connections and IOs
 ===================

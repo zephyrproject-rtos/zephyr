@@ -159,6 +159,23 @@ To fetch Binary Blobs:
 
    west blobs fetch hal_stm32
 
+Secure bootloader
+=================
+
+.. include:: ../../common/doc/stm32_common_doc.rst
+  :start-after: stm32wba_default_zephyr_bootloader_start
+  :end-before: stm32wba_default_zephyr_bootloader_end
+
+Low Power
+=========
+
+.. |stm32wba_lp_board_name| replace:: Nucleo WBA55CG
+.. |stm32wba_lp_board_target| replace:: nucleo_wba55cg
+
+.. include:: ../../common/doc/stm32_common_doc.rst
+  :start-after: stm32wba_low_power_start
+  :end-before: stm32wba_low_power_end
+
 Connections and IOs
 ===================
 
