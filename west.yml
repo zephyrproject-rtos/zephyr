@@ -397,13 +397,18 @@ manifest:
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
+    - name: tf-psa-crypto-drivers
+      revision: d98398faf06f0cb0c0262bed60f327f838320926
+      path: modules/crypto/tf-psa-crypto-drivers
+      groups:
+        - crypto
     - name: trusted-firmware-a
       revision: 4d431cbbb451d13359534c63bf67e2d315ca37de
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: ef007cd771423cf31a5a1427290efd37b891dbd6
+      revision: f02460904a32c29be5bba7d3d2b1a032a09a4e99
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
