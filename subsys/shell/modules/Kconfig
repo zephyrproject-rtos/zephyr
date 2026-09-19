@@ -54,4 +54,30 @@ config ZYCLICTEST_SHELL
 	  the application to run.
 	  Inspired by Linux cyclictest tool.
 
+config SCHED_STATS_SHELL
+	bool "Scheduler stats shell (sched cpus/threads/top)"
+	depends on SHELL
+	depends on THREAD_RUNTIME_STATS
+	depends on SCHED_THREAD_USAGE
+	depends on SCHED_THREAD_USAGE_ALL
+	depends on THREAD_MONITOR
+	help
+	  Register shell commands for SMP-aware scheduler statistics:
+	  "sched cpus", "sched threads", and "sched top". These show per-CPU
+	  busy/idle utilization and a compact thread table (CPU % and stack %)
+	  using k_thread_runtime_stats_*().
+
+config PERF_SHELL
+	bool "PMU perf shell (perf start / stop / report / record)"
+	depends on SHELL
+	depends on ARCH_HAS_PMU
+	depends on ARM64_PMUV3
+	default n
+	help
+	  Register Zephyr shell commands for interactive PMU use on AArch64:
+	  "perf start [-e <event>|help]", "perf list", "perf stop", and
+	  "perf report". When CONFIG_PROFILING_PMU_SAMPLING is enabled, adds
+	  "perf record" (PMU overflow PC sampling: start/stop/dump/export/clear).
+	  Uses <zephyr/arch/pmu.h> with the ARM64 PMUV3 backend.
+
 rsource "kernel_service/Kconfig"

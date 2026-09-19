@@ -1,0 +1,18 @@
+tests:
+  arch.arm64.pmu.accuracy:
+    arch_allow: arm64
+    # PMU event counters are only wired up (and non-zero) on real silicon; the
+    # suite self-skips where the PMU does not count (e.g. QEMU virt), but keep
+    # the exercised platforms explicit for device testing.
+    platform_allow:
+      - versalnet_apu/amd_versalnet_apu/smp
+      - versalnet_apu
+      - versal_apu/versal_apu/smp
+      - versal_apu
+      - versal2_apu/amd_versal2_apu/smp
+    integration_platforms:
+      - versalnet_apu/amd_versalnet_apu/smp
+    tags:
+      - pmu
+      - arch
+    harness: ztest

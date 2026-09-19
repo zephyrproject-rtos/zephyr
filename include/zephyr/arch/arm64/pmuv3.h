@@ -121,6 +121,7 @@ typedef enum {
 /** @cond INTERNAL_HIDDEN */
 
 int arch_pmu_init(void);
+int arch_pmu_init_secondary(void);
 uint32_t arch_pmu_num_counters(void);
 void arch_pmu_get_info(pmu_info_t *info);
 int arch_pmu_counter_config(uint32_t counter, pmu_evt_t event);
@@ -168,6 +169,17 @@ uint32_t arch_pmu_cpu_freq_mhz(void);
 
 /** @brief Human-readable name for @a event, or @c "UNKNOWN". */
 const char *arch_pmu_event_name(uint32_t event);
+
+#if defined(CONFIG_PROFILING_PMU_SAMPLING)
+/** @brief Preload a 32-bit value into event counter @a counter (overflow sampling). */
+int arch_pmu_counter_write32(uint32_t counter, uint32_t value);
+
+/** @brief Enable or disable PMU overflow interrupt for event counter @a counter. */
+void arch_pmu_counter_overflow_interrupt_set(uint32_t counter, bool enable);
+
+#define pmu_counter_write32                 arch_pmu_counter_write32
+#define pmu_counter_overflow_interrupt_set  arch_pmu_counter_overflow_interrupt_set
+#endif /* CONFIG_PROFILING_PMU_SAMPLING */
 
 /** @} */
 

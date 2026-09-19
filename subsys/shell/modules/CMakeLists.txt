@@ -24,3 +24,11 @@ zephyr_sources_ifdef(
   CONFIG_ZYCLICTEST_SHELL
   zyclictest_service.c
 )
+zephyr_sources_ifdef(
+  CONFIG_SCHED_STATS_SHELL
+  stats_service.c
+)
+zephyr_sources_ifdef(
+  CONFIG_PERF_SHELL
+  perf_service.c
+)
