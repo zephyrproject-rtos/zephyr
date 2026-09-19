@@ -3169,6 +3169,7 @@ class Kconfig(object):
             if t0 in _TYPE_TOKENS:
                 # Relies on '_T_BOOL is BOOL', etc., to save a conversion
                 self._set_type(node.item, t0)
+                node.has_type = True
                 if self._tokens[1] is not None:
                     self._parse_prompt(node)
 
@@ -3199,6 +3200,7 @@ class Kconfig(object):
 
             elif t0 in _DEF_TOKEN_TO_TYPE:
                 self._set_type(node.item, _DEF_TOKEN_TO_TYPE[t0])
+                node.has_type = True
                 node.defaults.append((self._parse_expr(False),
                                       self._parse_cond(), self.loc))
 
@@ -5682,6 +5684,11 @@ class MenuNode(object):
       Also includes dependencies inherited from surrounding menus and ifs.
       Choices appear in the dependencies of choice symbols.
 
+    has_type:
+      True if this definition of the item sets its type ('bool', 'def_bool',
+      'int', ...). An item defined in several places has the type set in at
+      least one of them; the other definitions can only add properties.
+
     is_menuconfig:
       Set to True if the children of the menu node should be displayed in a
       separate menu. This is the case for the following items:
@@ -5717,6 +5724,7 @@ class MenuNode(object):
     """
     __slots__ = (
         "dep",
+        "has_type",
         "help",
         "include_path",
         "is_menuconfig",
@@ -5745,6 +5753,7 @@ class MenuNode(object):
         self.selects = []
         self.implies = []
         self.ranges = []
+        self.has_type = False
 
     @property
     def filename(self):
