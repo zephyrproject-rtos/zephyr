@@ -32,6 +32,11 @@ static void reassembly_timeout(struct k_work *work);
 
 static struct net_ipv4_reassembly reassembly[CONFIG_NET_IPV4_FRAGMENT_MAX_COUNT];
 
+/* Serializes the reassembly array between the RX path and the timeout handler,
+ * which run on different threads.
+ */
+static K_MUTEX_DEFINE(reass_lock);
+
 static struct net_ipv4_reassembly *reassembly_get(uint16_t id, const uint8_t *src,
 						  const uint8_t *dst, uint8_t protocol)
 {
@@ -125,16 +130,30 @@ static void reassembly_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct net_ipv4_reassembly *reass =
 		CONTAINER_OF(dwork, struct net_ipv4_reassembly, timer);
+	struct net_pkt *first = NULL;
+
+	k_mutex_lock(&reass_lock, K_FOREVER);
 
 	reassembly_info("Reassembly cancelled", reass);
 
-	/* Send a ICMPv4 Time Exceeded only if we received the first fragment */
+	/* Detach the first fragment so the ICMP error can be sent without
+	 * holding the lock; sending may block on buffers and the TX path.
+	 */
 	if (reass->pkt[0] && net_pkt_ipv4_fragment_offset(reass->pkt[0]) == 0) {
-		net_icmpv4_send_error(reass->pkt[0], NET_ICMPV4_TIME_EXCEEDED,
-				      NET_ICMPV4_TIME_EXCEEDED_FRAGMENT_REASSEMBLY_TIME);
+		first = reass->pkt[0];
+		reass->pkt[0] = NULL;
 	}
 
 	reassembly_cancel(reass->id, &reass->src, &reass->dst);
+
+	k_mutex_unlock(&reass_lock);
+
+	/* Send a ICMPv4 Time Exceeded only if we received the first fragment */
+	if (first != NULL) {
+		net_icmpv4_send_error(first, NET_ICMPV4_TIME_EXCEEDED,
+				      NET_ICMPV4_TIME_EXCEEDED_FRAGMENT_REASSEMBLY_TIME);
+		net_pkt_unref(first);
+	}
 }
 
 static void reassemble_packet(struct net_ipv4_reassembly *reass)
@@ -240,6 +259,8 @@ void net_ipv4_frag_foreach(net_ipv4_frag_cb_t cb, void *user_data)
 {
 	int i;
 
+	k_mutex_lock(&reass_lock, K_FOREVER);
+
 	for (i = 0; i < CONFIG_NET_IPV4_FRAGMENT_MAX_COUNT; i++) {
 		if (!k_work_delayable_remaining_get(&reassembly[i].timer)) {
 			continue;
@@ -247,6 +268,8 @@ void net_ipv4_frag_foreach(net_ipv4_frag_cb_t cb, void *user_data)
 
 		cb(&reassembly[i], user_data);
 	}
+
+	k_mutex_unlock(&reass_lock);
 }
 
 /* Verify that we have all the fragments received and in correct order.
@@ -354,8 +377,10 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 		 */
 		net_icmpv4_send_error(pkt, NET_ICMPV4_BAD_IP_HEADER,
 				      NET_ICMPV4_BAD_IP_HEADER_LENGTH);
-		goto drop;
+		return NET_DROP;
 	}
+
+	k_mutex_lock(&reass_lock, K_FOREVER);
 
 	reass = reassembly_get(id, hdr->src, hdr->dst, hdr->proto);
 	if (!reass) {
@@ -422,15 +447,18 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	reassemble_packet(reass);
 
 accept:
+	k_mutex_unlock(&reass_lock);
 	return NET_OK;
 
 drop:
 	if (reass) {
 		if (reassembly_cancel(reass->id, &reass->src, &reass->dst)) {
+			k_mutex_unlock(&reass_lock);
 			return NET_OK;
 		}
 	}
 
+	k_mutex_unlock(&reass_lock);
 	return NET_DROP;
 }
 
