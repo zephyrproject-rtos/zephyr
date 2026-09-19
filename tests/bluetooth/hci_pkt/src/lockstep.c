@@ -577,6 +577,58 @@ static ZTEST(bt_hci_lockstep, test_timeout_uses_credit)
 	zassert_equal(xport.sends, 2);
 }
 
+/* A controller reset by other means than an HCI command allows a command
+ * again without announcing it, which is what bt_hci_lockstep_reset() is for.
+ */
+static ZTEST(bt_hci_lockstep, test_reset_restores_the_allowance)
+{
+	struct fake_transport xport;
+
+	BT_HCI_PKT_CMD_DEFINE(cmd, 1);
+	NET_BUF_SIMPLE_DEFINE(rsp, 8);
+
+	fake_transport_init(&xport);
+
+	send_test_cmd(&xport, &cmd, &rsp, -EAGAIN);
+	zassert_equal(xport.sends, 1);
+
+	bt_hci_lockstep_reset(&xport.ls);
+
+	/* The send function and the timeout survive the reset */
+	zassert_true(K_TIMEOUT_EQ(xport.ls.timeout, K_MSEC(100)));
+
+	xport.rsp = cc_ok_rsp;
+	xport.rsp_len = sizeof(cc_ok_rsp);
+	xport.rsp_in_send = true;
+
+	send_test_cmd(&xport, &cmd, &rsp, 0);
+	zassert_equal(xport.sends, 2);
+	zassert_equal(rsp.len, 3);
+}
+
+/* A driver resets the helper every time it reopens its transport, so the
+ * operation has to survive being repeated.
+ */
+static ZTEST(bt_hci_lockstep, test_reset_is_repeatable)
+{
+	struct fake_transport xport;
+
+	BT_HCI_PKT_CMD_DEFINE(cmd, 1);
+	NET_BUF_SIMPLE_DEFINE(rsp, 8);
+
+	fake_transport_init(&xport);
+
+	bt_hci_lockstep_reset(&xport.ls);
+	bt_hci_lockstep_reset(&xport.ls);
+
+	xport.rsp = cc_ok_rsp;
+	xport.rsp_len = sizeof(cc_ok_rsp);
+	xport.rsp_in_send = true;
+
+	send_test_cmd(&xport, &cmd, &rsp, 0);
+	zassert_equal(rsp.len, 3);
+}
+
 static ZTEST(bt_hci_lockstep, test_allowance_revoked_before_send)
 {
 	struct fake_transport xport;
