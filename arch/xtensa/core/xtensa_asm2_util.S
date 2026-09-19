@@ -301,16 +301,32 @@ __switch_swap_same_domain:
 	SPILL_ALL_WINDOWS
 	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
 
-	/* Stash our A0/2/3 and the shift/loop registers into the base
-	 * save area so they get restored as they are now.  A2/A3
-	 * don't actually get used post-restore, but they need to be
-	 * stashed across the xtensa_save_high_regs call and this is a
-	 * convenient place.
+	/* Stash our A0/2/3 into the base save area so they get
+	 * restored as they are now.  A2/A3 don't actually get used
+	 * post-restore, but they need to be stashed across the HiFi
+	 * save call and this is a convenient place.
 	 */
 	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
 	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
-	ODD_REG_SAVE a0, a1
+
+	/* Synchronous switch: SAR, EXCCAUSE and SCOMPARE1 are
+	 * caller-saved scratch, so _restore_context may reload their
+	 * uninitialized save slots.  The loop registers' slots must be
+	 * zeroed, though: restoring a nonzero LCOUNT with stale
+	 * LBEG/LEND could trigger a spurious loopback.
+	 */
+#if XCHAL_HAVE_LOOPS
+	movi a0, 0
+	s32i a0, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
+	s32i a0, a1, ___xtensa_irq_bsa_t_lend_OFFSET
+	s32i a0, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
+#endif
+#if XCHAL_HAVE_THREADPTR && \
+	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
+	rur.THREADPTR a0
+	s32i a0, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
+#endif
 
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
 	FPU_REG_SAVE
@@ -344,8 +360,14 @@ __switch_swap_same_domain:
 	wsr a6, CPENABLE
 #endif
 
-	/* Now the high registers */
-	call0 xtensa_save_high_regs
+	/* SPILL_ALL_WINDOWS above spilled every caller frame, so
+	 * A4-A15 only hold dead copies: instead of calling
+	 * xtensa_save_high_regs, push the "no high registers saved"
+	 * marker that xtensa_restore_high_regs expects.
+	 */
+	mov a0, a1
+	addi a1, a1, -4
+	s32i a0, a1, 0
 
 #if defined(CONFIG_KERNEL_COHERENCE)
 	/* Flush the stack.  The top of stack was stored for us by
