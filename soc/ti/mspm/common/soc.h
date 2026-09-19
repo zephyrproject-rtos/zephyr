@@ -15,4 +15,6 @@
 
 #include <cmsis_core_m_defaults.h>
 
+void msp_delay_peripheral_startup(void);
+
 #endif /* _MSPM0_SOC_H */
