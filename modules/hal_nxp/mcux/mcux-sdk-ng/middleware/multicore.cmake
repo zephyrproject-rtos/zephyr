@@ -19,8 +19,3 @@ if(CONFIG_NXP_MULTICORE)
     )
 endif()
 
-if(CONFIG_RPMSGLITE)
-    add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/mcuxsdk-middleware-multicore/rpmsg-lite/zephyr
-        ${CMAKE_CURRENT_BINARY_DIR}/mcuxsdk-middleware-multicore-rpmsg-lite-zephyr
-    )
-endif()
