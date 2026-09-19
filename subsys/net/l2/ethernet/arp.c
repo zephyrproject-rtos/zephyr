@@ -1005,13 +1005,20 @@ void net_arp_clear_cache(struct net_if *iface)
 
 int net_arp_clear_pending(struct net_if *iface, struct net_in_addr *dst)
 {
-	struct arp_entry *entry = arp_entry_find_pending(iface, dst);
+	struct arp_entry *entry;
 
+	k_mutex_lock(&arp_mutex, K_FOREVER);
+
+	entry = arp_entry_get_pending(iface, dst);
 	if (!entry) {
+		k_mutex_unlock(&arp_mutex);
 		return -ENOENT;
 	}
 
 	arp_entry_cleanup(entry, true);
+	sys_slist_prepend(&arp_free_entries, &entry->node);
+
+	k_mutex_unlock(&arp_mutex);
 
 	return 0;
 }
