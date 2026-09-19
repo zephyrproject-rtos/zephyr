@@ -28,6 +28,7 @@ static K_MUTEX_DEFINE(mutex_b);
 static K_SEM_DEFINE(sem_low_ready, 0, 1);
 static K_SEM_DEFINE(sem_done,      0, 1);
 
+#if defined(CONFIG_MUTEX_DEADLOCK_DETECT) && Z_MUTEX_PI_ENABLED
 static K_THREAD_STACK_DEFINE(stack_low, STACK_SIZE);
 static struct k_thread t_low;
 
@@ -40,8 +41,6 @@ static void t_b_deadlock(void *p1, void *p2, void *p3)
 	k_mutex_unlock(&mutex_b);
 	k_sem_give(&sem_done);
 }
-
-#if defined(CONFIG_MUTEX_DEADLOCK_DETECT) && Z_MUTEX_PI_ENABLED
 /*
  * After test_deadlock_detection fires __ASSERT, the test function is
  * aborted before it can clean up. This hook runs after the fatal error
