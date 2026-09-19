@@ -68,6 +68,13 @@
 			interrupts = <49 0>;
 			status = "disabled";
 		};
+
+		slcd: display-controller@40002400 {
+			compatible = "st,slcd";
+			reg = <0x40002400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 9)>;
+			status = "disabled";
+		};
 	};
 
 	smbus2: smbus2 {
