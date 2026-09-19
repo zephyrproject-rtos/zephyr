@@ -494,10 +494,19 @@ __weak void clock_init(void)
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	/* 24MHz PTP clock */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
+	/* 24MHz enet PTP clock */
 	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer1, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet1g))
+	/* 24MHz enet1g PTP clock */
+	rootCfg.mux = kCLOCK_ENET_TIMER2_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer2, &rootCfg);
+#endif
 #endif
 
 #ifdef CONFIG_SPI_NXP_LPSPI
