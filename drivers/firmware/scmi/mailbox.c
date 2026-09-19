@@ -64,7 +64,7 @@ static int scmi_mbox_read_message(const struct device *transport,
 	int ret;
 
 	ret = scmi_shmem_read_message(mbox_chan->shmem, msg);
-	if (ret < 0) {
+	if ((ret < 0) && (ret != -EMSGSIZE)) {
 		return ret;
 	}
 
@@ -75,7 +75,7 @@ static int scmi_mbox_read_message(const struct device *transport,
 		scmi_shmem_mark_channel_free(mbox_chan->shmem);
 	}
 
-	return 0;
+	return ret;
 }
 
 static bool scmi_mbox_channel_is_free(const struct device *transport,
