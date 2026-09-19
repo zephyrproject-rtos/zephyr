@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT realtek_rts5912_adc
 
+#include <zephyr/irq.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_rts5912.h>
@@ -262,7 +263,7 @@ static int adc_rts5912_init(const struct device *dev)
 
 	regs->ctrl = ADC_CTRL_RST;
 
-	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	k_irq_clear_pending(DT_INST_IRQN(0));
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), adc_rts5912_single_isr,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
