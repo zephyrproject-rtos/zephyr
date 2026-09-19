@@ -781,6 +781,8 @@ New APIs and options
     :c:func:`k_irq_lock`, :c:func:`k_irq_unlock`, :c:func:`k_irq_enable`,
     :c:func:`k_irq_disable`, :c:func:`k_irq_is_enabled`,
     :c:func:`k_irq_connect_dynamic` and :c:func:`k_irq_disconnect_dynamic`
+  * :kconfig:option:`CONFIG_SEMIHOST_EXIT_ON_FATAL_ERROR` (report fatal errors to an
+    attached debugger through semihosting)
 
 * LIN
 
