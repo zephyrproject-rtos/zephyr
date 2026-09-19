@@ -957,6 +957,10 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	init_thread_halt_queue(new_thread);
 	init_thread_usage(new_thread);
 
+#ifdef CONFIG_COMMON_LIBC_MALLOC_TLS
+	new_thread->malloc_heap = NULL;
+#endif /* CONFIG_COMMON_LIBC_MALLOC_TLS */
+
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
 
 	return stack_ptr;
@@ -1920,3 +1924,31 @@ static inline void z_vrfy_k_yield(void)
 }
 #include <zephyr/syscalls/k_yield_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_COMMON_LIBC_MALLOC_TLS
+int z_impl_k_thread_malloc_heap_assign(struct k_thread *thread, struct sys_sync_heap *heap)
+{
+	thread->malloc_heap = heap;
+	return 0;
+}
+
+struct sys_sync_heap *z_impl_k_thread_malloc_heap_get(struct k_thread *thread)
+{
+	return thread->malloc_heap;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_thread_malloc_heap_assign(struct k_thread *thread, struct sys_sync_heap *heap)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_malloc_heap_assign(thread, heap);
+}
+
+static inline struct sys_sync_heap *z_vrfy_k_thread_malloc_heap_get(struct k_thread *thread)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_malloc_heap_get(thread);
+}
+#include <zephyr/syscalls/k_thread_malloc_heap_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_COMMON_LIBC_MALLOC_TLS */

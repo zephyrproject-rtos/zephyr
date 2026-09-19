@@ -47,12 +47,42 @@ config COMMON_LIBC_TIME
 	help
 	  common implementation of time().
 
+config COMMON_LIBC_MALLOC_SUPPORTED
+	bool
+	help
+	  Hidden option to signal that malloc is supported.
+
+choice
+	prompt "Common C library malloc support"
+	optional
+	default COMMON_LIBC_MALLOC if PICOLIBC || MINIMAL_LIBC
+	help
+	  If enabled the malloc family of functions will be available.
+
 config COMMON_LIBC_MALLOC
-	bool "Common C library malloc implementation"
+	bool "Common C library malloc implementation with shared heap"
+	select COMMON_LIBC_MALLOC_SUPPORTED
 	select NEED_LIBC_MEM_PARTITION if COMMON_LIBC_MALLOC_ARENA_SIZE != 0
 	help
 	  Common implementation of malloc family that uses the kernel heap
 	  API.
+
+config COMMON_LIBC_MALLOC_TLS
+	bool "Common C library malloc implementation with TLS-based per-thread heaps"
+	select COMMON_LIBC_MALLOC_SUPPORTED
+	depends on THREAD_LOCAL_STORAGE
+	depends on SYS_SYNC_HEAP
+	help
+	  Common implementation of malloc family that uses per-thread assigned
+	  heaps for user and kernel threads.
+
+endchoice
+
+config COMMON_LIBC_MALLOC_REQUIRED
+	bool
+	depends on COMMON_LIBC_MALLOC_SUPPORTED
+	help
+	  Hidden option to signal that malloc is required.
 
 config COMMON_LIBC_MALLOC_ARENA_SIZE
 	int "Size of the common C library malloc arena"
@@ -81,9 +111,18 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 	  16kB and all other systems will default to using all remaining
 	  ram for the malloc heap.
 
+config COMMON_LIBC_MALLOC_TLS_FALLBACK
+	bool "Kernel threads fall back to system heap"
+	depends on COMMON_LIBC_MALLOC_TLS
+	depends on HEAP_MEM_POOL_SIZE > 0
+	default y
+	help
+	  If no heap has been assigned, kernel threads fall back to allocate
+	  from the system heap.
+
 config COMMON_LIBC_CALLOC
 	bool "Common C library calloc"
-	depends on COMMON_LIBC_MALLOC
+	depends on COMMON_LIBC_MALLOC_SUPPORTED
 	default n if MINIMAL_LIBC
 	default y
 	help
@@ -92,7 +131,7 @@ config COMMON_LIBC_CALLOC
 
 config COMMON_LIBC_REALLOCARRAY
 	bool "Common C library reallocarray"
-	depends on COMMON_LIBC_MALLOC
+	depends on COMMON_LIBC_MALLOC_SUPPORTED
 	default n if MINIMAL_LIBC
 	default y
 	help
