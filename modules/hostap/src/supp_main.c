@@ -730,8 +730,8 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 		}
 
 		if (msg->len != sizeof(event_msg)) {
-			LOG_ERR("Received incomplete message: got: %d, expected:%d",
-				msg->len, sizeof(event_msg));
+			LOG_ERR("Received incomplete message: got: %zu, expected:%zu", msg->len,
+				sizeof(event_msg));
 			goto out;
 		}
 
