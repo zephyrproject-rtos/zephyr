@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Linumiz
+# Copyright (c) 2026 Texas Instruments Inc.
+
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_MSPM0_AES
+	bool "TI MSPM0 AES driver support"
+	default y
+	depends on DT_HAS_TI_MSPM0_AES_ENABLED
+	depends on CRYPTO
+	select USE_MSPM0_DL_AES
+	help
+	  Enable TI MSPM0 AES driver support
+
+config CRYPTO_MSP_AES_ADV
+	bool "TI MSP AESADV driver support"
+	default y
+	depends on DT_HAS_TI_MSP_AES_ADV_ENABLED
+	depends on CRYPTO
+	help
+	  Enable TI MSP Advanced AES driver support
+
+config CRYPTO_MSP_AES_MAX_SESSION
+	int "Maximum AES sessions"
+	default 2
+	depends on CRYPTO_MSPM0_AES || CRYPTO_MSP_AES_ADV
+	help
+	  Maximum number of concurrent AES sessions
