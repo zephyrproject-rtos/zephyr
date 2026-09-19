@@ -1,0 +1,64 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: Omron D7S Seismic Sensor
+
+description: |
+  Omron D7S vibration sensor.
+
+  The D7S reports the spectral intensity (SI) and the peak ground
+  acceleration (PGA) of an earthquake. Both are derived from an internal
+  three-axis accelerometer, using the two axes that are horizontal at the
+  mounting angle.
+
+compatible: "omron,d7s"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      Shutoff output. Asserted when the shutoff judgement condition or the
+      collapse detection condition is met, and released when the EVENT
+      register is read. The pin is open drain, so the flags must describe
+      an active low signal.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      Processing notification output. Asserted while the sensor calculates
+      an earthquake, acquires an offset, or runs a self-diagnostic. The
+      transition back to inactive is what signals that a result is ready.
+      The pin is open drain, so the flags must describe an active low
+      signal.
+
+  shutoff-threshold:
+    type: string
+    default: "high"
+    enum: ["high", "low"]
+    description: |
+      Earthquake shutoff judgement threshold. "high" asserts the shutoff
+      output at a JMA seismic intensity equivalent to 5 Upper or higher.
+      The sensor default is "high".
+
+  axis-mode:
+    type: string
+    default: "switch-at-install"
+    enum: ["yz", "xz", "xy", "auto", "switch-at-install"]
+    description: |
+      Which pair of accelerometer axes is used for the SI calculation.
+      "yz", "xz" and "xy" fix the pair. "auto" recalculates it whenever
+      Normal Mode starts. "switch-at-install" recalculates it only on entry
+      to Initial Installation Mode, and is the sensor default.
+
+examples:
+  - |
+    &i2c0 {
+        d7s: d7s@55 {
+            compatible = "omron,d7s";
+            reg = <0x55>;
+            int1-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+            int2-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+        };
+    };
