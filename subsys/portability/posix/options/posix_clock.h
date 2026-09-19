@@ -59,6 +59,12 @@ static inline bool tp_diff_in_range_ns(const struct timespec *a, const struct ti
 
 uint32_t timespec_to_timeoutms(int clock_id, const struct timespec *abstime);
 
+/* Convert an absolute timespec on clock_id to a relative kernel timeout in
+ * ticks, rounding up, so that a wait armed with the result cannot expire
+ * before abstime.  abstime must be valid (caller-checked per POSIX).
+ */
+k_timeout_t timespec_abs_to_timeout(int clock_id, const struct timespec *abstime);
+
 /** INTERNAL_HIDDEN @endcond */
 
 #ifdef __cplusplus
