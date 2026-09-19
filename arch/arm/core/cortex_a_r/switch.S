@@ -81,9 +81,10 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 #endif
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	push {lr}
+	/* r0 is pushed as padding to keep the stack double-word aligned */
+	push {r0, lr}
 	bl z_thread_mark_switched_in
-	pop {lr}
+	pop {r0, lr}
 #endif
 
 	bx lr
@@ -135,12 +136,15 @@ offload:
     add r3, r3, #1
     str r3, [r2, #___cpu_t_nested_OFFSET]
 
-    /* If not nested: switch to IRQ stack and save current sp on it. */
+    /* If not nested: switch to IRQ stack and save current sp on it.
+     * r1 is pushed as padding to keep the IRQ stack aligned at a
+     * double-word boundary, matching _isr_wrapper().
+     */
     cmp r3, #1
     bhi 1f
     mov r0, sp
     cps #MODE_IRQ
-    push {r0}
+    push {r0, r1}
 
 1:
     blx z_irq_do_offload
