@@ -80,10 +80,10 @@ static inline void set_fault_valid(bool valid)
 
 #if (defined(CONFIG_X86_64) || defined(CONFIG_ARM64) || \
 	(defined(CONFIG_RISCV) && defined(CONFIG_64BIT)))
-#define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 1024
+#define TEST_HEAP_SIZE (2 << CONFIG_MAX_THREAD_BYTES) * 1024
 #define MAX_OBJ 512
 #else
-#define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 256
+#define TEST_HEAP_SIZE (2 << CONFIG_MAX_THREAD_BYTES) * 512
 #define MAX_OBJ 256
 #endif
 
