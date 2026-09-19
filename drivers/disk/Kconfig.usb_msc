@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_MSC_DISK
+	bool "USB mass storage disk access"
+	depends on DT_HAS_ZEPHYR_USB_MSC_DISK_ENABLED
+	default y
+	select USB_HOST_STACK
+	select USBH_MSC
+	help
+	  Expose a USB mass storage device attached to the USB host stack
+	  as a disk access device, so a file system can be mounted on it.
+
+if USB_MSC_DISK
+
+module = USB_MSC_DISK
+module-str = usb msc disk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USB_MSC_DISK

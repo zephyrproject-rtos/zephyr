@@ -1,0 +1,7 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"
