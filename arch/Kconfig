@@ -3,6 +3,7 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2015 Intel Corporation
 # Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 # Include these first so that any properties (e.g. defaults) below can be
@@ -45,6 +46,7 @@ config ARM
 	select ARCH_HAS_SEMIHOST
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ARCH_SUPPORTS_ROM_OFFSET
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_HAS_CPU_IDLE_HOOKS if CPU_CORTEX_M
 	select ARCH_HAS_DIRECT_INTERRUPTS
 	help

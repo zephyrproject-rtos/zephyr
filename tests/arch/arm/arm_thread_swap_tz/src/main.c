@@ -34,6 +34,14 @@ static void do_hash(char *hash)
 	zassert_equal(HASH_LEN, len, "hash length not correct\n");
 }
 
+#ifdef CONFIG_IRQ_OFFLOAD
+static void irq_suspend_current(const void *param)
+{
+	/* Suspend this thread, so returning from the interrupt should switch back into TF-M. */
+	k_thread_suspend(_current);
+}
+#endif /* CONFIG_IRQ_OFFLOAD */
+
 static void work_func(struct k_work *work)
 {
 #ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
@@ -64,13 +72,23 @@ static void work_func(struct k_work *work)
 			 :);
 #endif /* CONFIG_CPU_HAS_FPU */
 
+#ifdef CONFIG_IRQ_OFFLOAD
+	/* Swap back to the original call using an irq offload:
+	 * This will exercise switching-in an interrupted secure call on interrupt exit.
+	 */
+	irq_offload(irq_suspend_current, NULL);
+#else
 	/* Call a secure service here as well, to test the added complexity of
 	 * calling secure services from two threads.
+	 *
+	 * This should block on the a semaphore, switching back to the first call and allowing
+	 * it to complete before the second call runs.
 	 */
 	psa_status_t status = psa_hash_compare(PSA_ALG_SHA_256, dummy_string, sizeof(dummy_string),
 					       dummy_digest_correct, HASH_LEN);
 
 	zassert_equal(PSA_SUCCESS, status, "psa_hash_compare failed\n");
+#endif
 }
 
 ZTEST(thread_swap_tz, test_thread_swap_tz)

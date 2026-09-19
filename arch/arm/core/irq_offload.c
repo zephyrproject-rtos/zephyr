@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015 Intel corporation
- * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,13 +13,11 @@
 #include <zephyr/irq_offload.h>
 #include <cmsis_core.h>
 
-volatile irq_offload_routine_t offload_routine;
-static const void *offload_param;
-
-/* Called by z_arm_svc */
-void z_irq_do_offload(void)
+/* Called by z_arm_svc, which must preserve the callee-saved regs. r4 and r5. */
+__attribute__((naked)) void z_irq_do_offload(void)
 {
-	offload_routine(offload_param);
+	__asm__ volatile("mov r0, r5; bx r4;");
+	/* return from the offload routine branches back to the svc handler */
 }
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
@@ -31,18 +29,14 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 	__ASSERT(__get_PRIMASK() == 0U, "irq_offload called with interrupts locked\n");
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE && CONFIG_ASSERT */
 
-	k_sched_lock();
-	offload_routine = routine;
-	offload_param = parameter;
+	register const void *r4 __asm__("r4") = routine;
+	register const void *r5 __asm__("r5") = parameter;
 
-	__asm__ volatile ("svc %[id]\n"
-			  IF_ENABLED(CONFIG_ARM_BTI, ("bti"))
-			  :
-			  : [id] "i" (_SVC_CALL_IRQ_OFFLOAD)
-			  : "memory");
-
-	offload_routine = NULL;
-	k_sched_unlock();
+	__asm__ volatile("svc %[id]\n" IF_ENABLED(CONFIG_ARM_BTI, ("bti"))
+						  :
+						  : [id] "i"(_SVC_CALL_IRQ_OFFLOAD), "r"(r4),
+						    "r"(r5)
+						  : "memory");
 }
 
 void arch_irq_offload_init(void)
