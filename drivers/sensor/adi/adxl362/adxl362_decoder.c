@@ -5,23 +5,13 @@
  */
 
 #include "adxl362.h"
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-
-#ifdef CONFIG_ADXL362_STREAM
 
 /* (2^31 / 2^8(shift) */
 #define ADXL362_TEMP_QSCALE   8388608
 
 #define ADXL362_COMPLEMENT         0xf000
-
-static const uint32_t accel_period_ns[] = {
-	[ADXL362_ODR_12_5_HZ] = UINT32_C(10000000000) / 125,
-	[ADXL362_ODR_25_HZ] = UINT32_C(1000000000) / 25,
-	[ADXL362_ODR_50_HZ] = UINT32_C(1000000000) / 50,
-	[ADXL362_ODR_100_HZ] = UINT32_C(1000000000) / 100,
-	[ADXL362_ODR_200_HZ] = UINT32_C(1000000000) / 200,
-	[ADXL362_ODR_400_HZ] = UINT32_C(1000000000) / 400,
-};
 
 static const uint32_t range_to_shift[] = {
 	[ADXL362_RANGE_2G] = 5,
@@ -64,6 +54,17 @@ static inline void adxl362_accel_convert_q31(q31_t *out, int16_t data_in, int32_
 
 	*out = data_in * qscale_factor[range];
 }
+
+#ifdef CONFIG_ADXL362_STREAM
+
+static const uint32_t accel_period_ns[] = {
+	[ADXL362_ODR_12_5_HZ] = UINT32_C(10000000000) / 125,
+	[ADXL362_ODR_25_HZ] = UINT32_C(1000000000) / 25,
+	[ADXL362_ODR_50_HZ] = UINT32_C(1000000000) / 50,
+	[ADXL362_ODR_100_HZ] = UINT32_C(1000000000) / 100,
+	[ADXL362_ODR_200_HZ] = UINT32_C(1000000000) / 200,
+	[ADXL362_ODR_400_HZ] = UINT32_C(1000000000) / 400,
+};
 
 static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 				uint32_t *fit, uint16_t max_count, void *data_out)
@@ -319,37 +320,57 @@ static int adxl362_decoder_get_frame_count(const uint8_t *buffer,
 static int adxl362_decode_sample(const struct adxl362_sample_data *data,
 	struct sensor_chan_spec chan_spec, uint32_t *fit, uint16_t max_count, void *data_out)
 {
-	struct sensor_value *out = (struct sensor_value *) data_out;
+	uint64_t now_ns = k_ticks_to_ns_floor64(k_uptime_ticks());
 
 	if (*fit > 0) {
 		return -ENOTSUP;
 	}
 
-	switch (chan_spec.chan_type) {
-	case SENSOR_CHAN_ACCEL_X: /* Acceleration on the X axis, in m/s^2. */
-		adxl362_accel_convert(out, data->acc_x, data->selected_range);
-		break;
-	case SENSOR_CHAN_ACCEL_Y: /* Acceleration on the Y axis, in m/s^2. */
-		adxl362_accel_convert(out, data->acc_y, data->selected_range);
-		break;
-	case SENSOR_CHAN_ACCEL_Z: /* Acceleration on the Z axis, in m/s^2. */
-		adxl362_accel_convert(out, data->acc_z,  data->selected_range);
-		break;
-	case SENSOR_CHAN_ACCEL_XYZ: /* Acceleration on the XYZ axis, in m/s^2. */
-		adxl362_accel_convert(out++, data->acc_x, data->selected_range);
-		adxl362_accel_convert(out++, data->acc_y, data->selected_range);
-		adxl362_accel_convert(out, data->acc_z,  data->selected_range);
-		break;
-	case SENSOR_CHAN_DIE_TEMP: /* Temperature in degrees Celsius. */
-		adxl362_temp_convert(out, data->temp);
-		break;
-	default:
-		return -ENOTSUP;
+	if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+		struct sensor_q31_data *out = (struct sensor_q31_data *)data_out;
+
+		memset(out, 0, sizeof(*out));
+		out->header.base_timestamp_ns = now_ns;
+		out->header.reading_count = 1;
+		out->shift = 8;
+		adxl362_temp_convert_q31(&out->readings[0].temperature, data->temp);
+	} else {
+		struct sensor_three_axis_data *out = (struct sensor_three_axis_data *)data_out;
+
+		memset(out, 0, sizeof(*out));
+		out->header.base_timestamp_ns = now_ns;
+		out->header.reading_count = 1;
+		out->shift = range_to_shift[data->selected_range];
+
+		switch (chan_spec.chan_type) {
+		case SENSOR_CHAN_ACCEL_X: /* Acceleration on the X axis, in m/s^2. */
+			adxl362_accel_convert_q31(&out->readings[0].x, data->acc_x,
+						  data->selected_range);
+			break;
+		case SENSOR_CHAN_ACCEL_Y: /* Acceleration on the Y axis, in m/s^2. */
+			adxl362_accel_convert_q31(&out->readings[0].y, data->acc_y,
+						  data->selected_range);
+			break;
+		case SENSOR_CHAN_ACCEL_Z: /* Acceleration on the Z axis, in m/s^2. */
+			adxl362_accel_convert_q31(&out->readings[0].z, data->acc_z,
+						  data->selected_range);
+			break;
+		case SENSOR_CHAN_ACCEL_XYZ: /* Acceleration on the XYZ axis, in m/s^2. */
+			adxl362_accel_convert_q31(&out->readings[0].x, data->acc_x,
+						  data->selected_range);
+			adxl362_accel_convert_q31(&out->readings[0].y, data->acc_y,
+						  data->selected_range);
+			adxl362_accel_convert_q31(&out->readings[0].z, data->acc_z,
+						  data->selected_range);
+			break;
+		default:
+			return -ENOTSUP;
+		}
 	}
 
 	*fit = 1;
 
-	return 0;
+	return 1;
 }
 
 static int adxl362_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
