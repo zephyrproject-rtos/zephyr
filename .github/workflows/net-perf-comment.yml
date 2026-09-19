@@ -1,0 +1,134 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Posts the report produced by the "Networking throughput" workflow as a comment
+# on the pull request, so the numbers are visible where they are reviewed rather
+# than only in the Actions log.
+#
+# It has to be a separate workflow. The measurement runs from a pull_request
+# event, whose token is read-only for forks and so cannot comment. This one runs
+# on workflow_run, which is privileged, and therefore treats everything the
+# measurement produced as untrusted: it reads a report and a pull request number
+# out of the artifacts, and never checks out or executes pull request code.
+#
+# Note that workflow_run only fires for workflow files that are on the default
+# branch, so this cannot demonstrate itself on the pull request that adds it. It
+# starts commenting once merged.
+
+name: Networking Throughput Comment
+
+on:
+  workflow_run:
+    workflows: ["Networking throughput"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  comment:
+    name: "Comment on the pull request"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pull-requests: write
+    if: |
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.repository == 'zephyrproject-rtos/zephyr'
+
+    steps:
+      - name: Download artifacts
+        id: download-artifacts
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
+        with:
+          workflow: net-perf.yml
+          run_id: ${{ github.event.workflow_run.id }}
+          if_no_artifact_found: ignore
+
+      - name: Post or update the report
+        if: steps.download-artifacts.outputs.found_artifact == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require("fs");
+            const head_sha = context.payload.workflow_run.head_sha;
+            const MARKER = "<!-- net-perf-report -->";
+
+            function skip(reason) {
+              core.warning(`Throughput report not posted: ${reason}`);
+            }
+
+            let report;
+            try {
+              report = fs.readFileSync("./net-perf/net-perf.md", "utf8");
+            } catch {
+              skip("the run produced no report.");
+              return;
+            }
+
+            let pr_num;
+            try {
+              pr_num = Number(fs.readFileSync("./pr_num/pr_num", "utf8").trim());
+            } catch {
+              skip("the run recorded no pull request number.");
+              return;
+            }
+            if (!Number.isSafeInteger(pr_num) || pr_num <= 0) {
+              skip("the artifact carries a malformed pull request number.");
+              return;
+            }
+
+            // The artifacts come from a workflow that ran untrusted code, so
+            // make sure the pull request number really belongs to the commit
+            // that was measured. A mismatch means either a stale run - the
+            // branch moved on while it was measuring, and a newer run is on its
+            // way - or a spoofed number.
+            let pr;
+            try {
+              pr = (await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr_num,
+              })).data;
+            } catch (err) {
+              skip(`PR #${pr_num} could not be retrieved (status ${err.status}).`);
+              return;
+            }
+
+            if (pr.head.sha !== head_sha) {
+              skip(`throughput was measured on ${head_sha}, but PR #${pr_num} ` +
+                   `is now at ${pr.head.sha}.`);
+              return;
+            }
+
+            const run_url = context.payload.workflow_run.html_url;
+            const body = `${MARKER}\n${report}\n` +
+                         `[Full output, logs and plots](${run_url})\n`;
+
+            // One comment per pull request, rewritten in place, so a branch
+            // pushed ten times does not leave ten tables behind.
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr_num,
+              per_page: 100,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(MARKER));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr_num,
+                body,
+              });
+            }
