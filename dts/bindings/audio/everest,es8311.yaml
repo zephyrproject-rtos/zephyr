@@ -1,0 +1,179 @@
+# Copyright (c) 2026 Hsiu-Chi Tsai
+# SPDX-License-Identifier: Apache-2.0
+
+title: Everest Semiconductor ES8311 Audio Codec
+
+description: |
+  The ES8311 is a single-chip mono ADC/DAC with an I2C control interface
+  (7-bit address 0x18 or 0x19, selected by the CE pin) and an I2S/PCM audio
+  data interface. It is always the clock target; the SoC drives BCLK and LRCK.
+
+  Master clock
+  ------------
+
+  The internal master clock comes either from the MCLK pin or from the I2S bit
+  clock, selected by audio_codec_cfg.mclk_freq:
+
+  - mclk_freq == 0 derives it from BCLK. A 16-bit stereo frame is 32 bit clocks,
+    and register 0x02 multiplies that by 8 to give 256 * Fs. The recommended
+    operating conditions require a source multiplied by 4 or 8 to exceed 1 MHz at
+    3.3 V DVDD, which 32 * Fs clears only from 32 kHz up, so this mode serves 32,
+    44.1 and 48 kHz. Widening the slot to 32 bits does not help: 64 * Fs at 8 kHz
+    is 512 kHz, still under the 1 MHz figure.
+  - mclk_freq == 256 * Fs takes the clock from the MCLK pin with no multiplier and
+    serves every rate the driver lists. Any other non-zero value is rejected: it
+    would describe a clock the part is not being given.
+
+  Whichever clock is named has to be present on the pin before the codec is opened,
+  and a board using the MCLK mode has to route MCLK. 16-bit words and two-slot
+  frames only, in both modes: the dividers are written for a 32-bit-clock frame.
+
+  No reset
+  --------
+
+  The ES8311 has no reset pin, hence no reset-gpios: its twenty pins are the I2C
+  three, MCLK, SCLK, LRCK, ASDOUT, DSDIN, MIC1P/N, OUTP/N, four supply pairs and
+  three filtering-capacitor pins. The register-0x00 software reset is not used
+  either; it is documented as "reset digital except control port block", and the
+  registers live in that block. Measured on hardware, issuing it costs about 6.2
+  seconds during which the ADC returns a noise floor of exactly zero.
+
+  The codec therefore inherits its register file from whatever ran last, and the
+  driver writes every register its behaviour depends on rather than trusting any
+  of them.
+
+  One published recommendation the driver does not follow: the operating conditions
+  ask that MCLK, LRCK and SCLK be present before any control register is written.
+  init() runs at POST_KERNEL, before an application has configured an I2S
+  peripheral, so no clock is running then, and the remedy the note offers is the
+  0x00 reset above. Every rate and route the driver advertises has been exercised
+  on hardware in both clock modes with the control writes made this way, which is
+  measurement on a handful of boards rather than a guarantee across process,
+  voltage and temperature.
+
+  Board policy
+  ------------
+
+  Two choices are devicetree properties, defined below, because they are the ones
+  most likely to differ between boards and to be met as silence or as clipping.
+  Mainline Linux exposes each as a control and both Espressif reference drivers
+  hard-code them.
+
+  Capture gain stacks: the driver also writes 0x16 ADC_SCALE as +24 dB, its own
+  reset value, so a board on the 0 dB PGA default still has 24 dB of digital gain
+  ahead of INPUT_VOLUME.
+
+  Three choices stay compiled in:
+
+    capture input  MIC1, differential (0x14 LINSEL). The part has exactly one
+                   analog input, the MIC1P/MIC1N pair. 0x14 bit 6 selects a
+                   DIGITAL microphone on MIC1P instead, which this driver does
+                   not support.
+    ADC scale      +24 dB (0x16), the register's reset value, written whole so
+                   that ADC_SYNC (bit 5, clear at reset) is set.
+    output mode    headphone (0x13 HPSW set). The part also has a line-out mode.
+                   Every measurement behind either value was taken through a board
+                   power amplifier, which cannot tell them apart at the codec pins,
+                   so exposing a property waits for a differential measurement at
+                   OUTP/OUTN. HPSW resets clear, so line-out is the reset default.
+
+  Power management is the application's
+  -------------------------------------
+
+  This driver registers no PM control callback and does nothing on suspend or
+  resume. The application must stop or mute the codec before it suspends or
+  power-manages the I2S controller. Mainline Linux's es8311 has suspend/resume and
+  bias-level handling; that is the shape of the follow-up.
+
+  Clock sequencing is the application's too
+  -----------------------------------------
+
+  The I2S controller must run a continuous bit clock while streaming in either mode
+  (I2S_OPT_BIT_CLK_GATED is refused in both).
+
+  The hard rule is on the way DOWN: never let BCLK stop while the DAC is powered and
+  unmuted. In the BCLK-derived mode the codec's clock IS the bit clock, so with no
+  clock the modulator freezes on its last sample, a DC level sitting on the
+  amplifier. In the MCLK mode the clock tree survives a stopped bit clock, but what
+  the DAC does with a stalled serial port has not been characterised here, so the
+  same order is asked for.
+
+  The mute has to land before the transport stops, and the caller has to know that
+  it did. audio_codec_stop() with AUDIO_DAI_DIR_TX reports that, and it is not
+  gated on the route cache, so it is also the call to use after a configure() that
+  failed. apply_properties() after an OUTPUT_MUTE reports it only while a route is
+  configured: every write it makes is gated on the playback or capture flag, so
+  with no route it writes nothing and returns 0. audio_codec_stop_output() returns
+  void and cannot report anything at all.
+
+  On the way up, have the transport already running before the first unmute, so it
+  lands into a running clock and cannot produce a step:
+
+      audio_codec_configure()      # the DAC comes up powered but MUTED
+      i2s_configure()
+      queue initial (silent) I2S buffers
+      i2s_trigger(START)           # continuous BCLK begins, silence flows
+      audio_codec_start_output()   # first DAC unmute, into a running clock
+
+  Shutdown reverses the pair, and the failed mute has to stop the sequence rather
+  than be noted and passed over:
+
+      ret = audio_codec_stop(codec, AUDIO_DAI_DIR_TX);
+      if (ret < 0) {
+              /* The DAC may still be live, so do not stop the clock here. */
+              return ret;
+      }
+
+      return i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+
+  samples/drivers/i2s/i2s_codec unmutes before it starts the transport and stops
+  with I2S_TRIGGER_DROP without muting, so an application using this codec should
+  follow the order above rather than that sample.
+
+  A board with a separate power-amp enable should gate the speaker with that, on
+  once clean frames are flowing and off before the mute, which is the primary click
+  control on such boards. Capture is symmetric: configure() leaves the microphone
+  muted and audio_codec_start() with AUDIO_DAI_DIR_RX is the first unmute. The
+  ADC's analog settling is measured in seconds, so an application should discard
+  the first buffers.
+
+compatible: "everest,es8311"
+
+properties:
+  everest,mono-dac-source:
+    type: string
+    enum:
+      - "left"
+      - "right"
+    default: "left"
+    description: |
+      Which slot of the stereo I2S frame the single (mono) DAC plays, via 0x09 bit 7
+      (SDP_IN_SEL). "left" is the reset default and the value for a mono stream placed in the
+      left slot; "right" takes the right slot. An application whose samples are in the other
+      slot hears silence with every register reading back as intended.
+
+  everest,mic-pga-gain-db:
+    type: int
+    enum: [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
+    default: 0
+    description: |
+      Analog microphone PGA gain in dB, 0x14 bits [3:0] (3 dB per step, 0-30 dB). The default is
+      0 dB, which is also this field's reset value: the gain is ahead of the ADC, clipping there
+      cannot be undone by the digital INPUT_VOLUME downstream, so a board asks for it
+      explicitly. Both Espressif reference drivers hard-code the 30 dB maximum, which suits a
+      quiet analog MEMS microphone and will clip a hotter one.
+
+# supply-gpios and vin-supply arrive from power.yaml via i2c-device.yaml, and this driver reads
+# neither. A board whose codec sits behind a switch or a regulator must bring that rail up
+# itself, before POST_KERNEL, since that is when init() reads the chip ID; a board that cannot
+# needs zephyr,deferred-init and an explicit device_init(). Blocking the two properties turns a
+# node that sets one into a build error naming it, rather than a driver probing an unpowered
+# part with a devicetree that looks correct. Both are blocked together because power.yaml
+# orders them (regulator, then GPIO), and honouring one half would leave that order undefined.
+# Gating the supply at runtime is not free either: cutting and restoring the analog rail leaves
+# the ADC deaf for several seconds, measured, the same as the 0x00 reset.
+include:
+  - name: i2c-device.yaml
+    property-blocklist:
+      - supply-gpios
+      - vin-supply
