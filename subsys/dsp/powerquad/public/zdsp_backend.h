@@ -350,6 +350,105 @@ static inline void zdsp_not_u32(const uint32_t *src, uint32_t *dst, uint32_t blo
 	arm_not_u32(src, dst, block_size);
 }
 
+/*
+ * Transform (FFT) functions.
+ *
+ * The PowerQuad FFT engine is fixed point, so the Q15 transforms run on the
+ * coprocessor. There is no float transform engine, so the float32 ones fall back
+ * to CMSIS-DSP, which this backend already depends on.
+ */
+extern void pq_cfft_q15(uint32_t fft_len, q15_t *p, uint8_t ifft_flag);
+extern void pq_rfft_q15(uint32_t fft_len, const q15_t *src, q15_t *dst);
+
+/*
+ * The engine transforms N = 16 to 512 points (AN12383, "Computing FFT with
+ * PowerQuad and CMSIS-DSP on LPC5500"). It does not reject anything outside that
+ * range, it just returns wrong results, so the lengths are checked here.
+ */
+#define PQ_FFT_MIN_LEN 16U
+#define PQ_FFT_MAX_LEN 512U
+
+static inline bool pq_fft_len_valid(uint32_t fft_len)
+{
+	return fft_len >= PQ_FFT_MIN_LEN && fft_len <= PQ_FFT_MAX_LEN &&
+	       (fft_len & (fft_len - 1U)) == 0U;
+}
+
+struct zdsp_cfft_instance_q15 {
+	uint16_t fft_len;
+};
+
+static inline zdsp_status zdsp_cfft_init_q15(struct zdsp_cfft_instance_q15 *inst, uint16_t fft_len)
+{
+	inst->fft_len = fft_len;
+
+	return pq_fft_len_valid(fft_len) ? ZDSP_STATUS_OK : ZDSP_STATUS_ERROR;
+}
+
+static inline void zdsp_cfft_q15(const struct zdsp_cfft_instance_q15 *inst, q15_t *p,
+				 uint8_t ifft_flag, uint8_t bit_reverse_flag)
+{
+	/* The engine always bit reverses its output */
+	ARG_UNUSED(bit_reverse_flag);
+
+	pq_cfft_q15(inst->fft_len, p, ifft_flag);
+}
+
+struct zdsp_cfft_instance_f32 {
+	arm_cfft_instance_f32 arm;
+};
+
+static inline zdsp_status zdsp_cfft_init_f32(struct zdsp_cfft_instance_f32 *inst, uint16_t fft_len)
+{
+	return arm_cfft_init_f32(&inst->arm, fft_len) == ARM_MATH_SUCCESS ? ZDSP_STATUS_OK
+									  : ZDSP_STATUS_ERROR;
+}
+static inline void zdsp_cfft_f32(const struct zdsp_cfft_instance_f32 *inst, float32_t *p,
+				 uint8_t ifft_flag, uint8_t bit_reverse_flag)
+{
+	arm_cfft_f32(&inst->arm, p, ifft_flag, bit_reverse_flag);
+}
+
+struct zdsp_rfft_instance_q15 {
+	uint32_t fft_len;
+};
+
+static inline zdsp_status zdsp_rfft_init_q15(struct zdsp_rfft_instance_q15 *inst, uint32_t fft_len,
+					     uint32_t ifft_flag, uint32_t bit_reverse_flag)
+{
+	/* The engine always bit reverses its output and has no inverse real transform */
+	ARG_UNUSED(bit_reverse_flag);
+
+	inst->fft_len = fft_len;
+
+	if (ifft_flag != 0U || !pq_fft_len_valid(fft_len)) {
+		return ZDSP_STATUS_ERROR;
+	}
+
+	return ZDSP_STATUS_OK;
+}
+
+static inline void zdsp_rfft_q15(const struct zdsp_rfft_instance_q15 *inst, q15_t *src, q15_t *dst)
+{
+	pq_rfft_q15(inst->fft_len, src, dst);
+}
+
+struct zdsp_rfft_fast_instance_f32 {
+	arm_rfft_fast_instance_f32 arm;
+};
+
+static inline zdsp_status zdsp_rfft_fast_init_f32(struct zdsp_rfft_fast_instance_f32 *inst,
+						  uint16_t fft_len)
+{
+	return arm_rfft_fast_init_f32(&inst->arm, fft_len) == ARM_MATH_SUCCESS ? ZDSP_STATUS_OK
+									       : ZDSP_STATUS_ERROR;
+}
+static inline void zdsp_rfft_fast_f32(const struct zdsp_rfft_fast_instance_f32 *inst, float32_t *p,
+				      float32_t *out, uint8_t ifft_flag)
+{
+	arm_rfft_fast_f32(&inst->arm, p, out, ifft_flag);
+}
+
 #ifdef __cplusplus
 }
 #endif
