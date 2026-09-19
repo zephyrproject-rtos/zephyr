@@ -15,10 +15,7 @@ properties:
     required: true
 
   bus-width:
-    type: int
     default: 4
     description: |
       Data bus width. 1 for 1-bit, 4 for 4-bit. 1-bit width is rarely used.
-    enum:
-      - 1
-      - 4
+      No 8-bit support in hardware.

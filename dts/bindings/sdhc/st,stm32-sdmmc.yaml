@@ -34,15 +34,10 @@ properties:
     description: Power pin
 
   bus-width:
-    type: int
     default: 1
     description: |
       bus width for SDMMC access, defaults to the minimum necessary
       number of bus lines
-    enum:
-      - 1
-      - 4
-      - 8
 
   clk-div:
     type: int
