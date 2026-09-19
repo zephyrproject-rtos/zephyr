@@ -30,4 +30,17 @@ static inline void usbh_host_unlock(struct usbh_context *const uhs_ctx)
 	k_mutex_unlock(&uhs_ctx->mutex);
 }
 
+/**
+ * @brief Submit work to the USB host bus work queue
+ *
+ * The bus events of the host controllers are handled on this work queue,
+ * class instances use it for work that needs synchronous requests, whose
+ * completions are handled on the host stack thread.
+ *
+ * @param[in] work Pointer to the work item
+ *
+ * @return As @ref k_work_submit_to_queue
+ */
+int usbh_bus_work_submit(struct k_work *const work);
+
 #endif /* ZEPHYR_INCLUDE_USBH_HOST_H */
