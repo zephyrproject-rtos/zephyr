@@ -1082,6 +1082,22 @@ MBOX
              channel-mask = <0x1>;
      };
 
+MFD
+===
+
+* The nPM13xx MFD event callback API no longer reuses :c:struct:`gpio_callback`. Register with
+  :c:struct:`mfd_npm13xx_event_callback`, setting ``event_mask`` (a bitwise-OR of
+  ``BIT(NPM13XX_EVENT_*)``) and ``handler`` directly instead of calling ``gpio_init_callback()``.
+  The handler signature is now ``void handler(const struct device *dev,
+  struct mfd_npm13xx_event_callback *cb, npm13xx_event_t events)``. A handler is invoked once
+  per dispatch with the fired events it subscribed to rather than once per event bit, and after
+  those events have been acknowledged in the PMIC rather than before. (:github:`110454`)
+
+* :c:func:`mfd_npm13xx_add_callback` now returns ``-EINVAL`` for a ``NULL`` callback or handler,
+  an empty ``event_mask``, mask bits at or above ``NPM13XX_EVENT_MAX``, or a callback that is
+  already registered; the previous implementation asserted on the first two and accepted the
+  rest. (:github:`110454`)
+
 MSPI
 ====
 
