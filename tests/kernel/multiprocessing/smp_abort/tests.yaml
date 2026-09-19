@@ -3,4 +3,4 @@ tests:
     tags:
       - kernel
       - smp
-    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1) and CONFIG_IRQ_OFFLOAD_NESTED

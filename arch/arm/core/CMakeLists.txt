@@ -28,6 +28,7 @@ zephyr_library_sources_ifdef(CONFIG_ARCH_STACKWALK stacktrace.c)
 if(NOT (CONFIG_CPU_AARCH32_CORTEX_A OR CONFIG_CPU_AARCH32_CORTEX_R))
   zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 endif()
+zephyr_library_sources_ifdef(CONFIG_HAS_ARM_SMCCC smccc-call.S)
 
 zephyr_cc_option_ifdef(CONFIG_ARCH_STACKWALK -funwind-tables)
 
