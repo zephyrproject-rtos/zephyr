@@ -19,17 +19,9 @@ description: |
 
 compatible: "nxp,ipc-rpmsg-lite"
 
-include: base.yaml
+include: [base.yaml, "zephyr,ipc-common.yaml"]
 
 properties:
-  role:
-    description: RPMSG-Lite role of this instance
-    required: true
-    type: string
-    enum:
-      - host
-      - remote
-
   link-id:
     required: true
     type: int
@@ -40,11 +32,6 @@ properties:
       The instance with link-id = <0> must own the shared MBOX channel
       (via ``mboxes`` / ``mbox-names``). All other instances must set
       ``notification-parent`` pointing to it.
-
-  memory-region:
-    description: phandle to the shared memory region for this link
-    required: true
-    type: phandle
 
   notification-parent:
     description: |
@@ -72,39 +59,11 @@ properties:
       MBOX channel names. Must be "tx" and "rx", matching the order of
       the ``mboxes`` entries.
 
-  priority:
-    type: array
-    description: |
-      Work-queue priority for the per-instance RX thread. This is an
-      array of [priority, type] where type is PRIO_COOP or PRIO_PREEMPT.
-
-      Examples:
-        priority = <1 PRIO_COOP>;    /* K_PRIO_COOP(1)    */
-        priority = <2 PRIO_PREEMPT>; /* K_PRIO_PREEMPT(2) */
-
-      Defaults to <0 PRIO_PREEMPT> when omitted.
-
-  buffer-size:
-    type: int
-    description: |
-      Total message buffer size in bytes (including the 16-byte
-      RPMSG-Lite header). The payload available to the application is
-      (buffer-size - 16) bytes.
-
-      Both host and remote must use the same value. Must be > 16 bytes.
-
-      Common values:
-        256  -> 240 bytes payload
-        512  -> 496 bytes payload  (default)
-        1024 -> 1008 bytes payload
-    default: 512
-
-  buffer-count:
+  zephyr,buffer-count:
     type: int
     description: |
       Number of TX/RX buffers for this link. Must be a power of 2.
       Both host and remote must use the same value.
-    default: 2
 
 examples:
   - |
