@@ -20,4 +20,17 @@
 				 <PD0D_SERCOM1_PAD1>;  /* SCL */
 		};
 	};
+
+	tcc0_pwm_default: tcc0_pwm_default {
+		group1 {
+			pinmux = <PA20F_TCC0_WO1>;  /* LED0 */
+		};
+	};
+
+	tcc3_pwm_default: tcc3_pwm_default {
+		group1 {
+			pinmux = <PB13F_TCC3_WO0>,  /* Arduino D3 */
+				 <PB14F_TCC3_WO1>;  /* Arduino D6 */
+		};
+	};
 };

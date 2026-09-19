@@ -9,6 +9,7 @@
 #include "pic32cm_gc00_cpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "PIC32CM GC00 Curiosity Pro";
@@ -25,6 +26,7 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		sw1 = &button1;
 	};
@@ -40,6 +42,21 @@
 		led1: led_1 {
 			gpios = <&porta 18 GPIO_ACTIVE_LOW>;
 			label = "LED1";
+		};
+	};
+
+	/*
+	 * LED0 again, driven by TCC0: PA20's only timer output is TCC0_WO1.
+	 * Once the PWM driver applies its pinctrl, PORT no longer owns the
+	 * pin and the GPIO side of led0 is inert. The LEDs are active low,
+	 * hence PWM_POLARITY_INVERTED.
+	 */
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 1 PWM_MSEC(1) PWM_POLARITY_INVERTED>;
+			label = "LED0 PWM";
 		};
 	};
 
@@ -159,6 +176,18 @@
 			gclkperiph-src = "gclk0";
 			gclkperiph-en = <1>;
 		};
+
+		tcc0 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_TCC0>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
+
+		tcc3 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_TCC3>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
 	};
 
 	mclkdomain: mclkdomain {
@@ -176,6 +205,16 @@
 
 		sercom1 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>;
+			mclk-en = <1>;
+		};
+
+		tcc0 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_TCC0>;
+			mclk-en = <1>;
+		};
+
+		tcc3 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_TCC3>;
 			mclk-en = <1>;
 		};
 	};
@@ -219,5 +258,28 @@ i2c0: &sercom1 {
 	pinctrl-names = "default";
 	dmas = <&dmac 2 6>, <&dmac 3 7>;
 	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+/*
+ * gclk0 runs at 72 MHz and the counter is 16 bits wide, so without a
+ * prescaler a 1 ms period needs 72000 counts and pwm_set_dt() returns
+ * -EINVAL. DIV16 brings it to 4500.
+ */
+&tcc0 {
+	compatible = "microchip,tcc-g1-pwm";
+	#pwm-cells = <3>;
+	prescaler = <16>;
+	pinctrl-0 = <&tcc0_pwm_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tcc3 {
+	compatible = "microchip,tcc-g1-pwm";
+	#pwm-cells = <3>;
+	prescaler = <16>;
+	pinctrl-0 = <&tcc3_pwm_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
