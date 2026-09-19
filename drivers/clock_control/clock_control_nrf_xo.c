@@ -81,7 +81,8 @@ static void calibration_handler(struct k_timer *timer)
 		return;
 	}
 
-	sys_notify_init_callback(&hf_cal_cli.notify, calibration_finished_callback);
+	sys_notify_init_callback(&hf_cal_cli.notify,
+				 (sys_notify_generic_callback)calibration_finished_callback);
 	(void)onoff_request(&((common_clock_data_t *)CLOCK_DEVICE_XO->data)->mgr, &hf_cal_cli);
 }
 
