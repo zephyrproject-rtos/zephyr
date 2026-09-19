@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_BUILD_WITH_TFM)
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-    # Execute post build script postbuild.sh
+  # Run the postbuild.sh script in a custom target so that the regression.sh script
+  # installed by the TF-M build always gets updated with the proper values.
+  add_custom_target(stm32_tfm_postbuild ALL
     COMMAND $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/postbuild.sh ${CROSS_COMPILE}${CC}
+    COMMENT "Patching TF-M helper scripts with flash layout addresses"
+    VERBATIM
   )
-  # Ensure postbuild.sh script is run to update raw regression.sh installed from TF-M source tree
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-    ${PROJECT_BINARY_DIR}/tfm/api_ns/regression.sh
-  )
+  add_dependencies(stm32_tfm_postbuild tfm)
 endif()
 
 add_subdirectory(common)
