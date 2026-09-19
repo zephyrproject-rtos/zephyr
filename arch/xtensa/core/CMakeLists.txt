@@ -28,7 +28,12 @@ zephyr_library_sources_ifdef(CONFIG_XTENSA_MMU ptables.c mmu.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_MPU mpu/mpu_core.c mpu/mpu_regions.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S syscall_helper.c)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
-zephyr_library_sources_ifdef(CONFIG_SMP smp.c)
+# intel_adsp SoCs have their own independent SMP implementation
+# (soc/intel/intel_adsp/{common,ace}/multiprocessing.c) and must not also
+# link this shared implementation.
+if(CONFIG_SMP AND NOT CONFIG_SOC_FAMILY_INTEL_ADSP)
+  zephyr_library_sources(smp.c)
+endif()
 zephyr_library_sources_ifdef(CONFIG_XTENSA_HIFI_SHARING xtensa_hifi.S)
 
 zephyr_library_sources(instr_mem.c)
