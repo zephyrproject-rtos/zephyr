@@ -36,3 +36,6 @@ family:
       cpuclusters:
       - name: v3f
       - name: v5f
+  - name: qingke-v4a
+    socs:
+    - name: ch582m
