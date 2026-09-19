@@ -1,0 +1,29 @@
+common:
+  tags:
+    - bluetooth
+    - classic
+    - opp
+    - pytest
+    - multidut
+  harness: pytest
+
+tests:
+  bluetooth.classic.opp.board2board:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    harness_config:
+      pytest_dut_scope: session
+      pytest_root:
+        - "pytest/test_opp.py"
+      required_devices:
+        # A second board (same platform, same image); it takes the OPP server
+        # role while the first board takes the OPP client role at runtime.
+        - {}
+    timeout: 800
+  bluetooth.classic.opp.no_blobs:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 800
+    build_only: true
