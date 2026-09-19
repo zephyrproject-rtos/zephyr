@@ -18,6 +18,13 @@ config SDHC_STM32_SDMMC
 
 if SDHC_STM32_SDMMC
 
+config HEAP_MEM_POOL_ADD_SIZE_SDHC_STM32_SDMMC
+	int
+	default 2048
+	help
+	  Minimum system heap size required by the STM32 SDHC/SDMMC driver
+	  for aligned DMA buffer allocations.
+
 config SDHC_BUFFER_ALIGNMENT
 	default 32
 
