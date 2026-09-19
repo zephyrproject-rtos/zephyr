@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,27 +71,40 @@ static inline void pm_state_notify(bool entering_state)
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
 }
 
-static inline int32_t ticks_expiring_sooner(int32_t ticks1, int32_t ticks2)
+static inline int32_t ticks_expiring_sooner(int64_t ticks1, int64_t ticks2)
 {
+	int64_t ticks;
+
 	/*
 	 * Ticks are relative numbers that defines the number of ticks
 	 * until the next event.
-	 * Its maximum value is K_TICKS_FOREVER ((uint32_t)-1) which is -1
-	 * when we cast it to (int32_t)
+	 * "Nothing pending" is reported as a negative value: the kernel
+	 * timeout is K_TICKS_FOREVER, which is -1 once it is held in a signed
+	 * tick variable, and the policy getters return -1. Test the sign
+	 * instead of comparing against K_TICKS_FOREVER, whose underlying
+	 * k_ticks_t is unsigned when CONFIG_TIMEOUT_64BIT=n and would then not
+	 * compare equal to -1 at this width.
 	 * We need to find out which one is the closest
 	 */
 
 	__ASSERT(ticks1 >= -1, "ticks1 has unexpected negative value");
 	__ASSERT(ticks2 >= -1, "ticks2 has unexpected negative value");
 
-	if (ticks1 == K_TICKS_FOREVER) {
-		return ticks2;
+	if (ticks1 < 0) {
+		ticks = ticks2;
+	} else if (ticks2 < 0) {
+		ticks = ticks1;
+	} else {
+		/* At this step ticks1 and ticks2 are positive */
+		ticks = MIN(ticks1, ticks2);
 	}
-	if (ticks2 == K_TICKS_FOREVER) {
-		return ticks1;
-	}
-	/* At this step ticks1 and ticks2 are positive */
-	return MIN(ticks1, ticks2);
+
+	/*
+	 * The result is consumed as int32_t ticks by pm_policy_next_state(), so
+	 * saturate rather than truncate: an event beyond the int32_t range must
+	 * not wrap negative, and must not alias K_TICKS_FOREVER.
+	 */
+	return (int32_t)MIN(ticks, (int64_t)SYS_CLOCK_MAX_WAIT);
 }
 
 void pm_system_resume(void)
@@ -146,7 +160,8 @@ bool pm_system_suspend(int32_t kernel_ticks)
 {
 	uint8_t id = CPU_ID;
 	k_spinlock_key_t key;
-	int32_t ticks, events_ticks;
+	int32_t ticks;
+	int64_t events_ticks;
 	uint32_t exit_latency_ticks;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
@@ -165,7 +180,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	ticks = ticks_expiring_sooner(kernel_ticks, events_ticks);
 
 #ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
-	int32_t custom_ticks = pm_policy_next_custom_ticks();
+	int64_t custom_ticks = pm_policy_next_custom_ticks();
 
 	ticks = ticks_expiring_sooner(custom_ticks, ticks);
 #endif /* CONFIG_PM_CUSTOM_TICKS_HOOK */

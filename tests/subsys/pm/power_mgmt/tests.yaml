@@ -1,8 +1,13 @@
 common:
-  platform_allow: native_sim
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
   tags: pm
 tests:
   pm.system: {}
   pm.system.no.device.pm:
     extra_args:
       - CONF_FILE="no-device-pm.conf"
+  pm.system.custom.ticks.hook:
+    extra_args:
+      - CONF_FILE="custom-ticks.conf"
