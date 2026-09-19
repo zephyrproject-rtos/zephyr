@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CH582M
+	bool
+	select SOC_SERIES_QINGKE_V4A
+
+config SOC
+	default "ch582m" if SOC_CH582M
