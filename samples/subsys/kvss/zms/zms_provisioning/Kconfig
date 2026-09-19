@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+menu "ZMS Provisioning Sample Options"
+
+config SAMPLE_ZMS_PROVISIONING_MERGE_WITH_APP_HEX
+	bool "Merge application hex with provisioning data"
+	default n
+	help
+	  When enabled, the provisioning script merges the generated provisioning
+	  data into the application hex file and emits a single merged hex output.
+
+	  When disabled, the build generates only the provisioning data hex file in
+	  addition to the normal application zephyr.hex output.
+
+endmenu
+
+source "Kconfig.zephyr"
