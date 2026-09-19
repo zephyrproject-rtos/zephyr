@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	chosen {
@@ -32,11 +31,12 @@
 	 * users can allocate the HyperRAM reasonably so that both cores (CM33 and CM7)
 	 * can use HyperRAM as their RAM region.
 	 *
-	 * If not configured by the ROM bootloader, the user must ensure the hyperram0
-	 * device is enabled in the DTS, otherwise, the user must set 'status = "disabled";
-	 * Note: mpu_region.c uses the status property from the DTS to configure the
-	 * corresponding MPU settings.
+	 * If the HyperRAM is not initialized by the ROM bootloader, set
+	 * 'status = "disabled"' here to prevent the MPU region from being created.
+	 *
+	 * Note: the MPU executable region for HyperRAM is created automatically by
+	 * arm_mpu_regions.c because this node is selected as zephyr,flash above.
+	 * No zephyr,memory-attr is needed on this node.
 	 */
-	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	status = "okay";
 };
