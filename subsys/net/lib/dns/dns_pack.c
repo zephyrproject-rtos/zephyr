@@ -21,7 +21,7 @@ static inline uint16_t dns_strlen(const char *str)
 	return (uint16_t)strlen(str);
 }
 
-int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
+int dns_msg_pack_qname(uint32_t *len, uint8_t *buf, uint32_t size,
 		       const char *domain_name)
 {
 	uint16_t dn_size;
@@ -286,12 +286,12 @@ static int dns_msg_pack_query_header(uint8_t *buf, uint16_t size, uint16_t id)
 	return 0;
 }
 
-int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,
-		       uint8_t *qname, uint16_t qname_len, uint16_t id,
+int dns_msg_pack_query(uint8_t *buf, uint32_t *len, uint32_t size,
+		       uint8_t *qname, uint32_t qname_len, uint16_t id,
 		       enum dns_rr_type qtype)
 {
 	uint16_t msg_size;
-	uint16_t offset;
+	uint32_t offset;
 	int rc;
 
 	msg_size = DNS_MSG_HEADER_SIZE + DNS_QTYPE_LEN + DNS_QCLASS_LEN;
@@ -384,7 +384,7 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 	return 0;
 }
 
-int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
+int dns_copy_qname(uint8_t *buf, uint32_t *len, uint32_t size,
 		   struct dns_msg_t *dns_msg, uint16_t pos)
 {
 	SYS_BITARRAY_DEFINE(visited, DNS_RESOLVER_MAX_BUF_SIZE);
