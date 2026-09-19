@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 RASNA
  * Copyright (c) 2022, Kumar Gala <galak@kernel.org>
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -514,6 +515,25 @@
 					tcon = <0x22>;
 					pll = <0x09>;
 					vdcs = <0x07>;
+				};
+
+				status = "okay";
+			};
+
+			test_uc8253_gdey037t03_gray: uc8253@29 {
+				compatible = "ultrachip,uc8253";
+				reg = <0x29>;
+				mipi-max-frequency = <10000000>;
+				width = <240>;
+				height = <416>;
+				busy-gpios = <&test_gpio 0 0>;
+				grayscale;
+				gray-level-planes = <0 2 1 3>;
+
+				gray {
+					cdi = <0x97>;
+					ccset = <0x02>;
+					tsset = <0x5a>;
 				};
 
 				status = "okay";
