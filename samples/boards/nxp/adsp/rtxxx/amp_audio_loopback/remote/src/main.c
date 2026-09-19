@@ -14,7 +14,7 @@
 #define I2S_RX_NODE  DT_ALIAS(i2s_rx)
 #define I2S_TX_NODE  DT_ALIAS(i2s_tx)
 
-#define SAMPLE_FREQUENCY    48000
+#define SAMPLE_FREQUENCY    16000
 #define SAMPLE_BIT_WIDTH    16
 #define BYTES_PER_SAMPLE    sizeof(int16_t)
 #define NUMBER_OF_CHANNELS  2
