@@ -252,7 +252,7 @@ static usb_host_pipe_handle uhc_mcux_check_hal_ep(const struct device *dev,
 	if (mcux_ep->pipeType != xfer->type ||
 	    mcux_ep->maxPacketSize != USB_MPS_EP_SIZE(xfer->mps) ||
 	    mcux_ep->numberPerUframe != USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps) + 1 ||
-	    priv->mcux_eps_interval[i] != xfer->interval) {
+	    priv->mcux_eps_interval[i] != xfer->bInterval) {
 		status = priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle,
 							    mcux_ep);
 		if (status != kStatus_USB_Success) {
@@ -294,7 +294,7 @@ usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_trans
 	 * 'number per uframe' and the endpoint type cannot be got yet.
 	 */
 	pipe_init.numberPerUframe = USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps);
-	pipe_init.interval = xfer->interval;
+	pipe_init.interval = xfer->bInterval;
 	pipe_init.pipeType = xfer->type;
 
 	status = priv->mcux_if->controllerOpenPipe(priv->mcux_host.controllerHandle,
@@ -315,7 +315,7 @@ usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_trans
 	for (i = 0; i < USB_HOST_CONFIG_MAX_PIPES; i++) {
 		if (priv->mcux_eps[i] == NULL) {
 			priv->mcux_eps[i] = mcux_ep;
-			priv->mcux_eps_interval[i] = xfer->interval;
+			priv->mcux_eps_interval[i] = xfer->bInterval;
 			break;
 		}
 	}
