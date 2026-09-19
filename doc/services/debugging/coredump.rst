@@ -43,6 +43,11 @@ Here are the choices regarding memory dump:
   _image_ram_start[] and _image_ram_end[]. This includes at least data, noinit,
   and BSS sections. This is the default.
 
+* ``DEBUG_COREDUMP_CRC``: append a CRC-32 integrity trailer to every core dump,
+  covering all preceding bytes, so a dump corrupted or truncated in transit or
+  storage can be detected by the host tooling before it is handed to the
+  debugger. See `CRC Trailer Block`_.
+
 Additional memory can be included in a dump (even with the "DEBUG_COREDUMP_MEMORY_DUMP_MIN"
 config selected) through one or more :ref:`coredump devices <coredump_device_api>`
 
@@ -263,7 +268,7 @@ File Format
 
 The core dump binary file consists of one file header, one
 architecture-specific block, zero or one threads metadata block(s),
-and multiple memory blocks. All numbers in
+multiple memory blocks, and an optional CRC trailer block. All numbers in
 the headers below are little endian.
 
 File Header
@@ -395,6 +400,39 @@ the memory region.
    * - Memory byte stream
      - ``uint8_t[]``
      - Contains the memory content between the start and end addresses.
+
+CRC Trailer Block
+-----------------
+
+When :kconfig:option:`CONFIG_DEBUG_COREDUMP_CRC` is enabled, a CRC trailer
+block is emitted as the very last block of the core dump. It carries a CRC-32
+(IEEE 802.3, as computed by :c:func:`crc32_ieee`) over every preceding byte of
+the dump - the file header and all architecture-specific, threads metadata,
+per-CPU snapshot and memory blocks - but not the trailer itself. Host tooling
+recomputes the CRC over the same range and compares, so a dump that is
+corrupted or truncated in transit (for example over the logging or UDP
+backends, which otherwise carry no integrity check) or in storage can be
+detected before it is handed to the debugger. When the option is disabled the
+on-disk format is unchanged and no trailer is written.
+
+.. list-table:: CRC Trailer Block
+   :widths: 2 1 7
+   :header-rows: 1
+
+   * - Field
+     - Data Type
+     - Description
+   * - ID
+     - ``char``
+     - ``C`` to indicate this is a CRC trailer block.
+   * - Header version
+     - ``uint16_t``
+     - Identify the version of the header. This needs to be incremented
+       whenever the header struct is modified.
+   * - CRC-32
+     - ``uint32_t``
+     - CRC-32 (IEEE 802.3) computed over every byte of the core dump that
+       precedes this trailer.
 
 Adding New Target
 *****************
