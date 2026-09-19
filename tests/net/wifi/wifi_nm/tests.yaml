@@ -19,4 +19,5 @@ tests:
       - bl618g0 # Requires binary blobs to build
       - ai_m61_32s_kit # Requires binary blobs to build
       - ai_m62_12f_kit # Requires binary blobs to build
+      - ai_m64p_32s_kit # Requires binary blobs to build
       - maix_m0s_dock # Requires binary blobs to build
