@@ -20,6 +20,7 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
       - frdm_mcxe247@w25q64
       - frdm_mcxe31b@w25q64
+      - stm32h573i_dk
     integration_platforms:
       - native_sim
       - apollo3p_evb

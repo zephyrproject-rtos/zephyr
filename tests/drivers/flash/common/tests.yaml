@@ -198,6 +198,16 @@ tests:
     platform_exclude:
       - nucleo_wb55rg
       - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+  drivers.flash.common.stm32.mx25:
+    filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
+      and CONFIG_SOC_FAMILY_STM32 and (dt_compat_enabled("mxicy_mx25u")))
+    integration_platforms:
+      - stm32h573i_dk
+    platform_allow:
+      - stm32h573i_dk
+    extra_args:
+      - CONFIG_TEST_FORCE_STORAGE_PARTITION=n
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=67108864
   drivers.flash.common.non_quad_mode:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25r64_non_quad.overlay
