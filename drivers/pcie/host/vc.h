@@ -7,9 +7,12 @@
 #ifndef ZEPHYR_DRIVERS_PCIE_HOST_VC_H_
 #define ZEPHYR_DRIVERS_PCIE_HOST_VC_H_
 
-#define PCIE_VC_CAP_REG_1_OFFSET	0x04U
-#define PCIE_VC_CAP_REG_2_OFFSET	0x08U
-#define PCIE_VC_CTRL_STATUS_REG_OFFSET	0x0CU
+/* pcie_conf_read()/pcie_conf_write() use DWORD indices, not byte offsets. */
+#define PCIE_VC_REG_OFFSET(_offset)		((_offset) / sizeof(uint32_t))
+
+#define PCIE_VC_CAP_REG_1_OFFSET	PCIE_VC_REG_OFFSET(0x04U)
+#define PCIE_VC_CAP_REG_2_OFFSET	PCIE_VC_REG_OFFSET(0x08U)
+#define PCIE_VC_CTRL_STATUS_REG_OFFSET	PCIE_VC_REG_OFFSET(0x0CU)
 
 /** Virtual Channel capability and control Registers */
 struct pcie_vc_regs {
@@ -56,9 +59,12 @@ struct pcie_vc_regs {
 	} ctrl_reg;
 };
 
-#define PCIE_VC_RES_CAP_REG_OFFSET(_vc)		(0x10U + _vc * 0X0CU)
-#define PCIE_VC_RES_CTRL_REG_OFFSET(_vc)	(0x14U + _vc * 0X0CU)
-#define PCIE_VC_RES_STATUS_REG_OFFSET(_vc)	(0x18U + _vc * 0X0CU)
+#define PCIE_VC_RES_CAP_REG_OFFSET(_vc) \
+	PCIE_VC_REG_OFFSET(0x10U + (_vc) * 0x0CU)
+#define PCIE_VC_RES_CTRL_REG_OFFSET(_vc) \
+	PCIE_VC_REG_OFFSET(0x14U + (_vc) * 0x0CU)
+#define PCIE_VC_RES_STATUS_REG_OFFSET(_vc) \
+	PCIE_VC_REG_OFFSET(0x18U + (_vc) * 0x0CU)
 
 #define PCIE_VC_PA_RR		BIT(0)
 #define PCIE_VC_PA_WRR		BIT(1)
