@@ -29,6 +29,9 @@
 
 #define IFX_FLASH_ERASE_VALUE DT_INST_PROP(0, erase_value)
 
+/* PDL program row functions require 32 byte aligned source data */
+#define IFX_FLASH_PROG_ALIGN 32
+
 BUILD_ASSERT(IFX_FLASH_SIZE > 0, "Flash size must be greater than 0");
 
 BUILD_ASSERT(IFX_FLASH_MAX > IFX_FLASH_BASE, "Flash max_addr must be greater than base_addr");
@@ -105,26 +108,19 @@ static int flash_ifx_write(const struct device *dev, off_t offset, const void *d
 		return -EINVAL;
 	}
 
-	static uint32_t __aligned(sizeof(uint32_t)) row_buf[IFX_FLASH_ROW_WORDS];
+	static uint32_t __aligned(IFX_FLASH_PROG_ALIGN) row_buf[IFX_FLASH_ROW_WORDS];
 
 	k_mutex_lock(&dev_data->lock, K_FOREVER);
 
 	while (remaining_len > 0) {
-		const uint32_t *row_src;
-
-		if ((((uintptr_t)src_ptr) & (sizeof(uint32_t) - 1)) == 0) {
-			row_src = (const uint32_t *)src_ptr;
-		} else {
-			memcpy(row_buf, src_ptr, row_len);
-			row_src = row_buf;
-		}
+		memcpy(row_buf, src_ptr, row_len);
 
 #if IFX_FLASH_EXPLICIT_ERASE
 		/* Advertises explicit erase */
-		status = Cy_Flash_ProgramRow(write_offset, row_src);
+		status = Cy_Flash_ProgramRow(write_offset, row_buf);
 #else
 		/* Auto-erases the row as part of the write. */
-		status = Cy_Flash_WriteRow(write_offset, row_src);
+		status = Cy_Flash_WriteRow(write_offset, row_buf);
 #endif
 		if (status != CY_FLASH_DRV_SUCCESS) {
 			ret = -EIO;
@@ -212,7 +208,7 @@ static int flash_ifx_erase(const struct device *dev, off_t offset, size_t size)
 	}
 
 #if !IFX_FLASH_EXPLICIT_ERASE
-	static uint32_t __aligned(4) row_buf[IFX_FLASH_ROW_WORDS];
+	static uint32_t __aligned(IFX_FLASH_PROG_ALIGN) row_buf[IFX_FLASH_ROW_WORDS];
 
 	memset(row_buf, IFX_FLASH_ERASE_VALUE, row_len);
 #endif
