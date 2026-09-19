@@ -1,0 +1,16 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &w25q128jv;
+		zephyr,code-partition = &slot1_partition;
+	};
+};
+
+&flexspi2 {
+	status = "okay";
+};

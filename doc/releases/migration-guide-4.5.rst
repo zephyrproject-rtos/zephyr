@@ -239,6 +239,13 @@ Boards
   used by the other NXP board options and by frdm_imxrt1186. Configurations setting
   ``CONFIG_NXP_BOARD_SPECIFIC_MPU_SETTINGS`` must be updated to the new name.
 
+* On ``mimxrt1180_evk`` and ``frdm_imxrt1186``, the optional DTS overlay files
+  (``cm33_sram_dtcm.overlay``, ``cm7_code_hyperram.overlay``, ``cm7_flash_boot.overlay``) were
+  moved from the board root directory into a dedicated ``dts/`` subdirectory. Out-of-tree
+  applications that referenced these overlays with an explicit path must update it to include
+  the ``dts/`` component (e.g. use ``boards/nxp/mimxrt1180_evk/dts/cm7_flash_boot.overlay``
+  instead of ``boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay``).
+
 * Boards must now select :kconfig:option:`CONFIG_TFM_PARTITION_FIRMWARE_UPDATE_SUPPORTED` if they
   support firmware update via TF-M.
 
