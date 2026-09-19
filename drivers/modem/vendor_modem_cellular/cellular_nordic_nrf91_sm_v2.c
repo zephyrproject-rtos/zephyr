@@ -17,7 +17,12 @@ MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(xiccid_match, "%XICCID: ", "", modem_cellula
 MODEM_CHAT_MATCH_DEFINE(uicc_initialized, "%XSIM: 1", "", NULL);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(init_chat_script_cmds,
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(init_chat_script, init_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN", imei_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
@@ -31,7 +36,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(init_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT%XSIM=0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0", ok_match));
 
-MODEM_CHAT_SCRIPT_DEFINE(init_chat_script, init_chat_script_cmds, abort_matches,
+MODEM_CHAT_SCRIPT_DEFINE(configuration_chat_script, configuration_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(network_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
@@ -58,6 +63,7 @@ static const struct modem_cellular_vendor_config nrf91_sm_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &init_chat_script,
+		.configuration = &configuration_chat_script,
 		.network = &network_chat_script,
 		.dial = &dial_chat_script,
 		.shutdown = &shutdown_chat_script,

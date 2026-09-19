@@ -14,7 +14,13 @@ MODEM_CHAT_MATCHES_DEFINE(sqn_gm02s_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	sqn_gm02s_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_init_chat_script, sqn_gm02s_init_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	sqn_gm02s_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
@@ -24,7 +30,8 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), ok_match));
 
-MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_init_chat_script, sqn_gm02s_init_chat_script_cmds, abort_matches,
+MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_configuration_chat_script,
+			 sqn_gm02s_configuration_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(sqn_gm02s_dial_chat_script_cmds,
@@ -49,6 +56,7 @@ static const struct modem_cellular_vendor_config sqn_gm02s_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &sqn_gm02s_init_chat_script,
+		.configuration = &sqn_gm02s_configuration_chat_script,
 		.dial = &sqn_gm02s_dial_chat_script,
 		.periodic = &sqn_gm02s_periodic_chat_script,
 	},

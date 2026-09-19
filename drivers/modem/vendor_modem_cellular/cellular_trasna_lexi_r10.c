@@ -22,7 +22,13 @@ MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_set_baudrate_chat_script,
 			 modem_cellular_chat_callback_handler, 1);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	trasna_lexi_r10_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+	trasna_lexi_r10_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_init_chat_script, trasna_lexi_r10_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	trasna_lexi_r10_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
@@ -37,8 +43,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CCID", ccid_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), ok_match));
 
-MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_init_chat_script, trasna_lexi_r10_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_configuration_chat_script,
+			 trasna_lexi_r10_configuration_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r10_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
@@ -68,6 +75,7 @@ static const struct modem_cellular_vendor_config trasna_lexi_r10_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &trasna_lexi_r10_init_chat_script,
+		.configuration = &trasna_lexi_r10_configuration_chat_script,
 		.dial = &trasna_lexi_r10_dial_chat_script,
 		.periodic = &trasna_lexi_r10_periodic_chat_script,
 		.shutdown = &trasna_lexi_r10_shutdown_chat_script,

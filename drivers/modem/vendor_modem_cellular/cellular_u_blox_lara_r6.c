@@ -34,7 +34,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	 * unreachable" to DNS answers from DNS requests that we send
 	 */
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+ULWM2M=1", allow_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_init_chat_script, u_blox_lara_r6_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	u_blox_lara_r6_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG=1", ok_match),
@@ -62,8 +68,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CCID", ccid_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), ok_match));
 
-MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_init_chat_script, u_blox_lara_r6_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_configuration_chat_script,
+			 u_blox_lara_r6_configuration_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_lara_r6_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT(
@@ -90,6 +97,7 @@ static const struct modem_cellular_vendor_config u_blox_lara_r6_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &u_blox_lara_r6_init_chat_script,
+		.configuration = &u_blox_lara_r6_configuration_chat_script,
 		.dial = &u_blox_lara_r6_dial_chat_script,
 		.periodic = &u_blox_lara_r6_periodic_chat_script,
 		.set_baudrate = &u_blox_lara_r6_set_baudrate_chat_script,

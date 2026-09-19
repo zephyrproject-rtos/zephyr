@@ -48,7 +48,13 @@ MODEM_CHAT_MATCHES_DEFINE(quectel_eg2x_g_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATC
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	quectel_eg2x_g_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_init_chat_script, quectel_eg2x_g_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	quectel_eg2x_g_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 #if BUS_HAS_FLOW_CONTROL(quectel_eg21_g) || BUS_HAS_FLOW_CONTROL(quectel_eg25_g)
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IFC=2,2", ok_match),
@@ -68,8 +74,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 					",127,10,3,30,10,2",
 					100));
 
-MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_init_chat_script, quectel_eg2x_g_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_configuration_chat_script,
+			 quectel_eg2x_g_configuration_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
 
 #if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
@@ -168,6 +175,7 @@ static const struct modem_cellular_vendor_config quectel_eg2x_g_vendor = {
 		.set_baudrate = &quectel_eg2x_g_set_baudrate_chat_script,
 #endif
 		.init = &quectel_eg2x_g_init_chat_script,
+		.configuration = &quectel_eg2x_g_configuration_chat_script,
 		.dial = &quectel_eg2x_g_dial_chat_script,
 		.periodic = &quectel_eg2x_g_periodic_chat_script,
 	},

@@ -21,7 +21,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	 * doing it later (e.g. from a user pipe).
 	 */
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGNSSPWR=1", allow_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_init_chat_script, simcom_a76xx_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	simcom_a76xx_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG=1", ok_match),
@@ -33,8 +39,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), 300));
 
-MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_init_chat_script, simcom_a76xx_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_configuration_chat_script,
+			 simcom_a76xx_configuration_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_a76xx_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT(
@@ -66,6 +73,7 @@ static const struct modem_cellular_vendor_config simcom_a76xx_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &simcom_a76xx_init_chat_script,
+		.configuration = &simcom_a76xx_configuration_chat_script,
 		.dial = &simcom_a76xx_dial_chat_script,
 		.periodic = &simcom_a76xx_periodic_chat_script,
 		.shutdown = &simcom_a76xx_shutdown_chat_script,

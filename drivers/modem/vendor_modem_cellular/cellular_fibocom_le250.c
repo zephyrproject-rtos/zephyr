@@ -11,15 +11,21 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
 MODEM_CHAT_MATCHES_DEFINE(fibocom_le250_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	fibocom_le250_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(fibocom_le250_init_chat_script, fibocom_le250_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
 /*
  * Configure reporting, collect the standard modem identifiers, and then put
  * the UART into 3GPP TS 27.010 basic-mode multiplexing at 115200 baud with a
  * 127-byte frame.
  */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	fibocom_le250_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
-	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
-	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+	fibocom_le250_configuration_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=2", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG=1", ok_match),
@@ -35,8 +41,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CCID", ccid_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2", 1000));
 
-MODEM_CHAT_SCRIPT_DEFINE(fibocom_le250_init_chat_script, fibocom_le250_init_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(fibocom_le250_configuration_chat_script,
+			 fibocom_le250_configuration_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(fibocom_le250_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99#", connect_match));
@@ -68,6 +75,7 @@ static const struct modem_cellular_vendor_config fibocom_le250_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &fibocom_le250_init_chat_script,
+		.configuration = &fibocom_le250_configuration_chat_script,
 		.dial = &fibocom_le250_dial_chat_script,
 		.periodic = &fibocom_le250_periodic_chat_script,
 		.shutdown = &fibocom_le250_shutdown_chat_script,
