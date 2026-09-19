@@ -7,6 +7,7 @@ Tests for jobserver.py classes' methods
 """
 
 import functools
+import importlib.util
 import os
 import sys
 from contextlib import nullcontext
@@ -15,13 +16,20 @@ from selectors import EVENT_READ
 from unittest import mock
 
 import pytest
+from twisterlib import jobserver
+from twisterlib.jobserver import JobClient, JobHandle
 
-# Job server only works on Linux for now.
-pytestmark = pytest.mark.skipif(sys.platform != 'linux', reason='JobServer only works on Linux.')
+# Only GNU Make's job server is Linux-only. JobHandle and JobClient are not,
+# and runner.py hands JobClient to every other platform, so the tests for
+# those two need to run there as well.
+linux_only = pytest.mark.skipif(
+    sys.platform != 'linux', reason='GNU Make job server only works on Linux.'
+)
+
 if sys.platform == 'linux':
     from fcntl import F_GETFL
 
-    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient, JobHandle
+    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer
 
 
 def test_jobhandle(capfd):
@@ -63,7 +71,7 @@ def test_jobclient_pass_fds():
 
 
 TESTDATA_1 = [
-    ({}, {'env': {'k': 'v'}, 'pass_fds': []}),
+    ({}, {}),
     ({'env': {}, 'pass_fds': ['fd']}, {'env': {}, 'pass_fds': ['fd']}),
 ]
 
@@ -88,6 +96,73 @@ def test_jobclient_popen(kwargs, expected_kwargs):
     assert proc == proc_mock
 
 
+def _reimport_jobserver():
+    # A fresh module object built from the same source, so the import-time
+    # guard runs again under whatever the caller is patching. Reloading the
+    # installed module would hand back the one this file already imported.
+    spec = importlib.util.spec_from_file_location(
+        'jobserver_reimport', jobserver.__file__
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    return module
+
+
+def test_jobserver_module_imports_where_fcntl_does_not_exist():
+    # Windows is the one platform without fcntl, and this module has to
+    # import there. Blocking the name in sys.modules is what makes
+    # `import fcntl` raise on a host that has it, so what is under test is
+    # the guard and not the platform the suite happens to run on.
+    with mock.patch.object(os, 'name', 'nt'), \
+         mock.patch.dict(sys.modules, {'fcntl': None}):
+        module = _reimport_jobserver()
+
+    assert not hasattr(module, 'fcntl')
+    assert module.JobClient().get_job() is not None
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec('fcntl') is None,
+    reason='the host has no fcntl for the guard to keep'
+)
+def test_jobserver_module_keeps_fcntl_on_posix():
+    # macOS and the BSDs are POSIX and do ship fcntl, and
+    # GNUMakeJobClient.from_environ() calls fcntl.fcntl(), so a guard keyed
+    # on Linux alone leaves it raising NameError on those hosts.
+    with mock.patch.object(os, 'name', 'posix'), \
+         mock.patch.object(sys, 'platform', 'darwin'):
+        module = _reimport_jobserver()
+
+    assert hasattr(module, 'fcntl')
+
+
+def test_jobclient_popen_shares_what_it_has():
+    # The base client has nothing to share, but a client that does still has
+    # to name env and pass_fds -- that is the half GNUMakeJobClient relies
+    # on, and it is the same code path.
+    class SharingJobClient(JobClient):
+        @staticmethod
+        def env():
+            return {'MAKEFLAGS': '-j2'}
+
+        @staticmethod
+        def pass_fds():
+            return [7]
+
+    argv = ['cmd']
+    popen_mock = mock.Mock()
+    env_mock = {'k': 'v'}
+
+    with mock.patch('subprocess.Popen', popen_mock), \
+         mock.patch('os.environ', env_mock):
+        SharingJobClient().popen(argv)
+
+    popen_mock.assert_called_once_with(
+        argv, env={'k': 'v', 'MAKEFLAGS': '-j2'}, pass_fds=[7]
+    )
+
+
 TESTDATA_2 = [
     (False, 0),
     (True, 0),
@@ -101,6 +176,7 @@ TESTDATA_2 = [
     ids=['no inheritable, no internal', 'inheritable, no internal',
          'no inheritable, internal', 'inheritable, internal']
 )
+@linux_only
 def test_gnumakejobclient_dunders(inheritable, internal_jobs):
     inherit_read_fd = mock.Mock()
     inherit_write_fd = mock.Mock()
@@ -227,6 +303,7 @@ TESTDATA_3 = [
          'env, no jobs, oserror', 'env, no jobs, wrong read pipe',
          'env, no jobs, wrong write pipe', 'environ, no makeflags']
 )
+@linux_only
 def test_gnumakejobclient_from_environ(
     caplog,
     env,
@@ -282,6 +359,7 @@ def test_gnumakejobclient_from_environ(
 
 
 
+@linux_only
 def test_gnumakejobclient_get_job():
     inherit_read_fd = mock.Mock()
     inherit_write_fd = mock.Mock()
@@ -353,6 +431,7 @@ TESTDATA_4 = [
     ids=['preexisting makeflags', 'no jobs, no pipe', 'one job',
          ' multiple jobs', 'no jobs']
 )
+@linux_only
 def test_gnumakejobclient_env(
     makeflags,
     jobs,
@@ -393,6 +472,7 @@ TESTDATA_5 = [
     TESTDATA_5,
     ids=['no pipe', 'one job', ' multiple jobs', 'no jobs']
 )
+@linux_only
 def test_gnumakejobclient_pass_fds(jobs, use_inheritable_pipe, expected_fds):
     inheritable_pipe = (0, 1) if use_inheritable_pipe else None
 
@@ -427,6 +507,7 @@ TESTDATA_6 = [
     TESTDATA_6,
     ids=['no jobs', 'too many jobs', 'valid jobs']
 )
+@linux_only
 def test_gnumakejobserver(jobs, expected_jobs):
     def mock_init(self, p, j):
         self._inheritable_pipe = p
