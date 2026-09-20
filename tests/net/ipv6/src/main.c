@@ -36,6 +36,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include "udp_internal.h"
 
+#include "ipv6_test.h"
+
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
@@ -255,6 +257,7 @@ static struct k_sem wait_data;
 static bool recv_cb_called;
 struct net_if_addr *ifaddr_record;
 static struct test_ns_handler *ns_handler;
+struct test_tx_handler *tx_handler;
 static int pkt_num;
 
 #define WAIT_TIME 250
@@ -477,6 +480,14 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	if (!pkt->buffer) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
+	}
+
+	/* A test that inspects the transmitted frames itself gets them before
+	 * the ICMPv6 handling below, which would otherwise clone the packet
+	 * back into the receive path.
+	 */
+	if (tx_handler != NULL && tx_handler->fn(pkt, tx_handler->user_data)) {
+		return 0;
 	}
 
 	icmp = get_icmp_hdr(pkt);
@@ -783,6 +794,7 @@ static void ipv6_before(void *fixture)
 	ARG_UNUSED(fixture);
 
 	ns_handler = NULL;
+	tx_handler = NULL;
 }
 
 static void ipv6_teardown(void *dummy)
