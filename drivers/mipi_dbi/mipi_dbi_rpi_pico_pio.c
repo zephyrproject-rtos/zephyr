@@ -117,7 +117,7 @@ static void mipi_dbi_pio_dma_irq_handler(const struct device *dev, void *user_da
 
 	for (int i = 0; i < config->split_count; ++i) {
 		if (config->splits[i].dma.channel == channel) {
-			k_msgq_put(config->msq, &channel, K_NO_WAIT);
+			k_msgq_put(config->msq, &status, K_NO_WAIT);
 		}
 	}
 }
