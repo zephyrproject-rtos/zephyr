@@ -46,7 +46,7 @@ static void negotiate_and_check(uint32_t rate, uint32_t width)
 					       MPIPE_PROP_LIST_END));
 
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PAUSED),
-		      MPIPE_STATE_CHANGE_SUCCESS, "negotiation of %u/%u failed", rate, width);
+		      0, "negotiation of %u/%u failed", rate, width);
 
 	zassert_ok(mpipe_aud_caps_get_uint(&src.aud_src.src.src_pad.caps, MPIPE_CAPS_SAMPLE_RATE,
 					   &got_rate));
@@ -120,7 +120,7 @@ ZTEST(mpipe_caps_combo, test_sink_without_codec)
 
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&nc_pipe,
 					      MPIPE_STATE_PAUSED),
-		      MPIPE_STATE_CHANGE_SUCCESS, "negotiation without a codec failed");
+		      0, "negotiation without a codec failed");
 	zassert_ok(mpipe_aud_caps_get_uint(&nc_src.aud_src.src.src_pad.caps, MPIPE_CAPS_SAMPLE_RATE,
 					   &got_rate));
 	zassert_equal(got_rate, 16000, "negotiated rate %u, wanted 16000", got_rate);

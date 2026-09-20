@@ -318,33 +318,34 @@ static int mpipe_aud_i2s_src_stop(struct mpipe_buffer_pool *pool)
 	return 0;
 }
 
-static enum mpipe_state_change_return
-mpipe_aud_i2s_src_change_state(struct mpipe_element *self,
-				enum mpipe_state_change transition)
+static int mpipe_aud_i2s_src_change_state(struct mpipe_element *self,
+					 enum mpipe_state_change transition)
 {
 	struct mpipe_src *src = (struct mpipe_src *)self;
-	enum mpipe_state_change_return ret;
+	int ret;
 
 	if (transition == MPIPE_STATE_CHANGE_PLAYING_TO_PAUSED) {
-		if (mpipe_aud_i2s_src_stop_capture(src->pool) != 0) {
-			LOG_ERR("Unable to pause I2S capture");
-			return MPIPE_STATE_CHANGE_FAILURE;
+		ret = mpipe_aud_i2s_src_stop_capture(src->pool);
+		if (ret != 0) {
+			LOG_ERR("Unable to pause I2S capture: %d", ret);
+			return ret;
 		}
 	}
 
 	ret = mpipe_src_change_state(self, transition);
-	if (ret != MPIPE_STATE_CHANGE_SUCCESS) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	if (transition == MPIPE_STATE_CHANGE_PAUSED_TO_PLAYING) {
-		if (mpipe_aud_i2s_src_start(src->pool) != 0) {
-			LOG_ERR("Unable to start I2S capture");
-			return MPIPE_STATE_CHANGE_FAILURE;
+		ret = mpipe_aud_i2s_src_start(src->pool);
+		if (ret != 0) {
+			LOG_ERR("Unable to start I2S capture: %d", ret);
+			return ret;
 		}
 	}
 
-	return MPIPE_STATE_CHANGE_SUCCESS;
+	return 0;
 }
 
 int mpipe_aud_i2s_src_init(struct mpipe_aud_i2s_src *aud_i2s_src, uint8_t id,
