@@ -64,7 +64,7 @@ static uint32_t vrt_xfer_bus_time(const struct uhc_transfer *const xfer,
 				  const enum usb_device_speed speed)
 {
 	bool isoc = xfer->type == USB_EP_TYPE_ISO;
-	uint32_t bc = xfer->mps;
+	uint32_t bc = USB_MPS_EP_SIZE(xfer->mps);
 
 	if (speed == USB_SPEED_SPEED_HS) {
 		return isoc ? VRT_HS_NSECS_ISO(bc) : VRT_HS_NSECS(bc);
@@ -193,10 +193,10 @@ static int vrt_xfer_control(const struct device *dev,
 
 	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
-			length = MIN(net_buf_tailroom(buf), xfer->mps);
+			length = MIN(net_buf_tailroom(buf), USB_MPS_EP_SIZE(xfer->mps));
 			data = net_buf_tail(buf);
 		} else {
-			length = MIN(buf->len, xfer->mps);
+			length = MIN(buf->len, USB_MPS_EP_SIZE(xfer->mps));
 			data = buf->data;
 		}
 
@@ -250,10 +250,10 @@ static int vrt_xfer_bulk(const struct device *dev,
 	size_t length;
 
 	if (USB_EP_DIR_IS_IN(xfer->ep)) {
-		length = MIN(net_buf_tailroom(buf), xfer->mps);
+		length = MIN(net_buf_tailroom(buf), USB_MPS_EP_SIZE(xfer->mps));
 		data = net_buf_tail(buf);
 	} else {
-		length = MIN(buf->len, xfer->mps);
+		length = MIN(buf->len, USB_MPS_EP_SIZE(xfer->mps));
 		data = buf->data;
 	}
 
@@ -402,7 +402,7 @@ static void vrt_hrslt_success(const struct device *dev,
 		}
 
 		if (USB_EP_DIR_IS_OUT(pkt->ep)) {
-			length = MIN(buf->len, xfer->mps);
+			length = MIN(buf->len, USB_MPS_EP_SIZE(xfer->mps));
 			net_buf_pull(buf, length);
 			LOG_DBG("OUT chunk %zu out of %u", length, buf->len);
 			if (buf->len == 0) {
@@ -415,13 +415,14 @@ static void vrt_hrslt_success(const struct device *dev,
 		} else {
 			length = MIN(net_buf_tailroom(buf), pkt->length);
 			net_buf_add(buf, length);
-			if (pkt->length > xfer->mps) {
+			if (pkt->length > USB_MPS_EP_SIZE(xfer->mps)) {
 				LOG_ERR("Ambiguous packet with the length %zu",
 					pkt->length);
 			}
 
 			LOG_DBG("IN chunk %zu out of %zu", length, net_buf_tailroom(buf));
-			if (pkt->length < xfer->mps || !net_buf_tailroom(buf)) {
+			if (pkt->length < USB_MPS_EP_SIZE(xfer->mps) ||
+			    !net_buf_tailroom(buf)) {
 				if (pkt->ep == USB_CONTROL_EP_IN && !xfer->no_status) {
 					xfer->stage = UHC_CONTROL_STAGE_STATUS;
 				} else {
