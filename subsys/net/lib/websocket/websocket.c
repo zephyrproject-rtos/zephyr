@@ -560,8 +560,7 @@ static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 		goto exit;
 	}
 
-	ret = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_OFFLOAD,
-				   fds, nfds, timeout);
+	ret = zvfs_fdtable_call_poll_offload(vtable, ctx, fds, nfds, timeout);
 
 exit:
 	/* Restore original fds. */
@@ -604,6 +603,12 @@ static int websocket_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
 	}
 
 	return zvfs_fdtable_call_poll_update(vtable, core_obj, pfd, pev);
+}
+
+static int websocket_poll_offload_vmeth(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	return websocket_poll_offload(fds, nfds, timeout);
 }
 
 static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
@@ -1451,6 +1456,7 @@ static const struct socket_op_vtable websocket_fd_op_vtable = {
 		.ioctl = websocket_ioctl_vmeth,
 		.poll_prepare = websocket_poll_prepare_vmeth,
 		.poll_update = websocket_poll_update_vmeth,
+		.poll_offload = websocket_poll_offload_vmeth,
 	},
 	.sendto = websocket_sendto_ctx,
 	.recvfrom = websocket_recvfrom_ctx,
