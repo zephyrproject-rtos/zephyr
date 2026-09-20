@@ -615,6 +615,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len, void *
 	source->qos.sdu = sys_le16_to_cpu(cp->max_sdu);
 
 	source->stream_count = cp->subgroups * cp->streams_per_subgroup;
+	source->subgroup_count = cp->subgroups;
 
 	err = setup_broadcast_source(cp->streams_per_subgroup, cp->subgroups, source, &codec_cfg);
 	if (err != 0) {
@@ -734,6 +735,7 @@ uint8_t btp_bap_broadcast_source_setup_v2(const void *cmd, uint16_t cmd_len, voi
 	source->qos.sdu = sys_le16_to_cpu(cp->max_sdu);
 
 	source->stream_count = cp->subgroups * cp->streams_per_subgroup;
+	source->subgroup_count = cp->subgroups;
 
 	err = setup_broadcast_source(cp->streams_per_subgroup, cp->subgroups, source, &codec_cfg);
 	if (err != 0) {
@@ -788,6 +790,93 @@ uint8_t btp_bap_broadcast_source_setup_v2(const void *cmd, uint16_t cmd_len, voi
 
 	rp->gap_settings = gap_settings;
 	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t btp_bap_broadcast_source_reconfigure(const void *cmd, uint16_t cmd_len, void *rsp,
+					     uint16_t *rsp_len)
+{
+	int err;
+	struct bt_audio_codec_cfg codec_cfg;
+	const struct btp_bap_broadcast_source_reconfigure_cmd *cp = cmd;
+	struct btp_bap_broadcast_local_source *source;
+	struct bt_data *per_ad;
+
+	NET_BUF_SIMPLE_DEFINE(base_buf, BT_BASE_MAX_SIZE);
+
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
+	LOG_DBG("");
+
+	if ((cmd_len < sizeof(*cp)) || (cmd_len != sizeof(*cp) + cp->cc_ltvs_len) ||
+	    (cp->cc_ltvs_len > sizeof(codec_cfg.data))) {
+		LOG_DBG("Invalid command length: %u", cmd_len);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->subgroups > CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT) {
+		LOG_DBG("Invalid number of subgroups: %u", cp->subgroups);
+		return BTP_STATUS_FAILED;
+	}
+
+	uint32_t broadcast_id = sys_get_le24(cp->broadcast_id);
+
+	source = btp_bap_broadcast_local_source_from_brcst_id_get(broadcast_id);
+	if (source == NULL) {
+		LOG_DBG("No broadcast source found for broadcast ID 0x%06X", broadcast_id);
+		return BTP_STATUS_FAILED;
+	}
+
+	/* Reconfiguring cannot change the number of subgroups or streams, only their
+	 * codec/QoS content.
+	 */
+	if (cp->subgroups != source->subgroup_count ||
+	    (uint16_t)(cp->subgroups * cp->streams_per_subgroup) != source->stream_count) {
+		LOG_DBG("Cannot change topology on reconfigure: %u subgroup(s) x %u stream(s), "
+			"source has %u subgroup(s) with %u stream(s) total",
+			cp->subgroups, cp->streams_per_subgroup, source->subgroup_count,
+			source->stream_count);
+		return BTP_STATUS_FAILED;
+	}
+
+	(void)memset(&codec_cfg, 0, sizeof(codec_cfg));
+	codec_cfg.id = cp->coding_format;
+	codec_cfg.vid = sys_le16_to_cpu(cp->vid);
+	codec_cfg.cid = sys_le16_to_cpu(cp->cid);
+	codec_cfg.data_len = cp->cc_ltvs_len;
+	(void)memcpy(codec_cfg.data, cp->cc_ltvs, cp->cc_ltvs_len);
+
+	source->qos.phy = BT_BAP_QOS_CFG_2M;
+	source->qos.framing = cp->framing;
+	source->qos.rtn = cp->retransmission_num;
+	source->qos.latency = sys_le16_to_cpu(cp->max_transport_latency);
+	source->qos.interval = sys_get_le24(cp->sdu_interval);
+	source->qos.pd = sys_get_le24(cp->presentation_delay);
+	source->qos.sdu = sys_le16_to_cpu(cp->max_sdu);
+
+	err = setup_broadcast_source(cp->streams_per_subgroup, cp->subgroups, source, &codec_cfg);
+	if (err != 0) {
+		LOG_DBG("Unable to reconfigure broadcast source: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_bap_broadcast_source_get_base(source->bap_broadcast, &base_buf);
+	if (err != 0) {
+		LOG_DBG("Failed to get encoded BASE: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	per_ad = &source->per_adv_local;
+	per_ad->type = BT_DATA_SVC_DATA16;
+	per_ad->data_len = base_buf.len;
+	per_ad->data = base_buf.data;
+	err = tester_gap_padv_set_data(source->ext_adv, per_ad, 1);
+	if (err != 0) {
+		LOG_DBG("Failed to set periodic advertising data: %d", err);
+		return BTP_STATUS_FAILED;
+	}
 
 	return BTP_STATUS_SUCCESS;
 }
