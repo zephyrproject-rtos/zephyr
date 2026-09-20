@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Intel Corporation
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2026 RAKwireless Technology Limited
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,7 +14,6 @@
 #include "icm4268x.h"
 #include "icm4268x_reg.h"
 #include "icm4268x_rtio.h"
-#include "icm4268x_spi.h"
 #include "icm4268x_trigger.h"
 
 LOG_MODULE_DECLARE(ICM4268X, CONFIG_SENSOR_LOG_LEVEL);
@@ -31,7 +31,7 @@ static void icm4268x_gpio_callback(const struct device *dev, struct gpio_callbac
 #elif defined(CONFIG_ICM4268X_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&data->work);
 #endif
-	if (IS_ENABLED(CONFIG_ICM4268X_STREAM)) {
+	if (IS_ENABLED(CONFIG_ICM4268X_STREAM) && data->cfg.fifo_en) {
 		icm4268x_fifo_event(data->dev);
 	}
 }
@@ -99,7 +99,7 @@ int icm4268x_trigger_set(const struct device *dev, const struct sensor_trigger *
 		data->data_ready_handler = handler;
 		data->data_ready_trigger = trig;
 
-		res = icm4268x_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
+		res = icm4268x_reg_read(dev, REG_INT_STATUS, &status, 1);
 		break;
 	default:
 		res = -ENOTSUP;
@@ -153,17 +153,15 @@ int icm4268x_trigger_init(const struct device *dev)
 int icm4268x_trigger_enable_interrupt(const struct device *dev, struct icm4268x_cfg *new_cfg)
 {
 	int res;
-	const struct icm4268x_dev_cfg *cfg = dev->config;
-
 	/* pulse-mode (auto clearing), push-pull and active-high */
-	res = icm4268x_spi_single_write(&cfg->spi, REG_INT_CONFIG,
+	res = icm4268x_reg_write(dev, REG_INT_CONFIG,
 					BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
 	if (res != 0) {
 		return res;
 	}
 
 	/* Deassert async reset for proper INT pin operation, see datasheet 14.50 */
-	res = icm4268x_spi_single_write(&cfg->spi, REG_INT_CONFIG1, 0);
+	res = icm4268x_reg_write(dev, REG_INT_CONFIG1, 0);
 	if (res != 0) {
 		return res;
 	}
@@ -180,7 +178,7 @@ int icm4268x_trigger_enable_interrupt(const struct device *dev, struct icm4268x_
 	if (new_cfg->interrupt1_fifo_full) {
 		value |= FIELD_PREP(BIT_FIFO_FULL_INT1_EN, 1);
 	}
-	return icm4268x_spi_single_write(&cfg->spi, REG_INT_SOURCE0, value);
+	return icm4268x_reg_write(dev, REG_INT_SOURCE0, value);
 }
 
 void icm4268x_lock(const struct device *dev)

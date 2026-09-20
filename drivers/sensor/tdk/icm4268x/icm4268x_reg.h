@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Intel Corporation
  * Copyright 2025 CogniPilot Foundation
+ * Copyright (c) 2026 RAKwireless Technology Limited
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -504,6 +505,7 @@
 /* misc. defines */
 #define WHO_AM_I_ICM42688     0x47
 #define WHO_AM_I_ICM42686     0x44
+#define WHO_AM_I_IIM42652     0x6F
 #define MIN_ACCEL_SENS_SHIFT  11
 #define ACCEL_DATA_SIZE	      6
 #define GYRO_DATA_SIZE	      6
