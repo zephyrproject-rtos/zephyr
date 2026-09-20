@@ -586,6 +586,16 @@ uint8_t ll_sync_terminate(uint16_t handle)
 #endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	}
 
+#if !defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+	/* Also stop any auxiliary context still parented to this sync that
+	 * lll_aux no longer references, as ull_scan_disable() does for a scan.
+	 */
+	err = ull_scan_aux_stop_by_parent(&sync->lll);
+	if (err != 0) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
 	/* Clean up node_rx_sync_estab if still present */
 	if (sync->node_rx_sync_estab) {
