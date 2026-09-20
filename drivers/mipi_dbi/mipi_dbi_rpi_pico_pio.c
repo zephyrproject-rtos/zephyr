@@ -466,8 +466,11 @@ static int mipi_dbi_pico_pio_reset(const struct device *dev, k_timeout_t delay)
 static int mipi_dbi_pico_pio_init(const struct device *dev)
 {
 	const struct mipi_dbi_pico_pio_config *config = dev->config;
+	struct mipi_dbi_pico_pio_data *data = dev->data;
 	const char *failed_pin = NULL;
 	int ret = 0;
+
+	k_mutex_init(&data->lock);
 
 	if (!gpio_is_ready_dt(&config->cmd_data) || !gpio_is_ready_dt(&config->cs) ||
 	    !gpio_is_ready_dt(&config->reset) || !gpio_is_ready_dt(&config->wr)) {
