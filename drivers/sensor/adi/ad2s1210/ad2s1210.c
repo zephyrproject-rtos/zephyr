@@ -422,9 +422,9 @@ static int ad2s1210_channel_get(const struct device *dev, enum sensor_channel ch
 	case SENSOR_CHAN_RPM: {
 		/* Get max range from lookup table */
 		int32_t range = table_velocity_range_rpm[data->resolution][data->clock];
-		/* Convert raw velocity to RPM */
-		int rpm = ((int32_t)data->velocity * range) /
-			  ((1 << (AD2S1210_MAX_RESOLUTION_BITS - 1)) - 1);
+		/* The product overflows 32 bits in the fastest ranges */
+		int rpm = (int)(((int64_t)data->velocity * range) /
+				((1 << (AD2S1210_MAX_RESOLUTION_BITS - 1)) - 1));
 
 		val->val1 = rpm;
 		val->val2 = 0;
