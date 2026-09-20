@@ -288,6 +288,12 @@ def test_hardwaremap_load():
   product: pr2
   runner: r2
   connected: True
+- id: id3
+  platform: p3
+  product: pr3
+  runner: r3
+  connected: True
+  runner_console: True
 """
     map_filename = 'map-file.yaml'
 
@@ -333,7 +339,20 @@ def test_hardwaremap_load():
             'connected': True,
             'serial_pty': 'dummy',
         },
+        # A runner that prints the output of the device itself needs no serial port
+        'id3': {
+            'platform': 'p3',
+            'product': 'pr3',
+            'runner': 'r3',
+            'connected': True,
+            'serial': None,
+            'serial_pty': None,
+            'runner_console': True,
+        },
     }
+
+    # id2 has neither a serial port nor a runner console, so it is not connected
+    assert sorted(dut.id for dut in hm.duts) == ['id0', 'id1', 'id3']
 
     for dut in hm.duts:
         assert dut.id in expected
