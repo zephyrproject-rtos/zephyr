@@ -44,6 +44,16 @@ tests:
       - CONFIG_HEAP_MEM_POOL_SIZE=16384
       - CONFIG_POSIX_THREAD_KEYS_MAX=2048
       - CONFIG_TEST_EXTRA_STACK_SIZE=16384
+  posix.threads_base.dynamic_stack_alloc:
+    min_ram: 128
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD=y
+      - CONFIG_THREAD_STACK_INFO=y
+      - CONFIG_DYNAMIC_THREAD_ALLOC=y
+      - CONFIG_HEAP_MEM_POOL_SIZE=16384
+      - CONFIG_POSIX_THREAD_KEYS_MAX=2048
+      - CONFIG_TEST_EXTRA_STACK_SIZE=16384
+      - CONFIG_SYS_HEAP_VALIDATE=y
   posix.threads_base.static_stack:
     extra_configs:
       - CONFIG_DYNAMIC_THREAD=n
