@@ -224,16 +224,16 @@ ZTEST(mpipe_aud_i2s_src, test_teardown_while_streaming)
 				 (struct mpipe_element *)&td_sink, NULL));
 
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&td_pipe, MPIPE_STATE_PAUSED),
-		      MPIPE_STATE_CHANGE_SUCCESS, "negotiation to PAUSED failed");
+		      0, "negotiation to PAUSED failed");
 	zassert_equal(
 		mpipe_element_set_state((struct mpipe_element *)&td_pipe, MPIPE_STATE_PLAYING),
-		MPIPE_STATE_CHANGE_SUCCESS);
+		0);
 
 	/* Let the source thread take a block out of the pool. */
 	k_sleep(K_MSEC(50));
 
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&td_pipe, MPIPE_STATE_READY),
-		      MPIPE_STATE_CHANGE_SUCCESS, "teardown from PLAYING did not complete");
+		      0, "teardown from PLAYING did not complete");
 }
 
 ZTEST_SUITE(mpipe_aud_i2s_src, NULL, NULL, NULL, NULL, NULL);
