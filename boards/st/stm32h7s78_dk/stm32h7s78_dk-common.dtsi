@@ -107,6 +107,19 @@
 		zephyr,memory-region = "EXTMEM";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
+
+	/*
+	 * 11.025/22.05/44.1/88.2kHz:
+	 * PLL2.Q / 24 = 271MHz / 24 = 11.2917MHz.
+	 *
+	 * 8/16/32/48/96kHz:
+	 * PLL2.Q / 22 = 271MHz / 22 = 12.3182MHz.
+	 */
+	wm8904_fll_ref: i2s6-mclk {
+		compatible = "fixed-clock";
+		clock-frequency = <11291666>;
+		#clock-cells = <0>;
+	};
 };
 
 &clk_hsi48 {
@@ -279,6 +292,10 @@ st_cam_i2c: &i2c1 {
 		wolfson,mic-bias-voltage = "avdd-9-10";
 		input-pga-select = <1>;
 		status = "okay";
+
+		clocks = <&wm8904_fll_ref>;
+		clock-source = "FLL";
+		clock-names = "mclk";
 	};
 };
 
