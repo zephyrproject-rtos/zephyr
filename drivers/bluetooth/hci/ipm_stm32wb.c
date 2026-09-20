@@ -91,9 +91,7 @@ struct aci_reset {
 #define HCI_CONFIG_DATA_PUBADDR_OFFSET		0
 static bt_addr_t bd_addr_udn;
 
-#ifdef CONFIG_BT_HCI_HOST
 #define ACI_RESET			BT_OP(BT_OGF_VS, 0xFF00)
-#endif /* CONFIG_BT_HCI_HOST */
 
 /* Rx thread definitions */
 K_FIFO_DEFINE(ipm_rx_events_fifo);
@@ -446,7 +444,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 
 		TL_MM_EvtDone(hcievt);
 
-		/* Responses to the driver's own commands, sent while opening */
+		/* Responses to the driver's own commands, sent while opening and closing */
 		if (bt_hci_lockstep_feed(&data->lockstep, buf->data, buf->len)) {
 			net_buf_unref(buf);
 			goto end_loop;
@@ -787,24 +785,21 @@ static int bt_ipm_open(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_BT_HCI_HOST
 static int bt_ipm_close(const struct device *dev)
 {
-	struct net_buf *buf;
+	struct ipm_data *data = dev->data;
 	struct aci_reset *param;
 	int err;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
-	}
+	BT_HCI_PKT_CMD_DEFINE(cmd, sizeof(*param));
 
-	param = net_buf_add(buf, sizeof(*param));
+	param = net_buf_simple_add(&cmd, sizeof(*param));
 	param->mode = 0x00;  /* 0x00: Reset without BLE stack options change */
 	param->options = sys_cpu_to_le32(0x00);
 
-	err = bt_hci_cmd_send_sync(ACI_RESET, buf, NULL);
-	if (err) {
+	/* The RX thread is still running and feeds the response to the helper */
+	err = bt_hci_lockstep_cmd_send_sync(&data->lockstep, ACI_RESET, &cmd, NULL);
+	if (err != 0) {
 		LOG_ERR("IPM Channel Close Issue");
 		return err;
 	}
@@ -821,13 +816,10 @@ static int bt_ipm_close(const struct device *dev)
 
 	return err;
 }
-#endif /* CONFIG_BT_HCI_HOST */
 
 static DEVICE_API(bt_hci, drv) = {
 	.open           = bt_ipm_open,
-#ifdef CONFIG_BT_HCI_HOST
 	.close          = bt_ipm_close,
-#endif
 	.send           = bt_ipm_send,
 };
 
