@@ -381,7 +381,7 @@ int gpio_emul_output_get_masked(const struct device *port, gpio_port_pins_t mask
 	}
 
 	key = k_spin_lock(&drv_data->lock);
-	*values = drv_data->output_vals & get_output_pins(port);
+	*values = drv_data->output_vals & get_output_pins(port) & mask;
 	k_spin_unlock(&drv_data->lock, key);
 
 	return 0;
