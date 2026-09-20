@@ -33,6 +33,7 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 	stack->next = buffer;
 	stack->base = buffer;
 	stack->top = stack->base + num_entries;
+	stack->flags = 0;
 
 	SYS_PORT_TRACING_OBJ_INIT(k_stack, stack);
 	k_object_init(stack);
@@ -126,7 +127,13 @@ int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, push, stack);
 
-	CHECKIF(stack->next == stack->top) {
+	/*
+	 * A full stack is a documented runtime result (-ENOMEM), not a
+	 * programming error. CHECKIF would assert under
+	 * CONFIG_ASSERT_ON_ERRORS and compile the test out under
+	 * CONFIG_NO_RUNTIME_CHECKS, overflowing the caller buffer.
+	 */
+	if (stack->next == stack->top) {
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -190,10 +197,10 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_stack, pop, stack, timeout);
 
 	result = z_pend_curr(&stack->lock, key, &stack->wait_q, timeout);
-	if (result == -EAGAIN) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, -EAGAIN);
+	if (result != 0) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, result);
 
-		return -EAGAIN;
+		return result;
 	}
 
 	*data = (stack_data_t)_current->base.swap_data;
