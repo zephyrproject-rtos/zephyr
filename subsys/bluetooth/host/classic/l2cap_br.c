@@ -15,12 +15,15 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/crc.h>
+#include <zephyr/random/random.h>
 
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/classic/l2cap_br.h>
 
+#include <common/hci_common_internal.h>
 #include <host/buf_view.h>
 #include <host/hci_core.h>
 #include <host/conn_internal.h>
@@ -59,11 +62,13 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 
 #define L2CAP_BR_PSM_SDP	0x0001
 
-#define L2CAP_BR_INFO_TIMEOUT    K_SECONDS(4)
-#define L2CAP_BR_CFG_TIMEOUT     K_SECONDS(4)
+#define L2CAP_BR_INFO_TIMEOUT K_SECONDS(4)
+#define L2CAP_BR_CFG_TIMEOUT K_SECONDS(4)
 #define L2CAP_BR_DISCONN_TIMEOUT K_SECONDS(1)
-#define L2CAP_BR_CONN_TIMEOUT    K_SECONDS(40)
-#define L2CAP_BR_ECHO_TIMEOUT    K_SECONDS(30)
+#define L2CAP_BR_DISCONN_INIT_TIMEOUT K_SECONDS(10)
+#define L2CAP_BR_CONN_INIT_TIMEOUT K_SECONDS(10)
+#define L2CAP_BR_CONN_TIMEOUT K_SECONDS(40)
+#define L2CAP_BR_ECHO_TIMEOUT K_SECONDS(30)
 
 #define L2CAP_FEAT_FC_MASK           BIT(0)
 #define L2CAP_FEAT_RET_MASK          BIT(1)
@@ -143,10 +148,16 @@ enum {
 	L2CAP_FLAG_CONN_ACCEPTOR,         /* getting incoming connection req */
 	L2CAP_FLAG_CONN_PENDING,          /* remote sent pending result in rsp */
 	L2CAP_FLAG_CONN_CONF_RSP_SENDING, /* waiting for config response sent */
+	L2CAP_FLAG_CONN_RSP_SEC_BLOCK,    /* retry conn rsp with sec block err */
+	L2CAP_FLAG_CONN_RSP_SUCCESS,      /* retry conn rsp without err */
+	L2CAP_FLAG_CONN_CONF_REQ,         /* retry config req */
+	L2CAP_FLAG_CONN_REQ,              /* retry conn req */
+	L2CAP_FLAG_DISCONN_REQ,           /* retry disconn req */
 
 	/* Signaling channel flags */
-	L2CAP_FLAG_SIG_INFO_PENDING, /* retrieving remote l2cap info */
-	L2CAP_FLAG_SIG_INFO_DONE,    /* remote l2cap info is done */
+	L2CAP_FLAG_SIG_INFO_FEAT_REQ, /* need to send l2cap info (feature) req */
+	L2CAP_FLAG_SIG_INFO_PENDING,  /* retrieving remote l2cap info */
+	L2CAP_FLAG_SIG_INFO_DONE,     /* remote l2cap info is done */
 
 	/* fixed channels flags */
 	L2CAP_FLAG_FIXED_CONNECTED, /* fixed connected */
@@ -182,14 +193,12 @@ enum {
 
 	/* Auth failed, disconnect ACL */
 	L2CAP_FLAG_DISCONNECT_ACL,	/* Disconnect ACL */
+
+	/* Total number of flags - must be at the end of the enum */
+	L2CAP_NUM_FLAGS,
 };
 
 static sys_slist_t br_servers;
-
-
-/* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
-NET_BUF_POOL_FIXED_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 static void br_tx_buf_destroy(struct net_buf *buf)
@@ -208,10 +217,44 @@ NET_BUF_POOL_FIXED_DEFINE(br_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, br_tx_buf_destroy);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+struct bt_l2cap_br_recv_pending {
+	void *node;
+	/* Current received pending buffers */
+	struct net_buf *buf;
+	/* State of the received pending buffer */
+	struct net_buf_simple_state state;
+};
+
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+/*
+ * `L2CAP_BR_RECV_PENDING_POOL_COUNT` should be aligned with the number of `acl_in_pool` net
+ * buffers.
+ */
+#define L2CAP_BR_RECV_PENDING_POOL_COUNT (BT_BUF_ACL_RX_COUNT_EXTRA + BT_BUF_HCI_ACL_RX_COUNT)
+#else
+/*
+ * To avoid consuming the event RX buffer, `BT_BUF_ACL_RX_COUNT` is used; however, due to
+ * limitations on the number of TX buffers, this can lead to failures during bursts of L2CAP
+ * signaling transmissions, for instance, L2CAP connection failures.
+ */
+#define L2CAP_BR_RECV_PENDING_POOL_COUNT BT_BUF_ACL_RX_COUNT
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+K_MEM_SLAB_DEFINE_STATIC(br_recv_pending_pool, sizeof(struct bt_l2cap_br_recv_pending),
+			 L2CAP_BR_RECV_PENDING_POOL_COUNT, sizeof(void *));
+
 /* BR/EDR L2CAP signalling channel specific context */
 struct bt_l2cap_br {
 	/* The channel this context is associated with */
 	struct bt_l2cap_br_chan	chan;
+	/* Allocated net buffer for response/request */
+	struct net_buf *allocated_buf;
+	/* Received pending buffers */
+	struct k_queue recv_pending_queue;
+	/* Current received pending buffer */
+	struct bt_l2cap_br_recv_pending recv_pending;
+	/* Ident of the received pending buffer */
+	uint8_t ident;
 	/*
 	 * 2.1 CHANNEL IDENTIFIERS in
 	 * BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part A.
@@ -219,11 +262,30 @@ struct bt_l2cap_br {
 	 * So use one octet buffer to keep the `Fixed channels supported`
 	 * of peer device.
 	 */
-	uint8_t			info_fixed_chan;
-	uint32_t			info_feat_mask;
+	uint8_t info_fixed_chan;
+	uint32_t info_feat_mask;
+
 };
 
 static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BT_MAX_CONN];
+
+BUILD_ASSERT(ATOMIC_BITMAP_SIZE(L2CAP_NUM_FLAGS) <= ARRAY_SIZE(bt_l2cap_br_pool[0].chan.flags),
+	"L2CAP flags out of range");
+
+static void br_sig_destroy(struct net_buf *buf)
+{
+	net_buf_destroy(buf);
+
+	ARRAY_FOR_EACH(bt_l2cap_br_pool, i) {
+		if (bt_l2cap_br_pool[i].chan.chan.conn != NULL) {
+			bt_work_reschedule(&bt_l2cap_br_pool[i].chan.retry_work, K_NO_WAIT);
+		}
+	}
+}
+
+/* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
+NET_BUF_POOL_FIXED_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, br_sig_destroy);
 
 static sys_slist_t bt_l2cap_br_echo_cbs = SYS_SLIST_STATIC_INIT(&bt_l2cap_br_echo_cbs);
 
@@ -346,6 +408,7 @@ static void l2cap_br_chan_cleanup(struct bt_l2cap_chan *chan)
 static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+	struct k_work_sync retry_sync = {0};
 
 	LOG_DBG("chan %p cid 0x%04x", br_chan, br_chan->rx.cid);
 
@@ -356,12 +419,19 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 	 * In the case where we are in the context of executing the rtx_work
 	 * item, we don't sync as it will deadlock the workqueue.
 	 */
-	struct k_work_q *rtx_work_queue = br_chan->rtx_work.queue;
+	struct k_work_q *work_queue = br_chan->rtx_work.queue;
 
-	if (rtx_work_queue == NULL || k_current_get() != rtx_work_queue->thread_id) {
+	if (work_queue == NULL || k_current_get() != work_queue->thread_id) {
 		k_work_cancel_delayable_sync(&br_chan->rtx_work, &br_chan->rtx_sync);
 	} else {
 		k_work_cancel_delayable(&br_chan->rtx_work);
+	}
+
+	work_queue = br_chan->retry_work.queue;
+	if (work_queue == NULL || k_current_get() != work_queue->thread_id) {
+		k_work_cancel_delayable_sync(&br_chan->retry_work, &retry_sync);
+	} else {
+		k_work_cancel_delayable(&br_chan->retry_work);
 	}
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
@@ -370,6 +440,100 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	atomic_clear(BR_CHAN(chan)->flags);
+}
+
+#define L2CAP_BR_RETRY_INTERVAL_MAX 100
+#define L2CAP_BR_RETRY_INTERVAL (K_MSEC(1 + (sys_rand32_get() % L2CAP_BR_RETRY_INTERVAL_MAX)))
+
+static struct net_buf *l2cap_br_create_pdu(struct net_buf_pool *pool, k_timeout_t timeout)
+{
+	struct net_buf *buf;
+
+	buf = bt_l2cap_create_pdu_timeout(pool, 0, timeout);
+	if ((buf == NULL) && (pool != NULL)) {
+		LOG_WRN("Fail to allocate buffer from pool %p", pool);
+
+		/* If the pool is empty, try to allocate from the default pool without waiting. */
+		buf = bt_l2cap_create_pdu_timeout(NULL, 0, K_NO_WAIT);
+	}
+
+	if (buf == NULL) {
+		LOG_WRN("Fail to allocate buffer");
+		return NULL;
+	}
+
+	LOG_DBG("allocated buffer %p", buf);
+	return buf;
+}
+
+static struct net_buf *l2cap_br_get_allocated_buf(struct bt_l2cap_br *l2cap)
+{
+	return net_buf_take(&l2cap->allocated_buf);
+}
+
+static void l2cap_br_drop_allocated_buf(struct bt_l2cap_br *l2cap)
+{
+	net_buf_drop(&l2cap->allocated_buf);
+}
+
+static void l2cap_br_drop_recv_pending_bufs(struct bt_l2cap_br *l2cap)
+{
+	struct bt_l2cap_br_recv_pending *recv_pending;
+
+	net_buf_drop(&l2cap->recv_pending.buf);
+
+	recv_pending = k_queue_get(&l2cap->recv_pending_queue, K_NO_WAIT);
+	while (recv_pending != NULL) {
+		net_buf_drop(&recv_pending->buf);
+		k_mem_slab_free(&br_recv_pending_pool, (void *)recv_pending);
+		recv_pending = k_queue_get(&l2cap->recv_pending_queue, K_NO_WAIT);
+	}
+}
+
+static void l2cap_br_recv_pending_done(struct bt_l2cap_br *l2cap)
+{
+	struct bt_l2cap_br_recv_pending *recv_pending;
+
+	net_buf_drop(&l2cap->recv_pending.buf);
+
+	recv_pending = k_queue_get(&l2cap->recv_pending_queue, K_NO_WAIT);
+	if (recv_pending != NULL) {
+		l2cap->recv_pending.buf = net_buf_take(&recv_pending->buf);
+		l2cap->recv_pending.state = recv_pending->state;
+		k_mem_slab_free(&br_recv_pending_pool, (void *)recv_pending);
+		bt_work_reschedule(&l2cap->chan.retry_work, K_NO_WAIT);
+	}
+}
+
+static bool l2cap_br_allocate_buf(struct bt_l2cap_br *l2cap)
+{
+	if (l2cap->allocated_buf != NULL) {
+		return true;
+	}
+
+	l2cap->allocated_buf = l2cap_br_create_pdu(&br_sig_pool, K_NO_WAIT);
+	if (l2cap->allocated_buf != NULL) {
+		return true;
+	}
+
+	return false;
+}
+
+static struct bt_l2cap_br *l2cap_br_find_signal_channel(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *signaling_channel;
+
+	if (conn == NULL) {
+		return NULL;
+	}
+
+	signaling_channel = bt_l2cap_br_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (signaling_channel == NULL) {
+		LOG_WRN("Invalid signaling channel");
+		return NULL;
+	}
+
+	return CONTAINER_OF(signaling_channel, struct bt_l2cap_br, chan.chan);
 }
 
 static void l2cap_br_rtx_timeout(struct k_work *work)
@@ -395,9 +559,18 @@ static void l2cap_br_rtx_timeout(struct k_work *work)
 	LOG_DBG("chan %p %s scid 0x%04x", chan, bt_l2cap_chan_state_str(chan->state), chan->rx.cid);
 
 	switch (chan->state) {
+	case BT_L2CAP_CONNECTED:
+		if (!atomic_test_bit(chan->flags, L2CAP_FLAG_DISCONN_REQ)) {
+			break;
+		}
+		__fallthrough;
 	case BT_L2CAP_CONFIG:
-		bt_l2cap_br_chan_disconnect(&chan->chan);
-		break;
+		if (!atomic_test_bit(chan->flags, L2CAP_FLAG_DISCONN_REQ)) {
+			(void)bt_l2cap_br_chan_disconnect(&chan->chan);
+			break;
+		}
+		/* Due to the flags L2CAP_FLAG_DISCONN_REQ has been set, clear channel directly. */
+		__fallthrough;
 	case BT_L2CAP_DISCONNECTING:
 	case BT_L2CAP_CONNECTING:
 		l2cap_br_chan_cleanup(&chan->chan);
@@ -931,6 +1104,218 @@ static void l2cap_br_monitor_timeout(struct k_work *work)
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+static void l2cap_br_conn_req_reply(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
+				    uint16_t result);
+
+static void l2cap_br_pend_conn_req_reply_sec_block(struct bt_l2cap_br *l2cap,
+						   struct bt_l2cap_chan *chan)
+{
+	/* Send response to connection request only when in acceptor role */
+	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+		return;
+	}
+
+	if (BR_CHAN(chan)->state != BT_L2CAP_CONNECTING) {
+		return;
+	}
+
+	if (!l2cap_br_allocate_buf(l2cap)) {
+		LOG_WRN("No buffers for conn rsp (sec block)");
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RSP_SEC_BLOCK);
+		bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
+		return;
+	}
+
+	l2cap_br_conn_req_reply(l2cap, chan, BT_L2CAP_BR_ERR_SEC_BLOCK);
+}
+
+static void l2cap_br_conf(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan, bool init);
+
+static void l2cap_br_config_req(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan)
+{
+	if (BR_CHAN(chan)->state != BT_L2CAP_CONFIG) {
+		return;
+	}
+
+	if (!l2cap_br_allocate_buf(l2cap)) {
+		LOG_WRN("No buffers for config req");
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_CONF_REQ);
+		bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
+		return;
+	}
+
+	l2cap_br_conf(l2cap, chan, true);
+	l2cap_br_drop_allocated_buf(l2cap);
+}
+
+static void l2cap_br_pend_conn_req_reply_success(struct bt_l2cap_br *l2cap,
+						 struct bt_l2cap_chan *chan)
+{
+	/* Send response to connection request only when in acceptor role */
+	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+		return;
+	}
+
+	if (BR_CHAN(chan)->state != BT_L2CAP_CONNECTING) {
+		return;
+	}
+
+	if (!l2cap_br_allocate_buf(l2cap)) {
+		LOG_WRN("No buffers for conn rsp (success)");
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RSP_SUCCESS);
+		bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
+		return;
+	}
+
+	l2cap_br_conn_req_reply(l2cap, chan, BT_L2CAP_BR_SUCCESS);
+
+	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONFIG);
+	/*
+	 * Initialize config request since remote needs to know
+	 * local MTU segmentation.
+	 */
+	l2cap_br_config_req(l2cap, chan);
+}
+
+static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
+				   struct net_buf *buf, k_timeout_t timeout)
+{
+
+	if (bt_l2cap_br_send_cb(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf,
+			     NULL, NULL)) {
+		net_buf_unref(buf);
+		return;
+	}
+
+	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
+	 *
+	 * The value of this timer is implementation-dependent but the minimum
+	 * initial value is 1 second and the maximum initial value is 60
+	 * seconds. One RTX timer shall exist for each outstanding signaling
+	 * request, including each Echo Request. The timer disappears on the
+	 * final expiration, when the response is received, or the physical
+	 * link is lost.
+	 */
+	bt_work_reschedule(&chan->rtx_work, timeout);
+}
+
+static void l2cap_br_connect_req(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan)
+{
+	struct net_buf *buf;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_conn_req *req;
+
+	buf = l2cap_br_create_pdu(&br_sig_pool, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_WRN("No buffers for connect req");
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_REQ);
+		bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_CONN_REQ;
+	hdr->ident = l2cap_br_get_ident();
+	hdr->len = sys_cpu_to_le16(sizeof(*req));
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->psm = sys_cpu_to_le16(BR_CHAN(chan)->psm);
+	req->scid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
+
+	/* Set the ident for the signaling request */
+	BR_CHAN(chan)->ident = hdr->ident;
+
+	l2cap_br_chan_send_req(BR_CHAN(chan), buf, L2CAP_BR_CONN_TIMEOUT);
+}
+
+static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type);
+
+static void l2cap_br_get_info_req(struct bt_l2cap_br *l2cap)
+{
+	if (!l2cap_br_allocate_buf(l2cap)) {
+		LOG_WRN("No buffers for l2cap info feature req");
+		atomic_set_bit(l2cap->chan.flags, L2CAP_FLAG_SIG_INFO_FEAT_REQ);
+		bt_work_schedule(&l2cap->chan.retry_work, L2CAP_BR_RETRY_INTERVAL);
+		return;
+	}
+
+	l2cap_br_get_info(l2cap, BT_L2CAP_INFO_FEAT_MASK);
+	l2cap_br_drop_allocated_buf(l2cap);
+}
+
+#define _L2CAP_BR_RETRY(_w) k_work_delayable_from_work(_w)
+#define L2CAP_BR_RETRY(_w) CONTAINER_OF(_L2CAP_BR_RETRY(_w), struct bt_l2cap_br_chan, retry_work)
+
+static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf);
+
+static void l2cap_br_retry_signaling_handler(struct bt_l2cap_br *l2cap)
+{
+	if (l2cap->recv_pending.buf == NULL) {
+		l2cap_br_recv_pending_done(l2cap);
+	}
+
+	if (l2cap->recv_pending.buf == NULL) {
+		return;
+	}
+
+	net_buf_simple_restore(&l2cap->recv_pending.buf->b, &l2cap->recv_pending.state);
+	if (l2cap->chan.chan.conn != NULL) {
+		(void)l2cap_br_recv(&l2cap->chan.chan, l2cap->recv_pending.buf);
+	}
+}
+
+static void l2cap_br_retry_handler(struct k_work *work)
+{
+	struct bt_l2cap_br *l2cap = NULL;
+	struct bt_l2cap_br_chan *chan = L2CAP_BR_RETRY(work);
+
+	if (chan->rx.cid == BT_L2CAP_CID_BR_SIG) {
+		l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan);
+		LOG_DBG("Retry BR/EDR signalling channel handler");
+		l2cap_br_retry_signaling_handler(l2cap);
+	}
+
+	if (chan->chan.conn == NULL) {
+		/* The underlying connection is already gone; there is nothing
+		 * left for the timeout to act on.
+		 */
+		return;
+	}
+
+	if (l2cap == NULL) {
+		l2cap = l2cap_br_find_signal_channel(chan->chan.conn);
+	}
+
+	if (l2cap == NULL) {
+		LOG_WRN("Invalid signaling channel");
+		return;
+	}
+
+	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_SIG_INFO_FEAT_REQ)) {
+		l2cap_br_get_info_req(l2cap);
+	}
+
+	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_RSP_SEC_BLOCK)) {
+		l2cap_br_pend_conn_req_reply_sec_block(l2cap, &chan->chan);
+	}
+
+	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_RSP_SUCCESS)) {
+		l2cap_br_pend_conn_req_reply_success(l2cap, &chan->chan);
+	}
+
+	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_CONF_REQ)) {
+		l2cap_br_config_req(l2cap, &chan->chan);
+	}
+
+	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_REQ)) {
+		l2cap_br_connect_req(l2cap, &chan->chan);
+	}
+
+	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_DISCONN_REQ)) {
+		(void)bt_l2cap_br_chan_disconnect(&chan->chan);
+	}
+}
+
 static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			      bt_l2cap_chan_destroy_t destroy)
 {
@@ -951,6 +1336,7 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	 * always succeed.
 	 */
 	k_work_init_delayable(&ch->rtx_work, l2cap_br_rtx_timeout);
+	k_work_init_delayable(&ch->retry_work, l2cap_br_retry_handler);
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	k_work_init_delayable(&ch->ret_work, l2cap_br_ret_timeout);
 	k_work_init_delayable(&ch->monitor_work, l2cap_br_monitor_timeout);
@@ -1064,28 +1450,6 @@ static inline void l2cap_send(struct bt_conn *conn, uint16_t cid,
 	if (bt_l2cap_br_send_cb(conn, cid, buf, NULL, NULL)) {
 		net_buf_unref(buf);
 	}
-}
-
-static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
-				   struct net_buf *buf, k_timeout_t timeout)
-{
-
-	if (bt_l2cap_br_send_cb(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf,
-			     NULL, NULL)) {
-		net_buf_unref(buf);
-		return;
-	}
-
-	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
-	 *
-	 * The value of this timer is implementation-dependent but the minimum
-	 * initial value is 1 second and the maximum initial value is 60
-	 * seconds. One RTX timer shall exist for each outstanding signaling
-	 * request, including each Echo Request. The timer disappears on the
-	 * final expiration, when the response is received, or the physical
-	 * link is lost.
-	 */
-	bt_work_reschedule(&chan->rtx_work, timeout);
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
@@ -1783,27 +2147,6 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 	return pdu;
 }
 
-static struct net_buf *l2cap_br_create_pdu(struct net_buf_pool *pool, k_timeout_t timeout)
-{
-	struct net_buf *buf;
-
-	buf = bt_l2cap_create_pdu_timeout(pool, 0, timeout);
-	if ((buf == NULL) && (pool != NULL)) {
-		LOG_WRN("Fail to allocate buffer from pool %p", pool);
-
-		/* If the pool is empty, try to allocate from the default pool without waiting. */
-		buf = bt_l2cap_create_pdu_timeout(NULL, 0, K_NO_WAIT);
-	}
-
-	if (buf == NULL) {
-		LOG_ERR("Fail to allocate buffer");
-		return NULL;
-	}
-
-	LOG_DBG("allocated buffer %p", buf);
-	return buf;
-}
-
 static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 {
 	struct bt_l2cap_info_req *info;
@@ -1826,12 +2169,8 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 		return;
 	}
 
-	buf = l2cap_br_create_pdu(&br_sig_pool, K_FOREVER);
-	if (buf == NULL) {
-		LOG_ERR("Fail to send info req");
-		/* Consider disconnect ACL here. */
-		return;
-	}
+	buf = l2cap_br_get_allocated_buf(l2cap);
+	__ASSERT(buf != NULL, "No buffers to send get info req");
 
 	atomic_set_bit(l2cap->chan.flags, L2CAP_FLAG_SIG_INFO_PENDING);
 	l2cap->chan.ident = l2cap_br_get_ident();
@@ -2024,11 +2363,8 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		return -EINVAL;
 	}
 
-	rsp_buf = l2cap_br_create_pdu(&br_sig_pool, L2CAP_BR_INFO_TIMEOUT);
-	if (rsp_buf == NULL) {
-		LOG_ERR("Fail to response info req");
-		return -ENOBUFS;
-	}
+	rsp_buf = l2cap_br_get_allocated_buf(l2cap);
+	__ASSERT(rsp_buf != NULL, "No buffers to send get info rsp");
 
 	type = sys_le16_to_cpu(req->type);
 	LOG_DBG("type 0x%04x", type);
@@ -2116,12 +2452,12 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 		 * Response is received
 		 */
 		if (fchan->cid == BT_L2CAP_CID_BR_SIG) {
-			struct bt_l2cap_br *sig_ch;
+			struct bt_l2cap_br *l2cap;
 
 			connect_fixed_channel(br_chan);
 
-			sig_ch = CONTAINER_OF(br_chan, struct bt_l2cap_br, chan);
-			l2cap_br_get_info(sig_ch, BT_L2CAP_INFO_FEAT_MASK);
+			l2cap = CONTAINER_OF(br_chan, struct bt_l2cap_br, chan);
+			l2cap_br_get_info_req(l2cap);
 		}
 	}
 }
@@ -2467,7 +2803,7 @@ static void l2cap_br_chan_disconn(struct bt_l2cap_chan *chan)
 	}
 }
 
-static void l2cap_br_conf(struct bt_l2cap_chan *chan, bool init)
+static void l2cap_br_conf(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan, bool init)
 {
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_conf_req *conf;
@@ -2478,20 +2814,19 @@ static void l2cap_br_conf(struct bt_l2cap_chan *chan, bool init)
 		int err;
 
 		err = l2cap_br_check_chan_config(chan->conn, BR_CHAN(chan));
-		if (err) {
+		if (err != 0) {
+			/* Drop the allocated buffer. Then disconnect request can allocate it. */
+			l2cap_br_drop_allocated_buf(l2cap);
 			bt_l2cap_chan_disconnect(chan);
 			return;
 		}
 	}
 #else
-	(void)init;
+	ARG_UNUSED(init);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
-	buf = l2cap_br_create_pdu(&br_sig_pool, K_FOREVER);
-	if (buf == NULL) {
-		l2cap_br_chan_disconn(chan);
-		return;
-	}
+	buf = l2cap_br_get_allocated_buf(l2cap);
+	__ASSERT(buf != NULL, "No buffers to send config req");
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONF_REQ;
@@ -2678,22 +3013,16 @@ static void l2cap_br_conn_rsp_sent_cb(struct bt_conn *conn, void *user_data, int
 	}
 }
 
-static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
-				  uint16_t dcid, uint8_t ident, uint16_t result)
+static void l2cap_br_send_conn_rsp(struct bt_l2cap_br *l2cap, uint16_t scid, uint16_t dcid,
+				   uint8_t ident, uint16_t result)
 {
+	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct net_buf *buf;
 	struct bt_l2cap_conn_rsp *rsp;
 	struct bt_l2cap_sig_hdr *hdr;
 
-	buf = l2cap_br_create_pdu(&br_sig_pool, L2CAP_BR_CONN_TIMEOUT);
-	if (buf == NULL) {
-		struct bt_l2cap_chan *chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
-
-		if (chan != NULL) {
-			l2cap_br_chan_disconn(chan);
-		}
-		return;
-	}
+	buf = l2cap_br_get_allocated_buf(l2cap);
+	__ASSERT(buf != NULL, "No buffers to send conn rsp");
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONN_RSP;
@@ -2717,24 +3046,17 @@ static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 	}
 }
 
-static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
+static void l2cap_br_conn_req_reply(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
+				    uint16_t result)
 {
-	/* Send response to connection request only when in acceptor role */
-	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-		return -ESRCH;
-	}
-
-	l2cap_br_send_conn_rsp(chan->conn, BR_CHAN(chan)->tx.cid,
-			       BR_CHAN(chan)->rx.cid, BR_CHAN(chan)->ident, result);
+	l2cap_br_send_conn_rsp(l2cap, BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->rx.cid,
+			       BR_CHAN(chan)->ident, result);
 	BR_CHAN(chan)->ident = 0U;
-
-	return 0;
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL) && defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
-void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan,
-				   bt_l2cap_chan_state_t state,
-				   const char *func, int line)
+void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_t state,
+				      const char *func, int line)
 {
 	struct bt_l2cap_br_chan *br_chan;
 
@@ -2778,8 +3100,7 @@ void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan,
 	br_chan->state = state;
 }
 #else
-void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan,
-			     bt_l2cap_chan_state_t state)
+void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_t state)
 {
 	BR_CHAN(chan)->state = state;
 }
@@ -2934,7 +3255,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		break;
 	}
 	/* Reply on connection request as acceptor */
-	l2cap_br_conn_req_reply(chan, result);
+	l2cap_br_conn_req_reply(l2cap, chan, result);
 
 	if (result != BT_L2CAP_BR_SUCCESS) {
 		/* Disconnect link when security rules were violated */
@@ -2954,11 +3275,11 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONFIG);
-	l2cap_br_conf(chan, true);
+	l2cap_br_config_req(l2cap, chan);
 	return;
 
 no_chan:
-	l2cap_br_send_conn_rsp(conn, scid, 0, ident, result);
+	l2cap_br_send_conn_rsp(l2cap, scid, 0, ident, result);
 }
 
 #define L2CAP_QOS_TOKEN_RATE_DEFAULT        0x00000000
@@ -3910,6 +4231,8 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 		atomic_set_bit(br_chan->flags, L2CAP_FLAG_CONN_LCONF_DONE);
 		err = l2cap_br_conf_rsp_opt_check(chan, opt_len, buf);
 		if (err) {
+			/* Drop the allocated buffer. Then disconnect request can allocate it. */
+			l2cap_br_drop_allocated_buf(l2cap);
 			/* currently disconnect channel if opt is invalid */
 			bt_l2cap_chan_disconnect(chan);
 			break;
@@ -3928,11 +4251,13 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	case BT_L2CAP_CONF_UNACCEPT:
 		err = l2cap_br_conf_rsp_unaccept_opt(chan, opt_len, buf);
 		if (!err) {
-			l2cap_br_conf(chan, false);
+			l2cap_br_conf(l2cap, chan, false);
 			break;
 		}
 		__fallthrough;
 	default:
+		/* Drop the allocated buffer. Then disconnect request can allocate it. */
+		l2cap_br_drop_allocated_buf(l2cap);
 		/* currently disconnect channel on non success result */
 		bt_l2cap_chan_disconnect(chan);
 		break;
@@ -4055,14 +4380,15 @@ int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server)
 	return 0;
 }
 
-static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident, uint16_t reason, void *data,
-				 uint8_t data_len)
+static void l2cap_br_send_reject(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t reason,
+				 void *data, uint8_t data_len)
 {
+	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_cmd_reject *rej;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = l2cap_br_create_pdu(&br_sig_pool, K_FOREVER);
+	buf = l2cap_br_get_allocated_buf(l2cap);
 	if (buf == NULL) {
 		LOG_ERR("Fail to send reject packet");
 		/* Consider disconnect ACL here. */
@@ -4721,15 +5047,12 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 			.dcid = 0,
 		};
 
-		l2cap_br_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID, &data, sizeof(data));
+		l2cap_br_send_reject(l2cap, ident, BT_L2CAP_REJ_INVALID_CID, &data, sizeof(data));
 		return;
 	}
 
-	rsp_buf = l2cap_br_create_pdu(&br_sig_pool, L2CAP_BR_CFG_TIMEOUT);
-	if (rsp_buf == NULL) {
-		l2cap_br_chan_disconn(chan);
-		return;
-	}
+	rsp_buf = l2cap_br_get_allocated_buf(l2cap);
+	__ASSERT(rsp_buf != NULL, "No buffers to send config rsp");
 
 	hdr = net_buf_add(rsp_buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONF_RSP;
@@ -4929,15 +5252,12 @@ static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident, struc
 
 		data.scid = req->scid;
 		data.dcid = req->dcid;
-		l2cap_br_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID, &data, sizeof(data));
+		l2cap_br_send_reject(l2cap, ident, BT_L2CAP_REJ_INVALID_CID, &data, sizeof(data));
 		return;
 	}
 
-	buf = l2cap_br_create_pdu(&br_sig_pool, L2CAP_BR_DISCONN_TIMEOUT);
-	if (buf == NULL) {
-		l2cap_br_chan_disconn(&chan->chan);
-		return;
-	}
+	buf = l2cap_br_get_allocated_buf(l2cap);
+	__ASSERT(buf != NULL, "No buffers to send disconn rsp");
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_DISCONN_RSP;
@@ -4961,8 +5281,14 @@ static void l2cap_br_connected(struct bt_l2cap_chan *chan)
 static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
 
 	LOG_DBG("ch %p cid 0x%04x", br_chan, br_chan->rx.cid);
+
+	k_work_cancel_delayable(&br_chan->retry_work);
+	l2cap->ident = 0;
+	l2cap_br_drop_allocated_buf(l2cap);
+	l2cap_br_drop_recv_pending_bufs(l2cap);
 
 	if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_SIG_INFO_PENDING)) {
 		/* Cancel RTX work on signal channel.
@@ -4978,12 +5304,12 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 {
 	struct bt_conn *conn = chan->conn;
-	struct net_buf *buf;
 	struct bt_l2cap_disconn_req *req;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_br_chan *br_chan;
+	struct net_buf *buf;
 
-	if (!conn) {
+	if (conn == NULL) {
 		return -ENOTCONN;
 	}
 
@@ -4995,11 +5321,17 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("chan %p scid 0x%04x dcid 0x%04x", chan, br_chan->rx.cid, br_chan->tx.cid);
 
-	buf = l2cap_br_create_pdu(&br_sig_pool, K_FOREVER);
+	bt_work_schedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_DISCONN_INIT_TIMEOUT);
+
+	buf = l2cap_br_create_pdu(&br_sig_pool, K_NO_WAIT);
 	if (buf == NULL) {
-		return -ENOBUFS;
+		LOG_WRN("No buffers for disconnect req");
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONN_REQ);
+		bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
+		return 0;
 	}
 
+	atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONN_REQ);
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_DISCONN_REQ;
 	hdr->ident = l2cap_br_get_ident();
@@ -5052,10 +5384,8 @@ static void l2cap_br_disconn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struc
 
 int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, uint16_t psm)
 {
-	struct net_buf *buf;
-	struct bt_l2cap_sig_hdr *hdr;
-	struct bt_l2cap_conn_req *req;
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+	struct bt_l2cap_br *l2cap;
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	int err;
 #endif /* CONFIG_BT_L2CAP_RET_FC */
@@ -5128,26 +5458,15 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, u
 		return -EIO;
 	}
 
-	buf = l2cap_br_create_pdu(&br_sig_pool, K_FOREVER);
-	if (buf == NULL) {
+	l2cap = l2cap_br_find_signal_channel(conn);
+	if (l2cap == NULL) {
+		LOG_ERR("Signaling channel not found");
 		l2cap_br_chan_cleanup(chan);
-		return -ENOBUFS;
+		return -ENOTCONN;
 	}
 
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->code = BT_L2CAP_CONN_REQ;
-	hdr->ident = l2cap_br_get_ident();
-	hdr->len = sys_cpu_to_le16(sizeof(*req));
-
-	req = net_buf_add(buf, sizeof(*req));
-	req->psm = sys_cpu_to_le16(psm);
-	req->scid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
-
-	/* Set the ident for the signaling request */
-	BR_CHAN(chan)->ident = hdr->ident;
-
-	l2cap_br_chan_send_req(BR_CHAN(chan), buf, L2CAP_BR_CONN_TIMEOUT);
-
+	bt_work_schedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_CONN_INIT_TIMEOUT);
+	l2cap_br_connect_req(l2cap, chan);
 	return 0;
 }
 
@@ -5197,8 +5516,8 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 	case BT_L2CAP_BR_SUCCESS:
 		br_chan->ident = 0U;
 		BR_CHAN(chan)->tx.cid = dcid;
-		l2cap_br_conf(chan, true);
 		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONFIG);
+		l2cap_br_conf(l2cap, chan, true);
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
 	case BT_L2CAP_BR_PENDING:
@@ -5266,6 +5585,8 @@ static void l2cap_br_reject_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct
 	do {
 		chan = bt_l2cap_br_lookup_ident(conn, ident);
 		if (chan != NULL) {
+			/* Clear the ident to avoid the endless loop */
+			chan->ident = 0;
 			l2cap_br_chan_disconn(&chan->chan);
 		}
 	} while (chan != NULL);
@@ -5351,8 +5672,7 @@ static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_h
 		break;
 	default:
 		LOG_WRN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
-		l2cap_br_send_reject(l2cap->chan.chan.conn, hdr->ident, BT_L2CAP_REJ_NOT_UNDERSTOOD,
-				     NULL, 0);
+		l2cap_br_send_reject(l2cap, hdr->ident, BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 		break;
 	}
 
@@ -5364,10 +5684,54 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
 	struct bt_l2cap_sig_hdr *hdr;
-	uint8_t ident = 0;
+	struct bt_l2cap_br_recv_pending *recv_pending;
+	struct bt_conn *conn = chan->conn;
 	uint16_t len;
 
+	if (conn == NULL) {
+		return 0;
+	}
+
+	if (l2cap->recv_pending.buf != NULL && l2cap->recv_pending.buf != buf) {
+		int err;
+
+		err = k_mem_slab_alloc(&br_recv_pending_pool, (void **)&recv_pending, K_NO_WAIT);
+		if (err != 0) {
+			/* There are two possible causes for this issue:
+			 * 1. When `CONFIG_BT_HCI_ACL_FLOW_CONTROL` is enabled,
+			 *    `L2CAP_BR_RECV_PENDING_POOL_COUNT` is less than the number of
+			 *    `acl_in_pool` net buffers. The solution is to align these values.
+			 * 2. `CONFIG_BT_HCI_ACL_FLOW_CONTROL` is disabled. Since a unified HCI RX
+			 *    pool is used, the number of net buffers in the data reception pool
+			 *    exceeds the count of `br_recv_pending_pool`.
+			 *
+			 * In short, the number of L2CAP channel connections being simultaneously
+			 * created and accepted should be minimized to alleviate or even avoid
+			 * this issue.
+			 */
+			LOG_WRN("No available recv_pending buffers, drop signaling received buf");
+			return 0;
+		}
+		recv_pending->buf = net_buf_ref(buf);
+		net_buf_simple_save(&buf->b, &recv_pending->state);
+		k_queue_append(&l2cap->recv_pending_queue, recv_pending);
+		bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
+		return 0;
+	}
+
+	if (l2cap->recv_pending.buf == NULL) {
+		l2cap->recv_pending.buf = net_buf_ref(buf);
+	}
+
 	while (buf->len > 0) {
+		net_buf_simple_save(&buf->b, &l2cap->recv_pending.state);
+
+		if (!l2cap_br_allocate_buf(l2cap)) {
+			bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
+			LOG_WRN("No net buffers available");
+			return 0;
+		}
+
 		if (buf->len < sizeof(*hdr)) {
 			LOG_ERR("Too small L2CAP signaling PDU");
 			goto reject;
@@ -5389,42 +5753,47 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			continue;
 		}
 
-		if (ident == 0) {
+		if (l2cap->ident == 0) {
 			LOG_DBG("Save identifier of the first request in the L2CAP packet.");
-			ident = hdr->ident;
+			l2cap->ident = hdr->ident;
 		}
 
 		l2cap_br_sig_handle(l2cap, hdr, buf);
+		l2cap_br_drop_allocated_buf(l2cap);
 	}
 
-	return 0;
+	goto done;
 
 reject:
-	if (ident != 0) {
-		l2cap_br_send_reject(chan->conn, ident, BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
+	if (l2cap->ident != 0) {
+		l2cap_br_send_reject(l2cap, l2cap->ident, BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 	}
 
+done:
+	l2cap->ident = 0;
+	l2cap_br_drop_allocated_buf(l2cap);
+	l2cap_br_recv_pending_done(l2cap);
 	return 0;
 }
 
-static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
+static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
+			       uint8_t status)
 {
-	struct net_buf *buf;
-	struct bt_l2cap_sig_hdr *hdr;
-	struct bt_l2cap_conn_req *req;
-
 	if (BR_CHAN(chan)->state != BT_L2CAP_CONNECTING) {
 		return;
 	}
 
 	LOG_DBG("chan %p status 0x%02x encr 0x%02x", chan, status, chan->conn->encrypt);
 
-	if (status) {
+	if (status != 0) {
 		/*
 		 * Security procedure status is non-zero so respond with
 		 * security violation only as channel acceptor.
 		 */
-		l2cap_br_conn_req_reply(chan, BT_L2CAP_BR_ERR_SEC_BLOCK);
+		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+			l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
+			return;
+		}
 
 		/* Release channel allocated to outgoing connection request */
 		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
@@ -5434,7 +5803,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 		return;
 	}
 
-	if (!chan->conn->encrypt) {
+	if (chan->conn->encrypt == 0) {
 		return;
 	}
 
@@ -5442,42 +5811,31 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, uint8_t status)
 	 * For incoming connection state send confirming outstanding
 	 * response and initiate configuration request.
 	 */
-	if (l2cap_br_conn_req_reply(chan, BT_L2CAP_BR_SUCCESS) == 0) {
-		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONFIG);
-		/*
-		 * Initialize config request since remote needs to know
-		 * local MTU segmentation.
-		 */
-		l2cap_br_conf(chan, true);
-	} else if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
-		buf = l2cap_br_create_pdu(&br_sig_pool, K_FOREVER);
-		if (buf == NULL) {
-			l2cap_br_chan_disconn(chan);
-			return;
-		}
+	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+		l2cap_br_pend_conn_req_reply_success(l2cap, chan);
+		return;
+	}
 
-		hdr = net_buf_add(buf, sizeof(*hdr));
-		hdr->code = BT_L2CAP_CONN_REQ;
-		hdr->ident = l2cap_br_get_ident();
-		hdr->len = sys_cpu_to_le16(sizeof(*req));
-
-		req = net_buf_add(buf, sizeof(*req));
-		req->psm = sys_cpu_to_le16(BR_CHAN(chan)->psm);
-		req->scid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
-
-		/* Set the ident for the signaling request */
-		BR_CHAN(chan)->ident = hdr->ident;
-
-		l2cap_br_chan_send_req(BR_CHAN(chan), buf, L2CAP_BR_CONN_TIMEOUT);
+	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
+		l2cap_br_connect_req(l2cap, chan);
 	}
 }
 
 void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
 	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_br *l2cap;
+	struct bt_l2cap_chan *sig_ch = bt_l2cap_br_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SIG);
+
+	if (sig_ch == NULL) {
+		LOG_ERR("Invalid BR SIG channel");
+		return;
+	}
+
+	l2cap = CONTAINER_OF(sig_ch, struct bt_l2cap_br, chan.chan);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		l2cap_br_conn_pend(chan, hci_status);
+		l2cap_br_conn_pend(l2cap, chan, hci_status);
 
 		if (chan->conn == NULL) {
 			LOG_WRN("Invalid ACL conn for chan %p", chan);
@@ -6513,6 +6871,7 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 	l2cap->chan.chan.ops = &ops;
 	*chan = &l2cap->chan.chan;
+	k_queue_init(&l2cap->recv_pending_queue);
 	atomic_set(l2cap->chan.flags, 0);
 	return 0;
 }
