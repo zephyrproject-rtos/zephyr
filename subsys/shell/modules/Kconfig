@@ -42,6 +42,7 @@ config APP_VERSION_SHELL
 
 config ZYCLICTEST_SHELL
 	bool "Zyclictest shell"
+	depends on TIMER_HAS_64BIT_CYCLE_COUNTER
 	select POSIX_C_LIB_EXT
 	help
 	  This shell command provides latency measurement.
