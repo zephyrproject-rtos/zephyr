@@ -107,6 +107,7 @@ struct uhc_vrt_data {
 	struct k_thread thread_data;
 	struct k_fifo fifo;
 	struct uhc_transfer *last_xfer;
+	uint8_t xact_remaining;
 	struct uvb_packet *last_pkt;
 	k_timepoint_t xfer_timeout;
 	struct uhc_vrt_frame frame;
@@ -313,7 +314,8 @@ static void vrt_assemble_frame(const struct device *dev)
 				continue;
 			}
 
-			bus_time = vrt_xfer_bus_time(tmp, priv->speed);
+			bus_time = vrt_xfer_bus_time(tmp, priv->speed) *
+				   (1 + USB_MPS_ADDITIONAL_TRANSACTIONS(tmp->mps));
 			if (periodic_used + bus_time > budget) {
 				/* Frame's periodic budget is full, retry next frame. */
 				tmp->start_frame = priv->frame_number + 1;
@@ -361,6 +363,10 @@ static int vrt_schedule_frame(const struct device *dev)
 
 		priv->last_xfer = slot->xfer;
 		frame->count++;
+		if (priv->last_xfer->interval) {
+			priv->xact_remaining =
+				1 + USB_MPS_ADDITIONAL_TRANSACTIONS(priv->last_xfer->mps);
+		}
 		LOG_DBG("Next transfer is %p (count %u)",
 			(void *)priv->last_xfer, frame->count);
 	}
@@ -430,6 +436,15 @@ static void vrt_hrslt_success(const struct device *dev,
 				}
 			}
 		}
+
+		if (!finished && xfer->interval && --priv->xact_remaining == 0) {
+			/*
+			 * Microframe's transaction opportunities are used up.
+			 * The transfer stays queued and resumes at its next interval.
+			 */
+			priv->last_xfer = NULL;
+		}
+
 		break;
 	}
 
@@ -492,8 +507,13 @@ static int vrt_handle_reply(const struct device *dev,
 
 	switch (pkt->reply) {
 	case UVB_REPLY_NACK:
-		/* Move the transfer back to the list. */
-		sys_dlist_append(&frame->list, frame->ptr);
+		if (xfer->type == USB_EP_TYPE_ISO) {
+			/* Isochronous transfers are never retried. */
+			uhc_xfer_return(dev, xfer, 0);
+		} else {
+			/* Move the transfer back to the list. */
+			sys_dlist_append(&frame->list, frame->ptr);
+		}
 		priv->last_xfer = NULL;
 		LOG_DBG("NACK 0x%02x count %u", xfer->ep, frame->count);
 		break;
