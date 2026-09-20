@@ -405,6 +405,11 @@ static const struct btp_handler bap_handlers[] = {
 		.func = btp_bap_broadcast_source_setup_v2,
 	},
 	{
+		.opcode = BTP_BAP_BROADCAST_SOURCE_RECONFIGURE,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = btp_bap_broadcast_source_reconfigure,
+	},
+	{
 		.opcode = BTP_BAP_BROADCAST_SOURCE_RELEASE,
 		.expect_len = sizeof(struct btp_bap_broadcast_source_release_cmd),
 		.func = btp_bap_broadcast_source_release,
