@@ -60,7 +60,7 @@ extern "C" {
  *
  * @defgroup bt_gap Generic Access Profile (GAP)
  * @since 1.0
- * @version 1.1.0
+ * @version 1.1.1
  * @ingroup bluetooth
  * @{
  */
@@ -376,7 +376,13 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * Close and release HCI resources. Result is architecture dependent.
  *
+ * If the HCI driver fails to close its transport, the error is returned with
+ * Bluetooth left not ready, as the Host has torn down its state, connections
+ * included, by then. bt_disable() can be called again.
+ *
  * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS The HCI driver does not support closing its transport. Bluetooth is
+ *                 left as it was.
  * @retval -EALREADY Bluetooth is already disabled, or being disabled.
  * @retval -EAGAIN Bluetooth is still being enabled, which with @kconfig{CONFIG_BT_SETTINGS}
  *                 includes loading the Bluetooth settings; retry once bt_is_ready() returns true.

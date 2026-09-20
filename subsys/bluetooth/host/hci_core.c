@@ -4636,8 +4636,8 @@ static void hci_event_prio(struct net_buf *buf)
 }
 
 /* Whether bt_disable() is tearing down low-priority RX processing, meaning
- * that RX packets must no longer be queued or dispatched. Not true in the
- * failed-disable recovery states, where BT_DEV_READY gets restored.
+ * that RX packets must no longer be queued or dispatched. Not true after a
+ * failed disable, which clears BT_DEV_DISABLING again.
  */
 static bool rx_teardown_active(void)
 {
@@ -4999,6 +4999,14 @@ int bt_disable(void)
 		return -EALREADY;
 	}
 
+	/* A driver without a close() op cannot be disabled. Find that out
+	 * before anything is torn down, none of which can be undone.
+	 */
+	if (!bt_hci_can_close(bt_dev.hci)) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
+		return -ENOSYS;
+	}
+
 	/* Clear BT_DEV_READY before disabling HCI link. It is not set if
 	 * bt_enable() failed after opening the transport, in which case a
 	 * failed disable must not set it either.
@@ -5083,11 +5091,13 @@ int bt_disable(void)
 
 	err = bt_hci_close(bt_dev.hci);
 	if (err) {
-		/* Re-enable state bits to avoid inconsistent stack state */
+		/* The transport is still open, but what has been torn down
+		 * cannot be brought back: the connections are gone, and the
+		 * controller has been reset unless the driver has the
+		 * no-reset quirk. So the stack is left not ready, where all
+		 * that can be done is to try the disable again.
+		 */
 		atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
-		if (was_ready) {
-			atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-		}
 		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 		return err;
 	}
