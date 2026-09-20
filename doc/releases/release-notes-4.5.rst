@@ -555,6 +555,7 @@ New APIs and options
     * :c:func:`bt_hci_lockstep_cmd_send_sync`
     * :c:func:`bt_hci_lockstep_reset`
     * :c:func:`bt_hci_set_public_addr` and :c:func:`bt_hci_get_public_addr`
+    * :c:func:`bt_hci_can_close`
 
   * Host
 
