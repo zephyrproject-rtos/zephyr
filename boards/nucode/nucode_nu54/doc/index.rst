@@ -74,7 +74,8 @@ interface, but hardware flow control is not enabled by default.
 * CTS = P1.07
 
 UART30 is available to the CPUAPP as a disabled optional configuration on
-P0.00 through P0.03.
+P0.00 through P0.03. Before enabling it, see
+:ref:`nucode_nu54_debug_probe_limitations`.
 
 Both UART paths pass through the onboard debug interface. Probe firmware may
 expose them as two CDC ACM interfaces named ``UART0`` and ``UART1``. If there
@@ -141,6 +142,33 @@ The supported board target is ``nucode_nu54/nrf54l15/cpuapp``. When using an
 external probe, isolate the onboard SWD interface before driving the same
 signals.
 
+.. _nucode_nu54_debug_probe_limitations:
+
+Onboard Debug Probe Limitations
+===============================
+
+DAPLink firmware ``NU54DK_v2_Pre-release`` (build ID
+``3601db04e83571edc43dbfacacf2cddbe34be5b9``) has two reported issues. See the
+`NU54V DK debug probe report`_ for the test results.
+
+* Sending data from the host through VCOM0 (UART30), or driving its RTS
+  signal (P0.02) low, can make SWD accesses fail with ``No ACK`` while UART
+  communication continues.
+* Copying a HEX file to the probe's mass-storage drive can cause a
+  HardFault, recorded in ``ASSERT.TXT``.
+
+Leave UART30 disabled with this firmware and use UART20 (VCOM1), the
+default console, which worked normally in the reported tests. Removing
+RTS/CTS from pinctrl does not prevent the failure when the host sends data
+through VCOM0. Use ``west flash`` with pyOCD instead of copying HEX files
+to the USB drive.
+
+Unplugging and reconnecting USB restored SWD after the host sent data and
+recovered the probe after the HEX file copy. If the application drives RTS
+at startup, SWD can fail again immediately. To recover, disconnect the
+onboard SWD interface with ``SW1 DISABLE_SWD``, then connect an external
+probe to J4 and flash an application with UART30 disabled.
+
 Hardware Configuration Notes
 ****************************
 
@@ -166,3 +194,5 @@ References
    https://github.com/Nucode01/NU54DK_Zephyr_DTS/blob/main/NU54-DK%20Schematic.pdf
 .. _NUCODE NU54V DK product page:
    https://nucode.store/product/nu-54v-dk-nucode-nrf54l15-ble-60-mcu-kcfcccemic/36/
+.. _NU54V DK debug probe report:
+   https://github.com/chcbaram/nu54v-dk/blob/main/docs/reports/2026-09-20_daplink_vcom0_swd.md
