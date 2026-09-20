@@ -1,0 +1,6 @@
+board:
+  name: ulanzi_tc001
+  full_name: TC001 Smart Pixel Clock
+  vendor: ulanzi
+  socs:
+  - name: esp32
