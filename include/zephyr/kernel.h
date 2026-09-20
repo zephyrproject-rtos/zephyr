@@ -5942,8 +5942,10 @@ __syscall void k_pipe_reset(struct k_pipe *pipe);
 /**
  * @brief Close a pipe
  *
- * This routine closes a pipe. Any threads that were blocked on the pipe
- * will be unblocked and receive an error code.
+ * This routine closes a pipe. Threads blocked in k_pipe_read() or
+ * k_pipe_write() are unblocked and receive an error. Threads waiting in
+ * k_poll() for K_POLL_TYPE_PIPE_DATA_AVAILABLE are woken as well: a
+ * closed pipe is treated as readable so k_pipe_read() can return -EPIPE.
  *
  * @param pipe Address of the pipe.
  */
