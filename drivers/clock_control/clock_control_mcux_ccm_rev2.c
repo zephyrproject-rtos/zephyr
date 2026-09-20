@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <zephyr/sys/util.h>
 #include <fsl_clock.h>
-#if defined(CONFIG_SOC_MIMX9352)
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 #include <soc.h>
 #endif
 
@@ -593,6 +593,16 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 	case IMX_CCM_USB_CLK:
 	case IMX_CCM_USB_PHY_CLK:
 		return common_clock_set_freq(clock_name, (uint32_t)clock_rate);
+#endif
+
+		/*
+		 * ARM_PLL clocks the Cortex-A cores, so it cannot be reprogrammed while
+		 * it clocks them. The SoC layer owns the transition because the step
+		 * clock the cores run off in the meantime is SoC specific.
+		 */
+#if defined(CONFIG_CPU_FREQ_PSTATE_SET_SOC) && DT_NODE_HAS_STATUS(DT_NODELABEL(arm_pll), okay)
+	case IMX_CCM_ARM_PLL_CLK:
+		return imx9_arm_pll_set_rate(clock_rate);
 #endif
 
 	default:
