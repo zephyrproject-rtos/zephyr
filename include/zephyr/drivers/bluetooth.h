@@ -132,6 +132,8 @@ struct bt_hci_driver_config {
  * @brief Deliver HCI data from the controller to the host
  *
  * Registered with bt_hci_open(). The HCI driver invokes this callback from thread context.
+ * It may do so already before bt_hci_open() returns, and does not do so any more once
+ * bt_hci_close() has returned successfully.
  */
 typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
 
@@ -187,6 +189,23 @@ typedef int (*bt_hci_api_setup_t)(const struct device *dev,
 
 /**
  * @driver_ops{Bluetooth HCI}
+ *
+ * The operations serve any user of this API, of which the Bluetooth Host is only one:
+ * a controller-only application or a test opens, closes and sends in the same way. With
+ * the exception of setup(), they therefore do not use the Host's HCI command APIs
+ * (bt_hci_cmd_alloc(), bt_hci_cmd_send(), bt_hci_cmd_send_sync()). The allocators of
+ * @ref bt_buf "the buffer API", bt_hci_recv() and bt_hci_recv_err() are what a driver
+ * delivers its data with, and not meant by that. A driver that has HCI commands of its
+ * own to exchange with its controller does so over its own transport, for which the
+ * @ref bt_hci_pkt and the @ref bt_hci_lockstep exist, and only inside open() and
+ * close(), while the transport is not in the hands of its user.
+ *
+ * bt_hci_open(), bt_hci_close() and bt_hci_send() are not safe to call concurrently
+ * for the same device: none of them may be called while another one, or another call
+ * of the same one, is in progress. A transport has one user, the one that opened it,
+ * which is the Bluetooth Host or, in a build without one, the application. That user
+ * makes its calls one at a time and within the limits that the three functions
+ * document, and a driver need not defend against anything else.
  */
 __subsystem struct bt_hci_driver_api {
 	/**
@@ -266,7 +285,18 @@ static inline void bt_hci_recv(const struct device *dev, struct net_buf *buf)
  *
  * Opens the HCI transport for operation. This function must not
  * return until the transport is ready for operation, meaning it
- * is safe to start calling the send() handler.
+ * is safe to start calling the send() handler. It may block, and is
+ * called from thread context.
+ *
+ * When this function fails, the transport is closed: the driver has stopped
+ * what the call had started, no longer calls the recv callback, and
+ * bt_hci_close() is not called for it. The exception is -EALREADY, which this
+ * function returns without calling the driver when the transport is open
+ * already, and which leaves it open.
+ *
+ * A transport that has been closed with bt_hci_close() can be opened again.
+ * The function must not be called while another call to it, or to
+ * bt_hci_close(), is in progress.
  *
  * @param dev  HCI device
  * @param recv This is callback through which the HCI driver provides the
@@ -299,12 +329,23 @@ static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
 /**
  * @brief Close the HCI transport.
  *
- * Closes the HCI transport. This function must not return until the
- * transport is closed.
+ * Closes the HCI transport. When it succeeds, this function must not return
+ * until the transport is closed: the driver then no longer calls the recv
+ * callback, and the transport can be opened again with bt_hci_open(). When
+ * the function fails, the transport is still open and can be used as before.
+ *
+ * The function must not be called while a bt_hci_send() call is in progress,
+ * nor while another call to it, or to bt_hci_open(), is in progress, and
+ * bt_hci_send() must not be called while it runs. It must not be called from
+ * the recv callback, so that a driver is free to stop the thread it delivers
+ * its data from. It may block, and is called from thread context.
+ *
+ * The transport must be open, see bt_hci_send().
  *
  * @param dev HCI device
  *
  * @return 0 on success or negative POSIX error number on failure.
+ * @retval -ENOSYS The driver does not support closing the transport.
  */
 static inline int bt_hci_close(const struct device *dev)
 {
@@ -335,6 +376,14 @@ static inline int bt_hci_close(const struct device *dev)
  * If the function returns 0 (success) the reference to @c buf was moved to the
  * HCI driver. On error, the caller still owns the reference and is responsible
  * for eventually calling @ref net_buf_unref on it.
+ *
+ * The transport must be open: the function may only be called after
+ * bt_hci_open() has returned successfully, and neither while a bt_hci_close()
+ * call is in progress nor after one has succeeded. There is no query for
+ * that: the one user of the transport knows it from its own calls. Calling
+ * the function for a transport that is not open is an error of the caller
+ * with undefined results, which a driver is not required to detect. Nor may
+ * the function be called while another call to it is in progress.
  *
  * @note This function must only be called from a cooperative thread.
  *
