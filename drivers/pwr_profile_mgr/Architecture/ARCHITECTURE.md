@@ -124,29 +124,42 @@ rather than being part of the runtime call path.
 
 ## 2. File/directory layout
 
-Working proposal, following Zephyr driver/module conventions (core +
-backend split mirrors e.g. `drivers/flash` core vs. `flash_stm32.c`):
+Code follows Zephyr driver conventions: flat, one `.c` per backend named
+`<module>_<soc>.c` (as `hwinfo_stm32.c`), private headers beside the
+sources, per-module `Kconfig` and `CMakeLists.txt`. Unlike in-tree
+drivers, tests, sample and design docs stay inside the module folder so
+the whole project reviews and pushes as one unit.
 
 ```
 drivers/pwr_profile_mgr/
-├── Kconfig                        # CONFIG_PWR_PROFILE_MGR, retry/timeout values
 ├── CMakeLists.txt
-├── pwr_profile_mgr.c               # generic core: public API, set_state()
-├── pwr_profile_mgr.h                # public API + enum + backend_ops struct decl
-├── pwr_profile_mgr_stm32f4.c        # board-specific backend
-├── pwr_profile_mgr_stm32f4.h         # backend-private declarations, if needed
+├── Kconfig                          # CONFIG_PWR_PROFILE_MGR, retries, timeout
+├── pwr_profile_mgr.h                # public API + enums
+├── pwr_profile_mgr.c                # generic core: public API, set_state()
+├── pwr_profile_backend.h            # private: backend ops / driver table
+├── pwr_profile_mgr_stm32f4.c        # board backend (planned)
+├── README.md
 ├── Requirements/REQUIREMENTS.md
 ├── Design/DESIGN.md
 ├── Architecture/ARCHITECTURE.md
+├── tests/
+│   └── core/                        # ztest on native_sim, stub backend
 └── samples/
-    └── state_manager/                # shell sample app (name TBD)
-        ├── CMakeLists.txt
-        ├── prj.conf
-        ├── boards/stm32f4_disco.overlay
-        └── src/main.c
+    └── state_manager/               # shell sample app (planned, name TBD)
 ```
 
-Not yet finalized — see [Open points](#open-points) item 2.
+### Mapping to the in-tree Zephyr layout
+
+If the module is ever prepared for upstream, the pieces move to the
+locations Zephyr uses for other drivers:
+
+| Item | Now | Upstream-style location |
+|---|---|---|
+| Public API header | `drivers/pwr_profile_mgr/pwr_profile_mgr.h` | `include/zephyr/drivers/pwr_profile_mgr.h` |
+| Tests | `drivers/pwr_profile_mgr/tests/core/` | `tests/drivers/pwr_profile_mgr/core/` |
+| Sample | `drivers/pwr_profile_mgr/samples/state_manager/` | `samples/drivers/pwr_profile_mgr/` |
+| Docs | `drivers/pwr_profile_mgr/{Requirements,Design,Architecture}/` | `doc/hardware/peripherals/pwr_profile_mgr.rst` |
+| DT bindings (if any) | not needed yet | `dts/bindings/<class>/` |
 
 ## 3. Kconfig / Devicetree plan
 
@@ -192,17 +205,14 @@ All architecture-level open points, in one place:
    descriptors so the core's rollback-walk can iterate generically);
    and a return convention that encodes the recoverable-vs-unrecoverable
    distinction from Design/DESIGN.md.
-2. **File/directory layout** (§2) — two things need confirming:
-   - Whether the sample app lives under this directory (`samples/`
-     in-tree convention) vs. `zephyr/samples/boards/st/stm32f4_disco/`
-     or an out-of-tree location.
-   - Whether this ships as an in-tree `drivers/` module (current
-     location) or is better suited as `subsys/pm/` or an out-of-tree
-     module, given it's closer to a PM-policy subsystem than a
-     hardware-facing driver (no `DEVICE_DT_INST_DEFINE`-style
-     instantiation planned, since there's exactly one instance). Kept
-     under `drivers/` per current instruction; revisit if it causes
-     friction with Zephyr's driver-model conventions.
+2. **Module placement** (§2) — layout inside the folder is decided
+   (see §2). Still open: whether this ships as an in-tree `drivers/`
+   module (current location) or is better suited as `subsys/pm/` or an
+   out-of-tree module, given it's closer to a PM-policy subsystem than a
+   hardware-facing driver (no `DEVICE_DT_INST_DEFINE`-style
+   instantiation planned, since there's exactly one instance). Kept
+   under `drivers/` for now; revisit if it causes friction with Zephyr's
+   driver-model conventions.
 3. **Kconfig / Devicetree structure** (§3):
    - `CONFIG_PWR_PROFILE_MGR*` exact names and defaults.
    - Devicetree overlay for the accelerometer — blocked on Phase 0

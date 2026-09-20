@@ -1,0 +1,5 @@
+tests:
+  drivers.pwr_profile_mgr.core:
+    platform_allow:
+      - native_sim
+    tags: pwr_profile_mgr

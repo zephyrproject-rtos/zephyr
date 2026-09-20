@@ -1,0 +1,33 @@
+# Power profile manager configuration options
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PWR_PROFILE_MGR
+	bool "Power profile manager"
+	help
+	  Enable the Active/Sleep power profile manager. Requires a
+	  board-specific backend providing pwr_profile_backend.
+
+if PWR_PROFILE_MGR
+
+config PWR_PROFILE_MGR_MAX_RETRIES
+	int "Per-driver rollback retry bound"
+	default 3
+	range 0 255
+	help
+	  Number of times a driver's rollback is retried after it fails before
+	  the transition is latched as a fault.
+
+config PWR_PROFILE_MGR_STEP_TIMEOUT_MS
+	int "Per-step hardware operation timeout in milliseconds"
+	default 100
+	range 1 60000
+	help
+	  Timeout passed to every backend callback. A callback that cannot
+	  finish in time must return -ETIMEDOUT.
+
+module = PWR_PROFILE_MGR
+module-str = pwr_profile_mgr
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # PWR_PROFILE_MGR
