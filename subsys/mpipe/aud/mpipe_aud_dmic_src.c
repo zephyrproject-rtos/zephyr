@@ -192,24 +192,25 @@ static int mpipe_aud_dmic_src_stop(struct mpipe_buffer_pool *pool)
 	return 0;
 }
 
-static enum mpipe_state_change_return
-mpipe_aud_dmic_src_change_state(struct mpipe_element *self, enum mpipe_state_change transition)
+static int mpipe_aud_dmic_src_change_state(struct mpipe_element *self,
+					   enum mpipe_state_change transition)
 {
 	struct mpipe_aud_dmic_src *aud_dmic_src =
 		CONTAINER_OF(self, struct mpipe_aud_dmic_src, aud_src.src.element);
 	struct mpipe_aud_buffer_pool *aud_pool = &aud_dmic_src->pool;
-	enum mpipe_state_change_return ret;
+	int ret;
 
 	if (transition == MPIPE_STATE_CHANGE_PLAYING_TO_PAUSED) {
-		if (dmic_trigger(aud_pool->aud_dev, DMIC_TRIGGER_PAUSE) != 0) {
-			LOG_ERR("Unable to pause DMIC capture");
-			return MPIPE_STATE_CHANGE_FAILURE;
+		ret = dmic_trigger(aud_pool->aud_dev, DMIC_TRIGGER_PAUSE);
+		if (ret != 0) {
+			LOG_ERR("Unable to pause DMIC capture: %d", ret);
+			return ret;
 		}
 		aud_dmic_src->capture_paused = true;
 	}
 
 	ret = mpipe_src_change_state(self, transition);
-	if (ret != MPIPE_STATE_CHANGE_SUCCESS) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -217,7 +218,7 @@ mpipe_aud_dmic_src_change_state(struct mpipe_element *self, enum mpipe_state_cha
 		aud_dmic_src->capture_paused = false;
 	}
 
-	return MPIPE_STATE_CHANGE_SUCCESS;
+	return 0;
 }
 
 int mpipe_aud_dmic_src_init(struct mpipe_aud_dmic_src *aud_dmic_src, uint8_t id)

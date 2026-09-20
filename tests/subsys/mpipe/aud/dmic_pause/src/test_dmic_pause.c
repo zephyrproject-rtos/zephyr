@@ -141,10 +141,15 @@ DEVICE_DEFINE(interrupting_dmic, "interrupting_dmic", interrupting_dmic_init, NU
 	      &interrupting_dmic_state, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	      &interrupting_dmic_api);
 
-static bool wait_for_state(struct mpipe_player *player, enum mpipe_player_state state)
+static enum mpipe_state player_state(const struct mpipe_player *player)
+{
+	return ((const struct mpipe_element *)player->pipeline)->current_state;
+}
+
+static bool wait_for_state(struct mpipe_player *player, enum mpipe_state state)
 {
 	for (int i = 0; i < 300; i++) {
-		if (player->state == state) {
+		if (player_state(player) == state) {
 			return true;
 		}
 		k_sleep(K_MSEC(10));
@@ -193,24 +198,24 @@ ZTEST(mpipe_aud_dmic_pause, test_resume_after_capture_settles_while_paused)
 
 	setup_graph(&native_graph, &native_slab, NULL);
 	zassert_ok(mpipe_player_play(player));
-	zassert_true(wait_for_state(player, MPIPE_PLAYER_PLAYING), "initial play failed");
+	zassert_true(wait_for_state(player, MPIPE_STATE_PLAYING), "initial play failed");
 	/* Pause only after capture reaches steady state. */
 	k_sleep(K_SECONDS(20));
 
 	zassert_ok(mpipe_player_pause(player));
-	zassert_true(wait_for_state(player, MPIPE_PLAYER_PAUSED), "pause failed");
+	zassert_true(wait_for_state(player, MPIPE_STATE_PAUSED), "pause failed");
 	k_sleep(K_SECONDS(1));
 	zassert_not_equal(player->last_error.type, MPIPE_MESSAGE_ERROR,
 			  "capture reported %d while paused", player->last_error.code);
-	zassert_equal(player->state, MPIPE_PLAYER_PAUSED,
+	zassert_equal(player_state(player), MPIPE_STATE_PAUSED,
 		      "an interrupted capture read stopped the paused pipeline");
 
 	zassert_ok(mpipe_player_play(player));
-	zassert_true(wait_for_state(player, MPIPE_PLAYER_PLAYING), "resume did not start");
+	zassert_true(wait_for_state(player, MPIPE_STATE_PLAYING), "resume did not start");
 	k_sleep(K_MSEC(100));
 	zassert_not_equal(player->last_error.type, MPIPE_MESSAGE_ERROR,
 			  "capture reported %d after resume", player->last_error.code);
-	zassert_equal(player->state, MPIPE_PLAYER_PLAYING,
+	zassert_equal(player_state(player), MPIPE_STATE_PLAYING,
 		      "capture exhausted the shared pool across pause");
 
 	zassert_ok(mpipe_player_deinit(player));
@@ -222,17 +227,17 @@ ZTEST(mpipe_aud_dmic_pause, test_pause_flushes_interrupted_capture_read)
 
 	setup_graph(&interrupting_graph, &interrupting_slab, DEVICE_GET(interrupting_dmic));
 	zassert_ok(mpipe_player_play(player));
-	zassert_true(wait_for_state(player, MPIPE_PLAYER_PLAYING), "initial play failed");
+	zassert_true(wait_for_state(player, MPIPE_STATE_PLAYING), "initial play failed");
 
 	zassert_ok(mpipe_player_pause(player));
 	k_sleep(K_MSEC(100));
 	zassert_not_equal(player->last_error.type, MPIPE_MESSAGE_ERROR,
 			  "capture reported %d while paused", player->last_error.code);
-	zassert_equal(player->state, MPIPE_PLAYER_PAUSED,
+	zassert_equal(player_state(player), MPIPE_STATE_PAUSED,
 		      "an interrupted capture read stopped the paused pipeline");
 
 	zassert_ok(mpipe_player_play(player));
-	zassert_true(wait_for_state(player, MPIPE_PLAYER_PLAYING), "resume did not start");
+	zassert_true(wait_for_state(player, MPIPE_STATE_PLAYING), "resume did not start");
 	zassert_ok(mpipe_player_deinit(player));
 }
 
