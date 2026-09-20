@@ -195,7 +195,7 @@ static int mpipe_tee_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
 	return first_err;
 }
 
-static enum mpipe_state_change_return mpipe_tee_change_state(struct mpipe_element *self,
+static int mpipe_tee_change_state(struct mpipe_element *self,
 							     enum mpipe_state_change transition)
 {
 	switch (transition) {
@@ -206,7 +206,7 @@ static enum mpipe_state_change_return mpipe_tee_change_state(struct mpipe_elemen
 		break;
 	}
 
-	return MPIPE_STATE_CHANGE_SUCCESS;
+	return 0;
 }
 
 static int mpipe_tee_add_src_pad(struct mpipe_tee *tee)

@@ -75,12 +75,12 @@ static int mpipe_caps_filter_set_caps(struct mpipe_transform *transform,
 	return 0;
 }
 
-static enum mpipe_state_change_return
+static int
 mpipe_caps_filter_change_state(struct mpipe_element *self, enum mpipe_state_change transition)
 {
 	struct mpipe_transform *transform = (struct mpipe_transform *)self;
 	struct mpipe_caps_filter *filter = (struct mpipe_caps_filter *)self;
-	enum mpipe_state_change_return ret;
+	int ret;
 
 	switch (transition) {
 	case MPIPE_STATE_CHANGE_PAUSED_TO_READY:

@@ -25,7 +25,7 @@ static __nocache __aligned(AUD_BUFFER_POOL_BASE_ALIGN)
 uint8_t aud_buffer_pool_buf[AUD_BUFFER_POOL_SIZE];
 
 static int mpipe_aud_buffer_pool_config(struct mpipe_buffer_pool *pool,
-					struct mpipe_structure *config)
+					const struct mpipe_structure *config)
 {
 	struct mpipe_aud_buffer_pool *aud_pool = (struct mpipe_aud_buffer_pool *)pool;
 	int align = 0;
