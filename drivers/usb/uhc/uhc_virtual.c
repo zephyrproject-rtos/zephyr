@@ -27,6 +27,58 @@ LOG_MODULE_REGISTER(uhc_vrt, CONFIG_UHC_DRIVER_LOG_LEVEL);
 #define FRAME_MAX_TRANSFERS 16
 
 /*
+ * USB 2.0 limits periodic (interrupt/isochronous) transfers to at most
+ * 90% of a (micro)frame's time budget, leaving the rest for control/bulk.
+ */
+#define FRAME_NSECS_FS 1000000UL
+#define FRAME_NSECS_HS 125000UL
+#define FRAME_PERIODIC_BUDGET(speed) \
+	(((speed) == USB_SPEED_SPEED_HS ? FRAME_NSECS_HS : FRAME_NSECS_FS) * 9UL / 10UL)
+
+/*
+ * Approximate bus time for a periodic transaction, in nanoseconds
+ * (USB 2.0 5.11.3).
+ *
+ * VRT_BIT_STUFF_TERM() is (3.167 + BitStuffTime(Data_bc)) * 1000: BitStuffTime
+ * is the worst-case bit-stuffed bit count (7/6 stuff ratio times 8 bits per
+ * byte), and 3.167 is a few extra fixed bit-times folded into the same term.
+ * Dividing by 1000 below floors it back to a plain bit-time count.
+ *
+ * 2083 and 8354 are the High-/Full-speed bit time (1000/480e6 s and
+ * 1000/12e6 s, the latter using the spec's own published rounding) scaled
+ * up so the bit-time count can be multiplied by them in integers; dividing
+ * by 1000 or 100 afterwards undoes that scaling and leaves nanoseconds.
+ */
+#define VRT_BIT_STUFF_TERM(bytecount) (3167UL + 9334UL * (bytecount))
+
+#define VRT_HS_NSECS(bytecount) \
+	((2083UL * (55UL * 8UL + VRT_BIT_STUFF_TERM(bytecount) / 1000UL)) / 1000UL + 5UL)
+#define VRT_HS_NSECS_ISO(bytecount) \
+	((2083UL * (38UL * 8UL + VRT_BIT_STUFF_TERM(bytecount) / 1000UL)) / 1000UL + 5UL)
+#define VRT_FS_NSECS(bytecount) \
+	(9107UL + (8354UL * (VRT_BIT_STUFF_TERM(bytecount) / 1000UL)) / 100UL)
+#define VRT_FS_NSECS_ISO(bytecount, fixed) \
+	((fixed) + (8354UL * (VRT_BIT_STUFF_TERM(bytecount) / 1000UL)) / 100UL)
+
+static uint32_t vrt_xfer_bus_time(const struct uhc_transfer *const xfer,
+				  const enum usb_device_speed speed)
+{
+	bool isoc = xfer->type == USB_EP_TYPE_ISO;
+	uint32_t bc = xfer->mps;
+
+	if (speed == USB_SPEED_SPEED_HS) {
+		return isoc ? VRT_HS_NSECS_ISO(bc) : VRT_HS_NSECS(bc);
+	}
+
+	/* Full speed. Low speed is not supported yet. */
+	if (isoc) {
+		return VRT_FS_NSECS_ISO(bc, USB_EP_DIR_IS_IN(xfer->ep) ? 7268UL : 6265UL);
+	}
+
+	return VRT_FS_NSECS(bc);
+}
+
+/*
  * UVB has no propagation delay, and this timeout is much higher than specified
  * in USB 2.0 (7.1.19.2) So, it should be good enough even under high CPU load.
  */
@@ -62,6 +114,7 @@ struct uhc_vrt_data {
 	k_timeout_t sof_period;
 	uint16_t frame_number;
 	uint8_t req;
+	enum usb_device_speed speed;
 };
 
 enum uhc_vrt_event_type {
@@ -235,13 +288,14 @@ static void vrt_assemble_frame(const struct device *dev)
 	unsigned int n = 0;
 	unsigned int key;
 	uint32_t bm = 0;
+	uint32_t periodic_used = 0;
+	uint32_t budget = FRAME_PERIODIC_BUDGET(priv->speed);
 
 	sys_dlist_init(&frame->list);
 	frame->ptr = NULL;
 	frame->count = 0;
 	key = irq_lock();
 
-	/* TODO: add periodic transfers up to 90% */
 	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
 		uint8_t idx = get_xfer_ep_idx(tmp->ep);
 
@@ -253,10 +307,20 @@ static void vrt_assemble_frame(const struct device *dev)
 		}
 
 		if (tmp->interval) {
+			uint32_t bus_time;
+
 			if (tmp->start_frame != priv->frame_number) {
 				continue;
 			}
 
+			bus_time = vrt_xfer_bus_time(tmp, priv->speed);
+			if (periodic_used + bus_time > budget) {
+				/* Frame's periodic budget is full, retry next frame. */
+				tmp->start_frame = priv->frame_number + 1;
+				continue;
+			}
+
+			periodic_used += bus_time;
 			tmp->start_frame = priv->frame_number + tmp->interval;
 			LOG_DBG("Interrupt transfer s.f. %u f.n. %u interval %u",
 				tmp->start_frame, priv->frame_number, tmp->interval);
@@ -538,11 +602,13 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_FS:
 		type = UHC_EVT_DEV_CONNECTED_FS;
+		priv->speed = USB_SPEED_SPEED_FS;
 		priv->sof_period = K_MSEC(1);
 		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 		break;
 	case UVB_DEVICE_ACT_HS:
 		type = UHC_EVT_DEV_CONNECTED_HS;
+		priv->speed = USB_SPEED_SPEED_HS;
 		priv->sof_period = K_USEC(125);
 		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 		break;
