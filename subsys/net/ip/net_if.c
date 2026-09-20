@@ -497,6 +497,7 @@ enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 	struct net_context *context = net_pkt_context(pkt);
 	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
 	enum net_verdict verdict = NET_OK;
+	net_sa_family_t family;
 	int status = -EIO;
 
 	if (!net_if_flag_is_set(iface, NET_IF_LOWER_UP) ||
@@ -559,12 +560,18 @@ enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 
 	/* If the ll dst address is not set check if it is present in the nbr
 	 * cache.
+	 *
+	 * The family is read once, before the call. A prepare function that
+	 * returns NET_CONTINUE has handed the packet over (IPv6 neighbor
+	 * discovery pending queue, fragmentation): it can be sent, freed and
+	 * its memory reused by another packet before this thread runs again,
+	 * so the packet must not be looked at after the call.
 	 */
-	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
-		verdict = net_ipv6_prepare_for_send(pkt);
-	}
+	family = net_pkt_family(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
+		verdict = net_ipv6_prepare_for_send(pkt);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		verdict = net_ipv4_prepare_for_send(pkt);
 	}
 
