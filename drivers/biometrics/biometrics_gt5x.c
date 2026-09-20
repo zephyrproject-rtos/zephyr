@@ -550,12 +550,12 @@ static int gt5x_get_capabilities(const struct device *dev, struct biometric_capa
 {
 	const struct gt5x_config *cfg = dev->config;
 
-	caps->type = BIOMETRIC_TYPE_FINGERPRINT;
+	caps->supported_modalities = BIOMETRIC_MODALITY_FINGERPRINT;
 	caps->max_templates = cfg->max_templates;
 	caps->template_size = cfg->template_size;
 	caps->storage_modes = BIOMETRIC_STORAGE_DEVICE;
 	caps->enrollment_samples_required = 3;
-
+	caps->async_operations = 0;
 	return 0;
 }
 
@@ -1022,6 +1022,7 @@ static int gt5x_match(const struct device *dev, enum biometric_match_mode mode,
 				result->confidence = 0;
 				result->template_id = template_id;
 				result->image_quality = 0;
+				result->modality = BIOMETRIC_MODALITY_FINGERPRINT;
 			}
 			LOG_INF("Verification successful for ID %u", template_id);
 		} else {
@@ -1040,6 +1041,7 @@ static int gt5x_match(const struct device *dev, enum biometric_match_mode mode,
 				result->confidence = 0;
 				result->template_id = matched_id;
 				result->image_quality = 0;
+				result->modality = BIOMETRIC_MODALITY_FINGERPRINT;
 			}
 			LOG_INF("Identification successful, matched ID %u", matched_id);
 		} else {
