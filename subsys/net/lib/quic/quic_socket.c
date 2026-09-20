@@ -716,6 +716,28 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 	return 0;
 }
 
+static int quic_ctx_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	return quic_conn_poll_prepare_ctx(obj, pfd, pev, pev_end);
+}
+
+static int quic_ctx_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	return quic_conn_poll_update_ctx(obj, pfd, pev);
+}
+
+static int quic_ctx_poll_offload_vmeth(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(fds);
+	ARG_UNUSED(nfds);
+	ARG_UNUSED(timeout);
+
+	return -ENOTSUP;
+}
+
 static int quic_ctx_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	struct quic_context *ctx = obj;
@@ -885,6 +907,28 @@ static int quic_stream_poll_update(struct quic_stream *stream,
 	}
 
 	return 0;
+}
+
+static int quic_stream_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	return quic_stream_poll_prepare(obj, pfd, pev, pev_end);
+}
+
+static int quic_stream_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	return quic_stream_poll_update(obj, pfd, pev);
+}
+
+static int quic_stream_poll_offload_vmeth(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(fds);
+	ARG_UNUSED(nfds);
+	ARG_UNUSED(timeout);
+
+	return -ENOTSUP;
 }
 
 static int quic_stream_ioctl_vmeth(void *obj, unsigned int request, va_list args)
@@ -2276,6 +2320,9 @@ static const struct socket_op_vtable quic_ctx_fd_op_vtable = {
 	.fd_vtable = {
 		.close = quic_ctx_close_vmeth,
 		.ioctl = quic_ctx_ioctl_vmeth,
+		.poll_prepare = quic_ctx_poll_prepare_vmeth,
+		.poll_update = quic_ctx_poll_update_vmeth,
+		.poll_offload = quic_ctx_poll_offload_vmeth,
 	},
 	.accept = quic_accept_ctx,
 	.getsockopt = quic_getsockopt_ctx,
@@ -2288,6 +2335,9 @@ static const struct socket_op_vtable quic_stream_fd_op_vtable = {
 		.write = quic_stream_write_vmeth,
 		.close = quic_stream_close_vmeth,
 		.ioctl = quic_stream_ioctl_vmeth,
+		.poll_prepare = quic_stream_poll_prepare_vmeth,
+		.poll_update = quic_stream_poll_update_vmeth,
+		.poll_offload = quic_stream_poll_offload_vmeth,
 	},
 	.sendto = quic_stream_sendto_ctx,
 	.recvfrom = quic_stream_recvfrom_ctx,
