@@ -1,0 +1,16 @@
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host_disable: {}
+  bluetooth.host_disable.no_close:
+    extra_configs:
+      - CONFIG_TEST_DRIVER_NO_CLOSE=y
