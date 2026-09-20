@@ -168,19 +168,19 @@ ZTEST(mpipe_aud_i2s_src, test_pipeline_starts_i2s_only_while_playing)
 				 (struct mpipe_element *)&sink, NULL));
 
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PAUSED),
-		      MPIPE_STATE_CHANGE_SUCCESS, "negotiation to PAUSED failed");
+		      0, "negotiation to PAUSED failed");
 	zassert_false(sink.started, "TX started before the pipeline reached PLAYING");
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PLAYING),
-		      MPIPE_STATE_CHANGE_SUCCESS);
+		      0);
 	zassert_not_ok(i2s_trigger(src.pool.aud_dev, I2S_DIR_RX, I2S_TRIGGER_START),
 		       "RX was not running after the pipeline reached PLAYING");
 	zassert_true(sink.started, "sync-clocked capture left the TX clock stopped");
 	zassert_equal(sink.count, CONFIG_MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME_COUNT,
 		      "TX did not retain the configured silence prime");
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PAUSED),
-		      MPIPE_STATE_CHANGE_SUCCESS);
+		      0);
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PLAYING),
-		      MPIPE_STATE_CHANGE_SUCCESS, "RX was not stopped and restarted across pause");
+		      0, "RX was not stopped and restarted across pause");
 
 	(void)mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_READY);
 }
