@@ -5133,8 +5133,9 @@ Nuvoton Numicro Numaker Platforms:
     - dts/arm/nuvoton/m*
     - dts/bindings/*/*numicro*
     - dts/bindings/*/*numaker*
-    - drivers/*/*_numicro*
-    - drivers/*/*_numaker*
+    - drivers/*/*numicro*
+    - drivers/*/*numaker*
+    - drivers/*/*/*numaker*
   labels:
     - "platform: Nuvoton Numicro Numaker"
 
