@@ -3,4 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_FAMILY_INFINEON_PSOC4
+	select SPI_INFINEON_PDL_PERIPHERAL_NO_CLOCK_STALL if SPI
+
 rsource "*/Kconfig"
