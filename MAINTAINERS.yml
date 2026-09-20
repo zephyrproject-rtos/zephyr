@@ -3260,7 +3260,8 @@ Espressif Platforms:
     - wmrsouza
     - tmedicci
   files:
-    - drivers/*/*esp32*.c
+    - drivers/*/*esp32*
+    - drivers/*/*/*esp32*
     - boards/espressif/
     - cmake/emu/espressif_qemu.cmake
     - cmake/emu/espressif_qemu/
