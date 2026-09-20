@@ -3557,7 +3557,9 @@ Infineon Platforms:
     - boards/cypress/
     - boards/infineon/
     - drivers/*/*infineon*
+    - drivers/*/*/*infineon*
     - drivers/*/*xmc*
+    - drivers/*/*/*xmc*
     - drivers/sensor/infineon/
     - drivers/wifi/infineon/
     - dts/arm/infineon/
