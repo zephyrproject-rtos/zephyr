@@ -541,6 +541,15 @@ config NOCACHE_MEMORY
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
 
+config NOCACHE_MEMORY_REGION
+	string "Linker memory region for the non-cached sections"
+	depends on NOCACHE_MEMORY
+	help
+	  Name of the linker memory region the non-cached sections are
+	  placed in, for example a region created by a devicetree node
+	  with a "zephyr,memory-region" property. Leave empty to use the
+	  region backing the system RAM.
+
 config FRAME_POINTER
 	bool "Compile the kernel with frame pointers"
 	select OVERRIDE_FRAME_POINTER_DEFAULT
