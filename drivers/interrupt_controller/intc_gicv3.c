@@ -18,6 +18,7 @@
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
 
+#include <errno.h>
 #include <string.h>
 
 #define DT_DRV_COMPAT arm_gic_v3
@@ -384,6 +385,19 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_lis
 	barrier_dsync_fence_full();
 	write_sysreg(sgi_val, ICC_SGI1R);
 	barrier_isync_fence_full();
+}
+
+int gic_raise_sgi_by_affinity(unsigned int sgi_id, uint64_t target_aff)
+{
+	uint32_t aff0 = (uint32_t)MPIDR_AFFLVL(target_aff, 0);
+
+	if (!GIC_IS_SGI(sgi_id) || aff0 >= 16U) {
+		return -EINVAL;
+	}
+
+	gic_raise_sgi(sgi_id, target_aff, (uint16_t)BIT(aff0));
+
+	return 0;
 }
 
 /*
