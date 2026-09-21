@@ -22,6 +22,7 @@ tests:
       - frdm_mcxe31b@w25q64
       - stm32h573i_dk
       - stm32h5f5j_dk
+      - stm32l562e_dk
     integration_platforms:
       - native_sim
       - apollo3p_evb
@@ -30,6 +31,7 @@ tests:
     platform_allow:
       - stm32h573i_dk
       - stm32h5f5j_dk
+      - stm32l562e_dk
     integration_platforms:
       - stm32h573i_dk
     extra_configs:
@@ -38,6 +40,7 @@ tests:
     platform_allow:
       - stm32h573i_dk
       - stm32h5f5j_dk
+      - stm32l562e_dk
     integration_platforms:
       - stm32h573i_dk
     extra_configs:
