@@ -111,3 +111,19 @@ child-binding:
         - "1/2"
         - "3/4"
         - "full"
+
+  child-binding:
+    description: |
+      SAI sub-block Master Clock (MCK) output, exposed as a clock_control
+      provider so a downstream device such as an audio codec can read the
+      live MCK rate through a "clocks" phandle instead of assuming a fixed
+      frequency. The rate is only known once the sub-block has been
+      configured as a clock master (mclk-enable).
+
+      This node's clock specifier takes no cells: each node already refers
+      to exactly one sub-block by construction.
+
+    properties:
+      "#clock-cells":
+        type: int
+        const: 0

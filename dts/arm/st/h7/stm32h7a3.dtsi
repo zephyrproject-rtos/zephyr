@@ -31,6 +31,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+
+				sai2_a_mclk: mclk {
+					#clock-cells = <0>;
+				};
 			};
 
 			sai2_b: sai2b@40015c24 {
@@ -39,6 +43,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+
+				sai2_b_mclk: mclk {
+					#clock-cells = <0>;
+				};
 			};
 		};
 

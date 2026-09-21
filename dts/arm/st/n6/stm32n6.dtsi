@@ -1048,18 +1048,22 @@
 					reg = <0x52005804 0x20>;
 					dmas = <&gpdma1 1 91
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
-					#address-cells = <1>;
-					#size-cells = <0>;
 					status = "disabled";
+
+					sai1_a_mclk: mclk {
+						#clock-cells = <0>;
+					};
 				};
 
 				sai1_b: sai1b@52005824 {
 					reg = <0x52005824 0x20>;
 					dmas = <&gpdma1 0 92
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
-					#address-cells = <1>;
-					#size-cells = <0>;
 					status = "disabled";
+
+					sai1_b_mclk: mclk {
+						#clock-cells = <0>;
+					};
 				};
 			};
 
@@ -1077,18 +1081,22 @@
 					reg = <0x52005c04 0x20>;
 					dmas = <&gpdma1 3 93
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
-					#address-cells = <1>;
-					#size-cells = <0>;
 					status = "disabled";
+
+					sai2_a_mclk: mclk {
+						#clock-cells = <0>;
+					};
 				};
 
 				sai2_b: sai2b@52005c24 {
 					reg = <0x52005c24 0x20>;
 					dmas = <&gpdma1 2 94
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
-					#address-cells = <1>;
-					#size-cells = <0>;
 					status = "disabled";
+
+					sai2_b_mclk: mclk {
+						#clock-cells = <0>;
+					};
 				};
 			};
 
