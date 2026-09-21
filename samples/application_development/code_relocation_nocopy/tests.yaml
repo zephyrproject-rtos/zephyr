@@ -11,6 +11,7 @@ tests:
       - stm32f769i_disco
       - stm32h7b3i_dk
       - stm32h573i_dk
+      - stm32l562e_dk
       - b_u585i_iot02a
       - stm32h745i_disco/stm32h745xx/m7
       - stm32h750b_dk
