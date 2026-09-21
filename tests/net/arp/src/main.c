@@ -83,6 +83,7 @@ static void net_arp_iface_init(struct net_if *iface)
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
+	struct net_if *iface = net_if_lookup_by_dev(dev);
 	struct net_eth_hdr *hdr;
 
 	if (!pkt->buffer) {
@@ -93,9 +94,16 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	hdr = (struct net_eth_hdr *)net_pkt_data(pkt);
 
 	if (net_ntohs(hdr->type) == NET_ETH_PTYPE_ARP) {
-		/* First frag has eth hdr */
-		struct net_arp_hdr *arp_hdr =
-			(struct net_arp_hdr *)pkt->frags->frags;
+		struct net_arp_hdr *arp_hdr;
+
+		if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER)) {
+			/* Ethernet header is pushed in front of the ARP header. */
+			arp_hdr = (struct net_arp_hdr *)(net_pkt_data(pkt) +
+							 sizeof(struct net_eth_hdr));
+		} else {
+			/* Ethernet header is in a fragment of its own. */
+			arp_hdr = (struct net_arp_hdr *)pkt->frags->frags->data;
+		}
 
 		if (net_ntohs(arp_hdr->opcode) == NET_ARP_REPLY) {
 			if (!req_test && pkt != pending_pkt) {
@@ -123,7 +131,8 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			}
 
 		} else if (net_ntohs(arp_hdr->opcode) == NET_ARP_REQUEST) {
-			if (memcmp(&hdr->src, &eth_hwaddr,
+			/* A request we send carries our own link address. */
+			if (memcmp(&hdr->src, net_if_get_link_addr(iface)->addr,
 				   sizeof(struct net_eth_addr))) {
 				char out[sizeof("xx:xx:xx:xx:xx:xx")];
 
@@ -134,7 +143,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 				printk("Invalid src hwaddr %s, should be %s\n",
 				       out,
 				       net_sprint_ll_addr(
-					       (uint8_t *)&eth_hwaddr,
+					       net_if_get_link_addr(iface)->addr,
 					       sizeof(struct net_eth_addr)));
 				send_status = -EINVAL;
 				return send_status;
