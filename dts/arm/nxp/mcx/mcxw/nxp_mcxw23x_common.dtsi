@@ -133,7 +133,13 @@
 	iap: flash-controller@34000 {
 		compatible = "nxp,iap-fmc55";
 		reg = <0x34000 0x18>;
-		ranges;
+		/*
+		 * No "ranges" on the flash controller: the parent peripheral
+		 * node aliases child 0x0 to CPU 0x40000000 (register space).
+		 * Omitting ranges here stops address translation at the
+		 * controller so flash0/boot_rom keep their real flash addresses
+		 * (flash0 -> 0x0) instead of being pushed up to 0x40000000.
+		 */
 		#address-cells = <1>;
 		#size-cells = <1>;
 		status = "okay";
