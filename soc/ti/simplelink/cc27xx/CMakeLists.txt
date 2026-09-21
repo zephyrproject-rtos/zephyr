@@ -11,6 +11,11 @@ zephyr_include_directories(.)
 
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
+if(NOT CONFIG_FLASH AND CONFIG_GPIO)
+zephyr_library()
+zephyr_library_sources(../lpf3_common/ext_flash_dpd.c)
+endif()
+
 zephyr_linker_sources_ifdef(CONFIG_HAS_TI_CCFG SECTIONS ccfg.ld)
 
 zephyr_linker_sources_ifdef(CONFIG_HAS_TI_SCFG SECTIONS scfg.ld)

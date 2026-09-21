@@ -10,6 +10,11 @@ zephyr_include_directories(.)
 
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
+if(NOT CONFIG_FLASH AND CONFIG_GPIO)
+zephyr_library()
+zephyr_library_sources(../lpf3_common/ext_flash_dpd.c)
+endif()
+
 zephyr_linker_sources_ifdef(CONFIG_HAS_TI_CCFG SECTIONS ccfg.ld)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
