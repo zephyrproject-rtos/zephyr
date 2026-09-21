@@ -903,6 +903,24 @@ static int display_esp32_dsi_set_orientation(const struct device *dev,
 	return display_set_orientation(config->panel, orientation);
 }
 
+static int display_esp32_dsi_set_brightness(const struct device *dev, const uint8_t brightness)
+{
+	const struct display_esp32_dsi_config *config = dev->config;
+
+	/* The controller only streams pixels, so the backlight level is the
+	 * panel's to set.
+	 */
+	if (config->panel == NULL) {
+		return -ENOSYS;
+	}
+
+	if (!device_is_ready(config->panel)) {
+		return -ENODEV;
+	}
+
+	return display_set_brightness(config->panel, brightness);
+}
+
 static int display_esp32_dsi_register_event_cb(const struct device *dev, display_event_cb_t cb,
 					       void *user_data, uint32_t event_mask, bool in_isr,
 					       uint32_t *out_reg_handle)
@@ -966,6 +984,7 @@ static DEVICE_API(display, display_esp32_dsi_api) = {
 	.get_capabilities = display_esp32_dsi_get_capabilities,
 	.set_pixel_format = display_esp32_dsi_set_pixel_format,
 	.set_orientation = display_esp32_dsi_set_orientation,
+	.set_brightness = display_esp32_dsi_set_brightness,
 	.register_event_cb = display_esp32_dsi_register_event_cb,
 	.unregister_event_cb = display_esp32_dsi_unregister_event_cb,
 };
