@@ -1331,6 +1331,13 @@
 			resets = <&rctl STM32_RESET(AHB5, 3)>;
 			status = "disabled";
 		};
+
+		dma2d: dma@52001000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x52001000 0x1000>;
+			interrupts = <98 0>;
+			status = "disabled";
+		};
 	};
 
 	iocell: iocell {
