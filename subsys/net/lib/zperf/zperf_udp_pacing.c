@@ -76,9 +76,12 @@ void zperf_udp_pacer_init(struct zperf_udp_pacer *pacer, uint32_t packet_duratio
 	pacer->last_loop_time = start_time;
 
 #ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
-	/* compensate period, by default 10 ticks */
+	/* Compensate period, by default 10 ticks. An unpaced stream (zero
+	 * packet duration) has nothing to compensate and must not divide
+	 * by the duration.
+	 */
 	pacer->ctx = (struct compensate_ctx){
-		.period = 10,
+		.period = (packet_duration_us != 0U) ? 10 : 0,
 		.period_start = -1,
 		.packet_duration_us = packet_duration_us,
 	};

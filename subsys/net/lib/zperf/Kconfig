@@ -32,6 +32,7 @@ config NET_ZPERF_IPERF3
 	depends on NET_TCP
 	select EXPERIMENTAL
 	select JSON_LIBRARY
+	select NET_CONTEXT_RCVTIMEO if NET_NATIVE_TCP
 	help
 	  Interoperate with iperf 3. A test runs over TCP or UDP with a
 	  single stream. Reverse, bidirectional and parallel tests and
@@ -74,6 +75,7 @@ config NET_ZPERF_LEGACY_HEADER_COMPAT
 
 config ZPERF_SESSION_PER_THREAD
 	bool "Run each session in a separate thread"
+	depends on NET_ZPERF_IPERF2
 	select EVENTS
 	help
 	  Each session is started in its own thread. This means
