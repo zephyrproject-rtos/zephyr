@@ -76,6 +76,22 @@ def zephyr_base_abs_path(dir: Path, file: Path) -> Path:
     return dir / file if dir.is_absolute() else ZEPHYR_BASE / dir / file
 
 
+def gather_runner_policy_files(cache, processed_socs, processed_boards, check_files):
+    for directory in cache.get_list('SOC_DIRECTORIES'):
+        soc_yml = zephyr_base_abs_path(Path(directory), Path('soc.yml'))
+        soc_dir = soc_yml.parent.resolve()
+        if soc_dir not in processed_socs:
+            check_files.append(SocBoardFilesProcessing(soc_yml))
+            processed_socs.add(soc_dir)
+
+    for directory in cache.get_list('BOARD_DIRECTORIES'):
+        board_yml = zephyr_base_abs_path(Path(directory), Path('board.yml'))
+        board_dir = board_yml.parent.resolve()
+        if board_dir not in processed_boards:
+            check_files.append(SocBoardFilesProcessing(board_yml, True))
+            processed_boards.add(board_dir)
+
+
 def import_from_path(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
@@ -189,7 +205,9 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
     # interfere with other images if they run one per time an image is flashed.
     used_cmds = []
 
-    # Holds a set of processed board names for flash running information.
+    # Holds the SoC and board directories already gathered for flash
+    # running information, so that each is only processed once.
+    processed_socs = set()
     processed_boards = set()
 
     # Holds a dictionary of board image flash counts, the first element is
@@ -244,17 +262,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
             # Load board flash runner configuration (if it exists) and store
             # single-use commands in a dictionary so that they get executed
             # once per unique board name.
-            for directory in cache.get_list('SOC_DIRECTORIES'):
-                if directory not in processed_boards:
-                    check_files.append(SocBoardFilesProcessing(
-                        zephyr_base_abs_path(Path(directory), Path('soc.yml'))))
-                    processed_boards.add(directory)
-
-            for directory in cache.get_list('BOARD_DIRECTORIES'):
-                if directory not in processed_boards:
-                    check_files.append(SocBoardFilesProcessing(
-                        zephyr_base_abs_path(Path(directory), Path('board.yml')), True))
-                    processed_boards.add(directory)
+            gather_runner_policy_files(cache, processed_socs, processed_boards, check_files)
 
         for check in check_files:
             try:
@@ -279,6 +287,8 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
                         highest_entry = check
 
             except FileNotFoundError:
+                command.dbg(f'no runner policy file at {check.filename}',
+                            level=Verbosity.DBG_MORE)
                 continue
 
         if highest_entry is not None:
