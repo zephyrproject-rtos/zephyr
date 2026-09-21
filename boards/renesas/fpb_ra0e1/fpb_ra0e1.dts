@@ -48,6 +48,7 @@
 
 	aliases {
 		led0 = &led1;
+		i2c-0 = &i2c20;
 	};
 };
 
@@ -90,4 +91,11 @@
 &uart2 {
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+};
+
+&i2c20 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c20_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
