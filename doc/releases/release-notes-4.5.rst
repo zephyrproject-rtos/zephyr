@@ -848,6 +848,10 @@ New APIs and options
     receive queue, so that a sender which supports SACK can resend only the
     missing data. Incoming SACK blocks are not yet used when retransmitting.
   * :kconfig:option:`CONFIG_PTP_NETWORK_MODE_HYBRID`
+  * Add experimental iperf3 support to zperf
+    (:kconfig:option:`CONFIG_NET_ZPERF_IPERF3`), chosen in place of iPerf 2
+    (:kconfig:option:`CONFIG_NET_ZPERF_IPERF2`). The zperf API and shell commands are the
+    same for both. See :ref:`zperf_iperf3`.
   * Add an SNTP server (:kconfig:option:`CONFIG_SNTP_SERVER`) that answers time
     queries on UDP port 123 on every enabled address family. The application
     sets the system clock and then tells the server about its clock source with
