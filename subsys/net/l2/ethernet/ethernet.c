@@ -707,6 +707,9 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint16_t ptype = htons(net_pkt_ll_proto_type(pkt));
 	struct net_pkt *orig_pkt = pkt;
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
+	struct in_addr arp_dst = {0};
+#endif
 	int ret;
 
 	if (!api) {
@@ -745,6 +748,10 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 				 */
 				NET_DBG("Sending arp pkt %p (orig %p) to iface %d (%p)",
 					arp, pkt, net_if_get_by_iface(iface), iface);
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
+				/* Saved before the Ethernet header is added. */
+				memcpy(&arp_dst, NET_ARP_HDR(arp)->dst_ipaddr, sizeof(arp_dst));
+#endif
 				pkt = arp;
 				ptype = htons(net_pkt_ll_proto_type(pkt));
 			} else if (ret == NET_ARP_PKT_QUEUED) {
@@ -825,9 +832,10 @@ arp_error:
 		/* The caller's reference on orig_pkt is still held and
 		 * net_if releases it on error. Clearing the pending entry
 		 * releases the reference ARP took when it queued orig_pkt.
+		 * The entry is keyed on the packet's interface, which may
+		 * be a VLAN interface on top of this one.
 		 */
-		if (net_arp_clear_pending(
-			    iface, (struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+		if (net_arp_clear_pending(net_pkt_iface(orig_pkt), &arp_dst)) {
 			NET_DBG("Could not find pending ARP entry");
 		}
 		/* Free the ARP request */
