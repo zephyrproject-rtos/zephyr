@@ -7,6 +7,22 @@
 #include <st/wba/stm32wba55.dtsi>
 
 / {
+	cpus {
+		cpu@0 {
+			/* Do not add &standby here since CONFIG_PM_S2RAM is disabled by default */
+			cpu-power-states = <&stop0 &stop1 &stop2>;
+		};
+
+		power-states {
+			stop2: state3 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <3>;
+				min-residency-us = <900>;
+			};
+		};
+	};
+
 	soc {
 		compatible = "st,stm32wba65", "st,stm32wba", "simple-bus";
 
