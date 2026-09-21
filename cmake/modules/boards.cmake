@@ -128,14 +128,19 @@ if(DEFINED ZEPHYR_BOARD_ALIASES)
 endif()
 
 include(${ZEPHYR_BASE}/boards/deprecated.cmake)
-if(${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED)
-  set(BOARD_DEPRECATED ${BOARD}/${BOARD_QUALIFIERS} CACHE STRING "Deprecated BOARD, provided by user")
+if("${BOARD_QUALIFIERS}" STREQUAL "")
+  set(board_deprecated_key ${BOARD})
+else()
+  set(board_deprecated_key ${BOARD}/${BOARD_QUALIFIERS})
+endif()
+if(${board_deprecated_key}_DEPRECATED)
+  set(BOARD_DEPRECATED ${board_deprecated_key} CACHE STRING "Deprecated BOARD, provided by user")
   message(WARNING
     "Deprecated BOARD=${BOARD_DEPRECATED} specified, "
-    "board automatically changed to: ${${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED}."
+    "board automatically changed to: ${${board_deprecated_key}_DEPRECATED}."
   )
   parse_board_components(
-    ${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED
+    ${board_deprecated_key}_DEPRECATED
     BOARD BOARD_DEPRECATED_REVISION BOARD_QUALIFIERS
   )
   if(DEFINED BOARD_DEPRECATED_REVISION)
