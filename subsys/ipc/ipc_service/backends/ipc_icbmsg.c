@@ -62,7 +62,6 @@
 #include <zephyr/cache.h>
 
 #if defined(CONFIG_ARCH_POSIX)
-#include <soc.h>
 #define MAYBE_CONST
 #else
 #define MAYBE_CONST const
@@ -1326,17 +1325,6 @@ static int open(const struct device *instance)
  */
 static int backend_init(const struct device *instance)
 {
-#if defined(CONFIG_ARCH_POSIX)
-	MAYBE_CONST struct icbmsg_config *conf = (struct icbmsg_config *)instance->config;
-
-	native_emb_addr_remap((void **)&conf->tx.blocks_ptr);
-	native_emb_addr_remap((void **)&conf->rx.blocks_ptr);
-	native_emb_addr_remap((void **)&conf->tx_msg_q.prod_shmq);
-	native_emb_addr_remap((void **)&conf->tx_msg_q.cons_shmq);
-	native_emb_addr_remap((void **)&conf->rx_msg_q.prod_shmq);
-	native_emb_addr_remap((void **)&conf->rx_msg_q.cons_shmq);
-#endif
-
 #if defined(CONFIG_STATS) || defined(CONFIG_MULTITHREADING)
 	struct icbmsg_data *data = instance->data;
 #endif
@@ -1378,6 +1366,44 @@ const static struct ipc_service_backend backend_ops = {
 #define CACHE_ALIGN(i, x) ROUND_UP((x), GET_CACHE_ALIGNMENT(i))
 
 #define CACHE_DOWN_ALIGN(i, x) ROUND_DOWN((x), GET_CACHE_ALIGNMENT(i))
+
+#if defined(CONFIG_ARCH_POSIX)
+static void posix_address_remap(const struct device *instance, char *tx_shm, char *rx_shm)
+{
+	struct icbmsg_config *conf = (struct icbmsg_config *)instance->config;
+	uintptr_t off0, off1;
+
+	off0 = (uintptr_t)conf->tx_msg_q.cons_shmq - (uintptr_t)conf->tx_msg_q.prod_shmq;
+	off1 = (uintptr_t)conf->tx.blocks_ptr - (uintptr_t)conf->tx_msg_q.prod_shmq;
+	conf->tx_msg_q.prod_shmq = (struct icbmsg_shm_q *)(uintptr_t)tx_shm;
+	conf->tx_msg_q.cons_shmq = (struct icbmsg_shm_q *)((uintptr_t)tx_shm + off0);
+	conf->tx.blocks_ptr = (uint8_t *)((uintptr_t)tx_shm + off1);
+
+	off0 = (uintptr_t)conf->rx_msg_q.cons_shmq - (uintptr_t)conf->rx_msg_q.prod_shmq;
+	off1 = (uintptr_t)conf->rx.blocks_ptr - (uintptr_t)conf->rx_msg_q.prod_shmq;
+	conf->rx_msg_q.prod_shmq = (struct icbmsg_shm_q *)(uintptr_t)rx_shm;
+	conf->rx_msg_q.cons_shmq = (struct icbmsg_shm_q *)((uintptr_t)rx_shm + off0);
+	conf->rx.blocks_ptr = (uint8_t *)((uintptr_t)rx_shm + off1);
+}
+
+#define BACKEND_INIT_DEFINE(i)                                                                     \
+	static int backend_init##i(const struct device *instance)                                  \
+	{                                                                                          \
+		extern char IPC##i##_shm_buffer_tx[];                                              \
+		extern char IPC##i##_shm_buffer_rx[];                                              \
+		char *tx = IS_ENABLED(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP) ?                   \
+			IPC##i##_shm_buffer_tx : IPC##i##_shm_buffer_rx;                           \
+		char *rx = IS_ENABLED(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP) ?                   \
+			IPC##i##_shm_buffer_rx : IPC##i##_shm_buffer_tx;                           \
+		posix_address_remap(instance, tx, rx);                                             \
+		return backend_init(instance);                                                     \
+	}                                                                                          \
+
+#define BACKEND_INIT_PTR(i) &backend_init##i
+#else /* CONFIG_ARCH_POSIX */
+#define BACKEND_INIT_DEFINE(i)
+#define BACKEND_INIT_PTR(i) &backend_init
+#endif /* CONFIG_ARCH_POSIX */
 
 /**
  * Size of a single shared-memory message queue at the start of each region.
@@ -1432,6 +1458,7 @@ const static struct ipc_service_backend backend_ops = {
 #define GET_BLOCKS_ADDR(i, dir) GET_MEM_ADDR_INST(i, dir) + GET_BLOCKS_OFFSET(i, dir)
 
 #define DEFINE_BACKEND_DEVICE(i)                                                                   \
+	BACKEND_INIT_DEFINE(i)                                                                     \
 	static struct icbmsg_data icbmsg_data_##i;                                                 \
 	static MAYBE_CONST struct icbmsg_config icbmsg_config_##i = {                              \
 		.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),                                           \
@@ -1484,7 +1511,7 @@ const static struct ipc_service_backend backend_ops = {
 		     "RX region is too small for the message queues");                             \
 	BUILD_ASSERT(DT_INST_PROP(i, rx_blocks) <= 32, "Too many RX blocks");                      \
 	BUILD_ASSERT(DT_INST_PROP(i, tx_blocks) <= 32, "Too many TX blocks");                      \
-	DEVICE_DT_INST_DEFINE(i, &backend_init, NULL, &icbmsg_data_##i, &icbmsg_config_##i,        \
+	DEVICE_DT_INST_DEFINE(i, BACKEND_INIT_PTR(i), NULL, &icbmsg_data_##i, &icbmsg_config_##i,  \
 			      POST_KERNEL, CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY, &backend_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)

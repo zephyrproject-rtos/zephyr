@@ -25,3 +25,15 @@
 	char IPC##i##_shm_buffer[DT_REG_SIZE(DT_INST_PHANDLE(i, memory_region))];
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_BUFFER)
+
+#undef DEFINE_BACKEND_BUFFER
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT zephyr_ipc_icbmsg
+
+#define DEFINE_BACKEND_BUFFER(i)                                                              \
+	NATIVE_SIMULATOR_IF_DATA                                                              \
+	char IPC##i##_shm_buffer_rx[DT_REG_SIZE(DT_INST_PHANDLE(i, rx_region))] __aligned(8); \
+	NATIVE_SIMULATOR_IF_DATA                                                              \
+	char IPC##i##_shm_buffer_tx[DT_REG_SIZE(DT_INST_PHANDLE(i, tx_region))] __aligned(8);
+
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_BUFFER)
