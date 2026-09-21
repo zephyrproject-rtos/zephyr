@@ -781,7 +781,13 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 		rx_bytes = data->async.rx_len;
 	}
 
-	data->async.rx_counter = data->async.rx_offset + rx_bytes;
+	/*
+	 * The EOF descriptor length is the absolute number of bytes received
+	 * into the buffer since it was armed. Do not add rx_offset: a preceding
+	 * idle-timeout notification may already have delivered a prefix, and the
+	 * offset is only used to compute the delta below.
+	 */
+	data->async.rx_counter = rx_bytes;
 
 	/*
 	 * If buffer is not full and no timeout is configured, reload DMA to
