@@ -2,6 +2,7 @@
  * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
  * Copyright (c) 2022 T-Mobile USA, Inc.
  * Copyright (c) 2025 Byteflies NV
+ * Copyright (c) 2026 Antmicro <antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -348,47 +349,6 @@ static DEVICE_API(sensor, tmp108_driver_api) = {
 #endif
 };
 
-#ifdef CONFIG_TMP108_TRIGGER
-static int setup_interrupts(const struct device *dev)
-{
-	struct tmp108_data *drv_data = dev->data;
-	const struct tmp108_config *config = dev->config;
-	const struct gpio_dt_spec *alert_gpio = &config->alert_gpio;
-	int result;
-
-	if (!device_is_ready(alert_gpio->port)) {
-		LOG_ERR_DEVICE_NOT_READY(alert_gpio->port);
-		return -ENODEV;
-	}
-
-	result = gpio_pin_configure_dt(alert_gpio, GPIO_INPUT);
-
-	if (result < 0) {
-		return result;
-	}
-
-	gpio_init_callback(&drv_data->temp_alert_gpio_cb,
-			   tmp108_trigger_handle_alert,
-			   BIT(alert_gpio->pin));
-
-	result = gpio_add_callback(alert_gpio->port,
-				   &drv_data->temp_alert_gpio_cb);
-
-	if (result < 0) {
-		return result;
-	}
-
-	result = gpio_pin_interrupt_configure_dt(alert_gpio,
-						 GPIO_INT_EDGE_BOTH);
-
-	if (result < 0) {
-		return result;
-	}
-
-	return 0;
-}
-#endif
-
 static int tmp108_init(const struct device *dev)
 {
 	const struct tmp108_config *cfg = dev->config;
@@ -405,7 +365,7 @@ static int tmp108_init(const struct device *dev)
 	/* save this driver instance for passing to other functions */
 	drv_data->tmp108_dev = dev;
 
-	result = setup_interrupts(dev);
+	result = tmp108_setup_trigger(dev);
 
 	if (result < 0) {
 		return result;

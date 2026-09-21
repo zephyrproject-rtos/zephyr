@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Arrow Electronics.
+ * Copyright (c) 2026 Antmicro <antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +28,7 @@ LOG_MODULE_REGISTER(TMP1075, CONFIG_SENSOR_LOG_LEVEL);
 #define I2C_REG_ADDR_OFFSET   0
 #define I2C_WRITE_DATA_OFFSET 1
 
-static int tmp1075_reg_read(const struct tmp1075_config *cfg, uint8_t reg, uint16_t *val)
+int tmp1075_reg_read(const struct tmp1075_config *cfg, uint8_t reg, uint16_t *val)
 {
 	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, sizeof(*val)) < 0) {
 		return -EIO;
@@ -205,44 +206,6 @@ static DEVICE_API(sensor, tmp1075_driver_api) = {
 #endif
 };
 
-#ifdef CONFIG_TMP1075_TRIGGER
-static int setup_interrupts(const struct device *dev)
-{
-	struct tmp1075_data *drv_data = dev->data;
-	const struct tmp1075_config *config = dev->config;
-	const struct gpio_dt_spec *alert_gpio = &config->alert_gpio;
-	int result;
-
-	if (!gpio_is_ready_dt(alert_gpio)) {
-		LOG_ERR("gpio controller %s not ready", alert_gpio->port->name);
-		return -ENODEV;
-	}
-
-	result = gpio_pin_configure_dt(alert_gpio, GPIO_INPUT);
-
-	if (result < 0) {
-		return result;
-	}
-
-	gpio_init_callback(&drv_data->temp_alert_gpio_cb, tmp1075_trigger_handle_alert,
-			   BIT(alert_gpio->pin));
-
-	result = gpio_add_callback(alert_gpio->port, &drv_data->temp_alert_gpio_cb);
-
-	if (result < 0) {
-		return result;
-	}
-
-	result = gpio_pin_interrupt_configure_dt(alert_gpio, GPIO_INT_EDGE_BOTH);
-
-	if (result < 0) {
-		return result;
-	}
-
-	return 0;
-}
-#endif
-
 static int tmp1075_init(const struct device *dev)
 {
 	const struct tmp1075_config *cfg = dev->config;
@@ -253,7 +216,7 @@ static int tmp1075_init(const struct device *dev)
 		return -EINVAL;
 	}
 #ifdef CONFIG_TMP1075_TRIGGER
-	int result = setup_interrupts(dev);
+	int result = tmp1075_setup_trigger(dev);
 
 	if (result < 0) {
 		LOG_ERR("Couldn't setup interrupts");
