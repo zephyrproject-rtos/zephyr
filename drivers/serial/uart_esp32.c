@@ -755,6 +755,16 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	size_t rx_bytes;
 	unsigned int key = irq_lock();
 
+	if (data->async.rx_buf == NULL || data->async.rx_len == 0U) {
+		/*
+		 * A DMA completion can arrive after the buffer was released and
+		 * no successor is armed. There is nothing to notify and no valid
+		 * buffer to invalidate.
+		 */
+		irq_unlock(key);
+		return;
+	}
+
 	/*
 	 * Read actual transferred bytes from DMA descriptor.
 	 * Direct LL calls used because this ISR context requires IRAM-safe code.
@@ -952,6 +962,11 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	}
 
 	key = irq_lock();
+
+	if (data->async.rx_buf == NULL || data->async.rx_len == 0U) {
+		irq_unlock(key);
+		return;
+	}
 
 	/* Update rx_counter with actual DMA progress */
 	data->async.rx_counter = rx_count;
