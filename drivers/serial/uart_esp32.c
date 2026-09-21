@@ -136,6 +136,7 @@ struct uart_esp32_async_data {
 	size_t rx_timeout;
 	volatile size_t rx_counter;
 	size_t rx_offset;
+	uint32_t rx_generation;
 	uart_callback_t cb;
 	void *user_data;
 };
@@ -740,17 +741,67 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 #endif
 
 #if CONFIG_UART_ASYNC_API
+
+/*
+ * Number of bytes received into the armed RX buffer, derived from the
+ * successful-EOF descriptor. A buffer larger than one descriptor spans several
+ * descriptors, so the position is the EOF descriptor's buffer address relative
+ * to rx_buf plus its length. A descriptor that does not describe the current
+ * buffer falls back to its raw length, clamped to the buffer.
+ */
+static size_t uart_esp32_async_rx_position(const struct device *dev)
+{
+	const struct uart_esp32_config *config = dev->config;
+	struct uart_esp32_data *data = dev->data;
+	gdma_hal_context_t *dma_hal = config->dma_dev->data;
+	dma_descriptor_t *desc;
+	uintptr_t base = (uintptr_t)data->async.rx_buf;
+	uintptr_t address;
+	size_t position;
+
+	desc = (dma_descriptor_t *)gdma_ll_rx_get_success_eof_desc_addr(dma_hal->dev,
+									config->rx_dma_channel / 2);
+	if (desc == NULL) {
+		return data->async.rx_len;
+	}
+
+	/*
+	 * The descriptor length only covers one descriptor, so relate it to the
+	 * start of the armed buffer to support buffers split across several
+	 * descriptors. A descriptor that does not belong to the buffer, or a
+	 * length past its size, is ignored and the raw length is used instead.
+	 * The result is clamped to the buffer so a stale descriptor can never
+	 * make the caller underflow.
+	 */
+	sys_cache_data_invd_range(desc, sizeof(*desc));
+	address = (uintptr_t)desc->buffer;
+	position = desc->dw0.length;
+	if (address >= base && address < base + data->async.rx_len &&
+	    desc->dw0.length <= desc->dw0.size) {
+		size_t candidate = (size_t)(address - base) + desc->dw0.length;
+
+		if (candidate <= data->async.rx_len) {
+			position = candidate;
+		}
+	}
+	return position <= data->async.rx_len ? position : data->async.rx_len;
+}
+
 static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void *user_data,
 					     uint32_t channel, int status)
 {
 	const struct device *uart_dev = user_data;
 	const struct uart_esp32_config *config = uart_dev->config;
 	struct uart_esp32_data *data = uart_dev->data;
-	gdma_hal_context_t *dma_hal = dma_dev->data;
 	struct uart_event evt = {0};
-	dma_descriptor_t *desc;
 	size_t rx_bytes;
+	uint32_t generation;
 	unsigned int key = irq_lock();
+
+	if (status == DMA_STATUS_BLOCK) {
+		irq_unlock(key);
+		return;
+	}
 
 	if (data->async.rx_buf == NULL || data->async.rx_len == 0U) {
 		irq_unlock(key);
@@ -758,25 +809,18 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	}
 
 	/*
-	 * Read actual transferred bytes from DMA descriptor.
-	 * Direct LL calls used because this ISR context requires IRAM-safe code.
-	 * Note: We SET rx_counter (not add) because the UART ISR also increments
-	 * rx_counter on RXFIFO_FULL interrupts, and the DMA descriptor contains
-	 * the authoritative byte count.
+	 * Read the absolute number of bytes received into the armed buffer from
+	 * the successful-EOF descriptor. It is not the descriptor length alone:
+	 * a large buffer is split across several descriptors, and the
+	 * idle-timeout path may already have reported a prefix.
 	 */
-	desc = (dma_descriptor_t *)gdma_ll_rx_get_success_eof_desc_addr(dma_hal->dev,
-									config->rx_dma_channel / 2);
-	if (desc) {
-		rx_bytes = desc->dw0.length;
-	} else {
-		/* Fallback to full buffer if descriptor unavailable */
-		rx_bytes = data->async.rx_len;
-	}
+	rx_bytes = uart_esp32_async_rx_position(uart_dev);
+	generation = data->async.rx_generation;
 
-	data->async.rx_counter = data->async.rx_offset + rx_bytes;
+	data->async.rx_counter = rx_bytes;
 
 	/*
-	 * If buffer is not full and no timeout is configured, reload DMA to
+	 * If the buffer is not full and no timeout is configured, reload DMA to
 	 * continue receiving into the same buffer. The timeout callback will
 	 * handle notifications for partial data.
 	 */
@@ -792,19 +836,31 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 		return;
 	}
 
-	/* Notify RX_RDY */
-	sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-					    data->async.rx_counter - data->async.rx_offset);
+	/* Notify RX_RDY for the bytes not yet reported by the timeout path */
+	if (data->async.rx_offset < data->async.rx_counter) {
+		size_t length = data->async.rx_counter - data->async.rx_offset;
 
-	evt.type = UART_RX_RDY;
-	evt.data.rx.buf = data->async.rx_buf;
-	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
-	evt.data.rx.offset = data->async.rx_offset;
+		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
+						    length);
 
-	if (data->async.cb && evt.data.rx.len) {
-		data->async.cb(uart_dev, &evt, data->async.user_data);
+		evt.type = UART_RX_RDY;
+		evt.data.rx.buf = data->async.rx_buf;
+		evt.data.rx.len = length;
+		evt.data.rx.offset = data->async.rx_offset;
+		data->async.rx_offset = data->async.rx_counter;
+		if (data->async.cb) {
+			data->async.cb(uart_dev, &evt, data->async.user_data);
+		}
+		if (data->async.rx_generation != generation) {
+			irq_unlock(key);
+			return;
+		}
 	}
 
+	/* EOF may precede the FIFO interrupt for bytes already reported. */
+	if (uart_hal_get_rxfifo_len(&data->hal) == 0U) {
+		uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_FULL);
+	}
 	data->async.rx_offset = 0;
 	data->async.rx_counter = 0;
 
@@ -814,15 +870,25 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	if (data->async.cb) {
 		data->async.cb(uart_dev, &evt, data->async.user_data);
 	}
+	if (data->async.rx_generation != generation) {
+		irq_unlock(key);
+		return;
+	}
 
 	/* Load next buffer and request another */
 	data->async.rx_buf = data->async.rx_next_buf;
 	data->async.rx_len = data->async.rx_next_len;
 	data->async.rx_next_buf = NULL;
 	data->async.rx_next_len = 0U;
+	data->async.rx_generation++;
+	generation = data->async.rx_generation;
 	evt.type = UART_RX_BUF_REQUEST;
 	if (data->async.cb) {
 		data->async.cb(uart_dev, &evt, data->async.user_data);
+	}
+	if (data->async.rx_generation != generation) {
+		irq_unlock(key);
+		return;
 	}
 
 	/* Notify RX_DISABLED when there is no buffer */
@@ -938,14 +1004,15 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	const struct uart_esp32_config *config = data->uart_dev->config;
 	struct dma_status dma_status = {0};
 	struct uart_event evt = {0};
+	uint8_t *snapshot_buf = data->async.rx_buf;
+	uint32_t snapshot_generation = data->async.rx_generation;
 	size_t rx_count;
 	unsigned int key;
 
 	/*
-	 * Get actual transferred bytes from DMA descriptor.
-	 * In DMA mode, data goes directly to memory via UHCI+GDMA, bypassing
-	 * the UART FIFO. So rx_counter (updated by FIFO Full ISR) is not reliable.
-	 * Instead, read total_copied from DMA status.
+	 * Read DMA progress for timeout notifications. The FIFO interrupt
+	 * schedules this work, while its counter is retained for RX disable
+	 * before the open descriptor has written back its received length.
 	 */
 	if (dma_get_status(config->dma_dev, config->rx_dma_channel, &dma_status) == 0) {
 		rx_count = dma_status.total_copied;
@@ -956,24 +1023,43 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 
 	key = irq_lock();
 
-	if (data->async.rx_buf == NULL || data->async.rx_len == 0U) {
+	/*
+	 * This work may have been scheduled for a previous buffer and run after
+	 * the DMA completion released it or the consumer re-armed. A running
+	 * work item cannot be cancelled, so drop it when the session moved on.
+	 */
+	if (data->async.rx_generation != snapshot_generation ||
+	    data->async.rx_buf != snapshot_buf || data->async.rx_buf == NULL ||
+	    data->async.rx_len == 0U) {
 		irq_unlock(key);
 		return;
 	}
 
-	/* Update rx_counter with actual DMA progress */
-	data->async.rx_counter = rx_count;
-
-	evt.type = UART_RX_RDY;
-	evt.data.rx.buf = data->async.rx_buf;
-	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
-	evt.data.rx.offset = data->async.rx_offset;
-
-	if (data->async.cb && evt.data.rx.len) {
-		data->async.cb(data->uart_dev, &evt, data->async.user_data);
+	if (rx_count > data->async.rx_len) {
+		rx_count = data->async.rx_len;
 	}
 
-	data->async.rx_offset = data->async.rx_counter;
+	if (rx_count > data->async.rx_offset) {
+		size_t length = rx_count - data->async.rx_offset;
+
+		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
+						    length);
+
+		data->async.rx_counter = rx_count;
+		evt.type = UART_RX_RDY;
+		evt.data.rx.buf = data->async.rx_buf;
+		evt.data.rx.len = length;
+		evt.data.rx.offset = data->async.rx_offset;
+		data->async.rx_offset = rx_count;
+		if (data->async.cb) {
+			data->async.cb(data->uart_dev, &evt, data->async.user_data);
+		}
+		if (data->async.rx_generation != snapshot_generation) {
+			irq_unlock(key);
+			return;
+		}
+	}
+
 	k_work_cancel_delayable(&data->async.rx_timeout_work);
 	irq_unlock(key);
 }
@@ -1107,6 +1193,11 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 		return -ENOTSUP;
 	}
 
+	if (buf == NULL || len == 0U || len > UHCI_LL_MAX_RECEIVE_PACKET_THRESHOLD) {
+		LOG_ERR("Invalid Rx buffer or length");
+		return -EINVAL;
+	}
+
 	err = dma_get_status(config->dma_dev, config->rx_dma_channel, &dma_status);
 	if (err) {
 		LOG_ERR("Unable to get Rx status (%d)", err);
@@ -1123,6 +1214,15 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	data->async.rx_buf = buf;
 	data->async.rx_len = len;
 	data->async.rx_timeout = timeout;
+	/*
+	 * A new session starts a new buffer from the beginning: a prefix
+	 * reported by the idle-timeout path for the previous buffer must not
+	 * leak into this one, and any work still scheduled for the previous
+	 * buffer must be invalidated.
+	 */
+	data->async.rx_offset = 0;
+	data->async.rx_counter = 0;
+	data->async.rx_generation++;
 
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.dma_callback = uart_esp32_dma_rx_done;
@@ -1136,6 +1236,8 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	err = dma_config(config->dma_dev, config->rx_dma_channel, &dma_cfg);
 	if (err) {
 		LOG_ERR("Error configuring Rx DMA (%d)", err);
+		data->async.rx_buf = NULL;
+		data->async.rx_len = 0U;
 		goto unlock;
 	}
 
@@ -1152,9 +1254,12 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	err = dma_start(config->dma_dev, config->rx_dma_channel);
 	if (err) {
 		LOG_ERR("Error starting Rx DMA (%d)", err);
+		uart_esp32_irq_rx_disable(dev);
 #ifdef CONFIG_PM
 		uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
 #endif
+		data->async.rx_buf = NULL;
+		data->async.rx_len = 0U;
 		goto unlock;
 	}
 
@@ -1193,6 +1298,10 @@ static int uart_esp32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, s
 {
 	struct uart_esp32_data *data = dev->data;
 
+	if (buf == NULL || len == 0U || len > UHCI_LL_MAX_RECEIVE_PACKET_THRESHOLD) {
+		return -EINVAL;
+	}
+
 	data->async.rx_next_buf = buf;
 	data->async.rx_next_len = len;
 
@@ -1206,6 +1315,7 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 	unsigned int key = irq_lock();
 	int err = 0;
 	struct uart_event evt = {0};
+	size_t rx_count;
 
 	k_work_cancel_delayable(&data->async.rx_timeout_work);
 
@@ -1227,15 +1337,26 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 #ifdef CONFIG_PM
 	uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
 #endif
+	data->async.rx_generation++;
+	rx_count = data->async.rx_counter;
+	if (rx_count > data->async.rx_len) {
+		rx_count = data->async.rx_len;
+	}
 
 	/*If any bytes have been received notify RX_RDY*/
-	evt.type = UART_RX_RDY;
-	evt.data.rx.buf = data->async.rx_buf;
-	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
-	evt.data.rx.offset = data->async.rx_offset;
+	if (data->async.rx_offset < rx_count) {
+		size_t length = rx_count - data->async.rx_offset;
 
-	if (data->async.cb && evt.data.rx.len) {
-		data->async.cb(dev, &evt, data->async.user_data);
+		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
+						    length);
+
+		evt.type = UART_RX_RDY;
+		evt.data.rx.buf = data->async.rx_buf;
+		evt.data.rx.len = length;
+		evt.data.rx.offset = data->async.rx_offset;
+		if (data->async.cb) {
+			data->async.cb(dev, &evt, data->async.user_data);
+		}
 	}
 
 	data->async.rx_offset = 0;
