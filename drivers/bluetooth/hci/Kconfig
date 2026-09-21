@@ -114,7 +114,6 @@ config BT_BLUENRG_ACI
 	bool "ACI message with BlueNRG-based devices"
 	depends on BT_SPI_BLUENRG
 	select BT_HCI_SET_PUBLIC_ADDR
-	select BT_HCI_SETUP if !BT_HCI_RAW
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
