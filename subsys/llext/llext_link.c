@@ -408,6 +408,18 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		const void *link_addr;
 
 		switch (stb) {
+		case STB_WEAK:
+			if (sym.st_shndx != SHN_UNDEF) {
+				/* Weak symbol defined in this module: relocate like STB_LOCAL */
+				ret = arch_elf_relocate_local(ldr, ext, &rela, &sym, rel_addr,
+							      ldr_parm);
+				if (!link_err) {
+					link_err = ret;
+				}
+				break;
+			}
+			/* Undefined weak symbol: resolve like STB_GLOBAL, may stay unresolved */
+			__fallthrough;
 		case STB_GLOBAL:
 			/* First try the global symbol table */
 			link_addr = llext_find_sym(NULL,
