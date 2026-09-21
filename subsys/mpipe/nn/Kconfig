@@ -1,0 +1,142 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MPIPE_NN
+	bool "Neural network plugin"
+	help
+	  Enable the neural network plugin: elements that convert media buffers to
+	  tensors, run neural network inference through a pluggable backend
+	  and decode the resulting tensors into application-level results.
+
+if MPIPE_NN
+
+config MPIPE_NN_MAX_IO_TENSORS
+	int "Maximum input/output tensors of a model"
+	range 1 16
+	default 4
+	help
+	  Size of the per-direction tensor descriptor set. Four covers the
+	  common detection post-processing convention (boxes, classes,
+	  scores, count).
+
+config MPIPE_NN_CONVERTER
+	bool "Video frame to tensor converter element"
+	help
+	  Element converting a video frame into a model input tensor in one
+	  pass: nearest-neighbor scaling, color conversion and quantization.
+
+if MPIPE_NN_CONVERTER
+
+config MPIPE_NN_CONVERTER_POOL_NUM
+	int "Number of tensor buffers of the converter"
+	range 1 8
+	default 2
+	help
+	  Tensors in flight between the converter and the inference element.
+	  A frame arriving while all are held downstream is dropped.
+
+config MPIPE_NN_CONVERTER_MAX_TENSOR_SIZE
+	int "Maximum output tensor size of the converter (in bytes)"
+	range 1 16777216
+	default 16384
+	help
+	  Upper bound of one converted tensor; sizes the static buffer pool.
+	  The default covers a 128x128 single-channel model input.
+
+config MPIPE_NN_CONVERTER_DUMP
+	bool "Dump converted tensors to the console"
+	help
+	  Print every MPIPE_NN_CONVERTER_DUMP_PERIOD-th tensor the converter
+	  produces as hex rows on the console, to check what a model is fed:
+	  geometry, orientation, brightness and byte order. Debugging aid;
+	  a 96x96 tensor is about 19 kB of output, so use an immediate log
+	  mode and a short period only on a fast console.
+
+config MPIPE_NN_CONVERTER_DUMP_PERIOD
+	int "Frames between two tensor dumps"
+	depends on MPIPE_NN_CONVERTER_DUMP
+	range 1 100000
+	default 100
+	help
+	  Every Nth converted tensor is dumped.
+
+endif # MPIPE_NN_CONVERTER
+
+config MPIPE_NN_RUNNER
+	bool "Neural network inference element"
+	help
+	  Element running a model on every input tensor buffer through the
+	  selected backend.
+
+if MPIPE_NN_RUNNER
+
+choice MPIPE_NN_BACKEND
+	prompt "Inference backend"
+	default MPIPE_NN_BACKEND_FAKE
+
+config MPIPE_NN_BACKEND_FAKE
+	bool "Fake backend"
+	help
+	  Deterministic pseudo-inference with no runtime dependency, for
+	  framework bring-up and continuous integration.
+
+endchoice
+
+config MPIPE_NN_RUNNER_POOL_NUM
+	int "Number of output buffers of the inference element"
+	range 1 8
+	default 2
+	help
+	  Output buffers in flight between the inference element and the
+	  decoder. An inference finding none free is dropped.
+
+config MPIPE_NN_RUNNER_MAX_OUT_SIZE
+	int "Maximum total output size of a model (in bytes)"
+	range 1 1048576
+	default 512
+	help
+	  Upper bound of the flat buffer holding every output tensor of one
+	  inference; sizes the static buffer pool. Classification outputs
+	  are tiny; detection outputs need a few kilobytes.
+
+endif # MPIPE_NN_RUNNER
+
+config MPIPE_NN_DECODER
+	bool "Tensor decoder element"
+	help
+	  Transform element turning output tensors into a results stream:
+	  ranked class scores, or bounding boxes filtered by score and
+	  non-maximum suppression, one results structure per buffer,
+	  typically consumed by an app_sink.
+
+config MPIPE_NN_DECODER_POOL_NUM
+	int "Number of results buffers of the decoder element"
+	range 1 8
+	default 2
+	depends on MPIPE_NN_DECODER
+	help
+	  Results buffers in flight between the decoder and its consumer. An
+	  inference finding none free is dropped.
+
+config MPIPE_NN_DECODER_CANDIDATES_MAX
+	int "Boxes kept for non-maximum suppression"
+	range 1 64
+	default 16
+	depends on MPIPE_NN_DECODER
+	help
+	  Boxes above the score threshold that the scored box list layout
+	  ranks before non-maximum suppression, best first; lower-scored
+	  ones are dropped. Keep it above MPIPE_NN_RESULTS_MAX so the
+	  suppression has something to drop.
+
+config MPIPE_NN_RESULTS_MAX
+	int "Maximum entries in a result set"
+	range 1 32
+	default 8
+	help
+	  Ranked classes or boxes one struct mpipe_nn_results holds.
+
+endif # MPIPE_NN
