@@ -42,7 +42,8 @@ struct test_rec {
 			(void *)test_##src##_to_##dst##_##round##prec	\
 	}								\
 
-#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
 #define TESTVAR(src, dst, round, prec)
 #else
 #define TESTVAR(src, dst, round, prec)					\
