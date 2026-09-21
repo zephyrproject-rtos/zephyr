@@ -129,8 +129,11 @@ struct zperf_work {
 extern void start_jobs(void);
 extern struct zperf_work *get_queue(enum session_proto proto, int session_id);
 
+/* if_name, when not NULL or empty, is the interface to bind the socket to
+ * before it is connected.
+ */
 int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
-			      int priority, int tcp_nodelay, int proto);
+			      int priority, int tcp_nodelay, int proto, const char *if_name);
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
 

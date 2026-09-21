@@ -169,7 +169,7 @@ int zperf_get_ipv4_addr(char *host, struct net_in_addr *addr)
 }
 
 int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
-			      int priority, int tcp_nodelay, int proto)
+			      int priority, int tcp_nodelay, int proto, const char *if_name)
 {
 	net_socklen_t addrlen = peer_addr->sa_family == NET_AF_INET6 ?
 			    sizeof(struct net_sockaddr_in6) :
@@ -257,6 +257,18 @@ int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
 		NET_WARN("Failed to set NET_IPPROTO_TCP - TCP_NODELAY socket option.");
 		ret = -errno;
 		goto error;
+	}
+
+	if (if_name != NULL && if_name[0] != '\0') {
+		struct net_ifreq req = { 0 };
+
+		/* Before connecting, which is when a TCP socket picks its route */
+		strncpy(req.ifr_name, if_name, sizeof(req.ifr_name) - 1);
+
+		if (zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE, &req,
+				     sizeof(req)) != 0) {
+			NET_WARN("setsockopt SO_BINDTODEVICE error (%d)", -errno);
+		}
 	}
 
 	ret = zsock_connect(sock, peer_addr, addrlen);
