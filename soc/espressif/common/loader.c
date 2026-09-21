@@ -59,7 +59,7 @@
 #include <memory.h>
 #include <hw_init.h>
 #include <soc_init.h>
-#include <soc_random.h>
+#include "bootloader_random.h"
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 #include <kernel_tls.h>
@@ -342,9 +342,9 @@ static void boot_start(void)
 		ESP_EARLY_LOGE(TAG, "HW init failed, aborting");
 		abort();
 	}
-#endif
 
-	soc_random_enable();
+	bootloader_random_enable();
+#endif
 
 #if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_BOOTLOADER_MCUBOOT)
 	map_rom_segments(0, &map);
@@ -354,12 +354,17 @@ static void boot_start(void)
 	z_tls_copy(__builtin_thread_pointer());
 #endif
 
+#ifdef CONFIG_ESP_SIMPLE_BOOT
+	/* Disable random number generator before jumping to the application.
+	 * Note: MCUboot bootloader disables the RNG later in the boot process.
+	 */
+	bootloader_random_disable();
+#endif
+
 	/* Disable glitch detection as it can be falsely triggered by EMI interference */
 	ana_clock_glitch_reset_config(false);
 
 	ESP_EARLY_LOGI(TAG, "libc heap size %d kB.", libc_heap_size / 1024);
-
-	soc_random_disable();
 
 	__esp_platform_app_start();
 #endif /* CONFIG_ESP_SIMPLE_BOOT || CONFIG_BOOTLOADER_MCUBOOT */
