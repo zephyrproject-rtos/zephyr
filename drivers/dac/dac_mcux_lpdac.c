@@ -30,6 +30,9 @@ LOG_MODULE_REGISTER(dac_mcux_lpdac, CONFIG_DAC_LOG_LEVEL);
  * A state that power gates the DAC resets its register block. TURN_ON rebuilds
  * the devicetree configuration of an instance that was already set up, so a
  * resume after a power cycle restores the output the same way.
+ *
+ * An API call that arrives while the device is not active returns -EBUSY rather
+ * than writing a register block that is gated or has lost its contents.
  */
 
 struct mcux_lpdac_config {
@@ -66,6 +69,22 @@ static void mcux_lpdac_configure(const struct device *dev)
 	DAC_Init(config->base, &dac_config);
 }
 
+/*
+ * A device the core has suspended has its analog output buffer off, and one it
+ * has turned off has lost the contents of its register block, so GCR and DATA
+ * written here would either never reach a pin or be thrown away by the next
+ * power cycle. Without CONFIG_PM_DEVICE the state reads back as active and this
+ * always passes.
+ */
+static bool mcux_lpdac_is_active(const struct device *dev)
+{
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+
+	return state == PM_DEVICE_STATE_ACTIVE;
+}
+
 static int mcux_lpdac_channel_setup(const struct device *dev,
 				    const struct dac_channel_cfg *channel_cfg)
 {
@@ -84,6 +103,11 @@ static int mcux_lpdac_channel_setup(const struct device *dev,
 	if (channel_cfg->internal) {
 		LOG_ERR("Internal channels not supported");
 		return -ENOTSUP;
+	}
+
+	if (!mcux_lpdac_is_active(dev)) {
+		LOG_ERR("device is not active");
+		return -EBUSY;
 	}
 
 	mcux_lpdac_configure(dev);
@@ -112,6 +136,11 @@ static int mcux_lpdac_write_value(const struct device *dev, uint8_t channel, uin
 	if (value >= 4096) {
 		LOG_ERR("unsupported value %d", value);
 		return -EINVAL;
+	}
+
+	if (!mcux_lpdac_is_active(dev)) {
+		LOG_ERR("device is not active");
+		return -EBUSY;
 	}
 
 	DAC_Enable(config->base, true);
