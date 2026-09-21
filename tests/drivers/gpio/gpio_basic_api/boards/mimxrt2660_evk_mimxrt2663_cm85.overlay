@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * To run this test, connect PIO0_2 to PIO0_3 on header J51:
+ *
+ *   J51 pin 2 (PIO0_2, out-gpios, gpio5 bit 2)
+ *   J51 pin 3 (PIO0_3, in-gpios,  gpio5 bit 3)
+ *
+ * J51 is a four-pin header on the MIMXRT2660-EVK (sheet RT2660_IO_A).
+ * PIO0_2 and PIO0_3 are VBAT-domain pads that default to the VBAT GPIO
+ * mux function. No jumper change is needed; only the short between pin 2
+ * and pin 3 is required.
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio5 2 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
+		in-gpios  = <&gpio5 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+};

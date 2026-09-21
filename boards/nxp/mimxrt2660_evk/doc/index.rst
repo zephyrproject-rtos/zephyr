@@ -103,6 +103,10 @@ Connections and I/Os
 |           | PCS0            | PIO3_23 (needs J53 at 1-2, see     |
 |           |                 | below)                             |
 +-----------+-----------------+------------------------------------+
+| GPIO test | VBAT GPIO0 2,   | PIO0_2 (J51 pin 2),                |
+|           | VBAT GPIO0 3    | PIO0_3 (J51 pin 3)                 |
+|           |                 | Short J51 pin 2 to pin 3           |
++-----------+-----------------+------------------------------------+
 
 The debug console runs at 115200 8N1 on the MCU-Link virtual COM port.
 

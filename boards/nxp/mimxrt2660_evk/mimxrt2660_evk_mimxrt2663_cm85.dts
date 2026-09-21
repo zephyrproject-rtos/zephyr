@@ -66,6 +66,10 @@
 	status = "okay";
 };
 
+&gpio5 {
+	status = "okay";
+};
+
 &cpu0 {
 	/*
 	 * The CPU rate, not the system timer's -- SysTick counts the external
