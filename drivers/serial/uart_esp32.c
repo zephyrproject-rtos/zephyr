@@ -1136,6 +1136,13 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	data->async.rx_buf = buf;
 	data->async.rx_len = len;
 	data->async.rx_timeout = timeout;
+	/*
+	 * A previous buffer may have been partially delivered through the idle
+	 * timeout path, leaving rx_offset pointing into that old buffer. A new
+	 * buffer starts from zero.
+	 */
+	data->async.rx_offset = 0;
+	data->async.rx_counter = 0;
 
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.dma_callback = uart_esp32_dma_rx_done;
