@@ -71,6 +71,9 @@ potentiometer: Analog.Potentiometer @ adcM1S2 2
     minVolt: 0
     maxVolt: 3.3
 
+rcc:
+    hseFrequency: 25_000_000
+
 sysbus:
     init:
         Tag <0x58024800 4> "PWR_CR1_DBP_SET" 0x100
