@@ -361,6 +361,11 @@ zephyr_udc0: &usb0 {
 	phy-handle = <&usbphy1>;
 };
 
+zephyr_uhc0: &usbh0 {
+	status = "okay";
+	phy-handle = <&usbphy1>;
+};
+
 &usbphy1 {
 	status = "okay";
 	tx-d-cal = <4>;
