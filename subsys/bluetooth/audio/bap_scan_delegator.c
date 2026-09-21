@@ -336,8 +336,18 @@ static void notify_work_handler(struct k_work *work)
 
 		if (conn_info.state == BT_CONN_STATE_CONNECTED &&
 		    bt_gatt_is_subscribed(conn, internal_state->attr, BT_GATT_CCC_NOTIFY)) {
-			const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(conn);
-			const uint16_t ntf_size = MIN(max_ntf_size, read_buf.len);
+			const int max_ntf_size =
+				bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT_NONE);
+			uint16_t ntf_size;
+
+			if (max_ntf_size < 0) {
+				__ASSERT(max_ntf_size != -EINVAL, "Unexpected -EINVAL");
+				LOG_DBG("Failed to get max notification size: %d", max_ntf_size);
+				bt_conn_unref(conn);
+				continue;
+			}
+
+			ntf_size = MIN(max_ntf_size, read_buf.len);
 
 			if (ntf_size < read_buf.len) {
 				LOG_DBG("Sending truncated notification (%u/%u)", ntf_size,

@@ -27,6 +27,8 @@
 #include <zephyr/ztest_test.h>
 #include <zephyr/ztest_assert.h>
 
+#include "host/att_internal.h"
+
 #include "gatt.h"
 #include "conn.h"
 #include "common/bt_str.h"
@@ -574,6 +576,26 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	ARG_UNUSED(conn);
 
 	return 64;
+}
+
+int bt_att_get_max_notify_size(struct bt_conn *conn, enum bt_att_chan_opt chan_opt)
+{
+	/* Opcode (1 octet) + attribute handle (2 octets) */
+	const uint16_t att_ntf_hdr_size = sizeof(struct bt_att_hdr) + sizeof(struct bt_att_notify);
+	uint16_t mtu;
+
+	ARG_UNUSED(chan_opt);
+
+	if (conn == NULL) {
+		return -EINVAL;
+	}
+
+	mtu = bt_gatt_get_mtu(conn);
+	if (mtu > att_ntf_hdr_size) {
+		return mtu - att_ntf_hdr_size;
+	}
+
+	return 0;
 }
 
 bool bt_gatt_is_subscribed(struct bt_conn *conn,

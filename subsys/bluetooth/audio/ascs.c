@@ -222,7 +222,7 @@ static int ase_state_notify(struct bt_ascs_ase *ase)
 {
 	struct bt_conn *conn = ase->conn;
 	struct bt_conn_info conn_info;
-	uint16_t max_ntf_size;
+	int max_ntf_size;
 	uint16_t ntf_size;
 	int err;
 
@@ -245,7 +245,12 @@ static int ase_state_notify(struct bt_ascs_ase *ase)
 
 	ascs_ep_get_status(&ase->ep, &ase_buf);
 
-	max_ntf_size = bt_audio_get_max_ntf_size(conn);
+	max_ntf_size = bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT_NONE);
+	if (max_ntf_size < 0) {
+		__ASSERT(max_ntf_size != -EINVAL, "Unexpected -EINVAL");
+		k_sem_give(&ase_buf_sem);
+		return max_ntf_size;
+	}
 
 	ntf_size = MIN(max_ntf_size, ase_buf.len);
 	if (ntf_size < ase_buf.len) {
@@ -2087,10 +2092,10 @@ int bt_ascs_metadata_ase(struct bt_bap_ep *ep, const uint8_t meta[], size_t meta
 
 static uint16_t get_max_ase_rsp_for_conn(struct bt_conn *conn)
 {
-	const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(conn);
+	const int max_ntf_size = bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT_NONE);
 	const size_t rsp_hdr_size = sizeof(struct bt_ascs_cp_rsp);
 
-	if (max_ntf_size > rsp_hdr_size) {
+	if (max_ntf_size > 0 && (size_t)max_ntf_size > rsp_hdr_size) {
 		return (max_ntf_size - rsp_hdr_size) / sizeof(struct bt_ascs_cp_ase_rsp);
 	}
 
