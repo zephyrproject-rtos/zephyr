@@ -1132,6 +1132,10 @@ static inline int z_impl_smbus_block_pcall(const struct device *dev,
 		return -ENOSYS;
 	}
 
+	if (snd_count < 1 || snd_count > SMBUS_BLOCK_BYTES_MAX) {
+		return -EINVAL;
+	}
+
 	return  api->smbus_block_pcall(dev, addr, cmd, snd_count, snd_buf,
 				       rcv_count, rcv_buf);
 }
