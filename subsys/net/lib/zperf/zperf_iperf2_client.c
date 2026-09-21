@@ -323,7 +323,7 @@ int zperf_iperf2_udp_upload(const struct zperf_upload_params *param,
 
 	sock = zperf_prepare_upload_sock(peer_addr, param->options.tos,
 					 param->options.priority, 0,
-					 NET_IPPROTO_UDP);
+					 NET_IPPROTO_UDP, NULL);
 	if (sock < 0) {
 		return sock;
 	}
@@ -604,7 +604,7 @@ int zperf_iperf2_tcp_upload(const struct zperf_upload_params *param,
 
 	sock = zperf_prepare_upload_sock(net_sad(&param->peer_addr_storage), param->options.tos,
 					 param->options.priority, param->options.tcp_nodelay,
-					 NET_IPPROTO_TCP);
+					 NET_IPPROTO_TCP, NULL);
 	if (sock < 0) {
 		return sock;
 	}
@@ -658,7 +658,7 @@ static void tcp_upload_async_work(struct k_work *work)
 
 	sock = zperf_prepare_upload_sock(net_sad(&param.peer_addr_storage), param.options.tos,
 					 param.options.priority, param.options.tcp_nodelay,
-					 NET_IPPROTO_TCP);
+					 NET_IPPROTO_TCP, NULL);
 
 	if (sock < 0) {
 		upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
