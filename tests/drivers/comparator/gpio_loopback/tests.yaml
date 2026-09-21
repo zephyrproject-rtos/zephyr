@@ -90,6 +90,7 @@ tests:
   drivers.comparator.gpio_loopback.infineon_lpcomp:
     platform_allow:
       - kit_psc3m5_evk
+      - kit_psc3m6_evk/psc3m6ges3ahq1
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
       - kit_pse84_ai/pse846gps2dbzc4a/m33
