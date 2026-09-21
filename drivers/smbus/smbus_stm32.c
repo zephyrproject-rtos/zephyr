@@ -11,6 +11,7 @@
 #include <zephyr/drivers/smbus.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
+#include <string.h>
 
 #include "smbus_utils.h"
 
@@ -428,6 +429,11 @@ static int smbus_stm32_block_read(const struct device *dev, uint16_t periph_addr
 	int ret;
 	uint8_t num_msgs;
 	uint8_t received_pec;
+	/* The peripheral picks the block size while the transfer is running, so
+	 * the data is received here and only copied out once the size is known
+	 * to fit into the caller's buffer.
+	 */
+	uint8_t block[UINT8_MAX];
 	struct i2c_msg msgs[] = {
 		{
 			.buf = &command,
@@ -440,7 +446,7 @@ static int smbus_stm32_block_read(const struct device *dev, uint16_t periph_addr
 			.flags = I2C_MSG_READ | I2C_MSG_RESTART,
 		},
 		{
-			.buf = buf,
+			.buf = block,
 			.len = 0, /* written by previous message! */
 			.flags = I2C_MSG_READ,
 		},
@@ -465,11 +471,19 @@ static int smbus_stm32_block_read(const struct device *dev, uint16_t periph_addr
 		return ret;
 	}
 
+	if (msgs[2].len > SMBUS_BLOCK_BYTES_MAX) {
+		LOG_ERR("%s: block size %u exceeds the maximum of %d bytes", dev->name, msgs[2].len,
+			SMBUS_BLOCK_BYTES_MAX);
+		return -ENODATA;
+	}
+
 	*count = msgs[2].len;
 	ret = smbus_read_check_pec(data->config, periph_addr, msgs, num_msgs);
 	if (ret < 0) {
 		return ret;
 	}
+
+	memcpy(buf, block, msgs[2].len);
 
 	return 0;
 }
@@ -481,6 +495,11 @@ int smbus_stm32_block_pcall(const struct device *dev, uint16_t addr, uint8_t cmd
 	int ret;
 	uint8_t num_msgs;
 	uint8_t received_pec;
+	/* The peripheral picks the block size while the transfer is running, so
+	 * the data is received here and only copied out once the size is known
+	 * to fit into the caller's buffer.
+	 */
+	uint8_t block[UINT8_MAX];
 	struct i2c_msg msgs[] = {
 		{
 			.buf = &cmd,
@@ -503,7 +522,7 @@ int smbus_stm32_block_pcall(const struct device *dev, uint16_t addr, uint8_t cmd
 			.flags = I2C_MSG_READ | I2C_MSG_RESTART,
 		},
 		{
-			.buf = recv_buf,
+			.buf = block,
 			.len = 0, /* written by previous message! */
 			.flags = I2C_MSG_READ,
 		},
@@ -528,12 +547,19 @@ int smbus_stm32_block_pcall(const struct device *dev, uint16_t addr, uint8_t cmd
 		return ret;
 	}
 
+	if (msgs[4].len > SMBUS_BLOCK_BYTES_MAX) {
+		LOG_ERR("%s: block size %u exceeds the maximum of %d bytes", dev->name, msgs[4].len,
+			SMBUS_BLOCK_BYTES_MAX);
+		return -ENODATA;
+	}
+
 	ret = smbus_read_check_pec(data->config, addr, msgs, num_msgs);
 	if (ret < 0) {
 		return ret;
 	}
 
 	*recv_count = msgs[4].len;
+	memcpy(recv_buf, block, msgs[4].len);
 
 	return 0;
 }
