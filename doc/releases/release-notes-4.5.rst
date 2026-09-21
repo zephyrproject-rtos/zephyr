@@ -543,6 +543,19 @@ New APIs and options
     * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LK`
     * :c:func:`bt_sdp_unregister_service`
 
+  * HCI Drivers
+
+    * :c:macro:`BT_HCI_PKT_CMD_DEFINE`
+    * :c:macro:`BT_HCI_PKT_CMD_DEFINE_STATIC`
+    * :c:func:`bt_hci_pkt_reset_cmd`
+    * :c:func:`bt_hci_pkt_push_cmd_hdr`
+    * :c:func:`bt_hci_pkt_pull_cmd_complete`
+    * :c:func:`bt_hci_pkt_pull_cmd_status`
+    * :c:func:`bt_hci_pkt_parse_cmd_rsp`
+    * :c:func:`bt_hci_lockstep_cmd_send_sync`
+    * :c:func:`bt_hci_lockstep_reset`
+    * :c:func:`bt_hci_set_public_addr` and :c:func:`bt_hci_get_public_addr`
+
   * Host
 
     * :c:func:`bt_conn_take`
@@ -562,12 +575,6 @@ New APIs and options
     * :c:func:`bt_rfcomm_dlc_recv_complete` to return RX credits to the peer. Applications can
       return ``-EINPROGRESS`` from the :c:member:`bt_rfcomm_dlc_ops.recv` callback to defer buffer
       release and flow-control credit refill until processing is complete.
-    * HCI packet helpers (:c:macro:`BT_HCI_PKT_CMD_DEFINE`, :c:func:`bt_hci_pkt_push_cmd_hdr`,
-      :c:func:`bt_hci_pkt_parse_cmd_rsp` and friends) for framing HCI command packets and
-      parsing command responses independently of the Host.
-    * :c:func:`bt_hci_lockstep_cmd_send_sync`
-    * :c:func:`bt_hci_lockstep_reset`
-    * :c:func:`bt_hci_set_public_addr` and :c:func:`bt_hci_get_public_addr`
     * :c:func:`bt_le_bond_addr_res_support`, :c:enum:`bt_le_addr_res_support` and
       :c:member:`bt_conn_auth_info_cb.addr_res_support_read`
     * :c:enumerator:`BT_LE_SCAN_OPT_EXT_FILTER_POLICY`
