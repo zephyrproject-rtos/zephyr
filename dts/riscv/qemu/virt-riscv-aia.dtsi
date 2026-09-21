@@ -11,7 +11,7 @@
 / {
 	cpus {
 		riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
-				       "zifencei", "smcsrind", "smaia", "ssaia";
+				       "zifencei", "zkr", "smcsrind", "smaia", "ssaia";
 	};
 };
 
