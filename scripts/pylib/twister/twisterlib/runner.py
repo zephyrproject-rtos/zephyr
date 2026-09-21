@@ -1545,7 +1545,12 @@ class ProjectBuilder(FilterBuilder):
                 if self.instance.platform.arch == cond_args[1]:
                     args.append(cond_args[2])
             elif cond_args[0] == "platform" and len(cond_args) == 3:
-                if cond_args[1] in self.instance.platform.name:
+                platform_name = self.instance.platform.name
+                # A board target without a revision is a selector for every
+                # revision of that target. For example, a selector for
+                # ``board/soc/core`` applies to ``board@revision/soc/core``.
+                revisionless_platform_name = re.sub(r'@[^/]+(?=/)', '', platform_name)
+                if cond_args[1] in platform_name or cond_args[1] == revisionless_platform_name:
                     args.append(cond_args[2])
             elif cond_args[0] == "simulation" and len(cond_args) == 3:
                 if self.instance.platform.simulation == cond_args[1]:

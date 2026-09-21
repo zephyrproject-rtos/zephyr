@@ -2386,6 +2386,50 @@ def test_projectbuilder_cmake():
     pb.run_cmake.assert_called_once_with(['dummy'], ['dummy filter'])
 
 
+@pytest.mark.parametrize(
+    'platform_name, selector, expected_args',
+    [
+        (
+            'mimxrt700_evk@mx25um51345g/mimxrt798s/cm33_cpu0',
+            'mimxrt700_evk/mimxrt798s/cm33_cpu0',
+            ['SHIELD=zc143ac72mipi'],
+        ),
+        (
+            'mimxrt700_evk@w25q512nw/mimxrt798s/cm33_cpu0',
+            'mimxrt700_evk/mimxrt798s/cm33_cpu0',
+            ['SHIELD=zc143ac72mipi'],
+        ),
+        (
+            'mimxrt700_evk@w25q512nw/mimxrt798s/cm33_cpu0',
+            'mimxrt700_evk@mx25um51345g/mimxrt798s/cm33_cpu0',
+            [],
+        ),
+    ],
+)
+def test_projectbuilder_cmake_platform_extra_args_matches_all_board_revisions(
+    mocked_jobserver, platform_name, selector, expected_args
+):
+    instance_mock = mock.Mock()
+    instance_mock.handler = mock.Mock(ready=False)
+    instance_mock.build_dir = os.path.join('build', 'dir')
+    instance_mock.platform.name = platform_name
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.testsuite.extra_args = [f'platform:{selector}:SHIELD=zc143ac72mipi']
+    pb.testsuite.conf_files = []
+    pb.testsuite.extra_conf_files = []
+    pb.testsuite.extra_overlay_confs = []
+    pb.testsuite.extra_dtc_overlay_files = []
+    pb.options.extra_args = []
+    pb.cmake_assemble_args = mock.Mock(return_value=['dummy'])
+    pb.run_cmake = mock.Mock()
+
+    pb.cmake()
+
+    assert pb.cmake_assemble_args.call_args.args[0] == expected_args
+
+
 def test_projectbuilder_build(mocked_jobserver):
     instance_mock = mock.Mock()
     instance_mock.testsuite.harness = 'test'
