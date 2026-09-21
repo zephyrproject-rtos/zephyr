@@ -384,9 +384,8 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 
 	wifi_mgmt_raise_ap_sta_connected_event(iface, &sta_info);
 
-	if (!(esp32_data.ap_connection_cnt++)) {
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, esp32_rx);
-	}
+	esp32_data.ap_connection_cnt++;
+	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, esp32_rx);
 }
 
 static void esp_wifi_handle_ap_disconnect_event(void *event_data)
@@ -407,8 +406,8 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 	memcpy(sta_info.mac, event->mac, WIFI_MAC_ADDR_LEN);
 	wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
 
-	if (!(--esp32_data.ap_connection_cnt)) {
-		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+	if (esp32_data.ap_connection_cnt > 0) {
+		esp32_data.ap_connection_cnt--;
 	}
 }
 
@@ -427,6 +426,7 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	switch (event_id) {
 	case WIFI_EVENT_STA_START:
 		esp32_data.state = ESP32_STA_STARTED;
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
 		net_eth_carrier_on(esp32_wifi_iface);
 		break;
 	case WIFI_EVENT_STA_STOP:
@@ -444,11 +444,19 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		break;
 	case WIFI_EVENT_AP_START:
 		ap_data->state = ESP32_AP_STARTED;
+		esp32_data.ap_connection_cnt = 0;
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, wifi_esp32_ap_iface_rx);
+#else
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, eth_esp32_rx);
+#endif
 		net_eth_carrier_on(iface_ap);
 		wifi_mgmt_raise_ap_enable_result_event(iface_ap, 0);
 		break;
 	case WIFI_EVENT_AP_STOP:
 		ap_data->state = ESP32_AP_STOPPED;
+		esp32_data.ap_connection_cnt = 0;
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
 		net_eth_carrier_off(iface_ap);
 		wifi_mgmt_raise_ap_disable_result_event(iface_ap, 0);
 		break;
@@ -757,28 +765,25 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		return -EINVAL;
 	}
 
-	err = esp_wifi_start();
-	if (err) {
-		LOG_ERR("Failed to enable Wi-Fi AP mode");
-		return -EAGAIN;
-	}
-
 	/*
-	 * Update interface link address to AP MAC.
+	 * Update interface link address to AP MAC before starting AP.
 	 * In AP-only mode (without CONFIG_ESP32_WIFI_AP_STA_MODE), the interface
-	 * is initialized with STA MAC but operates with AP MAC. Some clients
-	 * correctly address frames to AP MAC, which would be dropped without
-	 * this update. See: https://github.com/zephyrproject-rtos/zephyr/issues/101761
+	 * is initialized with STA MAC but operates with AP MAC.
 	 */
 #if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 	esp_read_mac(data->mac_addr, ESP_MAC_WIFI_SOFTAP);
 	net_if_carrier_off(iface);
 	net_if_set_link_addr(iface, data->mac_addr, NET_ETH_ADDR_LEN,
 			     NET_LINK_ETHERNET);
-	net_if_carrier_on(iface);
 #else
 	ARG_UNUSED(iface);
 #endif
+
+	err = esp_wifi_start();
+	if (err) {
+		LOG_ERR("Failed to enable Wi-Fi AP mode");
+		return -EAGAIN;
+	}
 
 	return 0;
 };
@@ -792,6 +797,7 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 	int err = 0;
 	wifi_mode_t mode;
 
+	esp_wifi_deauth_sta(0);
 	esp_wifi_get_mode(&mode);
 	if (mode == ESP32_WIFI_MODE_APSTA) {
 		err = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
@@ -810,7 +816,9 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 	net_if_carrier_off(iface);
 	net_if_set_link_addr(iface, data->mac_addr, NET_ETH_ADDR_LEN,
 			     NET_LINK_ETHERNET);
-	net_if_carrier_on(iface);
+	if (mode == ESP32_WIFI_MODE_APSTA) {
+		net_if_carrier_on(iface);
+	}
 #endif
 
 	return 0;
