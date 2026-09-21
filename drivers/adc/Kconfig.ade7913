@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADE7913
+	bool "Analog Devices ADE7913 SPI ADC"
+	select SPI
+	default y
+	depends on DT_HAS_ADI_ADE7913_ENABLED
+	depends on MULTITHREADING
+	help
+	  Outputs raw signed 24-bit Values. Calibration and Conversion is left to user.
+
+if ADC_ADE7913
+
+config ADC_ADE7913_INIT_PRIORITY
+	int "ADE7913 init priority"
+	default SPI_INIT_PRIORITY
+	help
+	  ADE7913 device initialization.
+
+config ADC_ADE7913_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 512
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+config ADC_ADE7913_ACQUISITION_THREAD_PRIORITY
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+endif # ADC_ADE7913
