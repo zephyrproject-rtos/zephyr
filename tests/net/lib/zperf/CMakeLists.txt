@@ -9,6 +9,11 @@ target_sources(app PRIVATE
   src/main.c
   )
 
+target_sources_ifdef(CONFIG_NET_ZPERF_IPERF3 app PRIVATE
+  src/iperf3_proto.c
+  src/iperf3_server.c
+  )
+
 target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/subsys/net/lib/zperf
   )
