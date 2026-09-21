@@ -24,3 +24,22 @@ def test_zephyr_base_abs_path_preserves_absolute_cache_directory(monkeypatch, tm
     directory = tmp_path / 'external' / 'soc'
 
     assert run_common.zephyr_base_abs_path(directory, Path('soc.yml')) == directory / 'soc.yml'
+
+
+def test_filter_used_cmds_drops_unmatched_boards_and_entries():
+    used_cmds = [
+        run_common.UsedFlashCommand(
+            '--erase', ['a/x', 'b/y', 'nrf5340dk/nrf5340/cpuapp'], ['all'], True
+        ),
+        run_common.UsedFlashCommand('--erase', ['q/z'], ['all'], True),
+        run_common.UsedFlashCommand('--erase', ['r/z'], ['all'], True),
+        run_common.UsedFlashCommand('--reset', ['([^/]+)/nrf5340/cpunet'], ['all'], False),
+    ]
+    board_names = {'nrf5340dk/nrf5340/cpuapp', 'nrf5340dk/nrf5340/cpunet'}
+
+    filtered = run_common.filter_used_cmds(used_cmds, board_names)
+
+    assert [entry.boards for entry in filtered] == [
+        ['nrf5340dk/nrf5340/cpuapp'],
+        ['([^/]+)/nrf5340/cpunet'],
+    ]
