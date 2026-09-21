@@ -1070,11 +1070,6 @@
 				interrupts = <304 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&pclk32m>;
 				#clock-cells = <0>;
-				/*
-				 * Temporarily reading FICR addr 0 as FICR offsets
-				 * not defined yet
-				 */
-				nordic,ficrs = <&ficr 0>;
 				nordic,out-div = <12>;
 				nordic,out-drive = <0>;
 				nordic,current-tune = <9>;
