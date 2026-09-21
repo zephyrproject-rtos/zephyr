@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G2 GMAC MDIO controller
+
+description: |
+  The MDIO management interface of the Microchip G2 GMAC (PIC32CZ CA "ETH").
+
+  Must be a child of a "microchip,gmac-g2-eth" node: it has no registers of
+  its own and uses the parent's reg and clocks. It is usable on its own, before
+  or without the Ethernet driver, so the PHY can be probed at boot.
+
+compatible: "microchip,gmac-g2-mdio"
+
+include:
+  - name: mdio-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
