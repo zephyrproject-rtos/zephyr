@@ -143,7 +143,7 @@ int mpipe_pad_set_caps(struct mpipe_pad *pad, const struct mpipe_structure *caps
 	return 0;
 }
 
-int mpipe_pad_link(struct mpipe_pad *src_pad, struct mpipe_pad *sink_pad)
+void mpipe_pad_link(struct mpipe_pad *src_pad, struct mpipe_pad *sink_pad)
 {
 	__ASSERT_NO_MSG(src_pad != NULL);
 	__ASSERT_NO_MSG(sink_pad != NULL);
@@ -151,8 +151,6 @@ int mpipe_pad_link(struct mpipe_pad *src_pad, struct mpipe_pad *sink_pad)
 	/* Set peer pad */
 	src_pad->peer = sink_pad;
 	sink_pad->peer = src_pad;
-
-	return 0;
 }
 
 int mpipe_pad_query(struct mpipe_pad *pad, struct mpipe_dispatch *query)
