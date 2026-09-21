@@ -8,6 +8,7 @@ zephyr_library_sources(
   )
 zephyr_library_sources_ifdef(CONFIG_NET_ZPERF_RAW_TX zperf_raw_uploader.c)
 zephyr_library_sources_ifdef(CONFIG_NET_ZPERF_IPERF2 zperf_iperf2_client.c)
+zephyr_library_sources_ifdef(CONFIG_NET_UDP zperf_udp_pacing.c)
 
 if(CONFIG_NET_ZPERF_SERVER)
   zephyr_library_sources(zperf_session.c)
