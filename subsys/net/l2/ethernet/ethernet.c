@@ -1011,12 +1011,13 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 				NET_DBG("Found ARP entry, sending pkt %p to iface %d (%p)",
 					pkt, net_if_get_by_iface(iface), iface);
 			} else if (ret == NET_ARP_PKT_REPLACED) {
-				/* Original pkt got queued and is replaced
-				 * by an ARP request packet.
+				/* pkt is replaced by an ARP request. ARP holds
+				 * its own reference on pkt only if it queued it,
+				 * so the caller's reference is kept until the
+				 * request has been sent.
 				 */
 				NET_DBG("Sending arp pkt %p (orig %p) to iface %d (%p)",
 					arp, pkt, net_if_get_by_iface(iface), iface);
-				net_pkt_unref(pkt);
 				pkt = arp;
 				ptype = net_htons(net_pkt_ll_proto_type(pkt));
 			} else if (ret == NET_ARP_PKT_QUEUED) {
@@ -1081,17 +1082,23 @@ send:
 
 	ret = net_pkt_get_len(pkt);
 
+	if (pkt != orig_pkt) {
+		/* ARP request sent, drop the caller's reference on the
+		 * packet it replaced.
+		 */
+		net_pkt_unref(orig_pkt);
+	}
+
 	net_pkt_unref(pkt);
 error:
 	return ret;
 
 arp_error:
-	if (IS_ENABLED(CONFIG_NET_ARP) && ptype == net_htons(NET_ETH_PTYPE_ARP)) {
-		/* Original packet was added to ARP's pending Q, so, to avoid it
-		 * being freed, take a reference, the reference is dropped when we
-		 * clear the pending Q in ARP and then it will be freed by net_if.
+	if (IS_ENABLED(CONFIG_NET_ARP) && pkt != orig_pkt) {
+		/* The caller's reference on orig_pkt is still held and
+		 * net_if releases it on error. Clearing the pending entry
+		 * releases the reference ARP took when it queued orig_pkt.
 		 */
-		net_pkt_ref(orig_pkt);
 		if (net_arp_clear_pending(
 			    iface, (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst)) {
 			NET_DBG("Could not find pending ARP entry");
