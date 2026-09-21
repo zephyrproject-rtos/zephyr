@@ -531,12 +531,17 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	}
 
 	if (length != 0) {
-		const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(conn);
+		const int max_ntf_size = bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT_NONE);
+
+		if (max_ntf_size < 0) {
+			__ASSERT(max_ntf_size != -EINVAL, "Unexpected -EINVAL");
+			return BT_GATT_ITER_STOP;
+		}
 
 		/* Cancel any pending long reads containing now obsolete information */
 		(void)k_work_cancel_delayable(&inst->bap_read_work);
 
-		if (length == max_ntf_size) {
+		if (max_ntf_size >= 0 && length == max_ntf_size) {
 			/* TODO: if we are busy we should not overwrite the long_read_handle,
 			 * we'll have to keep track of the handle and parameters separately
 			 * for each characteristic, similar to the bt_bap_unicast_client_ep
