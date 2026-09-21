@@ -45,3 +45,58 @@ config ETH_MCHP_RX_THREAD_PRIORITY
 	  This options sets the priority of that thread.
 
 endif # ETH_MCHP_GMAC_G1
+
+menuconfig ETH_MCHP_GMAC_G2
+	bool "Microchip G2 GMAC Ethernet driver"
+	default y
+	depends on ETH_DRIVER
+	depends on DT_HAS_MICROCHIP_GMAC_G2_ETH_ENABLED
+	select EXPERIMENTAL
+	select PINCTRL
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT && DCACHE
+	select CACHE_MANAGEMENT if DCACHE
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_GMAC_G2_ETH),nvmem-cells)
+	help
+	  Enable the Ethernet driver for the Microchip G2 GMAC, the gigabit
+	  "ETH" peripheral of PIC32CZ CA (a Cadence GEM core behind a
+	  Microchip wrapper). GMII at 10/100/1000 Mbit/s; MII and RMII at
+	  10/100 Mbit/s.
+
+	  Not the GMAC microchip,gmac-g1-eth drives: that is the 10/100 core
+	  of SAM E5x and PIC32CX SG, with a different register map.
+
+if ETH_MCHP_GMAC_G2
+
+config ETH_MCHP_GMAC_G2_RX_BUF_COUNT
+	int "Receive descriptors"
+	default 32
+	range 2 1024
+	help
+	  Receive descriptors, each with a 1536-byte frame buffer owned by
+	  the driver. This is how many frames the MAC can absorb in a burst
+	  before the receive thread gets to run.
+
+config ETH_MCHP_GMAC_G2_TX_BUF_COUNT
+	int "Transmit descriptors"
+	default 16
+	range 2 1024
+	help
+	  Transmit descriptors, each with a 1536-byte frame buffer owned by
+	  the driver. One of them always stays empty.
+
+config ETH_MCHP_GMAC_G2_RX_THREAD_STACK_SIZE
+	int "Receive thread stack size"
+	default 1536
+	help
+	  Stack of the thread that hands received frames to the network
+	  stack.
+
+config ETH_MCHP_GMAC_G2_RX_THREAD_PRIORITY
+	int "Receive thread priority"
+	default 2
+	help
+	  Priority of the receive thread, cooperative or preemptive as
+	  CONFIG_NET_TC_THREAD_PREEMPTIVE selects.
+
+endif # ETH_MCHP_GMAC_G2
