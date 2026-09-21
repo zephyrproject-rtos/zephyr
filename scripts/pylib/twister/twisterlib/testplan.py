@@ -1218,6 +1218,21 @@ class TestPlan:
                 if not ts.build:
                     self._apply_no_self_build_filters(instance)
 
+                if self.options.device_testing:
+                    if self.options.device_rtt:
+                        # When testing on the device and when --device-rtt is given,
+                        # only test testcases where RTT transport is enabled, filter out
+                        # the rest. If --device-rtt is not given, then filter out all
+                        # testcases that enable RTT transport.
+                        fltr = "(CONFIG_SHELL_PROMPT_RTT or CONFIG_RTT_CONSOLE)"
+                    else:
+                        fltr = "(not CONFIG_SHELL_PROMPT_RTT and not CONFIG_RTT_CONSOLE)"
+
+                    if ts.filter:
+                        ts.filter = f"({ts.filter}) and {fltr}"
+                    else:
+                        ts.filter = fltr
+
                 # handle quarantined tests
                 self.handle_quarantined_tests(instance, plat)
 

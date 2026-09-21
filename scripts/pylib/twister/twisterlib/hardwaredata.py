@@ -18,6 +18,7 @@ class HardwareData:
     platform: str | None = None
     product: str | None = None
     serial_pty: str | None = None
+    use_rtt: bool = False
     connected: bool = False
     runner_params: str | None = None
     pre_script: str | None = None
@@ -25,6 +26,7 @@ class HardwareData:
     post_flash_script: str | None = None
     script_param: str | None = None
     runner: str | None = None
+    rtt_runner: str | None = None
     flash_timeout: int = 60
     flash_with_test: bool = False
     flash_before: bool = False
