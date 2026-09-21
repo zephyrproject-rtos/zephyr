@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USB_DEVICE_DRIVER
-	bool "USB device controller drivers"
+	bool "USB device controller drivers [DEPRECATED]"
 	select DEPRECATED
 	help
 	  Enable USB device controller drivers.
