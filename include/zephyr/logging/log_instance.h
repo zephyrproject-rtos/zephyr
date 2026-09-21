@@ -37,6 +37,14 @@ struct log_source_dynamic_data {
 #endif
 };
 
+/** @brief Anchor for data associated with a log source. */
+struct log_source_anchor {
+	const struct log_source_const_data *const_data;
+#if defined(CONFIG_LOG_RUNTIME_FILTERING)
+	struct log_source_dynamic_data *dynamic_data;
+#endif
+};
+
 /** @endcond */
 
 /**
@@ -56,6 +64,14 @@ struct log_source_dynamic_data {
  *  @param _name Name.
  */
 #define Z_LOG_ITEM_CONST_DATA(_name) UTIL_CAT(log_const_, _name)
+
+/** @internal
+ *
+ * Creates name of variable for a log source anchor.
+ *
+ * @param _name Name.
+ */
+#define Z_LOG_ITEM_ANCHOR(_name) UTIL_CAT(log_anchor_, _name)
 
 /** @internal
  *
@@ -97,17 +113,13 @@ struct log_source_dynamic_data {
 
 /** @internal
  *
- * Returns a pointer associated with given logging instance. When runtime filtering
- * is enabled then dynamic instance is returned.
+ * Returns an anchor associated with a given logging instance.
  *
  * @param _name Name of the instance.
  *
- * @return Pointer to the instance object (static or dynamic).
+ * @return Pointer to the instance anchor.
  */
-#define Z_LOG_OBJECT_PTR(_name) \
-		COND_CODE_1(CONFIG_LOG_RUNTIME_FILTERING, \
-			(&LOG_ITEM_DYNAMIC_DATA(_name)), \
-			(&Z_LOG_ITEM_CONST_DATA(_name))) \
+#define Z_LOG_OBJECT_PTR(_name) (&Z_LOG_ITEM_ANCHOR(_name))
 
 /** @brief Get pointer to a logging instance.
  *
@@ -136,10 +148,7 @@ struct log_source_dynamic_data {
 #define LOG_INSTANCE_PTR_INIT(_name, _module_name, _inst_name)	   \
 	LOG_OBJECT_PTR_INIT(_name, LOG_INSTANCE_PTR(_module_name, _inst_name))
 
-#define Z_LOG_INSTANCE_STRUCT \
-	COND_CODE_1(CONFIG_LOG_RUNTIME_FILTERING, \
-		    (struct log_source_dynamic_data), \
-		    (const struct log_source_const_data))
+#define Z_LOG_INSTANCE_STRUCT const volatile struct log_source_anchor
 
 /**
  * @brief Declare a logger instance pointer in the module structure.
@@ -159,13 +168,21 @@ struct log_source_dynamic_data {
 	STRUCT_SECTION_ITERABLE_ALTERNATE(log_dynamic, log_source_dynamic_data, \
 			LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst_name))
 
+#define Z_LOG_SOURCE_ANCHOR_REGISTER(_name)                                                       \
+	const volatile struct log_source_anchor Z_LOG_ITEM_ANCHOR(_name) __used = {                \
+		.const_data = &Z_LOG_ITEM_CONST_DATA(_name),                                    \
+		IF_ENABLED(CONFIG_LOG_RUNTIME_FILTERING,                                         \
+			   (.dynamic_data = &LOG_ITEM_DYNAMIC_DATA(_name),))                     \
+	}
+
 #define Z_LOG_INSTANCE_REGISTER(_module_name, _inst_name, _level) \
 	Z_LOG_CONST_ITEM_REGISTER( \
 		Z_LOG_INSTANCE_FULL_NAME(_module_name, _inst_name), \
 		STRINGIFY(_module_name._inst_name), \
 		_level); \
 	IF_ENABLED(CONFIG_LOG_RUNTIME_FILTERING, \
-		   (Z_LOG_RUNTIME_INSTANCE_REGISTER(_module_name, _inst_name)))
+		   (Z_LOG_RUNTIME_INSTANCE_REGISTER(_module_name, _inst_name);)) \
+	Z_LOG_SOURCE_ANCHOR_REGISTER(Z_LOG_INSTANCE_FULL_NAME(_module_name, _inst_name))
 
 /**
  * @brief Macro for registering instance for logging with independent filtering.
