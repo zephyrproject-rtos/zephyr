@@ -39,6 +39,7 @@
 
 	aliases {
 		die-temp0 = &die_temp;
+		ext-nor0 = &ext_flash_ctrl;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
@@ -216,6 +217,16 @@
 };
 
 &octospi1 {
+	compatible = "st,stm32-ospi-controller";
+	reg = <0x44021000 0x400>, <0x90000000 DT_SIZE_M(256)>;
+	interrupts = <76 0>;
+	clock-names = "ospix", "ospi-ker";
+	clocks = <&rcc STM32_CLOCK(AHB3, 8)>,
+		 <&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>;
+	clock-frequency = <DT_FREQ_M(50)>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
 	pinctrl-0 = <&octospi1_clk_pa3 &octospi1_ncs_pa2
 		     &octospi1_io0_pb1 &octospi1_io1_pb0
 		     &octospi1_io2_pa7 &octospi1_io3_pa6
@@ -224,48 +235,53 @@
 		     &octospi1_dqs_pb2>;
 	pinctrl-names = "default";
 
+	dmas = <&dma1 1 41 0x480>; /* request 41 for OCTOSPI1 */
+	dma-names = "tx_rx";
 	status = "okay";
 
-	mx25lm51245: ospi-nor-flash@0 {
-		compatible = "st,stm32-ospi-nor";
+	ext_flash_ctrl: nor-flash-controller@0 {
+		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Megabits */
-		ospi-max-frequency = <DT_FREQ_M(50)>;
-		/* Using OSPI_OPI_MODE with OSPI_STR_TRANSFER or
-		 * OSPI_DTR_TRANSFER isn't working. Please refer to
-		 * the Errata Sheet for possible causes. Alternatively
-		 * this mode can be tested with MSPI-NOR configuration.
-		 */
-		spi-bus-width = <OSPI_SPI_MODE>;
-		data-rate = <OSPI_STR_TRANSFER>;
-		four-byte-opcodes;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+		mspi-hardware-ce-num = <0>;
+		read-command = <0xee11>;
+		write-command = <0x12ed>;
+		command-length = "INSTR_2_BYTE";
+		address-length = "ADDR_4_BYTE";
+		use-4byte-addressing;
+		rx-dummy = <20>;
+		st,mem-type = "macronix";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
 		status = "okay";
-		sfdp-bfp = [53 46 44 50 06 01 02 ff
-			    00 06 01 10 30 00 00 ff
-			    c2 00 01 04 10 01 00 ff
-			    84 00 01 02 c0 00 00 ff
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    e5 20 fb ff ff ff ff 1f
-			    44 eb 08 6b 08 3b 04 bb
-			    fe ff ff ff ff ff 00 ff
-			    ff ff 44 eb 0c 20 0f 52
-			    10 d8 00 ff d6 49 c5 00
-			    81 df 04 e3 44 03 67 38
-			    30 b0 30 b0 f7 bd d5 5c
-			    4a 9e 29 ff f0 50 f9 85
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    00 00 00 00 00 00 00 00
-			    7f ef ff ff 21 5c dc ff];
+
+		ext_flash: mx25lm51245: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+		};
 	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
 };
 
 &timers2 {
