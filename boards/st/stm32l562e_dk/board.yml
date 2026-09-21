@@ -5,4 +5,5 @@ board:
   socs:
     - name: stm32l562xx
       variants:
+        - name: ext_flash_app
         - name: ns
