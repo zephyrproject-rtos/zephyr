@@ -267,7 +267,7 @@ i2c0: &sercom9 {
 	pinctrl-0 = <&sercom2_spi_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&portc 10 GPIO_ACTIVE_LOW>;
-	dmas = <&dmac 3 10>, <&dmac 4 9>;
+	dmas = <&dmac 4 10>, <&dmac 5 9>;
 	dma-names = "tx", "rx";
 	status = "okay";
 };
