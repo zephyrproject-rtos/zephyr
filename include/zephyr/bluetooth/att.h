@@ -14,7 +14,7 @@
  * @brief Attribute Protocol (ATT)
  * @defgroup bt_att Attribute Protocol (ATT)
  * @since 1.1
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -198,6 +198,61 @@ enum bt_att_chan_opt {
 	/** Only Enhanced channels will be used  */
 	BT_ATT_CHAN_OPT_ENHANCED_ONLY = BIT(1),
 };
+
+/**
+ * @brief Get the maximum notification value size for a connection
+ *
+ * The value of an ATT_HANDLE_VALUE_NTF PDU is limited to ATT_MTU - 3, where the 3 octets are
+ * the opcode and the attribute handle, as defined by the Bluetooth Core Specification,
+ * Version 6.1, Vol 3, Part F, Section 3.4.7.1.
+ *
+ * Values larger than this either have to be truncated by the sender, or read by the client
+ * with a read request.
+ *
+ * @note The ATT_MTU may change during the lifetime of a connection, so the result of this
+ * function shall not be cached.
+ *
+ * @param conn The LE ACL connection to get the maximum notification value size for.
+ * @param chan_opt Bearer to get the maximum notification value size for.
+ *                 Shall be either @ref BT_ATT_CHAN_OPT_NONE, @ref BT_ATT_CHAN_OPT_UNENHANCED_ONLY
+ *                 or @ref BT_ATT_CHAN_OPT_ENHANCED_ONLY (only if @kconfig{CONFIG_BT_EATT} is
+ *                 enabled)
+ *                 @ref BT_ATT_CHAN_OPT_NONE will get the value for any bearer.
+ *
+ * @return The maximum notification value size in octets on success.
+ * @retval -EINVAL @p conn is NULL, not an ACL connection, or @p chan_opt is invalid.
+ * @retval -ENOTCONN @p conn is not connected.
+ */
+int bt_att_get_max_notify_size(struct bt_conn *conn, enum bt_att_chan_opt chan_opt);
+
+/**
+ * @brief Get the maximum indication value size for a connection
+ *
+ * The value of an ATT_HANDLE_VALUE_IND PDU is limited to ATT_MTU - 3, where the 3 octets are
+ * the opcode and the attribute handle, as defined by the Bluetooth Core Specification,
+ * Version 6.1, Vol 3, Part F, Section 3.4.7.2. This is the same limit as for notifications.
+ *
+ * Values larger than this either have to be truncated by the sender, or read by the client
+ * with a read request.
+ *
+ * @note The ATT_MTU may change during the lifetime of a connection, so the result of this
+ * function shall not be cached.
+ *
+ * @param conn The LE ACL connection to get the maximum indication value size for.
+ * @param chan_opt Bearer to get the maximum indication value size for.
+ *                 Shall be either @ref BT_ATT_CHAN_OPT_NONE, @ref BT_ATT_CHAN_OPT_UNENHANCED_ONLY
+ *                 or @ref BT_ATT_CHAN_OPT_ENHANCED_ONLY (only if @kconfig{CONFIG_BT_EATT} is
+ *                 enabled)
+ *                 @ref BT_ATT_CHAN_OPT_NONE will get the value for any bearer.
+ *
+ * @return The maximum indication value size in octets on success.
+ * @retval -EINVAL @p conn is NULL, not an ACL connection, or @p chan_opt is invalid.
+ * @retval -ENOTCONN @p conn is not connected.
+ */
+static inline int bt_att_get_max_indicate_size(struct bt_conn *conn, enum bt_att_chan_opt chan_opt)
+{
+	return bt_att_get_max_notify_size(conn, chan_opt);
+}
 
 #ifdef __cplusplus
 }

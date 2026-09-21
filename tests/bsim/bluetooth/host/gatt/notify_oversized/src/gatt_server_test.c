@@ -174,6 +174,7 @@ static void test_main(void)
 	};
 	const struct bt_gatt_attr *attr_a;
 	const struct bt_gatt_attr *attr_b;
+	int max_ntf_size;
 	int err;
 
 	ARRAY_FOR_EACH(test_data, i) {
@@ -196,6 +197,18 @@ static void test_main(void)
 	attr_a = bt_gatt_find_by_uuid(NULL, 0, TEST_CHRC_A_UUID);
 	attr_b = bt_gatt_find_by_uuid(NULL, 0, TEST_CHRC_B_UUID);
 	TEST_ASSERT(attr_a != NULL && attr_b != NULL, "Test characteristics not found");
+
+	/* Both notification and indication values are limited to ATT_MTU - 3 */
+	max_ntf_size = bt_att_get_max_notify_size(g_conn, BT_ATT_CHAN_OPT_NONE);
+	TEST_ASSERT(max_ntf_size == bt_gatt_get_mtu(g_conn) - 3U /* header size */,
+		    "Unexpected maximum notification size %d for ATT_MTU %u", max_ntf_size,
+		    bt_gatt_get_mtu(g_conn));
+	TEST_ASSERT(bt_att_get_max_indicate_size(g_conn, BT_ATT_CHAN_OPT_NONE) == max_ntf_size,
+		    "Maximum indication size %d does not match maximum notification size %d",
+		    bt_att_get_max_indicate_size(g_conn, BT_ATT_CHAN_OPT_NONE), max_ntf_size);
+	TEST_ASSERT(bt_att_get_max_notify_size(NULL, BT_ATT_CHAN_OPT_NONE) == -EINVAL,
+		    "Unexpected maximum notification size %d without a connection",
+		    bt_att_get_max_notify_size(NULL, BT_ATT_CHAN_OPT_NONE));
 
 	/* The client must discard the oversized values and deliver the rest in
 	 * this order. Wait for the notifications to be sent so that the
