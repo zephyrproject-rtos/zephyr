@@ -278,11 +278,7 @@ static int transceive(const struct device *dev,
 			finish_transaction(dev, -ETIMEDOUT);
 
 			/* Clean up the driver state. */
-#ifdef CONFIG_MULTITHREADING
-			k_sem_reset(&dev_data->ctx.sync);
-#else
-			dev_data->ctx.ready = 0;
-#endif /* CONFIG_MULTITHREADING */
+			spi_context_clear_completion(&dev_data->ctx);
 		}
 
 		spi_context_cs_control(&dev_data->ctx, false);
