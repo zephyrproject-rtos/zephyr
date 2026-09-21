@@ -339,16 +339,12 @@ int sam9x60_clk_register_frac_pll(pmc_registers_t *const pmc, struct k_spinlock 
 							     parent_rate, true);
 		if (tmp < 0) {
 			ret = -ENOTSUP;
-			goto free;
 		}
 	}
-	k_spin_unlock(frac->core.lock, key);
-
-	return ret;
 
 free:
 	k_spin_unlock(frac->core.lock, key);
-	k_free(frac);
+
 	return ret;
 }
 
