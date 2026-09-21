@@ -156,6 +156,7 @@
 			compatible = "microchip,port-g1-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			reg = <0x44840000 0x380>;
 			ranges = <0x44840000 0x44840000 0x380>;
 
 			porta: gpio@44840000 {
