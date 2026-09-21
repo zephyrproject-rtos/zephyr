@@ -281,3 +281,7 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&dma2d {
+	status = "okay";
+};

@@ -44,4 +44,7 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x8fb060fe" if SOC_STM32F407XG
 	default "0x57755a57"
 
+configdefault LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32f4xx.h" if LVGL && LV_USE_DRAW_DMA2D
+
 endif # SOC_SERIES_STM32F4X
