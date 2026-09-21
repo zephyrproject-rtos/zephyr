@@ -39,6 +39,10 @@
 #define apb4_prescaler(v) CONCAT(LL_RCC_APB4_DIV_, v)
 #define apb5_prescaler(v) CONCAT(LL_RCC_APB5_DIV_, v)
 
+/* VCOH frequency range */
+#define VCOH_MIN_FREQ DT_PROP_BY_IDX(STM32_CLOCK_CONTROL_NODE, st_vcoh_frequency_range, 0)
+#define VCOH_MAX_FREQ DT_PROP_BY_IDX(STM32_CLOCK_CONTROL_NODE, st_vcoh_frequency_range, 1)
+
 /* PLLx fractional ratio is 2^13 */
 #define PLL_FRACN_DIVISOR 8192
 
@@ -344,36 +348,47 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 	return 0;
 }
 
-__unused
-static int get_vco_input_range(uint32_t m_div, uint32_t *range)
+__maybe_unused
+static int get_vco_parameters(uint32_t ref_ck, uint32_t target_vco_ck,
+			      uint32_t *inrange, uint32_t *vcosel)
 {
-	uint32_t vco_freq;
+	/*
+	 * Some constraints are consistent across all lines of STM32H7 SoCs:
+	 * - In VCOL mode: 1 MHz <= ref_ck <= 2 MHz, 150 MHz <= vco_ck <= 420 MHz
+	 * - In VCOH mode: 2 MHz <= ref_ck <= 16 MHz
+	 *
+	 * Constraints on vco_ck when operating in VCOH mode vary depending on the
+	 * product line and are taken from DT. Refer to figure "PLL block diagram"
+	 * or section "PLL description" of RM0399, RM0433, RM0455, RM0468 and RM0477
+	 * for more details.
+	 */
+	const bool vcol_input_ok = IN_RANGE(ref_ck, MHZ(1), MHZ(2));
+	const bool vcol_output_ok = IN_RANGE(target_vco_ck, MHZ(150), MHZ(420));
 
-	vco_freq = PLLSRC_FREQ / m_div;
+	const bool vcoh_input_ok = IN_RANGE(ref_ck, MHZ(2), MHZ(16));
+	const bool vcoh_output_ok = IN_RANGE(target_vco_ck, VCOH_MIN_FREQ, VCOH_MAX_FREQ);
 
-	if (MHZ(1) <= vco_freq && vco_freq <= MHZ(2)) {
-		*range = LL_RCC_PLLINPUTRANGE_1_2;
-	} else if (MHZ(2) < vco_freq && vco_freq <= MHZ(4)) {
-		*range = LL_RCC_PLLINPUTRANGE_2_4;
-	} else if (MHZ(4) < vco_freq && vco_freq <= MHZ(8)) {
-		*range = LL_RCC_PLLINPUTRANGE_4_8;
-	} else if (MHZ(8) < vco_freq && vco_freq <= MHZ(16)) {
-		*range = LL_RCC_PLLINPUTRANGE_8_16;
+	if (vcol_input_ok && vcol_output_ok) {
+		/* Prefer VCOL if possible (lower power consumption) */
+		*vcosel = LL_RCC_PLLVCORANGE_MEDIUM;
+		*inrange = LL_RCC_PLLINPUTRANGE_1_2;
+	} else if (vcoh_input_ok && vcoh_output_ok) {
+		/* Otherwise, use VCOH if the configuration is achievable */
+		*vcosel = LL_RCC_PLLVCORANGE_WIDE;
+
+		if (IN_RANGE(ref_ck, MHZ(2), MHZ(4))) {
+			*inrange = LL_RCC_PLLINPUTRANGE_2_4;
+		} else if (IN_RANGE(ref_ck, MHZ(4), MHZ(8))) {
+			*inrange = LL_RCC_PLLINPUTRANGE_4_8;
+		} else { /* 8 MHz < ref_ck <= 16 MHz */
+			*inrange = LL_RCC_PLLINPUTRANGE_8_16;
+		}
 	} else {
+		/* Illegal clock configuration for this hardware */
 		return -ERANGE;
 	}
 
 	return 0;
-}
-
-__unused
-static uint32_t get_vco_output_range(uint32_t vco_input_range)
-{
-	if (vco_input_range == LL_RCC_PLLINPUTRANGE_1_2) {
-		return LL_RCC_PLLVCORANGE_MEDIUM;
-	}
-
-	return LL_RCC_PLLVCORANGE_WIDE;
 }
 
 #endif /* ! CONFIG_CPU_CORTEX_M4 */
@@ -976,12 +991,16 @@ static int set_up_plls(void)
 	}
 
 #if defined(STM32_PLL_ENABLED)
-	r = get_vco_input_range(STM32_PLL_M_DIVISOR, &vco_input_range);
+	const uint32_t vco1_ck = PLLX_VCO_FREQ(
+		PLLSRC_FREQ, UINT64_C(STM32_PLL_M_DIVISOR),
+		STM32_PLL_N_MULTIPLIER, STM32_PLL_FRACN_VALUE);
+
+	r = get_vco_parameters(
+		PLLSRC_FREQ / STM32_PLL_M_DIVISOR, vco1_ck,
+		&vco_input_range, &vco_output_range);
 	if (r < 0) {
 		return r;
 	}
-
-	vco_output_range = get_vco_output_range(vco_input_range);
 
 	LL_RCC_PLL1_SetM(STM32_PLL_M_DIVISOR);
 
@@ -1024,12 +1043,16 @@ static int set_up_plls(void)
 #endif /* STM32_PLL_ENABLED */
 
 #if defined(STM32_PLL2_ENABLED)
-	r = get_vco_input_range(STM32_PLL2_M_DIVISOR, &vco_input_range);
+	const uint32_t vco2_ck = PLLX_VCO_FREQ(
+		PLLSRC_FREQ, UINT64_C(STM32_PLL2_M_DIVISOR),
+		STM32_PLL2_N_MULTIPLIER, STM32_PLL2_FRACN_VALUE);
+
+	r = get_vco_parameters(
+		PLLSRC_FREQ / STM32_PLL2_M_DIVISOR, vco2_ck,
+		&vco_input_range, &vco_output_range);
 	if (r < 0) {
 		return r;
 	}
-
-	vco_output_range = get_vco_output_range(vco_input_range);
 
 	LL_RCC_PLL2_SetM(STM32_PLL2_M_DIVISOR);
 
@@ -1078,12 +1101,16 @@ static int set_up_plls(void)
 #endif /* STM32_PLL2_ENABLED */
 
 #if defined(STM32_PLL3_ENABLED)
-	r = get_vco_input_range(STM32_PLL3_M_DIVISOR, &vco_input_range);
+	const uint32_t vco3_ck = PLLX_VCO_FREQ(
+		PLLSRC_FREQ, UINT64_C(STM32_PLL3_M_DIVISOR),
+		STM32_PLL3_N_MULTIPLIER, STM32_PLL3_FRACN_VALUE);
+
+	r = get_vco_parameters(
+		PLLSRC_FREQ / STM32_PLL3_M_DIVISOR, vco3_ck,
+		&vco_input_range, &vco_output_range);
 	if (r < 0) {
 		return r;
 	}
-
-	vco_output_range = get_vco_output_range(vco_input_range);
 
 	LL_RCC_PLL3_SetM(STM32_PLL3_M_DIVISOR);
 
