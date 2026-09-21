@@ -153,7 +153,7 @@ configdefault LIBLC3
 
 configdefault BT_RX_STACK_SIZE
 	default 4096 if LIBLC3
-	default 2048 if BT_SETTINGS && !BT_MESH
+	default 2800 if (BT_SETTINGS || BT_SMP) && !BT_MESH_GATT_CLIENT
 
 if SHELL
 
