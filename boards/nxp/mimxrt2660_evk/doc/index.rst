@@ -99,24 +99,21 @@ Connections and I/Os
 |           |                 | P3T1755DP temperature sensor at    |
 |           |                 | 0x48, ``ambient-temp0``)           |
 +-----------+-----------------+------------------------------------+
-| LPSPI0    | SCK, SDO, SDI,  | PIO3_20, PIO3_21, PIO3_22,         |
-|           | PCS0            | PIO3_23 (needs J53 at 1-2, see     |
-|           |                 | below)                             |
+| LPSPI0    | SCK, SDO, SDI,  | PIO3_20, PIO3_21 (J56 pin 5),      |
+|           | PCS0            | PIO3_22 (J56 pin 6), PIO3_23       |
+|           |                 | (needs J53 at 1-2, see below)      |
++-----------+-----------------+------------------------------------+
+| GPIO test | VBAT GPIO0 2,   | PIO0_2 (J51 pin 2),                |
+|           | VBAT GPIO0 3    | PIO0_3 (J51 pin 3)                 |
 +-----------+-----------------+------------------------------------+
 
 The debug console runs at 115200 8N1 on the MCU-Link virtual COM port.
 
-.. important::
-   LPSPI0's four pads do not reach a header directly. PIO3_20..PIO3_25 pass
-   through a pair of analog switches (U33 TMUX136 and U34 TMUX1574) that hand
-   them either to the LCD interface or to LPSPI0, selected by LCD0_SPI1_SEL.
-   That line is low by default -- both the R392 strap and jumper J53's default
-   2-3 position tie it to ground -- so out of the box these pads carry the LCD
-   signals and LPSPI0 is not reachable. **Move J53 to 1-2** to use LPSPI0.
-
-   The board has no populated SPI target, so exercising the bus also needs an
-   external connection; ``tests/drivers/spi/spi_loopback`` expects SDO (PIO3_21)
-   shorted to SDI (PIO3_22).
+PIO3_20..PIO3_23 are shared between the LCD interface and LPSPI0 through the U33
+and U34 analog switches, which select the LCD by default: move J53 to 1-2 to
+route them to LPSPI0. The board has no SPI target, so ``spi_loopback`` also needs
+J56 pin 5 (SDO) shorted to J56 pin 6 (SDI). ``gpio_basic_api`` needs J51 pin 2
+shorted to pin 3; no jumper change is required for those pads.
 
 System Clock
 ============
