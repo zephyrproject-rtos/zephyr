@@ -56,3 +56,16 @@ tests:
       - CONFIG_MPIPE_VID=y
       - CONFIG_MPIPE_VID_CONVERT=y
       - CONFIG_MPIPE_VID_OVERLAY=y
+
+  mpipe.nn.build:
+    tags:
+      - subsys
+      - mpipe
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MPIPE_NN=y
+      - CONFIG_MPIPE_NN_CONVERTER=y
+      - CONFIG_MPIPE_NN_RUNNER=y
+      - CONFIG_MPIPE_NN_DECODER=y
