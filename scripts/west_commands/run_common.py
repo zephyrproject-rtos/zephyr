@@ -175,6 +175,16 @@ def get_domains_to_process(build_dir, args, domain_file, get_all_domain=False):
         # Use domains from domain file with flash order
         return domains.get_domains(args.domain, default_flash_order=True)
 
+def filter_used_cmds(used_cmds, board_names):
+    # Reduce entries to only those having matching board names (either exact or with regex) and
+    # remove any entries with empty board lists
+    for entry in used_cmds:
+        entry.boards = [match for match in entry.boards
+                        if any(re.match(fr'^{match}$', check) is not None
+                               for check in board_names)]
+
+    return [entry for entry in used_cmds if len(entry.boards) > 0]
+
 def do_run_common(command, user_args, user_runner_args, domain_file=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
@@ -299,23 +309,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
 
                         used_cmds.append(UsedFlashCommand(cmd, targets, data['runners'], run_first))
 
-    # Reduce entries to only those having matching board names (either exact or with regex) and
-    # remove any entries with empty board lists
-    for i, entry in enumerate(used_cmds):
-        for l, match in enumerate(entry.boards):
-            match_found = False
-
-            # Check if there is a matching board for this regex
-            for check in board_names:
-                if re.match(fr'^{match}$', check) is not None:
-                    match_found = True
-                    break
-
-            if not match_found:
-                del entry.boards[l]
-
-        if len(entry.boards) == 0:
-            del used_cmds[i]
+    used_cmds = filter_used_cmds(used_cmds, board_names)
 
     # Set up runner logging to delegate to the WestCommand logging methods.
     forward_logging_to_west(command, 'runners')
