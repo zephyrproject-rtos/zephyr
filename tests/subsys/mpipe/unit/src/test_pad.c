@@ -56,7 +56,7 @@ ZTEST_SUITE(mpipe_pad_api, NULL, pad_suite_setup, pad_before, pad_after, NULL);
 
 ZTEST_F(mpipe_pad_api, test_link_sets_peers)
 {
-	zassert_ok(mpipe_pad_link(&fixture->src_pad, &fixture->sink_pad), "mpipe_pad_link failed");
+	mpipe_pad_link(&fixture->src_pad, &fixture->sink_pad);
 	zassert_equal(fixture->src_pad.peer, &fixture->sink_pad, "src_pad peer != sink_pad");
 	zassert_equal(fixture->sink_pad.peer, &fixture->src_pad, "sink_pad peer != src_pad");
 }

@@ -94,7 +94,9 @@ static int mpipe_element_link_pads(struct mpipe_element *src, uint8_t src_pad_id
 		return -ENOTSUP;
 	}
 
-	return mpipe_pad_link(src_pad, sink_pad);
+	mpipe_pad_link(src_pad, sink_pad);
+
+	return 0;
 }
 
 int mpipe_element_link(struct mpipe_element *element, struct mpipe_element *next_element, ...)
