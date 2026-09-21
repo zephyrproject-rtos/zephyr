@@ -118,7 +118,7 @@ extern "C" {
  * this macro to initialize the target k_timeout_t value at build time.
  */
 #define I2C_DT_INST_TRANSFER_TIMEOUT(inst)                                                         \
-	SYS_TIMEOUT_MS_INIT(((I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst) != 0)                          \
+	SYS_TIMEOUT_MS(((I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst) != 0)                               \
 				     ? I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst)                       \
 				     : SYS_FOREVER_MS))
 
