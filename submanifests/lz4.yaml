@@ -1,0 +1,7 @@
+# Zephyr 4.4 moved lz4 out of optional.yaml (16fecc0276b); sondebase's Iridium path needs it.
+manifest:
+  projects:
+    - name: lz4
+      url: https://github.com/zephyrproject-rtos/lz4
+      revision: 0ad20d0fc4ec70d6f4c3d399357e59d0544cf07f # zephyr branch head, 2026-04-29
+      path: modules/lib/lz4
