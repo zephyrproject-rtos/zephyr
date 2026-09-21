@@ -411,23 +411,17 @@ wiced_bt_dev_vendor_specific_command(uint16_t opcode, uint8_t param_len, uint8_t
 
 {
 	/*
-	 * This function is using only by btstack-integration asset
-	 * for enable LPM.
+	 * Only here for the btstack-integration asset to link. Its callers are not reached:
+	 * the asset's post stack initialization callback, which would enable the low power
+	 * mode, is never run (cyw208xx_bt_enable_low_power_mode() does that instead), and
+	 * its firmware download is not part of the build.
 	 */
-	struct net_buf *buf = NULL;
+	ARG_UNUSED(opcode);
+	ARG_UNUSED(param_len);
+	ARG_UNUSED(param_buf);
+	ARG_UNUSED(cback);
 
-	/* Allocate a HCI command buffer */
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		LOG_ERR("Unable to allocate buffer");
-		return WICED_NO_MEMORY;
-	}
-
-	/* Add data part of packet */
-	net_buf_add_mem(buf, param_buf, param_len);
-	bt_hci_cmd_send(opcode, buf);
-
-	return WICED_BT_SUCCESS;
+	return WICED_BT_UNSUPPORTED;
 }
 
 void wiced_bt_process_hci(hci_packet_type_t pti, uint8_t *data, uint32_t length)
