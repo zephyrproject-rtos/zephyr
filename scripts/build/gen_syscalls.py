@@ -42,7 +42,7 @@ notracing = [
     "zephyr/errno_private.h",
 ]
 
-types64 = ["int64_t", "uint64_t"]
+types64 = ["int64_t", "uint64_t", "timing_t"]
 
 # The kernel linkage is complicated.  These functions from
 # userspace_handlers.c are present in the kernel .a library after
@@ -233,6 +233,13 @@ def union_decl(ctype, split):
     return f"union {{ {middle}; {ctype} val; }}"
 
 
+def split_assert(type, check):
+    test = f"sizeof ({type}) {'>' if check else '<='} sizeof(void *)"
+    kind = "wide" if check else "narrow"
+    message = f'"{type} is not {kind}"'
+    return f"BUILD_ASSERT({test}, {message});\n"
+
+
 def wrapper_defs(func_name, func_type, args, fn, userspace_only):
     ret64 = need_split(func_type)
     mrsh_args = []  # List of rvalue expressions for the marshalled invocation
@@ -241,6 +248,12 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
     syscall_id = "K_SYSCALL_" + func_name.upper()
 
     wrap = ''
+
+    split_check = '/* Validate sizes of return and parameter types computed at build time */\n'
+
+    if func_type != 'void':
+        split_check += split_assert(func_type, ret64)
+
     if not userspace_only:
         wrap += f"extern {func_type} z_impl_{func_name}({decl_arglist});\n"
         wrap += "\n"
@@ -257,9 +270,11 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
     valist_args = []
     for argnum, (argtype, argname) in enumerate(args):
         split = need_split(argtype)
+
         decl = union_decl(argtype, split)
         wrap += f"\t\t{decl} parm{argnum}"
         if argtype != "va_list":
+            split_check += split_assert(argtype, split)
             wrap += f" = {{ .val = {argname} }};\n"
         else:
             # va_list objects are ... peculiar.
@@ -315,6 +330,8 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
         wrap += "\t" + f"{ret}{impl_call};\n"
 
     wrap += "}\n"
+
+    wrap += split_check
 
     if fn not in notracing:
         argnames = ", ".join([f"{argname}" for _, argname in args])
