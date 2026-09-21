@@ -15,6 +15,10 @@
 	soc {
 		compatible = "st,stm32h7a3", "st,stm32h7", "simple-bus";
 
+		rcc@58024400 {
+			st,vcoh-frequency-range = <DT_FREQ_M(128) DT_FREQ_M(560)>;
+		};
+
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
