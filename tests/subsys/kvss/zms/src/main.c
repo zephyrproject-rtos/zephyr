@@ -23,6 +23,12 @@
 #define TEST_ZMS_AREA_DEV    DEVICE_DT_GET(DT_MTD_FROM_PARTITION(DT_NODELABEL(TEST_ZMS_AREA)))
 #define TEST_DATA_ID         1
 #define TEST_SECTOR_COUNT    5U
+
+/* Free space tests walk a whole sector entry by entry, too slow on large
+ * sectors.
+ */
+#define ZMS_MAX_SECTOR_SIZE_FOR_FREE_SPACE_TEST 8192U
+
 #if defined(CONFIG_ZMS_LOOKUP_CACHE_MANUAL)
 #define TEST_ZMS_LOOKUP_CACHE_SIZE 64
 #elif defined(CONFIG_ZMS_LOOKUP_CACHE)
@@ -1387,6 +1393,11 @@ ZTEST_F(zms, test_zms_free_space)
 
 	fixture->fs.sector_count = 2;
 
+	/* Too slow on large sectors. */
+	if (fixture->fs.sector_size > ZMS_MAX_SECTOR_SIZE_FOR_FREE_SPACE_TEST) {
+		ztest_test_skip();
+	}
+
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
@@ -1626,6 +1637,11 @@ ZTEST_F(zms, test_zms_free_space_5sectors)
 	char *write_buf;
 
 	fixture->fs.sector_count = 5;
+
+	/* Same reason as in test_zms_free_space. */
+	if (fixture->fs.sector_size > ZMS_MAX_SECTOR_SIZE_FOR_FREE_SPACE_TEST) {
+		ztest_test_skip();
+	}
 
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
