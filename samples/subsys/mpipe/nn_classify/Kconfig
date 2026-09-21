@@ -1,0 +1,92 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Live classification pipeline sample"
+
+menu "Live classification pipeline configuration"
+
+config VIDEO_SOURCE_CROP_LEFT
+	int "Crop area left value"
+	default 0
+
+config VIDEO_SOURCE_CROP_TOP
+	int "Crop area top value"
+	default 0
+
+config VIDEO_SOURCE_CROP_WIDTH
+	int "Crop area width value"
+	default 0
+	help
+	  If set to 0, the crop is not applied.
+
+config VIDEO_SOURCE_CROP_HEIGHT
+	int "Crop area height value"
+	default 0
+	help
+	  If set to 0, the crop is not applied.
+
+config VIDEO_FRAME_HEIGHT
+	int "Height of the video frame"
+	default 0
+	help
+	  If set to 0, the default height is used.
+
+config VIDEO_FRAME_WIDTH
+	int "Width of the video frame"
+	default 0
+	help
+	  If set to 0, the default width is used.
+
+config VIDEO_PIXEL_FORMAT
+	string "Pixel format of the video frame"
+	help
+	  If not set, the default pixel format is used.
+
+config VIDEO_CTRL_HFLIP
+	int "Mirror the video frame horizontally"
+	range 0 1
+	default 0
+
+config VIDEO_CTRL_VFLIP
+	int "Mirror the video frame vertically"
+	range 0 1
+	default 0
+
+config VIDEO_ROTATION_ANGLE
+	int "Rotate the video frame by a specified angle"
+	range 0 270
+	default 0
+	help
+	  Specify one of {0, 90, 180, 270} degrees.
+
+config PROP_NUM_BUFS
+	int "Number of buffers the source provides before stopping"
+	default 0
+	help
+	  If not set or set to 0, the source will run forever.
+
+config SAMPLE_NN_ARENA_SIZE
+	int "Tensor arena size in bytes"
+	default 140000
+	help
+	  Working memory handed to the inference backend; 136 KiB fits the
+	  stock person detection model.
+
+config SAMPLE_NN_INPUT_SHIFT
+	bool "Shift the input samples by the model's zero point"
+	default y
+	help
+	  Store each input sample as (pixel + SAMPLE_NN_INPUT_ZERO_POINT),
+	  the affine mapping of a model trained on pixels scaled to -1..1,
+	  such as the stock person detection model. Disabled, the converter
+	  stores the raw pixel bytes.
+
+config SAMPLE_NN_INPUT_ZERO_POINT
+	int "Zero point added to each input sample"
+	depends on SAMPLE_NN_INPUT_SHIFT
+	default -128
+
+endmenu
+
+source "Kconfig.zephyr"
