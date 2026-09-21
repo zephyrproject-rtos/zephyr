@@ -13,6 +13,7 @@ toolchain:
 supported:
   - uart
   - gpio
+  - dma
   - spi
   - i2c
   - rtc
