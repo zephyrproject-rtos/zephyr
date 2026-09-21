@@ -1,0 +1,110 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP i.MX9 fractional-N PLL.
+
+  The PLL derives its output from the 24 MHz oscillator using a reference
+  predivider, an integer or fractional loop divider and an output divider:
+
+    Fvco = (Fref / RDIV) * (MFI + MFN / MFD)
+    Fout = Fvco / ODIV
+
+  In integer mode the fractional part is unused, so:
+
+    Fvco = (Fref / RDIV) * MFI
+    Fout = Fvco / ODIV
+
+  (Fref / RDIV) must be within 20 MHz to 40 MHz and Fvco within 2.5 GHz to
+  5 GHz, so only validated divider sets may be used.
+
+  Each child node describes one operating point the PLL may be programmed to.
+  The dividers must produce the frequency the child advertises in
+  clock-frequency.
+
+  A driver that programs a specific instance of this PLL, such as the ARM PLL
+  that clocks the Cortex-A cores, identifies its node by the label the SoC
+  devicetree gives it (for example arm_pll), because the compatible is shared
+  by every instance.
+
+  Example configuration:
+
+  arm_pll: arm-pll@44481000 {
+          compatible = "nxp,imx9-pll";
+          reg = <0x44481000 0x100>;
+          #clock-cells = <0>;
+          pll-mode = "integer";
+
+          /* 24 MHz / 1 * 141 / 2 */
+          opp-0 {
+                  clock-frequency = <DT_FREQ_M(1692)>;
+                  rdiv = <1>;
+                  mfi = <141>;
+                  odiv = <2>;
+          };
+  };
+
+compatible: "nxp,imx9-pll"
+
+include:
+  - clock-controller.yaml
+  - base.yaml
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  pll-mode:
+    type: string
+    required: true
+    enum:
+      - "integer"
+      - "fractional"
+    description: |
+      Loop divider mode used by every operating point of this PLL. In integer
+      mode the operating points omit mfn and mfd; in fractional mode they must
+      provide both.
+
+child-binding:
+  description: |
+    One PLL operating point.
+
+  properties:
+    clock-frequency:
+      type: int
+      required: true
+      description: |
+        Output frequency produced by these dividers, in Hz.
+
+    rdiv:
+      type: int
+      required: true
+      enum: [0, 1, 2, 3, 4, 5, 6, 7]
+      description: |
+        Raw DIV[RDIV] input clock predivider field. Both 0 and 1 select divide
+        by 1; values 2 to 7 divide by that value.
+
+    mfi:
+      type: int
+      required: true
+      description: |
+        Integer portion of the loop divider, DIV[MFI].
+
+    mfn:
+      type: int
+      description: |
+        Numerator of the fractional loop divider, NUMERATOR[MFN]. Used only in
+        fractional mode. MFN / MFD must be within 0 to 1.
+
+    mfd:
+      type: int
+      description: |
+        Denominator of the fractional loop divider, DENOMINATOR[MFD]. Used only
+        in fractional mode. Writing 0 to this field is not allowed.
+
+    odiv:
+      type: int
+      required: true
+      description: |
+        Raw DIV[ODIV] output divider field. Both 0 and 1 divide by 2; values 2
+        to 255 divide by that value.
