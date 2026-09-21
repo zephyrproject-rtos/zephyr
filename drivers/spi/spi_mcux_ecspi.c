@@ -271,11 +271,7 @@ static int transceive(const struct device *dev,
 		irq_unlock(key);
 
 		spi_context_cs_control(&data->ctx, false);
-#ifdef CONFIG_MULTITHREADING
-		k_sem_reset(&data->ctx.sync);
-#else
-		atomic_set(&data->ctx.ready, 0);
-#endif
+		spi_context_clear_completion(&data->ctx);
 	}
 
 out:
