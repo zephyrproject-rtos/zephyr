@@ -53,7 +53,7 @@ struct usb_setup_packet {
 		uint8_t bmRequestType;
 		/** Request type bit fields. */
 		struct usb_req_type_field RequestType;
-	} __packed;
+	};
 	/** Request code. */
 	uint8_t bRequest;
 	/** Request-specific value. */
@@ -62,7 +62,7 @@ struct usb_setup_packet {
 	uint16_t wIndex;
 	/** Expected data length. */
 	uint16_t wLength;
-} __packed;
+};
 
 /**
  * @name USB Setup packet RequestType Direction values. See Table 9-2 of the specification.
