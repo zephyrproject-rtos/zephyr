@@ -676,6 +676,14 @@ New APIs and options
 * Modem
 
   * :c:enumerator:`CELLULAR_MODEM_INFO_SERIAL_NUMBER`
+  * Refuse to suspend modem cellular (``-EBUSY``) when a devicetree child device
+    PM state is still :c:enumerator:`PM_DEVICE_STATE_ACTIVE`, instead of cutting
+    power to it unexpectedly. This applies only to child devices implemented PM.
+    Requires :kconfig:option:`CONFIG_DEVICE_DEPS` to enumerate child device PM state.
+  * Introduced optional ``gnss_power_on`` and ``gnss_shutdown`` chat scripts in
+    :c:struct:`modem_cellular_config_scripts`. These scripts run around modem's
+    power on and modem shutdown respectively. This is only for cellular modems
+    with integrated GNSS receiver.
 
 * Multimedia Pipeline
 

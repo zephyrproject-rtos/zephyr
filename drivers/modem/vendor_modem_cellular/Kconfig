@@ -3,3 +3,12 @@
 
 configdefault MODEM_CHAT_COMMANDS_CONDITIONAL
 	default y if DT_HAS_NORDIC_NRF93M1_ENABLED
+
+config MODEM_CELLULAR_U_BLOX_SARA_R4_GNSS
+	bool "u-blox SARA-R4 GNSS receiver support"
+	default n
+	depends on GNSS
+	help
+	  Enable modem cellular functionality for integrated GNSS receiver for u-blox SARA-R4.
+	  This enables modem cellular scripts handling GNSS power on and power off procedures.
+	  Default enabled when GNSS subsystem is enabled.
