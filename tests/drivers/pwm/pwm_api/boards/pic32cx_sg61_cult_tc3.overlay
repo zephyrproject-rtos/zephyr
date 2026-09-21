@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define PWM_NODE    tc3
+#define PWM_PINCTRL tc3_pwm_default
+#include "mchp_pwm_api_support.dtsi"
+
+&pinctrl {
+	tc3_pwm_default: tc3_pwm_default {
+		group1 {
+			pinmux = <PA14E_TC3_WO0>;
+		};
+	};
+};
