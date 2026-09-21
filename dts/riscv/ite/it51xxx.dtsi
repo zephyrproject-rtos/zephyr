@@ -1571,13 +1571,18 @@
 		hwcrypto: crypto@f03b00 {
 			compatible = "ite,it51xxx-mfd";
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			reg = <0xf03b00 0x00aa>;
 			interrupts = <IT51XXX_IRQ_CRYPTO IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 
 			sha256: sha256 {
 				compatible = "ite,it51xxx-sha";
+				status = "disabled";
+			};
+
+			hw_rsa: hw_rsa {
+				compatible = "ite,it51xxx-hw-rsa";
 				status = "disabled";
 			};
 		};

@@ -3,7 +3,7 @@
 
 config MFD_ITE_IT51XXX
 	bool "ITE IT51XXX multi-function device driver"
-	default y if CRYPTO_IT51XXX_SHA
+	default y if CRYPTO_IT51XXX_SHA || IT51XXX_HW_RSA_CALCULATION
 	depends on DT_HAS_ITE_IT51XXX_MFD_ENABLED
 	help
 	  Enable the ITE IT51XXX MFD driver.
@@ -16,7 +16,7 @@ config MFD_ITE_IT51XXX_INIT_PRIORITY
 	help
 	  Initialization priority for the ITE IT51XXX MFD driver.  This must be
 	  lower (earlier) than the init priority of the child driver
-	  (CONFIG_CRYPTO_INIT_PRIORITY) so the shared resources are ready before
-	  child uses them.
+	  (CONFIG_CRYPTO_INIT_PRIORITY and CONFIG_IT51XXX_RSA_INIT_PRIORITY)
+	  so the shared resources are ready before child uses them.
 
 endif # MFD_ITE_IT51XXX

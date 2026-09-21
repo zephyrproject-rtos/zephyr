@@ -48,6 +48,11 @@ extern "C" {
 /** Maximum input length in 32-bit words per SHA hardware operation. */
 #define SHA_HW_MAX_INPUT_LEN_WORDS (SHA_HW_MAX_INPUT_LEN / sizeof(uint32_t))
 
+/** Minimum RSA operand length in bytes. */
+#define IT51XXX_HWCRYPTO_RSA_MIN_BYTE_LEN 64
+/** Maximum RSA operand length in bytes. */
+#define IT51XXX_HWCRYPTO_RSA_MAX_BYTE_LEN 512
+
 /**
  * @brief SHA DLM data.
  *
@@ -73,6 +78,27 @@ struct it51xxx_sha_dlm {
 } __aligned(256);
 
 /**
+ * @brief RSA DLM layout.
+ *
+ * Field offsets correspond to the hardware-defined layout within
+ * the 4 KiB DLM region.
+ */
+struct it51xxx_rsa_dlm {
+	/** Public key data at offsets 0x000–0x1FF. */
+	uint8_t key_public[IT51XXX_HWCRYPTO_RSA_MAX_BYTE_LEN];
+	/** Reserved region at offsets 0x200–0x3FF. */
+	uint8_t reserved_1[512];
+	/** Message data at offsets 0x400–0x5FF. */
+	uint8_t messages[IT51XXX_HWCRYPTO_RSA_MAX_BYTE_LEN];
+	/** Reserved region at offsets 0x600–0x9FF. */
+	uint8_t reserved_2[1024];
+	/** Private key data at offsets 0xA00–0xBFF. */
+	uint8_t key_private[IT51XXX_HWCRYPTO_RSA_MAX_BYTE_LEN];
+	/** Reserved region at offsets 0xC00–0xFFF. */
+	uint8_t reserved_3[1024];
+};
+
+/**
  * @brief Shared DLM storage for it51xxx hardware crypto algorithms.
  *
  * SHA, RSA, and other crypto algorithms share the same 4 KiB DLM
@@ -82,6 +108,8 @@ struct it51xxx_sha_dlm {
 union hwcrypto_dlm_block {
 	/** SHA DLM data. */
 	struct it51xxx_sha_dlm sha;
+	/** RSA DLM data. */
+	struct it51xxx_rsa_dlm rsa;
 	/** Raw access to the entire shared DLM region. */
 	uint8_t raw_data[IT51XXX_HWCRYPTO_DLM_SIZE];
 };
