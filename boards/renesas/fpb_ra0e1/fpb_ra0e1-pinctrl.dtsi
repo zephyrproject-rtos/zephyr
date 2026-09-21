@@ -29,4 +29,15 @@
 			psels = <RA_PSEL(RA_PSEL_P1nPFS_RXD2A, 1, 10)>;
 		};
 	};
+
+	i2c20_default: i2c20_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_P1nPFS_SCL20A, 1, 12)>,
+				<RA_PSEL(RA_PSEL_P1nPFS_SDA20A, 1, 10)>;
+			drive-open-drain;
+			output-enable;
+			output-high;
+			bias-pull-up;
+		};
+	};
 };
