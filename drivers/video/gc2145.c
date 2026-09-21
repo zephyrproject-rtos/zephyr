@@ -1264,7 +1264,7 @@ static int gc2145_set_selection(const struct device *dev, struct video_selection
 	}
 
 	if (sel->target != VIDEO_SEL_TGT_CROP) {
-		return -EINVAL;
+		return -ENOSYS;
 	}
 
 	return gc2145_set_crop(dev, sel);
