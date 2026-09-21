@@ -106,7 +106,7 @@ ZTEST(mipi_dbi_api, test_mipi_dbi_reset)
 static void *mipi_dbi_setup(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(devices); ++i) {
-		__ASSERT_NO_MSG(device_is_ready(devices[i]));
+		zassert_true(device_is_ready(devices[i]), "%s is not ready", devices[i]->name);
 	}
 
 	return NULL;
