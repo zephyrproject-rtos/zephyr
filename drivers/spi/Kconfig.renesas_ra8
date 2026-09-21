@@ -16,6 +16,7 @@ if SPI_RENESAS_RA8
 
 config SPI_B_INTERRUPT
 	bool "RA MCU SPI B Interrupt Support"
+	default y if SPI_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for the SPI B Driver of RA family.
 

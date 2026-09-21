@@ -1227,6 +1227,7 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  *
  * @return Number of frames received in peripheral mode, 0 on success in
  *         controller mode, negative errno value on failure.
+ * @retval -ENOSYS The driver does not implement asynchronous transfers.
  * @retval -ENOTSUP The spi config is not supported either by the
  *	   device hardware or the driver software.
  * @retval -EINVAL Some parameter of the spi_config is invalid.
@@ -1238,8 +1239,13 @@ static inline int spi_transceive_cb(const struct device *dev,
 				    spi_callback_t callback,
 				    void *userdata)
 {
-	return DEVICE_API_GET(spi, dev)->transceive_async(dev, config, tx_bufs, rx_bufs, callback,
-							  userdata);
+	const struct spi_driver_api *api = DEVICE_API_GET(spi, dev);
+
+	if (api->transceive_async == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->transceive_async(dev, config, tx_bufs, rx_bufs, callback, userdata);
 }
 
 #if defined(CONFIG_POLL) || defined(__DOXYGEN__)
@@ -1273,6 +1279,7 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  *
  * @return Number of frames received in peripheral mode, 0 on success in
  *         controller mode, negative errno value on failure.
+ * @retval -ENOSYS The driver does not implement asynchronous transfers.
  * @retval -ENOTSUP The spi config is not supported either by the
  *	   device hardware or the driver software.
  * @retval -EINVAL Some parameter of the spi_config is invalid.
@@ -1283,9 +1290,14 @@ static inline int spi_transceive_signal(const struct device *dev,
 				       const struct spi_buf_set *rx_bufs,
 				       struct k_poll_signal *sig)
 {
+	const struct spi_driver_api *api = DEVICE_API_GET(spi, dev);
 	spi_callback_t cb = (sig == NULL) ? NULL : z_spi_transfer_signal_cb;
 
-	return DEVICE_API_GET(spi, dev)->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
+	if (api->transceive_async == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
 }
 
 /**
