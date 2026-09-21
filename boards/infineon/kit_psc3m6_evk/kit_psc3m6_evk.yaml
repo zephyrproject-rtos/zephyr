@@ -19,4 +19,5 @@ supported:
   - pinctrl
   - rtc
   - watchdog
+  - comparator
 vendor: infineon
