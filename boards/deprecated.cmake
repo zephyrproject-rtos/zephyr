@@ -31,8 +31,8 @@ set(esp32s3_devkitm/esp32s3/appcpu_DEPRECATED
 set(ubx_evk_iris_w1_fidelex/rw612_DEPRECATED
     ubx_evk_iris_w1@fidelix/rw612
 )
-set(it51xxx_evb_DEPRECATED
-    it515xx_evb/it51526aw
+set(it515xx_evb_DEPRECATED
+    it51xxx_evb/it51526aw
 )
 set(weact_stm32h5_core_DEPRECATED
     weact_stm32h562_core
