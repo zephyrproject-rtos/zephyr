@@ -16,6 +16,10 @@
 	};
 
 	soc {
+		flash-controller@52002000 {
+			clocks = <&rcc STM32_CLOCK(AHB3, 8)>;
+		};
+
 		mailbox: mailbox@58026400 {
 			compatible = "st,stm32-hsem-mailbox", "st,mbox-stm32-hsem";
 			reg = <0x58026400 0x400>;
@@ -24,8 +28,4 @@
 			status = "disabled";
 		};
 	};
-};
-
-&flash {
-	clocks = <&rcc STM32_CLOCK(AHB3, 8)>;
 };
