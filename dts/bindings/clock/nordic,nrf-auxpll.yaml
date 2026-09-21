@@ -35,9 +35,6 @@ properties:
   "#clock-cells":
     const: 0
 
-  nordic,ficrs:
-    required: true
-
   nordic,frequency:
     type: int
     required: true
