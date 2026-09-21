@@ -83,7 +83,39 @@ config MPIPE_NN_BACKEND_FAKE
 	  Deterministic pseudo-inference with no runtime dependency, for
 	  framework bring-up and continuous integration.
 
+config MPIPE_NN_BACKEND_TFLM
+	bool "TensorFlow Lite Micro backend"
+	depends on TENSORFLOW_LITE_MICRO
+	depends on STD_CPP17 || STD_CPP2A || STD_CPP20 || STD_CPP2B
+	help
+	  Run inference through the optional tflite-micro module, which needs
+	  C++17 or later. With CONFIG_ETHOS_U or CONFIG_TFLM_NXP_NEUTRON the
+	  backend also registers the NPU custom operator, so a model compiled
+	  for that NPU runs on it; a model that was not runs on the CPU
+	  kernels without notice.
+
 endchoice
+
+config MPIPE_NN_TFLM_MAX_OPS
+	int "Operator capacity of the TFLM op resolver"
+	range 25 64
+	default 32
+	depends on MPIPE_NN_BACKEND_TFLM
+	help
+	  Operator registrations the op resolver can hold. The backend
+	  registers a fixed set for quantized vision models plus the NPU
+	  custom operator when one is configured; raise it when extending
+	  the registration list.
+
+config MPIPE_NN_TFLM_MAX_INSTANCES
+	int "Concurrent TFLM interpreter instances"
+	range 1 4
+	default 1
+	depends on MPIPE_NN_BACKEND_TFLM
+	help
+	  Number of inference elements that can hold a loaded model at the
+	  same time. Each instance reserves static storage for an interpreter
+	  and an op resolver.
 
 config MPIPE_NN_RUNNER_POOL_NUM
 	int "Number of output buffers of the inference element"
