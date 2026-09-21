@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ENSEMBLE_E1C_SK
+	select SOC_AE1C1F4051920PH0_RTSS_HE if BOARD_ENSEMBLE_E1C_SK_AE1C1F4051920PH0_RTSS_HE
