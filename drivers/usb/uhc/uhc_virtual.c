@@ -120,6 +120,7 @@ struct uhc_vrt_data {
 	uint16_t sof_count;
 	uint8_t req;
 	enum usb_device_speed speed;
+	struct k_spinlock lock;
 };
 
 enum uhc_vrt_event_type {
@@ -291,7 +292,7 @@ static void vrt_assemble_frame(const struct device *dev)
 	struct uhc_data *const data = dev->data;
 	struct uhc_transfer *tmp;
 	unsigned int n = 0;
-	unsigned int key;
+	k_spinlock_key_t key;
 	uint32_t bm = 0;
 	uint32_t periodic_used = 0;
 	uint32_t budget = FRAME_PERIODIC_BUDGET(priv->speed);
@@ -299,7 +300,7 @@ static void vrt_assemble_frame(const struct device *dev)
 	sys_dlist_init(&frame->list);
 	frame->ptr = NULL;
 	frame->count = 0;
-	key = irq_lock();
+	key = k_spin_lock(&priv->lock);
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
 		uint8_t idx = get_xfer_ep_idx(tmp->ep);
@@ -342,7 +343,7 @@ static void vrt_assemble_frame(const struct device *dev)
 		}
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&priv->lock, key);
 }
 
 static int vrt_schedule_frame(const struct device *dev)
@@ -689,6 +690,7 @@ static int uhc_vrt_enqueue(const struct device *dev,
 			   struct uhc_transfer *const xfer)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	k_spinlock_key_t key;
 
 	if (xfer->interval) {
 		xfer->start_frame = priv->sof_count + xfer->interval;
@@ -696,7 +698,9 @@ static int uhc_vrt_enqueue(const struct device *dev,
 			xfer->start_frame, priv->sof_count, xfer->interval);
 	}
 
+	key = k_spin_lock(&priv->lock);
 	uhc_xfer_append(dev, xfer);
+	k_spin_unlock(&priv->lock, key);
 
 	return 0;
 }
@@ -704,11 +708,12 @@ static int uhc_vrt_enqueue(const struct device *dev,
 static int uhc_vrt_dequeue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	struct uhc_data *data = dev->data;
 	struct uhc_transfer *tmp;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&priv->lock);
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
 		if (xfer == tmp) {
@@ -716,7 +721,7 @@ static int uhc_vrt_dequeue(const struct device *dev,
 		}
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&priv->lock, key);
 
 	return 0;
 }
