@@ -14,7 +14,8 @@ zperf is a shell utility which allows to generate network traffic in Zephyr. The
 tool may be used to evaluate network bandwidth.
 
 zperf is compatible with iPerf 2.0.10 and newer. For compatibility with older versions,
-enable :kconfig:option:`CONFIG_NET_ZPERF_LEGACY_HEADER_COMPAT`.
+enable :kconfig:option:`CONFIG_NET_ZPERF_LEGACY_HEADER_COMPAT`. Alternatively, zperf can speak
+iperf3, see :ref:`zperf_iperf3`. A build speaks one of the two.
 
 zperf can be enabled in any application, a dedicated sample is also present
 in Zephyr. See :zephyr:code-sample:`zperf sample application <zperf>` for details.
@@ -96,6 +97,59 @@ and this if you are testing TCP:
 
 iPerf output can be limited by using the -b option if Zephyr is not
 able to receive all the packets in orderly manner.
+
+.. _zperf_iperf3:
+
+iperf3
+******
+
+With :kconfig:option:`CONFIG_NET_ZPERF_IPERF3`, zperf interoperates with iperf3 instead of
+iPerf 2. The support is experimental. The zperf API and shell commands stay the same, and the default port becomes 5201, the
+iperf3 default.
+
+When Zephyr acts as a server, enable the protocols to accept:
+
+.. code-block:: console
+
+   zperf tcp download
+   zperf udp download
+
+An iperf3 client chooses TCP or UDP for each test and uses one port for both, with a TCP control
+connection either way. The two commands therefore share the listening port: each enables its own
+protocol, and a test asking for one that is not enabled is refused. On the host:
+
+.. code-block:: console
+
+   $ iperf3 -c 2001:db8::1
+   $ iperf3 -c 2001:db8::1 -u -b 10M
+
+When Zephyr acts as a client, run ``iperf3 -s`` on the host, and in the Zephyr console:
+
+.. code-block:: console
+
+   zperf tcp upload 2001:db8::2 5201 10 1K
+   zperf udp upload 2001:db8::2 5201 10 1K 10M
+
+A test runs over a single stream. Reverse (``-R``), bidirectional (``--bidir``) and parallel
+(``-P``) tests, and omitting the start of a test (``-O``), are refused with the message iperf3
+prints for an option the server does not implement. One test runs at a time, and a second client
+is told that the server is busy. Multicast and
+:kconfig:option:`CONFIG_ZPERF_SESSION_PER_THREAD` are iPerf 2 features.
+
+Points to keep in mind when comparing with iPerf 2:
+
+* An iperf3 server counts TCP data until the client ends the test on the control connection,
+  which can overtake the last of the data, so it may report slightly less than the client sent.
+  An iPerf 2 server counts until the connection closes.
+* For UDP, datagrams lost after the last one the server received are counted as lost in the zperf
+  upload report, as with iPerf 2. iperf3 itself leaves them out.
+* iperf3 does not report reordering, so an upload reports no out-of-order packets.
+* The server reads only the header of each UDP datagram, relying on ``ZSOCK_MSG_TRUNC`` to learn
+  its full length. A socket offload driver that ignores the flag makes it count too few bytes.
+* A test takes a control connection and a data stream on each end, and closed connections linger
+  in TIME_WAIT for a while after each test. Allow for them in
+  :kconfig:option:`CONFIG_NET_MAX_CONTEXTS` and :kconfig:option:`CONFIG_NET_MAX_CONN`, as the
+  sample's ``overlay-iperf3.conf`` does.
 
 Session Management
 ******************
