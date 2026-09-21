@@ -119,6 +119,7 @@ config MMU_PAGE_SIZE
 menuconfig DEMAND_PAGING
 	bool "Demand paging [EXPERIMENTAL]"
 	depends on ARCH_HAS_DEMAND_PAGING
+	select EXPERIMENTAL
 	help
 	  Enable demand paging. Requires architecture support in how the kernel
 	  is linked and the implementation of an eviction algorithm and a
