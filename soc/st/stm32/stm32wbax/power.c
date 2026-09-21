@@ -227,8 +227,28 @@ static void set_mode_suspend_to_ram_exit(void)
 }
 #endif
 
+/*
+ * @brief Check if cpu has entered Stop mode
+ *
+ * @return true if the CPU has entered Stop mode, false otherwise.
+ */
+static bool stop_mode_entered(void)
+{
+#if defined(PWR_STOP2_SUPPORT)
+	if (LL_PWR_IsActiveFlag_STOP2() != 0U) {
+		return true;
+	}
+#endif /* PWR_STOP2_SUPPORT */
+
+	return LL_PWR_IsActiveFlag_STOP() != 0U;
+}
+
 static void set_mode_stop_enter(uint8_t substate_id)
 {
+	/*
+	 * Clear both STOP and STOP2 flags
+	 * LL_PWR_ClearFlag_STOP() and LL_PWR_ClearFlag_STOP2() are the same
+	 */
 	LL_PWR_ClearFlag_STOP();
 	LL_RCC_ClearResetFlags();
 
@@ -256,6 +276,11 @@ static void set_mode_stop_enter(uint8_t substate_id)
 	case 2:
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
 		break;
+#if defined(PWR_STOP2_SUPPORT)
+	case 3:
+		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP2);
+		break;
+#endif /* PWR_STOP2_SUPPORT */
 	default:
 		LOG_DBG("Unsupported power state substate-id %u", substate_id);
 		return;
@@ -267,7 +292,7 @@ static void set_mode_stop_enter(uint8_t substate_id)
 
 static void set_mode_stop_exit(uint8_t substate_id)
 {
-	if (LL_PWR_IsActiveFlag_STOP() || !HSE_ON) {
+	if (stop_mode_entered() || !HSE_ON) {
 		/* Reconfigure the clock (incl. RAM/FLASH latency) */
 		stm32_clock_control_init(NULL);
 	} else {
