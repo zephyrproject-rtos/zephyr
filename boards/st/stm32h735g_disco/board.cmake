@@ -2,7 +2,13 @@
 # Copyright (c) 2021 SILA Embedded Solutions GmbH
 
 # keep first
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+if(CONFIG_FLASH_STM32_NOR_MEMMAP OR (CONFIG_XIP AND CONFIG_BOOTLOADER_MCUBOOT))
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+  board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32H735G-DK.stldr")
+else()
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+endif()
+
 board_runner_args(jlink "--device=STM32H735IG" "--speed=4000")
 board_runner_args(openocd --target-handle=_CHIPNAME.cpu0)
 
