@@ -123,6 +123,10 @@
 				status = "disabled";
 			};
 		};
+
+		ethernet@40028000 {
+			memory-regions = <&sram3>;
+		};
 	};
 
 	/*
@@ -180,8 +184,4 @@
 	vbat: vbat {
 		io-channels = <&adc3 17>;
 	};
-};
-
-&mac {
-	memory-regions = <&sram3>;
 };
