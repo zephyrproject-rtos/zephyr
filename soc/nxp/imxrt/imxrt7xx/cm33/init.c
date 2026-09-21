@@ -55,3 +55,38 @@ void soc_reset_hook(void)
 {
 	SystemInit();
 }
+
+#if defined(CONFIG_LV_USE_DRAW_VG_LITE) || !defined(CONFIG_LV_USE_VG_LITE_DRIVER)
+static int gpu_init_imxrt7xx(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	POWER_DisablePD(kPDRUNCFG_APD_GPU);
+	POWER_DisablePD(kPDRUNCFG_PPD_GPU);
+	POWER_ApplyPD();
+
+	/* VGPU clock enablement and divider selection */
+	CLOCK_EnableClock(kCLOCK_MediaAccessRamArbiter0);
+	CLOCK_EnableClock(kCLOCK_MediaAccessRamArbiter1);
+	CLOCK_EnableClock(kCLOCK_Gpu);
+
+	CLOCK_AttachClk(kFRO0_DIV1_to_VGPU);
+	CLOCK_SetClkDiv(kCLOCK_DivVgpuClk, 1U);
+
+	/* Enable GPU interrupt */
+	RESET_ClearPeripheralReset(kVGPU_RST_SHIFT_RSTn);
+	NVIC_SetPriority(VGPU_IRQn, 3);
+	EnableIRQ((IRQn_Type)VGPU_IRQn);
+
+	return 0;
+}
+
+DEVICE_DT_DEFINE(DT_INST(0, vsi_gpu_gc555), gpu_init_imxrt7xx, NULL,
+		NULL, NULL, POST_KERNEL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+void gpu_cache_flush_range(void *addr, size_t size)
+{
+	sys_cache_data_flush_all();
+}
+#endif /* CONFIG_LV_USE_DRAW_VG_LITE || !CONFIG_LV_USE_VG_LITE_DRIVER */
