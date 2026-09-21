@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dac.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 
 #include <fsl_dac.h>
@@ -16,6 +17,7 @@ LOG_MODULE_REGISTER(dac_mcux_lpdac, CONFIG_DAC_LOG_LEVEL);
 
 struct mcux_lpdac_config {
 	LPDAC_Type *base;
+	const struct pinctrl_dev_config *pincfg;
 	dac_reference_voltage_source_t ref_voltage;
 	bool low_power;
 };
@@ -88,6 +90,14 @@ static int mcux_lpdac_write_value(const struct device *dev, uint8_t channel, uin
 
 static int mcux_lpdac_init(const struct device *dev)
 {
+	const struct mcux_lpdac_config *config = dev->config;
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0 && err != -ENOENT) {
+		return err;
+	}
+
 	return 0;
 }
 
@@ -99,8 +109,11 @@ static DEVICE_API(dac, mcux_lpdac_driver_api) = {
 #define MCUX_LPDAC_INIT(n)                                                                         \
 	static struct mcux_lpdac_data mcux_lpdac_data_##n;                                         \
                                                                                                    \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
 	static const struct mcux_lpdac_config mcux_lpdac_config_##n = {                            \
 		.base = (LPDAC_Type *)DT_INST_REG_ADDR(n),                                         \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.ref_voltage = DT_INST_PROP(n, voltage_reference),                                 \
 		.low_power = DT_INST_PROP(n, low_power_mode),                                      \
 	};                                                                                         \
