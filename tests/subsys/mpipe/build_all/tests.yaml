@@ -47,3 +47,23 @@ tests:
       - CONFIG_MPIPE_NN_CONVERTER=y
       - CONFIG_MPIPE_NN_RUNNER=y
       - CONFIG_MPIPE_NN_DECODER=y
+
+  mpipe.nn.tflm.build:
+    tags:
+      - subsys
+      - mpipe
+    modules:
+      - tflite-micro
+    build_only: true
+    platform_allow:
+      - qemu_x86_64
+      - mimxrt1170_evk/mimxrt1176/cm7
+    extra_args:
+      - CONFIG_CPP=y
+      - CONFIG_STD_CPP17=y
+      - CONFIG_TENSORFLOW_LITE_MICRO=y
+      - CONFIG_MPIPE_NN=y
+      - CONFIG_MPIPE_NN_CONVERTER=y
+      - CONFIG_MPIPE_NN_RUNNER=y
+      - CONFIG_MPIPE_NN_DECODER=y
+      - CONFIG_MPIPE_NN_BACKEND_TFLM=y
