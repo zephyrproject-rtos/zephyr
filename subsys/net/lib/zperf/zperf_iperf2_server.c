@@ -565,14 +565,11 @@ error:
 	return ret;
 }
 
-int zperf_udp_download(const struct zperf_download_params *param,
+int zperf_iperf2_udp_download(const struct zperf_download_params *param,
 		       zperf_callback callback, void *user_data)
 {
 	int ret;
 
-	if (param == NULL || callback == NULL) {
-		return -EINVAL;
-	}
 
 	if (udp_server_running) {
 		return -EALREADY;
@@ -606,7 +603,7 @@ int zperf_udp_download(const struct zperf_download_params *param,
 	return 0;
 }
 
-int zperf_udp_download_stop(void)
+int zperf_iperf2_udp_download_stop(void)
 {
 	if (!udp_server_running) {
 		return -EALREADY;
@@ -1026,14 +1023,11 @@ error:
 	return ret;
 }
 
-int zperf_tcp_download(const struct zperf_download_params *param,
+int zperf_iperf2_tcp_download(const struct zperf_download_params *param,
 		       zperf_callback callback, void *user_data)
 {
 	int ret;
 
-	if (param == NULL || callback == NULL) {
-		return -EINVAL;
-	}
 
 	if (tcp_server_running) {
 		return -EALREADY;
@@ -1055,7 +1049,7 @@ int zperf_tcp_download(const struct zperf_download_params *param,
 	return 0;
 }
 
-int zperf_tcp_download_stop(void)
+int zperf_iperf2_tcp_download_stop(void)
 {
 	if (!tcp_server_running) {
 		return -EALREADY;

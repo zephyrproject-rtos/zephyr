@@ -135,6 +135,25 @@ int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
 
 void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work);
+
+/* What zperf_api.c calls to do the work of the public functions of the same
+ * names. It has checked the arguments.
+ */
+int zperf_iperf2_udp_upload(const struct zperf_upload_params *param,
+			    struct zperf_results *result);
+int zperf_iperf2_tcp_upload(const struct zperf_upload_params *param,
+			    struct zperf_results *result);
+int zperf_iperf2_udp_upload_async(const struct zperf_upload_params *param,
+				  zperf_callback callback, void *user_data);
+int zperf_iperf2_tcp_upload_async(const struct zperf_upload_params *param,
+				  zperf_callback callback, void *user_data);
+int zperf_iperf2_udp_download(const struct zperf_download_params *param,
+			      zperf_callback callback, void *user_data);
+int zperf_iperf2_tcp_download(const struct zperf_download_params *param,
+			      zperf_callback callback, void *user_data);
+int zperf_iperf2_udp_download_stop(void);
+int zperf_iperf2_tcp_download_stop(void);
+
 void zperf_udp_uploader_init(void);
 void zperf_tcp_uploader_init(void);
 void zperf_raw_uploader_init(void);

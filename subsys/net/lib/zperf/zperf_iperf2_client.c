@@ -409,7 +409,7 @@ static int udp_upload(int sock, int port,
 	return 0;
 }
 
-int zperf_udp_upload(const struct zperf_upload_params *param,
+int zperf_iperf2_udp_upload(const struct zperf_upload_params *param,
 		     struct zperf_results *result)
 {
 	struct net_sockaddr *peer_addr;
@@ -418,9 +418,6 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	int ret;
 	struct net_ifreq req;
 
-	if (param == NULL || result == NULL) {
-		return -EINVAL;
-	}
 
 	peer_addr = net_sad(&param->peer_addr_storage);
 
@@ -497,7 +494,7 @@ static void udp_upload_async_work(struct k_work *work)
 	upload_ctx->callback(ZPERF_SESSION_STARTED, NULL,
 			     upload_ctx->user_data);
 
-	ret = zperf_udp_upload(&upload_ctx->param, result);
+	ret = zperf_iperf2_udp_upload(&upload_ctx->param, result);
 	if (ret < 0) {
 		upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 				     upload_ctx->user_data);
@@ -507,12 +504,9 @@ static void udp_upload_async_work(struct k_work *work)
 	}
 }
 
-int zperf_udp_upload_async(const struct zperf_upload_params *param,
+int zperf_iperf2_udp_upload_async(const struct zperf_upload_params *param,
 			   zperf_callback callback, void *user_data)
 {
-	if (param == NULL || callback == NULL) {
-		return -EINVAL;
-	}
 
 #ifdef CONFIG_ZPERF_SESSION_PER_THREAD
 	struct k_work_q *queue;
@@ -710,16 +704,13 @@ static int tcp_upload(int sock,
 	return 0;
 }
 
-int zperf_tcp_upload(const struct zperf_upload_params *param,
+int zperf_iperf2_tcp_upload(const struct zperf_upload_params *param,
 		     struct zperf_results *result)
 {
 	uint64_t data_offset = 0;
 	int sock;
 	int ret;
 
-	if (param == NULL || result == NULL) {
-		return -EINVAL;
-	}
 
 	sock = zperf_prepare_upload_sock(net_sad(&param->peer_addr_storage), param->options.tos,
 					 param->options.priority, param->options.tcp_nodelay,
@@ -837,12 +828,9 @@ cleanup:
 	zsock_close(sock);
 }
 
-int zperf_tcp_upload_async(const struct zperf_upload_params *param,
+int zperf_iperf2_tcp_upload_async(const struct zperf_upload_params *param,
 			   zperf_callback callback, void *user_data)
 {
-	if (param == NULL || callback == NULL) {
-		return -EINVAL;
-	}
 
 #ifdef CONFIG_ZPERF_SESSION_PER_THREAD
 	struct k_work_q *queue;
