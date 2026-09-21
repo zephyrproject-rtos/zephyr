@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
  * Copyright (c) 2022 T-Mobile USA, Inc.
+ * Copyright (c) 2026 Antmicro <antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -136,6 +137,14 @@ struct tmp108_data {
 	sensor_trigger_handler_t temp_alert_handler;
 
 	struct gpio_callback temp_alert_gpio_cb;
+#if defined(CONFIG_TMP108_TRIGGER_OWN_THREAD)
+	struct k_sem trigger_sem;
+	struct k_thread trigger_thread;
+
+	K_KERNEL_STACK_MEMBER(trigger_thread_stack, CONFIG_TMP108_THREAD_STACK_SIZE);
+#elif defined(CONFIG_TMP108_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
 #endif /* CONFIG_TMP108_TRIGGER */
 };
 
@@ -146,9 +155,8 @@ int tmp_108_trigger_set(const struct device *dev,
 int tmp108_reg_read(const struct device *dev, uint8_t reg, uint16_t *val);
 
 int ti_tmp108_read_temp(const struct device *dev);
-void tmp108_trigger_handle_one_shot(struct k_work *work);
-void tmp108_trigger_handle_alert(const struct device *port,
-				 struct gpio_callback *cb,
-				 gpio_port_pins_t pins);
+
+int tmp108_setup_trigger(const struct device *dev);
+void tmp108_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 
 #endif /*  ZEPHYR_DRIVERS_SENSOR_TMP108_TMP108_H_ */
