@@ -23,6 +23,7 @@ DECLARE_FAKE_VALUE_FUNC(bool, mock_bt_gatt_is_subscribed, struct bt_conn *,
 
 void bt_gatt_notify_cb_reset(void);
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn);
+int bt_att_get_max_notify_size(struct bt_conn *conn, enum bt_att_chan_opt chan_opt);
 int bt_gatt_service_register(struct bt_gatt_service *svc);
 int bt_gatt_service_unregister(struct bt_gatt_service *svc);
 
