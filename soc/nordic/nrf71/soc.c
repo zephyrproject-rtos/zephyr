@@ -192,6 +192,46 @@ static void antsw_setup(void)
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_wifi_antsw) */
 
+/*
+ * CLOCK is a split-security peripheral, so the XOSTART task and XOSTARTED event must be reached
+ * through the alias matching the domain that owns CLOCK when this code runs. The Zephyr secure
+ * image drives it through the _S alias, while the non-Zephyr (TF-M) build runs after CLOCK has
+ * been handed to the non-secure domain and must use the _NS alias to avoid a secure bus fault.
+ */
+#if defined(__ZEPHYR__)
+#define NRF_CLOCK_REG NRF_CLOCK_S
+#else
+#define NRF_CLOCK_REG NRF_CLOCK_NS
+#endif
+
+/* Generous bound versus the ~450 us the crystal typically needs to reach Running. */
+#define HFXO64M_START_TIMEOUT_US 10000U
+
+/*
+ * The boot ROM configures HFXO64M (trims, mirror, auto power) but does not start it, so kick
+ * the CLOCK XOSTART task and wait until the crystal is running. XO.STAT.STATE is the barrier
+ * the Wi-Fi core depends on: releasing the core before it reads Running brings it up against
+ * an unsettled clock, which shows up as intermittent, poor Wi-Fi performance.
+ */
+static int hfxo64m_start(void)
+{
+	NRF_CLOCK_REG->EVENTS_XOSTARTED = 0;
+	NRF_CLOCK_REG->TASKS_XOSTART =
+		(CLOCK_TASKS_XOSTART_TASKS_XOSTART_Trigger << CLOCK_TASKS_XOSTART_TASKS_XOSTART_Pos);
+
+	/* Runs before the kernel, so bound the wait with the coredep busy-wait, not kernel timing. */
+	for (uint32_t elapsed_us = 0U; elapsed_us < HFXO64M_START_TIMEOUT_US; elapsed_us++) {
+		if ((NRF_CLOCK_REG->XO.STAT & CLOCK_XO_STAT_STATE_Msk) ==
+		    (CLOCK_XO_STAT_STATE_Running << CLOCK_XO_STAT_STATE_Pos)) {
+			return 0;
+		}
+		nrfx_coredep_delay_us(1);
+	}
+
+	LOG_ERR("HFXO64M did not start within %u us", HFXO64M_START_TIMEOUT_US);
+	return -ETIMEDOUT;
+}
+
 static void wifi_setup(void)
 {
 	/* Kickstart the LMAC processor */
@@ -246,6 +286,13 @@ int nordicsemi_nrf71_init(void)
 	/* Steer the (now powered) antenna switch towards WLAN before Wi-Fi boot. */
 	antsw_setup();
 #endif
+	/* Start the 64 MHz crystal and wait for it before releasing the Wi-Fi core. */
+	int err = hfxo64m_start();
+
+	if (err != 0) {
+		return err;
+	}
+
 	wifi_setup();
 #endif
 
