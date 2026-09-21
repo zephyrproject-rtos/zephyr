@@ -119,7 +119,7 @@ static int is_area_readable(const struct device *dev, off_t offset, size_t len)
 	ret = k_sem_take(&interface->interface_sem, K_FOREVER);
 	if (ret != 0) {
 		LOG_DBG("Device is busy");
-		return ret
+		return ret;
 	}
 
 	err = R_FLASH_HP_BlankCheck(&interface->flash_ctrl,
