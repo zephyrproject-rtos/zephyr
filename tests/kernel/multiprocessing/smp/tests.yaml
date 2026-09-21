@@ -29,4 +29,4 @@ tests:
       - qemu_riscv32/qemu_virt_riscv32/aia-imsic/smp # no custom ROM offset
       - qemu_riscv32/qemu_virt_riscv32/aia-direct/smp # no custom ROM offset
     extra_configs:
-      - CONFIG_ROM_START_OFFSET=0x80
+      - CONFIG_ROM_START_OFFSET=0x400
