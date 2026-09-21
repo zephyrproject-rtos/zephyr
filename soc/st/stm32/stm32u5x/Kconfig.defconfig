@@ -37,4 +37,7 @@ endif #STM32_USE_STOP3
 config STM32_INT_FLASH_SECURE_BASE_ADDRESS
 	default 0x0c000000
 
+configdefault LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32u5xx.h" if LVGL && LV_USE_DRAW_DMA2D
+
 endif # SOC_SERIES_STM32U5X
