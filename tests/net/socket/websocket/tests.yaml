@@ -1,5 +1,8 @@
 common:
   depends_on: netif
+  # websocket_connect() needs SHA-1 for Sec-WebSocket-Key, which the TF-M
+  # crypto partition does not provide.
+  filter: not CONFIG_BUILD_WITH_TFM
 tests:
   net.socket.websocket:
     min_ram: 21
