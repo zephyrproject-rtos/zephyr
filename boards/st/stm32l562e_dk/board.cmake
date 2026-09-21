@@ -14,6 +14,9 @@ endif()
 
 # keep first
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+if(CONFIG_FLASH_STM32_NOR_MEMMAP OR (CONFIG_XIP AND CONFIG_BOOTLOADER_MCUBOOT))
+  board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32L562E-DK-SFIx.stldr")
+endif()
 board_runner_args(pyocd "--target=stm32l562qeixq")
 board_runner_args(jlink "--device=STM32L562QE" "--speed=4000")
 
