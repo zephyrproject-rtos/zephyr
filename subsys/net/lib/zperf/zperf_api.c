@@ -10,6 +10,7 @@
 #include <errno.h>
 
 #include <zephyr/net/zperf.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "zperf_internal.h"
 
@@ -21,7 +22,9 @@ int zperf_udp_upload(const struct zperf_upload_params *param, struct zperf_resul
 		return -EINVAL;
 	}
 
-	return zperf_iperf2_udp_upload(param, result);
+	return IS_ENABLED(CONFIG_NET_ZPERF_IPERF3) ?
+		       zperf_iperf3_udp_upload(param, result) :
+		       zperf_iperf2_udp_upload(param, result);
 }
 
 int zperf_udp_upload_async(const struct zperf_upload_params *param, zperf_callback callback,
@@ -31,7 +34,9 @@ int zperf_udp_upload_async(const struct zperf_upload_params *param, zperf_callba
 		return -EINVAL;
 	}
 
-	return zperf_iperf2_udp_upload_async(param, callback, user_data);
+	return IS_ENABLED(CONFIG_NET_ZPERF_IPERF3) ?
+		       zperf_iperf3_udp_upload_async(param, callback, user_data) :
+		       zperf_iperf2_udp_upload_async(param, callback, user_data);
 }
 
 #if defined(CONFIG_NET_ZPERF_SERVER)
@@ -43,12 +48,16 @@ int zperf_udp_download(const struct zperf_download_params *param, zperf_callback
 		return -EINVAL;
 	}
 
-	return zperf_iperf2_udp_download(param, callback, user_data);
+	return IS_ENABLED(CONFIG_NET_ZPERF_IPERF3) ?
+		       zperf_iperf3_udp_download(param, callback, user_data) :
+		       zperf_iperf2_udp_download(param, callback, user_data);
 }
 
 int zperf_udp_download_stop(void)
 {
-	return zperf_iperf2_udp_download_stop();
+	return IS_ENABLED(CONFIG_NET_ZPERF_IPERF3) ?
+		       zperf_iperf3_udp_download_stop() :
+		       zperf_iperf2_udp_download_stop();
 }
 
 #endif /* CONFIG_NET_ZPERF_SERVER */
@@ -62,7 +71,9 @@ int zperf_tcp_upload(const struct zperf_upload_params *param, struct zperf_resul
 		return -EINVAL;
 	}
 
-	return zperf_iperf2_tcp_upload(param, result);
+	return IS_ENABLED(CONFIG_NET_ZPERF_IPERF3) ?
+		       zperf_iperf3_tcp_upload(param, result) :
+		       zperf_iperf2_tcp_upload(param, result);
 }
 
 int zperf_tcp_upload_async(const struct zperf_upload_params *param, zperf_callback callback,
@@ -72,7 +83,9 @@ int zperf_tcp_upload_async(const struct zperf_upload_params *param, zperf_callba
 		return -EINVAL;
 	}
 
-	return zperf_iperf2_tcp_upload_async(param, callback, user_data);
+	return IS_ENABLED(CONFIG_NET_ZPERF_IPERF3) ?
+		       zperf_iperf3_tcp_upload_async(param, callback, user_data) :
+		       zperf_iperf2_tcp_upload_async(param, callback, user_data);
 }
 
 #if defined(CONFIG_NET_ZPERF_SERVER)
@@ -84,12 +97,16 @@ int zperf_tcp_download(const struct zperf_download_params *param, zperf_callback
 		return -EINVAL;
 	}
 
-	return zperf_iperf2_tcp_download(param, callback, user_data);
+	return IS_ENABLED(CONFIG_NET_ZPERF_IPERF3) ?
+		       zperf_iperf3_tcp_download(param, callback, user_data) :
+		       zperf_iperf2_tcp_download(param, callback, user_data);
 }
 
 int zperf_tcp_download_stop(void)
 {
-	return zperf_iperf2_tcp_download_stop();
+	return IS_ENABLED(CONFIG_NET_ZPERF_IPERF3) ?
+		       zperf_iperf3_tcp_download_stop() :
+		       zperf_iperf2_tcp_download_stop();
 }
 
 #endif /* CONFIG_NET_ZPERF_SERVER */
