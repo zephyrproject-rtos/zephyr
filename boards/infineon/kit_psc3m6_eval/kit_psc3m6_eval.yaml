@@ -24,6 +24,7 @@ supported:
   - rtc
   - watchdog
   - spi
+  - comparator
   - arduino_gpio
   - arduino_i2c
   - arduino_serial
