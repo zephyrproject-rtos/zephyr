@@ -191,7 +191,7 @@ config SOC_HFXO_CAP_DEFAULT
 	  during the device trimming in the SystemInit() function.
 
 config SOC_HFXO_CAP_EXTERNAL
-	bool "Use external load capacitors"
+	bool "Use external load capacitors [DEPRECATED]"
 	select DEPRECATED
 	help
 	  This option is deprecated, use DT instead. Example configuration:
@@ -201,7 +201,7 @@ config SOC_HFXO_CAP_EXTERNAL
 	  };
 
 config SOC_HFXO_CAP_INTERNAL
-	bool "Use internal load capacitors"
+	bool "Use internal load capacitors [DEPRECATED]"
 	depends on NRF_SOC_SECURE_SUPPORTED
 	select DEPRECATED
 	help
@@ -217,7 +217,7 @@ config SOC_HFXO_CAP_INTERNAL
 endchoice
 
 config SOC_HFXO_CAP_INT_VALUE_X2
-	int "Doubled value of HFXO internal load capacitors (in pF)"
+	int "Doubled value of HFXO internal load capacitors (in pF) [DEPRECATED]"
 	depends on SOC_HFXO_CAP_INTERNAL
 	range 14 40
 	help

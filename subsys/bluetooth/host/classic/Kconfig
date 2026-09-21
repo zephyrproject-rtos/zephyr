@@ -192,59 +192,71 @@ config BT_HFP_AG
 	  This option enables Bluetooth AG support
 
 if BT_HFP_HF
+
 config BT_HFP_HF_CLI
 	bool "CLI presentation capability for HFP HF [EXPERIMENTAL]"
 	default y
+	select EXPERIMENTAL
 	help
 	  This option enables CLI presentation capability for HFP HF
 
 config BT_HFP_HF_VOLUME
 	bool "Remote audio volume control for HFP HF [EXPERIMENTAL]"
 	default y
+	select EXPERIMENTAL
 	help
 	  This option enables Remote audio volume control for HFP HF
 
 config BT_HFP_HF_CODEC_NEG
 	bool "Codec Negotiation for HFP HF [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Codec Negotiation for HFP HF
 
 config BT_HFP_HF_ECNR
 	bool "EC and/or NR function for HFP HF [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables EC and/or NR function for HFP HF
 
 if BT_HFP_HF_CODEC_NEG
+
 config BT_HFP_HF_CODEC_MSBC
 	bool "Support Codec mSBC for HFP HF [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Codec mSBC for HFP HF
 
 config BT_HFP_HF_CODEC_LC3_SWB
 	bool "Support Codec LC3 SWB for HFP HF [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Codec LC3 SWB for HFP HF
+
 endif # BT_HFP_HF_CODEC_NEG
 
 config BT_HFP_HF_3WAY_CALL
 	bool "Three-way calling for HFP HF [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Three-way calling for HFP HF
 
 config BT_HFP_HF_ECS
 	bool "Enhanced Call Status for HFP HF [EXPERIMENTAL]"
 	default y if BT_HFP_HF_3WAY_CALL
+	select EXPERIMENTAL
 	help
 	  This option enables Enhanced Call Status for HFP HF
 
 config BT_HFP_HF_ECC
 	bool "Enhanced Call Control for HFP HF [EXPERIMENTAL]"
 	default y if BT_HFP_HF_3WAY_CALL
+	select EXPERIMENTAL
 	help
 	  This option enables Enhanced Call Control for HFP HF
 
 config BT_HFP_HF_MAX_CALLS
-	int "Maximum supported calls for HFP HF [EXPERIMENTAL]"
+	int "Maximum supported calls for HFP HF"
 	default 2 if BT_HFP_HF_3WAY_CALL
 	default 1
 	range 1 2
@@ -253,76 +265,91 @@ config BT_HFP_HF_MAX_CALLS
 
 config BT_HFP_HF_VOICE_RECG
 	bool "Voice recognition activation for HFP HF [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Voice recognition activation for HFP HF
 
 config BT_HFP_HF_ENH_VOICE_RECG
 	bool "Enhanced Voice Recognition Status for HFP HF [EXPERIMENTAL]"
 	select BT_HFP_HF_VOICE_RECG
+	select EXPERIMENTAL
 	help
 	  This option enables Enhanced Voice Recognition Status for HFP HF
 
 config BT_HFP_HF_VOICE_RECG_TEXT
 	bool "Voice Recognition Text for HFP HF [EXPERIMENTAL]"
 	select BT_HFP_HF_ENH_VOICE_RECG
+	select EXPERIMENTAL
 	help
 	  This option enables Voice Recognition Text for HFP HF
 
 config BT_HFP_HF_HF_INDICATORS
 	bool "HF Indicators for HFP HF [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables HF Indicators for HFP HF
 
 config BT_HFP_HF_HF_INDICATOR_ENH_SAFETY
 	bool "HF Indicator Enhanced Safety for HFP HF [EXPERIMENTAL]"
 	select BT_HFP_HF_HF_INDICATORS
+	select EXPERIMENTAL
 	help
 	  This option enables HF Indicator Enhanced Safety for HFP HF
 
 config BT_HFP_HF_HF_INDICATOR_BATTERY
 	bool "HF Indicator Battery level for HFP HF [EXPERIMENTAL]"
 	select BT_HFP_HF_HF_INDICATORS
+	select EXPERIMENTAL
 	help
 	  This option enables HF Indicator Battery level for HFP HF
 
 endif # BT_HFP_HF
 
 if BT_HFP_AG
+
 config BT_HFP_AG_EXT_ERR
 	bool "Extended Error Result Codes for HFP AG [EXPERIMENTAL]"
 	default y
+	select EXPERIMENTAL
 	help
 	  This option enables Extended Error Result Codes for HFP AG
 
 config BT_HFP_AG_CODEC_NEG
 	bool "Codec Negotiation for HFP AG [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Codec Negotiation for HFP AG
 
 if BT_HFP_AG_CODEC_NEG
+
 config BT_HFP_AG_CODEC_MSBC
 	bool "Support Codec mSBC for HFP AG [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Codec mSBC for HFP AG
 
 config BT_HFP_AG_CODEC_LC3_SWB
 	bool "Support Codec LC3 SWB for HFP AG [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Codec LC3 SWB for HFP AG
+
 endif # BT_HFP_AG_CODEC_NEG
 
 config BT_HFP_AG_ECNR
 	bool "EC and/or NR function for HFP AG [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables EC and/or NR function for HFP AG
 
 config BT_HFP_AG_3WAY_CALL
 	bool "Three-way calling for HFP AG [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Three-way calling for HFP AG
 
 config BT_HFP_AG_MAX_CALLS
-	int "Maximum supported calls for HFP AG [EXPERIMENTAL]"
+	int "Maximum supported calls for HFP AG"
 	default 2 if BT_HFP_AG_3WAY_CALL
 	default 1
 	range 1 2
@@ -332,17 +359,18 @@ config BT_HFP_AG_MAX_CALLS
 config BT_HFP_AG_ECS
 	bool "Enhanced call status for HFP AG [EXPERIMENTAL]"
 	default y if BT_HFP_AG_3WAY_CALL
+	select EXPERIMENTAL
 	help
 	  This option enables Enhanced call status for HFP AG
 
 config BT_HFP_AG_ECC
-	bool "Enhanced call control for HFP AG [EXPERIMENTAL]"
+	bool "Enhanced call control for HFP AG"
 	default y if BT_HFP_AG_3WAY_CALL
 	help
 	  This option enables Enhanced call control for HFP AG
 
 config BT_HFP_AG_TX_BUF_COUNT
-	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"
+	int "Maximum number of TX buffers for HFP AG"
 	default BT_RFCOMM_TX_MAX
 	range BT_RFCOMM_TX_MAX $(UINT8_MAX)
 	help
@@ -351,7 +379,7 @@ config BT_HFP_AG_TX_BUF_COUNT
 	  is equal to the number of session in the stack-internal pool.
 
 config BT_HFP_AG_OUTGOING_TIMEOUT
-	int "Call outgoing timeout value for HFP AG [EXPERIMENTAL]"
+	int "Call outgoing timeout value for HFP AG"
 	default 3
 	range 1 10
 	help
@@ -360,7 +388,7 @@ config BT_HFP_AG_OUTGOING_TIMEOUT
 	  stopped by the HFP AG. The unit is seconds.
 
 config BT_HFP_AG_INCOMING_TIMEOUT
-	int "Incoming call timeout value for HFP AG [EXPERIMENTAL]"
+	int "Incoming call timeout value for HFP AG"
 	default 3
 	range 1 10
 	help
@@ -369,7 +397,7 @@ config BT_HFP_AG_INCOMING_TIMEOUT
 	  stopped by the HFP AG. The unit is seconds.
 
 config BT_HFP_AG_ALERTING_TIMEOUT
-	int "Call alerting/ringing timeout value for HFP AG [EXPERIMENTAL]"
+	int "Call alerting/ringing timeout value for HFP AG"
 	default 60
 	range 10 60
 	help
@@ -378,14 +406,14 @@ config BT_HFP_AG_ALERTING_TIMEOUT
 	  by the HFP AG. The unit is seconds.
 
 config BT_HFP_AG_PHONE_NUMBER_MAX_LEN
-	int "Supported max length of phone number for HFP AG [EXPERIMENTAL]"
+	int "Supported max length of phone number for HFP AG"
 	default 32
 	range 1 $(UINT8_MAX)
 	help
 	  Supported max length of phone number for HFP AG.
 
 config BT_HFP_AG_RING_NOTIFY_INTERVAL
-	int "Ring notification interval [EXPERIMENTAL]"
+	int "Ring notification interval"
 	default 3
 	help
 	  Ring notification interval if the call is in alert state.
@@ -393,52 +421,60 @@ config BT_HFP_AG_RING_NOTIFY_INTERVAL
 
 config BT_HFP_AG_VOICE_RECG
 	bool "Voice recognition activation for HFP AG [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Voice recognition activation for HFP AG
 
 config BT_HFP_AG_ENH_VOICE_RECG
 	bool "Enhanced Voice Recognition Status for HFP AG [EXPERIMENTAL]"
 	select BT_HFP_AG_VOICE_RECG
+	select EXPERIMENTAL
 	help
 	  This option enables Enhanced Voice Recognition Status for HFP AG
 
 config BT_HFP_AG_VOICE_RECG_TEXT
 	bool "Voice Recognition Text for HFP AG [EXPERIMENTAL]"
 	select BT_HFP_AG_ENH_VOICE_RECG
+	select EXPERIMENTAL
 	help
 	  This option enables Voice Recognition Text for HFP AG
 
 config BT_HFP_AG_VOICE_TAG
 	bool "Attach a phone number for a voice tag for HFP AG [EXPERIMENTAL]"
 	select BT_HFP_AG_VOICE_RECG
+	select EXPERIMENTAL
 	help
 	  This option enables Attach a phone number for a voice tag for HFP AG
 
 config BT_HFP_AG_HF_INDICATORS
 	bool "HF Indicators for HFP AG [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables HF Indicators for HFP AG
 
 config BT_HFP_AG_HF_INDICATOR_ENH_SAFETY
 	bool "HF Indicator Enhanced Safety for HFP AG [EXPERIMENTAL]"
 	select BT_HFP_AG_HF_INDICATORS
+	select EXPERIMENTAL
 	help
 	  This option enables HF Indicator Enhanced Safety for HFP AG
 
 config BT_HFP_AG_HF_INDICATOR_BATTERY
 	bool "HF Indicator Battery level for HFP AG [EXPERIMENTAL]"
 	select BT_HFP_AG_HF_INDICATORS
+	select EXPERIMENTAL
 	help
 	  This option enables HF Indicator Battery level for HFP AG
 
 config BT_HFP_AG_REJECT_CALL
 	bool "Ability to reject a call for HFP AG [EXPERIMENTAL]"
 	default y
+	select EXPERIMENTAL
 	help
 	  This option enables ability to reject a call for HFP AG
 
 config BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT
-	int "Timeout after the get ongoing calls callback notified (milliseconds) [EXPERIMENTAL]"
+	int "Timeout after the get ongoing calls callback notified (milliseconds)"
 	default 10000
 	range 1000 10000
 	help
@@ -773,12 +809,14 @@ config BT_PBAP
 config BT_PBAP_PSE
 	bool "Bluetooth PBAP Profile Server [EXPERIMENTAL]"
 	select BT_PBAP
+	select EXPERIMENTAL
 	help
 	  This option enables the PSE
 
 config BT_PBAP_PCE
 	bool "Bluetooth PBAP Profile Client [EXPERIMENTAL]"
 	select BT_PBAP
+	select EXPERIMENTAL
 	help
 	  This option enables the PCE
 

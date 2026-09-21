@@ -268,7 +268,7 @@ config NET_IPV4_MAX_ROUTES
 	  This determines how many entries can be stored in routing table.
 
 config NET_IPV4_NAT
-	bool "IPv4 Network Address Translation (EXPERIMENTAL)"
+	bool "IPv4 Network Address Translation [EXPERIMENTAL]"
 	depends on NET_IPV4_ROUTE
 	select NET_PKT_FILTER
 	select NET_PKT_FILTER_IPV4_HOOK
