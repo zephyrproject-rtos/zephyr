@@ -41,6 +41,12 @@ for as short a time as possible to avoid negatively impacting other threads
 that want to use the resource. When the thread no longer needs the resource
 it must **unlock** the mutex to allow other threads to use the resource.
 
+A mutex must not be freed, or have its memory reused, while it is locked
+or while threads are waiting on it. A mutex embedded in a dynamically
+allocated object must be unlocked before that object is released;
+otherwise the owning thread is left tracking a mutex in memory that no
+longer belongs to it.
+
 Any number of threads may wait on a locked mutex simultaneously.
 When the mutex becomes unlocked it is then locked by the highest-priority
 thread that has waited the longest.

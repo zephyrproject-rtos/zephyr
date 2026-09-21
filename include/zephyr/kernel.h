@@ -3588,6 +3588,12 @@ __syscall int k_mutex_init(struct k_mutex *mutex);
  *
  * Mutexes may not be locked in ISRs.
  *
+ * A mutex must not be freed, or have its memory reused, while it is locked
+ * or while threads are waiting on it. A mutex embedded in a dynamically
+ * allocated object must be unlocked before that object is released;
+ * otherwise the owning thread is left tracking a mutex in memory that no
+ * longer belongs to it.
+ *
  * @param mutex Address of the mutex.
  * @param timeout Waiting period to lock the mutex,
  *                or one of the special values K_NO_WAIT and
