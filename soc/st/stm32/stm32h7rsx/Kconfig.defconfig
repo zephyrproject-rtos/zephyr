@@ -1,0 +1,11 @@
+# STMicroelectronics STM32H7RS MCU line
+
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32H7RSX
+
+configdefault LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32h7rsxx.h" if LVGL && LV_USE_DRAW_DMA2D
+
+endif # SOC_SERIES_STM32H7RSX
