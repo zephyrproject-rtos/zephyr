@@ -40,14 +40,12 @@ LOG_MODULE_REGISTER(hci_wba);
  */
 static K_MUTEX_DEFINE(hci_lock);
 
-#if defined(CONFIG_BT_HCI_SETUP)
 /* Bluetooth LE public STM32WBA default device address (if udn not available) */
 static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
 
 #define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
 #define HCI_CONFIG_DATA_PUBADDR_OFFSET	   0
 static bt_addr_t bd_addr_udn;
-#endif /* CONFIG_BT_HCI_SETUP */
 
 /* ACI Reset command */
 #define ACI_RESET                             0xFF00
@@ -400,37 +398,6 @@ static int bt_ble_ctlr_init(void)
 	return 0;
 }
 
-static int bt_hci_stm32wba_open(const struct device *dev)
-{
-	int ret = 0;
-	/* Initialization of the thread dedicated to BLE Host Controller IP */
-	stm32wba_ble_ctlr_thread_init();
-
-	/* Initialization of the thread dedicated to Link Layer Controller IP */
-	stm32wba_ll_ctlr_thread_init();
-
-	if (bt_hci_state == BT_HCI_STATE_CLOSED) {
-#if !defined(CONFIG_IEEE802154_STM32WBA)
-		LINKLAYER_PLAT_ClockInit();
-#endif
-	}
-
-	link_layer_register_isr();
-
-	ret = bt_ble_ctlr_init();
-
-	/* TODO. Enable Flash manager once available */
-	if (IS_ENABLED(CONFIG_FLASH)) {
-		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_DISABLE);
-	}
-
-	if (ret == 0) {
-		bt_hci_state = BT_HCI_STATE_OPENED;
-	}
-
-	return ret;
-}
-
 static int bt_hci_stm32wba_close(const struct device *dev)
 {
 	uint8_t aci_reset_cmd[9];
@@ -479,8 +446,6 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_BT_HCI_SETUP)
-
 bt_addr_t *bt_get_ble_addr(void)
 {
 	bt_addr_t *bd_addr;
@@ -522,19 +487,23 @@ bt_addr_t *bt_get_ble_addr(void)
 	return bd_addr;
 }
 
-static int bt_hci_stm32wba_setup(const struct device *dev,
-				 const struct bt_hci_setup_params *params)
+static int bt_hci_stm32wba_set_public_addr(const struct device *dev)
 {
-	bt_addr_t *uid_addr;
+	const bt_addr_t *addr = BT_ADDR_ANY;
 	uint8_t aci_set_ble_addr_cmd[12];
 	uint16_t event_length;
 	int err;
 
-	ARG_UNUSED(dev);
+	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+		addr = bt_hci_get_public_addr(dev);
+	}
 
-	uid_addr = bt_get_ble_addr();
-	if (!uid_addr) {
-		return -ENOMSG;
+	/* Without a public address to set, use the one derived from the UID */
+	if (bt_addr_eq(addr, BT_ADDR_ANY)) {
+		addr = bt_get_ble_addr();
+		if (addr == NULL) {
+			return -ENOMSG;
+		}
 	}
 
 	aci_set_ble_addr_cmd[0] = BT_HCI_H4_CMD;
@@ -544,11 +513,7 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 	aci_set_ble_addr_cmd[4] = HCI_CONFIG_DATA_PUBADDR_OFFSET;
 	aci_set_ble_addr_cmd[5] = 6;
 
-	if (bt_addr_eq(&params->public_addr, BT_ADDR_ANY)) {
-		memcpy(&aci_set_ble_addr_cmd[6], uid_addr, 6);
-	} else {
-		memcpy(&aci_set_ble_addr_cmd[6], &(params->public_addr), 6);
-	}
+	(void)memcpy(&aci_set_ble_addr_cmd[6], addr->val, sizeof(addr->val));
 
 	err = k_mutex_lock(&hci_lock, K_FOREVER);
 	if (err != 0) {
@@ -577,7 +542,45 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 
 	return 0;
 }
-#endif /* CONFIG_BT_HCI_SETUP */
+
+static int bt_hci_stm32wba_open(const struct device *dev)
+{
+	int ret = 0;
+	/* Initialization of the thread dedicated to BLE Host Controller IP */
+	stm32wba_ble_ctlr_thread_init();
+
+	/* Initialization of the thread dedicated to Link Layer Controller IP */
+	stm32wba_ll_ctlr_thread_init();
+
+	if (bt_hci_state == BT_HCI_STATE_CLOSED) {
+#if !defined(CONFIG_IEEE802154_STM32WBA)
+		LINKLAYER_PLAT_ClockInit();
+#endif
+	}
+
+	link_layer_register_isr();
+
+	ret = bt_ble_ctlr_init();
+
+	/* TODO. Enable Flash manager once available */
+	if (IS_ENABLED(CONFIG_FLASH)) {
+		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_DISABLE);
+	}
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	bt_hci_state = BT_HCI_STATE_OPENED;
+
+	ret = bt_hci_stm32wba_set_public_addr(dev);
+	if (ret != 0) {
+		/* A failed open() is not followed by close() */
+		(void)bt_hci_stm32wba_close(dev);
+	}
+
+	return ret;
+}
 
 #ifdef CONFIG_PM_DEVICE
 static int radio_pm_action(const struct device *dev, enum pm_device_action action)
@@ -623,9 +626,6 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 #endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(bt_hci, drv) = {
-#if defined(CONFIG_BT_HCI_SETUP)
-	.setup          = bt_hci_stm32wba_setup,
-#endif /* CONFIG_BT_HCI_SETUP */
 	.open           = bt_hci_stm32wba_open,
 	.send           = bt_hci_stm32wba_send,
 	.close          = bt_hci_stm32wba_close,
