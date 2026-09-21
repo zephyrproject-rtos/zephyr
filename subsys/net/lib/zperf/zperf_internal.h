@@ -40,7 +40,14 @@
 #define PACKET_SIZE_MAX CONFIG_NET_ZPERF_MAX_PACKET_SIZE
 
 #define MY_SRC_PORT 50000
+/* The port each iperf version listens on by default */
+#if defined(CONFIG_NET_ZPERF_IPERF3)
+#define DEF_PORT 5201
+#define ZPERF_PROTOCOL "iperf3"
+#else
 #define DEF_PORT 5001
+#define ZPERF_PROTOCOL "iperf2"
+#endif
 #define DEF_PORT_STR STRINGIFY(DEF_PORT)
 
 /* Upload defaults */

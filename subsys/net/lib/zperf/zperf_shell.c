@@ -1582,8 +1582,8 @@ static int cmd_tcp_download(const struct shell *sh, size_t argc,
 
 static int cmd_version(const struct shell *sh, size_t argc, char *argv[])
 {
-	shell_fprintf(sh, SHELL_NORMAL, "Version: %s\nConfig: %s\n",
-		      ZPERF_VERSION, CONFIG);
+	shell_fprintf(sh, SHELL_NORMAL, "Version: %s\nProtocol: %s\nConfig: %s\n",
+		      ZPERF_VERSION, ZPERF_PROTOCOL, CONFIG);
 
 	return 0;
 }
@@ -1973,7 +1973,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 	SHELL_CMD(download, &zperf_cmd_tcp_download,
 		  "[<port>]:  Server port to listen on/connect to\n"
 		  "[<host>]:  Bind to <host>, an interface address\n"
-		  "Example: tcp download 5001 192.168.0.1\n",
+		  "Example: tcp download " DEF_PORT_STR " 192.168.0.1\n",
 		  cmd_tcp_download),
 #endif
 	SHELL_SUBCMD_SET_END
@@ -2055,7 +2055,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "[<host>]:  Bind to <host>, an interface address\n"
 		  "Available options:\n"
 		  "-I <interface name>: Specify host interface name\n"
-		  "Example: udp download 5001 192.168.0.1\n",
+		  "Example: udp download " DEF_PORT_STR " 192.168.0.1\n",
 		  cmd_udp_download),
 #endif
 	SHELL_SUBCMD_SET_END
