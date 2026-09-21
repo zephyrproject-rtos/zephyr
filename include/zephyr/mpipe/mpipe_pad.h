@@ -256,14 +256,13 @@ int mpipe_pad_set_caps(struct mpipe_pad *pad, const struct mpipe_structure *caps
  * @brief Link two pads together
  *
  * Links a source pad to a sink pad, establishing a connection for data flow.
- * Both pads will have their peer pointers set to each other.
+ * Both pads will have their peer pointers set to each other. Neither pad may
+ * be NULL; that is an assertion, not an error.
  *
  * @param src_pad Source pad to link
  * @param sink_pad Sink pad to link
- *
- * @return 0 on success, negative errno on failure
  */
-int mpipe_pad_link(struct mpipe_pad *src_pad, struct mpipe_pad *sink_pad);
+void mpipe_pad_link(struct mpipe_pad *src_pad, struct mpipe_pad *sink_pad);
 
 /**
  * @brief Send an event to a pad
