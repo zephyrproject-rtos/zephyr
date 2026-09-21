@@ -13,8 +13,11 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/sem.h>
 
 LOG_MODULE_REGISTER(pthread_cond, CONFIG_PTHREAD_COND_LOG_LEVEL);
+
+static SYS_SEM_DEFINE(posix_cond_lock, 1, 1);
 
 static struct posix_cond posix_cond_pool[CONFIG_MAX_PTHREAD_COND_COUNT];
 
@@ -70,23 +73,35 @@ static struct posix_cond *get_posix_cond(pthread_cond_t cond)
 static struct posix_cond *to_posix_cond(pthread_cond_t *cvar)
 {
 	size_t bit;
-	struct posix_cond *cv;
+	struct posix_cond *cv = NULL;
 
 	if (*cvar != PTHREAD_COND_INITIALIZER) {
 		return get_posix_cond(*cvar);
 	}
 
-	/* Try and automatically associate a posix_cond */
-	if (sys_bitarray_alloc(&posix_cond_bitarray, 1, &bit) < 0) {
-		/* No conds left to allocate */
-		LOG_DBG("Unable to allocate pthread_cond_t");
-		return NULL;
-	}
+	/*
+	 * Auto-associate a posix_cond. Only this lazy-init path needs to be
+	 * serialized, so that two threads racing on the same static condvar do not
+	 * each allocate a slot.
+	 */
+	SYS_SEM_LOCK(&posix_cond_lock) {
+		if (*cvar != PTHREAD_COND_INITIALIZER) {
+			/* lost the race; another thread already associated a slot */
+			cv = get_posix_cond(*cvar);
+			SYS_SEM_LOCK_BREAK;
+		}
 
-	/* Record the associated posix_cond in mu and mark as initialized */
-	*cvar = mark_pthread_obj_initialized(bit);
-	cv = &posix_cond_pool[bit];
-	(void)pthread_condattr_init((pthread_condattr_t *)&cv->attr);
+		if (sys_bitarray_alloc(&posix_cond_bitarray, 1, &bit) < 0) {
+			/* No conds left to allocate */
+			LOG_DBG("Unable to allocate pthread_cond_t");
+			SYS_SEM_LOCK_BREAK;
+		}
+
+		/* Record the associated posix_cond in cvar and mark as initialized */
+		*cvar = mark_pthread_obj_initialized(bit);
+		cv = &posix_cond_pool[bit];
+		(void)pthread_condattr_init((pthread_condattr_t *)&cv->attr);
+	}
 
 	return cv;
 }
