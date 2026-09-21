@@ -540,7 +540,20 @@ static void iadc_isr(void *arg)
 	err = flags & (IADC_IF_PORTALLOCERR | IADC_IF_POLARITYERR | IADC_IF_EM23ABORTERROR |
 		       IADC_IF_SCANFIFOOF | IADC_IF_SCANFIFOUF);
 
-	if (flags & IADC_IF_SCANTABLEDONE) {
+	/* Complete the sequence only once: a second completion leaves the context's
+	 * semaphore signaled and lets later reads return before their conversion is done.
+	 */
+	if (err != 0U) {
+		LOG_ERR("IADC error, flags=%08x", err);
+		/* Unlike adc_context_on_sampling_done(), adc_context_complete() leaves the
+		 * timer of a sequence with an interval running.
+		 */
+		adc_context_disable_timer(&data->ctx);
+		adc_context_complete(&data->ctx, -EIO);
+		return;
+	}
+
+	if ((flags & IADC_IF_SCANTABLEDONE) != 0U) {
 		while (sl_hal_iadc_get_scan_fifo_cnt(iadc) > 0) {
 			sample = sl_hal_iadc_pull_scan_fifo_result(iadc);
 			memcpy(sample_ptr, &sample.data, data->data_size);
@@ -548,11 +561,6 @@ static void iadc_isr(void *arg)
 		}
 
 		adc_context_on_sampling_done(&data->ctx, dev);
-	}
-
-	if (err) {
-		LOG_ERR("IADC error, flags=%08x", err);
-		adc_context_complete(&data->ctx, -EIO);
 	}
 }
 
