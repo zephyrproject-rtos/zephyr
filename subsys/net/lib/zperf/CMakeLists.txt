@@ -5,14 +5,14 @@ zephyr_library_named(zperf)
 zephyr_library_sources(
   zperf_api.c
   zperf_common.c
-  zperf_iperf2_client.c
   )
 zephyr_library_sources_ifdef(CONFIG_NET_ZPERF_RAW_TX zperf_raw_uploader.c)
+zephyr_library_sources_ifdef(CONFIG_NET_ZPERF_IPERF2 zperf_iperf2_client.c)
 
-zephyr_library_sources_ifdef(CONFIG_NET_ZPERF_SERVER
-  zperf_iperf2_server.c
-  zperf_session.c
-  )
+if(CONFIG_NET_ZPERF_SERVER)
+  zephyr_library_sources(zperf_session.c)
+  zephyr_library_sources_ifdef(CONFIG_NET_ZPERF_IPERF2 zperf_iperf2_server.c)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL
   zperf_shell.c

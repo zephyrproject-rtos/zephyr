@@ -14,8 +14,24 @@ menuconfig NET_ZPERF
 
 if NET_ZPERF
 
+choice NET_ZPERF_PROTOCOL
+	prompt "iperf protocol version"
+	default NET_ZPERF_IPERF2
+	help
+	  The iperf protocol version zperf speaks. A build supports one
+	  version; the zperf API and shell commands are the same whichever
+	  is chosen.
+
+config NET_ZPERF_IPERF2
+	bool "iperf2"
+	help
+	  Interoperate with iperf 2.0.10 and newer.
+
+endchoice
+
 config NET_ZPERF_LEGACY_HEADER_COMPAT
 	bool "Legacy iperf UDP header format"
+	depends on NET_ZPERF_IPERF2
 	help
 	  iperf 2.0.10 (2017) updated the UDP header format in a
 	  backwards incompatible manner that cannot be automatically
