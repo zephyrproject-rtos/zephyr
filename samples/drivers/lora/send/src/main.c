@@ -25,7 +25,11 @@ char data[MAX_DATA_LEN] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd', ' '
 int main(void)
 {
 	const struct device *const lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
+#ifdef CONFIG_SAMPLE_LORA_GFSK
+	struct lora_modem_config_gfsk config = {0};
+#else
 	struct lora_modem_config config = {0};
+#endif
 	int ret;
 
 	if (!device_is_ready(lora_dev)) {
@@ -33,6 +37,27 @@ int main(void)
 		return 0;
 	}
 
+#ifdef CONFIG_SAMPLE_LORA_GFSK
+	/* The 50 kbps FSK that LoRaWAN defines as DR7. A backend whose library
+	 * writes the sync word, the pulse shape and the whitening itself takes
+	 * these and nothing else.
+	 */
+	config.frequency = 865100000;
+	config.bitrate = 50000;
+	config.freq_deviation = 25000;
+	config.bandwidth = 100000;
+	config.pulse_shape = LORA_GFSK_PULSE_SHAPE_BT_1_0;
+	config.sync_word[0] = 0xC1;
+	config.sync_word[1] = 0x94;
+	config.sync_word[2] = 0xC1;
+	config.sync_word_len = 3;
+	config.preamble_len = 5;
+	config.whitening = true;
+	config.tx_power = 4;
+	config.tx = true;
+
+	ret = lora_config_gfsk(lora_dev, &config);
+#else
 	config.frequency = 865100000;
 	config.bandwidth = BW_125_KHZ;
 	config.datarate = SF_10;
@@ -44,6 +69,7 @@ int main(void)
 	config.tx = true;
 
 	ret = lora_config(lora_dev, &config);
+#endif
 	if (ret < 0) {
 		LOG_ERR("LoRa config failed");
 		return 0;
