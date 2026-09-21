@@ -723,8 +723,19 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 
 #if CONFIG_UART_ASYNC_API
 	if (uart_intr_status & UART_INTR_RXFIFO_FULL) {
-		data->async.rx_counter++;
-		uart_esp32_async_timer_start(&data->async.rx_timeout_work, data->async.rx_timeout);
+		if (data->async.rx_len == 0U) {
+			/*
+			 * RX is disarmed. Any byte still in the FIFO would keep
+			 * these level interrupts asserted forever, so mask them
+			 * until the next uart_rx_enable().
+			 */
+			uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
+			uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
+		} else {
+			data->async.rx_counter++;
+			uart_esp32_async_timer_start(&data->async.rx_timeout_work,
+						     data->async.rx_timeout);
+		}
 	}
 #endif
 }
