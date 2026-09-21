@@ -184,6 +184,13 @@
 #define MNSTATUS_NMIE 0x00000008 /* NMI Enable (bit 3) */
 #endif                           /* CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY */
 
+/* Zkr CSR addresses */
+#define CSR_SEED    0x015
+#define CSR_MSECCFG 0x747
+
+/* MSECCFG bit fields */
+#define MSECCFG_SSEED 0x00000200 /* S-mode access to the seed CSR (bit 9) */
+
 #define DEFAULT_RSTVEC	0x00001000
 #define CLINT_BASE	0x02000000
 #define CLINT_SIZE	0x000c0000

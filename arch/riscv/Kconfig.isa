@@ -344,6 +344,19 @@ config RISCV_ISA_EXT_ZK
 	  (NIST AES decryption/encryption), Zknh (NIST hash functions
 	  such as SHA-256 and SHA-512), and Zkr (entropy source).
 
+config RISCV_ISA_EXT_ZKR
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zkr)
+	default y if RISCV_ISA_EXT_ZK
+	depends on RISCV_ISA_EXT_ZICSR
+	help
+	  (Zkr) - Standard Extension for Entropy Source
+
+	  The "Zkr" extension provides the seed CSR, a physical entropy
+	  source delivering 16 bits of randomness per access. The CSR is
+	  accessible from M-mode only, unless access from S-mode or U-mode
+	  is granted through the SSEED and USEED bits of the mseccfg CSR.
+
 config RISCV_ISA_EXT_ZKS
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zks)
