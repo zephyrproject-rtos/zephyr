@@ -25,6 +25,10 @@
 			};
 		};
 
+		rcc@58024400 {
+			st,vcoh-frequency-range = <DT_FREQ_M(192) DT_FREQ_M(960)>;
+		};
+
 		uart9: serial@40011800 {
 			compatible = "st,stm32-uart";
 			reg = <0x40011800 0x400>;
