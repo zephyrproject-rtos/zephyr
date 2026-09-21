@@ -20,7 +20,8 @@ description: |
 
       with f(VCOx clock) = f(REFx_CK) × (PLLNx / PLLMx)
 
-  The PLL output frequency must not exceed 80 MHz.
+  The maximum PLL output frequency is device-dependent.
+  Refer to your product's Reference Manual and Data Sheet for more details.
 
 compatible: "st,stm32h7-pll-clock"
 
