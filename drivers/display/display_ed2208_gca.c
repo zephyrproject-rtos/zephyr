@@ -400,7 +400,7 @@ static DEVICE_API(display, ed2208_gca_api) = {
 #define ED2208_GCA_DEFINE(inst)                                                                    \
 	BUILD_ASSERT(CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE >=                                      \
 		     DT_PROP_LEN(DT_INST_CHILD(inst, color_palette), colors));                     \
-	DISPLAY_COLOR_DITHER_DEFINE(inst);                                                         \
+	DISPLAY_COLOR_DITHER_INST_DEFINE(inst);                                                    \
 	static const struct ed2208_gca_config ed2208_gca_cfg_##inst = {                            \
 		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
 		.dbi_config =                                                                      \
@@ -415,7 +415,7 @@ static DEVICE_API(display, ed2208_gca_api) = {
 		.height = DT_INST_PROP(inst, height),                                              \
 	};                                                                                         \
 	static struct ed2208_gca_data ed2208_gca_data_##inst = {                                   \
-		.color_dither = DISPLAY_COLOR_DITHER_INIT(inst),                                   \
+		.color_dither = DISPLAY_COLOR_DITHER_INST_INIT(inst),                              \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, ed2208_gca_pm_action);                                      \
 	DEVICE_DT_INST_DEFINE(inst, ed2208_gca_init, PM_DEVICE_DT_INST_GET(inst),                  \
