@@ -7,8 +7,17 @@ The STM32MP157x-DK2 Discovery board leverages the capacities of the STM32MP157
 multi-core processor, composed of a dual Cortex®-A7 and a single Cortex®-M4 core.
 Zephyr OS is ported to run on the Cortex®-M4 core.
 
-The board target is ``stm32mp157x_dk2/stm32mp157cxx`` for the STM32MP157C-DK2
-(Cortex®-A7 up to 650 MHz).
+The board is available with two SoC options, selected through the board
+qualifier:
+
+- ``stm32mp157x_dk2/stm32mp157cxx`` — STM32MP157C-DK2 (Cortex®-A7 up to 650 MHz)
+- ``stm32mp157x_dk2/stm32mp157fxx`` — STM32MP157F-DK2 (Cortex®-A7 up to 800 MHz,
+  newer Rev.Z silicon)
+
+From the Cortex®-M4 (Zephyr) point of view the two variants are identical: same
+package, peripherals, pin mapping and memory layout. They differ only by the
+maximum Cortex®-A7 frequency and the silicon revision, both in the Cortex®-A7
+domain. Build for the variant you own using the SoC qualifier.
 
 - Common features:
 
@@ -47,7 +56,7 @@ The board target is ``stm32mp157x_dk2/stm32mp157cxx`` for the STM32MP157C-DK2
   - Bluetooth® Low Energy 4.1
 
 More information about the board can be found at the
-`STM32MP157C-DK2 website`_.
+`STM32MP157F-DK2 website`_ and `STM32MP157C-DK2 website`_.
 
 Hardware
 ********
@@ -218,9 +227,13 @@ These are the memory mappings for Cortex®-A7 and Cortex®-M4:
 Refer to `stm32mp157 boot Cortex-M4 firmware`_ wiki page for instructions
 to load and start the Cortex-M4 firmware.
 
+Build the sample for the variant you own, e.g. the STM32MP157F-DK2:
+
 .. code-block:: console
 
-  west build -b stm32mp157x_dk2/stm32mp157cxx samples/hello_world
+  west build -b stm32mp157x_dk2/stm32mp157fxx samples/hello_world
+
+(or ``stm32mp157x_dk2/stm32mp157cxx`` for the STM32MP157C-DK2).
 
 Debugging
 =========
@@ -239,6 +252,9 @@ The principle is to attach to the firmware already loaded by Linux.
 .. code-block:: console
 
   west attach
+
+.. _STM32MP157F-DK2 website:
+   https://www.st.com/en/evaluation-tools/stm32mp157f-dk2.html
 
 .. _STM32MP157C-DK2 website:
    https://www.st.com/en/evaluation-tools/stm32mp157c-dk2.html
