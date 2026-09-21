@@ -75,6 +75,7 @@ config VIDEO_CAM_NUM_BUFS
 choice VIDEO_TRANSFORM
 	prompt "Video transform implementation"
 	bool
+	optional
 	help
 	  The captured frame will go through m2m transforms defined in a separate .c file.
 	  The implementation could include "transform.h" which provides helper functions
