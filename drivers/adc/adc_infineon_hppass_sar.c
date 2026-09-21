@@ -37,12 +37,14 @@
 
 #include <infineon_hppass.h>
 #include "cy_hppass_sar.h"
+#include "adc_common.h"
 
 /* The channel count is the one PDL constant that tracks the revision. */
 BUILD_ASSERT(IS_ENABLED(CONFIG_ADC_INFINEON_HPPASS_SAR_V3) == (CY_HPPASS_SAR_CHAN_NUM == 36U),
 	     "SAR compatible does not match the device's MCPASS revision");
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+#define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #include "adc_context.h"
 
 #define IFX_HPPASS_SAR_ADC_RESOLUTION (12u)
@@ -442,6 +444,14 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
+/* adc_context only stops the interval timer when a sequence finishes without error. */
+static void adc_context_on_complete(struct adc_context *ctx, int status)
+{
+	ARG_UNUSED(status);
+
+	adc_context_disable_timer(ctx);
+}
+
 /**
  * @brief Start read operation
  *
@@ -453,10 +463,12 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct ifx_hppass_sar_adc_data *data = dev->data;
+	int ret;
 
-	if (sequence->buffer_size < (sizeof(int16_t) * POPCOUNT(sequence->channels))) {
+	ret = adc_sequence_validate_buffer(sequence, POPCOUNT(sequence->channels), sizeof(int16_t));
+	if (ret != 0) {
 		LOG_ERR("Buffer too small");
-		return -ENOMEM;
+		return ret;
 	}
 
 	if (sequence->resolution != IFX_HPPASS_SAR_ADC_RESOLUTION) {
