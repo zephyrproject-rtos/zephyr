@@ -263,6 +263,9 @@ static void verify_udp_packet_sequence(const int32_t *packet_ids, size_t packet_
 
 ZTEST(zperf_api, test_udp_fin_accounts_for_trailing_loss)
 {
+	/* The iperf2 end of test handshake; iperf3 has none */
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_ZPERF_IPERF3);
+
 	const int32_t packet_ids[] = {1, 2, -5};
 
 	verify_udp_packet_sequence(packet_ids, ARRAY_SIZE(packet_ids), 2, 0, 5);
@@ -270,6 +273,9 @@ ZTEST(zperf_api, test_udp_fin_accounts_for_trailing_loss)
 
 ZTEST(zperf_api, test_udp_fin_reconciles_out_of_order_gap)
 {
+	/* The iperf2 end of test handshake; iperf3 has none */
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_ZPERF_IPERF3);
+
 	const int32_t packet_ids[] = {1, 3, 2, -4};
 
 	verify_udp_packet_sequence(packet_ids, ARRAY_SIZE(packet_ids), 0, 1, 4);
@@ -277,6 +283,9 @@ ZTEST(zperf_api, test_udp_fin_reconciles_out_of_order_gap)
 
 ZTEST(zperf_api, test_udp_fin_does_not_reconcile_duplicate)
 {
+	/* The iperf2 end of test handshake; iperf3 has none */
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_ZPERF_IPERF3);
+
 	const int32_t packet_ids[] = {1, 3, 3, -5};
 
 	verify_udp_packet_sequence(packet_ids, ARRAY_SIZE(packet_ids), 2, 1, 5);
@@ -284,9 +293,35 @@ ZTEST(zperf_api, test_udp_fin_does_not_reconcile_duplicate)
 
 ZTEST(zperf_api, test_udp_fin_does_not_reconcile_recovered_duplicate)
 {
+	/* The iperf2 end of test handshake; iperf3 has none */
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_ZPERF_IPERF3);
+
 	const int32_t packet_ids[] = {1, 4, 2, 2, -5};
 
 	verify_udp_packet_sequence(packet_ids, ARRAY_SIZE(packet_ids), 1, 2, 5);
+}
+
+/* The server's byte count against what the client sent over TCP. An iperf2
+ * server counts until the client closes the connection, so it sees every
+ * byte. An iperf3 server counts until the client ends the test on the
+ * control connection, which can overtake the last of the data, so it may
+ * see a little less, as iperf3 itself reports.
+ */
+static void check_tcp_total(uint64_t server_len, uint64_t client_len)
+{
+	if (IS_ENABLED(CONFIG_NET_ZPERF_IPERF3)) {
+		zassert_true(server_len <= client_len,
+			     "TCP server received %" PRIu64 " bytes, client sent %" PRIu64,
+			     server_len, client_len);
+		zassert_true(client_len - server_len < client_len / 10,
+			     "TCP server received %" PRIu64 " bytes, client sent %" PRIu64,
+			     server_len, client_len);
+		return;
+	}
+
+	zassert_equal(server_len, client_len,
+		      "TCP server received %" PRIu64 " bytes, client sent %" PRIu64,
+		      server_len, client_len);
 }
 
 ZTEST(zperf_api, test_tcp_upload_download)
@@ -327,13 +362,7 @@ ZTEST(zperf_api, test_tcp_upload_download)
 	zassert_true(server_results.total_len > 0,
 		     "TCP server did not report any received data");
 
-	/* TCP is reliable, so the server must have received exactly what the
-	 * client sent.
-	 */
-	zassert_equal(server_results.total_len, client_results.total_len,
-		      "TCP server received %" PRIu64 " bytes, client sent %"
-		      PRIu64, server_results.total_len,
-		      client_results.total_len);
+	check_tcp_total(server_results.total_len, client_results.total_len);
 }
 
 ZTEST(zperf_api, test_udp_upload_async)
@@ -418,13 +447,7 @@ ZTEST(zperf_api, test_tcp_upload_async)
 	zassert_true(server_results.total_len > 0,
 		     "TCP server did not report any received data");
 
-	/* TCP is reliable, so the server must have received exactly what the
-	 * client sent.
-	 */
-	zassert_equal(server_results.total_len, client_async_results.total_len,
-		      "TCP server received %" PRIu64 " bytes, client sent %"
-		      PRIu64, server_results.total_len,
-		      client_async_results.total_len);
+	check_tcp_total(server_results.total_len, client_async_results.total_len);
 }
 
 ZTEST_SUITE(zperf_api, NULL, NULL, zperf_before, zperf_after, NULL);
