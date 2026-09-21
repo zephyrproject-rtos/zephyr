@@ -181,6 +181,12 @@ aa_loop:
 	li t0, (COUNTEREN_CY | COUNTEREN_TM | COUNTEREN_IR)
 	csrw mcounteren, t0
 
+#ifdef CONFIG_RISCV_ISA_EXT_ZKR
+	/* Allow S-mode to access the Zkr seed CSR */
+	li t0, MSECCFG_SSEED
+	csrs CSR_MSECCFG, t0
+#endif /* CONFIG_RISCV_ISA_EXT_ZKR */
+
 	/* Enable M-mode timer interrupt so MTIP fires and is forwarded to S-mode as STIP */
 	li t0, MIP_MTIP
 	csrs mie, t0
