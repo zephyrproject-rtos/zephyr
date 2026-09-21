@@ -26,14 +26,9 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
     message(FATAL_ERROR "mutually exclusive on RW612_BGA due to shared PCB nets "
       "between the ethernet PHY and the external oscillator")
   endif()
+endif()
 
-  # Set TX power limit
-  if(CONFIG_WIFI_NXP)
-    zephyr_include_directories(
-      tx_pwr_limits
-    )
-
+# Set TX power limit
+if(CONFIG_WIFI_NXP)
   zephyr_compile_definitions(WIFI_BT_TX_PWR_LIMITS_OVERRIDE="wlan_txpwrlimit_cfg_WW_rw610.h")
-  endif()
-
 endif()

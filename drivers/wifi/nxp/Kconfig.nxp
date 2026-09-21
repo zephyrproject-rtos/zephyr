@@ -1053,6 +1053,14 @@ config NXP_WIFI_WLAN_CALDATA_3ANT_DIVERSITY
 	help
 	  This option is used to enable three antenna diversity.
 
+config NXP_WIFI_CALDATA_UBX_IRIS_W1
+	bool "u-blox IRIS-W1 module calibration data"
+	select NXP_OVERRIDE_CALIBRATION_DATA
+	help
+	  Use the single-antenna Wi-Fi RF calibration data of the u-blox
+	  IRIS-W1 module provided by hal_nxp instead of the NXP RW61x
+	  reference board calibration data.
+
 endif # NXP_RW610
 
 config NXP_WIFI_11AX_TWT
