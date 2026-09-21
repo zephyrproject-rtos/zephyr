@@ -706,14 +706,22 @@ static void hci_like_callback(const struct device *dev, struct uart_event *evt, 
 
 		zassert_true(dev == tx_dev);
 		if (IS_ENABLED(CONFIG_PM_RUNTIME_IN_TEST)) {
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 			pm_device_runtime_put_async(tx_dev, K_NO_WAIT);
+#else
+			pm_device_runtime_put(tx_dev);
+#endif
 		}
 		k_sem_give(&tx_data.sem);
 		break;
 	case UART_TX_ABORTED:
 		zassert_true(dev == tx_dev);
 		if (IS_ENABLED(CONFIG_PM_RUNTIME_IN_TEST)) {
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 			pm_device_runtime_put_async(tx_dev, K_NO_WAIT);
+#else
+			pm_device_runtime_put(tx_dev);
+#endif
 		}
 		zassert_false(tx_data.cont,
 				"Unexpected TX abort, receiver not reading data on time");
