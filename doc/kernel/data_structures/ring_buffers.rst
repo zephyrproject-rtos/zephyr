@@ -65,13 +65,6 @@ buffer data from which the user can read without making a verbatim
 copy, and :c:func:`ring_buf_consume` signals the buffer with how many
 bytes have been consumed and allows for a new transfer to begin.
 
-The legacy :c:func:`ring_buf_put_claim` / :c:func:`ring_buf_put_finish` and
-:c:func:`ring_buf_get_claim` / :c:func:`ring_buf_get_finish` APIs provide
-similar functionality but reserve the claimed region until finished, which
-incurs additional code size and runtime cost. These APIs are deprecated
-and will be removed in a future release; new code should use the
-``_ptr`` / ``_commit`` / ``_consume`` variants described above.
-
 The user can manage the capacity of a ring buffer without modifying it
 using either :c:func:`ring_buf_space_get` which returns the number of free bytes,
 or by testing the :c:func:`ring_buf_is_empty` predicate.
@@ -131,17 +124,9 @@ producer side only updates the ``put`` indices and the consumer side
 only updates the ``get`` indices, so the two sides never write the
 same fields. This holds for both the copying APIs
 (:c:func:`ring_buf_put` / :c:func:`ring_buf_get`) and the zero-copy
-"claim" APIs (:c:func:`ring_buf_put_claim` /
-:c:func:`ring_buf_put_finish` and :c:func:`ring_buf_get_claim` /
-:c:func:`ring_buf_get_finish`).
-
-When the producer and consumer run on different CPUs (SMP), the
-application must still ensure that data writes are visible before the
-index update that publishes them. In practice this happens for free
-when the producer and consumer use a kernel synchronization primitive
-to coordinate (for example a :c:struct:`k_sem` signaled by the
-producer and waited on by the consumer), since those primitives
-include the necessary memory barriers.
+ APIs (:c:func:`ring_buf_put_ptr` /
+:c:func:`ring_buf_commit` and :c:func:`ring_buf_get_ptr` /
+:c:func:`ring_buf_consume`).
 
 Any use case with more than one concurrent producer, or more than one
 concurrent consumer, must serialize those accesses externally
@@ -158,12 +143,10 @@ set of "head" and "tail" indices representing where the next read and write
 operations may occur.
 
 This boundary is invisible to the user using the normal put/get APIs,
-but becomes a barrier to the "claim" API, because obviously no
+but becomes a barrier to the zero-copy API, because obviously no
 contiguous region can be returned that crosses the end of the buffer.
 This can be surprising to application code, and produce performance
-artifacts when transfers need to happen close to the end of the
-buffer, as the number of calls to claim/finish needs to double for such
-transfers.
+artifacts when transfers close to the end of the buffer occur.
 
 
 Implementation
@@ -266,10 +249,6 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:option:`CONFIG_RING_BUFFER`: Restore the deprecated legacy ring
-  buffer APIs (the claim/finish and fixed-size item APIs). The ring buffer
-  itself is header-only and always available, so this option is not required
-  for normal use.
 * :kconfig:option:`CONFIG_RING_BUFFER_LARGE`: Increase the maximum buffer size
   from 32KB to 1GB.
 
