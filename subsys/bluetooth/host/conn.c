@@ -2669,7 +2669,8 @@ static int start_security(struct bt_conn *conn)
 
 int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 {
-	bool force_pair;
+	bt_security_t prev_sec_level;
+	bool force_pair, prev_force_pair;
 	int err;
 
 	if (!bt_conn_is_le(conn) && !bt_conn_is_br(conn)) {
@@ -2697,13 +2698,20 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 		return 0;
 	}
 
+	prev_sec_level = conn->required_sec_level;
+	prev_force_pair = atomic_test_bit(conn->flags, BT_CONN_FORCE_PAIR);
+
 	atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR, force_pair);
 	conn->required_sec_level = sec;
 
 	err = start_security(conn);
 
-	/* reset required security level in case of error */
-	if (err) {
+	if (err == -EALREADY) {
+		/* keep the settings of the request already in flight */
+		conn->required_sec_level = prev_sec_level;
+		atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR, prev_force_pair);
+	} else if (err) {
+		/* reset required security level in case of error */
 		conn->required_sec_level = conn->sec_level;
 	}
 

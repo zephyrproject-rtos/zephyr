@@ -15,7 +15,7 @@
  * @brief Connection management
  * @defgroup bt_conn Connection management
  * @since 1.0
- * @version 1.0.0
+ * @version 1.0.1
  * @ingroup bluetooth
  * @{
  */
@@ -2024,6 +2024,9 @@ int bt_conn_create_auto_stop(void);
  *
  *  @return 0 on success or negative error
  *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection.
+ *  @return -EALREADY A Security Request is already in flight (one sent by the
+ *                    peripheral has not yet been answered). It is left as-is and
+ *                    the security level it carries is not changed.
  */
 int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
 
