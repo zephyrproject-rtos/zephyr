@@ -72,6 +72,7 @@ struct ifx_cat1_i2c_data {
 	struct k_sem operation_sem;
 	struct k_sem transfer_sem;
 	bool error;
+	bool rx_overrun;
 	uint32_t async_pending;
 	struct ifx_cat1_clock clock;
 	struct i2c_target_config *p_target_config;
@@ -458,6 +459,21 @@ static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool i
 	return 0;
 }
 
+/**
+ * @brief Apply a bus configuration and re-initialise the SCB.
+ *
+ * Also selects the receive path for the role being configured, since the RX
+ * FIFO suits a controller but changes when a target refuses further bytes.
+ *
+ * @param[in] dev I2C device instance.
+ * @param[in] dev_config Speed and role bits, or zero to re-apply the role and
+ *                       speed already held.
+ *
+ * @retval 0 Configured and enabled.
+ * @retval -ERANGE The requested speed is outside the supported set.
+ * @retval -EIO Ten-bit addressing was requested, or the SCB or its clock
+ *              divider did not initialise.
+ */
 static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct ifx_cat1_i2c_data *data = dev->data;
@@ -510,6 +526,12 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	if (is_target_mode) {
 		data->scb_config.slaveAddressMask = 0xFE;
 		data->scb_config.ackGeneralAddr = false;
+
+		/* A target using the RX FIFO NACKs the controller only once the
+		 * FIFO fills, not once the driver buffer fills, so the receiver
+		 * stays on the byte-at-a-time path in this role.
+		 */
+		data->scb_config.useRxFifo = false;
 	} else {
 		/* Controller mode: the PDL consults these target-only fields only in
 		 * target mode, but scb_config is a persistent per-instance copy, so
@@ -518,6 +540,15 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 		 */
 		data->scb_config.slaveAddressMask = 0;
 		data->scb_config.ackGeneralAddr = false;
+
+		/* Hardware acknowledges received bytes, which cuts the interrupt
+		 * count on long reads and releases the byte a held read leaves
+		 * outstanding when a later message appends to it.  The cost is a
+		 * deadline: the acknowledge must be cleared before a buffer's
+		 * final byte, or the controller clocks bytes past the end.
+		 * i2c_isr_handler() reports that rather than letting it pass.
+		 */
+		data->scb_config.useRxFifo = true;
 	}
 
 #ifdef CONFIG_PM_DEVICE
@@ -623,9 +654,131 @@ static int ifx_cat1_i2c_msg_validate(struct i2c_msg *msg, uint8_t num_msgs)
 	return 0;
 }
 
+/**
+ * @brief Test whether msg[i + 1] continues the addressed write at msg[i].
+ *
+ * A write run ends at I2C_MSG_STOP, at a direction change, and at
+ * I2C_MSG_RESTART.
+ *
+ * @param[in] msg Message array passed to the transfer.
+ * @param[in] num_msgs Number of messages in @p msg.
+ * @param[in] i Index of the message being submitted.
+ *
+ * @retval true The bus stays held and the next buffer appends without a
+ *              repeated START.
+ * @retval false The run ends at msg[i].
+ */
+static bool ifx_cat1_i2c_write_run_continues(struct i2c_msg *msg, uint8_t num_msgs, uint32_t i)
+{
+	if ((i + 1) >= num_msgs) {
+		return false;
+	}
+
+	if ((msg[i].flags & I2C_MSG_STOP) != 0) {
+		return false;
+	}
+
+	/* A zero-length write addresses the target and stops, so it cannot
+	 * hold the bus for anything that follows.
+	 */
+	if (msg[i].len == 0) {
+		return false;
+	}
+
+	if ((msg[i + 1].flags & (I2C_MSG_READ | I2C_MSG_RESTART)) != 0) {
+		return false;
+	}
+
+	/* A zero-length append never completes.  The PDL arms the closing TX
+	 * underflow only on the path that sends an address.
+	 */
+	return msg[i + 1].len != 0;
+}
+
+/**
+ * @brief Test whether msg[j] and msg[j + 1] are consecutive reads the caller
+ *        wants on the bus as one addressed transaction.
+ *
+ * @param[in] msg Message array passed to the transfer.
+ * @param[in] num_msgs Number of messages in @p msg.
+ * @param[in] j Index of the earlier message.
+ *
+ * @retval true Both messages belong to the same read run.
+ * @retval false The run ends at msg[j].
+ */
+static bool ifx_cat1_i2c_reads_adjacent(struct i2c_msg *msg, uint8_t num_msgs, uint32_t j)
+{
+	if ((j + 1) >= num_msgs) {
+		return false;
+	}
+
+	if ((msg[j].flags & I2C_MSG_STOP) != 0) {
+		return false;
+	}
+
+	return ((msg[j + 1].flags & I2C_MSG_READ) != 0) &&
+	       ((msg[j + 1].flags & I2C_MSG_RESTART) == 0);
+}
+
+/**
+ * @brief Test whether msg[i + 1] continues the addressed read at msg[i].
+ *
+ * Read runs merge less often than write runs.  A held read leaves its closing
+ * byte unacknowledged, and the hardware acknowledge that releases it is
+ * enabled only for a buffer of at least two bytes that is not itself holding
+ * the bus.  Only the buffer ending the run meets both, so runs of three or
+ * more stay unmerged.
+ *
+ * Returning false costs a STOP and a fresh addressed read, which the I2C API
+ * permits.  Returning true for a buffer that cannot release the byte stalls
+ * until the transfer times out.
+ *
+ * @param[in] msg Message array passed to the transfer.
+ * @param[in] num_msgs Number of messages in @p msg.
+ * @param[in] i Index of the message being submitted.
+ *
+ * @retval true The bus stays held and the next buffer appends without a
+ *              repeated START.
+ * @retval false The run ends at msg[i].
+ */
+static bool ifx_cat1_i2c_read_run_continues(struct i2c_msg *msg, uint8_t num_msgs, uint32_t i)
+{
+	if (!ifx_cat1_i2c_reads_adjacent(msg, num_msgs, i)) {
+		return false;
+	}
+
+	if (msg[i + 1].len < 2U) {
+		return false;
+	}
+
+	return !ifx_cat1_i2c_reads_adjacent(msg, num_msgs, i + 1);
+}
+
+/**
+ * @brief Submit one message, or a write followed by a read, to the controller.
+ *
+ * Completion arrives through the event handler rather than on return.
+ *
+ * @param[in] dev I2C device instance.
+ * @param[in] address Seven-bit target address.
+ * @param[in] tx Write buffer, or NULL when the submission only reads.
+ * @param[in] tx_size Bytes in @p tx.  Zero with a non-NULL @p tx addresses the
+ *                    target without transferring data, which is how a bus scan
+ *                    probes.
+ * @param[out] rx Read buffer, or NULL when the submission only writes.
+ * @param[in] rx_size Bytes to read into @p rx.
+ * @param[in] hold_bus Leave the bus held once the last phase completes, so the
+ *                     next message can append to this transaction.
+ * @param[in] append Continue the transaction the previous message left held,
+ *                   emitting neither a START nor an address.
+ *
+ * @retval 0 Submitted.
+ * @retval -EIO A transfer is still in flight.
+ * @retval -EIO Neither buffer was supplied.
+ */
 static int _i2c_controller_transfer_async(const struct device *dev, uint16_t address,
 					  const void *tx, size_t tx_size, void *rx,
-					  size_t rx_size)
+					  size_t rx_size, bool hold_bus, bool append)
 {
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
@@ -645,15 +798,32 @@ static int _i2c_controller_transfer_async(const struct device *dev, uint16_t add
 
 	if (tx_size) {
 		data->pending = (rx_size) ? CAT1_I2C_PENDING_TX_RX : CAT1_I2C_PENDING_TX;
-		data->tx_config.xferPending = (rx_size != 0u);
+		data->tx_config.xferPending = (rx_size != 0u) || hold_bus;
+		data->tx_config.continueXfer = append;
+
+		/* A read following a write always re-addresses, so the read phase
+		 * of a write-read pair never appends.  It still takes the hold,
+		 * because a read run it continues into starts here.
+		 */
+		data->rx_config.xferPending = hold_bus;
+		data->rx_config.continueXfer = false;
+
 		Cy_SCB_I2C_MasterWrite(config->base, &data->tx_config, &data->context);
 		/* Receive covered by interrupt handler - i2c_isr_handler() */
 	} else if (rx_size) {
 		data->pending = CAT1_I2C_PENDING_RX;
+		data->rx_config.xferPending = hold_bus;
+		data->rx_config.continueXfer = append;
 		Cy_SCB_I2C_MasterRead(config->base, &data->rx_config, &data->context);
 	} else if (tx != NULL) {
-		/* 0-byte write for address probing (i2c scan) */
+		/* A zero-length write addresses the target and stops, which is
+		 * how a bus scan probes.  It carries nothing to append and
+		 * nothing worth holding the bus for, so it ignores the run
+		 * flags and stands on its own.
+		 */
 		data->pending = CAT1_I2C_PENDING_TX;
+		data->tx_config.xferPending = false;
+		data->tx_config.continueXfer = false;
 		Cy_SCB_I2C_MasterWrite(config->base, &data->tx_config, &data->context);
 	} else {
 		return -EIO;
@@ -662,6 +832,26 @@ static int _i2c_controller_transfer_async(const struct device *dev, uint16_t add
 	return 0;
 }
 
+/**
+ * @brief Place a message array on the bus.
+ *
+ * Consecutive same-direction messages are merged into one addressed
+ * transaction where the controller can express it, so an address and its
+ * payload supplied as separate buffers reach the target as a single
+ * transaction rather than one per buffer.
+ *
+ * @param[in] dev I2C device instance.
+ * @param[in,out] msg Message array; read buffers are filled in place.
+ * @param[in] num_msgs Number of messages in @p msg.
+ * @param[in] addr Seven-bit target address.
+ *
+ * @retval 0 Every message completed.
+ * @retval -EINVAL A message uses ten-bit addressing or carries a NULL buffer.
+ * @retval -EIO The bus could not be claimed for this caller.
+ * @retval -EIO A message failed on the bus.
+ * @retval -EIO A read took in more bytes than it asked for.
+ * @retval -ETIMEDOUT A message did not complete within the bus timeout.
+ */
 static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, uint8_t num_msgs,
 				 uint16_t addr)
 {
@@ -669,6 +859,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	struct i2c_msg *rx_msg;
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
+	bool append = false;
 	int ret;
 
 	/* Acquire semaphore (block I2C transfer for another thread) */
@@ -690,6 +881,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	}
 
 	data->error = false;
+	data->rx_overrun = false;
 
 	/* Enable I2C Interrupt */
 	data->irq_cause |= I2C_CAT1_EVENTS_MASK;
@@ -698,11 +890,14 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	pm_policy_device_power_lock_get(dev);
 
 	for (uint32_t i = 0; i < num_msgs; i++) {
+		bool hold_bus = false;
+
 		tx_msg = NULL;
 		rx_msg = NULL;
 
 		if ((msg[i].flags & I2C_MSG_READ) != 0) {
 			rx_msg = &msg[i];
+			hold_bus = ifx_cat1_i2c_read_run_continues(msg, num_msgs, i);
 			data->async_pending = CAT1_I2C_PENDING_RX;
 		} else {
 			tx_msg = &msg[i];
@@ -710,8 +905,10 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 			if (((i + 1) < num_msgs) && ((msg[i + 1].flags & I2C_MSG_READ) != 0)) {
 				rx_msg = &msg[i + 1];
 				i++;
+				hold_bus = ifx_cat1_i2c_read_run_continues(msg, num_msgs, i);
 				data->async_pending = CAT1_I2C_PENDING_TX_RX;
 			} else {
+				hold_bus = ifx_cat1_i2c_write_run_continues(msg, num_msgs, i);
 				data->async_pending = CAT1_I2C_PENDING_TX;
 			}
 		}
@@ -723,14 +920,25 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 						     (tx_msg == NULL) ? NULL : tx_msg->buf,
 						     (tx_msg == NULL) ? 0 : tx_msg->len,
 						     (rx_msg == NULL) ? NULL : rx_msg->buf,
-						     (rx_msg == NULL) ? 0 : rx_msg->len);
+						     (rx_msg == NULL) ? 0 : rx_msg->len,
+						     hold_bus, append);
 
 		if (ret < 0) {
+			/* The submission never reached the bus, so no abort ran
+			 * and a bus held by the previous message stays held,
+			 * stretching SCL after this call returns.
+			 */
+			if (append) {
+				(void)Cy_SCB_I2C_MasterSendStop(config->base, 1U, &data->context);
+			}
+
 			pm_policy_device_power_lock_put(dev);
 			(void)pm_device_runtime_put(dev);
 			k_sem_give(&data->operation_sem);
 			return ret;
 		}
+
+		append = hold_bus;
 
 		/* Wait for the async transfer to complete, bounded by the
 		 * per-bus transfer timeout.
@@ -765,6 +973,23 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 
 		/* Check for an error during the transfer */
 		if (data->error) {
+			pm_policy_device_power_lock_put(dev);
+			(void)pm_device_runtime_put(dev);
+			k_sem_give(&data->operation_sem);
+			return -EIO;
+		}
+
+		if (data->rx_overrun) {
+			LOG_ERR("read acknowledged past the end of the buffer; "
+				"target advanced further than requested");
+
+			/* The transfer completed without error, so no abort ran
+			 * and a bus held for the next message is still held.
+			 */
+			if (append) {
+				(void)Cy_SCB_I2C_MasterSendStop(config->base, 1U, &data->context);
+			}
+
 			pm_policy_device_power_lock_put(dev);
 			(void)pm_device_runtime_put(dev);
 			k_sem_give(&data->operation_sem);
@@ -996,10 +1221,30 @@ static int ifx_cat1_i2c_target_unregister(const struct device *dev, struct i2c_t
 	return 0;
 }
 
+/**
+ * @brief SCB interrupt handler, shared by the controller and target roles.
+ *
+ * @param[in] dev I2C device instance.
+ */
 static void i2c_isr_handler(const struct device *dev)
 {
 	struct ifx_cat1_i2c_data *data = (struct ifx_cat1_i2c_data *)dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
+
+	/* The RX FIFO acknowledges in hardware until this handler stops it near
+	 * the end of the buffer, so a late handler takes in bytes no message
+	 * asked for and leaves the target advanced past them.
+	 *
+	 * More bytes in the FIFO than the transfer still wants is the overrun.
+	 * The role and busy tests confine the comparison to a controller read.
+	 * The PDL drains the FIFO and caps the reported count before the
+	 * completion callback, so the check cannot wait until then.
+	 */
+	if (data->context.masterRdDir &&
+	    ((data->context.masterStatus & CY_SCB_I2C_MASTER_BUSY) != 0U) &&
+	    (Cy_SCB_GetNumInRxFifo(config->base) > data->context.masterBufferSize)) {
+		data->rx_overrun = true;
+	}
 
 	Cy_SCB_I2C_Interrupt(config->base, &data->context);
 
