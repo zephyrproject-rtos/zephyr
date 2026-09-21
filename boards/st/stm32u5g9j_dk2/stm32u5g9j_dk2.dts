@@ -414,3 +414,7 @@ zephyr_jpegenc: &jpeg {
 &gpu2d {
 	status = "okay";
 };
+
+&dma2d {
+	status = "okay";
+};
