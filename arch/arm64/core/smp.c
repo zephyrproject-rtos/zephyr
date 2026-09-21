@@ -230,14 +230,12 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 		}
 
 		uint64_t target_mpidr = cpu_map[i];
-		uint8_t aff0;
 
 		if (mpidr == target_mpidr || target_mpidr == INV_MPID) {
 			continue;
 		}
 
-		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
-		gic_raise_sgi(ipi, target_mpidr, 1 << aff0);
+		gic_raise_sgi_by_affinity(ipi, target_mpidr);
 	}
 }
 
@@ -292,14 +290,12 @@ void flush_fpu_ipi_handler(const void *unused)
 void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	const uint64_t mpidr = cpu_map[cpu];
-	uint8_t aff0;
 
 	if (mpidr == INV_MPID) {
 		return;
 	}
 
-	aff0 = MPIDR_AFFLVL(mpidr, 0);
-	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
+	gic_raise_sgi_by_affinity(SGI_FPU_IPI, mpidr);
 }
 
 /*
@@ -491,7 +487,6 @@ void arch_coredump_freeze_other_cpus(void)
 
 	for (unsigned int i = 0; i < num_cpus; i++) {
 		uint64_t mpidr;
-		uint8_t aff0;
 
 		if (i == self) {
 			continue;
@@ -504,8 +499,7 @@ void arch_coredump_freeze_other_cpus(void)
 			continue;
 		}
 
-		aff0 = MPIDR_AFFLVL(mpidr, 0);
-		gic_raise_sgi(SGI_COREDUMP_FREEZE_IPI, mpidr, 1 << aff0);
+		gic_raise_sgi_by_affinity(SGI_COREDUMP_FREEZE_IPI, mpidr);
 	}
 
 	for (unsigned int i = 0; i < num_cpus; i++) {
