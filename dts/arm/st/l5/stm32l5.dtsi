@@ -598,6 +598,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+
+				sai1_a_mclk: mclk {
+					#clock-cells = <0>;
+				};
 			};
 
 			sai1_b: sai1b@40015424 {
@@ -606,6 +610,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+
+				sai1_b_mclk: mclk {
+					#clock-cells = <0>;
+				};
 			};
 		};
 
@@ -625,6 +633,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+
+				sai2_a_mclk: mclk {
+					#clock-cells = <0>;
+				};
 			};
 
 			sai2_b: sai2b@40015824 {
@@ -633,6 +645,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+
+				sai2_b_mclk: mclk {
+					#clock-cells = <0>;
+				};
 			};
 		};
 
