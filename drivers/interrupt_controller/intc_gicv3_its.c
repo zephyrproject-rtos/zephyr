@@ -79,7 +79,7 @@ static inline int fls_z(unsigned int x)
 	return 0;
 }
 
-/* wait 500ms & wakeup every millisecond */
+/* Poll for up to 500ms. */
 #define WAIT_QUIESCENT 500
 
 static int its_force_quiescent(struct gicv3_its_data *data)
@@ -103,7 +103,7 @@ static int its_force_quiescent(struct gicv3_its_data *data)
 			return -EBUSY;
 		}
 
-		k_msleep(1);
+		k_busy_wait(USEC_PER_MSEC);
 		reg = sys_read32(data->base + GITS_CTLR);
 	}
 
