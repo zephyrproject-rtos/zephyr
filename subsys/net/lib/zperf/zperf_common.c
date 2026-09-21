@@ -344,8 +344,10 @@ static int zperf_init(void)
 		zperf_raw_uploader_init();
 	}
 
-	if (IS_ENABLED(CONFIG_NET_ZPERF_SERVER) ||
-	    IS_ENABLED(CONFIG_ZPERF_SESSION_PER_THREAD)) {
+	/* The session table belongs to the iperf2 receivers and uploaders */
+	if (IS_ENABLED(CONFIG_NET_ZPERF_IPERF2) &&
+	    (IS_ENABLED(CONFIG_NET_ZPERF_SERVER) ||
+	     IS_ENABLED(CONFIG_ZPERF_SESSION_PER_THREAD))) {
 		zperf_session_init();
 	}
 
