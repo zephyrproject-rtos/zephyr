@@ -272,6 +272,21 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 	return status;
 }
 
+/*
+ * Discard a completion signalled after the waiter gave up, e.g. by a late
+ * interrupt of a transfer that spi_context_wait_for_completion() timed out on
+ * and the driver then aborted. Otherwise the stale signal would satisfy the
+ * next transfer's wait immediately.
+ */
+static inline void spi_context_clear_completion(struct spi_context *ctx)
+{
+#ifdef CONFIG_MULTITHREADING
+	k_sem_reset(&ctx->sync);
+#else
+	atomic_set(&ctx->ready, 0);
+#endif /* CONFIG_MULTITHREADING */
+}
+
 /* For synchronous transfers, this will signal to a thread waiting
  * on spi_context_wait for completion.
  *
