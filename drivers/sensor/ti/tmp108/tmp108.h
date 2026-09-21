@@ -49,7 +49,7 @@
 	 .CONF_TM = 0x0400,                                                                        \
 	 .CONF_CR0 = 0x2000,                                                                       \
 	 .CONF_CR1 = 0x4000,                                                                       \
-	 .CONF_RST = 0x0022,                                                                       \
+	 .CONF_RST = 0x2210,                                                                       \
 	 .TEMP_MULT = 15625,                                                                       \
 	 .TEMP_DIV = 4,                                                                            \
 	 IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS,                                                \
