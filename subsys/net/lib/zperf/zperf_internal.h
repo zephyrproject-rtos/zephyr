@@ -154,6 +154,21 @@ int zperf_iperf2_tcp_download(const struct zperf_download_params *param,
 int zperf_iperf2_udp_download_stop(void);
 int zperf_iperf2_tcp_download_stop(void);
 
+int zperf_iperf3_udp_upload(const struct zperf_upload_params *param,
+			    struct zperf_results *result);
+int zperf_iperf3_tcp_upload(const struct zperf_upload_params *param,
+			    struct zperf_results *result);
+int zperf_iperf3_udp_upload_async(const struct zperf_upload_params *param,
+				  zperf_callback callback, void *user_data);
+int zperf_iperf3_tcp_upload_async(const struct zperf_upload_params *param,
+				  zperf_callback callback, void *user_data);
+int zperf_iperf3_udp_download(const struct zperf_download_params *param,
+			      zperf_callback callback, void *user_data);
+int zperf_iperf3_tcp_download(const struct zperf_download_params *param,
+			      zperf_callback callback, void *user_data);
+int zperf_iperf3_udp_download_stop(void);
+int zperf_iperf3_tcp_download_stop(void);
+
 void zperf_udp_uploader_init(void);
 void zperf_tcp_uploader_init(void);
 void zperf_raw_uploader_init(void);
