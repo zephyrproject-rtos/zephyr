@@ -1457,6 +1457,10 @@ static void dhcpv4_server_timeout(struct k_work *work)
 		CONTAINER_OF(dwork, struct dhcpv4_server_ctx, timeout_work);
 
 	k_mutex_lock(&server_lock, K_FOREVER);
+	if (ctx->iface == NULL) {
+		k_mutex_unlock(&server_lock);
+		return;
+	}
 
 	for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
 		struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
@@ -1571,7 +1575,7 @@ static void dhcpv4_server_cb(struct net_socket_service_event *evt)
 	}
 
 	if (evt->event.revents & ZSOCK_POLLERR) {
-		LOG_ERR("DHCPv4 server poll revents error");
+		LOG_ERR("DHCPv4 server poll revents error: 0x%x", evt->event.revents);
 		net_dhcpv4_server_stop(ctx->iface);
 		return;
 	}
@@ -1770,12 +1774,14 @@ int net_dhcpv4_server_stop(struct net_if *iface)
 	}
 
 	fds[slot].fd = -1;
-	(void)zsock_close(server_ctx[slot].sock);
+	int sock_to_close = server_ctx[slot].sock;
+	server_ctx[slot].sock = -1;
 
 	dhcpv4_server_probing_deinit(&server_ctx[slot]);
-	k_work_cancel_delayable_sync(&server_ctx[slot].timeout_work, &sync);
+	(void)k_work_cancel_delayable(&server_ctx[slot].timeout_work);
 
-	memset(&server_ctx[slot], 0, sizeof(server_ctx[slot]));
+	/* Clear iface while holding server_lock so any running timeout callback immediately exits */
+	server_ctx[slot].iface = NULL;
 
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
 		if (fds[i].fd >= 0) {
@@ -1785,11 +1791,25 @@ int net_dhcpv4_server_stop(struct net_if *iface)
 	}
 
 	if (service_stop) {
-		ret = net_socket_service_unregister(&dhcpv4_server);
+		ret = net_socket_service_register(&dhcpv4_server, NULL, 0, NULL);
 	} else {
 		ret = net_socket_service_register(&dhcpv4_server, fds,
 						  ARRAY_SIZE(fds), NULL);
 	}
+
+	if (sock_to_close >= 0) {
+		(void)zsock_close(sock_to_close);
+	}
+
+	/* Unlock server_lock BEFORE waiting for timeout_work to finish to avoid deadlock */
+	struct k_work_delayable *dwork = &server_ctx[slot].timeout_work;
+	k_mutex_unlock(&server_lock);
+
+	k_work_cancel_delayable_sync(dwork, &sync);
+
+	k_mutex_lock(&server_lock, K_FOREVER);
+	memset(&server_ctx[slot], 0, sizeof(server_ctx[slot]));
+	fds[slot].fd = -1;
 
 out:
 	k_mutex_unlock(&server_lock);
