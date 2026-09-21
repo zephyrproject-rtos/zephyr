@@ -3984,6 +3984,54 @@ uint16_t bt_att_get_uatt_mtu(struct bt_conn *conn)
 	return 0;
 }
 
+int bt_att_get_max_notify_size(struct bt_conn *conn, enum bt_att_chan_opt chan_opt)
+{
+	/* Opcode (1 octet) + attribute handle (2 octets) */
+	const uint16_t att_ntf_hdr_size = sizeof(struct bt_att_hdr) + sizeof(struct bt_att_notify);
+	struct bt_att_chan *chan, *tmp;
+	struct bt_att *att;
+	uint16_t mtu = 0;
+
+	if (conn == NULL) {
+		return -EINVAL;
+	}
+
+	if (!bt_conn_is_le(conn)) {
+		LOG_DBG("conn %p is not LE ACL", conn);
+		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		LOG_DBG("conn %p is not connected (%d)", conn, conn->state);
+		return -ENOTCONN;
+	}
+
+	if ((!IS_ENABLED(CONFIG_BT_EATT) && (chan_opt & BT_ATT_CHAN_OPT_ENHANCED_ONLY) != 0) ||
+	    !(chan_opt == BT_ATT_CHAN_OPT_NONE || chan_opt == BT_ATT_CHAN_OPT_UNENHANCED_ONLY ||
+	      chan_opt == BT_ATT_CHAN_OPT_ENHANCED_ONLY)) {
+		LOG_DBG("Invalid channel options %d for conn %p", chan_opt, conn);
+		return -EINVAL;
+	}
+
+	att = att_get(conn);
+	if (att == NULL) {
+		LOG_DBG("Could not get ATT for conn %p", conn);
+		return -ENOTCONN;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
+		if (att_chan_matches_chan_opt(chan, chan_opt) && (bt_att_mtu(chan) > mtu)) {
+			mtu = bt_att_mtu(chan);
+		}
+	}
+
+	if (mtu > att_ntf_hdr_size) {
+		return (int)(mtu - att_ntf_hdr_size);
+	}
+
+	return 0;
+}
+
 static void att_chan_mtu_updated(struct bt_att_chan *updated_chan)
 {
 	struct bt_att *att = updated_chan->att;
