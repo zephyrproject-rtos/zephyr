@@ -167,6 +167,13 @@
 			phys = <&otgfs_phy>;
 			status = "disabled";
 		};
+
+		dma2d: dma@5002a000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x5002a000 0x1000>;
+			interrupts = <134 0>;
+			status = "disabled";
+		};
 	};
 
 	/delete-node/ usbphy;
