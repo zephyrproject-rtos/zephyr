@@ -45,6 +45,9 @@ static struct net_eth_addr eth_hwaddr = { { 0x42, 0x11, 0x69, 0xde, 0xfa, 0xec }
 
 static int send_status = -EINVAL;
 
+/* Returned by the fake driver for ARP requests when non-zero. */
+static int arp_req_send_ret;
+
 struct net_arp_context {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
@@ -131,6 +134,11 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			}
 
 		} else if (net_ntohs(arp_hdr->opcode) == NET_ARP_REQUEST) {
+			if (arp_req_send_ret != 0) {
+				send_status = arp_req_send_ret;
+				return send_status;
+			}
+
 			/* A request we send carries our own link address. */
 			if (memcmp(&hdr->src, net_if_get_link_addr(iface)->addr,
 				   sizeof(struct net_eth_addr))) {
@@ -1176,4 +1184,258 @@ ZTEST(arp_fn_tests, test_arp_entry_rm_pending)
 	zexpect_equal(arp_entry_count(), 0, "Cache is not empty");
 }
 
-ZTEST_SUITE(arp_fn_tests, NULL, NULL, NULL, NULL, NULL);
+static struct net_if *arp_test_iface_setup(void)
+{
+	struct net_in_addr src = { { { 192, 0, 2, 1 } } };
+	struct net_in_addr netmask = { { { 255, 255, 255, 0 } } };
+	struct net_if_addr *ifaddr;
+	struct net_if *iface;
+
+	iface = net_if_lookup_by_dev(DEVICE_GET(net_arp_test));
+	zassert_not_null(iface, "No ARP test interface");
+
+	ifaddr = net_if_ipv4_addr_add(iface, &src, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Cannot add address");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	net_if_ipv4_set_netmask_by_addr(iface, &src, &netmask);
+
+	return iface;
+}
+
+/* An IPv4 packet to an on-link destination with no link layer destination
+ * address, so that sending it through the L2 triggers ARP resolution.
+ */
+static struct net_pkt *alloc_ipv4_pkt(struct net_if *iface, const struct net_in_addr *dst)
+{
+	struct net_in_addr src = { { { 192, 0, 2, 1 } } };
+	struct net_ipv4_hdr *ipv4;
+	struct net_pkt *pkt;
+	size_t len = strlen(app_data);
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_ipv4_hdr) + len, NET_AF_INET, 0,
+					K_SECONDS(1));
+	zassert_not_null(pkt, "out of mem");
+
+	(void)net_linkaddr_set(net_pkt_lladdr_src(pkt), net_if_get_link_addr(iface)->addr,
+			       sizeof(struct net_eth_addr));
+
+	ipv4 = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer, sizeof(struct net_ipv4_hdr));
+	memset(ipv4, 0, sizeof(struct net_ipv4_hdr));
+	net_ipv4_addr_copy_raw(ipv4->src, (uint8_t *)&src);
+	net_ipv4_addr_copy_raw(ipv4->dst, (const uint8_t *)dst);
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
+	memcpy(net_buf_add(pkt->buffer, len), app_data, len);
+
+	return pkt;
+}
+
+/* Hand the packet to the L2 the way net_if_tx() does. The caller keeps the
+ * responsibility net_if_tx() has of releasing the packet on a negative return.
+ */
+static int l2_send(struct net_if *iface, struct net_pkt *pkt)
+{
+	int ret;
+
+	net_if_tx_lock(iface);
+	ret = net_if_l2(iface)->send(iface, pkt);
+	net_if_tx_unlock(iface);
+
+	return ret;
+}
+
+/* Give each destination its own on-link address. */
+static void pending_dsts(struct net_in_addr *dsts, size_t count)
+{
+	for (size_t i = 0; i < count; i++) {
+		struct net_in_addr dst = { { { 192, 0, 2, 201 + i } } };
+
+		dsts[i] = dst;
+	}
+}
+
+/* Fill the ARP table with pending requests, one per destination. */
+static void fill_pending_table(struct net_if *iface, struct net_pkt **pkts,
+			       struct net_in_addr *dsts, size_t count)
+{
+	for (size_t i = 0; i < count; i++) {
+		struct net_pkt *pkt_arp;
+		int ret;
+
+		pkts[i] = alloc_ipv4_pkt(iface, &dsts[i]);
+		ret = net_arp_prepare(pkts[i], &dsts[i], NULL, &pkt_arp);
+		zassert_equal(ret, NET_ARP_PKT_REPLACED, "No ARP request for entry %zu (%d)", i,
+			      ret);
+		net_pkt_unref(pkt_arp);
+
+		zassert_equal(atomic_get(&pkts[i]->atomic_ref), 2, "Packet %zu not queued", i);
+	}
+}
+
+/* Clear every pending entry and release the packets that were queued on them. */
+static void clear_pending_table(struct net_if *iface, struct net_pkt **pkts,
+				struct net_in_addr *dsts, size_t count)
+{
+	for (size_t i = 0; i < count; i++) {
+		zassert_equal(net_arp_clear_pending(iface, &dsts[i]), 0, "Pending entry %zu lost",
+			      i);
+		zassert_equal(atomic_get(&pkts[i]->atomic_ref), 1,
+			      "Queue reference on packet %zu not released (ref %ld)", i,
+			      atomic_get(&pkts[i]->atomic_ref));
+		net_pkt_unref(pkts[i]);
+	}
+}
+
+/* A failed ARP request must leave the caller with exactly its own reference on
+ * the packet that was queued for the request, and the pending entry must be
+ * reclaimed so that the next packet to that destination starts a new request.
+ */
+ZTEST(arp_fn_tests, test_arp_req_send_fail_queued)
+{
+	struct net_in_addr dst = { { { 192, 0, 2, 201 } } };
+	struct net_pkt *pkt, *pkt_arp;
+	struct net_if *iface;
+	int ret;
+
+	iface = arp_test_iface_setup();
+	req_test = true;
+
+	pkt = alloc_ipv4_pkt(iface, &dst);
+
+	arp_req_send_ret = -EIO;
+	ret = l2_send(iface, pkt);
+	zassert_equal(ret, -EIO, "Unexpected send result %d", ret);
+
+	zassert_equal(atomic_get(&pkt->atomic_ref), 1,
+		      "Caller's reference not intact after failed request (ref %ld)",
+		      atomic_get(&pkt->atomic_ref));
+	zassert_equal(net_arp_clear_pending(iface, &dst), -ENOENT,
+		      "Pending entry not cleared after failed request");
+
+	/* The entry is free again, a new request queues the packet. */
+	arp_req_send_ret = 0;
+	ret = net_arp_prepare(pkt, &dst, NULL, &pkt_arp);
+	zassert_equal(ret, NET_ARP_PKT_REPLACED, "No ARP request (%d)", ret);
+	zassert_equal(atomic_get(&pkt->atomic_ref), 2, "Packet not queued (ref %ld)",
+		      atomic_get(&pkt->atomic_ref));
+	net_pkt_unref(pkt_arp);
+
+	zassert_equal(net_arp_clear_pending(iface, &dst), 0);
+	zassert_equal(atomic_get(&pkt->atomic_ref), 1, "ref %ld", atomic_get(&pkt->atomic_ref));
+	net_pkt_unref(pkt);
+}
+
+/* With every ARP entry pending, a packet to a new destination cannot be
+ * queued and only an ARP request is sent. When that fails, the packet must
+ * still be alive for net_if_tx() to release, and the pending entries of the
+ * other destinations must be untouched.
+ */
+ZTEST(arp_fn_tests, test_arp_req_send_fail_table_full)
+{
+	struct net_in_addr dsts[CONFIG_NET_ARP_TABLE_SIZE];
+	struct net_pkt *pkts[CONFIG_NET_ARP_TABLE_SIZE];
+	struct net_in_addr dst = { { { 192, 0, 2, 250 } } };
+	struct net_pkt *pkt;
+	struct net_if *iface;
+	int ret;
+
+	iface = arp_test_iface_setup();
+	req_test = true;
+
+	pending_dsts(dsts, ARRAY_SIZE(dsts));
+	fill_pending_table(iface, pkts, dsts, ARRAY_SIZE(dsts));
+
+	pkt = alloc_ipv4_pkt(iface, &dst);
+
+	arp_req_send_ret = -EIO;
+	ret = l2_send(iface, pkt);
+	zassert_equal(ret, -EIO, "Unexpected send result %d", ret);
+
+	zassert_equal(atomic_get(&pkt->atomic_ref), 1,
+		      "Packet released while still owned by the caller (ref %ld)",
+		      atomic_get(&pkt->atomic_ref));
+	net_pkt_unref(pkt);
+
+	clear_pending_table(iface, pkts, dsts, ARRAY_SIZE(dsts));
+}
+
+/* A cleared pending entry must be usable for a new destination right away. */
+ZTEST(arp_fn_tests, test_arp_clear_pending_frees_entry)
+{
+	struct net_in_addr dsts[CONFIG_NET_ARP_TABLE_SIZE];
+	struct net_pkt *pkts[CONFIG_NET_ARP_TABLE_SIZE];
+	struct net_in_addr dst = { { { 192, 0, 2, 250 } } };
+	struct net_pkt *pkt, *pkt_arp;
+	struct net_if *iface;
+	int ret;
+
+	iface = arp_test_iface_setup();
+
+	pending_dsts(dsts, ARRAY_SIZE(dsts));
+	fill_pending_table(iface, pkts, dsts, ARRAY_SIZE(dsts));
+
+	zassert_equal(net_arp_clear_pending(iface, &dsts[0]), 0);
+	zassert_equal(atomic_get(&pkts[0]->atomic_ref), 1, "Queue reference not released (ref %ld)",
+		      atomic_get(&pkts[0]->atomic_ref));
+	net_pkt_unref(pkts[0]);
+
+	pkt = alloc_ipv4_pkt(iface, &dst);
+	ret = net_arp_prepare(pkt, &dst, NULL, &pkt_arp);
+	zassert_equal(ret, NET_ARP_PKT_REPLACED, "No ARP request (%d)", ret);
+	zassert_equal(atomic_get(&pkt->atomic_ref), 2,
+		      "Packet not queued, cleared entry not reusable (ref %ld)",
+		      atomic_get(&pkt->atomic_ref));
+	net_pkt_unref(pkt_arp);
+
+	/* The new entry took the cleared slot, so the rest are still pending. */
+	clear_pending_table(iface, &pkts[1], &dsts[1], ARRAY_SIZE(dsts) - 1);
+	clear_pending_table(iface, &pkt, &dst, 1);
+}
+
+/* A sent ARP request consumes the caller's reference on the packet it
+ * replaced, leaving only the one held by the pending queue.
+ */
+ZTEST(arp_fn_tests, test_arp_req_send_ok_releases_caller_ref)
+{
+	struct net_in_addr dst = { { { 192, 0, 2, 201 } } };
+	struct net_pkt *pkt;
+	struct net_if *iface;
+	int ret;
+
+	iface = arp_test_iface_setup();
+	req_test = true;
+
+	pkt = alloc_ipv4_pkt(iface, &dst);
+
+	/* Keep a reference so that the count can be read after the send. */
+	net_pkt_ref(pkt);
+
+	ret = l2_send(iface, pkt);
+	zassert_true(ret > 0, "ARP request not sent (%d)", ret);
+	zassert_equal(send_status, 0, "ARP request not seen by the driver");
+
+	zassert_equal(atomic_get(&pkt->atomic_ref), 2,
+		      "Caller's reference not released after sent request (ref %ld)",
+		      atomic_get(&pkt->atomic_ref));
+
+	zassert_equal(net_arp_clear_pending(iface, &dst), 0, "No pending entry after sent request");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 1, "ref %ld", atomic_get(&pkt->atomic_ref));
+	net_pkt_unref(pkt);
+}
+
+static void arp_test_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	/* Release any queued packets, then drop static entries as well. */
+	net_arp_clear_cache(NULL);
+	net_arp_init();
+
+	req_test = false;
+	send_status = -EINVAL;
+	arp_req_send_ret = 0;
+}
+
+ZTEST_SUITE(arp_fn_tests, NULL, NULL, arp_test_before, NULL, NULL);
