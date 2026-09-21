@@ -323,6 +323,7 @@ ZTEST(arp_fn_tests, test_arp)
 	struct net_eth_addr dst_lladdr;
 	struct net_pkt *pkt;
 	struct net_pkt *pkt2;
+	struct net_pkt *pkt_far;
 	struct net_pkt *pkt_arp;
 	struct net_if *iface;
 	struct net_if_addr *ifaddr;
@@ -480,15 +481,21 @@ ZTEST(arp_fn_tests, test_arp)
 	/* Done with the duplicate packet */
 	net_pkt_unref(pkt2);
 
-	/* Then a case where target is not in the same subnet */
-	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far);
+	/* Then a case where target is not in the same subnet. pkt sits on
+	 * the pending queue for dst and a packet can be on one queue only,
+	 * so use a separate packet.
+	 */
+	pkt_far = net_pkt_clone(pkt, K_SECONDS(1));
+	zassert_not_null(pkt_far, "out of mem");
 
-	ret = net_arp_prepare(pkt, &dst_far, NULL, &pkt_arp);
+	net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt_far)->dst, (uint8_t *)&dst_far);
+
+	ret = net_arp_prepare(pkt_far, &dst_far, NULL, &pkt_arp);
 
 	zassert_equal(NET_ARP_PKT_REPLACED, ret);
 
-	zassert_not_equal((void *)(pkt_arp), (void *)(pkt),
-		"ARP cache should not find anything");
+	zassert_not_equal((void *)(pkt_arp), (void *)(pkt_far),
+			  "ARP cache should not find anything");
 
 	/**TESTPOINTS: Check if packets not empty*/
 	zassert_not_null(pkt_arp,
@@ -509,14 +516,7 @@ ZTEST(arp_fn_tests, test_arp)
 	/* Try to find the same destination again, this should fail as there
 	 * is a pending request in ARP cache.
 	 */
-	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far);
-
-	/* Make sure prepare will not free the pkt because it will be
-	 * needed in the later test case.
-	 */
-	net_pkt_ref(pkt);
-
-	ret = net_arp_prepare(pkt, &dst_far, NULL, &pkt_arp);
+	ret = net_arp_prepare(pkt_far, &dst_far, NULL, &pkt_arp);
 
 	zassert_equal(NET_ARP_PKT_REPLACED, ret);
 
@@ -525,7 +525,7 @@ ZTEST(arp_fn_tests, test_arp)
 
 	net_pkt_unref(pkt_arp);
 
-	ret = net_arp_prepare(pkt, &dst_far, NULL, &pkt_arp);
+	ret = net_arp_prepare(pkt_far, &dst_far, NULL, &pkt_arp);
 
 	zassert_equal(NET_ARP_PKT_REPLACED, ret);
 
@@ -537,24 +537,19 @@ ZTEST(arp_fn_tests, test_arp)
 	/* Try to find the different destination, this should fail too
 	 * as the cache table should be full.
 	 */
-	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far2);
+	net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt_far)->dst, (uint8_t *)&dst_far2);
 
-	/* Make sure prepare will not free the pkt because it will be
-	 * needed in the next test case.
-	 */
-	net_pkt_ref(pkt);
-
-	ret = net_arp_prepare(pkt, &dst_far2, NULL, &pkt_arp);
+	ret = net_arp_prepare(pkt_far, &dst_far2, NULL, &pkt_arp);
 
 	zassert_equal(NET_ARP_PKT_REPLACED, ret);
 
 	zassert_not_null(pkt_arp,
 		"ARP cache did not send a req");
 
-	/* Restore the original address so that following test case can
-	 * work properly.
-	 */
-	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst);
+	net_pkt_unref(pkt_arp);
+
+	/* The gateway's pending queue keeps its own reference. */
+	net_pkt_unref(pkt_far);
 
 	/* The arp request packet is now verified, create an arp reply.
 	 * The previous value of pkt is stored in arp table and is not lost.
