@@ -26,12 +26,31 @@ struct mcux_lpdac_data {
 	bool configured;
 };
 
+/*
+ * Write the devicetree configuration into the register block. DAC_Init()
+ * releases the peripheral reset, resets the logic and the FIFO, then writes
+ * GCR in full, which leaves GCR[DACEN] clear: the block is configured but not
+ * converting when this returns.
+ */
+static void mcux_lpdac_configure(const struct device *dev)
+{
+	const struct mcux_lpdac_config *config = dev->config;
+	dac_config_t dac_config;
+
+	DAC_GetDefaultConfig(&dac_config);
+	dac_config.referenceVoltageSource = config->ref_voltage;
+#if defined(FSL_FEATURE_LPDAC_HAS_GCR_BUF_SPD_CTRL) && FSL_FEATURE_LPDAC_HAS_GCR_BUF_SPD_CTRL
+	dac_config.enableLowerLowPowerMode = config->low_power;
+#else
+	dac_config.enableLowPowerMode = config->low_power;
+#endif
+	DAC_Init(config->base, &dac_config);
+}
+
 static int mcux_lpdac_channel_setup(const struct device *dev,
 				    const struct dac_channel_cfg *channel_cfg)
 {
-	const struct mcux_lpdac_config *config = dev->config;
 	struct mcux_lpdac_data *data = dev->data;
-	dac_config_t dac_config;
 
 	if (channel_cfg->channel_id != 0) {
 		LOG_ERR("unsupported channel %d", channel_cfg->channel_id);
@@ -48,15 +67,7 @@ static int mcux_lpdac_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	DAC_GetDefaultConfig(&dac_config);
-	dac_config.referenceVoltageSource = config->ref_voltage;
-#if defined(FSL_FEATURE_LPDAC_HAS_GCR_BUF_SPD_CTRL) && FSL_FEATURE_LPDAC_HAS_GCR_BUF_SPD_CTRL
-	dac_config.enableLowerLowPowerMode = config->low_power;
-#else
-	dac_config.enableLowPowerMode = config->low_power;
-#endif
-	DAC_Init(config->base, &dac_config);
-	DAC_Enable(config->base, false);
+	mcux_lpdac_configure(dev);
 	data->configured = true;
 
 	return 0;
