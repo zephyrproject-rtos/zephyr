@@ -28,6 +28,7 @@ struct usbh_testusb_param {
  *    0: NOP                 1: bulk OUT            2: bulk IN
  *    3: bulk OUT (vary)     4: bulk IN (vary)
  *   13: set/clear halt     14: control loopback
+ *   15: isochronous OUT    16: isochronous IN
  *   25: interrupt OUT      26: interrupt IN
  *
  * The function is the common entry point for in-tree test tools.

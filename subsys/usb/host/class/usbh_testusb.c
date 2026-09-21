@@ -59,11 +59,16 @@ struct testusb_data {
 	/* Interrupt IN and OUT endpoints */
 	uint8_t int_in_ep;
 	uint8_t int_out_ep;
+	/* Isochronous IN and OUT endpoints */
+	uint8_t iso_in_ep;
+	uint8_t iso_out_ep;
 	/* Current test parameter */
 	uint8_t ep;
 	uint32_t max;
 	uint32_t length;
 	uint32_t vary;
+	/* Actual test uses isochronous transfers */
+	bool iso;
 	/* Number of transfers still to submit */
 	atomic_t to_submit;
 	/*
@@ -174,26 +179,41 @@ err:
 	return ret;
 }
 
+/*
+ * The transfer ended with a short transaction or an ISO transfer that was NAKed.
+ */
+static bool testusb_xfer_is_short(const struct uhc_transfer *const xfer,
+				  const uint32_t length)
+{
+	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		return xfer->buf->len != length;
+	}
+
+	return xfer->buf->len != 0;
+}
+
 static int testusb_xfer_cb(struct usb_device *const udev,
 			   struct uhc_transfer *const xfer)
 {
 	struct testusb_data *const data = xfer->priv;
 	const int err = xfer->err;
 
-	net_buf_unref(xfer->buf);
-	(void)uhc_xfer_unref(xfer);
-
-	if (err == 0) {
+	if (err == 0 && (!data->iso || !testusb_xfer_is_short(xfer, data->max))) {
 		data->success++;
 	} else {
 		data->error++;
-		if (data->first_err == 0) {
+		if (err != 0 && data->first_err == 0) {
 			data->first_err = err;
 		}
 
-		/* Stop re-submitting on the first error */
-		atomic_clear(&data->to_submit);
+		if (!data->iso) {
+			/* Stop re-submitting on the first error */
+			atomic_clear(&data->to_submit);
+		}
 	}
+
+	net_buf_unref(xfer->buf);
+	(void)uhc_xfer_unref(xfer);
 
 	/* Continue until all transfers have been submitted */
 	(void)testusb_submit(data);
@@ -202,14 +222,17 @@ static int testusb_xfer_cb(struct usb_device *const udev,
 }
 
 /*
- * Run a bulk or interrupt transfer test on the given endpoint.
+ * Run a bulk, interrupt or isochronous transfer test on the given endpoint.
  *
  * The minimum of the parameter param->count and the parameter depth determines
  * the number of transfers queued immediately. The completion callback then
  * continues until the count is reached.
+ *
+ * Isochronous transfers are not retried on error, so up to 10% of them are
+ * allowed to fail, matching the tolerance of the Linux usbtest driver.
  */
 static int testusb_io(struct testusb_data *const data,
-		      const uint8_t ep, const uint32_t depth,
+		      const uint8_t ep, const uint32_t depth, const bool iso,
 		      const struct usbh_testusb_param *const param)
 {
 	int err = 0;
@@ -222,6 +245,7 @@ static int testusb_io(struct testusb_data *const data,
 	data->max = param->length;
 	data->length = param->length;
 	data->vary = param->vary;
+	data->iso = iso;
 	data->success = 0;
 	data->error = 0;
 	data->first_err = 0;
@@ -236,7 +260,7 @@ static int testusb_io(struct testusb_data *const data,
 
 	/* Wait for all transfers, including those re-submitted in the callback. */
 	if (usbh_class_xfer_drain(data->c_data, TESTUSB_IO_TIMEOUT) != 0) {
-		LOG_ERR("Bulk/Interrupt transfer test 0x%02x timed out", ep);
+		LOG_ERR("Transfer test 0x%02x timed out", ep);
 
 		/* Stop submitting, cancel anchored transfers and let them drain. */
 		atomic_clear(&data->to_submit);
@@ -255,6 +279,10 @@ static int testusb_io(struct testusb_data *const data,
 
 	LOG_DBG("Transfer test finished, ep 0x%02x, %u transfers, %u errors",
 		ep, data->success + data->error, data->error);
+
+	if (err == 0 && iso) {
+		return data->error > param->count / 10 ? -EIO : 0;
+	}
 
 	return data->first_err;
 }
@@ -376,7 +404,7 @@ static int testusb_io_once(struct testusb_data *const data, const uint8_t ep)
 		.vary = 0,
 	};
 
-	return testusb_io(data, ep, 1, &param);
+	return testusb_io(data, ep, 1, false, &param);
 }
 
 /*
@@ -492,40 +520,52 @@ static int testusb_exec(const struct usbh_class_data *const c_data,
 		return 0;
 	case 1:
 		return testusb_io(data, data->out_ep,
-				  CONFIG_USBH_TESTUSB_QUEUE_DEPTH, param);
+				  CONFIG_USBH_TESTUSB_QUEUE_DEPTH, false, param);
 	case 2:
 		return testusb_io(data, data->in_ep,
-				  CONFIG_USBH_TESTUSB_QUEUE_DEPTH, param);
+				  CONFIG_USBH_TESTUSB_QUEUE_DEPTH, false, param);
 	case 3:
 		if (param->vary == 0) {
 			return -EINVAL;
 		}
 
 		return testusb_io(data, data->out_ep,
-				  CONFIG_USBH_TESTUSB_QUEUE_DEPTH, param);
+				  CONFIG_USBH_TESTUSB_QUEUE_DEPTH, false, param);
 	case 4:
 		if (param->vary == 0) {
 			return -EINVAL;
 		}
 
 		return testusb_io(data, data->in_ep,
-				  CONFIG_USBH_TESTUSB_QUEUE_DEPTH, param);
+				  CONFIG_USBH_TESTUSB_QUEUE_DEPTH, false, param);
 	case 13:
 		return testusb_halt_simple(data);
 	case 14:
 		return testusb_control(data, param);
+	case 15:
+		if (data->iso_out_ep == 0) {
+			return -ENODEV;
+		}
+
+		return testusb_io(data, data->iso_out_ep, 1, true, param);
+	case 16:
+		if (data->iso_in_ep == 0) {
+			return -ENODEV;
+		}
+
+		return testusb_io(data, data->iso_in_ep, 1, true, param);
 	case 25:
 		if (data->int_out_ep == 0) {
 			return -ENODEV;
 		}
 
-		return testusb_io(data, data->int_out_ep, 1, param);
+		return testusb_io(data, data->int_out_ep, 1, false, param);
 	case 26:
 		if (data->int_in_ep == 0) {
 			return -ENODEV;
 		}
 
-		return testusb_io(data, data->int_in_ep, 1, param);
+		return testusb_io(data, data->int_in_ep, 1, false, param);
 	default:
 		return -ENOSYS;
 	}
@@ -576,6 +616,8 @@ static int testusb_parse_descriptors(struct testusb_data *const data,
 	data->out_ep = 0;
 	data->int_in_ep = 0;
 	data->int_out_ep = 0;
+	data->iso_in_ep = 0;
+	data->iso_out_ep = 0;
 
 	iface_desc = usbh_desc_get_iface(udev, 0);
 	if (iface_desc == NULL && iface_desc->bNumEndpoints != 0) {
@@ -623,7 +665,13 @@ static int testusb_parse_descriptors(struct testusb_data *const data,
 			}
 		}
 
-		/* The isochronous endpoints are ignored */
+		if (ep_type == USB_EP_TYPE_ISO) {
+			if (USB_EP_DIR_IS_IN(ep_desc->bEndpointAddress)) {
+				data->iso_in_ep = ep_desc->bEndpointAddress;
+			} else {
+				data->iso_out_ep = ep_desc->bEndpointAddress;
+			}
+		}
 
 		desc = usbh_desc_get_next(desc);
 	}
@@ -637,8 +685,14 @@ static int testusb_parse_descriptors(struct testusb_data *const data,
 		LOG_WRN("Interrupt endpoints not found");
 	}
 
-	LOG_DBG("Bulk in 0x%02x out 0x%02x, interrupt in 0x%02x out 0x%02x",
-		data->in_ep, data->out_ep, data->int_in_ep, data->int_out_ep);
+	if (data->iso_in_ep == 0 || data->iso_out_ep == 0) {
+		LOG_WRN("Isochronous endpoints not found");
+	}
+
+	LOG_DBG("Bulk in 0x%02x out 0x%02x, interrupt in 0x%02x out 0x%02x, "
+		"isochronous in 0x%02x out 0x%02x",
+		data->in_ep, data->out_ep, data->int_in_ep, data->int_out_ep,
+		data->iso_in_ep, data->iso_out_ep);
 
 	return 0;
 }
@@ -688,6 +742,8 @@ static int testusb_removed(struct usbh_class_data *const c_data)
 	data->out_ep = 0;
 	data->int_in_ep = 0;
 	data->int_out_ep = 0;
+	data->iso_in_ep = 0;
+	data->iso_out_ep = 0;
 
 	return 0;
 }
