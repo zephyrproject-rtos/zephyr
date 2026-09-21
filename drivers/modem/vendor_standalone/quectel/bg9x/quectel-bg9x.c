@@ -648,6 +648,24 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 	return offload_sendto(obj, buffer, count, 0, NULL, 0);
 }
 
+/* Func: offload_poll_prepare
+ * Desc: Prepare poll events for the given socket object.
+ */
+static int offload_poll_prepare(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	return modem_socket_poll_prepare(&mdata.socket_config, obj, pfd, pev, pev_end);
+}
+
+/* Func: offload_poll_update
+ * Desc: Update poll results for the given socket object.
+ */
+static int offload_poll_update(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	return modem_socket_poll_update(obj, pfd, pev);
+}
+
 /* Func: offload_ioctl
  * Desc: Function call to handle various misc requests.
  */
@@ -1090,10 +1108,12 @@ error:
 
 static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.fd_vtable = {
-		.read	= offload_read,
-		.write	= offload_write,
-		.close	= offload_close,
-		.ioctl	= offload_ioctl,
+		.read		= offload_read,
+		.write		= offload_write,
+		.close		= offload_close,
+		.ioctl		= offload_ioctl,
+		.poll_prepare	= offload_poll_prepare,
+		.poll_update	= offload_poll_update,
 	},
 	.bind		= NULL,
 	.connect	= offload_connect,

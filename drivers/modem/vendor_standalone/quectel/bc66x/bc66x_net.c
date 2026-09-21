@@ -891,6 +891,50 @@ static void bc66x_ioctl_poll_update(struct bc66x_socket *sock, struct zsock_poll
 	}
 }
 
+static int bc66x_poll_prepare(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	struct bc66x_socket *sock = obj;
+
+	if (pfd->events & ZSOCK_POLLIN) {
+		if (*pev == pev_end) {
+			LOG_ERR("Cannot register poll: no slots");
+			return -ENOMEM;
+		}
+		/* Register the event to wait for data on the FIFO */
+		k_poll_event_init(*pev, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+				  K_POLL_MODE_NOTIFY_ONLY, &sock->recv_fifo);
+		(*pev)++;
+	}
+
+	return 0;
+}
+
+static int bc66x_poll_update(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	struct bc66x_socket *sock = obj;
+
+	if (pfd == NULL || pev == NULL) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	bc66x_ioctl_poll_update(sock, pfd, pev);
+
+	return 0;
+}
+
+static int bc66x_poll_offload(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(fds);
+	ARG_UNUSED(nfds);
+	ARG_UNUSED(timeout);
+
+	return -ENOTSUP;
+}
+
 /* TODO: Implement every request */
 static int bc66x_network_ioctl(void *obj, unsigned int request, va_list args)
 {
@@ -1098,6 +1142,9 @@ static const struct socket_op_vtable bc66x_socket_vtable = {
 			.write = bc66x_network_write,
 			.close = bc66x_network_close,
 			.ioctl = bc66x_network_ioctl,
+			.poll_prepare = bc66x_poll_prepare,
+			.poll_update = bc66x_poll_update,
+			.poll_offload = bc66x_poll_offload,
 		},
 	.sendto = bc66x_network_sendto,
 	.recvfrom = bc66x_network_recvfrom,
