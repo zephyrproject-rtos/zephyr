@@ -85,3 +85,25 @@ config RISCV_CUSTOM_CSR_ANDES_HSP
 	help
 	  This option enables the Andes V5 StackSafe hardware stack protection,
 	  in order to support custom stack guard.
+
+config CPU_HAS_ANDES_NMI
+	bool
+	help
+	  The AndesCore supports the Andes NMI extension.
+
+config RISCV_CUSTOM_CSR_ANDES_NMI
+	bool "Andes V5 NMI extension"
+	depends on CPU_HAS_ANDES_NMI
+	help
+	  On AndeStar V5 cores such as N25/N25F the NMI vector base address
+	  register (mnvec) is read-only and reads back the reset_vector input
+	  signal, so an NMI enters at __reset and the boot path destroys the
+	  state the NMI was raised to let software examine.
+
+	  Enable this to tell a reset (mcause and mepc both 0) from an NMI
+	  (mcause 1, interrupted PC in mepc) and branch to _andes_nmi_entry.
+
+	  A SoC enabling NMIs is expected to provide its own _andes_nmi_entry,
+	  overriding the weak one, and to set up what that handler needs, such
+	  as an NMI stack in mscratch, before enabling any NMI source. The weak
+	  default only parks the core.
