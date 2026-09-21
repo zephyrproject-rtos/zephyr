@@ -266,14 +266,14 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 		}
 
 		uint32_t target_mpidr = cpu_map[i];
-		uint8_t aff0;
 
 		if (mpidr == target_mpidr || target_mpidr == INV_MPID) {
 			continue;
 		}
 
-		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
-		gic_raise_sgi(ipi, (uint64_t)target_mpidr, 1 << aff0);
+		if (gic_raise_sgi_by_affinity(ipi, (uint64_t)target_mpidr) != 0) {
+			__ASSERT(false, "Failed to send IPI to target affinity");
+		}
 	}
 }
 
