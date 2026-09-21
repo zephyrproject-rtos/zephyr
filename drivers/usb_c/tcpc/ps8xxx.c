@@ -580,7 +580,11 @@ void ps8xxx_init_work_cb(struct k_work *work)
 		chip_info.device_id);
 
 	/* Initialize alert interrupt */
-	gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
+	ret = gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure alert GPIO: %d", ret);
+		return;
+	}
 
 	gpio_init_callback(&data->alert_cb, ps8xxx_alert_cb, BIT(cfg->alert_gpio.pin));
 	ret = gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
@@ -589,7 +593,11 @@ void ps8xxx_init_work_cb(struct k_work *work)
 		return;
 	}
 
-	gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure alert interrupt: %d", ret);
+		return;
+	}
 
 	tcpci_init_alert_mask(data->dev);
 	data->initialized = true;
