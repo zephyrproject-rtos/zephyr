@@ -603,6 +603,14 @@
 		status = "disabled";
 	};
 
+	usbh0: usbh@2e000 {
+		compatible = "nxp,uhc-ehci";
+		reg = <0x2e000 0x1000>;
+		interrupts = <103 0>;
+		interrupt-names = "usb_otg";
+		status = "disabled";
+	};
+
 	usbphy1: usbphy@2f000 {
 		compatible = "nxp,usbphy";
 		reg = <0x2f000 0x1000>;
