@@ -119,6 +119,16 @@ ZTEST(testusb, test_interrupt_in)
 	run_test(26, 64, TESTUSB_DEFAULT_COUNT, 0);
 }
 
+ZTEST(testusb, test_iso_out)
+{
+	run_test(15, 256, TESTUSB_DEFAULT_COUNT, 0);
+}
+
+ZTEST(testusb, test_iso_in)
+{
+	run_test(16, 256, TESTUSB_DEFAULT_COUNT, 0);
+}
+
 /* Disable device support with a delay after the semaphore is released. */
 static void disconnect_fn(void *p1, void *p2, void *p3)
 {
