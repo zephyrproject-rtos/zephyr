@@ -293,13 +293,15 @@ CBOR data of successful response:
 .. code-block:: none
 
     {
-        (str)<pool_name> {
-            (str)"blksiz"   : (int)
-            (str)"nblks"    : (int)
-            (str)"nfree"    : (int)
-            (str)"min'      : (int)
+        (str)"mpools" : {
+            (str)<pool_name> : {
+                (str)"blksiz"   : (int)
+                (str)"nblks"    : (int)
+                (str)"nfree"    : (int)
+                (str)"min'      : (int)
+            }
+            ...
         }
-        ...
     }
 
 In case of error the CBOR data takes the form:
