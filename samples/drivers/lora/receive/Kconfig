@@ -1,0 +1,13 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "LoRa receive sample application"
+
+config SAMPLE_LORA_GFSK
+	bool "Receive over the GFSK modem"
+	depends on LORA_GFSK
+	help
+	  Set the radio up for the 50 kbps FSK that LoRaWAN defines as DR7 and
+	  receive over that modem rather than the LoRa one.
+
+source "Kconfig.zephyr"
