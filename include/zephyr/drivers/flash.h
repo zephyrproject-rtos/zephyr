@@ -79,6 +79,11 @@ struct flash_parameters {
 		 * do not require it.
 		 */
 		bool no_explicit_erase: 1;
+
+		/* Erased area does not read back as erase_value, for example
+		 * because the read path decrypts what is stored.
+		 */
+		bool erase_value_readback_unsupported: 1;
 	} caps;
 	/** @endcond */
 	/** Value the device is filled in erased areas */
@@ -127,6 +132,23 @@ int flash_params_get_erase_cap(const struct flash_parameters *p)
 	ARG_UNUSED(p);
 #endif
 	return 0;
+}
+
+/**
+ * @brief Check if erased area reads back as the erase value
+ *
+ * Returns false on devices that transform the content on read, typically
+ * transparent decryption, so an erased area does not read back as
+ * flash_parameters.erase_value. Storage systems should then rely on the erase
+ * status reported by the driver instead of reading the erase value back.
+ *
+ * @param p		pointer to flash_parameters type object
+ *
+ * @return true if erased area reads back as erase_value, false otherwise.
+ */
+static inline bool flash_params_erase_value_readable(const struct flash_parameters *p)
+{
+	return !p->caps.erase_value_readback_unsupported;
 }
 
 /**
