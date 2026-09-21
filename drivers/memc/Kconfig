@@ -21,6 +21,7 @@ config MEMC_INIT_PRIORITY
 # zephyr-keep-sorted-start
 source "drivers/memc/Kconfig.bflb"
 source "drivers/memc/Kconfig.max32_hpb"
+source "drivers/memc/Kconfig.mchp"
 source "drivers/memc/Kconfig.mcux"
 source "drivers/memc/Kconfig.mspi"
 source "drivers/memc/Kconfig.nxp_s32_qspi"
