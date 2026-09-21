@@ -212,6 +212,54 @@ unlock:
 	return ret;
 }
 
+static int zvfs_eventfd_poll_prepare_op(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	int ret;
+	k_spinlock_key_t key;
+	struct zvfs_eventfd *efd = obj;
+
+	/* note: zsock_poll_internal() has already taken the mutex */
+	key = k_spin_lock(&efd->lock);
+
+	if (!zvfs_eventfd_is_in_use(efd)) {
+		errno = EBADF;
+		ret = -1;
+		goto unlock;
+	}
+
+	ret = zvfs_eventfd_poll_prepare(efd, pfd, pev, pev_end);
+
+unlock:
+	k_spin_unlock(&efd->lock, key);
+
+	return ret;
+}
+
+static int zvfs_eventfd_poll_update_op(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	int ret;
+	k_spinlock_key_t key;
+	struct zvfs_eventfd *efd = obj;
+
+	/* note: zsock_poll_internal() has already taken the mutex */
+	key = k_spin_lock(&efd->lock);
+
+	if (!zvfs_eventfd_is_in_use(efd)) {
+		errno = EBADF;
+		ret = -1;
+		goto unlock;
+	}
+
+	ret = zvfs_eventfd_poll_update(efd, pfd, pev);
+
+unlock:
+	k_spin_unlock(&efd->lock, key);
+
+	return ret;
+}
+
 static int zvfs_eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 {
 	int ret;
@@ -287,6 +335,8 @@ static const struct fd_op_vtable zvfs_eventfd_fd_vtable = {
 	.write = zvfs_eventfd_write_op,
 	.close = zvfs_eventfd_close_op,
 	.ioctl = zvfs_eventfd_ioctl_op,
+	.poll_prepare = zvfs_eventfd_poll_prepare_op,
+	.poll_update = zvfs_eventfd_poll_update_op,
 };
 
 /* common to both zvfs_eventfd_read_op() and zvfs_eventfd_write_op() */
