@@ -103,5 +103,12 @@
 				status = "disabled";
 			};
 		};
+
+		dma2d: dma@5002b000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x5002b000 0xc00>;
+			interrupts = <118 0>;
+			status = "disabled";
+		};
 	};
 };
