@@ -3,6 +3,7 @@
 zephyr_library_named(zperf)
 
 zephyr_library_sources(
+  zperf_api.c
   zperf_common.c
   zperf_iperf2_client.c
   )
