@@ -242,7 +242,7 @@ def find_v2_boards(args):
     board_extensions = []
     board_files = []
     if args.board_dir:
-        board_files = [d / BOARD_YML for d in args.board_dir]
+        board_files = [d.resolve() / BOARD_YML for d in args.board_dir]
     else:
         for root in unique_paths(args.board_roots):
             board_files.extend((root / 'boards').rglob(BOARD_YML))
