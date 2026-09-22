@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
- * Copyright (c) 2023, NXP
+ * Copyright 2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +10,23 @@
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 #include <fsl_dac.h>
 
 LOG_MODULE_REGISTER(dac_mcux_lpdac, CONFIG_DAC_LOG_LEVEL);
+
+/*
+ * With CONFIG_PM_DEVICE_RUNTIME the consumer owns the output's lifetime. A DAC
+ * output voltage has no completion event the driver could hang a
+ * pm_device_runtime_put() on, so the driver takes no runtime reference of its
+ * own: call pm_device_runtime_get() before dac_channel_setup() and keep the
+ * reference for as long as the output is needed.
+ *
+ * A suspend switches the analog output buffer off and a resume restores the last
+ * value written, so a consumer that keeps its reference does not have to call
+ * dac_channel_setup() again.
+ */
 
 struct mcux_lpdac_config {
 	LPDAC_Type *base;
@@ -24,6 +37,8 @@ struct mcux_lpdac_config {
 
 struct mcux_lpdac_data {
 	bool configured;
+	bool output_on;
+	uint32_t value;
 };
 
 /*
@@ -69,6 +84,8 @@ static int mcux_lpdac_channel_setup(const struct device *dev,
 
 	mcux_lpdac_configure(dev);
 	data->configured = true;
+	data->output_on = false;
+	data->value = 0U;
 
 	return 0;
 }
@@ -96,20 +113,61 @@ static int mcux_lpdac_write_value(const struct device *dev, uint8_t channel, uin
 	DAC_Enable(config->base, true);
 	DAC_SetData(config->base, value);
 
+	data->value = value;
+	data->output_on = true;
+
 	return 0;
+}
+
+static int mcux_lpdac_pm_callback(const struct device *dev, enum pm_device_action action)
+{
+	const struct mcux_lpdac_config *config = dev->config;
+	struct mcux_lpdac_data *data = dev->data;
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+		/*
+		 * Restore the output the consumer last asked for, and only
+		 * that: a DAC whose value was never written stays disabled
+		 * rather than starting to drive a pin at 0 V.
+		 */
+		if (data->output_on) {
+			DAC_Enable(config->base, true);
+			DAC_SetData(config->base, data->value);
+		}
+
+		return 0;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Clearing GCR[DACEN] switches the analog output buffer off, so
+		 * the output really stops driving. Relying on the SoC to gate
+		 * the DAC clock instead would leave the buffer holding whatever
+		 * level it had.
+		 */
+		DAC_Enable(config->base, false);
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static int mcux_lpdac_init(const struct device *dev)
 {
-	const struct mcux_lpdac_config *config = dev->config;
-	int err;
-
-	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0 && err != -ENOENT) {
-		return err;
-	}
-
-	return 0;
+	return pm_device_driver_init(dev, mcux_lpdac_pm_callback);
 }
 
 static DEVICE_API(dac, mcux_lpdac_driver_api) = {
@@ -122,6 +180,8 @@ static DEVICE_API(dac, mcux_lpdac_driver_api) = {
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_lpdac_pm_callback);                                       \
+                                                                                                   \
 	static const struct mcux_lpdac_config mcux_lpdac_config_##n = {                            \
 		.base = (LPDAC_Type *)DT_INST_REG_ADDR(n),                                         \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
@@ -129,8 +189,9 @@ static DEVICE_API(dac, mcux_lpdac_driver_api) = {
 		.low_power = DT_INST_PROP(n, low_power_mode),                                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, mcux_lpdac_init, NULL, &mcux_lpdac_data_##n,                      \
-			      &mcux_lpdac_config_##n, POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,       \
+	DEVICE_DT_INST_DEFINE(n, mcux_lpdac_init, PM_DEVICE_DT_INST_GET(n),                        \
+			      &mcux_lpdac_data_##n, &mcux_lpdac_config_##n,                        \
+			      POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,                               \
 			      &mcux_lpdac_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_LPDAC_INIT)
