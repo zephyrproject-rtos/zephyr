@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <st/mp2/stm32mp257_m33.dtsi>
-#include <st/mp2/stm32mp257faix-pinctrl.dtsi>
+#include <st/mp2/stm32mp257fakx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
