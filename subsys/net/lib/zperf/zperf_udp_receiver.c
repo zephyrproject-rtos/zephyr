@@ -137,9 +137,9 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 			 size_t datalen)
 {
 	struct zperf_udp_datagram *hdr;
-	struct session *session;
+	struct session *ses;
 	int32_t transit_time;
-	int64_t time;
+	int64_t now;
 	int32_t id;
 	uint32_t packet_id;
 	bool is_final;
@@ -150,10 +150,10 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 	}
 
 	hdr = (struct zperf_udp_datagram *)data;
-	time = k_uptime_ticks();
+	now = k_uptime_ticks();
 
-	session = get_session(addr, SESSION_UDP);
-	if (!session) {
+	ses = get_session(addr, SESSION_UDP);
+	if (!ses) {
 		NET_ERR("Cannot get a session!");
 		return;
 	}
@@ -162,7 +162,7 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 	is_final = id < 0;
 	packet_id = is_final ? (uint32_t)(-(int64_t)id) : (uint32_t)id;
 
-	switch (session->state) {
+	switch (ses->state) {
 	case STATE_COMPLETED:
 	case STATE_NULL:
 		if (is_final) {
@@ -170,16 +170,16 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 			 * and continue
 			 */
 			if (zperf_receiver_send_stat(sock, addr, hdr,
-						     &session->stat) < 0) {
+						     &ses->stat) < 0) {
 				NET_ERR("Failed to send the packet");
 			}
 			break;
 		}
 
 		/* Start a new session */
-		zperf_reset_session_stats(session);
-		session->state = STATE_ONGOING;
-		session->start_time = time;
+		zperf_reset_session_stats(ses);
+		ses->state = STATE_ONGOING;
+		ses->start_time = now;
 
 		if (udp_session_cb != NULL) {
 			udp_session_cb(ZPERF_SESSION_STARTED, NULL,
@@ -190,66 +190,66 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 		__fallthrough;
 	case STATE_ONGOING:
 		/* Update counter */
-		session->counter++;
-		session->length += datalen;
+		ses->counter++;
+		ses->length += datalen;
 
 		/* Compute jitter */
 		transit_time = time_delta(
-			k_ticks_to_us_ceil32(time),
+			k_ticks_to_us_ceil32(now),
 			net_ntohl(hdr->tv_sec) * USEC_PER_SEC +
 			net_ntohl(hdr->tv_usec));
-		if (session->last_transit_time != 0) {
+		if (ses->last_transit_time != 0) {
 			int32_t delta_transit = transit_time -
-				session->last_transit_time;
+				ses->last_transit_time;
 
 			delta_transit =
 				(delta_transit < 0) ?
 				-delta_transit : delta_transit;
 
-			session->jitter +=
-				(delta_transit - session->jitter) / 16;
+			ses->jitter +=
+				(delta_transit - ses->jitter) / 16;
 		}
 
-		session->last_transit_time = transit_time;
+		ses->last_transit_time = transit_time;
 
 		/* Check header id */
-		udp_update_sequence(session, packet_id);
+		udp_update_sequence(ses, packet_id);
 
 		if (is_final) { /* Negative id means session end. */
 			struct zperf_results results = {0};
 			uint64_t duration;
 
-			duration = k_ticks_to_us_ceil64(time - session->start_time);
+			duration = k_ticks_to_us_ceil64(now - ses->start_time);
 
 			/* Update state machine */
-			session->state = STATE_COMPLETED;
+			ses->state = STATE_COMPLETED;
 
 			/* Fill statistics */
-			session->stat.flags = 0x80000000;
-			session->stat.total_len1 = session->length >> 32;
-			session->stat.total_len2 =
-				session->length % 0xFFFFFFFF;
-			session->stat.stop_sec = duration / USEC_PER_SEC;
-			session->stat.stop_usec = duration % USEC_PER_SEC;
-			session->stat.error_cnt = session->error;
-			session->stat.outorder_cnt = session->outorder;
+			ses->stat.flags = 0x80000000;
+			ses->stat.total_len1 = ses->length >> 32;
+			ses->stat.total_len2 =
+				ses->length % 0xFFFFFFFF;
+			ses->stat.stop_sec = duration / USEC_PER_SEC;
+			ses->stat.stop_usec = duration % USEC_PER_SEC;
+			ses->stat.error_cnt = ses->error;
+			ses->stat.outorder_cnt = ses->outorder;
 			/* iPerf encodes the total sequence count, including loss. */
-			session->stat.datagrams = packet_id;
-			session->stat.jitter1 = 0;
-			session->stat.jitter2 = session->jitter;
+			ses->stat.datagrams = packet_id;
+			ses->stat.jitter1 = 0;
+			ses->stat.jitter2 = ses->jitter;
 
 			if (zperf_receiver_send_stat(sock, addr, hdr,
-						     &session->stat) < 0) {
+						     &ses->stat) < 0) {
 				NET_ERR("Failed to send the packet");
 			}
 
-			results.nb_packets_rcvd = session->counter;
-			results.nb_packets_lost = session->error;
-			results.nb_packets_outorder = session->outorder;
-			results.total_len = session->length;
+			results.nb_packets_rcvd = ses->counter;
+			results.nb_packets_lost = ses->error;
+			results.nb_packets_outorder = ses->outorder;
+			results.total_len = ses->length;
 			results.time_in_us = duration;
-			results.jitter_in_us = session->jitter;
-			results.packet_size = session->length / session->counter;
+			results.jitter_in_us = ses->jitter;
+			results.packet_size = ses->length / ses->counter;
 
 			if (udp_session_cb != NULL) {
 				udp_session_cb(ZPERF_SESSION_FINISHED, &results,
