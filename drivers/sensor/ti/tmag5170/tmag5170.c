@@ -24,12 +24,26 @@
 #include "tmag5170_decoder.h"
 #endif
 
+#if defined(CONFIG_TMAG5170_STREAM)
+#include "tmag5170_stream.h"
+#endif
+
+#if defined(CONFIG_SENSOR_ASYNC_API)
+const uint8_t tmag5170_result_regs[TMAG5170_RESULT_IDX_COUNT] = {
+	[TMAG5170_RESULT_IDX_X] = TMAG5170_REG_X_CH_RESULT,
+	[TMAG5170_RESULT_IDX_Y] = TMAG5170_REG_Y_CH_RESULT,
+	[TMAG5170_RESULT_IDX_Z] = TMAG5170_REG_Z_CH_RESULT,
+	[TMAG5170_RESULT_IDX_ANGLE] = TMAG5170_REG_ANGLE_RESULT,
+	[TMAG5170_RESULT_IDX_TEMP] = TMAG5170_REG_TEMP_RESULT,
+};
+#endif
+
 /** Number of submission and completion queue entries per instance.
  *
  * The longest sequence issued by the driver is a trigger frame, a delay and the
  * five result frames, followed by the completion callback.
  */
-#define TMAG5170_RTIO_QUEUE_LEN 8
+#define TMAG5170_RTIO_QUEUE_LEN 12
 
 LOG_MODULE_REGISTER(TMAG5170, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -197,15 +211,6 @@ static int tmag5170_channel_get(const struct device *dev, enum sensor_channel ch
 
 #if defined(CONFIG_SENSOR_ASYNC_API)
 
-/** Register address of each result register, indexed by enum tmag5170_result_idx */
-static const uint8_t tmag5170_result_regs[TMAG5170_RESULT_IDX_COUNT] = {
-	[TMAG5170_RESULT_IDX_X] = TMAG5170_REG_X_CH_RESULT,
-	[TMAG5170_RESULT_IDX_Y] = TMAG5170_REG_Y_CH_RESULT,
-	[TMAG5170_RESULT_IDX_Z] = TMAG5170_REG_Z_CH_RESULT,
-	[TMAG5170_RESULT_IDX_ANGLE] = TMAG5170_REG_ANGLE_RESULT,
-	[TMAG5170_RESULT_IDX_TEMP] = TMAG5170_REG_TEMP_RESULT,
-};
-
 static void tmag5170_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, int result,
 				     void *arg)
 {
@@ -232,7 +237,7 @@ static void tmag5170_complete_result(struct rtio *ctx, const struct rtio_sqe *sq
 		/* The buffer has already been allocated by the submission, so
 		 * this only hands back the very same buffer.
 		 */
-		err = rtio_sqe_rx_buf(iodev_sqe, sizeof(*edata), sizeof(*edata), &buf, &buf_len);
+		err = rtio_sqe_rx_buf(iodev_sqe, 0, 0, &buf, &buf_len);
 	}
 
 	if (err == 0) {
@@ -363,14 +368,17 @@ static void tmag5170_submit(const struct device *dev, struct rtio_iodev_sqe *iod
 {
 	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
 
-	if (read_cfg->is_streaming) {
-		/* TODO: Implement streaming on top of the optional int-gpios */
-		LOG_ERR("Streaming not supported");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+	if (!read_cfg->is_streaming) {
+		tmag5170_submit_one_shot(dev, iodev_sqe);
 		return;
 	}
 
-	tmag5170_submit_one_shot(dev, iodev_sqe);
+#if defined(CONFIG_TMAG5170_STREAM)
+	tmag5170_stream_submit(dev, iodev_sqe);
+#else
+	LOG_ERR("Streaming not supported");
+	rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+#endif
 }
 
 #endif /* CONFIG_SENSOR_ASYNC_API */
@@ -404,7 +412,7 @@ static int tmag5170_init_registers(const struct device *dev)
 				TMAG5170_X_RANGE_SET(cfg->x_range));
 	}
 
-#if defined(CONFIG_TMAG5170_TRIGGER)
+#if defined(CONFIG_TMAG5170_TRIGGER) || defined(CONFIG_TMAG5170_STREAM)
 	if (ret == 0) {
 		ret = tmag5170_write_register(dev, TMAG5170_REG_ALERT_CONFIG,
 					      TMAG5170_RSLT_ALRT_SET(1U));
@@ -480,7 +488,9 @@ static int tmag5170_init(const struct device *dev)
 		return ret;
 	}
 
-#if defined(CONFIG_TMAG5170_TRIGGER)
+#if defined(CONFIG_TMAG5170_STREAM)
+	ret = tmag5170_stream_init(dev);
+#elif defined(CONFIG_TMAG5170_TRIGGER)
 	if (cfg->int_gpio.port) {
 		ret = tmag5170_trigger_init(dev);
 	}
@@ -488,6 +498,12 @@ static int tmag5170_init(const struct device *dev)
 
 	return ret;
 }
+
+#if defined(CONFIG_TMAG5170_TRIGGER) || defined(CONFIG_TMAG5170_STREAM)
+#define TMAG5170_INT_GPIO_INIT(_num) .int_gpio = GPIO_DT_SPEC_INST_GET_OR(_num, int_gpios, {0}),
+#else
+#define TMAG5170_INT_GPIO_INIT(_num)
+#endif
 
 #define DEFINE_TMAG5170(_num)                                                                      \
 	RTIO_DEFINE(tmag5170_rtio_ctx_##_num, TMAG5170_RTIO_QUEUE_LEN, TMAG5170_RTIO_QUEUE_LEN);   \
@@ -513,8 +529,7 @@ static int tmag5170_init(const struct device *dev)
 		.disable_temperature_oversampling =                                                \
 			DT_INST_PROP(_num, disable_temperature_oversampling),                      \
 		.sleep_time = DT_INST_ENUM_IDX(_num, sleep_time),                                  \
-		IF_ENABLED(CONFIG_TMAG5170_TRIGGER, (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(_num,    \
-								int_gpios, { 0 }),)) };           \
+		TMAG5170_INT_GPIO_INIT(_num)};                                                     \
 	PM_DEVICE_DT_INST_DEFINE(_num, tmag5170_pm_action);                                        \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmag5170_init, PM_DEVICE_DT_INST_GET(_num),             \
