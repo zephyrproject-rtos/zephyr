@@ -13,6 +13,8 @@
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_eic_g1.h>
 
+#include "intc_mchp_eic_g1_priv.h"
+
 #define DT_DRV_COMPAT microchip_eic_g1_intc
 
 LOG_MODULE_REGISTER(intc_mchp_eic_g1, CONFIG_INTC_LOG_LEVEL);
@@ -64,8 +66,6 @@ LOG_MODULE_REGISTER(intc_mchp_eic_g1, CONFIG_INTC_LOG_LEVEL);
 #define PORTD_SPECIAL_PINS_2        DT_INST_PROP_BY_IDX(0, portd_special_pins_2, 0)
 #define PORTD_SPECIAL_PINS_1_OFFSET DT_INST_PROP_BY_IDX(0, portd_special_pins_1, 1)
 #define PORTD_SPECIAL_PINS_2_OFFSET DT_INST_PROP_BY_IDX(0, portd_special_pins_2, 1)
-
-#define EIC_LINES_PER_PORT 16
 
 #define TIMEOUT_VALUE_US 1000
 #define DELAY_US         2
@@ -125,6 +125,15 @@ struct eic_mchp_dev_data {
  *         If the pin is unsupported, returns INTC_LINE_FREE.
  */
 #if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
+static const struct eic_mchp_g1_special_pins porta_special_pins[] = {
+	{PORTA_SPECIAL_PINS_1, PORTA_SPECIAL_PINS_1_OFFSET, false},
+};
+
+static const struct eic_mchp_g1_special_pins portc_special_pins[] = {
+	{PORTC_SPECIAL_PINS_1, PORTC_SPECIAL_PINS_1_OFFSET, false},
+	{PORTC_SPECIAL_PINS_2, PORTC_SPECIAL_PINS_2_OFFSET, true},
+};
+
 uint8_t find_eic_line_from_pin(int port, int pin)
 {
 	uint8_t eic_line = pin % EIC_LINES_PER_PORT;
@@ -134,10 +143,9 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 	case MCHP_PORT_ID0:
 		if ((PORTA_UNSUPPORTED_PINS & pin_mask) != 0) {
 			eic_line = INTC_LINE_FREE;
-		} else if ((PORTA_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line += PORTA_SPECIAL_PINS_1_OFFSET;
 		} else {
-			/* Nothing to be done */
+			eic_line = eic_mchp_g1_line_from_pin(pin, porta_special_pins,
+							     ARRAY_SIZE(porta_special_pins));
 		}
 		break;
 	case MCHP_PORT_ID1:
@@ -148,12 +156,9 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 	case MCHP_PORT_ID2:
 		if ((PORTC_SUPPORTED_PINS & pin_mask) == 0) {
 			eic_line = INTC_LINE_FREE;
-		} else if ((PORTC_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line += PORTC_SPECIAL_PINS_1_OFFSET;
-		} else if ((PORTC_SPECIAL_PINS_2 & pin_mask) != 0) {
-			eic_line -= PORTC_SPECIAL_PINS_2_OFFSET;
 		} else {
-			/* Nothing to be done */
+			eic_line = eic_mchp_g1_line_from_pin(pin, portc_special_pins,
+							     ARRAY_SIZE(portc_special_pins));
 		}
 		break;
 	default:
@@ -166,6 +171,19 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 
 #else
 
+static const struct eic_mchp_g1_special_pins portb_special_pins[] = {
+	{PORTB_SPECIAL_PINS, PORTB_SPECIAL_PINS_OFFSET, false},
+};
+
+static const struct eic_mchp_g1_special_pins portc_special_pins[] = {
+	{PORTC_SPECIAL_PINS_1, PORTC_SPECIAL_PINS_1_OFFSET, false},
+};
+
+static const struct eic_mchp_g1_special_pins portd_special_pins[] = {
+	{PORTD_SPECIAL_PINS_2, PORTD_SPECIAL_PINS_2_OFFSET, false},
+	{PORTD_SPECIAL_PINS_1, PORTD_SPECIAL_PINS_1_OFFSET, true},
+};
+
 uint8_t find_eic_line_from_pin(int port, int pin)
 {
 	uint8_t eic_line = pin % EIC_LINES_PER_PORT;
@@ -180,30 +198,25 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 	case MCHP_PORT_ID1:
 		if ((PORTB_UNSUPPORTED_PINS & pin_mask) != 0) {
 			eic_line = INTC_LINE_FREE;
-		} else if ((PORTB_SPECIAL_PINS & pin_mask) != 0) {
-			eic_line += PORTB_SPECIAL_PINS_OFFSET;
 		} else {
-			/* Nothing to be done */
+			eic_line = eic_mchp_g1_line_from_pin(pin, portb_special_pins,
+							     ARRAY_SIZE(portb_special_pins));
 		}
 		break;
 	case MCHP_PORT_ID2:
 		if ((PORTC_UNSUPPORTED_PINS & pin_mask) != 0) {
 			eic_line = INTC_LINE_FREE;
-		} else if ((PORTC_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line += PORTC_SPECIAL_PINS_1_OFFSET;
 		} else {
-			/* Nothing to be done */
+			eic_line = eic_mchp_g1_line_from_pin(pin, portc_special_pins,
+							     ARRAY_SIZE(portc_special_pins));
 		}
 		break;
 	case MCHP_PORT_ID3:
 		if ((PORTD_SUPPORTED_PINS & pin_mask) == 0) {
 			eic_line = INTC_LINE_FREE;
-		} else if ((PORTD_SPECIAL_PINS_2 & pin_mask) != 0) {
-			eic_line += PORTD_SPECIAL_PINS_2_OFFSET;
-		} else if ((PORTD_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line -= PORTD_SPECIAL_PINS_1_OFFSET;
 		} else {
-			/*Nothing to be done*/
+			eic_line = eic_mchp_g1_line_from_pin(pin, portd_special_pins,
+							     ARRAY_SIZE(portd_special_pins));
 		}
 		break;
 	default:
