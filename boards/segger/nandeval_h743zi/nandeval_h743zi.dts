@@ -103,9 +103,13 @@ zephyr_udc0: &usbotg_fs {
 	power-supply = "ldo";
 };
 
-&adc3 {
+&adc3_common {
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc3 {
 	status = "okay";
 };
 
