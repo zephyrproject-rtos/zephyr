@@ -235,7 +235,6 @@ rsource "Kconfig.memory"
 rsource "Kconfig.input"
 rsource "Kconfig.shell"
 
-rsource "esp32_ppa/Kconfig"
 rsource "nemagfx/Kconfig"
 
 endif
