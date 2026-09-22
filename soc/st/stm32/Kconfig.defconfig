@@ -233,4 +233,14 @@ endif # CRYPTO_STM32
 configdefault ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT || BUILD_WITH_TFM
 
+# These TF_PSA_CRYPTO_xxx default configuration should be in 'modules/Kconfig.stm32'
+# but the defaults were not picked up properly. Moving these options here solved the
+# issue. To be investigated.
+configdefault TF_PSA_CRYPTO_DRIVER_CONFIG_FILE
+	default "stm32_psa_crypto_drivers_config.h" if USE_STM32_HAL_PSA_CRYPTO_DRIVERS
+
+configdefault TF_PSA_CRYPTO_DISPATCH_DIR
+	default "$(ZEPHYR_HAL_STM32_MODULE_DIR)/lib/stm32_psa_crypto_drivers/dispatch" \
+		if USE_STM32_HAL_PSA_CRYPTO_DRIVERS
+
 endif # SOC_FAMILY_STM32
