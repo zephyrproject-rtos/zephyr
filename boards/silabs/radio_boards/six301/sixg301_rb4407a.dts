@@ -50,6 +50,8 @@
 		zephyr,console = &eusart0;
 		zephyr,display = &ls013b7dh03;
 		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,openthread-counter = &protimer;
 		zephyr,shell-uart = &eusart0;
 		zephyr,sram = &sram0;
 		zephyr,uart-pipe = &eusart0;
@@ -231,12 +233,21 @@
 	};
 };
 
+&ieee802154 {
+	hfxo = <&hfxo>;
+	status = "okay";
+};
+
 &itm {
 	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
 };
 
 &lpwaes {
+	status = "okay";
+};
+
+&protimer {
 	status = "okay";
 };
 
