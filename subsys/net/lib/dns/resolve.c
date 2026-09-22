@@ -2933,6 +2933,21 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 	return ret;
 }
 
+bool dns_resolve_is_active(struct dns_resolve_context *ctx)
+{
+	bool active;
+
+	if (ctx == NULL) {
+		return false;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	active = (ctx->state == DNS_RESOLVE_CONTEXT_ACTIVE);
+	k_mutex_unlock(&ctx->lock);
+
+	return active;
+}
+
 static bool dns_server_exists(struct dns_resolve_context *ctx,
 			      const struct net_sockaddr *addr)
 {

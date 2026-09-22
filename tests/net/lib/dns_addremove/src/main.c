@@ -72,6 +72,8 @@ static struct dns_resolve_context resv_ipv4_2;
 static struct dns_resolve_context resv_ipv6;
 static struct dns_resolve_context resv_ipv6_2;
 #endif
+/* Only test_dns_is_active() touches this one */
+static struct dns_resolve_context resv_lifecycle;
 
 /* this must be higher that the DNS_TIMEOUT */
 #define WAIT_TIME K_MSEC((DNS_TIMEOUT + 300) * 3)
@@ -702,6 +704,37 @@ ZTEST(dns_addremove, test_dns_addremove_v4)
 	test_dns_add_callback();
 	test_dns_remove_callback();
 	test_dns_remove_none_callback();
+}
+
+ZTEST(dns_addremove, test_dns_is_active)
+{
+#if defined(CONFIG_NET_IPV4)
+	const char *server = DNS_NAME_IPV4;
+#else
+	const char *server = DNS_NAME_IPV6;
+#endif
+	struct dns_resolve_context *dnsCtx = &resv_lifecycle;
+	int ret;
+
+	zassert_false(dns_resolve_is_active(NULL), "NULL context is active");
+
+	/* Initialized, but without any server */
+	ret = dns_resolve_init(dnsCtx, NULL, NULL);
+	zassert_true(ret < 0, "dns_resolve_init without servers (%d)", ret);
+	zassert_false(dns_resolve_is_active(dnsCtx), "Context without servers is active");
+
+	ret = dns_resolve_init(dnsCtx, (const char *[]){server, NULL}, NULL);
+	zassert_equal(ret, 0, "dns_resolve_init fail (%d)", ret);
+	zassert_true(dns_resolve_is_active(dnsCtx), "Initialized context is not active");
+
+	ret = dns_resolve_close(dnsCtx);
+	zassert_equal(ret, 0, "dns_resolve_close fail (%d)", ret);
+	zassert_false(dns_resolve_is_active(dnsCtx), "Closed context is active");
+
+	/* Do not leave the ADD/DEL events of this test to the next one */
+	k_yield();
+	k_sem_reset(&dns_added);
+	k_sem_reset(&dns_removed);
 }
 
 ZTEST_SUITE(dns_addremove, NULL, test_init, NULL, NULL, NULL);
