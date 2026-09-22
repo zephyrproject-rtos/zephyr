@@ -15,7 +15,7 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 if SMP
 
 config SCHED_CPU_MASK
-	default y if SCHED_SIMPLE
+	default y
 
 config MP_MAX_NUM_CPUS
 	default 2

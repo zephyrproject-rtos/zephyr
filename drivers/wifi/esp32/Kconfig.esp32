@@ -439,6 +439,26 @@ config ESP32_WIFI_STA_POWER_SAVE_NONE
 
 endchoice # ESP32_WIFI_STA_POWER_SAVE_MODE
 
+choice ESP32_WIFI_TASK_CORE_ID
+	prompt "Wi-Fi task core affinity"
+	depends on SOC_SERIES_ESP32S3
+	default ESP32_WIFI_TASK_PINNED_TO_CORE_0
+	help
+	  Core the Wi-Fi task runs on and the Wi-Fi interrupt line is
+	  reserved on. The Wi-Fi blob assumes its task and its interrupt
+	  share a core, so under SMP the task is pinned to this core. The
+	  reservation applies to every build, which is why the choice does
+	  not depend on SMP; only the second core needs SMP.
+
+config ESP32_WIFI_TASK_PINNED_TO_CORE_0
+	bool "Core 0"
+
+config ESP32_WIFI_TASK_PINNED_TO_CORE_1
+	bool "Core 1"
+	depends on SMP
+
+endchoice # ESP32_WIFI_TASK_CORE_ID
+
 config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
 	int "Minimum active time"
 	range 8 60
