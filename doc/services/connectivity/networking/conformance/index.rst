@@ -146,14 +146,6 @@ leaves both to the application: :c:func:`mqtt_publish` sends the identifier and
 the duplicate flag it is given, so a test of either would test the system under
 test's own counter rather than the client.
 
-CoAP block transfer and observe
-===============================
-
-``TD_COAP_BLOCK_01`` and ``TD_COAP_OBS_01`` are not run. They address
-``/large`` and ``/obs``, and the application provides only ``/test``; against
-it the observe case waits for notifications that never arrive and the run does
-not finish. Adding those two resources is the obvious next step.
-
 Overlapping DNS queries
 =======================
 

@@ -12,9 +12,11 @@ Titan project publishes in ``titan.misc``, pinned and built by the harness in
 the ``net-tools`` repository under ``ttcn3/suites/coap``, which contributes the
 configuration that points them at Zephyr.
 
-The application here is the system under test: a CoAP server exposing one
-resource, ``/test``, answering GET, POST, PUT and DELETE with Content, Created,
-Changed and Deleted. That is what the core test cases address.
+The application here is the system under test: a CoAP server exposing the
+three resources the test cases address. ``/test`` answers GET, POST, PUT and
+DELETE with Content, Created, Changed and Deleted. ``/large`` is bigger than
+one block, so a GET of it is a block-wise transfer. ``/obs`` can be observed
+and changes every couple of seconds.
 
 Requirements
 ************
@@ -39,6 +41,12 @@ What is covered
 each over a confirmable and a non-confirmable request, checking the response
 code, the response type, and that the token and message identifier are echoed.
 
-``TD_COAP_BLOCK_01`` and ``TD_COAP_OBS_01`` are not run. They address a
-``/large`` and an ``/obs`` resource, which this system under test does not
-provide. See :ref:`ttcn3_known_gaps`.
+``TD_COAP_BLOCK_01``: a GET of ``/large`` in blocks of the size the client asks
+for, each response carrying the Block2 option with the right number and more
+bit, until the last.
+
+``TD_COAP_OBS_01``: a GET of ``/obs`` with the Observe option registers an
+observer, which the response says with an Observe option of its own; the
+changes that follow arrive as confirmable notifications, and a reset in place
+of an acknowledgment ends the observation. The registration uses an empty
+token, which the server takes as the token it is.
