@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(uhc_dwc2, CONFIG_UHC_DRIVER_LOG_LEVEL);
 #define RESET_RECOVERY_MS	CONFIG_UHC_DWC2_RESET_RECOVERY_MS
 #define SET_ADDR_DELAY_MS	CONFIG_UHC_DWC2_SET_ADDR_DELAY_MS
 #define MAX_CHANNELS		16
+#define MAX_CHANNEL_DATA	(2U * MAX_CHANNELS)
 #define PERIODIC_FRAME_MASK	0x3FFFU
 #define PERIODIC_FRAME_HALF	0x2000U
 
@@ -96,8 +97,12 @@ enum uhc_dwc2_channel_event {
 					 USB_DWC2_GINTSTS_WKUPINT|		\
 					 USB_DWC2_GINTSTS_SOF)
 
-/* TODO: rename to pipe_data and expand with udev */
+/* TODO: rename to pipe_data and expand with udev or to move one level higher */
 struct uhc_dwc2_channel_data {
+	/* Device this endpoint state belongs to */
+	struct usb_device *udev;
+	/* Endpoint address this state belongs to */
+	uint8_t ep;
 	/* PID value, used for the next data stage transfer */
 	uint8_t next_pid;
 	/* Next scheduled frame for the periodic transfer */
@@ -139,7 +144,7 @@ struct uhc_dwc2_data {
 	/* Port channels */
 	struct uhc_dwc2_channel ch[MAX_CHANNELS];
 	/* Channels specific transfer related parameters */
-	struct uhc_dwc2_channel_data ch_data[2][MAX_CHANNELS];
+	struct uhc_dwc2_channel_data ch_data[MAX_CHANNEL_DATA];
 	/* Number of channels, available on the hardware */
 	uint32_t numhstchnl;
 	/* Number of channels currently not claimed */
@@ -153,6 +158,37 @@ struct uhc_dwc2_data {
 struct usb_dwc2_reg *uhc_dwc2_get_base(const struct device *dev)
 {
 	return (struct usb_dwc2_reg *)DEVICE_MMIO_NAMED_GET(dev, core);
+}
+
+static struct uhc_dwc2_channel_data *ch_data_get(struct uhc_dwc2_data *priv,
+						 struct usb_device *udev,
+						 uint8_t ep)
+{
+	struct uhc_dwc2_channel_data *ch_data = NULL;
+
+	for (uint8_t idx = 0; idx < ARRAY_SIZE(priv->ch_data); idx++) {
+		struct uhc_dwc2_channel_data *data = &priv->ch_data[idx];
+
+		if (data->udev == udev && data->ep == ep) {
+			return data;
+		}
+
+		if (data->udev == NULL && ch_data == NULL) {
+			ch_data = data;
+		}
+	}
+
+	if (ch_data == NULL) {
+		return NULL;
+	}
+
+	*ch_data = (struct uhc_dwc2_channel_data) {
+		.udev = udev,
+		.ep = ep,
+		.next_pid = USB_DWC2_HCTSIZ_PID_DATA0,
+	};
+
+	return ch_data;
 }
 
 static inline uint32_t calc_packet_count(const uint32_t size, const uint16_t mps)
@@ -1160,12 +1196,9 @@ static int ch_claim(const struct device *const dev,
 		    struct uhc_dwc2_channel **const ch_p)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	uint8_t ep_dir_idx = USB_EP_DIR_IS_IN(xfer->ep) ? 1 : 0;
-	uint8_t ep_num = USB_EP_GET_IDX(xfer->ep);
 	struct uhc_dwc2_channel *ch = NULL;
 
-	/*
-	 * A non-NULL xfer marks the channel as busy. Scan all channels:
+	/* A non-NULL xfer marks the channel as busy. Scan all channels:
 	 * remember the first free one, but only after making sure the endpoint
 	 * is not already in flight.
 	 */
@@ -1197,7 +1230,12 @@ static int ch_claim(const struct device *const dev,
 
 	/* Save channel characteristics of the underlying channel */
 	ch->xfer = xfer;
-	ch->data = &priv->ch_data[ep_dir_idx][ep_num];
+	ch->data = ch_data_get(priv, xfer->udev, xfer->ep);
+
+	if (ch->data == NULL) {
+		LOG_ERR("No channel data slot for addr %u ep 0x%02x", xfer->udev->addr, xfer->ep);
+		return -ENOMEM;
+	}
 
 	ch->data->scheduled_frame = 0;
 	ch->data->periodic_started = false;
@@ -2410,8 +2448,6 @@ static int uhc_dwc2_init(const struct device *const dev)
 
 	for (uint32_t idx = 0; idx < MAX_CHANNELS; idx++) {
 		priv->ch[idx].length = 0;
-		priv->ch_data[0][idx].next_pid = USB_DWC2_HCTSIZ_PID_DATA0;
-		priv->ch_data[1][idx].next_pid = USB_DWC2_HCTSIZ_PID_DATA0;
 	}
 
 	ret = uhc_dwc2_quirk_pre_init(dev);
