@@ -327,7 +327,6 @@ static int gpio_stm32_config(const struct device *dev,
 
 #ifdef CONFIG_STM32_WKUP_PINS
 	if (flags & STM32_GPIO_WKUP) {
-#ifdef CONFIG_POWEROFF
 		const struct gpio_stm32_config *cfg = dev->config;
 
 		/*
@@ -358,9 +357,6 @@ static int gpio_stm32_config(const struct device *dev,
 				('A' + cfg->port), pin);
 			return err;
 		}
-#else /* CONFIG_POWEROFF */
-		LOG_DBG("STM32_GPIO_WKUP flag has no effect when CONFIG_POWEROFF=n");
-#endif /* CONFIG_POWEROFF */
 	}
 #endif /* CONFIG_STM32_WKUP_PINS */
 
