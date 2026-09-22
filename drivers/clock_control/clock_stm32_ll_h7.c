@@ -15,14 +15,22 @@
 #include <stm32_ll_utils.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <stm32_backup_domain.h>
 #include <stm32_hsem.h>
 
+LOG_MODULE_REGISTER(clock_control, CONFIG_KERNEL_LOG_LEVEL);
+
 /* Power supply / regulator configuration node */
 #define PWRC_NODE DT_INST(0, st_stm32h7_pwr)
+
+/* Dummy value to use automatic voltage scale selection */
+#define VOLTAGE_SCALE_AUTO_HIGHEST 0xFFFFFFFFu
+
+#define SELECTED_VOLTAGE_SCALE DT_PROP_OR(PWRC_NODE, voltage_scale, VOLTAGE_SCALE_AUTO_HIGHEST)
 
 /* Macros to fill up prescaler values */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -115,6 +123,7 @@
 #define APB3_FREQ	((AHB_FREQ)/(STM32_D1PPRE))
 #define APB4_FREQ	((AHB_FREQ)/(STM32_D3PPRE))
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+#endif /* CONFIG_CPU_CORTEX_M7 */
 
 /* Datasheet maximum frequency definitions */
 #if defined(CONFIG_SOC_STM32H742XX) || defined(CONFIG_SOC_STM32H743XX) ||\
@@ -128,32 +137,50 @@
 #define SYSCLK_FREQ_MAX		480000000UL
 #define AHB_FREQ_MAX		240000000UL
 #define APBx_FREQ_MAX		120000000UL
+#if !defined(CONFIG_CPU_CORTEX_M4)
+#define VOS_CPU_FREQ_LIMITS_MHZ 480U, 400U, 300U, 200U
+#define VOS_AHB_FREQ_LIMITS_MHZ 240U, 200U, 150U, 100U
+#endif
 #elif defined(CONFIG_SOC_STM32H723XX) ||\
 	  defined(CONFIG_SOC_STM32H725XX) ||\
 	  defined(CONFIG_SOC_STM32H730XX) || defined(CONFIG_SOC_STM32H730XXQ) ||\
 	  defined(CONFIG_SOC_STM32H735XX)
 /* All h7 SoC with maximum 550MHz SYSCLK */
-#define SYSCLK_FREQ_MAX		550000000UL
-#define AHB_FREQ_MAX		275000000UL
-#define APBx_FREQ_MAX		137500000UL
+#define SYSCLK_FREQ_MAX         550000000UL
+#define AHB_FREQ_MAX            275000000UL
+#define APBx_FREQ_MAX           137500000UL
+#define VOS_CPU_FREQ_LIMITS_MHZ 550U, 400U, 300U, 170U
+#define VOS_AHB_FREQ_LIMITS_MHZ 275U, 200U, 150U, 85U /* DS13313 Table 12 */
 #elif defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) ||\
 	  defined(CONFIG_SOC_STM32H7B0XX) || defined(CONFIG_SOC_STM32H7B0XXQ) ||\
 	  defined(CONFIG_SOC_STM32H7B3XX) || defined(CONFIG_SOC_STM32H7B3XXQ)
 #define SYSCLK_FREQ_MAX		280000000UL
 #define AHB_FREQ_MAX		280000000UL
 #define APBx_FREQ_MAX		140000000UL
+#define VOS_CPU_FREQ_LIMITS_MHZ 280U, 225U, 160U, 88U
+#define VOS_AHB_FREQ_LIMITS_MHZ 280U, 225U, 160U, 88U
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 /* All h7RS SoC with maximum 600MHz SYSCLK (refer to Datasheet DS14359 rev 4) */
 #define SYSCLK_FREQ_MAX		600000000UL
 #define AHB_FREQ_MAX		300000000UL
 #define APBx_FREQ_MAX		150000000UL
+/* VOS selection is unsupported on H7RSx */
 #else
 /* Default: All h7 SoC with maximum 280MHz SYSCLK */
 #define SYSCLK_FREQ_MAX		280000000UL
 #define AHB_FREQ_MAX		140000000UL
 #define APBx_FREQ_MAX		70000000UL
+/* There are no other H7 SoCs than A3xx, B0xx and B3xx that have maximum CPU
+ * frequency of 280 MHz (source:
+ * https://www.st.com/en/microcontrollers-microprocessors/stm32h7-series/products.html).
+ * No valid device should ever choose this block. Define dummy VOS limits to
+ * easily filter out SoCs that do not support VOS selection yet (H7RS only).
+ */
+#define VOS_CPU_FREQ_LIMITS_MHZ 280U
+#define VOS_AHB_FREQ_LIMITS_MHZ 140U
 #endif
 
+#ifdef CONFIG_CPU_CORTEX_M7
 #if SYSCLK_FREQ > SYSCLK_FREQ_MAX
 #error "SYSCLK frequency is too high!"
 #endif
@@ -201,6 +228,35 @@
 BUILD_ASSERT(((STM32_PLL_P_DIVISOR == 1) || (STM32_PLL_P_DIVISOR % 2) == 0),
 	     "STM32H7/H7RS PLL1 DIVP divisor factor must be 1 or even");
 #endif /* STM32_PLL_P_ENABLED */
+
+#if !defined(CONFIG_SOC_SERIES_STM32H7RSX) && !defined(CONFIG_CPU_CORTEX_M4)
+/* Asserts fSYSCLK <= `freq_mhz` if `vos` is selected on PWR node */
+#define ASSERT_VALID_VOS_CPU_FREQ(vos, freq_mhz)                                                   \
+	BUILD_ASSERT(DT_PROP_OR(PWRC_NODE, voltage_scale, 0) != (vos) ||                           \
+			     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= MHZ(freq_mhz),                  \
+		     "Maximal system clock frequency in voltage scale " #vos " is " #freq_mhz      \
+		     " MHz.");
+
+#define ASSERT_VALID_VOS_AHB_FREQ(vos, freq_mhz)                                                   \
+	BUILD_ASSERT(DT_PROP_OR(PWRC_NODE, voltage_scale, 0) != (vos) ||                           \
+			     (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / STM32_HPRE) <= MHZ(freq_mhz),   \
+		     "Maximal AHB bus frequency in voltage scale " #vos " is " #freq_mhz " MHz.");
+
+FOR_EACH_IDX(ASSERT_VALID_VOS_CPU_FREQ, (;), VOS_CPU_FREQ_LIMITS_MHZ)
+	;
+FOR_EACH_IDX(ASSERT_VALID_VOS_AHB_FREQ, (;), VOS_AHB_FREQ_LIMITS_MHZ)
+	;
+
+#if defined(SYSCFG_PWRCR_ODEN)
+#if !DT_ENUM_HAS_VALUE(PWRC_NODE, power_supply, ldo) &&                                            \
+	!DT_ENUM_HAS_VALUE(PWRC_NODE, power_supply, smps_ldo) &&                                   \
+	!DT_ENUM_HAS_VALUE(PWRC_NODE, power_supply, smps_ext_ldo)
+BUILD_ASSERT(DT_PROP_OR(PWRC_NODE, voltage_scale, 1) != 0,
+	     "VOS0 is only valid when Vcore is generated by the LDO. "
+	     "Other supply modes are limited to VOS1.");
+#endif
+#endif
+#endif
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
@@ -290,9 +346,24 @@ static uint32_t get_sysclk_frequency(void)
 
 #if !defined(CONFIG_CPU_CORTEX_M4)
 
-static int32_t prepare_regulator_voltage_scale(void)
+#if !defined(CONFIG_SOC_SERIES_STM32H7RSX)
+static uint32_t vos_reg_val_get(uint32_t scale)
 {
-	/* Put the CPU in the highest voltage scale supported by the board */
+	switch (scale) {
+	case 1:
+		return PWR_REGULATOR_VOLTAGE_SCALE1;
+	case 2:
+		return PWR_REGULATOR_VOLTAGE_SCALE2;
+	case 3:
+		return PWR_REGULATOR_VOLTAGE_SCALE3;
+	default:
+		return PWR_REGULATOR_VOLTAGE_SCALE0;
+	}
+}
+#endif
+
+static void activate_vos0(void)
+{
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	/* VOS0 is always safe to use on STM32H7RS */
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
@@ -323,29 +394,58 @@ static int32_t prepare_regulator_voltage_scale(void)
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
 	}
 #endif
-
-	return 0;
 }
 
-static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
+static void set_regulator_vos(uint32_t scale)
 {
-
-	/* After sysclock is configured, tweak the voltage scale down */
-	/* to reduce power consumption */
-
-	/* Needs some smart work to configure properly */
-	/* LL_PWR_REGULATOR_SCALE3 is lowest power consumption */
-	/* Must be done in accordance to the Maximum allowed frequency vs VOS*/
-	/* See RM0433 page 352 for more details */
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
-#else
-	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	if ((scale == VOLTAGE_SCALE_AUTO_HIGHEST) || (scale == 0)) {
+		activate_vos0();
+	} else {
+#if defined(SYSCFG_PWRCR_ODEN)
+		if (DT_ENUM_HAS_VALUE(PWRC_NODE, power_supply, ldo) ||
+		    DT_ENUM_HAS_VALUE(PWRC_NODE, power_supply, smps_ldo) ||
+		    DT_ENUM_HAS_VALUE(PWRC_NODE, power_supply, smps_ext_ldo)) {
+			/* Enable the SYSCFG clock in case we are scaling down
+			 * from VOS0 and ODEN will need to be cleared.
+			 */
+			LL_APB4_GRP1_EnableClock(LL_APB4_GRP1_PERIPH_SYSCFG);
+		}
 #endif
-	};
 
-	return 0;
+#if !defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		__HAL_PWR_VOLTAGESCALING_CONFIG(vos_reg_val_get(scale));
+		while (LL_PWR_IsActiveFlag_VOS() == 0) {
+		}
+#endif
+	}
+}
+
+static bool is_current_vos_higher_than(uint32_t scale)
+{
+#if defined(SYSCFG_PWRCR_ODEN)
+	LL_APB4_GRP1_EnableClock(LL_APB4_GRP1_PERIPH_SYSCFG);
+	bool oden = (SYSCFG->PWRCR & SYSCFG_PWRCR_ODEN);
+#endif
+
+	switch (LL_PWR_GetRegulVoltageScaling()) {
+	case LL_PWR_REGU_VOLTAGE_SCALE1:
+#if defined(SYSCFG_PWRCR_ODEN)
+		/* LL_PWR_REGU_VOLTAGE_SCALE0 and LL_PWR_REGU_VOLTAGE_SCALE1
+		 * have identical values. Use ODEN to tell them apart
+		 */
+		return (scale > 1 && !oden) || (scale > 0 && oden);
+#endif
+		return scale > 1;
+
+#if !defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	case LL_PWR_REGU_VOLTAGE_SCALE2:
+		return scale > 2;
+	case LL_PWR_REGU_VOLTAGE_SCALE3:
+		return false; /* This is the lowest VOS */
+#endif
+	default:
+		return scale > 0;
+	}
 }
 
 __maybe_unused
@@ -1193,8 +1293,19 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
-	/* Configure Voltage scale to comply with the desired system frequency */
-	prepare_regulator_voltage_scale();
+	/* Set voltage scale before setting up PLLs to comply with RM0433 rev. 8
+	 * section 6.6.4 (p. 286) where on Stop exit, the voltage scale is set
+	 * first and the PLLs are enabled once VOSRDY is set.
+	 */
+	if ((SELECTED_VOLTAGE_SCALE == VOLTAGE_SCALE_AUTO_HIGHEST) ||
+	    !is_current_vos_higher_than(SELECTED_VOLTAGE_SCALE)) {
+		/* If taking over from bootloader, the current scale might be
+		 * higher than selected and PLL might already be set up, so it
+		 * would be unsafe to lower it. Only set the scale if it is not
+		 * lower than the current one.
+		 */
+		set_regulator_vos(SELECTED_VOLTAGE_SCALE);
+	}
 
 	/* Current hclk value */
 	old_hclk_freq = get_startup_hclk_frequency();
@@ -1207,8 +1318,7 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 
 	/* AHB is HCLK clock to configure */
-	new_hclk_freq = get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-				      STM32_HPRE);
+	new_hclk_freq = get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, STM32_HPRE);
 
 	/* Set flash latency */
 
@@ -1262,14 +1372,19 @@ int stm32_clock_control_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
+	/*
+	 * Set the selected scale before setting flash latency: LL_SetFlashLatency
+	 * reads the current voltage scale to calculate the required number of
+	 * wait states. Update the scale to ensure correct result.
+	 */
+	set_regulator_vos(SELECTED_VOLTAGE_SCALE);
+
 	/* Set FLASH latency */
 	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
 	/* If freq not increased, set flash latency after all clock setting */
 	if (new_hclk_freq <= old_hclk_freq) {
 		LL_SetFlashLatency(new_hclk_freq);
 	}
-
-	optimize_regulator_voltage_scale(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif /* CONFIG_CPU_CORTEX_M7 */
