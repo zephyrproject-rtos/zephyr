@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI DAC53508 10-bit DAC
+
+compatible: "ti,dac53508"
+
+include: ti,dacx3508-base.yaml

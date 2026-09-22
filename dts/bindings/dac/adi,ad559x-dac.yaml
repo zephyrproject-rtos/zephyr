@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+description: AD559x DAC Controller
+
+compatible: "adi,ad559x-dac"
+
+include: dac-controller.yaml
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  double-output-range:
+    type: boolean
+    description: |
+      Default DAC output range is 0V to Vref.
+      This option increases the range from 0V to 2 x Vref. Note that this
+      requires VDD >= 2 x Vref.
+
+io-channel-cells:
+  - output

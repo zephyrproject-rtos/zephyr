@@ -1,0 +1,38 @@
+# Private config options for ssh sample app
+
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SSH sample application"
+
+config NET_SAMPLE_SSH_USERNAME
+	string "Default SSH server username"
+	default "root"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_SSH_USE_PASSWORD
+	bool "Use password authentication"
+	depends on SSH_SERVER
+	help
+	  Enable this flag if you want to use password authentication.
+
+config NET_SAMPLE_SSH_PASSWORD
+	string "Default SSH server password"
+	# Generate a random default password at build time (see gen_random_password.py).
+	default "$(shell,python3 $(ZEPHYR_BASE)/samples/net/ssh/gen_random_password.py)"
+	depends on NET_SAMPLE_SSH_USE_PASSWORD
+	help
+	  The value depends on your network setup.
+
+if USB_DEVICE_STACK_NEXT
+
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+endif
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"

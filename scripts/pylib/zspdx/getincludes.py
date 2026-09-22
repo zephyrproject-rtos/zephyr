@@ -1,0 +1,69 @@
+# Copyright (c) 2021 The Linux Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+import logging
+import os
+from subprocess import run
+
+_logger = logging.getLogger(__name__)
+
+
+# Given a path to the applicable C compiler, a C source file, and the
+# corresponding TargetCompileGroup, determine which include files would
+# be used.
+# Arguments:
+#   1) path to applicable C compiler
+#   2) C source file being analyzed
+#   3) TargetCompileGroup for the current target
+# Returns: list of paths to include files, or [] on error or empty findings.
+def get_c_includes(compiler_path, src_file, tcg):
+    _logger.debug("    - getting includes for %s", src_file)
+
+    # prepare fragments
+    fragments = [fr for fr in tcg.compile_command_fragments if fr.strip() != ""]
+
+    # prepare include arguments
+    includes = ["-I" + incl.path for incl in tcg.includes]
+
+    # prepare defines
+    defines = ["-D" + d.define for d in tcg.defines]
+
+    # prepare command invocation
+    cmd = [compiler_path, "-E", "-H"] + fragments + includes + defines + [src_file]
+
+    cp = run(cmd, capture_output=True, text=True)
+    if cp.returncode != 0:
+        _logger.debug("    - calling %s failed with error code %d", compiler_path, cp.returncode)
+        return []
+    else:
+        # response will be in cp.stderr, not cp.stdout
+        return extract_includes(cp.stderr)
+
+
+# Parse the response from the CC -E -H call, to extract the include file paths
+def extract_includes(resp):
+    includes = set()
+
+    # lines we want will start with one or more periods, followed by
+    # a space and then the include file path, e.g.:
+    # .... /home/steve/programming/zephyr/zephyrproject/zephyr/include/zephyr/kernel.h
+    # the number of periods indicates the depth of nesting (for transitively-
+    # included files), but here we aren't going to care about that. We'll
+    # treat everything as tied to the corresponding source file.
+
+    # once we hit the line "Multiple include guards may be useful for:",
+    # we're done; ignore everything after that
+
+    for rline in resp.splitlines():
+        if rline.startswith("Multiple include guards"):
+            break
+        if rline[0] == ".":
+            sline = rline.split(" ", maxsplit=1)
+            if len(sline) != 2:
+                continue
+            includes.add(os.path.normpath(sline[1]))
+
+    includes_list = list(includes)
+    includes_list.sort()
+    return includes_list

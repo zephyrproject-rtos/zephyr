@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BG29_RB4420A
+	select SOC_EFR32BG29B220F1024CJ45

@@ -1,0 +1,15 @@
+#
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: vmu_rt1170/mimxrt1176/cm4
+name: NXP VMU RT1170 (CM4)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 128
+vendor: nxp

@@ -1,0 +1,18 @@
+sample:
+  description: BSD Sockets big HTTP download example
+  name: big_http_download
+common:
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  harness: net
+  depends_on: netif
+  min_ram: 32
+  min_flash: 128
+  tags:
+    - net
+    - socket
+tests:
+  sample.net.sockets.big_http_download:
+    extra_configs:
+      - CONFIG_POSIX_API=y
+  sample.net.sockets.big_http_download.ci:
+    extra_args: EXTRA_CONF_FILE=overlay-ci.conf

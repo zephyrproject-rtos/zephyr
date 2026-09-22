@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <bflb/bl70x.dtsi>
+#include "dt_xt_zb1-pinctrl.dtsi"
+
+/ {
+	model = "Zigbee 3.0 and BLE 5.0 Coexistence Module";
+	compatible = "bflb,bl702";
+
+	chosen {
+		zephyr,flash = &kh25v80;
+		zephyr,flash-controller = &sf_bank1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,itcm = &itcm;
+		zephyr,sram = &sram0_bt;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &sec_eng_trng;
+		zephyr,bt-hci = &bt_hci_bflb;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(144)>;
+};
+
+&sf_bank1 {
+	reg = <0x23000000 0x100000>;
+	ranges = <0x0 0x23000000 0x100000>;
+
+	kh25v80: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0 0x100000>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		write-block-size = <4>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		/* Sad flash can only do DO at best */
+		spi-bus-mode = <1>;
+		sf-pad = <2>;
+		jedec-id = [c2 20 14];
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_header_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "boot_header";
+				reg = <0x00000000 0x2000>;
+				read-only;
+			};
+
+			slot0_partition: partition@2000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x00002000 (0x80000 - 0x2000)>;
+				read-only;
+			};
+
+			storage_partition: partition@80000 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0x0080000 0x80000>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};
+
+&bt_hci_bflb {
+	status = "okay";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb_default>;
+	pinctrl-names = "default";
+};

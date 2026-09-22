@@ -1,0 +1,14 @@
+common:
+  tags:
+    - filesystem
+    - virtio
+  harness: ztest
+  sidecar: virtiofs
+  filter: CONFIG_DT_HAS_VIRTIO_PCI_ENABLED
+tests:
+  filesystem.virtiofs:
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86_64

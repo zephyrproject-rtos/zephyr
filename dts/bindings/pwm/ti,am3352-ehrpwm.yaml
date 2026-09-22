@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI SOC EHRPWM based PWM controller
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+compatible: "ti,am3352-ehrpwm"
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  symmetric:
+    type: boolean
+    description: Generate a symmetric PWM by using up-down count mode
+
+  tbclk:
+    type: phandle-array
+    specifier-space: epwm-tbclk
+    description: |
+      Offset and bit configuration for selecting the time-base clock
+      Format: <&syscon_phandle offset bit>
+      - syscon_phandle: reference to syscon device
+      - offset: register offset within syscon for clock selection
+      - value: bit within the register that controls the timebase clock
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

@@ -1,0 +1,12 @@
+# ARM CRSAS (Corstone Reference Systems Architecture Specification Ma2) Watchdog Timer
+
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_CRSAS_MA2
+	bool "CRSAS-MA2 Watchdog Driver"
+	default y
+	select CLOCK_CONTROL
+	depends on DT_HAS_ARM_CRSAS_MA2_WATCHDOG_ENABLED
+	help
+	  Enable CRSAS-MA2 Watchdog Driver

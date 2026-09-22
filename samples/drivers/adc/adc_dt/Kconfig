@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "ADC DT sample"
+
+source "Kconfig.zephyr"
+
+
+config SAMPLE_ADC_CALIBRATE_REQUIRED
+	bool "Require calibrate field in ADC"
+	default y if DT_HAS_RENESAS_RA_ADC16_ENABLED

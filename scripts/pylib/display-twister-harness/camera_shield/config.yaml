@@ -1,0 +1,22 @@
+case_config: {device_id: 0, fps: 30, res_y: 720, res_x: 1280, run_time: 20}
+plugins:
+- class: VideoSignaturePlugin
+  config:
+    dhash_weight: 0.25
+    directory: ${DISPLAY_TEST_DIR}/./fingerprints
+    duration: 100
+    edge_ratio_weight: 0.1
+    gradient_hist_weight: 0.1
+    histogram_weight: 0.2
+    metadata: {name: tests.drivers.display.check.shield, platform: frdm_mcxn947}
+    method: combined
+    operations: compare
+    phash_weight: 0.35
+    threshold: 0.65
+  module: .plugins.signature_plugin
+  name: signature
+  status: enable
+tests:
+  expect: [tests.drivers.display.check.shield]
+  prompt: screen starts
+  timeout: 30

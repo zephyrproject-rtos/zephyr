@@ -1,0 +1,20 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		light-sensor = &opt3001_mikroe_ambient_2_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	opt3001_mikroe_ambient_2_click: opt3001@44 {
+		compatible = "ti,opt3001";
+		reg = <0x44>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+	};
+};

@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Core and device clock set up
+ *
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ */
+
+&clk_hsi {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(64)>;
+	hsi-div = <1>;
+};
+
+&cpusw {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
+	clock-frequency = <DT_FREQ_M(600)>;
+};
+
+&ic1 {
+	status = "okay";
+	pll-src = <1>;
+	ic-div = <2>;
+};
+
+&ic2 {
+	status = "okay";
+	pll-src = <2>;
+	ic-div = <3>;
+};
+
+&ic6 {
+	status = "okay";
+	pll-src = <3>;
+	ic-div = <5>;
+};
+
+&ic8 {
+	status = "okay";
+	pll-src = <1>;
+	ic-div = <10>;
+};
+
+&ic9 {
+	status = "okay";
+	pll-src = <2>;
+	ic-div = <16>;
+};
+
+&ic10 {
+	status = "okay";
+	pll-src = <3>;
+	ic-div = <5>;
+};
+
+&ic11 {
+	status = "okay";
+	pll-src = <4>;
+	ic-div = <3>;
+};
+
+&perck {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
+};
+
+&pll1 {
+	status = "okay";
+	clocks = <&clk_hsi>;
+	div-m = <4>;
+	mul-n = <75>;
+	div-p1 = <1>;
+	div-p2 = <1>;
+};
+
+&pll2 {
+	status = "okay";
+	clocks = <&clk_hsi>;
+	div-m = <8>;
+	mul-n = <300>;
+	div-p1 = <1>;
+	div-p2 = <2>;
+};
+
+&pll3 {
+	status = "okay";
+	clocks = <&clk_hsi>;
+	div-m = <2>;
+	mul-n = <75>;
+	div-p1 = <2>;
+	div-p2 = <5>;
+};
+
+&pll4 {
+	status = "okay";
+	clocks = <&clk_hsi>;
+	div-m = <4>;
+	mul-n = <300>;
+	div-p1 = <1>;
+	div-p2 = <3>;
+};
+
+&rcc {
+	/* ic2, ic6 & ic11 must all be enabled to set ic2 as SYSCLK */
+	clocks = <&ic2>;
+	clock-frequency = <DT_FREQ_M(400)>;
+	ahb-prescaler = <2>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb4-prescaler = <1>;
+	apb5-prescaler = <1>;
+};
+
+&i2c1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 21)>, <&rcc STM32_SRC_IC10 I2C1_SEL(2)>;
+	status = "okay";
+};
+
+&adc1 {
+	clocks = <&rcc STM32_CLOCK(AHB1, 5)>, <&rcc STM32_SRC_IC8 ADC12_SEL(3)>;
+	status = "okay";
+};
+
+&spi5 {
+	clocks = <&rcc STM32_CLOCK(APB2, 20)>, <&rcc STM32_SRC_IC9 SPI5_SEL(2)>;
+	status = "okay";
+};

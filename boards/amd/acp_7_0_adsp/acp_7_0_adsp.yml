@@ -1,0 +1,11 @@
+# Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: acp_7_0_adsp/acp_7_0
+name: AMD ACP7.0 Audio DSP
+type: mpu
+arch: xtensa
+toolchain:
+  - zephyr
+  - xcc
+vendor: amd

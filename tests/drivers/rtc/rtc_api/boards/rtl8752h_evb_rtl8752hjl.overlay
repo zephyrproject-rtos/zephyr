@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc = &rtc;
+	};
+};
+
+&rtc_counter {
+	status = "okay";
+	prescaler = <1>;
+
+	rtc: rtc {
+		compatible = "zephyr,rtc-counter";
+		alarms-count = <4>;
+		status = "okay";
+	};
+};

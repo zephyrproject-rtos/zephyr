@@ -1,0 +1,11 @@
+description: NXP LPADC_TEMP40 temperature sensor
+
+compatible: "nxp,lpadc-temp40"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: This should point to an ADC channel (e.g., <&lpadc0 0>). That
+      will be used for reading from the internal temperature sensor.

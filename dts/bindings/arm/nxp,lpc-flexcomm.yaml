@@ -1,0 +1,22 @@
+# Copyright (c) 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC Flexcomm node
+
+compatible: "nxp,lpc-flexcomm"
+
+include: [base.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  low-power-states:
+    type: phandles
+    description: |
+      power states which will put the uart into a "low power mode" in which it cannot
+      function with normal baud rate but will retain state
+      and activity on the RX line can cause wakeup if wakeup function is also enabled.

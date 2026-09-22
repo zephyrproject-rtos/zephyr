@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# This normally would be selected in the Kconfig of the driver, but since this is a test, we want
+# to enable it, so we set the default here. We can't use the prj.conf file to enable it, because
+# it is promptless.
+configdefault NET_CHECKSUM_OFFLOAD_SUPPORTED
+	default y
+
+source "Kconfig.zephyr"

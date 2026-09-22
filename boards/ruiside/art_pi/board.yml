@@ -1,0 +1,6 @@
+board:
+  name: art_pi
+  full_name: ART-Pi
+  vendor: ruiside
+  socs:
+    - name: stm32h750xx

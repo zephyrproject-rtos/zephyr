@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2021 ASPEED Technology Inc.
+
+if SOC_AST1030
+
+config NUM_IRQS
+	default 240
+
+DT_NODE_SRAM := /memory@0
+
+config SRAM_NC_SIZE
+	default $(dt_node_reg_size_int,$(DT_NODE_SRAM),1,K)
+
+config SRAM_NC_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,$(DT_NODE_SRAM),1)
+
+endif # SOC_AST1030

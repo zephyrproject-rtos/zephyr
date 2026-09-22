@@ -1,0 +1,10 @@
+identifier: esp32c6_lcd_1_47/esp32c6/hpcore
+name: ESP32-C6 LCD 1.47 HP Core
+vendor: waveshare
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart

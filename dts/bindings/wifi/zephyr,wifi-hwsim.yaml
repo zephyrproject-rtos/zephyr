@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Zephyr virtual Wi-Fi simulator node.
+  Instantiate one node per virtual radio in your board overlay.
+
+compatible: "zephyr,wifi-hwsim"
+
+include: ethernet-controller.yaml
+
+properties:
+  radio-index:
+    type: int
+    required: true
+    description: |
+      Index into the hwsim medium radio table (0-based).
+      Must be unique across all hwsim nodes in the system.
+      Maximum value is CONFIG_WIFI_HWSIM_NUM_RADIOS - 1.
+
+  # MAC address configuration (local-mac-address, zephyr,random-mac-address,
+  # zephyr,mac-address-prefix, nvmem-cells) is inherited from
+  # ethernet-controller.yaml. If no MAC is configured the driver falls back to
+  # a random locally-administered address so each radio has a unique address.

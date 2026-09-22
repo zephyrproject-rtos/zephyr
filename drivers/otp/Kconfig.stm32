@@ -1,0 +1,46 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_STM32_BSEC
+	bool "STM32 BSEC driver"
+	default y
+	select USE_STM32_HAL_BSEC
+	depends on DT_HAS_ST_STM32_BSEC_ENABLED
+	help
+	  Enable OTP fuse access for STM32 SoCs embedding a BSEC peripheral.
+
+config OTP_STM32_NVM
+	bool "STM32 embedded NVM OTP driver"
+	default y
+	depends on DT_HAS_ST_STM32_NVM_OTP_ENABLED
+	help
+	  Enable driver for OTP regions inside embedded non-volatile memory
+	  found in STM32 SoCs.
+
+	  Note: the "program" operation (CONFIG_OTP_PROGRAM) is not implemented
+	  in this driver but in each STM32 series' flash driver instead. This
+	  driver merely acts as a shim redirecting otp_program() to the proper
+	  "backend" driver. It is possible that some series do not provide an
+	  implementation for the program operation: in this case, otp_program()
+	  will return -ENOTSUP. Check the appropriate flash driver to determine
+	  if the program operation is implemented or not.
+
+if OTP_STM32_NVM
+
+config OTP_STM32_NVM_PROGRAMMING_SUPPORT
+	bool "NVM OTP programming"
+	default y
+	depends on OTP_PROGRAM
+	depends on SOC_FLASH_STM32
+	help
+	  Enable programming of the OTP area of STM32 NVM.
+
+	  Note that the OTP programming logic is implemented in series-specific
+	  flash drivers; this driver merely implements otp_program() as a shim
+	  which calls the flash driver's implementation.
+
+	  OTP programming is not supported by all flash drivers yet. Calling
+	  otp_program() when the underlying flash driver does not support the
+	  operation will return -ENOTSUP.
+
+endif # OTP_STM32_NVM

@@ -1,0 +1,19 @@
+identifier: xiao_esp32c5/esp32c5/lpcore
+name: XIAO ESP32C5 LP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - cpu
+  - uart
+  - serial
+testing:
+  only_tags:
+    - introduction
+  ignore_tags:
+    - kernel
+    - posix
+    - chre
+    - cpp
+vendor: seeed

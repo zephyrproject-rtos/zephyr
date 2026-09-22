@@ -1,0 +1,36 @@
+common:
+  filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE or
+    (CONFIG_ARMV7_R and CONFIG_GIC)
+  tags:
+    - arm
+    - fpu
+    - interrupt
+  ignore_faults: true
+  arch_allow: arm
+tests:
+  arch.arm.interrupt:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+  arch.arm.interrupt.no_optimizations:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    extra_configs:
+      - CONFIG_NO_OPTIMIZATIONS=y
+      - CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n
+      - CONFIG_IDLE_STACK_SIZE=512
+      - CONFIG_MAIN_STACK_SIZE=2048
+      - CONFIG_ZTEST_STACK_SIZE=1280
+      - CONFIG_KOBJECT_TEXT_AREA=4096
+  arch.arm.interrupt.extra_exception_info:
+    filter: ARCH_HAS_EXTRA_EXCEPTION_INFO and not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    extra_configs:
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.interrupt.secure_fpu_extra_exception_info:
+    platform_allow:
+      - mps3/corstone300/an547
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+      - CONFIG_EXCEPTION_DEBUG=y
+      - CONFIG_FAULT_DUMP=2
+    integration_platforms:
+      - mps3/corstone300/an547

@@ -1,0 +1,43 @@
+# Copyright (c) 2023 Enphase Energy
+# Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM62X
+	bool
+	select SOC_FAMILY_TI_K3
+
+config SOC_SERIES_AM62X_A53
+	bool
+	select SOC_SERIES_AM62X
+	help
+	  Enable support for AM62X A53 Series.
+
+config SOC_SERIES_AM62X_M4
+	bool
+	select SOC_SERIES_AM62X
+	help
+	  Enable support for AM62X M4 Series.
+
+config SOC_AM6234_A53
+	bool
+	select SOC_SERIES_AM62X_A53
+
+config SOC_AM6234_M4
+	bool
+	select SOC_SERIES_AM62X_M4
+
+config SOC_AM6254_A53
+	bool
+	select SOC_SERIES_AM62X_A53
+
+config SOC_AM6254_M4
+	bool
+	select SOC_SERIES_AM62X_M4
+
+config SOC_AM6232_A53
+	bool
+	select SOC_SERIES_AM62X_A53
+
+config SOC_AM6232_M4
+	bool
+	select SOC_SERIES_AM62X_M4

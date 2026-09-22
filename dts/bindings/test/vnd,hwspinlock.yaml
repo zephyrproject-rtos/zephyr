@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test hardware spinlock node
+
+compatible: "vnd,hwspinlock"
+
+include: [base.yaml, hwspinlock-controller.yaml]
+
+hwlock-cells:
+  - id

@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_ble_tiny_click
+  full_name: BLE TINY Click
+  vendor: mikroe
+  supported_features:
+    - bluetooth

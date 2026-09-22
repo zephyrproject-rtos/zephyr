@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Minimal power state so CONFIG_PM has something to enter. The point is to
+ * reach sys_clock_idle_enter() and sys_clock_idle_exit(), not to emulate a
+ * real low-power mode.
+ */
+
+/ {
+	cpus {
+		power-states {
+			idle_state: idle-state {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <0>;
+			};
+		};
+	};
+};
+
+&{/cpus/cpu@0} {
+	cpu-power-states = <&idle_state>;
+};

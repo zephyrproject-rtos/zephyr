@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Fabio Baltieri
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 SUBGHZ SPI controller
+
+compatible: "st,stm32-spi-subghz"
+
+include:
+  - name: st,stm32-spi-common.yaml
+    property-blocklist:
+      - pinctrl-0
+      - pinctrl-names

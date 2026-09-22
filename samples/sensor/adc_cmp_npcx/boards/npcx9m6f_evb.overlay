@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 Intel Corp.
+ */
+
+/ {
+	adc_cmp: comparator {
+		compatible = "nuvoton,adc-cmp";
+		io-channels = <&adc0 8>;
+	};
+};

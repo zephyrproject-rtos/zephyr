@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_BFLB_BL61X
+	bool "Bouffalo Lab BL61x CAN driver"
+	default y
+	depends on DT_HAS_BFLB_BL61X_CAN_ENABLED
+	select CAN_SJA1000
+	select PINCTRL
+	help
+	  Enable support for the Bouffalo Lab BL61x ISO11898 (SJA1000 compatible)
+	  classic CAN 2.0 controller.

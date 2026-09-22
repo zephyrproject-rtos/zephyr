@@ -1,0 +1,13 @@
+# SHTCX temperature and humidity sensor configuration options
+
+# Copyright (c) 2021 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config SHTCX
+	bool "SHTCX: SHTC1 and SHTC3 Temperature and Humidity Sensor"
+	default y
+	depends on DT_HAS_SENSIRION_SHTCX_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable driver for SHTC1 and SHTC3 temperature and humidity sensors.

@@ -1,0 +1,5 @@
+# Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H7B3I_DK
+	select SOC_STM32H7B3XXQ

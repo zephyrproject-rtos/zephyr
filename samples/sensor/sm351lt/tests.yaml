@@ -1,0 +1,11 @@
+sample:
+  name: SM351LT Magnetoresistive Sensor Example
+tests:
+  sample.sensor.sm351lt:
+    harness: sensor
+    tags:
+      - samples
+      - sensor
+    depends_on:
+      - gpio
+      - sm351lt

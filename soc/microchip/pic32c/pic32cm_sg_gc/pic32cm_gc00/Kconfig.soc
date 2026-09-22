@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC32CM_GC00
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC
+	help
+	  Enable support for Microchip PIC32CM GC00 Cortex-M23 microcontrollers.
+
+config SOC_SERIES
+	default "pic32cm_gc00" if SOC_SERIES_PIC32CM_GC00
+
+config SOC_PIC32CM5112GC00048
+	bool
+	select SOC_SERIES_PIC32CM_GC00
+
+config SOC_PIC32CM5112GC00064
+	bool
+	select SOC_SERIES_PIC32CM_GC00
+
+config SOC_PIC32CM5112GC00100
+	bool
+	select SOC_SERIES_PIC32CM_GC00
+
+config SOC
+	default "pic32cm5112gc00048" if SOC_PIC32CM5112GC00048
+	default "pic32cm5112gc00064" if SOC_PIC32CM5112GC00064
+	default "pic32cm5112gc00100" if SOC_PIC32CM5112GC00100

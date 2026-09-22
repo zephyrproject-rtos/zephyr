@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_TLA2528
+	bool "Texas Instruments TLA2528 I2C ADC with GPIOs"
+	default y
+	depends on DT_HAS_TI_TLA2528_ENABLED
+	select I2C
+	help
+	  Enable the mfd driver implementation for the TLA2528
+
+config MFD_TLA2528_INIT_PRIO
+	int "Init priority"
+	default 65
+	depends on MFD_TLA2528
+	help
+	  Device driver initialization priority.

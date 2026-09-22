@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_CDNS_SWERV
+	bool
+
+config SOC_FAMILY
+	default "cdns_swerv" if SOC_FAMILY_CDNS_SWERV
+
+rsource "*/Kconfig.soc"

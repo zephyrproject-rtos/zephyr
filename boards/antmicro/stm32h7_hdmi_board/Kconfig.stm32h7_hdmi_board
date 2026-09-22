@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H7_HDMI_BOARD
+	select SOC_STM32H747XX_M7 if BOARD_STM32H7_HDMI_BOARD_STM32H747XX_M7
+	select SOC_STM32H747XX_M4 if BOARD_STM32H7_HDMI_BOARD_STM32H747XX_M4

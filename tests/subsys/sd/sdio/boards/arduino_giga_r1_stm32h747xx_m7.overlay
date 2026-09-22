@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025 EXALT Technologies.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wifi {
+	status = "disabled";
+};

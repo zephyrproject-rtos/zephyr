@@ -1,0 +1,11 @@
+# FS_I6S board configuration
+
+# Copyright (c) 2026 Sahaj Sarup
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FS_I6S
+
+config ADC_STM32_DMA
+	default y if ADC
+
+endif # BOARD_FS_I6S

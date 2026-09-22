@@ -1,0 +1,18 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Intersil ISL29035 Light Sensor. See datasheet at
+    https://www.renesas.com/us/en/www/doc/datasheet/isl29035.pdf
+
+compatible: "isil,isl29035"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe the
+      signal that is presented to the driver.

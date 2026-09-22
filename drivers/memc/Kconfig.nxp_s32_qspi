@@ -1,0 +1,10 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_NXP_S32_QSPI
+	bool "NXP S32 Quad Serial Peripheral Interface (QSPI) controller"
+	default y
+	depends on DT_HAS_NXP_S32_QSPI_ENABLED
+	select PINCTRL
+	help
+	  Enable NXP S32 Quad Serial Peripheral Interface (QSPI) controller.

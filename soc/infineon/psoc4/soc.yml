@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: psoc4
+  series:
+  - name: psoc4100tp
+    socs:
+    - name: cy8c4146lqi_t403
+    - name: cy8c4146axi_t403
+    - name: cy8c4146azi_t403
+    - name: cy8c4146azi_t405
+    - name: cy8c4146lqi_t413
+    - name: cy8c4146axi_t413
+    - name: cy8c4146azi_t413
+    - name: cy8c4146azi_t415
+    - name: cy8c4146lqi_t453
+    - name: cy8c4146axi_t453
+    - name: cy8c4146azi_t453
+    - name: cy8c4146azi_t455
+    - name: cy8c4147lqi_t403
+    - name: cy8c4147axi_t403
+    - name: cy8c4147azi_t403
+    - name: cy8c4147azi_t405
+    - name: cy8c4147lqi_t413
+    - name: cy8c4147axi_t413
+    - name: cy8c4147azi_t413
+    - name: cy8c4147azi_t415
+    - name: cy8c4147lqi_t453
+    - name: cy8c4147axi_t453
+    - name: cy8c4147azi_t453
+    - name: cy8c4147azi_t455
+    - name: cy8c4147lqi_t463
+    - name: cy8c4147axi_t463
+    - name: cy8c4147azi_t463
+    - name: cy8c4147azi_t465
+    - name: cy8c4147lqi_t473
+    - name: cy8c4147axi_t473
+    - name: cy8c4147azi_t473
+    - name: cy8c4147azi_t475
+    - name: cy8c4147lqq_t493
+    - name: cy8c4147axq_t493
+    - name: cy8c4147azq_t493
+    - name: cy8c4147azq_t495
+    - name: cy8c4146azq_t413
+    - name: cy8c4146azq_t453
+    - name: cy8c4147azq_t415
+    - name: cy8c4147azq_t455
+  - name: psoc4100smax
+    socs:
+    - name: cy8c4149azi_s598
+  - name: psoc4000t
+    socs:
+    - name: cy8c4046lqi_t452
+    - name: cy8c4046lqe_t1
+    - name: cy8c4025lqi_t411
+    - name: cy8c4025lqi_t441
+    - name: cy8c4025lqi_t451
+    - name: cy8c4026lqi_t411
+    - name: cy8c4026lqi_t441
+    - name: cy8c4045lqi_t411
+    - name: cy8c4045lqi_t441
+    - name: cy8c4045lqi_t451
+    - name: cy8c4046lqi_t411
+    - name: cy8c4046lqi_t441
+    - name: cy8c4046lqi_t451
+    - name: cy8c4025lqi_t412
+    - name: cy8c4025lqi_t442
+    - name: cy8c4025lqi_t452
+    - name: cy8c4026lqi_t412
+    - name: cy8c4026lqi_t442
+    - name: cy8c4045lqi_t412
+    - name: cy8c4045lqi_t442
+    - name: cy8c4045lqi_t452
+    - name: cy8c4045lqe_t1
+    - name: cy8c4045lqs_t1
+    - name: cy8c4046lqi_t412
+    - name: cy8c4046lqi_t442
+    - name: cy8c4046lqs_t1
+    - name: cy8c4046lqq_t412
+    - name: cy8c4025fni_t412
+    - name: cy8c4025fni_t442
+    - name: cy8c4025fni_t452
+    - name: cy8c4026fni_t412
+    - name: cy8c4026fni_t442
+    - name: cy8c4045fni_t412
+    - name: cy8c4045fni_t442
+    - name: cy8c4045fni_t452
+    - name: cy8c4046fni_t412
+    - name: cy8c4046fni_t442
+    - name: cy8c4046fni_t452

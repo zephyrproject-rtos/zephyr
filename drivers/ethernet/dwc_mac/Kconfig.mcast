@@ -1,0 +1,57 @@
+# Synopsys DesignWare MAC multicast filter configuration options
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+DT_PROP_SNPS_MULTICAST_FILTER_BINS := snps,multicast-filter-bins
+DT_PROP_SNPS_PERFECT_FILTER_ENTRIES := snps,perfect-filter-entries
+
+config ETH_DWC_ETHER_MULTICAST_FILTER_HASH_SUPPORTED
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DWMAC),$(DT_PROP_SNPS_MULTICAST_FILTER_BINS))
+	help
+	  The hardware can hash multicast addresses, which the devicetree
+	  property snps,multicast-filter-bins indicates.
+
+config ETH_DWC_ETHER_MULTICAST_FILTER_PERFECT_SUPPORTED
+	def_bool !$(dt_compat_all_has_prop,$(DT_COMPAT_SNPS_DWMAC),$(DT_PROP_SNPS_PERFECT_FILTER_ENTRIES),1)
+	help
+	  The hardware has spare MAC address entries to perfect filter
+	  multicast addresses with, meaning the devicetree property
+	  snps,perfect-filter-entries is larger than 1, as entry 0 holds
+	  the station address.
+
+config ETH_DWC_ETHER_MULTICAST_FILTER
+	bool "Multicast filter support"
+	depends on ETH_DWC_ETHER_MULTICAST_FILTER_HASH_SUPPORTED || \
+		ETH_DWC_ETHER_MULTICAST_FILTER_PERFECT_SUPPORTED
+	depends on NET_L2_ETHERNET
+	default y
+	help
+	  Enable support for multicast filtering in the MAC, so only
+	  multicast for the addresses the stack listens to is received.
+	  If disabled, or if the hardware cannot filter at all, then all
+	  multicast is received by the MAC.
+
+choice ETH_DWC_ETHER_MULTICAST_FILTER_MODE
+	prompt "Multicast filter mode"
+	depends on ETH_DWC_ETHER_MULTICAST_FILTER
+	default ETH_DWC_ETHER_MULTICAST_FILTER_HASH if ETH_DWC_ETHER_MULTICAST_FILTER_HASH_SUPPORTED
+	default ETH_DWC_ETHER_MULTICAST_FILTER_PERFECT
+
+config ETH_DWC_ETHER_MULTICAST_FILTER_HASH
+	bool "Hash filtering"
+	depends on ETH_DWC_ETHER_MULTICAST_FILTER_HASH_SUPPORTED
+	select CRC
+	help
+	  Imperfect multicast filtering based on a computed hash of the
+	  destination MAC address.
+
+config ETH_DWC_ETHER_MULTICAST_FILTER_PERFECT
+	bool "Perfect filtering"
+	depends on ETH_DWC_ETHER_MULTICAST_FILTER_PERFECT_SUPPORTED
+	help
+	  Perfect multicast filtering against the spare MAC address entries
+	  of the hardware. Should the addresses ever not fit into the spare
+	  entries, all multicast is received instead.
+
+endchoice

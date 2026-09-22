@@ -1,0 +1,67 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX32 UART
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+compatible: "adi,max32-uart"
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl:
+    type: phandles
+
+  clock-source:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5]
+    description: |
+      Clock source to be used by the UART peripheral. The following options
+      are available:
+      - 0: "ADI_MAX32_PRPH_CLK_SRC_PCLK" Peripheral clock
+      - 1: "ADI_MAX32_PRPH_CLK_SRC_EXTCLK" External Clock
+      - 2: "ADI_MAX32_PRPH_CLK_SRC_IBRO" Internal Baud Rate Oscillator
+      - 3: "ADI_MAX32_PRPH_CLK_SRC_ERFO" External Radio Frequency Oscillator
+      - 4: "ADI_MAX32_PRPH_CLK_SRC_ERTCO" External Real-Time Clock Oscillator
+      - 5: "ADI_MAX32_PRPH_CLK_SRC_INRO" Internal Ring Oscillator
+      The target device might not support all option please take a look on
+      target device user guide
+
+  current-speed:
+    description: |
+      Initial baud rate setting for UART. Defaults to standard baudrate of 115200 if not specified.
+    default: 115200
+
+  stop-bits:
+    description: |
+      Sets the number of stop bits. Defaults to standard of 1 if not specified.
+    default: "1"
+
+  data-bits:
+    description: |
+      Sets the number of data bits. Defaults to standard of 8 if not specified.
+    default: 8
+
+  dmas:
+    description: |
+      DMA configuration used by asynchronous UART. Consists of a DMA instance,
+      channel number and a matching DMA slot.
+
+      For example dmas for TX, RX on UART2
+         dmas = <&dma0 1 MAX32_DMA_SLOT_UART2_TX>, <&dma0 2 MAX32_DMA_SLOT_UART2_RX>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists.  This should be "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";

@@ -1,0 +1,77 @@
+# Copyright (c) 2019 Linaro Limited
+# Copyright 2025-2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX PWM
+
+compatible: "nxp,imx-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  index:
+    type: int
+    description: flexpwm submodule index
+    required: true
+
+  interrupts:
+    required: true
+
+  run-in-wait:
+    type: boolean
+    description: |
+      Enable for PWM to keep running in WAIT mode.
+
+  run-in-debug:
+    type: boolean
+    description: |
+      Enable for PWM to keep running in debug mode.
+
+  nxp,prescaler:
+    type: int
+    enum: [1, 2, 4, 8, 16, 32, 64, 128]
+    required: true
+    description: |
+      Clock prescaler at the input of the PWM.
+
+  nxp,reload:
+    type: string
+    enum:
+      - "immediate"
+      - "half-cycle"
+      - "full-cycle"
+      - "half-and-full-cycle"
+    description: |
+      Select how to load the buffered-registers with new values:
+      "immediate" - buffered-registers get loaded with new values as soon as LDOK bit is set;
+      "half-cycle" - registers loaded on a PWM half cycle;
+      "full-cycle" - registers loaded on a PWM full cycle;
+      "half-and-full-cycle" - registers loaded on a PWM half & full cycle.
+
+  input-filter-count:
+    type: int
+    description: |
+      Set the number of consecutive samples that must agree prior to
+      the input filter accepting an input transition. The number of samples
+      is the decimal value of this field plus three: the bit field value of 0-7
+      represents 3-10 samples, respectively. The value affects the input latency.
+      Valid range: 0 - 7
+      Note this property only takes effect when capture input filter register is available.
+
+  input-filter-period:
+    type: int
+    description: |
+      Set the sampling period (in IPBus clock cycles) of the input capture pin input filter.
+      Each input is sampled multiple times at the rate specified by this field.
+      If the value is 0x00 (default), then the input filter is bypassed. The value affects
+      the input latency.
+      Valid range: 0 - 255
+      Note this property only takes effect when capture input filter register is available.
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

@@ -1,0 +1,8 @@
+# u-blox EVK-NINA-B1 board configuration
+
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UBX_EVKNINAB1
+
+endif # BOARD_UBX_EVKNINAB1

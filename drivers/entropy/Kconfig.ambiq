@@ -1,0 +1,14 @@
+# PUF entropy generator driver configuration
+
+# Copyright (c) 2025, Ambiq Micro, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_AMBIQ_PUF_TRNG
+	bool "Ambiq TRNG driver"
+	default y
+	depends on SOC_AMBIQ_HAS_PUF
+	depends on DT_HAS_AMBIQ_PUF_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the true random number generator
+	  driver based on the OTP/PUF TRNG.

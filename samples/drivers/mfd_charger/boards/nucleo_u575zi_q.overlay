@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2026 Analog Devices Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/regulator/adp5360.h>
+
+dev: &i2c1 {
+	status = "okay";
+
+	mfd: adp5360@46 {
+		compatible = "adi,adp5360";
+		reg = <0x46>;
+
+		charger: charger {
+			compatible = "adi,adp5360-charger";
+
+			battery-name = "dummy-charger";
+			device-chemistry = "lithium-ion";
+			charge-term-current-microamp = <5000>;
+			constant-charge-current-max-microamp = <20000>;
+			constant-charge-voltage-max-microvolt = <4160000>;
+			re-charge-voltage-microvolt = <120000>;
+			precharge-current-microamp = <5000>;
+		};
+
+		fuelgauge: fuel-gauge {
+			compatible = "adi,adp5360-fuel-gauge";
+			status = "okay";
+		};
+
+		regulators {
+			compatible = "adi,adp5360-regulator";
+
+			buck: buck {
+				regulator-boot-on;
+				regulator-active-discharge = <1>;
+				regulator-allowed-modes = <ADP5360_MODE_HYS ADP5360_MODE_PWM>;
+				adi,enable-stop-pulse;
+				regulator-init-microvolt = <1300000>;
+				regulator-initial-mode = <ADP5360_MODE_PWM>;
+				regulator-max-microvolt = <3750000>;
+				regulator-min-microvolt = <600000>;
+			};
+
+			buckboost: buckboost {
+				regulator-boot-on;
+				regulator-active-discharge = <0>;
+				regulator-init-microvolt = <3300000>;
+				regulator-max-microvolt = <5500000>;
+				regulator-min-microvolt = <1800000>;
+			};
+		};
+	};
+};

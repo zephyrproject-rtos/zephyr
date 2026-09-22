@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The requesting-router (client) build needs two TAP interfaces:
+ * zeth0 (upstream/WAN) and zeth1 (downstream/LAN).
+ */
+
+&zeth0 {
+	host-interface = "zeth0";
+};
+
+/ {
+	zeth1: zeth1 {
+		compatible = "zephyr,native-tap";
+		status = "okay";
+		zephyr,random-mac-address;
+		zephyr,mac-address-prefix = [00 00 5e 00 53];
+		host-interface = "zeth1";
+	};
+};

@@ -1,0 +1,15 @@
+# Copyright (c) 2019 SiFive Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SPARKFUN_RED_V_THINGS_PLUS
+
+config HAS_FLASH_LOAD_OFFSET
+	default y
+
+config FLASH_LOAD_OFFSET
+	default 0x0
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/spi@10014000,1)
+
+endif # BOARD_SPARKFUN_RED_V_THINGS_PLUS

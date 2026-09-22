@@ -1,0 +1,8 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: Si7055 temperature sensor
+
+compatible: "silabs,si7055"
+
+include: [sensor-device.yaml, i2c-device.yaml]

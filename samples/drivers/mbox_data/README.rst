@@ -1,0 +1,125 @@
+.. zephyr:code-sample:: mbox_data
+   :name: MBOX Data
+   :relevant-api: mbox_interface
+
+   Perform inter-processor mailbox communication using the MBOX API with data.
+
+Overview
+********
+
+This sample demonstrates how to use the :ref:`MBOX API <mbox_api>` in data transfer mode.
+It can be used only with mbox driver which supports data transfer mode.
+
+Sample will ping-pong data between two cores via two mbox channels. The data size
+depends on the driver's MTU (Maximum Transmission Unit), which varies by platform.
+After each core receives data, it increments the counter by one and sends it back to other core.
+
+Configuration
+*************
+
+The sample sizes its message buffers using the :kconfig:option:`CONFIG_MBOX_DATA_MAX_MSG_SIZE`
+option (default 4 bytes). Boards whose mbox driver supports a larger MTU should override this
+value in a board-specific configuration fragment
+(``boards/<board>.conf``), for example ``CONFIG_MBOX_DATA_MAX_MSG_SIZE=32``. The actual MTU is
+queried at runtime with :c:func:`mbox_mtu_get_dt` and validated against this configured capacity.
+
+Building and Running
+********************
+
+The sample can be built and executed on boards supporting MBOX with data transfer mode.
+
+Building the application for mimxrt1160_evk_cm7
+===============================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox_data/
+   :board: mimxrt1160_evk_cm7
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for mimxrt1170_evk_cm7
+===============================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox_data/
+   :board: mimxrt1170_evk_cm7
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for lpcxpresso55s69_cpu1
+=================================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox_data/
+   :board: lpcxpresso55s69_cpu1
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for frdm_mcxn947/mcxn947/cpu0
+======================================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox_data/
+   :board: frdm_mcxn947/mcxn947/cpu0
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for ek_ra8p1/r7ka8p1kflcac/cm85
+========================================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mbox_data/
+   :board: ek_ra8p1/r7ka8p1kflcac/cm85
+   :goals: debug
+   :west-args: --sysbuild
+
+Sample Output
+=============
+
+Open a serial terminal (minicom, putty, etc.) and connect the board with the
+following settings:
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+Reset the board and the following message will appear on the corresponding
+serial port, one is the main core another is the remote core:
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build zephyr-v3.5.0-4051-g12f4f4dc8679 ***
+   mbox_data Client demo started
+   Using MTU: 4 bytes
+   Client send (on channel 3) value: 0
+   Client received (on channel 2) value: 1
+   Client send (on channel 3) value: 2
+   Client received (on channel 2) value: 3
+   Client send (on channel 3) value: 4
+   ...
+   Client received (on channel 2) value: 95
+   Client send (on channel 3) value: 96
+   Client received (on channel 2) value: 97
+   Client send (on channel 3) value: 98
+   Client received (on channel 2) value: 99
+   mbox_data Client demo ended
+
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build zephyr-v3.5.0-4051-g12f4f4dc8679 ***
+   mbox_data Server demo started
+   Using MTU: 4 bytes
+   Server receive (on channel 3) value: 0
+   Server send (on channel 2) value: 1
+   Server receive (on channel 3) value: 2
+   Server send (on channel 2) value: 3
+   Server receive (on channel 3) value: 4
+   ...
+   Server send (on channel 2) value: 95
+   Server receive (on channel 3) value: 96
+   Server send (on channel 2) value: 97
+   Server receive (on channel 3) value: 98
+   Server send (on channel 2) value: 99
+   mbox_data Server demo ended.

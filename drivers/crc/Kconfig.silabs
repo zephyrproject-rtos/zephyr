@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Phuc Hoang
+# SPDX-License-Identifier: Apache-2.0
+
+config CRC_DRIVER_SILABS_GPCRC
+	bool "Silicon Labs GPCRC driver"
+	depends on DT_HAS_SILABS_GPCRC_ENABLED
+	default y
+	select SILABS_SISDK_GPCRC
+	select CRC_DRIVER_HAS_CRC16
+	select CRC_DRIVER_HAS_CRC16_ANSI
+	select CRC_DRIVER_HAS_CRC16_CCITT
+	select CRC_DRIVER_HAS_CRC16_ITU_T
+	select CRC_DRIVER_HAS_CRC16_REFLECT
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	help
+	  Enable the General Purpose CRC (GPCRC) driver implementation
+	  for Silicon Labs Gecko (EFR32/EFM32) microcontrollers.

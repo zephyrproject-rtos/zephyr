@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Andrew Featherstone
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+/* The build system assumes that there's a cpucluster-specific file.
+ *
+ * This file provides composition of the device tree:
+ * 1. The common features of the SoC
+ * 2. Core-specific configuration.
+ * 3. Board-specific configuration.
+ */
+#include <raspberrypi/rpi_pico/rp2350b.dtsi>
+#include <riscv/raspberrypi/hazard3.dtsi>
+#include "pico_plus2.dtsi"

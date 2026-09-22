@@ -1,0 +1,12 @@
+# Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ACP_7_0
+	bool
+
+config SOC
+	default "acp_7_0" if SOC_ACP_7_0
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "amd_acp_7_0_adsp" if SOC_ACP_7_0

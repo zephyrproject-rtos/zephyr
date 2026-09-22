@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Nicolas Goualard <nicolas.goualard@sfr.fr>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SEEED_XIAO_ROUND_DISPLAY
+	def_bool $(shields_list_contains,seeed_xiao_round_display)

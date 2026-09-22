@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2023 Ian Morris
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas HS300x humidity and temperature sensor
+
+compatible: "renesas,hs300x"
+
+include: [sensor-device.yaml, i2c-device.yaml]

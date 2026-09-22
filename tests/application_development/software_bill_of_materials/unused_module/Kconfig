@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SBOM_UNUSED_MODULE
+	bool "Build the sbom_unused_module sources"
+	help
+	  When enabled, compiles sources from sbom_unused_module. It is left disabled for this test
+	  so the source stays out of the build.

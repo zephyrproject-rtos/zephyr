@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 CodeWrights GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi_nand_mikroe_flash_5_click {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ftl_partition: partition@0 {
+			label = "ftl";
+			reg = <0x00000000 DT_SIZE_M(128)>;
+		};
+	};
+};
+
+/ {
+	ftl {
+		compatible = "zephyr,ftl-dhara";
+		partition = <&ftl_partition>;
+		disk-name = "NAND";
+		buffer-size = <2048>;
+	};
+};

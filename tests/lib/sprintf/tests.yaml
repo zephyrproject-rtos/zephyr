@@ -1,0 +1,41 @@
+common:
+  tags:
+    - libc
+tests:
+  libraries.libc.sprintf:
+    extra_args: CONF_FILE=prj.conf
+    filter: not CONFIG_SOC_MCIMX7D_M4 and CONFIG_STDOUT_CONSOLE
+    integration_platforms:
+      - qemu_x86
+    arch_exclude: posix
+    ignore_faults: true
+  libraries.libc.sprintf_new:
+    extra_args: CONF_FILE=prj_new.conf
+    arch_exclude: posix
+    integration_platforms:
+      - qemu_x86
+  libraries.libc.picolibc.sprintf:
+    extra_args: CONF_FILE=prj_picolibc.conf
+    tags:
+      - picolibc
+    ignore_faults: true
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    integration_platforms:
+      - qemu_x86
+  libraries.libc.picolibc.sprintf_new:
+    extra_args: CONF_FILE=prj_picolibc_new.conf
+    tags:
+      - picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    integration_platforms:
+      - qemu_x86
+  libraries.libc.picolibc.sprintf_inexact:
+    extra_args: CONF_FILE=prj_picolibc_new.conf
+    extra_configs:
+      - CONFIG_PICOLIBC_USE_MODULE=y
+      - CONFIG_PICOLIBC_IO_FLOAT_EXACT=n
+    tags:
+      - picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    integration_platforms:
+      - qemu_x86

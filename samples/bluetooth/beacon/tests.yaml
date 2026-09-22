@@ -1,0 +1,30 @@
+sample:
+  name: Bluetooth Beacon
+tests:
+  sample.bluetooth.beacon:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+      - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - cyw920829m2evk_02/cyw20829b0lkml
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+      - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+  sample.bluetooth.beacon-coex:
+    extra_args: CONF_FILE="prj-coex.conf"
+    harness: bluetooth
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    tags: bluetooth

@@ -1,0 +1,33 @@
+# Copyright (c) 2022, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32WB Radio device
+
+compatible: "st,stm32wb-rf"
+
+include: bt-hci.yaml
+
+properties:
+  clocks:
+    required: true
+
+  bt-hci-name:
+    default: "BT IPM"
+
+  bt-hci-bus:
+    default: "ipc"
+
+  bt-hci-quirks:
+    default: ["no-reset"]
+
+  interrupts:
+    required: true
+    # Do not set min-len/max-len due to DT parsing process issues.
+    # Rely on interrupt-names for the consistency.
+
+  interrupt-names:
+    required: true
+    enum: ["rx", "tx"]
+    min-len: 2
+    max-len: 2

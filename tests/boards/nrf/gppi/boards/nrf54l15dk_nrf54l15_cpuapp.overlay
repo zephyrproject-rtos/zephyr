@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut_timer0: &timer00 {
+	status = "reserved";
+};
+
+dut_timer1: &timer20 {
+	status = "reserved";
+};
+
+dut_timer2: &timer10 {
+	status = "reserved";
+};
+
+&comp {
+	status = "reserved";
+};

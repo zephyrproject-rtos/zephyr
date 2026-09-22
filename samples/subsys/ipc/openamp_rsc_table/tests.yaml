@@ -1,0 +1,18 @@
+sample:
+  description: This app provides an example of how to integrate OpenAMP
+    with Zephyr including a resource table.
+  name: OpenAMP with resource table example integration
+tests:
+  sample.ipc.openamp_rs_table:
+    build_only: true
+    platform_allow:
+      - stm32mp157c_dk2
+      - imx8mp_evk/mimx8ml8/adsp
+      - scobc_v1/versal_rpu
+    integration_platforms:
+      - stm32mp157c_dk2
+      - imx8mp_evk/mimx8ml8/adsp
+      - scobc_v1/versal_rpu
+    tags:
+      - ipm
+      - openamp

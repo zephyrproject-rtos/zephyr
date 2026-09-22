@@ -1,0 +1,6 @@
+board:
+  name: ek_rx261
+  full_name: RX261 Evaluation Kit
+  vendor: renesas
+  socs:
+  - name: r5f52618bgfp

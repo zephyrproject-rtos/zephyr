@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_MAX32
+	bool "Analog Devices MAX32 SDHC driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_SDHC_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  sdhc driver for max32 family.

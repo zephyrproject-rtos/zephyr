@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Dmitrii Sharshakov
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&bt_hci_userchan {
+	status = "disabled";
+};
+
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+
+	hci_uart: hci_uart {
+		compatible = "zephyr,native-tty-uart";
+		status = "okay";
+		current-speed = <2000000>;
+		serial-port = "/dev/ttyACM0";
+
+		bt_hci_uart: bt_hci_uart {
+			compatible = "zephyr,bt-hci-uart";
+			status = "okay";
+		};
+	};
+};

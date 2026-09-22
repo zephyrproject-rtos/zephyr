@@ -1,0 +1,392 @@
+/*
+ * Copyright (c) 2015 Wind River Systems, Inc.
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief Timer driver API
+ *
+ * Declare API implemented by system timer driver and used by kernel components.
+ */
+
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
+
+#include <stdbool.h>
+#include <zephyr/types.h>
+#include <zephyr/spinlock.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * Maximum number of ticks the kernel will ever ask a timer driver to wait
+ * before the next sys_clock_announce(). It is half of the unsigned tick
+ * range so that the elapsed-tick count the driver eventually announces is
+ * guaranteed to fit in the (unsigned) sys_clock_announce() argument. The
+ * other half is left as slack to absorb a late announce (e.g. interrupt
+ * latency, or a timeout that fires slightly past its deadline) without
+ * overflowing that argument. The kernel caps the value passed to
+ * sys_clock_set_timeout() to this, so a driver need not clamp against the
+ * announce range and only has to honour its own cycle-count limits.
+ */
+#define SYS_CLOCK_MAX_WAIT (UINT32_MAX / 2)
+
+/**
+ * @brief Tick count meaning "nothing needs to wake the CPU up"
+ *
+ * Passed to sys_clock_idle_enter() when no wakeup is expected. It is above
+ * SYS_CLOCK_MAX_WAIT, the longest wait the kernel ever asks for, so it cannot
+ * be taken for one. K_TICKS_FOREVER is not usable here: it is (int64_t)-1 with
+ * CONFIG_TIMEOUT_64BIT and UINT32_MAX without it, so comparing an unsigned tick
+ * count against it means different things in the two configurations.
+ */
+#define SYS_CLOCK_IDLE_FOREVER UINT32_MAX
+
+/**
+ * @brief System Clock APIs
+ * @defgroup clock_apis System Clock APIs
+ * @{
+ */
+
+/**
+ * @brief Lock the system clock.
+ *
+ * Acquires the kernel timer lock that protects tick accounting and
+ * the timeout queue.  Timer drivers should call this at the start of
+ * their ISR and pass the returned key to sys_clock_announce_locked()
+ * which consumes it.  The lock is released when
+ * sys_clock_announce_locked() returns.
+ *
+ * The driver-provided functions sys_clock_set_timeout() and
+ * sys_clock_elapsed() are always called by the kernel with this lock
+ * already held.
+ *
+ * Example usage from a timer ISR:
+ *
+ * @code{.c}
+ * static void timer_isr(const void *arg)
+ * {
+ *     k_spinlock_key_t key = sys_clock_lock();
+ *
+ *     // Update driver-private state (e.g. cycle counter baseline)
+ *     uint64_t now = read_hw_counter();
+ *     uint32_t dticks = (now - last_cycle) / CYC_PER_TICK;
+ *     last_cycle += (uint64_t)dticks * CYC_PER_TICK;
+ *
+ *     // Reprogram comparator if needed ...
+ *
+ *     // Announce ticks — key ownership transfers to announce.
+ *     sys_clock_announce_locked(dticks, key);
+ * }
+ * @endcode
+ *
+ * @return Lock key to be passed to sys_clock_announce_locked()
+ *         or sys_clock_unlock().
+ */
+#if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
+k_spinlock_key_t sys_clock_lock(void);
+#else
+/*
+ * When actual spinlocks are not needed (UP without CONFIG_SPIN_VALIDATE),
+ * k_spin_lock() reduces to arch_irq_lock() and the lock argument is
+ * ignored.  Inline this to avoid the overhead of an extra function
+ * call for legacy drivers using sys_clock_announce().
+ */
+static inline k_spinlock_key_t sys_clock_lock(void)
+{
+	k_spinlock_key_t key;
+
+	/* If this fires, a new config grew real spinlock content and
+	 * the #if guard above needs updating.
+	 */
+	BUILD_ASSERT(sizeof(struct k_spinlock) <= 1);
+
+	key.key = arch_irq_lock();
+	return key;
+}
+#endif
+
+/**
+ * @brief Unlock the system clock.
+ *
+ * Releases the kernel timer lock previously acquired with
+ * sys_clock_lock().  Provided for drivers with special needs;
+ * most drivers should use sys_clock_announce_locked() which
+ * handles unlocking automatically.
+ *
+ * @param key Lock key returned by sys_clock_lock().
+ */
+#if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
+void sys_clock_unlock(k_spinlock_key_t key);
+#else
+static inline void sys_clock_unlock(k_spinlock_key_t key)
+{
+	arch_irq_unlock(key.key);
+}
+#endif
+
+#if defined(CONFIG_TEST) || defined(CONFIG_ASSERT)
+/**
+ * @brief Check whether the system clock lock is currently held.
+ *
+ * Analog of z_spin_is_locked() for the timer lock exposed via
+ * sys_clock_lock().  Intended for assertions in timer driver callbacks
+ * (sys_clock_set_timeout, sys_clock_elapsed, sys_clock_idle_exit) that
+ * rely on the kernel having taken the lock before calling them.
+ *
+ * @return true if the system clock lock is held.
+ */
+bool sys_clock_is_locked(void);
+#endif
+
+/**
+ * @brief Set system clock timeout
+ *
+ * Informs the system clock driver that the next needed call to
+ * sys_clock_announce() will not be until the specified number of ticks
+ * from the current time have elapsed.  Note that spurious calls
+ * to sys_clock_announce() are allowed (i.e. it's legal to announce
+ * every tick and implement this function as a noop), the requirement
+ * is that one tick announcement should occur within one tick BEFORE
+ * the specified expiration (that is, passing ticks==1 means "announce
+ * the next tick", this convention was chosen to match legacy usage).
+ * Similarly a ticks value of zero is legal: it simply indicates the
+ * kernel would like the next tick announcement as soon as possible.
+ *
+ * No tick count carries a meaning of its own.  The driver arms what it is
+ * asked for, clamping to what its hardware can hold and announcing the ticks
+ * that did elapse.
+ *
+ * The two conditions a driver used to infer from the tick value now have
+ * their own entry points: sys_clock_no_timeout() for "no timeout is pending"
+ * and sys_clock_idle_enter() for "the CPU is going to sleep".
+ *
+ * A final note about SMP: note that the call to sys_clock_set_timeout()
+ * is made on any CPU, and reflects the next timeout desired globally.
+ * The resulting calls(s) to sys_clock_announce() must be properly
+ * serialized by the driver such that a given tick is announced
+ * exactly once across the system.  The kernel does not (cannot,
+ * really) attempt to serialize things by "assigning" timeouts to
+ * specific CPUs.
+ *
+ * @note This function is called by the kernel with the system clock
+ * lock held.
+ *
+ * @param ticks Timeout in tick units
+ * @param idle Deprecated, and always false when the kernel calls this
+ *        function: idle entry is notified through sys_clock_idle_enter(),
+ *        whose fallback passes true here.  Scheduled for removal in a future
+ *        release; new code must ignore it.
+ */
+void sys_clock_set_timeout(uint32_t ticks, bool idle);
+
+/**
+ * @brief Timer idle exit notification
+ *
+ * This notifies the timer driver that the system is exiting the idle
+ * and allows it to do whatever bookkeeping is needed to restore timer
+ * operation and compute elapsed ticks.
+ *
+ * @note Legacy timer drivers also use this opportunity to call back
+ * into sys_clock_announce() to notify the kernel of expired ticks.
+ * This is allowed for compatibility, but not recommended.  The kernel
+ * will figure that out on its own.
+ */
+void sys_clock_idle_exit(void);
+
+/**
+ * @brief Announce time progress to the kernel
+ *
+ * Informs the kernel that the specified number of ticks have elapsed
+ * since the last call to sys_clock_announce() (or system startup for
+ * the first call).  The timer driver is expected to deliver these
+ * announcements as close as practical (subject to hardware and
+ * latency limitations) to tick boundaries.
+ *
+ * The caller must already hold the system clock lock obtained via
+ * sys_clock_lock().  The key is consumed: the lock is released when
+ * this function returns.
+ *
+ * This is the preferred interface for timer ISRs that need to update
+ * driver-internal state (e.g. cycle counter baseline) atomically with
+ * the kernel tick accounting.  See sys_clock_lock() for example usage.
+ *
+ * @param ticks Elapsed time, in ticks
+ * @param key Lock key obtained from sys_clock_lock().
+ */
+void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key);
+
+/**
+ * @brief Announce time progress to the kernel (legacy wrapper)
+ *
+ * Convenience wrapper around @ref sys_clock_announce_locked that
+ * acquires the system clock lock internally.  New drivers should
+ * prefer sys_clock_lock() + sys_clock_announce_locked() to protect
+ * driver state and tick accounting under a single lock.
+ *
+ * @param ticks Elapsed time, in ticks
+ */
+static inline void sys_clock_announce(uint32_t ticks)
+{
+	sys_clock_announce_locked(ticks, sys_clock_lock());
+}
+
+/**
+ * @brief Ticks elapsed since last sys_clock_announce() call
+ *
+ * Queries the clock driver for the current time elapsed since the
+ * last call to sys_clock_announce() was made.  The kernel will call
+ * this with appropriate locking, the driver needs only provide an
+ * instantaneous answer.
+ *
+ * @note This function is called by the kernel with the system clock
+ * lock held.
+ */
+uint32_t sys_clock_elapsed(void);
+
+/**
+ * @brief Disable system timer.
+ *
+ * @note Not all system timer drivers has the capability of being disabled.
+ * The config @kconfig{CONFIG_SYSTEM_TIMER_HAS_DISABLE_SUPPORT} can be used to
+ * check if the system timer has the capability of being disabled.
+ */
+void sys_clock_disable(void);
+
+/**
+ * @brief Notify the timer driver that no timeout is pending.
+ *
+ * Called by the kernel in place of sys_clock_set_timeout() when the timeout
+ * queue is empty and @kconfig{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} is enabled.
+ * No tick announcement is forthcoming and the system does not care about
+ * precise uptime keeping, so the driver may do something to save resources:
+ * mask the wakeup, program the longest interval the hardware can hold, or
+ * both.  Normal operation resumes at the next sys_clock_set_timeout().
+ *
+ * The CPU keeps running, so sys_clock_cycle_get_32() and
+ * sys_clock_cycle_get_64() must keep counting: a thread can still call
+ * k_cycle_get_32() or k_busy_wait().  A driver whose cycle counter is driven
+ * by the timer it would stop can therefore only mask the interrupt.  One
+ * whose cycle counter lives in a different clock or power domain may stop
+ * more.  Stopping the time base belongs in sys_clock_idle_enter().
+ *
+ * Unlike sys_clock_disable(), this is not a teardown.
+ *
+ * The hook is optional.  Without it, sys_clock_set_timeout() is asked for the
+ * longest wait it can express, UINT32_MAX ticks.  That is numerically what
+ * K_TICKS_FOREVER was here, so a driver that has not migrated and still keys
+ * on that value stops its clock as it always did.
+ */
+void sys_clock_no_timeout(void);
+
+/**
+ * @brief Notify the timer driver that the CPU is entering low-power idle.
+ *
+ * Called from the power-management idle path when the CPU is about to sleep.
+ * A driver that hands off to a low-power wakeup timer, or otherwise
+ * reconfigures itself for sleep, does so here.  sys_clock_idle_exit() undoes
+ * it on the way out.  A driver with no low-power handling does not need to
+ * implement this hook.
+ *
+ * The hook is optional.  Without it, sys_clock_set_timeout() is called with
+ * its deprecated idle argument set to true, which keeps a driver keying its
+ * low-power handling on that argument working.  It goes with the argument, by
+ * which time a platform using the power management facility is expected to
+ * have implemented sys_clock_idle_enter() itself.
+ *
+ * @param ticks Ticks until the next expected wakeup, or SYS_CLOCK_IDLE_FOREVER
+ *        when nothing needs to wake the CPU and the uptime accounting is
+ *        allowed to drift, in which case the driver may stop its time base.
+ *        Only the calling CPU is going idle: a driver whose time base is
+ *        shared between CPUs must ensure only the last CPU going idle stops
+ *        the clock.
+ */
+void sys_clock_idle_enter(uint32_t ticks);
+
+/**
+ * @brief Hardware cycle counter
+ *
+ * Timer drivers are generally responsible for the system cycle
+ * counter as well as the tick announcements.  This function is
+ * generally called out of the architecture layer (@see
+ * arch_k_cycle_get_32()) to implement the cycle counter, though the
+ * user-facing API is owned by the architecture, not the driver.  The
+ * rate must match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
+ *
+ * @note
+ * If the counter clock is large enough for this to wrap its full range
+ * within a few seconds (i.e. CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC is greater
+ * than 50Mhz) then it is recommended to also implement
+ * sys_clock_cycle_get_64().
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 32 bit space, wrapping at 0xffffffff.  Hardware
+ * with fewer bits of precision in the timer is expected to synthesize
+ * a 32 bit count.
+ */
+uint32_t sys_clock_cycle_get_32(void);
+
+/**
+ * @brief 64 bit hardware cycle counter
+ *
+ * As for sys_clock_cycle_get_32(), but with a 64 bit return value.
+ * Not all hardware has 64 bit counters.  This function need be
+ * implemented only if CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER is set.
+ *
+ * @note
+ * If the counter clock is large enough for sys_clock_cycle_get_32() to wrap
+ * its full range within a few seconds (i.e. CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+ * is greater than 50Mhz) then it is recommended to implement this API.
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 64 bit space, wrapping at 2^64-1.  Hardware with
+ * fewer bits of precision in the timer is generally not expected to
+ * implement this API.
+ */
+uint64_t sys_clock_cycle_get_64(void);
+
+#if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE) || defined(__DOXYGEN__)
+/**
+ * @brief Update the system timer frequency at runtime.
+ *
+ * @kconfig_dep{CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE}
+ *
+ * Publish a new system timer clock frequency.
+ *
+ * Platforms that can change the system timer clock rate at runtime must
+ * call this function after the clock change has been applied.
+ *
+ * The kernel provides a weak default implementation that only updates the
+ * stored frequency value used by sys_clock_hw_cycles_per_sec().
+ *
+ * System timer drivers that cache derived constants or need to reprogram
+ * hardware on a frequency change should provide a strong override of this
+ * function. Driver overrides must also ensure the stored frequency returned
+ * by sys_clock_hw_cycles_per_sec() is updated.
+ *
+ * @note This is a kernel/platform hook. Application code must not call it.
+ *
+ * Notes:
+ * - @p new_hz is the frequency of the system timer's clock source.
+ * - If @p new_hz is 0, the update is ignored.
+ * - If @p new_hz is unchanged from the previous value, this function is a no-op.
+ *
+ * @param[in] new_hz New system timer clock frequency, in Hz.
+ */
+void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz);
+#endif /* defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE) || defined(__DOXYGEN__) */
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_ */

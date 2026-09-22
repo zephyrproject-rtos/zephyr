@@ -1,0 +1,49 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA8 SPI_B controller
+
+compatible: "renesas,ra8-spi-b"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  tx-dtc:
+    type: boolean
+    description: |
+      Use DTC (Data Transfer Controller) for TX transfers.
+
+  rx-dtc:
+    type: boolean
+    description: |
+      Use DTC (Data Transfer Controller) for RX transfers.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    enum: ["rxi", "txi", "tei", "eri"]
+    description: |
+      Names of the interrupts used by the SPI controller.
+
+  dma-names:
+    enum: ["tx", "rx"]
+    description: |
+      Names of the DMA channels used for TX and RX transfers.

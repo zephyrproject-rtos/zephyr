@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2019-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2021 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Default Flash planning for bl5340_dvk CPUAPP (Application MCU).
+ *
+ * Zephyr build for BL5340 with ARM TrustZone-M support
+ * implies building Secure and Non-Secure Zephyr images.
+ *
+ * Secure image will be placed, by default, in flash0
+ * (or in slot0, if MCUboot is present).
+ * Secure image will use sram0 for system memory.
+ *
+ * Non-Secure image will be placed in slot0_ns, and use
+ * sram0_ns for system memory.
+ *
+ * Note that the Secure image only requires knowledge of
+ * the beginning of the Non-Secure image (not its size).
+ */
+
+&slot0_partition {
+	reg = <0x00010000 0xa0000>;
+};
+
+&slot0_ns_partition {
+	reg = <0x000b0000 0x40000>;
+};
+
+&slot1_partition {
+	reg = <0x00000000 0xa0000>;
+};
+
+&slot1_ns_partition {
+	reg = <0x000a0000 0x40000>;
+};
+
+/* Default SRAM planning when building for nRF5340 with
+ * ARM TrustZone-M support
+ * - Lowest 256 kB SRAM allocated to Secure image (sram0_s)
+ * - Middle 192 kB allocated to Non-Secure image (sram0_ns)
+ * - Upper 64 kB SRAM allocated as Shared memory (sram0_shared)
+ *   (see bl5340_dvk_shared_sram_planning_conf.dtsi)
+ */
+&sram0_image {
+	reg = <0x20000000 DT_SIZE_K(448)>;
+};
+
+&sram0_s {
+	reg = <0x20000000 0x40000>;
+};
+
+&sram0_ns {
+	reg = <0x20040000 0x30000>;
+};
+
+/* Include shared RAM configuration file */
+#include "bl5340_dvk_nrf5340_shared_sram_planning_conf.dtsi"

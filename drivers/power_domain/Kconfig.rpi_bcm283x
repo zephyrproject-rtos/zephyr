@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config POWER_DOMAIN_RASPBERRYPI_BCM283X
+	bool "Raspberry Pi BCM283x power domain driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_BCM283X_POWER_ENABLED
+	select RASPBERRYPI_FIRMWARE
+	help
+	  Enable Driver for Raspberry Pi BCM283x power domain.
+
+if POWER_DOMAIN_RASPBERRYPI_BCM283X
+
+config POWER_DOMAIN_RASPBERRYPI_BCM283X_INIT_PRIORITY
+	int "Raspberry Pi BCM283x power domain init priority"
+	default 46
+	help
+	  Must be higher (later) than CONFIG_RASPBERRYPI_FIRMWARE_INIT_PRIORITY so the
+	  Raspberry Pi firmware interface is ready before this drivers initialization runs.
+
+endif

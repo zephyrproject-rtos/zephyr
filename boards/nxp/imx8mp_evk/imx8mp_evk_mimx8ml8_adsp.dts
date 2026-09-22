@@ -1,0 +1,39 @@
+/*
+ * Copyright 2021, 2023-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8m.dtsi>
+#include "imx8mp_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX 8MPLUS Audio DSP";
+	compatible = "nxp";
+
+	chosen {
+		zephyr,sram = &sram0;
+
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+};
+
+&micfil {
+	pinctrl-0 = <&pdm_default>;
+	pinctrl-names = "default";
+};
+
+&sai3 {
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};

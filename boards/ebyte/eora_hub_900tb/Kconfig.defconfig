@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EORA_HUB_900TB
+
+if LORA
+
+choice LORA_MODULE_BACKEND
+	default LORA_MODULE_BACKEND_NATIVE
+endchoice
+
+endif # LORA
+
+endif # BOARD_EORA_HUB_900TB

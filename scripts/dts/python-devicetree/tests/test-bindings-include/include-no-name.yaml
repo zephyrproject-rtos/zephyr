@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: |
+  Invalid include element: no name key is present.
+compatible: include-no-name
+include:
+  - property-allowlist: [x]

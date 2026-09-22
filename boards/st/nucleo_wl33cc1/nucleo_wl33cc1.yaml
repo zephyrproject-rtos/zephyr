@@ -1,0 +1,19 @@
+identifier: nucleo_wl33cc1
+name: ST NUCLEO-WL33CC1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+flash: 256
+supported:
+  - arduino_i2c
+  - arduino_spi
+  - dma
+  - gpio
+  - i2c
+  - rtc
+  - serial
+  - spi
+vendor: st

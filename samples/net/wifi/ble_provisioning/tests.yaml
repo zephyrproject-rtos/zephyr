@@ -1,0 +1,21 @@
+sample:
+  name: Wi-Fi provisioning over BLE
+  description: Provision Wi-Fi credentials from a BLE central (phone app).
+common:
+  harness: bluetooth
+  tags:
+    - wifi
+    - bluetooth
+    - net
+tests:
+  sample.net.wifi.ble_provisioning.build.no_blobs:
+    build_only: true
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp8684_devkitm
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore

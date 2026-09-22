@@ -1,0 +1,244 @@
+#
+# Copyright (c) 2020 Siddharth Chandrasekaran <siddharth@embedjournal.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# OSDP_NUM_CONNECTED_PD is used in CP mode. It is a constant set to 1 when
+# operating as a PD.
+config OSDP_NUM_CONNECTED_PD
+	int
+	default 1
+	help
+	  In PD mode, number of connected PDs is always 1 and cannot
+	  be configured.
+
+config OSDP_PD_COMMAND_QUEUE_SIZE
+	int "OSDP Peripheral Device command queue size"
+	default 16
+	help
+	  The number of commands that can be queued to a given PD. In CP mode,
+	  the queue size is multiplied by number of connected PD so this can grow
+	  very quickly.
+
+config OSDP_PD_ADDRESS
+	int "Peripheral Device Address"
+	default 1
+	range 1 126
+	help
+	  The 7 least significant bits represent the address of the PD to which
+	  the message is directed, or the address of the PD sending the reply.
+	  Address 0x7F is reserved as a broadcast address to which all PDs would
+	  respond.
+
+if OSDP_SC_ENABLED
+
+config OSDP_PD_SCBK
+	string "Secure Channel Base Key (SCBK)"
+	default "NONE"
+	help
+	  Hexadecimal string representation of the 16 byte OSDP PD Secure
+	  Channel Base Key. When this field is sent to "NONE", the PD is set to
+	  "Install Mode". In this mode, the PD would allow a CP to setup a secure
+	  channel with default SCBK. Once as secure channel is active with the
+	  default key, the CP can send a KEYSET command to set new keys to the PD.
+	  It is up to the user to make sure that the PD enters the "Install Mode"
+	  only during provisioning time (controlled environment).
+
+endif # OSDP_SC_ENABLED
+
+menu "Peripheral Device ID Information"
+
+config OSDP_PD_ID_VENDOR_CODE
+	hex "PD Vendor Code"
+	default 0x001A2B3C
+	range 0 0x00FFFFFF
+	help
+	  IEEE assigned OUI. Least 24 bits are valid.
+
+config OSDP_PD_ID_MODEL
+	int "PD Product Model Number"
+	default 1
+	range 0 $(UINT8_MAX)
+	help
+	  Manufacturer's model number. Least 8 bits are valid.
+
+config OSDP_PD_ID_VERSION
+	int "PD Product Version"
+	default 1
+	range 0 $(UINT8_MAX)
+	help
+	  Manufacturer's version of this product. Least 8 bits are valid.
+
+config OSDP_PD_ID_SERIAL_NUMBER
+	hex "PD Serial Number"
+	default 0xCAFEBABE
+	range 0 0xFFFFFFFF
+	help
+	  A 4-byte serial number for the PD.
+
+config OSDP_PD_ID_FIRMWARE_VERSION
+	hex "PD Firmware Version"
+	default 0x00010100
+	range 0 0x00FFFFFF
+	help
+	  Firmware revision code.
+	    - Bit 0-7  : build version number;
+	    - Bit 8-15 : minor version number;
+	    - Bit 16-23: major version number;
+
+endmenu # "PD ID Information"
+
+menu "OSDP PD Capabilities"
+
+menu "Contact Status Monitoring"
+
+config OSDP_PD_CAP_CONTACT_STATUS_MONITORING_COMP_LEVEL
+	int "Compliance Level"
+	default 0
+	range 0 4
+	help
+	  Possible values:
+	  - 01: PD monitors and reports the state of the circuit without any
+	  supervision. The PD encodes the circuit status per its default
+	  interpretation of contact state to active/inactive status.
+	  - 02: Like 01, plus: The PD accepts configuration of the encoding of the
+	  open/closed circuit status to the reported active/inactive status. (User
+	  may configure each circuit as "normally closed" or "normally open".)
+	  - 03: Like 02, plus: PD supports supervised monitoring. The operating mode
+	  for each circuit is determined by configuration settings.
+	  - 04: Like 03, plus: the PD supports custom End-Of-Line settings within
+	  the Manufacturer's guidelines.
+
+config OSDP_PD_CAP_CONTACT_STATUS_MONITORING_NUM_ITEMS
+	int "Number of items"
+	default 0
+	help
+	  The number of Inputs
+
+endmenu # "Contact Status Monitoring"
+
+menu "Output Control"
+
+config OSDP_PD_CAP_OUTPUT_CONTROL_COMP_LEVEL
+	int "Compliance Level"
+	default 0
+	range 0 4
+	help
+	  Possible values:
+	  - 01: The PD is able to activate and deactivate the Output per direct
+	  command from the CP.
+	  - 02: Like 01, plus: The PD is able to accept configuration of the Output
+	  driver to set the inactive state of the Output. The typical state of an
+	  inactive Output is the state of the Output when no power is applied to the
+	  PD and the output device (relay) is not energized. The inverted drive
+	  setting causes the PD to energize the Output during the inactive state and
+	  de-energize the Output during the active state. This feature allows the
+	  support of "fail-safe/fail-secure" operating modes.
+	  - 03: Like 01, plus: The PD is able to accept timed commands to the
+	  Output. A timed command specifies the state of the Output for the
+	  specified duration.
+	  - 04: Like 02 and 03 - normal/inverted drive and timed operation.
+
+config OSDP_PD_CAP_OUTPUT_CONTROL_NUM_ITEMS
+	int "Number of items"
+	default 0
+	help
+	  The number of Outputs.
+
+endmenu # "Output Control"
+
+menu "LED Control"
+
+config OSDP_PD_CAP_READER_LED_CONTROL_COMP_LEVEL
+	int "Compliance Level"
+	default 0
+	range 0 4
+	help
+	  Possible values:
+	  - 01: the PD support on/off control only
+	  - 02: the PD supports timed commands
+	  - 03: like 02, plus bi-color LEDs
+	  - 04: like 02, plus tri-color LEDs
+
+config OSDP_PD_CAP_READER_LED_CONTROL_NUM_ITEMS
+	int "Number of items"
+	default 0
+	help
+	  The number of LEDs per reader.
+
+endmenu # "LED Control"
+
+menu "Audible Output"
+
+config OSDP_PD_CAP_READER_AUDIBLE_OUTPUT_COMP_LEVEL
+	int "Compliance Level"
+	default 0
+	range 0 2
+	help
+	  Possible values:
+	  - 01: the PD support on/off control only
+	  - 02: the PD supports timed commands
+
+config OSDP_PD_CAP_READER_AUDIBLE_OUTPUT_NUM_ITEMS
+	int "Number of items"
+	default 0
+	help
+	  The number of audible annunciators per reader
+
+endmenu # "Audible Output"
+
+menu "Text Output"
+
+config OSDP_PD_CAP_READER_TEXT_OUTPUT_COMP_LEVEL
+	int "Compliance Level"
+	default 0
+	range 0 4
+	help
+	  Possible values:
+	  - 00: The PD has no text display support
+	  - 01: The PD supports 1 row of 16 characters
+	  - 02: the PD supports 2 rows of 16 characters
+	  - 03: the PD supports 4 rows of 16 characters
+	  - 04: TBD.
+
+config OSDP_PD_CAP_READER_TEXT_OUTPUT_NUM_ITEMS
+	int "Number of items"
+	default 0
+	help
+	  Number of textual displays per reader
+
+endmenu # "Text Output"
+
+menu "Card Data Format"
+
+config OSDP_PD_CAP_CARD_DATA_FORMAT_COMP_LEVEL
+	int "Compliance Level"
+	default 0
+	range 0 3
+	help
+	  Possible values:
+	  - 01: the PD sends card data to the CP as array of bits, not exceeding
+	  1024 bits.
+	  - 02: the PD sends card data to the CP as array of BCD characters, not
+	  exceeding 256 characters.
+	  - 03: the PD can send card data to the CP as array of bits, or as an
+	  array of BCD characters.
+
+endmenu # "Card Data Format"
+
+menu "Time Keeping"
+
+config OSDP_PD_CAP_TIME_KEEPING_COMP_LEVEL
+	int "Compliance Level"
+	default 0
+	range 0 2
+	help
+	  Possible values:
+	  - 00: The PD does not support time/date functionality
+	  - 01: The PD understands time/date settings per Command osdp_TDSET
+	  - 02: The PD is able to locally update the time and date
+
+endmenu # "Time Keeping"
+
+endmenu # "OSDP PD Capabilities"

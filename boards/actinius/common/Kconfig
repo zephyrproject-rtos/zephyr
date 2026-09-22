@@ -1,0 +1,6 @@
+# Copyright (c) 2022 Actinius
+# SPDX-License-Identifier: Apache-2.0
+
+module = ACTINIUS_BOARD_CONTROL
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"

@@ -1,0 +1,15 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMXRT7XX
+
+rsource "*/Kconfig"
+
+config IMAGE_VECTOR_TABLE_OFFSET
+	default 0x4000 if NXP_IMXRT_BOOT_HEADER
+
+config GLIKEY_MCUX_GLIKEY
+	default y
+	bool "Use glikey MCUX Driver"
+
+endif # SOC_SERIES_IMXRT7XX

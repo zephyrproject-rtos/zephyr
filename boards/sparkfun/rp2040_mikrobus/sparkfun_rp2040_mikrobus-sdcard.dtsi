@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		sdhc0 = &sdhc0;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		status = "okay";
+		reg = <0>;
+
+		spi-max-frequency = <DT_FREQ_M(12)>;
+
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+
+			disk-name = "SD";
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};

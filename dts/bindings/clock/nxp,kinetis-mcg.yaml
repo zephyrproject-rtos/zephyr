@@ -1,0 +1,32 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Kinetis Multipurpose Clock generator (MCG) IP node
+
+compatible: "nxp,kinetis-mcg"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+  fcrdiv:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Internal Reference Clock Divider.
+      Division factor is given as 2^fcrdiv.
+
+  lircdiv2:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Second Low-frequency Internal Reference Clock Divider.
+      Division factor is given as 2^lircdiv2.
+
+clock-cells:
+  - name

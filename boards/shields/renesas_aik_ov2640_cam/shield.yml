@@ -1,0 +1,6 @@
+shield:
+  name: renesas_aik_ov2640_cam
+  full_name: Renesas AIK OV2640 Camera Module
+  vendor: renesas
+  supported_features:
+    - video

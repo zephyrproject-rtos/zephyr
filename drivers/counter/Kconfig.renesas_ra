@@ -1,0 +1,21 @@
+# Renesas RA Family
+
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_RA_AGT
+	bool "Renesas RA AGT driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_AGT_COUNTER_ENABLED
+	select USE_RA_FSP_AGT
+	help
+	  Enable support for Renesas Low Power Asynchronous General Purpose Timer (AGT) driver.
+
+config COUNTER_RENESAS_RA_ULPT
+	bool "Renesas RA ULPT driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_ULPT_COUNTER_ENABLED
+	depends on !RENESAS_RA_ULPT_TIMER
+	select USE_RA_FSP_ULPT
+	help
+	  Enable support for Renesas RA Ultra-Low-Power Timer (ULPT) Driver.

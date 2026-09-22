@@ -1,0 +1,8 @@
+sample:
+  name: Console over USB
+tests:
+  sample.usb.legacy.console:
+    depends_on:
+      - usb_device
+    tags: usb
+    build_only: true

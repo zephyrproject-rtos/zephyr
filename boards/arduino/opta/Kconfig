@@ -1,0 +1,6 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_OPTA
+	select BOARD_EARLY_INIT_HOOK
+	select BOARD_LATE_INIT_HOOK if FLASH_STM32_QSPI_GENERIC_READ

@@ -1,0 +1,10 @@
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_test;
+	};
+
+	bt_hci_test: bt_hci_test {
+		compatible = "zephyr,bt-hci-test";
+		status = "okay";
+	};
+};

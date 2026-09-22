@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Aerlync Labs Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC84x on chip flash controller (ROM IAP, FMC)
+
+compatible: "nxp,iap-fmc84x"
+
+include:
+  - name: flash-controller.yaml
+
+properties:
+  clocks:
+    required: true
+    description: Clock required for the flash controller.
+
+  flash-access-time:
+    type: int
+    required: true
+    enum: [0, 1, 2]
+    description: |
+      Controls flash read wait-state count written to FLASHCFG.FLASHTIM
+      - 0 : 1 system clock, 18 MHz
+      - 1 : 2 system clocks, 24 MHz
+      - 2 : 3 system clocks, 30 MHz (hardware reset default)
+      Must match the actual system clock frequency to avoid flash read errors.

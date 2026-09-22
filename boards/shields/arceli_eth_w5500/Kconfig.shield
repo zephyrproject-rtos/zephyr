@@ -1,0 +1,5 @@
+# Copyright (c) 2022 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ARCELI_ETH_W5500
+	def_bool $(shields_list_contains,arceli_eth_w5500)

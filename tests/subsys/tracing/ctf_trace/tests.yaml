@@ -1,0 +1,12 @@
+tests:
+  tracing.ctf.trace:
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: function
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - tracing
+      - pytest

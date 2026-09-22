@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: PWM-driven passive piezo buzzer
+
+description: |
+    The PWM channel's period sets the audio frequency; the duty cycle sets the perceived volume
+    (50% is loudest for piezos, 0% and 100% are silent). Applications drive the buzzer through the
+    generic buzzer API in <zephyr/drivers/buzzer.h>.
+
+compatible: "pwm-buzzer"
+
+include: base.yaml
+
+properties:
+  pwms:
+    required: true
+    type: phandle-array
+    description: |
+      PWM specifier for the channel wired to the buzzer. The period cell conventionally encodes
+      the buzzer's natural operating frequency (typically the piezo element's mechanical
+      resonance, e.g. ``PWM_HZ(2700)``); the driver overrides the period at runtime as the
+      application requests specific tones, so the DT value acts as a documentary default rather
+      than as a hard configuration. Polarity flags are forwarded to the PWM controller verbatim.

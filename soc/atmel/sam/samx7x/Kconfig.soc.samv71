@@ -1,0 +1,106 @@
+# Atmel SAM V71 MCU series
+
+# Copyright (c) 2016 Piotr Mienkowski
+# Copyright (c) 2019-2024 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ATMEL_SAMV71
+	bool
+	select SOC_SERIES_SAMX7X
+
+config SOC_ATMEL_SAMV71_REVB
+	bool
+	select SOC_SERIES_SAMX7X
+
+config SOC_SAMV71J19
+	bool
+	select SOC_ATMEL_SAMV71
+
+config SOC_SAMV71J20
+	bool
+	select SOC_ATMEL_SAMV71
+
+config SOC_SAMV71J21
+	bool
+	select SOC_ATMEL_SAMV71
+
+config SOC_SAMV71N19
+	bool
+	select SOC_ATMEL_SAMV71
+
+config SOC_SAMV71N20
+	bool
+	select SOC_ATMEL_SAMV71
+
+config SOC_SAMV71N21
+	bool
+	select SOC_ATMEL_SAMV71
+
+config SOC_SAMV71Q19
+	bool
+	select SOC_ATMEL_SAMV71
+
+config SOC_SAMV71Q20
+	bool
+	select SOC_ATMEL_SAMV71
+
+config SOC_SAMV71Q21
+	bool
+	select SOC_ATMEL_SAMV71
+
+config SOC_SAMV71J19B
+	bool
+	select SOC_ATMEL_SAMV71_REVB
+
+config SOC_SAMV71J20B
+	bool
+	select SOC_ATMEL_SAMV71_REVB
+
+config SOC_SAMV71J21B
+	bool
+	select SOC_ATMEL_SAMV71_REVB
+
+config SOC_SAMV71N19B
+	bool
+	select SOC_ATMEL_SAMV71_REVB
+
+config SOC_SAMV71N20B
+	bool
+	select SOC_ATMEL_SAMV71_REVB
+
+config SOC_SAMV71N21B
+	bool
+	select SOC_ATMEL_SAMV71_REVB
+
+config SOC_SAMV71Q19B
+	bool
+	select SOC_ATMEL_SAMV71_REVB
+
+config SOC_SAMV71Q20B
+	bool
+	select SOC_ATMEL_SAMV71_REVB
+
+config SOC_SAMV71Q21B
+	bool
+	select SOC_ATMEL_SAMV71_REVB
+
+config SOC
+	default "samv71j19" if SOC_SAMV71J19
+	default "samv71j20" if SOC_SAMV71J20
+	default "samv71j21" if SOC_SAMV71J21
+	default "samv71n19" if SOC_SAMV71N19
+	default "samv71n20" if SOC_SAMV71N20
+	default "samv71n21" if SOC_SAMV71N21
+	default "samv71q19" if SOC_SAMV71Q19
+	default "samv71q20" if SOC_SAMV71Q20
+	default "samv71q21" if SOC_SAMV71Q21
+	default "samv71j19b" if SOC_SAMV71J19B
+	default "samv71j20b" if SOC_SAMV71J20B
+	default "samv71j21b" if SOC_SAMV71J21B
+	default "samv71n19b" if SOC_SAMV71N19B
+	default "samv71n20b" if SOC_SAMV71N20B
+	default "samv71n21b" if SOC_SAMV71N21B
+	default "samv71q19b" if SOC_SAMV71Q19B
+	default "samv71q20b" if SOC_SAMV71Q20B
+	default "samv71q21b" if SOC_SAMV71Q21B

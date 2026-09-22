@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2026 Fiona Behrens
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v203/ch32v203c8t.dtsi>
+
+#include "ch32v203-pinctrl.dtsi"
+
+/ {
+	model = "ch32v203c8t6evt";
+	compatible = "wch,ch32v203", "wch,ch32v203c8t6";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+/* we technically have PD0 and PD1, but the LSE is on those pins, so keep it disabled */
+&gpiod {
+	status = "disabled";
+};
+
+&usart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart3_default>;
+	pinctrl-names = "default";
+};

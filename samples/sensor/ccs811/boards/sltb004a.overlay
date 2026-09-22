@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2020 Christian Taedcke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	status = "okay";
+};

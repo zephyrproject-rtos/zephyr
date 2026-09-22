@@ -1,0 +1,28 @@
+# Copyright 2024 Ian Morris
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Extension of the Bluetooth H:4 HCI driver for a Renesas DA1453x based
+  controller, allowing control of the GPIO used to reset the DA1453x.
+
+compatible: "renesas,bt-hci-da1453x"
+
+include: base.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      This gpio is used to reset the DA1453x.
+
+  reset-assert-duration-ms:
+    type: int
+    description: |
+      Minimum duration to activate the reset-gpios pin.
+      If not specified no delay beyond the code path execution time is guaranteed.
+
+  boot-duration-ms:
+    type: int
+    default: 200
+    description: |
+      Minimum time to wait for the DA1453x to boot following a hardware reset.

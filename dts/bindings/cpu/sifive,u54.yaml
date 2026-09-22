@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFive U54 Standard Core CPU
+
+compatible: "sifive,u54"
+
+include: sifive-common.yaml

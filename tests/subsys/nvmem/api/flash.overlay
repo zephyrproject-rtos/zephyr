@@ -1,0 +1,8 @@
+/**
+ * Copyright (c) 2025, Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+test_nvmem0: &flashcontroller0 {};
+
+#include "common.dtsi"

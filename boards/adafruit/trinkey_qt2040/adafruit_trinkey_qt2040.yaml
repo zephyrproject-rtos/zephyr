@@ -1,0 +1,19 @@
+identifier: adafruit_trinkey_qt2040
+name: Adafruit Trinkey QT2040
+type: mcu
+arch: arm
+flash: 8192
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock
+  - counter
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - watchdog
+  - zephyr_i2c

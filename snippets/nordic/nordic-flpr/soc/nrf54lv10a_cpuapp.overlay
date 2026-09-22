@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf54lv10a_ipc_shared_ram.dtsi>
+
+/ {
+	soc {
+		cpuflpr_sram_code_data: memory@2001fc00 {
+			compatible = "mmio-sram";
+			reg = <0x2001fc00 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2001fc00 DT_SIZE_K(64)>;
+			status = "reserved";
+		};
+	};
+};
+
+&ipc0 {
+	status = "okay";
+	tx-region = <&cpuapp_cpuflpr_ipc_shm>;
+	rx-region = <&cpuflpr_cpuapp_ipc_shm>;
+};
+
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(123)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(123)>;
+};
+
+&cpuapp_rram {
+	reg = <0x0 DT_SIZE_K(948)>;
+	ranges = <0x0 0x0 DT_SIZE_K(948)>;
+
+	/delete-node/ partitions;
+};
+
+&rram_controller {
+	cpuflpr_rram: rram@ed000 {
+		compatible = "soc-nv-flash";
+		reg = <0xed000 DT_SIZE_K(64)>;
+		ranges = <0x0 0xed000 DT_SIZE_K(64)>;
+		erase-block-size = <0x1000>;
+		write-block-size = <0x10>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};
+
+&uart20 {
+	status = "reserved";
+};
+
+&cpuflpr_vpr {
+	execution-memory = <&cpuflpr_sram_code_data>;
+	source-memory = <&cpuflpr_rram>;
+};
+
+&cpuapp_vevif_rx {
+	status = "okay";
+};
+
+&cpuapp_vevif_tx {
+	status = "okay";
+};
+
+#define WITH_FLPR_PARTITIONS
+#include <vendor/nordic/nrf54lv10a_cpuapp_partition.dtsi>

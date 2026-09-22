@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &pwm1;
+	};
+};
+
+&pwm1 {
+	status = "okay";
+};

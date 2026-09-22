@@ -1,0 +1,10 @@
+# Copyright (c) 2020 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+title: WIZnet W5500 Ethernet Controller
+
+description: W5500 standalone 10/100BASE-T Ethernet controller with SPI interface
+
+compatible: "wiznet,w5500"
+
+include: wiznet,ethernet-common.yaml

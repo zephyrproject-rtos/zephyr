@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HYDROGEN
+	bool
+
+config SOC_ELEMRV_H
+	bool
+	select SOC_SERIES_HYDROGEN
+
+config SOC_SERIES
+	default "hydrogen" if SOC_SERIES_HYDROGEN
+
+config SOC
+	default "elemrv_h" if SOC_ELEMRV_H

@@ -1,0 +1,20 @@
+/* Copyright (c) 2020 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		eeprom-1 = &i2c_eeprom;
+	};
+};
+
+&i2c0 {
+	i2c_eeprom: eeprom@57 {
+		compatible = "atmel,at24";
+		reg = <0x57>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};

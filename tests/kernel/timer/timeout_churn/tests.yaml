@@ -1,0 +1,21 @@
+common:
+  tags:
+    - kernel
+    - timer
+  timeout: 180
+tests:
+  kernel.timer.timeout_churn:
+    integration_platforms:
+      - mps2/an385
+      - qemu_cortex_m3
+      - qemu_or1k/qemu_or1k
+  kernel.timer.timeout_churn.realtime:
+    # The regime every networking test runs in: virtual time follows the
+    # wall clock, so emulated-timer reprogramming windows are reachable.
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=n
+    platform_allow:
+      - mps2/an385
+      - qemu_cortex_m3
+    integration_platforms:
+      - mps2/an385

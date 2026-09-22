@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SPC buffered bandgap output
+
+compatible: "nxp,spc-bandgap-buffer"
+
+include:
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-always-on
+      - regulator-boot-on

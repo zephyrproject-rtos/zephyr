@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Calian Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx ZynqMP DDR memory controller
+
+compatible: "xlnx,zynqmp-ddrc-2.40a"
+
+include: base.yaml

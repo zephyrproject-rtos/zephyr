@@ -1,0 +1,20 @@
+# Copyright Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic VBUS regulator for USB peripheral
+
+compatible: "nordic,vregusb-regulator"
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+
+properties:
+  reg:
+    required: true
+
+  regulator-name:
+    required: true

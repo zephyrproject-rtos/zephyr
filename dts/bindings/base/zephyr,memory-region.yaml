@@ -1,0 +1,12 @@
+# Copyright (c) 2021, CSIRO
+# SPDX-License-Identifier: Apache-2.0
+
+description: Compatible for devices resulting in linker memory regions
+
+compatible: "zephyr,memory-region"
+
+include: [base.yaml, "zephyr,memory-common.yaml"]
+
+properties:
+  zephyr,memory-region:
+    required: true

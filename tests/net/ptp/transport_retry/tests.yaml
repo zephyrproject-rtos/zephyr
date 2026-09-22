@@ -1,0 +1,21 @@
+common:
+  tags:
+    - net
+    - ptp
+    - unit
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+  depends_on: netif
+tests:
+  net.ptp.transport_retry: {}
+  net.ptp.transport_retry.ipv4:
+    extra_configs:
+      - CONFIG_NET_IPV4=y
+      - CONFIG_PTP_UDP_IPV4_PROTOCOL=y
+  net.ptp.transport_retry.ipv6:
+    extra_configs:
+      - CONFIG_NET_IPV6=y
+      - CONFIG_PTP_UDP_IPV6_PROTOCOL=y

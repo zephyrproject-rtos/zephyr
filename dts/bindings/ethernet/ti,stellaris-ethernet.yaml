@@ -1,0 +1,14 @@
+# Copyright (c) 2018 Zilogic Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI Stellaris Ethernet
+
+compatible: "ti,stellaris-ethernet"
+
+include: ethernet-controller.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true

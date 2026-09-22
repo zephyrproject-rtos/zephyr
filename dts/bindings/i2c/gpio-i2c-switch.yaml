@@ -1,0 +1,24 @@
+# Copyright (c) 2023, Ayush Singh <ayushdevel1325@gmail.com>
+# Copyright (c) 2021, Jason Kridner, BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO enabled analog switch to isolate devices from an I2C bus
+
+compatible: "gpio-i2c-switch"
+
+include: i2c-controller.yaml
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 0
+  controller:
+    type: phandle
+    required: true
+  gpios:
+    type: phandle-array
+    required: true

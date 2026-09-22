@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026, Xsight Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mhu0: mbox@88880000 {
+		compatible = "arm,mhuv2";
+		reg = <0x88880000 0x1000>, <0x88881000 0x1000>;
+		reg-names = "send", "recv";
+		interrupt-parent = <&nvic>;
+		interrupts = <10 0>;
+		#mbox-cells = <1>;
+	};
+};

@@ -1,0 +1,27 @@
+identifier: bgm220_ek4314a
+name: BGM220 Explorer Kit (BGM220-EK4314A)
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - clock_control
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - i2c
+  - led
+  - pinctrl
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

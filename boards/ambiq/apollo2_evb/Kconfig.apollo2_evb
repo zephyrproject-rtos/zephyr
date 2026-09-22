@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Linumiz GmbH
+# Author: Sri Surya  <srisurya@linumiz.com>
+
+config BOARD_APOLLO2_EVB
+	select SOC_APOLLO2

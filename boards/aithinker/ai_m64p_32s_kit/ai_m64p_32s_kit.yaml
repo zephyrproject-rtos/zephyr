@@ -1,0 +1,26 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ai_m64p_32s_kit
+name: Ai-Thinker M64P-32S Development Board
+type: mcu
+arch: riscv
+ram: 384
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - dma
+  - i2c
+  - spi
+  - flash
+  - pwm
+  - entropy
+  - crypto
+  - counter
+  - netif:wifi
+  - bluetooth
+vendor: bflb

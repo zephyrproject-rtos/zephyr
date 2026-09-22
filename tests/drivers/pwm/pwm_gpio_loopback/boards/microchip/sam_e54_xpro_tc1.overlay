@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect the PA07 to PC05 */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	zephyr,user {
+		pwms = <&tc1 1 PWM_MSEC(1) 0>;
+		gpios = <&portc 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&tc1 {
+	status = "okay";
+	compatible = "microchip,tc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tc1_pwm_default>;
+	pinctrl-names = "default";
+	prescaler = <4>;
+};
+
+&pinctrl {
+	tc1_pwm_default: tc1_pwm_default {
+		group1 {
+			pinmux = <PA7E_TC1_WO1>;
+		};
+	};
+};

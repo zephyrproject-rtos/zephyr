@@ -1,0 +1,23 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&iomuxc1 {
+	iomuxc1_ptf22_lpuart7_tx: IOMUXC_PTF22_LPUART7_TX {
+		pinmux = <0x298c0158 0x4 0x298c09e0 0x3 0x298c0158>;
+	};
+
+	iomuxc1_ptf23_lpuart7_rx: IOMUXC_PTF23_LPUART7_RX {
+		pinmux = <0x298c015c 0x4 0x298c09dc 0x3 0x298c015c>;
+	};
+};
+
+&pinctrl {
+	lpuart7_default: lpuart7_default {
+		group0 {
+			pinmux = <&iomuxc1_ptf22_lpuart7_tx>, <&iomuxc1_ptf23_lpuart7_rx>;
+		};
+	};
+};

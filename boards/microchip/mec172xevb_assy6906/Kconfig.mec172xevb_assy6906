@@ -1,0 +1,5 @@
+# Copyright (c) 2021, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MEC172XEVB_ASSY6906
+	select SOC_MEC172X_NSZ

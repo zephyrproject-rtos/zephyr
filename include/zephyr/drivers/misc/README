@@ -1,0 +1,13 @@
+Miscellaneous Drivers
+
+This directory holds headers for drivers of peripheral ICs that have no
+matching generic Zephyr driver class, and whose functionality is specific
+to the device rather than to an SoC vendor.
+
+SoC- and vendor-specific functionality does not belong here. See the
+Vendor-Specific API Placement Policy
+(doc/develop/api/vendor_interfaces_policy.rst): such code goes under
+soc/<vendor>/.
+
+Existing subdirectories predate that policy and are retained for
+compatibility. Do not add new SoC-vendor-specific headers here.

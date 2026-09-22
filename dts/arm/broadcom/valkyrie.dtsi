@@ -1,0 +1,56 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright 2018 Broadcom.
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <broadcom/valkyrie-irq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		sram0: memory@400000 {
+			device_type = "memory";
+			reg = <0x00400000 0x30000>;
+		};
+
+		uart0: uart@40020000 {
+			compatible = "ns16550";
+			reg = <0x40020000 0x400>;
+			clock-frequency = <25000000>;
+			interrupts = <MCU_AON_UART_INTR 3>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart1: uart@48100000 {
+			compatible = "ns16550";
+			reg = <0x48100000 0x400>;
+			clock-frequency = <100000000>;
+			interrupts = <UART0_INTR 3>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

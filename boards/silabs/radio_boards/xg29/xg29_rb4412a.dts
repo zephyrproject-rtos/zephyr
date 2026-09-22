@@ -1,0 +1,212 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg29/efr32mg29b140f1024im40.dtsi>
+#include <zephyr/dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include "xg29_common.dtsi"
+#include "xg29_rb4412a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs xG29-RB4412A";
+	compatible = "silabs,xg29_rb4412a", "silabs,efr32mg29";
+
+	chosen {
+		zephyr,display = &ls013b7dh03;
+	};
+
+	aliases {
+		adc0 = &adc0;
+		dht0 = &si7021;
+		pwm-led0 = &pwm_led0;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&letimer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	joystick {
+		compatible = "adc-keys";
+		io-channels = <&adc0 0>;
+		keyup-threshold-mv = <3300>;
+
+		select-key {
+			press-thresholds-mv = <33>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		left-key {
+			press-thresholds-mv = <1980>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		down-key {
+			press-thresholds-mv = <1650>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		up-key {
+			press-thresholds-mv = <2831>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		right-key {
+			press-thresholds-mv = <2533>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
+	display_enable: sensor_enable: gpio_switch_0 {
+		compatible = "regulator-fixed";
+		enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+		regulator-name = "sensor_enable";
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <4 0 &gpioc 0 0>,
+			   <6 0 &gpioc 1 0>,
+			   <7 0 &gpiob 0 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpiob 1 0>,
+			   <10 0 &gpioc 3 0>,
+			   <12 0 &gpioa 5 0>,
+			   <13 0 &gpioa 8 0>,
+			   <14 0 &gpioa 6 0>,
+			   <15 0 &gpiob 2 0>,
+			   <16 0 &gpiob 3 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
+	};
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfxo {
+	ctune = <63>;
+	precision = <50>;
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		vin-supply = <&sensor_enable>;
+	};
+};
+
+&eusart1 {
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>, <&gpioc 6 GPIO_ACTIVE_HIGH>;
+
+	ls013b7dh03: ls0xx@1 {
+		compatible = "sharp,ls0xx";
+		reg = <1>;
+		height = <128>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		width = <128>;
+		extcomin-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+		extcomin-frequency = <60>;
+	};
+};
+
+&letimer0 {
+	status = "okay";
+
+	letimer0_pwm: pwm {
+		pinctrl-0 = <&letimer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&adc0 {
+	pinctrl-0 = <&iadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PD3>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&gpiob {
+	vcom-enable {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&dcdc {
+	status = "okay";
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
+};

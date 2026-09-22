@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &i2s1;
+/delete-node/ &ceu;
+
+&adc0 {
+	channel-available-mask = <0x197>;
+};
+
+&ioport0 {
+	gpio-reserved-ranges = <9 2>;
+};
+
+&ioport2 {
+	gpio-reserved-ranges = <2 3>;
+};
+
+&ioport3 {
+	gpio-reserved-ranges = <9 5>;
+};
+
+&ioport5 {
+	gpio-reserved-ranges = <11 3>;
+};
+
+&ioport6 {
+	gpio-reserved-ranges = <1 5>, <11 4>;
+};
+
+&ioport7 {
+	gpio-reserved-ranges = <0 6>, <9 5>;
+};
+
+&ioport8 {
+	gpio-reserved-ranges = <5 2>;
+};
+
+&ioport9 {
+	gpio-reserved-ranges = <5 1>;
+};

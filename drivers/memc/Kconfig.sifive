@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_HIFIVE_UNMATCHED_DRAM
+	bool "HiFive Unmatched DRAM Memory Controller"
+	default y
+	depends on DT_HAS_SIFIVE_FU740_C000_DDR_ENABLED
+	help
+	  Enable HiFive Unmatched Memory Controller.

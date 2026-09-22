@@ -1,0 +1,13 @@
+# P3T1755 digital temperature sensor
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config P3T1755
+	bool "P3T1755 digital temperature sensor driver"
+	default y
+	depends on DT_HAS_NXP_P3T1755_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_P3T1755),i2c)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_P3T1755),i3c)
+	help
+	  Enable driver for the P3T1755 digital temperature sensor.

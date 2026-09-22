@@ -1,0 +1,11 @@
+sample:
+  description: Demonstration of auxdisplay driver
+  name: Auxiliary display sample
+tests:
+  sample.drivers.auxdisplay:
+    tags: auxdisplay
+    harness_config:
+      fixture: fixture_auxdisplay
+    platform_allow: nucleo_f746zg
+    integration_platforms:
+      - nucleo_f746zg

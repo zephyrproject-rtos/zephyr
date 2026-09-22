@@ -1,0 +1,11 @@
+common:
+  min_ram: 16
+  depends_on: netif
+  tags:
+    - net
+    - iface
+tests:
+  net.iface.with_mld: {}
+  net.iface.with_mld.no_dad:
+    extra_configs:
+      - CONFIG_NET_IPV6_DAD=n

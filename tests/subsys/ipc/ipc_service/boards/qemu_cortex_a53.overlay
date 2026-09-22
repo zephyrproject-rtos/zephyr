@@ -1,0 +1,17 @@
+/* Copyright 2021 Carlo Caione <ccaione@baylibre.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	ipc10: ipc10 {
+		compatible = "ipc-service-backend";
+		offset = <10>;
+		status = "okay";
+	};
+
+	ipc20: ipc20 {
+		compatible = "ipc-service-backend";
+		offset = <20>;
+		status = "okay";
+	};
+};

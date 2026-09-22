@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/m2-memory-connector.h>
+
+/ {
+	m2mem_connector: m2mem-connector {
+		compatible = "st,m2-memory-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <M2MEM_CONNECTOR_GPIO_SPI_SCK 0 &gpioa 5 0>,
+			   <M2MEM_CONNECTOR_GPIO_SPI_MOSI 0 &gpioa 7 0>,
+			   <M2MEM_CONNECTOR_GPIO_LDO_EN 0 &gpiod 4 0>,
+			   <M2MEM_CONNECTOR_GPIO_SPI_MISO 0 &gpioa 6 0>,
+			   <M2MEM_CONNECTOR_GPIO_SPI_NSS 0 &gpiod 6 0>,
+			   <M2MEM_CONNECTOR_XSPI_NCS1 0 &gpiog 12 0>,
+			   <M2MEM_CONNECTOR_XSPI_DQS0 0 &gpiog 15 0>,
+			   <M2MEM_CONNECTOR_XSPI_D6 0 &gpiog 9 0>,
+			   <M2MEM_CONNECTOR_XSPI_D7 0 &gpiog 10 0>,
+			   <M2MEM_CONNECTOR_XSPI_D5 0 &gpiog 6 0>,
+			   <M2MEM_CONNECTOR_XSPI_D4 0 &gpiog 3 0>,
+			   <M2MEM_CONNECTOR_XSPI_D3 0 &gpiog 2 0>,
+			   <M2MEM_CONNECTOR_XSPI_D2 0 &gpiog 8 0>,
+			   <M2MEM_CONNECTOR_XSPI_D1 0 &gpiog 5 0>,
+			   <M2MEM_CONNECTOR_XSPI_D0 0 &gpiog 4 0>,
+			   <M2MEM_CONNECTOR_LED2 0 &gpiof 11 0>,
+			   <M2MEM_CONNECTOR_INT1 0 &gpiof 15 0>,
+			   <M2MEM_CONNECTOR_XSPI_CLK1 0 &gpiog 13 0>,
+			   <M2MEM_CONNECTOR_LED1 0 &gpiof 10 0>,
+			   <M2MEM_CONNECTOR_XSPI_NCLK1 0 &gpiog 14 0>,
+			   <M2MEM_CONNECTOR_I2C_SDA 0 &gpiob 7 0>,
+			   <M2MEM_CONNECTOR_I2C_SCL 0 &gpiob 6 0>,
+			   <M2MEM_CONNECTOR_INT2 0 &gpiof 14 0>;
+	};
+};
+
+m2mem_i2c: &i2c1 {};
+
+m2mem_xspi: &xspi1 {};
+
+m2mem_ldo_en: &m2mem_connector {};

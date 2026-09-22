@@ -1,0 +1,50 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF LFCLK clock control node
+
+compatible: "nordic,nrf-clock-lfclk"
+
+include: base.yaml
+
+properties:
+
+  k32src-frequency:
+    type: int
+    default: 32768
+
+  k32src:
+    type: string
+    default: "xtal"
+    description: "32KHz clock source"
+    enum:
+      - "rc"
+      - "xtal"
+      - "synth"
+      - "ext_low_swing"
+      - "ext_full_swing"
+
+  k32src-accuracy-ppm:
+    type: int
+    default: 50
+    description: "32KHz clock accuracy in ppm:
+                  500 means 251-500 ppm
+                  250 means 151-250 ppm
+                  150 means 101-150 ppm
+                  100 means 76-100 ppm
+                  75  means 51-75 ppm
+                  50  means 31-50 ppm
+                  30  means 21-30 ppm
+                  20  means 0-20 ppm
+                  if k32src is set to RC this property by default should be set to:
+                  - 500 for NRF52 series
+                  - 250 for the rest of the SoCs"
+    enum:
+      - 500
+      - 250
+      - 150
+      - 100
+      - 75
+      - 50
+      - 30
+      - 20

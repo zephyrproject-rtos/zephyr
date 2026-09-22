@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 TOKITA Hiroshi
+ */
+
+/* W5500 EVB Pico2 can work the same configuration as W5500 EVB Pico */
+#include "w5500_evb_pico.overlay"
+
+&adc {
+	status = "okay";
+};

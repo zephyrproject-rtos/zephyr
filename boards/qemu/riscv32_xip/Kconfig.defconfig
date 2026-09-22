@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_RISCV32_XIP
+
+# Use thread local storage by default so that this feature gets more CI coverage.
+config THREAD_LOCAL_STORAGE
+	default y
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config HAS_COVERAGE_SUPPORT
+	default y
+
+endif # BOARD_QEMU_RISCV32_XIP

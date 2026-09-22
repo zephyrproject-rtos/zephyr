@@ -1,0 +1,5 @@
+description: Broadcom BCM283x Auxiliary UART
+
+compatible: "brcm,bcm283x-aux-uart"
+
+include: ns16550.yaml

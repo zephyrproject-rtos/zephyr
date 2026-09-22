@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_REALTEK_MODULE
+	bool
+
+config HAS_REALTEK_BEE
+	bool
+
+config HAS_REALTEK_AMEBA
+	bool
+
+config ZEPHYR_HAL_REALTEK_MODULE_BLOBS
+	bool
+
+if HAS_REALTEK_BEE || HAS_REALTEK_AMEBA
+osource "$(ZEPHYR_HAL_REALTEK_MODULE_DIR)/Kconfig"
+endif
+
+if HAS_REALTEK_BEE
+rsource "bee/Kconfig.bee"
+endif
+
+if HAS_REALTEK_AMEBA
+rsource "ameba/Kconfig.ameba"
+endif

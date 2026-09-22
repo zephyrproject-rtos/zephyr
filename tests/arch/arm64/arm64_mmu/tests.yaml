@@ -1,0 +1,3 @@
+tests:
+  arch.arm64.mmu:
+    platform_allow: qemu_cortex_a53

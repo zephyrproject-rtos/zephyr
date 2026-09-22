@@ -1,0 +1,8 @@
+# Copyright (c) 2024, Lucas Dietrich
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32L4 AES Accelerator
+
+compatible: "st,stm32l4-aes"
+
+include: st,stm32-crypto-common.yaml

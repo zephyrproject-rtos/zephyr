@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026, Anuj Deshpande
+
+shield:
+  name: dfrobot_gravity_tm6605
+  full_name: DFRobot Gravity TM6605 Haptic Motor Driver Module
+  vendor: dfrobot
+  supported_features:
+    - haptics

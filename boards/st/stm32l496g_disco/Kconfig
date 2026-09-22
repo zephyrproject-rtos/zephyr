@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32L496G_DISCO
+	select BOARD_LATE_INIT_HOOK if ADC

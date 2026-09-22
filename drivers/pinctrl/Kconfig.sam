@@ -1,0 +1,17 @@
+# Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_SAM
+	bool "Atmel SAM pin controller driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_PINCTRL_ENABLED
+	help
+	  Atmel pin controller driver is used on SAM and SAM4L SoC series
+
+config PINCTRL_SAM_PIO4
+	bool "Microchip SAM Parallel Input/Output Controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SAMA7G5_PINCTRL_ENABLED
+	help
+	  Microchip Parallel Input/Output Controller is used on SAMA5D2 and
+	  SAMA7G5 SoC series

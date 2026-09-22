@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable console over segger RTT
+CONFIG_CONSOLE=y
+CONFIG_RTT_CONSOLE=y
+CONFIG_USE_SEGGER_RTT=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable UART
+CONFIG_SERIAL=y

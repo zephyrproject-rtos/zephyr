@@ -1,0 +1,23 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Semtech LR1121 LoRa Modem
+
+description: |
+  Semtech LR1121 LoRa Modem. It supports 150-960MHz sub-GHz ISM bands, 1.9-2.1GHz Satellite bands,
+  and the 2.4GHz ISM band.
+  Unlike LR1110 or LR1120, it is not capable of receiving GNSS or WiFi signals.
+
+compatible: "semtech,lr1121"
+
+include: semtech,lr11xx-base.yaml
+
+properties:
+  reset-gpios:
+    required: true
+  busy-gpios:
+    required: true
+  irq-gpios:
+    required: true
+  lf-clk:
+    required: true

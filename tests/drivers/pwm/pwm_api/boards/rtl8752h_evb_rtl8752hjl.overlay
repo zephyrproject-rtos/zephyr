@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-test = &pwm6;
+	};
+};
+
+&timer6 {
+	status = "okay";
+	prescaler = <1>;
+
+	pwm6: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm6_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&pinctrl {
+	pwm6_default: pwm6_default {
+		group1 {
+			psels = <BEE_PSEL(ENPWM0, P0_1)>;
+			output-enable;
+			output-low;
+			bias-pull-down;
+		};
+	};
+};

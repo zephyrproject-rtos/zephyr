@@ -1,0 +1,30 @@
+description: Arm Corstone Reference Systems Architecture Specification MA2 System Counter
+
+compatible: "arm,crsas-ma2-counter"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      CRSAS-MA2 System Counter has two 4KB frames. We only use
+      the control frame and don't use the read frame,
+      so this should be the base address of the control frame.
+
+  clocks:
+    required: true
+    description: |
+      Specifier for the clock source for the device.
+
+  scaling-factor:
+    type: int
+    default: 0x01000000
+    description: |
+      32-bit fixed-point scaling factor (8.24 format).
+      Defaults to 1.0 (no scaling) if not specified.
+
+  halt-on-debug:
+    type: boolean
+    description: |
+      Set to enable halt on debug.

@@ -1,0 +1,24 @@
+identifier: rp2350b_plus_w/rp2350b/m33
+name: Waveshare RP2350B Plus W (Cortex-M33)
+type: mcu
+arch: arm
+flash: 16384
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock
+  - counter
+  - crypto
+  - dma
+  - entropy
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - usbd
+  - watchdog
+  - wifi

@@ -1,0 +1,67 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  CPU frequency thermal cap.
+
+  Thermal cap constraints use the performance-states child order as the
+  CPU frequency ordering: lower index P-states are treated as higher-performance,
+  higher index P-states are treated as lower-performance and more restrictive.
+
+compatible: "zephyr,cpu-freq-thermal-cap"
+
+properties:
+  sensor:
+    type: phandle
+    required: true
+    description: |
+      Temperature sensor used to compute the CPU frequency thermal cap.
+
+  sensor-channel:
+    type: string
+    default: "die-temp"
+    enum:
+      - "die-temp"
+      - "ambient-temp"
+    description: |
+      Sensor channel used for temperature samples.
+
+  polling-delay-ms:
+    type: int
+    default: 1000
+    description: |
+      Polling interval in milliseconds while no thermal trip is active.
+
+  trip-active-polling-delay-ms:
+    type: int
+    default: 100
+    description: |
+      Polling interval in milliseconds while one or more thermal trips are active.
+      This is typically shorter than polling-delay-ms so cap changes and release
+      decisions are reflected promptly.
+
+child-binding:
+  description: |
+    CPU frequency thermal trip point
+
+  properties:
+    temperature-millicelsius:
+      type: int
+      required: true
+      description: |
+        Temperature threshold in millicelsius. When this threshold is reached, the
+        trip becomes active and constrains CPU frequency to cap-pstate or lower.
+
+    hysteresis-millicelsius:
+      type: int
+      required: true
+      description: |
+        Hysteresis in millicelsius. An active trip is released when the measured
+        temperature falls to temperature-millicelsius minus this value.
+
+    cap-pstate:
+      type: phandle
+      required: true
+      description: |
+        Highest-performance P-state allowed while this trip is active.
+        The referenced P-state must belong to the ordered performance-states table.

@@ -1,0 +1,300 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "adi,adp5360-charger"
+
+description: |
+  ADI ADP5360 Battery Management PMIC.
+  The charger is modeled in DT as a child device of "adi,adp5360" compatible node.
+
+include:
+  - name: battery.yaml
+    property-allowlist:
+      - device-chemistry
+      - re-charge-voltage-microvolt
+      - precharge-current-microamp
+      - charge-term-current-microamp
+      - constant-charge-current-max-microamp
+      - constant-charge-voltage-max-microvolt
+
+properties:
+
+  device-chemistry:
+    type: string
+    required: true
+
+  re-charge-voltage-microvolt:
+    type: int
+    default: 120000
+    description: The device default for this setting is 120mV.
+
+  precharge-current-microamp:
+    type: int
+    default: 5000
+    description: The device default for this setting is 5mA.
+
+  charge-term-current-microamp:
+    type: int
+    required: true
+
+  constant-charge-current-max-microamp:
+    type: int
+    required: true
+
+  constant-charge-voltage-max-microvolt:
+    type: int
+    required: true
+
+  battery-name:
+    type: string
+    required: true
+    description: |
+      Battery name connected to the PMIC.
+
+  charger-init-adpichg-limit-uv:
+    type: int
+    default: 4600000
+    description: |
+      Sets the initial adaptive current limit to VBUS voltage threshold.
+      The device default for this setting is 4.6V.
+
+  battery-voltage-weak-threshold-uv:
+    type: int
+    default: 3000000
+    description: |
+      Weak battery voltage rising threshold. Determines the operating mode of
+      the charger if the threshold falls below this value.
+      Below V_WEAK, the charger will operate in weak charge mode.
+      Above V_WEAK, the charger will operate in fast charge mode.
+      The device default for this setting is 3V.
+
+  charger-init-input-i-limit-ua:
+    type: int
+    default: 100000
+    description: |
+      Initial Current input limit for VBUS.
+      The device default for this setting is 100mA.
+
+  battery-voltage-cold-threshold-uv:
+    type: int
+    default: 1800000
+    description: |
+      Voltage threshold for Cold Battery status.
+      The device default for this setting is 1.8V.
+
+  battery-voltage-cool-threshold-uv:
+    type: int
+    default: 1130000
+    description: |
+      Voltage threshold for Cool Battery status.
+      The device default for this setting is 1.13V.
+
+  battery-voltage-warm-threshold-uv:
+    type: int
+    default: 286000
+    description: |
+      Voltage threshold for Warm Battery status.
+      The device default for this setting is 286mV.
+
+  battery-voltage-hot-threshold-uv:
+    type: int
+    default: 172000
+    description: |
+      Voltage threshold for Hot Battery status.
+      The device default for this setting is 172mV.
+
+  thermistor-current-limit-ua:
+    type: int
+    default: 60
+    enum: [60, 12, 6]
+    description: |
+      Sets the thermistor current ITHR.
+      The device default for this setting is 60uA.
+
+  enable-thermistor-current:
+    type: boolean
+    description: |
+      Enable ITHR even while VBUS < VBUS_OK.
+
+  charger-voltage-trk-to-fast-uv:
+    type: int
+    default: 2500000
+    enum: [2000000, 2500000, 2600000, 2900000]
+    description: |
+      Trickle to Fast Charge Battery threshold. switches from trickle mode to
+      fast charge mode.
+      The device default for this setting is 2.5V.
+
+  disable-recharge:
+    type: boolean
+    description: |
+      Disables the recharge function of the charger.
+
+  enable-charge-complete-timer:
+    type: boolean
+    description: |
+      Enables the charge complete timer (tEND).
+
+  enable-trickle-fast-charge-timer:
+    type: boolean
+    description: |
+      Enables the trickle charge timer (tTRK) and the fast charge timer (tCHG).
+
+  trickle-fast-charge-timer-period:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      Sets tTRK and tCHG period.
+      0 - tTRK = 15 minutes, tCHG = 150 minutes
+      1 - tTRK = 30 minutes, tCHG = 300 minutes
+      2 - tTRK = 45 minutes, tCHG = 450 minutes
+      3 - tTRK = 60 minutes, tCHG = 600 minutes
+      The device default for this setting is set to 0.
+
+  enable-jeita-temp-spec:
+    type: boolean
+    description: |
+      Enables the JEITA Li-Ion temperature battery charging specification.
+
+  ilim-jeita-cool-10pct:
+    type: boolean
+    description: |
+      Uses approximately 10% of programmed ILIM when battery is cool.
+      If not set, 50% of programmed ILIM will be used during cool battery.
+
+  enable-voltage-adpichg:
+    type: boolean
+    description: |
+      Enables V_ADPICHG for adaptive current-limit during charging.
+
+  disable-end-of-charge:
+    type: boolean
+    description: |
+      Disables end of charge function.
+
+  set-vsys-5v:
+    type: boolean
+    description: |
+      Sets the V_SYSTEM voltage to 5V if set. Otherwise uses V_TRM + 200mV.
+
+  disable-low-dropout:
+    type: boolean
+    description: |
+      Enables the Low Dropout (LDO) FET of the charger.
+      LDO must be active for charger operations to function.
+
+  disable-isofet:
+    type: boolean
+    description: |
+      Forces the Battery Isolation FET to turn off.
+
+  enable-battery-protection:
+    type: boolean
+    description: |
+      Enables battery protection features of the charger.
+
+  disable-charge-with-undervoltage:
+    type: boolean
+    description: |
+      Enables charging while battery is undervoltage.
+
+  set-isofet-overcharge-off:
+    type: boolean
+    description: |
+      Sets the battery isolation FET off when an overcharge event occurs.
+      If not set, battery isolation FET turns on when an overcharge occurs.
+
+  set-overcurrent-discharge-hiccup:
+    type: boolean
+    description: |
+      Sets the overcurrent discharge protection mode to hiccup.
+      If unset mode is set to latch up.
+
+  set-overcurrent-charge-hiccup:
+    type: boolean
+    description: |
+      Sets the overcurrent charge protection mode to hiccup.
+      If unset mode is set to latch up.
+
+  battery-undervolt-discharge-threshold-uv:
+    type: int
+    default: 2500000
+    description: |
+      Battery undervoltage discharge threshold. Indicates a battery voltage condition.
+      The device default for this setting is 2.5V.
+
+  battery-undervolt-discharge-hysteresis:
+    type: int
+    default: 2
+    enum: [2, 4, 6, 8]
+    description: |
+      Hysteresis percentage for battery undervolt discharge.
+      Indicates the hysteresis range relative to the battery undervolt discharge threshold.
+      The device default for this setting is 2%.
+
+  battery-undervolt-discharge-deglitch-ms:
+    type: int
+    default: 30
+    enum: [30, 60, 120, 240]
+    description: |
+      Battery undervoltage deglitch time.
+      Indicates the timing window when battery voltage passes the set threshold.
+      The device default for this setting is 30ms.
+
+  battery-overcurrent-discharge-ua:
+    type: int
+    default: 600000
+    description: |
+      Battery overcurrent discharge threshold. Indicates a battery charging condition.
+      The device default for this setting is 600mA.
+
+  battery-overcurrent-discharge-deglitch-us:
+    type: int
+    default: 5000
+    enum: [500, 1000, 5000, 10000, 20000, 50000, 100000]
+    description: |
+      Battery overcurrent deglitch time.
+      Indicates the timing window when battery discharging current passes the set threshold.
+      The device default for this setting is 5ms.
+
+  battery-overvolt-charge-threshold-uv:
+    type: int
+    default: 4300000
+    description: |
+      Battery overvoltage charge threshold. Indicates a battery voltage condition.
+      The device default for this setting is 4.3V.
+
+  battery-overvolt-charge-hysteresis:
+    type: int
+    default: 2
+    enum: [2, 4, 6, 8]
+    description: |
+      Hysteresis percentage for battery overvolt charge.
+      Indicates the hysteresis range relative to the battery undervolt discharge threshold.
+      The device default for this setting is 2%.
+
+  battery-overvolt-charge-deglitch-ms:
+    type: int
+    default: 500
+    enum: [500, 1000]
+    description: |
+      Battery overvoltage deglitch time.
+      Indicates the timing window when battery voltage passes the set threshold.
+      The device default for this setting is 500ms.
+
+  battery-overcurrent-charge-ua:
+    type: int
+    default: 150000
+    description: |
+      Battery overcurrent charge threshold. Indicates a battery charging condition.
+      The device default for this setting is 150mA.
+
+  battery-overcurrent-charge-deglitch-ms:
+    type: int
+    default: 10
+    enum: [5, 10, 20, 40]
+    description: |
+      Battery overcurrent deglitch time.
+      Indicates the timing window when battery charging current passes the set threshold.
+      The device default for this setting is 10ms.

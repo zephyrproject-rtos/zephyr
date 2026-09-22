@@ -1,0 +1,13 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ */
+
+&i2c0 {
+	ltc2959: ltc2959@63 {
+		compatible = "adi,ltc2959";
+		reg = <0x63>;
+		rsense-milliohms = <50>;
+		status = "okay";
+	};
+};

@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RPI_ZERO_2W
+	select SOC_BCM2710

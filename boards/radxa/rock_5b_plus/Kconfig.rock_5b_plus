@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ROCK_5B_PLUS
+	select SOC_RK3588

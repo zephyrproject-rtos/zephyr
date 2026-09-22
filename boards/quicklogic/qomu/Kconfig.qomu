@@ -1,0 +1,7 @@
+# QuickLogic Qomu board
+
+# Copyright (c) 2022 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QOMU
+	select SOC_EOS_S3

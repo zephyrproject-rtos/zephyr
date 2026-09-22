@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		test-comp = &comp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&comp0 {
+	status = "okay";
+	positive-inputs = <2>;
+	pinctrl-0 = <&comp0_out_pa7>;
+	pinctrl-names = "default";
+	ti,mode = "fast";
+	ti,reference-source = "vdda_dac";
+	ti,reference-terminal = "neg";
+	ti,reference-dac-code0 = <128>;
+	ti,filter-enable;
+	ti,filter-delay = <2700>;
+};

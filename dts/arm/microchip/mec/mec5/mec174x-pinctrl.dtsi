@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * PINCTRL pin definitions for MEC174x family.
+ * Refer to datasheets for MEC174x to know which pins are
+ * in a variant and package combination.
+ */
+
+#include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
+#include "mec5-common-pinctrl.dtsi"

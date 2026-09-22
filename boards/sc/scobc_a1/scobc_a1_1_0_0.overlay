@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &hrmem;
+/delete-node/ &uartlite0;
+
+/ {
+	soc {
+		hrmem: memory@0 {
+			compatible = "sc,hrmem";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+
+		uartlite0: uartlite@50010000 {
+			compatible = "xlnx,xps-uartlite-1.00.a";
+			interrupts = <0 0>;
+			reg = <0x50010000 0x10000>;
+		};
+	};
+};

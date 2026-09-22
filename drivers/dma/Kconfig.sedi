@@ -1,0 +1,14 @@
+# Intel sedi DMA configuration options
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_SEDI
+	bool "SEDI DMA driver"
+	select DMA_64BIT
+	default y
+	depends on DT_HAS_INTEL_SEDI_DMA_ENABLED
+	help
+	  This option enables the Intel SEDI DMA driver.
+	  This driver is simply a shim driver built upon the SEDI
+	  bare metal DMA driver in the hal-intel module

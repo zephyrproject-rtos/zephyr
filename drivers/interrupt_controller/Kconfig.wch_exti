@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config WCH_EXTI
+	bool "WCH CH32V00x/20x/30x External Interrupt and Event Controller (EXTI)"
+	default y
+	depends on DT_HAS_WCH_EXTI_ENABLED
+	help
+	  Enable the WCH CH32V00x/20x/30x External Interrupt and Event Controller (EXTI)
+	  driver.

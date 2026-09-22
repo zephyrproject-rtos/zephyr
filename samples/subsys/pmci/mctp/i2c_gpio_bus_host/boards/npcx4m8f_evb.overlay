@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* SDA J18.2 */
+	/* SCL J18.1 */
+	/* GPIO J17.2 */
+	mctp_i2c: mctp_i2c {
+		compatible = "zephyr,mctp-i2c-gpio-controller";
+		i2c = <&i2c0_0>;
+		endpoint-ids = <11>;
+		endpoint-addrs = <70>;
+		endpoint-gpios = <&gpio4 3 GPIO_ACTIVE_HIGH>;
+	};
+};

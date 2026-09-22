@@ -1,0 +1,45 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP 4 channel DMA controller (DMA + DMAMUX)
+
+compatible: "nxp,4ch-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Specifies base address and size of DMA and respective DMAMUX base address
+      that routes DMA sources. Provide two regions: index 0 is DMA, index 1 is DMAMUX.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupts for each DMA channel.
+
+  dma-channels:
+    required: true
+    description: |
+      Specifies the number of DMA channels supported by the controller. This value is
+      used to validate the channel number provided in the DMA specifier.
+
+  dma-requests:
+    required: true
+    description: |
+      Indicates the maximum value of the DMA request sources (slots) index supported by
+      DMAMUX. This value is used to validate the request source index provided in the
+      DMA specifier.
+
+  "#dma-cells":
+    type: int
+    required: true
+    const: 2
+    description: |
+      Number of items to expect in a specifier, including the channel number and
+      the DMA request source.
+
+dma-cells:
+  - channel
+  - source

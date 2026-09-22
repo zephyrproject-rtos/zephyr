@@ -1,0 +1,53 @@
+# Copyright (c) 2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SCTimer PWM
+
+compatible: "nxp,sctimer-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml, mux-consumer.yaml]
+
+properties:
+  prescaler:
+    type: int
+    default: 1
+    description: prescaling factor from the SCT clock. Default to 1 which is the reset value
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+
+  mux-states:
+    type: phandle-array
+    description: |
+      INPUTMUX routing for the SCTimer capture inputs. Optional; only needed
+      when PWM capture is used. Each entry is <&inputmuxN index connection>:
+        - &inputmuxN is the INPUTMUX mux controller providing the route
+        - index is the SCTimer input channel number (0-7 for most NXP SoCs)
+        - connection is an inputmux_connection_t value from
+          fsl_inputmux_connections.h. Take LPC55S36 as example:
+          - 0: kINPUTMUX_SctGpioInAToSct0 (GPIO to SCT input A)
+          - 1: kINPUTMUX_SctGpioInBToSct0 (GPIO to SCT input B)
+      Example (route SCT input channel 1 via INPUTMUX0):
+        mux-states = <&inputmux0 1 0>;
+
+  out-init-state:
+    type: int
+    default: 0
+    description: |
+      Initial output state applied at init Bitmask, one bit per output.
+      8-bit value. Maps to the MCUX SCTimer outInitState field.
+      Default to 0 (all low)
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

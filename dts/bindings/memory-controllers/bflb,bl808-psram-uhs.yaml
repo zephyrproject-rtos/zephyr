@@ -1,0 +1,33 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: BL808 UHS PSRAM Chip
+
+description: |
+  PSRAM chip attached to a BL808x UHS PSRAM controller. Combine with
+  zephyr,memory-region (or another window-describing compatible) on the
+  same node to expose the memory window.
+
+compatible: "bflb,bl808-psram-uhs"
+
+include: ["base.yaml", "zephyr,memory-region.yaml"]
+
+properties:
+  page-size:
+    type: int
+    required: true
+    enum:
+      - 2048
+      - 4096
+    description: |
+      Chip page size in bytes. Maps to the controller's LINEAR_BND_B
+      field (2 KB = 0x0B, 4 KB = 0x16) per the BL808 SDK
+      PSRAM_UHS_Page_Size_Type enum.
+
+  high-temp:
+    type: boolean
+    description: |
+      Operate the chip in high-temperature refresh mode (refresh window
+      halved from 32ms to 16ms). Set when the PSRAM is expected to run
+      above ~85°C — depends on both the chip's operating-temperature
+      grade and the board's thermal environment.

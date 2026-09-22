@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * Drive ana_cmpr0's own source pad (GPIO9) directly as a digital output
+ * instead of a separate jumpered pin, mirroring the self-loopback trick
+ * ESP-IDF's ana_cmpr test app uses: the comparator's analog front-end taps
+ * the pad directly, bypassing the digital input buffer, so the pad's own
+ * digital output driver can still force a real voltage transition on it --
+ * see ana_cmpr_esp32_init()'s gpio_config_as_analog() call, which disables
+ * input/pulls but leaves the pad otherwise ready for gpio_esp32 to
+ * reconfigure as output. No jumper wire needed.
+ */
+/ {
+	aliases {
+		test-comp = &ana_cmpr0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&ana_cmpr0 {
+	status = "okay";
+	ref-source = "internal";
+	ref-voltage = <50>;
+};

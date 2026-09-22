@@ -1,0 +1,11 @@
+# NPCM Clock controller driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_NPCM
+	bool "NPCM clock controller driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_PCC_ENABLED
+	help
+	  Enable support for NPCM clock controller driver.

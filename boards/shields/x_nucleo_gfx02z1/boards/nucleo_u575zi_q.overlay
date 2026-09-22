@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Michele Vaccari
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
+#include <freq.h>
+
+&mx_flash {
+	ospi-max-frequency = <DT_FREQ_M(50)>;
+	data-rate = <OSPI_STR_TRANSFER>;
+};

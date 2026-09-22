@@ -1,0 +1,14 @@
+shields:
+  - name: lcd_par_s035_8080
+    full_name: NXP LCD_PAR_S035 TFT LCD Module (Parallel)
+    vendor: nxp
+    supported_features:
+      - input
+      - display
+
+  - name: lcd_par_s035_spi
+    full_name: NXP LCD_PAR_S035 TFT LCD Module (SPI)
+    vendor: nxp
+    supported_features:
+      - input
+      - display

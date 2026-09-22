@@ -1,0 +1,22 @@
+sample:
+  description: This app provides an example of how to integrate OpenAMP with DSP.
+  name: OpenAMP DSP example integration
+tests:
+  samples.boards.nxp.adsp.rtxxx.amp_talk:
+    filter: dt_chosen_enabled("zephyr,ipc") and dt_chosen_enabled("zephyr,ipc_shm")
+    platform_allow:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    tags:
+      - ipm
+      - openamp
+    harness: console
+    sysbuild: true
+    harness_config:
+      type: multi_line
+      regex:
+        - "Main core received a message: 1"
+        - "Main core received a message: 99"
+        - "OpenAMP demo ended."
+        - "[DSP] Remote core received a message: 0"
+        - "[DSP] Remote core received a message: 98"
+        - "[DSP] OpenAMP demo ended."

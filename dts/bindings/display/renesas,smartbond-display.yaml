@@ -1,0 +1,37 @@
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+include: [display-controller.yaml, lcd-controller.yaml, pinctrl-device.yaml]
+
+description: Renesas Smartbond(tm) display controller
+
+compatible: "renesas,smartbond-display"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  disp-gpios:
+    type: phandle-array
+    description: |
+      Display ON/OFF port control.
+
+  dma-prefetch:
+    type: string
+    enum:
+      - "no-prefetch"
+      - "prefetch-44-bytes"
+      - "prefetch-84-bytes"
+      - "prefetch-116-bytes"
+      - "prefetch-108-bytes"
+    description: |
+      Host controller will wait for at least the specified number of bytes before triggering
+      a single frame update. The prefetch mechanism should be enabled when frame buffer(s)
+      is stored into external storage mediums, e.g. PSRAM, that introduce comparable delays.
+      In such a case it might case that the controller runs into underrun conditions which
+      results in correpting the whole frame update. It's user's responsibility to ensure that
+      the selected value does not exceed frame's total size as otherwise the controller will
+      not be able to trigger the frame update.

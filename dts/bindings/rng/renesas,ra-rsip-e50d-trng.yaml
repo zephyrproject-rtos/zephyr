@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA RSIP-E51A TRNG
+
+compatible: "renesas,ra-rsip-e50d-trng"
+
+include: base.yaml

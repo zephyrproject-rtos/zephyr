@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalo Lab USB 1.1 Full-Speed device controller (v1 block)
+
+compatible: "bflb,udc-1"
+
+include: [usb-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: USB controller registers
+
+  interrupts:
+    required: true

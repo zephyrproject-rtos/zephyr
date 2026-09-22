@@ -1,0 +1,32 @@
+{
+  "power": {
+    "scheme": "VDDH_2V1_5V5"
+  },
+  "ioPortPower": {
+    "p1Supply": "EXTERNAL_1V8",
+    "p2Supply": "EXTERNAL_1V8",
+    "p6Supply": "EXTERNAL_1V8",
+    "p7Supply": "EXTERNAL_1V8",
+    "p9Supply": "EXTERNAL_FULL"
+  },
+  "ioPortImpedance": {
+    "p6ImpedanceOhms": 50,
+    "p7ImpedanceOhms": 50
+  },
+  "lfosc": {
+    "source": "LFXO",
+    "lfxo": {
+      "mode": "CRYSTAL",
+      "accuracyPPM": 20,
+      "startupTimeMs": 600,
+      "builtInLoadCapacitancePf": 15,
+      "builtInLoadCapacitors": true
+    }
+  },
+  "hfxo": {
+    "mode": "CRYSTAL",
+    "startupTimeUs": 850,
+    "builtInLoadCapacitors": true,
+    "builtInLoadCapacitancePf": 14
+  }
+}

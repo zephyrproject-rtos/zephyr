@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Ambiq Micro Inc.
+
+if BOARD_APOLLO510_EVB
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if AMBIQ_STIMER_TIMER
+	default 96000000 if CORTEX_M_SYSTICK
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 1000000
+	depends on LOG_BACKEND_SWO
+
+if MSPI
+
+config MSPI_INIT_PRIORITY
+	default 40
+
+endif # MSPI
+
+if MEMC
+
+config MEMC_INIT_PRIORITY
+	default 50
+
+endif # MEMC
+
+if FLASH
+
+config FLASH_INIT_PRIORITY
+	default 50
+
+endif # FLASH
+
+endif # BOARD_APOLLO510_EVB

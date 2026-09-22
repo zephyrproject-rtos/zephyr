@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwmclock: pwmclock {
+		status = "okay";
+		compatible = "pwm-clock";
+		#clock-cells = <1>;
+		clock-frequency = <1000000>;
+		pwms = <&pwm6 0 PWM_KHZ(1000) PWM_POLARITY_NORMAL>;
+	};
+
+	samplenode: samplenode {
+		status = "okay";
+		compatible = "test-clock-control-pwm-clock";
+		clocks = <&pwmclock 0>;
+	};
+};
+
+&pinctrl {
+	pwm6_default: pwm6_default {
+		group1 {
+			/* GTIOC6A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 1)>;
+		};
+
+		group2 {
+			/* GTIOC6B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 0)>;
+		};
+	};
+};
+
+&gptclk {
+	status = "okay";
+};
+
+&pwm6 {
+	pinctrl-0 = <&pwm6_default>;
+	pinctrl-names = "default";
+	interrupts = <93 1>, <92 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};

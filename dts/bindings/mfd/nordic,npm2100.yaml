@@ -1,0 +1,72 @@
+# Copyright (c) 2024, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nPM2100
+
+compatible: "nordic,npm2100"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  host-int-gpios:
+    type: phandle-array
+    description: Host pin for interrupt input
+
+  host-int-type:
+    type: string
+    enum:
+    - "edge"
+    - "level"
+    default: "edge"
+    description: |
+      Using interrupt level triggering instead of edge triggering
+      can reduce power consumption on some platforms at the expense of irq latency.
+
+  pmic-int-pin:
+    type: int
+    enum:
+    - 0
+    - 1
+    description: Pmic pin number for interrupt output
+
+  pmic-int-flags:
+    type: int
+    description: |
+      GPIO flags for PMIC interrupt output
+
+  shiphold-flags:
+    type: int
+    description: |
+      GPIO flags for shiphold button.
+      Defaults to active low with pull-up enabled.
+
+  shiphold-hibernate-wakeup:
+    type: boolean
+    description: |
+      Enable shiphold button to trigger wakeup from hibernate state
+
+  shiphold-longpress:
+    type: string
+    enum:
+    - "ship"
+    - "disable"
+    - "reset"
+    description: |
+      Configure behaviour of shiphold button.
+      ship: Enter ship mode if SHPHLD is pressed for 2 seconds
+      disable: SHPHLD button press has no effect
+      reset: Reset PMIC if SHPHLD is pressed for 10 seconds
+
+  shiphold-current:
+    type: string
+    enum:
+    - "disable"
+    - "weak"
+    - "low"
+    - "moderate"
+    - "high"
+    description: |
+      Configure behaviour of shiphold pull-up current

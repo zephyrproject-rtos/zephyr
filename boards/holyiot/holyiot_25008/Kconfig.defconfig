@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Clunky Machines
+# SPDX-License-Identifier: Apache-2.0
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION

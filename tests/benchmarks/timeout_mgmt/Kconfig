@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Timeout Management Benchmark"
+
+source "Kconfig.zephyr"
+
+config BENCHMARK_NUM_ITERATIONS
+	int "Number of iterations to gather data"
+	default 1000
+	help
+	  This option specifies the number of times each test will be executed
+	  before calculating the average times for reporting.
+
+config BENCHMARK_NUM_TIMEOUTS
+	int "Number of timeouts"
+	default 100
+	help
+	  This option specifies the maximum number of timeouts that the test
+	  will create. Increasing this value will place greater stress on
+	  the timeout management system.
+
+config BENCHMARK_TIMEOUT_BIAS
+	int "Timeout bias (ticks) to apply to the timeouts"
+	default 0
+	help
+	  This option specifies the number of ticks to add to each of the
+	  timeouts created by the test. This bias can be used to ensure that
+	  timeouts do not expire mid-test which could skew the results.
+
+
+config BENCHMARK_VERBOSE
+	bool "Display detailed results"
+	default n
+	help
+	  This option displays the average time of all the iterations done for
+	  each timeout in the tests. This generates large amounts of output. To
+	  analyze it, it is recommended to redirect the output to a file.

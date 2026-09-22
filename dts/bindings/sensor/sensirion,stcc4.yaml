@@ -1,0 +1,32 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sensirion STCC4 miniature CO2 sensor based on thermal conductivity.
+  Provides CO2, temperature, and humidity readings via I2C.
+
+compatible: "sensirion,stcc4"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  measurement-mode:
+    type: int
+    required: true
+    description: |
+      Measurement mode.
+      Continuous mode measures at ~1 Hz. Single-shot mode measures
+      on demand with a 500ms conversion time per fetch.
+    enum:
+      - 0 # STCC4_DT_MODE_CONTINUOUS
+      - 1 # STCC4_DT_MODE_SINGLE_SHOT
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/stcc4.h>
+
+    stcc4@64 {
+      compatible = "sensirion,stcc4";
+      reg = <0x64>;
+      measurement-mode = <STCC4_DT_MODE_CONTINUOUS>;
+    };

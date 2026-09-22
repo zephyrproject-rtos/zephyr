@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: U-BLOX F9P High Precision GNSS Module
+
+compatible: "u-blox,f9p"
+
+include:
+  - uart-device.yaml
+  - u-blox,common.yaml

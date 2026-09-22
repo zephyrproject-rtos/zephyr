@@ -1,0 +1,37 @@
+/*
+ * Copyright 2024 Felipe Neves
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m4.dtsi>
+#include <st/h7/stm32h747a(g-i)ix-pinctrl.dtsi>
+#include "arduino_nicla_vision.dtsi"
+
+/ {
+	model = "Arduino Nicla Vision Board (M4)";
+	compatible = "arduino,nicla-vision";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+	};
+
+	aliases {
+		led0 = &blue_led;
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(240)>;
+};
+
+&uart4 {
+	status = "okay";
+	pinctrl-0 = <&uart4_tx_pb9 &uart4_rx_pb8>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};

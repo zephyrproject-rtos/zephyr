@@ -1,0 +1,9 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_CC23X0
+	bool "Watchdog Driver for CC23x0 family of MCUs"
+	default y
+	depends on DT_HAS_TI_CC23X0_WDT_ENABLED
+	help
+	  Enable watchdog for CC23x0 family of MCUs

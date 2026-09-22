@@ -1,0 +1,9 @@
+# Copyright (c) 2022 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_NUMICRO
+	bool "Pin controller driver for Nuvoton NuMicro MCUs"
+	default y
+	depends on DT_HAS_NUVOTON_NUMICRO_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for Nuvoton NuMicro MCUs

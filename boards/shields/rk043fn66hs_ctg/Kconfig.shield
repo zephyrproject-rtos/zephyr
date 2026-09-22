@@ -1,0 +1,5 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RK043FN66HS_CTG
+	def_bool $(shields_list_contains,rk043fn66hs_ctg)

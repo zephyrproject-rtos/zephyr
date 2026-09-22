@@ -1,0 +1,41 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic Performance State (P-state) binding
+
+  Implement a generic P-state device node.
+
+  Example configuration:
+
+  performance-states {
+          pstate_0: pstate_0 {
+                  compatible = "zephyr,generic-pstate";
+                  load-threshold = <50>;
+                  pstate-id = <0>;
+          };
+          pstate_1: pstate_1 {
+                  compatible = "zephyr,generic-pstate";
+                  load-threshold = <20>;
+                  pstate-id = <1>;
+          };
+          pstate_2: pstate_2 {
+                  compatible = "zephyr,generic-pstate";
+                  load-threshold = <0>;
+                  pstate-id = <2>;
+          };
+  };
+
+compatible: "zephyr,generic-pstate"
+
+include: "zephyr,pstate.yaml"
+
+properties:
+  pstate-id:
+    type: int
+    required: true
+    description: |
+      Identifier of performance state. The state IDs shall be unique among all
+      sibling nodes. It is recommended that they begin at 0 and monotonically
+      increase with decreasing performance (increasing power savings).

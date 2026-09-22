@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NPCM4
+	bool
+	select SOC_FAMILY_NPCM
+	help
+	  Enable support for Nuvoton NPCM4 series
+
+config SOC_NPCM400
+	bool
+	select SOC_SERIES_NPCM4
+
+config SOC_SERIES
+	default "npcm4" if SOC_SERIES_NPCM4
+
+config SOC
+	default "npcm400" if SOC_NPCM400

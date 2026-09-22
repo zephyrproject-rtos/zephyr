@@ -1,0 +1,6 @@
+tests:
+  kernel.spinlock.held_lock:
+    tags:
+      - kernel
+      - spinlock
+    filter: CONFIG_SPIN_VALIDATE and not CONFIG_SMP

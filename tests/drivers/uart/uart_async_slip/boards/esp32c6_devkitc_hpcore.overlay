@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* TX and RX share GPIO4 for internal loopback, no external wiring needed. */
+#include <zephyr/dt-bindings/pinctrl/esp32c6-pinctrl.h>
+
+&pinctrl {
+	uart1_loop: uart1_loop {
+		group1 {
+			pinmux = <UART1_TX_GPIO4>, <UART1_RX_GPIO4>;
+			input-enable;
+		};
+	};
+};
+
+dut: &uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_loop>;
+	pinctrl-names = "default";
+	dmas = <&dma 0>, <&dma 1>;
+	dma-names = "rx", "tx";
+};
+
+&dma {
+	status = "okay";
+};

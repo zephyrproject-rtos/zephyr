@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mikroe_flash_6_click
+  full_name: Flash 6 Click
+  vendor: mikroe
+  supported_features:
+    - mtd

@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Core and device clock set up
+ *
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ */
+
+&clk_hsi {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(64)>;
+	hsi-div = <1>;
+};
+
+&cpusw {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
+	clock-frequency = <DT_FREQ_M(150)>;
+};
+
+&ic1 {
+	status = "okay";
+	pll-src = <1>;
+	ic-div = <4>;
+};
+
+&ic2 {
+	status = "okay";
+	pll-src = <1>;
+	ic-div = <3>;
+};
+
+&ic6 {
+	status = "okay";
+	pll-src = <1>;
+	ic-div = <2>;
+};
+
+&ic11 {
+	status = "okay";
+	pll-src = <1>;
+	ic-div = <3>;
+};
+
+&perck {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
+};
+
+&pll1 {
+	status = "okay";
+	clocks = <&clk_hsi>;
+	div-m = <4>;
+	mul-n = <75>;
+	div-p1 = <2>;
+	div-p2 = <1>;
+};
+
+&rcc {
+	/* ic2, ic6 & ic11 must all be enabled to set ic2 as SYSCLK */
+	clocks = <&ic2>;
+	clock-frequency = <DT_FREQ_M(400)>;
+	ahb-prescaler = <2>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb4-prescaler = <1>;
+	apb5-prescaler = <1>;
+};
+
+&i2c1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 21)>, <&rcc STM32_SRC_HSI_DIV I2C1_SEL(5)>;
+	status = "disabled";
+};
+
+&adc1 {
+	clocks = <&rcc STM32_CLOCK(AHB1, 5)>, <&rcc STM32_SRC_HSI_DIV ADC12_SEL(5)>;
+	status = "disabled";
+};
+
+&spi5 {
+	clocks = <&rcc STM32_CLOCK(APB2, 20)>, <&rcc STM32_SRC_HSI_DIV SPI5_SEL(5)>;
+	status = "disabled";
+};

@@ -1,0 +1,13 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config RCAR_CMT_TIMER
+	bool "Renesas RCar cmt timer"
+	default y
+	depends on DT_HAS_RENESAS_RCAR_CMT_ENABLED
+	help
+	  This module implements a kernel device driver for the Renesas RCAR
+	  platform provides the standard "system clock driver" interfaces.
+	  If unchecked, no timer will be used.

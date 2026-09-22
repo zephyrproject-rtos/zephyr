@@ -1,0 +1,40 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	flexpwm2_pwm0_default: flexpwm2_pwm0_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b1_18_flexpwm2_pwm0_a>;
+			drive-strength = "normal";
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_emc_b1_19_flexpwm2_pwm0_b>;
+			drive-strength = "normal";
+			slew-rate = "fast";
+		};
+	};
+};
+
+/* To test this sample, connect
+ * GPIO_EMC_B1_18(J53-12) ---> GPIO_EMC_B1_19(J53-14)
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&flexpwm2_pwm0 0 0 PWM_POLARITY_NORMAL>, /* GPIO_EMC_B1_18, out */
+		       <&flexpwm2_pwm0 1 0 PWM_POLARITY_NORMAL>; /* GPIO_EMC_B1_19, in */
+	};
+};
+
+&flexpwm2_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&flexpwm2_pwm0_default>;
+	pinctrl-names = "default";
+};

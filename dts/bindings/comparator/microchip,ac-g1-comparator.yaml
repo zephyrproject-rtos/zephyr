@@ -1,0 +1,128 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G1 Analog Comparator
+
+description: |
+  Binding for the Microchip Comparator driver supporting AC G1 peripherals.
+
+compatible: "microchip,ac-g1-comparator"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address of AC peripheral and its size
+
+  comparator-channel:
+    required: true
+    type: int
+    enum: [0, 1]
+    description: |
+      Comparator channel index (0 or 1).
+
+  single-shot-mode:
+    type: boolean
+    description: |
+      Enable single-shot mode operation. When enabled, the comparator performs a single comparison
+      and disables itself. This must be disabled for continuous-mode features like hysteresis.
+
+  positive-mux-input:
+    type: string
+    enum: ["pin0", "pin1", "pin2", "pin3", "vscale"]
+    description: |
+      Positive input source selection (MUXPOS):
+        - pin0:   I/O pin 0 (0x0)
+        - pin1:   I/O pin 1 (0x1)
+        - pin2:   I/O pin 2 (0x2)
+        - pin3:   I/O pin 3 (0x3)
+        - vscale: VDDANA scaler (0x4)
+
+  negative-mux-input:
+    type: string
+    enum: ["pin0", "pin1", "pin2", "pin3", "gnd", "vscale", "bandgap", "dac"]
+    description: |
+      Negative input source selection (MUXNEG):
+        - pin0:    I/O pin 0 (0x0)
+        - pin1:    I/O pin 1 (0x1)
+        - pin2:    I/O pin 2 (0x2)
+        - pin3:    I/O pin 3 (0x3)
+        - gnd:     Ground (0x4)
+        - vscale:  VDDANA scaler (0x5)
+        - bandgap: Internal bandgap voltage (0x6)
+        - dac:     DAC output (0x7)
+
+  vddana-scale-value:
+    type: int
+    default: 0
+    description: |
+      VSCALE = (VDDANA * (value + 1)) / 64
+      Only used when either positive or negative input is configured as "vscale".
+      Valid range: 0 to 63
+
+  output-mode:
+    type: string
+    enum: ["off", "async", "sync"]
+    default: "off"
+    description: |
+      Comparator output routing mode:
+        - off:   Output is not routed to COMPn I/O pin (0x0)
+        - async: Asynchronous output is routed (0x1)
+        - sync:  Synchronous filtered output is routed (0x2)
+
+  run-standby:
+    type: boolean
+    description: |
+      Keep the comparator running in standby mode (when the core is sleeping).
+
+  hysteresis-enable:
+    type: boolean
+    description: |
+      Enable hysteresis on comparator output.
+      This is only valid when single-shot mode is disabled (i.e., in continuous mode).
+
+  hysteresis-level:
+    type: string
+    enum: ["hyst50", "hyst100", "hyst150"]
+    default: "hyst50"
+    description: |
+      Hysteresis voltage level to apply when hysteresis is enabled:
+        - hyst50:  50 mV (0x0)
+        - hyst100: 100 mV (0x1)
+        - hyst150: 150 mV (0x2)
+
+      This setting is effective only if hysteresis is enabled and single-shot mode is disabled.
+
+  filter-length:
+    type: string
+    enum: ["off", "maj3", "maj5"]
+    default: "off"
+    description: |
+      Output filtering (debounce) mode:
+        - off:   No filtering (0x0)
+        - maj3:  3-bit majority filter (2 of 3) (0x1)
+        - maj5:  5-bit majority filter (3 of 5) (0x2)
+
+  swap-inputs:
+    type: boolean
+    description: |
+      Swap the comparator inputs and invert the output:
+        - false: MUXPOS → positive input, MUXNEG → negative input
+        - true:  MUXNEG → positive input, MUXPOS → negative input (output inverted)
+
+      This can be used for offset cancellation.
+      It must be configured before enabling the comparator.
+
+  event-input-enable:
+    type: boolean
+    description: |
+      Enable the event input path for the comparator.
+
+  event-output-enable:
+    type: boolean
+    description: |
+      Enable the event output path for the comparator.

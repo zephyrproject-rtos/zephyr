@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "nano_ch57x-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,serial = &uart0;
+		zephyr,console = &uart0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led0 {
+			gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
+			label = "LED";
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart_default>;
+	pinctrl-names = "default";
+};

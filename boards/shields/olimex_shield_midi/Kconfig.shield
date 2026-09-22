@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_OLIMEX_SHIELD_MIDI
+	def_bool $(shields_list_contains,olimex_shield_midi)

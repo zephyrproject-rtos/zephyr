@@ -1,0 +1,12 @@
+common:
+  tags:
+    - bluetooth
+    - bt_unsupported
+    - bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_unsupported.default.test:
+    type: unit
+
+  bluetooth.controller.ctrl_unsupported.test:
+    type: unit
+    extra_args: CONF_FILE=prj_unsupported.conf

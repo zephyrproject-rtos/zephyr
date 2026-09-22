@@ -1,0 +1,81 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: GPIO pins exposed on Arduino Mega (rev3) headers
+
+description: |
+    The Arduino Mega layout provides six headers, three each along
+    opposite edges of the board.
+
+    Proceeding counter-clockwise:
+    * An 8-pin Power Supply header. No pins on this header are exposed
+      by this binding.
+    * An 8-pin Analog Input header. This has analog input signals
+      labeled from A0 at the top through A7 at the bottom.
+    * Another 8-pin Analog Input header. This has eight additional analog
+      input signals labeled from A8 at the top through A15 at the bottom.
+
+    * An 8-pin header (opposite the second Analog Input header). This has
+      digital input signals labeled in decreasing order from D21 at the bottom
+      to D14 at the top.
+    * Another 8-pin header (opposite the first Analog Input header). This has
+      digital input signals labeled from D0 at the bottom to D7 at the top.
+    * A 10-pin header (opposite Power Supply). This has six additional
+      digital input signals labelled from D8 at the bottom through D13
+      towards the top, skipping two pins (GND and AREF), then finishing with
+      SDA1 and SCL1 at the top.
+
+    This binding provides a nexus mapping for 40 pins, extending the mapping of
+    the Arduino Uno (R3) header.
+
+    The pins overlapping between Arduino Mega and Arduino Uno have the following
+    parent pin mapping:
+    * Parent pins 0 through 5 correspond to A0 through A5.
+    * Parent pins 6 through 19 correspond to D0 through D13.
+    * Parent pins 20 and 21 correspond to SDA1 and SCL1.
+
+    The additional pins of Arduino Mega have the following parent pin mapping:
+    * Parent pins 22 through 27 correspond to D14 through D19.
+    * Parent pins 28 and 29 correspond to D20 and D21.
+    * Parent pins 30 and 31 correspond to A6 and A7.
+    * Parent pins 32 through 39 correspond to A8 through A15.
+
+    The parent pin mapping and their physical layout are depicted below:
+
+                                 SCL1 21
+                                 SDA1 20
+                                 AREF -
+                                 GND  -
+        - N/C                    D13  19
+        - IOREF                  D12  18
+        - RESET                  D11  17
+        - 3V3                    D10  16
+        - 5V                     D9   15
+        - GND                    D8   14
+        - GND
+        - VIN                    D7   13
+                                 D6   12
+        0  A0                    D5   11
+        1  A1                    D4   10
+        2  A2                    D3    9
+        3  A3                    D2    8
+        4  A4                    D1    7
+        5  A5                    D0    6
+        30 A6
+        31 A7                    D14  22
+                                 D15  23
+        32 A8                    D16  24
+        33 A9                    D17  25
+        34 A10                   D18  26
+        35 A11                   D19  27
+        36 A12                   D20  28
+        37 A13                   D21  29
+        38 A14
+        39 A15
+
+    Use ARDUINO_MEGA_HEADER_* constants in <zephyr/dt-bindings/gpio/arduino-mega-header.h>
+    to refer to specific pins using convenient constant names.
+
+compatible: "arduino-mega-header"
+
+include: [gpio-nexus.yaml, base.yaml]

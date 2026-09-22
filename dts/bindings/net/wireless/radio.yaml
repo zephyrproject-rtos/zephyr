@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Base binding for generic radio hardware capabilities that are not specific
+  to any wireless protocol or vendor.
+
+  These properties describe hardware-supported features that are common across
+  different vendors but are not part of any specific wireless protocol
+  specification. They are read-only and indicate what the hardware is capable
+  of, not what features are currently enabled.
+
+properties:
+  radio-tx-high-power-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports high TX power settings.
+      This capability enables transmission beyond standard power levels
+      (typically >10 dBm).
+
+      This property should be treated as read-only and should not be overridden;
+      the correct value is provided for your target's SoC already.

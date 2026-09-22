@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf54l15.dtsi>
+#include <riscv/nordic/nrf54l_05_10_15_cpuflpr.dtsi>
+
+/* 155 (APP RAM) + 4 (IPC memory) + 96 (FLPR RAM) + 1 (FLPR hibernation) = 256KB */
+/ {
+	soc {
+		cpuflpr_sram: memory@20027c00 {
+			compatible = "mmio-sram";
+			reg = <0x20027c00 DT_SIZE_K(96)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x20027c00 DT_SIZE_K(96)>;
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icbmsg";
+			tx-region = <&cpuflpr_cpuapp_ipc_shm>;
+			rx-region = <&cpuapp_cpuflpr_ipc_shm>;
+			mboxes = <&cpuflpr_vevif_rx 21>, <&cpuflpr_vevif_tx 20>;
+			mbox-names = "rx", "tx";
+			tx-blocks = <15>;
+			rx-blocks = <15>;
+			status = "okay";
+		};
+	};
+};
+
+/* 1428 + 96 = 1524KB */
+&rram_controller {
+	cpuflpr_rram: rram@165000 {
+		compatible = "soc-nv-flash";
+		reg = <0x165000 DT_SIZE_K(96)>;
+		ranges = <0x0 0x165000 DT_SIZE_K(96)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		erase-block-size = <4096>;
+		write-block-size = <16>;
+	};
+};

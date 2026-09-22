@@ -1,0 +1,17 @@
+description: Atmel SAM family USART
+
+compatible: "atmel,sam-usart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

@@ -1,0 +1,8 @@
+# Copyright (c) 2018 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADXL372 3-axis high-g accelerometer, accessed through I2C bus
+
+compatible: "adi,adxl372"
+
+include: ["i2c-device.yaml", "adi,adxl372-common.yaml"]

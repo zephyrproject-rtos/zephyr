@@ -1,0 +1,23 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/* Switch to flexcomm0_lpuart0(P0_16,P0_17), since default console
+		 * pins are duplicated with camera header pins
+		 */
+		zephyr,console = &flexcomm0_lpuart0;
+		zephyr,shell-uart = &flexcomm0_lpuart0;
+	};
+};
+
+&flexcomm0 {
+	status = "okay";
+};
+
+&flexcomm0_lpuart0 {
+	status = "okay";
+};

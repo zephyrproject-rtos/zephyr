@@ -1,0 +1,6 @@
+board:
+  name: orangepi_5_ultra_rk3588
+  full_name: Orange Pi 5 Ultra RK3588
+  vendor: xunlong
+  socs:
+  - name: rk3588

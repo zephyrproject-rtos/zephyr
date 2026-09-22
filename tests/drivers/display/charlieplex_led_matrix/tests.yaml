@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Qualcomm Innovation Center, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - display
+  harness: ztest
+  # Runs entirely on native_sim with emulated GPIO + software counter, so no
+  # hardware fixture is required -- safe for unattended CI.
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+tests:
+  drivers.display.charlieplex_led_matrix:
+    # The test devicetree (boards/native_sim.overlay) instantiates the driver
+    # on gpio0 (zephyr,gpio-emul) + counter0 (zephyr,native-sim-counter).
+    {}

@@ -1,0 +1,9 @@
+tests:
+  drivers.memc.ram_api:
+    tags:
+      - drivers
+      - memc
+    filter: dt_alias_exists("memc0")
+    build_only: true
+    integration_platforms:
+      - nrf7120dk/nrf7120/cpuapp

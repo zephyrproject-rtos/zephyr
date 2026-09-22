@@ -1,0 +1,43 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&ftm1 1 0 PWM_POLARITY_NORMAL>, /* PTB3, P1.3 */
+		       <&ftm0 4 0 PWM_POLARITY_NORMAL>; /* PTB4, P1.4 */
+	};
+};
+
+&pinctrl {
+	ftm0_loopback: ftm0_loopback {
+		group0 {
+			pinmux = <FTM0_CH4_PTB4>;
+			drive-strength = "low";
+		};
+	};
+
+	ftm1_loopback: ftm1_loopback {
+		group0 {
+			pinmux = <FTM1_CH1_PTB3>;
+			drive-strength = "low";
+		};
+	};
+};
+
+&ftm0 {
+	pinctrl-0 = <&ftm0_loopback>;
+	prescaler = <32>;
+	status = "okay";
+};
+
+&ftm1 {
+	pinctrl-0 = <&ftm1_loopback>;
+	prescaler = <128>;
+	status = "okay";
+};

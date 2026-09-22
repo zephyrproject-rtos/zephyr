@@ -1,0 +1,9 @@
+# Private config options for mDNS responder sample app
+
+# Copyright (c) 2023 NordicNordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking mDNS responder sample application"
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"

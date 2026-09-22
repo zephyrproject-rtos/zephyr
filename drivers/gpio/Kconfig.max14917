@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# MAX14917 GPIO configuration options
+
+menuconfig GPIO_MAX14917
+	bool "MAX14917 GPIO driver"
+	default y
+	select CRC
+	depends on DT_HAS_ADI_MAX14917_GPIO_ENABLED && SPI
+	help
+	  Enable MAX14917 octal industrial digital
+	  output with diagnostics
+
+config GPIO_MAX14917_INIT_PRIORITY
+	int "Driver init priority"
+	default 99
+	depends on GPIO_MAX14917
+	help
+	  Device driver initialization priority.

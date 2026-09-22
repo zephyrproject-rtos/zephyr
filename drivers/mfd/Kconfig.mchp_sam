@@ -1,0 +1,10 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_MCHP_SAM_FLEXCOM
+	bool "Driver for the Microchip SAM FLEXCOM Interface"
+	default y
+	depends on DT_HAS_MICROCHIP_SAM_FLEXCOM_ENABLED
+	help
+	  Enabled the SAM FLEXCOM driver.

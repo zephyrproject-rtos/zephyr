@@ -1,0 +1,17 @@
+identifier: m5stickc_plus/esp32/procpu
+name: M5StickC PLUS PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - pinmux
+  - nvs
+  - regulator
+  - display
+vendor: m5stack

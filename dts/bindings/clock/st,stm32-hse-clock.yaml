@@ -1,0 +1,31 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 HSE Clock
+
+compatible: "st,stm32-hse-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  hse-bypass:
+    type: boolean
+    description: |
+      HSE crystal oscillator bypass
+      Set to the property to by-pass the oscillator with an external clock.
+
+  css-enabled:
+    type: boolean
+    description: |
+      HSE clock security system enabled
+      Set the property to enable the clock security system (CSS) for the HSE clock.
+
+      If a failure is detected on the HSE clock, the HSE oscillator is automatically disabled,
+      a clock failure event is sent to timers, and a non-maskable interrupt is generated to
+      inform the software about the failure, allowing the MCU to perform rescue operations.
+      See the MCU reference manual for details.
+
+      The interaction of CSS and low-power modes is unclear from the documentation.
+      For at least some devices Zephyr will reconfigure the clocks on resuming from low-power
+      modes; this will include re-enabling CSS. However it is important that you verify
+      this for your own hardware.

@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-PS/2 controller node
+
+compatible: "nuvoton,npcx-ps2-ctrl"
+
+include: base.yaml
+
+bus: ps2
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true

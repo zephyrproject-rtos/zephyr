@@ -1,0 +1,17 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&qtmr1 {
+	status = "okay";
+};
+
+&qtmr1_timer0 {
+	status = "okay";
+	#counter-capture-cells = <2>;
+	primary-source = "kQTMR_ClockDivide_128";
+	secondary-source = "kQTMR_Counter0InputPin";
+	mode = "kQTMR_PriSrcRiseEdge";
+};

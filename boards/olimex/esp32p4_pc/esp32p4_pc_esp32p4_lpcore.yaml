@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: esp32p4_pc/esp32p4/lpcore
+name: ESP32-P4-PC LP Core
+vendor: olimex
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - cpu
+  - uart
+  - serial
+testing:
+  only_tags:
+    - introduction
+  ignore_tags:
+    - kernel
+    - posix
+    - chre
+    - cpp

@@ -1,0 +1,34 @@
+# Copyright (c) 2023, Meta
+# SPDX-License-Identifier: Apache-2.0
+
+# Options specific to clock.c / test_realtime
+
+config TEST_CLOCK_RT_ITERATIONS
+	int "Number of iterations to check clock_gettime() reliability"
+	range 10 100
+	default 20
+	help
+	  This option is specific to posix_apis.test_realtime in clock.c
+
+config TEST_CLOCK_RT_SLEEP_MS
+	int "Time to sleep between iterations in milliseconds"
+	range 50 1000
+	default 100
+	help
+	  This option is specific to posix_apis.test_realtime in clock.c
+
+config TEST_CLOCK_RT_ERROR_MS
+	int "Maximum overshoot (error) in milliseconds"
+	range 10 500
+	default 10
+	help
+	  This option is specific to posix_apis.test_realtime in clock.c
+
+config TEST_SEM_N_LOOPS
+	int "Number of loops in semaphore test"
+	range 16 1024
+	default 32
+	help
+	  This option is specific to semaphore.test_named_semaphore in semaphore.c
+
+source "Kconfig.zephyr"

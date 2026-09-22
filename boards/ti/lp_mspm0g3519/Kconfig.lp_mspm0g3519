@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LP_MSPM0G3519
+	select SOC_MSPM0G3519

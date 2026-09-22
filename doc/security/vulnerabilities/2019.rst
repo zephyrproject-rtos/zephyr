@@ -1,0 +1,22 @@
+.. _vulnerabilities_2019:
+
+CVE-2019
+########
+
+:cve:`2019-9506`
+----------------
+
+The Bluetooth BR/EDR specification up to and including version 5.1
+permits sufficiently low encryption key length and does not prevent an
+attacker from influencing the key length negotiation. This allows
+practical brute-force attacks (aka "KNOB") that can decrypt traffic
+and inject arbitrary ciphertext without the victim noticing.
+
+- `Zephyr project bug tracker ZEPSEC-20
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-20>`_
+
+- `PR18702 fix for v1.14.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/18702>`_
+
+- `PR18659 fix for v2.0.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/18659>`_

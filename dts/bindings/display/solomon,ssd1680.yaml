@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Andreas Sandberg
+# SPDX-License-Identifier: Apache-2.0
+
+description: Solomon Systech SSD1680 296x176 EPD display controller
+
+compatible: "solomon,ssd1680"
+
+include: solomon,ssd16xx-common.yaml
+
+properties:
+  ram-ping-pong-mode2:
+    type: boolean
+    description:
+      Enable RAM ping-pong for display mode 2 by setting F[6] in the
+      display option register.

@@ -1,0 +1,6 @@
+board:
+  name: rp2350b_plus_w
+  full_name: Waveshare RP2350B Plus W
+  vendor: waveshare
+  socs:
+    - name: rp2350b

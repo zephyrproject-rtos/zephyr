@@ -1,0 +1,13 @@
+# ARM CMSDK (Cortex-M System Design Kit) AHB GPIO cfg
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_CMSDK_AHB
+	bool "ARM CMSDK (Cortex-M System Design Kit) AHB GPIO Controllers"
+	default y
+	depends on DT_HAS_ARM_CMSDK_GPIO_ENABLED
+	help
+	  Enable config options to support the ARM CMSDK GPIO controllers.
+
+	  Says n if not sure.

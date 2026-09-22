@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u3/stm32u3.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32u385", "st,stm32u3", "simple-bus";
+	};
+};

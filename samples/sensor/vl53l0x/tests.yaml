@@ -1,0 +1,17 @@
+sample:
+  name: Sample for MEMS sensors VL53L0X
+tests:
+  sample.sensor.vl53l0x:
+    depends_on:
+      - i2c
+      - vl53l0x
+    tags:
+      - sensors
+    integration_platforms:
+      - disco_l475_iot1
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "prox is .*"
+        - "distance is .*"

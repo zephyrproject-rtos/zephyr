@@ -1,0 +1,13 @@
+sample:
+  description: Demonstration of the LP586x LED matrix driver
+  name: LP586x sample
+tests:
+  sample.drivers.led.lp586x:
+    filter: dt_compat_enabled("ti,lp5860") or
+            dt_compat_enabled("ti,lp5861") or
+            dt_compat_enabled("ti,lp5862") or
+            dt_compat_enabled("ti,lp5864") or
+            dt_compat_enabled("ti,lp5866") or
+            dt_compat_enabled("ti,lp5868")
+    tags: LED
+    depends_on: i2c

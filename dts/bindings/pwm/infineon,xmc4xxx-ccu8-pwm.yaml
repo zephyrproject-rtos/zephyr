@@ -1,0 +1,126 @@
+# Copyright (c) 2023 SLB
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon XMC4XXX PWM Capture Compare Unit 8 (CCU8) module
+
+  The PWM CCU8 module can automatically generate a high-side
+  and a low-side PWM signal, where the two signals are complementary
+  to each other.
+
+  The module supports adding a dead time between the high-side and
+  low-side PWM signals.
+
+  The dead time ensures that there is a delay before the PWM state
+  transitions from 0 to 1, preventing the high-side and low-side
+  switches from being on simultaneously.
+
+  There are two CCU8 modules with DTS node labels: pwm_ccu80 and
+  pwm_ccu81. Each module has four slices, and each slice has
+  two channels. A channel consists of a corresponding high-side
+  and low-side PWM signal.
+
+  The CCU8 modules use the CCU clock source. Each slice applies
+  a separate prescaler to divide the clock. The clock divider is
+  defined by the 'slice-prescaler' property. Additionally, each
+  slice has a dead time prescaler, which divides the slice clock
+  for the dead time counter.
+
+  Device tree example:
+  A node can define a 'pwm' field, usually referenced in a 'pwms'
+  property, where the entries include the PWM module phandle,
+  channel number, pulse period (in nanoseconds or set using
+  PWM_XX() macros), and a channel
+  flag (PWM_POLARITY_NORMAL/PWM_POLARITY_INVERTED).
+
+  The 'pwm_ccu8' node must define the following fields:
+  &pwm_ccu80 {
+          slice-prescaler = <15 15 15 15>;
+          slice-deadtime-prescaler = <3 3 3 3>;
+          channel-deadtime-high = <0 0 0 0 PWM_MSEC(100) 0 0 0>;
+          channel-deadtime-low = <0 0 0 0 PWM_MSEC(100) 0 0 0>;
+          pinctrl-0 = <&pwm_out_p5_9_ccu80_ch4_high &pwm_out_p0_0_ccu80_ch4_low>;
+          pinctrl-names = "default";
+  };
+
+  This will configure channel 4 with a 100msec deadtime on the high
+  and low side PWM signals.
+
+  Another node can reference the PWM as follows:
+  &test_node {
+     ...
+     pwms = <&pwm_ccu80 0 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+     ...
+  };
+
+  The 'pwm_out_p{PORT}_{PIN}_ccu8{MODULE_IDX}_ch{CHANNEL_IDX}_{HIGH_LOW}'
+  format is used for CCU8 pinctrl nodes. 'MODULE_IDX' and 'CHANNEL_IDX'
+  refer to a specific 'pwm_ccu8x' module and channel, respectively.
+  'PORT/PIN' defines the GPIO that the channel connects to.
+  'HIGH_LOW' indicates whether the pin is for the high or low-side signal.
+
+  It's not necessary to specify both the high and low pinctrls. Only the low-side
+  signal can, for example, be used as PWM, but note that the duty cycle of the
+  low signal will be (1 - duty) as set via the API.
+
+  Note that a slice has two channels. Channels 0/1 are in slice 0,
+  channels 2/3 are in slice 1, and so on. Each channel can have its own
+  duty cycle and high/low dead times. But the pulse duration applies to
+  both channels. Thus, when using the PWM control api to modify the pulse width
+  on a channel 0, it will also be updated for channel 1 since they are
+  in the same slice.
+
+compatible: "infineon,xmc4xxx-ccu8-pwm"
+
+include:
+  - name: base.yaml
+  - name: pwm-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  slice-prescaler:
+    type: array
+    required: true
+    description: |
+      Defines the clock divider for each slice.
+      The entry in the array will divide CCU clock by (2 << value).
+      The range for the prescaler values is [0, 15].
+      Reducing prescaler value will improve resolution but decrease the maximum period.
+
+  slice-deadtime-prescaler:
+    type: array
+    required: true
+    description: |
+      Defines the clock divider for dead time counter for each slice.
+      The range for the values is [0, 3].
+      Reducing prescaler value will improve dead time resolution but decrease the
+      maximum dead time.
+
+  channel-deadtime-high:
+    type: array
+    required: true
+    description: |
+      Defines the dead time in nanoseconds for the high-side PWM signal for each channel.
+
+  channel-deadtime-low:
+    type: array
+    required: true
+    description: |
+      Defines the dead time in nanoseconds for the low-side PWM signal for each channel.
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

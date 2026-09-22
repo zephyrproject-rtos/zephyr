@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Framework Computer Inc
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+
+# Enable reset by default
+CONFIG_RESET=y
+CONFIG_CLOCK_CONTROL=y
+
+# Code partition needed to target the correct flash range
+CONFIG_USE_DT_CODE_PARTITION=y
+
+# Output UF2 by default, maskrom bootloader supports it.
+CONFIG_BUILD_OUTPUT_UF2=y
+CONFIG_BUILD_OUTPUT_HEX=y

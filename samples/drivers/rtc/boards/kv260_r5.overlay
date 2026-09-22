@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc = &rtc_counter0;
+	};
+};
+
+&rtc {
+	rtc_counter0: rtc_counter {
+		compatible = "zephyr,rtc-counter";
+		alarms-count = <1>;
+		status = "okay";
+	};
+};

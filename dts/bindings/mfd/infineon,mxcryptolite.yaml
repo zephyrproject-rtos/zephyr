@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MXCRYPTOLITE multi-function device.
+
+  The MXCRYPTOLITE block is a shared hardware crypto engine that provides both
+  a True Random Number Generator (TRNG) and AES/SHA-256 cryptographic
+  acceleration.  This node is the parent that owns the register base address and
+  the shared access mutex.  The individual functions are exposed as child nodes:
+
+    cryptolite0: crypto@52230000 {
+            compatible = "infineon,mxcryptolite";
+            reg = <0x52230000 0x10000>;
+
+            mxcryptolite_trng {
+                    compatible = "infineon,mxcryptolite-trng";
+            };
+
+            mxcryptolite_crypto {
+                    compatible = "infineon,mxcryptolite-crypto";
+            };
+    };
+
+compatible: "infineon,mxcryptolite"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

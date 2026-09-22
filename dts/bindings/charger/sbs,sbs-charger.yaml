@@ -1,0 +1,11 @@
+#
+# Copyright 2023 Cirrus Logic, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: SBS 1.1 compliant charger (http://www.sbs-forum.org/specs)
+
+compatible: "sbs,sbs-charger"
+
+include: [i2c-device.yaml]

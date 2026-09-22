@@ -1,0 +1,17 @@
+# Copyright 2026 Hong Nguyen
+# SPDX-License-Identifier: Apache-2.0
+
+description: GlobalTop PA6H GNSS module (MediaTek MT3339 chipset).
+
+compatible: "globaltop,pa6h"
+
+include:
+  - uart-device.yaml
+
+properties:
+  fix-interval-ms:
+    type: int
+    default: 1000
+    description: |
+      Initial fix update interval in milliseconds.
+      Valid range is 100 to 10000 ms.

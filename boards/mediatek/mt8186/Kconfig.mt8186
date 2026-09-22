@@ -1,0 +1,5 @@
+# Copyright 2024 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MT8186
+	select SOC_MT8186

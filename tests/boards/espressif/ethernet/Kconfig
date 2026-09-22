@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Ethernet Test"
+
+source "Kconfig.zephyr"
+
+config DHCP_ASSIGN_TIMEOUT
+	int "DHCP Assign Timeout (in seconds)"
+	default 30
+	help
+	  Timeout duration for receiving IPv4 address from DHCP.
+	  If no address is assigned within this time, test will fail.
+
+config GATEWAY_PING_TIMEOUT
+	int "Gateway Ping Timeout (in seconds)"
+	default 10
+	help
+	  Timeout duration for pinging the network gateway.
+	  If no reply is received within this time, test will fail.

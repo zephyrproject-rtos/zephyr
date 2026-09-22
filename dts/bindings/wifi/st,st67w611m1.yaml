@@ -1,0 +1,28 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST67W611M1 Wi-Fi module
+
+compatible: "st,st67w611m1"
+
+include: spi-device.yaml
+
+properties:
+  chip-select-gpios:
+    type: phandle-array
+    required: true
+    description:
+      Pin set to 1 by the host to wake up the ST67 and indicate that data is
+      ready to be sent.
+
+  ready-gpios:
+    type: phandle-array
+    required: true
+    description:
+      Pin set to 1 by the ST67 to inform the host that data is ready to be
+      sent or to acknowledge that it is ready to receive data.
+
+  chip-en-gpios:
+    type: phandle-array
+    required: true
+    description: Pin set to 1 by the host to power on the ST67.

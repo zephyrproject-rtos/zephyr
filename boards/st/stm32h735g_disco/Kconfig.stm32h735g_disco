@@ -1,0 +1,5 @@
+# Copyright (c) 2021 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H735G_DISCO
+	select SOC_STM32H735XX

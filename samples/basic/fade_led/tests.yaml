@@ -1,0 +1,19 @@
+sample:
+  name: Fade LED
+tests:
+  sample.basic.fade_led:
+    tags:
+      - drivers
+      - pwm
+    depends_on: pwm
+    filter: dt_alias_exists("pwm-led0") and dt_compat_enabled("pwm-leds")
+    integration_platforms:
+      - nrf51dk/nrf51822
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "PWM-based LED fade"
+        - "Using pulse width [0-9]+%"
+        - "Using pulse width [0-9]+%"

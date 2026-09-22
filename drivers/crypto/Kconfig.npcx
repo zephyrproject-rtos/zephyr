@@ -1,0 +1,11 @@
+# NPCX SHA driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_NPCX_SHA
+	bool "NPCX SHA driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_SHA_ENABLED
+	help
+	  Enable NPCX SHA driver.

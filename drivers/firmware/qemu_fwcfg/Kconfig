@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Maximilian Zimmermann
+# SPDX-License-Identifier: Apache-2.0
+
+config QEMU_FWCFG
+	bool "Support for QEMU's fwcfg"
+	depends on DT_HAS_QEMU_FW_CFG_MMIO_ENABLED || DT_HAS_QEMU_FW_CFG_IOPORT_ENABLED
+	help
+	  Enable support for QEMU's firmware configuration device.
+
+if QEMU_FWCFG
+
+config QEMU_FWCFG_MMIO
+	bool "QEMU fwcfg MMIO transport"
+	default y
+	depends on DT_HAS_QEMU_FW_CFG_MMIO_ENABLED
+	help
+	  Enable support for the memory-mapped (MMIO) QEMU fwcfg transport.
+
+config QEMU_FWCFG_IOPORT
+	bool "QEMU fwcfg I/O port transport"
+	default y
+	depends on X86
+	depends on DT_HAS_QEMU_FW_CFG_IOPORT_ENABLED
+	help
+	  Enable support for the I/O port QEMU fwcfg transport.
+
+config QEMU_FWCFG_DMA_BOUNCE_SIZE
+	int "QEMU fwcfg DMA bounce buffer size"
+	default 4096
+	range 16 65536
+	help
+	  Size in bytes of the internal per-device DMA bounce buffer used by
+	  the QEMU fwcfg driver. Larger values reduce the number of DMA
+	  transactions for large transfers, while smaller values reduce RAM
+	  usage.
+
+endif # QEMU_FWCFG

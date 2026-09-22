@@ -1,0 +1,11 @@
+# Atmel XDMAC SAM driver configuration options
+
+# Copyright (c) 2017 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_SAM_XDMAC
+	bool "Atmel SAM DMA (XDMAC) driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_XDMAC_ENABLED
+	help
+	  Enable Atmel SAM MCU Family Direct Memory Access (XDMAC) driver.

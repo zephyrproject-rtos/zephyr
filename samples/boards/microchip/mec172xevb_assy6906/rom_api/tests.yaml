@@ -1,0 +1,21 @@
+sample:
+  description: MEC172x EVB ROM API sample application
+  name: rom_api
+common:
+  tags: crypto
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "Test Zephyr crypto hash API for multiblock plus remainder"
+      - "Test Zephyr crypto hash API for multiblock plus remainder returned 0"
+      - "Test Zephyr crypto arbitrary chunk size = \\d+"
+      - "Test Zephyr crypto arbitrary chunk size returned 0"
+      - "Test Zephyr crypto arbitrary chunk size = \\d+"
+      - "Test Zephyr crypto arbitrary chunk size returned 0"
+      - "Test Zephyr crypto arbitrary chunk size = \\d+"
+      - "Test Zephyr crypto arbitrary chunk size returned 0"
+      - "Application done"
+tests:
+  sample.boards.mec172xevb_assy6906.rom_api:
+    platform_allow: mec172xevb_assy6906

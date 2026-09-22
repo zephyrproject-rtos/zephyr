@@ -1,0 +1,8 @@
+compatible: "silabs,series0-lfrco"
+
+title: Silicon Labs Series 0 LFRCO (Low-Frequency RC Oscillator)
+
+description: |
+  Low-Frequency RC Oscillator peripheral.
+
+include: fixed-clock.yaml

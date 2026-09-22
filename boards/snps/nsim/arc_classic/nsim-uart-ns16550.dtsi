@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2023, Synopsys Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+#ifndef UART0_IRQ_NUM
+#define UART0_IRQ_NUM 24
+#endif
+
+/ {
+	uart0: uart@f0000000 {
+		compatible = "ns16550";
+		clock-frequency = <50000000>;
+		reg = <0xf0000000 0x400>;
+		current-speed = <115200>;
+		interrupt-parent = <&intc>;
+		interrupts = <UART0_IRQ_NUM 1>;
+		reg-shift = <2>;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};

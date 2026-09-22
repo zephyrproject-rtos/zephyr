@@ -1,0 +1,15 @@
+# Copyright 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas SLG47105/SLG47115 GreenPAK Configurable Mixed-Signal IC
+
+compatible: "renesas,slg471x5"
+
+include: i2c-device.yaml
+
+properties:
+  try-unconfigured:
+    type: boolean
+    description: |
+      If selected driver will test transaction on address 0x0 first, before
+      trying address defined in devicetree.

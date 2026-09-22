@@ -1,0 +1,12 @@
+# GD32 counter timer configuration options
+
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_TIMER_GD32
+	bool "GD32 timer counter driver"
+	default y
+	depends on DT_HAS_GD_GD32_TIMER_ENABLED && !SOC_SERIES_GD32VF103
+	select USE_GD32_TIMER
+	help
+	  Enable counter timer driver for GD32 series devices.

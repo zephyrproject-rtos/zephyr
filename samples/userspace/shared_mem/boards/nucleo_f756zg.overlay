@@ -1,0 +1,13 @@
+/*
+ * Copyright 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Disable quadspi MPU region for testing
+ * on this stm32f7 target.
+ * Otherwise one region will be missing from the 8 MPU regions
+ */
+
+/delete-node/ &quadspi_memory;

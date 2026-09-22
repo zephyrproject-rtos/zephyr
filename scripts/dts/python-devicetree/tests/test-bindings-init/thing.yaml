@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Right (included last) YAML file for testing diamond inheritance.
+#
+# Amends base.yaml.
+#
+# Binding level:
+# - prop-1 (amended)
+# - prop-enum (amended)
+# - prop-thing (new property)
+#
+# Child-binding level:
+#  - child-prop-1 (amended)
+#  - child-prop-enum (amended)
+#  - child-prop-thing (new property)
+#
+# Grandchild-binding level:
+#   - grandchild-prop-1 (amended)
+#   - grandchild-prop-enum (amended)
+#   - grandchild-prop-thing (new property)
+
+description: Description of 'thing.yaml'.
+
+include:
+  - name: base.yaml
+    property-allowlist: [prop-1, prop-enum]
+    child-binding:
+      property-allowlist: [child-prop-1, child-prop-enum]
+      child-binding:
+        property-allowlist: [grandchild-prop-1, grandchild-prop-enum]
+
+properties:
+  prop-1:
+    default: 1
+    # Diamond inheritance in diamond.yaml: should overwrite
+    # the amended description from base_amend.yaml.
+    description: Overwritten in thing.yaml.
+
+  prop-enum:
+    # This is the definition inherited from base.yaml.
+    #
+    # Diamond inheritance in diamond.yaml: should be ORed
+    # with the definition inherited via base_amend.yaml.
+    required: false
+
+  prop-thing:
+    description: Thing property.
+    type: int
+
+child-binding:
+  description: Child-binding description (thing).
+  properties:
+    child-prop-1:
+      description: Overwritten in thing.yaml (child).
+      default: 2
+    child-prop-enum:
+      required: false
+    child-prop-thing:
+      description: Thing child-binding property.
+      type: int
+
+  child-binding:
+    description: Grandchild-binding description (thing).
+    properties:
+      grandchild-prop-1:
+        description: Overwritten in thing.yaml (grandchild).
+        default: 3
+      grandchild-prop-enum:
+        required: false
+      grandchild-prop-thing:
+        description: Thing grandchild-binding property.
+        type: int

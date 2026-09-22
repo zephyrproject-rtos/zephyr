@@ -1,0 +1,11 @@
+# Copyright 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAPTICS_DRV2605
+	bool "DRV2605 Haptics Driver"
+	default y
+	depends on DT_HAS_TI_DRV2605_ENABLED
+	select I2C
+	help
+	  Enable I2C-based driver for the Texas Instruments DRV2605 Haptics
+	  Driver.

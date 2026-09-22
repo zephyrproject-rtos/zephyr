@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PA22 <-> PD8 (SDA) and PA23 <-> PD9 (SCL) */
+
+&pinctrl {
+	sercom3_i2c_default: sercom3_i2c_default {
+		group1 {
+			pinmux = <PA22C_SERCOM3_PAD0>,
+				 <PA23C_SERCOM3_PAD1>;
+		};
+	};
+};
+
+&sercom3 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom3_i2c_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&sercom7 {
+	eeprom1: eeprom@58 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x58>;
+		size = <256>;
+	};
+};

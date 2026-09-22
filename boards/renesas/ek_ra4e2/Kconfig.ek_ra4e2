@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EK_RA4E2
+	select SOC_R7FA4E2B93CFM

@@ -1,0 +1,28 @@
+/*
+ * Device Tree Source for the R-Car H3 (R8A77951) SoC
+ *
+ * Copyright (C) 2023 EPAM Systems.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "rcar_gen3_ca57.dtsi"
+
+/ {
+	compatible = "renesas,r8a77951";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		a57_0: cpu@0 {
+			compatible = "arm,cortex-a57", "arm,armv8";
+			reg = <0x0>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+	};
+};
+
+&cpg {
+	compatible = "renesas,r8a7795-cpg-mssr";
+};

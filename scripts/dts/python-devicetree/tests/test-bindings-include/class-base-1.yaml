@@ -1,0 +1,8 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Class union test base 1
+
+compatible: "class-base-1"
+
+class: class-a

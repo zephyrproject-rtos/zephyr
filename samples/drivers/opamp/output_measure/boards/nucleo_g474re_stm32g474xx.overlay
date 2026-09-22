@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&opamp2>;
+		adc-read-delay-ms = <100>;
+		io-channels = <&adc2 16>;
+	};
+};
+
+&spi2 {
+	/* Disabled to avoid conflicts with opamp gpio allocation */
+	status = "disabled";
+};
+
+&adc2 {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@10 {
+		reg = <16>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&opamp2 {
+	pinctrl-0 = <&opamp2_vinp_pb14>;
+	pinctrl-names = "default";
+	functional-mode = "follower";
+	inp = "VINP1"; /* PB14 */
+	/* To enable VINM0: add opamp2_vinm_pa5 to pinctrl-0 and disable spi1 */
+	/* st,inm-filtering = "VINM0"; */ /* PA5 */
+	io-channels = <&adc2 16>;
+	st,enable-self-calibration;
+	status = "okay";
+};

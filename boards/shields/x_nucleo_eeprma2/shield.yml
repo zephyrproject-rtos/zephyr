@@ -1,0 +1,6 @@
+shield:
+  name: x_nucleo_eeprma2
+  full_name: X-NUCLEO-EEPRMA2
+  vendor: st
+  supported_features:
+    - mtd

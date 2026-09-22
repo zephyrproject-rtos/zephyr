@@ -1,0 +1,33 @@
+# Copyright(c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip RTC MSS driver
+
+description: |
+  Microchip RTC driver.
+
+  This driver configures the RTC peripheral in Microchip
+  microcontrollers for clock and interrupts.
+
+compatible: "microchip,rtc-mss"
+
+include: [rtc.yaml, rtc-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register base address and size for the RTC peripheral.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt specifier for the RTC peripheral.
+
+  clock-frequency:
+    required: true
+
+  prescaler:
+    type: int
+    description: |
+      RTC frequency equals clock-frequency divided by the prescaler value

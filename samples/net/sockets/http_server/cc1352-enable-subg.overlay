@@ -1,0 +1,21 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * Overlay to enable for CC1352R1 / CC1352P1-based boards.
+ */
+
+/ {
+	chosen {
+		zephyr,ieee802154 = &ieee802154g;
+	};
+};
+
+&ieee802154 {
+	status = "disabled";
+};
+
+&ieee802154g {
+	status = "okay";
+};

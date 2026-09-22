@@ -1,0 +1,28 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Clock-related configurations
+CONFIG_CLOCK_CONTROL=y
+
+# Serial interface-related configurations
+CONFIG_SERIAL=y
+CONFIG_UART_CONSOLE=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+CONFIG_CONSOLE=y
+
+# SCMI-related configurations
+CONFIG_MBOX=y
+CONFIG_MBOX_INIT_PRIORITY=0
+CONFIG_ARM_SCMI=y
+CONFIG_ARM_SCMI_NXP_VENDOR_EXTENSIONS=y
+
+# Kernel-related configurations
+CONFIG_XIP=y
+
+# Peripheral-related configurations
+CONFIG_GPIO=y
+CONFIG_FLASH_MCUX_FLEXSPI_FORCE_USING_OVRDVAL=y
+CONFIG_FLASH_MCUX_FLEXSPI_OVRDVAL=27

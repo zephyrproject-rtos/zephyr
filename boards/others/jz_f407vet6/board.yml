@@ -1,0 +1,6 @@
+board:
+  name: jz_f407vet6
+  full_name: JZ-F407VET6 Industrial Control Board
+  vendor: others
+  socs:
+    - name: stm32f407xx

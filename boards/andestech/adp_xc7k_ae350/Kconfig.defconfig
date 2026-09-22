@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice SOC_AE350_INTERRUPT_TYPE
+	default SOC_AE350_INTERRUPT_TYPE_CLIC if BOARD_ADP_XC7K_AE350_CLIC
+
+endchoice

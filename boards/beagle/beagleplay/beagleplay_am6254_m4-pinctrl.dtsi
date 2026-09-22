@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+
+&pinctrl {
+	mikrobus_uart_pins_default: mikrobus-uart-default-pins {
+		pinmux = </* (C15) MCAN0_TX.UART5_RXD */
+			  K3_PINMUX(0x01d8, PIN_INPUT, MUX_MODE_1)
+			  /* (E15) MCAN0_RX.UART5_TXD */
+			  K3_PINMUX(0x01dc, PIN_OUTPUT, MUX_MODE_1)>;
+	};
+};

@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2021 Aspeed Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <aspeed/ast10x0.dtsi>
+
+/ {
+	model = "Aspeed AST1030 Evaluation board";
+	compatible = "aspeed,ast1030-evb";
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,sram = &sram0;
+	};
+};
+
+&sram0 {
+	reg = <0 DT_SIZE_K(448)>, <0x70000 DT_SIZE_K(320)>;
+};
+
+&uart5 {
+	clock-frequency = <1846153>;
+	current-speed = <115200>;
+	status = "okay";
+};

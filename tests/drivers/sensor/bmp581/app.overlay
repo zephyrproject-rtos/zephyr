@@ -1,0 +1,18 @@
+/* Copyright (c) 2026 Meta Platforms
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	bmp581: bmp581@46 {
+		compatible = "bosch,bmp581";
+		reg = <0x46>;
+	};
+};
+
+&spi0 {
+	bmp581_spi: bmp581@0 {
+		compatible = "bosch,bmp581";
+		reg = <0>;
+		spi-max-frequency = <0>;
+	};
+};

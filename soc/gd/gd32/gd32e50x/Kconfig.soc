@@ -1,0 +1,18 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32E50X
+	bool
+	select SOC_FAMILY_GD_GD32
+	help
+	  Enable support for GigaDevice GD32E50X MCU series
+
+config SOC_SERIES
+	default "gd32e50x" if SOC_SERIES_GD32E50X
+
+config SOC_GD32E507
+	bool
+	select SOC_SERIES_GD32E50X
+
+config SOC
+	default "gd32e507" if SOC_GD32E507

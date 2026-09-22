@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Internal loopback on GPIO8 using channels without DMA, so the
+ * interrupt driven transfer paths are exercised.
+ */
+
+&pinctrl {
+	pulse_io_loopback: pulse_io_loopback {
+		group1 {
+			pinmux = <RMT_OUT0_GPIO8>;
+		};
+
+		group2 {
+			pinmux = <RMT_IN0_GPIO8>;
+			input-enable;
+		};
+	};
+};
+
+&rmt {
+	pinctrl-0 = <&pulse_io_loopback>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/ {
+	aliases {
+		pulse-io0 = &rmt;
+	};
+};

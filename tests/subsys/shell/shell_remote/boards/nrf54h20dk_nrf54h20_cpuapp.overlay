@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpuapp_cpuppr_ipc {
+	status = "okay";
+};
+
+&cpuapp_cpuflpr_ipc {
+	status = "okay";
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};
+
+&cpuflpr_vevif {
+	status = "okay";
+};
+
+&cpuppr_vpr {
+	status = "okay";
+};
+
+&cpuflpr_vpr {
+	status = "okay";
+};

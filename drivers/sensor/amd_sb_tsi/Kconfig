@@ -1,0 +1,21 @@
+# SB-TSI configuration options
+
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config AMD_SB_TSI
+	bool "AMD SB Temperature Sensor Interface"
+	default y
+	depends on DT_HAS_AMD_SB_TSI_ENABLED
+	select I2C
+	help
+	  Enable the driver for SB Temperature Sensor Interface. This
+	  is an I2C temperature sensor on AMD SoCs.
+
+config EMUL_AMD_SB_TSI
+	bool "Emulator for AMD SB-TSI"
+	default y
+	depends on AMD_SB_TSI
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the AMD SB-TSI.

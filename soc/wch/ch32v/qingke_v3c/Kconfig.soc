@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_QINGKE_V3C
+	bool
+	select SOC_FAMILY_CH32V
+
+config SOC_SERIES
+	default "qingke_v3c" if SOC_SERIES_QINGKE_V3C
+
+rsource "Kconfig.soc.*"

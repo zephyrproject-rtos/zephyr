@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: sparkfun_rv8803
+  full_name: Sparkfun RV8803 Real Time Clock Shield
+  vendor: sparkfun
+  supported_features:
+    - rtc

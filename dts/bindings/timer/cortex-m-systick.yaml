@@ -1,0 +1,37 @@
+# Copyright (c) 2023 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for SysTick of ARM Cortex-M chips
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  external-clock-source:
+    type: boolean
+    description: |
+      For ARM Cortex-M SysTick timer, the CLKSOURCE bit in the
+      SysTick Control and Status Register (CSR) selects the clock source.
+      If this property is present, the external reference clock is selected.
+      If absent, the processor/core clock is selected.
+
+  zephyr,min-timeout-cycles:
+    type: int
+    description: |
+      Minimum SysTick timeout, in SysTick cycles. This is the smallest value the
+      SysTick driver will program into the timer LOAD register. It determines the
+      kernel's minimum available timing granularity (resolution) in conjunction
+      with the clock frequency (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC).
+
+      When specified, the minimum timing granularity is
+      (<value> cycles / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) seconds, subject to
+      a hardware floor of two cycles (a LOAD of zero stops the counter).
+
+      Otherwise, the default is derived from a fixed wall-clock budget
+      (SYSTICK_MIN_DELAY_US, 10 us) converted to cycles at the actual clock
+      frequency and floored at two cycles.
+
+      Set this property only when the default budget is unsuitable, for example
+      to enlarge the floor when the SysTick interrupt can be masked for longer
+      than 10 us (see CONFIG_CORTEX_M_SYSTICK_INTERRUPT_PRIORITY).

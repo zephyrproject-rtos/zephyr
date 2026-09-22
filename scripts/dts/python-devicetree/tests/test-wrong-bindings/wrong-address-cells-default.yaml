@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: "Explicitly set #address-cells defaults should be forbidden"
+
+compatible: "wrong-address-cells-default"
+
+properties:
+  "#address-cells":
+    type: int
+    # Treat any default as an error, even if it's the value
+    # recommended by the spec. A spec-compliant program should
+    # be explicitly setting these properties.
+    default: 2

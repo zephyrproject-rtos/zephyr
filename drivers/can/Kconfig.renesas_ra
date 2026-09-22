@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_RENESAS_RA_CANFD
+	bool "Renesas RA CANFD"
+	default y
+	depends on DT_HAS_RENESAS_RA_CANFD_ENABLED
+	select USE_RA_FSP_CANFD
+	select PINCTRL
+	help
+	  Enable Renesas RA CANFD driver

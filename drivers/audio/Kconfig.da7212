@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_DA7212
+	bool "Dialog DA7212 codec support"
+	default y
+	select I2C
+	depends on DT_HAS_DLG_DA7212_ENABLED
+	help
+	  Enable support for the Dialog DA7212 audio codec.

@@ -1,0 +1,8 @@
+sample:
+  name: TMC50XX Stepper Sample
+tests:
+  sample.drivers.stepper.tmc50xx:
+    harness: stepper
+    tags: stepper
+    platform_allow: nucleo_g071rb
+    depends_on: spi

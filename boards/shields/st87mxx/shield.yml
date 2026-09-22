@@ -1,0 +1,6 @@
+shield:
+  name: st87mxx
+  full_name: ST87MXX module
+  vendor: st
+  supported_features:
+    - modem

@@ -1,0 +1,39 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-test = &emios0_pwm;
+	};
+};
+
+&pinctrl {
+	emios0_default: emios0_default {
+		group0 {
+			pinmux = <PN5_EMIOS0_CH0_X_O>;
+			output-enable;
+		};
+	};
+};
+
+&emios0 {
+	clock-divider = <133>;
+	status = "okay";
+
+	emios0_pwm: pwm {
+		pinctrl-0 = <&emios0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm_0 {
+			channel = <0>;
+			prescaler = <16>;
+			pwm-mode = "OPWFMB";
+		};
+	};
+};

@@ -1,0 +1,12 @@
+# Atmel SAMC21 MCU series configuration options
+
+# Copyright (c) 2022 Kamil Serwus
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAMC21
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_SERIES_SAMC21

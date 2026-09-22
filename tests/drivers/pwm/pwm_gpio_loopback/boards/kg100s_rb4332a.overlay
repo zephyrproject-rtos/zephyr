@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2026 Martin Moya <martin.moya@focus.uy>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg21-pinctrl.h>
+
+/*
+ * Connections:
+ * PB0 - PD4: LETIMER0 (PB0) to GPIO (PD4)
+ * PB1 - PD1: TIMER0 (PB1) to GPIO (PA4)
+ */
+
+/ {
+	zephyr,user {
+		pwms = <&letimer0_pwm 0 PWM_MSEC(5) PWM_POLARITY_NORMAL>,
+		       <&timer0_pwm 0 PWM_MSEC(5) PWM_POLARITY_NORMAL>;
+		gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>, <&gpioa 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	letimer0_default: letimer0_default {
+		group1 {
+			pins = <LETIMER0_OUT0_PB0>;
+			drive-push-pull;
+		};
+	};
+
+	timer0_default: timer0_default {
+		group1 {
+			pins = <TIMER0_CC0_PB1>;
+			drive-push-pull;
+		};
+	};
+};
+
+&letimer0 {
+	status = "okay";
+
+	letimer0_pwm: pwm {
+		pinctrl-0 = <&letimer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};

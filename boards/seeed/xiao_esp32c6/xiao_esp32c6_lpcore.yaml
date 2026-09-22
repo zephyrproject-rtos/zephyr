@@ -1,0 +1,17 @@
+identifier: xiao_esp32c6/esp32c6/lpcore
+name: XIAO ESP32C6 LP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - cpu
+testing:
+  only_tags:
+    - introduction
+  ignore_tags:
+    - kernel
+    - posix
+    - chre
+    - cpp
+vendor: seeed

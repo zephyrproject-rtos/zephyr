@@ -1,0 +1,39 @@
+# Native LoRaWAN backend configuration
+#
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if LORA_MODULE_BACKEND_NATIVE
+
+config LORAWAN_NATIVE
+	bool
+	default y
+	select PSA_CRYPTO
+	select PSA_WANT_ALG_CMAC
+	select PSA_WANT_ALG_ECB_NO_PADDING
+	select PSA_WANT_KEY_TYPE_AES
+	help
+	  Hidden config to enable native LoRaWAN backend specific options.
+
+config LORAWAN_NATIVE_ENGINE_STACK_SIZE
+	int "Engine thread stack size"
+	default 4096
+	help
+	  Stack size for the native LoRaWAN engine thread.
+
+config LORAWAN_NATIVE_ENGINE_PRIORITY
+	int "Engine thread priority"
+	default 2
+	help
+	  Priority for the native LoRaWAN engine thread.
+
+config LORAWAN_NATIVE_PUBLIC_NETWORK
+	bool "LoRaWAN Public Network"
+	default y
+	help
+	  Enable this option to use a public LoRaWAN network.
+	  Disable for private LoRaWAN networks.
+
+endif # LORA_MODULE_BACKEND_NATIVE
+
+rsource "region/Kconfig"

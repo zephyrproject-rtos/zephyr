@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020 Erwin Rol <erwin@erwinrol.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma1 {
+	status = "okay";
+};
+
+tst_dma0: &dma2 {
+	status = "okay";
+};

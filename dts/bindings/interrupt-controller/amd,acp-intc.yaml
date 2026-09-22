@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMD ACP interrupt controller
+
+compatible: "amd,acp-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+interrupt-cells:
+  - irq

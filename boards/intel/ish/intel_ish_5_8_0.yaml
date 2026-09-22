@@ -1,0 +1,18 @@
+identifier: intel_ish_5_8_0
+name: Intel ISH 5.8.0 SoC
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 640
+simulation:
+  - name: simics
+    exec: simics
+supported:
+  - serial
+testing:
+  timeout_multiplier: 2
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel

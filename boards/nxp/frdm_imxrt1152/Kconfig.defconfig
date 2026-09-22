@@ -1,0 +1,16 @@
+# FRDM-IMXRT1152 board
+
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_IMXRT1152
+
+# Use External Memory Configuration Data (XMCD) by default so the boot
+# ROM configures the FlexSPI2 HyperRAM used as the main SRAM region
+config EXTERNAL_MEM_CONFIG_DATA
+	default y
+
+config NXP_IMX_EXTERNAL_HYPERRAM
+	default y
+
+endif # BOARD_FRDM_IMXRT1152

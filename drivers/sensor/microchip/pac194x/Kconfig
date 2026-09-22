@@ -1,0 +1,13 @@
+# Microchip PAC195X power monitor driver
+#
+# Copyright (c) 2026 Google, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config PAC194X
+	bool "PAC194X/PAC195X power monitor sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_PAC194X_ENABLED
+	select I2C
+	help
+	  Enables PAC194X/PAC195X power monitor driver.

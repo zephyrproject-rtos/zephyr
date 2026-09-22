@@ -1,0 +1,18 @@
+identifier: framework_ledmatrix
+name: Framework Laptop 16 LED Matrix
+type: mcu
+arch: arm
+flash: 1024
+ram: 264
+toolchain:
+  - zephyr
+supported:
+  - i2c
+  - gpio
+  - usb_device
+  - watchdog
+  - hwinfo
+  - dma
+  - counter
+  - clock
+vendor: framework

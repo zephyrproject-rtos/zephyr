@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Luis Ubieda
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CROXEL_CX1825
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_CROXEL_CX1825

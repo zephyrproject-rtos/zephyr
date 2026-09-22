@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_EMSDP
+	bool "EMSDP pinmux driver"
+	default y
+	depends on DT_HAS_SNPS_EMSDP_PINCTRL_ENABLED
+	help
+	  Enable driver for the synopsys ARC EMSDP pinctrl driver

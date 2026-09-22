@@ -1,0 +1,17 @@
+description: Xilinx SD/EMMC host controller
+
+compatible: "xlnx,versal-8.9a"
+
+include: [sdhc.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  broken-cd:
+    type: boolean
+    description:
+      There is no card detection available; polling must be used.

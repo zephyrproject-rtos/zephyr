@@ -1,0 +1,16 @@
+# Copyright (c) 2021 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMPE1600 I2C-based GPIO expander
+
+compatible: "st,stmpe1600"
+
+include: [gpio-controller.yaml, i2c-device.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

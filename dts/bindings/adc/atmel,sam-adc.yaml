@@ -1,0 +1,61 @@
+# Copyright (c) 2022, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM family ADC
+
+compatible: "atmel,sam-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+    description: CPU clock prescaler applied to get the ADC clock.
+
+  startup-time:
+    type: int
+    required: true
+    description: |
+      ADC startup time in ADC clock cycles.
+    enum: [0, 8, 16, 24, 64, 80, 96, 112, 512, 576, 640, 704, 768, 832, 896, 960]
+
+  settling-time:
+    type: int
+    required: true
+    description: |
+      ADC settling time in ADC clock cycles. When the gain, offset
+      or differential input parameters of the analog cell change
+      between two channels, the analog cell may need a specific
+      settling time before starting the tracking phase.
+    enum: [3, 5, 9, 17]
+
+  tracking-time:
+    type: int
+    required: true
+    description: |
+      ADC tracking time in ADC clock cycles. A minimal tracking time
+      is necessary for the ADC to guarantee the best converted final
+      value between two channel selections.
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+  "#io-channel-cells":
+    const: 1
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+io-channel-cells:
+  - input

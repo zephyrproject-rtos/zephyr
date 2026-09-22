@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP MC_RGM (Reset Generation Module).
+
+  Found on NXP MCUs with the MC_RGM module (e.g. the MCXE family). The
+  hwinfo reset-cause backend uses this node to decode the MC_RGM DES
+  (Destructive Event Status) and FES (Functional/External Reset Status)
+  registers.
+
+compatible: "nxp,mc-rgm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

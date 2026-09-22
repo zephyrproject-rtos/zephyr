@@ -1,0 +1,29 @@
+sample:
+  name: Bluetooth HCI UART Async
+  description:
+    This sample is a batteries-included example of a Bluetooth HCI UART
+    connectivity chip.
+
+    It demonstrates a possible implementation of an HCI UART (H4)
+    interface on top of Zephyr's Bluetooth Raw API, and how to expose it
+    over a UART.
+
+    This implementation is based on the Zephyr Asynchronous UART API.
+
+common:
+  tags:
+    - uart
+    - bluetooth
+tests:
+  sample.bluetooth.hci_uart_async.nrf5:
+    harness: bluetooth
+    platform_allow:
+      - nrf52dk/nrf52832
+  sample.bluetooth.hci_uart_async.bsim:
+    depends_on: bsim
+    build_only: true
+    platform_allow:
+      - nrf52_bsim
+    harness: bsim
+    harness_config:
+      bsim_exe_name: samples_bluetooth_hci_uart_async_prj_conf

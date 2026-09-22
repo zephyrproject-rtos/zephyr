@@ -1,0 +1,65 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config BLINK_DELAY_SHORT
+	int "Blinking delay for short cycle demo"
+	default 100
+	help
+	  Specifies the LED on/off delay in milliseconds for short cycle
+	  blinking demonstration.
+	  If set to 0, the short-cycle blinking demo will not be performed.
+
+config BLINK_DELAY_LONG
+	int "Blinking delay for long cycle demo"
+	default 1000
+	help
+	  Specifies the LED on/off delay in milliseconds for long cycle
+	  blinking demonstration.
+	  If set to 0, the long-cycle blinking demo will not be performed.
+
+config FADE_DELAY
+	int "Delay time for fade demo"
+	default 10
+	help
+	  Specifies the delay in milliseconds for the fade demo of the
+	  PWM-LED sample.
+	  The brightness gradually increases by one level each time this
+	  delay elapses.
+
+config BLINK_DELAY_AUTO_FALLBACK
+	bool "Enable automatic fallback to calculated delays"
+	default y
+	help
+	  When enabled, if the configured blink delays fail (e.g., exceed
+	  PWM period), the sample will automatically calculate appropriate
+	  delays from the LED's PWM period.
+
+config BLINK_DELAY_SHORT_LED_PERIOD_DIV
+	int "Divisor for auto-calculating short blink delay from PWM period"
+	default 10
+	depends on BLINK_DELAY_AUTO_FALLBACK
+	help
+	  When CONFIG_BLINK_DELAY_SHORT exceeds the timer's range, this divisor
+	  is used to automatically calculate the short blink delay from the
+	  LED's PWM period defined in the devicetree.
+
+	  Formula: delay_ms = (pwm_period_ms / DIVISOR / 2)
+
+	  The division by 2 is because the delay applies to each phase
+	  (on OR off) separately, not the total period.
+
+config BLINK_DELAY_LONG_LED_PERIOD_DIV
+	int "Divisor for auto-calculating long blink delay from PWM period"
+	default 1
+	depends on BLINK_DELAY_AUTO_FALLBACK
+	help
+	  When CONFIG_BLINK_DELAY_LONG exceeds the timer's range, this divisor
+	  is used to automatically calculate the long blink delay from the
+	  LED's PWM period defined in the devicetree.
+
+	  Formula: delay_ms = (pwm_period_ms / DIVISOR / 2)
+
+	  The division by 2 is because the delay applies to each phase
+	  (on OR off) separately, not the total period.
+
+source "Kconfig.zephyr"

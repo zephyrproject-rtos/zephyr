@@ -1,0 +1,6 @@
+board:
+  name: stm32mp257f_dk
+  full_name: STM32MP257F-DK Discovery Kit
+  vendor: st
+  socs:
+    - name: stm32mp257fxx

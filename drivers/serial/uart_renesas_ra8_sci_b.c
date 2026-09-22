@@ -1,0 +1,1517 @@
+/*
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT renesas_ra8_uart_sci_b
+
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
+#include <soc.h>
+#include "r_sci_b_uart.h"
+#ifdef CONFIG_UART_RA8_SCI_B_UART_DTC
+#include "r_dtc.h"
+#endif
+#ifdef CONFIG_UART_RA8_SCI_B_UART_DMAC
+#include "r_dmac.h"
+#endif
+#include "r_transfer_api.h"
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(ra8_uart_sci_b);
+
+#ifdef CONFIG_UART_RA8_SCI_B_UART_DTC
+#define TRANSFER_INFO_ALIGNMENT DTC_TRANSFER_INFO_ALIGNMENT
+#else
+#define TRANSFER_INFO_ALIGNMENT
+#endif
+
+#if defined(CONFIG_UART_ASYNC_API)
+void sci_b_uart_rxi_isr(void);
+void sci_b_uart_txi_isr(void);
+void sci_b_uart_tei_isr(void);
+void sci_b_uart_eri_isr(void);
+#ifdef CONFIG_UART_RA8_SCI_B_UART_DMAC
+void dmac_int_isr(void);
+void sci_b_uart_tx_dmac_callback(sci_b_uart_instance_ctrl_t * const p_ctrl);
+void sci_b_uart_rx_dmac_callback(sci_b_uart_instance_ctrl_t * const p_ctrl);
+#endif
+#endif
+
+struct uart_ra_sci_b_config {
+	R_SCI_B0_Type * const regs;
+	const struct pinctrl_dev_config *pcfg;
+};
+
+struct uart_ra_sci_b_data {
+	const struct device *dev;
+	struct st_sci_b_uart_instance_ctrl sci;
+	struct uart_config uart_config;
+	struct st_uart_cfg fsp_config;
+	struct st_sci_b_uart_extended_cfg fsp_config_extend;
+	struct st_sci_b_baud_setting_t fsp_baud_setting;
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+	uart_irq_callback_user_data_t user_cb;
+	void *user_cb_data;
+	uint32_t csr;
+#endif
+#if defined(CONFIG_UART_ASYNC_API)
+	/* RX */
+	struct st_transfer_instance rx_transfer;
+	struct st_transfer_info rx_transfer_info TRANSFER_INFO_ALIGNMENT;
+	struct st_transfer_cfg rx_transfer_cfg;
+	struct k_work_delayable rx_timeout_work;
+	size_t rx_timeout;
+	uint8_t *rx_buffer;
+	size_t rx_buffer_len;
+	size_t rx_buffer_cap;
+	size_t rx_buffer_offset;
+	uint8_t *rx_next_buffer;
+	size_t rx_next_buffer_cap;
+
+	/* TX */
+	struct st_transfer_instance tx_transfer;
+	struct st_transfer_info tx_transfer_info TRANSFER_INFO_ALIGNMENT;
+	struct st_transfer_cfg tx_transfer_cfg;
+	struct k_work_delayable tx_timeout_work;
+	size_t tx_timeout;
+	uint8_t *tx_buffer;
+	size_t tx_buffer_len;
+	size_t tx_buffer_cap;
+
+	uart_callback_t async_user_cb;
+	void *async_user_cb_data;
+#ifdef CONFIG_UART_RA8_SCI_B_UART_DTC
+	/* DMAC RX */
+	struct st_dtc_instance_ctrl rx_dtc_ctrl;
+	struct st_dtc_extended_cfg rx_dtc_cfg_extend;
+
+	/* DMAC TX */
+	struct st_dtc_instance_ctrl tx_dtc_ctrl;
+	struct st_dtc_extended_cfg tx_dtc_cfg_extend;
+#endif
+
+#ifdef CONFIG_UART_RA8_SCI_B_UART_DMAC
+	/* DMAC RX */
+	struct st_dmac_instance_ctrl rx_dmac_ctrl;
+	struct st_dmac_extended_cfg rx_dmac_cfg_extend;
+
+	/* DMAC TX */
+	struct st_dmac_instance_ctrl tx_dmac_ctrl;
+	struct st_dmac_extended_cfg tx_dmac_cfg_extend;
+#endif
+#endif
+#ifdef CONFIG_PM
+	bool rx_ongoing;
+	bool tx_ongoing;
+#endif
+};
+
+#if CONFIG_PM
+static inline void uart_ra_sci_b_rx_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (!data->rx_ongoing) {
+		data->rx_ongoing = true;
+#if CONFIG_PM_NEED_ALL_DEVICES_IDLE
+		pm_device_busy_set(dev);
+#else
+		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+	}
+}
+
+static inline void uart_ra_sci_b_rx_pm_policy_state_lock_put(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->rx_ongoing) {
+		data->rx_ongoing = false;
+#if CONFIG_PM_NEED_ALL_DEVICES_IDLE
+		if (!data->tx_ongoing) {
+			pm_device_busy_clear(dev);
+		}
+#else
+		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+	}
+}
+
+static inline void uart_ra_sci_b_tx_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (!data->tx_ongoing) {
+		data->tx_ongoing = true;
+#if CONFIG_PM_NEED_ALL_DEVICES_IDLE
+		pm_device_busy_set(dev);
+#else
+		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+	}
+}
+
+static inline void uart_ra_sci_b_tx_pm_policy_state_lock_put(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->tx_ongoing) {
+		data->tx_ongoing = false;
+#if CONFIG_PM_NEED_ALL_DEVICES_IDLE
+		if (!data->rx_ongoing) {
+			pm_device_busy_clear(dev);
+		}
+#else
+		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+	}
+}
+#endif
+
+static int uart_ra_sci_b_poll_in(const struct device *dev, unsigned char *c)
+{
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	/* Check if async reception was enabled */
+	if (IS_ENABLED(CONFIG_UART_ASYNC_API) && cfg->regs->CCR0_b.RIE) {
+		return -EBUSY;
+	}
+
+	if (IS_ENABLED(CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE) ? cfg->regs->FRSR_b.R == 0U
+							      : cfg->regs->CSR_b.RDRF == 0U) {
+		/* There are no characters available to read. */
+		return -1;
+	}
+
+	/* got a character */
+	*c = (unsigned char)cfg->regs->RDR;
+
+	return 0;
+}
+
+static void uart_ra_sci_b_poll_out(const struct device *dev, unsigned char c)
+{
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_get(dev);
+#endif
+
+	while (cfg->regs->CSR_b.TEND == 0U) {
+	}
+
+	cfg->regs->TDR_BY = c;
+
+	while (cfg->regs->CSR_b.TEND == 0U) {
+	}
+
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_put(dev);
+#endif
+}
+
+static int uart_ra_sci_b_err_check(const struct device *dev)
+{
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	const uint32_t status = cfg->regs->CSR;
+	int errors = 0;
+
+	if ((status & BIT(R_SCI_B0_CSR_ORER_Pos)) != 0) {
+		errors |= UART_ERROR_OVERRUN;
+	}
+	if ((status & BIT(R_SCI_B0_CSR_PER_Pos)) != 0) {
+		errors |= UART_ERROR_PARITY;
+	}
+	if ((status & BIT(R_SCI_B0_CSR_FER_Pos)) != 0) {
+		errors |= UART_ERROR_FRAMING;
+	}
+
+	return errors;
+}
+
+static int uart_ra_sci_b_apply_config(const struct uart_config *config,
+				      struct st_uart_cfg *fsp_config,
+				      struct st_sci_b_uart_extended_cfg *fsp_config_extend,
+				      struct st_sci_b_baud_setting_t *fsp_baud_setting)
+{
+	fsp_err_t fsp_err;
+
+	fsp_err = R_SCI_B_UART_BaudCalculate(config->baudrate, false, 5000, fsp_baud_setting);
+	__ASSERT(fsp_err == 0, "sci_uart: baud calculate error");
+
+	switch (config->parity) {
+	case UART_CFG_PARITY_NONE:
+		fsp_config->parity = UART_PARITY_OFF;
+		break;
+	case UART_CFG_PARITY_ODD:
+		fsp_config->parity = UART_PARITY_ODD;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		fsp_config->parity = UART_PARITY_EVEN;
+		break;
+	case UART_CFG_PARITY_MARK:
+		return -ENOTSUP;
+	case UART_CFG_PARITY_SPACE:
+		return -ENOTSUP;
+	default:
+		return -EINVAL;
+	}
+
+	switch (config->stop_bits) {
+	case UART_CFG_STOP_BITS_0_5:
+		return -ENOTSUP;
+	case UART_CFG_STOP_BITS_1:
+		fsp_config->stop_bits = UART_STOP_BITS_1;
+		break;
+	case UART_CFG_STOP_BITS_1_5:
+		return -ENOTSUP;
+	case UART_CFG_STOP_BITS_2:
+		fsp_config->stop_bits = UART_STOP_BITS_2;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	switch (config->data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		return -ENOTSUP;
+	case UART_CFG_DATA_BITS_6:
+		return -ENOTSUP;
+	case UART_CFG_DATA_BITS_7:
+		fsp_config->data_bits = UART_DATA_BITS_7;
+		break;
+	case UART_CFG_DATA_BITS_8:
+		fsp_config->data_bits = UART_DATA_BITS_8;
+		break;
+	case UART_CFG_DATA_BITS_9:
+		fsp_config->data_bits = UART_DATA_BITS_9;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	fsp_config_extend->clock = SCI_B_UART_CLOCK_INT;
+	fsp_config_extend->rx_edge_start = SCI_B_UART_START_BIT_FALLING_EDGE;
+	fsp_config_extend->noise_cancel = SCI_B_UART_NOISE_CANCELLATION_DISABLE;
+	fsp_config_extend->flow_control_pin = UINT16_MAX;
+#if CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE
+	fsp_config_extend->rx_fifo_trigger = 0x8;
+#endif /* CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE */
+
+	switch (config->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		fsp_config_extend->flow_control = 0;
+		fsp_config_extend->rs485_setting.enable = false;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		fsp_config_extend->flow_control = SCI_B_UART_FLOW_CONTROL_HARDWARE_CTSRTS;
+		fsp_config_extend->rs485_setting.enable = false;
+		break;
+	case UART_CFG_FLOW_CTRL_DTR_DSR:
+		return -ENOTSUP;
+	case UART_CFG_FLOW_CTRL_RS485:
+		/* TODO: implement this config */
+		return -ENOTSUP;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
+static int uart_ra_sci_b_configure(const struct device *dev, const struct uart_config *cfg)
+{
+	int err;
+	fsp_err_t fsp_err;
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	err = uart_ra_sci_b_apply_config(cfg, &data->fsp_config, &data->fsp_config_extend,
+					 &data->fsp_baud_setting);
+	if (err) {
+		return err;
+	}
+
+	fsp_err = R_SCI_B_UART_Close(&data->sci);
+	__ASSERT(fsp_err == 0, "sci_uart: configure: fsp close failed");
+
+	fsp_err = R_SCI_B_UART_Open(&data->sci, &data->fsp_config);
+	__ASSERT(fsp_err == 0, "sci_uart: configure: fsp open failed");
+	memcpy(&data->uart_config, cfg, sizeof(struct uart_config));
+
+	return err;
+}
+
+static int uart_ra_sci_b_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	memcpy(cfg, &data->uart_config, sizeof(*cfg));
+	return 0;
+}
+
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+static int uart_ra_sci_b_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+	int num_tx = 0U;
+
+	if (IS_ENABLED(CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE) && data->sci.fifo_depth > 0) {
+		while ((size - num_tx > 0) && cfg->regs->FTSR != 0x10U) {
+			/* FTSR flag will be cleared with byte write to TDR register */
+
+			/* Send a character (8bit , parity none) */
+			cfg->regs->TDR_BY = tx_data[num_tx++];
+		}
+	} else {
+		if (size > 0 && cfg->regs->CSR_b.TDRE) {
+			/* TEND flag will be cleared with byte write to TDR register */
+
+			/* Send a character (8bit , parity none) */
+			cfg->regs->TDR_BY = tx_data[num_tx++];
+		}
+	}
+
+	return num_tx;
+}
+
+static int uart_ra_sci_b_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+	int num_rx = 0U;
+
+	if (IS_ENABLED(CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE) && data->sci.fifo_depth > 0) {
+		while ((size - num_rx > 0) && cfg->regs->FRSR_b.R > 0U) {
+			/* FRSR.DR flag will be cleared with byte write to RDR register */
+
+			/* Receive a character (8bit , parity none) */
+			rx_data[num_rx++] = cfg->regs->RDR;
+		}
+		if (cfg->regs->FRSR_b.R == 0U) {
+			cfg->regs->CFCLR_b.RDRFC = 1U;
+			cfg->regs->FFCLR_b.DRC = 1U;
+		}
+	} else {
+		if (size > 0 && cfg->regs->CSR_b.RDRF) {
+			/* Receive a character (8bit , parity none) */
+			rx_data[num_rx++] = cfg->regs->RDR;
+		}
+	}
+
+	/* Clear overrun error flag */
+	cfg->regs->CFCLR_b.ORERC = 1U;
+
+	return num_rx;
+}
+
+static void uart_ra_sci_b_irq_tx_enable(const struct device *dev)
+{
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_get(dev);
+#endif
+
+	cfg->regs->CCR0 |= (BIT(R_SCI_B0_CCR0_TIE_Pos) | BIT(R_SCI_B0_CCR0_TEIE_Pos));
+}
+
+static void uart_ra_sci_b_irq_tx_disable(const struct device *dev)
+{
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	cfg->regs->CCR0 &= ~(BIT(R_SCI_B0_CCR0_TIE_Pos) | BIT(R_SCI_B0_CCR0_TEIE_Pos));
+
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_put(dev);
+#endif
+}
+
+static int uart_ra_sci_b_irq_tx_ready(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	return (cfg->regs->CCR0_b.TIE == 1U) &&
+	       (data->csr & (BIT(R_SCI_B0_CSR_TDRE_Pos) | BIT(R_SCI_B0_CSR_TEND_Pos)));
+}
+
+static int uart_ra_sci_b_irq_tx_complete(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	return (cfg->regs->CCR0_b.TEIE == 1U) && (data->csr & BIT(R_SCI_B0_CSR_TEND_Pos));
+}
+
+static void uart_ra_sci_b_irq_rx_enable(const struct device *dev)
+{
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+#if CONFIG_PM
+	uart_ra_sci_b_rx_pm_policy_state_lock_get(dev);
+#endif
+
+	cfg->regs->CCR0_b.RIE = 1U;
+}
+
+static void uart_ra_sci_b_irq_rx_disable(const struct device *dev)
+{
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	cfg->regs->CCR0_b.RIE = 0U;
+
+#if CONFIG_PM
+	uart_ra_sci_b_rx_pm_policy_state_lock_put(dev);
+#endif
+}
+
+static int uart_ra_sci_b_irq_rx_ready(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	return (cfg->regs->CCR0_b.RIE == 1U) &&
+	       ((data->csr & BIT(R_SCI_B0_CSR_RDRF_Pos)) ||
+		(IS_ENABLED(CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE) && cfg->regs->FRSR_b.DR == 1U));
+}
+
+static void uart_ra_sci_b_irq_err_enable(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	irq_enable(data->fsp_config.eri_irq);
+}
+
+static void uart_ra_sci_b_irq_err_disable(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	irq_disable(data->fsp_config.eri_irq);
+}
+
+static int uart_ra_sci_b_irq_is_pending(const struct device *dev)
+{
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	const uint32_t ccr0 = cfg->regs->CCR0;
+	const uint32_t csr = cfg->regs->CSR;
+
+	const bool tx_pending = ((ccr0 & BIT(R_SCI_B0_CCR0_TIE_Pos)) &&
+				 (csr & (BIT(R_SCI_B0_CSR_TEND_Pos) | BIT(R_SCI_B0_CSR_TDRE_Pos))));
+	const bool rx_pending =
+		((ccr0 & BIT(R_SCI_B0_CCR0_RIE_Pos)) &&
+		 ((csr & (BIT(R_SCI_B0_CSR_RDRF_Pos) | BIT(R_SCI_B0_CSR_PER_Pos) |
+			  BIT(R_SCI_B0_CSR_FER_Pos) | BIT(R_SCI_B0_CSR_ORER_Pos))) ||
+		  (IS_ENABLED(CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE) &&
+		   cfg->regs->FRSR_b.DR == 1U)));
+
+	return tx_pending || rx_pending;
+}
+
+static void uart_ra_sci_b_irq_update(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+	uint32_t cfclr = 0;
+
+	data->csr = cfg->regs->CSR;
+
+	if (data->csr & BIT(R_SCI_B0_CSR_PER_Pos)) {
+		cfclr |= BIT(R_SCI_B0_CFCLR_PERC_Pos);
+	}
+	if (data->csr & BIT(R_SCI_B0_CSR_FER_Pos)) {
+		cfclr |= BIT(R_SCI_B0_CFCLR_FERC_Pos);
+	}
+	if (data->csr & BIT(R_SCI_B0_CSR_ORER_Pos)) {
+		cfclr |= BIT(R_SCI_B0_CFCLR_ORERC_Pos);
+	}
+
+	cfg->regs->CFCLR = cfclr;
+}
+
+static void uart_ra_sci_b_irq_callback_set(const struct device *dev,
+					   uart_irq_callback_user_data_t cb, void *cb_data)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	data->user_cb = cb;
+	data->user_cb_data = cb_data;
+}
+
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#ifdef CONFIG_UART_ASYNC_API
+
+static inline void async_user_callback(const struct device *dev, struct uart_event *event)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->async_user_cb) {
+		data->async_user_cb(dev, event, data->async_user_cb_data);
+	}
+}
+
+static inline void async_rx_error(const struct device *dev, enum uart_rx_stop_reason reason)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	struct uart_event event = {
+		.type = UART_RX_STOPPED,
+		.data.rx_stop.reason = reason,
+		.data.rx_stop.data.buf = (uint8_t *)data->rx_buffer,
+		.data.rx_stop.data.offset = data->rx_buffer_offset,
+		.data.rx_stop.data.len = data->rx_buffer_len,
+	};
+	async_user_callback(dev, &event);
+}
+
+static inline void async_rx_disabled(const struct device *dev)
+{
+	struct uart_event event = {
+		.type = UART_RX_DISABLED,
+	};
+	async_user_callback(dev, &event);
+}
+
+static inline void async_request_rx_buffer(const struct device *dev)
+{
+	struct uart_event event = {
+		.type = UART_RX_BUF_REQUEST,
+	};
+	async_user_callback(dev, &event);
+}
+
+static inline void async_rx_ready(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->rx_buffer_len == 0) {
+		return;
+	}
+
+	struct uart_event event = {
+		.type = UART_RX_RDY,
+		.data.rx.buf = (uint8_t *)data->rx_buffer,
+		.data.rx.offset = data->rx_buffer_offset,
+		.data.rx.len = data->rx_buffer_len,
+	};
+	async_user_callback(dev, &event);
+
+	data->rx_buffer_offset += data->rx_buffer_len;
+	data->rx_buffer_len = 0;
+}
+
+static inline void async_replace_rx_buffer(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->rx_next_buffer != NULL) {
+		data->rx_buffer = data->rx_next_buffer;
+		data->rx_buffer_cap = data->rx_next_buffer_cap;
+
+		R_SCI_B_UART_Read(&data->sci, data->rx_buffer, data->rx_buffer_cap);
+
+		data->rx_next_buffer = NULL;
+		data->rx_next_buffer_cap = 0;
+		async_request_rx_buffer(dev);
+	} else {
+		async_rx_disabled(dev);
+	}
+}
+
+static inline void async_release_rx_buffer(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->rx_buffer == NULL) {
+		return;
+	}
+
+	struct uart_event event = {
+		.type = UART_RX_BUF_RELEASED,
+		.data.rx.buf = (uint8_t *)data->rx_buffer,
+	};
+	async_user_callback(dev, &event);
+
+	data->rx_buffer = NULL;
+	data->rx_buffer_cap = 0;
+	data->rx_buffer_len = 0;
+	data->rx_buffer_offset = 0;
+}
+
+static inline void async_release_rx_next_buffer(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->rx_next_buffer == NULL) {
+		return;
+	}
+
+	struct uart_event event = {
+		.type = UART_RX_BUF_RELEASED,
+		.data.rx.buf = (uint8_t *)data->rx_next_buffer,
+	};
+	async_user_callback(dev, &event);
+
+	data->rx_next_buffer = NULL;
+	data->rx_next_buffer_cap = 0;
+}
+
+static inline void async_update_tx_buffer(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	struct uart_event event = {
+		.type = UART_TX_DONE,
+		.data.tx.buf = (uint8_t *)data->tx_buffer,
+		.data.tx.len = data->tx_buffer_cap,
+	};
+	async_user_callback(dev, &event);
+
+	data->tx_buffer = NULL;
+	data->tx_buffer_cap = 0;
+}
+
+static inline void async_tx_abort(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->tx_buffer_len < data->tx_buffer_cap) {
+		struct uart_event event = {
+			.type = UART_TX_ABORTED,
+			.data.tx.buf = (uint8_t *)data->tx_buffer,
+			.data.tx.len = data->tx_buffer_len,
+		};
+		async_user_callback(dev, &event);
+	}
+
+	data->tx_buffer = NULL;
+	data->tx_buffer_cap = 0;
+}
+
+static inline void uart_ra_sci_b_async_timer_start(struct k_work_delayable *work, size_t timeout)
+{
+	if (timeout != SYS_FOREVER_US && timeout != 0) {
+		LOG_DBG("Async timer started for %d us", timeout);
+		k_work_reschedule(work, K_USEC(timeout));
+	}
+}
+
+static inline int fsp_err_to_errno(fsp_err_t fsp_err)
+{
+	switch (fsp_err) {
+	case FSP_ERR_INVALID_ARGUMENT:
+		return -EINVAL;
+	case FSP_ERR_NOT_OPEN:
+		return -EIO;
+	case FSP_ERR_IN_USE:
+		return -EBUSY;
+	case FSP_ERR_UNSUPPORTED:
+		return -ENOTSUP;
+	case 0:
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int uart_ra_sci_b_async_callback_set(const struct device *dev, uart_callback_t cb,
+					    void *cb_data)
+
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	unsigned int key = irq_lock();
+
+	data->async_user_cb = cb;
+	data->async_user_cb_data = cb_data;
+
+	irq_unlock(key);
+	return 0;
+}
+
+static int uart_ra_sci_b_async_tx(const struct device *dev, const uint8_t *buf, size_t len,
+				  int32_t timeout)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	int err = 0;
+
+	unsigned int key = irq_lock();
+
+	if (data->tx_buffer_len < data->tx_buffer_cap) {
+		err = -EBUSY;
+		goto unlock;
+	}
+
+	err = fsp_err_to_errno(R_SCI_B_UART_Write(&data->sci, buf, len));
+	if (err != 0) {
+		goto unlock;
+	}
+
+	data->tx_buffer = (uint8_t *)buf;
+	data->tx_buffer_cap = len;
+
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_get(dev);
+#endif
+
+	uart_ra_sci_b_async_timer_start(&data->tx_timeout_work, timeout);
+
+unlock:
+	irq_unlock(key);
+	return err;
+}
+
+static inline void disable_tx(const struct device *dev)
+{
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	/* Transmit interrupts must be disabled to start with. */
+	cfg->regs->CCR0 &= (uint32_t) ~(R_SCI_B0_CCR0_TIE_Msk | R_SCI_B0_CCR0_TEIE_Msk);
+
+	/*
+	 * Make sure no transmission is in progress. Setting CCR0_b.TE to 0 when CSR_b.TEND
+	 * is 0 causes SCI peripheral to work abnormally.
+	 */
+	while (cfg->regs->CSR_b.TEND != 1U) {
+	}
+
+	cfg->regs->CCR0 &= (uint32_t) ~(R_SCI_B0_CCR0_TE_Msk);
+	while (cfg->regs->CESR_b.TIST != 0U) {
+	}
+}
+
+static int uart_ra_sci_b_async_tx_abort(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	int err = 0;
+
+	disable_tx(dev);
+	k_work_cancel_delayable(&data->tx_timeout_work);
+
+	if (data->fsp_config.p_transfer_tx) {
+		transfer_properties_t transfer_info;
+
+		err = fsp_err_to_errno(data->tx_transfer.p_api->infoGet(data->tx_transfer.p_ctrl,
+									&transfer_info));
+		if (err != 0) {
+			return err;
+		}
+		data->tx_buffer_len = data->tx_buffer_cap - transfer_info.transfer_length_remaining;
+	} else {
+		data->tx_buffer_len = data->tx_buffer_cap - data->sci.tx_src_bytes;
+	}
+
+	R_SCI_B_UART_Abort(&data->sci, UART_DIR_TX);
+
+	async_tx_abort(dev);
+
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_put(dev);
+#endif
+
+	return 0;
+}
+
+static void uart_ra_sci_b_async_tx_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct uart_ra_sci_b_data *data =
+		CONTAINER_OF(dwork, struct uart_ra_sci_b_data, tx_timeout_work);
+
+	uart_ra_sci_b_async_tx_abort(data->dev);
+}
+
+static int uart_ra_sci_b_async_rx_enable(const struct device *dev, uint8_t *buf, size_t len,
+					 int32_t timeout)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+	int err = 0;
+
+	k_work_cancel_delayable(&data->rx_timeout_work);
+
+	unsigned int key = irq_lock();
+
+	if (data->rx_buffer) {
+		err = -EBUSY;
+		goto unlock;
+	}
+
+	err = fsp_err_to_errno(R_SCI_B_UART_Read(&data->sci, buf, len));
+	if (err != 0) {
+		goto unlock;
+	}
+
+#if CONFIG_PM
+	uart_ra_sci_b_rx_pm_policy_state_lock_get(dev);
+#endif
+
+	data->rx_timeout = timeout;
+	data->rx_buffer = buf;
+	data->rx_buffer_cap = len;
+	data->rx_buffer_len = 0;
+	data->rx_buffer_offset = 0;
+
+	cfg->regs->CCR0_b.RIE = 1U;
+
+	async_request_rx_buffer(dev);
+
+unlock:
+	irq_unlock(key);
+	return err;
+}
+
+static int uart_ra_sci_b_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	data->rx_next_buffer = buf;
+	data->rx_next_buffer_cap = len;
+
+	return 0;
+}
+
+static int uart_ra_sci_b_async_rx_disable(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+	uint32_t remaining_byte = 0;
+	int err = 0;
+	unsigned int key = irq_lock();
+
+	k_work_cancel_delayable(&data->rx_timeout_work);
+
+	err = fsp_err_to_errno(R_SCI_B_UART_ReadStop(&data->sci, &remaining_byte));
+	if (err != 0) {
+		goto unlock;
+	}
+
+	if (!data->fsp_config.p_transfer_rx) {
+		data->rx_buffer_len = data->rx_buffer_cap - data->rx_buffer_offset - remaining_byte;
+	}
+	async_rx_ready(dev);
+	async_release_rx_buffer(dev);
+	async_release_rx_next_buffer(dev);
+	async_rx_disabled(dev);
+
+	/* Clear the RDRF bit so that the next reception can be raised correctly */
+	cfg->regs->CFCLR_b.RDRFC = 1U;
+
+unlock:
+#if CONFIG_PM
+	uart_ra_sci_b_rx_pm_policy_state_lock_put(dev);
+#endif
+
+	irq_unlock(key);
+	return err;
+}
+
+static void uart_ra_sci_b_async_rx_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct uart_ra_sci_b_data *data =
+		CONTAINER_OF(dwork, struct uart_ra_sci_b_data, rx_timeout_work);
+	const struct device *dev = data->dev;
+
+	unsigned int key = irq_lock();
+
+	if (!data->fsp_config.p_transfer_rx) {
+		data->rx_buffer_len =
+			data->rx_buffer_cap - data->rx_buffer_offset - data->sci.rx_dest_bytes;
+	}
+	async_rx_ready(dev);
+
+	irq_unlock(key);
+}
+
+static void uart_ra_sci_b_callback_adapter(struct st_uart_callback_arg *fsp_args)
+{
+	const struct device *dev = fsp_args->p_context;
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	switch (fsp_args->event) {
+	case UART_EVENT_TX_COMPLETE: {
+		data->tx_buffer_len = data->tx_buffer_cap;
+		async_update_tx_buffer(dev);
+		break;
+	}
+	case UART_EVENT_RX_COMPLETE: {
+		data->rx_buffer_len =
+			data->rx_buffer_cap - data->rx_buffer_offset - data->sci.rx_dest_bytes;
+		async_rx_ready(dev);
+		async_release_rx_buffer(dev);
+		async_replace_rx_buffer(dev);
+		break;
+	}
+	case UART_EVENT_ERR_PARITY:
+		async_rx_error(dev, UART_ERROR_PARITY);
+		break;
+	case UART_EVENT_ERR_FRAMING:
+		async_rx_error(dev, UART_ERROR_FRAMING);
+		break;
+	case UART_EVENT_ERR_OVERFLOW:
+		async_rx_error(dev, UART_ERROR_OVERRUN);
+		break;
+	case UART_EVENT_BREAK_DETECT:
+		async_rx_error(dev, UART_BREAK);
+		break;
+	case UART_EVENT_TX_DATA_EMPTY:
+	case UART_EVENT_RX_CHAR:
+		break;
+	}
+}
+
+#ifdef CONFIG_UART_RA8_SCI_B_UART_DMAC
+static __maybe_unused void uart_ra_sci_b_rx_callback_handler(struct uart_ra_sci_b_data *data)
+{
+	uart_ra_sci_b_async_timer_start(&data->rx_timeout_work, data->rx_timeout);
+
+	if (data->fsp_config.p_transfer_rx) {
+		data->rx_buffer_len++;
+		if (data->rx_buffer_offset + data->rx_buffer_len == data->rx_buffer_cap) {
+			sci_b_uart_rx_dmac_callback(&data->sci);
+		}
+	}
+}
+#endif
+#endif /* CONFIG_UART_ASYNC_API */
+
+#ifdef CONFIG_PM_DEVICE
+static int uart_ra_sci_b_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+	fsp_err_t fsp_err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Deinitialize the device */
+		fsp_err = R_SCI_B_UART_Close(&data->sci);
+		__ASSERT(fsp_err == 0, "sci_uart: initialization: close failed");
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+	{
+		/* Reinitialize the device */
+		int ret = uart_ra_sci_b_apply_config(&data->uart_config, &data->fsp_config,
+						     &data->fsp_config_extend,
+						     &data->fsp_baud_setting);
+		if (ret < 0) {
+			return ret;
+		}
+
+		fsp_err = R_SCI_B_UART_Open(&data->sci, &data->fsp_config);
+		__ASSERT(fsp_err == 0, "sci_uart: initialization: open failed");
+		break;
+	}
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static DEVICE_API(uart, uart_ra_sci_b_driver_api) = {
+	.poll_in = uart_ra_sci_b_poll_in,
+	.poll_out = uart_ra_sci_b_poll_out,
+	.err_check = uart_ra_sci_b_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_ra_sci_b_configure,
+	.config_get = uart_ra_sci_b_config_get,
+#endif
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill = uart_ra_sci_b_fifo_fill,
+	.fifo_read = uart_ra_sci_b_fifo_read,
+	.irq_tx_enable = uart_ra_sci_b_irq_tx_enable,
+	.irq_tx_disable = uart_ra_sci_b_irq_tx_disable,
+	.irq_tx_ready = uart_ra_sci_b_irq_tx_ready,
+	.irq_rx_enable = uart_ra_sci_b_irq_rx_enable,
+	.irq_rx_disable = uart_ra_sci_b_irq_rx_disable,
+	.irq_tx_complete = uart_ra_sci_b_irq_tx_complete,
+	.irq_rx_ready = uart_ra_sci_b_irq_rx_ready,
+	.irq_err_enable = uart_ra_sci_b_irq_err_enable,
+	.irq_err_disable = uart_ra_sci_b_irq_err_disable,
+	.irq_is_pending = uart_ra_sci_b_irq_is_pending,
+	.irq_update = uart_ra_sci_b_irq_update,
+	.irq_callback_set = uart_ra_sci_b_irq_callback_set,
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#if CONFIG_UART_ASYNC_API
+	.callback_set = uart_ra_sci_b_async_callback_set,
+	.tx = uart_ra_sci_b_async_tx,
+	.tx_abort = uart_ra_sci_b_async_tx_abort,
+	.rx_enable = uart_ra_sci_b_async_rx_enable,
+	.rx_buf_rsp = uart_ra_sci_b_async_rx_buf_rsp,
+	.rx_disable = uart_ra_sci_b_async_rx_disable,
+#endif /* CONFIG_UART_ASYNC_API */
+};
+
+static int uart_ra_sci_b_init(const struct device *dev)
+{
+	const struct uart_ra_sci_b_config *config = dev->config;
+	struct uart_ra_sci_b_data *data = dev->data;
+	int ret;
+	fsp_err_t fsp_err;
+
+	/* Configure dt provided device signals when available */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Setup fsp sci_uart setting */
+	ret = uart_ra_sci_b_apply_config(&data->uart_config, &data->fsp_config,
+					 &data->fsp_config_extend, &data->fsp_baud_setting);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->fsp_config_extend.p_baud_setting = &data->fsp_baud_setting;
+	data->fsp_config.p_extend = &data->fsp_config_extend;
+
+#if defined(CONFIG_UART_ASYNC_API)
+	data->fsp_config.p_callback = uart_ra_sci_b_callback_adapter;
+	data->fsp_config.p_context = (void *)dev;
+
+	k_work_init_delayable(&data->tx_timeout_work, uart_ra_sci_b_async_tx_timeout);
+	k_work_init_delayable(&data->rx_timeout_work, uart_ra_sci_b_async_rx_timeout);
+#endif /* defined(CONFIG_UART_ASYNC_API) */
+
+	fsp_err = R_SCI_B_UART_Open(&data->sci, &data->fsp_config);
+	__ASSERT(fsp_err == 0, "sci_uart: initialization: open failed");
+
+	return 0;
+}
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+
+static void uart_ra_sci_b_rxi_isr(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+	if (data->user_cb != NULL) {
+		data->user_cb(dev, data->user_cb_data);
+	}
+#endif
+
+#if defined(CONFIG_UART_ASYNC_API)
+	uart_ra_sci_b_async_timer_start(&data->rx_timeout_work, data->rx_timeout);
+
+	if (data->fsp_config.p_transfer_rx) {
+		/*
+		 * The RX DTC is set to TRANSFER_IRQ_EACH, triggering an interrupt for each received
+		 * byte. However, the sci_b_uart_rxi_isr function currently only handles the
+		 * TRANSFER_IRQ_END case, which assumes the transfer is complete. To address this,
+		 * we need to add some code to simulate the TRANSFER_IRQ_END case by counting the
+		 * received length.
+		 */
+		data->rx_buffer_len++;
+		if (data->rx_buffer_offset + data->rx_buffer_len == data->rx_buffer_cap) {
+			sci_b_uart_rxi_isr();
+		} else {
+			R_ICU->IELSR_b[data->fsp_config.rxi_irq].IR = 0U;
+		}
+	} else {
+		sci_b_uart_rxi_isr();
+	}
+#else
+	R_ICU->IELSR_b[data->fsp_config.rxi_irq].IR = 0U;
+#endif
+}
+
+static void uart_ra_sci_b_txi_isr(const struct device *dev)
+{
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->user_cb != NULL) {
+		data->user_cb(dev, data->user_cb_data);
+	}
+#endif
+
+#if defined(CONFIG_UART_ASYNC_API)
+	sci_b_uart_txi_isr();
+#else
+	R_ICU->IELSR_b[data->fsp_config.txi_irq].IR = 0U;
+#endif
+}
+
+static void uart_ra_sci_b_tei_isr(const struct device *dev)
+{
+	struct uart_ra_sci_b_data *data = dev->data;
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+	if (data->user_cb != NULL) {
+		data->user_cb(dev, data->user_cb_data);
+	}
+#endif
+
+#if defined(CONFIG_UART_ASYNC_API)
+	k_work_cancel_delayable(&data->tx_timeout_work);
+	sci_b_uart_tei_isr();
+#if CONFIG_PM
+	uart_ra_sci_b_tx_pm_policy_state_lock_put(dev);
+#endif
+#else
+	R_ICU->IELSR_b[data->fsp_config.tei_irq].IR = 0U;
+#endif
+}
+
+static void uart_ra_sci_b_eri_isr(const struct device *dev)
+{
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+	struct uart_ra_sci_b_data *data = dev->data;
+
+	if (data->user_cb != NULL) {
+		data->user_cb(dev, data->user_cb_data);
+	}
+#endif
+
+#if defined(CONFIG_UART_ASYNC_API)
+	sci_b_uart_eri_isr();
+#else
+	R_ICU->IELSR_b[data->fsp_config.eri_irq].IR = 0U;
+#endif
+}
+
+#endif /* defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+
+#define EVENT_SCI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _RXI))
+#define EVENT_SCI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TXI))
+#define EVENT_SCI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TEI))
+#define EVENT_SCI_ERI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _ERI))
+#define EVENT_DMAC_INT(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_DMAC, channel, _INT))
+
+#define UART_SCI_B_ASSERT_NO_CONFLICT(index, dir)                                                  \
+	BUILD_ASSERT(!(DT_INST_DMAS_HAS_NAME(index, dir) &&                                        \
+		       DT_INST_PROP_OR(index, dir##_dtc, false)),                                  \
+		      "Cannot use both DMAS and " #dir "-dtc for the same direction")
+
+#define UART_SCI_B_DMAC_IRQ(index, dir)                                                            \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                             \
+		   (DT_IRQ_BY_IDX(DT_INST_DMAS_CTLR_BY_NAME(index, dir),                           \
+				  DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                  \
+				  irq)),                                                           \
+		   (FSP_INVALID_VECTOR))
+
+#define UART_SCI_B_DMAC_IPL(index, dir)                                                            \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                             \
+		   (DT_IRQ_BY_IDX(DT_INST_DMAS_CTLR_BY_NAME(index, dir),                           \
+				  DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                  \
+				  priority)),                                                      \
+		   (BSP_IRQ_DISABLED))
+
+#define UART_RA_SCI_B_IRQ_CONFIG_INIT(index)                                                       \
+	do {                                                                                       \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq)] =                    \
+			EVENT_SCI_TEI(DT_INST_PROP(index, channel));                               \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq)] =                    \
+			EVENT_SCI_ERI(DT_INST_PROP(index, channel));                               \
+	                                                                                           \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_TEI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_ERI(DT_INST_PROP(index, channel)));     \
+	                                                                                           \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),                       \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, priority),                  \
+			    uart_ra_sci_b_tei_isr, DEVICE_DT_INST_GET(index), 0);                  \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq),                       \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, priority),                  \
+			    uart_ra_sci_b_eri_isr, DEVICE_DT_INST_GET(index), 0);                  \
+                                                                                                   \
+		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq));                       \
+		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq));                       \
+                                                                                                   \
+		/* Enable DMAC interrupt instead of TXI/RXI for DMA transfers */                   \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),                                      \
+		(                                                                                  \
+			BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                          \
+				    EVENT_DMAC_INT(DT_INST_DMAS_CELL_BY_NAME(index, rx, channel)));\
+			R_ICU->IELSR[UART_SCI_B_DMAC_IRQ(index, rx)] = EVENT_DMAC_INT(             \
+				    DT_INST_DMAS_CELL_BY_NAME(index, rx, channel));                \
+			IRQ_CONNECT(UART_SCI_B_DMAC_IRQ(index, rx),                                \
+				    UART_SCI_B_DMAC_IPL(index, rx),                                \
+				    dmac_int_isr, NULL, 0);                                        \
+			irq_enable(UART_SCI_B_DMAC_IRQ(index, rx));                                \
+		),                                                                                 \
+		(                                                                                  \
+			BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                          \
+				    EVENT_SCI_RXI(DT_INST_PROP(index, channel)));                  \
+			R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =            \
+				    EVENT_SCI_RXI(DT_INST_PROP(index, channel));                   \
+			IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),               \
+				    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),          \
+				    uart_ra_sci_b_rxi_isr, DEVICE_DT_INST_GET(index), 0);          \
+			irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq));               \
+		))                                                                                 \
+	                                                                                           \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                                      \
+		(                                                                                  \
+			BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                          \
+				    EVENT_DMAC_INT(DT_INST_DMAS_CELL_BY_NAME(index, tx, channel)));\
+			R_ICU->IELSR[UART_SCI_B_DMAC_IRQ(index, tx)] = EVENT_DMAC_INT(             \
+				    DT_INST_DMAS_CELL_BY_NAME(index, tx, channel));                \
+			IRQ_CONNECT(UART_SCI_B_DMAC_IRQ(index, tx),                                \
+				    UART_SCI_B_DMAC_IPL(index, tx),                                \
+				    dmac_int_isr, NULL, 0);                                        \
+			irq_enable(UART_SCI_B_DMAC_IRQ(index, tx));                                \
+		),                                                                                 \
+		(                                                                                  \
+			BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                          \
+				    EVENT_SCI_TXI(DT_INST_PROP(index, channel)));                  \
+			R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)] =            \
+				    EVENT_SCI_TXI(DT_INST_PROP(index, channel));                   \
+			IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),               \
+				    DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority),          \
+				    uart_ra_sci_b_txi_isr, DEVICE_DT_INST_GET(index), 0);          \
+			irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq));               \
+		))                                                                                 \
+	} while (0)
+
+#else
+
+#define UART_RA_SCI_B_IRQ_CONFIG_INIT(index)
+
+#endif
+#ifdef CONFIG_UART_RA8_SCI_B_UART_DMAC
+#define UART_RA_SCI_B_DMAC_CFG_EXTEND(index)                                                       \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx), (                                             \
+		.tx_dmac_cfg_extend = {                                                            \
+			.activation_source = EVENT_SCI_TXI(DT_INST_PROP(index, channel)),          \
+			.channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                   \
+					      (DT_INST_DMAS_CELL_BY_NAME(index, tx, channel)),     \
+					      (0)),                                                \
+			.irq = UART_SCI_B_DMAC_IRQ(index, tx),                                     \
+			.ipl = UART_SCI_B_DMAC_IPL(index, tx),                                     \
+			.offset = 1, .src_buffer_size = 1},                                        \
+	))                                                                                         \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx), (                                             \
+		.rx_dmac_cfg_extend = {                                                            \
+			.activation_source = EVENT_SCI_RXI(DT_INST_PROP(index, channel)),          \
+			.channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),                   \
+					      (DT_INST_DMAS_CELL_BY_NAME(index, rx, channel)),     \
+					      (0)),                                                \
+			.irq = UART_SCI_B_DMAC_IRQ(index, rx),                                     \
+			.ipl = UART_SCI_B_DMAC_IPL(index, rx),                                     \
+			.offset = 1, .src_buffer_size = 1},                                        \
+	))
+#define UART_RA_SCI_B_DMAC_CALLBACKS(index)                                                        \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx), (                                             \
+		static void uart_ra_sci_b_dmac_tx_cb_##index(dmac_callback_args_t *p_args)         \
+		{                                                                                  \
+			FSP_PARAMETER_NOT_USED(p_args);                                            \
+			sci_b_uart_tx_dmac_callback(&uart_ra_sci_b_data_##index.sci);              \
+		}                                                                                  \
+	))                                                                                         \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx), (                                             \
+		static void uart_ra_sci_b_dmac_rx_cb_##index(dmac_callback_args_t *p_args)         \
+		{                                                                                  \
+			FSP_PARAMETER_NOT_USED(p_args);                                            \
+			uart_ra_sci_b_rx_callback_handler(&uart_ra_sci_b_data_##index);            \
+		}                                                                                  \
+	))
+#else
+#define UART_RA_SCI_B_DMAC_CFG_EXTEND(index)
+#define UART_RA_SCI_B_DMAC_CALLBACKS(index)
+#endif
+
+#ifdef CONFIG_UART_RA8_SCI_B_UART_DTC
+#define UART_RA_SCI_B_DTC_CFG_EXTEND(index)                                                        \
+	IF_ENABLED(DT_INST_PROP_OR(index, rx_dtc, false),                                          \
+		   (.rx_dtc_cfg_extend = {.activation_source =                                     \
+					   DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)},))     \
+	IF_ENABLED(DT_INST_PROP_OR(index, tx_dtc, false),                                          \
+		   (.tx_dtc_cfg_extend = {.activation_source =                                     \
+					   DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)},))
+#else
+#define UART_RA_SCI_B_DTC_CFG_EXTEND(index)
+#endif
+
+#if defined(CONFIG_UART_ASYNC_API)
+
+#define UART_RA_SCI_B_TRANSFER_INIT(index)                                                         \
+	do {                                                                                       \
+		if (DT_INST_PROP_OR(index, rx_dtc, false) || DT_INST_DMAS_HAS_NAME(index, rx)) {   \
+			uart_ra_sci_b_data_##index.fsp_config.p_transfer_rx =                      \
+				&uart_ra_sci_b_data_##index.rx_transfer;                           \
+		}                                                                                  \
+		if (DT_INST_PROP_OR(index, tx_dtc, false) || DT_INST_DMAS_HAS_NAME(index, tx)) {   \
+			uart_ra_sci_b_data_##index.fsp_config.p_transfer_tx =                      \
+				&uart_ra_sci_b_data_##index.tx_transfer;                           \
+		}                                                                                  \
+		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx),                                       \
+			(uart_ra_sci_b_data_##index.rx_dmac_cfg_extend.p_callback =                \
+				uart_ra_sci_b_dmac_rx_cb_##index;))                                \
+		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx),                                       \
+			(uart_ra_sci_b_data_##index.tx_dmac_cfg_extend.p_callback =                \
+				uart_ra_sci_b_dmac_tx_cb_##index;))                                \
+	} while (0)
+
+/*
+ * Select a transfer value for a given direction (@p dir: rx or tx).
+ * - If instance has DMAS for @p dir: use @p dmac_val
+ * - Else if instance has DTC property for @p dir: use @p dtc_val
+ * - Else: NULL
+ */
+#define UART_RA_SCI_B_DMAC_OR_DTC(index, dir, dmac_val, dtc_val)                                   \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                             \
+		    (dmac_val),                                                                    \
+		    (COND_CODE_1(DT_INST_PROP_OR(index, dir##_dtc, false),                         \
+				 (dtc_val),                                                        \
+				 (NULL))))
+
+#define UART_RA_SCI_B_ASYNC_INIT(index)                                                            \
+	.rx_transfer_info =                                                                        \
+		{                                                                                  \
+			.transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED, \
+			.transfer_settings_word_b.repeat_area = TRANSFER_REPEAT_AREA_SOURCE,       \
+			.transfer_settings_word_b.irq = TRANSFER_IRQ_EACH,                         \
+			.transfer_settings_word_b.chain_mode = TRANSFER_CHAIN_MODE_DISABLED,       \
+			.transfer_settings_word_b.src_addr_mode = TRANSFER_ADDR_MODE_FIXED,        \
+			.transfer_settings_word_b.size = TRANSFER_SIZE_1_BYTE,                     \
+			.transfer_settings_word_b.mode = COND_CODE_1(                              \
+					DT_INST_DMAS_HAS_NAME(index, rx), (TRANSFER_MODE_BLOCK),   \
+									  (TRANSFER_MODE_NORMAL)), \
+			.p_dest = (void *)NULL,                                                    \
+			.p_src = (void const *)NULL,                                               \
+			.num_blocks = 0,                                                           \
+			.length = 1,                                                               \
+	},                                                                                         \
+	.rx_transfer_cfg =                                                                         \
+		{                                                                                  \
+			.p_info = &uart_ra_sci_b_data_##index.rx_transfer_info,                    \
+			.p_extend = UART_RA_SCI_B_DMAC_OR_DTC(index, rx,                           \
+					(&uart_ra_sci_b_data_##index.rx_dmac_cfg_extend),          \
+					(&uart_ra_sci_b_data_##index.rx_dtc_cfg_extend)),          \
+	},                                                                                         \
+	.rx_transfer =                                                                             \
+		{                                                                                  \
+			.p_ctrl = UART_RA_SCI_B_DMAC_OR_DTC(index, rx,                             \
+				      (&uart_ra_sci_b_data_##index.rx_dmac_ctrl),                  \
+				      (&uart_ra_sci_b_data_##index.rx_dtc_ctrl)),                  \
+			.p_cfg = &uart_ra_sci_b_data_##index.rx_transfer_cfg,                      \
+			.p_api = UART_RA_SCI_B_DMAC_OR_DTC(index, rx,                              \
+					     (&g_transfer_on_dmac), (&g_transfer_on_dtc)),         \
+	},                                                                                         \
+	.tx_transfer_info =                                                                        \
+		{                                                                                  \
+			.transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_FIXED,       \
+			.transfer_settings_word_b.repeat_area = TRANSFER_REPEAT_AREA_SOURCE,       \
+			.transfer_settings_word_b.irq = TRANSFER_IRQ_END,                          \
+			.transfer_settings_word_b.chain_mode = TRANSFER_CHAIN_MODE_DISABLED,       \
+			.transfer_settings_word_b.src_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED,  \
+			.transfer_settings_word_b.size = TRANSFER_SIZE_1_BYTE,                     \
+			.transfer_settings_word_b.mode = TRANSFER_MODE_NORMAL,                     \
+			.p_dest = (void *)NULL,                                                    \
+			.p_src = (void const *)NULL,                                               \
+			.num_blocks = 0,                                                           \
+			.length = 0,                                                               \
+	},                                                                                         \
+	.tx_transfer_cfg =                                                                         \
+		{                                                                                  \
+			.p_info = &uart_ra_sci_b_data_##index.tx_transfer_info,                    \
+			.p_extend = UART_RA_SCI_B_DMAC_OR_DTC(index, tx,                           \
+					(&uart_ra_sci_b_data_##index.tx_dmac_cfg_extend),          \
+					(&uart_ra_sci_b_data_##index.tx_dtc_cfg_extend)),          \
+	},                                                                                         \
+	.tx_transfer = {                                                                           \
+		.p_ctrl = UART_RA_SCI_B_DMAC_OR_DTC(index, tx,                                     \
+				      (&uart_ra_sci_b_data_##index.tx_dmac_ctrl),                  \
+				      (&uart_ra_sci_b_data_##index.tx_dtc_ctrl)),                  \
+		.p_cfg = &uart_ra_sci_b_data_##index.tx_transfer_cfg,                              \
+		.p_api = UART_RA_SCI_B_DMAC_OR_DTC(index, tx,                                      \
+				     (&g_transfer_on_dmac), (&g_transfer_on_dtc)),                 \
+	},                                                                                         \
+	UART_RA_SCI_B_DMAC_CFG_EXTEND(index)                                                       \
+	UART_RA_SCI_B_DTC_CFG_EXTEND(index)
+#else
+#define UART_RA_SCI_B_ASYNC_INIT(index)
+#define UART_RA_SCI_B_TRANSFER_INIT(index)
+#endif
+
+#define FLOW_CTRL_PARAMETER(index)                                                                 \
+	COND_CODE_1(DT_INST_PROP(index, hw_flow_control),                                          \
+	(UART_CFG_FLOW_CTRL_RTS_CTS), (UART_CFG_FLOW_CTRL_NONE))
+
+#define UART_RA_SCI_B_INIT(index)                                                                  \
+	PINCTRL_DT_DEFINE(DT_INST_PARENT(index));                                                  \
+                                                                                                   \
+	static const struct uart_ra_sci_b_config uart_ra_sci_b_config_##index = {                  \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(index)),                          \
+		.regs = (R_SCI_B0_Type *)DT_REG_ADDR(DT_INST_PARENT(index)),                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct uart_ra_sci_b_data uart_ra_sci_b_data_##index = {                            \
+		.uart_config =                                                                     \
+			{                                                                          \
+				.baudrate = DT_INST_PROP(index, current_speed),                    \
+				.parity = UART_CFG_PARITY_NONE,                                    \
+				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
+				.data_bits = UART_CFG_DATA_BITS_8,                                 \
+				.flow_ctrl = FLOW_CTRL_PARAMETER(index),                           \
+			},                                                                         \
+		.fsp_config =                                                                      \
+			{                                                                          \
+				.channel = DT_INST_PROP(index, channel),                           \
+				.rxi_ipl = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),           \
+					  (BSP_IRQ_DISABLED),                                      \
+					  (DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority))), \
+				.rxi_irq = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),           \
+					  (FSP_INVALID_VECTOR),                                    \
+					  (DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq))),      \
+				.txi_ipl = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),           \
+					  (BSP_IRQ_DISABLED),                                      \
+					  (DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority))), \
+				.txi_irq = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),           \
+					  (FSP_INVALID_VECTOR),                                    \
+					  (DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq))),      \
+				.tei_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, priority),   \
+				.tei_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),        \
+				.eri_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, priority),   \
+				.eri_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq),        \
+			},                                                                         \
+		.fsp_config_extend = {},                                                           \
+		.fsp_baud_setting = {},                                                            \
+		.dev = DEVICE_DT_GET(DT_DRV_INST(index)),                                          \
+		UART_RA_SCI_B_ASYNC_INIT(index)};                                                  \
+												   \
+	UART_RA_SCI_B_DMAC_CALLBACKS(index)                                                        \
+                                                                                                   \
+	static int uart_ra_sci_b_init_##index(const struct device *dev)                            \
+	{                                                                                          \
+		UART_SCI_B_ASSERT_NO_CONFLICT(index, rx);                                          \
+		UART_SCI_B_ASSERT_NO_CONFLICT(index, tx);                                          \
+		UART_RA_SCI_B_TRANSFER_INIT(index);                                                \
+		UART_RA_SCI_B_IRQ_CONFIG_INIT(index);                                              \
+		int err = uart_ra_sci_b_init(dev);                                                 \
+		if (err != 0) {                                                                    \
+			return err;                                                                \
+		}                                                                                  \
+		return 0;                                                                          \
+	}                                                                                          \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(index, uart_ra_sci_b_pm_action);                                  \
+	DEVICE_DT_INST_DEFINE(index, uart_ra_sci_b_init_##index, PM_DEVICE_DT_INST_GET(index),     \
+			      &uart_ra_sci_b_data_##index, &uart_ra_sci_b_config_##index,          \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,                           \
+			      &uart_ra_sci_b_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(UART_RA_SCI_B_INIT)

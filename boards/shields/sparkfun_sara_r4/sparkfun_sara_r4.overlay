@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2019 Foundries.io
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+&arduino_serial {
+	current-speed = <115200>;
+	status = "okay";
+
+	sara_r4 {
+		compatible = "u-blox,sara-r4";
+		mdm-power-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+		mdm-reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};

@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: Broadcom GENET MDIO Controller
+
+compatible: "brcm,genet-mdio"
+
+include: mdio-controller.yaml

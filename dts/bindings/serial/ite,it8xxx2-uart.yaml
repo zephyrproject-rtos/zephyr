@@ -1,0 +1,32 @@
+# Copyright (c) 2021 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, IT8XXX2-UART node
+
+compatible: "ite,it8xxx2-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port-num:
+    type: int
+    required: true
+    description: Ordinal identifying the port
+
+  gpios:
+    type: phandle-array
+    required: true
+
+  uart-dev:
+    type: phandle
+    required: true
+    description: Get the handle of the UART device
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

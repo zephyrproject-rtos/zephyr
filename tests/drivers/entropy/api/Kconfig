@@ -1,0 +1,10 @@
+# Copyright NXP 2022
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Entropy API Test"
+
+source "Kconfig.zephyr"
+source "tests/drivers/entropy/api/Kconfig.mcux"
+
+config RANDOM_BUFFER_NOCACHED
+	bool "Put the buffer of randomly generated numbers in nocache region."

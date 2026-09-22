@@ -1,0 +1,20 @@
+# NXP NX20P3483 Configuration menu
+
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_PPC_NX20P3483
+	bool "NXP NX20P3483 support"
+	default y
+	depends on DT_HAS_NXP_NX20P3483_ENABLED
+	help
+	  Enable USB-C PPC support for NXP nx20p3483 chip
+
+if USBC_PPC_NX20P3483
+
+config USBC_PPC_NX20P3483_DUMP_FULL_REG_NAMES
+	bool "Dump full register names"
+	help
+	  Dump human-readable names instead of offsets of registers
+
+endif

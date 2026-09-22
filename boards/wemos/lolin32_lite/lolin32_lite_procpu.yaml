@@ -1,0 +1,22 @@
+identifier: lolin32_lite/esp32/procpu
+name: Wemos Lolin32 Lite PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - i2c
+  - i2s
+  - watchdog
+  - uart
+  - nvs
+  - pwm
+  - spi
+  - counter
+  - entropy
+  - input
+  - crypto
+  - retained_mem
+vendor: wemos

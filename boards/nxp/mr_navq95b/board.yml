@@ -1,0 +1,11 @@
+board:
+  name: mr_navq95b
+  full_name: MR-NavQ95B
+  vendor: nxp
+  socs:
+  - name: mimx9596
+    variants:
+    - name: ddr
+      cpucluster: m7
+    - name: flash
+      cpucluster: m7

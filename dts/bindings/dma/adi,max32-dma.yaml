@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX32 DMA
+
+compatible: "adi,max32-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#dma-cells":
+    const: 2
+
+# Parameter syntax
+dma-cells:
+  - channel
+  - slot

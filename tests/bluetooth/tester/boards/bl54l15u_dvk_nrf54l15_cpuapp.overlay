@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,uart-pipe = &uart20;
+	};
+};
+
+&uart20 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	hw-flow-control;
+};

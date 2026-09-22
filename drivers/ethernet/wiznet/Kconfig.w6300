@@ -1,0 +1,15 @@
+# W6300 Ethernet driver configuration options
+
+# Copyright (c) 2025 WIZnet Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_W6300
+	bool "W6300 Ethernet Controller"
+	default y
+	depends on DT_HAS_WIZNET_W6300_ENABLED
+	select ETH_WIZNET
+	select SPI
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W6300),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W6300),int-gpios))
+	help
+	  W6300 Stand-Alone Ethernet Controller with SPI interface.

@@ -1,0 +1,26 @@
+# Copyright (c) 2017, 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_XTENSA
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config IPM_CONSOLE_STACK_SIZE
+	default 2048 if IPM_CONSOLE_RECEIVER
+
+# Must match XCHAL_DCACHE_LINESIZE form core-isa.h
+configdefault DCACHE_LINE_SIZE
+	default 4 if BOARD_QEMU_XTENSA_SAMPLE_CONTROLLER32_MPU
+	default 32
+
+configdefault MAIN_STACK_SIZE
+	default 2048
+
+configdefault PRIVILEGED_STACK_SIZE
+	default 4096 if BOARD_QEMU_XTENSA_SAMPLE_CONTROLLER32_MPU
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif # BOARD_QEMU_XTENSA

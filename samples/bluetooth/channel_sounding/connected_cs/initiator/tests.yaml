@@ -1,0 +1,11 @@
+sample:
+  name: Bluetooth Channel Sounding - Initiator
+tests:
+  sample.bluetooth.channel_sounding.connected_cs.initiator:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3

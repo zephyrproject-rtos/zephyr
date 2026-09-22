@@ -1,0 +1,22 @@
+identifier: rp2350_zero/rp2350a/hazard3
+name: Waveshare RP2350-Zero (Hazard3)
+type: mcu
+arch: riscv
+flash: 4096
+ram: 520
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock
+  - usbd

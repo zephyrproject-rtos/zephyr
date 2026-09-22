@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32H2
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+
+config SOC_ESP32H2
+	bool
+	select SOC_SERIES_ESP32H2
+
+config SOC_SERIES
+	default "esp32h2" if SOC_SERIES_ESP32H2
+
+config SOC
+	default "esp32h2" if SOC_ESP32H2
+
+config SOC_PART_NUMBER
+	default "ESP32H2" if SOC_ESP32H2

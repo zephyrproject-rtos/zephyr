@@ -1,0 +1,6 @@
+board:
+  name: balletto_b1_dk
+  full_name: Alif Balletto B1 Development Kit
+  vendor: alif
+  socs:
+  - name: ab1c1f4m51820ph0

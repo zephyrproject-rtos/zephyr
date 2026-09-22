@@ -1,0 +1,8 @@
+# Copyright (c) 2025 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICP201xx High Accuracy, Low Power, Barometric Pressure and Temperature Sensor IC
+
+compatible: "invensense,icp201xx"
+
+include: [i2c-device.yaml, "invensense,icp201xx.yaml"]

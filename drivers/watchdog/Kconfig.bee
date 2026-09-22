@@ -1,0 +1,10 @@
+# Copyright(c) 2026, Realtek Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_BEE_CORE
+	bool "Realtek Bee CORE Watch Dog Timer driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_CORE_WDT_ENABLED
+	select HAL_REALTEK_BEE_CORE_WDT
+	help
+	  Enable the CORE WDT driver for Realtek Bee Family SoCs.

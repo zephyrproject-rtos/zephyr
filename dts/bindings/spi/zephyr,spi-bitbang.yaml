@@ -1,0 +1,39 @@
+# Copyright 2021 Marc Reilly, Creative Product Design
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr SPI Bitbang driver
+
+compatible: "zephyr,spi-bitbang"
+
+include: spi-controller.yaml
+
+properties:
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Clock gpio info
+
+  sdo-gpios:
+    type: phandle-array
+    description: |
+      SDO gpio info. Output pin for Serial Data Out.
+      If this is not provided then the driver will transmit 0s
+
+  sdi-gpios:
+    type: phandle-array
+    description: |
+      SDI gpio info. Input pin for Serial Data In.
+      If this is not provided the driver will read 0s
+
+  mosi-gpios:
+    type: phandle-array
+    deprecated: true
+    description: |
+      Deprecated. Use sdo-gpios instead.
+
+  miso-gpios:
+    type: phandle-array
+    deprecated: true
+    description: |
+      Deprecated. Use sdi-gpios instead.

@@ -1,0 +1,34 @@
+# Copyright (c) 2021, Teslabs Engineering S.L.
+# Copyright (c) 2022, Rtone.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32F4XX
+	bool
+	select SOC_FAMILY_GD_GD32
+	help
+	  Enable support for GigaDevice GD32F4XX MCU series
+
+config SOC_SERIES
+	default "gd32f4xx" if SOC_SERIES_GD32F4XX
+
+config SOC_GD32F405
+	bool
+	select SOC_SERIES_GD32F4XX
+
+config SOC_GD32F407
+	bool
+	select SOC_SERIES_GD32F4XX
+
+config SOC_GD32F450
+	bool
+	select SOC_SERIES_GD32F4XX
+
+config SOC_GD32F470
+	bool
+	select SOC_SERIES_GD32F4XX
+
+config SOC
+	default "gd32f405" if SOC_GD32F405
+	default "gd32f407" if SOC_GD32F407
+	default "gd32f450" if SOC_GD32F450
+	default "gd32f470" if SOC_GD32F470

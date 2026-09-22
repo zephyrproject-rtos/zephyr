@@ -1,0 +1,30 @@
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/* Sets up I2C and a GPIO on JP8 to use as our i2c bus for MCTP */
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&flexcomm2 {
+	status = "okay";
+};
+
+&flexcomm2_lpi2c2 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+/ {
+	mctp_i2c: mctp_i2c {
+		compatible = "zephyr,mctp-i2c-gpio-controller";
+		i2c = <&flexcomm2_lpi2c2>;
+		endpoint-ids = <11>, <12>;
+		endpoint-addrs = <70>, <71>;
+		endpoint-gpios = <&gpio4 6 GPIO_ACTIVE_HIGH>, <&gpio4 7 GPIO_ACTIVE_HIGH>;
+	};
+};

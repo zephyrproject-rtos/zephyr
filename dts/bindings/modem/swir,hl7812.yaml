@@ -1,0 +1,8 @@
+# Copyright (c) 2025, Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sierra Wireless HL7812 Modem
+
+compatible: "swir,hl7812"
+
+include: swir,hl78xx.yaml

@@ -1,0 +1,14 @@
+# Copyright 2023 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: MediaTek Audio DSP CPU Frequency Control
+compatible: "mediatek,mt818x_cpuclk"
+properties:
+  freqs-mhz:
+    type: array
+    description: Available frequencies in ascending order
+    required: true
+  reg:
+    type: array
+  pll-ctrl-reg:
+    type: int

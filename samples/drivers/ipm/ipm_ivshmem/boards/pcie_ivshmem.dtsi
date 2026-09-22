@@ -1,0 +1,18 @@
+/*
+ * Copyright 2023 Linaro.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/pcie/pcie.h>
+
+/ {
+	ivhsmem {
+		ivshmem0: ivshmem {
+			compatible = "qemu,ivshmem";
+
+			vendor-id = <0x1af4>;
+			device-id = <0x1110>;
+			status = "okay";
+		};
+	};
+};

@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX9529_A55
+
+# Enable GIC Safe Configuration to run multiple OSes on Cortex-A Cores
+config GIC_SAFE_CONFIG
+	default y
+
+config GIC_V3_RDIST_DMA_NONCOHERENT
+	default y
+
+config GIC_V3_ITS_DMA_NONCOHERENT
+	default y
+
+# Disable data cache until MMU is enabled when booting from EL2
+config ARM64_DCACHE_ALL_OPS
+	default y
+
+config ARM64_BOOT_DISABLE_DCACHE
+	default y
+
+config MCUX_CORE_SUFFIX
+	default "_ca55" if SOC_MIMX9529_A55
+
+# Reserve 8192 LPI interrupt ID starts from 8192 when ITS is enabled
+config NUM_IRQS
+	default 16384 if GIC_V3_ITS
+	default 437 if !GIC_V3_ITS
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) \
+		if $(dt_path_enabled,/cpus/cpu@0)
+	default $(dt_node_int_prop_int,/cpus/cpu@100,clock-frequency) \
+		if $(dt_path_enabled,/cpus/cpu@100)
+	default $(dt_node_int_prop_int,/cpus/cpu@200,clock-frequency) \
+		if $(dt_path_enabled,/cpus/cpu@200)
+	default $(dt_node_int_prop_int,/cpus/cpu@300,clock-frequency) \
+		if $(dt_path_enabled,/cpus/cpu@300)
+
+endif

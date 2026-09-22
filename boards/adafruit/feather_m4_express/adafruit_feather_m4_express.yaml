@@ -1,0 +1,19 @@
+identifier: adafruit_feather_m4_express
+name: Adafruit Feather M4 Express
+type: mcu
+arch: arm
+ram: 192
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - dma
+  - gpio
+  - hwinfo
+  - pwm
+  - spi
+  - uart
+  - usb_device
+  - watchdog
+vendor: adafruit

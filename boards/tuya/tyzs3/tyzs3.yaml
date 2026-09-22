@@ -1,0 +1,21 @@
+identifier: tyzs3
+name: TYZS3
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - gpio
+  - nvs
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: tuya

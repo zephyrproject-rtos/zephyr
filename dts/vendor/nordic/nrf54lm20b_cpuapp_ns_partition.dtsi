@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54lm20_a_b_cpuapp_ns_partition.dtsi"

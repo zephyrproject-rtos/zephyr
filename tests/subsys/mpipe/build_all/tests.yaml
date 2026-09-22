@@ -1,0 +1,21 @@
+tests:
+
+  mpipe.core.build:
+    tags:
+      - subsys
+      - mpipe
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+
+  mpipe.utils.build:
+    tags:
+      - subsys
+      - mpipe
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MPIPE_DUMP=y
+      - CONFIG_MPIPE_PLAYER=y
+      - CONFIG_MPIPE_PLAYER_DUMP_ON_STATE_CHANGE=y

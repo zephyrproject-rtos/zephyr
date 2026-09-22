@@ -1,0 +1,6 @@
+board:
+  name: m1s_dock
+  full_name: Sipeed M1S Dock
+  vendor: sipeed
+  socs:
+    - name: bl808c09q2i

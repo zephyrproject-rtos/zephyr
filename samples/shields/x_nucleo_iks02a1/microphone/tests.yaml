@@ -1,0 +1,7 @@
+sample:
+  name: X-NUCLEO-IKS02A1 sensor shield
+tests:
+  sample.shields.x_nucleo_iks02a1.microphone:
+    harness: shield
+    tags: shield
+    depends_on: arduino_i2s

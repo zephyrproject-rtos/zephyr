@@ -1,0 +1,14 @@
+# Copyright (c) 2023, Trent Piepho <tpiepho@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sensirion SHT21 Humidity and Temperature Sensor
+
+  This is compatible with the Measurement Specialties HUT21D, "meas,htu21d".
+
+  For the Silicon Labs Si7006/13/20/21 series, use the "silabs,si7006"
+  compatible for slightly altered operation.
+
+compatible: "sensirion,sht21"
+
+include: [sensor-device.yaml, i2c-device.yaml]

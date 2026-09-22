@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Core Devices LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/sf32lb52x-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <PA19_USART1_TXD>;
+		};
+
+		group2 {
+			pinmux = <PA18_USART1_RXD>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <PA33_I2C1_SDA>, <PA30_I2C1_SCL>;
+			input-enable;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <PA24_SPI1_DIO>, <PA28_SPI1_CLK>, <PA29_SPI1_CS>;
+			input-enable;
+			input-schmitt-enable;
+		};
+
+		group2 {
+			pinmux = <PA25_SPI1_DI>;
+			input-enable;
+			input-schmitt-enable;
+			bias-pull-down;
+		};
+	};
+};

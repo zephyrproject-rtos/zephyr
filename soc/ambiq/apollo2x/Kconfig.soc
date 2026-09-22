@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Linumiz GmbH
+# Author : Sri Surya  <srisurya@linumiz.com>
+
+config SOC_SERIES_APOLLO2X
+	bool
+	select SOC_FAMILY_AMBIQ
+	help
+	  Apollo2 Series MCU
+
+config SOC_APOLLO2
+	bool
+	select SOC_SERIES_APOLLO2X
+	help
+	  Apollo2
+
+config SOC_SERIES
+	default "apollo2x" if SOC_SERIES_APOLLO2X
+
+config SOC
+	default "apollo2" if SOC_APOLLO2

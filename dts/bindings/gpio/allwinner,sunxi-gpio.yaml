@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+description: Allwinner sunxi GPIO controller
+
+compatible: "allwinner,sunxi-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  allwinner,hw-bank:
+    type: int
+    required: true
+    description: Hardware bank ID for the interrupts
+
+gpio-cells:
+  - pin
+  - flags

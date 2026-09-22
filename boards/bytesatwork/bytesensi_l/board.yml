@@ -1,0 +1,8 @@
+# Copyright (c) 2024 bytesatwork AG
+# SPDX-License-Identifier: Apache-2.0
+board:
+  name: bytesensi_l
+  full_name: byteSENSI-L
+  vendor: bytesatwork
+  socs:
+  - name: nrf52832

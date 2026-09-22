@@ -1,0 +1,11 @@
+common:
+  harness: net
+  tags:
+    - net
+    - vlan
+sample:
+  description: Test VLAN functionality
+  name: VLAN sample app
+tests:
+  sample.net.vlan:
+    depends_on: eth

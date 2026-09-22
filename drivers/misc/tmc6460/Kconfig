@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config TMC6460
+	bool "Trinamic TMC6460 FOC motor controller"
+	default y
+	depends on DT_HAS_ADI_TMC6460_ENABLED
+	help
+	  Enable support for the Analog Devices / Trinamic TMC6460
+	  Field Oriented Control (FOC) motor controller. The TMC6460
+	  uses 48-bit (6-byte) datagrams with a 16-bit address space
+	  and supports both SPI and UART interfaces. It exposes a
+	  device-specific register access and motion control API.
+
+if TMC6460
+
+config TMC6460_SPI
+	bool "TMC6460 SPI bus support"
+	default y if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC6460),spi)
+	select SPI
+	help
+	  Enable SPI bus support for the TMC6460.
+
+config TMC6460_UART
+	bool "TMC6460 UART bus support"
+	default y if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC6460),uart)
+	select SERIAL
+	help
+	  Enable UART bus support for the TMC6460.
+	  The TMC6460 UART protocol uses a unique CRC8 polynomial
+	  (0x100011011 reflected) and supports RTMI streaming.
+
+config TMC6460_INIT_PRIORITY
+	int "TMC6460 initialization priority"
+	default 80
+	help
+	  Device driver initialization priority for the TMC6460.
+
+module = TMC6460
+module-str = tmc6460
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # TMC6460

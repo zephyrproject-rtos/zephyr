@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: LiteX I2C controller
+
+compatible: "litex,i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    required: true

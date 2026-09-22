@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Netfeasa Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		modem = &hl7800_modem;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	hl7800_modem: modem {
+		compatible = "swir,hl7800";
+		status = "okay";
+		mdm-wake-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		mdm-reset-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		mdm-pwr-on-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		mdm-fast-shutd-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		mdm-vgpio-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		mdm-uart-dsr-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		mdm-uart-cts-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		mdm-gpio6-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		mdm-gpio2-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		mdm-dtr-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+
+		test_hl7800_socket_offload: socket_offload {
+			compatible = "swir,hl7800-offload", "swir,hl78xx-offload";
+			max-data-length = <512>;
+		};
+
+		test_hl7800_gnss: hl_gnss {
+			compatible = "swir,hl7800-gnss", "swir,hl78xx-gnss";
+			pps-mode = "GNSS_PPS_MODE_DISABLED";
+			fix-rate = <1000>;
+		};
+	};
+};

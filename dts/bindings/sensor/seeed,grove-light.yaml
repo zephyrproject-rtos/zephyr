@@ -1,0 +1,14 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Grove Photo-Resistor Light Sensor
+
+compatible: "seeed,grove-light"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      IO channel associated with the resistor voltage divider.

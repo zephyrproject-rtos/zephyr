@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2021 Leonard Pollak
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: SGP40 and SHT4X Sensor Sample
+tests:
+  sample.sensor.sgp40_sht4x:
+    build_only: true
+    platform_allow: blackpill_f411ce
+    tags: sensors

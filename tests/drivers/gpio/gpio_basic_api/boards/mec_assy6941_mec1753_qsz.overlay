@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Close JP19 (1-2) to mux GPIO106 to JP71.3
+ * Close JP14 (10-11) to connect GPIO014 to JP71.13
+ * Ensure JP79 (13-14) is open to avoid interference
+ * Connect the JP71 pin 3 to JP76 13 to test the GPIO loopback.
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		in-gpios = <MCHP_GPIO_DECODE_106 GPIO_ACTIVE_HIGH>;
+		out-gpios = <MCHP_GPIO_DECODE_014 GPIO_ACTIVE_HIGH>;
+	};
+};

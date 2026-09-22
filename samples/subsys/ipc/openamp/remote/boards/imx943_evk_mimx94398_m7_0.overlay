@@ -1,0 +1,19 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	chosen {
+		/*
+		 * shared memory reserved for the inter-processor communication
+		 */
+
+		zephyr,ipc_shm = &dram_m33s_m70_sh_mem;
+		zephyr,ipc = &mailbox_m33s_m70_for_m70_as_remote;
+	};
+};

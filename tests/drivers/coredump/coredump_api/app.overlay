@@ -1,0 +1,20 @@
+/*
+ * Copyright Meta Platforms, Inc. and its affiliates.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	coredump_device0: coredump-device0 {
+		compatible = "zephyr,coredump";
+		coredump-type = "COREDUMP_TYPE_MEMCPY";
+		status = "okay";
+	};
+
+	coredump_devicecb: coredump-device-cb {
+		compatible = "zephyr,coredump";
+		coredump-type = "COREDUMP_TYPE_CALLBACK";
+		status = "okay";
+		memory-regions = <0x0 0x4>;
+	};
+};

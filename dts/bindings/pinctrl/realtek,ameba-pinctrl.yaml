@@ -1,0 +1,88 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek Ameba pinctrl is a singleton node responsible for controlling pin function selection
+  and pin properties. For example, you can use this node to route UART0 TX to pin PB_17
+  and enable the pull-up resistor on the pin.
+
+  All device pin configurations should be placed in child nodes of the 'pinctrl' node,
+  as shown in this example:
+    /* put this example in places like a board-pinctrl.dtsi file in your board directory,
+     * or a devicetree overlay in your application.
+     */
+    &pinctrl {
+      /* configuration for uart0 device, default state */
+      uart0_default: uart0_default {
+        /* 'group1' name is arbitrary, if pin's settings are not same,
+         * add other group like group2 {}
+         */
+        group1 {
+          pinmux = <AMEBA_PINMUX('B', 17, AMEBA_UART2_TXD)>,
+                   <AMEBA_PINMUX('B', 18, AMEBA_UART2_RXD)>;
+          bias-pull-up;
+        };
+      };
+    };
+
+  The 'uart0_default' child node encodes the pin configurations for a particular state of a device;
+  in this case, the default (that is, active) state. You would specify the low-power configuration
+  for the same device in a separate child node.
+
+  As shown, pin configurations are organized in groups within each child node. Each group can
+  specify a list of pin function selections in the 'pinmux' property. The AMEBA_PINMUX macro is
+  used to specify a pin function selection and pin configuration. You could choose pinmux specified
+  function to specified pin. And you could configure driver direction, driver state and pull state
+  for the specified pad.
+
+  To link this pin configuration with a device, use a pinctrl-N property for some number N,
+  like this example you could place in your board's DTS file:
+    &uart0 {
+      pinctrl-0 = <&uart0_default>;
+      pinctrl-names = "default";
+    };
+
+compatible: "realtek,ameba-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+child-binding:
+  description: |
+    Realtek Ameba pin controller pin group for a pinctrl state.
+  child-binding:
+    description: |
+      Realtek Ameba pin controller pin configuration node.
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - input-schmitt-disable
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin mux selections for this group. An array of pins sharing the same group properties.
+          Each element of the array is an integer constructed from the pin number and
+          the alternative function of the pin.
+      slew-rate-slow:
+        type: boolean
+        description: |
+          Pin output slew rate.If not set, default value is fast.
+      drive-strength-low:
+        type: boolean
+        description: |
+          Drive strength of the output pin.If not set, default ability is high.
+      digital-input-disable:
+        type: boolean
+        description: |
+          Disable the digital input function.
+      swd-off:
+        type: boolean
+        description: |
+          Disable the SWD function.

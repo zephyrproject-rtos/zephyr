@@ -1,0 +1,37 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		zephyr,uart-mcumgr = &uart1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 0x00020000>;
+		};
+
+		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00020000 0x00020000>;
+		};
+
+		slot1_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00040000 0x00020000>;
+		};
+	};
+};

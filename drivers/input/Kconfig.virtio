@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_VIRTIO
+	bool "VIRTIO input device driver"
+	default y
+	depends on DT_HAS_VIRTIO_INPUT_ENABLED
+	select VIRTIO
+	help
+	  Enable driver for VIRTIO input devices.
+
+if INPUT_VIRTIO
+
+config INPUT_VIRTIO_EVENT_BUF_COUNT
+	int "Number of queued event buffers"
+	default 16
+	range 1 256
+	help
+	  Number of event buffers queued on the event virtqueue. Each buffer
+	  holds a single input event.
+
+choice INPUT_VIRTIO_DEVICE_TYPE
+	prompt "VIRTIO input device type"
+	default INPUT_VIRTIO_DEVICE_TYPE_TABLET
+	help
+	  Type of VIRTIO input device to emulate/probe.
+
+config INPUT_VIRTIO_DEVICE_TYPE_TABLET
+	bool "Tablet"
+
+config INPUT_VIRTIO_DEVICE_TYPE_KEYBOARD
+	bool "Keyboard"
+
+endchoice # INPUT_VIRTIO_DEVICE_TYPE
+
+endif # INPUT_VIRTIO

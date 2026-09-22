@@ -1,0 +1,13 @@
+sample:
+  name: CoAP Download Sample
+tests:
+  sample.net.sockets.coap_download:
+    harness: net
+    filter: CONFIG_ENTROPY_HAS_DRIVER
+    depends_on: netif
+    tags:
+      - net
+      - coap
+    integration_platforms:
+      - native_sim
+      - nucleo_h753zi

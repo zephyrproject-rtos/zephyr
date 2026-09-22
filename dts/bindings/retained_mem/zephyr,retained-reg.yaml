@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Retained register based retained memory area.
+
+compatible: "zephyr,retained-reg"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+  reg:
+    required: true

@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq PDM
+
+compatible: "ambiq,pdm"
+
+include: ["base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  pdm-buffer-location:
+    type: string
+    description: |
+      Define PDM DMA buffer location section
+
+  pdm-buffer-size:
+    type: int
+    description: |
+      Define the PDM DMA buffer size in (4-byte) words

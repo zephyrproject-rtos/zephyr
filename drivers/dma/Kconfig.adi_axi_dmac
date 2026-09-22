@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_ADI_AXI_DMAC
+	bool "Analog Devices AXI DMAC driver"
+	default y
+	depends on DT_HAS_ADI_AXI_DMAC_ENABLED
+	help
+	  Driver for the Analog Devices AXI DMAC core. Provides DMA
+	  transfers for AXI-Stream peripherals via the standard Zephyr
+	  DMA driver API.

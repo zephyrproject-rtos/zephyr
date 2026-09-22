@@ -1,0 +1,41 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&flexcomm3 {
+	status = "okay";
+};
+
+&flexcomm3_lpi2c3 {
+	status = "okay";
+};
+
+/* To test this sample, connect
+ * LPI2C3 SCL(J5-5, P1_1/FC3_P1)    -->        LPI2C2 SCL(J2-20, P4_1/FC2_P1)
+ * LPI2C3 SDA(J5-6, P1_0/FC3_P0)     -->        LPI2C2 SDA(J2-18, P4_0/FC2_P0)
+ */
+&flexcomm3_lpi2c3 {
+	scl-gpios = <&gpio1 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio1 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	recover-bus-on-init;
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&flexcomm2_lpi2c2 {
+	scl-gpios = <&gpio4 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio4 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	recover-bus-on-init;
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

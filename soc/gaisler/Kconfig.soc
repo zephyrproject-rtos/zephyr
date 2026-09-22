@@ -1,0 +1,5 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SPARC_LEON
+	bool

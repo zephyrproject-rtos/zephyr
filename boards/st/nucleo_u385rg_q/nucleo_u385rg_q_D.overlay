@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2026 Zuehlke Engineering AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define BOARD_REVISION_D
+#include "arduino_r3_connector.dtsi"

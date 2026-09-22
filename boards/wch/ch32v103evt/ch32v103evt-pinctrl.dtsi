@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2026 Lucy Wong
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32v20x_30x-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PA9_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+
+		group2 {
+			pinmux = <USART1_RX_PA10_0>;
+			bias-pull-up;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <I2C2_SCL_PB10_0>, <I2C2_SDA_PB11_0>;
+			drive-open-drain;
+			bias-pull-up;
+		};
+	};
+
+	spi2_default: spi2_default {
+		group1 {
+			pinmux = <SPI2_SCK_PB13_0>, <SPI2_MOSI_PB15_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+
+		group2 {
+			pinmux = <SPI2_MISO_PB14_0>;
+			bias-pull-up;
+		};
+	};
+};

@@ -1,0 +1,26 @@
+# Copyright (c) 2025  STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ST87MXX
+
+if NETWORKING
+
+config MODEM
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+config MODEM_SHELL
+	default y
+
+config MODEM_ST87MXX
+	default y
+
+# extend retry timing to 20 seconds for LTE/LTE-M
+config COAP_INIT_ACK_TIMEOUT_MS
+	default 20000
+
+endif # NETWORKING
+
+endif # SHIELD_ST87MXX

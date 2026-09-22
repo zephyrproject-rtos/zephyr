@@ -1,0 +1,69 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&pinctrl {
+	uart1_default_alt: uart1_default_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 6)>,
+				<NRF_PSEL(UART_RX, 0, 8)>;
+		};
+	};
+
+	uart1_sleep_alt: uart1_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 6)>,
+				<NRF_PSEL(UART_RX, 0, 8)>;
+			low-power-enable;
+		};
+	};
+
+	uart0_default_alt: uart0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 1)>,
+				<NRF_PSEL(UART_RX, 1, 2)>,
+				<NRF_PSEL(UART_RTS, 1, 3)>,
+				<NRF_PSEL(UART_CTS, 1, 4)>;
+		};
+	};
+
+	uart0_sleep_alt: uart0_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 1)>,
+				<NRF_PSEL(UART_RX, 1, 2)>,
+				<NRF_PSEL(UART_RTS, 1, 3)>,
+				<NRF_PSEL(UART_CTS, 1, 4)>;
+			low-power-enable;
+		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,console = &uart1;
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_default_alt>;
+	pinctrl-1 = <&uart1_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+};
+
+dut: &uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default_alt>;
+	pinctrl-1 = <&uart0_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+};
+
+&rtc1 {
+	interrupts = <17 2>;
+};
+
+counter_dev: &timer0 {
+	status = "okay";
+};

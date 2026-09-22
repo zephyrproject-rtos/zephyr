@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config BBRAM_NXP_IMX_SNVS_GPR
+	bool "NXP i.MX SNVS General Purpose Registers BBRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_SNVS_GPR_ENABLED
+	help
+	  Enable a BBRAM driver backed by the NXP i.MX SNVS Low-Power
+	  General Purpose Registers. The bank's base address and size are
+	  obtained from the MCUX HAL SNVS_Type definition for the active SoC.

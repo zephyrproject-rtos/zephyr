@@ -1,0 +1,40 @@
+#
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Aesc Silicon Clock Controller
+
+description: |
+  Clock controller for the ElemRV platform. Each clock domain exposes a control
+  register (enable + lock status) and a ratio register (multiplier / divider).
+  The output rate of a domain is computed as
+
+      rate = reference * mult / div
+
+  where the reference clock frequency is read from the syscon device referenced
+  by the "syscon" property.
+
+  The clock specifier is the zero-based domain index, e.g. HYDROGEN_CLK_SYSTEM.
+
+compatible: "aesc,clock-controller"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  syscon:
+    type: phandle
+    required: true
+    description: |
+      Reference to the syscon node that publishes the reference clock
+      frequency (in Hz) used to compute each domain's rate.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - domain

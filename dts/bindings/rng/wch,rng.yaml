@@ -1,0 +1,15 @@
+# Copyright (c) 2025 James Bennion-Pedley
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    WCH CH32 RNG (Random Number Generator).
+
+    The TRNG is based on a LFSR with analogue noise as a seed
+
+compatible: "wch,rng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

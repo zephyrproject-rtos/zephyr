@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Aerlync Labs Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: zephyr min-heap library application
+  name: min-heap
+tests:
+  sample.data_structures.min-heap:
+    tags:
+      - data_structures
+    harness: console
+    integration_platforms:
+      - native_sim
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Top of heap: key=2 value=400"
+        - "Found element with key 5 at index 1,removing it..."

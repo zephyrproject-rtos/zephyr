@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence Nand flash controller
+
+compatible: "cdns,nand"
+
+include: [flash-controller.yaml, reset-device.yaml]
+
+properties:
+  data-rate-mode:
+    type: int
+    required: true
+    description: Data Rate mode Selection. 0 - SDR , 1 - NVDDR.
+    enum:
+      - 0
+      - 1
+
+  block-size:
+    type: int
+    required: true
+    description: Erase Block size of Cadence Nand

@@ -1,0 +1,6 @@
+board:
+  name: m5stack_unitc6l
+  full_name: Unit C6L
+  vendor: m5stack
+  socs:
+  - name: esp32c6

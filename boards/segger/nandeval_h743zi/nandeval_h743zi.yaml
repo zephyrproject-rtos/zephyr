@@ -1,0 +1,18 @@
+identifier: nandeval_h743zi
+name: SEGGER NAND Flash Evaluator
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 2048
+supported:
+  - entropy
+  - gpio
+  - adc
+  - backup_sram
+  - crc
+  - usb_device
+  - usbd
+vendor: segger

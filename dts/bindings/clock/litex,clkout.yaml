@@ -1,0 +1,67 @@
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+description: |
+  LiteX Mixed Mode Clock Manager clock output binding
+
+compatible: "litex,clkout"
+
+properties:
+
+  "#clock-cells":
+    required: true
+    type: int
+    description: |
+      Number of cells in a clock specifier;
+      Typically 0 for nodes with a single clock output
+      and 1 for nodes with multiple clock outputs.
+    const: 1
+
+  clock-output-names:
+    required: true
+    type: string
+    description: |
+      string of clock output signal name.
+
+  litex,clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
+
+  litex,clock-phase:
+    required: true
+    type: int
+    description: |
+      default phase offset given in degrees
+
+  litex,clock-duty-num:
+    required: true
+    type: int
+    description: |
+      default duty cycle numerator value
+
+  litex,clock-duty-den:
+    required: true
+    type: int
+    description: |
+      default duty cycle denominator value
+
+  litex,clock-margin:
+    required: true
+    type: int
+    description: |
+      clock output margin coefficient
+
+  litex,clock-margin-exp:
+    required: true
+    type: int
+    description: |
+      exponent for clkout margin
+      effective clkout margin shall be
+      margin * 10^(-exponent) * 100%
+
+clock-cells:
+  - id

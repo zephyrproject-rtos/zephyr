@@ -1,0 +1,8 @@
+common:
+  tags:
+    - bluetooth
+    - bt_version_exchange
+    - bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_version.test:
+    type: unit

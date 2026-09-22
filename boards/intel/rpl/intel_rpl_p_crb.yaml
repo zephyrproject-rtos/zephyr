@@ -1,0 +1,22 @@
+identifier: intel_rpl_p_crb
+name: Raptor Lake P CRB
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+supported:
+  - acpi
+  - smp
+  - smbus
+  - watchdog
+  - rtc
+  - pwm
+  - gpio
+  - spi
+  - i2c
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel

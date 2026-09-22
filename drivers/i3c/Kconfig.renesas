@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config I3C_RENESAS_RA
+	bool "Renesas RA I3C driver support"
+	default y
+	depends on DT_HAS_RENESAS_RA_I3C_ENABLED
+	select USE_RA_FSP_I3C
+	select PINCTRL
+	help
+	  Enable support for I3C on Renesas RA microcontrollers.

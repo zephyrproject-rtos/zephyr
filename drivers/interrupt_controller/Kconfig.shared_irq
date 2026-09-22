@@ -1,0 +1,20 @@
+# shared_irq configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SHARED_IRQ
+	bool "Shared interrupt driver"
+	default y
+	depends on DT_HAS_SHARED_IRQ_ENABLED
+	help
+	  Include shared interrupt support in system. Shared interrupt
+	  support is NOT required in most systems. If in doubt answer no.
+
+config SHARED_IRQ_INIT_PRIORITY
+	int "Shared IRQ init priority"
+	depends on SHARED_IRQ
+	default 45
+	help
+	  Shared IRQ are initialized on POST_KERNEL init level. They
+	  have to be initialized before any device that uses them.

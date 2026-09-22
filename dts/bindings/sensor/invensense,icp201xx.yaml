@@ -1,0 +1,53 @@
+# Copyright (c) 2025 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICP201xx High Accuracy, Low Power, Barometric Pressure and Temperature Sensor IC
+
+compatible: "invensense,icp201xx"
+
+include: [sensor-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-high. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  op-mode:
+    type: string
+    default: mode0
+    description: |
+      Default mode for sensor.
+      Mode selection is a trade-off between measurement time, consumption and noise.
+      Operation modes are the following:
+      - Mode0: odr=25Hz,  noise=0.5rms, current=211uA
+      - Mode1: odr=120Hz, noise=1rms,   current=222uA
+      - Mode2: odr=40Hz,  noise=2.5rms, current=49uA
+      - Mode3: odr=2Hz,   noise=0.5rms, current=23uA
+      - Mode4: odr=25Hz,  noise=0.3rms, current=250uA
+      Default set to mode0 which is the sensor default value.
+    enum:
+      - mode0
+      - mode1
+      - mode2
+      - mode3
+      - mode4
+
+  drive-strength:
+    type: string
+    default: current_12mA_1_8V
+    description: |
+      IO device strength register value.
+      Define max current when switching IO state.
+      Default set to current_12mA_1_8V which is the sensor default value.
+    enum:
+      - current_2mA_1_8V
+      - current_4mA_1_8V
+      - current_8mA_1_8V
+      - current_12mA_1_8V
+      - current_2mA_1_2V
+      - current_4mA_1_2V
+      - current_6mA_1_2V
+      - current_8mA_1_2V

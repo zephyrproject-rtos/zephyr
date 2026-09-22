@@ -1,0 +1,21 @@
+/* Copyright (C) 2026 Advanced Micro Devices, Inc. (AMD) */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	xclk_wiz_test_in: xclk-wiz-test-in {
+		compatible = "fixed-clock";
+		clock-frequency = <100000000>;
+		#clock-cells = <0>;
+	};
+};
+
+&soc {
+	xclk_wiz_test: clock-controller@80040000 {
+		compatible = "xlnx,clkx5-wiz-1.0";
+		reg = <0x80040000 0x10000>;
+		clocks = <&xclk_wiz_test_in>;
+		#clock-cells = <1>;
+		xlnx,num-out-clks = <1>;
+		status = "okay";
+	};
+};

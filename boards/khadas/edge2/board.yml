@@ -1,0 +1,6 @@
+board:
+  name: khadas_edge2
+  full_name: Edge2
+  vendor: khadas
+  socs:
+  - name: rk3588s

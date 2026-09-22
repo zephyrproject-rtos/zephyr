@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: xiao_rp2350
+  full_name: XIAO RP2350
+  vendor: seeed
+  socs:
+  - name: rp2350a

@@ -1,0 +1,17 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCXW7x HW_PARAMS node
+
+compatible: "nxp,mcxw-hw-params"
+
+include: [base.yaml, nvmem-consumer.yaml]
+
+properties:
+  nvmem-cells:
+    required: true
+    description: |
+      HW PARAMS contains some NVMEM cells for factory settings stored in IFR0 section 1.
+
+  nvmem-cell-names:
+    required: true

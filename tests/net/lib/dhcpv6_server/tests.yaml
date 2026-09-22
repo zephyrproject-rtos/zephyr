@@ -1,0 +1,9 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - dhcpv6
+tests:
+  net.dhcpv6_server:
+    platform_allow:
+      - native_sim

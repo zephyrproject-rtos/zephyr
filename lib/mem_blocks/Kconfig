@@ -1,0 +1,54 @@
+# Copyright (c) 2021,2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Memory Blocks"
+
+config SYS_MEM_BLOCKS
+	bool "(Yet Another) Memory Blocks Allocator"
+	help
+	  This enables support for memory block allocator where:
+	  () All memory blocks have a single fixed size.
+	  () Multiple blocks can be allocated or freed at the same time.
+	  () A group of blocks allocated together may not be contiguous.
+	     This is useful for operations such as scatter-gather DMA
+	     transfers.
+	  () Bookkeeping of allocated blocks is done outside of
+	     the associated buffer (unlike memory slab). This allows
+	     the buffer to reside in memory regions where these can be
+	     powered down to conserve energy.
+
+config SYS_MEM_BLOCKS_LISTENER
+	bool "Memory Blocks Allocator event notifications"
+	depends on SYS_MEM_BLOCKS
+	select HEAP_LISTENER
+	help
+	  This allows application to listen for memory blocks allocator
+	  events, such as memory allocation and de-allocation.
+
+config SYS_MEM_BLOCKS_RUNTIME_STATS
+	bool "Memory blocks runtime statistics"
+	depends on SYS_MEM_BLOCKS
+	help
+	  This option enables the tracking and reporting of the memory
+	  blocks statistics related to the current and maximum number
+	  of allocations in a given memory block.
+
+config OBJ_CORE_SYS_MEM_BLOCKS
+	bool "Kernel object for memory blocks"
+	depends on SYS_MEM_BLOCKS && OBJ_CORE
+	default y if SYS_MEM_BLOCKS && OBJ_CORE
+	help
+	  This option allows object cores to be integrated into memory block
+	  objects.
+
+config OBJ_CORE_STATS_SYS_MEM_BLOCKS
+	bool "Object core statistics for memory blocks"
+	depends on SYS_MEM_BLOCKS && OBJ_CORE_STATS
+	default y if SYS_MEM_BLOCKS && OBJ_CORE_STATS
+	select SYS_MEM_BLOCKS_RUNTIME_STATS
+	help
+	  This option integrates the object core statistics framework into
+	  the memory blocks.
+
+endmenu

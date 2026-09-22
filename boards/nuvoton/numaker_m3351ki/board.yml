@@ -1,0 +1,6 @@
+board:
+  name: numaker_m3351ki
+  full_name: NUMAKER M3351KI
+  vendor: nuvoton
+  socs:
+  - name: m335xxx

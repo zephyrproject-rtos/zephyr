@@ -1,0 +1,15 @@
+# Copyright 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: IMX CAAM (Cryptographic Acceleration and Assurance Module)
+
+compatible: "nxp,imx-caam"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

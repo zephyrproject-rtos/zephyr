@@ -1,0 +1,14 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - bbram
+    - userspace
+  filter: CONFIG_ARCH_HAS_USERSPACE
+  integration_platforms:
+    - qemu_x86
+tests:
+  drivers.bbram.userspace:
+    harness: ztest

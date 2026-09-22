@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX clock control node pclk block
+
+compatible: "renesas,rx-cgc-pclk-block"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  clocks:
+    description: |
+      Select the clock source for pclk block.
+      If you want to use different clock source for child node,
+      select it there

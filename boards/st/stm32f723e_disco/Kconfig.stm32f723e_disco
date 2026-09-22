@@ -1,0 +1,5 @@
+# Copyright (c) 2018 Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F723E_DISCO
+	select SOC_STM32F723XX

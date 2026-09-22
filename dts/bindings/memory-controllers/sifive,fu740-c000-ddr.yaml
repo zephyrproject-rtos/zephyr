@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+#
+description: |
+  Sifive Fu740 memory controller
+
+compatible: "sifive,fu740-c000-ddr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

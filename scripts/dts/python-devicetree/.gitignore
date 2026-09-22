@@ -1,0 +1,7 @@
+dist/
+src/devicetree.egg-info/
+build/
+devicetree.egg-info/
+__pycache__/
+.tox/
+doc/build/

@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Native simulator Digital Microphone controller
+
+compatible: "zephyr,native-sim-dmic"
+
+include: base.yaml
+
+properties:
+  max-channels:
+    type: int
+    default: 16
+    description: |
+      Maximum number of PCM channels accepted by this instance.

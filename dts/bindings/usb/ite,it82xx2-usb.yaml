@@ -1,0 +1,24 @@
+description: |
+    ITE IT82XX2 USB in device mode
+
+compatible: "ite,it82xx2-usb"
+
+include: [base.yaml, pinctrl-device.yaml, usb-ep.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  wucctrl:
+    type: phandles
+    description: |
+      usbd node WUC interrupt.

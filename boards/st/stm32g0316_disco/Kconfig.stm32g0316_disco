@@ -1,0 +1,5 @@
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32G0316_DISCO
+	select SOC_STM32G031XX

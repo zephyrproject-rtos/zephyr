@@ -1,0 +1,30 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Select the RTC (rtc_jdp) as the kernel system timer on frdm_mcxe31b. */
+
+/ {
+	chosen {
+		zephyr,system-timer = &rtc;
+	};
+};
+
+&rtc {
+	status = "okay";
+	/*
+	 * prescaler = 1 -> 32 kHz counter rate. The default calendar prescaler
+	 * (16384) would give an unusable ~2 Hz tick.
+	 */
+	prescaler = <1>;
+};
+
+/*
+ * The RTC instance now backs the system tick; it can no longer provide the
+ * counter-based RTC calendar on the same hardware.
+ */
+&counter_rtc {
+	status = "disabled";
+};

@@ -1,0 +1,14 @@
+# Copyright (c) 2025 WIZnet Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+title: WIZnet W6300 Ethernet Controller
+
+description: W6300 standalone 10/100BASE-T Ethernet controller with SPI interface
+
+compatible: "wiznet,w6300"
+
+include: wiznet,ethernet-common.yaml
+
+properties:
+  int-gpios:
+    required: true

@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RENESAS_SMARTBOND
+	bool
+
+config SOC_FAMILY
+	default "renesas_smartbond" if SOC_FAMILY_RENESAS_SMARTBOND
+
+rsource "*/Kconfig.soc"

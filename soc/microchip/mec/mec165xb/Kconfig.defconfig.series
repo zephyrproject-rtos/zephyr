@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Microchip MEC165xB MCU series configuration options
+
+if SOC_SERIES_MEC165XB
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	# All NVIC external sources.
+	default 198
+
+config CORTEX_M_SYSTICK
+	depends on !MCHP_XEC_RTOS_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/soc/timer@40007400,clock-frequency) if MCHP_XEC_RTOS_TIMER
+
+if MCHP_XEC_RTOS_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default $(dt_node_int_prop_int,/soc/timer@40007400,clock-frequency)
+
+endif # MCHP_XEC_RTOS_TIMER
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
+endif # SOC_SERIES_MEC165XB

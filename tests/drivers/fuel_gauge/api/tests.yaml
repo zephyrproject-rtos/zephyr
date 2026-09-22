@@ -1,0 +1,19 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.fuel_gauge.api:
+    tags:
+      - drivers
+      - fuel_gauge
+      - userspace
+    harness: ztest
+    # test_set_buffer_prop__rejects_unreadable_src expects a kernel oops
+    ignore_faults: true
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+    integration_platforms:
+      - native_sim
+      - qemu_x86

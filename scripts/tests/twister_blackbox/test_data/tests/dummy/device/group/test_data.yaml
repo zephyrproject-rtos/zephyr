@@ -1,0 +1,6 @@
+tests:
+  dummy.device.group:
+    platform_allow: intel_adl_crb
+    integration_platforms:
+      - intel_adl_crb
+    tags: device

@@ -1,0 +1,14 @@
+#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2040.h>
+
+/* This file overrides pio0_spi0 configured in ./rpi_pico_pio.overlay
+ * and enables DMA.
+ */
+
+&dma {
+	status = "okay";
+};
+
+&pio0_spi0 {
+	dmas = <&dma 0 0 0>, <&dma 1 0 0>;
+	dma-names = "tx", "rx";
+};

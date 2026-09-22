@@ -1,0 +1,44 @@
+# SSD1327 and SSD1325 display controller configuration options
+
+# Copyright (c) 2024 Savoir-faire Linux
+# Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SSD1327_5
+	bool "SSD1327/5 display controller driver"
+	default y
+	depends on DT_HAS_SOLOMON_SSD1327_ENABLED || DT_HAS_SOLOMON_SSD1325_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1327),i2c) \
+		||  $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1325),i2c)
+	select MIPI_DBI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1327),mipi-dbi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1325),mipi-dbi)
+	help
+	  Enable driver for SSD1327 and SSD1325 display controllers.
+
+if SSD1327_5
+
+config SSD1327_DEFAULT_CONTRAST
+	int "SSD1327 default contrast"
+	default 128
+	range 0 255
+	help
+	  SSD1327 default contrast.
+
+config SSD1327_CONV_BUFFER_LINES
+	int "How many lines can the conversion buffer hold"
+	default 1
+	range 1 128
+
+config SSD1325_DEFAULT_CONTRAST
+	int "SSD1325 default contrast"
+	default 128
+	range 0 255
+	help
+	  SSD1325 default contrast.
+
+config SSD1325_CONV_BUFFER_LINES
+	int "How many lines can the conversion buffer hold"
+	default 1
+	range 1 128
+
+endif # SSD1327_5

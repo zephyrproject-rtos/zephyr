@@ -1,0 +1,5 @@
+tests:
+  message_bus.zbus.channel_name:
+    tags: zbus
+    integration_platforms:
+      - native_sim

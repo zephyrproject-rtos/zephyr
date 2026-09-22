@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INTEL_ISH_5_8_0
+	select SOC_INTEL_ISH_5_8_0

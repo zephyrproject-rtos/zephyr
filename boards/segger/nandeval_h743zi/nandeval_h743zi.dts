@@ -1,0 +1,134 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h743Xi.dtsi>
+#include <st/h7/stm32h743zitx-pinctrl.dtsi>
+
+/ {
+	model = "SEGGER NAND Flash Evaluator";
+	compatible = "segger,nandeval-h743zi";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,dtcm = &dtcm;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	nand_mmio: memory@80000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x80000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "NAND_MMIO";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_nce_pg9 &fmc_nwait_pd6 &fmc_nwe_pd5 &fmc_noe_pd4
+		     &fmc_a16_pd11 /* cle */
+		     &fmc_a17_pd12 /* ale */
+		     &fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1
+		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
+		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
+		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(12)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <160>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&pwr {
+	power-supply = "ldo";
+};
+
+&adc3 {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&backup_sram {
+	status = "okay";
+};

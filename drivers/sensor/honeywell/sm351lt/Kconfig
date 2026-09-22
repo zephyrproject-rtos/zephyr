@@ -1,0 +1,52 @@
+# SM351LT Magnetoresistive Sensor configuration options
+
+# Copyright (c) 2020, Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SM351LT
+	bool "SM351LT Magnetoresistive Sensor"
+	default y
+	depends on DT_HAS_HONEYWELL_SM351LT_ENABLED
+	depends on (GPIO)
+	help
+	  Enable GPIO-based driver for SM351LT magnetoresistive
+	  sensor.
+
+if SM351LT
+
+choice SM351LT_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config SM351LT_TRIGGER_NONE
+	bool "No trigger"
+
+config SM351LT_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select SM351LT_TRIGGER
+
+config SM351LT_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select SM351LT_TRIGGER
+
+endchoice
+
+config SM351LT_TRIGGER
+	bool
+
+config SM351LT_THREAD_PRIORITY
+	int "Thread priority"
+	depends on SM351LT_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config SM351LT_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on SM351LT_TRIGGER_OWN_THREAD
+	default 512
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # SM351LT

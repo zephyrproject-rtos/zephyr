@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci5_spi_default: sci5_spi_default {
+		group1 {
+			/* MISO MOSI SCK */
+			psels = <RA_PSEL(RA_PSEL_SCI_5, 11, 2)>,
+				<RA_PSEL(RA_PSEL_SCI_5, 11, 3)>,
+				<RA_PSEL(RA_PSEL_SCI_5, 11, 4)>;
+			drive-strength = "high";
+		};
+	};
+};
+
+&ioport8 {
+	status = "okay";
+};
+
+&sci5 {
+	pinctrl-0 = <&sci5_spi_default>;
+	pinctrl-names = "default";
+	interrupts = <95 1>, <94 1>, <93 1>, <92 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	spi {
+		cs-gpios = <&ioport8 6 GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		sdcard@0 {
+			compatible = "zephyr,sdhc-spi-slot";
+			reg = <0>;
+			status = "okay";
+			spi-max-frequency = <1000000>;
+
+			sdmmc {
+				compatible = "zephyr,sdmmc-disk";
+				disk-name = "SD";
+				status = "okay";
+			};
+		};
+	};
+};

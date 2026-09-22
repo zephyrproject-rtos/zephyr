@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2020 TDK Invensense
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: ICM42605 Sensor Sample
+tests:
+  sample.sensor.icm42605:
+    build_only: true
+    platform_allow: nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52dk/nrf52832
+    tags: sensors

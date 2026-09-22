@@ -1,0 +1,24 @@
+identifier: mgm260p_ek2713a
+name: xGM260P Explorer Kit (MGM260P-EK2713A, BRD2713A)
+type: mcu
+arch: arm
+ram: 512
+flash: 3200
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

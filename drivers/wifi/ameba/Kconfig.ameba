@@ -1,0 +1,87 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_AMEBA
+	bool "Ameba SoC Wi-Fi support"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_WIFI_ENABLED
+	depends on ZEPHYR_HAL_REALTEK_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
+	select WIFI_USE_NATIVE_NETWORKING
+	select NET_L2_ETHERNET
+	select WIFI_NM
+
+if WIFI_AMEBA
+
+config AMEBA_WIFI_EVENT_STACK_SIZE
+	int "Ameba Wi-Fi event thread stack size"
+	default 4096
+	help
+	  Stack size for the Ameba Wi-Fi event handling thread.
+	  Increase this if you see stack overflow, or decrease to save RAM.
+
+config HEAP_MEM_POOL_ADD_SIZE_AMEBA_WIFI
+	int
+	default 8192
+	help
+	  Add heap memory pool for Ameba Wi-Fi scan buffer allocation.
+
+configdefault WIFI_NM_MAX_MANAGED_INTERFACES
+	default 2
+
+configdefault NET_IF_MAX_IPV4_COUNT
+	default 2
+
+configdefault NET_SOCKETS_SERVICE_THREAD_PRIO
+	default -3
+
+configdefault NET_TCP_WORKQ_STACK_SIZE
+	default 2048
+
+configdefault NET_RX_STACK_SIZE
+	default 2048
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+config RTK_WIFI_STA_AUTO_DHCPV4
+	bool "Automatically starts DHCP4 negotiation"
+	depends on NET_DHCPV4
+	depends on NET_IPV4
+	default y
+	help
+	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
+
+config BT_COEXIST
+	bool "Wi-Fi/Bluetooth coexistence"
+
+config RTK_WIFI_AP_STA_MODE
+	bool "Concurrent AP and STA mode"
+	default y
+
+config RTK_AP_IPV4_ADDR
+	string "RTK SoftAP IPv4 address"
+	default "192.168.43.1"
+	help
+	  IPv4 address assigned to RTK SoftAP interface.
+
+config RTK_AP_IPV4_NETMASK
+	string "RTK SoftAP IPv4 netmask"
+	default "255.255.255.0"
+	help
+	  Netmask for the SoftAP IPv4 address.
+
+config RTK_AP_IPV4_GATEWAY
+	string "RTK SoftAP IPv4 gateway"
+	default "192.168.43.1"
+	help
+	  Gateway for SoftAP clients (usually the AP itself).
+
+config SINGLE_CORE_WIFI
+	bool
+	depends on SOC_SERIES_AMEBAD
+	default y
+
+config WHC_HOST
+	bool
+
+endif

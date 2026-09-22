@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+&arduino_spi {
+	status = "okay";
+	/delete-property/ cs-gpios;
+
+	st67w611m1: st67w611m1@0 {
+		status = "okay";
+		compatible = "st,st67w611m1";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(40)>;
+		chip-select-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_HIGH>;
+		ready-gpios = <&arduino_header ARDUINO_HEADER_R3_D3 GPIO_ACTIVE_HIGH>;
+		chip-en-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+	};
+};

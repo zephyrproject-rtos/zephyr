@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+identifier: rts5912_evb
+name: RTS5912-EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 320
+supported:
+  - gpio
+  - pinmux
+  - adc
+vendor: realtek

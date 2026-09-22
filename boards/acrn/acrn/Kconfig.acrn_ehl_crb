@@ -1,0 +1,6 @@
+# Copyright (c) 2019-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ACRN_EHL_CRB
+	select SOC_ATOM

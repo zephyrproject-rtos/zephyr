@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Aspeed Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+identifier: ast1030_evb
+name: Aspeed AST1030-EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 768
+flash: 1024
+supported:
+  - serial
+vendor: aspeed

@@ -1,0 +1,5 @@
+description: Texas Instruments LP5864 I2C LED controller node
+
+compatible: "ti,lp5864"
+
+include: ti,lp586x.yaml

@@ -1,0 +1,18 @@
+# Copyright (c) 2024, Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Digital Temperature Sensor.
+
+compatible: "st,stm32-digi-temp"
+
+include: [sensor-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

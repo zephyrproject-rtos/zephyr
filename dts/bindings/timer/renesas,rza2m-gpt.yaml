@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZA2M GPT
+
+compatible: "renesas,rza2m-gpt"
+
+include: [base.yaml]
+
+properties:
+  prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 4
+      - 16
+      - 64
+      - 256
+      - 1024
+    description: Input clock prescaler.
+
+  channel:
+    type: int
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true

@@ -1,0 +1,6 @@
+board:
+  name: sparkfun_samd21_breakout
+  full_name: Sparkfun SAMD21 Dev Breakout
+  vendor: sparkfun
+  socs:
+    - name: samd21g18a

@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sram_rx: memory@38000000 {
+			reg = <0x38000000 DT_SIZE_K(32)>;
+		};
+
+		sram_tx: memory@38008000 {
+			reg = <0x38008000 DT_SIZE_K(32)>;
+		};
+	};
+
+	ipc0: ipc0 {
+		compatible = "zephyr,ipc-icmsg";
+		tx-region = <&sram_tx>;
+		rx-region = <&sram_rx>;
+		mboxes = <&mailbox 10>, <&mailbox 11>;
+		mbox-names = "tx", "rx";
+		status = "okay";
+	};
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart8 {
+	status = "disabled";
+};

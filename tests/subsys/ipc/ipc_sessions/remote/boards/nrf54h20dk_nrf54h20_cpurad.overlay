@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&uart135 {
+	/delete-property/ hw-flow-control;
+};
+
+&ipc0 {
+	compatible = "zephyr,ipc-icmsg";
+	/delete-property/ tx-blocks;
+	/delete-property/ rx-blocks;
+	unbound = "enable";
+};

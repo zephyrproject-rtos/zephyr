@@ -1,0 +1,6 @@
+tests:
+  libraries.encoding.cobs:
+    min_flash: 32
+    tags: cobs
+    integration_platforms:
+      - native_sim

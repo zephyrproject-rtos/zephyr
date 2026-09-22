@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+spibb0: &spi2 {
+	cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};

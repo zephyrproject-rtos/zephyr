@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mctp_i3c: mctp_i3c {
+		compatible = "zephyr,mctp-i3c-target";
+		i3c = <&i3c2>;
+		endpoint-id = <11>;
+	};
+};
+
+&i3c2 {
+	status = "okay";
+
+	pinctrl-0 = <&i3c2_clk_gpe2_default &i3c2_data_gpe3_default>;
+	pinctrl-names = "default";
+
+	bcr = <0x06>;
+	pid-random-value = <0x00000011>;
+};

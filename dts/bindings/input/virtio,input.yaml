@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: VIRTIO Input device
+
+compatible: "virtio,input"
+
+include: base.yaml
+
+properties:
+  display:
+    type: phandle
+    description: |
+      Display used to scale absolute axes. When set, ABS_X and ABS_Y
+      coordinates are scaled from the range advertised by the device to
+      the display resolution, as expected by consumers operating in
+      screen coordinates.

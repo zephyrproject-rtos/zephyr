@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_TI_MSPM0
+	bool "Texas Instruments MSPM0 RTC driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_RTC_ENABLED
+	help
+	  Texas Instruments Real-Time Clock (RTC) driver used on MSPM0 SoC series.

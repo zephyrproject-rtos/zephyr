@@ -1,0 +1,12 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_MICROCHIP_SAMA5
+	select MICROCHIP_SAM
+	select ARM
+	select CPU_CORTEX_A5
+	select MMU
+	select CACHE_MANAGEMENT
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER

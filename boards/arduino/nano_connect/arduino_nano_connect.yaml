@@ -1,0 +1,20 @@
+identifier: arduino_nano_connect
+name: Arduino Nano RP2040 Connect
+type: mcu
+arch: arm
+ram: 264
+flash: 16384
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - usb_device
+  - watchdog
+vendor: arduino

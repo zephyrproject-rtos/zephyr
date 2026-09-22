@@ -1,0 +1,50 @@
+# Private config options for packet socket sample app
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking packet socket sample application"
+
+config NET_SAMPLE_SEND_WAIT_TIME
+	int "Wait time between sent packets (in ms)"
+	default 5000
+	help
+	  By default the application will send a packet every 5 seconds.
+	  If set to 0, then the packets are sent as fast as possible, which
+	  will stress test the network stack.
+
+config NET_SAMPLE_ENABLE_PACKET_DGRAM
+	bool "Use AF_PACKET with SOCK_DGRAM"
+	depends on NET_SOCKETS_PACKET_DGRAM
+	default y
+	help
+	  This will strip Ethernet header from received packets
+	  and insert Ethernet header to sent packets.
+
+config NET_SAMPLE_DESTINATION_ADDR
+	string "Destination Ethernet MAC address"
+	depends on NET_SOCKETS_PACKET_DGRAM
+	default "00:11:22:33:44:55"
+	help
+	  Where to send the Ethernet frames.
+
+config NET_SAMPLE_MCAST_MEMBERSHIP
+	bool "Join an Ethernet multicast group"
+	select NET_SOCKETS_PACKET_MCAST_MEMBERSHIP
+	default y
+	help
+	  Ask the network interface to also listen to the multicast MAC
+	  address set by NET_SAMPLE_MCAST_ADDR. The group is joined with the
+	  PACKET_ADD_MEMBERSHIP socket option and left with
+	  PACKET_DROP_MEMBERSHIP when the sample stops.
+
+config NET_SAMPLE_MCAST_ADDR
+	string "Ethernet multicast MAC address to listen to"
+	depends on NET_SAMPLE_MCAST_MEMBERSHIP
+	default "01:00:5e:00:00:01"
+	help
+	  The multicast MAC address the receiving packet socket joins. The
+	  default value is the one IPv4 multicast address 224.0.0.1 (all
+	  hosts) maps to.
+
+source "Kconfig.zephyr"

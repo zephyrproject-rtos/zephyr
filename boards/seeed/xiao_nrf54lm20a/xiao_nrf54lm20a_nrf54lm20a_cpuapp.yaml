@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: xiao_nrf54lm20a/nrf54lm20a/cpuapp
+name: XIAO nRF54LM20A-nRF54LM20A-Application
+vendor: seeed
+arch: arm
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 512
+flash: 449
+supported:
+  - adc
+  - counter
+  - dmic
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - watchdog
+  - xiao_gpio
+  - xiao_i2c
+  - xiao_spi
+  - xiao_serial
+  - xiao_adc

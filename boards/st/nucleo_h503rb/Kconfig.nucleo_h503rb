@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H503RB
+	select SOC_STM32H503XX

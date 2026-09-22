@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic BICR (Board Information Configuration Registers)
+
+compatible: "nordic,nrf-bicr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

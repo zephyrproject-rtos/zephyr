@@ -1,0 +1,11 @@
+sample:
+  name: BMI270 Sensor sample
+tests:
+  sample.sensor.bmi270:
+    platform_type:
+      - mcu
+    filter: dt_compat_enabled("bosch,bmi270")
+    harness: sensor
+    tags:
+      - samples
+      - sensor

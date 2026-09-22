@@ -1,0 +1,37 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S3
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  ESP32-S3 Series
+
+config SOC_ESP32S3
+	bool
+	select SOC_SERIES_ESP32S3
+	help
+	  ESP32S3
+
+config SOC_ESP32S3_PROCPU
+	bool
+	help
+	  This hidden configuration defines that build is targeted for PROCPU (core 0).
+
+config SOC_ESP32S3_APPCPU
+	bool
+	help
+	  This hidden configuration defines that build is targeted for APPCPU (core 1).
+
+config SOC_SERIES
+	default "esp32s3" if SOC_SERIES_ESP32S3
+
+config SOC
+	default "esp32s3" if SOC_SERIES_ESP32S3
+
+config SOC_PART_NUMBER
+	default "ESP32S3" if SOC_ESP32S3
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32s3" if SOC_SERIES_ESP32S3

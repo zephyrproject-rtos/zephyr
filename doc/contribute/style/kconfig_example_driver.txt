@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Examples of Kconfig symbols with prompt to enable drivers
+
+# start-after-here
+
+config ADC_AD405X
+	bool "AD405X ADC driver"
+
+config CAN_MAX32
+	bool "MAX32 CAN driver"
+
+config I2C_EMUL
+	bool "I2C emulator driver"

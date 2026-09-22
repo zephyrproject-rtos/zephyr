@@ -1,0 +1,10 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_EMUL_RX
+	bool "Software implementation of video frame RX core"
+	depends on DT_HAS_ZEPHYR_VIDEO_EMUL_RX_ENABLED
+	depends on VIDEO_EMUL_IMAGER
+	default y
+	help
+	  Enable driver for the MIPI RX emulated DMA engine.

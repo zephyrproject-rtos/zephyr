@@ -1,0 +1,14 @@
+/*
+ * Copyright (C) 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Set GPIO pins as inputs controlling features of the respective regulators */
+
+&npm2100_boost {
+	mode-gpios = <&npm2100_gpio 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};
+
+&npm2100_ldosw {
+	mode-gpios = <&npm2100_gpio 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};

@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO pins exposed on Renesas Parallel Graphics Expansion Header.
+
+  The Renesas Parallel Graphics Expansion Header consists of 2 rows of 20 pins each (40 pins total),
+
+  Pin mapping:
+
+    ------------------      --------------------
+    1   DISP_BLEN           2   IIC_SDA
+    3   DISP_INT            4   IIC_SCL
+    5   3V3                 6   DISP_RST
+    7   3V3                 8   5V0
+    9   LCDC_TCON0          10  LCDC_CLK
+    11  LCDC_TCON2          12  LCDC_TCON1
+    13  LCDC_EXTCLK         14  LCDC_TCON3
+    15  LCDC_DATA01         16  LCDC_DATA00
+    17  LCDC_DATA03         18  LCDC_DATA02
+    19  LCDC_DATA05         20  LCDC_DATA04
+    21  LCDC_DATA07         22  LCDC_DATA16
+    23  LCDC_DATA09         24  LCDC_DATA08
+    25  LCDC_DATA11         26  LCDC_DATA10
+    27  LCDC_DATA13         28  LCDC_DATA12
+    29  LCDC_DATA15         30  LCDC_DATA14
+    31  LCDC_DATA17         32  LCDC_DATA16
+    33  LCDC_DATA19         34  LCDC_DATA18
+    35  LCDC_DATA21         36  LCDC_DATA20
+    37  LCDC_DATA23         38  LCDC_DATA22
+    39  GND                 40  GND
+
+compatible: "renesas,ra-parallel-graphics-header"
+
+include: [gpio-nexus.yaml, base.yaml]

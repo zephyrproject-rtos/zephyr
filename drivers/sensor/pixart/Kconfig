@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# Copyright (c) 2025 Paul Timke <ptimkec@live.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/pixart/paa3905/Kconfig"
+source "drivers/sensor/pixart/paj7620/Kconfig"
+source "drivers/sensor/pixart/pat9136/Kconfig"
+# zephyr-keep-sorted-stop

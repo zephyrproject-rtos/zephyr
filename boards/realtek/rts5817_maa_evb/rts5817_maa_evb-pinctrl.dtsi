@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025 Realtek Semiconductor, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rts5817_pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group0 {
+			pinmux = <P_SCL0_F_UART0_RX>, <P_SDA0_F_UART0_TX>;
+		};
+	};
+
+	/omit-if-no-ref/ sensor_spi_default: sensor_spi_default {
+		group0 {
+			pinmux = <P_SNR_MISO_F_SNR_MISO>, <P_SNR_MOSI_F_SNR_MOSI>,
+				 <P_SNR_CLK_F_SNR_CLK>;
+			power-source = <IO_POWER_1V8>;
+			bias-pull-down;
+		};
+
+		group1 {
+			pinmux = <P_SNR_CS_F_SNR_CS>, <P_SNR_RST_F_SNR_RST>;
+			power-source = <IO_POWER_1V8>;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/ ssi_master_default: ssi_master_default {
+		group0 {
+			pinmux = <P_SSI_M_MISO_F_SSI_M_MISO>, <P_SSI_M_MOSI_F_SSI_M_MOSI>,
+				 <P_SSI_M_CS_F_SSI_M_CS>, <P_SSI_M_SCK_F_SSI_M_CLK>;
+			bias-pull-down;
+		};
+	};
+};
