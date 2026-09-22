@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
+
+/* Loopback wiring: P5.0 -> P5.1 and P2.2 -> P2.3. */
+/ {
+	zephyr,user {
+		pwms = <&pwm0_6 0 PWM_MSEC(6) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>,
+		       <&pwm2_7 0 PWM_MSEC(6) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>;
+		gpios = <&gpio_prt5 1 GPIO_ACTIVE_HIGH>,
+			<&gpio_prt2 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&tcpwm2_7 {
+	status = "okay";
+
+	pwm2_7: pwm2_7 {
+		status = "okay";
+		clocks = <&peri0_group0_16bit_2>;
+		pinctrl-0 = <&p2_2_pwm2_7>;
+		pinctrl-names = "default";
+	};
+};
+
+&pinctrl {
+	p2_2_pwm2_7: p2_2_pwm2_7 {
+		drive-push-pull;
+	};
+};
