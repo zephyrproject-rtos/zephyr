@@ -395,6 +395,27 @@ handle_reply_err:
 	return ret;
 }
 
+/* A device that is gone will never answer a transfer that is still queued, so
+ * the transfers are returned to their owners here. Without it the class driver
+ * waits for a completion that cannot arrive and the pools are never restored.
+ */
+static void vrt_xfer_drop_queued(const struct device *dev, const int err)
+{
+	struct uhc_vrt_data *const priv = uhc_get_private(dev);
+	struct uhc_data *const data = dev->data;
+	struct uhc_transfer *tmp;
+	sys_dnode_t *node;
+
+	if (priv->last_xfer != NULL) {
+		vrt_xfer_drop_active(dev, err);
+	}
+
+	while ((node = sys_dlist_peek_head(&data->ctrl_xfers)) != NULL) {
+		tmp = SYS_DLIST_CONTAINER(node, tmp, node);
+		uhc_xfer_return(dev, tmp, err);
+	}
+}
+
 static void vrt_xfer_cleanup_cancelled(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
@@ -480,6 +501,8 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_REMOVED:
 		type = UHC_EVT_DEV_REMOVED;
+		k_timer_stop(&priv->sof_timer);
+		vrt_xfer_drop_queued(dev, -ENODEV);
 		break;
 	default:
 		type = UHC_EVT_ERROR;
