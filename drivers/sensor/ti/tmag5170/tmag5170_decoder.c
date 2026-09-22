@@ -67,6 +67,7 @@ int tmag5170_encode(const struct device *dev, const struct sensor_chan_spec *con
 	edata->header.x_range = cfg->x_range;
 	edata->header.y_range = cfg->y_range;
 	edata->header.z_range = cfg->z_range;
+	edata->header.events = 0;
 
 	return 0;
 }
@@ -305,12 +306,15 @@ static int tmag5170_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 
 static bool tmag5170_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
 {
-	ARG_UNUSED(buffer);
-	ARG_UNUSED(trigger);
+	const struct tmag5170_encoded_data *edata = (const struct tmag5170_encoded_data *)buffer;
 
-	/* TODO: Report SENSOR_TRIG_DATA_READY once streaming (based on the
-	 * optional int-gpios property) has been implemented.
-	 */
+	switch (trigger) {
+	case SENSOR_TRIG_DATA_READY:
+		return (edata->header.events & TMAG5170_EVENT_DATA_READY) != 0;
+	default:
+		break;
+	}
+
 	return false;
 }
 

@@ -124,6 +124,8 @@
 #define TMAG5170_TEMP_SHIFT     10
 #define TMAG5170_ROTATION_SHIFT 9
 
+#define TMAG5170_EVENT_DATA_READY BIT(0)
+
 /** Result registers which can be part of a single one-shot read */
 enum tmag5170_result_idx {
 	TMAG5170_RESULT_IDX_X,
@@ -133,6 +135,17 @@ enum tmag5170_result_idx {
 	TMAG5170_RESULT_IDX_TEMP,
 	TMAG5170_RESULT_IDX_COUNT,
 };
+
+#if defined(CONFIG_SENSOR_ASYNC_API)
+/** Result registers indexed by enum tmag5170_result_idx. Defined once in
+ * tmag5170.c to avoid a copy per translation unit.
+ */
+extern const uint8_t tmag5170_result_regs[TMAG5170_RESULT_IDX_COUNT];
+#endif
+
+#if defined(CONFIG_TMAG5170_STREAM)
+#include "tmag5170_stream.h"
+#endif
 
 /** Raw SPI frames of the result registers, indexed by enum tmag5170_result_idx.
  *
@@ -151,6 +164,7 @@ struct tmag5170_encoded_header {
 	uint8_t z_range: 2;
 	/** Bitmask of enum tmag5170_result_idx entries held by the payload */
 	uint8_t channels;
+	uint8_t events;
 };
 
 struct tmag5170_encoded_data {
@@ -170,7 +184,7 @@ struct tmag5170_dev_config {
 	bool disable_temperature_oversampling;
 	uint8_t sleep_time;
 	uint8_t operating_mode;
-#if defined(CONFIG_TMAG5170_TRIGGER)
+#if defined(CONFIG_TMAG5170_TRIGGER) || defined(CONFIG_TMAG5170_STREAM)
 	struct gpio_dt_spec int_gpio;
 #endif
 };
@@ -192,7 +206,9 @@ struct tmag5170_data {
 	uint8_t tx_trigger_frame[TMAG5170_SPI_BUFFER_LEN];
 	uint8_t rx_trigger_frame[TMAG5170_SPI_BUFFER_LEN];
 #endif
-#if defined(CONFIG_TMAG5170_TRIGGER)
+#if defined(CONFIG_TMAG5170_STREAM)
+	struct tmag5170_stream_data stream;
+#elif defined(CONFIG_TMAG5170_TRIGGER)
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy;
 	const struct sensor_trigger *trigger_drdy;
