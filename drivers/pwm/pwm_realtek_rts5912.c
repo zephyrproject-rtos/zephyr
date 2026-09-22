@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_rts5912.h>
+#include <zephyr/pm/policy.h>
 
 #include "reg/reg_pwm.h"
 
@@ -26,13 +27,44 @@ struct pwm_rts5912_config {
 	const struct pinctrl_dev_config *pcfg;
 };
 
+struct pwm_rts5912_data {
+    /* True while this channel is actively modulating (0 < duty < 100%) and
+     * therefore holding off suspend-to-idle so the PWM clock keeps running.
+     */
+    bool pm_lock_held;
+};
+
+
+/* Prevent / allow the system entering suspend-to-idle (heavy sleep). Heavy
+ * sleep gates the PWM clock, which is fine when the output is a static level
+ * (duty 0% or 100%) but would freeze an actively modulating waveform. The lock
+ * is reference-counted by the PM policy, so each channel manages its own.
+ */
+static void pwm_rts5912_pm_update(struct pwm_rts5912_data *data, bool active)
+{
+#if defined(CONFIG_PM)
+    if (active && !data->pm_lock_held) {
+        pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+        data->pm_lock_held = true;
+    } else if (!active && data->pm_lock_held) {
+        pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+        data->pm_lock_held = false;
+    }
+#endif
+	ARG_UNUSED(data);
+    ARG_UNUSED(active);
+}
+
+
 static int pwm_rts5912_set_cycles(const struct device *dev, uint32_t channel,
 				  uint32_t period_cycles, uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_rts5912_config *const pwm_config = dev->config;
 	volatile struct pwm_regs *pwm_regs = pwm_config->pwm_regs;
+	struct pwm_rts5912_data *const data = dev->data;
 
 	uint32_t pwm_div, pwm_duty;
+	bool active;
 
 	if (channel > 0) {
 		return -EIO;
@@ -51,6 +83,9 @@ static int pwm_rts5912_set_cycles(const struct device *dev, uint32_t channel,
 		pwm_regs->ctrl |= PWM_CTRL_INVT;
 	}
 	pwm_regs->ctrl |= PWM_CTRL_EN;
+
+	active = (pulse_cycles != 0U) && (pulse_cycles < period_cycles);
+	pwm_rts5912_pm_update(data, active);
 
 	return 0;
 }
@@ -113,13 +148,14 @@ static int pwm_rts5912_init(const struct device *dev)
 		.pwm_clk_idx = DT_INST_CLOCKS_CELL(inst, clk_idx),                                 \
 		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};
+};
 
 #define RTS5912_PWM_DEVICE_INIT(index)                                                             \
 	RTS5912_PWM_PINCTRL_DEF(index);                                                            \
 	RTS5912_PWM_CONFIG(index);                                                                 \
-	DEVICE_DT_INST_DEFINE(index, &pwm_rts5912_init, NULL, NULL, &pwm_rts5912_config_##index,   \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
-			      &pwm_rts5912_driver_api);
+	static struct pwm_rts5912_data pwm_rts5912_data_##index;                                   \
+	DEVICE_DT_INST_DEFINE(index, &pwm_rts5912_init, NULL, &pwm_rts5912_data_##index,           \
+				&pwm_rts5912_config_##index, POST_KERNEL,                            \
+				CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &pwm_rts5912_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTS5912_PWM_DEVICE_INIT)
