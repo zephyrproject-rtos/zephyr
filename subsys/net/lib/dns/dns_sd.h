@@ -150,8 +150,6 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
  *
  * This function should be called once for each type of advertised service.
  *
- * @param iface the network interface the query was received on, may be NULL, in
- *              which case the bind check is always performed
  * @param service the DNS-SD service to advertise
  * @param addr4 pointer to the IPv4 address
  * @param addr6 pointer to the IPv6 address
@@ -161,7 +159,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
  * @return on success, number of bytes written to @p buf
  * @return on failure, a negative errno value
  */
-int dns_sd_handle_service_type_enum(struct net_if *iface, const struct dns_sd_rec *service,
+int dns_sd_handle_service_type_enum(const struct dns_sd_rec *service,
 				    const struct net_in_addr *addr4,
 				    const struct net_in6_addr *addr6, uint8_t *buf,
 				    uint16_t buf_size);

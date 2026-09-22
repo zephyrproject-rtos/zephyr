@@ -839,7 +839,7 @@ static void send_sd_response(int sock,
 
 			/* Construct the response */
 			if (service_type_enum) {
-				ret = dns_sd_handle_service_type_enum(iface, record, addr4, addr6,
+				ret = dns_sd_handle_service_type_enum(record, addr4, addr6,
 								      result->data, result_size);
 				if (ret < 0) {
 					NET_DBG("dns_sd_handle_service_type_enum() failed (%d)",

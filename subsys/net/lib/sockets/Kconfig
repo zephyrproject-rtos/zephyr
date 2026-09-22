@@ -362,6 +362,28 @@ config NET_SOCKETS_OFFLOAD_DISPATCHER_CONTEXT_MAX
 	  After a proper socket has been created for a given file descriptor,
 	  the dispatcher context is released and can be reused.
 
+config NET_SOCKETS_OFFLOAD_PORT_TRACKING
+	bool
+	depends on NET_SOCKETS_OFFLOAD
+	help
+	  Record the local port each offloaded socket binds so that
+	  net_context_port_in_use() reports it as used. Offloaded sockets bind
+	  outside the net_context layer, so without this a port bound through an
+	  offloaded socket appears free. Selected by subsystems that need the
+	  check. Not meant to be set by hand.
+
+config NET_SOCKETS_OFFLOAD_PORT_TRACKING_COUNT
+	int "Maximum number of tracked offloaded bound sockets"
+	default 4
+	depends on NET_SOCKETS_OFFLOAD_PORT_TRACKING
+	help
+	  Number of offloaded sockets whose bound local port is tracked at once
+	  for net_context_port_in_use(). A slot is taken when an offloaded socket
+	  binds a local port and released when it is closed. Native sockets and
+	  sockets that never bind take no slot. Increase this if more offloaded
+	  sockets are bound at the same time than the default allows, otherwise a
+	  binding may be missed and its port reported as free.
+
 config NET_SOCKETS_PACKET
 	bool "Packet socket support"
 	depends on NET_NATIVE
