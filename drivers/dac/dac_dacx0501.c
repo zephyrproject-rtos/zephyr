@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(dac_dacx0501, CONFIG_DAC_LOG_LEVEL);
 #define DACX0501_MASK_GAIN_REFDIV_EN     BIT(8)
 #define DACX0501_MASK_TRIGGER_SOFT_RESET (BIT(1) | BIT(3))
 #define DACX0501_MASK_STATUS_REF_ALM     BIT(0)
+#define DACX0501_MASK_STATUS_REF_ALM_BIT 0
 
 /* Specifies the source of the reference voltage. */
 enum voltage_reference_source {
@@ -45,9 +46,10 @@ enum voltage_reference_source {
 
 /* Specifies the reference voltage multiplier. */
 enum output_gain {
-	VM_MUL2, /* Multiplies by 2. */
-	VM_MUL1, /* Multiplies by 1. */
-	VM_DIV2, /* Multiplies by 0.5 */
+	VM_MUL2,      /* Multiplies by 2. */
+	VM_MUL1,      /* Multiplies by 1. */
+	VM_DIV2,      /* Multiplies by 0.5 */
+	VM_DIV2_MUL2, /* Multiplies by 1 */
 };
 
 struct dacx0501_config {
@@ -138,6 +140,7 @@ static int dacx0501_init(const struct device *dev)
 	const struct dacx0501_config *config = dev->config;
 	struct dacx0501_data *data = dev->data;
 	uint16_t device_id;
+	uint16_t device_status;
 	int status;
 
 	if (!i2c_is_ready_dt(&config->i2c_spec)) {
@@ -164,11 +167,26 @@ static int dacx0501_init(const struct device *dev)
 
 	status = dacx0501_reg_write(
 		dev, DACX0501_REG_GAIN,
-		FIELD_PREP(DACX0501_MASK_GAIN_REFDIV_EN, config->output_gain == VM_DIV2) |
-			FIELD_PREP(DACX0501_MASK_GAIN_BUFF_GAIN, config->output_gain == VM_MUL2));
+		FIELD_PREP(DACX0501_MASK_GAIN_REFDIV_EN,
+			   (config->output_gain == VM_DIV2) ||
+				   (config->output_gain == VM_DIV2_MUL2)) |
+			FIELD_PREP(DACX0501_MASK_GAIN_BUFF_GAIN,
+				   (config->output_gain == VM_MUL2) ||
+					   (config->output_gain == VM_DIV2_MUL2)));
 	if (status != 0) {
 		LOG_ERR("GAIN Register update failed");
 		return status;
+	}
+
+	status = dacx0501_reg_read(dev, DACX0501_REG_STATUS, &device_status);
+	if (status != 0) {
+		LOG_ERR("read DACX0501_REG_STATUS register failed");
+		return status;
+	}
+
+	if (IS_BIT_SET(device_status, DACX0501_MASK_STATUS_REF_ALM_BIT)) {
+		LOG_ERR("REF-ALARM, check reference and gain settings");
+		return -EIO;
 	}
 
 	return 0;
