@@ -13,6 +13,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #include <soc.h>
@@ -20,6 +21,19 @@
 #include <hal/twai_hal.h>
 #include <hal/twaifd_ll.h>
 #include <hal/twai_types.h>
+#include <soc/soc_caps.h>
+
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) &&                               \
+	defined(SOC_TWAI_SUPPORT_SLEEP_RETENTION)
+#define CAN_ESP32_TWAIFD_SLEEP_RETENTION_ENABLED 1
+#else
+#define CAN_ESP32_TWAIFD_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if CAN_ESP32_TWAIFD_SLEEP_RETENTION_ENABLED
+#include <esp_private/sleep_retention.h>
+#include <hal/twai_periph.h>
+#endif
 
 LOG_MODULE_REGISTER(can_esp32_twaifd, CONFIG_CAN_LOG_LEVEL);
 
@@ -75,7 +89,38 @@ struct can_esp32_twaifd_data {
 	uint8_t tx_buffer_count;
 	enum can_state state;
 	intr_handle_t intr_handle;
+	bool pm_lock_held;
 };
+
+static void can_esp32_twaifd_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct can_esp32_twaifd_data *data = dev->data;
+	unsigned int key = irq_lock();
+
+	if (!data->pm_lock_held) {
+		data->pm_lock_held = true;
+		pm_policy_state_all_lock_get();
+	}
+
+	irq_unlock(key);
+}
+
+static void can_esp32_twaifd_pm_policy_sync_lock(const struct device *dev)
+{
+	struct can_esp32_twaifd_data *data = dev->data;
+	unsigned int key = irq_lock();
+	bool must_lock = data->common.started;
+
+	if (must_lock && !data->pm_lock_held) {
+		data->pm_lock_held = true;
+		pm_policy_state_all_lock_get();
+	} else if (!must_lock && data->pm_lock_held) {
+		data->pm_lock_held = false;
+		pm_policy_state_all_lock_put();
+	}
+
+	irq_unlock(key);
+}
 
 static int can_esp32_twaifd_get_core_clock(const struct device *dev, uint32_t *rate)
 {
@@ -227,10 +272,13 @@ static int can_esp32_twaifd_start(const struct device *dev)
 		return -EALREADY;
 	}
 
+	can_esp32_twaifd_pm_policy_state_lock_get(dev);
+
 	if (cfg->common.phy != NULL) {
 		err = can_transceiver_enable(cfg->common.phy, data->common.mode);
 		if (err != 0) {
 			LOG_ERR("failed to enable CAN transceiver (err %d)", err);
+			can_esp32_twaifd_pm_policy_sync_lock(dev);
 			return err;
 		}
 	}
@@ -257,6 +305,7 @@ static int can_esp32_twaifd_start(const struct device *dev)
 		if (cfg->common.phy != NULL) {
 			(void)can_transceiver_disable(cfg->common.phy);
 		}
+		can_esp32_twaifd_pm_policy_sync_lock(dev);
 		return err;
 	}
 
@@ -305,6 +354,8 @@ static int can_esp32_twaifd_stop(const struct device *dev)
 		}
 	}
 	k_mutex_unlock(&data->lock);
+
+	can_esp32_twaifd_pm_policy_sync_lock(dev);
 
 	if (cfg->common.phy != NULL) {
 		err = can_transceiver_disable(cfg->common.phy);
@@ -699,6 +750,43 @@ static void IRAM_ATTR can_esp32_twaifd_isr(void *arg)
 	}
 }
 
+#if CAN_ESP32_TWAIFD_SLEEP_RETENTION_ENABLED
+static esp_err_t can_esp32_twaifd_create_sleep_retention_cb(void *arg)
+{
+	uint32_t id = (uint32_t)(uintptr_t)arg;
+
+	return sleep_retention_entries_create(twai_reg_retention_info[id].entry_array,
+					      twai_reg_retention_info[id].array_size,
+					      REGDMA_LINK_PRI_TWAI,
+					      twai_reg_retention_info[id].module_id);
+}
+
+static void can_esp32_twaifd_sleep_retention_init(uint32_t id)
+{
+	sleep_retention_module_t module = twai_reg_retention_info[id].module_id;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = can_esp32_twaifd_create_sleep_retention_cb,
+				   .arg = (void *)(uintptr_t)id}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
+	}
+
+	if (err != ESP_OK) {
+		LOG_WRN("TWAI%u sleep retention unavailable (err %d), "
+			"peripheral power domain will stay on",
+			(unsigned int)id, err);
+	}
+}
+#endif /* CAN_ESP32_TWAIFD_SLEEP_RETENTION_ENABLED */
+
 static int can_esp32_twaifd_init(const struct device *dev)
 {
 	const struct can_esp32_twaifd_config *cfg = dev->config;
@@ -794,6 +882,10 @@ static int can_esp32_twaifd_init(const struct device *dev)
 		LOG_ERR("intr alloc failed (err %d)", err);
 		goto err_clock_off;
 	}
+
+#if CAN_ESP32_TWAIFD_SLEEP_RETENTION_ENABLED
+	can_esp32_twaifd_sleep_retention_init((uint32_t)cfg->controller_id);
+#endif
 
 	data->state = CAN_STATE_STOPPED;
 	return 0;
