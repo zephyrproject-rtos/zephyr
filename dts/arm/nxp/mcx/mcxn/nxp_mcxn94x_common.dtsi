@@ -20,6 +20,8 @@
 		status = "disabled";
 		voltage-reference = <0>;
 		#io-channel-cells = <1>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	dac2: dac@114000 {
