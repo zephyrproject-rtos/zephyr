@@ -16,3 +16,10 @@ properties:
       - tx
       - both
     description: Select whether the logical native_sim I2S device handles RX or TX.
+
+  codec:
+    type: phandle
+    description: |
+      Optional audio codec paired with this I2S controller. An mpipe audio
+      element derives its codec from here, so the application configures only
+      the I2S device.
