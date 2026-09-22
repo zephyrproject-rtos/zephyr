@@ -56,6 +56,21 @@ void mapped_thread(void *p1, void *p2, void *p3)
 	ztest_test_fail();
 }
 
+/* Number of create/abort cycles done by test_mapped_stack_abort_reuse().
+ * A leaked mapping is caught within the first two cycles, so this only needs
+ * to be big enough to also cover repeated reuse of the same stack object.
+ */
+#define ABORT_REUSE_CYCLES 32
+
+static void mapped_stack_sleeper(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sleep(K_FOREVER);
+}
+
 /**
  * @brief To create thread to fault on guard pages.
  *
@@ -147,5 +162,52 @@ ZTEST(stackprot_mapped_stack, test_guard_page_rear_user)
 #endif
 }
 
+/**
+ * @brief Test that aborting a thread releases its mapped stack
+ *
+ * Repeatedly create a thread on the same stack object and abort it from
+ * another thread, which takes the immediate cleanup path in
+ * k_thread_abort_cleanup(). Each cycle must return the virtual address
+ * region of the stack to the pool, so every cycle maps the stack object
+ * at the same address again. If the mapping is leaked instead, the address
+ * walks away from the first one and the address space is eventually
+ * exhausted.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST(stackprot_mapped_stack, test_mapped_stack_abort_reuse)
+{
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	void *first_addr = NULL;
+
+	for (unsigned int i = 0; i < ABORT_REUSE_CYCLES; i++) {
+		k_tid_t tid = k_thread_create(&mapped_thread_data, mapped_thread_stack_area,
+					      STACK_SIZE, mapped_stack_sleeper,
+					      NULL, NULL, NULL,
+					      K_PRIO_COOP(1), 0, K_NO_WAIT);
+		void *addr = mapped_thread_data.stack_info.mapped.addr;
+
+		zassert_not_null(addr, "cycle %u: stack could not be mapped", i);
+
+		if (first_addr == NULL) {
+			first_addr = addr;
+		}
+
+		zassert_equal(addr, first_addr,
+			      "cycle %u: stack mapped at %p, expected %p to be reused",
+			      i, addr, first_addr);
+
+		/* Needed on SMP platforms where the thread runs asynchronously. */
+		k_msleep(1);
+
+		k_thread_abort(tid);
+
+		zassert_is_null(mapped_thread_data.stack_info.mapped.addr,
+				"cycle %u: stack still reported as mapped after abort", i);
+	}
+#else
+	ztest_test_skip();
+#endif
+}
 
 ZTEST_SUITE(stackprot_mapped_stack, NULL, NULL, NULL, NULL, NULL);
