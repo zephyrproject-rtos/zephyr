@@ -100,3 +100,24 @@
 		status = "disabled";
 	};
 };
+
+&lpi2c0 {
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+
+	pcal6524: gpio@22 {
+		compatible = "nxp,pcal6524";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+	};
+
+	pca9555: gpio@21 {
+		compatible = "nxp,pca9555";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
+};
