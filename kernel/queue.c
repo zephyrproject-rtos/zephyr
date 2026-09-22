@@ -472,8 +472,7 @@ STRUCT_SECTION_START_EXTERN(k_fifo);
 STRUCT_SECTION_END_EXTERN(k_fifo);
 STRUCT_SECTION_ITERABLE(k_obj_type, _obj_type_fifo) =
 	K_OBJ_TYPE_INITIALIZER(k_fifo, K_OBJ_TYPE_FIFO_ID, NULL, 0, 0,
-			       STRUCT_SECTION_START(k_fifo),
-			       STRUCT_SECTION_END(k_fifo));
+			       K_OBJ_RANGE_SECTION(k_fifo));
 #endif /* CONFIG_OBJ_CORE_FIFO */
 
 #ifdef CONFIG_OBJ_CORE_LIFO
@@ -482,6 +481,5 @@ STRUCT_SECTION_START_EXTERN(k_lifo);
 STRUCT_SECTION_END_EXTERN(k_lifo);
 STRUCT_SECTION_ITERABLE(k_obj_type, _obj_type_lifo) =
 	K_OBJ_TYPE_INITIALIZER(k_lifo, K_OBJ_TYPE_LIFO_ID, NULL, 0, 0,
-			       STRUCT_SECTION_START(k_lifo),
-			       STRUCT_SECTION_END(k_lifo));
+			       K_OBJ_RANGE_SECTION(k_lifo));
 #endif /* CONFIG_OBJ_CORE_LIFO */
