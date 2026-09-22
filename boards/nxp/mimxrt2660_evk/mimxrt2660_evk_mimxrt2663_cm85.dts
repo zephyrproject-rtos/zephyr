@@ -61,6 +61,14 @@
 	status = "okay";
 };
 
+&lpi2c0 {
+	status = "okay";
+};
+
+&media_ccm {
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -140,3 +148,5 @@ zephyr_mipi_dsi: &mipi_dsi {};
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+zephyr_mipi_dbi_parallel: &dcif {};
