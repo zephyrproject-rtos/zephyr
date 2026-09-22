@@ -348,11 +348,22 @@ static int load_segment(uint32_t src_addr, uint32_t src_len, uint32_t dst_addr)
 	return 0;
 }
 
+/* SOC_IRAM_HIGH is the ceiling of the SRAM0 instruction view and falls
+ * inside SRAM1, below where the APPCPU image is placed, so neither
+ * esp_ptr_in_iram() nor esp_ptr_in_diram_iram() covers a valid placement
+ * on its own.
+ */
+static bool IRAM_ATTR ptr_in_appcpu_iram(const void *p)
+{
+	return ((intptr_t)p >= SOC_IRAM_LOW) && ((intptr_t)p < SOC_DIRAM_IRAM_HIGH);
+}
+
 int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry_addr)
 {
 	const uint32_t img_off = PARTITION_OFFSET(slot0_appcpu_partition);
 	const uint32_t fa_size = PARTITION_SIZE(slot0_appcpu_partition);
 	const uint8_t fa_id = PARTITION_ID(slot0_appcpu_partition);
+	uint32_t iram_end;
 
 	if (entry_addr == NULL) {
 		ets_printf("Can't return the entry address. Aborting!\n");
@@ -382,8 +393,10 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 		abort();
 	}
 
-	if (!esp_ptr_in_iram((void *)image_header.iram_dest_addr) ||
-	    !esp_ptr_in_iram((void *)(image_header.iram_dest_addr + image_header.iram_size))) {
+	iram_end = image_header.iram_dest_addr + image_header.iram_size;
+
+	if (!ptr_in_appcpu_iram((void *)image_header.iram_dest_addr) ||
+	    !ptr_in_appcpu_iram((void *)iram_end)) {
 		ets_printf("IRAM region in load header is not valid. Aborting");
 		abort();
 	}
@@ -394,7 +407,7 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 		abort();
 	}
 
-	if (!esp_ptr_in_iram((void *)image_header.entry_addr)) {
+	if (!ptr_in_appcpu_iram((void *)image_header.entry_addr)) {
 		ets_printf("Application entry point (%xh) is not in IRAM. Aborting",
 			   image_header.entry_addr);
 		abort();
