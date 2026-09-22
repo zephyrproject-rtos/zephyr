@@ -13,7 +13,7 @@ the Cortex®-A35 core.
 Features:
 =========
 
-- STM32MP257FAI3 microprocessor featuring dual-core Arm® Cortex®-A35,
+- STM32MP257FAK3 microprocessor featuring dual-core Arm® Cortex®-A35,
   a Cortex®-M33 in a VFBGA424 package
 - ST power management STPMIC25
 - 32‑Gbit LPDDR4 DRAM
