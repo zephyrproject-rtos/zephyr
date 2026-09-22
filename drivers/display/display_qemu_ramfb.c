@@ -16,6 +16,12 @@ LOG_MODULE_REGISTER(qemu_ramfb, CONFIG_DISPLAY_LOG_LEVEL);
 /* QEMU ramfb uses DRM fourcc; AR24 matches Zephyr ARGB_8888 API format. */
 #define QEMU_RAMFB_FOURCC_AR24 0x34325241u /* 'A' 'R' '2' '4' as 0x34 0x32 0x52 0x41 */
 
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+#define QEMU_RAMFB_MEM_ATTR K_MEM_ARM_NORMAL_NC
+#else
+#define QEMU_RAMFB_MEM_ATTR K_MEM_CACHE_NONE
+#endif
+
 struct ramfb_config {
 	struct display_fb_common_config common;
 	uintptr_t fb_phys;
@@ -126,7 +132,7 @@ static int ramfb_init(const struct device *dev)
 		return rc;
 	}
 
-	device_map(&data->common.fb_addr, cfg->fb_phys, req_size, K_MEM_CACHE_NONE);
+	device_map(&data->common.fb_addr, cfg->fb_phys, req_size, QEMU_RAMFB_MEM_ATTR);
 	data->common.pitch = cfg->common.width;
 
 	return 0;
