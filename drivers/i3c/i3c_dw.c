@@ -699,6 +699,26 @@ static void dw_i3c_intr_disable(const struct device *dev, uint32_t bits)
 	sys_write32(mask, dw_i3c_regs(dev) + INTR_SIGNAL_EN);
 }
 
+#ifdef CONFIG_I3C_TARGET
+/**
+ * @brief Drop RX bytes left in the FIFO at dynamic address assignment.
+ *
+ * Any unsupported CCC carrying a payload will accumulate in the RX FIFO -
+ * it should be discarded as no transfer will claim it.
+ *
+ * @param dev Pointer to the I3C device structure.
+ */
+static void dw_i3c_target_flush_rx_residue(const struct device *dev)
+{
+	uint32_t rx_lvl = DATA_BUFFER_STATUS_LEVEL_RX(
+		sys_read32(dw_i3c_regs(dev) + DATA_BUFFER_STATUS_LEVEL));
+
+	while (rx_lvl-- > 0U) {
+		(void)sys_read32(dw_i3c_regs(dev) + RX_TX_DATA_PORT);
+	}
+}
+#endif /* CONFIG_I3C_TARGET */
+
 /**
  * @brief Enqueue pending commands into the Command Queue as space allows.
  *
@@ -1967,6 +1987,7 @@ static int i3c_dw_irq(const struct device *dev)
 #endif /* CONFIG_I3C_USE_IBI */
 		/* DA has been assigned, could happen after a IBI HJ request */
 		if (status & INTR_DYN_ADDR_ASSGN_STAT) {
+			dw_i3c_target_flush_rx_residue(dev);
 #ifdef CONFIG_I3C_USE_IBI
 			k_sem_give(&data->sem_hj);
 #endif /* CONFIG_I3C_USE_IBI */
