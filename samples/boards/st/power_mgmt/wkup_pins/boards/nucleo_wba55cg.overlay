@@ -10,6 +10,14 @@
 	};
 };
 
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &standby>;
+};
+
+&lptim1 {
+	status = "okay";
+};
+
 &pwr {
 	wakeup-controller {
 		status = "okay";
