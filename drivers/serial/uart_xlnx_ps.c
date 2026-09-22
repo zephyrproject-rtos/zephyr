@@ -948,9 +948,13 @@ static void uart_xlnx_ps_irq_tx_enable(const struct device *dev)
 	struct uart_xlnx_ps_dev_data_t *dev_data = dev->data;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	sys_write32((XUARTPS_IXR_TTRIG | XUARTPS_IXR_TXEMPTY), reg_base + XUARTPS_IER_OFFSET);
-	if ((sys_read32(reg_base + XUARTPS_SR_OFFSET) & (XUARTPS_SR_TTRIG | XUARTPS_SR_TXEMPTY)) !=
-	    0) {
+	/*
+	 * Only the TX FIFO empty interrupt is used: the TX trigger interrupt
+	 * and status flag indicate that the FIFO fill level is at or *above*
+	 * the TX trigger level, i.e. that the FIFO is filling up.
+	 */
+	sys_write32(XUARTPS_IXR_TXEMPTY, reg_base + XUARTPS_IER_OFFSET);
+	if ((sys_read32(reg_base + XUARTPS_SR_OFFSET) & XUARTPS_SR_TXEMPTY) != 0) {
 		/*
 		 * Enabling TX empty interrupts does not cause an interrupt
 		 * if the FIFO is already empty.
@@ -974,22 +978,20 @@ static void uart_xlnx_ps_irq_tx_disable(const struct device *dev)
 }
 
 /**
- * @brief Check if Tx IRQ has been raised
+ * @brief Check if the TX FIFO can accept a new character
  *
  * @param dev UART device struct
  *
- * @return 1 if an IRQ is ready, 0 otherwise
+ * @return 1 if the TX interrupt is enabled and the TX FIFO is not full,
+ *         0 otherwise
  */
 static int uart_xlnx_ps_irq_tx_ready(const struct device *dev)
 {
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
-	uint32_t reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
+	uint32_t reg_imr = sys_read32(reg_base + XUARTPS_IMR_OFFSET);
+	uint32_t reg_sr = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 
-	if ((reg_val & (XUARTPS_SR_TTRIG | XUARTPS_SR_TXEMPTY)) == 0) {
-		return 0;
-	} else {
-		return 1;
-	}
+	return ((reg_imr & XUARTPS_IXR_TXEMPTY) != 0) && ((reg_sr & XUARTPS_SR_TXFULL) == 0);
 }
 
 /**
