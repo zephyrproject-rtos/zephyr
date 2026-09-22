@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/obj_core.h>
 #include <kernel_internal.h>
@@ -48,10 +49,27 @@ static bool range_contains(const struct k_obj_range *range, const void *ptr)
 	return (ptr >= range->start) && (ptr < range->end);
 }
 
-/* Object core of the range element */
-static struct k_obj_core *range_core(const struct k_obj_type *type, const void *elem)
+static bool type_ranges_contain(const struct k_obj_type *type, const void *ptr)
 {
-	const uint8_t *obj = type->statics.indirect ? *(const uint8_t *const *)elem : elem;
+	for (size_t i = 0; i < ARRAY_SIZE(type->statics); i++) {
+		const struct k_obj_range *range = &type->statics[i];
+
+		if (range->stride == 0U) {
+			break;
+		}
+		if (range_contains(range, ptr)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Object core of the range element */
+static struct k_obj_core *range_core(const struct k_obj_type *type,
+				     const struct k_obj_range *range, const void *elem)
+{
+	const uint8_t *obj = range->indirect ? *(const uint8_t *const *)elem : elem;
 
 	return (struct k_obj_core *)(obj + type->obj_core_offset);
 }
@@ -127,7 +145,7 @@ struct k_obj_type *z_obj_type_init(struct k_obj_type *type,
 	sys_slist_append(&z_obj_type_list, &type->node);
 	type->id = id;
 	type->obj_core_offset = off;
-	type->statics = (struct k_obj_range){ 0 };
+	memset(type->statics, 0, sizeof(type->statics));
 	type->dropped = 0;
 	type->skipped = 0;
 
@@ -137,10 +155,10 @@ struct k_obj_type *z_obj_type_init(struct k_obj_type *type,
 void k_obj_type_init_range(struct k_obj_type *type, const void *start,
 			   const void *end, size_t stride, bool indirect)
 {
-	type->statics.start = start;
-	type->statics.end = end;
-	type->statics.stride = stride;
-	type->statics.indirect = indirect;
+	type->statics[0].start = start;
+	type->statics[0].end = end;
+	type->statics[0].stride = stride;
+	type->statics[0].indirect = indirect;
 }
 
 void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type)
@@ -156,8 +174,7 @@ void k_obj_core_link(struct k_obj_core *obj_core)
 	struct k_obj_type *type = obj_core->type;
 	struct obj_core_slot *slot;
 
-	if (range_contains(&type->statics,
-			   (const uint8_t *)obj_core - type->obj_core_offset)) {
+	if (type_ranges_contain(type, (const uint8_t *)obj_core - type->obj_core_offset)) {
 		return;
 	}
 
@@ -235,25 +252,31 @@ void sys_heap_release_hook(void *mem, size_t bytes)
 static void obj_core_init_all(void)
 {
 	STRUCT_SECTION_FOREACH(k_obj_type, type) {
-		const struct k_obj_range *range = &type->statics;
-
 		sys_slist_append(&z_obj_type_list, &type->node);
 
-		for (const uint8_t *obj = range->start;
-		     obj < (const uint8_t *)range->end; obj += range->stride) {
-			struct k_obj_core *obj_core =
-				(struct k_obj_core *)(obj + type->obj_core_offset);
+		for (size_t r = 0; r < ARRAY_SIZE(type->statics); r++) {
+			const struct k_obj_range *range = &type->statics[r];
 
-			k_obj_core_init(obj_core, type);
-#ifdef CONFIG_OBJ_CORE_STATS
-			if ((type->stats_desc != NULL) &&
-			    (type->stats_size != 0)) {
-				k_obj_core_stats_register(
-					obj_core,
-					(void *)(obj + type->stats_offset),
-					type->stats_size);
+			if (range->stride == 0U) {
+				break;
 			}
+
+			for (const uint8_t *elem = range->start;
+			     elem < (const uint8_t *)range->end; elem += range->stride) {
+				struct k_obj_core *obj_core = range_core(type, range, elem);
+
+				k_obj_core_init(obj_core, type);
+#ifdef CONFIG_OBJ_CORE_STATS
+				if ((type->stats_desc != NULL) && (type->stats_size != 0)) {
+					k_obj_core_stats_register(
+						obj_core,
+						(void *)((uint8_t *)obj_core -
+							 type->obj_core_offset +
+							 type->stats_offset),
+						type->stats_size);
+				}
 #endif /* CONFIG_OBJ_CORE_STATS */
+			}
 		}
 	}
 }
@@ -297,20 +320,27 @@ static int walk_statics(struct k_obj_type *type,
 			int (*func)(struct k_obj_core *obj_core, void *data),
 			void *data)
 {
-	const struct k_obj_range *range = &type->statics;
 	int status = 0;
 
-	for (const uint8_t *elem = range->start; elem < (const uint8_t *)range->end;
-	     elem += range->stride) {
-		struct k_obj_core *obj_core = range_core(type, elem);
+	for (size_t r = 0; (status == 0) && (r < ARRAY_SIZE(type->statics)); r++) {
+		const struct k_obj_range *range = &type->statics[r];
 
-		if (obj_core->type != type) {
-			continue;
+		if (range->stride == 0U) {
+			break;
 		}
 
-		status = func(obj_core, data);
-		if (status != 0) {
-			break;
+		for (const uint8_t *elem = range->start; elem < (const uint8_t *)range->end;
+		     elem += range->stride) {
+			struct k_obj_core *obj_core = range_core(type, range, elem);
+
+			if (obj_core->type != type) {
+				continue;
+			}
+
+			status = func(obj_core, data);
+			if (status != 0) {
+				break;
+			}
 		}
 	}
 
