@@ -12,8 +12,13 @@
 /*
  * v1: 22 registers (x0-x18, lr, spsr, elr)
  * v2: 24 registers (v1 + fp, sp) - needed for GDB stack unwinding
+ * v3: 34 registers (v2 + x19-x28) - callee-saved regs now in ESF
  */
-#define ARCH_HDR_VER			2
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+#define ARCH_HDR_VER 3
+#else
+#define ARCH_HDR_VER 2
+#endif
 
 struct arm64_arch_block {
 	struct {
@@ -36,6 +41,18 @@ struct arm64_arch_block {
 		uint64_t x16;
 		uint64_t x17;
 		uint64_t x18;
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+		uint64_t x19;
+		uint64_t x20;
+		uint64_t x21;
+		uint64_t x22;
+		uint64_t x23;
+		uint64_t x24;
+		uint64_t x25;
+		uint64_t x26;
+		uint64_t x27;
+		uint64_t x28;
+#endif
 		uint64_t lr;
 		uint64_t spsr;
 		uint64_t elr;
@@ -95,6 +112,18 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	arch_blk.r.x16 = esf->x16;
 	arch_blk.r.x17 = esf->x17;
 	arch_blk.r.x18 = esf->x18;
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	arch_blk.r.x19 = esf->x19;
+	arch_blk.r.x20 = esf->x20;
+	arch_blk.r.x21 = esf->x21;
+	arch_blk.r.x22 = esf->x22;
+	arch_blk.r.x23 = esf->x23;
+	arch_blk.r.x24 = esf->x24;
+	arch_blk.r.x25 = esf->x25;
+	arch_blk.r.x26 = esf->x26;
+	arch_blk.r.x27 = esf->x27;
+	arch_blk.r.x28 = esf->x28;
+#endif
 	arch_blk.r.lr = esf->lr;
 	arch_blk.r.spsr = esf->spsr;
 	arch_blk.r.elr = esf->elr;
