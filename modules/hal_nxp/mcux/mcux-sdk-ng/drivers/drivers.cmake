@@ -180,6 +180,7 @@ set_variable_ifdef(CONFIG_COUNTER_MCUX_SNVS_SRTC    CONFIG_MCUX_COMPONENT_driver
 set_variable_ifdef(CONFIG_BBRAM_NXP_IMX_SNVS_GPR    CONFIG_MCUX_COMPONENT_driver.snvs_lp)
 set_variable_ifdef(CONFIG_DISPLAY_MCUX_DCNANO_LCDIF CONFIG_MCUX_COMPONENT_driver.lcdif)
 set_variable_ifdef(CONFIG_MIPI_DBI_NXP_DCNANO_LCDIF CONFIG_MCUX_COMPONENT_driver.lcdif)
+set_variable_ifdef(CONFIG_MIPI_DBI_NXP_DCIF         CONFIG_MCUX_COMPONENT_driver.dcif_1)
 set_variable_ifdef(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF CONFIG_MCUX_COMPONENT_driver.flexio_mculcd)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX    CONFIG_MCUX_COMPONENT_driver.mipi_csi2rx)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_JPEGDEC        CONFIG_MCUX_COMPONENT_driver.jpegdec)
