@@ -45,23 +45,23 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_tcp, tcp_svc_handler,
 
 static void tcp_received(const struct net_sockaddr *addr, size_t datalen)
 {
-	struct session *session;
-	int64_t time;
+	struct session *ses;
+	int64_t now;
 
-	time = k_uptime_ticks();
+	now = k_uptime_ticks();
 
-	session = get_session(addr, SESSION_TCP);
-	if (!session) {
+	ses = get_session(addr, SESSION_TCP);
+	if (!ses) {
 		NET_ERR("Cannot get a session!");
 		return;
 	}
 
-	switch (session->state) {
+	switch (ses->state) {
 	case STATE_COMPLETED:
 	case STATE_NULL:
-		zperf_reset_session_stats(session);
-		session->start_time = k_uptime_ticks();
-		session->state = STATE_ONGOING;
+		zperf_reset_session_stats(ses);
+		ses->start_time = k_uptime_ticks();
+		ses->state = STATE_ONGOING;
 
 		if (tcp_session_cb != NULL) {
 			tcp_session_cb(ZPERF_SESSION_STARTED, NULL,
@@ -70,17 +70,17 @@ static void tcp_received(const struct net_sockaddr *addr, size_t datalen)
 
 		__fallthrough;
 	case STATE_ONGOING:
-		session->counter++;
-		session->length += datalen;
+		ses->counter++;
+		ses->length += datalen;
 
 		if (datalen == 0) { /* EOF */
 			struct zperf_results results = { 0 };
 
-			session->state = STATE_COMPLETED;
+			ses->state = STATE_COMPLETED;
 
-			results.total_len = session->length;
+			results.total_len = ses->length;
 			results.time_in_us = k_ticks_to_us_ceil64(
-						time - session->start_time);
+						now - ses->start_time);
 
 			if (tcp_session_cb != NULL) {
 				tcp_session_cb(ZPERF_SESSION_FINISHED, &results,
