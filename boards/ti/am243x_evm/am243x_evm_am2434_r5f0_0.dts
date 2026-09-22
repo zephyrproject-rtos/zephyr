@@ -278,7 +278,7 @@
 		status = "okay";
 		reg = <0>;
 		jedec-id = [34 5b 1a];
-		size = <DT_SIZE_M(128)>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits(64 MB) - input in Bits */
 		erase-block-size = <DT_SIZE_K(256)>;
 		mspi-max-frequency = <DT_FREQ_M(25)>;
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
@@ -293,11 +293,11 @@
 		t-reset-recovery = <90000>; /* 90us */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x60000000 DT_SIZE_M(128)>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(64)>; /* 64 MB - input in Bytes */
 
 		flash0_memory: flash@0 {
 			compatible = "zephyr,memory-region", "soc-nv-flash";
-			reg = <0x0 DT_SIZE_M(128)>;
+			reg = <0x0 DT_SIZE_M(64)>; /* 64 MB - input in Bytes */
 			zephyr,memory-region = "FSS_DAT0";
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 			#address-cells = <1>;
