@@ -59,6 +59,50 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+extern void __soc_save_context(struct soc_esf *context);
+extern void __soc_restore_context(struct soc_esf *context);
+#endif
+
+/**
+ * @brief What a direct ISR keeps of the context it interrupted
+ *
+ * A direct ISR is entered straight from the vector table, so it has no esf to
+ * hold the trap CSRs, and an interrupt nested in its body overwrites them. The
+ * ISR keeps its own copy in the frame the compiler gives it.
+ */
+struct arch_isr_direct_ctx {
+	unsigned long cause;
+	unsigned long epc;
+	unsigned long status;
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	struct soc_esf soc_context;
+#endif
+};
+
+static inline void arch_isr_direct_ctx_save(struct arch_isr_direct_ctx *ctx)
+{
+	ctx->cause = csr_read(RV_CAUSE_CSR);
+	ctx->epc = csr_read(RV_EPC_CSR);
+	ctx->status = csr_read(RV_STATUS_CSR);
+
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	__soc_save_context(&ctx->soc_context);
+#endif
+}
+
+static inline void arch_isr_direct_ctx_restore(struct arch_isr_direct_ctx *ctx)
+{
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	__soc_restore_context(&ctx->soc_context);
+#endif
+
+	/* Leave the trap CSRs as this ISR found them */
+	csr_write(RV_EPC_CSR, ctx->epc);
+	csr_write(RV_STATUS_CSR, ctx->status);
+	csr_write(RV_CAUSE_CSR, ctx->cause);
+}
+
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
@@ -152,8 +196,11 @@ static inline void arch_isr_direct_footer(int swap)
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt("supervisor"))) void name(void) \
 	{ \
+		struct arch_isr_direct_ctx ctx; \
 		ISR_DIRECT_HEADER(); \
+		arch_isr_direct_ctx_save(&ctx); \
 		name##_body(); \
+		arch_isr_direct_ctx_restore(&ctx); \
 		ISR_DIRECT_FOOTER(0); \
 	} \
 	static inline int name##_body(void)
@@ -162,8 +209,11 @@ static inline void arch_isr_direct_footer(int swap)
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt)) void name(void) \
 	{ \
+		struct arch_isr_direct_ctx ctx; \
 		ISR_DIRECT_HEADER(); \
+		arch_isr_direct_ctx_save(&ctx); \
 		name##_body(); \
+		arch_isr_direct_ctx_restore(&ctx); \
 		ISR_DIRECT_FOOTER(0); \
 	} \
 	static inline int name##_body(void)

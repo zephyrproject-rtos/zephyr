@@ -234,10 +234,14 @@
 #define RV_STATUS_CSR sstatus
 #define RV_STATUS_IE  SSTATUS_SIE
 #define RV_STATUS_PIE SSTATUS_SPIE
+#define RV_CAUSE_CSR  scause
+#define RV_EPC_CSR    sepc
 #else
 #define RV_STATUS_CSR mstatus
 #define RV_STATUS_IE  MSTATUS_IEN
 #define RV_STATUS_PIE MSTATUS_MPIE_EN
+#define RV_CAUSE_CSR  mcause
+#define RV_EPC_CSR    mepc
 #endif
 
 #ifndef _ASMLANGUAGE
