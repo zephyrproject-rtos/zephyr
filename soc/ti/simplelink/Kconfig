@@ -18,4 +18,23 @@ config TI_SIMPLELINK_DYNAMIC_DPL_OBJECTS
 	  Turn on dynamic memory allocation for DPL objects. Reserves
 	  extra memory for this.
 
+config TI_DPL_TASK_POOL_SIZE
+	int "Number of pre-allocated TaskP thread stacks"
+	depends on TI_SIMPLELINK_DYNAMIC_DPL_OBJECTS
+	default 2
+	help
+	  Number of thread stacks in the TaskP-private pool. This is
+	  independent of CONFIG_DYNAMIC_THREAD_POOL_SIZE, which governs
+	  the generic Zephyr dynamic thread pool.
+
+config TI_DPL_TASK_STACK_SIZE
+	int "Stack size for dynamically created TaskP threads"
+	depends on TI_SIMPLELINK_DYNAMIC_DPL_OBJECTS
+	default 1500
+	help
+	  Stack size used by TaskP_create() for each dynamically allocated
+	  thread. This is independent of CONFIG_DYNAMIC_THREAD_STACK_SIZE,
+	  which governs the generic Zephyr dynamic thread pool and is used
+	  by e.g. pthread_create() with a NULL attr argument.
+
 endif # SOC_FAMILY_TI_SIMPLELINK
