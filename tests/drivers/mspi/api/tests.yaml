@@ -36,6 +36,7 @@ tests:
     platform_allow:
       - stm32h573i_dk
       - stm32h5f5j_dk
+      - stm32h7b3i_dk
   drivers.mspi.api.xec:
     tags:
       - drivers
