@@ -231,10 +231,9 @@ struct bt_hid_host {
 	struct bt_hid_req req;
 	/** Closes whichever channel L2CAP still owns.
 	 *
-	 * Used both as the INTR channel connect timeout, where CTRL came up but the
-	 * device never opened INTR, and to close the second channel of an
-	 * association whose first channel is already gone. The latter cannot be done
-	 * from the L2CAP callback that reported it, see hid_close_handler().
+	 * Used to handle HID channel timeout and teardown, ensuring CTRL and INTR channels are
+	 * both established as required and closing the peer channel when the association becomes
+	 * invalid or is disconnected.
 	 */
 	struct k_work_delayable close_work;
 	/** Control channel transaction timeout. */
