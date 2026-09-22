@@ -9,6 +9,7 @@
 #include <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 /*
  * i.MX RT266x shared peripheral tree. The CPU, its TCMs and its NVIC
@@ -545,6 +546,15 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x4c060000 0x4000>;
+
+		/* MIPI-DSI D-PHY PLL reference clock, its only legal mux is SXOSC. */
+		mipidsi_refclk_rootclk: clock-root@50 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x50 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_MEDIA_MIPIDSI_REFCLK>;
+			clock-mux = <IMX_CCM_MUX_MIPIDSI_REFCLK_SXOSC>;
+			clock-div = <1>;
+		};
 	};
 
 	/*
@@ -1890,6 +1900,24 @@
 		compatible = "nxp,imx-csi";
 		reg = <0x4c090000 0x1000>;
 		interrupts = <326 0>;
+		status = "disabled";
+	};
+
+	mipi_dsi: dsi@4c0a0000 {
+		compatible = "nxp,mipi-dsi-split";
+		reg = <0x4c0a0000 0x300>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <332 0>;
+		clock-names = "gate", "esc-target", "ref-source", "pixel-source";
+		clocks = <&media_ccm IMX_CCM_CLK(IMX_CCM_LPCG_MEDIA_MIPI_DSI,
+						 IMX_CCM_ROOT_MEDIA_MIPIDSI_CLK)>,
+			 <&media_ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MEDIA_MIPIDSI_ESCCLK_DIVIDED,
+						      IMX_CCM_MUX_MIPIDSI_ESCCLK_PERI5, 2, 10)>,
+			 <&media_ccm
+			  IMX_CCM_CLK(IMX_CCM_GATE_NONE, IMX_CCM_ROOT_MEDIA_MIPIDSI_REFCLK)>,
+			 <&media_ccm
+			  IMX_CCM_CLK(IMX_CCM_GATE_NONE, IMX_CCM_ROOT_MEDIA_DCPIXEL_FCLK)>;
 		status = "disabled";
 	};
 
