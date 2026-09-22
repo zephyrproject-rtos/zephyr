@@ -31,16 +31,16 @@ Sample Output
 
 .. code-block:: console
 
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
 
    <repeats endlessly>
 
