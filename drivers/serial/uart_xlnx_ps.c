@@ -135,6 +135,9 @@
 #define XUARTPS_SR_RXEMPTY 0x00000002U /**< RX FIFO empty */
 #define XUARTPS_SR_RTRIG   0x00000001U /**< RX FIFO fill over trigger */
 
+/* 64-byte TX FIFO plus the shift register, at up to 12 bits per character */
+#define XUARTPS_TX_DRAIN_BITS ((64U + 1U) * 12U)
+
 /** Device configuration structure */
 struct uart_xlnx_ps_dev_config {
 	DEVICE_MMIO_ROM;
@@ -648,7 +651,8 @@ static inline bool uart_xlnx_ps_cfg2ll_hwctrl(uint32_t *modemcr_reg,
  * @param cfg The configuration parameters to be applied.
  *
  * @return 0 if the configuration completed successfully, ENOTSUP
- *         error if an unsupported configuration parameter is detected.
+ *         error if an unsupported configuration parameter is detected,
+ *         ETIMEDOUT error if the transmitter does not become idle.
  */
 static int uart_xlnx_ps_configure(const struct device *dev, const struct uart_config *cfg)
 {
@@ -657,6 +661,7 @@ static int uart_xlnx_ps_configure(const struct device *dev, const struct uart_co
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t mode_reg = 0;
 	uint32_t modemcr_reg = 0;
+	uint32_t drain_us;
 
 	/* Read the current mode register & modem control register values */
 	mode_reg = sys_read32(reg_base + XUARTPS_MR_OFFSET);
@@ -674,6 +679,19 @@ static int uart_xlnx_ps_configure(const struct device *dev, const struct uart_co
 	    (!uart_xlnx_ps_cfg2ll_databits(&mode_reg, cfg->data_bits)) ||
 	    (!uart_xlnx_ps_cfg2ll_hwctrl(&modemcr_reg, cfg->flow_ctrl))) {
 		return -ENOTSUP;
+	}
+
+	/*
+	 * Wait until the TX FIFO has drained and the transmitter is idle, so
+	 * that disabling the controller does not cut off a character mid-frame.
+	 * The timeout allows twice the time needed to send a full FIFO at the
+	 * current baud rate; with hardware flow control, CTS may hold it off.
+	 */
+	drain_us = DIV_ROUND_UP(2U * XUARTPS_TX_DRAIN_BITS * USEC_PER_SEC, dev_cfg->baud_rate);
+	if (!WAIT_FOR((sys_read32(reg_base + XUARTPS_SR_OFFSET) &
+		       (XUARTPS_SR_TXEMPTY | XUARTPS_SR_TACTIVE)) == XUARTPS_SR_TXEMPTY,
+		      drain_us, k_busy_wait(1))) {
+		return -ETIMEDOUT;
 	}
 
 	/* Disable the controller before modifying any config registers */
