@@ -1220,8 +1220,6 @@ static inline int soft_reset(const struct device *dev)
 	const struct uhc_dwc2_config *const config = dev->config;
 	int ret;
 
-	/* TODO: Check that port has no ongoing transfers */
-
 	/* Disable Global IRQ */
 	config->irq_disable_func(dev);
 
@@ -1752,8 +1750,8 @@ static inline void submit_new_device(const struct device *dev)
 }
 
 /*
- * Give back the channels of a device that is gone. Its transfers are not
- * returned: the host stack frees them along with the device.
+ * Give back the channels of a device that is gone. Its transfers are returned
+ * by xfer_drop_queued().
  */
 static void ch_release_all(const struct device *dev)
 {
@@ -2076,6 +2074,17 @@ static void submit_pending(const struct device *const dev)
 	}
 }
 
+/* Return every queued transfer when no completion can arrive for it */
+static void xfer_drop_queued(const struct device *dev, const int err)
+{
+	struct uhc_data *const data = dev->data;
+	struct uhc_transfer *xfer, *tmp;
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&data->ctrl_xfers, xfer, tmp, node) {
+		uhc_xfer_return(dev, xfer, err);
+	}
+}
+
 static void port_handle_events(const struct device *dev, uint32_t event_mask)
 {
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
@@ -2109,6 +2118,7 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 		}
 
 		ch_release_all(dev);
+		xfer_drop_queued(dev, -ENODEV);
 		/* Notify upper layer */
 		submit_dev_gone(dev);
 		/* Reset the controller to handle new connection */
@@ -2120,6 +2130,7 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 	if (event_mask & BIT(UHC_DWC2_EVENT_PORT_ERROR)) {
 		LOG_DBG("Port error");
 		ch_release_all(dev);
+		xfer_drop_queued(dev, -ENODEV);
 		/* Notify upper layer */
 		submit_dev_gone(dev);
 		/* TODO: recover from the error */
@@ -2628,11 +2639,13 @@ static int uhc_dwc2_disable(const struct device *const dev)
 {
 	const struct uhc_dwc2_config *const config = dev->config;
 	int ret;
-	/* TODO: Check ongoing transfer? */
 
 	submit_dev_gone(dev);
 
 	config->irq_disable_func(dev);
+
+	ch_release_all(dev);
+	xfer_drop_queued(dev, -ENODEV);
 
 	port_disable(dev);
 
