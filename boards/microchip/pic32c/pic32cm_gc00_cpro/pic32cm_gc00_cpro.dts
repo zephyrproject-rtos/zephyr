@@ -194,6 +194,13 @@
 			gclkperiph-src = "gclk2";
 			gclkperiph-en = <1>;
 		};
+
+		/* The AC needs a GCLK for register sync; SWRST never completes without it. */
+		ac {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_AC>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
 	};
 
 	mclkdomain: mclkdomain {
@@ -221,6 +228,11 @@
 
 		can1 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_CAN1>;
+			mclk-en = <1>;
+		};
+
+		ac {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_AC>;
 			mclk-en = <1>;
 		};
 	};
@@ -302,5 +314,32 @@ i2c0: &sercom1 {
 
 	can-transceiver {
 		max-bitrate = <5000000>;
+	};
+};
+
+&ac0 {
+	status = "okay";
+
+	comp0: comparator@0 {
+		compatible = "microchip,ac-g2-comparator";
+		reg = <0>;
+		positive-mux-input = "pin2";
+		negative-mux-input = "dac";
+		dac-value = <64>;
+		hysteresis-level = "hyst20";
+		filter-length = "maj3";
+		pinctrl-0 = <&ac0_comp0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+
+	comp1: comparator@1 {
+		compatible = "microchip,ac-g2-comparator";
+		reg = <1>;
+		positive-mux-input = "dac";
+		negative-mux-input = "bandgap";
+		dac-value = <40>;
+		hysteresis-level = "hyst10";
+		status = "okay";
 	};
 };
