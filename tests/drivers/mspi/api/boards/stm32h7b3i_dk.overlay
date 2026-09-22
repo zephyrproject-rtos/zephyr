@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		mspi0 = &octospi1;
+		/delete-property/ ext-nor0;
+	};
+};
+
+/* Delete the flash node since MSPI_MAX_DEVICE is 1 */
+/delete-node/ &mx25lm51245;
+
+&octospi1 {
+	mspi_device: mspi_device@0 {
+		status = "okay";
+		compatible = "zephyr,emul-device-mspi";
+		reg = <0x0>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+	};
+};
