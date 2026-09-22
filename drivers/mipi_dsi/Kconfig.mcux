@@ -50,3 +50,11 @@ config MIPI_DSI_NXP_DWC
 	depends on DT_HAS_NXP_MIPI_DSI_DWC_ENABLED
 	help
 	  NXP MIPI DSI DWC controller driver
+
+config MIPI_DSI_MCUX_SPLIT
+	bool "NXP MCUX MIPI-DSI split controller"
+	default y
+	depends on DT_HAS_NXP_MIPI_DSI_SPLIT_ENABLED
+	help
+	  NXP MIPI DSI controller driver for the split_1 IP, whose registers are
+	  split across separate HOST, DPI, DBI, APB and D-PHY blocks.
