@@ -1,0 +1,23 @@
+/*
+ * Copyright 2026, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_lcdif {
+	/* Parallel-RGB DPI pins */
+	pinctrl-0 = <&pinmux_dcif>;
+	pinctrl-names = "default";
+
+	/*
+	 * dcif pixel clock source PERI5 is 400 MHz, set the devider to 19 to
+	 * generate a 21.05 MHz pixel clock. Ideally the divider shall be calculated
+	 * inside driver using the value of 'clock-frequency' of display-timings,
+	 * however the clock driver has no API to update divider currently, will
+	 * improve later.
+	 */
+	clocks = <&media_ccm IMX_CCM_CLK(IMX_CCM_LPCG_MEDIA_DCIF,
+					 IMX_CCM_ROOT_MEDIA_DCPIXEL_FCLK)>,
+		 <&media_ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MEDIA_DCPIXEL_FCLK,
+					      IMX_CCM_MUX_DCPIXEL_PERI5, 19, 1)>;
+};
