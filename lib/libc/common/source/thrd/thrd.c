@@ -8,8 +8,8 @@
 #include <threads.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/pthread.h>
-#include <zephyr/posix/sched.h>
+#include <pthread.h>
+#include <sched.h>
 #include <zephyr/sys/clock.h>
 
 struct thrd_trampoline_arg {

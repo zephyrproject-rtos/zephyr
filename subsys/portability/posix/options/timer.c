@@ -16,7 +16,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 
 #define ACTIVE 1
 #define NOT_ACTIVE 0

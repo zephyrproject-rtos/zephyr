@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 
 /**
  * @brief Sleep for a specified number of seconds.

@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <threads.h>
 
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 
 int cnd_broadcast(cnd_t *cond)
 {

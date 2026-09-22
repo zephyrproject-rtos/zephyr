@@ -8,8 +8,8 @@
 
 #include <stddef.h>
 
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/sys/socket.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 #include <zephyr/net/socket.h>
 
@@ -21,8 +21,8 @@ typedef uint32_t in_addr_t;
 
 in_addr_t inet_addr(const char *cp);
 char *inet_ntoa(struct in_addr in);
-char *inet_ntop(sa_family_t family, const void *src, char *dst, size_t size);
-int inet_pton(sa_family_t family, const char *src, void *dst);
+char *inet_ntop(int family, const void *src, char *dst, size_t size);
+int inet_pton(int family, const char *src, void *dst);
 
 #define ntohs(x)  net_ntohs(x)
 #define ntohl(x)  net_ntohl(x)
