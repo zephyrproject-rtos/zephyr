@@ -32,6 +32,7 @@ static size_t map_count;
 static size_t mdr_count;
 static size_t master_count;
 static size_t allocation_count;
+static uint8_t forced_allocation;
 static uint64_t its_address;
 
 uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
@@ -103,7 +104,7 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority, msi_vector_t *vect
 		vectors[i].arch.priority = priority;
 	}
 
-	return n_vector;
+	return forced_allocation != 0U ? forced_allocation : n_vector;
 }
 
 bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int bar_index, struct pcie_bar *bar)
@@ -172,6 +173,7 @@ static void before(void *fixture)
 	mdr_count = 0U;
 	master_count = 0U;
 	allocation_count = 0U;
+	forced_allocation = 0U;
 	its_address = TEST_ADDRESS64;
 	config_space[MSI_BASE] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64 | (1U << PCIE_MSI_MCR_MMC_SHIFT);
 	config_space[MSIX_BASE] = PCI_CAP_ID_MSIX | (1U << PCIE_MSIX_MCR_TSIZE_SHIFT);
@@ -200,6 +202,23 @@ ZTEST(pcie_msi, test_allocator_low_address)
 
 	zassert_true(pcie_msi_enable(TEST_BDF, vectors, ARRAY_SIZE(vectors), TEST_IRQ));
 	assert_msi64(TEST_ADDRESS);
+}
+
+ZTEST(pcie_msi, test_msi_partial_allocation_rounds_down)
+{
+	msi_vector_t vectors[4] = {0};
+
+	/*
+	 * The MSI MME field can only encode a power-of-two message count.
+	 * Exhausted LPIs can make the allocation return 3 out of 4 vectors.
+	 */
+	config_space[MSI_BASE] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64 | (2U << PCIE_MSI_MCR_MMC_SHIFT);
+	forced_allocation = 3U;
+
+	zassert_equal(
+		pcie_msi_vectors_allocate(TEST_BDF, TEST_PRIORITY, vectors, ARRAY_SIZE(vectors)),
+		2U);
+	zassert_equal(allocation_count, 1U);
 }
 
 ZTEST(pcie_msi, test_msix_allocator_maps_table)
