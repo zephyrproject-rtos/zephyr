@@ -43,6 +43,26 @@ static void clk_peripheral_set(struct clk_peripheral *periph,
 	sys_write32((sys_read32(pcr_addr) & ~PMC_PCR_EN_Msk) | (periph->layout->cmd | enable),
 		    pcr_addr);
 
+	/*
+	 * For SAMA5D2, PMC Peripheral Clock Enable/Disable Register 0/1
+	 * enables and disables the peripheral clocks.
+	 */
+#if defined(PMC_PCER0_REG_OFST)
+	if (enable != 0) {
+		if (periph->id < 32) {
+			sys_set_bit(periph->pmc + PMC_PCER0_REG_OFST, periph->id);
+		} else {
+			sys_set_bit(periph->pmc + PMC_PCER1_REG_OFST, periph->id % 32);
+		}
+	} else {
+		if (periph->id < 32) {
+			sys_set_bit(periph->pmc + PMC_PCDR0_REG_OFST, periph->id);
+		} else {
+			sys_set_bit(periph->pmc + PMC_PCDR1_REG_OFST, periph->id % 32);
+		}
+	}
+#endif
+
 	k_spin_unlock(periph->lock, key);
 }
 
