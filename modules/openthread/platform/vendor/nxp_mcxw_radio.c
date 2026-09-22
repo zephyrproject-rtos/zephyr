@@ -32,6 +32,9 @@
 #include "fwk_platform_ot.h"
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(nxp_mcxw_radio, LOG_LEVEL_DBG);
 
 #if USE_NBU
 void PLATFORM_RemoteActiveReq(void);
@@ -390,6 +393,8 @@ otError otPlatRadioSleep(otInstance *aInstance)
 
 	stop_csl_receiver();
 
+	LOG_DBG("Sleep: is_rx_after_poll=%d radio_state=%d", is_rx_after_poll, radio_state);
+
 	if (is_rx_after_poll) {
 		is_rx_after_poll = FALSE;
 		radio_state = OT_RADIO_STATE_SLEEP;
@@ -687,6 +692,9 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
 
 	is_tx_poll = otMacFrameIsDataRequest(aFrame);
 	is_rx_after_poll = FALSE;
+
+	LOG_INF("TX: poll=%d fcf=0x%02x 0x%02x len=%d",
+		is_tx_poll, aFrame->mPsdu[0], aFrame->mPsdu[1], aFrame->mLength);
 
 	msg->msgType = gPdDataReq_c;
 
@@ -1264,9 +1272,23 @@ phyStatus_t PD_OT_MAC_SapHandler(void *pMsg, instanceId_t instance)
 
 				convert_ack(&radio_rx_ack_frame, &pDataMsg->msgData.dataCnf);
 
-				if (is_tx_poll &&
-				    (radio_rx_ack_frame.mPsdu[IEEE802154_FRM_CTL_LO_OFFSET] &
-				     IEEE802154_FP)) {
+				LOG_DBG("TX cnf: ack_len=%d ack_fcf=0x%02x FP=%d",
+					radio_rx_ack_frame.mLength,
+					radio_rx_ack_frame.mLength > 0 ?
+						radio_rx_ack_frame.mPsdu[IEEE802154_FRM_CTL_LO_OFFSET] : 0,
+					radio_rx_ack_frame.mLength > 0 ?
+						!!(radio_rx_ack_frame.mPsdu[IEEE802154_FRM_CTL_LO_OFFSET] &
+						   IEEE802154_FP) : 0);
+
+				/* Stay in RX after any unicast TX ACKed with FP=1.
+				 * This covers both MAC Data Request (poll) and MLE
+				 * unicast frames such as Child Update Request where
+				 * the parent signals pending data via the FP bit.
+				 * Without this the radio would sleep before OT can
+				 * call otPlatRadioReceive() and the response is lost.
+				 */
+				if (radio_rx_ack_frame.mPsdu[IEEE802154_FRM_CTL_LO_OFFSET] &
+				    IEEE802154_FP) {
 					is_rx_after_poll = TRUE;
 				}
 			}

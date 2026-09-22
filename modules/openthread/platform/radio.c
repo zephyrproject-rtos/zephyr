@@ -86,6 +86,14 @@ K_SEM_DEFINE(radio_sem, 0, 1);
 
 static otRadioState sState = OT_RADIO_STATE_DISABLED;
 
+/*
+ * When a unicast TX is ACKed with Frame Pending=1, keep the radio in RX
+ * so that the response frame (e.g. Child Update Response) can be received
+ * before OT calls otPlatRadioSleep(). This mirrors the fix applied in
+ * nxp_mcxw_radio.c for the non-L2 build path.
+ */
+static bool is_rx_after_poll;
+
 static otRadioFrame sTransmitFrame;
 static otRadioFrame ack_frame;
 static uint8_t ack_psdu[ACK_PKT_LENGTH];
@@ -692,6 +700,19 @@ void platformRadioProcess(otInstance *aInstance)
 	if (is_pending_event_set(PENDING_EVENT_TX_DONE)) {
 		reset_pending_event(PENDING_EVENT_TX_DONE);
 		sState = OT_RADIO_STATE_RECEIVE;
+
+		/* If the ACK has Frame Pending=1 the parent has data queued
+		 * for us. Keep the radio in RX so OT can call otPlatRadioReceive()
+		 * before we go to sleep (otherwise the response is lost for SED).
+		 * FP is bit 4 of FCF byte 0 in the ACK PSDU.
+		 */
+		if (ack_frame.mLength > 0 &&
+		    (ack_frame.mPsdu[0] & BIT(4))) {
+			is_rx_after_poll = true;
+		} else {
+			is_rx_after_poll = false;
+		}
+
 		handle_tx_done(aInstance);
 	}
 
@@ -803,6 +824,16 @@ otError otPlatRadioSleep(otInstance *aInstance)
 
 	if (sState != OT_RADIO_STATE_SLEEP && sState != OT_RADIO_STATE_RECEIVE) {
 		return OT_ERROR_INVALID_STATE;
+	}
+
+	/* If we are waiting for a response after an ACK with FP=1,
+	 * do not stop the radio. OT will call otPlatRadioReceive()
+	 * shortly after and the radio will stay in RX.
+	 */
+	if (is_rx_after_poll) {
+		is_rx_after_poll = false;
+		sState = OT_RADIO_STATE_SLEEP;
+		return OT_ERROR_NONE;
 	}
 
 	radio_api->stop(radio_dev);
@@ -1295,27 +1326,49 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
 
 #if defined(CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE)
+	/* Export PSA key references into local buffers. Do NOT write into the
+	 * aPrevKey/aCurrKey/aNextKey const pointers: mKey and mKeyRef share a
+	 * union, so writing the exported bytes there would corrupt the PSA
+	 * handle and break subsequent SW RX decryption by the OT stack.
+	 */
 	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_KEY_REF);
+	uint8_t prev_key_bytes[OT_MAC_KEY_SIZE];
+	uint8_t curr_key_bytes[OT_MAC_KEY_SIZE];
+	uint8_t next_key_bytes[OT_MAC_KEY_SIZE];
 	size_t keyLen;
 	otError error;
 
 	error = otPlatCryptoExportKey(aPrevKey->mKeyMaterial.mKeyRef,
-				      (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE,
-				      &keyLen);
+				      prev_key_bytes, OT_MAC_KEY_SIZE, &keyLen);
 	__ASSERT_NO_MSG(error == OT_ERROR_NONE);
+
 	error = otPlatCryptoExportKey(aCurrKey->mKeyMaterial.mKeyRef,
-				      (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE,
-				      &keyLen);
+				      curr_key_bytes, OT_MAC_KEY_SIZE, &keyLen);
 	__ASSERT_NO_MSG(error == OT_ERROR_NONE);
+
 	error = otPlatCryptoExportKey(aNextKey->mKeyMaterial.mKeyRef,
-				      (uint8_t *)aNextKey->mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE,
-				      &keyLen);
+				      next_key_bytes, OT_MAC_KEY_SIZE, &keyLen);
 	__ASSERT_NO_MSG(error == OT_ERROR_NONE);
+
+	/* Use local pointers so the key_value assignments below are uniform */
+	const uint8_t *prev_key_data = prev_key_bytes;
+	const uint8_t *curr_key_data = curr_key_bytes;
+	const uint8_t *next_key_data = next_key_bytes;
 #else
 	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
+	const uint8_t *prev_key_data = aPrevKey->mKeyMaterial.mKey.m8;
+	const uint8_t *curr_key_data = aCurrKey->mKeyMaterial.mKey.m8;
+	const uint8_t *next_key_data = aNextKey->mKeyMaterial.mKey.m8;
 #endif
 
-	uint8_t key_id_mode = aKeyIdMode >> 3;
+	/* aKeyIdMode is passed as the enum value (Mac::Frame::kKeyIdMode1 = 1),
+	 * not the raw wire byte. The old >> 3 shift was for the wire format where
+	 * KeyIdMode occupied bits [5:3] of the Security Control byte. With the
+	 * new OT API the enum value is passed directly, so no shift is needed.
+	 * (The OT spec also notes that platforms should ignore aKeyIdMode and
+	 * always treat keys as Mode-1, but we keep the branch for clarity.)
+	 */
+	uint8_t key_id_mode = aKeyIdMode;
 	uint8_t prev_key_id = 0;
 	uint8_t next_key_id = 0;
 
@@ -1349,13 +1402,13 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 		next_key_id = aKeyId == 0x80 ? 1 : aKeyId + 1;
 
 		keys[0].key_id = &prev_key_id;
-		keys[0].key_value = (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8;
+		keys[0].key_value = (uint8_t *)prev_key_data;
 
 		keys[1].key_id = &aKeyId;
-		keys[1].key_value = (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8;
+		keys[1].key_value = (uint8_t *)curr_key_data;
 
 		keys[2].key_id = &next_key_id;
-		keys[2].key_value = (uint8_t *)aNextKey->mKeyMaterial.mKey.m8;
+		keys[2].key_value = (uint8_t *)next_key_data;
 	} else {
 		/* aKeyId == 0 is used only to clear keys for stack reset in RCP */
 		__ASSERT_NO_MSG((key_id_mode == 0) && (aKeyId == 0));
