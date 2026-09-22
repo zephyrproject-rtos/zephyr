@@ -13,11 +13,11 @@
 #include <zephyr/pm/device_runtime.h>
 #include <string.h>
 
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/poll.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <poll.h>
 
 #include <zephyr/drivers/cellular.h>
 

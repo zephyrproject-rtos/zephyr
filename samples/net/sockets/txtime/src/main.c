@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_mgmt.h>
 
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/unistd.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include "net_sample_common.h"
 

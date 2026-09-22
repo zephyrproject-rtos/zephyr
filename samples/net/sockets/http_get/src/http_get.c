@@ -6,22 +6,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#if !defined(__ZEPHYR__)
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netdb.h>
 
-#else
-
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/netdb.h>
+#if defined(__ZEPHYR__)
 
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>

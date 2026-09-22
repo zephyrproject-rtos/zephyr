@@ -11,9 +11,9 @@
 #include <zephyr/net/coap_client.h>
 #include <inttypes.h>
 #include <errno.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 
 #include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"

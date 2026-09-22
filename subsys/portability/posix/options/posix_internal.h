@@ -12,7 +12,7 @@
 #include <signal.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/slist.h>
 
@@ -79,6 +79,11 @@ struct posix_condattr {
 	unsigned char pshared: 1;
 #endif
 };
+
+struct pthread_once {
+	bool flag;
+};
+BUILD_ASSERT(sizeof(pthread_once_t) >= sizeof(struct pthread_once));
 
 struct posix_cond {
 	struct k_condvar condvar;

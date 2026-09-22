@@ -9,7 +9,6 @@
 #include "openthread_border_router.h"
 #include <common/code_utils.hpp>
 #include <openthread/platform/infra_if.h>
-#include <zephyr/posix/sys/socket.h>
 #include <zephyr/net/socket_service.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>

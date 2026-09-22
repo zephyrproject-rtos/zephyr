@@ -6,8 +6,8 @@
 
 #include <stdio.h>
 
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/poll.h>
+#include <sys/socket.h>
+#include <poll.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/tls_credentials.h>

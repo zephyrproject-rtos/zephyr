@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <zephyr/sys/util.h>
-#include <zephyr/posix/pwd.h>
+#include <pwd.h>
 
 int getpwnam_r(const char *nam, struct passwd *pwd, char *buffer, size_t bufsize,
 	       struct passwd **result)

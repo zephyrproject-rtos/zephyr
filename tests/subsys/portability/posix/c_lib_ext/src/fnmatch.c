@@ -5,7 +5,7 @@
  */
 
 #include <ctype.h>
-#include <zephyr/posix/fnmatch.h>
+#include <fnmatch.h>
 
 #include <zephyr/ztest.h>
 

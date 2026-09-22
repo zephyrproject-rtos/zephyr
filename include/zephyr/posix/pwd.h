@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#include <zephyr/posix/sys/stat.h>
+#include <sys/stat.h>
 
 struct passwd {
 	/* user's login name */

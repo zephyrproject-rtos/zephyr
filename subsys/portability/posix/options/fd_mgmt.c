@@ -8,9 +8,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/sys/select.h>
-#include <zephyr/posix/sys/socket.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <zephyr/sys/fdtable.h>
 
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */

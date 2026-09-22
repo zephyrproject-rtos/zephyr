@@ -9,7 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/serial/uart_emul.h>
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 
 #define STDOUT_FD 1
 

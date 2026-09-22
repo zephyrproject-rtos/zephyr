@@ -11,12 +11,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include <zephyr/posix/poll.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netdb.h>
-#include <zephyr/posix/unistd.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_mgmt.h>
