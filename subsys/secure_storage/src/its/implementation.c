@@ -11,7 +11,7 @@
 #include <zephyr/toolchain.h>
 #include <string.h>
 
-LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
+LOG_MODULE_REGISTER(secure_storage_its, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
 static void log_failed_operation(const char *operation, const char *preposition, psa_status_t ret)
 {
