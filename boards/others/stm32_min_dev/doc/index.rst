@@ -10,8 +10,33 @@ are two variants of the board:
 - Blue Pill Board
 - Black Pill Board
 
-Zephyr applications can use the ``stm32_min_dev@blue`` or ``stm32_min_dev@black``
-board configuration to use these boards.
+Both variants are also sold populated with the smaller `STM32F103x6`_ CPU,
+which has 32 KB of flash and 10 KB of RAM instead of 64 KB and 20 KB, and
+which lacks USART3, I2C2 and SPI2.
+
+The board revision selects the variant and the SoC qualifier selects the CPU,
+giving four board targets:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Board target
+     - Variant
+     - CPU
+   * - ``stm32_min_dev@blue/stm32f103x8``
+     - Blue Pill
+     - STM32F103C8
+   * - ``stm32_min_dev@black/stm32f103x8``
+     - Black Pill
+     - STM32F103C8
+   * - ``stm32_min_dev@blue/stm32f103x6``
+     - Blue Pill
+     - STM32F103C6
+   * - ``stm32_min_dev@black/stm32f103x6``
+     - Black Pill
+     - STM32F103C6
+
+An STM32F103C6 populated board is, for example, available from `Robu`_.
 
 As the name suggests, these boards have the bare minimum components required to
 power on the CPU. For practical use, you'll need to add additional components
@@ -91,14 +116,17 @@ Default Zephyr Peripheral Mapping:
 
 - UART_1 TX/RX: PA9/PA10
 - UART_2 TX/RX: PA2/PA3
-- UART_3 TX/RX: PB10/PB11
 - I2C_1 SCL/SDA : PB6/PB7
-- I2C_2 SCL/SDA : PB10/PB11
 - PWM_1_CH1: PA8
 - SPI_1 NSS_OE/SCK/MISO/MOSI: PA4/PA5/PA6/PA7
-- SPI_2 NSS_OE/SCK/MISO/MOSI: PB12/PB13/PB14/PB15
 - USB_DC DM/DP: PA11/PA12
 - ADC_1: PA0
+
+On the ``stm32f103x8`` targets only:
+
+- UART_3 TX/RX: PB10/PB11
+- I2C_2 SCL/SDA : PB10/PB11
+- SPI_2 NSS_OE/SCK/MISO/MOSI: PB12/PB13/PB14/PB15
 
 System Clock
 ------------
@@ -108,8 +136,9 @@ The on-board 8Mhz crystal is used to produce a 72Mhz system clock with PLL.
 Serial Port
 -----------
 
-STM32 Minimum Development Board has 3 U(S)ARTs. The Zephyr console output is
-assigned to UART_1. Default settings are 115200 8N1.
+STM32 Minimum Development Board has 3 U(S)ARTs on the STM32F103C8 and 2 on
+the STM32F103C6. The Zephyr console output is assigned to UART_1. Default
+settings are 115200 8N1.
 
 On-Board LEDs
 -------------
@@ -122,8 +151,8 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-Applications for the ``stm32_min_dev@(blue|black)`` board configuration can be
-built and flashed in the usual way (see :ref:`build_an_application` and
+Applications for the ``stm32_min_dev@(blue|black)/stm32f103(x6|x8)`` board
+targets can be built and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
 Flashing
@@ -133,7 +162,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32_min_dev
+   :board: stm32_min_dev@blue/stm32f103x8
    :goals: build flash
 
 Debugging
@@ -144,11 +173,15 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32_min_dev
+   :board: stm32_min_dev@blue/stm32f103x8
    :maybe-skip-config:
    :goals: debug
 
 .. _STM32F103x8:
         https://www.st.com/resource/en/datasheet/stm32f103c8.pdf
+.. _STM32F103x6:
+        https://www.st.com/resource/en/datasheet/stm32f103c6.pdf
 .. _EmbedJournal:
         https://embedjournal.com/tag/stm32-min-dev/
+.. _Robu:
+        https://robu.in/product/stm32f103c6t6-core-board-with-soldering/
