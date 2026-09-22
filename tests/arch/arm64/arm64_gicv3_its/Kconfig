@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_GICV3_ITS_SMALL_LPI_POOL
+	bool "Test concurrent allocation from a small LPI pool"
+	select SCHED_CPU_MASK if SMP
+
+config NUM_IRQS
+	default 8200 if TEST_GICV3_ITS_SMALL_LPI_POOL
+
+source "Kconfig.zephyr"
