@@ -153,7 +153,7 @@ int tp_poll(struct mqtt_sn_transport *transport)
 	return recvfrom_data.sz;
 }
 
-#define NUM_TEST_CLIENTS 17
+#define NUM_TEST_CLIENTS 19
 static ZTEST_BMEM struct mqtt_sn_client mqtt_clients[NUM_TEST_CLIENTS];
 static ZTEST_BMEM struct mqtt_sn_client *mqtt_client;
 
@@ -402,6 +402,106 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_will)
 	zassert_equal(mqtt_client->state, 1, "Wrong state");
 	zassert_equal(evt_cb_data.called, 1, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_CONNECTED, "Wrong event");
+}
+
+/* Test that a second CONNECT is rejected while one is already in progress */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_already_in_progress)
+{
+	int err;
+
+	err = mqtt_sn_client_init(mqtt_client, &client_id, &transport, evt_cb, tx, sizeof(tx), rx,
+				  sizeof(rx));
+	zassert_ok(err, "unexpected error %d", err);
+
+	err = mqtt_sn_add_gw(mqtt_client, gw_id, gw_addr);
+	zassert_ok(err, "unexpected error %d", err);
+
+	err = mqtt_sn_connect(mqtt_client, false, false);
+	zassert_ok(err, "unexpected error %d", err);
+	assert_msg_send(1, 12, &gw_addr);
+
+	/* Parallel connects are not supported. */
+	err = mqtt_sn_connect(mqtt_client, false, false);
+	zassert_equal(err, -EALREADY, "unexpected error %d", err);
+}
+
+/* Test that a failed CONNECT send is retried by process_connect() */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_retries_after_send_failure)
+{
+	int err;
+	static const uint8_t connack[] = {3, 0x05, 0x00};
+
+	err = mqtt_sn_client_init(mqtt_client, &client_id, &transport, evt_cb, tx, sizeof(tx), rx,
+				  sizeof(rx));
+	zassert_ok(err, "unexpected error %d", err);
+
+	err = mqtt_sn_add_gw(mqtt_client, gw_id, gw_addr);
+	zassert_ok(err, "unexpected error %d", err);
+
+	msg_send_data.ret = -EIO;
+
+	/* A failed first send is not returned: the attempt is still retried. */
+	err = mqtt_sn_connect(mqtt_client, false, false);
+	zassert_ok(err, "unexpected error %d", err);
+	assert_msg_send(1, 12, &gw_addr);
+
+	/* Drain the TX semaphore given by the failed send above. */
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	/* process_connect() retries on its own, this time successfully. */
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_LIB_T_RETRY + 1));
+	zassert_ok(err, "Timed out waiting for CONNECT retry.");
+	assert_msg_send(1, 12, &gw_addr);
+
+	err = input(mqtt_client, connack, sizeof(connack), &gw_addr);
+	zassert_ok(err, "unexpected error %d", err);
+	zassert_equal(mqtt_client->state, 1, "Wrong state");
+	zassert_equal(evt_cb_data.called, 1, "NO event");
+	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_CONNECTED, "Wrong event");
+}
+
+/* CONNECT keeps retrying with no CONNACK, then gives up cleanly. */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_gives_up)
+{
+	int err;
+
+	err = mqtt_sn_client_init(mqtt_client, &client_id, &transport, evt_cb, tx, sizeof(tx), rx,
+				  sizeof(rx));
+	zassert_ok(err, "unexpected error %d", err);
+
+	err = mqtt_sn_add_gw(mqtt_client, gw_id, gw_addr);
+	zassert_ok(err, "unexpected error %d", err);
+
+	err = mqtt_sn_connect(mqtt_client, false, false);
+	zassert_ok(err, "unexpected error %d", err);
+	assert_msg_send(1, 12, &gw_addr);
+
+	/* Drain the TX semaphore given by the first send above. */
+	(void)k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	/* No CONNACK: N_RETRY - 1 retransmissions, each T_RETRY apart. */
+	for (size_t i = 1; i < CONFIG_MQTT_SN_LIB_N_RETRY; i++) {
+		err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_LIB_T_RETRY + 1));
+		zassert_ok(err, "Timed out waiting for CONNECT retransmission %zu", i);
+		assert_msg_send(1, 12, &gw_addr);
+	}
+
+	/* Then the client gives up. */
+	err = k_sem_take(&mqtt_sn_cb_sem, K_SECONDS(CONFIG_MQTT_SN_LIB_T_RETRY + 1));
+	zassert_ok(err, "Timed out waiting for the give-up event");
+	zassert_equal(evt_cb_data.called, 1, "Wrong number of events");
+	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_DISCONNECTED, "Wrong event");
+	zassert_equal(mqtt_client->state, 0, "Wrong state");
+
+	/* Nothing more goes out, and the pinned gateway survives. */
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_LIB_T_RETRY + 1));
+	zassert_equal(err, -EAGAIN, "Unexpected TX after giving up");
+	zassert_false(sys_slist_is_empty(&mqtt_client->gateways), "Pinned GW was deleted.");
+
+	/* A new connect is accepted again once the old one is over. */
+	err = mqtt_sn_connect(mqtt_client, false, false);
+	zassert_ok(err, "unexpected error %d", err);
+	assert_msg_send(1, 12, &gw_addr);
 }
 
 /* Test a simple incoming PUBLISH event */
