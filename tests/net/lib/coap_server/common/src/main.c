@@ -390,4 +390,47 @@ ZTEST(coap_service, test_retransmit_send_failure_no_assert)
 	zassert_ok(net_if_up(iface));
 }
 
+/* An observer is keyed by its endpoint and its token, and an empty token is
+ * a token like any other: a client that registers with one has to be
+ * notified, and has to be able to deregister again. RFC 7641 section 4.1.
+ */
+ZTEST(coap_service, test_observe_with_empty_token)
+{
+	struct net_sockaddr_in6 peer = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_packet request;
+	uint8_t buf[64];
+
+	zassert_equal(zsock_inet_pton(NET_AF_INET6, "::1", &peer.sin6_addr), 1);
+
+	/* A GET with the Observe option set to 0 and no token registers. */
+	zassert_ok(coap_packet_init(&request, buf, sizeof(buf), COAP_VERSION_1, COAP_TYPE_CON,
+				    0, NULL, COAP_METHOD_GET, coap_next_id()));
+	zassert_ok(coap_append_option_int(&request, COAP_OPTION_OBSERVE, 0));
+
+	zassert_equal(coap_resource_parse_observe(&resource_0, &request,
+						  (struct net_sockaddr *)&peer),
+		      0, "an observer with an empty token was not registered");
+
+	/* The same again is a refresh, not a second observer. */
+	zassert_equal(coap_resource_parse_observe(&resource_0, &request,
+						  (struct net_sockaddr *)&peer),
+		      0, "a refresh with an empty token was not accepted");
+
+	/* The Observe option set to 1 deregisters that same observer. */
+	zassert_ok(coap_packet_init(&request, buf, sizeof(buf), COAP_VERSION_1, COAP_TYPE_CON,
+				    0, NULL, COAP_METHOD_GET, coap_next_id()));
+	zassert_ok(coap_append_option_int(&request, COAP_OPTION_OBSERVE, 1));
+
+	zassert_equal(coap_resource_parse_observe(&resource_0, &request,
+						  (struct net_sockaddr *)&peer),
+		      1, "the observer with an empty token was not removed");
+
+	zassert_equal(coap_resource_parse_observe(&resource_0, &request,
+						  (struct net_sockaddr *)&peer),
+		      -ENOENT, "a removed observer was found again");
+}
+
 ZTEST_SUITE(coap_service, NULL, NULL, NULL, NULL, NULL);

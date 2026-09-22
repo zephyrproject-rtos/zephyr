@@ -1292,6 +1292,46 @@ ZTEST(coap, test_observer_server)
 		      "There should be no handler for this resource");
 }
 
+/* An observer registered with an empty token is found by its endpoint and
+ * that empty token, but not by the token alone, which would say nothing.
+ */
+ZTEST(coap, test_observer_empty_token)
+{
+	uint8_t request_pdu[] = {
+		0x40, 0x01, 0x12, 0x35, /* no token */
+		0x60, /* enable observe option */
+		0x51, 's', 0x01, '1', /* path */
+	};
+	struct coap_packet req;
+	struct coap_option options[4] = {};
+	struct coap_observer *observer;
+	uint8_t *data = data_buf[0];
+	uint8_t opt_num = ARRAY_SIZE(options) - 1;
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	int r;
+
+	memcpy(data, request_pdu, sizeof(request_pdu));
+
+	r = coap_packet_parse(&req, data, sizeof(request_pdu), options, opt_num);
+	zassert_equal(r, 0, "Could not initialize packet");
+
+	r = coap_handle_request(&req, server_resources, options, opt_num,
+				(struct net_sockaddr *)&dummy_addr, sizeof(dummy_addr));
+	zassert_equal(r, 0, "Could not handle packet");
+
+	observer = coap_find_observer(observers, NUM_OBSERVERS,
+				      (struct net_sockaddr *)&dummy_addr, token, 0);
+	zassert_not_null(observer, "The observer with an empty token was not found");
+	zassert_equal(observer->tkl, 0, "The observer found has a token");
+
+	zassert_is_null(coap_find_observer_by_token(observers, NUM_OBSERVERS, token, 0),
+			"An empty token alone identifies no observer");
+
+	zassert_true(coap_remove_observer(&server_resources[0], observer),
+		     "The observer could not be removed");
+	memset(observer, 0, sizeof(*observer));
+}
+
 static int resource_reply_cb(const struct coap_packet *response,
 			     struct coap_reply *reply,
 			     const struct net_sockaddr *from)

@@ -1985,6 +1985,13 @@ Libraries / Subsystems
     * The image management client now supports SHA-512 image digests. It can
       list and select images for testing or confirmation on targets built with
       :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512`.
+* Networking
+
+  * CoAP
+
+    * The CoAP server accepts an observe registration that carries an empty token, which
+      :rfc:`7641` allows, and keys the observer on the endpoint and that empty token.
+
 * Secure Storage
 
   * The ``psa_its_get*()`` functions now return ``PSA_ERROR_INVALID_SIGNATURE`` or

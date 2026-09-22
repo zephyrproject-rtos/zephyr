@@ -2136,14 +2136,19 @@ struct coap_observer *coap_find_observer(
 	const struct net_sockaddr *addr,
 	const uint8_t *token, uint8_t token_len)
 {
-	if (token_len == 0U || token_len > COAP_TOKEN_MAX_LEN) {
+	/* An empty token is a token: together with the endpoint it names
+	 * one observer, RFC 7641 section 4.1. Only a lookup by token alone
+	 * needs it to be non-empty.
+	 */
+	if (token_len > COAP_TOKEN_MAX_LEN) {
 		return NULL;
 	}
 
 	for (size_t i = 0; i < len; i++) {
 		struct coap_observer *o = &observers[i];
 
-		if (o->tkl == token_len && memcmp(o->token, token, token_len) == 0 &&
+		if (o->tkl == token_len &&
+		    (token_len == 0U || memcmp(o->token, token, token_len) == 0) &&
 		    net_sockaddr_cmp(net_sad(&o->addr), addr)) {
 			return o;
 		}
