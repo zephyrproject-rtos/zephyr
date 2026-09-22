@@ -22,11 +22,13 @@ tests:
       - frdm_mcxe31b@w25q64
       - stm32h573i_dk
       - stm32h5f5j_dk
+      - stm32h7b3i_dk
       - stm32l562e_dk
     integration_platforms:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
+      - stm32h7b3i_dk
   drivers.mspi.flash.stm32.dma:
     platform_allow:
       - stm32h573i_dk
@@ -40,9 +42,11 @@ tests:
     platform_allow:
       - stm32h573i_dk
       - stm32h5f5j_dk
+      - stm32h7b3i_dk
       - stm32l562e_dk
     integration_platforms:
       - stm32h573i_dk
+      - stm32h7b3i_dk
     extra_configs:
       - CONFIG_MSPI_MEMMAP=y
   drivers.mspi.flash.xip_read:
