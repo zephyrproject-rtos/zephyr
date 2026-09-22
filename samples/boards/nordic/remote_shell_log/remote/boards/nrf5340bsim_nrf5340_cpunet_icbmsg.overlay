@@ -4,6 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&uart120 {
-	status = "disabled";
-};
+#include "nrf5340dk_nrf5340_cpunet_icbmsg.overlay"
