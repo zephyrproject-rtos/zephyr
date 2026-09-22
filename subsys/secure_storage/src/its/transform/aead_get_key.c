@@ -9,7 +9,7 @@
 #include <string.h>
 #include <mbedtls/platform_util.h>
 
-LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
+LOG_MODULE_DECLARE(secure_storage_its, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
 #define SHA256_OUTPUT_SIZE 32
 BUILD_ASSERT(SHA256_OUTPUT_SIZE == PSA_HASH_LENGTH(PSA_ALG_SHA_256));
