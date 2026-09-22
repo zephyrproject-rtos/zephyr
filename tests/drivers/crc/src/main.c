@@ -429,6 +429,8 @@ ZTEST(crc, test_crc_threadsafe)
 		.reversed = CRC_TEST_REVERSE_CONFIG,
 	};
 
+	int ret;
+
 	/**
 	 * Create new thread that will immediately take the semaphore
 	 */
@@ -445,9 +447,17 @@ ZTEST(crc, test_crc_threadsafe)
 	 * Attempt to take semaphore, this should wait for the new thread to give the semaphore
 	 * before executing
 	 */
-	crc_begin(dev, &ctx);
-	crc_update(dev, &ctx, data, sizeof(data));
-	crc_finish(dev, &ctx);
+
+	do {
+		ret = crc_begin(dev, &ctx);
+		if (ret == -EBUSY) {
+			k_sleep(K_MSEC(5));
+		}
+	} while (ret == -EBUSY);
+
+	zassert_equal(ret, 0);
+	zassert_equal(crc_update(dev, &ctx, data, sizeof(data)), 0);
+	zassert_equal(crc_finish(dev, &ctx), 0);
 	zassert_equal(crc_verify(&ctx, CRC_TEST_THREADSAFE_EXPECTED), 0);
 }
 
