@@ -10,7 +10,7 @@
 #include <zephyr/toolchain.h>
 #include <string.h>
 
-LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
+LOG_MODULE_REGISTER(secure_storage_its, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
 #ifndef CONFIG_SECURE_STORAGE_64_BIT_UID
 BUILD_ASSERT(sizeof(secure_storage_its_uid_t) == 4); /* ITS UIDs are 32-bit */
