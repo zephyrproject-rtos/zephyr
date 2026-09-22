@@ -1,0 +1,14 @@
+# NXP i.MX GPIO driver (nxp,imx-gpio-v2)
+
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MCUX_GPIO
+	bool "NXP i.MX GPIO driver"
+	default y
+	depends on DT_HAS_NXP_IMX_GPIO_V2_ENABLED
+	select PINCTRL
+	help
+	  Enable the NXP i.MX GPIO driver for SoCs that use the
+	  nxp,imx-gpio-v2 compatible. Handles IOMUXC-based pin mux and
+	  optional LPCG clock gating.

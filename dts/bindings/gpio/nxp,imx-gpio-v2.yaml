@@ -1,0 +1,51 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP i.MX GPIO controller.
+
+  Pin mux is handled by an external IOMUXC controller; the driver requires a
+  per-port "pinmux" phandle list (when CONFIG_PINCTRL=y) because the IOMUXC
+  does not follow a fixed GPIO-port-to-pad mapping.
+
+compatible: "nxp,imx-gpio-v2"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    description: |
+      Clock gate for this GPIO port. Optional: VBAT-domain instances are
+      permanently powered and carry no gate; omit this property for those
+      nodes. All other instances (HSP and WAKE domain) gate through the CCM
+      LPCG and must provide this property so the driver opens the gate at
+      init.
+
+  pinmux:
+    type: phandles
+    description: |
+      Ordered list of IOMUXC pinmux nodes, one per pad that can be assigned
+      to this GPIO port, in pin-number order. Required when CONFIG_PINCTRL=y.
+      The IOMUXC on this SoC has no fixed GPIO-to-pad mapping, so the list
+      must be provided explicitly.
+
+  irq-output-select:
+    type: int
+    default: 0
+    description: |
+      Which of the two NVIC interrupt lines this port routes its requests to.
+        0 = first IRQ line, channel A (default)
+        1 = second IRQ line, channel B
+    enum:
+      - 0
+      - 1
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
