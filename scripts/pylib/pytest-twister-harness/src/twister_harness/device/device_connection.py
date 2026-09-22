@@ -445,6 +445,7 @@ class FifoConnection(ProcessConnection):
 
     def _clear_internal_resources(self) -> None:
         super()._clear_internal_resources()
+        self._fifo_connection.disconnect()
         self._fifo_connection.cleanup()
 
 
