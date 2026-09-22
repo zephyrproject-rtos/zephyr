@@ -42,6 +42,12 @@ config STM32N6_RIF_OPEN
 	  configured during SoC initialization. Zephyr running with Secure privileges has full
 	  access to all SoC resources.
 
+config STM32N6_BRANCH_CACHE
+	bool "Cortex-M55 branch cache"
+	default y
+	help
+	  Enable the Cortex-M55's branch cache during SoC initialization.
+
 source "soc/st/stm32/stm32n6x/axisram/Kconfig"
 source "soc/st/stm32/stm32n6x/npu/Kconfig"
 

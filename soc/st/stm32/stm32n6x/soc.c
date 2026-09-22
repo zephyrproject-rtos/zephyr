@@ -116,4 +116,15 @@ void soc_early_init_hook(void)
 	if (IS_ENABLED(CONFIG_STM32N6_RIF_OPEN)) {
 		soc_rif_config();
 	}
+
+	if (IS_ENABLED(CONFIG_STM32N6_BRANCH_CACHE)) {
+		/*
+		 * Enable the Cortex-M55's branch cache.
+		 * CCR.BP is banked between Security states
+		 * so this must be done in every environment.
+		 */
+		SCB->CCR |= SCB_CCR_LOB_Msk;
+		__DSB();
+		__ISB();
+	}
 }
