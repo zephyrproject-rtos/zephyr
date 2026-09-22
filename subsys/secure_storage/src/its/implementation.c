@@ -1,6 +1,7 @@
 /* Copyright (c) 2024 Nordic Semiconductor
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/secure_storage/uid.h>
 #include <zephyr/secure_storage/its.h>
 #include <zephyr/secure_storage/its/store.h>
 #include <zephyr/secure_storage/its/transform.h>
@@ -11,42 +12,6 @@
 #include <string.h>
 
 LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
-
-#ifndef CONFIG_SECURE_STORAGE_64_BIT_UID
-BUILD_ASSERT(sizeof(secure_storage_uid_t) == 4); /* ITS UIDs are 32-bit */
-BUILD_ASSERT(1 << SECURE_STORAGE_CALLER_ID_BIT_SIZE >= SECURE_STORAGE_CALLER_COUNT);
-BUILD_ASSERT(SECURE_STORAGE_CALLER_ID_BIT_SIZE + SECURE_STORAGE_UID_BIT_SIZE == 32);
-#endif
-
-/* For logging a `secure_storage_uid_t`, whose width depends on the configuration. */
-#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
-#define UID_FMT           "%u/%#llx"
-#define UID_ARGS(its_uid) (its_uid).caller_id, (unsigned long long)(its_uid).uid
-#else
-#define UID_FMT           "%u/%#lx"
-#define UID_ARGS(its_uid) (its_uid).caller_id, (unsigned long)(its_uid).uid
-#endif
-
-static psa_status_t make_its_uid(secure_storage_caller_id_t caller_id, psa_storage_uid_t uid,
-				 secure_storage_uid_t *its_uid)
-{
-	if (uid == 0) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-
-#ifndef CONFIG_SECURE_STORAGE_64_BIT_UID
-	/* Check that the UID is not bigger than the maximum defined size. */
-	if (uid & GENMASK64(63, SECURE_STORAGE_UID_BIT_SIZE)) {
-		LOG_DBG("UID %u/%#llx cannot be used as it has bits set past "
-			"the first " STRINGIFY(SECURE_STORAGE_UID_BIT_SIZE) " ones.",
-			caller_id, (unsigned long long)uid);
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-#endif /* !CONFIG_SECURE_STORAGE_64_BIT_UID */
-
-	*its_uid = (secure_storage_uid_t){.caller_id = caller_id, .uid = uid};
-	return PSA_SUCCESS;
-}
 
 static void log_failed_operation(const char *operation, const char *preposition, psa_status_t ret)
 {
@@ -123,8 +88,8 @@ static bool keep_stored_entry(secure_storage_uid_t uid, size_t data_length, cons
 		 * forever, but make it visible as it may be a sign of corruption or tampering.
 		 */
 		if (*ret != PSA_ERROR_DOES_NOT_EXIST) {
-			LOG_WRN("%s entry " UID_FMT " that failed to be read back. (%d)",
-				"Overwriting", UID_ARGS(uid), *ret);
+			LOG_WRN("%s entry " SS_UID_FMT " that failed to be read back. (%d)",
+				"Overwriting", SS_UID_ARGS(uid), *ret);
 		}
 		return false;
 	}
@@ -135,8 +100,8 @@ static bool keep_stored_entry(secure_storage_uid_t uid, size_t data_length, cons
 	if (existing_data_len == data_length &&
 	    existing_create_flags == create_flags &&
 	    !memcmp(existing_data, p_data, data_length)) {
-		LOG_DBG("Not writing entry " UID_FMT " to storage because its stored data"
-			" (of length %zu) is identical.", UID_ARGS(uid), data_length);
+		LOG_DBG("Not writing entry " SS_UID_FMT " to storage because its stored data"
+			" (of length %zu) is identical.", SS_UID_ARGS(uid), data_length);
 		*ret = PSA_SUCCESS;
 		return true;
 	}
@@ -171,7 +136,7 @@ static psa_status_t its_set(secure_storage_caller_id_t caller_id, psa_storage_ui
 	psa_status_t ret;
 	secure_storage_uid_t its_uid;
 
-	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
+	if (secure_storage_make_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 	if (create_flags & ~SECURE_STORAGE_ALL_CREATE_FLAGS) {
@@ -201,7 +166,7 @@ psa_status_t secure_storage_its_get(secure_storage_caller_id_t caller_id, psa_st
 	size_t stored_data_len;
 	psa_storage_create_flags_t create_flags;
 
-	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
+	if (secure_storage_make_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -239,7 +204,7 @@ psa_status_t secure_storage_its_get_info(secure_storage_caller_id_t caller_id,
 	secure_storage_uid_t its_uid;
 	uint8_t data[CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE];
 
-	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
+	if (secure_storage_make_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -258,7 +223,7 @@ static psa_status_t its_remove(secure_storage_caller_id_t caller_id, psa_storage
 	uint8_t data[CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE];
 	size_t data_len;
 
-	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
+	if (secure_storage_make_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -273,8 +238,8 @@ static psa_status_t its_remove(secure_storage_caller_id_t caller_id, psa_storage
 	    ret == PSA_ERROR_INVALID_SIGNATURE ||
 	    ret == PSA_ERROR_DATA_CORRUPT) {
 		if (ret != PSA_SUCCESS) {
-			LOG_WRN("%s entry " UID_FMT " that failed to be read back. (%d)",
-				"Removing", UID_ARGS(its_uid), ret);
+			LOG_WRN("%s entry " SS_UID_FMT " that failed to be read back. (%d)",
+				"Removing", SS_UID_ARGS(its_uid), ret);
 		}
 		ret = secure_storage_its_store_remove(its_uid);
 		if (ret != PSA_SUCCESS) {

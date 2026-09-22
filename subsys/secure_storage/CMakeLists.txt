@@ -16,14 +16,24 @@ zephyr_include_directories(
   include
 )
 
+# Outputs, in `deps_var`, the subsystem headers included by `header`, if any.
+function(get_common_header header deps_var)
+  if(header STREQUAL "its.h" OR header STREQUAL "ps.h")
+    set(deps "common.h" "uid.h")
+  elseif((header MATCHES "^its") AND NOT (header STREQUAL "its/common.h"))
+    set(deps "common.h" "its/common.h" "uid.h")
+  else()
+    set(deps "")
+  endif()
+  set(${deps_var} "${deps}" PARENT_SCOPE)
+endfunction()
+
 # Make the secure_storage headers available to the application only when it's implementing the relevant APIs.
 function(make_available header)
-  if(NOT header STREQUAL "common.h")
-    make_available(common.h)
-  endif()
-  if((header MATCHES "^its") AND NOT (header STREQUAL "its/common.h"))
-    make_available(its/common.h)
-  endif()
+  get_common_header(${header} deps)
+  foreach(dep IN LISTS deps)
+    make_available(${dep})
+  endforeach()
   configure_file(include/internal/zephyr/secure_storage/${header}
                  ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/secure_storage/${header}
                  COPYONLY)

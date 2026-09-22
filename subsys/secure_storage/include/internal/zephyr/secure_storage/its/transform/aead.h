@@ -12,7 +12,7 @@
  * This header file may and must be included when providing a custom implementation of one
  * or more of these functions (@kconfig_regex{CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_.*_CUSTOM}).
  */
-#include <zephyr/secure_storage/its/common.h>
+#include <zephyr/secure_storage/uid.h>
 #include <psa/crypto_types.h>
 
 /** @brief ITS transform AEAD tag size */

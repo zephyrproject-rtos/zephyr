@@ -2,5 +2,6 @@
 
 zephyr_library_sources(
   log.c
+  uid.c
 )
 add_subdirectory(its)

@@ -11,7 +11,8 @@
  * They must not be called directly, and this header must not be included other than when
  * providing a custom implementation (@kconfig{CONFIG_SECURE_STORAGE_ITS_IMPLEMENTATION_CUSTOM}).
  */
-#include "its/common.h"
+#include <psa/storage_common.h>
+#include "common.h"
 
 /** @brief See `psa_its_set()`, to which this function is analogous. */
 psa_status_t secure_storage_its_set(secure_storage_caller_id_t caller_id, psa_storage_uid_t uid,

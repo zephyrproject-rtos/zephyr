@@ -16,6 +16,7 @@
  * atomic with respect to each other, so that a retrieval returns either the previous or the
  * new data of an entry, never a mix of both.
  */
+#include <zephyr/secure_storage/uid.h>
 #include <zephyr/secure_storage/its/common.h>
 
 /** @brief Writes the data of an ITS entry to the storage medium.

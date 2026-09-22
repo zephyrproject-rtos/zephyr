@@ -11,6 +11,7 @@
  * This header may be included when providing a custom implementation of the
  * ITS transform module (@kconfig{CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_CUSTOM}).
  */
+#include <zephyr/secure_storage/uid.h>
 #include <zephyr/secure_storage/its/common.h>
 
 /** @brief Transforms the data of an ITS entry for storage.

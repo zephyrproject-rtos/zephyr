@@ -12,6 +12,7 @@
  * providing a custom implementation (@kconfig{CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_CUSTOM}).
  */
 #include <psa/storage_common.h>
+#include "common.h"
 
 /** @brief See `psa_ps_set()`, to which this function is analogous. */
 psa_status_t secure_storage_ps_set(const psa_storage_uid_t uid, size_t data_length,
