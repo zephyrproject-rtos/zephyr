@@ -26,6 +26,10 @@ LOG_MODULE_REGISTER(dac_mcux_lpdac, CONFIG_DAC_LOG_LEVEL);
  * A suspend switches the analog output buffer off and a resume restores the last
  * value written, so a consumer that keeps its reference does not have to call
  * dac_channel_setup() again.
+ *
+ * A state that power gates the DAC resets its register block. TURN_ON rebuilds
+ * the devicetree configuration of an instance that was already set up, so a
+ * resume after a power cycle restores the output the same way.
  */
 
 struct mcux_lpdac_config {
@@ -126,6 +130,23 @@ static int mcux_lpdac_pm_callback(const struct device *dev, enum pm_device_actio
 	int err;
 
 	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * The register block may have just come back from a power loss
+		 * with GCR and DATA at their reset values, and nothing re-runs
+		 * driver init on that path. Rebuild the configuration, but only
+		 * for an instance the application has already set up: an
+		 * untouched DAC keeps the reset state it had before this ran.
+		 *
+		 * The block is left disabled, which is the state the core
+		 * records for the device once this returns.
+		 */
+		if (data->configured) {
+			mcux_lpdac_configure(dev);
+		}
+
+		return 0;
+
 	case PM_DEVICE_ACTION_RESUME:
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err < 0 && err != -ENOENT) {
@@ -158,6 +179,13 @@ static int mcux_lpdac_pm_callback(const struct device *dev, enum pm_device_actio
 			return err;
 		}
 
+		return 0;
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/*
+		 * Nothing to do: the core suspends the device before it turns
+		 * it off, so the output buffer is already off.
+		 */
 		return 0;
 
 	default:
