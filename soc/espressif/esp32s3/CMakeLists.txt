@@ -10,9 +10,11 @@ else()
 
   zephyr_sources(
     soc.c
-    esp32s3-mp.c
     ../common/loader.c
     )
+
+  zephyr_sources_ifdef(CONFIG_SMP esp32s3_smp.c ../common/esp_mp_stall.c)
+  zephyr_sources_ifdef(CONFIG_SOC_ENABLE_APPCPU esp32s3_amp.c)
 
 endif()
 

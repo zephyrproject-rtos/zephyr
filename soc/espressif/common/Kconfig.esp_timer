@@ -26,3 +26,12 @@ config SOC_ESP32_TIMER_TASK_CORE_ID
 	help
 	  Resolved core id for the esp_timer task (0 or 1). Consumed by the
 	  esp_timer task-create path to pin the task.
+
+config ESP32_TIMER_IN_IRAM
+	bool
+	help
+	  Place the esp_timer arm, disarm and time query paths in IRAM so
+	  they can run while the flash cache is suspended. Selected by the
+	  light sleep IRAM option and enabled for SMP builds, where the radio
+	  blobs call these from IRAM interrupt handlers on a core that may be
+	  parked during a flash operation on the other core.

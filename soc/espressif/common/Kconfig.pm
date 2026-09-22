@@ -111,9 +111,6 @@ config SOC_ESP32_PM_WAKEUP_MARGIN_US
 	  optimization shortens it by keeping the early wake path independent
 	  of the flash cache.
 
-config ESP32_TIMER_IN_IRAM
-	bool
-
 config ESP32_PM_SLP_IRAM_OPT
 	bool "Put light sleep path code in internal RAM"
 	select ESP32_TIMER_IN_IRAM
