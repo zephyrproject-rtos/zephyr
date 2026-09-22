@@ -1104,7 +1104,7 @@ else()
   set(NO_WHOLE_ARCHIVE_LIBS kernel)
 endif()
 
-if(CONFIG_LLEXT)
+if(CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_SYSCALL)
   # LLEXT exports symbols for all syscalls, including unimplemented ones.
   # Weak definitions for these must be added at the end of the link order
   # to avoid shadowing actual implementations.
