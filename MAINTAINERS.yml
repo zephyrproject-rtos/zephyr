@@ -4278,6 +4278,8 @@ Multimedia Pipeline:
   status: maintained
   maintainers:
     - ngphibang
+  collaborators:
+    - josuah
   files:
     - doc/services/mpipe/
     - include/zephyr/mpipe/
