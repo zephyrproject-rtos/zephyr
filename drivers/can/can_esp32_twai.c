@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(can_esp32_twai, CONFIG_CAN_LOG_LEVEL);
 #ifndef CONFIG_SOC_SERIES_ESP32
 
 /* TWAI_BUS_TIMING_0_REG is incompatible with CAN_SJA1000_BTR0 */
-#define TWAI_BUS_TIMING_0_REG           (6U)
+#define TWAI_BUS_TIMING_0_REG_IDX       (6U)
 #define TWAI_BAUD_PRESC_MASK            GENMASK(12, 0)
 #define TWAI_SYNC_JUMP_WIDTH_MASK       GENMASK(15, 14)
 #define TWAI_BAUD_PRESC_PREP(brp)	FIELD_PREP(TWAI_BAUD_PRESC_MASK, brp)
@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(can_esp32_twai, CONFIG_CAN_LOG_LEVEL);
  * TWAI_BUS_TIMING_1_REG is compatible with CAN_SJA1000_BTR1, but needed here for the custom
  * set_timing() function.
  */
-#define TWAI_BUS_TIMING_1_REG           (7U)
+#define TWAI_BUS_TIMING_1_REG_IDX       (7U)
 #define TWAI_TIME_SEG1_MASK             GENMASK(3, 0)
 #define TWAI_TIME_SEG2_MASK             GENMASK(6, 4)
 #define TWAI_TIME_SAMP                  BIT(7)
@@ -47,9 +47,9 @@ LOG_MODULE_REGISTER(can_esp32_twai, CONFIG_CAN_LOG_LEVEL);
 #define TWAI_TIME_SEG2_PREP(seg2)       FIELD_PREP(TWAI_TIME_SEG2_MASK, seg2)
 
 /* TWAI_CLOCK_DIVIDER_REG is incompatible with CAN_SJA1000_CDR */
-#define TWAI_CLOCK_DIVIDER_REG          (31U)
+#define TWAI_CLOCK_DIVIDER_REG_IDX      (31U)
 #define TWAI_CD_MASK			GENMASK(7, 0)
-#define TWAI_CLOCK_OFF			BIT(8)
+#define TWAI_CD_CLOCK_OFF		BIT(8)
 
 /*
  * Further incompatible registers currently not used by the driver:
@@ -61,7 +61,7 @@ LOG_MODULE_REGISTER(can_esp32_twai, CONFIG_CAN_LOG_LEVEL);
 
 /* Redefinitions of the SJA1000 CDR bits to simplify driver config */
 #define TWAI_CD_MASK			GENMASK(2, 0)
-#define TWAI_CLOCK_OFF			BIT(3)
+#define TWAI_CD_CLOCK_OFF		BIT(3)
 
 #endif /* !CONFIG_SOC_SERIES_ESP32 */
 
@@ -136,8 +136,8 @@ static int can_esp32_twai_set_timing(const struct device *dev, const struct can_
 		btr1 |= TWAI_TIME_SAMP;
 	}
 
-	can_esp32_twai_write_reg32(dev, TWAI_BUS_TIMING_0_REG, btr0);
-	can_esp32_twai_write_reg32(dev, TWAI_BUS_TIMING_1_REG, btr1);
+	can_esp32_twai_write_reg32(dev, TWAI_BUS_TIMING_0_REG_IDX, btr0);
+	can_esp32_twai_write_reg32(dev, TWAI_BUS_TIMING_1_REG_IDX, btr1);
 
 	k_mutex_unlock(&data->mod_lock);
 
@@ -201,7 +201,7 @@ static int can_esp32_twai_init(const struct device *dev)
 	 *
 	 * Overwrite with 32-bit register variant configured via devicetree.
 	 */
-	can_esp32_twai_write_reg32(dev, TWAI_CLOCK_DIVIDER_REG, twai_config->cdr32);
+	can_esp32_twai_write_reg32(dev, TWAI_CLOCK_DIVIDER_REG_IDX, twai_config->cdr32);
 #endif /* !CONFIG_SOC_SERIES_ESP32 */
 
 	err = esp_intr_alloc(twai_config->irq_source,
@@ -269,7 +269,7 @@ DEVICE_API(can, can_esp32_twai_driver_api) = {
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clkout_divider),                                   \
 		    COND_CODE_1(DT_INST_PROP(inst, clkout_divider) == 1, (TWAI_CD_MASK),           \
 				((DT_INST_PROP(inst, clkout_divider)) / 2 - 1)),                   \
-		    (TWAI_CLOCK_OFF))
+		    (TWAI_CD_CLOCK_OFF))
 
 #define CAN_ESP32_TWAI_INIT(inst)                                                                  \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
