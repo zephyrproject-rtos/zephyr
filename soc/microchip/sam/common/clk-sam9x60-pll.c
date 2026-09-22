@@ -260,15 +260,28 @@ static int sam9x60_clk_frac_pll_get_rate(const struct device *dev,
 
 	struct sam9x60_pll_core *core = to_sam9x60_pll_core(dev);
 	struct sam9x60_frac *frac = to_sam9x60_frac(core);
-	int retval = 0;
+	pmc_registers_t *pmc = core->pmc;
+	uint32_t ctrl1, mul, fracr;
+	k_spinlock_key_t key;
+	int retval;
 
 	retval = clock_control_get_rate(frac->core.parent, NULL, rate);
 	if (retval) {
 		LOG_ERR("get parent clock rate failed.");
 		*rate = 0;
 	} else {
-		*rate = *rate * (frac->mul + 1) +
-			DIV_ROUND_CLOSEST_ULL((uint64_t)*rate * frac->frac, (1<<22));
+		key = k_spin_lock(core->lock);
+
+		reg_update_bits(pmc->PMC_PLL_UPDT, PMC_PLL_UPDT_ID_Msk, core->id);
+		ctrl1 = pmc->PMC_PLL_CTRL1;
+
+		k_spin_unlock(core->lock, key);
+
+		mul = FIELD_GET(PMC_PLL_CTRL1_MUL_MSK, ctrl1);
+		fracr = FIELD_GET(PMC_PLL_CTRL1_FRACR_MSK, ctrl1);
+
+		*rate = *rate * (mul + 1) +
+			DIV_ROUND_CLOSEST_ULL((uint64_t)*rate * fracr, (1 << 22));
 	}
 	LOG_DBG("clk %s: rate %d", dev->name, *rate);
 
