@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
  * Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,8 +15,22 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
 
 #include <soc.h>
+#include <soc/soc_caps.h>
+
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) &&                               \
+	defined(SOC_TWAI_SUPPORT_SLEEP_RETENTION)
+#define CAN_ESP32_TWAI_SLEEP_RETENTION_ENABLED 1
+#else
+#define CAN_ESP32_TWAI_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if CAN_ESP32_TWAI_SLEEP_RETENTION_ENABLED
+#include <esp_private/sleep_retention.h>
+#include <hal/twai_periph.h>
+#endif
 
 LOG_MODULE_REGISTER(can_esp32_twai, CONFIG_CAN_LOG_LEVEL);
 
@@ -78,6 +93,65 @@ struct can_esp32_twai_config {
 	uint32_t cdr32;
 #endif /* !CONFIG_SOC_SERIES_ESP32 */
 };
+
+struct can_esp32_twai_data {
+	bool pm_lock_held;
+};
+
+static void can_esp32_twai_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct can_sja1000_data *sja1000_data = dev->data;
+	struct can_esp32_twai_data *data = sja1000_data->custom;
+	unsigned int key = irq_lock();
+
+	if (!data->pm_lock_held) {
+		data->pm_lock_held = true;
+		pm_policy_state_all_lock_get();
+	}
+
+	irq_unlock(key);
+}
+
+static void can_esp32_twai_pm_policy_sync_lock(const struct device *dev)
+{
+	struct can_sja1000_data *sja1000_data = dev->data;
+	struct can_esp32_twai_data *data = sja1000_data->custom;
+	unsigned int key = irq_lock();
+	bool must_lock = sja1000_data->common.started;
+
+	if (must_lock && !data->pm_lock_held) {
+		data->pm_lock_held = true;
+		pm_policy_state_all_lock_get();
+	} else if (!must_lock && data->pm_lock_held) {
+		data->pm_lock_held = false;
+		pm_policy_state_all_lock_put();
+	}
+
+	irq_unlock(key);
+}
+
+static int can_esp32_twai_start(const struct device *dev)
+{
+	int err;
+
+	can_esp32_twai_pm_policy_state_lock_get(dev);
+
+	err = can_sja1000_start(dev);
+	if (err != 0) {
+		can_esp32_twai_pm_policy_sync_lock(dev);
+	}
+
+	return err;
+}
+
+static int can_esp32_twai_stop(const struct device *dev)
+{
+	int err = can_sja1000_stop(dev);
+
+	can_esp32_twai_pm_policy_sync_lock(dev);
+
+	return err;
+}
 
 static uint8_t can_esp32_twai_read_reg(const struct device *dev, uint8_t reg)
 {
@@ -163,10 +237,61 @@ static void IRAM_ATTR can_esp32_twai_isr(void *arg)
 	can_sja1000_isr(dev);
 }
 
+#if CAN_ESP32_TWAI_SLEEP_RETENTION_ENABLED
+static int can_esp32_twai_controller_id(int irq_source)
+{
+	for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
+		if (twai_periph_signals[i].irq_id == irq_source) {
+			return i;
+		}
+	}
+
+	return -ENODEV;
+}
+
+static esp_err_t can_esp32_twai_create_sleep_retention_cb(void *arg)
+{
+	uint32_t id = (uint32_t)(uintptr_t)arg;
+
+	return sleep_retention_entries_create(twai_reg_retention_info[id].entry_array,
+					      twai_reg_retention_info[id].array_size,
+					      REGDMA_LINK_PRI_TWAI,
+					      twai_reg_retention_info[id].module_id);
+}
+
+static void can_esp32_twai_sleep_retention_init(uint32_t id)
+{
+	sleep_retention_module_t module = twai_reg_retention_info[id].module_id;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = can_esp32_twai_create_sleep_retention_cb,
+				   .arg = (void *)(uintptr_t)id}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
+	}
+
+	if (err != ESP_OK) {
+		LOG_WRN("TWAI%u sleep retention unavailable (err %d), "
+			"peripheral power domain will stay on",
+			(unsigned int)id, err);
+	}
+}
+#endif /* CAN_ESP32_TWAI_SLEEP_RETENTION_ENABLED */
+
 static int can_esp32_twai_init(const struct device *dev)
 {
 	const struct can_sja1000_config *sja1000_config = dev->config;
 	const struct can_esp32_twai_config *twai_config = sja1000_config->custom;
+#if CAN_ESP32_TWAI_SLEEP_RETENTION_ENABLED
+	int id;
+#endif
 	int err;
 
 	if (!device_is_ready(twai_config->clock_dev)) {
@@ -211,15 +336,27 @@ static int can_esp32_twai_init(const struct device *dev)
 
 	if (err != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", err);
+		return err;
 	}
 
-	return err;
+#if CAN_ESP32_TWAI_SLEEP_RETENTION_ENABLED
+	id = can_esp32_twai_controller_id(twai_config->irq_source);
+	if (id < 0) {
+		LOG_ERR("could not match interrupt source %d to a TWAI controller",
+			twai_config->irq_source);
+		return id;
+	}
+
+	can_esp32_twai_sleep_retention_init((uint32_t)id);
+#endif
+
+	return 0;
 }
 
 DEVICE_API(can, can_esp32_twai_driver_api) = {
 	.get_capabilities = can_sja1000_get_capabilities,
-	.start = can_sja1000_start,
-	.stop = can_sja1000_stop,
+	.start = can_esp32_twai_start,
+	.stop = can_esp32_twai_stop,
 	.set_mode = can_sja1000_set_mode,
 #ifdef CONFIG_SOC_SERIES_ESP32
 	.set_timing = can_sja1000_set_timing,
@@ -292,8 +429,10 @@ DEVICE_API(can, can_esp32_twai_driver_api) = {
 					COND_CODE_0(IS_ENABLED(CONFIG_SOC_SERIES_ESP32), (0),      \
 					(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))), 25000);           \
                                                                                                    \
+	static struct can_esp32_twai_data can_esp32_twai_data_##inst;                              \
+                                                                                                   \
 	static struct can_sja1000_data can_sja1000_data_##inst =                                   \
-		CAN_SJA1000_DATA_INITIALIZER(NULL);                                                \
+		CAN_SJA1000_DATA_INITIALIZER(&can_esp32_twai_data_##inst);                         \
                                                                                                    \
 	CAN_DEVICE_DT_INST_DEFINE(inst, can_esp32_twai_init, NULL, &can_sja1000_data_##inst,       \
 				  &can_sja1000_config_##inst, POST_KERNEL,                         \
