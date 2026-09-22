@@ -29,4 +29,7 @@ typedef __pid_t pid_t;
 
 #include_next <time.h>
 
+#define _TIMESPEC_DECLARED
+#define _TIMEVAL_DECLARED
+
 #endif /* ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_TIME_H_ */

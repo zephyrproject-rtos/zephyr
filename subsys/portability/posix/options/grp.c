@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <zephyr/sys/util.h>
-#include <zephyr/posix/grp.h>
+#include <grp.h>
 
 int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize,
 	       struct group **result)
