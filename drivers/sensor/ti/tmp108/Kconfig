@@ -18,7 +18,7 @@ menuconfig TMP108
 
 if TMP108
 
-config TMP108_ALERT_INTERRUPTS
+config TMP108_TRIGGER
 	bool "Allow interrupts to service over and under temp alerts"
 	help
 	  This will set up interrupts to service under and over temp alerts

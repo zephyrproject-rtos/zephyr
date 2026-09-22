@@ -16,7 +16,7 @@ menuconfig TMP1075
 
 if TMP1075
 
-config TMP1075_ALERT_INTERRUPTS
+config TMP1075_TRIGGER
 	bool "Allow interrupts to service over and under temp alerts"
 	help
 	  This will set up interrupts to service under and over temp alerts
