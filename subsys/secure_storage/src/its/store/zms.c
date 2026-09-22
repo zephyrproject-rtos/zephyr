@@ -38,23 +38,23 @@ SYS_INIT(init_zms, APPLICATION, CONFIG_SECURE_STORAGE_INIT_PRIORITY);
 /* Bit position of the ITS caller ID in the ZMS entry ID. */
 #define ITS_CALLER_ID_POS 30
 /* Make sure that every ITS caller ID fits in ZMS entry IDs at the defined position. */
-BUILD_ASSERT(1 << (32 - ITS_CALLER_ID_POS) >= SECURE_STORAGE_ITS_CALLER_COUNT);
+BUILD_ASSERT(1 << (32 - ITS_CALLER_ID_POS) >= SECURE_STORAGE_CALLER_COUNT);
 
-static uint32_t zms_id_from(secure_storage_its_uid_t uid)
+static uint32_t zms_id_from(secure_storage_uid_t uid)
 {
 	__ASSERT_NO_MSG(!(uid.uid & GENMASK64(63, ITS_CALLER_ID_POS)));
 	return (uint32_t)uid.uid | (uid.caller_id << ITS_CALLER_ID_POS);
 }
 #else
 
-static uint32_t zms_id_from(secure_storage_its_uid_t uid)
+static uint32_t zms_id_from(secure_storage_uid_t uid)
 {
 	BUILD_ASSERT(sizeof(uid) == sizeof(uint32_t));
 	return *(uint32_t *)&uid;
 }
 #endif /* CONFIG_SECURE_STORAGE_64_BIT_UID */
 
-psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
+psa_status_t secure_storage_its_store_set(secure_storage_uid_t uid,
 					  size_t data_length, const void *data)
 {
 	psa_status_t psa_ret;
@@ -74,7 +74,7 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 	return psa_ret;
 }
 
-psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t data_size,
+psa_status_t secure_storage_its_store_get(secure_storage_uid_t uid, size_t data_size,
 					  void *data, size_t *data_length)
 {
 	psa_status_t psa_ret;
@@ -95,7 +95,7 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 	return psa_ret;
 }
 
-psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
+psa_status_t secure_storage_its_store_remove(secure_storage_uid_t uid)
 {
 	int ret;
 	const uint32_t zms_id = zms_id_from(uid);

@@ -43,14 +43,14 @@ static psa_status_t hash_data_into_key(
 #define WARNING "Using a potentially insecure PSA ITS encryption key provider."
 
 psa_status_t secure_storage_its_transform_aead_get_key(
-		secure_storage_its_uid_t uid,
+		secure_storage_uid_t uid,
 		uint8_t key[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE])
 {
 	psa_status_t ret;
 	ssize_t hwinfo_ret;
 	struct {
 		uint8_t device_id[8];
-		secure_storage_its_uid_t uid; /* acts as a salt */
+		secure_storage_uid_t uid; /* acts as a salt */
 	} __packed data;
 
 	hwinfo_ret = hwinfo_get_device_eui64(data.device_id);
@@ -76,7 +76,7 @@ psa_status_t secure_storage_its_transform_aead_get_key(
 #define WARNING "Using an insecure PSA ITS encryption key provider."
 
 psa_status_t secure_storage_its_transform_aead_get_key(
-		secure_storage_its_uid_t uid,
+		secure_storage_uid_t uid,
 		uint8_t key[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE])
 {
 	return hash_data_into_key(sizeof(uid), &uid, key);

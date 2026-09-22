@@ -33,7 +33,7 @@ BUILD_ASSERT(CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN ==
 	     + 2 * sizeof(psa_storage_uid_t) /* hex UID */);
 
 void secure_storage_its_store_settings_get_name(
-	secure_storage_its_uid_t uid,
+	secure_storage_uid_t uid,
 	char name[static SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE])
 {
 	int ret;
@@ -52,7 +52,7 @@ void secure_storage_its_store_settings_get_name(
 
 #endif /* !CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM */
 
-psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
+psa_status_t secure_storage_its_store_set(secure_storage_uid_t uid,
 					  size_t data_length, const void *data)
 {
 	int ret;
@@ -91,7 +91,7 @@ static int load_direct_setting(const char *key, size_t len, settings_read_cb rea
 	return 0;
 }
 
-psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t data_size,
+psa_status_t secure_storage_its_store_get(secure_storage_uid_t uid, size_t data_size,
 					  void *data, size_t *data_length)
 {
 	psa_status_t ret;
@@ -114,7 +114,7 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 	return ret;
 }
 
-psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
+psa_status_t secure_storage_its_store_remove(secure_storage_uid_t uid)
 {
 	int ret;
 	char name[SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE];

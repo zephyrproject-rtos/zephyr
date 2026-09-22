@@ -26,7 +26,7 @@
  *
  * @return One of the return values of `psa_its_set()`.
  */
-psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
+psa_status_t secure_storage_its_store_set(secure_storage_uid_t uid,
 					  size_t data_length, const void *data);
 
 /** @brief Retrieves the data of an ITS entry from the storage medium.
@@ -41,7 +41,7 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
  * @retval PSA_ERROR_DOES_NOT_EXIST  The entry was not found from the storage.
  * @retval PSA_ERROR_STORAGE_FAILURE Some storage failure happened.
  */
-psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t data_size,
+psa_status_t secure_storage_its_store_get(secure_storage_uid_t uid, size_t data_size,
 					  void *data, size_t *data_length);
 
 /** @brief Removes an ITS entry from the storage medium.
@@ -50,6 +50,6 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
  *
  * @return `PSA_SUCCESS` on success, anything else on failure.
  */
-psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid);
+psa_status_t secure_storage_its_store_remove(secure_storage_uid_t uid);
 
 #endif

@@ -7,14 +7,14 @@
 #include <string.h>
 
 static struct {
-	secure_storage_its_uid_t uid;
+	secure_storage_uid_t uid;
 	size_t data_length;
 	uint8_t data[SECURE_STORAGE_ITS_TRANSFORM_MAX_STORED_DATA_SIZE];
 } s_its_entries[100];
 
 static K_MUTEX_DEFINE(s_its_entries_mutex);
 
-static int get_existing_entry_index(secure_storage_its_uid_t uid)
+static int get_existing_entry_index(secure_storage_uid_t uid)
 {
 	__ASSERT_NO_MSG(uid.uid != 0);
 
@@ -26,7 +26,7 @@ static int get_existing_entry_index(secure_storage_its_uid_t uid)
 	return -1;
 }
 
-psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
+psa_status_t secure_storage_its_store_set(secure_storage_uid_t uid,
 					  size_t data_length, const void *data)
 {
 	k_mutex_lock(&s_its_entries_mutex, K_FOREVER);
@@ -55,7 +55,7 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 	return PSA_SUCCESS;
 }
 
-psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t data_size,
+psa_status_t secure_storage_its_store_get(secure_storage_uid_t uid, size_t data_size,
 					  void *data, size_t *data_length)
 {
 	k_mutex_lock(&s_its_entries_mutex, K_FOREVER);
@@ -73,7 +73,7 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 	return PSA_SUCCESS;
 }
 
-psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
+psa_status_t secure_storage_its_store_remove(secure_storage_uid_t uid)
 {
 	k_mutex_lock(&s_its_entries_mutex, K_FOREVER);
 

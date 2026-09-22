@@ -40,7 +40,7 @@
  * @return `PSA_SUCCESS` on success, anything else on failure.
  */
 psa_status_t secure_storage_its_transform_aead_crypt(
-		psa_key_usage_t operation, secure_storage_its_uid_t uid,
+		psa_key_usage_t operation, secure_storage_uid_t uid,
 		const uint8_t nonce[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE],
 		size_t add_data_len, const uint8_t *add_data, size_t input_len,
 		const uint8_t *input, size_t output_size, uint8_t *output, size_t *output_len);
@@ -66,7 +66,7 @@ void secure_storage_its_transform_aead_get_scheme(psa_key_type_t *key_type, psa_
  * @return `PSA_SUCCESS` on success, anything else on failure.
  */
 psa_status_t secure_storage_its_transform_aead_get_key(
-		secure_storage_its_uid_t uid,
+		secure_storage_uid_t uid,
 		uint8_t key[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE]);
 
 #endif /* SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM */
