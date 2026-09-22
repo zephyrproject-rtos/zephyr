@@ -25,6 +25,9 @@ struct lbu_data {
 	uint32_t log_format_current;
 	volatile bool in_panic;
 	bool use_async;
+#if defined(CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE)
+	bool pm_held;
+#endif
 };
 
 struct lbu_cb_ctx {
@@ -82,13 +85,18 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	struct lbu_data *lb_data = cb_ctx->data;
 	const struct device *uart_dev = LBU_UART_DEV(cb_ctx);
 
-#ifdef CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE
-	(void)pm_device_action_run(uart_dev, PM_DEVICE_ACTION_RESUME);
-#endif /* CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE */
-
+#if defined(CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE)
+	if (!lb_data->pm_held) {
+		if (pm_device_runtime_get(uart_dev) < 0) {
+			return length;
+		}
+		lb_data->pm_held = true;
+	}
+#else
 	if (pm_device_runtime_get(uart_dev) < 0) {
 		return length;
 	}
+#endif
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX)) {
 		dict_char_out_hex(uart_dev, data, length);
@@ -111,7 +119,9 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 
 	(void)err;
 cleanup:
+#if !defined(CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE)
 	(void)pm_device_runtime_put_async(uart_dev, K_MSEC(1));
+#endif
 
 	return length;
 }
@@ -204,21 +214,21 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	}
 }
 
-#ifdef CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE
+#if defined(CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE)
 static void notify(const struct log_backend *const backend,
 		  enum log_backend_evt event,
 		  union log_backend_evt_arg *arg)
 {
-	ARG_UNUSED(arg);
-
-	if (event != LOG_BACKEND_EVT_PROCESS_THREAD_DONE) {
-		return;
-	}
-
 	const struct lbu_cb_ctx *ctx = backend->cb->ctx;
+	struct lbu_data *data = ctx->data;
 	const struct device *uart_dev = LBU_UART_DEV(ctx);
 
-	(void)pm_device_action_run(uart_dev, PM_DEVICE_ACTION_SUSPEND);
+	ARG_UNUSED(arg);
+
+	if (event == LOG_BACKEND_EVT_PROCESS_THREAD_DONE && data->pm_held) {
+		data->pm_held = false;
+		(void)pm_device_runtime_put(uart_dev);
+	}
 }
 #endif /* CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE */
 
@@ -228,7 +238,7 @@ const struct log_backend_api log_backend_uart_api = {
 	.init = log_backend_uart_init,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 	.format_set = format_set,
-#ifdef CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE
+#if defined(CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE)
 	.notify = notify,
 #endif
 };

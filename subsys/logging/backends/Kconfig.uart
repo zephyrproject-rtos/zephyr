@@ -37,30 +37,16 @@ config LOG_BACKEND_UART_AUTOSTART
 	  the backend manually using log_backend_enable().
 
 config LOG_BACKEND_UART_SUSPEND_ON_IDLE
-	bool "Suspend UART when log queue is empty"
-	depends on PM_DEVICE
-	depends on !PM_DEVICE_RUNTIME
+	bool "Suspend UART backend when log queue is idle"
+	depends on PM_DEVICE_RUNTIME
 	depends on !LOG_MODE_IMMEDIATE
-	depends on !SHELL_BACKEND_SERIAL
 	help
-	  Suspend the UART device via PM_DEVICE_ACTION_SUSPEND whenever the
-	  deferred log processing thread finishes draining the log queue
-	  (LOG_BACKEND_EVT_PROCESS_THREAD_DONE), and resume it automatically
-	  before the next log message is transmitted.
-
-	  This prevents the UART clock from keeping the SoC out of its deepest
-	  sleep states during log inactivity, reducing idle current from the
-	  mA range to uA range on typical SoCs.
-
-	  This option is the non-runtime-PM alternative to the
-	  pm_device_runtime_put_async() path already present in this backend.
-	  Enable it on platforms where CONFIG_PM_DEVICE is available but
-	  CONFIG_PM_DEVICE_RUNTIME is not configured for the console UART.
-
-	  Warning: do not enable this if CONFIG_PRINTK or any other subsystem
-	  writes directly to the console UART outside of the logging subsystem.
-	  Suspending the UART will cause those writes to fail silently or
-	  fault the system.
+	  When enabled, the UART device is suspended via Runtime PM as soon as
+	  the deferred logging queue is completely empty, and resumed automatically
+	  before the next log burst begins. This eliminates UART clock drain
+	  during CPU sleep on PM-capable platforms. Requires PM_DEVICE_RUNTIME
+	  support in the UART driver. Not compatible with immediate logging mode
+	  since there is no deferred queue to drain.
 
 backend = UART
 backend-str = uart
