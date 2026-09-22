@@ -113,6 +113,7 @@
 
 &eusart0 {
 	current-speed = <115200>;
+	hw-flow-control;
 	pinctrl-0 = <&eusart0_default>;
 	pinctrl-names = "default";
 	status = "okay";

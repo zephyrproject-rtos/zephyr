@@ -15,13 +15,13 @@
 
 	eusart0_default: eusart0_default {
 		group0 {
-			pins = <EUSART0_TX_PB2>;
+			pins = <EUSART0_TX_PB2>, <EUSART0_RTS_PA0>;
 			drive-push-pull;
 			output-high;
 		};
 
 		group1 {
-			pins = <EUSART0_RX_PB0>;
+			pins = <EUSART0_RX_PB0>, <EUSART0_CTS_PB3>;
 			input-enable;
 			silabs,input-filter;
 		};
