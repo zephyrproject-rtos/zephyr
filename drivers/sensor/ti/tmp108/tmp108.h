@@ -39,7 +39,7 @@
 	 .CONF_RST = 0x0080,                                                                       \
 	 .TEMP_MULT = 15625,                                                                       \
 	 .TEMP_DIV = 2,                                                                            \
-	 IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS, (.CONF_POL = 0x0400))}
+	 IF_ENABLED(CONFIG_TMP108_TRIGGER, (.CONF_POL = 0x0400))}
 
 #define AMS_AS6221_CONF AMS_AS6212_CONF
 
@@ -52,7 +52,7 @@
 	 .CONF_RST = 0x2210,                                                                       \
 	 .TEMP_MULT = 15625,                                                                       \
 	 .TEMP_DIV = 4,                                                                            \
-	 IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS,                                                \
+	 IF_ENABLED(CONFIG_TMP108_TRIGGER,                                                         \
 		    (.CONF_HYS0 = 0x0010, .CONF_HYS1 = 0x0020, .CONF_POL = 0x0080))}
 
 #define TI_TMP108_MODE_SHUTDOWN(x) 0
@@ -107,7 +107,7 @@ struct tmp_108_reg_def {
 	int32_t TEMP_MULT;   /** Temperature multiplier */
 	int32_t TEMP_DIV;    /** Temperature divisor */
 	uint16_t CONF_RST;   /** default reset values on init */
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP108_TRIGGER
 	uint16_t CONF_POL;  /** Alert pin Polarity configuration bit */
 	uint16_t CONF_HYS1; /** Temperature hysteresis config 1 bit  */
 	uint16_t CONF_HYS0; /** Temperature hysteresis config 2 bit */
@@ -119,9 +119,9 @@ struct tmp_108_reg_def {
 struct tmp108_config {
 	const struct i2c_dt_spec i2c_spec;
 	struct tmp_108_reg_def reg_def;
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP108_TRIGGER
 	const struct gpio_dt_spec alert_gpio;
-#endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
+#endif /* CONFIG_TMP108_TRIGGER */
 };
 
 struct tmp108_data {
@@ -129,14 +129,14 @@ struct tmp108_data {
 
 	bool one_shot_mode;
 
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP108_TRIGGER
 	const struct device *tmp108_dev;
 
 	const struct sensor_trigger *temp_alert_trigger;
 	sensor_trigger_handler_t temp_alert_handler;
 
 	struct gpio_callback temp_alert_gpio_cb;
-#endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
+#endif /* CONFIG_TMP108_TRIGGER */
 };
 
 int tmp_108_trigger_set(const struct device *dev,
