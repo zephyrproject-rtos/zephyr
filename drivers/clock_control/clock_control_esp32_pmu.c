@@ -15,7 +15,10 @@
 
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/spinlock.h>
 LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+
+static struct k_spinlock cpu_freq_lock;
 
 int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 {
@@ -227,8 +230,6 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 		esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 	}
 
-	rtc_clk_cpu_freq_get_config(&old_config);
-
 	ret = rtc_clk_cpu_freq_mhz_to_config(cpu_cfg->cpu_freq, &new_config);
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 	/*
@@ -300,13 +301,14 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	}
 #endif
 
-	unsigned int key = irq_lock();
+	k_spinlock_key_t lock_key = k_spin_lock(&cpu_freq_lock);
 
+	rtc_clk_cpu_freq_get_config(&old_config);
 	rtc_clk_cpu_freq_set_config(&new_config);
 
 	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * cpu_cfg->cpu_freq /
 				old_config.freq_mhz);
-	irq_unlock(key);
+	k_spin_unlock(&cpu_freq_lock, lock_key);
 
 #if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32C61)
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
