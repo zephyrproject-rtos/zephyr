@@ -529,6 +529,8 @@ New APIs and options
     the interrupt lock/unlock fast paths, speeding up kernel hot paths)
   * :kconfig:option:`CONFIG_EXCEPTION_DUMP` (enabled by default, can be disabled to compile
     out the fault handler output on size constrained builds)
+  * :kconfig:option:`CONFIG_RISCV_ISA_EXT_ZKR` (RISC-V Zkr entropy source extension, enabled
+    from the ``riscv,isa-extensions`` devicetree property)
   * :kconfig:option:`CONFIG_RISCV_USER_STRING_NLEN_VALIDATE` (RISC-V, validate the user
     string chunk by chunk in ``arch_user_string_nlen()`` instead of relying on the fault fixup,
     for SoCs whose load access fault is imprecise)
@@ -648,6 +650,11 @@ New APIs and options
 
   * :c:enumerator:`PIXEL_FORMAT_YUYV`
   * :c:macro:`PANEL_PIXEL_FORMAT_YUYV`
+
+* Entropy
+
+  * :kconfig:option:`CONFIG_ENTROPY_RISCV_ZKR` (architectural entropy driver based on the
+    ``seed`` CSR of the RISC-V Zkr extension)
 
 * FIDO2
 
