@@ -7,7 +7,6 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/drivers/gpio.h>
 
@@ -16,13 +15,12 @@
 static const uint16_t net_idx;
 static const uint16_t app_idx;
 static uint16_t self_addr = 1, node_addr;
-static const uint8_t dev_uuid[BT_UUID_SIZE_128] = { 0xdd, 0xdd };
-static uint8_t node_uuid[BT_UUID_SIZE_128];
+static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
+static uint8_t node_uuid[16];
 
 K_SEM_DEFINE(sem_unprov_beacon, 0, 1);
 K_SEM_DEFINE(sem_node_added, 0, 1);
-K_SEM_DEFINE(sem_bt_ready, 0, 1);
-#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#ifdef CONFIG_MESH_PROVISIONER_USE_SW0
 K_SEM_DEFINE(sem_button_pressed, 0, 1);
 #endif
 
@@ -237,84 +235,35 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 	printk("Configuration complete\n");
 }
 
-static void unprovisioned_beacon(uint8_t uuid[BT_UUID_SIZE_128],
+static void unprovisioned_beacon(uint8_t uuid[16],
 				 bt_mesh_prov_oob_info_t oob_info,
 				 uint32_t *uri_hash)
 {
-	uint8_t i = 0;
-
-	/* Check if UUID is already set */
-	for (i = 0; i < BT_UUID_SIZE_128; i++) {
-		if (node_uuid[i] != 0) {
-			break;
-		}
-	}
-
-	/* Only set a new UUID if not currently set */
-	if (i == BT_UUID_SIZE_128) {
-		memcpy(node_uuid, uuid, BT_UUID_SIZE_128);
-		k_sem_give(&sem_unprov_beacon);
-	}
+	memcpy(node_uuid, uuid, 16);
+	k_sem_give(&sem_unprov_beacon);
 }
 
-static void node_added(uint16_t idx, uint8_t uuid[BT_UUID_SIZE_128], uint16_t addr, uint8_t num_elem)
+static void node_added(uint16_t idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem)
 {
 	node_addr = addr;
 	k_sem_give(&sem_node_added);
-}
-
-static void node_capabilities(const struct bt_mesh_dev_capabilities *cap)
-{
-	printk("Node capabilities received:\n");
-	printk("  Elem Count: %u\n", cap->elem_count);
-	printk("  Algorithms: %u\n", cap->algorithms);
-	printk("  Pub Key Type: %u\n", cap->pub_key_type);
-	printk("  OOB Type: %u\n", cap->oob_type);
-	printk("  Output Actions: %u\n", cap->output_actions);
-	printk("  Input Actions: %u\n", cap->input_actions);
-	printk("  Output Size: %u\n", cap->output_size);
-	printk("  Input Size: %u\n", cap->input_size);
-
-	/* By default use no authentication (this is not secure or recommended for production)
-	 * Alternatively call one of the corresponding bt_mesh_auth_method_set_<*> methods
-	 * based on the node capabilities.
-	 */
-	bt_mesh_auth_method_set_none();
-}
-
-static void link_open(bt_mesh_prov_bearer_t bearer)
-{
-	printk("Provisioning link opened on (bearer %d)\n", bearer);
-}
-
-static void link_close(bt_mesh_prov_bearer_t bearer)
-{
-	printk("Provisioning link closed on (bearer %d)\n", bearer);
 }
 
 static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
 	.unprovisioned_beacon = unprovisioned_beacon,
 	.node_added = node_added,
-	.link_open = link_open,
-	.link_close = link_close,
-	.capabilities = node_capabilities,
 };
 
-static void bt_ready(int err)
+static int bt_ready(void)
 {
 	uint8_t net_key[16], dev_key[16];
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Bluetooth initialized\n");
+	int err;
 
 	err = bt_mesh_init(&prov, &mesh_comp);
 	if (err) {
 		printk("Initializing mesh failed (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	printk("Mesh initialized\n");
@@ -331,7 +280,7 @@ static void bt_ready(int err)
 		printk("Using stored CDB\n");
 	} else if (err) {
 		printk("Failed to create CDB (err %d)\n", err);
-		return;
+		return err;
 	} else {
 		printk("Created CDB\n");
 		setup_cdb();
@@ -345,12 +294,12 @@ static void bt_ready(int err)
 		printk("Using stored settings\n");
 	} else if (err) {
 		printk("Provisioning failed (err %d)\n", err);
-		return;
+		return err;
 	} else {
 		printk("Provisioning completed\n");
 	}
 
-	k_sem_give(&sem_bt_ready);
+	return 0;
 }
 
 static uint8_t check_unconfigured(struct bt_mesh_cdb_node *node, void *data)
@@ -366,7 +315,7 @@ static uint8_t check_unconfigured(struct bt_mesh_cdb_node *node, void *data)
 	return BT_MESH_CDB_ITER_CONTINUE;
 }
 
-#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#ifdef CONFIG_MESH_PROVISIONER_USE_SW0
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
 static struct gpio_callback button_cb_data;
 
@@ -408,21 +357,20 @@ int main(void)
 	printk("Initializing...\n");
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);
+	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return 0;
 	}
 
-#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+	printk("Bluetooth initialized\n");
+	bt_ready();
+
+#ifdef CONFIG_MESH_PROVISIONER_USE_SW0
 	button_init();
 #endif
 
-	/* Wait for BT ready */
-	k_sem_take(&sem_bt_ready, K_FOREVER);
-
 	while (1) {
-		memset(node_uuid, 0, sizeof(node_uuid));
 		k_sem_reset(&sem_unprov_beacon);
 		k_sem_reset(&sem_node_added);
 		bt_mesh_cdb_node_foreach(check_unconfigured, NULL);
@@ -433,9 +381,9 @@ int main(void)
 			continue;
 		}
 
-		bin2hex(node_uuid, BT_UUID_SIZE_128, uuid_hex_str, sizeof(uuid_hex_str));
+		bin2hex(node_uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
 
-#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#ifdef CONFIG_MESH_PROVISIONER_USE_SW0
 		k_sem_reset(&sem_button_pressed);
 		printk("Device %s detected, press button 1 to provision.\n", uuid_hex_str);
 		err = k_sem_take(&sem_button_pressed, K_SECONDS(30));
@@ -446,14 +394,14 @@ int main(void)
 #endif
 
 		printk("Provisioning %s\n", uuid_hex_str);
-		err = bt_mesh_provision_adv(node_uuid, net_idx, 0, 10);
+		err = bt_mesh_provision_adv(node_uuid, net_idx, 0, 0);
 		if (err < 0) {
 			printk("Provisioning failed (err %d)\n", err);
 			continue;
 		}
 
 		printk("Waiting for node to be added...\n");
-		err = k_sem_take(&sem_node_added, K_SECONDS(30));
+		err = k_sem_take(&sem_node_added, K_SECONDS(10));
 		if (err == -EAGAIN) {
 			printk("Timeout waiting for node to be added\n");
 			continue;
