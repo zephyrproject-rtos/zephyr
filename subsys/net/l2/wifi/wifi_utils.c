@@ -158,6 +158,41 @@ uint16_t wifi_utils_chan_to_freq(enum wifi_frequency_bands band, uint16_t chan)
 	}
 }
 
+uint16_t wifi_utils_freq_to_chan(uint16_t freq)
+{
+	static const struct {
+		enum wifi_frequency_bands band;
+		uint16_t base;
+	} bands[] = {
+		{WIFI_FREQ_BAND_2_4_GHZ, 2407},
+		{WIFI_FREQ_BAND_5_GHZ, 5000},
+		{WIFI_FREQ_BAND_6_GHZ, 5950},
+	};
+
+	if (freq == 2484) {
+		return 14;
+	}
+
+	if (freq == 5935) {
+		return 2;
+	}
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(bands); i++) {
+		uint16_t chan;
+
+		if (freq <= bands[i].base) {
+			continue;
+		}
+
+		chan = (freq - bands[i].base) / 5;
+		if (wifi_utils_chan_to_freq(bands[i].band, chan) == freq) {
+			return chan;
+		}
+	}
+
+	return 0;
+}
+
 /**
  * @brief Get the next Wi-Fi 6GHz channel based on the given (valid) channel.
  * The function handles the initial edge cases (1 -> 2, 2 -> 5) and then increments by 4.
