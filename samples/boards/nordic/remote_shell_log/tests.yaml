@@ -10,13 +10,68 @@ common:
     - shell
     - ipc
   sysbuild: true
-  platform_allow:
-    - nrf54h20dk/nrf54h20/cpuapp
-  integration_platforms:
-    - nrf54h20dk/nrf54h20/cpuapp
 
 tests:
-  sample.boards.nrf.remote_shell_log:
+  sample.boards.nrf.remote_shell_log.nrf54h20_stm:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
     required_snippets:
       - nordic-log-stm
     harness: pytest
+    extra_args:
+      - remote_shell_log_SNIPPET=nordic-log-stm;nordic-ppr;nordic-flpr
+    extra_configs:
+      - CONFIG_SOC_NRF54H20_CPURAD_ENABLE=y
+      - CONFIG_SHELL_REMOTE_PPR=y
+      - CONFIG_SHELL_REMOTE_FLPR=y
+      - CONFIG_SHELL_REMOTE_RADIO=y
+      # kwork must start before ETR logging
+      - CONFIG_KERNEL_INIT_PRIORITY_DEFAULT=0
+  sample.boards.nrf.remote_shell_log.nrf54h20_ipc_frontend:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness: pytest
+    extra_args:
+      - remote_shell_log_SNIPPET=nordic-ppr;nordic-flpr
+    extra_configs:
+      - CONFIG_SOC_NRF54H20_CPURAD_ENABLE=y
+      - CONFIG_SHELL_REMOTE_PPR=y
+      - CONFIG_SHELL_REMOTE_FLPR=y
+      - CONFIG_SHELL_REMOTE_RADIO=y
+      - CONFIG_LOG_LINK_IPC_PPR=y
+      - CONFIG_LOG_LINK_IPC_FLPR=y
+      - CONFIG_LOG_LINK_IPC_RADIO=y
+      - CONFIG_LOG_MULTIDOMAIN=y
+      - CONFIG_LOG_LINK_IPC=y
+      - remote_ppr_CONFIG_LOG_FRONTEND_IPC=y
+      - remote_flpr_CONFIG_LOG_FRONTEND_IPC=y
+      - remote_rad_CONFIG_LOG_FRONTEND_IPC=y
+  sample.boards.nrf.remote_shell_log.ipc_frontend:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - platform:nrf54l:remote_shell_log_SNIPPET=nordic-flpr
+      - platform:nrf5340dk/nrf5340/cpuapp:FILE_SUFFIX=icbmsg
+      - platform:nrf5340dk/nrf5340/cpuapp:remote_FILE_SUFFIX=icbmsg
+      - platform:nrf5340bsim/nrf5340/cpuapp:FILE_SUFFIX=icbmsg
+      - platform:nrf5340bsim/nrf5340/cpuapp:remote_FILE_SUFFIX=icbmsg
+    extra_configs:
+      - CONFIG_IPC_SERVICE=y
+      - CONFIG_MBOX=y
+      - CONFIG_LOG_MULTIDOMAIN=y
+      - CONFIG_LOG_LINK_IPC=y
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_stm_shell.py::test_runtime_stm_shell_single_remote[]"
+        - "pytest/test_stm_shell.py::test_runtime_stm_shell_single_remote[remote_shell ]"
