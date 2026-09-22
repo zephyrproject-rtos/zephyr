@@ -21,6 +21,14 @@ config ADC_SHELL
 	help
 	  Enable ADC Shell for testing.
 
+config ADC_SHELL_PERIODIC_READ_STACK_SIZE
+	int "ADC shell periodic read thread stack size"
+	depends on ADC_SHELL
+	default 1024
+	help
+	  Stack size of the thread that takes the samples of a periodic
+	  "adc <device> read <channel> <period_ms>" command.
+
 config ADC_EMUL_SHELL
 	bool "ADC emulator shell"
 	depends on SHELL

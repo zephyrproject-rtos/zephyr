@@ -298,14 +298,60 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 	return retval;
 }
 
+/* Periodic read state; samples are taken from a dedicated thread so that the
+ * shell thread stays free to deliver the key press that stops the read. The
+ * system workqueue is not used because some drivers complete reads through it.
+ */
+static struct {
+	struct k_thread thread;
+	const struct shell *sh;
+	const struct device *dev;
+	struct adc_sequence sequence;
+	int16_t sample;
+	k_timeout_t period;
+	bool thread_started; /* thread object has been created; needs a join before reuse */
+	atomic_t running;
+} adc_periodic;
+
+static K_THREAD_STACK_DEFINE(adc_periodic_stack, CONFIG_ADC_SHELL_PERIODIC_READ_STACK_SIZE);
+static K_SEM_DEFINE(adc_periodic_stop, 0, 1);
+
+static void adc_periodic_read_thread(void *p1, void *p2, void *p3)
+{
+	int retval;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* Wait one period between samples; a key press ends the wait and the read. */
+	while (k_sem_take(&adc_periodic_stop, adc_periodic.period) != 0) {
+		retval = adc_read(adc_periodic.dev, &adc_periodic.sequence);
+		if (retval < 0) {
+			/* Clear the bypass first so that the shell redraws the prompt. */
+			shell_set_bypass(adc_periodic.sh, NULL, NULL);
+			shell_error(adc_periodic.sh, "read failed: %d", retval);
+			break;
+		}
+
+		shell_print(adc_periodic.sh, "read: %i", adc_periodic.sample);
+	}
+
+	atomic_clear(&adc_periodic.running);
+}
+
+/* Any byte received while the periodic read runs stops it. Runs on the shell
+ * thread, which redraws the prompt once the bypass is cleared.
+ */
 static void adc_shell_read_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
 				     void *user_data)
 {
-	ARG_UNUSED(sh);
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
+	ARG_UNUSED(user_data);
 
-	*(bool *)user_data = true;
+	shell_set_bypass(sh, NULL, NULL);
+	k_sem_give(&adc_periodic_stop);
 }
 
 #define BUFFER_SIZE 1
@@ -347,30 +393,41 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	bool stop = false;
-	bool msg_one_shot = true;
-
-	shell_set_bypass(sh, adc_shell_read_bypass_cb, &stop);
-
-	while (!stop) {
-		retval = adc_read(adc->dev, &sequence);
-		if (retval >= 0) {
-			shell_print(sh, "read: %i", m_sample_buffer[0]);
-		} else {
-			break;
-		}
-
-		if (msg_one_shot) {
-			msg_one_shot = false;
-			shell_print(sh, "Hit any key to exit");
-		}
-
-		k_msleep(period_ms);
+	if (retval < 0) {
+		return retval;
 	}
 
-	shell_set_bypass(sh, NULL, NULL);
+	if (!atomic_cas(&adc_periodic.running, 0, 1)) {
+		shell_error(sh, "Periodic read is already running");
+		return -EBUSY;
+	}
 
-	return stop ? 0 : retval;
+	/* Winning the CAS means a previous read thread is at most unwinding; join it
+	 * before reusing its thread object and stack.
+	 */
+	if (adc_periodic.thread_started) {
+		(void)k_thread_join(&adc_periodic.thread, K_FOREVER);
+	}
+
+	adc_periodic.sh = sh;
+	adc_periodic.dev = adc->dev;
+	adc_periodic.sequence = sequence;
+	adc_periodic.sequence.buffer = &adc_periodic.sample;
+	adc_periodic.sequence.buffer_size = sizeof(adc_periodic.sample);
+	adc_periodic.period = K_MSEC(period_ms);
+	k_sem_reset(&adc_periodic_stop);
+
+	shell_print(sh, "Hit any key to exit");
+
+	/* The shell thread only invokes the bypass callback once this command returns. */
+	shell_set_bypass(sh, adc_shell_read_bypass_cb, NULL);
+	k_thread_create(&adc_periodic.thread, adc_periodic_stack,
+			K_THREAD_STACK_SIZEOF(adc_periodic_stack), adc_periodic_read_thread, NULL,
+			NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+	(void)k_thread_name_set(&adc_periodic.thread, "adc_shell_read");
+	adc_periodic.thread_started = true;
+
+	return 0;
 }
 
 static void adc_shell_print_acq_time(const struct shell *sh, uint16_t acq_time)
