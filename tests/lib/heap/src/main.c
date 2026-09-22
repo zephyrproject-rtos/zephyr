@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -492,6 +493,53 @@ ZTEST(lib_heap, test_heap_overhead)
 		zassert_true(min_size_for >= base,
 			"Z_HEAP_MIN_SIZE_FOR(%d) could not allocate %d", base, base);
 	}
+}
+
+ZTEST(lib_heap, test_largest_free_block)
+{
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	struct sys_heap heap;
+	size_t before;
+	size_t after;
+	void *ptr;
+
+	sys_heap_init(&heap, alignedmem, sizeof(alignedmem));
+
+	/* Invalid arguments */
+	zassert_equal(sys_heap_get_largest_free_block(NULL, &before),
+		      -EINVAL, "");
+
+	zassert_equal(sys_heap_get_largest_free_block(&heap, NULL),
+		      -EINVAL, "");
+
+	/* Initial heap state */
+	zassert_equal(sys_heap_get_largest_free_block(&heap, &before),
+		      0, "");
+
+	zassert_true(before > 0,
+		     "largest free block should be non-zero");
+
+	/* Allocate some memory */
+	ptr = sys_heap_alloc(&heap, 64);
+	zassert_not_null(ptr, "");
+
+	zassert_equal(sys_heap_get_largest_free_block(&heap, &after),
+		      0, "");
+
+	zassert_true(after < before,
+		     "largest free block should decrease");
+
+	/* Free memory */
+	sys_heap_free(&heap, ptr);
+
+	zassert_equal(sys_heap_get_largest_free_block(&heap, &after),
+		      0, "");
+
+	zassert_true(after >= before,
+		     "largest free block should recover");
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST_SUITE(lib_heap, NULL, NULL, NULL, NULL, NULL);

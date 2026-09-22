@@ -15,6 +15,32 @@ LOG_MODULE_DECLARE(os_heap, CONFIG_SYS_HEAP_LOG_LEVEL);
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 
+/*
+ * Buckets hold strictly increasing, non-overlapping chunk-size ranges
+ * (see bucket_idx()), so the largest free chunk in the heap is always
+ * in the highest-indexed non-empty bucket. Finding the largest free
+ * block therefore only requires scanning that bucket, not the entire
+ * heap.
+ */
+static size_t largest_free_block_scan(struct z_heap *h)
+{
+	if (h->avail_buckets == 0U) {
+		return 0;
+	}
+
+	int bidx = 31 - __builtin_clz(h->avail_buckets);
+	chunkid_t first = h->buckets[bidx].next;
+	chunkid_t c = first;
+	size_t largest = 0;
+
+	do {
+		largest = max(largest, chunk_usable_bytes(h, c));
+		c = next_free_chunk(h, c);
+	} while (c != first);
+
+	return largest;
+}
+
 int sys_heap_runtime_stats_get(struct sys_heap *heap,
 		struct sys_memory_stats *stats)
 {
@@ -36,6 +62,17 @@ int sys_heap_runtime_stats_reset_max(struct sys_heap *heap)
 	}
 
 	heap->heap->max_allocated_bytes = heap->heap->allocated_bytes;
+
+	return 0;
+}
+
+int sys_heap_get_largest_free_block(struct sys_heap *heap, size_t *bytes)
+{
+	if (heap == NULL || bytes == NULL || heap->heap == NULL) {
+		return -EINVAL;
+	}
+
+	*bytes = largest_free_block_scan(heap->heap);
 
 	return 0;
 }
