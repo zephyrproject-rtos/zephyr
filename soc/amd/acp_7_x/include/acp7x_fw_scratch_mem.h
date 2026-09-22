@@ -53,8 +53,8 @@ typedef struct acp_atu_grp_pte {
 
 typedef union acp_cfg_dma_trns_cnt {
 	struct {
-		uint32_t trns_cnt: 19;
-		uint32_t reserved: 12;
+		uint32_t trns_cnt: 20;
+		uint32_t reserved: 11;
 		uint32_t ioc: 1;
 	} bits;
 	unsigned int u32all;
