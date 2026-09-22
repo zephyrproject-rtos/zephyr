@@ -31,17 +31,6 @@ extern const struct socket_op_vtable sock_fd_op_vtable;
 
 static const struct socket_op_vtable packet_sock_fd_op_vtable;
 
-static inline int k_fifo_wait_non_empty(struct k_fifo *fifo,
-					k_timeout_t timeout)
-{
-	struct k_poll_event events[] = {
-		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-					 K_POLL_MODE_NOTIFY_ONLY, fifo),
-	};
-
-	return k_poll(events, ARRAY_SIZE(events), timeout);
-}
-
 static void zpacket_received_cb(struct net_context *ctx,
 				struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
@@ -59,10 +48,10 @@ static void zpacket_received_cb(struct net_context *ctx,
 		if (last_pkt == NULL) {
 			/* If there're no packets in the queue, recv() may
 			 * be blocked waiting on it to become non-empty,
-			 * so cancel that wait.
+			 * so end that wait.
 			 */
 			sock_set_eof(ctx);
-			k_fifo_cancel_wait(&ctx->recv_q);
+			k_poll_signal_raise(&ctx->recv_signal, 0);
 			NET_DBG("Marked socket %p as peer-closed", ctx);
 		} else {
 			net_pkt_set_eof(last_pkt, true);
@@ -78,6 +67,85 @@ static void zpacket_received_cb(struct net_context *ctx,
 	k_fifo_put(&ctx->recv_q, pkt);
 }
 
+
+/*
+ * Wait for the receive queue with this socket's mutex released.
+ *
+ * Every socket call holds that mutex for its whole duration (VTABLE_CALL in
+ * sockets.c), so a receive that blocks with it held stalls every concurrent
+ * sendto() on the same socket until a frame arrives. INET sockets wait on a
+ * condition variable instead; a packet socket cannot, because its receive
+ * callback runs with the global connection lock held and taking the socket
+ * mutex under it would invert the order that close() takes the two in.
+ *
+ * close() can run to completion while the mutex is released, before this
+ * thread starts waiting. The context reference keeps the context from being
+ * handed to a new socket meanwhile, and close() raises recv_signal, which
+ * stays raised, so a wait that starts after close() still returns. A raise
+ * wakes one waiter, so each reader it ends raises it again for the next.
+ *
+ * Returns 0 with *pkt set, or NULL on timeout or end of file, or a negative
+ * error once the socket is closed.
+ */
+static int zpacket_wait_pkt(struct net_context *ctx, int flags, k_timeout_t timeout,
+			    struct net_pkt **pkt)
+{
+	struct k_mutex *lock = ctx->cond.lock;
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+	struct k_poll_event events[2];
+	int res;
+
+	(void)net_context_ref(ctx);
+
+	while (true) {
+		if (sock_is_error(ctx)) {
+			res = -sock_get_error(ctx);
+			break;
+		}
+
+		if (flags & ZSOCK_MSG_PEEK) {
+			*pkt = k_fifo_peek_head(&ctx->recv_q);
+		} else {
+			*pkt = k_fifo_get(&ctx->recv_q, K_NO_WAIT);
+		}
+
+		if (*pkt != NULL || sock_is_eof(ctx) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			res = 0;
+			break;
+		}
+
+		k_poll_event_init(&events[0], K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+				  K_POLL_MODE_NOTIFY_ONLY, &ctx->recv_q);
+		k_poll_event_init(&events[1], K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+				  &ctx->recv_signal);
+
+		if (lock != NULL && k_mutex_unlock(lock) != 0) {
+			/* Not this thread's to release; wait with it held, as before. */
+			lock = NULL;
+		}
+
+		res = k_poll(events, ARRAY_SIZE(events), timeout);
+
+		if (lock != NULL) {
+			(void)k_mutex_lock(lock, K_FOREVER);
+		}
+
+		/* EAGAIN when timeout expired, EINTR when cancelled */
+		if (res != 0 && res != -EAGAIN && res != -EINTR) {
+			break;
+		}
+
+		timeout = sys_timepoint_timeout(end);
+	}
+
+	if (sock_is_error(ctx) || sock_is_eof(ctx)) {
+		k_poll_signal_raise(&ctx->recv_signal, 0);
+	}
+
+	(void)net_context_unref(ctx);
+
+	return res;
+}
 
 static int zpacket_socket(int family, int type, int proto)
 {
@@ -112,6 +180,7 @@ static int zpacket_socket(int family, int type, int proto)
 
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
+	k_poll_signal_init(&ctx->recv_signal);
 
 	/* Register the callback so that the socket is able to receive packets
 	 * as soon as it's created.
@@ -311,7 +380,7 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 {
 	size_t recv_len = 0;
 	k_timeout_t timeout = K_FOREVER;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt = NULL;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
@@ -319,22 +388,20 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
-	if (flags & ZSOCK_MSG_PEEK) {
-		int res;
+	{
+		int res = zpacket_wait_pkt(ctx, flags, timeout, &pkt);
 
-		res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
-		/* EAGAIN when timeout expired, EINTR when cancelled */
-		if (res && res != -EAGAIN && res != -EINTR) {
+		if (res != 0) {
 			errno = -res;
 			return -1;
 		}
-
-		pkt = k_fifo_peek_head(&ctx->recv_q);
-	} else {
-		pkt = k_fifo_get(&ctx->recv_q, timeout);
 	}
 
 	if (pkt == NULL) {
+		if (sock_is_eof(ctx)) {
+			return 0;
+		}
+
 		errno = EAGAIN;
 		return -1;
 	}
@@ -418,20 +485,7 @@ static int zpacket_update_msg_controllen(struct net_msghdr *msg)
 static int zpacket_recvmsg_get_pkt(struct net_context *ctx, int flags, k_timeout_t timeout,
 				   struct net_pkt **pkt)
 {
-	if (flags & ZSOCK_MSG_PEEK) {
-		int res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
-
-		/* EAGAIN when timeout expired, EINTR when cancelled */
-		if (res != 0 && res != -EAGAIN && res != -EINTR) {
-			return res;
-		}
-
-		*pkt = k_fifo_peek_head(&ctx->recv_q);
-	} else {
-		*pkt = k_fifo_get(&ctx->recv_q, timeout);
-	}
-
-	return 0;
+	return zpacket_wait_pkt(ctx, flags, timeout, pkt);
 }
 
 static int zpacket_recvmsg_copy_data(struct net_pkt *pkt, struct net_msghdr *msg, size_t read_len)
@@ -550,6 +604,10 @@ static ssize_t zpacket_recvmsg_ctx(struct net_context *ctx, struct net_msghdr *m
 	}
 
 	if (pkt == NULL) {
+		if (sock_is_eof(ctx)) {
+			return 0;
+		}
+
 		errno = EAGAIN;
 		return -1;
 	}
@@ -1005,9 +1063,12 @@ static int packet_sock_setsockopt_vmeth(void *obj, int level, int optname,
 
 static int packet_sock_close2_vmeth(void *obj, int fd)
 {
-	mcast_membership_drop_all(obj);
+	struct net_context *ctx = obj;
 
-	return zsock_close_ctx(obj, fd);
+	mcast_membership_drop_all(ctx);
+	k_poll_signal_raise(&ctx->recv_signal, 0);
+
+	return zsock_close_ctx(ctx, fd);
 }
 
 static const struct fd_op_vtable packet_sock_fd_vtable = {
