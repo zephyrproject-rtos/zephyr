@@ -6,3 +6,19 @@ tests:
     tags:
       - net
       - websocket
+  net.socket.websocket.asan:
+    min_ram: 21
+    tags:
+      - net
+      - websocket
+    # The handshake tests log a mismatching Sec-WebSocket-Accept value, which
+    # is the only path that reads the parser supplied header slice, so check it
+    # for overreads.
+    extra_configs:
+      - CONFIG_ASAN=y
+      - CONFIG_LOG=y
+      - CONFIG_NET_LOG=y
+      - CONFIG_NET_WEBSOCKET_LOG_LEVEL_DBG=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
