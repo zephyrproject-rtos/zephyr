@@ -1,0 +1,46 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Arduino-header analog inputs on the Nucleo-G431KB:
+ *   A0 — PA0 — ADC1_IN1
+ *   A1 — PA1 — ADC1_IN2
+ */
+
+/ {
+	aliases {
+		adc0 = &adc1;
+	};
+
+	zephyr,user {
+		io-channels = <&adc1 1>, <&adc1 2>;
+	};
+};
+
+&adc1 {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	pinctrl-0 = <&adc1_in1_pa0 &adc1_in2_pa1>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* A0 — PA0 */
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+
+	/* A1 — PA1 */
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+};
