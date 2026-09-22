@@ -14,6 +14,10 @@ if(CONFIG_POSIX_SYSTEM_INTERFACES OR CONFIG_POSIX_BASE_DEFINITIONS OR CONFIG_POS
    OR CONFIG_POSIX_C_LIB_EXT OR CONFIG_EVENTFD)
   zephyr_include_directories(include)
 endif()
+if(CONFIG_PICOLIBC_USE_MODULE)
+  # temporary workaround for https://github.com/picolibc/picolibc/pull/1079
+  zephyr_compile_options(-Dpid_t=__pid_t)
+endif()
 
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,prohibit_lto>)
 
