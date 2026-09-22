@@ -152,8 +152,11 @@ static inline void arch_isr_direct_footer(int swap)
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt("supervisor"))) void name(void) \
 	{ \
+		struct arch_isr_direct_ctx ctx; \
 		ISR_DIRECT_HEADER(); \
+		arch_isr_direct_ctx_save(&ctx); \
 		name##_body(); \
+		arch_isr_direct_ctx_restore(&ctx); \
 		ISR_DIRECT_FOOTER(0); \
 	} \
 	static inline int name##_body(void)
@@ -162,8 +165,11 @@ static inline void arch_isr_direct_footer(int swap)
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt)) void name(void) \
 	{ \
+		struct arch_isr_direct_ctx ctx; \
 		ISR_DIRECT_HEADER(); \
+		arch_isr_direct_ctx_save(&ctx); \
 		name##_body(); \
+		arch_isr_direct_ctx_restore(&ctx); \
 		ISR_DIRECT_FOOTER(0); \
 	} \
 	static inline int name##_body(void)

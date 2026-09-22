@@ -290,6 +290,10 @@ extern void z_irq_spurious(const void *unused);
 #define RV_STATUS_IE  SSTATUS_SIE
 /** @brief Previous interrupt-enable bit in the status CSR (S-mode: SPIE) */
 #define RV_STATUS_PIE SSTATUS_SPIE
+/** @brief Name of the trap cause CSR as a string literal (S-mode) */
+#define RV_CAUSE_CSR  "scause"
+/** @brief Name of the exception PC CSR as a string literal (S-mode) */
+#define RV_EPC_CSR    "sepc"
 #else
 /** @brief Name of the interrupt-status CSR as a string literal (M-mode) */
 #define RV_STATUS_CSR "mstatus"
@@ -297,7 +301,55 @@ extern void z_irq_spurious(const void *unused);
 #define RV_STATUS_IE  MSTATUS_IEN
 /** @brief Previous interrupt-enable bit in the status CSR (M-mode: MPIE) */
 #define RV_STATUS_PIE MSTATUS_MPIE_EN
+/** @brief Name of the trap cause CSR as a string literal (M-mode) */
+#define RV_CAUSE_CSR  "mcause"
+/** @brief Name of the exception PC CSR as a string literal (M-mode) */
+#define RV_EPC_CSR    "mepc"
 #endif
+
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+extern void __soc_save_context(struct soc_esf *context);
+extern void __soc_restore_context(struct soc_esf *context);
+#endif
+
+/**
+ * @brief What a direct ISR keeps of the context it interrupted
+ *
+ * A direct ISR is entered straight from the vector table, so it has no esf to
+ * hold the trap CSRs, and an interrupt nested in its body overwrites them. The
+ * ISR keeps its own copy in the frame the compiler gives it.
+ */
+struct arch_isr_direct_ctx {
+	unsigned long cause;
+	unsigned long epc;
+	unsigned long status;
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	struct soc_esf soc_context;
+#endif
+};
+
+static inline void arch_isr_direct_ctx_save(struct arch_isr_direct_ctx *ctx)
+{
+	__asm__ volatile("csrr %0, " RV_CAUSE_CSR : "=r"(ctx->cause));
+	__asm__ volatile("csrr %0, " RV_EPC_CSR : "=r"(ctx->epc));
+	__asm__ volatile("csrr %0, " RV_STATUS_CSR : "=r"(ctx->status));
+
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	__soc_save_context(&ctx->soc_context);
+#endif
+}
+
+static inline void arch_isr_direct_ctx_restore(struct arch_isr_direct_ctx *ctx)
+{
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	__soc_restore_context(&ctx->soc_context);
+#endif
+
+	/* Leave the trap CSRs as this ISR found them */
+	__asm__ volatile("csrw " RV_EPC_CSR ", %0" : : "r"(ctx->epc) : "memory");
+	__asm__ volatile("csrw " RV_STATUS_CSR ", %0" : : "r"(ctx->status) : "memory");
+	__asm__ volatile("csrw " RV_CAUSE_CSR ", %0" : : "r"(ctx->cause) : "memory");
+}
 
 /**
  * @brief Read the privilege-level status register (mstatus or sstatus).
