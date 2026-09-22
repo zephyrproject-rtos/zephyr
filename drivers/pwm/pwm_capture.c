@@ -45,6 +45,11 @@ int z_impl_pwm_capture_cycles(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		LOG_ERR("capture cannot complete without waiting");
+		return -EINVAL;
+	}
+
 	flags |= PWM_CAPTURE_MODE_SINGLE;
 	k_sem_init(&data.sem, 0, 1);
 
