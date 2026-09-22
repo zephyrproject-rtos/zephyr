@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#if defined(_POSIX_MULTI_PROCESS) || defined(__DOXYGEN__)
+#if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
 
 #if !defined(_TMS_DECLARED) && !defined(__tms_defined)
 struct tms {
@@ -28,7 +28,7 @@ struct tms {
 
 clock_t times(struct tms *buf);
 
-#endif /* _POSIX_MULTI_PROCESS */
+#endif /* defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__) */
 
 #ifdef __cplusplus
 }
