@@ -6,6 +6,7 @@
 # only what ties them to Zephyr is added here.
 
 config LV_USE_PPA
+	bool
 	depends on DT_HAS_ESPRESSIF_ESP32_PPA_ENABLED
 	depends on SOC_SERIES_ESP32P4
 	select ESP32_PPA
