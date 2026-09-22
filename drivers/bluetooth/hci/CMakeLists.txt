@@ -60,6 +60,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_STM32WB0 hci_stm32wb0.c)
 zephyr_library_sources_ifdef(CONFIG_BT_STM32WBA hci_stm32wba.c)
 zephyr_library_sources_ifdef(CONFIG_BT_STM32_IPM ipm_stm32wb.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUAPP nrf53_support.c)
+zephyr_library_sources_ifdef(CONFIG_BT_HCI_TI hci_ti.c)
 # zephyr-keep-sorted-stop
 
 zephyr_library_include_directories_ifdef(CONFIG_BT_HCI_TI_CC35XX
@@ -71,4 +72,3 @@ if(CONFIG_BT_USERCHAN)
   zephyr_library_sources(userchan.c)
   target_sources(native_simulator INTERFACE userchan_bottom.c)
 endif()
-zephyr_library_sources_ifdef(CONFIG_BT_HCI_TI      hci_ti.c)
