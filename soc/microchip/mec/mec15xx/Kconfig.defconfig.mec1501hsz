@@ -12,8 +12,4 @@ config ESPI_XEC
 	default y
 	depends on ESPI
 
-config PS2_XEC
-	default y
-	depends on PS2
-
 endif # SOC_MEC1501_HSZ
