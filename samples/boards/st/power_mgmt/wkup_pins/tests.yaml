@@ -21,3 +21,13 @@ tests:
       - stm32l1_disco
     integration_platforms:
       - nucleo_l4r5zi
+  sample.boards.stm32.power_mgmt.wkup_pins.s2ram:
+    build_only: true
+    filter: dt_enabled_alias_with_parent_compat("wkup-src", "gpio-keys")
+      and dt_compat_enabled("st,stm32-pwr-wkupctrl")
+    extra_configs:
+      - CONFIG_SAMPLE_SCENARIO_S2RAM=y
+    platform_allow:
+      - nucleo_wba55cg
+    integration_platforms:
+      - nucleo_wba55cg
