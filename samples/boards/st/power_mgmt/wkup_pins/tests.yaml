@@ -1,10 +1,10 @@
 sample:
-  name: GPIO As A Wake-up Pin Source
+  name: GPIO as Wake-up Pin
 tests:
   sample.boards.stm32.power_mgmt.wkup_pins:
     build_only: true
     filter: dt_enabled_alias_with_parent_compat("wkup-src",
-      "gpio-keys") and dt_compat_enabled("st,stm32-pwr")
+      "gpio-keys") and dt_compat_enabled("st,stm32-pwr-wkupctrl")
     platform_allow:
       - nucleo_c092rc
       - nucleo_f103rb
