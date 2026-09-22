@@ -10,3 +10,7 @@ tests:
   net.offloaded_netdev.no_native:
     extra_configs:
       - CONFIG_NET_NATIVE=n
+  net.offloaded_netdev.packet:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_PACKET=y
+      - CONFIG_NET_CONTEXT_RCVTIMEO=y

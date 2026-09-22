@@ -731,6 +731,230 @@ ZTEST(net_offloaded_netdev, test_bind_during_recv_net_off_impl)
 	offloaded_close(sock);
 }
 
+static K_THREAD_STACK_DEFINE(packet_recv_stack, 2048);
+static struct k_thread packet_recv_thread;
+static bool packet_recv_created;
+static int packet_recv_ret;
+
+static K_THREAD_STACK_DEFINE(packet_poll_stack, 2048);
+static struct k_thread packet_poll_thread;
+static bool packet_poll_created;
+static struct zsock_pollfd packet_pollfd;
+static int packet_poll_ret;
+
+static int packet_socket(struct net_context **ctx)
+{
+	struct zsock_timeval optval = {
+		.tv_usec = 100000,
+	};
+	int ret;
+
+	offload_sock = zsock_socket(NET_AF_PACKET, NET_SOCK_RAW, 0);
+	zassert_true(offload_sock >= 0, "socket() failed (%d)", errno);
+
+	ret = zsock_setsockopt(offload_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
+			       sizeof(optval));
+	zassert_ok(ret, "setsockopt() failed (%d)", errno);
+
+	*ctx = zvfs_get_fd_obj(offload_sock, NULL, 0);
+	zassert_not_null(*ctx, "no context for socket %d", offload_sock);
+
+	return offload_sock;
+}
+
+static void packet_bind(int sock, struct net_if *iface)
+{
+	struct net_sockaddr_ll addr = {
+		.sll_family = NET_AF_PACKET,
+		.sll_ifindex = net_if_get_by_iface(iface),
+	};
+	int ret;
+
+	offload_recv_cb = NULL;
+	ret = zsock_bind(sock, (struct net_sockaddr *)&addr, sizeof(addr));
+	zassert_ok(ret, "bind() failed (%d)", errno);
+	zassert_not_null(offload_recv_cb, "offloaded recv() was not called");
+}
+
+static int offloaded_packet_socket(struct net_if *iface, struct net_context **ctx)
+{
+	int sock = packet_socket(ctx);
+
+	packet_bind(sock, iface);
+
+	return sock;
+}
+
+static void packet_recv(void *p1, void *p2, void *p3)
+{
+	char buf[OFFLOAD_PAYLOAD_LEN];
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	packet_recv_ret = zsock_recv(POINTER_TO_INT(p1), buf, sizeof(buf), 0);
+}
+
+static void packet_poll(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	packet_pollfd.fd = POINTER_TO_INT(p1);
+	packet_pollfd.events = ZSOCK_POLLIN;
+	packet_pollfd.revents = 0;
+	packet_poll_ret = zsock_poll(&packet_pollfd, 1, 1000);
+}
+
+static void packet_thread_start(struct k_thread *thread, bool *created, k_thread_stack_t *stack,
+				size_t stack_size, k_thread_entry_t entry, int sock)
+{
+	int prio = k_thread_priority_get(k_current_get()) + 1;
+	char state[32];
+
+	zassume_true(prio <= K_LOWEST_APPLICATION_THREAD_PRIO, "no lower priority for the thread");
+
+	k_thread_create(thread, stack, stack_size, entry, INT_TO_POINTER(sock), NULL, NULL, prio, 0,
+			K_NO_WAIT);
+	*created = true;
+	k_msleep(10);
+	zassert_not_null(strstr(k_thread_state_str(thread, state, sizeof(state)), "pending"),
+			 "the thread is not blocked: %s", state);
+}
+
+static void packet_test_skip(void)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_SOCKETS_PACKET);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_CONTEXT_RCVTIMEO);
+
+	if (arch_num_cpus() > 1) {
+		ztest_test_skip();
+	}
+}
+
+ZTEST(net_offloaded_netdev, test_packet_close_during_recv_net_off_impl)
+{
+	struct net_if *test_iface = NET_IF_GET(net_offload_test_impl, 0);
+	struct net_context *ctx;
+	int sock;
+
+	packet_test_skip();
+
+	sock = offloaded_packet_socket(test_iface, &ctx);
+	packet_thread_start(&packet_recv_thread, &packet_recv_created, packet_recv_stack,
+			    K_THREAD_STACK_SIZEOF(packet_recv_stack), packet_recv, sock);
+
+	offloaded_close(sock);
+	sock = zsock_socket(NET_AF_PACKET, NET_SOCK_RAW, 0);
+	zassert_true(sock >= 0, "socket() failed (%d)", errno);
+	offload_sock = sock;
+	zassume_equal_ptr(zvfs_get_fd_obj(sock, NULL, 0), ctx,
+			  "socket() did not reuse the context");
+
+	zassert_ok(k_thread_join(&packet_recv_thread, K_SECONDS(1)), "recv() did not return");
+	packet_recv_created = false;
+	zassert_equal(packet_recv_ret, -1, "recv() returned %d", packet_recv_ret);
+	zassert_true(net_context_is_used(ctx), "recv() released the new socket's context");
+
+	offloaded_close(sock);
+}
+
+ZTEST(net_offloaded_netdev, test_packet_reopen_during_recv_net_off_impl)
+{
+	struct net_if *test_iface = NET_IF_GET(net_offload_test_impl, 0);
+	struct net_context *new_ctx;
+	struct net_context *ctx;
+	char buf[OFFLOAD_PAYLOAD_LEN];
+	int sock;
+	int ret;
+
+	packet_test_skip();
+
+	sock = offloaded_packet_socket(test_iface, &ctx);
+	packet_thread_start(&packet_recv_thread, &packet_recv_created, packet_recv_stack,
+			    K_THREAD_STACK_SIZEOF(packet_recv_stack), packet_recv, sock);
+
+	offloaded_close(sock);
+	sock = offloaded_packet_socket(test_iface, &new_ctx);
+	zassume_equal_ptr(new_ctx, ctx, "socket() did not reuse the context");
+
+	offload_recv_cb(ctx, offloaded_rx_pkt(test_iface), NULL, NULL, 0, offload_recv_user_data);
+
+	ret = zsock_recv(sock, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(buf), "recv() on the new socket returned %d (%d)", ret, errno);
+
+	zassert_ok(k_thread_join(&packet_recv_thread, K_SECONDS(1)), "recv() did not return");
+	packet_recv_created = false;
+	zassert_equal(packet_recv_ret, -1, "recv() on the closed socket returned %d",
+		      packet_recv_ret);
+
+	offloaded_close(sock);
+}
+
+ZTEST(net_offloaded_netdev, test_packet_bind_during_recv_net_off_impl)
+{
+	struct net_if *test_iface = NET_IF_GET(net_offload_test_impl, 0);
+	struct net_if *default_iface = net_if_get_default();
+	struct net_context *ctx;
+	char buf[OFFLOAD_PAYLOAD_LEN];
+	int sock;
+	int ret;
+
+	packet_test_skip();
+
+	net_if_set_default(NET_IF_GET(sock_offload_test_impl, 0));
+	sock = packet_socket(&ctx);
+	net_if_set_default(default_iface);
+	zassume_false(net_if_is_ip_offloaded(net_context_get_iface(ctx)),
+		      "the socket starts on an IP-offloaded interface");
+	packet_thread_start(&packet_recv_thread, &packet_recv_created, packet_recv_stack,
+			    K_THREAD_STACK_SIZEOF(packet_recv_stack), packet_recv, sock);
+
+	packet_bind(sock, test_iface);
+	offloaded_close(sock);
+	sock = zsock_socket(NET_AF_PACKET, NET_SOCK_RAW, 0);
+	zassert_true(sock >= 0, "socket() failed (%d)", errno);
+	offload_sock = sock;
+	zassume_equal_ptr(zvfs_get_fd_obj(sock, NULL, 0), ctx,
+			  "socket() did not reuse the context");
+
+	offload_recv_cb(ctx, offloaded_rx_pkt(test_iface), NULL, NULL, 0, offload_recv_user_data);
+
+	ret = zsock_recv(sock, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zexpect_equal(ret, sizeof(buf), "recv() on the new socket returned %d (%d)", ret, errno);
+
+	zassert_ok(k_thread_join(&packet_recv_thread, K_SECONDS(1)), "recv() did not return");
+	packet_recv_created = false;
+	zexpect_equal(packet_recv_ret, -1, "recv() on the closed socket returned %d",
+		      packet_recv_ret);
+	zassert_true(net_context_is_used(ctx), "recv() released the new socket's context");
+
+	offloaded_close(sock);
+}
+
+ZTEST(net_offloaded_netdev, test_packet_eof_during_poll_net_off_impl)
+{
+	struct net_if *test_iface = NET_IF_GET(net_offload_test_impl, 0);
+	struct net_context *ctx;
+	int sock;
+
+	packet_test_skip();
+
+	sock = offloaded_packet_socket(test_iface, &ctx);
+	packet_thread_start(&packet_poll_thread, &packet_poll_created, packet_poll_stack,
+			    K_THREAD_STACK_SIZEOF(packet_poll_stack), packet_poll, sock);
+
+	offload_recv_cb(ctx, NULL, NULL, NULL, 0, offload_recv_user_data);
+
+	zassert_ok(k_thread_join(&packet_poll_thread, K_MSEC(200)),
+		   "poll() did not wake at end of file");
+	packet_poll_created = false;
+	zassert_equal(packet_poll_ret, 1, "poll() returned %d", packet_poll_ret);
+	zassert_true((packet_pollfd.revents & ZSOCK_POLLIN) != 0, "no POLLIN at end of file");
+
+	offloaded_close(sock);
+}
+
 static bool offload_getaddrinfo_called;
 
 static int test_offload_getaddrinfo(const char *node,
@@ -833,6 +1057,20 @@ static void net_offloaded_netdev_after(void *fixture)
 	if (addr_added) {
 		(void)net_if_ipv4_addr_rm(NET_IF_GET(net_offload_test_impl, 0), &test_addr_ipv4);
 		addr_added = false;
+	}
+
+	if (packet_recv_created) {
+		if (k_thread_join(&packet_recv_thread, K_SECONDS(1)) != 0) {
+			k_thread_abort(&packet_recv_thread);
+		}
+		packet_recv_created = false;
+	}
+
+	if (packet_poll_created) {
+		if (k_thread_join(&packet_poll_thread, K_SECONDS(2)) != 0) {
+			k_thread_abort(&packet_poll_thread);
+		}
+		packet_poll_created = false;
 	}
 }
 
