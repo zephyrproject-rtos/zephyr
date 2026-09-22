@@ -311,14 +311,18 @@ zephyr_udc0: &usbotg_fs {
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&adc12_common {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
 &adc1 {
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&adc1_inp2_pf11>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 
 	pot1: channel@2 {
 		reg = <2>;
