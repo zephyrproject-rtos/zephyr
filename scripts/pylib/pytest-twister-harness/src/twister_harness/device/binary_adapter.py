@@ -120,6 +120,13 @@ class CustomSimulatorAdapter(BinaryAdapterBase):
 class QemuAdapter(BinaryAdapterBase):
     """Simulator adapter to run QEMU"""
 
+    def close(self) -> None:
+        """Stop QEMU before closing the console FIFO."""
+        self._stop_subprocess()
+        self.stop_reader()
+        self.disconnect()
+        self._clear_internal_resources()
+
     def generate_command(self) -> None:
         """Set command to run."""
         self.command = [
