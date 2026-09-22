@@ -187,6 +187,20 @@ enum wifi_frequency_bands wifi_utils_chan_to_band(uint16_t chan);
 uint16_t wifi_utils_chan_to_freq(enum wifi_frequency_bands band, uint16_t chan);
 
 /**
+ * @brief Convert a center frequency to its channel number.
+ *
+ * @details This is the inverse of wifi_utils_chan_to_freq(). No band is
+ * needed because a center frequency is unique across the bands. Use
+ * wifi_utils_chan_to_band() on the result when the band is also wanted.
+ *
+ * @param freq Center frequency in MHz.
+ *
+ * @return The channel number.
+ * @retval 0 Frequency is not a channel center frequency in any band.
+ */
+uint16_t wifi_utils_freq_to_chan(uint16_t freq);
+
+/**
  * @}
  */
 

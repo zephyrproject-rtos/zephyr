@@ -25,7 +25,6 @@
 LOG_MODULE_DECLARE(wifi_hwsim, CONFIG_WIFI_HWSIM_LOG_LEVEL);
 
 #define SSID_IE_ID   0
-#define HWSIM_2G_BASE_FREQ_MHZ 2407
 
 /*
  * Beacon frame layout: 24-byte 802.11 MAC header + fixed fields
@@ -404,7 +403,7 @@ static int hwsim_supp_authenticate(void *if_priv,
 	 */
 	if (params->freq > 0) {
 		radio->freq_mhz = (uint32_t)params->freq;
-		radio->channel = (uint8_t)((params->freq - HWSIM_2G_BASE_FREQ_MHZ) / 5);
+		radio->channel = (uint8_t)wifi_utils_freq_to_chan((uint16_t)params->freq);
 	}
 
 	/*
@@ -490,8 +489,7 @@ static int hwsim_supp_init_ap(void *if_priv,
 	if (params->freq.channel > 0) {
 		radio->channel = (uint8_t)params->freq.channel;
 	} else if (params->freq.freq > 0) {
-		radio->channel = (uint8_t)((params->freq.freq - HWSIM_2G_BASE_FREQ_MHZ)
-					   / 5);
+		radio->channel = (uint8_t)wifi_utils_freq_to_chan((uint16_t)params->freq.freq);
 	} else {
 		radio->channel = 1;
 	}

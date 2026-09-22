@@ -311,27 +311,6 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 	   wifi_mfp_txt(entry->mfp));
 }
 
-static int wifi_freq_to_channel(int frequency)
-{
-	int channel;
-
-	if (frequency == 2484) { /* channel 14 */
-		channel = 14;
-	} else if ((frequency <= 2472) && (frequency >= 2412)) {
-		channel = ((frequency - 2412) / 5) + 1;
-	} else if ((frequency <= 5320) && (frequency >= 5180)) {
-		channel = ((frequency - 5180) / 5) + 36;
-	} else if ((frequency <= 5720) && (frequency >= 5500)) {
-		channel = ((frequency - 5500) / 5) + 100;
-	} else if ((frequency <= 5895) && (frequency >= 5745)) {
-		channel = ((frequency - 5745) / 5) + 149;
-	} else {
-		channel = frequency;
-	}
-
-	return channel;
-}
-
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 static enum wifi_frequency_bands wifi_freq_to_band(int frequency)
 {
@@ -366,7 +345,7 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 	}
 
 	rssi = raw->rssi;
-	channel = wifi_freq_to_channel(raw->frequency);
+	channel = wifi_utils_freq_to_chan(raw->frequency);
 	band = wifi_freq_to_band(raw->frequency);
 
 	PR("%-4d | %-4u (%-6s) | %-4d | %s |      %-4d        ",
@@ -2777,7 +2756,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		   "<max power(dBm)>\t<passive transmission only(y/n)>\t<DFS supported(y/n)>\n");
 		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
 			PR("  %d\t\t\t%d\t\t\t%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
-			   wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
+			   wifi_utils_freq_to_chan(chan_info[chan_idx].center_frequency),
 			   chan_info[chan_idx].center_frequency,
 			   chan_info[chan_idx].supported ? "y" : "n",
 			   chan_info[chan_idx].max_power,
