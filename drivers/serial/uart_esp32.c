@@ -59,6 +59,9 @@
 #include <hal/dma_types.h>
 #include <esp_memory_utils.h>
 #include <soc/soc_caps.h>
+#if defined(SOC_AXI_GDMA_SUPPORTED)
+#include <hal/ahb_dma_ll.h>
+#endif
 #endif
 #include <soc/uart_struct.h>
 #include <hal/uart_ll.h>
@@ -818,8 +821,13 @@ static size_t uart_esp32_async_rx_position(const struct device *dev)
 	uintptr_t address;
 	size_t position;
 
+#if defined(SOC_AXI_GDMA_SUPPORTED)
+	desc = (dma_descriptor_t *)ahb_dma_ll_rx_get_success_eof_desc_addr(
+		dma_hal->ahb_dma_dev, config->rx_dma_channel / 2);
+#else
 	desc = (dma_descriptor_t *)gdma_ll_rx_get_success_eof_desc_addr(dma_hal->dev,
 									config->rx_dma_channel / 2);
+#endif
 	if (desc == NULL) {
 		return data->async.rx_len;
 	}
@@ -832,7 +840,13 @@ static size_t uart_esp32_async_rx_position(const struct device *dev)
 	 * The result is clamped to the buffer so a stale descriptor can never
 	 * make the caller underflow.
 	 */
+#if defined(SOC_NON_CACHEABLE_OFFSET_SRAM)
+	if ((uintptr_t)desc >= SOC_DRAM_LOW && (uintptr_t)desc < SOC_DRAM_HIGH) {
+		desc = (dma_descriptor_t *)((uintptr_t)desc + SOC_NON_CACHEABLE_OFFSET_SRAM);
+	}
+#else
 	sys_cache_data_invd_range(desc, sizeof(*desc));
+#endif
 	address = (uintptr_t)desc->buffer;
 	position = desc->dw0.length;
 	if (address >= base && address < base + data->async.rx_len &&
