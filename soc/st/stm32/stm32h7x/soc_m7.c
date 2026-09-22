@@ -42,6 +42,10 @@ BUILD_ASSERT((DTCM_BASE & __alignof__(uint32_t)) == 0, "DTCM start address must 
 BUILD_ASSERT((DTCM_END & __alignof__(uint32_t)) == 0, "DTCM size must be 32-bit aligned");
 #endif
 
+#if defined(CONFIG_PM)
+extern void stm32_power_init(void);
+#endif
+
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 static int stm32h7_m4_wakeup(void)
 {
@@ -168,6 +172,10 @@ void soc_early_init_hook(void)
 	if (LL_DBGMCU_GetRevisionID() == 0x1003) {
 		stm32_reg_set_bits(&GPV->AXI_TARG7_FN_MOD, 0x1);
 	}
+
+#if defined(CONFIG_PM)
+	stm32_power_init();
+#endif
 }
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
