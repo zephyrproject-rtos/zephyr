@@ -848,6 +848,21 @@ class KconfigCheck(ComplianceTest):
         self.check_soc_name_sync(kconf)
         self.check_no_undef_outside_kconfig(kconf)
         self.check_disallowed_defconfigs(kconf)
+        self.check_no_parser_warnings(kconf)
+
+    def check_no_parser_warnings(self, kconf):
+        """
+        Checks that the Kconfig parser emitted no warnings, for example a
+        symbol left without a type because the definition carrying it lives
+        in a module.
+        """
+        if not kconf.warnings:
+            return
+
+        self.failure(
+            "Kconfig parser warnings:\n\n"
+            + "\n".join(warning.strip() for warning in kconf.warnings)
+        )
 
     def get_modules(self, _module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
         """
