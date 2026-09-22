@@ -6,6 +6,7 @@
 
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/toolchain.h>
 #include <adsp_memory.h>
 #include <adsp_imr_layout.h>
 
@@ -78,6 +79,15 @@ MEM_MAP_SYM_DECLARE(__text_region_start);
 MEM_MAP_SYM_DECLARE(__text_region_end);
 
 const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
+
+	/*
+	 * Note the first 2MB are where most hardware registers reside,
+	 * and is pinned in TLB cache below in arch_xtensa_mmu_post_init().
+	 * Because of the pinning, there is no need to define MMU range
+	 * entries for the first 2MB as the TLB cache does not need to be
+	 * auto-filled from the page table.
+	 */
+
 	MEM_MAP_SYM_REGION(
 		_image_ram_start,
 		_image_ram_end,
@@ -264,20 +274,47 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 		.attrs = XTENSA_MMU_PERM_W,
 		.name = "l1cc",
 	},
-	{
-		/* FIXME: definitely need more refinements... */
-		.start = (uint32_t)0x0,
-		.end   = (uint32_t)0x100800,
-		.attrs = XTENSA_MMU_PERM_W,
-		.name = "hwreg0",
-	},
-	{
-		/* FIXME: definitely need more refinements... */
-		.start = (uint32_t)0x160000,
-		.end   = (uint32_t)0x180000,
-		.attrs = XTENSA_MMU_PERM_W,
-		.name = "hwreg1",
-	},
 };
 
 int xtensa_soc_mmu_ranges_num = ARRAY_SIZE(xtensa_soc_mmu_ranges);
+
+void arch_xtensa_mmu_post_init(bool is_core0)
+{
+	ARG_UNUSED(is_core0);
+
+	uint32_t reg_at;
+	uint32_t reg_as;
+
+	/*
+	 * We are pinning the first 2MB to the TLB cache, where
+	 * most hardware registers reside. As TLB cache way 4 has
+	 * page size of 1MB each, we need 2 entries. Also there
+	 * are 4 entry slots in way 4 so two consecutive regions
+	 * can co-exist. The permission is kernel read/write only
+	 * with no user access due to hardware register access.
+	 *
+	 * With this pinning here, the TLB cache no longer need to
+	 * auto-refill the TLB entries from the page table, and thus
+	 * not needing to be defined in MMU range table above... and
+	 * we can skip allocated a page table from the L2 table array
+	 * and saving it for other uses.
+	 */
+
+	/* Pin first 1MB in way 4 */
+	reg_at = 0x0 | XTENSA_MMU_PERM_W;
+	reg_as = 0x0 | 4;
+	__asm__ volatile("wdtlb %0, %1" :: "r"(reg_at), "r"(reg_as));
+
+	/* Pin second 1MB in way 4 */
+	reg_at = 0x100000 | XTENSA_MMU_PERM_W;
+	reg_as = 0x100000 | 4;
+	__asm__ volatile("wdtlb %0, %1" :: "r"(reg_at), "r"(reg_as));
+
+	/*
+	 * Not really necessary to do dsync here as this is called just
+	 * after MMU has been initialized. But it's a good practice to
+	 * this just in case hardware needs to invalidate some old TLB
+	 * translations.
+	 */
+	__asm__ volatile("dsync");
+}
