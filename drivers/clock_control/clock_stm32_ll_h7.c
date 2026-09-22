@@ -1064,8 +1064,16 @@ static int set_up_plls(void)
 		LL_RCC_PLL1S_Enable();
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	LL_RCC_PLL1_Enable();
-	while (LL_RCC_PLL1_IsReady() != 1U) {
+	/*
+	 * PLL1 may be enabled in devicetree so its dividers/multipliers are
+	 * configured, even when SYSCLK runs off another clock source (e.g. HSI)
+	 * at boot/resume and PLL1 is only enabled on-demand for high-performance
+	 * bursts. Only enable PLL1 and wait for lock if it is the SYSCLK source.
+	 */
+	if (IS_ENABLED(STM32_SYSCLK_SRC_PLL)) {
+		LL_RCC_PLL1_Enable();
+		while (LL_RCC_PLL1_IsReady() != 1U) {
+		}
 	}
 
 #endif /* STM32_PLL_ENABLED */
