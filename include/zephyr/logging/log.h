@@ -160,7 +160,7 @@ extern "C" {
 			uint32_t __now = k_uptime_get_32();                                        \
 			uint32_t __last = atomic_get(&__last_log_time);                            \
 			uint32_t __diff = __now - __last;                                          \
-			if (unlikely(__diff >= (_rate_ms))) {                                      \
+			if (unlikely(__last == 0 || __diff >= (_rate_ms))) {                       \
 				if (atomic_cas(&__last_log_time, __last, __now)) {                 \
 					uint32_t __skipped = atomic_clear(&__skipped_count);       \
 					if (__skipped > 0) {                                       \
@@ -273,7 +273,7 @@ extern "C" {
 			uint32_t __now = k_uptime_get_32();                                        \
 			uint32_t __last = atomic_get(&__last_log_time);                            \
 			uint32_t __diff = __now - __last;                                          \
-			if (unlikely(__diff >= (_rate_ms))) {                                      \
+			if (unlikely(__last == 0 || __diff >= (_rate_ms))) {                       \
 				if (atomic_cas(&__last_log_time, __last, __now)) {                 \
 					uint32_t __skipped = atomic_clear(&__skipped_count);       \
 					if (__skipped > 0) {                                       \
