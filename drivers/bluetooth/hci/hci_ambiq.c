@@ -426,6 +426,10 @@ static int bt_apollo_open(const struct device *dev)
 
 	ret = bt_apollo_controller_init(spi_send_packet);
 	if (ret == 0) {
+		/* The controller has been reset and loaded outside the helper,
+		 * and allows one command again without announcing it.
+		 */
+		bt_hci_lockstep_reset(&data->lockstep);
 		ret = bt_apollo_vnd_setup(&data->lockstep);
 	}
 
