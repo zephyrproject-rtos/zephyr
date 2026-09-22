@@ -14,6 +14,7 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 #include <zephyr/sys/barrier.h>
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
@@ -60,7 +61,7 @@ mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 /*
  * We allocate memory for PROPBASE to cover 2 ^ lpi_id_bits LPIs to
  * deal with (one configuration byte per interrupt). PENDBASE has to
- * be 64kB aligned (one bit per LPI, plus 8192 bits for SPI/PPI/SGI).
+ * be 64kB aligned (one bit per LPI, plus bits for SPI/PPI/SGI INTIDs).
  */
 #define ITS_MAX_LPI_NRBITS 16 /* 64K LPIs */
 
@@ -69,8 +70,7 @@ mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 
 #ifdef CONFIG_GIC_V3_ITS
 static uintptr_t lpi_prop_table;
-
-atomic_t nlpi_intid = ATOMIC_INIT(8192);
+static uint32_t lpi_intid_limit;
 #endif
 
 static inline mem_addr_t gic_get_rdist(void)
@@ -103,9 +103,18 @@ static int gic_wait_rwp(uint32_t intid)
 }
 
 #ifdef CONFIG_GIC_V3_ITS
+bool arm_gic_lpi_is_valid(uint32_t intid)
+{
+	return intid >= GIC_LPI_INT_BASE && intid < lpi_intid_limit;
+}
+
 static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	if (!arm_gic_lpi_is_valid(intid)) {
+		return;
+	}
+
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - GIC_LPI_INT_BASE];
 
 	if (enable) {
 		*cfg |= BIT(0);
@@ -124,7 +133,11 @@ static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 
 static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	if (!arm_gic_lpi_is_valid(intid)) {
+		return;
+	}
+
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - GIC_LPI_INT_BASE];
 
 	*cfg &= 0xfc;
 	*cfg |= prio & 0xfc;
@@ -140,7 +153,11 @@ static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 
 static bool arm_gic_lpi_is_enabled(unsigned int intid)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	if (!arm_gic_lpi_is_valid(intid)) {
+		return false;
+	}
+
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - GIC_LPI_INT_BASE];
 
 	return (*cfg & BIT(0));
 }
@@ -170,7 +187,7 @@ static inline void arm_gic_write_irouter(uint64_t val, unsigned int intid)
 void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t flags)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		arm_gic_lpi_set_priority(intid, prio);
 		return;
 	}
@@ -221,7 +238,7 @@ void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t fl
 void arm_gic_irq_enable(unsigned int intid)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		arm_gic_lpi_setup(intid, true);
 		return;
 	}
@@ -253,7 +270,7 @@ void arm_gic_irq_enable(unsigned int intid)
 void arm_gic_irq_disable(unsigned int intid)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		arm_gic_lpi_setup(intid, false);
 		return;
 	}
@@ -275,7 +292,7 @@ void arm_gic_irq_disable(unsigned int intid)
 bool arm_gic_irq_is_enabled(unsigned int intid)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		return arm_gic_lpi_is_enabled(intid);
 	}
 #endif
@@ -426,6 +443,7 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	if (!lpi_prop_table) {
 		lpi_prop_table = (uintptr_t)k_aligned_alloc(4 * 1024, LPI_PROPBASE_SZ(lpi_id_bits));
 		memset((void *)lpi_prop_table, 0, LPI_PROPBASE_SZ(lpi_id_bits));
+		lpi_intid_limit = MIN(BIT(lpi_id_bits), CONFIG_NUM_IRQS);
 	}
 
 	lpi_pend_table = (uintptr_t)k_aligned_alloc(64 * 1024, LPI_PENDBASE_SZ(lpi_id_bits));
