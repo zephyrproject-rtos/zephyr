@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+choice
+	prompt "Sample scenario"
+	default SAMPLE_SCENARIO_POWEROFF
+
+config SAMPLE_SCENARIO_POWEROFF
+	bool "Power Off"
+	select POWEROFF
+	help
+	  Demonstrate usage of wake-up pins in Poweroff low-power state.
+	  In this scenario, the SoC enters a deep low-power state (e.g., "Shutdown" on STM32C0)
+	  and is powered off completely; a wake-up pin is then used to wake the SoC which starts
+	  execution as if it had just been reset.
+
+config SAMPLE_SCENARIO_S2RAM
+	bool "Suspend to RAM"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_POWER_STATE),power-state-name,suspend-to-ram)
+	depends on SOC_SERIES_STM32WBAX  # Needs SoC-specific support; only implemented on WBA today
+	select PM
+	select PM_DEVICE
+	select PM_DEVICE_RUNTIME
+	select PM_DEVICE_SYSTEM_MANAGED
+	help
+	  Demonstrate usage of wake-up pins in S2RAM (suspend-to-RAM) low-power states.
+	  In this scenario, wake-up pins are used to wake the SoC and trigger a GPIO callback.
+
+endchoice
+
+config SAMPLE_BUSY_WAIT_TIME_MS
+	int "Busy-wait time (in milliseconds)"
+	default 4000 if SAMPLE_SCENARIO_POWEROFF
+	default 1000 if SAMPLE_SCENARIO_S2RAM
+	help
+	  Amount of time the system will busy-wait before entry in low-power state.
+	  In the "Power Off" scenario, this delay elapses once then the system powers off.
+	  In the "Suspend to RAM" scenario, this delay elapses before waiting for a button press.
+
+config SAMPLE_BUTTON_PRESS_TIMEOUT_MS
+	int "Button press timeout (in milliseconds)"
+	default 5000
+	depends on SAMPLE_SCENARIO_S2RAM
+	help
+	  Amount of time the system will wait for a button press before a timeout occurs.
+	  This timeout will wake the system if the button is not pressed within the specified time.
+	  Only relevant in the "Suspend to RAM" scenario.
