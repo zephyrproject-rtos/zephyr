@@ -176,3 +176,27 @@ When organizing Kconfig files:
 * When dealing with large Kconfig files (e.g. with many config symbols),
   consider grouping (some of) them into a separate file and import it using the
   ``source`` directive to improve readability.
+
+.. _kconfig_experimental_deprecated_style:
+
+Experimental/deprecated Kconfig selection
+*****************************************
+
+The :kconfig:option:`CONFIG_DEPRECATED` and :kconfig:option:`CONFIG_EXPERIMENTAL` Kconfigs can be
+selected by other Kconfig symbols to indicate that they are deprecated or experimental (only
+boolean symbols must do this). Deprecated Kconfigs with prompts shall have ' [DEPRECATED]' at the
+end of the prompt string, experimental Kconfigs with prompts shall have ' [EXPERIMENTAL]' at the
+end of the prompt string, note that due to the nature of non-bool symbols always having a value, a
+non-bool Kconfig cannot be added which is experimental, instead a Kconfig adding a feature should
+be added which is experimental, and the child Kconfigs can be inside of that.
+
+As per the Zephyr :ref:`api_lifecycle`, a Kconfig that is experimental or deprecated must be
+entirely deprecated or experimental if the symbol is enabled, irrespective of conditions
+(i.e. **without** any ``if`` conditions attached to select experimental/deprecated).
+
+To deprecate non-bool Kconfigs, it is required to add a helper symbol which will select the
+DEPRECATED Kconfig and clearly states what condition has caused it, this demonstrates an example:
+
+.. literalinclude:: kconfig_example_deprecated_non_bool.txt
+   :language: kconfig
+   :start-after: start-after-here
