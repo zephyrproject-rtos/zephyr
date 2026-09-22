@@ -95,6 +95,7 @@ struct counter_esp32_data {
 #ifdef CONFIG_COUNTER_TMR_ESP32_CAPTURE
 	struct counter_esp32_capture_data capture;
 #endif
+	struct k_spinlock lock;
 };
 
 #if COUNTER_SLEEP_RETENTION_ENABLED
@@ -265,6 +266,8 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 		return -EINVAL;
 	}
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
 	data->alarm_cfg.callback = alarm_cfg->callback;
 	data->alarm_cfg.user_data = alarm_cfg->user_data;
 
@@ -306,6 +309,8 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 		timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, true);
 	}
 
+	k_spin_unlock(&data->lock, key);
+
 	return err;
 }
 
@@ -313,6 +318,8 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	ARG_UNUSED(chan_id);
 	struct counter_esp32_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
 	timer_ll_enable_intr(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id),
 			     false);
 	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
@@ -320,6 +327,8 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 
 	data->alarm_cfg.callback = NULL;
 	data->alarm_cfg.user_data = NULL;
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -329,11 +338,8 @@ static int counter_esp32_set_top_value_64(const struct device *dev,
 {
 	const struct counter_esp32_config *config = dev->config;
 	struct counter_esp32_data *data = dev->data;
+	k_spinlock_key_t key;
 	uint64_t now;
-
-	if (data->alarm_cfg.callback) {
-		return -EBUSY;
-	}
 
 #ifdef CONFIG_COUNTER_64BITS_TICKS
 	if (cfg->ticks > config->counter_info.max_top_value_64) {
@@ -345,6 +351,13 @@ static int counter_esp32_set_top_value_64(const struct device *dev,
 	}
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 
+	key = k_spin_lock(&data->lock);
+
+	if (data->alarm_cfg.callback != NULL) {
+		k_spin_unlock(&data->lock, key);
+		return -EBUSY;
+	}
+
 	counter_esp32_get_value_64(dev, &now);
 
 	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
@@ -354,6 +367,7 @@ static int counter_esp32_set_top_value_64(const struct device *dev,
 			if (cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
 				timer_hal_set_counter_value(&data->hal_ctx, 0);
 			} else {
+				k_spin_unlock(&data->lock, key);
 				return -ETIME;
 			}
 		}
@@ -371,6 +385,8 @@ static int counter_esp32_set_top_value_64(const struct device *dev,
 
 	timer_ll_enable_auto_reload(data->hal_ctx.dev, data->hal_ctx.timer_id,
 				    cfg->callback ? true : false);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -767,8 +783,12 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct counter_esp32_data *data = dev->data;
-	counter_alarm_callback_64_t cb = data->alarm_cfg.callback;
-	void *cb_data = data->alarm_cfg.user_data;
+	counter_alarm_callback_64_t cb;
+	counter_top_callback_t top_cb;
+	void *cb_data;
+	void *top_data;
+	bool auto_reload;
+	k_spinlock_key_t key;
 	uint64_t now;
 
 	uint32_t intr_status = timer_ll_get_intr_status(data->hal_ctx.dev);
@@ -781,18 +801,28 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 
 	counter_esp32_get_value_64(dev, &now);
 
+	key = k_spin_lock(&data->lock);
+	cb = data->alarm_cfg.callback;
+	cb_data = data->alarm_cfg.user_data;
 	if (cb) {
 		timer_ll_enable_intr(data->hal_ctx.dev,
 				     TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id), false);
 		timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
 		data->alarm_cfg.callback = NULL;
 		data->alarm_cfg.user_data = NULL;
+	}
+	top_cb = data->top_data.callback;
+	top_data = data->top_data.user_data;
+	auto_reload = data->top_data.auto_reload;
+	k_spin_unlock(&data->lock, key);
+
+	if (cb) {
 		cb(dev, 0, now, cb_data);
 	}
 
-	if (data->top_data.callback) {
-		data->top_data.callback(dev, data->top_data.user_data);
-		if (data->top_data.auto_reload) {
+	if (top_cb) {
+		top_cb(dev, top_data);
+		if (auto_reload) {
 			timer_ll_enable_intr(data->hal_ctx.dev,
 					     TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id), true);
 			timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, true);
