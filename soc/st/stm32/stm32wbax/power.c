@@ -42,6 +42,20 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RETAINED_SRAM12_START	(DT_REG_ADDR(RETAINED_SRAM12))
 #define RETAINED_SRAM12_END	(RETAINED_SRAM12_START + DT_REG_SIZE(RETAINED_SRAM12))
 
+/* Retained S2RAM context region (from DTS) */
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pm_s2ram), zephyr_memory_region, okay)
+#define RETAINED_PM_S2RAM	DT_NODELABEL(pm_s2ram)
+#define RETAINED_PM_S2RAM_START	(DT_REG_ADDR(RETAINED_PM_S2RAM))
+#define RETAINED_PM_S2RAM_END	(RETAINED_PM_S2RAM_START + DT_REG_SIZE(RETAINED_PM_S2RAM))
+#else /* DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pm_s2ram), zephyr_memory_region, okay) */
+/*
+ * If S2RAM context region is not provided, use dummy values.
+ * Zero is chosen on purpose: it is not a valid SRAM address.
+ */
+#define RETAINED_PM_S2RAM_START	0
+#define RETAINED_PM_S2RAM_END	0
+#endif /* DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pm_s2ram), zephyr_memory_region, okay) */
+
 /* Hardware information */
 #if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
 #define BASE(sramn) CONCAT(sramn, _BASE_S)
@@ -62,6 +76,21 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RANGES_OVERLAP(i1s, i1e, i2s, i2e)					\
 	(((i1e) > (i2s)) && ((i1s) < (i2e)))
 
+/*
+ * @param ois Start of the common overlap interval (inclusive)
+ * @param oie End of the common overlap interval (exclusive)
+ * @param i1s Start of interval 1 (inclusive)
+ * @param i1e End of interval 1 (exclusive)
+ * @param i2s Start of interval 2 (inclusive)
+ * @param i2e End of interval 2 (exclusive)
+ *
+ * Evaluates as true if there is an overlap between
+ * intervals [ois, oie) and [i1s, i1e) or an overlap
+ * between [ois, oie) and [i2s, i2e).
+ */
+#define RANGES_OVERLAP_2(ois, oie, i1s, i1e, i2s, i2e)				\
+	(RANGES_OVERLAP(ois, oie, i1s, i1e) || RANGES_OVERLAP(ois, oie, i2s, i2e))
+
 #if !defined(PWR_STOP2_SUPPORT) || defined(PWR_STOP3_SUPPORT) /* STM32WBA5x or STM32WBA2x */
 /* No page granularity on STM32WBA5x and STM32WBA2x */
 #define SRAM1_RETENTION_MASK LL_PWR_SRAM1_SB_FULL_RETENTION
@@ -73,9 +102,11 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
  * region, false otherwise.
  */
 #define SRAM1_PAGE_USED(pgn)							\
-	RANGES_OVERLAP(RETAINED_SRAM12_START, RETAINED_SRAM12_END,		\
+	RANGES_OVERLAP_2(							\
 		BASE(SRAM1) + (((pgn) - 1) * SRAM1_PAGE_SIZE),			\
-		BASE(SRAM1) + ((pgn) * SRAM1_PAGE_SIZE))
+		BASE(SRAM1) + ((pgn) * SRAM1_PAGE_SIZE),			\
+		RETAINED_SRAM12_START, RETAINED_SRAM12_END,			\
+		RETAINED_PM_S2RAM_START, RETAINED_PM_S2RAM_END)
 
 #define SRAM1_PAGE_RETAIN_MASK(pgn, msknum)					\
 	(SRAM1_PAGE_USED(pgn) ?	CONCAT(LL_PWR_SRAM1_SB_PAGE, msknum, _RETENTION) : 0)
@@ -93,11 +124,10 @@ BUILD_ASSERT(SRAM1_RETENTION_MASK != 0U,
 	"Retained SRAM1/2 region does not contain any SRAM1 page!");
 #endif /* !defined(PWR_STOP2_SUPPORT) || defined(PWR_STOP3_SUPPORT) */
 
-#define RETAINED_SRAM12_OVERLAPS_SRAM2                                 \
-		(RANGES_OVERLAP(RETAINED_SRAM12_START,                 \
-				RETAINED_SRAM12_END,                   \
-				BASE(SRAM2),                           \
-				BASE(SRAM2) + SRAM2_SIZE))
+#define SHOULD_RETAIN_SRAM2							\
+	(RANGES_OVERLAP_2(BASE(SRAM2), BASE(SRAM2) + SRAM2_SIZE,		\
+		RETAINED_SRAM12_START, RETAINED_SRAM12_END,			\
+		RETAINED_PM_S2RAM_START, RETAINED_PM_S2RAM_END))
 #endif /* CONFIG_PM_S2RAM */
 
 
@@ -373,7 +403,7 @@ void stm32_power_init(void)
 	/* Retain only the required SRAM1 pages */
 	LL_PWR_SetSRAM1SBRetention(SRAM1_RETENTION_MASK);
 
-	if (DT_PROP(PWRC_NODE, retain_sram2) || RETAINED_SRAM12_OVERLAPS_SRAM2) {
+	if (DT_PROP(PWRC_NODE, retain_sram2) || SHOULD_RETAIN_SRAM2) {
 		/* Retain SRAM2 if explicitly requested or used by Zephyr as system RAM */
 		LL_PWR_SetSRAM2SBRetention(LL_PWR_SRAM2_SB_FULL_RETENTION);
 	}
