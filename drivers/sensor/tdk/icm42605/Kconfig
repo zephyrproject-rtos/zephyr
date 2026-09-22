@@ -1,13 +1,15 @@
 # ICM42605 Six-Axis Motion Tracking device configuration options
 
 # Copyright (c) 2020 TDK Invensense
+# Copyright 2026 Ahmed Ashraf NourEldeen <a.programmer55559@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ICM42605
 	bool "ICM42605 Six-Axis Motion Tracking Device"
 	default y
 	depends on DT_HAS_INVENSENSE_ICM42605_ENABLED
-	select SPI
+	 select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42605),spi)
+	 select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42605),i2c)
 	help
 	  Enable driver for ICM42605 SPI-based six-axis motion tracking device.
 
