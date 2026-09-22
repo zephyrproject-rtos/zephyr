@@ -847,7 +847,7 @@ static void send_sd_response(int sock,
 
 			/* Construct the response */
 			if (service_type_enum) {
-				ret = dns_sd_handle_service_type_enum(iface, record, addr4, addr6,
+				ret = dns_sd_handle_service_type_enum(record, addr4, addr6,
 								      result->data, result_size);
 			} else if (qtype == DNS_RR_TYPE_PTR) {
 				ret = dns_sd_handle_ptr_query(iface, record, addr4, addr6,
@@ -1149,8 +1149,8 @@ static int send_probe(struct mdns_responder_context *ctx)
 	do {
 		local_port = sys_rand16_get() | 0x8000;
 		ret++;
-	} while (net_context_port_in_use(NET_IPPROTO_UDP, local_port,
-					 net_sad(&ctx->dispatcher.local_addr_storage)) &&
+	} while (net_socket_port_in_use(NET_IPPROTO_UDP, local_port,
+					net_sad(&ctx->dispatcher.local_addr_storage)) &&
 		 ret < PORT_COUNT);
 	if (ret >= PORT_COUNT) {
 		NET_ERR("No available port, %s probe fails!", "mDNS");

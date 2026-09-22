@@ -469,6 +469,7 @@ endif # LLMNR_RESPONDER
 
 config DNS_SD
 	bool "DNS Service Discovery"
+	select NET_SOCKETS_OFFLOAD_PORT_TRACKING if NET_SOCKETS_OFFLOAD
 	help
 	  This option enables DNS Service Discovery for Zephyr. It can
 	  be enabled for virtually any network service with only a few

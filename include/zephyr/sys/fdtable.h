@@ -95,6 +95,20 @@ struct fd_op_vtable {
 	int (*ioctl)(void *obj, unsigned int request, va_list args);
 };
 
+/** @cond INTERNAL_HIDDEN */
+
+/* Called by zvfs_close() for every ZVFS_MODE_IFSOCK descriptor, implemented by the socket layer. */
+#if defined(CONFIG_NET_SOCKETS)
+void zvfs_socket_close_hook(int fd);
+#else
+static inline void zvfs_socket_close_hook(int fd)
+{
+	ARG_UNUSED(fd);
+}
+#endif /* CONFIG_NET_SOCKETS */
+
+/** @endcond */
+
 /**
  * @brief Reserve file descriptor.
  *
