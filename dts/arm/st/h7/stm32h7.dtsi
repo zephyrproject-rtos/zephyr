@@ -46,6 +46,31 @@
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+
+			cpu-power-states = <&stop>;
+		};
+
+		power-states {
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				/*
+				 * The worst case scenario for single core
+				 * STM32H7: 90us of maximum guaranteed wakeup
+				 * latency when using CSI oscillator on
+				 * STM32H723/33, 30us for voltage stabilization
+				 * when switching from SVOS5 VOS1 or VOS0,
+				 * 150us of maximum PLL lock time.
+				 */
+				exit-latency-us = <270>;
+				/*
+				 * Difficult to estimate accurately. With exit
+				 * latency significantly below 270us in most
+                                 * cases, 0.5ms seems reasonable.
+				 */
+				min-residency-us = <500>;
+			};
 		};
 	};
 
