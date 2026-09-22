@@ -416,6 +416,7 @@ int zvfs_close(int fd)
 			 * it via close2() call.
 			 */
 			res = fdtable[fd].vtable->close2(fdtable[fd].obj, fd);
+			zvfs_socket_close_hook(fd);
 		} else {
 			res = fdtable[fd].vtable->close(fdtable[fd].obj);
 		}
