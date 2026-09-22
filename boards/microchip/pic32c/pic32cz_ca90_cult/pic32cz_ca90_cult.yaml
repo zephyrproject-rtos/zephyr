@@ -18,5 +18,6 @@ supported:
   - rtc
   - spi
   - uart
+  - usb_device
   - watchdog
 vendor: microchip
