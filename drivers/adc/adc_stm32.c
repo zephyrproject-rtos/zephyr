@@ -2111,7 +2111,7 @@ static int adc_stm32_init(const struct device *dev)
 static int adc_stm32_suspend_setup(const struct device *dev)
 {
 	const struct adc_sub_stm32_cfg *config = dev->config;
-	const struct adc_stm32_cfg *parent_config = adc_stm32_get_parent_cfg(config);
+	__maybe_unused const struct adc_stm32_cfg *parent_config = adc_stm32_get_parent_cfg(config);
 	ADC_TypeDef *adc = config->base;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct adc_stm32_clk_cfg *clk_cfg = adc_stm32_get_clk_cfg(config);
