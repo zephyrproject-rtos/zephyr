@@ -34,6 +34,43 @@ MARK_DBG = r".*<dbg> \w+\/app: debug 1000 100.*"
     ],
 )
 def test_runtime_stm_shell(shell: Shell, cmd_prefix: str) -> None:
+    """Exercise cpuapp and each named remote (nRF54H20 multi-remote shell)."""
+    _run_runtime_stm_shell_sequence(shell, cmd_prefix)
+
+
+@pytest.mark.parametrize(
+    "cmd_prefix",
+    [
+        "",
+        "remote_shell ",
+    ],
+)
+def test_runtime_stm_shell_single_remote(shell: Shell, cmd_prefix: str) -> None:
+    """Exercise cpuapp and the sole remote shell."""
+    _run_runtime_stm_shell_sequence(shell, cmd_prefix)
+
+
+@pytest.mark.parametrize(
+    "cmd_prefix",
+    [
+        "",
+        "remote_shell ",
+    ],
+)
+def test_no_runtime_filtering_single_remote(shell: Shell, cmd_prefix: str) -> None:
+    """
+    With runtime filtering disabled, ``ping`` on cpuapp and the sole remote shell must
+    print all severities (module ``app`` is compiled with DBG level).
+    """
+    label = "cpuapp" if not cmd_prefix else cmd_prefix.strip()
+    logger.info("testing %s (no runtime filtering)", label)
+
+    ping_cmd = f"{cmd_prefix}ping".rstrip()
+    out_ping = shell.exec_command(ping_cmd, get_full_output=True, full_output_timeout=1.0)
+    pytest.LineMatcher(out_ping).re_match_lines([MARK_ERR, MARK_WRN, MARK_INF, MARK_DBG])
+
+
+def _run_runtime_stm_shell_sequence(shell: Shell, cmd_prefix: str) -> None:
     """
     For each core (local or via ``remote_shell``): set module ``app`` to DBG, run ``ping`` and
     expect all severities; set to INF, run ``ping`` again and expect no DBG line.
