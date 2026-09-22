@@ -251,6 +251,8 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	hal_dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	hal_dma_cfg.source_data_size = 4U;
 	hal_dma_cfg.dest_data_size = 4U;
+	hal_dma_cfg.source_burst_length = 16U;
+	hal_dma_cfg.dest_burst_length = 16U;
 	ret = dma_stm32_zcfg_to_halcfg(dma->dev, &hal_dma_cfg, &handle->Init,
 				       DMA_ADDR_ADJ_NO_CHANGE, DMA_ADDR_ADJ_INCREMENT);
 	if (ret < 0) {
@@ -263,8 +265,6 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	handle->Init.Mode                = DMA_PFCTRL;
 	handle->Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
 	handle->Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
-	handle->Init.MemBurst            = DMA_MBURST_INC4;
-	handle->Init.PeriphBurst         = DMA_PBURST_INC4;
 #else
 	BUILD_ASSERT(STM32_SDMMC_USE_DMA_SHARED == 1, "Only txrx is supported on this family");
 	/* handle->Init.Direction is not initialised here on purpose.
