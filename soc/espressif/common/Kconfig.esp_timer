@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+choice SOC_ESP32_TIMER_TASK_CORE
+	prompt "esp_timer task core"
+	depends on SMP && SCHED_CPU_MASK
+	default SOC_ESP32_TIMER_TASK_PINNED_TO_CORE_0
+	help
+	  Core the esp_timer dispatch task is pinned to under SMP. esp_timer
+	  callbacks drive Wi-Fi and BLE housekeeping, so the task should share
+	  the core where those stacks run (core 0 by default) to avoid
+	  cross-core wakeups and lock contention.
+
+config SOC_ESP32_TIMER_TASK_PINNED_TO_CORE_0
+	bool "Core 0"
+
+config SOC_ESP32_TIMER_TASK_PINNED_TO_CORE_1
+	bool "Core 1"
+
+endchoice # SOC_ESP32_TIMER_TASK_CORE
+
+config SOC_ESP32_TIMER_TASK_CORE_ID
+	int
+	default 1 if SOC_ESP32_TIMER_TASK_PINNED_TO_CORE_1
+	default 0
+	help
+	  Resolved core id for the esp_timer task (0 or 1). Consumed by the
+	  esp_timer task-create path to pin the task.
