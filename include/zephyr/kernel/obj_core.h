@@ -125,13 +125,16 @@ struct k_obj_range {
 	bool        indirect; /**< Elements are pointers to the objects */
 };
 
+/** Maximum number of permanent object ranges of an object type */
+#define K_OBJ_TYPE_MAX_RANGES 3
+
 /** Object type structure */
 struct k_obj_type {
 	sys_snode_t    node;   /**< Node within list of object types */
 	uint32_t       id;     /**< Unique type ID */
 	size_t         obj_core_offset;  /**< Offset to obj_core field */
-	/** Permanent objects of this type, walked in place */
-	struct k_obj_range statics;
+	/** Permanent objects of this type, walked in place; a zero stride ends the list */
+	struct k_obj_range statics[K_OBJ_TYPE_MAX_RANGES];
 	/** Registrations refused because the registry was full */
 	uint32_t       dropped;
 	/** Registrations refused because the object lives in stack storage */
@@ -178,20 +181,30 @@ struct k_obj_core {
  * @param _stats  Pointer to a k_obj_core_stats_desc, or NULL
  * @param _soff   Offset of the per-object stats buffer within @a _struct, or 0
  * @param _ssz    Size of the per-object stats buffer, or 0 for none
- * @param _start  First permanent object of the type, or NULL
- * @param _end    One past the last permanent object of the type, or NULL
+ * @param ...     Permanent object range initializers, e.g. K_OBJ_RANGE_SECTION()
  */
-#define K_OBJ_TYPE_INITIALIZER(_struct, _id, _stats, _soff, _ssz, _start, _end) \
+#define K_OBJ_TYPE_INITIALIZER(_struct, _id, _stats, _soff, _ssz, ...)        \
 	{                                                                      \
 		.id = (_id),                                                   \
 		.obj_core_offset = offsetof(struct _struct, obj_core),         \
-		.statics = {                                                   \
-			.start = (_start),                                     \
-			.end = (_end),                                         \
-			.stride = sizeof(struct _struct),                      \
-			.indirect = false,                                     \
-		},                                                             \
+		.statics = { __VA_ARGS__ },                                    \
 		K_OBJ_TYPE_STATS_INITIALIZER(_stats, _soff, _ssz)              \
+	}
+
+/**
+ * @brief Permanent object range initializer for an iterable section
+ *
+ * The section start and end symbols of @a _struct must be declared with
+ * STRUCT_SECTION_START_EXTERN() and STRUCT_SECTION_END_EXTERN().
+ *
+ * @param _struct Struct type of the section elements
+ */
+#define K_OBJ_RANGE_SECTION(_struct)                                           \
+	{                                                                      \
+		.start = STRUCT_SECTION_START(_struct),                        \
+		.end = STRUCT_SECTION_END(_struct),                            \
+		.stride = sizeof(struct _struct),                              \
+		.indirect = false,                                             \
 	}
 
 /**
@@ -212,8 +225,7 @@ struct k_obj_core {
 	STRUCT_SECTION_END_EXTERN(_struct);                                    \
 	static STRUCT_SECTION_ITERABLE(k_obj_type, _type_var) =                \
 		K_OBJ_TYPE_INITIALIZER(_struct, _id, _stats, 0, 0,             \
-				       STRUCT_SECTION_START(_struct),          \
-				       STRUCT_SECTION_END(_struct))
+				       K_OBJ_RANGE_SECTION(_struct))
 
 /**
  * @brief Define an object type that also gathers per-object statistics
@@ -234,8 +246,7 @@ struct k_obj_core {
 		K_OBJ_TYPE_INITIALIZER(_struct, _id, _stats,                   \
 				       offsetof(struct _struct, _member),      \
 				       sizeof(((struct _struct *)0)->_member), \
-				       STRUCT_SECTION_START(_struct),          \
-				       STRUCT_SECTION_END(_struct))
+				       K_OBJ_RANGE_SECTION(_struct))
 
 /**
  * @brief Define an object type without permanent objects
@@ -251,7 +262,24 @@ struct k_obj_core {
  */
 #define K_OBJ_TYPE_DEFINE_TYPE_ONLY(_type_var, _struct, _id, _stats)           \
 	static STRUCT_SECTION_ITERABLE(k_obj_type, _type_var) =                \
-		K_OBJ_TYPE_INITIALIZER(_struct, _id, _stats, 0, 0, NULL, NULL)
+		K_OBJ_TYPE_INITIALIZER(_struct, _id, _stats, 0, 0, { 0 })
+
+/**
+ * @brief Define an object type with explicit permanent object ranges
+ *
+ * Like K_OBJ_TYPE_DEFINE(), but the permanent objects are the elements of
+ * the given ranges, at most K_OBJ_TYPE_MAX_RANGES of them, each of which
+ * holds objects with an obj_core member at the same offset as @a _struct.
+ *
+ * @param _type_var Name of the object type (struct k_obj_type) to define
+ * @param _struct   Object struct type with an obj_core member
+ * @param _id       Unique type ID
+ * @param _stats    Pointer to a k_obj_core_stats_desc, or NULL
+ * @param ...       Range initializers, e.g. K_OBJ_RANGE_SECTION(k_queue)
+ */
+#define K_OBJ_TYPE_DEFINE_RANGES(_type_var, _struct, _id, _stats, ...)         \
+	static STRUCT_SECTION_ITERABLE(k_obj_type, _type_var) =                \
+		K_OBJ_TYPE_INITIALIZER(_struct, _id, _stats, 0, 0, __VA_ARGS__)
 
 /**
  * INTERNAL_HIDDEN @endcond
