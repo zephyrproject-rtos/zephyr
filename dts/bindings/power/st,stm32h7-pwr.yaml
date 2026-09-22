@@ -64,3 +64,27 @@ properties:
     enum:
       - "1V8"
       - "2V5"
+
+  voltage-scale:
+    type: int
+    description: |
+      Voltage regulator scale selection
+
+      If present, this property determines the voltage regulator scale to use.
+      This choice affects several aspects of the system:
+        * power consumption
+        * memory and flash wait states
+        * maximal system clock frequency
+        * maximal bus clock frequency
+        * availability of certain peripherals
+        * ...
+
+      The application is responsible for every clock (CPU, buses, PLL and kernel
+      clocks) staying within the limits of the selected voltage scale. Maximum
+      frequencies supported by voltage scales differ across the STM32H7 series.
+      Refer to the specific product datasheet for details.
+
+      When this property is not present, the highest available voltage scale is
+      selected.
+    min: 0
+    max: 3
