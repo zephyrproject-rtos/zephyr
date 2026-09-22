@@ -1133,6 +1133,41 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
 	k_spin_unlock(&s_intc_lock, key);
 }
 
+uint32_t IRAM_ATTR esp_intr_noniram_mask_local(void)
+{
+	int cpu = esp_cpu_get_core_id();
+	unsigned int key;
+	uint32_t masked;
+
+	/* Lines held masked by esp_intr_noniram_disable() are left alone. */
+	if (non_iram_int_disable_nest[cpu] != 0U) {
+		return 0U;
+	}
+
+	key = arch_irq_lock();
+	masked = esp_cpu_intr_get_enabled_mask() & non_iram_int_mask[cpu];
+	esp_cpu_intr_disable(masked);
+	rtc_isr_noniram_disable(cpu);
+	arch_irq_unlock(key);
+
+	return masked;
+}
+
+void IRAM_ATTR esp_intr_noniram_unmask_local(uint32_t masked)
+{
+	int cpu = esp_cpu_get_core_id();
+	unsigned int key;
+
+	if (non_iram_int_disable_nest[cpu] != 0U) {
+		return;
+	}
+
+	key = arch_irq_lock();
+	esp_cpu_intr_enable(masked);
+	rtc_isr_noniram_enable(cpu);
+	arch_irq_unlock(key);
+}
+
 #if defined(CONFIG_RISCV)
 /*
  * Functions below are implemented to keep consistency with current
