@@ -263,12 +263,8 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 #if CONFIG_PM
 	bool hold_en = (flags & ESP32_SLEEP_HOLD_FLAG);
 
-	int key = irq_lock();
-
 	/* Enable pin pad state hold while in low power mode */
 	esp32_sleep_gpio_hold_config(pin_num, hold_en);
-
-	irq_unlock(key);
 #endif
 
 	return 0;

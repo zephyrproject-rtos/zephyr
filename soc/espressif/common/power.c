@@ -66,6 +66,7 @@ static uint64_t lpm_entry_counter;
 static uint64_t lpm_deadline_us;
 #endif
 static uint64_t gpio_sleep_hold;
+static struct k_spinlock gpio_sleep_hold_lock;
 #if defined(SOC_RTC_SLOW_MEM_SUPPORTED) || defined(SOC_RTC_FAST_MEM_SUPPORTED)
 static RTC_DATA_ATTR uint64_t gpio_was_held;
 #else
@@ -163,10 +164,12 @@ void esp32_sleep_gpio_hold_config(uint8_t gpio_num, bool enable)
 		return;
 	}
 
-	if (enable) {
-		gpio_sleep_hold |= (1ULL << gpio_num);
-	} else {
-		gpio_sleep_hold &= ~(1ULL << gpio_num);
+	K_SPINLOCK(&gpio_sleep_hold_lock) {
+		if (enable) {
+			gpio_sleep_hold |= (1ULL << gpio_num);
+		} else {
+			gpio_sleep_hold &= ~(1ULL << gpio_num);
+		}
 	}
 }
 
