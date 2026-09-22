@@ -868,6 +868,17 @@
 			status = "disabled";
 		};
 
+		cryp: crypto@54002000 {
+			compatible = "st,stm32-cryp";
+			reg = <0x54002000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 4)>;
+			resets = <&rctl STM32_RESET(AHB5, 4)>;
+			/* CRYP1_IRQn (CMSIS) = 112 -> GIC SPI = 112 - 32 = 80 */
+			interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			gcm-ccm-supported;
+			status = "disabled";
+		};
+
 		rtc: rtc@5c004000 {
 			compatible = "st,stm32-rtc";
 			reg = <0x5c004000 0x400>;
