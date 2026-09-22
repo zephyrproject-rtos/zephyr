@@ -1,0 +1,111 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MPIPE_BASE
+	bool "Base optional elements (e.g. caps_filter, queue, tee, app_src, app_sink)"
+	help
+	  Media-agnostic elements that shape a graph rather than its data: a caps
+	  filter that constrains what a link may carry, a tee that splits a graph
+	  into branches, a queue that splits it across threads, and the
+	  application source and sink that let the application inject data
+	  into a graph and receive what comes out of it.
+
+if MPIPE_BASE
+
+config MPIPE_BASE_APP_SINK
+	bool "Application sink element"
+	help
+	  Enable the app_sink element which hands the buffers reaching the
+	  end of a pipeline to the application, through a callback or a
+	  pull API.
+
+config MPIPE_BASE_APP_SINK_QUEUE_DEPTH
+	int "Buffers the app_sink can hold for pulling"
+	range 1 32
+	default 2
+	depends on MPIPE_BASE_APP_SINK
+	help
+	  Number of buffers queued for mpipe_app_sink_pull() when no callback
+	  is set. A buffer arriving on a full queue is dropped.
+
+config MPIPE_BASE_APP_SRC
+	bool "Application source element"
+	help
+	  Enable the app_src element which lets the application inject data
+	  into a pipeline: payloads are pushed at the application's pace
+	  and end of stream is declared explicitly.
+
+config MPIPE_BASE_APP_SRC_POOL_NUM
+	int "Number of buffers of the app_src pool"
+	range 1 32
+	default 2
+	depends on MPIPE_BASE_APP_SRC
+	help
+	  Number of pushed payloads that can be in flight at once.
+
+config MPIPE_BASE_APP_SRC_BUF_SZ
+	int "Buffer size of the app_src element (in bytes)"
+	range 1 262144
+	default 1024
+	depends on MPIPE_BASE_APP_SRC
+	help
+	  Upper bound of one pushed payload; sizes the static buffer pool.
+
+config MPIPE_BASE_APP_SRC_QUEUE_DEPTH
+	int "Payloads the app_src can queue ahead"
+	range 1 32
+	default 2
+	depends on MPIPE_BASE_APP_SRC
+	help
+	  Number of pushed payloads waiting for the pipeline thread before a
+	  push blocks.
+
+config MPIPE_BASE_CAPS_FILTER
+	bool "Caps filter element"
+	help
+	  Enable the caps_filter element. Caps filter restricts the media
+	  format flowing between two elements by filtering on capabilities
+	  such as sample rate, pixel format, etc. This allows forcing a
+	  specific format at a given point in the pipeline.
+
+config MPIPE_BASE_QUEUE
+	bool "Queue element (for pipeline-level threading)"
+	help
+	  Enable the queue element which decouples pipeline segments
+	  into separate threads for parallel processing. The queue
+	  deposits buffers into a FIFO and spawns a dedicated thread
+	  to drive the downstream segment. A full queue holds the
+	  producer by default; a leak policy makes it drop the oldest
+	  or the arriving buffer instead.
+
+config MPIPE_BASE_QUEUE_MAX_SIZE
+	int "Max size of a queue element"
+	range 1 255
+	default 2
+	depends on MPIPE_BASE_QUEUE
+	help
+	  Maximum number of buffers that can be queued into a queue element.
+
+config MPIPE_BASE_TEE
+	bool "Tee element"
+	help
+	  Enable the tee element which splits a single input branch
+	  into multiple output branches.
+
+config MPIPE_BASE_TEE_MAX_SRC_PADS_NUM
+	int "Maximum number of source pads of a tee element"
+	range 2 8
+	default 2
+	depends on MPIPE_BASE_TEE
+	help
+	  Number of output branches a tee element provides. The pads are part of
+	  the element, so this is reserved whether or not every branch is linked;
+	  a branch left unlinked is simply skipped.
+
+	  Note that every branch must accept a format the single input can
+	  supply, since one negotiation has to satisfy them all.
+
+endif # MPIPE_BASE
