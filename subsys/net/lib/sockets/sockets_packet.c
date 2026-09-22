@@ -79,6 +79,66 @@ static void zpacket_received_cb(struct net_context *ctx,
 }
 
 
+/*
+ * Wait for the receive queue with this socket's mutex released.
+ *
+ * Every socket call holds that mutex for its whole duration (VTABLE_CALL in
+ * sockets.c), so a receive that blocks here holds it too, and every concurrent
+ * sendto() on the same socket waits for a frame to arrive. INET sockets avoid
+ * that by waiting on a condition variable, which releases the mutex; a packet
+ * socket cannot use the same mechanism, because its receive callback runs with
+ * the global connection lock held and taking the socket mutex under it would
+ * invert the order that close() takes the two in. Releasing the mutex
+ * around the queue wait needs neither the callback nor the condition variable,
+ * and leaves k_fifo_cancel_wait() on peer close working as it did.
+ *
+ * Returns 0, or a negative error from the peek path. The queue is re-read after
+ * the mutex is taken again, and the wait resumes for the remaining timeout if
+ * another thread has since removed the packet.
+ */
+static int zpacket_wait_pkt(struct net_context *ctx, int flags, k_timeout_t timeout,
+			    struct net_pkt **pkt)
+{
+	struct k_mutex *lock = ctx->cond.lock;
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+	int res;
+
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		lock = NULL;
+	}
+
+	do {
+		if (lock != NULL && k_mutex_unlock(lock) != 0) {
+			/* Not this thread's to release; wait with it held, as before. */
+			lock = NULL;
+		}
+
+		if (flags & ZSOCK_MSG_PEEK) {
+			res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
+		} else {
+			*pkt = k_fifo_get(&ctx->recv_q, timeout);
+			res = 0;
+		}
+
+		if (lock != NULL) {
+			(void)k_mutex_lock(lock, K_FOREVER);
+		}
+
+		/* EAGAIN when timeout expired, EINTR when cancelled */
+		if (res != 0 && res != -EAGAIN && res != -EINTR) {
+			return res;
+		}
+
+		if (flags & ZSOCK_MSG_PEEK) {
+			*pkt = k_fifo_peek_head(&ctx->recv_q);
+		}
+
+		timeout = sys_timepoint_timeout(end);
+	} while ((flags & ZSOCK_MSG_PEEK) && *pkt == NULL && res == 0 && !sock_is_error(ctx));
+
+	return 0;
+}
+
 static int zpacket_socket(int family, int type, int proto)
 {
 	struct net_context *ctx;
@@ -311,7 +371,7 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 {
 	size_t recv_len = 0;
 	k_timeout_t timeout = K_FOREVER;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt = NULL;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
@@ -319,19 +379,13 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
-	if (flags & ZSOCK_MSG_PEEK) {
-		int res;
+	{
+		int res = zpacket_wait_pkt(ctx, flags, timeout, &pkt);
 
-		res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
-		/* EAGAIN when timeout expired, EINTR when cancelled */
-		if (res && res != -EAGAIN && res != -EINTR) {
+		if (res != 0) {
 			errno = -res;
 			return -1;
 		}
-
-		pkt = k_fifo_peek_head(&ctx->recv_q);
-	} else {
-		pkt = k_fifo_get(&ctx->recv_q, timeout);
 	}
 
 	if (pkt == NULL) {
@@ -418,20 +472,7 @@ static int zpacket_update_msg_controllen(struct net_msghdr *msg)
 static int zpacket_recvmsg_get_pkt(struct net_context *ctx, int flags, k_timeout_t timeout,
 				   struct net_pkt **pkt)
 {
-	if (flags & ZSOCK_MSG_PEEK) {
-		int res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
-
-		/* EAGAIN when timeout expired, EINTR when cancelled */
-		if (res != 0 && res != -EAGAIN && res != -EINTR) {
-			return res;
-		}
-
-		*pkt = k_fifo_peek_head(&ctx->recv_q);
-	} else {
-		*pkt = k_fifo_get(&ctx->recv_q, timeout);
-	}
-
-	return 0;
+	return zpacket_wait_pkt(ctx, flags, timeout, pkt);
 }
 
 static int zpacket_recvmsg_copy_data(struct net_pkt *pkt, struct net_msghdr *msg, size_t read_len)
