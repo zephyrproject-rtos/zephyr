@@ -38,6 +38,14 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 #define DISPLAY_NODE(n) DT_INVALID_NODE
 #endif
 
+/* Every selected node must be a display controller, whether it comes from the
+ * "zephyr,displays" list or from the chosen node.
+ */
+#define DISPLAY_NODE_CLASS_ASSERT(n)                                                               \
+	BUILD_ASSERT(DT_NODE_HAS_CLASS(DISPLAY_NODE(n), display),                                  \
+		     "LVGL display " #n " is not a display controller node");
+FOR_EACH(DISPLAY_NODE_CLASS_ASSERT, (), LV_DISPLAYS_IDX_LIST)
+
 #define IS_MONOCHROME_DISPLAY                                                                      \
 	UTIL_OR(IS_EQ(CONFIG_LV_Z_BITS_PER_PIXEL, 1), IS_EQ(CONFIG_LV_COLOR_DEPTH_1, 1))
 
@@ -62,12 +70,16 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 #define DISPLAY_HEIGHT(n) DT_PROP(DISPLAY_NODE(n), height)
 
 #if IS_MONOCHROME_DISPLAY
-/* monochrome buffers are expected to have 8 preceding bytes for the color palette */
+/* monochrome buffers are expected to have 8 preceding bytes for the color palette.
+ * Ensure the buffer can hold at least the data necessary for
+ * an aligned line (8 * width pixels on a Vtiled display, so width bytes)
+ * so get_max_row doesn't result in LVGL being able to render less than 1 line.
+ */
 #define BUFFER_SIZE(n)                                                                             \
-	(((CONFIG_LV_Z_VDB_SIZE * ROUND_UP(DISPLAY_WIDTH(n), 8) *                                  \
-	   ROUND_UP(DISPLAY_HEIGHT(n), 8)) /                                                       \
-	  100) / 8 +                                                                               \
-	 8)
+	(MAX(((CONFIG_LV_Z_VDB_SIZE * ROUND_UP(DISPLAY_WIDTH(n), 8) *                              \
+	ROUND_UP(DISPLAY_HEIGHT(n), 8)) / 100) / 8,                                                \
+	ROUND_UP(DISPLAY_WIDTH(n), 8))                                                             \
+	+ 8)
 #else
 #define BUFFER_SIZE(n)                                                                             \
 	(CONFIG_LV_Z_BITS_PER_PIXEL *                                                              \
@@ -92,7 +104,7 @@ static uint8_t *mono_vtile_buf_p[DT_ZEPHYR_DISPLAYS_COUNT] = {NULL};
 #if defined(CONFIG_LV_Z_VDB_CUSTOM_SECTION)
 #define LV_BUF_SECTION	Z_GENERIC_SECTION(.lvgl_buf)
 #elif defined(CONFIG_LV_Z_VDB_ZEPHYR_REGION)
-#define LV_BUF_SECTION	Z_GENERIC_SECTION(CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME)
+#define LV_BUF_SECTION	__attribute__((section(CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME)))
 #else
 #define LV_BUF_SECTION
 #endif

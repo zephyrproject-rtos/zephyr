@@ -338,7 +338,6 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 {
 	const struct mcux_elcdif_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->rgb_mode.panelWidth;
 	capabilities->y_resolution = config->rgb_mode.panelHeight;
 	capabilities->supported_pixel_formats = supported_fmts;

@@ -56,6 +56,21 @@ config ETH_XMC_DWC_ETHER_1000
 	help
 	  This enables the Synopsys DesignWare MAC driver for XMC4XXX SoCs.
 
+config ETH_NUMAKER_DWC_ETHER_1000
+	bool "Driver for DWC Ethernet MAC-based Nuvoton NuMaker"
+	depends on SOC_SERIES_M46X || SOC_SERIES_M55M1X
+	depends on DT_HAS_NUVOTON_NUMAKER_ETHERNET_ENABLED
+	select ETH_DWC_ETHER_1000_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
+	select RESET
+	select CLOCK_CONTROL
+	select HWINFO
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on Nuvoton NuMaker
+	  M467 and M55M1 SoCs.
+
 config ETH_NXP_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based NXP"
 	depends on !ETH_NXP_ENET_QOS
@@ -64,6 +79,7 @@ config ETH_NXP_DWC_ETHER_QOS
 	select ETH_DWC_ETHER_QOS_CORE
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select PINCTRL
+	select RESET if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_QOS),resets)
 	select HWINFO
 	select CRC
 	default y
@@ -74,18 +90,22 @@ config ETH_NXP_DWC_ETHER_QOS
 config ETH_STM32_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based STM32"
 	depends on !ETH_STM32_HAL
-	depends on SOC_SERIES_STM32H5X \
-		   || SOC_SERIES_STM32H7X \
-		   || SOC_SERIES_STM32H7RSX
+	depends on SOC_SERIES_STM32C5X \
+		|| SOC_SERIES_STM32H5X \
+		|| SOC_SERIES_STM32H7X \
+		|| SOC_SERIES_STM32H7RSX \
+		|| SOC_SERIES_STM32MP13X \
+		|| SOC_SERIES_STM32N6X
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select ETH_DWC_ETHER_QOS_CORE
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select PINCTRL
+	select RESET
 	select HWINFO
 	select CRC
 	default y
 	help
-	  This enables the Synopsys DesignWare MAC driver on STM32 H5/H7/H7RS
+	  This enables the Synopsys DesignWare MAC driver on STM32 C5/H5/H7/H7RS/MP13/N6
 	  series SoCs.
 
 config ETH_STM32_DWC_ETHER_1000
@@ -100,12 +120,27 @@ config ETH_STM32_DWC_ETHER_1000
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT \
 				 && !$(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
 	select PINCTRL
+	select RESET
 	select HWINFO
 	select CRC
 	default y
 	help
 	  This enables the Synopsys DesignWare MAC driver for STM32 SoCs.
 	  Applicable for STM32F1/F2/F4/F7 series; tested only on F2/F4/F7.
+
+config ETH_ROCKCHIP_DWC_ETHER_QOS
+	bool "Driver for DWC Ethernet QoS-based Rockchip RK3588"
+	depends on SOC_RK3588
+	depends on 64BIT
+	depends on DT_HAS_ROCKCHIP_RK3588_GMAC_ENABLED
+	select ETH_DWC_ETHER_QOS_CORE
+	select CLOCK_CONTROL
+	select RESET
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select SYSCON
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on Rockchip RK3588.
 
 config ETH_DWMAC_MMU
 	bool "Synopsys DesignWare MAC driver for MMU based platforms"

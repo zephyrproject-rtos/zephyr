@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #define _SOC__H_
 
 #ifndef _ASMLANGUAGE
+#include <infineon_kconfig.h>
 #include <cy_device_headers.h>
 #endif /* !_ASMLANGUAGE */
 

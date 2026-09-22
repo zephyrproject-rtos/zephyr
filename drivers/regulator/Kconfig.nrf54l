@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_NRF54L
+	bool "nRF54L regulator driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF54L_REGULATORS_ENABLED
+
+if REGULATOR_NRF54L
+
+config REGULATOR_NRF54L_HIBERNATE_MIN_UPTIME_MS
+	int "Minimum uptime before permitting system hibernate"
+	default 1000
+	help
+	  When entering system hibernate, the debugger will be
+	  disconnected. This guard prevents the SoC from entering
+	  system hibernate before a debugger can be connected.
+	  For production, this guard should be kept at a minimum
+	  to preserve power.
+
+endif # REGULATOR_NRF54L

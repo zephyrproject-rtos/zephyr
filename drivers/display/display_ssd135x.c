@@ -193,7 +193,7 @@ static int ssd135x_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
-	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %zu", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
 	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config, SSD135X_SET_COLUMN_ADDR,
@@ -237,7 +237,6 @@ static void ssd135x_get_capabilities(const struct device *dev, struct display_ca
 {
 	const struct ssd135x_config *config = dev->config;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565;

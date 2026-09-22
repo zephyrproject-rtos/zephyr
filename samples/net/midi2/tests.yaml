@@ -8,13 +8,35 @@ sample:
   name: Network MIDI2.0 sample application
   description: Demonstrates usage of the Network MIDI2.0 (udp) host endpoint
 tests:
-  sample.net.midi2.host: {}
+  sample.net.midi2.host:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
   sample.net.midi2.host_auth_shared:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_NET_SAMPLE_MIDI2_AUTH_SHARED_SECRET=y
       - CONFIG_NET_SAMPLE_MIDI2_SHARED_SECRET="some-secret"
   sample.net.midi2.host_auth_user:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_NET_SAMPLE_MIDI2_AUTH_USER_PASSWORD=y
       - CONFIG_NET_SAMPLE_MIDI2_USERNAME="user"
       - CONFIG_NET_SAMPLE_MIDI2_PASSWORD="passwd"
+  sample.net.midi2.host.olimex_shield_midi:
+    platform_allow: nucleo_f429zi
+    integration_platforms:
+      - nucleo_f429zi
+    extra_args: SHIELD=olimex_shield_midi
+    harness_config:
+      fixture: fixture_shield_olimex_shield_midi

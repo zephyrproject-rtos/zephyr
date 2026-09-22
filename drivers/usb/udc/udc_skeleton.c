@@ -401,14 +401,14 @@ static const struct udc_api udc_skeleton_api = {
 			      CONFIG_UDC_SKELETON_STACK_SIZE);			\
 										\
 	static struct udc_ep_config						\
-		ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_out_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 	static struct udc_ep_config						\
-		ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_in_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 										\
 	static const struct udc_skeleton_config udc_skeleton_config_##n = {	\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
-		.ep_cfg_in = ep_cfg_out,					\
-		.ep_cfg_out = ep_cfg_in,					\
+		.ep_cfg_in = ep_cfg_out_##n,					\
+		.ep_cfg_out = ep_cfg_in_##n,					\
 		.thread_stk = udc_skeleton_stack_##n,				\
 		.thread_stk_sz = K_THREAD_STACK_SIZEOF(udc_skeleton_stack_##n),	\
 		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),	\

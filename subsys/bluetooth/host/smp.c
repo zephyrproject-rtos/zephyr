@@ -72,7 +72,7 @@ LOG_MODULE_REGISTER(bt_smp);
 #define ID_DIST 0
 #endif
 
-#if defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_SMP_DERIVE_LK)
 #define LINK_DIST BT_SMP_DIST_LINK_KEY
 #else
 #define LINK_DIST 0
@@ -773,6 +773,10 @@ static bool ltk_derive_link_key_allowed(struct bt_smp *smp)
 	struct bt_keys_link_key *link_key;
 	struct bt_keys *keys;
 
+	if (!IS_ENABLED(CONFIG_BT_SMP_DERIVE_LK)) {
+		return false;
+	}
+
 	if (!smp->chan.chan.conn) {
 		return false;
 	}
@@ -1270,6 +1274,10 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 	struct bt_conn *conn;
 	struct bt_keys_link_key *key;
 	struct bt_keys *le_keys;
+
+	if (!IS_ENABLED(CONFIG_BT_SMP_DERIVE_LTK)) {
+		return false;
+	}
 
 	if (!smp->chan.chan.conn) {
 		return false;
@@ -1825,7 +1833,7 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 
 	/* check if we are allowed to start SMP over BR/EDR */
 	if (!smp_br_pairing_allowed(smp)) {
-		return 0;
+		return -ENOTSUP;
 	}
 
 	/* Channel not yet connected, will start pairing once connected */

@@ -21,40 +21,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/classic/hid.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/net_buf.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/** @name HID protocol mode values
- *
- * These values indicate which HID protocol the host requests the device
- * to use. BOOT_MODE is the legacy boot protocol; REPORT_MODE indicates
- * normal report protocol operation.
- * @{
- */
-/** Boot protocol mode (legacy). */
-#define BT_HID_PROTOCOL_BOOT_MODE   0x00
-/** Report protocol mode (default). */
-#define BT_HID_PROTOCOL_REPORT_MODE 0x01
-/** @} */
-
-/** @name HID report types used for Get/Set/Data operations
- *
- * These map to report type fields in HID messages. INPUT reports are
- * typically device->host, OUTPUT are host->device, and FEATURE are
- * device-specific feature reports.
- * @{
- */
-/** Report type for input reports (1) - device->host. */
-#define BT_HID_REPORT_TYPE_INPUT   0x01
-/** Report type for output reports (2) - host->device. */
-#define BT_HID_REPORT_TYPE_OUTPUT  0x02
-/** Report type for feature reports (3) - device-specific. */
-#define BT_HID_REPORT_TYPE_FEATURE 0x03
-/** @} */
 
 struct bt_hid_device;
 

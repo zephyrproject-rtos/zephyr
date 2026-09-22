@@ -69,3 +69,9 @@ child-binding:
         Expected measured frequency (Hz) after switching the target to
         switch-target. When non-zero, the measured value must lie within
         measure-tolerance-ppm of it. 0 only logs the measured value.
+
+    invalid-source:
+      type: int
+      default: 0xDEADBEEF
+      description: |
+        Invalid source for set_source API test.

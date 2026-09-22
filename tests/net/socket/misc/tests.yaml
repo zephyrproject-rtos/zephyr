@@ -19,3 +19,8 @@ tests:
   net.socket.misc.v4_mapping_to_v6_disabled:
     extra_configs:
       - CONFIG_NET_IPV4_MAPPING_TO_IPV6=n
+  net.socket.misc.obj_core:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_OBJ_CORE=y
+      - CONFIG_NET_SOCKETS_OBJ_CORE=y

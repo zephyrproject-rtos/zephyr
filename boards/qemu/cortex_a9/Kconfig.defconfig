@@ -58,4 +58,28 @@ endif # QEMU_ICOUNT
 config SHELL_STACK_SIZE
 	default 8192 if SHELL
 
+configdefault ARMV7_EXCEPTION_STACK_SIZE
+	default 8192
+
+configdefault ARMV7_FIQ_STACK_SIZE
+	default 8192
+
+configdefault ARMV7_SVC_STACK_SIZE
+	default 8192
+
+configdefault ARMV7_SYS_STACK_SIZE
+	default 8192
+
+configdefault IDLE_STACK_SIZE
+	default 8192
+
+configdefault ISR_STACK_SIZE
+	default 8192
+
+configdefault MAIN_STACK_SIZE
+	default 8192
+
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 8192
+
 endif # BOARD_QEMU_CORTEX_A9

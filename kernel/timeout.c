@@ -189,7 +189,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	to->fn = fn;
 
 	K_SPINLOCK(&timeout_lock) {
-		uint32_t ticks_elapsed;
+		uint32_t ticks_elapsed = 0;
 		bool has_elapsed = false;
 		k_ticks_t dticks;
 

@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdlib.h>
+#include <zephyr/random/random.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
@@ -27,7 +28,6 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/icmp.h>
 #include <zephyr/net/ethernet.h>
-#include <zephyr/random/random.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -58,6 +58,9 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
  */
 #define MIN_IPV6_MTU NET_IPV6_MTU
 #define MAX_IPV6_MTU 0xffff
+#if defined(CONFIG_NET_IPV6_DAD)
+#define NET_IPV6_DAD_NONCE_OPT_LEN 8U
+#endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE) || defined(CONFIG_NET_IPV6_ND)
 /* Global stale counter, whenever ipv6 neighbor enters into
@@ -291,10 +294,37 @@ static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 		pkt = k_fifo_get(&data->pending_queue, K_FOREVER);
 
 		NET_DBG("Releasing pending pkt %p (ref %ld)",
-			pkt, atomic_get(&pkt->atomic_ref) - 1);
+			pkt, atomic_get(&pkt->atomic_ref) - 2);
 
+		/* Reference taken when queued */
+		net_pkt_unref(pkt);
+
+		/* Reference handed over by the sender */
 		net_pkt_unref(pkt);
 	}
+}
+
+/* Send the queued packets of a neighbor whose link address is known. */
+static void nbr_send_pending(struct net_ipv6_nbr_data *data)
+{
+	struct net_pkt *pkt;
+
+	while (!k_fifo_is_empty(&data->pending_queue)) {
+		pkt = k_fifo_get(&data->pending_queue, K_FOREVER);
+
+		NET_DBG("Sending pending pkt %p to %s", pkt,
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
+
+		/* Reference taken when queued */
+		net_pkt_unref(pkt);
+
+		if (net_send_data(pkt) < 0) {
+			NET_DBG("Cannot send pkt %p", pkt);
+			net_pkt_unref(pkt);
+		}
+	}
+
+	data->send_ns = 0;
 }
 
 static inline void nbr_free(struct net_nbr *nbr)
@@ -384,6 +414,7 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data;
 	struct net_pkt *pending;
+	int ret;
 	int i;
 
 	ARG_UNUSED(work);
@@ -429,61 +460,60 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 			continue;
 		}
 
-		while (!k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
-			enum net_verdict verdict;
-
-			/* Remove the first pending packet from the queue
-			 * and unref it. If there are more pending packets,
-			 * they will be processed in the next round.
+		if (nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
+			/* Resolved in the meantime, for example by an RA or
+			 * a received NS. Send the pending packets.
 			 */
-			pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
-					     K_FOREVER);
+			nbr_send_pending(data);
+			continue;
+		}
 
-			NET_DBG("NS nbr %p pending %p timeout to %s", nbr, pending,
-				net_sprint_ipv6_addr(&NET_IPV6_HDR(pending)->dst));
+		/* Drop the oldest pending packet. */
+		pending = k_fifo_get(&data->pending_queue, K_FOREVER);
 
-			NET_DBG("Dropping pending pkt %p", pending);
+		NET_DBG("NS nbr %p pending %p timeout to %s", nbr, pending,
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pending)->dst));
 
-			/* This gets rid of the reference that was
-			 * added when the packet was put into the pending queue.
+		NET_DBG("Dropping pending pkt %p", pending);
+
+		/* Reference taken when queued */
+		net_pkt_unref(pending);
+
+		/* Reference handed over by the sender */
+		net_pkt_unref(pending);
+
+		if (!k_fifo_is_empty(&data->pending_queue)) {
+			struct net_in6_addr src;
+
+			/* Solicit again for the remaining packets, which
+			 * stay queued in their original order. Use the
+			 * source address of the next one, as the first NS did.
 			 */
-			net_pkt_unref(pending);
+			pending = k_fifo_peek_head(&data->pending_queue);
+			net_ipv6_addr_copy_raw(src.s6_addr, NET_IPV6_HDR(pending)->src);
 
-			/* To unref the original pkt allocation */
-			net_pkt_unref(pending);
+			ret = net_ipv6_send_ns(nbr->iface, NULL,
+					       net_pkt_forwarding(pending) ? NULL : &src,
+					       NULL, &data->addr, false);
+			if (ret == 0) {
+				data->send_ns = k_uptime_get();
 
-			/* If there are no more pending packets, we can
-			 * unref the neighbor.
-			 */
-			if (k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
-				net_nbr_unref(nbr);
+				if (!k_work_delayable_remaining_get(&ipv6_ns_reply_timer)) {
+					k_work_reschedule(&ipv6_ns_reply_timer,
+							  K_MSEC(NS_REPLY_TIMEOUT));
+				}
 
-				NET_DBG("Dropping neighbor %p", nbr);
-				break;
-			}
-
-			/* If there are more pending packets, we need to
-			 * reschedule the work so that we can process them and
-			 * send a new NS.
-			 */
-			pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
-					     K_FOREVER);
-
-			verdict = net_ipv6_prepare_for_send(pending);
-			if (verdict == NET_DROP) {
-				/* The ref when added to the pending queue */
-				net_pkt_unref(pending);
-
-				/* To unref the original pkt allocation */
-				net_pkt_unref(pending);
-
-				/* Get next packet from the list */
 				continue;
 			}
 
-			/* Now wait timeout again */
-			break;
+			NET_DBG("Cannot send NS (%d), dropping pending packets", ret);
+
+			nbr_clear_ns_pending(data);
 		}
+
+		NET_DBG("Dropping neighbor %p", nbr);
+
+		net_nbr_unref(nbr);
 	}
 
 	net_ipv6_nbr_unlock();
@@ -1069,24 +1099,23 @@ try_send:
 
 	net_ipv6_addr_copy_raw(src_ip.s6_addr, ip_hdr->src);
 
+	iface = net_pkt_iface(pkt);
+
+	NET_DBG("pkt %p (buffer %p) will be sent later to iface %p/%d",
+		pkt, pkt->buffer, iface, net_if_get_by_iface(iface));
+
 	/* We need to send NS and wait for NA before sending the packet. If the packet was
 	 * forwarded from another interface do not use the original source address.
+	 * The packet belongs to the neighbor pending queue from here on, or is
+	 * released on error, so it must not be touched afterwards.
 	 */
-	ret = net_ipv6_send_ns(net_pkt_iface(pkt), pkt,
+	ret = net_ipv6_send_ns(iface, pkt,
 			       net_pkt_forwarding(pkt) ? NULL : &src_ip,
 			       NULL, nexthop, false);
 	if (ret < 0) {
-		/* In case of an error, the NS send function will unref
-		 * the pkt.
-		 */
 		NET_DBG("Cannot send NS (%d) iface %p/%d",
-			ret, net_pkt_iface(pkt),
-			net_if_get_by_iface(net_pkt_iface(pkt)));
+			ret, iface, net_if_get_by_iface(iface));
 	}
-
-	NET_DBG("pkt %p (buffer %p) will be sent later to iface %p/%d",
-		pkt, pkt->buffer, net_pkt_iface(pkt),
-		net_if_get_by_iface(net_pkt_iface(pkt)));
 
 	return NET_CONTINUE;
 #else
@@ -1200,6 +1229,47 @@ static bool read_llao(struct net_pkt *pkt,
 
 	return true;
 }
+
+#if defined(CONFIG_NET_IPV6_DAD)
+static bool set_dad_nonce_opt(struct net_pkt *pkt,
+			      const uint8_t nonce[NET_IF_IPV6_DAD_NONCE_LEN])
+{
+	struct net_icmpv6_nd_opt_hdr opt_hdr = {
+		.type = NET_ICMPV6_ND_OPT_NONCE,
+		.len = 1U,
+	};
+
+	if (net_pkt_write(pkt, &opt_hdr, sizeof(opt_hdr)) ||
+	    net_pkt_write(pkt, nonce, NET_IF_IPV6_DAD_NONCE_LEN)) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool read_dad_nonce_opt(struct net_pkt *pkt,
+			       uint8_t len,
+			       uint8_t nonce[NET_IF_IPV6_DAD_NONCE_LEN])
+{
+	size_t opt_len = (size_t)len * 8U;
+
+	if (opt_len < NET_IPV6_DAD_NONCE_OPT_LEN) {
+		return false;
+	}
+
+	if (net_pkt_read(pkt, nonce, NET_IF_IPV6_DAD_NONCE_LEN)) {
+		return false;
+	}
+
+	if (opt_len > NET_IPV6_DAD_NONCE_OPT_LEN) {
+		if (net_pkt_skip(pkt, opt_len - NET_IPV6_DAD_NONCE_OPT_LEN)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+#endif /* CONFIG_NET_IPV6_DAD */
 
 int net_ipv6_send_na(struct net_if *iface, const struct net_in6_addr *src,
 		     const struct net_in6_addr *dst, const struct net_in6_addr *tgt,
@@ -1320,6 +1390,10 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 	struct net_in6_addr *tgt;
 	struct net_in6_addr ns_tgt, ns_src, ns_dst;
 	struct net_linkaddr src_lladdr;
+#if defined(CONFIG_NET_IPV6_DAD)
+	uint8_t ns_dad_nonce[NET_IF_IPV6_DAD_NONCE_LEN];
+	bool ns_dad_nonce_present = false;
+#endif
 	struct net_pkt_cursor backup;
 	int ret;
 
@@ -1398,6 +1472,22 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 			}
 
 			break;
+#if defined(CONFIG_NET_IPV6_DAD)
+		case NET_ICMPV6_ND_OPT_NONCE:
+			if (!read_dad_nonce_opt(pkt, nd_opt_hdr->len,
+						ns_dad_nonce)) {
+				NET_ERR("DROP: failed to read DAD nonce");
+				goto drop;
+			}
+
+			/* RFC7527 nonce matching is only defined for 8-byte
+			 * ND option format (len == 1, 6-byte payload).
+			 */
+			if (nd_opt_hdr->len == 1U) {
+				ns_dad_nonce_present = true;
+			}
+			break;
+#endif
 		default:
 			NET_DBG("Unknown ND option 0x%x", nd_opt_hdr->type);
 			break;
@@ -1480,10 +1570,20 @@ nexthop_found:
 
 	/* Do DAD */
 	if (net_ipv6_is_addr_unspecified(&ns_src)) {
-
 		if (!net_ipv6_is_addr_solicited_node(&ns_dst)) {
 			NET_DBG("DROP: Not solicited node addr %s",
 				net_sprint_ipv6_addr(&ns_dst));
+			goto silent_drop;
+		}
+
+		if (ifaddr->addr_state == NET_ADDR_TENTATIVE &&
+		    ns_dad_nonce_present &&
+		    memcmp(ifaddr->dad_nonce, ns_dad_nonce,
+			   NET_IF_IPV6_DAD_NONCE_LEN) == 0) {
+			NET_DBG("DROP: Ignore self DAD probe by nonce for %s iface %p/%d",
+				net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
+				net_pkt_iface(pkt),
+				net_if_get_by_iface(net_pkt_iface(pkt)));
 			goto silent_drop;
 		}
 
@@ -1766,7 +1866,6 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	struct net_linkaddr lladdr = { 0 };
 	bool lladdr_changed = false;
 	struct net_linkaddr *cached_lladdr;
-	struct net_pkt *pending;
 	struct net_nbr *nbr;
 	bool point_to_point = net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_POINTOPOINT);
 
@@ -1920,22 +2019,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 send_pending:
 	/* Next send any pending messages to the peer. */
-	while (!k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
-		pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
-				     K_FOREVER);
-
-		NET_DBG("Sending pending %p to lladdr %s", pending,
-			net_sprint_ll_addr(cached_lladdr->addr, cached_lladdr->len));
-
-		if (net_send_data(pending) < 0) {
-			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
-
-			NET_DBG("Cannot send pkt %p, clearing pending queue", pending);
-			break;
-		}
-
-		net_pkt_unref(pending);
-	}
+	nbr_send_pending(net_ipv6_nbr_data(nbr));
 
 	net_ipv6_nbr_unlock();
 	return true;
@@ -2106,6 +2190,9 @@ int net_ipv6_send_ns(struct net_if *iface,
 	struct net_icmpv6_ns_hdr *ns_hdr;
 	struct net_in6_addr node_dst;
 	struct net_nbr *nbr;
+#if defined(CONFIG_NET_IPV6_DAD)
+	struct net_if_addr *ifaddr = NULL;
+#endif
 	uint8_t llao_len;
 
 	if (!dst) {
@@ -2118,6 +2205,12 @@ int net_ipv6_send_ns(struct net_if *iface,
 	if (is_my_address) {
 		src = net_ipv6_unspecified_address();
 		llao_len = 0U;
+#if defined(CONFIG_NET_IPV6_DAD)
+		ifaddr = net_if_ipv6_addr_lookup_by_iface(iface, tgt);
+		if (ifaddr) {
+			sys_rand_get(ifaddr->dad_nonce, NET_IF_IPV6_DAD_NONCE_LEN);
+		}
+#endif
 	} else {
 		if (!src) {
 			src = net_if_ipv6_select_src_addr(iface, tgt);
@@ -2134,7 +2227,12 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	pkt = net_pkt_alloc_with_buffer(iface,
 					sizeof(struct net_icmpv6_ns_hdr) +
-					llao_len,
+					llao_len
+#if defined(CONFIG_NET_IPV6_DAD)
+					+ (is_my_address ?
+					   NET_IPV6_DAD_NONCE_OPT_LEN : 0U)
+#endif
+					,
 					NET_AF_INET6, NET_IPPROTO_ICMPV6,
 					ND_NET_BUF_TIMEOUT);
 	if (!pkt) {
@@ -2171,6 +2269,12 @@ int net_ipv6_send_ns(struct net_if *iface,
 			      llao_len, NET_ICMPV6_ND_OPT_SLLAO)) {
 			goto drop;
 		}
+#if defined(CONFIG_NET_IPV6_DAD)
+	} else if (ifaddr) {
+		if (!set_dad_nonce_opt(pkt, ifaddr->dad_nonce)) {
+			goto drop;
+		}
+#endif
 	}
 
 	net_pkt_cursor_init(pkt);
@@ -2831,13 +2935,23 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 
 		net_if_addr_set_lf(ifaddr, false);
 	} else {
+		struct net_if_addr *new_ifaddr;
+
 		if (prefix_info->valid_lifetime ==
 		    NET_IPV6_ND_INFINITE_LIFETIME) {
-			net_if_ipv6_addr_add(iface, &addr,
-					     NET_ADDR_AUTOCONF, 0);
+			new_ifaddr = net_if_ipv6_addr_add(iface, &addr,
+							  NET_ADDR_AUTOCONF, 0);
 		} else {
-			net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF,
-					     prefix_info->valid_lifetime);
+			new_ifaddr = net_if_ipv6_addr_add(
+				iface, &addr, NET_ADDR_AUTOCONF,
+				prefix_info->valid_lifetime);
+		}
+
+		if (new_ifaddr == NULL) {
+			NET_ERR("Failed to add SLAAC address %s",
+				net_sprint_ipv6_addr(&addr));
+		} else {
+			NET_INFO("Received: %s", net_sprint_ipv6_addr(&addr));
 		}
 	}
 
@@ -3295,23 +3409,12 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 
 	net_ipv6_nbr_lock();
 
-	if (nbr != NULL) {
-		while (!k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
-			struct net_pkt *pending;
-
-			pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
-					     K_FOREVER);
-
-			NET_DBG("Sending pending pkt %p to %s",
-				pending,
-				net_sprint_ipv6_addr(&NET_IPV6_HDR(pending)->dst));
-
-			if (net_send_data(pending) < 0) {
-				net_pkt_unref(pending);
-			}
-		}
-
-		nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
+	/* Without SLLAO the entry stays unresolved. Sending the pending
+	 * packets now would only queue them again, so leave them to the
+	 * NS reply timeout.
+	 */
+	if (nbr != NULL && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
+		nbr_send_pending(net_ipv6_nbr_data(nbr));
 	}
 
 	net_ipv6_nbr_unlock();

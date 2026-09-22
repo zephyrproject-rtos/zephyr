@@ -47,7 +47,9 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 	BT_DATA_BYTES(BT_DATA_UUID16_SOME,
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 		      BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
 	BT_DATA_BYTES(BT_DATA_SVC_DATA16,
 		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
@@ -137,6 +139,7 @@ static int advertise(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 struct bt_cap_stream *stream_alloc(enum bt_audio_dir dir)
 {
 	struct bt_cap_stream *ret_stream;
@@ -167,6 +170,7 @@ void stream_released(const struct bt_cap_stream *cap_stream)
 		__ASSERT(false, "Invalid stream: %p", cap_stream);
 	}
 }
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 static int reset_cap_acceptor(void)
 {
@@ -203,6 +207,7 @@ static int reset_cap_acceptor(void)
 		adv = NULL;
 	}
 
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 	if (peer.source_stream.bap_stream.ep != NULL) {
 		err = k_sem_take(&peer.source_stream_sem, SEM_TIMEOUT);
 		if (err != 0) {
@@ -220,6 +225,7 @@ static int reset_cap_acceptor(void)
 			}
 		}
 	}
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 	k_sem_reset(&sem_state_change);
 

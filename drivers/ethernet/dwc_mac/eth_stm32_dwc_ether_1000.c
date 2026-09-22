@@ -19,13 +19,14 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
 #include <stm32_ll_system.h>
 
 #include "eth_dwmac_priv.h"
 #include "eth_stm32_dwc.h"
 
-/* The DMA bus master interface is 32-bit on this IP */
+/* The DMA bus master interface is a 32-bit AHB interface on this IP */
 #define DATA_BUS_WIDTH 32
 
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
@@ -57,23 +58,22 @@ static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_G
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
+static const struct reset_dt_spec eth_reset = RESET_DT_SPEC_INST_GET(0);
+
 int dwmac_bus_init(const struct device *dev)
 {
 	const struct dwmac_config *cfg = dev->config;
 	int ret;
 
-	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
-		if (IN_RANGE(pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
-			ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&pclken[n]);
-		} else {
-			ret = clock_control_configure(cfg->clock,
-						      (clock_control_subsys_t)&pclken[n], NULL);
-		}
-
-		if (ret != 0) {
-			LOG_ERR("Failed to setup ethernet clock #%zu", n);
-			return -EIO;
-		}
+	/*
+	 * Hold the MAC in reset while the pins, the PHY interface mode and the
+	 * clocks are configured. The PHY interface mode must be selected while
+	 * the MAC is under reset.
+	 */
+	ret = reset_line_assert_dt(&eth_reset);
+	if (ret != 0) {
+		LOG_ERR("Could not assert ethernet reset");
+		return ret;
 	}
 
 	ret = pinctrl_apply_state(eth0_pcfg, PINCTRL_STATE_DEFAULT);
@@ -83,6 +83,20 @@ int dwmac_bus_init(const struct device *dev)
 	}
 
 	STM32_CONFIGURE_ETH_PHY_MODE();
+
+	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
+		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&pclken[n]);
+		if (ret != 0) {
+			LOG_ERR("Failed to setup ethernet clock #%zu", n);
+			return -EIO;
+		}
+	}
+
+	ret = reset_line_deassert_dt(&eth_reset);
+	if (ret != 0) {
+		LOG_ERR("Could not deassert ethernet reset");
+		return ret;
+	}
 
 	return 0;
 }
@@ -104,6 +118,8 @@ int dwmac_platform_init(const struct device *dev)
 	const struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 	struct dwmac_priv *p = dev->data;
 
+	DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_DMABMR_AAL | DWMAC_DMABMR_FB);
+
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
 
@@ -117,7 +133,7 @@ static const struct dwmac_config dwmac_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 	.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-	.mac_clk = (clock_control_subsys_t)&pclken[0],
+	.mac_clk = (clock_control_subsys_t)&pclken[ETH_STM32_MAC_CLK_IDX(0)],
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
 	.ptp_clk = (clock_control_subsys_t)&pclken[ETH_STM32_PTP_CLK_IDX(0)],

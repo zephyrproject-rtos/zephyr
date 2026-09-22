@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_NRF_SW
-	bool "Nordic Semiconductor nRF family S/W PWM"
+	bool "Nordic Semiconductor nRF family S/W PWM driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_SW_PWM_ENABLED
 	select NRFX_GPIOTE

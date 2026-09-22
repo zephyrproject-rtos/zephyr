@@ -10,6 +10,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Interrupt allocation flags - These flags can be used to specify
  * which interrupt qualities the code calling esp_intr_alloc* needs.
@@ -308,5 +312,9 @@ void esp_intr_noniram_disable(void);
  * @brief Re-enable interrupts disabled by esp_intr_noniram_disable
  */
 void esp_intr_noniram_enable(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32_H_ */

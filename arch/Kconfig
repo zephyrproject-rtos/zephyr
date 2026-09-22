@@ -41,6 +41,7 @@ config ARM
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
 	select BARRIER_OPERATIONS_ARCH
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED if CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
 	select ARCH_HAS_SEMIHOST
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ARCH_SUPPORTS_ROM_OFFSET
@@ -53,6 +54,7 @@ config ARM64
 	bool
 	select ARCH_IS_SET
 	select 64BIT
+	select ARCH_HAS_FWARGS_HANDLER_HOOK
 	select ARCH_SUPPORTS_COREDUMP
 	select HAS_ARM_SMCCC
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
@@ -192,6 +194,21 @@ config XTENSA
 	help
 	  Xtensa architecture
 
+config TRICORE
+	bool
+	select ARCH_IS_SET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select ATOMIC_OPERATIONS_BUILTIN if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
+	select ATOMIC_OPERATIONS_C if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "llvm"
+	select ARCH_HAS_CODE_DATA_RELOCATION
+	select ARCH_SUPPORTS_ROM_START
+	select ARCH_HAS_THREAD_ABORT
+	select BARRIER_OPERATIONS_BUILTIN if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
+	imply XIP
+	help
+	  TriCore architecture
+
 config ARCH_POSIX
 	bool
 	select ARCH_IS_SET
@@ -210,6 +227,17 @@ config ARCH_POSIX
 	select ARCH_HAS_DIRECT_INTERRUPTS
 	help
 	  POSIX (native) architecture
+
+config HEXAGON
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ARCH_HAS_CUSTOM_BUSY_WAIT
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  Qualcomm Hexagon DSP architecture
 
 config RX
 	bool
@@ -297,14 +325,23 @@ config SRAM_BASE_ADDRESS
 config XIP
 	bool "Execute in place"
 	help
-	  This option allows zephyr to operate with its text and read-only
-	  sections residing in ROM (or similar read-only memory). Not all boards
-	  support this option so it must be used with care; you must also
-	  supply a linker command file when building your image. Enabling this
-	  option increases both the code and data footprint of the image.
+	  Execute application code directly from non-volatile storage
+	  (e.g. Flash/MRAM) without copying it to RAM first. Not all targets
+	  support this option, so it must be used with care.
+
+	  When enabled, the linker aligns Load Memory Addresses (LMA) with Virtual
+	  Memory Addresses (VMA) for code (.text) and read-only data (.rodata)
+	  sections, so they are fetched directly from their storage location.
+	  Mutable initialized data (.data) is still copied to RAM during
+	  early boot sequence. This reduces RAM usage at the cost of slower
+	  execution compared to running from RAM.
+
+	  Applications that are relocated to RAM before being run (such as
+	  those built for RAM-loading bootloader modes) should have this
+	  option disabled.
 
 
-if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
+if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX || HEXAGON || TRICORE
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -327,7 +364,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX || OPENRISC || ARCH_POSIX || HEXAGON || TRICORE
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -575,7 +612,7 @@ config DYNAMIC_INTERRUPTS
 	  on some architectures increase code size.
 
 config SHARED_INTERRUPTS
-	bool "Set this to enable support for shared interrupts"
+	bool "Set this to enable support for shared interrupts [EXPERIMENTAL]"
 	depends on GEN_SW_ISR_TABLE
 	select EXPERIMENTAL
 	help
@@ -923,6 +960,12 @@ config ARCH_HAS_CPU_IDLE_HOOKS
 
 	  It is a prerequisite for the idle-hook CPU load backend
 	  (CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK).
+
+config ARCH_HAS_FWARGS_HANDLER_HOOK
+	bool
+	help
+	  This option is selected by architectures that support calling a firmware
+	  argument handler hook during initialization.
 
 config ARCH_SUPPORTS_COREDUMP
 	bool
@@ -1332,7 +1375,7 @@ config CACHE_HAS_MIRRORED_MEMORY_REGIONS
 	  sense when MP_MAX_NUM_CPUS > 1.
 
 config CACHE_DOUBLEMAP
-	bool "Cache double-mapping support"
+	bool "Cache double-mapping support [DEPRECATED]"
 	select CACHE_HAS_MIRRORED_MEMORY_REGIONS
 	select DEPRECATED
 	help

@@ -46,6 +46,10 @@
 	status = "okay";
 };
 
+&clk_ertco {
+	status = "okay";
+};
+
 &spibb0 {
 	status = "okay";
 };

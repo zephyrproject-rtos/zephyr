@@ -43,12 +43,14 @@ ZTEST(posix_multi_process, test_times)
 	zexpect_not_equal(rtime[0], -1);
 	zexpect_not_equal(rtime[1], -1);
 
-	printk("t0: rtime: %ld utime: %ld stime: %ld cutime: %ld cstime: %ld\n", rtime[0],
-	       test_tms[0].tms_utime, test_tms[0].tms_stime, test_tms[0].tms_cutime,
-	       test_tms[0].tms_cstime);
-	printk("t1: rtime: %ld utime: %ld stime: %ld cutime: %ld cstime: %ld\n", rtime[1],
-	       test_tms[1].tms_utime, test_tms[1].tms_stime, test_tms[1].tms_cutime,
-	       test_tms[1].tms_cstime);
+	printk("t0: rtime: %lld utime: %lld stime: %lld cutime: %lld cstime: %lld\n",
+	       (long long)rtime[0],
+	       (long long)test_tms[0].tms_utime, (long long)test_tms[0].tms_stime,
+	       (long long)test_tms[0].tms_cutime, (long long)test_tms[0].tms_cstime);
+	printk("t1: rtime: %lld utime: %lld stime: %lld cutime: %lld cstime: %lld\n",
+	       (long long)rtime[1],
+	       (long long)test_tms[1].tms_utime, (long long)test_tms[1].tms_stime,
+	       (long long)test_tms[1].tms_cutime, (long long)test_tms[1].tms_cstime);
 
 	ARRAY_FOR_EACH(fields, i) {
 		const char *name = fields[i].name;
@@ -57,7 +59,7 @@ ZTEST(posix_multi_process, test_times)
 		clock_t t0 = *(clock_t *)((uint8_t *)&test_tms[0] + offset);
 		clock_t t1 = *(clock_t *)((uint8_t *)&test_tms[1] + offset);
 
-		zexpect_true(t1 >= t0, "time moved backward for tms_%s: t0: %ld t1: %ld", name, t0,
-			     t1);
+		zexpect_true(t1 >= t0, "time moved backward for tms_%s: t0: %lld t1: %lld",
+			     name, (long long)t0, (long long)t1);
 	}
 }

@@ -6,10 +6,7 @@
 
 #define DT_DRV_COMPAT raspberrypi_bcm2711_framebuffer
 
-#include <zephyr/kernel.h>
-#include <zephyr/device.h>
-#include <zephyr/drivers/display.h>
-
+#include "display_framebuffer.h"
 #include <rpi_fw.h>
 
 #include <zephyr/logging/log.h>
@@ -17,7 +14,6 @@ LOG_MODULE_REGISTER(rpi_bcm2711_fb, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define RPI_BCM2711_FB_PIXEL_ORDER_BGR 0
 #define RPI_BCM2711_FB_PIXEL_ORDER_RGB 1
-#define RPI_BCM2711_FB_BYTES_PER_PIXEL 4
 #define RPI_BCM2711_FB_TAG_SIZE        6
 
 #define BCM2711_PHYS_ADDR_MASK(x) (x & 0x3FFFFFFF)
@@ -41,54 +37,22 @@ struct rpi_bcm2711_fb_descriptor {
 };
 
 struct rpi_bcm2711_fb_config {
-	const struct device *fw_dev;
-	uint16_t width;
-	uint16_t height;
+	struct display_fb_common_config common;
 	enum display_pixel_format pixel_format;
 	bool red_blue_swap;
 };
 
 struct rpi_bcm2711_fb_data {
-	mem_addr_t fb_addr;
-	uint32_t pitch;
+	struct display_fb_common_data common;
 };
-
-static int rpi_bcm2711_fb_write(const struct device *dev, const uint16_t x, const uint16_t y,
-				const struct display_buffer_descriptor *desc, const void *buf)
-{
-	const struct rpi_bcm2711_fb_config *config = dev->config;
-	struct rpi_bcm2711_fb_data *data = dev->data;
-	uint32_t *dst = (uint32_t *)data->fb_addr;
-	const uint32_t *src = (const uint32_t *)buf;
-
-	if ((x + desc->width > config->width) || (y + desc->height > config->height) ||
-	    desc->pitch < desc->width) {
-		return -EINVAL;
-	}
-
-	if (desc->buf_size <
-	    ((size_t)desc->pitch * desc->height * RPI_BCM2711_FB_BYTES_PER_PIXEL)) {
-		return -EINVAL;
-	}
-
-	dst += x + (y * (data->pitch / RPI_BCM2711_FB_BYTES_PER_PIXEL));
-
-	for (uint32_t row = 0; row < desc->height; row++) {
-		memcpy(dst, src, desc->width * RPI_BCM2711_FB_BYTES_PER_PIXEL);
-		dst += data->pitch / RPI_BCM2711_FB_BYTES_PER_PIXEL;
-		src += desc->pitch;
-	}
-
-	return 0;
-}
 
 static void rpi_bcm2711_fb_get_capabilities(const struct device *dev,
 					    struct display_capabilities *capabilities)
 {
 	const struct rpi_bcm2711_fb_config *config = dev->config;
 
-	capabilities->x_resolution = config->width;
-	capabilities->y_resolution = config->height;
+	capabilities->x_resolution = config->common.width;
+	capabilities->y_resolution = config->common.height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_ABGR_8888;
 	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->screen_info = 0;
@@ -143,12 +107,12 @@ static int rpi_bcm2711_fb_init(const struct device *dev)
 {
 	const struct rpi_bcm2711_fb_config *config = dev->config;
 	struct rpi_bcm2711_fb_data *data = dev->data;
-	const struct device *fw_dev = config->fw_dev;
+	const struct device *fw_dev = config->common.fw_dev;
 	struct rpi_bcm2711_fb_descriptor fb;
 	int ret;
 
-	fb.display.width = config->width;
-	fb.display.height = config->height;
+	fb.display.width = config->common.width;
+	fb.display.height = config->common.height;
 	fb.depth = DISPLAY_BITS_PER_PIXEL(config->pixel_format);
 	fb.pixel_order = config->red_blue_swap ? 0 : RPI_BCM2711_FB_PIXEL_ORDER_RGB;
 	fb.alloc.buffer = 16;
@@ -166,7 +130,8 @@ static int rpi_bcm2711_fb_init(const struct device *dev)
 		return ret;
 	}
 
-	if (config->width != fb.display.width || config->height != fb.display.height) {
+	if (config->common.width != fb.display.width ||
+	    config->common.height != fb.display.height) {
 		LOG_ERR("Firmware framebuffer size does not match dt-property");
 		return -EINVAL;
 	}
@@ -187,25 +152,23 @@ static int rpi_bcm2711_fb_init(const struct device *dev)
 		(fb.pixel_order == RPI_BCM2711_FB_PIXEL_ORDER_RGB) ? "RGB" : "BGR", fb.alloc.buffer,
 		fb.alloc.size / 8192, fb.pitch);
 
-	data->pitch = fb.pitch;
-
-	device_map(&data->fb_addr, BCM2711_PHYS_ADDR_MASK(fb.alloc.buffer), fb.alloc.size,
+	data->common.pitch = fb.pitch / DISPLAY_FB_BYTES_PER_PIXEL;
+	device_map(&data->common.fb_addr, BCM2711_PHYS_ADDR_MASK(fb.alloc.buffer), fb.alloc.size,
 		   K_MEM_CACHE_NONE | K_MEM_PERM_RW);
 
 	return 0;
 }
 
 static DEVICE_API(display, rpi_bcm2711_fb_api) = {
-	.write = rpi_bcm2711_fb_write,
+	.read = display_fb_read,
+	.write = display_fb_write,
 	.get_capabilities = rpi_bcm2711_fb_get_capabilities,
 	.set_pixel_format = rpi_bcm2711_fb_set_pixel_format,
 };
 
 #define RPI_BCM2711_FB_DEFINE(n)                                                                   \
 	static const struct rpi_bcm2711_fb_config rpi_bcm2711_fb_config_##n = {                    \
-		.fw_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                        \
-		.width = DT_INST_PROP(n, width),                                                   \
-		.height = DT_INST_PROP(n, height),                                                 \
+		.common = DISPLAY_FB_COMMON_CFG_FROM_DT_INST(n),                                   \
 		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
 		.red_blue_swap = DT_INST_PROP(n, red_blue_swap),                                   \
 	};                                                                                         \

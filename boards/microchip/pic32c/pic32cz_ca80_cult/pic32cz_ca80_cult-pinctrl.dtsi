@@ -20,4 +20,12 @@
 				 <PD29D_SERCOM9_PAD1>;  /* SCL */
 		};
 	};
+
+	sercom2_spi_default: sercom2_spi_default {
+		group1 {
+			pinmux = <PC8D_SERCOM2_PAD0>,   /* MOSI */
+				 <PC11D_SERCOM2_PAD3>,  /* MISO */
+				 <PC9D_SERCOM2_PAD1>;   /* SCK  */
+		};
+	};
 };

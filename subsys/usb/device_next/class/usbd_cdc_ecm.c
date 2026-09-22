@@ -82,8 +82,8 @@ struct cdc_ecm_eth_data {
 	struct usbd_class_data *c_data;
 	struct usbd_desc_node *const mac_desc_data;
 	struct usbd_cdc_ecm_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header *const *const fs_desc;
+	const struct usb_desc_header *const *const hs_desc;
 
 	struct net_if *iface;
 	uint8_t mac_addr[6];
@@ -480,8 +480,8 @@ static void usbd_cdc_ecm_shutdown(struct usbd_class_data *const c_data)
 	sys_dlist_remove(&data->mac_desc_data->node);
 }
 
-static void *usbd_cdc_ecm_get_desc(struct usbd_class_data *const c_data,
-				   const enum usbd_speed speed)
+static const void *usbd_cdc_ecm_get_desc(struct usbd_class_data *const c_data,
+					 const enum usbd_speed speed)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *const data = dev->data;
@@ -636,7 +636,7 @@ static int usbd_cdc_ecm_preinit(const struct device *dev)
 	return 0;
 }
 
-static struct usbd_class_api usbd_cdc_ecm_api = {
+static const struct usbd_class_api usbd_cdc_ecm_api = {
 	.request = usbd_cdc_ecm_request,
 	.update = usbd_cdc_ecm_update,
 	.enable = usbd_cdc_ecm_enable,
@@ -793,7 +793,7 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 	},									\
 };										\
 										\
-	const static struct usb_desc_header *cdc_ecm_fs_desc_##n[] = {		\
+	const static struct usb_desc_header *const cdc_ecm_fs_desc_##n[] = {	\
 		(struct usb_desc_header *) &cdc_ecm_desc_##n.iad,		\
 		(struct usb_desc_header *) &cdc_ecm_desc_##n.if0,		\
 		(struct usb_desc_header *) &cdc_ecm_desc_##n.if0_header,	\
@@ -807,7 +807,7 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 		(struct usb_desc_header *) &cdc_ecm_desc_##n.nil_desc,		\
 	};									\
 										\
-	const static struct usb_desc_header *cdc_ecm_hs_desc_##n[] = {		\
+	const static struct usb_desc_header *const cdc_ecm_hs_desc_##n[] = {	\
 		(struct usb_desc_header *) &cdc_ecm_desc_##n.iad,		\
 		(struct usb_desc_header *) &cdc_ecm_desc_##n.if0,		\
 		(struct usb_desc_header *) &cdc_ecm_desc_##n.if0_header,	\

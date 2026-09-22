@@ -24,6 +24,7 @@
 	chosen {
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	cpus {
@@ -48,7 +49,7 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
 				min-residency-us = <2500>;
-				exit-latency-us = <50>;
+				exit-latency-us = <0>;
 			};
 
 			deep_sleep: deep_sleep {
@@ -67,12 +68,23 @@
 		status = "okay";
 	};
 
+	esp32_bt_hci: esp32_bt_hci {
+		compatible = "espressif,esp32-bt-hci";
+		bt-hci-vs-ext;
+		status = "disabled";
+	};
+
 	clock: clock {
 		compatible = "espressif,esp32-clock";
 		fast-clk-src = <ESP32_RTC_FAST_CLK_SRC_RC_FAST>;
 		slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
 		#clock-cells = <1>;
 		status = "okay";
+	};
+
+	wifi: wifi {
+		compatible = "espressif,esp32-wifi";
+		status = "disabled";
 	};
 
 	soc {

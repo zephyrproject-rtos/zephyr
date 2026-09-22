@@ -9,7 +9,6 @@ config MODEM_BACKEND_TTY
 config MODEM_BACKEND_UART
 	bool "Modem UART backend module"
 	select MODEM_PIPE
-	select RING_BUFFER
 	depends on UART_INTERRUPT_DRIVEN || UART_ASYNC_API
 
 if MODEM_BACKEND_UART
@@ -49,7 +48,7 @@ config MODEM_BACKEND_UART_ASYNC_RECEIVE_IDLE_TIMEOUT_MS
 	default 30
 
 config MODEM_BACKEND_UART_ASYNC_HWFC
-	bool "Hardware flow control (HWFC) for the modem async UART backend"
+	bool "Hardware flow control (HWFC) for the modem async UART backend [EXPERIMENTAL]"
 	select EXPERIMENTAL
 
 if MODEM_BACKEND_UART_ASYNC_HWFC

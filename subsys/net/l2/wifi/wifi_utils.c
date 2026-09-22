@@ -103,6 +103,29 @@ bool wifi_utils_validate_chan(uint8_t band,
 	return result;
 }
 
+
+enum wifi_frequency_bands wifi_utils_chan_to_band(uint16_t chan)
+{
+	/* The 2.4 GHz (1-14) and 6 GHz (1, 2, 5, 9, ...) channel numbers overlap, as
+	 * do the 5 GHz and 6 GHz ones above 14. A channel number on its own cannot
+	 * resolve that, so return the lowest band it is valid in. Every open coded
+	 * conversion this replaces made the same assumption.
+	 */
+	if (wifi_utils_validate_chan_2g(chan)) {
+		return WIFI_FREQ_BAND_2_4_GHZ;
+	}
+
+	if (wifi_utils_validate_chan_5g(chan)) {
+		return WIFI_FREQ_BAND_5_GHZ;
+	}
+
+	if (wifi_utils_validate_chan_6g(chan)) {
+		return WIFI_FREQ_BAND_6_GHZ;
+	}
+
+	return WIFI_FREQ_BAND_UNKNOWN;
+}
+
 /**
  * @brief Get the next Wi-Fi 6GHz channel based on the given (valid) channel.
  * The function handles the initial edge cases (1 -> 2, 2 -> 5) and then increments by 4.
@@ -216,16 +239,18 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 }
 
 
-static int wifi_utils_validate_chan_str(char *chan_str)
+static int wifi_utils_validate_chan_str(const char *chan_str)
 {
-	uint8_t i;
+	size_t i;
+	size_t len;
 
-	if ((!chan_str) || (!strlen(chan_str))) {
-		NET_ERR("Null or empty channel string\n");
+	len = strlen(chan_str);
+	if (len == 0) {
+		NET_ERR("Empty channel string\n");
 		return -EINVAL;
 	}
 
-	for (i = 0; i < strlen(chan_str); i++) {
+	for (i = 0; i < len; i++) {
 		if (!isdigit((int)chan_str[i])) {
 			NET_ERR("Invalid character in channel string %c\n", chan_str[i]);
 			return -EINVAL;

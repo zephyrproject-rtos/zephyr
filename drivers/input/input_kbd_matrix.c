@@ -154,7 +154,7 @@ void input_kbd_matrix_update_state(const struct device *dev)
 		}
 
 		for (int r = 0; r < cfg->row_size; r++) {
-			uint8_t cyc_idx = c * cfg->row_size + r;
+			uint16_t cyc_idx = c * cfg->row_size + r;
 
 			/*
 			 * Index all they keys that changed for each row in
@@ -186,7 +186,7 @@ void input_kbd_matrix_update_state(const struct device *dev)
 				continue;
 			}
 
-			uint8_t cyc_idx = c * cfg->row_size + r;
+			uint16_t cyc_idx = c * cfg->row_size + r;
 			uint8_t scan_cyc_idx = cfg->scan_cycle_idx[cyc_idx];
 			uint32_t scan_clk_cycle = data->scan_clk_cycle[scan_cyc_idx];
 

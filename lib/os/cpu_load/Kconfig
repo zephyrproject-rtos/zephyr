@@ -78,7 +78,7 @@ source "subsys/logging/Kconfig.template.log_config"
 endif # CPU_LOAD
 
 config CPU_LOAD_METRIC
-	bool "Deprecated CPU load metric"
+	bool "CPU load metric [DEPRECATED]"
 	select DEPRECATED
 	select CPU_LOAD
 	select CPU_LOAD_MULTICPU

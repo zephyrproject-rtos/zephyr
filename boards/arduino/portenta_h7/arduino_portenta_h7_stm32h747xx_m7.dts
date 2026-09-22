@@ -13,6 +13,10 @@
 	model = "Arduino Portenta H7 board";
 	compatible = "arduino,portenta-h7";
 
+	aliases {
+		rtc = &rtc;
+	};
+
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
 		zephyr,sram = &sram0;

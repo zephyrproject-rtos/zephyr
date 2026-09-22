@@ -8,6 +8,7 @@
 #include <st/wl3/stm32wl33Xc.dtsi>
 #include <st/wl3/stm32wl33ccvx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics NUCLEO-WL33CC1 board";
@@ -18,6 +19,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -62,6 +64,7 @@
 	};
 
 	aliases {
+		rtc = &rtc;
 		led0 = &blue_led_1;
 		led1 = &green_led_1;
 		led2 = &red_led_1;
@@ -94,9 +97,65 @@
 	slow-clock = <&clk_lse>;
 };
 
+&rtc {
+	status = "okay";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa1 &usart1_rx_pa15>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa6 &i2c2_sda_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pb10 &spi1_sck_pb11 &spi1_miso_pb8 &spi1_mosi_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(100)>;
+		};
+
+		slot1_partition: partition@25000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00025000 DT_SIZE_K(102)>;
+		};
+
+		storage_partition: partition@3e800 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x0003e800 DT_SIZE_K(6)>;
+		};
+	};
 };

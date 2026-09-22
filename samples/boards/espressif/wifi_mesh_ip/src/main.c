@@ -84,11 +84,33 @@ int main(void)
 
 	esp_wifi_mesh_event_cb_register(mesh_event);
 
+	/*
+	 * Mesh credentials and tree limits are runtime-configurable; set them
+	 * here before esp_wifi_mesh_start() rather than through Kconfig. These
+	 * values match the driver's built-in defaults: replace them with your
+	 * router's credentials and a mesh ID unique to your network.
+	 */
+	struct esp_wifi_mesh_config mesh_cfg = {
+		.ssid = "myssid",
+		.password = "mypassword",
+		.mesh_password = "meshpassword",
+		.channel = 0,
+		.mesh_id = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc},
+		.authmode = WIFI_SECURITY_TYPE_PSK,
+		.num_layers = CONFIG_WIFI_ESP32_MESH_MAX_LAYER,
+		.max_connections = CONFIG_WIFI_ESP32_MESH_MAX_CONNECTIONS,
+	};
+
+	if (esp_wifi_mesh_set_config(&mesh_cfg) != 0) {
+		LOG_ERR("invalid mesh configuration");
+		return -EINVAL;
+	}
+
 	if (esp_wifi_mesh_start() != 0) {
 		LOG_ERR("Wi-Fi mesh start failed");
 		return -EIO;
 	}
 
-	LOG_INF("Wi-Fi mesh starting");
+	LOG_INF("Wi-Fi mesh starting (router SSID \"%s\")", mesh_cfg.ssid);
 	return 0;
 }

@@ -96,6 +96,20 @@
 			ranges = <0x0 0x200fe000 0x1000>;
 		};
 
+#ifndef USE_NON_SECURE_ADDRESS_MAP
+		/*
+		 * The KMU pushes keys to a fixed address at the start of SRAM,
+		 * so this area is not available to the application. When
+		 * building with TF-M the area is part of the SRAM partition
+		 * owned by the secure image instead.
+		 */
+		kmu_push_area: memory@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20000000 0x60>;
+			zephyr,memory-region = "KMU_PUSH";
+		};
+#endif
+
 		nrf_kmu_cracen_exchange_area: memory@200ff000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -121,6 +135,17 @@
 		 * P0.09 is available and not used by other enabled peripherals.
 		 */
 		pwr-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	wifi_antsw: wifi_antsw {
+		compatible = "nordic,nrf71-wifi-antsw";
+		/*
+		 * Steers the antenna switch towards WLAN, driven from
+		 * soc_early_init_hook() before the Wi-Fi core is started. Hardwired to
+		 * P0.05 in nRF7120. Powering the switch is handled by pwr_antswc.
+		 */
+		wlan-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		status = "disabled";
 	};
 
@@ -197,6 +222,13 @@
 					#size-cells = <1>;
 					ranges = <0x0 0xe0000 (DT_SIZE_K(120) - 0x20)>;
 				};
+
+#ifndef USE_NON_SECURE_ADDRESS_MAP
+				cpuapp_sram_app: memory@60 {
+					compatible = "mmio-sram";
+					reg = <0x60 (DT_SIZE_K(1016) - 0x20 - 0x60)>;
+				};
+#endif
 			};
 
 			vtf_region_default: memory@fdfe0 {
@@ -1020,6 +1052,16 @@
 					reg = <0x504 0x1>;
 					status = "disabled";
 				};
+			};
+
+			lfrc: clock-controller@123000 {
+				compatible = "nordic,nrf-lfrc";
+				reg = <0x123000 0x1000>;
+				interrupts = <291 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				#clock-cells = <0>;
+				clock-frequency = <32768>;
+				accuracy-ppm = <250>;
 			};
 
 			audio_auxpll: auxpll@130000 {

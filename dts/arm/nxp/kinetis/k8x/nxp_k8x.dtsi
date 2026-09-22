@@ -103,6 +103,7 @@
 			interrupt-names = "command-complete", "read-collision";
 			status = "okay";
 
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};

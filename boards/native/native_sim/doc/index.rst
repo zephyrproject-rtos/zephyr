@@ -498,8 +498,8 @@ Here are more details on the peripherals that are currently provided with this b
   Some more information can be found in :ref:`the emulators page <emul_eeprom_simu_brief>`.
 
 **Flash simulator**
-  The flash simulator can also be used in the native targets. In this you have the option to keep
-  the flash content in a binary file on the host file system or in RAM. The behavior of the flash
+  The flash simulator can also be used in the native targets. In these, you have the option to keep
+  the flash content in a binary file on the host filesystem or in RAM. The behavior of the flash
   device can be configured through the native_sim board devicetree or Kconfig settings under
   :kconfig:option:`CONFIG_FLASH_SIMULATOR`.
 
@@ -507,8 +507,8 @@ Here are more details on the peripherals that are currently provided with this b
   working directory. The location of this file can be changed through the
   command line parameter ``--flash``. The flash data will be stored in raw format
   and the file will be truncated to match the size specified in the devicetree
-  configuration. In case the file does not exists the driver will take care of
-  creating the file, else the existing file is used.
+  configuration. If the file does not exist, the driver creates it; otherwise, the existing file is
+  used.
 
   Some more information can be found in :ref:`the emulators page <emul_flash_simu_brief>`.
 

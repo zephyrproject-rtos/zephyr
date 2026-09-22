@@ -32,6 +32,7 @@ static mipi_syst_u16 channel = 1;
 static struct stp_writer_data writer_state;
 #elif !defined(CONFIG_MIPI_SYST_RAW_DATA)
 static const char pattern[] = "SYS-T RAW DATA: ";
+static const size_t pattern_len = sizeof(pattern) - 1;
 static const char valToHex[] = "0123456789ABCDEF";
 #endif
 
@@ -332,7 +333,7 @@ static void write_d32ts(struct mipi_syst_handle *systh, uint32_t v)
 
 	write_raw(systh, &v, sizeof(v));
 #else
-	for (int i = 0; i < strlen(pattern); i++) {
+	for (int i = 0; i < (int)pattern_len; i++) {
 		out_func(pattern[i], systh->systh_platform.log_output);
 	}
 

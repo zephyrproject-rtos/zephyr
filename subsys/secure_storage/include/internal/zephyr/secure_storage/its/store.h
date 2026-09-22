@@ -10,6 +10,11 @@
  * They are meant to be called only by the ITS implementation.
  * This header may be included when providing a custom implementation of the
  * ITS store module (@kconfig{CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM}).
+ *
+ * The ITS implementation serializes the operations that modify the storage medium, but a
+ * retrieval can happen concurrently with one of them. The operations must therefore be
+ * atomic with respect to each other, so that a retrieval returns either the previous or the
+ * new data of an entry, never a mix of both.
  */
 #include <zephyr/secure_storage/its/common.h>
 
@@ -32,7 +37,9 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
  * @param[out] data_length On success, the number of bytes written to `data`.
  *                         May be less than `data_size`.
  *
- * @return One of the return values of `psa_its_get()`.
+ * @retval PSA_SUCCESS               The read succeeded.
+ * @retval PSA_ERROR_DOES_NOT_EXIST  The entry was not found from the storage.
+ * @retval PSA_ERROR_STORAGE_FAILURE Some storage failure happened.
  */
 psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t data_size,
 					  void *data, size_t *data_length);

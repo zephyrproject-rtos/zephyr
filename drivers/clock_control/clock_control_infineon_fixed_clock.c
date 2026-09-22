@@ -38,7 +38,9 @@ struct fixed_rate_clock_config {
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp)) ||                                              \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                         \
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1)) ||                                         \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco)) &&                                         \
+	 !IS_ENABLED(CONFIG_SOC_FAMILY_INFINEON_PSOC4))
 static void clock_startup_error(uint32_t error)
 {
 	(void)error; /* Suppress the compiler warning */
@@ -170,7 +172,9 @@ static int fixed_rate_clk_init(const struct device *dev)
 		/* "touch" err to avoid a warning with asserts turned off */
 		ARG_UNUSED(err);
 		__ASSERT(err == CY_SYSCLK_SUCCESS, "Invalid clock selection");
+#if defined(CONFIG_INFINEON_SYSCLK_LOCK_NONE)
 		Cy_SysClk_ImoLock(CY_SYSCLK_IMO_LOCK_NONE);
+#endif
 		SystemCoreClockUpdate();
 #endif
 		break;

@@ -13,6 +13,15 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCHES_DEFINE(quectel_eg915u_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	quectel_eg915u_set_baudrate_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR=" STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE),
+				   ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_set_baudrate_chat_script,
+			 quectel_eg915u_set_baudrate_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 1);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	quectel_eg915u_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPIN?", ok_match),
@@ -31,13 +40,17 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_init_chat_script, quectel_eg915u_init_ch
 			 abort_matches, modem_cellular_chat_callback_handler, 30);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg915u_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT(
+				"AT+CGACT=0," STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID),
+				allow_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      /* this at command is required as a small delay before performing
 			       * dialing, otherwise we get 'NO CARRIER' and abort
 			       */
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 500),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				connect_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_dial_chat_script, quectel_eg915u_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -53,6 +66,7 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_periodic_chat_script,
 static const struct modem_cellular_vendor_config quectel_eg915u_vendor = {
 	/* clang-format off */
 	.scripts = {
+		.set_baudrate = &quectel_eg915u_set_baudrate_chat_script,
 		.init = &quectel_eg915u_init_chat_script,
 		.dial = &quectel_eg915u_dial_chat_script,
 		.periodic = &quectel_eg915u_periodic_chat_script,
@@ -64,7 +78,7 @@ static const struct modem_cellular_vendor_config quectel_eg915u_vendor = {
 	/* clang-format on */
 	.chat_delimiter = "\r",
 	.chat_filter = "\n",
-	.power_pulse_duration_ms = 2000,
+	.power_pulse_duration_ms = 3100,
 	.reset_pulse_duration_ms = 500,
 	.startup_time_ms = 15000,
 	.shutdown_time_ms = 3000,
@@ -77,6 +91,6 @@ static const struct modem_cellular_vendor_config quectel_eg915u_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &quectel_eg915u_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &quectel_eg915u_vendor, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_EG915U)

@@ -82,14 +82,14 @@ static int da7212_clock_mode_config(const struct device *dev, audio_dai_cfg_t *c
 {
 	uint8_t val = 0;
 
-	/* Master mode => DAI_CLK_EN = 1 (BCLK/WCLK output).
-	 * Slave mode => DAI_CLK_EN = 0 (BCLK/WCLK input)
+	/* Clock controller => DAI_CLK_EN = 1 (BCLK/WCLK output).
+	 * Clock target => DAI_CLK_EN = 0 (BCLK/WCLK input)
 	 */
 	if ((cfg->i2s.options & I2S_OPT_FRAME_CLK_TARGET) == 0) {
 		da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
 				DIALOG7212_DAI_CLK_EN_MASK, DIALOG7212_DAI_CLK_EN_MASK);
 
-		/* DAI master mode BCLK number per WCLK period */
+		/* DAI clock controller BCLK number per WCLK period */
 		switch (cfg->i2s.word_size) {
 		case 16:
 			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK32;
@@ -562,7 +562,7 @@ static int da7212_configure(const struct device *dev, struct audio_codec_cfg *cf
 			DIALOG7212_PLL_FBDIV_INTEGER_RESET_VALUE);
 	da7212_write_reg(dev, DIALOG7212_PLL_CTRL, 0x0);
 
-	/* Set default clock mode to slave, BCLK number per WCLK = 64 */
+	/* Set default clock mode to target, BCLK number per WCLK = 64 */
 	da7212_write_reg(dev, DIALOG7212_DAI_CLK_MODE,
 			(uint8_t)DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK64);
 

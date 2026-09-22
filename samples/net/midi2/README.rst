@@ -16,6 +16,7 @@ This sample demonstrates usage of the Network MIDI 2.0 stack:
   send MIDI1 data from UMP group 9 there
 * if ``midi_green_led`` node is defined in the device tree,
   light up the led when sending data on the serial port
+  (:kconfig:option:`CONFIG_NET_SAMPLE_MIDI2_ACTIVITY_LED`)
 
 Requirements
 ************

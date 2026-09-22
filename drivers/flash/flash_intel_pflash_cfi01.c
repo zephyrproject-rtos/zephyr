@@ -164,7 +164,7 @@ static int pflash_write(const struct device *dev, off_t offset, const void *data
 		/* Wait for operation to complete */
 		ret = pflash_wait_ready(addr + i, cfg->bank_width, cfg->device_width);
 		if (ret != 0) {
-			LOG_ERR("Write failed at offset 0x%lx", offset + i);
+			LOG_ERR("Write failed at offset 0x%lx", (long)(offset + i));
 			pflash_read_array(base_addr, cfg->bank_width);
 			return ret;
 		}
@@ -206,7 +206,7 @@ static int pflash_erase(const struct device *dev, off_t offset, size_t size)
 		/* Wait for erase to complete */
 		ret = pflash_wait_ready(addr, cfg->bank_width, cfg->device_width);
 		if (ret != 0) {
-			LOG_ERR("Erase failed at offset 0x%lx", offset + erased);
+			LOG_ERR("Erase failed at offset 0x%lx", (long)(offset + erased));
 			pflash_read_array(base_addr, cfg->bank_width);
 			return ret;
 		}

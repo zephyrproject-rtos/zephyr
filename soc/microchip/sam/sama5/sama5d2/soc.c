@@ -23,8 +23,11 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_STRONG(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aic)), "aic",
 			  AIC_BASE_ADDRESS, 0x100)
 
-	MMU_REGION_STRONG(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(PMC)), "pmc",
+	MMU_REGION_STRONG(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pmc)), "pmc",
 			  PMC_BASE_ADDRESS, 0x200)
+
+	MMU_REGION_STRONG(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc)), "rtc",
+			  RTC_BASE_ADDRESS, 0x200)
 };
 
 const struct arm_mmu_config mmu_config = {

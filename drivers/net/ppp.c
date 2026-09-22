@@ -699,6 +699,13 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 }
 
 #if defined(CONFIG_NET_TEST)
+static void (*ppp_send_cb)(struct net_pkt *pkt);
+
+void ppp_driver_register_send_cb(void (*cb)(struct net_pkt *pkt))
+{
+	ppp_send_cb = cb;
+}
+
 static uint8_t *ppp_recv_cb(uint8_t *buf, size_t *off)
 {
 	struct ppp_driver_context *ppp =
@@ -822,6 +829,10 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 	int i, offset;
 
 #if defined(CONFIG_NET_TEST)
+	if (ppp_send_cb != NULL) {
+		ppp_send_cb(pkt);
+	}
+
 	return 0;
 #endif
 

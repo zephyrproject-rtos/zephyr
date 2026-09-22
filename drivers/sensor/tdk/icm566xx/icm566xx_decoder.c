@@ -236,7 +236,7 @@ int icm566xx_encode(const struct device *dev, const struct sensor_chan_spec *con
 		    const size_t num_channels, uint8_t *buf)
 {
 	struct icm566xx_encoded_data *edata = (struct icm566xx_encoded_data *)buf;
-	const struct icm566xx_config *dev_config = dev->config;
+	const struct icm566xx_data *data = dev->data;
 	uint64_t cycles;
 	int err;
 
@@ -252,8 +252,8 @@ int icm566xx_encode(const struct device *dev, const struct sensor_chan_spec *con
 	}
 
 	edata->header.events = 0;
-	edata->header.accel_fs = dev_config->settings.accel.fs;
-	edata->header.gyro_fs = dev_config->settings.gyro.fs;
+	edata->header.accel_fs = data->edata.header.accel_fs;
+	edata->header.gyro_fs = data->edata.header.gyro_fs;
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
@@ -378,9 +378,13 @@ static int icm566xx_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 
 		int32_t raw_reading;
 #if defined(CONFIG_DT_HAS_INVENSENSE_ICM56686_ENABLED)
-		int pos = icm566xx_get_channel_position(chan_spec.chan_type);
+		if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+			raw_reading = edata->payload.temp;
+		} else {
+			int pos = icm566xx_get_channel_position(chan_spec.chan_type);
 
-		raw_reading = get_raw_reading_by_position(edata, pos);
+			raw_reading = get_raw_reading_by_position(edata, pos);
+		}
 #else
 		raw_reading =
 			edata->payload.readings[icm566xx_get_channel_position(chan_spec.chan_type)];

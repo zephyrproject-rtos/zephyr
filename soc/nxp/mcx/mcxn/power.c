@@ -21,7 +21,8 @@ void mcxn_pm_suspend_to_ram(void);
 static void pm_enter_hook(void)
 {
 	CMC_SetPowerModeProtection(MCXN_CMC_ADDR, kCMC_AllowAllLowPowerModes);
-	CMC_EnableDebugOperation(MCXN_CMC_ADDR, false);
+	CMC_EnableDebugOperation(MCXN_CMC_ADDR,
+				 IS_ENABLED(CONFIG_SOC_FAMILY_MCXN_DEBUG_IN_LOW_POWER));
 	CMC_ConfigFlashMode(MCXN_CMC_ADDR, true, false);
 }
 

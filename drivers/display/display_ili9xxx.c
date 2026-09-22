@@ -366,8 +366,6 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 	struct ili9xxx_data *data = dev->data;
 	const struct ili9xxx_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
-
 	capabilities->supported_pixel_formats =
 		PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_RGB_565X;
 	capabilities->current_pixel_format = data->pixel_format;

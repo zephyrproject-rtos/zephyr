@@ -18,6 +18,7 @@
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
 #ifdef CONFIG_PM_MCUX_GPC
@@ -929,8 +930,7 @@ static int nxp_wifi_process_results(unsigned int count)
 
 		res.rssi = -scan_result.rssi;
 		res.channel = scan_result.channel;
-		res.band = scan_result.channel > 14 ?
-			   WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+		res.band = wifi_utils_chan_to_band(scan_result.channel);
 
 		res.security = WIFI_SECURITY_TYPE_NONE;
 
@@ -1060,10 +1060,27 @@ static int nxp_wifi_scan(const struct device *dev,
 
 	wlan_scan_params_v2.num_channels = i;
 
+	/* Propagate scan type for full-band scans where no explicit
+	 * channel list is provided and the loop above is skipped.
+	 */
+	if (i == 0U) {
+		if (params->scan_type == WIFI_SCAN_TYPE_PASSIVE) {
+			wlan_scan_params_v2.chan_list[0].scan_type =
+				MLAN_SCAN_TYPE_PASSIVE;
+			wlan_scan_params_v2.chan_list[0].scan_time =
+				params->dwell_time_passive;
+		} else {
+			wlan_scan_params_v2.chan_list[0].scan_type =
+				MLAN_SCAN_TYPE_ACTIVE;
+			wlan_scan_params_v2.chan_list[0].scan_time =
+				params->dwell_time_active;
+		}
+	}
+
 	if (params->bands & (1 << WIFI_FREQ_BAND_2_4_GHZ)) {
 		wlan_scan_params_v2.chan_list[0].radio_type = 0 | BAND_SPECIFIED;
 	}
-#ifdef CONFIG_5GHz_SUPPORT
+#ifdef CONFIG_NXP_WIFI_5GHz_SUPPORT
 	if (params->bands & (1 << WIFI_FREQ_BAND_5_GHZ)) {
 		if (wlan_scan_params_v2.chan_list[0].radio_type & BAND_SPECIFIED) {
 			wlan_scan_params_v2.chan_list[0].radio_type = 0;
@@ -1397,10 +1414,16 @@ static int nxp_wifi_uap_status(const struct device *dev,
 			}
 
 			if (nxp_wlan_uap_network.channel != 0) {
-				status->band = nxp_wlan_uap_network.channel > 14 ?
-					WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+				status->band =
+					wifi_utils_chan_to_band(nxp_wlan_uap_network.channel);
 			} else {
-				status->band = nxp_wlan_uap_network.acs_band;
+				/* ACS has not picked a channel yet, so report the
+				 * band it was asked to scan. acs_band is 1 for
+				 * 5 GHz and 0 for 2.4 GHz.
+				 */
+				status->band = nxp_wlan_uap_network.acs_band
+						       ? WIFI_FREQ_BAND_5_GHZ
+						       : WIFI_FREQ_BAND_2_4_GHZ;
 			}
 
 			status->security = nxp_wifi_key_mgmt_to_zephyr(
@@ -1488,8 +1511,7 @@ static int nxp_wifi_status(const struct device *dev,
 #else
 			status->twt_capable = false;
 #endif
-			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
-								     : WIFI_FREQ_BAND_2_4_GHZ;
+			status->band = wifi_utils_chan_to_band(nxp_wlan_network.channel);
 			status->security = nxp_wifi_key_mgmt_to_zephyr(
 				nxp_wlan_network.security.key_mgmt,
 				nxp_wlan_network.security.pwe_derivation);
@@ -2126,10 +2148,7 @@ static void nxp_wifi_sta_init(struct net_if *iface)
 	net_eth_set_if_type_wifi(iface);
 	intf->netif = iface;
 #ifdef CONFIG_WIFI_NM
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
-			WIFI_TYPE_STA, iface);
-#else
+#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_sta"),
 			WIFI_TYPE_STA, iface);
 #endif
@@ -2167,10 +2186,7 @@ static void nxp_wifi_uap_init(struct net_if *iface)
 	intf->netif = iface;
 
 #ifdef CONFIG_WIFI_NM
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("hostapd"),
-			WIFI_TYPE_SAP, iface);
-#else
+#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_sap"),
 			WIFI_TYPE_SAP, iface);
 #endif

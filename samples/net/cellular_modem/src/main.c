@@ -59,9 +59,9 @@ static void init_sample_test_packet(void)
 
 static void print_cellular_info(void)
 {
-	int rc;
+	char buffer[MAX(64, CONFIG_MODEM_CELLULAR_SERIAL_NUMBER_MAX_SIZE) + 1] = {0};
 	int16_t rssi;
-	char buffer[64];
+	int rc;
 
 	rc = cellular_get_signal(modem, CELLULAR_SIGNAL_RSSI, &rssi);
 	if (!rc) {
@@ -71,6 +71,11 @@ static void print_cellular_info(void)
 	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_IMEI, &buffer[0], sizeof(buffer));
 	if (!rc) {
 		printk("IMEI: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_SERIAL_NUMBER, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("SN: %s\n", buffer);
 	}
 	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_MODEL_ID, &buffer[0],
 				     sizeof(buffer));

@@ -103,6 +103,10 @@
 	};
 };
 
+&rtc {
+	interrupts = <140 0>, <141 0>, <142 0>;
+};
+
 &aon_qtmr0 {
 	interrupts = <151 0>;
 };
@@ -117,4 +121,8 @@
 
 &aon_lpuart0 {
 	interrupts = <130 0>;
+};
+
+&aon_kpp0 {
+	interrupts = <148 0>;
 };

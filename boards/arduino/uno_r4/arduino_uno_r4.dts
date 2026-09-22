@@ -19,7 +19,7 @@
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,flash = &code_flash;
 		zephyr,entropy = &trng;
 		zephyr,code-partition = &code_partition;
 	};
@@ -89,7 +89,7 @@
 	status = "okay";
 };
 
-&flash0 {
+&code_flash {
 	partitions {
 		ranges;
 		#address-cells = <1>;

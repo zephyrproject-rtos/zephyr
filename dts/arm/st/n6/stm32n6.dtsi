@@ -972,10 +972,13 @@
 				compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
 					     "st,stm32-ethernet", "snps,dwmac";
 				reg = <0x58036000 0x8000>;
-				clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
+				clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx",
+					      "mac-clk-ptp";
 				clocks = <&rcc STM32_CLOCK(AHB5, 22)>,
 					 <&rcc STM32_CLOCK(AHB5, 23)>,
-					 <&rcc STM32_CLOCK(AHB5, 24)>;
+					 <&rcc STM32_CLOCK(AHB5, 24)>,
+					 <&rcc STM32_SRC_HCLK5 ETH1PTP_SEL(0)>;
+				resets = <&rctl STM32_RESET(AHB5, 25)>;
 				interrupts = <179 0>;
 				snps,multicast-filter-bins = <64>;
 				snps,perfect-filter-entries = <4>;
@@ -1509,7 +1512,7 @@
 				compatible = "st,stm32n6-usbphyc";
 				reg = <0x5803fc00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
-					 <&rcc STM32_SRC_HSE OTGPHY1_SEL(3)>;
+					 <&rcc STM32_SRC_HSE_DIV2_OSC OTGPHY1_SEL(3)>;
 				clock-names = "gate", "mux";
 				#phy-cells = <0>;
 			};
@@ -1518,7 +1521,7 @@
 				compatible = "st,stm32n6-usbphyc";
 				reg = <0x580c0000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 28)>,
-					 <&rcc STM32_SRC_HSE OTGPHY2_SEL(3)>;
+					 <&rcc STM32_SRC_HSE_DIV2_OSC OTGPHY2_SEL(3)>;
 				clock-names = "gate", "mux";
 				#phy-cells = <0>;
 			};

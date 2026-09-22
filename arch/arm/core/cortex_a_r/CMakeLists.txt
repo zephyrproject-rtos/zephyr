@@ -18,6 +18,7 @@ zephyr_library_sources(
   smp.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE thread.c)
 zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)

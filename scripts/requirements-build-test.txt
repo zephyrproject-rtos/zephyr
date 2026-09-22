@@ -10,7 +10,7 @@ colorama
 ply>=3.10
 
 # used for code coverage
-gcovr>=6.0
+gcovr>=8.0
 coverage
 
 # used for west-command testing

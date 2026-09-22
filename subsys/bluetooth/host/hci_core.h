@@ -452,7 +452,7 @@ struct bt_dev {
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
-	uint8_t			irk[CONFIG_BT_ID_MAX][16];
+	uint8_t			irk[CONFIG_BT_ID_MAX][BT_IRK_SIZE];
 
 #if defined(CONFIG_BT_RPA_SHARING)
 	/* Only 1 RPA per identity */
@@ -597,6 +597,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
 
 /* Scan HCI event handlers */
 void bt_hci_le_adv_report(struct net_buf *buf);
+void bt_hci_le_direct_adv_report(struct net_buf *buf);
 void bt_hci_le_scan_timeout(struct net_buf *buf);
 void bt_hci_le_adv_ext_report(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_established(struct net_buf *buf);

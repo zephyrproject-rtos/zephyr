@@ -61,10 +61,8 @@
 LOG_MODULE_REGISTER(intc_miwu, LOG_LEVEL_ERR);
 
 /* MIWU module instances */
-#define NPCX_MIWU_DEV(inst) DEVICE_DT_INST_GET(inst),
-
 static const struct device *const miwu_devs[] = {
-	DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_DEV)
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
 };
 
 BUILD_ASSERT(ARRAY_SIZE(miwu_devs) == NPCX_MIWU_TABLE_COUNT,

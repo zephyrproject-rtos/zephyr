@@ -97,6 +97,7 @@
 			interrupts = <18 0>, <19 0>;
 			interrupt-names = "command-complete", "read-collision";
 
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};

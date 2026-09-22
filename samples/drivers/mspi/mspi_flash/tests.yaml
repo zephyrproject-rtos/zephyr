@@ -28,6 +28,8 @@ tests:
       - apollo510_evb
       - arduino_giga_r1/stm32h747xx/m7
       - b_u585i_iot02a
+      - frdm_mcxe247@w25q64
+      - frdm_mcxe31b@w25q64
       - stm32h573i_dk
       - stm32h735g_disco
       - stm32l496g_disco
@@ -50,8 +52,10 @@ tests:
       - shield
     platform_allow:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     integration_platforms:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     extra_args: SHIELD=b_m2mem_pack1_mb1927_18ba
 
   sample.drivers.mspi.flash.b_m2mem_pack1_mb1927_33ba:
@@ -59,8 +63,10 @@ tests:
       - shield
     platform_allow:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     integration_platforms:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     extra_args: SHIELD=b_m2mem_pack1_mb1927_33ba
 
   sample.drivers.mspi.flash.b_m2mem_pack1_mb1928_33la:
@@ -68,8 +74,10 @@ tests:
       - shield
     platform_allow:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     integration_platforms:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     extra_args: SHIELD=b_m2mem_pack1_mb1928_33la
 
   sample.drivers.mspi.flash.b_m2mem_pack1_mb1928_33lb:
@@ -77,6 +85,8 @@ tests:
       - shield
     platform_allow:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     integration_platforms:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     extra_args: SHIELD=b_m2mem_pack1_mb1928_33lb

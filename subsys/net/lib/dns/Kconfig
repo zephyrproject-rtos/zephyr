@@ -28,6 +28,16 @@ config MDNS_RESOLVER
 	  When the mDNS responder is not enabled, the resolver joins the mDNS
 	  multicast groups itself.
 
+config MDNS_RESOLVER_AUTO_ADD_UNSCOPED
+	bool "Auto-add unscoped mDNS server to the default resolver"
+	depends on MDNS_RESOLVER
+	default y
+	help
+	  When dns_resolve_init_default() runs (auto-init or a manual call),
+	  append unscoped mDNS servers to the default resolver server list.
+	  Disable on multi-interface systems that configure mDNS per
+	  interface to avoid UDP/5353 bind collisions.
+
 config LLMNR_RESOLVER
 	bool "LLMNR support [DEPRECATED]"
 	select DEPRECATED

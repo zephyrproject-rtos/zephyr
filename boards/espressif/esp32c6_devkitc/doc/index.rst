@@ -39,6 +39,9 @@ Programming and Debugging
 .. include:: ../../../espressif/common/building-flashing.rst
    :start-after: espressif-building-flashing
 
+.. include:: ../../../espressif/common/qemu.rst
+   :start-after: espressif-qemu
+
 .. include:: ../../../espressif/common/board-variants.rst
    :start-after: espressif-board-variants
 

@@ -183,12 +183,15 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 
 #ifdef CONFIG_I3C_USE_IBI
 #define INTR_MASTER_MASK (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT | INTR_IBI_THLD_STAT)
-#else
-#define INTR_MASTER_MASK (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT)
-#endif
 #define INTR_SLAVE_MASK                                                                            \
 	(INTR_TRANSFER_ERR_STAT | INTR_IBI_UPDATED_STAT | INTR_READ_REQ_RECV_STAT |                \
 	 INTR_DYN_ADDR_ASSGN_STAT | INTR_RESP_READY_STAT)
+#else
+#define INTR_MASTER_MASK (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT)
+#define INTR_SLAVE_MASK                                                                            \
+	(INTR_TRANSFER_ERR_STAT | INTR_READ_REQ_RECV_STAT | INTR_DYN_ADDR_ASSGN_STAT |             \
+	 INTR_RESP_READY_STAT)
+#endif
 
 #define QUEUE_STATUS_LEVEL             0x4c
 #define QUEUE_STATUS_IBI_STATUS_CNT(x) (((x) & GENMASK(28, 24)) >> 24)
@@ -339,6 +342,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DEV_CHAR_TABLE_LSB_PID(x)       ((x) & GENMASK(15, 0))
 #define DEV_CHAR_TABLE_LOC2(start, idx) ((DEV_CHAR_TABLE_LOC1(start, idx)) + 4)
 #define DEV_CHAR_TABLE_LOC3(start, idx) ((DEV_CHAR_TABLE_LOC1(start, idx)) + 8)
+#define DEV_CHAR_TABLE_LOC4(start, idx) ((DEV_CHAR_TABLE_LOC1(start, idx)) + 12)
+#define DEV_CHAR_TABLE_DYNAMIC_ADDR(x)  ((x) & GENMASK(7, 0))
 #define DEV_CHAR_TABLE_DCR(x)           ((x) & GENMASK(7, 0))
 #define DEV_CHAR_TABLE_BCR(x)           (((x) & GENMASK(15, 8)) >> 8)
 
@@ -472,7 +477,13 @@ static inline bool dw_i3c_is_current_controller(const struct device *dev)
 }
 
 #ifdef CONFIG_I3C_CONTROLLER
-static uint8_t get_free_pos(uint32_t free_pos)
+
+/*
+ * Returns the index of the first free slot, or -1 when the table is full.
+ * The return type must stay signed: truncating to uint8_t turns the
+ * exhaustion result into 255 and defeats every caller's bounds check.
+ */
+static int get_free_pos(uint32_t free_pos)
 {
 	return find_lsb_set(free_pos) - 1;
 }
@@ -998,7 +1009,7 @@ static int dw_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_dev
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint8_t pos;
+	int pos;
 
 	pos = get_free_pos(data->free_pos);
 	if (pos < 0) {
@@ -1422,7 +1433,7 @@ static void ibis_handle(const struct device *dev)
 	int32_t i;
 
 	nibis = sys_read32(config->regs + QUEUE_STATUS_LEVEL);
-	nibis = QUEUE_STATUS_IBI_BUF_BLR(nibis);
+	nibis = QUEUE_STATUS_IBI_STATUS_CNT(nibis);
 	for (i = 0; i < nibis; i++) {
 		ibi_stat = sys_read32(config->regs + IBI_QUEUE_STATUS);
 		if (IBI_TYPE_SIRQ(ibi_stat)) {
@@ -1689,12 +1700,14 @@ static int i3c_dw_irq(const struct device *dev)
 			k_sem_give(&data->ibi_sts_sem);
 			sys_write32(INTR_IBI_UPDATED_STAT, config->regs + INTR_STATUS);
 		}
+#endif /* CONFIG_I3C_USE_IBI */
 		/* DA has been assigned, could happen after a IBI HJ request */
 		if (status & INTR_DYN_ADDR_ASSGN_STAT) {
+#ifdef CONFIG_I3C_USE_IBI
 			k_sem_give(&data->sem_hj);
+#endif /* CONFIG_I3C_USE_IBI */
 			sys_write32(INTR_DYN_ADDR_ASSGN_STAT, config->regs + INTR_STATUS);
 		}
-#endif /* CONFIG_I3C_USE_IBI */
 	}
 #endif /* CONFIG_I3C_TARGET */
 
@@ -1874,8 +1887,8 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint8_t pos = get_free_pos(data->free_pos);
-	uint8_t addr = desc->dynamic_addr ? desc->dynamic_addr : desc->static_addr;
+	int pos = get_free_pos(data->free_pos);
+	uint32_t dat = 0U;
 
 	if (pos < 0) {
 		LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
@@ -1888,8 +1901,16 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 
 	LOG_DBG("%s: Attaching %s", dev->name, desc->dev->name);
 
-	sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(addr),
-		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+	if (desc->dynamic_addr != 0U) {
+		dat |= DEV_ADDR_TABLE_DYNAMIC_ADDR(desc->dynamic_addr);
+	}
+
+	if (desc->static_addr != 0U) {
+		dat |= DEV_ADDR_TABLE_STATIC_ADDR(desc->static_addr);
+	}
+	dat |= DEV_ADDR_TABLE_SIR_REJECT;
+
+	sys_write32(dat, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 
 	return 0;
 }
@@ -1928,8 +1949,7 @@ static int dw_i3c_detach_device(const struct device *dev, struct i3c_device_desc
 	struct dw_i3c_i2c_dev_data *dw_i3c_device_data = desc->controller_priv;
 
 	if (dw_i3c_device_data == NULL) {
-		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
-		return -EINVAL;
+		return -EALREADY;
 	}
 
 	LOG_DBG("%s: Detaching %s", dev->name, desc->dev->name);
@@ -2169,23 +2189,41 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint32_t tmp;
+	uint32_t dat_word;
+	uint32_t dct4_word;
+	uint32_t dct1_word;
+	uint32_t dct2_word;
+	uint32_t dct3_word;
+	uint32_t dat_patched;
 	uint64_t pid;
 	uint8_t dyn_addr;
+	uint8_t dyn_addr_parity;
 
-	/* retrieve dynamic address assigned */
-	tmp = sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
-	dyn_addr = (((tmp) & GENMASK(22, 16)) >> 16);
+	/* The IP records the DA it assigned in DCT.LOC4[7:0] (databook figure 2-14).
+	 * Read it from there rather than from the DAT entry the driver programmed.
+	 * The controller DCT stride is 16 bytes (LOC1..LOC4).
+	 */
+	dat_word = sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+	dct4_word = sys_read32(config->regs + DEV_CHAR_TABLE_LOC4(data->dctstartaddr, pos));
+	dyn_addr = DEV_CHAR_TABLE_DYNAMIC_ADDR(dct4_word);
 
 	/* retrieve pid */
-	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC1(data->dctstartaddr, pos));
-	pid = ((uint64_t)DEV_CHAR_TABLE_MSB_PID(tmp) << 16) + (DEV_CHAR_TABLE_LSB_PID(tmp) << 16);
-	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC2(data->dctstartaddr, pos));
-	pid |= DEV_CHAR_TABLE_LSB_PID(tmp);
+	dct1_word = sys_read32(config->regs + DEV_CHAR_TABLE_LOC1(data->dctstartaddr, pos));
+	pid = ((uint64_t)DEV_CHAR_TABLE_MSB_PID(dct1_word) << 16) +
+	      (DEV_CHAR_TABLE_LSB_PID(dct1_word) << 16);
+	dct2_word = sys_read32(config->regs + DEV_CHAR_TABLE_LOC2(data->dctstartaddr, pos));
+	pid |= DEV_CHAR_TABLE_LSB_PID(dct2_word);
 
-	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC3(data->dctstartaddr, pos));
-	uint8_t bcr = DEV_CHAR_TABLE_BCR(tmp);
-	uint8_t dcr = DEV_CHAR_TABLE_DCR(tmp);
+	dct3_word = sys_read32(config->regs + DEV_CHAR_TABLE_LOC3(data->dctstartaddr, pos));
+	uint8_t bcr = DEV_CHAR_TABLE_BCR(dct3_word);
+	uint8_t dcr = DEV_CHAR_TABLE_DCR(dct3_word);
+
+	/* Keep DAT dynamic address/parity aligned with the HW-assigned DA. */
+	dat_patched = dat_word;
+	dyn_addr_parity = odd_parity(dyn_addr) << 7;
+	dat_patched &= ~DEV_ADDR_TABLE_DYNAMIC_ADDR_MASK;
+	dat_patched |= DEV_ADDR_TABLE_DYNAMIC_ADDR(dyn_addr | dyn_addr_parity);
+	sys_write32(dat_patched, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 
 	/* lookup known pids */
 	const struct i3c_device_id i3c_id = I3C_DEVICE_ID(pid);
@@ -2313,7 +2351,7 @@ static int dw_i3c_do_daa(const struct device *dev)
 		p = odd_parity(addr);
 		last_addr = addr;
 		addr |= (p << 7);
-		sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(addr),
+		sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(addr) | DEV_ADDR_TABLE_SIR_REJECT,
 			    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 	}
 
@@ -2622,7 +2660,7 @@ static int dw_i3c_recover_bus(const struct device *dev)
 	/* Drain any pending IBIs so the controller is not blocked by
 	 * an unread IBI queue when we try to resume.
 	 */
-	nibis = QUEUE_STATUS_IBI_BUF_BLR(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
+	nibis = QUEUE_STATUS_IBI_STATUS_CNT(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
 	while (nibis--) {
 		(void)sys_read32(config->regs + IBI_QUEUE_STATUS);
 	}

@@ -235,8 +235,6 @@ static void can_rcar_state_change(const struct device *dev, uint32_t newstate)
 {
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
-	const can_state_change_callback_t cb = data->common.state_change_cb;
-	void *state_change_cb_data = data->common.state_change_cb_user_data;
 	struct can_bus_err_cnt err_cnt;
 
 	if (data->state == newstate) {
@@ -247,11 +245,9 @@ static void can_rcar_state_change(const struct device *dev, uint32_t newstate)
 
 	data->state = newstate;
 
-	if (cb == NULL) {
-		return;
-	}
 	can_rcar_get_error_count(config, &err_cnt);
-	cb(dev, newstate, err_cnt, state_change_cb_data);
+
+	can_fire_state_change_callbacks(dev, newstate, err_cnt);
 }
 
 static void can_rcar_error(const struct device *dev)
@@ -790,16 +786,6 @@ unlock:
 	return ret;
 }
 
-static void can_rcar_set_state_change_callback(const struct device *dev,
-					       can_state_change_callback_t cb,
-					       void *user_data)
-{
-	struct can_rcar_data *data = dev->data;
-
-	data->common.state_change_cb = cb;
-	data->common.state_change_cb_user_data = user_data;
-}
-
 static int can_rcar_get_state(const struct device *dev, enum can_state *state,
 			      struct can_bus_err_cnt *err_cnt)
 {
@@ -1010,6 +996,7 @@ static int can_rcar_init(const struct device *dev)
 	int ret;
 	uint16_t ctlr;
 
+	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&data->inst_mutex);
 	k_mutex_init(&data->rx_mutex);
 	k_sem_init(&data->tx_sem, RCAR_CAN_FIFO_DEPTH, RCAR_CAN_FIFO_DEPTH);
@@ -1020,8 +1007,6 @@ static int can_rcar_init(const struct device *dev)
 
 	memset(data->rx_callback, 0, sizeof(data->rx_callback));
 	data->state = CAN_STATE_ERROR_ACTIVE;
-	data->common.state_change_cb = NULL;
-	data->common.state_change_cb_user_data = NULL;
 
 	if (config->common.phy != NULL && !device_is_ready(config->common.phy)) {
 		LOG_ERR_DEVICE_NOT_READY(config->common.phy);
@@ -1158,7 +1143,6 @@ static DEVICE_API(can, can_rcar_driver_api) = {
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_rcar_recover,
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
-	.set_state_change_callback = can_rcar_set_state_change_callback,
 	.get_core_clock = can_rcar_get_core_clock,
 	.get_max_filters = can_rcar_get_max_filters,
 	.timing_min = {

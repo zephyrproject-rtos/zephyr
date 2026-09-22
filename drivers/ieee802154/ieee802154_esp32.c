@@ -316,7 +316,7 @@ static int handle_ack(struct ieee802154_esp32_data *data)
 	net_pkt_set_ieee802154_rssi_dbm(ack_pkt, data->ack_frame_info->rssi);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	net_pkt_set_timestamp_ns(ack_pkt, data->ack_frame_info->time * NSEC_PER_USEC);
+	net_pkt_set_timestamp_ns(ack_pkt, data->ack_frame_info->timestamp * NSEC_PER_USEC);
 #endif
 
 	net_pkt_cursor_init(ack_pkt);

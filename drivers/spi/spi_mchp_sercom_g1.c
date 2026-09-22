@@ -1093,29 +1093,22 @@ static DEVICE_API(spi, spi_mchp_api) = {
 	.reg_cfg.regs = (sercom_registers_t *)DT_INST_REG_ADDR(n),                                 \
 	.reg_cfg.pads = SPI_MCHP_SERCOM_PADS(n),
 
-#if DT_INST_IRQ_HAS_IDX(0, 3)
 #define SPI_MCHP_IRQ_HANDLER(n)                                                                    \
 	static void spi_mchp_irq_config_##n(const struct device *dev)                              \
 	{                                                                                          \
-		MCHP_SPI_IRQ_CONNECT(n, 0);                                                        \
-		MCHP_SPI_IRQ_CONNECT(n, 1);                                                        \
-		MCHP_SPI_IRQ_CONNECT(n, 2);                                                        \
-		MCHP_SPI_IRQ_CONNECT(n, 3);                                                        \
+		LISTIFY(                                         \
+		DT_INST_NUM_IRQS(n),                    \
+		MCHP_SPI_IRQ_CONNECT,                   \
+		(;),                                    \
+		n);                           \
 	}
-#else
-#define SPI_MCHP_IRQ_HANDLER(n)                                                                    \
-	static void spi_mchp_irq_config_##n(const struct device *dev)                              \
-	{                                                                                          \
-		MCHP_SPI_IRQ_CONNECT(n, 0);                                                        \
-	}
-#endif
 
 #define SPI_MCHP_CLOCK_DEFN(n)                                                                     \
 	.spi_clock.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                                 \
 	.spi_clock.mclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, subsystem)),           \
 	.spi_clock.gclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, subsystem))
 
-#define MCHP_SPI_IRQ_CONNECT(n, m)                                                                 \
+#define MCHP_SPI_IRQ_CONNECT(m, n)                                                                 \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority),     \
 			    spi_mchp_isr, DEVICE_DT_INST_GET(n), 0);                               \

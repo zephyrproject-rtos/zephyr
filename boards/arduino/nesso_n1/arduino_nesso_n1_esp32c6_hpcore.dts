@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c6/esp32c6_common.dtsi>
+#include <espressif/esp32c6/esp32c6.dtsi>
 #include "arduino_nesso_n1-pinctrl.dtsi"
 #include <espressif/partitions_0x0_default.dtsi>
 #include <zephyr/dt-bindings/lora/sx126x.h>

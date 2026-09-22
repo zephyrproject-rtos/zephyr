@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Picoheart.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "pmp tests"
+
+source "Kconfig.zephyr"
+
+config PMP_NAPOT_TEST
+	bool "Test pmp"
+	select PMP_NO_TOR
+	help
+	  help the testcase select PMP_NO_TOR.

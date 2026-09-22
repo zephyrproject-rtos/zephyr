@@ -127,7 +127,7 @@ static int icm4268x_sample_fetch(const struct device *dev, enum sensor_channel c
 	}
 
 	for (int i = 0; i < 7; i++) {
-		data->readings[i] = sys_le16_to_cpu((readings[i * 2] << 8) | readings[i * 2 + 1]);
+		data->readings[i] = (int16_t)sys_get_be16(&readings[i * 2]);
 	}
 
 	return 0;

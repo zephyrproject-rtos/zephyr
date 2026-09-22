@@ -31,8 +31,24 @@ config SECURE_STORAGE_ITS_TRANSFORM_OUTPUT_OVERHEAD
 
 if SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD
 
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
+	bool "Custom AEAD en/decrypt function"
+	help
+	  Implement the secure_storage_its_transform_aead_crypt() function
+	  declared in <zephyr/secure_storage/its/transform/aead.h>.
+	  The header is made available when this Kconfig option is enabled.
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_IS_CONFIGURABLE
+	bool
+	default y if !SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
+	help
+	  Signals whether the secure_storage_its_transform_aead_crypt() implementation
+	  gets its AEAD scheme from secure_storage_its_transform_aead_get_scheme(),
+	  configured by the CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME choice.
+
 choice SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME
 	prompt "AEAD ITS transform module scheme"
+	depends on SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_IS_CONFIGURABLE
 	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_AES_GCM
 	help
 	  The AEAD scheme used to encrypt and authenticate the data.
@@ -52,7 +68,7 @@ config SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_CUSTOM
 	bool "Custom AEAD scheme"
 	help
 	  Implement the secure_storage_its_transform_aead_get_scheme() function
-	  declared in <zephyr/secure_storage/its/transform/aead_get.h>
+	  declared in <zephyr/secure_storage/its/transform/aead.h>
 	  and set CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE appropriately.
 	  The header is made available when this Kconfig option is enabled.
 
@@ -60,6 +76,7 @@ endchoice # SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME
 
 choice SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER
 	prompt "AEAD ITS transform module encryption key provider"
+	depends on !SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
 	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH if HWINFO_HAS_DRIVER
 	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH if !HWINFO_HAS_DRIVER
 
@@ -90,13 +107,18 @@ config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_CUSTOM
 	bool "Custom key provider"
 	help
 	  Implement the secure_storage_its_transform_aead_get_key() function
-	  declared in <zephyr/secure_storage/its/transform/aead_get.h>.
+	  declared in <zephyr/secure_storage/its/transform/aead.h>.
 	  The header is made available when this Kconfig option is enabled.
 
 endchoice # SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER
 
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE_IS_CONFIGURABLE
+	bool
+	default y if !SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
+
 config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE
 	int "AEAD ITS transform module encryption key size in bytes"
+	depends on SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE_IS_CONFIGURABLE
 	default 32
 
 if SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH \
@@ -121,7 +143,7 @@ config SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER_CUSTOM
 	bool "Custom nonce provider"
 	help
 	  Implement the secure_storage_its_transform_aead_get_nonce() function
-	  declared in <zephyr/secure_storage/its/transform/aead_get.h>.
+	  declared in <zephyr/secure_storage/its/transform/aead.h>.
 	  The header is made available when this Kconfig option is enabled.
 
 endchoice # SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER

@@ -465,7 +465,6 @@ static void st7701_get_capabilities(const struct device *dev,
 		return;
 	}
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
 	capabilities->supported_pixel_formats = data->pixel_format;

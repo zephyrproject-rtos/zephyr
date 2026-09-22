@@ -20,6 +20,15 @@ config CLOCK_CONTROL_IFX_FIXED_CLOCK
 	help
 	  This option enables the Fixed clock driver for Infineon CAT1 family.
 
+config INFINEON_SYSCLK_LOCK_NONE
+	bool
+	default n if SOC_SERIES_PSOC4000T
+	default y if SOC_FAMILY_INFINEON_PSOC4
+	help
+	  Hidden option enabled for SoC series whose IMO clock must be explicitly
+	  unlocked from the WCO (Cy_SysClk_ImoLock(CY_SYSCLK_IMO_LOCK_NONE)) after
+	  being reconfigured. Not all Infineon CAT1 SoCs have this capability.
+
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 	bool "Infineon fixed factor clock driver"
 	default y
@@ -27,13 +36,41 @@ config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 	help
 	  This option enables the Fixed clock driver for Infineon CAT1 family.
 
+config INFINEON_SYSCLK_HAS_CLK_PUMP
+	bool
+	default n if SOC_SERIES_PSOC4000T
+	default y if SOC_FAMILY_INFINEON_PSOC4
+	help
+	  Hidden option enabled for SoC series that have a clk_pump (charge
+	  pump) IP block. Not all Infineon CAT1 SoCs have this capability.
+
 config CLOCK_CONTROL_IFX_PERI_CLOCK
 	bool "Infineon peri div clock driver"
 	default y
 	depends on DT_HAS_INFINEON_PERI_DIV_ENABLED
+	depends on !CLOCK_CONTROL_IFX_PERI_CLOCK_V2
 	help
 	  This option enables the Peripheral clock driver for Infineon CAT1 family.
+	  It is force-disabled when the peripheral clock group driver
+	  (CLOCK_CONTROL_IFX_PERI_CLOCK_V2, infineon,peri-clk) is selected, since
+	  that driver manages the infineon,peri-div child nodes itself.
 
+config CLOCK_CONTROL_IFX_CLOCK_V2
+	bool "Infineon Traveo clock control driver"
+	default y
+	depends on DT_HAS_INFINEON_CLK_OSC_ENABLED
+	depends on DT_HAS_INFINEON_CLK_PLL_ENABLED
+	depends on DT_HAS_INFINEON_CAT1C_CLK_HF_ENABLED
+	help
+	  This option enables the clock control driver for Infineon Traveo family.
+
+config CLOCK_CONTROL_IFX_PERI_CLOCK_V2
+	bool "Infineon peripheral clock group driver"
+	default y
+	depends on DT_HAS_INFINEON_PERI_CLK_ENABLED
+	help
+	  This option enables the peripheral clock group driver (infineon,peri-clk)
+	  for Infineon MCUs.
 
 if CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY

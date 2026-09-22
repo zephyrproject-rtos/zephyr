@@ -109,7 +109,9 @@ static ATOMIC_DEFINE(adv_opt, SHELL_ADV_OPT_NUM);
 #if defined(CONFIG_BT_EXT_ADV)
 uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
-static ATOMIC_DEFINE(adv_set_opt, SHELL_ADV_OPT_NUM)[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
+static ATOMIC_DEFINE(adv_set_opt[CONFIG_BT_EXT_ADV_MAX_ADV_SET], SHELL_ADV_OPT_NUM);
+BUILD_ASSERT(ARRAY_SIZE(adv_set_opt) == CONFIG_BT_EXT_ADV_MAX_ADV_SET,
+	     "adv_set_opt must have one bitmap per advertising set");
 #endif /* CONFIG_BT_EXT_ADV */
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -571,6 +573,17 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 		       phy2str(info->primary_phy), phy2str(info->secondary_phy),
 		       info->interval, BT_CONN_INTERVAL_TO_US(info->interval),
 		       info->sid);
+
+	if (info->direct_addr != NULL) {
+		const char *unresolved = "";
+
+		if (info->direct_addr->type == BT_ADDR_LE_UNRESOLVED) {
+			unresolved = " [unresolved]";
+		}
+
+		bt_shell_print("%*sDirected to %s%s", (int)strlen(scan_response_label), "",
+			       bt_addr_le_str(info->direct_addr), unresolved);
+	}
 
 	if (scan_verbose_output) {
 		bt_shell_info("%*s[SCAN DATA START - %s]",
@@ -1668,7 +1681,7 @@ static int cmd_scan_off(const struct shell *sh)
 static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct sys_getopt_state *state = sys_getopt_state_get();
-	enum { TIMEOUT, INTERVAL, WINDOW, FILTER_DUPS, FAL, CODED, NO_1M };
+	enum { TIMEOUT, INTERVAL, WINDOW, FILTER_DUPS, FAL, CODED, NO_1M, EXT_FILTER_POLICY };
 	static const struct sys_getopt_option long_options[] = {
 		{ "timeout", sys_getopt_required_argument, NULL, TIMEOUT },
 		{ "interval", sys_getopt_required_argument, NULL, INTERVAL },
@@ -1677,6 +1690,7 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 		{ "fal", sys_getopt_no_argument, NULL, FAL },
 		{ "coded", sys_getopt_no_argument, NULL, CODED },
 		{ "no-1m", sys_getopt_no_argument, NULL, NO_1M },
+		{ "ext-filter-policy", sys_getopt_no_argument, NULL, EXT_FILTER_POLICY },
 		{ "help", sys_getopt_no_argument, NULL, 'h' },
 		{},
 	};
@@ -1727,6 +1741,9 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 			break;
 		case NO_1M:
 			options |= BT_LE_SCAN_OPT_NO_1M;
+			break;
+		case EXT_FILTER_POLICY:
+			options |= BT_LE_SCAN_OPT_EXT_FILTER_POLICY;
 			break;
 		case 'h':
 			shell_help(sh);
@@ -3955,6 +3972,26 @@ static const char *get_conn_role_str(uint8_t role)
 	}
 }
 
+#if defined(CONFIG_BT_ISO)
+static const char *iso_chan_type_str(enum bt_iso_chan_type type)
+{
+	switch (type) {
+	case BT_ISO_CHAN_TYPE_NONE:
+		return "None";
+	case BT_ISO_CHAN_TYPE_CENTRAL:
+		return "Central";
+	case BT_ISO_CHAN_TYPE_PERIPHERAL:
+		return "Peripheral";
+	case BT_ISO_CHAN_TYPE_BROADCASTER:
+		return "Broadcaster";
+	case BT_ISO_CHAN_TYPE_SYNC_RECEIVER:
+		return "Sync Receiver";
+	default:
+		return "Unknown";
+	}
+}
+#endif /* CONFIG_BT_ISO */
+
 static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_conn *conn = NULL;
@@ -4449,10 +4486,33 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 			       conn_state_to_str(info.state));
 		break;
 #if defined(CONFIG_BT_ISO)
-	case BT_CONN_TYPE_ISO:
-		bt_shell_print(" #%u [ISO][%s] %s (%s)", info.id, role_str, bt_conn_dst_str(conn),
-			       conn_state_to_str(info.state));
+	case BT_CONN_TYPE_ISO: {
+		const struct bt_iso_chan *chan = bt_iso_get_chan_by_conn(conn);
+
+		if (chan != NULL) {
+			struct bt_iso_info iso_info;
+
+			selected = chan == &iso_chan ? "*" : " ";
+
+			err = bt_iso_chan_get_info(chan, &iso_info);
+			if (err != 0) {
+				bt_shell_error("Unable to get ISO info: chan %p (err %d)", chan,
+					       err);
+				return;
+			}
+
+			bt_shell_print("%s#%u [ISO][%s]: ISO interval %u us%s%s (%s)", selected,
+				       info.id, iso_chan_type_str(iso_info.type),
+				       BT_GAP_ISO_INTERVAL_TO_US(iso_info.iso_interval),
+				       iso_info.can_send ? " TX" : "",
+				       iso_info.can_recv ? " RX" : "",
+				       bt_iso_chan_state_str(chan->state));
+		} else {
+			return; /* return to avoid incrementing conn_count */
+		}
+
 		break;
+	}
 #endif
 	default:
 		break;
@@ -5420,9 +5480,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
 		      "[--timeout <timeout>] [--filter-dups] [--fal] [--coded] [--no-1m] "
+		      "[--ext-filter-policy] "
 		      "[--interval <n * 0.625 ms] [--window <n * 0.625 ms>] "
 		      "<value: on, passive, off>",
-		      cmd_scan, 2, 11),
+		      cmd_scan, 2, 12),
 	SHELL_CMD(scan-filter-set, &bt_scan_filter_set_cmds,
 		      "Scan filter set commands",
 		      cmd_default_handler),

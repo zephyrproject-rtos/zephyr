@@ -494,4 +494,50 @@ ZTEST(http2_hpack, test_http2_hpack_literal_not_indexed_decode)
 				 ARRAY_SIZE(test_enc_literal_not_indexed_headers));
 }
 
+/* A header value long enough that the length of its string needs more
+ * than one octet after the prefix. RFC7541, ch 5.1 encodes such a length
+ * seven bits at a time, every octet but the last carrying a continuation
+ * bit, so the encoder has to move on after each one.
+ *
+ * The length is picked so that the Huffman form of the value cannot fit
+ * in the encoding buffer of struct http_hpack_header_buf whatever that
+ * buffer is configured to hold, which keeps the encoder on the literal
+ * path and the value decodable without one.
+ */
+#define TEST_LONG_VALUE_LEN MAX(408, 2 * HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE)
+
+static char test_long_value[TEST_LONG_VALUE_LEN + 1];
+static uint8_t test_long_buf[TEST_LONG_VALUE_LEN + 16];
+
+ZTEST(http2_hpack, test_http2_hpack_long_value_encode_decode)
+{
+	struct http_hpack_header_buf hdr = { 0 };
+	struct http_hpack_header_buf dec = { 0 };
+	int enc_ret, dec_ret;
+
+	memset(test_long_value, 'a', TEST_LONG_VALUE_LEN);
+
+	hdr.name = "content-type";
+	hdr.name_len = strlen(hdr.name);
+	hdr.value = test_long_value;
+	hdr.value_len = TEST_LONG_VALUE_LEN;
+
+	enc_ret = http_hpack_encode_header(test_long_buf, sizeof(test_long_buf), &hdr);
+	zassert_true(enc_ret > 0, "Cannot encode the header (%d)", enc_ret);
+
+	/* What the encoder reports has to be what it wrote. A header
+	 * field is followed by the next one in the block, so a length
+	 * that covers an octet the encoder never produced does not only
+	 * lose this field, it takes the rest of the block with it.
+	 */
+	dec_ret = http_hpack_decode_header(test_long_buf, enc_ret, &dec);
+	zassert_equal(dec_ret, enc_ret, "Decoded %d of the %d bytes encoded", dec_ret, enc_ret);
+
+	zexpect_equal(dec.name_len, hdr.name_len, "Wrong decoded header name length");
+	zexpect_mem_equal(dec.name, hdr.name, dec.name_len, "Header name wrongly decoded");
+	zexpect_equal(dec.value_len, hdr.value_len, "Decoded a %zu byte value, encoded %zu",
+		      dec.value_len, hdr.value_len);
+	zexpect_mem_equal(dec.value, hdr.value, dec.value_len, "Header value wrongly decoded");
+}
+
 ZTEST_SUITE(http2_hpack, NULL, NULL, NULL, NULL, NULL);

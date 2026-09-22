@@ -57,6 +57,15 @@ static void start_drdy_backup_timer(const struct device *dev)
 		      K_NO_WAIT);
 }
 
+static void paa3905_led_work_handler(struct k_work *work)
+{
+	struct paa3905_stream *stream = CONTAINER_OF(work,
+						     struct paa3905_stream,
+						     led_work);
+
+	(void)paa3905_apply_led_config(stream->dev);
+}
+
 static void paa3905_complete_result(struct rtio *ctx,
 				    const struct rtio_sqe *sqe,
 				    int err,
@@ -83,6 +92,11 @@ static void paa3905_complete_result(struct rtio *ctx,
 
 	if (data->stream.settings.enabled.drdy) {
 		start_drdy_backup_timer(dev);
+	}
+
+	if (++data->stream.led_reassert_ctr >= 128) {
+		data->stream.led_reassert_ctr = 0;
+		k_work_submit(&data->stream.led_work);
 	}
 
 	/* Flush RTIO bus CQEs */
@@ -363,6 +377,7 @@ int paa3905_stream_init(const struct device *dev)
 	}
 
 	k_timer_init(&data->stream.timer, paa3905_stream_drdy_timeout, NULL);
+	k_work_init(&data->stream.led_work, paa3905_led_work_handler);
 
 	return err;
 }

@@ -12,6 +12,28 @@
 	};
 };
 
+&cmu_aon {
+	/* TODO: This should be done in the UULP GPIO driver
+	 * and then we would be able to remove gpio-reserved-ranges
+	 * property from the uulpgpio node.
+	 * Can't name it with -gpio suffix because dts parser will complain.
+	 * Also, can't reference &uulpgpio node because it creates a circular dependency.
+	 */
+	silabs,external-xtal-khz-pin = <3>;
+};
+
+&aon_ref_lf_mux {
+	/* Keep the aon low frequency reference clock on rc_khz while
+	 * xtal_khz is supplied through UULP GPIO 3.
+	 */
+	clocks = <&rc_khz>;
+};
+
+&xtal_khz {
+	/* Frequency of the module's external oscillator signal. */
+	clock-frequency = <32768>;
+};
+
 &uulpgpio {
 	gpio-reserved-ranges = <3 1>;
 };

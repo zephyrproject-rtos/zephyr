@@ -53,6 +53,7 @@ $defs:
           - arc
           - arm
           - arm64
+          - hexagon
           - mips
           - nios2
           - openrisc
@@ -60,6 +61,7 @@ $defs:
           - riscv
           - rx
           - sparc
+          - tricore
           - x86
           - xtensa
           - unit

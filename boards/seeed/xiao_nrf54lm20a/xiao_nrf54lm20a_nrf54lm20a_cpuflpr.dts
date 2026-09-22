@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf54lm20_a_b_cpuflpr.dtsi>
+#include <vendor/nordic/nrf54lm20_a_b_ipc_shared_ram.dtsi>
 #include "xiao_nrf54lm20a_nrf54lm20a-common.dtsi"
 
 / {
@@ -47,6 +48,10 @@
 };
 
 &gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
 	status = "okay";
 };
 

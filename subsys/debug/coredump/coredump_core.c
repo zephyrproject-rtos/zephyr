@@ -31,6 +31,10 @@ static struct coredump_backend_api
 extern struct coredump_backend_api coredump_backend_in_memory;
 static struct coredump_backend_api
 	*backend_api = &coredump_backend_in_memory;
+#elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_AMD_ACP_PANIC_DUMP)
+extern struct coredump_backend_api coredump_backend_amd_acp_panic_dump;
+static struct coredump_backend_api
+	*backend_api = &coredump_backend_amd_acp_panic_dump;
 #elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_OTHER)
 extern struct coredump_backend_api coredump_backend_other;
 static struct coredump_backend_api

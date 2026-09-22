@@ -137,6 +137,7 @@ capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
 catalyst	Catalyst Semiconductor, Inc.
 cavium	Cavium, Inc.
+cdac	Centre for Development of Advanced Computing (C-DAC)
 cdns	Cadence Design Systems Inc.
 cdtech	CDTech(H.K.) Electronics Limited
 cellwise	CellWise Microelectronics Co., Ltd
@@ -718,6 +719,7 @@ swir	Sierra Wireless
 syna	Synaptics Inc.
 synochip	Hangzhou Synochip Data Security Technology Co., Ltd.
 synology	Synology, Inc.
+t3gemstone	T3 Gemstone
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
 tcg	Trusted Computing Group

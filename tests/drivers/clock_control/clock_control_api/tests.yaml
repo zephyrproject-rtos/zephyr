@@ -16,6 +16,8 @@ tests:
       - bg29_rb4420a
       - sam_e54_xpro
       - pic32cm_jh01_cpro
+      - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
     integration_platforms:
       - esp32_devkitc/esp32/procpu
   drivers.clock.clock_control_nrf5:
@@ -73,7 +75,7 @@ tests:
   drivers.clock.clock_control_nrf5.legacy:
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
       - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
       - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION=n
     platform_allow:
@@ -95,7 +97,7 @@ tests:
   drivers.clock.clock_control_nrf5_lfclk_rc.legacy:
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
       - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
       - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION=n
     platform_allow:
@@ -115,7 +117,7 @@ tests:
   drivers.clock.clock_control_nrf52_lfclk_rc.legacy:
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
       - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
       - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION=n
     platform_allow:

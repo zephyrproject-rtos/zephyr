@@ -66,6 +66,29 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
   zephyr_cc_option(-moverride=tune=no_ldp_stp_qregs)
 endif()
 
+# Clang has no equivalent of the tuning parameter above, and that parameter
+# would not be sufficient here in any case: it suppresses ldp/stp pairs, but a
+# single unaligned 128-bit access such as "stur q0, [x9, #-0x10]" is still
+# emitted.
+#
+# This matters because the early boot code in this library runs before
+# z_arm64_mm_init() enables the MMU. Until that point every access is treated as
+# Device-nGnRnE, which the architecture requires to be naturally aligned
+# regardless of SCTLR_ELx.A (cleared in reset.S). An unaligned 128-bit access
+# therefore raises an alignment fault (data abort, ESR_ELx.DFSC 0b100001) before
+# the console is up, which presents as a silent hang.
+#
+# -mstrict-align prevents the compiler from emitting any access it cannot prove
+# is naturally aligned. zephyr_library_compile_options() is used rather than
+# zephyr_cc_option() so that the flag applies only to this library: the latter
+# appends to zephyr_interface and would restrict the whole image, including code
+# that runs with the MMU enabled. Assembly is unaffected, so the FPU context
+# save/restore in fpu.S continues to use the Qn registers.
+
+if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  zephyr_library_compile_options(-mstrict-align)
+endif()
+
 add_subdirectory_ifdef(CONFIG_XEN xen)
 
 if(CONFIG_GEN_SW_ISR_TABLE)

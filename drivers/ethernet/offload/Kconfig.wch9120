@@ -10,9 +10,9 @@ menuconfig ETH_CH9120
 	select NET_SOCKETS_OFFLOAD
 	select UART_USE_RUNTIME_CONFIGURE
 	help
-	  This offloads ethernet driver to ch9120 chip. Note: the
-	  chip only supports only a single TCP/UDP client connection at
-	  a time. Attempting to open a second socket will fail.
+	  This driver offloads Ethernet sockets to the CH9120 chip. Note: the
+	  chip supports a single TCP/UDP client connection at a time. Attempting
+	  to open a second socket will fail.
 
 if ETH_CH9120
 

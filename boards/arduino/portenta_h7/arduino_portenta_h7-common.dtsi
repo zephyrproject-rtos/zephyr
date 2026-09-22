@@ -134,10 +134,6 @@ zephyr_i2c: &i2c1 {
 		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 };
 
-&rtc {
-	status = "okay";
-};
-
 &mailbox {
 	status = "okay";
 };

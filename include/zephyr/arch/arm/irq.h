@@ -19,9 +19,6 @@
 
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
-#if !defined(_ASMLANGUAGE) && defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/arm-m-switch.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,6 +120,9 @@ bool z_soc_irq_is_pending(unsigned int irq);
 #endif
 
 #if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH)
+/* CMSIS may include SoC headers that include <zephyr/irq.h>. Keep this after the IRQ mappings. */
+#include <zephyr/arch/arm/arm-m-switch.h>
+
 static inline void z_arm_int_exit(void)
 {
 	arm_m_exc_tail();

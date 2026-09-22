@@ -153,16 +153,17 @@ int enabled_clock(uint32_t src_clk)
 	return -ENOTSUP;
 }
 
+static int stm32_clock_control_configure(const struct device *dev,
+					 clock_control_subsys_t sub_system, void *data);
+
 static int stm32_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	volatile int temp;
 
-	ARG_UNUSED(dev);
-
 	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
-		/* Attempt to toggle a wrong periph clock bit */
-		return -ENOTSUP;
+		/* Source selection entry: apply it instead of toggling a gate */
+		return stm32_clock_control_configure(dev, sub_system, NULL);
 	}
 
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
@@ -900,6 +901,24 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
 	} else {
 		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
+	}
+
+	/* Set programming delay for the read latency */
+	switch (LL_FLASH_GetLatency()) {
+	case LL_FLASH_LATENCY_0:
+	case LL_FLASH_LATENCY_1:
+		MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, 0U);
+		break;
+
+	case LL_FLASH_LATENCY_2:
+	case LL_FLASH_LATENCY_3:
+		MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, FLASH_ACR_WRHIGHFREQ_0);
+		break;
+
+	case LL_FLASH_LATENCY_4:
+	case LL_FLASH_LATENCY_5:
+		MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, FLASH_ACR_WRHIGHFREQ_1);
+		break;
 	}
 
 	/* Update CMSIS variable */

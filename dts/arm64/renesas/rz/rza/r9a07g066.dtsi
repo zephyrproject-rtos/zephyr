@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-FileCopyrightText: 2025-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,8 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	compatible = "renesas,r9a07g066";
@@ -595,6 +597,73 @@
 			reg = <0x10060000 DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@10058000 {
+			compatible = "renesas,rz-riic";
+			channel = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x10058000 0x400>;
+			interrupts = <GIC_SPI 348 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 349 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 350 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 351 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 352 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 353 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 354 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 355 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
+			status = "disabled";
+		};
+
+		i2c1: i2c@10058400 {
+			compatible = "renesas,rz-riic";
+			channel = <1>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x10058400 0x400>;
+			interrupts = <GIC_SPI 356 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 357 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 358 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 359 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 360 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 361 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 362 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 363 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
+			status = "disabled";
+		};
+
+		lcdif: display-controller@10870000 {
+			compatible = "renesas,rz-lcdc";
+			reg = <0x10870000 DT_SIZE_K(64)>,
+			      <0x10880000 DT_SIZE_K(1)>,
+			      <0x10890000 DT_SIZE_K(1)>;
+			reg-names = "vcpd", "fcpvd", "du";
+			interrupts = <GIC_SPI 149 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "vspd_int", "du_int";
+			status = "disabled";
+		};
+
+		mipi_dsi: dsihost@10850000 {
+			compatible = "renesas,rz-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x10850000 DT_SIZE_K(1)>,
+			      <0x10860000 DT_SIZE_K(4)>;
+			reg-names = "dphy", "link";
+			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 143 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 144 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 145 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 146 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 147 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "sq0", "sq1", "vin1", "rcv", "ferr", "ppi";
 			status = "disabled";
 		};
 	};

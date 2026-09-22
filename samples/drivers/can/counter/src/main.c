@@ -23,6 +23,11 @@
 #define RESET_LED 0
 #define SLEEP_TIME K_MSEC(250)
 
+struct state_change_context {
+	struct can_state_change_callback callback;
+	struct k_work work;
+};
+
 K_THREAD_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
 K_THREAD_STACK_DEFINE(poll_state_stack, STATE_POLL_THREAD_STACK_SIZE);
 
@@ -32,7 +37,7 @@ struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 struct k_thread rx_thread_data;
 struct k_thread poll_state_thread_data;
 struct k_work_poll change_led_work;
-struct k_work state_change_work;
+struct state_change_context state_change_ctx;
 enum can_state current_state;
 struct can_bus_err_cnt current_err_cnt;
 
@@ -175,16 +180,19 @@ void state_change_work_handler(struct k_work *work)
 		current_err_cnt.rx_err_cnt, current_err_cnt.tx_err_cnt);
 }
 
-void state_change_callback(const struct device *dev, enum can_state state,
-			   struct can_bus_err_cnt err_cnt, void *user_data)
+static void state_change_callback_handler(const struct device *dev,
+					  struct can_state_change_callback *callback,
+					  enum can_state state,
+					  struct can_bus_err_cnt err_cnt)
 {
-	struct k_work *work = (struct k_work *)user_data;
+	struct state_change_context *ctx =
+		CONTAINER_OF(callback, struct state_change_context, callback);
 
 	ARG_UNUSED(dev);
 
 	current_state = state;
 	current_err_cnt = err_cnt;
-	k_work_submit(work);
+	k_work_submit(&ctx->work);
 }
 
 int main(void)
@@ -241,7 +249,8 @@ int main(void)
 		}
 	}
 
-	k_work_init(&state_change_work, state_change_work_handler);
+	can_init_state_change_callback(&state_change_ctx.callback, state_change_callback_handler);
+	k_work_init(&state_change_ctx.work, state_change_work_handler);
 	k_work_poll_init(&change_led_work, change_led_work_handler);
 
 	ret = can_add_rx_filter_msgq(can_dev, &change_led_msgq, &change_led_filter);
@@ -277,7 +286,11 @@ int main(void)
 		printf("ERROR spawning poll_state_thread\n");
 	}
 
-	can_set_state_change_callback(can_dev, state_change_callback, &state_change_work);
+	ret = can_add_state_change_callback(can_dev, &state_change_ctx.callback);
+	if (ret != 0) {
+		printf("Failed to add state change callback: %d", ret);
+		return 0;
+	}
 
 	printf("Finished init.\n");
 

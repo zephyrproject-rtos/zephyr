@@ -99,6 +99,10 @@
 	status = "okay";
 };
 
+&clk_ertco {
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };

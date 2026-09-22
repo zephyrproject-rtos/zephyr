@@ -836,14 +836,20 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 			return 0;
 		}
 
-		/* MshDFUv1.0 Section 7.1.2.6: a target that responds with
-		 * status Success and phase Applying Update has accepted the
-		 * Firmware Update Apply message. A target that remains
-		 * provisioned may also respond with phase Idle once the apply
-		 * has already completed. Both responses are terminal for the
-		 * Apply step, and the Firmware Update Apply message is
-		 * idempotent, so further retries cannot change the response.
-		 * Acknowledge the target on the first such response.
+		if (phase == BT_MESH_DFU_PHASE_APPLYING &&
+		    !bt_mesh_has_addr(target->blob.addr)) {
+			/* MshDFUv1.0 Section 6.2.2.4 requires the Confirm step to
+			 * wait until the targets have applied. Keep repeating
+			 * Firmware Update Apply (Section 7.1.2.6) until the
+			 * target leaves Applying Update, otherwise the Confirm
+			 * step reads the old Firmware ID.
+			 */
+			LOG_DBG("Target 0x%04x still applying", target->blob.addr);
+			return 0;
+		}
+
+		/* The self-target defers its apply until the Confirm step
+		 * completes, so it never leaves Applying Update on its own.
 		 */
 		LOG_DBG("Target 0x%04x accepted apply (phase %u)",
 			target->blob.addr, phase);

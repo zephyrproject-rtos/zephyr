@@ -6,9 +6,11 @@
  */
 
 #include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/stm32wl3_clock.h>
 #include <zephyr/dt-bindings/reset/stm32wl3_reset.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -100,7 +102,8 @@
 
 	soc {
 		flash: flash-controller@40001000 {
-			compatible = "st,stm32wl3-flash-controller", "st,stm32-flash-controller";
+			/* Flash controller IP is identical to the STM32WB0 one */
+			compatible = "st,stm32wb0-flash-controller", "st,stm32-flash-controller";
 			reg = <0x40001000 DT_SIZE_K(4)>;
 			interrupts = <0 0>;
 			#address-cells = <1>;
@@ -169,6 +172,21 @@
 			};
 		};
 
+		rtc: rtc@40004000 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40004000 DT_SIZE_K(1)>;
+			/*
+			 * STM32_SRC_LSE reflects the "slow-clock" selected on
+			 * RCC node. NO_SEL reflects STM32WL3's lack of RTC
+			 * clock mux to configure.
+			 */
+			clocks = <&rcc STM32_CLOCK(APB0, 12)>,
+				 <&rcc STM32_SRC_LSE NO_SEL>;
+			interrupts = <11 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
 		usart1: serial@41004000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x41004000 DT_SIZE_K(1)>;
@@ -176,6 +194,40 @@
 				 <&rcc STM32_SRC_CLK_ROOT_DIV NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 10)>;
 			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		spi3: spi@41007000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41007000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <7 0>;
+			st,spi-data-width = "full-4-to-16-bit";
+			status = "disabled";
+		};
+
+		dma1: dma@48700000 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <3>;
+			reg = <0x48700000 256>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			interrupts = <17 0>, <17 0>, <17 0>, <17 0>,
+				     <17 0>, <17 0>, <17 0>, <17 0>;
+			dma-requests = <8>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		dmamux1: dmamux@48800000 {
+			compatible = "st,stm32-dmamux";
+			reg = <0x48800000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			#dma-cells = <3>;
+			dma-channels = <8>;
+			dma-generators = <1>;
+			dma-requests = <25>;
 			status = "disabled";
 		};
 	};

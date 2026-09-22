@@ -182,7 +182,6 @@ static void lpm_get_capabilities(const struct device *dev, struct display_capabi
 {
 	const struct lpm013m126_config *cfg = dev->config;
 
-	memset(caps, 0, sizeof(*caps));
 	caps->x_resolution = cfg->width;
 	caps->y_resolution = cfg->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565;

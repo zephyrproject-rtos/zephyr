@@ -1640,15 +1640,10 @@ static void test_cli_stop(void)
 		}
 
 		bt_mesh_dfu_cli_apply(&dfu_cli);
-		/* Per MshDFUv1.0 Section 7.1.2.6, SUCCESS + APPLYING is a terminal
-		 * response to Update Apply. The target sends this response before
-		 * its (test-injected) apply callback stalls, so the client MUST
-		 * accept it and complete the Apply step successfully.
-		 */
-		if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
-			FAIL("DFU Apply step did not complete");
+		if (!k_sem_take(&dfu_cli_applied_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
+			FAIL("Apply should not complete: target stops while applying");
 		}
-		ASSERT_EQUAL(BT_MESH_DFU_SUCCESS, dfu_cli_xfer.targets[0].status);
+		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[0].status);
 		ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLYING, dfu_cli_xfer.targets[0].phase);
 		break;
 	case BT_MESH_DFU_PHASE_APPLY_SUCCESS:

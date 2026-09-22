@@ -68,9 +68,9 @@ Building and Running
    :goals: build flash
    :compact:
 
-Configure the mesh channel and the router credentials through Kconfig
-(``CONFIG_WIFI_ESP32_MESH_CHANNEL``, ``CONFIG_WIFI_ESP32_MESH_ROUTER_SSID``,
-``CONFIG_WIFI_ESP32_MESH_ROUTER_PSK``). The router credentials default to the
+Configure the mesh channel and the router credentials at runtime, in
+``src/main.c``, through ``esp_wifi_mesh_set_config()`` (see
+``esp_wifi_mesh.h``). The router credentials default to the
 ``myssid``/``mypassword`` placeholders and must be set to the router in use;
 a node left on the placeholder finds no such network and keeps searching for
 a parent. Set the channel to the router's channel. Flash the same image to
@@ -116,7 +116,7 @@ Sample Output
 
 .. code-block:: console
 
-   <inf> wifi_mesh: Wi-Fi mesh starting, use the "mesh" shell commands
+   <inf> wifi_mesh: Wi-Fi mesh starting (router SSID "myssid"), use the "mesh" shell commands
    <inf> wifi_mesh: mesh started, layer -1
    <inf> wifi_mesh: parent connected, layer 1 (root)
    <inf> wifi_mesh: child connected

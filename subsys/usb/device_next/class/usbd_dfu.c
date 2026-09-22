@@ -55,7 +55,7 @@ static const struct usb_dfu_descriptor dfu_desc = {
 
 /* Common class data for both run-time and DFU instances. */
 struct usbd_dfu_data {
-	struct usb_desc_header **const runtime_mode_descs;
+	struct usb_desc_header *const *const runtime_mode_descs;
 	struct usb_desc_header **const dfu_mode_descs;
 	enum usb_dfu_state state;
 	enum usb_dfu_state next;
@@ -71,7 +71,7 @@ struct usbd_dfu_data {
 static __noinit struct usb_if_descriptor runtime_if0_desc;
 
 /* Run-Time mode descriptors. No endpoints, identical for high and full speed. */
-static struct usb_desc_header *runtime_mode_descs[] = {
+static struct usb_desc_header *const runtime_mode_descs[] = {
 	(struct usb_desc_header *) &runtime_if0_desc,
 	(struct usb_desc_header *) &dfu_desc,
 	NULL,
@@ -535,11 +535,20 @@ static struct net_buf *handle_get_status(struct usbd_class_data *const c_data,
 	/*
 	 * Add GET_STATUS response consisting of
 	 * bStatus, bwPollTimeout, bStatus, iString (no strings defined)
+	 *
+	 * The bState is the state that the device enters immediately after this
+	 * response instead the one it is leaving, per DFU 1.1 Table 6-2.
+	 *
+	 * The distinction here is what tells to the host wait: an image backend
+	 * that reply a waiting condition due to a slow operation from its next_cb
+	 * puts the device into DFU_DNBUSY. Without this signaling the host
+	 * interpret as DFU_DNLOAD_SYNC instead send the next block straight
+	 * into a device that is still busy without perform a poll.
 	 */
 	net_buf_add_u8(buf, data->status);
 	net_buf_add_le16(buf, CONFIG_USBD_DFU_POLLTIMEOUT);
 	net_buf_add_u8(buf, 0);
-	net_buf_add_u8(buf, data->state);
+	net_buf_add_u8(buf, data->next);
 	net_buf_add_u8(buf, 0);
 
 	return buf;
@@ -618,8 +627,8 @@ static int runtime_mode_control_to_dev(struct usbd_class_data *const c_data,
 	return ret;
 }
 
-static void *runtime_mode_get_desc(struct usbd_class_data *const c_data,
-				   const enum usbd_speed speed)
+static const void *runtime_mode_get_desc(struct usbd_class_data *const c_data,
+					 const enum usbd_speed speed)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
 
@@ -641,7 +650,7 @@ static int runtime_mode_init(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-struct usbd_class_api runtime_mode_api = {
+static const struct usbd_class_api runtime_mode_api = {
 	.control_to_host = runtime_mode_control_to_host,
 	.control_to_dev = runtime_mode_control_to_dev,
 	.get_desc = runtime_mode_get_desc,
@@ -787,8 +796,8 @@ static void dfu_mode_update(struct usbd_class_data *const c_data,
 	}
 }
 
-static void *dfu_mode_get_desc(struct usbd_class_data *const c_data,
-			       const enum usbd_speed speed)
+static const void *dfu_mode_get_desc(struct usbd_class_data *const c_data,
+				     const enum usbd_speed speed)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
 
@@ -813,17 +822,19 @@ static int dfu_mode_init(struct usbd_class_data *const c_data)
 			data->image = image;
 		}
 
-		if (usbd_add_descriptor(uds_ctx, image->sd_nd)) {
-			LOG_ERR("Failed to add string descriptor");
-		} else {
-			image->if_desc->iInterface = usbd_str_desc_get_idx(image->sd_nd);
+		if (image->if_desc->iInterface == 0) {
+			if (usbd_add_descriptor(uds_ctx, image->sd_nd)) {
+				LOG_ERR("Failed to add string descriptor");
+			} else {
+				image->if_desc->iInterface = usbd_str_desc_get_idx(image->sd_nd);
+			}
 		}
 	}
 
 	return data->image == NULL ? -EINVAL : 0;
 }
 
-struct usbd_class_api dfu_api = {
+static const struct usbd_class_api dfu_api = {
 	.control_to_host = dfu_mode_control_to_host,
 	.control_to_dev = dfu_mode_control_to_dev,
 	.update = dfu_mode_update,

@@ -47,11 +47,6 @@ static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
 #define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
 #define HCI_CONFIG_DATA_PUBADDR_OFFSET	   0
 static bt_addr_t bd_addr_udn;
-struct aci_set_ble_addr {
-	uint8_t config_offset;
-	uint8_t length;
-	uint8_t value[6];
-} __packed;
 #endif /* CONFIG_BT_HCI_SETUP */
 
 /* ACI Reset command */
@@ -264,7 +259,6 @@ static int receive_data(const struct device *dev, const uint8_t *data, size_t le
 		bt_hci_recv(dev, buf);
 	} else {
 		err = -ENOMEM;
-		ll_state_busy = 1;
 	}
 
 	return err;
@@ -292,22 +286,25 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 	err = receive_data(dev, data, (size_t)length,
 			   ext_data, (size_t)ext_length);
 
+	if (err) {
+		ll_state_busy = 1;
+		ret = 1;
+	}
+
 	unlock_err = k_mutex_unlock(&hci_lock);
 	__ASSERT_NO_MSG(unlock_err == 0);
 
 	HostStack_Process();
-
-	if (err) {
-		ret = 1;
-	}
 
 	return ret;
 }
 
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
+	/* This buffer is used to store command and response, since BleStack_Request does
+	 * not know the length of the buffer, we need to set it to the maximum length
+	 */
 	uint8_t hci_cmd_buf[MAX(BT_BUF_CMD_TX_SIZE, BT_BUF_EVT_SIZE(255U))];
-	struct net_buf *evt_buf = NULL;
 	uint16_t event_length;
 	uint8_t *data;
 	__maybe_unused int unlock_err;
@@ -320,22 +317,9 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	}
 
 	if (buf->data[0] == BT_HCI_H4_CMD) {
-		/*
-		 * Get Event Buffer which will be used to store Tx buffer and store
-		 * the response event which is a Command Complete Event or a
-		 * Command Status Event.
-		 */
-		evt_buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
-		if (!evt_buf) {
-			LOG_ERR("No available event buffers!");
-			__ASSERT_NO_MSG(evt_buf);
-			err = -ENOMEM;
-			goto done;
-		}
 		if (buf->len > sizeof(hci_cmd_buf)) {
 			LOG_ERR("HCI command length %zu exceeds buffer size %zu",
 				buf->len, sizeof(hci_cmd_buf));
-			net_buf_unref(evt_buf);
 			err = -EMSGSIZE;
 			goto done;
 		}
@@ -348,28 +332,19 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	event_length = BleStack_Request(data);
 	LOG_DBG("event_length: %u", event_length);
 
-	if (evt_buf) {
-		if (event_length) {
-			if (event_length > net_buf_tailroom(evt_buf)) {
-				LOG_ERR("HCI event too large for sync event buffer (%u > %zu)",
-					event_length, net_buf_tailroom(evt_buf));
-				net_buf_unref(evt_buf);
-				err = -EMSGSIZE;
-			} else {
-				net_buf_reset(evt_buf);
-				net_buf_add_mem(evt_buf, hci_cmd_buf, event_length);
-				bt_hci_recv(dev, evt_buf);
-			}
-		} else {
-			net_buf_unref(evt_buf);
-		}
+	if ((event_length != 0) && (buf->data[0] == BT_HCI_H4_CMD)) {
+		err = receive_data(dev, data, (size_t)event_length, NULL, 0);
 	}
-
 done:
 	unlock_err = k_mutex_unlock(&hci_lock);
 	__ASSERT_NO_MSG(unlock_err == 0);
 
-	net_buf_unref(buf);
+	/* Free buffer only if no errors, the caller remains
+	 * responsible for it.
+	 */
+	if (err == 0) {
+		net_buf_unref(buf);
+	}
 
 	return err;
 }
@@ -458,8 +433,8 @@ static int bt_hci_stm32wba_open(const struct device *dev)
 
 static int bt_hci_stm32wba_close(const struct device *dev)
 {
-	int err = 0;
 	uint8_t aci_reset_cmd[9];
+	int err;
 
 	ARG_UNUSED(dev);
 
@@ -473,7 +448,16 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	aci_reset_cmd[7] = (uint8_t)(CFG_BLE_OPTIONS >> 16);
 	aci_reset_cmd[8] = (uint8_t)(CFG_BLE_OPTIONS >> 24);
 
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return err;
+	}
+
 	BleStack_Request(aci_reset_cmd);
+
+	err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(err == 0);
 
 	bt_hci_state = BT_HCI_STATE_CLOSED;
 
@@ -492,7 +476,7 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
 #endif
 
-	return err;
+	return 0;
 }
 
 #if defined(CONFIG_BT_HCI_SETUP)
@@ -544,6 +528,7 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 	bt_addr_t *uid_addr;
 	uint8_t aci_set_ble_addr_cmd[12];
 	uint16_t event_length;
+	int err;
 
 	ARG_UNUSED(dev);
 
@@ -565,7 +550,17 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 		memcpy(&aci_set_ble_addr_cmd[6], &(params->public_addr), 6);
 	}
 
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return err;
+	}
+
 	event_length = BleStack_Request(aci_set_ble_addr_cmd);
+
+	err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(err == 0);
+
 	if (event_length) {
 		/* Get the return status from the event */
 		uint8_t evt_status;

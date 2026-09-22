@@ -575,6 +575,24 @@ struct bt_sdp_record {
  */
 int bt_sdp_register_service(struct bt_sdp_record *service);
 
+/** @brief Unregister a Service Record.
+ *
+ *  Remove a previously registered Service Record from the SDP database.
+ *  The function checks for active SDP L2CAP channels and returns -EBUSY
+ *  if any exist. A residual race window remains between the check and
+ *  the actual removal; the caller is responsible for ensuring no new SDP
+ *  connections are established during this call (e.g., by disconnecting
+ *  BR/EDR links or disabling connectable mode beforehand).
+ *
+ *  @param service Service record to unregister.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL @p service is NULL.
+ *  @retval -EBUSY An SDP L2CAP channel is currently active.
+ *  @retval -ENOENT @p service is not currently registered.
+ */
+int bt_sdp_unregister_service(struct bt_sdp_record *service);
+
 /* Client API */
 
 /** @brief Generic SDP Client Query Result data holder */
@@ -616,7 +634,7 @@ struct bt_sdp_discover_params;
  *
  *  @param conn Connection object identifying connection to queried remote.
  *  @param result Object pointing to logical unparsed SDP record collected on
- *  base of response driven by given discover params.
+ *                base of response driven by given discover params.
  *  @param params Discover parameters.
  *
  *  @return BT_SDP_DISCOVER_UUID_STOP in case of no more need to read next
@@ -723,13 +741,17 @@ struct bt_sdp_discover_params {
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
  *
- * @retval 0 Success.
- * @retval -EINVAL Invalid @p params, or an attribute ID list that does not fit in a request PDU.
- * @return Other negative error code on failure to set up the SDP channel.
+ * @retval 0         The request @p params has been put to request pending queue.
+ *                   The SDP discovery result will be notified through the `params->func` (
+ *                   @ref bt_sdp_discover_params.func ). If the parameter `result->resp_buf` (
+ *                   @ref bt_sdp_client_result.resp_buf ) is NULL, the discovery is failed or no
+ *                   SDP record discovered.
+ * @retval -ENOTCONN The connection @p conn is invalid or not established.
+ * @retval -EINVAL   The request @p params is invalid, or an attribute ID list that does not fit
+ *                   in a request PDU.
  */
 
-int bt_sdp_discover(struct bt_conn *conn,
-		    struct bt_sdp_discover_params *params);
+int bt_sdp_discover(struct bt_conn *conn, struct bt_sdp_discover_params *params);
 
 /** @brief Release waiting SDP discovery request.
  *

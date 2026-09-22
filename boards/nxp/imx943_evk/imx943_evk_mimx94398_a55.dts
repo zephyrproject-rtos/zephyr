@@ -215,3 +215,9 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&pwm6 {
+	pinctrl-0 = <&pwm6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

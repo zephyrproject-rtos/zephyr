@@ -84,9 +84,8 @@ void mtk_adsp_mbox_signal(const struct device *mbox, uint32_t chan)
 	}
 }
 
-#define DEF_DEVPTR(N) DEVICE_DT_INST_GET(N),
 const struct device * const mbox_devs[] = {
-	DT_INST_FOREACH_STATUS_OKAY(DEF_DEVPTR)
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
 };
 
 static void mbox_handle(const void *arg)

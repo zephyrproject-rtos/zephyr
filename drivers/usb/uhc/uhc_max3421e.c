@@ -495,7 +495,7 @@ static int max3421e_hrslt_success(const struct device *dev)
 
 		LOG_INF("bc %u tr %u", bc, net_buf_tailroom(buf));
 
-		if (bc < MAX3421E_MAX_EP_SIZE || !net_buf_tailroom(buf)) {
+		if (bc < xfer->mps || !net_buf_tailroom(buf)) {
 			LOG_INF("hrslt bulk in %u, %u", bc, len);
 			if (xfer->ep == USB_CONTROL_EP_IN) {
 				xfer->stage = UHC_CONTROL_STAGE_STATUS;
@@ -647,6 +647,15 @@ static int max3421e_handle_bus_irq(const struct device *dev)
 	return ret;
 }
 
+static bool max3421e_can_schedule(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	return !HRSLT_IS_BUSY(priv->hrsl) &&
+	       !atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESUME) &&
+	       !atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET);
+}
+
 static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
@@ -684,7 +693,7 @@ static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 
 		/* Frame Generator Interrupt */
 		if (priv->hirq & MAX3421E_FRAME) {
-			schedule = HRSLT_IS_BUSY(priv->hrsl) ? false : true;
+			schedule = max3421e_can_schedule(dev);
 		}
 
 		/* Shorten the if path a little */

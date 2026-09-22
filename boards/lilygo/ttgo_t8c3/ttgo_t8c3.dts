@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3/esp32c3_common.dtsi>
+#include <espressif/esp32c3/esp32c3.dtsi>
 #include "ttgo_t8c3-pinctrl.dtsi"
 #include <espressif/partitions_0x0_default.dtsi>
 

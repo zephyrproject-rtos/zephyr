@@ -159,6 +159,7 @@
 			apb3-prescaler = <8>; /* APB3_CLK runs at 15MHz */
 			apb4-prescaler = <8>; /* APB4_CLK runs at 15MHz */
 			ram-pd-depth = <8>; /* Valid bit-depth of RAM_PDn reg */
+			fast-clk-to-espi-sleep-support;
 			pwdwn-ctl-val = <0xfb
 					 0xff
 					 0x1f /* No GDMA1_PD/GDMA2_PD */

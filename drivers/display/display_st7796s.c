@@ -192,8 +192,6 @@ static void st7796s_get_capabilities(const struct device *dev,
 {
 	const struct st7796s_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
-
 	capabilities->current_pixel_format = st7796s_get_pixelfmt(dev);
 	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
 	capabilities->x_resolution = config->width;

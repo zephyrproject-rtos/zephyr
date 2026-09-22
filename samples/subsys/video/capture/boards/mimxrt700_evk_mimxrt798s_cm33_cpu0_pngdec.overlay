@@ -1,0 +1,26 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	chosen {
+		zephyr,camera = &video_sw_generator;
+		zephyr,videodec = &pngdec;
+	};
+
+	video_sw_generator: video-sw-generator {
+		compatible = "zephyr,video-sw-generator";
+	};
+};
+
+/*
+ * This pipeline uses the sw-generator instead of the real camera, and
+ * flexio_camera requires a shield to provide its remote sensor endpoint,
+ * so disable it to avoid a build error when no shield is attached.
+ */
+&flexio_camera {
+	status = "disabled";
+};

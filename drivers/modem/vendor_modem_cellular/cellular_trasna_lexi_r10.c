@@ -42,7 +42,9 @@ MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_init_chat_script, trasna_lexi_r10_init_
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r10_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 1000));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				1000));
 
 MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_dial_chat_script, trasna_lexi_r10_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -91,6 +93,6 @@ static const struct modem_cellular_vendor_config trasna_lexi_r10_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &trasna_lexi_r10_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &trasna_lexi_r10_vendor, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R10)

@@ -22,14 +22,8 @@
 
 #else
 
-#include <zephyr/irq_offload.h>
-
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef CONFIG_IRQ_OFFLOAD
-extern volatile irq_offload_routine_t offload_routine;
 #endif
 
 static ALWAYS_INLINE bool arch_is_in_isr(void)

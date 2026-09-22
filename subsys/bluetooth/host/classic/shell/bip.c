@@ -2680,7 +2680,7 @@ static int cmd_bip_client_start_print(const struct shell *sh, size_t argc, char 
 	uint8_t uuid_128[] = {
 		BT_UUID_128_ENCODE(0x8E61F95D, 0x1A79, 0x11D4, 0x8EA4, 0x00805F9B9834)};
 	struct bt_obex_tlv appl_params[] = {
-		{BT_BIP_APPL_PARAM_TAG_ID_STORE_FLAG, sizeof(uuid_128), (const uint8_t *)uuid_128},
+		{BT_BIP_APPL_PARAM_TAG_ID_SERVICE_ID, sizeof(uuid_128), (const uint8_t *)uuid_128},
 	};
 	uint16_t len = 0;
 	const uint8_t *print_control_obj = (const uint8_t *)PRINT_CONTROL_OBJECT;
@@ -2771,7 +2771,7 @@ static int cmd_bip_client_start_archive(const struct shell *sh, size_t argc, cha
 	uint8_t uuid_128[] = {
 		BT_UUID_128_ENCODE(0x8E61F95E, 0x1A79, 0x11D4, 0x8EA4, 0x00805F9B9834)};
 	struct bt_obex_tlv appl_params[] = {
-		{BT_BIP_APPL_PARAM_TAG_ID_STORE_FLAG, sizeof(uuid_128), (const uint8_t *)uuid_128},
+		{BT_BIP_APPL_PARAM_TAG_ID_SERVICE_ID, sizeof(uuid_128), (const uint8_t *)uuid_128},
 	};
 
 	if (default_conn == NULL) {

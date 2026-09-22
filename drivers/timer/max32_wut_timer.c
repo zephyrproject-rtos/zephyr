@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,12 +15,10 @@
 
 #include <wut.h>
 #include <wrap_max32_lp.h>
-#include <wrap_max32_sys.h>
 
 #define WUT_NODE       DT_INST_PARENT(0)
 #define WUT_REGS       ((mxc_wut_regs_t *)DT_REG_ADDR(WUT_NODE))
 #define WUT_PRESCALER  DT_PROP(WUT_NODE, prescaler)
-#define WUT_CLK_SRC    DT_PROP_OR(WUT_NODE, clock_source, ADI_MAX32_PRPH_CLK_SRC_ERTCO)
 
 #define WUT_CLOCK_FREQ (32768 / WUT_PRESCALER)
 #define CYC_PER_TICK   (WUT_CLOCK_FREQ / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
@@ -159,9 +157,6 @@ static int sys_clock_driver_init(void)
 	uint8_t prescaler_lo, prescaler_hi;
 	mxc_wut_pres_t pres;
 	mxc_wut_cfg_t wut_cfg;
-
-	/* Select 32kHz clock source */
-	Wrap_MXC_SYS_Select32KClockSource(WUT_CLK_SRC);
 
 	/* Calculate prescaler register values */
 	prescaler_lo = FIELD_GET(GENMASK(2, 0), LOG2(WUT_PRESCALER));

@@ -271,11 +271,11 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 
 	if (head != NULL) {
 		sys_sflist_append_list(&queue->data_q, head, tail);
+
+		resched = queue_handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE) || resched;
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append_list, queue, 0);
-
-	resched = queue_handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE) || resched;
 
 	if (resched) {
 		z_reschedule(&queue->lock, key);

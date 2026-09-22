@@ -71,6 +71,7 @@ The following pages cover additional Twister topics:
    twister_statuses
    twister_blackbox
 
+.. _twister_board_configuration:
 
 Board Configuration
 *******************
@@ -391,7 +392,7 @@ explained in this document.
             platform_allow:
               - qemu_cortex_m3 qemu_x86
             tags:
-              bluetooth
+              - bluetooth
 
 
 A sample with tests will have the same structure with additional information
@@ -449,7 +450,9 @@ extra_args: <list of extra arguments>
     .. code-block:: yaml
 
         common:
-          tags: drivers adc
+          tags:
+           - drivers
+           - adc
         tests:
           test:
             depends_on: adc
@@ -467,7 +470,9 @@ extra_configs: <list of extra configurations>
     .. code-block:: yaml
 
         common:
-          tags: drivers adc
+          tags:
+            - drivers
+            - adc
         tests:
           test:
             depends_on: adc
@@ -481,7 +486,9 @@ extra_configs: <list of extra configurations>
     .. code-block:: yaml
 
         common:
-          tags: drivers adc
+          tags:
+            - drivers
+            - adc
         tests:
           test:
             depends_on: adc
@@ -1179,7 +1186,8 @@ The following is an example yaml file with a few harness_config options.
       sample:
         name: HTS221 Temperature and Humidity Monitor
       common:
-        tags: sensor
+        tags:
+          - sensor
         harness: console
         harness_config:
           type: multi_line
@@ -1190,7 +1198,8 @@ The following is an example yaml file with a few harness_config options.
           fixture: i2c_hts221
       tests:
         test:
-          tags: sensors
+          tags:
+            - sensors
           depends_on: i2c
 
 .. toctree::
@@ -1658,6 +1667,20 @@ Fixtures are defined in the hardware map file as a list:
 When running ``twister`` with ``--device-testing``, the configured fixture
 in the hardware map file will be matched to test scenarios requesting the same fixtures
 and these tests will be executed on the boards that provide this fixture.
+
+To reserve a board for fixture-dependent tests, set ``run_with_fixture_only`` to
+``true``. Twister will select that board only for test scenarios that request
+matching fixtures; it will not select the board for scenarios without fixture
+requirements.
+
+.. code-block:: yaml
+
+      - connected: true
+        fixtures:
+          - gpio_loopback
+        run_with_fixture_only: true
+        id: 0240000026334e450015400f5e0e000b4eb1000097969900
+        platform: frdm_k64f
 
 .. figure:: figures/fixtures.svg
    :figclass: align-center

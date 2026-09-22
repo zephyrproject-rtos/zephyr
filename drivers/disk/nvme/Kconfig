@@ -52,7 +52,7 @@ config NVME_REQUEST_TIMEOUT
 	range 5 120
 	default 5
 	help
-	  This sets the waiting time for a request to succeed.
+	  This sets the waiting time for a request to succeed, in seconds.
 	  Do not touch this unless you know what you are doing.
 
 config NVME_PRP_PAGE_SIZE

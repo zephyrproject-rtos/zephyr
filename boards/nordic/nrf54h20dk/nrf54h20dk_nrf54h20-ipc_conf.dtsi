@@ -40,7 +40,7 @@
 		};
 
 		cpuapp_cpuppr_ipc: ipc-2-13 {
-			compatible = "zephyr,ipc-icmsg";
+			compatible = "zephyr,ipc-icbmsg";
 			status = "disabled";
 			dcache-alignment = <32>;
 			mboxes = <&cpuapp_bellboard 13>,
@@ -48,7 +48,7 @@
 		};
 
 		cpuapp_cpuflpr_ipc: ipc-2-14 {
-			compatible = "zephyr,ipc-icmsg";
+			compatible = "zephyr,ipc-icbmsg";
 			status = "disabled";
 			dcache-alignment = <32>;
 			mboxes = <&cpuapp_bellboard 14>,

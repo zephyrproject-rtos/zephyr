@@ -40,7 +40,9 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_le910c1tx_init_chat_script, telit_le910c1tx_init_
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_le910c1tx_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				0));
 
 MODEM_CHAT_SCRIPT_DEFINE(telit_le910c1tx_dial_chat_script, telit_le910c1tx_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -81,6 +83,6 @@ static const struct modem_cellular_vendor_config telit_le910c1tx_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_le910c1tx_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_le910c1tx_vendor, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_LE910C1TX)

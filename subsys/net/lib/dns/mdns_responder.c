@@ -305,6 +305,9 @@ static void create_ipv6_addr(struct net_sockaddr_in6 *addr)
 	/* Well known IPv6 ff02::fb address */
 	net_ipv6_addr_create(&addr->sin6_addr,
 			     0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
+
+	/* Not scoped to any interface. */
+	addr->sin6_scope_id = 0;
 }
 
 static void create_ipv4_addr(struct net_sockaddr_in *addr)
@@ -468,7 +471,7 @@ static int init_name_labels(struct net_buf *query)
 	 * + the type and class of an echoed question, which an answer to a
 	 * legacy unicast query appends straight after the name.
 	 */
-	if ((net_buf_max_len(query) - query->len) <
+	if (net_buf_tailroom(query) <
 	    (DNS_MSG_HEADER_SIZE + 2 + DNS_QTYPE_LEN + DNS_QCLASS_LEN)) {
 		return -ENOBUFS;
 	}
@@ -692,6 +695,7 @@ static void send_sd_response(int sock,
 {
 	struct net_if *iface;
 	net_socklen_t dst_len;
+	size_t result_size;
 	int ret;
 	const struct dns_sd_rec *record;
 	/* filter must be zero-initialized for "wildcard" port */
@@ -799,6 +803,11 @@ static void send_sd_response(int sock,
 		service_type_enum = true;
 	}
 
+	/* Each response is encoded from result->data over the extracted query,
+	 * so the whole area behind the data pointer is available to it.
+	 */
+	result_size = result->len + net_buf_tailroom(result);
+
 	DNS_SD_COUNT(&rec_num);
 
 	while (rec_num > 0 || ext_rec_num > 0) {
@@ -824,7 +833,7 @@ static void send_sd_response(int sock,
 			/* Construct the response */
 			if (service_type_enum) {
 				ret = dns_sd_handle_service_type_enum(record, addr4, addr6,
-						result->data, net_buf_max_len(result));
+						result->data, result_size);
 				if (ret < 0) {
 					NET_DBG("dns_sd_handle_service_type_enum() failed (%d)",
 						ret);
@@ -832,7 +841,7 @@ static void send_sd_response(int sock,
 				}
 			} else {
 				ret = dns_sd_handle_ptr_query(iface, record, addr4, addr6,
-						result->data, net_buf_max_len(result), false);
+						result->data, result_size, false);
 				if (ret < 0) {
 					NET_DBG("dns_sd_handle_ptr_query() failed (%d)", ret);
 					continue;
@@ -2298,6 +2307,7 @@ static void send_dns_sd_announce(struct net_if *iface, int sock, net_sa_family_t
 	const struct net_in6_addr *addr6 = NULL;
 	const struct dns_sd_rec *record;
 	struct net_buf *answer;
+	size_t answer_size;
 	size_t rec_num;
 	size_t ext_rec_num = external_records_count;
 	int ret;
@@ -2315,6 +2325,11 @@ static void send_dns_sd_announce(struct net_if *iface, int sock, net_sa_family_t
 		return;
 	}
 
+	/* The buffer is reused for every announcement, each encoded from
+	 * answer->data, so the usable size is the capacity of the empty buffer.
+	 */
+	answer_size = net_buf_tailroom(answer);
+
 	DNS_SD_COUNT(&rec_num);
 
 	while (rec_num > 0 || ext_rec_num > 0) {
@@ -2327,7 +2342,7 @@ static void send_dns_sd_announce(struct net_if *iface, int sock, net_sa_family_t
 		}
 
 		ret = dns_sd_handle_ptr_query(iface, record, addr4, addr6, answer->data,
-					      net_buf_max_len(answer), true);
+					      answer_size, true);
 		if (ret < 0) {
 			continue;
 		}

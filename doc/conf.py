@@ -6,6 +6,7 @@ import re
 import sys
 import textwrap
 from pathlib import Path
+from urllib.request import urlopen
 
 ZEPHYR_BASE = Path(__file__).resolve().parents[1]
 ZEPHYR_BUILD = Path(os.environ.get("OUTPUT_DIR")).resolve()
@@ -165,9 +166,26 @@ highlight_language = "none"
 
 todo_include_todos = False
 
-intersphinx_mapping = {
-    "cmake": ("https://cmake.org/cmake/help/latest", None),
-}
+CMAKE_DOCS_URL = "https://cmake.org/cmake/help/latest"
+
+
+def _inventory_reachable(url: str) -> bool:
+    """Check that an intersphinx inventory can be fetched."""
+    try:
+        with urlopen(f"{url}/objects.inv", timeout=10):
+            return True
+    except Exception as err:
+        print(f"NOTE: {url} is unreachable ({err}), its references will not be linked")
+        return False
+
+
+# Fetching an inventory is best effort: a doc set that cannot be reached (site
+# down, build without network access) is left out of the mapping, so that the
+# references into it degrade to plain text instead of failing the build under
+# -W, the same way a reference to an unknown Kconfig option does.
+intersphinx_mapping = {}
+if _inventory_reachable(CMAKE_DOCS_URL):
+    intersphinx_mapping["cmake"] = (CMAKE_DOCS_URL, None)
 
 nitpick_ignore = [
     # ignore C standard identifiers (they are not defined in Zephyr docs)
@@ -454,8 +472,11 @@ sitemap_url_scheme = "{link}"
 
 #-- Options for sphinxcontrib-mermaid -------------------------------------
 
-mermaid_version = "11.14.0"
+mermaid_version = "11.16.1"
 d3_version = "7.9.0"
+
+# Without this, every diagram is drawn in a box of a fixed height and centered in it.
+mermaid_height = "auto"
 
 if tags.has("no-external-deps"): # pylint: disable=undefined-variable  # noqa: F821
     mermaid_use_local = "js/mermaid/mermaid.esm.mjs"

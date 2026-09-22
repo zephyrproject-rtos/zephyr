@@ -81,6 +81,25 @@ and an explanation why. This is not an exhaustive list.
   It is only secured at rest. Protecting it at runtime as well
   requires specific hardware mechanisms to support this.
 
+* The ``PSA_STORAGE_FLAG_WRITE_ONCE`` flag only protects an entry against modification through
+  the API, not against modification of the storage medium itself.
+
+  | Upholding the flag requires knowing that an entry was created in the first place, which is
+    state that has to survive the storage medium being rewritten. Like replay protection, that
+    requires storage that is protected by hardware.
+  | An attacker who can write to the storage medium can therefore have a write-once entry
+    overwritten or removed: either by tampering with it, after which the subsystem treats it as
+    corrupted and allows it to be replaced, or simply by erasing it, after which it appears never
+    to have existed. Neither can be prevented by encrypting and authenticating the entry.
+
+* The ``psa_its_get*()`` functions can return ``PSA_ERROR_INVALID_SIGNATURE`` and
+  ``PSA_ERROR_DATA_CORRUPT``.
+
+  The specification doesn't define these for the ITS API because it assumes that the storage
+  underlying it is protected by hardware, and thus that data read back from it is always intact.
+  As it's not the case here, these error codes are passed on to let callers tell an entry that has
+  been tampered with apart from an internal failure.
+
 Configuration
 *************
 

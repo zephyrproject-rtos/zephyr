@@ -38,9 +38,9 @@ The features include the following:
   - AES-128/192/256 encryption/decryption engine and TRNG
 
 - RF Performance:
-  - Tx Power: 0/4/7.5dBm adjustable (refer to datasheet for details)
-  - BLE Rx Sensitivity: -97dBm@1M
-  - 15.4 Rx Sensitivity: -102dBm@250 kbps O-QPSK DSSS
+  - Tx Power: 0/4/7.5 dBm adjustable (refer to datasheet for details)
+  - BLE Rx Sensitivity: -97 dBm at 1 Mbps
+  - 15.4 Rx Sensitivity: -102 dBm at 250 kbps O-QPSK DSSS
   - Fast AGC control to improve receiving dynamic range
 
 Board Features

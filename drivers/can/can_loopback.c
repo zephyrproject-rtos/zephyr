@@ -339,15 +339,6 @@ static int can_loopback_get_state(const struct device *dev, enum can_state *stat
 	return 0;
 }
 
-static void can_loopback_set_state_change_callback(const struct device *dev,
-						   can_state_change_callback_t cb,
-						   void *user_data)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
-}
-
 static int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	ARG_UNUSED(dev);
@@ -375,7 +366,6 @@ static DEVICE_API(can, can_loopback_driver_api) = {
 	.add_rx_filter = can_loopback_add_rx_filter,
 	.remove_rx_filter = can_loopback_remove_rx_filter,
 	.get_state = can_loopback_get_state,
-	.set_state_change_callback = can_loopback_set_state_change_callback,
 	.get_core_clock = can_loopback_get_core_clock,
 	.get_max_filters = can_loopback_get_max_filters,
 	/* Recommended configuration ranges from CiA 601-2 */
@@ -418,6 +408,7 @@ static int can_loopback_init(const struct device *dev)
 	struct can_loopback_data *data = dev->data;
 	k_tid_t tx_tid;
 
+	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&data->mtx);
 
 	for (int i = 0; i < CONFIG_CAN_LOOPBACK_MAX_FILTERS; i++) {

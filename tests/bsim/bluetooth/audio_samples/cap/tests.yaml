@@ -10,24 +10,24 @@ common:
   build: false
 
 tests:
-  tests.bsim.bluetooth.audio_samples.cap.broadcast:
+  bluetooth.audio_samples.bsim.cap.broadcast:
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/cap_broadcast.sh
     required_applications:
-      - application: tests.bsim.bluetooth.audio_samples.cap.initiator.broadcast
+      - application: bluetooth.audio_samples.bsim.cap.initiator.broadcast
         path: initiator
-      - application: tests.bsim.bluetooth.audio_samples.cap.acceptor.broadcast
+      - application: bluetooth.audio_samples.bsim.cap.acceptor.broadcast
         path: acceptor
 
-  tests.bsim.bluetooth.audio_samples.cap.unicast:
+  bluetooth.audio_samples.bsim.cap.unicast:
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/cap_unicast.sh
     required_applications:
-      - application: tests.bsim.bluetooth.audio_samples.cap.initiator.unicast
+      - application: bluetooth.audio_samples.bsim.cap.initiator.unicast
         path: initiator
-      - application: tests.bsim.bluetooth.audio_samples.cap.acceptor.unicast
+      - application: bluetooth.audio_samples.bsim.cap.acceptor.unicast
         path: acceptor

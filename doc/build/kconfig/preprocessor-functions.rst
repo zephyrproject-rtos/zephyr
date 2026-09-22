@@ -39,6 +39,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_chosen_reg_addr_int,<property in /chosen>[,<index>,<unit>])
    $(dt_chosen_reg_size_hex,<property in /chosen>[,<index>,<unit>])
    $(dt_chosen_reg_size_int,<property in /chosen>[,<index>,<unit>])
+   $(dt_class_enabled,<class name>)
    $(dt_compat_all_has_prop,<compatible string>,<prop>[,<value>])
    $(dt_compat_any_has_prop,<compatible string>,<prop>[,<value>])
    $(dt_compat_any_on_bus,<compatible string>,<prop>)
@@ -131,6 +132,10 @@ name is specified.
 .. code-block:: none
 
    $(shields_list_contains,<shield name>)
+
+Shield names cannot contain whitespace. A space after the comma, as in
+``$(shields_list_contains, foo)``, is stripped and a warning is printed
+so the lookup still matches ``foo``.
 
 
 Example Usage

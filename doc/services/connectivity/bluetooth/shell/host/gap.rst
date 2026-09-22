@@ -69,6 +69,13 @@ will ask the advertisers for more information by sending a *scan request* packet
 can create a *passive scanner* by using the :code:`bt scan passive` command, so the scanner will not
 ask the advertiser for more information.
 
+With :kconfig:option:`CONFIG_BT_SCAN_EXT_FILTER_POLICY` enabled, the
+:code:`bt scan --ext-filter-policy on` command starts the scanner with the extended scanner filter
+policy. The Controller then also reports directed advertisements whose target address is a
+resolvable private address it was unable to resolve. The target address of a directed advertisement
+is printed on its own line. This requires a Controller that supports the Extended Scanner Filter
+Policies, and the command fails otherwise.
+
 Connecting to a device
 **********************
 

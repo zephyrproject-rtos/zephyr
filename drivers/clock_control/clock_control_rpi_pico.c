@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT raspberrypi_pico_clock_controller
 
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_rpi_pico.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #if defined(CONFIG_SOC_SERIES_RP2040)
@@ -648,43 +649,24 @@ rpi_pico_clkid_tuple_reorder_by_dependencies(struct rpi_pico_clkid_tuple *tuples
 	}
 }
 
-static int clock_control_rpi_pico_init(const struct device *dev)
+/**
+ * @brief Reapply the devicetree-declared XOSC/PLL/clock topology.
+ *
+ * Configures XOSC, PLL_SYS/PLL_USB, and every clock listed in the "clock-names"
+ * property, in dependency order, from the config data generated from devicetree.
+ * Used both by clock_control_rpi_pico_init() at boot and to restore clocks after a
+ * low-power mode that resets them, so that resume restores the board's actual
+ * devicetree-configured clock rates instead of a hardcoded/duplicated subset.
+ *
+ * @param dev clock-controller device
+ * @return 0 on success, -EINVAL if a clock could not be configured
+ */
+int clock_control_rpi_pico_reconfigure(const struct device *dev)
 {
-#if !defined(CONFIG_RPI_PICO_SKIP_CLOCK_INIT)
-	const uint32_t cycles_per_tick = CLOCK_FREQ_xosc / 1000000;
 	const struct clock_control_rpi_pico_config *config = dev->config;
-	struct clock_control_rpi_pico_data *data = dev->data;
-	clocks_hw_t *clocks_regs = config->clocks_regs;
-	rosc_hw_t *rosc_regs = config->rosc_regs;
 	pll_hw_t *plls[] = {config->pll_sys_regs, config->pll_usb_regs};
 	struct rpi_pico_clkid_tuple tuples[] = {
 		DT_INST_FOREACH_PROP_ELEM_SEP(0, clock_names, TUPLE_ENTRY, (,))};
-	uint32_t rosc_div;
-	int ret;
-
-	/* Reset all function before clock configuring */
-	reset_block(~(RESETS_RESET_IO_QSPI_BITS | RESETS_RESET_PADS_QSPI_BITS |
-		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_USBCTRL_BITS |
-		      RESETS_RESET_SYSCFG_BITS | RESETS_RESET_PLL_SYS_BITS));
-
-	unreset_block_wait(RESETS_RESET_BITS &
-			   ~(RESETS_RESET_ADC_BITS |
-#if defined(RESETS_RESET_RTC_BITS)
-			     RESETS_RESET_RTC_BITS |
-#endif
-#if defined(RESETS_RESET_HSTX_BITS)
-			     RESETS_RESET_HSTX_BITS |
-#endif
-			     RESETS_RESET_SPI0_BITS | RESETS_RESET_SPI1_BITS |
-			     RESETS_RESET_UART0_BITS | RESETS_RESET_UART1_BITS |
-			     RESETS_RESET_USBCTRL_BITS));
-
-	/* Start all the tick generators. */
-	for (tick_gen_num_t i = 0; i < TICK_COUNT; i++) {
-		tick_start(i, cycles_per_tick);
-	}
-
-	clocks_regs->resus.ctrl = 0;
 
 	/* Configure xosc */
 	xosc_init();
@@ -719,6 +701,49 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 				      config->clocks_data[tuples[i].clk].rate))) {
 			return -EINVAL;
 		}
+	}
+
+	return 0;
+}
+
+static int clock_control_rpi_pico_init(const struct device *dev)
+{
+#if !defined(CONFIG_RPI_PICO_SKIP_CLOCK_INIT)
+	const uint32_t cycles_per_tick = CLOCK_FREQ_xosc / 1000000;
+	const struct clock_control_rpi_pico_config *config = dev->config;
+	struct clock_control_rpi_pico_data *data = dev->data;
+	clocks_hw_t *clocks_regs = config->clocks_regs;
+	rosc_hw_t *rosc_regs = config->rosc_regs;
+	uint32_t rosc_div;
+	int ret;
+
+	/* Reset all function before clock configuring */
+	reset_block(~(RESETS_RESET_IO_QSPI_BITS | RESETS_RESET_PADS_QSPI_BITS |
+		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_USBCTRL_BITS |
+		      RESETS_RESET_SYSCFG_BITS | RESETS_RESET_PLL_SYS_BITS));
+
+	unreset_block_wait(RESETS_RESET_BITS &
+			   ~(RESETS_RESET_ADC_BITS |
+#if defined(RESETS_RESET_RTC_BITS)
+			     RESETS_RESET_RTC_BITS |
+#endif
+#if defined(RESETS_RESET_HSTX_BITS)
+			     RESETS_RESET_HSTX_BITS |
+#endif
+			     RESETS_RESET_SPI0_BITS | RESETS_RESET_SPI1_BITS |
+			     RESETS_RESET_UART0_BITS | RESETS_RESET_UART1_BITS |
+			     RESETS_RESET_USBCTRL_BITS));
+
+	/* Start all the tick generators. */
+	for (tick_gen_num_t i = 0; i < TICK_COUNT; i++) {
+		tick_start(i, cycles_per_tick);
+	}
+
+	clocks_regs->resus.ctrl = 0;
+
+	ret = clock_control_rpi_pico_reconfigure(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	hw_clear_bits(&clocks_regs->clk[rpi_pico_clkid_clk_gpout0].ctrl, CTRL_ENABLE_BITS);

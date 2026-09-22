@@ -12,7 +12,6 @@ source "subsys/logging/Kconfig.template.log_config"
 config MULTITHREADING
 	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y
-	select RING_BUFFER
 	help
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
@@ -141,7 +140,7 @@ config SCHED_DEADLINE
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || OPENRISC)
+	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || OPENRISC || HEXAGON)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then

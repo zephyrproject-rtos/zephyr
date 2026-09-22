@@ -1203,7 +1203,7 @@ class TestPlan:
 
                             for this_board in found_snippets[this_snippet].board2appends:
                                 if this_board.startswith('/'):
-                                    match = re.search(this_board[1:-1], plat.name)
+                                    match = re.fullmatch(this_board[1:-1], plat.name)
                                     if match is not None:
                                         matched_snippet_board = True
                                         break

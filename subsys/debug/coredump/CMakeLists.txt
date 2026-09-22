@@ -39,6 +39,11 @@ zephyr_library_sources_ifdef(
   )
 
 zephyr_library_sources_ifdef(
+  CONFIG_DEBUG_COREDUMP_BACKEND_AMD_ACP_PANIC_DUMP
+  coredump_backend_amd_acp_panic_dump.c
+  )
+
+zephyr_library_sources_ifdef(
   CONFIG_DEBUG_COREDUMP_SHELL
   coredump_shell.c
   )

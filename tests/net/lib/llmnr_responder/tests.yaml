@@ -3,6 +3,8 @@ common:
     - dns
     - net
   depends_on: netif
+  extra_configs:
+    - CONFIG_WARN_DEPRECATED=n
 tests:
   net.llmnr:
     min_ram: 21

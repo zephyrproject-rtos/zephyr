@@ -32,6 +32,7 @@ struct dma_silabs_channel {
 	atomic_t busy;
 	void *user_data;
 	dma_callback_t cb;
+	dma_callback_t error_cb;
 	sl_hal_ldma_transfer_init_t xfer_config;
 	sl_hal_ldma_descriptor_t *desc;
 };
@@ -307,19 +308,28 @@ static void dma_silabs_irq_handler(const struct device *dev, uint32_t id)
 	const struct dma_silabs_data *data = dev->data;
 	struct dma_silabs_channel *chan;
 	int status;
-	uint32_t pending, chnum, error_mask;
+	uint32_t pending, chnum, error_mask, error_chnum;
 
 	pending = sl_hal_ldma_get_enabled_pending_interrupts(config->ldma);
+#if defined(LDMA_IF_ERROR)
 	error_mask = LDMA_IF_ERROR;
+	error_chnum = FIELD_GET(_LDMA_STATUS_CHERROR_MASK, sl_hal_ldma_get_status(config->ldma));
+#endif
 
 	for (chnum = 0; chnum < data->dma_ctx.dma_channels; chnum++) {
 		chan = &data->dma_chan_table[chnum];
 		status = DMA_STATUS_COMPLETE;
+#if !defined(LDMA_IF_ERROR)
+		error_mask = BIT(_LDMA_IF_ERROR0_SHIFT + chnum);
+		error_chnum = chnum;
+#endif
 
-		if (pending & error_mask) {
-			if (chan->cb) {
-				chan->cb(dev, chan->user_data, chnum, -EIO);
+		if ((pending & error_mask) && (error_chnum == chnum)) {
+			sl_hal_ldma_clear_interrupts(config->ldma, error_mask);
+			if (chan->error_cb) {
+				chan->error_cb(dev, chan->user_data, chnum, -EIO);
 			}
+			atomic_clear(&chan->busy);
 		} else if (pending & BIT(chnum)) {
 			sl_hal_ldma_clear_interrupts(config->ldma, BIT(chnum));
 
@@ -391,6 +401,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 
 	chan_conf->user_data = config->user_data;
 	chan_conf->cb = config->dma_callback;
+	chan_conf->error_cb = config->error_callback_dis ? NULL : config->dma_callback;
 	chan_conf->dir = config->channel_direction;
 	chan_conf->complete_callback_en = config->complete_callback_en;
 
@@ -470,7 +481,7 @@ static int dma_silabs_start(const struct device *dev, uint32_t channel)
 
 	sl_hal_ldma_init_transfer(config->ldma, channel, &chan->xfer_config, chan->desc);
 	sl_hal_ldma_clear_interrupts(config->ldma, BIT(channel));
-	sl_hal_ldma_enable_interrupts(config->ldma, BIT(channel));
+	sl_hal_ldma_enable_interrupts(config->ldma, BIT(channel) | LDMA_IEN_ERROR);
 	sl_hal_ldma_start_transfer(config->ldma, channel);
 
 	return 0;
@@ -630,7 +641,7 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 		irq_unlock(key);
 		sl_hal_ldma_init_transfer(cfg->ldma, channel, &chan_conf->xfer_config, desc);
 		sl_hal_ldma_clear_interrupts(cfg->ldma, BIT(channel));
-		sl_hal_ldma_enable_interrupts(cfg->ldma, BIT(channel));
+		sl_hal_ldma_enable_interrupts(cfg->ldma, BIT(channel) | LDMA_IEN_ERROR);
 		sl_hal_ldma_start_transfer(cfg->ldma, channel);
 	}
 

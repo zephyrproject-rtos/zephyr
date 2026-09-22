@@ -38,6 +38,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #define MY_PORT 4242
 #define PEER_PORT 4242
 
+#define LINEARIZE_TCP_FIRST 8
+#define LINEARIZE_TCP_REST  (NET_TCPH_LEN - LINEARIZE_TCP_FIRST)
+#define LINEARIZE_PAYLOAD   16
+
 /* Data (1280 bytes) to be sent */
 static const char lorem_ipsum[] = LOREM_IPSUM;
 
@@ -117,6 +121,8 @@ static enum test_case_no {
 	TEST_SERVER_ACK_VALIDATION = 20,
 	TEST_SERVER_FIN_ACK_AFTER_DATA = 21,
 	TEST_SERVER_RST_ON_CLOSED_PORT_FIN = 22,
+	TEST_ADVERTISED_RECV_WINDOW = 23,
+	TEST_TCP_PKT_LINEARIZE_FRAG_CHAIN = 24,
 } test_case_no;
 
 static enum test_state t_state;
@@ -129,6 +135,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt);
 static void handle_client_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_server_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(void);
+static void handle_advertised_recv_window(struct tcphdr *th);
 static void handle_syn_rst_ack(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_failure_test(net_sa_family_t af, struct tcphdr *th);
@@ -510,6 +517,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	case TEST_CLIENT_SYN_RESEND:
 		handle_syn_resend();
 		break;
+	case TEST_ADVERTISED_RECV_WINDOW:
+		handle_advertised_recv_window(&th);
+		break;
 	case TEST_CLIENT_FIN_WAIT_2_IPV4:
 		handle_client_fin_wait_2_test(net_pkt_family(pkt), &th);
 		break;
@@ -557,6 +567,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case TEST_SERVER_FIN_ACK_AFTER_DATA:
 		handle_server_fin_ack_after_data_test(net_pkt_family(pkt), &th);
+		break;
+	case TEST_TCP_PKT_LINEARIZE_FRAG_CHAIN:
+		/* Ignore RST/response TX while exercising tcp_pkt_linearize(). */
 		break;
 	default:
 		zassert_true(false, "Undefined test case");
@@ -1140,6 +1153,49 @@ ZTEST(net_tcp, test_client_syn_resend)
 	zassert_true(ret < 0, "Connect on no response from peer");
 
 	/* test handler will release the sem once it receives SYN again */
+	test_sem_take(K_MSEC(500), __LINE__);
+
+	net_context_put(ctx);
+}
+
+static void handle_advertised_recv_window(struct tcphdr *th)
+{
+	test_verify_flags(th, SYN);
+
+	zassert_not_equal(net_ntohs(th_win(th)), 0, "Advertised receive window is zero");
+
+	test_sem_give();
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   expect the advertised receive window to be usable.
+ *
+ * The window is derived from the buffer pool but travels in a 16 bit header
+ * field, so a pool that works out to 65536 has to be capped rather than
+ * truncated to zero.
+ */
+ZTEST(net_tcp, test_advertised_recv_window)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = TEST_ADVERTISED_RECV_WINDOW;
+	seq = ack = 0;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_equal(ret, 0, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	/* The peer never answers, so the connect itself is expected to fail.
+	 * All this test needs is the SYN the stack puts on the wire.
+	 */
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in), NULL, K_MSEC(150), NULL);
+	zassert_true(ret < 0, "Connect on no response from peer");
+
 	test_sem_take(K_MSEC(500), __LINE__);
 
 	net_context_put(ctx);
@@ -3393,6 +3449,98 @@ ZTEST(net_tcp, test_contiguous_tx)
 
 	zassert_equal(data_payload_len, 1,
 		      "Unexpected data segment payload length %zu (expected 1)", data_payload_len);
+}
+
+/*
+ * Reproduce tcp_pkt_linearize() frag-chain UAF/double-free:
+ * TCP header split across net_buf fragments with leftover payload frags.
+ *
+ * Layout after rebuild:
+ *   b0: [IPv4 20][TCP first 8]
+ *   b1: [TCP last 12]          <- emptied then unref'd (bug frees b2 too)
+ *   b2: [payload]
+ *
+ * Path: net_recv_data -> net_tcp_input (stack copy OK) -> no listener ->
+ *        net_tcp_reply_rst -> th_get -> tcp_pkt_linearize.
+ */
+
+static void tcp_pkt_rebuild_split_tcp_header(struct net_pkt *pkt)
+{
+	uint8_t copy[NET_IPV4H_LEN + NET_TCPH_LEN + LINEARIZE_PAYLOAD];
+	struct net_buf *frag;
+	struct net_buf *b0;
+	struct net_buf *b1;
+	struct net_buf *b2;
+	size_t len;
+
+	len = net_pkt_get_len(pkt);
+	zassert_equal(len, sizeof(copy), "unexpected pkt len %zu", len);
+
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_pkt_read(pkt, copy, len));
+
+	while (pkt->buffer) {
+		frag = pkt->buffer;
+		pkt->buffer = frag->frags;
+		frag->frags = NULL;
+		net_buf_unref(frag);
+	}
+
+	b0 = net_pkt_get_frag(pkt, NET_IPV4H_LEN + LINEARIZE_TCP_FIRST, K_NO_WAIT);
+	zassert_not_null(b0);
+	net_buf_add_mem(b0, copy, NET_IPV4H_LEN + LINEARIZE_TCP_FIRST);
+	net_pkt_frag_add(pkt, b0);
+
+	b1 = net_pkt_get_frag(pkt, LINEARIZE_TCP_REST, K_NO_WAIT);
+	zassert_not_null(b1);
+	net_buf_add_mem(b1, copy + NET_IPV4H_LEN + LINEARIZE_TCP_FIRST, LINEARIZE_TCP_REST);
+	net_pkt_frag_add(pkt, b1);
+
+	b2 = net_pkt_get_frag(pkt, LINEARIZE_PAYLOAD, K_NO_WAIT);
+	zassert_not_null(b2);
+	net_buf_add_mem(b2, copy + NET_IPV4H_LEN + NET_TCPH_LEN, LINEARIZE_PAYLOAD);
+	net_pkt_frag_add(pkt, b2);
+
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV4H_LEN);
+	net_pkt_set_ipv4_opts_len(pkt, 0);
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_pkt_skip(pkt, NET_IPV4H_LEN));
+	zassert_false(net_pkt_is_contiguous(pkt, NET_TCPH_LEN),
+		      "TCP header unexpectedly contiguous");
+	net_pkt_cursor_init(pkt);
+}
+
+ZTEST(net_tcp, test_tcp_pkt_linearize_frag_chain)
+{
+	struct net_pkt *pkt;
+	uint8_t payload[LINEARIZE_PAYLOAD];
+	int ret;
+	int i;
+
+	test_case_no = TEST_TCP_PKT_LINEARIZE_FRAG_CHAIN;
+	seq = 1U;
+	ack = 0U;
+
+	for (i = 0; i < LINEARIZE_PAYLOAD; i++) {
+		payload[i] = (uint8_t)i;
+	}
+
+	/* Unbound dst port -> RST path calls th_get()/tcp_pkt_linearize(). */
+	pkt = tester_prepare_tcp_pkt(NET_AF_INET, net_htons(PEER_PORT),
+				     net_htons(9999), SYN, payload,
+				     sizeof(payload));
+	zassert_not_null(pkt, "failed to allocate TCP pkt");
+
+	tcp_pkt_rebuild_split_tcp_header(pkt);
+
+	ret = net_recv_data(net_iface, pkt);
+	zassert_equal(ret, 0, "net_recv_data failed (%d)", ret);
+
+	/* Allow RX/TCP work to finish (RST reply, pkt teardown).
+	 * On the buggy code path this panics with a net_buf double-free.
+	 */
+	k_msleep(50);
 }
 
 /* Always clear the TX intercept hook after every test so a test that installs

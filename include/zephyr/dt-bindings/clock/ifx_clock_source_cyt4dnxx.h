@@ -1,0 +1,130 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Peripheral clock (PCLK) root clock ids for CYT4DN (TRAVEO(TM) T2G) devices.
+ *
+ * Each value is the peripheral's output index within its PERI_PCLK group.
+ * Refer to the device datasheet, section 20 "Peripheral clocks", for details.
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_CYT4DNXX_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_CYT4DNXX_H_
+
+/* CPUSS root clocks (PERI group 0, use under clk_peri0) */
+#define IFX_PCLK_CPUSS_TRACE_IN    0    /* Trace clock */
+#define IFX_PCLK_SMARTIO7          1    /* Smart I/O #7 */
+
+/* TCPWM0 counters (output = datasheet Table 20-1) */
+#define IFX_PCLK_TCPWM0_GRP0_CNT0  2
+#define IFX_PCLK_TCPWM0_GRP0_CNT1  3
+#define IFX_PCLK_TCPWM0_GRP0_CNT2  4
+#define IFX_PCLK_TCPWM0_GRP0_CNT3  5
+#define IFX_PCLK_TCPWM0_GRP0_CNT4  6
+#define IFX_PCLK_TCPWM0_GRP0_CNT5  7
+#define IFX_PCLK_TCPWM0_GRP0_CNT6  8
+#define IFX_PCLK_TCPWM0_GRP0_CNT7  9
+#define IFX_PCLK_TCPWM0_GRP0_CNT8  10
+#define IFX_PCLK_TCPWM0_GRP0_CNT9  11
+#define IFX_PCLK_TCPWM0_GRP0_CNT10 12
+#define IFX_PCLK_TCPWM0_GRP0_CNT11 13
+#define IFX_PCLK_TCPWM0_GRP0_CNT12 14
+#define IFX_PCLK_TCPWM0_GRP0_CNT13 15
+#define IFX_PCLK_TCPWM0_GRP0_CNT14 16
+#define IFX_PCLK_TCPWM0_GRP0_CNT15 17
+#define IFX_PCLK_TCPWM0_GRP0_CNT16 18
+#define IFX_PCLK_TCPWM0_GRP0_CNT17 19
+#define IFX_PCLK_TCPWM0_GRP0_CNT18 20
+#define IFX_PCLK_TCPWM0_GRP0_CNT19 21
+#define IFX_PCLK_TCPWM0_GRP0_CNT20 22
+#define IFX_PCLK_TCPWM0_GRP0_CNT21 23
+#define IFX_PCLK_TCPWM0_GRP0_CNT22 24
+#define IFX_PCLK_TCPWM0_GRP0_CNT23 25
+#define IFX_PCLK_TCPWM0_GRP0_CNT24 26
+#define IFX_PCLK_TCPWM0_GRP0_CNT25 27
+#define IFX_PCLK_TCPWM0_GRP0_CNT26 28
+#define IFX_PCLK_TCPWM0_GRP0_CNT27 29
+#define IFX_PCLK_TCPWM0_GRP0_CNT28 30
+#define IFX_PCLK_TCPWM0_GRP0_CNT29 31
+#define IFX_PCLK_TCPWM0_GRP0_CNT30 32
+#define IFX_PCLK_TCPWM0_GRP0_CNT31 33
+#define IFX_PCLK_TCPWM0_GRP0_CNT32 34
+#define IFX_PCLK_TCPWM0_GRP0_CNT33 35
+#define IFX_PCLK_TCPWM0_GRP0_CNT34 36
+#define IFX_PCLK_TCPWM0_GRP0_CNT35 37
+#define IFX_PCLK_TCPWM0_GRP0_CNT36 38
+#define IFX_PCLK_TCPWM0_GRP0_CNT37 39
+
+#define IFX_PCLK_TCPWM0_GRP1_CNT0  40
+#define IFX_PCLK_TCPWM0_GRP1_CNT1  41
+#define IFX_PCLK_TCPWM0_GRP1_CNT2  42
+#define IFX_PCLK_TCPWM0_GRP1_CNT3  43
+#define IFX_PCLK_TCPWM0_GRP1_CNT4  44
+#define IFX_PCLK_TCPWM0_GRP1_CNT5  45
+#define IFX_PCLK_TCPWM0_GRP1_CNT6  46
+#define IFX_PCLK_TCPWM0_GRP1_CNT7  47
+#define IFX_PCLK_TCPWM0_GRP1_CNT8  48
+#define IFX_PCLK_TCPWM0_GRP1_CNT9  49
+#define IFX_PCLK_TCPWM0_GRP1_CNT10 50
+#define IFX_PCLK_TCPWM0_GRP1_CNT11 51
+
+#define IFX_PCLK_TCPWM0_GRP2_CNT0  52
+#define IFX_PCLK_TCPWM0_GRP2_CNT1  53
+#define IFX_PCLK_TCPWM0_GRP2_CNT2  54
+#define IFX_PCLK_TCPWM0_GRP2_CNT3  55
+#define IFX_PCLK_TCPWM0_GRP2_CNT4  56
+#define IFX_PCLK_TCPWM0_GRP2_CNT5  57
+#define IFX_PCLK_TCPWM0_GRP2_CNT6  58
+#define IFX_PCLK_TCPWM0_GRP2_CNT7  59
+#define IFX_PCLK_TCPWM0_GRP2_CNT8  60
+#define IFX_PCLK_TCPWM0_GRP2_CNT9  61
+#define IFX_PCLK_TCPWM0_GRP2_CNT10 62
+#define IFX_PCLK_TCPWM0_GRP2_CNT11 63
+#define IFX_PCLK_TCPWM0_GRP2_CNT12 64
+#define IFX_PCLK_TCPWM0_GRP2_CNT13 65
+#define IFX_PCLK_TCPWM0_GRP2_CNT14 66
+#define IFX_PCLK_TCPWM0_GRP2_CNT15 67
+#define IFX_PCLK_TCPWM0_GRP2_CNT16 68
+#define IFX_PCLK_TCPWM0_GRP2_CNT17 69
+#define IFX_PCLK_TCPWM0_GRP2_CNT18 70
+#define IFX_PCLK_TCPWM0_GRP2_CNT19 71
+#define IFX_PCLK_TCPWM0_GRP2_CNT20 72
+#define IFX_PCLK_TCPWM0_GRP2_CNT21 73
+#define IFX_PCLK_TCPWM0_GRP2_CNT22 74
+#define IFX_PCLK_TCPWM0_GRP2_CNT23 75
+#define IFX_PCLK_TCPWM0_GRP2_CNT24 76
+#define IFX_PCLK_TCPWM0_GRP2_CNT25 77
+#define IFX_PCLK_TCPWM0_GRP2_CNT26 78
+#define IFX_PCLK_TCPWM0_GRP2_CNT27 79
+#define IFX_PCLK_TCPWM0_GRP2_CNT28 80
+#define IFX_PCLK_TCPWM0_GRP2_CNT29 81
+#define IFX_PCLK_TCPWM0_GRP2_CNT30 82
+#define IFX_PCLK_TCPWM0_GRP2_CNT31 83
+
+/* COMM root clocks (PERI group 1, use under clk_peri1) */
+#define IFX_PCLK_CANFD0_CH0        0    /* CAN0, channel 0 */
+#define IFX_PCLK_CANFD0_CH1        1    /* CAN0, channel 1 */
+#define IFX_PCLK_CANFD1_CH0        2    /* CAN1, channel 0 */
+#define IFX_PCLK_CANFD1_CH1        3    /* CAN1, channel 1 */
+#define IFX_PCLK_LIN0_CH0          4    /* LIN0, channel 0 */
+#define IFX_PCLK_LIN0_CH1          5    /* LIN0, channel 1 */
+#define IFX_PCLK_CXPI0_CH0         6    /* CXPI0, channel 0 */
+#define IFX_PCLK_CXPI0_CH1         7    /* CXPI0, channel 1 */
+#define IFX_PCLK_SCB0              8    /* SCB0 */
+#define IFX_PCLK_SCB1              9    /* SCB1 */
+#define IFX_PCLK_SCB2              10   /* SCB2 */
+#define IFX_PCLK_SCB3              11   /* SCB3 */
+#define IFX_PCLK_SCB4              12   /* SCB4 */
+#define IFX_PCLK_SCB5              13   /* SCB5 */
+#define IFX_PCLK_SCB6              14   /* SCB6 */
+#define IFX_PCLK_SCB7              15   /* SCB7 */
+#define IFX_PCLK_SCB8              16   /* SCB8 */
+#define IFX_PCLK_SCB9              17   /* SCB9 */
+#define IFX_PCLK_SCB10             18   /* SCB10 */
+#define IFX_PCLK_SCB11             19   /* SCB11 */
+#define IFX_PCLK_SAR0              20   /* PASS0 SAR0 */
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_CYT4DNXX_H_ */

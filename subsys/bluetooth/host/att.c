@@ -4149,13 +4149,17 @@ struct bt_att_req *bt_att_find_req_by_user_data(struct bt_conn *conn, const void
 	struct bt_att_chan *chan;
 	struct bt_att_req *req;
 
+	if (user_data == NULL) {
+		return NULL;
+	}
+
 	att = att_get(conn);
 	if (!att) {
 		return NULL;
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		if (chan->req->user_data == user_data) {
+		if (chan->req != NULL && chan->req->user_data == user_data) {
 			return chan->req;
 		}
 	}

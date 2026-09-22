@@ -265,7 +265,7 @@ static int renesas_ra_agt_abs_alarm_set(const struct device *dev, uint32_t val, 
 	max_val = ticks_sub(read_again + top, data->guard_period, top);
 	if (val > max_val) {
 		if (irq_on_late) {
-			NVIC_SetPendingIRQ(data->agtcmai_irq);
+			k_irq_set_pending(data->agtcmai_irq);
 		} else {
 			data->alarm_cb = NULL;
 		}
@@ -314,7 +314,7 @@ static int renesas_ra_agt_rel_alarm_set(const struct device *dev, uint32_t val, 
 
 	if (diff > max_rel_val || diff == 0) {
 		if (irq_on_late) {
-			NVIC_SetPendingIRQ(data->agtcmai_irq);
+			k_irq_set_pending(data->agtcmai_irq);
 		} else {
 			data->alarm_cb = NULL;
 		}
@@ -391,7 +391,7 @@ static int counter_renesas_ra_agt_cancel_alarm(const struct device *dev, uint8_t
 	}
 
 	irq_disable(data->agtcmai_irq);
-	NVIC_ClearPendingIRQ(data->agtcmai_irq);
+	k_irq_clear_pending(data->agtcmai_irq);
 	data->alarm_cb = NULL;
 	data->alarm_data = NULL;
 out:

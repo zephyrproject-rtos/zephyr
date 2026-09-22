@@ -8,3 +8,26 @@ config CLOCK_CONTROL_SILABS_SERIES
 	select SILABS_SISDK_CLOCK_MANAGER
 	help
 	  Enable Silicon Labs Series 2+ Clock Management Unit clock control driver.
+
+config CLOCK_CONTROL_SILABS_SERIES_OUTPUT
+	bool "Silicon Labs Series 2+ clock output driver"
+	default y
+	depends on DT_HAS_SILABS_SERIES_CLOCK_OUTPUT_ENABLED
+	select SILABS_SISDK_CLOCK_MANAGER
+	select PINCTRL
+	help
+	  Enable Silicon Labs Series 2+ Clock Management Unit clock output driver.
+	  The driver supports on, off, get_rate and get_status actions to control the
+	  export of a clock as configured in devicetree to a pin. The clock subsys
+	  parameter represents the clock output to act upon.
+
+if CLOCK_CONTROL_SILABS_SERIES_OUTPUT
+
+config CLOCK_CONTROL_SILABS_SERIES_OUTPUT_INIT_PRIORITY
+	int "Silicon Labs Series 2+ clock output init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Initialization priority for clock output. Must be greater than pinctrl/GPIO init,
+	  and lower than any consumer of the clock.
+
+endif

@@ -50,6 +50,7 @@ menuconfig FLASH_MSPI_NOR
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_JESD216
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EX_OP if DT_HAS_ST_M95P32_ENABLED
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_NOR),reset-gpios) || \
 			$(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_NOR),supply-gpios)
 

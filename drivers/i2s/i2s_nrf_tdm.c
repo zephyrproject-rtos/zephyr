@@ -145,7 +145,8 @@ static int audio_clock_request(struct tdm_drv_data *drv_data)
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
 #elif (DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL) || \
-	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL) || \
+	  ((NRF_CLOCK_HAS_HFCLK24M || NRF_CLOCK_HAS_HFCLKAUDIO) && !CONFIG_CLOCK_CONTROL_NRF)
 	return nrf_clock_control_request(drv_data->audioclock, &drv_data->aclk_spec,
 					 &drv_data->clk_cli);
 #else
@@ -160,7 +161,8 @@ static int audio_clock_release(struct tdm_drv_data *drv_data)
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_release(drv_data->clk_mgr);
 #elif (DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL) || \
-	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL) || \
+	  ((NRF_CLOCK_HAS_HFCLK24M || NRF_CLOCK_HAS_HFCLKAUDIO) && !CONFIG_CLOCK_CONTROL_NRF)
 	return nrf_clock_control_release(drv_data->audioclock, &drv_data->aclk_spec);
 #else
 	(void)drv_data;

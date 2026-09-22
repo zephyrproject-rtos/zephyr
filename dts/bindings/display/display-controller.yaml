@@ -3,6 +3,8 @@
 
 include: base.yaml
 
+class: display
+
 properties:
   height:
     type: int

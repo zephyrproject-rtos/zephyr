@@ -499,10 +499,13 @@ ZTEST(net_buf_simple_test_suite, test_net_buf_simple_is_valid_fresh)
 
 ZTEST(net_buf_simple_test_suite, test_net_buf_simple_is_valid_len_boundary)
 {
-	buf.len = net_buf_simple_max_len(&buf);
-	zassert_true(net_buf_simple_is_valid(&buf), "len == max_len must be valid");
+	/* The buffer is empty, so the tailroom is its whole capacity. */
+	const uint16_t capacity = net_buf_simple_tailroom(&buf);
 
-	buf.len = net_buf_simple_max_len(&buf) + 1U;
+	buf.len = capacity;
+	zassert_true(net_buf_simple_is_valid(&buf), "len == capacity must be valid");
+
+	buf.len = capacity + 1U;
 	zassert_false(net_buf_simple_is_valid(&buf), "len past capacity must be invalid");
 }
 
@@ -568,7 +571,7 @@ ZTEST(net_buf_simple_test_suite, test_net_buf_simple_hardening_add_overflow)
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_BUF_HARDENING);
 
 	/* Valid buffer, but request more than the tailroom. */
-	ptr = net_buf_simple_add(&buf, net_buf_simple_max_len(&buf) + 1U);
+	ptr = net_buf_simple_add(&buf, net_buf_simple_tailroom(&buf) + 1U);
 	zassert_is_null(ptr, "add() beyond tailroom must return NULL");
 	zassert_equal(buf.len, 0, "rejected add() must not change len");
 }

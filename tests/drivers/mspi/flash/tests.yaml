@@ -18,10 +18,26 @@ tests:
       - apollo3p_evb
       - apollo510_evb
       - nrf7120dk/nrf7120/cpuapp
+      - frdm_mcxe247@w25q64
+      - frdm_mcxe31b@w25q64
     integration_platforms:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
+  drivers.mspi.flash.stm32.dma:
+    platform_allow:
+      - stm32h573i_dk
+    integration_platforms:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_MSPI_DMA=y
+  drivers.mspi.flash.stm32.memmap:
+    platform_allow:
+      - stm32h573i_dk
+    integration_platforms:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_MSPI_MEMMAP=y
   drivers.mspi.flash.xip_read:
     filter: dt_compat_enabled("is25xX0xx")
     platform_allow:

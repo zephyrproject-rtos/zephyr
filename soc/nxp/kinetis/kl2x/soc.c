@@ -73,6 +73,18 @@ __weak void clock_init(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart0))
 	CLOCK_SetLpsci0Clock(LPSCI0SRC_MCGFLLCLK);
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tpm0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tpm1)) ||  \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tpm2))
+	/*
+	 * TPMSRC=1 selects whatever SOPT2[PLLFLLSEL] points to (MCGFLLCLK or
+	 * MCGPLLCLK/2). In this file's clock config (PEE mode, OUTDIV4=2),
+	 * that value happens to equal the bus clock, which is what each TPM
+	 * node's "clocks" phandle (KINETIS_SIM_BUS_CLK) reports to the pwm
+	 * driver for its frequency calculations. If OUTDIV4 or the MCG mode
+	 * changes this equivalence breaks and TPM period/duty math.
+	 */
+	CLOCK_SetTpmClock(1U);
+#endif
 #if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
 				DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency));

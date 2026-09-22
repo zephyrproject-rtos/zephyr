@@ -692,7 +692,8 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 			    const void *value, k_timeout_t timeout,
 			    net_buf_allocator_cb allocate_cb, void *user_data)
 {
-	struct net_buf *frag = net_buf_frag_last(buf);
+	struct net_buf *tail = net_buf_frag_last(buf);
+	struct net_buf *frag = tail;
 	size_t added_len = 0;
 	const uint8_t *value8 = value;
 	size_t max_size;
@@ -728,7 +729,15 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 			return added_len;
 		}
 
-		net_buf_frag_add(buf, frag);
+		/* The tail is already known, so link the new fragment behind
+		 * it instead of walking the chain from the head again: a
+		 * single append spanning n fragments would otherwise cost
+		 * O(n^2) traversal steps. Re-derive the tail from the
+		 * returned fragment, in case the allocator handed back a
+		 * chain rather than a single buffer.
+		 */
+		net_buf_frag_insert(tail, frag);
+		tail = net_buf_frag_last(frag);
 	} while (1);
 
 	/* Unreachable */

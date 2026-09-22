@@ -285,8 +285,6 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 	z_riscv_custom_stack_guard_disable();
 
-	irq_unlock(RV_STATUS_IE);
-
 	/*
 	 * No thread object exists in no-multithreading mode, so pass NULL:
 	 * the callee's contract allows a NULL thread and expects the
@@ -298,24 +296,27 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	 * Bind main_entry to a callee-saved register: the call below
 	 * clobbers the caller-saved registers, and jalr consumes %1 only
 	 * after the call returns. %0 is safe anywhere because mv sp
-	 * consumes it before the call.
+	 * consumes it before the call. RV_STATUS_IE is passed with constraint
+	 * "K" (5-bit unsigned immediate) so the assembler emits csrsi without
+	 * allocating a caller-saved register that could be clobbered by the call.
 	 */
 	register k_thread_entry_t s1 __asm__("s1") = main_entry;
 
 	__asm__ volatile (
 	"mv sp, %0\n"
 	"call z_riscv_custom_stack_guard_enable\n"
+	"csrs " RV_STATUS_CSR ", %2\n"
 	"jalr ra, %1, 0\n"
 	:
-	: "r" (main_stack), "r" (s1), "r" (a0)
+	: "r" (main_stack), "r" (s1), "K" (RV_STATUS_IE), "r" (a0)
 	: "memory");
 #else
-	irq_unlock(RV_STATUS_IE);
-
 	__asm__ volatile (
-	"mv sp, %0; jalr ra, %1, 0"
+	"mv sp, %0\n"
+	"csrs " RV_STATUS_CSR ", %2\n"
+	"jalr ra, %1, 0\n"
 	:
-	: "r" (main_stack), "r" (main_entry)
+	: "r" (main_stack), "r" (main_entry), "K" (RV_STATUS_IE)
 	: "memory");
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 

@@ -73,7 +73,16 @@ struct llext_test {
 };
 
 
-K_THREAD_STACK_DEFINE(llext_stack, 1024);
+/* Extensions run in a user thread on this stack. 64-bit targets need
+ * more room: pointers, saved registers and stack slots all double.
+ */
+#ifdef CONFIG_64BIT
+#define LLEXT_STACK_SIZE 4096
+#else
+#define LLEXT_STACK_SIZE 1024
+#endif
+
+K_THREAD_STACK_DEFINE(llext_stack, LLEXT_STACK_SIZE);
 struct k_thread llext_thread;
 
 

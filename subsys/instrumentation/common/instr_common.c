@@ -12,6 +12,7 @@
 #include <instr_buffer.h>
 #include <instr_timestamp.h>
 
+#include <zephyr/init.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
@@ -20,6 +21,12 @@
 
 #include <kernel_internal.h>
 #include <ksched.h>
+
+#ifdef CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_DUMP_ON_FULL
+#define INSTR_INIT_TAG "-*-INSTR-INIT-*-\n"
+#endif
+#define INSTR_START_TAG "-*-#"
+#define INSTR_END_TAG "-*-!\n"
 
 /*
  * Memory buffer to store instrumentation event records has the following modes:
@@ -91,6 +98,16 @@ static void *k_stopper_callee = INSTR_STOPPER_FUNCTION;
 /* Current (live) trigger and stopper addresses */
 static void *trigger_callee;
 static void *stopper_callee;
+
+#ifdef CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_DUMP_ON_FULL
+int instr_init_tag_emit(void)
+{
+	printk(INSTR_INIT_TAG);
+	return 0;
+}
+
+SYS_INIT(instr_init_tag_emit, APPLICATION, 0);
+#endif
 
 bool instr_tracing_supported(void)
 {
@@ -302,7 +319,7 @@ void instr_dump_buffer_uart(void)
 	instr_disable();
 
 	/* Initiator mark */
-	printk("-*-#");
+	printk(INSTR_START_TAG);
 
 	while (!ring_buf_is_empty(instr_buffer_get_ring_buf())) {
 		transferring_length =
@@ -316,7 +333,7 @@ void instr_dump_buffer_uart(void)
 	}
 
 	/* Terminator mark */
-	printk("-*-!\n");
+	printk(INSTR_END_TAG);
 #endif
 }
 
@@ -330,7 +347,7 @@ void instr_dump_deltas_uart(void)
 	instr_disable();
 
 	/* Initiator mark */
-	printk("-*-#");
+	printk(INSTR_START_TAG);
 
 	for (int i = 0; i < num_disco_func; i++) {
 		uart_poll_out(uart_dev, INSTR_EVENT_PROFILE);
@@ -343,7 +360,7 @@ void instr_dump_deltas_uart(void)
 	}
 
 	/* Terminator mark */
-	printk("-*-!\n");
+	printk(INSTR_END_TAG);
 #endif
 }
 
@@ -565,8 +582,13 @@ void instr_event_handler(enum instr_event_types type, void *callee, void *caller
 		if (!IS_ENABLED(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_OVERWRITE) &&
 		    ring_buf_space_get(instr_buffer_get_ring_buf()) <
 			    sizeof(struct instr_record)) {
+#ifdef CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_DUMP_ON_FULL
+			instr_dump_buffer_uart();
+			instr_buffer_reset();
+#else
 			_instr_tracing_disabled = true;
 			return;
+#endif
 		}
 
 		set_up_record(&record, type, callee, caller);

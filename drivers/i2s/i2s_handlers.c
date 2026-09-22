@@ -35,9 +35,14 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 	}
 
 	/* Check that the k_mem_slab provided is a valid pointer and that
-	 * the caller has permission on it
+	 * the caller has permission on it.
+	 *
+	 * The slab pointer is copied into the driver's stream state and is
+	 * dereferenced by i2s_buf_write()/i2s_buf_read() and by driver DMA
+	 * callbacks long after this call returns, so it must not be an object
+	 * which user mode can free. See K_SYSCALL_OBJ_STATIC().
 	 */
-	if (K_SYSCALL_OBJ(config.mem_slab, K_OBJ_MEM_SLAB)) {
+	if (K_SYSCALL_OBJ_STATIC(config.mem_slab, K_OBJ_MEM_SLAB)) {
 		goto out;
 	}
 

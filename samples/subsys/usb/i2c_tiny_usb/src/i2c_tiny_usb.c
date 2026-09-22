@@ -357,12 +357,13 @@ static struct i2c_tiny_usb_desc bridge_desc = {
 };
 /* clang-format on */
 
-static const struct usb_desc_header *bridge_desc_list[] = {
+static const struct usb_desc_header *const bridge_desc_list[] = {
 	(struct usb_desc_header *)&bridge_desc.if0,
 	(struct usb_desc_header *)&bridge_desc.nil_desc,
 };
 
-static void *bridge_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
+static const void *bridge_get_desc(struct usbd_class_data *const c_data,
+				   const enum usbd_speed speed)
 {
 	/* Without endpoints the same descriptors are used at any speed */
 	return bridge_desc_list;
@@ -375,7 +376,7 @@ static int bridge_init(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-static struct usbd_class_api bridge_api = {
+static const struct usbd_class_api bridge_api = {
 	.control_to_dev = class_control_to_dev,
 	.control_to_host = class_control_to_host,
 	.get_desc = bridge_get_desc,

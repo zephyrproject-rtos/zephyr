@@ -10,6 +10,7 @@ config BT_HCI_HOST
 	default y
 	depends on !BT_HCI_RAW
 	select UUID
+	select BT_SYSTEM_WORKQUEUE_COOP
 
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
@@ -548,7 +549,7 @@ config BT_RPA_SHARING
 	  period.
 
 config BT_SIGNING
-	bool "Data signing support"
+	bool "Data signing support [DEPRECATED]"
 	select DEPRECATED
 	help
 	  This option enables data signing which is used for transferring
@@ -608,6 +609,45 @@ config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	  to replace the existing bond. When this option is disabled in order
 	  to create a new bond the old bond has to be explicitly deleted with
 	  bt_unpair.
+
+config BT_SMP_DERIVE_LTK
+	bool "Derive the LE LTK from the BR/EDR link key"
+	depends on BT_CLASSIC
+	default y
+	help
+	  Accept the Security Manager procedure over BR/EDR, which derives the
+	  LE LTK from the BR/EDR link key as part of Cross-Transport Key
+	  Derivation (Core Specification 6.3, Vol 3, Part H, Section 2.4.2.5).
+
+	  Disabling this refuses that procedure as a whole rather than only the
+	  LTK: the IRK, the identity address and the CSRK are not distributed
+	  over BR/EDR either, so RPAs from a peer bonded only over BR/EDR can
+	  no longer be resolved. That is intended, because the identity
+	  information on its own already creates an LE bond entry. The BR/EDR
+	  Security Manager fixed channel is also left out of the L2CAP
+	  information response so that a peer does not start a procedure that
+	  would then be rejected.
+
+	  Disable this on a device that must not end up with an LE bond as a
+	  side effect of pairing over BR/EDR. Keys derived while it was enabled
+	  are kept.
+
+config BT_SMP_DERIVE_LK
+	bool "Derive the BR/EDR link key from the LE LTK"
+	depends on BT_CLASSIC
+	default y
+	help
+	  Ask for a BR/EDR link key to be derived from the LE LTK during Secure
+	  Connections pairing over LE, as part of Cross-Transport Key Derivation
+	  (Core Specification 6.3, Vol 3, Part H, Section 2.4.2.4).
+
+	  Disabling this clears the LinkKey bit from the key distribution of
+	  both the Pairing Request and the Pairing Response, so that the peer
+	  does not keep a link key that this device never derives.
+
+	  Disable this on a device that must not end up with a BR/EDR bond as a
+	  side effect of pairing over LE. Keys derived while it was enabled are
+	  kept.
 
 config BT_ID_UNPAIR_MATCHING_BONDS
 	bool "Delete bond with same peer with other local identity when bonding"
@@ -843,6 +883,23 @@ config BT_EXT_SCAN_BUF_SIZE
 	  Maximum size of an advertisement report in octets. If the advertisement
 	  provided by the controller is larger than this buffer size,
 	  the remaining data will be discarded.
+
+config BT_SCAN_EXT_FILTER_POLICY
+	bool "Extended scanner filter policies"
+	depends on !HAS_BT_CTLR || BT_CTLR_EXT_SCAN_FP
+	help
+	  Enable support for the BT_LE_SCAN_OPT_EXT_FILTER_POLICY scanning option.
+
+	  The extended scanner filter policies let the Controller report directed
+	  advertisements whose target address is a resolvable private address that
+	  the Controller was unable to resolve, instead of discarding them. This
+	  allows an application to detect a peer that is directing advertisements
+	  at an identity the local device cannot resolve.
+
+	  This enables the LE Directed Advertising Report event, which is used to
+	  report these advertisements while scanning with the legacy scanning
+	  commands. It requires a Controller that supports the Extended Scanner
+	  Filter Policies.
 
 endif # BT_OBSERVER
 

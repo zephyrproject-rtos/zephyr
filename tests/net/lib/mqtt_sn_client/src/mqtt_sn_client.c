@@ -14,6 +14,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
+/* Window granted to the client workqueue when no message is expected. */
+#define NO_TX_TIMEOUT K_MSEC(100)
+
 static const struct mqtt_sn_data client_id = MQTT_SN_DATA_STRING_LITERAL("zephyr");
 static const uint8_t gw_id = 12;
 static const struct mqtt_sn_data gw_addr = MQTT_SN_DATA_STRING_LITERAL("gw1");
@@ -646,7 +649,7 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_suback)
 
 	err = mqtt_sn_subscribe(mqtt_client, MQTT_SN_QOS_0, &topic2);
 	zassert_ok(err, "Unexpected error %d", err);
-	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+	err = k_sem_take(&mqtt_sn_tx_sem, NO_TX_TIMEOUT);
 	/* Expect NO message */
 	assert_msg_send(0, 0, NULL);
 
@@ -658,7 +661,7 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_suback)
 
 	err = mqtt_sn_unsubscribe(mqtt_client, MQTT_SN_QOS_0, &topic1);
 	zassert_ok(err, "Unexpected error %d", err);
-	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+	err = k_sem_take(&mqtt_sn_tx_sem, NO_TX_TIMEOUT);
 	/* Expect NO message - SUBSCRIBE in progress */
 	assert_msg_send(0, 0, NULL);
 
@@ -706,7 +709,8 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_will_topic_update)
 	/* Send WILLTOPICRESP in response */
 	err = input(mqtt_client, msg_data_response, sizeof(msg_data_response), &gw_addr);
 	zassert_ok(err, "unexpected error %d", err);
-	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+	err = k_sem_take(&mqtt_sn_tx_sem, NO_TX_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "Unexpected TX");
 
 	/* Request deletion of the will topic */
 	mqtt_client->will_topic.size = 0;
@@ -721,7 +725,8 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_will_topic_update)
 	/* Send WILLTOPICRESP in response */
 	err = input(mqtt_client, msg_data_response, sizeof(msg_data_response), &gw_addr);
 	zassert_ok(err, "unexpected error %d", err);
-	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+	err = k_sem_take(&mqtt_sn_tx_sem, NO_TX_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "Unexpected TX");
 }
 
 /*
@@ -754,7 +759,8 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_will_message_update)
 	/* Send WILLMSGRESP in response */
 	err = input(mqtt_client, msg_data_response, sizeof(msg_data_response), &gw_addr);
 	zassert_ok(err, "unexpected error %d", err);
-	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+	err = k_sem_take(&mqtt_sn_tx_sem, NO_TX_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "Unexpected TX");
 }
 
 /*
@@ -784,16 +790,26 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_ping_timeout)
 
 	mqtt_sn_connect_no_will(mqtt_client);
 	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+	err = k_sem_take(&mqtt_sn_cb_sem, K_NO_WAIT);
 
-	for (size_t i = 0; i < CONFIG_MQTT_SN_LIB_N_RETRY; i++) {
-		err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_KEEPALIVE + 1));
+	/* The first PINGREQ is due one keepalive period after the CONNECT. */
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_KEEPALIVE + 1));
+	zassert_equal(err, 0, "Timed out waiting for callback.");
+	assert_msg_send_data(1, ping_request, sizeof(ping_request), &gw_addr);
+
+	/* Every further attempt follows one retry period later. */
+	for (size_t i = 1; i < CONFIG_MQTT_SN_LIB_N_RETRY; i++) {
+		err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_LIB_T_RETRY + 1));
 		zassert_equal(err, 0, "Timed out waiting for callback.");
 		assert_msg_send_data(1, ping_request, sizeof(ping_request), &gw_addr);
-		k_sleep(K_SECONDS(CONFIG_MQTT_SN_LIB_T_RETRY));
 	}
 
-	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_KEEPALIVE + 1));
-	zassert_equal(err, -EAGAIN, "Unexpected TX");
+	/* Retries exhausted - the client drops the gateway. */
+	err = k_sem_take(&mqtt_sn_cb_sem, K_SECONDS(CONFIG_MQTT_SN_LIB_T_RETRY + 1));
+	zassert_equal(err, 0, "Timed out waiting for callback.");
+
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+	zassert_equal(err, -EBUSY, "Unexpected TX");
 
 	zassert_true(sys_slist_is_empty(&mqtt_client->gateways), "GW not deleted.");
 	zassert_equal(mqtt_client->state, 0, "Wrong state");

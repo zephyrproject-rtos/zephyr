@@ -15,5 +15,6 @@ config MCUX_LPCMP
 config MCUX_LPCMP_TRIGGER
 	bool "Trigger support [DEPRECATED]"
 	depends on MCUX_LPCMP
+	select DEPRECATED
 	help
 	  Enable trigger support for the NXP LPCMP.

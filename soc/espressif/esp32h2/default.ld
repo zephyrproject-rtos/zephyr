@@ -156,9 +156,9 @@ SECTIONS
      * 12. Flash offset (LMA) for start of LP_DRAM region
      * 13. Size of LP_DRAM region
      */
-    LONG(ADDR(.rtc.data))
-    LONG(LOADADDR(.rtc.data))
-    LONG(SIZEOF(.rtc.data))
+    LONG(ADDR(.rtc.force_fast))
+    LONG(LOADADDR(.rtc.force_fast))
+    LONG(LOADADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - LOADADDR(.rtc.force_fast))
 
     /* IROM metadata:
      * 14. Destination address (VMA) for IROM region
@@ -184,7 +184,7 @@ SECTIONS
   #include <zephyr/linker/llext-sections.ld>
 
   /* --- START OF RTC --- */
-  .rtc.text :
+  .rtc.text : ALIGN_WITH_INPUT
   {
     . = ALIGN(4);
     _rtc_fast_start = ABSOLUTE(.);
@@ -199,7 +199,7 @@ SECTIONS
    * It holds data marked with RTC_FAST_ATTR attribute.
    * See the file "esp_attr.h" for more information.
    */
-  .rtc.force_fast :
+  .rtc.force_fast : ALIGN_WITH_INPUT
   {
     . = ALIGN(4);
     _rtc_force_fast_start = ABSOLUTE(.);
@@ -212,12 +212,25 @@ SECTIONS
   /* RTC data section holds data marked with
    * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
    */
-  .rtc.data :
+  .rtc.data : ALIGN_WITH_INPUT
   {
     _rtc_data_start = ABSOLUTE(.);
     *(.rtc.data .rtc.data.*)
     *(.rtc.rodata .rtc.rodata.*)
     _rtc_data_end = ABSOLUTE(.);
+  } GROUP_DATA_LINK_IN(lp_ram_seg, ROMABLE_REGION)
+
+  /* This section located in RTC SLOW Memory area.
+   * It holds data marked with RTC_SLOW_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc.force_slow : ALIGN_WITH_INPUT
+  {
+    . = ALIGN(4);
+    _rtc_force_slow_start = ABSOLUTE(.);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4);
+    _rtc_force_slow_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(lp_ram_seg, ROMABLE_REGION)
 
   .rtc.bss (NOLOAD) :
@@ -240,19 +253,6 @@ SECTIONS
     . = ALIGN(4) ;
     _rtc_noinit_end = ABSOLUTE(.);
   } GROUP_LINK_IN(lp_ram_seg)
-
-  /* This section located in RTC SLOW Memory area.
-   * It holds data marked with RTC_SLOW_ATTR attribute.
-   * See the file "esp_attr.h" for more information.
-   */
-  .rtc.force_slow :
-  {
-    . = ALIGN(4);
-    _rtc_force_slow_start = ABSOLUTE(.);
-    *(.rtc.force_slow .rtc.force_slow.*)
-    . = ALIGN(4);
-    _rtc_force_slow_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(lp_ram_seg, ROMABLE_REGION)
 
   /**
    * This section holds RTC data that should have fixed addresses.
@@ -279,6 +279,15 @@ SECTIONS
 
   ASSERT((_rtc_slow_length <= LENGTH(rtc_slow_seg)), "RTC_SLOW segment data does not fit.")
   ASSERT((_rtc_fast_length <= LENGTH(rtc_data_seg)), "RTC_FAST segment data does not fit.")
+
+  /* The LP_DRAM load descriptor above spans .rtc.force_fast through .rtc.force_slow, so the
+   * bootloader can only place those sections correctly while the VMA and LMA layouts of that
+   * span agree. ALIGN_WITH_INPUT on the four loadable LP sections keeps them in step; this
+   * catches any future change that reintroduces a skew.
+   */
+  ASSERT((LOADADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - LOADADDR(.rtc.force_fast)) ==
+         (ADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - ADDR(.rtc.force_fast)),
+         "LP-SRAM loadable sections must be contiguous with equal VMA and LMA offsets")
 
   /* --- END OF RTC --- */
 
@@ -845,6 +854,16 @@ SECTIONS
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
+  /* Move drom0 after the .text region in the shared I/D cache window.
+   * irom0_0_seg and drom0_0_seg share the same origin (unified cache),
+   * so advance the drom counter past the aligned IROM span; otherwise
+   * .flash.rodata would land in the same flash mapping as .text.
+   */
+  .flash_rodata_dummy (NOLOAD) :
+  {
+    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN);
+  } GROUP_LINK_IN(RODATA_REGION)
+
   /* Symbols used during the application memory mapping */
   _image_drom_start = LOADADDR(.flash.rodata);
   _image_drom_size = _image_rodata_end -  _image_rodata_start;
@@ -885,7 +904,6 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    __rodata_region_end = .;
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
@@ -922,6 +940,11 @@ SECTIONS
     LONG(0);
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
+    /* The read-only region must span the linker-collected rom sections too:
+     * device API structures live there, and a pointer into one reaches a
+     * syscall as an argument, where it is checked against this region.
+     */
+    __rodata_region_end = .;
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */

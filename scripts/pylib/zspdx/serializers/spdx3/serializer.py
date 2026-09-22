@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 
 from spdx_python_model import v3_0_1 as spdx
 
+from zspdx.licenses import get_license_ids
 from zspdx.model import (
     NOASSERTION,
     ComponentPurpose,
@@ -25,7 +26,6 @@ from zspdx.serializers.helpers import (
     PURL_REGEX,
     format_blob_comment,
     generate_download_url,
-    get_standard_licenses,
     normalize_spdx_name,
 )
 from zspdx.spdxids import get_unique_file_id
@@ -788,7 +788,7 @@ class SPDX3Serializer:
             return None
 
         license_expr = spdx.simplelicensing_LicenseExpression()
-        standard_licenses = get_standard_licenses()
+        standard_licenses = get_license_ids()
 
         # Check if it's a standard license ID
         if license_str in standard_licenses:

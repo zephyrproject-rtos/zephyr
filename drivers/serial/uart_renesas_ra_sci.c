@@ -434,14 +434,14 @@ static void uart_ra_sci_irq_err_enable(const struct device *dev)
 {
 	struct uart_ra_sci_data *data = dev->data;
 
-	NVIC_EnableIRQ(data->fsp_config.eri_irq);
+	irq_enable(data->fsp_config.eri_irq);
 }
 
 static void uart_ra_sci_irq_err_disable(const struct device *dev)
 {
 	struct uart_ra_sci_data *data = dev->data;
 
-	NVIC_DisableIRQ(data->fsp_config.eri_irq);
+	irq_disable(data->fsp_config.eri_irq);
 }
 
 static int uart_ra_sci_irq_is_pending(const struct device *dev)
@@ -1031,9 +1031,11 @@ static void uart_ra_sci_eri_isr(const struct device *dev)
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	struct uart_ra_sci_data *data = dev->data;
 
+	(void)uart_ra_sci_err_check(dev);
+	R_ICU->IELSR_b[data->fsp_config.eri_irq].IR = 0U;
+
 	if (data->user_cb != NULL) {
 		data->user_cb(dev, data->user_cb_data);
-		R_ICU->IELSR_b[data->fsp_config.eri_irq].IR = 0U;
 		return;
 	}
 #endif

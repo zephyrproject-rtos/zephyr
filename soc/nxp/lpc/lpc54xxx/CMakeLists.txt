@@ -26,9 +26,9 @@ if(DEFINED CONFIG_LPC54XXX_USB_RAM)
   zephyr_compile_definitions_ifdef(CONFIG_UHC_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
 endif()
 
-# CMSIS SystemInit allows us to skip enabling clock to SRAM2 bank via
-# this compiler definition
-if(NOT DEFINED CONFIG_LPC54XXX_SRAM2_CLOCK)
+# CMSIS SystemInit allows us to skip enabling the clock to the RAM banks that
+# are disabled out of reset, via this compiler definition
+if(NOT DEFINED CONFIG_SOC_SERIES_LPC54XXX_SRAM_CLOCKS)
 zephyr_compile_definitions(DONT_ENABLE_DISABLED_RAMBANKS=1)
 endif()
 

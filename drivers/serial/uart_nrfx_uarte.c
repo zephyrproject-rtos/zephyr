@@ -8,7 +8,6 @@
  * @brief Driver for Nordic Semiconductor nRF UARTE
  */
 
-#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
@@ -25,6 +24,10 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+
+#ifdef CONFIG_UART_NRFX_UARTE_HFXO_ON_ACTIVE
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#endif
 
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
@@ -689,6 +692,8 @@ static int uarte_nrfx_configure(const struct device *dev,
 
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 	uarte_cfg.frame_timeout = NRF_UARTE_FRAME_TIMEOUT_EN;
+#elif NRF_UARTE_HAS_FRAME_TIMEOUT
+	uarte_cfg.frame_timeout = NRF_UARTE_FRAME_TIMEOUT_DIS;
 #endif
 
 #if NRF_UARTE_HAS_FRAME_SIZE
@@ -937,7 +942,7 @@ static void rx_disable_finalize(const struct device *dev)
 	 * callback we avoid suspending/resuming the device.
 	 */
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put_async(dev, K_NO_WAIT);
+		pm_device_runtime_put(dev);
 	}
 }
 
@@ -2447,7 +2452,7 @@ static void txstopped_isr(const struct device *dev)
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 		if (data->flags & UARTE_FLAG_POLL_OUT) {
-			pm_device_runtime_put_async(dev, K_NO_WAIT);
+			pm_device_runtime_put(dev);
 			data->flags &= ~UARTE_FLAG_POLL_OUT;
 		}
 	} else if (LOW_POWER_ENABLED(config)) {
@@ -2513,7 +2518,7 @@ static void txstopped_isr(const struct device *dev)
 	user_callback(dev, &evt);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put_async(dev, K_NO_WAIT);
+		pm_device_runtime_put(dev);
 	}
 }
 

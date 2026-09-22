@@ -502,11 +502,16 @@ static void dwmac_dma_irq(const struct device *dev, unsigned int ch)
 
 static void dwmac_mac_irq(const struct device *dev)
 {
+	struct dwmac_priv *p = dev->data;
 	uint32_t status;
 
+	/* reading clears the status bits */
 	status = DWMAC_REG_READ(MAC_IRQ_STATUS);
 	LOG_DBG("MAC_IRQ_STATUS = 0x%08x", status);
-	__ASSERT(false, "unimplemented");
+
+	if ((status & MAC_IRQ_STATUS_MDIOIS) != 0U) {
+		k_sem_give(&p->mdio_done);
+	}
 }
 
 static void dwmac_mtl_irq(const struct device *dev)
@@ -595,6 +600,12 @@ static int dwmac_set_config(const struct device *dev,
 	return ret;
 }
 
+__weak void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_speed speed)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(speed);
+}
+
 static void phy_link_state_changed(const struct device *phy_dev,
 				   struct phy_link_state *state,
 				   void *user_data)
@@ -639,6 +650,7 @@ static void phy_link_state_changed(const struct device *phy_dev,
 		}
 
 		DWMAC_REG_WRITE(MAC_CONF, reg_val);
+		dwmac_platform_link_speed_changed(dev, state->speed);
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
@@ -772,6 +784,9 @@ int dwmac_probe(const struct device *dev)
 	p->feature3 = DWMAC_REG_READ(MAC_HW_FEATURE3);
 	LOG_DBG("hw_feature: 0x%08x 0x%08x 0x%08x 0x%08x",
 		p->feature0, p->feature1, p->feature2, p->feature3);
+
+	/* the MDIO driver enables the MDIO interrupt if the IP has it */
+	k_sem_init(&p->mdio_done, 0, 1);
 
 	ret = dwmac_platform_init(dev);
 	if (ret != 0) {

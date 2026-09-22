@@ -431,10 +431,8 @@ static int afbr_s50_init(const struct device *dev)
 /** Macrobatics to get a list of compatible sensors in order to map them back
  * and forth at run-time.
  */
-#define AFBR_S50_LIST(inst) DEVICE_DT_GET(DT_DRV_INST(inst)),
-
 const static struct device *afbr_s50_list[] = {
-	DT_INST_FOREACH_STATUS_OKAY(AFBR_S50_LIST)
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
 };
 
 int afbr_s50_platform_get_by_id(s2pi_slave_t peripheral,

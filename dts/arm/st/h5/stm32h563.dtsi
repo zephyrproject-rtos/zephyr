@@ -29,6 +29,7 @@
 				 <&rcc STM32_CLOCK(AHB1, 20)>,
 				 <&rcc STM32_CLOCK(AHB1, 21)>,
 				 <&rcc STM32_SRC_PLL1_Q NO_SEL>;
+			resets = <&rctl STM32_RESET(AHB1, 19)>;
 			interrupts = <106 0>;
 			snps,multicast-filter-bins = <64>;
 			snps,perfect-filter-entries = <4>;

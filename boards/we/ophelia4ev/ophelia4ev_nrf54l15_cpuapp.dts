@@ -23,7 +23,7 @@
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,boot-mode = &boot_mode0;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,sram = &cpuapp_sram;
+		zephyr,sram = &cpuapp_sram_app;
 	};
 
 	aliases {

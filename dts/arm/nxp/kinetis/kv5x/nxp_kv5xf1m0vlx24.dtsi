@@ -23,5 +23,8 @@
 		reg = <0x10000000 DT_SIZE_K(1024)>;
 		erase-block-size = <DT_SIZE_K(8)>;
 		write-block-size = <8>;
+		ranges = <0x0 0x10000000 DT_SIZE_K(1024)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 };

@@ -18,6 +18,7 @@ tests:
     arch_exclude:
       # See #66027
       - xtensa
+      - tricore
     platform_exclude:
       # See zephyrproject-rtos/sdk-ng#593
       - qemu_x86

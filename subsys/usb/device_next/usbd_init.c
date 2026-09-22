@@ -114,7 +114,7 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 				   uint32_t *const config_ep_bm,
 				   uint8_t *const nif)
 {
-	struct usb_desc_header **dhp;
+	struct usb_desc_header *const *dhp;
 	struct usb_association_descriptor *iad = NULL;
 	struct usb_if_descriptor *ifd = NULL;
 	struct usb_ep_descriptor *ed;

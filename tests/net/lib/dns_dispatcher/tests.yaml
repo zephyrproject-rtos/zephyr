@@ -13,3 +13,7 @@ tests:
   net.dns.dispatch.ctx_no_cleanup:
     extra_configs:
       - CONFIG_DNS_RECONFIGURE_CLEANUP=n
+  net.dns.dispatch.multi_iface:
+    min_ram: 30
+    extra_conf_files:
+      - prj_multi_iface.conf

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_SAM0_TC
-	bool "Atmel SAM0 MCU Family TC PWM Driver"
+	bool "Atmel SAM0 MCU Family TC PWM driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM0_TC_PWM_ENABLED
 	help

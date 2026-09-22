@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_NVMEM
+	bool "NVMEM device ID"
+	default y
+	depends on DT_HAS_ZEPHYR_HWINFO_NVMEM_ENABLED
+	select NVMEM
+	select HWINFO_HAS_DRIVER
+	help
+	  Generic hwinfo backend reading the device unique identifier (and
+	  optionally the EUI-64) from NVMEM cells described by a
+	  zephyr,hwinfo-nvmem devicetree node.
+
+	  Only one hwinfo device-id backend can be linked into an image;
+	  disable any SoC-specific backend (and HWINFO_NATIVE on native_sim)
+	  when enabling this one. The backing provider class (e.g. EEPROM,
+	  OTP) must be enabled separately.

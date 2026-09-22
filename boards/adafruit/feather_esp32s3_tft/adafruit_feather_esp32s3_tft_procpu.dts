@@ -6,7 +6,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_wroom_n4r2.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include <espressif/partitions_0x0_amp.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
@@ -123,6 +123,15 @@
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(2)>;
 };
 
 &usb_serial {

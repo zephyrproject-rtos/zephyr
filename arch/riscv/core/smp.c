@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
+#include <counters.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/arch/riscv/irq.h>
@@ -88,6 +89,9 @@ void arch_secondary_cpu_init(int hartid)
 #endif
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
+#endif
+#ifdef CONFIG_RISCV_USER_COUNTER_ACCESS
+	z_riscv_counteren_init();
 #endif
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 	z_riscv_custom_stack_guard_init();

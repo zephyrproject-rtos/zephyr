@@ -180,7 +180,10 @@ static int os_mgmt_echo(struct smp_streamer *ctxt)
 
 	ok = zcbor_map_decode_bulk(zsd, echo_decode, ARRAY_SIZE(echo_decode), &decoded) == 0;
 
-	if (!ok) {
+	/* No "d" key leaves data a zero-length string with no buffer;
+	 * echoing it back would hand zcbor_tstr_encode() a NULL pointer.
+	 */
+	if (!ok || decoded == 0) {
 		return MGMT_ERR_EINVAL;
 	}
 

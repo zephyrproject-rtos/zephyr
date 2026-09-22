@@ -75,7 +75,7 @@ struct i2c_cc32xx_data {
 	volatile enum i2c_cc32xx_state state;
 
 	struct i2c_msg msg; /* Cache msg for transfer state machine */
-	uint16_t  slave_addr; /* Cache slave address for ISR use */
+	uint16_t  target_addr; /* Cache target address for ISR use */
 };
 
 static void configure_i2c_irq(const struct i2c_cc32xx_config *config);
@@ -120,12 +120,12 @@ static void i2c_cc32xx_prime_transfer(const struct device *dev,
 
 	/* Initialize internal counters and buf pointers: */
 	data->msg = *msg;
-	data->slave_addr = addr;
+	data->target_addr = addr;
 
 	/* Start transfer in Transmit mode */
 	if (IS_I2C_MSG_WRITE(data->msg.flags)) {
 
-		/* Specify the I2C slave address */
+		/* Specify the I2C target address */
 		MAP_I2CMasterSlaveAddrSet(base, addr, false);
 
 		/* Update the I2C state */
@@ -134,19 +134,19 @@ static void i2c_cc32xx_prime_transfer(const struct device *dev,
 		/* Write data contents into data register */
 		MAP_I2CMasterDataPut(base, *((data->msg.buf)++));
 
-		/* Start the I2C transfer in master transmit mode */
+		/* Start the I2C transfer in controller transmit mode */
 		MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_SEND_START);
 
 	} else {
 		/* Start transfer in Receive mode */
-		/* Specify the I2C slave address */
+		/* Specify the I2C target address */
 		MAP_I2CMasterSlaveAddrSet(base, addr, true);
 
 		/* Update the I2C mode */
 		data->state = I2C_CC32XX_READ_MODE;
 
 		if (data->msg.len < 2) {
-			/* Start the I2C transfer in master receive mode */
+			/* Start the I2C transfer in controller receive mode */
 			MAP_I2CMasterControl(base,
 				       I2C_MASTER_CMD_BURST_RECEIVE_START_NACK);
 		} else {
@@ -370,7 +370,7 @@ static int i2c_cc32xx_init(const struct device *dev)
 	/* Clear any pending interrupts */
 	MAP_I2CMasterIntClear(base);
 
-	/* Enable the I2C Master for operation */
+	/* Enable the I2C controller for operation */
 	MAP_I2CMasterEnable(base);
 
 	/* Unmask I2C interrupts */

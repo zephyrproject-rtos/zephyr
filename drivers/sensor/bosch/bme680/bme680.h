@@ -166,6 +166,11 @@ struct bme680_config {
 #define BME680_HEATR_DUR_MS                             1943
 #endif
 
+/* Forced-mode data-ready time is the TPH conversion time plus the programmed
+ * gas heater duration.
+ */
+#define BME680_MEAS_TIMEOUT_MS                          (BME680_HEATR_DUR_MS + 100)
+
 #if defined CONFIG_BME680_FILTER_OFF
 #define BME680_FILTER                   0
 #elif defined CONFIG_BME680_FILTER_2
@@ -291,7 +296,7 @@ struct bme680_encoded_data {
 #define BME680_TEMP_SHIFT     10  /* Q21.10 for temperature */
 #define BME680_PRESS_SHIFT    8   /* Q24.8 for pressure */
 #define BME680_HUM_SHIFT      10  /* Q22.10 for humidity */
-#define BME680_GAS_SHIFT      20  /* Q11.20 for gas resistance, up to ~1M ohms */
+#define BME680_GAS_SHIFT      24  /* Q7.24 for gas resistance, up to ~16.7M ohms */
 
 /* Function declarations */
 int bme680_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);

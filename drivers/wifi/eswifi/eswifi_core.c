@@ -554,6 +554,9 @@ int eswifi_mgmt_iface_status(const struct device *dev,
 	status->state = WIFI_STATE_COMPLETED;
 	status->ssid_len = strnlen(sta->ssid, WIFI_SSID_MAX_LEN);
 	strncpy(status->ssid, sta->ssid, status->ssid_len);
+	/* The ISM43362 is a 2.4 GHz only part and does not report the channel
+	 * it is on, so the band cannot be derived from the channel here.
+	 */
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	status->channel = 0;
 

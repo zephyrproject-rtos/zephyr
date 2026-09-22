@@ -185,7 +185,11 @@ int multi_sector_test(const struct device *flash_dev)
 
 int main(void)
 {
+#if DT_HAS_ALIAS(ext_nor0)
+	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(ext_nor0));
+#else
 	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(flash0));
+#endif
 
 	if (!device_is_ready(flash_dev)) {
 		printk("%s: device not ready.\n", flash_dev->name);

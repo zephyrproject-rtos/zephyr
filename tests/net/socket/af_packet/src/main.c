@@ -2144,12 +2144,7 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_mgmt_errors)
 
 	eth_filter_ret = 0;
 
-	/* The address was taken into use even though the device refused it,
-	 * so it can be given back.
-	 */
-	ret = net_eth_mac_filter(ud.first, &mac,
-				 ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS, false);
-	zassert_ok(ret, "Cannot unset the filter (%d)", ret);
+	/* The address was removed because the device refused it. */
 	zassert_equal(eth_filter_data.count, 2, "Filter not removed");
 	zassert_false(eth_filter_data.set, "Filter not disabled");
 }

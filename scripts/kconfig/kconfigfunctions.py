@@ -828,6 +828,22 @@ def dt_node_str_prop_equals(kconf, _, path, prop, val):
     return "n"
 
 
+def dt_class_enabled(kconf, _, cls):
+    """
+    This function takes a device class name 'cls', as declared by the
+    "class" key in devicetree bindings, and returns "y" if any status "okay"
+    node in the EDT belongs to that class. It returns "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    for node in edt.nodes:
+        if node.status == "okay" and cls in node.classes:
+            return "y"
+
+    return "n"
+
+
 def dt_has_compat(kconf, _, compat):
     """
     This function takes a 'compat' and returns "y" if any compatible node
@@ -1211,7 +1227,24 @@ def shields_list_contains(kconf, _, shield):
     Return "n" if cmake environment variable 'SHIELD_AS_LIST' doesn't exist.
     Return "y" if 'shield' is present list obtained after 'SHIELD_AS_LIST'
     has been split using ";" as a separator and "n" otherwise.
+
+    Shield names cannot contain whitespace. A leading or trailing space
+    (from ``$(shields_list_contains, foo)``) is stripped so the lookup
+    uses the intended name, and a warning is printed.
     """
+    stripped = shield.strip()
+    if stripped != shield:
+        _warn(kconf,
+              'searching for shield "{}", did you mean "{}" '
+              '(without a space)'.format(shield, stripped))
+        shield = stripped
+
+    if any(c.isspace() for c in shield):
+        _warn(kconf,
+              'shield name "{}" contains whitespace; shield names '
+              'cannot contain spaces'.format(shield))
+        return "n"
+
     try:
         list = os.environ['SHIELD_AS_LIST']
     except KeyError:
@@ -1329,6 +1362,7 @@ functions = {
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_compat_enabled_num": (dt_compat_enabled_num, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
+        "dt_class_enabled": (dt_class_enabled, 1, 1),
         "dt_compat_all_has_prop": (dt_compat_all_has_prop, 2, 3),
         "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 3),
         "dt_compat_any_not_has_prop": (dt_compat_any_not_has_prop, 2, 2),

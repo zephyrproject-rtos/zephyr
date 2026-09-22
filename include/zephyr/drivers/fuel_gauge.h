@@ -511,6 +511,15 @@ typedef int (*fuel_gauge_get_buffer_property_t)(const struct device *dev,
 						size_t dst_len);
 
 /**
+ * @brief Callback API for setting a fuel_gauge buffer property.
+ *
+ * See fuel_gauge_set_buffer_prop() for argument description
+ */
+typedef int (*fuel_gauge_set_buffer_property_t)(const struct device *dev,
+						fuel_gauge_prop_t prop_type, const void *src,
+						size_t src_len);
+
+/**
  * @brief Callback API for doing a battery cutoff.
  *
  * See fuel_gauge_battery_cutoff() for argument description
@@ -535,6 +544,8 @@ __subsystem struct fuel_gauge_driver_api {
 	fuel_gauge_set_property_t set_property;
 	/** @driver_ops_optional @copybrief fuel_gauge_get_buffer_prop */
 	fuel_gauge_get_buffer_property_t get_buffer_property;
+	/** @driver_ops_optional @copybrief fuel_gauge_set_buffer_prop */
+	fuel_gauge_set_buffer_property_t set_buffer_property;
 	/** @driver_ops_optional @copybrief fuel_gauge_battery_cutoff */
 	fuel_gauge_battery_cutoff_t battery_cutoff;
 };
@@ -677,6 +688,39 @@ static inline int z_impl_fuel_gauge_get_buffer_prop(const struct device *dev,
 	}
 
 	return api->get_buffer_property(dev, prop_type, dst, dst_len);
+}
+
+/**
+ * @brief Set a battery fuel-gauge buffer property
+ *
+ * Writes a variable length buffer property, such as a configuration image or a manufacturer
+ * defined data block, to the fuel gauge device.
+ *
+ * The source is an opaque, pointer-free byte buffer. When called from user mode, only the
+ * @p src_len bytes starting at @p src are validated before they are handed to the driver, so
+ * the buffer must not contain pointers that the driver dereferences.
+ *
+ * @param dev Pointer to the battery fuel-gauge device
+ * @param prop_type Type of property that is written to the fuel gauge device
+ * @param src Byte buffer holding the data that is written to the fuel gauge
+ * @param src_len Length of the source buffer in bytes
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+__syscall int fuel_gauge_set_buffer_prop(const struct device *dev, fuel_gauge_prop_t prop_type,
+					 const void *src, size_t src_len);
+
+static inline int z_impl_fuel_gauge_set_buffer_prop(const struct device *dev,
+						    fuel_gauge_prop_t prop_type, const void *src,
+						    size_t src_len)
+{
+	const struct fuel_gauge_driver_api *api = DEVICE_API_GET(fuel_gauge, dev);
+
+	if (api->set_buffer_property == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_buffer_property(dev, prop_type, src, src_len);
 }
 
 /**

@@ -617,6 +617,7 @@ static const struct device *shell_device_internal(size_t idx,
 	const struct device *dev;
 	size_t len = z_device_get_all_static(&dev);
 	const struct device *dev_end = dev + len;
+	size_t prefix_len = (prefix != NULL) ? strlen(prefix) : 0;
 
 	while (dev < dev_end) {
 		if ((status == SHELL_DEVICE_STATUS_ANY
@@ -628,7 +629,7 @@ static const struct device *shell_device_internal(size_t idx,
 		    && (strlen(dev->name) != 0)
 		    && ((prefix == NULL)
 			|| (strncmp(prefix, dev->name,
-				    strlen(prefix)) == 0))
+				    prefix_len) == 0))
 		    && (filter == NULL || filter(dev))) {
 			if (match_idx == idx) {
 				return dev;
@@ -689,11 +690,12 @@ static inline bool device_has_nodelabel(const struct device *dev,
 	nl = device_get_dt_nodelabels(dev);
 	if (nl != NULL) {
 		size_t i;
+		size_t name_len = strlen(name);
 
 		for (i = 0; i < nl->num_nodelabels; i++) {
 			const char *dev_nl = nl->nodelabels[i];
 
-			if ((strlen(dev_nl) == strlen(name)) &&
+			if ((strlen(dev_nl) == name_len) &&
 			    (strcmp(name, dev_nl) == 0)) {
 				return true;
 			}
@@ -713,9 +715,11 @@ const struct device *shell_device_get_binding_all(const char *name)
 	const struct device *dev_end = dev + len;
 
 	if (name != NULL) {
+		size_t name_len = strlen(name);
+
 		for (; dev < dev_end; dev++) {
 			if (((dev->name != NULL)
-			     && (strlen(dev->name) == strlen(name))
+			     && (strlen(dev->name) == name_len)
 			     && (strcmp(name, dev->name) == 0))
 			    || device_has_nodelabel(dev, name)) {
 				return dev;

@@ -250,7 +250,6 @@ static void st7735r_get_capabilities(const struct device *dev,
 {
 	const struct st7735r_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 

@@ -11,13 +11,6 @@
 #include <vendor/nordic/nrf54lm20a_cpuapp_partition.dtsi>
 
 / {
-	power_en: power_en {
-		compatible = "regulator-fixed";
-		regulator-name = "power_en";
-		enable-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
-	};
-
 	chosen {
 		zephyr,console = &uart20;
 		zephyr,shell-uart = &uart20;
@@ -87,6 +80,10 @@
 	status = "okay";
 };
 
+&gpio3 {
+	status = "okay";
+};
+
 &gpiote20 {
 	status = "okay";
 };
@@ -104,6 +101,16 @@
 };
 
 &clock {
+	status = "okay";
+};
+
+/* The temperature sensor gets its high-frequency clock from the XO. */
+&xo {
+	status = "okay";
+};
+
+/* The GRTC system timer references the LFCLK when it is disabled. */
+&lfclk {
 	status = "okay";
 };
 

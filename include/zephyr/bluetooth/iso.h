@@ -773,6 +773,18 @@ struct bt_iso_chan_ops {
 	 * @param chan The channel which has sent data.
 	 */
 	void (*sent)(struct bt_iso_chan *chan);
+
+	/**
+	 * @brief Channel send failed callback
+	 *
+	 * This callback will be called if the call to bt_iso_chan_send() was successful, but
+	 * where the send operation later failed before the request was sent to the Bluetooth
+	 * Controller. This can happen if the @p chan has disconnected.
+	 *
+	 * @param chan The channel for which the send operation failed.
+	 * @param err The reason for the send failure.
+	 */
+	void (*send_failed)(struct bt_iso_chan *chan, int err);
 };
 
 /** @brief ISO Accept Info Structure */
@@ -809,6 +821,16 @@ struct bt_iso_server {
 	 */
 	int (*accept)(const struct bt_iso_accept_info *info, struct bt_iso_chan **chan);
 };
+
+/**
+ * @brief Lookup a bt_iso_chan object by its @ref bt_iso_chan.iso reference
+ *
+ * This is useful to get the corresponding bt_iso_chan object when using e.g. bt_conn_foreach.
+ *
+ * @param iso A connection object with type @ref BT_CONN_TYPE_ISO
+ * @return The corresponding bt_iso_chan object or NULL.
+ */
+struct bt_iso_chan *bt_iso_get_chan_by_conn(const struct bt_conn *iso);
 
 /**
  * @brief Register ISO server.
@@ -1326,6 +1348,14 @@ int bt_iso_big_terminate(struct bt_iso_big *big);
  */
 int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
 		    struct bt_iso_big **out_big);
+
+/**
+ * @brief Returns a string representation of an ISO channel state
+ *
+ * @param state The state of the channel
+ * @return A string representation, or "unknown" if unknown state.
+ */
+const char *bt_iso_chan_state_str(enum bt_iso_state state);
 
 #ifdef __cplusplus
 }

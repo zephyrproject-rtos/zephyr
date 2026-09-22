@@ -2826,6 +2826,9 @@ __syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
+ * @note If @p events is zero, this function returns 0 immediately. If @p reset is true,
+ *       the events currently tracked by the event object are reset before returning.
+ *
  * @retval non-zero set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
@@ -2853,6 +2856,9 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
+ * @note If @p events is zero, this function returns 0 immediately. If @p reset is true,
+ *       the events currently tracked by the event object are reset before returning.
+ *
  * @retval non-zero set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
@@ -2875,6 +2881,9 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
+ * @note If @p events is zero, this function returns 0 immediately. If @p reset is true,
+ *       the events currently tracked by the event object are reset before returning.
+ *
  * @retval non-zero set of matching events upon success
  * @retval 0 if no matching event was received within the specified time
  */
@@ -2896,6 +2905,9 @@ __syscall uint32_t k_event_wait_safe(struct k_event *event, uint32_t events,
  *              before waiting. If false, do not clear the events.
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @note If @p events is zero, this function returns 0 immediately. If @p reset is true,
+ *       the events currently tracked by the event object are reset before returning.
  *
  * @retval non-zero set of matching events upon success
  * @retval 0 if all matching events were not received within the specified time
@@ -3823,6 +3835,9 @@ __syscall void k_sem_give(struct k_sem *sem);
  * This routine sets the count of @a sem to zero.
  * Any outstanding semaphore takes will be aborted
  * with -EAGAIN.
+ *
+ * @note A reset does not wake semaphore poll waiters. They remain pending until the semaphore
+ *       becomes available or the poll operation times out.
  *
  * @param sem Address of the semaphore.
  */
@@ -5889,6 +5904,7 @@ struct k_pipe {
  * @retval -EAGAIN if no data could be written before the timeout expired
  * @retval -ECANCELED if the write was interrupted by k_pipe_reset(..)
  * @retval -EPIPE if the pipe was closed
+ * @retval -EOVERFLOW if @a len is greater than INT_MAX
  */
 __syscall int k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len,
 			   k_timeout_t timeout);
@@ -5907,6 +5923,7 @@ __syscall int k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len,
  * @retval -EAGAIN if no data could be read before the timeout expired
  * @retval -ECANCELED if the read was interrupted by k_pipe_reset(..)
  * @retval -EPIPE if the pipe was closed
+ * @retval -EOVERFLOW if @a len is greater than INT_MAX
  */
 __syscall int k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len,
 			  k_timeout_t timeout);

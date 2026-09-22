@@ -60,6 +60,16 @@ enum wifi_conn_status {
 	WIFI_STATUS_CONN_TIMEOUT,
 	/** Connection failed - AP not found */
 	WIFI_STATUS_CONN_AP_NOT_FOUND,
+	/** Connection failed - the AP rejected the authentication.
+	 * The IEEE 802.11 status code from the Authentication frame is reported in
+	 * the status_code field of \ref wifi_status.
+	 */
+	WIFI_STATUS_CONN_AUTH_REJECT,
+	/** Connection failed - the AP rejected the association.
+	 * The IEEE 802.11 status code from the (Re)Association Response frame is
+	 * reported in the status_code field of \ref wifi_status.
+	 */
+	WIFI_STATUS_CONN_ASSOC_REJECT,
 	/** Last connection status */
 	WIFI_STATUS_CONN_LAST_STATUS,
 	/** Connection disconnected status */
@@ -146,11 +156,11 @@ enum wifi_wep_key_type {
 enum wifi_eap_type {
 	/** No EPA  security. */
 	WIFI_EAP_TYPE_NONE = 0,
-	/** EPA GTC security, refer to rfc3748 chapter 5. */
+	/** EPA GTC security, refer to @rfc{3748,section-5}. */
 	WIFI_EAP_TYPE_GTC = 6,
-	/** EPA TLS security, refer to rfc5216. */
+	/** EPA TLS security, refer to @rfc{5216}. */
 	WIFI_EAP_TYPE_TLS = 13,
-	/** EPA TTLS security, refer to rfc5281. */
+	/** EPA TTLS security, refer to @rfc{5281}. */
 	WIFI_EAP_TYPE_TTLS = 21,
 	/** EPA PEAP security, refer to draft-josefsson-pppext-eap-tls-eap-06.txt. */
 	WIFI_EAP_TYPE_PEAP = 25,

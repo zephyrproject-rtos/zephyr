@@ -199,5 +199,6 @@ static DEVICE_API(devmux, devmux_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(DEVMUX_DEFINE)
 
-#define DEVMUX_DEVICE_GET(_n) DEVICE_DT_INST_GET(_n),
-static const struct device *devmux_devices[] = {DT_INST_FOREACH_STATUS_OKAY(DEVMUX_DEVICE_GET)};
+static const struct device *devmux_devices[] = {
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
+};

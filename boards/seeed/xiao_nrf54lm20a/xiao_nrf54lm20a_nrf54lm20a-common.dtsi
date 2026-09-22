@@ -5,6 +5,7 @@
  */
 
 #include "xiao_nrf54lm20a_nrf54lm20a-pinctrl.dtsi"
+#include <zephyr/dt-bindings/regulator/npm13xx.h>
 
 / {
 	leds {
@@ -67,7 +68,7 @@
 
 			pmic_charger: charger {
 				compatible = "nordic,npm1300-charger";
-				term-microvolt = <4150000>;
+				term-microvolt = <4200000>;
 				term-warm-microvolt = <4000000>;
 				current-microamp = <150000>;
 				dischg-limit-microamp = <1000000>;
@@ -80,11 +81,33 @@
 			regulators {
 				compatible = "nordic,npm1300-regulator";
 
-				LDO1 {
-					regulator-min-microvolt = <1800000>;
-					regulator-max-microvolt = <1800000>;
+				/*
+				 * BUCK2 supplies VSYS_3V3, which powers both the nRF54
+				 * application core and the on-board SAMD11 USB debugger.
+				 * Keep this rail enabled; disabling it also removes power
+				 * from the USB debugger.
+				 */
+				vsys_3v3: BUCK2 {
+					regulator-always-on;
+					regulator-min-microvolt = <3300000>;
+					regulator-max-microvolt = <3300000>;
+				};
+
+				imu_vdd: dmic_vdd: LDO1 {
+					regulator-init-microvolt = <3300000>;
+					regulator-min-microvolt = <3300000>;
+					regulator-max-microvolt = <3300000>;
+					regulator-initial-mode = <NPM13XX_LDSW_MODE_LDO>;
+					regulator-allowed-modes = <NPM13XX_LDSW_MODE_LDO>;
 					regulator-boot-on;
 				};
+			};
+
+			pmic_leds: leds {
+				compatible = "nordic,npm1300-led";
+				nordic,led0-mode = "error";
+				nordic,led1-mode = "host";
+				nordic,led2-mode = "host";
 			};
 		};
 	};

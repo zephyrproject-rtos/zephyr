@@ -14,6 +14,12 @@
 		reg = <0x34000000 0x10000>;
 	};
 
+	flash-controller@52150000 {
+		erase-value = <0x00>;
+		infineon,explicit-erase;
+		infineon,cache-invalidate = "icache0";
+	};
+
 	soc {
 		pinctrl: pinctrl@52400000 {
 			compatible = "infineon,pinctrl";
@@ -270,7 +276,9 @@
 			compatible = "infineon,ipc";
 			reg = <0x521d0000 0x1200>;
 			status = "disabled";
-			#ipc-config-cells = <3>;
+			#ipc-config-cells = <2>;
+			channel-count = <4>;
+			interrupt-count = <2>;
 		};
 
 		canfd0: canfd@52800000 {

@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #endif
@@ -115,6 +116,19 @@ struct esp32_wifi_runtime {
  * without its payload.
  */
 #define ESP32_WIFI_EVENT_DATA_MAX 64
+
+/* 2.4 GHz channel 14 is passive-only; 5 GHz channels 52-144 require DFS. */
+#define ESP32_WIFI_CHAN_14     14
+#define ESP32_WIFI_DFS_CHAN_LO 52
+#define ESP32_WIFI_DFS_CHAN_HI 144
+
+#if defined(CONFIG_SOC_WIFI_SUPPORT_5G)
+/* Channel number for each bit of wifi_5g_channel_bit_t, which starts at BIT(1). */
+static const uint8_t esp32_wifi_5g_chan[] = {
+	36,  40,  44,  48,  52,  56,  60,  64,  100, 104, 108, 112, 116, 120,
+	124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165, 169, 173, 177,
+};
+#endif
 
 BUILD_ASSERT(sizeof(wifi_event_sta_connected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
 		     sizeof(wifi_event_sta_disconnected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
@@ -427,7 +441,7 @@ static void scan_done_handler(void)
 		strncpy(res.ssid, ap_record.ssid, ssid_len);
 		res.rssi = ap_record.rssi;
 		res.channel = ap_record.primary;
-		res.band = ap_record.primary <= 14 ? WIFI_FREQ_BAND_2_4_GHZ : WIFI_FREQ_BAND_5_GHZ;
+		res.band = wifi_utils_chan_to_band(res.channel);
 
 		memcpy(res.mac, ap_record.bssid, WIFI_MAC_ADDR_LEN);
 		res.mac_length = WIFI_MAC_ADDR_LEN;
@@ -1651,7 +1665,8 @@ static int esp32_wifi_status(const struct device *dev __unused,
 	status->ssid[WIFI_SSID_MAX_LEN-1] = '\0';
 	/* We know it is NUL terminated, so we can use strlen */
 	status->ssid_len = strlen(data->status.ssid);
-	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	/* Derived from the channel below, once the channel is known. */
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->mfp = WIFI_MFP_DISABLE;
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
@@ -1673,6 +1688,7 @@ static int esp32_wifi_status(const struct device *dev __unused,
 
 			status->iface_mode = WIFI_MODE_INFRA;
 			status->channel = ap_info.primary;
+			status->band = wifi_utils_chan_to_band(status->channel);
 			status->rssi = ap_info.rssi;
 			memcpy(status->bssid, ap_info.bssid, WIFI_MAC_ADDR_LEN);
 
@@ -1696,6 +1712,7 @@ static int esp32_wifi_status(const struct device *dev __unused,
 			status->iface_mode = WIFI_MODE_AP;
 			status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 			status->channel = conf.ap.channel;
+			status->band = wifi_utils_chan_to_band(status->channel);
 			status->beacon_interval = conf.ap.beacon_interval;
 
 		} else {
@@ -1914,6 +1931,14 @@ static int esp32_wifi_pm_action(const struct device *dev, enum pm_device_action 
 	return 0;
 }
 
+#if defined(CONFIG_ESP32_WIFI_STA_POWER_SAVE_NONE)
+#define ESP32_WIFI_STA_PS_TYPE WIFI_PS_NONE
+#elif defined(CONFIG_ESP32_WIFI_STA_POWER_SAVE_MAX_MODEM)
+#define ESP32_WIFI_STA_PS_TYPE WIFI_PS_MAX_MODEM
+#else
+#define ESP32_WIFI_STA_PS_TYPE WIFI_PS_MIN_MODEM
+#endif
+
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
@@ -1952,6 +1977,11 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	if (ret != ESP_OK) {
 		LOG_ERR("Unable to start the Wi-Fi: %d", ret);
 		return -EIO;
+	}
+
+	ret = esp_wifi_set_ps(ESP32_WIFI_STA_PS_TYPE);
+	if (ret != ESP_OK) {
+		LOG_WRN("Unable to set the Wi-Fi power save mode: %d", ret);
 	}
 
 	return pm_device_driver_init(dev, esp32_wifi_pm_action);
@@ -1993,6 +2023,149 @@ static int esp32_wifi_set_config(const struct device *dev __unused,
 	return -ENOTSUP;
 }
 
+static void esp32_wifi_fill_chan_info(struct wifi_reg_chan_info *info, uint8_t chan, int8_t power,
+				      bool is_5g)
+{
+	if (is_5g) {
+		info->center_frequency = 5000 + chan * 5;
+	} else {
+		info->center_frequency = (chan == ESP32_WIFI_CHAN_14) ? 2484 : (2407 + chan * 5);
+	}
+
+	info->max_power = power;
+	info->supported = 1;
+	info->passive_only = (!is_5g && chan == ESP32_WIFI_CHAN_14) ? 1 : 0;
+	info->dfs =
+		(is_5g && chan >= ESP32_WIFI_DFS_CHAN_LO && chan <= ESP32_WIFI_DFS_CHAN_HI) ? 1 : 0;
+}
+
+static unsigned int esp32_wifi_fill_5g(struct wifi_reg_domain *reg_domain, unsigned int written,
+				       const wifi_country_t *country)
+{
+#if defined(CONFIG_SOC_WIFI_SUPPORT_5G)
+	/* An all-zero mask means every channel allowed by the regulatory rules. */
+	uint32_t mask =
+		(country->wifi_5g_channel_mask == 0U) ? UINT32_MAX : country->wifi_5g_channel_mask;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(esp32_wifi_5g_chan); i++) {
+		if (written >= MAX_REG_CHAN_NUM) {
+			break;
+		}
+
+		if ((mask & BIT(i + 1)) == 0U) {
+			continue;
+		}
+
+		esp32_wifi_fill_chan_info(&reg_domain->chan_info[written], esp32_wifi_5g_chan[i],
+					  country->max_tx_power, true);
+		written++;
+	}
+#else
+	ARG_UNUSED(reg_domain);
+	ARG_UNUSED(country);
+#endif
+
+	return written;
+}
+
+static unsigned int esp32_wifi_count_5g(const wifi_country_t *country)
+{
+#if defined(CONFIG_SOC_WIFI_SUPPORT_5G)
+	uint32_t mask =
+		(country->wifi_5g_channel_mask == 0U) ? UINT32_MAX : country->wifi_5g_channel_mask;
+	unsigned int count = 0;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(esp32_wifi_5g_chan); i++) {
+		if ((mask & BIT(i + 1)) != 0U) {
+			count++;
+		}
+	}
+
+	return count;
+#else
+	ARG_UNUSED(country);
+	return 0;
+#endif
+}
+
+static int esp32_wifi_reg_domain(const struct device *dev __unused, struct net_if *iface __unused,
+				 struct wifi_reg_domain *reg_domain)
+{
+	wifi_country_t country;
+	char cc[WIFI_COUNTRY_CODE_LEN + 2];
+	unsigned int written = 0;
+	esp_err_t ret;
+
+	if (reg_domain == NULL) {
+		return -EINVAL;
+	}
+
+	if (reg_domain->oper == WIFI_MGMT_SET) {
+		memcpy(cc, reg_domain->country_code, WIFI_COUNTRY_CODE_LEN);
+
+		/* Zephyr spells the worldwide domain "00", the Espressif
+		 * regulatory table calls it "01".
+		 */
+		if (cc[0] == '0' && cc[1] == '0') {
+			cc[1] = '1';
+		}
+
+		/* The third octet selects the operating environment and must be
+		 * ' ', 'O', 'I' or 'X'. Use ' ' to accept any environment.
+		 */
+		cc[WIFI_COUNTRY_CODE_LEN] = ' ';
+		cc[WIFI_COUNTRY_CODE_LEN + 1] = '\0';
+
+		/* Forcing the domain means ignoring what the surrounding APs
+		 * advertise, so it maps to disabling 802.11d.
+		 */
+		ret = esp_wifi_set_country_code(cc, !reg_domain->force);
+		if (ret != ESP_OK) {
+			LOG_ERR("Failed to set country code (%d)", ret);
+			return -EIO;
+		}
+
+		return 0;
+	}
+
+	if (reg_domain->oper != WIFI_MGMT_GET) {
+		return -EINVAL;
+	}
+
+	ret = esp_wifi_get_country(&country);
+	if (ret != ESP_OK) {
+		LOG_ERR("Failed to get country (%d)", ret);
+		return -EIO;
+	}
+
+	memcpy(reg_domain->country_code, country.cc, WIFI_COUNTRY_CODE_LEN);
+
+	if (reg_domain->country_code[0] == '0' && reg_domain->country_code[1] == '1') {
+		reg_domain->country_code[1] = '0';
+	}
+
+	if (reg_domain->chan_info == NULL) {
+		reg_domain->num_channels =
+			MIN(country.nchan + esp32_wifi_count_5g(&country), MAX_REG_CHAN_NUM);
+		return 0;
+	}
+
+	/* num_channels is an output: callers pass a MAX_REG_CHAN_NUM buffer
+	 * without setting it, so clamp to the buffer, not to its value.
+	 */
+	for (unsigned int i = 0; i < country.nchan && written < MAX_REG_CHAN_NUM; i++) {
+		esp32_wifi_fill_chan_info(&reg_domain->chan_info[written], country.schan + i,
+					  country.max_tx_power, false);
+		written++;
+	}
+
+	written = esp32_wifi_fill_5g(reg_domain, written, &country);
+
+	reg_domain->num_channels = written;
+
+	return 0;
+}
+
 static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 	.scan = esp32_wifi_scan,
 	.connect = esp32_wifi_connect,
@@ -2001,6 +2174,7 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 	.ap_disable = esp32_wifi_ap_disable,
 	.iface_status = esp32_wifi_status,
 	.set_power_save = esp32_wifi_set_power_save,
+	.reg_domain = esp32_wifi_reg_domain,
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 	.enterprise_creds = esp32_wifi_enterprise_creds,
 #endif

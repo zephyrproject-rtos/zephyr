@@ -3,3 +3,35 @@ description: Infineon CAT1 flash controller
 compatible: "infineon,flash-controller"
 
 include: flash-controller.yaml
+
+properties:
+  erase-value:
+    type: int
+    default: 0xff
+    description: |
+      Byte value a flash cell reads back after an erase. This is a fixed
+      characteristic of the flash IP (e.g. 0xff on PSoC4/PSoC6, 0x00 on the
+      MXS40FLASHC used by PSC3), not a software-configurable option.
+
+  infineon,explicit-erase:
+    type: boolean
+    description: |
+      The flash IP requires an explicit erase of a row before it can be
+      programmed (e.g. MXS40FLASHC on PSC3). When this property is absent the
+      program operation performs an implicit erase-on-write (e.g. PSoC4/PSoC6).
+
+  infineon,cache-invalidate:
+    type: string
+    default: "flashc-buffer"
+    enum:
+      - "none"
+      - "flashc-buffer"
+      - "icache0"
+    description: |
+      Cache/prefetch invalidation mechanism the CPU must run after a program or
+      erase so subsequent reads are coherent.
+        - none:          no invalidation required.
+        - flashc-buffer: clear the FLASHC cache/prefetch buffer via the PDL
+                         (PSoC4).
+        - icache0:       invalidate the CM33 instruction cache by writing
+                         ICACHE0->CMD (PSC3).

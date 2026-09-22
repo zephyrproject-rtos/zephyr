@@ -12,9 +12,9 @@ configdefault OTP
 	default y if ETH_STM32_HAL && NVMEM
 
 # MEMC needs to be enabled in order to store
-# LTDC frame buffer and video buffer pool to external PSRAM
+# LTDC/LVGL frame buffer and video buffer pool to external PSRAM
 config MEMC
-	default y if STM32_LTDC || VIDEO
+	default y if STM32_LTDC || LVGL || VIDEO
 
 if DISPLAY
 configdefault I2C_STM32_V2_TIMING
@@ -47,10 +47,26 @@ endif # VIDEO
 
 if LVGL
 
-if NEOCHROM_GPU2D
+# Let LVGL fully handle the buffers
+configdefault STM32_LTDC_FB_NUM
+	default 0
+
+configdefault LV_Z_VDB_ZEPHYR_REGION
+	default y
+configdefault LV_Z_VDB_ZEPHYR_REGION_NAME
+	default "PSRAM"
+
+configdefault LV_Z_DOUBLE_VDB
+	default y
+
+choice LV_Z_RENDERING_MODE
+	default LV_Z_DIRECT_RENDERING
+endchoice
+
+if STM32_NEOCHROM_GPU2D
 
 configdefault LV_ATTRIBUTE_MEM_ALIGN_SIZE
-	default 32 if NEOCHROM_GPU2D
+	default 32 if STM32_NEOCHROM_GPU2D
 
 configdefault LV_Z_NEMA_GFX_MULTI_THREAD
 	default y if LV_USE_NEMA_GFX
@@ -69,7 +85,7 @@ configdefault LV_NEMA_USE_CACHE
 configdefault LV_NEMA_CACHE_HAL_INCLUDE
 	default "stm32n6xx_hal.h"
 
-endif # NEOCHROM_GPU2D
+endif # STM32_NEOCHROM_GPU2D
 
 endif # LVGL
 

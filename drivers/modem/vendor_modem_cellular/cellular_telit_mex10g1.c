@@ -36,7 +36,9 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_mex10g1_init_chat_script, telit_mex10g1_init_chat
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_mex10g1_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				0));
 
 MODEM_CHAT_SCRIPT_DEFINE(telit_mex10g1_dial_chat_script, telit_mex10g1_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -87,7 +89,7 @@ __maybe_unused static const struct modem_cellular_vendor_config telit_me910g1_ve
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_me910g1_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_me910g1_vendor, NULL)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(telit_me310g1)
 static const struct modem_cellular_vendor_config telit_me310g1_vendor = {
@@ -121,7 +123,7 @@ static const struct modem_cellular_vendor_config telit_me310g1_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_me310g1_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_me310g1_vendor, NULL)
 
 #define DT_DRV_COMPAT telit_me910g1
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_ME910G1)

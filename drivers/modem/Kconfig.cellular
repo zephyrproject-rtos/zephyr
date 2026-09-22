@@ -13,7 +13,6 @@ config MODEM_CELLULAR
 	select MODEM_BACKEND_UART
 	select UART_USE_RUNTIME_CONFIGURE
 	select PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ if PM_DEVICE_RUNTIME
-	select RING_BUFFER
 	select NET_L2_PPP_OPTION_MRU
 	select NET_L2_PPP_PAP
 	select NET_L2_PPP_MGMT
@@ -39,6 +38,14 @@ config MODEM_CELLULAR
 	  features.
 
 if MODEM_CELLULAR
+
+config MODEM_CELLULAR_PDP_CONTEXT_ID
+	int "PDP context identifier used for the data call"
+	default 1
+	range 1 24
+	help
+	  Identifier of the PDP context the driver defines, deactivates and
+	  dials.
 
 config MODEM_CELLULAR_STATS
 	bool "Operational statistics"
@@ -98,6 +105,16 @@ config MODEM_CELLULAR_CHAT_BUFFER_SIZE
 config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES
 	int "The size of the buffers used for each user pipe in bytes."
 	default 128
+
+config MODEM_CELLULAR_SERIAL_NUMBER_MAX_SIZE
+	int "The maximum size of the modem serial number string (excluding NUL)"
+	range 16 2048
+	default 16
+	help
+	  3GPP TS 27.007 documentation for +CGSN states that the serial
+	  number text shall not exceed 2048 characters. Most modems output
+	  the IMEI as the serial number, and therefore 16 characters is
+	  sufficient.
 
 config MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA
 	default 256 if DT_HAS_TELIT_LE910C1TX_ENABLED

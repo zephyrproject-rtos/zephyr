@@ -15,10 +15,17 @@ endif # GPIO_MCP230XX
 configdefault ETH_DRIVER
 	default y
 
+# The MAC addresses are read from the OTP fuses through NVMEM
+configdefault OTP
+	default y if ETH_DRIVER && NVMEM
+
 configdefault NET_IF_MAX_IPV4_COUNT
 	default 2
 
 configdefault NET_IF_MAX_IPV6_COUNT
 	default 2
+
+configdefault ZVFS_POLL_MAX
+	default 8
 
 endif # BOARD_STM32MP135F_DK

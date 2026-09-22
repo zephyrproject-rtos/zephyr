@@ -64,8 +64,8 @@ Commands
                                     [extended <meta>]
                                     [vendor <meta>]]
       send                   : Send to Audio Stream [data]
-      bap_stats              : Sets or gets the statistics reporting interval in # of
-                              packets
+      stats                  : Sets or gets the statistics reporting interval in # of
+                              packets (set 0 to disable)
       set_location           : <direction: sink, source> <location bitmask>
       set_context            : <direction: sink, source><context bitmask> <type:
                               supported, available>

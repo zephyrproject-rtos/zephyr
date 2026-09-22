@@ -194,8 +194,6 @@ void z_impl_k_sem_reset(struct k_sem *sem)
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_sem, reset, sem);
 
-	resched = sem_handle_poll_events(sem) || resched;
-
 	if (resched) {
 		z_reschedule(lock, key);
 	} else {

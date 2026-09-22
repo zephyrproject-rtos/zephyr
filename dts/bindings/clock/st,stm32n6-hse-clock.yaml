@@ -17,5 +17,9 @@ properties:
   hse-div2:
     type: boolean
     description: |
-      When set HSE output clock is divided by 2.
-      Otherwise, no prescaler is used.
+      Enable hse_div2_osc_ck prescaler.
+
+      If this property is present, the div2 prescaler is enabled and
+      hse_div2_osc_ck = hse_osc_ck / 2; otherwise, hse_div2_osc_ck = hse_osc_ck.
+
+      hse_osc_ck is equal to the value of this node's `clock-frequency` property.

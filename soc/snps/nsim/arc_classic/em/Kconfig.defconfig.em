@@ -30,9 +30,6 @@ config HARVARD
 config ARC_FIRQ
 	default y
 
-config CACHE_MANAGEMENT
-	default y
-
 config FP_FPU_DA
 	default y
 

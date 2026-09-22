@@ -7,6 +7,8 @@ zephyr_sources(
   soc_config.c
 )
 
+zephyr_sources_ifdef(CONFIG_STM32_NEOCHROM_GPU2D stm32_neochrom_gpu2d.c)
+
 zephyr_sources_ifdef(CONFIG_STM32_BACKUP_SRAM stm32_backup_sram.c)
 zephyr_linker_sources_ifdef(CONFIG_STM32_BACKUP_SRAM SECTIONS stm32_backup_sram.ld)
 
@@ -17,6 +19,7 @@ endif()
 zephyr_sources_ifdef(CONFIG_STM32_WKUP_PINS pwr_wkupctrl.c)
 zephyr_sources_ifdef(CONFIG_STM32_IOCELL stm32_iocell.c)
 zephyr_sources_ifdef(CONFIG_STM32_XSPIM stm32_xspim.c)
+zephyr_sources_ifdef(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION stm32_xspi_hal_timer.c)
 
 if(CONFIG_PM AND CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP)
   message(WARNING "\

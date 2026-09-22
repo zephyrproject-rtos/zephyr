@@ -283,7 +283,6 @@ static void co5300_get_capabilities(const struct device *dev,
 	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 |
@@ -438,7 +437,6 @@ static int co5300_init(const struct device *dev)
 	struct display_cmds lcm_init_settings = {0};
 	uint8_t *ptr_to_cmd_register = 0;
 	uint8_t *ptr_to_last_cmd = 0;
-	uint8_t cmd_params = 0;
 	uint8_t cmd_param_size = 0;
 	uint8_t cmd_register = 0;
 	int ret = 0;
@@ -470,11 +468,10 @@ static int co5300_init(const struct device *dev)
 		 */
 		cmd_register = *ptr_to_cmd_register++;
 		cmd_param_size = *ptr_to_cmd_register++;
-		cmd_params = *ptr_to_cmd_register;
-		ptr_to_cmd_register += cmd_param_size;
 
-		ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-				cmd_register, &cmd_params, cmd_param_size);
+		ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel, cmd_register,
+					 ptr_to_cmd_register, cmd_param_size);
+		ptr_to_cmd_register += cmd_param_size;
 		if (ret < 0) {
 			return ret;
 		}

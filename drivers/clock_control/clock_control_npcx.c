@@ -261,6 +261,10 @@ static int npcx_clock_control_init(const struct device *dev)
 		NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) |= BIT(7);
 	}
 
+#if defined(CONFIG_CLOCK_CONTROL_NPCX_ESPI_FMCLK_IN_SLEEP)
+	HAL_PMC_INST(dev)->ENSLP_CTL |= BIT(NPCX_ENSLP_CTL_ESPI_FMCLK_ENSLP);
+#endif
+
 	return 0;
 }
 

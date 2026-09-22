@@ -203,6 +203,71 @@ config RISCV_SOC_HAS_CUSTOM_SYS_IO
 	  the RISC-V SoC needs to do something different and more than reading and
 	  writing the registers.
 
+config RISCV_SOC_HAS_SYSCALL_INTMASK
+	bool
+	depends on USERSPACE
+	depends on RISCV_SOC_CONTEXT_SAVE
+	depends on RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	help
+	  Hidden option for SoCs where an interrupt, or another asynchronously
+	  reported event such as an imprecise access fault, taken while the ECALL
+	  exception of a user-mode syscall is still being handled cannot be
+	  delivered safely. Precise synchronous traps, such as the ECALL used to
+	  switch out of the syscall body, nest normally. The syscall path sets
+	  mstatus.MIE before running the syscall body, so such a SoC must hold
+	  interrupts off another way.
+
+	  Enable this hidden option and provide a soc_syscall.h header defining
+	  the SOC_SYSCALL_INTMASK macro (guarded by _ASMLANGUAGE). The IRQ
+	  wrapper invokes it on syscall entry, after the SoC context has been
+	  saved and at a point where the caller-saved temporaries are free, so
+	  the macro may clobber them. Typically it raises a hardware interrupt
+	  level threshold. This is a SoC hook rather than part of the generic
+	  CLIC interrupt level support because the SoCs that need it drive
+	  their interrupt controller from SoC code and do not select
+	  RISCV_HAS_CLIC, so the generic code has no view of their threshold.
+
+	  The mask is per exception frame: the SoC context save/restore hooks
+	  (RISCV_SOC_CONTEXT_SAVE) save the state on trap entry and restore it
+	  on the exception exit path. Because every context switch goes through
+	  that path (RISCV_ALWAYS_SWITCH_THROUGH_ECALL), a thread that blocks in
+	  the syscall body hands the CPU to a thread that restores its own saved
+	  state, and a new thread starts from SOC_ESF_INIT. The mask therefore
+	  ends when the syscall returns or the thread switches out, never later.
+
+	  The cost is that the syscall body is not preemptible: nothing is
+	  delivered while the mask is raised, so interrupts, including the
+	  system tick, stay pending until the syscall returns or blocks.
+	  arch_irq_unlocked() is true only formally during that time, and a
+	  body that bounds a busy wait with tick-derived uptime never times
+	  out when the kernel is not tickless.
+
+config RISCV_SOC_SYSCALL_CLOSE_ECALL
+	bool
+	depends on USERSPACE
+	help
+	  Hidden option for SoCs that cannot deliver a fault raised by the
+	  syscall body itself while the ECALL exception of a user-mode syscall
+	  is still being handled. The stack guard below the privileged stack
+	  catches a syscall whose call chain runs too deep, but on such a SoC
+	  that access fault is reported asynchronously inside the open ECALL
+	  and locks the core up, resetting the chip with nothing delivered to
+	  software. Masking interrupts does not help: the fault comes from the
+	  body, not from an interrupt controller.
+
+	  Enable this hidden option to leave the exception before the syscall
+	  body runs. The IRQ wrapper returns to the following instruction with
+	  a trap return that stays in machine mode, so the body runs on the
+	  same privileged stack with the same privileges, but outside the
+	  exception. A fault taken in the body is then an ordinary top-level
+	  trap the SoC delivers normally, and a syscall that overflows the
+	  privileged stack is reported as a stack overflow and kills only the
+	  offending thread.
+
+	  The exception exit path reloads the exception program counter and
+	  status register from the saved frame, so borrowing them here does
+	  not disturb the return to user mode.
+
 config RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	bool
 	help
@@ -360,6 +425,15 @@ config RISCV_HART_MASK
 	  i.e. 128, 129, ..(0x80, 8x81, ..), this can be configured to 63 (0x7f)
 	  such that we can extract the bits that start from 0.
 
+config RISCV_USER_COUNTER_ACCESS
+	bool
+	depends on RISCV_ISA_EXT_ZICNTR
+	default y if USERSPACE
+	help
+	  Set mcounteren, and scounteren on harts that implement S-mode, so
+	  that user threads can read the Zicntr counters directly instead of
+	  taking an illegal instruction exception.
+
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	depends on !RISCV_S_MODE
@@ -404,7 +478,7 @@ config PMP_NO_NAPOT
 	  Set this if NAPOT (Naturally Aligned Power Of Two) is not supported.
 
 config PMP_POWER_OF_TWO_ALIGNMENT
-	bool "Enforce power-of-two alignment on PMP memory areas" if !PMP_NO_TOR
+	bool "Enforce power-of-two alignment on PMP memory areas"
 	default y if TEST_USERSPACE
 	default y if (PMP_SLOTS = 8)
 	default y if PMP_NO_TOR
@@ -414,6 +488,49 @@ config PMP_POWER_OF_TWO_ALIGNMENT
 	  This option reduces the PMP slot usage but increases
 	  memory consumption. Useful when enabling userspace mode with
 	  many memory domains and/or few PMP slots available.
+
+config PMP_NAPOT_USE_MULTI_SLOTS
+	bool "Use multiple NAPOT entries to cover non-aligned memory regions"
+	depends on PMP_NO_TOR
+	depends on !PMP_POWER_OF_TWO_ALIGNMENT
+	depends on !PMP_NO_NAPOT
+	depends on !USERSPACE
+	default y
+	help
+	  Enable splitting non-naturally-aligned memory regions into multiple
+	  NAPOT entries. This allows PMP to protect memory regions that are
+	  not power-of-2 aligned in both start address and size.
+
+	  When enabled, a region like [0x1800, 0x3800) will be split into
+	  multiple naturally-aligned blocks (e.g., 0x800+0x1000+0x800 bytes),
+	  each protected by a separate NAPOT entry.
+
+	  This option is useful when TOR mode is not supported and memory
+	  regions are not naturally aligned. It consumes more PMP slots
+	  but provides flexible memory protection coverage.
+
+	  Note: disabling PMP_POWER_OF_TWO_ALIGNMENT affects more than the
+	  code+rodata region. The kernel-mode stack guard
+	  (Z_RISCV_STACK_GUARD_SIZE) is then rounded up to Z_RISCV_STACK_PMP_ALIGN
+	  instead of to a power of two, and ARCH_KERNEL_STACK_OBJ_ALIGN drops to
+	  the PMP granularity. As a result, every kernel-mode stack guard and,
+	  under CONFIG_USERSPACE, every user-mode stack region is also split into
+	  multiple NAPOT entries. With the typical PMP_SLOTS=8 or 16, this is
+	  where the slot budget is actually consumed.
+
+	  Setting PMP_GRANULARITY to 64 reduces the number of split entries for
+	  code+rodata, but it also makes the stack guard a multiple of 64 that
+	  is generally not a power of two, so the guard itself still needs to be
+	  split. Weigh both effects when choosing a granularity.
+
+	  Depends on !USERSPACE: under CONFIG_USERSPACE, arch_mem_domain_max_partitions_get()
+	  assumes 1 or 2 PMP slots per partition, and resync_pmp_domain() can
+	  only log an error (compiles out __ASSERT) when a partition needs more
+	  slots than remain. The domain would then run with partitions unmapped,
+	  a silent loss of protection rather than a visible failure. Until the
+	  slot estimate and the failure path handle a partition requiring an
+	  arbitrary number of slots, this option is limited to the M-mode
+	  code+rodata region case.
 
 config PMP_GRANULARITY
 	int "The granularity of PMP address matching"
@@ -510,6 +627,25 @@ config NULL_POINTER_EXCEPTION_REGION_SIZE
 	  Minimum is 4 bytes.
 
 endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
+
+config RISCV_USER_STRING_NLEN_VALIDATE
+	bool "Pre-validate the pointer in arch_user_string_nlen()"
+	depends on USERSPACE
+	depends on RISCV_PMP
+	help
+	  arch_user_string_nlen() dereferences a user pointer and recovers from a
+	  bad address through a fault fixup that matches the faulting mepc against
+	  the load instruction's address range. On some RISC-V SoCs the load access
+	  fault is imprecise: the reported mepc lands a variable distance past the
+	  faulting load (sometimes in a different function), so the fixup does not
+	  recognize the fault and it escalates to a fatal reset instead of the
+	  intended recoverable error.
+
+	  Enable this to validate the string with arch_buffer_validate() before
+	  reading it: the whole range first, then chunk by chunk at PMP
+	  granularity when the range is only partly accessible, so no load that
+	  could fault is ever issued. Leave disabled on SoCs with precise load
+	  faults, where the fixup works unaided.
 
 config RISCV_IMPRECISE_FPU_STATE_TRACKING
 	bool "Imprecise implementation of FPU state tracking"

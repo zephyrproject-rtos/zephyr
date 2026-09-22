@@ -49,4 +49,12 @@
 			pinmux = <PWM_4B_P25>;
 		};
 	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <ADC_CH0_P40>, <ADC_CH1_P41>, <ADC_CH2_P42>, <ADC_CH3_P43>,
+				 <ADC_CH4_P44>, <ADC_CH5_P45>, <ADC_CH6_P46>, <ADC_CH7_P47>;
+			input-enable;
+		};
+	};
 };

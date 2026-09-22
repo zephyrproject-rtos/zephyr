@@ -430,16 +430,6 @@ static int can_nxp_s32_get_state(const struct device *dev, enum can_state *state
 	return 0;
 }
 
-static void can_nxp_s32_set_state_change_callback(const struct device *dev,
-							can_state_change_callback_t callback,
-							void *user_data)
-{
-	struct can_nxp_s32_data *data = dev->data;
-
-	data->common.state_change_cb = callback;
-	data->common.state_change_cb_user_data = user_data;
-}
-
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static int can_nxp_s32_recover(const struct device *dev, k_timeout_t timeout)
 {
@@ -839,7 +829,6 @@ static void can_nxp_s32_err_callback(const struct device *dev,
 	struct can_nxp_s32_data *data = dev->data;
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
-	void *cb_data = data->common.state_change_cb_user_data;
 	can_tx_callback_t function;
 	int alloc;
 	void *arg;
@@ -892,9 +881,7 @@ static void can_nxp_s32_err_callback(const struct device *dev,
 	can_nxp_s32_get_state(dev, &state, &err_cnt);
 	if (data->state != state) {
 		data->state = state;
-		if (data->common.state_change_cb) {
-			data->common.state_change_cb(dev, state, err_cnt, cb_data);
-		}
+		can_fire_state_change_callbacks(dev, state, err_cnt);
 	}
 
 	if (state == CAN_STATE_BUS_OFF) {
@@ -1137,6 +1124,7 @@ static int can_nxp_s32_init(const struct device *dev)
 		return err;
 	}
 
+	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&data->rx_mutex);
 	k_mutex_init(&data->tx_mutex);
 	k_sem_init(&data->tx_allocs_sem, CONFIG_CAN_NXP_S32_MAX_TX, CONFIG_CAN_NXP_S32_MAX_TX);
@@ -1273,7 +1261,6 @@ static DEVICE_API(can, can_nxp_s32_driver_api) = {
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_nxp_s32_recover,
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
-	.set_state_change_callback = can_nxp_s32_set_state_change_callback,
 	.get_core_clock = can_nxp_s32_get_core_clock,
 	.get_max_filters = can_nxp_s32_get_max_filters,
 	.timing_min = {

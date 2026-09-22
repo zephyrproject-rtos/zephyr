@@ -169,6 +169,25 @@ TESTDATA_2 = [
             ztest_suite_names = ['feature5']
         )
     ),
+    (
+        os.path.join(
+            'testsuites',
+            'tests',
+            'test_e',
+            'test_ztest_token_paste.c'
+        ),
+        ScanPathResult(
+            warnings=None,
+            # The ## token-pasted ZTEST cases must be skipped so no phantom
+            # 'feature6.dma' testcase is registered; only the literal case
+            # is picked up statically.
+            matches=['feature6.normal_case'],
+            has_registered_test_suites=False,
+            has_run_registered_test_suites=True,
+            has_test_main=False,
+            ztest_suite_names = ['feature6']
+        )
+    ),
 #    (
 #        os.path.join(
 #            'testsuites',
@@ -197,6 +216,7 @@ TESTDATA_2 = [
         'invalid ifdef with test_main',
         'registered testsuite',
         'new testsuite with registered run',
+        'new testsuite with token-pasted testcase names',
 #        'empty testsuite'
     ]
 )

@@ -11,10 +11,6 @@ config REGULATOR
 
 if LVGL
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
 config LV_COLOR_16_SWAP
 	default y
 

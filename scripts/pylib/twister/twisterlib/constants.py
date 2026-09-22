@@ -41,7 +41,13 @@ SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'sim
 # value means the simulator was not found and the test cannot be executed.
 SIM_PROGRAM_CMAKE_VARS = {
     'armfvp': 'ARMFVP',
+    'whisper': 'WHISPER_BIN',
 }
+
+# Failure reason reported when the console output contains an unexpected
+# fatal error (a crash), shared between the harness and the handlers so
+# every execution path reports such a crash the same way.
+FAULT_REASON = "Fault detected while running test"
 
 PYTEST_HARNESSES = ['pytest', 'shell', 'power', 'display_capture']
 
