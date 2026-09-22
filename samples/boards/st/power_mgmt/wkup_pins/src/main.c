@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/dt-bindings/gpio/stm32-gpio.h>
@@ -25,7 +26,18 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
 int main(void)
 {
+	uint32_t reset_cause;
 	int res;
+
+	res = hwinfo_get_reset_cause(&reset_cause);
+	if (res == 0) {
+		if (reset_cause & RESET_LOW_POWER_WAKE) {
+			printk("Reset from low-power state detected.\n");
+			printk("Continuing sample execution...\n");
+		}
+	} else {
+		printk("Failed to get reset cause: %d\n", res);
+	}
 
 	printk("\nWake-up button is connected to %s pin %d\n", button.port->name, button.pin);
 
