@@ -1,0 +1,8 @@
+common:
+  depends_on: netif
+  min_flash: 240
+  tags:
+    - net
+    - socket
+tests:
+  net.socket.offload_tracking: {}
