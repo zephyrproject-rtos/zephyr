@@ -1,0 +1,12 @@
+common:
+  tags:
+    - drivers
+    - interrupt
+  harness: ztest
+tests:
+  drivers.interrupt_controller.intc_mchp_eic_g1:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
