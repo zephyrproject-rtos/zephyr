@@ -1576,8 +1576,8 @@ message Rpc_Resp_GetCoprocessorFwVersion {
 	int32 revision = 5;
 	int32 prerelease = 6;
 	int32 build = 7;
-	uint32 chip_id = 8;    // from sdkconfig->CONFIG_IDF_FIRMWARE_CHIP_ID
-	bytes idf_target = 9;  // from sdkconfig->CONFIG_IDF_TARGET
+	uint32 chip_id = 8;
+	bytes idf_target = 9;
 }
 
 message Rpc_Req_SetDhcpDnsStatus {
