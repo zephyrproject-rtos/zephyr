@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 TDK Invensense
+ * Copyright 2026 Ahmed Ashraf NourEldeen <a.programmer55559@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +9,10 @@
 #define ZEPHYR_DRIVERS_SENSOR_ICM42605_ICM42605_H_
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
@@ -63,8 +66,20 @@ struct icm42605_data {
 #endif
 };
 
-struct icm42605_config {
+enum icm42605_bus_type {
+	ICM42605_BUS_I2C,
+	ICM42605_BUS_SPI,
+};
+
+union icm42605_bus_cfg {
+	struct i2c_dt_spec i2c;
 	struct spi_dt_spec spi;
+};
+
+struct icm42605_config {
+	const union icm42605_bus_cfg bus_cfg;
+	enum icm42605_bus_type bus_type;
+
 	struct gpio_dt_spec gpio_int;
 	uint16_t accel_hz;
 	uint16_t gyro_hz;
