@@ -250,6 +250,39 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		/*
+		 * The two USB controllers. Both are the same
+		 * usb_otg_2_0_ctlr_v2 peripheral: a Mentor Graphics Inventra
+		 * core behind a Microchip wrapper, with its own additional
+		 * voltage regulator in SUPC and its own USBRBIASn pad.
+		 *
+		 * They are declared here rather than per board because the
+		 * addresses, the interrupt lines, the peripheral clocks and the
+		 * endpoint count are properties of the die. What a board owns is
+		 * which connector each one reaches and whether it is used, so
+		 * both are disabled here and a board or application enables the
+		 * one it wires.
+		 */
+		usbhs0: usb@4f010000 {
+			compatible = "microchip,pic32cz-usbhs";
+			reg = <0x4f010000 0x2000>;
+			interrupts = <213 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_HUSB0>;
+			clock-names = "mclk";
+			num-bidir-endpoints = <8>;
+			status = "disabled";
+		};
+
+		usbhs1: usb@4f012000 {
+			compatible = "microchip,pic32cz-usbhs";
+			reg = <0x4f012000 0x2000>;
+			interrupts = <214 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_HUSB1>;
+			clock-names = "mclk";
+			num-bidir-endpoints = <8>;
+			status = "disabled";
+		};
 	};
 };
 
