@@ -467,6 +467,12 @@
 		status = "disabled";
 		voltage-reference = <0>;
 		#io-channel-cells = <1>;
+		/* Deep Power Down gates the CORE domain, so the register block
+		 * comes back from reset.
+		 */
+		power-domains = <&core_domain>;
+		/* The analog output does not survive any of these states. */
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	dac1: dac@b5000 {
@@ -476,6 +482,8 @@
 		status = "disabled";
 		voltage-reference = <0>;
 		#io-channel-cells = <1>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	wwdt0: watchdog@c000 {
