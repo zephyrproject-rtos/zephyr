@@ -62,9 +62,6 @@ LOG_MODULE_REGISTER(intc_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 # define INTC_LOG(...) do {} while (false)
 #endif
 
-/* Typedef for C-callable interrupt handler function */
-typedef void (*intc_dyn_handler_t)(const void *);
-
 static int esp_intr_disable_locked(intr_handle_t handle);
 
 /* Never held across the heap and never taken from an ISR. */
@@ -72,6 +69,30 @@ static struct k_spinlock s_intc_lock;
 
 /* Linked list of vector descriptions, sorted by cpu.intno value */
 static struct vector_desc_t *vector_desc_head; /* implicitly initialized to NULL */
+
+#ifdef CONFIG_SMP
+struct intc_line_handler {
+	intr_handler_t isr;
+	void *arg;
+};
+
+static struct intc_line_handler line_handlers[CONFIG_MP_MAX_NUM_CPUS][SOC_CPU_INTR_NUM];
+
+static int intc_line_table_init(void)
+{
+	for (int cpu = 0; cpu < CONFIG_MP_MAX_NUM_CPUS; cpu++) {
+		for (int i = 0; i < SOC_CPU_INTR_NUM; i++) {
+			if (line_handlers[cpu][i].isr == NULL) {
+				line_handlers[cpu][i].arg = (void *)(uintptr_t)i;
+				line_handlers[cpu][i].isr = (intr_handler_t)z_irq_spurious;
+			}
+		}
+	}
+
+	return 0;
+}
+SYS_INIT(intc_line_table_init, PRE_KERNEL_1, 0);
+#endif
 
 /* This bitmask has an 1 if the int should be disabled when the flash is disabled. */
 static uint32_t non_iram_int_mask[CONFIG_MP_MAX_NUM_CPUS];
@@ -251,17 +272,89 @@ int esp_intr_reserve(int intno, int cpu)
 	return 0;
 }
 
-/* Returns true if handler for interrupt is not the default unhandled interrupt handler */
+static int intc_table_idx(int intr)
+{
+#ifdef CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	intr += CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET;
+#endif
+	return intr;
+}
+
+#ifdef CONFIG_SMP
+static void IRAM_ATTR intc_dispatch(const void *arg)
+{
+	const struct intc_line_handler *lh = &line_handlers[esp_cpu_get_core_id()][(uintptr_t)arg];
+
+	lh->isr(lh->arg);
+}
+
+static void intc_set_line_handler(int cpu, int intr, intr_handler_t isr, void *arg)
+{
+	struct intc_line_handler *lh = &line_handlers[cpu][intr];
+
+	if (isr == NULL) {
+		isr = (intr_handler_t)z_irq_spurious;
+		arg = (void *)(uintptr_t)intr;
+	}
+
+	lh->isr = (intr_handler_t)z_irq_spurious;
+	barrier_dmem_fence_full();
+	lh->arg = arg;
+	barrier_dmem_fence_full();
+	lh->isr = isr;
+
+	if (_sw_isr_table[intc_table_idx(intr)].isr != intc_dispatch) {
+		__ASSERT(_sw_isr_table[intc_table_idx(intr)].isr == z_irq_spurious,
+			 "line %d already connected outside the allocator", intr);
+		irq_connect_dynamic(intr, 0, intc_dispatch, (const void *)(uintptr_t)intr, 0);
+	}
+}
+
+void z_isr_install(unsigned int irq, void (*routine)(const void *parameter), const void *param)
+{
+	int line = (int)irq - intc_table_idx(0);
+	k_spinlock_key_t key;
+
+	if (routine == intc_dispatch || line < 0 || line >= SOC_CPU_INTR_NUM) {
+		_sw_isr_table[irq].arg = param;
+		_sw_isr_table[irq].isr = routine;
+		return;
+	}
+
+	key = k_spin_lock(&s_intc_lock);
+	intc_set_line_handler(esp_cpu_get_core_id(), line, (intr_handler_t)routine, (void *)param);
+	k_spin_unlock(&s_intc_lock, key);
+}
+
+static bool intr_has_handler(int intr, int cpu)
+{
+	int idx = intc_table_idx(intr);
+
+	if (line_handlers[cpu][intr].isr != (intr_handler_t)z_irq_spurious) {
+		return true;
+	}
+
+	return _sw_isr_table[idx].isr != z_irq_spurious && _sw_isr_table[idx].isr != intc_dispatch;
+}
+#else
+static void intc_set_line_handler(int cpu, int intr, intr_handler_t isr, void *arg)
+{
+	ARG_UNUSED(cpu);
+
+	if (isr == NULL) {
+		irq_connect_dynamic(intr, 0, z_irq_spurious, (void *)(uintptr_t)intr, 0);
+	} else {
+		irq_connect_dynamic(intr, 0, (void (*)(const void *))isr, arg, 0);
+	}
+}
+
 static bool intr_has_handler(int intr, int cpu)
 {
 	ARG_UNUSED(cpu);
 
-#ifdef CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
-	intr += CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET;
-#endif
-
-	return _sw_isr_table[intr].isr != z_irq_spurious;
+	return _sw_isr_table[intc_table_idx(intr)].isr != z_irq_spurious;
 }
+#endif /* CONFIG_SMP */
 
 static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)
 {
@@ -665,13 +758,13 @@ int esp_intr_alloc_intrstatus(int source,
 		irq_disable(intr);
 
 		/* (Re-)set shared isr handler to new value. */
-		irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)shared_intr_isr, vd, 0);
+		intc_set_line_handler(cpu, intr, shared_intr_isr, vd);
 	} else {
 		/* Mark as unusable for other interrupt sources. This is ours now! */
 		vd->flags = VECDESC_FL_NONSHARED;
 		if (handler) {
 			irq_disable(intr);
-			irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)handler, arg, 0);
+			intc_set_line_handler(cpu, intr, handler, arg);
 		}
 		if (flags & ESP_INTR_FLAG_EDGE) {
 			esp_cpu_intr_edge_ack(intr);
@@ -791,13 +884,18 @@ int esp_intr_free(intr_handle_t handle)
 	k_spinlock_key_t key;
 	bool free_shared_vector = false;
 	struct shared_vector_desc_t *unlinked = NULL;
+	int ret;
 
 	if (!handle) {
 		return -EINVAL;
 	}
 
 	key = k_spin_lock(&s_intc_lock);
-	esp_intr_disable_locked(handle);
+	ret = esp_intr_disable_locked(handle);
+	if (ret != 0) {
+		k_spin_unlock(&s_intc_lock, key);
+		return ret;
+	}
 	if (handle->vector_desc->flags & VECDESC_FL_SHARED) {
 		/* Find and kill the shared int */
 		struct shared_vector_desc_t *svd = handle->vector_desc->shared_vec_info;
@@ -829,13 +927,13 @@ int esp_intr_free(intr_handle_t handle)
 	if ((handle->vector_desc->flags & VECDESC_FL_NONSHARED) || free_shared_vector) {
 		INTC_LOG("%s: Disabling int, killing handler", __func__);
 
-		/* Disable interrupt to avoid assert at IRQ install */
-		irq_disable(handle->vector_desc->intno);
+		if (handle->vector_desc->cpu == esp_cpu_get_core_id()) {
+			irq_disable(handle->vector_desc->intno);
+		}
 
 		/* Reset IRQ handler */
-		irq_connect_dynamic(handle->vector_desc->intno, 0,
-				      (intc_dyn_handler_t)z_irq_spurious,
-				      (void *)((int)handle->vector_desc->intno), 0);
+		intc_set_line_handler(handle->vector_desc->cpu, handle->vector_desc->intno, NULL,
+				      NULL);
 		/*
 		 * Theoretically, we could free the vector_desc... not sure if that's worth the
 		 * few bytes of memory we save.(We can also not use the same exit path for empty
@@ -862,6 +960,21 @@ int esp_intr_free(intr_handle_t handle)
 
 	k_free(unlinked);
 	k_free(handle);
+	return 0;
+}
+
+int esp_intr_set_line_handler(int intno, intr_handler_t handler, void *arg)
+{
+	k_spinlock_key_t key;
+
+	if (intno < 0 || intno >= SOC_CPU_INTR_NUM) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&s_intc_lock);
+	intc_set_line_handler(esp_cpu_get_core_id(), intno, handler, arg);
+	k_spin_unlock(&s_intc_lock, key);
+
 	return 0;
 }
 
