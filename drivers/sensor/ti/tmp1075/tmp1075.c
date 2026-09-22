@@ -63,7 +63,7 @@ static inline uint32_t tmp1075_conv_time_ms(uint8_t cr_idx)
 	}
 }
 
-#if CONFIG_TMP1075_ALERT_INTERRUPTS
+#if CONFIG_TMP1075_TRIGGER
 static int set_threshold_attribute(const struct device *dev, uint8_t reg, int16_t value,
 				   const char *error_msg)
 {
@@ -83,7 +83,7 @@ static int tmp1075_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 
 	switch (attr) {
-#if CONFIG_TMP1075_ALERT_INTERRUPTS
+#if CONFIG_TMP1075_TRIGGER
 		int integer, frac;
 
 	case SENSOR_ATTR_LOWER_THRESH:
@@ -108,7 +108,7 @@ static int tmp1075_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-#if CONFIG_TMP1075_ALERT_INTERRUPTS
+#if CONFIG_TMP1075_TRIGGER
 static int get_threshold_attribute(const struct device *dev, uint8_t reg, struct sensor_value *val,
 				   const char *error_msg)
 {
@@ -133,7 +133,7 @@ static int tmp1075_attr_get(const struct device *dev, enum sensor_channel chan,
 	}
 
 	switch (attr) {
-#if CONFIG_TMP1075_ALERT_INTERRUPTS
+#if CONFIG_TMP1075_TRIGGER
 	case SENSOR_ATTR_LOWER_THRESH:
 		return get_threshold_attribute(dev, TMP1075_REG_TLOW, val,
 					       "SENSOR_ATTR_LOWER_THRESH");
@@ -200,12 +200,12 @@ static DEVICE_API(sensor, tmp1075_driver_api) = {
 	.attr_get = tmp1075_attr_get,
 	.sample_fetch = tmp1075_sample_fetch,
 	.channel_get = tmp1075_channel_get,
-#ifdef CONFIG_TMP1075_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP1075_TRIGGER
 	.trigger_set = tmp1075_trigger_set,
 #endif
 };
 
-#ifdef CONFIG_TMP1075_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP1075_TRIGGER
 static int setup_interrupts(const struct device *dev)
 {
 	struct tmp1075_data *drv_data = dev->data;
@@ -252,7 +252,7 @@ static int tmp1075_init(const struct device *dev)
 		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
 		return -EINVAL;
 	}
-#ifdef CONFIG_TMP1075_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP1075_TRIGGER
 	int result = setup_interrupts(dev);
 
 	if (result < 0) {
