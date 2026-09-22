@@ -764,6 +764,8 @@ New APIs and options
     that its time must not be used. The SNTP client is now selected by
     :kconfig:option:`CONFIG_SNTP` alone, both share
     :kconfig:option:`CONFIG_SNTP_LIB`.
+  * Add :c:func:`dns_resolve_is_active` to check whether a DNS resolving
+    context is active without reading the context internals.
 
 * Power Management
 
