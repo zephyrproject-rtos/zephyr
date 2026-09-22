@@ -441,6 +441,15 @@ Networking
 Other subsystems
 ****************
 
+POSIX
+=====
+
+* The ``<zephyr/posix/net/if_arp.h>`` header has moved to
+  :zephyr_file:`include/zephyr/net/if_arp.h`. Include ``<zephyr/net/if_arp.h>`` instead.
+
+* The ``<zephyr/posix/posix_types.h>`` and ``<zephyr/posix/sys/dirent.h>`` headers have been
+  removed. Include the standard ``<sys/types.h>`` and ``<dirent.h>`` headers instead.
+
 Shell
 =====
 
