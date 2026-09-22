@@ -25,7 +25,9 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <soc.h>
 #include <esp_memory_utils.h>
 #include <errno.h>
+#include <string.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/clock_control.h>
@@ -112,6 +114,20 @@ struct irq_config {
 typedef dma_descriptor_align8_t esp_dma_desc_t;
 #else
 typedef dma_descriptor_t esp_dma_desc_t;
+#endif
+
+/* CONFIG_DCACHE_LINE_SIZE can be narrower than the line the cache really
+ * uses, so take the widest line in this build.
+ */
+#if defined(CONFIG_DCACHE)
+#if defined(CONFIG_ESP32_CACHE_L2_LINE_SIZE)
+#define DMA_ESP32_SOC_CACHE_LINE CONFIG_ESP32_CACHE_L2_LINE_SIZE
+#elif defined(CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE)
+#define DMA_ESP32_SOC_CACHE_LINE CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE
+#else
+#define DMA_ESP32_SOC_CACHE_LINE 0
+#endif
+#define DMA_ESP32_CACHE_LINE MAX(CONFIG_DCACHE_LINE_SIZE, DMA_ESP32_SOC_CACHE_LINE)
 #endif
 
 struct dma_esp32_channel {
@@ -304,29 +320,72 @@ static void dma_esp32_cache_flush_data(struct dma_esp32_channel *dma_channel)
 	}
 }
 
-/*
- * Invalidating a GDMA-written buffer also drops the rest of any cache line it
- * shares with CPU-owned data. When the buffer is not cache-line aligned or
- * sized, flush the head and tail lines first so adjacent dirty data is written
- * back to memory before the invalidate discards it.
+/* Drop the cache over a buffer the GDMA wrote. Callers pass buffers that are
+ * not cache-line aligned, so the first and last lines also hold data the CPU
+ * owns and keeps writing during the transfer: save those bytes and put them
+ * back, or they are lost. Writing the lines back instead would put a stale
+ * copy of the buffer on top of the received data.
  */
-static void dma_esp32_cache_invd_data(struct dma_esp32_channel *dma_channel)
+static void dma_esp32_invd_keep_edges(uint8_t *buf, size_t len)
 {
-	const size_t line = sys_cache_data_line_size_get();
+#if defined(CONFIG_DCACHE)
+	const size_t line = DMA_ESP32_CACHE_LINE;
+	uint8_t head[DMA_ESP32_CACHE_LINE - 1];
+	uint8_t tail[DMA_ESP32_CACHE_LINE - 1];
+	uintptr_t start = (uintptr_t)buf;
+	uintptr_t end = start + len;
+	uintptr_t base;
+	size_t head_len, tail_len;
+
+	base = ROUND_DOWN(start, line);
+	head_len = start - base;
+	tail_len = ROUND_UP(end, line) - end;
+
+	if (head_len > 0) {
+		memcpy(head, (void *)base, head_len);
+	}
+	if (tail_len > 0) {
+		memcpy(tail, (void *)end, tail_len);
+	}
+
+	sys_cache_data_invd_range((void *)base, ROUND_UP(end, line) - base);
+
+	if (head_len > 0) {
+		memcpy((void *)base, head, head_len);
+	}
+	if (tail_len > 0) {
+		memcpy((void *)end, tail, tail_len);
+	}
+#else
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+#endif
+}
+
+/* Before a transfer the CPU still owns the buffer: the controller may fill
+ * only part of it, and the rest has to read back as the CPU left it. Write
+ * the cached copy out and drop it, so memory holds the CPU data and no
+ * stale line can later be written over what the controller delivers.
+ */
+static void dma_esp32_cache_prepare_data(struct dma_esp32_channel *dma_channel)
+{
 	esp_dma_desc_t *desc = dma_channel->desc_list;
 
 	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list) && desc; ++i) {
 		if (desc->buffer && desc->dw0.size) {
-			uintptr_t start = (uintptr_t)desc->buffer;
-			uintptr_t end = start + desc->dw0.size;
+			sys_cache_data_flush_and_invd_range(desc->buffer, desc->dw0.size);
+		}
+		desc = desc->next;
+	}
+}
 
-			if (line && (start & (line - 1))) {
-				sys_cache_data_flush_range((void *)start, 1);
-			}
-			if (line && (end & (line - 1))) {
-				sys_cache_data_flush_range((void *)(end - 1), 1);
-			}
-			sys_cache_data_invd_range(desc->buffer, desc->dw0.size);
+static void dma_esp32_cache_invd_data(struct dma_esp32_channel *dma_channel)
+{
+	esp_dma_desc_t *desc = dma_channel->desc_list;
+
+	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list) && desc; ++i) {
+		if (desc->buffer && desc->dw0.size) {
+			dma_esp32_invd_keep_edges(desc->buffer, desc->dw0.size);
 		}
 		desc = desc->next;
 	}
@@ -346,9 +405,11 @@ static void IRAM_ATTR dma_esp32_isr_handle_rx(const struct device *dev,
 		status = DMA_STATUS_COMPLETE;
 		pm_unlock = true;
 	} else if (intr_status & GDMA_LL_EVENT_RX_DONE) {
+		dma_esp32_cache_invd_data(rx);
 		status = DMA_STATUS_BLOCK;
 #if defined(CONFIG_SOC_SERIES_ESP32S3)
 	} else if (intr_status & GDMA_LL_EVENT_RX_WATER_MARK) {
+		dma_esp32_cache_invd_data(rx);
 		status = DMA_STATUS_BLOCK;
 #endif
 	} else {
@@ -509,7 +570,7 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 	if (dma_channel->dir == DMA_TX) {
 		dma_esp32_cache_flush_data(dma_channel);
 	} else {
-		dma_esp32_cache_invd_data(dma_channel);
+		dma_esp32_cache_prepare_data(dma_channel);
 	}
 
 	return 0;
@@ -932,7 +993,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 	if (dma_channel->dir == DMA_TX) {
 		dma_esp32_cache_flush_data(dma_channel);
 	} else {
-		dma_esp32_cache_invd_data(dma_channel);
+		dma_esp32_cache_prepare_data(dma_channel);
 	}
 
 	return 0;
