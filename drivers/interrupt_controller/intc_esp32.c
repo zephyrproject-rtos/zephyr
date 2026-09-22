@@ -6,6 +6,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/barrier.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,6 +65,11 @@ LOG_MODULE_REGISTER(intc_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 /* Typedef for C-callable interrupt handler function */
 typedef void (*intc_dyn_handler_t)(const void *);
 
+static int esp_intr_disable_locked(intr_handle_t handle);
+
+/* Never held across the heap and never taken from an ISR. */
+static struct k_spinlock s_intc_lock;
+
 /* Linked list of vector descriptions, sorted by cpu.intno value */
 static struct vector_desc_t *vector_desc_head; /* implicitly initialized to NULL */
 
@@ -70,7 +77,7 @@ static struct vector_desc_t *vector_desc_head; /* implicitly initialized to NULL
 static uint32_t non_iram_int_mask[CONFIG_MP_MAX_NUM_CPUS];
 /* This bitmask has 1 in it if the int was disabled using esp_intr_noniram_disable. */
 static uint32_t non_iram_int_disabled[CONFIG_MP_MAX_NUM_CPUS];
-static bool non_iram_int_disabled_flag[CONFIG_MP_MAX_NUM_CPUS];
+static uint32_t non_iram_int_disable_nest[CONFIG_MP_MAX_NUM_CPUS];
 
 /*
  * Inserts an item into vector_desc list so that the list is sorted
@@ -116,28 +123,30 @@ static struct vector_desc_t *find_desc_for_int(int intno, int cpu)
 }
 
 /*
- * Returns a vector_desc entry for an intno/cpu.
- * Either returns a preexisting one or allocates a new one and inserts
- * it into the list. Returns NULL on malloc fail.
+ * Returns the entry for intno/cpu, taking *spare for a new one so the
+ * allocation stays outside s_intc_lock.
  */
-static struct vector_desc_t *get_desc_for_int(int intno, int cpu)
+static struct vector_desc_t *get_desc_for_int(int intno, int cpu, struct vector_desc_t **spare)
 {
 	struct vector_desc_t *vd = find_desc_for_int(intno, cpu);
 
-	if (vd == NULL) {
-		struct vector_desc_t *newvd = k_malloc(sizeof(struct vector_desc_t));
-
-		if (newvd == NULL) {
-			return NULL;
-		}
-		memset(newvd, 0, sizeof(struct vector_desc_t));
-		newvd->intno = intno;
-		newvd->cpu = cpu;
-		insert_vector_desc(newvd);
-		return newvd;
-	} else {
+	if (vd != NULL) {
 		return vd;
 	}
+
+	if (spare == NULL || *spare == NULL) {
+		return NULL;
+	}
+
+	vd = *spare;
+	*spare = NULL;
+
+	memset(vd, 0, sizeof(struct vector_desc_t));
+	vd->intno = intno;
+	vd->cpu = cpu;
+	insert_vector_desc(vd);
+
+	return vd;
 }
 
 /*
@@ -177,6 +186,9 @@ static struct vector_desc_t *find_desc_for_source(int source, int cpu)
 
 int esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 {
+	k_spinlock_key_t key;
+	struct vector_desc_t *spare;
+
 	if (intno >= SOC_CPU_INTR_NUM) {
 		return -EINVAL;
 	}
@@ -184,24 +196,34 @@ int esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 		return -EINVAL;
 	}
 
-	unsigned int key = irq_lock();
-	struct vector_desc_t *vd = get_desc_for_int(intno, cpu);
+	spare = k_malloc(sizeof(struct vector_desc_t));
+	if (spare == NULL) {
+		return -ENOMEM;
+	}
+
+	key = k_spin_lock(&s_intc_lock);
+	struct vector_desc_t *vd = get_desc_for_int(intno, cpu, &spare);
 
 	if (vd == NULL) {
-		irq_unlock(key);
+		k_spin_unlock(&s_intc_lock, key);
+		k_free(spare);
 		return -ENOMEM;
 	}
 	vd->flags = (vd->flags & ~VECDESC_FL_TYPE_MASK) | VECDESC_FL_SHARED;
 	if (is_int_ram) {
 		vd->flags |= VECDESC_FL_INIRAM;
 	}
-	irq_unlock(key);
+	k_spin_unlock(&s_intc_lock, key);
+	k_free(spare);
 
 	return 0;
 }
 
 int esp_intr_reserve(int intno, int cpu)
 {
+	k_spinlock_key_t key;
+	struct vector_desc_t *spare;
+
 	if (intno >= SOC_CPU_INTR_NUM) {
 		return -EINVAL;
 	}
@@ -209,15 +231,22 @@ int esp_intr_reserve(int intno, int cpu)
 		return -EINVAL;
 	}
 
-	unsigned int key = irq_lock();
-	struct vector_desc_t *vd = get_desc_for_int(intno, cpu);
+	spare = k_malloc(sizeof(struct vector_desc_t));
+	if (spare == NULL) {
+		return -ENOMEM;
+	}
+
+	key = k_spin_lock(&s_intc_lock);
+	struct vector_desc_t *vd = get_desc_for_int(intno, cpu, &spare);
 
 	if (vd == NULL) {
-		irq_unlock(key);
+		k_spin_unlock(&s_intc_lock, key);
+		k_free(spare);
 		return -ENOMEM;
 	}
 	vd->flags = VECDESC_FL_RESERVED;
-	irq_unlock(key);
+	k_spin_unlock(&s_intc_lock, key);
+	k_free(spare);
 
 	return 0;
 }
@@ -225,11 +254,13 @@ int esp_intr_reserve(int intno, int cpu)
 /* Returns true if handler for interrupt is not the default unhandled interrupt handler */
 static bool intr_has_handler(int intr, int cpu)
 {
-	bool r;
+	ARG_UNUSED(cpu);
 
-	r = _sw_isr_table[intr * CONFIG_MP_MAX_NUM_CPUS + cpu].isr != z_irq_spurious;
+#ifdef CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	intr += CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET;
+#endif
 
-	return r;
+	return _sw_isr_table[intr].isr != z_irq_spurious;
 }
 
 static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)
@@ -463,9 +494,15 @@ static int get_available_int(int flags, int cpu, int force, int source)
 static void IRAM_ATTR shared_intr_isr(void *arg)
 {
 	struct vector_desc_t *vd = (struct vector_desc_t *)arg;
-	struct shared_vector_desc_t *sh_vec = vd->shared_vec_info;
+	struct shared_vector_desc_t *sh_vec;
 
-	unsigned int key = irq_lock();
+	/* Lock-free walk: esp_intr_free() waits for it before releasing an entry. */
+	unsigned int key = arch_irq_lock();
+
+	vd->isr_busy = true;
+	barrier_dmem_fence_full();
+	sh_vec = vd->shared_vec_info;
+
 	while (sh_vec) {
 		if (!sh_vec->disabled) {
 			if (!(sh_vec->statusreg) || (*sh_vec->statusreg & sh_vec->statusmask)) {
@@ -474,7 +511,10 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
 		}
 		sh_vec = sh_vec->next;
 	}
-	irq_unlock(key);
+
+	barrier_dmem_fence_full();
+	vd->isr_busy = false;
+	arch_irq_unlock(key);
 }
 
 int esp_intr_alloc_intrstatus(int source,
@@ -485,6 +525,7 @@ int esp_intr_alloc_intrstatus(int source,
 			      void *arg,
 			     intr_handle_t *ret_handle)
 {
+	k_spinlock_key_t key;
 	intr_handle_data_t *ret = NULL;
 	int force = -1;
 
@@ -563,36 +604,50 @@ int esp_intr_alloc_intrstatus(int source,
 		return -ENOMEM;
 	}
 
-	unsigned int key = irq_lock();
+	struct shared_vector_desc_t *sv = NULL;
+	struct vector_desc_t *spare;
+
+	if (flags & ESP_INTR_FLAG_SHARED) {
+		sv = k_malloc(sizeof(struct shared_vector_desc_t));
+		if (sv == NULL) {
+			k_free(ret);
+			return -ENOMEM;
+		}
+	}
+
+	spare = k_malloc(sizeof(struct vector_desc_t));
+	if (spare == NULL) {
+		k_free(sv);
+		k_free(ret);
+		return -ENOMEM;
+	}
+
+	key = k_spin_lock(&s_intc_lock);
 	int cpu = esp_cpu_get_core_id();
 	/* See if we can find an interrupt that matches the flags. */
 	int intr = get_available_int(flags, cpu, force, source);
 
 	if (intr == -1) {
 		/* None found. Bail out. */
-		irq_unlock(key);
+		k_spin_unlock(&s_intc_lock, key);
+		k_free(spare);
+		k_free(sv);
 		k_free(ret);
 		return -ENODEV;
 	}
 	/* Get an int vector desc for int. */
-	struct vector_desc_t *vd = get_desc_for_int(intr, cpu);
+	struct vector_desc_t *vd = get_desc_for_int(intr, cpu, &spare);
 
 	if (vd == NULL) {
-		irq_unlock(key);
+		k_spin_unlock(&s_intc_lock, key);
+		k_free(spare);
+		k_free(sv);
 		k_free(ret);
 		return -ENOMEM;
 	}
 
 	/* Allocate that int! */
 	if (flags & ESP_INTR_FLAG_SHARED) {
-		/* Populate vector entry and add to linked list. */
-		struct shared_vector_desc_t *sv = k_malloc(sizeof(struct shared_vector_desc_t));
-
-		if (sv == NULL) {
-			irq_unlock(key);
-			k_free(ret);
-			return -ENOMEM;
-		}
 		memset(sv, 0, sizeof(struct shared_vector_desc_t));
 		sv->statusreg = (uint32_t *)intrstatusreg;
 		sv->statusmask = intrstatusmask;
@@ -601,6 +656,8 @@ int esp_intr_alloc_intrstatus(int source,
 		sv->next = vd->shared_vec_info;
 		sv->source = source;
 		sv->disabled = 0;
+		/* Publish after the fields are visible to a concurrent chain walk. */
+		barrier_dmem_fence_full();
 		vd->shared_vec_info = sv;
 		vd->flags |= VECDESC_FL_SHARED;
 
@@ -666,7 +723,7 @@ int esp_intr_alloc_intrstatus(int source,
 	 * real until the end of the critical section.
 	 */
 	if (flags & ESP_INTR_FLAG_INTRDISABLED) {
-		esp_intr_disable(ret);
+		esp_intr_disable_locked(ret);
 	}
 
 #if SOC_INT_PLIC_SUPPORTED
@@ -674,7 +731,9 @@ int esp_intr_alloc_intrstatus(int source,
 	RV_CLEAR_CSR(mideleg, BIT(intr));
 #endif
 
-	irq_unlock(key);
+	k_spin_unlock(&s_intc_lock, key);
+
+	k_free(spare);
 
 	/* Fill return handle if needed, otherwise free handle. */
 	if (ret_handle != NULL) {
@@ -704,6 +763,7 @@ int esp_intr_alloc(int source,
 
 int IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 {
+	k_spinlock_key_t key;
 	if (!handle) {
 		return -EINVAL;
 	}
@@ -712,7 +772,7 @@ int IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 	if (vd->flags & VECDESC_FL_SHARED) {
 		return -EINVAL;
 	}
-	unsigned int key = irq_lock();
+	key = k_spin_lock(&s_intc_lock);
 	uint32_t mask = (1 << vd->intno);
 
 	if (is_in_iram) {
@@ -722,20 +782,22 @@ int IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 		vd->flags &= ~VECDESC_FL_INIRAM;
 		non_iram_int_mask[vd->cpu] |= mask;
 	}
-	irq_unlock(key);
+	k_spin_unlock(&s_intc_lock, key);
 	return 0;
 }
 
 int esp_intr_free(intr_handle_t handle)
 {
+	k_spinlock_key_t key;
 	bool free_shared_vector = false;
+	struct shared_vector_desc_t *unlinked = NULL;
 
 	if (!handle) {
 		return -EINVAL;
 	}
 
-	unsigned int key = irq_lock();
-	esp_intr_disable(handle);
+	key = k_spin_lock(&s_intc_lock);
+	esp_intr_disable_locked(handle);
 	if (handle->vector_desc->flags & VECDESC_FL_SHARED) {
 		/* Find and kill the shared int */
 		struct shared_vector_desc_t *svd = handle->vector_desc->shared_vec_info;
@@ -744,13 +806,12 @@ int esp_intr_free(intr_handle_t handle)
 		assert(svd); /* should be something in there for a shared int */
 		while (svd != NULL) {
 			if (svd == handle->shared_vector_desc) {
-				/* Found it. Now kill it. */
 				if (prevsvd) {
 					prevsvd->next = svd->next;
 				} else {
 					handle->vector_desc->shared_vec_info = svd->next;
 				}
-				k_free(svd);
+				unlinked = svd;
 				break;
 			}
 			prevsvd = svd;
@@ -789,7 +850,17 @@ int esp_intr_free(intr_handle_t handle)
 		/* Also kill non_iram mask bit. */
 		non_iram_int_mask[handle->vector_desc->cpu] &= ~(1 << (handle->vector_desc->intno));
 	}
-	irq_unlock(key);
+	k_spin_unlock(&s_intc_lock, key);
+
+	/* Wait for a chain walk on the other core before freeing. */
+	if (unlinked != NULL && handle->vector_desc->cpu != esp_cpu_get_core_id()) {
+		barrier_dmem_fence_full();
+		while (handle->vector_desc->isr_busy) {
+			arch_spin_relax();
+		}
+	}
+
+	k_free(unlinked);
 	k_free(handle);
 	return 0;
 }
@@ -826,10 +897,11 @@ int esp_intr_get_cpu(intr_handle_t handle)
 
 int IRAM_ATTR esp_intr_enable(intr_handle_t handle)
 {
+	k_spinlock_key_t key;
 	if (!handle) {
 		return -EINVAL;
 	}
-	unsigned int key = irq_lock();
+	key = k_spin_lock(&s_intc_lock);
 	int source;
 
 	if (handle->shared_vector_desc) {
@@ -845,21 +917,18 @@ int IRAM_ATTR esp_intr_enable(intr_handle_t handle)
 	} else {
 		/* Re-enable using cpu int ena reg */
 		if (handle->vector_desc->cpu != esp_cpu_get_core_id()) {
-			irq_unlock(key);
+			k_spin_unlock(&s_intc_lock, key);
 			return -EINVAL; /* Can only enable these ints on this cpu */
 		}
 		irq_enable(handle->vector_desc->intno);
 	}
-	irq_unlock(key);
+	k_spin_unlock(&s_intc_lock, key);
 	return 0;
 }
 
-int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
+/* Caller must hold s_intc_lock. */
+static int IRAM_ATTR esp_intr_disable_locked(intr_handle_t handle)
 {
-	if (!handle) {
-		return -EINVAL;
-	}
-	unsigned int key = irq_lock();
 	int source;
 	bool disabled = true;
 
@@ -890,47 +959,65 @@ int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 	} else {
 		/* Disable using per-cpu regs */
 		if (handle->vector_desc->cpu != esp_cpu_get_core_id()) {
-			irq_unlock(key);
 			return -EINVAL; /* Can only enable these ints on this cpu */
 		}
 		irq_disable(handle->vector_desc->intno);
 	}
-	irq_unlock(key);
 	return 0;
+}
+
+int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
+{
+	int ret;
+
+	if (handle == NULL) {
+		return -EINVAL;
+	}
+
+	K_SPINLOCK(&s_intc_lock) {
+		ret = esp_intr_disable_locked(handle);
+	}
+
+	return ret;
 }
 
 void IRAM_ATTR esp_intr_noniram_disable(void)
 {
-	unsigned int key = irq_lock();
-	int oldint;
+	k_spinlock_key_t key = k_spin_lock(&s_intc_lock);
+	uint32_t oldint;
 	int cpu = esp_cpu_get_core_id();
-	int non_iram_ints = non_iram_int_mask[cpu];
+	uint32_t non_iram_ints = non_iram_int_mask[cpu];
 
-	if (non_iram_int_disabled_flag[cpu]) {
-		abort();
+	non_iram_int_disable_nest[cpu]++;
+	if (non_iram_int_disable_nest[cpu] > 1U) {
+		k_spin_unlock(&s_intc_lock, key);
+		return;
 	}
-	non_iram_int_disabled_flag[cpu] = true;
 	oldint = esp_cpu_intr_get_enabled_mask();
 	esp_cpu_intr_disable(non_iram_ints);
 	rtc_isr_noniram_disable(cpu);
 	/* Save which ints we did disable */
 	non_iram_int_disabled[cpu] = oldint & non_iram_ints;
-	irq_unlock(key);
+	k_spin_unlock(&s_intc_lock, key);
 }
 
 void IRAM_ATTR esp_intr_noniram_enable(void)
 {
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&s_intc_lock);
 	int cpu = esp_cpu_get_core_id();
-	int non_iram_ints = non_iram_int_disabled[cpu];
+	uint32_t non_iram_ints = non_iram_int_disabled[cpu];
 
-	if (!non_iram_int_disabled_flag[cpu]) {
+	if (non_iram_int_disable_nest[cpu] == 0U) {
 		abort();
 	}
-	non_iram_int_disabled_flag[cpu] = false;
+	non_iram_int_disable_nest[cpu]--;
+	if (non_iram_int_disable_nest[cpu] > 0U) {
+		k_spin_unlock(&s_intc_lock, key);
+		return;
+	}
 	esp_cpu_intr_enable(non_iram_ints);
 	rtc_isr_noniram_enable(cpu);
-	irq_unlock(key);
+	k_spin_unlock(&s_intc_lock, key);
 }
 
 #if defined(CONFIG_RISCV)

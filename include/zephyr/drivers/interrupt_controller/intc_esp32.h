@@ -96,6 +96,7 @@ struct vector_desc_t {
 	int source: 16;                               /* Int mux flags, used when not shared */
 	struct shared_vector_desc_t *shared_vec_info; /* used when VECDESC_FL_SHARED */
 	struct vector_desc_t *next;
+	volatile bool isr_busy; /**< Shared ISR is walking shared_vec_info */
 };
 
 /** Interrupt handler associated data structure */
