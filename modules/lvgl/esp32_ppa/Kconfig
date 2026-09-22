@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LV_Z_USE_ESP32_PPA
+	bool "Pixel processing accelerator draw unit"
+	depends on ESP32_PPA
+	help
+	  Draw fills and image blits with the pixel processing
+	  accelerator instead of the software renderer.
+
+if LV_Z_USE_ESP32_PPA
+
+config LV_Z_USE_ESP32_PPA_IMG
+	bool "Accelerate image draws"
+	default y
+	help
+	  Draw unscaled, unrotated image blits with the accelerator.
+
+config LV_DRAW_BUF_ALIGN
+	default ESP32_CACHE_L2_LINE_SIZE
+	help
+	  The accelerator reads and writes the draw buffers over 2D-DMA,
+	  so they are aligned to the L2 cache line.
+
+endif # LV_Z_USE_ESP32_PPA

@@ -14,6 +14,9 @@
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
 #include "lvgl_fs.h"
 #endif
+#ifdef CONFIG_LV_Z_USE_ESP32_PPA
+#include "esp32_ppa/lvgl_ppa.h"
+#endif
 #ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
 #include "lvgl_mem.h"
 #endif
@@ -388,6 +391,10 @@ int lvgl_init(void)
 
 #if CONFIG_LV_Z_LOG_LEVEL != 0
 	lv_log_register_print_cb(lvgl_log);
+#endif
+
+#ifdef CONFIG_LV_Z_USE_ESP32_PPA
+	lvgl_ppa_init();
 #endif
 
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
