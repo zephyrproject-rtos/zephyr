@@ -186,6 +186,14 @@ static int stm32_dma_init(const struct device *dev)
 		return ret;
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
+	if (STM32_DMA_FEATURES_FIFO_THRESHOLD(DT_INST_DMAS_CELL_BY_IDX(0, 0, features)) ==
+	    DMA_FIFO_THRESHOLD_FULL) {
+		hdma.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+		hdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+	}
+#endif
+
 	hdma.Instance = STM32_DMA_GET_INSTANCE(dma->reg, dma->channel);
 
 	/* Initialize DMA HAL */
