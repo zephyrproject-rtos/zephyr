@@ -24,6 +24,14 @@ tests:
       - nucleo_h753zi
     integration_platforms:
       - nucleo_h753zi
+  drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_hsi_64_vos3:
+    extra_args:
+      DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_64.overlay;boards/vos3.overlay"
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
+    integration_platforms:
+      - nucleo_h753zi
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_csi_4:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/csi_4.overlay"
     platform_allow:
