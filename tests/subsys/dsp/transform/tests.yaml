@@ -29,6 +29,22 @@ tests:
     # The CMSIS twiddle tables for every supported length dominate the image.
     min_flash: 448
     min_ram: 64
+  zdsp.transform.powerquad:
+    filter: dt_compat_enabled("nxp,powerquad")
+    integration_platforms:
+      - frdm_mcxn947/mcxn947/cpu0
+    platform_exclude:
+      # For RT595, PowerQuad can't access flexspi0, but can access flexspi1
+      - mimxrt595_evk/mimxrt595s/cm33
+      # For RT685, PowerQuad can't access flexspi memory
+      - mimxrt685_evk/mimxrt685s/cm33
+    tags: zdsp
+    # Smaller than the CMSIS scenarios, which link the fixed-point twiddle
+    # tables too, but still too large for the 256 KB LPC55S69 parts.
+    min_flash: 448
+    min_ram: 64
+    extra_configs:
+      - CONFIG_DSP_BACKEND_POWERQUAD=y
   zdsp.transform.arcmwdt:
     filter: CONFIG_ISA_ARCV2
     toolchain_allow: arcmwdt
