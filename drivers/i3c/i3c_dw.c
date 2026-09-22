@@ -115,6 +115,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define RX_TX_DATA_PORT              0x14
 #define IBI_QUEUE_STATUS             0x18
 #define IBI_QUEUE_STATUS_IBI_STS(x)  (((x) & GENMASK(31, 28)) >> 28)
+#define IBI_QUEUE_STATUS_LAST_STATUS BIT(24)
 #define IBI_QUEUE_STATUS_IBI_ID(x)   (((x) & GENMASK(15, 8)) >> 8)
 #define IBI_QUEUE_STATUS_DATA_LEN(x) ((x) & GENMASK(7, 0))
 #define IBI_QUEUE_IBI_ADDR(x)        (IBI_QUEUE_STATUS_IBI_ID(x) >> 1)
@@ -492,6 +493,11 @@ struct dw_i3c_data {
 #ifdef CONFIG_I3C_USE_IBI
 	struct k_sem ibi_sts_sem;
 	struct k_sem sem_hj;
+#ifdef CONFIG_I3C_CONTROLLER
+	/* Reassembly buffer: the IP splits an IBI payload across status entries. */
+	uint8_t ibi_data[CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE];
+	uint8_t ibi_data_len;
+#endif /* CONFIG_I3C_CONTROLLER */
 #endif
 
 	struct dw_i3c_xfer xfer;
@@ -1593,7 +1599,7 @@ static void dw_i3c_ibi_discard_payload(const struct device *dev, uint8_t nbytes)
 
 static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status, bool has_ibi_data)
 {
-	uint8_t ibi_data[CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE];
+	struct dw_i3c_data *data = dev->data;
 	uint8_t addr, len;
 	int pos;
 
@@ -1604,18 +1610,36 @@ static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status, boo
 	if (pos < 0) {
 		LOG_ERR("%s: Invalid Slave address", dev->name);
 		dw_i3c_ibi_discard_payload(dev, len);
+		data->ibi_data_len = 0;
 		return;
 	}
 
 	struct i3c_device_desc *desc = i3c_dev_list_i3c_addr_find(dev, addr);
 
-	if (len > 0) {
-		read_ibi_fifo(dev, ibi_data, len);
+	/* A payload longer than one FIFO word arrives as several status
+	 * entries, only the last of which has LAST_STATUS set. Every entry's
+	 * data must leave the FIFO, but one IBI is delivered once complete.
+	 */
+	while (len > 0U) {
+		uint8_t chunk[4];
+		uint8_t n = MIN(len, sizeof(chunk));
+		uint8_t room = sizeof(data->ibi_data) - data->ibi_data_len;
+
+		read_ibi_fifo(dev, chunk, n);
+		memcpy(&data->ibi_data[data->ibi_data_len], chunk, MIN(n, room));
+		data->ibi_data_len += MIN(n, room);
+		len -= n;
 	}
 
-	if (i3c_ibi_work_enqueue_target_irq(desc, ibi_data, len) != 0) {
+	if ((ibi_status & IBI_QUEUE_STATUS_LAST_STATUS) == 0U) {
+		return;
+	}
+
+	if (i3c_ibi_work_enqueue_target_irq(desc, data->ibi_data, data->ibi_data_len) != 0) {
 		LOG_ERR("%s: Error enqueue IBI IRQ work", dev->name);
 	}
+
+	data->ibi_data_len = 0;
 }
 
 static void dw_i3c_handle_hj(const struct device *dev, uint32_t ibi_status)
@@ -2993,6 +3017,10 @@ static int dw_i3c_recover_bus(const struct device *dev)
 		(void)sys_read32(dw_i3c_regs(dev) + IBI_QUEUE_STATUS);
 		ndwords--;
 	}
+#ifdef CONFIG_I3C_USE_IBI
+	/* Discarding the queue orphans any half-reassembled IBI payload. */
+	data->ibi_data_len = 0;
+#endif
 
 	/* Flush command / response / data FIFOs and the IBI queue.
 	 * Crucially, SOFT reset is NOT asserted here — DAT/DCT survive.
