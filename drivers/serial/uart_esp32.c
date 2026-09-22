@@ -154,6 +154,7 @@ struct uart_esp32_data {
 	 *  Consumed and cleared by uart_err_check().
 	 */
 	uint32_t isr_error_flags;
+	struct k_spinlock err_lock;
 #endif
 #if CONFIG_UART_ASYNC_API
 	struct uart_esp32_async_data async;
@@ -266,14 +267,14 @@ static int uart_esp32_err_check(const struct device *dev)
 	 * In pure polling mode (no ISR) read hardware directly.
 	 */
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&data->err_lock);
 
 	mask = data->isr_error_flags;
 	data->isr_error_flags = 0;
 	mask |= uart_hal_get_intsts_mask(&data->hal) & UART_ESP32_ERR_INTR_MASK;
 	uart_hal_clr_intsts_mask(&data->hal, mask & UART_ESP32_ERR_INTR_MASK);
 
-	irq_unlock(key);
+	k_spin_unlock(&data->err_lock, key);
 #else
 	mask = uart_hal_get_intsts_mask(&data->hal);
 	uart_hal_clr_intsts_mask(&data->hal, mask & UART_ESP32_ERR_INTR_MASK);
@@ -692,18 +693,22 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct uart_esp32_data *data = dev->data;
-	uint32_t uart_intr_status = uart_hal_get_intsts_mask(&data->hal);
-
-	if (uart_intr_status == 0) {
-		return;
-	}
+	uint32_t uart_intr_status;
+	k_spinlock_key_t key;
 
 	/* Save error flags before clearing so that uart_err_check()
 	 * can report them from the user callback.
 	 */
-	data->isr_error_flags |= uart_intr_status & UART_ESP32_ERR_INTR_MASK;
+	key = k_spin_lock(&data->err_lock);
+	uart_intr_status = uart_hal_get_intsts_mask(&data->hal);
+	if (uart_intr_status == 0) {
+		k_spin_unlock(&data->err_lock, key);
+		return;
+	}
 
+	data->isr_error_flags |= uart_intr_status & UART_ESP32_ERR_INTR_MASK;
 	uart_hal_clr_intsts_mask(&data->hal, uart_intr_status);
+	k_spin_unlock(&data->err_lock, key);
 
 #if CONFIG_PM
 	if (uart_intr_status & UART_INTR_TX_DONE) {
