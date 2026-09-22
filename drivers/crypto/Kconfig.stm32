@@ -7,6 +7,8 @@ menuconfig CRYPTO_STM32
 	bool "STM32 Cryptographic Accelerator driver"
 	default y
 	depends on DT_HAS_ST_STM32_AES_ENABLED || DT_HAS_ST_STM32_CRYP_ENABLED
+	depends on !USE_STM32_HAL_PSA_CRYPTO_DRIVERS_AES && \
+		!USE_STM32_HAL_PSA_CRYPTO_DRIVERS_CRYP
 	select USE_STM32_HAL_AES if STM32_HAL2
 	select USE_STM32_HAL_CRYP if !STM32_HAL2
 	select USE_STM32_HAL_CRYP_EX if !STM32_HAL2
@@ -37,7 +39,8 @@ endif # CRYPTO_STM32
 config CRYPTO_STM32_HASH
 	bool "STM32 Hash Accelerator driver"
 	default y
-	depends on DT_HAS_ST_STM32_HASH_ENABLED
+	depends on DT_HAS_ST_STM32_HASH_ENABLED && \
+		!USE_STM32_HAL_PSA_CRYPTO_DRIVERS_HASH
 	select USE_STM32_HAL_HASH
 	select USE_STM32_HAL_HASH_EX
 	help
