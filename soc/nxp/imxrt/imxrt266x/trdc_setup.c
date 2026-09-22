@@ -6,8 +6,8 @@
 
 /*
  * Access control for the i.MX RT266x: hand the Resource Domain Controller over
- * from the EdgeLock enclave, then put the DMA initiators in the same domain as
- * the CPU. Both have to happen before any driver touches a peripheral.
+ * from the EdgeLock enclave, then put every bus-master initiator in the same
+ * domain as the CPU. Both have to happen before any driver touches a peripheral.
  */
 
 #include <zephyr/kernel.h>
@@ -56,27 +56,77 @@ static void soc_ele_release_rdc(void)
 }
 
 /*
- * Give the MAIN eDMA masters the CPU's access-control domain, so a DMA initiator
- * sees the same view of the RDC-released peripherals and memories that the CPU
- * does. CPU0's own AXIM/AHBP ports are already in domain 0.
+ * Give every TRDC master (MAIN / CMPT / WAKE / AUDIO / COMM / MEDIA) the CPU's
+ * access-control domain, so every initiator's transfers see the same view of
+ * the RDC-released peripherals and memories that the CPU does. CPU0's own
+ * AXIM/AHBP ports (CMPT masters 0, 1) are already in domain 0.
  *
- * The TRDC has one master per channel PAIR, and an unassigned pair is denied
- * silently -- the transfer completes and moves nothing -- so every pair of both
- * controllers is assigned rather than just the ones a given driver happens to
- * use. Masters 0..7 are eDMA5's 16 channels, 8..23 are eDMA3's 32.
+ * Mirrors BOARD_ConfigTRDC()'s exhaustive branch in the SDK board support,
+ * which is what actually runs there: board.h defines
+ * BOARD_TRDC_ALL_MASTER_TO_PREVELEGE_DOMAIN to 1 unless a build overrides it.
+ * BOARD_CommonSetting() calls BOARD_InitBootClocks() before BOARD_ConfigTRDC()
+ * for the same reason this has to run after soc_clock_init(): MEDIA__TRDC sits
+ * on the MEDIA domain bus, which mediabus_rootclk (CGU slice 32) has to be
+ * clocking before anything on that bus is accessible -- writing it any earlier
+ * stalls the bus transaction indefinitely and hangs the core.
+ *
+ * The TRDC has one master per channel PAIR on the eDMA controllers, and an
+ * unassigned master is denied silently -- the transfer completes and moves
+ * nothing -- so every master is assigned rather than just the ones a given
+ * Zephyr driver happens to use today. Upper bounds are each block's last
+ * trdc_master_t enumerator (fsl_trdc_soc.h); ranges are contiguous except for
+ * MAIN's five reserved slots.
  */
-static void soc_trdc_assign_dma_masters(void)
+void soc_trdc_assign_masters(void)
 {
-	for (uint8_t master = kTRDC_MAIN_MasterEDMA5Ch0_1; master <= kTRDC_MAIN_MasterMEDMA3Ch30_31;
-	     master++) {
+	for (uint32_t master = 0U; master <= (uint32_t)kTRDC_MAIN_MasterTESTPORT; master++) {
+		if (master == (uint32_t)kTRDC_MAIN_MasterReserved0 ||
+		    master == (uint32_t)kTRDC_MAIN_MasterReserved1 ||
+		    master == (uint32_t)kTRDC_MAIN_MasterReserved2 ||
+		    master == (uint32_t)kTRDC_MAIN_MasterReserved3 ||
+		    master == (uint32_t)kTRDC_MAIN_MasterReserved4) {
+			continue;
+		}
 		MAIN__TRDC->MDA_DFMT1[master].MDA_W_DFMT1[0] =
+			TRDC_MDA_W_DFMT1_DID(0) | TRDC_MDA_W_DFMT1_VLD_MASK;
+	}
+
+	/* CPU0_AXIM/CPU0_AHBP (0, 1) are the CPU's own ports; Reserved0/1 (2, 3)
+	 * do not exist.
+	 */
+	for (uint32_t master = (uint32_t)kTRDC_CMPT_MasterLLC_RD;
+	     master <= (uint32_t)kTRDC_CMPT_MasterNPU; master++) {
+		CMPT__TRDC->MDA_DFMT1[master].MDA_W_DFMT1[0] =
+			TRDC_CMPT_MDA_W_DFMT1_DID(0) | TRDC_CMPT_MDA_W_DFMT1_VLD_MASK;
+	}
+
+	for (uint32_t master = 0U; master <= (uint32_t)kTRDC_WAKE_MasterWEDMA3Ch0_4; master++) {
+		WAKE__TRDC->MDA_DFMT1[master].MDA_W_DFMT1[0] =
+			TRDC_MDA_W_DFMT1_DID(0) | TRDC_MDA_W_DFMT1_VLD_MASK;
+	}
+
+	for (uint32_t master = 0U; master <= (uint32_t)kTRDC_AUDIO_MasterAEDMA3Ch0_4; master++) {
+		AUDIO__TRDC->MDA_DFMT1[master].MDA_W_DFMT1[0] =
+			TRDC_MDA_W_DFMT1_DID(0) | TRDC_MDA_W_DFMT1_VLD_MASK;
+	}
+
+	for (uint32_t master = 0U; master <= (uint32_t)kTRDC_COMM_MasterXSPI_RESP; master++) {
+		COMM__TRDC->MDA_DFMT1[master].MDA_W_DFMT1[0] =
+			TRDC_MDA_W_DFMT1_DID(0) | TRDC_MDA_W_DFMT1_VLD_MASK;
+	}
+
+	for (uint32_t master = 0U; master <= (uint32_t)kTRDC_MEDIA_MasterJPEG; master++) {
+		MEDIA__TRDC->MDA_DFMT1[master].MDA_W_DFMT1[0] =
 			TRDC_MDA_W_DFMT1_DID(0) | TRDC_MDA_W_DFMT1_VLD_MASK;
 	}
 }
 
+/*
+ * Hand the Resource Domain Controller over from the EdgeLock enclave. Must run
+ * before any peripheral access; soc_trdc_assign_masters() is the rest of TRDC
+ * setup and runs later, once clocks are up (see its own comment).
+ */
 void soc_trdc_setup(void)
 {
-	/* Release first: every step after it is itself a peripheral access. */
 	soc_ele_release_rdc();
-	soc_trdc_assign_dma_masters();
 }
