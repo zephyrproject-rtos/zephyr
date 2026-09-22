@@ -58,6 +58,13 @@ static void set_systimer_alarm(uint64_t time)
 	}
 }
 
+#if defined(CONFIG_SMP)
+/* The tick alarm stays on CPU0; other CPUs are reached through the scheduler IPI. */
+void smp_timer_init(void)
+{
+}
+#endif
+
 static uint64_t get_systimer_alarm(void)
 {
 	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
