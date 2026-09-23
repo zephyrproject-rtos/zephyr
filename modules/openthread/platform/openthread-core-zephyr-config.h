@@ -452,6 +452,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_CRYPTO_PLATFORM_ALLOCS_CONTEXT
+ *
+ * Allocate crypto operation contexts in the platform layer.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_CRYPTO_PLATFORM_ALLOCS_CONTEXT
+#define OPENTHREAD_CONFIG_CRYPTO_PLATFORM_ALLOCS_CONTEXT 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
  *
  * Enable radio coexistence support.

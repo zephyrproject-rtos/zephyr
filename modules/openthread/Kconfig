@@ -201,6 +201,48 @@ config OPENTHREAD_CRYPTO_PSA
 	  Use PSA Crypto API as backend for cryptographic operations instead
 	  of legacy Mbed TLS.
 
+menuconfig OPENTHREAD_CRYPTO_PLATFORM_ALLOCS_CONTEXT
+	bool "Platform-allocated OpenThread crypto contexts"
+	depends on OPENTHREAD_CRYPTO_PSA
+	help
+	  Allocate crypto operation contexts in the platform layer instead of
+	  the OpenThread core (OPENTHREAD_CONFIG_CRYPTO_PLATFORM_ALLOCS_CONTEXT).
+	  Each operation type has its own memory slab. Exhausting a slab is
+	  fatal.
+
+if OPENTHREAD_CRYPTO_PLATFORM_ALLOCS_CONTEXT
+
+config OPENTHREAD_CRYPTO_PLATFORM_ALLOCS_CONTEXT_SHA256_COUNT
+	int "SHA-256 context count"
+	range 1 32
+	default 4
+	help
+	  Maximum number of simultaneous SHA-256 operation contexts.
+
+config OPENTHREAD_CRYPTO_PLATFORM_ALLOCS_CONTEXT_HMAC_SHA256_COUNT
+	int "HMAC-SHA-256 context count"
+	range 1 32
+	default 4
+	help
+	  Maximum number of simultaneous HMAC-SHA-256 operation contexts.
+
+config OPENTHREAD_CRYPTO_PLATFORM_ALLOCS_CONTEXT_HKDF_COUNT
+	int "HKDF context count"
+	range 1 32
+	default 4
+	help
+	  Maximum number of simultaneous HKDF-SHA-256 operation contexts.
+
+config OPENTHREAD_CRYPTO_PLATFORM_ALLOCS_CONTEXT_AES_COUNT
+	int "AES context count"
+	range 1 32
+	default 4
+	help
+	  Maximum number of simultaneous AES operation contexts. Secured
+	  frames each take one.
+
+endif # OPENTHREAD_CRYPTO_PLATFORM_ALLOCS_CONTEXT
+
 if OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
 config OPENTHREAD_CRYPTO_PSA_CONFIG
