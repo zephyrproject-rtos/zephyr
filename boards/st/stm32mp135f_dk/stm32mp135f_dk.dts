@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <st/mp13/stm32mp135.dtsi>
+#include <st/mp13/stm32mp135f.dtsi>
 #include <st/mp13/stm32mp135faex-pinctrl.dtsi>
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
