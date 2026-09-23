@@ -785,6 +785,17 @@ int dwmac_probe(const struct device *dev)
 	LOG_DBG("hw_feature: 0x%08x 0x%08x 0x%08x 0x%08x",
 		p->feature0, p->feature1, p->feature2, p->feature3);
 
+	/*
+	 * The MMC counters run from reset with their interrupts unmasked. A
+	 * counter reaching half or full scale raises the MAC interrupt until
+	 * that counter is read, which the interrupt handler never does.
+	 */
+	DWMAC_REG_WRITE(DWMAC_MMC_RX_INTERRUPT_MASK, UINT32_MAX);
+	DWMAC_REG_WRITE(DWMAC_MMC_TX_INTERRUPT_MASK, UINT32_MAX);
+	DWMAC_REG_WRITE(DWMAC_MMC_IPC_RX_INTERRUPT_MASK, UINT32_MAX);
+	DWMAC_REG_WRITE(DWMAC_MMC_FPE_TX_INTERRUPT_MASK, UINT32_MAX);
+	DWMAC_REG_WRITE(DWMAC_MMC_FPE_RX_INTERRUPT_MASK, UINT32_MAX);
+
 	/* the MDIO driver enables the MDIO interrupt if the IP has it */
 	k_sem_init(&p->mdio_done, 0, 1);
 
