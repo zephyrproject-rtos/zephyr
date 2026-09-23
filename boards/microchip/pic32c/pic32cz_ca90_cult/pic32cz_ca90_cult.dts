@@ -9,6 +9,8 @@
 #include "pic32cz_ca90_cult-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <dt-bindings/adc/adc.h>
+#include <dt-bindings/adc/mchp_pic32cz_ca_adc.h>
 
 / {
 	model = "PIC32CZ CA90 Curiosity Ultra";
@@ -269,5 +271,27 @@ i2c0: &sercom9 {
 	cs-gpios = <&portc 10 GPIO_ACTIVE_LOW>;
 	dmas = <&dmac 3 10>, <&dmac 4 9>;
 	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&adc {
+	ctrl-clock-div = <1>;
+	adc-wkup-clock-count = <6>;
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+	adc-div-ratio = <1>;
+	#io-channel-cells = <1>;
+	status = "okay";
+};
+
+&adc2 {
+	pinctrl-0 = <&adc2_default>;
+	pinctrl-names = "default";
+	#io-channel-cells = <1>;
+	adc-div-ratio = <1>;
 	status = "okay";
 };

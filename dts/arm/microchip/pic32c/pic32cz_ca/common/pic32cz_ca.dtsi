@@ -236,6 +236,62 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		adc: adc@46820000 {
+			compatible = "microchip,adc-g2";
+			reg = <0x46820000 0x15c>, <0x0a007000 0x188>;
+			reg-names = "adc", "fuses";
+			interrupts = <185 0>;
+			interrupt-names = "global";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_ADC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_ADC>;
+			clock-names = "mclk", "gclk";
+			clock-parent = <&clock>;
+			num-cores = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			adc0: adc@0 {
+				reg = <0>;
+				core-id = <0>;
+				#io-channel-cells = <1>;
+				num-channels = <16>;
+				interrupts = <186 0>;
+				interrupt-names = "core";
+				status = "disabled";
+			};
+
+			adc1: adc@1 {
+				reg = <1>;
+				core-id = <1>;
+				#io-channel-cells = <1>;
+				num-channels = <7>;
+				interrupts = <187 0>;
+				interrupt-names = "core";
+				status = "disabled";
+			};
+
+			adc2: adc@2 {
+				reg = <2>;
+				core-id = <2>;
+				num-channels = <7>;
+				#io-channel-cells = <1>;
+				interrupts = <188 0>;
+				interrupt-names = "core";
+				status = "disabled";
+			};
+
+			adc3: adc@3 {
+				reg = <3>;
+				core-id = <3>;
+				#io-channel-cells = <1>;
+				num-channels = <7>;
+				interrupts = <189 0>;
+				interrupt-names = "core";
+				status = "disabled";
+			};
+		};
 	};
 };
 

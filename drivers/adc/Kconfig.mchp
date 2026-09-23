@@ -9,3 +9,29 @@ config ADC_MCHP_G1
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable support for the Microchip ADC driver on G1 ADC peripherals.
+
+config ADC_MCHP_G2
+	bool "Microchip ADC support for G2 peripherals"
+	default y
+	depends on DT_HAS_MICROCHIP_ADC_G2_ENABLED
+	select PINCTRL
+	help
+	  Enable support for the Microchip ADC driver on G2 ADC peripherals.
+
+if ADC_MCHP_G2
+
+config ADC_MCHP_G2_MULTI_CORE
+	bool
+	depends on SOC_FAMILY_MICROCHIP_PIC32CZ_CA
+	default y
+	help
+	  Enable Multiple core support for G2 ADC
+
+config ADC_CORE_INIT_PRIORITY
+	int "ADC Core init priority"
+	default 51
+	help
+	  Initialization priority of the ADC core driver.
+	  The ADC core driver must be initialized before ADC (global) device.
+
+endif # ADC_MCHP_G2
