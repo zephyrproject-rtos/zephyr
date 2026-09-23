@@ -113,6 +113,8 @@ void mesh_bridge_setup_root(struct net_if *sta_iface)
 
 	net_if_ipv4_addr_add(mesh_iface, &gw, NET_ADDR_MANUAL, 0);
 	net_if_ipv4_set_netmask_by_addr(mesh_iface, &gw, &netmask);
+	/* The DHCP server hands out the interface gateway as the router option. */
+	net_if_ipv4_set_gw(mesh_iface, &gw);
 
 	/*
 	 * Add an explicit connected route for the mesh subnet over the mesh
