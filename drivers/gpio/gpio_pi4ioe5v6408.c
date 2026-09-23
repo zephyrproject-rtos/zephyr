@@ -341,6 +341,12 @@ static int pi4ioe5v6408_init(const struct device *dev)
 		return rc;
 	}
 
+	/* The reset asserts INT; only a read of this register clears it. */
+	rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_DEVICE_ID, &scratch);
+	if (rc) {
+		return rc;
+	}
+
 	rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_OUT_HIZ, ALL_PINS);
 	if (rc) {
 		return rc;
