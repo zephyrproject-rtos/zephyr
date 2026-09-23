@@ -128,4 +128,19 @@ int mcp_server_handle_request(mcp_server_ctx_t ctx, struct mcp_transport_message
  */
 int mcp_server_update_client_timestamp(mcp_server_ctx_t ctx, struct mcp_transport_binding *binding);
 
+/**
+ * @brief Terminate a client session
+ *
+ * @note The client is removed the same way as on idle timeout. The transport's
+ *       disconnect operation is called once the last in-flight request or tool
+ *       execution for the client has completed.
+ *
+ * @param ctx MCP server context handle
+ * @param binding Client transport binding
+ *
+ * @return 0 on success, -ENOENT if no live client uses this binding,
+ *         other negative errno on failure
+ */
+int mcp_server_remove_client(mcp_server_ctx_t ctx, struct mcp_transport_binding *binding);
+
 #endif /* ZEPHYR_SUBSYS_MCP_SERVER_INTERNAL_H_ */
