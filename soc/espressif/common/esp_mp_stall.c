@@ -12,6 +12,7 @@
 #include <esp_attr.h>
 #include <esp_rom_sys.h>
 #include <esp_intr_alloc.h>
+#include <esp_ipc_isr.h>
 #include <soc/system_reg.h>
 
 #include <esp_mp_stall.h>
@@ -230,4 +231,14 @@ void esp_mp_stall_enable(void)
 bool esp_mp_cpu_online(int cpu)
 {
 	return s_cpu_up[cpu];
+}
+
+void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
+{
+	soc_mp_pause_others();
+}
+
+void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
+{
+	soc_mp_resume_others();
 }
