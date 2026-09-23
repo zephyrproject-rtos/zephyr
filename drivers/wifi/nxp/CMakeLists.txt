@@ -55,6 +55,7 @@ zephyr_code_relocate(FILES src/nxp_wifi_drv.c
 # ZPERF
 string(JOIN "" NXP_ZPERF_UDP_UP_FILTER
        ".*\\.udp_upload|"
+       ".*\\.zperf_udp_upload|"
        ".*\\.cal_compensate_delay"
 )
 string(JOIN "" NXP_ZPERF_TCP_UP_FILTER
