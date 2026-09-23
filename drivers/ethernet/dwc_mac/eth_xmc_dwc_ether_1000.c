@@ -33,6 +33,91 @@ BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) ||
 		     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii),
 	     "Unsupported PHY connection type");
 
+/* MMC counters present in the controller */
+#define XMC_MMC_COUNTERS(X)                                                                        \
+	X(TX_OCTET_COUNT_GOOD_BAD)                                                                 \
+	X(TX_PACKET_COUNT_GOOD_BAD)                                                                \
+	X(TX_BROADCAST_PACKETS_GOOD)                                                               \
+	X(TX_MULTICAST_PACKETS_GOOD)                                                               \
+	X(TX_64OCTETS_PACKETS_GOOD_BAD)                                                            \
+	X(TX_65TO127OCTETS_PACKETS_GOOD_BAD)                                                       \
+	X(TX_128TO255OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(TX_256TO511OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(TX_512TO1023OCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(TX_1024TOMAXOCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(TX_UNICAST_PACKETS_GOOD_BAD)                                                             \
+	X(TX_MULTICAST_PACKETS_GOOD_BAD)                                                           \
+	X(TX_BROADCAST_PACKETS_GOOD_BAD)                                                           \
+	X(TX_UNDERFLOW_ERROR_PACKETS)                                                              \
+	X(TX_SINGLE_COLLISION_GOOD_PACKETS)                                                        \
+	X(TX_MULTIPLE_COLLISION_GOOD_PACKETS)                                                      \
+	X(TX_DEFERRED_PACKETS)                                                                     \
+	X(TX_LATE_COLLISION_PACKETS)                                                               \
+	X(TX_EXCESSIVE_COLLISION_PACKETS)                                                          \
+	X(TX_CARRIER_ERROR_PACKETS)                                                                \
+	X(TX_OCTET_COUNT_GOOD)                                                                     \
+	X(TX_PACKET_COUNT_GOOD)                                                                    \
+	X(TX_EXCESSIVE_DEFERRAL_ERROR)                                                             \
+	X(TX_PAUSE_PACKETS)                                                                        \
+	X(TX_VLAN_PACKETS_GOOD)                                                                    \
+	X(TX_OSIZE_PACKETS_GOOD)                                                                   \
+	X(RX_PACKETS_COUNT_GOOD_BAD)                                                               \
+	X(RX_OCTET_COUNT_GOOD_BAD)                                                                 \
+	X(RX_OCTET_COUNT_GOOD)                                                                     \
+	X(RX_BROADCAST_PACKETS_GOOD)                                                               \
+	X(RX_MULTICAST_PACKETS_GOOD)                                                               \
+	X(RX_CRC_ERROR_PACKETS)                                                                    \
+	X(RX_ALIGNMENT_ERROR_PACKETS)                                                              \
+	X(RX_RUNT_ERROR_PACKETS)                                                                   \
+	X(RX_JABBER_ERROR_PACKETS)                                                                 \
+	X(RX_UNDERSIZE_PACKETS_GOOD)                                                               \
+	X(RX_OVERSIZE_PACKETS_GOOD)                                                                \
+	X(RX_64OCTETS_PACKETS_GOOD_BAD)                                                            \
+	X(RX_65TO127OCTETS_PACKETS_GOOD_BAD)                                                       \
+	X(RX_128TO255OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(RX_256TO511OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(RX_512TO1023OCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(RX_1024TOMAXOCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(RX_UNICAST_PACKETS_GOOD)                                                                 \
+	X(RX_LENGTH_ERROR_PACKETS)                                                                 \
+	X(RX_OUT_OF_RANGE_TYPE_PACKETS)                                                            \
+	X(RX_PAUSE_PACKETS)                                                                        \
+	X(RX_FIFO_OVERFLOW_PACKETS)                                                                \
+	X(RX_VLAN_PACKETS_GOOD_BAD)                                                                \
+	X(RX_WATCHDOG_ERROR_PACKETS)                                                               \
+	X(RX_RECEIVE_ERROR_PACKETS)                                                                \
+	X(RX_CONTROL_PACKETS_GOOD)                                                                 \
+	X(RXIPV4_GOOD_PACKETS)                                                                     \
+	X(RXIPV4_HEADER_ERROR_PACKETS)                                                             \
+	X(RXIPV4_NO_PAYLOAD_PACKETS)                                                               \
+	X(RXIPV4_FRAGMENTED_PACKETS)                                                               \
+	X(RXIPV4_UDP_CHECKSUM_DISABLED_PACKETS)                                                    \
+	X(RXIPV6_GOOD_PACKETS)                                                                     \
+	X(RXIPV6_HEADER_ERROR_PACKETS)                                                             \
+	X(RXIPV6_NO_PAYLOAD_PACKETS)                                                               \
+	X(RXUDP_GOOD_PACKETS)                                                                      \
+	X(RXUDP_ERROR_PACKETS)                                                                     \
+	X(RXTCP_GOOD_PACKETS)                                                                      \
+	X(RXTCP_ERROR_PACKETS)                                                                     \
+	X(RXICMP_GOOD_PACKETS)                                                                     \
+	X(RXICMP_ERROR_PACKETS)                                                                    \
+	X(RXIPV4_GOOD_OCTETS)                                                                      \
+	X(RXIPV4_HEADER_ERROR_OCTETS)                                                              \
+	X(RXIPV4_NO_PAYLOAD_OCTETS)                                                                \
+	X(RXIPV4_FRAGMENTED_OCTETS)                                                                \
+	X(RXIPV4_UDP_CHECKSUM_DISABLE_OCTETS)                                                      \
+	X(RXIPV6_GOOD_OCTETS)                                                                      \
+	X(RXIPV6_HEADER_ERROR_OCTETS)                                                              \
+	X(RXIPV6_NO_PAYLOAD_OCTETS)                                                                \
+	X(RXUDP_GOOD_OCTETS)                                                                       \
+	X(RXUDP_ERROR_OCTETS)                                                                      \
+	X(RXTCP_GOOD_OCTETS)                                                                       \
+	X(RXTCP_ERROR_OCTETS)                                                                      \
+	X(RXICMP_GOOD_OCTETS)                                                                      \
+	X(RXICMP_ERROR_OCTETS)
+
+DWMAC_MMC_COUNTERS_DEFINE(xmc_mmc, XMC_MMC_COUNTERS);
+
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
@@ -152,6 +237,7 @@ static const struct dwmac_config dwmac_config = {
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
 	.ptp_clk = (clock_control_subsys_t)XMC_ETH_PTP_CLK,
 #endif
+	DWMAC_MMC_CONFIG_INIT(xmc_mmc)
 };
 
 static struct dwmac_priv dwmac_instance;
