@@ -13,26 +13,9 @@
 #include <zephyr/logging/log.h>
 #include <string.h>
 
+#include "hy4245.h"
+
 LOG_MODULE_REGISTER(HY4245);
-
-#define HY4245_CHIPID				0x4245
-
-#define HY4245_CMD_CTRL				0x00
-#define HY4245_CMD_TEMPERATURE			0x06
-#define HY4245_CMD_VOLTAGE			0x08
-#define HY4245_CMD_CURRENT			0x0c
-#define HY4245_CMD_CAPACITY_REM			0x10
-#define HY4245_CMD_CAPACITY_FULL		0x12
-#define HY4245_CMD_AVG_CURRENT			0x14
-#define HY4245_CMD_TIME_TO_EMPTY		0x16
-#define HY4245_CMD_TIME_TO_FULL			0x18
-#define HY4245_CMD_CHRG_VOLTAGE			0x30
-#define HY4245_CMD_CHRG_CURRENT			0x32
-#define HY4245_CMD_CAPACITY_FULL_AVAIL		0x78
-#define HY4245_CMD_RELATIVE_STATE_OF_CHRG	0x2c
-#define HY4245_CMD_STATE_OF_HEALTH		0x2e
-
-#define HY4245_SUBCMD_CTRL_CHIPID		0x55
 
 struct hy4245_config {
 	struct i2c_dt_spec i2c;
