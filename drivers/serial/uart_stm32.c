@@ -1327,11 +1327,11 @@ static inline void async_evt_rx_buf_request(struct uart_stm32_data *data)
 	async_user_callback(data, &evt);
 }
 
-static inline void async_evt_rx_buf_release(struct uart_stm32_data *data)
+static inline void async_evt_rx_buf_release(struct uart_stm32_data *data, void *buf)
 {
 	struct uart_event evt = {
 		.type = UART_RX_BUF_RELEASED,
-		.data.rx_buf.buf = data->dma_rx.buffer,
+		.data.rx_buf.buf = buf,
 	};
 
 	async_user_callback(data, &evt);
@@ -1655,7 +1655,7 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 
 	uart_stm32_dma_rx_flush(dev);
 
-	async_evt_rx_buf_release(data);
+	async_evt_rx_buf_release(data, data->dma_rx.buffer);
 
 	uart_stm32_dma_rx_disable(dev);
 
@@ -1664,11 +1664,7 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 
 	if (data->rx_next_buffer) {
-		struct uart_event rx_next_buf_release_evt = {
-			.type = UART_RX_BUF_RELEASED,
-			.data.rx_buf.buf = data->rx_next_buffer,
-		};
-		async_user_callback(data, &rx_next_buf_release_evt);
+		async_evt_rx_buf_release(data, data->rx_next_buffer);
 	}
 
 	data->rx_next_buffer = NULL;
@@ -1768,7 +1764,7 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		data->dma_rx.counter = data->dma_rx.buffer_length;
 		async_evt_rx_rdy(data);
 		if (data->rx_next_buffer != NULL) {
-			async_evt_rx_buf_release(data);
+			async_evt_rx_buf_release(data, data->dma_rx.buffer);
 
 			/* replace the buffer when the current
 			 * is full and not the same as the next
