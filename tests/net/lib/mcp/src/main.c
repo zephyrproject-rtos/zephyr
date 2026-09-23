@@ -915,6 +915,84 @@ ZTEST(mcp_server_tests, test_02_tool_registration_edge_cases)
 	}
 }
 
+static char async_tool_token[UUID_STR_LEN];
+
+/* Returns without answering, the test submits the result later */
+static int test_tool_async_callback(enum mcp_tool_event_type event, const char *arguments,
+				    const char *execution_token)
+{
+	if (event == MCP_TOOL_CALL_REQUEST) {
+		mcp_safe_strcpy(async_tool_token, sizeof(async_tool_token), execution_token);
+	}
+
+	return 0;
+}
+
+/* Terminating a session releases it right away when nothing is in flight, and only
+ * after the last tool execution completes otherwise.
+ */
+ZTEST(mcp_server_tests, test_03_client_removal)
+{
+	struct mcp_transport_binding *binding;
+	int disconnects;
+	int ret;
+	char tools_list_request[] = "{\"jsonrpc\":\"2.0\",\"id\":3302,\"method\":\"tools/list\"}";
+	struct mcp_tool_message response = {
+		.type = MCP_USR_TOOL_RESPONSE,
+		.data = "{\"type\":\"text\",\"text\":\"done\"}",
+		.length = strlen("{\"type\":\"text\",\"text\":\"done\"}"),
+	};
+	struct mcp_tool_record async_tool = {
+		.metadata = {
+			.name = "test_async_tool",
+			.input_schema = "{\"type\":\"object\"}",
+		},
+		.callback = test_tool_async_callback
+	};
+
+	zassert_equal(mcp_server_remove_client(server, NULL), -EINVAL);
+
+	binding = send_initialize_request(3300);
+	zassert_not_null(binding, "Client binding should be allocated");
+	send_initialized_notification(binding, 3301);
+
+	disconnects = mcp_transport_mock_get_disconnect_count();
+	ret = mcp_server_remove_client(server, binding);
+	zassert_equal(ret, 0, "Removing a live client should succeed");
+	zassert_equal(mcp_transport_mock_get_disconnect_count(), disconnects + 1,
+		      "Idle client should be disconnected immediately");
+	zassert_equal(mcp_server_remove_client(server, binding), -ENOENT,
+		      "Removing a removed client should fail");
+	zassert_equal(send_json_request(binding, 3302, tools_list_request), -ENOENT,
+		      "Requests on a removed client should be rejected");
+
+	ret = mcp_server_add_tool(server, &async_tool);
+	zassert_equal(ret, 0, "Async tool should register");
+
+	binding = send_initialize_request(3303);
+	zassert_not_null(binding, "Client binding should be allocated");
+	send_initialized_notification(binding, 3304);
+
+	memset(async_tool_token, 0, sizeof(async_tool_token));
+	send_tools_call_request(binding, 3305, "test_async_tool", "{}");
+	zassert_true(async_tool_token[0] != '\0', "Async tool should have been called");
+
+	disconnects = mcp_transport_mock_get_disconnect_count();
+	ret = mcp_server_remove_client(server, binding);
+	zassert_equal(ret, 0, "Removing a busy client should succeed");
+	zassert_equal(mcp_transport_mock_get_disconnect_count(), disconnects,
+		      "Client with a running tool should not be disconnected yet");
+
+	ret = mcp_server_submit_tool_message(server, &response, async_tool_token);
+	zassert_equal(ret, 0, "Tool response should be accepted");
+	zassert_equal(mcp_transport_mock_get_disconnect_count(), disconnects + 1,
+		      "Client should be disconnected once the tool completed");
+
+	while (mcp_server_remove_tool(server, "test_async_tool") == -EBUSY) {
+		k_msleep(10);
+	}
+}
+
 ZTEST(mcp_server_tests, test_04_tool_removal)
 {
 	int ret;
