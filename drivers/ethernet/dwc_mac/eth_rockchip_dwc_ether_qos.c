@@ -36,6 +36,44 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_NOCACHE_MEMORY),
 
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 
+/* MMC counters present in the controller */
+#define RK3588_GMAC_MMC_COUNTERS(X)                                                                \
+	X(TX_OCTET_COUNT_GOOD_BAD)                                                                 \
+	X(TX_PACKET_COUNT_GOOD_BAD)                                                                \
+	X(TX_UNDERFLOW_ERROR_PACKETS)                                                              \
+	X(TX_CARRIER_ERROR_PACKETS)                                                                \
+	X(TX_OCTET_COUNT_GOOD)                                                                     \
+	X(TX_PACKET_COUNT_GOOD)                                                                    \
+	X(TX_PAUSE_PACKETS)                                                                        \
+	X(RX_PACKETS_COUNT_GOOD_BAD)                                                               \
+	X(RX_OCTET_COUNT_GOOD_BAD)                                                                 \
+	X(RX_OCTET_COUNT_GOOD)                                                                     \
+	X(RX_MULTICAST_PACKETS_GOOD)                                                               \
+	X(RX_CRC_ERROR_PACKETS)                                                                    \
+	X(RX_OVERSIZE_PACKETS_GOOD)                                                                \
+	X(RX_LENGTH_ERROR_PACKETS)                                                                 \
+	X(RX_PAUSE_PACKETS)                                                                        \
+	X(RX_FIFO_OVERFLOW_PACKETS)                                                                \
+	X(RX_WATCHDOG_ERROR_PACKETS)                                                               \
+	X(RXIPV4_GOOD_PACKETS)                                                                     \
+	X(RXIPV4_HEADER_ERROR_PACKETS)                                                             \
+	X(RXIPV6_GOOD_PACKETS)                                                                     \
+	X(RXIPV6_HEADER_ERROR_PACKETS)                                                             \
+	X(RXUDP_ERROR_PACKETS)                                                                     \
+	X(RXTCP_ERROR_PACKETS)                                                                     \
+	X(RXICMP_ERROR_PACKETS)                                                                    \
+	X(RXIPV4_HEADER_ERROR_OCTETS)                                                              \
+	X(RXIPV6_HEADER_ERROR_OCTETS)                                                              \
+	X(RXUDP_ERROR_OCTETS)                                                                      \
+	X(RXTCP_ERROR_OCTETS)                                                                      \
+	X(RXICMP_ERROR_OCTETS)                                                                     \
+	X(TX_FPE_FRAGMENT_CNTR)                                                                    \
+	X(TX_HOLD_REQ_CNTR)                                                                        \
+	X(RX_PACKET_ASSEMBLY_ERR_CNTR)                                                             \
+	X(RX_PACKET_SMD_ERR_CNTR)                                                                  \
+	X(RX_PACKET_ASSEMBLY_OK_CNTR)                                                              \
+	X(RX_FPE_FRAGMENT_CNTR)
+
 struct rk3588_gmac_clk {
 	const struct device *dev;
 	uint16_t id;
@@ -256,6 +294,8 @@ int dwmac_bus_init(const struct device *dev)
 		DT_INST_FOREACH_PROP_ELEM_SEP(n, clocks, RK3588_GMAC_CLK_ENTRY, (,))               \
 	};                                                                                         \
                                                                                                    \
+	DWMAC_MMC_COUNTERS_DEFINE(rk3588_gmac_mmc_##n, RK3588_GMAC_MMC_COUNTERS);                  \
+                                                                                                   \
 	static int rk3588_gmac_platform_init_##n(const struct device *dev)                         \
 	{                                                                                          \
 		const struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(n);      \
@@ -293,6 +333,7 @@ int dwmac_bus_init(const struct device *dev)
 			.mac_clk = (clock_control_subsys_t)(uintptr_t)                             \
 				DT_INST_CLOCKS_CELL(n, clkid),                                     \
 			RK3588_GMAC_PTP_CFG(n)                                                     \
+			DWMAC_MMC_CONFIG_INIT(rk3588_gmac_mmc_##n)                                 \
 		},                                                                                 \
 		.clocks = rk3588_gmac_clocks_##n,                                                  \
 		.num_clocks = ARRAY_SIZE(rk3588_gmac_clocks_##n),                                  \
