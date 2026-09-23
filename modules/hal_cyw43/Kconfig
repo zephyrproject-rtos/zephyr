@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Igalia S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_CYW43_MODULE
+	bool
+
+config CYW43_DRIVER
+	bool "Infineon CYW43439 support driver by George Robotics"
+	help
+	  Enables support for Infineon CYW43439.

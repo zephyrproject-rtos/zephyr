@@ -6942,6 +6942,15 @@ West:
   labels:
     - "platform: Infineon"
 
+"West project: hal_cyw43":
+  status: maintained
+  maintainers:
+    - dpgeorge
+  files:
+    - modules/hal_cyw43/
+  labels:
+    - "platform: Infineon"
+
 "West project: hal_espressif":
   status: maintained
   maintainers:
