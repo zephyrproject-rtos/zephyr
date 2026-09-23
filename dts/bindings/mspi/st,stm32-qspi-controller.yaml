@@ -50,3 +50,19 @@ properties:
 
   clock-frequency:
     required: true
+
+  st,cs-high-time:
+    type: int
+    default: 8
+    min: 1
+    max: 8
+    description: |
+      Minimum number of QSPI clock cycles the chip select signal must remain
+      high between commands issued to the flash memory.
+
+      The minimum acceptable value depends on the flash memory model and the
+      QSPI clock frequency. Using a value higher than the minimum required by
+      the flash memory does not lead to communication errors, but is
+      suboptimal as it reduces the throughput.
+
+      Defaults to 8 clock cycles, which is the maximum supported value.
