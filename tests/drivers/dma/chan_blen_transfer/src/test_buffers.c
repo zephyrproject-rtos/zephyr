@@ -6,16 +6,19 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/test_devices.h>
 
 #include "test_buffers.h"
 
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), dma_test_devs)
+TEST_DEVS_REQUIRE(dma_test_devs);
+
+/* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
+ * phandle list. The shared buffers below are aligned to the first controller's
+ * requirement; a board mixing controllers with different alignment needs is a
+ * known limitation not handled here.
+ */
 #define DMA_DATA_ALIGNMENT                                                                         \
-	DT_PROP_OR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), dma_test_devs, 0),                     \
-		   dma_buf_addr_alignment, 32)
-#else
-#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
-#endif
+	DT_PROP_OR(TEST_DEVS_NODE_BY_IDX(dma_test_devs, 0), dma_buf_addr_alignment, 32)
 
 #if CONFIG_NOCACHE_MEMORY
 __aligned(DMA_DATA_ALIGNMENT) char tx_data[TEST_BUF_SIZE] __used

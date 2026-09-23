@@ -8,6 +8,7 @@
 #include <zephyr/drivers/misc/pio_rpi_pico/pio_rpi_pico.h>
 #include <stdlib.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/test_devices.h>
 
 #if defined(CONFIG_SOC_SERIES_RP2040) /* include RPI_PICO_DMA_DREQ_TO_SLOT */
 #include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2040.h>
@@ -39,7 +40,9 @@ RPI_PICO_PIO_DEFINE_PROGRAM(loopback_pio, 0, 1,
 			    /* .wrap */
 );
 
-const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
+TEST_DEVS_REQUIRE(dma_test_devs);
+
+const struct device *dma = TEST_DEVS_GET_BY_IDX(dma_test_devs, 0);
 
 struct dma_pico_reload_suite_fixture {
 	PIO pio;
@@ -97,7 +100,8 @@ static void test_done(const struct device *dma_dev, void *f, uint32_t id, int st
 }
 
 #define DMA_CHAN_ID        0
-#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
+#define DMA_DATA_ALIGNMENT                                                                         \
+	DT_PROP_OR(TEST_DEVS_NODE_BY_IDX(dma_test_devs, 0), dma_buf_addr_alignment, 32)
 #define TEST_BUF_SIZE      (48)
 __aligned(DMA_DATA_ALIGNMENT) char tx_data[TEST_BUF_SIZE] =
 	"It is harder to be kind than to be wise........";
