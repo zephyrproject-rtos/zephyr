@@ -2155,8 +2155,15 @@ static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
 		struct bt_conn *conn = bt_conn_lookup_addr_le(ccc->cfg[i].id, &ccc->cfg[i].peer);
 
 		if (conn) {
-			if (ccc->cfg[i].value > value) {
-				value = ccc->cfg[i].value;
+			/* Leave out Reserved bits, which a receiver ignores:
+			 * callbacks compare the value with BT_GATT_CCC_NOTIFY or
+			 * BT_GATT_CCC_INDICATE.
+			 */
+			uint16_t peer_value =
+				ccc->cfg[i].value & (BT_GATT_CCC_NOTIFY | BT_GATT_CCC_INDICATE);
+
+			if (peer_value > value) {
+				value = peer_value;
 			}
 
 			bt_conn_unref(conn);
