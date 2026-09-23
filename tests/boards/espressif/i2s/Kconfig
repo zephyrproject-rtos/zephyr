@@ -22,4 +22,6 @@ config I2S_TEST_ALLOWED_DATA_DISCARD
 	int "Allowed discard in received data"
 	default 0
 	help
-	  Maximum allowed discard between sent and received samples
+	  Drop the first received block and allow later blocks to start this many
+	  samples away from the transmitted block boundary. The offset must stay
+	  fixed for the rest of the stream.
