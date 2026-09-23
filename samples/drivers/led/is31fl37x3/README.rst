@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: is31fl3733
+.. zephyr:code-sample:: is31fl37x3
    :name: IS31FL3733 / IS31FL3743B LED Matrix
    :relevant-api: led_interface
 
