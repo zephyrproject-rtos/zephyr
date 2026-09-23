@@ -28,8 +28,6 @@ static K_MUTEX_DEFINE(sntp_server_lock);
 
 /* Server set by the application. Written from any thread, under the lock. */
 static char sntp_server_cfg[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1];
-/* Copy of sntp_server_cfg taken when a DNS query is started */
-static char sntp_server_active[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1];
 #endif
 
 BUILD_ASSERT(
@@ -62,20 +60,23 @@ int net_config_sntp_set_server(const char *server)
 	return 0;
 }
 
-static const char *sntp_runtime_server(void)
+static const char *
+sntp_runtime_server(char user_buf[static CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1])
 {
 	k_mutex_lock(&sntp_server_lock, K_FOREVER);
-	strcpy(sntp_server_active, sntp_server_cfg);
+	strncpy(user_buf, sntp_server_cfg, CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN);
 	k_mutex_unlock(&sntp_server_lock);
+	user_buf[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN] = '\0';
 
-	return sntp_server_active[0] != '\0' ? sntp_server_active : NULL;
+	return user_buf[0] != '\0' ? user_buf : NULL;
 }
 #endif
 
 static int sntp_init_helper(struct sntp_time *tm)
 {
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
-	const char *server = sntp_runtime_server();
+	char server_buf[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1];
+	const char *server = sntp_runtime_server(server_buf);
 
 	if (server != NULL) {
 		return sntp_simple(server, CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
@@ -196,6 +197,9 @@ static K_WORK_DELAYABLE_DEFINE(sntp_async_timeout_work, sntp_async_timeout);
 static struct sntp_ctx sntp_async_ctx;
 static struct net_sockaddr_storage sntp_addr;
 static net_socklen_t sntp_addrlen;
+
+/* Copy of sntp_server_cfg owned by resync work */
+static char sntp_server_active[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1];
 
 static void sntp_async_timeout(struct k_work *work)
 {
@@ -384,7 +388,7 @@ static void sntp_resync_handler(struct k_work *work)
 	ARG_UNUSED(work);
 
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
-	const char *server = sntp_runtime_server();
+	const char *server = sntp_runtime_server(sntp_server_active);
 
 	if (server != NULL) {
 		ret = dns_query_async(server);
