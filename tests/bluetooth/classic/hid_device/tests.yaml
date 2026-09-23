@@ -1,0 +1,27 @@
+tests:
+  bluetooth.classic.hid_device:
+    platform_allow:
+    - native_sim
+    integration_platforms:
+    - native_sim
+    tags:
+    - bluetooth
+    - hid
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      fixture: bt_classic_multi_test
+      required_devices:
+      # One more board, same platform and image, take the server roles
+      - {}
+    timeout: 240
+  bluetooth.classic.hid_device.no_blobs:
+    platform_allow:
+    - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+    - bluetooth
+    - hid
+    extra_args:
+    - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 240
+    build_only: true
