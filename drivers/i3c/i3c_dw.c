@@ -583,7 +583,6 @@ static int dw_i3c_post_reset(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_I3C_CONTROLLER
 /**
  * @brief Pre-resume-ctrl hook: re-open wrapper gate before writing RESUME.
  *
@@ -599,7 +598,6 @@ static int dw_i3c_pre_resume_ctrl(const struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_I3C_CONTROLLER */
 
 /**
  * @brief Pre-init hook: open any vendor wrapper gates before MMIO access.
@@ -897,6 +895,32 @@ static void dw_i3c_intr_disable(const struct device *dev, uint32_t bits)
 	sys_write32(mask, dw_i3c_regs(dev) + INTR_SIGNAL_EN);
 }
 
+#ifdef CONFIG_I3C_TARGET
+/**
+ * @brief FIFOs to reset before RESUME for a target-mode response error.
+ *
+ * @param err ERR_STATUS field of the response.
+ *
+ * @retval 0 The response carries no error and needs no recovery.
+ */
+static uint32_t dw_i3c_target_err_flush_mask(uint8_t err)
+{
+	switch (err) {
+	case RESPONSE_NO_ERROR:
+		return 0U;
+	case RESPONSE_ERROR_CRC:
+	case RESPONSE_ERROR_PARITY:
+	case RESPONSE_ERROR_FRAME:
+		return RESET_CTRL_RX_FIFO;
+	case RESPONSE_ERROR_OVER_UNDER_FLOW:
+		/* One code covers both directions, so reset both sides. */
+		return RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_CMD_QUEUE;
+	default:
+		return RESET_CTRL_TX_FIFO | RESET_CTRL_CMD_QUEUE;
+	}
+}
+#endif /* CONFIG_I3C_TARGET */
+
 /**
  * @brief Enqueue pending commands into the Command Queue as space allows.
  *
@@ -1038,6 +1062,7 @@ static void dw_i3c_process_response(const struct device *dev, uint32_t resp)
 		const struct i3c_target_callbacks *target_cb =
 			(data->target_config != NULL) ? data->target_config->callbacks : NULL;
 		uint32_t rx_data;
+		uint32_t tgt_flush;
 		int j, k;
 
 		for (j = 0; j < cmd->rx_len; j += 4) {
@@ -1058,6 +1083,15 @@ static void dw_i3c_process_response(const struct device *dev, uint32_t resp)
 			 * transfer
 			 */
 			target_cb->stop_cb(data->target_config);
+		}
+
+		tgt_flush = dw_i3c_target_err_flush_mask(cmd->error);
+		if (tgt_flush != 0U) {
+			sys_write32(tgt_flush, dw_i3c_regs(dev) + RESET_CTRL);
+			/* DEVICE_CTRL is not accessible until the flush bits settle. */
+			(void)dw_i3c_pre_resume_ctrl(dev);
+			sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) | DEV_CTRL_RESUME,
+				    dw_i3c_regs(dev) + DEVICE_CTRL);
 		}
 	}
 #endif /* CONFIG_I3C_TARGET */
