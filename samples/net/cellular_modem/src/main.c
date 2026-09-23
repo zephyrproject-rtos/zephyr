@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <string.h>
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include <poll.h>
 
 #include <zephyr/drivers/cellular.h>
