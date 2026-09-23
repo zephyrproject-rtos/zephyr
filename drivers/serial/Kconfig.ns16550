@@ -99,6 +99,8 @@ config UART_NS16550_TI_K3
 
 config UART_NS16550_DW8250_DW_APB
 	bool "Synopsys DesignWare 8250"
+	default y
+	depends on DT_HAS_SNPS_DW_APB_UART_ENABLED
 	help
 	  This enables support for Synopsys DesignWare 8250 UART controller.
 
