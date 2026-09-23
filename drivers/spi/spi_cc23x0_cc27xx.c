@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(spi_cc23x0_cc27xx, CONFIG_SPI_LOG_LEVEL);
 #define SPI_CC23X0_CC27XX_DATA_WIDTH 8
 #define SPI_CC23X0_CC27XX_DFS        (SPI_CC23X0_CC27XX_DATA_WIDTH >> 3)
 
-#define SPI_CC23X0_CC27XX_DUMMY_DATA 0xFFFFFFFF
+#define SPI_CC23X0_CC27XX_DUMMY_DATA 0x0U
 
 #ifdef CONFIG_SPI_CC23X0_CC27XX_DMA_DRIVEN
 #define SPI_CC23X0_CC27XX_REG_GET(base, offset) ((base) + (offset))
@@ -858,12 +858,12 @@ static int spi_cc23x0_cc27xx_transceive_internal(const struct device *dev,
 	 * the CS pin provided from the pinctrl-0. It takes precedence over the
 	 * cs_gpios node (see spi-controller.yaml)
 	 */
-#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(cs_gpios)
 	else if (data->cs_gpio == NULL && data->ctx.num_cs_gpios >= (config->slave + 1)) {
 		data->cs_gpio = (struct gpio_dt_spec *)&(data->ctx.cs_gpios[config->slave]);
 		data->is_cs_sw_controlled = true;
 	}
-#endif /* !DT_SPI_CTX_HAS_NO_CS_GPIOS */
+#endif
 
 	if (data->cs_gpio == NULL && SPI_CC23X0_CC27XX_CONFIG_IS_SLAVE((config->operation))) {
 		/* NOTE: Removing this else-statement will remove the restriction of
@@ -954,6 +954,18 @@ static int spi_cc23x0_cc27xx_transceive(const struct device *dev, const struct s
 {
 	struct spi_cc23x0_cc27xx_data *data = dev->data;
 	int ret;
+
+	if (!tx_bufs && !rx_bufs) {
+		return 0;
+	}
+
+	if (!tx_bufs->buffers && !rx_bufs->buffers) {
+		return 0;
+	}
+
+	if (!tx_bufs->buffers[0].len && !rx_bufs->buffers[0].len) {
+		return 0;
+	}
 
 	ret = spi_cc23x0_cc27xx_transceive_internal(dev, config, tx_bufs, rx_bufs, NULL, NULL);
 	if (ret) {
