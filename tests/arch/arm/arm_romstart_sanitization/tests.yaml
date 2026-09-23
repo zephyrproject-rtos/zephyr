@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Test that sanitization of the linker memory region names is applied, if a
+# chosen romstart node exists
+
+common:
+  arch_allow:
+    - arm
+  tags:
+    - arm
+  filter: dt_chosen_enabled("zephyr,romstart")
+
+tests:
+  arch.arm.romstart_sanitization.linker_template:
+    build_only: true
+    filter: CONFIG_LD_LINKER_SCRIPT_SUPPORTED
+    extra_configs:
+      - CONFIG_LD_LINKER_TEMPLATE=y
+  arch.arm.romstart_sanitization.linker_cmake:
+    build_only: true
+    # This is restricted since the CMake linker script generator doesn't work
+    # for every ARM board
+    platform_allow:
+      - mps3/corstone310/an555
+      - mps3/corstone310/fvp
+      - mps4/corstone315/fvp
+      - mps4/corstone320/fvp
+      - pic32ck_gc01_cult/pic32ck2051gc01144
+      - pic32ck_sg01_cult/pic32ck2051sg01144
+      - pic32cm_gc00_cpro/pic32cm5112gc00100
+      - pic32cm_sg00_cpro/pic32cm5112sg00100
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
