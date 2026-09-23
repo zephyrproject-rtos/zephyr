@@ -114,7 +114,7 @@ void sys_clock_disable(void)
 }
 
 #if defined(CONFIG_PM)
-void sys_clock_idle_enter(uint32_t ticks)
+void sys_clock_idle_enter(sys_clock_ticks_t ticks)
 {
 	sys_clock_set_timeout(ticks, false);
 

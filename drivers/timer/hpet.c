@@ -341,7 +341,7 @@ void sys_clock_no_timeout(void)
 	}
 }
 
-void sys_clock_idle_enter(uint32_t ticks)
+void sys_clock_idle_enter(sys_clock_ticks_t ticks)
 {
 	uint32_t reg;
 
