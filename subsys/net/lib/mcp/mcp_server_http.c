@@ -151,8 +151,8 @@ HTTP_RESOURCE_DEFINE(mcp_endpoint_resource, mcp_http_service, CONFIG_MCP_HTTP_EN
 		     &mcp_resource_detail);
 
 /* HTTP service definition */
-HTTP_SERVICE_DEFINE(mcp_http_service, NULL, &mcp_http_port, 1,
-		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL);
+HTTP_SERVICE_DEFINE(mcp_http_service, NULL, &mcp_http_port, CONFIG_HTTP_SERVER_MAX_CLIENTS, 10,
+		    NULL, NULL, NULL);
 
 /* HTTP headers capture */
 HTTP_SERVER_REGISTER_HEADER_CAPTURE(origin_hdr, "Origin");
