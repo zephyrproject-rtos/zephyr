@@ -35,6 +35,7 @@ rsource "Kconfig.renesas_rx"
 rsource "Kconfig.shell"
 rsource "Kconfig.silabs_acmp"
 rsource "Kconfig.stm32_comp"
+rsource "Kconfig.ti_lpf3_lpcmp"
 # zephyr-keep-sorted-stop
 
 endif # COMPARATOR
