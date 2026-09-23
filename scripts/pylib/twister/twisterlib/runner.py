@@ -397,10 +397,8 @@ class CMake:
             gen_edt_args = ""
 
         warning_command = 'CONFIG_COMPILER_WARNINGS_AS_ERRORS'
-        kconfig_deprecation_command = 'CONFIG_DEPRECATED_KCONFIGS_AS_ERRORS'
         if self.instance.sysbuild:
             warning_command = 'SB_' + warning_command
-            kconfig_deprecation_command = 'SB_' + kconfig_deprecation_command
 
         logger.debug(f"Running cmake on {self.source_dir} for {self.platform.name}")
         cmake_args = [
@@ -408,7 +406,6 @@ class CMake:
             f'-DTC_RUNID={self.instance.run_id}',
             f'-DTC_NAME={self.instance.testsuite.name}',
             f'-D{warning_command}={warnings_as_errors}',
-            f'-D{kconfig_deprecation_command}={warnings_as_errors}',
             f'-DEXTRA_GEN_EDT_ARGS={gen_edt_args}',
             f'-G{self.env.generator}',
             f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}'
