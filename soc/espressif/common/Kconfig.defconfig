@@ -110,6 +110,12 @@ if BT_ESP32
 configdefault BT_RX_STACK_SIZE
 	default 2048 if BT_SETTINGS
 
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048 if BT_SETTINGS && !WIFI_NM_WPA_SUPPLICANT
+
+configdefault SHELL_STACK_SIZE
+	default 4096 if BT_SHELL
+
 config BT_BUF_ACL_TX_COUNT
 	default 10
 
