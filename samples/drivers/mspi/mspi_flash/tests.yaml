@@ -36,6 +36,7 @@ tests:
     integration_platforms:
       - apollo3p_evb
       - apollo510_evb
+      - stm32l496g_disco
 
   sample.drivers.mspi.flash.x_nucleo_pgeez1:
     tags:
