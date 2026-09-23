@@ -5,6 +5,7 @@
  */
 
 #include <soc.h>
+#include <soc/hp_sys_clkrst_reg.h>
 #include <soc_init.h>
 #include <flash_init.h>
 #include <esp_err.h>
@@ -127,6 +128,13 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 #if defined(CONFIG_NOCACHE_MEMORY)
 	nocache_region_init();
+#endif
+
+	/* Hold CPU1 in reset, gate its clock and take it out of WFI clock gating. */
+	REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
+	REG_SET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
+#if !defined(CONFIG_SOC_ESP32P4_REV_1_3)
+	REG_CLR_BIT(HP_SYS_CLKRST_CPU_WAITI_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_WAITI_ICG_EN);
 #endif
 
 	z_cstart();
