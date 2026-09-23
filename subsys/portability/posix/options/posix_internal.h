@@ -103,8 +103,13 @@ typedef struct pthread_thread_data {
 	void *spec_data;
 } pthread_thread_data;
 
+#ifndef PTHREAD_DESTRUCTOR_ITERATIONS
+#define PTHREAD_DESTRUCTOR_ITERATIONS 4
+#endif
+
 struct pthread_key_data {
 	sys_dnode_t node;
+	struct posix_thread *thread;
 	pthread_thread_data thread_data;
 };
 
