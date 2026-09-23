@@ -94,6 +94,7 @@ struct input_crsf_data {
 	/* Async RX DMA Buffers (Double buffering) */
 	uint8_t *rx_buf_a;
 	uint8_t *rx_buf_b;
+	uint8_t *rx_buf_next; /* Buffer to provide on the next UART_RX_BUF_REQUEST */
 
 	uint8_t crsf_frame[CRSF_MAX_FRAME_LEN];
 
@@ -476,12 +477,10 @@ static void crsf_uart_callback(const struct device *uart_dev, struct uart_event 
 	}
 
 	case UART_RX_BUF_REQUEST:
-		/* Provide the next buffer to keep reception continuous */
-		{
-			uint8_t *next_buf = (evt->data.rx_buf.buf == data->rx_buf_a)
-						    ? data->rx_buf_b
-						    : data->rx_buf_a;
-			uart_rx_buf_rsp(uart_dev, next_buf, CRSF_RX_BUF_SIZE);
+		/* Provide the idle buffer to keep reception continuous */
+		if (uart_rx_buf_rsp(uart_dev, data->rx_buf_next, CRSF_RX_BUF_SIZE) == 0) {
+			data->rx_buf_next = (data->rx_buf_next == data->rx_buf_a) ? data->rx_buf_b
+										  : data->rx_buf_a;
 		}
 		break;
 
@@ -491,6 +490,7 @@ static void crsf_uart_callback(const struct device *uart_dev, struct uart_event 
 
 	case UART_RX_DISABLED:
 		/* Restart RX if disabled (error recovery) */
+		data->rx_buf_next = data->rx_buf_b;
 		uart_rx_enable(uart_dev, data->rx_buf_a, CRSF_RX_BUF_SIZE, CRSF_RX_TIMEOUT_US);
 		break;
 
@@ -537,6 +537,7 @@ static int input_crsf_init(const struct device *dev)
 	k_msgq_init(&data->rx_queue, data->rx_queue_slab, CRSF_MAX_FRAME_LEN, CRSF_QUEUE_SIZE);
 
 	/* Start Async RX */
+	data->rx_buf_next = data->rx_buf_b;
 	ret = uart_rx_enable(config->uart_dev, data->rx_buf_a, CRSF_RX_BUF_SIZE,
 			     CRSF_RX_TIMEOUT_US);
 	if (ret < 0) {
