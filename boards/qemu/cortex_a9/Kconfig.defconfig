@@ -11,7 +11,6 @@ config BUILD_OUTPUT_BIN
 	default n
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 111111111
 
 config SYS_CLOCK_TICKS_PER_SEC

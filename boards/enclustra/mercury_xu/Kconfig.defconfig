@@ -4,7 +4,6 @@
 if BOARD_MERCURY_XU
 
 config FLASH_SIZE
-	int
 	default 64
 
 config FLASH_BASE_ADDRESS
