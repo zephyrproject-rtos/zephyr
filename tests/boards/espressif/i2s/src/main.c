@@ -45,39 +45,47 @@ void fill_buf(int16_t *tx_block, int16_t val_l, int16_t val_r)
 	}
 }
 
+static ZTEST_DMEM int discard_blocks;
+static ZTEST_DMEM int block_start = -1;
+
+void verify_buf_new_stream(void)
+{
+	discard_blocks = (CONFIG_I2S_TEST_ALLOWED_DATA_DISCARD > 0) ? 1 : 0;
+	block_start = -1;
+}
+
 int verify_buf(int16_t *rx_block, int16_t val_l, int16_t val_r)
 {
-	int sample_no = SAMPLE_NO;
-
-#if (CONFIG_I2S_TEST_ALLOWED_DATA_DISCARD > 0)
-	static ZTEST_DMEM int offset = -1;
-
-	if (offset < 0) {
-		do {
-			++offset;
-			if (offset > CONFIG_I2S_TEST_ALLOWED_DATA_DISCARD) {
-				TC_PRINT("Allowed data discard exceeded\n");
-				return -TC_FAIL;
-			}
-		} while ((rx_block[0] != val_l + offset) || (rx_block[1] != val_r + offset));
+	/* ESP32 and ESP32-S2 can corrupt the first block of a stream. */
+	if (discard_blocks > 0) {
+		discard_blocks--;
+		return TC_PASS;
 	}
 
-	val_l += offset;
-	val_r += offset;
-	sample_no -= offset;
-#endif
+	/* Use the first valid block to determine this stream's fixed offset. */
+	if (block_start < 0) {
+		int start = rx_block[0] - val_l;
 
-	for (int16_t i = 0; i < sample_no; i++) {
-		if (rx_block[2 * i] != (val_l + i)) {
-			TC_PRINT("Error: data_l mismatch at position "
-				 "%d, expected %d, actual %d\n",
-				 i, (int)(val_l + i), (int)rx_block[2 * i]);
+		if (start < 0 || start >= SAMPLE_NO ||
+		    MIN(start, SAMPLE_NO - start) > CONFIG_I2S_TEST_ALLOWED_DATA_DISCARD) {
+			TC_PRINT("Error: block starts %d %d, more than %d samples off\n",
+				 (int)rx_block[0], (int)rx_block[1],
+				 CONFIG_I2S_TEST_ALLOWED_DATA_DISCARD);
 			return -TC_FAIL;
 		}
-		if (rx_block[2 * i + 1] != (val_r + i)) {
-			TC_PRINT("Error: data_r mismatch at position "
-				 "%d, expected %d, actual %d\n",
-				 i, (int)(val_r + i), (int)rx_block[2 * i + 1]);
+
+		block_start = start;
+	}
+
+	for (int i = 0; i < SAMPLE_NO; i++) {
+		int n = (block_start + i) % SAMPLE_NO;
+
+		if (rx_block[2 * i] != (int16_t)(val_l + n) ||
+		    rx_block[2 * i + 1] != (int16_t)(val_r + n)) {
+			TC_PRINT("Error: data mismatch at position %d, expected %d %d, "
+				 "actual %d %d\n",
+				 i, (int)(val_l + n), (int)(val_r + n), (int)rx_block[2 * i],
+				 (int)rx_block[2 * i + 1]);
 			return -TC_FAIL;
 		}
 	}
@@ -220,6 +228,8 @@ ZTEST_USER(i2s_loopback, test_i2s_transfer)
 	/* Prefill TX queue */
 	ret = tx_block_write(dev_i2s, VAL_L, VAL_R, 0);
 	zassert_equal(ret, TC_PASS);
+
+	verify_buf_new_stream();
 
 	ret = i2s_trigger(dev_i2s, I2S_DIR_BOTH, I2S_TRIGGER_START);
 	zassert_equal(ret, 0, "RX/TX START trigger failed\n");
