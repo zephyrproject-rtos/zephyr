@@ -98,7 +98,7 @@ extensions = [
     "sphinx.ext.graphviz",
     "sphinxcontrib.jquery",
     "sphinxcontrib.mermaid",
-    "sphinxcontrib.programoutput",
+    "zephyr.subprocess_output",
     "sphinx_design",
     "zephyr.application",
     "zephyr.html_redirects",
