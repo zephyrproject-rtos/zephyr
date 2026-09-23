@@ -140,6 +140,12 @@ int pthread_key_delete(pthread_key_t key)
 		while ((node_l = sys_dlist_get(&key_obj->key_data_l)) != NULL) {
 			key_data = CONTAINER_OF(node_l, struct pthread_key_data, node);
 
+			if (key_data->thread != NULL) {
+				(void)sys_slist_find_and_remove(
+					&key_data->thread->key_list,
+					(sys_snode_t *)&key_data->thread_data);
+			}
+
 			/* Deallocate the object's memory */
 			k_free((void *)key_data);
 			LOG_DBG("Freed key data %p for key %x in thread %x", key_data, key,
@@ -218,6 +224,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 			pthread_self());
 
 		/* Associate thread specific data, initialize new key */
+		key_data->thread = thread;
 		key_data->thread_data.key = key_obj;
 		key_data->thread_data.spec_data = (void *)value;
 

@@ -6,6 +6,7 @@
 
 #include <pthread.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
@@ -180,6 +181,72 @@ ZTEST(key, test_thread_specific_data_deallocation)
 
 	zassert_equal(alloc_count_t0, alloc_count_t1,
 		"failed to deallocate thread specific data");
+}
+
+static struct k_sem sem_worker_ready;
+static struct k_sem sem_key_deleted;
+static bool dtor_executed;
+
+static void dtor_active_thread(void *arg)
+{
+	ARG_UNUSED(arg);
+	dtor_executed = true;
+}
+
+static void *key_delete_worker(void *arg)
+{
+	pthread_key_t *key = arg;
+	int val = 0x1234;
+
+	zassert_ok(pthread_setspecific(*key, &val),
+		   "failed to set thread-specific data");
+
+	/* Signal that data has been bound to the key */
+	k_sem_give(&sem_worker_ready);
+
+	/* Wait until key deletion completes before exiting */
+	k_sem_take(&sem_key_deleted, K_FOREVER);
+
+	return NULL;
+}
+
+/**
+ * @brief Verify pthread_key_delete() on key bound to active thread.
+ *
+ * Verifies that deleting a key while a thread holds thread-specific data
+ * unlinks the key from the thread's internal list, suppresses destructor
+ * invocation at thread exit per IEEE 1003.1, and does not cause double-free
+ * or memory corruption.
+ */
+ZTEST(key, test_key_delete_active_thread)
+{
+	pthread_t thread;
+	pthread_key_t key;
+
+	dtor_executed = false;
+	k_sem_init(&sem_worker_ready, 0, 1);
+	k_sem_init(&sem_key_deleted, 0, 1);
+
+	zassert_ok(pthread_key_create(&key, dtor_active_thread),
+		   "failed to create key");
+
+	zassert_ok(pthread_create(&thread, NULL, key_delete_worker, &key),
+		   "failed to create worker thread");
+
+	/* Wait deterministically for worker thread to bind data */
+	k_sem_take(&sem_worker_ready, K_FOREVER);
+
+	/* Delete key while worker thread is still alive and blocked */
+	zassert_ok(pthread_key_delete(key), "failed to delete key");
+
+	/* Release worker thread to exit and finalize */
+	k_sem_give(&sem_key_deleted);
+
+	/* Wait for worker thread to exit and finalize */
+	zassert_ok(pthread_join(thread, NULL), "failed to join worker thread");
+
+	/* Per IEEE 1003.1, destructor must not be called for deleted keys */
+	zassert_false(dtor_executed, "destructor was executed for deleted key");
 }
 
 static void before(void *arg)
