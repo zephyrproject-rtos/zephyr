@@ -135,6 +135,8 @@ Enable one of the Kconfig options below to quickly configure a pre-defined
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51` (:ref:`PSE51 <posix_aep_pse51>`)
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE52` (:ref:`PSE52 <posix_aep_pse52>`)
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE53` (:ref:`PSE53 <posix_aep_pse53>`)
+* :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_NETAPP` (PSE52 plus the networking interfaces of
+  PSE53, without multi-process support)
 
 Additional POSIX :ref:`Options and Option Groups <posix_option_groups>` may be enabled as needed
 via Kconfig (e.g. ``CONFIG_POSIX_C_LIB_EXT=y``). Further fine-tuning may be accomplished via

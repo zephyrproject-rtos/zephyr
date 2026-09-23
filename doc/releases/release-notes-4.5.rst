@@ -858,6 +858,11 @@ New APIs and options
   * Add :c:func:`dns_resolve_is_active` to check whether a DNS resolving
     context is active without reading the context internals.
 
+* POSIX
+
+  * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_NETAPP`, a Zephyr-specific subprofile with the
+    features of PSE52 plus the networking interfaces of PSE53, without multi-process support.
+
 * Power Management
 
   * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_GET`

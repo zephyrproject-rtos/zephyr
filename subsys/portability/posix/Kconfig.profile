@@ -109,6 +109,23 @@ config POSIX_AEP_CHOICE_PSE53
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
+config POSIX_AEP_CHOICE_NETAPP
+	bool "Network Appliance Profile"
+	select POSIX_SYSTEM_INTERFACES
+	select POSIX_BASE_DEFINITIONS
+	select POSIX_AEP_REALTIME_MINIMAL
+	select POSIX_AEP_REALTIME_CONTROLLER
+	select POSIX_NETWORKING if NETWORKING
+	select POSIX_RAW_SOCKETS if NETWORKING
+	select POSIX_CPUTIME
+	select POSIX_PRIORITY_SCHEDULING
+	help
+	  This profile is custom to Zephyr and does not correspond to a standard POSIX subprofile.
+	  It includes all features of PSE52 as well as the networking interfaces of PSE53, but not
+	  its multi-process, pipe, spawn or sporadic server interfaces. It is intended for
+	  networked applications that do not need process management. The networking interfaces
+	  are only enabled when CONFIG_NETWORKING is enabled.
+
 # TODO: PSE54: Multi-purpose Realtime System Profile
 
 endchoice # POSIX_AEP_CHOICE
