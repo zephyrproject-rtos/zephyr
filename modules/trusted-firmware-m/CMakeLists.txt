@@ -53,6 +53,38 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_NS=${CONFIG_TFM_IMAGE_VERSION_NS})
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_SIGNATURE_TYPE=${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE})
 
+    if(CONFIG_TFM_MCUBOOT_ENCRYPTION_NONE)
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENC_IMAGES:BOOL=OFF)
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_RSA:BOOL=OFF)
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_KW:BOOL=OFF)
+    else()
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENC_IMAGES:BOOL=ON)
+      if(CONFIG_TFM_MCUBOOT_ENCRYPTION_RSA_OAEP)
+        # imgtool rejects an encryption key whose type differs from the
+        # signing key's, so RSA-OAEP requires signing with RSA too.
+        if(NOT CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE MATCHES "^RSA-")
+          message(FATAL_ERROR
+            "TFM_MCUBOOT_ENCRYPTION_RSA_OAEP requires an RSA signature type, "
+            "but TFM_MCUBOOT_SIGNATURE_TYPE is ${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}")
+        endif()
+        list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_RSA:BOOL=ON)
+      else()
+        list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_RSA:BOOL=OFF)
+      endif()
+      # AES-KW is not supported in Zephyr's version of MCUboot but might be
+      # the platform default, turn it off
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_KW:BOOL=OFF)
+      if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_KEY_LEN MATCHES "^(128|256)$")
+        message(FATAL_ERROR
+          "TFM_MCUBOOT_ENCRYPTION_KEY_LEN must be 128 or 256, "
+          "but is ${CONFIG_TFM_MCUBOOT_ENCRYPTION_KEY_LEN}")
+      endif()
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENC_KEY_LEN=${CONFIG_TFM_MCUBOOT_ENCRYPTION_KEY_LEN})
+      # BL2 embeds the private key and holds a single key for both images
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_KEY_ENC=${CONFIG_TFM_MCUBOOT_ENCRYPTION_KEY_FILE})
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_KEY_ENC_NS=${CONFIG_TFM_MCUBOOT_ENCRYPTION_KEY_FILE})
+    endif()
+
     # Configure which format to include the public key in the image manifest.
     #
     # Note: we disable MCUBOOT_BUILTIN_KEY because starting from TF-M v2.3
@@ -400,9 +432,16 @@ if(CONFIG_BUILD_WITH_TFM)
     TFM_S_HEX_FILE ${TFM_S_HEX_FILE} # TFM Secure FW (unsigned)
     TFM_NS_BIN_FILE ${TFM_NS_BIN_FILE} # TFM Nonsecure FW (unsigned)
     TFM_NS_HEX_FILE ${TFM_NS_HEX_FILE} # TFM Nonsecure FW (unsigned)
-    TFM_S_SIGNED_BIN_FILE ${TFM_S_SIGNED_BIN_FILE} # TFM Secure FW (signed)
-    TFM_NS_SIGNED_BIN_FILE ${TFM_NS_SIGNED_BIN_FILE} # TFM Nonsecure FW (signed)
-    TFM_S_NS_SIGNED_BIN_FILE ${TFM_S_NS_SIGNED_BIN_FILE} # Merged TFM Secure/Nonsecure FW (signed)
+    # The below signed files are not produced by a regular Zephyr build. Zephyr
+    # signs images itself through the post-build commands (with
+    # PLATFORM_DEFAULT_IMAGE_SIGNING=OFF), so TF-M only generates them when it
+    # performs the signing, e.g. in the tfm_psa_test sample.
+    # TFM Secure FW (signed or signed+encrypted)
+    TFM_S_SIGNED_BIN_FILE ${TFM_S_SIGNED_BIN_FILE}
+    # TFM Nonsecure FW (signed or signed+encrypted)
+    TFM_NS_SIGNED_BIN_FILE ${TFM_NS_SIGNED_BIN_FILE}
+    # Merged TFM Secure/Nonsecure FW (signed or signed+encrypted)
+    TFM_S_NS_SIGNED_BIN_FILE ${TFM_S_NS_SIGNED_BIN_FILE}
     )
 
   if(NOT CONFIG_TFM_USE_NS_APP)
@@ -528,7 +567,7 @@ if(CONFIG_BUILD_WITH_TFM)
   endif()
 
   function(tfm_sign OUT_ARG)
-    set(options HEADER TRAILER CONFIRM)
+    set(options HEADER TRAILER CONFIRM ENCRYPT)
     set(oneValueArgs SUFFIX MAX_SECTORS INPUT_FILE OUTPUT_FILE)
     set(multiValueArgs "")
 
@@ -567,6 +606,12 @@ if(CONFIG_BUILD_WITH_TFM)
       set(TFM_SIGN_ARG_SUFFIX "S")
     endif()
 
+    set(encrypt "")
+    if(TFM_SIGN_ARG_ENCRYPT)
+      set(encrypt -E ${CONFIG_TFM_MCUBOOT_ENCRYPTION_KEY_FILE}
+                  -L ${CONFIG_TFM_MCUBOOT_ENCRYPTION_KEY_LEN})
+    endif()
+
     set(${OUT_ARG}
       # Add the MCUBoot script to the path so that if there is a version of imgtool in there then
       # it gets used over the system imgtool. Used so that imgtool from upstream
@@ -575,6 +620,7 @@ if(CONFIG_BUILD_WITH_TFM)
       ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper.py
       --layout ${layout_file}
       -k ${CONFIG_TFM_KEY_FILE_${TFM_SIGN_ARG_SUFFIX}}
+      ${encrypt}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
       --align ${image_alignment}
       --max-sectors ${TFM_SIGN_ARG_MAX_SECTORS}
@@ -601,6 +647,13 @@ if(CONFIG_BUILD_WITH_TFM)
   set(S_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
   set(NS_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.bin)
   set(S_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.bin)
+  # Only the update images exist in an encrypted variant: BL2 decrypts an image
+  # while moving it from the secondary to the primary slot, so an encrypted
+  # image flashed to the primary slot would fail validation.
+  set(S_NS_SIGNED_ENCRYPTED_BIN_FILE
+    ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed_encrypted.bin)
+  set(NS_SIGNED_ENCRYPTED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed_encrypted.bin)
+  set(S_SIGNED_ENCRYPTED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed_encrypted.bin)
 
   if(CONFIG_TFM_USE_NS_APP)
     # Use the TF-M NS binary as the Non-Secure application firmware image
@@ -640,6 +693,11 @@ if(CONFIG_BUILD_WITH_TFM)
     tfm_sign(sign_cmd_s_ns_hex SUFFIX "S_NS"
       HEADER MAX_SECTORS ${S_NS_MAX_SECTORS}
       INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_HEX_FILE})
+    if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_NONE)
+      tfm_sign(sign_cmd_s_ns_encrypted_bin SUFFIX "S_NS"
+        HEADER ENCRYPT MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_ENCRYPTED_BIN_FILE})
+    endif()
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
@@ -664,6 +722,12 @@ if(CONFIG_BUILD_WITH_TFM)
       COMMAND ${CMAKE_OBJCOPY} --input-target=ihex --output-target=binary ${S_NS_SIGNED_HEX_FILE} ${S_NS_SIGNED_BIN_FILE}
     )
 
+    if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_NONE)
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+        COMMAND ${sign_cmd_s_ns_encrypted_bin}
+      )
+    endif()
+
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
       ${S_NS_SIGNED_CONFIRMED_HEX_FILE}
       ${S_NS_HEX_FILE}
@@ -672,6 +736,12 @@ if(CONFIG_BUILD_WITH_TFM)
       ${MERGED_HEX_FILE}
       ${MERGED_BIN_FILE}
     )
+
+    if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_NONE)
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
+        ${S_NS_SIGNED_ENCRYPTED_BIN_FILE}
+      )
+    endif()
 
   else()
     if(CONFIG_TFM_USE_NS_APP)
@@ -683,6 +753,12 @@ if(CONFIG_BUILD_WITH_TFM)
         HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
         INPUT_FILE ${NS_BIN_APP_FILE}
         OUTPUT_FILE ${NS_SIGNED_BIN_FILE})
+      if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_NONE)
+        tfm_sign(sign_cmd_ns_encrypted_bin SUFFIX "NS"
+          HEADER TRAILER ENCRYPT MAX_SECTORS ${S_NS_MAX_SECTORS}
+          INPUT_FILE ${NS_BIN_APP_FILE}
+          OUTPUT_FILE ${NS_SIGNED_ENCRYPTED_BIN_FILE})
+      endif()
     else()
       tfm_sign(sign_cmd_ns_hex SUFFIX "NS"
         TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
@@ -692,6 +768,12 @@ if(CONFIG_BUILD_WITH_TFM)
         MAX_SECTORS ${S_NS_MAX_SECTORS}
         INPUT_FILE ${NS_BIN_APP_FILE}
         OUTPUT_FILE ${NS_SIGNED_BIN_FILE})
+      if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_NONE)
+        tfm_sign(sign_cmd_ns_encrypted_bin SUFFIX "NS"
+          ENCRYPT MAX_SECTORS ${S_NS_MAX_SECTORS}
+          INPUT_FILE ${NS_BIN_APP_FILE}
+          OUTPUT_FILE ${NS_SIGNED_ENCRYPTED_BIN_FILE})
+      endif()
     endif()
 
     tfm_sign(sign_cmd_s_hex SUFFIX "S"
@@ -702,6 +784,12 @@ if(CONFIG_BUILD_WITH_TFM)
       HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
       INPUT_FILE $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE>
       OUTPUT_FILE ${S_SIGNED_BIN_FILE})
+    if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_NONE)
+      tfm_sign(sign_cmd_s_encrypted_bin SUFFIX "S"
+        HEADER TRAILER ENCRYPT MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE>
+        OUTPUT_FILE ${S_SIGNED_ENCRYPTED_BIN_FILE})
+    endif()
 
     #Create and sign for concatenated binary image, should align with the TF-M BL2
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
@@ -718,6 +806,13 @@ if(CONFIG_BUILD_WITH_TFM)
         ${NS_SIGNED_HEX_FILE}
     )
 
+    if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_NONE)
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+        COMMAND ${sign_cmd_ns_encrypted_bin}
+        COMMAND ${sign_cmd_s_encrypted_bin}
+      )
+    endif()
+
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
       ${S_SIGNED_HEX_FILE}
       ${S_SIGNED_BIN_FILE}
@@ -725,6 +820,13 @@ if(CONFIG_BUILD_WITH_TFM)
       ${NS_SIGNED_BIN_FILE}
       ${MERGED_HEX_FILE}
     )
+
+    if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_NONE)
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
+        ${S_SIGNED_ENCRYPTED_BIN_FILE}
+        ${NS_SIGNED_ENCRYPTED_BIN_FILE}
+      )
+    endif()
   endif()
 
   if(CONFIG_TFM_DUMMY_PROVISIONING)
