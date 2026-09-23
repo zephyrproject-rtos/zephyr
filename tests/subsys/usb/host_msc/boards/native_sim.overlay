@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
+
+/ {
+	zephyr_uhc0: uhc_vrt0 {
+		compatible = "zephyr,uhc-virtual";
+
+		zephyr_udc0: udc_vrt0 {
+			compatible = "zephyr,udc-virtual";
+			num-bidir-endpoints = <8>;
+			maximum-speed = "high-speed";
+		};
+	};
+
+	ramdisk0 {
+		compatible = "zephyr,ram-disk";
+		disk-name = "RAM";
+		sector-size = <512>;
+		sector-count = <192>;
+	};
+
+	usb_disk {
+		compatible = "zephyr,usb-msc-disk";
+		disk-name = "USB";
+		status = "okay";
+	};
+};

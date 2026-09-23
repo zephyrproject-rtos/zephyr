@@ -794,11 +794,11 @@ static inline void ch_process_control(const struct device *dev,
 
 	/* TODO: Configure split transaction if needed */
 
-	if (dma_addr != NULL && size > 0) {
+	if (dma_addr != 0U && size > 0U) {
 		if (next_dir_is_in) {
-			sys_cache_data_invd_range(dma_addr, size);
+			sys_cache_data_invd_range((void *)dma_addr, size);
 		} else {
-			sys_cache_data_flush_range(dma_addr, size);
+			sys_cache_data_flush_range((void *)dma_addr, size);
 		}
 	}
 
@@ -1039,8 +1039,6 @@ static inline int soft_reset(const struct device *dev)
 {
 	const struct uhc_dwc2_config *const config = dev->config;
 	int ret;
-
-	/* TODO: Check that port has no ongoing transfers */
 
 	/* Disable Global IRQ */
 	config->irq_disable_func(dev);
@@ -1344,11 +1342,11 @@ static void ch_start_bulk(const struct device *dev,
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
 	sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
 
-	if (ch->length > 0) {
+	if (ch->length > 0U) {
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
-			sys_cache_data_invd_range(dma_addr, ch->length);
+			sys_cache_data_invd_range((void *)dma_addr, ch->length);
 		} else {
-			sys_cache_data_flush_range(dma_addr, ch->length);
+			sys_cache_data_flush_range((void *)dma_addr, ch->length);
 		}
 	}
 
@@ -1654,6 +1652,30 @@ static void submit_pending(const struct device *const dev)
 	}
 }
 
+/* Return every transfer still queued, releasing the channel each one holds.
+ * Used when the device is gone and no completion can arrive for them.
+ */
+static void xfer_drop_queued(const struct device *dev, const int err)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	struct uhc_data *const data = dev->data;
+	struct uhc_transfer *tmp;
+	sys_dnode_t *node;
+
+	while ((node = sys_dlist_peek_head(&data->ctrl_xfers)) != NULL) {
+		tmp = SYS_DLIST_CONTAINER(node, tmp, node);
+
+		for (uint32_t idx = 0; idx < priv->numhstchnl; idx++) {
+			if (priv->ch[idx].xfer == tmp) {
+				ch_release(dev, &priv->ch[idx]);
+				break;
+			}
+		}
+
+		uhc_xfer_return(dev, tmp, err);
+	}
+}
+
 static void port_handle_events(const struct device *dev, uint32_t event_mask)
 {
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
@@ -1682,6 +1704,13 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 			LOG_DBG("Port disconnected");
 			/* Notify upper layer */
 			submit_dev_gone(dev);
+			/* The reset below drops the channel state, so the
+			 * transfers still queued are returned first. They can
+			 * never be answered by a device that is gone, and
+			 * their owners would otherwise wait for a completion
+			 * that cannot arrive.
+			 */
+			xfer_drop_queued(dev, -ENODEV);
 			/* Reset the controller to handle new connection */
 			soft_reset(dev);
 			/* Prepare for device connection */
