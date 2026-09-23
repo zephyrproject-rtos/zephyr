@@ -32,6 +32,9 @@ config HEAP_MEM_POOL_ADD_SIZE_ESP_WIFI
 	default 25400 if ESP_WIFI_HEAP_SPIRAM
 	help
 	  Make sure there is a minimal heap available for Wi-Fi driver.
+	  This covers the default Wi-Fi buffer numbers. Each static RX buffer
+	  above the default of 10 takes approximately 1.6KB more from the system heap,
+	  so increase CONFIG_HEAP_MEM_POOL_SIZE accordingly.
 
 choice ESP_WIFI_HEAP
 	prompt "Wi-Fi adapter heap memory"
@@ -88,7 +91,8 @@ config ESP32_WIFI_STATIC_RX_BUFFER_NUM
 	help
 	  Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
 	  The static rx buffers are allocated when esp_wifi_init is called, they are not freed
-	  until esp_wifi_deinit is called.
+	  until esp_wifi_deinit is called. They are always taken from the system heap, also
+	  when ESP_WIFI_HEAP_SPIRAM is selected.
 
 	  WiFi hardware use these buffers to receive all 802.11 frames.
 	  A higher number may allow higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED
@@ -107,6 +111,8 @@ config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
 	  For each received data frame, the WiFi driver makes a copy to an RX buffer
 	  and then delivers it to the high layer TCP/IP stack. The dynamic RX buffer
 	  is freed after the higher layer has successfully received the data frame.
+	  The buffers come from the Wi-Fi adapter heap selected by ESP_WIFI_HEAP. If
+	  that heap is exhausted, received frames are dropped.
 
 	  For some applications, WiFi data frames may be received faster than the
 	  application can process them. In these cases we may run out of memory if
