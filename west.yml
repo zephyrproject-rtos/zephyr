@@ -264,7 +264,7 @@ manifest:
       groups:
         - hal
     - name: hal_tdk
-      revision: 6a2669c3d82dc1a9f7e9ca4acc260f261688cfc0
+      revision: 4e53fe1a1ea634dd8a13ecda1151a73bc598622f
       path: modules/hal/tdk
       groups:
         - hal
