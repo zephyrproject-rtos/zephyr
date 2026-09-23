@@ -445,6 +445,7 @@ config NXP_WIFI_POWERSAVE_TASK_STACK_SIZE
 
 config NXP_WIFI_TX_TASK_STACK_SIZE
 	int "Wifi driver TX task stack size"
+	default 4096 if !NXP_RW610
 	default 2048
 	depends on NXP_WIFI_WMM
 	help
@@ -1485,11 +1486,12 @@ config TXPD_RXPD_V3
 	bool
 	default y
 
-if NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
-
-# For SDHC zero copy, net buf size should be multiples of SDHC block size
+# SDHC zero-copy needs net buf multiple of SDHC block size
 configdefault NET_BUF_DATA_SIZE
-	default 2048
+	default 1744 if NXP_RW610
+	default 2048 if NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
+
+if NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
 
 # For SDHC zero copy, net buf should be aligned by cache line size.
 # On platforms without DCACHE, align to SDHC DMA transfer requirement.
@@ -1498,5 +1500,21 @@ configdefault NET_BUF_ALIGNMENT
 	default SDHC_BUFFER_ALIGNMENT
 
 endif # NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
+
+config NXP_WIFI_RECOMMENDED_CONF
+	bool "Apply NXP Wi-Fi recommended configuration profile"
+	help
+	  Apply the NXP Wi-Fi recommended per-chip configuration profile
+	  (net_buf/net_pkt pools, TCP window, stack sizes, thread priorities,
+	  queue sizes, IP fragmentation, DHCPv4 server, code relocation and
+	  wpa_supplicant/mbedTLS heap). Applied as Kconfig defaults, so an
+	  application may still override them in its own prj.conf or overlay.
+	  Disable to fall back to upstream Zephyr defaults.
+
+if NXP_WIFI_RECOMMENDED_CONF
+
+orsource "Kconfig.profile"
+
+endif
 
 endif # WIFI_NXP
