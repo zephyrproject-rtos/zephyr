@@ -132,9 +132,9 @@ ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat)
 	rule.proto = NET_IPPROTO_UDP;
 	rule.priority = 5;
 
-	int ret = net_ipv4_table_rule_add(&rule);
+	int rule_idx = net_ipv4_table_rule_add(&rule);
 
-	zassert_equal(ret, 0, "Could not add NAT table rule");
+	zassert_true(rule_idx >= 0, "Could not add NAT table rule");
 
 	/* Step 4: build UDP packet from client to server */
 	struct net_pkt *pkt = build_test_udp_pkt(&client_addr, &server_addr,
@@ -159,11 +159,35 @@ ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat)
 	/* Cleanup */
 	net_pkt_unref(pkt);
 	net_pkt_unref(reply);
-	net_ipv4_table_rule_del(0);
+	net_ipv4_table_rule_del(rule_idx);
 	(void)net_if_ipv4_addr_rm(dummy_iface_a, &addr_a);
 	(void)net_if_ipv4_addr_rm(dummy_iface_b, &addr_b);
 	npf_remove_ipv4_recv_rule(&npf_default_drop);
 	npf_append_ipv4_recv_rule(&npf_default_ok);
+}
+
+ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_rule_index)
+{
+	struct net_iptable_rule_params rule = {0};
+	int idx1, idx2;
+
+	rule.input_iface_idx = net_if_get_by_iface(dummy_iface_a);
+	rule.output_iface_idx = net_if_get_by_iface(dummy_iface_b);
+	rule.proto = NET_IPPROTO_UDP;
+
+	idx1 = net_ipv4_table_rule_add(&rule);
+	zassert_true(idx1 >= 0, "Could not add first NAT table rule");
+
+	idx2 = net_ipv4_table_rule_add(&rule);
+	zassert_true(idx2 >= 0, "Could not add second NAT table rule");
+	zassert_not_equal(idx1, idx2, "Rules share the same index");
+
+	/* Deleting by the returned index must free that exact slot */
+	net_ipv4_table_rule_del(idx1);
+	zassert_equal(net_ipv4_table_rule_add(&rule), idx1, "Freed rule index was not reused");
+
+	net_ipv4_table_rule_del(idx1);
+	net_ipv4_table_rule_del(idx2);
 }
 
 ZTEST_SUITE(net_ipv4_nat_test_suite, NULL, NULL, NULL, NULL, NULL);
