@@ -3,6 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for strnlen() */
+
 #include <zephyr/logging/log.h>
 #include <zephyr/authentication/fido2/fido2_storage.h>
 #include <zephyr/random/random.h>
