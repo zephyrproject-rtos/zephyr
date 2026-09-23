@@ -226,7 +226,7 @@ static void test_long_subscribed(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static volatile size_t num_notifications;
+static atomic_t num_notifications;
 static volatile size_t num_short_unsub_notifications;
 uint8_t test_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params, const void *data,
 		    uint16_t length)
@@ -240,7 +240,8 @@ uint8_t test_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *param
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	printk("Received notification #%u with length %d\n", num_notifications++, length);
+	printk("Received notification #%ld with length %d\n", (long)atomic_inc(&num_notifications),
+	       length);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -453,7 +454,7 @@ static void test_main_none(void)
 	WAIT_FOR_FLAG(flag_long_subscribed);
 	printk("Subscribed\n");
 
-	while (num_notifications < NOTIFICATION_COUNT) {
+	while (atomic_get(&num_notifications) < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
 
@@ -479,7 +480,7 @@ static void test_main_unenhanced(void)
 
 	printk("Subscribed\n");
 
-	while (num_notifications < NOTIFICATION_COUNT) {
+	while (atomic_get(&num_notifications) < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
 
@@ -505,7 +506,7 @@ static void test_main_enhanced(void)
 
 	printk("Subscribed\n");
 
-	while (num_notifications < NOTIFICATION_COUNT) {
+	while (atomic_get(&num_notifications) < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
 
@@ -531,7 +532,7 @@ static void test_main_mixed(void)
 
 	printk("Subscribed\n");
 
-	while (num_notifications < NOTIFICATION_COUNT) {
+	while (atomic_get(&num_notifications) < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
 
@@ -573,7 +574,7 @@ static void test_main_racy(void)
 	WAIT_FOR_FLAG(flag_long_subscribed);
 	printk("Subscribed\n");
 
-	while (num_notifications < NOTIFICATION_COUNT) {
+	while (atomic_get(&num_notifications) < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
 
@@ -649,7 +650,7 @@ static void test_main_reentrant(void)
 	WAIT_FOR_FLAG(flag_long_subscribed);
 	printk("Subscribed\n");
 
-	while (num_notifications < NOTIFICATION_COUNT) {
+	while (atomic_get(&num_notifications) < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
 
@@ -710,7 +711,7 @@ static void test_main_crosstraffic(void)
 	WAIT_FOR_FLAG(flag_long_subscribed);
 	printk("Subscribed\n");
 
-	while (num_notifications < NOTIFICATION_COUNT) {
+	while (atomic_get(&num_notifications) < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
 
@@ -777,6 +778,30 @@ static void test_main_broadcast(void)
 	TEST_PASS_AND_EXIT("GATT client passed");
 }
 
+static void test_main_reserved_bit(void)
+{
+	int err;
+
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_NONE);
+
+	/* A server ignores a Reserved bit that a client sets anyway (Core 6.3,
+	 * Vol 1, Part E, Section 2.4.1).
+	 */
+	sub_params_short.value = BT_GATT_CCC_NOTIFY | BIT(2);
+	sub_params_short.value_handle = chrc_handle;
+	err = bt_gatt_subscribe(g_conn, &sub_params_short);
+	TEST_ASSERT(err == 0, "Failed to subscribe (err %d)", err);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+
+	while (atomic_get(&num_notifications) < 1) {
+		k_sleep(K_MSEC(10));
+	}
+
+	TEST_PASS_AND_EXIT("GATT client passed");
+}
+
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_none",
@@ -809,6 +834,10 @@ static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_broadcast",
 		.test_main_f = test_main_broadcast,
+	},
+	{
+		.test_id = "gatt_client_reserved_bit",
+		.test_main_f = test_main_reserved_bit,
 	},
 	BSTEST_END_MARKER,
 };
