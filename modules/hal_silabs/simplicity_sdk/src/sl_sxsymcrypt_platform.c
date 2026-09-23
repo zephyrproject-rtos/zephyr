@@ -170,7 +170,6 @@ struct sx_regs *sx_hw_find_regs(unsigned int idx)
 SL_CODE_CLASSIFY(SL_CODE_COMPONENT_SXSYMCRYPT, SL_CODE_CLASS_TIME_CRITICAL)
 struct sx_regs *sx_cmdma_find_available(unsigned int compatible)
 {
-	ARG_UNUSED(compatible);
 	const struct device *dev = selection.dev;
 
 	if (k_is_in_isr()) {
@@ -178,7 +177,7 @@ struct sx_regs *sx_cmdma_find_available(unsigned int compatible)
 		dev = crypto_dev_from_instance(SLI_CRYPTO_LPWAES);
 	}
 
-	if (!dev) {
+	if ((dev == NULL) || (compatible == 0)) {
 		return NULL;
 	}
 
