@@ -27,3 +27,5 @@ supported:
   - comparator
   - dmic
   - i2c
+  - counter
+  - pwm
