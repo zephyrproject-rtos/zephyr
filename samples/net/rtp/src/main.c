@@ -82,6 +82,7 @@ static void rtp_sink(struct rtp_session *session, struct net_sockaddr *sockaddre
 
 static void rtp_source(struct rtp_session *session, struct net_sockaddr *sockaddress)
 {
+	int64_t deadline_ms;
 	void *payload;
 	int period_ms;
 	int delta_ts;
@@ -110,6 +111,7 @@ static void rtp_source(struct rtp_session *session, struct net_sockaddr *sockadd
 	delta_ts = size / sizeof(uint16_t);
 
 	LOG_INF("Start sending RTP packets");
+	deadline_ms = k_uptime_get();
 	while (true) {
 		ret = rtp_session_send_simple(session, payload, size, delta_ts);
 		if (ret < 0) {
@@ -117,7 +119,9 @@ static void rtp_source(struct rtp_session *session, struct net_sockaddr *sockadd
 			return;
 		}
 
-		k_msleep(period_ms);
+		/* Sleep until an absolute deadline so the stream keeps real time */
+		deadline_ms += period_ms;
+		k_sleep(K_TIMEOUT_ABS_MS(deadline_ms));
 	}
 }
 #endif /* CONFIG_RTP_SAMPLE_ROLE_SOURCE */
