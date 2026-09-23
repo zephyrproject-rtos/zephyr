@@ -12,6 +12,7 @@ config WIFI_RPI_PICO_CYW43
 	select NET_L2_ETHERNET_MGMT
 	select WIFI_USE_NATIVE_NETWORKING
 	select SPI
+	select CYW43_DRIVER
 	help
 	  Enable Infineon CYW43439 SoC Wi-Fi support for Raspberry Pi Pico W boards.
 

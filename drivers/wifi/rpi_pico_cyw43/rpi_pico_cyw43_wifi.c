@@ -239,10 +239,10 @@ static inline bool mac_addr_specified(uint8_t *addr)
 
 static inline uint32_t cyw43_security_to_zephyr(uint32_t cyw43_sec)
 {
-	uint32_t sec = (cyw43_sec | 0x00400000) & 0xFFFFFFFE;
 	uint32_t ret;
 
-	switch (sec) {
+	/* Ignore WEP flag */
+	switch (cyw43_sec & ~(uint32_t)CYW43_AUTH_FLAG_WEP_ENABLED) {
 	case CYW43_AUTH_OPEN:
 		ret = WIFI_SECURITY_TYPE_NONE;
 		break;
@@ -254,6 +254,12 @@ static inline uint32_t cyw43_security_to_zephyr(uint32_t cyw43_sec)
 		break;
 	case CYW43_AUTH_WPA2_MIXED_PSK:
 		ret = WIFI_SECURITY_TYPE_PSK;
+		break;
+	case CYW43_AUTH_WPA3_SAE_AES_PSK:
+		ret = WIFI_SECURITY_TYPE_SAE;
+		break;
+	case CYW43_AUTH_WPA3_WPA2_AES_PSK:
+		ret = WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 		break;
 	default:
 		ret = WIFI_SECURITY_TYPE_UNKNOWN;
