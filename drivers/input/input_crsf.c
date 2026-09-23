@@ -19,21 +19,17 @@
 
 LOG_MODULE_REGISTER(tbs_crsf, CONFIG_INPUT_LOG_LEVEL);
 
+/*
+ * The RX buffers are used for DMA by the UART driver, which is responsible for
+ * their cache coherency. Place them in DTCM or non-cacheable memory when
+ * available.
+ */
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && CONFIG_INPUT_CRSF_USE_DTCM_FOR_DMA_BUFFER
 #define _dma_buffer_section __dtcm_noinit_section
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define _dma_buffer_section __nocache
 #else
 #define _dma_buffer_section
-#ifdef CONFIG_CACHE_MANAGEMENT
-#include <zephyr/cache.h>
-#define CRSF_INVALIDATE_CACHE
-#elif defined(CONFIG_DCACHE)
-#error "CRSF input requires a DMA-safe buffer, but no suitable memory configuration was found. \
-Enable one of the following: \
-CONFIG_INPUT_CRSF_USE_DTCM_FOR_DMA_BUFFER with a zephyr,dtcm node, \
-CONFIG_NOCACHE_MEMORY, or CONFIG_CACHE_MANAGEMENT."
-#endif
 #endif
 
 struct crsf_input_channel {
@@ -474,9 +470,6 @@ static void crsf_uart_callback(const struct device *uart_dev, struct uart_event 
 			break;
 		}
 
-#ifdef CRSF_INVALIDATE_CACHE
-		arch_dcache_invd_range(&rx_buf[rx_off], rx_len);
-#endif
 		/* Process received data chunk */
 		crsf_process_bytes(dev, &rx_buf[rx_off], rx_len);
 		break;
