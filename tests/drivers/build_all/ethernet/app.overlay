@@ -50,6 +50,20 @@
 					microchip,interface-type = "rmii";
 				};
 
+				ethernet-phy@3 {
+					reg = <0x3>;
+					compatible = "microchip,vsc8541";
+					microchip,interface-type = "rgmii";
+				};
+
+				ethernet-phy@4 {
+					reg = <0x4>;
+					compatible = "microchip,vsc8541";
+					microchip,interface-type = "rmii";
+					vsc8531,vddmac = <3300>;
+					vsc8531,edge-slowdown = <7>;
+				};
+
 				ethernet-phy@5 {
 					reg = <0x5>;
 					compatible = "adi,adin1100-phy";
