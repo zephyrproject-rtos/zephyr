@@ -299,6 +299,8 @@ static int pi4ioe5v6408_pin_interrupt_configure(const struct device *dev, gpio_p
 	const struct pi4ioe5v6408_config *cfg = dev->config;
 	struct pi4ioe5v6408_data *data = dev->data;
 	struct pi4ioe5v6408_irq_state *irq = &data->irq_state;
+	uint8_t prev_rising;
+	uint8_t prev_falling;
 	uint8_t mask;
 	int rc = 0;
 
@@ -307,6 +309,9 @@ static int pi4ioe5v6408_pin_interrupt_configure(const struct device *dev, gpio_p
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
+
+	prev_rising = irq->rising;
+	prev_falling = irq->falling;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		irq->rising &= ~BIT(pin);
@@ -353,6 +358,11 @@ static int pi4ioe5v6408_pin_interrupt_configure(const struct device *dev, gpio_p
 	}
 
 out:
+	if (rc != 0) {
+		irq->rising = prev_rising;
+		irq->falling = prev_falling;
+	}
+
 	k_sem_give(&data->lock);
 	return rc;
 }
