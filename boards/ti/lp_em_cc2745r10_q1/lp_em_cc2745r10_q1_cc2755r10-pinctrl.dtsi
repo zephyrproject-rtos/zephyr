@@ -229,21 +229,49 @@
 		input-enable;
 	};
 
-	/* PWM - LGPT3 Channel 1 on DIO12 (T3_C1) for LED0/Green LED and test capture */
-	pwm10_default: pwm10_default {
-		pinmux = <12 DIO12_T3_C1>;
+	/* LPCMP */
+	lpcmp_pos0_default: lpcmp_pos0_default {
+		pinmux = <19 DIO19_ADC6_LPCP>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_pos1_default: lpcmp_pos1_default {
+		pinmux = <20 DIO20_ADC5_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_pos2_default: lpcmp_pos2_default {
+		pinmux = <21 DIO21_ADC4_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_neg0_default: lpcmp_neg0_default {
+		pinmux = <20 DIO20_ADC5_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_neg1_default: lpcmp_neg1_default {
+		pinmux = <21 DIO21_ADC4_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_out0_default: lpcmp_out0_default {
+		pinmux = <0 DIO0_LPC0>;
 		bias-disable;
 	};
 
-	/* PWM - LGPT3 Channel 0 on DIO16 (T3_C0) for LED1/Red LED */
-	pwm9_default: pwm9_default {
-		pinmux = <16 DIO16_T3_C0>;
+	lpcmp_out1_default: lpcmp_out1_default {
+		pinmux = <15 DIO15_LPCO>;
 		bias-disable;
 	};
 
-	/* PWM - LGPT2 Channel 1 on DIO5 (T2_C1) - BP15 for idle level */
-	pwm7_default: pwm7_default {
-		pinmux = <5 DIO5_T2_C1>;
+	lpcmp_out2_default: lpcmp_out2_default {
+		pinmux = <24 DIO24_LPCO>;
 		bias-disable;
 	};
 };

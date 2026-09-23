@@ -215,4 +215,50 @@
 		pinmux = <23 DIO23_T3_C2N>;
 		bias-disable;
 	};
+
+	/* LPCMP */
+	lpcmp_pos0_default: lpcmp_pos0_default {
+		pinmux = <21 DIO21_ADC10_LPCP>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_pos1_default: lpcmp_pos1_default {
+		pinmux = <23 DIO23_ADC8_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_pos2_default: lpcmp_pos2_default {
+		pinmux = <24 DIO24_ADC7_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_neg0_default: lpcmp_neg0_default {
+		pinmux = <23 DIO23_ADC8_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_neg1_default: lpcmp_neg1_default {
+		pinmux = <24 DIO24_ADC7_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	lpcmp_out0_default: lpcmp_out0_default {
+		pinmux = <10 DIO10_LPC0>;
+		bias-disable;
+	};
+
+	lpcmp_out1_default: lpcmp_out1_default {
+		pinmux = <18 DIO18_LPC0>;
+		bias-disable;
+	};
+
+	lpcmp_out2_default: lpcmp_out2_default {
+		pinmux = <20 DIO20_LPC0>;
+		bias-disable;
+	};
 };

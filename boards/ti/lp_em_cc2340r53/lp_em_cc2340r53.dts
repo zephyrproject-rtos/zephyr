@@ -227,3 +227,14 @@
 &rng {
 	status = "okay";
 };
+
+&comparator {
+	status = "disabled";
+	pinctrl-0 = <&lpcmp_pos0_default &lpcmp_out0_default>;
+	pinctrl-names = "default";
+	positive-mux-input = "VA_PAD_A1";
+	negative-mux-input = "VDDD";
+	input-division-factor = "VIN_1_2";
+	division-input = "DIVISION_INPUT_NEGATIVE";
+	enable-output-pin;
+};
