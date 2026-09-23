@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(HY4245, CONFIG_FUEL_GAUGE_LOG_LEVEL);
 #define HY4245_DATA_FLASH_DELAY_MS  10
 /* The gauge delivers the DFChecksum() result within 500 ms */
 #define HY4245_DF_CHECKSUM_DELAY_MS 500
+/* The gauge holds the clock line low for 250 ms after QuickStart() */
+#define HY4245_QUICK_START_DELAY_MS 250
 
 /*
  * Configuration image layout rules.
@@ -651,6 +653,24 @@ static int hy4245_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		}
 
 		ret = hy4245_enable_flash_update(dev);
+		break;
+	case HY4245_FUEL_GAUGE_CLEAR_LEARNED:
+		if (!val.custom_bool) {
+			return -EINVAL;
+		}
+
+		ret = hy4245_ctrl_write(dev, HY4245_SUBCMD_CTRL_CLEAR_LEARNED);
+		break;
+	case HY4245_FUEL_GAUGE_QUICK_START:
+		if (!val.custom_bool) {
+			return -EINVAL;
+		}
+
+		ret = hy4245_ctrl_write(dev, HY4245_SUBCMD_CTRL_QUICK_START);
+		if (ret == 0) {
+			/* The gauge stalls the bus while it re-estimates the capacity */
+			k_sleep(K_MSEC(HY4245_QUICK_START_DELAY_MS));
+		}
 		break;
 	default:
 		ret = -ENOTSUP;

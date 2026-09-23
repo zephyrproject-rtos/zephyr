@@ -302,6 +302,22 @@ enum hy4245_fuel_gauge_prop {
 	 * mismatch.
 	 */
 	HY4245_FUEL_GAUGE_CONFIG_IMAGE_VERIFY,
+	/**
+	 * Clear learned capacity information (Control() subcommand
+	 * ClearLearned). Clears HY4245_FLAGS_LRND, so the gauge relearns the
+	 * capacity, e.g. after the battery has been replaced.
+	 *
+	 * set, @c custom_bool: true triggers the command.
+	 */
+	HY4245_FUEL_GAUGE_CLEAR_LEARNED,
+	/**
+	 * QuickStart: re-estimate the capacity information from the open
+	 * circuit voltage (Control() subcommand QuickStart). The gauge holds
+	 * the bus for 250 ms, the driver waits accordingly.
+	 *
+	 * set, @c custom_bool: true triggers the command.
+	 */
+	HY4245_FUEL_GAUGE_QUICK_START,
 };
 
 /** Data flash block for HY4245_FUEL_GAUGE_DATA_FLASH_BLOCK */
