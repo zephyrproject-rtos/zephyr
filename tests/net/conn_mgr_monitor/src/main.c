@@ -44,6 +44,8 @@
 #define TEST_EXPECT_L4_IPV6_DISCONNECTED NET_EVENT_L4_CMD_IPV6_DISCONNECTED
 #define TEST_EXPECT_L4_IPV4_CONNECTED    NET_EVENT_L4_CMD_IPV4_CONNECTED
 #define TEST_EXPECT_L4_IPV4_DISCONNECTED NET_EVENT_L4_CMD_IPV4_DISCONNECTED
+#define TEST_EXPECT_L4_IF_CONNECTED      NET_EVENT_L4_CMD_IF_CONNECTED
+#define TEST_EXPECT_L4_IF_DISCONNECTED   NET_EVENT_L4_CMD_IF_DISCONNECTED
 
 #define TEST_EXPECT_CLEAR(event) (global_stats.expected_events &= ~event)
 
@@ -103,15 +105,22 @@ static struct test_stats {
 	int conn_count_gen;  /* connect */
 	int dconn_count_gen; /* disconnect */
 
+	/** Per-interface connectivity event counters */
+	int event_count_iface; /* any */
+	int conn_count_iface;  /* connect */
+	int dconn_count_iface; /* disconnect */
+
 	/** The iface blamed for the last disconnect event */
 	struct net_if *dconn_iface_gen;
 	struct net_if *dconn_iface_ipv4;
 	struct net_if *dconn_iface_ipv6;
+	struct net_if *dconn_iface;
 
 	/** The iface blamed for the last connect event */
 	struct net_if *conn_iface_gen;
 	struct net_if *conn_iface_ipv4;
 	struct net_if *conn_iface_ipv6;
+	struct net_if *conn_iface;
 
 	uint32_t expected_events;
 } global_stats;
@@ -125,6 +134,11 @@ static void reset_stats(void)
 	global_stats.event_count_gen = 0;
 	global_stats.dconn_iface_gen = NULL;
 	global_stats.conn_iface_gen = NULL;
+	global_stats.conn_count_iface = 0;
+	global_stats.dconn_count_iface = 0;
+	global_stats.event_count_iface = 0;
+	global_stats.dconn_iface = NULL;
+	global_stats.conn_iface = NULL;
 
 	global_stats.conn_count_ipv4 = 0;
 	global_stats.dconn_count_ipv4 = 0;
@@ -224,6 +238,31 @@ void conn_handler(struct net_mgmt_event_callback *cb, uint64_t event, struct net
 	}
 }
 
+struct net_mgmt_event_callback iface_callback;
+
+void iface_handler(struct net_mgmt_event_callback *cb, uint64_t event, struct net_if *iface)
+{
+	if (event == NET_EVENT_L4_IF_CONNECTED) {
+		k_mutex_lock(&stats_mutex, K_FOREVER);
+		global_stats.conn_count_iface += 1;
+		global_stats.event_count_iface += 1;
+		global_stats.conn_iface = iface;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_IF_CONNECTED);
+		k_mutex_unlock(&stats_mutex);
+	} else if (event == NET_EVENT_L4_IF_DISCONNECTED) {
+		k_mutex_lock(&stats_mutex, K_FOREVER);
+		global_stats.dconn_count_iface += 1;
+		global_stats.event_count_iface += 1;
+		global_stats.dconn_iface = iface;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_IF_DISCONNECTED);
+		k_mutex_unlock(&stats_mutex);
+	}
+
+	if (global_stats.expected_events == 0) {
+		k_sem_give(&event_sem);
+	}
+}
+
 static void wait_for_events(uint64_t event_mask, k_timeout_t timeout)
 {
 	k_mutex_lock(&stats_mutex, K_FOREVER);
@@ -252,6 +291,13 @@ static void *conn_mgr_setup(void)
 		NET_EVENT_L4_IPV4_CONNECTED | NET_EVENT_L4_IPV4_DISCONNECTED
 	);
 	net_mgmt_add_event_callback(&conn_callback);
+
+	net_mgmt_init_event_callback(
+		&iface_callback, iface_handler,
+		NET_EVENT_L4_IF_CONNECTED | NET_EVENT_L4_IF_DISCONNECTED
+	);
+	net_mgmt_add_event_callback(&iface_callback);
+
 	return NULL;
 }
 
@@ -951,6 +997,62 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 }
 
 /* Cases */
+
+/* Verify per-interface events are emitted for every iface readiness transition, independently of
+ * the aggregate connectivity events.
+ */
+ZTEST(conn_mgr_monitor, test_iface_events)
+{
+	struct test_stats stats;
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	net_if_ipv4_addr_add(if_simp_b, &test_ipv4_b, NET_ADDR_MANUAL, 0);
+
+	/* The first ready iface also establishes aggregate connectivity. */
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_CONNECTED | TEST_EXPECT_L4_IF_CONNECTED, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.conn_count_gen, 1, "Aggregate connected event should be fired.");
+	zassert_equal(stats.conn_count_iface, 1, "Per-interface connected event should be fired.");
+	zassert_equal(stats.event_count_iface, 1,
+		      "Only one per-interface connected event should be fired.");
+	zassert_equal(stats.conn_iface, if_simp_a, "if_simp_a should be reported as connected.");
+
+	/* A second ready iface does not change aggregate connectivity. */
+	zassert_equal(net_if_up(if_simp_b), 0, "net_if_up should succeed for if_simp_b.");
+	wait_for_events(TEST_EXPECT_L4_IF_CONNECTED, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.event_count_gen, 0, "No aggregate event should be fired.");
+	zassert_equal(stats.conn_count_iface, 1, "Per-interface connected event should be fired.");
+	zassert_equal(stats.event_count_iface, 1,
+		      "Only one per-interface connected event should be fired.");
+	zassert_equal(stats.conn_iface, if_simp_b, "if_simp_b should be reported as connected.");
+
+	/* Losing one of two ready ifaces does not change aggregate connectivity. */
+	zassert_equal(net_if_down(if_simp_a), 0, "net_if_down should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_IF_DISCONNECTED, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.event_count_gen, 0, "No aggregate event should be fired.");
+	zassert_equal(stats.dconn_count_iface, 1,
+		      "Per-interface disconnected event should be fired.");
+	zassert_equal(stats.event_count_iface, 1,
+		      "Only one per-interface disconnected event should be fired.");
+	zassert_equal(stats.dconn_iface, if_simp_a,
+		      "if_simp_a should be reported as disconnected.");
+
+	/* Losing the final ready iface also removes aggregate connectivity. */
+	zassert_equal(net_if_down(if_simp_b), 0, "net_if_down should succeed for if_simp_b.");
+	wait_for_events(TEST_EXPECT_L4_DISCONNECTED | TEST_EXPECT_L4_IF_DISCONNECTED,
+			EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.dconn_count_gen, 1, "Aggregate disconnected event should be fired.");
+	zassert_equal(stats.dconn_count_iface, 1,
+		      "Per-interface disconnected event should be fired.");
+	zassert_equal(stats.event_count_iface, 1,
+		      "Only one per-interface disconnected event should be fired.");
+	zassert_equal(stats.dconn_iface, if_simp_b,
+		      "if_simp_b should be reported as disconnected.");
+}
 
 /* Make sure all readiness transitions of a pair of connectivity-enabled ifaces results in all
  * expected events.
