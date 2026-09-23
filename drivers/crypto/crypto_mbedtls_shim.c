@@ -288,7 +288,7 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (ctx->keylen != 16U) {
+	if (ctx->keylen != 16U && ctx->keylen != 24U && ctx->keylen != 32U) {
 		LOG_ERR("%u key size is not supported", ctx->keylen);
 		return -EINVAL;
 	}
