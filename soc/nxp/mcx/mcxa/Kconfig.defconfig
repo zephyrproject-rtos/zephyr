@@ -36,6 +36,21 @@ configdefault SYSTEM_TIMER_RESET_BY_LPM
 
 endif # PM
 
+if PM_DEVICE
+
+# The core domain node relays a SoC power state change to every driver that
+# names it in power-domains, so they get the TURN_OFF and TURN_ON they need to
+# survive Deep Power Down.
+configdefault POWER_DOMAIN
+	default y
+
+# Resuming the swept devices runs on the idle thread, and re-initializing a
+# peripheral from its TURN_ON handler needs more room than the default.
+config IDLE_STACK_SIZE
+	default 512
+
+endif # PM_DEVICE
+
 if HAS_MCUX_SYSCON_LPCAC
 
 configdefault CACHE_MANAGEMENT
