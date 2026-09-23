@@ -2,6 +2,7 @@ common:
   depends_on: netif
   filter: CONFIG_FULL_LIBC_SUPPORTED
   min_ram: 21
+  min_flash: 194
   tags:
     - net
     - socket
