@@ -143,6 +143,8 @@ static int cmd_net_iptable_add(const struct shell *sh, size_t argc, char *argv[]
 		PR_ERROR("iptable rule add fail ret %d\n", ret);
 		return -EINVAL;
 	}
+
+	PR("iptable rule %d added\n", ret);
 #else
 	print_iptable_error(sh);
 #endif
