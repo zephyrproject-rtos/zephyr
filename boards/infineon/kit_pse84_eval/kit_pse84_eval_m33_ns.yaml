@@ -21,3 +21,6 @@ supported:
   - flash
   - dma
   - spi
+  - i2c
+  - counter
+  - pwm
