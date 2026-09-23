@@ -1653,15 +1653,56 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 	/* Disable error interrupt to prevent spurious ISRs when async RX is disabled */
 	LL_USART_DisableIT_ERROR(usart);
 
-	uart_stm32_dma_rx_flush(dev);
-
-	async_evt_rx_buf_release(data, data->dma_rx.buffer);
-
+	/*
+	 * Disable DMA in case it was still active.
+	 *
+	 * Note the ordering here is very important: we must not
+	 * clear dma_rx.enabled before stopping the DMA itself
+	 * as we did not mask interrupts, so the DMA RX callback
+	 * may actually be called until the channel is stopped.
+	 * If such a situation occurs, our RX callback will work
+	 * as usual since it will still see the async UART as
+	 * enabled. On the other hand, after dma_stop() completes,
+	 * it is impossible for the DMA RX callback to run.
+	 */
+	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 	uart_stm32_dma_rx_disable(dev);
 
 	(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
-	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+	if (data->rx_complete_buffer != NULL) {
+		/*
+		 * This is a call to uart_rx_disable() from the async_cb
+		 * which is handling an UART_RX_RDY event that we just
+		 * sent it (we are in DMA RX callback context). Release
+		 * the buffer whose data we just submitted, and the one
+		 * that was used to re-arm the DMA (if we did re-arm).
+		 * Any byte received in the re-armed buffer is discarded;
+		 * these bytes would not have been received at all if we
+		 * did not re-arm immediately, which was how this driver
+		 * previously behaved. A caller of uart_rx_disable() in
+		 * response to UART_RX_RDY most likely indicates that no
+		 * additional data is wanted anyways (that would be a
+		 * re-entrant UART_RX_RDY event!).
+		 */
+		async_evt_rx_buf_release(data, data->rx_complete_buffer);
+		if (data->dma_rx.buffer != NULL) {
+			async_evt_rx_buf_release(data, data->dma_rx.buffer);
+		}
+
+		data->rx_complete_buffer = NULL;
+	} else {
+		/*
+		 * Flush and release in-flight DMA buffer if there is one.
+		 * The only situation where there isn't one should be
+		 * when this function is called by uart_stm32_dma_rx_cb().
+		 */
+		if (data->dma_rx.buffer != NULL) {
+			uart_stm32_dma_rx_flush(dev);
+
+			async_evt_rx_buf_release(data, data->dma_rx.buffer);
+		}
+	}
 
 	if (data->rx_next_buffer) {
 		async_evt_rx_buf_release(data, data->rx_next_buffer);
@@ -1712,43 +1753,15 @@ void uart_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 	irq_unlock(key);
 }
 
-static void uart_stm32_dma_replace_buffer(const struct device *dev)
-{
-	const struct uart_stm32_config *config = dev->config;
-	USART_TypeDef *usart = config->usart;
-	struct uart_stm32_data *data = dev->data;
-
-	/* Replace the buffer and reload the DMA */
-	LOG_DBG("Replacing RX buffer: %d", data->rx_next_buffer_len);
-
-	/* reload DMA */
-	data->dma_rx.offset = 0;
-	data->dma_rx.counter = 0;
-	data->dma_rx.buffer = data->rx_next_buffer;
-	data->dma_rx.buffer_length = data->rx_next_buffer_len;
-	data->dma_rx.blk_cfg.block_size = data->dma_rx.buffer_length;
-	data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.buffer;
-	data->rx_next_buffer = NULL;
-	data->rx_next_buffer_len = 0;
-
-	dma_reload(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
-			data->dma_rx.blk_cfg.source_address,
-			data->dma_rx.blk_cfg.dest_address,
-			data->dma_rx.blk_cfg.block_size);
-
-	dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
-
-	LL_USART_ClearFlag_IDLE(usart);
-
-	/* Request next buffer */
-	async_evt_rx_buf_request(data);
-}
-
 void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 			       uint32_t channel, int status)
 {
 	const struct device *uart_dev = user_data;
 	struct uart_stm32_data *data = uart_dev->data;
+	const struct uart_stm32_config *config = uart_dev->config;
+	USART_TypeDef *usart = config->usart;
+	__maybe_unused int res;
+	struct uart_event evt;
 
 	if (status < 0) {
 		async_evt_rx_err(data, status);
@@ -1757,35 +1770,123 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 
 	(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
-	/* If we are in NORMAL MODE */
 	if (data->dma_rx.dma_cfg.cyclic == 0) {
+		/*
+		 * Normal mode: DMA RX callback = RX buffer is full.
+		 *
+		 * Capture all information we will need to handle the event
+		 * and save the RX buffer that just got filled and we will
+		 * be submitted in a special variable, such that any call
+		 * to uart_rx_disable() from a user callback will remember
+		 * to release it, while still allowing us to update the
+		 * dma_rx.buffer variables to the next buffer.
+		 *
+		 * Note the use of compiler_barrier() to prevent these reads
+		 * and writes from being re-ordered at a later point.
+		 */
+		void *const rx_buf = data->dma_rx.buffer;
+		const uint32_t rx_offset = data->dma_rx.offset;
+		const uint32_t rx_buf_len = data->dma_rx.buffer_length;
 
-		/* true since this functions occurs when buffer is full */
-		data->dma_rx.counter = data->dma_rx.buffer_length;
-		async_evt_rx_rdy(data);
+		data->rx_complete_buffer = rx_buf;
+
+		compiler_barrier();
+
+		/* Reset bookkeeping */
+		data->dma_rx.offset = 0;
+		data->dma_rx.counter = 0;
+		data->dma_rx.buffer = NULL;
+		data->dma_rx.buffer_length = 0;
+
+		/*
+		 * The callback occurs when the buffer is full so
+		 * the amount of bytes received is the buffer size
+		 * minus the number of bytes already submitted to
+		 * the application. This cannot be non-zero since
+		 * we should otherwise have already submitted the
+		 * full buffer to the application.
+		 */
+		const uint32_t rx_len = rx_buf_len - rx_offset;
+		bool swapped_buffers = false;
+
+		__ASSERT_NO_MSG(rx_len > 0);
+
 		if (data->rx_next_buffer != NULL) {
-			async_evt_rx_buf_release(data, data->dma_rx.buffer);
-
-			/* replace the buffer when the current
-			 * is full and not the same as the next
-			 * one.
+			/*
+			 * Next buffer available: continue reception.
+			 * Re-arm DMA with new RX buffer immediately
+			 * to prevent loss of data received while the
+			 * RX_RDY and RELEASE callbacks below execute.
+			 * (Data loss can obviously still occur if the
+			 * callbacks take a VERY long time...)
 			 */
-			uart_stm32_dma_replace_buffer(uart_dev);
+			void *const next_buf = data->rx_next_buffer;
+			const uint32_t next_buf_len = data->rx_next_buffer_len;
+
+			swapped_buffers = true;
+			data->rx_next_buffer = NULL;
+			data->rx_next_buffer_len = 0;
+
+			data->dma_rx.buffer = next_buf;
+			data->dma_rx.buffer_length = next_buf_len;
+			data->dma_rx.blk_cfg.dest_address = (uint32_t)next_buf;
+			data->dma_rx.blk_cfg.block_size = next_buf_len;
+
+			dma_reload(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
+				data->dma_rx.blk_cfg.source_address,
+				data->dma_rx.blk_cfg.dest_address,
+				data->dma_rx.blk_cfg.block_size);
+			dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+
+			LL_USART_ClearFlag_IDLE(usart);
+		}
+
+		/*
+		 * Submit filled buffer to user.
+		 *
+		 * async_evt_rx_rdy() must NOT be used here since
+		 * it reads dev->data to build the event packet
+		 * but we have already reset that bookkeeping.
+		 */
+		evt.type = UART_RX_RDY;
+		evt.data.rx.buf = rx_buf;
+		evt.data.rx.offset = rx_offset;
+		evt.data.rx.len = rx_len;
+		async_user_callback(data, &evt);
+
+		/*
+		 * UART_RX_RDY callback may have explicitly called
+		 * uart_rx_disable(), in which case all tasks are
+		 * already done - return immediately if so.
+		 */
+		if (!data->dma_rx.enabled) {
+			return;
+		}
+
+		/*
+		 * Release buffer we just submitted to user.
+		 * Since the buffer is being released here,
+		 * it is no longer needed to keep it saved
+		 * for release by uart_rx_disable() anymore.
+		 */
+		data->rx_complete_buffer = NULL;
+		async_evt_rx_buf_release(data, rx_buf);
+
+		if (!data->dma_rx.enabled) {
+			/* UART_RX_BUF_RELEASED called uart_rx_disable() */
+			return;
+		}
+
+		if (swapped_buffers) {
+			/*
+			 * Swapped buffers: data reception continues.
+			 * Request a replacement for the buffer we just released.
+			 */
+			async_evt_rx_buf_request(data);
 		} else {
-			/* Buffer full without valid next buffer,
-			 * an UART_RX_DISABLED event must be generated,
-			 * but uart_stm32_async_rx_disable() cannot be
-			 * called in ISR context. So force the RX timeout
-			 * to minimum value and let the RX timeout to do the job.
-			 */
-#if defined(CONFIG_UART_STM32_ABNORMAL_RTS_ERRATUM_WORKAROUND)
-			const struct uart_stm32_config *config = uart_dev->config;
-
-			if (config->rts_gpio.port != NULL) {
-				gpio_pin_set_dt(&config->rts_gpio, 0);
-			}
-#endif
-			k_work_reschedule(&data->dma_rx.timeout_work, K_TICKS(1));
+			/* No buffer for swapping: stop data reception */
+			res = uart_stm32_async_rx_disable(uart_dev);
+			__ASSERT(res == 0, "Failed to disable UART from DMA RX callback");
 		}
 	} else {
 		/* CIRCULAR MODE */
