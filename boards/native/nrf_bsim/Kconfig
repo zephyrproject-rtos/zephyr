@@ -26,6 +26,12 @@ source "soc/nordic/common/Kconfig.peripherals"
 
 source "boards/native/common/extra_args/Kconfig"
 
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BT_HCI_IPC
+	default 4096 if NRF_802154_SER_HOST && BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	default 4096 if NRF_802154_SER_RADIO && BOARD_NRF5340BSIM_NRF5340_CPUNET
+
 endif # SOC_SERIES_BSIM_NRFXX
 
 
