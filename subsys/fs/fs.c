@@ -837,15 +837,9 @@ mount_err:
 
 #endif /* CONFIG_FILE_SYSTEM_MKFS */
 
-int fs_unmount(struct fs_mount_t *mp)
+static int fs_unmount_locked(struct fs_mount_t *mp)
 {
 	int rc = -EINVAL;
-
-	if (mp == NULL) {
-		return rc;
-	}
-
-	k_mutex_lock(&mutex, K_FOREVER);
 
 	if (!sys_dnode_is_linked(&mp->node)) {
 		LOG_ERR("fs not mounted (mp == %p)", mp);
@@ -869,6 +863,63 @@ int fs_unmount(struct fs_mount_t *mp)
 	LOG_DBG("fs unmounted from %s", mp->mnt_point);
 
 unmount_err:
+	return rc;
+}
+
+int fs_unmount(struct fs_mount_t *mp)
+{
+	int rc;
+
+	if (mp == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&mutex, K_FOREVER);
+	rc = fs_unmount_locked(mp);
+	k_mutex_unlock(&mutex);
+
+	return rc;
+}
+
+int fs_unmount_path(const char *mnt_point)
+{
+	struct fs_mount_t *mp = NULL;
+	sys_dnode_t *node;
+	size_t len;
+	int rc;
+
+	if (mnt_point == NULL) {
+		return -EINVAL;
+	}
+
+	len = strlen(mnt_point);
+	if (len == 0U || mnt_point[0] != '/') {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
+		struct fs_mount_t *itr = CONTAINER_OF(node, struct fs_mount_t, node);
+
+		if (len != itr->mountp_len) {
+			continue;
+		}
+
+		if (strncmp(mnt_point, itr->mnt_point, len) == 0) {
+			mp = itr;
+			break;
+		}
+	}
+
+	if (mp == NULL) {
+		rc = -ENOENT;
+		goto out;
+	}
+
+	rc = fs_unmount_locked(mp);
+
+out:
 	k_mutex_unlock(&mutex);
 	return rc;
 }

@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/scsi/scsi_cmd.h>
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usbd.h>
@@ -63,16 +64,16 @@ enum code_set {
 
 /* SPC-5 F.3.1 Operation codes Table F.2 — Operation codes */
 enum scsi_opcode {
-	TEST_UNIT_READY = 0x00,
-	REQUEST_SENSE = 0x03,
-	INQUIRY = 0x12,
-	MODE_SENSE_6 = 0x1A,
-	START_STOP_UNIT = 0x1B,
+	TEST_UNIT_READY = SCSI_OPCODE_TEST_UNIT_READY,
+	REQUEST_SENSE = SCSI_OPCODE_REQUEST_SENSE,
+	INQUIRY = SCSI_OPCODE_INQUIRY,
+	MODE_SENSE_6 = SCSI_OPCODE_MODE_SENSE_6,
+	START_STOP_UNIT = SCSI_OPCODE_START_STOP_UNIT,
 	PREVENT_ALLOW_MEDIUM_REMOVAL = 0x1E,
 	READ_FORMAT_CAPACITIES = 0x23,
-	READ_CAPACITY_10 = 0x25,
-	READ_10 = 0x28,
-	WRITE_10 = 0x2A,
+	READ_CAPACITY_10 = SCSI_OPCODE_READ_CAPACITY_10,
+	READ_10 = SCSI_OPCODE_READ_10,
+	WRITE_10 = SCSI_OPCODE_WRITE_10,
 	MODE_SENSE_10 = 0x5A,
 };
 

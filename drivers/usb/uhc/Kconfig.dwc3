@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_DWC3
+	bool "Synopsys DWC3 xHCI USB Host Controller driver"
+	default y
+	depends on DT_HAS_SNPS_DWC3_ENABLED
+	help
+	  Synopsys DesignWare USB3 DRD controller in xHCI host mode.
+	  Bulk and control paths follow xHCI ring management; optional Xilinx/AMD
+	  USB2 wrapper tuning via a second `reg` entry named `usb2_wrapper`
+
+config UHC_DWC3_DEBUG
+	bool "Verbose DWC3 xHCI ring and context debug logs"
+	depends on UHC_DWC3
+	default n
+	help
+	  LOG_DBG traces for EP0/bulk ring sync, device-context verification,
+	  and transfer-ring bookkeeping. Enable when debugging enumeration or
+	  bulk pipe issues on integrated DWC3+xHCI controllers.
+
+config UHC_DWC3_BULK_OUT_STAGING_BUFSZ
+	int "Bulk/interrupt OUT staging buffer size (bytes)"
+	default 16384
+	range 512 131072
+	depends on UHC_DWC3
+	help
+	  __aligned(64) per-controller buffer for bulk/interrupt OUT when the
+	  net_buf payload physical address is not 64-byte aligned. Payload length
+	  must fit or enqueue returns -E2BIG.
+
+config UHC_DWC3_BULK_FLOW_LOG
+	bool "Log DWC3 bulk pipe recovery at INFO"
+	depends on UHC_DWC3
+	default n
+	help
+	  INFO logs for bulk EP state, Configure Endpoint drop+add, and enqueue
+	  recovery on integrated DWC3+xHCI (use with CONFIG_USBH_MSC_FLOW_LOG).
