@@ -131,7 +131,7 @@ int icm566xx_convert_raw_to_q31(struct icm566xx_encoded_data *edata, enum sensor
 	int rc;
 	bool is_high_res = false;
 
-#if INV_IMU_20BIT_REG_DATA_SUPPORTED
+#if FORMAT_SENSOR_DATA == FORMAT_20BIT_REG_DATA
 	is_high_res = true;
 #endif
 

@@ -58,6 +58,10 @@ void icm566xx_accel_ms(uint8_t fs, int32_t in, bool high_res, int32_t *out_ms,
 	int64_t sensitivity, total_ums;
 	uint64_t full_scale_range_lsb = high_res ? 524288 : 32768;
 
+	if (high_res) {
+		fs = ICM566XX_DT_ACCEL_FS_32;
+	}
+
 	switch (fs) {
 #if defined(CONFIG_DT_HAS_INVENSENSE_ICM56686_ENABLED)
 	case ICM566XX_DT_ACCEL_FS_32:
@@ -90,6 +94,10 @@ void icm566xx_gyro_rads(uint8_t fs, int32_t in, bool high_res, int32_t *out_rads
 {
 	int64_t sensitivity, total_urads;
 	uint64_t full_scale_range_lsb = high_res ? 524288 : 32768;
+
+	if (high_res) {
+		fs = ICM566XX_DT_GYRO_FS_4000;
+	}
 
 	switch (fs) {
 #if defined(CONFIG_DT_HAS_INVENSENSE_ICM56686_ENABLED)
@@ -375,7 +383,7 @@ static int icm566xx_channel_get(const struct device *dev, enum sensor_channel ch
 		return -ENOTSUP;
 	}
 
-#if INV_IMU_20BIT_REG_DATA_SUPPORTED
+#if FORMAT_SENSOR_DATA == FORMAT_20BIT_REG_DATA
 	is_high_res = true;
 #endif
 
@@ -670,7 +678,7 @@ static int icm566xx_init(const struct device *dev)
 		return err;
 	}
 
-#if INV_IMU_20BIT_REG_DATA_SUPPORTED == 0
+#if FORMAT_SENSOR_DATA != FORMAT_20BIT_REG_DATA
 	err = icm566xx_set_accel_fsr(&data->driver, cfg->settings.accel.fs);
 	if (err < 0) {
 		LOG_ERR("Failed to set Accel fsr: %d", err);
