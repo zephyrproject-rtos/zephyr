@@ -5,9 +5,14 @@ tests:
   libraries.shared_multi_heap:
     platform_allow:
       - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp
       - mps2/an521/cpu0
     integration_platforms:
       - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_args:
+      - platform:qemu_cortex_a53/qemu_cortex_a53/smp:DTC_OVERLAY_FILE=boards/qemu_cortex_a53.overlay
+      - platform:qemu_cortex_a53/qemu_cortex_a53/smp:EXTRA_CONF_FILE=boards/qemu_cortex_a53.conf
     tags:
       - kernel
       - multi_heap
