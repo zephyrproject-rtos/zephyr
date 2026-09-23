@@ -12,35 +12,13 @@
 #define ZEPHYR_INCLUDE_MODEM_WORKQUEUE_H_
 
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/subsystem_workq.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef CONFIG_MODEM_DEDICATED_WORKQUEUE
-
-int modem_work_submit(struct k_work *work);
-int modem_work_schedule(struct k_work_delayable *dwork, k_timeout_t delay);
-int modem_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay);
-
-#else
-
-static inline int modem_work_submit(struct k_work *work)
-{
-	return k_work_submit(work);
-}
-
-static inline int modem_work_schedule(struct k_work_delayable *dwork, k_timeout_t delay)
-{
-	return k_work_schedule(dwork, delay);
-}
-
-static inline int modem_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
-{
-	return k_work_reschedule(dwork, delay);
-}
-
-#endif /* CONFIG_MODEM_DEDICATED_WORKQUEUE */
+K_SUBSYSTEM_WORK_QUEUE_DECLARE(modem, MODEM);
 
 #ifdef __cplusplus
 }
