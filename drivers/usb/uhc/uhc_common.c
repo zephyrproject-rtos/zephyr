@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/dlist.h>
 #include <zephyr/usb/usb_ch9.h>
 #include "uhc_common.h"
 
@@ -47,7 +48,14 @@ void uhc_xfer_return(const struct device *dev,
 		.dev = dev,
 	};
 
-	sys_dlist_remove(&xfer->node);
+	if (!sys_dnode_is_linked(&xfer->node)) {
+		if (!xfer->queued) {
+			LOG_WRN("uhc: duplicate xfer_return ignored (%p)", (void *)xfer);
+			return;
+		}
+	} else {
+		sys_dlist_remove(&xfer->node);
+	}
 	xfer->queued = 0;
 	xfer->err = err;
 
@@ -373,6 +381,181 @@ int uhc_shutdown(const struct device *dev)
 	atomic_clear_bit(&data->status, UHC_STATUS_INITIALIZED);
 
 uhc_shutdown_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_add_endpoints(const struct device *dev,
+		      struct usb_device *udev)
+{
+	const struct uhc_driver_api *api;
+	int ret = 0;
+
+	if (dev == NULL || udev == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out;
+	}
+
+	if (api->add_endpoints != NULL) {
+		ret = api->add_endpoints(dev, udev);
+	}
+
+out:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_eps_verify_steady(const struct device *dev,
+			  struct usb_device *udev)
+{
+	const struct uhc_driver_api *api;
+	int ret;
+
+	if (dev == NULL || udev == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->eps_verify_steady == NULL) {
+		return 0;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out_verify;
+	}
+
+	ret = api->eps_verify_steady(dev, udev);
+
+out_verify:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_ep_sync_after_clear_feature(const struct device *dev,
+				    struct usb_device *udev)
+{
+	const struct uhc_driver_api *api;
+	int ret;
+
+	if (dev == NULL || udev == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->ep_sync_after_clear_feature == NULL) {
+		return 0;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out_sync;
+	}
+
+	ret = api->ep_sync_after_clear_feature(dev, udev);
+
+out_sync:
+	api->unlock(dev);
+
+	return ret;
+}
+
+bool uhc_post_configure_steady(const struct device *dev)
+{
+	const struct uhc_driver_api *api;
+	bool steady;
+
+	if (dev == NULL) {
+		return false;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->post_configure_steady == NULL) {
+		return true;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		steady = false;
+		goto out_steady;
+	}
+
+	steady = api->post_configure_steady(dev);
+
+out_steady:
+	api->unlock(dev);
+
+	return steady;
+}
+
+void uhc_free_dev(const struct device *dev)
+{
+	const struct uhc_driver_api *api;
+
+	if (dev == NULL) {
+		return;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->free_dev == NULL) {
+		return;
+	}
+
+	api->lock(dev);
+
+	if (uhc_is_initialized(dev)) {
+		api->free_dev(dev);
+	}
+
+	api->unlock(dev);
+}
+
+int uhc_assign_address(const struct device *dev, struct usb_device *udev,
+		       uint8_t *addr_out)
+{
+	const struct uhc_driver_api *api;
+	int ret;
+
+	if (dev == NULL || udev == NULL || addr_out == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->assign_address == NULL) {
+		return -ENOTSUP;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out_assign;
+	}
+
+	ret = api->assign_address(dev, udev, addr_out);
+
+out_assign:
 	api->unlock(dev);
 
 	return ret;
