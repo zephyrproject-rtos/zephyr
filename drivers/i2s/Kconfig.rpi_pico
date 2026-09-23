@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Robin Sachsenweger Ballantyne <makenenjoy@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_RPI_PICO_PIO
+	bool "Raspberry Pi Pico PIO I2S controller driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_I2S_PIO_ENABLED
+	select PICOSDK_USE_PIO
+	select DMA
+	select PINCTRL
+	help
+	  Enable driving I2S via PIO on the Raspberry Pi Pico
+
+if I2S_RPI_PICO_PIO
+
+config I2S_RPI_PICO_PIO_RX_QUEUE_SIZE
+	int "RX queue length"
+	default 8
+	help
+	  Number of blocks the RX software queue can hold.
+
+config I2S_RPI_PICO_PIO_TX_QUEUE_SIZE
+	int "TX queue length"
+	default 8
+	help
+	  Number of blocks the TX software queue can hold.
+
+endif # I2S_RPI_PICO_PIO

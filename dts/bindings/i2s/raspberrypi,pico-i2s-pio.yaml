@@ -1,0 +1,90 @@
+# Copyright (c) 2026 Robin Sachsenweger Ballantyne <makenenjoy@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico PIO I2S
+
+compatible: "raspberrypi,pico-i2s-pio"
+
+include: [i2s-controller.yaml, "raspberrypi,pico-pio-device.yaml"]
+
+properties:
+  pinctrl-0:
+    required: true
+    description: |
+      Must name a node containing groups with the names `bclk_pins`, `ws_pins` and one
+      or both of `sdout_pins`/`sdin_pins`.
+
+      The GPIO pins for `sdin_pins`, `bclk_pins` and `ws_pins` must be consecutively
+      ascending. The PIO state machine's IN_BASE is the `sdin_pins` pin
+      and it reads data at IN_BASE + 0, BCLK at IN_BASE + 1 and WS at
+      IN_BASE + 2. When configured TX-only, IN_BASE is derived as `bclk_pins` - 1.
+
+      The `bclk_pins`, `ws_pins` and `sdin_pins` groups must also be tagged with
+      `input-enable`, so that the pad input buffers are on and the PIO can sample them.
+
+      `sdout_pins` and `sdin_pins` may name the same GPIO to enable loopback which is
+      used primarily for testing.
+
+  pinctrl-names:
+    required: true
+
+  dmas:
+    required: true
+    description: |
+      TX and/or RX DMA channel specifiers. At least one is required.
+
+      Note: the DREQ slot cell is ignored. raspberrypi,pico-dma.yaml fixes #dma-cells at 3, but the
+      driver derives the slot from pio_get_dreq() once the state machine has been dynamically
+      allocated during i2s_configure(). Write 0 as the placeholder.
+  dma-names:
+    required: true
+    description: |
+      `tx`, `rx`, or both.
+
+examples:
+  - |
+    &pinctrl {
+      pio1_i2s0_default: pio1_i2s0_default {
+        sdout_pins {
+          pinmux = <PIO1_P16>;
+        };
+
+        sdin_pins {
+          pinmux = <PIO1_P26>;
+          input-enable;
+        };
+
+        bclk_pins {
+          pinmux = <PIO1_P27>;
+          input-enable;
+        };
+
+        ws_pins {
+          pinmux = <PIO1_P28>;
+          input-enable;
+        };
+      };
+    };
+
+    &pio1 {
+      status = "okay";
+
+      pio1_i2s0: i2s0 {
+        compatible = "raspberrypi,pico-i2s-pio";
+        status = "okay";
+
+        pinctrl-0 = <&pio1_i2s0_default>;
+        pinctrl-names = "default";
+
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        dmas = <&dma 7 0 0>,
+              <&dma 8 0 0>;
+        dma-names = "tx", "rx";
+      };
+    };
+
+    &dma {
+      status = "okay";
+    };
