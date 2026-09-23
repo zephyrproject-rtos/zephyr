@@ -360,6 +360,24 @@ static void test_main_broadcast(void)
 	TEST_PASS("GATT server passed");
 }
 
+/* A client that sets a Reserved bit next to the notify bit is subscribed:
+ * short_subscribe(), which compares the value with BT_GATT_CCC_NOTIFY, has to
+ * see it that way, and a notification sent to all peers has to reach it.
+ */
+static void test_main_reserved_bit(void)
+{
+	int err;
+
+	advertise_and_wait_connected();
+	WAIT_FOR_FLAG(flag_short_subscribe);
+
+	err = bt_gatt_notify(NULL, &attr_test_svc[1], chrc_data, CHRC_SIZE);
+	TEST_ASSERT(err == 0, "Notification broadcast failed (err %d)", err);
+
+	/* The client ends the simulation once it has received the value */
+	TEST_PASS("GATT server passed");
+}
+
 static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_none",
@@ -380,6 +398,10 @@ static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_broadcast",
 		.test_main_f = test_main_broadcast,
+	},
+	{
+		.test_id = "gatt_server_reserved_bit",
+		.test_main_f = test_main_reserved_bit,
 	},
 	BSTEST_END_MARKER,
 };
