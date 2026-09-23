@@ -41,6 +41,11 @@ static void before(void *fixture)
 	zassert_true(device_is_ready(dev_i2s_tx),
 		     "device %s is not ready", dev_i2s_tx->name);
 
+	i2s_test_recover(dev_i2s_rx);
+	if (dev_i2s_tx != dev_i2s_rx) {
+		i2s_test_recover(dev_i2s_tx);
+	}
+
 	ret = configure_stream(dev_i2s_rx, I2S_DIR_RX);
 	zassert_equal(ret, TC_PASS);
 
@@ -57,6 +62,8 @@ static void before_dir_both(void *fixture)
 	zassert_not_null(dev_i2s, "TX/RX device not found");
 	zassert_true(device_is_ready(dev_i2s),
 		     "device %s is not ready", dev_i2s->name);
+
+	i2s_test_recover(dev_i2s);
 
 	ret = configure_stream(dev_i2s, I2S_DIR_BOTH);
 	zassert_equal(ret, TC_PASS);

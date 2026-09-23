@@ -187,6 +187,23 @@ int rx_block_read(const struct device *dev_i2s, int att)
 	return rx_block_read_slab(dev_i2s, att, &rx_mem_slab);
 }
 
+void i2s_test_recover(const struct device *dev)
+{
+	int ret;
+
+	if (dev == NULL || !device_is_ready(dev)) {
+		return;
+	}
+
+	ret = i2s_trigger(dev, I2S_DIR_BOTH, I2S_TRIGGER_DROP);
+	if (ret == 0) {
+		return;
+	}
+
+	(void)i2s_trigger(dev, I2S_DIR_RX, I2S_TRIGGER_DROP);
+	(void)i2s_trigger(dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+}
+
 int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 {
 	int ret;
