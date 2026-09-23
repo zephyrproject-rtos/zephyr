@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32s31-pinctrl.h>
+
+/* Console UART on the default UART0 pads (U0TXD GPIO58, U0RXD GPIO59),
+ * which the on-board USB-to-UART bridge is wired to.
+ */
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO58>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO59>;
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO8>,
+				 <I2C0_SCL_GPIO9>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};

@@ -1,0 +1,23 @@
+identifier: esp32s31_devkitc/esp32s31/hpcore
+name: ESP32-S31-DevKitC HP Core
+vendor: espressif
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - can
+  - counter
+  - crypto
+  - dma
+  - entropy
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - retained_mem
+  - sensor
+  - spi
+  - uart
+  - watchdog

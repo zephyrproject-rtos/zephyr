@@ -27,6 +27,7 @@ tests:
       - esp8684_devkitm
       - esp32c3_devkitc
       - esp32c5_devkitc/esp32c5/hpcore
+      - esp32s31_devkitc/esp32s31/hpcore
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
       - esp32s2_devkitc

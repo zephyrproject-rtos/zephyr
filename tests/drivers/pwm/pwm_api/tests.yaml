@@ -61,6 +61,12 @@ tests:
       - mcx_n9xx_evk/mcxn947/cpu0
       - mcx_n9xx_evk/mcxn947/cpu0/qspi
     filter: dt_alias_exists("pwm-test")
+  drivers.pwm.esp32s31_mcpwm:
+    extra_args: DTC_OVERLAY_FILE="boards/esp32s31_devkitc_hpcore_mcpwm.overlay"
+    platform_allow:
+      - esp32s31_devkitc/esp32s31/hpcore
+    filter: dt_alias_exists("pwm-test")
+    depends_on: pwm
   drivers.pwm.native_sim:
     platform_allow:
       - native_sim

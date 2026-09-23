@@ -179,6 +179,15 @@ static int sys_clock_driver_init(void)
 		return ret;
 	}
 
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+	/* The reset default leaves the systimer bus and function clocks gated
+	 * and the clock controller does not manage module clocks on this SoC,
+	 * so bring the block up here before touching its registers.
+	 */
+	systimer_ll_enable_bus_clock(true);
+	systimer_ll_reset_register();
+	systimer_ll_enable_sys_clock(true);
+#endif
 	systimer_hal_init(&systimer_hal);
 	systimer_hal_connect_alarm_counter(&systimer_hal,
 		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_COUNTER_OS_TICK);

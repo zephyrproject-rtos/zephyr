@@ -78,6 +78,7 @@ if(CONFIG_CLOCK_CONTROL_ESP32)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_ESP32P4 clock_control_esp32_pmu.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_ESP32S2 clock_control_esp32_rtc_cntl.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_ESP32S3 clock_control_esp32_rtc_cntl.c)
+  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_ESP32S31 clock_control_esp32_pmu.c)
 endif()
 
 # zephyr-keep-sorted-start

@@ -14,6 +14,7 @@ tests:
       - disco_l475_iot1
       - esp32h2_devkitm
       - esp32s3_devkitc/esp32s3/procpu
+      - esp32s31_devkitc/esp32s31/hpcore
       - mr_canhubk3
       - nucleo_c071rb
       - nucleo_c5a3zg

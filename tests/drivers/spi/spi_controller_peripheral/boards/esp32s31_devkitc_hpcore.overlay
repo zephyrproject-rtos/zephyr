@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		peripheral-cs = <0>;
+	};
+};
+
+&pinctrl {
+	spim2_loopback: spim2_loopback {
+		group1 {
+			pinmux = <SPIM2_SCLK_GPIO23>,
+				 <SPIM2_MOSI_GPIO24>,
+				 <SPIM2_CSEL_GPIO26>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MISO_GPIO25>;
+			input-enable;
+		};
+	};
+
+	spis3_loopback: spis3_loopback {
+		group1 {
+			pinmux = <SPIS3_SCLK_GPIO27>,
+				 <SPIS3_MOSI_GPIO28>,
+				 <SPIS3_CSEL_GPIO31>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <SPIS3_MISO_GPIO30>;
+			output-enable;
+		};
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_loopback>;
+	pinctrl-names = "default";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
+	};
+};
+
+dut_spis: &spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spis3_loopback>;
+	pinctrl-names = "default";
+};

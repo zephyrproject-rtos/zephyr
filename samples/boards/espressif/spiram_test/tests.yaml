@@ -16,8 +16,11 @@ tests:
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c5_devkitc/esp32c5/hpcore
       - esp32p4x_function_ev_board/esp32p4/hpcore
+      - esp32s31_devkitc/esp32s31/hpcore
   sample.boards.espressif.spiram.octal_80m:
-    platform_allow: esp32s3_devkitc/esp32s3/procpu
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32s31_devkitc/esp32s31/hpcore
     extra_configs:
       - CONFIG_SPIRAM_SPEED_80M=y
       - CONFIG_SPIRAM_MODE_OCT=y

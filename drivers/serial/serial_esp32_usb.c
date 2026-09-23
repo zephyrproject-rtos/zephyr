@@ -108,7 +108,7 @@ static int serial_esp32_usb_init(const struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C61) ||                   \
 	defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2) ||                \
-	defined(CONFIG_SOC_SERIES_ESP32P4)
+	defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
 	usb_serial_jtag_ll_phy_set_defaults();
 #endif
 
