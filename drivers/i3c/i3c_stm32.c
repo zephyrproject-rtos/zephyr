@@ -591,6 +591,7 @@ static int i3c_stm32_config_clk_wave(const struct device *dev)
 	uint8_t sclh_i3c = 0;
 	uint32_t clk_wave = 0;
 	uint32_t sclh_i3c_min_ns;
+	bool i3c_enable_state;
 
 	LOG_DBG("I3C Clock = %u, I2C Bus Freq = %u, I3C Bus Freq = %u", i3c_clock, i2c_bus_freq,
 		i3c_bus_freq);
@@ -625,7 +626,17 @@ static int i3c_stm32_config_clk_wave(const struct device *dev)
 
 	LOG_DBG("TimigReg0 = 0x%08x", clk_wave);
 
+	/* TIMINGR0 is read-only while the peripheral is enabled. */
+	i3c_enable_state = LL_I3C_IsEnabled(i3c);
+	if (i3c_enable_state) {
+		LL_I3C_Disable(i3c);
+	}
+
 	LL_I3C_ConfigClockWaveForm(i3c, clk_wave);
+
+	if (i3c_enable_state) {
+		LL_I3C_Enable(i3c);
+	}
 
 	return 0;
 }
