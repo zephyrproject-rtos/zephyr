@@ -59,6 +59,71 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 #error "Unsupported PHY connection type"
 #endif
 
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
+/* MMC counters present in the controller */
+#define NXP_ETH_MMC_COUNTERS(X)                                                                    \
+	X(TX_OCTET_COUNT_GOOD_BAD)                                                                 \
+	X(TX_PACKET_COUNT_GOOD_BAD)                                                                \
+	X(TX_BROADCAST_PACKETS_GOOD)                                                               \
+	X(TX_MULTICAST_PACKETS_GOOD)                                                               \
+	X(TX_64OCTETS_PACKETS_GOOD_BAD)                                                            \
+	X(TX_65TO127OCTETS_PACKETS_GOOD_BAD)                                                       \
+	X(TX_128TO255OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(TX_256TO511OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(TX_512TO1023OCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(TX_1024TOMAXOCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(TX_UNICAST_PACKETS_GOOD_BAD)                                                             \
+	X(TX_MULTICAST_PACKETS_GOOD_BAD)                                                           \
+	X(TX_BROADCAST_PACKETS_GOOD_BAD)                                                           \
+	X(TX_UNDERFLOW_ERROR_PACKETS)                                                              \
+	X(TX_SINGLE_COLLISION_GOOD_PACKETS)                                                        \
+	X(TX_MULTIPLE_COLLISION_GOOD_PACKETS)                                                      \
+	X(TX_DEFERRED_PACKETS)                                                                     \
+	X(TX_LATE_COLLISION_PACKETS)                                                               \
+	X(TX_EXCESSIVE_COLLISION_PACKETS)                                                          \
+	X(TX_CARRIER_ERROR_PACKETS)                                                                \
+	X(TX_OCTET_COUNT_GOOD)                                                                     \
+	X(TX_PACKET_COUNT_GOOD)                                                                    \
+	X(TX_EXCESSIVE_DEFERRAL_ERROR)                                                             \
+	X(TX_PAUSE_PACKETS)                                                                        \
+	X(TX_VLAN_PACKETS_GOOD)                                                                    \
+	X(TX_OSIZE_PACKETS_GOOD)                                                                   \
+	X(RX_PACKETS_COUNT_GOOD_BAD)                                                               \
+	X(RX_OCTET_COUNT_GOOD_BAD)                                                                 \
+	X(RX_OCTET_COUNT_GOOD)                                                                     \
+	X(RX_BROADCAST_PACKETS_GOOD)                                                               \
+	X(RX_MULTICAST_PACKETS_GOOD)                                                               \
+	X(RX_CRC_ERROR_PACKETS)                                                                    \
+	X(RX_ALIGNMENT_ERROR_PACKETS)                                                              \
+	X(RX_RUNT_ERROR_PACKETS)                                                                   \
+	X(RX_JABBER_ERROR_PACKETS)                                                                 \
+	X(RX_UNDERSIZE_PACKETS_GOOD)                                                               \
+	X(RX_OVERSIZE_PACKETS_GOOD)                                                                \
+	X(RX_64OCTETS_PACKETS_GOOD_BAD)                                                            \
+	X(RX_65TO127OCTETS_PACKETS_GOOD_BAD)                                                       \
+	X(RX_128TO255OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(RX_256TO511OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(RX_512TO1023OCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(RX_1024TOMAXOCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(RX_UNICAST_PACKETS_GOOD)                                                                 \
+	X(RX_LENGTH_ERROR_PACKETS)                                                                 \
+	X(RX_OUT_OF_RANGE_TYPE_PACKETS)                                                            \
+	X(RX_PAUSE_PACKETS)                                                                        \
+	X(RX_FIFO_OVERFLOW_PACKETS)                                                                \
+	X(RX_VLAN_PACKETS_GOOD_BAD)                                                                \
+	X(RX_WATCHDOG_ERROR_PACKETS)                                                               \
+	X(RX_RECEIVE_ERROR_PACKETS)                                                                \
+	X(RX_CONTROL_PACKETS_GOOD)                                                                 \
+	X(TX_FPE_FRAGMENT_CNTR)                                                                    \
+	X(TX_HOLD_REQ_CNTR)                                                                        \
+	X(RX_PACKET_ASSEMBLY_ERR_CNTR)                                                             \
+	X(RX_PACKET_SMD_ERR_CNTR)                                                                  \
+	X(RX_PACKET_ASSEMBLY_OK_CNTR)                                                              \
+	X(RX_FPE_FRAGMENT_CNTR)
+
+DWMAC_MMC_COUNTERS_DEFINE(nxp_eth_mmc, NXP_ETH_MMC_COUNTERS);
+#endif
+
 /*
  * OUI used when devicetree carries no MAC address and one has to be derived
  * from the chip's unique ID. NXP prints a per-board address from this same OUI
@@ -293,6 +358,9 @@ static const struct dwmac_config dwmac_config = {
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
 	.ptp_clk = NXP_ETH_CLOCK_SUBSYS(ptp),
+#endif
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
+	DWMAC_MMC_CONFIG_INIT(nxp_eth_mmc)
 #endif
 };
 
