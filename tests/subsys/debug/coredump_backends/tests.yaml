@@ -29,3 +29,36 @@ tests:
     extra_configs:
       - CONFIG_TEST_STORED_COREDUMP=y
     platform_exclude: acrn_ehl_crb
+  debug.coredump.backends.logging_udp:
+    extra_args: CONF_FILE=prj_logging_udp.conf
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net
+  debug.coredump.backends.logging_udp.mirror:
+    extra_args: CONF_FILE=prj_logging_udp.conf
+    extra_configs:
+      - CONFIG_DEBUG_COREDUMP_LOGGING_UDP_MIRROR_TO_LOG=y
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net
+  debug.coredump.backends.logging_udp.ipv6:
+    extra_args: CONF_FILE=prj_logging_udp.conf
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IPV6=y
+      - CONFIG_DEBUG_COREDUMP_LOGGING_UDP_HOST="[::1]"
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net
+  debug.coredump.backends.logging_udp.no_peer:
+    extra_args: CONF_FILE=prj_logging_udp.conf
+    extra_configs:
+      - CONFIG_TEST_BACKEND_ERROR=y
+      - CONFIG_DEBUG_COREDUMP_LOGGING_UDP_HOST=""
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net
