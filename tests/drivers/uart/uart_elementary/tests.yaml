@@ -48,6 +48,7 @@ tests:
       - nucleo_h753zi
       - nucleo_l152re
       - stm32n6570_dk/stm32n657xx/sb
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
   drivers.uart.uart_elementary.esp.pm:
