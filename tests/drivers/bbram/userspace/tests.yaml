@@ -7,6 +7,8 @@ common:
     - bbram
     - userspace
   filter: CONFIG_ARCH_HAS_USERSPACE
+  platform_allow:
+    - qemu_x86
   integration_platforms:
     - qemu_x86
 tests:
