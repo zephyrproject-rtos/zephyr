@@ -47,6 +47,7 @@ struct pi4ioe5v6408_irq_state {
 	uint8_t rising;
 	uint8_t falling;
 	uint8_t last_input;
+	uint8_t in_default;
 };
 
 struct pi4ioe5v6408_data {
@@ -67,6 +68,23 @@ struct pi4ioe5v6408_config {
 	struct gpio_dt_spec int_gpio;
 	bool interrupt_enabled;
 };
+
+/* The part latches on departure from 09h, so the default has to follow the pin. */
+static int pi4ioe5v6408_set_input_default(const struct device *dev, uint8_t mask, uint8_t level)
+{
+	const struct pi4ioe5v6408_config *cfg = dev->config;
+	struct pi4ioe5v6408_data *data = dev->data;
+	struct pi4ioe5v6408_irq_state *irq = &data->irq_state;
+	uint8_t next = (irq->in_default & ~mask) | (level & mask);
+	int rc;
+
+	rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_IN_DEFAULT_STATE, next);
+	if (rc == 0) {
+		irq->in_default = next;
+	}
+
+	return rc;
+}
 
 static void pi4ioe5v6408_handle_interrupt(const struct device *dev)
 {
@@ -100,6 +118,10 @@ static void pi4ioe5v6408_handle_interrupt(const struct device *dev)
 
 	fired = irq->rising & transitioned & curr;
 	fired |= irq->falling & transitioned & prev;
+
+	if (cfg->interrupt_enabled) {
+		(void)pi4ioe5v6408_set_input_default(dev, irq->rising | irq->falling, curr);
+	}
 
 	(void)i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &status);
 
@@ -311,6 +333,22 @@ static int pi4ioe5v6408_pin_interrupt_configure(const struct device *dev, gpio_p
 
 	if (cfg->interrupt_enabled) {
 		mask = irq->rising | irq->falling;
+		if ((mask & BIT(pin)) != 0) {
+			uint8_t input;
+
+			/* init() sampled this before the caller had configured the pin. */
+			rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_IN_STATE, &input);
+			if (rc != 0) {
+				goto out;
+			}
+
+			irq->last_input = (irq->last_input & ~BIT(pin)) | (input & BIT(pin));
+			rc = pi4ioe5v6408_set_input_default(dev, BIT(pin), input);
+			if (rc != 0) {
+				goto out;
+			}
+		}
+
 		rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_INT_MASK, (uint8_t)~mask);
 	}
 
@@ -361,14 +399,8 @@ static int pi4ioe5v6408_init(const struct device *dev)
 		return rc;
 	}
 
-	/*
-	 * Use the current resting input level as the per-pin default state, so
-	 * the chip latches an interrupt on any deviation from rest rather than
-	 * on transitions back to the post-reset all-zero default.  Without
-	 * this, e.g. an active-low button that idles high (1, non-default)
-	 * would only trigger on release, not on press.
-	 */
-	rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_IN_DEFAULT_STATE, data->irq_state.last_input);
+	/* A starting point; pin_interrupt_configure() re-reads it per pin later. */
+	rc = pi4ioe5v6408_set_input_default(dev, ALL_PINS, data->irq_state.last_input);
 	if (rc) {
 		return rc;
 	}
