@@ -70,6 +70,13 @@ Use ``wifi --help`` to list all available subcommands and ``wifi <subcommand> --
 command-specific help.
 See :zephyr:code-sample:`wifi-shell` for a sample application that enables the Wi-Fi shell.
 
+.. warning::
+
+   By default, the Wi-Fi shell scan command does not limit scan results. Due to the UART shell
+   backend being slow, printing all scan results may cause network management events to be dropped.
+   To avoid the warning, adjust :kconfig:option:`CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT` or
+   :kconfig:option:`CONFIG_NET_MGMT_EVENT_QUEUE_SIZE` if needed.
+
 Wi-Fi PSA crypto supported build
 ********************************
 
