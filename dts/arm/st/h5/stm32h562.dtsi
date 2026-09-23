@@ -568,7 +568,7 @@
 		};
 
 		rng: rng@420c0800 {
-			nist-config = <0xf00e00>;
+			nist-config = <0xf01e00>;
 			health-test-config = <0x6a91>;
 			noise-source-control = <0x3af66>;
 		};

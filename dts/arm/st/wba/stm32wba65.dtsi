@@ -96,7 +96,9 @@
 		};
 
 		rng: rng@420c0800 {
-			nist-config = <0x8200f00>;
+			nist-config = <0x8401f00>;
+			health-test-config = <0x6ea0>;
+			noise-source-control = <0x1ff>;
 		};
 
 		spi2: spi@40003800 {
