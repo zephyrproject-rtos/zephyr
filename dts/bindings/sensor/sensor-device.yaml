@@ -6,6 +6,8 @@ description: Sensor Device
 
 include: base.yaml
 
+class: sensor
+
 properties:
   friendly-name:
     type: string
