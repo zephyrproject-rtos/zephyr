@@ -32,6 +32,7 @@ zephyr_library_sources(
   ${CPC_DIR}/src/sli_cpc_frame.c
   ${CPC_DIR}/src/sli_cpc_memory.c
   ${CPC_DIR}/src/sli_cpc_msgq.c
+  src/sli_cpc_log.c
   src/sli_cpc_timer.c
 )
 
