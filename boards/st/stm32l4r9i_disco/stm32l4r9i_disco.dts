@@ -383,3 +383,15 @@ zephyr_lcd_controller: &ltdc {};
 &dma2d {
 	status = "okay";
 };
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
