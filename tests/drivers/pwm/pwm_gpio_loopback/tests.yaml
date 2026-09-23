@@ -99,3 +99,21 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc7.overlay"
     platform_allow:
       - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tcc0.mchp:
+    platform_allow:
+      - pic32cx_sg41_cult
+    extra_args:
+      - FILE_SUFFIX=tcc0
+
+  drivers.pwm.gpio_loopback_tcc1.mchp:
+    platform_allow:
+      - pic32cx_sg41_cult
+    extra_args:
+      - FILE_SUFFIX=tcc1
+
+  drivers.pwm.gpio_loopback_tcc4.mchp:
+    platform_allow:
+      - pic32cx_sg41_cult
+    extra_args:
+      - FILE_SUFFIX=tcc4
