@@ -185,7 +185,8 @@ config NET_QEMU_DEVICE_EXTRA_ARGS
 	default ""
 	help
 	  Extra arguments passed to the QEMU networking device.
-	  This string is appended to the QEMU "-device" option.
+	  This string is appended to the QEMU "-device" option, or to the
+	  "-nic" option for a NIC built into the emulated machine.
 	  Typically this is used to set the network MAC address of
 	  Zephyr instance. This option can contain multiple QEMU option
 	  arguments. Each QEMU argument must be separated by comma "," and no
