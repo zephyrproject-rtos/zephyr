@@ -108,3 +108,23 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
       - nrf7120dk/nrf7120e/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+
+  drivers.uart.pm.generic:
+    filter: dt_label_compat_enabled("dut", "infineon,uart")
+    platform_allow:
+      - kit_psc3m5_evk
+    integration_platforms:
+      - kit_psc3m5_evk
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+
+  drivers.uart.pm.generic.int_driven:
+    filter: dt_label_compat_enabled("dut", "infineon,uart")
+    platform_allow:
+      - kit_psc3m5_evk
+    integration_platforms:
+      - kit_psc3m5_evk
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_ASYNC_API=n

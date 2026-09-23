@@ -10,7 +10,7 @@
 #include <zephyr/ztest.h>
 
 #define UART_NODE DT_NODELABEL(dut)
-#define DISABLED_RX DT_PROP(UART_NODE, disable_rx)
+#define DISABLED_RX DT_PROP_OR(UART_NODE, disable_rx, 0)
 
 static void polling_verify(const struct device *dev, bool is_async, bool active)
 {
