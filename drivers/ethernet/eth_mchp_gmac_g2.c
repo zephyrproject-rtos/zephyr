@@ -24,6 +24,15 @@
  * the core requires every queue to point at a valid one even when unused;
  * their interrupts are disabled at the MAC and their lines are left
  * unconnected.
+ *
+ * CONFIG_ETH_MCHP_GMAC_G2_TX_ZEROCOPY replaces the transmit half: the MAC
+ * reads each frame straight out of the net_pkt, one descriptor per fragment,
+ * and the driver holds a reference to the packet until the frame has gone.
+ * The core writes its used bit back to the first descriptor of a frame only,
+ * so the ring is reclaimed a frame at a time and the others are marked used
+ * again by the driver. No alignment is needed: a transmit buffer starts at
+ * any byte address, and a clean of a line the buffer shares with something
+ * else loses nothing.
  */
 
 #define DT_DRV_COMPAT microchip_gmac_g2_eth
@@ -35,6 +44,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/barrier.h>
@@ -117,6 +127,13 @@ struct eth_g2_desc {
 	uint32_t status;
 };
 
+#if defined(CONFIG_ETH_MCHP_GMAC_G2_TX_ZEROCOPY)
+struct eth_g2_tx_frame {
+	struct net_pkt *pkt;
+	uint16_t ndesc;
+};
+#endif
+
 struct eth_g2_config {
 	eth_registers_t *regs;
 	const struct pinctrl_dev_config *pcfg;
@@ -135,7 +152,12 @@ struct eth_g2_config {
 	/* [0] parks the receive side of queues 1..n, [1] the transmit side. */
 	struct eth_g2_desc *dummy_desc;
 	uint8_t (*rx_buf)[ETH_G2_BUF_SIZE];
+#if defined(CONFIG_ETH_MCHP_GMAC_G2_TX_ZEROCOPY)
+	/* Per descriptor; set on the first descriptor of each frame in flight. */
+	struct eth_g2_tx_frame *tx_frame;
+#else
 	uint8_t (*tx_buf)[ETH_G2_BUF_SIZE];
+#endif
 };
 
 struct eth_g2_data {
@@ -223,6 +245,11 @@ static void eth_g2_rx_ring_init(const struct device *dev)
 	cfg->regs->ETH_RSR = cfg->regs->ETH_RSR;
 }
 
+static inline uint32_t eth_g2_txd_wrap(int idx)
+{
+	return (idx == ETH_G2_TX_COUNT - 1) ? ETH_G2_TXD_WRAP : 0U;
+}
+
 /*
  * Transmit ring back to its initial state, dropping whatever was queued.
  * TXEN must be clear and tx_lock held.
@@ -236,9 +263,16 @@ static void eth_g2_tx_ring_init(const struct device *dev)
 	key = irq_lock();
 
 	for (int i = 0; i < ETH_G2_TX_COUNT; i++) {
+#if defined(CONFIG_ETH_MCHP_GMAC_G2_TX_ZEROCOPY)
+		if (cfg->tx_frame[i].pkt != NULL) {
+			net_pkt_unref(cfg->tx_frame[i].pkt);
+			cfg->tx_frame[i].pkt = NULL;
+		}
+		cfg->tx_desc[i].addr = 0U;
+#else
 		cfg->tx_desc[i].addr = (uint32_t)cfg->tx_buf[i];
-		cfg->tx_desc[i].status = ETH_G2_TXD_USED |
-					 ((i == ETH_G2_TX_COUNT - 1) ? ETH_G2_TXD_WRAP : 0U);
+#endif
+		cfg->tx_desc[i].status = ETH_G2_TXD_USED | eth_g2_txd_wrap(i);
 	}
 
 	data->tx_head = 0U;
@@ -399,12 +433,13 @@ static void eth_g2_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-/* Reclaim every descriptor the MAC has finished with. ISR context. */
+/* Reclaim every frame the MAC has finished with. ISR context. */
 static void eth_g2_tx_complete(const struct device *dev)
 {
 	const struct eth_g2_config *cfg = dev->config;
 	struct eth_g2_data *data = dev->data;
 	uint32_t status;
+	uint16_t ndesc;
 
 	while (data->tx_tail != data->tx_head) {
 		status = cfg->tx_desc[data->tx_tail].status;
@@ -416,8 +451,27 @@ static void eth_g2_tx_complete(const struct device *dev)
 			ETH_G2_STAT_ADD(data, errors.tx, 1);
 		}
 
-		data->tx_tail = (data->tx_tail + 1U) % ETH_G2_TX_COUNT;
-		k_sem_give(&data->tx_sem);
+#if defined(CONFIG_ETH_MCHP_GMAC_G2_TX_ZEROCOPY)
+		struct eth_g2_tx_frame *frame = &cfg->tx_frame[data->tx_tail];
+
+		ndesc = frame->ndesc;
+		net_pkt_unref(frame->pkt);
+		frame->pkt = NULL;
+
+		/* The core set the used bit of the first descriptor only. */
+		for (uint16_t k = 1U; k < ndesc; k++) {
+			int i = (data->tx_tail + k) % ETH_G2_TX_COUNT;
+
+			cfg->tx_desc[i].status = ETH_G2_TXD_USED | eth_g2_txd_wrap(i);
+		}
+#else
+		ndesc = 1U;
+#endif
+
+		data->tx_tail = (data->tx_tail + ndesc) % ETH_G2_TX_COUNT;
+		for (uint16_t k = 0U; k < ndesc; k++) {
+			k_sem_give(&data->tx_sem);
+		}
 	}
 }
 
@@ -459,6 +513,97 @@ static void eth_g2_isr(const struct device *dev)
 	}
 }
 
+/*
+ * Take ndesc free transmit descriptors. Called with tx_lock held. A ring that
+ * stays full for ETH_G2_TX_TIMEOUT has a stalled transmitter; it is restarted,
+ * which drops what was queued and frees the whole ring.
+ */
+static void eth_g2_tx_reserve(const struct device *dev, int ndesc)
+{
+	struct eth_g2_data *data = dev->data;
+
+	for (int k = 0; k < ndesc; k++) {
+		if (k_sem_take(&data->tx_sem, ETH_G2_TX_TIMEOUT) != 0) {
+			LOG_WRN("TX timeout, restarting the transmit queue");
+			ETH_G2_STAT_ADD(data, tx_timeout_count, 1);
+			eth_g2_tx_restart(dev);
+			for (k = 0; k < ndesc; k++) {
+				(void)k_sem_take(&data->tx_sem, K_NO_WAIT);
+			}
+			return;
+		}
+	}
+}
+
+#if defined(CONFIG_ETH_MCHP_GMAC_G2_TX_ZEROCOPY)
+static int eth_g2_send(const struct device *dev, struct net_pkt *pkt)
+{
+	const struct eth_g2_config *cfg = dev->config;
+	struct eth_g2_data *data = dev->data;
+	uint32_t first_status = 0U;
+	struct net_buf *frag;
+	int ndesc = 0;
+	uint16_t idx;
+	unsigned int key;
+
+	if (net_pkt_get_len(pkt) > ETH_G2_BUF_SIZE) {
+		return -EMSGSIZE;
+	}
+
+	for (frag = pkt->buffer; frag != NULL; frag = frag->frags) {
+		ndesc++;
+	}
+
+	/* One descriptor always stays empty. */
+	if (ndesc == 0 || ndesc > ETH_G2_TX_COUNT - 1) {
+		LOG_DBG("%d fragments do not fit the transmit ring", ndesc);
+		return -EMSGSIZE;
+	}
+
+	k_mutex_lock(&data->tx_lock, K_FOREVER);
+
+	if (atomic_test_and_clear_bit(&data->flags, ETH_G2_TX_RESTART)) {
+		eth_g2_tx_restart(dev);
+	}
+
+	eth_g2_tx_reserve(dev, ndesc);
+
+	idx = data->tx_head;
+	for (frag = pkt->buffer; frag != NULL; frag = frag->frags) {
+		uint32_t status = (frag->len & ETH_G2_TXD_LEN_MASK) | eth_g2_txd_wrap(idx) |
+				  ((frag->frags == NULL) ? ETH_G2_TXD_LAST : 0U);
+
+		sys_cache_data_flush_range(frag->data, frag->len);
+		cfg->tx_desc[idx].addr = (uint32_t)frag->data;
+
+		/* The first one goes last, so the MAC never sees half a frame. */
+		if (idx == data->tx_head) {
+			first_status = status;
+		} else {
+			cfg->tx_desc[idx].status = status;
+		}
+
+		idx = (idx + 1U) % ETH_G2_TX_COUNT;
+	}
+
+	cfg->tx_frame[data->tx_head].pkt = net_pkt_ref(pkt);
+	cfg->tx_frame[data->tx_head].ndesc = ndesc;
+	barrier_dmem_fence_full();
+
+	/* As below: hand-over and head advance are one step for the ISR. */
+	key = irq_lock();
+	cfg->tx_desc[data->tx_head].status = first_status;
+	data->tx_head = idx;
+	irq_unlock(key);
+
+	barrier_dmem_fence_full();
+	eth_g2_ncr_update(cfg->regs, 0U, ETH_NCR_TSTART_Msk);
+
+	k_mutex_unlock(&data->tx_lock);
+
+	return 0;
+}
+#else
 static int eth_g2_send(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct eth_g2_config *cfg = dev->config;
@@ -478,12 +623,7 @@ static int eth_g2_send(const struct device *dev, struct net_pkt *pkt)
 		eth_g2_tx_restart(dev);
 	}
 
-	if (k_sem_take(&data->tx_sem, ETH_G2_TX_TIMEOUT) != 0) {
-		LOG_WRN("TX timeout, restarting the transmit queue");
-		ETH_G2_STAT_ADD(data, tx_timeout_count, 1);
-		eth_g2_tx_restart(dev);
-		(void)k_sem_take(&data->tx_sem, K_NO_WAIT);
-	}
+	eth_g2_tx_reserve(dev, 1);
 
 	idx = data->tx_head;
 	buf = cfg->tx_buf[idx];
@@ -503,8 +643,8 @@ static int eth_g2_send(const struct device *dev, struct net_pkt *pkt)
 	 * frame and complete it before TSTART below.
 	 */
 	key = irq_lock();
-	cfg->tx_desc[idx].status = (len & ETH_G2_TXD_LEN_MASK) | ETH_G2_TXD_LAST |
-				   ((idx == ETH_G2_TX_COUNT - 1) ? ETH_G2_TXD_WRAP : 0U);
+	cfg->tx_desc[idx].status =
+		(len & ETH_G2_TXD_LEN_MASK) | ETH_G2_TXD_LAST | eth_g2_txd_wrap(idx);
 	data->tx_head = (idx + 1U) % ETH_G2_TX_COUNT;
 	irq_unlock(key);
 
@@ -515,6 +655,7 @@ static int eth_g2_send(const struct device *dev, struct net_pkt *pkt)
 
 	return 0;
 }
+#endif
 
 static void eth_g2_mac_addr_set(eth_registers_t *regs, const uint8_t *mac)
 {
@@ -836,6 +977,16 @@ static int eth_g2_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_ETH_MCHP_GMAC_G2_TX_ZEROCOPY)
+#define ETH_G2_TX_BUF_DEFINE(n) static struct eth_g2_tx_frame eth_g2_tx_frame_##n[ETH_G2_TX_COUNT]
+#define ETH_G2_TX_BUF_INIT(n)   .tx_frame = eth_g2_tx_frame_##n
+#else
+#define ETH_G2_TX_BUF_DEFINE(n)                                                                    \
+	static uint8_t eth_g2_tx_buf_##n[ETH_G2_TX_COUNT][ETH_G2_BUF_SIZE] __aligned(              \
+		ETH_G2_BUF_ALIGN)
+#define ETH_G2_TX_BUF_INIT(n) .tx_buf = eth_g2_tx_buf_##n
+#endif
+
 #define ETH_G2_CONN(n)                                                                             \
 	(DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, gmii)   ? ETH_G2_CONN_GMII                 \
 	 : DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, rmii) ? ETH_G2_CONN_RMII                 \
@@ -858,8 +1009,7 @@ static int eth_g2_init(const struct device *dev)
 	static struct eth_g2_desc eth_g2_dummy_desc_##n[2] __nocache __aligned(ETH_G2_DESC_ALIGN); \
 	static uint8_t eth_g2_rx_buf_##n[ETH_G2_RX_COUNT][ETH_G2_BUF_SIZE]                         \
 		__aligned(ETH_G2_BUF_ALIGN);                                                       \
-	static uint8_t eth_g2_tx_buf_##n[ETH_G2_TX_COUNT][ETH_G2_BUF_SIZE]                         \
-		__aligned(ETH_G2_BUF_ALIGN);                                                       \
+	ETH_G2_TX_BUF_DEFINE(n);                                                                   \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
@@ -887,7 +1037,7 @@ static int eth_g2_init(const struct device *dev)
 		.tx_desc = eth_g2_tx_desc_##n,                                                     \
 		.dummy_desc = eth_g2_dummy_desc_##n,                                               \
 		.rx_buf = eth_g2_rx_buf_##n,                                                       \
-		.tx_buf = eth_g2_tx_buf_##n,                                                       \
+		ETH_G2_TX_BUF_INIT(n),                                                             \
 	};                                                                                         \
                                                                                                    \
 	static struct eth_g2_data eth_g2_data_##n;                                                 \

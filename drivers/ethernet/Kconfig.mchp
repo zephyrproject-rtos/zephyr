@@ -83,7 +83,28 @@ config ETH_MCHP_GMAC_G2_TX_BUF_COUNT
 	range 2 1024
 	help
 	  Transmit descriptors, each with a 1536-byte frame buffer owned by
-	  the driver. One of them always stays empty.
+	  the driver. One of them always stays empty. With
+	  CONFIG_ETH_MCHP_GMAC_G2_TX_ZEROCOPY there are no driver buffers and a
+	  frame takes one descriptor per fragment of its packet.
+
+config ETH_MCHP_GMAC_G2_TX_ZEROCOPY
+	bool "Zero-copy transmit"
+	depends on NET_L2_ETHERNET
+	help
+	  Let the MAC read each frame straight out of the packet it was sent
+	  in, one descriptor per fragment, instead of copying the frame into a
+	  driver-owned buffer first. The driver keeps a reference to the
+	  packet until the frame is on the wire, so the packet has to stay
+	  unchanged until then: the network stack never writes to a packet it
+	  has sent, but an application handing its own packets to the driver
+	  must not reuse one while the driver still holds it.
+
+	  It saves the copy and the CONFIG_ETH_MCHP_GMAC_G2_TX_BUF_COUNT
+	  frame buffers. A frame with more fragments than
+	  CONFIG_ETH_MCHP_GMAC_G2_TX_BUF_COUNT - 1 cannot be sent and is
+	  refused with -EMSGSIZE, so with small network buffers the ring has
+	  to be sized for the fragment count rather than the frame count.
+	  Packet data has to be in memory the MAC can reach.
 
 config ETH_MCHP_GMAC_G2_RX_THREAD_STACK_SIZE
 	int "Receive thread stack size"
