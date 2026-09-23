@@ -454,11 +454,12 @@ static int gt5x_led_control_internal(const struct device *dev, bool on)
 static int gt5x_capture_finger_internal(const struct device *dev, bool best_quality,
 					k_timeout_t timeout)
 {
+	struct gt5x_data *data = dev->data;
 	uint32_t timeout_ms;
 	int ret;
 
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		timeout_ms = GT5X_MAX_TIMEOUT_MS;
+		timeout_ms = data->timeout_ms;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		timeout_ms = 0;
 	} else {
@@ -567,27 +568,8 @@ static int gt5x_attr_set(const struct device *dev, enum biometric_attribute attr
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	switch (attr) {
-	case BIOMETRIC_ATTR_MATCH_THRESHOLD:
-		data->match_threshold = val;
-		ret = 0;
-		break;
-
-	case BIOMETRIC_ATTR_ENROLLMENT_QUALITY:
-		data->enroll_quality = val;
-		ret = 0;
-		break;
-
-	case BIOMETRIC_ATTR_SECURITY_LEVEL:
-		if (val < 1 || val > 10) {
-			ret = -EINVAL;
-			break;
-		}
-		data->security_level = val;
-		ret = 0;
-		break;
-
 	case BIOMETRIC_ATTR_TIMEOUT_MS:
-		if (val > GT5X_MAX_TIMEOUT_MS) {
+		if (val < 0 || val > GT5X_MAX_TIMEOUT_MS) {
 			ret = -EINVAL;
 		} else {
 			data->timeout_ms = val;
@@ -616,15 +598,6 @@ static int gt5x_attr_get(const struct device *dev, enum biometric_attribute attr
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	switch (attr) {
-	case BIOMETRIC_ATTR_MATCH_THRESHOLD:
-		*val = data->match_threshold;
-		break;
-	case BIOMETRIC_ATTR_ENROLLMENT_QUALITY:
-		*val = data->enroll_quality;
-		break;
-	case BIOMETRIC_ATTR_SECURITY_LEVEL:
-		*val = data->security_level;
-		break;
 	case BIOMETRIC_ATTR_TIMEOUT_MS:
 		*val = data->timeout_ms;
 		break;
@@ -977,6 +950,10 @@ static int gt5x_template_list(const struct device *dev, uint16_t *ids, size_t ma
 			ids[count++] = hw_id_to_api_id(hw_id);
 		} else if (ret != -ENOENT) {
 			LOG_WRN("Check enrolled failed for HW ID %u: %d", hw_id, ret);
+			/* A failed scan must not report a valid inventory. */
+			*actual_count = 0;
+			k_mutex_unlock(&data->lock);
+			return ret;
 		}
 
 		k_yield();
@@ -1116,9 +1093,6 @@ static int gt5x_init(const struct device *dev)
 	data->dev = dev;
 	data->enroll_state = GT5X_ENROLL_IDLE;
 	data->timeout_ms = CONFIG_GT5X_TIMEOUT_MS;
-	data->security_level = 5;
-	data->match_threshold = 100;
-	data->enroll_quality = 100;
 	data->led_on = false;
 	data->rx_error = GT5X_RX_OK;
 	data->last_match_id = 0;

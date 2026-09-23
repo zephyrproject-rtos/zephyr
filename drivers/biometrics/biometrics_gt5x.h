@@ -150,9 +150,6 @@ struct gt5x_data {
 	bool led_on;
 	uint16_t last_match_id;
 
-	int32_t match_threshold;
-	int32_t enroll_quality;
-	int32_t security_level;
 	int32_t timeout_ms;
 };
 
