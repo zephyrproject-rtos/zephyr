@@ -625,6 +625,15 @@ int dwmac_probe(const struct device *dev)
 			(p->feature0 & DWMAC_HWFR_ALTDESC) ? "yes" : "no");
 	}
 
+	/*
+	 * The MMC counters run from reset with their interrupts unmasked. A
+	 * counter reaching half or full scale raises the MAC interrupt until
+	 * that counter is read, which the interrupt handler never does.
+	 */
+	DWMAC_REG_WRITE(DWMAC_MMC_RX_INTERRUPT_MASK, UINT32_MAX);
+	DWMAC_REG_WRITE(DWMAC_MMC_TX_INTERRUPT_MASK, UINT32_MAX);
+	DWMAC_REG_WRITE(DWMAC_MMC_IPC_RX_INTERRUPT_MASK, UINT32_MAX);
+
 	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
 	ret = dwmac_platform_init(dev);
