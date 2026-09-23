@@ -65,7 +65,7 @@ After fetching the blobs, you can building and flashing the :zephyr:code-sample:
 
 .. zephyr-app-commands::
     :zephyr-app: samples/net/wifi/shell
-    :board: rp2350b_plus_w/rp2350b/m33
+    :board: rp2350b_plus_w/rp2350b/m33_0
     :goals: build flash
     :flash-args: -r uf2
 
