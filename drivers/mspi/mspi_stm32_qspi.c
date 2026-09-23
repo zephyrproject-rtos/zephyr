@@ -1344,7 +1344,7 @@ static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 				.SampleShifting = (DT_INST_PROP(index, st_ssht_enable)         \
 						  ? QSPI_SAMPLE_SHIFTING_HALFCYCLE             \
 						  : QSPI_SAMPLE_SHIFTING_NONE),                \
-				.FlashSize = 0x19,                                             \
+				.FlashSize = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26) - 1,     \
 				.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE,               \
 				.ClockMode = QSPI_CLOCK_MODE_0,                                \
 				.FlashID = QSPI_FLASH_ID_1,                                    \
