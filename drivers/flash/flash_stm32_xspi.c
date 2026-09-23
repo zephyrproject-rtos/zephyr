@@ -2309,6 +2309,9 @@ static int flash_stm32_xspi_init(const struct device *dev)
 				return -ENODEV;
 			}
 #endif
+			/* Set timeout value */
+			HAL_XSPI_SetTimeout(&dev_data->hxspi, HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+
 			/* Force HAL instance in correct state */
 			dev_data->hxspi.State = HAL_XSPI_STATE_BUSY_MEM_MAPPED;
 
