@@ -20,6 +20,28 @@
  */
 struct regset_target_lib_api {
 	/**
+	 * @brief Callback invoked when a single register is read.
+	 *
+	 * Called after the register value has been fetched from the buffer.
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param offset Address offset of the register being read.
+	 * @param reg Pointer to the register in the buffer.
+	 * @param val Pointer to the value to be returned to the controller.
+	 */
+	void (*read)(const struct device *dev, off_t offset, uint8_t *reg, uint8_t *val);
+	/**
+	 * @brief Callback invoked when a single register is written.
+	 *
+	 * Called instead of the default buffer write when provided.
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param offset Address offset of the register being written.
+	 * @param reg Pointer to the register in the buffer.
+	 * @param val Value being written to the register.
+	 */
+	void (*write)(const struct device *dev, off_t offset, uint8_t *reg, uint8_t val);
+	/**
 	 * @brief Callback invoked when the register set content has changed.
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
