@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(crypto_stm32);
 
 #if IS_ENABLED(STM32_CRYPTO_GCM_CCM_SUPPORT)
 #if !IS_ENABLED(STM32_CRYPTO_HEAP)
-#warning "CCM AD support requires CONFIG_HEAP_MEM_POOL_SIZE > 0"
+#warning "GCM/CCM AD support requires CONFIG_HEAP_MEM_POOL_SIZE > 0"
 #endif /* !IS_ENABLED(STM32_CRYPTO_HEAP) */
 #if IS_ENABLED(CONFIG_CRYPTO_STM32_USE_MBEDTLS_CT_MEMCMP)
 #include <mbedtls/constant_time.h>
@@ -440,6 +440,17 @@ static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 	struct crypto_stm32_session *const session = CRYPTO_STM32_SESSN(ctx);
 	uint8_t *dst;
 	uint32_t iv[BLOCK_LEN_WORDS] = {0};
+	/*
+	 * The legacy CRYP header phase always reads HeaderSize as a word count
+	 * regardless of HeaderWidthUnit; pad ad into a word-sized scratch buffer so
+	 * a non-word-multiple ad_len isn't read as a word count of bytes
+	 * (over-reading past the caller's buffer). Typical GCM AAD (protocol
+	 * headers/counters) fits the stack buffer with no heap dependency; larger
+	 * AAD falls back to a heap allocation sized exactly to what's needed.
+	 */
+	uint8_t stack_hdr_buf[64] __aligned(4);
+	uint8_t *hdr_buf = NULL;
+	int ret;
 
 	if (!IN_RANGE(apkt->pkt->in_len, 0, apkt->pkt->out_buf_max)) {
 		return -EINVAL;
@@ -469,12 +480,51 @@ static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 		session->config.Header = NULL;
 		session->config.HeaderSize = 0U;
 	} else {
-		session->config.Header = CAST_VEC(apkt->ad);
-		session->config.HeaderSize = apkt->ad_len;
-		session->config.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
+		size_t hdr_padded_len;
+		uint8_t *hdr_dst;
+
+		if (apkt->ad_len > (UINT32_MAX - (sizeof(uint32_t) - 1U))) {
+			/* overflow */
+			return -EINVAL;
+		}
+
+		hdr_padded_len = ROUND_UP(apkt->ad_len, sizeof(uint32_t));
+
+		if (hdr_padded_len <= sizeof(stack_hdr_buf)) {
+			hdr_dst = stack_hdr_buf;
+		} else {
+#if IS_ENABLED(STM32_CRYPTO_HEAP)
+			hdr_buf = k_calloc(1, hdr_padded_len);
+			if (hdr_buf == NULL) {
+				return -ENOMEM;
+			}
+			hdr_dst = hdr_buf;
+#else
+			return -EINVAL;
+#endif /* IS_ENABLED(STM32_CRYPTO_HEAP) */
+		}
+
+		memset(hdr_dst, 0, hdr_padded_len);
+		memcpy(hdr_dst, apkt->ad, apkt->ad_len);
+
+		session->config.Header = CAST_VEC(hdr_dst);
+		session->config.HeaderSize = hdr_padded_len / sizeof(uint32_t);
+		/*
+		 * WORD, not BYTE: HAL_CRYPEx_AESGCM_GenerateAuthTAG() derives the
+		 * AAD bit-length fed into the GCM length block from HeaderSize
+		 * using HeaderWidthUnit (HeaderSize * 32 for WORD, * 8 for BYTE),
+		 * while the header phase itself always consumes HeaderSize as a
+		 * word count regardless of HeaderWidthUnit. Both must agree with
+		 * the word count actually fed above.
+		 */
+		session->config.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_WORD;
 	}
 
-	return do_aes_staged(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
+	ret = do_aes_staged(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
+
+	k_free(hdr_buf);
+
+	return ret;
 }
 
 static int crypto_stm32_gcm_encrypt(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
