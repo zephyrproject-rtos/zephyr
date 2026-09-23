@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Same SCB5 loopback wiring as the uart_async_api suite: P17_1 (TX) must be
+ * strapped to P17_0 (RX) for the gpio_loopback fixture.
+ */
+
+dut: &scb5 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&peri0_group1_16bit_2>;
+	pinctrl-0 = <&p17_1_scb5_uart_tx &p17_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&p17_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p17_0_scb5_uart_rx {
+	input-enable;
+};
+
+&peri0_group1_16bit_2 {
+	status = "okay";
+	clock-div = <109>;
+};
