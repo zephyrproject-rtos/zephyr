@@ -339,6 +339,15 @@ static LLEXT_CONST uint8_t align_ext[] LLEXT_SECT ELF_ALIGN = {
 };
 LLEXT_LOAD_UNLOAD(align)
 
+#ifdef CONFIG_CPP
+static LLEXT_CONST uint8_t weak_vtable_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "weak_vtable.inc"
+};
+LLEXT_LOAD_UNLOAD(weak_vtable,
+	.kernel_only = true
+)
+#endif
+
 #if defined(CONFIG_ARM64) && defined(CONFIG_THREAD_LOCAL_STORAGE)
 /*
  * TLS local-exec relocation test (arm64). The extension (tls_ext.c) reads and
