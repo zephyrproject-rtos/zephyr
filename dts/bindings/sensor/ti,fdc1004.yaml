@@ -10,7 +10,7 @@ description: |
 
 compatible: "ti,fdc1004"
 
-include: i2c-device.yaml
+include: [i2c-device.yaml, sensor-device.yaml]
 
 properties:
   measure-rate:
