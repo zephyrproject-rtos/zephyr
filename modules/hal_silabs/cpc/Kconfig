@@ -18,3 +18,11 @@ config SILABS_CPC
 	  set NUM_PREEMPT_PRIORITIES to at least 56 and size the CMSIS_V2_*
 	  pools (one thread per bus, mutexes and semaphores for each bus and
 	  endpoint).
+
+if SILABS_CPC
+
+module = SILABS_CPC
+module-str = silabs_cpc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SILABS_CPC
