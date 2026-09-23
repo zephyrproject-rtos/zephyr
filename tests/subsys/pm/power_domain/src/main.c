@@ -301,6 +301,7 @@ static struct k_thread async_get_thread;
 K_THREAD_STACK_DEFINE(async_get_stack, 1024);
 static int domain_async_resume_count;
 static int domain_async_suspend_count;
+static int async_resume_failures;
 
 static const struct device *const domain_async = DEVICE_DT_GET(TEST_DOMAIN_ASYNC);
 static const struct device *const dev_async = DEVICE_DT_GET(TEST_DEV_ASYNC);
@@ -323,6 +324,11 @@ static int async_pm_action(const struct device *dev, enum pm_device_action pm_ac
 		k_sem_give(&async_suspend_started);
 		k_sem_take(&async_suspend_continue, K_FOREVER);
 		block_async_suspend = false;
+	}
+
+	if ((pm_action == PM_DEVICE_ACTION_RESUME) && (async_resume_failures > 0)) {
+		async_resume_failures--;
+		return -EIO;
 	}
 
 	return deva_pm_action(dev, pm_action);
@@ -415,6 +421,76 @@ ZTEST(power_domain_1cpu, test_power_domain_get_while_async_suspend)
 
 	ret = pm_device_runtime_put(dev_async);
 	zassert_equal(ret, 0);
+}
+
+static void get_async_device_ret(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	*(int *)arg1 = pm_device_runtime_get(dev_async);
+}
+
+/**
+ * @brief Test the power domain stays claimed when a resume fails with references left
+ *
+ * Two gets wait on an async suspend. The first resume fails and the second retries it.
+ */
+ZTEST(power_domain_1cpu, test_power_domain_resume_failure_with_references)
+{
+	static struct k_thread threads[2];
+	int results[2];
+	enum pm_device_state state;
+
+	static K_THREAD_STACK_ARRAY_DEFINE(stacks, 2, 1024);
+
+	pm_device_init_suspended(domain_async);
+	pm_device_init_suspended(dev_async);
+	zassert_ok(pm_device_runtime_enable(domain_async));
+	zassert_ok(pm_device_runtime_enable(dev_async));
+
+	zassert_ok(pm_device_runtime_get(dev_async));
+	domain_async_resume_count = 0;
+	domain_async_suspend_count = 0;
+
+	k_sem_reset(&async_suspend_started);
+	k_sem_reset(&async_suspend_continue);
+	block_async_suspend = true;
+
+	/* Hold the async suspend in the device callback */
+	zassert_ok(pm_device_runtime_put_async(dev_async, K_NO_WAIT));
+	zassert_ok(k_sem_take(&async_suspend_started, K_SECONDS(1)));
+
+	for (size_t i = 0; i < ARRAY_SIZE(threads); i++) {
+		k_thread_create(&threads[i], stacks[i], K_THREAD_STACK_SIZEOF(stacks[i]),
+				get_async_device_ret, &results[i], NULL, NULL,
+				K_PRIO_PREEMPT(CONFIG_SYSTEM_WORKQUEUE_PRIORITY), 0, K_NO_WAIT);
+	}
+	zassert_true(WAIT_FOR(pm_device_runtime_usage(dev_async) == 2, USEC_PER_SEC, k_msleep(1)));
+
+	/* Fail the first resume after the suspend finishes */
+	async_resume_failures = 1;
+	k_sem_give(&async_suspend_continue);
+	for (size_t i = 0; i < ARRAY_SIZE(threads); i++) {
+		zassert_ok(k_thread_join(&threads[i], K_SECONDS(1)));
+	}
+
+	zassert_equal(async_resume_failures, 0);
+	zassert_equal(results[0] + results[1], -EIO);
+	zassert_true((results[0] == 0) || (results[1] == 0));
+
+	/* The retry must find the domain still claimed and powered */
+	pm_device_state_get(dev_async, &state);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+	pm_device_state_get(domain_async, &state);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+	zassert_true(atomic_test_bit(&dev_async->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED));
+	zassert_equal(pm_device_runtime_usage(dev_async), 1);
+	zassert_equal(pm_device_runtime_usage(domain_async), 1);
+	zassert_equal(domain_async_resume_count, 0);
+	zassert_equal(domain_async_suspend_count, 0);
+
+	zassert_ok(pm_device_runtime_put(dev_async));
 }
 
 #define TEST_DOMAIN_RESUME_FAIL DT_NODELABEL(test_domain_resume_fail)
