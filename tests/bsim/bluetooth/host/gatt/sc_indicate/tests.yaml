@@ -14,6 +14,7 @@ tests:
       tests_scripts:
         - test_scripts/sc_indicate.sh
         - test_scripts/sc_indicate_reboot.sh
+        - test_scripts/sc_indicate_reserved_bit.sh
   bluetooth.host.gatt.sc_indicate_privacy:
     extra_args:
       - EXTRA_CONF_FILE=overlay-privacy.conf
