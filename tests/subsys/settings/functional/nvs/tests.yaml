@@ -5,6 +5,7 @@ tests:
       - mps2/an385
       - native_sim
       - native_sim/native/64
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
