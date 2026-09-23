@@ -401,7 +401,7 @@
 		};
 
 		ulpuart: uart@24041800 {
-			compatible = "ns16550";
+			compatible = "snps,dw-apb-uart", "ns16550";
 			reg = <0x24041800 0x1000>;
 			interrupts = <12 0>;
 			reg-shift = <2>;
@@ -413,7 +413,7 @@
 		};
 
 		uart0: uart@44000000 {
-			compatible = "ns16550";
+			compatible = "snps,dw-apb-uart", "ns16550";
 			reg = <0x44000000 0x1000>;
 			interrupts = <38 0>;
 			reg-shift = <2>;
@@ -425,7 +425,7 @@
 		};
 
 		uart1: uart@45020000 {
-			compatible = "ns16550";
+			compatible = "snps,dw-apb-uart", "ns16550";
 			reg = <0x45020000 0x1000>;
 			interrupts = <39 0>;
 			reg-shift = <2>;

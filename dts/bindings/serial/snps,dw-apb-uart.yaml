@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: DesignWare 8250 UART Controller
+
+compatible: "snps,dw-apb-uart"
+
+include: [ns16550.yaml]
