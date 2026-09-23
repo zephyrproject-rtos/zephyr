@@ -49,6 +49,13 @@ config ETH_QEMU_EXTRA_ARGS
 	  See https://www.qemu.org/docs/master/system/invocation.html#hxtool-5
 	  for the available options.
 
+config ETH_NIC_MODEL_ONBOARD
+	bool
+	help
+	  Selected by drivers whose QEMU NIC model (ETH_NIC_MODEL) is built
+	  into the emulated machine. Such a NIC cannot be created with the
+	  QEMU -device option, so it is configured with -nic instead.
+
 # zephyr-keep-sorted-start
 source "drivers/ethernet/Kconfig.adin1140"
 source "drivers/ethernet/Kconfig.adin2111"
