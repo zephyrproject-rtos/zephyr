@@ -1,0 +1,425 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 Tenstorrent USA, Inc.
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMC
+	bool "Baseboard Management Controller (BMC)"
+	depends on NETWORKING
+	select NET_CONFIG_SETTINGS
+	select NET_HOSTNAME_ENABLE
+	select NET_HOSTNAME_DYNAMIC
+	select REBOOT
+	help
+	  Enable the BMC subsystem, a set of building blocks for managing a
+	  host system: network configuration, host power control, a sensor
+	  registry, a captured host console and a Redfish service.
+
+	  The subsystem provides mechanism only. Product policy such as
+	  branding, the web dashboard, the board GPIO map and the reported
+	  identity is supplied by the application through the registration
+	  APIs in include/zephyr/mgmt/bmc/.
+
+if BMC
+
+module = BMC
+module-str = BMC
+source "subsys/logging/Kconfig.template.log_config"
+
+config BMC_ADMIN_USER
+	string "Administrator user name"
+	default "admin"
+	help
+	  User name accepted by the built-in authentication backend.
+
+config BMC_DEFAULT_ADMIN_PASSWORD
+	string "Default administrator password"
+	default "changeme"
+	help
+	  Password accepted by the built-in authentication backend until it is
+	  changed at runtime. Products are expected to override this, or to
+	  register their own backend with bmc_auth_ops_register().
+
+config BMC_DEFAULT_ADMIN_PASSWORD_UNCHANGED
+	bool
+	default y if BMC_DEFAULT_ADMIN_PASSWORD = "changeme"
+	help
+	  Hidden helper that lets the build warn about the placeholder
+	  administrator password.
+
+config BMC_DEFAULT_HOSTNAME
+	string "Default host name"
+	default "bmc"
+
+config BMC_DEFAULT_USE_DHCP4
+	bool "Use DHCPv4 by default"
+	depends on NET_IPV4
+	default y
+
+config BMC_DEFAULT_IPV4_ADDRESS
+	string "Default static IPv4 address"
+	depends on NET_IPV4
+	default "0.0.0.0"
+
+config BMC_DEFAULT_IPV4_SUBNET_MASK
+	string "Default static IPv4 subnet mask"
+	depends on NET_IPV4
+	default "0.0.0.0"
+
+config BMC_DEFAULT_IPV4_GATEWAY
+	string "Default static IPv4 gateway"
+	depends on NET_IPV4
+	default "0.0.0.0"
+
+config BMC_DEFAULT_NTP_SERVER
+	string "Default NTP server"
+	default "pool.ntp.org"
+
+config BMC_DEFAULT_HOST_AUTO_POWERON
+	bool "Power the host on by default when the BMC boots"
+
+config BMC_UUID
+	bool "Derive the BMC UUID from the hardware device ID"
+	default y
+	depends on HWINFO
+	select MBEDTLS
+	select PSA_CRYPTO
+	select MBEDTLS_PSA_CRYPTO_C
+	select PSA_WANT_ALG_SHA_1
+	select UUID
+	select UUID_V5
+	help
+	  Without this the BMC reports the nil UUID.
+
+config BMC_UUID_NS
+	string
+	default "6ae4c3c7-fff0-472a-a77c-6f3f5a09ee7c"
+	help
+	  Namespace the per-device UUID is generated from. Changing this
+	  changes the UUID of every device.
+
+config BMC_SETTINGS
+	bool "Persist the BMC configuration"
+	default y
+	depends on SETTINGS
+	help
+	  Store the runtime configuration in the settings subsystem, under the
+	  "bmc/" tree. Without this the configuration is reset to the Kconfig
+	  defaults on every boot.
+
+	  The application selects the settings backend, so any of NVS, ZMS,
+	  FCB or FILE can be used.
+
+config BMC_DNS_RESOLVE
+	bool "Resolve host names"
+	select DNS_RESOLVER
+	select NET_SOCKETS_SERVICE
+	select NET_DHCPV4_OPTION_DNS_ADDRESS if NET_DHCPV4
+	select DNS_SERVER_IP_ADDRESSES
+	select DNS_RECONFIGURE_CLEANUP
+	help
+	  Needed to reach an NTP server given by name.
+
+config BMC_NTP
+	bool "Synchronise the clock over NTP"
+	default y
+	select SNTP
+	select BMC_DNS_RESOLVE
+
+if BMC_NTP
+
+config BMC_DEFAULT_USE_NTP
+	bool "Use NTP by default"
+	default y
+
+config BMC_NTP_THREAD_STACK_SIZE
+	int "NTP thread stack size"
+	default 2048
+
+config BMC_NTP_THREAD_PRIORITY
+	int "NTP thread priority"
+	default 10
+
+endif # BMC_NTP
+
+config BMC_RTC
+	bool "Keep a real time clock in sync with the system clock"
+	default y
+	depends on RTC
+	depends on $(dt_alias_enabled,bmc-rtc) || $(dt_nodelabel_enabled,rtc)
+
+config BMC_RTC_DEFAULT_YEAR
+	int "Year the clock starts at when the RTC is not set"
+	default 2026
+	depends on BMC_RTC
+	help
+	  A plausible time keeps TLS certificate validity checks from failing
+	  before NTP has had a chance to run.
+
+config BMC_HOST_GPIO
+	bool "Control the host over GPIOs"
+	default y
+	depends on GPIO
+	depends on $(dt_alias_enabled,bmc-host-power)
+	help
+	  Register the built-in GPIO backend for the host control operations,
+	  driven by the bmc-host-power, bmc-host-power-2, bmc-host-reset and
+	  bmc-status-led devicetree aliases.
+
+	  An application that talks to its host differently leaves this off and
+	  calls bmc_host_ops_register() instead.
+
+if BMC_HOST_GPIO
+
+config BMC_HOST_GPIO_RESET_PULSE_MS
+	int "Length of the host reset pulse in milliseconds"
+	default 100
+
+config BMC_HOST_GPIO_HEARTBEAT
+	bool "Blink the status LED while the BMC is running"
+	default y
+	depends on $(dt_alias_enabled,bmc-status-led)
+
+config BMC_HOST_GPIO_HEARTBEAT_PERIOD_MS
+	int "Status LED blink period in milliseconds"
+	default 1000
+	depends on BMC_HOST_GPIO_HEARTBEAT
+
+endif # BMC_HOST_GPIO
+
+config BMC_RESET_BUTTON
+	bool "Reset the configuration from a button"
+	default y
+	depends on GPIO
+	depends on $(dt_alias_enabled,bmc-reset-button)
+	help
+	  Hold the button to erase the stored configuration and reboot.
+
+config BMC_RESET_BUTTON_HOLD_MS
+	int "How long the reset button has to be held, in milliseconds"
+	default 3000
+	depends on BMC_RESET_BUTTON
+
+config BMC_SENSORS
+	bool "Sensor registry"
+	default y
+	select SENSOR
+	help
+	  Let the application publish sensors with BMC_SENSOR_DEFINE() and
+	  report them over Redfish and the shell.
+
+config BMC_HTTP
+	bool "HTTP service"
+	default y
+	select HTTP_SERVER
+	help
+	  Run an HTTP server the BMC and the application attach resources to.
+
+if BMC_HTTP
+
+config BMC_HTTP_PORT
+	int "HTTP port"
+	default 80
+
+config BMC_HTTP_CONCURRENT
+	int "Concurrent connections per service"
+	default HTTP_SERVER_MAX_CLIENTS
+	range 1 HTTP_SERVER_MAX_CLIENTS
+
+config BMC_HTTP_BACKLOG
+	int "Listen backlog per service"
+	default 4
+
+config BMC_HTTPS
+	bool "HTTPS service"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Serve the same resources over TLS on a second port. The application
+	  provisions the server certificate and key under
+	  CONFIG_BMC_HTTPS_SEC_TAG before bmc_init() runs.
+
+config BMC_HTTPS_PORT
+	int "HTTPS port"
+	default 443
+	depends on BMC_HTTPS
+
+config BMC_HTTPS_SEC_TAG
+	int "Security tag holding the HTTPS server credentials"
+	default 1
+	depends on BMC_HTTPS
+
+config BMC_WEBSOCKET
+	bool "Websocket support"
+	default y
+	select HTTP_SERVER_WEBSOCKET
+	select NET_SOCKETS_SERVICE
+	select BASE64
+	help
+	  Let clients upgrade to a websocket, which the console bridge and the
+	  websocket shell backend need.
+
+endif # BMC_HTTP
+
+config BMC_REDFISH
+	bool "Redfish service"
+	default y
+	depends on BMC_HTTP
+	select HTTP_SERVER_CAPTURE_HEADERS
+	# The Redfish tree is served by one HTTP resource that matches /redfish
+	# as a leading directory.
+	select HTTP_SERVER_RESOURCE_WILDCARD
+	select JSON_LIBRARY
+	select BASE64
+	help
+	  Serve the Redfish resources describing the BMC, the managed system
+	  and its chassis.
+
+if BMC_REDFISH
+
+config BMC_REDFISH_PRODUCT_NAME
+	string "Default product name"
+	default "BMC Board"
+	help
+	  Used unless the application registers a bmc_redfish_identity.
+
+config BMC_REDFISH_MANUFACTURER
+	string "Default manufacturer"
+	default "Zephyr"
+
+config BMC_REDFISH_MODEL
+	string "Default model"
+	default "Generic"
+
+config BMC_REDFISH_SERIAL_NUMBER
+	string "Default serial number"
+	default "0000000000"
+
+config BMC_REDFISH_PROCESSOR_MODEL
+	string "Default host processor model"
+	default "N/A"
+
+config BMC_REDFISH_PROCESSOR_COUNT
+	int "Default host processor count"
+	default 1
+
+config BMC_REDFISH_MEMORY_GIB
+	int "Default host memory size in GiB"
+	default 0
+	help
+	  0 is reported as unknown.
+
+config BMC_REDFISH_CHASSIS_TYPE
+	string "Redfish ChassisType"
+	default "RackMount"
+
+config BMC_REDFISH_RESPONSE_BUFFER_SIZE
+	int "Largest Redfish response body"
+	default 2048
+
+config BMC_REDFISH_REQUEST_BUFFER_SIZE
+	int "Largest Redfish request body"
+	default 512
+
+config BMC_REDFISH_BUFFER_HEAP_SIZE
+	int "Heap the Redfish request and response buffers are taken from"
+	default 8192
+	help
+	  Sized for CONFIG_BMC_HTTP_CONCURRENT in-flight transactions.
+
+endif # BMC_REDFISH
+
+config BMC_CONSOLE_LOGGER
+	bool "Capture the host console"
+	default y
+	depends on $(dt_alias_enabled,host-console-uart)
+	depends on SERIAL_SUPPORT_ASYNC
+	select UART_ASYNC_API
+	select RING_BUFFER
+	help
+	  Record what the host prints on its console UART into a circular
+	  buffer that transports and the application can read back.
+
+if BMC_CONSOLE_LOGGER
+
+config BMC_CONSOLE_LOG_SIZE
+	int "Captured host console size in bytes"
+	range 64 65536
+	default 2048
+
+config BMC_CONSOLE_BAUDRATE
+	int "Host console baud rate"
+	default 115200
+
+config BMC_CONSOLE_BRIDGE
+	bool "Bridge the host console to a TCP port"
+	default y
+
+if BMC_CONSOLE_BRIDGE
+
+config BMC_CONSOLE_BRIDGE_PORT
+	int "Host console TCP port"
+	default 2200
+
+config BMC_CONSOLE_BRIDGE_STACK_SIZE
+	int "Host console bridge thread stack size"
+	default 1024
+
+config BMC_CONSOLE_BRIDGE_PRIORITY
+	int "Host console bridge thread priority"
+	default 5
+
+endif # BMC_CONSOLE_BRIDGE
+
+config BMC_CONSOLE_BRIDGE_WS
+	bool "Bridge the host console to a websocket"
+	default y
+	depends on BMC_WEBSOCKET
+	help
+	  Publish the captured host console at /console/host so that a web
+	  terminal can attach to it.
+
+if BMC_CONSOLE_BRIDGE_WS
+
+config BMC_CONSOLE_BRIDGE_WS_STACK_SIZE
+	int "Host console websocket thread stack size"
+	default 4096 if BMC_HTTPS
+	default 2048
+
+config BMC_CONSOLE_BRIDGE_WS_PRIORITY
+	int "Host console websocket thread priority"
+	default 5
+
+endif # BMC_CONSOLE_BRIDGE_WS
+
+endif # BMC_CONSOLE_LOGGER
+
+config BMC_JTAG
+	bool "JTAG bit-banging daemon"
+	default y
+	depends on GPIO
+	depends on $(dt_path_enabled,/jtag)
+	help
+	  Speak the OpenOCD remote_bitbang protocol over TCP, driving the JTAG
+	  pins described by the /jtag devicetree node.
+
+if BMC_JTAG
+
+config BMC_JTAG_PORT
+	int "JTAG daemon TCP port"
+	default 3335
+
+config BMC_JTAG_STACK_SIZE
+	int "JTAG daemon stack size"
+	default 1024
+
+config BMC_JTAG_PRIORITY
+	int "JTAG daemon priority"
+	default 5
+
+endif # BMC_JTAG
+
+endif # BMC
+
+config SHELL_WEBSOCKET_ENDPOINT_URL
+	string
+	depends on BMC && SHELL_BACKEND_WEBSOCKET
+	default "console/bmc"
