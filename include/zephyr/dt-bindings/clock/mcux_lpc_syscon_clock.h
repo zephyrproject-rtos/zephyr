@@ -243,6 +243,11 @@
 /** PowerQuad DSP coprocessor clock identifier. */
 #define MCUX_POWERQUAD_CLK MCUX_LPC_CLK_ID(0x39, 0x00)
 
+/** ANACTRL (analog control) peripheral gate clock identifier (MCXW2xx). */
+#define MCUX_ANALOG_CTRL_CLK MCUX_LPC_CLK_ID(0x3A, 0x00)
+/** 1 MHz FRO (MCXW2xx) rate identifier. */
+#define MCUX_FRO_1M_CLK      MCUX_LPC_CLK_ID(0x3A, 0x01)
+
 /** FRO high-frequency clock (FRO_HF) rate identifier. */
 #define MCUX_FRO_HF_CLK MCUX_LPC_CLK_ID(0x40, 0x00)
 
@@ -260,5 +265,8 @@
 
 /** External (system oscillator / CLK_IN) clock rate identifier. */
 #define MCUX_EXT_CLK MCUX_LPC_CLK_ID(0x45, 0x00)
+
+/** Main clock (main_clk, ahead of the AHB divider) rate identifier. */
+#define MCUX_MAIN_CLK MCUX_LPC_CLK_ID(0x46, 0x00)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
