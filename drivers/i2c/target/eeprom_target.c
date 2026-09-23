@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(i2c_eeprom, CONFIG_I2C_LOG_LEVEL);
 
 struct i2c_eeprom_target_data {
 	struct regset_target_lib_data regset_data;
+	eeprom_target_changed_handler_t changed_handler;
+	void *changed_handler_data;
 };
 
 struct i2c_eeprom_target_config {
@@ -29,7 +31,10 @@ void eeprom_target_set_changed_callback(const struct device *dev,
 					eeprom_target_changed_handler_t handler,
 					void *user_data)
 {
-	regset_target_lib_set_changed_callback(dev, handler, user_data);
+	struct i2c_eeprom_target_data *data = dev->data;
+
+	data->changed_handler = handler;
+	data->changed_handler_data = user_data;
 }
 
 size_t eeprom_target_get_size(const struct device *dev)
@@ -56,10 +61,23 @@ int eeprom_target_set_addr(const struct device *dev, uint8_t addr)
 }
 #endif /* CONFIG_I2C_EEPROM_TARGET_RUNTIME_ADDR */
 
+static void i2c_eeprom_target_changed(const struct device *dev)
+{
+	struct i2c_eeprom_target_data *data = dev->data;
+
+	if (data->changed_handler != NULL) {
+		data->changed_handler(dev, data->changed_handler_data);
+	}
+}
+
 static int i2c_eeprom_target_init(const struct device *dev)
 {
 	return regset_target_lib_init(dev);
 }
+
+static const struct regset_target_lib_api i2c_eeprom_target_api = {
+	.changed = i2c_eeprom_target_changed,
+};
 
 #define I2C_EEPROM_INIT(inst)								\
 	REGSET_TARGET_LIB_DT_INST_BUILD_ASSERT(inst)					\
@@ -67,7 +85,8 @@ static int i2c_eeprom_target_init(const struct device *dev)
 	static struct i2c_eeprom_target_data i2c_eeprom_target_##inst##_dev_data;	\
 											\
 	static const struct i2c_eeprom_target_config i2c_eeprom_target_##inst##_cfg = {	\
-		.regset_cfg = REGSET_TARGET_LIB_DT_INST_CONFIG_INIT(inst),		\
+		.regset_cfg = REGSET_TARGET_LIB_DT_INST_CONFIG_INIT(			\
+			inst, &i2c_eeprom_target_api),					\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(inst, &i2c_eeprom_target_init, NULL,			\
