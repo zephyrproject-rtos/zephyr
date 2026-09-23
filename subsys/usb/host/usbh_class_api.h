@@ -33,7 +33,7 @@ static inline int usbh_class_init(struct usbh_class_data *const c_data)
 		return api->init(c_data);
 	}
 
-	return -ENOTSUP;
+	return 0;
 }
 
 /**
