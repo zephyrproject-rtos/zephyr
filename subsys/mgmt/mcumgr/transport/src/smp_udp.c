@@ -292,6 +292,14 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 				/* No free space, drop SMP frame */
 				continue;
 			}
+
+			if (net_buf_tailroom(nb) < (size_t)len) {
+				LOG_ERR("SMP frame (%d) exceeds mcumgr buffer (%zu)", len,
+					net_buf_tailroom(nb));
+				smp_packet_free(nb);
+				continue;
+			}
+
 			net_buf_add_mem(nb, conf->recv_buffer, len);
 			ud = net_buf_user_data(nb);
 			memcpy(ud, &addr, sizeof(addr));
