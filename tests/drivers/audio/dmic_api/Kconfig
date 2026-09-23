@@ -13,9 +13,11 @@ config SAMPLE_BIT_WIDTH
 config SAMPLE_PDM_CHANNELS
 	int "Number of DMIC channels"
 	default 4 if DT_HAS_NXP_MICFIL_ENABLED || DT_HAS_NXP_DMIC_ENABLED
+	default 1 if DT_HAS_RENESAS_RA_PDM_ENABLED
 	default 2
 	help
-	  Count of DMIC channels to capture and process.
+	  Count of DMIC channels to capture and process. With 1, the stereo
+	  test is skipped.
 
 config TEST_HW_CHANNEL_INDEX
 	int "hardware controller index"
@@ -25,5 +27,6 @@ config TEST_HW_CHANNEL_INDEX
 
 config TEST_SMALL_BUFFER
 	bool "Use a smaller buffer for testing"
+	default y if DT_HAS_RENESAS_RA_PDM_ENABLED
 	help
 	  Use a smaller buffer for testing. This is useful if your device has limited memory.
