@@ -2614,6 +2614,11 @@ MCUmgr
     the new ``hash_len`` field holds the actual length. Code that reads ``hash``
     must use ``hash_len`` instead of assuming :c:macro:`IMG_MGMT_DATA_SHA_LEN`.
 
+* :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_MTU` can no longer exceed
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE`, and a larger value now fails at
+  configuration time. When the buffer is smaller than 1500 bytes, the MTU now defaults to the
+  buffer size instead of 1500.
+
 Network buffers
 ===============
 

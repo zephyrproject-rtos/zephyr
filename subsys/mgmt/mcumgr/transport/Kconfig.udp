@@ -55,12 +55,13 @@ config MCUMGR_TRANSPORT_UDP_THREAD_PRIO
 
 config MCUMGR_TRANSPORT_UDP_MTU
 	int "UDP SMP MTU"
+	range 1 MCUMGR_TRANSPORT_NETBUF_SIZE
+	default MCUMGR_TRANSPORT_NETBUF_SIZE if MCUMGR_TRANSPORT_NETBUF_SIZE < 1500
 	default 1500
 	help
 	  Maximum size of SMP frames sent and received over UDP, in bytes.
 	  This value must satisfy the following relation:
-	  MCUMGR_TRANSPORT_UDP_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + SMP msg overhead - address size
-	  where address size is determined by IPv4/IPv6 selection.
+	  MCUMGR_TRANSPORT_UDP_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE
 
 config MCUMGR_TRANSPORT_UDP_DTLS
 	bool "DTLS"
