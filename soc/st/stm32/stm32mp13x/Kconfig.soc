@@ -10,7 +10,43 @@ config SOC_SERIES_STM32MP13X
 config SOC_SERIES
 	default "stm32mp13x" if SOC_SERIES_STM32MP13X
 
+config SOC_STM32MP131AXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
+config SOC_STM32MP131CXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
+config SOC_STM32MP131DXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
+config SOC_STM32MP131FXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
+config SOC_STM32MP133AXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
+config SOC_STM32MP133CXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
+config SOC_STM32MP133DXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
 config SOC_STM32MP133FXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
+config SOC_STM32MP135AXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
+config SOC_STM32MP135CXX
 	bool
 	select SOC_SERIES_STM32MP13X
 
@@ -23,6 +59,15 @@ config SOC_STM32MP135FXX
 	select SOC_SERIES_STM32MP13X
 
 config SOC
+	default "stm32mp131axx" if SOC_STM32MP131AXX
+	default "stm32mp131cxx" if SOC_STM32MP131CXX
+	default "stm32mp131dxx" if SOC_STM32MP131DXX
+	default "stm32mp131fxx" if SOC_STM32MP131FXX
+	default "stm32mp133axx" if SOC_STM32MP133AXX
+	default "stm32mp133cxx" if SOC_STM32MP133CXX
+	default "stm32mp133dxx" if SOC_STM32MP133DXX
 	default "stm32mp133fxx" if SOC_STM32MP133FXX
+	default "stm32mp135axx" if SOC_STM32MP135AXX
+	default "stm32mp135cxx" if SOC_STM32MP135CXX
 	default "stm32mp135dxx" if SOC_STM32MP135DXX
 	default "stm32mp135fxx" if SOC_STM32MP135FXX
