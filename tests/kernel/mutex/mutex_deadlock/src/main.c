@@ -41,30 +41,6 @@ static void t_b_deadlock(void *p1, void *p2, void *p3)
 	k_mutex_unlock(&mutex_b);
 	k_sem_give(&sem_done);
 }
-/*
- * After test_deadlock_detection fires __ASSERT, the test function is
- * aborted before it can clean up. This hook runs after the fatal error
- * is caught and restores a clean state (only ztest framework bookkeeping
- * happens after this point in this binary).
- */
-void ztest_post_fatal_error_hook(unsigned int reason,
-				 const struct arch_esf *pEsf)
-{
-	/*
-	 * Remove mutex_a from the main thread's held_mutexes list BEFORE
-	 * reinitializing the mutex. k_mutex_init() sets held_node.next = NULL,
-	 * which would corrupt the list if the node is still linked into it.
-	 */
-	sys_slist_find_and_remove(&k_current_get()->held_mutexes,
-				  &mutex_a.held_node);
-
-	/* Abort t_low which is stuck pending on mutex_a */
-	k_thread_abort(&t_low);
-
-	/* Reinitialize both mutexes to clear all stale state */
-	k_mutex_init(&mutex_a);
-	k_mutex_init(&mutex_b);
-}
 #endif /* CONFIG_MUTEX_DEADLOCK_DETECT && Z_MUTEX_PI_ENABLED */
 
 /**
