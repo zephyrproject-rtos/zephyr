@@ -1,0 +1,6 @@
+board:
+  name: m5stack_stackchan
+  full_name: M5Stack StackChan
+  vendor: m5stack
+  socs:
+  - name: esp32s3
