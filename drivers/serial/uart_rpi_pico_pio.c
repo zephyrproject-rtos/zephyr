@@ -4,18 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/spinlock.h>
 
 #include <zephyr/drivers/misc/pio_rpi_pico/pio_rpi_pico.h>
 
 #include <hardware/pio.h>
 #include <hardware/clocks.h>
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#include <zephyr/drivers/dma.h>
+#include <hardware/dma.h>
+#endif
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(uart_rpi_pico_pio, CONFIG_UART_LOG_LEVEL);
+
 #define DT_DRV_COMPAT raspberrypi_pico_uart_pio
 
 #define CYCLES_PER_BIT 8
 #define SIDESET_BIT_COUNT 2
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+BUILD_ASSERT(CONFIG_UART_RPI_PICO_PIO_RX_RING_BUF_SIZE > 1 &&
+	    (CONFIG_UART_RPI_PICO_PIO_RX_RING_BUF_SIZE &
+	     (CONFIG_UART_RPI_PICO_PIO_RX_RING_BUF_SIZE - 1)) == 0,
+	    "CONFIG_UART_RPI_PICO_PIO_RX_RING_BUF_SIZE must be a power of two, and non-zero");
+
+#define PIO_UART_RX_RING_MASK (CONFIG_UART_RPI_PICO_PIO_RX_RING_BUF_SIZE - 1)
+
+/* Any large count works: the control channel reloads it on completion. */
+#define PIO_UART_RX_DMA_RELOAD_COUNT 1000000UL
+
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 struct pio_uart_config {
 	const struct device *piodev;
@@ -23,11 +47,27 @@ struct pio_uart_config {
 	const uint32_t tx_pin;
 	const uint32_t rx_pin;
 	uint32_t baudrate;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uint8_t *rx_dma_buf;
+#endif
 };
 
 struct pio_uart_data {
 	size_t tx_sm;
 	size_t rx_sm;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	struct k_spinlock irq_lock;
+	struct k_spinlock rx_lock;
+	uart_irq_callback_user_data_t cb;
+	void *cb_data;
+	atomic_t rx_irq_enabled;
+	atomic_t tx_irq_enabled;
+	int rx_dma_chan;
+	int rx_dma_ctrl_chan;
+	uint8_t *rx_dma_buf;
+	uint32_t rx_read_pos;
+	struct k_timer poll_timer;
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 RPI_PICO_PIO_DEFINE_PROGRAM(uart_tx, 0, 3,
@@ -112,34 +152,277 @@ static int pio_uart_rx_init(PIO pio, uint32_t sm, uint32_t rx_pin, float div)
 	return 0;
 }
 
+/* The RX program shifts right, so the byte is in the FIFO word's MSB. */
+static inline uint8_t pio_uart_rx_fifo_get(PIO pio, size_t sm)
+{
+	io_rw_8 *uart_rx_fifo_msb = (io_rw_8 *)&pio->rxf[sm] + 3;
+
+	return *uart_rx_fifo_msb;
+}
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static int pio_uart_rx_ring_read(struct pio_uart_data *data, uint8_t *out, int max);
+#endif
+
 static int pio_uart_poll_in(const struct device *dev, unsigned char *c)
 {
+	struct pio_uart_data *data = dev->data;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* The RX DMA drains the FIFO, so received bytes are only in the ring. */
+	return (pio_uart_rx_ring_read(data, c, 1) == 1) ? 0 : -1;
+#else
 	const struct pio_uart_config *config = dev->config;
 	PIO pio = pio_rpi_pico_get_pio(config->piodev);
-	struct pio_uart_data *data = dev->data;
-	io_rw_8 *uart_rx_fifo_msb;
 
-	/*
-	 * The rx FIFO is 4 bytes wide, add 3 to get the most significant
-	 * byte.
-	 */
-	uart_rx_fifo_msb = (io_rw_8 *)&pio->rxf[data->rx_sm] + 3;
 	if (pio_sm_is_rx_fifo_empty(pio, data->rx_sm)) {
 		return -1;
 	}
 
-	/* Accessing the FIFO pops the read word from it */
-	*c = (char)*uart_rx_fifo_msb;
+	*c = pio_uart_rx_fifo_get(pio, data->rx_sm);
 	return 0;
+#endif
 }
 
 static void pio_uart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct pio_uart_config *config = dev->config;
 	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
 
-	pio_sm_put_blocking(pio_rpi_pico_get_pio(config->piodev), data->tx_sm, (uint32_t)c);
+	pio_sm_put_blocking(pio, data->tx_sm, (uint32_t)c);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* As in fifo_fill(), so irq_tx_complete() also covers this byte. */
+	pio->fdebug = BIT(PIO_FDEBUG_TXSTALL_LSB + data->tx_sm);
+#endif
 }
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+static const uint32_t pio_uart_rx_dma_reload_count = PIO_UART_RX_DMA_RELOAD_COUNT;
+
+static int pio_uart_rx_dma_init(PIO pio, uint32_t rx_sm, struct pio_uart_data *data,
+				uint8_t *rx_dma_buf)
+{
+	const struct device *dma_dev = DEVICE_DT_GET_ONE(raspberrypi_pico_dma);
+	io_rw_8 *rx_fifo_msb = (io_rw_8 *)&pio->rxf[rx_sm] + 3;
+	dma_channel_config dma_cfg;
+	dma_channel_config ctrl_cfg;
+	int data_chan;
+	int ctrl_chan;
+
+	data_chan = dma_request_channel(dma_dev, NULL);
+	if (data_chan < 0) {
+		return -EBUSY;
+	}
+
+	ctrl_chan = dma_request_channel(dma_dev, NULL);
+	if (ctrl_chan < 0) {
+		dma_release_channel(dma_dev, data_chan);
+		return -EBUSY;
+	}
+
+	data->rx_dma_chan = data_chan;
+	data->rx_dma_ctrl_chan = ctrl_chan;
+	data->rx_dma_buf = rx_dma_buf;
+	data->rx_read_pos = 0;
+
+	dma_cfg = dma_channel_get_default_config(data_chan);
+	channel_config_set_transfer_data_size(&dma_cfg, DMA_SIZE_8);
+	channel_config_set_read_increment(&dma_cfg, false);
+	channel_config_set_write_increment(&dma_cfg, true);
+	channel_config_set_dreq(&dma_cfg, pio_get_dreq(pio, rx_sm, false));
+	channel_config_set_ring(&dma_cfg, true,
+				 __builtin_ctz(CONFIG_UART_RPI_PICO_PIO_RX_RING_BUF_SIZE));
+	channel_config_set_chain_to(&dma_cfg, ctrl_chan);
+
+	dma_channel_configure(data_chan, &dma_cfg, data->rx_dma_buf, rx_fifo_msb,
+			      PIO_UART_RX_DMA_RELOAD_COUNT, true);
+
+	/* Writing TRANS_COUNT_TRIG restarts the data channel, keeping its ring position. */
+	ctrl_cfg = dma_channel_get_default_config(ctrl_chan);
+	channel_config_set_transfer_data_size(&ctrl_cfg, DMA_SIZE_32);
+	channel_config_set_read_increment(&ctrl_cfg, false);
+	channel_config_set_write_increment(&ctrl_cfg, false);
+	channel_config_set_dreq(&ctrl_cfg, DREQ_FORCE);
+	channel_config_set_chain_to(&ctrl_cfg, ctrl_chan);
+
+	dma_channel_configure(ctrl_chan, &ctrl_cfg,
+			      (volatile void *)
+			      &dma_channel_hw_addr(data_chan)->al1_transfer_count_trig,
+			      &pio_uart_rx_dma_reload_count, 1, false);
+
+	return 0;
+}
+
+static int pio_uart_rx_ring_read(struct pio_uart_data *data, uint8_t *out, int max)
+{
+	/* poll_in() runs in thread context, fifo_read() from the poll timer ISR. */
+	k_spinlock_key_t key = k_spin_lock(&data->rx_lock);
+	uint32_t write_pos = ((uint32_t)dma_channel_hw_addr(data->rx_dma_chan)->write_addr -
+			      (uint32_t)data->rx_dma_buf) & PIO_UART_RX_RING_MASK;
+	int n = 0;
+
+	while (n < max && data->rx_read_pos != write_pos) {
+		out[n++] = data->rx_dma_buf[data->rx_read_pos];
+		data->rx_read_pos = (data->rx_read_pos + 1) & PIO_UART_RX_RING_MASK;
+	}
+
+	k_spin_unlock(&data->rx_lock, key);
+
+	return n;
+}
+
+static int pio_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
+	int i;
+
+	for (i = 0; i < len && !pio_sm_is_tx_fifo_full(pio, data->tx_sm); i++) {
+		pio->txf[data->tx_sm] = tx_data[i];
+	}
+
+	/* TXSTALL is sticky. Clearing it ties irq_tx_complete() to this fill. */
+	pio->fdebug = BIT(PIO_FDEBUG_TXSTALL_LSB + data->tx_sm);
+
+	return i;
+}
+
+static int pio_uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
+{
+	struct pio_uart_data *data = dev->data;
+
+	return pio_uart_rx_ring_read(data, rx_data, size);
+}
+
+static bool pio_uart_irq_any_enabled(struct pio_uart_data *data)
+{
+	return (atomic_get(&data->rx_irq_enabled) != 0) || (atomic_get(&data->tx_irq_enabled) != 0);
+}
+
+static void pio_uart_irq_enable_set(struct pio_uart_data *data, atomic_t *flag, bool enable)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->irq_lock);
+	bool was_enabled = pio_uart_irq_any_enabled(data);
+	bool is_enabled;
+
+	atomic_set(flag, enable ? 1 : 0);
+	is_enabled = pio_uart_irq_any_enabled(data);
+
+	/* Only on transitions: restarting on every enable would keep postponing expiry. */
+	if (is_enabled != was_enabled) {
+		if (is_enabled) {
+			k_timer_start(&data->poll_timer,
+				      K_USEC(CONFIG_UART_RPI_PICO_PIO_POLL_PERIOD_US),
+				      K_USEC(CONFIG_UART_RPI_PICO_PIO_POLL_PERIOD_US));
+		} else {
+			k_timer_stop(&data->poll_timer);
+		}
+	}
+
+	k_spin_unlock(&data->irq_lock, key);
+}
+
+static void pio_uart_irq_tx_enable(const struct device *dev)
+{
+	struct pio_uart_data *data = dev->data;
+
+	pio_uart_irq_enable_set(data, &data->tx_irq_enabled, true);
+}
+
+static void pio_uart_irq_tx_disable(const struct device *dev)
+{
+	struct pio_uart_data *data = dev->data;
+
+	pio_uart_irq_enable_set(data, &data->tx_irq_enabled, false);
+}
+
+static int pio_uart_irq_tx_ready(const struct device *dev)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
+
+	return atomic_get(&data->tx_irq_enabled) && !pio_sm_is_tx_fifo_full(pio, data->tx_sm);
+}
+
+static int pio_uart_irq_tx_complete(const struct device *dev)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
+
+	/* TXSTALL latches only once the last frame has left the OSR. */
+	return pio_sm_is_tx_fifo_empty(pio, data->tx_sm) &&
+	      (pio->fdebug & BIT(PIO_FDEBUG_TXSTALL_LSB + data->tx_sm));
+}
+
+static void pio_uart_irq_rx_enable(const struct device *dev)
+{
+	struct pio_uart_data *data = dev->data;
+
+	pio_uart_irq_enable_set(data, &data->rx_irq_enabled, true);
+}
+
+static void pio_uart_irq_rx_disable(const struct device *dev)
+{
+	struct pio_uart_data *data = dev->data;
+
+	pio_uart_irq_enable_set(data, &data->rx_irq_enabled, false);
+}
+
+static int pio_uart_irq_rx_ready(const struct device *dev)
+{
+	struct pio_uart_data *data = dev->data;
+	uint32_t write_pos = ((uint32_t)dma_channel_hw_addr(data->rx_dma_chan)->write_addr -
+			      (uint32_t)data->rx_dma_buf) & PIO_UART_RX_RING_MASK;
+
+	return atomic_get(&data->rx_irq_enabled) && (data->rx_read_pos != write_pos);
+}
+
+static int pio_uart_irq_is_pending(const struct device *dev)
+{
+	return pio_uart_irq_rx_ready(dev) || pio_uart_irq_tx_ready(dev);
+}
+
+static void pio_uart_irq_update(const struct device *dev)
+{
+	/* Readiness is read live from the DMA ring and the PIO FIFO. */
+	ARG_UNUSED(dev);
+}
+
+static void pio_uart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
+				      void *cb_data)
+{
+	struct pio_uart_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->irq_lock);
+
+	data->cb = cb;
+	data->cb_data = cb_data;
+
+	k_spin_unlock(&data->irq_lock, key);
+}
+
+/* Runs in ISR context, as the callback would with a hardware interrupt. */
+static void pio_uart_poll_timer_handler(struct k_timer *timer)
+{
+	const struct device *dev = k_timer_user_data_get(timer);
+	struct pio_uart_data *data = dev->data;
+	uart_irq_callback_user_data_t cb;
+	void *cb_data;
+	k_spinlock_key_t key = k_spin_lock(&data->irq_lock);
+
+	cb = data->cb;
+	cb_data = data->cb_data;
+
+	k_spin_unlock(&data->irq_lock, key);
+
+	if (cb != NULL) {
+		cb(dev, cb_data);
+	}
+}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static int pio_uart_init(const struct device *dev)
 {
@@ -174,22 +457,59 @@ static int pio_uart_init(const struct device *dev)
 		return retval;
 	}
 
-	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	retval = pio_uart_rx_dma_init(pio, rx_sm, data, config->rx_dma_buf);
+	if (retval < 0) {
+		LOG_ERR("failed to set up the RX DMA channel: %d", retval);
+		return retval;
+	}
+
+	k_timer_init(&data->poll_timer, pio_uart_poll_timer_handler, NULL);
+	k_timer_user_data_set(&data->poll_timer, (void *)dev);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	/* Applied last, once the state machine and RX DMA can drain the FIFO. */
+	retval = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
+
+	return 0;
 }
 
 static DEVICE_API(uart, pio_uart_driver_api) = {
 	.poll_in = pio_uart_poll_in,
 	.poll_out = pio_uart_poll_out,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill = pio_uart_fifo_fill,
+	.fifo_read = pio_uart_fifo_read,
+	.irq_tx_enable = pio_uart_irq_tx_enable,
+	.irq_tx_disable = pio_uart_irq_tx_disable,
+	.irq_tx_ready = pio_uart_irq_tx_ready,
+	.irq_tx_complete = pio_uart_irq_tx_complete,
+	.irq_rx_enable = pio_uart_irq_rx_enable,
+	.irq_rx_disable = pio_uart_irq_rx_disable,
+	.irq_rx_ready = pio_uart_irq_rx_ready,
+	.irq_is_pending = pio_uart_irq_is_pending,
+	.irq_update = pio_uart_irq_update,
+	.irq_callback_set = pio_uart_irq_callback_set,
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 #define PIO_UART_INIT(idx)									\
 	PINCTRL_DT_INST_DEFINE(idx);								\
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,						\
+		(static uint8_t									\
+		 pio_uart##idx##_rx_dma_buf[CONFIG_UART_RPI_PICO_PIO_RX_RING_BUF_SIZE]		\
+			__aligned(CONFIG_UART_RPI_PICO_PIO_RX_RING_BUF_SIZE);))		\
 	static const struct pio_uart_config pio_uart##idx##_config = {				\
 		.piodev = DEVICE_DT_GET(DT_INST_PARENT(idx)),					\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),					\
 		.tx_pin = DT_INST_RPI_PICO_PIO_PIN_BY_NAME(idx, default, 0, tx_pins, 0),	\
 		.rx_pin = DT_INST_RPI_PICO_PIO_PIN_BY_NAME(idx, default, 0, rx_pins, 0),	\
 		.baudrate = DT_INST_PROP(idx, current_speed),					\
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,					\
+			(.rx_dma_buf = pio_uart##idx##_rx_dma_buf,))				\
 	};											\
 	static struct pio_uart_data pio_uart##idx##_data;					\
 												\
