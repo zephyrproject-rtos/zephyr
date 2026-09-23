@@ -15,10 +15,10 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/drivers/bluetooth.h>
+#include <zephyr/drivers/bluetooth/h4.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/byteorder.h>
@@ -43,9 +43,6 @@ BUILD_ASSERT(DT_PROP(DT_INST_BUS(0), hw_flow_control) == 1,
 
 /* HCI Command packet from Host to Controller */
 #define HCI_COMMAND_PACKET                (0x01)
-
-/* Length of UPDATE BAUD RATE command */
-#define HCI_VSC_UPDATE_BAUD_RATE_LENGTH   (6u)
 
 /* Length of Write_SCO_PCM_Int_Param command */
 #define HCI_VSC_WRITE_SCO_PCM_INT_PARAM_LENGTH   (5u)
@@ -72,14 +69,8 @@ extern const int brcm_patch_ram_length;
 #define BT_HCI_VND_OP_UPDATE_BAUDRATE           BT_OP(BT_OGF_VS, BT_HCI_CMD_UPDATE_BAUDRATE)
 #define BT_HCI_VND_OP_WRITE_PCM_INT_PARAM       BT_OP(BT_OGF_VS, BT_HCI_CMD_WRITE_PCM_INT_PARAM)
 
-
-/*  bt_h4_vnd_setup function.
- * This function executes vendor-specific commands sequence to
- * initialize BT Controller before BT Host executes Reset sequence.
- * bt_h4_vnd_setup function must be implemented in vendor-specific HCI
- * extension module if CONFIG_BT_HCI_SETUP is enabled.
- */
-int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params);
+/* One command at a time, sized for the longest one: a block of the firmware image */
+BT_HCI_PKT_CMD_DEFINE_STATIC(vnd_cmd, UINT8_MAX);
 
 static int bt_hci_uart_set_baudrate(const struct device *bt_uart_dev, uint32_t baudrate)
 {
@@ -106,7 +97,8 @@ static int bt_hci_uart_set_baudrate(const struct device *bt_uart_dev, uint32_t b
 	return 0;
 }
 
-static int bt_update_controller_baudrate(const struct device *bt_uart_dev, uint32_t baudrate)
+static int bt_update_controller_baudrate(const struct device *bt_uart_dev,
+					 struct bt_hci_lockstep *ls, uint32_t baudrate)
 {
 	/*
 	 *  NOTE from datasheet for update baudrate:
@@ -122,72 +114,41 @@ static int bt_update_controller_baudrate(const struct device *bt_uart_dev, uint3
 	 *  - The host switches to the new baud rate after receiving the response at the old
 	 *  baud rate.
 	 */
-	struct net_buf *buf;
 	int err;
-	uint8_t hci_data[HCI_VSC_UPDATE_BAUD_RATE_LENGTH];
 
-	/* Baudrate is loaded LittleEndian */
-	hci_data[0] = 0;
-	hci_data[1] = 0;
-	hci_data[2] = (uint8_t)(baudrate & 0xFFUL);
-	hci_data[3] = (uint8_t)((baudrate >> 8) & 0xFFUL);
-	hci_data[4] = (uint8_t)((baudrate >> 16) & 0xFFUL);
-	hci_data[5] = (uint8_t)((baudrate >> 24) & 0xFFUL);
-
-	/* Allocate buffer for update uart baudrate command.
-	 * It will be BT_HCI_OP_RESET with extra parameters.
-	 */
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
-		return -ENOMEM;
-	}
-
-	/* Add data part of packet */
-	net_buf_add_mem(buf, &hci_data, HCI_VSC_UPDATE_BAUD_RATE_LENGTH);
+	bt_hci_pkt_reset_cmd(&vnd_cmd);
+	net_buf_simple_add_le16(&vnd_cmd, 0);
+	net_buf_simple_add_le32(&vnd_cmd, baudrate);
 
 	/* Send update uart baudrate command. */
-	err = bt_hci_cmd_send_sync(BT_HCI_VND_OP_UPDATE_BAUDRATE, buf, NULL);
+	err = bt_hci_lockstep_cmd_send_sync(ls, BT_HCI_VND_OP_UPDATE_BAUDRATE, &vnd_cmd, NULL);
 	if (err) {
 		return err;
 	}
 
 	/* Re-configure Uart baudrate */
-	err = bt_hci_uart_set_baudrate(bt_uart_dev, baudrate);
-	if (err) {
-		return err;
-	}
-
-	return 0;
+	return bt_hci_uart_set_baudrate(bt_uart_dev, baudrate);
 }
 
-static int bt_set_mac_address(const bt_addr_t *addr)
+static int bt_set_mac_address(struct bt_hci_lockstep *ls, const bt_addr_t *addr)
 {
-	struct net_buf *buf;
-	int err;
+	bt_hci_pkt_reset_cmd(&vnd_cmd);
+	net_buf_simple_add_mem(&vnd_cmd, addr->val, sizeof(addr->val));
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	net_buf_add_mem(buf, addr->val, 6);
-
-	err = bt_hci_cmd_send_sync(BT_HCI_VND_OP_SET_MAC, buf, NULL);
-	if (err) {
-		return err;
-	}
-
-	return 0;
+	return bt_hci_lockstep_cmd_send_sync(ls, BT_HCI_VND_OP_SET_MAC, &vnd_cmd, NULL);
 }
 
-static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
+static int bt_firmware_download(struct bt_hci_lockstep *ls, const uint8_t *firmware_image,
+				uint32_t size)
 {
-	uint8_t *data = (uint8_t *)firmware_image;
-	volatile uint32_t remaining_length = size;
-	struct net_buf *buf;
+	const uint8_t *data = firmware_image;
+	uint32_t remaining_length = size;
 	int err;
 
 	LOG_DBG("Executing Fw downloading for BT device (%u bytes)", size);
 
 	/* Send hci_download_minidriver command */
-	err = bt_hci_cmd_send_sync(BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER, NULL, NULL);
+	err = bt_hci_lockstep_cmd_send_sync(ls, BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER, NULL, NULL);
 	if (err) {
 		return err;
 	}
@@ -201,18 +162,11 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 		size_t data_length = data[2]; /* data length from firmware image block */
 		uint16_t op_code = sys_get_le16(data);
 
-		/* Allocate buffer for hci_write_ram/hci_launch_ram command. */
-		buf = bt_hci_cmd_alloc(K_FOREVER);
-		if (buf == NULL) {
-			LOG_ERR("Unable to allocate command buffer");
-			return err;
-		}
-
-		/* Add data part of packet */
-		net_buf_add_mem(buf, &data[3], data_length);
+		bt_hci_pkt_reset_cmd(&vnd_cmd);
+		net_buf_simple_add_mem(&vnd_cmd, &data[3], data_length);
 
 		/* Send hci_write_ram command. */
-		err = bt_hci_cmd_send_sync(op_code, buf, NULL);
+		err = bt_hci_lockstep_cmd_send_sync(ls, op_code, &vnd_cmd, NULL);
 		if (err) {
 			return err;
 		}
@@ -236,27 +190,18 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 	return 0;
 }
 
-static int bt_update_sco_route(void)
+static int bt_update_sco_route(struct bt_hci_lockstep *ls)
 {
-	struct net_buf *buf;
-
-	/* Allocate buffer for write pcm internal params command*/
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
-		return -ENOMEM;
-	}
-
+	bt_hci_pkt_reset_cmd(&vnd_cmd);
 	/* Zero-initialize to use the default settings */
-	memset(net_buf_add(buf, HCI_VSC_WRITE_SCO_PCM_INT_PARAM_LENGTH), 0,
-		HCI_VSC_WRITE_SCO_PCM_INT_PARAM_LENGTH);
+	memset(net_buf_simple_add(&vnd_cmd, HCI_VSC_WRITE_SCO_PCM_INT_PARAM_LENGTH), 0,
+	       HCI_VSC_WRITE_SCO_PCM_INT_PARAM_LENGTH);
 
 	/* Send write pcm internal params command. */
-	return bt_hci_cmd_send_sync(BT_HCI_VND_OP_WRITE_PCM_INT_PARAM, buf, NULL);
+	return bt_hci_lockstep_cmd_send_sync(ls, BT_HCI_VND_OP_WRITE_PCM_INT_PARAM, &vnd_cmd, NULL);
 }
 
-
-int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params)
+int bt_h4_vnd_open(const struct device *dev, const struct device *uart, struct bt_hci_lockstep *ls)
 {
 	int err;
 	const bt_addr_t *public_addr;
@@ -265,7 +210,7 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	uint32_t fw_download_speed = DT_INST_PROP_OR(0, fw_download_speed, default_uart_speed);
 
 	/* Check BT Uart instance */
-	if (!device_is_ready(dev)) {
+	if (!device_is_ready(uart)) {
 		LOG_ERR("BT UART device not ready");
 		return -EINVAL;
 	}
@@ -306,14 +251,14 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	 */
 	if (IS_ENABLED(CONFIG_AIROC_AUTOBAUD_MODE) &&
 	    (fw_download_speed != default_uart_speed)) {
-		err = bt_hci_uart_set_baudrate(dev, fw_download_speed);
+		err = bt_hci_uart_set_baudrate(uart, fw_download_speed);
 		if (err) {
 			return err;
 		}
 	}
 
 	/* Send HCI_RESET */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
+	err = bt_hci_lockstep_cmd_send_sync(ls, BT_HCI_OP_RESET, NULL, NULL);
 	if (err) {
 		LOG_ERR("HCI_RESET (1st) failed (err %d)", err);
 		return err;
@@ -322,14 +267,14 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	/* Re-configure baudrate for BT Controller (if we haven't already) */
 	if (!IS_ENABLED(CONFIG_AIROC_AUTOBAUD_MODE) &&
 	    (fw_download_speed != default_uart_speed)) {
-		err = bt_update_controller_baudrate(dev, fw_download_speed);
+		err = bt_update_controller_baudrate(uart, ls, fw_download_speed);
 		if (err) {
 			return err;
 		}
 	}
 
 	/* BT firmware download */
-	err = bt_firmware_download(brcm_patchram_buf, (uint32_t) brcm_patch_ram_length);
+	err = bt_firmware_download(ls, brcm_patchram_buf, (uint32_t)brcm_patch_ram_length);
 	if (err) {
 		LOG_ERR("FW download failed (err %d)", err);
 		return err;
@@ -340,14 +285,14 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 
 	/* When FW launched, HCI UART baudrate should be configured to default */
 	if (fw_download_speed != default_uart_speed) {
-		err = bt_hci_uart_set_baudrate(dev, default_uart_speed);
+		err = bt_hci_uart_set_baudrate(uart, default_uart_speed);
 		if (err) {
 			return err;
 		}
 	}
 
 	/* Send HCI_RESET */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
+	err = bt_hci_lockstep_cmd_send_sync(ls, BT_HCI_OP_RESET, NULL, NULL);
 	if (err) {
 		LOG_ERR("HCI_RESET (2nd) failed (err %d)", err);
 		return err;
@@ -357,16 +302,16 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	 * after fw downloading.
 	 */
 	if (hci_operation_speed != default_uart_speed) {
-		err = bt_update_controller_baudrate(dev, hci_operation_speed);
+		err = bt_update_controller_baudrate(uart, ls, hci_operation_speed);
 		if (err) {
 			return err;
 		}
 	}
 
 	/* Set public address if present */
-	public_addr = &params->public_addr;
+	public_addr = bt_hci_get_public_addr(dev);
 	if (!bt_addr_eq(public_addr, BT_ADDR_ANY) && !bt_addr_eq(public_addr, BT_ADDR_NONE)) {
-		err = bt_set_mac_address(public_addr);
+		err = bt_set_mac_address(ls, public_addr);
 		if (err) {
 			return err;
 		}
@@ -380,7 +325,7 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 		 * Transport and Host is not setting SCO PKT Size and Count, Controller
 		 * sends invalid command response. So set the default route to PCM
 		 */
-		err = bt_update_sco_route();
+		err = bt_update_sco_route(ls);
 		if (err) {
 			LOG_ERR("Failed to update SCO route (err %d)", err);
 			return err;
