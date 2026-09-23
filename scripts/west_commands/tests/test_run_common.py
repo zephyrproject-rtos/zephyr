@@ -43,3 +43,36 @@ def test_filter_used_cmds_drops_unmatched_boards_and_entries():
         ['nrf5340dk/nrf5340/cpuapp'],
         ['([^/]+)/nrf5340/cpunet'],
     ]
+
+
+def test_do_run_common_single_domain_defines_board_names(monkeypatch):
+    # Regression: a single-domain flash skips the `len(domains) > 1` block, so
+    # board_names must be initialized beforehand; otherwise filter_used_cmds()
+    # raises UnboundLocalError and every flash fails.
+    from types import SimpleNamespace
+
+    domain = SimpleNamespace(build_dir='build')
+    flashed = []
+
+    monkeypatch.setattr(
+        run_common, 'zephyr_module', SimpleNamespace(parse_modules=lambda *a, **k: [])
+    )
+    monkeypatch.setattr(run_common, 'get_build_dir', lambda *a, **k: 'build')
+    monkeypatch.setattr(run_common, 'rebuild', lambda *a, **k: None)
+    monkeypatch.setattr(run_common, 'get_domains_to_process', lambda *a, **k: [domain])
+    monkeypatch.setattr(run_common, 'forward_logging_to_west', lambda *a, **k: None)
+    monkeypatch.setattr(run_common, 'do_run_common_image', lambda *a, **k: flashed.append(a))
+
+    command = SimpleNamespace(
+        name='flash',
+        manifest=None,
+        config=None,
+        wrn=lambda *a, **k: None,
+        die=lambda *a, **k: None,
+    )
+    user_args = SimpleNamespace(context=False)
+
+    run_common.do_run_common(command, user_args, [])
+
+    # Reached the per-domain flashing step without raising.
+    assert len(flashed) == 1
