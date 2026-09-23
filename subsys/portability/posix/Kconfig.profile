@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config POSIX_API
-	bool "POSIX APIs"
+	bool "POSIX APIs [DEPRECATED]"
 	select POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS # clock_gettime(), pthread_create(), sem_get(), etc
 	select POSIX_AEP_REALTIME_MINIMAL # CLOCK_MONOTONIC, pthread_attr_setstack(), etc
@@ -12,11 +12,12 @@ config POSIX_API
 	imply POSIX_FD_MGMT # open(), close(), read(), write()
 	imply POSIX_MULTI_PROCESS # sleep(), getpid(), etc
 	imply XSI_SINGLE_PROCESS # gettimeofday()
+	select DEPRECATED
 	help
-	  This option enables the required POSIX System Interfaces (base definitions), all of PSE51,
-	  and some features found in PSE52.
-
-	  Note: in the future, this option may be deprecated in favour of subprofiling options.
+	  This option is deprecated. Applications should select CONFIG_POSIX_AEP_CHOICE_BASE,
+	  CONFIG_POSIX_AEP_CHOICE_PSE51, CONFIG_POSIX_AEP_CHOICE_PSE52, or
+	  CONFIG_POSIX_AEP_CHOICE_PSE53. Libraries should depend on
+	  CONFIG_POSIX_SYSTEM_INTERFACES and other POSIX Option Groups.
 
 choice POSIX_AEP_CHOICE
 	prompt "POSIX Subprofile"

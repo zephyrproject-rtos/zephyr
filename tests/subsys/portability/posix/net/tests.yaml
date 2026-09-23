@@ -56,6 +56,6 @@ tests:
       - CONFIG_NET_HOSTNAME_DYNAMIC=y
   portability.posix.net.hostname.unique_update:
     extra_configs:
-      - CONFIG_POSIX_API=y
+      - CONFIG_POSIX_AEP_CHOICE_PSE53=y
       - CONFIG_NET_HOSTNAME_UNIQUE_UPDATE=y
       - CONFIG_NET_HOSTNAME_UNIQUE=y

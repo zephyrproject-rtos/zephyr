@@ -295,7 +295,8 @@ config SYS_HEAP_KASAN_GRANULE
 config SYS_HEAP_KASAN_EXTENSIONS
 	bool "Interceptors for POSIX/GNU string extensions"
 	depends on SYS_HEAP_KASAN
-	default y if PICOLIBC || NEWLIB_LIBC || NATIVE_LIBC || POSIX_API
+	# Add POSIX_C_LIB_EXT once Zephyr declares stpcpy() and stpncpy()
+	default y if PICOLIBC || NEWLIB_LIBC || NATIVE_LIBC
 	help
 	  Add KASAN write-checking wrappers for POSIX and GNU extension
 	  functions. Requires the C library to declare them.

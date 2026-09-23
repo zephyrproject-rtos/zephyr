@@ -9,6 +9,4 @@ common:
     - socket
   filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
 tests:
-  sample.net.sockets.echo_async_select:
-    extra_configs:
-      - CONFIG_POSIX_API=y
+  sample.net.sockets.echo_async_select: {}
