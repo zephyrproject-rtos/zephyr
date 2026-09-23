@@ -1,0 +1,37 @@
+# M5Stack StackChan board defconfig
+
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STACK_STACKCHAN_ESP32S3_PROCPU
+
+config INPUT
+	default y
+
+if LVGL
+
+config LV_COLOR_16_SWAP
+	default y
+
+endif # LVGL
+
+# The regulators, the MIPI-DBI controller, the display and the audio codec all
+# reference the AW9523B / AXP2101 (or each other) in the devicetree, so a common
+# init priority lets the devicetree dependency order sort them.
+
+configdefault REGULATOR_FIXED_INIT_PRIORITY
+	default MFD_INIT_PRIORITY
+
+configdefault REGULATOR_AXP192_AXP2101_INIT_PRIORITY
+	default MFD_INIT_PRIORITY
+
+configdefault MIPI_DBI_INIT_PRIORITY
+	default MFD_INIT_PRIORITY
+
+configdefault DISPLAY_INIT_PRIORITY
+	default MFD_INIT_PRIORITY
+
+configdefault AUDIO_CODEC_INIT_PRIORITY
+	default MFD_INIT_PRIORITY
+
+endif # BOARD_M5STACK_STACKCHAN_ESP32S3_PROCPU
