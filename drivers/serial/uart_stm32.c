@@ -1253,46 +1253,6 @@ static inline void async_user_callback(struct uart_stm32_data *data,
 	}
 }
 
-static inline void async_evt_rx_rdy(struct uart_stm32_data *data)
-{
-	LOG_DBG("rx_rdy: (%d %d)", data->dma_rx.offset, data->dma_rx.counter);
-
-	struct uart_event event = {
-		.type = UART_RX_RDY,
-		.data.rx.buf = data->dma_rx.buffer,
-		.data.rx.len = data->dma_rx.counter - data->dma_rx.offset,
-		.data.rx.offset = data->dma_rx.offset
-	};
-
-	/* When cyclic DMA is used, buffer positions are not updated - call callback every time*/
-	if (data->dma_rx.dma_cfg.cyclic == 0) {
-		/* update the current pos for new data */
-		data->dma_rx.offset = data->dma_rx.counter;
-
-		/* send event only for new data */
-		if (event.data.rx.len > 0) {
-			async_user_callback(data, &event);
-		}
-	} else {
-		async_user_callback(data, &event);
-	}
-}
-
-static inline void async_evt_rx_err(struct uart_stm32_data *data, int err_code)
-{
-	LOG_DBG("rx error: %d", err_code);
-
-	struct uart_event event = {
-		.type = UART_RX_STOPPED,
-		.data.rx_stop.reason = err_code,
-		.data.rx_stop.data.len = data->dma_rx.counter,
-		.data.rx_stop.data.offset = 0,
-		.data.rx_stop.data.buf = data->dma_rx.buffer
-	};
-
-	async_user_callback(data, &event);
-}
-
 static inline void async_evt_tx_done(struct uart_stm32_data *data)
 {
 	LOG_DBG("tx done: %d", data->dma_tx.counter);
@@ -1333,6 +1293,31 @@ static inline void async_evt_tx_abort(struct uart_stm32_data *data)
 	async_user_callback(data, &event);
 }
 
+static inline void async_evt_rx_rdy(struct uart_stm32_data *data)
+{
+	LOG_DBG("rx_rdy: (%d %d)", data->dma_rx.offset, data->dma_rx.counter);
+
+	struct uart_event event = {
+		.type = UART_RX_RDY,
+		.data.rx.buf = data->dma_rx.buffer,
+		.data.rx.len = data->dma_rx.counter - data->dma_rx.offset,
+		.data.rx.offset = data->dma_rx.offset
+	};
+
+	/* When cyclic DMA is used, buffer positions are not updated - call callback every time*/
+	if (data->dma_rx.dma_cfg.cyclic == 0) {
+		/* update the current pos for new data */
+		data->dma_rx.offset = data->dma_rx.counter;
+
+		/* send event only for new data */
+		if (event.data.rx.len > 0) {
+			async_user_callback(data, &event);
+		}
+	} else {
+		async_user_callback(data, &event);
+	}
+}
+
 static inline void async_evt_rx_buf_request(struct uart_stm32_data *data)
 {
 	struct uart_event evt = {
@@ -1350,6 +1335,21 @@ static inline void async_evt_rx_buf_release(struct uart_stm32_data *data)
 	};
 
 	async_user_callback(data, &evt);
+}
+
+static inline void async_evt_rx_err(struct uart_stm32_data *data, int err_code)
+{
+	LOG_DBG("rx error: %d", err_code);
+
+	struct uart_event event = {
+		.type = UART_RX_STOPPED,
+		.data.rx_stop.reason = err_code,
+		.data.rx_stop.data.len = data->dma_rx.counter,
+		.data.rx_stop.data.offset = 0,
+		.data.rx_stop.data.buf = data->dma_rx.buffer
+	};
+
+	async_user_callback(data, &event);
 }
 
 static inline void async_timer_start(struct k_work_delayable *work,
