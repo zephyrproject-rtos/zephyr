@@ -8,6 +8,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2s.h>
+#include "i2s_test.h"
 
 #define SAMPLE_NO      32
 #define TIMEOUT        2000
@@ -15,9 +16,6 @@
 
 #define NUM_RX_BLOCKS 4
 #define NUM_TX_BLOCKS 4
-
-#define VAL_L 11
-#define VAL_R 22
 
 #define TRANSFER_REPEAT_COUNT 100
 
@@ -140,6 +138,23 @@ int rx_block_read(const struct device *i2s_dev, int16_t val_l, int16_t val_r)
 	return rx_block_read_slab(i2s_dev, val_l, val_r, &rx_mem_slab);
 }
 
+void i2s_test_recover(const struct device *dev)
+{
+	int ret;
+
+	if (dev == NULL || !device_is_ready(dev)) {
+		return;
+	}
+
+	ret = i2s_trigger(dev, I2S_DIR_BOTH, I2S_TRIGGER_DROP);
+	if (ret == 0) {
+		return;
+	}
+
+	(void)i2s_trigger(dev, I2S_DIR_RX, I2S_TRIGGER_DROP);
+	(void)i2s_trigger(dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+}
+
 int configure_stream(const struct device *i2s_dev, enum i2s_dir dir)
 {
 	int ret;
@@ -207,6 +222,8 @@ static void before(void *fixture)
 
 	zassert_not_null(dev_i2s_tx, "TX device not found");
 	zassert_true(device_is_ready(dev_i2s_tx), "device %s is not ready", dev_i2s_tx->name);
+
+	i2s_test_recover(dev_i2s);
 
 	ret = configure_stream(dev_i2s_rx, I2S_DIR_RX);
 	zassert_equal(ret, TC_PASS);
