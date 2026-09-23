@@ -631,8 +631,9 @@ static int mcp_endpoint_post_handler(struct http_client_ctx *client,
 	}
 
 	if (mcp_client == NULL) {
-		response_ctx->status = is_initialize_request ? HTTP_500_INTERNAL_SERVER_ERROR
-							     : HTTP_400_BAD_REQUEST;
+		/* Unknown or terminated sessions get a 404 so the client re-initializes */
+		response_ctx->status =
+			is_initialize_request ? HTTP_500_INTERNAL_SERVER_ERROR : HTTP_404_NOT_FOUND;
 		response_ctx->final_chunk = true;
 		return 0;
 	}
@@ -662,8 +663,14 @@ static int mcp_endpoint_post_handler(struct http_client_ctx *client,
 			client_ref_put(mcp_client);
 		}
 
-		response_ctx->status =
-			(ret == -EPROTO) ? HTTP_400_BAD_REQUEST : HTTP_500_INTERNAL_SERVER_ERROR;
+		if (ret == -ENOENT) {
+			/* No session in the core: header missing (400) or session gone (404) */
+			response_ctx->status =
+				is_initialize_request ? HTTP_400_BAD_REQUEST : HTTP_404_NOT_FOUND;
+		} else {
+			response_ctx->status = (ret == -EPROTO) ? HTTP_400_BAD_REQUEST
+								: HTTP_500_INTERNAL_SERVER_ERROR;
+		}
 
 		LOG_ERR("Error processing request: %d", ret);
 		response_ctx->final_chunk = true;
@@ -734,11 +741,17 @@ static int mcp_endpoint_get_handler(struct http_client_ctx *client,
 	struct mcp_http_response_item response_data;
 	struct mcp_http_response_item *temp;
 
+	if (accumulator->session_id_hdr[0] == '\0') {
+		response_ctx->status = HTTP_400_BAD_REQUEST;
+		response_ctx->final_chunk = true;
+		return 0;
+	}
+
 	/* Find client by UUID string and increment ref count) */
 	mcp_client = get_client_by_uuid_str(accumulator->session_id_hdr);
 	if (mcp_client == NULL) {
 		LOG_ERR("Client session not found for UUID: %s", accumulator->session_id_hdr);
-		response_ctx->status = HTTP_400_BAD_REQUEST;
+		response_ctx->status = HTTP_404_NOT_FOUND;
 		response_ctx->final_chunk = true;
 		return 0;
 	}
