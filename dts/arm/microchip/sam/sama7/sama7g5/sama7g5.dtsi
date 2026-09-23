@@ -636,8 +636,7 @@
 		ethernet@e2800000 {
 			compatible = "microchip,sam-ethernet-controller";
 			reg = <0xe2800000 0x4000>;
-			clocks = <&pmc PMC_TYPE_GCK 51>, <&pmc PMC_TYPE_CORE PMC_MCK>;
-			clock-names = "gmac_clk", "mck";
+			clocks = <&pmc PMC_TYPE_GCK 51>;
 
 			gmac0: ethernet {
 				compatible = "atmel,sam-gmac";
@@ -664,8 +663,7 @@
 		ethernet@e2804000 {
 			compatible = "microchip,sam-ethernet-controller";
 			reg = <0xe2804000 0x4000>;
-			clocks = <&pmc PMC_TYPE_GCK 52>, <&pmc PMC_TYPE_CORE PMC_MCK>;
-			clock-names = "gmac_clk", "mck";
+			clocks = <&pmc PMC_TYPE_GCK 52>;
 
 			gmac1: ethernet {
 				compatible = "atmel,sam-gmac";
