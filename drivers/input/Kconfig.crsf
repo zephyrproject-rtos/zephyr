@@ -5,7 +5,7 @@ config INPUT_CRSF
 	bool "CRSF driver"
 	default y
 	depends on DT_HAS_TBS_CRSF_ENABLED
-	depends on UART_INTERRUPT_DRIVEN
+	depends on UART_ASYNC_API
 	select CRC
 	select UART_USE_RUNTIME_CONFIGURE
 	help
