@@ -61,8 +61,7 @@ static void mcux_ccm_rt11xx_init_audio_pll(void)
 
 #endif
 
-static int mcux_ccm_on(const struct device *dev,
-				  clock_control_subsys_t sub_system)
+static int mcux_ccm_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	uint32_t clock_name = (uintptr_t)sub_system;
 	uint32_t peripheral, instance;
@@ -73,19 +72,20 @@ static int mcux_ccm_on(const struct device *dev,
 #ifdef CONFIG_ETH_NXP_ENET
 
 #if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
-#define ENET1G_CLOCK	kCLOCK_Enet1
+#define ENET1G_CLOCK kCLOCK_Enet1
 #else
-#define ENET_CLOCK	kCLOCK_Enet
-#define ENET1G_CLOCK	kCLOCK_Enet_1g
+#define ENET_CLOCK   kCLOCK_Enet
+#define ENET1G_CLOCK kCLOCK_Enet_1g
 #endif
 #ifdef ENET_CLOCK
 	case IMX_CCM_ENET_CLK:
-		CLOCK_EnableClock(ENET_CLOCK);
+		if (clock_name == IMX_CCM_ENET_CLK) {
+			CLOCK_EnableClock(ENET_CLOCK);
+		} else if (clock_name == IMX_CCM_ENET1G_CLK) {
+			CLOCK_EnableClock(ENET1G_CLOCK);
+		}
 		return 0;
 #endif
-	case IMX_CCM_ENET1G_CLK:
-		CLOCK_EnableClock(ENET1G_CLOCK);
-		return 0;
 #endif
 #ifdef CONFIG_I2S_MCUX_SAI
 #if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || defined(CONFIG_SOC_MIMX9111)
@@ -132,17 +132,15 @@ static int mcux_ccm_on(const struct device *dev,
 	}
 }
 
-static int mcux_ccm_off(const struct device *dev,
-				   clock_control_subsys_t sub_system)
+static int mcux_ccm_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_ccm_get_subsys_rate(const struct device *dev,
-					clock_control_subsys_t sub_system,
-					uint32_t *rate)
+static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subsys_t sub_system,
+				    uint32_t *rate)
 {
-	uint32_t clock_name = (size_t) sub_system;
+	uint32_t clock_name = (size_t)sub_system;
 	uint32_t clock_root, peripheral, instance;
 
 	peripheral = (clock_name & IMX_CCM_PERIPHERAL_MASK);
@@ -282,8 +280,14 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_ETH_NXP_ENET
+	/*
+	 * nxp_rt11xx.dtsi defines the ENET clock and PLL IDs in the range
+	 * 0x1200 to 0x1203. The switch statement only matches on the
+	 * peripheral base (clock_name & IMX_CCM_PERIPHERAL_MASK), so all of
+	 * them fall under 0x12xx. IMX_CCM_ENET_CLK therefore covers both
+	 * ENET and ENET_1G, and the specific instance is selected below.
+	 */
 	case IMX_CCM_ENET_CLK:
-	case IMX_CCM_ENET1G_CLK:
 #if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 		clock_root = kCLOCK_Root_WakeupAxi;
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
@@ -473,8 +477,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#if (defined(CONFIG_COUNTER_MCUX_SYSCTR) || defined(CONFIG_COUNTER_MCUX_TSTMR)) \
-	&& defined(CONFIG_SOC_SERIES_IMXRT118X)
+#if (defined(CONFIG_COUNTER_MCUX_SYSCTR) || defined(CONFIG_COUNTER_MCUX_TSTMR)) &&                 \
+	defined(CONFIG_SOC_SERIES_IMXRT118X)
 	case IMX_CCM_SYSCTR_BASE_CLK:
 		*rate = MHZ(24);
 		return 0;
@@ -505,8 +509,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	default:
 		return -EINVAL;
 	}
-#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) \
-	|| defined(CONFIG_SOC_MIMX9111)
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || defined(CONFIG_SOC_MIMX9111)
 	*rate = CLOCK_GetIpFreq(clock_root);
 #else
 	*rate = CLOCK_GetRootClockFreq(clock_root);
@@ -525,8 +528,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
-			clock_control_subsys_t subsys,
-			clock_control_subsys_rate_t rate)
+						      clock_control_subsys_t subsys,
+						      clock_control_subsys_rate_t rate)
 {
 	uint32_t clock_name = (uintptr_t)subsys;
 	uint32_t clock_rate = (uintptr_t)rate;
@@ -535,9 +538,9 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 	case IMX_CCM_FLEXSPI_CLK:
 		__fallthrough;
 	case IMX_CCM_FLEXSPI2_CLK:
-#if (defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT118X) \
-		|| defined(CONFIG_SOC_MIMX9352)) \
-		&& defined(CONFIG_MEMC_MCUX_FLEXSPI)
+#if (defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT118X) ||               \
+    defined(CONFIG_SOC_MIMX9352)) &&                                                               \
+	defined(CONFIG_MEMC_MCUX_FLEXSPI)
 		/* The SOC is using the FlexSPI for XIP. Therefore,
 		 * the FlexSPI itself must be managed within the function,
 		 * which is SOC specific.
@@ -564,8 +567,9 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 		return common_clock_set_freq(clock_name, (uint32_t)clock_rate);
 #endif
 
-#if (defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || \
-	defined(CONFIG_SOC_MIMX9111)) && defined(CONFIG_I2S_MCUX_SAI)
+#if (defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) ||                               \
+    defined(CONFIG_SOC_MIMX9111)) &&                                                               \
+	defined(CONFIG_I2S_MCUX_SAI)
 	case IMX_CCM_SAI1_CLK:
 	case IMX_CCM_SAI2_CLK:
 	case IMX_CCM_SAI3_CLK:
@@ -617,6 +621,5 @@ static DEVICE_API(clock_control, mcux_ccm_driver_api) = {
 	.set_rate = mcux_ccm_set_subsys_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &mcux_ccm_driver_api);
