@@ -179,9 +179,9 @@ static struct mcp_server_ctx *allocate_mcp_server_context(void)
  * NOTE: Functions with _locked suffix assume the caller holds client_registry.mutex
  ******************************************************************************/
 /**
- * @brief Find a client context by transport binding
+ * @brief Find a live client context by transport binding
  * @note Must be called with client_registry.mutex held
- * @return Pointer to client context if found, NULL otherwise
+ * @return Pointer to client context if found and not being removed, NULL otherwise
  */
 static struct mcp_client_context *
 get_client_by_binding_locked(struct mcp_server_ctx *server,
@@ -190,8 +190,15 @@ get_client_by_binding_locked(struct mcp_server_ctx *server,
 	struct mcp_client_registry *client_registry = &server->client_registry;
 
 	for (int i = 0; i < ARRAY_SIZE(client_registry->clients); i++) {
-		if (client_registry->clients[i].binding == binding) {
-			return &client_registry->clients[i];
+		struct mcp_client_context *client = &client_registry->clients[i];
+
+		if ((client->lifecycle_state == MCP_LIFECYCLE_DEINITIALIZED) ||
+		    (client->lifecycle_state == MCP_LIFECYCLE_DEINITIALIZING)) {
+			continue;
+		}
+
+		if (client->binding == binding) {
+			return client;
 		}
 	}
 
@@ -553,6 +560,7 @@ static void cleanup_client_request(struct mcp_client_registry *client_registry,
 				   bool is_execution_canceled)
 {
 	int ret;
+	bool released = false;
 
 	ret = k_mutex_lock(&client_registry->mutex, K_FOREVER);
 	if (ret != 0) {
@@ -578,11 +586,17 @@ static void cleanup_client_request(struct mcp_client_registry *client_registry,
 		if ((client->active_requests[i] != NULL) &&
 		    (client->active_requests[i]->transport_msg_id == msg_id)) {
 			client->active_requests[i] = 0;
+			released = true;
 			break;
 		}
 	}
 
 	k_mutex_unlock(&client_registry->mutex);
+
+	if (released) {
+		/* Drop the reference held by the execution */
+		client_put(client);
+	}
 }
 
 /**
@@ -1118,12 +1132,26 @@ static int handle_tools_call_request(struct mcp_server_ctx *server,
 		goto cleanup_execution;
 	}
 
+	/* The execution holds a client reference until it completes */
+	if (client_get_locked(client) == NULL) {
+		k_mutex_unlock(&client_registry->mutex);
+		ret = -ENOENT;
+		goto cleanup_execution;
+	}
+
 	/* After reaching here, active_request needs to be cleaned up in case of later error */
 	for (request_index = 0; request_index < CONFIG_MCP_MAX_CLIENT_REQUESTS; request_index++) {
 		if (client->active_requests[request_index] == 0) {
 			client->active_requests[request_index] = exec_ctx;
 			break;
 		}
+	}
+
+	if (request_index == CONFIG_MCP_MAX_CLIENT_REQUESTS) {
+		k_mutex_unlock(&client_registry->mutex);
+		client_put(client);
+		ret = -EBUSY;
+		goto cleanup_execution;
 	}
 
 	client->active_request_count++;
@@ -1142,9 +1170,17 @@ static int handle_tools_call_request(struct mcp_server_ctx *server,
 
 cleanup_active_request:
 	if (k_mutex_lock(&client_registry->mutex, K_FOREVER) == 0) {
+		bool released = (client->active_requests[request_index] == exec_ctx);
+
 		client->active_request_count--;
-		client->active_requests[request_index] = 0;
+		if (released) {
+			client->active_requests[request_index] = 0;
+		}
 		k_mutex_unlock(&client_registry->mutex);
+
+		if (released) {
+			client_put(client);
+		}
 	}
 
 cleanup_execution:
@@ -1820,6 +1856,35 @@ int mcp_server_update_client_timestamp(mcp_server_ctx_t ctx, struct mcp_transpor
 
 	client->last_message_timestamp = k_uptime_get();
 	k_mutex_unlock(&client_registry->mutex);
+
+	return 0;
+}
+
+int mcp_server_remove_client(mcp_server_ctx_t ctx, struct mcp_transport_binding *binding)
+{
+	int ret;
+	struct mcp_client_context *client;
+	struct mcp_server_ctx *server = (struct mcp_server_ctx *)ctx;
+
+	if ((server == NULL) || (binding == NULL)) {
+		LOG_ERR("Invalid parameters passed to %s", __func__);
+		return -EINVAL;
+	}
+
+	ret = k_mutex_lock(&server->client_registry.mutex, K_FOREVER);
+	if (ret != 0) {
+		LOG_ERR("Failed to lock client registry: %d", ret);
+		return ret;
+	}
+
+	client = get_client_by_binding_locked(server, binding);
+	if (client == NULL) {
+		k_mutex_unlock(&server->client_registry.mutex);
+		return -ENOENT;
+	}
+
+	remove_client_locked(server, client);
+	k_mutex_unlock(&server->client_registry.mutex);
 
 	return 0;
 }
