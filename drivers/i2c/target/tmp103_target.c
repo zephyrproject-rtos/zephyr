@@ -63,7 +63,7 @@ static void tmp103_work_handler(struct k_work *work)
 	k_work_schedule(&data->dwork, K_MSEC(500));
 }
 
-static void tmp103_change_cb(const struct device *dev, void *user_data)
+static void tmp103_change_cb(const struct device *dev)
 {
 	int8_t regs[4];
 
@@ -85,8 +85,6 @@ static int tmp103_target_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	regset_target_lib_set_changed_callback(dev, tmp103_change_cb, NULL);
-
 	k_work_init_delayable(&data->dwork, tmp103_work_handler);
 
 	if (cfg->sensor_dev != NULL) {
@@ -96,13 +94,18 @@ static int tmp103_target_init(const struct device *dev)
 	return regset_target_lib_init(dev);
 }
 
+static const struct regset_target_lib_api tmp103_target_api = {
+	.changed = tmp103_change_cb,
+};
+
 #define I2C_TMP103_INIT(inst)								\
 	REGSET_TARGET_LIB_DT_INST_BUILD_ASSERT(inst)					\
 											\
 	static struct tmp103_target_data tmp103_target_##inst##_dev_data;		\
 											\
 	static const struct tmp103_target_config tmp103_target_##inst##_cfg = {		\
-		.regset_cfg = REGSET_TARGET_LIB_DT_INST_CONFIG_INIT(inst),		\
+		.regset_cfg = REGSET_TARGET_LIB_DT_INST_CONFIG_INIT(			\
+			inst, &tmp103_target_api),					\
 		.sensor_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, sensor)),	\
 	};										\
 											\
