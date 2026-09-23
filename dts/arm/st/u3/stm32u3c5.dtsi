@@ -48,5 +48,15 @@
 			interrupts = <96 0>;
 			status = "disabled";
 		};
+
+		rng: rng@420c0800 {
+			/* In AN4230 rev 14, no NIST values are listed for STM32U3C5.
+			 * Use Configuration C from RM0487 instead. To be updated if / when
+			 * AN4230 provides values.
+			 */
+			nist-config = <0x8450f00>;
+			health-test-config = <0xaac7>;
+			/delete-property/ noise-source-control;
+		};
 	};
 };
