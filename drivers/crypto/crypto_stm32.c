@@ -13,6 +13,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
@@ -36,6 +37,11 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #define BLOCK_LEN_BYTES 16
 #define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(uint32_t))
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_STM32_MAX_SESSION
+
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && DT_INST_IRQ_HAS_IDX(0, 0)
+#define STM32_CRYP_USE_ISR
+static void stm32_cryp_isr(const struct device *dev);
+#endif
 
 #if defined(CRYP_KEYSIZE_192B)
 #define STM32_CRYPTO_KEYSIZE_192B_SUPPORT
@@ -99,6 +105,12 @@ typedef HAL_StatusTypeDef status_t;
  */
 typedef status_t (*hal_cryp_aes_op_func_t)(CRYP_HandleTypeDef *hcryp, uint8_t *in_data,
 					   uint16_t size, uint8_t *out_data, uint32_t timeout);
+
+#if defined(STM32_CRYP_USE_ISR)
+/* Same operation as hal_cryp_aes_op_func_t, without the timeout: completion is asynchronous. */
+typedef status_t (*hal_cryp_aes_it_op_func_t)(CRYP_HandleTypeDef *hcryp, uint32_t *in_data,
+					      uint16_t size, uint32_t *out_data);
+#endif /* STM32_CRYP_USE_ISR */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 #define hal_ecb_encrypt_op HAL_CRYP_AESECB_Encrypt
@@ -184,6 +196,68 @@ static status_t hal_decrypt(CRYP_HandleTypeDef *hcryp, uint8_t *pCypherData, uin
 	return HAL_CRYP_Decrypt(hcryp, (uint32_t *)pCypherData, Size, (uint32_t *)pPlainData,
 				Timeout);
 }
+
+#if defined(STM32_CRYP_USE_ISR)
+static status_t hal_encrypt_it(CRYP_HandleTypeDef *hcryp, uint32_t *in_data, uint16_t size,
+			       uint32_t *out_data)
+{
+	return HAL_CRYP_Encrypt_IT(hcryp, in_data, size, out_data);
+}
+
+static status_t hal_decrypt_it(CRYP_HandleTypeDef *hcryp, uint32_t *in_data, uint16_t size,
+			       uint32_t *out_data)
+{
+	return HAL_CRYP_Decrypt_IT(hcryp, in_data, size, out_data);
+}
+
+/*
+ * Interrupt-driven counterpart of do_aes(), for CBC only: HAL_CRYP_{En,De}crypt_IT() arm the
+ * peripheral and return immediately, freeing the CPU instead of busy-polling status registers
+ * until completion, signalled asynchronously from the CRYP ISR via HAL_CRYP_OutCpltCallback()/
+ * HAL_CRYP_ErrorCallback(), both of which give complete_sem. Returns -EIO on any failure so the
+ * caller can fall back to the polling do_aes() path.
+ */
+static int do_aes_it(struct cipher_ctx *ctx, hal_cryp_aes_it_op_func_t fn, uint8_t *in_buf,
+		     int in_len, uint8_t *out_buf)
+{
+	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(ctx->device);
+	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
+
+	if (HAL_CRYP_SetConfig(&data->hcryp, &session->config) != HAL_OK) {
+		LOG_ERR("Configuration error");
+		return -EIO;
+	}
+
+	k_sem_reset(&data->complete_sem);
+
+	if (fn(&data->hcryp, (uint32_t *)in_buf, in_len, (uint32_t *)out_buf) != HAL_OK) {
+		return -EIO;
+	}
+
+	if ((k_sem_take(&data->complete_sem, K_MSEC(1000)) != 0) ||
+	    (data->hcryp.State != HAL_CRYP_STATE_READY)) {
+		LOG_WRN("CRYP IT operation failed, falling back to polling");
+		/*
+		 * Leaving CRYP completion/error interrupts armed would let a later polling
+		 * operation on this same peripheral (e.g. GCM/CCM) spuriously re-enter
+		 * this driver's ISR and corrupt its FIFO access.
+		 */
+#if defined(CRYP_IT_INI) && defined(CRYP_IT_OUTI)
+		__HAL_CRYP_DISABLE_IT(&data->hcryp, CRYP_IT_INI | CRYP_IT_OUTI);
+#elif defined(CRYP_IT_CCFIE) && defined(CRYP_IT_ERRIE)
+		__HAL_CRYP_DISABLE_IT(&data->hcryp, CRYP_IT_CCFIE | CRYP_IT_ERRIE);
+#elif defined(CRYP_IT_CCFIE)
+		__HAL_CRYP_DISABLE_IT(&data->hcryp, CRYP_IT_CCFIE);
+#endif
+		__HAL_CRYP_DISABLE(&data->hcryp);
+		data->hcryp.State = HAL_CRYP_STATE_READY;
+		__HAL_UNLOCK(&data->hcryp);
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* STM32_CRYP_USE_ISR */
 #endif
 
 static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
@@ -202,7 +276,14 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
+#if defined(STM32_CRYP_USE_ISR)
+	ret = do_aes_it(ctx, hal_encrypt_it, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	if (ret != 0) {
+		ret = do_aes(ctx, hal_ecb_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	}
+#else
 	ret = do_aes(ctx, hal_ecb_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+#endif /* STM32_CRYP_USE_ISR */
 
 	k_sem_give(&data->device_sem);
 
@@ -229,7 +310,14 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
+#if defined(STM32_CRYP_USE_ISR)
+	ret = do_aes_it(ctx, hal_decrypt_it, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	if (ret != 0) {
+		ret = do_aes(ctx, hal_ecb_decrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	}
+#else
 	ret = do_aes(ctx, hal_ecb_decrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+#endif /* STM32_CRYP_USE_ISR */
 
 	k_sem_give(&data->device_sem);
 
@@ -261,7 +349,15 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
+#if defined(STM32_CRYP_USE_ISR)
+	ret = do_aes_it(ctx, hal_encrypt_it, pkt->in_buf, pkt->in_len, pkt->out_buf + out_offset);
+	if (ret != 0) {
+		ret = do_aes(ctx, hal_cbc_encrypt_op, pkt->in_buf, pkt->in_len,
+			     pkt->out_buf + out_offset);
+	}
+#else
 	ret = do_aes(ctx, hal_cbc_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf + out_offset);
+#endif /* STM32_CRYP_USE_ISR */
 
 	k_sem_give(&data->device_sem);
 
@@ -291,7 +387,15 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
+#if defined(STM32_CRYP_USE_ISR)
+	ret = do_aes_it(ctx, hal_decrypt_it, pkt->in_buf + in_offset, pkt->in_len, pkt->out_buf);
+	if (ret != 0) {
+		ret = do_aes(ctx, hal_cbc_decrypt_op, pkt->in_buf + in_offset, pkt->in_len,
+			     pkt->out_buf);
+	}
+#else
 	ret = do_aes(ctx, hal_cbc_decrypt_op, pkt->in_buf + in_offset, pkt->in_len, pkt->out_buf);
+#endif /* STM32_CRYP_USE_ISR */
 
 	k_sem_give(&data->device_sem);
 
@@ -319,7 +423,14 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
+#if defined(STM32_CRYP_USE_ISR)
+	ret = do_aes_it(ctx, hal_encrypt_it, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	if (ret != 0) {
+		ret = do_aes(ctx, hal_ctr_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	}
+#else
 	ret = do_aes(ctx, hal_ctr_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+#endif /* STM32_CRYP_USE_ISR */
 
 	k_sem_give(&data->device_sem);
 
@@ -347,7 +458,14 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
+#if defined(STM32_CRYP_USE_ISR)
+	ret = do_aes_it(ctx, hal_decrypt_it, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	if (ret != 0) {
+		ret = do_aes(ctx, hal_ctr_decrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	}
+#else
 	ret = do_aes(ctx, hal_ctr_decrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+#endif /* STM32_CRYP_USE_ISR */
 
 	k_sem_give(&data->device_sem);
 
@@ -472,6 +590,7 @@ static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 		return -EIO;
 	}
 
+	/* Initial counter block J0 = nonce || 0^31 || 1; the payload starts at J0+1. */
 	iv[3] = 2U;
 
 	session->config.pInitVect = CAST_VEC(iv);
@@ -1025,6 +1144,14 @@ static int crypto_stm32_init(const struct device *dev)
 	k_sem_init(&data->device_sem, 1, 1);
 	k_sem_init(&data->session_sem, 1, 1);
 
+#if defined(STM32_CRYP_USE_ISR)
+	k_sem_init(&data->complete_sem, 0, 1);
+
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), stm32_cryp_isr,
+		    DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQN(0));
+#endif /* STM32_CRYP_USE_ISR */
+
 	if (HAL_CRYP_DeInit(&data->hcryp) != HAL_OK) {
 		LOG_ERR("Peripheral reset error");
 		return -EIO;
@@ -1045,6 +1172,27 @@ static struct crypto_stm32_data crypto_stm32_dev_data = {
 		.Instance = (STM32_CRYPTO_TYPEDEF *)DT_INST_REG_ADDR(0),
 	}
 };
+
+#if defined(STM32_CRYP_USE_ISR)
+static void stm32_cryp_isr(const struct device *dev)
+{
+	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
+
+	HAL_CRYP_IRQHandler(&data->hcryp);
+}
+
+void HAL_CRYP_OutCpltCallback(CRYP_HandleTypeDef *hcryp)
+{
+	ARG_UNUSED(hcryp);
+	k_sem_give(&crypto_stm32_dev_data.complete_sem);
+}
+
+void HAL_CRYP_ErrorCallback(CRYP_HandleTypeDef *hcryp)
+{
+	ARG_UNUSED(hcryp);
+	k_sem_give(&crypto_stm32_dev_data.complete_sem);
+}
+#endif /* STM32_CRYP_USE_ISR */
 
 static const struct crypto_stm32_config crypto_stm32_dev_config = {
 	.reset = RESET_DT_SPEC_INST_GET(0),
