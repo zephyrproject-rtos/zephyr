@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * PWM_NODE   - TC peripheral label (e.g. tc0)
+ * PWM_PINCTRL - pinctrl state label (e.g. tc0_pwm_default)
+ * Both must be defined by the including overlay.
+ */
+
+/ {
+	aliases {
+		pwm-test = &PWM_NODE;
+	};
+};
+
+&tcc0 {
+	status = "disabled";
+};
+
+&PWM_NODE {
+	compatible = "microchip,tc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&PWM_PINCTRL>;
+	pinctrl-names = "default";
+	max-bit-width = <16>;
+	prescaler = <256>;
+	status = "okay";
+};
