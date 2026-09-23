@@ -983,6 +983,10 @@ static int exec_cmd(const struct shell *sh, size_t argc, const char **argv, size
 		     (SHELL_CMD_FLAG_REMOTE_ROOT | SHELL_CMD_FLAG_REMOTE_SUBCMD))) {
 			ret_val = z_shell_remote_cmd_exec(sh, &sh->ctx->active_cmd,
 							  argc, argv, cmd_lvl);
+			if (ret_val < 0) {
+				z_shell_fprintf(sh, SHELL_ERROR,
+						"Failed to execute remote command: %d\n", ret_val);
+			}
 		} else {
 			ret_val = sh->ctx->active_cmd.handler(sh, cmd_argc, cmd_argv);
 		}
