@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&dma1 {
-	status = "okay";
-};
-
-&dmamux1 {
-	status = "okay";
-};
-
 &mco1 {
 	clocks = <&rcc STM32_SRC_SYSCLK MCO1_SEL(MCO_SEL_SYSCLK)>;
 	prescaler = <MCO1_PRE(MCO_PRE_DIV_4)>;
