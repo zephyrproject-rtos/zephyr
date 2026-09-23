@@ -1116,7 +1116,7 @@ struct bt_gatt_ccc_managed_user_data {
 	/** Configuration for each connection */
 	struct bt_gatt_ccc_cfg cfg[BT_GATT_CCC_MAX];
 
-	/** Highest value of all connected peer's subscriptions */
+	/** Highest value of all connected peer's subscriptions, Reserved bits excluded */
 	uint16_t value;
 
 	/** @brief CCC attribute changed callback
