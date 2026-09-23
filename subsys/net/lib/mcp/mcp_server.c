@@ -1521,9 +1521,9 @@ static void mcp_health_monitor_worker(void *ctx, void *arg2, void *arg3)
 
 				if (cancel_duration > CONFIG_MCP_TOOL_CANCEL_TIMEOUT_MS) {
 					LOG_ERR("Execution token %s exceeded cancellation "
-						"timeout (%lld ms). Client: %p, Worker ID %u",
+						"timeout (%lld ms). Client: %p, Worker ID %p",
 						context->execution_token, cancel_duration,
-						context->client, (uint32_t)context->worker_id);
+						context->client, context->worker_id);
 				}
 				continue;
 			}
@@ -1538,9 +1538,9 @@ static void mcp_health_monitor_worker(void *ctx, void *arg2, void *arg3)
 				struct mcp_transport_message tx_msg;
 
 				LOG_WRN("Execution token %s exceeded execution timeout "
-					"(%lld ms). Client: %p, Worker ID %u",
+					"(%lld ms). Client: %p, Worker ID %p",
 					context->execution_token, execution_duration,
-					context->client, (uint32_t)context->worker_id);
+					context->client, context->worker_id);
 				/* Allocate notification params structure */
 				params = (struct mcp_params_notif_cancelled *)mcp_alloc(
 					sizeof(struct mcp_params_notif_cancelled));
@@ -1608,9 +1608,9 @@ static void mcp_health_monitor_worker(void *ctx, void *arg2, void *arg3)
 					struct mcp_transport_message tx_msg;
 
 					LOG_WRN("Execution token %s exceeded idle timeout "
-						"(%lld ms). Client: %p, Worker ID %u",
+						"(%lld ms). Client: %p, Worker ID %p",
 						context->execution_token, idle_duration,
-						context->client, (uint32_t)context->worker_id);
+						context->client, context->worker_id);
 
 					/* Allocate notification params structure */
 					params = (struct mcp_params_notif_cancelled *)mcp_alloc(
