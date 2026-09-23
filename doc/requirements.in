@@ -12,7 +12,6 @@ sphinx-design
 sphinx-togglebutton
 sphinx-sitemap
 sphinx-autobuild
-sphinxcontrib.programoutput
 sphinxcontrib.mermaid
 
 # YAML validation. Used by zephyr_module.
