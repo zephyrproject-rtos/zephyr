@@ -1522,6 +1522,13 @@ STM32
   is present in Devicetree with value ``"none"`` or ``"full-disconnect"``. Refer to the migration
   guide entry related to this binding for more details. (:github:`104690` / :github:`108294`)
 
+* The STM32MP13 SoC DTSI files have been split per part number so that crypto peripherals (the
+  ``hash`` node) are only described on the variants that provide them. Board device trees must now
+  include the DTSI matching their exact SoC part number instead of the generic
+  ``stm32mp135.dtsi``. For example, ``stm32mp135f_dk`` now includes
+  ``<st/mp13/stm32mp135f.dtsi>`` instead of ``<st/mp13/stm32mp135.dtsi>``. Out-of-tree boards
+  based on an STM32MP13 SoC must update their ``#include`` accordingly. (:github:`120085`)
+
 * SoC DTSI files now consistently use interrupt priority zero for all peripherals.
   Applications must now explicitly configure interrupt priorities using Devicetree
   if they previously relied on the values found in SoC DTSI files. (:github:`106188`)
