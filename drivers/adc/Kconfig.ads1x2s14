@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADS1X2S14
+	bool "Texas Instruments ADS112S14/ADS122S14 ADC driver"
+	default y
+	depends on DT_HAS_TI_ADS112S14_ENABLED || DT_HAS_TI_ADS122S14_ENABLED
+	select SPI
+	select ADC_CONFIGURABLE_INPUTS
+	select ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	help
+	  Enable the driver for the Texas Instruments ADS112S14 (16-bit) and
+	  ADS122S14 (24-bit) delta-sigma ADCs with eight multiplexed analog
+	  inputs, PGA, internal voltage reference and two excitation current
+	  sources, connected via SPI.

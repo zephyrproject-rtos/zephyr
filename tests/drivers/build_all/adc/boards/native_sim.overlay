@@ -625,6 +625,47 @@
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 			};
+
+			test_spi_ads112s14: ads112s14@33 {
+				compatible = "ti,ads112s14";
+				reg = <0x33>;
+				spi-max-frequency = <1000000>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				idac1-current-microamp = <100>;
+				idac2-current-microamp = <100>;
+
+				channel@0 {
+					reg = <0>;
+					zephyr,gain = "ADC_GAIN_1";
+					zephyr,reference = "ADC_REF_INTERNAL";
+					zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+					zephyr,differential;
+					zephyr,input-positive = <0>;
+					zephyr,input-negative = <1>;
+					zephyr,current-source-pin = [02 03];
+				};
+			};
+
+			test_spi_ads122s14: ads122s14@34 {
+				compatible = "ti,ads122s14";
+				reg = <0x34>;
+				spi-max-frequency = <1000000>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				internal-reference-mv = <2500>;
+				global-chop;
+
+				channel@0 {
+					reg = <0>;
+					zephyr,gain = "ADC_GAIN_16";
+					zephyr,reference = "ADC_REF_INTERNAL";
+					zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+					zephyr,input-positive = <2>;
+				};
+			};
 		};
 	};
 };
