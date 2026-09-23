@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NPCX Host Sub-Module - Power Management (PM) channel.
+  Used for host I/O and host command channels.
+
+compatible: "nuvoton,npcx-host-pm-channel"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    description: Clock configuration for the PM channel module.
+
+  interrupts:
+    description: |
+      Optional interrupts for the PM channel. The primary channel provides
+      "pmch_ibf" (Input Buffer Full) and "pmch_obe" (Output Buffer Empty).
+
+  interrupt-names:
+    description: |
+      Names for the PM channel interrupts: "pmch_ibf" and/or "pmch_obe".
+
+  ldn:
+    type: int
+    required: true
+    description: |
+      Logical Device Number for this PM channel.
+
+  host-io-data-addr:
+    type: int
+    description: |
+      Host I/O data port address for this PM channel.
+
+  host-io-cmd-addr:
+    type: int
+    description: |
+      Host I/O command/status port address for this PM channel.

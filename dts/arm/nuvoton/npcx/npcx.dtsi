@@ -402,6 +402,91 @@
 				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
 		};
 
+		host_sub_v2: host-sub-v2@400c1000 {
+			compatible = "nuvoton,npcx-host-sub-v2";
+			/* host sub-module register address & size */
+			reg = <0x400c1000 0x2000
+			       0x4000e000 0x2000>;
+			reg-names = "mswc", "c2h";
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* WUI map for accessing host sub-modules */
+			host-acc-wui = <&wui_host_acc>;
+
+			status = "disabled";
+
+			shm: shm@40010000 {
+				compatible = "nuvoton,npcx-host-shm";
+				reg = <0x40010000 0x2000>;
+				interrupts = <24 4>;
+				interrupt-names = "shm";
+				ldn = <0x0f>;
+				status = "disabled";
+
+				dp80: dp80 {
+					compatible = "nuvoton,npcx-host-dp80";
+					clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>;
+					interrupts = <6 4>;
+					interrupt-names = "dp80_fifo";
+					status = "disabled";
+				};
+			};
+
+			kbc: kbc@400c7000 {
+				compatible = "nuvoton,npcx-host-kbc";
+				reg = <0x400c7000 0x2000>;
+				interrupts = <25 4>, /* KBC Input-Buf-Full */
+					     <56 4>; /* KBC Output-Buf-Empty */
+				interrupt-names = "kbc_ibf", "kbc_obe";
+				/* ldn[0] = mouse (LDN 5), ldn[1] = keyboard (LDN 6) */
+				ldn = <0x5>, <0x6>;
+				status = "disabled";
+			};
+
+			pm_group: pm-group {
+				compatible = "nuvoton,npcx-host-pm-ch-group";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				interrupts = <26 4>, /* PMCH Input-Buf-Full */
+					     <3 4>;  /* PMCH Output-Buf-Empty */
+				interrupt-names = "pmch_ibf", "pmch_obe";
+
+				pm_ch1: pm-ch1@400c9000 {
+					compatible = "nuvoton,npcx-host-pm-channel";
+					reg = <0x400c9000 0x2000>;
+					ldn = <0x11>;
+					status = "disabled";
+				};
+
+				pm_ch2: pm-ch2@400cb000 {
+					compatible = "nuvoton,npcx-host-pm-channel";
+					reg = <0x400cb000 0x2000>;
+					ldn = <0x12>;
+					status = "disabled";
+				};
+
+				pm_ch3: pm-ch3@400cd000 {
+					compatible = "nuvoton,npcx-host-pm-channel";
+					reg = <0x400cd000 0x2000>;
+					ldn = <0x17>;
+					status = "disabled";
+				};
+
+				pm_ch4: pm-ch4@400cf000 {
+					compatible = "nuvoton,npcx-host-pm-channel";
+					reg = <0x400cf000 0x2000>;
+					ldn = <0x1e>;
+					status = "disabled";
+				};
+			};
+		};
+
 		tach1: tach@400e1000 {
 			compatible = "nuvoton,npcx-tach";
 			reg = <0x400e1000 0x2000>;
