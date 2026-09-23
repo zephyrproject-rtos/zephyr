@@ -523,6 +523,28 @@ ZTEST(bt_id_public_api, test_delete_errors_and_empty_slot)
 		      "Deleting the tail identity did not shrink identity count");
 }
 
+ZTEST(bt_id_public_api, test_oob_rejects_invalid_identity)
+{
+	bt_addr_le_t addr1 = test_addr(2U);
+	bt_addr_le_t addr2 = test_addr(3U);
+	struct bt_le_oob oob = {0};
+	uint8_t first_unused_id = (uint8_t)identity_count();
+	int id1;
+	int id2;
+
+	zassert_equal(bt_le_oob_get_local(first_unused_id, &oob), -EINVAL,
+		      "First unused identity handle was accepted for OOB lookup");
+
+	id1 = bt_id_create(&addr1, NULL);
+	id2 = bt_id_create(&addr2, NULL);
+	zassert_equal(id1, 1, "Unexpected first secondary identity id");
+	zassert_equal(id2, 2, "Unexpected second secondary identity id");
+
+	zassert_ok(bt_id_delete((uint8_t)id1), "Failed to delete non-tail identity");
+	zassert_equal(bt_le_oob_get_local((uint8_t)id1, &oob), -EINVAL,
+		      "Deleted identity handle was accepted for OOB lookup");
+}
+
 #if defined(CONFIG_BT_PRIVACY)
 static bool is_zero_irk(const uint8_t *irk)
 {
