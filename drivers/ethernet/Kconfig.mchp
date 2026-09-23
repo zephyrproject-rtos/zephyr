@@ -106,6 +106,20 @@ config ETH_MCHP_GMAC_G2_TX_ZEROCOPY
 	  to be sized for the fragment count rather than the frame count.
 	  Packet data has to be in memory the MAC can reach.
 
+config ETH_MCHP_GMAC_G2_TX_INT_MODERATION
+	int "Transmit interrupt moderation, in 800 ns units"
+	default 0
+	range 0 255
+	help
+	  How long the MAC holds back the transmit-complete interrupt after a
+	  frame has gone, so that one interrupt reclaims several frames. 0
+	  interrupts once per frame.
+
+	  Worth setting only where the transmitter runs near line rate and the
+	  processor is short: 50, 40 us, reclaims about four full-size frames
+	  per interrupt at gigabit. The transmit ring has to hold more frames
+	  than go out in that time, or the sender waits for the interrupt.
+
 config ETH_MCHP_GMAC_G2_RX_THREAD_STACK_SIZE
 	int "Receive thread stack size"
 	default 1536

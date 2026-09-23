@@ -949,6 +949,8 @@ static int eth_g2_init(const struct device *dev)
 	regs->ETH_DCFGR = ETH_DCFGR_FBLDO(4) | ETH_DCFGR_RXBMS(3) | ETH_DCFGR_TXPBMS_Msk |
 			  ETH_DCFGR_TXCOEN_Msk | ETH_DCFGR_DRBS(ETH_G2_BUF_SIZE / 64U);
 
+	regs->ETH_INTMOD = ETH_INTMOD_TXINTMOD(CONFIG_ETH_MCHP_GMAC_G2_TX_INT_MODERATION);
+
 	/* Every multicast frame passes the hash filter; the stack sorts them out. */
 	regs->ETH_HRB = UINT32_MAX;
 	regs->ETH_HRT = UINT32_MAX;
