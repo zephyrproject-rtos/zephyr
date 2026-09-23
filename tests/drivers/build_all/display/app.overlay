@@ -539,6 +539,16 @@
 
 				status = "okay";
 			};
+
+			test_mipi_dbi_pcd8544: pcd8544@2a {
+				compatible = "philips,pcd8544";
+				reg = <0x2a>;
+				mipi-max-frequency = <4000000>;
+				width = <84>;
+				height = <48>;
+				bias = <3>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
