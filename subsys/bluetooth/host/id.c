@@ -2221,7 +2221,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 		return -EAGAIN;
 	}
 
-	if (id >= CONFIG_BT_ID_MAX) {
+	if (id >= bt_dev.id_count || bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
 		return -EINVAL;
 	}
 
