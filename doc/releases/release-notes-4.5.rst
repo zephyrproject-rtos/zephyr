@@ -801,6 +801,11 @@ New APIs and options
     :kconfig:option:`CONFIG_SNTP` alone, both share
     :kconfig:option:`CONFIG_SNTP_LIB`.
 
+* POSIX
+
+  * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_NETAPP`, a Zephyr-specific subprofile with the
+    features of PSE52 plus the networking interfaces of PSE53, without multi-process support.
+
 * Power Management
 
   * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_GET`
