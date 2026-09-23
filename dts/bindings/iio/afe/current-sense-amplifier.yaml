@@ -12,7 +12,7 @@ description: |
 
 compatible: "current-sense-amplifier"
 
-include: base.yaml
+include: sensor-device.yaml
 
 properties:
   io-channels:

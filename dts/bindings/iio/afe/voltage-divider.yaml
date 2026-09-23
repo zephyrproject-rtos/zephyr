@@ -9,4 +9,4 @@ description: |
 
 compatible: "voltage-divider"
 
-include: voltage-divider-common.yaml
+include: [voltage-divider-common.yaml, sensor-device.yaml]
