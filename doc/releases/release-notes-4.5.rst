@@ -464,6 +464,12 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* POSIX
+
+  * :kconfig:option:`CONFIG_POSIX_API` was deprecated. Select a POSIX subprofile such as
+    :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51` and the required Option Groups instead. See
+    :ref:`POSIX Configuration<posix_config>` for more details.
+
 * SPI
 
   * The SPI API now uses inclusive terminology (controller/peripheral, SDO/SDI). The former

@@ -2760,6 +2760,16 @@ POSIX
 * ``CONFIG_POSIX_READER_WRITER_LOCKS`` has been removed. Use
   :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
 
+* :kconfig:option:`CONFIG_POSIX_API` is deprecated. It is equivalent to
+  :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51` with :kconfig:option:`CONFIG_POSIX_NETWORKING`,
+  :kconfig:option:`CONFIG_POSIX_FD_MGMT`, :kconfig:option:`CONFIG_POSIX_MULTI_PROCESS`,
+  :kconfig:option:`CONFIG_XSI_SINGLE_PROCESS` and :kconfig:option:`CONFIG_EVENTFD`. Applications
+  should select a subprofile (:kconfig:option:`CONFIG_POSIX_AEP_CHOICE_BASE`,
+  :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51`, :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE52`
+  or :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE53`) and the Option Groups they use. Libraries
+  should depend on :kconfig:option:`CONFIG_POSIX_SYSTEM_INTERFACES` and the Option Groups they
+  need instead of :kconfig:option:`CONFIG_POSIX_API`. See :ref:`posix_config`.
+
 Random
 ======
 
