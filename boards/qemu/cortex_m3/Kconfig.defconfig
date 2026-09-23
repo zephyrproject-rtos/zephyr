@@ -11,7 +11,6 @@ configdefault QEMU_ICOUNT_SHIFT
 
 # DWT is not properly emulated in QEMU
 choice NULL_POINTER_EXCEPTION_DETECTION
-	bool
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE
 endchoice
 
@@ -20,7 +19,6 @@ endchoice
 # provided with a true random number generator which is required to properly
 # initialize the PSA Crypto core, so we need to enable the fake TEST_RANDOM_GENERATOR.
 config TEST_RANDOM_GENERATOR
-	bool
 	default y if BT
 
 endif # BOARD_QEMU_CORTEX_M3
