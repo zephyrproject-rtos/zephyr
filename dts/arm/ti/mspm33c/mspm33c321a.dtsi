@@ -18,3 +18,13 @@
 	reg = <0x10000000 DT_SIZE_K(1024)>;
 	ranges = <0x0 0x10000000 DT_SIZE_K(1024)>;
 };
+
+&dma0 {
+	dma-channels = <4>;
+	ti,num-full-channels = <2>;
+};
+
+&dma1 {
+	dma-channels = <12>;
+	ti,num-full-channels = <6>;
+};

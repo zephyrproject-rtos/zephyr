@@ -6,7 +6,19 @@ config ADC_MSPM0_ADC12
 	bool "TI ADC MSPM0 driver"
 	default y
 	depends on DT_HAS_TI_MSPM0_ADC12_ENABLED
-	select USE_MSPM0_DL_ADC
 	select PINCTRL
 	help
 	  Enable support for ADC12 on the TI MSPM0 series.
+
+if ADC_MSPM0_ADC12
+
+config ADC_MSPM0_ADC12_DMA
+	bool "TI MSPM0 ADC12 DMA support"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_MSPM0_ADC12),dmas)
+	select DMA
+	help
+	  Offload ADC12 result transfers to DMA instead of CPU interrupt handler.
+	  This is only used to guard the DMA code, actual DMA depends on whether the instance has
+	  the dmas property in their devicetree node or not.
+
+endif # ADC_MSPM0_ADC12
