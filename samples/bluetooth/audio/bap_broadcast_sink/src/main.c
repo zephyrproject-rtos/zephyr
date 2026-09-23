@@ -39,6 +39,7 @@
 #include "stream_rx.h"
 #include "usb.h"
 #include "hw_codec.h"
+#include "mpipe_audio.h"
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 	     "Either SCAN_SELF or SCAN_OFFLOAD must be enabled");
@@ -204,7 +205,14 @@ static void stream_stopped_cb(struct bt_bap_stream *bap_stream, uint8_t reason)
 		printk("Failed to take sem_stream_started: %d\n", err);
 	}
 
-	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
+	/*
+	 * For the mpipe path, hw_codec_close() is called from
+	 * mpipe_audio_stop() when the last stream stops, so closing it here
+	 * would shut down the codec while the second BIS is still streaming.
+	 * The non-mpipe path has no such mechanism, so it closes per stream.
+	 */
+	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT) &&
+	    !IS_ENABLED(CONFIG_BAP_SINK_AUDIO_PATH_MPIPE)) {
 		err = hw_codec_close();
 		if (err != 0) {
 			printk("Audio codec close failed (err %d)\n", err);
@@ -1091,6 +1099,7 @@ static uint8_t get_stream_count(uint32_t bitfield)
 		if ((bitfield & BIT(i)) != 0) {
 			count++;
 		}
+
 	}
 
 	return count;
@@ -1344,6 +1353,16 @@ wait_for_pa_sync:
 
 		printk("Syncing to broadcast with bitfield: 0x%08x, stream_count = %u\n",
 		       sync_bitfield, stream_count);
+
+
+		/*
+		 * Inform the mpipe audio path of the channel count before any
+		 * stream starts. The I2S block size and the number of LC3
+		 * decoders are both derived from this value; setting it here
+		 * ensures the production rate equals the SAI consumption rate
+		 * regardless of whether one or two BIS streams are synced.
+		 */
+		mpipe_audio_set_channels(stream_count);
 
 		err = bt_bap_broadcast_sink_sync(broadcast_sink, sync_bitfield, bap_streams_p,
 						 sink_broadcast_code);

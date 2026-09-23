@@ -15,6 +15,15 @@ if(CONFIG_USE_CODEC_AUDIO_OUTPUT)
   target_sources(app PRIVATE src/hw_codec.c)
 endif()
 
+if(CONFIG_USE_I2S_CODEC_TRANSPORT)
+  target_sources(app PRIVATE
+    src/hw_codec_i2s.c
+    src/i2s_play.c
+  )
+endif()
+
+target_sources_ifdef(CONFIG_BAP_SINK_AUDIO_PATH_MPIPE app PRIVATE src/mpipe_audio.c)
+
 if(CONFIG_USE_USB_AUDIO_OUTPUT)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
   target_sources(app PRIVATE src/usb.c)
