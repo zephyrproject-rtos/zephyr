@@ -551,7 +551,7 @@ int net_ipv4_table_rule_add(struct net_iptable_rule_params *param)
 	rule->reply_timeout = param->reply_timeout;
 
 	iptable_rule_list_insert(rule);
-	return 0;
+	return rule->idx;
 }
 
 void net_ipv4_table_rule_del(int idx)
