@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SPARKFUN_REDBOARD_ARTEMIS
+
+config USE_DT_CODE_PARTITION
+	default y
+
+config FLASH_LOAD_OFFSET
+	default 0x10000
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if AMBIQ_STIMER_TIMER
+	default 48000000 if CORTEX_M_SYSTICK
+
+endif # BOARD_SPARKFUN_REDBOARD_ARTEMIS
