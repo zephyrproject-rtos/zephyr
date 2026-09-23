@@ -58,6 +58,10 @@ extern "C" {
  *    take care of selecting the correct heap (thus memory region) to carve
  *    memory from, based on the opaque parameter and the runtime state of the
  *    heaps (available memory, heap state, etc...)
+ *
+ * The allocation functions of this interface are safe to call from any
+ * thread and from ISRs. Regions are added at initialization time, from a
+ * single context.
  */
 
 /**
