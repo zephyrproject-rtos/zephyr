@@ -204,6 +204,34 @@
 			status = "okay";
 		};
 
+		ipi0: ipi@500e5010 {
+			compatible = "espressif,crosscore-interrupt";
+			reg = <0x500e5010 0x4>;
+			interrupts = <FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+		};
+
+		ipi1: ipi@500e5014 {
+			compatible = "espressif,crosscore-interrupt";
+			reg = <0x500e5014 0x4>;
+			interrupts = <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+		};
+
+		ipi2: ipi@500e5018 {
+			compatible = "espressif,crosscore-interrupt";
+			reg = <0x500e5018 0x4>;
+			interrupts = <FROM_CPU_INTR2_SOURCE 3 0>;
+			interrupt-parent = <&intc>;
+		};
+
+		ipi3: ipi@500e501c {
+			compatible = "espressif,crosscore-interrupt";
+			reg = <0x500e501c 0x4>;
+			interrupts = <FROM_CPU_INTR3_SOURCE 3 0>;
+			interrupt-parent = <&intc>;
+		};
+
 		systimer0: systimer@500e2000 {
 			compatible = "espressif,esp32-systimer";
 			reg = <0x500e2000 DT_SIZE_K(4)>;

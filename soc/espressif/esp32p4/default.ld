@@ -415,6 +415,11 @@ SECTIONS
     /* [mapping:soc] */
     *libzephyr.a:lldesc.*(.literal .literal.* .text .text.*)
 
+    /* SMP IPI and stall paths, with the esprv_int_* helpers they call, placed in IRAM. */
+    *libzephyr.a:esp32p4_smp.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_mp_stall.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:interrupt_clic.*(.literal .text .literal.* .text.*)
+
     /* [mapping:log] */
 
     /* [mapping:spi_flash] */
@@ -651,6 +656,10 @@ SECTIONS
 
     /* [mapping:soc] */
     *libzephyr.a:lldesc.*(.rodata .rodata.* .srodata .srodata.*)
+
+    /* SMP support rodata placed in DRAM. */
+    *libzephyr.a:esp32p4_smp.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_mp_stall.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:log] */
 

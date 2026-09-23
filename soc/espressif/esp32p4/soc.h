@@ -14,6 +14,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <esp_attr.h>
+#include <esp_cpu.h>
 #include <esp_private/esp_clk.h>
 #endif
 
@@ -30,10 +31,11 @@
 
 void __esp_platform_mcuboot_start(void);
 void __esp_platform_app_start(void);
+void esp_core_intr_matrix_clear(void);
 
 static inline uint32_t esp_core_id(void)
 {
-	return 0;
+	return (uint32_t)esp_cpu_get_core_id();
 }
 
 extern int esp_rom_gpio_matrix_in(uint32_t gpio, uint32_t signal_index, bool inverted);

@@ -41,6 +41,16 @@ config MAIN_STACK_SIZE
 config ISR_STACK_SIZE
 	default 4096
 
+if SMP
+
+config MP_MAX_NUM_CPUS
+	default 2
+
+config SCHED_CPU_MASK
+	default y
+
+endif # SMP
+
 endif # SOC_ESP32P4_HPCORE
 
 if SOC_ESP32P4_LPCORE
