@@ -605,6 +605,14 @@ ZTEST(llext, test_find_section)
 	uintptr_t symbol_ptr = (uintptr_t)llext_find_sym(&ext->exp_tab, "number");
 	uintptr_t section_ptr = (uintptr_t)find_section_ext + section_ofs;
 
+	if (ext->mem_on_heap[LLEXT_MEM_DATA]) {
+		const void *data_region;
+
+		res = llext_get_region_info(loader, ext, LLEXT_MEM_DATA, NULL, &data_region, NULL);
+		zassert_ok(res, "get_region_info() should succeed");
+		section_ptr = (uintptr_t)data_region;
+	}
+
 	/*
 	 * FIXME on RISC-V, at least for GCC, the symbols aren't always at the beginning
 	 * of the section when CONFIG_LLEXT_TYPE_ELF_OBJECT is used, breaking this assertion.
