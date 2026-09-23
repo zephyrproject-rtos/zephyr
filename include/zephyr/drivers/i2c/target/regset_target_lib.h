@@ -16,12 +16,16 @@
 #include <sys/types.h>
 
 /**
- * @brief Define the application callback handler function signature
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param user_data Optional user data provided when callback is set.
+ * @brief Register set library internal APIs.
  */
-typedef void (*regset_target_lib_changed_handler_t)(const struct device *dev, void *user_data);
+struct regset_target_lib_api {
+	/**
+	 * @brief Callback invoked when the register set content has changed.
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 */
+	void (*changed)(const struct device *dev);
+};
 
 /**
  * @brief Register set library config
@@ -34,8 +38,6 @@ struct regset_target_lib_data {
 	struct i2c_target_config config;
 	uint32_t buffer_idx;
 	uint32_t idx_write_cnt;
-	regset_target_lib_changed_handler_t changed_handler;
-	void *changed_handler_data;
 	bool changed;
 	/** @endcond */
 };
@@ -47,6 +49,7 @@ struct regset_target_lib_data {
  */
 struct regset_target_lib_config {
 	/** @cond INTERNAL_HIDDEN */
+	const struct regset_target_lib_api *api;
 	struct i2c_dt_spec bus;
 	uint32_t buffer_size;
 	uint8_t *buffer;
@@ -54,17 +57,6 @@ struct regset_target_lib_config {
 	bool auto_register;
 	/** @endcond */
 };
-
-/**
- * @brief Set the regset changed callback handler
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param handler Handler to call on regset changes
- * @param user_data Optional user data passed to callback
- */
-void regset_target_lib_set_changed_callback(const struct device *dev,
-					    regset_target_lib_changed_handler_t handler,
-					    void *user_data);
 
 /**
  * @brief Get size of the register set
@@ -155,9 +147,13 @@ int regset_target_lib_init(const struct device *dev);
 
 /**
  * @brief Define the common data structure from devicetree
+ *
+ * @param node_id The devicetree node identifier.
+ * @param _api Pointer to a @ref regset_target_lib_api structure.
  */
-#define REGSET_TARGET_LIB_DT_CONFIG_INIT(node_id)		\
+#define REGSET_TARGET_LIB_DT_CONFIG_INIT(node_id, _api)		\
 {								\
+	.api = _api,						\
 	.bus = I2C_DT_SPEC_GET(node_id),			\
 	.buffer_size = DT_PROP(node_id, size),			\
 	.buffer = (uint8_t[DT_PROP(node_id, size)]) {},		\
@@ -167,8 +163,11 @@ int regset_target_lib_init(const struct device *dev);
 
 /**
  * @brief Define the common data structure from a devicetree instance
+ *
+ * @param inst Instance.
+ * @param _api Pointer to a @ref regset_target_lib_api structure.
  */
-#define REGSET_TARGET_LIB_DT_INST_CONFIG_INIT(inst) \
-	REGSET_TARGET_LIB_DT_CONFIG_INIT(DT_DRV_INST(inst))
+#define REGSET_TARGET_LIB_DT_INST_CONFIG_INIT(inst, _api) \
+	REGSET_TARGET_LIB_DT_CONFIG_INIT(DT_DRV_INST(inst), _api)
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_TARGET_REGSET_TARGET_LIB_H_ */

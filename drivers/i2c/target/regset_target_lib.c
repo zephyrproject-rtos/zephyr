@@ -11,16 +11,6 @@
 
 LOG_MODULE_REGISTER(regset, CONFIG_I2C_LOG_LEVEL);
 
-void regset_target_lib_set_changed_callback(const struct device *dev,
-					    regset_target_lib_changed_handler_t handler,
-					    void *user_data)
-{
-	struct regset_target_lib_data *data = dev->data;
-
-	data->changed_handler = handler;
-	data->changed_handler_data = user_data;
-}
-
 size_t regset_target_lib_get_size(const struct device *dev)
 {
 	const struct regset_target_lib_config *cfg = dev->config;
@@ -160,14 +150,16 @@ static int regset_target_lib_stop(struct i2c_target_config *config)
 {
 	struct regset_target_lib_data *data = CONTAINER_OF(
 			config, struct regset_target_lib_data, config);
-	regset_target_lib_changed_handler_t handler = data->changed_handler;
+	const struct device *dev = data->dev;
+	const struct regset_target_lib_config *cfg = dev->config;
+	const struct regset_target_lib_api *api = cfg->api;
 
 	LOG_DBG("i2c target: stop");
 
 	data->idx_write_cnt = 0;
 
-	if (data->changed && handler != NULL) {
-		handler(data->dev, data->changed_handler_data);
+	if (data->changed && api != NULL && api->changed != NULL) {
+		api->changed(dev);
 	}
 	data->changed = false;
 
