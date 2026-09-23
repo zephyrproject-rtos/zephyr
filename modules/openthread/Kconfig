@@ -201,6 +201,17 @@ config OPENTHREAD_CRYPTO_PSA
 	  Use PSA Crypto API as backend for cryptographic operations instead
 	  of legacy Mbed TLS.
 
+config OPENTHREAD_CRYPTO_PLATFORM_ALLOCS_CONTEXT
+	bool "Platform-allocated OpenThread crypto contexts"
+	depends on OPENTHREAD_CRYPTO_PSA
+	depends on HEAP_MEM_POOL_SIZE > 0
+	help
+	  Allocate crypto operation contexts in the platform layer instead of
+	  the OpenThread core (OPENTHREAD_CONFIG_CRYPTO_PLATFORM_ALLOCS_CONTEXT).
+	  Contexts come from the system heap (k_aligned_alloc()), so
+	  HEAP_MEM_POOL_SIZE must be large enough for the peak number of
+	  concurrent PSA operation contexts.
+
 if OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
 config OPENTHREAD_CRYPTO_PSA_CONFIG
