@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest_assert.h>
 
-#if defined(CONFIG_POSIX_API)
+#if defined(CONFIG_POSIX_NETWORKING)
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
