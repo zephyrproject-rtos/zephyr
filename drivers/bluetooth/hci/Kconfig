@@ -365,7 +365,7 @@ config BT_H4_NXP_CTLR
 	select GPIO
 	depends on BT_H4
 	select CRC
-	select BT_HCI_SETUP
+	select BT_H4_VND_OPEN
 	default y
 	depends on DT_HAS_NXP_BT_HCI_UART_ENABLED
 	help

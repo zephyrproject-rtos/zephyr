@@ -19,8 +19,8 @@
 #include <zephyr/sys/crc.h>
 
 #include <zephyr/drivers/bluetooth.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/h4.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -50,11 +50,11 @@ extern const unsigned int bt_fw_bin_len;
 static const struct device *uart_dev = DEVICE_DT_GET(DT_INST_GPARENT(0));
 
 #if !defined(CONFIG_HCI_NXP_SET_CAL_DATA)
-#define bt_nxp_set_calibration_data_annex55() 0
+#define bt_nxp_set_calibration_data_annex55(ls) 0
 #endif
 
 #if !defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
-#define bt_nxp_set_calibration_data_annex100() 0
+#define bt_nxp_set_calibration_data_annex100(ls) 0
 #endif
 
 #if DT_NODE_HAS_PROP(DT_DRV_INST(0), sdio_reset_gpios)
@@ -1351,10 +1351,11 @@ static int bt_nxp_ctlr_init(bool is_ir_req)
 
 #if defined(CONFIG_HCI_NXP_SET_CAL_DATA)
 
-static int bt_nxp_set_calibration_data_annex55(void)
+static int bt_nxp_set_calibration_data_annex55(struct bt_hci_lockstep *ls)
 {
-	int ret = 0;
+	BT_HCI_PKT_CMD_DEFINE(cmd, HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH);
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_OCF);
+	int ret;
 
 	const uint8_t hci_cal_data_annex55[HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH] = {
 #if defined(CONFIG_BT_NXP_NW612)
@@ -1444,35 +1445,25 @@ static int bt_nxp_set_calibration_data_annex55(void)
 #endif
 	};
 
-	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
-		struct net_buf *buf;
+	net_buf_simple_add_mem(&cmd, hci_cal_data_annex55, HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH);
 
-		buf = bt_hci_cmd_alloc(K_FOREVER);
-		if (buf == NULL) {
-			LOG_ERR("Unable to allocate command buffer");
-			return -ENOMEM;
-		}
-
-		net_buf_add_mem(buf, hci_cal_data_annex55, HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH);
-
-		ret = bt_hci_cmd_send_sync(opcode, buf, NULL);
-		if (ret) {
-			LOG_ERR("Failed to send set-calibration cmd (err %d)", ret);
-			return ret;
-		}
-
-		(void)k_msleep(CONFIG_BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE);
+	ret = bt_hci_lockstep_cmd_send_sync(ls, opcode, &cmd, NULL);
+	if (ret) {
+		LOG_ERR("Failed to send set-calibration cmd (err %d)", ret);
+		return ret;
 	}
 
-	return ret;
+	(void)k_msleep(CONFIG_BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE);
+
+	return 0;
 }
 #endif /*CONFIG_HCI_NXP_SET_CAL_DATA*/
 
 #if defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
 
-static int bt_nxp_set_calibration_data_annex100(void)
+static int bt_nxp_set_calibration_data_annex100(struct bt_hci_lockstep *ls)
 {
-	int ret = 0;
+	BT_HCI_PKT_CMD_DEFINE(cmd, HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH);
 	const uint8_t hci_cal_data_annex100[HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH] = {
 #if defined(CONFIG_BT_NXP_NW612)
 		0x64,                   /* Annex Type : 0x64 */
@@ -1508,51 +1499,36 @@ static int bt_nxp_set_calibration_data_annex100(void)
 	};
 
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_ANNEX100_OCF);
+	int ret;
 
-	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
-		struct net_buf *buf;
+	net_buf_simple_add_mem(&cmd, hci_cal_data_annex100,
+			       HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH);
 
-		buf = bt_hci_cmd_alloc(K_FOREVER);
-		if (buf == NULL) {
-			LOG_ERR("Unable to allocate command buffer");
-			return -ENOMEM;
-		}
-
-		net_buf_add_mem(buf, hci_cal_data_annex100,
-					HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH);
-
-		ret = bt_hci_cmd_send_sync(opcode, buf, NULL);
-		if (ret) {
-			LOG_ERR("Failed to send set-calibration cmd (err %d)", ret);
-			return ret;
-		}
+	ret = bt_hci_lockstep_cmd_send_sync(ls, opcode, &cmd, NULL);
+	if (ret) {
+		LOG_ERR("Failed to send set-calibration cmd (err %d)", ret);
+		return ret;
 	}
 
-	return ret;
+	return 0;
 }
 #endif /* defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100) */
 
 #if defined(CONFIG_HCI_NXP_CONFIG_IR)
-static int bt_nxp_configure_ir(void)
+static int bt_nxp_configure_ir(struct bt_hci_lockstep *ls)
 {
 	const uint8_t hci_configure_ir[HCI_CMD_BT_CONFIG_IR_LENGTH] = {
 		HCI_CMD_BT_CONFIG_IR_MODE,
 		HCI_CMD_BT_CONFIG_IR_PARAM
 	};
-	struct net_buf *buf;
+	BT_HCI_PKT_CMD_DEFINE(cmd, HCI_CMD_BT_CONFIG_IR_LENGTH);
 	int err;
 
 	LOG_DBG("Configuring IR");
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
-		return -ENOMEM;
-	}
+	net_buf_simple_add_mem(&cmd, hci_configure_ir, HCI_CMD_BT_CONFIG_IR_LENGTH);
 
-	net_buf_add_mem(buf, hci_configure_ir, HCI_CMD_BT_CONFIG_IR_LENGTH);
-
-	err = bt_hci_cmd_send_sync(HCI_CMD_BT_CONFIG_IR_OPCODE, buf, NULL);
+	err = bt_hci_lockstep_cmd_send_sync(ls, HCI_CMD_BT_CONFIG_IR_OPCODE, &cmd, NULL);
 	if (err) {
 		LOG_DBG("Failed to send config IR cmd (err %d)", err);
 		return err;
@@ -1696,21 +1672,14 @@ int bt_hci_transport_teardown(const struct device *dev)
 #define BT_HCI_VSC_BAUDRATE_UPDATE_LENGTH 4
 #define BT_HCI_VSC_BAUDRATE_UPDATE_OPCODE BT_OP(BT_OGF_VS, 0x09)
 
-static int bt_hci_baudrate_update(const struct device *dev, uint32_t baudrate)
+static int bt_hci_baudrate_update(struct bt_hci_lockstep *ls, uint32_t baudrate)
 {
+	BT_HCI_PKT_CMD_DEFINE(cmd, BT_HCI_VSC_BAUDRATE_UPDATE_LENGTH);
 	int err;
-	struct net_buf *buf;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		LOG_ERR("Fail to allocate buffer");
-		return -ENOBUFS;
-	}
+	net_buf_simple_add_le32(&cmd, baudrate);
 
-	/* Add new baudrate to the buffer */
-	net_buf_add_le32(buf, baudrate);
-
-	err = bt_hci_cmd_send_sync(BT_HCI_VSC_BAUDRATE_UPDATE_OPCODE, buf, NULL);
+	err = bt_hci_lockstep_cmd_send_sync(ls, BT_HCI_VSC_BAUDRATE_UPDATE_OPCODE, &cmd, NULL);
 	if (err) {
 		LOG_ERR("Fail to send baudrate update cmd");
 		return err;
@@ -1719,16 +1688,16 @@ static int bt_hci_baudrate_update(const struct device *dev, uint32_t baudrate)
 	return 0;
 }
 
-int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params)
+int bt_h4_vnd_open(const struct device *dev, const struct device *uart, struct bt_hci_lockstep *ls)
 {
 	int err;
 	uint32_t default_speed;
 	uint32_t operation_speed;
 	bool flowcontrol_of_hci;
 
-	ARG_UNUSED(params);
+	ARG_UNUSED(dev);
 
-	if (dev != uart_dev) {
+	if (uart != uart_dev) {
 		return -EINVAL;
 	}
 
@@ -1746,7 +1715,7 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	}
 
 	if (!fw_upload.is_setup_done) {
-		err = bt_hci_baudrate_update(dev, operation_speed);
+		err = bt_hci_baudrate_update(ls, operation_speed);
 		if (err) {
 			return err;
 		}
@@ -1762,20 +1731,20 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	}
 
 	if (!fw_upload.is_setup_done) {
-		err = bt_nxp_set_calibration_data_annex55();
+		err = bt_nxp_set_calibration_data_annex55(ls);
 		if (err) {
 			LOG_ERR("Fail to load annex-55 calibration data");
 			return err;
 		}
 
-		err = bt_nxp_set_calibration_data_annex100();
+		err = bt_nxp_set_calibration_data_annex100(ls);
 		if (err) {
 			LOG_ERR("Fail to load annex-100 calibration data");
 			return err;
 		}
 
 #if defined(CONFIG_HCI_NXP_CONFIG_IR)
-		err = bt_nxp_configure_ir();
+		err = bt_nxp_configure_ir(ls);
 		if (err) {
 			LOG_ERR("Fail to configure IR");
 			return err;
