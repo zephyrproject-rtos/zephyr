@@ -42,7 +42,11 @@ void check_error(void)
 	/* Check backend error if backend supports this query */
 	ret = coredump_query(COREDUMP_QUERY_GET_ERROR, NULL);
 	if (ret != -ENOTSUP) {
-		zassert_equal(ret, 0, "Error encountered! (%d)", ret);
+		if (IS_ENABLED(CONFIG_TEST_BACKEND_ERROR)) {
+			zassert_not_equal(ret, 0, "Expected a backend error");
+		} else {
+			zassert_equal(ret, 0, "Error encountered! (%d)", ret);
+		}
 	}
 }
 
