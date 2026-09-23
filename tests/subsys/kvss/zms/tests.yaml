@@ -4,6 +4,7 @@ tests:
   keyvalstorage.zms:
     platform_allow:
       - qemu_x86
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
   keyvalstorage.zms.0x00:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
     platform_allow: qemu_x86
