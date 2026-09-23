@@ -12,4 +12,8 @@
 
 &sdhci1 {
 	status = "okay";
+
+	mmc {
+		status = "okay";
+	};
 };
