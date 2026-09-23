@@ -467,6 +467,7 @@ void wiced_bt_process_hci(hci_packet_type_t pti, uint8_t *data, uint32_t length)
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < length) {
 		LOG_WRN("Not enough space for rx data");
+		net_buf_unref(buf);
 		return;
 	}
 	net_buf_add_mem(buf, data, length);
