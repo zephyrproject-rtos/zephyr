@@ -1,0 +1,15 @@
+common:
+  tags:
+    - openthread
+    - crypto
+    - psa
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+tests:
+  openthread.crypto_psa.platform_allocs_context:
+    # Slab exhaustion calls k_panic(), which logs "ZEPHYR FATAL ERROR".
+    ignore_faults: true
