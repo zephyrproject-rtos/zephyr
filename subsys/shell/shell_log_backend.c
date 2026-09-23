@@ -201,7 +201,7 @@ static void process_log_msg(const struct shell *sh,
 		if (readline_active) {
 			z_cursor_restore(sh);
 			z_clear_eos(sh);
-		} else if (!z_flag_cmd_ctx_get(sh)) {
+		} else if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass) {
 			z_shell_cmd_line_erase(sh);
 		}
 	}
@@ -217,7 +217,7 @@ static void process_log_msg(const struct shell *sh,
 			}
 			z_shell_print_cmd(sh);
 			z_shell_op_cursor_position_synchronize(sh);
-		} else if (!z_flag_cmd_ctx_get(sh)) {
+		} else if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass) {
 			z_shell_print_prompt_and_cmd(sh);
 		}
 		if (k_is_in_isr()) {
