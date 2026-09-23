@@ -1308,6 +1308,8 @@ New Drivers
   * :dtcompatible:`ti,ads1220` (:github:`102479`)
   * :dtcompatible:`ti,ads7828` (:github:`114359`)
   * :dtcompatible:`ti,ads7830` (:github:`114359`)
+  * :dtcompatible:`ti,ads8684` (:github:`120411`)
+  * :dtcompatible:`ti,ads8688` (:github:`120411`)
   * :dtcompatible:`ti,mspm0-adc12` (:github:`94736`)
   * :dtcompatible:`ti,tla2528-adc` (:github:`110722`)
 
