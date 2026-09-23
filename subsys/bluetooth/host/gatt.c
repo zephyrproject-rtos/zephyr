@@ -2828,10 +2828,11 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		struct bt_conn *conn;
 		int err;
 
-		/* Check if config value matches data type since consolidated
-		 * value may be for a different peer.
+		/* The consolidated value may be for a different peer, and the
+		 * CCC value is a bit field: a peer may have enabled both
+		 * notifications and indications, and Reserved bits are ignored.
 		 */
-		if (cfg->value != data->type) {
+		if ((cfg->value & data->type) == 0U) {
 			continue;
 		}
 
