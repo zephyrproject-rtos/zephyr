@@ -1,0 +1,89 @@
+# Copyright 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments LPF3 family low-power comparator
+
+compatible: "ti,lpf3-lpcmp"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  positive-mux-input:
+    type: string
+    enum:
+      - "VA_PAD_A1"
+      - "VA_PAD_A2"
+      - "VA_PAD_A3"
+      - "VDDS"
+    description: |
+      Positive input selection.
+      "VA_PAD_A1" routes to "DIO21_A10" in cc23xx devices
+      and "DIO19_A6" in cc27xx devices.
+      "VA_PAD_A2" routes to "DIO23_A8" in cc23xx devices
+      and "DIO20_A5" in cc27xx devices.
+      "VA_PAD_A3" routes to "DIO24_A7" in cc23xx devices
+      and "DIO21_A4" in cc27xx devices.
+      "VDDS" is the supply voltage.
+
+  negative-mux-input:
+    type: string
+    enum:
+      - "VA_PAD_A2"
+      - "VA_PAD_A3"
+      - "VDDS"
+      - "VDDD"
+    description: |
+      Negative input selection.
+      "VA_PAD_A2" routes to "DIO23_A8" in cc23xx devices
+      and "DIO20_A5" in cc27xx devices.
+      "VA_PAD_A3" routes to "DIO24_A7" in cc23xx devices
+      and "DIO21_A4" in cc27xx devices.
+      "VDDS" is the supply voltage.
+      "VDDD" is the digital domain voltage.
+
+  enable-output-pin:
+    type: boolean
+    description: |
+      Enable the comparator output at the selected pin. Note that If
+      this property is enabled, then, the last entry in the pinctrl will
+      be considered as the output pin.
+
+  input-division-factor:
+    type: string
+    enum:
+      - "VIN_1_1"
+      - "VIN_3_4"
+      - "VIN_1_2"
+      - "VIN_1_3"
+      - "VIN_1_4"
+    default: "VIN_1_1"
+    description: |
+      Division factor for the positive input or negative input
+      of the comparator.
+
+  division-input:
+    type: string
+    enum:
+      - "DIVISION_INPUT_NEGATIVE"
+      - "DIVISION_INPUT_POSITIVE"
+    default: "DIVISION_INPUT_POSITIVE"
+    description: |
+      The LPCMP allows the volatge division to be applied either to
+      the positive or negative input.
+
+  "#io-channel-cells":
+    type: int
+    const: 2
+
+io-channel-cells:
+  - positive
+  - negative

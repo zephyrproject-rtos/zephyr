@@ -94,6 +94,15 @@
 			reg = <0x40003000 0xc14>;
 		};
 
+		comparator: comparator@40004000 {
+			compatible = "ti,lpf3-lpcmp";
+			reg = <0x40004000 0x818>;
+			/* Comparator interrupt signal is mapped to IRQ1. This interrupt line
+			 * is not a dedicated interrupt line for the comparator peripheral.
+			 */
+			interrupts = <1 0>;
+		};
+
 		gpio0: gpio@40023000 {
 			compatible = "ti,cc23x0-gpio";
 			reg = <0x40023000 0x804>;
