@@ -32,10 +32,26 @@
 #define HY4245_SUBCMD_CTRL_DF_CHECKSUM        0x0004
 #define HY4245_SUBCMD_CTRL_DF_VERSION         0x000c
 #define HY4245_SUBCMD_CTRL_SET_UPD_EN         0x001f
+#define HY4245_SUBCMD_CTRL_CALIB_MODE         0x0040
+#define HY4245_SUBCMD_CTRL_RESET              0x0041
 #define HY4245_SUBCMD_CTRL_CHIPID             0x0055
 #define HY4245_SUBCMD_CTRL_FW_VERSION         0x0082
 #define HY4245_SUBCMD_CTRL_OPERATION_CFG_A    0x0098
 #define HY4245_SUBCMD_CTRL_SAFETY_STATUS      0x009d
 #define HY4245_SUBCMD_CTRL_LIFETIME_OVER_TEMP 0x00d8
+
+/* Extended commands (data flash access) */
+#define HY4245_EXTCMD_SUBCLASS         0x3e
+#define HY4245_EXTCMD_BLOCK            0x3f
+#define HY4245_EXTCMD_BLKDATA          0x40
+#define HY4245_EXTCMD_BLKDATA_CHECKSUM 0x60
+#define HY4245_EXTCMD_BLKDATA_CTRL     0x61
+
+/* Default unseal keys 0x28804288 and 0xffffffff, least significant byte first */
+#define HY4245_UNSEAL_KEY_0 0x88, 0x42, 0x80, 0x28
+#define HY4245_UNSEAL_KEY_1 0xff, 0xff, 0xff, 0xff
+
+/* Data flash subclass holding the manufacturer info blocks A, B and C */
+#define HY4245_SUBCLASS_MANUFACTURER_INFO 0x20
 
 #endif /* ZEPHYR_DRIVERS_FUEL_GAUGE_HY4245_HY4245_H_ */

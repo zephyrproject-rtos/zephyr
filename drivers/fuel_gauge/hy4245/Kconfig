@@ -9,3 +9,16 @@ config HY4245
 	select I2C
 	help
 	  Enable I2C-based driver for HY4245 Fuel Gauge.
+
+if HY4245
+
+config HY4245_RESET_SETTLE_TIME_MS
+	int "Settle time after a gauge reset in milliseconds"
+	default 2000
+	help
+	  Time the driver waits after a reset triggered through
+	  HY4245_FUEL_GAUGE_RESET or by leaving calibration mode before it
+	  returns to the caller. The gauge does not deliver valid
+	  measurements until it has restarted its algorithm.
+
+endif # HY4245

@@ -9,14 +9,25 @@
  * @file
  * @brief HYCON HY4245 fuel gauge specific properties
  *
- * Device specific fuel gauge properties of the HY4245, used with
- * fuel_gauge_get_prop() and fuel_gauge_set_prop().
+ * The HY4245 stores its battery configuration ("configuration image") and
+ * three manufacturer info blocks in an internal data flash. This header
+ * defines the device specific fuel gauge properties that give access to
+ * these features through the generic fuel gauge API:
+ *
+ * - scalar properties via fuel_gauge_get_prop() / fuel_gauge_set_prop()
+ * - buffer properties via fuel_gauge_get_buffer_prop() /
+ *   fuel_gauge_set_buffer_prop()
+ *
+ * Data flash access requires the gauge to be in calibration mode
+ * (HY4245_FUEL_GAUGE_CALIBRATION_MODE = true). Leaving calibration mode
+ * resets the gauge, which makes programmed data effective.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_FUEL_GAUGE_HY4245_H_
 #define ZEPHYR_INCLUDE_DRIVERS_FUEL_GAUGE_HY4245_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <zephyr/drivers/fuel_gauge.h>
 #include <zephyr/sys/util.h>
@@ -144,6 +155,15 @@ extern "C" {
 #define HY4245_OPERATION_CONFIG_A_UPD_EN   BIT(15)
 /** @} */
 
+/** Size of one data flash block in bytes */
+#define HY4245_DATA_FLASH_BLOCK_SIZE 32U
+
+/**
+ * Size of one configuration image element in bytes: subclass id, block id
+ * followed by one data flash block.
+ */
+#define HY4245_CONFIG_IMAGE_ELEMENT_SIZE (2U + HY4245_DATA_FLASH_BLOCK_SIZE)
+
 /**
  * @brief HY4245 specific fuel gauge properties
  *
@@ -218,6 +238,82 @@ enum hy4245_fuel_gauge_prop {
 	 * get, @c custom_uint: 16 bit version.
 	 */
 	HY4245_FUEL_GAUGE_FIRMWARE_VERSION,
+	/**
+	 * Calibration mode (data flash access session).
+	 *
+	 * set, @c custom_bool: true unseals the gauge and enters calibration
+	 * mode, false resets the gauge and waits until it is operational
+	 * again (CONFIG_HY4245_RESET_SETTLE_TIME_MS).
+	 *
+	 * get, @c custom_bool: true while the driver is in calibration mode.
+	 */
+	HY4245_FUEL_GAUGE_CALIBRATION_MODE,
+	/**
+	 * Full reset of the gauge (Control() subcommand Reset).
+	 *
+	 * set, @c custom_bool: true triggers the reset and waits until the
+	 * gauge is operational again. Leaves calibration mode.
+	 */
+	HY4245_FUEL_GAUGE_RESET,
+	/**
+	 * Single data flash block, buffer property with
+	 * struct hy4245_data_flash_block. Requires calibration mode.
+	 *
+	 * set_buffer_prop: writes @c len bytes of @c data to the start of the
+	 * block, the remaining bytes of the block are kept.
+	 *
+	 * get_buffer_prop: the caller fills @c subclass, @c block and @c len,
+	 * the driver reads the block and copies @c len bytes into @c data.
+	 */
+	HY4245_FUEL_GAUGE_DATA_FLASH_BLOCK,
+	/**
+	 * Manufacturer info block A, buffer property with up to
+	 * HY4245_DATA_FLASH_BLOCK_SIZE bytes. Requires calibration mode.
+	 *
+	 * set_buffer_prop: writes the buffer, padded with zeros to the block
+	 * size.
+	 *
+	 * get_buffer_prop: reads the first @p dst_len bytes of the block.
+	 */
+	HY4245_FUEL_GAUGE_MANUFACTURER_INFO_A,
+	/** Manufacturer info block B, see HY4245_FUEL_GAUGE_MANUFACTURER_INFO_A */
+	HY4245_FUEL_GAUGE_MANUFACTURER_INFO_B,
+	/** Manufacturer info block C, see HY4245_FUEL_GAUGE_MANUFACTURER_INFO_A */
+	HY4245_FUEL_GAUGE_MANUFACTURER_INFO_C,
+	/**
+	 * Configuration image (battery parameter file), buffer property.
+	 * Requires calibration mode.
+	 *
+	 * set_buffer_prop: programs the image into the data flash. The image
+	 * is a sequence of HY4245_CONFIG_IMAGE_ELEMENT_SIZE byte elements
+	 * (subclass, block, 32 data bytes). Elements that hold device
+	 * specific calibration data or manufacturer info block A are not
+	 * programmed, device specific bytes inside shared blocks are
+	 * preserved. The image becomes effective after leaving calibration
+	 * mode.
+	 */
+	HY4245_FUEL_GAUGE_CONFIG_IMAGE,
+	/**
+	 * Verify the data flash against a configuration image, buffer
+	 * property. Requires calibration mode.
+	 *
+	 * set_buffer_prop: reads back every programmed element of the image
+	 * and compares it with the data flash. Returns -EILSEQ on the first
+	 * mismatch.
+	 */
+	HY4245_FUEL_GAUGE_CONFIG_IMAGE_VERIFY,
+};
+
+/** Data flash block for HY4245_FUEL_GAUGE_DATA_FLASH_BLOCK */
+struct hy4245_data_flash_block {
+	/** Data flash subclass id */
+	uint8_t subclass;
+	/** Block number within the subclass */
+	uint8_t block;
+	/** Number of valid bytes in @ref data, at most HY4245_DATA_FLASH_BLOCK_SIZE */
+	uint8_t len;
+	/** Block data */
+	uint8_t data[HY4245_DATA_FLASH_BLOCK_SIZE];
 };
 
 /**
