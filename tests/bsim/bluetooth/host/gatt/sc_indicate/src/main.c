@@ -9,6 +9,7 @@
 #include "bs_bt_utils.h"
 
 extern void central(void);
+extern void central_reserved_bit(void);
 extern void peripheral(void);
 extern void central_reboot_subscribe_bond(void);
 extern void central_reboot_resubscribe(void);
@@ -23,6 +24,12 @@ static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "peripheral",
 		.test_main_f = peripheral,
+	},
+	{
+		.test_id = "central_reserved_bit",
+		.test_descr = "Same as central, subscribing to Service Changed with a Reserved "
+			      "bit set.",
+		.test_main_f = central_reserved_bit,
 	},
 	{
 		.test_id = "central_reboot_subscribe_bond",

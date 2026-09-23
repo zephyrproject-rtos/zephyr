@@ -38,6 +38,7 @@ enum GATT_HANDLES {
 static uint16_t gatt_handles[NUM_HANDLES] = {0};
 
 static struct bt_gatt_subscribe_params subscribe_params;
+static uint16_t subscribe_value = BT_GATT_CCC_INDICATE;
 
 static void sc_subscribed(struct bt_conn *conn,
 			  uint8_t err,
@@ -65,7 +66,7 @@ static void subscribe(void)
 
 	subscribe_params.ccc_handle = gatt_handles[CCC];
 	subscribe_params.value_handle = gatt_handles[SC];
-	subscribe_params.value = BT_GATT_CCC_INDICATE;
+	subscribe_params.value = subscribe_value;
 	subscribe_params.subscribe = sc_subscribed;
 	subscribe_params.notify = sc_indicated;
 
@@ -296,4 +297,15 @@ void central(void)
 	WAIT_FOR_FLAG(flag_indicated);
 
 	TEST_PASS("PASS");
+}
+
+void central_reserved_bit(void)
+{
+	/* A server ignores a Reserved bit that a client sets anyway (Core 6.3,
+	 * Vol 1, Part E, Section 2.4.1), so the subscription is still tracked
+	 * while the client is disconnected.
+	 */
+	subscribe_value = BT_GATT_CCC_INDICATE | BIT(2);
+
+	central();
 }
