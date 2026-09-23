@@ -1,15 +1,23 @@
 sample:
   name: FIDO2 Authenticator
-common:
-  depends_on:
-    - usbd
-  filter: dt_compat_enabled("zephyr,hid-device")
-  harness: console
-  harness_config:
-    type: one_line
-    regex:
-      - "FIDO2 authenticator ready"
-  integration_platforms:
-    - weact_stm32wb55_core
 tests:
-  sample.authentication.fido2: {}
+  sample.authentication.fido2:
+    depends_on:
+      - usbd
+    filter: dt_compat_enabled("zephyr,hid-device")
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "FIDO2 authenticator ready"
+    integration_platforms:
+      - weact_stm32wb55_core
+  sample.authentication.fido2.no_usb:
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_FIDO2_TRANSPORT_USB_HID=n
+      - CONFIG_FIDO2_UP_ALWAYS=y
