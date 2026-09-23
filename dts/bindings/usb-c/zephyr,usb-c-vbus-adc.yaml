@@ -7,7 +7,7 @@ description: |
 
 compatible: "zephyr,usb-c-vbus-adc"
 
-include: [base.yaml, voltage-divider.yaml]
+include: [base.yaml, voltage-divider-common.yaml]
 
 properties:
   discharge-gpios:
