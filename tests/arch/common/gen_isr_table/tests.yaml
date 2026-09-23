@@ -67,7 +67,6 @@ tests:
       - cdns_swerv/s400/pmp/whisper
       - cdns_swerv/s420/whisper
       - cdns_swerv/s420/64/whisper
-      - it8xxx2_evb
     filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
     extra_configs:
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
