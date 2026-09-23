@@ -21,4 +21,14 @@ config HY4245_RESET_SETTLE_TIME_MS
 	  returns to the caller. The gauge does not deliver valid
 	  measurements until it has restarted its algorithm.
 
+
+config EMUL_HY4245
+	bool "Emulate a HY4245 fuel gauge"
+	default y
+	depends on EMUL
+	help
+	  Emulates the I2C interface of the HY4245 including the Control()
+	  subcommands, the seal state and a small data flash, so the driver
+	  can be tested on native_sim.
+
 endif # HY4245
