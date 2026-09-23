@@ -374,6 +374,7 @@ static int udc_max32_ep_dequeue(const struct device *dev, struct udc_ep_config *
 	lock_key = irq_lock();
 
 	udc_ep_cancel_queued(dev, cfg);
+	udc_ep_set_busy(cfg, false);
 
 	irq_unlock(lock_key);
 
@@ -416,6 +417,8 @@ static int udc_max32_ep_disable(const struct device *dev, struct udc_ep_config *
 	}
 
 	ret = MXC_USB_ResetEp(USB_EP_GET_IDX(cfg->addr));
+
+	udc_ep_set_busy(cfg, false);
 
 	return ret;
 }
