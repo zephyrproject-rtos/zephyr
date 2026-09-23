@@ -4,3 +4,5 @@
 description: Arduino Modulino buttons LEDs
 
 compatible: "arduino,modulino-buttons-leds"
+
+class: led
