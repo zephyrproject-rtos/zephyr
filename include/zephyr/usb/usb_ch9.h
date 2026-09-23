@@ -15,7 +15,7 @@
 #include <zephyr/version.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/math/ilog2.h>
-#include <zephyr/usb/class/usb_hub.h>
+#include <zephyr/usb/usb_hub.h>
 
 #ifndef ZEPHYR_INCLUDE_USB_CH9_H_
 #define ZEPHYR_INCLUDE_USB_CH9_H_
@@ -503,6 +503,8 @@ struct usb_association_descriptor {
 #define USB_BCC_CDC_CONTROL		0x02
 /** HID device class. */
 #define USB_BCC_HID			0x03
+/** Hub device class. */
+#define USB_BCC_HUB			0x09
 /** Mass storage device class. */
 #define USB_BCC_MASS_STORAGE		0x08
 /** CDC data device class. */
