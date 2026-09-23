@@ -4,6 +4,8 @@ compatible: "holtek,ht16k33"
 
 include: i2c-device.yaml
 
+class: led
+
 bus: ht16k33
 
 properties:
