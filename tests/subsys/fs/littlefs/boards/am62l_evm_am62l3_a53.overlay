@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0_memory {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		small_partition: partition@0 {
+			label = "small";
+			reg = <0x00000000 DT_SIZE_M(4)>;
+		};
+
+		medium_partition: partition@400000 {
+			label = "medium";
+			reg = <0x00400000 DT_SIZE_M(4)>;
+		};
+
+		large_partition: partition@800000 {
+			label = "large";
+			reg = <0x00800000 DT_SIZE_M(8)>;
+		};
+	};
+};
