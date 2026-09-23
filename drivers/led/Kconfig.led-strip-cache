@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Simon Guinot <simon.guinot@sequanux.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_STRIP_CACHE
+	bool "LED strip cache driver"
+	default y
+	depends on DT_HAS_ZEPHYR_LED_STRIP_CACHE_ENABLED
+	help
+	  Enable this driver to support a virtual LED device bridging the LED
+	  and LED strip APIs. The driver provides a cache for one or more LED
+	  strip devices.
