@@ -439,6 +439,7 @@ static DEVICE_API(gpio, pi4ioe5v6408_api) = {
 		.pin_state =                                                                       \
 			{                                                                          \
 				.hiz = ALL_PINS,                                                   \
+				.pull_enable = ALL_PINS,                                           \
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
