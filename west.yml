@@ -23,6 +23,10 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: georgerobotics
+      # Note: personal test fork for PR draft only.
+      url-base: https://github.com/r-c-n
+      # url-base: https://github.com/georgerobotics
 
   group-filter: [-babblesim, -optional, -testing]
 
@@ -169,6 +173,15 @@ manifest:
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
       revision: 15b8a5f64cea87dcd247a2a5edd8b2ed51fa8ff4
+      groups:
+        - hal
+    - name: hal_cyw43
+      remote: georgerobotics
+      repo-path: cyw43-driver
+      path: modules/hal/cyw43
+      # Note: test revision for PR draft only.
+      revision: a06498ab18a49125f4094887398f438055c428f6
+      # revision: bed438f119cfba03f75957fceb6a5623ef95e6d9
       groups:
         - hal
     - name: hal_espressif
