@@ -34,7 +34,6 @@ struct adc_esp32_data {
 	uint8_t resolution[ADC_LL_MAX_CHANNEL_NUM];
 	adc_cali_handle_t cal_handle[ADC_LL_MAX_CHANNEL_NUM];
 	uint16_t meas_ref_internal;
-	uint16_t *buffer;
 #ifdef CONFIG_ADC_ESP32_DMA
 	adc_hal_dma_ctx_t adc_hal_dma_ctx;
 	uint8_t *dma_buffer;

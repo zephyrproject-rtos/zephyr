@@ -16,6 +16,19 @@ config BOOTLOADER_MCUBOOT
 config MAIN_STACK_SIZE
 	default 4096
 
+if SMP
+
+config MP_MAX_NUM_CPUS
+	default 2
+
+config SCHED_CPU_MASK
+	default y
+
+config ESP32_TIMER_IN_IRAM
+	default y
+
+endif # SMP
+
 if PM && TICKLESS_KERNEL
 
 choice XTENSA_TIMER_LPM_TIMER

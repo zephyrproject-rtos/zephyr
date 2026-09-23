@@ -75,6 +75,10 @@ static inline void timer_driver_set_compare(uint64_t cycles)
 	set_ccompare((uint32_t)cycles - ccount_comp());
 }
 
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+#define TIMER_CORE_COUNTER_NONMONOTONIC
+#endif
+
 #include "system_timer_generic.h"
 
 static void ccompare_isr(const void *arg)

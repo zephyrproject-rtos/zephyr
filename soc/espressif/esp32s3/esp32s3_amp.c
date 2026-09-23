@@ -21,9 +21,6 @@
 
 #define TAG "amp"
 
-/* AMP support */
-#ifdef CONFIG_SOC_ENABLE_APPCPU
-
 #include <bootloader_flash_priv.h>
 
 #define sys_mmap   bootloader_mmap
@@ -195,5 +192,3 @@ int esp_appcpu_init(void)
 extern int esp_appcpu_init(void);
 SYS_INIT(esp_appcpu_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
-
-#endif /* CONFIG_SOC_ENABLE_APPCPU */

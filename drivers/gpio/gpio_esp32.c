@@ -30,6 +30,7 @@
 #include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 
@@ -37,6 +38,8 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
+
+static struct k_spinlock gpio_esp32_lock;
 
 #ifdef CONFIG_SOC_SERIES_ESP32C2
 #define out            out.val
@@ -66,6 +69,8 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #else
 #define ESP32_CPU_ID() arch_curr_cpu()->id
 #endif
+
+static uint32_t gpio_esp32_isr_core;
 
 /*
  * On ESP32, RTC IO pads share pull-up/down/drive registers with GPIO.
@@ -105,7 +110,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev, gpio_pin_t pin,
 {
 	const struct gpio_esp32_config *const cfg = dev->config;
 	uint32_t io_pin = esp_gpio_port_pad(cfg->gpio_port, pin);
-	uint32_t key;
+	k_spinlock_key_t key;
 	bool gpio_pull;
 	bool rtcio_pull;
 	bool rtcio_wakeup;
@@ -119,7 +124,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev, gpio_pin_t pin,
 		return -EINVAL;
 	}
 
-	key = irq_lock();
+	key = k_spin_lock(&gpio_esp32_lock);
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 	if (rtc_gpio_is_valid_gpio(io_pin)) {
@@ -335,7 +340,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev, gpio_pin_t pin,
 #endif
 
 end:
-	irq_unlock(key);
+	k_spin_unlock(&gpio_esp32_lock, key);
 
 	return ret;
 }
@@ -359,7 +364,7 @@ static int gpio_esp32_port_set_masked_raw(const struct device *port, uint32_t ma
 {
 	const struct gpio_esp32_config *const cfg = port->config;
 
-	uint32_t key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&gpio_esp32_lock);
 
 	if (cfg->gpio_port == 0) {
 		cfg->gpio_dev->out = (cfg->gpio_dev->out & ~mask) | (mask & value);
@@ -369,7 +374,7 @@ static int gpio_esp32_port_set_masked_raw(const struct device *port, uint32_t ma
 #endif
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&gpio_esp32_lock, key);
 
 	return 0;
 }
@@ -407,7 +412,7 @@ static int gpio_esp32_port_clear_bits_raw(const struct device *port, uint32_t pi
 static int gpio_esp32_port_toggle_bits(const struct device *port, uint32_t pins)
 {
 	const struct gpio_esp32_config *const cfg = port->config;
-	uint32_t key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&gpio_esp32_lock);
 
 	if (cfg->gpio_port == 0) {
 		cfg->gpio_dev->out ^= pins;
@@ -417,7 +422,7 @@ static int gpio_esp32_port_toggle_bits(const struct device *port, uint32_t pins)
 #endif
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&gpio_esp32_lock, key);
 
 	return 0;
 }
@@ -466,13 +471,13 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port, gpio_pi
 	trig &= ~GPIO_INT_WAKEUP;
 
 	int intr_trig_mode = convert_int_type(mode, trig);
-	uint32_t key;
+	k_spinlock_key_t key;
 
 	if (intr_trig_mode < 0) {
 		return intr_trig_mode;
 	}
 
-	key = irq_lock();
+	key = k_spin_lock(&gpio_esp32_lock);
 
 	/* Disable interrupt before reconfiguring to avoid spurious triggers */
 	gpio_ll_intr_disable(cfg->gpio_base, io_pin);
@@ -486,9 +491,9 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port, gpio_pi
 
 	gpio_ll_set_intr_type(cfg->gpio_base, io_pin, intr_trig_mode);
 	if (intr_trig_mode != GPIO_INTR_DISABLE) {
-		gpio_ll_intr_enable_on_core(cfg->gpio_base, ESP32_CPU_ID(), io_pin);
+		gpio_ll_intr_enable_on_core(cfg->gpio_base, gpio_esp32_isr_core, io_pin);
 	}
-	irq_unlock(key);
+	k_spin_unlock(&gpio_esp32_lock, key);
 
 	return 0;
 }
@@ -636,6 +641,7 @@ static int gpio_esp32_init(const struct device *dev)
 			return ret;
 		}
 
+		gpio_esp32_isr_core = ESP32_CPU_ID();
 		isr_connected = true;
 	}
 

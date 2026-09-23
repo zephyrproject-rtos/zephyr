@@ -9,6 +9,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/irq.h>
+#include <zephyr/arch/cpu.h>
 
 #include <esp_attr.h>
 #include <esp_cpu.h>
@@ -66,6 +67,7 @@ static uint64_t lpm_entry_counter;
 static uint64_t lpm_deadline_us;
 #endif
 static uint64_t gpio_sleep_hold;
+static struct k_spinlock gpio_sleep_hold_lock;
 #if defined(SOC_RTC_SLOW_MEM_SUPPORTED) || defined(SOC_RTC_FAST_MEM_SUPPORTED)
 static RTC_DATA_ATTR uint64_t gpio_was_held;
 #else
@@ -75,7 +77,7 @@ static uint64_t gpio_was_held;
 static gpio_hal_context_t gpio_hal = {.dev = GPIO_HAL_GET_HW(GPIO_PORT_0)};
 
 #if defined(CONFIG_XTENSA)
-static uint32_t intenable;
+static uint32_t intenable[CONFIG_MP_MAX_NUM_CPUS];
 #endif
 
 static inline uint64_t lpm_counter_ticks_per_sec(void)
@@ -163,10 +165,12 @@ void esp32_sleep_gpio_hold_config(uint8_t gpio_num, bool enable)
 		return;
 	}
 
-	if (enable) {
-		gpio_sleep_hold |= (1ULL << gpio_num);
-	} else {
-		gpio_sleep_hold &= ~(1ULL << gpio_num);
+	K_SPINLOCK(&gpio_sleep_hold_lock) {
+		if (enable) {
+			gpio_sleep_hold |= (1ULL << gpio_num);
+		} else {
+			gpio_sleep_hold &= ~(1ULL << gpio_num);
+		}
 	}
 }
 
@@ -232,7 +236,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	switch (state) {
 	case PM_STATE_STANDBY:
 #if defined(CONFIG_XTENSA)
-		intenable = XTENSA_RSR("INTENABLE");
+		intenable[arch_curr_cpu()->id] = XTENSA_RSR("INTENABLE");
 #endif
 		/* Check if RTC is enabled and there's enough time for sleep.
 		 * Sleep is skipped otherwise.
@@ -295,9 +299,9 @@ void ESP32_PM_SLEEP_FN_ATTR pm_state_exit_post_ops(enum pm_state state, uint8_t 
 
 #if defined(CONFIG_RISCV)
 		rv_utils_intr_global_enable();
-		irq_unlock(0);
+		arch_irq_unlock(0);
 #elif defined(CONFIG_XTENSA)
-		z_xt_ints_on(intenable);
+		z_xt_ints_on(intenable[arch_curr_cpu()->id]);
 		/* We don't have the key used to lock interruptions here.
 		 * Just set PS.INTLEVEL to 0.
 		 */

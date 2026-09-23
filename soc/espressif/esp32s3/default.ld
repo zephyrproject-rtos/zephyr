@@ -415,7 +415,10 @@ SECTIONS
     *librtc.a:(.literal .text .literal.* .text.*)
 
     /* APPCPU_ENABLED */
-    *libzephyr.a:esp32s3-mp.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp32s3_smp.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_mp_stall.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp32s3_amp.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:cpu.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
 
@@ -720,7 +723,9 @@ SECTIONS
     *libzephyr.a:esp_mmu_map.*(.rodata .rodata.*)
 
     /* APPCPU_ENABLE */
-    *libzephyr.a:esp32s3-mp.*(.rodata .rodata.*)
+    *libzephyr.a:esp32s3_smp.*(.rodata .rodata.*)
+    *libzephyr.a:esp_mp_stall.*(.rodata .rodata.*)
+    *libzephyr.a:esp32s3_amp.*(.rodata .rodata.*)
     *libzephyr.a:bootloader_flash.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 

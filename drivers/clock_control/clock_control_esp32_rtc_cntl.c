@@ -15,7 +15,10 @@
 
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/spinlock.h>
 LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+
+static struct k_spinlock cpu_freq_lock;
 
 static void esp32_enable_ext_slow_clk(uint8_t slow_clk)
 {
@@ -165,21 +168,20 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	}
 #endif
 
-	rtc_clk_cpu_freq_get_config(&old_config);
-
 	ret = rtc_clk_cpu_freq_mhz_to_config(cpu_cfg->cpu_freq, &new_config);
 	if (!ret || (new_config.source != cpu_cfg->clk_src)) {
 		LOG_ERR("invalid CPU frequency value");
 		return -EINVAL;
 	}
 
-	unsigned int key = irq_lock();
+	k_spinlock_key_t lock_key = k_spin_lock(&cpu_freq_lock);
 
+	rtc_clk_cpu_freq_get_config(&old_config);
 	rtc_clk_cpu_freq_set_config(&new_config);
 
 	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * cpu_cfg->cpu_freq /
 				old_config.freq_mhz);
-	irq_unlock(key);
+	k_spin_unlock(&cpu_freq_lock, lock_key);
 
 #if defined(CONFIG_ESP_CONSOLE_UART)
 #if defined(CONFIG_SOC_SERIES_ESP32C2)

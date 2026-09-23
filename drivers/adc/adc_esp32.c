@@ -142,9 +142,9 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_ADC_ESP32_DMA
 	data->resolution[channel_id] = seq->resolution;
 
-#ifdef CONFIG_ADC_ESP32_DMA
 	int err = adc_esp32_dma_read(dev, seq);
 
 	if (err < 0) {
@@ -172,6 +172,8 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	adc_lock_acquire(data->hal.unit);
 	ANALOG_CLOCK_ENABLE();
 
+	data->resolution[channel_id] = seq->resolution;
+
 	adc_oneshot_hal_setup(&data->hal, channel_id);
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -181,9 +183,9 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	valid = adc_oneshot_hal_convert(&data->hal, &acq_raw);
 
 	ANALOG_CLOCK_DISABLE();
-	adc_lock_release(data->hal.unit);
 
 	if (!valid) {
+		adc_lock_release(data->hal.unit);
 		return -ETIMEDOUT;
 	}
 
@@ -214,9 +216,9 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		LOG_WRN("ADC reading is uncompensated");
 	}
 
-	/* Store result */
-	data->buffer = (uint16_t *)seq->buffer;
-	data->buffer[0] = acq_raw;
+	((uint16_t *)seq->buffer)[0] = acq_raw;
+
+	adc_lock_release(data->hal.unit);
 #endif /* CONFIG_ADC_ESP32_DMA */
 
 	return 0;
