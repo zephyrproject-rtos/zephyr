@@ -892,6 +892,9 @@ struct stm32_pclken {
 		       STM32_CLOCK_DIV_SHIFT,					\
 	}
 
+/* STM32_CLOCK_INFO() with the argument order of CLOCK_DT_DEFINE_CONSUMERS() */
+#define STM32_CLOCK_DT_INIT(node_id, clk_index) STM32_CLOCK_INFO(clk_index, node_id)
+
 /* Get an array of STM32 clocks information for clocks listed in a DT node */
 #define STM32_DT_CLOCKS(node_id)					\
 	{								\

@@ -149,11 +149,11 @@ static int dwmac_mdio_resolve_csr_clk_idx(const struct dwmac_mdio_config *cfg,
 		return 0;
 	}
 
-	if (mac_cfg->clock == NULL) {
+	if (mac_cfg->mac_clk == NULL) {
 		return -EINVAL;
 	}
 
-	ret = clock_control_get_rate(mac_cfg->clock, mac_cfg->mac_clk, &clock_rate);
+	ret = clock_control_get_rate_dt(mac_cfg->mac_clk, &clock_rate);
 	if (ret < 0) {
 		LOG_ERR("Failed to get MAC CSR clock rate (%d)", ret);
 		return ret;

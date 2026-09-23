@@ -17,7 +17,6 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
@@ -56,13 +55,12 @@ BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) ||
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
-static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
+static const struct clock_dt_spec *const clks[] = CLOCK_DT_INST_SPECS_INIT(0);
 
 static const struct reset_dt_spec eth_reset = RESET_DT_SPEC_INST_GET(0);
 
-int dwmac_bus_init(const struct device *dev)
+int dwmac_bus_init(const struct device *dev __unused)
 {
-	const struct dwmac_config *cfg = dev->config;
 	int ret;
 
 	/*
@@ -84,8 +82,8 @@ int dwmac_bus_init(const struct device *dev)
 
 	STM32_CONFIGURE_ETH_PHY_MODE();
 
-	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
-		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&pclken[n]);
+	for (size_t n = 0; n < ARRAY_SIZE(clks); n++) {
+		ret = clock_control_on_dt(clks[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
@@ -132,11 +130,10 @@ int dwmac_platform_init(const struct device *dev)
 static const struct dwmac_config dwmac_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
-	.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-	.mac_clk = (clock_control_subsys_t)&pclken[ETH_STM32_MAC_CLK_IDX(0)],
+	.mac_clk = CLOCK_DT_INST_GET_BY_IDX(0, ETH_STM32_MAC_CLK_IDX(0)),
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
-	.ptp_clk = (clock_control_subsys_t)&pclken[ETH_STM32_PTP_CLK_IDX(0)],
+	.ptp_clk = CLOCK_DT_INST_GET_BY_IDX(0, ETH_STM32_PTP_CLK_IDX(0)),
 #endif
 };
 
