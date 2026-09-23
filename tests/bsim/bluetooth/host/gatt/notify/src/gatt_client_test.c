@@ -28,11 +28,13 @@ DEFINE_FLAG_STATIC(flag_long_subscribed);
 DEFINE_FLAG_STATIC(flag_short_unsubscribed);
 DEFINE_FLAG_STATIC(flag_read_complete);
 DEFINE_FLAG_STATIC(flag_write_complete);
+DEFINE_FLAG_STATIC(flag_both_subscribed);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
 static uint16_t long_chrc_handle;
 static uint16_t write_chrc_handle;
+static uint16_t both_chrc_handle;
 static const struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -150,6 +152,9 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_WRITE_CHRC_UUID) == 0) {
 			printk("Found write_chrc\n");
 			write_chrc_handle = chrc->value_handle;
+		} else if (bt_uuid_cmp(chrc->uuid, TEST_BOTH_CHRC_UUID) == 0) {
+			printk("Found both_chrc\n");
+			both_chrc_handle = chrc->value_handle;
 		}
 	}
 
@@ -719,6 +724,59 @@ static void test_main_crosstraffic(void)
 	TEST_PASS("GATT client Passed");
 }
 
+static void test_both_subscribed(struct bt_conn *conn, uint8_t err,
+				 struct bt_gatt_subscribe_params *params)
+{
+	TEST_ASSERT(err == 0U, "Subscribe failed (err %u)", err);
+
+	SET_FLAG(flag_both_subscribed);
+}
+
+static atomic_t num_both_values;
+
+static uint8_t test_both_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
+				const void *data, uint16_t length)
+{
+	if (data != NULL) {
+		printk("Received value #%ld with length %u\n", (long)atomic_inc(&num_both_values),
+		       length);
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static struct bt_gatt_discover_params disc_params_both;
+static struct bt_gatt_subscribe_params sub_params_both = {
+	.notify = test_both_notify,
+	.subscribe = test_both_subscribed,
+	.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE,
+	.disc_params = &disc_params_both,
+	.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
+	.value = BT_GATT_CCC_NOTIFY | BT_GATT_CCC_INDICATE,
+};
+
+static void test_main_broadcast(void)
+{
+	int err;
+
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_NONE);
+	TEST_ASSERT(both_chrc_handle != 0U, "Did not discover both_chrc");
+
+	sub_params_both.value_handle = both_chrc_handle;
+	err = bt_gatt_subscribe(g_conn, &sub_params_both);
+	TEST_ASSERT(err == 0, "Failed to subscribe (err %d)", err);
+	WAIT_FOR_FLAG(flag_both_subscribed);
+
+	/* The server broadcasts one indication and one notification */
+	while (atomic_get(&num_both_values) < 2) {
+		k_sleep(K_MSEC(10));
+	}
+
+	TEST_PASS_AND_EXIT("GATT client passed");
+}
+
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_none",
@@ -747,6 +805,10 @@ static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_crosstraffic",
 		.test_main_f = test_main_crosstraffic,
+	},
+	{
+		.test_id = "gatt_client_broadcast",
+		.test_main_f = test_main_broadcast,
 	},
 	BSTEST_END_MARKER,
 };
