@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The STM32MP13XD part number embeds following specific characteristics:
+ *
+ *   Cortex-A7 frequency | Security IPs
+ *   --------------------+-----------------
+ *     1 GHz             |  no
+ */
