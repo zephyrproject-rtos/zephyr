@@ -81,6 +81,10 @@ static void pi4ioe5v6408_handle_interrupt(const struct device *dev)
 	k_sem_take(&data->lock, K_FOREVER);
 
 	if (!irq->rising && !irq->falling) {
+		if (cfg->interrupt_enabled) {
+			/* Reading this is what releases INT. */
+			(void)i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &status);
+		}
 		k_sem_give(&data->lock);
 		return;
 	}
