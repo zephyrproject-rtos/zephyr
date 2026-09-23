@@ -36,11 +36,6 @@ choice CYW55500_MODULE
 	default CYW55513_MURATA_2FY_SM
 endchoice
 
-# Heap Pool Size
-config HEAP_MEM_POOL_ADD_SIZE_BOARD
-	int
-	default 15000
-
 endif # WIFI
 
 config FLASH_FILL_BUFFER_SIZE

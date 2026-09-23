@@ -14,11 +14,6 @@ choice CYW55500_MODULE
 	default CYW55513_MOD_PSE84_SOM
 endchoice
 
-# Heap Pool Size
-config HEAP_MEM_POOL_ADD_SIZE_BOARD
-	int
-	default 15000
-
 endif # WIFI
 
 if BT
