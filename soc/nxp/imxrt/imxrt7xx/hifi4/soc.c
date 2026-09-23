@@ -5,6 +5,8 @@
 
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/arch/common/init.h>
+#include <zephyr/linker/linker-defs.h>
 
 #include <fsl_clock.h>
 #include <fsl_inputmux.h>
@@ -34,6 +36,14 @@ static void edma_enable_all_request(uint8_t instance)
 		reg = EDMA_EN_REG(instance, idx);
 		*reg |= 0xFFFFFFFFU;
 	}
+}
+#endif
+
+#if CONFIG_NOCACHE_MEMORY
+void mimxrt798s_hifi4_nocache_init(void)
+{
+	arch_early_memset(&_nocache_noload_ram_start, 0,
+		(uintptr_t) _nocache_noload_ram_size);
 }
 #endif
 
@@ -126,6 +136,9 @@ __weak void mimxrt798s_hifi4_clock_init(void)
 
 void soc_early_init_hook(void)
 {
+#ifdef CONFIG_NOCACHE_MEMORY
+	mimxrt798s_hifi4_nocache_init();
+#endif
 	mimxrt798s_hifi4_irq_init();
 	mimxrt798s_hifi4_clock_init();
 }
