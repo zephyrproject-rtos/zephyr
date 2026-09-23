@@ -36,9 +36,11 @@ config LORA_MODULE_BACKEND_LORA_BASICS_MODEM
 
 config LORA_MODULE_BACKEND_NATIVE
 	bool "Native Zephyr backend"
+	depends on DT_HAS_SEMTECH_SX1261_ENABLED || DT_HAS_SEMTECH_SX1262_ENABLED \
+		|| DT_HAS_ST_STM32WL_SUBGHZ_RADIO_ENABLED || DT_HAS_SEMTECH_LR1121_ENABLED
 	help
 	  Use Zephyr's built-in LoRa drivers without external modules.
-	  Currently supports SX1261/SX1262 transceivers.
+	  Currently supports SX1261/SX1262, the STM32WL sub-GHz radio and LR1121.
 
 endchoice
 
