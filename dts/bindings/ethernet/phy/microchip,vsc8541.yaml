@@ -47,17 +47,42 @@ properties:
       Used to configure the TX clock delay for RGMII interface. The value can be
       0 to 7. Refer to the datasheet for more details on the delay settings.
 
-  microchip,pad-edge-rate:
+  vsc8531,vddmac:
     type: int
-    default: 7
-    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    default: 3300
+    enum: [3300, 2500, 1800, 1500]
     description: |
-      Edge-rate setting for the PHY's MAC-interface output pins, including
-      RXD, RX_CLK/CRS_DV/RX_CTL, and MDIO read data. Zero selects the slowest
-      edge rate and 7 selects the fastest edge rate and power-on default.
-      Slower settings can reduce MAC-interface power consumption, EMI, and
-      signal overshoot or ringing. Refer to the datasheet for the recommended
-      setting at a given VDDMAC voltage.
+      VDDMAC supply voltage in millivolts. The driver uses the voltage to
+      select the edge-rate conversion table. The property does not change
+      the supply voltage.
+
+      The default matches the Linux binding. When setting
+      vsc8531,edge-slowdown, override the default if the board uses a
+      different VDDMAC voltage.
+
+  vsc8531,edge-slowdown:
+    type: int
+    default: 0
+    enum: [0, 2, 3, 4, 5, 6, 7, 9, 10, 14, 16, 17, 21, 23, 29, 35, 37, 42,
+           52, 53, 58, 63, 76, 77]
+    description: |
+      Percentage reduction in MAC-interface output edge rate relative to
+      the fastest setting. Zero selects the fastest setting. The default
+      matches the hardware power-on default and the Linux binding.
+      Set a nonzero value to select a slower edge rate.
+
+      Valid percentages depend on vsc8531,vddmac:
+
+      - 3300 mV: 0, 2, 4, 7, 10, 17, 29, 53 (recommended: 7)
+      - 2500 mV: 0, 3, 6, 10, 14, 23, 37, 63 (recommended: 10)
+      - 1800 mV: 0, 5, 9, 16, 23, 35, 52, 76 (recommended: 0)
+      - 1500 mV: 0, 6, 14, 21, 29, 42, 58, 77 (recommended: 0)
+
+      The percentages select settings from the datasheet's MAC Interface
+      Edge Rate Control table, as in the Linux binding. The percentages
+      describe measurements on typical silicon at nominal supply voltage
+      and room temperature. The actual edge rate depends on the board
+      and operating conditions.
 
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",

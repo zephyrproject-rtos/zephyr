@@ -211,12 +211,14 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	reg &= ~PHY_REG_PAGE2_WOL_MAC_IF_CONTROL_PAD_EDGE_RATE;
-	reg |= FIELD_PREP(PHY_REG_PAGE2_WOL_MAC_IF_CONTROL_PAD_EDGE_RATE,
-			  cfg->pad_edge_rate);
-	ret = phy_mc_vsc8541_write(dev, PHY_REG_PAGE2_WOL_MAC_IF_CONTROL, reg);
-	if (ret < 0) {
-		return ret;
+	if (FIELD_GET(PHY_REG_PAGE2_WOL_MAC_IF_CONTROL_PAD_EDGE_RATE, reg) != cfg->pad_edge_rate) {
+		reg &= ~PHY_REG_PAGE2_WOL_MAC_IF_CONTROL_PAD_EDGE_RATE;
+		reg |= FIELD_PREP(PHY_REG_PAGE2_WOL_MAC_IF_CONTROL_PAD_EDGE_RATE,
+				  cfg->pad_edge_rate);
+		ret = phy_mc_vsc8541_write(dev, PHY_REG_PAGE2_WOL_MAC_IF_CONTROL, reg);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	/* configure the RGMII clk delay */
@@ -664,22 +666,50 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 #define INTERRUPT_GPIO(n)
 #endif /* interrupt gpio */
 
-#define MICROCHIP_VSC8541_INIT(n)                                                                  \
-	static const struct mc_vsc8541_config mc_vsc8541_##n##_config = {                          \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
-		.microchip_interface_type = DT_INST_ENUM_IDX(n, microchip_interface_type),         \
-		.rgmii_rx_clk_delay = DT_INST_PROP(n, microchip_rgmii_rx_clk_delay),               \
-		.rgmii_tx_clk_delay = DT_INST_PROP(n, microchip_rgmii_tx_clk_delay),               \
-		.pad_edge_rate = DT_INST_PROP(n, microchip_pad_edge_rate),                         \
-		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),                             \
-		RESET_GPIO(n)                                                                      \
-		INTERRUPT_GPIO(n)};                                                                \
-                                                                                                   \
-	static struct mc_vsc8541_data mc_vsc8541_##n##_data;                                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &phy_mc_vsc8541_init, NULL, &mc_vsc8541_##n##_data,               \
-			      &mc_vsc8541_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,     \
+/*
+ * The macro expands to the register setting (0 through 7) for slowdown percentage sd.
+ * If sd matches none of sd7 through sd0, the macro expands to -1.
+ */
+#define VSC8541_EDGE_RATE_LOOKUP(sd, sd7, sd6, sd5, sd4, sd3, sd2, sd1, sd0) \
+	COND_CASE_1(IS_EQ(sd, sd7), (7),                                  \
+		    IS_EQ(sd, sd6), (6),                                  \
+		    IS_EQ(sd, sd5), (5),                                  \
+		    IS_EQ(sd, sd4), (4),                                  \
+		    IS_EQ(sd, sd3), (3),                                  \
+		    IS_EQ(sd, sd2), (2),                                  \
+		    IS_EQ(sd, sd1), (1),                                  \
+		    IS_EQ(sd, sd0), (0), (-1))
+
+/* Datasheet MAC Interface Edge Rate Control table, fastest setting first. */
+#define VSC8541_EDGE_RATE_3300(sd) VSC8541_EDGE_RATE_LOOKUP(sd, 0, 2, 4, 7, 10, 17, 29, 53)
+#define VSC8541_EDGE_RATE_2500(sd) VSC8541_EDGE_RATE_LOOKUP(sd, 0, 3, 6, 10, 14, 23, 37, 63)
+#define VSC8541_EDGE_RATE_1800(sd) VSC8541_EDGE_RATE_LOOKUP(sd, 0, 5, 9, 16, 23, 35, 52, 76)
+#define VSC8541_EDGE_RATE_1500(sd) VSC8541_EDGE_RATE_LOOKUP(sd, 0, 6, 14, 21, 29, 42, 58, 77)
+
+#define VSC8541_EDGE_RATE(vddmac, sd) CONCAT(VSC8541_EDGE_RATE_, vddmac)(sd)
+
+#define VSC8541_INST_EDGE_RATE(n)                           \
+	VSC8541_EDGE_RATE(DT_INST_PROP(n, vsc8531_vddmac),   \
+			  DT_INST_PROP(n, vsc8531_edge_slowdown))
+
+#define MICROCHIP_VSC8541_INIT(n)                                                                 \
+	BUILD_ASSERT(VSC8541_INST_EDGE_RATE(n) >= 0,                                              \
+		     "Invalid vsc8531,edge-slowdown for vsc8531,vddmac");                         \
+	static const struct mc_vsc8541_config mc_vsc8541_##n##_config = {                         \
+		.addr = DT_INST_REG_ADDR(n),                                                      \
+		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                     \
+		.microchip_interface_type = DT_INST_ENUM_IDX(n, microchip_interface_type),        \
+		.rgmii_rx_clk_delay = DT_INST_PROP(n, microchip_rgmii_rx_clk_delay),              \
+		.rgmii_tx_clk_delay = DT_INST_PROP(n, microchip_rgmii_tx_clk_delay),              \
+		.pad_edge_rate = VSC8541_INST_EDGE_RATE(n),                                       \
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),                            \
+		RESET_GPIO(n)                                                                     \
+		INTERRUPT_GPIO(n)};                                                               \
+                                                                                                  \
+	static struct mc_vsc8541_data mc_vsc8541_##n##_data;                                      \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, &phy_mc_vsc8541_init, NULL, &mc_vsc8541_##n##_data,              \
+			      &mc_vsc8541_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,    \
 			      &mc_vsc8541_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_VSC8541_INIT)
