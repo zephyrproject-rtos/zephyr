@@ -331,6 +331,7 @@
 				status = "disabled";
 				enable-secure;
 				enable-dma-secure;
+				hibernation-ram-block = <32>;
 
 				cpuflpr_clic: interrupt-controller@f0000000 {
 					compatible = "nordic,nrf-clic";
