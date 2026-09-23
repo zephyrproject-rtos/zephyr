@@ -35,6 +35,17 @@ BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) ||
 		     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii),
 	     "Unsupported PHY connection type");
 
+/* MMC counters present in the controller */
+#define ETH_STM32_MMC_COUNTERS(X)                                                                  \
+	X(TX_SINGLE_COLLISION_GOOD_PACKETS)                                                        \
+	X(TX_MULTIPLE_COLLISION_GOOD_PACKETS)                                                      \
+	X(TX_PACKET_COUNT_GOOD)                                                                    \
+	X(RX_CRC_ERROR_PACKETS)                                                                    \
+	X(RX_ALIGNMENT_ERROR_PACKETS)                                                              \
+	X(RX_UNICAST_PACKETS_GOOD)
+
+DWMAC_MMC_COUNTERS_DEFINE(eth_stm32_mmc, ETH_STM32_MMC_COUNTERS);
+
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define STM32_CONFIGURE_ETH_PHY_MODE()                                                             \
 	WRITE_BIT(AFIO->MAPR, AFIO_MAPR_MII_RMII_SEL_Pos,                                          \
@@ -138,6 +149,7 @@ static const struct dwmac_config dwmac_config = {
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
 	.ptp_clk = (clock_control_subsys_t)&pclken[ETH_STM32_PTP_CLK_IDX(0)],
 #endif
+	DWMAC_MMC_CONFIG_INIT(eth_stm32_mmc)
 };
 
 static struct dwmac_priv dwmac_instance;
