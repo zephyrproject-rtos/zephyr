@@ -6,8 +6,6 @@
 #ifndef SL_COMPONENT_CATALOG_H
 #define SL_COMPONENT_CATALOG_H
 
-#include <zephyr/devicetree.h>
-
 #define SL_CODE_COMPONENT_DEVICE_PERIPHERAL peripheral
 #define SL_CODE_COMPONENT_HAL_COMMON        hal_common
 #define SL_CODE_COMPONENT_SYSTEM            system
@@ -22,7 +20,7 @@
 #define SL_CATALOG_CLOCK_MANAGER_PRESENT 1
 #define SL_CODE_COMPONENT_CLOCK_MANAGER  clock_manager
 
-#if DT_NODE_EXISTS(DT_NODELABEL(extmem)) && DT_NODE_HAS_PROP(DT_NODELABEL(extmem), clock_frequency)
+#if defined(CONFIG_SILABS_SISDK_CLOCK_MANAGER_EXT_FLASH)
 #define SL_CATALOG_CLOCK_MANAGER_EXT_FLASH_PRESENT 1
 #endif
 #endif /* CONFIG_SILABS_SISDK_CLOCK_MANAGER */
