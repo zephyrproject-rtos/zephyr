@@ -8,6 +8,8 @@
 #include <zephyr/llext/symbol.h>
 #include <limits.h>
 
+EXPORT_SYMBOL(sys_clock_cycle_get_32);
+
 #ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
 EXPORT_SYMBOL(sys_clock_cycle_get_64);
 #endif
