@@ -509,13 +509,12 @@ static void set_epod_booster(void)
 
 	if (MHZ(55) <= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 		/*
-		 * Set EPOD clock prescaler based on PLL1 input freq
-		 * (MSIS/PLLM, HSI16/PLLM or HSE/PLLM)
+		 * Set EPOD clock prescaler based on PLL1 source freq
+		 * (MSIS, HSI16 or HSE), taken before PLLM
 		 * Booster clock frequency should be between 4 and 16MHz
 		 * This is done in following steps:
 		 * Read MSIS, HSI16 or HSE oscillator freq
-		 * Divide PLL1 input freq (source/PLLM)
-		 * by the targeted freq (8MHz).
+		 * Divide it by the targeted freq (8MHz).
 		 * Make sure value is not higher than 16
 		 * Shift in the register space (/2)
 		 */
@@ -530,7 +529,7 @@ static void set_epod_booster(void)
 			tmp = STM32_HSI_FREQ;
 		}
 
-		tmp = MIN(tmp / STM32_PLL_M_DIVISOR / 8000000, 16);
+		tmp = MIN(tmp / MHZ(8), 16);
 		tmp = tmp / 2;
 
 		/* Configure the epod clock frequency between 4 and 16 MHz */
