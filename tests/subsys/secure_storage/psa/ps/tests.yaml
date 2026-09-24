@@ -1,6 +1,9 @@
 common:
   platform_allow:
     - native_sim
+    - mps2/an521/cpu0
+    - nrf52840dk/nrf52840
+    - nrf5340dk/nrf5340/cpuapp
   timeout: 600
   tags:
     - psa.secure_storage
@@ -55,8 +58,10 @@ tests:
       overlay-secure_storage.conf;overlay-transform_custom.conf;overlay-store_custom.conf;\
       overlay-its_store_settings.conf"
 
-  # secure_storage.psa.ps.tfm:
-  #   filter: CONFIG_BUILD_WITH_TFM
-  #   integration_platforms:
-  #     - nrf9151dk/nrf9151/ns
-  #   extra_args: EXTRA_CONF_FILE=overlay-tfm.conf
+  secure_storage.psa.ps.tfm:
+    filter: CONFIG_BUILD_WITH_TFM
+    platform_allow:
+      - mps2/an521/cpu0/ns
+    tags:
+      - trusted-firmware-m
+    extra_args: EXTRA_CONF_FILE=overlay-tfm.conf
