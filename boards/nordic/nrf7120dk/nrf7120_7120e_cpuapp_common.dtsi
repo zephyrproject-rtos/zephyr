@@ -81,6 +81,10 @@
 	status = "okay";
 };
 
+&vbat_monitor {
+	status = "okay";
+};
+
 &grtc {
 	/* Channels 14-15 are reserved for Wi-Fi domain */
 	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11 12 13>;
