@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <freq.h>
 #include <rockchip/rk3399.dtsi>
 
 / {
@@ -19,6 +20,8 @@
 	};
 
 	cpus {
+		timebase-frequency = <DT_FREQ_M(24)>;
+
 		/delete-node/ cpu@1;
 		/delete-node/ cpu@2;
 		/delete-node/ cpu@3;
