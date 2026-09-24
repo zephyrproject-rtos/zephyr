@@ -571,18 +571,16 @@ void soc_early_init_hook(void)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_HIGH, true);
 #endif
 
+	__maybe_unused int err;
 #if defined(CONFIG_SOC_NRF53_CPUNET_MGMT)
-	int err = nrf53_cpunet_mgmt_init();
+	err = nrf53_cpunet_mgmt_init();
 
 	__ASSERT_NO_MSG(err == 0);
 	(void)err;
 #endif
-}
 
-void soc_late_init_hook(void)
-{
 #ifdef CONFIG_SOC_NRF53_RTC_PRETICK
-	int err = rtc_pretick_init();
+	err = rtc_pretick_init();
 
 	__ASSERT_NO_MSG(err == 0);
 	(void)err;
