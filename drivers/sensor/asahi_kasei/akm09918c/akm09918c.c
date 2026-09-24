@@ -21,6 +21,8 @@
 
 LOG_MODULE_REGISTER(AKM09918C, CONFIG_SENSOR_LOG_LEVEL);
 
+static const struct ak099xx_odr akm09918c_odr_table[] = {AK099XX_ODR_COMMON};
+
 /**
  * @brief Perform the bus transaction to start measurement.
  *
@@ -39,9 +41,9 @@ int akm09918c_start_measurement_blocking(const struct device *dev, enum sensor_c
 		return -EINVAL;
 	}
 
-	if (data->mode == AKM09918C_CNTL2_PWR_DOWN) {
+	if (data->mode == AK099XX_MODE_POWER_DOWN) {
 		if (i2c_reg_write_byte_dt(&cfg->i2c, AKM09918C_REG_CNTL2,
-					  AKM09918C_CNTL2_SINGLE_MEASURE) != 0) {
+					  AK099XX_MODE_SINGLE) != 0) {
 			LOG_ERR("Failed to start measurement.");
 			return -EIO;
 		}
@@ -71,7 +73,7 @@ int akm09918c_fetch_measurement_blocking(const struct device *dev, int16_t *x, i
 		return -EIO;
 	}
 
-	if (FIELD_GET(AKM09918C_ST1_DRDY, buf[0]) == 0) {
+	if (FIELD_GET(AK099XX_ST1_DRDY, buf[0]) == 0) {
 		LOG_ERR("Data not ready, st1=0x%02x", buf[0]);
 		return -EBUSY;
 	}
@@ -87,7 +89,7 @@ static int akm09918c_sample_fetch(const struct device *dev, enum sensor_channel 
 {
 	struct akm09918c_data *data = dev->data;
 	/* Avoid introducing delay on continuous measurements */
-	bool wait_for_sample = data->mode == AKM09918C_CNTL2_PWR_DOWN;
+	bool wait_for_sample = data->mode == AK099XX_MODE_POWER_DOWN;
 	int ret = akm09918c_start_measurement_blocking(dev, chan);
 
 	if (ret) {
@@ -148,7 +150,8 @@ static int akm09918c_attr_get(const struct device *dev, enum sensor_channel chan
 			LOG_WRN("Invalid attribute %d", attr);
 			return -EINVAL;
 		}
-		akm09918c_reg_to_hz(data->mode, val);
+		ak099xx_mode_to_odr(akm09918c_odr_table, ARRAY_SIZE(akm09918c_odr_table),
+				    data->mode, val);
 		break;
 	default:
 		LOG_WRN("Invalid channel %d", chan);
@@ -174,7 +177,8 @@ static int akm09918c_attr_set(const struct device *dev, enum sensor_channel chan
 			return -EINVAL;
 		}
 
-		uint8_t mode = akm09918c_hz_to_reg(val);
+		uint8_t mode = ak099xx_odr_to_mode(akm09918c_odr_table,
+						   ARRAY_SIZE(akm09918c_odr_table), val);
 
 		res = i2c_reg_write_byte_dt(&cfg->i2c, AKM09918C_REG_CNTL2, mode);
 		if (res != 0) {
@@ -202,7 +206,7 @@ static inline int akm09918c_check_who_am_i(const struct i2c_dt_spec *i2c)
 		return -EIO;
 	}
 
-	if (buffer[0] != AKM09918C_WIA1 || buffer[1] != AKM09918C_WIA2) {
+	if (buffer[0] != AK099XX_WIA1_AKM || buffer[1] != AKM09918C_WIA2) {
 		LOG_ERR("Wrong who-am-i value");
 		return -EINVAL;
 	}
@@ -234,7 +238,7 @@ static int akm09918c_init(const struct device *dev)
 	if (rc != 0) {
 		return rc;
 	}
-	data->mode = AKM09918C_CNTL2_PWR_DOWN;
+	data->mode = AK099XX_MODE_POWER_DOWN;
 #ifdef CONFIG_SENSOR_ASYNC_API
 	/* init work for fetching after measurement has completed */
 	k_work_init_delayable(&data->work_ctx.async_fetch_work, akm09918_async_fetch);
