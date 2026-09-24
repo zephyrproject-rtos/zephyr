@@ -33,3 +33,4 @@ tests:
       - it82xx2_evb
       - pic32cz_ca80_cult
       - pic32cz_ca90_cult
+      - kit_psc3m6_eval/psc3m6ges3ahq1
