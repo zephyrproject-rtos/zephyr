@@ -1,0 +1,45 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/mp13/stm32mp135d.dtsi>
+#include <st/mp13/stm32mp135daex-pinctrl.dtsi>
+
+/ {
+	model = "M5Stack CoreMP135";
+	compatible = "m5stack,coremp135";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+	};
+};
+
+&clk_hsi {
+	clock-frequency = <DT_FREQ_M(64)>;
+	status = "okay";
+};
+
+/* cpusw supplies CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC for the STGEN-backed ARM timer. */
+&cpusw {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	status = "okay";
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(64)>;
+	clocks = <&clk_hsi>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pg4 &usart3_de_pd12>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	de-enable;
+	status = "okay";
+};
