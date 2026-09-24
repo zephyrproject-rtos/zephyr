@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (c) 2026 inovex GmbH
+ * SPDX-FileCopyrightText: Copyright 2026 inovex GmbH
  */
 
 /*
@@ -31,35 +31,35 @@
 #define SERVED_TIME    1000000000
 #define UNTOUCHED_TIME 500000000
 
-#define SERVER_STACK_SIZE 2048
-#define SERVER_PRIORITY   K_PRIO_PREEMPT(8)
+#define SNTP_SERVER_STACK_SIZE 2048
+#define SNTP_SERVER_PRIORITY   K_PRIO_PREEMPT(8)
 
-static int server_fd = -1;
-static struct k_thread server_thread_data;
-static K_THREAD_STACK_DEFINE(server_stack, SERVER_STACK_SIZE);
+static int sntp_server_fd = -1;
+static struct k_thread sntp_server_thread_data;
+static K_THREAD_STACK_DEFINE(sntp_server_stack, SNTP_SERVER_STACK_SIZE);
 
 /* Cleared by the teardown so the server thread can return on its own. It
  * is aborting a thread parked in a receive that leaves the run without an
  * event to end on.
  */
-static volatile bool server_running;
+static volatile bool sntp_server_running;
 
 /* Answer every request that arrives, echoing the client's transmit
  * timestamp back as the originate timestamp so the client accepts it.
  */
-static void server_thread(void *p1, void *p2, void *p3)
+static void sntp_server_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	while (server_running) {
+	while (sntp_server_running) {
 		struct net_sockaddr_in client;
 		net_socklen_t client_len = sizeof(client);
 		struct sntp_pkt pkt;
 		int ret;
 
-		ret = zsock_recvfrom(server_fd, &pkt, sizeof(pkt), 0,
+		ret = zsock_recvfrom(sntp_server_fd, &pkt, sizeof(pkt), 0,
 				     (struct net_sockaddr *)&client, &client_len);
 		if (ret != (int)sizeof(pkt)) {
 			continue;
@@ -78,8 +78,8 @@ static void server_thread(void *p1, void *p2, void *p3)
 		pkt.tx_tm_s = net_htonl(OFFSET_1970_JAN_1 + SERVED_TIME);
 		pkt.tx_tm_f = 0;
 
-		(void)zsock_sendto(server_fd, &pkt, sizeof(pkt), 0, (struct net_sockaddr *)&client,
-				   client_len);
+		(void)zsock_sendto(sntp_server_fd, &pkt, sizeof(pkt), 0,
+				   (struct net_sockaddr *)&client, client_len);
 	}
 }
 
@@ -167,21 +167,22 @@ static void *setup(void)
 	 */
 	struct timeval timeout = {.tv_sec = 0, .tv_usec = 100000};
 
-	server_fd = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
-	zassert_true(server_fd >= 0, "could not open the server socket");
+	sntp_server_fd = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sntp_server_fd >= 0, "could not open the server socket");
 
-	zassert_ok(zsock_bind(server_fd, (struct net_sockaddr *)&addr, sizeof(addr)),
+	zassert_ok(zsock_bind(sntp_server_fd, (struct net_sockaddr *)&addr, sizeof(addr)),
 		   "could not bind the server socket");
 
-	zassert_ok(zsock_setsockopt(server_fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeout,
+	zassert_ok(zsock_setsockopt(sntp_server_fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeout,
 				    sizeof(timeout)),
 		   "could not set the server socket's receive timeout");
 
-	server_running = true;
+	sntp_server_running = true;
 
-	k_thread_create(&server_thread_data, server_stack, K_THREAD_STACK_SIZEOF(server_stack),
-			server_thread, NULL, NULL, NULL, SERVER_PRIORITY, 0, K_NO_WAIT);
-	k_thread_name_set(&server_thread_data, "sntp_server");
+	k_thread_create(&sntp_server_thread_data, sntp_server_stack,
+			K_THREAD_STACK_SIZEOF(sntp_server_stack), sntp_server_thread, NULL, NULL,
+			NULL, SNTP_SERVER_PRIORITY, 0, K_NO_WAIT);
+	k_thread_name_set(&sntp_server_thread_data, "sntp_server");
 
 	return NULL;
 }
@@ -190,12 +191,12 @@ static void teardown(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
-	server_running = false;
-	zassert_ok(k_thread_join(&server_thread_data, K_SECONDS(2)),
+	sntp_server_running = false;
+	zassert_ok(k_thread_join(&sntp_server_thread_data, K_SECONDS(2)),
 		   "the server thread did not stop");
 
-	(void)zsock_close(server_fd);
-	server_fd = -1;
+	(void)zsock_close(sntp_server_fd);
+	sntp_server_fd = -1;
 }
 
 ZTEST_SUITE(net_config_sntp, NULL, setup, before, NULL, teardown);
