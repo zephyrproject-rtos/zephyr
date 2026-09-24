@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <mem.h>
 
 / {
@@ -13,6 +14,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(4)>;
 
 		cpu@0 {
 			clock-frequency = <0>;
