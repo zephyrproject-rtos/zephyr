@@ -10,6 +10,7 @@
  * including this file when they need something other than 32 MiB at 0.
  */
 
+#include <freq.h>
 #include <mem.h>
 
 #ifndef DT_DRAM_BASE
@@ -26,6 +27,10 @@
 / {
 	model = "QEMU X86 emulator";
 	compatible = "qemu,x86_emulator";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_M(25)>;
+	};
 
 	flash0: flash@500000 {
 		compatible = "soc-nv-flash";
