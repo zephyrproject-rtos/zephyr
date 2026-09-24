@@ -236,6 +236,7 @@ struct bt_l2cap_br_recv_pending {
  * To avoid consuming the event RX buffer, `BT_BUF_ACL_RX_COUNT` is used; however, due to
  * limitations on the number of TX buffers, this can lead to failures during bursts of L2CAP
  * signaling transmissions, for instance, L2CAP connection failures.
+ * The TX buffers count can be increased by configuring `CONFIG_BT_L2CAP_SIG_TX_BUF_COUNT`.
  */
 #define L2CAP_BR_RECV_PENDING_POOL_COUNT BT_BUF_ACL_RX_COUNT
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
@@ -284,8 +285,9 @@ static void br_sig_destroy(struct net_buf *buf)
 }
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
-NET_BUF_POOL_FIXED_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, br_sig_destroy);
+NET_BUF_POOL_FIXED_DEFINE(br_sig_pool, CONFIG_BT_L2CAP_SIG_TX_BUF_COUNT,
+			  BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			  br_sig_destroy);
 
 static sys_slist_t bt_l2cap_br_echo_cbs = SYS_SLIST_STATIC_INIT(&bt_l2cap_br_echo_cbs);
 
@@ -5701,9 +5703,15 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			 * 1. When `CONFIG_BT_HCI_ACL_FLOW_CONTROL` is enabled,
 			 *    `L2CAP_BR_RECV_PENDING_POOL_COUNT` is less than the number of
 			 *    `acl_in_pool` net buffers. The solution is to align these values.
+			 *    Increasing `CONFIG_BT_L2CAP_SIG_TX_BUF_COUNT` can also alleviate it.
 			 * 2. `CONFIG_BT_HCI_ACL_FLOW_CONTROL` is disabled. Since a unified HCI RX
 			 *    pool is used, the number of net buffers in the data reception pool
-			 *    exceeds the count of `br_recv_pending_pool`.
+			 *    exceeds the count of `br_recv_pending_pool`. An optimization is to
+			 *    increase `CONFIG_BT_L2CAP_SIG_TX_BUF_COUNT` so that it is at least
+			 *    `ACL_CONN * 1 + L2CAP_CHANNEL * 2`. Here, `ACL_CONN` represents the
+			 *    maximum number of simultaneous ACL connections, and `L2CAP_CHANNEL`
+			 *    represents the maximum number of L2CAP channels being created or
+			 *    accepted simultaneously.
 			 *
 			 * In short, the number of L2CAP channel connections being simultaneously
 			 * created and accepted should be minimized to alleviate or even avoid
