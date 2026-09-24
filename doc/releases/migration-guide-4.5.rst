@@ -376,6 +376,13 @@ Boards
   node as ``st,stm32-xspi-controller`` compatible. The stm32h5 device DTS will be updated
   once all the target boards are changed.
 
+* :kconfig:option:`CONFIG_ROMSTART_RELOCATION_ROM`, :kconfig:option:`CONFIG_ROMSTART_REGION_ADDRESS`
+  and :kconfig:option:`CONFIG_ROMSTART_REGION_SIZE` have been deprecated in favour of the new chosen
+  ``zephyr,romstart`` property that should be used instead. If an overwrite over
+  the board defaults is detected the Kconfig option
+  :kconfig:option:`CONFIG_ROMSTART_DEPRECATED_SET` is set and old behaviour is
+  preserved while indicating the deprecation. (:github:`114974`)
+
 Device Drivers and Devicetree
 *****************************
 
