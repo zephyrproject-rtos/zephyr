@@ -6,6 +6,9 @@
 
 #include <zephyr/ztest.h>
 #include <soc.h>
+#include <stm32_bitops.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/logging/log.h>
@@ -76,4 +79,40 @@ ZTEST(stm32_syclck_config, test_pll_src)
 #endif
 
 }
+
+ZTEST(stm32_syclck_config, test_epod_booster)
+{
+#if defined(STM32_PLL_ENABLED)
+	uint32_t src_freq;
+	uint32_t mboost;
+	uint32_t booster_freq;
+
+	/* RM0456: the booster must be enabled and ready above 55 MHz */
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= MHZ(55)) {
+		ztest_test_skip();
+		return;
+	}
+
+#if STM32_PLL_SRC_HSE
+	src_freq = STM32_HSE_FREQ;
+#elif STM32_PLL_SRC_HSI
+	src_freq = STM32_HSI_FREQ;
+#else
+	src_freq = __LL_RCC_CALC_MSIS_FREQ(LL_RCC_MSIRANGESEL_RUN, LL_RCC_MSIS_GetRange());
+#endif
+
+	/* The booster clock is the PLL1 source divided by 1 or, if PLL1MBOOST = n > 0, by 2n */
+	mboost = stm32_reg_read_bits(&RCC->PLL1CFGR, RCC_PLL1CFGR_PLL1MBOOST) >>
+		 RCC_PLL1CFGR_PLL1MBOOST_Pos;
+	booster_freq = src_freq / ((mboost == 0U) ? 1U : (2U * mboost));
+
+	zassert_equal(LL_PWR_IsEnabledEPODBooster(), 1U, "EPOD booster is disabled");
+	zassert_equal(LL_PWR_IsActiveFlag_BOOST(), 1U, "EPOD booster is not ready");
+	zassert_between_inclusive(booster_freq, MHZ(4), MHZ(16),
+				  "EPOD booster clock out of range: %u Hz", booster_freq);
+#else
+	ztest_test_skip();
+#endif
+}
+
 ZTEST_SUITE(stm32_syclck_config, NULL, NULL, NULL, NULL, NULL);
