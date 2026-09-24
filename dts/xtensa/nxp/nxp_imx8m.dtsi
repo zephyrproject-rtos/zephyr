@@ -6,12 +6,14 @@
 
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <xtensa/xtensa.dtsi>
+#include <freq.h>
 #include <mem.h>
 
 / {
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(800)>;
 
 		cpu0: cpu@0 {
 			device_type = "cpu";

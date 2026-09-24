@@ -6,9 +6,6 @@
 
 if SOC_MIMX8ML8_M7
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 800000000
-
 config GPIO
 	default y
 
