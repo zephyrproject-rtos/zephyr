@@ -1415,6 +1415,54 @@ NXP
   AIHNAR/AIUKAR/BIUKAR package suffixes of both MCXW235 and MCXW236 (only
   BIHNAR previously had an entry for each).
 
+* The NXP MCXW7xx per-part composer DTSI files were renamed to match their
+  HAL part number, and gained siblings for real order codes that
+  previously had no Zephyr representation. Out-of-tree boards that
+  include the old files directly must update their includes.
+
+  ========================  ========================================
+  Old file                  New file(s)
+  ========================  ========================================
+  ``nxp_mcxw70.dtsi``        ``nxp_mcxw70ac.dtsi``, plus new
+                             ``nxp_mcxw70aa.dtsi``/``nxp_mcxw70ad.dtsi``
+  ``nxp_mcxw70_ns.dtsi``     ``nxp_mcxw70ac_ns.dtsi``, plus new
+                             ``nxp_mcxw70aa_ns.dtsi``/``nxp_mcxw70ad_ns.dtsi``
+  ``nxp_mcxw71.dtsi``        ``nxp_mcxw716c.dtsi``, plus new
+                             ``nxp_mcxw716a.dtsi``
+  ``nxp_mcxw72.dtsi``        ``nxp_mcxw727c.dtsi`` (no rev/package
+                             siblings: MCXW727A/MCXW727D have no pinctrl
+                             headers, so they are not represented)
+  ========================  ========================================
+
+  The new MCXW70AA/MCXW70AD/MCXW716A parts and their ``_ns`` composers omit
+  the FlexCAN node that MCXW70AC/MCXW716C have, confirmed via HAL
+  COMMON.h: ``CAN_0_BASE``/``CAN0_BASE`` and the CAN interrupt vector entry
+  are absent for these order codes. No other peripheral or memory
+  difference exists between the parts in each family.
+
+  Example:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/mcx/mcxw/nxp_mcxw71.dtsi>
+
+    /* After */
+    #include <nxp/mcx/mcxw/nxp_mcxw716c.dtsi>
+
+* The NXP boards ``frdm_mcxw71``, ``frdm_mcxw72`` and ``mcxw72_evk`` gained
+  a non-secure ``ns`` board variant. These boards already built
+  ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` by default with no non-secure
+  counterpart, so the new ``ns`` variant sets
+  ``CONFIG_TRUSTED_EXECUTION_NONSECURE=y`` and uses the exact same flash
+  partitions and RAM as the secure default, differing only in which
+  address alias (secure vs non-secure) it is compiled against. Their
+  board DTSI was also split into a composer-free ``<board>_common.dtsi``
+  plus a thin ``<board>.dts`` to let the new ``ns`` variant share the
+  board body; out-of-tree code that included the old monolithic
+  ``<board>.dts`` directly is unaffected, since board files are not
+  meant to be included by other files.
+
 * The NXP i.MX RT DTSI files were reorganized from the flat directory
   ``dts/arm/nxp/imxrt/`` into per-series subdirectories, Out-of-tree
   boards that include these files directly must update their includes.
