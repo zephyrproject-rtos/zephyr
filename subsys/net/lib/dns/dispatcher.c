@@ -584,8 +584,9 @@ out:
 	 * pointer. Wait for it here so the caller can safely reuse/reinit
 	 * ctx once we return. This runs with the global lock released: the
 	 * dispatch may re-enter the dispatcher before it returns (an
-	 * application result callback closing the resolver, or a CNAME
-	 * re-query re-randomizing its source port) and then needs that lock.
+	 * application result callback closing the resolver, or a lookup it
+	 * starts that renews another server's source port) and then needs
+	 * that lock.
 	 *
 	 * Only do this for a context that was actually registered: ctx->lock
 	 * is initialized in dns_dispatcher_register(), and a context that
