@@ -2377,6 +2377,28 @@ Documentation Infrastructure:
     - drivers.led_strip
     - sample.drivers.led_strip
 
+"Drivers: LIN":
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  collaborators:
+    - henrikbrixandersen
+  files:
+    - boards/shields/mikroe_lin_click/
+    - doc/hardware/peripherals/lin.rst
+    - drivers/lin/
+    - dts/bindings/lin/
+    - dts/bindings/phy/lin-transceiver*
+    - include/zephyr/drivers/lin.h
+    - include/zephyr/drivers/lin/
+    - samples/drivers/lin/
+    - tests/drivers/lin/
+  labels:
+    - "area: LIN"
+  tests:
+    - drivers.lin
+    - sample.drivers.lin
+
 "Drivers: MEMC":
   status: odd fixes
   files:
