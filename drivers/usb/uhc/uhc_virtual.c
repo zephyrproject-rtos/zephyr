@@ -21,6 +21,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/usb/class/usb_hub.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc_vrt, CONFIG_UHC_DRIVER_LOG_LEVEL);
@@ -116,9 +117,23 @@ struct uhc_vrt_port {
 	struct usb_hub_port_status status;
 };
 
+static enum uvb_speed vrt_port_speed(const struct uhc_vrt_port *const port)
+{
+	if (port->status.wPortStatus & USB_HUB_PORT_STATUS_LOW_SPEED) {
+		return UVB_SPEED_LS;
+	}
+
+	if (port->status.wPortStatus & USB_HUB_PORT_STATUS_HIGH_SPEED) {
+		return UVB_SPEED_HS;
+	}
+
+	return UVB_SPEED_FS;
+}
+
 struct uhc_vrt_data {
 	const struct device *dev;
 	struct uvb_node *host_node;
+	struct usb_hub_status *hub_status;
 	struct k_thread thread_data;
 	struct k_fifo fifo;
 	struct uhc_transfer *last_xfer;
@@ -131,6 +146,7 @@ struct uhc_vrt_data {
 	uint16_t sof_count;
 	uint8_t req;
 	enum usb_device_speed speed;
+	bool bus_suspended;
 	struct k_spinlock lock;
 	struct uhc_vrt_port ports[CONFIG_UHC_VIRTUAL_NUM_PORTS];
 };
@@ -150,6 +166,8 @@ struct uhc_vrt_event {
 };
 
 K_MEM_SLAB_DEFINE_TYPE(uhc_vrt_slab, struct uhc_vrt_event, 16);
+
+static int uhc_vrt_bus_resume(const struct device *dev);
 
 static void vrt_event_submit(const struct device *dev,
 			     const enum uhc_vrt_event_type type,
@@ -184,6 +202,339 @@ static int vrt_advert_pkt(struct uhc_vrt_data *const priv,
 
 	/* Broadcast like a real hub to every enabled port. */
 	return uvb_advert_pkt(priv->host_node, NULL, pkt);
+}
+
+/*
+ * Hub and Port Status Change Bitmap length, USB 2.0 11.12.4:
+ * bit 0 is the hub's own  change, bits 1..N are ports 1..N, rounded up to
+ * whole bytes, same layout as the hub descriptor's DeviceRemovable and
+ * PortPwrCtrlMask fields.
+ */
+#define VRT_HUB_CHANGE_LEN DIV_ROUND_UP(CONFIG_UHC_VIRTUAL_NUM_PORTS + 1, 8)
+
+/*
+ * 11.23.2.1 Hub Descriptor. Identical wHubCharacteristics for all instances.
+ * D1:D0 Logical Power Switching Mode, Individual port power switching
+ * D4:D3 Over-current Protection Mode, Individual Port Over-current Protection
+ * D6:D5 TT Think Time, minimum (8 FS bit times)
+ * D7 Port Indicators Supported, not supported yet
+ */
+#define VRT_HUB_CHARACTERISTICS (BIT(0) | BIT(4))
+
+struct vrt_hub_desc {
+	struct usb_hub_descriptor hub;
+	uint8_t DeviceRemovable[DIV_ROUND_UP(CONFIG_UHC_VIRTUAL_NUM_PORTS + 1, 8)];
+	uint8_t PortPwrCtrlMask[DIV_ROUND_UP(CONFIG_UHC_VIRTUAL_NUM_PORTS + 1, 8)];
+} __packed;
+
+/*
+ * PortPwrCtrlMask is set to all-1s in uhc_vrt_driver_preinit();
+ * DeviceRemovable stays zeroed, every port reports a removable device.
+ */
+static struct vrt_hub_desc vrt_hub_desc = {
+	.hub = {
+		.bDescLength = sizeof(struct vrt_hub_desc),
+		.bDescriptorType = USB_HUB_DESCRIPTOR_TYPE,
+		.bNbrPorts = CONFIG_UHC_VIRTUAL_NUM_PORTS,
+		.wHubCharacteristics = sys_cpu_to_le16(VRT_HUB_CHARACTERISTICS),
+		/* 20 ms, virtual ports power up instantly */
+		.bPwrOn2PwrGood = 10,
+	},
+};
+
+static int vrt_hub_sreq_get_desc(const struct device *dev,
+				 const struct usb_setup_packet *const setup,
+				 struct net_buf *const buf)
+{
+	size_t len;
+
+	ARG_UNUSED(dev);
+
+	len = MIN(sizeof(vrt_hub_desc), setup->wLength);
+	net_buf_add_mem(buf, &vrt_hub_desc, len);
+
+	return 0;
+}
+
+static int vrt_hub_hcreq_get_status(const struct device *dev,
+				    const struct usb_setup_packet *const setup,
+				    struct net_buf *const buf)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	const void *data = NULL;
+	size_t len = 0;
+	int ret = 0;
+
+	switch (setup->RequestType.recipient) {
+	case USB_REQTYPE_RECIPIENT_DEVICE:
+		data = priv->hub_status;
+		len = sizeof(*priv->hub_status);
+		break;
+	case USB_REQTYPE_RECIPIENT_OTHER:
+		if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+			ret = -EPIPE;
+			break;
+		}
+
+		data = &priv->ports[setup->wIndex - 1].status;
+		len = sizeof(priv->ports[setup->wIndex - 1].status);
+		break;
+	default:
+		ret = -EPIPE;
+		break;
+	}
+
+	if (ret == 0 && data != NULL && buf != NULL) {
+		len = MIN(len, setup->wLength);
+		net_buf_add_mem(buf, data, len);
+	}
+
+	return ret;
+}
+
+static int vrt_hub_dev_set_feature(const struct device *dev,
+				   const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	switch (setup->wValue) {
+	case USB_HCFS_C_HUB_LOCAL_POWER:
+		priv->hub_status->wHubChange |= USB_HUB_CHANGE_LOCAL_POWER;
+		break;
+	case USB_HCFS_C_HUB_OVER_CURRENT:
+		priv->hub_status->wHubChange |= USB_HUB_CHANGE_OVER_CURRENT;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int vrt_hub_port_set_feature(const struct device *dev,
+				    const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	struct uhc_vrt_port *port;
+
+	if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+		return -EPIPE;
+	}
+
+	port = &priv->ports[setup->wIndex - 1];
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		port->status.wPortStatus |= USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_RESET:
+		if (!(port->status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION)) {
+			break;
+		}
+
+		port->status.wPortStatus &= (USB_HUB_PORT_STATUS_POWER |
+					     USB_HUB_PORT_STATUS_CONNECTION |
+					     USB_HUB_PORT_STATUS_LOW_SPEED |
+					     USB_HUB_PORT_STATUS_HIGH_SPEED);
+
+		port->status.wPortStatus |= USB_HUB_PORT_STATUS_ENABLE;
+		port->status.wPortChange |= USB_HUB_PORT_CHANGE_RESET;
+		uvb_advert(priv->host_node, UVB_EVT_RESET, port->node,
+			  INT_TO_POINTER(vrt_port_speed(port)));
+		break;
+	case USB_HCFS_PORT_SUSPEND:
+		if (port->status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION) {
+			port->status.wPortStatus |= USB_HUB_PORT_STATUS_SUSPEND;
+			uvb_advert(priv->host_node, UVB_EVT_SUSPEND, port->node, NULL);
+		}
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int vrt_hub_dev_clear_feature(const struct device *dev,
+				     const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	switch (setup->wValue) {
+	case USB_HCFS_C_HUB_LOCAL_POWER:
+		priv->hub_status->wHubChange &= ~USB_HUB_CHANGE_LOCAL_POWER;
+		break;
+	case USB_HCFS_C_HUB_OVER_CURRENT:
+		priv->hub_status->wHubChange &= ~USB_HUB_CHANGE_OVER_CURRENT;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int vrt_hub_port_clear_feature(const struct device *dev,
+				      const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	struct uhc_vrt_port *port;
+
+	if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+		return -EPIPE;
+	}
+
+	port = &priv->ports[setup->wIndex - 1];
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		port->status.wPortStatus &= ~USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_ENABLE:
+		port->status.wPortStatus &= ~USB_HUB_PORT_STATUS_ENABLE;
+		break;
+	case USB_HCFS_PORT_SUSPEND:
+		if (port->status.wPortStatus & USB_HUB_PORT_STATUS_SUSPEND) {
+			port->status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
+			uvb_advert(priv->host_node, UVB_EVT_RESUME, port->node, NULL);
+		}
+		break;
+	case USB_HCFS_C_PORT_CONNECTION:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_CONNECTION;
+		break;
+	case USB_HCFS_C_PORT_ENABLE:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_ENABLE;
+		break;
+	case USB_HCFS_C_PORT_SUSPEND:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_SUSPEND;
+		break;
+	case USB_HCFS_C_PORT_OVER_CURRENT:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_OVER_CURRENT;
+		break;
+	case USB_HCFS_C_PORT_RESET:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_RESET;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+/*
+ * ClearTTBuffer/ResetTT/StopTT (USB 2.0 11.24.2.3/11.24.2.9/11.24.2.11): no
+ * real TT hardware is emulated (no busy buffers, no stopped state), so these
+ * are accepted as no-ops once the addressed port is validated.
+ */
+static int vrt_hub_validate_tt_port(const struct device *dev,
+				    const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+/* GetTTState (USB 2.0 11.24.2.8): no real TT state exists, report an idle TT. */
+static int vrt_hub_get_tt_state(const struct device *dev,
+				const struct usb_setup_packet *const setup,
+				struct net_buf *const buf)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	uint32_t tt_state = 0;
+	size_t len;
+
+	if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+		return -EPIPE;
+	}
+
+	len = MIN(sizeof(tt_state), setup->wLength);
+	net_buf_add_mem(buf, &tt_state, len);
+
+	return 0;
+}
+
+static int vrt_root_hub_control(const struct device *dev,
+				const struct usb_setup_packet *const setup,
+				struct net_buf *const buf)
+{
+	int ret = 0;
+
+	switch (setup->bRequest) {
+	case USB_SREQ_GET_DESCRIPTOR:
+		ret = vrt_hub_sreq_get_desc(dev, setup, buf);
+		break;
+	case USB_HCREQ_GET_STATUS:
+		ret = vrt_hub_hcreq_get_status(dev, setup, buf);
+		break;
+	case USB_HCREQ_SET_FEATURE:
+		if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE) {
+			ret = vrt_hub_dev_set_feature(dev, setup);
+		} else {
+			ret = vrt_hub_port_set_feature(dev, setup);
+		}
+		break;
+	case USB_HCREQ_CLEAR_FEATURE:
+		if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE) {
+			ret = vrt_hub_dev_clear_feature(dev, setup);
+		} else {
+			ret = vrt_hub_port_clear_feature(dev, setup);
+		}
+		break;
+	case USB_HCREQ_CLEAR_TT_BUFFER:
+	case USB_HCREQ_RESET_TT:
+	case USB_HCREQ_STOP_TT:
+		/*
+		 * No real TT hardware is emulated (no busy buffers, no
+		 * stopped state), so these are accepted as no-ops once the
+		 * addressed port is validated.
+		 */
+		ret = vrt_hub_validate_tt_port(dev, setup);
+		break;
+	case USB_HCREQ_GET_TT_STATE:
+		/* No real TT state exists; report an idle TT. */
+		ret = vrt_hub_get_tt_state(dev, setup, buf);
+		break;
+	default:
+		LOG_ERR("root hub: unsupported request 0x%02x", setup->bRequest);
+		ret = -EPIPE;
+		break;
+	}
+
+	return ret;
+}
+
+/*
+ * Process the emulated hub's status-change request.
+ * USB 2.0 11.12.4: only return data once something has actually changed.
+ */
+static int vrt_root_hub_status(const struct device *dev, struct net_buf *const buf)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	uint8_t bitmap[VRT_HUB_CHANGE_LEN] = {0};
+	bool changed = false;
+
+	if (priv->hub_status->wHubChange != 0) {
+		bitmap[0] |= BIT(0);
+		changed = true;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(priv->ports); i++) {
+		if (priv->ports[i].status.wPortChange != 0) {
+			bitmap[(i + 1) / 8] |= BIT((i + 1) % 8);
+			changed = true;
+		}
+	}
+
+	if (changed) {
+		net_buf_add_mem(buf, bitmap,
+				MIN(sizeof(bitmap), net_buf_tailroom(buf)));
+	}
+
+	return 0;
 }
 
 static int vrt_xfer_control(const struct device *dev,
@@ -689,68 +1040,62 @@ static void vrt_port_disconnect(struct uhc_vrt_data *const priv,
 	port->status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
 }
 
+static void vrt_port_rwup(struct uhc_vrt_data *const priv,
+			  const struct uvb_node *const source)
+{
+	struct uhc_vrt_port *port = vrt_port_find(priv, source);
+
+	if (port != NULL && (port->status.wPortStatus & USB_HUB_PORT_STATUS_SUSPEND)) {
+		port->status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
+		port->status.wPortChange |= USB_HUB_PORT_CHANGE_SUSPEND;
+	}
+
+	if (priv->bus_suspended) {
+		uhc_lock_internal(priv->dev, K_FOREVER);
+		uhc_vrt_bus_resume(priv->dev);
+		uhc_unlock_internal(priv->dev);
+	}
+}
+
 static void vrt_device_act(const struct device *dev,
 			   const struct uvb_node *const source,
 			   const enum uvb_device_act act)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
-	enum uhc_event_type type;
 
 	switch (act) {
 	case UVB_DEVICE_ACT_RWUP:
-		type = UHC_EVT_RWUP;
+		vrt_port_rwup(priv, source);
 		break;
 	case UVB_DEVICE_ACT_LS:
 		if (vrt_port_connect(priv, source, USB_HUB_PORT_STATUS_LOW_SPEED) == NULL) {
 			return;
 		}
-
-		type = UHC_EVT_DEV_CONNECTED_LS;
-		priv->speed = USB_SPEED_SPEED_LS;
-		/*
-		 * Low-speed devices get a keep-alive (low-speed EOP) per frame
-		 * instead of SOF (USB 2.0 11.8.4.1), UVB_EVT_SOF is used for both.
-		 */
-		priv->sof_period = K_MSEC(1);
-		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 		break;
 	case UVB_DEVICE_ACT_FS:
 		if (vrt_port_connect(priv, source, 0) == NULL) {
 			return;
 		}
-
-		type = UHC_EVT_DEV_CONNECTED_FS;
-		priv->speed = USB_SPEED_SPEED_FS;
-		priv->sof_period = K_MSEC(1);
-		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 		break;
 	case UVB_DEVICE_ACT_HS:
 		if (vrt_port_connect(priv, source, USB_HUB_PORT_STATUS_HIGH_SPEED) == NULL) {
 			return;
 		}
-
-		type = UHC_EVT_DEV_CONNECTED_HS;
-		priv->speed = USB_SPEED_SPEED_HS;
-		priv->sof_period = K_USEC(125);
-		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 		break;
 	case UVB_DEVICE_ACT_CONNECTED:
 		if (uhc_is_enabled(dev)) {
 			uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, source, NULL);
 		}
-
-		return;
+		break;
 	case UVB_DEVICE_ACT_REMOVED:
 		vrt_port_disconnect(priv, source);
-		type = UHC_EVT_DEV_REMOVED;
 		break;
 	case UVB_DEVICE_ACT_SS:
 		__fallthrough;
 	default:
-		type = UHC_EVT_ERROR;
+		uhc_submit_event(dev, UHC_EVT_ERROR, 0);
+		break;
 	}
-
-	uhc_submit_event(dev, type, 0);
 }
 
 static void uhc_vrt_uvb_cb(const void *const vrt_priv,
@@ -784,35 +1129,16 @@ static int uhc_vrt_bus_suspend(const struct device *dev)
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
 	k_timer_stop(&priv->sof_timer);
+	priv->bus_suspended = true;
 
 	return uvb_advert(priv->host_node, UVB_EVT_SUSPEND, NULL, NULL);
 }
 
-static enum uvb_speed vrt_uvb_speed(const enum usb_device_speed speed)
-{
-	switch (speed) {
-	case USB_SPEED_SPEED_LS:
-		return UVB_SPEED_LS;
-	case USB_SPEED_SPEED_HS:
-		return UVB_SPEED_HS;
-	default:
-		return UVB_SPEED_FS;
-	}
-}
-
 static int uhc_vrt_bus_reset(const struct device *dev)
 {
-	struct uhc_vrt_data *priv = uhc_get_private(dev);
-	int ret;
+	ARG_UNUSED(dev);
 
-	k_timer_stop(&priv->sof_timer);
-	ret = uvb_advert(priv->host_node, UVB_EVT_RESET, NULL,
-			 INT_TO_POINTER(vrt_uvb_speed(priv->speed)));
-	/* TDRSTR */
-	k_msleep(50);
-	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
-
-	return ret;
+	return 0;
 }
 
 static int uhc_vrt_bus_resume(const struct device *dev)
@@ -820,6 +1146,7 @@ static int uhc_vrt_bus_resume(const struct device *dev)
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
 	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
+	priv->bus_suspended = false;
 
 	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL, NULL);
 }
@@ -868,7 +1195,7 @@ static int uhc_vrt_init(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	priv->sof_period = K_MSEC(1);
+	priv->sof_period = K_USEC(125);
 
 	return 0;
 }
@@ -876,8 +1203,19 @@ static int uhc_vrt_init(const struct device *dev)
 static int uhc_vrt_enable(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	int err;
 
-	return uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL, NULL);
+	err = uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL, NULL);
+	if (err != 0) {
+		return err;
+	}
+
+	/* The emulated root hub itself, permanently high-speed. */
+	priv->speed = USB_SPEED_SPEED_HS;
+	priv->sof_period = K_USEC(125);
+	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
+
+	return 0;
 }
 
 static int uhc_vrt_disable(const struct device *dev)
@@ -912,9 +1250,13 @@ static int uhc_vrt_driver_preinit(const struct device *dev)
 	priv->dev = dev;
 	k_mutex_init(&data->mutex);
 
+	data->caps.hs = 1;
 	priv->host_node->priv = dev;
 	k_fifo_init(&priv->fifo);
 	k_timer_init(&priv->sof_timer, sof_timer_handler, NULL);
+
+	/* USB 2.0 11.23.2.1: PortPwrCtrlMask should have all bits set to 1B. */
+	memset(vrt_hub_desc.PortPwrCtrlMask, 0xFF, sizeof(vrt_hub_desc.PortPwrCtrlMask));
 
 	k_thread_create(&priv->thread_data, config->thread_stack,
 			config->stack_size, uhc_vrt_thread_handler,
@@ -943,6 +1285,8 @@ static DEVICE_API(uhc, uhc_vrt_api) = {
 
 	.ep_enqueue = uhc_vrt_enqueue,
 	.ep_dequeue = uhc_vrt_dequeue,
+	.root_hub_control = vrt_root_hub_control,
+	.root_hub_status = vrt_root_hub_status,
 };
 
 #define DT_DRV_COMPAT zephyr_uhc_virtual
@@ -955,6 +1299,8 @@ static DEVICE_API(uhc, uhc_vrt_api) = {
 			     DT_NODE_FULL_NAME(DT_DRV_INST(n)),			\
 			     uhc_vrt_uvb_cb);					\
 										\
+	static struct usb_hub_status uhc_vrt_hub_status_##n;			\
+										\
 	static const struct uhc_vrt_config uhc_vrt_config_##n = {		\
 		.thread_stack = uhc_vrt_stack_area_##n,				\
 		.stack_size = K_THREAD_STACK_SIZEOF(uhc_vrt_stack_area_##n),	\
@@ -962,6 +1308,7 @@ static DEVICE_API(uhc, uhc_vrt_api) = {
 										\
 	static struct uhc_vrt_data uhc_priv_##n = {				\
 		.host_node = &uhc_bc_##n,					\
+		.hub_status = &uhc_vrt_hub_status_##n,				\
 	};									\
 										\
 	static struct uhc_data uhc_data_##n = {					\
