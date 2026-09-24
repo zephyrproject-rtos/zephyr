@@ -1291,6 +1291,7 @@ New Drivers
 
   * :dtcompatible:`st,stm32-dfsdm` (:github:`108302`)
   * :dtcompatible:`st,stm32-dfsdm-dmic` (:github:`108302`)
+  * :dtcompatible:`ti,tas2560` (:github:`120217`)
   * :dtcompatible:`ti,tas2563` (:github:`103148`)
   * :dtcompatible:`ti,tlv320aic26` (:github:`106836`)
   * :dtcompatible:`wolfson,wm8960` (:github:`106212`)
