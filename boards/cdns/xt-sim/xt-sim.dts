@@ -5,11 +5,16 @@
  */
 /dts-v1/;
 
+#include <freq.h>
 #include "sample_controller.dtsi"
 
 / {
 	model = "xt-sim";
 	compatible = "cdns,xtensa-sample-controller";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_M(2)>;
+	};
 
 	chosen {
 		zephyr,sram = &sram0;
