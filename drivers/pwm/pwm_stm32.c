@@ -728,13 +728,16 @@ static int pwm_stm32_init(const struct device *dev)
 		}
 
 		r = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1], &tim_clk);
-		if (r < 0) {
-			LOG_ERR("Timer clock rate get error (%d)", r);
-			return r;
-		}
+	} else if (IS_ENABLED(CONFIG_SOC_SERIES_STM32MP2X)) {
+		/* No selectable source: the gate clock rate is the timer clock rate */
+		r = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0], &tim_clk);
 	} else {
 		LOG_ERR("Timer clock source is not specified");
 		return -EINVAL;
+	}
+	if (r < 0) {
+		LOG_ERR("Timer clock rate get error (%d)", r);
+		return r;
 	}
 
 	data->tim_clk = tim_clk;
