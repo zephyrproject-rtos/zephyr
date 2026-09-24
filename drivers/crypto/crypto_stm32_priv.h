@@ -26,6 +26,7 @@ struct crypto_stm32_data {
 	CRYP_HandleTypeDef hcryp;
 	struct k_sem device_sem;
 	struct k_sem session_sem;
+	struct k_sem complete_sem;
 };
 
 struct crypto_stm32_session {

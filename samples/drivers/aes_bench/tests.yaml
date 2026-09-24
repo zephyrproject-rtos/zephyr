@@ -1,0 +1,28 @@
+sample:
+  description: Benchmark AES cipher API throughput and CPU load
+  name: AES HW benchmark
+common:
+  tags: crypto
+tests:
+  sample.drivers.aes_bench:
+    platform_allow:
+      - stm32mp135f_dk
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "AES HW benchmark"
+        - "BENCH AES256-CBC .*"
+  sample.drivers.aes_bench.cpu:
+    extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
+    platform_allow:
+      - native_sim
+      - stm32mp135f_dk
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "AES SW benchmark"
+        - "BENCH AES256-CBC .*"
