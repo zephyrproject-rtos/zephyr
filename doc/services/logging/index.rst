@@ -21,7 +21,7 @@ Summary of the logging features:
   consuming operations to a known context, instead of processing and sending
   the log message when called.
 - Multiple backends supported (up to 9 backends).
-- Custom frontend support. It can work together with backends.
+- Custom frontend support, which can work together with standard backends.
 - Compile time filtering on module level.
 - Independent runtime filtering for each backend.
 - Additional runtime filtering on module instance level.
