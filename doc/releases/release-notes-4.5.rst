@@ -860,6 +860,10 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_USBC_LOG_PD_MSG_NAMES`
 
+* Utilities
+
+  * :c:macro:`ARGS_UNUSED` to mark multiple arguments as unused.
+
 * Zbus
 
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION`

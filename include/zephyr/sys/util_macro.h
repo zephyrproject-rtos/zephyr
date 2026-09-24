@@ -698,6 +698,25 @@ extern "C" {
 	Z_FOR_EACH_ENGINE(Z_FOR_EACH_EXEC, (,), Z_BYPASS, _, __VA_ARGS__)
 
 /**
+ * @brief Mark each argument as unused to suppress compiler warnings.
+ *
+ * Applies ARG_UNUSED() to every element of the argument list.
+ *
+ * Example:
+ *
+ *     ARGS_UNUSED(p1, p2, p3);
+ *
+ * This expands to:
+ *
+ *     (void)(p1);
+ *     (void)(p2);
+ *     (void)(p3);
+ *
+ * @param ... List of variables to mark as unused.
+ */
+#define ARGS_UNUSED(...) FOR_EACH(ARG_UNUSED, (;), __VA_ARGS__)
+
+/**
  * @brief Number of arguments in the variable arguments list minus one.
  *
  * @note Supports up to 64 arguments.
