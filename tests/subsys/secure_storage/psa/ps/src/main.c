@@ -7,18 +7,29 @@
 #include <zephyr/storage/flash_map.h>
 #include <psa/protected_storage.h>
 
-/* The flash must be erased after this test suite is run for the write-once entry test to pass. */
+/* The flash must be erased after this test suite is run for the write-once entry test to pass.
+ * Both the ITS partition (storage_partition) and the PS one (storage_partition_2) are erased,
+ * so that no PS entry is left without its replay protection value in ITS.
+ */
 #if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_FLASH_PAGE_LAYOUT) &&                        \
 	PARTITION_EXISTS(storage_partition)
 static int erase_flash(void)
 {
-	const struct device *const fdev = PARTITION_DEVICE(storage_partition);
 	int rc;
 
-	rc = flash_flatten(fdev, PARTITION_OFFSET(storage_partition),
+	rc = flash_flatten(PARTITION_DEVICE(storage_partition),
+			   PARTITION_OFFSET(storage_partition),
 			   PARTITION_SIZE(storage_partition));
 	if (rc < 0) {
 		TC_PRINT("Failed to flatten the storage partition (%d) !", rc);
+		return rc;
+	}
+
+	rc = flash_flatten(PARTITION_DEVICE(storage_partition_2),
+			   PARTITION_OFFSET(storage_partition_2),
+			   PARTITION_SIZE(storage_partition_2));
+	if (rc < 0) {
+		TC_PRINT("Failed to flatten the storage partition 2 (%d) !", rc);
 		return rc;
 	}
 
