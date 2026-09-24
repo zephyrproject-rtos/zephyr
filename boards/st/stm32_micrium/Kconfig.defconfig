@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32_MICRIUM
+
+configdefault ETH_DRIVER
+	default y
+
+endif # BOARD_STM32_MICRIUM
