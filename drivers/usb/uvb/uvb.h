@@ -141,6 +141,7 @@ struct uvb_node {
 	/** Pointer to the notify callback of the UVB node */
 	void (*notify)(const void *const priv,
 		       const enum uvb_event_type type,
+		       const struct uvb_node *const source,
 		       const void *data);
 	/** Internally used atomic value */
 	atomic_t subscribed;
@@ -176,17 +177,18 @@ void uvb_free_pkt(struct uvb_packet *const pkt);
 /**
  * @brief Advert UVB event on virtual bus
  *
- * All devices subscribed to a controller are advertised.
- * Events like UVB_EVT_REQUEST are to be filtered by using device address.
+ * If target is NULL, all devices subscribed to a controller are advertised.
  *
  * @param[in] host_node Pointer to host controller UVB node
  * @param[in] type      UVB event type
+ * @param[in] target    Device UVB node to advert to, or NULL for all
  * @param[in] pkt       Pointer to UVB packet or NULL
  *
  * @return 0 on success, all other values should be treated as error.
  */
 int uvb_advert(const struct uvb_node *const host_node,
 	       const enum uvb_event_type type,
+	       const struct uvb_node *const target,
 	       const struct uvb_packet *const pkt);
 
 /**
@@ -233,14 +235,16 @@ int uvb_unsubscribe(const char *name, struct uvb_node *const dev_node);
  * @brief Advert request UVB event on virtual bus
  *
  * @param[in] host_node Pointer to host controller UVB node
+ * @param[in] target    Device UVB node to advert to
  * @param[in] pkt       Pointer to UVB packet
  *
  * @return 0 on success, all other values should be treated as error.
  */
 static inline int uvb_advert_pkt(const struct uvb_node *const host_node,
+				 const struct uvb_node *const target,
 				 const struct uvb_packet *const pkt)
 {
-	return uvb_advert(host_node, UVB_EVT_REQUEST, pkt);
+	return uvb_advert(host_node, UVB_EVT_REQUEST, target, pkt);
 }
 
 /**

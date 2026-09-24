@@ -34,6 +34,7 @@ struct uvb_msg {
 		struct uvb_node *sink;
 		struct {
 			enum uvb_event_type type;
+			const struct uvb_node *target;
 			const void *data;
 		} event;
 	};
@@ -129,12 +130,13 @@ static ALWAYS_INLINE bool try_dispatch_inline(struct uvb_msg *const msg)
 
 int uvb_advert(const struct uvb_node *const host_node,
 	       const enum uvb_event_type type,
+	       const struct uvb_node *const target,
 	       const struct uvb_packet *const pkt)
 {
 	struct uvb_msg stack_msg = {
 		.source = host_node,
 		.type = UVB_MSG_ADVERT,
-		.event = { .type = type, .data = (void *)pkt },
+		.event = { .type = type, .target = target, .data = (void *)pkt },
 	};
 	struct uvb_msg *msg;
 	int err;
@@ -150,6 +152,7 @@ int uvb_advert(const struct uvb_node *const host_node,
 
 	msg->type = UVB_MSG_ADVERT;
 	msg->event.type = type;
+	msg->event.target = target;
 	msg->event.data = (void *)pkt;
 	err = submit_new_work(msg);
 
@@ -304,10 +307,20 @@ static ALWAYS_INLINE void handle_msg_event(struct uvb_msg *const msg)
 
 	host_node = (struct uvb_node *)msg->source;
 	SYS_DLIST_FOR_EACH_CONTAINER(&host_node->list, dev_node, node) {
+		/*
+		 * target parameter is used to emulate port-scoped
+		 * operations (reset, suspend and resume) like on real hub
+		 * hardware. Everything else is broadcasted to all devices.
+		 */
+		if (msg->event.target != NULL && msg->event.target != dev_node) {
+			continue;
+		}
+
 		LOG_DBG("%p from %p to %p", msg, host_node, dev_node);
 		if (dev_node->notify) {
 			dev_node->notify(dev_node->priv,
 					 msg->event.type,
+					 host_node,
 					 msg->event.data);
 		}
 	}
@@ -328,6 +341,7 @@ static ALWAYS_INLINE void handle_msg_to_host(struct uvb_msg *const msg)
 		if (host_node->head && host_node->notify) {
 			host_node->notify(host_node->priv,
 					  msg->event.type,
+					  source,
 					  msg->event.data);
 		}
 	}
