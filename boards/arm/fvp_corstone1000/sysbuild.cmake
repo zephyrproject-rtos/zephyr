@@ -30,6 +30,11 @@
 
 include(ExternalProject)
 
+if(CMAKE_HOST_WIN32)
+  message(FATAL_ERROR "Corstone-1000: Windows hosts are not supported. "
+    "Building the firmware images requires sh, dd and sgdisk.")
+endif()
+
 # Zephyr SDK is required for both the Cortex-M0+ (TF-M) and AArch64 (TF-A) toolchains.
 find_package(Zephyr-sdk QUIET CONFIG HINTS $ENV{ZEPHYR_SDK_INSTALL_DIR})
 if(NOT ZEPHYR_SDK_INSTALL_DIR AND DEFINED ENV{ZEPHYR_SDK_INSTALL_DIR})
