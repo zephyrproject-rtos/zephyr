@@ -427,7 +427,7 @@ static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	struct dma_block_config dma_blk = { 0 };
 	int retval;
 
-	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
 	dma_cfg.block_count = 1;
