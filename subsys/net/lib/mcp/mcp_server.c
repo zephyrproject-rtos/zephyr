@@ -1172,15 +1172,22 @@ cleanup_active_request:
 	if (k_mutex_lock(&client_registry->mutex, K_FOREVER) == 0) {
 		bool released = (client->active_requests[request_index] == exec_ctx);
 
-		client->active_request_count--;
 		if (released) {
+			client->active_request_count--;
 			client->active_requests[request_index] = 0;
 		}
 		k_mutex_unlock(&client_registry->mutex);
 
-		if (released) {
+		if (!released) {
+			/*
+			 * The tool already sent its final response, which ran
+			 * the whole request cleanup.
+			 */
 			client_put(client);
+			return ret;
 		}
+
+		client_put(client);
 	}
 
 cleanup_execution:
