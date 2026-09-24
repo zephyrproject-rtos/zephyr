@@ -1392,6 +1392,29 @@ NXP
     /* After */
     #include <nxp/mcx/mcxn/nxp_mcxn947.dtsi>
 
+* The NXP MCXW23 boards ``frdm_mcxw23`` and ``mcxw23_evk`` now build a
+  secure image by default, instead of the single non-secure image they
+  built previously. MCXW235/MCXW236 support a secure/non-secure address
+  alias split like the rest of the MCXW family, and every other
+  TrustZone-capable board in this tree already builds secure by default
+  with an explicit ``ns`` variant for the non-secure image; these two
+  boards were the exception. ``west build -b frdm_mcxw23`` (and
+  ``mcxw23_evk``) now produces an image using a new dedicated secure
+  composer DTSI (``nxp_mcxw236.dtsi``, ``peripheral@50000000``) instead
+  of the non-secure one (``nxp_mcxw236_ns.dtsi``, ``peripheral@40000000``)
+  it used before; build ``frdm_mcxw23/mcxw236/ns`` (or
+  ``mcxw23_evk/mcxw236/ns``) to get the previous non-secure addressing.
+  The flash/RAM partition layout is unchanged either way, so the ``ns``
+  variant is not a reduced counterpart to the secure image, just the same
+  single-image build compiled against the other address alias.
+
+* The NXP MCXW2xx series gained a dedicated composer DTSI pair for
+  MCXW235 (``nxp_mcxw235.dtsi``/``nxp_mcxw235_ns.dtsi``), a real silicon
+  part that previously had no Zephyr representation. New
+  ``SOC_PART_NUMBER`` Kconfig entries were also added for the
+  AIHNAR/AIUKAR/BIUKAR package suffixes of both MCXW235 and MCXW236 (only
+  BIHNAR previously had an entry for each).
+
 * The NXP i.MX RT DTSI files were reorganized from the flat directory
   ``dts/arm/nxp/imxrt/`` into per-series subdirectories, Out-of-tree
   boards that include these files directly must update their includes.
