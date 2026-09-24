@@ -399,8 +399,8 @@ struct pdu_adv_connect_ind {
 	uint8_t init_addr[BDADDR_SIZE];
 	uint8_t adv_addr[BDADDR_SIZE];
 	struct {
-		uint8_t  access_addr[4];
-		uint8_t  crc_init[3];
+		uint8_t  access_addr[PDU_ACCESS_ADDR_SIZE];
+		uint8_t  crc_init[PDU_CRC_SIZE];
 		uint8_t  win_size;
 		uint16_t win_offset;
 		uint16_t interval;
