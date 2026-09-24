@@ -1702,10 +1702,16 @@ z_impl_zsock_sendto_custom_fake_observe_subscribe(int sock, void *buf, size_t le
 	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
 }
 
+/* Uri-Query carried by the deregister tests; RFC 7641 requires a deregister to repeat the
+ * options of the registration request.
+ */
+#define TEST_QUERY "id=1"
+
 static void verify_deregister_packet(void *buf, size_t len, uint8_t expected_type)
 {
 	struct coap_packet pkt = {0};
 	struct coap_option obs_opt = {0};
+	struct coap_option query_opt = {0};
 	uint8_t token[COAP_TOKEN_MAX_LEN];
 	int ret;
 
@@ -1722,6 +1728,11 @@ static void verify_deregister_packet(void *buf, size_t len, uint8_t expected_typ
 	coap_header_get_token(&pkt, token);
 	zassert_mem_equal(token, saved_observe_token, COAP_TOKEN_MAX_LEN,
 			  "Deregister token must match original observe token");
+
+	ret = coap_find_options(&pkt, COAP_OPTION_URI_QUERY, &query_opt, 1);
+	zassert_equal(ret, 1, "Uri-Query option missing in deregister");
+	zassert_equal(query_opt.len, strlen(TEST_QUERY), "Unexpected Uri-Query length");
+	zassert_mem_equal(query_opt.value, TEST_QUERY, query_opt.len, "Unexpected Uri-Query value");
 }
 
 static ssize_t z_impl_zsock_sendto_custom_fake_deregister_con(int sock, void *buf, size_t len,
@@ -1750,12 +1761,19 @@ ZTEST(coap_client, test_observe_deregister_con)
 		.path = TEST_PATH,
 		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 		.cb = coap_callback,
-		.options = {{
-			.code = COAP_OPTION_OBSERVE,
-			.value[0] = 0,
-			.len = 1,
-		}},
-		.num_options = 1,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
 		.user_data = &sem1,
 	};
 
@@ -1785,12 +1803,19 @@ ZTEST(coap_client, test_observe_deregister_non)
 		.path = TEST_PATH,
 		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 		.cb = coap_callback,
-		.options = {{
-			.code = COAP_OPTION_OBSERVE,
-			.value[0] = 0,
-			.len = 1,
-		}},
-		.num_options = 1,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
 		.user_data = &sem1,
 	};
 
