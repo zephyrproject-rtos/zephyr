@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <freq.h>
 #include <nuvoton/m46x.dtsi>
 #include "numaker_pfm_m467-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -13,6 +14,10 @@
 / {
 	model = "Nuvoton PFM M467 board";
 	compatible = "nuvoton,pfm-m467", "nuvoton,m467";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_M(200)>;
+	};
 
 	aliases {
 		led0 = &green_led;
