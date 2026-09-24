@@ -162,6 +162,12 @@ tests:
       - lp_mspm0g3519
       - lp_mspm0l2228
       - lp_mspm33c321a
+  drivers.uart.uart_elementary.lp_am13e230:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - lp_am13e230
+    integration_platforms:
+      - lp_am13e230
   drivers.uart.uart_elementary.build_gd32:
     build_only: true
     harness: ""
