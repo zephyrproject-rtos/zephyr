@@ -508,6 +508,21 @@ ZTEST(util, test_FOR_EACH_IDX_FIXED_ARG) {
 	zassert_equal(a2, 3, "Unexpected value %d", a2);
 }
 
+ZTEST(util, test_ARGS_UNUSED) {
+	int a = 0;
+	int b = 0;
+	int c = 0;
+
+	ARGS_UNUSED(a++, b++, c++);
+
+	zassert_equal(a, 1, "First argument not expanded once");
+	zassert_equal(b, 1, "Middle argument not expanded once");
+	zassert_equal(c, 1, "Last argument not expanded once");
+
+	ARGS_UNUSED(a++);
+	zassert_equal(a, 2, "Single argument not expanded once");
+}
+
 ZTEST(util, test_IS_EMPTY) {
 	#define test_IS_EMPTY_REAL_EMPTY
 	#define test_IS_EMPTY_NOT_EMPTY XXX_DO_NOT_REPLACE_XXX
