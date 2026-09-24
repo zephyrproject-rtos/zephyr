@@ -11,10 +11,12 @@
 #include <zephyr/dt-bindings/reset/intel_socfpga_reset.h>
 #include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <freq.h>
 #include <mem.h>
 
 / {
 	cpus {
+		timebase-frequency = <DT_FREQ_M(400)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 
