@@ -1264,6 +1264,50 @@ static int prepare_read(const struct device *dev, const struct adc_sequence *seq
 	return 0;
 }
 
+__maybe_unused static bool adc_stm32_reg_eoc_is_set(ADC_TypeDef *adc)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	return LL_ADC_IsActiveFlag_EOS(adc) == 1;
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	return LL_ADC_IsActiveFlag_EOCS(adc) == 1;
+#else
+	return LL_ADC_IsActiveFlag_EOC(adc) == 1;
+#endif
+}
+
+__maybe_unused static void adc_stm32_reg_eoc_clear(ADC_TypeDef *adc)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	LL_ADC_ClearFlag_EOS(adc);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	LL_ADC_ClearFlag_EOCS(adc);
+#else
+	LL_ADC_ClearFlag_EOC(adc);
+#endif
+}
+
+__maybe_unused static void adc_stm32_enable_eoc_it(ADC_TypeDef *adc)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	LL_ADC_EnableIT_EOCS(adc);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	LL_ADC_EnableIT_EOS(adc);
+#else
+	LL_ADC_EnableIT_EOC(adc);
+#endif
+}
+
+__maybe_unused static void adc_stm32_disable_eoc_it(ADC_TypeDef *adc)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	LL_ADC_DisableIT_EOCS(adc);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	LL_ADC_DisableIT_EOS(adc);
+#else
+	LL_ADC_DisableIT_EOC(adc);
+#endif
+}
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
@@ -1330,12 +1374,8 @@ static int start_read(const struct device *dev,
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	/* Trigger an ISR after each sampling (not just end of sequence) */
 	LL_ADC_REG_SetFlagEndOfConversion(adc, LL_ADC_REG_FLAG_EOC_UNITARY_CONV);
-	LL_ADC_EnableIT_EOCS(adc);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
-	LL_ADC_EnableIT_EOS(adc);
-#else
-	LL_ADC_EnableIT_EOC(adc);
 #endif
+	adc_stm32_enable_eoc_it(adc);
 #endif /* CONFIG_ADC_STM32_DMA */
 
 #ifdef CONFIG_ADC_STREAM
@@ -1428,13 +1468,7 @@ static void adc_stm32_isr(const struct device *dev)
 	}
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
-	if (LL_ADC_IsActiveFlag_EOS(adc) == 1) {
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
-	if (LL_ADC_IsActiveFlag_EOCS(adc) == 1) {
-#else
-	if (LL_ADC_IsActiveFlag_EOC(adc) == 1) {
-#endif
+	if (adc_stm32_reg_eoc_is_set(adc)) {
 
 #ifndef CONFIG_ADC_STREAM
 		*data->buffer++ = LL_ADC_REG_ReadConversionData32(adc);
