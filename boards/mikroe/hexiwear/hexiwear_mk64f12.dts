@@ -99,6 +99,10 @@
 	er32k-select = <KINETIS_SIM_ER32KSEL_RTC>;
 };
 
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(120)>;
+};
+
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(120)>;
 };
