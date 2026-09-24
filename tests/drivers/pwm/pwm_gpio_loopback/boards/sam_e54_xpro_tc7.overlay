@@ -1,12 +1,13 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
- *
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* connect the PB01 to PC02 */
+/* connect PB01 to PC02 */
 
-#include <zephyr/dt-bindings/gpio/gpio.h>
+#define PWM_NODE     tc7
+#define PWM_PINCTRL  tc7_pwm_default
+#include "mchp_pwm_loopback_support.dtsi"
 
 / {
 	zephyr,user {
@@ -15,13 +16,8 @@
 	};
 };
 
-&tc7 {
+&portc {
 	status = "okay";
-	compatible = "microchip,tc-g1-pwm";
-	#pwm-cells = <3>;
-	pinctrl-0 = <&tc7_pwm_default>;
-	pinctrl-names = "default";
-	prescaler = <4>;
 };
 
 &pinctrl {
