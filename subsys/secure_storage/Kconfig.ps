@@ -1,0 +1,27 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+choice SECURE_STORAGE_PS_IMPLEMENTATION
+	prompt "Protected Storage (PS) API implementation"
+	default SECURE_STORAGE_PS_IMPLEMENTATION_ITS
+
+config SECURE_STORAGE_PS_IMPLEMENTATION_ITS
+	bool "PS calls directly into the ITS"
+	help
+	  The PS API doesn't have an implementation of its own, and directly calls into the ITS API.
+	  This means that the implementation of the PS API will be identical to that of the ITS API.
+
+config SECURE_STORAGE_PS_IMPLEMENTATION_CUSTOM
+	bool "Custom PS implementation"
+	help
+	  A custom implementation of the PS API is present.
+	  Implement the functions declared in <zephyr/secure_storage/ps.h>.
+	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_PS_IMPLEMENTATION
+
+config SECURE_STORAGE_PS_SUPPORTS_SET_EXTENDED
+	bool "PS API implementation supports psa_ps_create() and psa_ps_set_extended()"
+	depends on SECURE_STORAGE_PS_IMPLEMENTATION_CUSTOM
+	help
+	  Whether the psa_ps_create() and psa_ps_set_extended() functions are implemented.
