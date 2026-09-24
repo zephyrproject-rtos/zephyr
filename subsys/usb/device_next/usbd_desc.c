@@ -108,6 +108,10 @@ int usbd_desc_remove_all(struct usbd_context *const uds_ctx)
 	struct usbd_desc_node *tmp;
 	sys_dnode_t *node;
 
+	if (!sys_dnode_is_linked(&uds_ctx->descriptors)) {
+		return 0;
+	}
+
 	while ((node = sys_dlist_get(&uds_ctx->descriptors))) {
 		tmp = CONTAINER_OF(node, struct usbd_desc_node, node);
 		LOG_DBG("Remove descriptor node %p type %u",
