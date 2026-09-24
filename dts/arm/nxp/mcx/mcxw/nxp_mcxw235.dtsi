@@ -1,0 +1,36 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MCXW235 has 512 KiB of flash vs MCXW236's 1016 KiB
+ * (FSL_FEATURE_SYSCON_FLASH_SIZE_BYTES: 524288 vs 1040384 in the vendor
+ * feature headers). No peripheral differences are modeled in this
+ * devicetree for the two parts.
+ */
+#include "nxp_mcxw236.dtsi"
+
+&iap {
+	ranges = <0x0 0x10000000 DT_SIZE_K(512)>;
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_K(512)>;
+	ranges = <0x0 0x0 DT_SIZE_K(512)>;
+};
+
+/*
+ * MCXW235 has 96 KiB of RAM vs MCXW236's 128 KiB: the tightly-coupled
+ * sramx region is unchanged at 16 KiB, and the main sram0 region is
+ * 80 KiB instead of 112 KiB.
+ */
+&sram {
+	ranges = <0x4000000 0x14000000 DT_SIZE_K(16)>,
+		 <0x20004000 0x30004000 DT_SIZE_K(80)>;
+};
+
+&sram0 {
+	reg = <0x20004000 DT_SIZE_K(80)>;
+};
