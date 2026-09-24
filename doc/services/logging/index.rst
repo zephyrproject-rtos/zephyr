@@ -545,7 +545,11 @@ A log message has the following format:
 |                  +----------------------------------------------------+
 |                  | 32 or 64 bits: Timestamp [#l0]_                    |
 |                  +----------------------------------------------------+
-|                  | Optional padding [#l1]_                            |
+|                  | pointer: Pointer to thread ID (optional) [#l1]_    |
+|                  +----------------------------------------------------+
+|                  | 8 bits: core ID (optional) [#l2]_                  |
+|                  +----------------------------------------------------+
+|                  | Optional padding [#l3]_                            |
 +------------------+----------------------------------------------------+
 | Cbprintf         | Header                                             |
 |                  +----------------------------------------------------+
@@ -560,8 +564,11 @@ A log message has the following format:
 
 .. rubric:: Footnotes
 
-.. [#l0] Depending on the platform and the timestamp size fields may be swapped.
-.. [#l1] It may be required for cbprintf package alignment
+.. [#l0] Depending on their size, the source descriptor and timestamp fields may be swapped,
+         in order to reduce the amount of padding.
+.. [#l1] Only present if CONFIG_LOG_THREAD_ID_PREFIX is enabled.
+.. [#l2] Only present if CONFIG_LOG_CORE_ID_PREFIX is enabled.
+.. [#l3] It may be required for cbprintf package alignment.
 
 Log message allocation
 ----------------------
