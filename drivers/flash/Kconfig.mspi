@@ -58,13 +58,16 @@ if FLASH_MSPI_NOR
 
 config FLASH_MSPI_NOR_USE_SFDP
 	bool "Use Serial Flash Discoverable Parameters (SFDP)"
-	default $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_NOR),sfdp-bfp)
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_NOR),sfdp-bfp) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_NOR),use-runtime-sfdp,True)
 	help
 	  Use information from SFDP for setting up flash command transfers
 	  and for configuring the flash chip.
 
-	  Currently, only build time processing of SFDP structures is supported,
-	  based on dts arrays provided as flash node properties like `sfdp-bfp`,
+	  For flash instances that have the `use-runtime-sfdp` property set,
+	  the SFDP database is read from the chip and processed at runtime.
+	  For the others, the SFDP processing is done at build time and based
+	  on dts arrays provided as flash node properties like `sfdp-bfp`,
 	  `sfdp-ff05`, and `sfdp-ff84`. Depending on the IO mode used, some or
 	  all of these properties are required for building the flash driver.
 	  Data for these properties can be obtained with the `drivers/jesd216`

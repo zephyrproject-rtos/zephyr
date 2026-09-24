@@ -377,12 +377,38 @@ static inline uint32_t dev_flash_size(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 
+#if defined(WITH_RUNTIME_SFDP)
+	/* Use the value read from SFDP only if the flash size is not
+	 * specified in dts.
+	 */
+	if (dev_config->flash_size == 0 && dev_config->uses_runtime_sfdp) {
+		struct flash_mspi_nor_data *dev_data = dev->data;
+
+		return dev_data->flash_size;
+	}
+#endif
+
 	return dev_config->flash_size;
 }
 
 static inline uint16_t dev_page_size(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
+
+#if defined(WITH_RUNTIME_SFDP)
+	if (dev_config->page_size == 0) {
+		/* Use the value read from SFDP only if the page size is not
+		 * specified in dts.
+		 */
+		if (dev_config->uses_runtime_sfdp) {
+			struct flash_mspi_nor_data *dev_data = dev->data;
+
+			return dev_data->page_size;
+		} else {
+			return SPI_NOR_PAGE_SIZE;
+		}
+	}
+#endif
 
 	return dev_config->page_size;
 }
@@ -759,8 +785,18 @@ static void api_page_layout(const struct device *dev,
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 
-	*layout = &dev_config->layout;
 	*layout_size = 1;
+
+#if defined(WITH_RUNTIME_SFDP)
+	if (dev_config->uses_runtime_sfdp) {
+		struct flash_mspi_nor_data *dev_data = dev->data;
+
+		*layout = &dev_data->layout;
+		return;
+	}
+#endif
+
+	*layout = &dev_config->layout;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
@@ -1138,6 +1174,472 @@ static int switch_to_target_io_mode(const struct device *dev)
 	return 0;
 }
 
+#if defined(WITH_RUNTIME_SFDP)
+#define BFP_DW_MAX 23
+static void sfdp_process_bfp(const struct device *dev,
+			     const struct jesd216_param_header *php,
+			     uint32_t param_data[])
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	enum mspi_data_rate data_rate = dev_config->mspi_control_cfg.data_rate;
+	const struct jesd216_bfp *bfp = (const struct jesd216_bfp *)param_data;
+	struct jesd216_erase_type *et = dev_data->erase_types;
+	uint16_t read_cmd_bf = 0;
+
+	/* Make sure that all DWORDs that are processed by this function
+	 * but were not read from the flash chip have the value of 0.
+	 */
+	if (php->len_dw < BFP_DW_MAX) {
+		memset(&param_data[php->len_dw], 0,
+			(BFP_DW_MAX - php->len_dw) * sizeof(uint32_t));
+	}
+
+	dev_data->flash_size = jesd216_bfp_density(bfp) / 8;
+	dev_data->page_size = jesd216_bfp_page_size(php, bfp);
+
+	if (jesd216_bfp_addrbytes(bfp) == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B) {
+		dev_data->cmd_info.uses_4byte_addr = true;
+	}
+
+	dev_data->switch_info.quad_enable_req =
+		FIELD_GET(GENMASK(22, 20), bfp->dw10[5]);
+
+	dev_data->switch_info.octal_enable_req =
+		FIELD_GET(GENMASK(22, 20), bfp->dw10[9]);
+
+	if (dev_data->cmd_info.uses_4byte_addr) {
+		uint8_t opts = FIELD_GET(GENMASK(31, 24), bfp->dw10[6]);
+
+		if (opts & (BFP_DW16_4B_ADDR_PER_CMD | BFP_DW16_4B_ADDR_ALWAYS)) {
+			dev_data->switch_info.enter_4byte_addr =
+				ENTER_4BYTE_ADDR_NONE;
+		} else if (opts & BFP_DW16_4B_ADDR_ENTER_B7) {
+			dev_data->switch_info.enter_4byte_addr =
+				ENTER_4BYTE_ADDR_B7;
+		} else if (opts & BFP_DW16_4B_ADDR_ENTER_06_B7) {
+			dev_data->switch_info.enter_4byte_addr =
+				ENTER_4BYTE_ADDR_06_B7;
+		}
+	}
+
+	/* If 4-byte addressing mode is to be used, the erase types array
+	 * items as well as the read and page program instruction codes will
+	 * be modified accordingly in sfdp_process_4b_addr_instr().
+	 */
+
+	et[0].cmd = FIELD_GET(GENMASK(15, 8),  bfp->dw8);
+	et[0].exp = FIELD_GET(GENMASK(7, 0),   bfp->dw8);
+	et[1].cmd = FIELD_GET(GENMASK(31, 24), bfp->dw8);
+	et[1].exp = FIELD_GET(GENMASK(23, 16), bfp->dw8);
+	et[2].cmd = FIELD_GET(GENMASK(15, 8),  bfp->dw9);
+	et[2].exp = FIELD_GET(GENMASK(7, 0),   bfp->dw9);
+	et[3].cmd = FIELD_GET(GENMASK(31, 24), bfp->dw9);
+	et[3].exp = FIELD_GET(GENMASK(23, 16), bfp->dw9);
+
+	switch (dev_config->read_io_mode) {
+	case MSPI_IO_MODE_OCTAL_1_8_8:
+		/* 1S-8S-8S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			read_cmd_bf = bfp->dw10[7] & 0xFFFF;
+		}
+		break;
+	case MSPI_IO_MODE_OCTAL_1_1_8:
+		/* 1S-1S-8S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			read_cmd_bf = bfp->dw10[7] >> 16;
+		}
+		break;
+	case MSPI_IO_MODE_QUAD:
+		/* 4S-4D-4D */
+		if (data_rate == MSPI_DATA_RATE_S_D_D) {
+			read_cmd_bf = bfp->dw10[13] >> 16;
+		}
+		/* 4S-4S-4S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			read_cmd_bf = bfp->dw7 >> 16;
+		}
+		break;
+	case MSPI_IO_MODE_QUAD_1_4_4:
+		/* 1S-4D-4D */
+		if (data_rate == MSPI_DATA_RATE_S_D_D) {
+			read_cmd_bf = bfp->dw10[13] & 0xFFFF;
+		}
+		/* 1S-4S-4S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			read_cmd_bf = bfp->dw3 & 0xFFFF;
+		}
+		break;
+	case MSPI_IO_MODE_QUAD_1_1_4:
+		/* 1S-1S-4S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			read_cmd_bf = bfp->dw3 >> 16;
+		}
+		break;
+	case MSPI_IO_MODE_DUAL:
+		/* 2S-2S-2S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			read_cmd_bf = bfp->dw6 >> 16;
+		}
+		break;
+	case MSPI_IO_MODE_DUAL_1_2_2:
+		/* 1S-2D-2D */
+		if (data_rate == MSPI_DATA_RATE_S_D_D) {
+			read_cmd_bf = bfp->dw10[12] >> 16;
+		}
+		break;
+		/* 1S-2S-2S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			read_cmd_bf = bfp->dw4 >> 16;
+		}
+	case MSPI_IO_MODE_DUAL_1_1_2:
+		/* 1S-1S-2S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			read_cmd_bf = bfp->dw4 & 0xFFFF;
+		}
+		break;
+	case MSPI_IO_MODE_SINGLE:
+		/* 1S-1D-1D */
+		if (data_rate == MSPI_DATA_RATE_S_D_D) {
+			read_cmd_bf = bfp->dw10[12] & 0xFFFF;
+		}
+		/* 1S-1S-1S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			/* Form a bit field for the standard fast read command
+			 * (with 0 mode bit and 8 dummy cycles).
+			 */
+			read_cmd_bf = (SPI_NOR_CMD_READ_FAST << 8)
+				    | (0 << 5)
+				    | 8;
+		}
+		break;
+	default:
+	}
+
+	if (read_cmd_bf != 0) {
+		dev_data->cmd_info.read_cmd =
+			FIELD_GET(GENMASK(15, 8), read_cmd_bf);
+		dev_data->cmd_info.read_mode_bit_cycles =
+			FIELD_GET(GENMASK(7, 5), read_cmd_bf);
+		dev_data->cmd_info.read_dummy_cycles =
+			FIELD_GET(GENMASK(4, 0), read_cmd_bf);
+	}
+
+	switch (dev_config->write_io_mode) {
+	case MSPI_IO_MODE_OCTAL_1_8_8:
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			dev_data->cmd_info.pp_cmd = SPI_NOR_CMD_PP_1_8_8;
+		}
+		break;
+	case MSPI_IO_MODE_OCTAL_1_1_8:
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			dev_data->cmd_info.pp_cmd = SPI_NOR_CMD_PP_1_1_8;
+		}
+		break;
+	case MSPI_IO_MODE_QUAD_1_4_4:
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			dev_data->cmd_info.pp_cmd = SPI_NOR_CMD_PP_1_4_4;
+		}
+		break;
+	case MSPI_IO_MODE_QUAD_1_1_4:
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			dev_data->cmd_info.pp_cmd = SPI_NOR_CMD_PP_1_1_4;
+		}
+		break;
+	case MSPI_IO_MODE_SINGLE:
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			dev_data->cmd_info.pp_cmd = SPI_NOR_CMD_PP;
+		}
+		break;
+	default:
+	}
+
+	if (dev_config->read_io_mode  != MSPI_IO_MODE_OCTAL &&
+	    dev_config->write_io_mode != MSPI_IO_MODE_OCTAL) {
+		dev_data->cmd_info.cmd_extension = CMD_EXTENSION_NONE;
+	} else if (FIELD_GET(GENMASK(30, 29), bfp->dw10[8]) ==
+		   BFP_DW18_CMD_EXT_INV) {
+		dev_data->cmd_info.cmd_extension = CMD_EXTENSION_INVERSE;
+	} else {
+		dev_data->cmd_info.cmd_extension = CMD_EXTENSION_SAME;
+	}
+}
+
+static void sfdp_process_4b_addr_instr(const struct device *dev,
+				       uint32_t param_data[2])
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	enum mspi_data_rate data_rate = dev_config->mspi_control_cfg.data_rate;
+	uint32_t dw1 = param_data[0],
+		 dw2 = param_data[1];
+	struct jesd216_erase_type *et = dev_data->erase_types;
+	uint8_t read_cmd = 0;
+	uint8_t pp_cmd = 0;
+
+	/* If a given erase type is supported in 4-byte addressing mode,
+	 * get its instruction code, otherwise, clear its exponent to mark
+	 * that it is not available.
+	 */
+	if (dw1 & JESD216_SFDP_4B_ADDR_DW1_ERASE_TYPE_1_SUP) {
+		et[0].cmd = FIELD_GET(GENMASK(7, 0), dw2);
+	} else {
+		et[0].exp = 0;
+	}
+	if (dw1 & JESD216_SFDP_4B_ADDR_DW1_ERASE_TYPE_2_SUP) {
+		et[1].cmd = FIELD_GET(GENMASK(15, 8), dw2);
+	} else {
+		et[1].exp = 0;
+	}
+	if (dw1 &  JESD216_SFDP_4B_ADDR_DW1_ERASE_TYPE_3_SUP) {
+		et[2].cmd = FIELD_GET(GENMASK(23, 16), dw2);
+	} else {
+		et[2].exp = 0;
+	}
+	if (dw1 &  JESD216_SFDP_4B_ADDR_DW1_ERASE_TYPE_4_SUP) {
+		et[3].cmd = FIELD_GET(GENMASK(31, 24), dw2);
+	} else {
+		et[3].exp = 0;
+	}
+
+	switch (dev_config->read_io_mode) {
+	case MSPI_IO_MODE_OCTAL:
+		/* 8D-8D-8D */
+		if (data_rate == MSPI_DATA_RATE_DUAL) {
+			read_cmd = 0xEE;
+		}
+		/* 8S-8S-8S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE) {
+			read_cmd = 0xEC;
+		}
+		break;
+	case MSPI_IO_MODE_OCTAL_1_8_8:
+		/* 1S-8D-8D */
+		if (data_rate == MSPI_DATA_RATE_S_D_D &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_8D_8D_DTR_READ_FD_SUP)) {
+			read_cmd = 0xFD;
+		}
+		/* 1S-8S-8S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_8S_8S_FAST_READ_CC_SUP)) {
+			read_cmd = 0xCC;
+		}
+		break;
+	case MSPI_IO_MODE_OCTAL_1_1_8:
+		/* 1S-1S-8S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_1S_8S_FAST_READ_7C_SUP)) {
+			read_cmd = 0x7C;
+		}
+		break;
+	case MSPI_IO_MODE_QUAD_1_4_4:
+		/* 1S-4D-4D */
+		if (data_rate == MSPI_DATA_RATE_S_D_D &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_4D_4D_DTR_READ_EE_SUP)) {
+			read_cmd = 0xEE;
+		}
+		/* 1S-4S-4S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_4S_4_FAST_READ_EC_SUP)) {
+			read_cmd = 0xEC;
+		}
+		break;
+	case MSPI_IO_MODE_DUAL_1_2_2:
+		/* 1S-2D-2D */
+		if (data_rate == MSPI_DATA_RATE_S_D_D &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_2D_2D_DTR_READ_BE_SUP)) {
+			read_cmd = 0xBE;
+		}
+		/* 1S-2S-2S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_2S_2S_FAST_READ_BC_SUP)) {
+			read_cmd = 0xBC;
+		}
+		break;
+	case MSPI_IO_MODE_SINGLE:
+		/* 1S-1D-1D */
+		if (data_rate == MSPI_DATA_RATE_S_D_D &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_1D_1D_DTR_READ_0E_SUP)) {
+			read_cmd = 0x0E;
+		}
+		/* 1S-1S-1S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_1S_1S_FAST_READ_0C_SUP)) {
+			read_cmd = 0x0C;
+		}
+		break;
+	default:
+	}
+
+	switch (dev_config->write_io_mode) {
+	case MSPI_IO_MODE_OCTAL_1_8_8:
+		/* 1S-8S-8S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_8S_8S_PP_8E_SUP)) {
+			pp_cmd = 0x8E;
+		}
+		break;
+	case MSPI_IO_MODE_OCTAL_1_1_8:
+		/* 1S-1S-8S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_1S_8S_PP_84_SUP)) {
+			pp_cmd = 0x84;
+		}
+		break;
+	case MSPI_IO_MODE_QUAD_1_4_4:
+		/* 1S-4S-4S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_4S_4S_PP_3E_SUP)) {
+			pp_cmd = 0x3E;
+		}
+		break;
+	case MSPI_IO_MODE_QUAD_1_1_4:
+		/* 1S-1S-4S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_1S_4S_PP_34_SUP)) {
+			pp_cmd = 0x34;
+		}
+		break;
+	case MSPI_IO_MODE_SINGLE:
+		/* 1S-1S-1S */
+		if (data_rate == MSPI_DATA_RATE_SINGLE &&
+		    (dw1 & JESD216_SFDP_4B_ADDR_DW1_1S_1S_1S_PP_12_SUP)) {
+			pp_cmd = 0x12;
+		}
+		break;
+	default:
+	}
+
+	if (read_cmd != 0) {
+		dev_data->cmd_info.read_cmd = read_cmd;
+	}
+
+	if (pp_cmd != 0) {
+		dev_data->cmd_info.pp_cmd = pp_cmd;
+	}
+}
+
+static void sfdp_process_xspi_prof_1v0(const struct device *dev,
+				       const struct jesd216_param_header *php,
+				       uint32_t param_data[])
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	uint32_t dw1 = param_data[0];
+
+	if (dev_config->read_io_mode != MSPI_IO_MODE_OCTAL) {
+		return;
+	}
+
+	dev_data->cmd_info.sfdp_addr_4   = (dw1 & BIT(31)) == 0;
+	dev_data->cmd_info.sfdp_dummy_20 = (dw1 & BIT(30)) != 0;
+	dev_data->cmd_info.rdsr_addr_4   = (dw1 & BIT(29)) != 0;
+	dev_data->cmd_info.rdsr_dummy    = (dw1 & BIT(28)) ? 8 : 4;
+	dev_data->cmd_info.rdid_addr_4   = dev_data->cmd_info.rdsr_addr_4;
+	dev_data->cmd_info.rdid_dummy    = dev_data->cmd_info.rdid_dummy;
+}
+
+static int sfdp_process(const struct device *dev)
+{
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	struct jesd216_sfdp_header sfdp_header;
+	uint32_t par_data_4b_addr_instr[2] = {0};
+	uint32_t magic;
+	int rc;
+
+	rc = sfdp_read(dev, 0, &sfdp_header, sizeof(sfdp_header));
+	if (rc != 0) {
+		LOG_ERR("Failed to read SFDP header: %d", rc);
+		return rc;
+	}
+
+	magic = jesd216_sfdp_magic(&sfdp_header);
+	if (magic != JESD216_SFDP_MAGIC) {
+		LOG_ERR("SFDP magic %08x invalid", magic);
+		return -EINVAL;
+	}
+
+	LOG_DBG("%s: SFDP v %u.%u AP %x with %u PH", dev->name,
+		sfdp_header.rev_major, sfdp_header.rev_minor,
+		sfdp_header.access, 1 + sfdp_header.nph);
+
+	for (uint32_t i = 0; i <= sfdp_header.nph; ++i) {
+		void (*process_func)(const struct device *dev,
+				     const struct jesd216_param_header *php,
+				     uint32_t param_data[]) = NULL;
+		struct jesd216_param_header par_head;
+		uint32_t head_addr;
+		uint32_t data_addr;
+		uint32_t par_data[BFP_DW_MAX];
+		uint32_t *read_buf;
+		uint32_t read_len;
+		uint16_t id;
+
+		head_addr = sizeof(sfdp_header) + i * sizeof(par_head);
+		rc = sfdp_read(dev, head_addr, &par_head, sizeof(par_head));
+		if (rc != 0) {
+			LOG_ERR("Failed to read parameter #%u header: %d",
+				i, rc);
+			return rc;
+		}
+
+		id = jesd216_param_id(&par_head);
+		data_addr = jesd216_param_addr(&par_head);
+
+		LOG_DBG("PH%u: %04x rev %u.%u: %u DW @ 0x%x",
+			i, id, par_head.rev_major, par_head.rev_minor,
+			par_head.len_dw, data_addr);
+
+		read_buf = par_data;
+		read_len = MIN(sizeof(uint32_t) * par_head.len_dw,
+			       sizeof(par_data));
+
+		switch (id) {
+		case JESD216_SFDP_PARAM_ID_BFP:
+			process_func = sfdp_process_bfp;
+			break;
+		/* The 4-Byte Address Instruction Parameter must be processed
+		 * after the Basic Flash Parameter, because it needs to alter
+		 * the erase types array that is populated by the latter.
+		 * That's why this parameter is processed after the loop.
+		 */
+		case JESD216_SFDP_PARAM_ID_4B_ADDR_INSTR:
+			read_buf = par_data_4b_addr_instr;
+			read_len = MIN(sizeof(uint32_t) * par_head.len_dw,
+				       sizeof(par_data_4b_addr_instr));
+			break;
+		case JESD216_SFDP_PARAM_ID_XSPI_PROFILE_1V0:
+			process_func = sfdp_process_xspi_prof_1v0;
+			break;
+		default:
+			continue;
+		}
+
+		rc = sfdp_read(dev, data_addr, read_buf, read_len);
+		if (rc != 0) {
+			LOG_ERR("Failed to read parameter #%u data: %d", i, rc);
+			return rc;
+		}
+
+		if (process_func) {
+			process_func(dev, &par_head, par_data);
+		}
+	}
+
+	/* If the first DWORD of the 4-Byte Address Instruction Parameter is 0,
+	 * this means that the parameter was not present in the SFDP database
+	 * or no 4-byte address instruction is supported; anyway, no processing
+	 * is needed.
+	 */
+	if (dev_data->cmd_info.uses_4byte_addr &&
+	    par_data_4b_addr_instr[0] != 0) {
+		sfdp_process_4b_addr_instr(dev, par_data_4b_addr_instr);
+	}
+
+	return rc;
+}
+#endif /* WITH_RUNTIME_SFDP */
+
 #if defined(WITH_SUPPLY_GPIO)
 static int power_supply(const struct device *dev)
 {
@@ -1328,6 +1830,22 @@ static int flash_chip_init(const struct device *dev)
 	}
 #endif
 
+#if defined(WITH_RUNTIME_SFDP)
+	if (dev_config->uses_runtime_sfdp) {
+		rc = sfdp_process(dev);
+		if (rc < 0) {
+			LOG_ERR("Failed to read SFDP (%d)", rc);
+			return -EIO;
+		}
+
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+		dev_data->layout.pages_size = CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE;
+		dev_data->layout.pages_count = dev_flash_size(dev)
+					     / CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE;
+#endif
+	}
+#endif /* WITH_RUNTIME_SFDP */
+
 	if (dev_config->quirks != NULL &&
 	    dev_config->quirks->pre_init != NULL) {
 		rc = dev_config->quirks->pre_init(dev);
@@ -1484,6 +2002,12 @@ static int drv_init(const struct device *dev)
 	       sizeof(dev_data->erase_types));
 	dev_data->cmd_info = dev_config->default_cmd_info;
 	dev_data->switch_info = dev_config->default_switch_info;
+#if defined(WITH_RUNTIME_SFDP)
+	if (dev_config->uses_runtime_sfdp) {
+		dev_data->flash_size = dev_config->flash_size;
+		dev_data->page_size = dev_config->page_size;
+	}
+#endif
 
 	rc = pm_device_runtime_get(dev_config->bus);
 	if (rc < 0) {
@@ -1644,25 +2168,37 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 #define FLASH_MSPI_NOR_DATA_XFER_MODE MSPI_PIO
 #endif
 
+#ifdef CONFIG_FLASH_MSPI_NOR_USE_SFDP
+#define USES_DTS_SFDP(inst) UTIL_NOT(DT_INST_PROP(inst, use_runtime_sfdp))
+#else
+#define USES_DTS_SFDP(inst) 0
+#endif
+
 #define FLASH_MSPI_NOR_INST(inst)						\
 	BUILD_ASSERT(!PACKET_DATA_LIMIT(inst) ||				\
+		     DT_INST_PROP(inst, use_runtime_sfdp) ||			\
 		     FLASH_PAGE_SIZE_INST(inst) <= PACKET_DATA_LIMIT(inst),	\
 		"Page size for " DT_NODE_FULL_NAME(DT_DRV_INST(inst))		\
 		" exceeds controller packet data limit");			\
 	BUILD_ASSERT(IS_POWER_OF_TWO(DT_INST_PROP(inst, erase_block_size)),	\
 		"Erase block size for " DT_NODE_FULL_NAME(DT_DRV_INST(inst))	\
 		" must be a power of 2");					\
-	SFDP_BUILD_ASSERTS(inst);						\
+	COND_CODE_1(USES_DTS_SFDP(inst),					\
+		(SFDP_BUILD_ASSERTS(inst);					\
+		 SFDP_DTS_DEFAULT_ERASE_TYPES_DEFINE(inst);),			\
+		(DEFAULT_ERASE_TYPES_DEFINE(inst);))				\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);			\
-	DEFAULT_ERASE_TYPES_DEFINE(inst);					\
 	static struct flash_mspi_nor_data dev##inst##_data;			\
 	static const struct flash_mspi_nor_config dev##inst##_config = {	\
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
 		.packet_data_limit = DT_PROP_OR(DT_INST_BUS(inst),		\
 						packet_data_limit, 0),		\
-		.flash_size = FLASH_SIZE_INST(inst),				\
 		.erase_block_size = DT_INST_PROP(inst, erase_block_size),	\
-		.page_size = FLASH_PAGE_SIZE_INST(inst),			\
+	COND_CODE_1(USES_DTS_SFDP(inst),					\
+		(.flash_size = SFDP_DTS_FLASH_SIZE_INST(inst),			\
+		 .page_size = SFDP_DTS_FLASH_PAGE_SIZE_INST(inst),),		\
+		(.flash_size = FLASH_SIZE_INST(inst),				\
+		 .page_size = FLASH_PAGE_SIZE_INST(inst),))			\
 		.mspi_id = MSPI_DEVICE_ID_DT_INST(inst),			\
 		.mspi_nor_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst),		\
 		.mspi_control_cfg = FLASH_CONTROL_CMD_CONFIG(inst),		\
@@ -1678,12 +2214,17 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 				   / NSEC_PER_USEC,				\
 		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),	\
 		IF_ENABLED(WITH_DPD, (INIT_DPD_TIMES(inst)))			\
-		FLASH_PAGE_LAYOUT_DEFINE(inst)					\
+	IF_DISABLED(DT_INST_PROP(inst, use_runtime_sfdp),			\
+		(FLASH_PAGE_LAYOUT_DEFINE(inst)))				\
 		.jedec_id = DT_INST_PROP_OR(inst, jedec_id, {0}),		\
 		.quirks = FLASH_QUIRKS(inst),					\
-		.default_erase_types = DEFAULT_ERASE_TYPES(inst),		\
-		.default_cmd_info = DEFAULT_CMD_INFO(inst),			\
-		.default_switch_info = DEFAULT_SWITCH_INFO(inst),		\
+	COND_CODE_1(USES_DTS_SFDP(inst),					\
+		(.default_erase_types = SFDP_DTS_DEFAULT_ERASE_TYPES(inst),	\
+		 .default_cmd_info = SFDP_DTS_DEFAULT_CMD_INFO(inst),		\
+		 .default_switch_info = SFDP_DTS_DEFAULT_SWITCH_INFO(inst),),	\
+		(.default_erase_types = DEFAULT_ERASE_TYPES(inst),		\
+		 .default_cmd_info = DEFAULT_CMD_INFO(inst),			\
+		 .default_switch_info = DEFAULT_SWITCH_INFO(inst),))		\
 		.read_freq = DT_INST_PROP_OR(inst, read_frequency,		\
 			FLASH_MSPI_MAX_FREQ(inst)),				\
 		.read_io_mode = DT_INST_ENUM_IDX_OR(inst, read_io_mode,		\
@@ -1699,10 +2240,12 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		IO_MODE_FLAGS(DT_INST_ENUM_IDX(inst, mspi_io_mode)),		\
 		.initial_soft_reset = DT_INST_PROP(inst, initial_soft_reset),	\
 		.has_dpd = DT_INST_PROP(inst, has_dpd),				\
+		.uses_runtime_sfdp = DT_INST_PROP(inst, use_runtime_sfdp),	\
 		.control_xfer_mode = FLASH_MSPI_NOR_CONTROL_XFER_MODE,		\
 		.data_xfer_mode = FLASH_MSPI_NOR_DATA_XFER_MODE,		\
 	};									\
-	FLASH_PAGE_LAYOUT_CHECK(inst)						\
+	IF_DISABLED(DT_INST_PROP(inst, use_runtime_sfdp),			\
+		(FLASH_PAGE_LAYOUT_CHECK(inst)))				\
 	DEVICE_DT_INST_DEFINE(inst,						\
 		drv_init, PM_DEVICE_DT_INST_GET(inst),				\
 		&dev##inst##_data, &dev##inst##_config,				\
