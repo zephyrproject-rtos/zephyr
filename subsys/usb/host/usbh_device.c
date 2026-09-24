@@ -583,8 +583,8 @@ error:
 	return err;
 }
 
-void usbh_device_connect(struct usbh_context *const ctx,
-			 struct usb_device *const udev)
+int usbh_device_connect(struct usbh_context *const ctx,
+			struct usb_device *const udev)
 {
 	int err;
 
@@ -605,7 +605,7 @@ void usbh_device_connect(struct usbh_context *const ctx,
 		}
 
 		usbh_device_free(udev);
-		return;
+		return err;
 	}
 
 	/*
@@ -627,6 +627,8 @@ void usbh_device_connect(struct usbh_context *const ctx,
 			break;
 		}
 	}
+
+	return 0;
 }
 
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
