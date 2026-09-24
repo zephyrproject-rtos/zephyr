@@ -19,6 +19,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_K(32)>;
 
 		cpu0: cpu@0 {
 			reg = <0>;
