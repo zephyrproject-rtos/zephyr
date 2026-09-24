@@ -413,7 +413,7 @@ static void native_pty_uart_async_poll_function(void *arg1, void *arg2, void *ar
 		}
 		if ((data->async.rx_len != 0) && (rc < 0)) {
 			/* Sleep if RX not disabled and last read didn't result in any data */
-			k_sleep(K_MSEC(10));
+			k_sleep(K_USEC(CONFIG_UART_NATIVE_PTY_RX_POLL_PERIOD_US));
 		}
 	}
 

@@ -64,4 +64,15 @@ config UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD
 	  If you are using GNOME, then you can use this command string
 	  'gnome-terminal -- screen %s'
 
+config UART_NATIVE_PTY_RX_POLL_PERIOD_US
+	int "Period at which the async RX thread polls the pty, in microseconds"
+	depends on UART_ASYNC_API
+	default 10000
+	help
+	  The async API is emulated with a thread which polls the pty, sleeping
+	  this long when it finds nothing, so this is how long a received byte
+	  waits before the driver notices it. Lowering will increase host CPU
+	  usage but decrease latency. Note that the sleep always takes at least
+	  two ticks (CONFIG_SYS_CLOCK_TICKS_PER_SEC), regardless of this value.
+
 endif # UART_NATIVE_PTY
