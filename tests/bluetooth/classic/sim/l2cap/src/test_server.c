@@ -984,6 +984,258 @@ ZTEST(l2cap_server, test_10_stream_mode_optional)
 	test_wait_for_disconnect(K_SECONDS(30));
 }
 
+static struct bt_l2cap_br_server l2cap_servers[CONFIG_TEST_L2CAP_MAX_CHANNEL_COUNT];
+static struct l2cap_br_chan l2cap_chans[CONFIG_TEST_L2CAP_MAX_CHANNEL_COUNT];
+
+static const struct bt_l2cap_chan_ops l2cap_common_ops = {
+	.connected = l2cap_connected,
+	.disconnected = l2cap_disconnected,
+};
+
+static int l2cap_common_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			       struct bt_l2cap_chan **chan)
+{
+	struct bt_l2cap_br_server *br_server;
+	struct l2cap_br_chan *br_chan;
+
+	br_server = CONTAINER_OF(server, struct bt_l2cap_br_server, server);
+
+	LOG_DBG("Incoming BR/EDR conn %p", conn);
+
+	br_chan = &l2cap_chans[ARRAY_INDEX(l2cap_servers, br_server)];
+
+	if (br_chan->chan.chan.conn != NULL) {
+		LOG_ERR("No channels available");
+		return -ENOMEM;
+	}
+
+	*chan = &br_chan->chan.chan;
+
+	memset(&br_chan->chan.rx, 0, sizeof(br_chan->chan.rx));
+	memset(&br_chan->chan.tx, 0, sizeof(br_chan->chan.tx));
+	br_chan->chan.rx.mtu = CONFIG_TEST_L2CAP_SERVER_MTU;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	br_chan->chan.rx.extended_control = br_server->extended_control;
+	br_chan->chan.rx.optional = br_server->optional;
+	if (br_server->no_fcs) {
+		br_chan->chan.rx.fcs = BT_L2CAP_BR_FCS_NO;
+	} else {
+		br_chan->chan.rx.fcs = BT_L2CAP_BR_FCS_16BIT;
+	}
+
+	br_chan->chan.rx.mode = br_server->mode;
+	br_chan->chan.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+
+	switch (br_chan->chan.rx.mode) {
+	case BT_L2CAP_BR_LINK_MODE_STREAM:
+		br_chan->chan.rx.max_transmit = 0;
+		break;
+	case BT_L2CAP_BR_LINK_MODE_ERET:
+		br_chan->chan.rx.max_transmit = 3;
+		break;
+	case BT_L2CAP_BR_LINK_MODE_FC:
+		br_chan->chan.rx.max_transmit = 3;
+		break;
+	case BT_L2CAP_BR_LINK_MODE_RET:
+		br_chan->chan.rx.max_transmit = 3;
+		break;
+	case BT_L2CAP_BR_LINK_MODE_BASIC:
+		br_chan->chan.rx.max_transmit = 0;
+		break;
+	default:
+		LOG_WRN("Unknown mode %u", br_chan->chan.rx.mode);
+		return -EINVAL;
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+	return 0;
+}
+
+static void test_wait_for_all_l2cap_connect(void)
+{
+	int64_t start;
+	int64_t current;
+	bool connected;
+
+	start = k_uptime_get();
+	current = start;
+
+	LOG_DBG("Waiting for L2CAP connection");
+
+	while (current < (start + 30000)) {
+		k_sleep(K_MSEC(1));
+
+		current = k_uptime_get();
+
+		connected = true;
+		ARRAY_FOR_EACH(l2cap_chans, i) {
+			if (!atomic_test_bit(l2cap_chans[i].flags, TEST_L2CAP_FLAG_CONNECTED)) {
+				connected = false;
+				continue;
+			}
+		}
+
+		if (connected) {
+			break;
+		}
+	}
+	zassert_true(connected, "L2CAP connection timeout");
+}
+
+static void test_wait_for_all_l2cap_disconnect(void)
+{
+	int64_t start;
+	int64_t current;
+	bool disconnected;
+
+	start = k_uptime_get();
+	current = start;
+
+	LOG_DBG("Waiting for L2CAP disconnection");
+
+	while (current < (start + 30000)) {
+		k_sleep(K_MSEC(1));
+
+		current = k_uptime_get();
+
+		disconnected = true;
+		ARRAY_FOR_EACH(l2cap_chans, i) {
+			if (atomic_test_bit(l2cap_chans[i].flags, TEST_L2CAP_FLAG_CONNECTED)) {
+				disconnected = true;
+				continue;
+			}
+		}
+
+		if (disconnected) {
+			break;
+		}
+	}
+	zassert_true(disconnected, "L2CAP disconnection timeout");
+}
+
+static void test_all_l2cap_disconnect(void)
+{
+	int err;
+
+	ARRAY_FOR_EACH(l2cap_chans, i) {
+		LOG_DBG("Disconnecting l2cap channel %p[%zu]", &l2cap_chans[i].chan.chan, i);
+		err = bt_l2cap_chan_disconnect(&l2cap_chans[i].chan.chan);
+		zassert_equal(err, 0, "Failed to disconnect L2CAP channel (err %d)", err);
+	}
+}
+
+ZTEST(l2cap_server, test_11_basic_mode_multiple_channels_simultaneously)
+{
+	int err;
+
+	LOG_DBG("Register L2CAP server");
+	k_sem_reset(&l2cap_chan.connect_changed_sem);
+	k_sem_reset(&l2cap_chan.rx_sem);
+	k_sem_reset(&l2cap_chan.tx_sem);
+	l2cap_server.server.psm = 0;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	l2cap_server.mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+	l2cap_server.optional = false;
+	l2cap_server.no_fcs = false;
+	l2cap_server.extended_control = false;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+	err = bt_l2cap_br_server_register(&l2cap_server.server);
+	zassert_equal(err, 0, "Failed to register L2CAP server (err %d)", err);
+
+	ARRAY_FOR_EACH(l2cap_chans, i) {
+		l2cap_chans[i].chan.chan.ops = &l2cap_common_ops;
+		l2cap_chans[i].chan.rx.mtu = CONFIG_TEST_L2CAP_SERVER_MTU;
+		k_sem_init(&l2cap_chans[i].connect_changed_sem, 0, 1);
+		k_sem_init(&l2cap_chans[i].rx_sem, 0, CONFIG_TEST_L2CAP_SERVER_RX_DATA_POOL_COUNT);
+		k_sem_init(&l2cap_chans[i].tx_sem, 0, CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT);
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+		k_fifo_init(&l2cap_chans[i].rx_fifo);
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+		atomic_clear(l2cap_chans[i].flags);
+	}
+
+	ARRAY_FOR_EACH(l2cap_servers, i) {
+		l2cap_servers[i].server.accept = l2cap_common_accept;
+		l2cap_servers[i].server.psm = 0;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+		l2cap_servers[i].mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+		l2cap_servers[i].optional = false;
+		l2cap_servers[i].no_fcs = false;
+		l2cap_servers[i].extended_control = false;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+		err = bt_l2cap_br_server_register(&l2cap_servers[i].server);
+		zassert_equal(err, 0, "Failed to register L2CAP server (err %d)", err);
+	}
+
+	test_wait_for_connect();
+
+	test_wait_for_all_l2cap_connect();
+
+	test_l2cap_conn_disconn_sequence(BT_L2CAP_BR_LINK_MODE_BASIC,
+					 "l2cap_server::test_11::basic_mode",
+					 BT_L2CAP_BR_LINK_MODE_BASIC, false);
+
+	test_all_l2cap_disconnect();
+
+	test_wait_for_disconnect(K_SECONDS(30));
+}
+
+ZTEST(l2cap_server, test_12_eret_mode_multiple_channels_simultaneously)
+{
+	int err;
+
+	LOG_DBG("Register L2CAP server");
+
+	k_sem_reset(&l2cap_chan.connect_changed_sem);
+	k_sem_reset(&l2cap_chan.rx_sem);
+	k_sem_reset(&l2cap_chan.tx_sem);
+	l2cap_server.server.psm = 0;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	l2cap_server.mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+	l2cap_server.optional = false;
+	l2cap_server.no_fcs = false;
+	l2cap_server.extended_control = false;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+	err = bt_l2cap_br_server_register(&l2cap_server.server);
+	zassert_equal(err, 0, "Failed to register L2CAP server (err %d)", err);
+
+	ARRAY_FOR_EACH(l2cap_chans, i) {
+		l2cap_chans[i].chan.chan.ops = &l2cap_common_ops;
+		l2cap_chans[i].chan.rx.mtu = CONFIG_TEST_L2CAP_SERVER_MTU;
+		k_sem_init(&l2cap_chans[i].connect_changed_sem, 0, 1);
+		k_sem_init(&l2cap_chans[i].rx_sem, 0, CONFIG_TEST_L2CAP_SERVER_RX_DATA_POOL_COUNT);
+		k_sem_init(&l2cap_chans[i].tx_sem, 0, CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT);
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+		k_fifo_init(&l2cap_chans[i].rx_fifo);
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+		atomic_clear(l2cap_chans[i].flags);
+	}
+
+	ARRAY_FOR_EACH(l2cap_servers, i) {
+		l2cap_servers[i].server.accept = l2cap_common_accept;
+		l2cap_servers[i].server.psm = 0;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+		l2cap_servers[i].mode = BT_L2CAP_BR_LINK_MODE_ERET;
+		l2cap_servers[i].optional = false;
+		l2cap_servers[i].no_fcs = false;
+		l2cap_servers[i].extended_control = false;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+		err = bt_l2cap_br_server_register(&l2cap_servers[i].server);
+		zassert_equal(err, 0, "Failed to register L2CAP server (err %d)", err);
+	}
+
+	test_wait_for_connect();
+
+	test_wait_for_all_l2cap_connect();
+
+	test_l2cap_conn_disconn_sequence(BT_L2CAP_BR_LINK_MODE_BASIC,
+					 "l2cap_server::test_11::basic_mode",
+					 BT_L2CAP_BR_LINK_MODE_BASIC, false);
+
+	test_wait_for_all_l2cap_disconnect();
+
+	test_wait_for_disconnect(K_SECONDS(30));
+}
+
 static void br_disconnect_from_peer(void)
 {
 	int err;

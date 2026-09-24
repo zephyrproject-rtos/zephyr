@@ -111,6 +111,18 @@ Available scenarios:
   * Server ztest: ``-test=l2cap_server::test_10_stream_mode_optional``
   * Client ztest: ``-test=l2cap_client::test_10_stream_mode_optional``
 
+* ``bluetooth.classic.sim.l2cap.multiple_channels_simultaneously.basic``
+
+  * Script: :file:`tests_scripts/stream_mode_optional.sh`
+  * Server ztest: ``-test=l2cap_server::test_11_basic_mode_multiple_channels_simultaneously``
+  * Client ztest: ``-test=l2cap_client::test_11_basic_mode_multiple_channels_simultaneously``
+
+* ``bluetooth.classic.sim.l2cap.multiple_channels_simultaneously.eret``
+
+  * Script: :file:`tests_scripts/stream_mode_optional.sh`
+  * Server ztest: ``-test=l2cap_server::test_12_eret_mode_multiple_channels_simultaneously``
+  * Client ztest: ``-test=l2cap_client::test_12_eret_mode_multiple_channels_simultaneously``
+
 Requirements
 ************
 
