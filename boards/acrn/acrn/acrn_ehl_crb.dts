@@ -5,3 +5,7 @@
  */
 
 #include "acrn.dts"
+
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(1900)>;
+};
