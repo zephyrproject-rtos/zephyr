@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP Core Mode Controller (CMC)
@@ -10,3 +10,14 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  sram-banks:
+    type: array
+    description: |
+      Flat list describing each CMC-controllable SRAM power partition, three
+      cells per bank: <start-address size cmc-disable-bit>. cmc-disable-bit is
+      the SRAMDIS/SRAMRET / kCMC_SRAMBank<n> index for that partition. Banks may
+      be listed in any order and from any memory aperture (Code-TCM and
+      System-TCM banks are described identically). Banks that must never be
+      power-gated (for example the VBAT-retained top bank) are simply omitted
+      from the list.
