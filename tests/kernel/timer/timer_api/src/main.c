@@ -65,6 +65,7 @@ static struct k_timer status_timer;
 static struct k_timer status_anytime_timer;
 static struct k_timer status_sync_timer;
 static struct k_timer remain_timer;
+static struct k_timer overdue_timer;
 
 static ZTEST_BMEM struct timer_data tdata;
 
@@ -821,6 +822,41 @@ ZTEST_USER(timer_api, test_timer_remaining)
 				  0, latency_ticks, NULL);
 }
 
+/**
+ * @brief Overdue timers must report 0 remaining ticks, not a wrapped value
+ *
+ * Start a 1-tick timer, then hold IRQs and busy-wait so announce cannot
+ * run while time still advances. Remaining ticks must saturate at 0.
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @see k_timer_remaining_ticks()
+ */
+ZTEST(timer_api, test_timer_remaining_overdue)
+{
+	k_ticks_t rem;
+	int64_t t0;
+	int64_t t1;
+	unsigned int key;
+
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_usleep(1); /* align to tick */
+	}
+
+	t0 = k_uptime_ticks();
+	k_timer_start(&overdue_timer, K_TICKS(1), K_NO_WAIT);
+
+	key = irq_lock();
+	k_busy_wait(k_ticks_to_us_ceil32(3));
+	t1 = k_uptime_ticks();
+	rem = k_timer_remaining_ticks(&overdue_timer);
+	k_timer_stop(&overdue_timer);
+	irq_unlock(key);
+
+	zassume_true((t1 - t0) >= 2, "busy wait did not overshoot the timeout");
+	zassert_equal(rem, 0, "overdue remaining was %lld", (long long)rem);
+}
+
 ZTEST_USER(timer_api, test_timeout_abs)
 {
 #ifdef CONFIG_TIMEOUT_64BIT
@@ -1163,6 +1199,7 @@ void *setup_timer_api(void)
 	timer_init(&status_anytime_timer, NULL, NULL);
 	timer_init(&status_sync_timer, duration_expire, duration_stop);
 	timer_init(&remain_timer, duration_expire, duration_stop);
+	timer_init(&overdue_timer, NULL, NULL);
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		k_thread_access_grant(k_current_get(), &ktimer, &timer0, &timer1,

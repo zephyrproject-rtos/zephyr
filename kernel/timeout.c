@@ -291,7 +291,11 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 
 	K_SPINLOCK(&timeout_lock) {
 		if (!z_is_inactive_timeout(timeout)) {
-			ticks = z_timeout_q_remainder(timeout) - elapsed();
+			k_ticks_t rem = z_timeout_q_remainder(timeout);
+			uint32_t el = elapsed();
+
+			/* elapsed() can exceed rem when announce is late. */
+			ticks = (rem > el) ? (rem - el) : 0;
 		}
 	}
 
