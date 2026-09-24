@@ -257,6 +257,12 @@
 #define CLOCK_MCHP_GCLKPERIPH_ID_TCC1         MCHP_CLOCK_DERIVE_ID(7, 0x3f, 0x3f, 32, 36)
 /** @brief GCLK Peripheral ID: TCC2. */
 #define CLOCK_MCHP_GCLKPERIPH_ID_TCC2         MCHP_CLOCK_DERIVE_ID(7, 0x3f, 0x3f, 33, 37)
+/** @brief GCLK Peripheral ID: TCC3. */
+#define CLOCK_MCHP_GCLKPERIPH_ID_TCC3         MCHP_CLOCK_DERIVE_ID(7, 0x3f, 0x3f, 34, 63)
+/** @brief GCLK Peripheral ID: TCC4. */
+#define CLOCK_MCHP_GCLKPERIPH_ID_TCC4         MCHP_CLOCK_DERIVE_ID(7, 0x3f, 0x3f, 35, 64)
+/** @brief GCLK Peripheral ID: TCC5. */
+#define CLOCK_MCHP_GCLKPERIPH_ID_TCC5         MCHP_CLOCK_DERIVE_ID(7, 0x3f, 0x3f, 36, 65)
 /** @brief GCLK Peripheral ID: TCC6. */
 #define CLOCK_MCHP_GCLKPERIPH_ID_TCC6         MCHP_CLOCK_DERIVE_ID(7, 0x3f, 0x3f, 37, 38)
 /** @brief GCLK Peripheral ID: TCC7. */
@@ -308,7 +314,7 @@
 /** @brief GCLK Peripheral ID: CM7 Trace. */
 #define CLOCK_MCHP_GCLKPERIPH_ID_CM7_TRACE    MCHP_CLOCK_DERIVE_ID(7, 0x3f, 0x3f, 63, 62)
 /** @brief Maximum index for GCLK Peripheral IDs. */
-#define CLOCK_MCHP_GCLKPERIPH_ID_MAX          (62)
+#define CLOCK_MCHP_GCLKPERIPH_ID_MAX          (65)
 /** @} */
 
 /**
