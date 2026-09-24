@@ -827,6 +827,8 @@ New APIs and options
     that its time must not be used. The SNTP client is now selected by
     :kconfig:option:`CONFIG_SNTP` alone, both share
     :kconfig:option:`CONFIG_SNTP_LIB`.
+  * Add :c:func:`coap_client_reregister_observe` to refresh an ongoing CoAP
+    observation (:rfc:`7641` re-registration) without tearing it down.
 
 * Power Management
 
