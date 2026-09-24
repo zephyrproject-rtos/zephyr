@@ -5,6 +5,7 @@
  */
 
 #include <st/mp2/stm32mp2_m33.dtsi>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 
 / {
 	soc {
@@ -217,6 +218,44 @@
 			interrupts = <213 0>;
 			interrupt-names = "combined";
 			status = "disabled";
+		};
+
+		dcmipp: dcmipp@48030000 {
+			compatible = "st,stm32-dcmipp";
+			reg = <0x48030000 DT_SIZE_K(4)>;
+			clock-names = "dcmipp", "csi";
+			clocks = <&rcc STM32_CLOCK(DCMIPP, STM32_CLK)>,
+				 <&rcc STM32_CLOCK(CSI2, STM32_CLK)>;
+			interrupts = <198 0>, <142 0>;
+			interrupt-names = "dcmipp", "dcmipp_csi";
+			resets = <&rctl STM32_RESET(DCMIPP, STM32_RST)>,
+				 <&rctl STM32_RESET(CSI2, STM32_RST)>;
+			status = "disabled";
+
+			pipes {
+				compatible = "st,stm32-dcmipp-pipes";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				pipe_dump: pipe@0 {
+					reg = <0>;
+				};
+
+				pipe_main: pipe@1 {
+					reg = <1>;
+				};
+
+				pipe_aux: pipe@2 {
+					reg = <2>;
+				};
+			};
+
+			port {
+				endpoint {
+					remote-endpoint-label = "";
+					bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				};
+			};
 		};
 	};
 
