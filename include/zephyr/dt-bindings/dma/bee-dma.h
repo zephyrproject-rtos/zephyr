@@ -19,6 +19,7 @@
  * The "config" cell is the third cell of a "dmas" entry, a 32-bit mask.
  * Compose it from the named macros below instead of writing raw numbers:
  *
+ * @code{.dts}
  *   #include <dt-bindings/dma/rtl87x2g-dma.h>
  *
  *   &uart2 {
@@ -35,6 +36,7 @@
  *                    BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(1))>;
  *           dma-names = "rx", "tx";
  *   };
+ * @endcode
  */
 
 /* Direction, bits [1:0] */
