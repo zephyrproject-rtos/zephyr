@@ -56,8 +56,7 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
-	volatile uint8_t *rcause_reg = (uint8_t *)(DT_REG_ADDR(RSTC_INST));
-	uint8_t rcause = *rcause_reg;
+	uint32_t rcause = ((rstc_registers_t *)DT_REG_ADDR(RSTC_INST))->RSTC_RCAUSE;
 	uint32_t result = 0;
 
 	if (cause == NULL) {
@@ -68,10 +67,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if ((rcause & BIT(RSTC_G1_RCAUSE_POR)) != 0) {
 		result |= RESET_POR;
 	}
-	if ((rcause & BIT(RSTC_G1_RCAUSE_BOD12)) != 0) {
-		result |= RESET_BROWNOUT;
-	}
-	if ((rcause & BIT(RSTC_G1_RCAUSE_BOD33)) != 0) {
+	if ((rcause & RSTC_G1_RCAUSE_BROWNOUT_MASK) != 0) {
 		result |= RESET_BROWNOUT;
 	}
 	if ((rcause & BIT(RSTC_G1_RCAUSE_EXT)) != 0) {
