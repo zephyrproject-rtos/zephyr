@@ -1,0 +1,10 @@
+tests:
+  drivers.charger.bq25620:
+    tags:
+      - drivers
+      - charger
+    filter: dt_compat_enabled("ti,bq25620-charger")
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
