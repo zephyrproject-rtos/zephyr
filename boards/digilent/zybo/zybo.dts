@@ -5,6 +5,7 @@
  */
 
 /dts-v1/;
+#include <freq.h>
 #include <xilinx/zynq7000.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -31,6 +32,8 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		/* The GTC is always clocked at 1/2 of the CPU frequency (CPU_3x2x) */
+		timebase-frequency = <DT_FREQ_M(325)>;
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
