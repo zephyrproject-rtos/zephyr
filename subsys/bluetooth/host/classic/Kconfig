@@ -66,6 +66,13 @@ config BT_L2CAP_RX_FLUSH_TO
 	  may be overridden on a packet by packet basis by marking individual L2CAP packets
 	  as non-automatically-flushable via the Packet_Boundary_Flag in the HCI ACL Data packet.
 
+config BT_L2CAP_SIG_TX_BUF_COUNT
+	int "Bluetooth L2CAP signalling channel TX buffer count"
+	default BT_L2CAP_TX_BUF_COUNT
+	range 1 $(UINT8_MAX)
+	help
+	  This option sets Bluetooth L2CAP signalling channel TX buffer count
+
 config BT_L2CAP_CONNLESS
 	bool "Bluetooth L2CAP connectionless data reception [EXPERIMENTAL]"
 	select EXPERIMENTAL
