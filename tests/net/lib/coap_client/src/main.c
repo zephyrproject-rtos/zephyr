@@ -1059,6 +1059,31 @@ void coap_callback(const struct coap_client_response_data *data, void *user_data
 	}
 }
 
+/* The test callbacks give their semaphore before returning. A refresh issued while the recv
+ * thread is still inside the callback is refused with -EBUSY, so wait for it to return first.
+ */
+static void wait_callbacks_done(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(client.requests); i++) {
+		while (atomic_get(&client.requests[i].in_callback) != 0) {
+			k_sleep(K_MSEC(1));
+		}
+	}
+}
+
+/* Refreshes the observation from inside its own callback, which must be refused. */
+static int reregister_in_callback_ret;
+
+static void coap_callback_reregister_in_callback(const struct coap_client_response_data *data,
+						 void *user_data)
+{
+	if (data->result_code == COAP_RESPONSE_CODE_CONTENT) {
+		reregister_in_callback_ret =
+			coap_client_reregister_observe(&client, &(struct coap_client_request){0});
+	}
+	coap_callback(data, user_data);
+}
+
 static void coap_callback_interleave_observe(const struct coap_client_response_data *data,
 					     void *user_data)
 {
@@ -1192,6 +1217,7 @@ static void test_setup(void *data)
 	ox_step = 0;
 	ox_dereg_count = 0;
 	ox_interleave_cb_idx = 0;
+	reregister_in_callback_ret = 0;
 	ox_blockwise_cb_count = 0;
 	memset(ox_reg_token, 0, sizeof(ox_reg_token));
 	memset(ox_last_token, 0, sizeof(ox_last_token));
@@ -1702,26 +1728,41 @@ z_impl_zsock_sendto_custom_fake_observe_subscribe(int sock, void *buf, size_t le
 	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
 }
 
-static void verify_deregister_packet(void *buf, size_t len, uint8_t expected_type)
+/* Uri-Query carried by the deregister and re-registration tests; RFC 7641 requires a re-sent
+ * observe GET to repeat the options of the registration request.
+ */
+#define TEST_QUERY "id=1"
+
+/* Check a re-sent observe GET: CON/NON type, Observe option value (1 for deregister, 0 for
+ * re-registration), the token of the original registration and its Uri-Query option.
+ */
+static void verify_observe_resend_packet(void *buf, size_t len, uint8_t expected_type,
+					 int expected_observe)
 {
 	struct coap_packet pkt = {0};
 	struct coap_option obs_opt = {0};
+	struct coap_option query_opt = {0};
 	uint8_t token[COAP_TOKEN_MAX_LEN];
 	int ret;
 
 	ret = coap_packet_parse(&pkt, buf, len, NULL, 0);
-	zassert_ok(ret, "Failed to parse deregister packet");
+	zassert_ok(ret, "Failed to parse observe packet");
 
 	zassert_equal(coap_header_get_type(&pkt), expected_type, "Unexpected CON/NON type");
 
 	ret = coap_find_options(&pkt, COAP_OPTION_OBSERVE, &obs_opt, 1);
-	zassert_equal(ret, 1, "Observe option missing in deregister");
-	zassert_equal(coap_option_value_to_int(&obs_opt), 1,
-		      "Observe option must be 1 (deregister)");
+	zassert_equal(ret, 1, "Observe option missing");
+	zassert_equal(coap_option_value_to_int(&obs_opt), expected_observe,
+		      "Unexpected Observe option value");
 
 	coap_header_get_token(&pkt, token);
 	zassert_mem_equal(token, saved_observe_token, COAP_TOKEN_MAX_LEN,
-			  "Deregister token must match original observe token");
+			  "Token must match original observe token");
+
+	ret = coap_find_options(&pkt, COAP_OPTION_URI_QUERY, &query_opt, 1);
+	zassert_equal(ret, 1, "Uri-Query option missing");
+	zassert_equal(query_opt.len, strlen(TEST_QUERY), "Unexpected Uri-Query length");
+	zassert_mem_equal(query_opt.value, TEST_QUERY, query_opt.len, "Unexpected Uri-Query value");
 }
 
 static ssize_t z_impl_zsock_sendto_custom_fake_deregister_con(int sock, void *buf, size_t len,
@@ -1729,7 +1770,7 @@ static ssize_t z_impl_zsock_sendto_custom_fake_deregister_con(int sock, void *bu
 							      const struct net_sockaddr *dest_addr,
 							      net_socklen_t addrlen)
 {
-	verify_deregister_packet(buf, len, COAP_TYPE_CON);
+	verify_observe_resend_packet(buf, len, COAP_TYPE_CON, 1);
 	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
 }
 
@@ -1738,7 +1779,66 @@ static ssize_t z_impl_zsock_sendto_custom_fake_deregister_non(int sock, void *bu
 							      const struct net_sockaddr *dest_addr,
 							      net_socklen_t addrlen)
 {
-	verify_deregister_packet(buf, len, COAP_TYPE_NON_CON);
+	verify_observe_resend_packet(buf, len, COAP_TYPE_NON_CON, 1);
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_reregister_con(int sock, void *buf, size_t len,
+							      int flags,
+							      const struct net_sockaddr *dest_addr,
+							      net_socklen_t addrlen)
+{
+	verify_observe_resend_packet(buf, len, COAP_TYPE_CON, 0);
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+/* Deliver one NON notification on the registration token, then fall back to the default
+ * recvfrom fake.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_notification(int sock, void *buf,
+								      size_t max_len, int flags,
+								      struct net_sockaddr *src_addr,
+								      net_socklen_t *addrlen)
+{
+	static const uint8_t payload[] = "notification";
+	struct coap_packet pkt;
+
+	zassert_ok(coap_packet_init(&pkt, buf, max_len, 1, COAP_TYPE_NON_CON, COAP_TOKEN_MAX_LEN,
+				    saved_observe_token, COAP_RESPONSE_CODE_CONTENT, 0x7000));
+	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_OBSERVE, 7));
+	zassert_ok(coap_packet_append_payload_marker(&pkt));
+	zassert_ok(coap_packet_append_payload(&pkt, payload, sizeof(payload) - 1));
+
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+
+	return pkt.offset;
+}
+
+/* Same as reregister_con, but without signalling POLLIN: the response is delivered by the
+ * test with set_socket_events() once it has checked the slot is busy.
+ */
+static ssize_t
+z_impl_zsock_sendto_custom_fake_reregister_con_hold(int sock, void *buf, size_t len, int flags,
+						    const struct net_sockaddr *dest_addr,
+						    net_socklen_t addrlen)
+{
+	uint16_t mid = (((uint8_t *)buf)[2] << 8) | ((uint8_t *)buf)[3];
+
+	verify_observe_resend_packet(buf, len, COAP_TYPE_CON, 0);
+	store_token(buf);
+	set_next_pending_message_id(mid);
+
+	return 1;
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_reregister_non(int sock, void *buf, size_t len,
+							      int flags,
+							      const struct net_sockaddr *dest_addr,
+							      net_socklen_t addrlen)
+{
+	verify_observe_resend_packet(buf, len, COAP_TYPE_NON_CON, 0);
 	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
 }
 
@@ -1750,12 +1850,19 @@ ZTEST(coap_client, test_observe_deregister_con)
 		.path = TEST_PATH,
 		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 		.cb = coap_callback,
-		.options = {{
-			.code = COAP_OPTION_OBSERVE,
-			.value[0] = 0,
-			.len = 1,
-		}},
-		.num_options = 1,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
 		.user_data = &sem1,
 	};
 
@@ -1785,12 +1892,19 @@ ZTEST(coap_client, test_observe_deregister_non)
 		.path = TEST_PATH,
 		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 		.cb = coap_callback,
-		.options = {{
-			.code = COAP_OPTION_OBSERVE,
-			.value[0] = 0,
-			.len = 1,
-		}},
-		.num_options = 1,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
 		.user_data = &sem1,
 	};
 
@@ -1811,6 +1925,260 @@ ZTEST(coap_client, test_observe_deregister_non)
 	zassert_equal(last_response_code, -ECANCELED);
 
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_observe_reregister_con)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* Wait for subscription confirmation */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* Re-register: CON packet with Observe=0, the same token and the original Uri-Query */
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con_hold;
+	zassert_ok(coap_client_reregister_observe(&client, &req));
+
+	/* A second refresh while the first awaits its ACK is refused and sends nothing */
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con;
+	zassert_equal(coap_client_reregister_observe(&client, &req), -EBUSY);
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 2, "Refused refresh must not send");
+
+	/* Server ACKs the refresh with 2.05 */
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* The slot is free again: a further refresh goes out and is answered */
+	wait_callbacks_done();
+	zassert_ok(coap_client_reregister_observe(&client, &req));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* The observation is still ongoing: cancelling it reports -ECANCELED */
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
+
+	/* Refreshing the ended observation matches nothing */
+	zassert_equal(coap_client_reregister_observe(&client, &req), -ENOENT);
+
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_observe_reregister_non)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = false,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* NON: sendto does not trigger POLLIN; manually deliver a subscription notification */
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* Re-register: NON packet with Observe=0, the same token and the original Uri-Query;
+	 * unlike a NON deregister the slot is kept and the server's response is delivered on
+	 * it.
+	 */
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_non;
+	zassert_ok(coap_client_reregister_observe(&client, &req));
+
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* The observation is still ongoing: cancelling it reports -ECANCELED */
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
+
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_observe_reregister_notification_before_ack)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* Send the refresh but hold its ACK back */
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con_hold;
+	zassert_ok(coap_client_reregister_observe(&client, &req));
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 2);
+
+	/* A notification the server sent before seeing the refresh arrives first. It is
+	 * delivered as usual but must not count as the refresh's answer.
+	 */
+	z_impl_zsock_recvfrom_fake.custom_fake =
+		z_impl_zsock_recvfrom_custom_fake_observe_notification;
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* The unanswered refresh is retransmitted; the server then ACKs it */
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con;
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 3, "Refresh must be retransmitted");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
+}
+
+ZTEST(coap_client, test_observe_reregister_send_fail)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* The refresh cannot be sent: the error is returned, the observation stays intact and
+	 * the failed refresh is neither retransmitted nor reported to the callback.
+	 */
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_err;
+	zassert_equal(coap_client_reregister_observe(&client, &req), -ENETDOWN);
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	/* A later refresh succeeds */
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con;
+	zassert_ok(coap_client_reregister_observe(&client, &req));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
+}
+
+ZTEST(coap_client, test_observe_reregister_in_callback)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback_reregister_in_callback,
+		.options = {{
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		}},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* The subscription callback tries to refresh the observation it is running for */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_equal(reregister_in_callback_ret, -EBUSY, "Refresh from callback must be refused");
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 1, "Refused refresh must not send");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
 }
 
 ZTEST(coap_client, test_observe_blockwise)
