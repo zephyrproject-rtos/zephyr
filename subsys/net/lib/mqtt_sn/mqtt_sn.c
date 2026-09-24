@@ -1099,8 +1099,11 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 			LOG_WRN("Ping ran out of retries");
 			mqtt_sn_disconnect_internal(client);
 			gw = SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateways, gw, next);
-			LOG_DBG("Removing non-responsive GW 0x%02x", gw->gw_id);
-			mqtt_sn_gw_destroy(client, gw);
+			/* Only drop discovered gateways; a pinned one can't be re-learned. */
+			if (gw != NULL && gw->adv_timer != -1) {
+				LOG_DBG("Removing non-responsive GW 0x%02x", gw->gw_id);
+				mqtt_sn_gw_destroy(client, gw);
+			}
 			return -ETIMEDOUT;
 		}
 
