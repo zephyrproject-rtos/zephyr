@@ -242,11 +242,11 @@ static __ramfunc bool flash_bflb_is_in_xip(struct flash_bflb_bank_data *data, vo
 static int flash_bflb_is_valid_range(struct flash_bflb_bank_data *data, off_t offset, size_t len)
 {
 	if (offset < 0) {
-		LOG_WRN("0x%lx: before start of flash", (long)offset);
+		LOG_WRN("0x%tx: before start of flash", (ptrdiff_t)offset);
 		return -EINVAL;
 	}
 	if ((data->cfg.size - offset) < len || len > data->cfg.size) {
-		LOG_WRN("0x%lx: ends past the end of flash", (long)offset);
+		LOG_WRN("0x%tx: ends past the end of flash", (ptrdiff_t)offset);
 		return -EINVAL;
 	}
 
@@ -1716,7 +1716,7 @@ static __ramfunc int flash_bflb_read(const struct device *dev, off_t address, vo
 		flash_bflb_set_offset(data, 0);
 
 		/* copy data we need */
-		flash_bflb_xip_memcpy((uint8_t *)(address + data->xip_base),
+		flash_bflb_xip_memcpy((uint8_t *)((ptrdiff_t)address + data->xip_base),
 				      (uint8_t *)buffer, length);
 
 		sys_cache_data_flush_and_invd_all();
@@ -1724,7 +1724,7 @@ static __ramfunc int flash_bflb_read(const struct device *dev, off_t address, vo
 		flash_bflb_set_offset(data, img_offset);
 	} else {
 		/* copy data we need */
-		flash_bflb_xip_memcpy((uint8_t *)(address + data->xip_base - img_offset),
+		flash_bflb_xip_memcpy((uint8_t *)((ptrdiff_t)address + data->xip_base - img_offset),
 				      (uint8_t *)buffer, length);
 	}
 
@@ -1773,7 +1773,8 @@ static __ramfunc int flash_bflb_write(const struct device *dev, off_t address, c
 
 			/* copy data we need */
 			flash_bflb_xip_memcpy((uint8_t *)buffer,
-					(uint8_t *)(address + data->xip_base), length);
+					      (uint8_t *)((ptrdiff_t)address + data->xip_base),
+					      length);
 
 			sys_cache_data_flush_and_invd_all();
 
@@ -1781,7 +1782,8 @@ static __ramfunc int flash_bflb_write(const struct device *dev, off_t address, c
 		} else {
 			/* copy data we need */
 			flash_bflb_xip_memcpy((uint8_t *)buffer,
-					      (uint8_t *)(address + data->xip_base - img_offset),
+					      (uint8_t *)((ptrdiff_t)address + data->xip_base
+							  - img_offset),
 					      length);
 		}
 
