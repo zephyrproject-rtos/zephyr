@@ -16,7 +16,6 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_J1939_TRANSPORT_PROTOCOL j1939_tp.c)
 
 zephyr_library_sources(
-    Application/J1939_App.c
     Application/J1939Ac_App.c
 )
 

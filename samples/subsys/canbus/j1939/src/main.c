@@ -123,13 +123,16 @@ int main(void)
 		return 0;
 	}
 
+	j1939_init();
+
+	(void)j1939_register_request_pgn(J1939_SOFTWARE_ID_PGN, &diag_node);
+	(void)j1939_register_request_pgn(J1939_ECU_ID_INFO_PGN, &diag_node);
+
 	ret = can_start(can_dev);
 	if (ret != 0) {
 		printf("Error starting CAN controller [%d]", ret);
 		return 0;
 	}
-
-	j1939_init();
 
 	printf("Finished init.\n");
 
