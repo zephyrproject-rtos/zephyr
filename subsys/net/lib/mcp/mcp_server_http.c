@@ -1025,9 +1025,9 @@ static int mcp_server_http_send(struct mcp_transport_message *response)
 	if (ret != 0) {
 		LOG_ERR("Failed to push response to heap for client %s: %d",
 			client->session_uuid_str, ret);
+	} else {
+		atomic_inc(&available_responses);
 	}
-
-	atomic_inc(&available_responses);
 
 	k_mutex_unlock(&client->responses_mutex);
 	client_ref_put(client);
