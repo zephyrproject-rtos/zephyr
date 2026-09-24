@@ -28,8 +28,15 @@ extern "C" {
 
 /**
  * @brief Interfaces for Local Interconnect Network (LIN) controllers and transceivers
- * @defgroup lin_controller LIN controller
+ * @defgroup lin_interface LIN
  * @ingroup io_interfaces
+ *
+ * @defgroup lin_controller LIN Controller
+ * @brief Interfaces for LIN controllers
+ * @ingroup lin_interface
+ * @since 4.5
+ * @version 0.1.0
+ *
  * @{
  */
 
