@@ -355,6 +355,16 @@ static stm32_status_t hal_udc_flush_endpoint(stm32_pcd_handle_t *hpcd, uint8_t e
 #endif /* CONFIG_STM32_HAL2 */
 }
 
+static stm32_status_t hal_udc_abort_endpoint_transfer(stm32_pcd_handle_t *hpcd,
+					      uint8_t ep_addr)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_AbortEndpointTransfer(hpcd, ep_addr);
+#else
+	return HAL_PCD_EP_Abort(hpcd, ep_addr);
+#endif
+}
+
 /*
  * The callbacks below are invoked by HAL_PCD_IRQHandler() when appropriate.
  * HAL_PCD_IRQHandler() is registered as ISR for this driver because it just
@@ -1443,10 +1453,31 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	__maybe_unused stm32_status_t status;
 
-	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
+	LOG_DBG("Dequeue ep 0x%02x", ep_cfg->addr);
 
-	status = hal_udc_flush_endpoint(&priv->pcd, ep_cfg->addr);
-	__ASSERT_NO_MSG(status == HAL_OK);
+	/* TODO: abort OUT endpoints on OTG IP (needs HAL fix?) */
+	if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) ||
+	    USB_EP_DIR_IS_IN(ep_cfg->addr)) {
+		status = hal_udc_abort_endpoint_transfer(&priv->pcd, ep_cfg->addr);
+		if (status != HAL_OK) {
+			LOG_ERR("Failed to abort endpoint 0x%02x", ep_cfg->addr);
+		}
+	}
+
+	if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) ||
+	    USB_EP_DIR_IS_IN(ep_cfg->addr)) {
+		/*
+		 * On ST USB IP, there is no restriction on flush.
+		 * On ST OTG_FS/OTG_HS, the TxFIFOs are per-endpoint
+		 * and can be flushed safely, but the RxFIFO is shared
+		 * by all endpoints and should not be flushed to avoid
+		 * data loss. Once hal_udc_abort_endpoint_transfer()
+		 * returns, all data in the RxFIFO that would have been
+		 * delivered to that endpoint should already be flushed.
+		 */
+		status = hal_udc_flush_endpoint(&priv->pcd, ep_cfg->addr);
+		__ASSERT_NO_MSG(status == HAL_OK);
+	}
 
 	udc_ep_cancel_queued(dev, ep_cfg);
 
