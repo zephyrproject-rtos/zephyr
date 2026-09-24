@@ -40,7 +40,15 @@ config PROFILING_PERF_EVENTS_SHELL
 
 config PROFILING_PERF_EVENT_PROVIDER_CPU
 	bool "CPU performance counter provider"
+	depends on ARM64_PMUV3
 	help
-	  Register a cpu0 provider exposing a cycles event.
+	  Register a per-CPU provider (cpu0, cpu1, ...) that exposes hardware
+	  performance events (cycles, instructions, cache and branch events)
+	  through the portable <zephyr/arch/pmu.h> API. The ARMv8-A PMUv3
+	  backend is used today; any architecture that implements the pmu_*()
+	  primitives can back this provider unchanged.
+
+	  On SMP, each counter session is steered onto the target CPU. Enable
+	  CONFIG_SCHED_CPU_MASK to measure a CPU other than the calling one.
 
 endif
