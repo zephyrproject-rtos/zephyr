@@ -210,6 +210,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
     highest_priority = IGNORED_RUN_ONCE_PRIORITY
     highest_entry = None
     check_files = []
+    board_names = set()
 
     if user_args.context:
         dump_context(command, user_args, user_runner_args)
@@ -238,7 +239,6 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
 
         # Process all domains to load board names and populate flash runner
         # parameters.
-        board_names = set()
         for d in domains:
             if d.build_dir is None:
                 build_dir = get_build_dir(user_args, config=command.config)
