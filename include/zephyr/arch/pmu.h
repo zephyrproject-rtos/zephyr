@@ -198,6 +198,26 @@ bool pmu_counter_overflow(uint32_t counter);
 void pmu_counter_clear_overflow(uint32_t counter);
 
 /**
+ * @brief Write a 32-bit preload value to an event counter (for overflow sampling).
+ *
+ * @param counter Event counter index [0, pmu_num_counters()).
+ * @param value Value to write (typically (uint32_t)(-period) for periodic overflow).
+ *
+ * @retval 0 Success
+ * @retval -ENODEV PMU not initialized on this CPU
+ * @retval -EINVAL @a counter out of range
+ */
+int pmu_counter_write32(uint32_t counter, uint32_t value);
+
+/**
+ * @brief Enable or disable the PMU overflow interrupt for an event counter at EL1.
+ *
+ * @param counter Event counter index [0, pmu_num_counters()).
+ * @param enable true to generate an interrupt on overflow, false to mask it.
+ */
+void pmu_counter_overflow_interrupt_set(uint32_t counter, bool enable);
+
+/**
  * @}
  */
 

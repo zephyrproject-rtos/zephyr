@@ -137,6 +137,8 @@ void arch_pmu_start(void);
 void arch_pmu_stop(void);
 bool arch_pmu_counter_overflow(uint32_t counter);
 void arch_pmu_counter_clear_overflow(uint32_t counter);
+int arch_pmu_counter_write32(uint32_t counter, uint32_t value);
+void arch_pmu_counter_overflow_interrupt_set(uint32_t counter, bool enable);
 
 #define pmu_init                   arch_pmu_init
 #define pmu_num_counters           arch_pmu_num_counters
@@ -155,6 +157,8 @@ void arch_pmu_counter_clear_overflow(uint32_t counter);
 #define pmu_stop                   arch_pmu_stop
 #define pmu_counter_overflow       arch_pmu_counter_overflow
 #define pmu_counter_clear_overflow arch_pmu_counter_clear_overflow
+#define pmu_counter_write32                arch_pmu_counter_write32
+#define pmu_counter_overflow_interrupt_set arch_pmu_counter_overflow_interrupt_set
 
 /** @endcond */
 
