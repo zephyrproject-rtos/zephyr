@@ -100,9 +100,6 @@
 #define DRAM_USER_END DRAM_HW_USER_END
 #endif
 
-/* Stack pointer for early startup (__start) */
-#define DRAM_STACK_START DRAM_USER_END
-
 /* Safety margin between MCUboot segments and ROM stack */
 #define BOOTLOADER_STACK_OVERHEAD      0x2000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x2000
