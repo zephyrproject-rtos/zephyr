@@ -3002,6 +3002,22 @@ static void nan_transmit_to_cmd(struct wifi_nan_params *params, char **pos, char
 	append_nan_ssi(pos, end, params->transmit.ssi, params->transmit.ssi_len);
 }
 
+static int nan_set_to_cmd(struct wifi_nan_params *params, char *cmd, size_t max_len)
+{
+	int ret;
+
+	if (params->set.param[0] == '\0' || params->set.value[0] == '\0') {
+		return -EINVAL;
+	}
+
+	ret = snprintf(cmd, max_len, "NAN_SET %s %s", params->set.param, params->set.value);
+	if (ret < 0 || (size_t)ret >= max_len) {
+		return -ENOBUFS;
+	}
+
+	return 0;
+}
+
 static int nan_params_to_cmd(struct wifi_nan_params *params, char *cmd, size_t max_len)
 {
 	char *pos = cmd;
@@ -3013,6 +3029,25 @@ static int nan_params_to_cmd(struct wifi_nan_params *params, char *cmd, size_t m
 	}
 
 	switch (params->op) {
+	case WIFI_NAN_OP_START:
+		strncpy(pos, "NAN_START", end - pos);
+		break;
+
+	case WIFI_NAN_OP_STOP:
+		strncpy(pos, "NAN_STOP", end - pos);
+		break;
+
+	case WIFI_NAN_OP_SET:
+		return nan_set_to_cmd(params, pos, end - pos);
+
+	case WIFI_NAN_OP_UPDATE_CONF:
+		strncpy(pos, "NAN_UPDATE_CONF", end - pos);
+		break;
+
+	case WIFI_NAN_OP_STATUS:
+		strncpy(pos, "NAN_STATUS", end - pos);
+		break;
+
 	case WIFI_NAN_OP_PUBLISH:
 		nan_publish_to_cmd(params, &pos, end);
 		break;
@@ -3069,6 +3104,7 @@ int supplicant_nan_cfg(const struct device *dev __unused, struct net_if *iface,
 		goto out;
 	}
 
+	memset(params->resp, 0, sizeof(params->resp));
 	if (zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd, params->resp)) {
 		ret = -ENOEXEC;
 		goto out;
