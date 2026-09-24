@@ -6,13 +6,6 @@
 / {
 	chosen {
 		zephyr,secure-storage-its-partition = &storage_partition;
-
-		/* WARNING!!!
-		 * This cannot work in a real scenario because both ITS and
-		 * PS use the same partition. This is OK only for this test
-		 * suite and only up until PS does not write anything into
-		 * ITS (replay-attack).
-		 */
-		zephyr,secure-storage-ps-partition = &storage_partition;
+		zephyr,secure-storage-ps-partition = &storage_partition_2;
 	};
 };
