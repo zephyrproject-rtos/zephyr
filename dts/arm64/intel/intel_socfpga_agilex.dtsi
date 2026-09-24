@@ -8,10 +8,12 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
+#include <freq.h>
 #include <mem.h>
 
 / {
 	cpus {
+		timebase-frequency = <DT_FREQ_M(25)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 
