@@ -107,3 +107,28 @@ config RISCV_CUSTOM_CSR_ANDES_NMI
 	  overriding the weak one, and to set up what that handler needs, such
 	  as an NMI stack in mscratch, before enabling any NMI source. The weak
 	  default only parks the core.
+
+config CPU_HAS_ANDES_VECTORED_PLIC
+	bool
+	help
+	  The AndesCore supports Vectored PLIC extension.
+
+config RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC
+	bool "Andes V5 Vectored PLIC extension"
+	depends on CPU_HAS_ANDES_VECTORED_PLIC
+	depends on !(SMP || 64BIT)
+	select GEN_IRQ_VECTOR_TABLE
+	help
+	  This option enables the Andes V5 Vectored PLIC extension. This extension
+	  allows the PLIC to directly vector interrupts to their respective handlers,
+	  enabling support for direct interrupts.
+
+	  64 bit systems are not supported, because the vectored PLIC mode requires
+	  4 byte addresses per entry and the Zephyr IRQ table uses 8 byte addresses.
+
+choice IRQ_VECTOR_TABLE_TYPE
+	default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS if RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC
+endchoice
+
+config SW_ISR_TABLE_ENTRY_FUNCTION
+	default "_andes_plic_isr_entry" if RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC
