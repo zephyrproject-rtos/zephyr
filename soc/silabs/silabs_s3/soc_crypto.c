@@ -5,9 +5,12 @@
  */
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_silabs.h>
+#include <zephyr/random/random.h>
 
+#include <sl_status.h>
 #include <sli_crypto_s3.h>
 #include <sli_sxsymcrypt.h>
+#include <sxsymcrypt/cmmask.h>
 
 #include "soc_crypto.h"
 
@@ -25,11 +28,55 @@ struct soc_crypto_data {
 	struct sx_regs regs;
 	struct k_mutex lock;
 	struct k_sem done;
+	bool initialized;
 };
+
+static int soc_crypto_reseed(const struct device *dev)
+{
+	struct soc_crypto_data *data = dev->data;
+	struct sxcmmask ctx = {0};
+	sl_status_t status;
+	uint32_t random[4];
+	int ret;
+
+	ret = sys_csrand_get(&random, sizeof(random));
+	if (ret != 0) {
+		return ret;
+	}
+
+	for (size_t i = 0; i < 4; i++) {
+
+		/* Lock must be inside the loop: sx_cm_load_mask_wait() calls sx_cmdma_release_hw(),
+		 * which releases the engine lock, so we must retake it every iteration.
+		 */
+		status = sli_sxsymcrypt_lock_cryptomaster_selection(data->regs.instance_index,
+								    false);
+		if (status != SL_STATUS_OK) {
+			return -EIO;
+		}
+
+		ret = sx_cm_load_mask(&ctx, random[i]);
+		if (ret != 0) {
+			sli_sxsymcrypt_unlock_cryptomaster_selection();
+			return -EIO;
+		}
+
+		ret = sx_cm_load_mask_wait(&ctx);
+
+		sli_sxsymcrypt_unlock_cryptomaster_selection();
+
+		if (ret != 0) {
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
 
 static int soc_crypto_init(const struct device *dev)
 {
 	const struct soc_crypto_config *config = dev->config;
+	struct soc_crypto_data *data = dev->data;
 	int ret;
 
 	ret = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
@@ -45,6 +92,17 @@ static int soc_crypto_init(const struct device *dev)
 
 	config->config_irq(dev);
 
+	ret = soc_crypto_reseed(dev);
+
+	/* Mark initialization complete such that future driver calls can fail if init failed.
+	 * Must be done before returning the status of the reseed operation.
+	 */
+	data->initialized = true;
+
+	if (ret != 0) {
+		return ret;
+	}
+
 	ret = clock_control_off(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
 
 	return ret;
@@ -55,6 +113,13 @@ int soc_crypto_enable(const struct device *dev, bool yield)
 	const struct soc_crypto_config *config = dev->config;
 	struct soc_crypto_data *data = dev->data;
 	int ret;
+
+	/* The device is allowed not to be ready if init is in progress, since the reseed operation
+	 * calls back into the driver from crypto library callbacks. Otherwise, return failure.
+	 */
+	if (data->initialized && !device_is_ready(dev)) {
+		return -ENODEV;
+	}
 
 	ret = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
 	if (ret < 0 && ret != -EALREADY) {
@@ -203,6 +268,7 @@ static void soc_crypto_isr(const struct device *dev)
 		},                                                                                 \
 		.lock = Z_MUTEX_INITIALIZER(crypto_data_##idx.lock),                               \
 		.done = Z_SEM_INITIALIZER(crypto_data_##idx.done, 0, 1),                           \
+		.initialized = false,                                                              \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, soc_crypto_init, NULL, &crypto_data_##idx,                      \
