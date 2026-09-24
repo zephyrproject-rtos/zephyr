@@ -156,8 +156,8 @@ static int validate_flash_parameters(const struct nvmctrl_config *const config, 
 	if ((offset < 0) || (offset > config->size) || (size > config->size) ||
 	    (offset > (config->size - size))) {
 		LOG_WRN("Offset+Size is beyond flash addressable range."
-			" Off: %#08x, Sz: %#08x, MaxSz: %#08x",
-			(uint32_t)offset, size, config->size);
+			" Off: %#08tx, Sz: %#08zx, MaxSz: %#08x",
+			(ptrdiff_t)offset, size, config->size);
 		return -EINVAL;
 	}
 
@@ -168,8 +168,8 @@ static int validate_flash_parameters(const struct nvmctrl_config *const config, 
 		if ((config->base_addr + offset + size) > unimp_region_start &&
 		    (config->base_addr + offset + size) <= unimp_region_end) {
 			LOG_WRN("Offset+Size lies in unimplemented flash range."
-				" Off: %#08x, Sz: %#08x",
-				(uint32_t)offset, size);
+				" Off: %#08tx, Sz: %#08zx",
+				(ptrdiff_t)offset, size);
 			return -EINVAL;
 		}
 	}
@@ -180,13 +180,13 @@ static int validate_flash_parameters(const struct nvmctrl_config *const config, 
 	case OPERATION_WRITE:
 		if (!(IS_MCHP_FLASH_G3_ALIGNED(offset, config->write_block_size))) {
 			LOG_WRN("WRITE: Offset should be multiples of write-block size."
-				" Off: %#08x",
-				(uint32_t)offset);
+				" Off: %#08tx",
+				(ptrdiff_t)offset);
 			return -EINVAL;
 		}
 		if (!(IS_MCHP_FLASH_G3_ALIGNED(size, config->write_block_size))) {
 			LOG_WRN("WRITE: Size should be multiples of write-block size."
-				" Sz: %#08x",
+				" Sz: %#08zx",
 				size);
 			return -EINVAL;
 		}
@@ -194,19 +194,19 @@ static int validate_flash_parameters(const struct nvmctrl_config *const config, 
 	case OPERATION_ERASE:
 		if (size < config->erase_block_size) {
 			LOG_WRN("ERASE: Cannot erase less than the size of an erase-block."
-				" Sz: %#08x",
+				" Sz: %#08zx",
 				size);
 			return -EINVAL;
 		}
 		if (!IS_MCHP_FLASH_G3_ALIGNED(size, config->erase_block_size)) {
 			LOG_WRN("ERASE: Size should be multiples of erase-block size."
-				" Sz: %#08x",
+				" Sz: %#08zx",
 				size);
 			return -EINVAL;
 		}
 		if (!IS_MCHP_FLASH_G3_ALIGNED(offset, config->erase_block_size)) {
 			LOG_WRN("ERASE: Offset should be multiples of erase-block size."
-				" Sz: %#08x",
+				" Sz: %#08zx",
 				size);
 			return -EINVAL;
 		}
@@ -302,7 +302,7 @@ static int flash_mchp_read(const struct device *dev, off_t offset, void *data_bu
 	}
 
 	k_sem_take(&data->fcw_sem_lock, K_FOREVER);
-	(void)memcpy(data_buff, (uint8_t *)(config->base_addr + offset), no_of_bytes);
+	(void)memcpy(data_buff, (uint8_t *)(config->base_addr + (ptrdiff_t)offset), no_of_bytes);
 	k_sem_give(&data->fcw_sem_lock);
 
 	return 0;
@@ -339,9 +339,10 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 
 		if (no_of_bytes >= config->write_block_size_row) {
 			regs->FCW_SRCADDR = (uint32_t)src_data_buff_read_ptr;
-			LOG_DBG("Writing row-block at address %#08x",
-				(uint32_t)(config->base_addr + offset));
-			nvm_error = exec_flash_operation(regs, data, (config->base_addr + offset),
+			LOG_DBG("Writing row-block at address %#08tx",
+				(ptrdiff_t)(config->base_addr + offset));
+			nvm_error = exec_flash_operation(regs, data,
+							 (config->base_addr + offset),
 							 ROW_PROGRAM_OPERATION);
 			if (nvm_error != 0) {
 				LOG_ERR("Flash Write Operation Failed");
@@ -358,9 +359,10 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 					*((uint32_t *)((uint32_t)src_data_buff_read_ptr +
 						       (i * sizeof(uint32_t))));
 			}
-			LOG_DBG("Writing quad-double-word at address %#08x",
-				(uint32_t)(config->base_addr + offset));
-			nvm_error = exec_flash_operation(regs, data, (config->base_addr + offset),
+			LOG_DBG("Writing quad-double-word at address %#08tx",
+				(ptrdiff_t)(config->base_addr + offset));
+			nvm_error = exec_flash_operation(regs, data,
+							 (config->base_addr + offset),
 							 QUAD_DOUBLE_WORD_PROGRAM_OPERATION);
 			if (nvm_error != 0) {
 				LOG_ERR("Flash Write Operation Failed");
@@ -377,10 +379,11 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 					*((uint32_t *)((uint32_t)src_data_buff_read_ptr +
 						       (i * sizeof(uint32_t))));
 			}
-			LOG_DBG("Writing double-word at address %#08x",
-				(uint32_t)(config->base_addr + offset));
+			LOG_DBG("Writing double-word at address %#08tx",
+				(ptrdiff_t)(config->base_addr + offset));
 			nvm_error = exec_flash_operation(regs, data,
-							 (uint32_t)(config->base_addr + offset),
+							 (uint32_t)(config->base_addr +
+								    offset),
 							 SINGLE_DOUBLE_WORD_PROGRAM_OPERATION);
 			if (nvm_error != 0) {
 				LOG_ERR("Flash Write Operation Failed");
@@ -392,7 +395,7 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 			src_data_buff_read_ptr += config->write_block_size;
 		} else {
 			LOG_ERR("Alignment error - no_of_bytes is not aligned to write-block size "
-				"%#08x",
+				"%#08tx",
 				no_of_bytes);
 			nvm_error = -EIO;
 			break;
@@ -422,9 +425,11 @@ static int flash_mchp_erase(const struct device *dev, off_t offset, size_t no_of
 	}
 
 	while (no_of_bytes > 0U) {
-		LOG_DBG("Erasing block at address %#08x", (uint32_t)(config->base_addr + offset));
+		LOG_DBG("Erasing block at address %#08tx",
+			(ptrdiff_t)(config->base_addr + offset));
 		k_sem_take(&data->fcw_sem_lock, K_FOREVER);
-		nvm_error = exec_flash_operation(regs, data, (uint32_t)(config->base_addr + offset),
+		nvm_error = exec_flash_operation(regs, data,
+						 (uint32_t)(config->base_addr + offset),
 						 PAGE_ERASE_OPERATION);
 		k_sem_give(&data->fcw_sem_lock);
 		if (nvm_error != 0) {
