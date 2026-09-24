@@ -24,7 +24,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - frdm_k64f
-    min_flash: 1024
+    min_flash: 256
     tags: usb
     extra_configs:
       - CONFIG_APP_USB_DFU_USE_FLASH_BACKEND=y
