@@ -1581,6 +1581,21 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 			err = coap_packet_set_path(&pkt, internal_req->coap_request.path);
 		}
 
+		/* RFC 7641 3.6: all options of a deregister must be identical to those of the
+		 * registration request. Re-add the application's options except Observe, which
+		 * is set to 1 (deregister) below.
+		 */
+		for (int j = 0; err == 0 && j < internal_req->coap_request.num_options; j++) {
+			const struct coap_client_option *opt =
+				&internal_req->coap_request.options[j];
+
+			if (opt->code == COAP_OPTION_OBSERVE) {
+				continue;
+			}
+
+			err = coap_packet_append_option(&pkt, opt->code, opt->value, opt->len);
+		}
+
 		if (err == 0) {
 			err = coap_append_option_int(&pkt, COAP_OPTION_OBSERVE, 1);
 		}
