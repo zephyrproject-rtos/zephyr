@@ -1,0 +1,64 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Ezurio
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nitrogen93_smarc_mimx9352_a55.dts"
+
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+
+	aliases {
+		wifi-sdio = &usdhc3;
+		wifi0 = &nxp_wifi;
+	};
+};
+
+&lpuart5 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		nxp_bt: nxp_bt {
+			compatible = "nxp,bt-hci-uart";
+			/* PDM_BIT_STREAM1, direct to CPU */
+			sdio-reset-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+			w-disable-gpios = <&pcal6534 4 GPIO_ACTIVE_HIGH>; /* BT_EN */
+			hci-operation-speed = <3000000>;
+			hw-flow-control;
+			fw-download-primary-speed = <115200>;
+			fw-download-secondary-speed = <3000000>;
+			fw-download-secondary-flowcontrol;
+		};
+	};
+};
+
+&usdhc3 {
+	pinctrl-0 = <&pinmux_usdhc3>;
+	pinctrl-1 = <&pinmux_usdhc3_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc3_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	non-removable;
+	no-3-3-v;
+	no-3-0-v;
+	power-delay-ms = <20>;
+	read-watermark = <0x10>;
+	write-watermark = <0x80>;
+	status = "okay";
+
+	nxp_wifi: nxp_wifi {
+		compatible = "nxp,wifi";
+		sd-gpios = <&pcal6534 2 GPIO_ACTIVE_LOW>; /* P0_2 WL_EN as active-low reset */
+		wakeup-gpios = <&pcal6534 3 GPIO_ACTIVE_LOW>; /* P0_3 WL_HOST_WAKE */
+		status = "okay";
+	};
+};
