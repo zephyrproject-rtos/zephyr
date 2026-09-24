@@ -795,7 +795,7 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_ping_timeout)
 	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_KEEPALIVE + 1));
 	zassert_equal(err, -EAGAIN, "Unexpected TX");
 
-	zassert_true(sys_slist_is_empty(&mqtt_client->gateways), "GW not deleted.");
+	zassert_false(sys_slist_is_empty(&mqtt_client->gateways), "Pinned GW was deleted.");
 	zassert_equal(mqtt_client->state, 0, "Wrong state");
 	zassert_equal(evt_cb_data.called, 2, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_DISCONNECTED, "Wrong event");
