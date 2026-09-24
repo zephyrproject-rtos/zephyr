@@ -12,5 +12,41 @@
 	/* Mapping between MIWU wui bits and source device */
 	npcx-miwus-wui-map {
 		compatible = "nuvoton,npcx-miwu-wui-map";
+
+		/* MIWU table 1, group A */
+		wui_cr_sin1: wui1-1-7-1 {
+			miwus = <&miwu1 0 7>; /* CR_SIN */
+		};
+
+		/* MIWU Table 1, group D */
+		wui_shi_cs: wui1-4-3 {
+			miwus = <&miwu1 3 3>; /* SHI_CS */
+		};
+
+		/* MIWU Table 2, group G */
+		wui_io_stb00: wui2-7-0 {
+			miwus = <&miwu2 6 0>; /* GPIO_STB00 */
+		};
+
+		wui_io_stb01: wui2-7-1 {
+			miwus = <&miwu2 6 1>; /* GPIO_STB01 */
+		};
+
+		wui_io_stb02: wui2-7-2 {
+			miwus = <&miwu2 6 2>; /* GPIO_STB02 */
+		};
+
+		wui_io_stb03: wui2-7-3 {
+			miwus = <&miwu2 6 3>; /* GPIO_STB03 */
+		};
+
+		wui_io_stb04: wui2-7-4 {
+			miwus = <&miwu2 6 4>; /* GPIO_STB04 */
+		};
+
+		/* MIWU Table 2, group H */
+		wui_io_stb15_psl_in4: wui2-8-5 {
+			miwus = <&miwu2 7 5>; /* GPIO_STB15/PSL_IN4 */
+		};
 	};
 };

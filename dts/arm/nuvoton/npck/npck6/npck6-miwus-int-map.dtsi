@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Nuvoton Technology Corporation.
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 /* Common MIWU group-interrupt mapping configurations in npck */
 #include <nuvoton/npck/npck-miwus-int-map.dtsi>
 
-/* Specific MIWU group-interrupt mapping configurations in npck3 series */
+/* Specific MIWU group-interrupt mapping configurations in npck6 series */
 / {
 	/* Mapping between MIWU group and interrupts */
 	npcx-miwus-int-map {
@@ -16,7 +16,7 @@
 			parent = <&miwu1>;
 
 			group_e1: group-e1-map {
-				irq = <12>;
+				irq = <82>;
 				irq-prio = <2>;
 				group-mask = <0x10>;
 			};

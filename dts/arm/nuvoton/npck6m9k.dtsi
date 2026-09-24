@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include "npck/npck6.dtsi"
+
+/ {
+	/* Code ram */
+	flash0: flash@10020000 {
+		reg = <0x10020000 DT_SIZE_K(640)>;
+	};
+
+	/* Internal flash */
+	flash1: flash@60000000 {
+		reg = <0x60000000 DT_SIZE_K(1024)>;
+	};
+
+	/* Data ram */
+	sram0: memory@200c0000 {
+		compatible = "mmio-sram";
+		reg = <0x200c0000 DT_SIZE_K(256)>;
+	};
+
+	soc-id {
+		device-id = <0x22>;
+	};
+};

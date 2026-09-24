@@ -11,5 +11,79 @@
 / {
 	npcx-alts-map {
 		compatible = "nuvoton,npcx-pinctrl-conf";
+
+		/* SCFG DEVALT 2 */
+		alt2_smb1b_sl: alt27 {
+			alts = <&scfg 0x02 0x7 0>;
+		};
+
+		/* SCFG DEVALT 3 */
+		alt3_tb1_2_sl: alt36 {
+			alts = <&scfg 0x03 0x6 0>;
+		};
+
+		alt3_ta1_2_sl: alt37 {
+			alts = <&scfg 0x03 0x7 0>;
+		};
+
+		/* SCFG DEVALT 4 */
+		alt4_shd2_spi: alt40 {
+			alts = <&scfg 0x04 0x0 0>;
+		};
+
+		alt4_noshd2_spi: alt40-inv {
+			alts = <&scfg 0x04 0x0 1>;
+		};
+
+		/* SCFG DEVALT A */
+		alta_shi_sl: alta0 {
+			alts = <&scfg 0x0a 0x0 0>;
+		};
+
+		/* SCFG DEVALT C */
+		altc_smb4b_sl: altc4 {
+			alts = <&scfg 0x0c 0x4 0>;
+		};
+
+		/* SCFG DEVALT D */
+		altd_gpstby0_out_in_sby: altd0 {
+			alts = <&scfg 0x0d 0x0 0>;
+		};
+
+		altd_psl_in4_en_out_def: altd6 {
+			alts = <&scfg 0x0d 0x6 0>;
+		};
+
+		/* SCFG DEVALT F */
+		altf_psl_in4_en: altf5 {
+			alts = <&scfg 0x0f 0x5 0>;
+		};
+
+		/* SCFG DEVALT 10 */
+		alt10_tb3_2_sl: alt104 {
+			alts = <&scfg 0x10 0x4 0>;
+		};
+
+		alt10_ta3_2_sl: alt105 {
+			alts = <&scfg 0x10 0x5 0>;
+		};
+
+		alt10_tb2_2_sl: alt106 {
+			alts = <&scfg 0x10 0x6 0>;
+		};
+
+		alt10_ta2_2_sl: alt107 {
+			alts = <&scfg 0x10 0x7 0>;
+		};
+
+		/* SCFG DEVALT 12 */
+		smb4b_pu_sl: alt127 {
+			alts = <&scfg 0x12 0x7 0>;
+		};
+
+		/* SCFG DEVALT CX */
+		altcx_psl_in4_ahi: alt135 {
+			alts = <&scfg 0x13 0x5 0>;
+		};
 	};
 };
