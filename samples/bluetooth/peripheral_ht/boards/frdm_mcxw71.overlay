@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MCXW7x unused-SRAM shutdown demonstration.
+ *
+ * Shrink the chosen zephyr,sram node so the linked image no longer spans the
+ * whole system SRAM. The high system-TCM banks then fall outside every kept
+ * memory region and CONFIG_SOC_SERIES_MCXW7XX_SHUTDOWN_UNUSED_RAM powers them off.
+ *
+ * 64 KB (banks 2..4) comfortably holds this sample's static footprint. An
+ * application that needs a retained (e.g. ECC) region should declare it as a
+ * zephyr,memory-region so it is kept powered.
+ */
+&stcm0 {
+	reg = <0x0 DT_SIZE_K(64)>;
+};
