@@ -6,9 +6,6 @@ if SOC_SERIES_IT8XXX2
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 32768
-
 config SYS_CLOCK_TICKS_PER_SEC
 	default 4096
 
