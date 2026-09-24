@@ -21,9 +21,6 @@ config ARC_MPU_VER
 config RGF_NUM_BANKS
 	default 2
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 5000000
-
 config HARVARD
 	default y
 

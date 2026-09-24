@@ -6,12 +6,14 @@
 
 /dts-v1/;
 
+#include <freq.h>
 #include "nsim.dtsi"
 #include "nsim-ccm-mem.dtsi"
 #include "nsim-uart-ns16550.dtsi"
 
 / {
 	cpus {
+		timebase-frequency = <DT_FREQ_M(5)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 

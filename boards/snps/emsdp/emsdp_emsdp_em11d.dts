@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <synopsys/emsdp.dtsi>
+#include <freq.h>
 #include <mem.h>
 #include "board.dtsi"
 #include "emsdp-pinctrl.dtsi"
@@ -14,6 +15,10 @@
 / {
 	model = "emsdp";
 	compatible = "snps,emsdp", "snps,emsdp";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_M(40)>;
+	};
 
 	aliases {
 		uart-0 = &uart0;
