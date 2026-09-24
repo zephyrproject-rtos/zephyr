@@ -20,6 +20,7 @@
 #include <zephyr/init.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <stm32_bitops.h>
 #include <stm32_cache.h>
@@ -113,6 +114,13 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define INTERNAL_REGULATOR_NONE			0
 #define INTERNAL_REGULATOR_STARTUP_SW_DELAY	1
 #define INTERNAL_REGULATOR_STARTUP_HW_STATUS	2
+
+/* WAIT_FOR() timeouts. Match the previous busy-wait budgets (ADRDY: 1 ms,
+ * EOC: 10 ms) without leaving raw literals at the call sites.
+ */
+#define ADC_STM32_ADRDY_TIMEOUT_US (1U * USEC_PER_MSEC)
+#define ADC_STM32_EOC_TIMEOUT_US   (10U * USEC_PER_MSEC)
+#define ADC_STM32_POLL_INTERVAL_US 1U
 
 #define ADC_STM32_DT_INST_PROP_OR_IS_EQ(inst, prop, default_value, compare_value)		\
 	IS_EQ(DT_INST_PROP_OR(inst, prop, default_value), compare_value) ||
@@ -435,8 +443,7 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 		return 0;
 	}
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	LL_ADC_ClearFlag_ADRDY(adc);
 	LL_ADC_Enable(adc);
 
@@ -445,20 +452,9 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	 * still not stabilized, this will wait for a short time (about 1ms)
 	 * to ensure ADC modules are properly enabled.
 	 */
-	uint32_t count_timeout = 0;
-
-	while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0) {
-#ifdef CONFIG_SOC_SERIES_STM32F0X
-		/* For F0, continue to write ADEN=1 until ADRDY=1 */
-		if (LL_ADC_IsEnabled(adc) == 0UL) {
-			LL_ADC_Enable(adc);
-		}
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
-		count_timeout++;
-		k_busy_wait(100);
-		if (count_timeout >= 10) {
-			return -ETIMEDOUT;
-		}
+	if (!WAIT_FOR(LL_ADC_IsActiveFlag_ADRDY(adc) == 1, ADC_STM32_ADRDY_TIMEOUT_US,
+		      k_busy_wait(ADC_STM32_POLL_INTERVAL_US))) {
+		return -ETIMEDOUT;
 	}
 #else
 	/*
