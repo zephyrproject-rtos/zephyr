@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if(CONFIG_SECURE_STORAGE_PS_TRANSFORM_MODULE)
+
+  if(NOT CONFIG_SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_AEAD)
+    make_available(ps/transform.h)
+  endif()
+
+endif() # CONFIG_SECURE_STORAGE_PS_TRANSFORM_MODULE
+
+if(CONFIG_SECURE_STORAGE_PS_STORE_IMPLEMENTATION_CUSTOM)
+  make_available(ps/store.h)
+endif()
+
+if(CONFIG_SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_AEAD)
+
+  # Make the aead.h header available whenever none of the Zephyr-provided
+  # implementations are in use. In that case either the custom or an additional
+  # option added downstream is used, and it needs that header file.
+
+  if(CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_CRYPT_CUSTOM
+  OR (NOT CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_SCHEME_AES_GCM
+      AND NOT CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_SCHEME_CHACHA20_POLY1305)
+  OR (NOT CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH
+      AND NOT CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH)
+  OR (NOT CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_NONCE_PROVIDER_DEFAULT))
+    make_available(ps/transform/aead.h)
+  endif()
+
+endif() # CONFIG_SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_AEAD
+
+if(CONFIG_SECURE_STORAGE_PS_STORE_SETTINGS_NAME_CUSTOM)
+  make_available(ps/store/settings.h)
+endif()

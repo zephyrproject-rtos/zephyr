@@ -2,7 +2,9 @@
 
 zephyr_library()
 
-if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD AND CONFIG_TF_PSA_CRYPTO_BUILTIN)
+if((CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD OR
+    CONFIG_SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_AEAD) AND
+   CONFIG_TF_PSA_CRYPTO_BUILTIN)
   zephyr_library_link_libraries(tfpsacrypto)
   # Inherit tfpsacrypto's private include directories for access to psa_crypto_driver_wrappers.h.
   zephyr_library_include_directories($<TARGET_PROPERTY:tfpsacrypto,INCLUDE_DIRECTORIES>)
@@ -22,6 +24,8 @@ function(get_common_header header deps_var)
     set(deps "common.h" "uid.h")
   elseif((header MATCHES "^its") AND NOT (header STREQUAL "its/common.h"))
     set(deps "common.h" "its/common.h" "uid.h")
+  elseif((header MATCHES "^ps") AND NOT (header STREQUAL "ps/common.h"))
+    set(deps "common.h" "ps/common.h" "uid.h")
   else()
     set(deps "")
   endif()
@@ -48,3 +52,4 @@ if(CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_CUSTOM)
 endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/its.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/ps.cmake)
