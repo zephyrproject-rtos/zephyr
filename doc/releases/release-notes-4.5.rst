@@ -888,6 +888,8 @@ New APIs and options
     :kconfig:option:`CONFIG_SNTP_LIB`.
   * Add :c:func:`dns_resolve_is_active` to check whether a DNS resolving
     context is active without reading the context internals.
+  * Add :c:func:`coap_client_reregister_observe` to refresh an ongoing CoAP
+    observation (:rfc:`7641` re-registration) without tearing it down.
 
 * POSIX
 
