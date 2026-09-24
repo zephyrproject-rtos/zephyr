@@ -1176,7 +1176,16 @@ static void data_handler(const struct device *dev, const tdm_buffers_t *released
 				return;
 			}
 		}
-		(void)supply_next_buffers(drv_data, &next);
+		if (!supply_next_buffers(drv_data, &next) && next.p_tx_buffer != NULL &&
+		    next.p_tx_buffer != drv_data->last_tx_buffer) {
+			/* The TX buffer taken from the queue did not reach the
+			 * peripheral (no RX buffer was available), so it
+			 * will not be released when the transfer stops.
+			 */
+			buf.mem_block = (void *)next.p_tx_mem_slab;
+			buf.dmm_buf = (void *)next.p_tx_buffer;
+			free_tx_buffer(drv_data, &buf);
+		}
 	}
 }
 
