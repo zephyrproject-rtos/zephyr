@@ -703,7 +703,7 @@ static int hci_esp_host_rcv_pkt(uint8_t *data, uint16_t len)
 		buf = bt_esp_acl_recv(data, remaining);
 		break;
 
-	case BT_HCI_H4_SCO:
+	case BT_HCI_H4_ISO:
 		buf = bt_esp_iso_recv(data, remaining);
 		break;
 
