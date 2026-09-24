@@ -79,6 +79,10 @@
 #define STM32_CLOCK_PERIPH_IWDG4	0x894
 #define STM32_CLOCK_PERIPH_WWDG1	0x89C
 
+/* Camera peripherals */
+#define STM32_CLOCK_PERIPH_CSI2		0x858
+#define STM32_CLOCK_PERIPH_DCMIPP	0x85C
+
 /* CRC peripheral */
 #define STM32_CLOCK_PERIPH_CRC		0x8B4
 
