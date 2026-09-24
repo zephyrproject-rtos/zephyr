@@ -9,6 +9,8 @@ compatible: "nxp,mcux-i3c"
 
 include: [i3c-controller.yaml, pinctrl-device.yaml]
 
+class: [i3c, i2c]
+
 properties:
   reg:
     required: true
