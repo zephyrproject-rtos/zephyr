@@ -20,6 +20,8 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		/* CPU clock divided by 4 */
+		timebase-frequency = <DT_FREQ_M(27)>;
 
 		cpu: cpu@0 {
 			clock-frequency = <DT_FREQ_M(108)>;
