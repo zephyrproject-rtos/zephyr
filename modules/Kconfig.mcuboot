@@ -367,6 +367,17 @@ config MCUBOOT_BOOTLOADER_USES_SHA512
 	help
 	  MCUboot has been compiled to verify images using SHA512.
 
+config MCUBOOT_ACTIVE_SLOT_FROM_BLINFO
+	bool "Determine active slot from MCUboot blinfo retention data"
+	default y if MCUBOOT_BOOTLOADER_MODE_RAM_LOAD || \
+		MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
+	depends on RETENTION_BOOTLOADER_INFO_TYPE_MCUBOOT
+	help
+	  When enabled, the active image slot number is determined by reading the
+	  BLINFO_RUNNING_SLOT entry from blinfo retention area. This is necessary
+	  for MCUboot modes where the running slot cannot be inferred from
+	  the zephyr,code-partition chosen node alone.
+
 config MCUBOOT_BOOTLOADER_SIGNATURE_TYPE_PURE
 	bool "Signature is verified over an image rather than sha of an image"
 	help
