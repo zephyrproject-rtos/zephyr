@@ -7,6 +7,7 @@
 #
 include(extensions)
 include(sysbuild_extensions)
+include(sysbuild_preset)
 include(python)
 include(west)
 include(yaml)
