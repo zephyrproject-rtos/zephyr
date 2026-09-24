@@ -11,13 +11,25 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_DEBUGPOINT
+Z_EXC_DECLARE(z_riscv_debugpoint_insn_read);
+Z_EXC_DECLARE(z_riscv_debugpoint_tinfo_read);
+#endif
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_riscv_user_string_nlen);
+#endif
 
+#if defined(CONFIG_DEBUGPOINT) || defined(CONFIG_USERSPACE)
 static const struct z_exc_handle exceptions[] = {
+#ifdef CONFIG_DEBUGPOINT
+	Z_EXC_HANDLE(z_riscv_debugpoint_insn_read),
+	Z_EXC_HANDLE(z_riscv_debugpoint_tinfo_read),
+#endif
+#ifdef CONFIG_USERSPACE
 	Z_EXC_HANDLE(z_riscv_user_string_nlen),
+#endif
 };
-#endif /* CONFIG_USERSPACE */
+#endif
 
 #if __riscv_xlen == 32
  #define PR_REG "%08" PRIxPTR
@@ -218,11 +230,25 @@ static bool bad_stack_pointer(struct arch_esf *esf)
 
 void z_riscv_fault(struct arch_esf *esf)
 {
-#ifdef CONFIG_USERSPACE
-	/*
-	 * Perform an assessment whether an PMP fault shall be
-	 * treated as recoverable.
-	 */
+#ifdef CONFIG_DEBUGPOINT
+	{
+		unsigned long mcause;
+
+#ifdef CONFIG_RISCV_S_MODE
+		__asm__ volatile("csrr %0, scause" : "=r"(mcause));
+#else
+		__asm__ volatile("csrr %0, mcause" : "=r"(mcause));
+#endif
+		mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
+
+		/* mcause == 3: breakpoint; may be a hardware debugpoint hit */
+		if (mcause == 3UL && z_riscv_debugpoint_handle(esf) == 0) {
+			return;
+		}
+	}
+#endif /* CONFIG_DEBUGPOINT */
+
+#if defined(CONFIG_DEBUGPOINT) || defined(CONFIG_USERSPACE)
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
 		unsigned long start = (unsigned long)exceptions[i].start;
 		unsigned long end = (unsigned long)exceptions[i].end;
@@ -232,7 +258,7 @@ void z_riscv_fault(struct arch_esf *esf)
 			return;
 		}
 	}
-#endif /* CONFIG_USERSPACE */
+#endif
 
 	unsigned int reason = K_ERR_CPU_EXCEPTION;
 
