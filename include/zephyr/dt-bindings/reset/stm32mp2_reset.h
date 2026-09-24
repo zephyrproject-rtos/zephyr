@@ -30,6 +30,9 @@
 /* Reset reg */
 #define STM32_RST	0U
 
+/* Timer Peripheral */
+#define STM32_RESET_PERIPH_TIM12	0x728
+
 /* USART/UART Peripheral */
 #define STM32_RESET_PERIPH_USART1	0x77C
 #define STM32_RESET_PERIPH_USART2	0x780
