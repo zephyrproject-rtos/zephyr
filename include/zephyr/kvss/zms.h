@@ -27,6 +27,8 @@ extern "C" {
 
 /**
  * @defgroup zms Zephyr Memory Storage (ZMS)
+ * @since 4.0
+ * @version 0.1.0
  * @ingroup file_system_storage
  * @{
  * @}
