@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright 2026 Ezurio
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nitrogen93_smarc/mimx9352/a55/smp
+name: Ezurio Nitrogen93 SMARC A55 SMP
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 786432
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - net
+  - watchdog
+  - smp
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: ezurio

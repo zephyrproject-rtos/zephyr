@@ -1,0 +1,253 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Ezurio
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx93_a55.dtsi>
+#include <dt-bindings/gpio/smarc-gpio.h>
+#include <dt-bindings/gpio/smarc-gbe.h>
+#include "nitrogen93_smarc-pinctrl.dtsi"
+
+/ {
+	model = "Ezurio Nitrogen93 SMARC A55";
+	compatible = "ezurio,nitrogen93-smarc";
+
+	aliases {
+		watchdog0 = &wdog3;
+	};
+
+	chosen {
+		zephyr,console = &smarc_ser1;
+		zephyr,shell-uart = &smarc_ser1;
+		zephyr,sram = &dram;
+		zephyr,canbus = &smarc_can1;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+	};
+
+	dram: memory@d0000000 {
+		reg = <0xd0000000 DT_SIZE_M(768)>;
+	};
+
+	/*
+	 * SMARC 2.x connector GPIO_IO0..GPIO_IO13. Cell 0 is the SMARC
+	 * GPIO_IO signal index; shields reference pins with the
+	 * SMARC_GPIO_IO* constants as <&smarc_gpio SMARC_GPIO_IO<n> flags>.
+	 * The module maps each index to its own SoC GPIO or on-module
+	 * expander. Only pins the carrier actually wires are listed here —
+	 * add entries as new pins are routed.
+	 */
+	smarc_gpio: smarc-gpio {
+		compatible = "smarc-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <SMARC_GPIO_IO1 0 &gpio3 27 0>,    /* smarc_can0 transceiver standby */
+			   <SMARC_GPIO_IO4 0 &pcal6534 15 0>, /* smarc_can1 transceiver standby */
+			   <SMARC_GPIO_IO6 0 &gpio2 2 0>;     /* smarc_i2c_gp mux reset */
+	};
+
+	/*
+	 * SMARC 2.x dedicated GBE0/GBE1 link LED signals (LINK100). These
+	 * are separate from the general-purpose GPIO_IO bank; the carrier
+	 * drives its Ethernet LEDs through these connector pins. The module
+	 * maps each to its own on-module expander pin.
+	 */
+	smarc_gbe_led: smarc-gbe-led {
+		compatible = "smarc-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <SMARC_GBE0_LINK100 0 &pcal6534 30 0>,
+			   <SMARC_GBE1_LINK100 0 &pcal6534 11 0>;
+	};
+};
+
+/* SMARC SER1 (LPUART1). Wired as the module console/shell UART. */
+smarc_ser1: &lpuart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* SMARC SER2 (LPUART2). Module pin routing; carrier enables and sets baud. */
+smarc_ser2: &lpuart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c2 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	pcal6534: pcal6534@22 {
+		compatible = "nxp,pcal6534";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		int-gpios = <&gpio2 21 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		reset-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};
+
+smarc_i2c_gp: &lpi2c3 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/*
+ * sai3_2 (SMARC I2S0) uses edma4_2 for its TX/RX DMA channels, so the
+ * DMA controller must also be enabled or the eDMA HAL headers won't be
+ * pulled into the build (CONFIG_DMA_MCUX_EDMA_V4 depends on it).
+ */
+&edma4_2 {
+	status = "okay";
+};
+
+smarc_i2s0: &sai3_2 {
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+/* SMARC CAN0 (i.MX93 CAN1). */
+smarc_can0: &flexcan1 {
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+/* SMARC CAN1 (i.MX93 CAN2). */
+smarc_can1: &flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+/* SMARC SPI0 (LPSPI3). */
+smarc_spi0: &lpspi3 {
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-names = "default";
+	rx-fifo-size = <16>;
+	tx-fifo-size = <16>;
+	status = "disabled";
+};
+
+/*
+ * SoC label &enet is the i.MX93 FEC controller at 0x42890000, which is
+ * routed to the physical ENET2 pins/RJ45 on the Nitrogen 93 SMARC.
+ * (ENET1 uses the i.MX93 EQoS block, which is not supported by Zephyr.)
+ */
+&enet {
+	pinctrl-0 = <&pinmux_enet2>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&enet_mac {
+	phy-handle = <&enet2_phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_enet2_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	enet2_phy: phy@3 {
+		compatible = "ethernet-phy";
+		reg = <3>;
+		reset-gpios = <&pcal6534 0 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <150000>;
+		reset-deassertion-timeout-ms = <100>;
+		status = "okay";
+	};
+};
+
+&wdog3 {
+	status = "okay";
+};
+
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc1_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	read-watermark = <0x10>;
+	write-watermark = <0x80>;
+	status = "disabled";
+
+	sdmmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "eMMC";
+		status = "disabled";
+	};
+};
+
+/* SMARC SDIO (USDHC2). */
+smarc_sdio: &usdhc2 {
+	pinctrl-0 = <&pinmux_usdhc2>;
+	pinctrl-1 = <&pinmux_usdhc2_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc2_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	pwr-gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+	power-delay-ms = <20>;
+	read-watermark = <0x10>;
+	write-watermark = <0x80>;
+	status = "disabled";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "disabled";
+	};
+};
+
+/* SMARC USB0 (i.MX93 USB1). */
+smarc_usb0: &usb1 {
+	status = "disabled";
+};
+
+/* Keep zephyr_udc0 alias so portable USB samples work. */
+zephyr_udc0: &usb1 {};

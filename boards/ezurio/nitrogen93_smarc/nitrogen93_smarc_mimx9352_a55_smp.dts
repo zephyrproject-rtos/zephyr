@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Ezurio
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nitrogen93_smarc_mimx9352_a55.dts"
+
+/ {
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+	};
+};
