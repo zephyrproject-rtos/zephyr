@@ -161,6 +161,75 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define ADC_STM32_DT_ANY_NODE_HAS_DIFFERENTIAL(node_id)						\
 	(DT_FOREACH_CHILD_VARGS(node_id, ADC_STM32_DT_PROP_OR_IS_EQ, zephyr_differential, 0, 1) 0)
 
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+
+#include <zephyr/cache.h>
+#include <zephyr/nvmem.h>
+
+#define STM32_VREFINT_MEAS_RES 12U
+
+/*
+ * Match st,stm32-vref nodes (including disabled) whose io-channels controller
+ * is this ADC child node. Disabled nodes still describe the silicon mux. Nested
+ * IF_ENABLED avoids expanding DT_IO_CHANNELS_CTLR on nodes without io-channels.
+ */
+#define STM32_VREF_NODE_IF_CTLR(child, adc_node)                                                   \
+	IF_ENABLED(DT_SAME_NODE(DT_IO_CHANNELS_CTLR(child), adc_node), (child,))
+
+#define STM32_VREF_NODE_IF_HAS_IO(child, adc_node)                                                 \
+	IF_ENABLED(DT_NODE_HAS_PROP(child, io_channels), (STM32_VREF_NODE_IF_CTLR(child, adc_node)))
+
+#define STM32_VREF_NODE_IF_FOR_ADC(child, adc_node)                                                \
+	IF_ENABLED(DT_NODE_HAS_COMPAT(child, st_stm32_vref),                                       \
+		   (STM32_VREF_NODE_IF_HAS_IO(child, adc_node)))
+
+#define STM32_ADC_VREF_MATCH_LIST(node_id)                                                         \
+	DT_FOREACH_CHILD_VARGS(DT_ROOT, STM32_VREF_NODE_IF_FOR_ADC, node_id)
+
+#define STM32_ADC_HAS_VREFINT(node_id)                                                             \
+	COND_CODE_1(IS_EMPTY(STM32_ADC_VREF_MATCH_LIST(node_id)), (0), (1))
+
+#define STM32_ADC_VREF_NODE(node_id) GET_ARG_N(1, STM32_ADC_VREF_MATCH_LIST(node_id))
+
+#define STM32_ADC_VREFINT_CHANNEL(node_id)                                                         \
+	COND_CODE_1(STM32_ADC_HAS_VREFINT(node_id),                                                \
+		    (DT_IO_CHANNELS_INPUT(STM32_ADC_VREF_NODE(node_id))), (0))
+
+#define STM32_ADC_VREFINT_CAL_MV(node_id)                                                          \
+	COND_CODE_1(STM32_ADC_HAS_VREFINT(node_id),                                                \
+		    (DT_PROP(STM32_ADC_VREF_NODE(node_id), vrefint_cal_mv)), (0))
+
+#define STM32_ADC_VREFINT_CAL_SHIFT(node_id)                                                       \
+	COND_CODE_1(STM32_ADC_HAS_VREFINT(node_id), \
+		    (DT_PROP(STM32_ADC_VREF_NODE(node_id), vrefint_cal_resolution) - \
+		     STM32_VREFINT_MEAS_RES), \
+		    (0))
+
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIB_VIA_NVMEM
+#define STM32_ADC_VREFINT_CAL_SRC(node_id)                                                         \
+	.vrefint_cal_cell = COND_CODE_1( \
+		STM32_ADC_HAS_VREFINT(node_id), \
+		(NVMEM_CELL_GET_BY_IDX(STM32_ADC_VREF_NODE(node_id), 0)), \
+		({0})),
+#else
+#define VREFINT_CAL_PTR_INIT(nvmc)                                                                 \
+	((const uint16_t *)(DT_REG_ADDR(DT_MTD_FROM_NVMEM_CELL(nvmc)) + DT_REG_ADDR(nvmc)))
+#define STM32_ADC_VREFINT_CAL_SRC(node_id)                                                         \
+	.vrefint_cal_ptr = COND_CODE_1( \
+		STM32_ADC_HAS_VREFINT(node_id), \
+		(VREFINT_CAL_PTR_INIT(DT_NVMEM_CELL(STM32_ADC_VREF_NODE(node_id)))), \
+		(NULL)),
+#endif
+
+K_MUTEX_DEFINE(stm32_adc_vref_lock);
+
+static struct {
+	uint16_t mv;
+	bool valid;
+} stm32_adc_vref;
+
+#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
+
 #if ADC_STM32_DT_ANY_INST_HAS_SEQUENCER_TYPE(SEQUENCER_PROGRAMMABLE)
 
 #if defined(LL_ADC_REG_RANK_28)
@@ -303,6 +372,17 @@ struct adc_sub_stm32_cfg {
 	const struct adc_stm32_clk_cfg *clk_cfg;
 	const struct pinctrl_dev_config *pcfg;
 	bool differential_channels_used	:1;
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+	bool has_vrefint: 1;
+	uint8_t vrefint_channel;
+	uint8_t vrefint_cal_shift;
+	uint16_t vrefint_cal_mv;
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIB_VIA_NVMEM
+	struct nvmem_cell vrefint_cal_cell;
+#else
+	const uint16_t *vrefint_cal_ptr;
+#endif
+#endif
 };
 
 static const struct adc_stm32_cfg *adc_stm32_get_parent_cfg(const struct adc_sub_stm32_cfg *config)
@@ -320,6 +400,35 @@ static const struct adc_stm32_clk_cfg *adc_stm32_get_clk_cfg(const struct adc_su
 		return adc_stm32_get_parent_cfg(config)->clk_cfg;
 	}
 }
+
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+
+static int adc_stm32_ref_get(const struct device *dev, enum adc_reference ref, uint16_t *vref_mv)
+{
+	const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
+
+	if (vref_mv == NULL) {
+		return -EINVAL;
+	}
+	if (ref != ADC_REF_INTERNAL) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&stm32_adc_vref_lock, K_FOREVER);
+	*vref_mv = stm32_adc_vref.valid ? stm32_adc_vref.mv : api->ref_internal;
+	k_mutex_unlock(&stm32_adc_vref_lock);
+
+	return (*vref_mv == 0U) ? -ENODATA : 0;
+}
+
+static bool adc_stm32_is_vrefint_owner(const struct device *dev)
+{
+	const struct adc_sub_stm32_cfg *cfg = dev->config;
+
+	return cfg->has_vrefint;
+}
+
+#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
 
 #ifdef CONFIG_ADC_STM32_DMA
 static void adc_stm32_enable_dma_transfer(ADC_TypeDef *adc)
@@ -1317,8 +1426,159 @@ __maybe_unused static void adc_stm32_disable_eoc_it(ADC_TypeDef *adc)
 #endif
 }
 
-static int start_read(const struct device *dev,
-		      const struct adc_sequence *sequence)
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+static int adc_stm32_convert_poll(const struct device *dev, uint16_t *raw)
+{
+	const struct adc_sub_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = config->base;
+	int err;
+
+	adc_stm32_disable_eoc_it(adc);
+#ifdef CONFIG_ADC_STM32_DMA
+	adc_stm32_disable_dma_transfer(adc);
+#endif
+
+	err = adc_stm32_enable(adc);
+	if (err != 0) {
+		return err;
+	}
+
+	adc_stm32_reg_eoc_clear(adc);
+	adc_stm32_start_conversion(dev);
+
+	if (!WAIT_FOR(adc_stm32_reg_eoc_is_set(adc), ADC_STM32_EOC_TIMEOUT_US,
+		      k_busy_wait(ADC_STM32_POLL_INTERVAL_US))) {
+		return -EIO;
+	}
+
+	*raw = (uint16_t)LL_ADC_REG_ReadConversionData32(adc);
+	return 0;
+}
+
+static void adc_stm32_vrefint_enable_path(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
+				       path | LL_ADC_PATH_INTERNAL_VREFINT);
+
+#ifdef LL_ADC_DELAY_VREFINT_STAB_US
+	k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
+#endif
+}
+
+#if !IS_ENABLED(CONFIG_STM32_VREF_INJECTED)
+static void adc_stm32_vrefint_disable_path(ADC_TypeDef *adc)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
+
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
+				       path & ~LL_ADC_PATH_INTERNAL_VREFINT);
+}
+#endif
+
+struct adc_stm32_smpr_save {
+	int8_t acq_time_index[2];
+	uint32_t common[2];
+	uint32_t channel_smpr;
+};
+
+static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id, uint16_t acq_time);
+static void adc_stm32_sampling_time_save(const struct device *dev, uint8_t channel_id,
+					 struct adc_stm32_smpr_save *save);
+static void adc_stm32_sampling_time_restore(const struct device *dev, uint8_t channel_id,
+					    const struct adc_stm32_smpr_save *save);
+
+static int adc_stm32_vrefint_measure(const struct device *dev)
+{
+	const struct adc_sub_stm32_cfg *cfg = dev->config;
+	ADC_TypeDef *adc = cfg->base;
+	struct adc_stm32_smpr_save smpr_save;
+	struct adc_sub_stm32_data *data = dev->data;
+	uint16_t raw = 0;
+	uint16_t vrefint_cal = 0;
+	uint16_t vref_mv;
+	int err = 0;
+
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIB_VIA_NVMEM
+	err = nvmem_cell_read(&cfg->vrefint_cal_cell, &vrefint_cal, 0, sizeof(vrefint_cal));
+
+	if (err < 0) {
+		LOG_ERR("Failed to read VREFINT calibration data: %d", err);
+		return err;
+	}
+#else
+	if (IS_ENABLED(CONFIG_HAS_STM32_UNCACHED_ACCESS_ONLY_OTP)) {
+		sys_cache_instr_disable();
+	}
+
+	vrefint_cal = *cfg->vrefint_cal_ptr;
+
+	if (IS_ENABLED(CONFIG_HAS_STM32_UNCACHED_ACCESS_ONLY_OTP)) {
+		sys_cache_instr_enable();
+	}
+#endif
+
+	const struct adc_sequence meas_seq = {
+		.channels = BIT(cfg->vrefint_channel),
+		.resolution = STM32_VREFINT_MEAS_RES,
+	};
+
+	adc_stm32_sampling_time_save(dev, cfg->vrefint_channel, &smpr_save);
+
+	data->acq_time_index[0] = -1;
+	data->acq_time_index[1] = -1;
+
+	err = adc_stm32_sampling_time_setup(dev, cfg->vrefint_channel, ADC_ACQ_TIME_MAX);
+	if (err != 0) {
+		goto restore_sampling_time;
+	}
+
+	err = prepare_read(dev, &meas_seq);
+	if (err != 0) {
+		goto restore_sampling_time;
+	}
+
+#if ADC_STM32_DT_ANY_INST_HAS_CHANNEL_PRESELECTION
+	err = adc_stm32_preselection_setup(dev, cfg->vrefint_channel);
+	if (err != 0) {
+		goto restore_sampling_time;
+	}
+#endif
+
+	adc_stm32_vrefint_enable_path(adc);
+
+	err = adc_stm32_convert_poll(dev, &raw);
+	if (err != 0) {
+		goto disable_path;
+	}
+
+	if (raw == 0U) {
+		err = -ENODATA;
+		goto disable_path;
+	}
+
+	int32_t numerator = cfg->vrefint_cal_mv * (vrefint_cal >> cfg->vrefint_cal_shift);
+
+	vref_mv = (uint16_t)(numerator / raw);
+
+	k_mutex_lock(&stm32_adc_vref_lock, K_FOREVER);
+	stm32_adc_vref.mv = vref_mv;
+	stm32_adc_vref.valid = true;
+	k_mutex_unlock(&stm32_adc_vref_lock);
+
+disable_path:
+#if !IS_ENABLED(CONFIG_STM32_VREF_INJECTED)
+	adc_stm32_vrefint_disable_path(adc);
+#endif
+restore_sampling_time:
+	adc_stm32_sampling_time_restore(dev, cfg->vrefint_channel, &smpr_save);
+	return err;
+}
+
+#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
+
+static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct adc_sub_stm32_cfg *config = dev->config;
 	struct adc_sub_stm32_data *data = dev->data;
@@ -1354,7 +1614,16 @@ static int start_read(const struct device *dev,
 			LOG_ERR("Calibration error");
 			return err;
 		}
-#else
+#endif /* HAS_CALIBRATION */
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+		if (adc_stm32_is_vrefint_owner(dev)) {
+			err = adc_stm32_vrefint_measure(dev);
+			if (err < 0) {
+				LOG_WRN("VREFINT measure failed (%d)", err);
+			}
+		}
+#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
+#if !defined(HAS_CALIBRATION) && !defined(CONFIG_ADC_STM32_VREFINT_CALIBRATE)
 		LOG_ERR("Calibration not supported");
 		return -ENOTSUP;
 #endif
@@ -1509,7 +1778,12 @@ static void adc_stm32_isr(const struct device *dev)
 
 			hdr = (struct adc_stm32_rtio_data *)buf;
 			hdr->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+			/* ISR: do not take stm32_adc_vref_lock. */
+			hdr->vref_mv = stm32_adc_vref.valid ? stm32_adc_vref.mv : api->ref_internal;
+#else
 			hdr->vref_mv = api->ref_internal;
+#endif
 			hdr->res = data->resolution;
 			hdr->channel_count = data->channel_count;
 		}
@@ -1765,6 +2039,85 @@ static int set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, b
 	return 0;
 }
 #endif /* ADC_STM32_DT_ANY_INST_HAS_DIFFERENTIAL_SUPPORT */
+
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+static void adc_stm32_sampling_time_save(const struct device *dev, uint8_t channel_id,
+					 struct adc_stm32_smpr_save *save)
+{
+	const struct adc_sub_stm32_cfg *config = dev->config;
+	const struct adc_stm32_cfg *parent_config = adc_stm32_get_parent_cfg(config);
+	struct adc_sub_stm32_data *data = dev->data;
+	ADC_TypeDef *adc = config->base;
+	__maybe_unused uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+
+	save->acq_time_index[0] = data->acq_time_index[0];
+	save->acq_time_index[1] = data->acq_time_index[1];
+	save->common[0] = 0;
+	save->common[1] = 0;
+	save->channel_smpr = 0;
+
+	switch (parent_config->num_sampling_time_common_channels) {
+	case 0:
+#if ADC_STM32_DT_ANY_INST_HAS_NUM_COMMON_SAMPLING_TIME_CHANNELS(0)
+		save->channel_smpr = LL_ADC_GetChannelSamplingTime(adc, channel);
+#endif
+		break;
+	case 1:
+#if ADC_STM32_DT_ANY_INST_HAS_NUM_COMMON_SAMPLING_TIME_CHANNELS(1)
+		save->common[0] = LL_ADC_GetSamplingTimeCommonChannels(adc);
+#endif
+		break;
+	case 2:
+#if ADC_STM32_DT_ANY_INST_HAS_NUM_COMMON_SAMPLING_TIME_CHANNELS(2)
+		save->common[0] =
+			LL_ADC_GetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_1);
+		save->common[1] =
+			LL_ADC_GetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_2);
+		save->channel_smpr = LL_ADC_GetChannelSamplingTime(adc, channel);
+#endif
+		break;
+	default:
+		break;
+	}
+}
+
+static void adc_stm32_sampling_time_restore(const struct device *dev, uint8_t channel_id,
+					    const struct adc_stm32_smpr_save *save)
+{
+	const struct adc_sub_stm32_cfg *config = dev->config;
+	const struct adc_stm32_cfg *parent_config = adc_stm32_get_parent_cfg(config);
+	struct adc_sub_stm32_data *data = dev->data;
+	ADC_TypeDef *adc = config->base;
+	__maybe_unused uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+
+	data->acq_time_index[0] = save->acq_time_index[0];
+	data->acq_time_index[1] = save->acq_time_index[1];
+
+	switch (parent_config->num_sampling_time_common_channels) {
+	case 0:
+#if ADC_STM32_DT_ANY_INST_HAS_NUM_COMMON_SAMPLING_TIME_CHANNELS(0)
+		LL_ADC_SetChannelSamplingTime(adc, channel, save->channel_smpr);
+#endif
+		break;
+	case 1:
+#if ADC_STM32_DT_ANY_INST_HAS_NUM_COMMON_SAMPLING_TIME_CHANNELS(1)
+		LL_ADC_SetSamplingTimeCommonChannels(adc, save->common[0]);
+#endif
+		break;
+	case 2:
+#if ADC_STM32_DT_ANY_INST_HAS_NUM_COMMON_SAMPLING_TIME_CHANNELS(2)
+		LL_ADC_SetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_1,
+						     save->common[0]);
+		LL_ADC_SetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_2,
+						     save->common[1]);
+		LL_ADC_SetChannelSamplingTime(adc, channel, save->channel_smpr);
+#endif
+		break;
+	default:
+		break;
+	}
+}
+#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
 
 static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
@@ -2124,6 +2477,16 @@ static int adc_sub_stm32_init(const struct device *dev)
 	adc_stm32_calibrate(dev, true);
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif /* HAS_CALIBRATION */
+
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+	if (adc_stm32_is_vrefint_owner(dev)) {
+		int merr = adc_stm32_vrefint_measure(dev);
+
+		if (merr != 0) {
+			LOG_WRN("VREFINT measure failed (%d); using DT vref-mv", merr);
+		}
+	}
+#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
 
 	/* If several ADCs are used and share a common clock property (for example ADC1/2 prescaler
 	 * value on STM32U5), none of them should be enabled when the clock is set.
@@ -2561,6 +2924,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_DT_INST_GENERATE_ISR)
 	}
 #endif
 
+/* clang-format off */
 #define ADC_SUB_STM32_DT_INIT(node_id)								\
 												\
 	PINCTRL_DT_DEFINE(node_id);								\
@@ -2574,7 +2938,13 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_DT_INST_GENERATE_ISR)
 		.clk_cfg = &sub_clk_cfg##node_id,						\
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(node_id),					\
 		.differential_channels_used =							\
-			(ADC_STM32_DT_ANY_NODE_HAS_DIFFERENTIAL(node_id) > 0),		\
+			(ADC_STM32_DT_ANY_NODE_HAS_DIFFERENTIAL(node_id) > 0),			\
+		IF_ENABLED(CONFIG_ADC_STM32_VREFINT_CALIBRATE,					\
+			   (.has_vrefint = STM32_ADC_HAS_VREFINT(node_id),			\
+			    .vrefint_channel = STM32_ADC_VREFINT_CHANNEL(node_id),		\
+			    .vrefint_cal_mv = STM32_ADC_VREFINT_CAL_MV(node_id),		\
+			    .vrefint_cal_shift = STM32_ADC_VREFINT_CAL_SHIFT(node_id),		\
+			    STM32_ADC_VREFINT_CAL_SRC(node_id)))				\
 	};											\
 												\
 	static struct adc_sub_stm32_data adc_stm32_data_##node_id = {				\
@@ -2596,6 +2966,8 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_DT_INST_GENERATE_ISR)
 		IF_ENABLED(CONFIG_ADC_ASYNC,							\
 			   (.read_async = adc_stm32_read_async,))				\
 		.ref_internal = DT_PROP(DT_PARENT(node_id), vref_mv),				\
+		IF_ENABLED(CONFIG_ADC_STM32_VREFINT_CALIBRATE,					\
+			   (.ref_get = adc_stm32_ref_get,))					\
 		IF_ENABLED(CONFIG_ADC_STREAM,							\
 			   (.submit = adc_stm32_submit_stream,					\
 			    .get_decoder = adc_stm32_get_decoder,))				\
@@ -2649,4 +3021,5 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_DT_INST_GENERATE_ISR)
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, NULL);			\
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, ADC_SUB_STM32_DT_INIT)
 
+/* clang-format on */
 DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_DT_INST_INIT)
