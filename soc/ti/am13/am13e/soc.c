@@ -7,6 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
+#include <soc.h>
 
 /* SYSCTL_BASE (0x400A_F000) + PWREN_MCPERIPH offset (0x1424) */
 #define SYSCTL_PWREN_MCPERIPH (*(volatile uint32_t *)0x400B0424)
@@ -24,3 +25,12 @@ static int am13e_power_init(void)
 	return 0;
 }
 SYS_INIT(am13e_power_init, PRE_KERNEL_1, 0);
+
+/* The BL/BX instructions themselves will be worth 1-3 overhead cycles depending on optimisation */
+void __noinline msp_delay_peripheral_startup(void)
+{
+#define NOP(i, ...)    "nop;"
+#define NOP_N_TIMES(n) LISTIFY(n, NOP, ())
+
+	__asm__ volatile(NOP_N_TIMES(CONFIG_MSPM0_PERIPH_STARTUP_DELAY));
+}
