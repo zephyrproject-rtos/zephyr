@@ -21,6 +21,19 @@ static void sntp_resync_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(sntp_resync_work_handle, sntp_resync_handler);
 #define RESYNC_FAILED_INTERVAL K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL)
 #define RESYNC_INTERVAL K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL)
+static K_MUTEX_DEFINE(sntp_resync_lock);
+/* Variables protected under sntp_resync_lock */
+struct sntp_resync_state {
+	unsigned int generation;
+	bool enabled;
+	bool async_dns_in_progress;
+	uint16_t dns_id;
+	bool async_sntp_in_progress;
+};
+static struct sntp_resync_state resync_state = {
+	.enabled = !IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER),
+};
+static void sntp_resync_cancel(const struct sntp_resync_state *state);
 #endif
 
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
@@ -53,8 +66,27 @@ int net_config_sntp_set_server(const char *server)
 	k_mutex_unlock(&sntp_server_lock);
 
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
-	/* Use the new server right away. */
-	k_work_reschedule(&sntp_resync_work_handle, K_NO_WAIT);
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (resync_state.enabled) {
+		struct sntp_resync_state state;
+
+		++resync_state.generation;
+		state = resync_state;
+		/* Temporarily clear enabled flag to prevent callbacks from re-enqueuing work that
+		 * should be cancelled.
+		 */
+		resync_state.enabled = false;
+		/* Cancel currently running resync */
+		sntp_resync_cancel(&state);
+		if (resync_state.generation == state.generation) {
+			/* Reset state after cancellation */
+			resync_state.enabled = true;
+			++resync_state.generation;
+			/* Use the new server right away. */
+			k_work_reschedule(&sntp_resync_work_handle, K_NO_WAIT);
+		}
+	}
+	k_mutex_unlock(&sntp_resync_lock);
 #endif
 
 	return 0;
@@ -179,8 +211,12 @@ int net_config_init_clock_via_sntp(void)
 
 end:
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
-	k_work_reschedule(&sntp_resync_work_handle,
-			  (res < 0) ? RESYNC_FAILED_INTERVAL : RESYNC_INTERVAL);
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (resync_state.enabled) {
+		k_work_reschedule(&sntp_resync_work_handle,
+				  (res < 0) ? RESYNC_FAILED_INTERVAL : RESYNC_INTERVAL);
+	}
+	k_mutex_unlock(&sntp_resync_lock);
 #endif
 	return res;
 }
@@ -207,10 +243,15 @@ static void sntp_async_timeout(struct k_work *work)
 
 	LOG_WRN("SNTP query timed out");
 
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
 	sntp_close_async(&sntp_service_async);
 
-	/* No response, reschedule */
-	k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
+	resync_state.async_sntp_in_progress = false;
+	if (resync_state.enabled) {
+		/* No response, reschedule */
+		k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
+	}
+	k_mutex_unlock(&sntp_resync_lock);
 }
 
 static void sntp_async_service_handler(struct net_socket_service_event *pev)
@@ -227,17 +268,21 @@ static void sntp_async_service_handler(struct net_socket_service_event *pev)
 	ret = sntp_set_clocks(&ts);
 
 out:
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
 	/* Close the service */
 	sntp_close_async(&sntp_service_async);
 
 	k_work_cancel_delayable(&sntp_async_timeout_work);
 
-	if (ret < 0) {
+	resync_state.async_sntp_in_progress = false;
+	if (resync_state.enabled && (ret < 0)) {
 		k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
 	}
+	k_mutex_unlock(&sntp_resync_lock);
 }
 
-static int sntp_query_async(struct net_sockaddr *addr, net_socklen_t addrlen)
+static int sntp_query_async(struct sntp_resync_state *state, struct net_sockaddr *addr,
+			    net_socklen_t addrlen)
 {
 	int ret;
 
@@ -256,6 +301,7 @@ static int sntp_query_async(struct net_sockaddr *addr, net_socklen_t addrlen)
 
 	k_work_reschedule(&sntp_async_timeout_work,
 			  K_MSEC(CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT));
+	state->async_sntp_in_progress = true;
 
 end:
 	return ret;
@@ -267,6 +313,17 @@ static void dns_result_cb(enum dns_resolve_status status,
 {
 	int ret;
 	const char *server = user_data;
+	bool need_resched = false;
+	struct sntp_resync_state state;
+
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (!resync_state.enabled) {
+		resync_state.async_dns_in_progress = false;
+		k_mutex_unlock(&sntp_resync_lock);
+		return;
+	}
+	state = resync_state;
+	k_mutex_unlock(&sntp_resync_lock);
 
 	if (status == DNS_EAI_CANCELED || status == DNS_EAI_FAIL) {
 		/* If IPv4 query failed, try IPv6. Otherwise, just schedule next retry. */
@@ -274,29 +331,29 @@ static void dns_result_cb(enum dns_resolve_status status,
 			sntp_addr.ss_family = NET_AF_INET6;
 			sntp_addrlen = 0;
 
-			ret = dns_get_addr_info(server, DNS_QUERY_TYPE_AAAA, NULL, dns_result_cb,
-						(void *)server,
+			ret = dns_get_addr_info(server, DNS_QUERY_TYPE_AAAA, &state.dns_id,
+						dns_result_cb, (void *)server,
 						CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
 			if (ret == 0) {
-				return;
+				goto out;
 			}
 		}
 
 		LOG_WRN("DNS query timed out");
-
-		k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
-
-		return;
+		state.async_dns_in_progress = false;
+		need_resched = true;
+		goto out;
 	}
 
 	if (status == DNS_EAI_ALLDONE) {
 		/* If address was found, schedule SNTP query, if that fails schedule next retry. */
-		ret = sntp_query_async(net_sad(&sntp_addr), sntp_addrlen);
+		state.async_dns_in_progress = false;
+		ret = sntp_query_async(&state, net_sad(&sntp_addr), sntp_addrlen);
 		if (ret < 0) {
-			k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
+			need_resched = true;
 		}
 
-		return;
+		goto out;
 	}
 
 	if (status == DNS_EAI_INPROGRESS && info != NULL) {
@@ -326,9 +383,24 @@ static void dns_result_cb(enum dns_resolve_status status,
 
 		(void)net_port_set_default(net_sad(&sntp_addr), SNTP_SERVER_PORT);
 	}
+
+out:
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (state.generation != resync_state.generation) {
+		/* Discard local changes, sntp resync was cancelled externally */
+		k_mutex_unlock(&sntp_resync_lock);
+		return;
+	}
+	if (need_resched) {
+		k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
+	}
+	resync_state.dns_id = state.dns_id;
+	resync_state.async_dns_in_progress = state.async_dns_in_progress;
+	resync_state.async_sntp_in_progress = state.async_sntp_in_progress;
+	k_mutex_unlock(&sntp_resync_lock);
 }
 
-static int dns_query_async(const char *server)
+static int dns_query_async(struct sntp_resync_state *state, const char *server)
 {
 	enum dns_query_type type;
 	int ret;
@@ -345,12 +417,14 @@ static int dns_query_async(const char *server)
 			type = DNS_QUERY_TYPE_AAAA;
 		}
 
-		ret = dns_get_addr_info(server, type, NULL, dns_result_cb, (void *)server,
+		ret = dns_get_addr_info(server, type, &state->dns_id, dns_result_cb, (void *)server,
 					CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
 		if (ret < 0) {
+			state->async_dns_in_progress = false;
 			LOG_ERR("Failed to initiate DNS query for SNTP server (%d)", ret);
+		} else {
+			state->async_dns_in_progress = true;
 		}
-
 		return ret;
 	}
 
@@ -372,7 +446,7 @@ static int dns_query_async(const char *server)
 			return ret;
 		}
 
-		ret = sntp_query_async(net_sad(&sntp_addr), sntp_addrlen);
+		ret = sntp_query_async(state, net_sad(&sntp_addr), sntp_addrlen);
 	} else {
 		LOG_ERR("Failed to parse SNTP server address, enable CONFIG_DNS_RESOLVER");
 		ret = -EINVAL;
@@ -383,15 +457,24 @@ static int dns_query_async(const char *server)
 
 static void sntp_resync_handler(struct k_work *work)
 {
-	int ret;
+	int ret = 0;
+	struct sntp_resync_state state;
 
 	ARG_UNUSED(work);
+
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (!resync_state.enabled) {
+		k_mutex_unlock(&sntp_resync_lock);
+		return;
+	}
+	state = resync_state;
+	k_mutex_unlock(&sntp_resync_lock);
 
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
 	const char *server = sntp_runtime_server(sntp_server_active);
 
 	if (server != NULL) {
-		ret = dns_query_async(server);
+		ret = dns_query_async(&state, server);
 		goto out;
 	}
 #endif /* CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME */
@@ -405,7 +488,7 @@ static void sntp_resync_handler(struct k_work *work)
 					       iface->config.dhcpv4.ntp_addr.s4_addr);
 		net_sin(net_sad(&sntp_addr))->sin_port = net_htons(SNTP_SERVER_PORT);
 
-		ret = sntp_query_async(net_sad(&sntp_addr), sntp_addrlen);
+		ret = sntp_query_async(&state, net_sad(&sntp_addr), sntp_addrlen);
 		if (ret < 0) {
 			LOG_ERR("Cannot set time using SNTP: %d", ret);
 		}
@@ -420,15 +503,73 @@ static void sntp_resync_handler(struct k_work *work)
 		goto out;
 	}
 
-	ret = dns_query_async(CONFIG_NET_CONFIG_SNTP_INIT_SERVER);
+	ret = dns_query_async(&state, CONFIG_NET_CONFIG_SNTP_INIT_SERVER);
 
 out:
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (state.generation != resync_state.generation) {
+		/* Discard local changes, sntp resync was cancelled externally */
+		k_mutex_unlock(&sntp_resync_lock);
+		return;
+	}
 	k_work_reschedule(&sntp_resync_work_handle,
 			  (ret < 0) ? RESYNC_FAILED_INTERVAL : RESYNC_INTERVAL);
+	resync_state.dns_id = state.dns_id;
+	resync_state.async_dns_in_progress = state.async_dns_in_progress;
+	resync_state.async_sntp_in_progress = state.async_sntp_in_progress;
+	k_mutex_unlock(&sntp_resync_lock);
+}
+
+/* Caller must hold sntp_resync_lock. This function releases and reacquires the lock. */
+static void sntp_resync_cancel(const struct sntp_resync_state *state)
+{
+	resync_state.async_sntp_in_progress = false;
+	resync_state.async_dns_in_progress = false;
+	k_mutex_unlock(&sntp_resync_lock);
+	if (IS_ENABLED(CONFIG_DNS_RESOLVER)) {
+		if (state->async_dns_in_progress) {
+			dns_cancel_addr_info(state->dns_id);
+		}
+	}
+	if (state->async_sntp_in_progress) {
+		sntp_close_async(&sntp_service_async);
+	}
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (state->generation == resync_state.generation) {
+		/* Only cancel work if generation still matches, otherwise we could undo the work of
+		 * an sntp_resync_enable called while we released the lock.
+		 */
+		k_work_cancel_delayable(&sntp_async_timeout_work);
+		k_work_cancel_delayable(&sntp_resync_work_handle);
+	}
 }
 #endif /* CONFIG_NET_CONFIG_SNTP_INIT_RESYNC */
 
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER
+/* Disable resync and cancel running work and async contexts */
+static void sntp_resync_disable(void)
+{
+	struct sntp_resync_state state;
+
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	++resync_state.generation;
+	state = resync_state;
+	resync_state.enabled = false;
+	sntp_resync_cancel(&state);
+	k_mutex_unlock(&sntp_resync_lock);
+}
+
+static void sntp_resync_enable(void)
+{
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (!resync_state.enabled) {
+		resync_state.enabled = true;
+		++resync_state.generation;
+		k_work_reschedule(&sntp_resync_work_handle, K_NO_WAIT);
+	}
+	k_mutex_unlock(&sntp_resync_lock);
+}
+
 static void l4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
 			     size_t info_length, void *user_data)
 {
@@ -438,9 +579,9 @@ static void l4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *in
 	ARG_UNUSED(user_data);
 
 	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
-		k_work_reschedule(&sntp_resync_work_handle, K_NO_WAIT);
+		sntp_resync_enable();
 	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
-		k_work_cancel_delayable(&sntp_resync_work_handle);
+		sntp_resync_disable();
 	}
 }
 
