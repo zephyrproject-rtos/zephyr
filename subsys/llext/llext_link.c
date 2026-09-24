@@ -655,17 +655,16 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			    || i == LLEXT_MEM_VENEER
 #endif
 			    ) {
-				#ifdef CONFIG_MMU
-				LOG_DBG("Updated memory flags for executable region at %d",
-					i);
+#ifdef CONFIG_MMU
+				LOG_DBG("Updated memory flags for executable region at %d", i);
 				LOG_DBG("before k_mem_update_flags");
 
 				ret = k_mem_update_flags(ext->mem[i],
 					ROUND_UP(ext->mem_size[i], CONFIG_MMU_PAGE_SIZE),
-						K_MEM_PERM_EXEC);
+					K_MEM_PERM_EXEC);
 				LOG_DBG("after k_mem_update_flags: %d", ret);
 
-				#endif
+#endif
 				sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
 			}
 		}
