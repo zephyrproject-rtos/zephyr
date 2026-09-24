@@ -71,6 +71,10 @@ sl_status_t sli_sxsymcrypt_lock_cryptomaster_selection(unsigned int instance, bo
 		return SL_STATUS_ISR;
 	}
 
+	if (yield && instance == SLI_CRYPTO_LPWAES) {
+		return SL_STATUS_NOT_SUPPORTED;
+	}
+
 	ret = k_mutex_lock(&selection.lock, K_FOREVER);
 	if (ret < 0) {
 		return SL_STATUS_FAIL;
@@ -78,23 +82,16 @@ sl_status_t sli_sxsymcrypt_lock_cryptomaster_selection(unsigned int instance, bo
 
 	atomic_set(&selection.busy, 1);
 
-	ret = soc_crypto_get(dev);
-	if (ret < 0) {
-		goto cleanup_get;
-	}
-
 	ret = soc_crypto_enable(dev, yield);
 	if (ret < 0) {
-		goto cleanup_enable;
+		goto cleanup;
 	}
 
 	selection.dev = dev;
 
 	return SL_STATUS_OK;
 
-cleanup_enable:
-	soc_crypto_put(dev);
-cleanup_get:
+cleanup:
 	atomic_set(&selection.busy, 0);
 	k_mutex_unlock(&selection.lock);
 	return SL_STATUS_FAIL;
@@ -171,6 +168,7 @@ SL_CODE_CLASSIFY(SL_CODE_COMPONENT_SXSYMCRYPT, SL_CODE_CLASS_TIME_CRITICAL)
 struct sx_regs *sx_cmdma_find_available(unsigned int compatible)
 {
 	const struct device *dev = selection.dev;
+	int ret;
 
 	if (k_is_in_isr()) {
 		/* Only LPWAES is supported from ISR */
@@ -181,9 +179,14 @@ struct sx_regs *sx_cmdma_find_available(unsigned int compatible)
 		return NULL;
 	}
 
+	/* Wait for the engine to be available */
 	if (k_is_in_isr()) {
-		/* Wait for the engine to be available */
 		soc_crypto_wait_busy(dev);
+	} else {
+		ret = soc_crypto_get(dev);
+		if (ret < 0) {
+			return NULL;
+		}
 	}
 
 	return soc_crypto_get_regs(dev);

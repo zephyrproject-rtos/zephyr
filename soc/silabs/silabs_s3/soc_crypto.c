@@ -29,6 +29,7 @@ struct soc_crypto_data {
 	struct k_mutex lock;
 	struct k_sem done;
 	bool initialized;
+	bool yield;
 };
 
 static int soc_crypto_reseed(const struct device *dev)
@@ -126,10 +127,7 @@ int soc_crypto_enable(const struct device *dev, bool yield)
 		return ret;
 	}
 
-	if (yield) {
-		irq_enable(config->irq);
-		data->regs.yield = true;
-	}
+	data->yield = yield;
 
 	return 0;
 }
@@ -137,13 +135,7 @@ int soc_crypto_enable(const struct device *dev, bool yield)
 int soc_crypto_disable(const struct device *dev)
 {
 	const struct soc_crypto_config *config = dev->config;
-	struct soc_crypto_data *data = dev->data;
 	int ret;
-
-	if (data->regs.yield) {
-		irq_disable(config->irq);
-		data->regs.yield = false;
-	}
 
 	ret = clock_control_off(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
 
@@ -152,6 +144,7 @@ int soc_crypto_disable(const struct device *dev)
 
 int soc_crypto_get(const struct device *dev)
 {
+	const struct soc_crypto_config *config = dev->config;
 	struct soc_crypto_data *data = dev->data;
 	int ret;
 
@@ -160,13 +153,26 @@ int soc_crypto_get(const struct device *dev)
 		return ret;
 	}
 
+	data->regs.yield = data->yield;
+	if (data->regs.yield) {
+		k_irq_clear_pending(config->irq);
+		k_sem_reset(&data->done);
+		irq_enable(config->irq);
+	}
+
 	return 0;
 }
 
 int soc_crypto_put(const struct device *dev)
 {
+	const struct soc_crypto_config *config = dev->config;
 	struct soc_crypto_data *data = dev->data;
 	int ret = 0;
+
+	if (data->regs.yield) {
+		irq_disable(config->irq);
+		data->regs.yield = false;
+	}
 
 	ret = k_mutex_unlock(&data->lock);
 
