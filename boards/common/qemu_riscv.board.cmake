@@ -15,10 +15,17 @@ function(qemu_riscv_cpu_from_dt result)
   set(riscv_isa_extensions)
   dt_prop(riscv_isa_base PATH "/cpus/cpu@0" PROPERTY "riscv,isa-base" REQUIRED)
   dt_prop(riscv_isa_extensions PATH "/cpus/cpu@0" PROPERTY "riscv,isa-extensions" REQUIRED)
+  # Extensions that are informational / not modelled as QEMU CPU features.
+  set(qemu_riscv_unsupported_extensions
+    zic64b   # Cache block size hint; not a QEMU CPU feature
+  )
 
   set(cpu "${riscv_isa_base}")
   foreach(ext IN LISTS riscv_isa_extensions)
     if(ext)
+      if(ext IN_LIST qemu_riscv_unsupported_extensions)
+        continue()
+      endif()
       string(APPEND cpu ",${ext}=on")
     endif()
   endforeach()
