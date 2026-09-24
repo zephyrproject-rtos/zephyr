@@ -89,6 +89,8 @@ config LV_Z_USE_FILESYSTEM
 	  Enable LittlevGL file system
 
 choice LV_COLOR_FORMAT_DEFAULT
+	prompt "Default color format"
+
 config LV_COLOR_FORMAT_I1
 	bool "I1"
 
