@@ -329,13 +329,11 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 		case LLEXT_MEM_VENEER:
 #endif
 			flags = K_MEM_PERM_EXEC;
-			LOG_DBG("region %d: enabling execute permission addr=%p size=0x%zx",
-				mem_idx, addr, size);
+
 			k_mem_update_flags(addr, size, flags);
-			LOG_DBG("region %d: execute permission enabled, invalidating instruction cache",
-				mem_idx);
+
 			sys_cache_instr_invd_range(addr, size);
-			LOG_DBG("region %d: instruction cache invalidated", mem_idx);
+
 			break;
 		case LLEXT_MEM_DATA:
 		case LLEXT_MEM_BSS:
