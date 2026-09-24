@@ -404,6 +404,16 @@ static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 {
 	if (resched(key.key) && need_swap()) {
 		z_swap(lock, key);
+	} else if (!z_is_sched_spinlock(lock)) {
+		/* Object lock is not the scheduler lock. Drop it with
+		 * IRQs still masked, then take _sched_spinlock, matching
+		 * do_swap(). On UP, LOCK_SCHED_SPINLOCK is empty.
+		 */
+		k_spin_release(lock);
+		LOCK_SCHED_SPINLOCK {
+			signal_pending_ipi();
+		}
+		arch_irq_unlock(key.key);
 	} else {
 		signal_pending_ipi();
 		k_spin_unlock(lock, key);
@@ -649,12 +659,10 @@ void z_reschedule_irqlock(uint32_t key)
 	if (resched(key) && need_swap()) {
 		z_swap_irqlock(key);
 	} else {
-		/* TODO: We only hold the IRQ lock here, not the scheduler's
-		 * spinlock, violating the locking requirement documented in
-		 * signal_pending_ipi(). This can result in added delayed
-		 * rescheduling.
-		 */
-		signal_pending_ipi();
+		/* Same requirement as reschedule(). Empty on UP. */
+		LOCK_SCHED_SPINLOCK {
+			signal_pending_ipi();
+		}
 		irq_unlock(key);
 	}
 }
