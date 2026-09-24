@@ -1557,6 +1557,58 @@ ZTEST(mcp_server_tests, test_12_tools_call_arguments_braces_in_string)
 	cleanup_test_tools();
 }
 
+static int test_tool_reply_then_fail_callback(enum mcp_tool_event_type event, const char *arguments,
+					      const char *execution_token)
+{
+	struct mcp_tool_message response = {
+		.type = MCP_USR_TOOL_RESPONSE,
+		.data = "{\"type\": \"text\", \"text\": \"done\"}",
+		.is_error = false,
+	};
+
+	ARG_UNUSED(arguments);
+
+	tool_execution_count++;
+
+	if (event == MCP_TOOL_CANCEL_REQUEST) {
+		return 0;
+	}
+
+	response.length = strlen(response.data);
+	(void)mcp_server_submit_tool_message(server, &response, execution_token);
+
+	/* Fail after the final response was already sent */
+	return -EIO;
+}
+
+ZTEST(mcp_server_tests, test_13_tools_call_reply_then_fail)
+{
+	int ret;
+	struct mcp_tool_record reply_then_fail_tool = {
+		.metadata = {
+			.name = "test_reply_then_fail_tool",
+			.input_schema = "{\"type\":\"object\"}",
+		},
+		.callback = test_tool_reply_then_fail_callback
+	};
+
+	reset_tool_execution_tracking();
+	register_test_tools();
+	ret = mcp_server_add_tool(server, &reply_then_fail_tool);
+	zassert_equal(ret, 0, "reply-then-fail tool should register");
+
+	send_tools_call_request(valid_client_binding, 3300, "test_reply_then_fail_tool", "{}");
+	zassert_equal(tool_execution_count, 1, "tool should execute once");
+
+	send_tools_call_request(valid_client_binding, 3301, "test_success_tool", "{}");
+	zassert_equal(tool_execution_count, 2,
+		      "request cleanup must not run twice and block later calls");
+
+	while (-EBUSY == mcp_server_remove_tool(server, "test_reply_then_fail_tool")) {
+	}
+	cleanup_test_tools();
+}
+
 static void *mcp_server_tests_setup(void)
 {
 	int ret;
