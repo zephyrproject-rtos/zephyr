@@ -20,6 +20,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/usb/uhc.h>
+#include <zephyr/usb/class/usb_hub.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc_vrt, CONFIG_UHC_DRIVER_LOG_LEVEL);
@@ -106,6 +107,15 @@ struct uhc_vrt_frame {
 	uint8_t count;
 };
 
+/*
+ * Port state as tracked by a real hub, USB 2.0 11.24.2.7. node is our own
+ * routing key, not part of the port status/change model.
+ */
+struct uhc_vrt_port {
+	const struct uvb_node *node;
+	struct usb_hub_port_status status;
+};
+
 struct uhc_vrt_data {
 	const struct device *dev;
 	struct uvb_node *host_node;
@@ -122,6 +132,7 @@ struct uhc_vrt_data {
 	uint8_t req;
 	enum usb_device_speed speed;
 	struct k_spinlock lock;
+	struct uhc_vrt_port ports[CONFIG_UHC_VIRTUAL_NUM_PORTS];
 };
 
 enum uhc_vrt_event_type {
@@ -631,7 +642,55 @@ static void sof_timer_handler(struct k_timer *timer)
 	vrt_event_submit(priv->dev, UHC_VRT_EVT_SOF, NULL);
 }
 
+/* Find the port occupied by node, or the first free port if node is NULL. */
+static struct uhc_vrt_port *vrt_port_find(struct uhc_vrt_data *const priv,
+					  const struct uvb_node *const node)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(priv->ports); i++) {
+		if (priv->ports[i].node == node) {
+			return &priv->ports[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct uhc_vrt_port *vrt_port_connect(struct uhc_vrt_data *const priv,
+					     const struct uvb_node *const source,
+					     const uint16_t speed_bit)
+{
+	struct uhc_vrt_port *port = vrt_port_find(priv, NULL);
+
+	if (port == NULL) {
+		LOG_ERR("No free port for %p", (void *)source);
+		return NULL;
+	}
+
+	port->node = source;
+	port->status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+	port->status.wPortStatus |= USB_HUB_PORT_STATUS_CONNECTION | speed_bit;
+	port->status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
+
+	return port;
+}
+
+static void vrt_port_disconnect(struct uhc_vrt_data *const priv,
+				const struct uvb_node *const source)
+{
+	struct uhc_vrt_port *port = vrt_port_find(priv, source);
+
+	if (port == NULL) {
+		LOG_ERR("Failed to disconnect, port not found");
+		return;
+	}
+
+	port->node = NULL;
+	port->status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+	port->status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
+}
+
 static void vrt_device_act(const struct device *dev,
+			   const struct uvb_node *const source,
 			   const enum uvb_device_act act)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
@@ -642,6 +701,10 @@ static void vrt_device_act(const struct device *dev,
 		type = UHC_EVT_RWUP;
 		break;
 	case UVB_DEVICE_ACT_LS:
+		if (vrt_port_connect(priv, source, USB_HUB_PORT_STATUS_LOW_SPEED) == NULL) {
+			return;
+		}
+
 		type = UHC_EVT_DEV_CONNECTED_LS;
 		priv->speed = USB_SPEED_SPEED_LS;
 		/*
@@ -652,12 +715,20 @@ static void vrt_device_act(const struct device *dev,
 		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 		break;
 	case UVB_DEVICE_ACT_FS:
+		if (vrt_port_connect(priv, source, 0) == NULL) {
+			return;
+		}
+
 		type = UHC_EVT_DEV_CONNECTED_FS;
 		priv->speed = USB_SPEED_SPEED_FS;
 		priv->sof_period = K_MSEC(1);
 		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 		break;
 	case UVB_DEVICE_ACT_HS:
+		if (vrt_port_connect(priv, source, USB_HUB_PORT_STATUS_HIGH_SPEED) == NULL) {
+			return;
+		}
+
 		type = UHC_EVT_DEV_CONNECTED_HS;
 		priv->speed = USB_SPEED_SPEED_HS;
 		priv->sof_period = K_USEC(125);
@@ -665,11 +736,12 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_CONNECTED:
 		if (uhc_is_enabled(dev)) {
-			uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL, NULL);
+			uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, source, NULL);
 		}
 
 		return;
 	case UVB_DEVICE_ACT_REMOVED:
+		vrt_port_disconnect(priv, source);
 		type = UHC_EVT_DEV_REMOVED;
 		break;
 	case UVB_DEVICE_ACT_SS:
@@ -688,12 +760,10 @@ static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 {
 	const struct device *dev = vrt_priv;
 
-	ARG_UNUSED(source);
-
 	if (type == UVB_EVT_REPLY) {
 		vrt_event_submit(dev, UHC_VRT_EVT_REPLY, data);
 	} else if (type == UVB_EVT_DEVICE_ACT) {
-		vrt_device_act(dev, POINTER_TO_INT(data));
+		vrt_device_act(dev, source, POINTER_TO_INT(data));
 	} else {
 		LOG_ERR("Unknown event %d for %p", type, dev);
 	}
