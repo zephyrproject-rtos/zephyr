@@ -145,7 +145,7 @@ static void fake_stepper_reset_rule_before(const struct ztest_unit_test *test, v
 ZTEST_RULE(fake_stepper_reset_rule, fake_stepper_reset_rule_before, NULL);
 #endif /* CONFIG_ZTEST */
 
-static int fake_stepper_driver_init(const struct device *dev)
+static __maybe_unused int fake_stepper_driver_init(const struct device *dev)
 {
 	fake_stepper_driver_set_micro_step_res_fake.custom_fake =
 		fake_stepper_driver_set_micro_step_res_delegate;
@@ -155,7 +155,7 @@ static int fake_stepper_driver_init(const struct device *dev)
 	return 0;
 }
 
-static int fake_stepper_init(const struct device *dev)
+static __maybe_unused int fake_stepper_init(const struct device *dev)
 {
 	fake_stepper_ctrl_is_moving_fake.custom_fake = fake_stepper_ctrl_is_moving_delegate;
 	fake_stepper_ctrl_set_reference_position_fake.custom_fake =
