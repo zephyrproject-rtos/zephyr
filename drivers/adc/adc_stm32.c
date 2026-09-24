@@ -1208,66 +1208,50 @@ static int start_inj_read(const struct device *dev, const struct adc_sequence *s
 }
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
-static int start_read(const struct device *dev,
-		      const struct adc_sequence *sequence)
+/*
+ * Bind sequence channels, resolution, and oversampling into driver data and
+ * ADC registers. Does not enable the ADC, IRQs, DMA, or adc_context.
+ */
+static int prepare_read(const struct device *dev, const struct adc_sequence *sequence)
 {
-	const struct adc_sub_stm32_cfg *config = dev->config;
 	struct adc_sub_stm32_data *data = dev->data;
-	ADC_TypeDef *adc = config->base;
+	uint8_t channel_count = POPCOUNT(sequence->channels);
 	int err;
 
-	data->buffer = sequence->buffer;
-	data->channels = sequence->channels;
-	data->channel_count = POPCOUNT(data->channels);
-	data->samples_count = 0;
-	data->resolution = sequence->resolution;
-
-	if (data->channel_count == 0) {
+	if (channel_count == 0) {
 		LOG_ERR("No channels selected");
 		return -EINVAL;
 	}
 
 #if ADC_STM32_DT_ANY_INST_HAS_SEQUENCER_TYPE(SEQUENCER_PROGRAMMABLE)
-	if (data->channel_count > ARRAY_SIZE(table_seq_len)) {
+	if (channel_count > ARRAY_SIZE(table_seq_len)) {
 		LOG_ERR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
 		return -EINVAL;
 	}
 #endif /* ADC_STM32_DT_ANY_INST_HAS_SEQUENCER_TYPE(SEQUENCER_PROGRAMMABLE) */
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !defined(CONFIG_ADC_STM32_DMA)
-	/* Multiple samplings is only supported with DMA for F1 */
-	if (data->channel_count > 1) {
-		LOG_ERR("Without DMA, this device only supports single channel sampling");
-		return -EINVAL;
+#ifndef HAS_OVERSAMPLING
+	if (sequence->oversampling) {
+		LOG_ERR("Oversampling not supported");
+		return -ENOTSUP;
 	}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !CONFIG_ADC_STM32_DMA */
+#endif /* !HAS_OVERSAMPLING */
 
-	/* Check and set the resolution */
+	data->channels = sequence->channels;
+	data->channel_count = channel_count;
+	data->resolution = sequence->resolution;
+
 	err = set_resolution(dev, sequence);
 	if (err < 0) {
 		LOG_ERR("Error setting the ADC resolution");
 		return err;
 	}
 
-	/* Configure the sequencer */
 	err = set_sequencer(dev);
 	if (err < 0) {
 		LOG_ERR("Error setting the ADC sequencer");
 		return err;
 	}
-
-#ifndef CONFIG_ADC_STREAM
-	/*
-	 * In streaming mode the application does not provide a buffer in the
-	 * sequence: sample data is written to a buffer allocated from the RTIO
-	 * mempool inside the ISR. Skip the sequence buffer validation here.
-	 */
-	err = check_buffer(sequence, data->channel_count);
-	if (err) {
-		LOG_ERR("ADC buffer error");
-		return err;
-	}
-#endif /* !CONFIG_ADC_STREAM */
 
 #ifdef HAS_OVERSAMPLING
 	err = adc_stm32_oversampling(dev, sequence->oversampling);
@@ -1275,12 +1259,40 @@ static int start_read(const struct device *dev,
 		LOG_ERR("Error setting the ADC oversampler");
 		return err;
 	}
-#else
-	if (sequence->oversampling) {
-		LOG_ERR("Oversampling not supported");
-		return -ENOTSUP;
-	}
 #endif /* HAS_OVERSAMPLING */
+
+	return 0;
+}
+
+static int start_read(const struct device *dev,
+		      const struct adc_sequence *sequence)
+{
+	const struct adc_sub_stm32_cfg *config = dev->config;
+	struct adc_sub_stm32_data *data = dev->data;
+	ADC_TypeDef *adc = config->base;
+	__maybe_unused uint8_t channel_count = POPCOUNT(sequence->channels);
+	int err;
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !defined(CONFIG_ADC_STM32_DMA)
+	/* Multiple samplings is only supported with DMA for F1 */
+	if (channel_count > 1) {
+		LOG_ERR("Without DMA, this device only supports single channel sampling");
+		return -EINVAL;
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !CONFIG_ADC_STM32_DMA */
+
+#ifndef CONFIG_ADC_STREAM
+	/*
+	 * In streaming mode the application does not provide a buffer in the
+	 * sequence: sample data is written to a buffer allocated from the RTIO
+	 * mempool inside the ISR. Skip the sequence buffer validation here.
+	 */
+	err = check_buffer(sequence, channel_count);
+	if (err) {
+		LOG_ERR("ADC buffer error");
+		return err;
+	}
+#endif /* !CONFIG_ADC_STREAM */
 
 	if (sequence->calibrate) {
 #if defined(HAS_CALIBRATION)
@@ -1293,6 +1305,14 @@ static int start_read(const struct device *dev,
 		LOG_ERR("Calibration not supported");
 		return -ENOTSUP;
 #endif
+	}
+
+	data->buffer = sequence->buffer;
+	data->samples_count = 0;
+
+	err = prepare_read(dev, sequence);
+	if (err < 0) {
+		return err;
 	}
 
 	/*
