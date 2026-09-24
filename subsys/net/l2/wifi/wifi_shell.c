@@ -5135,6 +5135,87 @@ static int cmd_wifi_nan_transmit(const struct shell *sh, size_t argc, char *argv
 				 "NAN transmit command sent", false);
 }
 
+static int parse_nan_args_set(const struct shell *sh, size_t argc, char *argv[],
+			      struct wifi_nan_params *params)
+{
+	ARG_UNUSED(sh);
+
+	if (argc != 3 || strlen(argv[1]) >= sizeof(params->set.param) ||
+	    strlen(argv[2]) >= sizeof(params->set.value)) {
+		return -EINVAL;
+	}
+
+	strncpy(params->set.param, argv[1], sizeof(params->set.param) - 1);
+	strncpy(params->set.value, argv[2], sizeof(params->set.value) - 1);
+	return 0;
+}
+
+static int parse_nan_args_none(const struct shell *sh, size_t argc, char *argv[],
+			       struct wifi_nan_params *params)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argv);
+	ARG_UNUSED(params);
+
+	return argc == 1 ? 0 : -EINVAL;
+}
+
+static int cmd_wifi_nan_start(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_START,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_none,
+				 "invalid NAN start arguments", "Failed to start NAN operation",
+				 "NAN start command sent", false);
+}
+
+static int cmd_wifi_nan_stop(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_STOP,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_none,
+				 "invalid NAN stop arguments", "Failed to stop NAN operation",
+				 "NAN stop command sent", false);
+}
+
+static int cmd_wifi_nan_set(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_SET,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_set,
+				 "parse NAN set args fail", "Failed to set NAN parameter",
+				 "NAN parameter set", false);
+}
+
+static int cmd_wifi_nan_status(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_STATUS,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_none,
+				 "invalid NAN status arguments", "Failed to query NAN status",
+				 "NAN status:\n", true);
+}
+
+static int cmd_wifi_nan_update_conf(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_UPDATE_CONF,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_none,
+				 "invalid NAN update configuration arguments",
+				 "Failed to update NAN configuration", "NAN configuration updated",
+				 false);
+}
+
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
 static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
@@ -5668,14 +5749,32 @@ SHELL_SUBCMD_ADD((wifi), dpp, &wifi_cmd_dpp,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_nan,
+	SHELL_CMD_ARG(start, NULL, SHELL_HELP("Start NAN operation", NULL), cmd_wifi_nan_start, 1,
+		      1),
+	SHELL_CMD_ARG(stop, NULL, SHELL_HELP("Stop NAN operation", NULL), cmd_wifi_nan_stop, 1, 1),
+	SHELL_CMD_ARG(set, NULL,
+		      SHELL_HELP("Set a NAN configuration parameter",
+				 "master_pref <1-254> | dual_band <0|1> |\n"
+				 "cluster_id <50:6f:9a:01:xx:xx> |\n"
+				 "scan_period <0-65535> | scan_dwell_time <10-150> |\n"
+				 "discovery_beacon_interval <50-200> | max_bw <MHz> |\n"
+				 "low_band_cfg <close,middle,awake,disable_scan> |\n"
+				 "high_band_cfg <close,middle,awake,disable_scan> |\n"
+				 "disallowed_freqs <range-list>"),
+		      cmd_wifi_nan_set, 3, 3),
+	SHELL_CMD_ARG(status, NULL, SHELL_HELP("Show NAN status", NULL), cmd_wifi_nan_status, 1, 1),
+	SHELL_CMD_ARG(update_conf, NULL, SHELL_HELP("Apply NAN configuration", NULL),
+		      cmd_wifi_nan_update_conf, 1, 1),
 	SHELL_CMD_ARG(publish, NULL,
 		      SHELL_HELP(" Start NAN publisher",
 				 "-s --service_name <name>: Service name (required)\n"
-				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, 2:Generic, 3:Matter)\n"
+				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, "
+				 "2:Generic, 3:Matter)\n"
 				 "[-t, --ttl=<time-to-live-in-sec>] : time-to-live-in-sec\n"
 				 "[-f, --freq=<freq in MHz>] : freq in MHz\n"
 				 "[-l, --freq_list=<comma separate list of MHz>] : freq list\n"
-				 "[-d, --ssi=<service specific information (hexdump)>] : service specific information\n"
+				 "[-d, --ssi=<service specific information (hexdump)>] : service "
+				 "specific information\n"
 				 "[-u --unsolicited <0/1>]: Unsolicited transmission (default 1)\n"
 				 "[-o --solicited <0/1>]: Solicited transmission (default 1)\n"
 				 "[-g --fsd <0/1>]: Further service discovery (default 1)"),
@@ -5692,7 +5791,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(subscribe, NULL,
 		      SHELL_HELP("Start NAN subscriber",
 				 "-s, --service_name=<service_name> : Service name\n"
-				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, 2:Generic, 3:Matter)\n"
+				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, "
+				 "2:Generic, 3:Matter)\n"
 				 "[-a, --active=<0/1>] : Active subscriber\n"
 				 "[-t, --ttl=<time-to-live-in-sec>] : Time to live\n"
 				 "[-f, --freq=<freq in MHz>] : freq in MHz\n"
@@ -5710,8 +5810,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "-a --address <MAC>: Peer MAC address\n"
 				 "-d --ssi <hex_string>: Service specific info"),
 		      cmd_wifi_nan_transmit, 9, 0),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 SHELL_SUBCMD_ADD((wifi), nan, &wifi_cmd_nan,
 		 "NAN operations.",
