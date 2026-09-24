@@ -13,6 +13,7 @@
  *   dtc -I dtb -O dts virt.dtb
  */
 
+#include <freq.h>
 #include <mem.h>
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
@@ -25,6 +26,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_K(62500)>;
 
 		cpu@0 {
 			device_type = "cpu";
