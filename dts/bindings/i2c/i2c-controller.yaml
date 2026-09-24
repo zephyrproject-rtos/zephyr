@@ -5,6 +5,8 @@
 
 include: base.yaml
 
+class: i2c
+
 bus: i2c
 
 properties:

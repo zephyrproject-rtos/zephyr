@@ -27,6 +27,7 @@ properties:
 
 child-binding:
   description: TCA954x I2C switch channel node
+  class: i2c
   bus: i2c
   on-bus: i2c
   properties:
