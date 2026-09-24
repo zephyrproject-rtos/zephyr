@@ -25,9 +25,6 @@ config ARM64_BOOT_DISABLE_DCACHE
 config NUM_IRQS
 	default 240
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 24000000
-
 config PM_CPU_OPS
 	default y if PM
 
