@@ -4,6 +4,7 @@ if BT_ESP32
 
 config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 	int
+	default 81920 if SOC_SERIES_ESP32S31 && ESP32_BT_LE_ISO_SUPPORT
 	default 65536 if SOC_SERIES_ESP32S31
 	default 50000 if SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || \
 		SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
@@ -391,6 +392,89 @@ config ESP32_BT_LE_MAX_PERIODIC_ADVERTISER_LIST
 	help
 	  Upper limit for the list of periodic advertisers.
 
+menuconfig ESP32_BT_LE_ISO_SUPPORT
+	bool "Isochronous channels support"
+	depends on SOC_SERIES_ESP32S31
+	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	default y if BT_ISO
+	help
+	  Enable the controller support for connected and broadcast
+	  isochronous channels.
+
+if ESP32_BT_LE_ISO_SUPPORT
+
+config ESP32_BT_LE_ISO_BUF_COUNT
+	int "Isochronous data buffer count"
+	range 1 255
+	default 12
+	help
+	  Number of controller buffers for isochronous data packets.
+
+config ESP32_BT_LE_ISO_BUF_SIZE
+	int "Isochronous data buffer size"
+	range 1 65535
+	default 251
+	help
+	  Size in bytes of each controller isochronous data buffer.
+
+config ESP32_BT_LE_ISO_BIG
+	int "Maximum broadcast isochronous groups"
+	range 1 2
+	default 2 if BT_ISO_BROADCAST && BT_ISO_MAX_BIG > 2
+	default BT_ISO_MAX_BIG if BT_ISO_BROADCAST
+	default 1
+	help
+	  Maximum number of broadcast isochronous groups (BIGs).
+
+config ESP32_BT_LE_ISO_BIS
+	int "Maximum broadcast isochronous streams"
+	range 1 6
+	default 6 if BT_ISO_BROADCAST && BT_ISO_MAX_CHAN > 6
+	default BT_ISO_MAX_CHAN if BT_ISO_BROADCAST
+	default 2
+	help
+	  Maximum number of broadcast isochronous streams (BISes) across
+	  all groups.
+
+config ESP32_BT_LE_ISO_BIS_PER_BIG
+	int "Maximum broadcast isochronous streams per group"
+	range 1 ESP32_BT_LE_ISO_BIS
+	default ESP32_BT_LE_ISO_BIS
+	help
+	  Maximum number of BISes in one broadcast isochronous group.
+
+config ESP32_BT_LE_ISO_CIG
+	int "Maximum connected isochronous groups"
+	range 1 2
+	default 2 if BT_ISO_UNICAST && BT_ISO_MAX_CIG > 2
+	default BT_ISO_MAX_CIG if BT_ISO_UNICAST
+	default 1
+	help
+	  Maximum number of connected isochronous groups (CIGs).
+
+config ESP32_BT_LE_ISO_CIS
+	int "Maximum connected isochronous streams"
+	range 1 6
+	default 6 if BT_ISO_UNICAST && BT_ISO_MAX_CHAN > 6
+	default BT_ISO_MAX_CHAN if BT_ISO_UNICAST
+	default 2
+	help
+	  Maximum number of connected isochronous streams (CISes) across
+	  all groups.
+
+config ESP32_BT_LE_ISO_CIS_PER_CIG
+	int "Maximum connected isochronous streams per group"
+	range 1 ESP32_BT_LE_ISO_CIS
+	default ESP32_BT_LE_ISO_CIS
+	help
+	  Maximum number of CISes in one connected isochronous group.
+
+# ISO data from the controller is received without waiting for a buffer.
+configdefault BT_ISO_RX_BUF_COUNT
+	default 8 if BT_ISO_RX
+
+endif # ESP32_BT_LE_ISO_SUPPORT
+
 config ESP32_BT_LE_POWER_CONTROL_ENABLED
 	bool "Controller BLE power control"
 	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
@@ -513,8 +597,8 @@ config ESP32_BT_LE_LL_RESOLV_LIST_SIZE
 
 menuconfig ESP32_BT_LE_SECURITY_ENABLE
 	bool "BLE security manager"
-	depends on BT_CRYPTO
-	default y if BT_CTLR_LE_ENC
+	depends on BT_CRYPTO || ESP32_BT_LE_ISO_SUPPORT
+	default y if BT_CTLR_LE_ENC || ESP32_BT_LE_ISO_SUPPORT
 	help
 	  Enable Security Manager features for BLE pairing and encryption.
 
@@ -549,7 +633,7 @@ config ESP32_BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
 config ESP32_BT_LE_CRYPTO_STACK_MBEDTLS
 	bool "Mbed TLS crypto stack"
 	depends on ESP32_BT_LE_SECURITY_ENABLE
-	default y if BT_CTLR_LE_ENC
+	default y if BT_CTLR_LE_ENC || ESP32_BT_LE_ISO_SUPPORT
 	select PSA_CRYPTO
 	select MBEDTLS_CTR_DRBG_C
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
