@@ -12,6 +12,10 @@
 	model = "Generic LEON3 system";
 	compatible = "gaisler,generic-leon3";
 
+	cpus {
+		timebase-frequency = <DT_FREQ_M(50)>;
+	};
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
