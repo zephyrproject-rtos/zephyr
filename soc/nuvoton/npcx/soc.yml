@@ -1,6 +1,9 @@
 family:
 - name: npcx
   series:
+  - name: npck6
+    socs:
+    - name: npck6m9k
   - name: npck3
     socs:
     - name: npck3m8k
