@@ -536,6 +536,13 @@ int esp_wifi_mesh_start(void)
 	esp_mesh_send_block_time(CONFIG_WIFI_ESP32_MESH_SEND_BLOCK_TIME_MS);
 
 	/*
+	 * Nodes booting together can each elect themselves root and then keep
+	 * two separate networks, since the mesh stack allows root conflicts by
+	 * default. Disallowing them makes one root yield and rejoin as a child.
+	 */
+	esp_mesh_allow_root_conflicts(IS_ENABLED(CONFIG_WIFI_ESP32_MESH_ALLOW_ROOT_CONFLICTS));
+
+	/*
 	 * The Wi-Fi station is already started by the driver before the mesh
 	 * stack registers its event handlers, so the mesh misses the initial
 	 * WIFI_EVENT_STA_START that would kick off parent scanning. Wait for the
