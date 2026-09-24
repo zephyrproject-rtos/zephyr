@@ -528,7 +528,13 @@ static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 	int retval;
 
 	ARG_UNUSED(id);
-	ARG_UNUSED(error_code);
+
+	if (error_code < 0) {
+		dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_complete(&data->ctx, dev, -EIO);
+		return;
+	}
 
 	spi_context_update_tx(&data->ctx, 1, data->dma_segment_len);
 	spi_context_update_rx(&data->ctx, 1, data->dma_segment_len);
