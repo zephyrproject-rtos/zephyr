@@ -599,6 +599,12 @@ struct dns_resolve_context {
 		 */
 		uint16_t query_hash;
 
+		/** Hash of the original DNS name + query type as requested by
+		 * the caller. Unlike @ref query_hash, this remains constant
+		 * even as the query follows CNAME aliases.
+		 */
+		uint16_t orig_query_hash;
+
 		/* Number of additional queries sent to resolve CNAME record
 		 * name aliases.
 		 */
