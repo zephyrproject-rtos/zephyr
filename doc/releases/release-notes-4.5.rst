@@ -41,6 +41,7 @@ Major enhancements with this release include:
   Zephyr 4.5 adds several new driver APIs, including:
 
   - :ref:`Clock Monitor <clock_monitor_api>` for runtime observation of clock frequency
+  - :ref:`LIN <lin>` for the Local Interconnect Network automotive serial bus
 
 **New subsystems**
 
@@ -709,6 +710,22 @@ New APIs and options
     :c:func:`k_irq_lock`, :c:func:`k_irq_unlock`, :c:func:`k_irq_enable`,
     :c:func:`k_irq_disable`, :c:func:`k_irq_is_enabled`,
     :c:func:`k_irq_connect_dynamic` and :c:func:`k_irq_disconnect_dynamic`
+
+* LIN
+
+  * :c:func:`lin_start`
+  * :c:func:`lin_stop`
+  * :c:func:`lin_configure`
+  * :c:func:`lin_get_config`
+  * :c:func:`lin_send`
+  * :c:func:`lin_receive`
+  * :c:func:`lin_response`
+  * :c:func:`lin_read`
+  * :c:func:`lin_wakeup_send`
+  * :c:func:`lin_set_event_callback`
+  * :c:func:`lin_set_rx_filter`
+  * :c:func:`lin_get_transceiver`
+  * :kconfig:option:`CONFIG_LIN`
 
 * LoRa
 
@@ -1640,6 +1657,10 @@ New Drivers
   * :dtcompatible:`worldsemi,ws2812-bflb-wo` (:github:`105325`)
   * :dtcompatible:`worldsemi,ws2812-pulse-io` (:github:`110466`)
 
+* LIN
+
+  * :dtcompatible:`renesas,ra-lin-sci-b`
+
 * LoRa
 
   * :dtcompatible:`semtech,lr1121` (:github:`109912`)
@@ -1755,6 +1776,7 @@ New Drivers
 
 * PHY
 
+  * :dtcompatible:`lin-transceiver-gpio`
   * :dtcompatible:`st,stm32f7-usbphyc` (:github:`114696`)
   * :dtcompatible:`st,stm32n6-usbphyc` (:github:`114696`)
 
