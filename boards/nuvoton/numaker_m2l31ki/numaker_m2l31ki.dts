@@ -14,6 +14,10 @@
 	model = "Nuvoton NuMaker M2L31KI board";
 	compatible = "nuvoton,numaker-m2l31ki";
 
+	cpus {
+		timebase-frequency = <DT_FREQ_M(72)>;
+	};
+
 	aliases {
 		led0 = &red_led;
 	};
