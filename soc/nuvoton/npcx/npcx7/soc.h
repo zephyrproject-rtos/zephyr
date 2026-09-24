@@ -43,11 +43,15 @@
 	 BIT(6) | BIT(11) | BIT(15))	/* DEVALT0_LK - DEVALTF_LK */
 
 /* NPCX7 Clock configuration */
-#define MAX_OFMCLK 100000000
+#define MAX_OFMCLK  100000000
+#define MAX_FMCLK   (MAX_OFMCLK / 2)
+#define MAX_AHB6CLK (MAX_OFMCLK / 2)
+#define MAX_FIUCLK  (MAX_OFMCLK / 2)
 
 #include <reg_def.h>
 #include <clock_def.h>
 #include <soc_dt.h>
+#include <soc_clock.h>
 #include <soc_pins.h>
 #include <soc_power.h>
 
