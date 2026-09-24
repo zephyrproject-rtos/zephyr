@@ -13,6 +13,10 @@
 / {
 	model = "Renesas Spider CA55";
 
+	cpus {
+		timebase-frequency = <16666666>;
+	};
+
 	chosen {
 		zephyr,sram = &ram;
 		zephyr,console = &hscif0;

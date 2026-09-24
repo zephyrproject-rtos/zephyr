@@ -6,6 +6,7 @@
  */
 
 /dts-v1/;
+#include <freq.h>
 #include <arm/renesas/rcar/gen4/r8a779f0.dtsi>
 #include "rcar_spider_s4_r8a779f0_r52-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -13,6 +14,10 @@
 / {
 	model = "Renesas Spider board";
 	compatible = "renesas,spider-s4-cr52";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_K(12500)>;
+	};
 
 	chosen {
 		zephyr,sram = &sram0;
