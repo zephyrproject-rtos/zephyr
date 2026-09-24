@@ -13,6 +13,10 @@
 	model = "TI AM13E230X Launchpad";
 	compatible = "ti,am13e23019";
 
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
 	chosen {
 		zephyr,sram = &sram0_1_2;
 		zephyr,flash = &flash0;
@@ -52,4 +56,8 @@
 
 	pinctrl-0 = <&uc4_tx_sda_pico_pa0 &uc4_rx_scl_sclk_pa1>;
 	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
 };
