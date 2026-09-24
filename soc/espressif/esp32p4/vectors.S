@@ -32,13 +32,16 @@ _vector_table:
  * CLIC hardware-vectored interrupt table.
  * mtvt CSR points here. Each entry is a function pointer (address).
  * On interrupt with SHV=1, the CLIC reads mtvt[4*int_id] and jumps there.
- * 136 entries cover all CLIC interrupt lines (0-15 internal, 16-135 external).
+ * The core has 48 lines: 16 internal followed by the 32 external ones.
  */
-	.balign 0x40
+	/* mtvt has to be aligned to a power of two at least as large as the
+	 * table, which is 48 entries of 4 bytes.
+	 */
+	.balign 0x100
 	.global _mtvt_table
 	.type   _mtvt_table, @function
 _mtvt_table:
-	.rept (136)
+	.rept (48)
 	.word _isr_wrapper
 	.endr
 	.size _mtvt_table, .-_mtvt_table

@@ -5,3 +5,9 @@ common:
   harness: ztest
 tests:
   boards.esp32p4.nocache: {}
+  boards.esp32p4.nocache.smp:
+    tags: smp
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SPIN_VALIDATE=y

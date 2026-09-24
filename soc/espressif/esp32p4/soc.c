@@ -5,6 +5,8 @@
  */
 
 #include <soc.h>
+#include <soc/hp_sys_clkrst_reg.h>
+#include <soc/hp_system_reg.h>
 #include <soc_init.h>
 #include <flash_init.h>
 #include <esp_err.h>
@@ -91,10 +93,12 @@ void nocache_region_init(void)
 }
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-static void core_intr_matrix_clear(void)
+void esp_core_intr_matrix_clear(void)
 {
+	unsigned int core_id = esp_cpu_get_core_id();
+
 	for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
-		interrupt_clic_ll_route(0, i, ETS_INVALID_INUM);
+		interrupt_clic_ll_route(core_id, i, ETS_INVALID_INUM);
 	}
 
 	for (int i = 0; i < 32; i++) {
@@ -115,7 +119,7 @@ void IRAM_ATTR __esp_platform_app_start(void)
 			 : "t0");
 #endif
 
-	core_intr_matrix_clear();
+	esp_core_intr_matrix_clear();
 
 	esp_reset_reason_init();
 
@@ -127,6 +131,26 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 #if defined(CONFIG_NOCACHE_MEMORY)
 	nocache_region_init();
+#endif
+
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	extern void esp_appcpu_start(void);
+
+	/* Keep the WFI clock running and take both cores out of the WFI clock gating decision. */
+	REG_SET_BIT(HP_SYSTEM_CPU_WAITI_CONF_REG, HP_SYSTEM_CPU_WAIT_MODE_FORCE_ON);
+#if !defined(CONFIG_SOC_ESP32P4_REV_1_3)
+	REG_CLR_BIT(HP_SYS_CLKRST_CPU_WAITI_CTRL0_REG, HP_SYS_CLKRST_REG_CORE0_WAITI_ICG_EN);
+	REG_CLR_BIT(HP_SYS_CLKRST_CPU_WAITI_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_WAITI_ICG_EN);
+#endif
+
+	esp_appcpu_start();
+#else
+	/* Hold CPU1 in reset, gate its clock and take it out of WFI clock gating. */
+	REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
+	REG_SET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
+#if !defined(CONFIG_SOC_ESP32P4_REV_1_3)
+	REG_CLR_BIT(HP_SYS_CLKRST_CPU_WAITI_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_WAITI_ICG_EN);
+#endif
 #endif
 
 	z_cstart();

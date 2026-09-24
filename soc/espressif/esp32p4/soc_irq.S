@@ -7,6 +7,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/autoconf.h>
+#include <riscv/csr_clic.h>
 
 /*
  * The per-context interrupt threshold CSR mintthresh (0x347) only exists on
@@ -38,8 +39,10 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
  * exception is never delivered again.
  *
  * Hence mcause.interrupt is forced to match the entry type: cleared on
- * exception entry (mil is already 0), set on interrupt entry, with mpil
- * cleared for exception-saved frames so they resume at mil 0.
+ * exception entry at mil 0, set on interrupt entry, with mpil cleared for
+ * exception-saved frames so they resume at mil 0. An exception taken at a
+ * non-zero mil returns at that mil with mcause.interrupt set, so the
+ * enclosing interrupt handler exits through the interrupt path.
  */
 
 SECTION_FUNC(exception.other, __soc_save_context)
@@ -64,7 +67,20 @@ SECTION_FUNC(exception.other, __soc_restore_context)
 	/* live mcause = entry type of this trap */
 	csrr t2, mcause
 	bltz t2, 1f
-	/* Exception-entered: keep mcause.interrupt clear; mil stays 0. */
+	/* Exception taken inside an interrupt handler: return at the current
+	 * mil and leave mcause interrupt-typed for the handler's own exit.
+	 */
+	csrr t1, MINTSTATUS_CSR
+	srli t1, t1, 24
+	beqz t1, 3f
+	li t2, 0xFF00FFFF
+	and t0, t0, t2
+	slli t1, t1, 16
+	or t0, t0, t1
+	li t1, RISCV_MCAUSE_IRQ_BIT
+	or t0, t0, t1
+	j 2f
+3:	/* Exception-entered: keep mcause.interrupt clear; mil stays 0. */
 	li t1, ~RISCV_MCAUSE_IRQ_BIT
 	and t0, t0, t1
 	j 2f

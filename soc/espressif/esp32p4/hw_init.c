@@ -11,6 +11,7 @@
 #include <esp_rom_sys.h>
 
 #include <hal/cache_hal.h>
+#include <rom/ets_sys.h>
 #include <hal/mmu_hal.h>
 #include <hal/mmu_ll.h>
 #include <hal/psram_ctrlr_ll.h>
@@ -51,6 +52,10 @@ static void check_chip_revision(void)
 int hardware_init(void)
 {
 	int err = 0;
+
+	/* Clear the CPU1 boot address and reset CPU1 into the ROM wait loop. */
+	ets_set_appcpu_boot_addr(0);
+	esp_cpu_reset(1);
 
 	soc_hw_init();
 	ana_reset_config();

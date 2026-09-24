@@ -2151,6 +2151,11 @@ Other notable changes
     cycle-counter read plus an absolute-compare arm. See the
     :ref:`migration guide <migration_4.5>` for how to use it (:github:`115844`).
 
+* Espressif
+
+  * Added experimental SMP support for the ESP32-P4 dual-core HP processor,
+    enabled with :kconfig:option:`CONFIG_SMP`.
+
 * Wi-Fi
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test

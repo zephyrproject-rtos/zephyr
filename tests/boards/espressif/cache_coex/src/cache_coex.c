@@ -36,7 +36,7 @@ static uint8_t flash_val = FLASH_BYTE_PATTERN;
 static bool buffer_ready;
 static bool needs_fill = true;
 static bool unfinished_tasks = true;
-static struct k_spinlock lock;
+static K_MUTEX_DEFINE(lock);
 
 struct coex_test_results {
 	bool using_ext_ram;
@@ -49,11 +49,11 @@ static void buffer_fill(void)
 {
 	while (needs_fill) {
 		if (!buffer_ready) {
-			k_spinlock_key_t key = k_spin_lock(&lock);
+			k_mutex_lock(&lock, K_FOREVER);
 
 			memset(flash_fill_buff, ++flash_val, sizeof(flash_fill_buff));
 			buffer_ready = true;
-			k_spin_unlock(&lock, key);
+			k_mutex_unlock(&lock);
 		}
 		k_usleep(10);
 	}
@@ -224,11 +224,11 @@ static void flash_test(void)
 	for (size_t i = 0; i < FLASH_ITERATIONS; ++i) {
 		page_erase();
 		if (buffer_ready) {
-			k_spinlock_key_t key = k_spin_lock(&lock);
+			k_mutex_lock(&lock, K_FOREVER);
 
 			do_flashop();
 			buffer_ready = false;
-			k_spin_unlock(&lock, key);
+			k_mutex_unlock(&lock);
 		}
 		k_msleep(sleep_ms);
 	}

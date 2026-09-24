@@ -147,4 +147,42 @@ ZTEST(nocache, test_pma_region_covers_section)
 		     region_base + region_size, end);
 }
 
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_SCHED_CPU_MASK)
+#define PMA_PROBE_STACK_SIZE 1024
+
+static K_THREAD_STACK_DEFINE(pma_probe_stack, PMA_PROBE_STACK_SIZE);
+static struct k_thread pma_probe_thread;
+static volatile uint32_t pma_probe_cfg;
+static volatile uint32_t pma_probe_cpu;
+
+static void pma_probe_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	pma_probe_cpu = arch_curr_cpu()->id;
+	pma_probe_cfg = RV_READ_CSR(CSR_PMACFG0 + NOCACHE_PMA_ENTRY);
+}
+
+/* Read the PMA config from a thread pinned to CPU1. */
+ZTEST(nocache, test_pma_entry_applied_on_secondary_cpu)
+{
+	k_tid_t tid = k_thread_create(&pma_probe_thread, pma_probe_stack,
+				      K_THREAD_STACK_SIZEOF(pma_probe_stack), pma_probe_fn, NULL,
+				      NULL, NULL, K_PRIO_COOP(0), 0, K_FOREVER);
+
+	zassert_ok(k_thread_cpu_pin(tid, 1), "failed to pin probe thread to CPU1");
+	k_thread_start(tid);
+	zassert_ok(k_thread_join(tid, K_SECONDS(1)), "probe thread did not finish");
+
+	zassert_equal(pma_probe_cpu, 1, "probe did not run on CPU1 (ran on %u)", pma_probe_cpu);
+	zassert_true(pma_probe_cfg & PMA_EN, "PMA entry %d not enabled on CPU1 (cfg=0x%08x)",
+		     NOCACHE_PMA_ENTRY, pma_probe_cfg);
+	zassert_true(pma_probe_cfg & PMA_NONCACHEABLE,
+		     "PMA entry %d missing NONCACHEABLE on CPU1 (cfg=0x%08x)", NOCACHE_PMA_ENTRY,
+		     pma_probe_cfg);
+}
+#endif /* CONFIG_SMP && CONFIG_MP_MAX_NUM_CPUS > 1 && CONFIG_SCHED_CPU_MASK */
+
 ZTEST_SUITE(nocache, NULL, NULL, NULL, NULL, NULL);
