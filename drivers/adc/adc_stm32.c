@@ -325,7 +325,7 @@ static const struct adc_stm32_clk_cfg *adc_stm32_get_clk_cfg(const struct adc_su
 }
 
 #ifdef CONFIG_ADC_STM32_DMA
-static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
+static void adc_stm32_enable_dma_transfer(ADC_TypeDef *adc)
 {
 	/* Allow ADC to create DMA request and set to one-shot mode as implemented in HAL drivers */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
@@ -335,11 +335,7 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 	if (LL_ADC_REG_GetDMATransfer(adc) != LL_ADC_REG_DMA_TRANSFER_UNLIMITED) {
 		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_UNLIMITED);
 	}
-#elif defined(CONFIG_SOC_SERIES_STM32C5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32N6X) || \
-	defined(CONFIG_SOC_SERIES_STM32U3X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(LL_ADC_REG_DR_TRANSFER)
 	/* H72x ADC3 and U5 ADC4 are different from the rest, but this call works also for them,
 	 * so no need to call their specific function
 	 */
@@ -347,6 +343,22 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 #else
 	/* Default mechanism for other MCUs */
 	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
+#endif
+}
+
+__maybe_unused static void adc_stm32_disable_dma_transfer(ADC_TypeDef *adc)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	if (LL_ADC_REG_GetDMATransfer(adc) != LL_ADC_REG_DMA_TRANSFER_NONE) {
+		/* Only modify CR2 register if DMA bit is already set,
+		 * otherwise when ADON=1 a conversion is triggered.
+		 */
+		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+	}
+#elif defined(LL_ADC_REG_DR_TRANSFER)
+	LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DR_TRANSFER);
+#else
+	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
 #endif
 }
 
@@ -391,7 +403,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 		return ret;
 	}
 
-	adc_stm32_enable_dma_support(adc);
+	adc_stm32_enable_dma_transfer(adc);
 
 	data->dma_error = 0;
 	ret = dma_start(data->dma.dma_dev, data->dma.channel);
@@ -733,11 +745,11 @@ static int adc_stm32_calibrate(const struct device *dev, bool force)
 	defined(CONFIG_SOC_SERIES_STM32WBAX) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	/* Make sure DMA is disabled before starting calibration */
-	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+	adc_stm32_disable_dma_transfer(adc);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	if (adc == ADC4) {
 		/* Make sure DMA is disabled before starting calibration */
-		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+		adc_stm32_disable_dma_transfer(adc);
 	}
 #endif /* CONFIG_SOC_SERIES_* */
 #endif /* CONFIG_ADC_STM32_DMA */
@@ -1419,7 +1431,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 #ifdef CONFIG_ADC_STM32_DMA
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	/* Make sure DMA bit of ADC register CR2 is set to 0 before starting a DMA transfer */
-	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+	adc_stm32_disable_dma_transfer(adc);
 #endif
 	adc_stm32_dma_start(dev, data->buffer, data->channel_count);
 #endif
