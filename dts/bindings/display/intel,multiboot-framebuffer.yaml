@@ -5,4 +5,4 @@ description: Intel Multiboot Framebuffer
 
 compatible: "intel,multiboot-framebuffer"
 
-include: simple-framebuffer.yaml
+include: display-controller.yaml

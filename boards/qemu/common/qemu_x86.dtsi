@@ -161,7 +161,7 @@
 
 	ramfb0: ramfb {
 		compatible = "qemu,ramfb";
-		firmware = <&fwcfg0>;
+		fwcfg = <&fwcfg0>;
 		memory-region = <&ramfb_mem>;
 		width = <1024>;
 		height = <768>;

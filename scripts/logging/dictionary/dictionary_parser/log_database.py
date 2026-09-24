@@ -52,9 +52,6 @@ ARCHS = {
     "rx": {
         "kconfig": "CONFIG_RX",
     },
-    "tricore": {
-        "kconfig": "CONFIG_TRICORE",
-    },
     "xtensa": {
         "kconfig": "CONFIG_XTENSA",
     },

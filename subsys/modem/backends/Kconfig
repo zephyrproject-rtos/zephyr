@@ -9,6 +9,7 @@ config MODEM_BACKEND_TTY
 config MODEM_BACKEND_UART
 	bool "Modem UART backend module"
 	select MODEM_PIPE
+	select RING_BUFFER
 	depends on UART_INTERRUPT_DRIVEN || UART_ASYNC_API
 
 if MODEM_BACKEND_UART

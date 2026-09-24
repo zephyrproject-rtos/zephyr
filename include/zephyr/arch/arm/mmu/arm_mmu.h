@@ -10,7 +10,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -141,7 +140,7 @@ struct arm_mmu_config {
  */
 extern const struct arm_mmu_config mmu_config;
 
-int z_arm_mmu_init(bool is_primary_core);
+int z_arm_mmu_init(void);
 
 #endif /* _ASMLANGUAGE */
 

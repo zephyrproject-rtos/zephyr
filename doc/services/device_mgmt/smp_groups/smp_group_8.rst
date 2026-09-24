@@ -1,9 +1,9 @@
 .. _mcumgr_smp_group_8:
 
-File system management
-######################
+File management
+###############
 
-The file system management group provides commands that allow to upload and download files
+The file management group provides commands that allow to upload and download files
 to/from a device.
 
 File management group defines following commands:

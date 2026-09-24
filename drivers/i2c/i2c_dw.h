@@ -1,4 +1,4 @@
-/* i2c_dw.h - header for Design Ware I2C operations */
+/* dw_i2c.h - header for Design Ware I2C operations */
 
 /*
  * Copyright (c) 2015 Intel Corporation

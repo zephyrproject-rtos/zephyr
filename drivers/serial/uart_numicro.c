@@ -369,11 +369,12 @@ static int numicro_uart_irq_is_pending(const struct device *dev)
 	return (numicro_uart_irq_tx_ready(dev) || numicro_uart_irq_rx_ready(dev));
 }
 
-static void numicro_uart_irq_update(const struct device *dev)
+static int numicro_uart_irq_update(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	/* nothing to be done here */
+	return 1;
 }
 
 static void numicro_uart_irq_callback_set(const struct device *dev,

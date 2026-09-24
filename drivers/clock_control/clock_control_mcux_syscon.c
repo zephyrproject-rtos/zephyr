@@ -722,17 +722,6 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif /* defined(CONFIG_CAN_NXP_LPC_MCAN) */
 
 #if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
-#if defined(CONFIG_SOC_SERIES_LPC54XXX)
-	case MCUX_CTIMER0_CLK:
-	case MCUX_CTIMER1_CLK:
-	case MCUX_CTIMER2_CLK:
-		*rate = CLOCK_GetFreq(kCLOCK_CoreSysClk);
-		break;
-	case MCUX_CTIMER3_CLK:
-	case MCUX_CTIMER4_CLK:
-		*rate = CLOCK_GetAsyncApbClkFreq();
-		break;
-#else
 	case MCUX_CTIMER0_CLK:
 		*rate = CLOCK_GetCTimerClkFreq(0);
 		break;
@@ -757,7 +746,6 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	case MCUX_CTIMER7_CLK:
 		*rate = CLOCK_GetCTimerClkFreq(7);
 		break;
-#endif /* defined(CONFIG_SOC_SERIES_LPC54XXX) */
 #endif
 #if defined(CONFIG_COUNTER_NXP_MRT) || defined(CONFIG_SOC_SERIES_RW6XX) \
 		|| defined(CONFIG_PWM_MCUX_SCTIMER)

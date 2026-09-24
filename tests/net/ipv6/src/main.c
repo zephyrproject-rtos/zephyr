@@ -164,12 +164,12 @@ static const unsigned char ipv6_hbho[] = {
 static const unsigned char ipv6_ext_hdr_err_1[] = {
 	/* IPv6 header */
 	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x40,
-	/* Src IP (peer_addr 2001:db8::2, not one of our own) */
-	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	/* Dst IP (my_addr 2001:db8::1, delivered locally) */
+	/* Src IP */
 	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	/* Dst IP */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
 	/* Hop-by-hop option */
 	0x3b, 0x05,
 	/* Padding to reach 48 bytes */
@@ -180,12 +180,12 @@ static const unsigned char ipv6_ext_hdr_err_1[] = {
 static const unsigned char ipv6_ext_hdr_err_2[] = {
 	/* IPv6 header */
 	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x40,
-	/* Src IP (peer_addr 2001:db8::2, not one of our own) */
-	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	/* Dst IP (my_addr 2001:db8::1, delivered locally) */
+	/* Src IP */
 	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	/* Dst IP */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
 	/* Hop-by-hop option */
 	0x3b, 0x00,
 	/* Option PADN */
@@ -198,43 +198,18 @@ static const unsigned char ipv6_ext_hdr_err_2[] = {
 static const unsigned char ipv6_ext_hdr_err_3[] = {
 	/* IPv6 header */
 	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x40,
-	/* Src IP (peer_addr 2001:db8::2, not one of our own) */
-	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	/* Dst IP (my_addr 2001:db8::1, delivered locally) */
+	/* Src IP */
 	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	/* Dst IP */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
 	/* Hop-by-hop option */
 	0x3b, 0x00,
 	/* Option Unknown */
 	0x3f, 0x08,
 	/* Padding to reach 48 bytes */
 	0x00, 0x00, 0x00, 0x00,
-};
-
-/* Scenario 4: Option length bounds-check underflow.
- * An 8-byte extension header with five Pad1 options brings "length" to 7, so
- * the final option's opt_len is read from just past the header boundary. The
- * opt_len byte is kept at 0 so net_pkt_skip() still succeeds, isolating the
- * bounds-check bypass itself.
- */
-static const unsigned char ipv6_ext_hdr_err_4[] = {
-	/* IPv6 header */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x40,
-	/* Src IP (peer_addr 2001:db8::2, not one of our own) */
-	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	/* Dst IP (my_addr 2001:db8::1, delivered locally) */
-	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* Hop-by-hop option, No Next Header, hdr_ext_len = 0 -> 8 bytes */
-	0x3b, 0x00,
-	/* Five Pad1 options, advancing length to 7 */
-	0x00, 0x00, 0x00, 0x00, 0x00,
-	/* Non-Pad1 option type at the last byte of the header */
-	0x01,
-	/* Bytes past the header; first is read as opt_len (0) */
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
 /* clang-format on */
@@ -370,66 +345,6 @@ static void inject_na_message(struct net_if *iface, struct net_in6_addr *src,
 
 	net_pkt_cursor_init(pkt);
 	zassert_ok((net_recv_data(iface, pkt)), "Data receive for NA failed.");
-}
-
-static void inject_dad_ns_loopback(struct net_if *iface,
-				   const struct net_in6_addr *target,
-				   const uint8_t *nonce,
-				   bool include_nonce,
-				   uint8_t nonce_opt_len)
-{
-	struct net_eth_hdr hdr;
-	struct net_pkt *pkt;
-	struct net_in6_addr dst;
-	const struct net_in6_addr *src;
-	uint32_t reserved = 0U;
-	uint8_t nonce_opt[32];
-	size_t nonce_opt_size = 0U;
-
-	pkt = net_pkt_alloc_with_buffer(iface, TEST_MSG_SIZE, NET_AF_INET6,
-					NET_IPPROTO_ICMPV6, K_NO_WAIT);
-	zassert_not_null(pkt, "Failed to allocate loopback NS packet");
-
-	src = net_ipv6_unspecified_address();
-	net_ipv6_addr_create_solicited_node(target, &dst);
-	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
-
-	hdr.type = net_htons(NET_ETH_PTYPE_IPV6);
-	memset(&hdr.src, 0xaa, sizeof(struct net_eth_addr));
-	hdr.dst.addr[0] = 0x33;
-	hdr.dst.addr[1] = 0x33;
-	hdr.dst.addr[2] = 0xff;
-	hdr.dst.addr[3] = target->s6_addr[13];
-	hdr.dst.addr[4] = target->s6_addr[14];
-	hdr.dst.addr[5] = target->s6_addr[15];
-
-	net_buf_reserve(pkt->frags, sizeof(struct net_eth_hdr));
-	net_pkt_cursor_init(pkt);
-	net_pkt_set_overwrite(pkt, false);
-
-	zassert_ok(net_ipv6_create(pkt, src, &dst));
-	zassert_ok(net_icmpv6_create(pkt, NET_ICMPV6_NS, 0));
-	zassert_ok(net_pkt_write_be32(pkt, reserved));
-	zassert_ok(net_pkt_write(pkt, target, sizeof(struct net_in6_addr)));
-
-	if (include_nonce) {
-		zassert_true(nonce_opt_len >= 1U, "Invalid nonce option length");
-		zassert_not_null(nonce, "Missing DAD nonce");
-		nonce_opt_size = (size_t)nonce_opt_len * 8U;
-		zassert_true(nonce_opt_size <= sizeof(nonce_opt), "Nonce option too long");
-		nonce_opt[0] = NET_ICMPV6_ND_OPT_NONCE;
-		nonce_opt[1] = nonce_opt_len;
-		memset(&nonce_opt[2], 0x5a, nonce_opt_size - 2U);
-		memcpy(&nonce_opt[2], nonce, 6U);
-		zassert_ok(net_pkt_write(pkt, nonce_opt, nonce_opt_size));
-	}
-
-	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6);
-
-	net_buf_push_mem(pkt->frags, &hdr, sizeof(struct net_eth_hdr));
-	net_pkt_cursor_init(pkt);
-	zassert_ok(net_recv_data(iface, pkt), "Data receive for reflected NS failed.");
 }
 
 static void skip_headers(struct net_pkt *pkt)
@@ -890,72 +805,59 @@ ZTEST(net_ipv6, test_send_ns_no_options)
 		      "Data receive for invalid NS failed.");
 }
 
-struct ext_hdr_test_case {
-	const char *name;
-	const unsigned char *data;
-	size_t len;
-};
-
-static const struct ext_hdr_test_case ext_hdr_test_cases[] = {
-	{ "exthdr_len_too_long", ipv6_ext_hdr_err_1, sizeof(ipv6_ext_hdr_err_1) },
-	{ "padn_opt_len_too_large", ipv6_ext_hdr_err_2, sizeof(ipv6_ext_hdr_err_2) },
-	{ "unknown_opt_len_too_large", ipv6_ext_hdr_err_3, sizeof(ipv6_ext_hdr_err_3) },
-	{ "opt_len_check_underflow", ipv6_ext_hdr_err_4, sizeof(ipv6_ext_hdr_err_4) },
-};
-
-static const char *ext_hdr_test_name(size_t index, const void *value)
+ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_1)
 {
-	const struct ext_hdr_test_case *tc = value;
-
-	ARG_UNUSED(index);
-	return tc->name;
-}
-
-static const struct ztest_param_values ext_hdr_cases = {
-	.values    = ext_hdr_test_cases,
-	.count     = ARRAY_SIZE(ext_hdr_test_cases),
-	.elem_size = sizeof(ext_hdr_test_cases[0]),
-	.name_cb   = ext_hdr_test_name,
-};
-
-/* Feed a malformed extension header packet directly to net_ipv6_input() so the
- * verdict and drop statistic can be checked synchronously, without the timing
- * noise of the asynchronous RX path. The packet must be rejected, so it is
- * dropped and the IPv6 drop count increases by one.
- */
-ZTEST_P(net_ipv6, test_ipv6_ext_hdr_len_bounds)
-{
-	const struct ext_hdr_test_case *tc = ZTEST_GET_PARAM_PTR(struct ext_hdr_test_case);
-	struct net_stats_ip ipv6_stats_before = { 0 };
-	struct net_stats_ip ipv6_stats_after = { 0 };
-	enum net_verdict verdict;
 	struct net_pkt *pkt;
-	struct net_if *iface = TEST_NET_IF;
+	struct net_if *iface;
 
-	pkt = net_pkt_alloc_with_buffer(iface, tc->len, NET_AF_INET6, 0, K_FOREVER);
+	iface = TEST_NET_IF;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_1), NET_AF_UNSPEC, 0,
+					K_FOREVER);
 
 	NET_ASSERT(pkt, "Out of TX packets");
 
-	zassert_ok(net_pkt_write(pkt, tc->data, tc->len), "Failed to write packet");
-	net_pkt_cursor_init(pkt);
+	net_pkt_write(pkt, ipv6_ext_hdr_err_1, sizeof(ipv6_ext_hdr_err_1));
 	net_pkt_lladdr_clear(pkt);
 
-	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6, NULL, &ipv6_stats_before,
-			    sizeof(ipv6_stats_before)),
-		   "Failed to retrieve stats");
-
-	verdict = net_ipv6_input(pkt);
-
-	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6, NULL, &ipv6_stats_after,
-			    sizeof(ipv6_stats_after)),
-		   "Failed to retrieve stats");
-
-	zassert_equal(verdict, NET_DROP, "Packet was not dropped: %s", tc->name);
-	zassert_equal(ipv6_stats_before.drop + 1, ipv6_stats_after.drop,
-		      "Packet was not counted as an IPv6 drop: %s", tc->name);
+	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
 }
 
-ZTEST_INSTANTIATE_TEST_SUITE_P(bounds, net_ipv6, test_ipv6_ext_hdr_len_bounds, ext_hdr_cases);
+ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_2)
+{
+	struct net_pkt *pkt;
+	struct net_if *iface;
+
+	iface = TEST_NET_IF;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_2), NET_AF_UNSPEC, 0,
+					K_FOREVER);
+
+	NET_ASSERT(pkt, "Out of TX packets");
+
+	net_pkt_write(pkt, ipv6_ext_hdr_err_2, sizeof(ipv6_ext_hdr_err_2));
+	net_pkt_lladdr_clear(pkt);
+
+	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
+}
+
+ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_3)
+{
+	struct net_pkt *pkt;
+	struct net_if *iface;
+
+	iface = TEST_NET_IF;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_3), NET_AF_UNSPEC, 0,
+					K_FOREVER);
+
+	NET_ASSERT(pkt, "Out of TX packets");
+
+	net_pkt_write(pkt, ipv6_ext_hdr_err_3, sizeof(ipv6_ext_hdr_err_3));
+	net_pkt_lladdr_clear(pkt);
+
+	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
+}
 
 struct test_nd_context {
 	struct k_sem wait_ns;
@@ -1252,50 +1154,6 @@ struct test_dad_context {
 	bool reply;
 };
 
-struct test_dad_loop_context {
-	struct k_sem wait_dad;
-	struct net_in6_addr *exp_dad_addr;
-	bool include_nonce;
-	uint8_t nonce_opt_len;
-};
-
-static bool wait_for_addr_preferred(struct net_if *iface,
-				    const struct net_in6_addr *addr,
-				    int32_t timeout_ms)
-{
-	int64_t end = k_uptime_get() + timeout_ms;
-
-	while (k_uptime_get() <= end) {
-		struct net_if_addr *ifaddr;
-
-		ifaddr = net_if_ipv6_addr_lookup_by_iface(iface, addr);
-		if (ifaddr && ifaddr->addr_state == NET_ADDR_PREFERRED) {
-			return true;
-		}
-
-		k_sleep(K_MSEC(10));
-	}
-
-	return false;
-}
-
-static bool wait_for_addr_removed(struct net_if *iface,
-				  const struct net_in6_addr *addr,
-				  int32_t timeout_ms)
-{
-	int64_t end = k_uptime_get() + timeout_ms;
-
-	while (k_uptime_get() <= end) {
-		if (!net_if_ipv6_addr_lookup_by_iface(iface, addr)) {
-			return true;
-		}
-
-		k_sleep(K_MSEC(10));
-	}
-
-	return false;
-}
-
 static void expect_dad_ns(struct net_pkt *pkt, void *user_data)
 {
 	uint32_t res_bytes;
@@ -1315,51 +1173,6 @@ static void expect_dad_ns(struct net_pkt *pkt, void *user_data)
 					  &all_nodes_mcast, &target, 0);
 		}
 
-		k_sem_give(&ctx->wait_dad);
-	}
-}
-
-static void expect_dad_ns_loopback(struct net_pkt *pkt, void *user_data)
-{
-	uint32_t res_bytes;
-	uint16_t nonce_opt_size = 0U;
-	struct net_icmpv6_nd_opt_hdr nonce_opt;
-	struct net_in6_addr target;
-	struct test_dad_loop_context *ctx = user_data;
-	uint8_t nonce_buf[6];
-
-	skip_headers(pkt);
-
-	zassert_ok(net_pkt_read_be32(pkt, &res_bytes), "Failed to read reserved bytes");
-	zassert_equal(0, res_bytes, "Reserved bytes must be zeroed");
-	zassert_ok(net_pkt_read(pkt, &target, sizeof(struct net_in6_addr)),
-		   "Failed to read target address");
-
-	if (net_ipv6_addr_cmp(ctx->exp_dad_addr, &target)) {
-		const uint8_t *nonce = NULL;
-
-		if (ctx->include_nonce) {
-			zassert_ok(net_pkt_read(pkt, &nonce_opt, sizeof(nonce_opt)),
-				   "Failed to read nonce option header");
-			zassert_equal(nonce_opt.type, NET_ICMPV6_ND_OPT_NONCE,
-				      "Unexpected ND option type");
-			zassert_true(nonce_opt.len >= 1U,
-				     "Invalid nonce option length");
-
-			nonce_opt_size = (uint16_t)nonce_opt.len * 8U;
-			zassert_ok(net_pkt_read(pkt, nonce_buf, sizeof(nonce_buf)),
-				   "Failed to read nonce payload");
-
-			if (nonce_opt_size > 8U) {
-				zassert_ok(net_pkt_skip(pkt, nonce_opt_size - 8U),
-					   "Failed to skip nonce option tail");
-			}
-
-			nonce = nonce_buf;
-		}
-
-		inject_dad_ns_loopback(net_pkt_iface(pkt), &target, nonce,
-				       ctx->include_nonce, ctx->nonce_opt_len);
 		k_sem_give(&ctx->wait_dad);
 	}
 }
@@ -1988,67 +1801,6 @@ ZTEST(net_ipv6, test_dad_conflict)
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(TEST_NET_IF, &addr);
 	zassert_is_null(ifaddr, "Address should not be present on the interface");
-}
-
-ZTEST(net_ipv6, test_dad_self_loop_nonce_ignored)
-{
-#if defined(CONFIG_NET_IPV6_DAD)
-	static struct net_in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0x99, 0x5 } } };
-	static struct test_dad_loop_context ctx = {
-		.exp_dad_addr = &addr,
-		.include_nonce = true,
-		.nonce_opt_len = 1U
-	};
-	static struct test_ns_handler handler = {
-		.fn = expect_dad_ns_loopback,
-		.user_data = &ctx
-	};
-	struct net_if_addr *ifaddr;
-
-	k_sem_init(&ctx.wait_dad, 0, 1);
-	ns_handler = &handler;
-
-	ifaddr = net_if_ipv6_addr_add(TEST_NET_IF, &addr, NET_ADDR_AUTOCONF, 0xffff);
-	zassert_not_null(ifaddr, "Address cannot be added");
-
-	zassert_ok(k_sem_take(&ctx.wait_dad, K_MSEC(WAIT_TIME)),
-		   "Timeout while waiting for DAD NS");
-
-	zassert_true(wait_for_addr_preferred(TEST_NET_IF, &addr, 1000),
-		     "Address should be preferred after DAD");
-	net_if_ipv6_addr_rm(TEST_NET_IF, &addr);
-#endif
-}
-
-ZTEST(net_ipv6, test_dad_self_loop_long_nonce_not_matched)
-{
-#if defined(CONFIG_NET_IPV6_DAD)
-	static struct net_in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0x99, 0x7 } } };
-	static struct test_dad_loop_context ctx = {
-		.exp_dad_addr = &addr,
-		.include_nonce = true,
-		.nonce_opt_len = 2U
-	};
-	static struct test_ns_handler handler = {
-		.fn = expect_dad_ns_loopback,
-		.user_data = &ctx
-	};
-	struct net_if_addr *ifaddr;
-
-	k_sem_init(&ctx.wait_dad, 0, 1);
-	ns_handler = &handler;
-
-	ifaddr = net_if_ipv6_addr_add(TEST_NET_IF, &addr, NET_ADDR_AUTOCONF, 0xffff);
-	zassert_not_null(ifaddr, "Address cannot be added");
-
-	zassert_ok(k_sem_take(&ctx.wait_dad, K_MSEC(WAIT_TIME)),
-		   "Timeout while waiting for DAD NS");
-
-	zassert_true(wait_for_addr_removed(TEST_NET_IF, &addr, 1000),
-		     "Long nonce option must not trigger self-match");
-#endif
 }
 
 #define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_udp_get_hdr(pkt, NULL)))

@@ -7,5 +7,4 @@ toolchain:
 testing:
   only_tags:
     - kernel
-    - integration
 vendor: nxp

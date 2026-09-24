@@ -34,6 +34,3 @@ config SOC_SERIES
 
 config SOC
 	default "esp32c61" if SOC_ESP32C61
-
-config SOC_PART_NUMBER
-	default "ESP32C61" if SOC_ESP32C61

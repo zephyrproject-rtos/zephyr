@@ -4,7 +4,7 @@ common:
   sysbuild: true
   tags: ipc
 tests:
-  sample.logging.multidomain:
+  sample.logging.multidomain.ipc_static_vrings:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp
@@ -17,10 +17,11 @@ tests:
       ordered: false
       regex:
         - "Hello World!"
-        - "app: Multidomain logging HOST demo started"
+        - "app: IPC-service HOST \\[INST 1\\] demo started"
         - "app: loop: 0"
+        - "app: ipc open"
         - "app: wait for bound"
         - "app: bounded"
         - "app: REMOTE \\[1\\]: 0"
         - "app: HOST \\[1\\]: 1"
-        - "app: Multidomain logging HOST demo ended."
+        - "app: IPC-service HOST \\[INST 1\\] demo ended."

@@ -15,5 +15,4 @@ supported:
   - i2c
   - mbox
   - rtc
-  - input
 vendor: nxp

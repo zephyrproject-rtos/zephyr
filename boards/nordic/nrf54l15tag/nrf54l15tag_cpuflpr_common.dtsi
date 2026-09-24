@@ -5,7 +5,6 @@
  */
 
 #include <vendor/nordic/nrf54l15_cpuflpr.dtsi>
-#include <vendor/nordic/nrf54l15_ipc_shared_ram.dtsi>
 
 #include "nrf54l15tag_common.dtsi"
 

@@ -527,7 +527,8 @@ engine.
 Data caches depends on one of the SenML data formats
 :kconfig:option:`CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT` or
 :kconfig:option:`CONFIG_LWM2M_RW_SENML_JSON_SUPPORT` and needs :kconfig:option:`CONFIG_POSIX_TIMERS`
-so it can request a timestamp from the system.
+so it can request a timestamp from the system and :kconfig:option:`CONFIG_RING_BUFFER` for ring
+buffer.
 
 Read and Write operations
 =========================

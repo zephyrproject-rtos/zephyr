@@ -311,52 +311,6 @@ Boards
 
   The Arduino UNO R4 Minima is unaffected. (:github:`118433`)
 
-* The Espressif per-module devicetree include files and their SoC Kconfig symbols have been
-  removed. A module or SIP part number describes how much flash and PSRAM a board carries, which
-  is a property of the board rather than of the SoC, so both are now declared by the board itself.
-
-  Every ``espressif/<soc>/<soc>_<module>.dtsi`` file is replaced by a single
-  ``espressif/<soc>/<soc>.dtsi`` per SoC. The matching hidden Kconfig symbols, such as
-  ``SOC_ESP32S3_WROOM_N8`` and ``SOC_ESP32_WROVER_E_N16R8``, are replaced by the plain SoC symbol,
-  such as :kconfig:option:`CONFIG_SOC_ESP32S3`. ``SOC_PART_NUMBER`` now reports the SoC rather than
-  the module.
-
-  Out-of-tree Espressif boards must be updated, and fail to build until they are:
-
-  * Include the plain SoC dtsi instead of the module one.
-  * Select the plain SoC symbol in ``Kconfig.<board>``.
-  * Describe the flash in the board dts, giving both ``reg`` and a matching ``ranges``, because
-    the SoC dtsi no longer sets either.
-
-    .. code-block:: devicetree
-
-       &flash0 {
-           reg = <0x0 DT_SIZE_M(8)>;
-           ranges = <0x0 0x0 DT_SIZE_M(8)>;
-       };
-
-  * Describe the PSRAM the same way, on boards that have it:
-
-    .. code-block:: devicetree
-
-       &psram0 {
-           size = <DT_SIZE_M(2)>;
-       };
-
-  On the dual-core ESP32, ``espressif/esp32/esp32_appcpu.dtsi`` no longer sets a flash either, so
-  an APPCPU board dts has to declare the same flash as its PROCPU counterpart.
-
-* On NXP S32K148, the ENET nodes ``enet`` (:dtcompatible:`nxp,enet`), ``enet_mac``
-  (:dtcompatible:`nxp,enet-mac`), ``enet_mdio`` (:dtcompatible:`nxp,enet-mdio`) and
-  ``enet_ptp_clock`` (:dtcompatible:`nxp,enet-ptp-clock`) are now ``disabled`` by default instead
-  of ``okay``. Out-of-tree boards that use Ethernet must set ``status = "okay"`` on these nodes.
-
-* The Silabs Kconfig option ``CONFIG_SOC_SILABS_IMAGE_PROPERTIES``
-  has been renamed to :kconfig:option:`CONFIG_SOC_VENDOR_SILABS_IMAGE_PROPERTIES`.
-
-* The Silabs Kconfig option ``CONFIG_SOC_SILABS_PM_LOW_INTERRUPT_LATENCY``
-  has been renamed to :kconfig:option:`CONFIG_SOC_VENDOR_SILABS_PM_LOW_INTERRUPT_LATENCY`.
-
 Device Drivers and Devicetree
 *****************************
 
@@ -391,18 +345,6 @@ ADC
   :kconfig:option:`CONFIG_ADC_MCUX_LPADC` is enabled, and its ``default y`` is now scoped to that
   condition. In-tree boards no longer enable it explicitly in their defconfigs since
   the default already covers them.
-
-* The ``CONFIG_LPADC_CHANNEL_COUNT`` Kconfig option has been removed. The NXP LPADC driver now
-  treats hardware command slots as logical ADC channels and derives the number of logical channels
-  per instance from the ``channel`` child nodes declared for that instance in devicetree, so unused
-  command slots no longer consume RAM. Applications that lowered the Kconfig option to save RAM
-  should simply drop it. An instance that declares no ``channel`` node keeps the full hardware
-  capacity available, so applications that only ever configure channels at runtime through
-  :c:func:`adc_channel_setup` are unaffected; applications that mix both must declare in
-  devicetree the highest channel identifier they set up at runtime. Declaring a channel identifier
-  beyond the number of ``CMD`` registers implemented by the SoC is now a build error instead of a
-  runtime HAL assertion, and :c:func:`adc_read` now rejects an empty channel mask, or one selecting
-  channels beyond that limit, with ``-EINVAL`` instead of silently ignoring it (:github:`116995`).
 
 Analog Devices
 ==============
@@ -446,14 +388,6 @@ Clock Control
   ``clock-div`` properties remain supported but are deprecated. Existing
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
-
-* SiWx91x clock control has been split into three managers
-  (:dtcompatible:`silabs,siwx91x-cmu-aon`, :dtcompatible:`silabs,siwx91x-cmu-ulp`,
-  :dtcompatible:`silabs,siwx91x-cmu-hp`). The legacy :dtcompatible:`silabs,siwx91x-clock`
-  binding and ``clock0`` node are removed. Out-of-tree boards and overlays must update
-  ``clocks`` phandles to the matching CMU and use the updated ``SIWX91X_CLK_*`` IDs from
-  ``siwx91x-clock.h``. For example, ``clocks = <&clock0 SIWX91X_CLK_UART0>;`` becomes
-  ``clocks = <&cmu_hp SIWX91X_CLK_UART0>;``.
 
 Clock control nrf deprecation
 -----------------------------
@@ -600,14 +534,6 @@ Controller Area Network (CAN)
 * The deprecated ``bus-speed`` and ``bus-speed-data`` CAN controller devicetree properties have
   been removed. Use ``bitrate`` and ``bitrate-data`` instead.
 
-* The CAN controllers driver ops no longer contain a ``can_set_state_change_callback_t`` function
-  pointer as adding/removing callbacks is now handled via the generic
-  :c:func:`can_add_state_change_callback`, and :c:func:`can_remove_state_change_callback` API
-  functions. Out-of-tree drivers can either remove the driver op completely or replace it with
-  ``can_state_change_callbacks_enabled_t`` as needed. Drivers must now use
-  :c:func:`can_fire_state_change_callbacks` for firing CAN controller state change callbacks
-  (:github:`117889`).
-
 Counter
 =======
 
@@ -748,10 +674,6 @@ ESPI
 Ethernet
 ========
 
-* The WIZnet Ethernet drivers now share one set of Kconfig options. Replace
-  ``CONFIG_ETH_W5500_*``, ``CONFIG_ETH_W6100_*`` and ``CONFIG_ETH_W6300_*`` with the matching
-  ``CONFIG_ETH_WIZNET_*`` option.
-
 * ``ETHERNET_CONFIG_TYPE_T1S_PARAM`` and the related ``NET_REQUEST_ETHERNET_SET_T1S_PARAM`` has
   been removed. :c:func:`phy_set_plca_cfg` together with :c:func:`net_eth_get_phy` should be
   used instead to set these parameters (:github:`108136`).
@@ -763,13 +685,6 @@ Ethernet
 * The ``pinctrl-0`` and ``pinctrl-names`` devicetree properties for the
   :dtcompatible:`nxp,enet-mac` need to be moved from the MAC node to the parent Ethernet controller
   node. (:github:`107352`)
-
-* The NuMaker Ethernet driver has been removed together with ``CONFIG_ETH_NUMAKER``. The NuMaker
-  EMAC is now driven by :kconfig:option:`CONFIG_ETH_NUMAKER_DWC_ETHER_1000`, the generic Synopsys
-  DesignWare MAC driver, which needs the MDIO controller and the PHY in devicetree. Out-of-tree
-  boards have to enable the ``mdio`` node with the MDC and MDIO pins in its pinctrl state, add
-  their PHY to it and point the ``emac`` node at it with ``phy-handle``. The ``phy-addr``
-  property of :dtcompatible:`nuvoton,numaker-ethernet` has been removed.
 
 * ``port_generate_random_mac`` of the :c:struct:`dsa_api` got removed. Also
   :c:struct:`dsa_port_config` now uses :c:struct:`net_eth_mac_config` to set the MAC address.
@@ -950,14 +865,6 @@ I2C
   :dtcompatible:`ite,it51xxx-i2c` :dtcompatible:`ite,it8xxx2-i2c` transfer
   timeout is now using the generic ``zephyr,transfer-timeout-ms`` property
   instead of ``transfer-timeout-ms``, default to 500ms.
-
-* The :dtcompatible:`nxp,sc18im704-i2c` bridge no longer sends the target address
-  unshifted to the SC18IM704. The Zephyr I2C API passes a 7-bit address to a controller's
-  ``transfer()`` callback, and the driver now shifts it left by one to build the address byte
-  the bridge expects. Devicetree nodes sitting on a :dtcompatible:`nxp,sc18im704-i2c` bus
-  that compensated for the missing shift by declaring a pre-shifted ``reg`` (for example
-  ``reg = <0xa0>`` for a device at address ``0x50``) must now declare the real 7-bit address
-  (``reg = <0x50>``).
 
 I2S
 ===
@@ -1394,11 +1301,6 @@ SD Host Controller
 Sensor
 ======
 
-* The :dtcompatible:`pixart,paa3905` driver now enforces the sensor's
-  datasheet SPI contract: mode 3 is set by the driver and a devicetree
-  ``spi-max-frequency`` above 2 MHz fails the build. Out-of-tree boards
-  that overclocked the bus must lower the property to 2000000 or less.
-
 * The ``girqs`` and ``pcrs`` properties (array type) of :dtcompatible:`microchip,xec-tach` have been
   replaced by ``pcr-scr`` (int type) to use encoded PCR register index and bit position macros.
   GIRQ configuration is now handled via the ``microchip,dmec-ecia-girq`` binding include
@@ -1655,18 +1557,6 @@ STM32
 
     SoCs of the STM32H5Ex/STM32H5Fx line are not affected by this change as they have always used
     the new names since their introduction in Zephyr.
-
-Storage
-=======
-
-* The ``fs_off`` element of :c:struct:`flash_sector` has been changed from type ``off_t`` to
-  ``ptrdiff_t``. This should make all platforms and toolchains use the native machine register size
-  and not vary based on the POSIX ``off_t`` type inherited from the C library. Picolibc 1.8.12
-  always defines ``off_t`` as a 64-bit integer, even on 32-bit platforms; this change effectively
-  returns the struct to the previous layout when using this C library. For older Picolibc versions
-  and all other supported C libraries, ``ptrdiff_t`` uses the same underlying C type as ``off_t``;
-  this change is intended to preserve the undering C type used for ``fs_off`` across the Picolibc
-  update.
 
 Syscon
 ======
@@ -2041,17 +1931,6 @@ Bluetooth Host
   :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`, but both stack sizes are
   application-specific and should be validated using stack-usage measurements.
 
-* When :kconfig:option:`CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES` is enabled (the
-  default when possible), the host reads the Central Address Resolution characteristic
-  of a bonded peer once when the bond is created, and :c:func:`bt_le_adv_start`,
-  :c:func:`bt_le_ext_adv_create` and :c:func:`bt_le_ext_adv_update_param` now fail
-  with ``-ENOTSUP`` when :c:enumerator:`BT_LE_ADV_OPT_DIR_ADDR_RPA` is used towards a
-  peer known not to support address resolution. Such a peer cannot resolve the target
-  address, so it would never respond to the advertising. Applications that need to know
-  in advance can read the same answer with :c:func:`bt_le_bond_addr_res_support`, and
-  reach those peers with directed advertising towards their identity address instead.
-  Disabling the option restores the previous behavior.
-
 * Selected Bluetooth Host work items now run on the dedicated Bluetooth RX
   workqueue instead of the system workqueue. Application callbacks reached from
   those work items consequently run in the Bluetooth RX thread. This includes
@@ -2304,101 +2183,6 @@ LoRaWAN
   These ordering requirements do not apply to the LoRaMac-node backend
   (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE`).
 
-Libraries
-*********
-
-Ring Buffer
-===========
-
-The ring buffer API has been reworked to reduce the :c:struct:`ring_buf` size and to make the
-bookkeeping path more efficient. To accommodate these changes, the zero-copy claim/finish API
-(``ring_buf_put_claim()`` / ``ring_buf_put_finish()`` and their ``get`` counterparts) has been
-replaced by the non-stacking :c:func:`ring_buf_put_ptr` and :c:func:`ring_buf_get_ptr`.
-
-The legacy claim/finish API is still available, but only when
-:kconfig:option:`CONFIG_RING_BUFFER` is enabled. New code should use the ``_ptr`` API
-directly.
-
-Enabling :kconfig:option:`CONFIG_RING_BUFFER` selects the legacy ring buffer header, which
-also brings back the other deprecated symbols that are absent from the default header: the entire
-item API (:c:func:`ring_buf_item_init`, :c:func:`ring_buf_item_put`, :c:func:`ring_buf_item_get`,
-:c:func:`ring_buf_item_space_get`, ``RING_BUF_ITEM_DECLARE*`` and ``RING_BUF_ITEM_SIZEOF``) and
-``ring_buf_internal_reset()``. Out-of-tree code that still uses any of these fails to compile with
-no other hint; enabling this option is the switch that restores them while the code is migrated to
-:c:struct:`sys_ringq` and the ``_ptr`` API.
-
-:c:func:`ring_buf_get` no longer accepts a ``NULL`` destination to discard data in the default
-(slim) build; passing ``NULL`` is only tolerated when :kconfig:option:`CONFIG_RING_BUFFER` is
-enabled. To drop data without a destination buffer, advance the read index directly with
-:c:func:`ring_buf_consume`, for example
-``ring_buf_consume(rb, MIN(count, ring_buf_size_get(rb)))``.
-
-Advanced use cases such as **speculative-write-then-cancel** and **backfilling** (modifying a
-previously written header before committing) now rely on the trailing ``offset`` parameter of
-:c:func:`ring_buf_put_ptr` and :c:func:`ring_buf_get_ptr`. The offset is the number of bytes past
-the current write (or read) index that the caller has already tentatively reserved, wrapping
-handled internally. You lay out successive regions by passing an increasing offset, leaving the
-real ring buffer unmodified, and only advance it with :c:func:`ring_buf_commit` (or
-:c:func:`ring_buf_consume`).
-If any step fails you simply return without committing, which is the equivalent of the old
-``ring_buf_put_finish(rb, 0)`` cancellation.
-
-For example, the following claim/finish code:
-
-.. code-block:: c
-
-   int write_pkg(struct ring_buf *rb, const uint8_t *payload, size_t payload_size)
-   {
-           struct hdr *h;
-           uint8_t *ptr;
-           uint32_t claim_size;
-
-           claim_size = ring_buf_put_claim(rb, (uint8_t **)&h, sizeof(*h));
-           if (claim_size < sizeof(*h)) {
-                   ring_buf_put_finish(rb, 0);
-                   return -ENOMEM;
-           }
-
-           claim_size = ring_buf_put_claim(rb, &ptr, payload_size);
-           if (claim_size == 0) {
-                   ring_buf_put_finish(rb, 0);
-                   return -ENOMEM;
-           }
-           h->len = claim_size;
-           /* ... write payload through ptr ... */
-           ring_buf_put_finish(rb, sizeof(*h) + h->len);
-           return h->len;
-   }
-
-would roughly translate to:
-
-.. code-block:: c
-
-   int write_pkg(struct ring_buf *rb, const uint8_t *payload, size_t payload_size)
-   {
-           struct hdr *h;
-           uint8_t *ptr;
-           uint32_t claim_size;
-
-           /* Reserve the header region without committing it. */
-           if (ring_buf_put_ptr(rb, (uint8_t **)&h, 0) < sizeof(*h)) {
-                   return -ENOMEM;
-           }
-
-           /* Expose the region right after the header via a trailing offset. */
-           claim_size = ring_buf_put_ptr(rb, &ptr, sizeof(*h));
-           if (claim_size == 0) {
-                   /* Nothing was committed to rb, so the write is cancelled. */
-                   return -ENOMEM;
-           }
-           h->len = MIN(claim_size, payload_size);
-           /* ... write payload through ptr ... */
-
-           /* Publish header and payload atomically to the real buffer. */
-           ring_buf_commit(rb, sizeof(*h) + h->len);
-           return h->len;
-   }
-
 Other subsystems
 ****************
 
@@ -2508,17 +2292,6 @@ MCUmgr
     the new ``hash_len`` field holds the actual length. Code that reads ``hash``
     must use ``hash_len`` instead of assuming :c:macro:`IMG_MGMT_DATA_SHA_LEN`.
 
-Network buffers
-===============
-
-* :c:func:`net_buf_max_len` and :c:func:`net_buf_simple_max_len` have been deprecated. They
-  returned the capacity of the buffer behind its ``data`` pointer, which is neither the storage
-  size nor the room left for more data. Use :c:func:`net_buf_tailroom` or
-  :c:func:`net_buf_simple_tailroom` to find out how much data can still be added, and
-  :c:func:`net_buf_headroom` or :c:func:`net_buf_simple_headroom` for how much can be pushed in
-  front. Code that used the value as the size of a scratch area starting at ``data`` can
-  compute it as ``buf->len + net_buf_tailroom(buf)``.
-
 POSIX
 =====
 
@@ -2542,17 +2315,6 @@ Secure Storage
     ``zephyr/secure_storage/its/store/settings.h``
   * ``zephyr/secure_storage/its/transform/aead_get.h`` ->
     ``zephyr/secure_storage/its/transform/aead.h``
-
-* The ZMS backend partition chosen name has been updated from
-  ``secure_storage_its_partition`` to ``zephyr,secure-storage-its-partition``. (:github:`118501`)
-
-* The ``psa_its_get*()`` functions can now return ``PSA_ERROR_INVALID_SIGNATURE`` and
-  ``PSA_ERROR_DATA_CORRUPT``, which were previously reported as ``PSA_ERROR_GENERIC_ERROR``.
-  (:github:`118718`)
-
-* ``psa_its_get()`` called with a ``data_size`` of 0 goes through the usual retrieval path, so
-  it can now fail, with ``PSA_ERROR_DOES_NOT_EXIST`` for instance, instead of always returning
-  ``PSA_SUCCESS``. (:github:`118718`)
 
 Shell
 =====

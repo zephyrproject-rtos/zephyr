@@ -122,14 +122,8 @@ static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 
 	ops = chan->ops;
 
-	if (ops != NULL) {
-		if (err == 0 && ops->sent != NULL) {
-			ops->sent(chan);
-		} else if (err != 0 && ops->send_failed != NULL) {
-			ops->send_failed(chan, err);
-		} else {
-			/* no op */
-		}
+	if (!err && ops != NULL && ops->sent != NULL) {
+		ops->sent(chan);
 	}
 #endif /* CONFIG_BT_ISO_TX */
 }

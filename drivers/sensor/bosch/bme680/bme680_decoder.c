@@ -10,9 +10,7 @@
 
 static inline int32_t bme680_q31_conv(int64_t val, int64_t mult, int32_t div)
 {
-	int64_t q = (val * mult) / div;
-
-	return (int32_t)CLAMP(q, (int64_t)INT32_MIN, (int64_t)INT32_MAX);
+	return (int32_t)((val * mult) / div);
 }
 
 /* Get frame count for specified channel from encoded data */

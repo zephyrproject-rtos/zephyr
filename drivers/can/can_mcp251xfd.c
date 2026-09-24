@@ -659,6 +659,15 @@ done:
 	k_mutex_unlock(&dev_data->mutex);
 }
 
+static void mcp251xfd_set_state_change_callback(const struct device *dev,
+						can_state_change_callback_t cb, void *user_data)
+{
+	struct mcp251xfd_data *dev_data = dev->data;
+
+	dev_data->common.state_change_cb = cb;
+	dev_data->common.state_change_cb_user_data = user_data;
+}
+
 static int mcp251xfd_get_state(const struct device *dev, enum can_state *state,
 			       struct can_bus_err_cnt *err_cnt)
 {
@@ -896,7 +905,10 @@ static int mcp251xfd_handle_cerrif(const struct device *dev)
 		mcp251xfd_reset_tx_fifos(dev, -ENETDOWN);
 	}
 
-	can_fire_state_change_callbacks(dev, new_state, err_cnt);
+	if (dev_data->common.state_change_cb) {
+		dev_data->common.state_change_cb(dev, new_state, err_cnt,
+						 dev_data->common.state_change_cb_user_data);
+	}
 
 done:
 	k_mutex_unlock(&dev_data->mutex);
@@ -1528,7 +1540,6 @@ static int mcp251xfd_init(const struct device *dev)
 		}
 	}
 
-	sys_slist_init(&dev_data->common.state_change_callbacks);
 	k_sem_init(&dev_data->int_sem, 0, 1);
 	k_sem_init(&dev_data->tx_sem, MCP251XFD_TX_QUEUE_ITEMS, MCP251XFD_TX_QUEUE_ITEMS);
 
@@ -1556,24 +1567,19 @@ static int mcp251xfd_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INPUT);
-	if (ret < 0) {
-		LOG_ERR("Failed to configure GPIO interrupt pin [%d]", ret);
+	if (gpio_pin_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INPUT) < 0) {
+		LOG_ERR("Unable to configure GPIO pin");
 		return -EINVAL;
 	}
 
 	gpio_init_callback(&dev_data->int_gpio_cb, mcp251xfd_int_gpio_callback,
 			   BIT(dev_cfg->int_gpio_dt.pin));
 
-	ret = gpio_add_callback_dt(&dev_cfg->int_gpio_dt, &dev_data->int_gpio_cb);
-	if (ret < 0) {
-		LOG_ERR("Failed to add GPIO interrupt callback [%d]", ret);
+	if (gpio_add_callback_dt(&dev_cfg->int_gpio_dt, &dev_data->int_gpio_cb) < 0) {
 		return -EINVAL;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_LEVEL_ACTIVE);
-	if (ret < 0) {
-		LOG_ERR("Failed to configure level-triggered GPIO interrupt [%d]", ret);
+	if (gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_LEVEL_ACTIVE) < 0) {
 		return -EINVAL;
 	}
 
@@ -1714,6 +1720,7 @@ static DEVICE_API(can, mcp251xfd_api_funcs) = {
 	.add_rx_filter = mcp251xfd_add_rx_filter,
 	.remove_rx_filter = mcp251xfd_remove_rx_filter,
 	.get_state = mcp251xfd_get_state,
+	.set_state_change_callback = mcp251xfd_set_state_change_callback,
 	.get_core_clock = mcp251xfd_get_core_clock,
 	.get_max_filters = mcp251xfd_get_max_filters,
 	.timing_min = {

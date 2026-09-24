@@ -15,4 +15,3 @@ testing:
   only_tags:
     - arm
     - fpu
-    - integration

@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * STM32C5/H5/H7/H7RS/MP13/N6 specific glue.
+ * STM32H5/H7/H7RS/MP13 specific glue.
  */
 
 #include <zephyr/logging/log.h>
@@ -25,26 +25,13 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/sys_io.h>
-#include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
 
 #include "eth_dwmac_priv.h"
 #include "eth_stm32_dwc.h"
 
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-/* The DMA bus master interface is a 64-bit AXI4 interface on this IP */
-#define DATA_BUS_WIDTH 64
-
-#define ETH_STM32_DMA_SYSBUS_MODE                                                                  \
-	(DMA_SYSBUS_MODE_AAL | DMA_SYSBUS_MODE_FB |                                                \
-	 DMA_SYSBUS_MODE_BLEN16 | DMA_SYSBUS_MODE_BLEN8 | DMA_SYSBUS_MODE_BLEN4 |                  \
-	 FIELD_PREP(DMA_SYSBUS_MODE_RD_OSR_LMT, 3) | FIELD_PREP(DMA_SYSBUS_MODE_WR_OSR_LMT, 3))
-#else
-/* The DMA bus master interface is a 32-bit AHB interface on this IP */
+/* The DMA bus master interface is 32-bit on this IP */
 #define DATA_BUS_WIDTH 32
-
-#define ETH_STM32_DMA_SYSBUS_MODE (DMA_SYSBUS_MODE_AAL | DMA_SYSBUS_MODE_FB)
-#endif
 
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 
@@ -60,32 +47,16 @@ struct eth_stm32_dwc_config {
 	int (*platform_init)(const struct device *dev);
 };
 
-#define ETH_STM32_IS_MII(n)   DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, mii)
 #define ETH_STM32_IS_RMII(n)  DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, rmii)
 #define ETH_STM32_IS_RGMII(n) DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, rgmii)
 
-#if defined(CONFIG_SOC_SERIES_STM32MP13X) || defined(CONFIG_SOC_SERIES_STM32N6X)
-#define HAS_RGMII_INTERFACE 1
-#else
-#define HAS_RGMII_INTERFACE 0
-#endif
-
 #define ETH_STM32_BUILD_ASSERT_PHY_MODE(n)                                                         \
-	BUILD_ASSERT(ETH_STM32_IS_MII(n) || ETH_STM32_IS_RMII(n) ||                                \
-			     (HAS_RGMII_INTERFACE && ETH_STM32_IS_RGMII(n)),                       \
+	BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, mii) ||                        \
+			     ETH_STM32_IS_RMII(n) ||                                               \
+			     (IS_ENABLED(CONFIG_SOC_SERIES_STM32MP13X) && ETH_STM32_IS_RGMII(n)),  \
 		     "Unsupported PHY connection type")
 
-#if defined(CONFIG_SOC_SERIES_STM32C5X)
-
-#define ETH_STM32_SELECT_PHY_INTERFACE(n)                                                          \
-	do {                                                                                       \
-		HAL_RCC_SBS_EnableClock();                                                         \
-		LL_SBS_SetETHPHYInterface(LL_SBS_PERIPH_ETH1,                                      \
-					  ETH_STM32_IS_RMII(n) ? LL_SBS_ETHPHY_ITF_RMII            \
-							       : LL_SBS_ETHPHY_ITF_GMII_MII);      \
-	} while (0)
-
-#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
 
 #define ETH_STM32_SELECT_PHY_INTERFACE(n)                                                          \
 	do {                                                                                       \
@@ -221,14 +192,6 @@ static void stm32mp1_eth2_select_phy_interface(enum stm32mp1_phy_interface phy_i
 		}                                                                                  \
 	} while (0)
 
-#elif defined(CONFIG_SOC_SERIES_STM32N6X)
-
-#define ETH_STM32_SELECT_PHY_INTERFACE(n)                                                          \
-	LL_RCC_SetETHPHYInterface(                                                                 \
-		COND_CASE_1(ETH_STM32_IS_RGMII(n), (LL_RCC_ETH1PHY_IF_RGMII),                      \
-			    ETH_STM32_IS_RMII(n), (LL_RCC_ETH1PHY_IF_RMII),                        \
-			    (LL_RCC_ETH1PHY_IF_MII)))
-
 #endif
 
 int dwmac_bus_init(const struct device *dev)
@@ -256,7 +219,14 @@ int dwmac_bus_init(const struct device *dev)
 	cfg->select_phy_interface();
 
 	for (size_t n = 0; n < cfg->pclken_cnt; n++) {
-		ret = clock_control_on(cfg->dwmac.clock, (clock_control_subsys_t)&cfg->pclken[n]);
+		if (IN_RANGE(cfg->pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
+			ret = clock_control_on(cfg->dwmac.clock,
+					       (clock_control_subsys_t)&cfg->pclken[n]);
+		} else {
+			ret = clock_control_configure(
+				cfg->dwmac.clock, (clock_control_subsys_t)&cfg->pclken[n], NULL);
+		}
+
 		if (ret != 0) {
 			LOG_ERR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
@@ -298,7 +268,7 @@ int dwmac_platform_init(const struct device *dev)
 
 	/* basic configuration for this platform */
 	DWMAC_REG_WRITE(MAC_CONF, MAC_CONF_PS | MAC_CONF_FES | MAC_CONF_DM);
-	DWMAC_REG_WRITE(DMA_SYSBUS_MODE, ETH_STM32_DMA_SYSBUS_MODE);
+	DWMAC_REG_WRITE(DMA_SYSBUS_MODE, DMA_SYSBUS_MODE_AAL | DMA_SYSBUS_MODE_FB);
 
 	return cfg->platform_init(dev);
 }
@@ -314,7 +284,7 @@ int dwmac_platform_init(const struct device *dev)
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                  \
 			.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),                          \
-			.mac_clk = ETH_STM32_PCLKEN_SUBSYS(n, ETH_STM32_MAC_CLK_IDX(n)),           \
+			.mac_clk = ETH_STM32_PCLKEN_SUBSYS(n, 0),                                  \
 			IF_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC, (ETH_STM32_DWMAC_PTP_CONFIG(n)))      \
 	}
 

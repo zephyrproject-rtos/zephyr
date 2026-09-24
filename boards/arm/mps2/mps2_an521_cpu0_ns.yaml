@@ -17,4 +17,3 @@ testing:
     - kernel
     - userspace
     - trusted-firmware-m
-    - integration

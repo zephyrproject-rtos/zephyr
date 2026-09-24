@@ -192,8 +192,6 @@ extern "C" {
 #define PROCESSOR_NAME "sparc"
 #elif defined(CONFIG_OPENRISC)
 #define PROCESSOR_NAME "openrisc"
-#elif defined(CONFIG_TRICORE)
-#define PROCESSOR_NAME "tricore"
 #endif
 
 #if defined(CONFIG_ARCH_POSIX)

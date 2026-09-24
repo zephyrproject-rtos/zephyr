@@ -11,7 +11,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
-#include <zephyr/spinlock.h>
 #include <fsl_common.h>
 #include <fsl_rgpio.h>
 
@@ -47,8 +46,6 @@ struct mcux_rgpio_data {
 
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
-
-	struct k_spinlock lock;
 };
 
 static int mcux_rgpio_configure(const struct device *dev,
@@ -56,11 +53,9 @@ static int mcux_rgpio_configure(const struct device *dev,
 {
 	RGPIO_Type *base = (RGPIO_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	const struct mcux_rgpio_config *config = dev->config;
-	struct mcux_rgpio_data *data = dev->data;
 
 	struct pinctrl_soc_pin pin_cfg;
 	int cfg_idx = pin, i;
-	k_spinlock_key_t key;
 
 	if (flags == GPIO_DISCONNECTED) {
 		return -ENOTSUP;
@@ -178,9 +173,7 @@ static int mcux_rgpio_configure(const struct device *dev,
 		RGPIO_WritePinOutput(base, pin, 0);
 	}
 
-	key = k_spin_lock(&data->lock);
 	WRITE_BIT(base->PDDR, pin, flags & GPIO_OUTPUT);
-	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -200,11 +193,8 @@ static int mcux_rgpio_port_set_masked_raw(const struct device *dev,
 					  uint32_t value)
 {
 	RGPIO_Type *base = (RGPIO_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	uint32_t set_mask = mask & value;
-	uint32_t clear_mask = mask & ~value;
 
-	RGPIO_PortSet(base, set_mask);
-	RGPIO_PortClear(base, clear_mask);
+	base->PDOR = (base->PDOR & ~mask) | (mask & value);
 
 	return 0;
 }
@@ -246,8 +236,7 @@ static int mcux_rgpio_pin_interrupt_configure(const struct device *dev,
 {
 	RGPIO_Type *base = (RGPIO_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	const struct mcux_rgpio_config *config = dev->config;
-	struct mcux_rgpio_data *data = dev->data;
-	k_spinlock_key_t key;
+	unsigned int key;
 	uint8_t irqs, irqc;
 
 #if !defined(__ARM_FEATURE_CMSE) && !defined(CONFIG_CPU_CORTEX_A)
@@ -286,9 +275,9 @@ static int mcux_rgpio_pin_interrupt_configure(const struct device *dev,
 		return -EINVAL; /* should never end up here */
 	}
 
-	key = k_spin_lock(&data->lock);
+	key = irq_lock();
 	RGPIO_SetPinInterruptConfig(base, pin, irqs, irqc);
-	k_spin_unlock(&data->lock, key);
+	irq_unlock(key);
 
 	return 0;
 }

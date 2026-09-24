@@ -18,12 +18,11 @@ tests:
       - apollo3p_evb
       - apollo510_evb
       - nrf7120dk/nrf7120/cpuapp
-      - frdm_mcxe247@w25q64
-      - frdm_mcxe31b@w25q64
     integration_platforms:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
+      - stm32h573i_dk
   drivers.mspi.flash.stm32.dma:
     platform_allow:
       - stm32h573i_dk

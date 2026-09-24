@@ -48,9 +48,6 @@
 extern "C" {
 #endif
 
-/** @rfc{7527,section-4} Enhanced DAD nonce payload length in bytes. */
-#define NET_IF_IPV6_DAD_NONCE_LEN 6U
-
 /**
  * @brief Network Interface unicast IP addresses
  *
@@ -108,16 +105,6 @@ struct net_if_addr {
 
 			/** How many times we have done DAD */
 			uint8_t dad_count;
-
-			/** How many times the solicitation for the current
-			 *  round has failed to go out. Non-zero means nothing
-			 *  has been asked yet, so the address has not been
-			 *  checked and must not be used.
-			 */
-			uint8_t dad_tx_failures;
-
-			/** @rfc{7527,section-4} Enhanced DAD nonce payload (6 bytes). */
-			uint8_t dad_nonce[NET_IF_IPV6_DAD_NONCE_LEN];
 		};
 #endif /* CONFIG_NET_IPV6_DAD */
 #if defined(CONFIG_NET_IPV4_ACD)

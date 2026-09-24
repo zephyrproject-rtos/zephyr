@@ -406,11 +406,8 @@ Alif Semiconductor Platforms:
     Alif Semiconductor SoCs, device tree files, and related drivers.
 
 Allwinner Platforms:
-  status: maintained
-  maintainers:
-    - khaidox
+  status: odd fixes
   files:
-    - boards/xunlong/opi_zero2w/
     - dts/arm/allwinner/
     - dts/arm64/allwinner/
     - soc/allwinner/
@@ -1042,10 +1039,10 @@ C library:
   status: maintained
   maintainers:
     - stephanosio
-    - keith-packard
   collaborators:
     - aescolar
     - nashif
+    - keith-packard
     - cfriedt
   files:
     - lib/libc/
@@ -2530,7 +2527,6 @@ Documentation Infrastructure:
     - SeppoTakalo
     - zafersn
     - wkhadgar
-    - JordanYates
   files:
     - drivers/modem/
     - tests/drivers/build_all/modem/
@@ -3516,27 +3512,6 @@ ITE Platforms:
   labels:
     - "platform: ITE"
 
-Infineon AURIX Platforms:
-  status: maintained
-  maintainers:
-    - go2sh
-    - parthitce
-    - ssekar15
-  files:
-    - soc/qemu/tricore/
-    - boards/qemu/tricore/
-    - drivers/*/*aurix*
-    - include/zephyr/drivers/*/*aurix*
-    - dts/bindings/*/infineon,asclin*
-    - dts/bindings/*/infineon,aurix*
-    - dts/bindings/*/infineon,tc*
-    - dts/tricore/
-  labels:
-    - "platform: Infineon AURIX"
-  description: >-
-    Infineon AURIX TriCore SoC family (TC3x, TC4x), boards, devicetree
-    and related drivers.
-
 Infineon Platforms:
   status: maintained
   maintainers:
@@ -4272,20 +4247,6 @@ Modem:
   tests:
     - modem
     - sample.net.cellular_modem
-
-Multimedia Pipeline:
-  status: maintained
-  maintainers:
-    - ngphibang
-  files:
-    - doc/services/mpipe/
-    - include/zephyr/mpipe/
-    - subsys/mpipe/
-    - tests/subsys/mpipe/
-  labels:
-    - "area: Multimedia Pipeline"
-  tests:
-    - mpipe
 
 NEORV32 platform:
   status: maintained
@@ -5723,11 +5684,6 @@ Rockchip Platforms:
     - dts/arm/rockchip/
     - dts/arm64/rockchip/
     - soc/rockchip/
-    - drivers/*/*rk35*
-    - drivers/*/*rockchip*
-    - drivers/*/*/*rockchip*
-    - dts/bindings/*/rockchip,*
-    - include/zephyr/dt-bindings/*/*rk35*
   labels:
     - "platform: Rockchip"
 
@@ -6510,20 +6466,6 @@ Trenz Electronic Platforms:
     - "platform: Trenz Electronic"
   description: >-
     Trenz Electronic development boards.
-
-TriCore arch:
-  status: maintained
-  maintainers:
-    - go2sh
-    - parthitce
-    - ssekar15
-  files:
-    - arch/tricore/
-    - cmake/compiler/*/target_tricore.cmake
-    - cmake/toolchain/tricore/
-    - include/zephyr/arch/tricore/
-  labels:
-    - "area: TriCore"
 
 Twister:
   status: maintained
@@ -7748,8 +7690,6 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
-  collaborators:
-    - kurtjd
   files: []
   labels:
     - "area: Rust"

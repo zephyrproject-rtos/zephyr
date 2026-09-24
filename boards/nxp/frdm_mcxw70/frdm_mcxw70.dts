@@ -10,12 +10,11 @@
 
 &flash {
 	partitions {
-		ranges;
+		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		storage_partition: partition@17a000 {
-			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x17a000 DT_SIZE_K(24)>;
 		};
@@ -24,12 +23,11 @@
 
 &flw {
 	partitions {
-		ranges;
+		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
-			compatible = "zephyr,mapped-partition";
 			label = "code";
 			reg = <0x0 DT_SIZE_K(1160)>;
 		};

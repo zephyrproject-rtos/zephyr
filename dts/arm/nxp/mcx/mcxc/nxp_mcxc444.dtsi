@@ -17,7 +17,6 @@
 
 &flash0 {
 	reg = <0 DT_SIZE_K(256)>;
-	ranges = <0x0 0x0 DT_SIZE_K(256)>;
 };
 
 /* MCXC444 HAL does not expose CRC peripheral support. */

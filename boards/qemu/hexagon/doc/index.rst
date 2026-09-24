@@ -101,15 +101,11 @@ at the extracted directory:
 
 See :ref:`toolchain_hexagon` for details on the ``hexagon`` toolchain variant.
 
-Step 2: QEMU with Hexagon Support
-=================================
+Step 2: Build QEMU with Hexagon Support
+========================================
 
-Standard QEMU releases do not include Hexagon system emulation. The toolchain
-installed in Step 1 bundles ``qemu-system-hexagon`` in its ``bin`` directory,
-and the build system looks there first, so no further setup is needed for
-``west build -t run`` or Twister.
-
-To use a different QEMU, build it from the Qualcomm fork:
+Standard QEMU releases do not include Hexagon support. You must build QEMU
+from the Qualcomm fork:
 
 .. code-block:: console
 
@@ -120,12 +116,12 @@ To use a different QEMU, build it from the Qualcomm fork:
    $ make -j$(nproc)
 
 The resulting binary is ``qemu-system-hexagon`` inside the ``build``
-directory you are currently in. Point ``QEMU_BIN_PATH`` at that directory to
-select it over the bundled one:
+directory you are currently in. Add it to your ``PATH`` so that
+``west build -t run`` can find it:
 
 .. code-block:: console
 
-   $ export QEMU_BIN_PATH="$PWD"
+   $ export PATH="$PWD:$PATH"
 
 Step 3: Install the Hexagon SDK
 ================================
@@ -245,7 +241,8 @@ runtime loading by the hypervisor.
 Running
 =======
 
-If ``loadlinux`` is present at the default path, you can run with:
+If ``loadlinux`` is present at the default path and ``qemu-system-hexagon``
+is on your ``PATH``, you can run with:
 
 .. code-block:: console
 

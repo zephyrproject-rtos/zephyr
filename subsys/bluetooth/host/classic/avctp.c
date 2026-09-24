@@ -450,15 +450,10 @@ static int avctp_recv_fragmented(struct bt_avctp *avctp, struct net_buf *buf)
 			goto failed;
 		}
 
-		/* This runs in the Bluetooth RX workqueue, which is also the only
-		 * context that releases reassembly buffers, so waiting here could
-		 * never be satisfied. Drop the fragment instead and let the peer
-		 * time out.
-		 */
-		avctp->reassembly_buf = net_buf_alloc(avctp->rx_pool, K_NO_WAIT);
+		avctp->reassembly_buf = net_buf_alloc(avctp->rx_pool, K_FOREVER);
 		if (avctp->reassembly_buf == NULL) {
-			LOG_ERR("Failed to allocate reassembly buffer (tid=%u, cr=%u)", tid, cr);
-			goto failed;
+			LOG_ERR("Failed to allocate reassembly buffer");
+			return -ENOMEM;
 		}
 
 		__ASSERT_NO_MSG(avctp->reassembly_buf->user_data_size >= sizeof(*hdr_reassembly));

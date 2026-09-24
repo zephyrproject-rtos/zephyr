@@ -5,13 +5,10 @@ HCI Packet Helpers
 
 Helpers for framing HCI command packets and parsing command responses in
 :c:struct:`net_buf_simple` buffers and packet bytes, independent of the Bluetooth
-Host and of the HCI driver interface, together with a lockstep helper for HCI
-drivers that exchange HCI commands with the controller over their own transport,
-for example for vendor-specific controller initialization.
+Host and of the HCI driver interface.
 
-Both helpers are part of every build with :kconfig:option:`CONFIG_BT` enabled.
-The lockstep helper's header lives with the HCI driver API, under
-:file:`include/zephyr/drivers/bluetooth/`.
+The helpers are part of every build with :kconfig:option:`CONFIG_BT` enabled;
+no further option is needed to use them.
 
 These are not general application APIs: the intended users are HCI drivers and
 Bluetooth stack internals. Applications that need to send HCI commands
@@ -23,5 +20,3 @@ API Reference
 *************
 
 .. doxygengroup:: bt_hci_pkt
-
-.. doxygengroup:: bt_hci_lockstep

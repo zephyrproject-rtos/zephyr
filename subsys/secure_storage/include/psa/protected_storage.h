@@ -236,6 +236,6 @@ uint32_t psa_ps_get_support(void)
 	return flags;
 }
 
-#undef ITS_CALLER_ID
+#undef ITS_UID
 
 #endif

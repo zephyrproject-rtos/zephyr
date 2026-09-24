@@ -423,13 +423,4 @@
 			status = "disabled";
 		};
 	};
-
-	clocks {
-		clk_sys: clk_sys {
-			compatible = "fixed-clock";
-			clock-frequency = <60000000>;
-			status = "disabled";
-			#clock-cells = <0>;
-		};
-	};
 };

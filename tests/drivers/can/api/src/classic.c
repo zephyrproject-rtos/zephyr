@@ -11,11 +11,6 @@
 
 #include "common.h"
 
-/* Message queue with a deliberately wrong element size, see
- * test_add_rx_filter_msgq_wrong_msg_size().
- */
-K_MSGQ_DEFINE(wide_msgq, sizeof(struct can_frame) + 16, 5, 4);
-
 /**
  * @addtogroup t_can_driver
  * @{
@@ -414,31 +409,25 @@ ZTEST_USER(can_classic, test_classic_get_capabilities)
 }
 
 /**
- * @brief CAN state change callback handler.
+ * @brief CAN state change callback.
  */
-static void state_change_callback_handler(const struct device *dev,
-					  struct can_state_change_callback *callback,
-					  enum can_state state, struct can_bus_err_cnt err_cnt)
+static void state_change_callback(const struct device *dev, enum can_state state,
+				  struct can_bus_err_cnt err_cnt, void *user_data)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(callback);
 	ARG_UNUSED(state);
 	ARG_UNUSED(err_cnt);
-
+	ARG_UNUSED(user_data);
 }
 
-static struct can_state_change_callback state_change_callback;
-
 /**
- * @brief Test adding/removing a CAN state change callback.
+ * @brief Test setting the CAN state change callback.
  */
-ZTEST(can_classic, test_add_remove_state_change_callback)
+ZTEST(can_classic, test_set_state_change_callback)
 {
-	can_init_state_change_callback(&state_change_callback, state_change_callback_handler);
-
 	/* It is not possible to provoke a change of state, but test the API call */
-	zassert_ok(can_add_state_change_callback(can_dev, &state_change_callback));
-	zassert_ok(can_remove_state_change_callback(can_dev, &state_change_callback));
+	can_set_state_change_callback(can_dev, state_change_callback, NULL);
+	can_set_state_change_callback(can_dev, NULL, NULL);
 }
 
 /**
@@ -770,23 +759,6 @@ ZTEST_USER(can_classic, test_add_rx_filter_msgq_dynamic)
 	(void)can_add_rx_filter_msgq(can_dev, msgq, &test_std_filter_1);
 
 	zassert_unreachable("dynamically allocated message queue was accepted");
-}
-
-/**
- * @brief Test that a message queue with a wrong message size is rejected.
- *
- * The RX callback passes a pointer to a single struct can_frame to k_msgq_put(),
- * which copies the number of bytes the message queue was initialized with. A
- * message queue with a larger message size makes the copy read past the end of
- * the frame, into whatever the driver happens to have on its stack next to it.
- */
-ZTEST_USER(can_classic, test_add_rx_filter_msgq_wrong_msg_size)
-{
-	int err;
-
-	err = can_add_rx_filter_msgq(can_dev, &wide_msgq, &test_std_filter_1);
-	zassert_equal(err, -EINVAL, "message queue with wrong message size accepted (err %d)",
-		      err);
 }
 
 /**
@@ -1427,8 +1399,6 @@ ZTEST_USER(can_classic, test_set_mode_while_started)
 
 void *can_classic_setup(void)
 {
-	k_object_access_grant(&wide_msgq, k_current_get());
-
 	can_common_test_setup(CAN_MODE_LOOPBACK);
 
 	return NULL;

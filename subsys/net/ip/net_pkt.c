@@ -317,8 +317,7 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 {
 	struct net_buf *frag;
 	size_t total = 0;
-	size_t occupied = 0;
-	int count = 0;
+	int count = 0, frag_size = 0;
 
 	if (!pkt) {
 		NET_INFO("pkt %p", pkt);
@@ -332,19 +331,21 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 	frag = pkt->frags;
 	while (frag) {
 		total += frag->len;
-		occupied += frag->size;
 
-		NET_INFO("[%d] frag %p len %d tailroom %zu size %d pool %p",
-			 count, frag, frag->len, net_buf_tailroom(frag),
-			 frag->size, net_buf_pool_get(frag->pool_id));
+		frag_size = net_buf_max_len(frag);
+
+		NET_INFO("[%d] frag %p len %d max len %u size %d pool %p",
+			 count, frag, frag->len, frag->size,
+			 frag_size, net_buf_pool_get(frag->pool_id));
 
 		count++;
 
 		frag = frag->frags;
 	}
 
-	NET_INFO("Total data size %zu, occupied %zu bytes, utilization %zu%%",
-		 total, occupied, occupied ? (total * 100) / occupied : 0);
+	NET_INFO("Total data size %zu, occupied %d bytes, utilization %zu%%",
+		 total, count * frag_size,
+		 count ? (total * 100) / (count * frag_size) : 0);
 }
 #endif
 
@@ -1231,17 +1232,17 @@ static size_t pkt_estimate_headers_length(struct net_pkt *pkt,
 	return hdr_len;
 }
 
-static size_t pkt_get_tailroom(struct net_pkt *pkt)
+static size_t pkt_get_max_len(struct net_pkt *pkt)
 {
 	struct net_buf *buf = pkt->buffer;
-	size_t tailroom = 0;
+	size_t size = 0;
 
 	while (buf) {
-		tailroom += net_buf_tailroom(buf);
+		size += net_buf_max_len(buf);
 		buf = buf->frags;
 	}
 
-	return tailroom;
+	return size;
 }
 
 size_t net_pkt_available_buffer(struct net_pkt *pkt)
@@ -1250,7 +1251,7 @@ size_t net_pkt_available_buffer(struct net_pkt *pkt)
 		return 0;
 	}
 
-	return pkt_get_tailroom(pkt);
+	return pkt_get_max_len(pkt) - net_pkt_get_len(pkt);
 }
 
 size_t net_pkt_available_payload_buffer(struct net_pkt *pkt,
@@ -1870,14 +1871,6 @@ void net_pkt_cursor_init(struct net_pkt *pkt)
 	}
 }
 
-/* Offset from buf->data past which nothing can be appended: the current
- * payload plus the tailroom behind it.
- */
-static size_t pkt_buf_write_limit(struct net_buf *buf)
-{
-	return buf->len + net_buf_tailroom(buf);
-}
-
 static void pkt_cursor_jump(struct net_pkt *pkt, bool write)
 {
 	struct net_pkt_cursor *cursor = &pkt->cursor;
@@ -1885,7 +1878,7 @@ static void pkt_cursor_jump(struct net_pkt *pkt, bool write)
 	cursor->buf = cursor->buf->frags;
 	while (cursor->buf) {
 		const size_t len =
-			write ? pkt_buf_write_limit(cursor->buf) : cursor->buf->len;
+			write ? net_buf_max_len(cursor->buf) : cursor->buf->len;
 
 		if (!len) {
 			cursor->buf = cursor->buf->frags;
@@ -1910,7 +1903,7 @@ static void pkt_cursor_advance(struct net_pkt *pkt, bool write)
 		return;
 	}
 
-	len = write ? pkt_buf_write_limit(cursor->buf) : cursor->buf->len;
+	len = write ? net_buf_max_len(cursor->buf) : cursor->buf->len;
 	if ((cursor->pos - cursor->buf->data) == len) {
 		pkt_cursor_jump(pkt, write);
 	}
@@ -1926,10 +1919,10 @@ static void pkt_cursor_update(struct net_pkt *pkt,
 		write = false;
 	}
 
-	len = write ? pkt_buf_write_limit(cursor->buf) : cursor->buf->len;
+	len = write ? net_buf_max_len(cursor->buf) : cursor->buf->len;
 	if (length + (cursor->pos - cursor->buf->data) == len &&
 	    !(net_pkt_is_being_overwritten(pkt) &&
-	      net_buf_tailroom(cursor->buf) > 0U)) {
+	      len < net_buf_max_len(cursor->buf))) {
 		pkt_cursor_jump(pkt, write);
 	} else {
 		cursor->pos += length;
@@ -1950,7 +1943,7 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 		size_t limit, d_len, len;
 
 		/* Compute the fragment limit only once per fragment */
-		limit = append ? pkt_buf_write_limit(c_op->buf) : c_op->buf->len;
+		limit = append ? net_buf_max_len(c_op->buf) : c_op->buf->len;
 		d_len = limit - (c_op->pos - c_op->buf->data);
 
 		if (d_len == 0U) {
@@ -1983,7 +1976,7 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 		 * subsequent appends.
 		 */
 		if (len == d_len &&
-		    !(ow && net_buf_tailroom(c_op->buf) > 0U)) {
+		    !(ow && c_op->buf->len < net_buf_max_len(c_op->buf))) {
 			pkt_cursor_jump(pkt, append);
 		} else {
 			c_op->pos += len;
@@ -2126,7 +2119,7 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 		}
 
 		s_len = c_src->buf->len - (c_src->pos - c_src->buf->data);
-		d_len = pkt_buf_write_limit(c_dst->buf) - (c_dst->pos - c_dst->buf->data);
+		d_len = net_buf_max_len(c_dst->buf) - (c_dst->pos - c_dst->buf->data);
 		if (length < s_len && length < d_len) {
 			len = length;
 		} else {
@@ -2461,7 +2454,7 @@ size_t net_pkt_get_contiguous_len(struct net_pkt *pkt)
 		size_t len;
 
 		len = net_pkt_is_being_overwritten(pkt) ?
-			pkt->cursor.buf->len : pkt_buf_write_limit(pkt->cursor.buf);
+			pkt->cursor.buf->len : net_buf_max_len(pkt->cursor.buf);
 		len -= pkt->cursor.pos - pkt->cursor.buf->data;
 
 		return len;

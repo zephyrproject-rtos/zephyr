@@ -1,7 +1,4 @@
-/*
- * Copyright 2025 The ChromiumOS Authors
- * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
- *
+/* Copyright 2025 The ChromiumOS Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
@@ -36,10 +33,11 @@ void *z_get_next_switch_handle(void *interrupted)
 
 void my_fn(void *a, void *b, void *c, void *d)
 {
-#ifdef CONFIG_CPU_CORTEX_M_HAS_SPLIM
-	void *psplim = (void *)__get_PSPLIM();
+	void *psplim;
+
+	__asm__ volatile("mrs %0, psplim" : "=r"(psplim));
+
 	printk("%s: PSPLIM = %p\n", __func__, psplim);
-#endif
 
 	zassert_equal((int)a, 0);
 	zassert_equal((int)b, 1);
@@ -95,11 +93,10 @@ void my_svc(void)
 
 ZTEST(arm_m_switch, test_smoke)
 {
-#ifdef CONFIG_CPU_CORTEX_M_HAS_SPLIM
-	void *psplim = (void *)__get_PSPLIM();
+	void *psplim;
 
+	__asm__ volatile("mrs %0, psplim" : "=r"(psplim));
 	printk("In main, PSPLIM = %p\n", psplim);
-#endif
 
 	/* "register" variables don't strictly force the compiler not
 	 * to spill them, but inspecting the generated code shows it's

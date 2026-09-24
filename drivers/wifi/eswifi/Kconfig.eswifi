@@ -31,6 +31,7 @@ config WIFI_ESWIFI_BUS_SPI
 config WIFI_ESWIFI_BUS_UART
 	bool "UART Bus interface"
 	select SERIAL
+	select RING_BUFFER
 
 endchoice
 

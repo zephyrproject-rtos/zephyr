@@ -61,7 +61,6 @@ $defs:
           - riscv
           - rx
           - sparc
-          - tricore
           - x86
           - xtensa
           - unit

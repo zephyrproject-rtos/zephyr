@@ -138,17 +138,6 @@
 		status = "disabled";
 	};
 
-	wifi_antsw: wifi_antsw {
-		compatible = "nordic,nrf71-wifi-antsw";
-		/*
-		 * Steers the antenna switch towards WLAN, driven from
-		 * soc_early_init_hook() before the Wi-Fi core is started. Hardwired to
-		 * P0.05 in nRF7120. Powering the switch is handled by pwr_antswc.
-		 */
-		wlan-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
-		status = "disabled";
-	};
-
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -1052,16 +1041,6 @@
 					reg = <0x504 0x1>;
 					status = "disabled";
 				};
-			};
-
-			lfrc: clock-controller@123000 {
-				compatible = "nordic,nrf-lfrc";
-				reg = <0x123000 0x1000>;
-				interrupts = <291 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
-				#clock-cells = <0>;
-				clock-frequency = <32768>;
-				accuracy-ppm = <250>;
 			};
 
 			audio_auxpll: auxpll@130000 {

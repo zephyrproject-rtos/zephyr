@@ -26,7 +26,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config HARVARD
 	default n
 
-configdefault CACHE_MANAGEMENT
+config CACHE_MANAGEMENT
 	default y
 
 config FP_FPU_DA

@@ -127,17 +127,15 @@
 
 &flash {
 	partitions {
-		ranges;
+		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
-			compatible = "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(2024)>;
 		};
 
 		storage_partition: partition@1fa000 {
-			compatible = "zephyr,mapped-partition";
 			reg = <0x1fa000 DT_SIZE_K(24)>;
 		};
 	};

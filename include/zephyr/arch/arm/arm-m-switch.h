@@ -18,7 +18,6 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM_ARM_M_SWITCH_H_
 
 #include <stdint.h>
-#include <cmsis_core.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/kernel/thread.h>
 
@@ -234,10 +233,10 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 	 * context switch unless you're in the kernel!).
 	 */
 	extern uint32_t arm_m_switch_control;
-	CONTROL_Type control = {.w = __get_CONTROL()};
+	uint32_t control;
 
-	__ASSERT_NO_MSG(!control.b.nPRIV);
-	arm_m_switch_control = control.w | (_current->arch.mode & 1);
+	__asm__ volatile("mrs %0, control" : "=r"(control));
+	arm_m_switch_control = (control & ~1) | (_current->arch.mode & 1);
 #endif
 
 	/* new switch handle in r4, old switch handle pointer in r5.

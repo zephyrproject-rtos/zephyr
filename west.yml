@@ -129,7 +129,7 @@ manifest:
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
-      revision: 1c1840af7a7e757d6e2fec3ddb0e5ce0dfcc93c8
+      revision: b2dfbe1a20bbd49c2d2c605073799671074bbb30
       path: modules/hal/cmsis_6
       groups:
         - hal
@@ -147,7 +147,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 489885cdfa668870f95b00ded1cc56ac52cdf5c4
+      revision: 7b845b62c15a2ec75e67f4eb95f23790aa607c61
       path: modules/hal/adi
       groups:
         - hal
@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 0db06f1fc8731e9e8b5069991744172bf9013ea4
+      revision: 049f33f97a80912da7136c33527c8254fab3d6c8
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_intel
-      revision: 71e18c0f225e5941cc1fc84f0ae35d61d9c654d0
+      revision: 7c8942c1ecb38b53dae0a02aeb4ab08371f4d4bf
       path: modules/hal/intel
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: cd19121a7bb887eebd1ccab71e70578a56fe22c7
+      revision: 2bbc7efdd88e2f89ea1b928cf9862b0bf5415a38
       path: modules/hal/nordic
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 6371585791666cb8f8958e989e2e98519070c6b0
+      revision: c7bf2092a0d6b26a1113689579bd2255b20c54c1
       groups:
         - hal
     - name: hal_rpi_pico
@@ -249,7 +249,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 0c970a3e71bac9e7ce93e6467cb3903664b9b6c9
+      revision: 1093933f15c4ad606059441a96b1433d53df1a84
       path: modules/hal/silabs
       groups:
         - hal
@@ -259,7 +259,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: c9afc5e80f977e48f9de14c7f6cce1d193ec7181
+      revision: 9e579a021d6ed794a7c2a4777a4c5be552769035
       path: modules/hal/stm32
       groups:
         - hal
@@ -274,7 +274,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 53c80140dd69905cc5e034f637eff9c66b2f9654
+      revision: 2e6514333cdb59e44a7635fb5852035c325f4c11
       path: modules/hal/ti
       groups:
         - hal
@@ -295,7 +295,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 63a13bed13fcee519496e855488610452d23746c
+      revision: 4f141f443d66cfa06269edc1bcf213e86136d0e6
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -353,7 +353,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: ccc7a8094566ba835da80176c565044b0516b614
+      revision: c84230d0329a2ce5e449bbd556d6854861a6eee7
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: fc0872109ec4c006d32843a202b129db33cf16b9
@@ -403,7 +403,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: ef007cd771423cf31a5a1427290efd37b891dbd6
+      revision: ef35073337e66e3117a6ef33fc60f69596d2afbc
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

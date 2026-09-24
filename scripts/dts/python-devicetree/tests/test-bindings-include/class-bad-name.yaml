@@ -1,8 +1,0 @@
-# Copyright The Zephyr Project Contributors
-# SPDX-License-Identifier: BSD-3-Clause
-
-description: Malformed class name
-
-compatible: "class-bad-name"
-
-class: "not a token"

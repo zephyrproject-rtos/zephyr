@@ -14,9 +14,8 @@ target_include_directories(app PRIVATE
 
 target_sources(app PRIVATE
   # Test source files
-  src/broadcast_to_unicast.c
   src/callbacks.c
-  src/cancel.c
+  src/broadcast_to_unicast.c
   src/unicast_to_broadcast.c
   src/test_common.c
 

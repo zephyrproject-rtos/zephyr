@@ -42,3 +42,4 @@ tests:
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_PM_DEVICE=n

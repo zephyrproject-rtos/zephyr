@@ -22,9 +22,7 @@
 	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 
-	spi: spi {
-		rx-dtc;
-		tx-dtc;
+	spi {
 		status = "okay";
 
 		slow@0 {

@@ -10,8 +10,6 @@ on:
       - v*-branch
     paths:
       - 'scripts/build/**'
-      - 'scripts/checkpatch.pl'
-      - 'scripts/checkpatch/**'
       - 'scripts/cmake/**'
       - 'scripts/kconfig/**'
       - '.github/workflows/scripts_tests.yml'
@@ -21,8 +19,6 @@ on:
       - v*-branch
     paths:
       - 'scripts/build/**'
-      - 'scripts/checkpatch.pl'
-      - 'scripts/checkpatch/**'
       - 'scripts/cmake/**'
       - 'scripts/kconfig/**'
       - '.github/workflows/scripts_tests.yml'
@@ -81,4 +77,4 @@ jobs:
           ZEPHYR_BASE: ./
         run: |
           echo "Run script tests"
-          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig
+          pytest ./scripts/build ./scripts/cmake ./scripts/kconfig

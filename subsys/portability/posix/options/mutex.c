@@ -133,13 +133,12 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 
 	LOG_DBG("Locking mutex %p with timeout %" PRIx64, m, (int64_t)timeout.ticks);
 
+	bit = posix_mutex_to_offset(m);
+	type = posix_mutex_type[bit];
 	owner = m->owner;
 	lock_count = m->lock_count;
 
-	if (owner != NULL && owner == k_current_get()) {
-		bit = posix_mutex_to_offset(m);
-		type = posix_mutex_type[bit];
-
+	if (owner == k_current_get()) {
 		switch (type) {
 		case PTHREAD_MUTEX_NORMAL:
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {

@@ -67,7 +67,7 @@ endchoice
 if WIFI_NM_HOSTAPD_AP
 
 config WIFI_NM_HOSTAPD_REGULATORY_REGION
-	default "US"
+	default "WW"
 
 endif # WIFI_NM_HOSTAPD_AP
 

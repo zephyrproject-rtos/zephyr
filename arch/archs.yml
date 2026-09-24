@@ -35,6 +35,3 @@ archs:
   - name: hexagon
     path: hexagon
     full_name: Qualcomm Hexagon
-  - name: tricore
-    path: tricore
-    full_name: TriCore

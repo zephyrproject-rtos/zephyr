@@ -9,8 +9,8 @@ toolchain:
   - gnuarmemb
   - zephyr
 sysbuild: true
-ram: 191
-flash: 456
+ram: 192
+flash: 1012
 supported:
   - adc
   - counter

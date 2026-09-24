@@ -201,8 +201,7 @@ enum transport_mgmt_ret_code_t {
 
 	/**
 	 * The transport does not support being used as both the input and output bridge
-	 * device (either because of the nature of the transport or the specific build
-	 * configuration).
+	 * device.
 	 */
 	TRANSPORT_MGMT_ERR_SAME_BRIDGE_DEVICE_DISALLOWED,
 
@@ -217,21 +216,6 @@ enum transport_mgmt_ret_code_t {
 
 	/** The outgoing transport is already bridged to another transport. */
 	TRANSPORT_MGMT_ERR_TRANSPORT_OUTGOING_TRANSPORT_ALREADY_BRIDGED,
-
-	/** The connection data provided is missing a parameter. */
-	TRANSPORT_MGMT_ERR_CONNECT_MISSING_PARAMETER,
-
-	/** An item in the connection data provided is invalid. */
-	TRANSPORT_MGMT_ERR_CONNECT_INVALID_PARAMETER,
-
-	/**
-	 * An item in the connection data provided is valid, but not supported by this device
-	 * (or due to device configuration).
-	 */
-	TRANSPORT_MGMT_ERR_CONNECT_UNSUPPORTED_PARAMETER,
-
-	/** A bridge connection attempt has failed. */
-	TRANSPORT_MGMT_ERR_CONNECT_FAILED,
 };
 
 /** Config types */

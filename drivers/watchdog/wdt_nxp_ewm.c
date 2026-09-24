@@ -1,5 +1,5 @@
 /*
- * Copyright 2025-2026 NXP
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,7 +90,8 @@ static int nxp_ewm_install_timeout(const struct device *dev,
 
 	if (cfg->window.max <= NXP_EWM_MAX_TIMEOUT_WINDOW &&
 		cfg->window.min <= cfg->window.max &&
-		cfg->window.max > 0) {
+		cfg->window.max > 0 &&
+		cfg->window.min >= 0) {
 		data->timeout_cfg.window = cfg->window;
 	} else {
 		return -EINVAL;
@@ -102,7 +103,9 @@ static int nxp_ewm_install_timeout(const struct device *dev,
 	}
 #endif
 
-	data->timeout_cfg.callback = cfg->callback;
+	if (cfg->callback) {
+		data->timeout_cfg.callback = cfg->callback;
+	}
 
 	return 0;
 }

@@ -27,7 +27,7 @@ config HARVARD
 config ARC_FIRQ
 	default y
 
-configdefault CACHE_MANAGEMENT
+config CACHE_MANAGEMENT
 	default y
 
 config ARC_MPU_VER

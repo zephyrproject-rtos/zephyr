@@ -347,7 +347,6 @@ SECTIONS
     . = ALIGN(4);
 
     _init_end = ABSOLUTE(.);
-    MPU_MIN_SIZE_ALIGN
     _iram_text_start = ABSOLUTE(.);
 
     *(.iram1 .iram1.*)
@@ -617,7 +616,6 @@ SECTIONS
   .iram0.text_end (NOLOAD) :
   {
     . = ALIGN(16);
-    MPU_MIN_SIZE_ALIGN
     _iram_text_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -1029,12 +1027,12 @@ SECTIONS
 
     /* Enforce flash segment size alignment */
     . = ALIGN(0x10);
-    /* Align for PMP granularity requirements */
-    MPU_MIN_SIZE_ALIGN
 
     _instruction_reserved_end = ABSOLUTE(.);
     _text_end = ABSOLUTE(.);
     __text_region_end = ABSOLUTE(.);
+    /* Align for PMP granularity requirements */
+    MPU_MIN_SIZE_ALIGN
     __rom_region_end = ABSOLUTE(.);
     __rom_region_size = ABSOLUTE(__rom_region_end - __rom_region_start);
     _etext = .;
@@ -1113,6 +1111,7 @@ SECTIONS
     *(.rodata_wlog*)
 #include <zephyr/linker/kobject-rom.ld>
     . = ALIGN(4);
+    __rodata_region_end = .;
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   #include <zephyr/linker/cplusplus-rom.ld>
@@ -1133,19 +1132,8 @@ SECTIONS
   {
     /* Enforce flash segment size alignment */
     LONG(0);
-    /* Align for PMP granularity so the whole flash-mapped rodata image
-     * (including the linker-collected rom sections) can be covered by a
-     * dedicated PMP region. Under MPRV, kernel loads of const data in
-     * this window are permission-checked and must be allowed.
-     */
-    MPU_MIN_SIZE_ALIGN
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
-    /* The read-only region must span the linker-collected rom sections too:
-     * device API structures live there, and a pointer into one reaches a
-     * syscall as an argument, where it is checked against this region.
-     */
-    __rodata_region_end = .;
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */

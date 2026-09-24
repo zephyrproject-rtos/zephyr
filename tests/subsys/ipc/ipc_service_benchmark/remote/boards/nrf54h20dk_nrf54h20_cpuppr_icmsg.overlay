@@ -5,7 +5,23 @@
  */
 
 ipc0: &cpuapp_cpuppr_ipc {
-	compatible = "zephyr,ipc-icmsg";
-	/delete-property/ tx-blocks;
-	/delete-property/ rx-blocks;
+	status = "okay";
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+};
+
+&wdt131 {
+	status = "okay";
+};
+
+/ {
+	aliases {
+		watchdog0 = &wdt131;
+	};
 };

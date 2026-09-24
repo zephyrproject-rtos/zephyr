@@ -516,6 +516,7 @@ static void hx8394_get_capabilities(const struct device *dev,
 {
 	const struct hx8394_config *config = dev->config;
 
+	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
 	capabilities->supported_pixel_formats = config->pixel_format;
@@ -591,7 +592,7 @@ static int hx8394_init(const struct device *dev)
 	ret_tx = hx8394_mipi_tx(config->mipi_dsi, config->channel,
 			     enable_extension, sizeof(enable_extension));
 	if (ret_tx < 0) {
-		LOG_ERR("hx8394_mipi_tx error, %zu", ret_tx);
+		LOG_ERR("hx8394_mipi_tx error, %d", ret_tx);
 		return -EIO;
 	}
 
@@ -600,7 +601,7 @@ static int hx8394_init(const struct device *dev)
 	ret_tx = hx8394_mipi_tx(config->mipi_dsi, config->channel,
 			     setmipi, sizeof(setmipi));
 	if (ret_tx < 0) {
-		LOG_ERR("hx8394_mipi_tx error, %zu", ret_tx);
+		LOG_ERR("hx8394_mipi_tx error, %d", ret_tx);
 		return -EIO;
 	}
 
@@ -608,7 +609,7 @@ static int hx8394_init(const struct device *dev)
 	ret_tx = hx8394_mipi_tx(config->mipi_dsi, config->channel,
 			     address_config, sizeof(address_config));
 	if (ret_tx < 0) {
-		LOG_ERR("hx8394_mipi_tx error, %zu", ret_tx);
+		LOG_ERR("hx8394_mipi_tx error, %d", ret_tx);
 		return -EIO;
 	}
 

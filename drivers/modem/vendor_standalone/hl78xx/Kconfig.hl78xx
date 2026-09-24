@@ -10,6 +10,7 @@ config MODEM_HL78XX
 	select MODEM_PIPE
 	select MODEM_PIPELINK
 	select MODEM_BACKEND_UART
+	select RING_BUFFER
 	select MODEM_SOCKET
 	select NET_OFFLOAD
 	select MODEM_CONTEXT
@@ -846,15 +847,6 @@ config MODEM_HL78XX_RAT_NBNTN
 
 endchoice
 
-config MODEM_HL78XX_NTN_SUPPORT
-	def_bool MODEM_HL78XX_RAT_NBNTN || (MODEM_HL78XX_AUTORAT && MODEM_HL78XX_12_FW_R6)
-	help
-	  Hidden capability symbol: NB-NTN can be the active RAT at runtime,
-	  either as the dedicated Kconfig RAT (MODEM_HL78XX_RAT_NBNTN) or by
-	  the Auto-RAT terrestrial-to-NTN fallback flow latching AT+KSRAT=3.
-	  Compiles in the NTN configuration helpers (+KNTNCFG positioning) so
-	  both paths apply the same NTN setup.
-
 menuconfig MODEM_HL78XX_CONFIGURE_BANDS
 	bool "Configure modem bands"
 	depends on !MODEM_HL78XX_AUTORAT
@@ -1038,16 +1030,15 @@ config MODEM_HL78XX_BAND_256
 endif # MODEM_HL78XX_CONFIGURE_BAND
 
 # NB-IoT NTN Position Configuration
-if MODEM_HL78XX_NTN_SUPPORT
+if MODEM_HL78XX_RAT_NBNTN
 
 menuconfig MODEM_HL78XX_NBNTN_POSITIONING
 	bool "NB-IoT NTN Position Configuration"
-	default y
+	depends on !MODEM_HL78XX_AUTORAT
+	default y if !MODEM_HL78XX_AUTORAT
 	help
 	  Choose this setting to configure NB-IoT NTN Positioning parameters.
-	  Applicable when NB-NTN can be the active RAT: either the dedicated
-	  NB-NTN mode (MODEM_HL78XX_RAT_NBNTN) or an Auto-RAT build whose
-	  fallback flow can move the modem to NTN at runtime.
+	  Only applicable if NB-NTN mode is selected (MODEM_HL78XX_RAT_NBNTN).
 
 if MODEM_HL78XX_NBNTN_POSITIONING
 
@@ -1131,10 +1122,8 @@ config NTN_MANUAL_ALTITUDE
 	  in meters from earth surface ("-5000.0" - "40000000.0")
 
 endif # NTN_POSITION_SOURCE_MANUAL
-
 endif # MODEM_HL78XX_NBNTN_POSITIONING
-
-endif # MODEM_HL78XX_NTN_SUPPORT
+endif # MODEM_HL78XX_RAT_NBNTN
 
 config MODEM_HL78XX_LOW_POWER_MODE
 	bool "Low power modes"

@@ -19,9 +19,7 @@
 	pinctrl-0 = <&sci0_spi_default>;
 	pinctrl-names = "default";
 
-	spi: spi {
-		rx-dtc;
-		tx-dtc;
+	spi {
 		status = "okay";
 
 		slow@0 {

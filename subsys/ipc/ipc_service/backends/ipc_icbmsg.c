@@ -631,7 +631,7 @@ static int msg_q_produce(const struct device *instance, uint8_t block_index, int
 		active_count = data->msg_q.tx_active_count;
 		if (active_count == MAX_ACTIVE_COUNT) {
 			rv = -ENOMEM;
-			K_SPINLOCK_BREAK;
+			break;
 		}
 
 		idx = config->tx_msg_q.prod_shmq->hdr.block_idx % MAX_ACTIVE_COUNT;

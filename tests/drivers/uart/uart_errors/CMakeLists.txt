@@ -6,7 +6,5 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(uart_errors)
 
 target_sources(app PRIVATE
-    src/uart_errors_common.c
-    src/test_parity.c
-    src/test_stop_bit.c
+    src/main.c
     )

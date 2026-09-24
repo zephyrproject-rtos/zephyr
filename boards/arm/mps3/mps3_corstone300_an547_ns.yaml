@@ -18,4 +18,3 @@ testing:
   default: true
   only_tags:
     - trusted-firmware-m
-    - integration

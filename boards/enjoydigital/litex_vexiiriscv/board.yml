@@ -1,6 +1,0 @@
-board:
-  name: litex_vexiiriscv
-  full_name: LiteX VexiiRiscv
-  vendor: enjoydigital
-  socs:
-  - name: litex_vexiiriscv

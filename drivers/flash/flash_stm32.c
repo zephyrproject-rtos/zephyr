@@ -140,8 +140,7 @@ static void flash_stm32_flush_caches(const struct device *dev, off_t offset, siz
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS +
-						  (uintptr_t)offset), len);
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS + offset), len);
 #endif
 }
 
@@ -566,5 +565,5 @@ static int stm32_flash_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL, &flash_data, NULL, PRE_KERNEL_1,
+DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
 		      CONFIG_FLASH_INIT_PRIORITY, &flash_stm32_api);

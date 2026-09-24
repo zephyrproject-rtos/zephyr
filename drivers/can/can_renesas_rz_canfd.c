@@ -365,7 +365,7 @@ static inline void can_renesas_rz_call_state_change_cb(const struct device *dev,
 		.tx_err_cnt = can_info.error_count_transmit,
 	};
 
-	can_fire_state_change_callbacks(dev, state, err_cnt);
+	data->common.state_change_cb(dev, state, err_cnt, data->common.state_change_cb_user_data);
 }
 
 static int can_renesas_rz_get_capabilities(const struct device *dev, can_mode_t *cap)
@@ -686,7 +686,9 @@ static int can_renesas_rz_get_state(const struct device *dev, enum can_state *st
 	return 0;
 }
 
-static int can_renesas_rz_state_change_callbacks_enabled(const struct device *dev, bool enabled)
+static void can_renesas_rz_set_state_change_callback(const struct device *dev,
+						     can_state_change_callback_t callback,
+						     void *user_data)
 {
 	struct can_renesas_rz_data *data = dev->data;
 	canfd_instance_ctrl_t *p_ctrl = data->fsp_ctrl;
@@ -694,7 +696,7 @@ static int can_renesas_rz_state_change_callbacks_enabled(const struct device *de
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
-	if (enabled) {
+	if (callback != NULL) {
 		/* Enable state change interrupt */
 		p_ctrl->p_reg->CFDC->CTR |= (uint32_t)CANFD_CFG_ERR_IRQ;
 	} else {
@@ -707,11 +709,12 @@ static int can_renesas_rz_state_change_callbacks_enabled(const struct device *de
 			  BIT(R_CANFD_CFDC_ERFL_EPF_Pos) | BIT(R_CANFD_CFDC_ERFL_BEF_Pos));
 	}
 
+	data->common.state_change_cb = callback;
+	data->common.state_change_cb_user_data = user_data;
+
 	k_mutex_unlock(&data->inst_mutex);
 
 	irq_unlock(key);
-
-	return 0;
 }
 
 static int can_renesas_rz_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -842,7 +845,6 @@ static int can_renesas_rz_init(const struct device *dev)
 	canfd_extended_cfg_t *p_extend = (canfd_extended_cfg_t *)data->fsp_cfg->p_extend;
 	int ret = 0;
 
-	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&data->inst_mutex);
 	k_sem_init(&data->tx_sem, 1, 1);
 	data->common.started = false;
@@ -897,7 +899,7 @@ static DEVICE_API(can, can_renesas_rz_driver_api) = {
 	.recover = can_renesas_rz_recover,
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.get_state = can_renesas_rz_get_state,
-	.state_change_callbacks_enabled = can_renesas_rz_state_change_callbacks_enabled,
+	.set_state_change_callback = can_renesas_rz_set_state_change_callback,
 	.get_core_clock = can_renesas_rz_get_core_clock,
 	.get_max_filters = can_renesas_rz_get_max_filters,
 	.timing_min = CAN_RENESAS_RZ_TIMING_MIN,

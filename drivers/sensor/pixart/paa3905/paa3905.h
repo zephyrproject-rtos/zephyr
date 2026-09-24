@@ -46,8 +46,6 @@ struct paa3905_stream {
 	const struct device *dev;
 	struct rtio_iodev_sqe *iodev_sqe;
 	struct k_timer timer;
-	struct k_work led_work;
-	uint16_t led_reassert_ctr;
 	struct {
 		struct {
 			bool drdy : 1;
@@ -81,7 +79,5 @@ struct paa3905_config {
  * is detected.
  */
 int paa3905_recover(const struct device *dev);
-
-int paa3905_apply_led_config(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_PAA3905_H_ */

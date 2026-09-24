@@ -12,7 +12,5 @@ ram: 512
 flash: 1024
 supported:
   - gpio
-  - netif:eth
-  - ptp_clock
   - usbd
 vendor: nuvoton

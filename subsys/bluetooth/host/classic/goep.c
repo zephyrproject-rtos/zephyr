@@ -384,11 +384,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	struct net_buf *buf;
 
-	/* Called from the Bluetooth RX workqueue, which is also the context that
-	 * releases these buffers once an SDU has been delivered, so waiting here
-	 * could never be satisfied.
-	 */
-	buf = net_buf_alloc(&goep_rx_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&goep_rx_pool, K_FOREVER);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
 	}

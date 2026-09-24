@@ -36,8 +36,6 @@
 	pinctrl-names = "default";
 
 	spi {
-		rx-dtc;
-		tx-dtc;
 		cs-gpios = <&ioport7 13 GPIO_ACTIVE_LOW>;
 		status = "okay";
 
@@ -62,8 +60,6 @@
 	pinctrl-names = "default";
 
 	dut_spis: spi {
-		rx-dtc;
-		tx-dtc;
 		status = "okay";
 	};
 

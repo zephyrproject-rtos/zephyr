@@ -1,4 +1,4 @@
 tests:
   integration.kernel:
     tags:
-      - integration
+      - kernel

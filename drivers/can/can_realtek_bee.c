@@ -176,6 +176,8 @@ static void can_bee_update_state(const struct device *dev)
 	struct can_bee_data *data = dev->data;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
+	can_state_change_callback_t cb;
+	void *user_data;
 
 	can_bee_get_state(dev, &state, &err_cnt);
 
@@ -185,7 +187,12 @@ static void can_bee_update_state(const struct device *dev)
 
 	data->state = state;
 
-	can_fire_state_change_callbacks(dev, state, err_cnt);
+	cb = data->common.state_change_cb;
+	user_data = data->common.state_change_cb_user_data;
+
+	if (cb != NULL) {
+		cb(dev, state, err_cnt, user_data);
+	}
 }
 
 static int can_bee_start(const struct device *dev)
@@ -622,6 +629,17 @@ unlock:
 	k_mutex_unlock(&data->inst_mutex);
 }
 
+static void can_bee_set_state_change_callback(const struct device *dev,
+					      can_state_change_callback_t cb, void *user_data)
+{
+	struct can_bee_data *data = dev->data;
+	unsigned int key = irq_lock();
+
+	data->common.state_change_cb = cb;
+	data->common.state_change_cb_user_data = user_data;
+	irq_unlock(key);
+}
+
 static int can_bee_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	ARG_UNUSED(dev);
@@ -786,7 +804,6 @@ static int can_bee_init(const struct device *dev)
 	CAN_InitTypeDef *init_struct = &data->init_struct;
 	int ret;
 
-	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&data->inst_mutex);
 	k_sem_init(&data->tx_int_sem, CONFIG_CAN_REALTEK_BEE_TX_MSG_BUF_NUM,
 		   CONFIG_CAN_REALTEK_BEE_TX_MSG_BUF_NUM);
@@ -854,6 +871,7 @@ static DEVICE_API(can, can_bee_driver_api) = {
 	.add_rx_filter = can_bee_add_rx_filter,
 	.remove_rx_filter = can_bee_remove_rx_filter,
 	.get_state = can_bee_get_state,
+	.set_state_change_callback = can_bee_set_state_change_callback,
 	.get_core_clock = can_bee_get_core_clock,
 	.get_max_filters = can_bee_get_max_filters,
 	/* clang-format off */

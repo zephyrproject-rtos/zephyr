@@ -77,8 +77,7 @@ int nxp_s32_qspi_read(const struct device *dev, off_t offset, void *dest, size_t
 		status = Qspi_Ip_Read(data->instance, (uint32_t)offset, (uint8_t *)dest,
 				      (uint32_t)size);
 		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to read %zu bytes at 0x%lx (%d)", size,
-				(long)offset, status);
+			LOG_ERR("Failed to read %zu bytes at 0x%lx (%d)", size, offset, status);
 			ret = -EIO;
 		}
 
@@ -119,8 +118,7 @@ int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void *src, 
 		status = Qspi_Ip_Program(data->instance, (uint32_t)offset, (const uint8_t *)src,
 					 (uint32_t)len);
 		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to write %zu bytes at 0x%lx (%d)",
-				len, (long)offset, status);
+			LOG_ERR("Failed to write %zu bytes at 0x%lx (%d)", len, offset, status);
 			ret = -EIO;
 			break;
 		}
@@ -134,8 +132,7 @@ int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void *src, 
 			status = Qspi_Ip_ProgramVerify(data->instance, (uint32_t)offset,
 						       (const uint8_t *)src, (uint32_t)len);
 			if (status != STATUS_QSPI_IP_SUCCESS) {
-				LOG_ERR("Write verification failed at 0x%lx (%d)",
-					(long)offset, status);
+				LOG_ERR("Write verification failed at 0x%lx (%d)", offset, status);
 				ret = -EIO;
 				break;
 			}
@@ -179,7 +176,7 @@ static int nxp_s32_qspi_erase_block(const struct device *dev, off_t offset, size
 		status = Qspi_Ip_EraseBlock(data->instance, (uint32_t)offset, *erase_size);
 		if (status != STATUS_QSPI_IP_SUCCESS) {
 			LOG_ERR("Failed to erase %zu bytes at 0x%lx (%d)", *erase_size,
-				(unsigned long)offset, status);
+				(long)offset, status);
 			ret = -EIO;
 		}
 	} else {
@@ -232,8 +229,8 @@ int nxp_s32_qspi_erase(const struct device *dev, off_t offset, size_t size)
 				status = Qspi_Ip_EraseVerify(data->instance, (uint32_t)offset,
 							     erase_size);
 				if (status != STATUS_QSPI_IP_SUCCESS) {
-					LOG_ERR("Erase verification failed at 0x%lx (%d)",
-						(long)offset, status);
+					LOG_ERR("Erase verification failed at 0x%lx (%d)", offset,
+						status);
 					ret = -EIO;
 					break;
 				}

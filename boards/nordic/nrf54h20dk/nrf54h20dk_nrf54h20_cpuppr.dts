@@ -31,21 +31,10 @@
 	};
 };
 
-ipc0: &cpuapp_cpuppr_ipc {
-	status = "okay";
+&cpuapp_cpuppr_ipc {
 	mbox-names = "tx", "rx";
 	tx-region = <&cpuppr_cpuapp_ipc_shm>;
 	rx-region = <&cpuapp_cpuppr_ipc_shm>;
-	tx-blocks = <15>;
-	rx-blocks = <15>;
-};
-
-&cpuppr_vevif {
-	status = "okay";
-};
-
-&cpuapp_bellboard {
-	status = "okay";
 };
 
 &grtc {

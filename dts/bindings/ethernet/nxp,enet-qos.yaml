@@ -8,7 +8,6 @@ compatible: "nxp,enet-qos"
 include:
   - snps,dwmac.yaml
   - pinctrl-device.yaml
-  - reset-device.yaml
 
 properties:
   reg:

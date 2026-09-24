@@ -27,9 +27,7 @@
 #include <stdbool.h>
 
 #if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
-static size_t sys_dcache_line_size;
-#else
-static const size_t sys_dcache_line_size = (size_t)CONFIG_DCACHE_LINE_SIZE;
+size_t sys_cache_line_size;
 #endif
 
 #define DC_CTRL_DC_ENABLE            0x0   /* enable d-cache */
@@ -274,6 +272,7 @@ static void dcache_high_addr_init(void)
 
 static void dcache_flush_region(void *start_addr_ptr, size_t size)
 {
+	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	uint32_t ctrl;
@@ -287,7 +286,7 @@ static void dcache_flush_region(void *start_addr_ptr, size_t size)
 
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_CTRL, ctrl);
 
-	end_addr = start_addr + size + sys_dcache_line_size - 1;
+	end_addr = start_addr + size + line_size - 1;
 
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_ENDR, end_addr);
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_STARTR, start_addr);
@@ -301,6 +300,7 @@ static void dcache_flush_region(void *start_addr_ptr, size_t size)
 
 static void dcache_invalidate_region(void *start_addr_ptr, size_t size)
 {
+	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	uint32_t ctrl;
@@ -317,7 +317,7 @@ static void dcache_invalidate_region(void *start_addr_ptr, size_t size)
 
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_CTRL, ctrl);
 
-	end_addr = start_addr + size + sys_dcache_line_size - 1;
+	end_addr = start_addr + size + line_size - 1;
 
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_ENDR, end_addr);
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_STARTR, start_addr);
@@ -327,6 +327,7 @@ static void dcache_invalidate_region(void *start_addr_ptr, size_t size)
 
 static void dcache_flush_and_invalidate_region(void *start_addr_ptr, size_t size)
 {
+	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	uint32_t ctrl;
@@ -343,7 +344,7 @@ static void dcache_flush_and_invalidate_region(void *start_addr_ptr, size_t size
 
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_CTRL, ctrl);
 
-	end_addr = start_addr + size + sys_dcache_line_size - 1;
+	end_addr = start_addr + size + line_size - 1;
 
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_ENDR, end_addr);
 	z_arc_v2_aux_reg_write(_ARC_V2_DC_STARTR, start_addr);
@@ -359,13 +360,14 @@ static void dcache_flush_and_invalidate_region(void *start_addr_ptr, size_t size
 
 static void dcache_flush_lines(void *start_addr_ptr, size_t size)
 {
+	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	unsigned int key;
 
 	end_addr = start_addr + size;
 
-	start_addr = ROUND_DOWN(start_addr, sys_dcache_line_size);
+	start_addr = ROUND_DOWN(start_addr, line_size);
 
 	key = arch_irq_lock(); /* --enter critical section-- */
 
@@ -381,7 +383,7 @@ static void dcache_flush_lines(void *start_addr_ptr, size_t size)
 				break;
 			}
 		} while (1);
-		start_addr += sys_dcache_line_size;
+		start_addr += line_size;
 	} while (start_addr < end_addr);
 
 	arch_irq_unlock(key); /* --exit critical section-- */
@@ -389,13 +391,14 @@ static void dcache_flush_lines(void *start_addr_ptr, size_t size)
 
 static void dcache_invalidate_lines(void *start_addr_ptr, size_t size)
 {
+	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	unsigned int key;
 	uint32_t ctrl;
 
 	end_addr = start_addr + size;
-	start_addr = ROUND_DOWN(start_addr, sys_dcache_line_size);
+	start_addr = ROUND_DOWN(start_addr, line_size);
 
 	key = arch_irq_lock(); /* -enter critical section- */
 
@@ -408,20 +411,21 @@ static void dcache_invalidate_lines(void *start_addr_ptr, size_t size)
 		__builtin_arc_nop();
 		__builtin_arc_nop();
 		__builtin_arc_nop();
-		start_addr += sys_dcache_line_size;
+		start_addr += line_size;
 	} while (start_addr < end_addr);
 	irq_unlock(key); /* -exit critical section- */
 }
 
 static void dcache_flush_and_invalidate_lines(void *start_addr_ptr, size_t size)
 {
+	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	unsigned int key;
 	uint32_t ctrl;
 
 	end_addr = start_addr + size;
-	start_addr = ROUND_DOWN(start_addr, sys_dcache_line_size);
+	start_addr = ROUND_DOWN(start_addr, line_size);
 
 	key = arch_irq_lock(); /* -enter critical section- */
 
@@ -434,7 +438,7 @@ static void dcache_flush_and_invalidate_lines(void *start_addr_ptr, size_t size)
 		__builtin_arc_nop();
 		__builtin_arc_nop();
 		__builtin_arc_nop();
-		start_addr += sys_dcache_line_size;
+		start_addr += line_size;
 	} while (start_addr < end_addr);
 	irq_unlock(key); /* -exit critical section- */
 }
@@ -443,7 +447,9 @@ static void dcache_flush_and_invalidate_lines(void *start_addr_ptr, size_t size)
 
 int arch_dcache_flush_range(void *start_addr_ptr, size_t size)
 {
-	if (!dcache_available() || (size == 0U) || sys_dcache_line_size == 0U) {
+	size_t line_size = sys_cache_data_line_size_get();
+
+	if (!dcache_available() || (size == 0U) || line_size == 0U) {
 		return -ENOTSUP;
 	}
 
@@ -462,7 +468,9 @@ int arch_dcache_flush_range(void *start_addr_ptr, size_t size)
 
 int arch_dcache_invd_range(void *start_addr_ptr, size_t size)
 {
-	if (!dcache_available() || (size == 0U) || sys_dcache_line_size == 0U) {
+	size_t line_size = sys_cache_data_line_size_get();
+
+	if (!dcache_available() || (size == 0U) || line_size == 0U) {
 		return -ENOTSUP;
 	}
 
@@ -481,7 +489,9 @@ int arch_dcache_invd_range(void *start_addr_ptr, size_t size)
 
 int arch_dcache_flush_and_invd_range(void *start_addr_ptr, size_t size)
 {
-	if (!dcache_available() || (size == 0U) || sys_dcache_line_size == 0U) {
+	size_t line_size = sys_cache_data_line_size_get();
+
+	if (!dcache_available() || (size == 0U) || line_size == 0U) {
 		return -ENOTSUP;
 	}
 
@@ -500,9 +510,10 @@ int arch_dcache_flush_and_invd_range(void *start_addr_ptr, size_t size)
 
 int arch_dcache_flush_all(void)
 {
+	size_t line_size = sys_cache_data_line_size_get();
 	unsigned int key;
 
-	if (!dcache_available() || sys_dcache_line_size == 0U) {
+	if (!dcache_available() || line_size == 0U) {
 		return -ENOTSUP;
 	}
 
@@ -525,10 +536,11 @@ int arch_dcache_flush_all(void)
 
 int arch_dcache_invd_all(void)
 {
+	size_t line_size = sys_cache_data_line_size_get();
 	unsigned int key;
 	uint32_t ctrl;
 
-	if (!dcache_available() || sys_dcache_line_size == 0U) {
+	if (!dcache_available() || line_size == 0U) {
 		return -ENOTSUP;
 	}
 
@@ -551,10 +563,11 @@ int arch_dcache_invd_all(void)
 
 int arch_dcache_flush_and_invd_all(void)
 {
+	size_t line_size = sys_cache_data_line_size_get();
 	unsigned int key;
 	uint32_t ctrl;
 
-	if (!dcache_available() || sys_dcache_line_size == 0U) {
+	if (!dcache_available() || line_size == 0U) {
 		return -ENOTSUP;
 	}
 
@@ -588,12 +601,12 @@ static void init_dcache_line_size(void)
 	__ASSERT((val&0xff) != 0U, "d-cache is not present");
 	val = ((val>>16) & 0xf) + 1;
 	val *= 16U;
-	sys_dcache_line_size = (size_t)val;
+	sys_cache_line_size = (size_t) val;
 }
 
 size_t arch_dcache_line_size_get(void)
 {
-	return sys_dcache_line_size;
+	return sys_cache_line_size;
 }
 #endif
 

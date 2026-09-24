@@ -44,7 +44,6 @@
 		sw1 = &user_button_3;
 		wakeup-button = &user_button_2;
 		mcuboot-button0 = &user_button_2;
-		accel0 = &fxls8974;
 	};
 
 	leds {
@@ -207,7 +206,7 @@
 
 /*
  * LPFLEXCOMM supports UART and I2C on the same instance, enable this for
- * LPFLEXCOMM2
+ * LFLEXCOMM2
  */
 &flexcomm2_lpuart2 {
 	status = "okay";
@@ -220,11 +219,6 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-
-	fxls8974: accelerometer@18 {
-		compatible = "nxp,fxls8974";
-		reg = <0x18>;
-	};
 
 	/* Note: The DA7212 codec is not populated on this board by default.
 	 * Refer to the board MCX_N5XX_EVK to use this sample with the same codec.
@@ -374,7 +368,7 @@ arduino_spi: &flexcomm3_lpspi3 {
 
 &flash {
 	partitions {
-		ranges;
+		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -383,7 +377,6 @@ arduino_spi: &flexcomm3_lpspi3 {
 		 * to the flash memory sector size of 8KB.
 		 */
 		boot_partition: partition@0 {
-			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
@@ -392,19 +385,16 @@ arduino_spi: &flexcomm3_lpspi3 {
 		 * the slot sizes must be equal.
 		 */
 		slot0_partition: partition@14000 {
-			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(440)>;
 		};
 
 		slot1_partition: partition@84000 {
-			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x0084000 DT_SIZE_K(440)>;
 		};
 
 		storage_partition: partition@f0000 {
-			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
 		};

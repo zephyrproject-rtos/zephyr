@@ -65,9 +65,7 @@ shields:
 - ``m2mem_xspi`` for the serial NOR interface
 - ``m2mem_ldo_en`` for module power-cycle/reset control
 
-Host boards providing this connector can be found by filtering the
-:ref:`board catalog <boards>` for the ``st,m2-memory-connector``
-hardware feature.
+The current in-tree host-board implementation is ``nucleo_u3c5zi_q``.
 
 Programming
 ***********

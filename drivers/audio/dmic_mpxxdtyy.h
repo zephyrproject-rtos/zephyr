@@ -20,7 +20,7 @@ extern "C" {
 #define MPXXDTYY_MAX_PDM_FREQ		3250000 /* 3.25MHz */
 
 struct mpxxdtyy_config {
-	const struct device *comm_dev;
+	const struct device *comm_master;
 };
 
 struct mpxxdtyy_data {

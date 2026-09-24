@@ -57,9 +57,6 @@ config SILABS_SISDK_RTCC
 config SILABS_SISDK_SE
 	bool "Peripheral HAL for SE (Secure Engine)"
 
-config SILABS_SISDK_SYSCFG
-	bool "Peripheral HAL for SYSCFG"
-
 config SILABS_SISDK_SYSTEM
 	bool "Peripheral HAL for SYSTEM (device info)"
 
@@ -84,9 +81,6 @@ config SILABS_SISDK_SLIST
 
 config SILABS_SISDK_CLOCK_MANAGER
 	bool "Clock Manager service"
-	select SILABS_SISDK_SE if SOC_FAMILY_SILABS_S3
-	select SILABS_SISDK_SYSCFG if SOC_FAMILY_SILABS_S3
-	select SILABS_SISDK_SYSTEM if SOC_FAMILY_SILABS_S3
 	help
 	  Set if the Clock Manager HAL module is used.
 
@@ -104,7 +98,7 @@ config SILABS_SISDK_HFXO_MANAGER
 
 config SILABS_SISDK_POWER_MANAGER
 	bool "Power Manager service"
-	select SILABS_SISDK_EMU if SOC_FAMILY_SILABS_S2
+	select SILABS_SISDK_EMU
 	select SILABS_SISDK_SLIST
 	help
 	  Set if the Power Manager HAL module is used.
@@ -152,7 +146,6 @@ config SILABS_SISDK_RAIL_MULTIPROTOCOL
 
 config SILABS_SISDK_PROTOCOL_CRYPTO
 	bool
-	depends on SOC_VENDOR_SILABS_HAS_RADIO
-	depends on $(dt_nodelabel_enabled,lpwaes) if SOC_FAMILY_SILABS_S3
+	depends on SOC_GECKO_HAS_RADIO
 
 endmenu

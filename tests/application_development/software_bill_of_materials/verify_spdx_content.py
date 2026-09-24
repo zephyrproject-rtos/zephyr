@@ -15,7 +15,6 @@ and license information for a minimal Zephyr application.
 
 import hashlib
 import os
-import re
 
 import pytest
 from spdx_tools.spdx.model import ExternalPackageRefCategory
@@ -55,7 +54,7 @@ FILE_REUSE_TOML_C = "./src/no_header.c"
 # Common license and copyright strings as they appear in the SBOM.
 LICENSE_APACHE = "Apache-2.0"
 COPYRIGHT_ZEPHYR = "Copyright The Zephyr Project Contributors"
-COPYRIGHT_LINUX_FOUNDATION = "Copyright (c) 2026 The Linux Foundation"
+COPYRIGHT_LINUX_FOUNDATION = "Copyright (C) 2026 The Linux Foundation"
 
 # Fake vendor blobs provided by the used module: one linked as an imported
 # library, one via -lNAME/-L linker flags and one via an -l:FILENAME flag.
@@ -69,23 +68,13 @@ BLOB_CONTENT = b"!<arch>\n"
 BLOB_VERSION = "1.2.3"
 BLOB_URL_PREFIX = "https://example.com/blobs/"
 LICENSE_BLOBS = "MIT"
-COPYRIGHT_BLOBS = "Copyright (c) 2026 Fake Vendor"
+# REUSE canonicalizes copyright notices, so the "(c)" the module's REUSE.toml
+# declares is surfaced as "(C)" here.
+COPYRIGHT_BLOBS = "Copyright (C) 2026 Fake Vendor"
 
 # answer.c declares its copyright with the SPDX tag, and the scanner stores each
 # notice canonically between newlines, so this is the exact value in the SBOM.
 EXPECTED_USED_MODULE_COPYRIGHT = f"\nSPDX-FileCopyrightText: {COPYRIGHT_ZEPHYR}\n"
-
-
-def normalize_copyright(text):
-    """
-    Fold the copyright symbol to a single spelling.
-
-    REUSE re-renders a notice from a canonical prefix rather than echoing the
-    one the source declares, and which of "(c)" or "(C)" it picks varies
-    between library versions, so normalize both sides before comparing.
-    """
-
-    return re.sub(r"\(c\)", "(C)", str(text), flags=re.IGNORECASE)
 
 
 def find_file_by_name(doc, name):
@@ -392,12 +381,10 @@ class TestAppDocument:
 
         assert main_c_spdx.copyright_text, "app.spdx: main.c has no copyright_text"
 
-        copyright_text = normalize_copyright(main_c_spdx.copyright_text)
+        copyright_text = str(main_c_spdx.copyright_text)
         expected = [COPYRIGHT_ZEPHYR, COPYRIGHT_LINUX_FOUNDATION]
         for s in expected:
-            assert normalize_copyright(s) in copyright_text, (
-                f"main.c copyright missing '{s}', got '{main_c_spdx.copyright_text}'"
-            )
+            assert s in copyright_text, f"main.c copyright missing '{s}', got '{copyright_text}'"
 
 
 class TestZephyrDocument:
@@ -1162,8 +1149,7 @@ class TestBlobs:
 
     def test_blob_copyright_from_reuse_toml(self, blob_file):
         """Binary blobs cannot carry SPDX headers; REUSE.toml supplies their copyright."""
-        copyright_text = normalize_copyright(blob_file.copyright_text)
-        assert normalize_copyright(COPYRIGHT_BLOBS) in copyright_text, (
+        assert COPYRIGHT_BLOBS in str(blob_file.copyright_text), (
             f"zephyr.spdx: {blob_file.name} copyright should come from REUSE.toml "
             f"('{COPYRIGHT_BLOBS}'), got '{blob_file.copyright_text}'"
         )

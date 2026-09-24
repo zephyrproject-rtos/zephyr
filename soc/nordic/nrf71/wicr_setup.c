@@ -42,18 +42,8 @@ static const struct wicr_word wicr_words[] = {
 
 int wicr_setup(void)
 {
+	bool write_enabled = false;
 	int err = 0;
-
-	while (!nrfx_mramc_ready_check()) {
-		/* Wait until MRAMC is ready for the next operation. */
-	}
-
-	/* The page permissions gate reads as well as writes, so the page has to
-	 * be unlocked before the comparison below is meaningful. Reading it
-	 * while locked yields 0xFFFFFFFF for every word, so no word ever
-	 * matches and the whole block is rewritten on every boot.
-	 */
-	nrfx_mramc_confignvr_perm_set(true, MRAM_CONFIGNVR_WICR_PAGE);
 
 	for (size_t i = 0; i < ARRAY_SIZE(wicr_words); i++) {
 		volatile uint32_t *reg = (uint32_t *)(WICR_BASE + wicr_words[i].offset);
@@ -63,11 +53,12 @@ int wicr_setup(void)
 			continue;
 		}
 
-		*reg = wicr_words[i].value;
-
-		while (!nrfx_mramc_ready_check()) {
-			/* Let the write commit before reading it back. */
+		if (!write_enabled) {
+			nrfx_mramc_confignvr_perm_set(true, MRAM_CONFIGNVR_WICR_PAGE);
+			write_enabled = true;
 		}
+
+		*reg = wicr_words[i].value;
 
 		if (*reg != wicr_words[i].value) {
 			err = -EIO;
@@ -75,11 +66,9 @@ int wicr_setup(void)
 		}
 	}
 
-	while (!nrfx_mramc_ready_check()) {
-		/* Do not lock the page with a write still in flight. */
+	if (write_enabled) {
+		nrfx_mramc_confignvr_perm_set(false, MRAM_CONFIGNVR_WICR_PAGE);
 	}
-
-	nrfx_mramc_confignvr_perm_set(false, MRAM_CONFIGNVR_WICR_PAGE);
 
 	return err;
 }

@@ -189,6 +189,8 @@ static inline void can_stm32_bus_state_change_isr(const struct device *dev)
 	struct can_stm32_data *data = dev->data;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
+	const can_state_change_callback_t cb = data->common.state_change_cb;
+	void *state_change_cb_data = data->common.state_change_cb_user_data;
 
 #ifdef CONFIG_CAN_STATS
 	const struct can_stm32_config *cfg = dev->config;
@@ -226,7 +228,9 @@ static inline void can_stm32_bus_state_change_isr(const struct device *dev)
 	if (state != data->state) {
 		data->state = state;
 
-		can_fire_state_change_callbacks(dev, state, err_cnt);
+		if (cb != NULL) {
+			cb(dev, state, err_cnt, state_change_cb_data);
+		}
 	}
 }
 
@@ -597,7 +601,6 @@ static int can_stm32_init(const struct device *dev)
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int ret;
 
-	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&filter_mutex);
 	k_mutex_init(&data->inst_mutex);
 	k_sem_init(&data->tx_int_sem, 0, 1);
@@ -688,18 +691,22 @@ static int can_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static int can_stm32_state_change_callbacks_enabled(const struct device *dev, bool enabled)
+static void can_stm32_set_state_change_callback(const struct device *dev,
+						can_state_change_callback_t cb,
+						void *user_data)
 {
+	struct can_stm32_data *data = dev->data;
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 
-	if (enabled) {
-		can->IER |= CAN_IER_BOFIE | CAN_IER_EPVIE | CAN_IER_EWGIE;
-	} else {
-		can->IER &= ~(CAN_IER_BOFIE | CAN_IER_EPVIE | CAN_IER_EWGIE);
-	}
+	data->common.state_change_cb = cb;
+	data->common.state_change_cb_user_data = user_data;
 
-	return 0;
+	if (cb == NULL) {
+		can->IER &= ~(CAN_IER_BOFIE | CAN_IER_EPVIE | CAN_IER_EWGIE);
+	} else {
+		can->IER |= CAN_IER_BOFIE | CAN_IER_EPVIE | CAN_IER_EWGIE;
+	}
 }
 
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
@@ -1079,7 +1086,7 @@ static DEVICE_API(can, can_api_funcs) = {
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_stm32_recover,
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
-	.state_change_callbacks_enabled = can_stm32_state_change_callbacks_enabled,
+	.set_state_change_callback = can_stm32_set_state_change_callback,
 	.get_core_clock = can_stm32_get_core_clock,
 	.get_max_filters = can_stm32_get_max_filters,
 	.timing_min = {

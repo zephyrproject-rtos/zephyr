@@ -16,7 +16,6 @@ USB
 .. toctree::
    :maxdepth: 1
 
-   guidelines.rst
    device_next/usb_device.rst
    device_next/vid_pid.rst
    device_next/cdc_acm.rst

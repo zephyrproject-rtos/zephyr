@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nordic/nrf54l05_ipc_shared_ram.dtsi>
-
 / {
 	soc {
 		cpuflpr_sram_code_data: memory@2000fc00 {
@@ -18,18 +16,12 @@
 	};
 };
 
-&ipc0 {
-	status = "okay";
-	tx-region = <&cpuapp_cpuflpr_ipc_shm>;
-	rx-region = <&cpuflpr_cpuapp_ipc_shm>;
-};
-
 &uart30 {
 	status = "reserved";
 };
 
 &cpuapp_sram_app {
-	reg = <0x60 (DT_SIZE_K(59) - 0x60)>;
+	reg = <0x60 (DT_SIZE_K(63) - 0x60)>;
 };
 
 &cpuapp_rram {
@@ -54,10 +46,6 @@
 &cpuflpr_vpr {
 	execution-memory = <&cpuflpr_sram_code_data>;
 	source-memory = <&cpuflpr_rram>;
-};
-
-&cpuapp_vevif_rx {
-	status = "okay";
 };
 
 &cpuapp_vevif_tx {

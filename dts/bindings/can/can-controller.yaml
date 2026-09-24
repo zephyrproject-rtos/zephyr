@@ -2,8 +2,6 @@
 
 include: base.yaml
 
-class: can
-
 properties:
   bitrate:
     type: int

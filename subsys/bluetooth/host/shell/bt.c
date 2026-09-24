@@ -109,9 +109,7 @@ static ATOMIC_DEFINE(adv_opt, SHELL_ADV_OPT_NUM);
 #if defined(CONFIG_BT_EXT_ADV)
 uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
-static ATOMIC_DEFINE(adv_set_opt[CONFIG_BT_EXT_ADV_MAX_ADV_SET], SHELL_ADV_OPT_NUM);
-BUILD_ASSERT(ARRAY_SIZE(adv_set_opt) == CONFIG_BT_EXT_ADV_MAX_ADV_SET,
-	     "adv_set_opt must have one bitmap per advertising set");
+static ATOMIC_DEFINE(adv_set_opt, SHELL_ADV_OPT_NUM)[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 #endif /* CONFIG_BT_EXT_ADV */
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -573,17 +571,6 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 		       phy2str(info->primary_phy), phy2str(info->secondary_phy),
 		       info->interval, BT_CONN_INTERVAL_TO_US(info->interval),
 		       info->sid);
-
-	if (info->direct_addr != NULL) {
-		const char *unresolved = "";
-
-		if (info->direct_addr->type == BT_ADDR_LE_UNRESOLVED) {
-			unresolved = " [unresolved]";
-		}
-
-		bt_shell_print("%*sDirected to %s%s", (int)strlen(scan_response_label), "",
-			       bt_addr_le_str(info->direct_addr), unresolved);
-	}
 
 	if (scan_verbose_output) {
 		bt_shell_info("%*s[SCAN DATA START - %s]",
@@ -1681,7 +1668,7 @@ static int cmd_scan_off(const struct shell *sh)
 static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct sys_getopt_state *state = sys_getopt_state_get();
-	enum { TIMEOUT, INTERVAL, WINDOW, FILTER_DUPS, FAL, CODED, NO_1M, EXT_FILTER_POLICY };
+	enum { TIMEOUT, INTERVAL, WINDOW, FILTER_DUPS, FAL, CODED, NO_1M };
 	static const struct sys_getopt_option long_options[] = {
 		{ "timeout", sys_getopt_required_argument, NULL, TIMEOUT },
 		{ "interval", sys_getopt_required_argument, NULL, INTERVAL },
@@ -1690,7 +1677,6 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 		{ "fal", sys_getopt_no_argument, NULL, FAL },
 		{ "coded", sys_getopt_no_argument, NULL, CODED },
 		{ "no-1m", sys_getopt_no_argument, NULL, NO_1M },
-		{ "ext-filter-policy", sys_getopt_no_argument, NULL, EXT_FILTER_POLICY },
 		{ "help", sys_getopt_no_argument, NULL, 'h' },
 		{},
 	};
@@ -1741,9 +1727,6 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 			break;
 		case NO_1M:
 			options |= BT_LE_SCAN_OPT_NO_1M;
-			break;
-		case EXT_FILTER_POLICY:
-			options |= BT_LE_SCAN_OPT_EXT_FILTER_POLICY;
 			break;
 		case 'h':
 			shell_help(sh);
@@ -5480,10 +5463,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
 		      "[--timeout <timeout>] [--filter-dups] [--fal] [--coded] [--no-1m] "
-		      "[--ext-filter-policy] "
 		      "[--interval <n * 0.625 ms] [--window <n * 0.625 ms>] "
 		      "<value: on, passive, off>",
-		      cmd_scan, 2, 12),
+		      cmd_scan, 2, 11),
 	SHELL_CMD(scan-filter-set, &bt_scan_filter_set_cmds,
 		      "Scan filter set commands",
 		      cmd_default_handler),

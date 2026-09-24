@@ -19,5 +19,4 @@ supported:
   - crc
   - watchdog
   - mbox
-  - input
 vendor: nxp

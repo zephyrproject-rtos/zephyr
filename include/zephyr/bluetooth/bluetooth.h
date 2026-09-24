@@ -691,13 +691,9 @@ enum bt_le_adv_opt {
 	 * This is required if the remote device is privacy-enabled and
 	 * supports address resolution of the target address in directed
 	 * advertisement.
-	 * When @kconfig{CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES} is enabled
-	 * the host reads the peer's Central Address Resolution characteristic
-	 * when a bond is created, advertising towards a peer known not to
-	 * support address resolution fails with -ENOTSUP, and the answer can
-	 * be queried with @ref bt_le_bond_addr_res_support. When the support
-	 * is not known, it is the responsibility of the application to check
-	 * it by reading that characteristic.
+	 * It is the responsibility of the application to check that the remote
+	 * device supports address resolution of directed advertisements by
+	 * reading its Central Address Resolution characteristic.
 	 */
 	BT_LE_ADV_OPT_DIR_ADDR_RPA = BIT(5),
 
@@ -1294,9 +1290,6 @@ struct bt_le_per_adv_param {
  * @return Zero on success or (negative) error code otherwise.
  * @return -ENOMEM No free connection objects available for connectable
  *                 advertiser.
- * @retval -ENOTSUP @ref BT_LE_ADV_OPT_DIR_ADDR_RPA was used and the peer is
- *                  known not to support address resolution, as reported by
- *                  @ref bt_le_bond_addr_res_support.
  * @return -ECONNREFUSED When connectable advertising is requested and there
  *                       is already maximum number of connections established
  *                       in the controller.
@@ -2423,21 +2416,6 @@ enum bt_le_scan_opt {
 	 * @note Requires @ref BT_LE_SCAN_OPT_CODED.
 	 */
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
-
-	/**
-	 * @brief Use the extended scanner filter policy.
-	 *
-	 * Also report directed advertisements whose target address is a resolvable private
-	 * address that the Controller was unable to resolve. The target address is reported
-	 * in @ref bt_le_scan_recv_info.direct_addr.
-	 *
-	 * @note Requires @kconfig{CONFIG_BT_SCAN_EXT_FILTER_POLICY}. @ref bt_le_scan_start
-	 *       returns @c -EINVAL if this option is set while it is disabled.
-	 *
-	 * @note Requires a Controller that supports the Extended Scanner Filter Policies.
-	 *       @ref bt_le_scan_start returns @c -ENOTSUP otherwise.
-	 */
-	BT_LE_SCAN_OPT_EXT_FILTER_POLICY = BIT(4),
 };
 
 enum bt_le_scan_type {
@@ -2564,23 +2542,6 @@ struct bt_le_scan_recv_info {
 
 	/** Secondary advertising channel PHY. */
 	uint8_t secondary_phy;
-
-	/**
-	 * @brief Target address of a directed advertisement.
-	 *
-	 * @c NULL if the report carries no target address. Whether the advertisement was
-	 * directed is given by @ref BT_GAP_ADV_PROP_DIRECTED in
-	 * @ref bt_le_scan_recv_info.adv_props.
-	 *
-	 * An LE Extended Advertising Report always carries the target address of a directed
-	 * advertisement, whether or not the Controller resolved it. An LE Advertising Report
-	 * has no target address field, so this is @c NULL for a directed advertisement the
-	 * Controller resolved while scanning with the legacy scanning commands.
-	 *
-	 * The address type is @ref BT_ADDR_LE_UNRESOLVED if the Controller was unable to
-	 * resolve it.
-	 */
-	const bt_addr_le_t *direct_addr;
 };
 
 /** Listener context for (LE) scanning.
@@ -2723,10 +2684,6 @@ BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
  *       when requesting additional information from advertisers.
  *       In order to enable directed advertiser reports then
  *       @kconfig{CONFIG_BT_SCAN_WITH_IDENTITY} must be enabled.
- *       This does not apply to directed advertisements whose target address the Controller
- *       was unable to resolve. Those are reported whenever
- *       @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is used, as they cannot disclose the local
- *       identity address.
  *
  * @note Setting the `param.timeout` parameter is not supported when
  *       @kconfig{CONFIG_BT_PRIVACY} is enabled, when the param.type is @ref
@@ -2743,10 +2700,6 @@ BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
  * @return Zero on success or error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  * @retval -EBUSY if the scanner is already being started in a different thread.
- * @retval -EINVAL if @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is set and
- *         @kconfig{CONFIG_BT_SCAN_EXT_FILTER_POLICY} is disabled.
- * @retval -ENOTSUP if @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is set and the Controller does
- *         not support the Extended Scanner Filter Policies.
  */
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 
@@ -3002,43 +2955,6 @@ struct bt_bond_info {
 void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data);
-
-/** A bonded peer's support for address resolution. */
-enum bt_le_addr_res_support {
-	/** The peer has not been asked, or the answer could not be read. */
-	BT_LE_ADDR_RES_SUPPORT_UNKNOWN,
-	/** The peer does not support address resolution. */
-	BT_LE_ADDR_RES_SUPPORT_NO,
-	/**
-	 * The peer supports address resolution.
-	 *
-	 * Support is a static capability: it does not guarantee that the peer has address
-	 * resolution enabled at any given moment.
-	 */
-	BT_LE_ADDR_RES_SUPPORT_YES,
-};
-
-/**
- * @brief Get a bonded peer's support for address resolution.
- *
- * A peer that does not support address resolution is unable to resolve the target address
- * of a directed advertisement, i.e. it can only be reached by directed advertising that
- * does not use @ref BT_LE_ADV_OPT_DIR_ADDR_RPA.
- *
- * The answer is the value of the peer's Central Address Resolution characteristic, which
- * the host reads when the bond is created if
- * @kconfig{CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES} is enabled, with a new attempt on
- * later connections to the peer as long as the answer is unknown. It is unknown when that
- * option is disabled, when there is no bond with the peer, or when the characteristic has
- * not been read yet. The completion of the automatic read is signalled through
- * @ref bt_conn_auth_info_cb.addr_res_support_read.
- *
- * @param id    Local identity handle (typically @ref BT_ID_DEFAULT).
- * @param peer  Identity address of the bonded peer.
- *
- * @return The peer's support for address resolution.
- */
-enum bt_le_addr_res_support bt_le_bond_addr_res_support(uint8_t id, const bt_addr_le_t *peer);
 
 /**
  * @brief Configure vendor data path

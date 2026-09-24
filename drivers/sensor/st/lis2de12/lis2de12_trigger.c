@@ -43,7 +43,7 @@ static int lis2de12_enable_xl_int(const struct device *dev, int enable)
 		return ret;
 	}
 
-	val.i1_zyxda = enable ? 1 : 0;
+	val.i1_zyxda = 1;
 
 	return lis2de12_pin_int1_config_set(ctx, &val);
 }
@@ -101,12 +101,9 @@ static void lis2de12_handle_interrupt(const struct device *dev)
 			break;
 		}
 
-		if (lis2de12->handler_drdy_acc == NULL) {
-			/* ZYXDA is only cleared by reading the output registers */
-			break;
+		if ((status.zyxda) && (lis2de12->handler_drdy_acc != NULL)) {
+			lis2de12->handler_drdy_acc(dev, lis2de12->trig_drdy_acc);
 		}
-
-		lis2de12->handler_drdy_acc(dev, lis2de12->trig_drdy_acc);
 	}
 
 	gpio_pin_interrupt_configure_dt(lis2de12->drdy_gpio,

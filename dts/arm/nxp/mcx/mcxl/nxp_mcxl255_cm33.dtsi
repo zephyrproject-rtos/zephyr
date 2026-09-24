@@ -122,7 +122,3 @@
 &aon_lpuart0 {
 	interrupts = <130 0>;
 };
-
-&aon_kpp0 {
-	interrupts = <148 0>;
-};
