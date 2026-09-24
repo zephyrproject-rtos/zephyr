@@ -1,5 +1,6 @@
 common:
   tags: coredump
+  filter: CONFIG_ARCH_SUPPORTS_COREDUMP
   ignore_faults: true
   ignore_qemu_crash: true
   arch_exclude:
@@ -8,12 +9,8 @@ common:
     - qemu_x86
 tests:
   debug.coredump.backends.logging:
-    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_exclude: acrn_ehl_crb
-    extra_configs:
-      - CONFIG_TEST_STORED_COREDUMP=n
   debug.coredump.backends.flash:
-    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_flash_partition.conf
     extra_configs:
       - CONFIG_TEST_STORED_COREDUMP=y
@@ -24,12 +21,10 @@ tests:
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitc
   debug.coredump.backends.in_memory:
-    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_in_memory.conf
     extra_configs:
       - CONFIG_TEST_STORED_COREDUMP=y
   debug.coredump.backends.other:
-    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_backend_other.conf
     extra_configs:
       - CONFIG_TEST_STORED_COREDUMP=y
