@@ -57,7 +57,7 @@ void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe
 		}
 	}
 	struct rtio_sqe *writeByte_sqe = i2c_rtio_copy_reg_write_byte(
-		data->rtio_ctx, data->iodev, AKM09918C_REG_CNTL2, AKM09918C_CNTL2_SINGLE_MEASURE);
+		data->rtio_ctx, data->iodev, AKM09918C_REG_CNTL2, AK099XX_MODE_SINGLE);
 	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(data->rtio_ctx);
 
 	if (writeByte_sqe != NULL && cb_sqe != NULL) {
@@ -65,7 +65,7 @@ void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe
 		rtio_sqe_prep_callback_no_cqe(cb_sqe, akm09918_after_start_cb, (void *)iodev_sqe,
 					      NULL);
 		/* The device returns to power-down mode after a single measurement */
-		data->mode = AKM09918C_CNTL2_PWR_DOWN;
+		data->mode = AK099XX_MODE_POWER_DOWN;
 		rtio_submit(data->rtio_ctx, 0);
 	} else {
 		rtio_sqe_drop_all(data->rtio_ctx);
@@ -171,7 +171,7 @@ void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, int
 		return;
 	}
 
-	if (FIELD_GET(AKM09918C_ST1_DRDY, edata->reading.st1) == 0) {
+	if (FIELD_GET(AK099XX_ST1_DRDY, edata->reading.st1) == 0) {
 		LOG_ERR("Data not ready, st1=0x%02x", edata->reading.st1);
 		rtio_iodev_sqe_err(parent_iodev_sqe, -EBUSY);
 		return;
