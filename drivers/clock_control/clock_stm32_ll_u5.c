@@ -496,9 +496,7 @@ static void set_regu_voltage(uint32_t hclk_freq, uint32_t wanted_scale)
  * Enable the Booster mode before enabling then PLL for sysclock above 55MHz
  * The goal of this function is to set the epod prescaler, so that epod clock freq
  * is between 4MHz and 16MHz.
- * Up to now only MSI as PLL1 source clock can be > 16MHz, requiring a epod prescaler > 1
- * For HSI16, epod prescaler is default (div1, not divided).
- * Once HSE is > 16MHz, the epod prescaler would also be also required.
+ * The booster is needed whatever the PLL1 source clock.
  */
 static void set_epod_booster(void)
 {
@@ -512,11 +510,11 @@ static void set_epod_booster(void)
 	if (MHZ(55) <= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 		/*
 		 * Set EPOD clock prescaler based on PLL1 input freq
-		 * (MSI/PLLM  or HSE/PLLM when HSE is > 16MHz
+		 * (MSIS/PLLM, HSI16/PLLM or HSE/PLLM)
 		 * Booster clock frequency should be between 4 and 16MHz
 		 * This is done in following steps:
-		 * Read MSI Frequency or HSE oscillaor freq
-		 * Divide PLL1 input freq (MSI/PLL or HSE/PLLM)
+		 * Read MSIS, HSI16 or HSE oscillator freq
+		 * Divide PLL1 input freq (source/PLLM)
 		 * by the targeted freq (8MHz).
 		 * Make sure value is not higher than 16
 		 * Shift in the register space (/2)
@@ -526,10 +524,10 @@ static void set_epod_booster(void)
 		if (IS_ENABLED(STM32_PLL_SRC_MSIS)) {
 			tmp = __LL_RCC_CALC_MSIS_FREQ(LL_RCC_MSIRANGESEL_RUN,
 			 STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
-		} else if (IS_ENABLED(STM32_PLL_SRC_HSE) && (MHZ(16) < STM32_HSE_FREQ)) {
+		} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
 			tmp = STM32_HSE_FREQ;
 		} else {
-			return;
+			tmp = STM32_HSI_FREQ;
 		}
 
 		tmp = MIN(tmp / STM32_PLL_M_DIVISOR / 8000000, 16);
