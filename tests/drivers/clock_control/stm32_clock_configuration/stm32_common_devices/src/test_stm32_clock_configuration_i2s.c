@@ -46,7 +46,7 @@ ZTEST(stm32_common_devices_clocks, test_i2s_clk_config)
 
 	if (pclken[1].bus == STM32_SRC_PLLI2S_R) {
 		zassert_equal(dev_actual_clk_src, RCC_I2SCLKSOURCE_PLLI2S,
-				"Expected I2S src: PLLI2S (0x%lx). Actual I2S src: 0x%x",
+				"Expected I2S src: PLLI2S (0x%x). Actual I2S src: 0x%x",
 				RCC_I2SCLKSOURCE_PLLI2S, dev_actual_clk_src);
 	} else {
 		zassert_true(0, "Unexpected domain clk (0x%x)", dev_actual_clk_src);
