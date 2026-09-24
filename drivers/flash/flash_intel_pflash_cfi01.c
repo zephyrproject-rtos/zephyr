@@ -117,7 +117,7 @@ static int pflash_read(const struct device *dev, off_t offset, void *data, size_
 	}
 
 	/* Device is in ROM mode, just memcpy */
-	src = (uint8_t *)(base_addr + offset);
+	src = (uint8_t *)(base_addr + (ptrdiff_t)offset);
 	memcpy(data, src, len);
 
 	return 0;
@@ -128,7 +128,7 @@ static int pflash_write(const struct device *dev, off_t offset, const void *data
 	const struct pflash_config *cfg = dev->config;
 	const uint8_t *src = (const uint8_t *)data;
 	uintptr_t base_addr = DEVICE_MMIO_GET(dev);
-	uintptr_t addr = base_addr + offset;
+	uintptr_t addr = base_addr + (ptrdiff_t)offset;
 	size_t i;
 	int ret;
 
@@ -162,7 +162,7 @@ static int pflash_write(const struct device *dev, off_t offset, const void *data
 		/* Wait for operation to complete */
 		ret = pflash_wait_ready(addr + i, cfg->bank_width, cfg->device_width);
 		if (ret != 0) {
-			LOG_ERR("Write failed at offset 0x%lx", (long)(offset + i));
+			LOG_ERR("Write failed at offset 0x%tx", (ptrdiff_t)(offset + i));
 			pflash_read_array(base_addr, cfg->bank_width);
 			return ret;
 		}
@@ -204,7 +204,7 @@ static int pflash_erase(const struct device *dev, off_t offset, size_t size)
 		/* Wait for erase to complete */
 		ret = pflash_wait_ready(addr, cfg->bank_width, cfg->device_width);
 		if (ret != 0) {
-			LOG_ERR("Erase failed at offset 0x%lx", (long)(offset + erased));
+			LOG_ERR("Erase failed at offset 0x%tx", (ptrdiff_t)(offset + erased));
 			pflash_read_array(base_addr, cfg->bank_width);
 			return ret;
 		}
