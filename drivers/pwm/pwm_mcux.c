@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
 #include <fsl_flexpwm.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -31,6 +32,12 @@ LOG_MODULE_REGISTER(pwm_mcux, CONFIG_PWM_LOG_LEVEL);
 #define RELOAD_HALF_CYCLE          1U
 #define RELOAD_FULL_CYCLE          2U
 #define RELOAD_HALF_AND_FULL_CYCLE 3U
+
+/* Which output state mcux_pwm_config_channels() programs. */
+enum mcux_pwm_output_state {
+	MCUX_PWM_OUTPUT_REQUESTED, /* the waveform the caller asked for */
+	MCUX_PWM_OUTPUT_INACTIVE,  /* everything parked, for suspend */
+};
 
 struct pwm_mcux_channel {
 	uint32_t pulse_cycles;
@@ -90,6 +97,21 @@ static inline uint16_t mcux_pwm_submodule_mask(const struct device *dev)
 	return (uint16_t)BIT(config->index);
 }
 
+#ifdef CONFIG_PM_DEVICE
+static bool mcux_pwm_any_channel_configured(const struct pwm_mcux_data *data)
+{
+	uint32_t channel;
+
+	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
+		if (data->channel[channel].configured) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 /*
  * 0% and 100% duty are static levels, and the output mask is what holds them. Masking
  * forces a channel to 0 ahead of the polarity stage, so a masked pin follows OCTRL
@@ -115,14 +137,16 @@ static bool mcux_pwm_static_level(const struct pwm_mcux_data *data, uint32_t cha
 }
 
 static flexpwm_pwm_polarity_t mcux_pwm_polarity(const struct pwm_mcux_data *data,
-						uint32_t channel)
+						uint32_t channel,
+						enum mcux_pwm_output_state state)
 {
 	bool inverted = (data->channel[channel].flags & PWM_POLARITY_INVERTED) != 0U;
 
 	/* Channel X at full width is the one case where the mask has to hold the pin
 	 * active rather than inactive, so flip POLx there.
 	 */
-	if (mcux_pwm_full_width_needs_mask(data, channel)) {
+	if ((state == MCUX_PWM_OUTPUT_REQUESTED) &&
+	    mcux_pwm_full_width_needs_mask(data, channel)) {
 		inverted = !inverted;
 	}
 
@@ -250,7 +274,7 @@ static void mcux_pwm_config_counter(const struct device *dev)
  * pulse always ends on the period boundary and its width is VAL1 - VAL0. VAL1 is
  * period - 1 already, so VAL0 goes one lower.
  */
-static void mcux_pwm_config_channels(const struct device *dev)
+static void mcux_pwm_config_channels(const struct device *dev, enum mcux_pwm_output_state state)
 {
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
@@ -262,11 +286,11 @@ static void mcux_pwm_config_channels(const struct device *dev)
 
 	pwm_config.pwma.compareValue_ON = 0U;
 	pwm_config.pwma.compareValue_OFF = (uint16_t)data->channel[0].pulse_cycles;
-	pwm_config.pwma.polarity = mcux_pwm_polarity(data, 0);
+	pwm_config.pwma.polarity = mcux_pwm_polarity(data, 0, state);
 
 	pwm_config.pwmb.compareValue_ON = 0U;
 	pwm_config.pwmb.compareValue_OFF = (uint16_t)data->channel[1].pulse_cycles;
-	pwm_config.pwmb.polarity = mcux_pwm_polarity(data, 1);
+	pwm_config.pwmb.polarity = mcux_pwm_polarity(data, 1, state);
 
 	FLEXPWM_ConfigPWM(config->base, config->index, &pwm_config);
 
@@ -288,7 +312,7 @@ static void mcux_pwm_config_channels(const struct device *dev)
 			(uint16_t)(data->period_cycles - 1U - data->channel[2].pulse_cycles);
 	}
 	pwmx_config.compareValue_OFF = (uint16_t)(data->period_cycles - 1U);
-	pwmx_config.polarity = mcux_pwm_polarity(data, 2);
+	pwmx_config.polarity = mcux_pwm_polarity(data, 2, state);
 
 	FLEXPWM_ConfigPWMChannelX(config->base, config->index, &pwmx_config);
 }
@@ -316,7 +340,7 @@ static void mcux_pwm_program(const struct device *dev, bool reprogram_counter)
 		mcux_pwm_config_counter(dev);
 	}
 
-	mcux_pwm_config_channels(dev);
+	mcux_pwm_config_channels(dev, MCUX_PWM_OUTPUT_REQUESTED);
 
 	FLEXPWM_SetLoadOkay(config->base, mcux_pwm_submodule_mask(dev));
 
@@ -621,6 +645,7 @@ static void mcux_pwm_handle_capture(const struct device *dev)
 		 * ours until pwm_disable_capture() - that is what the API expects.
 		 */
 		mcux_pwm_capture_irq_disable(dev, capture->capture_channel);
+		pm_device_busy_clear(dev);
 	}
 }
 
@@ -862,6 +887,13 @@ static int mcux_pwm_enable_capture(const struct device *dev, uint32_t channel)
 	data->capture.modulo = (uint32_t)(config->base->SM[config->index].VAL1 -
 					  config->base->SM[config->index].INIT) + 1U;
 
+	/* The suspend hook halts the counter, which would leave an unknown gap
+	 * between the two captured edges and report a bogus result with err == 0.
+	 * This only keeps the system awake with CONFIG_PM_NEED_ALL_DEVICES_IDLE=y;
+	 * on its own it just makes pm_suspend_devices() skip this device.
+	 */
+	pm_device_busy_set(dev);
+
 	/* Keep captures off until the FIFO is empty. A stale edge would pair with a
 	 * new one and get reported as a real measurement.
 	 */
@@ -903,13 +935,40 @@ static int mcux_pwm_disable_capture(const struct device *dev, uint32_t channel)
 
 	data->capture_active = false;
 	data->capture.callback = NULL;
+	pm_device_busy_clear(dev);
 
 	return 0;
 }
 
+/* Drop the capture on power down. There is no telling what the input did while the
+ * counter was stopped, and the capture control registers may have gone back to
+ * their reset values. Re-arming would time the wrong pulse, or restart a one-shot
+ * that already fired, so let the caller set it up again instead. The callback runs
+ * in interrupt context, so there is no way to report this from here.
+ */
+static void mcux_pwm_capture_invalidate(const struct device *dev)
+{
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
+
+	if (data->capture.callback == NULL) {
+		return;
+	}
+
+	/* Disable the interrupts first, mcux_pwm_isr() calls the callback without a
+	 * NULL check.
+	 */
+	mcux_pwm_capture_irq_disable(dev, data->capture.capture_channel);
+	FLEXPWM_DisableInputCapture(config->base, config->index,
+				    mcux_pwm_capture_channel(data->capture.capture_channel));
+
+	data->capture_active = false;
+	data->capture.callback = NULL;
+	pm_device_busy_clear(dev);
+}
 #endif /* CONFIG_PWM_CAPTURE */
 
-static int pwm_mcux_init(const struct device *dev)
+static int pwm_mcux_init_common(const struct device *dev)
 {
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
@@ -918,8 +977,6 @@ static int pwm_mcux_init(const struct device *dev)
 	status_t status;
 	uint32_t channel;
 	int err;
-
-	k_mutex_init(&data->lock);
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -978,6 +1035,116 @@ static int pwm_mcux_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+/*
+ * The submodule keeps its registers but stops counting in every low power mode, so
+ * hold the outputs at their inactive level before halting the counter. Otherwise the
+ * pins keep whatever level they had when the clock went away. A masked pin follows
+ * POLx (see above), so the requested polarity goes in here even for a channel that
+ * normally runs inverted at full width.
+ */
+static void mcux_pwm_hold_inactive(const struct device *dev)
+{
+	struct pwm_mcux_data *data = dev->data;
+	uint32_t channel;
+
+	mcux_pwm_config_channels(dev, MCUX_PWM_OUTPUT_INACTIVE);
+
+	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
+		if (data->channel[channel].configured) {
+			mcux_pwm_mask_channel(dev, channel, true);
+		}
+	}
+}
+
+static void mcux_pwm_resume(const struct device *dev)
+{
+	struct pwm_mcux_data *data = dev->data;
+
+	if (mcux_pwm_any_channel_configured(data)) {
+		/* Restores polarity, mask, output enable and the counter in one pass. */
+		mcux_pwm_program(dev, false);
+		return;
+	}
+
+#ifdef CONFIG_PWM_CAPTURE
+	if (data->capture_active) {
+		const struct pwm_mcux_config *config = dev->config;
+
+		FLEXPWM_EnableSubmoduleCounter(config->base, mcux_pwm_submodule_mask(dev));
+	}
+#endif
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static int mcux_pwm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct pwm_mcux_config *config = dev->config;
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+#ifdef CONFIG_PM_DEVICE
+		mcux_pwm_resume(dev);
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef CONFIG_PM_DEVICE
+		mcux_pwm_hold_inactive(dev);
+		FLEXPWM_DisableSubmoduleCounter(config->base, mcux_pwm_submodule_mask(dev));
+#endif
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+		break;
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+#ifdef CONFIG_PWM_CAPTURE
+		/* Clear it here, not on the way back up. A device that is switched off
+		 * should not hold the busy flag and keep the system out of low power.
+		 */
+		mcux_pwm_capture_invalidate(dev);
+#endif /* CONFIG_PWM_CAPTURE */
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+		err = pwm_mcux_init_common(dev);
+		if (err < 0) {
+			return err;
+		}
+#ifdef CONFIG_PM_DEVICE
+		if (mcux_pwm_any_channel_configured(dev->data)) {
+			/* The submodule lost its configuration, so write all of it again. */
+			mcux_pwm_program(dev, true);
+		}
+#endif /* CONFIG_PM_DEVICE */
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int pwm_mcux_init(const struct device *dev)
+{
+	struct pwm_mcux_data *data = dev->data;
+
+	k_mutex_init(&data->lock);
+
+	/* Rest of the init is done from the PM_DEVICE_ACTION_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, mcux_pwm_pm_action);
+}
+
 static DEVICE_API(pwm, pwm_mcux_driver_api) = {
 	.set_cycles = mcux_pwm_set_cycles,
 	.get_cycles_per_sec = mcux_pwm_get_cycles_per_sec,
@@ -1026,9 +1193,11 @@ static DEVICE_API(pwm, pwm_mcux_driver_api) = {
 		PWM_MCUX_CAPTURE_CONFIG_INIT(n)	\
 	};								  \
 									  \
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_pwm_pm_action);			  \
+									  \
 	DEVICE_DT_INST_DEFINE(n,					  \
 			    pwm_mcux_init,				  \
-			    NULL,					  \
+			    PM_DEVICE_DT_INST_GET(n),			  \
 			    &pwm_mcux_data_ ## n,			  \
 			    &pwm_mcux_config_ ## n,			  \
 			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,	  \
