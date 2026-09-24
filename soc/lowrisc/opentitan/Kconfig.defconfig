@@ -3,9 +3,6 @@
 
 if SOC_OPENTITAN
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 1000000
-
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
