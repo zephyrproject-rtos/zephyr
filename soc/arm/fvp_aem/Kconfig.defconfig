@@ -3,9 +3,6 @@
 
 if SOC_SERIES_FVP_AEM
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 100000000
-
 config NUM_IRQS
 	default 16384 if GIC_V3_ITS
 	default 128 if !GIC_V3_ITS
