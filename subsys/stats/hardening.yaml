@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the statistics subsystem.
+
+rules:
+  STATS:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Statistics collection exposes counters about internal operation that profile device behavior
+      and support reconnaissance.
+    references: [CWE-200]
