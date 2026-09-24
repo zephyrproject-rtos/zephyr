@@ -1,0 +1,55 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	soc {
+		sram: sram@14000000 {
+			ranges = <0x4000000 0x14000000 DT_SIZE_K(16)>,
+				 <0x20004000 0x30004000 DT_SIZE_K(112)>;
+		};
+
+		/*
+		 * Flash content lives in the secure/non-secure flash alias,
+		 * a completely different address space than the iap
+		 * flash-controller's own peripheral-bus registers, so it is
+		 * declared directly under soc, at its real secure-alias
+		 * address, instead of nested under iap.
+		 */
+		flash0: flash@10000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x10000000 DT_SIZE_K(1016)>;
+			erase-block-size = <DT_SIZE_K(8)>;
+			write-block-size = <16>;
+			ranges = <0x0 0x10000000 DT_SIZE_K(1016)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		flash_reserved: flash@100fe000 {
+			compatible = "soc-nv-flash";
+			reg = <0x100fe000 DT_SIZE_K(8)>;
+			status = "disabled";
+		};
+
+		uuid: flash@1003fc70 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x1003fc70 0x10>;
+		};
+
+		boot_rom: flash@13000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x13000000 DT_SIZE_K(256)>;
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+		};
+	};
+};
+
+#include "nxp_mcxw23x_common.dtsi"

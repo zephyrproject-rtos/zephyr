@@ -1,12 +1,12 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/mcx/mcxw/nxp_mcxw236.dtsi>
+#include <nxp/mcx/mcxw/nxp_mcxw236_ns.dtsi>
 #include "frdm_mcxw23_common.dtsi"
 
 / {
