@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2020-2024 Intel Corporation
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -634,6 +635,127 @@ def test_testplan_parse_configuration(tmp_path, config_yaml, expected_scenarios)
             assert expected_scenarios == {}
         for level in testplan.levels:
             assert sorted(level.scenarios) == sorted(expected_scenarios[level.name])
+
+
+def test_testconfiguration_includes_merges_levels(tmp_path):
+    included = tmp_path / "kernel.yaml"
+    included.write_text(
+        """\
+levels:
+  - name: kernel
+    adds:
+      - kernel.semaphore
+      - kernel.mutex
+  - name: sanity
+    adds:
+      - drivers.console.uart
+"""
+    )
+    board = tmp_path / "board.yaml"
+    board.write_text(
+        """\
+includes:
+  - kernel.yaml
+levels:
+  - name: sanity
+    adds:
+      - kernel.common
+  - name: sanity_and_kernel
+    inherits:
+      - sanity
+      - kernel
+"""
+    )
+
+    tc = TestConfiguration(str(board))
+    assert "includes" not in tc.test_config
+    names = [lvl["name"] for lvl in tc.test_config["levels"]]
+    assert names == ["kernel", "sanity", "sanity_and_kernel"]
+    sanity = next(lvl for lvl in tc.test_config["levels"] if lvl["name"] == "sanity")
+    assert sanity["adds"] == ["drivers.console.uart", "kernel.common"]
+
+    scenarios = [
+        "kernel.semaphore",
+        "kernel.mutex",
+        "drivers.console.uart",
+        "kernel.common",
+        "other.unused",
+    ]
+    levels = {lvl.name: lvl.scenarios for lvl in tc.get_levels(scenarios)}
+    assert sorted(levels["kernel"]) == ["kernel.mutex", "kernel.semaphore"]
+    assert sorted(levels["sanity"]) == ["drivers.console.uart", "kernel.common"]
+    assert sorted(levels["sanity_and_kernel"]) == [
+        "drivers.console.uart",
+        "kernel.common",
+        "kernel.mutex",
+        "kernel.semaphore",
+    ]
+
+
+def test_testconfiguration_includes_nested_and_overlay_platforms(tmp_path):
+    common = tmp_path / "common.yaml"
+    common.write_text(
+        """\
+platforms:
+  override_default_platforms: false
+  default_platforms:
+    - qemu_x86
+levels:
+  - name: kernel
+    adds:
+      - kernel.fifo
+"""
+    )
+    mid = tmp_path / "mid.yaml"
+    mid.write_text(
+        """\
+includes:
+  - common.yaml
+levels:
+  - name: kernel
+    adds:
+      - kernel.queue
+"""
+    )
+    top = tmp_path / "top.yaml"
+    top.write_text(
+        """\
+includes:
+  - mid.yaml
+platforms:
+  override_default_platforms: true
+  default_platforms:
+    - native_sim
+"""
+    )
+
+    tc = TestConfiguration(str(top))
+    kernel = next(lvl for lvl in tc.test_config["levels"] if lvl["name"] == "kernel")
+    assert kernel["adds"] == ["kernel.fifo", "kernel.queue"]
+    assert tc.override_default_platforms is True
+    assert tc.default_platforms == ["native_sim"]
+
+
+def test_testconfiguration_includes_missing_file(tmp_path):
+    board = tmp_path / "board.yaml"
+    board.write_text(
+        """\
+includes:
+  - missing.yaml
+"""
+    )
+    with pytest.raises(TwisterRuntimeError, match="not found"):
+        TestConfiguration(str(board))
+
+
+def test_testconfiguration_includes_circular(tmp_path):
+    a = tmp_path / "a.yaml"
+    b = tmp_path / "b.yaml"
+    a.write_text("includes:\n  - b.yaml\n")
+    b.write_text("includes:\n  - a.yaml\n")
+
+    with pytest.raises(TwisterRuntimeError, match="Circular include"):
+        TestConfiguration(str(a))
 
 
 def test_testplan_parse_build_toolchains(tmp_path):
