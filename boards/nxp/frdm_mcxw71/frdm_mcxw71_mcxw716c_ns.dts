@@ -1,25 +1,26 @@
 /*
- * Copyright 2024-2026 NXP
+ * Copyright 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/mcx/mcxw/nxp_mcxw727c.dtsi>
-#include "mcxw72_evk_common.dtsi"
+#include <nxp/mcx/mcxw/nxp_mcxw716c_ns.dtsi>
+#include "frdm_mcxw71_common.dtsi"
 
 / {
-	model = "NXP MCXW72-EVK board";
+	model = "NXP FRDM-MCXW71 board";
 
 	chosen {
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmu;
-		zephyr,code-partition = &code_partition;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &stcm0;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,uart-mcumgr = &lpuart0;
 		zephyr,bt-c2h-uart = &lpuart0;
 		zephyr,crc = &crc;
 	};

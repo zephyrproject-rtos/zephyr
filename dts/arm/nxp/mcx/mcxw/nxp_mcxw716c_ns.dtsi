@@ -1,8 +1,38 @@
 /*
- * Copyright 2023-2026 NXP
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/ {
+	soc {
+		fmu: memory-controller@40020000 {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "nxp,msf1";
+			reg = <0x40020000 0x30>;
+			interrupts = <27 0>;
+			status = "disabled";
+		};
+
+		ctcm: sram@4000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		stcm: sram@20000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};
 
 #include "nxp_mcxw7x_common.dtsi"
 
@@ -27,7 +57,7 @@
 };
 
 &fmu {
-	ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
+	ranges = <0x0 0x0 DT_SIZE_M(1)>;
 };
 
 &flash {
@@ -36,7 +66,7 @@
 };
 
 &ctcm {
-	ranges = <0x0 0x14000000 DT_SIZE_K(16)>;
+	ranges = <0x0 0x4000000 DT_SIZE_K(16)>;
 };
 
 &ctcm0 {
@@ -44,27 +74,11 @@
 };
 
 &stcm {
-	ranges = <0x0 0x30000000 DT_SIZE_K(112)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(112)>;
 };
 
 &stcm0 {
 	reg = <0x0 DT_SIZE_K(112)>;
-};
-
-&cmc {
-	/*
-	 * CMC SRAM power partitions: <start-address size cmc-disable-bit>.
-	 * bits 0..1 Code-TCM (8 KB each @0x1400_0000);
-	 * bits 2..6 System-TCM (16,16,32,32,8 KB @0x3000_0000).
-	 * The top 8 KB VBAT-retained bank is intentionally omitted (never gated).
-	 */
-	sram-banks = <0x14000000 DT_SIZE_K(8) 0>,
-		     <0x14002000 DT_SIZE_K(8) 1>,
-		     <0x30000000 DT_SIZE_K(16) 2>,
-		     <0x30004000 DT_SIZE_K(16) 3>,
-		     <0x30008000 DT_SIZE_K(32) 4>,
-		     <0x30010000 DT_SIZE_K(32) 5>,
-		     <0x30018000 DT_SIZE_K(8) 6>;
 };
 
 &pbridge2 {
@@ -124,7 +138,7 @@
 };
 
 &clk_ctrl {
-	/* MCXW71 has SIRC hardware; enable it in low-power mode by default. */
+	/* MCXW716C has SIRC hardware; enable it in low-power mode by default. */
 	sirc-supported;
 	enable-sirc-in-lp-mode;
 };
