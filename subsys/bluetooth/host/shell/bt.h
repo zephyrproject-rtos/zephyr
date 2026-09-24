@@ -24,9 +24,9 @@ extern struct bt_conn *default_conn;
 
 bool passes_scan_filter(const struct bt_le_scan_recv_info *info, const struct net_buf_simple *buf);
 
-#if defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_ISO_UNICAST)
 extern struct bt_iso_chan iso_chan;
-#endif /* CONFIG_BT_ISO */
+#endif /* CONFIG_BT_ISO_UNICAST */
 
 #if defined(CONFIG_BT_EXT_ADV)
 extern uint8_t selected_adv;

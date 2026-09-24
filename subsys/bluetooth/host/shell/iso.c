@@ -821,6 +821,8 @@ static int cmd_tx_sync_read_bis(const struct shell *sh, size_t argc, char *argv[
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+static struct bt_iso_chan_io_qos bis_rx_qos;
+
 static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -849,7 +851,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	bis_iso_qos.tx = NULL;
-	bis_iso_qos.rx = &iso_rx_qos;
+	bis_iso_qos.rx = &bis_rx_qos;
 
 	param.bis_channels = bis_channels;
 	param.num_bis = BIS_ISO_CHAN_COUNT;
