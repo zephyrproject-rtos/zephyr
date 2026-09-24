@@ -6,6 +6,7 @@
  */
 
 /dts-v1/;
+#include <freq.h>
 #include <arm/renesas/rcar/gen3/r8a77951.dtsi>
 #include "rcar_salvator_x_r8a77951_r7-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -13,6 +14,10 @@
 / {
 	model = "Renesas h3 Salvator-X board";
 	compatible = "renesas,h3-salvatorx-cr7";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_K(32)>;
+	};
 
 	chosen {
 		zephyr,sram = &sram0;
