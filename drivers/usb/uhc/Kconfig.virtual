@@ -9,16 +9,27 @@ config UHC_VIRTUAL
 	help
 	  Virtual USB host controller driver.
 
+if UHC_VIRTUAL
+
 config UHC_VIRTUAL_STACK_SIZE
 	int "Virtual controller driver internal thread stack size"
-	depends on UHC_VIRTUAL
 	default 512
 	help
 	  Virtual host controller driver internal thread stack size.
 
 config UHC_VIRTUAL_THREAD_PRIORITY
 	int "Virtual controller driver thread priority"
-	depends on UHC_VIRTUAL
 	default 8
 	help
 	  Virtual host controller driver thread priority.
+
+config UHC_VIRTUAL_NUM_PORTS
+	int "Number of downstream ports on the emulated root hub"
+	default 4
+	range 4 32
+	help
+	  Number of downstream ports the virtual controller's emulated
+	  root hub exposes. Capped well below the 126 devices leaving
+	  room in the address space for future nested hub topologies.
+
+endif # UHC_VIRTUAL
