@@ -797,6 +797,9 @@ static int ifx_cat1_uart_async_tx(const struct device *dev, const uint8_t *tx_da
 	err = ifx_cat1_uart_async_dma_config_buffer(dev, true);
 	if (err) {
 		LOG_ERR("Error Tx DMA configure (%d)", err);
+		/* Never started, so no callback will end the session. */
+		data->async.dma_tx.buf = NULL;
+		data->async.dma_tx.buf_len = 0;
 		goto exit;
 	}
 
@@ -842,6 +845,9 @@ static int ifx_cat1_uart_async_tx_abort(const struct device *dev)
 	}
 
 unlock:
+	/* DMA is stopped, so end the session; the event above already read buf. */
+	data->async.dma_tx.buf = NULL;
+	data->async.dma_tx.buf_len = 0;
 	irq_unlock(key);
 	return err;
 }
@@ -874,6 +880,8 @@ static void dma_callback_tx_done(const struct device *dma_dev, void *arg, uint32
 	} else {
 		/* DMA error */
 		dma_stop(data->async.dma_tx.dma_dev, data->async.dma_tx.dma_channel);
+		data->async.dma_tx.buf = NULL;
+		data->async.dma_tx.buf_len = 0;
 	}
 
 	irq_unlock(key);
@@ -1020,6 +1028,11 @@ static int ifx_cat1_uart_async_rx_enable(const struct device *dev, uint8_t *rx_d
 	err = ifx_cat1_uart_async_dma_config_buffer(dev, false);
 	if (err) {
 		LOG_ERR("Error Rx DMA configure (%d)", err);
+		/* Hand back what the request above took and end the session; otherwise
+		 * the buffers are swallowed and a later uart_rx_enable() is rejected.
+		 */
+		async_evt_rx_release_buffer(data, CURRENT_BUFFER);
+		async_evt_rx_release_buffer(data, NEXT_BUFFER);
 		goto unlock;
 	}
 
@@ -1068,7 +1081,16 @@ static void dma_callback_rx_rdy(const struct device *dma_dev, void *arg, uint32_
 		data->async.rx_next_buf = NULL;
 		data->async.rx_next_buf_len = 0;
 
-		ifx_cat1_uart_async_dma_config_buffer(uart_dev, false);
+		if (ifx_cat1_uart_async_dma_config_buffer(uart_dev, false) != 0) {
+			/* Cannot rearm, so end the session; leaving it would hold the
+			 * buffer with RX dead and no event to the app.
+			 */
+			dma_stop(data->async.dma_rx.dma_dev, data->async.dma_rx.dma_channel);
+			async_evt_rx_release_buffer(data, CURRENT_BUFFER);
+			async_evt_rx_release_buffer(data, NEXT_BUFFER);
+			async_evt_rx_disabled(data);
+			goto unlock;
+		}
 
 		async_evt_rx_buf_request(data);
 
