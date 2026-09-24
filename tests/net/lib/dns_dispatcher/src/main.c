@@ -30,6 +30,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
+#include "ipv6.h"
+#include "udp_internal.h"
 #include "dns_dispatcher_test.h"
 
 #if defined(CONFIG_DNS_RESOLVER_LOG_LEVEL_DBG)
@@ -481,5 +483,594 @@ ZTEST(dns_dispatcher, test_dispatcher_unscoped_pairs_single_iface)
 	pair_resv.sock = -1;
 }
 
+
+/* A resolver paired with a responder gets the responder socket's answers
+ * through the pair pointer, called with only the responder's lock held.
+ * Unregistering the resolver must wait for such a call to finish, or the
+ * caller can reuse the context while the callback is still running in it.
+ */
+static K_SEM_DEFINE(paired_cb_entered, 0, 1);
+static K_SEM_DEFINE(paired_cb_release, 0, 1);
+static atomic_t paired_cb_done;
+static atomic_t paired_unreg_returned;
+
+static K_THREAD_STACK_DEFINE(paired_unreg_stack, 2048);
+static struct k_thread paired_unreg_thread;
+
+static int pair_blocking_cb(struct dns_socket_dispatcher *ctx, int sock,
+			    struct net_sockaddr *addr, size_t addrlen,
+			    struct net_buf *buf, size_t len)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(sock);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	k_sem_give(&paired_cb_entered);
+	(void)k_sem_take(&paired_cb_release, K_SECONDS(5));
+	atomic_set(&paired_cb_done, 1);
+
+	return 0;
+}
+
+static void paired_unreg_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	(void)dns_dispatcher_unregister(p1);
+	atomic_set(&paired_unreg_returned, 1);
+}
+
+/* Deliver a minimal DNS answer (QR set, rcode 0) to the pair port on
+ * iface1. The responder socket receives it, and an answer is not the
+ * responder's to handle, so the dispatcher delegates it to the pair.
+ */
+static void inject_dns_answer(void)
+{
+	static const uint8_t answer[] = { 0x12, 0x34, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0 };
+	struct net_in6_addr src = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 2 } } };
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(answer), NET_AF_INET6, NET_IPPROTO_UDP,
+					K_FOREVER);
+	zassert_not_null(pkt, "cannot allocate the answer");
+	zassert_ok(net_ipv6_create(pkt, &src, &my_addr1), "cannot create the IPv6 header");
+	zassert_ok(net_udp_create(pkt, net_htons(TEST_DNS_PAIR_PORT + 1),
+				  net_htons(TEST_DNS_PAIR_PORT)),
+		   "cannot create the UDP header");
+	zassert_ok(net_pkt_write(pkt, answer, sizeof(answer)), "cannot write the answer");
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
+	zassert_ok(net_recv_data(iface1, pkt), "cannot deliver the answer");
+}
+
+ZTEST(dns_dispatcher, test_unregister_waits_for_paired_dispatch)
+{
+	int iface_idx = net_if_get_by_iface(iface1);
+	int sock = pair_create_socket();
+	int ret;
+
+	/* One socket for both: the paired context has no socket service of
+	 * its own, so everything arrives through the responder's.
+	 */
+	pair_setup(&pair_resp, DNS_SOCKET_RESPONDER, iface_idx, sock, &pair_resp_fd);
+	ret = dns_dispatcher_register(&pair_resp);
+	zassert_ok(ret, "responder register failed (%d)", ret);
+
+	pair_setup(&pair_resv, DNS_SOCKET_RESOLVER, 0, sock, &pair_resv_fd);
+	pair_resv.cb = pair_blocking_cb;
+	ret = dns_dispatcher_register(&pair_resv);
+	zassert_ok(ret, "resolver register failed (%d)", ret);
+	zassert_equal(pair_resp.pair, &pair_resv, "resolver did not pair with the responder");
+
+	atomic_set(&paired_cb_done, 0);
+	atomic_set(&paired_unreg_returned, 0);
+	k_sem_reset(&paired_cb_entered);
+	k_sem_reset(&paired_cb_release);
+
+	inject_dns_answer();
+	zassert_ok(k_sem_take(&paired_cb_entered, K_SECONDS(2)),
+		   "the answer was not delegated to the resolver");
+
+	/* The resolver's callback is now blocked inside a dispatch on the
+	 * responder. Unregistering the resolver must not return before it.
+	 */
+	k_thread_create(&paired_unreg_thread, paired_unreg_stack,
+			K_THREAD_STACK_SIZEOF(paired_unreg_stack), paired_unreg_fn, &pair_resv,
+			NULL, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(200));
+	zassert_equal(atomic_get(&paired_unreg_returned), 0,
+		      "unregister returned while the delegated dispatch was still running");
+
+	k_sem_give(&paired_cb_release);
+	zassert_ok(k_thread_join(&paired_unreg_thread, K_SECONDS(2)),
+		   "unregister did not return after the dispatch finished");
+	zassert_equal(atomic_get(&paired_cb_done), 1, "the dispatch did not finish");
+	zassert_is_null(pair_resp.pair, "responder still points at the unregistered resolver");
+
+	ret = dns_dispatcher_unregister(&pair_resp);
+	zassert_ok(ret, "responder unregister failed (%d)", ret);
+	(void)zsock_close(sock);
+	pair_resp_fd.fd = -1;
+	pair_resv_fd.fd = -1;
+	memset(&pair_resp, 0, sizeof(pair_resp));
+	memset(&pair_resv, 0, sizeof(pair_resv));
+	pair_resp.sock = -1;
+	pair_resv.sock = -1;
+}
+
+/* A dispatch delegated to the resolver may re-enter the dispatcher API
+ * before it returns, for example when the application closes the resolver
+ * from its result callback, and then needs the global lock while it still
+ * holds the responder's. Unregistering the resolver from another thread in
+ * the meantime must not wait for that dispatch with the global lock held,
+ * or the two block each other forever.
+ */
+static K_SEM_DEFINE(reentrant_cb_go, 0, 1);
+static struct dns_socket_dispatcher reentrant_third;
+static struct zsock_pollfd reentrant_third_fd;
+static atomic_t reentrant_cb_ret;
+
+static int pair_reentrant_cb(struct dns_socket_dispatcher *ctx, int sock,
+			     struct net_sockaddr *addr, size_t addrlen,
+			     struct net_buf *buf, size_t len)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(sock);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	k_sem_give(&paired_cb_entered);
+	(void)k_sem_take(&reentrant_cb_go, K_SECONDS(5));
+
+	/* Needs the global lock, with the responder's lock held */
+	atomic_set(&reentrant_cb_ret, dns_dispatcher_register(&reentrant_third));
+	atomic_set(&paired_cb_done, 1);
+
+	return 0;
+}
+
+ZTEST(dns_dispatcher, test_unregister_with_reentrant_paired_dispatch)
+{
+	int iface_idx = net_if_get_by_iface(iface1);
+	int sock = pair_create_socket();
+	int third_sock = pair_create_socket();
+	int ret;
+
+	pair_setup(&pair_resp, DNS_SOCKET_RESPONDER, iface_idx, sock, &pair_resp_fd);
+	ret = dns_dispatcher_register(&pair_resp);
+	zassert_ok(ret, "responder register failed (%d)", ret);
+
+	pair_setup(&pair_resv, DNS_SOCKET_RESOLVER, 0, sock, &pair_resv_fd);
+	pair_resv.cb = pair_reentrant_cb;
+	ret = dns_dispatcher_register(&pair_resv);
+	zassert_ok(ret, "resolver register failed (%d)", ret);
+	zassert_equal(pair_resp.pair, &pair_resv, "resolver did not pair with the responder");
+
+	/* An unrelated context the callback registers, on its own port */
+	pair_setup(&reentrant_third, DNS_SOCKET_RESOLVER, iface_idx, third_sock,
+		   &reentrant_third_fd);
+	net_sin6(&reentrant_third.local_addr)->sin6_port = net_htons(TEST_DNS_PAIR_PORT + 1);
+
+	atomic_set(&paired_cb_done, 0);
+	atomic_set(&paired_unreg_returned, 0);
+	atomic_set(&reentrant_cb_ret, -1);
+	k_sem_reset(&paired_cb_entered);
+	k_sem_reset(&reentrant_cb_go);
+
+	inject_dns_answer();
+	zassert_ok(k_sem_take(&paired_cb_entered, K_SECONDS(2)),
+		   "the answer was not delegated to the resolver");
+
+	/* Unregister blocks waiting for the delegated dispatch. */
+	k_thread_create(&paired_unreg_thread, paired_unreg_stack,
+			K_THREAD_STACK_SIZEOF(paired_unreg_stack), paired_unreg_fn, &pair_resv,
+			NULL, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(200));
+	zassert_equal(atomic_get(&paired_unreg_returned), 0,
+		      "unregister returned while the delegated dispatch was still running");
+
+	/* Let the dispatch re-enter the dispatcher; it must get through. */
+	k_sem_give(&reentrant_cb_go);
+	zassert_ok(k_thread_join(&paired_unreg_thread, K_SECONDS(2)),
+		   "unregister and the re-entrant dispatch block each other");
+	zassert_equal(atomic_get(&paired_cb_done), 1, "the dispatch did not finish");
+	zassert_ok(atomic_get(&reentrant_cb_ret), "register from the callback failed (%d)",
+		   (int)atomic_get(&reentrant_cb_ret));
+	zassert_is_null(pair_resp.pair, "responder still points at the unregistered resolver");
+
+	ret = dns_dispatcher_unregister(&reentrant_third);
+	zassert_ok(ret, "third unregister failed (%d)", ret);
+	(void)zsock_close(third_sock);
+	ret = dns_dispatcher_unregister(&pair_resp);
+	zassert_ok(ret, "responder unregister failed (%d)", ret);
+	(void)zsock_close(sock);
+	pair_resp_fd.fd = -1;
+	pair_resv_fd.fd = -1;
+	reentrant_third_fd.fd = -1;
+	memset(&pair_resp, 0, sizeof(pair_resp));
+	memset(&pair_resv, 0, sizeof(pair_resv));
+	memset(&reentrant_third, 0, sizeof(reentrant_third));
+	pair_resp.sock = -1;
+	pair_resv.sock = -1;
+	reentrant_third.sock = -1;
+}
+
+
+/* Both halves of a pairing may be torn down at the same time, the primary
+ * first. Its unregister takes it off the list and waits for the dispatch;
+ * the pair's unregister must then still wait for the callback running in
+ * it, although no listed context points at it any more.
+ */
+static K_THREAD_STACK_DEFINE(paired_unreg2_stack, 2048);
+static struct k_thread paired_unreg2_thread;
+static atomic_t paired_unreg2_returned;
+
+static void paired_unreg2_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	(void)dns_dispatcher_unregister(p1);
+	atomic_set(&paired_unreg2_returned, 1);
+}
+
+ZTEST(dns_dispatcher, test_unregister_both_during_paired_dispatch)
+{
+	int iface_idx = net_if_get_by_iface(iface1);
+	int sock = pair_create_socket();
+	int ret;
+
+	pair_setup(&pair_resp, DNS_SOCKET_RESPONDER, iface_idx, sock, &pair_resp_fd);
+	ret = dns_dispatcher_register(&pair_resp);
+	zassert_ok(ret, "responder register failed (%d)", ret);
+
+	pair_setup(&pair_resv, DNS_SOCKET_RESOLVER, 0, sock, &pair_resv_fd);
+	pair_resv.cb = pair_blocking_cb;
+	ret = dns_dispatcher_register(&pair_resv);
+	zassert_ok(ret, "resolver register failed (%d)", ret);
+	zassert_equal(pair_resp.pair, &pair_resv, "resolver did not pair with the responder");
+
+	atomic_set(&paired_cb_done, 0);
+	atomic_set(&paired_unreg_returned, 0);
+	atomic_set(&paired_unreg2_returned, 0);
+	k_sem_reset(&paired_cb_entered);
+	k_sem_reset(&paired_cb_release);
+
+	inject_dns_answer();
+	zassert_ok(k_sem_take(&paired_cb_entered, K_SECONDS(2)),
+		   "the answer was not delegated to the resolver");
+
+	/* Primary first, then the pair while the primary is still waiting */
+	k_thread_create(&paired_unreg_thread, paired_unreg_stack,
+			K_THREAD_STACK_SIZEOF(paired_unreg_stack), paired_unreg_fn, &pair_resp,
+			NULL, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(100));
+	k_thread_create(&paired_unreg2_thread, paired_unreg2_stack,
+			K_THREAD_STACK_SIZEOF(paired_unreg2_stack), paired_unreg2_fn, &pair_resv,
+			NULL, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(200));
+	zassert_equal(atomic_get(&paired_unreg_returned), 0,
+		      "primary unregister returned while the delegated dispatch was running");
+	zassert_equal(atomic_get(&paired_unreg2_returned), 0,
+		      "pair unregister returned while its callback was still running");
+
+	k_sem_give(&paired_cb_release);
+	zassert_ok(k_thread_join(&paired_unreg_thread, K_SECONDS(2)),
+		   "primary unregister did not return");
+	zassert_ok(k_thread_join(&paired_unreg2_thread, K_SECONDS(2)),
+		   "pair unregister did not return");
+	zassert_equal(atomic_get(&paired_cb_done), 1, "the dispatch did not finish");
+
+	(void)zsock_close(sock);
+	pair_resp_fd.fd = -1;
+	pair_resv_fd.fd = -1;
+	memset(&pair_resp, 0, sizeof(pair_resp));
+	memset(&pair_resv, 0, sizeof(pair_resv));
+	pair_resp.sock = -1;
+	pair_resv.sock = -1;
+}
+
+
+/* A paired context is not on the registration list. Registering it a
+ * second time must fail without re-initializing its lock, which a
+ * delegated dispatch may be holding.
+ */
+ZTEST(dns_dispatcher, test_register_paired_twice)
+{
+	int iface_idx = net_if_get_by_iface(iface1);
+	int sock = pair_create_socket();
+	int ret;
+
+	pair_setup(&pair_resp, DNS_SOCKET_RESPONDER, iface_idx, sock, &pair_resp_fd);
+	ret = dns_dispatcher_register(&pair_resp);
+	zassert_ok(ret, "responder register failed (%d)", ret);
+
+	pair_setup(&pair_resv, DNS_SOCKET_RESOLVER, 0, sock, &pair_resv_fd);
+	ret = dns_dispatcher_register(&pair_resv);
+	zassert_ok(ret, "resolver register failed (%d)", ret);
+	zassert_equal(pair_resp.pair, &pair_resv, "resolver did not pair with the responder");
+
+	/* Stand in for a delegated dispatch holding the lock */
+	zassert_ok(k_mutex_lock(&pair_resv.lock, K_NO_WAIT), "cannot take the resolver lock");
+
+	ret = dns_dispatcher_register(&pair_resv);
+	zassert_equal(ret, -EALREADY, "second register of a paired context (%d)", ret);
+	zassert_equal(pair_resv.lock.lock_count, 1U, "the held lock was re-initialized");
+	zassert_equal(pair_resv.lock.owner, k_current_get(), "the held lock lost its owner");
+
+	zassert_ok(k_mutex_unlock(&pair_resv.lock), "cannot release the resolver lock");
+
+	ret = dns_dispatcher_unregister(&pair_resv);
+	zassert_ok(ret, "resolver unregister failed (%d)", ret);
+	ret = dns_dispatcher_unregister(&pair_resp);
+	zassert_ok(ret, "responder unregister failed (%d)", ret);
+	(void)zsock_close(sock);
+	pair_resp_fd.fd = -1;
+	pair_resv_fd.fd = -1;
+	memset(&pair_resp, 0, sizeof(pair_resp));
+	memset(&pair_resv, 0, sizeof(pair_resv));
+	pair_resp.sock = -1;
+	pair_resv.sock = -1;
+}
+
+
+/* Registration claims a dispatch table slot for every descriptor in the
+ * context's fds array, as the resolver's shared array makes it do for
+ * more than its own socket. Unregistering must release all of them: a
+ * later registration with the same array keeps the descriptor polled,
+ * and its datagrams must not reach the unregistered context.
+ */
+static struct dns_socket_dispatcher *slot_last_cb_ctx;
+static struct dns_socket_dispatcher slot_a;
+static struct dns_socket_dispatcher slot_b;
+static struct zsock_pollfd slot_fds[2];
+static K_SEM_DEFINE(slot_cb_sem, 0, 1);
+
+static int slot_cb(struct dns_socket_dispatcher *ctx, int sock, struct net_sockaddr *addr,
+		   size_t addrlen, struct net_buf *buf, size_t len)
+{
+	ARG_UNUSED(sock);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	slot_last_cb_ctx = ctx;
+	k_sem_give(&slot_cb_sem);
+
+	return 0;
+}
+
+static void inject_dns_query(uint16_t port)
+{
+	static const uint8_t query[] = { 0x12, 0x34, 0x01, 0x00, 0, 0, 0, 0, 0, 0, 0, 0 };
+	struct net_in6_addr src = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 2 } } };
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(query), NET_AF_INET6, NET_IPPROTO_UDP,
+					K_FOREVER);
+	zassert_not_null(pkt, "cannot allocate the query");
+	zassert_ok(net_ipv6_create(pkt, &src, &my_addr1), "cannot create the IPv6 header");
+	zassert_ok(net_udp_create(pkt, net_htons(port + 100), net_htons(port)),
+		   "cannot create the UDP header");
+	zassert_ok(net_pkt_write(pkt, query, sizeof(query)), "cannot write the query");
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
+	zassert_ok(net_recv_data(iface1, pkt), "cannot deliver the query");
+}
+
+static void slot_setup(struct dns_socket_dispatcher *d, int sock, uint16_t port)
+{
+	memset(d, 0, sizeof(*d));
+	d->type = DNS_SOCKET_RESPONDER;
+	d->ifindex = net_if_get_by_iface(iface1);
+	d->sock = sock;
+	d->cb = slot_cb;
+	d->fds = slot_fds;
+	d->fds_len = ARRAY_SIZE(slot_fds);
+	d->svc = &pair_svc;
+	net_sin6(&d->local_addr)->sin6_family = NET_AF_INET6;
+	net_sin6(&d->local_addr)->sin6_port = net_htons(port);
+}
+
+ZTEST(dns_dispatcher, test_unregister_releases_every_slot)
+{
+	struct net_sockaddr_in6 xaddr = { .sin6_family = NET_AF_INET6,
+					  .sin6_port = net_htons(TEST_DNS_PAIR_PORT + 10) };
+	int sock_a = pair_create_socket();
+	int sock_x = pair_create_socket();
+	int sock_b = pair_create_socket();
+	int ret;
+
+	/* X is a second socket of the same owner, bound by the owner and
+	 * present in the shared array, like another resolver server.
+	 */
+	zassert_ok(zsock_bind(sock_x, (struct net_sockaddr *)&xaddr, sizeof(xaddr)),
+		   "cannot bind the extra socket");
+
+	slot_fds[0].fd = sock_a;
+	slot_fds[0].events = ZSOCK_POLLIN;
+	slot_fds[1].fd = sock_x;
+	slot_fds[1].events = ZSOCK_POLLIN;
+
+	slot_setup(&slot_a, sock_a, TEST_DNS_PAIR_PORT + 11);
+	ret = dns_dispatcher_register(&slot_a);
+	zassert_ok(ret, "register A failed (%d)", ret);
+
+	/* While A is registered, X's datagrams are dispatched to A */
+	slot_last_cb_ctx = NULL;
+	k_sem_reset(&slot_cb_sem);
+	inject_dns_query(TEST_DNS_PAIR_PORT + 10);
+	zassert_ok(k_sem_take(&slot_cb_sem, K_SECONDS(2)), "no dispatch on X");
+	zassert_equal(slot_last_cb_ctx, &slot_a, "X was not dispatched to A");
+
+	ret = dns_dispatcher_unregister(&slot_a);
+	zassert_ok(ret, "unregister A failed (%d)", ret);
+
+	/* B takes over the array with its own socket in A's place */
+	slot_fds[0].fd = sock_b;
+	slot_setup(&slot_b, sock_b, TEST_DNS_PAIR_PORT + 12);
+	ret = dns_dispatcher_register(&slot_b);
+	zassert_ok(ret, "register B failed (%d)", ret);
+
+	slot_last_cb_ctx = NULL;
+	k_sem_reset(&slot_cb_sem);
+	inject_dns_query(TEST_DNS_PAIR_PORT + 10);
+	zassert_ok(k_sem_take(&slot_cb_sem, K_SECONDS(2)),
+		   "no dispatch on X after re-registration");
+	zassert_not_equal(slot_last_cb_ctx, &slot_a,
+			  "datagram on X was dispatched to the unregistered context A");
+	zassert_equal(slot_last_cb_ctx, &slot_b, "datagram on X was not dispatched to B");
+
+	ret = dns_dispatcher_unregister(&slot_b);
+	zassert_ok(ret, "unregister B failed (%d)", ret);
+	(void)zsock_close(sock_a);
+	(void)zsock_close(sock_x);
+	(void)zsock_close(sock_b);
+	slot_fds[0].fd = -1;
+	slot_fds[1].fd = -1;
+}
+
+
+/* Unregistering a context releases the slots of every descriptor in its
+ * array, but a descriptor stays polled while another context's copy of
+ * the array holds it. A datagram on such a descriptor has no owner; it
+ * must still be consumed, or the socket service reports it again at once.
+ */
+ZTEST(dns_dispatcher, test_datagram_without_owner_is_consumed)
+{
+	struct net_sockaddr_in6 xaddr = { .sin6_family = NET_AF_INET6,
+					  .sin6_port = net_htons(TEST_DNS_PAIR_PORT + 30) };
+	int sock_a = pair_create_socket();
+	int sock_x = pair_create_socket();
+	int sock_b = pair_create_socket();
+	uint8_t buf[16];
+	int ret = -1;
+
+	zassert_ok(zsock_bind(sock_x, (struct net_sockaddr *)&xaddr, sizeof(xaddr)),
+		   "cannot bind the shared socket");
+
+	slot_fds[0].fd = sock_a;
+	slot_fds[0].events = ZSOCK_POLLIN;
+	slot_fds[1].fd = sock_x;
+	slot_fds[1].events = ZSOCK_POLLIN;
+
+	/* A owns both slots; B shares the array and the service but owns none */
+	slot_setup(&slot_a, sock_a, TEST_DNS_PAIR_PORT + 31);
+	ret = dns_dispatcher_register(&slot_a);
+	zassert_ok(ret, "register A failed (%d)", ret);
+	slot_setup(&slot_b, sock_b, TEST_DNS_PAIR_PORT + 32);
+	ret = dns_dispatcher_register(&slot_b);
+	zassert_ok(ret, "register B failed (%d)", ret);
+
+	/* Unregistering A releases X's slot, but B keeps X polled */
+	ret = dns_dispatcher_unregister(&slot_a);
+	zassert_ok(ret, "unregister A failed (%d)", ret);
+
+	slot_last_cb_ctx = NULL;
+	k_sem_reset(&slot_cb_sem);
+	inject_dns_query(TEST_DNS_PAIR_PORT + 30);
+
+	/* Nobody is dispatched, and the datagram must be gone from the socket.
+	 * Peek so that this thread does not consume it itself.
+	 */
+	for (int i = 0; i < 50; i++) {
+		k_msleep(20);
+		ret = zsock_recv(sock_x, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK);
+		if (ret < 0 && errno == EAGAIN) {
+			break;
+		}
+	}
+
+	zassert_true(ret < 0 && errno == EAGAIN,
+		     "datagram on the unowned descriptor was left in the socket (%d)", ret);
+	zassert_is_null(slot_last_cb_ctx, "datagram without owner was dispatched");
+
+	ret = dns_dispatcher_unregister(&slot_b);
+	zassert_ok(ret, "unregister B failed (%d)", ret);
+	(void)zsock_close(sock_a);
+	(void)zsock_close(sock_x);
+	(void)zsock_close(sock_b);
+	slot_fds[0].fd = -1;
+	slot_fds[1].fd = -1;
+}
+
+/* A registration whose socket service cannot take its descriptor array
+ * fails. It must leave no dispatch-table slot behind: a slot it kept would
+ * make a later registration sharing the descriptor skip claiming it, and
+ * that descriptor's datagrams would go to the failed context.
+ */
+static struct dns_socket_dispatcher svcfail_ctx;
+static struct zsock_pollfd svcfail_fds[3];
+
+ZTEST(dns_dispatcher, test_failed_register_claims_no_slot)
+{
+	struct net_sockaddr_in6 xaddr = { .sin6_family = NET_AF_INET6,
+					  .sin6_port = net_htons(TEST_DNS_PAIR_PORT + 20) };
+	int sock_f = pair_create_socket();
+	int sock_x = pair_create_socket();
+	int sock_b = pair_create_socket();
+	int ret;
+
+	zassert_ok(zsock_bind(sock_x, (struct net_sockaddr *)&xaddr, sizeof(xaddr)),
+		   "cannot bind the shared socket");
+
+	/* Three descriptors for a service that polls two: registering the
+	 * service fails with -ENOMEM after the socket has been bound.
+	 */
+	memset(&svcfail_ctx, 0, sizeof(svcfail_ctx));
+	svcfail_ctx.type = DNS_SOCKET_RESPONDER;
+	svcfail_ctx.ifindex = net_if_get_by_iface(iface1);
+	svcfail_ctx.sock = sock_f;
+	svcfail_ctx.cb = slot_cb;
+	svcfail_ctx.fds = svcfail_fds;
+	svcfail_ctx.fds_len = ARRAY_SIZE(svcfail_fds);
+	svcfail_ctx.svc = &pair_svc;
+	net_sin6(&svcfail_ctx.local_addr)->sin6_family = NET_AF_INET6;
+	net_sin6(&svcfail_ctx.local_addr)->sin6_port = net_htons(TEST_DNS_PAIR_PORT + 21);
+	svcfail_fds[0].fd = sock_f;
+	svcfail_fds[0].events = ZSOCK_POLLIN;
+	svcfail_fds[1].fd = sock_x;
+	svcfail_fds[1].events = ZSOCK_POLLIN;
+	svcfail_fds[2].fd = -1;
+
+	ret = dns_dispatcher_register(&svcfail_ctx);
+	zassert_equal(ret, -ENOMEM, "register with too many descriptors (%d)", ret);
+
+	/* B shares the descriptor X and must get its datagrams */
+	slot_fds[0].fd = sock_b;
+	slot_fds[0].events = ZSOCK_POLLIN;
+	slot_fds[1].fd = sock_x;
+	slot_fds[1].events = ZSOCK_POLLIN;
+	slot_setup(&slot_b, sock_b, TEST_DNS_PAIR_PORT + 22);
+	ret = dns_dispatcher_register(&slot_b);
+	zassert_ok(ret, "register B failed (%d)", ret);
+
+	slot_last_cb_ctx = NULL;
+	k_sem_reset(&slot_cb_sem);
+	inject_dns_query(TEST_DNS_PAIR_PORT + 20);
+	zassert_ok(k_sem_take(&slot_cb_sem, K_SECONDS(2)), "no dispatch on X");
+	zassert_not_equal(slot_last_cb_ctx, &svcfail_ctx,
+			  "datagram on X was dispatched to the failed registration");
+	zassert_equal(slot_last_cb_ctx, &slot_b, "datagram on X was not dispatched to B");
+
+	ret = dns_dispatcher_unregister(&slot_b);
+	zassert_ok(ret, "unregister B failed (%d)", ret);
+	(void)zsock_close(sock_f);
+	(void)zsock_close(sock_x);
+	(void)zsock_close(sock_b);
+	slot_fds[0].fd = -1;
+	slot_fds[1].fd = -1;
+}
+
 #endif /* !DNS_DISPATCHER_MULTI_IFACE_TEST */
+
 ZTEST_SUITE(dns_dispatcher, NULL, test_init, NULL, NULL, NULL);
