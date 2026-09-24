@@ -10,6 +10,9 @@ Logging
 The logging API provides a common interface to process messages issued by
 developers. Messages are passed through a frontend and then
 processed by active backends.
+The frontend is responsible for immediate filtering and queueing of log messages, so it needs to
+be fast. Backends may run later and take more time. They format the log message and send it to a
+destination, for example UART, RTT or BLE.
 A custom frontend and custom backends can be used if needed.
 
 Summary of the logging features:
