@@ -9,3 +9,54 @@ config PTP_CLOCK_DWC_MAC
 	select NET_L2_PTP_TIMESTAMPING
 	help
 	  Enable PTP clock support for the Synopsys DesignWare MAC cores.
+
+if PTP_CLOCK_DWC_MAC
+
+choice PTP_CLOCK_DWC_MAC_RX_TIMESTAMP
+	prompt "Received frames to timestamp"
+	default PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTP if PTP
+	default PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_ALL
+
+config PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_ALL
+	bool "All frames"
+	help
+	  Take a timestamp for every received frame.
+
+config PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTP
+	bool "PTP frames only"
+	help
+	  Take a timestamp only for received PTP frames of the enabled
+	  PTP version and transports.
+
+endchoice
+
+if PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTP
+
+config PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTPV2
+	bool "PTPv2 frame format"
+	default y
+	help
+	  Parse received PTP frames as IEEE 1588-2008 (PTPv2). Otherwise they
+	  are parsed as IEEE 1588-2002 (PTPv1).
+
+config PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_L2
+	bool "PTP over Ethernet"
+	default y if PTP_IEEE_802_3_PROTOCOL
+	help
+	  Timestamp PTP frames carried directly over Ethernet.
+
+config PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_IPV4
+	bool "PTP over UDP/IPv4"
+	default y if PTP_UDP_IPV4_PROTOCOL
+	help
+	  Timestamp PTP frames carried over UDP/IPv4.
+
+config PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_IPV6
+	bool "PTP over UDP/IPv6"
+	default y if PTP_UDP_IPV6_PROTOCOL
+	help
+	  Timestamp PTP frames carried over UDP/IPv6.
+
+endif # PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTP
+
+endif # PTP_CLOCK_DWC_MAC
