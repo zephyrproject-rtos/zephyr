@@ -161,9 +161,6 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define ADC_STM32_DT_ANY_NODE_HAS_DIFFERENTIAL(node_id)						\
 	(DT_FOREACH_CHILD_VARGS(node_id, ADC_STM32_DT_PROP_OR_IS_EQ, zephyr_differential, 0, 1) 0)
 
-/* reference voltage for the ADC */
-#define STM32_ADC_VREF_MV DT_INST_PROP(0, vref_mv)
-
 #if ADC_STM32_DT_ANY_INST_HAS_SEQUENCER_TYPE(SEQUENCER_PROGRAMMABLE)
 
 #if defined(LL_ADC_REG_RANK_28)
@@ -1496,6 +1493,8 @@ static void adc_stm32_isr(const struct device *dev)
 			}
 		}
 #else /* CONFIG_ADC_STREAM */
+		const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
+
 		if (data->samples_count == 0U) {
 			uint8_t *buf;
 			uint32_t buf_len;
@@ -1510,7 +1509,7 @@ static void adc_stm32_isr(const struct device *dev)
 
 			hdr = (struct adc_stm32_rtio_data *)buf;
 			hdr->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
-			hdr->vref_mv = STM32_ADC_VREF_MV;
+			hdr->vref_mv = api->ref_internal;
 			hdr->res = data->resolution;
 			hdr->channel_count = data->channel_count;
 		}
@@ -2325,19 +2324,6 @@ static int adc_stm32_get_decoder(const struct device *dev, const struct adc_deco
 }
 #endif
 
-static DEVICE_API(adc, api_stm32_driver_api) = {
-	.channel_setup = adc_stm32_channel_setup,
-	.read = adc_stm32_read_sync,
-#ifdef CONFIG_ADC_ASYNC
-	.read_async = adc_stm32_read_async,
-#endif
-	.ref_internal = STM32_ADC_VREF_MV, /* VREF is usually connected to VDD */
-#ifdef CONFIG_ADC_STREAM
-	.submit = adc_stm32_submit_stream,
-	.get_decoder = adc_stm32_get_decoder,
-#endif /* CONFIG_ADC_STREAM */
-};
-
 /* Macros for ADC clock source and prescaler */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source)
 
@@ -2604,11 +2590,22 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_DT_INST_GENERATE_ISR)
 												\
 	PM_DEVICE_DT_DEFINE(node_id, adc_stm32_pm_action);					\
 												\
+	static DEVICE_API(adc, adc_stm32_api_##node_id) = {					\
+		.channel_setup = adc_stm32_channel_setup,					\
+		.read = adc_stm32_read_sync,							\
+		IF_ENABLED(CONFIG_ADC_ASYNC,							\
+			   (.read_async = adc_stm32_read_async,))				\
+		.ref_internal = DT_PROP(DT_PARENT(node_id), vref_mv),				\
+		IF_ENABLED(CONFIG_ADC_STREAM,							\
+			   (.submit = adc_stm32_submit_stream,					\
+			    .get_decoder = adc_stm32_get_decoder,))				\
+	};											\
+												\
 	DEVICE_DT_DEFINE(node_id, adc_sub_stm32_init,						\
 			 PM_DEVICE_DT_GET(node_id),						\
 			 &adc_stm32_data_##node_id, &adc_sub_stm32_cfg_##node_id,		\
 			 POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,					\
-			 &api_stm32_driver_api);
+			 &adc_stm32_api_##node_id);
 
 #define ADC_STM32_DT_INST_INIT(inst)								\
 												\
