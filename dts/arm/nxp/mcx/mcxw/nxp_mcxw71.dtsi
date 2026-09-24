@@ -51,6 +51,22 @@
 	reg = <0x0 DT_SIZE_K(112)>;
 };
 
+&cmc {
+	/*
+	 * CMC SRAM power partitions: <start-address size cmc-disable-bit>.
+	 * bits 0..1 Code-TCM (8 KB each @0x1400_0000);
+	 * bits 2..6 System-TCM (16,16,32,32,8 KB @0x3000_0000).
+	 * The top 8 KB VBAT-retained bank is intentionally omitted (never gated).
+	 */
+	sram-banks = <0x14000000 DT_SIZE_K(8) 0>,
+		     <0x14002000 DT_SIZE_K(8) 1>,
+		     <0x30000000 DT_SIZE_K(16) 2>,
+		     <0x30004000 DT_SIZE_K(16) 3>,
+		     <0x30008000 DT_SIZE_K(32) 4>,
+		     <0x30010000 DT_SIZE_K(32) 5>,
+		     <0x30018000 DT_SIZE_K(8) 6>;
+};
+
 &pbridge2 {
 	reg = <0x0 0x4b000>;
 };
