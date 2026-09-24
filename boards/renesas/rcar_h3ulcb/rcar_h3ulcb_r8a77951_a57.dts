@@ -6,6 +6,7 @@
  */
 
 /dts-v1/;
+#include <freq.h>
 #include <mem.h>
 #include <arm64/renesas/r8a77951.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -13,6 +14,10 @@
 
 / {
 	model = "H3ULCB CA57";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_K(8300)>;
+	};
 
 	chosen {
 		zephyr,sram = &ram;
