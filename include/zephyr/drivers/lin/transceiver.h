@@ -26,7 +26,9 @@ extern "C" {
 /**
  * @brief Interfaces for LIN transceivers
  * @defgroup lin_transceiver LIN Transceiver
- * @ingroup lin_controller
+ * @since 4.5
+ * @version 0.1.0
+ * @ingroup lin_interface
  * @{
  */
 
