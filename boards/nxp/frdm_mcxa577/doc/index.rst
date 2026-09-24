@@ -171,6 +171,50 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v3.6.0-4478-ge6c3a42f5f52 ***
    Hello World! frdm_mcxa577/mcxa577
 
+10BASE-T1S Throughput Tuning
+============================
+
+10BASE-T1S is a shared bus arbitrated by PLCA, so the usable UDP throughput on
+the ``frdm_mcxa577/mcxa577/t1s`` target is lower than the 10 Mbps line rate.
+Near that limit the default network buffer sizing can be exhausted faster than
+the driver drains it, and packets are dropped with ``-EBUSY``.
+
+Increasing the net_buf fragment size, the packet and buffer pools, and the
+network TX/RX thread stacks avoids the drops:
+
+.. code-block:: cfg
+
+   CONFIG_NET_BUF_DATA_SIZE=512
+   CONFIG_NET_PKT_RX_COUNT=48
+   CONFIG_NET_PKT_TX_COUNT=48
+   CONFIG_NET_BUF_RX_COUNT=96
+   CONFIG_NET_BUF_TX_COUNT=96
+   CONFIG_NET_TX_STACK_SIZE=2048
+   CONFIG_NET_RX_STACK_SIZE=2048
+
+These raise RAM usage, so they are applied per application rather than enabled
+by default. For :zephyr:code-sample:`zperf` they are set in
+:zephyr_file:`samples/net/zperf/boards/frdm_mcxa577_mcxa577_t1s.conf`.
+
+If more headroom is needed, the ENET QoS driver's descriptor rings and RX thread
+can be enlarged as well:
+
+.. code-block:: cfg
+
+   CONFIG_ETH_NXP_ENET_QOS_TX_BUFFER_DESCRIPTORS=32
+   CONFIG_ETH_NXP_ENET_QOS_RX_BUFFER_DESCRIPTORS=32
+   CONFIG_ETH_NXP_ENET_QOS_RX_THREAD_STACK_SIZE=2048
+   CONFIG_ETH_NXP_ENET_QOS_RX_THREAD_PRIORITY=2
+
+Raising the priority of the application thread generating the traffic reduces
+inter-packet jitter. For :zephyr:code-sample:`zperf`:
+
+.. code-block:: cfg
+
+   CONFIG_ZPERF_WORK_Q_THREAD_PRIORITY=7
+   CONFIG_ZPERF_WORK_Q_STACK_SIZE=4096
+
+
 Troubleshooting
 ===============
 
