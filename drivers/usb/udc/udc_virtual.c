@@ -253,11 +253,15 @@ static void vrt_submit_uvb_event(const struct device *dev,
 
 static void udc_vrt_uvb_cb(const void *const vrt_priv,
 			   const enum uvb_event_type type,
+			   const struct uvb_node *const source,
 			   const void *data)
 {
 	const struct device *dev = vrt_priv;
 	struct udc_vrt_data *priv = udc_get_private(dev);
 	struct uvb_packet *const pkt = (void *)data;
+
+	/* source is unused in downstream messaging  */
+	ARG_UNUSED(source);
 
 	switch (type) {
 	case UVB_EVT_VBUS_REMOVED:
