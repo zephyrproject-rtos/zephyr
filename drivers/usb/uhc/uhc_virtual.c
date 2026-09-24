@@ -171,7 +171,8 @@ static int vrt_advert_pkt(struct uhc_vrt_data *const priv,
 	 */
 	priv->xfer_timeout = sys_timepoint_calc(UHC_VRT_XFER_TIMEOUT);
 
-	return uvb_advert_pkt(priv->host_node, pkt);
+	/* Broadcast like a real hub to every enabled port. */
+	return uvb_advert_pkt(priv->host_node, NULL, pkt);
 }
 
 static int vrt_xfer_control(const struct device *dev,
@@ -588,7 +589,7 @@ static void uhc_vrt_thread_handler(void *arg1, void *arg2, void *arg3)
 		switch (ev->type) {
 		case UHC_VRT_EVT_SOF:
 			priv->sof_count++;
-			err = uvb_advert(priv->host_node, UVB_EVT_SOF,
+			err = uvb_advert(priv->host_node, UVB_EVT_SOF, NULL,
 					 INT_TO_POINTER(UHC_FRAME_NUMBER(priv->sof_count)));
 			if (unlikely(err)) {
 				uhc_submit_event(dev, UHC_EVT_ERROR, err);
@@ -664,7 +665,7 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_CONNECTED:
 		if (uhc_is_enabled(dev)) {
-			uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL);
+			uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL, NULL);
 		}
 
 		return;
@@ -682,9 +683,12 @@ static void vrt_device_act(const struct device *dev,
 
 static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 			   const enum uvb_event_type type,
+			   const struct uvb_node *const source,
 			   const void *data)
 {
 	const struct device *dev = vrt_priv;
+
+	ARG_UNUSED(source);
 
 	if (type == UVB_EVT_REPLY) {
 		vrt_event_submit(dev, UHC_VRT_EVT_REPLY, data);
@@ -711,7 +715,7 @@ static int uhc_vrt_bus_suspend(const struct device *dev)
 
 	k_timer_stop(&priv->sof_timer);
 
-	return uvb_advert(priv->host_node, UVB_EVT_SUSPEND, NULL);
+	return uvb_advert(priv->host_node, UVB_EVT_SUSPEND, NULL, NULL);
 }
 
 static enum uvb_speed vrt_uvb_speed(const enum usb_device_speed speed)
@@ -732,7 +736,7 @@ static int uhc_vrt_bus_reset(const struct device *dev)
 	int ret;
 
 	k_timer_stop(&priv->sof_timer);
-	ret = uvb_advert(priv->host_node, UVB_EVT_RESET,
+	ret = uvb_advert(priv->host_node, UVB_EVT_RESET, NULL,
 			 INT_TO_POINTER(vrt_uvb_speed(priv->speed)));
 	/* TDRSTR */
 	k_msleep(50);
@@ -747,7 +751,7 @@ static int uhc_vrt_bus_resume(const struct device *dev)
 
 	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 
-	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
+	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL, NULL);
 }
 
 static int uhc_vrt_enqueue(const struct device *dev,
@@ -803,14 +807,14 @@ static int uhc_vrt_enable(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	return uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL);
+	return uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL, NULL);
 }
 
 static int uhc_vrt_disable(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	return uvb_advert(priv->host_node, UVB_EVT_VBUS_REMOVED, NULL);
+	return uvb_advert(priv->host_node, UVB_EVT_VBUS_REMOVED, NULL, NULL);
 }
 
 static int uhc_vrt_shutdown(const struct device *dev)
