@@ -1541,14 +1541,15 @@ static void mcp_health_monitor_worker(void *ctx, void *arg2, void *arg3)
 					.json_len = ret
 				};
 
+				/* The transport owns json_buffer once send() succeeds */
 				ret = context->client->binding->ops->send(&tx_msg);
 				if (ret != 0) {
 					LOG_ERR("Failed to send cancel notification: %d", ret);
+					mcp_free(json_buffer);
 				}
 
 				/* Clean up */
 				mcp_free(params);
-				mcp_free(json_buffer);
 
 				/* Update execution state */
 				context->execution_state = MCP_EXEC_CANCELED;
@@ -1617,15 +1618,16 @@ static void mcp_health_monitor_worker(void *ctx, void *arg2, void *arg3)
 						.json_len = ret
 					};
 
+					/* The transport owns json_buffer once send() succeeds */
 					ret = context->client->binding->ops->send(&tx_msg);
 					if (ret != 0) {
 						LOG_ERR("Failed to send cancel notification: %d",
 							ret);
+						mcp_free(json_buffer);
 					}
 
 					/* Clean up */
 					mcp_free(params);
-					mcp_free(json_buffer);
 
 					context->execution_state = MCP_EXEC_CANCELED;
 					context->cancel_timestamp = current_time;
