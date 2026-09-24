@@ -29,7 +29,6 @@ import json
 import os
 import re
 import sys
-from pathlib import PurePath
 
 regex_flags = re.MULTILINE | re.VERBOSE
 
@@ -45,6 +44,10 @@ syscall_regex = re.compile(
 )
 
 struct_tags = ["__subsystem", "__net_socket"]
+
+# Every regex below needs one of these markers to match. Most scanned files
+# contain none of them, and a substring test is far cheaper than the regexes.
+scan_markers = ("__syscall", "DEVICE_API_EXTENDS", *struct_tags)
 
 tagged_struct_decl_template = r'''
 %s\s+                           # tag, must be first
@@ -137,7 +140,7 @@ def analyze_headers(include_dir, scan_dir, file_list):
                 ):
                     continue
 
-                path = PurePath(os.path.normpath(path)).as_posix()
+                path = os.path.normpath(path).replace(os.sep, "/")
 
                 if path not in syscall_files:
                     if include_dir and base_path in include_dir:
@@ -153,6 +156,9 @@ def analyze_headers(include_dir, scan_dir, file_list):
             except Exception:
                 sys.stderr.write(f"Error decoding {one_file} (included in {path})\n")
                 raise
+
+        if not any(marker in contents for marker in scan_markers):
+            continue
 
         fn = os.path.basename(one_file)
 
