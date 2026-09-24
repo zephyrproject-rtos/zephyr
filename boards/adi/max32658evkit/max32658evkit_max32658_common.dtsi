@@ -108,5 +108,6 @@
 
 	counter_wut1: counter {
 		status = "okay";
+		wakeup-source;
 	};
 };
