@@ -909,7 +909,8 @@ static int check_image(struct fota_http_ctx *dl)
 		const struct mcuboot_img_sem_ver *new = &header.h.v1.sem_ver;
 		const struct mcuboot_img_sem_ver *cur;
 
-		ret = boot_read_bank_header(boot_fetch_active_slot(), &running, sizeof(running));
+		ret = boot_read_bank_header(boot_fetch_active_slot_area_id(), &running,
+					    sizeof(running));
 		if (ret == 0) {
 			cur = &running.h.v1.sem_ver;
 			if (new->major < cur->major ||
