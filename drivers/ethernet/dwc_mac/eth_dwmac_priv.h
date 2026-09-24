@@ -235,6 +235,11 @@ struct dwmac_priv {
 #define DWMAC_PTP_CTRL_L2			BIT(11)
 #define DWMAC_PTP_CTRL_IPV6			BIT(12)
 #define DWMAC_PTP_CTRL_IPV4			BIT(13)
+#define DWMAC_PTP_CTRL_SNAPTYPSEL		GENMASK(17, 16)
+/* all event messages, from core version 3.70 on */
+#define DWMAC_PTP_CTRL_SNAPTYPSEL_EVENT		1
+/* all event messages, before core version 3.70 (P2P transparent clock node) */
+#define DWMAC_PTP_CTRL_SNAPTYPSEL_P2P_TC	3
 #define DWMAC_PTP_NSEC_UPDATE_ADDSUB		BIT(31)
 
 /*
@@ -1446,6 +1451,10 @@ extern const struct ethernet_api dwmac_api;
 #define DWMAC_MACALR(n)  (DWMAC_MAC_OFFSET + 0x0044 + 8 * (n))
 #define DWMAC_MACA0HR    DWMAC_MACAHR(0)
 #define DWMAC_MACA0LR    DWMAC_MACALR(0)
+
+/* MAC version register bits */
+#define DWMAC_MACVERR_SNPSVER GENMASK(7, 0)
+#define DWMAC_CORE_3_70       0x37U
 
 /* MAC address high register bits (entries 1 and up) */
 #define DWMAC_MACAHR_AE  BIT(31)

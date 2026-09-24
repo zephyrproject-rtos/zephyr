@@ -183,6 +183,18 @@ static int dwmac_ptp_init(const struct device *dev)
 
 	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_ALL)) {
 		ctrl |= DWMAC_PTP_CTRL_ALL_RX;
+	} else {
+		/* all event messages, for both E2E and P2P delay mechanisms */
+		uint32_t snaptypsel = DWMAC_PTP_CTRL_SNAPTYPSEL_EVENT;
+
+#ifdef CONFIG_ETH_DWC_ETHER_1000_CORE
+		/* older cores select a clock node type here instead */
+		if (FIELD_GET(DWMAC_MACVERR_SNPSVER, sys_read32(base + DWMAC_MACVERR)) <
+		    DWMAC_CORE_3_70) {
+			snaptypsel = DWMAC_PTP_CTRL_SNAPTYPSEL_P2P_TC;
+		}
+#endif
+		ctrl |= FIELD_PREP(DWMAC_PTP_CTRL_SNAPTYPSEL, snaptypsel);
 	}
 	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTPV2)) {
 		ctrl |= DWMAC_PTP_CTRL_PTPV2;
