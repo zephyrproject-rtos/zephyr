@@ -226,7 +226,8 @@
 		     : false, \
 	.rdid_dummy = USES_OCTAL_IO(inst) \
 		    ? (SFDP_FIELD(inst, sfdp_ff05, 1, BIT(28)) ? 8 : 4) \
-		    : 0, }
+		    : 0, \
+	.rdid_data_str = false, }
 
 /* Erase Types, 8th and 9th DWORD of BSP */
 #define BFP_DW8_CMD_ET_1(inst) SFDP_FIELD(inst, sfdp_bfp, 8, GENMASK(15, 8))
@@ -389,7 +390,8 @@
 	.rdsr_addr_4 = false, \
 	.rdsr_dummy = 0, \
 	.rdid_addr_4 = false, \
-	.rdid_dummy = 0, }
+	.rdid_dummy = 0, \
+	.rdid_data_str = false, }
 
 #define DEFAULT_ERASE_TYPES_DEFINE(inst) \
 	static const struct jesd216_erase_type \
