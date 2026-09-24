@@ -516,7 +516,7 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 	uint16_t query_hash = 0U;
 	uint16_t dns_id = 0U;
 	int ret = 0, i;
-	int server_idx;
+	int server_idx = -1;
 
 	ARG_UNUSED(sock);
 	ARG_UNUSED(addr);
@@ -542,6 +542,9 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 	server_idx = (int)(server - ctx->servers);
 	if (server_idx < 0 || server_idx >= SERVER_COUNT) {
 		server_idx = -1;
+	} else {
+		/* See dns_randomize_source_port() */
+		ctx->servers[server_idx].in_dispatch = true;
 	}
 
 	ret = dns_read(ctx, dns_data, len, &dns_id, dns_cname, &query_hash,
@@ -616,6 +619,10 @@ quit:
 free_buf:
 	if (dns_cname) {
 		net_buf_unref(dns_cname);
+	}
+
+	if (server_idx >= 0) {
+		ctx->servers[server_idx].in_dispatch = false;
 	}
 
 unlock:
@@ -2099,6 +2106,16 @@ static void dns_randomize_source_port(struct dns_resolve_context *ctx,
 	 * dispatcher pairs a resolver with a responder by that port.
 	 */
 	if (server->is_mdns || server->is_llmnr) {
+		return;
+	}
+
+	/* A query sent while this server's own reply is being dispatched (a
+	 * CNAME re-query, or a lookup started from the result callback) runs
+	 * inside that dispatch, which holds the dispatcher's lock. Renewing
+	 * the socket there would unregister and register that dispatcher and
+	 * re-initialize the lock under the dispatch, so keep the port.
+	 */
+	if (server->in_dispatch) {
 		return;
 	}
 
