@@ -14,7 +14,7 @@ if PTP_CLOCK_DWC_MAC
 
 choice PTP_CLOCK_DWC_MAC_RX_TIMESTAMP
 	prompt "Received frames to timestamp"
-	default PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTP if PTP
+	default PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTP if PTP || NET_GPTP
 	default PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_ALL
 
 config PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_ALL
@@ -43,7 +43,7 @@ config PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTPV2
 
 config PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_L2
 	bool "PTP over Ethernet"
-	default y if PTP_IEEE_802_3_PROTOCOL
+	default y if PTP_IEEE_802_3_PROTOCOL || NET_GPTP
 	help
 	  Timestamp PTP frames carried directly over Ethernet.
 
