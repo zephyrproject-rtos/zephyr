@@ -2,6 +2,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+
+config TEST_L2CAP_MAX_CHANNEL_COUNT
+	int "Maximum L2CAP channel count"
+	depends on BT_CLASSIC
+	default 16
+	range 2 255
+	help
+	  The maximum number of L2CAP channels that can be created for testing.
+
+config BT_BUF_ACL_RX_COUNT_EXTRA
+	default TEST_L2CAP_MAX_CHANNEL_COUNT
+
 source "Kconfig.zephyr"
 
 config TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT
