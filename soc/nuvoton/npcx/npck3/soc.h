@@ -26,6 +26,9 @@
 #define NPCX_WKEN_OFFSET(n)		(0x01e + (n * 2) + ((n < 5) ? 0 : 0x012))
 #define NPCX_WKINEN_OFFSET(n)		(0x01f + (n * 2) + ((n < 5) ? 0 : 0x012))
 
+/* NPCK3 SMB wake-up: SMB1..SMB6 fit in SMB_SBD/SMB_EEN, no second bank */
+#define NPCX_SMB_WKUP_REG_CTRL_CNT 6
+
 /* NPCK3 PMC multi-registers */
 #define NPCX_PWDWN_CTL_OFFSET(n)	(0x007 + n)
 
@@ -48,12 +51,16 @@
 #define NPCK_SZ_UART_FIFO		16
 #define NPCX_FIU_EXT_CFG_SPI1_2DEV	0
 
+/* NPCK3 SCFG register fields */
+#define NPCK_DEV_CTL3_WP_IF 3
+
 /* NPCK3 GLUE register fields */
 #define NPCX_EPURST_CTL_EPUR1_AHI	0
 #define NPCX_EPURST_CTL_EPUR1_EN	1
 #define NPCX_EPURST_CTL_EPUR2_AHI	2
 #define NPCX_EPURST_CTL_EPUR2_EN	3
 #define NPCX_EPURST_CTL_EPUR_LK		7
+#define NPCX_EPURST_EPUR_DBC            FIELD(0, 5)
 
 /* NPCK3 TWD register fields */
 #define NPCX_T0CSR_T0EN			6
@@ -62,11 +69,16 @@
 #define NPCX_DEVALT_LK_GROUP_MASK	0x00000000
 
 /* NPCK3 Clock configuration and limitation */
-#define MAX_OFMCLK 100000000
+#define MAX_OFMCLK  160000000
+#define MAX_FMCLK   50000000
+#define MAX_AHB6CLK 100000000
+#define MAX_FIUCLK  100000000
+#define XF_4_RANGE_SUPP
 
 #include <reg_def.h>
 #include <clock_def.h>
 #include <soc_dt.h>
+#include <soc_clock.h>
 #include <soc_espi_taf.h>
 #include <soc_pins.h>
 #include <soc_power.h>

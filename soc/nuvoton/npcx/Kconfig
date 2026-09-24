@@ -31,6 +31,7 @@ config NPCX_IMAGE_OUTPUT_HEX
 
 config NPCX_HEADER_CHIP
 	string
+	default "npck6m9" if SOC_NPCK6M9K
 	default "npck3m8" if SOC_NPCK3M8K
 	default "npcx7m6" if SOC_NPCX7M6FB || SOC_NPCX7M6FC
 	default "npcx7m7" if SOC_NPCX7M7FC
@@ -137,8 +138,9 @@ config NPCX_HEADER_ENABLE_FIRMWARE_CRC
 choice NPCX_HEADER_FLASH_SIZE_CHOICE
 	prompt "Flash size"
 	default NPCX_HEADER_FLASH_SIZE_0P5M_1M if SOC_SERIES_NPCX7 || \
-						  SOC_SERIES_NPCX9 || \
-						  SOC_SERIES_NPCK3
+		SOC_SERIES_NPCX9 || \
+		SOC_SERIES_NPCK3 || \
+		SOC_SERIES_NPCK6
 	default NPCX_HEADER_FLASH_SIZE_16M
 	help
 	  This sets the SPI flash size.
@@ -176,6 +178,36 @@ config NPCX_HEADER_FLASH_SIZE
 	default 4 if NPCX_HEADER_FLASH_SIZE_4M
 	default 8 if NPCX_HEADER_FLASH_SIZE_8M
 	default 16 if NPCX_HEADER_FLASH_SIZE_16M
+
+config NPCX_HEADER_FIRMWARE_LOAD_ADDR
+	hex "Firmware Load Address"
+	default 0
+	help
+	  Firmware Load Address Located in Code RAM.
+	  Default 0 means not passing the "fwloadaddr" parameter to ecst command
+	  line.
+
+config NPCX_HEADER_FIRMWARE_ENTRY_POINT
+	hex "Firmware Entry Point"
+	default 0
+	help
+	  Firmware Entry Point Located in Code RAM.
+	  Default 0 means not passing the "fwep" parameter to ecst command
+	  line.
+
+config NPCX_HEADER_USE_ARM_RESET
+	bool "Use ARM Reset Table Entry"
+	default y
+	help
+	  Use the ARM reset table entry (offset 4h-7h from the start of
+	  a firmware image) as the firmware entry point.
+
+config NPCX_HEADER_NO_FW_ADDR_CHECK
+	bool "Skip firmware load address and entry point checks"
+	help
+	  Pass the "no_fw_addr_check" parameter to the ecst command line to
+	  skip the validation of the firmware load address and entry point
+	  against the RAM boundaries.
 
 endif # NPCX_HEADER
 
