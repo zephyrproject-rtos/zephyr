@@ -9,6 +9,8 @@ compatible: "snps,designware-i3c"
 
 include: [i3c-controller.yaml, pinctrl-device.yaml]
 
+class: [i3c, i2c]
+
 properties:
   clocks:
     required: true
