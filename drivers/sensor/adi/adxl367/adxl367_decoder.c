@@ -424,8 +424,7 @@ static int adxl367_decode_12b_stream(const uint8_t *buffer, struct sensor_chan_s
 				uint32_t *fit, uint16_t max_count, void *data_out,
 				const struct adxl367_fifo_data *enc_data, uint64_t base_ts)
 {
-	const uint8_t *buffer_end =
-		buffer + sizeof(struct adxl367_fifo_data) + enc_data->fifo_byte_count;
+	const uint8_t *buffer_end = buffer + enc_data->fifo_byte_count;
 	uint8_t packet_size = enc_data->packet_size;
 	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
 	uint8_t sample_num = 0;
