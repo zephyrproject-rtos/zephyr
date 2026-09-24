@@ -538,6 +538,9 @@ struct dns_resolve_context {
 /** @cond INTERNAL_HIDDEN */
 		/** Dispatch DNS data between resolver and responder */
 		struct dns_socket_dispatcher dispatcher;
+
+		/** A reply from this server is being dispatched */
+		bool in_dispatch;
 /** @endcond */
 	} servers[DNS_RESOLVER_MAX_POLL]; /**< List of configured DNS servers */
 
