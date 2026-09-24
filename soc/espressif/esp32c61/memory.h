@@ -31,7 +31,6 @@
 
 #define DRAM_SHARED_BUFFERS_START 0x4083e670
 #define DRAM_SHARED_BUFFERS_END   0x4084c670
-#define DRAM_STACK_START          DRAM_SHARED_BUFFERS_END
 
 /* Upper boundary of user-usable SRAM: the ROM shared buffers are
  * reclaimed as heap once the application is running, while the ROM CPU
