@@ -87,11 +87,11 @@ static int k3_rtc_fence(const struct device *dev)
 
 	/* Add slight delay in order to wait for register writes to sync */
 	k_busy_wait(data->sync_timeout_us);
-	int timeout = WAIT_FOR((rtc_regs->SYNCPEND & RTC_SYNCPEND_STATUS_MASK) != 0,
+	int timeout = WAIT_FOR((rtc_regs->SYNCPEND & RTC_SYNCPEND_STATUS_MASK) == 0,
 				data->sync_timeout_us,
 				k_busy_wait(1));
 
-	return timeout;
+	return timeout ? 0 : -ETIMEDOUT;
 }
 
 static int k3_rtc_unlock_status(k3_rtc_regs_t *rtc_regs)
