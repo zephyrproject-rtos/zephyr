@@ -1,0 +1,58 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "m5stack_coremp135-common.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sysram;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&pll1 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <81>;
+	div-p = <1>;
+	fracn = <0x800>;
+	status = "okay";
+};
+
+&pll2 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <66>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <1>;
+	fracn = <0x1400>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(650)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <2>;
+	apb3-prescaler = <2>;
+	apb4-prescaler = <2>;
+	apb5-prescaler = <4>;
+	apb6-prescaler = <2>;
+	axi-prescaler = <1>;
+};
+
+&ddr {
+	memory-region = <&ddr_code>;
+	st,mem-size = <DT_SIZE_M(512)>;
+	status = "okay";
+};
