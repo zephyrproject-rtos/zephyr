@@ -8,3 +8,11 @@ config MFD_BQ25620
 	select I2C
 	help
 	  Enable the TI BQ25620 battery charger multi-function device driver.
+
+config EMUL_BQ25620
+	bool "TI BQ25620 emulator"
+	default y
+	depends on EMUL
+	depends on MFD_BQ25620
+	help
+	  Enable the I2C emulator of the TI BQ25620 battery charger.
