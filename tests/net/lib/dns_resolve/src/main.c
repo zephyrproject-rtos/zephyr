@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
+#include "ipv4.h"
+#include "udp_internal.h"
 #include "dns_pack.h"
 
 #if defined(CONFIG_DNS_RESOLVER_LOG_LEVEL_DBG)
@@ -2589,5 +2591,116 @@ ZTEST(dns_resolve, test_dns_query_all_servers_llmnr_enabled_dns_fanout)
 }
 
 #endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
+/* Renewing a server's source port while a reply from that server waits to
+ * be dispatched must not deadlock. The dispatch holds the dispatcher's lock
+ * and waits for the resolver lock, which the thread renewing the port holds,
+ * so the renewal must not wait for the dispatch.
+ */
+static K_THREAD_STACK_DEFINE(renew_stack, 2048);
+static struct k_thread renew_thread;
+static volatile int renew_ret;
+
+static void renew_inject_reply(const struct net_in_addr *from, uint16_t to_port)
+{
+	/* A bare response header: enough to be dispatched to the resolver */
+	static const uint8_t reply[] = { 0x55, 0xaa, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0 };
+	struct net_if *iface = net_if_get_default();
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(reply), NET_AF_INET, NET_IPPROTO_UDP,
+					K_FOREVER);
+	if (pkt == NULL || net_ipv4_create(pkt, from, &my_addr2) < 0 ||
+	    net_udp_create(pkt, net_htons(53U), net_htons(to_port)) < 0 ||
+	    net_pkt_write(pkt, reply, sizeof(reply)) < 0) {
+		test_failed = true;
+		if (pkt != NULL) {
+			net_pkt_unref(pkt);
+		}
+		return;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
+
+	if (net_recv_data(iface, pkt) < 0) {
+		test_failed = true;
+		net_pkt_unref(pkt);
+	}
+}
+
+static void renew_worker(void *p1, void *p2, void *p3)
+{
+	struct dns_resolve_context *ctx = p1;
+	struct dns_server_info *server = p2;
+	struct net_sockaddr *local = net_sad(&server->dispatcher.local_addr_storage);
+	uint16_t dns_id = 0U;
+
+	ARG_UNUSED(p3);
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	renew_inject_reply(&net_sin(net_sad(&server->dns_server_addr))->sin_addr,
+			   net_ntohs(net_sin(local)->sin_port));
+
+	/* Let the socket service thread take the dispatcher's lock and block
+	 * on the resolver lock held here.
+	 */
+	k_msleep(100);
+
+	renew_ret = dns_get_addr_info(NAME4, DNS_QUERY_TYPE_A, &dns_id, dns_result_cb_dummy,
+				      NULL, DNS_TIMEOUT);
+
+	k_mutex_unlock(&ctx->lock);
+
+	if (renew_ret == 0) {
+		(void)dns_cancel_addr_info(dns_id);
+	}
+}
+
+ZTEST(dns_resolve, test_dns_source_port_renewal_during_dispatch)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	struct dns_server_info *server = NULL;
+	uint16_t old_port;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT);
+	Z_TEST_SKIP_IFDEF(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS);
+
+	/* The first ordinary IPv4 server, which NAME4 is asked from */
+	for (int i = 0; i < ARRAY_SIZE(ctx->servers); i++) {
+		if (ctx->servers[i].sock >= 0 && !ctx->servers[i].is_mdns &&
+		    !ctx->servers[i].is_llmnr &&
+		    ctx->servers[i].dns_server_addr.ss_family == NET_AF_INET &&
+		    net_sin(net_sad(&ctx->servers[i].dns_server_addr))->sin_port ==
+			    net_htons(53U)) {
+			server = &ctx->servers[i];
+			break;
+		}
+	}
+
+	zassert_not_null(server, "no IPv4 server on port 53");
+	old_port = net_ntohs(net_sin(net_sad(&server->dispatcher.local_addr_storage))->sin_port);
+
+	/* Answering is not wanted; only the source port of the query */
+	timeout_query = true;
+	test_failed = false;
+	query_src_port = 0U;
+	renew_ret = -EINPROGRESS;
+
+	k_thread_create(&renew_thread, renew_stack, K_THREAD_STACK_SIZEOF(renew_stack),
+			renew_worker, ctx, server, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+
+	zassert_ok(k_thread_join(&renew_thread, K_SECONDS(3)),
+		   "renewing the source port during a dispatch deadlocked");
+	/* Let the dispatch that was waiting finish */
+	k_msleep(50);
+
+	zassert_false(test_failed, "could not deliver the reply");
+	zassert_ok(renew_ret, "the query was not sent (%d)", renew_ret);
+	zassert_equal(query_src_port, old_port,
+		      "the query left from port %u; the port should have been kept (%u)",
+		      query_src_port, old_port);
+}
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);

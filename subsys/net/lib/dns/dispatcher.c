@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_dns_dispatcher, CONFIG_DNS_SOCKET_DISPATCHER_LOG_LEVEL);
 #include <zephyr/net/socket_service.h>
 
 #include "../../ip/net_stats.h"
+#include "dns_internal.h"
 #include "dns_pack.h"
 
 static K_MUTEX_DEFINE(lock);
@@ -279,6 +280,58 @@ void dns_dispatcher_svc_handler(struct net_socket_service_event *pev)
 	if (ret < 0 && ret != DNS_EAI_ALLDONE && ret != -ENOENT) {
 		NET_DBG("DNS recv error (%d)", ret);
 	}
+}
+
+/* Global lock held. A dispatch can be in flight on ctx only if it is on
+ * the registration list, owns a dispatch table slot or is paired; the
+ * lock of any other context may never have been initialized.
+ */
+static bool dispatcher_is_registered(struct dns_socket_dispatcher *ctx)
+{
+	sys_snode_t *prev_node = NULL;
+
+	if (ctx->paired || sys_slist_find(&sockets, &ctx->node, &prev_node)) {
+		return true;
+	}
+
+	ARRAY_FOR_EACH(dispatch_table, i) {
+		if (dispatch_table[i].ctx == ctx) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int dns_dispatcher_try_unregister(struct dns_socket_dispatcher *ctx)
+{
+	int ret;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!dispatcher_is_registered(ctx)) {
+		ret = dns_dispatcher_unregister(ctx);
+		k_mutex_unlock(&lock);
+		return ret;
+	}
+
+	/* A dispatch in progress on ctx holds its lock. Taking that lock
+	 * without waiting, while holding the global lock that recv_data()
+	 * needs to start a dispatch, makes sure that none is running and none
+	 * can start before the context is unregistered. Both locks are
+	 * recursive, so dns_dispatcher_unregister() then does not wait.
+	 */
+	if (k_mutex_lock(&ctx->lock, K_NO_WAIT) != 0) {
+		k_mutex_unlock(&lock);
+		return -EBUSY;
+	}
+
+	ret = dns_dispatcher_unregister(ctx);
+
+	k_mutex_unlock(&ctx->lock);
+	k_mutex_unlock(&lock);
+
+	return ret;
 }
 
 int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)

@@ -2091,6 +2091,7 @@ static void dns_randomize_source_port(struct dns_resolve_context *ctx,
 	struct net_sockaddr_storage local;
 	net_socklen_t local_len;
 	int old_sock = server->sock;
+	int old_idx = -1;
 	int sock;
 	int ret;
 
@@ -2125,15 +2126,28 @@ static void dns_randomize_source_port(struct dns_resolve_context *ctx,
 	 * service with this array for the other servers, and a closed
 	 * descriptor must not stay polled, since its number can be reused by
 	 * an unrelated socket.
+	 *
+	 * This runs with the resolver lock held. A reply being dispatched on
+	 * the old socket holds the dispatcher's lock and waits for the
+	 * resolver lock, so waiting for that dispatch here would deadlock;
+	 * keep the port for this query instead.
 	 */
 	ARRAY_FOR_EACH(ctx->fds, j) {
 		if (ctx->fds[j].fd == old_sock) {
 			ctx->fds[j].fd = -1;
+			old_idx = j;
 			break;
 		}
 	}
 
-	(void)dns_dispatcher_unregister(&server->dispatcher);
+	if (dns_dispatcher_try_unregister(&server->dispatcher) == -EBUSY) {
+		/* Still registered and polled, so the descriptor stays listed */
+		if (old_idx >= 0) {
+			ctx->fds[old_idx].fd = old_sock;
+		}
+
+		return;
+	}
 
 	zsock_close(old_sock);
 	server->sock = -1;
