@@ -60,16 +60,9 @@ void lvgl_rounder_cb(lv_event_t *e)
 	area->y2 |= (CONFIG_LV_Z_AREA_Y_ALIGNMENT_WIDTH - 1);
 #endif
 }
-#endif
-
-static inline void lvgl_add_rounder_event_cb(lv_display_t *display)
-{
-#ifdef CONFIG_LV_Z_USE_ROUNDER_CB
-	lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA, display);
 #else
-	ARG_UNUSED(display);
+#define lvgl_rounder_cb NULL
 #endif
-}
 
 int set_lvgl_rendering_cb(lv_display_t *display)
 {
@@ -85,33 +78,39 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 	case PIXEL_FORMAT_ARGB_8888:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_ARGB8888);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_32bit);
-		lvgl_add_rounder_event_cb(display);
+		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
+					display);
 		break;
 	case PIXEL_FORMAT_RGB_888:
 	case PIXEL_FORMAT_BGR_888:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB888);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_24bit);
-		lvgl_add_rounder_event_cb(display);
+		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
+					display);
 		break;
 	case PIXEL_FORMAT_RGB_565:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_16bit);
-		lvgl_add_rounder_event_cb(display);
+		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
+					display);
 		break;
 	case PIXEL_FORMAT_RGB_565X:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565_SWAPPED);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_16bit);
-		lvgl_add_rounder_event_cb(display);
+		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
+					display);
 		break;
 	case PIXEL_FORMAT_L_8:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_L8);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_8bit);
-		lvgl_add_rounder_event_cb(display);
+		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
+					display);
 		break;
 	case PIXEL_FORMAT_AL_88:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_AL88);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_16bit);
-		lvgl_add_rounder_event_cb(display);
+		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
+					display);
 		break;
 #ifdef CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER
 	case PIXEL_FORMAT_MONO01:
@@ -125,7 +124,8 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 
 	default:
 		lv_display_set_flush_cb(display, NULL);
-		lvgl_add_rounder_event_cb(display);
+		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
+					display);
 		err = -ENOTSUP;
 		break;
 	}
