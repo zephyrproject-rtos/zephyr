@@ -13,6 +13,10 @@
 	model = "TI AM13E230X Launchpad";
 	compatible = "ti,am13e23019";
 
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
 	chosen {
 		zephyr,sram = &sram0_1_2;
 		zephyr,flash = &flash0;
