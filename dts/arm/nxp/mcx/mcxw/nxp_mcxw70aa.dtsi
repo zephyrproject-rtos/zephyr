@@ -1,0 +1,15 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MCXW70AA lacks the FlexCAN peripheral present on MCXW70AC (confirmed via
+ * HAL: CAN_0_BASE/CAN_0_BASE_NS and CAN0_IRQn are absent from
+ * MCXW70AA_COMMON.h, present in MCXW70AC_COMMON.h). No other peripheral or
+ * memory differences exist between the two parts.
+ */
+#include "nxp_mcxw70ac.dtsi"
+
+/delete-node/ &flexcan_0;
