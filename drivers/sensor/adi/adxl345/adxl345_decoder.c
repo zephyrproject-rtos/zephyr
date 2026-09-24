@@ -103,12 +103,13 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				 uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct adxl345_fifo_data *enc_data = (const struct adxl345_fifo_data *)buffer;
-	const uint8_t *buffer_end =
-		buffer + sizeof(struct adxl345_fifo_data) + enc_data->fifo_byte_count;
+	/* *fit is the buffer offset past the last decoded sample */
+	uint32_t offset = sizeof(struct adxl345_fifo_data);
+	const uint32_t buffer_end = offset + enc_data->fifo_byte_count;
 	int count = 0;
 	uint8_t sample_num = 0;
 
-	if ((uintptr_t)buffer_end <= *fit || chan_spec.chan_idx != 0) {
+	if (buffer_end <= *fit || chan_spec.chan_idx != 0) {
 		return 0;
 	}
 
@@ -116,8 +117,6 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 
 	memset(data, 0, sizeof(struct sensor_three_axis_data));
 	data->shift = range_to_shift[enc_data->selected_range];
-
-	buffer += sizeof(struct adxl345_fifo_data);
 
 	uint8_t sample_set_size = enc_data->sample_set_size;
 
@@ -134,18 +133,17 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	uint8_t is_full_res = enc_data->is_full_res;
 
 	/* Calculate which sample is decoded. */
-	if ((uint8_t *)*fit >= buffer) {
-		sample_num = ((uint8_t *)*fit - buffer) / sample_set_size;
+	if (*fit >= offset) {
+		sample_num = (*fit - offset) / sample_set_size;
 	}
 
-	while (count < max_count && buffer < buffer_end) {
-		const uint8_t *sample_end = buffer;
+	while (count < max_count && offset < buffer_end) {
+		const uint32_t sample_end = offset + sample_set_size;
+		const uint8_t *sample = buffer + offset;
 
-		sample_end += sample_set_size;
-
-		if ((uintptr_t)buffer < *fit) {
+		if (offset < *fit) {
 			/* This frame was already decoded, move on to the next frame */
-			buffer = sample_end;
+			offset = sample_end;
 			continue;
 		}
 
@@ -154,22 +152,22 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			data->readings[count].timestamp_delta = sample_num * period_ns;
 			uint8_t buff_offset = 0;
 
-			adxl345_accel_convert_q31(&data->readings[count].x, *(int16_t *)buffer,
+			adxl345_accel_convert_q31(&data->readings[count].x, *(int16_t *)sample,
 					enc_data->selected_range, is_full_res);
 			buff_offset = 2;
 			adxl345_accel_convert_q31(&data->readings[count].y,
-						*(int16_t *)(buffer + buff_offset),
+						*(int16_t *)(sample + buff_offset),
 							enc_data->selected_range, is_full_res);
 			buff_offset += 2;
 			adxl345_accel_convert_q31(&data->readings[count].z,
-						*(int16_t *)(buffer + buff_offset),
+						*(int16_t *)(sample + buff_offset),
 							enc_data->selected_range, is_full_res);
 			break;
 		default:
 			return -ENOTSUP;
 		}
-		buffer = sample_end;
-		*fit = (uintptr_t)sample_end;
+		offset = sample_end;
+		*fit = sample_end;
 		count++;
 	}
 	data->header.reading_count = count;
