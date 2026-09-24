@@ -212,7 +212,8 @@ st_cam_i2c: &i2c4 {
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
-		refresh-rate = <0x603>;
+		/* 64 ms / 4096 rows x 93.3 MHz SDCLK (HCLK3 / 3) - 20 */
+		refresh-rate = <1438>;
 
 		bank@1 {
 			reg = <1>;
