@@ -14,6 +14,8 @@
  * The public documentation for these operations lives in <zephyr/sys/atomic.h>.
  */
 
+/* IWYU pragma: private, include "zephyr/sys/atomic.h" */
+
 #ifndef ZEPHYR_INCLUDE_SYS_ATOMIC_BUILTIN_H_
 #define ZEPHYR_INCLUDE_SYS_ATOMIC_BUILTIN_H_
 
