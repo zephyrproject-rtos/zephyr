@@ -147,14 +147,16 @@ static inline void cdns_macb_queue_isr_clear(const struct device *dev, unsigned 
 #define STATS_INC(p, field) do {} while (false)
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *cdns_macb_get_stats(const struct device *dev, struct net_if *iface)
 {
 	struct cdns_macb_priv *p = dev->data;
 
 	ARG_UNUSED(iface);
 
-	return COND_CODE_1(CONFIG_NET_STATISTICS_ETHERNET, (&p->stats), (NULL));
+	return &p->stats;
 }
+#endif
 
 /*
  * MAC address and filtering
@@ -255,6 +257,71 @@ static void cdns_macb_setup_multicast_filter(const struct device *dev)
 	cdns_macb_set_hash(dev, hash[0], hash[1]);
 }
 #endif /* CDNS_MACB_MCAST_FILTER */
+
+/*
+ * Hardware timestamps
+ */
+
+/*
+ * The timestamp of a transmitted frame sits in its first descriptor; some
+ * implementations put it in the last one instead. Called with the driver
+ * lock held.
+ */
+static void cdns_macb_tx_timestamp(const struct device *dev,
+				   const struct cdns_macb_dma_desc *first,
+				   const struct cdns_macb_dma_desc *last, struct net_pkt *pkt)
+{
+#if defined(CONFIG_PTP_CLOCK_CDNS_MACB)
+	const struct cdns_macb_dma_desc *d;
+	struct net_ptp_time tsu;
+
+	if (!net_pkt_is_tx_timestamping(pkt)) {
+		return;
+	}
+
+	if ((first->ctrl & GEM_TX_TSVALID) != 0U) {
+		d = first;
+	} else if ((last->ctrl & GEM_TX_TSVALID) != 0U) {
+		d = last;
+	} else {
+		LOG_DBG("no tx timestamp");
+		return;
+	}
+
+	cdns_macb_tsu_read(DEVICE_MMIO_GET(dev), &tsu);
+	cdns_macb_desc_timestamp(d->ts1, d->ts2, &tsu, &pkt->timestamp);
+	net_if_add_tx_timestamp(pkt);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(first);
+	ARG_UNUSED(last);
+	ARG_UNUSED(pkt);
+#endif
+}
+
+/* Take the timestamp of a received frame from the descriptor that carries it */
+static void cdns_macb_rx_timestamp(const struct device *dev, const struct cdns_macb_dma_desc *d,
+				   struct net_pkt *pkt)
+{
+#if defined(CONFIG_PTP_CLOCK_CDNS_MACB)
+	struct cdns_macb_priv *p = dev->data;
+	struct net_ptp_time tsu;
+
+	if (((d->addr & GEM_RX_TSVALID) == 0U) || net_pkt_is_rx_timestamping(pkt)) {
+		return;
+	}
+
+	K_SPINLOCK(&p->lock) {
+		cdns_macb_tsu_read(DEVICE_MMIO_GET(dev), &tsu);
+	}
+	cdns_macb_desc_timestamp(d->ts1, d->ts2, &tsu, &pkt->timestamp);
+	net_pkt_set_rx_timestamping(pkt, true);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(d);
+	ARG_UNUSED(pkt);
+#endif
+}
 
 /*
  * TX path
@@ -396,6 +463,7 @@ static void cdns_macb_tx_release(const struct device *dev)
 		idx = p->tx_tail;
 
 		while (idx != p->tx_head) {
+			struct cdns_macb_dma_desc *first, *last;
 			struct net_pkt *pkt;
 			uint32_t ctrl;
 
@@ -425,7 +493,9 @@ static void cdns_macb_tx_release(const struct device *dev)
 			}
 
 			/* The packet is stored with the last descriptor of the frame */
+			first = &tx[idx];
 			do {
+				last = &tx[idx];
 				pkt = p->tx_pkts[idx];
 				p->tx_pkts[idx] = NULL;
 				INC_WRAP(idx, CDNS_MACB_NB_TX_DESCS);
@@ -434,6 +504,7 @@ static void cdns_macb_tx_release(const struct device *dev)
 
 			LOG_DBG("pkt len/frags=%zu/%u", net_pkt_get_len(pkt),
 				net_pkt_get_nbfrags(pkt));
+			cdns_macb_tx_timestamp(dev, first, last, pkt);
 			net_pkt_unref(pkt);
 		}
 
@@ -588,7 +659,8 @@ static void cdns_macb_rx_refill_desc(const struct device *dev, struct net_buf *f
 	__ASSERT((d->addr & MACB_RX_USED) != 0U, "rx desc still owned by hardware");
 	__ASSERT(((idx + 1U) % CDNS_MACB_NB_RX_DESCS) != p->rx_tail, "rx ring overfilled");
 	__ASSERT(p->rx_frags[idx] == NULL, "rx desc still has a fragment");
-	__ASSERT((POINTER_TO_UINT(frag->data) & ~MACB_RX_ADDR) == 0U, "rx buffer misaligned");
+	__ASSERT((POINTER_TO_UINT(frag->data) % CDNS_MACB_RX_BUFFER_ALIGN) == 0U,
+		 "rx buffer misaligned");
 
 	/* The buffer may hold dirty lines from a previous use */
 	sys_cache_data_invd_range(frag->data, frag->size);
@@ -725,6 +797,8 @@ static void cdns_macb_receive(const struct device *dev)
 			cdns_macb_rx_recycle(dev, frag);
 			continue;
 		}
+
+		cdns_macb_rx_timestamp(dev, d, p->rx_pkt);
 
 		sys_cache_data_invd_range(frag->data, frag->size);
 
@@ -1000,6 +1074,17 @@ static const struct device *cdns_macb_get_phy(const struct device *dev, struct n
 	return cfg->phy_dev;
 }
 
+#if defined(CONFIG_PTP_CLOCK_CDNS_MACB)
+static const struct device *cdns_macb_get_ptp_clock(const struct device *dev, struct net_if *iface)
+{
+	const struct cdns_macb_config *cfg = dev->config;
+
+	ARG_UNUSED(iface);
+
+	return cfg->ptp_clock;
+}
+#endif
+
 static void cdns_macb_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -1196,6 +1281,12 @@ int cdns_macb_probe(const struct device *dev)
 		return -ENOTSUP;
 	}
 
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_CDNS_MACB) &&
+	    ((CDNS_MACB_REG_READ(GEM_DCFG5) & GEM_DCFG5_TSU) == 0U)) {
+		/* The devicetree enabled the PTP clock, trust it over the register */
+		LOG_WRN("the design configuration does not report a time stamp unit");
+	}
+
 	if ((cfg->caps & CDNS_MACB_CAPS_BD_RD_PREFETCH) != 0U) {
 		uint32_t dcfg10 = CDNS_MACB_REG_READ(GEM_DCFG10);
 		uint32_t rdbuff = MAX(FIELD_GET(GEM_DCFG10_RXBD_RDBUFF, dcfg10),
@@ -1247,7 +1338,16 @@ int cdns_macb_probe(const struct device *dev)
 	if (IS_ENABLED(CONFIG_ETH_CDNS_MACB_DMA_64BIT)) {
 		dmacfg |= GEM_DMACFG_ADDR64;
 	}
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_CDNS_MACB)) {
+		dmacfg |= GEM_DMACFG_RXEXT | GEM_DMACFG_TXEXT;
+	}
 	CDNS_MACB_REG_WRITE(GEM_DMACFG, dmacfg);
+
+	/* Timestamp every frame in the descriptors, the packets decide what to keep */
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_CDNS_MACB)) {
+		CDNS_MACB_REG_WRITE(GEM_TXBDCTRL, FIELD_PREP(GEM_BDCTRL_TSMODE, GEM_TSMODE_ALL));
+		CDNS_MACB_REG_WRITE(GEM_RXBDCTRL, FIELD_PREP(GEM_BDCTRL_TSMODE, GEM_TSMODE_ALL));
+	}
 
 	ret = cdns_macb_platform_init(dev);
 	if (ret != 0) {
@@ -1290,6 +1390,9 @@ const struct ethernet_api cdns_macb_api = {
 	.get_config = cdns_macb_get_config,
 	.get_phy = cdns_macb_get_phy,
 	.send = cdns_macb_send,
+#if defined(CONFIG_PTP_CLOCK_CDNS_MACB)
+	.get_ptp_clock = cdns_macb_get_ptp_clock,
+#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = cdns_macb_get_stats,
 #endif
