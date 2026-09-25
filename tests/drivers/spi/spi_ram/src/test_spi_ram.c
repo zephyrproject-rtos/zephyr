@@ -51,6 +51,9 @@
  */
 #define FRAM_SPI_FREQ_HZ 8000000U
 
+/* 16-bit values in the sequential-pattern test: 0x0000, 0x1111, ..., 0xFFFF */
+#define PATTERN_COUNT 256U
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(spi_ram))
 #define SPI_DEV_NODE DT_ALIAS(spi_ram)
 #else
@@ -308,12 +311,12 @@ ZTEST(spi_ram, test_ram_sequential_write_read)
 	 */
 	static const uint16_t PATTERN_START;
 	static const uint16_t PATTERN_STEP = 0x1111U;
-	static const uint16_t PATTERN_COUNT = 256U;                  /* 0x0000..0xFFFF */
 	const size_t total_bytes = PATTERN_COUNT * sizeof(uint16_t); /* 512 */
 	const uint16_t base_addr = 0x0100U; /* write after the basic test area */
 
-	uint8_t expected[PATTERN_COUNT * sizeof(uint16_t)];
-	uint8_t actual[PATTERN_COUNT * sizeof(uint16_t)];
+	/* Kept off the test thread stack (1 KiB total) to avoid overflow. */
+	static uint8_t expected[PATTERN_COUNT * sizeof(uint16_t)];
+	static uint8_t actual[PATTERN_COUNT * sizeof(uint16_t)];
 
 	/* Fill expected buffer */
 	for (uint16_t i = 0; i < PATTERN_COUNT; i++) {
