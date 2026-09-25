@@ -46,7 +46,8 @@ L2 LIM, as on the board.
    :board: hifive_unleashed/fu540/u54/qemu
    :goals: build run
 
-The machine has no QSPI1, so this device is disabled. The Ethernet MAC is connected with the
+The machine has no QSPI1, and its Ethernet MAC neither timestamps frames nor runs the 1588
+timer, so these devices are disabled. The Ethernet MAC is connected with the
 :kconfig:option:`CONFIG_NET_QEMU_ETHERNET` or :kconfig:option:`CONFIG_NET_QEMU_USER` networking
 of QEMU.
 

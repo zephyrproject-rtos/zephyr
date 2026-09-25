@@ -12,3 +12,8 @@
 &spi1 {
 	status = "disabled";
 };
+
+/* The GEM of QEMU does not timestamp frames and its 1588 timer does not run */
+&eth0_ptp {
+	status = "disabled";
+};
