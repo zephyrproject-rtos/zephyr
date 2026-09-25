@@ -153,8 +153,8 @@
 
 &pll3 {
 	div-m = <12>;
-	mul-n = <25>;
-	div-r = <2>;
+	mul-n = <200>;
+	div-r = <16>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
