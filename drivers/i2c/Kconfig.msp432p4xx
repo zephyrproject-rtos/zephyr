@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Gail Rojas <gailroco@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_MSP432P4XX
+	bool "MSP432P4xx eUSCI_B I2C driver"
+	default y
+	depends on DT_HAS_TI_MSP432P4XX_I2C_ENABLED
+	help
+	  I2C master driver for the TI MSP432P4xx eUSCI_B module.
+	  Supports standard (100 kHz) and fast (400 kHz) modes.
+	  Note: pin muxing for SDA and SCL is hardcoded for eUSCI_B0 on
+	  P1.6/P1.7 (MSP-EXP432P401R LaunchPad).  A pinctrl driver for
+	  MSP432P4xx is not yet available.
