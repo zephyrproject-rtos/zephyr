@@ -18,6 +18,9 @@ extern struct bt_conn *conn_connected;
 extern uint32_t last_write_rate;
 extern uint32_t *write_countdown;
 extern void (*start_scan_func)(void);
+#if defined(CONFIG_USE_NOTIFY)
+extern uint32_t notify_rx_get(void);
+#endif
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
@@ -125,6 +128,19 @@ uint32_t central_gatt_write(uint32_t count)
 		}
 
 		if (conn) {
+#if defined(CONFIG_USE_NOTIFY)
+			/* Central is the notify subscriber; reception happens in
+			 * the subscribe callback. Terminate once `count`
+			 * notifications have been received.
+			 */
+			bt_conn_unref(conn);
+
+			if (count && notify_rx_get() >= count) {
+				break;
+			}
+
+			k_sleep(K_MSEC(100));
+#else
 			(void)write_cmd(conn);
 			bt_conn_unref(conn);
 
@@ -143,6 +159,7 @@ uint32_t central_gatt_write(uint32_t count)
 			}
 
 			k_yield();
+#endif
 		} else {
 			k_sleep(K_SECONDS(1));
 		}
