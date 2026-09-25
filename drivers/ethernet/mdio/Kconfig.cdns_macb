@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_CDNS_MACB
+	bool "Cadence MACB/GEM MDIO controller driver"
+	default y
+	depends on DT_HAS_CDNS_MACB_MDIO_ENABLED
+	depends on ETH_CDNS_MACB_CORE
+	help
+	  Enable MDIO support for Cadence MACB/GEM Ethernet MACs, which
+	  expose the MDIO controller as a child node of the MAC.
+
+if MDIO_CDNS_MACB
+
+config MDIO_CDNS_MACB_IDLE_TIMEOUT_US
+	int "MDIO idle wait timeout"
+	default 1000000
+	help
+	  Timeout in microseconds to wait for the MDIO bus to become idle
+	  before and after a read or write operation.
+
+endif # MDIO_CDNS_MACB

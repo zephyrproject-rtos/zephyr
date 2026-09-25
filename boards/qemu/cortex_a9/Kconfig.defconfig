@@ -43,7 +43,7 @@ configdefault TEST_RANDOM_GENERATOR
 	default y if NETWORKING
 
 configdefault ETH_PHY_DRIVER
-	default n if !NET_QEMU_ETHERNET
+	default n if !NET_QEMU_ETHERNET && !NET_QEMU_USER
 
 if QEMU_ICOUNT
 

@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PTP clock of the Cadence MACB/GEM Ethernet MAC, its 1588 time stamp unit.
+  A child node named ptp-clock of the MAC node, whose registers it uses.
+
+    &eth0 {
+      eth0_ptp: ptp-clock {
+        compatible = "cdns,macb-ptp-clock";
+        clock-frequency = <125000000>;
+      };
+    };
+
+  Where the rate of the time stamp unit clock depends on the board, the SoC
+  devicetree leaves the node disabled without a clock-frequency and the board
+  supplies both:
+
+    &gem0_ptp {
+      status = "okay";
+      clock-frequency = <111111111>;
+    };
+
+compatible: "cdns,macb-ptp-clock"
+
+include: base.yaml
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Rate in Hz of the clock driving the time stamp unit, from which the
+      driver derives the timer increment. On cores without a separate TSU
+      clock this is the peripheral clock of the MAC.

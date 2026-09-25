@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM in the Xilinx ZynqMP processing system.
+
+  The second register range is the GEMx_REF_CTRL register of the CRL_APB,
+  through which the driver retunes the TX clock to the link speed. The
+  driver lifts the CRL_APB write protection for that write, which needs
+  the CRL_APB registers to be accessible at their physical address.
+
+compatible: "xlnx,zynqmp-gem"
+
+include: cdns,gem.yaml
+
+properties:
+  reg-names:
+    required: true
+    description: |
+      Names of the register ranges: "mac" for the GEM itself and "clkc"
+      for its reference clock control register in the CRL_APB.
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Rate in Hz of the PLL supplying the GEM reference clock, by default
+      the IO PLL. The GEM TX clock is derived from it through the two
+      dividers of the reference clock control register, which the driver
+      sets to match the link speed reported by the PHY.

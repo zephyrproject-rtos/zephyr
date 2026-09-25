@@ -7851,7 +7851,6 @@ Xilinx Platforms:
     - drivers/*/*zynq*
     - dts/*/xilinx/
     - dts/bindings/*/*xlnx*
-    - include/zephyr/*/*/*xlnx*
     - soc/xlnx/
   labels:
     - "platform: Xilinx"

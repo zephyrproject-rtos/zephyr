@@ -1,0 +1,156 @@
+# Cadence MACB/GEM Ethernet MAC configuration options
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Cadence MACB/GEM Ethernet driver"
+
+DT_COMPAT_CDNS_GEM := cdns,gem
+
+config ETH_CDNS_MACB_CORE
+	bool
+	depends on NET_BUF_FIXED_DATA_SIZE
+	select CACHE_MANAGEMENT if DCACHE
+	# The DMA descriptor rings are not cache maintained, so they need an
+	# uncached region, which on ARM can only be carved out by the MPU.
+	select ARM_MPU if CPU_HAS_ARM_MPU && DCACHE
+	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_CDNS_GEM),nvmem-cells)
+	help
+	  This is a driver for the Cadence GEM (Gigabit Ethernet MAC), the core
+	  the Linux macb driver supports. The 10/100 MACB variant is not
+	  supported.
+
+config ETH_XLNX_CDNS_MACB
+	bool "Driver for the Cadence GEM on Xilinx Zynq-7000 and ZynqMP"
+	depends on DT_HAS_XLNX_ZYNQ_GEM_ENABLED || DT_HAS_XLNX_ZYNQMP_GEM_ENABLED
+	depends on !QEMU_TARGET || NET_QEMU_ETHERNET || NET_QEMU_USER
+	select ETH_CDNS_MACB_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	default y
+	help
+	  This enables the Cadence GEM driver on the Xilinx Zynq-7000 and
+	  ZynqMP processing systems. The data cache of the CPU is maintained
+	  for the packet buffers; the Zynq-7000 L2 cache is not configured by
+	  Zephyr and must stay disabled.
+
+config ETH_SIFIVE_CDNS_MACB
+	bool "Driver for the Cadence GEM on the SiFive FU540"
+	depends on DT_HAS_SIFIVE_FU540_C000_GEM_ENABLED
+	select ETH_CDNS_MACB_CORE
+	default y
+	help
+	  This enables the Cadence GEM driver on the SiFive FU540. The GEM
+	  DMA is coherent with the caches of the cores, so the descriptor
+	  rings live in ordinary memory.
+
+config ETH_NIC_MODEL
+	string
+	default "cadence_gem"
+	depends on ETH_XLNX_CDNS_MACB
+	help
+	  Value of the -nic parameter to be used when starting QEMU.
+	  This parameter specifies which type of Ethernet controller
+	  shall be simulated by QEMU.
+
+if ETH_CDNS_MACB_CORE
+
+configdefault NET_BUF_ALIGNMENT
+	default DCACHE_LINE_SIZE if DCACHE
+	default 8 if PTP_CLOCK_CDNS_MACB
+
+config ETH_CDNS_MACB_NB_TX_DESCS
+	int "Number of entries in the transmit descriptor ring"
+	default 32
+	range 4 256
+	help
+	  A higher number allows for more packets to be queued which may
+	  improve throughput, but that requires more transient memory.
+	  There must be enough descriptors to hold all fragments of a
+	  full-size packet to be transmitted or the packet will be dropped.
+	  One entry is always kept free to terminate the queue.
+
+	  Fragment size is influenced by CONFIG_NET_BUF_DATA_SIZE.
+
+config ETH_CDNS_MACB_NB_RX_DESCS
+	int "Number of entries in the receive descriptor ring"
+	default 32
+	range 8 256
+	help
+	  Received packets are spread across the required number of fragment
+	  buffers. Each RX fragment has a size of CONFIG_NET_BUF_DATA_SIZE,
+	  so a full-size frame needs 12 entries with the default of 128
+	  bytes. There is one descriptor entry per fragment, taken from the
+	  RX data pool, so CONFIG_NET_BUF_RX_COUNT should be well above this.
+
+	  A higher number allows for more packets to be received without
+	  immediate intervention from the CPU but requires more transient
+	  memory. A smaller number increases the risk of an overflow and
+	  dropped packets.
+
+config ETH_CDNS_MACB_DMA_64BIT
+	bool "64-bit DMA descriptors"
+	default y if 64BIT
+	help
+	  Use 16-byte descriptors carrying 64-bit buffer addresses. The
+	  hardware must support 64-bit DMA addressing (DCFG6.DAW64), which
+	  the driver checks at initialization. Required on 64-bit CPUs, and
+	  selectable on 32-bit ones for testing.
+
+config ETH_CDNS_MACB_RX_REFILL_IRQ
+	bool "Receive buffer refill in interrupt"
+	default y
+	help
+	  Refill the receive buffer pool in the rx interrupt, if
+	  possible, otherwise in the refill thread.
+
+config ETH_CDNS_MACB_RX_REFILL_THREAD_PRIORITY
+	int "Receive buffer refill thread priority"
+	default 0
+	help
+	  Priority level of the internal thread which is used to refill
+	  the receive buffer pool.
+
+config ETH_CDNS_MACB_MULTICAST_FILTER
+	bool "Multicast filter support"
+	depends on NET_L2_ETHERNET
+	default y
+	help
+	  Enable the 64-bin multicast hash filter of the MAC, so only
+	  multicast for the addresses the stack listens to is received.
+	  If disabled, all multicast is received by the MAC.
+
+config ETH_CDNS_MACB_TX_HW_CHECKSUM
+	bool "Use TX hardware checksum"
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	default y
+	help
+	  Enable transmit checksum offload to enhance throughput
+	  performances. Only available when the packet buffers of the
+	  core are in SRAM mode, which the driver checks at initialization.
+
+config ETH_CDNS_MACB_TX_HW_CHECKSUM_EN
+	bool
+	depends on ETH_CDNS_MACB_TX_HW_CHECKSUM
+	depends on NET_CHECKSUM_OFFLOAD
+	default y
+
+config ETH_CDNS_MACB_RX_HW_CHECKSUM
+	bool "Use RX hardware checksum"
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	default y
+	help
+	  Enable receive checksum offload to enhance throughput
+	  performances. Frames with a bad checksum are discarded by the
+	  hardware, except in promiscuous mode.
+
+config ETH_CDNS_MACB_RX_HW_CHECKSUM_EN
+	bool
+	depends on ETH_CDNS_MACB_RX_HW_CHECKSUM
+	depends on NET_CHECKSUM_OFFLOAD
+	default y
+
+rsource "Kconfig.ptp"
+
+endif # ETH_CDNS_MACB_CORE
+
+endmenu
