@@ -47,6 +47,10 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_IRQ_TX_ENABLED		3
 #define CDC_ACM_TX_FIFO_BUSY		4
 
+#define CDC_ACM_RETAINED_TX_FIFO	DT_ANY_INST_HAS_PROP_STATUS_OKAY(memory_region)
+/* Change on any change to struct cdc_acm_retained_fifo */
+#define CDC_ACM_RETAINED_FIFO_MAGIC	0x43444346U
+
 struct cdc_acm_rx_uart_fifo {
 	struct k_fifo *bufs;
 	struct net_buf_pool *pool;
@@ -58,6 +62,15 @@ struct cdc_acm_tx_uart_fifo {
 	struct ring_buf *rb;
 	bool irq;
 	bool altered;
+};
+
+/* Kept across resets. rd and wr are in [0, 2 * size) so that full differs from empty. */
+struct cdc_acm_retained_fifo {
+	uint32_t magic;
+	uint32_t size;
+	uint32_t rd;
+	uint32_t wr;
+	uint8_t data[];
 };
 
 struct usbd_cdc_acm_desc {
@@ -91,6 +104,11 @@ struct cdc_acm_uart_config {
 	struct usbd_cdc_acm_desc *const desc;
 	const struct usb_desc_header *const *const fs_desc;
 	const struct usb_desc_header *const *const hs_desc;
+#if CDC_ACM_RETAINED_TX_FIFO
+	struct cdc_acm_retained_fifo *const retained_tx_fifo;
+	/* Largest stored TX FIFO size that fits the memory region */
+	const uint32_t tx_fifo_max_size;
+#endif
 };
 
 struct cdc_acm_uart_data {
@@ -117,6 +135,8 @@ struct cdc_acm_uart_data {
 	 */
 	bool zlp_needed;
 	bool echo_mitigated;
+	/* Length of the IN transfer in progress, buf->len may be 0 at completion */
+	uint32_t tx_len;
 	/* UART API IRQ callback */
 	uart_irq_callback_user_data_t cb;
 	/* UART API user callback data */
@@ -224,6 +244,40 @@ static ALWAYS_INLINE int cdc_acm_work_schedule(struct k_work_delayable *work,
 #define check_wq_ctx(dev) true
 
 #endif /* CONFIG_USBD_CDC_ACM_WORKQUEUE */
+
+/* Call after the data is in the TX FIFO */
+static void cdc_acm_retained_commit(const struct device *dev, const uint32_t len)
+{
+#if CDC_ACM_RETAINED_TX_FIFO
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct cdc_acm_retained_fifo *const fifo = cfg->retained_tx_fifo;
+
+	if (fifo != NULL) {
+		compiler_barrier();
+		fifo->wr = (fifo->wr + len) % (2U * fifo->size);
+	}
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(len);
+#endif
+}
+
+/* Call before the data is freed from the TX FIFO */
+static void cdc_acm_retained_consume(const struct device *dev, const uint32_t len)
+{
+#if CDC_ACM_RETAINED_TX_FIFO
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct cdc_acm_retained_fifo *const fifo = cfg->retained_tx_fifo;
+
+	if (fifo != NULL) {
+		fifo->rd = (fifo->rd + len) % (2U * fifo->size);
+		compiler_barrier();
+	}
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(len);
+#endif
+}
 
 static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
 {
@@ -333,6 +387,9 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 
 	if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
 		/* TX transfer completion */
+		cdc_acm_retained_consume(dev, data->tx_len);
+		ring_buf_consume(data->tx_fifo.rb, data->tx_len);
+
 		if (data->cb) {
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
@@ -696,9 +753,10 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	}
 
 	if (data->echo_mitigated) {
-		len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
+		len = ring_buf_peek(data->tx_fifo.rb, buf->data, buf->size);
 	}
 	net_buf_add(buf, len);
+	data->tx_len = len;
 
 	data->zlp_needed = len != 0 && len % cdc_acm_get_bulk_mps(c_data) == 0;
 
@@ -813,6 +871,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 
 	key = k_spin_lock(&data->lock);
 	done = ring_buf_put(data->tx_fifo.rb, tx_data, len);
+	cdc_acm_retained_commit(dev, done);
 	k_spin_unlock(&data->lock, key);
 	if (done) {
 		data->tx_fifo.altered = true;
@@ -1040,6 +1099,7 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 	while (true) {
 		key = k_spin_lock(&data->lock);
 		wrote = ring_buf_put(data->tx_fifo.rb, &c, 1);
+		cdc_acm_retained_commit(dev, wrote);
 		k_spin_unlock(&data->lock, key);
 
 		if (wrote == 1) {
@@ -1160,11 +1220,48 @@ static int cdc_acm_config_get(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
+#if CDC_ACM_RETAINED_TX_FIFO
+static void cdc_acm_retained_restore(const struct device *dev)
+{
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct cdc_acm_uart_data *const data = dev->data;
+	struct cdc_acm_retained_fifo *const fifo = cfg->retained_tx_fifo;
+	uint32_t len;
+	uint32_t rd;
+
+	if (fifo == NULL) {
+		return;
+	}
+
+	/* Keep a stored size that fits, it may come from an image with another tx-fifo-size */
+	len = fifo->wr - fifo->rd + (fifo->wr < fifo->rd ? 2U * fifo->size : 0U);
+	if (fifo->magic != CDC_ACM_RETAINED_FIFO_MAGIC || fifo->size > cfg->tx_fifo_max_size ||
+	    fifo->rd >= 2U * fifo->size || fifo->wr >= 2U * fifo->size ||
+	    len == 0U || len > fifo->size) {
+		fifo->magic = CDC_ACM_RETAINED_FIFO_MAGIC;
+		fifo->size = ring_buf_capacity_get(data->tx_fifo.rb);
+		fifo->rd = 0U;
+		fifo->wr = 0U;
+		len = 0U;
+	}
+
+	/* Move the empty ring to the oldest kept byte, then take the kept bytes */
+	rd = fifo->rd >= fifo->size ? fifo->rd - fifo->size : fifo->rd;
+	ring_buf_init(data->tx_fifo.rb, fifo->size, fifo->data);
+	ring_buf_commit(data->tx_fifo.rb, rd);
+	ring_buf_consume(data->tx_fifo.rb, rd);
+	ring_buf_commit(data->tx_fifo.rb, len);
+}
+#endif
+
 static int usbd_cdc_acm_preinit(const struct device *dev)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	ring_buf_reset(data->tx_fifo.rb);
+#if CDC_ACM_RETAINED_TX_FIFO
+	cdc_acm_retained_restore(dev);
+#endif
 
 	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
@@ -1377,6 +1474,22 @@ const static struct usb_desc_header *const cdc_acm_hs_desc_##n[] = {		\
 #define CDC_ACM_RX_BUF_COUNT(n)							\
 	DIV_ROUND_UP(DT_INST_PROP(n, rx_fifo_size), USBD_MAX_BULK_MPS)
 
+#define CDC_ACM_RETAINED_FIFO(n)						\
+	((struct cdc_acm_retained_fifo *)DT_REG_ADDR(DT_INST_PHANDLE(n, memory_region)))
+
+#define CDC_ACM_RETAINED_TX_FIFO_DEFINE(n)					\
+	BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, tx_fifo_size), 1,			\
+			      RING_BUFFER_MAX_SIZE),				\
+		     RING_BUFFER_SIZE_ASSERT_MSG);				\
+	BUILD_ASSERT(sizeof(struct cdc_acm_retained_fifo) +			\
+		     DT_INST_PROP(n, tx_fifo_size) <=				\
+		     DT_REG_SIZE(DT_INST_PHANDLE(n, memory_region)),		\
+		     "node " DT_NODE_PATH(DT_DRV_INST(n))			\
+		     " memory-region is too small for tx-fifo-size");		\
+	static struct ring_buf cdc_acm_rb_tx_##n =				\
+		RING_BUF_INIT(CDC_ACM_RETAINED_FIFO(n)->data,			\
+			      DT_INST_PROP(n, tx_fifo_size))
+
 #define USBD_CDC_ACM_DT_DEVICE_DEFINE(n)					\
 	BUILD_ASSERT(DT_INST_ON_BUS(n, usb),					\
 		     "node " DT_NODE_PATH(DT_DRV_INST(n))			\
@@ -1397,7 +1510,10 @@ const static struct usb_desc_header *const cdc_acm_hs_desc_##n[] = {		\
 				USBD_DUT_STRING_INTERFACE);			\
 	))									\
 										\
-	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, memory_region),			\
+		    (CDC_ACM_RETAINED_TX_FIFO_DEFINE(n);),			\
+		    (RING_BUF_DECLARE(cdc_acm_rb_tx_##n,			\
+				      DT_INST_PROP(n, tx_fifo_size));))		\
 	UDC_BUF_POOL_DEFINE(cdc_acm_rx_pool_##n,				\
 			    CDC_ACM_RX_BUF_COUNT(n), USBD_MAX_BULK_MPS,		\
 			    sizeof(struct udc_buf_info), NULL);			\
@@ -1411,6 +1527,13 @@ const static struct usb_desc_header *const cdc_acm_hs_desc_##n[] = {		\
 		.fs_desc = cdc_acm_fs_desc_##n,					\
 		.hs_desc = COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED,		\
 				       (cdc_acm_hs_desc_##n,), (NULL,))		\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, memory_region), (		\
+		.retained_tx_fifo = CDC_ACM_RETAINED_FIFO(n),			\
+		.tx_fifo_max_size =						\
+			MIN(DT_REG_SIZE(DT_INST_PHANDLE(n, memory_region)) -	\
+			    sizeof(struct cdc_acm_retained_fifo),		\
+			    RING_BUFFER_MAX_SIZE),				\
+		))								\
 	};									\
 										\
 	static struct k_fifo cdc_acm_uart_rx_fifo##n =				\
