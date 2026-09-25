@@ -1532,11 +1532,12 @@ Documentation Infrastructure:
     - "area: Documentation Infrastructure"
 
 "Drivers: ADC":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - jsbatch
   collaborators:
     - anangl
     - ZhaoxiangJin
-    - jsbatch
   files:
     - drivers/adc/
     - include/zephyr/drivers/adc.h
@@ -2647,12 +2648,13 @@ Documentation Infrastructure:
     - "area: Clocks"
 
 "Drivers: PWM":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - jsbatch
   collaborators:
     - anangl
     - henrikbrixandersen
     - FelixWang47831
-    - jsbatch
   files:
     - drivers/pwm/
     - dts/bindings/pwm/
