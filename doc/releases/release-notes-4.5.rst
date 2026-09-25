@@ -2095,6 +2095,11 @@ Libraries / Subsystems
     * The image management client now supports SHA-512 image digests. It can
       list and select images for testing or confirmation on targets built with
       :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512`.
+
+    * The Bluetooth SMP transport (:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT`) now depends on
+      :kconfig:option:`CONFIG_BT_CONN` instead of :kconfig:option:`CONFIG_BT_PERIPHERAL`, allowing
+      its use on Central-only devices.
+
 * Networking
 
   * CoAP
