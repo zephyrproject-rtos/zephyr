@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tc2 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <32>;
+	prescaler = <1>;
+	status = "okay";
+};
+
+&tc3 {
+	status = "disabled";
+};
