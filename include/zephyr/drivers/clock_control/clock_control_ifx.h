@@ -9,8 +9,8 @@
  * @brief Infineon clock control driver public API
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_IFX_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_IFX_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_IFX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_IFX_H_
 
 #include <stdint.h>
 #include <zephyr/devicetree.h>
@@ -54,4 +54,4 @@ struct ifx_clk_peri {
 #define IFX_CLK_PERI_DT_INST_SPEC_GET(inst)	\
 	IFX_CLK_PERI_DT_SPEC_GET(DT_DRV_INST(inst))
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_IFX_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_IFX_H_ */

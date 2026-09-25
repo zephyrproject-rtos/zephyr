@@ -9,8 +9,8 @@
  * @ingroup clock_control_sf32lb
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_SF32LB_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_SF32LB_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_SF32LB_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_SF32LB_H_
 
 #include <stdint.h>
 
@@ -143,4 +143,4 @@ static inline uint32_t sf32lb_clock_control_get_rate_dt(const struct sf32lb_cloc
 
 /** @} */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_SF32LB_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_SF32LB_H_ */
