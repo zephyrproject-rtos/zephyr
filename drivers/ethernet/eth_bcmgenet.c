@@ -29,6 +29,9 @@ struct bcmgenet_data {
 	uint16_t tx_idx;
 	uint16_t cidx;
 	uint16_t pidx;
+	uint16_t rx_pidx;
+	struct k_sem rx_sem;
+	struct k_sem tx_sem;
 
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_BCMGENET_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
@@ -38,6 +41,7 @@ struct bcmgenet_config {
 	DEVICE_MMIO_ROM;
 	const struct device *phy_dev;
 	struct net_eth_mac_config mac_cfg;
+	void (*irq_config_func)(void);
 };
 
 static inline uint32_t bcmgenet_read(const struct device *dev, uint32_t reg)
@@ -111,13 +115,13 @@ static void bcmgenet_dma_ctrl(const struct device *dev, bool enable)
 	}
 }
 
-static int bcmgenet_rx_refill(const struct device *dev, uint16_t index)
+static int bcmgenet_rx_refill(const struct device *dev, uint16_t index, k_timeout_t timeout)
 {
 	struct bcmgenet_data *data = dev->data;
 	struct net_buf *frag;
 	uint32_t desc;
 
-	frag = net_pkt_get_reserve_rx_data(GENET_BUF_SIZE, K_NO_WAIT);
+	frag = net_pkt_get_reserve_rx_data(GENET_BUF_SIZE, timeout);
 	if (frag == NULL) {
 		LOG_ERR("Failed to reserve data net buffers");
 		data->rx_frags[index] = NULL;
@@ -167,14 +171,16 @@ static int bcmgenet_rx_ring_init(const struct device *dev)
 
 	data->cidx = 0;
 	data->rx_idx = 0;
+	data->rx_pidx = 0;
 
 	bcmgenet_write(dev, GENET_RX_DMA_RING_BUF_SIZE,
 		       GENET_DMA_RING_SIZE_SET(GENET_RX_RING_DESCS) | GENET_BUF_SIZE);
+	bcmgenet_write(dev, GENET_RX_DMA_MBUF_DONE_THRESH, BIT(0));
 	bcmgenet_write(dev, GENET_RX_DMA_XOR_THRESH, GENET_DMA_FC_THRESH_VALUE);
 	bcmgenet_write(dev, GENET_RX_DMA_RING_CFG, GENET_QUEUES_CFG);
 
 	for (uint16_t i = 0; i < GENET_RX_RING_DESCS; i++) {
-		ret = bcmgenet_rx_refill(dev, i);
+		ret = bcmgenet_rx_refill(dev, i, K_NO_WAIT);
 		if (ret < 0) {
 			bcmgenet_rx_drain(dev, i);
 			return ret;
@@ -189,26 +195,20 @@ static int bcmgenet_rx(const struct device *dev)
 	struct bcmgenet_data *data = dev->data;
 	struct net_buf *frag;
 	uint32_t desc_base, dma_flags;
-	uint16_t pidx;
 	int ret = 0;
 
 	if (!net_if_flag_is_set(data->iface, NET_IF_UP)) {
 		return -ENETDOWN;
 	}
 
-	pidx = (uint16_t)bcmgenet_read(dev, GENET_RX_DMA_PIDX) & UINT16_MAX;
-	if (pidx == data->cidx) {
-		return -EAGAIN;
+	if (data->rx_pidx == data->cidx) {
+		data->rx_pidx = (uint16_t)bcmgenet_read(dev, GENET_RX_DMA_PIDX) & UINT16_MAX;
+		if (data->rx_pidx == data->cidx) {
+			return -EAGAIN;
+		}
 	}
 
 	frag = data->rx_frags[data->rx_idx];
-	if (frag == NULL) {
-		ret = bcmgenet_rx_refill(dev, data->rx_idx);
-		if (ret < 0) {
-			return ret;
-		}
-		return -EAGAIN;
-	}
 
 	desc_base = GENET_DMA_DESC_OFF_GET(data->rx_idx, GENET_RX_OFF);
 	dma_flags = bcmgenet_read(dev, desc_base + GENET_DMA_DESC_STATUS);
@@ -222,6 +222,7 @@ static int bcmgenet_rx(const struct device *dev)
 	if (!(dma_flags & GENET_DMA_SOP) && data->rx_pkt == NULL) {
 		LOG_WRN("Stale Rx descriptor at index: %u (flags=0x%x len=%u), skipping",
 			data->rx_idx, dma_flags, frag->len);
+		net_buf_unref(frag);
 		goto done;
 	}
 
@@ -235,7 +236,7 @@ static int bcmgenet_rx(const struct device *dev)
 		data->rx_pkt = net_pkt_rx_alloc_on_iface(data->iface, K_NO_WAIT);
 		if (data->rx_pkt == NULL) {
 			LOG_ERR("Failed to allocate pkt");
-			ret = -ENOMEM;
+			net_buf_unref(frag);
 			goto done;
 		}
 	}
@@ -254,34 +255,59 @@ static int bcmgenet_rx(const struct device *dev)
 	}
 
 done:
-	ret = bcmgenet_rx_refill(dev, data->rx_idx);
-	if (ret < 0) {
-		bcmgenet_write(dev, desc_base + GENET_DMA_DESC_STATUS, 0);
-		return ret;
-	}
+	/* Refill in place; CIDX is written once per batch */
+	(void)bcmgenet_rx_refill(dev, data->rx_idx, K_FOREVER);
 
 	data->cidx++;
-	bcmgenet_write(dev, GENET_RX_DMA_CIDX, data->cidx);
+	if (data->cidx == data->rx_pidx) {
+		bcmgenet_write(dev, GENET_RX_DMA_CIDX, data->cidx);
+	}
 
 	data->rx_idx++;
 	if (data->rx_idx >= GENET_RX_RING_DESCS) {
 		data->rx_idx = 0;
 	}
 
-	LOG_DBG("Rx index: %u, pidx: %u, cidx: %u", data->rx_idx, pidx, data->cidx);
+	LOG_DBG("Rx index: %u, pidx: %u, cidx: %u", data->rx_idx, data->rx_pidx, data->cidx);
 
-	return ret;
+	return 0;
 }
 
 static void bcmgenet_rx_thread(void *arg1, void *arg2 __unused, void *arg3 __unused)
 {
 	const struct device *dev = (struct device *)arg1;
+	struct bcmgenet_data *data = dev->data;
 
 	while (true) {
+		(void)k_sem_take(&data->rx_sem, K_FOREVER);
 		while (bcmgenet_rx(dev) == 0) {
 		/* drain all pending descriptors before sleeping */
 		}
-		k_usleep(CONFIG_ETH_BCMGENET_RX_POLLING_INTERVAL_US);
+		bcmgenet_write(dev, GENET_INTRL2_0_OFF + GENET_INTRL2_MASK_CLEAR,
+			       GENET_IRQ_RXDMA_MBDONE);
+	}
+}
+
+static void bcmgenet_isr(const struct device *dev)
+{
+	struct bcmgenet_data *data = dev->data;
+	uint32_t status;
+
+	status = bcmgenet_read(dev, GENET_INTRL2_0_OFF + GENET_INTRL2_CPU_STAT) &
+		 ~bcmgenet_read(dev, GENET_INTRL2_0_OFF + GENET_INTRL2_MASK_STATUS);
+	bcmgenet_write(dev, GENET_INTRL2_0_OFF + GENET_INTRL2_CPU_CLEAR, status);
+
+	LOG_DBG("INTRL2_0 status 0x%08x", status);
+
+	if ((status & GENET_IRQ_RXDMA_MBDONE) != 0) {
+		/* The Rx thread drains the ring and unmasks the interrupt when done */
+		bcmgenet_write(dev, GENET_INTRL2_0_OFF + GENET_INTRL2_MASK_SET,
+			       GENET_IRQ_RXDMA_MBDONE);
+		k_sem_give(&data->rx_sem);
+	}
+
+	if ((status & GENET_IRQ_TXDMA_MBDONE) != 0) {
+		k_sem_give(&data->tx_sem);
 	}
 }
 
@@ -348,14 +374,19 @@ static int bcmgenet_send(const struct device *dev, struct net_pkt *pkt)
 
 	barrier_dmem_fence_full();
 
+	/* Drop completions left over from a previous timed out frame */
+	k_sem_reset(&data->tx_sem);
+
 	data->pidx += nb_frags;
 	bcmgenet_write(dev, GENET_TX_DMA_PIDX, data->pidx);
 
-	if (!WAIT_FOR((bcmgenet_read(dev, GENET_TX_DMA_CIDX) & UINT16_MAX) >= data->pidx,
-		      GENET_TX_TIMEOUT_US, k_busy_wait(10))) {
-		LOG_WRN("Tx timeout at CIDX %d",
-			bcmgenet_read(dev, GENET_TX_DMA_CIDX) & UINT16_MAX);
-		return -ETIMEDOUT;
+	/* The Tx done interrupt fires once per descriptor */
+	while ((uint16_t)(bcmgenet_read(dev, GENET_TX_DMA_CIDX) & UINT16_MAX) != data->pidx) {
+		if (k_sem_take(&data->tx_sem, K_USEC(GENET_TX_TIMEOUT_US)) != 0) {
+			LOG_WRN("Tx timeout at CIDX %d",
+				bcmgenet_read(dev, GENET_TX_DMA_CIDX) & UINT16_MAX);
+			return -ETIMEDOUT;
+		}
 	}
 
 	LOG_DBG("Tx index: %u, pidx: %u, cidx: %u", data->tx_idx, data->pidx,
@@ -484,11 +515,16 @@ static void bcmgenet_iface_init(struct net_if *iface)
 
 	phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)iface);
 
+	k_sem_init(&data->tx_sem, 0, 1);
+	k_sem_init(&data->rx_sem, 0, 1);
 	k_thread_create(
 		&data->rx_thread, data->rx_thread_stack,
 		K_KERNEL_STACK_SIZEOF(data->rx_thread_stack), bcmgenet_rx_thread, (void *)dev, NULL,
 		NULL, K_PRIO_COOP(CONFIG_ETH_BCMGENET_RX_THREAD_PRIORITY), K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(&data->rx_thread, "eth_bcmgenet");
+
+	bcmgenet_write(dev, GENET_INTRL2_0_OFF + GENET_INTRL2_MASK_CLEAR,
+		       GENET_IRQ_RXDMA_MBDONE | GENET_IRQ_TXDMA_MBDONE);
 }
 
 static const struct ethernet_api bcmgenet_api = {
@@ -519,6 +555,12 @@ static int bcmgenet_init(const struct device *dev)
 	/* Disable Rx/Tx queues */
 	bcmgenet_ctrl(dev, false);
 
+	/* Mask and clear all interrupts */
+	bcmgenet_write(dev, GENET_INTRL2_0_OFF + GENET_INTRL2_MASK_SET, UINT32_MAX);
+	bcmgenet_write(dev, GENET_INTRL2_0_OFF + GENET_INTRL2_CPU_CLEAR, UINT32_MAX);
+	bcmgenet_write(dev, GENET_INTRL2_1_OFF + GENET_INTRL2_MASK_SET, UINT32_MAX);
+	bcmgenet_write(dev, GENET_INTRL2_1_OFF + GENET_INTRL2_CPU_CLEAR, UINT32_MAX);
+
 	/* Initialize Rx ring */
 	ret = bcmgenet_rx_ring_init(dev);
 	if (ret < 0) {
@@ -535,6 +577,8 @@ static int bcmgenet_init(const struct device *dev)
 	/* Load MAC address */
 	(void)net_eth_mac_load(&config->mac_cfg, data->mac_addr);
 
+	config->irq_config_func();
+
 	LOG_DBG("BCMGENET initialized");
 
 	return 0;
@@ -545,11 +589,20 @@ BUILD_ASSERT(CONFIG_NET_BUF_RX_COUNT > GENET_BUF_RX_COUNT,
 	     ", got " STRINGIFY(CONFIG_NET_BUF_RX_COUNT));
 
 /* clang-format off */
+#define BCMGENET_IRQ_CFG(n)                                                                        \
+	static void bcmgenet_##n##_irq_config(void)                                                \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), bcmgenet_isr,               \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}
+
 #define BCMGENET_DEV_CFG(n)                                                                        \
 	static const struct bcmgenet_config bcmgenet_##n##_cfg = {                                 \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phy_handle)),                  \
 		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),                                     \
+		.irq_config_func = bcmgenet_##n##_irq_config,                                      \
 	}
 
 #define BCMGENET_DEV_DATA(n)                                                                       \
@@ -561,6 +614,7 @@ BUILD_ASSERT(CONFIG_NET_BUF_RX_COUNT > GENET_BUF_RX_COUNT,
 				      &bcmgenet_api, NET_ETH_MTU)
 
 #define BCMGENET_INSTANTIATE(inst)                                                                 \
+	BCMGENET_IRQ_CFG(inst);                                                                    \
 	BCMGENET_DEV_CFG(inst);                                                                    \
 	BCMGENET_DEV_DATA(inst);                                                                   \
 	BCMGENET_INIT(inst);
