@@ -22,6 +22,13 @@ properties:
     description: |
       Size of the virtual CDC ACM UART RX FIFO
 
+  memory-region:
+    type: phandle
+    description: |
+      Non-cacheable memory region to keep the TX FIFO in, so that data not
+      yet received by the host is sent after a reset. Images sharing the
+      region may use different tx-fifo-size values.
+
   label:
     description: |
       The string defined by the label property is also used for the USB

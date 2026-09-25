@@ -1,0 +1,8 @@
+tests:
+  usb.device_next.cdc_acm.retained_tx_fifo:
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    expect_reboot: true
+    tags: usb
