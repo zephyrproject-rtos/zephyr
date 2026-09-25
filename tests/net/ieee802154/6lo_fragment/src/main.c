@@ -465,7 +465,11 @@ static struct net_buf frame_buf = {
 	.__buf = frame_buffer_data,
 };
 
-static bool test_fragment(struct net_fragment_data *data)
+/* Fragments the data and feeds at most max_frags fragments to reassembly.
+ * Returns true if all max_frags fragments are accepted before reassembly
+ * completes, or if reassembly completes and the result matches the data.
+ */
+static bool deliver_fragments(struct net_fragment_data *data, size_t max_frags)
 {
 	struct net_pkt *rxpkt = NULL;
 	struct net_pkt *f_pkt = NULL;
@@ -473,6 +477,7 @@ static bool test_fragment(struct net_fragment_data *data)
 	struct ieee802154_6lo_fragment_ctx ctx;
 	struct net_buf *buf, *dfrag;
 	struct net_pkt *pkt;
+	size_t delivered = 0U;
 	int hdr_diff;
 
 	pkt = create_pkt(data);
@@ -578,6 +583,13 @@ reassemble:
 
 		switch (ieee802154_6lo_reassemble(rxpkt)) {
 		case NET_OK:
+			/* Reassembly now owns the fragment */
+			rxpkt = NULL;
+			if (++delivered == max_frags) {
+				result = true;
+				goto end;
+			}
+
 			buf = buf->frags;
 			break;
 		case NET_CONTINUE:
@@ -613,6 +625,11 @@ end:
 	}
 
 	return result;
+}
+
+static bool test_fragment(struct net_fragment_data *data)
+{
+	return deliver_fragments(data, SIZE_MAX);
 }
 
 ZTEST(ieee802154_6lo_fragment, test_fragment_sam00_dam00)
@@ -676,6 +693,18 @@ ZTEST(ieee802154_6lo_fragment, test_fragment_ipv6_no_fragmentation_after_iphc)
 	bool ret = test_fragment(&test_data_9);
 
 	zassert_true(ret);
+}
+
+/* An incomplete datagram must release its reassembly cache entry when the
+ * reassembly timeout expires, so the entry can take a new datagram.
+ */
+ZTEST(ieee802154_6lo_fragment, test_fragment_reassembly_timeout)
+{
+	zassert_true(deliver_fragments(&test_data_2, 1), "First fragment was not cached");
+
+	k_sleep(K_MSEC(CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT * MSEC_PER_SEC + 200));
+
+	zassert_true(test_fragment(&test_data_2), "Reassembly failed after timeout");
 }
 
 ZTEST_SUITE(ieee802154_6lo_fragment, NULL, NULL, NULL, NULL, NULL);
