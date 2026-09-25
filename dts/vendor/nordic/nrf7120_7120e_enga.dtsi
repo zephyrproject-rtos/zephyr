@@ -142,7 +142,7 @@
 		 * soc_early_init_hook() before Wi-Fi or BLE starts using it. Hardwired
 		 * to P0.05 in nRF7120. Powering the switch is handled by pwr_antswc.
 		 */
-		wlan-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		sel-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		status = "disabled";
 	};
 

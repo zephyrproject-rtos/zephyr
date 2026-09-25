@@ -183,18 +183,18 @@ BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc),
  */
 static void antsw_setup(void)
 {
-	uint32_t wlan_psel = NRF_DT_GPIOS_TO_PSEL(ANTSW_NODE, wlan_gpios);
+	uint32_t sel_psel = NRF_DT_GPIOS_TO_PSEL(ANTSW_NODE, sel_gpios);
 
 	/* Drive the pin to the WLAN or BLE position before enabling the output,
 	 * then configure it as a plain output. No pull is needed on a driven
 	 * output.
 	 */
 	if (IS_ENABLED(CONFIG_SOC_NRF71_ANTSW_DEFAULT_BLE)) {
-		nrf_gpio_pin_set(wlan_psel);
+		nrf_gpio_pin_set(sel_psel);
 	} else {
-		nrf_gpio_pin_clear(wlan_psel);
+		nrf_gpio_pin_clear(sel_psel);
 	}
-	nrf_gpio_cfg_output(wlan_psel);
+	nrf_gpio_cfg_output(sel_psel);
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw) */
 
