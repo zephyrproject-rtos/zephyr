@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect PB1 to PB0 */
+
+#define PWM_NODE    tc6
+#define PWM_PINCTRL tc6_pwm_default
+#include "mchp_pwm_loopback_support.dtsi"
+
+/ {
+	zephyr,user {
+		pwms = <&tc6 1 PWM_MSEC(20) 0>;
+		gpios = <&portb 0 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&portb {
+	status = "okay";
+};
+
+&pinctrl {
+	tc6_pwm_default: tc6_pwm_default {
+		group1 {
+			pinmux = <PB1F_TC6_WO1>;
+		};
+	};
+};
