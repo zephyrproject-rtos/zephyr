@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - i2c
+  integration_platforms:
+    - native_sim
+
+tests:
+  drivers.i2c.regset_target_lib: {}
+  drivers.i2c.regset_target_lib.buf:
+    extra_configs:
+      - CONFIG_I2C_TARGET_BUFFER_MODE=y
