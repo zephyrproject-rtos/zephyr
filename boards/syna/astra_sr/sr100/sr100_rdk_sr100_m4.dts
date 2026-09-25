@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <syna/astra_sr/sr100_m4.dtsi>
+#include <syna/astra_sr/sr100_pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Synaptics SR100 RDK board";
+	compatible = "syna,sr100-rdk";
+
+	chosen {
+		zephyr,console = &ns16550_uart0;
+		zephyr,shell-uart = &ns16550_uart0;
+		zephyr,sram = &lp_mem_b;
+		zephyr,flash = &lp_mem_a;
+	};
+};
+
+&ns16550_uart0 {
+	pinctrl-0 = <&uart0_tx_c &uart0_rx_c>;
+	pinctrl-names = "default";
+	current-speed = <230400>;
+	dlf = <2>;
+	status = "okay";
+};
+
+&lp_gpio {
+	status = "okay";
+};
+
+&lp_cache {
+	status = "okay";
+};
