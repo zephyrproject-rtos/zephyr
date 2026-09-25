@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INFINEON_MXCORDIC
+	bool "Infineon MXCORDIC math accelerator driver"
+	default y
+	depends on DT_HAS_INFINEON_MXCORDIC_ENABLED
+	select USE_INFINEON_MXCORDIC
+	help
+	  Enable the vendor-specific driver for the Infineon MXCORDIC hardware
+	  math accelerator found on PSOC Control C3 (PSC3) devices. The driver
+	  exposes blocking sin, cos, tan, atan2, asin, acos, sinh, cosh, tanh,
+	  atanh, sqrt, magnitude, and Park transform operations.
+
+if INFINEON_MXCORDIC
+
+config INFINEON_MXCORDIC_INIT_PRIORITY
+	int "Init priority"
+	default 90
+	help
+	  Infineon MXCORDIC driver device initialization priority.
+
+module = INFINEON_MXCORDIC
+module-str = infineon_mxcordic
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # INFINEON_MXCORDIC
