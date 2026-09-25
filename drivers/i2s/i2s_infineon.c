@@ -518,6 +518,11 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	switch (i2s_cfg->word_size) {
 	case 8:
 		tdm_word_size = CY_TDM_SIZE_8;

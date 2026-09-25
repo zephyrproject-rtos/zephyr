@@ -534,6 +534,11 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		goto invalid_config;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		goto invalid_config;
+	}
+
 	if ((i2s_cfg->options & I2S_OPT_PINGPONG) == I2S_OPT_PINGPONG) {
 		LOG_ERR("Ping-pong mode not supported");
 		ret = -ENOTSUP;

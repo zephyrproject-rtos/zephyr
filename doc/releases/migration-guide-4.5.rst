@@ -1012,6 +1012,12 @@ I2S
   bounds the driver's enqueue wait, so no single value reproduces the old combination of an
   unbounded allocation and a bounded enqueue.
 
+* :c:struct:`i2s_config` has a new ``tdm`` member. :c:func:`i2s_configure` now returns
+  ``-EINVAL`` when :c:member:`tdm_config.channel_disable_mask` is nonzero on a driver without
+  TDM channel masking support. Applications that build :c:struct:`i2s_config` on the stack
+  without an initializer must zero it, for example with ``struct i2s_config cfg = {0};``, so
+  the new field does not hold stale stack contents.
+
 IEEE 802.15.4
 =============
 
