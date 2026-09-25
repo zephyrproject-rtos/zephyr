@@ -312,8 +312,9 @@ ZTEST(spi_ram, test_ram_sequential_write_read)
 	const size_t total_bytes = PATTERN_COUNT * sizeof(uint16_t); /* 512 */
 	const uint16_t base_addr = 0x0100U; /* write after the basic test area */
 
-	uint8_t expected[PATTERN_COUNT * sizeof(uint16_t)];
-	uint8_t actual[PATTERN_COUNT * sizeof(uint16_t)];
+	/* Kept off the test thread stack (1 KiB total) to avoid overflow. */
+	static uint8_t expected[256U * sizeof(uint16_t)];
+	static uint8_t actual[256U * sizeof(uint16_t)];
 
 	/* Fill expected buffer */
 	for (uint16_t i = 0; i < PATTERN_COUNT; i++) {
