@@ -10,8 +10,8 @@
  * @ingroup aesc_clock_controller
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_AESC_CLOCK_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_AESC_CLOCK_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_AESC_CLOCK_CONTROLLER_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_AESC_CLOCK_CONTROLLER_H_
 
 /**
  * @defgroup aesc_clock_controller Aesc Silicon clock domain identifiers
@@ -36,4 +36,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_AESC_CLOCK_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_AESC_CLOCK_CONTROLLER_H_ */

@@ -11,8 +11,8 @@
  * Clock subsystem IDs. To be used in devicetree nodes, and as argument for clock API.
  */
 
-#ifndef INCLUDE_ZEPHYR_DT_BINDINGS_CLOCK_MCHP_SAM_D5X_E5X_CLOCK_H_
-#define INCLUDE_ZEPHYR_DT_BINDINGS_CLOCK_MCHP_SAM_D5X_E5X_CLOCK_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_SAM_D5X_E5X_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_SAM_D5X_E5X_CLOCK_H_
 
 /**
  * Encode clock type, mclk bus, mclk mask bit, gclk pch and instance number,
@@ -240,4 +240,4 @@
 #define CLOCK_MCHP_MCLKPERIPH_ID_APBD_PCC     MCHP_CLOCK_DERIVE_ID(8, 4, 11, 0x3f, 72)
 #define CLOCK_MCHP_MCLKPERIPH_ID_MAX          (72)
 
-#endif /* INCLUDE_ZEPHYR_DT_BINDINGS_CLOCK_MCHP_SAM_D5X_E5X_CLOCK_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_SAM_D5X_E5X_CLOCK_H_ */

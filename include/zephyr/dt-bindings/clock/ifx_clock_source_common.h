@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_COMMON_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_COMMON_H_
+
 #define CLK_SOURCE_IHO
 #define CLK_SOURCE_PILO
 
@@ -102,3 +105,5 @@
 #define IFX_RSC_UDB     29 /*!< UDB Array */
 #define IFX_RSC_USB     30 /*!< USB communication block */
 #define IFX_RSC_INVALID 31 /*!< Placeholder for invalid type */
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_COMMON_H_ */

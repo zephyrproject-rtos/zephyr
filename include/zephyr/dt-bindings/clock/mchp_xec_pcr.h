@@ -9,8 +9,8 @@
  * @brief Clock IDs for the Microchip MEC SoC series
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_XEC_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_XEC_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_XEC_PCR_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_XEC_PCR_H_
 
 /** @brief PLL 32KHz clock source for full on */
 #define MCHP_XEC_PLL_CLK32K_SRC_SIL_OSC 0U
@@ -48,4 +48,4 @@
  */
 #define MCHP_XEC_SCR_ENCODE(idx, bitpos) (((idx) & 0x7) | (((bitpos) & 0x1f) << 3))
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_XEC_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_XEC_PCR_H_ */

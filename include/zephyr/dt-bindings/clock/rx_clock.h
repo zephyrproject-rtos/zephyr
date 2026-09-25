@@ -12,8 +12,8 @@
  * DeviceTree clock control subsystem to describe clock configurations.
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RX_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RX_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RX_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RX_CLOCK_H_
 
 /**
  * @name Renesas RX clock source selection definitions
@@ -132,4 +132,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RX_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RX_CLOCK_H_ */

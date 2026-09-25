@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_S32_S32K566_CLOCK_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_S32_S32K566_CLOCK_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_S32K566_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_S32K566_CLOCK_H_
 
 #define NXP_S32_FIRC_CLK                                        0U
 #define NXP_S32_FIRCDIV2_CLK                                    1U
@@ -375,4 +375,4 @@
 #define NXP_S32_XSPI_IPG_CLK                                    429U
 #define NXP_S32_XSPI_UNGATED_2XSFIF_CLK                         430U
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_S32_S32K566_CLOCK_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_S32K566_CLOCK_H_ */
