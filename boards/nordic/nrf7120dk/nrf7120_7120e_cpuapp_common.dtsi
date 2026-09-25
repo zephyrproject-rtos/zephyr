@@ -68,6 +68,7 @@
 
 &wicr {
 	status = "okay";
+	data-vtfaddress = <&vtf_region_default>;
 	firmware-lmacinitpc = <&wifi_lmac_rom>;
 	firmware-umacinitpc = <&wifi_umac_rom>;
 	firmware-lmacrompatchaddr = <&wifi_lmac_rom_entry>;
