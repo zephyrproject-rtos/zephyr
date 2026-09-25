@@ -135,8 +135,8 @@
 		status = "disabled";
 	};
 
-	wifi_antsw: wifi_antsw {
-		compatible = "nordic,nrf71-wifi-antsw";
+	antsw: antsw {
+		compatible = "nordic,nrf71-antsw";
 		/*
 		 * Steers the antenna switch towards WLAN, driven from
 		 * soc_early_init_hook() before the Wi-Fi core is started. Hardwired to

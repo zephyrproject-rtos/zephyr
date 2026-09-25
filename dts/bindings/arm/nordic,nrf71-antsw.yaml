@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  nRF71 Wi-Fi antenna switch (ANTSW) steering.
+  nRF71 antenna switch (ANTSW) steering.
 
   Steers the antenna switch towards WLAN before the Wi-Fi core is started,
   from soc_early_init_hook(). Because that runs before the GPIO driver is
@@ -14,7 +14,7 @@ description: |
   Powering the antenna switch is a separate concern handled by the pwr_antswc
   node (nordic,nrf-pwr-antswc).
 
-compatible: "nordic,nrf71-wifi-antsw"
+compatible: "nordic,nrf71-antsw"
 
 include: base.yaml
 
