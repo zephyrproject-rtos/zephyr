@@ -633,11 +633,15 @@ uint32_t z_vrfy_log_buffered_cnt(void)
 #include <zephyr/syscalls/log_buffered_cnt_mrsh.c>
 #endif
 
-void z_log_dropped(bool buffered)
+void z_log_dropped(bool buffered, uint32_t cnt)
 {
-	atomic_inc(&dropped_cnt);
+	if (cnt == 0U) {
+		return;
+	}
+
+	atomic_add(&dropped_cnt, cnt);
 	if (buffered) {
-		atomic_dec(&buffered_cnt);
+		atomic_sub(&buffered_cnt, cnt);
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
