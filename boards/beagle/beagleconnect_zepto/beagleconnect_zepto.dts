@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <dt-bindings/pinctrl/mspm0-pinctrl.h>
+#include <dt-bindings/adc/adc.h>
 
 / {
 	model = "BeagleBoard.org BeagleConnect Zepto";
@@ -30,6 +31,10 @@
 		zephyr,console = &uart0;
 		zephyr,entropy = &trng;
 		zephyr,rtc = &rtc;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 3>;
 	};
 
 	gpio_keys {
@@ -68,6 +73,56 @@
 		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_2)>;
 		input-enable;
 	};
+
+	analog_pa12: analog_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa14: analog_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa16: analog_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa17: analog_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa18: analog_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa22: analog_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa24: analog_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa25: analog_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa26: analog_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa27: analog_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
 };
 
 &uart0 {
@@ -98,4 +153,108 @@
 
 &rtc {
 	status = "okay";
+};
+
+/* zephyr,acquisition-time should be overwritten by user based on their needs in overlays */
+&adc0 {
+	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+	ti,clk-divider = <1>;
+	ti,clk-range = <5>;
+	max-result-reg = <12>;
+	pinctrl-0 = <&analog_pa24>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	auto-powerdown;
+
+	/* PA27 */
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA26 */
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA25 */
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA24 (AN) */
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA18 (BSL) */
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA22 (RST) */
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA12 */
+	channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA14 */
+	channel@12 {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA16 */
+	channel@13 {
+		reg = <13>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA17 */
+	channel@14 {
+		reg = <14>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
 };
