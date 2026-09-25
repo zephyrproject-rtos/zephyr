@@ -98,7 +98,7 @@ int IRAM_ATTR arch_printk_char_out(int c)
 	return 0;
 }
 
-void sys_arch_reboot(int type)
+void __weak sys_arch_reboot(int type)
 {
 	esp_restart();
 }
