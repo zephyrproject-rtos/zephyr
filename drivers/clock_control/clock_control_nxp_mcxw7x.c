@@ -318,6 +318,24 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 
 	/* Init OSC32K */
 	CLOCK_SetRoscMonitorMode(kSCG_RoscMonitorDisable);
+
+	/*
+	 * CCM32K registers are not reset on a warm boot. If a previous application
+	 * selected OSC32K as the 32 kHz clock source and this application disables
+	 * OSC32K, CCM32K_Set32kOscConfig() asserts because OSC32K cannot be
+	 * disabled while it is the active source. Switch the 32 kHz source back to
+	 * FRO32K first.
+	 */
+	if ((config->osc32k_mode == kCCM32K_Disable32kHzCrystalOsc) &&
+	    (CCM32K_GetClockSource(CCM32K) == kCCM32K_ClockSource32kOsc)) {
+		/* FRO32K must be enabled before it can be selected as the source. */
+		CCM32K_Enable32kFro(CCM32K, true);
+		CCM32K_SelectClockSource(CCM32K, kCCM32K_ClockSourceSelectFro32k);
+		/* Wait until FRO32K is the active 32 kHz clock source. */
+		while ((CCM32K_GetStatusFlag(CCM32K) & kCCM32K_32kFroActiveStatusFlag) == 0UL) {
+		}
+	}
+
 	ccm32k_osc_config_t ccm32k_osc_config = {
 		.coarseAdjustment = config->coarse_adjustment,
 		.enableInternalCapBank = true,
