@@ -252,6 +252,8 @@ int siwx91x_connect(const struct device *dev,
 		 */
 		wifi_config.security = SL_WIFI_WPA2;
 		break;
+	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
 	case WIFI_SECURITY_TYPE_SAE_AUTO:
 		/* Use WPA3 security as the device supports only HNP and H2E
 		 * methods for SAE
