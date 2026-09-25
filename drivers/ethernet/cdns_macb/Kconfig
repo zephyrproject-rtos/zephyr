@@ -20,6 +20,17 @@ config ETH_CDNS_MACB_CORE
 	  the Linux macb driver supports. The 10/100 MACB variant is not
 	  supported.
 
+config ETH_MCHP_CDNS_MACB
+	bool "Driver for the Cadence GEM on Microchip PIC32CZ CA"
+	depends on DT_HAS_MICROCHIP_PIC32CZ_CA_GEM_ENABLED
+	select ETH_CDNS_MACB_CORE
+	select PINCTRL
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT && DCACHE
+	default y
+	help
+	  This enables the Cadence GEM driver on the Microchip PIC32CZ CA,
+	  the "ETH" peripheral, over GMII at 10/100/1000 Mbit/s.
+
 config ETH_XLNX_CDNS_MACB
 	bool "Driver for the Cadence GEM on Xilinx Zynq-7000 and ZynqMP"
 	depends on DT_HAS_XLNX_ZYNQ_GEM_ENABLED || DT_HAS_XLNX_ZYNQMP_GEM_ENABLED
