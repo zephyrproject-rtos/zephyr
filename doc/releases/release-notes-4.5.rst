@@ -221,6 +221,9 @@ Removed APIs and options
 
     * The NuMaker Ethernet driver with ``CONFIG_ETH_NUMAKER`` is superseded by
       :kconfig:option:`CONFIG_ETH_NUMAKER_DWC_ETHER_1000`. See the migration guide.
+    * The Xilinx GEM Ethernet driver with ``CONFIG_ETH_XLNX_GEM`` and the devicetree
+      compatibles ``xlnx,gem`` and ``xlnx,gem-mdio`` are superseded by the Cadence MACB/GEM
+      driver with :kconfig:option:`CONFIG_ETH_XLNX_CDNS_MACB`. See the migration guide.
 
 * Debug
 
@@ -1612,6 +1615,8 @@ New Drivers
 
   * :dtcompatible:`brcm,genet` (:github:`113360`)
   * :dtcompatible:`brcm,genet-mdio` (:github:`113360`)
+  * :dtcompatible:`cdns,gem`
+  * :dtcompatible:`cdns,macb-mdio`
   * :dtcompatible:`microchip,gmac-g1-eth` (:github:`105275`)
   * :dtcompatible:`microchip,gmac-g1-mdio` (:github:`105275`)
   * :dtcompatible:`microchip,lan8840` (:github:`110896`)
@@ -1622,7 +1627,8 @@ New Drivers
   * :dtcompatible:`wch,ch9120` (:github:`111708`)
   * :dtcompatible:`wiznet,w5100s` (:github:`113315`)
   * :dtcompatible:`wiznet,w6300` (:github:`102727`)
-  * :dtcompatible:`xlnx,gem-mdio` (:github:`87313`)
+  * :dtcompatible:`xlnx,zynq-gem`
+  * :dtcompatible:`xlnx,zynqmp-gem`
   * :dtcompatible:`zephyr,native-ptp-clock` (:github:`109265`)
 
 * Firmware
