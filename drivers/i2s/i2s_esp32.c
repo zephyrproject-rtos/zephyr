@@ -322,6 +322,9 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 
 	err = i2s_esp32_restart_dma(dev, I2S_DIR_RX);
 	if (err < 0) {
+		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
+		stream->data->mem_block = NULL;
+		stream->data->mem_block_len = 0;
 		i2s_esp32_fatal_error(dev);
 		LOG_DBG("Failed to restart RX transfer: %d", err);
 		return;
@@ -493,6 +496,11 @@ void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 
 	err = i2s_esp32_restart_dma(dev, I2S_DIR_TX);
 	if (err < 0) {
+		if (stream->data->mem_block != NULL) {
+			k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
+			stream->data->mem_block = NULL;
+			stream->data->mem_block_len = 0;
+		}
 		i2s_esp32_fatal_error(dev);
 		LOG_DBG("Failed to restart TX transfer: %d", err);
 		return;
