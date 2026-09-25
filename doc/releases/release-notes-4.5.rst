@@ -1549,6 +1549,7 @@ New Drivers
   * :dtcompatible:`brcm,genet-mdio` (:github:`113360`)
   * :dtcompatible:`cdns,gem`
   * :dtcompatible:`cdns,macb-mdio`
+  * :dtcompatible:`cdns,macb-ptp-clock`
   * :dtcompatible:`microchip,gmac-g1-eth` (:github:`105275`)
   * :dtcompatible:`microchip,gmac-g1-mdio` (:github:`105275`)
   * :dtcompatible:`microchip,lan8840` (:github:`110896`)
