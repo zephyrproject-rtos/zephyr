@@ -2,7 +2,11 @@ description: NXP LPUART
 
 compatible: "nxp,lpuart"
 
-include: [uart-controller.yaml, uart-controller-pin-inversion.yaml, pinctrl-device.yaml]
+include:
+  - uart-controller.yaml
+  - uart-controller-pin-inversion.yaml
+  - pinctrl-device.yaml
+  - reset-device.yaml
 
 properties:
   reg:
