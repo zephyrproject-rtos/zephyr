@@ -1553,6 +1553,7 @@ New Drivers
   * :dtcompatible:`microchip,gmac-g1-mdio` (:github:`105275`)
   * :dtcompatible:`microchip,lan8840` (:github:`110896`)
   * :dtcompatible:`nxp,imx-netc-vsi` (:github:`114331`)
+  * :dtcompatible:`sifive,fu540-c000-gem`
   * :dtcompatible:`snps,dwmac` (:github:`114760`)
   * :dtcompatible:`snps,dwmac-mdio` (:github:`108046`)
   * :dtcompatible:`snps,dwmac-ptp-clock` (:github:`114242`)

@@ -33,6 +33,16 @@ config ETH_XLNX_CDNS_MACB
 	  for the packet buffers; the Zynq-7000 L2 cache is not configured by
 	  Zephyr and must stay disabled.
 
+config ETH_SIFIVE_CDNS_MACB
+	bool "Driver for the Cadence GEM on the SiFive FU540"
+	depends on DT_HAS_SIFIVE_FU540_C000_GEM_ENABLED
+	select ETH_CDNS_MACB_CORE
+	default y
+	help
+	  This enables the Cadence GEM driver on the SiFive FU540. The GEM
+	  DMA is coherent with the caches of the cores, so the descriptor
+	  rings live in ordinary memory.
+
 config ETH_NIC_MODEL
 	string
 	default "cadence_gem"
