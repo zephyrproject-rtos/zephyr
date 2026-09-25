@@ -446,14 +446,14 @@ static DEVICE_API(gpio, gpio_ifx_api) = {
 	GPIO_PORT_STRUCTS_DEFINE(n)                                                                \
 	DEVICE_DT_INST_DEFINE(n, gpio_ifx##n##_init, NULL, &gpio_ifx_data_##n,                     \
 			      &gpio_ifx_config_##n, POST_KERNEL,                                   \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_ifx_api);
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_ifx_api);
 
 
 #define GPIO_SHARED_PORT_DEFINE(n)                                                                 \
 	GPIO_PORT_STRUCTS_DEFINE(n)                                                                \
 	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &gpio_ifx_data_##n,                                   \
 			      &gpio_ifx_config_##n, POST_KERNEL,                                   \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_ifx_api);
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_ifx_api);
 
 /*
  * A few variants of this define are required due to interrupt connectivity variations.
@@ -507,6 +507,6 @@ static __maybe_unused void gpio_shared_isr(const struct device *dev)
 	}                                                                                          \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, gpio_shared##n##_init, NULL, NULL, &gpio_shared##n##_cfg,         \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SHARED_INIT)
