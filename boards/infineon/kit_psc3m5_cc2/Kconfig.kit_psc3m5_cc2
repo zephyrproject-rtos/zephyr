@@ -1,0 +1,9 @@
+# The Infineon PSOC™ Control C3M5 Connectivity Card 2 (KIT_PSC3M5_CC2)
+
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KIT_PSC3M5_CC2
+	select SOC_PSC3M5FDS2AFQ1
