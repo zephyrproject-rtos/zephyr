@@ -14,11 +14,16 @@ supported:
   - counter
   - display
   - dma
+  - dmic
   - eeprom
   - netif:eth
+  - mspi
   - ptp_clock
   - usb_device
   - adc
+  - i2c
+  - i2s
+  - spi
   - gpio
   - rtc
   - hwinfo
