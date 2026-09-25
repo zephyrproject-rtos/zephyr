@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM (Gigabit Ethernet MAC), also known as MACB.
+
+  This is the generic binding for the MAC, SoC integrations add a more
+  specific compatible in front of it, for example:
+
+    gem0: ethernet@e000b000 {
+      compatible = "xlnx,zynq-gem", "cdns,gem";
+      reg = <0xe000b000 0x1000>, <0xf8000140 0x4>;
+      reg-names = "mac", "clkc";
+      interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+      clocks = <&cpu_1x>, <&cpu_1x>, <&iopll>;
+      clock-names = "pclk", "hclk", "pll";
+      phy-handle = <&gem0_phy>;
+      phy-connection-type = "rgmii";
+
+      mdio {
+        compatible = "cdns,macb-mdio";
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        gem0_phy: phy@0 {
+          compatible = "ethernet-phy";
+          reg = <0>;
+        };
+      };
+    };
+
+  The MAC configuration is derived from the design configuration registers
+  of the core; the phy-connection-type property selects the PHY interface,
+  MII when it is absent.
+
+compatible: "cdns,gem"
+
+include: ethernet-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  phy-handle:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Names of the clocks, as in the Linux binding of the MAC. The driver
+      enables all of them.
+
+      - "pclk": peripheral clock, required. Its rate selects the divider
+        of the management clock MDC.
+      - "hclk": AHB clock.
+      - "tx_clk": transmit clock. Unless the PHY interface is MII or RMII,
+        the driver sets its rate to 125 MHz, 25 MHz or 2.5 MHz to match the
+        link speed, with the rate in Hz passed by value as the rate
+        argument of clock_control_set_rate(). A clock controller that does
+        not implement the call is taken as a fixed clock. SoC integrations
+        may provide this clock themselves, see their bindings.
+      - "rx_clk": receive clock.
+      - "tsu_clk": clock of the 1588 time stamp unit. Without it the unit
+        is taken to run from "pclk".
