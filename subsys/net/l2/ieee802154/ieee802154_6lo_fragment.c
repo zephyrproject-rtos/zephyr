@@ -47,6 +47,10 @@ struct frag_cache {
 };
 
 static struct frag_cache cache[REASS_CACHE_SIZE];
+static bool cache_init_done;
+
+/* Serializes the reassembly cache between the RX path and the timeout handler */
+static K_MUTEX_DEFINE(reass_lock);
 
 /**
  *  RFC 4944, section 5.3
@@ -297,6 +301,16 @@ static void reass_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct frag_cache *fcache = CONTAINER_OF(dwork, struct frag_cache, timer);
 
+	k_mutex_lock(&reass_lock, K_FOREVER);
+
+	/* While this handler waited for the lock, the RX path may have released
+	 * the entry, or released it and stored a new datagram in it.
+	 */
+	if (!fcache->used || k_work_delayable_remaining_get(dwork) != 0) {
+		k_mutex_unlock(&reass_lock);
+		return;
+	}
+
 	if (fcache->pkt) {
 		net_pkt_unref(fcache->pkt);
 	}
@@ -305,6 +319,8 @@ static void reass_timeout(struct k_work *work)
 	fcache->size = 0U;
 	fcache->tag = 0U;
 	fcache->used = false;
+
+	k_mutex_unlock(&reass_lock);
 }
 
 /**
@@ -326,7 +342,6 @@ static inline struct frag_cache *set_reass_cache(struct net_pkt *pkt, uint16_t s
 		cache[i].tag = tag;
 		cache[i].used = true;
 
-		k_work_init_delayable(&cache[i].timer, reass_timeout);
 		k_work_reschedule(&cache[i].timer, FRAG_REASSEMBLY_TIMEOUT);
 		return &cache[i];
 	}
@@ -519,10 +534,21 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	 */
 	pkt->buffer = NULL;
 
+	k_mutex_lock(&reass_lock, K_FOREVER);
+
+	if (!cache_init_done) {
+		for (int i = 0; i < REASS_CACHE_SIZE; i++) {
+			k_work_init_delayable(&cache[i].timer, reass_timeout);
+		}
+
+		cache_init_done = true;
+	}
+
 	fcache = get_reass_cache(size, tag);
 	if (!fcache) {
 		fcache = set_reass_cache(pkt, size, tag);
 		if (!fcache) {
+			k_mutex_unlock(&reass_lock);
 			NET_ERR("Could not allocate fragment cache, consider increasing "
 				"CONFIG_NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE: packet "
 				"dropped");
@@ -551,6 +577,8 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 
 		clear_reass_cache(size, tag);
 
+		k_mutex_unlock(&reass_lock);
+
 		if (!fragment_packet_valid(pkt)) {
 			NET_ERR("Invalid fragment type: packet dropped");
 			return NET_DROP;
@@ -577,6 +605,8 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 
 		return NET_CONTINUE;
 	}
+
+	k_mutex_unlock(&reass_lock);
 
 	/* Unref Rx part of original packet */
 	if (!first_frag) {
