@@ -115,6 +115,11 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
+			gem0_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
+			};
 		};
 
 		gem1: ethernet@ff0c0000 {
@@ -134,6 +139,11 @@
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+			};
+
+			gem1_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
 			};
 		};
 
@@ -155,6 +165,11 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
+			gem2_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
+			};
 		};
 
 		gem3: ethernet@ff0e0000 {
@@ -174,6 +189,11 @@
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+			};
+
+			gem3_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
 			};
 		};
 
