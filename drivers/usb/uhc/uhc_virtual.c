@@ -351,6 +351,12 @@ static int vrt_schedule_frame(const struct device *dev)
 	struct uhc_vrt_data *const priv = uhc_get_private(dev);
 	struct uhc_vrt_frame *const frame = &priv->frame;
 	struct uhc_vrt_slot *slot;
+	int ret;
+
+	if (priv->last_pkt != NULL) {
+		/* Wait for its reply. vrt_xfer_check_timeout() drops it otherwise. */
+		return 0;
+	}
 
 	if (priv->last_xfer == NULL) {
 		if (frame->count >= FRAME_MAX_TRANSFERS) {
@@ -372,10 +378,17 @@ static int vrt_schedule_frame(const struct device *dev)
 	}
 
 	if (USB_EP_GET_IDX(priv->last_xfer->ep) == 0) {
-		return vrt_xfer_control(dev, priv->last_xfer);
+		ret = vrt_xfer_control(dev, priv->last_xfer);
+	} else {
+		ret = vrt_xfer_bulk(dev, priv->last_xfer);
 	}
 
-	return vrt_xfer_bulk(dev, priv->last_xfer);
+	if (ret == -ENOMEM) {
+		/* Retry with the rest of the frame next SOF. */
+		priv->last_xfer = NULL;
+	}
+
+	return ret;
 }
 
 static void vrt_hrslt_success(const struct device *dev,
