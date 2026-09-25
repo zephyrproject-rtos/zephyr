@@ -297,6 +297,13 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
+			/* The time stamp unit runs from the 125 MHz GEMGXL clock */
+			eth0_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				clock-frequency = <125000000>;
+				status = "disabled";
+			};
 		};
 
 		gpio0: gpio@10060000 {
