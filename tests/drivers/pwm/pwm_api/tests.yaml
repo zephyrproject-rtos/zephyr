@@ -120,6 +120,7 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg61_cult
+      - pic32cm_jh01_cpro
     extra_args:
       - FILE_SUFFIX=tc0
     filter: dt_alias_exists("pwm-test")
@@ -156,7 +157,6 @@ tests:
       - sam_e54_xpro
       - pic32cx_sg41_cult
       - pic32cx_sg61_cult
-      - pic32cm_jh01_cpro
     extra_args:
       - FILE_SUFFIX=tc5
     filter: dt_alias_exists("pwm-test")
