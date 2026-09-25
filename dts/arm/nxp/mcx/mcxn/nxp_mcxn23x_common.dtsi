@@ -1207,6 +1207,14 @@
 		status = "disabled";
 	};
 
+	usb1_uhc: usbh@10b000 {
+		compatible = "nxp,uhc-ehci";
+		reg = <0x10b000 0x1000>;
+		interrupts = <67 0>;
+		interrupt-names = "usb_otg";
+		status = "disabled";
+	};
+
 	micfil: micfil@10c000 {
 		compatible = "nxp,micfil";
 		reg = <0x10c000 0x1000>;
