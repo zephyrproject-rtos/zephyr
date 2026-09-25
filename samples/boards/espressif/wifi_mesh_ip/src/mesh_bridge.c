@@ -63,9 +63,9 @@ static void mesh_dhcp_bound(struct net_mgmt_event_callback *cb, uint64_t mgmt_ev
 	}
 
 	/*
-	 * DHCP raises BOUND on the initial lease and again on every renewal.
-	 * The gateway and route only need setting once, so run this block just
-	 * once and ignore later renewals.
+	 * DHCP raises BOUND on the initial lease and again on every renewal;
+	 * only report the first one. The lease's router option already points
+	 * off-subnet traffic at the root.
 	 */
 	if (atomic_set(&bound_once, 1) != 0) {
 		return;
@@ -76,12 +76,6 @@ static void mesh_dhcp_bound(struct net_mgmt_event_callback *cb, uint64_t mgmt_ev
 
 	LOG_INF("child got IP %s over mesh",
 		net_addr_ntop(AF_INET, &ifaddr->address.in_addr, buf, sizeof(buf)));
-
-	/* Route off-subnet traffic to the root over the mesh. */
-	struct net_in_addr gw = {{{MESH_SUBNET_A, MESH_SUBNET_B, MESH_SUBNET_C, 1}}};
-
-	net_if_ipv4_set_gw(esp_wifi_mesh_netif_get(), &gw);
-	net_if_ipv4_router_add(esp_wifi_mesh_netif_get(), &gw, true, 0);
 }
 
 /*
@@ -113,6 +107,8 @@ void mesh_bridge_setup_root(struct net_if *sta_iface)
 
 	net_if_ipv4_addr_add(mesh_iface, &gw, NET_ADDR_MANUAL, 0);
 	net_if_ipv4_set_netmask_by_addr(mesh_iface, &gw, &netmask);
+	/* The DHCP server hands out the interface gateway as the router option. */
+	net_if_ipv4_set_gw(mesh_iface, &gw);
 
 	/*
 	 * Add an explicit connected route for the mesh subnet over the mesh

@@ -166,4 +166,67 @@ ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat)
 	npf_append_ipv4_recv_rule(&npf_default_ok);
 }
 
+/* A rule matching any destination must not translate traffic to the NAT host itself */
+ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_skip_local_dst)
+{
+	npf_remove_ipv4_recv_rule(&npf_default_ok);
+	npf_append_ipv4_recv_rule(&npf_default_drop);
+
+	struct net_in_addr addr_a = { { { 192, 168, 1, 1 } } };
+	struct net_in_addr addr_b = { { { 192, 168, 2, 1 } } };
+	struct net_if_addr *ifa_a = net_if_ipv4_addr_add(dummy_iface_a,
+		&addr_a, NET_ADDR_MANUAL, 0);
+	struct net_if_addr *ifa_b = net_if_ipv4_addr_add(dummy_iface_b,
+		&addr_b, NET_ADDR_MANUAL, 0);
+
+	zassert_not_null(ifa_a, "Failed to add IPv4 addr to dummy_iface_a");
+	zassert_not_null(ifa_b, "Failed to add IPv4 addr to dummy_iface_b");
+
+	struct net_iptable_rule_params rule = {0};
+	struct net_in_addr client_addr = { { { 192, 168, 1, 3 } } };
+	struct net_in_addr server_addr = { { { 192, 168, 2, 3 } } };
+	uint8_t mask[4] = { 255, 255, 255, 0 };
+
+	rule.input_iface_idx  = net_if_get_by_iface(dummy_iface_a);
+	rule.output_iface_idx = net_if_get_by_iface(dummy_iface_b);
+	memcpy(rule.src, client_addr.s4_addr, 4);
+	memcpy(rule.src_mask, mask, 4);
+	rule.proto = NET_IPPROTO_UDP;
+	rule.priority = 5;
+
+	int ret = net_ipv4_table_rule_add(&rule);
+
+	zassert_equal(ret, 0, "Could not add NAT table rule");
+
+	/* Local addresses on the input and on the output interface */
+	struct net_in_addr *local_dsts[] = { &addr_a, &addr_b };
+
+	ARRAY_FOR_EACH(local_dsts, i) {
+		struct net_pkt *pkt = build_test_udp_pkt(&client_addr, local_dsts[i],
+			5678, 67, dummy_iface_a);
+
+		zassert_false(net_pkt_filter_ip_recv_ok(pkt),
+			      "NAT matched a packet to a local address");
+		zassert_true(net_ipv4_addr_cmp_raw(NET_IPV4_HDR(pkt)->src,
+						   client_addr.s4_addr),
+			     "Source of a packet to a local address was translated");
+		net_pkt_unref(pkt);
+	}
+
+	/* The same rule still translates forwarded traffic */
+	struct net_pkt *pkt = build_test_udp_pkt(&client_addr, &server_addr,
+		5678, 8765, dummy_iface_a);
+
+	zassert_true(net_pkt_filter_ip_recv_ok(pkt), "NAT did not match forwarded packet");
+	zassert_true(net_ipv4_addr_cmp_raw(NET_IPV4_HDR(pkt)->src, addr_b.s4_addr),
+		     "Source of forwarded packet was not translated");
+	net_pkt_unref(pkt);
+
+	net_ipv4_table_rule_del(0);
+	(void)net_if_ipv4_addr_rm(dummy_iface_a, &addr_a);
+	(void)net_if_ipv4_addr_rm(dummy_iface_b, &addr_b);
+	npf_remove_ipv4_recv_rule(&npf_default_drop);
+	npf_append_ipv4_recv_rule(&npf_default_ok);
+}
+
 ZTEST_SUITE(net_ipv4_nat_test_suite, NULL, NULL, NULL, NULL, NULL);
