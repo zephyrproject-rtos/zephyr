@@ -26,6 +26,13 @@
 			clocks = <&coreclk>;
 			clock-div = <2>;
 		};
+
+		/* The GEMGXL PLL, set up by the boot firmware */
+		gemgxlclk: gemgxl-clk {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(125)>;
+		};
 	};
 
 	cpus {
@@ -281,6 +288,24 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+
+		eth0: ethernet@10090000 {
+			compatible = "sifive,fu540-c000-gem", "cdns,gem";
+			reg = <0x10090000 0x2000 0x100a0000 0x1000>;
+			reg-names = "mac", "mgmt";
+			interrupt-parent = <&plic>;
+			interrupts = <53 1>;
+			clocks = <&gemgxlclk>, <&gemgxlclk>;
+			clock-names = "pclk", "hclk";
+			status = "disabled";
+
+			eth0_mdio: mdio {
+				compatible = "cdns,macb-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		gpio0: gpio@10060000 {
