@@ -7,11 +7,19 @@ tests:
   drivers.input.default:
     platform_allow:
       - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
 
   # Touchscreen drivers, non-default option
   drivers.input.touchscreen_interrupt:
     platform_allow:
       - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_INPUT_CST8XX_INTERRUPT=n
       - CONFIG_INPUT_FT5336_INTERRUPT=y
@@ -21,6 +29,10 @@ tests:
   drivers.input.touchscreen_multitouch:
     platform_allow:
       - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_INPUT_FT5336_MAX_TOUCH_POINTS=5
       - CONFIG_INPUT_GT911_MAX_TOUCH_POINTS=5
@@ -29,12 +41,20 @@ tests:
   drivers.input.kbd_16_bit:
     platform_allow:
       - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW=y
 
   drivers.input.analog_axis:
     platform_allow:
       - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_ADC=y
       - CONFIG_SETTINGS=y
@@ -42,6 +62,10 @@ tests:
   drivers.input.adc_keys:
     platform_allow:
       - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_ADC=y
 
