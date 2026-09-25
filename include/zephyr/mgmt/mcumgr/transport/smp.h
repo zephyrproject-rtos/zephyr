@@ -31,6 +31,12 @@ struct smp_client_transport_entry;
 /** @typedef smp_transport_out_fn
  * @brief SMP transmit callback for transport
  *
+ * The supplied net_buf holds one complete SMP packet of up to
+ * @kconfig{CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE} bytes. If the packet does not fit in a
+ * single frame of the underlying link, the transport is responsible for fragmenting it.
+ * Likewise, on reception the transport must pass only complete SMP packets to the SMP
+ * layer, see @kconfig{CONFIG_MCUMGR_TRANSPORT_REASSEMBLY} for a common reassembly helper.
+ *
  * The supplied net_buf is always consumed, regardless of return code.
  *
  * @param nb                    The net_buf to transmit.
@@ -38,21 +44,6 @@ struct smp_client_transport_entry;
  * @return                      0 on success, #mcumgr_err_t code on failure.
  */
 typedef int (*smp_transport_out_fn)(struct net_buf *nb);
-
-/** @typedef smp_transport_get_mtu_fn
- * @brief SMP MTU query callback for transport
- *
- * The supplied net_buf should contain a request received from the peer whose
- * MTU is being queried.  This function takes a net_buf parameter because some
- * transports store connection-specific information in the net_buf user header
- * (e.g., the Bluetooth transport stores the peer address).
- *
- * @param nb                    Contains a request from the relevant peer.
- *
- * @return                      The transport's MTU;
- *                              0 if transmission is currently not possible.
- */
-typedef uint16_t (*smp_transport_get_mtu_fn)(const struct net_buf *nb);
 
 /** @typedef smp_transport_ud_copy_fn
  * @brief SMP copy user_data callback
@@ -199,9 +190,6 @@ typedef bool (*smp_transport_bridge_config_details_fn)(uint32_t mode, zcbor_stat
 struct smp_transport_api_t {
 	/** Transport's send function. */
 	smp_transport_out_fn output;
-
-	/** Transport's get-MTU function. */
-	smp_transport_get_mtu_fn get_mtu;
 
 	/** Transport buffer user_data copy function. */
 	smp_transport_ud_copy_fn ud_copy;

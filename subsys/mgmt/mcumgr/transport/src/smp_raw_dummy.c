@@ -120,11 +120,6 @@ struct net_buf *smp_raw_dummy_get_outgoing(void)
 	return nb;
 }
 
-static uint16_t smp_raw_dummy_get_mtu(const struct net_buf *nb)
-{
-	return CONFIG_MCUMGR_TRANSPORT_RAW_DUMMY_RX_BUF_SIZE;
-}
-
 static int smp_raw_dummy_tx_pkt_int(struct net_buf *nb)
 {
 	uint16_t data_size = MIN(nb->len, (sizeof(smp_send_buffer) - smp_send_pos - 1));
@@ -251,7 +246,6 @@ static int smp_raw_dummy_init(void)
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 
 	smp_raw_dummy_transport.functions.output = smp_raw_dummy_tx_pkt_int;
-	smp_raw_dummy_transport.functions.get_mtu = smp_raw_dummy_get_mtu;
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	smp_raw_dummy_transport.functions.bridge_connect = smp_raw_dummy_bridge_connect;

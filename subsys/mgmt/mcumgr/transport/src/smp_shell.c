@@ -214,11 +214,6 @@ void smp_shell_process(struct smp_shell_data *data)
 	}
 }
 
-static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
-{
-	return CONFIG_MCUMGR_TRANSPORT_SHELL_MTU;
-}
-
 static int smp_shell_tx_raw(const void *data, int len)
 {
 	const uint8_t *out = data;
@@ -327,7 +322,6 @@ int smp_shell_init(void)
 	int rc;
 
 	smp_shell_transport.functions.output = smp_shell_tx_pkt;
-	smp_shell_transport.functions.get_mtu = smp_shell_get_mtu;
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	smp_shell_transport.functions.bridge_connect = smp_shell_bridge_connect;

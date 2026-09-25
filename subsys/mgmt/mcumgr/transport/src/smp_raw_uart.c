@@ -115,11 +115,6 @@ static void smp_raw_uart_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
 	}
 }
 
-static uint16_t smp_raw_uart_get_mtu(const struct net_buf *nb)
-{
-	return CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE;
-}
-
 static int smp_raw_uart_tx_pkt(struct net_buf *nb)
 {
 	int rc;
@@ -211,7 +206,6 @@ static int smp_raw_uart_init(void)
 	int rc;
 
 	smp_raw_uart_transport.functions.output = smp_raw_uart_tx_pkt;
-	smp_raw_uart_transport.functions.get_mtu = smp_raw_uart_get_mtu;
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	smp_raw_uart_transport.functions.bridge_connect = smp_raw_uart_bridge_connect;
