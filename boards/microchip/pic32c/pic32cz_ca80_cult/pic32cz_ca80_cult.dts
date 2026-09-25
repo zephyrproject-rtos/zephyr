@@ -22,6 +22,7 @@
 		zephyr,flash-controller = &nvmctrl;
 		zephyr,console = &sercom1;
 		zephyr,shell-uart = &sercom1;
+		zephyr,entropy = &trng;
 	};
 
 	aliases {
