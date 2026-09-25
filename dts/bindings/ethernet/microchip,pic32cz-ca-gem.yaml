@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM in the Microchip PIC32CZ CA, the "ETH" peripheral.
+
+  The GEM sits behind a Microchip wrapper (CTRLA, CTRLB, SYNCB) which
+  resets and enables it and selects GMII. The wrapper occupies the start
+  of the block and the GEM follows at offset 0x1000, so the first register
+  range is the GEM and the second the wrapper.
+
+  The GEM has six DMA queues, each raising its own interrupt. The driver
+  moves all traffic through queue 0; the other queues are tied off and
+  their interrupts are left unconnected.
+
+compatible: "microchip,pic32cz-ca-gem"
+
+include:
+  - name: cdns,gem.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg-names:
+    required: true
+    description: |
+      Names of the register ranges: "mac" for the GEM itself and "wrapper"
+      for the Microchip wrapper in front of it.
+
+  interrupts:
+    description: |
+      One interrupt per DMA queue, queue 0 first. Only queue 0 is serviced.
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      "mclk-ahb" and "mclk-apb", the bus clocks; "gclk-tx", the 125 MHz
+      generic clock that becomes GTXCK in GMII mode; and "gclk-tsu", the
+      timestamp unit clock. The wrapper's software reset does not complete
+      without gclk-tsu running, so it is required even with no PTP in use.
+
+  phy-connection-type:
+    required: true
+    description: |
+      "gmii", the only interface supported. It also carries 10 and
+      100 Mbit/s links.
+
+  pinctrl-0:
+    required: true
+    description: |
+      Applied before the PHY driver releases the PHY from reset, as the
+      PHY node descends from this one. A PHY that latches its strap-in
+      values from the receive pins gets them from the pulls in this state.
+      The MDIO pins belong in it as well.
+
+  pinctrl-names:
+    required: true
