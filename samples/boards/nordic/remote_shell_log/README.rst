@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: coresight_stm_shell
+.. zephyr:code-sample:: remote_shell_log
    :name: Coresight STM with remote shell
    :relevant-api: log_api
 
@@ -30,7 +30,7 @@ Building and running
 
 .. code-block:: shell
 
-   west build -b nrf54h20dk/nrf54h20/cpuapp samples/boards/nordic/coresight_stm_shell \
-     -T sample.boards.nrf.coresight_stm_shell
+   west build -b nrf54h20dk/nrf54h20/cpuapp samples/boards/nordic/remote_shell_log \
+     -T sample.boards.nrf.remote_shell_log
 
 The ``nordic-log-stm`` snippet enables STM log frontend and the Coresight overlay on all cores.

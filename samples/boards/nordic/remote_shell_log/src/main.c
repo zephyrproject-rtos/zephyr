@@ -17,7 +17,7 @@ static int cmd_ping(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 
 	LOG_ERR("error %d", 100);
-	LOG_WRN("warning %lld", 0x1234567890LL);
+	LOG_WRN("warning 0x%llx", 0x1234567890LL);
 	LOG_INF("info %s", "test");
 	LOG_DBG("debug %d %d", 1000, 100);
 	shell_print(sh, "pong %s", CONFIG_BOARD_TARGET);
