@@ -222,5 +222,24 @@
 			interrupts = <36 4>;
 			status = "disabled";
 		};
+
+		lpcomp0: comparator@52430000 {
+			compatible = "infineon,lp-comp";
+			reg = <0x52430000 0x10000>;
+			interrupts = <37 4>;
+			status = "disabled";
+
+			lpcomp0_0: lpcomp0-0 {
+				compatible = "infineon,lp-comp-channel";
+				channel = <0>;
+				status = "disabled";
+			};
+
+			lpcomp0_1: lpcomp0-1 {
+				compatible = "infineon,lp-comp-channel";
+				channel = <1>;
+				status = "disabled";
+			};
+		};
 	};
 };
