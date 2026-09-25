@@ -818,7 +818,7 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 {
 	struct arducam_mega_data *drv_data = dev->data;
 	int ret = 0;
-	int i = 0;
+	size_t i = 0;
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
 		/* nothing to do */
