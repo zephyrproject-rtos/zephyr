@@ -90,6 +90,8 @@ struct usb_device {
 	uint8_t addr;
 	/** Pointer to actual device configuration descriptor */
 	void *cfg_desc;
+	/** Pointer to BOS descriptor */
+	void *bos_desc;
 	/** Pointers to device interfaces */
 	struct usb_host_interface ifaces[UHC_INTERFACES_MAX + 1];
 	/** Pointers to device OUT endpoints */

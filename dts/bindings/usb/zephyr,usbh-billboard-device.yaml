@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bindings for Billboard Host driver device
+
+compatible: "zephyr,usbh-billboard-device"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: USB device vendor + device IDs (0xFFFFFFFF acts as wildcard)
+  match-class:
+    type: boolean
+    description: Whether to use the VID-DID combination or just match this to
+      any Billboard device.
