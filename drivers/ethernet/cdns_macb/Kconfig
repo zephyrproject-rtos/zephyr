@@ -20,6 +20,28 @@ config ETH_CDNS_MACB_CORE
 	  the Linux macb driver supports. The 10/100 MACB variant is not
 	  supported.
 
+config ETH_XLNX_CDNS_MACB
+	bool "Driver for the Cadence GEM on Xilinx Zynq-7000 and ZynqMP"
+	depends on DT_HAS_XLNX_ZYNQ_GEM_ENABLED || DT_HAS_XLNX_ZYNQMP_GEM_ENABLED
+	depends on !QEMU_TARGET || NET_QEMU_ETHERNET || NET_QEMU_USER
+	select ETH_CDNS_MACB_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	default y
+	help
+	  This enables the Cadence GEM driver on the Xilinx Zynq-7000 and
+	  ZynqMP processing systems. The data cache of the CPU is maintained
+	  for the packet buffers; the Zynq-7000 L2 cache is not configured by
+	  Zephyr and must stay disabled.
+
+config ETH_NIC_MODEL
+	string
+	default "cadence_gem"
+	depends on ETH_XLNX_CDNS_MACB
+	help
+	  Value of the -nic parameter to be used when starting QEMU.
+	  This parameter specifies which type of Ethernet controller
+	  shall be simulated by QEMU.
+
 if ETH_CDNS_MACB_CORE
 
 configdefault NET_BUF_ALIGNMENT
