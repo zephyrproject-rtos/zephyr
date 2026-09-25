@@ -707,6 +707,11 @@ New APIs and options
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_NODE`
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST`
 
+* I2S
+
+  * :c:member:`i2s_config.tdm` and :c:struct:`tdm_config`, whose
+    :c:member:`tdm_config.channel_disable_mask` disables individual TDM channel slots.
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
