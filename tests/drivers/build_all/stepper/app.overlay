@@ -43,6 +43,17 @@
 #include "uart.dtsi"
 		};
 
+		test_i2c: i2c@77778888 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "zephyr,i2c-emul-controller";
+			reg = <0x77778888 0x1000>;
+			clock-frequency = <100000>;
+			status = "okay";
+
+#include "i2c.dtsi"
+		};
+
 		zephyr_gpio_step_dir_workq: zephyr-gpio-step-dir {
 			compatible = "zephyr,gpio-step-dir-stepper-ctrl";
 			step-gpios = <&test_gpio 0 0>;
