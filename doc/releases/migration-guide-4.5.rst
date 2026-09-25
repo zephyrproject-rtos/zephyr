@@ -384,10 +384,9 @@ Boards
 * The Silabs Kconfig option ``CONFIG_SOC_SILABS_PM_LOW_INTERRUPT_LATENCY``
   has been renamed to :kconfig:option:`CONFIG_SOC_VENDOR_SILABS_PM_LOW_INTERRUPT_LATENCY`.
 
-* The stm32h573i_dk and stm32h5f5j_dk disco kit are now adopting the mspi controller model.
+* The stm32h573i_dk, stm32h5f5j_dk and stm32h735g_disco kit are now adopting the mspi controller model.
   This is the next step of the migration to mspi stm32 support. For both boards, declare the xspi
-  node as ``st,stm32-xspi-controller`` compatible. The stm32h5 device DTS will be updated
-  once all the target boards are changed.
+  node as ``st,stm32-xspi-controller`` compatible.
 
 Device Drivers and Devicetree
 *****************************
