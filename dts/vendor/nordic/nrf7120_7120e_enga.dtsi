@@ -138,9 +138,9 @@
 	antsw: antsw {
 		compatible = "nordic,nrf71-antsw";
 		/*
-		 * Steers the antenna switch towards WLAN, driven from
-		 * soc_early_init_hook() before the Wi-Fi core is started. Hardwired to
-		 * P0.05 in nRF7120. Powering the switch is handled by pwr_antswc.
+		 * Steers the antenna switch towards its default radio, driven from
+		 * soc_early_init_hook() before Wi-Fi or BLE starts using it. Hardwired
+		 * to P0.05 in nRF7120. Powering the switch is handled by pwr_antswc.
 		 */
 		wlan-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		status = "disabled";

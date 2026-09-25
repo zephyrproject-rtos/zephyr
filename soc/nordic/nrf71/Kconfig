@@ -77,6 +77,26 @@ config SOC_NRF71_WIFI_BOOT
 	  disabled by default and must be enabled explicitly, either by the driver
 	  that owns the core or by the application.
 
+choice SOC_NRF71_ANTSW_DEFAULT
+	prompt "nRF71 antenna switch default radio"
+	depends on DT_HAS_NORDIC_NRF71_ANTSW_ENABLED
+	default SOC_NRF71_ANTSW_DEFAULT_WIFI if SOC_NRF71_WIFI_BOOT
+	default SOC_NRF71_ANTSW_DEFAULT_BLE if HAS_BT_CTLR
+	default SOC_NRF71_ANTSW_DEFAULT_WIFI
+	help
+	  Selects which radio the antenna switch (ANTSW) is steered towards
+	  during early boot, before any driver has taken ownership of the
+	  switch. A driver that later takes ownership of the switch is free
+	  to steer it again.
+
+config SOC_NRF71_ANTSW_DEFAULT_WIFI
+	bool "Wi-Fi"
+
+config SOC_NRF71_ANTSW_DEFAULT_BLE
+	bool "Bluetooth LE"
+
+endchoice
+
 config SOC_NRF7120_TFM_MRAMC_SERVICE
 	bool "TF-M MRAMC service"
 	default y
