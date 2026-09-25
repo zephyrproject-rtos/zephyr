@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <broadcom/bcm2712.dtsi>
+#include <broadcom/rp1_common.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include "rpi_5-pinctrl.dtsi"
 
