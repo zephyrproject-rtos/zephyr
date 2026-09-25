@@ -80,7 +80,6 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/portable_tensor_utils.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/tensor_ctypes.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/tensor_utils.cc
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/comparisons.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/portable_tensor_utils.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/kernel_util.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/flatbuffer_conversions.cc
@@ -92,6 +91,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/add_n.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/arg_min_max.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/assign_variable.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/basic_classifier.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/${CMSIS_NN_OPTIMIZED_KERNEL_DIR}/batch_matmul.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/batch_to_space_nd.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/broadcast_args.cc
