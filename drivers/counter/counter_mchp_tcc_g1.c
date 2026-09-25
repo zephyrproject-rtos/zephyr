@@ -762,10 +762,25 @@ static DEVICE_API(counter, counter_mchp_api) = {
 		(void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, subsystem)),
 
 
+/* Where an instance lists a CNT_TRIG line, it sits between the first line and MC0. The
+ * counter does not use it: handler m >= 1 serves the line at index m + 1.
+ */
+#define COUNTER_MCHP_HAS_CNT_TRIG(n) DT_INST_IRQ_HAS_NAME(n, cnt_trig)
+
+#define COUNTER_MCHP_NUM_IRQS(n)							\
+	COND_CODE_1(COUNTER_MCHP_HAS_CNT_TRIG(n),					\
+		    (UTIL_DEC(DT_NUM_IRQS(DT_DRV_INST(n)))), (DT_NUM_IRQS(DT_DRV_INST(n))))
+
+#define COUNTER_MCHP_IRQ_IDX(m, n)							\
+	COND_CODE_1(IS_EQ(m, 0), (0),							\
+		    (COND_CODE_1(COUNTER_MCHP_HAS_CNT_TRIG(n), (UTIL_INC(m)), (m))))
+
+#define COUNTER_MCHP_IRQ_BY_SLOT(m, n, cell) DT_INST_IRQ_BY_IDX(n, COUNTER_MCHP_IRQ_IDX(m, n), cell)
+
 #define COUNTER_MCHP_IRQ_HANDLER(n)							\
 	static void counter_mchp_config_##n(const struct device *dev)			\
 	{										\
-		 LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), MCHP_COUNTER_IRQ_CONNECT, (;), n)	\
+		 LISTIFY(COUNTER_MCHP_NUM_IRQS(n), MCHP_COUNTER_IRQ_CONNECT, (;), n)	\
 	}
 
 /* This macro calculates the number of IRQs for the given instance of the Microchip TCC g1
@@ -775,7 +790,7 @@ static DEVICE_API(counter, counter_mchp_api) = {
 
 #define COUNTER_MCHP_MAX_BIT_WIDTH(n) (DT_INST_PROP(n, max_bit_width))
 /*UTIL_INC is used here because the channel irqs are starting from the index 1*/
-#define COUNTER_MCHP_COMP_IRQ_IDX(idx, n) DT_INST_IRQ_BY_IDX(n, UTIL_INC(idx), irq)
+#define COUNTER_MCHP_COMP_IRQ_IDX(idx, n) COUNTER_MCHP_IRQ_BY_SLOT(UTIL_INC(idx), n, irq)
 
 /* This macro declares a static IRQ mapping structure for the specified instance
  * of a Microchip counter device. The structure maps IRQs to channels based on
@@ -790,7 +805,7 @@ static DEVICE_API(counter, counter_mchp_api) = {
 static struct tcc_counter_irq_map counter_mchp_irq_map_##n = {		\
 	.ovf_irq_line = DT_INST_IRQ_BY_IDX(n, 0, irq),			\
 	.comp_irq_line = {						\
-		LISTIFY(UTIL_DEC(DT_NUM_IRQS(DT_DRV_INST(n))),		\
+		LISTIFY(UTIL_DEC(COUNTER_MCHP_NUM_IRQS(n)),		\
 		COUNTER_MCHP_COMP_IRQ_IDX,				\
 		(,), n) }}
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
@@ -832,13 +847,13 @@ static struct tcc_counter_irq_map counter_mchp_irq_map_##n = {		\
  * retrieved from the device tree.
  */
 #define MCHP_COUNTER_IRQ_CONNECT(m, n)								\
-	COND_CODE_1(DT_IRQ_HAS_IDX(DT_DRV_INST(n), m),						\
+	COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, COUNTER_MCHP_IRQ_IDX(m, n)),				\
 	(											\
 		do {										\
-			IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq),				\
-				DT_INST_IRQ_BY_IDX(n, m, priority),				\
+			IRQ_CONNECT(COUNTER_MCHP_IRQ_BY_SLOT(m, n, irq),			\
+				COUNTER_MCHP_IRQ_BY_SLOT(m, n, priority),			\
 				counter_mchp_irq_##m##_handle, DEVICE_DT_INST_GET(n), 0);	\
-			irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));				\
+			irq_enable(COUNTER_MCHP_IRQ_BY_SLOT(m, n, irq));			\
 		} while (false);								\
 	), ())
 
