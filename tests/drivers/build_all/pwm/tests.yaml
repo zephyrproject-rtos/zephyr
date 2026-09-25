@@ -63,6 +63,9 @@ tests:
       - qemu_cortex_m3
       - native_sim
       - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
   drivers.pwm.max31790.build:
     platform_allow: nucleo_f429zi
     extra_args: DTC_OVERLAY_FILE=max31790.overlay
@@ -77,6 +80,9 @@ tests:
       - CONFIG_GPIO=y # needed by MAX2221x driver
   drivers.pwm.bitbang.build:
     platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
       - native_sim
       - native_sim/native/64
     extra_args: DTC_OVERLAY_FILE=bitbang.overlay
