@@ -19,19 +19,25 @@ LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_result_t *result,
 				    int item)
 {
+	/* Wiseconnect scan results do not expose MFP capabilities. Derive a safe
+	 * connection setting from the reported security mode.
+	 */
 	static const struct {
 		int sl_val;
 		int z_val;
+		enum wifi_mfp_options mfp;
 	} security_convert[] = {
-		{ SL_WIFI_OPEN,            WIFI_SECURITY_TYPE_NONE              },
-		{ SL_WIFI_WEP,             WIFI_SECURITY_TYPE_WEP               },
-		{ SL_WIFI_WPA,             WIFI_SECURITY_TYPE_WPA_PSK           },
-		{ SL_WIFI_WPA2,            WIFI_SECURITY_TYPE_PSK               },
-		{ SL_WIFI_WPA3,            WIFI_SECURITY_TYPE_SAE               },
-		{ SL_WIFI_WPA3_TRANSITION, WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL },
-		{ SL_WIFI_WPA_WPA2_MIXED,  WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL },
-		{ SL_WIFI_WPA_ENTERPRISE,  WIFI_SECURITY_TYPE_EAP               },
-		{ SL_WIFI_WPA2_ENTERPRISE, WIFI_SECURITY_TYPE_EAP               },
+		{ SL_WIFI_OPEN,             WIFI_SECURITY_TYPE_NONE,    WIFI_MFP_DISABLE  },
+		{ SL_WIFI_WEP,              WIFI_SECURITY_TYPE_WEP,     WIFI_MFP_DISABLE  },
+		{ SL_WIFI_WPA,              WIFI_SECURITY_TYPE_WPA_PSK, WIFI_MFP_DISABLE  },
+		{ SL_WIFI_WPA2,             WIFI_SECURITY_TYPE_PSK,     WIFI_MFP_OPTIONAL },
+		{ SL_WIFI_WPA3,             WIFI_SECURITY_TYPE_SAE,     WIFI_MFP_REQUIRED },
+		{ SL_WIFI_WPA3_TRANSITION,  WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
+									WIFI_MFP_OPTIONAL },
+		{ SL_WIFI_WPA_WPA2_MIXED,   WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
+									WIFI_MFP_OPTIONAL },
+		{ SL_WIFI_WPA_ENTERPRISE,   WIFI_SECURITY_TYPE_EAP,     WIFI_MFP_DISABLE  },
+		{ SL_WIFI_WPA2_ENTERPRISE,  WIFI_SECURITY_TYPE_EAP,     WIFI_MFP_OPTIONAL },
 	};
 	struct wifi_scan_result tmp = {
 		.channel = result->scan_info[item].rf_channel,
@@ -58,6 +64,8 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 	ARRAY_FOR_EACH(security_convert, i) {
 		if (security_convert[i].sl_val == result->scan_info[item].security_mode) {
 			tmp.security = security_convert[i].z_val;
+			tmp.mfp = security_convert[i].mfp;
+			break;
 		}
 	}
 
