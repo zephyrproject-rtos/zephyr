@@ -67,6 +67,10 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define PCIE_MISC_PCIE_CTRL                  0x4064
 #define PCIE_MISC_PCIE_CTRL_PCIE_PERSTB_MASK 0x4
 
+#define PCIE_MISC_PCIE_STATUS                     0x4068
+#define PCIE_MISC_PCIE_STATUS_PCIE_PHYLINKUP_MASK 0x10
+#define PCIE_MISC_PCIE_STATUS_PCIE_DL_ACTIVE_MASK 0x20
+
 #define PCIE_RC_CFG_PRIV1_ID_VAL3                 0x043c
 #define PCIE_RC_CFG_PRIV1_ID_VAL3_CLASS_CODE_MASK 0xffffff
 
@@ -150,7 +154,12 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 #define DMA_RANGES_IDX 2
 
-#define PCIE_ECAM_BDF_SHIFT 12
+#define PCIE_ECAM_BDF_SHIFT 4
+
+/* PCIe CEM r5.0, 2.2: wait 100 ms after PERST# deassertion */
+#define PCIE_RESET_CONFIG_WAIT_US 100000
+#define PCIE_LINK_UP_TIMEOUT_US   100000
+#define PCIE_LINK_UP_POLL_US      5000
 
 #define BAR_MAX 8
 
@@ -215,9 +224,40 @@ static uint32_t encode_ibar_size(uint64_t size)
 	return 0;
 }
 
+static bool pcie_brcmstb_link_up(const struct device *dev)
+{
+	struct pcie_brcmstb_data *data = dev->data;
+	uint32_t val = sys_read32(data->cfg_addr + PCIE_MISC_PCIE_STATUS);
+
+	return ((val & PCIE_MISC_PCIE_STATUS_PCIE_PHYLINKUP_MASK) != 0U) &&
+	       ((val & PCIE_MISC_PCIE_STATUS_PCIE_DL_ACTIVE_MASK) != 0U);
+}
+
 static mm_reg_t pcie_brcmstb_map_bus(const struct device *dev, pcie_bdf_t bdf, unsigned int reg)
 {
 	struct pcie_brcmstb_data *data = dev->data;
+
+	/* The root bus only holds the root port, whose registers are at the controller base */
+	if (PCIE_BDF_TO_BUS(bdf) == 0U) {
+		if (bdf != PCIE_BDF(0, 0, 0)) {
+			return 0;
+		}
+
+		return data->cfg_addr + reg * sizeof(uint32_t);
+	}
+
+	/*
+	 * Only device 0 exists on the link below the root port. Endpoints may ignore the
+	 * device number and alias, and accesses to other devices can raise an SError.
+	 */
+	if (PCIE_BDF_TO_DEV(bdf) != 0U) {
+		return 0;
+	}
+
+	/* Accessing the downstream buses without link-up causes a CPU abort */
+	if (!pcie_brcmstb_link_up(dev)) {
+		return 0;
+	}
 
 	sys_write32(bdf << PCIE_ECAM_BDF_SHIFT, data->cfg_addr + PCIE_EXT_CFG_INDEX);
 	return data->cfg_addr + PCIE_EXT_CFG_DATA + reg * sizeof(uint32_t);
@@ -550,6 +590,7 @@ static int pcie_brcmstb_init(const struct device *dev)
 	const struct pcie_brcmstb_config *config = dev->config;
 	struct pcie_brcmstb_data *data = dev->data;
 	uint32_t tmp;
+	uint32_t waited;
 	int ret;
 
 	if (config->common->ranges_count < DMA_RANGES_IDX) {
@@ -575,7 +616,21 @@ static int pcie_brcmstb_init(const struct device *dev)
 	tmp |= PCIE_MISC_PCIE_CTRL_PCIE_PERSTB_MASK;
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_PCIE_CTRL);
 
-	k_busy_wait(500000);
+	k_busy_wait(PCIE_RESET_CONFIG_WAIT_US);
+
+	for (waited = 0; waited < PCIE_LINK_UP_TIMEOUT_US && !pcie_brcmstb_link_up(dev);
+	     waited += PCIE_LINK_UP_POLL_US) {
+		k_busy_wait(PCIE_LINK_UP_POLL_US);
+	}
+
+	if (!pcie_brcmstb_link_up(dev)) {
+		LOG_ERR("Link down");
+		return -EIO;
+	}
+
+	/* Root port: primary bus 0, secondary and subordinate bus 1 */
+	sys_write32(PCIE_BUS_NUMBER_VAL(0, 1, 1, 0),
+		    data->cfg_addr + PCIE_BUS_NUMBER * sizeof(uint32_t));
 
 	/* Enable resources and bus-mastering */
 	tmp = sys_read32(data->cfg_addr + PCI_COMMAND);
@@ -588,6 +643,9 @@ static int pcie_brcmstb_init(const struct device *dev)
 					      config->common->ranges[i].map_length);
 	}
 
+	/* Select the endpoint (bus 1, device 0) for the PCIE_EXT_CFG_DATA accesses below */
+	sys_write32(PCIE_BDF(1, 0, 0) << PCIE_ECAM_BDF_SHIFT, data->cfg_addr + PCIE_EXT_CFG_INDEX);
+
 	/* Assign BARs */
 	/* TODO: It might be possible to do this without extra <regs> property */
 	for (int i = 1; i < config->regs_count; i++) {
@@ -599,7 +657,6 @@ static int pcie_brcmstb_init(const struct device *dev)
 	tmp = sys_read32(data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_COMMAND);
 	tmp |= PCI_COMMAND_MEMORY;
 	sys_write32(tmp, data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_COMMAND);
-	k_busy_wait(500000);
 
 	return 0;
 }
