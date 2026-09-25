@@ -220,7 +220,7 @@ static int i3g4250d_init(const struct device *dev)
 				&i3g4250d_driver_api);
 #define I3G4250D_CONFIG_SPI(inst)	\
 	{	\
-		STMEMSC_CTX_SPI(&i3g4250d_device_config_##inst.stmemsc_cfg),	\
+		STMEMSC_CTX_SPI_INCR(&i3g4250d_device_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {	\
 			.spi = SPI_DT_SPEC_INST_GET(	\
 				inst,	\
