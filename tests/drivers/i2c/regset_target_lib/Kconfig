@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_TARGET_REGSET_LIB
+	default y
+
+source "Kconfig.zephyr"
