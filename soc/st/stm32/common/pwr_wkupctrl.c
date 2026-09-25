@@ -254,6 +254,46 @@ static const struct wkup_pin_desc wkup_pins[] = {
 FOR_EACH_CHILD_NODE_GPIO(WKUP_CTLR, wkup_gpios, WKUP_PIN_DESCRIPTOR_INIT, (,))
 };
 
+/*
+ * Tracks whether interrupt dispatch is enabled for a given wake-up line.
+ * This is directly correlated to whether the corresponding interrupt for
+ * the associated pin is enabled at GPIO port controller level. The array
+ * is oversized by one element such that it can be directly indexed by
+ * wake-up line indexes. As a result, element [0] is never used.
+ *
+ * IMPLEMENTATION NOTE:
+ * The wake-up pins implementation historically didn't check whether
+ * a wake-up line was already configured, so you could configure two
+ * distinct pins mapped to the same WKUPn line without any warning or
+ * error. The new implementation warns when this happens because it
+ * is most likely an error, but we still allow it for backwards
+ * compatibility. In the future, we will probably make this forbidden.
+ * Interrupt dispatch is a new feature without historical constraints
+ * so we can forbid this from day 1: interrupt dispatch for a given
+ * line may only be controlled if you are calling on behalf of the
+ * pin which is configured as source of that wake-up line.
+ *
+ * This creates the possibility of a surprising behavior:
+ * (1) configure pin PAx as wake-up pin and enable its interrupt
+ *     (this enables interrupt dispatch for the corresponding WKUPn line)
+ * (2) configure another pin PBx *which also maps to WKUPn* as wake-up pin
+ *   (this changes the WKUPn source from PAx to PBx)
+ * (3) perform an S2RAM entry then trigger a wake-up event on PBx
+ * In this scenario, after wake-up, this module will dispatch an interrupt
+ * for pin PBx even though interrupts for that pin were never explicitly
+ * enabled. This is most likely harmless as there is probably no registered
+ * GPIO callback for PBx: it wouldn't make sense to register a GPIO callback
+ * for a pin whose interrupts are never enabled, and explicitly enabling
+ * (or disabling) interrupts for PBx will re-synchronize the state of this
+ * driver with that of the GPIO driver, preventing any spurious dispatch,
+ * so it is almost certain that the spurious dispatches will result in no
+ * GPIO callback being invoked (they merely waste some time).
+ *
+ * When source reconfiguration becomes forbidden, (2) will return an
+ * error instead of succeeding and this pitfall will cease to exist.
+ */
+static bool wkup_line_irq_dispatch_enabled[MAX_WKUP_LINE_IDX + 1];
+
 /**
  * @brief Searches for the descriptor of a given wake-up pin.
  *
@@ -532,6 +572,32 @@ int stm32_pwrc_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t
 }
 
 #if defined(CONFIG_GPIO_STM32)
+int stm32_pwrc_set_wakeup_pin_irq_enabled(uint32_t port_idx, gpio_pin_t pin, bool enabled)
+{
+	const struct wkup_pin_desc *pin_desc = search_pin_descriptor(port_idx, pin);
+
+	if (pin_desc == NULL) {
+		return -ENODEV;
+	}
+
+#if HAS_MUXED_WKUP_LINES
+	const uint32_t active_source = get_wake_up_line_source(pin_desc->line_idx);
+
+	if (active_source != pin_desc->src_select) {
+		/* Wake-up line is not triggered by this pin */
+		LOG_ERR("Cannot enable wake-up pin interrupt for GPIO%c pin %u:",
+			'A' + pin_desc->port_idx, pin_desc->pin_num);
+		LOG_ERR("source of wake-up line %u should be %u but is currently %u.",
+			pin_desc->line_idx, pin_desc->src_select, active_source);
+		return -EBUSY;
+	}
+#endif /* HAS_MUXED_WKUP_LINES */
+
+	wkup_line_irq_dispatch_enabled[pin_desc->line_idx] = enabled;
+
+	return 0;
+}
+
 void stm32_pwrc_dispatch_wakeup_gpio_irqs(void)
 {
 	/*
@@ -543,6 +609,11 @@ void stm32_pwrc_dispatch_wakeup_gpio_irqs(void)
 		const struct wkup_pin_desc *pin_desc;
 		struct gpio_stm32_data *gpio_data;
 		const struct device *gpio_port;
+
+		if (!wkup_line_irq_dispatch_enabled[line_idx]) {
+			LOG_DBG("Ignore WKUP%u: interrupt not enabled by SW", line_idx);
+			continue;
+		}
 
 		if (!ll_pwr_is_wake_up_line_enabled(ll_line)) {
 			LOG_DBG("Ignore WKUP%u: wake-up line not enabled", line_idx);

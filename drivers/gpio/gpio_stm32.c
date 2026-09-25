@@ -424,6 +424,10 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
+#if defined(CONFIG_STM32_WKUP_PINS)
+		/* See below for why errors are ignored */
+		(void)stm32_pwrc_set_wakeup_pin_irq_enabled(cfg->port, pin, false);
+#endif /* CONFIG_STM32_WKUP_PINS */
 		gpio_stm32_disable_pin_irqs(cfg->port, pin);
 		goto exit;
 	}
@@ -475,6 +479,17 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 	stm32_gpio_intc_select_line_trigger(irq_line, irq_trigger);
 
 	stm32_gpio_intc_enable_line(irq_line);
+
+#if defined(CONFIG_STM32_WKUP_PINS)
+	/*
+	 * This pin has been successfully configured as interrupt source.
+	 * Also enable its capability to trigger an interrupt if it wakes
+	 * the system from a low-power state where it acts as wake-up pin.
+	 * Ignore errors: they indicate that the pin cannot wake up the
+	 * system, rather than a functional error that should be reported.
+	 */
+	(void)stm32_pwrc_set_wakeup_pin_irq_enabled(cfg->port, pin, true);
+#endif /* CONFIG_STM32_WKUP_PINS */
 
 exit:
 	return err;
