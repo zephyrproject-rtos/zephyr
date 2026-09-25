@@ -119,6 +119,9 @@ void arch_secondary_cpu_init(int hartid)
 	/* Initialize IMSIC on secondary CPU */
 	z_riscv_imsic_secondary_init();
 #endif /* CONFIG_RISCV_IMSIC && CONFIG_SMP */
+#ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
+	(void)csr_read_set(CSR_MNSTATUS, MNSTATUS_NMIE);
+#endif
 	soc_per_core_init_hook();
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }
