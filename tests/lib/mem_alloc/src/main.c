@@ -54,7 +54,8 @@ union aligntest {
 
 
 #if defined(CONFIG_COMMON_LIBC_MALLOC) && \
-	(CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE == 0)
+	(CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE >= 0) && \
+	(CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE <= 16)
 __no_optimization void _test_no_mem_malloc(void)
 {
 	int *iptr = NULL;
@@ -84,6 +85,22 @@ __no_optimization void _test_no_mem_realloc(void)
 ZTEST(c_lib_dynamic_memalloc, test_no_mem_realloc)
 {
 	_test_no_mem_realloc();
+}
+
+__no_optimization void _test_no_mem_calloc(void)
+{
+	char *ptr = NULL;
+
+	errno = 0;
+	ptr = calloc(BUF_LEN, 1);
+	zassert_is_null(ptr, "calloc failed, errno: %d", errno);
+	zassert_equal(errno, ENOMEM);
+	free(ptr);
+}
+
+ZTEST(c_lib_dynamic_memalloc, test_no_mem_calloc)
+{
+	_test_no_mem_calloc();
 }
 #else
 /* Make sure we can access some built-in types. */
