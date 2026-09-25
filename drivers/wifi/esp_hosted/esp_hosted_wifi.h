@@ -14,6 +14,7 @@
 #include <zephyr/net/wifi.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_nm.h>
+#include <zephyr/net/wifi_utils.h>
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 
 #include <pb_encode.h>
@@ -30,7 +31,7 @@
 #define ESP_HOSTED_SCAN_TIMEOUT  (10000)
 #define ESP_HOSTED_QUEUE_TIMEOUT (1000)
 #define ESP_HOSTED_SPI_CONFIG                                                                      \
-	(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_MODE_CPOL)
+	(SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_MODE_CPOL)
 
 #define TLV_HEADER_SIZE      (14)
 #define TLV_HEADER_TYPE_EP   (1)
@@ -60,6 +61,18 @@ typedef enum {
 typedef enum {
 	ESP_PRIV_EVENT_INIT,
 } esp_hosted_priv_event_t;
+
+/* Tags of the TLVs carried by ESP_PRIV_EVENT_INIT. Which ones the slave emits,
+ * and in what order, depends on the firmware version and the transport.
+ */
+typedef enum {
+	ESP_PRIV_CAPABILITY = 0x00,
+	ESP_PRIV_SPI_CLK_MHZ = 0x01,
+	ESP_PRIV_FIRMWARE_CHIP_ID = 0x02,
+	ESP_PRIV_TEST_RAW_TP = 0x03,
+	ESP_PRIV_FW_DATA = 0x04,
+	ESP_PRIV_TAG_MAX,
+} esp_hosted_priv_tag_t;
 
 /* TLV payload. */
 typedef struct __packed {
@@ -119,6 +132,7 @@ typedef struct {
 		uint32_t minor;
 		uint32_t rev_patch1;
 		uint32_t rev_patch2;
+		char str[32];
 	} fw_version;
 
 	/* RX reassembly accumulator. */

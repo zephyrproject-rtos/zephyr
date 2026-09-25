@@ -22,6 +22,11 @@
 extern "C" {
 #endif
 
+/* Destination MAC address of every gPTP message, the nearest bridge group
+ * address of IEEE 802.1AS.
+ */
+extern const struct net_eth_addr gptp_multicast_eth_addr;
+
 /* Helpers to access gPTP messages. */
 #define GPTP_HDR(pkt) gptp_get_hdr(pkt)
 #define GPTP_ANNOUNCE(pkt) ((struct gptp_announce *)gptp_data(pkt))
@@ -449,6 +454,16 @@ void gptp_handle_signaling(int port, struct net_pkt *pkt);
  * @param pkt Sync message.
  */
 void gptp_send_sync(int port, struct net_pkt *pkt);
+
+/**
+ * @brief Unregister the Sync transmit timestamp callback.
+ *
+ * Unregisters the timestamp callback of a Sync that will not be
+ * timestamped, so that the next Sync registers one of its own.
+ *
+ * @param port gPTP port number.
+ */
+void gptp_sync_timestamp_cb_unregister(int port);
 
 /**
  * @brief Send a Follow Up message.

@@ -24,16 +24,16 @@ struct spi_bitbang_data {
 
 struct spi_bitbang_config {
 	struct gpio_dt_spec clk_gpio;
-	struct gpio_dt_spec mosi_gpio;
-	struct gpio_dt_spec miso_gpio;
+	struct gpio_dt_spec sdo_gpio;
+	struct gpio_dt_spec sdi_gpio;
 };
 
 static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 			    struct spi_bitbang_data *data,
 			    const struct spi_config *config)
 {
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -81,9 +81,9 @@ static int spi_bitbang_transceive(const struct device *dev,
 	struct spi_bitbang_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int rc;
-	const struct gpio_dt_spec *miso = NULL;
-	const struct gpio_dt_spec *mosi = NULL;
-	gpio_flags_t mosi_flags = GPIO_OUTPUT_INACTIVE;
+	const struct gpio_dt_spec *sdi = NULL;
+	const struct gpio_dt_spec *sdo = NULL;
+	gpio_flags_t sdo_flags = GPIO_OUTPUT_INACTIVE;
 
 	rc = spi_bitbang_configure(info, data, spi_cfg);
 	if (rc < 0) {
@@ -91,8 +91,8 @@ static int spi_bitbang_transceive(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		if (!info->mosi_gpio.port) {
-			LOG_ERR("No MOSI pin specified in half duplex mode");
+		if (!info->sdo_gpio.port) {
+			LOG_ERR("No SDO pin specified in half duplex mode");
 			return -EINVAL;
 		}
 
@@ -101,26 +101,26 @@ static int spi_bitbang_transceive(const struct device *dev,
 			return -EINVAL;
 		} else if (tx_bufs && !rx_bufs) {
 			/* TX mode */
-			mosi = &info->mosi_gpio;
+			sdo = &info->sdo_gpio;
 		} else if (!tx_bufs && rx_bufs) {
 			/* RX mode */
-			mosi_flags = GPIO_INPUT;
-			miso = &info->mosi_gpio;
+			sdo_flags = GPIO_INPUT;
+			sdi = &info->sdo_gpio;
 		}
 	} else {
-		if (info->mosi_gpio.port) {
-			mosi = &info->mosi_gpio;
+		if (info->sdo_gpio.port) {
+			sdo = &info->sdo_gpio;
 		}
 
-		if (info->miso_gpio.port) {
-			miso = &info->miso_gpio;
+		if (info->sdi_gpio.port) {
+			sdi = &info->sdi_gpio;
 		}
 	}
 
-	if (info->mosi_gpio.port) {
-		rc = gpio_pin_configure_dt(&info->mosi_gpio, mosi_flags);
+	if (info->sdo_gpio.port) {
+		rc = gpio_pin_configure_dt(&info->sdo_gpio, sdo_flags);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure MOSI pin: %d", rc);
+			LOG_ERR("Couldn't configure SDO pin: %d", rc);
 			return rc;
 		}
 	}
@@ -175,7 +175,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 		int b = 0;
 		bool do_read = false;
 
-		if (miso && spi_context_rx_buf_on(ctx)) {
+		if (sdi && spi_context_rx_buf_on(ctx)) {
 			do_read = true;
 		}
 
@@ -186,14 +186,14 @@ static int spi_bitbang_transceive(const struct device *dev,
 			b = 0;
 
 			/* setup data out first thing */
-			if (mosi) {
-				gpio_pin_set_dt(mosi, d);
+			if (sdo) {
+				gpio_pin_set_dt(sdo, d);
 			}
 
 			k_busy_wait(wait_us);
 
 			if (!loop && do_read && !cpha) {
-				b = gpio_pin_get_dt(miso);
+				b = gpio_pin_get_dt(sdi);
 			}
 
 			/* first (leading) clock edge */
@@ -202,7 +202,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 			k_busy_wait(wait_us);
 
 			if (!loop && do_read && cpha) {
-				b = gpio_pin_get_dt(miso);
+				b = gpio_pin_get_dt(sdi);
 			}
 
 			/* second (trailing) clock edge */
@@ -294,29 +294,29 @@ int spi_bitbang_init(const struct device *dev)
 		return rc;
 	}
 
-	if (config->mosi_gpio.port != NULL) {
-		if (!gpio_is_ready_dt(&config->mosi_gpio)) {
-			LOG_ERR("GPIO port for mosi pin is not ready");
+	if (config->sdo_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->sdo_gpio)) {
+			LOG_ERR("GPIO port for sdo pin is not ready");
 			return -ENODEV;
 		}
-		rc = gpio_pin_configure_dt(&config->mosi_gpio,
+		rc = gpio_pin_configure_dt(&config->sdo_gpio,
 				GPIO_OUTPUT_INACTIVE);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure mosi pin; (%d)", rc);
+			LOG_ERR("Couldn't configure sdo pin; (%d)", rc);
 			return rc;
 		}
 	}
 
-	if (config->miso_gpio.port != NULL) {
-		if (!gpio_is_ready_dt(&config->miso_gpio)) {
-			LOG_ERR("GPIO port for miso pin is not ready");
+	if (config->sdi_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->sdi_gpio)) {
+			LOG_ERR("GPIO port for sdi pin is not ready");
 			return -ENODEV;
 		}
 
 
-		rc = gpio_pin_configure_dt(&config->miso_gpio, GPIO_INPUT);
+		rc = gpio_pin_configure_dt(&config->sdi_gpio, GPIO_INPUT);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure miso pin; (%d)", rc);
+			LOG_ERR("Couldn't configure sdi pin; (%d)", rc);
 			return rc;
 		}
 	}
@@ -330,11 +330,21 @@ int spi_bitbang_init(const struct device *dev)
 	return 0;
 }
 
+#define SPI_BITBANG_SDO_SPEC(inst)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, sdo_gpios),		\
+		    (GPIO_DT_SPEC_INST_GET(inst, sdo_gpios)),		\
+		    (GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0})))
+
+#define SPI_BITBANG_SDI_SPEC(inst)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, sdi_gpios),		\
+		    (GPIO_DT_SPEC_INST_GET(inst, sdi_gpios)),		\
+		    (GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0})))
+
 #define SPI_BITBANG_INIT(inst)						\
 	static struct spi_bitbang_config spi_bitbang_config_##inst = {	\
 		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),	\
-		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),	\
-		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}),	\
+		.sdo_gpio = SPI_BITBANG_SDO_SPEC(inst),			\
+		.sdi_gpio = SPI_BITBANG_SDI_SPEC(inst),			\
 	};								\
 									\
 	static struct spi_bitbang_data spi_bitbang_data_##inst = {	\

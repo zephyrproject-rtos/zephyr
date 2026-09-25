@@ -419,6 +419,59 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_empty_ack(int sock, void *buf, 
 	return sizeof(ack_data);
 }
 
+#define BLOCK2_NUM_BLOCKS     3
+#define BLOCK2_BLOCK_SIZE     64
+#define BLOCK2_LAST_BLOCK_LEN 10
+
+static int block2_serve_cnt;
+static const uint8_t *block2_etags[BLOCK2_NUM_BLOCKS];
+static uint8_t block2_etag_lens[BLOCK2_NUM_BLOCKS];
+static bool block2_got_last_block;
+static size_t block2_bytes_received;
+
+/* Serve a block-wise GET response, one 64-byte block per call, with a
+ * test-controlled ETag option per block (NULL/0 omits the option).
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2(int sock, void *buf, size_t max_len,
+							int flags, struct net_sockaddr *src_addr,
+							net_socklen_t *addrlen)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[BLOCK2_BLOCK_SIZE];
+	bool more = block2_serve_cnt < (BLOCK2_NUM_BLOCKS - 1);
+	uint16_t payload_len = more ? BLOCK2_BLOCK_SIZE : BLOCK2_LAST_BLOCK_LEN;
+	uint16_t message_id = get_next_pending_message_id();
+
+	zassert_true(block2_serve_cnt < BLOCK2_NUM_BLOCKS, "Too many block requests");
+
+	memset(payload, 'A' + block2_serve_cnt, sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+
+	if (block2_etag_lens[block2_serve_cnt] > 0) {
+		zassert_ok(coap_packet_append_option(&response, COAP_OPTION_ETAG,
+						     block2_etags[block2_serve_cnt],
+						     block2_etag_lens[block2_serve_cnt]));
+	}
+
+	zassert_ok(coap_append_option_int(&response, COAP_OPTION_BLOCK2,
+					  (block2_serve_cnt << 4) | (more ? BIT(3) : 0) |
+						  COAP_BLOCK_64));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, payload_len));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	block2_serve_cnt++;
+
+	return response.offset;
+}
+
 static ssize_t z_impl_zsock_recvfrom_custom_fake_rst(int sock, void *buf, size_t max_len, int flags,
 						     struct net_sockaddr *src_addr,
 						     net_socklen_t *addrlen)
@@ -574,6 +627,429 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_observe(int sock, void *buf, si
 	return ret;
 }
 
+/* Token of the observe registration, captured from the first block-0 notification and reused
+ * when the server pushes the next notification.
+ */
+static uint8_t observe_reg_token[COAP_TOKEN_MAX_LEN];
+static int observe_block_step;
+
+/* Shared scratch for the interleaved-notification and mid-transfer deregister tests.
+ * ox_reg_token is the observe registration token; ox_last_token/ox_last_id track the most
+ * recently sent GET so the next block can echo it.
+ */
+static uint8_t ox_reg_token[COAP_TOKEN_MAX_LEN];
+static uint8_t ox_last_token[COAP_TOKEN_MAX_LEN];
+static uint16_t ox_last_id;
+static int ox_step;
+static int ox_dereg_count;
+static int ox_interleave_cb_idx;
+static int ox_blockwise_cb_count;
+static struct k_work ox_dereg_work;
+
+static void ox_dereg_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	(void)coap_client_deregister_observe(&client, &(struct coap_client_request){0});
+}
+
+static size_t build_block2_response(uint8_t *buf, size_t buf_len, uint8_t type,
+				    const uint8_t *token, uint16_t id, int observe_seq,
+				    int block_num, bool more)
+{
+	static uint8_t block_payload[CONFIG_COAP_CLIENT_BLOCK_SIZE];
+	struct coap_packet pkt;
+	uint16_t plen = more ? CONFIG_COAP_CLIENT_BLOCK_SIZE : 100;
+	int block2 = (block_num << 4) | (more ? 0x08 : 0) | COAP_BLOCK_256;
+
+	zassert_ok(coap_packet_init(&pkt, buf, buf_len, 1, type, COAP_TOKEN_MAX_LEN, token,
+				    COAP_RESPONSE_CODE_CONTENT, id));
+	if (observe_seq >= 0) {
+		zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_OBSERVE, observe_seq));
+	}
+	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_BLOCK2, block2));
+	zassert_ok(coap_packet_append_payload_marker(&pkt));
+	zassert_true(coap_packet_append_payload(&pkt, block_payload, plen) >= 0);
+
+	return pkt.offset;
+}
+
+/* Minimal piggybacked 2.05 ACK (no payload), used for CON deregister responses. */
+static size_t build_content_ack(uint8_t *buf, size_t buf_len, const uint8_t *token, uint16_t id)
+{
+	struct coap_packet pkt;
+
+	zassert_ok(coap_packet_init(&pkt, buf, buf_len, 1, COAP_TYPE_ACK, COAP_TOKEN_MAX_LEN, token,
+				    COAP_RESPONSE_CODE_CONTENT, id));
+
+	return pkt.offset;
+}
+
+/* Deliver a resource that is transferred blockwise (two blocks) both for the initial
+ * notification and for a subsequent server-pushed notification.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_block(int sock, void *buf, size_t max_len,
+							       int flags,
+							       struct net_sockaddr *src_addr,
+							       net_socklen_t *addrlen)
+{
+	uint8_t tokbuf[TOKEN_OFFSET + COAP_TOKEN_MAX_LEN] = {0};
+	size_t resp_len;
+	uint16_t id;
+
+	switch (observe_block_step) {
+	case 0: /* notification #1, block 0: carries Observe and the registration token */
+		id = get_next_pending_message_id();
+		restore_token(tokbuf);
+		memcpy(observe_reg_token, tokbuf + TOKEN_OFFSET, COAP_TOKEN_MAX_LEN);
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_ACK, observe_reg_token,
+						 id, 1, 0, true);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	case 1: /* notification #1, block 1: answers the continuation GET (token T1) */
+		id = get_next_pending_message_id();
+		restore_token(tokbuf);
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_ACK,
+						 tokbuf + TOKEN_OFFSET, id, -1, 1, false);
+		set_socket_events(sock, ZSOCK_POLLIN); /* push the next notification */
+		break;
+	case 2: /* notification #2, block 0: server push reusing the registration token */
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_NON_CON,
+						 observe_reg_token, 0xA000, 2, 0, true);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	case 3: /* notification #2, block 1: answers the continuation GET (token T2) */
+		id = get_next_pending_message_id();
+		restore_token(tokbuf);
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_ACK,
+						 tokbuf + TOKEN_OFFSET, id, -1, 1, false);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	default:
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		return 0;
+	}
+
+	observe_block_step++;
+	return resp_len;
+}
+
+/* Same as observe_block, but only the first two blocks (one notification). */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_block_one(
+	int sock, void *buf, size_t max_len, int flags,
+	struct net_sockaddr *src_addr, net_socklen_t *addrlen)
+{
+	ssize_t ret;
+
+	if (observe_block_step >= 2) {
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		return 0;
+	}
+
+	ret = z_impl_zsock_recvfrom_custom_fake_observe_block(sock, buf, max_len, flags,
+							       src_addr, addrlen);
+	if (observe_block_step >= 2) {
+		clear_socket_events(sock, ZSOCK_POLLIN);
+	}
+
+	return ret;
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_observe_block(int sock, void *buf, size_t len,
+							     int flags,
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
+{
+	struct coap_packet req = {0};
+	struct coap_option opt = {0};
+	uint16_t id = (((uint8_t *)buf)[2] << 8) | ((uint8_t *)buf)[3];
+	uint8_t type = (((uint8_t *)buf)[0] & 0x30) >> 4;
+
+	store_token(buf);
+	set_next_pending_message_id(id);
+
+	zassert_ok(coap_packet_parse(&req, buf, len, NULL, 0));
+
+	if (coap_get_option_int(&req, COAP_OPTION_OBSERVE) == 1) {
+		uint8_t token[COAP_TOKEN_MAX_LEN];
+
+		coap_header_get_token(&req, token);
+		zassert_mem_equal(token, observe_reg_token, COAP_TOKEN_MAX_LEN,
+				  "Deregister must use the observe registration token");
+		ox_dereg_count++;
+		return 1;
+	}
+
+	/* RFC 7959 Section 3.4: Block2 continuation GETs must not carry the Observe option. */
+	if (coap_get_option_int(&req, COAP_OPTION_BLOCK2) > 0) {
+		zassert_equal(coap_find_options(&req, COAP_OPTION_OBSERVE, &opt, 1), 0,
+			      "Observe must be absent on block retrievals");
+	}
+
+	if (type == 0) {
+		set_socket_events(sock, ZSOCK_POLLIN);
+	}
+
+	return 1;
+}
+
+/* Serve notification #1 block 0, then push notification #2 (block 0) WHILE the block-1
+ * retrieval of notification #1 is still outstanding. The pushed notification reuses the
+ * registration token, which must match via observe_token while request_token holds the
+ * block-retrieval token.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_interleave(
+	int sock, void *buf, size_t max_len, int flags,
+	struct net_sockaddr *src_addr, net_socklen_t *addrlen)
+{
+	size_t resp_len;
+
+	switch (ox_step) {
+	case 0: /* notification #1, block 0: Observe + registration token, more to come */
+		memcpy(ox_reg_token, ox_last_token, COAP_TOKEN_MAX_LEN);
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_ACK, ox_reg_token,
+						 ox_last_id, 1, 0, true);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	case 1: /* notification #2, block 0: async push reusing the registration token,
+		 * arriving before the block-1 continuation GET is answered
+		 */
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_NON_CON, ox_reg_token,
+						 0xB000, 2, 0, true);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	case 2: /* notification #2, block 1: answer the latest continuation GET, last block */
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_ACK, ox_last_token,
+						 ox_last_id, -1, 1, false);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	default:
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		return 0;
+	}
+
+	ox_step++;
+	return resp_len;
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_observe_interleave(
+	int sock, void *buf, size_t len, int flags,
+	const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
+{
+	struct coap_packet req = {0};
+	struct coap_option opt = {0};
+	uint8_t type = (((uint8_t *)buf)[0] & 0x30) >> 4;
+
+	zassert_ok(coap_packet_parse(&req, buf, len, NULL, 0));
+
+	/* The async notification must stay matchable: the client must never RST it. */
+	zassert_not_equal(type, COAP_TYPE_RESET,
+			  "Registration token unmatchable: client sent an RST");
+
+	if (coap_get_option_int(&req, COAP_OPTION_BLOCK2) > 0) {
+		zassert_equal(coap_find_options(&req, COAP_OPTION_OBSERVE, &opt, 1), 0,
+			      "Observe must be absent on block retrievals");
+	}
+
+	ox_last_id = (((uint8_t *)buf)[2] << 8) | ((uint8_t *)buf)[3];
+	memcpy(ox_last_token, (uint8_t *)buf + TOKEN_OFFSET, COAP_TOKEN_MAX_LEN);
+
+	if (type == COAP_TYPE_CON || type == COAP_TYPE_NON_CON) {
+		set_socket_events(sock, ZSOCK_POLLIN);
+	}
+
+	return 1;
+}
+
+/* Serve block 0 of a notification (more to come) so the client issues a block-1
+ * continuation GET, then deliver the CON deregister 2.05. Block 1 is never sent.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_dereg(
+	int sock, void *buf, size_t max_len, int flags,
+	struct net_sockaddr *src_addr, net_socklen_t *addrlen)
+{
+	size_t resp_len;
+
+	switch (ox_step) {
+	case 0: /* notification block 0: Observe + registration token, more to come */
+		memcpy(ox_reg_token, ox_last_token, COAP_TOKEN_MAX_LEN);
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_ACK, ox_reg_token,
+						 ox_last_id, 1, 0, true);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	case 1: /* CON deregister response: 2.05 with the registration token */
+		resp_len = build_content_ack(buf, max_len, ox_reg_token, ox_last_id);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	default:
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		return 0;
+	}
+
+	ox_step++;
+	fill_recv_src_addr(src_addr, addrlen);
+	return resp_len;
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_observe_dereg(
+	int sock, void *buf, size_t len, int flags,
+	const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
+{
+	struct coap_packet req = {0};
+	struct coap_option opt = {0};
+	uint8_t type = (((uint8_t *)buf)[0] & 0x30) >> 4;
+	uint8_t tkl = ((uint8_t *)buf)[0] & 0x0f;
+
+	zassert_ok(coap_packet_parse(&req, buf, len, NULL, 0));
+
+	ox_last_id = (((uint8_t *)buf)[2] << 8) | ((uint8_t *)buf)[3];
+	memcpy(ox_last_token, (uint8_t *)buf + TOKEN_OFFSET, COAP_TOKEN_MAX_LEN);
+
+	if (coap_get_option_int(&req, COAP_OPTION_OBSERVE) == 1) {
+		/* Deregister GET: must reuse the registration token, even though request_token
+		 * currently holds the outstanding block-retrieval (continuation) token.
+		 */
+		zassert_equal(tkl, COAP_TOKEN_MAX_LEN, "Unexpected deregister token length");
+		zassert_mem_equal((uint8_t *)buf + TOKEN_OFFSET, ox_reg_token, COAP_TOKEN_MAX_LEN,
+				  "Deregister must use the observe registration token");
+		ox_dereg_count++;
+		if (type == COAP_TYPE_CON) {
+			set_socket_events(sock, ZSOCK_POLLIN);
+		}
+		return 1;
+	}
+
+	if (coap_get_option_int(&req, COAP_OPTION_BLOCK2) > 0) {
+		zassert_equal(coap_find_options(&req, COAP_OPTION_OBSERVE, &opt, 1), 0,
+			      "Observe must be absent on block retrievals");
+		/* Continuation GET is out, so request_token now holds the continuation token. */
+		k_sem_give(&sem2);
+		return 1;
+	}
+
+	/* Registration GET. */
+	set_socket_events(sock, ZSOCK_POLLIN);
+	return 1;
+}
+
+static int sent_block2_opts[4];
+static int sent_block2_cnt;
+
+static int sent_block1_opts[8];
+static int sent_upload_block2_opts[8];
+static int sent_upload_cnt;
+
+/* Record the block1 and block2 options of every sent request */
+static ssize_t z_impl_zsock_sendto_custom_fake_record_blocks(int sock, void *buf, size_t len,
+							     int flags,
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
+{
+	struct coap_packet req = {0};
+
+	zassert_ok(coap_packet_parse(&req, buf, len, NULL, 0));
+	if (sent_upload_cnt < (int)ARRAY_SIZE(sent_block1_opts)) {
+		sent_block1_opts[sent_upload_cnt] = coap_get_option_int(&req, COAP_OPTION_BLOCK1);
+		sent_upload_block2_opts[sent_upload_cnt] =
+			coap_get_option_int(&req, COAP_OPTION_BLOCK2);
+		sent_upload_cnt++;
+	}
+
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+/* Record the block2 option of every sent request */
+static ssize_t z_impl_zsock_sendto_custom_fake_record_block2(int sock, void *buf, size_t len,
+							     int flags,
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
+{
+	struct coap_packet req = {0};
+
+	zassert_ok(coap_packet_parse(&req, buf, len, NULL, 0));
+	if (sent_block2_cnt < (int)ARRAY_SIZE(sent_block2_opts)) {
+		sent_block2_opts[sent_block2_cnt++] =
+			coap_get_option_int(&req, COAP_OPTION_BLOCK2);
+	}
+
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t serve_block2(int sock, void *buf, size_t max_len, struct net_sockaddr *src_addr,
+			    net_socklen_t *addrlen, int block_num, bool more)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[CONFIG_COAP_CLIENT_BLOCK_SIZE];
+	uint16_t payload_len = more ? sizeof(payload) : 10U;
+	uint16_t message_id = get_next_pending_message_id();
+
+	memset(payload, 'A' + block_num, sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+	zassert_ok(coap_append_option_int(&response, COAP_OPTION_BLOCK2,
+					  (block_num << 4) | (more ? BIT(3) : 0) |
+						  COAP_BLOCK_256));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, payload_len));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return response.offset;
+}
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2_last(int sock, void *buf, size_t max_len,
+							     int flags,
+							     struct net_sockaddr *src_addr,
+							     net_socklen_t *addrlen)
+{
+	return serve_block2(sock, buf, max_len, src_addr, addrlen, 1, false);
+}
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2_first(int sock, void *buf, size_t max_len,
+							      int flags,
+							      struct net_sockaddr *src_addr,
+							      net_socklen_t *addrlen)
+{
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2_last;
+
+	return serve_block2(sock, buf, max_len, src_addr, addrlen, 0, true);
+}
+
+/* A valid plain response whose reported length exceeds the buffer: the
+ * datagram was truncated. Follow up with a block-wise transfer.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_truncated(int sock, void *buf, size_t max_len,
+							   int flags,
+							   struct net_sockaddr *src_addr,
+							   net_socklen_t *addrlen)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[64];
+	uint16_t message_id = get_next_pending_message_id();
+
+	memset(payload, 'T', sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, sizeof(payload)));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2_first;
+
+	return max_len + 1;
+}
+
 void coap_callback(const struct coap_client_response_data *data, void *user_data)
 {
 	LOG_INF("CoAP response callback, %d", data->result_code);
@@ -581,6 +1057,89 @@ void coap_callback(const struct coap_client_response_data *data, void *user_data
 	if (user_data) {
 		k_sem_give((struct k_sem *) user_data);
 	}
+}
+
+static void coap_callback_interleave_observe(const struct coap_client_response_data *data,
+					     void *user_data)
+{
+	static const int expected_observe_seq[] = {1, 2};
+	int observe;
+
+	coap_callback(data, user_data);
+
+	if (data->packet == NULL || data->result_code != COAP_RESPONSE_CODE_CONTENT) {
+		return;
+	}
+
+	observe = coap_get_option_int(data->packet, COAP_OPTION_OBSERVE);
+	if (data->offset == 0 && !data->last_block) {
+		zassert_true(observe >= 0, "Observe missing on block-0 notification");
+		zassert_equal(observe, expected_observe_seq[ox_interleave_cb_idx],
+			      "Unexpected Observe sequence on interleaved notification");
+		ox_interleave_cb_idx++;
+	} else if (data->last_block) {
+		zassert_equal(observe, -ENOENT, "Observe must be absent on final block");
+	}
+}
+
+static void coap_callback_deregister_on_last_block(const struct coap_client_response_data *data,
+						 void *user_data)
+{
+	coap_callback(data, user_data);
+
+	if (data->result_code != COAP_RESPONSE_CODE_CONTENT) {
+		return;
+	}
+
+	ox_blockwise_cb_count++;
+	if (ox_blockwise_cb_count == 2) {
+		/* coap_client_deregister_observe() must not run synchronously from the
+		 * response callback: the recv path still holds the slot in_callback.
+		 * Post to the workqueue and run once the callback has returned.
+		 */
+		k_work_submit(&ox_dereg_work);
+	}
+}
+
+static void coap_block2_callback(const struct coap_client_response_data *data, void *user_data)
+{
+	LOG_INF("CoAP block2 response callback, %d", data->result_code);
+	last_response_code = data->result_code;
+
+	if (data->result_code >= 0) {
+		block2_bytes_received += data->payload_len;
+	}
+	if (data->last_block) {
+		block2_got_last_block = (data->result_code >= 0);
+		k_sem_give((struct k_sem *)user_data);
+	}
+}
+
+static struct coap_client_request block2_request = {
+	.method = COAP_METHOD_GET,
+	.confirmable = true,
+	.path = TEST_PATH,
+	.cb = coap_block2_callback,
+	.user_data = &sem1,
+};
+
+static void block2_test_start(const uint8_t *const etags[BLOCK2_NUM_BLOCKS],
+			      const uint8_t etag_lens[BLOCK2_NUM_BLOCKS])
+{
+	block2_serve_cnt = 0;
+	block2_bytes_received = 0;
+	block2_got_last_block = false;
+
+	for (int i = 0; i < BLOCK2_NUM_BLOCKS; i++) {
+		block2_etags[i] = etags[i];
+		block2_etag_lens[i] = etag_lens[i];
+	}
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &block2_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)),
+		   "No final block2 callback");
 }
 
 extern void net_coap_init(void);
@@ -597,6 +1156,7 @@ static void *suite_setup(void)
 	net_coap_init();
 	zassert_ok(coap_client_init(&client, NULL));
 	zassert_ok(coap_client_init(&client2, NULL));
+	k_work_init(&ox_dereg_work, ox_dereg_work_handler);
 
 	return NULL;
 }
@@ -627,6 +1187,16 @@ static void test_setup(void *data)
 	k_sem_reset(&sem1);
 	k_sem_reset(&sem2);
 
+	observe_block_step = 0;
+	memset(observe_reg_token, 0, sizeof(observe_reg_token));
+	ox_step = 0;
+	ox_dereg_count = 0;
+	ox_interleave_cb_idx = 0;
+	ox_blockwise_cb_count = 0;
+	memset(ox_reg_token, 0, sizeof(ox_reg_token));
+	memset(ox_last_token, 0, sizeof(ox_last_token));
+	ox_last_id = 0;
+
 	k_mutex_unlock(&client.lock);
 }
 
@@ -652,6 +1222,107 @@ ZTEST(coap_client, test_request_block)
 
 	zassert_equal(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL),
 		      -EAGAIN, "");
+}
+ZTEST(coap_client, test_truncated_response_retries_blockwise)
+{
+	sent_block2_cnt = 0;
+	memset(sent_block2_opts, 0, sizeof(sent_block2_opts));
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_block2;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_truncated;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	/* The retry after the truncated response must carry a block2 option
+	 * requesting block 0, so the server switches to a block-wise response
+	 * instead of repeating the truncated one, and the transfer completes.
+	 */
+	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Transfer did not complete");
+	zassert_equal(sent_block2_cnt, 3, "Unexpected number of requests");
+	zassert_equal(sent_block2_opts[0], -ENOENT, "Initial request must not carry block2");
+	zassert_equal(sent_block2_opts[1], COAP_BLOCK_256,
+		      "Retry after truncation must request block 0");
+	zassert_equal(sent_block2_opts[2], (1 << 4) | COAP_BLOCK_256,
+		      "Transfer must continue with block 1");
+}
+
+
+ZTEST(coap_client, test_blockwise_recv_etag_consistent)
+{
+	static const uint8_t etag[] = {0xde, 0xad, 0xbe, 0xef};
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {etag, etag, etag};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {sizeof(etag), sizeof(etag), sizeof(etag)};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_true(block2_got_last_block, "Transfer did not complete");
+	zassert_equal(block2_serve_cnt, BLOCK2_NUM_BLOCKS, "Unexpected number of blocks");
+	zassert_equal(block2_bytes_received,
+		      (BLOCK2_NUM_BLOCKS - 1) * BLOCK2_BLOCK_SIZE + BLOCK2_LAST_BLOCK_LEN,
+		      "Unexpected payload length");
+}
+
+ZTEST(coap_client, test_blockwise_recv_no_etag)
+{
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {NULL, NULL, NULL};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {0, 0, 0};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_true(block2_got_last_block, "Transfer did not complete");
+	zassert_equal(block2_serve_cnt, BLOCK2_NUM_BLOCKS, "Unexpected number of blocks");
+}
+
+ZTEST(coap_client, test_blockwise_recv_etag_changed)
+{
+	static const uint8_t etag_old[] = {0x01, 0x02};
+	static const uint8_t etag_new[] = {0x03, 0x04};
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {etag_old, etag_new, etag_new};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {sizeof(etag_old), sizeof(etag_new),
+						      sizeof(etag_new)};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, -EBADMSG, "Transfer should fail on ETag change");
+	zassert_false(block2_got_last_block, "Transfer should not complete");
+	zassert_equal(block2_serve_cnt, 2, "No further blocks should be requested");
+}
+
+ZTEST(coap_client, test_blockwise_recv_etag_malformed_ignored)
+{
+	/* RFC 7252, sections 5.4.1 and 5.4.3: an ETag exceeding 8 bytes is
+	 * treated like an unrecognized elective option and silently ignored,
+	 * so the transfer completes as if no ETag was sent. This path only
+	 * runs for ETags that fit the coap_option value buffer (12 bytes
+	 * here, CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE with extended options
+	 * enabled): parse_option() rejects longer values, making the block2
+	 * lookup fail first, and such a response is treated as non-block-wise.
+	 */
+	static const uint8_t etag[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {etag, etag, etag};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {sizeof(etag), sizeof(etag), sizeof(etag)};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_true(block2_got_last_block, "Transfer did not complete");
+	zassert_equal(block2_serve_cnt, BLOCK2_NUM_BLOCKS, "Unexpected number of blocks");
+}
+
+ZTEST(coap_client, test_blockwise_recv_etag_lost)
+{
+	static const uint8_t etag[] = {0x01, 0x02};
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {etag, NULL, NULL};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {sizeof(etag), 0, 0};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, -EBADMSG, "Transfer should fail on ETag change");
+	zassert_false(block2_got_last_block, "Transfer should not complete");
+	zassert_equal(block2_serve_cnt, 2, "No further blocks should be requested");
 }
 
 ZTEST(coap_client, test_resend_request)
@@ -722,6 +1393,28 @@ ZTEST(coap_client, test_send_large_data)
 
 	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+}
+
+ZTEST(coap_client, test_blockwise_upload_no_stray_block2)
+{
+	sent_upload_cnt = 0;
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_blocks;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &long_request, NULL));
+
+	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_true(sent_upload_cnt > 1, "Payload must span several block1 requests");
+
+	/* The client did not ask for a block-wise response, so no request of a
+	 * block-wise upload carries a block2 option.
+	 */
+	for (int i = 0; i < sent_upload_cnt; i++) {
+		zassert_true(sent_block1_opts[i] >= 0, "Request %d must carry block1", i);
+		zassert_equal(sent_upload_block2_opts[i], -ENOENT,
+			      "Request %d must not carry block2", i);
+	}
 }
 
 ZTEST(coap_client, test_no_response)
@@ -971,7 +1664,7 @@ ZTEST(coap_client, test_observe)
 		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 		.cb = coap_callback,
 		.payload = short_payload,
-		.len = strlen(short_payload),
+		.len = sizeof(short_payload) - 1,
 		.options = { {
 			.code = COAP_OPTION_OBSERVE,
 			.value[0] = 0,
@@ -982,7 +1675,6 @@ ZTEST(coap_client, test_observe)
 	};
 
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_observe;
-
 
 	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
 
@@ -1119,6 +1811,173 @@ ZTEST(coap_client, test_observe_deregister_non)
 	zassert_equal(last_response_code, -ECANCELED);
 
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_observe_blockwise)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = sizeof(short_payload) - 1,
+		.options = { {
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		} },
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_observe_block;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_block;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* Notification #1, transferred as two blocks. */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	/* Notification #2 must still be delivered: observe_token keeps the registration
+	 * token matchable while block retrievals use fresh tokens in request_token.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED, "");
+}
+
+ZTEST(coap_client, test_observe_blockwise_async_notification)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback_interleave_observe,
+		.payload = short_payload,
+		.len = sizeof(short_payload) - 1,
+		.options = { {
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		} },
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake =
+		z_impl_zsock_recvfrom_custom_fake_observe_interleave;
+	z_impl_zsock_sendto_fake.custom_fake =
+		z_impl_zsock_sendto_custom_fake_observe_interleave;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* Block 0 of notification #1, then notification #2 pushed mid-retrieval, then its
+	 * final block. All three deliveries must reach the callback and none must be RST'd
+	 * (asserted in the sendto fake).
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(ox_interleave_cb_idx, 2, "Expected two block-0 Observe notifications");
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED, "");
+}
+
+ZTEST(coap_client, test_observe_deregister_blockwise)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = sizeof(short_payload) - 1,
+		.options = { {
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		} },
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake =
+		z_impl_zsock_recvfrom_custom_fake_observe_dereg;
+	z_impl_zsock_sendto_fake.custom_fake =
+		z_impl_zsock_sendto_custom_fake_observe_dereg;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* Block 0 is delivered and the client issues the block-1 continuation GET, so
+	 * request_token now holds the continuation token, not the registration token.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	/* Deregister mid-transfer: outgoing GET must use the registration token (sendto
+	 * fake) and the CON 2.05 response must match after request_token is synced.
+	 */
+	zassert_ok(coap_client_deregister_observe(&client, &req));
+	zassert_equal(ox_dereg_count, 1, "Deregister GET was not sent");
+
+	/* Server 2.05 for the CON deregister. */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT,
+		      "Deregister CON response was not handled");
+
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_observe_deregister_blockwise_in_callback)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback_deregister_on_last_block,
+		.payload = short_payload,
+		.len = sizeof(short_payload) - 1,
+		.options = { {
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		} },
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake =
+		z_impl_zsock_recvfrom_custom_fake_observe_block_one;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_block;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* Deregister posted from the last-block callback while request_token still holds
+	 * the continuation token; only verifies the deregister GET is sent.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	/* Wait for the deregister work posted from the last-block callback. */
+	k_sleep(K_MSEC(10));
+	zassert_equal(ox_dereg_count, 1, "Deregister GET was not sent");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED, "");
 }
 
 ZTEST(coap_client, test_request_rst)

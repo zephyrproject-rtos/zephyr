@@ -174,7 +174,7 @@ SECTIONS
 
 	__text_region_end = .;
 
-#if defined (CONFIG_CPP)
+#if defined (CONFIG_CPP) || defined(CONFIG_RUST) || defined(CONFIG_ARCH_STACKWALK)
 	SECTION_PROLOGUE(.ARM.extab,,)
 	{
 	/*
@@ -482,7 +482,6 @@ GROUP_END(DTCM)
 
 #include <zephyr/linker/debug-sections.ld>
 
-	/DISCARD/ : { *(.note.GNU-stack) }
 
 	SECTION_PROLOGUE(.ARM.attributes, 0,)
 	{

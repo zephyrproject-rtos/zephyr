@@ -61,7 +61,7 @@ struct cs40l26_sensor {
 	bool is_signed;
 	uint8_t n;
 	uint8_t m;
-	int8_t full_scale;
+	struct sensor_value full_scale;
 };
 
 struct cs40l26_config {
@@ -102,6 +102,8 @@ int cs40l26_firmware_raw_write(const struct device *const dev, const uint32_t fi
 int cs40l26_firmware_multi_write(const struct device *const dev,
 				 const struct cs40lxx_multi_write *const multi_write,
 				 const uint32_t len);
+int cs40l26_firmware_poll(const struct device *const dev, const uint32_t firmware_control,
+			  const uint32_t val, const k_timeout_t timeout);
 
 #ifdef __cplusplus
 }

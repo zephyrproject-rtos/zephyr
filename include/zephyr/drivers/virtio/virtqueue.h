@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the VIRTIO virtqueue API.
+ * @ingroup virtqueue_interface
+ */
+
 #ifndef ZEPHYR_VIRTIO_VIRTQUEUE_H_
 #define ZEPHYR_VIRTIO_VIRTQUEUE_H_
 #include <stdint.h>

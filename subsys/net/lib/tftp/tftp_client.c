@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 #include <stddef.h>
 #include <zephyr/net/tftp.h>
 #include "tftp_client.h"
+#include "net_private.h"
 
 #define ADDRLEN(sa) \
 	(sa->sa_family == NET_AF_INET ? \
@@ -47,18 +48,100 @@ static size_t make_request(uint8_t *buf, int request,
 	return ptr - (char *)buf;
 }
 
-/*
- * Send Data message to the TFTP Server and receive ACK message from it.
- */
-static int send_data(int sock, struct tftpc *client, uint32_t block_no, const uint8_t *data_buffer,
-		     size_t data_size)
+static const void *sa_addr(const struct net_sockaddr *sa)
 {
-	int ret;
-	int send_count = 0, ack_count = 0;
+	if (IS_ENABLED(CONFIG_NET_IPV6) && sa->sa_family == NET_AF_INET6) {
+		return &net_sin6(sa)->sin6_addr;
+	}
+
+	return &net_sin(sa)->sin_addr;
+}
+
+static bool same_address(const struct net_sockaddr *a, const struct net_sockaddr *b)
+{
+	if (a->sa_family != b->sa_family) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && a->sa_family == NET_AF_INET) {
+		return net_ipv4_addr_cmp(&net_sin(a)->sin_addr, &net_sin(b)->sin_addr);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && a->sa_family == NET_AF_INET6) {
+		return net_ipv6_addr_cmp(&net_sin6(a)->sin6_addr, &net_sin6(b)->sin6_addr);
+	}
+
+	return false;
+}
+
+static bool same_tid(const struct net_sockaddr *a, const struct net_sockaddr *b)
+{
+	if (!same_address(a, b)) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && a->sa_family == NET_AF_INET6) {
+		return net_sin6(a)->sin6_port == net_sin6(b)->sin6_port;
+	}
+
+	return net_sin(a)->sin_port == net_sin(b)->sin_port;
+}
+
+static int recv_from_peer(int sock, struct tftpc *client, const struct net_sockaddr *peer,
+			  bool match_port, struct net_sockaddr_storage *from)
+{
+	int64_t deadline = k_uptime_get() + CONFIG_TFTPC_REQUEST_TIMEOUT;
 	struct zsock_pollfd fds = {
 		.fd     = sock,
 		.events = ZSOCK_POLLIN,
 	};
+
+	while (true) {
+		struct net_sockaddr_storage from_addr = {0};
+		struct net_sockaddr *from_sa = net_sad(&from_addr);
+		net_socklen_t from_addr_len = sizeof(from_addr);
+		int64_t remaining = deadline - k_uptime_get();
+		int ret;
+
+		if (remaining <= 0) {
+			return -EAGAIN;
+		}
+
+		ret = zsock_poll(&fds, 1, (int)remaining);
+		if (ret < 0) {
+			return -errno;
+		} else if (ret == 0) {
+			return -EAGAIN;
+		}
+
+		ret = zsock_recvfrom(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0, from_sa,
+				     &from_addr_len);
+		if (ret < 0) {
+			return -errno;
+		}
+
+		if (match_port ? same_tid(from_sa, peer) : same_address(from_sa, peer)) {
+			if (from != NULL) {
+				memcpy(from, &from_addr, sizeof(*from));
+			}
+
+			return ret;
+		}
+
+		LOG_WRN_RATELIMIT("Discarding a datagram from %s, expected %s",
+				  net_sprint_addr(from_sa->sa_family, sa_addr(from_sa)),
+				  net_sprint_addr(peer->sa_family, sa_addr(peer)));
+	}
+}
+
+/*
+ * Send Data message to the TFTP Server and receive ACK message from it.
+ */
+static int send_data(int sock, struct tftpc *client, const struct net_sockaddr *peer,
+		     uint32_t block_no, const uint8_t *data_buffer, size_t data_size)
+{
+	int ret;
+	int send_count = 0, ack_count = 0;
 
 	LOG_DBG("Client send data: block no %u, size %zu", block_no, data_size + TFTP_HEADER_SIZE);
 
@@ -85,18 +168,12 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 				break;
 			}
 
-			ret = zsock_poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
-			if (ret < 0) {
-				LOG_ERR("recv() error: %d", -errno);
-				return -errno;  /* IO error */
-			} else if (ret == 0) {
+			ret = recv_from_peer(sock, client, peer, true, NULL);
+			if (ret == -EAGAIN) {
 				break;		/* no response, re-send data */
-			}
-
-			ret = zsock_recv(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0);
-			if (ret < 0) {
-				LOG_ERR("recv() error: %d", -errno);
-				return -errno;
+			} else if (ret < 0) {
+				LOG_ERR("recv() error: %d", ret);
+				return ret;
 			}
 
 			if (ret != TFTP_HEADER_SIZE) {
@@ -179,21 +256,20 @@ static inline int send_ack(int sock, struct tftphdr_ack *ackhdr)
 	return zsock_send(sock, ackhdr, sizeof(struct tftphdr_ack), 0);
 }
 
-static int send_request(int sock, struct tftpc *client,
-			int request, const char *remote_file, const char *mode)
+static int send_request(int sock, struct tftpc *client, int request, const char *remote_file,
+			const char *mode, struct net_sockaddr_storage *peer)
 {
 	int tx_count = 0;
 	size_t req_size;
 	int ret;
-
-	/* Create TFTP Request. */
-	req_size = make_request(client->tftp_buf, request, remote_file, mode);
 
 	do {
 		tx_count++;
 
 		LOG_DBG("Sending TFTP request %d file %s", request,
 			remote_file);
+
+		req_size = make_request(client->tftp_buf, request, remote_file, mode);
 
 		/* Send the request to the server */
 		ret = zsock_sendto(sock, client->tftp_buf, req_size, 0,
@@ -203,34 +279,21 @@ static int send_request(int sock, struct tftpc *client,
 			break;
 		}
 
-		/* Poll for the response */
-		struct zsock_pollfd fds = {
-			.fd     = sock,
-			.events = ZSOCK_POLLIN,
-		};
-
-		ret = zsock_poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
-		if (ret <= 0) {
+		ret = recv_from_peer(sock, client, net_sad(&client->server_addr), false, peer);
+		if (ret == -EAGAIN) {
 			LOG_DBG("Failed to get data from the TFTP Server"
 				", req. no. %d", tx_count);
 			continue;
+		} else if (ret < 0) {
+			break;
 		}
 
-		/* Receive data from the TFTP Server. */
-		struct net_sockaddr_storage from_addr;
-		struct net_sockaddr *from_sa = net_sad(&from_addr);
-		net_socklen_t from_addr_len = sizeof(from_addr);
-
-		ret = zsock_recvfrom(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0,
-				     from_sa, &from_addr_len);
 		if (ret < TFTP_HEADER_SIZE) {
-			req_size = make_request(client->tftp_buf, request,
-						remote_file, mode);
 			continue;
 		}
 
 		/* Limit communication to the specific address:port */
-		if (zsock_connect(sock, from_sa, from_addr_len) < 0) {
+		if (zsock_connect(sock, net_sad(peer), ADDRLEN(net_sad(peer))) < 0) {
 			ret = -errno;
 			LOG_ERR("connect failed, err %d", ret);
 			break;
@@ -249,6 +312,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 	uint32_t tftpc_block_no = 1;
 	uint32_t tftpc_index = 0;
 	int tx_count = 0;
+	struct net_sockaddr_storage peer = {0};
 	struct tftphdr_ack ackhdr = {
 		.opcode = net_htons(ACK_OPCODE),
 		.block = net_htons(1)
@@ -267,7 +331,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 	}
 
 	/* Send out the READ request to the TFTP Server. */
-	ret = send_request(sock, client, READ_REQUEST, remote_file, mode);
+	ret = send_request(sock, client, READ_REQUEST, remote_file, mode, &peer);
 	rcv_size = ret;
 
 	while (rcv_size >= TFTP_HEADER_SIZE && rcv_size <= TFTPC_MAX_BUF_SIZE) {
@@ -339,12 +403,6 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 			}
 		}
 
-		/* Poll for the response */
-		struct zsock_pollfd fds = {
-			.fd     = sock,
-			.events = ZSOCK_POLLIN,
-		};
-
 		do {
 			if (tx_count > TFTP_REQ_RETX) {
 				LOG_ERR("No more retransmits. Exiting");
@@ -355,10 +413,11 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 			/* Send ACK to the TFTP Server */
 			(void)send_ack(sock, &ackhdr);
 			tx_count++;
-		} while (zsock_poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT) <= 0);
 
-		/* Receive data from the TFTP Server. */
-		ret = zsock_recv(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0);
+			/* Receive data from the TFTP Server. */
+			ret = recv_from_peer(sock, client, net_sad(&peer), true, NULL);
+		} while (ret == -EAGAIN);
+
 		rcv_size = ret;
 	}
 
@@ -379,6 +438,7 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 	uint32_t tftpc_index = 0;
 	uint32_t send_size;
 	uint8_t *send_buffer;
+	struct net_sockaddr_storage peer = {0};
 	int ret;
 
 	if (client == NULL || user_buf == NULL || user_buf_size == 0) {
@@ -392,7 +452,7 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 	}
 
 	/* Send out the WRITE request to the TFTP Server. */
-	ret = send_request(sock, client, WRITE_REQUEST, remote_file, mode);
+	ret = send_request(sock, client, WRITE_REQUEST, remote_file, mode, &peer);
 
 	/* Check connection initiation result */
 	if (ret >= TFTP_HEADER_SIZE) {
@@ -432,7 +492,8 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 		}
 		send_buffer = (uint8_t *)(user_buf + tftpc_index);
 
-		ret = send_data(sock, client, tftpc_block_no, send_buffer, send_size);
+		ret = send_data(sock, client, net_sad(&peer), tftpc_block_no, send_buffer,
+				send_size);
 		if (ret != TFTPC_SUCCESS) {
 			goto put_end;
 		} else {

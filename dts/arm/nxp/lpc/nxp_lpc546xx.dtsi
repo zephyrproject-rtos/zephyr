@@ -50,9 +50,10 @@
 		};
 
 		/*
-		 * LPC546xx main SRAM is three contiguous banks at 0x20000000:
-		 * SRAM0 (64K) + SRAM1 (64K) + SRAM2 (32K) = 160K. Each bank is a
-		 * separate node; sram0 covers the SRAM0 bank only. A board that
+		 * LPC546xx main SRAM is four contiguous banks at 0x20000000:
+		 * SRAM0 (64K) + SRAM1 (32K) + SRAM2 (32K) + SRAM3 (32K) = 160K,
+		 * each on its own AHB matrix port (UM10912 table 4). Each bank is
+		 * a separate node; sram0 covers the SRAM0 bank only. A board that
 		 * wants the full contiguous 160K overrides sram0's reg (see
 		 * lpcxpresso54628). SRAMX is a separate 32K code RAM bank at
 		 * 0x04000000.
@@ -64,14 +65,20 @@
 
 		sram1: memory@20010000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x20010000 DT_SIZE_K(64)>;
+			reg = <0x20010000 DT_SIZE_K(32)>;
 			zephyr,memory-region = "SRAM1";
 		};
 
-		sram2: memory@20020000 {
+		sram2: memory@20018000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20018000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAM2";
+		};
+
+		sram3: memory@20020000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20020000 DT_SIZE_K(32)>;
-			zephyr,memory-region = "SRAM2";
+			zephyr,memory-region = "SRAM3";
 		};
 
 		sramx: memory@4000000 {
@@ -334,6 +341,66 @@
 			reg = <0x4009b000 0x1000>;
 			interrupts = <42 0>;
 			clocks = <&syscon MCUX_SDIF_CLK>;
+			status = "disabled";
+		};
+
+		ctimer0: ctimer@40008000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40008000 0x1000>;
+			interrupts = <10 0>;
+			clocks = <&syscon MCUX_CTIMER0_CLK>;
+			clk-source = <0>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+			status = "disabled";
+		};
+
+		ctimer1: ctimer@40009000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40009000 0x1000>;
+			interrupts = <11 0>;
+			clocks = <&syscon MCUX_CTIMER1_CLK>;
+			clk-source = <0>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+			status = "disabled";
+		};
+
+		ctimer2: ctimer@40028000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40028000 0x1000>;
+			interrupts = <36 0>;
+			clocks = <&syscon MCUX_CTIMER2_CLK>;
+			clk-source = <0>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+			status = "disabled";
+		};
+
+		ctimer3: ctimer@40048000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40048000 0x1000>;
+			interrupts = <13 0>;
+			clocks = <&syscon MCUX_CTIMER3_CLK>;
+			clk-source = <0>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+			status = "disabled";
+		};
+
+		ctimer4: ctimer@40049000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40049000 0x1000>;
+			interrupts = <37 0>;
+			clocks = <&syscon MCUX_CTIMER4_CLK>;
+			clk-source = <0>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
 			status = "disabled";
 		};
 	};

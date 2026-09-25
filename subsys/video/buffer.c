@@ -90,7 +90,12 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
 
 int video_buffer_release(struct video_buffer *vbuf)
 {
-	if (vbuf == NULL || vbuf->index >= ARRAY_SIZE(video_buf)) {
+	if (vbuf == NULL) {
+		LOG_ERR("NULL buffer");
+		return -EINVAL;
+	}
+
+	if (vbuf->index >= ARRAY_SIZE(video_buf)) {
 		LOG_ERR("Invalid buffer index: %u", vbuf->index);
 		return -EINVAL;
 	}

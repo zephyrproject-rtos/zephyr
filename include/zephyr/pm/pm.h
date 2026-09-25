@@ -62,6 +62,11 @@ extern "C" {
  */
 struct pm_notifier {
 	sys_snode_t _node;
+	/**
+	 * Callbacks to be invoked on power state entry and exit. Set either
+	 * the plain variants or the substate reporting ones, and select
+	 * between them with the report_substate field.
+	 */
 	union {
 		struct {
 			/**
@@ -88,7 +93,12 @@ struct pm_notifier {
 			void (*substate_exit)(enum pm_state state, uint8_t substate_id);
 		};
 	};
-	bool report_substate; /* 0 is for backwards compatibility that didn't report substates */
+	/**
+	 * True if the substate reporting callbacks are set. False, the default
+	 * for backwards compatibility, selects the callbacks that do not report
+	 * the substate id.
+	 */
+	bool report_substate;
 };
 
 #if defined(CONFIG_PM) || defined(__DOXYGEN__)
@@ -197,13 +207,19 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
  *
  * This function is a place holder to do any operations that may be needed after
- * a sleep state exits. It is called after any system-managed devices have been
- * resumed and while interrupts are still locked, before PM exit notifications
- * and system clock idle-exit accounting have completed. Implementations that do
- * not select CONFIG_PM_STATE_SET_IRQ_UNLOCKED must use this hook for hardware
- * resume operations only. They must not unmask interrupts or otherwise dispatch
- * pending wake-source ISRs from this hook; the kernel idle path restores the
- * original interrupt state after PM resume housekeeping is complete.
+ * a sleep state exits. It is the first thing the resume path runs: before the
+ * system timer is restarted, before any system-managed devices are resumed,
+ * before PM exit notifications, and while interrupts are still locked.
+ * Implementations that do not select CONFIG_PM_STATE_SET_IRQ_UNLOCKED must use
+ * this hook for hardware resume operations only. They must not unmask interrupts
+ * or otherwise dispatch pending wake-source ISRs from this hook; the kernel idle
+ * path restores the original interrupt state after PM resume housekeeping is
+ * complete.
+ *
+ * @note The system timer has not been restarted yet, and a state that stopped
+ *       it leaves its count frozen. Nothing that waits on the system timer may
+ *       be called from this hook, k_busy_wait() in particular: it would never
+ *       return.
  *
  * @note As with @ref pm_state_set, when system PM keeps interrupts locked
  *       across resume, this ordering covers only interrupts that

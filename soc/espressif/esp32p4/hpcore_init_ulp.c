@@ -12,7 +12,6 @@
 #include <ulp_lp_core.h>
 #include <ulp_lp_core_memory_shared.h>
 #include <esp_sleep.h>
-#include <hal/lp_core_ll.h>
 
 LOG_MODULE_REGISTER(esp32p4_lp_core, CONFIG_SOC_LOG_LEVEL);
 
@@ -38,6 +37,12 @@ void IRAM_ATTR lp_core_image_init(void)
 		return;
 	}
 
+	if (*(const uint32_t *)data == 0xffffffff) {
+		LOG_ERR("LP core partition at 0x%x is erased; LP image not flashed",
+			lpcore_img_off);
+		return;
+	}
+
 	int ret = ulp_lp_core_load_binary(data, lpcore_img_size);
 
 	if (ret != 0) {
@@ -55,16 +60,13 @@ void IRAM_ATTR lp_core_image_init(void)
 
 	ulp_lp_core_cfg_t cfg = {
 		.wakeup_source = wakeup_source,
+		.skip_lp_rom_boot = true,
 #if IS_ENABLED(CONFIG_ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER)
 		.lp_timer_sleep_duration_us = CONFIG_ESP32_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US,
 #endif
 	};
 
 	ulp_lp_core_run(&cfg);
-
-	/* Disable stall/reset so LP core survives HP deep sleep */
-	lp_core_ll_stall_at_sleep_request(false);
-	lp_core_ll_rst_at_sleep_enable(false);
 }
 
 void soc_late_init_hook(void)

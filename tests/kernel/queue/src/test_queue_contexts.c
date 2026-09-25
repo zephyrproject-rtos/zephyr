@@ -30,6 +30,8 @@ static struct k_thread tdata1;
 static K_THREAD_STACK_DEFINE(tstack2, STACK_SIZE);
 static struct k_thread tdata2;
 static struct k_sem end_sema;
+static qdata_t poll_list_data[LIST_LEN];
+static void *poll_list_received[LIST_LEN];
 
 static void tqueue_append(struct k_queue *pqueue)
 {
@@ -773,6 +775,90 @@ ZTEST(queue_api_1cpu, test_queue_poll_race)
 
 	k_thread_abort(&tdata);
 	k_thread_abort(&tdata1);
+}
+
+/* Consume one queue node. */
+static void queue_append_list_poll_consume(void *p1, void *p2, void *p3)
+{
+	struct k_queue *q = p1;
+	void **received = p2;
+
+	(void)p3;
+	*received = k_queue_get(q, K_FOREVER);
+}
+
+static void queue_append_list_poll_produce(void *p1, void *p2, void *p3)
+{
+	struct k_queue *q = p1;
+	struct k_poll_signal *done = p2;
+	struct qdata *head = &poll_list_data[0];
+	struct qdata *tail = &poll_list_data[LIST_LEN - 1];
+
+	(void)p3;
+
+	head->snode.next = (sys_snode_t *)tail;
+	tail->snode.next = NULL;
+	k_queue_append_list(q, head, tail);
+	k_poll_signal_raise(done, 0);
+}
+
+/**
+ * @brief Verify that direct list handoff does not spuriously wake a poll waiter
+ *
+ * @details
+ * When two consumers are blocked on the queue, k_queue_append_list() directly
+ * hands the two nodes to the consumers, leaving the queue empty. The poll
+ * waiter must therefore not be woken.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_append_list(), k_queue_get(), k_poll()
+ */
+ZTEST(queue_api_1cpu, test_queue_append_list_poll_wakeup)
+{
+	struct k_poll_signal producer_done;
+	struct k_poll_event events[2];
+	int prio = k_thread_priority_get(k_current_get());
+	int rc;
+
+	k_queue_init(&queue);
+	k_poll_signal_init(&producer_done);
+	k_poll_event_init(&events[0], K_POLL_TYPE_DATA_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, &queue);
+	k_poll_event_init(&events[1], K_POLL_TYPE_SIGNAL,
+			  K_POLL_MODE_NOTIFY_ONLY, &producer_done);
+	poll_list_received[0] = NULL;
+	poll_list_received[1] = NULL;
+
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+			queue_append_list_poll_consume, &queue,
+			&poll_list_received[0], NULL,
+			prio - 1, 0, K_NO_WAIT);
+	k_thread_create(&tdata1, tstack1, STACK_SIZE,
+			queue_append_list_poll_consume, &queue,
+			&poll_list_received[1], NULL,
+			prio - 1, 0, K_NO_WAIT);
+
+	/* Let both higher-priority consumers block waiting for queue data. */
+	k_yield();
+
+	k_thread_create(&tdata2, tstack2, STACK_SIZE,
+			queue_append_list_poll_produce, &queue, &producer_done, NULL,
+			prio + 1, 0, K_NO_WAIT);
+
+	/* Arm the queue poll event before the lower-priority producer runs. */
+	rc = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
+
+	k_thread_join(&tdata2, K_FOREVER);
+	k_thread_join(&tdata, K_FOREVER);
+	k_thread_join(&tdata1, K_FOREVER);
+
+	zassert_equal(rc, 0);
+	zassert_equal(events[0].state, K_POLL_STATE_NOT_READY);
+	zassert_equal(events[1].state, K_POLL_STATE_SIGNALED);
+	zassert_not_null(poll_list_received[0]);
+	zassert_not_null(poll_list_received[1]);
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT));
 }
 
 /**

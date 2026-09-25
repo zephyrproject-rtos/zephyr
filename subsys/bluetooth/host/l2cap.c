@@ -720,11 +720,12 @@ static void raise_data_ready(struct bt_l2cap_le_chan *le_chan)
 {
 	__maybe_unused bool added;
 
-	/* This function is the only function which accesses l2cap_data_ready list that can be
-	 * called from a preemptive thread context, therefore requires a critical section to ensure
-	 * that the data ready list is not modified while we are checking and appending to it.
+	/* The l2cap_data_ready list is only ever modified under the host
+	 * lock: here (append, any thread context), in cancel_data_ready()
+	 * (remove, any thread context) and in lower_data_ready() (remove,
+	 * TX processor context, which holds the lock across the whole pass).
 	 */
-	k_sched_lock();
+	bt_dev_lock();
 
 	if (!sys_slist_find(&le_chan->chan.conn->l2cap_data_ready,
 				 &le_chan->_pdu_ready, NULL)) {
@@ -736,7 +737,7 @@ static void raise_data_ready(struct bt_l2cap_le_chan *le_chan)
 		added = false;
 	}
 
-	k_sched_unlock();
+	bt_dev_unlock();
 
 	LOG_DBG("L2CAP channel %p data ready %s", le_chan, added ? "added" : "already added");
 
@@ -746,7 +747,14 @@ static void raise_data_ready(struct bt_l2cap_le_chan *le_chan)
 static void lower_data_ready(struct bt_l2cap_le_chan *le_chan)
 {
 	struct bt_conn *conn = le_chan->chan.conn;
-	__maybe_unused sys_snode_t *s = sys_slist_get(&conn->l2cap_data_ready);
+	__maybe_unused sys_snode_t *s;
+
+	/* Only called from the TX processor, which holds the host lock
+	 * across the whole processing pass.
+	 */
+	BT_DEV_LOCK_ASSERT();
+
+	s = sys_slist_get(&conn->l2cap_data_ready);
 
 	LOG_DBG("%p", le_chan);
 
@@ -759,16 +767,16 @@ static void cancel_data_ready(struct bt_l2cap_le_chan *le_chan)
 
 	LOG_DBG("%p", le_chan);
 
-	/* Use critical section here as this function can be called from
-	 * a preemptive thread context and we need to ensure that the data ready list is not
-	 * modified while we are removing the channel from it.
+	/* Take the host lock as this function can be called from any
+	 * thread context and the data ready list must not be modified
+	 * while we are removing the channel from it (see raise_data_ready()).
 	 */
-	k_sched_lock();
+	bt_dev_lock();
 
 	sys_slist_find_and_remove(&conn->l2cap_data_ready,
 				  &le_chan->_pdu_ready);
 
-	k_sched_unlock();
+	bt_dev_unlock();
 }
 
 int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,

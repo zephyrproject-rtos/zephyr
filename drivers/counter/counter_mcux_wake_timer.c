@@ -10,9 +10,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
-#if defined(CONFIG_GIC)
-#include <zephyr/drivers/interrupt_controller/gic.h>
-#endif /* CONFIG_GIC */
 #include <zephyr/spinlock.h>
 #include <fsl_waketimer.h>
 
@@ -68,33 +65,6 @@ struct mcux_wake_timer_data {
 #endif
 };
 
-static ALWAYS_INLINE void irq_set_pending(unsigned int irq)
-{
-#if defined(CONFIG_GIC)
-	arm_gic_irq_set_pending(irq);
-#else
-	NVIC_SetPendingIRQ(irq);
-#endif /* CONFIG_GIC */
-}
-
-static ALWAYS_INLINE bool irq_is_pending(unsigned int irq)
-{
-#if defined(CONFIG_GIC)
-	return arm_gic_irq_is_pending(irq);
-#else
-	return NVIC_GetPendingIRQ((IRQn_Type)irq) != 0U;
-#endif /* CONFIG_GIC */
-}
-
-static ALWAYS_INLINE void irq_clear_pending(unsigned int irq)
-{
-#if defined(CONFIG_GIC)
-	arm_gic_irq_clear_pending(irq);
-#else
-	NVIC_ClearPendingIRQ((IRQn_Type)irq);
-#endif /* CONFIG_GIC */
-}
-
 /* Load a non-zero count and launch the countdown. The counter must be halted
  * (it always is after init, a stop, or a previous time-out) before a write.
  */
@@ -126,7 +96,7 @@ static uint32_t mcux_wake_timer_get_pending_int(const struct device *dev)
 	 * hardware time-out.
 	 */
 	if (((config->base->WAKE_TIMER_CTRL & WAKETIMER_WAKE_TIMER_CTRL_INTR_EN_MASK) != 0U) &&
-	    irq_is_pending(config->irqn)) {
+	    k_irq_is_pending(config->irqn)) {
 		return 1U;
 	}
 
@@ -154,7 +124,7 @@ static int mcux_wake_timer_start(const struct device *dev)
 	 */
 	WAKETIMER_DisableInterrupts(config->base, kWAKETIMER_WakeInterruptEnable);
 	WAKETIMER_HaltTimer(config->base);
-	irq_clear_pending(config->irqn);
+	k_irq_clear_pending(config->irqn);
 
 	data->alarm_callback = NULL;
 	data->alarm_user_data = NULL;
@@ -176,7 +146,7 @@ static int mcux_wake_timer_stop(const struct device *dev)
 
 	WAKETIMER_DisableInterrupts(config->base, kWAKETIMER_WakeInterruptEnable);
 	WAKETIMER_HaltTimer(config->base);
-	irq_clear_pending(config->irqn);
+	k_irq_clear_pending(config->irqn);
 
 	data->alarm_callback = NULL;
 	data->alarm_user_data = NULL;
@@ -233,12 +203,12 @@ static int mcux_wake_timer_set_alarm(const struct device *dev, uint8_t chan_id,
 	 */
 	WAKETIMER_HaltTimer(config->base);
 	WAKETIMER_ClearStatusFlags(config->base, kWAKETIMER_WakeFlag);
-	irq_clear_pending(config->irqn);
+	k_irq_clear_pending(config->irqn);
 	WAKETIMER_EnableInterrupts(config->base, kWAKETIMER_WakeInterruptEnable);
 
 	if (sw_pending) {
 		/* Trigger the callback immediately through the interrupt path. */
-		irq_set_pending(config->irqn);
+		k_irq_set_pending(config->irqn);
 	} else {
 		mcux_wake_timer_load(config->base, ticks);
 	}
@@ -271,7 +241,7 @@ static int mcux_wake_timer_cancel_alarm(const struct device *dev, uint8_t chan_i
 	WAKETIMER_DisableInterrupts(config->base, kWAKETIMER_WakeInterruptEnable);
 	WAKETIMER_HaltTimer(config->base);
 	WAKETIMER_ClearStatusFlags(config->base, kWAKETIMER_WakeFlag);
-	irq_clear_pending(config->irqn);
+	k_irq_clear_pending(config->irqn);
 
 	data->alarm_callback = NULL;
 	data->alarm_user_data = NULL;
@@ -336,7 +306,7 @@ static int mcux_wake_timer_stop(const struct device *dev)
 
 	WAKETIMER_DisableInterrupts(config->base, kWAKETIMER_WakeInterruptEnable);
 	WAKETIMER_HaltTimer(config->base);
-	irq_clear_pending(config->irqn);
+	k_irq_clear_pending(config->irqn);
 
 	k_spin_unlock(&data->lock, key);
 

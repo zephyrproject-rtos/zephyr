@@ -81,7 +81,7 @@ static int spi_sedi_configure(const struct device *dev,
 	sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_SPEED_SET,
 			 config->frequency);
 
-	sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CS_HW, config->slave);
+	sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CS_HW, config->peripheral);
 
 	data->ctx.config = config;
 	spi_context_cs_control(&data->ctx, true);

@@ -14,15 +14,27 @@ properties:
     description: |
       Output pin for SPI clock
 
-  mosi-gpios:
+  sdo-gpios:
     type: phandle-array
     description: |
-      Output pin for Master Out Slave In.
+      Output pin for Serial Data Out.
+
+  sdi-gpios:
+    type: phandle-array
+    description: |
+      Input pin for Serial Data In.
+
+  mosi-gpios:
+    type: phandle-array
+    deprecated: true
+    description: |
+      Deprecated. Use sdo-gpios instead.
 
   miso-gpios:
     type: phandle-array
+    deprecated: true
     description: |
-      Input pin for Master In Slave Out.
+      Deprecated. Use sdi-gpios instead.
 
   sio-gpios:
     type: phandle-array

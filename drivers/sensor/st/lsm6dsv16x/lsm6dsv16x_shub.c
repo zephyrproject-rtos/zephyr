@@ -496,7 +496,7 @@ enum sensor_channel lsm6dsv16x_shub_type(uint8_t k)
 {
 	struct lsm6dsv16x_shub_slist *sp;
 
-	if (k > LSM6DSV16X_SHUB_MAX_NUM_TARGETS) {
+	if (k >= ARRAY_SIZE(lsm6dsv16x_shub_slist)) {
 		return SENSOR_CHAN_COMMON_COUNT;
 	}
 

@@ -137,7 +137,7 @@ config NET_STATISTICS_PPP
 
 config NET_STATISTICS_ETHERNET
 	bool "Ethernet statistics"
-	depends on NET_L2_ETHERNET
+	depends on NET_L2_ETHERNET || ETH_DRIVER_RAW_MODE
 	default y
 	help
 	  Keep track of Ethernet related statistics. Note that this

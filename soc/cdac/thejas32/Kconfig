@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_THEJAS32
+	select RISCV
+	select INCLUDE_RESET_VECTOR
+	select RISCV_SOC_INTERRUPT_INIT
+	select ATOMIC_OPERATIONS_C
+	help
+	  Enable support for the C-DAC THEJAS32 SoC.
+
+	  THEJAS32 is built around the VEGA ET1031, a 32-bit (RV32IM) single-core,
+	  in-order, 3-stage pipeline RISC-V processor designed by C-DAC as part of
+	  India's Digital India RISC-V (DIR-V) programme. The image is loaded into
+	  and executed from internal SRAM, so execute-in-place (XIP) is not used.
+
+	  The SoC follows the RISC-V privileged specification for trap handling but
+	  uses a custom (non-PLIC) interrupt controller, so it provides its own
+	  interrupt management instead of selecting RISCV_PRIVILEGED.

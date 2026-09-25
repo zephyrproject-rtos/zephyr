@@ -269,11 +269,11 @@ struct adxl355_extra_attr {
  *
  */
 struct adxl355_sample {
+	uint8_t is_fifo: 1;
 	int32_t x;
 	int32_t y;
 	int32_t z;
 	enum adxl355_range range;
-	uint8_t is_fifo: 1;
 };
 
 /**

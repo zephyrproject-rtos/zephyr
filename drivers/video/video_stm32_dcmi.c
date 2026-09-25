@@ -168,6 +168,7 @@ static int stm32_dma_init(const struct device *dev)
 
 	/* Proceed to the minimum Zephyr DMA driver init */
 	dma_cfg->user_data = &hdma;
+	dma_cfg->cyclic = 1;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
 	ret = dma_config(dma->dma_dev, dma->channel, dma_cfg);
@@ -176,20 +177,24 @@ static int stm32_dma_init(const struct device *dev)
 		return ret;
 	}
 
-	/*** Configure the DMA ***/
-	/* Set the parameters to be configured */
-	hdma.Init.Request		= DMA_REQUEST_DCMI;
-	hdma.Init.Direction		= DMA_PERIPH_TO_MEMORY;
-	hdma.Init.PeriphInc		= DMA_PINC_DISABLE;
-	hdma.Init.MemInc		= DMA_MINC_ENABLE;
-	hdma.Init.PeriphDataAlignment	= DMA_PDATAALIGN_WORD;
-	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
-	hdma.Init.Mode			= DMA_CIRCULAR;
-	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
-	hdma.Instance			= STM32_DMA_GET_INSTANCE(dma->reg, dma->channel);
-#if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
-	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
+	dma_cfg->dma_slot = DMA_REQUEST_DCMI;
+	dma_cfg->channel_direction = PERIPHERAL_TO_MEMORY;
+
+	ret = dma_stm32_zcfg_to_halcfg(dma->dma_dev, dma_cfg, &hdma.Init,
+				       DMA_ADDR_ADJ_NO_CHANGE, DMA_ADDR_ADJ_INCREMENT);
+	if (ret < 0) {
+		return ret;
+	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
+	if (STM32_DMA_FEATURES_FIFO_THRESHOLD(DT_INST_DMAS_CELL_BY_IDX(0, 0, features)) ==
+	    DMA_FIFO_THRESHOLD_FULL) {
+		hdma.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+		hdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+	}
 #endif
+
+	hdma.Instance = STM32_DMA_GET_INSTANCE(dma->reg, dma->channel);
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&data->hdcmi, DMA_Handle, hdma);
@@ -582,20 +587,20 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 	.reg = (DMA_TypeDef *)DT_REG_ADDR(						\
 				DT_PHANDLE_BY_IDX(DT_DRV_INST(0), dmas, 0)),		\
 	.cfg = {									\
-		.dma_slot = STM32_DMA_SLOT_BY_IDX(index, 0, slot),			\
+		.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(index, 0),			\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(			\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-		/* single transfers (burst length = data size) */			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+		/* single transfers on the DCMI side, 4 beat bursts to memory */	\
 		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-		.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+		.dest_burst_length = 4 * STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.dma_callback = dcmi_dma_callback,					\
 	},										\
 

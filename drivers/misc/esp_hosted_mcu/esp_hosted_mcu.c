@@ -527,6 +527,12 @@ static void esp_hosted_mcu_event_task(void *p1, void *p2, void *p3)
 	 */
 	static uint8_t rx[2 * ESP_HOSTED_MCU_FRAME_SIZE] __aligned(ESP_HOSTED_MCU_DMA_ALIGN);
 	uint16_t carry = 0;
+	/* Leading gap that keeps the receive target aligned: pad + carry
+	 * always equals ROUND_UP(carry, ESP_HOSTED_MCU_DMA_ALIGN), so a
+	 * read lands on an alignment boundary while staying contiguous
+	 * with the carried bytes before it.
+	 */
+	uint16_t pad = 0;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -553,7 +559,7 @@ static void esp_hosted_mcu_event_task(void *p1, void *p2, void *p3)
 		 * the CPU and starve the network and transmit threads.
 		 */
 		for (int i = 0; i < ESP_HOSTED_MCU_RX_BURST; i++) {
-			int len = cfg->transport->transfer(dev, NULL, 0, rx + carry);
+			int len = cfg->transport->transfer(dev, NULL, 0, rx + pad + carry);
 			uint16_t total;
 			uint16_t done;
 
@@ -562,7 +568,7 @@ static void esp_hosted_mcu_event_task(void *p1, void *p2, void *p3)
 			}
 
 			total = carry + (uint16_t)len;
-			done = esp_hosted_mcu_process_frame(data, rx, total);
+			done = esp_hosted_mcu_process_frame(data, rx + pad, total);
 
 			/*
 			 * Keep an unfinished trailing frame and prepend it to
@@ -574,10 +580,15 @@ static void esp_hosted_mcu_event_task(void *p1, void *p2, void *p3)
 			if (carry > ESP_HOSTED_MCU_FRAME_SIZE) {
 				LOG_WRN("dropping %u byte partial frame", carry);
 				carry = 0;
+				pad = 0;
 			} else if (carry != 0) {
-				memmove(rx, rx + done, carry);
+				uint16_t new_pad =
+					ROUND_UP(carry, ESP_HOSTED_MCU_DMA_ALIGN) - carry;
+
+				memmove(rx + new_pad, rx + pad + done, carry);
+				pad = new_pad;
 			} else {
-				/* No partial frame carried over. */
+				pad = 0;
 			}
 
 			k_yield();

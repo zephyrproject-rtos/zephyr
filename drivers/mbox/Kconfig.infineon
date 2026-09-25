@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_INFINEON
+	bool "Infineon IPC mailbox driver"
+	default y
+	depends on DT_HAS_INFINEON_MBOX_ENABLED
+	help
+	  Enable the mailbox (MBOX) driver for the Infineon inter-processor
+	  communication (IPC) block using direct register access.

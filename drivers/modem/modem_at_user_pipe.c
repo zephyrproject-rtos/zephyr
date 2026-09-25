@@ -23,6 +23,7 @@ static struct modem_pipelink *at_util_pipelink =
 
 static struct k_sem at_util_pipe_access;
 static struct k_work at_util_open_pipe_work;
+static struct k_work at_util_release_work;
 static struct modem_chat *at_util_chat;
 static atomic_t at_util_state;
 
@@ -86,6 +87,19 @@ static void at_util_open_pipe_handler(struct k_work *work)
 	modem_pipe_open_async(pipe);
 }
 
+static void at_util_release_pipe_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (atomic_test_and_clear_bit(&at_util_state, AT_UTIL_STATE_PIPE_CLAIMED_BIT)) {
+		__ASSERT_NO_MSG(at_util_chat != NULL);
+		modem_chat_release(at_util_chat);
+		at_util_chat = NULL;
+		LOG_DBG("chat released");
+		k_sem_give(&at_util_pipe_access);
+	}
+}
+
 int modem_at_user_pipe_claim(struct modem_chat *chat, k_timeout_t timeout)
 {
 	struct modem_pipe *pipe = modem_pipelink_get_pipe(at_util_pipelink);
@@ -125,13 +139,7 @@ int modem_at_user_pipe_claim(struct modem_chat *chat, k_timeout_t timeout)
 
 void modem_at_user_pipe_release(void)
 {
-	if (atomic_test_and_clear_bit(&at_util_state, AT_UTIL_STATE_PIPE_CLAIMED_BIT)) {
-		__ASSERT_NO_MSG(at_util_chat != NULL);
-		modem_chat_release(at_util_chat);
-		at_util_chat = NULL;
-		LOG_DBG("chat released");
-		k_sem_give(&at_util_pipe_access);
-	}
+	k_work_submit(&at_util_release_work);
 }
 
 int modem_at_user_pipe_init(void)
@@ -139,6 +147,7 @@ int modem_at_user_pipe_init(void)
 	/* Initialise workers and setup callbacks */
 	k_sem_init(&at_util_pipe_access, 1, 1);
 	k_work_init(&at_util_open_pipe_work, at_util_open_pipe_handler);
+	k_work_init(&at_util_release_work, at_util_release_pipe_handler);
 	modem_pipelink_attach(at_util_pipelink, at_util_pipelink_callback, NULL);
 	return 0;
 }

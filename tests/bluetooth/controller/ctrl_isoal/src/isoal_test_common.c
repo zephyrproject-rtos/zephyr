@@ -94,7 +94,9 @@ void isoal_test_create_unframed_pdu(uint8_t llid,
 
 	pdu_meta->pdu->ll_id = llid;
 	pdu_meta->pdu->len = length;
-	memcpy(pdu_meta->pdu->payload, dataptr, length);
+	if (dataptr != NULL) {
+		(void)memcpy(pdu_meta->pdu->payload, dataptr, length);
+	}
 
 	isoal_test_debug_print_rx_pdu(pdu_meta);
 }

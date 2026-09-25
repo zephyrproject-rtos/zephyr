@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,7 +99,6 @@ struct ifx_cat1_spi_data {
 	struct spi_context ctx;
 	uint8_t dfs_value;
 	size_t chunk_len;
-	bool dma_configured;
 
 #ifdef CONFIG_SPI_INFINEON_DMA
 	struct ifx_cat1_dma_stream dma_rx;
@@ -114,7 +113,7 @@ struct ifx_cat1_spi_data {
 	struct ifx_cat1_clock clock;
 	cy_en_scb_spi_sclk_mode_t clk_mode;
 	uint8_t data_bits;
-	bool is_slave;
+	bool is_peripheral;
 	uint8_t oversample_value;
 	bool msb_first;
 	cy_stc_scb_spi_context_t context;
@@ -456,7 +455,7 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 	/* Store spi config in context */
 	ctx->config = spi_cfg;
 
-	if (spi_context_is_slave(ctx)) {
+	if (spi_context_is_peripheral(ctx)) {
 		scb_spi_config.spiMode = CY_SCB_SPI_SLAVE;
 		scb_spi_config.oversample = 0;
 		scb_spi_config.enableMisoLateSample = false;
@@ -467,8 +466,9 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 		 * devicetree/overlay files, the default of four will be used from the
 		 * default configuration
 		 */
-		if (config->cs_oversample_cnt > 0 && spi_cfg->slave < config->cs_oversample_cnt) {
-			scb_spi_config.oversample = config->cs_oversample[spi_cfg->slave];
+		if (config->cs_oversample_cnt > 0 &&
+		    spi_cfg->peripheral < config->cs_oversample_cnt) {
+			scb_spi_config.oversample = config->cs_oversample[spi_cfg->peripheral];
 		}
 	}
 
@@ -506,8 +506,8 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 		return -ENOTSUP;
 	}
 
-	/* Configure Slave select polarity */
-	if (spi_context_is_slave(ctx)) {
+	/* Configure chip select polarity */
+	if (spi_context_is_peripheral(ctx)) {
 		Cy_SCB_SPI_SetActiveSlaveSelectPolarity(config->reg_addr, CY_SCB_SPI_SLAVE_SELECT0,
 							scb_spi_config.ssPolarity);
 	}
@@ -586,15 +586,27 @@ static int ifx_cat1_spi_transceive_async(const struct device *dev, const struct 
 }
 #endif
 
+#ifdef CONFIG_SPI_INFINEON_DMA
+/* Stop the DMA channels wired to this instance. An instance built with DMA
+ * support may still have no dmas assigned in devicetree, leaving dev_dma NULL.
+ */
+static void ifx_cat1_spi_dma_stop(struct ifx_cat1_spi_data *data)
+{
+	if (data->dma_tx.dev_dma != NULL) {
+		dma_stop(data->dma_tx.dev_dma, data->dma_tx.dma_channel);
+	}
+	if (data->dma_rx.dev_dma != NULL) {
+		dma_stop(data->dma_rx.dev_dma, data->dma_rx.dma_channel);
+	}
+}
+#endif
+
 static int ifx_cat1_spi_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	spi_free(dev);
 
 #ifdef CONFIG_SPI_INFINEON_DMA
-	struct ifx_cat1_spi_data *const data = dev->data;
-
-	dma_stop(data->dma_tx.dev_dma, data->dma_tx.dma_channel);
-	dma_stop(data->dma_rx.dev_dma, data->dma_rx.dma_channel);
+	ifx_cat1_spi_dma_stop(dev->data);
 #endif
 
 	return 0;
@@ -607,6 +619,56 @@ static DEVICE_API(spi, ifx_cat1_spi_api) = {
 #endif
 	.release = ifx_cat1_spi_release,
 };
+
+bool ifx_cat1_spi_is_busy(const struct device *dev)
+{
+	struct ifx_cat1_spi_data *const data = dev->data;
+	const struct ifx_cat1_spi_config *const config = dev->config;
+	struct spi_context *ctx = &data->ctx;
+
+	/* On the large-chunk DMA path the transfer runs entirely through the DMA
+	 * channels without setting data->pending, and Cy_SCB_SPI_IsBusBusy() can
+	 * briefly read idle between FIFO-paced DMA bursts. The SPI context still
+	 * holds the outstanding buffers until the transfer completes, so use it as
+	 * the authoritative in-flight indicator that covers every transfer path.
+	 */
+	if (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
+		return true;
+	}
+
+	return Cy_SCB_SPI_IsBusBusy(config->reg_addr) || (data->pending != IFX_SPI_PENDING_NONE);
+}
+
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
+static int ifx_cat1_spi_deinit(const struct device *dev)
+{
+	const struct ifx_cat1_spi_config *const config = dev->config;
+	struct ifx_cat1_spi_data *const data = dev->data;
+
+	if (ifx_cat1_spi_is_busy(dev)) {
+		return -EBUSY;
+	}
+
+#ifdef CONFIG_PM
+	Cy_SysPm_UnregisterCallback(&data->spi_deep_sleep);
+#endif
+	irq_disable(config->irq_num);
+	Cy_SCB_SPI_Disable(config->reg_addr, NULL);
+
+#ifdef CONFIG_SPI_INFINEON_DMA
+	ifx_cat1_spi_dma_stop(data);
+#endif
+
+	/* Deinit the SCB last, then clear the cached config so the next transceive
+	 * after device_init() takes the full reconfigure path instead of being
+	 * short-circuited by spi_context_configured().
+	 */
+	Cy_SCB_SPI_DeInit(config->reg_addr);
+	data->ctx.config = NULL;
+
+	return 0;
+}
+#endif /* CONFIG_DEVICE_DEINIT_SUPPORT */
 
 static int ifx_cat1_spi_init(const struct device *dev)
 {
@@ -669,7 +731,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Configure slave select (master) */
+	/* Configure chip select (controller) */
 	spi_context_cs_configure_all(&data->ctx);
 
 	spi_context_unlock_unconditionally(&data->ctx);
@@ -815,9 +877,12 @@ static int ifx_cat1_spi_init(const struct device *dev)
 			CY_SYSPM_SKIP_BEFORE_TRANSITION,                                           \
 			&spi_cat1_config_##n.spi_deep_sleep_param, NULL, NULL, 1}};                \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_spi_init, NULL, &spi_cat1_data_##n,                     \
-			      &spi_cat1_config_##n, POST_KERNEL,                                   \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_cat1_spi_api);
+	SPI_DEVICE_DT_INST_DEINIT_DEFINE(n, &ifx_cat1_spi_init,                                    \
+					 COND_CODE_1(CONFIG_DEVICE_DEINIT_SUPPORT,                 \
+						     (&ifx_cat1_spi_deinit), (NULL)),              \
+					 NULL, &spi_cat1_data_##n, &spi_cat1_config_##n,           \
+					 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,          \
+					 &ifx_cat1_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_CAT1_SPI_INIT)
 
@@ -901,14 +966,6 @@ cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *t
 	return spi_status == CY_SCB_SPI_SUCCESS ? CY_RSLT_SUCCESS : IFX_SPI_RSLT_TRANSFER_ERROR;
 }
 
-bool ifx_cat1_spi_is_busy(const struct device *dev)
-{
-	struct ifx_cat1_spi_data *const data = dev->data;
-	const struct ifx_cat1_spi_config *const config = dev->config;
-
-	return Cy_SCB_SPI_IsBusBusy(config->reg_addr) || (data->pending != IFX_SPI_PENDING_NONE);
-}
-
 cy_rslt_t ifx_cat1_spi_abort_async(const struct device *dev)
 {
 	struct ifx_cat1_spi_data *const data = dev->data;
@@ -969,7 +1026,7 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency();
 #endif
 
-	if (!data->is_slave) {
+	if (!data->is_peripheral) {
 		for (oversample_value = IFX_SPI_OVERSAMPLE_MIN;
 		     oversample_value <= IFX_SPI_OVERSAMPLE_MAX; oversample_value++) {
 			oversampled_freq = hz * oversample_value;
@@ -997,9 +1054,10 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		}
 		*over_sample_val = last_ovrsmpl_val;
 	} else {
-		/* Slave requires such frequency: required_frequency = N / ((0.5 * desired_period)
-		 * – 20 nsec - tDSI, N is 3 when "Enable Input Glitch Filter" is false and 4 when
-		 * true. tDSI Is external master delay which is assumed to be 16.66 nsec
+		/* Peripheral requires such frequency: required_frequency = N / ((0.5 *
+		 * desired_period) – 20 nsec - tDSI, N is 3 when "Enable Input Glitch Filter" is
+		 * false and 4 when true. tDSI Is external controller delay which is assumed to be
+		 * 16.66 nsec
 		 */
 
 		/* Divided by 2 desired period to avoid dividing in required_frequency formula */
@@ -1039,16 +1097,16 @@ cy_rslt_t spi_set_frequency(const struct device *dev, uint32_t hz)
 	Cy_SCB_SPI_Disable(config->reg_addr, &data->context);
 	result = ifx_cat1_spi_int_frequency(dev, hz, &ovr_sample_val);
 
-	/* No need to reconfigure slave since oversample value, that was changed in
-	 * ifx_cat1_spi_int_frequency, in slave is ignored
+	/* No need to reconfigure peripheral since oversample value, that was changed in
+	 * ifx_cat1_spi_int_frequency, in peripheral is ignored
 	 */
-	if ((CY_RSLT_SUCCESS == result) && !data->is_slave &&
+	if ((CY_RSLT_SUCCESS == result) && !data->is_peripheral &&
 	    (data->oversample_value != ovr_sample_val)) {
 		cy_stc_scb_spi_config_t config_structure = config->scb_spi_config;
 
 		Cy_SCB_SPI_DeInit(config->reg_addr);
 		config_structure.spiMode =
-			data->is_slave == false ? CY_SCB_SPI_MASTER : CY_SCB_SPI_SLAVE;
+			data->is_peripheral == false ? CY_SCB_SPI_MASTER : CY_SCB_SPI_SLAVE;
 		config_structure.enableMsbFirst = data->msb_first;
 		config_structure.sclkMode = data->clk_mode;
 		config_structure.rxDataWidth = data->data_bits;
@@ -1098,9 +1156,9 @@ cy_rslt_t ifx_cat1_spi_init_cfg(const struct device *dev, cy_stc_scb_spi_config_
 	cy_stc_scb_spi_config_t cfg_local = *scb_spi_config;
 
 	cy_rslt_t result = CY_RSLT_SUCCESS;
-	bool is_slave = (cfg_local.spiMode == CY_SCB_SPI_SLAVE);
+	bool is_peripheral = (cfg_local.spiMode == CY_SCB_SPI_SLAVE);
 
-	data->is_slave = is_slave;
+	data->is_peripheral = is_peripheral;
 	data->write_fill = (uint8_t)CY_SCB_SPI_DEFAULT_TX;
 
 	result = ifx_cat1_spi_int_frequency(dev, IFX_SPI_DEFAULT_SPEED, &data->oversample_value);

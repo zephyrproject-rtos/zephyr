@@ -14,13 +14,19 @@
 #include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/ticker.h"
+
 #include "ticker/ticker.h"
+
+#include "lll/lll_vendor.h"
+
 #include "ll.h"
 
 #include "soc_flash_nrf.h"
 
-#define FLASH_RADIO_ABORT_DELAY_US 1500
-#define FLASH_RADIO_WORK_DELAY_US  200
+#define FLASH_RADIO_ABORT_DELAY_US COND_CODE_1(CONFIG_BT_TICKER_LOW_LAT, \
+					       (EVENT_OVERHEAD_XTAL_US), (0U))
+
+#define FLASH_RADIO_WORK_DELAY_US  EVENT_OVERHEAD_START_US
 
 /* delay needed for start execution-window */
 #define FLASH_SYNC_SWITCHING_TIME (FLASH_RADIO_ABORT_DELAY_US +\
@@ -196,10 +202,14 @@ int nrf_flash_sync_init(void)
 
 void nrf_flash_sync_set_context(uint32_t duration)
 {
-	/* FLASH_SYNC_SWITCHING_TIME is delay which is always added by
-	 * the slot calling mechanism
+	/* FLASH_SYNC_SWITCHING_TIME is delay which is to account for CPU overhead switching
+	 * between co-operating tickers (flash and Bluetooth tickers). This delay is accounted for
+	 * in Bluetooth tickers in use, hence we only need to ensure the interval is not less than
+	 * EVENT_OVERHEAD_START_US.
 	 */
-	_ticker_sync_context.interval = duration - FLASH_SYNC_SWITCHING_TIME;
+	_ticker_sync_context.interval = MAX(duration, FLASH_SYNC_SWITCHING_TIME);
+
+	/* Reserved duration scheduled for co-operation with the Bluetooth Controller tickers */
 	_ticker_sync_context.slot = duration;
 }
 

@@ -257,7 +257,7 @@ static DEVICE_API(sensor, ade7978_api) = {
 	static struct ade7978_data ade7978_data_##inst;                                            \
                                                                                                    \
 	static const struct ade7978_config ade7978_config_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |          \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB |      \
 							  SPI_WORD_SET(8))};                       \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, ade7978_init, NULL, &ade7978_data_##inst,               \

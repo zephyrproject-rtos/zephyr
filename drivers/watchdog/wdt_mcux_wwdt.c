@@ -139,6 +139,16 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 		return -ENOMEM;
 	}
 
+	/*
+	 * The window value is derived by subtracting the lower window bound from
+	 * the timeout, so reject an inverted window before it underflows.
+	 */
+	if (cfg->window.min > cfg->window.max) {
+		LOG_ERR("Invalid window: min %u is above max %u", cfg->window.min,
+			cfg->window.max);
+		return -EINVAL;
+	}
+
 	ret = mcux_wwdt_get_clock_frequency(dev, &clock_freq);
 	if (ret) {
 		return ret;
@@ -178,19 +188,18 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	 * callback-at-expiry behavior used by callback-only flows.
 	 * Other reset modes still require an early warning callback.
 	 */
-	if (cfg->callback) {
+	if (cfg->callback != NULL) {
 		if (CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0) {
-			data->callback = cfg->callback;
 			data->wwdt_config.warningValue =
 				CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG;
-		} else if ((cfg->flags & WDT_FLAG_RESET_MASK) == WDT_FLAG_RESET_NONE) {
-			data->callback = cfg->callback;
-		} else {
+		} else if ((cfg->flags & WDT_FLAG_RESET_MASK) != WDT_FLAG_RESET_NONE) {
 			LOG_ERR("Callback without warning requires WDT_FLAG_RESET_NONE or "
 				"CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0");
 			return -ENOTSUP;
 		}
 	}
+
+	data->callback = cfg->callback;
 
 	data->timeout_valid = true;
 	LOG_DBG("Installed timeout (timeoutValue = %d)",
@@ -330,7 +339,7 @@ static DEVICE_API(wdt, mcux_wwdt_api) = {
 		/* Defensive: clear any peripheral status and NVIC pending */                      \
 		WWDT_ClearStatusFlags((WWDT_Type *)DT_INST_REG_ADDR(id),                           \
 			      WWDT_GetStatusFlags((WWDT_Type *)DT_INST_REG_ADDR(id)));             \
-		NVIC_ClearPendingIRQ(DT_INST_IRQN(id));                                            \
+		k_irq_clear_pending(DT_INST_IRQN(id));                                            \
 		irq_enable(DT_INST_IRQN(id));                                                      \
 	}
 

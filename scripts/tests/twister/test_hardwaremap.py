@@ -262,6 +262,7 @@ def test_hardwaremap_load():
     map_file = \
 """
 - id: id0
+  probe_id: pid0
   platform: p0
   product: pr0
   runner: r0
@@ -271,6 +272,7 @@ def test_hardwaremap_load():
   fixtures:
   - dummy fixture 1
   - dummy fixture 2
+  run_with_fixture_only: true
   connected: True
   serial: 'dummy'
 - id: id1
@@ -303,6 +305,7 @@ def test_hardwaremap_load():
 
     expected = {
         'id0': {
+            'probe_id': 'pid0',
             'platform': 'p0',
             'product': 'pr0',
             'runner': 'r0',
@@ -310,11 +313,13 @@ def test_hardwaremap_load():
             'flash_with_test': True,
             'serial_baud': 14400,
             'fixtures': ['dummy fixture 1', 'dummy fixture 2'],
+            'run_with_fixture_only': True,
             'connected': True,
             'serial': 'dummy',
             'serial_pty': None,
         },
         'id1': {
+            'probe_id': None,
             'platform': 'p1',
             'product': 'pr1',
             'runner': 'r1',
@@ -322,6 +327,7 @@ def test_hardwaremap_load():
             'flash_with_test': False,
             'serial_baud': 115200,
             'fixtures': [],
+            'run_with_fixture_only': False,
             'connected': True,
             'serial_pty': 'dummy',
         },

@@ -194,7 +194,12 @@ static uint16_t dap_connect(struct dap_link_context *const ctx,
 			break;
 		}
 
-		(void)swdp_port_on(ctx->dev);
+		if (swdp_port_on(ctx->dev) != 0) {
+			LOG_ERR("failed to enable debug port");
+			atomic_clear_bit(&ctx->state, DAP_STATE_CONNECTED);
+			ctx->debug_port = DAP_PORT_DISABLED;
+			port = DAP_PORT_DISABLED;
+		}
 		break;
 	case DAP_PORT_JTAG:
 		LOG_ERR("port unsupported");

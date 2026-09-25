@@ -956,13 +956,13 @@ static const struct udc_api udc_ambiq_api = {
 	{                                                                                          \
 		irq_disable(DT_INST_IRQN(n));                                                      \
 	}                                                                                          \
-	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];              \
-	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];               \
+	static struct udc_ep_config ep_cfg_out_##n[DT_INST_PROP(n, num_bidir_endpoints)];          \
+	static struct udc_ep_config ep_cfg_in_##n[DT_INST_PROP(n, num_bidir_endpoints)];           \
                                                                                                    \
 	static const struct udc_ambiq_config udc_ambiq_config_##n = {                              \
 		.num_endpoints = DT_INST_PROP(n, num_bidir_endpoints),                             \
-		.ep_cfg_in = ep_cfg_out,                                                           \
-		.ep_cfg_out = ep_cfg_in,                                                           \
+		.ep_cfg_in = ep_cfg_out_##n,                                                       \
+		.ep_cfg_out = ep_cfg_in_##n,                                                       \
 		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),                           \
 		.vddusb33_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(n), vddusb33_gpios, {0}),         \
 		.vddusb0p9_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(n), vddusb0p9_gpios, {0}),       \

@@ -11,6 +11,8 @@
 #ifndef ZEPHYR_DRIVERS_BLUETOOTH_HCI_APOLLOX_BLUE_H_
 #define ZEPHYR_DRIVERS_BLUETOOTH_HCI_APOLLOX_BLUE_H_
 
+#include <zephyr/drivers/bluetooth/hci_lockstep.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,9 +94,12 @@ int bt_apollo_controller_deinit(void);
  * @brief Vendor specific setup before general HCI command sequence for
  * Bluetooth application.
  *
+ * @param ls Lockstep helper of the HCI device, through which the setup
+ *           sends its commands.
+ *
  * @return 0 on success or negative error number on failure.
  */
-int bt_apollo_vnd_setup(void);
+int bt_apollo_vnd_setup(struct bt_hci_lockstep *ls);
 
 /**
  * @brief Check if vendor specific receiving handling is ongoing.

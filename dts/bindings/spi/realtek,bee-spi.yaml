@@ -24,6 +24,11 @@ properties:
   pinctrl-names:
     required: true
 
+  is-peripheral:
+    type: boolean
+    description: Indicate the spi operates in peripheral mode.
+
   is-slave:
     type: boolean
-    description: Indicate the spi is spi slave.
+    deprecated: true
+    description: Deprecated. Use is-peripheral instead.

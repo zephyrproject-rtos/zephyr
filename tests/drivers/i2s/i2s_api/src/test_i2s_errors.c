@@ -154,3 +154,44 @@ ZTEST_USER(i2s_errors, test_i2s_improper_block_size_write)
 		err, 0,
 		"I2S attempting write with incorrect block size did not raise error, err=%d", err);
 }
+
+static void write_to_exhausted_slab(int32_t timeout, int expected)
+{
+	int err;
+	char tx_data[BLOCK_SIZE] = {0};
+	struct i2s_config test_config = { .word_size = 16U,
+					  .channels = 2U,
+					  .format = I2S_FMT_DATA_FORMAT_I2S,
+					  .frame_clk_freq = FRAME_CLK_FREQ,
+					  .block_size = BLOCK_SIZE,
+					  .timeout = timeout,
+					  .options = I2S_OPT_FRAME_CLK_CONTROLLER |
+						     I2S_OPT_BIT_CLK_CONTROLLER,
+					  .mem_slab = &tx_mem_slab };
+
+	err = i2s_configure(dev_i2s, I2S_DIR_TX, &test_config);
+	zassert_equal(err, 0, "Unexpected error when configuring I2S interface: %d", err);
+
+	for (int i = 0; i < NUM_TX_BLOCKS; i++) {
+		err = i2s_buf_write(dev_i2s, tx_data, BLOCK_SIZE);
+		zassert_equal(err, 0, "Write %d of %d failed, err=%d", i + 1, NUM_TX_BLOCKS,
+			      err);
+	}
+
+	err = i2s_buf_write(dev_i2s, tx_data, BLOCK_SIZE);
+	zassert_equal(err, expected, "I2S write on an exhausted slab returned %d, expected %d",
+		      err, expected);
+
+	err = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_DROP);
+	zassert_equal(err, 0, "Unexpected error when dropping the TX queue: %d", err);
+}
+
+ZTEST(i2s_errors, test_i2s_write_exhausted_slab_no_wait)
+{
+	write_to_exhausted_slab(0, -ENOMEM);
+}
+
+ZTEST_USER(i2s_errors, test_i2s_write_exhausted_slab_timeout)
+{
+	write_to_exhausted_slab(TIMEOUT, -EAGAIN);
+}

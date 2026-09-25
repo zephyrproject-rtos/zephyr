@@ -26,8 +26,6 @@
 #include <host/conn_internal.h>
 #include <host/keys.h>
 #include "l2cap_br_internal.h"
-#include "avdtp_internal.h"
-#include "a2dp_internal.h"
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
 #include "did_internal.h"
@@ -85,6 +83,12 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_FEAT_CONNLESS_ENABLE_MASK 0
 #endif /* CONFIG_BT_L2CAP_CONNLESS */
 
+#if defined(CONFIG_BT_L2CAP_QOS)
+#define L2CAP_FEAT_QOS_ENABLE_MASK L2CAP_FEAT_QOS_MASK
+#else
+#define L2CAP_FEAT_QOS_ENABLE_MASK 0
+#endif /* CONFIG_BT_L2CAP_QOS */
+
 #if defined(CONFIG_BT_L2CAP_RET)
 #define L2CAP_FEAT_RET_ENABLE_MASK L2CAP_FEAT_RET_MASK
 #else
@@ -129,14 +133,16 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 	(L2CAP_FEAT_FIXED_CHAN_MASK | L2CAP_FEAT_RET_ENABLE_MASK |                             \
 	 L2CAP_FEAT_FC_ENABLE_MASK | L2CAP_FEAT_ENH_RET_ENABLE_MASK |                          \
 	 L2CAP_FEAT_STREAM_ENABLE_MASK | L2CAP_FEAT_FCS_ENABLE_MASK |                          \
-	 L2CAP_FEAT_EXT_WIN_SIZE_ENABLE_MASK | L2CAP_FEAT_CONNLESS_ENABLE_MASK)
+	 L2CAP_FEAT_EXT_WIN_SIZE_ENABLE_MASK | L2CAP_FEAT_CONNLESS_ENABLE_MASK |               \
+	 L2CAP_FEAT_QOS_ENABLE_MASK)
 
 enum {
 	/* Connection oriented channels flags */
-	L2CAP_FLAG_CONN_LCONF_DONE, /* local config accepted by remote */
-	L2CAP_FLAG_CONN_RCONF_DONE, /* remote config accepted by local */
-	L2CAP_FLAG_CONN_ACCEPTOR,   /* getting incoming connection req */
-	L2CAP_FLAG_CONN_PENDING,    /* remote sent pending result in rsp */
+	L2CAP_FLAG_CONN_LCONF_DONE,       /* local config accepted by remote */
+	L2CAP_FLAG_CONN_RCONF_DONE,       /* remote config accepted by local */
+	L2CAP_FLAG_CONN_ACCEPTOR,         /* getting incoming connection req */
+	L2CAP_FLAG_CONN_PENDING,          /* remote sent pending result in rsp */
+	L2CAP_FLAG_CONN_CONF_RSP_SENDING, /* waiting for config response sent */
 
 	/* Signaling channel flags */
 	L2CAP_FLAG_SIG_INFO_PENDING, /* retrieving remote l2cap info */
@@ -422,6 +428,13 @@ static bool chan_has_data(struct bt_l2cap_br_chan *br_chan)
 
 static void raise_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
+	/* The l2cap_data_ready list is only ever modified under the host
+	 * lock: here (append, any thread context), in cancel_data_ready()
+	 * (remove, any thread context) and in lower_data_ready() (remove,
+	 * TX processor context, which holds the lock across the whole pass).
+	 */
+	bt_dev_lock();
+
 	if (!atomic_set(&br_chan->_pdu_ready_lock, 1)) {
 		sys_slist_append(&br_chan->chan.conn->l2cap_data_ready,
 				 &br_chan->_pdu_ready);
@@ -430,13 +443,22 @@ static void raise_data_ready(struct bt_l2cap_br_chan *br_chan)
 		LOG_DBG("data ready already");
 	}
 
+	bt_dev_unlock();
+
 	bt_conn_data_ready(br_chan->chan.conn);
 }
 
 static void lower_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_conn *conn = br_chan->chan.conn;
-	__maybe_unused sys_snode_t *s = sys_slist_get(&conn->l2cap_data_ready);
+	__maybe_unused sys_snode_t *s;
+
+	/* Only called from the TX processor, which holds the host lock
+	 * across the whole processing pass.
+	 */
+	BT_DEV_LOCK_ASSERT();
+
+	s = sys_slist_get(&conn->l2cap_data_ready);
 
 	__ASSERT_NO_MSG(s == &br_chan->_pdu_ready);
 
@@ -449,10 +471,18 @@ static void cancel_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_conn *conn = br_chan->chan.conn;
 
+	/* Take the host lock as this function can be called from any
+	 * thread context and the data ready list must not be modified
+	 * while we are removing the channel from it (see raise_data_ready()).
+	 */
+	bt_dev_lock();
+
 	sys_slist_find_and_remove(&conn->l2cap_data_ready,
 				  &br_chan->_pdu_ready);
 
 	atomic_set(&br_chan->_pdu_ready_lock, 0);
+
+	bt_dev_unlock();
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
@@ -1965,6 +1995,14 @@ static uint8_t get_fixed_channels_mask(void)
 
 	/* this needs to be enhanced if AMP Test Manager support is added */
 	STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
+		if (!IS_ENABLED(CONFIG_BT_SMP_DERIVE_LTK) &&
+		    fchan->cid == BT_L2CAP_CID_BR_SMP) {
+			/* Nothing would be accepted on this channel, so do not
+			 * invite the peer to start a derivation on it.
+			 */
+			continue;
+		}
+
 		mask |= BIT(fchan->cid);
 	}
 
@@ -4149,6 +4187,7 @@ static uint16_t l2cap_br_conf_opt_qos(struct bt_l2cap_chan *chan, struct net_buf
 
 	if (opt_qos->service_type == BT_L2CAP_QOS_TYPE_GUARANTEED) {
 		result = BT_L2CAP_CONF_UNACCEPT;
+		opt_qos->service_type = BT_L2CAP_QOS_TYPE_BEST_EFFORT;
 		/* Set to default value */
 		opt_qos->flags = 0x00;
 		/* do not care */
@@ -4605,6 +4644,50 @@ done:
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+static void l2cap_br_config_rsp_complete(struct bt_l2cap_chan *chan)
+{
+	if (!atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_CONF_RSP_SENDING)) {
+		LOG_DBG("No config response pending for chan %p", BR_CHAN(chan));
+		return;
+	}
+
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RCONF_DONE);
+
+	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_LCONF_DONE)) {
+		LOG_DBG("Local config req is not done");
+		return;
+	}
+
+	if (BR_CHAN(chan)->state == BT_L2CAP_CONFIG) {
+		LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", BR_CHAN(chan)->rx.cid,
+			BR_CHAN(chan)->rx.mtu, BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
+
+		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTED);
+		if (chan->ops != NULL && chan->ops->connected != NULL) {
+			chan->ops->connected(chan);
+		}
+	}
+}
+
+static void l2cap_br_config_rsp_sent_cb(struct bt_conn *conn, void *user_data, int err)
+{
+	uint16_t scid = POINTER_TO_UINT(user_data);
+	struct bt_l2cap_chan *chan;
+
+	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
+	if (chan == NULL) {
+		return;
+	}
+
+	if (err != 0) {
+		LOG_ERR("Config response of chan %p failed to send (%d)", BR_CHAN(chan), err);
+		l2cap_br_chan_disconn(chan);
+		return;
+	}
+
+	l2cap_br_config_rsp_complete(chan);
+}
+
 static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t len,
 			      struct net_buf *buf)
 {
@@ -4616,6 +4699,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	struct bt_l2cap_conf_opt *opt = NULL;
 	uint16_t flags, dcid, opt_len, hint, result = BT_L2CAP_CONF_SUCCESS;
 	struct net_buf *rsp_buf;
+	int err;
 
 	if (len < sizeof(*req)) {
 		LOG_ERR("Too small L2CAP conf req packet size");
@@ -4706,6 +4790,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 			if (result != BT_L2CAP_CONF_SUCCESS) {
 				goto send_rsp;
 			}
+			l2cap_br_conf_add_opt(rsp_buf, opt);
 			break;
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 		case BT_L2CAP_CONF_OPT_RET_FC:
@@ -4766,9 +4851,8 @@ send_rsp:
 
 	hdr->len = sys_cpu_to_le16(rsp_buf->len - sizeof(*hdr));
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, rsp_buf);
-
 	if (result != BT_L2CAP_CONF_SUCCESS) {
+		l2cap_send(conn, BT_L2CAP_CID_BR_SIG, rsp_buf);
 		return;
 	}
 
@@ -4787,17 +4871,14 @@ send_rsp:
 	}
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
-	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RCONF_DONE);
-
-	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_LCONF_DONE) &&
-	    BR_CHAN(chan)->state == BT_L2CAP_CONFIG) {
-		LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", BR_CHAN(chan)->rx.cid,
-			BR_CHAN(chan)->rx.mtu, BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
-
-		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTED);
-		if (chan->ops && chan->ops->connected) {
-			chan->ops->connected(chan);
-		}
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_CONF_RSP_SENDING);
+	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, rsp_buf, l2cap_br_config_rsp_sent_cb,
+				  UINT_TO_POINTER(BR_CHAN(chan)->tx.cid));
+	if (err != 0) {
+		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_CONF_RSP_SENDING);
+		LOG_ERR("Failed to send config response of chan %p (%d)", BR_CHAN(chan), err);
+		net_buf_unref(rsp_buf);
+		l2cap_br_chan_disconn(chan);
 	}
 }
 
@@ -5898,6 +5979,13 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 		} else {
 			br_chan->_sdu_len = net_buf_pull_le16(seg);
 		}
+
+		if (br_chan->_sdu_len > br_chan->rx.mtu) {
+			LOG_WRN("SDU exceeds MTU");
+			net_buf_drop(&br_chan->_sdu);
+			bt_l2cap_chan_disconnect(&br_chan->chan);
+			return -ESHUTDOWN;
+		}
 	}
 
 	if (!br_chan->_sdu) {
@@ -5910,7 +5998,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 		return -ESHUTDOWN;
 	}
 
-	if ((br_chan->_sdu->len + seg->len) > br_chan->_sdu_len) {
+	if ((net_buf_frags_len(br_chan->_sdu) + seg->len) > br_chan->_sdu_len) {
 		LOG_ERR("SDU length mismatch");
 		net_buf_drop(&br_chan->_sdu);
 		bt_l2cap_chan_disconnect(&br_chan->chan);
@@ -5927,10 +6015,11 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 		return -ESHUTDOWN;
 	}
 
-	LOG_DBG("chan %p len %zu / %zu", br_chan, br_chan->_sdu->len, br_chan->_sdu_len);
+	LOG_DBG("chan %p len %zu / %zu", br_chan, net_buf_frags_len(br_chan->_sdu),
+		br_chan->_sdu_len);
 
 	if ((sar == BT_L2CAP_CONTROL_SAR_UNSEG) || (sar == BT_L2CAP_CONTROL_SAR_END)) {
-		if (br_chan->_sdu->len < br_chan->_sdu_len) {
+		if (net_buf_frags_len(br_chan->_sdu) < br_chan->_sdu_len) {
 			LOG_ERR("SDU length mismatch");
 			net_buf_drop(&br_chan->_sdu);
 			bt_l2cap_chan_disconnect(&br_chan->chan);
@@ -6321,6 +6410,15 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 	 */
 	check_fixed_channel(chan);
 
+	/* If data arrives while still in the config state, the peer must have already received the
+	 * config response and moved to the connected state, so there's no need to wait for config
+	 * response tx callback. Complete the pending config response now, otherwise this packet
+	 * would be dropped since the channel isn't marked connected yet.
+	 */
+	if (BR_CHAN(chan)->state == BT_L2CAP_CONFIG) {
+		l2cap_br_config_rsp_complete(chan);
+	}
+
 	if (BR_CHAN(chan)->state < BT_L2CAP_CONNECTED) {
 		LOG_ERR("Chan %p in invalid state %u, ignoring data", chan, BR_CHAN(chan)->state);
 		goto done;
@@ -6427,19 +6525,11 @@ void bt_l2cap_br_init(void)
 		bt_rfcomm_init();
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AVDTP)) {
-		bt_avdtp_init();
-	}
-
 	if (IS_ENABLED(CONFIG_BT_AVCTP)) {
 		bt_avctp_init();
 	}
 
 	bt_sdp_init();
-
-	if (IS_ENABLED(CONFIG_BT_A2DP)) {
-		bt_a2dp_init();
-	}
 
 	if (IS_ENABLED(CONFIG_BT_AVRCP)) {
 		bt_avrcp_init();

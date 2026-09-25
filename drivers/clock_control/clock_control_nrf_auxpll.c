@@ -34,6 +34,10 @@ CHECK_DTS_BINDING_VS_MDK(NRF_AUXPLL_FREQ_DIV_MAX,	 NRF_AUXPLL_FREQUENCY_DIV_MAX)
 /* lock wait step in us*/
 #define AUXPLL_LOCK_WAIT_STEP_US 1000
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(nordic_ficrs)
+#define AUXPLL_FICR_CTUNE_SUPPORTED 1
+#endif
+
 struct dev_data_auxpll {
 	struct onoff_manager mgr;
 	onoff_notify_fn notify;
@@ -43,7 +47,9 @@ struct dev_data_auxpll {
 struct clock_control_nrf_auxpll_config {
 	NRF_AUXPLL_Type *auxpll;
 	uint32_t ref_clk_hz;
+#if AUXPLL_FICR_CTUNE_SUPPORTED
 	uint32_t ficr_ctune;
+#endif
 	nrf_auxpll_config_t cfg;
 	nrf_auxpll_freq_div_ratio_t frequency;
 	uint8_t out_div;
@@ -214,7 +220,9 @@ static int clock_control_nrf_auxpll_init(const struct device *dev)
 	nrf_auxpll_ctrl_frequency_set(config->auxpll, config->frequency);
 
 	nrf_auxpll_lock(config->auxpll);
+#if AUXPLL_FICR_CTUNE_SUPPORTED
 	nrf_auxpll_trim_ctune_set(config->auxpll, sys_read8(config->ficr_ctune));
+#endif
 	nrf_auxpll_config_set(config->auxpll, &config->cfg);
 	set_out_div(config);
 	nrf_auxpll_unlock(config->auxpll);
@@ -252,8 +260,9 @@ static DEVICE_API(nrf_clock_control, drv_api_auxpll) = {
 	static const struct clock_control_nrf_auxpll_config config##n = {                          \
 		.auxpll = (NRF_AUXPLL_Type *)DT_INST_REG_ADDR(n),                                  \
 		.ref_clk_hz = DT_PROP(DT_INST_CLOCKS_CTLR(n), clock_frequency),                    \
-		.ficr_ctune = DT_REG_ADDR(DT_INST_PHANDLE(n, nordic_ficrs)) +                      \
-			      DT_INST_PHA(n, nordic_ficrs, offset),                                \
+		IF_ENABLED(AUXPLL_FICR_CTUNE_SUPPORTED,                                            \
+			(.ficr_ctune = DT_REG_ADDR(DT_INST_PHANDLE(n, nordic_ficrs)) +             \
+				       DT_INST_PHA(n, nordic_ficrs, offset),))                     \
 		.cfg =                                                                             \
 			{                                                                          \
 				.outdrive = DT_INST_PROP(n, nordic_out_drive),                     \

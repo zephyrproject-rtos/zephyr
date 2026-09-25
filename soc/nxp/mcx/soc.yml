@@ -5,11 +5,20 @@ family:
     cpuclusters:
     - name: cpu0
     - name: cpu1
+  - name: mcxn946
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
   - name: mcxn547
     cpuclusters:
     - name: cpu0
     - name: cpu1
+  - name: mcxn546
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
   - name: mcxn236
+  - name: mcxn235
 - name: mcxc
   socs:
   - name: mcxc141
@@ -50,7 +59,16 @@ family:
   - name: mcxaxx7
     socs:
     - name: mcxa537
+    - name: mcxa536
+    - name: mcxa557
+    - name: mcxa556
+    - name: mcxa567
+    - name: mcxa566
     - name: mcxa577
+    - name: mcxa457
+    - name: mcxa456
+    - name: mcxa287
+    - name: mcxa286
 - name: mcxw
   series:
   - name: mcxw2xx
@@ -89,10 +107,18 @@ runners:
         - mcxn947/cpu0
         - mcxn947/cpu1
       - qualifiers:
+        - mcxn946/cpu0
+        - mcxn946/cpu1
+      - qualifiers:
         - mcxn547/cpu0
         - mcxn547/cpu1
       - qualifiers:
+        - mcxn546/cpu0
+        - mcxn546/cpu1
+      - qualifiers:
         - mcxn236
+      - qualifiers:
+        - mcxn235
       - qualifiers:
         - mcxc141
       - qualifiers:
@@ -128,7 +154,25 @@ runners:
       - qualifiers:
         - mcxa537
       - qualifiers:
+        - mcxa536
+      - qualifiers:
+        - mcxa557
+      - qualifiers:
+        - mcxa556
+      - qualifiers:
+        - mcxa567
+      - qualifiers:
+        - mcxa566
+      - qualifiers:
         - mcxa577
+      - qualifiers:
+        - mcxa457
+      - qualifiers:
+        - mcxa456
+      - qualifiers:
+        - mcxa287
+      - qualifiers:
+        - mcxa286
       - qualifiers:
         - mcxw716c
       - qualifiers:
@@ -161,10 +205,18 @@ runners:
         - mcxn947/cpu0
         - mcxn947/cpu1
       - qualifiers:
+        - mcxn946/cpu0
+        - mcxn946/cpu1
+      - qualifiers:
         - mcxn547/cpu0
         - mcxn547/cpu1
       - qualifiers:
+        - mcxn546/cpu0
+        - mcxn546/cpu1
+      - qualifiers:
         - mcxn236
+      - qualifiers:
+        - mcxn235
       - qualifiers:
         - mcxc141
       - qualifiers:
@@ -200,7 +252,25 @@ runners:
       - qualifiers:
         - mcxa537
       - qualifiers:
+        - mcxa536
+      - qualifiers:
+        - mcxa557
+      - qualifiers:
+        - mcxa556
+      - qualifiers:
+        - mcxa567
+      - qualifiers:
+        - mcxa566
+      - qualifiers:
         - mcxa577
+      - qualifiers:
+        - mcxa457
+      - qualifiers:
+        - mcxa456
+      - qualifiers:
+        - mcxa287
+      - qualifiers:
+        - mcxa286
       - qualifiers:
         - mcxw716c
       - qualifiers:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2020-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #endif
@@ -20,7 +21,10 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #endif
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
+#include <esp_private/esp_clk.h>
+#include <esp_private/sleep_modem.h>
 #include <esp_private/wifi.h>
 #include <esp_event.h>
 #include <esp_rom_sys.h>
@@ -114,6 +118,19 @@ struct esp32_wifi_runtime {
  */
 #define ESP32_WIFI_EVENT_DATA_MAX 64
 
+/* 2.4 GHz channel 14 is passive-only; 5 GHz channels 52-144 require DFS. */
+#define ESP32_WIFI_CHAN_14     14
+#define ESP32_WIFI_DFS_CHAN_LO 52
+#define ESP32_WIFI_DFS_CHAN_HI 144
+
+#if defined(CONFIG_SOC_ESP32_WIFI_SUPPORT_5G)
+/* Channel number for each bit of wifi_5g_channel_bit_t, which starts at BIT(1). */
+static const uint8_t esp32_wifi_5g_chan[] = {
+	36,  40,  44,  48,  52,  56,  60,  64,  100, 104, 108, 112, 116, 120,
+	124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165, 169, 173, 177,
+};
+#endif
+
 BUILD_ASSERT(sizeof(wifi_event_sta_connected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
 		     sizeof(wifi_event_sta_disconnected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
 		     sizeof(wifi_event_ap_staconnected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
@@ -136,7 +153,32 @@ struct esp32_wifi_event {
 K_MSGQ_DEFINE(esp32_wifi_event_msgq, sizeof(struct esp32_wifi_event),
 	      CONFIG_ESP32_WIFI_EVENT_QUEUE_SIZE, 4);
 
+/*
+ * Set the station IPv4 address in the Wi-Fi stack. The address is only reported
+ * when it is usable and the station is associated. A static address is usually
+ * set before the connection, so the connect handler calls this as well.
+ */
+static void esp32_wifi_set_sta_ip(void)
+{
+	if (esp32_data.state != ESP32_STA_CONNECTED) {
+		return;
+	}
+
+	if (net_if_ipv4_get_global_addr(esp32_wifi_iface, NET_ADDR_PREFERRED) == NULL) {
+		return;
+	}
+
+	esp_wifi_internal_set_sta_ip();
+}
+
+#if defined(CONFIG_NET_IPV4)
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
+#define ESP32_WIFI_IPV4_EVENT_MASK                                                                 \
+	(NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED | NET_EVENT_IPV4_DHCP_BOUND)
+#else
+#define ESP32_WIFI_IPV4_EVENT_MASK (NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED)
+#endif
+
 static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
 				size_t info_length __unused, void *user_data __unused)
 {
@@ -145,17 +187,23 @@ static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *
 	}
 
 	switch (mgmt_event) {
+	case NET_EVENT_IPV4_ADDR_ADD:
+	case NET_EVENT_IPV4_ACD_SUCCEED:
+		esp32_wifi_set_sta_ip();
+		break;
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	case NET_EVENT_IPV4_DHCP_BOUND:
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 		break;
+#endif
 	default:
 		break;
 	}
 }
 
-NET_MGMT_REGISTER_EVENT_HANDLER(esp32_wifi_events, NET_EVENT_IPV4_DHCP_BOUND, wifi_event_handler,
+NET_MGMT_REGISTER_EVENT_HANDLER(esp32_wifi_events, ESP32_WIFI_IPV4_EVENT_MASK, wifi_event_handler,
 				NULL);
-#endif /* CONFIG_WIFI_STA_AUTO_DHCPV4 */
+#endif /* CONFIG_NET_IPV4 */
 
 static void esp32_wifi_tx_done(uint8_t ifidx, uint8_t *data __unused, uint16_t *data_len __unused,
 			       bool status __unused)
@@ -394,7 +442,7 @@ static void scan_done_handler(void)
 		strncpy(res.ssid, ap_record.ssid, ssid_len);
 		res.rssi = ap_record.rssi;
 		res.channel = ap_record.primary;
-		res.band = ap_record.primary <= 14 ? WIFI_FREQ_BAND_2_4_GHZ : WIFI_FREQ_BAND_5_GHZ;
+		res.band = wifi_utils_chan_to_band(res.channel);
 
 		memcpy(res.mac, ap_record.bssid, WIFI_MAC_ADDR_LEN);
 		res.mac_length = WIFI_MAC_ADDR_LEN;
@@ -472,6 +520,7 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 	ARG_UNUSED(event_data);
 	esp32_data.state = ESP32_STA_CONNECTED;
 	net_if_dormant_off(esp32_wifi_iface);
+	esp32_wifi_set_sta_ip();
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
@@ -1617,7 +1666,8 @@ static int esp32_wifi_status(const struct device *dev __unused,
 	status->ssid[WIFI_SSID_MAX_LEN-1] = '\0';
 	/* We know it is NUL terminated, so we can use strlen */
 	status->ssid_len = strlen(data->status.ssid);
-	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	/* Derived from the channel below, once the channel is known. */
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->mfp = WIFI_MFP_DISABLE;
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
@@ -1639,6 +1689,7 @@ static int esp32_wifi_status(const struct device *dev __unused,
 
 			status->iface_mode = WIFI_MODE_INFRA;
 			status->channel = ap_info.primary;
+			status->band = wifi_utils_chan_to_band(status->channel);
 			status->rssi = ap_info.rssi;
 			memcpy(status->bssid, ap_info.bssid, WIFI_MAC_ADDR_LEN);
 
@@ -1662,6 +1713,7 @@ static int esp32_wifi_status(const struct device *dev __unused,
 			status->iface_mode = WIFI_MODE_AP;
 			status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 			status->channel = conf.ap.channel;
+			status->band = wifi_utils_chan_to_band(status->channel);
 			status->beacon_interval = conf.ap.beacon_interval;
 
 		} else {
@@ -1837,6 +1889,61 @@ static int esp32_wifi_reset_stats(const struct device *dev __unused,
 }
 #endif
 
+static int esp32_wifi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+#if defined(CONFIG_PM)
+	int cpu_freq_mhz;
+#endif
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#if defined(SOC_WIFI_HW_TSF)
+		if (esp_wifi_internal_is_tsf_active()) {
+			/* Reject sleep while TSF is active (timing critical) */
+			return -EBUSY;
+		}
+#endif
+#if defined(CONFIG_ESP32_WIFI_ENHANCED_LIGHT_SLEEP)
+		if (sleep_modem_wifi_modem_state_skip_light_sleep()) {
+			/* Block the system from entering sleep before modem link done */
+			return -EBUSY;
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+#if defined(CONFIG_PM)
+		/* Register the Wi-Fi modem sleep configuration. Advanced DTIM
+		 * sleep (ESP32_WIFI_ENHANCED_LIGHT_SLEEP) and default sleep
+		 * timing parameters (PM_SLP_DEFAULT_PARAMS_OPT) are
+		 * applied inside when those options are enabled.
+		 */
+		cpu_freq_mhz = esp_clk_cpu_freq() / MHZ(1);
+		sleep_modem_configure(cpu_freq_mhz, cpu_freq_mhz, true);
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_ESP32_WIFI_STA_POWER_SAVE_NONE)
+#define ESP32_WIFI_STA_PS_TYPE WIFI_PS_NONE
+#elif defined(CONFIG_ESP32_WIFI_STA_POWER_SAVE_MAX_MODEM)
+#define ESP32_WIFI_STA_PS_TYPE WIFI_PS_MAX_MODEM
+#else
+#define ESP32_WIFI_STA_PS_TYPE WIFI_PS_MIN_MODEM
+#endif
+
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
@@ -1877,7 +1984,12 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		return -EIO;
 	}
 
-	return 0;
+	ret = esp_wifi_set_ps(ESP32_WIFI_STA_PS_TYPE);
+	if (ret != ESP_OK) {
+		LOG_WRN("Unable to set the Wi-Fi power save mode: %d", ret);
+	}
+
+	return pm_device_driver_init(dev, esp32_wifi_pm_action);
 }
 
 static int esp32_wifi_set_config(const struct device *dev __unused,
@@ -1916,6 +2028,149 @@ static int esp32_wifi_set_config(const struct device *dev __unused,
 	return -ENOTSUP;
 }
 
+static void esp32_wifi_fill_chan_info(struct wifi_reg_chan_info *info, uint8_t chan, int8_t power,
+				      bool is_5g)
+{
+	if (is_5g) {
+		info->center_frequency = 5000 + chan * 5;
+	} else {
+		info->center_frequency = (chan == ESP32_WIFI_CHAN_14) ? 2484 : (2407 + chan * 5);
+	}
+
+	info->max_power = power;
+	info->supported = 1;
+	info->passive_only = (!is_5g && chan == ESP32_WIFI_CHAN_14) ? 1 : 0;
+	info->dfs =
+		(is_5g && chan >= ESP32_WIFI_DFS_CHAN_LO && chan <= ESP32_WIFI_DFS_CHAN_HI) ? 1 : 0;
+}
+
+static unsigned int esp32_wifi_fill_5g(struct wifi_reg_domain *reg_domain, unsigned int written,
+				       const wifi_country_t *country)
+{
+#if defined(CONFIG_SOC_ESP32_WIFI_SUPPORT_5G)
+	/* An all-zero mask means every channel allowed by the regulatory rules. */
+	uint32_t mask =
+		(country->wifi_5g_channel_mask == 0U) ? UINT32_MAX : country->wifi_5g_channel_mask;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(esp32_wifi_5g_chan); i++) {
+		if (written >= MAX_REG_CHAN_NUM) {
+			break;
+		}
+
+		if ((mask & BIT(i + 1)) == 0U) {
+			continue;
+		}
+
+		esp32_wifi_fill_chan_info(&reg_domain->chan_info[written], esp32_wifi_5g_chan[i],
+					  country->max_tx_power, true);
+		written++;
+	}
+#else
+	ARG_UNUSED(reg_domain);
+	ARG_UNUSED(country);
+#endif
+
+	return written;
+}
+
+static unsigned int esp32_wifi_count_5g(const wifi_country_t *country)
+{
+#if defined(CONFIG_SOC_ESP32_WIFI_SUPPORT_5G)
+	uint32_t mask =
+		(country->wifi_5g_channel_mask == 0U) ? UINT32_MAX : country->wifi_5g_channel_mask;
+	unsigned int count = 0;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(esp32_wifi_5g_chan); i++) {
+		if ((mask & BIT(i + 1)) != 0U) {
+			count++;
+		}
+	}
+
+	return count;
+#else
+	ARG_UNUSED(country);
+	return 0;
+#endif
+}
+
+static int esp32_wifi_reg_domain(const struct device *dev __unused, struct net_if *iface __unused,
+				 struct wifi_reg_domain *reg_domain)
+{
+	wifi_country_t country;
+	char cc[WIFI_COUNTRY_CODE_LEN + 2];
+	unsigned int written = 0;
+	esp_err_t ret;
+
+	if (reg_domain == NULL) {
+		return -EINVAL;
+	}
+
+	if (reg_domain->oper == WIFI_MGMT_SET) {
+		memcpy(cc, reg_domain->country_code, WIFI_COUNTRY_CODE_LEN);
+
+		/* Zephyr spells the worldwide domain "00", the Espressif
+		 * regulatory table calls it "01".
+		 */
+		if (cc[0] == '0' && cc[1] == '0') {
+			cc[1] = '1';
+		}
+
+		/* The third octet selects the operating environment and must be
+		 * ' ', 'O', 'I' or 'X'. Use ' ' to accept any environment.
+		 */
+		cc[WIFI_COUNTRY_CODE_LEN] = ' ';
+		cc[WIFI_COUNTRY_CODE_LEN + 1] = '\0';
+
+		/* Forcing the domain means ignoring what the surrounding APs
+		 * advertise, so it maps to disabling 802.11d.
+		 */
+		ret = esp_wifi_set_country_code(cc, !reg_domain->force);
+		if (ret != ESP_OK) {
+			LOG_ERR("Failed to set country code (%d)", ret);
+			return -EIO;
+		}
+
+		return 0;
+	}
+
+	if (reg_domain->oper != WIFI_MGMT_GET) {
+		return -EINVAL;
+	}
+
+	ret = esp_wifi_get_country(&country);
+	if (ret != ESP_OK) {
+		LOG_ERR("Failed to get country (%d)", ret);
+		return -EIO;
+	}
+
+	memcpy(reg_domain->country_code, country.cc, WIFI_COUNTRY_CODE_LEN);
+
+	if (reg_domain->country_code[0] == '0' && reg_domain->country_code[1] == '1') {
+		reg_domain->country_code[1] = '0';
+	}
+
+	if (reg_domain->chan_info == NULL) {
+		reg_domain->num_channels =
+			MIN(country.nchan + esp32_wifi_count_5g(&country), MAX_REG_CHAN_NUM);
+		return 0;
+	}
+
+	/* num_channels is an output: callers pass a MAX_REG_CHAN_NUM buffer
+	 * without setting it, so clamp to the buffer, not to its value.
+	 */
+	for (unsigned int i = 0; i < country.nchan && written < MAX_REG_CHAN_NUM; i++) {
+		esp32_wifi_fill_chan_info(&reg_domain->chan_info[written], country.schan + i,
+					  country.max_tx_power, false);
+		written++;
+	}
+
+	written = esp32_wifi_fill_5g(reg_domain, written, &country);
+
+	reg_domain->num_channels = written;
+
+	return 0;
+}
+
 static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 	.scan = esp32_wifi_scan,
 	.connect = esp32_wifi_connect,
@@ -1924,6 +2179,7 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 	.ap_disable = esp32_wifi_ap_disable,
 	.iface_status = esp32_wifi_status,
 	.set_power_save = esp32_wifi_set_power_save,
+	.reg_domain = esp32_wifi_reg_domain,
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 	.enterprise_creds = esp32_wifi_enterprise_creds,
 #endif
@@ -1940,11 +2196,11 @@ static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
 
-NET_DEVICE_DT_INST_DEFINE(0,
-		esp32_wifi_dev_init, NULL,
-		&esp32_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
-		&esp32_api, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+PM_DEVICE_DT_INST_DEFINE(0, esp32_wifi_pm_action);
+
+NET_DEVICE_DT_INST_DEFINE(0, esp32_wifi_dev_init, PM_DEVICE_DT_INST_GET(0), &esp32_data, NULL,
+			  CONFIG_WIFI_INIT_PRIORITY, &esp32_api, ETHERNET_L2,
+			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 NET_DEVICE_DT_INST_ADD_IFACE(0, ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU, 1);

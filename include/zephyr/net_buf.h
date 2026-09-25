@@ -24,7 +24,7 @@ extern "C" {
  * @brief Network buffer library
  * @defgroup net_buf Network Buffer Library
  * @since 1.0
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup os_services
  * @{
  */
@@ -93,7 +93,8 @@ struct net_buf_simple {
 	/**
 	 * Length of the data behind the data pointer.
 	 *
-	 * To determine the max length, use net_buf_simple_max_len(), not #size!
+	 * The room left for more data is net_buf_simple_tailroom(), not net_buf_simple::size
+	 * minus net_buf_simple::len: net_buf_simple::size counts the headroom as well.
 	 */
 	uint16_t len;
 
@@ -940,11 +941,16 @@ static inline size_t net_buf_simple_tailroom(const struct net_buf_simple *buf)
  *
  * This value is depending on the number of bytes being reserved as headroom.
  *
+ * @deprecated Use net_buf_simple_tailroom() to find out how much data can
+ *             still be added and net_buf_simple_headroom() for how much can
+ *             be pushed in front. The size of a scratch area starting at
+ *             net_buf_simple::data is net_buf_simple::len plus the tailroom.
+ *
  * @param buf A valid pointer on a buffer
  *
  * @return Number of bytes usable behind the net_buf_simple::data pointer.
  */
-static inline uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf)
+__deprecated static inline uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf)
 {
 	return buf->size - net_buf_simple_headroom(buf);
 }
@@ -2691,13 +2697,18 @@ static inline size_t net_buf_headroom(const struct net_buf *buf)
  *
  * This value is depending on the number of bytes being reserved as headroom.
  *
+ * @deprecated Use net_buf_tailroom() to find out how much data can still be
+ *             added and net_buf_headroom() for how much can be pushed in
+ *             front. The size of a scratch area starting at net_buf::data is
+ *             net_buf::len plus the tailroom.
+ *
  * @param buf A valid pointer on a buffer
  *
  * @return Number of bytes usable behind the net_buf::data pointer.
  */
-static inline uint16_t net_buf_max_len(const struct net_buf *buf)
+__deprecated static inline uint16_t net_buf_max_len(const struct net_buf *buf)
 {
-	return net_buf_simple_max_len(&buf->b);
+	return buf->size - net_buf_headroom(buf);
 }
 
 /**

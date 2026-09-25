@@ -354,6 +354,24 @@ static int ucpd_get_rp_value(const struct device *dev, enum tc_rp_value *rp)
 }
 
 /**
+ * @brief Report whether this port applies the Dead Battery resistors
+ *
+ * @retval 0 on success
+ */
+static int ucpd_dead_battery_enabled(const struct device *dev, bool *enabled)
+{
+#ifdef CONFIG_SOC_SERIES_STM32G0X
+	const struct tcpc_config *const config = dev->config;
+
+	*enabled = (stm32_reg_read(&config->ucpd_port->CR) & UCPD_CR_DBATTEN) != 0;
+#else
+	*enabled = LL_PWR_IsEnabledUCPDDeadBattery();
+#endif
+
+	return 0;
+}
+
+/**
  * @brief Enable or disable Dead Battery resistors
  */
 static void dead_battery(const struct device *dev, bool en)
@@ -1397,6 +1415,7 @@ static DEVICE_API(tcpc, driver_api) = {
 	.dump_std_reg = ucpd_dump_std_reg,
 	.set_bist_test_mode = ucpd_set_bist_test_mode,
 	.sop_prime_enable = ucpd_sop_prime_enable,
+	.dead_battery_enabled = ucpd_dead_battery_enabled,
 };
 
 #define DEV_INST_INIT(n) dev_inst[n] = DEVICE_DT_INST_GET(n);

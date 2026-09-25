@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(clock_mchp_pic32cz_ca, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define GCLK_IO_MIN                2
 #define GCLK_IO_MAX                7
-#define GCLK_PH_MAX                47
+#define GCLK_PH_MAX                (GCLK_NUM - 1)
 #define BIT_MASK_MAX               31
 #define CLOCK_INIT_ITERATION_COUNT 3
 

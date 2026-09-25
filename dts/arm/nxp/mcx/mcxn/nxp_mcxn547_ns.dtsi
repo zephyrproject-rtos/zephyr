@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_mcxn54x_ns.dtsi"
+
+/*
+ * MCXN547 has 2 MiB of flash. Explicit non-secure identity ranges for
+ * flash, mirroring the secure-alias override in nxp_mcxn547.dtsi.
+ */
+&flash {
+	reg = <0 DT_SIZE_M(2)>;
+	ranges = <0x0 0x0 DT_SIZE_M(2)>;
+};

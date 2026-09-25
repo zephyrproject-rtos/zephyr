@@ -25,6 +25,9 @@ ARCHS = {
     "arm64": {
         "kconfig": "CONFIG_ARM64",
     },
+    "hexagon": {
+        "kconfig": "CONFIG_HEXAGON",
+    },
     "mips": {
         "kconfig": "CONFIG_MIPS",
     },
@@ -48,6 +51,9 @@ ARCHS = {
     },
     "rx": {
         "kconfig": "CONFIG_RX",
+    },
+    "tricore": {
+        "kconfig": "CONFIG_TRICORE",
     },
     "xtensa": {
         "kconfig": "CONFIG_XTENSA",

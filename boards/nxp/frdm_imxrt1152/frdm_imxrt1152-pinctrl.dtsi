@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1152xhm8b-pinctrl.dtsi>
+#include <nxp/imxrt/imxrt11xx/pinctrl/mimxrt1152xhm8b-pinctrl.dtsi>
 
 &pinctrl {
 	pinmux_lpuart1: pinmux_lpuart1 {

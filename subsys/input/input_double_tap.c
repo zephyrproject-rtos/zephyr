@@ -26,7 +26,7 @@ struct double_tap_data_entry {
 	const struct device *dev;
 	struct k_work_delayable work;
 	uint8_t index;
-	bool first_tap;
+	atomic_t first_tap;
 };
 
 static void double_tap_deferred(struct k_work *work)
@@ -35,7 +35,7 @@ static void double_tap_deferred(struct k_work *work)
 	struct double_tap_data_entry *entry =
 		CONTAINER_OF(dwork, struct double_tap_data_entry, work);
 
-	entry->first_tap = false;
+	atomic_set(&entry->first_tap, 0);
 }
 
 static void double_tap_cb(struct input_event *evt, void *user_data)
@@ -62,13 +62,12 @@ static void double_tap_cb(struct input_event *evt, void *user_data)
 	entry = &cfg->entries[i];
 
 	if (evt->value) {
-		if (entry->first_tap) {
+		if (atomic_set(&entry->first_tap, 0)) {
 			k_work_cancel_delayable(&entry->work);
 			input_report_key(dev, cfg->double_tap_codes[i], 1, true, K_FOREVER);
 			input_report_key(dev, cfg->double_tap_codes[i], 0, true, K_FOREVER);
-			entry->first_tap = false;
 		} else {
-			entry->first_tap = true;
+			atomic_set(&entry->first_tap, 1);
 			k_work_schedule(&entry->work, K_MSEC(cfg->double_tap_delay_ms));
 		}
 	}
@@ -88,7 +87,7 @@ static int double_tap_init(const struct device *dev)
 
 		entry->dev = dev;
 		entry->index = i;
-		entry->first_tap = false;
+		atomic_set(&entry->first_tap, 0);
 		k_work_init_delayable(&entry->work, double_tap_deferred);
 	}
 

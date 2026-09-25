@@ -39,6 +39,12 @@ config RTIO_SYS_MEM_BLOCKS
 	  without a pre-allocated memory buffer. Instead the buffer will be taken
 	  from the allocated memory pool associated with the RTIO context.
 
+config RTIO_CQE_CALLBACK
+	bool "Notify when a CQE is submitted to the RTIO context using a callback"
+	help
+	  The CQE callback will notify when a CQE is submitted to the RTIO context.
+	  It is set using rtio_set_cqe_callback().
+
 config RTIO_OP_DELAY
 	bool "Delay Operation"
 	default y

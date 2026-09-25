@@ -7,6 +7,7 @@ import logging
 import os
 from datetime import UTC, datetime
 
+from zspdx.licenses import get_license_ids
 from zspdx.model import (
     ComponentPurpose,
     ExternalReferenceType,
@@ -16,8 +17,8 @@ from zspdx.model import (
     SBOMFile,
 )
 from zspdx.serializers.helpers import (
+    format_blob_comment,
     generate_download_url,
-    get_standard_licenses,
     normalize_spdx_name,
 )
 from zspdx.util import get_hashes
@@ -247,11 +248,10 @@ DocumentNamespace: {namespace}
         return spdx_id
 
     def _resolve_cpe_metadata(self, component):
-        """Derive (name, supplier, version), filling gaps from a CPE 2.3 reference.
+        """Derive (supplier, version), filling gaps from a CPE 2.3 reference.
 
-        Returns local copies so component.name is left untouched (it drives ID lookup).
+        Returns local copies so the component is left untouched.
         """
-        package_name = component.name
         supplier = component.supplier
         package_version = component.version
         for ref in component.external_references:
@@ -261,9 +261,8 @@ DocumentNamespace: {namespace}
             metadata = ref.locator.split(':', 6)
             if len(metadata) > 5:
                 supplier = supplier or metadata[3]
-                package_name = metadata[4]
                 package_version = package_version or metadata[5]
-        return package_name, supplier, package_version
+        return supplier, package_version
 
     def _write_files_analyzed(self, f, component):
         """Write the FilesAnalyzed section and verification code for a component."""
@@ -284,7 +283,8 @@ DocumentNamespace: {namespace}
     def _write_package(self, f, component, doc: SBOMDocument):
         """Write a single package."""
         spdx_id = self._resolve_package_id(component)
-        package_name, supplier, package_version = self._resolve_cpe_metadata(component)
+        supplier, package_version = self._resolve_cpe_metadata(component)
+        package_name = component.name
         normalized_name = normalize_spdx_name(package_name)
 
         f.write(f"""##### Package: {normalized_name}
@@ -367,7 +367,13 @@ FileChecksum: SHA1: {file_obj.hashes.get('SHA1', '')}
             for lic in file_obj.license_info_in_file:
                 f.write(f"LicenseInfoInFile: {lic}\n")
 
-        f.write(f"FileCopyrightText: {file_obj.copyright_text}\n\n")
+        f.write(f"FileCopyrightText: {file_obj.copyright_text}\n")
+
+        blob = file_obj.metadata.get("blob")
+        if blob:
+            f.write(f"FileComment: <text>{format_blob_comment(blob)}</text>\n")
+
+        f.write("\n")
 
         # File relationships
         for rel in file_obj.relationships:
@@ -404,7 +410,7 @@ FileChecksum: SHA1: {file_obj.hashes.get('SHA1', '')}
         """Write custom license declarations."""
         # Get custom licenses from components in this document
         custom_licenses = set()
-        standard_licenses = get_standard_licenses()
+        standard_licenses = get_license_ids()
         for component in doc.components.values():
             for file_obj in component.files.values():
                 for lic in file_obj.license_info_in_file:

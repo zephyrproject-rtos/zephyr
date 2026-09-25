@@ -36,6 +36,6 @@
 
 &eth0 {
 	status = "okay";
-
+	zephyr,random-mac-address;
 	phy-handle = <&pyh0>;
 };

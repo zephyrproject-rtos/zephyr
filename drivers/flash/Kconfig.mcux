@@ -187,6 +187,7 @@ config FLASH_MCUX_XSPI
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_XSPI_NOR),reset-gpios)
 	help
 	  Enable the mcux xspi flash driver.
 

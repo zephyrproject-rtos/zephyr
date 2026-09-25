@@ -182,7 +182,6 @@ static void lpm_get_capabilities(const struct device *dev, struct display_capabi
 {
 	const struct lpm013m126_config *cfg = dev->config;
 
-	memset(caps, 0, sizeof(*caps));
 	caps->x_resolution = cfg->width;
 	caps->y_resolution = cfg->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
@@ -252,7 +251,7 @@ static DEVICE_API(display, lpm_api) = {
 
 #define LPM013M126_INIT(inst)							\
 	static const struct lpm013m126_config lpm_cfg_##inst = {		\
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |		\
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER |	\
 					    SPI_WORD_SET(8) |			\
 					    SPI_TRANSFER_MSB),			\
 		.disp_gpio = GPIO_DT_SPEC_INST_GET(inst, disp_gpios),		\

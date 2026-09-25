@@ -85,7 +85,7 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_host_cmd_spi_backend),
 /* Timeout to wait for SPI request packet
  *
  * This affects the slowest SPI clock we can support. A delay of 8192 us
- * permits a 512-byte request at 500 KHz, assuming the master starts sending
+ * permits a 512-byte request at 500 KHz, assuming the controller starts sending
  * bytes as soon as it asserts chip select. That's as slow as we would
  * practically want to run the SPI interface, since running it slower
  * significantly impacts firmware update times.
@@ -397,7 +397,7 @@ static int spi_configure(const struct ec_host_cmd_spi_ctx *hc_spi)
 	LL_SPI_SetTransferBitOrder(spi, LL_SPI_MSB_FIRST);
 	LL_SPI_DisableCRC(spi);
 	LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_8BIT);
-	/* Set slave options */
+	/* Set peripheral options */
 	LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_INPUT);
 	LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
 
@@ -598,7 +598,7 @@ static int spi_setup_dma(struct ec_host_cmd_spi_ctx *hc_spi)
 		return ret;
 	}
 
-	/* Start receiving from the SPI Master */
+	/* Start receiving from the SPI controller */
 	ret = dma_start(hc_spi->dma_rx->dma_dev, hc_spi->dma_rx->channel);
 	if (ret != 0) {
 		return ret;

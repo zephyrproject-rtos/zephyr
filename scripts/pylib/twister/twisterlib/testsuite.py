@@ -244,9 +244,14 @@ def _find_new_ztest_testcases(search_area):
     Find regular ztest testcases like "ZTEST", "ZTEST_F" etc. Return
     testcases' names and eventually found warnings.
     """
+    # The negative lookahead rejects names built with the ## token-paste
+    # operator (e.g. ZTEST(suite, test_dma##idx##_m2m_loop)); those cannot be
+    # resolved statically, so registering the truncated name would create a
+    # phantom testcase that never runs. Such cases are still discovered at
+    # runtime from the harness output.
     testcase_regex = re.compile(
         br"^\s*(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
-        br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
+        br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)(?![a-zA-Z0-9_#])\s*",
         re.MULTILINE)
 
     return _find_ztest_testcases(search_area, testcase_regex)

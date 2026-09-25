@@ -1020,6 +1020,78 @@ ZTEST(net_buf_tests, test_net_buf_fixed_append)
 	net_buf_unref(buf);
 }
 
+/* Half of the fixed pool per append, so that a single call spans several
+ * fragments and the second call starts from a chain that already has some.
+ */
+#define APPEND_CHUNK (FIXED_BUFFER_SIZE * 5)
+
+/* Fragment allocator used to build a long chain, counting the allocations. */
+static struct net_buf *fixed_pool_allocator(k_timeout_t timeout, void *user_data)
+{
+	unsigned int *allocations = user_data;
+
+	(*allocations)++;
+
+	return net_buf_alloc(&fixed_pool, timeout);
+}
+
+ZTEST(net_buf_tests, test_net_buf_append_long_chain)
+{
+	static uint8_t data[APPEND_CHUNK];
+	unsigned int allocations = 0;
+	struct net_buf *buf, *frag;
+	size_t frags = 0;
+	size_t written;
+
+	destroy_called = 0;
+
+	/* Vary the pattern per fragment so that a reordered chain cannot
+	 * still match the source payload.
+	 */
+	for (size_t i = 0; i < sizeof(data); i++) {
+		data[i] = (uint8_t)(i + (i / FIXED_BUFFER_SIZE));
+	}
+
+	buf = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get fixed buffer");
+
+	written = net_buf_append_bytes(buf, sizeof(data), data, K_NO_WAIT, fixed_pool_allocator,
+				       &allocations);
+	zassert_equal(written, sizeof(data), "Incomplete first append");
+	zassert_equal(allocations, 4, "Unexpected fragment allocation count");
+
+	written = net_buf_append_bytes(buf, sizeof(data), data, K_NO_WAIT, fixed_pool_allocator,
+				       &allocations);
+	zassert_equal(written, sizeof(data), "Incomplete second append");
+	zassert_equal(allocations, 9, "Unexpected fragment allocation count");
+
+	/* Every fragment must be filled and linked exactly once. */
+	for (frag = buf; frag != NULL; frag = frag->frags) {
+		zassert_equal(frag->len, FIXED_BUFFER_SIZE, "Fragment not filled");
+		frags++;
+	}
+	zassert_equal(frags, 10, "Unexpected fragment count");
+	zassert_equal(net_buf_frags_len(buf), APPEND_CHUNK * 2, "Unexpected chain length");
+
+	/* Both appends must be readable back in order, including across the
+	 * fragment that joins them.
+	 */
+	zassert_equal(net_buf_data_match(buf, 0, data, sizeof(data)), sizeof(data),
+		      "First append is out of order");
+	zassert_equal(net_buf_data_match(buf, sizeof(data), data, sizeof(data)), sizeof(data),
+		      "Second append is out of order");
+
+	/* The pool is now empty: a failed allocation must leave the chain as
+	 * it is.
+	 */
+	written = net_buf_append_bytes(buf, 1, data, K_NO_WAIT, fixed_pool_allocator, &allocations);
+	zassert_equal(written, 0, "Appended to an exhausted pool");
+	zassert_equal(net_buf_frags_len(buf), APPEND_CHUNK * 2, "Chain changed on failed append");
+
+	net_buf_unref(buf);
+	zassert_equal(destroy_called, 10, "Incorrect destroy callback count");
+}
+
 ZTEST(net_buf_tests, test_net_buf_linearize)
 {
 	struct net_buf *buf, *frag;

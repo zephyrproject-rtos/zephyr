@@ -58,22 +58,21 @@ static void rng_pool_work_handler(struct k_work *work)
 	uint32_t len;
 	const struct busy_sim_config *config = busy_sim_dev->config;
 
-	len = ring_buf_put_claim(&rnd_rbuf, &buf, BUFFER_SIZE - 1);
+	len = ring_buf_put_ptr(&rnd_rbuf, &buf, 0);
 	if (len) {
 		int err = entropy_get_entropy(config->entropy, buf, len);
 
 		if (err == 0) {
-			ring_buf_put_finish(&rnd_rbuf, len);
+			ring_buf_commit(&rnd_rbuf, len);
 			return;
 		}
-		ring_buf_put_finish(&rnd_rbuf, 0);
 	}
 
 	k_work_submit(work);
 }
 
 
-static uint32_t get_timeout(bool idle, bool use_rand)
+static uint32_t get_timeout(bool idle)
 {
 	struct busy_sim_data *data = busy_sim_dev->data;
 	uint32_t avg = idle ? data->idle_avg : data->active_avg;
@@ -81,7 +80,7 @@ static uint32_t get_timeout(bool idle, bool use_rand)
 	uint16_t rand_val;
 	uint32_t len;
 
-	if (use_rand) {
+	if (IS_ENABLED(USE_TEST_RANDOM)) {
 		sys_rand_get(&rand_val, sizeof(rand_val));
 	} else {
 		len = ring_buf_get(&rnd_rbuf,
@@ -107,7 +106,7 @@ static void counter_alarm_callback(const struct device *dev,
 	const struct busy_sim_config *config = busy_sim_dev->config;
 	struct busy_sim_data *data = busy_sim_dev->data;
 
-	data->alarm_cfg.ticks = get_timeout(true, !config->entropy);
+	data->alarm_cfg.ticks = get_timeout(true);
 
 	if (config->pin_spec.port) {
 		err = gpio_pin_set_dt(&config->pin_spec, 1);
@@ -119,7 +118,7 @@ static void counter_alarm_callback(const struct device *dev,
 		data->cb();
 	}
 
-	k_busy_wait(get_timeout(false, !config->entropy) / data->us_tick);
+	k_busy_wait(get_timeout(false) / data->us_tick);
 
 	if (config->pin_spec.port) {
 		err = gpio_pin_set_dt(&config->pin_spec, 0);
@@ -144,7 +143,7 @@ void busy_sim_start(uint32_t active_avg, uint32_t active_delta,
 	data->idle_avg = idle_avg;
 	data->idle_delta = idle_delta;
 
-	if (config->entropy) {
+	if (!IS_ENABLED(USE_TEST_RANDOM)) {
 		err = k_work_submit(&sim_work);
 		__ASSERT_NO_MSG(err >= 0);
 	}
@@ -162,7 +161,7 @@ void busy_sim_stop(void)
 	int err;
 	const struct busy_sim_config *config = busy_sim_dev->config;
 
-	if (config->entropy) {
+	if (!IS_ENABLED(USE_TEST_RANDOM)) {
 		k_work_cancel(&sim_work);
 	}
 
@@ -196,7 +195,7 @@ static int busy_sim_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (config->entropy) {
+	if (!IS_ENABLED(USE_TEST_RANDOM)) {
 		k_work_init(&sim_work, rng_pool_work_handler);
 		ring_buf_init(&rnd_rbuf, BUFFER_SIZE, rnd_buf);
 	}

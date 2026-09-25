@@ -64,6 +64,7 @@ extern "C" {
 #define BT_HCI_VS_HW_VAR_ESP32C6                0x0005
 #define BT_HCI_VS_HW_VAR_ESP32H2                0x0006
 #define BT_HCI_VS_HW_VAR_ESP32C5                0x0007 /**< ESP32-C5 hardware variant */
+#define BT_HCI_VS_HW_VAR_ESP32C61               0x0008 /**< ESP32-C61 hardware variant */
 
 #define BT_HCI_VS_FW_VAR_STANDARD_CTLR          0x0000
 #define BT_HCI_VS_FW_VAR_VS_CTLR                0x0001

@@ -23,7 +23,7 @@ config SHELL_STACK_SIZE
 
 endif # SHELL
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y  if !NET_LOOPBACK && !NET_TEST
 
 if XIP
@@ -41,5 +41,8 @@ config CPU_CORTEX_R52_ICACHE_FLASH_WAY
 config CPU_CORTEX_R52_DCACHE_FLASH_WAY
 	default 1
 endif # XIP
+
+configdefault ISR_STACK_SIZE
+	default 512
 
 endif # BOARD_S32Z2XXDC2_S32Z270_RTU0 || BOARD_S32Z2XXDC2_S32Z270_RTU1

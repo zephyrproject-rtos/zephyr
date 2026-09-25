@@ -720,7 +720,7 @@ int bmi08x_accel_init(const struct device *dev)
 
 #define BMI08X_CONFIG_SPI(inst)                                                                    \
 	.bus.spi = SPI_DT_SPEC_INST_GET(                                                           \
-		inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),
+		inst, SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),
 
 #define BMI08X_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst),
 
@@ -788,7 +788,8 @@ int bmi08x_accel_init(const struct device *dev)
 	(COND_CODE_1(DT_INST_ON_BUS(inst, spi),							   \
 		    (SPI_DT_IODEV_DEFINE(bmi08x_accel_rtio_bus_##inst,				   \
 					 DT_DRV_INST(inst),					   \
-					 SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)),\
+					 SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) |		   \
+					 SPI_TRANSFER_MSB)),					   \
 		    ())));									   \
                                                                                                    \
 	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC(inst);))              \

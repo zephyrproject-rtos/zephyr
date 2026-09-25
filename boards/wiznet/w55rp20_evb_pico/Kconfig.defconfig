@@ -3,12 +3,8 @@
 
 if BOARD_W55RP20_EVB_PICO
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
-
-endif # NETWORKING
 
 if I2C_DW
 

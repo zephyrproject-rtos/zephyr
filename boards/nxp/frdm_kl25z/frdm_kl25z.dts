@@ -131,6 +131,38 @@
 	pinctrl-names = "default";
 };
 
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioe 5 GPIO_ACTIVE_LOW>;
+};
+
+&tpm0 {
+	status = "okay";
+	pinctrl-0 = <&tpm0_default>;
+	pinctrl-names = "default";
+};
+
+&tpm1 {
+	status = "disabled";
+	pinctrl-0 = <&tpm1_default>;
+	pinctrl-names = "default";
+};
+
+&tpm2 {
+	status = "disabled";
+	pinctrl-0 = <&tpm2_default>;
+	pinctrl-names = "default";
+};
+
 &gpioa {
 	status = "okay";
 };
@@ -139,7 +171,15 @@
 	status = "okay";
 };
 
+&gpioc {
+	status = "okay";
+};
+
 &gpiod {
+	status = "okay";
+};
+
+&gpioe {
 	status = "okay";
 };
 

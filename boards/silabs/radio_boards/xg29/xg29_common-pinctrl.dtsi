@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Pinctrl groups that match on every xG29 radio board in this folder.
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/xg29-pinctrl.h>
+
+&pinctrl {
+	itm_default: itm_default {
+		group0 {
+			pins = <GPIO_SWV_PA3>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	usart1_default: usart1_default {
+		group0 {
+			pins = <USART1_TX_PA5>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART1_RX_PA6>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};

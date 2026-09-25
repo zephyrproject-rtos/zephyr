@@ -38,6 +38,19 @@ properties:
       - 7 # ICM566XX_DT_GYRO_FS_31_25
       - 8 # ICM566XX_DT_GYRO_FS_15_625
 
+  apex:
+    type: string
+    default: none
+    enum:
+      - none
+    description: |
+      Advanced Pedometer and Event Detection (APEX)
+      features selection. Note that this driver does not
+      implement all hardware APEX functions of the family,
+      but exposes a supported subset for compatible variants
+      like ICM56686. Other variants, such as ICM56622,
+      do not support these features in Zephyr.
+
 include: ["i2c-device.yaml", "invensense,icm566xx-common.yaml"]
 
 examples:

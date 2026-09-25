@@ -888,18 +888,6 @@ struct bt_map_mce_mas {
 	const char *_req_type;
 };
 
-/** @brief Register callbacks for MAP Client MAS
- *
- * Registers callback functions to handle MAS events and responses.
- * Must be called before initiating any MAS operations.
- *
- * @param mce_mas MAS client instance.
- * @param cb Pointer to callback structure (must remain valid).
- *
- * @return 0 on success, negative error code on failure.
- */
-int bt_map_mce_mas_cb_register(struct bt_map_mce_mas *mce_mas, const struct bt_map_mce_mas_cb *cb);
-
 /** @brief Connect MAP Client MAS over RFCOMM
  *
  * Initiates RFCOMM transport connection to a remote MAS.
@@ -908,12 +896,13 @@ int bt_map_mce_mas_cb_register(struct bt_map_mce_mas *mce_mas, const struct bt_m
  *
  * @param conn Bluetooth connection to remote device.
  * @param mce_mas MAS client instance.
+ * @param cb Pointer to callback structure (must remain valid for the lifetime of the connection).
  * @param channel RFCOMM server channel (from SDP discovery).
  *
  * @return 0 on success, negative error code on failure.
  */
 int bt_map_mce_mas_rfcomm_connect(struct bt_conn *conn, struct bt_map_mce_mas *mce_mas,
-				  uint8_t channel);
+				  const struct bt_map_mce_mas_cb *cb, uint8_t channel);
 
 /** @brief Disconnect MAP Client MAS over RFCOMM
  *
@@ -934,12 +923,13 @@ int bt_map_mce_mas_rfcomm_disconnect(struct bt_map_mce_mas *mce_mas);
  *
  * @param conn Bluetooth connection to remote device.
  * @param mce_mas MAS client instance.
+ * @param cb Pointer to callback structure (must remain valid for the lifetime of the connection).
  * @param psm L2CAP PSM (from SDP discovery).
  *
  * @return 0 on success, negative error code on failure.
  */
 int bt_map_mce_mas_l2cap_connect(struct bt_conn *conn, struct bt_map_mce_mas *mce_mas,
-				 uint16_t psm);
+				 const struct bt_map_mce_mas_cb *cb, uint16_t psm);
 
 /** @brief Disconnect MAP Client MAS over L2CAP
  *
@@ -1405,17 +1395,17 @@ struct bt_map_mce_mns {
 	uint8_t _opcode;
 };
 
-/** @brief Register callbacks for MAP Client MNS
+/** @brief Register MAP Client MNS server
  *
- * Registers callback functions to handle MNS events and requests.
- * Must be called before accepting any MNS connections.
+ * Associates a callback table with the server object and registers it with
+ * the underlying OBEX server.
  *
  * @param mce_mns MNS server instance.
- * @param cb Pointer to callback structure (must remain valid).
+ * @param cb Pointer to callback structure (must remain valid for the lifetime of the server).
  *
  * @return 0 on success, negative error code on failure.
  */
-int bt_map_mce_mns_cb_register(struct bt_map_mce_mns *mce_mns, const struct bt_map_mce_mns_cb *cb);
+int bt_map_mce_mns_register(struct bt_map_mce_mns *mce_mns, const struct bt_map_mce_mns_cb *cb);
 
 /** @brief Register MAP Client MNS RFCOMM server
  *
@@ -1862,17 +1852,17 @@ struct bt_map_mse_mas {
 	uint8_t _opcode;
 };
 
-/** @brief Register callbacks for MAP Server MAS
+/** @brief Register MAP Server MAS server
  *
- * Registers callback functions to handle MAS events and requests.
- * Must be called before accepting any MAS connections.
+ * Associates a callback table with the server object and registers it with
+ * the underlying OBEX server.
  *
  * @param mse_mas MAS server instance.
- * @param cb Pointer to callback structure (must remain valid).
+ * @param cb Pointer to callback structure (must remain valid for the lifetime of the server).
  *
  * @return 0 on success, negative error code on failure.
  */
-int bt_map_mse_mas_cb_register(struct bt_map_mse_mas *mse_mas, const struct bt_map_mse_mas_cb *cb);
+int bt_map_mse_mas_register(struct bt_map_mse_mas *mse_mas, const struct bt_map_mse_mas_cb *cb);
 
 /** @brief Register MAP Server MAS RFCOMM server
  *
@@ -2328,18 +2318,6 @@ struct bt_map_mse_mns {
 	const char *_req_type;
 };
 
-/** @brief Register callbacks for MAP Server MNS
- *
- * Registers callback functions to handle MNS events and responses.
- * Must be called before initiating any MNS operations.
- *
- * @param mse_mns MNS client instance.
- * @param cb Pointer to callback structure (must remain valid).
- *
- * @return 0 on success, negative error code on failure.
- */
-int bt_map_mse_mns_cb_register(struct bt_map_mse_mns *mse_mns, const struct bt_map_mse_mns_cb *cb);
-
 /** @brief Connect MAP Server MNS over RFCOMM
  *
  * Initiates RFCOMM transport connection to a remote MNS.
@@ -2348,12 +2326,13 @@ int bt_map_mse_mns_cb_register(struct bt_map_mse_mns *mse_mns, const struct bt_m
  *
  * @param conn Bluetooth connection to remote device.
  * @param mse_mns MNS client instance.
+ * @param cb Pointer to callback structure (must remain valid for the lifetime of the connection).
  * @param channel RFCOMM server channel (from SDP discovery).
  *
  * @return 0 on success, negative error code on failure.
  */
 int bt_map_mse_mns_rfcomm_connect(struct bt_conn *conn, struct bt_map_mse_mns *mse_mns,
-				  uint8_t channel);
+				  const struct bt_map_mse_mns_cb *cb, uint8_t channel);
 
 /** @brief Disconnect MAP Server MNS over RFCOMM
  *
@@ -2374,12 +2353,13 @@ int bt_map_mse_mns_rfcomm_disconnect(struct bt_map_mse_mns *mse_mns);
  *
  * @param conn Bluetooth connection to remote device.
  * @param mse_mns MNS client instance.
+ * @param cb Pointer to callback structure (must remain valid for the lifetime of the connection).
  * @param psm L2CAP PSM (from SDP discovery).
  *
  * @return 0 on success, negative error code on failure.
  */
 int bt_map_mse_mns_l2cap_connect(struct bt_conn *conn, struct bt_map_mse_mns *mse_mns,
-				 uint16_t psm);
+				 const struct bt_map_mse_mns_cb *cb, uint16_t psm);
 
 /** @brief Disconnect MAP Server MNS over L2CAP
  *

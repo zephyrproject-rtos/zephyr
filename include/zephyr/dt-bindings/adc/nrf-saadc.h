@@ -47,6 +47,11 @@
  */
 #define NRF_SAADC_GND  (NRF_SAADC_AIN_VDD_SHIM_OFFSET - 1)
 
+/** @brief Symbol specifying offset to configure "TEST" SAADC inputs */
+#define NRF_SAADC_AIN_TEST_SHIM_OFFSET 64
+/** @brief Symbol specifying offset to configure AVSS as a channel input */
+#define NRF_SAADC_AVSS		      (NRF_SAADC_AIN_TEST_SHIM_OFFSET + 0)
+
 #define NRF_SAADC_AIN_VDD_SHIM_OFFSET 128
 #define NRF_SAADC_VDD		      (NRF_SAADC_AIN_VDD_SHIM_OFFSET + 0)
 #define NRF_SAADC_VDDDIV2	      (NRF_SAADC_AIN_VDD_SHIM_OFFSET + 1)

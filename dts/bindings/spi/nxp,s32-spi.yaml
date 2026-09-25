@@ -29,10 +29,16 @@ properties:
   pinctrl-names:
     required: true
 
-  slave:
+  peripheral:
     type: boolean
     description: |
-      Select if the SPI module is intended to be used in slave mode.
+      Select if the SPI module is intended to be used in peripheral mode.
+
+  slave:
+    type: boolean
+    deprecated: true
+    description: |
+      Deprecated. Use peripheral instead.
 
   spi-sck-cs-delay:
     type: int

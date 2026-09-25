@@ -21,7 +21,7 @@ jobs:
       group: zephyr-runner-v2-linux-x64-4xlarge
     timeout-minutes: 360
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.4.20260912
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -86,6 +86,7 @@ jobs:
 
       - name: west setup
         run: |
+          git config --global http.version HTTP/1.1
           west init -l . || true
           west update 1> west.update.log || west update 1> west.update-2.log
 
@@ -220,6 +221,7 @@ jobs:
 
       - name: Merge coverage files
         run: |
+          python3 ./scripts/ci/coverage/strip_function_pos.py coverage/reports/*.json
           pushd ./coverage/reports
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
@@ -257,7 +259,7 @@ jobs:
 
       - name: Upload test coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           env_vars: OS,PYTHON
           fail_ci_if_error: false
@@ -268,7 +270,7 @@ jobs:
 
       - name: Upload Doxygen coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           env_vars: OS,PYTHON
           fail_ci_if_error: false

@@ -27,7 +27,7 @@ jobs:
     steps:
     - name: Download artifacts
       id: download-artifacts
-      uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
+      uses: dawidd6/action-download-artifact@d63b86af1b34672e53c440b1b83979861906bad7 # v24
       with:
         workflow: doc-build.yml
         run_id: ${{ github.event.workflow_run.id }}
@@ -89,7 +89,7 @@ jobs:
 
     - name: Configure AWS Credentials
       if: steps.check-pr.outputs.publish == 'true'
-      uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+      uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
       with:
         aws-access-key-id: ${{ vars.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_SECRET_ACCESS_KEY }}

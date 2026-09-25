@@ -173,7 +173,7 @@ static int spi_cc23x0_configure(const struct device *dev,
 	}
 
 	/* Peripheral mode has not been implemented */
-	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_CONTROLLER) {
 		LOG_ERR("Peripheral mode is not supported");
 		return -ENOTSUP;
 	}

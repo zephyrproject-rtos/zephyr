@@ -53,6 +53,12 @@ else()
   endif()
 endif()
 
+if((TARGET_HOST STREQUAL "x86_64") AND (NOT CONFIG_64BIT))
+  set(NATIVE_TARGET_ARCH "i686" CACHE STRING "Target architecture for native simulator based targets")
+else()
+  set(NATIVE_TARGET_ARCH ${TARGET_HOST} CACHE STRING "Target architecture for native simulator based targets")
+endif()
+
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${TARGET_HOST}.cmake)
   # Set necessary compiler & linker options for this specific host architecture
   include(${TARGET_HOST}.cmake)

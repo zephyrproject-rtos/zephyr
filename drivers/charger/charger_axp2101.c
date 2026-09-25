@@ -33,6 +33,9 @@ LOG_MODULE_REGISTER(charger_axp2101, CONFIG_CHARGER_LOG_LEVEL);
 	#define BUTTON_BATTERY_CHARGE_ENABLE	BIT(2)
 	#define CELL_BATTERY_CHARGE_ENABLE	BIT(1)
 
+#define AXP2101_REG_TS_CONTROL			0x50
+	#define TS_DISABLE			BIT(4)
+
 #define AXP2101_IPRECH_CHARGER_SETTING		0x61
 	#define PRE_CHARGE_CURRENT_STEP_UA	25000
 
@@ -47,6 +50,7 @@ LOG_MODULE_REGISTER(charger_axp2101, CONFIG_CHARGER_LOG_LEVEL);
 struct axp2101_config {
 	struct i2c_dt_spec i2c;
 	bool vbackup_enable;
+	bool ts_disable;
 };
 
 struct axp2101_data {
@@ -358,6 +362,15 @@ static int axp2101_init(const struct device *dev)
 		}
 	}
 
+	if (config->ts_disable) {
+		ret = i2c_reg_update_byte_dt(&config->i2c, AXP2101_REG_TS_CONTROL,
+					     TS_DISABLE,
+					     TS_DISABLE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	val.const_charge_current_ua = data->cc_current_ua;
 	ret = set_constant_charge_current_ua(dev, &val);
 	if (ret < 0) {
@@ -389,6 +402,7 @@ static DEVICE_API(charger, axp2101_driver_api) = {
 	static const struct axp2101_config axp2101_config_##inst = {                               \
 		.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),                   \
 		.vbackup_enable = DT_INST_PROP(inst, vbackup_enable),                              \
+		.ts_disable = DT_INST_PROP(inst, ts_disable),                                      \
 	};                                                                                         \
 	static struct axp2101_data axp2101_data_##inst = {                                         \
 		.cc_current_ua = DT_INST_PROP(inst, constant_charge_current_max_microamp),         \

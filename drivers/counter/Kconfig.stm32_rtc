@@ -16,7 +16,6 @@ if COUNTER_RTC_STM32
 
 config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
 	bool "Save rtc time value between resets"
-	default n
 	help
 	  Keep the counter value after each reset.
 

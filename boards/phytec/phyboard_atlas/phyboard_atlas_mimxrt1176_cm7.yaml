@@ -22,6 +22,7 @@ supported:
   - i2s
   - mipi_dsi
   - netif:eth
+  - ptp_clock
   - spi
   - uart
   - usb_device

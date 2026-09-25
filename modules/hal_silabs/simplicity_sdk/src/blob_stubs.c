@@ -16,6 +16,22 @@
 #include <sl_rail_ieee802154.h>
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_SILABS_S3) && defined(CONFIG_SILABS_SISDK_PROTOCOL_CRYPTO)
+#include <sl_code_classification.h>
+
+/* The sxsymcrypt headers classify functions with component and class tokens that are not defined
+ * in Zephyr builds, so the stubs would end up in orphan sections. Keep them in .text.
+ */
+#undef SL_CODE_CLASSIFY
+#define SL_CODE_CLASSIFY(component, ...)
+
+#include <sxsymcrypt/aead.h>
+#include <sxsymcrypt/aes.h>
+#include <sxsymcrypt/blkcipher.h>
+#include <sxsymcrypt/keyref.h>
+#include <sxsymcrypt/statuscodes.h>
+#endif
+
 const uint16_t sl_rail_builtin_rx_packet_queue_entries;
 const uint16_t sl_rail_builtin_rx_fifo_bytes;
 sl_rail_packet_queue_entry_t *const sl_rail_builtin_rx_packet_queue_ptr;
@@ -263,6 +279,10 @@ void RDMAILBOX_IRQHandler(void)
 {
 }
 
+void SYSMBLPW0CPU_IRQHandler(void)
+{
+}
+
 /* RAIL timer API stubs (e.g. for counter_silabs_protimer when no blobs) */
 sl_rail_time_t sl_rail_get_time(sl_rail_handle_t rail_handle)
 {
@@ -307,6 +327,11 @@ sl_rail_status_t sl_rail_start_scheduled_cca_csma_tx(sl_rail_handle_t rail_handl
 	const sl_rail_scheduled_tx_config_t *p_scheduled_tx_config,
 	const sl_rail_csma_config_t *p_csma_config,
 	const sl_rail_scheduler_info_t *p_scheduler_info)
+{
+	return SL_RAIL_STATUS_NO_ERROR;
+}
+
+sl_rail_status_t sl_rail_copy_device_info(sl_rail_handle_t radio_handle)
 {
 	return SL_RAIL_STATUS_NO_ERROR;
 }
@@ -405,5 +430,84 @@ sl_rail_status_t sl_rail_ieee802154_get_address(sl_rail_handle_t rail_handle,
 sl_rail_status_t sl_rail_ieee802154_toggle_frame_pending(sl_rail_handle_t rail_handle)
 {
 	return SL_RAIL_STATUS_NO_ERROR;
+}
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_SILABS_S3) && defined(CONFIG_SILABS_SISDK_PROTOCOL_CRYPTO)
+/* Stubs for libsxsymcrypt.a, which backs the Series 3 implementation of sli_crypto. */
+struct sxkeyref sx_keyref_load_material(size_t keysz, const char *keymaterial)
+{
+	struct sxkeyref keyref = {0};
+
+	return keyref;
+}
+
+struct sxkeyref sx_keyref_load_by_id(size_t keyindex)
+{
+	struct sxkeyref keyref = {0};
+
+	return keyref;
+}
+
+int sx_aead_create_aesccm_enc(struct sxaead *c, const struct sxkeyref *key, const char *nonce,
+			      size_t noncesz, size_t tagsz, size_t aadsz, size_t datasz)
+{
+	return SX_OK;
+}
+
+int sx_aead_create_aesccm_dec(struct sxaead *c, const struct sxkeyref *key, const char *nonce,
+			      size_t noncesz, size_t tagsz, size_t aadsz, size_t datasz)
+{
+	return SX_OK;
+}
+
+int sx_aead_feed_aad(struct sxaead *c, const char *aad, size_t aadsz)
+{
+	return SX_OK;
+}
+
+int sx_aead_crypt(struct sxaead *c, const char *datain, size_t datainsz, char *dataout)
+{
+	return SX_OK;
+}
+
+int sx_aead_produce_tag(struct sxaead *c, char *tag)
+{
+	return SX_OK;
+}
+
+int sx_aead_verify_tag(struct sxaead *c, const char *tag)
+{
+	return SX_OK;
+}
+
+int sx_aead_wait(struct sxaead *c)
+{
+	return SX_OK;
+}
+
+int sx_blkcipher_create_aesecb_enc(struct sxblkcipher *c, const struct sxkeyref *key)
+{
+	return SX_OK;
+}
+
+int sx_blkcipher_create_aesecb_dec(struct sxblkcipher *c, const struct sxkeyref *key)
+{
+	return SX_OK;
+}
+
+int sx_blkcipher_crypt(struct sxblkcipher *c, const char *datain, size_t sz, char *dataout)
+{
+	return SX_OK;
+}
+
+int sx_blkcipher_run(struct sxblkcipher *c)
+{
+	return SX_OK;
+}
+
+int sx_blkcipher_wait(struct sxblkcipher *c)
+{
+	return SX_OK;
 }
 #endif

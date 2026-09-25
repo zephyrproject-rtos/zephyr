@@ -38,7 +38,6 @@ BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
 struct siwx91x_nwp_data {
-	uint8_t power_profile;
 	char current_country_code[WIFI_COUNTRY_CODE_LEN];
 };
 
@@ -47,6 +46,7 @@ struct siwx91x_nwp_config {
 	void (*config_irq)(const struct device *dev);
 	uint32_t stack_size;
 	uint8_t antenna_selection;
+	bool antenna_ext_gpios;
 	bool support_1p8v;
 	bool enable_xtal_correction;
 	bool qspi_80mhz_clk;
@@ -452,42 +452,35 @@ int siwx91x_nwp_mode_switch(const struct device *dev, uint8_t oper_mode, bool hi
 int siwx91x_nwp_apply_power_profile(const struct device *dev,
 				    const sl_wifi_performance_profile_v2_t *wifi_profile)
 {
-	struct siwx91x_nwp_data *data = dev->data;
-	sl_wifi_performance_profile_v2_t default_wifi_profile = {
-		.profile = data->power_profile,
-	};
-	sl_bt_performance_profile_t bt_performance_profile = {
-		.profile = data->power_profile,
-	};
+	sl_wifi_performance_profile_v2_t wifi_profile_default = { };
+	sl_bt_performance_profile_t bt_profile = { };
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_PM)) {
-		/* no_op if PM is not enabled*/
-		return 0;
-	}
+	ARG_UNUSED(dev);
 
 	/* WiseConnect zeros the BT half of its cached coex profile on every
 	 * sl_wifi_disconnect(). Re-seed it so the combined profile doesn't
 	 * resolve to HIGH_PERFORMANCE and silently drop the PS request.
 	 */
 	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-		ret = sl_si91x_bt_set_performance_profile(&bt_performance_profile);
+		bt_profile.profile = ASSOCIATED_POWER_SAVE;
+		ret = sl_si91x_bt_set_performance_profile(&bt_profile);
 		if (ret) {
 			LOG_ERR("Failed to initiate power save in BLE mode");
 			return -EINVAL;
 		}
 	}
-
-	if (!wifi_profile) {
-		wifi_profile = &default_wifi_profile;
+	if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		wifi_profile_default.profile = DEEP_SLEEP_WITH_RAM_RETENTION;
+		wifi_profile = &wifi_profile_default;
+	} else if (!wifi_profile) {
+		wifi_profile_default.profile = HIGH_PERFORMANCE;
+		wifi_profile = &wifi_profile_default;
 	}
 	ret = sl_wifi_set_performance_profile_v2(wifi_profile);
 	if (ret) {
 		return -EINVAL;
 	}
-
-	/* Remove the previously added PS4 power state requirement */
-	sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
 
 	return 0;
 }
@@ -495,7 +488,6 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev,
 static int siwx91x_nwp_init(const struct device *dev)
 {
 	const struct siwx91x_nwp_config *config = dev->config;
-	struct siwx91x_nwp_data *data = dev->data;
 	sl_wifi_device_configuration_t network_config;
 	int ret;
 
@@ -503,12 +495,8 @@ static int siwx91x_nwp_init(const struct device *dev)
 	if (ret < 0 && ret != -ENOENT) {
 		return ret;
 	}
-	if (config->antenna_selection == 2 && ret == -ENOENT) {
+	if (config->antenna_ext_gpios && ret == -ENOENT) {
 		LOG_WRN("'ext-gpios' expects some pinctrl configuration");
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) || IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
-		data->power_profile = ASSOCIATED_POWER_SAVE;
 	}
 
 	siwx91x_get_nwp_config(dev, &network_config, WIFI_STA_MODE, false, 0);
@@ -540,6 +528,10 @@ static int siwx91x_nwp_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_PM)) {
+		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
+	}
+
 	config->config_irq(dev);
 
 	return 0;
@@ -556,12 +548,12 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 	{                                                                                          \
 		ARG_UNUSED(dev);                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, nwp_irq, irq),                               \
-			    DT_INST_IRQ_BY_NAME(inst, nwp_irq, priority), IRQ074_Handler, NULL, 0);\
+			    DT_INST_IRQ_BY_NAME(inst, nwp_irq, priority), IRQ074_Handler, NULL,    \
+			    0);                                                                    \
 		irq_enable(DT_INST_IRQ_BY_NAME(inst, nwp_irq, irq));                               \
 	};                                                                                         \
                                                                                                    \
 	static struct siwx91x_nwp_data siwx91x_nwp_data_##inst = {                                 \
-		.power_profile = DEEP_SLEEP_WITH_RAM_RETENTION,                                    \
 	};                                                                                         \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
@@ -572,7 +564,8 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 		.enable_xtal_correction = DT_INST_PROP(inst, enable_xtal_correction),              \
 		.qspi_80mhz_clk = DT_INST_PROP(inst, qspi_80mhz_clk),                              \
 		.antenna_selection = DT_INST_ENUM_IDX(inst, antenna_selection),                    \
-		.clock_frequency = DT_INST_PROP(inst, clock_frequency)                             \
+		.antenna_ext_gpios = DT_INST_ENUM_HAS_VALUE(inst, antenna_selection, ext_gpios),   \
+		.clock_frequency = DT_INST_PROP(inst, clock_frequency),                            \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &siwx91x_nwp_init, NULL, &siwx91x_nwp_data_##inst,             \

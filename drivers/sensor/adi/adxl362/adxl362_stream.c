@@ -199,6 +199,7 @@ static void adxl362_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	hdr->timestamp = data->timestamp;
 	hdr->int_status = data->status;
 	hdr->selected_range = data->selected_range;
+	hdr->accel_odr = data->accel_odr;
 	hdr->has_tmp = data->en_temp_read;
 
 	uint32_t buf_avail = buf_len;

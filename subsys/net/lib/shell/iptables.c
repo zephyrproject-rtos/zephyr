@@ -139,7 +139,7 @@ static int cmd_net_iptable_add(const struct shell *sh, size_t argc, char *argv[]
 	}
 
 	ret = net_ipv4_table_rule_add(&params);
-	if (ret) {
+	if (ret < 0) {
 		PR_ERROR("iptable rule add fail ret %d\n", ret);
 		return -EINVAL;
 	}

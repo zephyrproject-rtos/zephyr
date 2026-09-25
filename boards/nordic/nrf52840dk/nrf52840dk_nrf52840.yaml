@@ -3,7 +3,7 @@ name: nRF52840-DK-NRF52840
 type: mcu
 arch: arm
 ram: 256
-flash: 1024
+flash: 472
 toolchain:
   - zephyr
   - gnuarmemb
@@ -13,7 +13,7 @@ supported:
   - arduino_i2c
   - arduino_serial
   - arduino_spi
-  - ble
+  - bluetooth
   - counter
   - gpio
   - i2c

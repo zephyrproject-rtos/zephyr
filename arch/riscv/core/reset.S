@@ -13,13 +13,6 @@
 #include <zephyr/arch/riscv/irq.h>
 #include "asm_macros.inc"
 
-#ifdef CONFIG_RISCV_S_MODE
-/* mcounteren bits */
-#define MCOUNTEREN_CY  BIT(0)  /* cycle counter */
-#define MCOUNTEREN_TM  BIT(1)  /* time counter */
-#define MCOUNTEREN_IR  BIT(2)  /* instret counter */
-#endif
-
 /* exports */
 GTEXT(__initialize)
 GTEXT(__reset)
@@ -29,7 +22,7 @@ GTEXT(z_prep_c)
 GDATA(riscv_cpu_wake_flag)
 GDATA(riscv_cpu_sp)
 GTEXT(arch_secondary_cpu_init)
-#ifdef CONFIG_RISCV_S_MODE
+#ifdef CONFIG_RISCV_S_MODE_INTERNAL_SBI
 GTEXT(__m_mode_sbi_handler)
 #endif
 
@@ -80,7 +73,14 @@ tls_skip\@:
  * the C domain
  */
 SECTION_FUNC(TEXT, __initialize)
+#ifndef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	/*
+	 * When entered directly in S-mode by an external bootloader/SBI, a0
+	 * already holds the hart id per the RISC-V S-mode boot protocol
+	 * (a0=hartid, a1=dtb), and mhartid would trap, so only read it here.
+	 */
 	csrr a0, mhartid
+#endif /* CONFIG_RISCV_S_MODE_EXTERNAL_SBI */
 	li t0, CONFIG_RV_BOOT_HART
 	beq a0, t0, boot_first_core
 	j boot_secondary_core
@@ -92,7 +92,11 @@ boot_first_core:
 	 * Enable floating-point.
 	 */
 	li t0, MSTATUS_FS_INIT
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	csrs sstatus, t0
+#else
 	csrs mstatus, t0
+#endif /* CONFIG_RISCV_S_MODE_EXTERNAL_SBI */
 
 	/*
 	 * Floating-point rounding mode set to IEEE-754 default, and clear
@@ -135,7 +139,7 @@ aa_loop:
 	riscv_tls_init_early
 #endif
 
-#ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
+#if defined(CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY) && !defined(CONFIG_RISCV_S_MODE_EXTERNAL_SBI)
 	csrs CSR_MNSTATUS, MNSTATUS_NMIE
 #endif
 
@@ -144,6 +148,7 @@ aa_loop:
 #endif
 
 #ifdef CONFIG_RISCV_S_MODE
+#ifdef CONFIG_RISCV_S_MODE_INTERNAL_SBI
 	/* Set M-mode trap vector to our SBI handler */
 	la t0, __m_mode_sbi_handler
 	csrw mtvec, t0
@@ -173,8 +178,14 @@ aa_loop:
 	csrw mscratch, t0
 
 	/* Allow S-mode to read cycle, time and instret counters */
-	li t0, (MCOUNTEREN_CY | MCOUNTEREN_TM | MCOUNTEREN_IR)
+	li t0, (COUNTEREN_CY | COUNTEREN_TM | COUNTEREN_IR)
 	csrw mcounteren, t0
+
+#ifdef CONFIG_RISCV_ISA_EXT_ZKR
+	/* Allow S-mode to access the Zkr seed CSR */
+	li t0, MSECCFG_SSEED
+	csrs CSR_MSECCFG, t0
+#endif /* CONFIG_RISCV_ISA_EXT_ZKR */
 
 	/* Enable M-mode timer interrupt so MTIP fires and is forwarded to S-mode as STIP */
 	li t0, MIP_MTIP
@@ -188,6 +199,7 @@ aa_loop:
 	la t0, s_mode_entry
 	csrw mepc, t0
 	mret
+#endif /* CONFIG_RISCV_S_MODE_INTERNAL_SBI */
 
 s_mode_entry:
 #endif /* CONFIG_RISCV_S_MODE */

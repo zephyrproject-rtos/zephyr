@@ -546,7 +546,7 @@ static int ambiq_gpio_init(const struct device *port)
 {
 	const struct ambiq_gpio_config *const dev_cfg = port->config;
 
-	NVIC_ClearPendingIRQ(dev_cfg->irq_num);
+	k_irq_clear_pending(dev_cfg->irq_num);
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	ambiq_gpio_cfg_func();

@@ -95,7 +95,7 @@ static int dfu_flash_write(void *const priv,
 	int ret;
 
 	if (block == 0) {
-		if (flash_img_init(&data->fi_ctx)) {
+		if (flash_img_init_id(&data->fi_ctx, data->id)) {
 			return -EINVAL;
 		}
 

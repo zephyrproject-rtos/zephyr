@@ -118,8 +118,8 @@ static int spi_rts5817_configure(const struct device *dev, const struct spi_conf
 		return -ENOTSUP;
 	}
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -162,7 +162,7 @@ static int spi_rts5817_configure(const struct device *dev, const struct spi_conf
 	/* At this point, it's mandatory to set this on the context! */
 	data->ctx.config = config;
 
-	/* Baud rate and Slave select, for master only */
+	/* Baud rate and peripheral select, for controller only */
 	write_baudr(cfg->dw_spi_dev, SPI_DW_CLK_DIVIDER(data->clock_frequency, config->frequency));
 
 	/* Config txftlr & rxftlr */
@@ -179,14 +179,14 @@ static int spi_rts5817_configure(const struct device *dev, const struct spi_conf
 
 	ctrl_reg_clear_bits(cfg, R_MST_SPI_SSI_CONTROL, MST_SCK_INTERVAL_EN_MASK);
 
-	LOG_DBG("Installed master config %p: freq %uHz (div = %u),"
-		" ws/dfs %u/%u, mode %u/%u/%u, slave %u",
+	LOG_DBG("Installed controller config %p: freq %uHz (div = %u),"
+		" ws/dfs %u/%u, mode %u/%u/%u, peripheral %u",
 		config, config->frequency,
 		SPI_DW_CLK_DIVIDER(data->clock_frequency, config->frequency),
 		SPI_WORD_SIZE_GET(config->operation), data->dfs,
 		(SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0,
 		(SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0,
-		(SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) ? 1 : 0, config->slave);
+		(SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) ? 1 : 0, config->peripheral);
 
 	return 0;
 }

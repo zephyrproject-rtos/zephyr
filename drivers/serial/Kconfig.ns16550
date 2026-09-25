@@ -52,6 +52,14 @@ config UART_NS16550_VARIANT_NS16550
 	help
 	  This enables support for 16-bytes FIFO if UART controller is 16550.
 
+config UART_NS16550_VARIANT_NS16450
+	bool "UART 16450 (no FIFO)"
+	help
+	  Run the controller in 16450 mode, without FIFOs. Select this on
+	  hardware whose FIFO-mode receive interrupts (trigger level and
+	  character timeout) do not work: in 16450 mode the received data
+	  available interrupt is raised for every character instead.
+
 config UART_NS16550_VARIANT_NS16750
 	bool "UART 16750 (64-bytes FIFO and auto flow control)"
 	help

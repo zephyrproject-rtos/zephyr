@@ -8,8 +8,8 @@ arch: arm
 toolchain:
   - gnuarmemb
   - zephyr
-ram: 256
-flash: 1524
+ram: 128
+flash: 940
 supported:
   - adc
   - counter

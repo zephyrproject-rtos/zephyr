@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "esp32p4_common.dtsi"
+
+/* The hp cores implement the Zb extensions and Zcb from silicon revision
+ * v3.0 on. Zcmp is left out because of the cm.push/cm.popret errata, whose
+ * workaround needs options only the Espressif toolchain has, and Zcmt
+ * because binutils does not know it yet.
+ */
+&cpus {
+	riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbs", "zcb";
+};

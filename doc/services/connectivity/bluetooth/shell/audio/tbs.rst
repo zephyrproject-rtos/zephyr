@@ -211,7 +211,7 @@ Setup
 .. code-block:: console
 
    uart:~$ bt init
-   uart:~$ bt connect xx:xx:xx:xx:xx:xx public
+   uart:~$ bt connect P:xx:xx:xx:xx:xx:xx
 
 When connected
 --------------

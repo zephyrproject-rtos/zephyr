@@ -9,6 +9,11 @@ boards:
     vendor: silabs
     socs:
       - name: efr32mg24b220f1536im48
+  - name: xg24_rb4188a
+    full_name: EFR32xG24 2.4 GHz 20 dBm Antenna Diversity Radio Board
+    vendor: silabs
+    socs:
+      - name: efr32mg24b220f1536im48
   - name: xgm240_rb4316a
     full_name: xGM240P 10 dBm Module Radio Board (xGM240-RB4316A)
     vendor: silabs
@@ -19,3 +24,8 @@ boards:
     vendor: silabs
     socs:
       - name: mgm240pb32vna
+  - name: xgm240_rb4318a
+    full_name: xGM240S +10 dBm SiP Module Radio Board (xGM240-RB4318A)
+    vendor: silabs
+    socs:
+      - name: mgm240sd22vna

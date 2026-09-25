@@ -9,6 +9,7 @@ Build and Configuration Systems
 
 
    cmake/index.rst
+   cmake-ref/index.rst
    dts/index
    kconfig/index.rst
    snippets/index.rst

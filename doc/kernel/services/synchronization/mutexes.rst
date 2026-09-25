@@ -41,6 +41,12 @@ for as short a time as possible to avoid negatively impacting other threads
 that want to use the resource. When the thread no longer needs the resource
 it must **unlock** the mutex to allow other threads to use the resource.
 
+A mutex must not be freed, or have its memory reused, while it is locked
+or while threads are waiting on it. A mutex embedded in a dynamically
+allocated object must be unlocked before that object is released;
+otherwise the owning thread is left tracking a mutex in memory that no
+longer belongs to it.
+
 Any number of threads may wait on a locked mutex simultaneously.
 When the mutex becomes unlocked it is then locked by the highest-priority
 thread that has waited the longest.
@@ -176,19 +182,19 @@ API Reference
 Futex API Reference
 *******************
 
-k_futex is a lightweight mutual exclusion primitive designed to minimize
+:c:struct:`k_futex` is a lightweight mutual exclusion primitive designed to minimize
 kernel involvement. Uncontended operation relies only on atomic access
-to shared memory. k_futex are tracked as kernel objects and can live in
-user memory so that any access bypasses the kernel object permission
-management mechanism.
+to shared memory. :c:struct:`k_futex` are not kernel objects and do not use the
+kernel object permission management. They live in user memory and can be
+used by any thread which has read-write access to this memory.
 
 .. doxygengroup:: futex_apis
 
 User Mode Mutex API Reference
 *****************************
 
-sys_mutex behaves almost exactly like k_mutex, with the added advantage
-that a sys_mutex instance can reside in user memory. When user mode isn't
-enabled, sys_mutex behaves like k_mutex.
+:c:struct:`sys_mutex` behaves almost exactly like :c:struct:`k_mutex`, with the added advantage
+that a :c:struct:`sys_mutex` instance can reside in user memory. When user mode isn't
+enabled, :c:struct:`sys_mutex` behaves like :c:struct:`k_mutex`.
 
 .. doxygengroup:: user_mutex_apis

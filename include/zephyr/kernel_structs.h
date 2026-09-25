@@ -235,6 +235,16 @@ struct z_kernel {
 	/* Identify CPUs to send IPIs to at the next scheduling point */
 	atomic_t pending_ipi;
 #endif
+
+#if defined(CONFIG_IPI_OPTIMIZE_IDLE)
+	/* Idle CPU reservations. sched_ipi_reserved marks valid entries in
+	 * sched_ipi_target. Each entry represents logical coverage by an
+	 * outstanding IPI, not a binding between that CPU and thread.
+	 * Protected by _sched_spinlock.
+	 */
+	uint32_t sched_ipi_reserved;
+	struct k_thread *sched_ipi_target[CONFIG_MP_MAX_NUM_CPUS];
+#endif
 };
 
 typedef struct z_kernel _kernel_t;
@@ -251,26 +261,48 @@ extern atomic_t _cpus_active;
 bool z_smp_cpu_mobile(void);
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
 			arch_curr_cpu(); })
-
-__attribute_const__ struct k_thread *z_smp_current_get(void);
-#define _current z_smp_current_get()
-
 #else
 #define _current_cpu (&_kernel.cpus[0])
-#define _current _kernel.cpus[0].current
+#endif
+
+/* The current thread, in the per-CPU structure where the kernel records it.
+ *
+ * This is the definitive location: z_current_thread_set() always writes here
+ * and nothing caches it, so it reports the incoming thread as soon as that
+ * call has been made.  Reading it requires a context that cannot migrate,
+ * which is what _current_cpu asserts: an ISR, or interrupts locked.
+ *
+ * Use _current instead unless the value must be up to date and the caller
+ * already meets that requirement.
+ */
+#define _raw_current (_current_cpu->current)
+
+#ifdef CONFIG_SMP
+__attribute_const__ struct k_thread *z_smp_current_get(void);
+#define _current z_smp_current_get()
+#else
+#define _current _raw_current
 #endif
 
 #define CPU_ID ((CONFIG_MP_MAX_NUM_CPUS == 1) ? 0 : _current_cpu->id)
 
-/* This is always invoked from a context where preemption is disabled */
-#define z_current_thread_set(thread) ({ _current_cpu->current = (thread); })
+/* This is always invoked from a context where preemption is disabled.
+ *
+ * Callers must not assume that _current reflects the new thread before the
+ * switch actually happens.  An architecture may cache the current thread in
+ * a register (CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL), and the compiler is then
+ * free to reuse a value it read earlier in the same function.  Code running
+ * between this call and the switch must therefore use the new thread pointer
+ * it already has, or _raw_current where it has none.
+ */
+#define z_current_thread_set(thread) ({ _raw_current = (thread); })
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL
 #undef _current
 #define _current arch_current_thread()
 #undef z_current_thread_set
 #define z_current_thread_set(thread) \
-	arch_current_thread_set(({ _current_cpu->current = (thread); }))
+	arch_current_thread_set(({ _raw_current = (thread); }))
 #endif
 
 /* kernel wait queue record */
@@ -314,12 +346,21 @@ struct _timeout {
 	 */
 	int64_t abs_ticks;
 	struct min_heap_handle heap_handle;
+#elif defined(CONFIG_TIMEOUT_BACKEND_SKIPLIST)
+	/*
+	 * Skip-list backend: absolute expiry tick plus a geometric-height
+	 * tower of forward pointers. height == 0 means the timeout is not
+	 * queued (idle, popped for announcing, or aborted).
+	 */
+	int64_t abs_ticks;
+	uint8_t height;
+	struct _timeout *forward[CONFIG_TIMEOUT_SKIPLIST_MAX_LEVEL];
 #else
 	/*
-	 * Delta-list and timer-wheel backends: a list node plus dticks (a
-	 * delta to the predecessor for the delta list; an encoded slot
-	 * position for the wheel). The wheel adds a flags field recording
-	 * which wheel tier the timeout currently occupies.
+	 * Delta-list, bucket, and timer-wheel backends: a list node plus
+	 * dticks (a delta to the predecessor for the delta list; an encoded
+	 * slot position for the wheel or bucket). The wheel adds a flags
+	 * field recording which wheel tier the timeout currently occupies.
 	 */
 	sys_dnode_t node;
 #if defined(CONFIG_TIMEOUT_BACKEND_WHEEL)

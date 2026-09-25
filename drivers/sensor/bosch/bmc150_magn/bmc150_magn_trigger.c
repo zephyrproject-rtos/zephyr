@@ -158,7 +158,10 @@ int bmc150_magn_init_interrupt(const struct device *dev)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT) < 0) {
+		LOG_DBG("failed to configure DRDY gpio");
+		return -EIO;
+	}
 
 	gpio_init_callback(&data->gpio_cb,
 			   bmc150_magn_gpio_drdy_callback,

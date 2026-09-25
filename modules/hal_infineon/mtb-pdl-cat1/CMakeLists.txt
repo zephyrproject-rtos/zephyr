@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -47,9 +47,14 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SDIO     ${pdl_drv_dir}/source/
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SPI      ${pdl_drv_dir}/source/cy_scb_spi.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER    ${pdl_drv_dir}/source/cy_tcpwm_counter.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART     ${pdl_drv_dir}/source/cy_scb_uart.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_FLASH    ${pdl_drv_dir}/source/cy_flash.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT      ${pdl_drv_dir}/source/cy_wdt.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPCOMP   ${pdl_drv_dir}/source/cy_lpcomp.c)
+
+if(CONFIG_USE_INFINEON_FLASH)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_flash.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_flash_v2.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_flash_srom.c)
+endif()
 
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
   zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC      ${pdl_drv_dir}/source/cy_adcmic.c)

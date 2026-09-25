@@ -1,0 +1,19 @@
+#
+# SPDX-FileCopyrightText: 2024-2025 NXP
+# SPDX-FileCopyrightText: 2026 CogniPilot Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mr_mcxn_t1/mcxn947/cpu1
+name: NXP MR-MCXN-T1 MCXN947 (CPU1)
+type: mcu
+arch: arm
+ram: 64
+flash: 200
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - dma
+vendor: nxp

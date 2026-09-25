@@ -10,7 +10,9 @@ tests:
     build_only: true
     # The Neutron NPU driver and firmware are binary blobs, which CI does
     # not fetch. Skip the sample rather than fail the build without them.
-    filter: CONFIG_ZEPHYR_HAL_NXP_MODULE_BLOBS
+    filter: CONFIG_TAINT_BLOBS
+    vendor_allow:
+      - nxp
     platform_allow:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mcx_n9xx_evk/mcxn947/cpu0

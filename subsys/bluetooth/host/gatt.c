@@ -330,8 +330,10 @@ static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
 {
 	LOG_DBG("value 0x%04x", value);
 
-	if (value == BT_GATT_CCC_INDICATE) {
-		/* Create a new SC configuration entry if subscribed */
+	if ((value & BT_GATT_CCC_INDICATE) != 0U) {
+		/* Create a new SC configuration entry if subscribed; the CCC
+		 * value is a bit field and Reserved bits are ignored.
+		 */
 		sc_save(conn->id, &conn->le.dst, 0, 0);
 	} else {
 		sc_clear(conn);
@@ -1081,6 +1083,19 @@ static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 		/* Store the ccc and cf data */
 		gatt_store_ccc(conn->id, &(conn->le.dst));
 		bt_gatt_store_cf(conn->id, &conn->le.dst);
+
+		if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+			struct gatt_sc_cfg *cfg = find_sc_cfg(conn->id, &conn->le.dst);
+
+			/* A client may subscribe to Service Changed before it
+			 * bonds, in which case sc_save() created the entry but
+			 * had no bond to persist it against. Store it now that
+			 * there is one.
+			 */
+			if (cfg != NULL) {
+				sc_store(cfg);
+			}
+		}
 	}
 }
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
@@ -1113,7 +1128,6 @@ BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 #endif /* CONFIG_BT_GATT_SERVICE_CHANGED */
 );
 
-#if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static uint8_t found_attr(const struct bt_gatt_attr *attr, uint16_t handle,
 			  void *user_data)
 {
@@ -1133,6 +1147,7 @@ static const struct bt_gatt_attr *find_attr(uint16_t handle)
 	return attr;
 }
 
+#if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static void gatt_insert(struct bt_gatt_service *svc, uint16_t last_handle)
 {
 	struct bt_gatt_service *tmp, *prev = NULL;
@@ -1163,6 +1178,8 @@ static int gatt_register(struct bt_gatt_service *svc)
 	uint16_t handle, last_handle;
 	struct bt_gatt_attr *attrs = svc->attrs;
 	uint16_t count = svc->attr_count;
+
+	BT_DEV_LOCK_ASSERT();
 
 	if (sys_slist_is_empty(&db)) {
 		handle = last_static_handle;
@@ -1431,6 +1448,8 @@ static void bt_gatt_service_init(void)
 	}
 }
 
+static void central_addr_res_pairing_complete(struct bt_conn *conn, bool bonded);
+
 void bt_gatt_init(void)
 {
 	if (atomic_test_and_set_bit(gatt_flags, GATT_INITIALIZED)) {
@@ -1477,6 +1496,21 @@ void bt_gatt_init(void)
 	 */
 	bt_conn_auth_info_cb_register(&gatt_conn_auth_info_cb);
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
+
+	if (IS_ENABLED(CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES)) {
+		static struct bt_conn_auth_info_cb central_addr_res_auth_info_cb = {
+			.pairing_complete = central_addr_res_pairing_complete,
+		};
+		int err;
+
+		/* Read the peer's Central Address Resolution support once a
+		 * bond has been created.
+		 */
+		err = bt_conn_auth_info_cb_register(&central_addr_res_auth_info_cb);
+		if (err != 0) {
+			LOG_ERR("Unable to register pairing callbacks (err %d)", err);
+		}
+	}
 }
 
 static void sc_indicate(uint16_t start, uint16_t end)
@@ -1647,17 +1681,26 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		return -EALREADY;
 	}
 
+	bt_dev_lock();
+
+	/* The RX-path readers of the database (the ATT request handlers
+	 * iterating the attributes) do not take the host lock and rely on
+	 * cooperative scheduling: hold the scheduler lock as well so that
+	 * they cannot preempt a preemptible caller mid-update.
+	 */
 	k_sched_lock();
 
 	err = gatt_register(svc);
 	if (err < 0) {
 		k_sched_unlock();
+		bt_dev_unlock();
 		return err;
 	}
 
 	/* Don't submit any work until the stack is initialized */
 	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
 		k_sched_unlock();
+		bt_dev_unlock();
 		return 0;
 	}
 
@@ -1667,6 +1710,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	db_changed();
 
 	k_sched_unlock();
+	bt_dev_unlock();
 
 	return 0;
 }
@@ -1685,17 +1729,24 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	sc_start_handle = svc->attrs[0].handle;
 	sc_end_handle = svc->attrs[svc->attr_count - 1].handle;
 
+	bt_dev_lock();
+
+	/* See bt_gatt_service_register() for why the scheduler lock is
+	 * held as well.
+	 */
 	k_sched_lock();
 
 	err = gatt_unregister(svc);
 	if (err) {
 		k_sched_unlock();
+		bt_dev_unlock();
 		return err;
 	}
 
 	/* Don't submit any work until the stack is initialized */
 	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
 		k_sched_unlock();
+		bt_dev_unlock();
 		return 0;
 	}
 
@@ -1704,6 +1755,7 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	db_changed();
 
 	k_sched_unlock();
+	bt_dev_unlock();
 
 	return 0;
 }
@@ -1713,7 +1765,7 @@ bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc)
 	bool registered = false;
 	sys_snode_t *node;
 
-	k_sched_lock();
+	bt_dev_lock();
 	SYS_SLIST_FOR_EACH_NODE(&db, node) {
 		if (&svc->node == node) {
 			registered = true;
@@ -1721,7 +1773,7 @@ bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc)
 		}
 	}
 
-	k_sched_unlock();
+	bt_dev_unlock();
 
 	return registered;
 }
@@ -2103,8 +2155,15 @@ static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
 		struct bt_conn *conn = bt_conn_lookup_addr_le(ccc->cfg[i].id, &ccc->cfg[i].peer);
 
 		if (conn) {
-			if (ccc->cfg[i].value > value) {
-				value = ccc->cfg[i].value;
+			/* Leave out Reserved bits, which a receiver ignores:
+			 * callbacks compare the value with BT_GATT_CCC_NOTIFY or
+			 * BT_GATT_CCC_INDICATE.
+			 */
+			uint16_t peer_value =
+				ccc->cfg[i].value & (BT_GATT_CCC_NOTIFY | BT_GATT_CCC_INDICATE);
+
+			if (peer_value > value) {
+				value = peer_value;
 			}
 
 			bt_conn_unref(conn);
@@ -2119,6 +2178,66 @@ static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
 			ccc->cfg_changed(attr, value);
 		}
 	}
+}
+
+/* Look up the properties of the characteristic that the given CCC descriptor
+ * belongs to, i.e. the nearest preceding characteristic declaration that is not
+ * separated from it by a service declaration.
+ *
+ * Returns false if no such declaration could be found or read, in which case
+ * the caller must not draw any conclusion from the properties.
+ */
+static bool ccc_get_chrc_props(const struct bt_gatt_attr *ccc_attr, uint8_t *properties)
+{
+	uint16_t ccc_handle = bt_gatt_attr_get_handle(ccc_attr);
+	uint16_t handle;
+
+	if (ccc_handle <= BT_ATT_FIRST_ATTRIBUTE_HANDLE) {
+		return false;
+	}
+
+	for (handle = ccc_handle - 1; handle >= BT_ATT_FIRST_ATTRIBUTE_HANDLE; handle--) {
+		const struct bt_gatt_attr *attr = find_attr(handle);
+		ssize_t len;
+
+		if (attr == NULL) {
+			return false;
+		}
+
+		/* Service and include declarations can only appear before the
+		 * characteristic definitions of a service, so finding one means
+		 * no owning declaration exists.
+		 */
+		if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) == 0 ||
+		    bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY) == 0 ||
+		    bt_uuid_cmp(attr->uuid, BT_UUID_GATT_INCLUDE) == 0) {
+			LOG_WRN("CCC 0x%04x has no characteristic declaration", ccc_handle);
+			return false;
+		}
+
+		if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC) != 0) {
+			continue;
+		}
+
+		if (attr->read == NULL) {
+			LOG_WRN("Characteristic declaration 0x%04x is not readable", handle);
+			return false;
+		}
+
+		/* The characteristic properties are the first octet of the
+		 * declaration value.
+		 */
+		len = attr->read(NULL, attr, properties, sizeof(*properties), 0);
+		if (len != sizeof(*properties)) {
+			LOG_WRN("Reading characteristic declaration 0x%04x failed (%zd != %zu)",
+				handle, len, sizeof(*properties));
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
 ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
@@ -2142,6 +2261,26 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		value = *(uint8_t *)buf;
 	} else {
 		value = sys_get_le16(buf);
+	}
+
+	if ((value & (BT_GATT_CCC_NOTIFY | BT_GATT_CCC_INDICATE)) != 0) {
+		uint8_t properties;
+
+		/* Reject configurations the characteristic cannot deliver. If
+		 * the declaration cannot be located the write is let through,
+		 * so that a database built by other means than the
+		 * BT_GATT_CHARACTERISTIC() macros keeps working.
+		 */
+		if (ccc_get_chrc_props(attr, &properties)) {
+			if (((value & BT_GATT_CCC_NOTIFY) != 0 &&
+			     (properties & BT_GATT_CHRC_NOTIFY) == 0) ||
+			    ((value & BT_GATT_CCC_INDICATE) != 0 &&
+			     (properties & BT_GATT_CHRC_INDICATE) == 0)) {
+				LOG_DBG("CCC 0x%04x value 0x%04x unsupported by properties 0x%02x",
+					bt_gatt_attr_get_handle(attr), value, properties);
+				return BT_GATT_ERR(BT_ATT_ERR_CCC_IMPROPER_CONF);
+			}
+		}
 	}
 
 	cfg = find_ccc_cfg(conn, ccc);
@@ -2516,11 +2655,15 @@ static struct bt_att_req *gatt_req_alloc(bt_att_func_t func, void *params,
 		return NULL;
 	}
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
 	req->att_op = op;
 	req->len = len;
 	req->encode = encode;
-#endif
+#else
+	ARG_UNUSED(encode);
+	ARG_UNUSED(op);
+	ARG_UNUSED(len);
+#endif /* CONFIG_BT_ATT_RETRY_ON_SEC_ERR */
 	req->func = func;
 	req->user_data = params;
 
@@ -2694,10 +2837,11 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		struct bt_conn *conn;
 		int err;
 
-		/* Check if config value matches data type since consolidated
-		 * value may be for a different peer.
+		/* The consolidated value may be for a different peer, and the
+		 * CCC value is a bit field: a peer may have enabled both
+		 * notifications and indications, and Reserved bits are ignored.
 		 */
-		if (cfg->value != data->type) {
+		if ((cfg->value & data->type) == 0U) {
 			continue;
 		}
 
@@ -3609,6 +3753,15 @@ static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct ga
 {
 	struct bt_gatt_subscribe_params *params, *tmp;
 	int err;
+
+	/* Core Specification Vol 3, Part F, Section 3.2.9: the maximum length
+	 * of an attribute value is 512 octets.
+	 */
+	if (length > BT_ATT_MAX_ATTRIBUTE_LEN) {
+		LOG_WRN("Ignoring value with invalid length %u for handle 0x%04x", length,
+			handle);
+		return;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
 		if (handle != params->value_handle) {
@@ -5538,6 +5691,34 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 	return 0;
 }
 
+static void gatt_cancel(struct bt_conn *conn, void *params, bool run_completion)
+{
+	struct bt_att_req *req;
+	bt_att_func_t func = NULL;
+
+	bt_dev_lock();
+
+	/* att_handle_rsp() processes the request state on the RX workqueue
+	 * without the host lock, relying on cooperative scheduling: hold the
+	 * scheduler lock as well so that it cannot preempt a preemptible
+	 * caller mid-cancel.
+	 */
+	k_sched_lock();
+
+	req = bt_att_find_req_by_user_data(conn, params);
+	if (req) {
+		func = req->func;
+		bt_att_req_cancel(conn, req);
+	}
+
+	k_sched_unlock();
+	bt_dev_unlock();
+
+	if (run_completion && func) {
+		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
+	}
+}
+
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
@@ -5574,9 +5755,13 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	/* Attempt to cancel if write is pending */
+	/* Cancel any in-flight CCC write silently: its completion shares this
+	 * params and must not run once we unsubscribe. gatt_cancel() drops the
+	 * request without invoking it, so clear WRITE_PENDING in its place.
+	 */
 	if (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
-		bt_gatt_cancel(conn, params);
+		gatt_cancel(conn, params, false);
+		atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
 	}
 
 	if (!has_subscription) {
@@ -5605,22 +5790,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 
 void bt_gatt_cancel(struct bt_conn *conn, void *params)
 {
-	struct bt_att_req *req;
-	bt_att_func_t func = NULL;
-
-	k_sched_lock();
-
-	req = bt_att_find_req_by_user_data(conn, params);
-	if (req) {
-		func = req->func;
-		bt_att_req_cancel(conn, req);
-	}
-
-	k_sched_unlock();
-
-	if (func) {
-		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
-	}
+	gatt_cancel(conn, params, true);
 }
 
 #if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
@@ -5979,6 +6149,116 @@ void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	}
 }
 
+/* Central Address Resolution characteristic value (Core 6.3, Vol 3, Part C,
+ * 12.4).
+ */
+#define CENTRAL_ADDR_RES_SUPP 0x01
+
+static uint8_t gatt_central_addr_res_rsp(struct bt_conn *conn, uint8_t err,
+					 struct bt_gatt_read_params *params,
+					 const void *data, uint16_t length)
+{
+	enum bt_le_addr_res_support support = BT_LE_ADDR_RES_SUPPORT_UNKNOWN;
+	struct bt_keys *keys = bt_keys_find_addr(conn->id, &conn->le.dst);
+	struct bt_conn_auth_info_cb *listener, *next;
+	bool supported = false;
+	bool known = false;
+
+	if (err == 0 && data != NULL && length == sizeof(uint8_t)) {
+		known = true;
+		supported = (((const uint8_t *)data)[0] == CENTRAL_ADDR_RES_SUPP);
+	} else if (err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
+		/* An absent characteristic means address resolution is not
+		 * supported (Core 6.3, Vol 3, Part C, 12.4).
+		 */
+		known = true;
+	}
+
+	/* Any other error, or a malformed value, leaves the support unknown,
+	 * to be read again on the next connection.
+	 */
+
+	if (known && keys != NULL) {
+		keys->flags |= BT_KEYS_CENTRAL_ADDR_RES_KNOWN;
+		if (supported) {
+			keys->flags |= BT_KEYS_CENTRAL_ADDR_RES_SUPPORT;
+		}
+
+		LOG_DBG("Peer %sable to resolve the target address of directed advertising",
+			supported ? "" : "un");
+
+		bt_keys_store(keys);
+
+		support = supported ? BT_LE_ADDR_RES_SUPPORT_YES : BT_LE_ADDR_RES_SUPPORT_NO;
+	}
+
+	params->func = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener, next, node) {
+		if (listener->addr_res_support_read != NULL) {
+			listener->addr_res_support_read(conn, support);
+		}
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void gatt_read_central_addr_res(struct bt_conn *conn)
+{
+	static struct bt_gatt_read_params central_addr_res_params[CONFIG_BT_MAX_CONN];
+	struct bt_gatt_read_params *params = &central_addr_res_params[bt_conn_index(conn)];
+	struct bt_keys *keys;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES)) {
+		return;
+	}
+
+	/* The characteristic and the check are LE-specific, and the address
+	 * lookups below use the LE part of the connection object.
+	 */
+	if (conn->type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	if (conn->role != BT_HCI_ROLE_PERIPHERAL) {
+		return;
+	}
+
+	if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
+		return;
+	}
+
+	keys = bt_keys_find_addr(conn->id, &conn->le.dst);
+	if (keys == NULL || (keys->flags & BT_KEYS_CENTRAL_ADDR_RES_KNOWN) != 0) {
+		return;
+	}
+
+	if (params->func != NULL) {
+		/* Read already in progress */
+		return;
+	}
+
+	*params = (struct bt_gatt_read_params){
+		.func = gatt_central_addr_res_rsp,
+		.by_uuid.uuid = BT_UUID_CENTRAL_ADDR_RES,
+		.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE,
+		.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
+	};
+
+	err = bt_gatt_read(conn, params);
+	if (err != 0) {
+		LOG_WRN("Unable to read Central Address Resolution (err %d)", err);
+		params->func = NULL;
+	}
+}
+
+static void central_addr_res_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	if (bonded) {
+		gatt_read_central_addr_res(conn);
+	}
+}
 void bt_gatt_encrypt_change(struct bt_conn *conn)
 {
 	struct conn_data data;
@@ -5991,6 +6271,9 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 #if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
 	add_subscriptions(conn);
 #endif	/* CONFIG_BT_GATT_AUTO_RESUBSCRIBE */
+
+	/* Covers bonds that were created before the support was tracked */
+	gatt_read_central_addr_res(conn);
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 

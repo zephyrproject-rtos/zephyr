@@ -115,6 +115,8 @@ static int mcp_endpoint_get_handler(struct http_client_ctx *client,
 				    const struct http_request_ctx *request_ctx,
 				    struct mcp_http_request_accumulator *accumulator,
 				    struct http_response_ctx *response_ctx);
+static int mcp_endpoint_delete_handler(struct mcp_http_request_accumulator *accumulator,
+				       struct http_response_ctx *response_ctx);
 static int mcp_server_http_resource_handler(struct http_client_ctx *client,
 					    enum http_transaction_status status,
 					    const struct http_request_ctx *request_ctx,
@@ -136,7 +138,8 @@ static struct mcp_http_transport_state http_transport_state;
 static struct http_resource_detail_dynamic mcp_resource_detail = {
 	.common = {
 			.type = HTTP_RESOURCE_TYPE_DYNAMIC,
-			.bitmask_of_supported_http_methods = BIT(HTTP_POST) | BIT(HTTP_GET),
+			.bitmask_of_supported_http_methods =
+				BIT(HTTP_POST) | BIT(HTTP_GET) | BIT(HTTP_DELETE),
 			.content_type = "application/json",
 		},
 	.cb = mcp_server_http_resource_handler,
@@ -151,8 +154,8 @@ HTTP_RESOURCE_DEFINE(mcp_endpoint_resource, mcp_http_service, CONFIG_MCP_HTTP_EN
 		     &mcp_resource_detail);
 
 /* HTTP service definition */
-HTTP_SERVICE_DEFINE(mcp_http_service, NULL, &mcp_http_port, 1,
-		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL);
+HTTP_SERVICE_DEFINE(mcp_http_service, NULL, &mcp_http_port, CONFIG_HTTP_SERVER_MAX_CLIENTS, 10,
+		    NULL, NULL, NULL);
 
 /* HTTP headers capture */
 HTTP_SERVER_REGISTER_HEADER_CAPTURE(origin_hdr, "Origin");
@@ -631,8 +634,9 @@ static int mcp_endpoint_post_handler(struct http_client_ctx *client,
 	}
 
 	if (mcp_client == NULL) {
-		response_ctx->status = is_initialize_request ? HTTP_500_INTERNAL_SERVER_ERROR
-							     : HTTP_400_BAD_REQUEST;
+		/* Unknown or terminated sessions get a 404 so the client re-initializes */
+		response_ctx->status =
+			is_initialize_request ? HTTP_500_INTERNAL_SERVER_ERROR : HTTP_404_NOT_FOUND;
 		response_ctx->final_chunk = true;
 		return 0;
 	}
@@ -662,8 +666,14 @@ static int mcp_endpoint_post_handler(struct http_client_ctx *client,
 			client_ref_put(mcp_client);
 		}
 
-		response_ctx->status =
-			(ret == -EPROTO) ? HTTP_400_BAD_REQUEST : HTTP_500_INTERNAL_SERVER_ERROR;
+		if (ret == -ENOENT) {
+			/* No session in the core: header missing (400) or session gone (404) */
+			response_ctx->status =
+				is_initialize_request ? HTTP_400_BAD_REQUEST : HTTP_404_NOT_FOUND;
+		} else {
+			response_ctx->status = (ret == -EPROTO) ? HTTP_400_BAD_REQUEST
+								: HTTP_500_INTERNAL_SERVER_ERROR;
+		}
 
 		LOG_ERR("Error processing request: %d", ret);
 		response_ctx->final_chunk = true;
@@ -734,16 +744,30 @@ static int mcp_endpoint_get_handler(struct http_client_ctx *client,
 	struct mcp_http_response_item response_data;
 	struct mcp_http_response_item *temp;
 
-	/* Find client by UUID string and increment ref count) */
-	mcp_client = get_client_by_uuid_str(accumulator->session_id_hdr);
-	if (mcp_client == NULL) {
-		LOG_ERR("Client session not found for UUID: %s", accumulator->session_id_hdr);
+	if (accumulator->session_id_hdr[0] == '\0') {
 		response_ctx->status = HTTP_400_BAD_REQUEST;
 		response_ctx->final_chunk = true;
 		return 0;
 	}
 
-	mcp_server_update_client_timestamp(http_transport_state.server_core, &mcp_client->binding);
+	/* Find client by UUID string and increment ref count) */
+	mcp_client = get_client_by_uuid_str(accumulator->session_id_hdr);
+	if (mcp_client == NULL) {
+		LOG_ERR("Client session not found for UUID: %s", accumulator->session_id_hdr);
+		response_ctx->status = HTTP_404_NOT_FOUND;
+		response_ctx->final_chunk = true;
+		return 0;
+	}
+
+	ret = mcp_server_update_client_timestamp(http_transport_state.server_core,
+						 &mcp_client->binding);
+	if (ret == -ENOENT) {
+		/* Session is being terminated */
+		client_ref_put(mcp_client);
+		response_ctx->status = HTTP_404_NOT_FOUND;
+		response_ctx->final_chunk = true;
+		return 0;
+	}
 
 	mcp_client->response_headers[0].name = "Content-Type";
 	mcp_client->response_headers[0].value = "text/event-stream";
@@ -810,6 +834,46 @@ get_handler_done:
 }
 
 /*******************************************************************************
+ * DELETE Handler
+ ******************************************************************************/
+static int mcp_endpoint_delete_handler(struct mcp_http_request_accumulator *accumulator,
+				       struct http_response_ctx *response_ctx)
+{
+	int ret;
+	struct mcp_http_client_ctx *mcp_client;
+
+	response_ctx->final_chunk = true;
+
+	if (accumulator->session_id_hdr[0] == '\0') {
+		response_ctx->status = HTTP_400_BAD_REQUEST;
+		return 0;
+	}
+
+	mcp_client = get_client_by_uuid_str(accumulator->session_id_hdr);
+	if (mcp_client == NULL) {
+		response_ctx->status = HTTP_404_NOT_FOUND;
+		return 0;
+	}
+
+	/* Same path as an idle timeout: the transport context is released through
+	 * the disconnect callback once no request or tool execution uses it anymore.
+	 */
+	ret = mcp_server_remove_client(http_transport_state.server_core, &mcp_client->binding);
+	client_ref_put(mcp_client);
+
+	if (ret == -ENOENT) {
+		response_ctx->status = HTTP_404_NOT_FOUND;
+	} else if (ret < 0) {
+		LOG_ERR("Failed to terminate session: %d", ret);
+		response_ctx->status = HTTP_500_INTERNAL_SERVER_ERROR;
+	} else {
+		response_ctx->status = HTTP_200_OK;
+	}
+
+	return 0;
+}
+
+/*******************************************************************************
  * HTTP resource handler
  ******************************************************************************/
 static int mcp_server_http_resource_handler(struct http_client_ctx *client,
@@ -851,6 +915,8 @@ static int mcp_server_http_resource_handler(struct http_client_ctx *client,
 		} else if (client->method == HTTP_GET) {
 			stat = mcp_endpoint_get_handler(client, request_ctx, accumulator,
 							response_ctx);
+		} else if (client->method == HTTP_DELETE) {
+			stat = mcp_endpoint_delete_handler(accumulator, response_ctx);
 		} else {
 			LOG_WRN("Unsupported HTTP method");
 			return -ENOTSUP;
@@ -1025,9 +1091,9 @@ static int mcp_server_http_send(struct mcp_transport_message *response)
 	if (ret != 0) {
 		LOG_ERR("Failed to push response to heap for client %s: %d",
 			client->session_uuid_str, ret);
+	} else {
+		atomic_inc(&available_responses);
 	}
-
-	atomic_inc(&available_responses);
 
 	k_mutex_unlock(&client->responses_mutex);
 	client_ref_put(client);

@@ -10,3 +10,20 @@ tests:
       - native_sim
     min_ram: 16
     timeout: 600
+    platform_exclude:
+      - frdm_mcxw71
+  # Platforms whose capture input can only be driven through an external wire
+  # between two header pins. The pins are documented in the board overlay.
+  drivers.counter.capture.wire_loopback:
+    tags:
+      - drivers
+      - counter
+      - gpio
+    depends_on: counter
+    filter: dt_compat_enabled("test-counter-capture")
+    platform_allow:
+      - frdm_mcxw71
+    min_ram: 16
+    timeout: 600
+    harness_config:
+      fixture: counter_capture_loopback

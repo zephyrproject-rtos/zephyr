@@ -1452,6 +1452,20 @@ static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 	return (t_preamble_us + t_payload_us + 500) / 1000;
 }
 
+static int sx126x_lora_rssi(const struct device *dev, int16_t *rssi)
+{
+	uint8_t buf[1];
+	int ret;
+
+	ret = sx126x_hal_read_cmd(dev, SX126X_CMD_GET_RSSI_INST, buf, 1);
+	if (ret == 0) {
+		/* RSSI is -value/2 dBm */
+		*rssi = -((int16_t)buf[0] >> 1);
+	}
+
+	return ret;
+}
+
 static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 			       int8_t tx_power, uint16_t duration)
 {
@@ -1519,6 +1533,7 @@ static DEVICE_API(lora, sx126x_lora_api) = {
 	.recv_duty_cycle_async = sx126x_lora_recv_duty_cycle_async,
 	.airtime = sx126x_lora_airtime,
 	.test_cw = sx126x_lora_test_cw,
+	.rssi = sx126x_lora_rssi,
 };
 
 #ifdef CONFIG_PM_DEVICE

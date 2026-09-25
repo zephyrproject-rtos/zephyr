@@ -223,7 +223,7 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
-	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, len %u", x, y, desc->pitch,
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, len %zu", x, y, desc->pitch,
 		desc->width, desc->height, expected_len);
 
 	ret = st7586s_set_window(dev, x, y, desc->width, desc->height);
@@ -278,7 +278,6 @@ static void st7586s_get_capabilities(const struct device *dev, struct display_ca
 	const struct st7586s_config *config = dev->config;
 	struct st7586s_data *data = dev->data;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10
@@ -524,7 +523,7 @@ static DEVICE_API(display, st7586s_driver_api) = {
 		.display_offset = DT_PROP(node_id, display_offset),                                \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
-			node_id, ST7586S_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),              \
+			node_id, ST7586S_WORD_SIZE(node_id) | SPI_OP_MODE_CONTROLLER, 0),          \
 		.conversion_buf = conversion_buf##node_id,                                         \
 		.conversion_buf_size = sizeof(conversion_buf##node_id),                            \
 	};                                                                                         \

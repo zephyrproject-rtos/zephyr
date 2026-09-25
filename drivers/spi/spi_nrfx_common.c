@@ -51,7 +51,7 @@ int spi_nrfx_wake_request(nrfx_gpiote_t *gpiote, uint32_t wake_pin)
 	 * the overhead of context switching to handle the interrupt.
 	 */
 	nrfx_gpiote_trigger_enable(gpiote, wake_pin, false);
-	/* Enable pull-up on the WAKE line. After the slave device sees the
+	/* Enable pull-up on the WAKE line. After the peripheral device sees the
 	 * WAKE line going high, it will force the line to go low. This will
 	 * be caught by the enabled trigger and the loop below waits for that.
 	 */

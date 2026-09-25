@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_DRIVER_NO_CLOSE
+	bool "Give the test HCI driver no close() op"
+	help
+	  Build the test HCI driver without a close() op, as several in-tree
+	  HCI drivers are, so that bt_disable() cannot close the transport.
+
+source "Kconfig.zephyr"

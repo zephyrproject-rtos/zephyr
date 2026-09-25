@@ -276,7 +276,6 @@ static int ls0xx_write(const struct device *dev, const uint16_t x,
 static void ls0xx_get_capabilities(const struct device *dev,
 				   struct display_capabilities *caps)
 {
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = LS0XX_PANEL_WIDTH;
 	caps->y_resolution = LS0XX_PANEL_HEIGHT;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
@@ -342,7 +341,7 @@ static struct ls0xx_data ls0xx_dev_data;
 
 static const struct ls0xx_config ls0xx_config = {
 	.bus = SPI_DT_SPEC_INST_GET(
-		0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
+		0, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) |
 		SPI_TRANSFER_LSB | SPI_CS_ACTIVE_HIGH |
 		SPI_HOLD_ON_CS | SPI_LOCK_ON),
 #if DT_INST_NODE_HAS_PROP(0, disp_en_gpios)

@@ -15,11 +15,23 @@
 	model = "Arduino OPTA M7 core Programmable Logic Controller";
 	compatible = "arduino,opta-m7";
 
+	aliases {
+		rtc = &rtc;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci_uart;
+	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(16)>; /* max addressable area */
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 };
 
@@ -66,6 +78,12 @@ zephyr_udc0: &usbotg_fs {
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
 };
 
 &flash0 {

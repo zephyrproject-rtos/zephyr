@@ -235,7 +235,6 @@ static void st7789v_get_capabilities(const struct device *dev,
 {
 	const struct st7789v_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 
@@ -485,7 +484,7 @@ static DEVICE_API(display, st7789v_api) = {
 		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                        \
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,                             \
 						      ST7789V_WORD_SIZE(inst) |         \
-						      SPI_OP_MODE_MASTER, 0),           \
+						      SPI_OP_MODE_CONTROLLER, 0),       \
 		.vcom = DT_INST_PROP_OR(inst, vcom, 0),					\
 		.gctrl = DT_INST_PROP_OR(inst, gctrl, 0),				\
 		.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(inst, vrhs)			\

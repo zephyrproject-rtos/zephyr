@@ -5,7 +5,8 @@
  */
 
 /dts-v1/;
-#include "nucleo_wba65ri.dts"
+#include "nucleo_wba65ri-common.dtsi"
+#include <mem.h>
 
 / {
 	chosen {
@@ -18,9 +19,21 @@
 		status = "okay";
 	};
 
-	/* SRAM1 (node label sram0) last 64kByte are owned by TF-M */
-	memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(448 - 64)>;
+	/* SRAM1 (node label sram0) last 64kByte are owned by TF-M.
+	 * Exclude the final 0x20 bytes reserved for the PM_S2RAM marker.
+	 */
+	sram0: memory@20000000 {
+		reg = <0x20000000 (DT_SIZE_K(448 - 64) - 0x20)>;
+	};
+
+	/* Reserve a fixed retained RAM window for the S2RAM CPU context so both
+	 * the application and MCUboot place `_cpu_context` at the same physical
+	 * address.
+	 */
+	pm_s2ram: memory@2005ffe0 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2005ffe0 0x20>;
+		zephyr,memory-region = "PM_S2RAM";
 	};
 
 	/* SRAM2 (node label sram1) is owned by TF-M */
@@ -28,12 +41,14 @@
 };
 
 &flash0 {
-	/delete-node/ partitions;
-
 	partitions {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
+
+		/* The flash layout defined in the partition nodes below must be synced
+		 * with TF-M flash layout implementation.
+		 */
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
@@ -59,9 +74,4 @@
 			reg = <0xcc000 (DT_SIZE_M(2) - DT_SIZE_K(48 + 256 + 512))>;
 		};
 	};
-};
-
-/* RNG is owned by TF-M */
-&rng {
-	status = "disabled";
 };

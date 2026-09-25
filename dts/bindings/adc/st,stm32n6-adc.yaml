@@ -2,10 +2,13 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-        STM32N6 ADC
+title: STM32N6 ADC
 
-        This compatible stands for STM32N6 ADC.
+description: |
+        This compatible stands for all ADC blocks similar to the one on STM32N6,
+        like C5 or U3.
+        It is similar to the STM32 ADC described in st,stm32-adc.yaml except that
+        it removes the st,adc-clock-source and st,adc-prescaler properties.
 
 compatible: "st,stm32n6-adc"
 

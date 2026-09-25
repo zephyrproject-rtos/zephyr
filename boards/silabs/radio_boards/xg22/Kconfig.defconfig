@@ -1,7 +1,7 @@
 # Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_SLWRB4182A || BOARD_SLWRB4311A
+if BOARD_SLWRB4182A || BOARD_SLWRB4311A || BOARD_XG22_RB4415A
 
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000

@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -57,7 +57,7 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPCOMP ${pdl_drv_dir}/source/cy_lpcomp.c)
 
-if(CONFIG_USE_INFINEON_MXCRYPTO_AES OR CONFIG_USE_INFINEON_MXCRYPTO_SHA OR CONFIG_USE_INFINEON_MXCRYPTO_TRNG)
+if(CONFIG_USE_INFINEON_MXCRYPTO_CORE)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_hw.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_hw_v1.c)

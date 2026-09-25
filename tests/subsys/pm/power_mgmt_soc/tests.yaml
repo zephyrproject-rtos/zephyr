@@ -10,6 +10,9 @@ tests:
       - nucleo_l476rg
       - twr_ke18f
       - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - lpcxpresso55s69/lpc55s69/cpu0
       - rd_rw612_bga
       - frdm_ke17z
       - frdm_ke17z512
@@ -22,6 +25,7 @@ tests:
       - max32657evkit/max32657/ns
       - max78002evkit/max78002/m4
       - imx95_evk/mimx9596/m7
+      - imx952_evk/mimx9529/m7
       - ek_ra8m1
       - ek_ra8d1
       - mck_ra8t1
@@ -32,6 +36,7 @@ tests:
       - ek_ra8m2/r7ka8m2jflcac/cm85
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
+      - frdm_mcxw72
       - mcxw23_evk
       - frdm_mcxw23
       - frdm_mcxa153

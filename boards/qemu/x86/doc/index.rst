@@ -5,13 +5,20 @@ Overview
 
 The X86 QEMU board configuration is used to emulate the X86 architecture.
 
-This board configuration provides support for an x86 Minute IA (Lakemont) CPU
-and the following devices:
+This board configuration provides support for a 32-bit Atom-class x86 CPU and
+the following devices:
 
 * HPET
 * Advanced Programmable Interrupt Controller (APIC)
 * NS16550 UART
+* E1000 Ethernet, CAN and VirtIO input devices on an emulated PCI bus
+* Simulated flash and EEPROM
+* QEMU ramfb display
 
+The ``qemu_x86/atom/*`` variants exercise the same machine with a particular
+memory-management configuration (no MMU, 32-bit page tables, KPTI disabled,
+execute-in-place, or a relocated virtual address space); ``qemu_x86_tiny``
+uses the same devicetree with only 384 KiB of RAM to test demand paging.
 
 Hardware
 ********
@@ -91,66 +98,6 @@ QEMU, and display the following console output:
         threadB: Hello World from x86!
         threadA: Hello World from x86!
         threadB: Hello World from x86!
-
-Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
-
-For qemu_x86_64 platform, it also supports to use UEFI bootable method
-to run Zephyr applications and kernel tests, but you need to set up
-some environment configurations as follows:
-
-* Please install uefi-run in your system environment according to this
-  reference link https://github.com/Richard-W/uefi-run. Note that uefi-run
-  from snapstore may not work because of strict snap confinements.
-  The preferred method is installing with cargo.
-
-* Please install OVMF in your system environment according to this
-  reference link https://github.com/tianocore/tianocore.github.io/wiki/OVMF.
-  The easiest way is to install a special ``ovmf`` package found in many distros.
-  For example, use the following command in Ubuntu:
-
-  .. code-block:: console
-
-     sudo apt install ovmf
-
-* Set system environment variable OVMF_FD_PATH,
-  for example:
-
-  .. code-block:: console
-
-     export OVMF_FD_PATH=/usr/share/OVMF/OVMF_CODE.fd
-
-Now you can build application, for example UEFI boot test sample found under
-:zephyr_file:`tests/boot/uefi`:
-
-.. zephyr-app-commands::
-   :zephyr-app: tests/boot/uefi
-   :host-os: unix
-   :board: qemu_x86_64
-   :goals: run
-
-This will build an image with the uefi boot test app, boot it on
-qemu_x86_64 using UEFI, and display the following console output:
-
-.. code-block:: console
-
-        UEFI Interactive Shell v2.2
-        EDK II
-        UEFI v2.70 (EDK II, 0x00010000)
-        Mapping table
-              FS0: Alias(s):F0a:;BLK0:
-                  PciRoot(0x0)/Pci(0x1,0x1)/Ata(0x0)
-             BLK1: Alias(s):
-                  PciRoot(0x0)/Pci(0x1,0x1)/Ata(0x0)
-        Press ESC in 1 seconds to skip startup.nsh or any other key to continue.
-        Starting UEFI application...
-        *** Zephyr EFI Loader ***
-        Zeroing 524544 bytes of memory at 0x105000
-        Copying 32768 data bytes to 0x1000 from image offset
-        Copying 20480 data bytes to 0x100000 from image offset 32768
-        Copying 540416 data bytes to 0x185100 from image offset 53248
-        Jumping to Entry Point: 0x112b (48 31 c0 48 31 d2 48)
-        *** Booting Zephyr OS build zephyr-v2.6.0-1472-g61810ec36d28  ***
-        Hello World! qemu_x86_64
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 

@@ -9,18 +9,12 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_STM32_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_STM32_H_
 
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c/stm32.h>
 #include <zephyr/kernel.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
-#include <zephyr/logging/log.h>
-
-#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
-#include <zephyr/drivers/gpio.h>
-#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
-
-#include <zephyr/drivers/dma.h>
 
 typedef void (*irq_config_func_t)(const struct device *port);
 
@@ -229,14 +223,16 @@ void i2c_stm32_error_isr(void *arg);
 #endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
 
 #define I2C_STM32_IRQ_HANDLER_DECL(index)							\
-static void i2c_stm32_irq_config_func_##index(const struct device *dev)
+	static void i2c_stm32_irq_config_func_##index(const struct device *dev)
+
 #define I2C_STM32_IRQ_HANDLER_FUNCTION(index)							\
 	.irq_config_func = i2c_stm32_irq_config_func_##index,
+
 #define I2C_STM32_IRQ_HANDLER(index)								\
-static void i2c_stm32_irq_config_func_##index(const struct device *dev)				\
-{												\
-	I2C_STM32_IRQ_CONNECT_AND_ENABLE(index);						\
-}
+	static void i2c_stm32_irq_config_func_##index(const struct device *dev __unused)	\
+	{											\
+		I2C_STM32_IRQ_CONNECT_AND_ENABLE(index);					\
+	}
 
 #else /* CONFIG_I2C_STM32_INTERRUPT */
 #define I2C_STM32_IRQ_HANDLER_DECL(index)
@@ -244,4 +240,4 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)				\
 #define I2C_STM32_IRQ_HANDLER(index)
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
-#endif	/* ZEPHYR_DRIVERS_I2C_I2C_STM32_H_ */
+#endif /* ZEPHYR_DRIVERS_I2C_I2C_STM32_H_ */

@@ -91,6 +91,8 @@
 #include <zephyr/dt-bindings/clock/stm32u5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBAX)
 #include <zephyr/dt-bindings/clock/stm32wba_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32WL3X)
+#include <zephyr/dt-bindings/clock/stm32wl3_clock.h>
 #else
 #include <zephyr/dt-bindings/clock/stm32_clock.h>
 #endif
@@ -883,11 +885,11 @@ struct stm32_pclken {
 /* Get STM32 clock information for an indexed clock phandle in a DT node */
 #define STM32_CLOCK_INFO(clk_index, node_id)					\
 	{									\
-		.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
 		.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) &		\
 		       GENMASK(STM32_CLOCK_DIV_SHIFT - 1, 0),			\
 		.div = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) >>	\
 		       STM32_CLOCK_DIV_SHIFT,					\
+		.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
 	}
 
 /* Get an array of STM32 clocks information for clocks listed in a DT node */
@@ -910,18 +912,18 @@ struct stm32_pclken {
 	STM32_DT_INST_CLOCK_INFO_BY_IDX(0, inst)
 
 /* Get STM32 clock information for a named clock phandle in DT node */
-#define STM32_CLOCK_INFO_BY_NAME(node_id, name)				\
+#define STM32_DT_CLOCK_INFO_BY_NAME(node_id, name)				\
 	{								\
-		.enr = DT_CLOCKS_CELL_BY_NAME(node_id, name, bits),	\
 		.bus = DT_CLOCKS_CELL_BY_NAME(node_id, name, bus) &	\
 		       GENMASK(STM32_CLOCK_DIV_SHIFT - 1, 0),		\
 		.div = DT_CLOCKS_CELL_BY_NAME(node_id, name, bus) >>	\
 		       STM32_CLOCK_DIV_SHIFT,				\
+		.enr = DT_CLOCKS_CELL_BY_NAME(node_id, name, bits),	\
 	}
 
 /* Get STM32 clock information for named clock phandle in a @c DT_DRV_COMPAT instance node */
 #define STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, name)			\
-	STM32_CLOCK_INFO_BY_NAME(DT_DRV_INST(inst), name)
+	STM32_DT_CLOCK_INFO_BY_NAME(DT_DRV_INST(inst), name)
 
 /* Return true only if at least an enabled instance of the @c DT_DRV_COMPAT has at least 2 clocks */
 #define STM32_DOMAIN_CLOCK_INST_SUPPORT(inst) DT_INST_CLOCKS_HAS_IDX(inst, 1) ||

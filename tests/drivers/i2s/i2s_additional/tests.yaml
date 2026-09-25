@@ -59,7 +59,7 @@ tests:
       fixture: gpio_loopback
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
@@ -80,7 +80,7 @@ tests:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_aclk.overlay"
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
     integration_platforms:

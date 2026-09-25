@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+	};
+};
+
+&pinctrl {
+	pinctrl_rgb_pwm_leds: pinctrl_rgb_pwm_leds {
+		group1 {
+			pinmux = <PIN_PB17__PWML1>, /* LED red */
+				 <PIN_PB15__PWML0>, /* LED green */
+				 <PIN_PA21__PWML1>; /* LED blue */
+			bias-disable;
+		};
+	};
+};
+
+&pwm {
+	pinctrl-0 = <&pinctrl_rgb_pwm_leds>;
+};

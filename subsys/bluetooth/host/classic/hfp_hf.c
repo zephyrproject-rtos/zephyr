@@ -4272,6 +4272,7 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED);
 
 	k_work_cancel(&hf->work);
+	k_work_cancel(&hf->slc_work);
 	k_work_cancel_delayable(&hf->deferred_work);
 
 	/* Drop queued TX buffers. Nothing will send them any more, and
@@ -4290,7 +4291,7 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 	hf->acl = NULL;
 }
 
-static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
+static int hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
 
@@ -4300,6 +4301,8 @@ static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	}
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_RX_ONGOING);
 	k_work_submit(&hf->work);
+
+	return 0;
 }
 
 static void hfp_hf_sent(struct bt_rfcomm_dlc *dlc, int err)
@@ -4354,6 +4357,15 @@ static uint8_t bt_hfp_hf_discover_cb(struct bt_conn *conn, struct bt_sdp_client_
 
 	hf = &bt_hfp_hf_pool[index];
 
+	if (hf->acl == NULL) {
+		/* The HF object was released by hfp_hf_disconnected() while
+		 * the discovery was still ongoing. Do not touch the object
+		 * state or re-submit any work in that case.
+		 */
+		LOG_WRN("HF %p released before discovery completed", hf);
+		return BT_SDP_DISCOVER_UUID_STOP;
+	}
+
 	if ((result == NULL) || (result->resp_buf == NULL)) {
 		LOG_ERR("SDP discovery failed");
 		goto failed;
@@ -4388,6 +4400,15 @@ static uint8_t bt_hfp_hf_discover_cb(struct bt_conn *conn, struct bt_sdp_client_
 	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_RECORD_FOUND);
 failed:
 	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_DISCOVER_DONE);
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_RELEASING)) {
+		/* The RFCOMM connection creation failed and the object was
+		 * kept allocated only to keep the SDP discovery request
+		 * valid. Release the object now that the discovery has
+		 * completed.
+		 */
+		hf->acl = NULL;
+		return BT_SDP_DISCOVER_UUID_STOP;
+	}
 	k_work_submit(&hf->slc_work);
 
 	return BT_SDP_DISCOVER_UUID_STOP;
@@ -4454,12 +4475,13 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 	hf->sdp_param.pool = &hf_pool;
 	hf->sdp_param.ids  = &id_list;
 
+	hf->acl = conn;
+
 	err = bt_sdp_discover(conn, &hf->sdp_param);
 	if (err != 0) {
+		hf->acl = NULL;
 		return NULL;
 	}
-
-	hf->acl = conn;
 
 	hf->rfcomm_dlc.ops = &ops;
 	hf->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
@@ -4625,7 +4647,17 @@ int bt_hfp_hf_connect(struct bt_conn *conn, struct bt_hfp_hf **hf, uint8_t chann
 
 	err = bt_rfcomm_dlc_connect(conn, &new_hf->rfcomm_dlc, channel);
 	if (err != 0) {
-		(void)memset(new_hf, 0, sizeof(*new_hf));
+		/* The SDP discovery request started by hfp_hf_create() is
+		 * linked in the SDP client's request list, so the object
+		 * cannot be wiped here. Mark the object for release and let
+		 * the SDP discovery callback release it. If the discovery
+		 * has already completed, release the object immediately.
+		 */
+		atomic_set_bit(new_hf->flags, BT_HFP_HF_FLAG_RELEASING);
+		if (atomic_test_bit(new_hf->flags, BT_HFP_HF_FLAG_DISCOVER_DONE)) {
+			k_work_cancel(&new_hf->slc_work);
+			new_hf->acl = NULL;
+		}
 		*hf = NULL;
 	} else {
 		*hf = new_hf;

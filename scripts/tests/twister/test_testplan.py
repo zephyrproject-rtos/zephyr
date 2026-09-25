@@ -98,6 +98,7 @@ def test_get_all_testsuites_short(class_testplan, all_testsuites_dict):
                       'test_d.check_1.unit_1b',
                       'test_e.check_1.feature5.1a',
                       'test_e.check_1.feature5.1b',
+                      'test_e.check_1.feature6.normal_case',
                       'test_config.main']
 
     assert sorted(plan.get_all_tests()) == sorted(expected_tests)

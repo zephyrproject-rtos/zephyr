@@ -261,7 +261,7 @@ struct k_work_q *smp_get_wq(void)
 void smp_rx_remove_invalid(struct smp_transport *zst, void *arg)
 {
 	struct net_buf *nb;
-	struct k_fifo temp_fifo;
+	sys_slist_t temp_list;
 
 	if (zst->functions.query_valid_check == NULL) {
 		/* No check check function registered, abort check */
@@ -274,20 +274,20 @@ void smp_rx_remove_invalid(struct smp_transport *zst, void *arg)
 	}
 
 	/* Run callback function and remove all buffers that are no longer needed. Store those
-	 * that are in a temporary FIFO
+	 * that are in a temporary list
 	 */
-	k_fifo_init(&temp_fifo);
+	sys_slist_init(&temp_list);
 
 	while ((nb = k_fifo_get(&zst->fifo, K_NO_WAIT)) != NULL) {
 		if (!zst->functions.query_valid_check(nb, arg)) {
 			smp_free_buf(nb, zst);
 		} else {
-			k_fifo_put(&temp_fifo, nb);
+			net_buf_slist_put(&temp_list, nb);
 		}
 	}
 
 	/* Re-insert the remaining queued operations into the original FIFO */
-	while ((nb = k_fifo_get(&temp_fifo, K_NO_WAIT)) != NULL) {
+	while ((nb = net_buf_slist_get(&temp_list)) != NULL) {
 		k_fifo_put(&zst->fifo, nb);
 	}
 

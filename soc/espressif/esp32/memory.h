@@ -98,20 +98,21 @@
 #define USER_IRAM_END SRAM1_DRAM_IRAM_CALC(SRAM1_DRAM_USER_START)
 #endif
 
-/* AMP memory */
-#if defined(CONFIG_SOC_ESP32_APPCPU)
+/* AMP memory. CONFIG_SOC_ENABLE_APPCPU is set on both images of an AMP
+ * pair, so it is what tells the PROCPU image to keep the APPCPU areas
+ * out of its own regions.
+ */
 #if defined(CONFIG_SOC_ENABLE_APPCPU)
 #define APPCPU_IRAM_SIZE CONFIG_ESP_APPCPU_IRAM_SIZE
 #define APPCPU_DRAM_SIZE CONFIG_ESP_APPCPU_DRAM_SIZE
-#else
+#elif defined(CONFIG_SOC_ESP32_APPCPU)
 /* Fallback for non-AMP APPCPU builds */
 #define APPCPU_IRAM_SIZE 0x8000
 #define APPCPU_DRAM_SIZE 0x8000
-#endif /* CONFIG_SOC_ENABLE_APPCPU */
 #else
 #define APPCPU_IRAM_SIZE 0
 #define APPCPU_DRAM_SIZE 0
-#endif /* CONFIG_SOC_ESP32_APPCPU */
+#endif /* CONFIG_SOC_ENABLE_APPCPU */
 
 #define APPCPU_SRAM_SIZE (APPCPU_IRAM_SIZE + APPCPU_DRAM_SIZE)
 

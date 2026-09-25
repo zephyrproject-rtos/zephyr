@@ -355,6 +355,27 @@ or label that does not exist causes a documentation build warning.
    These commands expand to plain text when the Doxygen documentation is built standalone, i.e.
    without the rest of the documentation. See :ref:`zephyr_doc` for more details.
 
+.. _doxygen_rfc_refs:
+
+Referencing IETF RFCs
+*********************
+
+``@rfc{<number>}`` or ``@rfc{<number>,<anchor>}``
+  Reference an IETF RFC by number, optionally pointing to an anchor within it. This is the
+  Doxygen counterpart of the :rst:role:`rfc` role and renders as a hyperlink to the RFC on the
+  IETF Datatracker.
+
+  The anchor is passed through verbatim, so it can target anything the Datatracker defines for
+  that RFC, such as ``section-3.1``, ``appendix-B.1.2``, ``figure-2``, or ``table-1``. Which
+  anchors exist depends on the RFC: figures and tables are only anchored on RFCs rendered from
+  their XML source.
+
+  Do not put whitespace after the comma: Doxygen keeps it as part of the argument, where it ends
+  up inside the URL fragment. The rendered link text still looks correct, so a broken anchor is
+  only noticeable when following the link.
+
+  Example: ``@rfc{7519}``, ``@rfc{8613,section-3.1}`` or ``@rfc{8613,appendix-B.1.2}``
+
 .. _doxygen_internals:
 
 Hiding internal details

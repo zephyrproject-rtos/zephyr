@@ -664,7 +664,7 @@ static DEVICE_API(adc, max2253x_api) = {
 #endif /* CONFIG_ADC_MAX2253X_STREAM */
 };
 
-#define MAX2253X_SPI_CFG (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))
+#define MAX2253X_SPI_CFG (SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))
 
 #define MAX2253X_RTIO_DEFINE(inst)                                                                 \
 	SPI_DT_IODEV_DEFINE(max2253x_iodev_##inst, DT_DRV_INST(inst), MAX2253X_SPI_CFG);           \

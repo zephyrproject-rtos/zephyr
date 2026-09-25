@@ -22,6 +22,7 @@
 		zephyr,flash = &cpuapp_mram;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,wifi = &wlan0;
+		nordic,vtf-region = &vtf_region_default;
 	};
 
 	/* Single IPC channel: 4KB + 16KB shared memory for TX+RX */
@@ -161,6 +162,10 @@
 };
 
 &pwr_antswc {
+	status = "okay";
+};
+
+&wifi_antsw {
 	status = "okay";
 };
 

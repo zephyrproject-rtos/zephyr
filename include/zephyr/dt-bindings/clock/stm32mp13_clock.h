@@ -6,9 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32MP13_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32MP13_CLOCK_H_
 
-/** @cond INTERNAL_HIDDEN */
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
 
-#include "stm32_common_clocks.h"
+/** @cond INTERNAL_HIDDEN */
 
 /** System clock */
 /* defined in stm32_common_clocks.h */
@@ -151,6 +151,9 @@
 #define SDMMC2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 5, 3, SDMMC12CKSELR_REG)
 #define ETH1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, ETH12CKSELR_REG)
 #define ETH2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, ETH12CKSELR_REG)
+/* The PTP clock is the ETHx kernel clock divided by (val + 1) */
+#define ETH1_PTP_DIV(val)	STM32_DT_CLOCK_SELECT((val), 7, 4, ETH12CKSELR_REG)
+#define ETH2_PTP_DIV(val)	STM32_DT_CLOCK_SELECT((val), 15, 12, ETH12CKSELR_REG)
 #define USBPHY_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, USBCKSELR_REG)
 #define USBOTG_SEL(val)		STM32_DT_CLOCK_SELECT((val), 4, 4, USBCKSELR_REG)
 #define QSPI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, QSPICKSELR_REG)

@@ -108,6 +108,18 @@ static void ALWAYS_INLINE rpi_pico_bit_clr(const mm_reg_t reg, const uint32_t bi
 	sys_write32(bit, REG_ALIAS_CLR_BITS | reg);
 }
 
+/* DPRAM is Device memory: unaligned half-word/word access faults, which memcpy() may emit. */
+static inline void dpram_memcpy(void *dst, const void *src, const size_t len)
+{
+	const size_t m_len = ROUND_DOWN(len, sizeof(uint32_t));
+
+	__ASSERT(IS_ALIGNED(dst, sizeof(uint32_t)), "Destination is not aligned");
+	__ASSERT(IS_ALIGNED(src, sizeof(uint32_t)), "Source is not aligned");
+
+	(void)memcpy(dst, src, m_len);
+	/* Copy the unaligned remainder byte by byte */
+	bytecpy((uint8_t *)dst + m_len, (const uint8_t *)src + m_len, len - m_len);
+}
 
 static void sie_dp_pullup(const struct device *dev, const bool enable)
 {
@@ -290,7 +302,7 @@ static int rpi_pico_prep_tx(const struct device *dev,
 	lock_key = irq_lock();
 
 	len = MIN(cfg->mps, buf->len);
-	memcpy(ep_data->buf, buf->data, len);
+	dpram_memcpy(ep_data->buf, buf->data, len);
 
 	LOG_DBG("Prepare TX ep 0x%02x len %u pid: %u",
 		cfg->addr, len, ep_data->next_pid);
@@ -435,8 +447,6 @@ static ALWAYS_INLINE void rpi_pico_thread_handler(void *const arg)
 
 			if (!udc_ep_is_busy(ep_cfg)) {
 				rpi_pico_handle_xfer_next(dev, ep_cfg);
-			} else {
-				LOG_ERR("Endpoint 0x%02x busy", ep);
 			}
 		}
 	}
@@ -511,7 +521,7 @@ static void rpi_pico_handle_buff_status_out(const struct device *dev, const uint
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
 	struct rpi_pico_data *priv = udc_get_private(dev);
 	struct net_buf *buf;
-	size_t len;
+	size_t len, copy_len;
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
@@ -521,7 +531,8 @@ static void rpi_pico_handle_buff_status_out(const struct device *dev, const uint
 	}
 
 	len = read_buf_ctrl_reg(dev, ep) & USB_BUF_CTRL_LEN_MASK;
-	net_buf_add_mem(buf, ep_data->buf, MIN(len, net_buf_tailroom(buf)));
+	copy_len = MIN(len, net_buf_tailroom(buf));
+	dpram_memcpy(net_buf_add(buf, copy_len), ep_data->buf, copy_len);
 
 	if (net_buf_tailroom(buf) && len == udc_mps_ep_size(ep_cfg)) {
 		__unused int err;
@@ -1174,16 +1185,16 @@ static const struct udc_api udc_rpi_pico_api = {
 		irq_disable(DT_INST_IRQN(n));						\
 	}										\
 											\
-	static struct udc_ep_config ep_cfg_out[USB_NUM_ENDPOINTS];			\
-	static struct udc_ep_config ep_cfg_in[USB_NUM_ENDPOINTS];			\
+	static struct udc_ep_config ep_cfg_out_##n[USB_NUM_ENDPOINTS];			\
+	static struct udc_ep_config ep_cfg_in_##n[USB_NUM_ENDPOINTS];			\
 											\
 	static const struct rpi_pico_config rpi_pico_config_##n = {			\
 		.base = (usb_hw_t *)DT_INST_REG_ADDR(n),				\
 		.dpram = (usb_device_dpram_t *)USBCTRL_DPRAM_BASE,			\
 		.mem_block = &rpi_pico_mb_##n,						\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),			\
-		.ep_cfg_in = ep_cfg_out,						\
-		.ep_cfg_out = ep_cfg_in,						\
+		.ep_cfg_in = ep_cfg_out_##n,						\
+		.ep_cfg_out = ep_cfg_in_##n,						\
 		.make_thread = udc_rpi_pico_make_thread_##n,				\
 		.irq_enable_func = udc_rpi_pico_irq_enable_func_##n,			\
 		.irq_disable_func = udc_rpi_pico_irq_disable_func_##n,			\

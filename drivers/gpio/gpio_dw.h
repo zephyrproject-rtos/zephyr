@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#define GPIO_DW_PINCTRL_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+
 typedef void (*gpio_config_irq_t)(const struct device *port);
 
 struct gpio_dw_config {
@@ -27,6 +29,9 @@ struct gpio_dw_config {
 	uint32_t ngpios;
 	uint32_t irq_num; /* set to 0 if GPIO port cannot interrupt */
 	gpio_config_irq_t config_func;
+#if GPIO_DW_PINCTRL_ENABLED
+	const struct pinctrl_dev_config *pcfg;
+#endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
 	const struct reset_dt_spec reset;
 #endif

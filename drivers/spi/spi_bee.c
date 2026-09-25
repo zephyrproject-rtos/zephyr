@@ -35,13 +35,13 @@ LOG_MODULE_REGISTER(spi_bee, CONFIG_SPI_LOG_LEVEL);
 #define SPI_DATASIZE_TO_BYTE(size) ((size) <= 16 ? ((((size) - 1) >> 3) + 1) : 4)
 #define SPI_SRC_CLOCK_HZ           40000000U
 
-#ifdef CONFIG_SPI_SLAVE
-#define SPI_SLAVE_ENABLED 1
+#ifdef CONFIG_SPI_PERIPHERAL
+#define SPI_PERIPHERAL_ENABLED 1
 #else
-#define SPI_SLAVE_ENABLED 0
+#define SPI_PERIPHERAL_ENABLED 0
 #endif
-BUILD_ASSERT(!(DT_NODE_HAS_STATUS(DT_NODELABEL(spi0_slave), okay) && !SPI_SLAVE_ENABLED),
-	     "Error: CONFIG_SPI_SLAVE should be set 'y' if spi0_slave node is enabled");
+BUILD_ASSERT(!(DT_NODE_HAS_STATUS(DT_NODELABEL(spi0_slave), okay) && !SPI_PERIPHERAL_ENABLED),
+	     "Error: CONFIG_SPI_PERIPHERAL should be set 'y' if spi0_slave node is enabled");
 BUILD_ASSERT(
 	DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) +
 			DT_NODE_HAS_STATUS(DT_NODELABEL(spi0_slave), okay) <=
@@ -78,7 +78,7 @@ struct spi_bee_config {
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t reg;
 	uint16_t clkid;
-	bool is_slave;
+	bool is_peripheral;
 #ifdef CONFIG_SPI_BEE_INTERRUPT
 	void (*irq_configure)(void);
 #endif
@@ -88,7 +88,7 @@ static bool spi_bee_tx_fifo_not_full(const struct spi_bee_config *cfg)
 {
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
 	return SPI_GetTxFIFOLen((SPI_TypeDef *)cfg->reg) <
-	       (cfg->is_slave ? SPI0_SLAVE_TX_FIFO_SIZE : SPI_TX_FIFO_SIZE);
+	       (cfg->is_peripheral ? SPI0_SLAVE_TX_FIFO_SIZE : SPI_TX_FIFO_SIZE);
 #elif defined(CONFIG_SOC_SERIES_RTL8752H)
 	if ((SPI_TypeDef *)cfg->reg == SPI1) {
 		return SPI_GetTxFIFOLen((SPI_TypeDef *)cfg->reg) < 16;
@@ -103,7 +103,7 @@ static bool spi_bee_rx_fifo_not_full(const struct spi_bee_config *cfg)
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
 	return (SPI_GetRxFIFOLen((SPI_TypeDef *)cfg->reg) +
 			SPI_GetTxFIFOLen((SPI_TypeDef *)cfg->reg) <
-		(cfg->is_slave ? SPI0_SLAVE_RX_FIFO_SIZE : SPI_RX_FIFO_SIZE));
+		(cfg->is_peripheral ? SPI0_SLAVE_RX_FIFO_SIZE : SPI_RX_FIFO_SIZE));
 #elif defined(CONFIG_SOC_SERIES_RTL8752H)
 	if ((SPI_TypeDef *)cfg->reg == SPI1) {
 		return (SPI_GetRxFIFOLen((SPI_TypeDef *)cfg->reg) +
@@ -134,7 +134,8 @@ static bool spi_bee_hw_ongoing(const struct device *dev)
 	const struct spi_bee_config *config = dev->config;
 
 	return !SPI_GetFlagState((SPI_TypeDef *)config->reg, SPI_FLAG_TFE) ||
-	       (!config->is_slave && SPI_GetFlagState((SPI_TypeDef *)config->reg, SPI_FLAG_BUSY));
+	       (!config->is_peripheral &&
+		SPI_GetFlagState((SPI_TypeDef *)config->reg, SPI_FLAG_BUSY));
 }
 
 static bool spi_bee_transfer_ongoing(const struct device *dev)
@@ -242,7 +243,7 @@ static void spi_bee_complete(const struct device *dev, int status)
 #endif
 	spi_context_complete(&dev_data->ctx, dev, status);
 
-	if (!dev_config->is_slave) {
+	if (!dev_config->is_peripheral) {
 		spi_context_cs_control(&dev_data->ctx, false);
 	}
 
@@ -469,13 +470,15 @@ static int spi_bee_configure(const struct device *dev, const struct spi_config *
 		return 0;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER && config->is_slave) {
-		LOG_ERR("Master mode is not supported on %s", dev->name);
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_CONTROLLER &&
+	    config->is_peripheral) {
+		LOG_ERR("Controller mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_SLAVE && !config->is_slave) {
-		LOG_ERR("Slave mode is not supported on %s", dev->name);
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_PERIPHERAL &&
+	    !config->is_peripheral) {
+		LOG_ERR("Peripheral mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
@@ -501,7 +504,7 @@ static int spi_bee_configure(const struct device *dev, const struct spi_config *
 	}
 
 	SPI_StructInit(&spi_init_struct);
-	if (!config->is_slave) {
+	if (!config->is_peripheral) {
 		spi_init_struct.SPI_BaudRatePrescaler = SPI_SRC_CLOCK_HZ / spi_cfg->frequency;
 	}
 #if defined(CONFIG_SOC_SERIES_RTL8752H)
@@ -530,7 +533,7 @@ static int spi_bee_configure(const struct device *dev, const struct spi_config *
 		spi_init_struct.SPI_TxDmaEn = ENABLE;
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
 		spi_init_struct.SPI_TxWaterlevel =
-			(config->is_slave ? SPI0_SLAVE_TX_FIFO_SIZE : SPI_TX_FIFO_SIZE) -
+			(config->is_peripheral ? SPI0_SLAVE_TX_FIFO_SIZE : SPI_TX_FIFO_SIZE) -
 			data->dma_tx.dma_cfg.dest_burst_length;
 #elif defined(CONFIG_SOC_SERIES_RTL8752H)
 		if ((SPI_TypeDef *)config->reg == SPI1) {
@@ -577,7 +580,7 @@ static int spi_bee_transceive_impl(const struct device *dev, const struct spi_co
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs,
 				  SPI_DATASIZE_TO_BYTE(data->datasize));
 
-	if (!config->is_slave) {
+	if (!config->is_peripheral) {
 		spi_context_cs_control(&data->ctx, true);
 	}
 
@@ -590,7 +593,7 @@ static int spi_bee_transceive_impl(const struct device *dev, const struct spi_co
 			}
 		} while (spi_bee_transfer_ongoing(dev));
 
-		if (!config->is_slave) {
+		if (!config->is_peripheral) {
 			spi_context_cs_control(&data->ctx, false);
 		}
 
@@ -607,7 +610,7 @@ static int spi_bee_transceive_impl(const struct device *dev, const struct spi_co
 
 			ret = spi_bee_start_dma_transceive(dev);
 			if (ret < 0) {
-				if (!config->is_slave) {
+				if (!config->is_peripheral) {
 					spi_context_cs_control(&data->ctx, false);
 				}
 				SPI_Cmd(spi, DISABLE);
@@ -635,7 +638,7 @@ static int spi_bee_transceive_impl(const struct device *dev, const struct spi_co
 
 		ret = spi_bee_start_dma_transceive(dev);
 		if (ret < 0) {
-			if (!config->is_slave) {
+			if (!config->is_peripheral) {
 				spi_context_cs_control(&data->ctx, false);
 			}
 			SPI_Cmd(spi, DISABLE);
@@ -874,7 +877,8 @@ static DEVICE_API(spi, spi_bee_driver_api) = {
 		.reg = DT_INST_REG_ADDR(index),                                                    \
 		.clkid = DT_INST_CLOCKS_CELL(index, id),                                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
-		.is_slave = DT_INST_PROP_OR(index, is_slave, false),                               \
+		.is_peripheral = DT_INST_PROP_OR(index, is_peripheral,                             \
+						 DT_INST_PROP_OR(index, is_slave, false)),         \
 		IF_ENABLED(CONFIG_SPI_BEE_INTERRUPT,                                               \
 			   (.irq_configure = spi_bee_irq_config_##index))}; \
 	DEVICE_DT_INST_DEFINE(index, &spi_bee_init, NULL, &spi_bee_data_##index,                   \

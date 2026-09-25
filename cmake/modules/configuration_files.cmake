@@ -2,26 +2,31 @@
 #
 # Copyright (c) 2021, Nordic Semiconductor ASA
 
-# Zephyr build system configuration files.
-#
-# Locate the Kconfig and DT config files that are to be used.
-# Also, locate the appropriate application config directory.
-#
-# Outcome:
-# The following variables will be defined when this CMake module completes:
-#
-# - CONF_FILE:              List of Kconfig fragments
-# - EXTRA_CONF_FILE:        List of additional Kconfig fragments
-# - DTC_OVERLAY_FILE:       List of devicetree overlay files
-# - EXTRA_DTC_OVERLAY_FILE  List of additional devicetree overlay files
-# - DTS_EXTRA_CPPFLAGS      List of additional devicetree preprocessor defines
-# - APPLICATION_CONFIG_DIR: Root folder for application configuration
-#
-# If any of the above variables are already set when this CMake module is
-# loaded, then no changes to the variable will happen.
-#
-# Variables set by this module and not mentioned above are considered internal
-# use only and may be removed, renamed, or re-purposed without prior notice.
+#[=======================================================================[.rst:
+configuration_files
+###################
+
+Locate the Kconfig and DT config files that are to be used.
+Also, locate the appropriate application config directory.
+
+Variables
+*********
+
+The following variables will be defined when this CMake module completes:
+
+* :cmake:variable:`CONF_FILE`
+* :cmake:variable:`EXTRA_CONF_FILE`
+* :cmake:variable:`DTC_OVERLAY_FILE`
+* :cmake:variable:`EXTRA_DTC_OVERLAY_FILE`
+* :cmake:variable:`DTS_EXTRA_CPPFLAGS`
+* :cmake:variable:`APPLICATION_CONFIG_DIR`
+
+If any of the above variables are already set when this CMake module is
+loaded, then no changes to the variable will happen.
+
+Variables set by this module and not mentioned above are considered internal
+use only and may be removed, renamed, or re-purposed without prior notice.
+#]=======================================================================]
 
 include_guard(GLOBAL)
 

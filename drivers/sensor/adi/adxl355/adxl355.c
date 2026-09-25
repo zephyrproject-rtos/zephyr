@@ -623,6 +623,7 @@ static int adxl355_read_sample(const struct device *dev)
 	sample->y = combine_bytes_to_int20(buf[3], buf[4], buf[5]);
 	sample->z = combine_bytes_to_int20(buf[6], buf[7], buf[8]);
 	sample->range = data->range;
+	sample->is_fifo = 0;
 	return 0;
 }
 

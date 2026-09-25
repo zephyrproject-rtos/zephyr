@@ -601,14 +601,14 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 		conn_cnt++;
 	}
 
-	err = bt_addr_le_from_str(argv[1], argv[2], &member_param->addr);
+	err = bt_addr_le_from_str(argv[1], &member_param->addr);
 	if (err != 0) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 
 		return -ENOEXEC;
 	}
 
-	adv_sid = shell_strtoul(argv[3], 0, &err);
+	adv_sid = shell_strtoul(argv[2], 0, &err);
 	if (err != 0) {
 		shell_error(sh, "Could not parse adv_sid: %d", err);
 
@@ -623,7 +623,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 
 	member_param->adv_sid = adv_sid;
 
-	broadcast_id = shell_strtoul(argv[4], 0, &err);
+	broadcast_id = shell_strtoul(argv[3], 0, &err);
 	if (err != 0) {
 		shell_error(sh, "Could not parse broadcast_id: %d", err);
 
@@ -638,10 +638,10 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 
 	member_param->broadcast_id = broadcast_id;
 
-	if (argc > 5) {
+	if (argc > 4) {
 		unsigned long pa_interval;
 
-		pa_interval = shell_strtoul(argv[5], 0, &err);
+		pa_interval = shell_strtoul(argv[4], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse pa_interval: %d", err);
 
@@ -661,10 +661,10 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 	}
 
 	/* TODO: Support multiple subgroups */
-	if (argc > 6) {
+	if (argc > 5) {
 		unsigned long bis_sync;
 
-		bis_sync = shell_strtoul(argv[6], 0, &err);
+		bis_sync = shell_strtoul(argv[5], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse bis_sync: %d", err);
 
@@ -682,10 +682,10 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 		subgroup.bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
 	}
 
-	if (argc > 7) {
+	if (argc > 6) {
 		size_t metadata_len;
 
-		metadata_len = hex2bin(argv[7], strlen(argv[7]), subgroup.metadata,
+		metadata_len = hex2bin(argv[6], strlen(argv[6]), subgroup.metadata,
 				       sizeof(subgroup.metadata));
 
 		if (metadata_len == 0U) {
@@ -935,11 +935,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 	SHELL_CMD_ARG(broadcast_reception_start, NULL,
 		      "Start broadcast reception "
-		      "with source <address: XX:XX:XX:XX:XX:XX> "
-		      "<type: public/random> <adv_sid> "
+		      "with source <address: P:XX:XX:XX:XX:XX:XX or "
+		      "R:XX:XX:XX:XX:XX:XX> <adv_sid> "
 		      "<broadcast_id> [<pa_interval>] [<sync_bis>] "
 		      "[<metadata>]",
-		      cmd_cap_commander_broadcast_reception_start, 5, 3),
+		      cmd_cap_commander_broadcast_reception_start, 4, 3),
 	SHELL_CMD_ARG(broadcast_reception_stop, NULL,
 		      "Stop broadcast reception "
 		      "<src_id [...]>",

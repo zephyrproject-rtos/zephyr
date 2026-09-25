@@ -111,6 +111,8 @@ static uint32_t elapsed(void)
 #include "timeout_wheel.h"
 #elif defined(CONFIG_TIMEOUT_BACKEND_BUCKET)
 #include "timeout_bucket.h"
+#elif defined(CONFIG_TIMEOUT_BACKEND_SKIPLIST)
+#include "timeout_skiplist.h"
 #else /* CONFIG_TIMEOUT_BACKEND_DLIST */
 #include "timeout_list.h"
 #endif
@@ -187,7 +189,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	to->fn = fn;
 
 	K_SPINLOCK(&timeout_lock) {
-		uint32_t ticks_elapsed;
+		uint32_t ticks_elapsed = 0;
 		bool has_elapsed = false;
 		k_ticks_t dticks;
 

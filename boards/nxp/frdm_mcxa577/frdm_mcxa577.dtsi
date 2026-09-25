@@ -333,6 +333,50 @@
 	status = "okay";
 };
 
+&espi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_espi0>;
+	pinctrl-names = "default";
+	ram-base-addr = <0x20010000>;
+	max-flash-payload-size = <256>;
+
+	port@0 {
+		reg = <0>;
+		port-type = <0xb>;  /* Mailbox OOB Split */
+		ram-offset = <0x0>;
+		ram-size = <256>;
+	};
+
+	port@1 {
+		reg = <1>;
+		port-type = <0x1>;  /* ACPI Endpoint */
+		io-addr = <0x100>;
+	};
+
+	port@2 {
+		reg = <2>;
+		port-type = <0x2>;  /* ACPI Index-Data */
+		io-addr = <0x200>;
+		idx-offset = <1>;
+	};
+
+	port@3 {
+		reg = <3>;
+		port-type = <0x9>;  /* Mailbox Single */
+		io-addr = <0x300>;
+		ram-offset = <0x300>;
+		ram-size = <256>;
+	};
+
+	port@4 {
+		reg = <4>;
+		port-type = <0x5>;  /* Bus Master Flash */
+		io-addr = <0x500>;
+		ram-offset = <0x500>;
+		ram-size = <64>;
+	};
+};
+
 &crc {
 	status = "okay";
 };
@@ -354,6 +398,18 @@
 &rtc {
 	status = "okay";
 	clock-src = <1>;
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+	phy-handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <4>;
+	tx-cal-45-dp-ohms = <7>;
+	tx-cal-45-dm-ohms = <7>;
 };
 
 &i3c0 {
@@ -388,12 +444,21 @@
 	scan-period-ms = <50>;
 };
 
+&smartdma {
+	status = "okay";
+};
+
 nxp_8080_touch_panel_i2c: &lpi2c3 {};
 
 zephyr_mipi_dbi_parallel: &flexio0_lcd {
-	/* DMA channel 0, muxed to FlexIO TX */
-	dmas = <&edma0 0 71>;
-	dma-names = "tx";
+	dmas = <&smartdma>;
+	dma-names = "smartdma";
+	/* Route the FlexIO IRQ to the SmartDMA trigger input through
+	 * INPUTMUX0. Connection value is the inputmux_connection_t
+	 * enum from fsl_inputmux_connections.h:
+	 *   kINPUTMUX_Flexio0irqToSmartdmatrig = 0xa000034
+	 */
+	mux-states = <&inputmux0 0 0xa000034>;
 	shifters-count = <4>;
 	timers-count = <1>;
 	enwr-pin = <27>;

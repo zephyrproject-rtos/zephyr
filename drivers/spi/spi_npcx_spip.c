@@ -59,7 +59,7 @@ static int spi_npcx_spip_configure(const struct device *dev, const struct spi_co
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_CONTROLLER) {
 		LOG_ERR("Only SPI controller mode is supported");
 		return -ENOTSUP;
 	}

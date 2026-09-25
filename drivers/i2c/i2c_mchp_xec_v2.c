@@ -194,7 +194,7 @@ static int i2c_xec_prog_timing(mm_reg_t regbase, uint32_t freq_hz)
 	}
 
 	sys_write32(ptm->data_tm, regbase + XEC_I2C_DT_OFS);
-	sys_write32(ptm->idle_sc, regbase + XEC_I2C_IDS_OFS);
+	sys_write32(ptm->idle_sc, regbase + XEC_I2C_ISC_OFS);
 	sys_write32(ptm->timeout_sc, regbase + XEC_I2C_TMOUT_SC_OFS);
 	sys_write32(ptm->bus_clock, regbase + XEC_I2C_BCLK_OFS);
 	sys_write8(ptm->rpt_sta_htm, regbase + XEC_I2C_RSHT_OFS);
@@ -302,7 +302,7 @@ static uint8_t i2c_sr_read(const struct device *dev)
  * released (high) for a certain number of the controller's 16 MHz BAUD clock.
  * Too many ways for I2C to malfunction:
  * Bus Error
- * Lost Arbitration in multi-master scenario.
+ * Lost Arbitration in multi-controller scenario.
  * NOTE: WAIT_FOR macro uses kernel timer granularity. Most projects using XEC are configured
  * to use 32KHz for the kernel timer. Granularity is 30.5 microseconds.
  */
@@ -1345,7 +1345,7 @@ static int i2c_xec_v2_pm_action(const struct device *dev, enum pm_device_action 
 			 * Turn on the clock so the block can complete the in-flight
 			 * AAT (auto-stretching SCL since the wake-up START), then
 			 * disarm the wake hardware. The regular GIRQ13 ISR will
-			 * service the AAT match once the master proceeds.
+			 * service the AAT match once the controller proceeds.
 			 */
 			soc_ecia_girq_ctrl(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos, 0);
 			sys_write8(0, rb + XEC_I2C_WKCR_OFS);

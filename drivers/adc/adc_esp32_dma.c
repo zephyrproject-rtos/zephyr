@@ -11,6 +11,7 @@
 #include <esp_private/periph_ctrl.h>
 #include <esp_private/sar_periph_ctrl.h>
 #include <esp_private/adc_share_hw_ctrl.h>
+#include <esp_private/regi2c_ctrl.h>
 
 #include "adc_esp32.h"
 
@@ -220,6 +221,8 @@ static int adc_esp32_digi_start(const struct device *dev,
 	struct adc_esp32_data *data = dev->data;
 	__maybe_unused int err = 0;
 
+	ANALOG_CLOCK_ENABLE();
+
 	sar_periph_ctrl_adc_reset();
 	sar_periph_ctrl_adc_continuous_power_acquire();
 	adc_lock_acquire(conf->unit);
@@ -287,6 +290,7 @@ static int adc_esp32_digi_start(const struct device *dev,
 	if (err) {
 		adc_lock_release(conf->unit);
 		sar_periph_ctrl_adc_continuous_power_release();
+		ANALOG_CLOCK_DISABLE();
 		return err;
 	}
 #endif /* CONFIG_SOC_SERIES_ESP32 */
@@ -325,6 +329,8 @@ static void adc_esp32_digi_stop(const struct device *dev)
 	adc_hal_digi_deinit();
 	adc_lock_release(conf->unit);
 	sar_periph_ctrl_adc_continuous_power_release();
+
+	ANALOG_CLOCK_DISABLE();
 }
 
 static void adc_esp32_fill_seq_buffer(const void *seq_buffer, const void *dma_buffer,

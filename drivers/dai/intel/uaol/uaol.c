@@ -20,9 +20,6 @@
 
 LOG_MODULE_REGISTER(dai_uaol_intel_adsp);
 
-#define UAOL_USB_EP_DIRECTION_OUT		0
-#define UAOL_USB_EP_DIRECTION_IN		1
-
 /* maximum payload size of PCM stream when split_ep is on */
 #define UAOL_MPS_SPLIT_EP			188
 
@@ -54,6 +51,21 @@ static const struct device *uaol_get_hw_device(uint32_t index)
 	return uaol_devs[index];
 }
 
+static void dai_uaol_set_ep_info(struct dai_intel_uaol_data *dp,
+				 const struct ipc4_uaol_usb_ep_info *ep_info)
+{
+	/* HW pcms_ctl.part.mps is 11 bits. */
+	uint32_t packet_size = ep_info->usb_mps & 0x7FF;
+
+	dp->hw_cfg.direction = ep_info->direction;
+
+	if (ep_info->direction == UAOL_DIR_PLAYBACK && ep_info->split_ep) {
+		dp->hw_cfg.sio_credit_size = MIN(packet_size, UAOL_MPS_SPLIT_EP);
+	} else {
+		dp->hw_cfg.sio_credit_size = packet_size;
+	}
+}
+
 static int dai_uaol_process_aux_config_data(struct dai_intel_uaol_data *dp,
 					    const void *data, size_t size)
 {
@@ -64,6 +76,7 @@ static int dai_uaol_process_aux_config_data(struct dai_intel_uaol_data *dp,
 	struct ipc4_uaol_fifo_sao *fifo_sao = NULL;
 	struct ipc4_uaol_usb_ep_info *ep_info = NULL;
 	struct ipc4_uaol_usb_art_divider *art_divider = NULL;
+	uint32_t *service_interval = NULL;
 
 	for (i = 0; i <= size; i += hop) {
 		if (size - i < sizeof(struct ipc4_uaol_tlv)) {
@@ -93,6 +106,10 @@ static int dai_uaol_process_aux_config_data(struct dai_intel_uaol_data *dp,
 		case IPC4_UAOL_AUX_CONFIG_TLV_USB_ART_DIVIDER:
 			art_divider = (struct ipc4_uaol_usb_art_divider *)&tlv->value;
 			length = sizeof(struct ipc4_uaol_usb_art_divider);
+			break;
+		case IPC4_UAOL_AUX_CONFIG_TLV_SERVICE_INTERVAL:
+			service_interval = (uint32_t *)&tlv->value;
+			length = sizeof(uint32_t);
 			break;
 		default:
 			length = tlv->length;
@@ -128,18 +145,23 @@ static int dai_uaol_process_aux_config_data(struct dai_intel_uaol_data *dp,
 			0;
 	}
 	if (ep_info) {
-		if (ep_info->direction == UAOL_USB_EP_DIRECTION_OUT && ep_info->split_ep) {
-			dp->hw_cfg.sio_credit_size = MIN(ep_info->usb_mps, UAOL_MPS_SPLIT_EP);
-		} else {
-			dp->hw_cfg.sio_credit_size = ep_info->usb_mps;
-		}
+		dai_uaol_set_ep_info(dp, ep_info);
 	}
 	if (art_divider) {
 		dp->hw_cfg.art_divider_m = art_divider->multiplier;
 		dp->hw_cfg.art_divider_n = art_divider->divider;
 	}
 
-	dp->hw_cfg.service_interval = UAOL_SERVICE_INTERVAL_DEFAULT;
+	/*
+	 * Service interval from host IPC. Defaults to 1000 us  (standard isochronous) if not set
+	 * or 0. High-Speed devices can use micro frames, which can be 125/250/500 or 1000 us to
+	 * allow higher bandwidth.
+	 */
+	if (service_interval && *service_interval != 0) {
+		dp->hw_cfg.service_interval = *service_interval;
+	} else {
+		dp->hw_cfg.service_interval = UAOL_SERVICE_INTERVAL_DEFAULT;
+	}
 
 	return 0;
 }
@@ -223,12 +245,7 @@ static int dai_uaol_process_dma_control_data(struct dai_intel_uaol_data *dp,
 				return -EINVAL;
 			}
 			ep_info = (struct ipc4_uaol_usb_ep_info *)tlv->value;
-			if (ep_info->direction == UAOL_USB_EP_DIRECTION_OUT && ep_info->split_ep) {
-				dp->hw_cfg.sio_credit_size =
-					MIN(ep_info->usb_mps, UAOL_MPS_SPLIT_EP);
-			} else {
-				dp->hw_cfg.sio_credit_size = ep_info->usb_mps;
-			}
+			dai_uaol_set_ep_info(dp, ep_info);
 			break;
 		default:
 			break;
@@ -322,6 +339,25 @@ static const struct dai_properties *dai_uaol_get_properties(const struct device 
 	return prop;
 }
 
+static int dai_uaol_get_properties_copy(const struct device *dev,
+					enum dai_dir dir, int stream_id,
+					struct dai_properties *prop)
+{
+	const struct dai_properties *kernel_prop = dai_uaol_get_properties(dev, dir, stream_id);
+
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	if (!kernel_prop) {
+		return -ENOENT;
+	}
+
+	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
+
+	return 0;
+}
+
 static int dai_uaol_trigger(const struct device *dev, enum dai_dir dir, enum dai_trigger_cmd cmd)
 {
 	struct dai_intel_uaol_data *dp = dev->data;
@@ -383,6 +419,7 @@ static DEVICE_API(dai, dai_intel_uaol_api_funcs) = {
 	.config_set		= dai_uaol_config_set,
 	.config_get		= dai_uaol_config_get,
 	.get_properties		= dai_uaol_get_properties,
+	.get_properties_copy	= dai_uaol_get_properties_copy,
 	.trigger		= dai_uaol_trigger,
 	.config_update		= dai_uaol_config_update,
 };

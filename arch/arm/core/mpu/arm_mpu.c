@@ -39,13 +39,6 @@ LOG_MODULE_DECLARE(mpu);
 #define MPU_NODEID DT_INST(0, arm_armv6m_mpu)
 #endif
 
-#define NODE_HAS_PROP_AND_OR(node_id, prop) \
-	DT_NODE_HAS_PROP(node_id, prop) ||
-
-BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
-	      NODE_HAS_PROP_AND_OR, zephyr_memory_region_mpu) false) == false,
-	      "`zephyr,memory-region-mpu` was deprecated in favor of `zephyr,memory-attr`");
-
 #define NULL_PAGE_DETECT_NODE_FINDER(node_id, prop)                                                \
 	(DT_NODE_HAS_PROP(node_id, prop) && (DT_REG_ADDR(node_id) == 0) &&                         \
 	 (DT_REG_SIZE(node_id) >= CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE)) ||
@@ -175,9 +168,6 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 			 */
 			continue;
 		}
-#if defined(CONFIG_ARMV7_R)
-		region_conf.size = size_to_mpu_rasr_size(region[idx].dt_size);
-#endif
 
 		if (region_allocate_and_init((*reg_index),
 					     (const struct arm_mpu_region *) &region_conf) < 0) {

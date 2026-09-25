@@ -120,6 +120,7 @@ static void conn_mgr_mon_handle_update(void)
 	bool was_ipv6_ready;
 	bool was_ipv4_ready;
 	bool is_ignored;
+	uint64_t mgmt_event;
 	int ready_count = 0;
 	int ready_count_ipv4 = 0;
 	int ready_count_ipv6 = 0;
@@ -166,6 +167,11 @@ static void conn_mgr_mon_handle_update(void)
 		/* If any states changed, track blame for possibly triggered events */
 		if (was_l4_ready != is_l4_ready) {
 			blame = conn_mgr_mon_get_if_by_index(idx);
+
+			/* Per-interface L4 events */
+			mgmt_event = is_l4_ready ? NET_EVENT_L4_IF_CONNECTED
+						 : NET_EVENT_L4_IF_DISCONNECTED;
+			net_mgmt_event_notify(mgmt_event, blame);
 		}
 		if (was_ipv6_ready != is_ipv6_ready) {
 			blame_ipv6 = conn_mgr_mon_get_if_by_index(idx);

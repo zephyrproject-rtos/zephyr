@@ -155,27 +155,27 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&adc123_common {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in9_pb1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 	status = "okay";
 };
 
 &adc2 {
 	pinctrl-0 = <&adc2_in6_pa6>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 	status = "okay";
 };
 
 &adc3 {
 	pinctrl-0 = <&adc3_in3_pa3>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 	status = "okay";
 };
 

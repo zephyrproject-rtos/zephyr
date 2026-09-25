@@ -40,3 +40,20 @@ properties:
       Selects the WM8904 input PGA source channel.
       Only single-ended input mode is supported.
       On the 32-pin QFN package, only channels 1 and 2 are supported.
+  wolfson,mic-bias-voltage:
+    type: string
+    description: |
+      Select microphone bias voltage for the connected microphone input.
+      * "avdd-9-10":  Vbias = 9/10 x AVDD
+      * "avdd-10-9":  Vbias = 10/9 x AVDD
+      * "avdd-7-6":   Vbias = 7/6 x AVDD
+      * "avdd-4-3":   Vbias = 4/3 x AVDD
+      * "avdd-3-2":   Vbias = 3/2 x AVDD
+
+      If the property is not present, the bias voltage is not enabled.
+    enum:
+      - "avdd-9-10"
+      - "avdd-10-9"
+      - "avdd-7-6"
+      - "avdd-4-3"
+      - "avdd-3-2"

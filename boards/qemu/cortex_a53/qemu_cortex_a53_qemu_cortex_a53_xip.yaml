@@ -12,4 +12,5 @@ testing:
   default: true
   only_tags:
     - xip
+    - integration
 vendor: qemu

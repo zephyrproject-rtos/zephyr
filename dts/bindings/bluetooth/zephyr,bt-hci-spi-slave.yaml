@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Configures SPI slave settings for a Bluetooth controller that uses
+    Deprecated. Use zephyr,bt-hci-spi-peripheral instead.
+
+    Configures SPI peripheral settings for a Bluetooth controller that uses
     Zephyr's Bluetooth Host Controller Interface SPI (HCI SPI) driver.
 
     A node defined via devicetree overlay should look like this:

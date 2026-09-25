@@ -20,9 +20,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/opamp.h>
 #include <zephyr/pm/policy.h>
-#if CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
-#endif
 #ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
 #include <zephyr/drivers/dma.h>
 #endif
@@ -36,18 +34,19 @@
 #include <fsl_lpadc.h>
 LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 
-/*
- * Currently, no instance of the ADC IP has more than
- * 8 channels present. Therefore, we treat channels
- * with an index 8 or higher as a side b channel, with
- * the channel index given by channel_num % 8
- */
-#define CHANNELS_PER_SIDE 0x8
-
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 #define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #endif
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+/*
+ * Bound the wait for sequence completion. The default in adc_context.h is
+ * K_FOREVER, which turns any sequence that can never complete into a permanent
+ * block of the calling thread -- for instance a trigger issued while the
+ * converter is disabled, so the watermark interrupt that would release the
+ * semaphore never fires.
+ */
+#define ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT \
+	K_MSEC(CONFIG_ADC_MCUX_LPADC_ACQUISITION_TIMEOUT_MS)
 #include "adc_context.h"
 
 struct mcux_lpadc_config {
@@ -60,6 +59,8 @@ struct mcux_lpadc_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *ref_supplies;
+	const struct device *bandgap_supply;
+	uint8_t bandgap_input;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	int32_t ref_supply_val;
@@ -74,6 +75,7 @@ struct mcux_lpadc_config {
 	 * (from that channel node's zephyr,vref-mv)
 	 */
 	uint16_t opamp_vref_mv;
+	bool stop_in_low_power;
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	bool pm_device_constraints;
 #endif
@@ -90,7 +92,12 @@ struct mcux_lpadc_data {
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
 	uint32_t channels;
-	lpadc_conv_command_config_t cmd_config[CONFIG_LPADC_CHANNEL_COUNT];
+	/* Map each logical channel to its physical input configuration.
+	 * Sized per instance from the channel nodes present in devicetree.
+	 */
+	lpadc_conv_command_config_t *logic_to_physical;
+	/* Number of logical channels (command slots) usable on this instance. */
+	uint8_t max_channels;
 	/* OPAMP gain control context */
 	uint8_t current_gain_index;
 	int desired_gain_index;
@@ -101,6 +108,7 @@ struct mcux_lpadc_data {
 	uint16_t sample_max_raw;
 	uint8_t channels_count;
 	bool use_dma;
+	uint32_t bandgap_channels;
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	bool pm_lock_active;
 #endif
@@ -108,7 +116,7 @@ struct mcux_lpadc_data {
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_block;
 	/* Staging buffer for 32-bit RESFIFO words (max channels per round) */
-	uint32_t dma_results[CONFIG_LPADC_CHANNEL_COUNT];
+	uint32_t *dma_results;
 #endif
 };
 
@@ -204,14 +212,12 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	uint8_t channel_num;
 	int err;
 
-	/* User may configure maximum number of active channels */
-	if (channel_cfg->channel_id >= CONFIG_LPADC_CHANNEL_COUNT) {
+	if (channel_cfg->channel_id >= data->max_channels) {
 		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
-	/* Select ADC CMD register to configure based off channel ID */
-	cmd = &data->cmd_config[channel_cfg->channel_id];
+	cmd = &data->logic_to_physical[channel_cfg->channel_id];
 
 	/* If bit 5 of input_positive is set, then channel side B is used */
 	channel_side = 0x20 & channel_cfg->input_positive;
@@ -303,7 +309,72 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	}
 
 	cmd->channelNumber = channel_num;
+
+	if (config->bandgap_supply != NULL) {
+		const uint32_t channel_mask = BIT(channel_cfg->channel_id);
+		const bool was_bandgap_channel = (data->bandgap_channels & channel_mask) != 0U;
+		const bool is_bandgap_channel =
+			channel_cfg->input_positive == config->bandgap_input;
+
+		if (is_bandgap_channel && !was_bandgap_channel) {
+			if (data->bandgap_channels == 0U) {
+				err = regulator_enable(config->bandgap_supply);
+				if (err < 0) {
+					return err;
+				}
+			}
+
+			data->bandgap_channels |= channel_mask;
+		} else if (!is_bandgap_channel && was_bandgap_channel) {
+			if (data->bandgap_channels == channel_mask) {
+				err = regulator_disable(config->bandgap_supply);
+				if (err < 0) {
+					return err;
+				}
+			}
+
+			data->bandgap_channels &= ~channel_mask;
+		}
+	}
+
 	return 0;
+}
+
+static void mcux_lpadc_stop_sequence(const struct device *dev)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	struct mcux_lpadc_data *data = dev->data;
+
+#ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
+	if (data->use_dma) {
+		(void)dma_stop(config->dma_dev, config->dma_channel);
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+		LPADC_EnableFIFO0WatermarkDMA(config->base, false);
+#else
+		LPADC_EnableFIFOWatermarkDMA(config->base, false);
+#endif
+	}
+#endif /* CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN */
+
+	/* Drop whatever the aborted sequence left behind: an ADC disable/enable
+	 * cycle clears the command state machine, and the FIFO reset discards any
+	 * result that arrived too late to be consumed. Without this the next read
+	 * would return a stale conversion.
+	 */
+	LPADC_Enable(config->base, false);
+
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+	LPADC_DoResetFIFO0(config->base);
+	LPADC_DoResetFIFO1(config->base);
+#else
+	LPADC_DoResetFIFO(config->base);
+#endif
+
+	LPADC_Enable(config->base, true);
+
+	data->buffer = NULL;
+	data->repeat_buffer = NULL;
+	data->channels = 0U;
 }
 
 static int mcux_lpadc_start_read(const struct device *dev,
@@ -313,6 +384,7 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_hardware_average_mode_t hardware_average_mode;
 	uint8_t channel, last_enabled;
+	uint8_t channel_count = POPCOUNT(sequence->channels);
 	int ret;
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
 	lpadc_conversion_resolution_mode_t resolution_mode;
@@ -369,8 +441,14 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = adc_sequence_validate_buffer(sequence,
-					   POPCOUNT(sequence->channels), sizeof(uint16_t));
+	if (channel_count == 0U ||
+	    (sequence->channels & ~BIT_MASK(data->max_channels)) != 0U) {
+		LOG_ERR("Invalid channel mask 0x%08x", sequence->channels);
+		return -EINVAL;
+	}
+
+	ret = adc_sequence_validate_buffer(sequence, channel_count,
+					   sizeof(uint16_t));
 	if (ret < 0) {
 		return ret;
 	}
@@ -379,36 +457,29 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	 * Now, look at the selected channels to determine which ADC channels
 	 * we need to configure, and set those channels up.
 	 *
-	 * Since this ADC supports chaining channels in hardware, we will
-	 * start with the highest channel ID and work downwards, chaining
-	 * channels as we go.
+	 * Since this ADC supports chaining channels in hardware, start with
+	 * the highest logical channel and work downwards, chaining as we go.
 	 */
-	channel = CONFIG_LPADC_CHANNEL_COUNT;
-	last_enabled = 0;
-	while (channel-- > 0) {
+	channel = data->max_channels;
+	last_enabled = 0U;
+	while (channel-- > 0U) {
 		if (sequence->channels & BIT(channel)) {
-			/* Setup this channel command */
+			lpadc_conv_command_config_t *physical_config =
+				&data->logic_to_physical[channel];
+
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
-			data->cmd_config[channel].conversionResolutionMode =
+			physical_config->conversionResolutionMode =
 				resolution_mode;
 #endif
-			data->cmd_config[channel].hardwareAverageMode =
+			physical_config->hardwareAverageMode =
 				hardware_average_mode;
-			if (last_enabled) {
-				/* Chain channel */
-				data->cmd_config[channel].chainedNextCommandNumber =
-					last_enabled + 1;
-				LOG_DBG("Chaining channel %u to %u",
-					channel, last_enabled);
-			} else {
-				/* End of chain */
-				data->cmd_config[channel].chainedNextCommandNumber = 0;
-			}
+			physical_config->chainedNextCommandNumber =
+				(last_enabled == 0U) ? 0U : last_enabled + 1U;
 			last_enabled = channel;
 			LPADC_SetConvCommandConfig(config->base,
-				channel + 1, &data->cmd_config[channel]);
+				channel + 1U, physical_config);
 		}
-	};
+	}
 
 	data->buffer = sequence->buffer;
 
@@ -434,6 +505,12 @@ static int mcux_lpadc_start_read(const struct device *dev,
 
 	adc_context_start_read(&data->ctx, sequence);
 	int error = adc_context_wait_for_completion(&data->ctx);
+
+	if (error == -EAGAIN) {
+		LOG_ERR("Conversion sequence timed out after %d ms",
+			CONFIG_ADC_MCUX_LPADC_ACQUISITION_TIMEOUT_MS);
+		mcux_lpadc_stop_sequence(dev);
+	}
 
 	return error;
 }
@@ -468,7 +545,20 @@ static int mcux_lpadc_read_async(const struct device *dev,
 			struct k_poll_signal *async)
 {
 	struct mcux_lpadc_data *data = dev->data;
+	enum pm_device_state state;
 	int error;
+
+	/*
+	 * A conversion issued against a suspended converter can never complete:
+	 * SUSPEND runs LPADC_Enable(false), so no watermark interrupt is ever
+	 * raised. Reject the request instead of arming a sequence that only the
+	 * acquisition timeout would eventually clean up. Without device PM the
+	 * state reads back as active, so this costs such a build nothing.
+	 */
+	if ((pm_device_state_get(dev, &state) == 0) && (state != PM_DEVICE_STATE_ACTIVE)) {
+		LOG_ERR("Converter is not active (pm state %d)", state);
+		return -EBUSY;
+	}
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
 
@@ -507,12 +597,10 @@ static void mcux_lpadc_start_channel(const struct device *dev)
 	const struct mcux_lpadc_config *config = dev->config;
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_conv_trigger_config_t trigger_config;
-	uint8_t first_channel;
-
-	first_channel = find_lsb_set(data->channels) - 1;
+	uint8_t first_channel = find_lsb_set(data->channels) - 1U;
 
 	LOG_DBG("Starting channel %d, input %d", first_channel,
-		data->cmd_config[first_channel].channelNumber);
+		data->logic_to_physical[first_channel].channelNumber);
 
 	/* Apply any pending OPAMP gain change synchronously at the start of
 	 * the next sampling round, so the adjustment takes effect immediately.
@@ -535,7 +623,7 @@ static void mcux_lpadc_start_channel(const struct device *dev)
 
 	LPADC_GetDefaultConvTriggerConfig(&trigger_config);
 
-	trigger_config.targetCommandId = first_channel + 1;
+	trigger_config.targetCommandId = first_channel + 1U;
 
 	/* configures trigger0. */
 	LPADC_SetConvTriggerConfig(config->base, 0, &trigger_config);
@@ -580,7 +668,7 @@ static void mcux_lpadc_dma_callback(const struct device *dma_dev, void *user_dat
 	uint32_t written = 0U;
 
 	for (uint8_t ch = 0U;
-		ch < CONFIG_LPADC_CHANNEL_COUNT && written < data->channels_count; ch++) {
+	     ch < data->max_channels && written < data->channels_count; ch++) {
 		/* Skip channels not requested in this sequence. */
 		if (!(data->ctx.sequence.channels & BIT(ch))) {
 			continue;
@@ -592,7 +680,8 @@ static void mcux_lpadc_dma_callback(const struct device *dma_dev, void *user_dat
 		bool is_diff = false;
 
 #if defined(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS) && (FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS)
-		lpadc_sample_channel_mode_t conv_mode = data->cmd_config[ch].sampleChannelMode;
+		lpadc_sample_channel_mode_t conv_mode =
+			data->logic_to_physical[ch].sampleChannelMode;
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_DIFF) && (FSL_FEATURE_LPADC_HAS_CMDL_DIFF)
 		is_diff = (conv_mode == kLPADC_SampleChannelDiffBothSideAB ||
 			   conv_mode == kLPADC_SampleChannelDiffBothSideBA);
@@ -743,7 +832,7 @@ static void mcux_lpadc_isr(const struct device *dev)
 	LPADC_GetConvResult(base, &conv_result);
 #endif /* FSL_FEATURE_LPADC_FIFO_COUNT */
 
-	channel = conv_result.commandIdSource - 1;
+	channel = conv_result.commandIdSource - 1U;
 	LOG_DBG("Finished channel %d. Raw result is 0x%04x",
 		channel, conv_result.convValue);
 	/*
@@ -755,7 +844,7 @@ static void mcux_lpadc_isr(const struct device *dev)
 	 * API should treat the value as signed if the channel is
 	 * in differential mode
 	 */
-	conv_mode = data->cmd_config[channel].sampleChannelMode;
+	conv_mode = data->logic_to_physical[channel].sampleChannelMode;
 	if (data->ctx.sequence.resolution < 15) {
 		result = ((conv_result.convValue >> 3) & 0xFFF);
 #if !(defined(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS) && \
@@ -821,6 +910,8 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 {
 	const struct mcux_lpadc_config *config = dev->config;
 	const struct device *regulator = config->ref_supplies;
+	const struct device *bandgap_supply = config->bandgap_supply;
+	struct mcux_lpadc_data *data = dev->data;
 	int err;
 
 	switch (action) {
@@ -834,6 +925,13 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 
 			/* Re-enable the BUF21 buffer (cleared at suspend). */
 			(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
+		}
+
+		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
+			err = regulator_enable(bandgap_supply);
+			if (err < 0) {
+				return err;
+			}
 		}
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -856,6 +954,13 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 
 		if (regulator != NULL) {
 			err = regulator_disable(regulator);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
+			err = regulator_disable(bandgap_supply);
 			if (err < 0) {
 				return err;
 			}
@@ -915,6 +1020,7 @@ static int mcux_lpadc_init(const struct device *dev)
 
 	adc_config.enableAnalogPreliminary = true;
 	adc_config.referenceVoltageSource = config->voltage_ref;
+	adc_config.enableInDozeMode = !config->stop_in_low_power;
 
 #if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) && FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
 	adc_config.conversionAverageMode = config->calibration_average;
@@ -1020,6 +1126,22 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 #define OPAMP_CH_ID(n) DT_PHA_BY_IDX(DT_DRV_INST(n), nxp_opamps, 0, channel_id)
 #define OPAMP_CH_NODE(n) DT_FOREACH_CHILD_VARGS(DT_DRV_INST(n),	\
 	LPADC_FOREACH_INPUT, OPAMP_CH_ID(n))
+
+/*
+ * Logical channels are hardware command slots. Size the per-instance command
+ * table from the channel nodes declared in devicetree, so slots the application
+ * does not describe cost no RAM. An instance without any channel node keeps the
+ * full hardware capacity available, since its channels can only be set up at
+ * runtime through adc_channel_setup().
+ */
+#define LPADC_CHANNEL_ID_BIT(node) \
+	IF_ENABLED(DT_NODE_HAS_PROP(node, reg), (BIT(DT_REG_ADDR_RAW(node)) |))
+#define LPADC_CHANNEL_ID_MASK(n) \
+	(DT_INST_FOREACH_CHILD_STATUS_OKAY(n, LPADC_CHANNEL_ID_BIT) 0)
+#define LPADC_MAX_CHANNELS(n)								\
+	(LPADC_CHANNEL_ID_MASK(n) == 0U						\
+		 ? ADC_CMDL_COUNT						\
+		 : LOG2(LPADC_CHANNEL_ID_MASK(n)) + 1)
 #define OPAMP_GAINS_INIT(n)								\
 	.opamp_gains = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_opamps),		\
 		(COND_CODE_1(DT_NODE_HAS_PROP(OPAMP_NODE(n), programmable_gain),	\
@@ -1038,8 +1160,14 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 			(DT_INST_DMAS_CELL_BY_NAME(n, fifoa, mux)), (0)),		\
 	.dma_slot = COND_CODE_1(DT_INST_DMAS_HAS_NAME(n, fifoa),			\
 			(DT_INST_DMAS_CELL_BY_NAME(n, fifoa, source)), (0)),
+#define DMA_RESULTS_DEFINE(n)								\
+	static uint32_t mcux_lpadc_dma_results_##n[LPADC_MAX_CHANNELS(n)];
+#define DMA_RESULTS_INIT(n)								\
+	.dma_results = mcux_lpadc_dma_results_##n,
 #else
 #define DMA_INIT(n)
+#define DMA_RESULTS_DEFINE(n)
+#define DMA_RESULTS_INIT(n)
 #endif
 
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
@@ -1050,12 +1178,19 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 #endif
 
 #if CONFIG_PM_DEVICE
-#define LPADC_PM_DEVICE_DEFINE		PM_DEVICE_DT_INST_DEFINE(n, mcux_lpadc_pm_callback);
-#define LPADC_PM_DEVICE_GET		PM_DEVICE_DT_INST_GET(n)
+#define LPADC_PM_DEVICE_DEFINE(n)	PM_DEVICE_DT_INST_DEFINE(n, mcux_lpadc_pm_callback);
+#define LPADC_PM_DEVICE_GET(n)		PM_DEVICE_DT_INST_GET(n)
 #else
-#define LPADC_PM_DEVICE_DEFINE
-#define LPADC_PM_DEVICE_GET		NULL
+#define LPADC_PM_DEVICE_DEFINE(n)
+#define LPADC_PM_DEVICE_GET(n)		NULL
 #endif
+
+#define LPADC_BANDGAP_SUPPLY_INIT(node_id)							\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, bandgap_supply),					\
+		(.bandgap_supply = DEVICE_DT_GET(DT_PHANDLE(node_id, bandgap_supply)),		\
+		 .bandgap_input = DT_PROP(node_id, zephyr_input_positive),), ())
+
+#define LPADC_BANDGAP_SUPPLY_COUNT(node_id) + DT_NODE_HAS_PROP(node_id, bandgap_supply)
 
 #define LPADC_MCUX_INIT(n)									\
 												\
@@ -1074,6 +1209,7 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		.ref_supplies = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),		\
 					    (DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n),		\
 					    nxp_references))), (NULL)),				\
+		DT_FOREACH_CHILD(DT_DRV_INST(n), LPADC_BANDGAP_SUPPLY_INIT)			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),		\
 		.ref_supply_val = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),		\
@@ -1092,18 +1228,26 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		.sample_max = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ideal_sample_range),		\
 			(DT_PROP_BY_IDX(DT_DRV_INST(n), ideal_sample_range, 1)), (UINT32_MAX)),	\
 			OPAMP_GAINS_INIT(n)							\
+		.stop_in_low_power = DT_INST_PROP(n, stop_in_low_power_mode),			\
 		DMA_INIT(n)									\
 	};											\
+												\
+	static lpadc_conv_command_config_t							\
+		mcux_lpadc_cmd_config_##n[LPADC_MAX_CHANNELS(n)];				\
+	DMA_RESULTS_DEFINE(n)									\
 												\
 	static struct mcux_lpadc_data mcux_lpadc_data_##n = {					\
 		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),				\
 		ADC_CONTEXT_INIT_LOCK(mcux_lpadc_data_##n, ctx),				\
 		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),				\
+		.logic_to_physical = mcux_lpadc_cmd_config_##n,					\
+		.max_channels = LPADC_MAX_CHANNELS(n),						\
+		DMA_RESULTS_INIT(n)								\
 	};											\
 												\
-	LPADC_PM_DEVICE_DEFINE									\
+	LPADC_PM_DEVICE_DEFINE(n)								\
 												\
-	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, LPADC_PM_DEVICE_GET, &mcux_lpadc_data_##n,	\
+	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, LPADC_PM_DEVICE_GET(n), &mcux_lpadc_data_##n,	\
 			      &mcux_lpadc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	\
 			      &mcux_lpadc_driver_api);						\
 												\
@@ -1116,6 +1260,11 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 	}											\
 												\
 	BUILD_ASSERT((DT_INST_PROP_OR(n, power_level, 0) >= 0) &&				\
-		     (DT_INST_PROP_OR(n, power_level, 0) <= 3), "power_level: wrong value");
+		     (DT_INST_PROP_OR(n, power_level, 0) <= 3), "power_level: wrong value");	\
+	BUILD_ASSERT((0 DT_FOREACH_CHILD(DT_DRV_INST(n), LPADC_BANDGAP_SUPPLY_COUNT)) <= 1,	\
+		     "Only one LPADC channel may define bandgap-supply");			\
+												\
+	BUILD_ASSERT(LPADC_MAX_CHANNELS(n) <= ADC_CMDL_COUNT,					\
+		     "channel id exceeds the CMD registers implemented by this SoC");
 
 DT_INST_FOREACH_STATUS_OKAY(LPADC_MCUX_INIT)

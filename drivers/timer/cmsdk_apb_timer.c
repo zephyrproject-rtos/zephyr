@@ -25,29 +25,24 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(TIMER_NODE, arm_cmsdk_timer),
 #define TIMER_IRQ_PRIO DT_IRQ(TIMER_NODE, priority)
 #define TIMER_BASE     DT_REG_ADDR(TIMER_NODE)
 
-#define CYC_PER_TICK                                                                               \
-	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /                                      \
-		    (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-#define MAX_CYC UINT32_MAX
-
+/* Reload floor, in cycles: the closest-in interval the driver will program.
+ * Expanded by the core, so it may use the cycles-per-tick the core derives.
+ */
 #ifdef CONFIG_CMSDK_APB_TIMER_MIN_DELAY_OVERRIDE
 #define MIN_DELAY_CYCLES CONFIG_CMSDK_APB_TIMER_MIN_DELAY_CYCLES
 #else
-#define MIN_DELAY_CYCLES MAX(1024U, ((uint32_t)(CYC_PER_TICK / 16U)))
+#define MIN_DELAY_CYCLES MAX(1024U, (TIMER_CORE_CYC_PER_TICK / 16U))
 #endif
-
-typedef uint32_t cycle_t;
 
 struct tmr_cmsdk_apb_cfg {
 	volatile struct timer_cmsdk_apb *timer;
 };
 
 struct tmr_cmsdk_apb_dev_data {
+	/* Interval currently programmed into RELOAD. */
 	uint32_t load;
-	cycle_t cycle_count;
-	cycle_t announced_cycles;
-	/* ticks last reported via sys_clock_elapsed(), cleared in the ISR */
-	cycle_t last_elapsed;
+	/* Whole intervals accumulated so far, the synthesized cycle count. */
+	uint32_t cycle_count;
 };
 
 static const struct tmr_cmsdk_apb_cfg cfg_inst0 = {
@@ -56,6 +51,12 @@ static const struct tmr_cmsdk_apb_cfg cfg_inst0 = {
 
 static struct tmr_cmsdk_apb_dev_data data_inst0;
 
+/* Cycles counted down since the interval was programmed.
+ *
+ * @param val_out Optional: the raw VALUE snapshot this used, for a caller that
+ *                needs to chain a measurement onto the window accounted here
+ *                with no gap in between (see timer_driver_set_reload()).
+ */
 static uint32_t elapsed(uint32_t *val_out)
 {
 	const struct tmr_cmsdk_apb_cfg *const cfg = &cfg_inst0;
@@ -70,51 +71,31 @@ static uint32_t elapsed(uint32_t *val_out)
 	return data->load - value;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+static inline uint32_t timer_driver_cycle_get(void)
 {
-	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+	return data_inst0.cycle_count + elapsed(NULL);
+}
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	ARG_UNUSED(idle);
-
+static void timer_driver_set_reload(uint32_t rel)
+{
 	const struct tmr_cmsdk_apb_cfg *const cfg = &cfg_inst0;
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
 	uint32_t last_load = data->load;
 	uint32_t val1;
-	uint32_t val2;
 
-	/* store the current cfg->timer->value in val1 */
-	uint32_t pending_cycles = elapsed(&val1);
-	uint32_t load_to_be_set = 0;
-	uint32_t unannounced_cycles = 0;
+	/* elapsed() hands back its own VALUE snapshot, so the window measured by
+	 * (val1 - val2) below abuts the window it just accounted for. Reading
+	 * VALUE separately afterwards would leave the cycles in between counted
+	 * by neither, i.e. systematically lost drift. The core has already
+	 * clamped rel to [MIN_DELAY_CYCLES, TIMER_CORE_ALARM_MAX_CYCLES].
+	 */
+	data->cycle_count += elapsed(&val1);
+	data->load = rel;
 
-	data->cycle_count += pending_cycles;
-	unannounced_cycles = data->cycle_count - data->announced_cycles;
+	uint32_t val2 = cfg->timer->value;
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		/*
-		 * No pending timeout and no future timer interrupt required:
-		 * wait as long as the hardware allows.
-		 */
-		load_to_be_set = MAX_CYC;
-	} else if ((int32_t)unannounced_cycles < 0) {
-		load_to_be_set = MIN_DELAY_CYCLES;
-	} else {
-		int64_t want = ((uint64_t)data->last_elapsed + ticks) * CYC_PER_TICK;
-		int64_t delta_cycles = want - unannounced_cycles;
-
-		load_to_be_set = CLAMP(delta_cycles, (int64_t)MIN_DELAY_CYCLES, (int64_t)MAX_CYC);
-	}
-
-	data->load = load_to_be_set;
-
-	val2 = cfg->timer->value;
-
-	cfg->timer->reload = data->load;
-	cfg->timer->value = data->load;
+	cfg->timer->reload = rel;
+	cfg->timer->value = rel;
 
 	/* verify if underflow occurred after reading val1 and before reading val2 */
 	if (val1 < val2) {
@@ -124,55 +105,41 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	}
 }
 
-uint32_t sys_clock_elapsed(void)
-{
-	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+/*
+ * Auto-reload 32-bit down-counter: a RELOAD backend. The hardware counts an
+ * interval at a time rather than free-running, so timer_driver_cycle_get()
+ * synthesizes a monotonic count from the intervals already consumed plus the
+ * current partial, and that read is not atomic (cycle_count and the VALUE
+ * register are both touched by the ISR and by the reprogram path). Hence
+ * TIMER_CORE_COUNTER_NONATOMIC, which has the core serialise
+ * sys_clock_cycle_get_32() under the clock lock.
+ *
+ * The reload register is as wide as the synthesized count, so there is no arm
+ * range to state and the core's own bound applies.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
+#define TIMER_CORE_ALARM_MIN_CYCLES MIN_DELAY_CYCLES
+#define TIMER_CORE_COUNTER_NONATOMIC
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
-	uint32_t unannounced = data->cycle_count - data->announced_cycles;
-	uint32_t cycles = elapsed(NULL) + unannounced;
-	uint32_t ret = cycles / CYC_PER_TICK;
-
-	data->last_elapsed = ret;
-	return ret;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
-	k_spinlock_key_t key = sys_clock_lock();
-	uint32_t cycles = data->cycle_count + elapsed(NULL);
-
-	sys_clock_unlock(key);
-
-	return cycles;
-}
+#include "system_timer_generic.h"
 
 static void cmsdk_apb_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	const struct tmr_cmsdk_apb_cfg *const cfg = &cfg_inst0;
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
-	uint32_t ticks = 1;
 	k_spinlock_key_t key = sys_clock_lock();
 
+	/* The counter underflowed to fire this interrupt, so a whole interval is
+	 * consumed. Commit it under the clock lock, atomically with the announce,
+	 * or a concurrent reprogram or cycle read sees a torn count.
+	 */
 	data->cycle_count += data->load;
-
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		uint32_t unannounced_cycles = data->cycle_count - data->announced_cycles;
-
-		ticks = unannounced_cycles / CYC_PER_TICK;
-		data->announced_cycles += ticks * CYC_PER_TICK;
-		data->last_elapsed = 0;
-	}
 
 	cfg->timer->intclear = TIMER_CTRL_INT_CLEAR;
 	NVIC_ClearPendingIRQ(TIMER_IRQ);
-	sys_clock_announce_locked(ticks, key);
+
+	timer_core_announce_from(key);
 }
 
 static int sys_clock_driver_init(void)
@@ -180,13 +147,13 @@ static int sys_clock_driver_init(void)
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
 	const struct tmr_cmsdk_apb_cfg *cfg = &cfg_inst0;
 
-	data->last_elapsed = 0;
-	data->load = CYC_PER_TICK;
-	cfg->timer->reload = CYC_PER_TICK;
-	cfg->timer->value = CYC_PER_TICK;
+	data->load = TIMER_CORE_CYC_PER_TICK;
+	cfg->timer->reload = TIMER_CORE_CYC_PER_TICK;
+	cfg->timer->value = TIMER_CORE_CYC_PER_TICK;
 	cfg->timer->ctrl = TIMER_CTRL_EN | TIMER_CTRL_IRQ_EN;
 
 	IRQ_CONNECT(TIMER_IRQ, TIMER_IRQ_PRIO, cmsdk_apb_timer_isr, NULL, 0);
+	timer_core_init();
 	irq_enable(TIMER_IRQ);
 
 	return 0;

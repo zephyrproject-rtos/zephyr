@@ -212,7 +212,7 @@ static int burtc_init(void)
 	/* Enable compare match interrupt */
 	BURTC_IntClear(BURTC_IF_COMP);
 	BURTC_IntEnable(BURTC_IF_COMP);
-	NVIC_ClearPendingIRQ(TIMER_IRQ);
+	k_irq_clear_pending(TIMER_IRQ);
 	IRQ_CONNECT(TIMER_IRQ, DT_INST_IRQ(0, priority), burtc_isr, 0, 0);
 	irq_enable(TIMER_IRQ);
 

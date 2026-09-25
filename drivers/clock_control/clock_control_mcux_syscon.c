@@ -176,6 +176,13 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) || \
+	defined(CONFIG_SOC_SERIES_RW6XX)
+	if ((uint32_t)sub_system == MCUX_FREQME_CLK) {
+		CLOCK_EnableClock(kCLOCK_Freqme);
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
@@ -221,7 +228,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif /* defined(CONFIG_PINCTRL_NXP_PORT) */
 
-#ifdef CONFIG_ETH_NXP_ENET_QOS
+#if defined(CONFIG_ETH_NXP_ENET_QOS) || defined(CONFIG_ETH_NXP_DWC_ETHER_QOS)
 	if ((uint32_t)sub_system == MCUX_ENET_QOS_CLK) {
 #if defined(CONFIG_SOC_FAMILY_MCXA)
 		CLOCK_EnableClock(kCLOCK_GateENET0);
@@ -399,6 +406,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(trng))
 	if ((uint32_t)sub_system == MCUX_TRNG_CLK) {
 		CLOCK_EnableClock(kCLOCK_GateTRNG0);
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(espi0))
+	if ((uint32_t)sub_system == MCUX_ESPI0_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateESPI0);
 	}
 #endif
 #endif
@@ -715,6 +728,17 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif /* defined(CONFIG_CAN_NXP_LPC_MCAN) */
 
 #if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
+#if defined(CONFIG_SOC_SERIES_LPC54XXX)
+	case MCUX_CTIMER0_CLK:
+	case MCUX_CTIMER1_CLK:
+	case MCUX_CTIMER2_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_CoreSysClk);
+		break;
+	case MCUX_CTIMER3_CLK:
+	case MCUX_CTIMER4_CLK:
+		*rate = CLOCK_GetAsyncApbClkFreq();
+		break;
+#else
 	case MCUX_CTIMER0_CLK:
 		*rate = CLOCK_GetCTimerClkFreq(0);
 		break;
@@ -739,6 +763,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	case MCUX_CTIMER7_CLK:
 		*rate = CLOCK_GetCTimerClkFreq(7);
 		break;
+#endif /* defined(CONFIG_SOC_SERIES_LPC54XXX) */
 #endif
 #if defined(CONFIG_COUNTER_NXP_MRT) || defined(CONFIG_SOC_SERIES_RW6XX) \
 		|| defined(CONFIG_PWM_MCUX_SCTIMER)
@@ -871,7 +896,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif /* CONFIG_SOC_SERIES_IMXRT7XX */
 #endif /* CONFIG_I2S_MCUX_SAI */
 
-#ifdef CONFIG_ETH_NXP_ENET_QOS
+#if defined(CONFIG_ETH_NXP_ENET_QOS) || defined(CONFIG_ETH_NXP_DWC_ETHER_QOS)
 	case MCUX_ENET_QOS_CLK:
 #ifdef CONFIG_SOC_FAMILY_MCXA
 		*rate = CLOCK_GetCoreSysClkFreq();
@@ -881,7 +906,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif
 
-#ifdef CONFIG_PTP_CLOCK_NXP_ENET_QOS
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS) || defined(CONFIG_ETH_NXP_DWC_ETHER_QOS)
 	case MCUX_ENET_QOS_PTP_CLK:
 		*rate = CLOCK_GetEnetPtpRefClkFreq();
 		break;

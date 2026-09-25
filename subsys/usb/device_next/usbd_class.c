@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(usbd_class, CONFIG_USBD_LOG_LEVEL);
 size_t usbd_class_desc_len(struct usbd_class_data *const c_data,
 			   const enum usbd_speed speed)
 {
-	struct usb_desc_header **dhp;
+	struct usb_desc_header *const *dhp;
 	size_t len = 0;
 
 	dhp = usbd_class_get_desc(c_data, speed);

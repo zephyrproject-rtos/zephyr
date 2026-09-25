@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg29/efr32bg29b220f1024cj45.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "xg29_common.dtsi"
+#include "bg29_rb4420a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs BG29-RB4420A";
+	compatible = "silabs,bg29_rb4420a", "silabs,efr32bg29";
+
+	aliases {
+		pwm-led0 = &pwm_led0;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&letimer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <3 0 &gpioa 4 0>,
+			   <4 0 &gpioc 5 0>,
+			   <5 0 &gpioa 0 0>,
+			   <6 0 &gpioc 3 0>,
+			   <7 0 &gpiob 2 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpiob 1 0>,
+			   <10 0 &gpioc 6 0>,
+			   <12 0 &gpioa 5 0>,
+			   <14 0 &gpioa 6 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+};
+
+&hfxo {
+	ctune = <133>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfxo {
+	ctune = <32>;
+	precision = <50>;
+	status = "okay";
+};
+
+&eusart1 {
+	cs-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+
+	mx25r80: mx25r8035f@0 {
+		zephyr,pm-device-runtime-auto;
+	};
+};
+
+&letimer0 {
+	status = "okay";
+
+	letimer0_pwm: pwm {
+		pinctrl-0 = <&letimer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&gpiob {
+	vcom-enable {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
+	pa-initial-power-dbm = <0>;
+	pa-2p4ghz = "lp";
+};

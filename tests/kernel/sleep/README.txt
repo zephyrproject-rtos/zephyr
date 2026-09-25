@@ -25,9 +25,10 @@ expected. It exercises three behaviors:
 
 Building and Running:
 
-Build and run with twister, for example on QEMU:
+Build and run with twister, for example on QEMU or native_sim:
 
     twister -p qemu_x86 -T tests/kernel/sleep
+    twister -p native_sim -T tests/kernel/sleep
 
 Or build and run a single platform directly with west:
 

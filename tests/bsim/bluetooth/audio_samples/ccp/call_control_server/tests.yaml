@@ -1,5 +1,5 @@
 tests:
-  tests.bsim.bluetooth.audio_samples.ccp.server:
+  bluetooth.audio_samples.bsim.ccp.server:
     tags:
       - bluetooth
     depends_on: bsim

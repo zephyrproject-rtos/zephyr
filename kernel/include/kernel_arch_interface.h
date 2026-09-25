@@ -329,8 +329,16 @@ static inline bool arch_is_in_isr(void);
  * @param phys Page-aligned Source physical address to map
  * @param size Page-aligned size of the mapped memory region in bytes
  * @param flags Caching, access and control flags, see K_MAP_* macros
+ *
+ * @retval 0 On success
+ * @retval -EINVAL If invalid arguments are given
+ * @retval -ENOTSUP If the requested cache/attribute combination in @a flags
+ *                  is not supported by the target architecture
+ * @retval -ENOMEM If the underlying page table could not be updated
+ * @retval -errno Other negative error codes may be returned by
+ *                architecture-specific implementations for other failure modes
  */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
 
 /**
  * Remove mappings for a provided virtual address range
@@ -357,8 +365,13 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
  *
  * @param addr Page-aligned base virtual address to un-map
  * @param size Page-aligned region size
+ *
+ * @retval 0 On success
+ * @retval -EINVAL If invalid arguments are given
+ * @retval -errno Other negative error codes may be returned by
+ *                architecture-specific implementations for other failure modes
  */
-void arch_mem_unmap(void *addr, size_t size);
+int arch_mem_unmap(void *addr, size_t size);
 
 /**
  * Update page frame database with reserved pages
@@ -648,6 +661,39 @@ uint16_t arch_coredump_tgt_code_get(void);
  * @brief Get the stack pointer of the thread.
  */
 uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread);
+
+#if defined(CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS) || defined(__DOXYGEN__)
+
+/**
+ * @brief Freeze every other online CPU and capture its live register state
+ *
+ * Sends an architecture-specific IPI to every CPU other than the caller and
+ * waits (with a bounded timeout) for each to report a captured snapshot.
+ * A CPU that doesn't respond in time (never booted, or busy with IRQs
+ * masked) is simply skipped -- this must never block indefinitely.
+ *
+ * Must be paired with a later call to arch_coredump_thaw_other_cpus() so
+ * frozen CPUs resume; must not be called from more than one CPU at a time.
+ */
+void arch_coredump_freeze_other_cpus(void);
+
+/**
+ * @brief Release every CPU frozen by arch_coredump_freeze_other_cpus()
+ */
+void arch_coredump_thaw_other_cpus(void);
+
+/**
+ * @brief Emit a live register snapshot captured for the given CPU index
+ *
+ * No-op if that CPU was never successfully frozen (self, never booted, or
+ * timed out). Only valid to call between arch_coredump_freeze_other_cpus()
+ * and arch_coredump_thaw_other_cpus().
+ *
+ * @param cpu CPU index (0..CONFIG_MP_MAX_NUM_CPUS-1)
+ */
+void arch_coredump_cpu_snapshot_dump(unsigned int cpu);
+
+#endif /* CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS */
 
 #if defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
 

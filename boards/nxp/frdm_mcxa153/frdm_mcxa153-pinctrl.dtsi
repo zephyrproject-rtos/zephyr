@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/MCXA153VLH-pinctrl.h>
+#include <nxp/mcx/mcxa/pinctrl/MCXA153VLH-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexpwm0_pwm0: pinmux_flexpwm0_pwm0 {

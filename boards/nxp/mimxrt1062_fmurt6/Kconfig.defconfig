@@ -11,7 +11,7 @@ config DEVICE_CONFIGURATION_DATA
 config NXP_IMX_EXTERNAL_SDRAM
 	default y
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 

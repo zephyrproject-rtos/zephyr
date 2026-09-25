@@ -140,6 +140,15 @@ struct icm45686_stream {
 			bool fifo_full: 1;
 		} events;
 	} data;
+	/* Counts of interrupts dropped by each ignore path, summarized at
+	 * most once per report interval. Per-instance so a multi-device
+	 * system attributes and rate-limits each sensor independently.
+	 */
+	struct {
+		atomic_t busy_ignored;
+		atomic_t no_submission_ignored;
+		int64_t report_deadline;
+	} ignore_stats;
 };
 
 struct icm45686_data {
@@ -178,6 +187,7 @@ struct icm45686_config {
 	} settings;
 	struct gpio_dt_spec int_gpio;
 	uint8_t apex;
+	uint8_t whoami;
 };
 
 static inline void icm45686_accel_ms(uint8_t fs, int32_t in, bool high_res, int32_t *out_ms,

@@ -107,7 +107,6 @@ static void hx8379c_get_capabilities(const struct device *dev,
 {
 	const struct hx8379c_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
 	capabilities->supported_pixel_formats = (PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888);

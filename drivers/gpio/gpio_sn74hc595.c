@@ -211,7 +211,7 @@ static int gpio_sn74hc595_init(const struct device *dev)
 }
 
 #define SN74HC595_SPI_OPERATION                                                                    \
-	((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
+	((uint16_t)(SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
 
 #define SN74HC595_INIT(n)                                                                          \
 	static struct gpio_sn74hc595_drv_data sn74hc595_data_##n = {                               \

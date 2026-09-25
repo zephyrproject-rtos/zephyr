@@ -7,9 +7,11 @@
 
 if SOC_SERIES_STM32F4X
 
+# STM32F401xB must be exposed as STM32F401xC at HAL level.
 # STM32F401xD must be exposed as STM32F401xE at HAL level.
 configdefault STM32CUBE_SOC_NAME_OVERRIDE
-	default "stm32f401xe" if SOC_STM32F401XD
+	default "STM32F401xC" if SOC_STM32F401XB
+	default "STM32F401xE" if SOC_STM32F401XD
 
 configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers9)
@@ -41,5 +43,8 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x6d0922fa" if SOC_STM32F407XE
 	default "0x8fb060fe" if SOC_STM32F407XG
 	default "0x57755a57"
+
+configdefault LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32f4xx.h" if LVGL && LV_USE_DRAW_DMA2D
 
 endif # SOC_SERIES_STM32F4X

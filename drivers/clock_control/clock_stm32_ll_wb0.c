@@ -18,8 +18,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/arch/common/sys_io.h>
-#include <zephyr/arch/common/sys_bitops.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 /* Driver definitions */
@@ -207,16 +206,18 @@ int enabled_clock(uint32_t src_clk)
 	return r;
 }
 
+static int stm32_clock_control_configure(const struct device *dev,
+					 clock_control_subsys_t sub_system, void *data);
+
 static int stm32_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	const mem_addr_t reg = RCC_REG(pclken->bus);
 	volatile uint32_t temp;
 
-	ARG_UNUSED(dev);
 	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
-		/* Attempting to change domain clock */
-		return -ENOTSUP;
+		/* Source selection entry: apply it instead of toggling a gate */
+		return stm32_clock_control_configure(dev, sub_system, NULL);
 	}
 
 	sys_set_bits(reg, pclken->enr);

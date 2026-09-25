@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 
 from spdx_python_model import v3_0_1 as spdx
 
+from zspdx.licenses import get_license_ids
 from zspdx.model import (
     NOASSERTION,
     ComponentPurpose,
@@ -23,8 +24,8 @@ from zspdx.model import (
 from zspdx.serializers.helpers import (
     CPE23TYPE_REGEX,
     PURL_REGEX,
+    format_blob_comment,
     generate_download_url,
-    get_standard_licenses,
     normalize_spdx_name,
 )
 from zspdx.spdxids import get_unique_file_id
@@ -649,6 +650,13 @@ class SPDX3Serializer:
         # Copyright
         file_element.software_copyrightText = file_obj.copyright_text or NOASSERTION
 
+        # blob provenance metadata, for files that modules declare as blobs
+        blob = file_obj.metadata.get("blob")
+        if blob:
+            file_element.comment = format_blob_comment(blob)
+            if blob.get("description"):
+                file_element.description = blob["description"]
+
         # Hashes - SPDX 3.0 uses verifiedUsing with Hash (which is a type of IntegrityMethod)
         for hash_type, hash_value in file_obj.hashes.items():
             if hash_value:
@@ -780,7 +788,7 @@ class SPDX3Serializer:
             return None
 
         license_expr = spdx.simplelicensing_LicenseExpression()
-        standard_licenses = get_standard_licenses()
+        standard_licenses = get_license_ids()
 
         # Check if it's a standard license ID
         if license_str in standard_licenses:

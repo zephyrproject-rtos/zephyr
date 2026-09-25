@@ -103,6 +103,28 @@
 	};
 };
 
+&peripheral {
+	lpadc0: adc@af000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0xaf000 0x1000>;
+		interrupts = <62 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		clk-source = <0>;
+		voltage-ref = <1>;
+		calibration-average = <128>;
+		power-level = <1>;
+		offset-value-a = <0>;
+		offset-value-b = <0>;
+		#io-channel-cells = <1>;
+		clocks = <&syscon MCUX_LPADC1_CLK>;
+	};
+};
+
+&rtc {
+	interrupts = <140 0>, <141 0>, <142 0>;
+};
+
 &aon_qtmr0 {
 	interrupts = <151 0>;
 };
@@ -113,4 +135,16 @@
 
 &aon_lpi2c0 {
 	interrupts = <128 0>;
+};
+
+&aon_lpuart0 {
+	interrupts = <130 0>;
+};
+
+&aon_kpp0 {
+	interrupts = <148 0>;
+};
+
+&aon_lptmr0 {
+	interrupts = <155 0>;
 };

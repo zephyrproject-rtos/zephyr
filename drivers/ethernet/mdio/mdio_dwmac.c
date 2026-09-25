@@ -9,12 +9,15 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
+
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #include "../dwc_mac/eth_dwmac_priv.h"
 
@@ -48,6 +51,10 @@ struct dwmac_mdio_config {
 
 struct dwmac_mdio_data {
 	struct k_mutex lock;
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
+	/* wait for the MAC interrupt on MDIO transaction completion, else poll */
+	bool use_irq;
+#endif /* CONFIG_ETH_DWC_ETHER_QOS_CORE */
 	uint8_t csr_clk_indx;
 };
 
@@ -211,6 +218,7 @@ static int dwmac_mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t 
 {
 	const struct dwmac_mdio_config *cfg = dev->config;
 	struct dwmac_mdio_data *data = dev->data;
+	struct dwmac_priv *mac_data __maybe_unused = cfg->mac_dev->data;
 	mm_reg_t base = DEVICE_MMIO_GET(cfg->mac_dev);
 	int ret;
 
@@ -221,10 +229,25 @@ static int dwmac_mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t 
 		goto end;
 	}
 
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
+	if (data->use_irq) {
+		k_sem_reset(&mac_data->mdio_done);
+	}
+#endif /* CONFIG_ETH_DWC_ETHER_QOS_CORE */
+
 	sys_write32(data_in, base + MAC_MDIO_DATA);
 	sys_write32(dwmac_mdio_make_addr(cfg, data, prtad, regad, op, c45),
 		    base + MAC_MDIO_ADDRESS);
 
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
+	if (data->use_irq &&
+	    (k_sem_take(&mac_data->mdio_done, K_USEC(CONFIG_MDIO_DWMAC_BUSY_CHECK_TIMEOUT)) != 0)) {
+		ret = -ETIMEDOUT;
+		goto end;
+	}
+#endif /* CONFIG_ETH_DWC_ETHER_QOS_CORE */
+
+	/* after the interrupt, this only confirms the busy bit is cleared */
 	ret = dwmac_mdio_wait_idle(base);
 	if ((ret == 0) && (data_out != NULL)) {
 		*data_out = FIELD_GET(MAC_MDIO_DATA_GD, sys_read32(base + MAC_MDIO_DATA));
@@ -276,6 +299,25 @@ static int dwmac_mdio_write_c45(const struct device *dev, uint8_t prtad, uint8_t
 
 	return ret;
 }
+
+/*
+ * The MDIO completion interrupt only exists from IP version 5.00 on, older
+ * versions poll the busy bit. It is also optional in the IP configuration,
+ * in which case MDIOIE reads back as zero.
+ */
+static bool dwmac_mdio_irq_enable(const struct dwmac_mdio_config *cfg)
+{
+	mm_reg_t base = DEVICE_MMIO_GET(cfg->mac_dev);
+
+	if (FIELD_GET(MAC_VERSION_SNPSVER, sys_read32(base + MAC_VERSION)) < 0x50U) {
+		return false;
+	}
+
+	sys_write32(sys_read32(base + MAC_IRQ_ENABLE) | MAC_IRQ_ENABLE_MDIOIE,
+		    base + MAC_IRQ_ENABLE);
+
+	return (sys_read32(base + MAC_IRQ_ENABLE) & MAC_IRQ_ENABLE_MDIOIE) != 0U;
+}
 #endif /* CONFIG_ETH_DWC_ETHER_QOS_CORE */
 
 static int dwmac_mdio_init(const struct device *dev)
@@ -303,6 +345,12 @@ static int dwmac_mdio_init(const struct device *dev)
 	}
 
 	k_mutex_init(&data->lock);
+
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
+	data->use_irq = dwmac_mdio_irq_enable(cfg);
+
+	LOG_INF("using %s for MDIO completion", data->use_irq ? "interrupt" : "polling");
+#endif
 
 	return 0;
 }

@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/mcxa/nxp_mcxa5x_ns.dtsi>
+
+/delete-node/ &lpuart3;
+/delete-node/ &lpuart4;
+/delete-node/ &lpuart5;
+/delete-node/ &lpspi3;
+/delete-node/ &lpspi4;
+/delete-node/ &lpspi5;
+/delete-node/ &lpi2c3;
+/delete-node/ &lpi2c4;
+/delete-node/ &i3c0;
+/delete-node/ &i3c1;
+/delete-node/ &i3c2;
+/delete-node/ &i3c3;
+/delete-node/ &flexcan0;
+/delete-node/ &flexcan1;
+/delete-node/ &flexio0;
+/delete-node/ &lpadc1;
+/delete-node/ &dac0;
+/delete-node/ &dac1;
+/delete-node/ &usb0;
+/delete-node/ &usbphy1;
+/delete-node/ &tsi0;

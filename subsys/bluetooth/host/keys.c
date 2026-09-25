@@ -104,6 +104,17 @@ void bt_keys_reset(void)
 	memset(key_pool, 0, sizeof(key_pool));
 }
 
+bool bt_keys_has_bond(uint8_t id)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(key_pool); i++) {
+		if ((key_pool[i].keys != 0U) && (key_pool[i].id == id)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
@@ -195,6 +206,31 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 			func(&info, user_data);
 		}
 	}
+}
+
+enum bt_le_addr_res_support bt_le_bond_addr_res_support(uint8_t id, const bt_addr_le_t *peer)
+{
+	struct bt_keys *keys;
+
+	__ASSERT_NO_MSG(peer != NULL);
+
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES)) {
+		/* Also ignores an answer stored by a previous firmware that
+		 * had the option enabled.
+		 */
+		return BT_LE_ADDR_RES_SUPPORT_UNKNOWN;
+	}
+
+	keys = bt_keys_find_addr(id, peer);
+	if (keys == NULL || (keys->flags & BT_KEYS_CENTRAL_ADDR_RES_KNOWN) == 0) {
+		return BT_LE_ADDR_RES_SUPPORT_UNKNOWN;
+	}
+
+	if ((keys->flags & BT_KEYS_CENTRAL_ADDR_RES_SUPPORT) != 0) {
+		return BT_LE_ADDR_RES_SUPPORT_YES;
+	}
+
+	return BT_LE_ADDR_RES_SUPPORT_NO;
 }
 
 void bt_keys_foreach_type(enum bt_keys_type type, void (*func)(struct bt_keys *keys, void *data),

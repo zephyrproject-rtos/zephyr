@@ -168,6 +168,10 @@ if PM_DEVICE_RUNTIME
 
 config PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
 	bool
+	help
+	  Use this option to signal that the driver performs blocking
+	  operations during suspend, and therefore the system workqueue cannot
+	  be used.
 
 config PM_DEVICE_RUNTIME_ASYNC
 	bool "Asynchronous device runtime power management"

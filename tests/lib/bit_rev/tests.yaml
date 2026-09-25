@@ -15,6 +15,7 @@ tests:
   libraries.bit_rev.llvm:
     integration_toolchains:
       - zephyr/llvm
-    arch_allow:
-      - arm
-      - arm64
+    platform_allow:
+      - mps2/an385
+      - qemu_cortex_a9
+      - qemu_riscv32e

@@ -295,12 +295,21 @@ static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	fsp_err_t err;
 	int ret;
 
+	/*
+	 * Instead of immediately dropping the packet,
+	 * wait briefly for a free tx descriptor to become available.
+	 */
+	if (k_sem_take(&ctx->tx_sem, K_MSEC(ETHER_TX_TIMEOUT_MS)) != 0) {
+		return -ENOBUFS;
+	}
+
 	tx_buf = ctx->txb_header[ctx->txb_idx].buf;
 	ctx->txb_idx = (ctx->txb_idx + 1) % (ctx->txb_num);
 
 	ret = net_pkt_read(pkt, tx_buf, len);
 	if (ret < 0) {
 		LOG_DBG("Failed to copy packet to tx buffer");
+		k_sem_give(&ctx->tx_sem);
 		return ret;
 	}
 	/* Pad short packets */
@@ -313,15 +322,6 @@ static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	err = R_ETHER_Write(&ctx->ctrl, tx_buf, len);
 	if (err != FSP_SUCCESS) {
 		LOG_DBG("R_ETHER_Write failed (%d)", err);
-		return -EIO;
-	}
-
-	if (k_sem_take(&ctx->tx_sem, K_NO_WAIT) != 0) {
-		return -ENOBUFS;
-	}
-
-	err = R_ETHER_Write(&ctx->ctrl, tx_buf, len);
-	if (err != FSP_SUCCESS) {
 		k_sem_give(&ctx->tx_sem);
 		return -EIO;
 	}
@@ -360,7 +360,11 @@ static struct net_pkt *renesas_ra_eth_rx(const struct device *dev)
 
 	err = R_ETHER_Read(&ctx->ctrl, (void *)&rx_buf, &len);
 
-	if ((err != FSP_SUCCESS) && (err != FSP_ERR_ETHER_ERROR_NO_DATA)) {
+	if (err == FSP_ERR_ETHER_ERROR_NO_DATA) {
+		return NULL;
+	}
+
+	if (err != FSP_SUCCESS) {
 		LOG_DBG("Failed to read packets");
 		goto out;
 	}
@@ -402,9 +406,7 @@ static void renesas_ra_eth_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		res = k_sem_take(&ctx->rx_sem, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 		if (res == 0) {
-			pkt = renesas_ra_eth_rx(dev);
-
-			if (pkt != NULL) {
+			while ((pkt = renesas_ra_eth_rx(dev)) != NULL) {
 				iface = net_pkt_iface(pkt);
 				res = net_recv_data(iface, pkt);
 				if (res < 0) {

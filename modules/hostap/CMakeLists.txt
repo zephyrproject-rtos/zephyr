@@ -212,6 +212,7 @@ if(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP OR CONFIG_WIFI_NM_HOSTAPD_AP)
     ${HOSTAP_SRC_BASE}/ap/hw_features.c
     ${HOSTAP_SRC_BASE}/ap/ieee802_11_auth.c
     ${HOSTAP_SRC_BASE}/ap/ieee802_11.c
+    ${HOSTAP_SRC_BASE}/ap/interference.c
     ${HOSTAP_SRC_BASE}/ap/comeback_token.c
     ${HOSTAP_SRC_BASE}/ap/ieee802_11_ht.c
     ${HOSTAP_SRC_BASE}/ap/ieee802_11_shared.c
@@ -619,18 +620,35 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
   ${HOSTAP_SRC_BASE}/common/gas.c
   ${HOSTAP_SRC_BASE}/common/dpp_backup.c
 
-  ${HOSTAP_SRC_BASE}/crypto/aes-siv.c
-
   ${HOSTAP_SRC_BASE}/utils/json.c
   ${HOSTAP_SRC_BASE}/utils/ip_addr.c
 
   ${HOSTAP_SRC_BASE}/tls/asn1.c
 )
 
+# aes-siv.c is needed by DPP as well as by SAE (e.g. SAE Password
+# Identifier encryption/decryption), so it cannot be tied to a single
+# Kconfig symbol.
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP OR CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)
+  zephyr_library_sources(
+    ${HOSTAP_SRC_BASE}/crypto/aes-siv.c
+  )
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
-  ${WIFI_NM_WPA_SUPPLICANT_BASE}/nan_usd.c
+  ${WIFI_NM_WPA_SUPPLICANT_BASE}/nan_supplicant.c
   ${HOSTAP_SRC_BASE}/ap/nan_usd_ap.c
   ${HOSTAP_SRC_BASE}/common/nan_de.c
+  ${HOSTAP_SRC_BASE}/nan/nan.c
+  ${HOSTAP_SRC_BASE}/nan/nan_util.c
+  ${HOSTAP_SRC_BASE}/nan/nan_ndp.c
+  ${HOSTAP_SRC_BASE}/nan/nan_ndl.c
+  ${HOSTAP_SRC_BASE}/nan/nan_crypto.c
+  ${HOSTAP_SRC_BASE}/nan/nan_sec.c
+  ${HOSTAP_SRC_BASE}/nan/nan_bootstrap.c
+
+  ${HOSTAP_SRC_BASE}/crypto/sha256-pbkdf2.c
+  ${HOSTAP_SRC_BASE}/crypto/sha384-pbkdf2.c
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
@@ -764,4 +782,10 @@ if(CONFIG_SAE_PWE_EARLY_EXIT)
   message(WARNING "CONFIG_SAE_PWE_EARLY_EXIT is enabled, "
   "this is not secure and is a workaround for low resource systems, "
   "please use it carefully and do not use it production.")
+endif()
+
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK)
+  message(WARNING "CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK is enabled, "
+  "the PMK will be printed in cleartext on every successful Wi-Fi handshake, "
+  "this is a security risk and must not be enabled in production builds.")
 endif()

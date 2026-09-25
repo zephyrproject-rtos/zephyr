@@ -5,6 +5,9 @@ rsource "../Kconfig.unit"
 
 # See ../Kconfig.unit for why selected PTP Kconfig entries are redeclared here.
 
+config PTP_NUM_PORTS
+	default 1
+
 config PTP_DSCP_VALUE
 	default 0
 

@@ -468,7 +468,7 @@ static DEVICE_API(gpio, api_table) = {
 
 #define GPIO_PCAL9722_INIT(n)                                                                      \
 	static const struct pcal9722_config pcal9722_cfg_##n = {                                   \
-		.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8)),              \
+		.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8)),          \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.addr = DT_INST_PROP(n, addr),                                                     \
 		IRQ_GPIO(n)};                                                                      \

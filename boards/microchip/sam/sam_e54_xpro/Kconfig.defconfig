@@ -6,7 +6,7 @@ if BOARD_SAM_E54_XPRO
 config EEPROM
 	default y if NVMEM
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_SAM_E54_XPRO

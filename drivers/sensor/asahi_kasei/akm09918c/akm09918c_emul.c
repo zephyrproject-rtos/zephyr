@@ -25,9 +25,6 @@ struct akm09918c_emul_data {
 	uint8_t reg[NUM_REGS];
 };
 
-struct akm09918c_emul_cfg {
-};
-
 void akm09918c_emul_set_reg(const struct emul *target, uint8_t reg_addr, const uint8_t *val,
 			    size_t count)
 {
@@ -214,10 +211,8 @@ static const struct emul_sensor_driver_api akm09918c_emul_sensor_driver_api = {
 };
 
 #define AKM09918C_EMUL(n)                                                                          \
-	const struct akm09918c_emul_cfg akm09918c_emul_cfg_##n;                                    \
 	struct akm09918c_emul_data akm09918c_emul_data_##n;                                        \
-	EMUL_DT_INST_DEFINE(n, akm09918c_emul_init, &akm09918c_emul_data_##n,                      \
-			    &akm09918c_emul_cfg_##n, &akm09918c_emul_api_i2c,                      \
-			    &akm09918c_emul_sensor_driver_api)
+	EMUL_DT_INST_DEFINE(n, akm09918c_emul_init, &akm09918c_emul_data_##n, NULL,                \
+			    &akm09918c_emul_api_i2c, &akm09918c_emul_sensor_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(AKM09918C_EMUL)

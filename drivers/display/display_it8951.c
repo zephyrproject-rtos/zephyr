@@ -741,7 +741,7 @@ static int it8951_write(const struct device *dev, const uint16_t x, const uint16
 	line_bytes = DIV_ROUND_UP(desc->width, 2U);
 	buf_len = line_bytes * desc->height;
 	if (desc->buf_size < buf_len) {
-		LOG_ERR("Invalid buffer size: %zu < %zu", desc->buf_size, buf_len);
+		LOG_ERR("Invalid buffer size: %zu < %zu", (size_t)desc->buf_size, buf_len);
 		return -EINVAL;
 	}
 
@@ -779,7 +779,6 @@ static void it8951_get_capabilities(const struct device *dev, struct display_cap
 {
 	const struct it8951_config *config = dev->config;
 
-	memset(caps, 0, sizeof(*caps));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_L_4;
@@ -907,7 +906,7 @@ static DEVICE_API(display, it8951_api) = {
 #define IT8951_DEFINE(inst)                                                                        \
 	static uint8_t it8951_row_spi_##inst[IT8951_ROW_SPI_BUF_SIZE(inst)];                       \
 	static const struct it8951_config it8951_cfg_##inst = {                                    \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),          \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8U)),      \
 		.busy_gpio = GPIO_DT_SPEC_INST_GET(inst, busy_gpios),                              \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
 		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),                  \

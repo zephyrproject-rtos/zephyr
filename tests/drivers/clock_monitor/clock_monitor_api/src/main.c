@@ -53,9 +53,33 @@ struct clkmon_fixture {
 	/* Alternate target cookie + its expected measured Hz; 0 = skip. */
 	uint32_t switch_target;
 	uint32_t switch_target_expected_hz;
+	/* Power-on selection, from the monitor's own "default-source" children. */
+	uint32_t default_reference;
+	uint32_t default_target;
+	/* A cookie the back-end does not declare, so set_source() must reject it. */
+	uint32_t invalid_source;
 };
 
 #if DT_HAS_COMPAT_STATUS_OKAY(test_clock_monitor)
+
+/*
+ * Cookie of the child marked "default-source" in one of the monitor's source
+ * containers (see nxp,fmeas.yaml / nxp,freqme.yaml). Read from the monitor node
+ * so it cannot drift from an overlay that moves "default-source" elsewhere;
+ * back-ends without source containers resolve to 0.
+ */
+#define DEFAULT_SOURCE_COOKIE(child, unused)                                   \
+	COND_CODE_1(DT_PROP_OR(child, default_source, 0),                      \
+		    (DT_PHA_BY_IDX(child, mux_states, 0, connection)), (0)) |
+
+#define CONTAINER_DEFAULT_COOKIE(container)                                    \
+	COND_CODE_1(DT_NODE_EXISTS(container),                                 \
+		    ((DT_FOREACH_CHILD_VARGS(container,                        \
+					     DEFAULT_SOURCE_COOKIE, 0) 0)),    \
+		    (0))
+
+#define FIXTURE_DEFAULT_SOURCE(node_id, container)                             \
+	CONTAINER_DEFAULT_COOKIE(DT_CHILD(DT_PHANDLE(node_id, monitor), container))
 
 #define FIXTURE_ENTRY(node_id)                                                 \
 	{                                                                      \
@@ -66,6 +90,11 @@ struct clkmon_fixture {
 		.switch_reference = DT_PROP(node_id, switch_reference),        \
 		.switch_target = DT_PROP(node_id, switch_target),             \
 		.switch_target_expected_hz = DT_PROP(node_id, switch_target_expected_hz), \
+		.default_reference =                                           \
+			FIXTURE_DEFAULT_SOURCE(node_id, reference_sources),    \
+		.default_target =                                              \
+			FIXTURE_DEFAULT_SOURCE(node_id, target_sources),       \
+		.invalid_source = DT_PROP(node_id, invalid_source),            \
 	},
 
 static const struct clkmon_fixture fixtures[] = {
@@ -274,6 +303,14 @@ static void before_each(void *fixture)
 	ARG_UNUSED(fixture);
 	for (size_t i = 0; i < NUM_CLOCK_DEVICES; i++) {
 		clean_slate(fixtures[i].dev);
+		/* Restore the power-on selection so a case that switches sources
+		 * cannot leak it into the next one (already selected = no-op).
+		 */
+		if (fixtures[i].default_reference != 0U) {
+			(void)clock_monitor_set_source(fixtures[i].dev,
+						      fixtures[i].default_reference,
+						      fixtures[i].default_target);
+		}
 	}
 }
 
@@ -798,6 +835,70 @@ ZTEST(clock_monitor_api, test_set_source_switch_reference)
 		}
 		clean_slate(dev);
 		body_set_source_switch_reference(dev);
+		ran = true;
+	}
+	if (!ran) {
+		ztest_test_skip();
+	}
+}
+
+/*
+ * A failed set_source() must leave the tracked selection - the back-end's record
+ * of what it routed - describing the hardware: configure() scales the counter by
+ * the reference rate derived from it, so a drifted record returns no error, it
+ * silently mis-scales every measurement. Any set_source() that reaches the
+ * routing stage ends up unconfigured, so a device still armed after the
+ * rejections proves the record was untouched.
+ */
+static void body_set_source_error_keeps_selection(const struct device *dev)
+{
+	const struct clkmon_fixture *fx = fixture_of(dev);
+	struct clock_monitor_config cfg = measure_cfg;
+
+	zassert_ok(clock_monitor_configure(dev, &cfg), "configure failed on %s",
+		   dev->name);
+
+	/* One unknown cookie per axis, then the asymmetric pairs - a valid cookie
+	 * beside an unknown one is what half-applies a switch.
+	 */
+	zassert_equal(clock_monitor_set_source(dev, fx->invalid_source, 0U),
+		      -EINVAL, "unknown reference must be -EINVAL on %s", dev->name);
+	zassert_equal(clock_monitor_set_source(dev, 0U, fx->invalid_source),
+		      -EINVAL, "unknown target must be -EINVAL on %s", dev->name);
+	if (fx->switch_reference != 0U) {
+		zassert_equal(clock_monitor_set_source(dev, fx->switch_reference,
+						       fx->invalid_source), -EINVAL,
+			      "valid reference + unknown target must be -EINVAL on %s",
+			      dev->name);
+	}
+	if (fx->switch_target != 0U) {
+		zassert_equal(clock_monitor_set_source(dev, fx->invalid_source,
+						       fx->switch_target), -EINVAL,
+			      "unknown reference + valid target must be -EINVAL on %s",
+			      dev->name);
+	}
+
+	zassert_ok(clock_monitor_start(dev),
+		   "a rejected set_source must leave %s armed", dev->name);
+	(void)clock_monitor_stop(dev);
+}
+
+ZTEST(clock_monitor_api, test_set_source_error_keeps_selection)
+{
+	bool ran = false;
+
+	for (size_t i = 0; i < NUM_CLOCK_DEVICES; i++) {
+		const struct device *dev = fixtures[i].dev;
+
+		zassert_true(device_is_ready(dev), "%s not ready", dev->name);
+
+		/* Side-effect-free probe; needs no alternate cookie, only MEASURE. */
+		if (clock_monitor_set_source(dev, 0U, 0U) == -ENOSYS ||
+		    !dev_supports_mode(dev, CLOCK_MONITOR_MODE_MEASURE)) {
+			continue;
+		}
+		clean_slate(dev);
+		body_set_source_error_keeps_selection(dev);
 		ran = true;
 	}
 	if (!ran) {

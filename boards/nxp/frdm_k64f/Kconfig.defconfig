@@ -20,7 +20,7 @@ config MCG_FCRDIV
 config TEST_EXTRA_STACK_SIZE
 	default 128
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y if !MODEM
 
 endif # BOARD_FRDM_K64F

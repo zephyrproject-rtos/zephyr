@@ -440,8 +440,6 @@ static void *display_smartbond_get_framebuffer(const struct device *dev)
 static void display_smartbond_get_capabilities(const struct device *dev,
 			struct display_capabilities *capabilities)
 {
-	memset(capabilities, 0, sizeof(*capabilities));
-
 	/*
 	 * Multiple color formats should be supported by LCDC. Currently, RGB56 and ARGB888
 	 * exposed by display API are supported. In the future we should consider supporting

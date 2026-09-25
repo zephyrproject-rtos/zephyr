@@ -30,7 +30,7 @@ extern char *ble_controller_get_compile_version(void);
 #define esp32_get_controller_version() ble_controller_get_compile_version()
 #endif
 
-#if defined(CONFIG_ESP32_BT_LE_SLEEP_ENABLE) && defined(CONFIG_ESP32_SOC_PAU_SUPPORTED)
+#if defined(CONFIG_ESP32_BT_LE_SLEEP_ENABLE) && defined(CONFIG_SOC_ESP32_PAU_SUPPORTED)
 extern bool r_ble_lll_sleep_should_skip_light_sleep_check(void);
 #endif
 
@@ -408,6 +408,8 @@ static uint16_t bt_esp32_get_hw_variant(void)
 	return BT_HCI_VS_HW_VAR_ESP32C5;
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
 	return BT_HCI_VS_HW_VAR_ESP32C6;
+#elif defined(CONFIG_SOC_SERIES_ESP32C61)
+	return BT_HCI_VS_HW_VAR_ESP32C61;
 #elif defined(CONFIG_SOC_SERIES_ESP32H2)
 	return BT_HCI_VS_HW_VAR_ESP32H2;
 #else
@@ -855,7 +857,7 @@ static int bt_esp32_pm_action(const struct device *dev, enum pm_device_action ac
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-#if defined(CONFIG_ESP32_BT_LE_SLEEP_ENABLE) && defined(CONFIG_ESP32_SOC_PAU_SUPPORTED)
+#if defined(CONFIG_ESP32_BT_LE_SLEEP_ENABLE) && defined(CONFIG_SOC_ESP32_PAU_SUPPORTED)
 		if (r_ble_lll_sleep_should_skip_light_sleep_check()) {
 			return -EBUSY;
 		}

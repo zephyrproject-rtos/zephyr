@@ -108,9 +108,28 @@ config SOC_NRF54LM20B_CPUFLPR
 	help
 	  NRF54LM20B CPUFLPR
 
+config SOC_NRF54LV10A
+	bool
+	select SOC_SERIES_NRF54L
+	help
+	  NRF54LV10A
+
+config SOC_NRF54LV10A_CPUAPP
+	bool
+	select SOC_NRF54LV10A
+	help
+	  NRF54LV10A CPUAPP
+
+config SOC_NRF54LV10A_CPUFLPR
+	bool
+	select SOC_NRF54LV10A
+	help
+	  NRF54LV10A CPUFLPR
+
 config SOC
 	default "nrf54l05" if SOC_NRF54L05
 	default "nrf54l10" if SOC_NRF54L10
 	default "nrf54l15" if SOC_NRF54L15
 	default "nrf54lm20a" if SOC_NRF54LM20A
 	default "nrf54lm20b" if SOC_NRF54LM20B
+	default "nrf54lv10a" if SOC_NRF54LV10A

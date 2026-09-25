@@ -39,9 +39,9 @@
 
 		dcmi@50050000 {
 			dmas = <&dma1 1 90 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-					    STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS |
+					    STM32_DMA_MEM_INC | STM32_DMA_PERIPH_32BITS |
 					    STM32_DMA_MEM_32BITS |
-					    STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+					    STM32_DMA_PRIORITY_HIGH)>;
 		};
 
 		rng: rng@50060800 {
@@ -81,6 +81,17 @@
 
 			sai1_b: sai1b@40015424 {
 				dmas = <&dma2 2 37 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			};
+		};
+
+		sai2: sai2@40015800 {
+			/* L4R/S SAI DMA Request differs from L4P/Q */
+			sai2_a: sai2a@40015804 {
+				dmas = <&dma2 1 38 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			};
+
+			sai2_b: sai2b@40015824 {
+				dmas = <&dma2 2 39 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 			};
 		};
 	};

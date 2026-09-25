@@ -14,7 +14,7 @@ if(CONFIG_ARM)
   endif()
 endif()
 
-if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
+if(CONFIG_NRFX_GPPI)
   zephyr_library_sources_ifdef(CONFIG_SOC_NRF54H20_CPURAD nrfx_gppi_cpurad.c)
 endif()
 

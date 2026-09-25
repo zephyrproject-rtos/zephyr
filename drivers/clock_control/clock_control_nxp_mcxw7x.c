@@ -242,6 +242,7 @@ static int nxp_mcxw_clock_control_pm(const struct device *dev, enum pm_device_ac
 	return 0;
 }
 
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 static int nxp_mcxw_clock_validate_sys_clk_src(const struct mcxw_clock_control_config *config)
 {
 #if !DT_INST_PROP(0, sirc_supported)
@@ -274,11 +275,33 @@ static int nxp_mcxw_clock_validate_sys_clk_src(const struct mcxw_clock_control_c
 
 	return 0;
 }
+#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 static int nxp_mcxw_clock_control_init(const struct device *dev)
 {
 	const struct mcxw_clock_control_config *config = dev->config;
 
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	/*
+	 * TF-M non-secure build:
+	 *
+	 * Secure firmware owns global clock, oscillator, voltage,
+	 * flash wait-state, power and security setup.
+	 *
+	 * Do not reconfigure SYSCLK, FIRC, SIRC, SOSC, ROSC, CCM32K,
+	 * SPC or FMU from the non-secure image.
+	 *
+	 * The secure image must configure the clock tree before jumping
+	 * to the non-secure image.
+	 */
+
+	if (config->core_clock_frequency != 0U) {
+		SystemCoreClock = config->core_clock_frequency;
+	} else {
+		SystemCoreClock = CLOCK_GetCoreSysClkFreq();
+	}
+
+#else
 	if (nxp_mcxw_clock_validate_sys_clk_src(config) != 0) {
 		return -EINVAL;
 	}
@@ -306,7 +329,7 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 	/* Switch to safe clock source (SIRC) before reconfiguring FIRC */
 	scg_sys_clk_config_t sys_clk_safe_config_source = {
 #if DT_INST_NODE_HAS_PROP(0, sys_clk_div_plat)
-		.divPlat = (uint32_t)kSCG_SysClkDivBy1,
+		.divCore1 = (uint32_t)kSCG_SysClkDivBy1,
 #endif
 		.divSlow = (uint32_t)kSCG_SysClkDivBy4,
 		.divBus = (uint32_t)kSCG_SysClkDivBy1,
@@ -372,7 +395,7 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 	/* Configure system clock with user-defined settings */
 	scg_sys_clk_config_t sys_clk_config = {
 #if DT_INST_NODE_HAS_PROP(0, sys_clk_div_plat)
-		.divPlat = (config->sys_clk_div_plat - 1),
+		.divCore1 = (config->sys_clk_div_plat - 1),
 #endif
 		.divSlow = (config->sys_clk_div_slow - 1),
 		.divBus = (config->sys_clk_div_bus - 1),
@@ -416,6 +439,7 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 	/* Enable 32kHz clock output to all peripherals.  */
 	CCM32K_EnableCLKOutToPeripherals(CCM32K, 0xFF);
 #endif
+#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 	return pm_device_driver_init(dev, nxp_mcxw_clock_control_pm);
 }

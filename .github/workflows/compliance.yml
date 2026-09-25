@@ -62,6 +62,7 @@ jobs:
 
     - name: west setup
       run: |
+        git config --global http.version HTTP/1.1
         west init -l . || true
         west config manifest.group-filter -- +ci,-optional
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
@@ -90,7 +91,7 @@ jobs:
         # Increase rename limit to allow for large PRs
         git config diff.renameLimit 10000
         excludes="-e KconfigBasic -e SysbuildKconfigBasic -e ClangFormat"
-        ./scripts/ci/check_compliance.py --annotate $excludes --parallel -c origin/${BASE_REF}..
+        ./scripts/ci/check_compliance.py --annotate $excludes -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

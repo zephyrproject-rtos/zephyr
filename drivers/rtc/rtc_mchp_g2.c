@@ -97,14 +97,20 @@ struct rtc_mchp_data {
 static inline void rtc_mchp_disable_wp(const struct device *syscwp)
 {
 	syscon_write_reg(syscwp, SYSCWP_SYSC_WPMR_REG_OFST,
-			 SYSCWP_SYSC_WPMR_WPKEY_PASSWD | SYSCWP_SYSC_WPMR_WPITEN_0 |
+			 SYSCWP_SYSC_WPMR_WPKEY_PASSWD |
+#ifdef SYSCWP_SYSC_WPMR_WPITEN_0
+			 SYSCWP_SYSC_WPMR_WPITEN_0 |
+#endif /* SYSCWP_SYSC_WPMR_WPITEN_0 */
 			 SYSCWP_SYSC_WPMR_WPEN_0);
 }
 
 static inline void rtc_mchp_enable_wp(const struct device *syscwp)
 {
 	syscon_write_reg(syscwp, SYSCWP_SYSC_WPMR_REG_OFST,
-			 SYSCWP_SYSC_WPMR_WPKEY_PASSWD | SYSCWP_SYSC_WPMR_WPITEN_1 |
+			 SYSCWP_SYSC_WPMR_WPKEY_PASSWD |
+#ifdef SYSCWP_SYSC_WPMR_WPITEN_1
+			 SYSCWP_SYSC_WPMR_WPITEN_1 |
+#endif /* SYSCWP_SYSC_WPMR_WPITEN_1 */
 			 SYSCWP_SYSC_WPMR_WPEN_1);
 }
 
@@ -163,7 +169,15 @@ static int rtc_mchp_set_time(const struct device *dev, const struct rtc_time *ti
 	/* Request update */
 	regs->RTC_CR = (RTC_CR_UPDTIM_Msk | RTC_CR_UPDCAL_Msk);
 
-	if (WAIT_FOR(((regs->RTC_SR & RTC_SR_ACKUPD_Msk) != 0), 5000, k_busy_wait(1)) == true) {
+	/*
+	 * Wait for the RTC to acknowledge the update request (ACKUPD).
+	 *
+	 * ACKUPD can be set up to ~1 second after UPDTIM/UPDCAL are written,
+	 * because the RTC acknowledges at the next second boundary.
+	 * Use 1100 ms (1,100,000 us) as the timeout to allow a full second
+	 * boundary to elapse with margin.
+	 */
+	if (WAIT_FOR(((regs->RTC_SR & RTC_SR_ACKUPD_Msk) != 0), 1100000, k_busy_wait(1)) == true) {
 		regs->RTC_SCCR = RTC_SCCR_ACKCLR_Msk;
 		regs->RTC_TIMR = rtc_mchp_timr_from_tm(timeptr);
 		regs->RTC_CALR = rtc_mchp_calr_from_tm(timeptr);
@@ -250,7 +264,7 @@ static void rtc_mchp_isr(const struct device *dev)
 #endif /* CONFIG_RTC_ALARM */
 
 #ifdef CONFIG_RTC_UPDATE
-	if (sr & RTC_SCCR_SECCLR_Msk) {
+	if (sr & RTC_SR_SEC_Msk) {
 		regs->RTC_SCCR = RTC_SCCR_SECCLR_Msk;
 		if (data->update_callback != NULL) {
 			data->update_callback(dev, data->update_user_data);

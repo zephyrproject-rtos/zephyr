@@ -5,7 +5,7 @@ if BOARD_IMX8MN_EVK
 
 if BOARD_IMX8MN_EVK_MIMX8MN6_A53 || BOARD_IMX8MN_EVK_MIMX8MN6_A53_SMP
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault NET_TX_STACK_SIZE

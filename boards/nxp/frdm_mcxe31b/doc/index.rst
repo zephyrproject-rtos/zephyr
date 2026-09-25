@@ -71,6 +71,40 @@ controller, refer to the device reference manual.
 +-------+-------------+---------------------------+
 | PTA6  | FLEXCAN0    | CAN0 RX                   |
 +-------+-------------+---------------------------+
+| PTB4  | EMAC        | Ethernet MDIO             |
++-------+-------------+---------------------------+
+| PTB5  | EMAC        | Ethernet MDC              |
++-------+-------------+---------------------------+
+| PTC0  | EMAC        | Ethernet RMII RXD1        |
++-------+-------------+---------------------------+
+| PTC1  | EMAC        | Ethernet RMII RXD0        |
++-------+-------------+---------------------------+
+| PTC2  | EMAC        | Ethernet RMII TXD0        |
++-------+-------------+---------------------------+
+| PTC3  | GPIO        | Ethernet PHY reset        |
++-------+-------------+---------------------------+
+| PTC17 | EMAC        | Ethernet RMII RX_DV       |
++-------+-------------+---------------------------+
+| PTD7  | EMAC        | Ethernet RMII TXD1        |
++-------+-------------+---------------------------+
+| PTD11 | EMAC        | Ethernet RMII REF_CLK     |
++-------+-------------+---------------------------+
+| PTD12 | EMAC        | Ethernet RMII TX_EN       |
++-------+-------------+---------------------------+
+
+Ethernet
+========
+
+The board carries a Microchip LAN8741 10/100 Mbit/s PHY on MDIO address 0,
+connected to the MCXE31B EMAC over RMII. The EMAC is a Synopsys DesignWare
+Ethernet QoS core and is driven by the generic
+:zephyr_file:`drivers/ethernet/dwc_mac` driver, not by the NXP HAL based
+``eth_nxp_enet_qos`` driver.
+
+The PHY sources the 50 MHz RMII reference clock, which the SoC takes in on
+``PTD11`` and divides by two to clock the MAC's MII side. The driver also
+supports MII, selected with ``phy-connection-type``, though this board is
+wired for RMII.
 
 System Clock
 ============
@@ -174,6 +208,27 @@ Troubleshooting
 ===============
 
 .. include:: ../../common/segger-ecc-systemview.rst.inc
+
+QSPI Flash
+**********
+
+The FRDM-MCXE31B board is populated with an on-board Winbond W25Q64
+(64 Mbit) QSPI NOR flash. The QSPI data and clock signals are not connected
+to the flash by default, so the ``w25q64`` node is disabled on the default
+board target and enabled by the ``w25q64`` board revision.
+
+.. note::
+   In order to use the on-board QSPI flash, populate resistors R126, R128,
+   R129, R130, R131 and R133, and remove resistors R153 and R154.
+
+Once the rework is done, build for the ``frdm_mcxe31b@w25q64`` revision to
+exercise the flash with the MSPI flash sample
+(``samples/drivers/mspi/mspi_flash``):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mspi/mspi_flash
+   :board: frdm_mcxe31b@w25q64
+   :goals: flash
 
 .. include:: ../../common/board-footer.rst.inc
 

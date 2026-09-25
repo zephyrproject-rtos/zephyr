@@ -48,6 +48,20 @@ family:
       - name: cm7
     - name: mimxrt1182
     - name: mimxrt1181
+  - name: imxrt266x
+    socs:
+    - name: mimxrt2663
+      cpuclusters:
+      - name: cm85
+    - name: mimxrt2662
+      cpuclusters:
+      - name: cm85
+    - name: mimxrt2661
+      cpuclusters:
+      - name: cm85
+    - name: mimxrt2660
+      cpuclusters:
+      - name: cm85
   - name: imxrt5xx
     socs:
     - name: mimxrt595s
@@ -67,6 +81,16 @@ family:
       - name: cm33_cpu0
       - name: cm33_cpu1
       - name: hifi4
+      - name: hifi1
+    - name: mimxrt758s
+      cpuclusters:
+      - name: cm33_cpu0
+      - name: cm33_cpu1
+      - name: hifi1
+    - name: mimxrt735s
+      cpuclusters:
+      - name: cm33_cpu0
+      - name: cm33_cpu1
       - name: hifi1
 runners:
   run_once:
@@ -108,6 +132,12 @@ runners:
       - qualifiers:
         - mimxrt1189/cm33
         - mimxrt1189/cm7
+      - qualifiers:
+        - mimxrt2663
+      - qualifiers:
+        - mimxrt2662
+      - qualifiers:
+        - mimxrt2661
       - qualifiers:
         - mimxrt595s/cm33
         - mimxrt595s/f1
@@ -154,6 +184,12 @@ runners:
       - qualifiers:
         - mimxrt1189/cm33
         - mimxrt1189/cm7
+      - qualifiers:
+        - mimxrt2663
+      - qualifiers:
+        - mimxrt2662
+      - qualifiers:
+        - mimxrt2661
       - qualifiers:
         - mimxrt595s/cm33
         - mimxrt595s/f1

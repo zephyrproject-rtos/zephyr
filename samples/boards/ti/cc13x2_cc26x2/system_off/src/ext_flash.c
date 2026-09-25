@@ -32,7 +32,7 @@ void CC1352R1_LAUNCHXL_sendExtFlashByte(const struct device *dev,
 	for (i = 0; i < 8; i++) {
 		gpio_pin_set(dev, DIO10_PIN, 0); /* SPI Flash CLK */
 
-		/* SPI Flash MOSI */
+		/* SPI flash SDI (MCU output) */
 		gpio_pin_set(dev, DIO9_PIN, (byte >> (7 - i)) & 0x01);
 		gpio_pin_set(dev, DIO10_PIN, 1); /* SPI Flash CLK */
 
@@ -92,9 +92,9 @@ void CC1352R1_LAUNCHXL_shutDownExtFlash(void)
 	gpio_pin_configure(dev, DIO20_PIN, GPIO_OUTPUT);
 	/* Set SPI Flash CLK pin as output */
 	gpio_pin_configure(dev, DIO10_PIN, GPIO_OUTPUT);
-	/* Set SPI Flash MOSI pin as output */
+	/* Set the pin driving the SPI flash SDI as output */
 	gpio_pin_configure(dev, DIO9_PIN, GPIO_OUTPUT);
-	/* Set SPI Flash MISO pin as input */
+	/* Set the pin reading the SPI flash SDO as input */
 	gpio_pin_configure(dev, DIO8_PIN, GPIO_INPUT | GPIO_PULL_DOWN);
 
 	/*

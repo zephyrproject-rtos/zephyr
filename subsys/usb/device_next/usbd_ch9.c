@@ -470,7 +470,7 @@ static struct net_buf *sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 	net_buf_add_mem(buf, cfg_desc, MIN(net_buf_tailroom(buf), cfg_desc->bLength));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
-		struct usb_desc_header **dhp;
+		struct usb_desc_header *const *dhp;
 
 		dhp = usbd_class_get_desc(c_nd->c_data, get_desc_speed);
 		if (dhp == NULL) {

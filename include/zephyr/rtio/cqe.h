@@ -1,7 +1,7 @@
 /*
  * SPDX-Copyright: Copyright (c) 2022 Intel Corporation
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief RTIO Completion Queue Events and Related Functions
+ * @ingroup rtio
  */
 
 
@@ -44,6 +45,12 @@ extern "C" {
  */
 #define RTIO_CQE_FLAG_MEMPOOL_BUFFER BIT(0)
 
+/**
+ * @brief Get the flag bits of a CQE flags value
+ *
+ * @param flags The CQE flags value
+ * @return The flag portion of the flags field.
+ */
 #define RTIO_CQE_FLAG_GET(flags) FIELD_GET(GENMASK(7, 0), (flags))
 
 /**
@@ -81,7 +88,9 @@ extern "C" {
  * @brief A completion queue event
  */
 struct rtio_cqe {
+	/** @cond INTERNAL_HIDDEN */
 	struct mpsc_node q;
+	/** @endcond */
 
 	int32_t result; /**< Result from operation */
 	void *userdata; /**< Associated userdata with operation */

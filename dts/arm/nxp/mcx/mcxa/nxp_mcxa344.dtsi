@@ -75,6 +75,21 @@
 		};
 	};
 
+	/*
+	 * Deep Power Down gates the entire CORE power domain (CPU, NVIC, and all
+	 * APB/AHB peripheral register blocks), so every peripheral inside it
+	 * comes back from reset. This domain hands the affected drivers a
+	 * TURN_OFF before the transition and a TURN_ON after it, which is what
+	 * lets them reconfigure their hardware on resume. It follows
+	 * &deeppowerdown, so it stays inert until the application enables that
+	 * state.
+	 */
+	core_domain: core-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&deeppowerdown>;
+	};
+
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
@@ -107,30 +122,35 @@
 			compatible = "nxp,port-pinmux";
 			reg = <0x400bc000 0x1000>;
 			clocks = <&syscon MCUX_PORT0_CLK>;
+			power-domains = <&core_domain>;
 		};
 
 		portb: pinmux@400bd000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x400bd000 0x1000>;
 			clocks = <&syscon MCUX_PORT1_CLK>;
+			power-domains = <&core_domain>;
 		};
 
 		portc: pinmux@400be000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x400be000 0x1000>;
 			clocks = <&syscon MCUX_PORT2_CLK>;
+			power-domains = <&core_domain>;
 		};
 
 		portd: pinmux@400bf000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x400bf000 0x1000>;
 			clocks = <&syscon MCUX_PORT3_CLK>;
+			power-domains = <&core_domain>;
 		};
 
 		porte: pinmux@400c0000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x400c0000 0x1000>;
 			clocks = <&syscon MCUX_PORT4_CLK>;
+			power-domains = <&core_domain>;
 		};
 
 		gpio0: gpio@40102000 {
@@ -297,6 +317,7 @@
 			reg = <0x40095000 0x1000>;
 			interrupts = <12 0>;
 
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -305,6 +326,9 @@
 				reg = <0 DT_SIZE_K(256)>;
 				erase-block-size = <8192>;
 				write-block-size = <128>;
+				ranges = <0x0 0x0 DT_SIZE_K(256)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 
 			uuid: uuid@1100800 {
@@ -492,6 +516,15 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC1_CLK>;
+			/* In deep sleep mode, the hardware allows the converter to keep
+			 * running there (CTRL[DOZEN] = 0, bus clock gated, hardware
+			 * trigger and compare wakeup still live): that only holds while
+			 * ADCK keeps running, which depends on the clock configuration.
+			 * An application that arranges a low-power ADCK source can drop
+			 * &deepsleep from this list in its own overlay. See MCX A344 RM
+			 * Rev. 1 section 24.5.
+			 */
+			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
 		lpadc1: lpadc@400b0000 {
@@ -508,6 +541,7 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC2_CLK>;
+			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
 		lpcmp0: lpcmp@400b1000 {
@@ -630,6 +664,10 @@
 			reg = <0x40090000 0x1000>;
 			interrupts = <16 0>;
 			wakeup-delay = <780>;
+
+			bandgap_buffer: bandgap-buffer {
+				compatible = "nxp,spc-bandgap-buffer";
+			};
 		};
 
 		wuu: system-modules@40092000 {

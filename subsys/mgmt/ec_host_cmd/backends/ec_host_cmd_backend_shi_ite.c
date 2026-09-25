@@ -320,7 +320,13 @@ static void shi_ite_int_handler(const struct device *dev)
 {
 	struct shi_it8xxx2_data *data = dev->data;
 
-	if (data->shi_state == SHI_STATE_DISABLED) {
+	if (data->shi_state == SHI_STATE_DISABLED || data->rx_ctx == NULL) {
+		if (data->rx_ctx == NULL) {
+			LOG_ERR("Interrupt fired before the backend is initialized");
+		}
+		/* Write clear the pending status to avoid an interrupt storm */
+		IT83XX_SPI_ISR = 0xff;
+		IT83XX_SPI_RX_VLISR = IT83XX_SPI_RVLI;
 		return;
 	}
 
@@ -430,8 +436,8 @@ static int shi_ite_init_registers(const struct device *dev)
 	/* Reset fifo and prepare to for next transaction */
 	shi_ite_reset_rx_fifo();
 
-	/* Ready to receive */
-	shi_ite_set_state(dev->data, SHI_STATE_READY_TO_RECV);
+	/* Not ready to receive until the host command backend is initialized */
+	shi_ite_set_state(dev->data, SHI_STATE_DISABLED);
 
 	/* Interrupt status register(write one to clear) */
 	IT83XX_SPI_ISR = 0xff;
@@ -446,10 +452,9 @@ static int shi_ite_init_registers(const struct device *dev)
 		return status;
 	}
 
-	/* Enable SPI peripheral interrupt */
+	/* Connect SPI peripheral interrupt, unmasked by the backend init */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), shi_ite_int_handler,
 		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
@@ -510,6 +515,10 @@ static int shi_ite_backend_init(const struct ec_host_cmd_backend *backend,
 	rx_ctx->len_max = CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST;
 	tx->buf = data->out_msg + sizeof(out_preamble);
 	data->tx->len_max = CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE;
+
+	/* The buffers are ready, so the interrupt can be safely handled now */
+	shi_ite_set_state(data, SHI_STATE_READY_TO_RECV);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }

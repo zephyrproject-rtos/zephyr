@@ -699,6 +699,13 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 }
 
 #if defined(CONFIG_NET_TEST)
+static void (*ppp_send_cb)(struct net_pkt *pkt);
+
+void ppp_driver_register_send_cb(void (*cb)(struct net_pkt *pkt))
+{
+	ppp_send_cb = cb;
+}
+
 static uint8_t *ppp_recv_cb(uint8_t *buf, size_t *off)
 {
 	struct ppp_driver_context *ppp =
@@ -822,6 +829,10 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 	int i, offset;
 
 #if defined(CONFIG_NET_TEST)
+	if (ppp_send_cb != NULL) {
+		ppp_send_cb(pkt);
+	}
+
 	return 0;
 #endif
 
@@ -914,10 +925,8 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 {
 	uint8_t *data;
 	size_t len, tmp;
-	int ret;
 
-	len = ring_buf_get_claim(&ppp->rx_ringbuf, &data,
-				 CONFIG_NET_PPP_RINGBUF_SIZE);
+	len = ring_buf_get_ptr(&ppp->rx_ringbuf, &data, 0);
 	if (len == 0) {
 		LOG_DBG("Ringbuf %p is empty!", &ppp->rx_ringbuf);
 		return 0;
@@ -939,10 +948,7 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 		}
 	} while (--tmp);
 
-	ret = ring_buf_get_finish(&ppp->rx_ringbuf, len);
-	if (ret < 0) {
-		LOG_DBG("Cannot flush ring buffer (%d)", ret);
-	}
+	ring_buf_consume(&ppp->rx_ringbuf, len);
 
 	return -EAGAIN;
 }

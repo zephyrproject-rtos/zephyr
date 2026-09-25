@@ -425,14 +425,10 @@ static inline void tlb_shootdown(void)
 }
 #endif /* CONFIG_SMP */
 
-static inline void assert_addr_aligned(uintptr_t addr)
+static inline void assert_addr_aligned(uintptr_t addr __maybe_unused)
 {
-#if __ASSERT_ON
 	__ASSERT((addr & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned address 0x%" PRIxPTR, addr);
-#else
-	ARG_UNUSED(addr);
-#endif
 }
 
 static inline bool is_addr_aligned(uintptr_t addr)
@@ -454,14 +450,10 @@ static inline bool is_virt_addr_aligned(void *addr)
 	return is_addr_aligned((uintptr_t)addr);
 }
 
-static inline void assert_size_aligned(size_t size)
+static inline void assert_size_aligned(size_t size __maybe_unused)
 {
-#if __ASSERT_ON
 	__ASSERT((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned size %zu", size);
-#else
-	ARG_UNUSED(size);
-#endif
 }
 
 static inline bool is_size_aligned(size_t size)
@@ -986,7 +978,7 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 		 * If the PS bit is not supported at some level (like
 		 * in a PML4 entry) it is always reserved and must be 0
 		 */
-		CHECKIF(!((*entryp & MMU_PS) == 0U)) {
+		if ((*entryp & MMU_PS) != 0U) {
 			/* Cannot continue since we cannot split
 			 * bigpage mappings.
 			 */
@@ -997,7 +989,7 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 
 		table = next_table(*entryp, level);
 
-		CHECKIF(!(table != NULL)) {
+		if (table == NULL) {
 			/* Cannot continue since table is NULL,
 			 * and it cannot be dereferenced in next loop
 			 * iteration.
@@ -1082,8 +1074,12 @@ static int range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 
 		ret2 = page_map_set(ptables, dest_virt, entry_val, NULL, mask,
 				   options);
-		ARG_UNUSED(ret2);
-		CHECKIF(ret2 != 0) {
+
+		/* Propagating a failure from the level below is not a caller
+		 * programming error, so it must not be compiled out by the
+		 * CHECKIF() configuration.
+		 */
+		if (ret2 != 0) {
 			ret = ret2;
 		}
 	}
@@ -1160,8 +1156,7 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 		ret2 = range_map_ptables(domain->ptables, virt, phys, size,
 					 entry_flags, mask,
 					 options | OPTION_USER);
-		ARG_UNUSED(ret2);
-		CHECKIF(ret2 != 0) {
+		if (ret2 != 0) {
 			ret = ret2;
 		}
 	}
@@ -1169,8 +1164,7 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 
 	ret2 = range_map_ptables(z_x86_kernel_ptables, virt, phys, size,
 				 entry_flags, mask, options);
-	ARG_UNUSED(ret2);
-	CHECKIF(ret2 != 0) {
+	if (ret2 != 0) {
 		ret = ret2;
 	}
 
@@ -1198,7 +1192,16 @@ static inline int range_map_unlocked(void *virt, uintptr_t phys, size_t size,
 	return ret;
 }
 
-static pentry_t flags_to_entry(uint32_t flags)
+/**
+ * Translate arch-neutral mapping flags to page table entry flags
+ *
+ * @param flags Arch-neutral mapping flags
+ * @param [out] entry_flags_p Resulting page table entry flags
+ *
+ * @retval 0 if successful
+ * @retval -ENOTSUP if the requested caching mode is not supported
+ */
+static int flags_to_entry(uint32_t flags, pentry_t *entry_flags_p)
 {
 	pentry_t entry_flags = MMU_P;
 
@@ -1218,8 +1221,8 @@ static pentry_t flags_to_entry(uint32_t flags)
 	case K_MEM_CACHE_WB:
 		break;
 	default:
-		__ASSERT(false, "bad memory mapping flags 0x%x", flags);
-		break;
+		LOG_ERR("bad memory mapping flags 0x%x", flags);
+		return -ENOTSUP;
 	}
 
 	if ((flags & K_MEM_PERM_RW) != 0U) {
@@ -1240,29 +1243,29 @@ static pentry_t flags_to_entry(uint32_t flags)
 		entry_flags |= MMU_A;
 	}
 
-	return entry_flags;
+	*entry_flags_p = entry_flags;
+
+	return 0;
 }
 
 /* map new region virt..virt+size to phys with provided arch-neutral flags */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
+	pentry_t entry_flags;
 	int ret;
 
-	ret = range_map_unlocked(virt, phys, size, flags_to_entry(flags),
-				 MASK_ALL, 0);
-	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	ret = flags_to_entry(flags, &entry_flags);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return range_map_unlocked(virt, phys, size, entry_flags, MASK_ALL, 0);
 }
 
 /* unmap region addr..addr+size, reset entries and flush TLB */
-void arch_mem_unmap(void *addr, size_t size)
+int arch_mem_unmap(void *addr, size_t size)
 {
-	int ret;
-
-	ret = range_map_unlocked(addr, 0, size, 0, 0,
-				 OPTION_FLUSH | OPTION_CLEAR);
-	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	return range_map_unlocked(addr, 0, size, 0, 0, OPTION_FLUSH | OPTION_CLEAR);
 }
 
 #ifdef K_MEM_IS_VM_KERNEL
@@ -1738,18 +1741,17 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	k_spinlock_key_t key  = k_spin_lock(&x86_mmu_lock);
 
 	LOG_DBG("%s(%p)", __func__, domain);
-#if __ASSERT_ON
+
 	sys_snode_t *node;
 
 	/* Assert that we have not already initialized this domain */
 	SYS_SLIST_FOR_EACH_NODE(&x86_domain_list, node) {
-		struct arch_mem_domain *list_domain =
+		struct arch_mem_domain *list_domain __maybe_unused =
 			CONTAINER_OF(node, struct arch_mem_domain, node);
 
 		__ASSERT(list_domain != &domain->arch,
 			 "%s(%p) called multiple times", __func__, domain);
 	}
-#endif /* __ASSERT_ON */
 #ifndef CONFIG_X86_KPTI
 	/* If we're not using KPTI then we can use the build time page tables
 	 * (which are mutable) as the set of page tables for the default

@@ -97,7 +97,7 @@ static int i2c_sam_twihs_configure(const struct device *dev, uint32_t config)
 	int ret;
 
 	if (!(config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Master Mode is not enabled");
+		LOG_ERR("Controller Mode is not enabled");
 		return -EIO;
 	}
 

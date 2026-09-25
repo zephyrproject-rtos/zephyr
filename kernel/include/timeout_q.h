@@ -59,6 +59,25 @@ static inline bool z_is_inactive_timeout(const struct _timeout *to)
 	return !sys_dnode_is_linked(&to->node);
 }
 
+#elif defined(CONFIG_TIMEOUT_BACKEND_SKIPLIST)
+
+static inline void z_init_timeout(struct _timeout *to)
+{
+	uint8_t i;
+
+	to->height = 0;
+	to->abs_ticks = 0;
+
+	for (i = 0; i < CONFIG_TIMEOUT_SKIPLIST_MAX_LEVEL; i++) {
+		to->forward[i] = NULL;
+	}
+}
+
+static inline bool z_is_inactive_timeout(const struct _timeout *to)
+{
+	return to->height == 0;
+}
+
 #else /* CONFIG_TIMEOUT_BACKEND_DLIST or _BUCKET */
 
 static inline void z_init_timeout(struct _timeout *to)

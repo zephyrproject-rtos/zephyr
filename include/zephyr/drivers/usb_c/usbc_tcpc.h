@@ -278,22 +278,6 @@ typedef int (*tcpc_api_transmit_data_t)(const struct device *dev, struct pd_msg 
 typedef int (*tcpc_api_dump_std_reg_t)(const struct device *dev);
 
 /**
- * @brief Callback API to get a status register.
- *
- * See tcpc_get_status_register() for argument description.
- */
-typedef int (*tcpc_api_get_status_register_t)(const struct device *dev, enum tcpc_status_reg reg,
-					      uint32_t *status);
-
-/**
- * @brief Callback API to clear bits in a status register.
- *
- * See tcpc_clear_status_register() for argument description.
- */
-typedef int (*tcpc_api_clear_status_register_t)(const struct device *dev, enum tcpc_status_reg reg,
-						uint32_t mask);
-
-/**
  * @brief Callback API to mask or unmask status register bits.
  *
  * See tcpc_mask_status_register() for argument description.
@@ -387,6 +371,13 @@ typedef int (*tcpc_api_set_alert_handler_cb_t)(const struct device *dev,
 					       tcpc_alert_handler_cb_t handler, void *data);
 
 /**
+ * @brief Callback API to query the dead battery configuration of the TCPC.
+ *
+ * See tcpc_dead_battery_enabled() for argument description.
+ */
+typedef int (*tcpc_api_dead_battery_enabled_t)(const struct device *dev, bool *enabled);
+
+/**
  * @driver_ops{USB Type-C Port Controller}
  */
 __subsystem struct tcpc_driver_api {
@@ -420,10 +411,6 @@ __subsystem struct tcpc_driver_api {
 	tcpc_api_transmit_data_t transmit_data;
 	/** @driver_ops_optional @copybrief tcpc_dump_std_reg */
 	tcpc_api_dump_std_reg_t dump_std_reg;
-	/** @driver_ops_optional @copybrief tcpc_get_status_register */
-	tcpc_api_get_status_register_t get_status_register;
-	/** @driver_ops_optional @copybrief tcpc_clear_status_register */
-	tcpc_api_clear_status_register_t clear_status_register;
 	/** @driver_ops_optional @copybrief tcpc_mask_status_register */
 	tcpc_api_mask_status_register_t mask_status_register;
 	/** @driver_ops_optional @copybrief tcpc_set_debug_accessory */
@@ -450,6 +437,8 @@ __subsystem struct tcpc_driver_api {
 	tcpc_api_set_bist_test_mode_t set_bist_test_mode;
 	/** @driver_ops_mandatory @copybrief tcpc_set_alert_handler_cb */
 	tcpc_api_set_alert_handler_cb_t set_alert_handler_cb;
+	/** @driver_ops_optional @copybrief tcpc_dead_battery_enabled */
+	tcpc_api_dead_battery_enabled_t dead_battery_enabled;
 };
 
 /** @} */
@@ -855,53 +844,6 @@ static inline int tcpc_set_alert_handler_cb(const struct device *dev,
 }
 
 /**
- * @brief Gets a status register
- *
- * @param dev     Runtime device structure
- * @param reg     The status register to read
- * @param status  Pointer where the status is stored
- *
- * @retval 0 on success
- * @retval -EIO on failure
- * @retval -ENOSYS if not implemented
- */
-static inline int tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
-					   uint32_t *status)
-{
-	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
-
-	if (api->get_status_register == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_status_register(dev, reg, status);
-}
-
-/**
- * @brief Clears a TCPC status register
- *
- * @param dev   Runtime device structure
- * @param reg   The status register to read
- * @param mask  A bit mask of the status register to clear.
- *		A status bit is cleared when it's set to 1.
- *
- * @retval 0 on success
- * @retval -EIO on failure
- * @retval -ENOSYS if not implemented
- */
-static inline int tcpc_clear_status_register(const struct device *dev, enum tcpc_status_reg reg,
-					     uint32_t mask)
-{
-	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
-
-	if (api->clear_status_register == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->clear_status_register(dev, reg, mask);
-}
-
-/**
  * @brief Sets the mask of a TCPC status register
  *
  * @param dev   Runtime device structure
@@ -1149,6 +1091,27 @@ static inline int tcpc_sop_prime_enable(const struct device *dev, bool enable)
 	}
 
 	return api->sop_prime_enable(dev, enable);
+}
+
+/**
+ * @brief Queries whether the TCPC applies the USB-C dead battery terminations
+ *
+ * @param dev Runtime device structure
+ * @param enabled True if the TCPC applies the dead battery terminations,
+ *                false otherwise.
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS if not implemented
+ */
+static inline int tcpc_dead_battery_enabled(const struct device *dev, bool *enabled)
+{
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
+
+	if (api->dead_battery_enabled == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->dead_battery_enabled(dev, enabled);
 }
 
 /**

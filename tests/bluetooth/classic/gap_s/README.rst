@@ -31,8 +31,8 @@ The HCI transport for ``bumble`` can be configured as follows:
 Building and Running
 ********************
 
-Running on mimxrt1170_evk@B/mimxrt1176/cm7
-==========================================
+Running on ``mimxrt1170_evk@B/mimxrt1176/cm7``
+==============================================
 
 Running the test suite on :ref:`mimxrt1170_evk` relies on configuration of ``bumble``.
 

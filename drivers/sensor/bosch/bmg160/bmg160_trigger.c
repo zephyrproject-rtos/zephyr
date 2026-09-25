@@ -105,7 +105,7 @@ int bmg160_slope_config(const struct device *dev, enum sensor_attribute attr,
 		}
 
 		return bmg160_write_byte(dev, BMG160_REG_THRES,
-					 any_th_dps & BMG160_THRES_MASK);
+					 any_th_reg_val & BMG160_THRES_MASK);
 	} else if (attr == SENSOR_ATTR_SLOPE_DUR) {
 		/* slope duration can be 4, 8, 12 or 16 samples */
 		if (val->val1 != 4 && val->val1 != 8 &&
@@ -259,7 +259,7 @@ int bmg160_trigger_init(const struct device *dev)
 	bmg160->work.handler = bmg160_work_cb;
 #endif
 
-	ret = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
 		return ret;
 	}

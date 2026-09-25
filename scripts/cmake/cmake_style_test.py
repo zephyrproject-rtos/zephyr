@@ -10,10 +10,14 @@ import pytest
 # cmake_style needs tree-sitter; skip the whole module if it is not installed.
 cmake_style = pytest.importorskip("cmake_style")
 
+# A fixture allow-list, so the rule tests don't depend on the contents of the
+# shipped cmake_style_mixed_case.txt.
+MIXED_CASE = {"externalproject_add": "ExternalProject_Add"}
 
-def _rules(text):
+
+def _rules(text, mixed_case=MIXED_CASE):
     """The set of rule ids reported for 'text'."""
-    return {issue.rule for issue in cmake_style.check_text(text)}
+    return {issue.rule for issue in cmake_style.check_text(text, mixed_case)}
 
 
 # Rule 1: indentation (2 spaces per block level, no tabs).
@@ -67,6 +71,11 @@ def test_command_case_module_canonical_clean():
 def test_command_case_module_non_canonical_flagged():
     # A module command must use its canonical mixed case, not all-lowercase.
     assert _rules("externalproject_add(foo)\n") == {"command-case"}
+
+
+def test_command_case_unlisted_mixed_case_flagged():
+    # A mixed-case command not in the allow-list is held to the lowercase rule.
+    assert _rules("UpdateableImage_Get(foo)\n") == {"command-case"}
 
 
 # Rule 3: no space before the opening parenthesis.
@@ -139,3 +148,47 @@ if(ENABLE_TESTS)
   add_subdirectory(tests)
 endif()
 """)
+
+
+# The mixed-case allow-list loader.
+def test_load_mixed_case_appends_across_files(tmp_path):
+    extra = tmp_path / "extra.txt"
+    extra.write_text("""\
+# downstream extension
+UpdateableImage_Get  # trailing comment
+
+""")
+    mixed_case = cmake_style.load_mixed_case([cmake_style.DEFAULT_MIXED_CASE_FILE, extra])
+    assert mixed_case["externalproject_add"] == "ExternalProject_Add"
+    assert mixed_case["updateableimage_get"] == "UpdateableImage_Get"
+
+
+def test_load_mixed_case_rejects_lowercase_entry(tmp_path):
+    f = tmp_path / "bad.txt"
+    f.write_text("all_lowercase\n")
+    with pytest.raises(ValueError, match="all-lowercase"):
+        cmake_style.load_mixed_case([f])
+
+
+def test_load_mixed_case_rejects_invalid_name(tmp_path):
+    f = tmp_path / "bad.txt"
+    f.write_text("Not a command\n")
+    with pytest.raises(ValueError, match="not a valid command name"):
+        cmake_style.load_mixed_case([f])
+
+
+def test_load_mixed_case_rejects_conflicting_case(tmp_path):
+    f = tmp_path / "bad.txt"
+    f.write_text("Foo_Bar\nFOO_Bar\n")
+    with pytest.raises(ValueError, match="conflicts"):
+        cmake_style.load_mixed_case([f])
+
+
+def test_load_mixed_case_missing_file_raises(tmp_path):
+    with pytest.raises(OSError):
+        cmake_style.load_mixed_case([tmp_path / "nonexistent.txt"])
+
+
+def test_default_mixed_case_file_loads():
+    # Guards the format of the shipped allow-list.
+    assert cmake_style.load_mixed_case([cmake_style.DEFAULT_MIXED_CASE_FILE])

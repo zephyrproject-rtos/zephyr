@@ -29,7 +29,7 @@ extern "C" {
  * @brief DNS resolving library
  * @defgroup dns_resolve DNS Resolve Library
  * @since 1.8
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup networking
  * @{
  */
@@ -57,13 +57,13 @@ enum dns_query_type {
 };
 
 
-/** Private RR type range start (RFC 6895) */
+/** Private RR type range start (@rfc{6895}) */
 #define DNS_RR_TYPE_PRIVATE_START_VALUE 65280
-/** Private RR type range end (RFC 6895) */
+/** Private RR type range end (@rfc{6895}) */
 #define DNS_RR_TYPE_PRIVATE_END_VALUE 65534
 
 /**
- * @brief Check if query type is a private RR (RFC 6895: 65280-65534)
+ * @brief Check if query type is a private RR (@rfc{6895}: 65280-65534)
  *
  * @param type Query type to check
  * @return true if type is in private RR range, false otherwise
@@ -714,6 +714,20 @@ int dns_resolve_init_default(struct dns_resolve_context *ctx);
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_close(struct dns_resolve_context *ctx);
+
+/**
+ * @brief Check if DNS resolving context is active.
+ *
+ * @details A context becomes active when it is initialized with at least one
+ * DNS server, and inactive when it is closed. The state says nothing about
+ * the servers themselves, for example whether they can be reached.
+ *
+ * @param ctx DNS context that dns_resolve_init() has been called on, or NULL.
+ *
+ * @retval true The context is active.
+ * @retval false The context is not active, or ctx is NULL.
+ */
+bool dns_resolve_is_active(struct dns_resolve_context *ctx);
 
 /**
  * @brief Reconfigure DNS resolving context.

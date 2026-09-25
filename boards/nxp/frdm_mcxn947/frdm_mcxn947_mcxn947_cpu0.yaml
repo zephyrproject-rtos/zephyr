@@ -30,6 +30,7 @@ supported:
   - i3c
   - netif:eth
   - nvs
+  - ptp_clock
   - pwm
   - regulator
   - rtc

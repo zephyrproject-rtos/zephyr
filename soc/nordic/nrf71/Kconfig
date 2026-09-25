@@ -44,6 +44,14 @@ config SOC_NRF7120E_ENGA_CPUFLPR
 
 if SOC_SERIES_NRF71
 
+config SOC_NRF7120_APPROTECT_BOOT_WORKAROUND
+	bool
+	default y if (SOC_NRF7120_ENGA_CPUAPP || SOC_NRF7120E_ENGA_CPUAPP)
+	help
+	  Enable the APPROTECT boot workaround when using
+	  either nRF7120 or nRF7120E application core.
+
+
 config SOC_NRF7120_WICR_SETUP
 	bool
 	default y if DT_HAS_NORDIC_NRF_WICR_ENABLED
@@ -79,5 +87,12 @@ config SOC_NRF7120_TFM_MRAMC_SERVICE
 	  Provide a MRAMC service for the nRF7120 SoC.
 	  This service allows the non-secure application to request
 	  the system to configure MRAMC using a secure service call.
+
+config SOC_NRF7120_DEVELOP_IN_NRF7120E
+	bool
+	help
+	  The nrf7120dk board can be used to develop the nRF7120 or nRF7120E SoCs
+	  onto the nRF7120E DK. This symbol needs to be considered by certain system
+	  initialization functionality residing in SoC erratas.
 
 endif # SOC_SERIES_NRF71

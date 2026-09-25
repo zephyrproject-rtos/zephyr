@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/s32/S32K148_LQFP176-pinctrl.h>
+#include <nxp/s32/pinctrl/S32K148_LQFP176-pinctrl.h>
 
 &pinctrl {
 	lpuart0_default: lpuart0_default {

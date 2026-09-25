@@ -43,6 +43,7 @@ config ICM566XX_TRIGGER_GLOBAL_THREAD
 			$(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM56686),int-gpios)
 	depends on !ICM566XX_STREAM
 	select ICM566XX_TRIGGER
+	select TDK_APEX
 
 config ICM566XX_TRIGGER_OWN_THREAD
 	bool "Use own thread"
@@ -51,6 +52,7 @@ config ICM566XX_TRIGGER_OWN_THREAD
 			$(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM56686),int-gpios)
 	depends on !ICM566XX_STREAM
 	select ICM566XX_TRIGGER
+	select TDK_APEX
 
 endchoice
 

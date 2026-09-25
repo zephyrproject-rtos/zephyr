@@ -484,9 +484,11 @@ static int sw_get_pins(const struct device *dev, uint8_t *const state)
 	const struct sw_config *config = dev->config;
 	uint32_t val;
 
+	*state = 0;
+
 	if (config->reset.port) {
 		val = gpio_pin_get_dt(&config->reset);
-		*state = val ? BIT(SWDP_nRESET_PIN) : 0;
+		*state |= val ? BIT(SWDP_nRESET_PIN) : 0;
 	}
 
 	val = gpio_pin_get_dt(&config->dio);
@@ -573,14 +575,27 @@ static int sw_port_on(const struct device *dev)
 		}
 	}
 
-	ret = gpio_pin_configure_dt(&config->clk, GPIO_OUTPUT_ACTIVE);
+	ret = gpio_pin_configure_dt(&config->clk, GPIO_INPUT | GPIO_OUTPUT_ACTIVE);
+	if (ret == -ENOTSUP) {
+		LOG_DBG("Fall back to CLK output only");
+		ret = gpio_pin_configure_dt(&config->clk, GPIO_OUTPUT_ACTIVE);
+	}
+
 	if (ret) {
+		LOG_ERR("Failed to configure CLK GPIO");
 		return ret;
 	}
 
 	if (config->reset.port) {
-		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
+		ret = gpio_pin_configure_dt(&config->reset,
+					    GPIO_INPUT | GPIO_OUTPUT_INACTIVE);
+		if (ret == -ENOTSUP) {
+			LOG_DBG("Fall back to RESET output only");
+			ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
+		}
+
 		if (ret) {
+			LOG_ERR("Failed to configure RESET GPIO");
 			return ret;
 		}
 	}

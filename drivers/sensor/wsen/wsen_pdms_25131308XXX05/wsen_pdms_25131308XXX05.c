@@ -228,7 +228,7 @@ static DEVICE_API(sensor, pdms_25131308XXX05_driver_api) = {
 		())
 
 #define PDMS_25131308XXX05_SPI_OPERATION \
-	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER)
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER)
 
 #define PDMS_25131308XXX05_CONFIG_BUS(inst) \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c), \
@@ -240,8 +240,7 @@ static DEVICE_API(sensor, pdms_25131308XXX05_driver_api) = {
 		(.bus_cfg = { \
 			.spi = SPI_DT_SPEC_INST_GET( \
 				inst, \
-				PDMS_25131308XXX05_SPI_OPERATION, \
-				0 \
+				PDMS_25131308XXX05_SPI_OPERATION \
 			) \
 		},), \
 		())

@@ -106,7 +106,6 @@ kobjects = OrderedDict(
         ("NET_SOCKET", (None, False, False)),
         ("net_if", (None, False, False)),
         ("sys_mutex", (None, True, False)),
-        ("k_futex", (None, True, False)),
         ("k_condvar", (None, False, True)),
         ("k_event", ("CONFIG_EVENTS", False, True)),
         ("ztest_suite_node", ("CONFIG_ZTEST", True, False)),
@@ -202,7 +201,6 @@ DW_OP_addrx = 0xA1
 STACK_TYPE = "z_thread_stack_element"
 thread_counter = 0
 sys_mutex_counter = 0
-futex_counter = 0
 stack_counter = 0
 
 # Global type environment. Populated by pass 1.
@@ -329,6 +327,13 @@ class ConstType:
 
     def __repr__(self):
         return f"<const {self.child_type}>"
+
+    @property
+    def size(self):
+        # Delegate to the underlying type so that arrays of const-qualified
+        # kernel objects (e.g. "const struct device foo[N]") can compute the
+        # per-element stride. Mirrors has_kobject()/get_kobjects() delegation.
+        return type_env[self.child_type].size
 
     def has_kobject(self):
         if self.child_type not in type_env:
@@ -568,7 +573,6 @@ def device_get_api_addr(elf, addr):
 def find_kobjects(elf, syms):
     global thread_counter
     global sys_mutex_counter
-    global futex_counter
     global stack_counter
 
     if not elf.has_dwarf_info():
@@ -719,9 +723,6 @@ def find_kobjects(elf, syms):
         elif ko.type_obj.name == "sys_mutex":
             ko.data = f"&kernel_mutexes[{sys_mutex_counter}]"
             sys_mutex_counter += 1
-        elif ko.type_obj.name == "k_futex":
-            ko.data = f"&futex_data[{futex_counter}]"
-            futex_counter += 1
         elif ko.type_obj.name == STACK_TYPE:
             stack_counter += 1
 
@@ -822,18 +823,9 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
                 fp.write(", ")
         fp.write("};\n")
 
-    if futex_counter != 0:
-        fp.write(f"static struct z_futex_data futex_data[{futex_counter}] = {{\n")
-        for i in range(futex_counter):
-            fp.write(f"Z_FUTEX_DATA_INITIALIZER(futex_data[{i}])")
-            if i != futex_counter - 1:
-                fp.write(", ")
-        fp.write("};\n")
-
     metadata_names = {
         "K_OBJ_THREAD": "thread_id",
         "K_OBJ_SYS_MUTEX": "mutex",
-        "K_OBJ_FUTEX": "futex_data",
     }
 
     if "CONFIG_GEN_PRIV_STACKS" in syms:

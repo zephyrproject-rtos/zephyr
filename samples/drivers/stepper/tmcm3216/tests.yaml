@@ -5,4 +5,6 @@ tests:
     harness: stepper
     tags: stepper
     platform_allow: nucleo_u575zi_q
-    depends_on: serial gpio
+    depends_on:
+      - serial
+      - gpio

@@ -1,0 +1,13 @@
+tests:
+  arch.arm.mpu.region_init:
+    tags:
+      - arm
+      - mpu
+    arch_allow:
+      - arm
+    platform_allow:
+      - mps2/an385
+      - qemu_cortex_r5/zynqmp_rpu
+    integration_platforms:
+      - mps2/an385
+      - qemu_cortex_r5/zynqmp_rpu

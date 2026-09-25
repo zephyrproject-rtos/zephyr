@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "stm32l562e_dk_common.dtsi"
+#include "stm32l562e_dk-common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L562E-DK Discovery board";
@@ -38,6 +38,10 @@
 };
 
 &aes {
+	status = "okay";
+};
+
+&hash {
 	status = "okay";
 };
 

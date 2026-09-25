@@ -10,8 +10,6 @@ menuconfig WIFI_NRF70
 	select NET_L2_WIFI_MGMT if NETWORKING
 	select NET_L2_ETHERNET_MGMT if NETWORKING && NET_L2_ETHERNET
 	select WIFI_USE_NATIVE_NETWORKING if NETWORKING
-	select EXPERIMENTAL if !SOC_SERIES_NRF53 && !SOC_SERIES_NRF91 && \
-		!SOC_NRF54LM20A && !SOC_NRF54LM20B
 	select NRF70_BUSLIB
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	default y
@@ -75,6 +73,23 @@ config NRF70_RADIO_TEST
 	  This mode is used for testing RF performance and regulatory
 	  compliance. It provides direct control of the radio hardware
 	  for transmitting test patterns and measuring RF parameters.
+
+config NRF70_RADIO_TEST_SHELL
+	bool "Radio test shell commands"
+	default y
+	depends on NRF70_RADIO_TEST && SHELL
+	help
+	  Register the wifi_radio_test shell command set for nRF70 radio test
+	  mode. Disable to provide a custom shell integration in the application.
+
+config NRF70_RADIO_TEST_FICR_SHELL
+	bool "Radio test FICR/OTP programming shell"
+	default y
+	depends on NRF70_RADIO_TEST_SHELL
+	help
+	  Register the wifi_radio_ficr_prog shell command set for programming
+	  nRF7002 OTP memory. Disable if the application provides its own
+	  integration.
 
 config NRF70_OFFLOADED_RAW_TX
 	bool "Offloaded raw TX mode of the nRF70 driver"

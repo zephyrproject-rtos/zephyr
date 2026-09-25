@@ -107,7 +107,7 @@ static int spi_mcux_flexio_isr(void *user_data)
 	return 0;
 }
 
-static void spi_mcux_master_transfer_callback(FLEXIO_SPI_Type *flexio_spi,
+static void spi_mcux_transfer_callback(FLEXIO_SPI_Type *flexio_spi,
 	flexio_spi_master_handle_t *handle, status_t status, void *userData)
 {
 	struct spi_mcux_flexio_data *data = userData;
@@ -118,11 +118,12 @@ static void spi_mcux_master_transfer_callback(FLEXIO_SPI_Type *flexio_spi,
 	spi_mcux_transfer_next_packet(data->dev);
 }
 
-static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_config_t *masterConfig,
+static void spi_flexio_controller_init(FLEXIO_SPI_Type *base,
+	flexio_spi_master_config_t *controllerConfig,
 	uint8_t pol, uint32_t srcClock_Hz)
 {
 	assert(base != NULL);
-	assert(masterConfig != NULL);
+	assert(controllerConfig != NULL);
 
 	flexio_shifter_config_t shifterConfig;
 	flexio_timer_config_t timerConfig;
@@ -134,19 +135,19 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	(void)memset(&shifterConfig, 0, sizeof(shifterConfig));
 	(void)memset(&timerConfig, 0, sizeof(timerConfig));
 
-	/* Configure FLEXIO SPI Master */
+	/* Configure FLEXIO SPI controller */
 	ctrlReg = base->flexioBase->CTRL;
 	ctrlReg &= ~(FLEXIO_CTRL_DBGE_MASK | FLEXIO_CTRL_FASTACC_MASK | FLEXIO_CTRL_FLEXEN_MASK);
 #if !(defined(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT) && \
 		(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT == 0))
 	ctrlReg &= ~FLEXIO_CTRL_DOZEN_MASK;
 #endif
-	ctrlReg |= (FLEXIO_CTRL_DBGE(masterConfig->enableInDebug) |
-		FLEXIO_CTRL_FASTACC(masterConfig->enableFastAccess) |
-		FLEXIO_CTRL_FLEXEN(masterConfig->enableMaster));
+	ctrlReg |= (FLEXIO_CTRL_DBGE(controllerConfig->enableInDebug) |
+		    FLEXIO_CTRL_FASTACC(controllerConfig->enableFastAccess) |
+		    FLEXIO_CTRL_FLEXEN(controllerConfig->enableMaster));
 #if !(defined(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT) && \
 		(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT == 0))
-	if (!masterConfig->enableInDoze) {
+	if (!controllerConfig->enableInDoze) {
 		ctrlReg |= FLEXIO_CTRL_DOZEN_MASK;
 	}
 #endif
@@ -161,7 +162,7 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	shifterConfig.pinPolarity = kFLEXIO_PinActiveHigh;
 	shifterConfig.shifterMode = kFLEXIO_ShifterModeTransmit;
 	shifterConfig.inputSource = kFLEXIO_ShifterInputFromPin;
-	if (masterConfig->phase == kFLEXIO_SPI_ClockPhaseFirstEdge) {
+	if (controllerConfig->phase == kFLEXIO_SPI_ClockPhaseFirstEdge) {
 		shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnNegitive;
 		shifterConfig.shifterStop   = kFLEXIO_ShifterStopBitDisable;
 		shifterConfig.shifterStart  = kFLEXIO_ShifterStartBitDisabledLoadDataOnEnable;
@@ -182,7 +183,7 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	shifterConfig.inputSource  = kFLEXIO_ShifterInputFromPin;
 	shifterConfig.shifterStop  = kFLEXIO_ShifterStopBitDisable;
 	shifterConfig.shifterStart = kFLEXIO_ShifterStartBitDisabledLoadDataOnEnable;
-	if (masterConfig->phase == kFLEXIO_SPI_ClockPhaseFirstEdge) {
+	if (controllerConfig->phase == kFLEXIO_SPI_ClockPhaseFirstEdge) {
 		shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnPositive;
 	} else {
 		shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnNegitive;
@@ -206,7 +207,7 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	timerConfig.timerStop       = kFLEXIO_TimerStopBitEnableOnTimerDisable;
 	timerConfig.timerStart      = kFLEXIO_TimerStartBitEnabled;
 	/* Low 8-bits are used to configure baud rate. */
-	timerDiv = (uint16_t)(srcClock_Hz / masterConfig->baudRate_Bps);
+	timerDiv = (uint16_t)(srcClock_Hz / controllerConfig->baudRate_Bps);
 
 	/* Add protection if the required baud rate overflows.
 	 * FLEXIO input freq can't meet required baud rate. Max baud rate can
@@ -219,15 +220,15 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	/* If timeDiv is odd, get it to even. */
 	timerDiv += timerDiv & 1UL;
 
-	if (masterConfig->baudRate_Bps != (srcClock_Hz / timerDiv)) {
+	if (controllerConfig->baudRate_Bps != (srcClock_Hz / timerDiv)) {
 		LOG_WRN("baud rate req:%uKbps, got:%uKbps",
-			(uint32_t)(masterConfig->baudRate_Bps / 1000),
+			(uint32_t)(controllerConfig->baudRate_Bps / 1000),
 			(uint32_t)(srcClock_Hz / (timerDiv*1000)));
 	}
 
 	timerDiv = timerDiv / 2U - 1U;
 	/* High 8-bits are used to configure shift clock edges(transfer width). */
-	timerCmp = ((uint16_t)masterConfig->dataMode * 2U - 1U) << 8U;
+	timerCmp = ((uint16_t)controllerConfig->dataMode * 2U - 1U) << 8U;
 	timerCmp |= timerDiv;
 
 	timerConfig.timerCompare = timerCmp;
@@ -241,7 +242,7 @@ static int spi_mcux_flexio_configure(const struct device *dev,
 	const struct spi_mcux_flexio_config *config = dev->config;
 	struct spi_mcux_flexio_data *data = dev->data;
 
-	flexio_spi_master_config_t master_config;
+	flexio_spi_master_config_t controller_config;
 	uint32_t clock_freq;
 	uint32_t word_size;
 
@@ -255,19 +256,19 @@ static int spi_mcux_flexio_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Mode Slave not supported");
+	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_CONTROLLER) {
+		LOG_ERR("Mode Peripheral not supported");
 		return -ENOTSUP;
 	}
 
-	FLEXIO_SPI_MasterGetDefaultConfig(&master_config);
+	FLEXIO_SPI_MasterGetDefaultConfig(&controller_config);
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if ((word_size != 8) && (word_size != 16) && (word_size != 32)) {
 		LOG_ERR("Word size %d must be 8, 16 or 32", word_size);
 		return -EINVAL;
 	}
-	master_config.dataMode = word_size;
+	controller_config.dataMode = word_size;
 
 	if (spi_cfg->operation & SPI_TRANSFER_LSB) {
 		if (word_size == 8) {
@@ -291,17 +292,17 @@ static int spi_mcux_flexio_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	master_config.phase =
+	controller_config.phase =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
 		? kFLEXIO_SPI_ClockPhaseSecondEdge
 		: kFLEXIO_SPI_ClockPhaseFirstEdge;
 
-	master_config.baudRate_Bps = spi_cfg->frequency;
-	spi_flexio_master_init(config->flexio_spi, &master_config,
+	controller_config.baudRate_Bps = spi_cfg->frequency;
+	spi_flexio_controller_init(config->flexio_spi, &controller_config,
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL), clock_freq);
 
 	FLEXIO_SPI_MasterTransferCreateHandle(config->flexio_spi, &data->handle,
-					spi_mcux_master_transfer_callback,
+					spi_mcux_transfer_callback,
 					data);
 	/* No SetDummyData() for FlexIO_SPI */
 

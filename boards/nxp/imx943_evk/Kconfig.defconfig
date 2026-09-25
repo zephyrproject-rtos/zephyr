@@ -29,7 +29,7 @@ config CLOCK_CONTROL_INIT_PRIORITY
 	default 31 if SOC_MIMX94398_A55
 
 # Enlarge default networking stack
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault NET_TX_STACK_SIZE

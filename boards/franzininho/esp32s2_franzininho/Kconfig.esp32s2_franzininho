@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ESP32S2_FRANZININHO
-	select SOC_ESP32S2_WROOM
+	select SOC_ESP32S2

@@ -54,4 +54,14 @@
 #define __CONCAT CONCAT
 #endif
 
+/* Zephyr performs runtime initialization itself. */
+#define PICO_RUNTIME_INIT_FUNC(func, priority_string)
+
+/*
+ * The SDK only sets EXTEXCLALL from a pre-init function, which Zephyr never
+ * runs. Single-core RP2350 does not need the global exclusive monitor;
+ * multicore support would have to set it explicitly.
+ */
+#define PICO_SW_SPIN_LOCKS_NO_EXTEXCLALL 1
+
 #endif

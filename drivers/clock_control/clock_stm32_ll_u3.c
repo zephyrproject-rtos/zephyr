@@ -118,16 +118,17 @@ static int enabled_clock(uint32_t src_clk)
 	return -ENOTSUP;
 }
 
+static int stm32_clock_control_configure(const struct device *dev,
+					 clock_control_subsys_t sub_system, void *data);
+
 static int stm32_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
 	volatile int temp;
 
-	ARG_UNUSED(dev);
-
 	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
-		/* Attempt to toggle a wrong periph clock bit */
-		return -ENOTSUP;
+		/* Source selection entry: apply it instead of toggling a gate */
+		return stm32_clock_control_configure(dev, sub_system, NULL);
 	}
 
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus, pclken->enr);
@@ -315,7 +316,7 @@ static DEVICE_API(clock_control, stm32_clock_control_api) = {
 
 static void set_regu_voltage(uint32_t hclk_freq)
 {
-	if (hclk_freq < MHZ(48)) {
+	if (hclk_freq <= MHZ(48)) {
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
 	} else {
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);

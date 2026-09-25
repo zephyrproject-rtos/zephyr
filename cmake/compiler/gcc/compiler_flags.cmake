@@ -151,6 +151,8 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-volatile")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
   "-Wno-register" "-Wno-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp26 "-std=c++26"
+  "-Wno-register" "-Wno-volatile")
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
@@ -310,3 +312,6 @@ set_compiler_property(PROPERTY func_instrumentation_exclude_function_list
   "-finstrument-functions-exclude-function-list=${CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST}")
 set_compiler_property(PROPERTY func_instrumentation_exclude_file_list
   "-finstrument-functions-exclude-file-list=${CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST}")
+
+# Compiler flag to let compiler use __aeabi_read_tp for setting thread pointer for TLS
+check_set_compiler_property(APPEND PROPERTY thread_local_storage -mtp=soft)

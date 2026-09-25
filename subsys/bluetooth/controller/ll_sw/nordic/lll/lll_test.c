@@ -491,7 +491,7 @@ static uint32_t calculate_tifs(uint8_t len)
 }
 
 static uint8_t init(uint8_t chan, uint8_t phy, int8_t tx_power,
-		    bool cte, void (*isr)(void *))
+		    bool cte, void (*isr)(void *param))
 {
 	int err;
 	uint8_t ret;

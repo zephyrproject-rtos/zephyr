@@ -1,0 +1,17 @@
+sample:
+  name: LIN driver NCV7430 responder mock sample
+tests:
+  sample.drivers.lin.ncv7430_responder:
+    tags: lin
+    platform_allow:
+      - ek_ra8m1/r7fa8m1ahecbd
+    integration_platforms:
+      - ek_ra8m1/r7fa8m1ahecbd
+    build_only: true
+    extra_args:
+      - platform:ek_ra8m1/r7fa8m1ahecbd:SHIELD=mikroe_lin_click
+    harness_config:
+      type: one_line
+      regex:
+        - "NCV7430 mock responder started"
+      fixture: fixture_shield_mikroe_lin_click

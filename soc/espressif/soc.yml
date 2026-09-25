@@ -34,6 +34,9 @@ family:
       cpuclusters:
       - name: hpcore
       - name: lpcore
+  - name: esp32c61
+    socs:
+    - name: esp32c61
   - name: esp32h2
     socs:
     - name: esp32h2
@@ -68,6 +71,8 @@ runners:
       - qualifiers:
         - esp32c6/hpcore
         - esp32c6/lpcore
+      - qualifiers:
+        - esp32c61
       - qualifiers:
         - esp32h2
       - qualifiers:

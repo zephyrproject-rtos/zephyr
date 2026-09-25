@@ -399,7 +399,6 @@ static void hx8353e_get_capabilities(const struct device *dev,
 	const struct hx8353e_config *cfg = dev->config;
 	const struct hx8353e_data *data = dev->data;
 
-	memset(caps, 0, sizeof(*caps));
 	caps->x_resolution         = cfg->width;
 	caps->y_resolution         = cfg->height;
 	/*
@@ -517,7 +516,7 @@ static int hx8353e_init(const struct device *dev)
 					DT_DRV_INST(n), mipi_mode),	\
 			.color_coding = MIPI_DBI_MODE_RGB565,		\
 			.config       = MIPI_DBI_SPI_CONFIG_DT_INST(	\
-					n, SPI_OP_MODE_MASTER |		\
+					n, SPI_OP_MODE_CONTROLLER |	\
 					SPI_WORD_SET(8), 0),		\
 		},							\
 		.width         = DT_INST_PROP(n, width),			\

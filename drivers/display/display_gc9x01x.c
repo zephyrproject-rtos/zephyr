@@ -570,8 +570,6 @@ static void gc9x01x_get_capabilities(const struct device *dev,
 	struct gc9x01x_data *data = dev->data;
 	const struct gc9x01x_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
-
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
 	capabilities->current_pixel_format = data->pixel_format;
 
@@ -625,7 +623,7 @@ static DEVICE_API(display, gc9x01x_api) = {
 		.dbi_config = {                                                                    \
 			.mode = MIPI_DBI_MODE_SPI_4WIRE,                                           \
 			.config = MIPI_DBI_SPI_CONFIG_DT_INST(inst,                                \
-							      SPI_OP_MODE_MASTER |                 \
+							      SPI_OP_MODE_CONTROLLER |             \
 							      SPI_WORD_SET(8), 0),                 \
 		},                                                                                 \
 		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \

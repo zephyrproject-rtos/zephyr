@@ -124,7 +124,7 @@ static int peci_npcx_enable(const struct device *dev)
 
 	reg->PECI_CTL_STS = BIT(NPCX_PECI_CTL_STS_DONE) | BIT(NPCX_PECI_CTL_STS_CRC_ERR) |
 			    BIT(NPCX_PECI_CTL_STS_ABRT_ERR);
-	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	k_irq_clear_pending(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 
 	k_sem_give(&data->lock);

@@ -1,0 +1,37 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * TAF (Target Attached Flash) test overlay for frdm_mcxa577.
+ *
+ * Instead of routing eSPI TAF flash requests to the on-board W25Q64 NOR
+ * (flexspi), back the TAF flash device with a RAM-based flash simulator.
+ * This lets the eSPI target respond to host-initiated flash read/write/erase
+ * without depending on the physical SPI NOR part. The simulator allocates its
+ * own static RAM buffer (no memory-region is specified).
+ */
+
+/ {
+	soc {
+		espi_taf_sim_flash: sim-flash@0 {
+			compatible = "zephyr,sim-flash";
+			reg = <0x0 0x1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			erase-value = <0xff>;
+
+			taf_sim_storage: flash_sim@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 DT_SIZE_K(64)>;
+				erase-block-size = <DT_SIZE_K(4)>;
+				write-block-size = <1>;
+			};
+		};
+	};
+};
+
+&espi_taf {
+	status = "okay";
+	flash-dev = <&espi_taf_sim_flash>;
+};

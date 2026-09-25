@@ -57,6 +57,8 @@ int main(void)
 	k_queue_init(&queue);
 	k_queue_append(&queue, &item);
 	(void)k_queue_get(&queue, K_NO_WAIT);
+	/* Exercise the empty no-wait path without emitting a blocking event. */
+	(void)k_queue_get(&queue, K_NO_WAIT);
 
 	k_fifo_init(&fifo);
 	k_fifo_put(&fifo, &item);

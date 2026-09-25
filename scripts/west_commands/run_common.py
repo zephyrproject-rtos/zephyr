@@ -71,6 +71,11 @@ class SocBoardFilesProcessing:
     priority: int = IGNORED_RUN_ONCE_PRIORITY
     yaml: object = None
 
+
+def zephyr_base_abs_path(dir: Path, file: Path) -> Path:
+    return dir / file if dir.is_absolute() else ZEPHYR_BASE / dir / file
+
+
 def import_from_path(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
@@ -170,6 +175,16 @@ def get_domains_to_process(build_dir, args, domain_file, get_all_domain=False):
         # Use domains from domain file with flash order
         return domains.get_domains(args.domain, default_flash_order=True)
 
+def filter_used_cmds(used_cmds, board_names):
+    # Reduce entries to only those having matching board names (either exact or with regex) and
+    # remove any entries with empty board lists
+    for entry in used_cmds:
+        entry.boards = [match for match in entry.boards
+                        if any(re.match(fr'^{match}$', check) is not None
+                               for check in board_names)]
+
+    return [entry for entry in used_cmds if len(entry.boards) > 0]
+
 def do_run_common(command, user_args, user_runner_args, domain_file=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
@@ -215,6 +230,10 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
 
     domains = get_domains_to_process(build_dir, user_args, domain_file)
 
+    # Must be defined even for a single domain so the filter_used_cmds() call
+    # below always has a board set to work with.
+    board_names = set()
+
     if len(domains) > 1:
         if len(user_runner_args) > 0:
             command.wrn("Specifying runner options for multiple domains is experimental.\n"
@@ -223,7 +242,6 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
 
         # Process all domains to load board names and populate flash runner
         # parameters.
-        board_names = set()
         for d in domains:
             if d.build_dir is None:
                 build_dir = get_build_dir(user_args, config=command.config)
@@ -241,12 +259,14 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
             # once per unique board name.
             for directory in cache.get_list('SOC_DIRECTORIES'):
                 if directory not in processed_boards:
-                    check_files.append(SocBoardFilesProcessing(Path(directory) / 'soc.yml'))
+                    check_files.append(SocBoardFilesProcessing(
+                        zephyr_base_abs_path(Path(directory), Path('soc.yml'))))
                     processed_boards.add(directory)
 
             for directory in cache.get_list('BOARD_DIRECTORIES'):
                 if directory not in processed_boards:
-                    check_files.append(SocBoardFilesProcessing(Path(directory) / 'board.yml', True))
+                    check_files.append(SocBoardFilesProcessing(
+                        zephyr_base_abs_path(Path(directory), Path('board.yml')), True))
                     processed_boards.add(directory)
 
         for check in check_files:
@@ -292,23 +312,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
 
                         used_cmds.append(UsedFlashCommand(cmd, targets, data['runners'], run_first))
 
-    # Reduce entries to only those having matching board names (either exact or with regex) and
-    # remove any entries with empty board lists
-    for i, entry in enumerate(used_cmds):
-        for l, match in enumerate(entry.boards):
-            match_found = False
-
-            # Check if there is a matching board for this regex
-            for check in board_names:
-                if re.match(fr'^{match}$', check) is not None:
-                    match_found = True
-                    break
-
-            if not match_found:
-                del entry.boards[l]
-
-        if len(entry.boards) == 0:
-            del used_cmds[i]
+    used_cmds = filter_used_cmds(used_cmds, board_names)
 
     # Set up runner logging to delegate to the WestCommand logging methods.
     forward_logging_to_west(command, 'runners')

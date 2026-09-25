@@ -81,6 +81,16 @@ static int gnss_nmea_generic_resume(const struct device *dev)
 	return ret;
 }
 
+#if CONFIG_PM_DEVICE
+static int gnss_nmea_generic_suspend(const struct device *dev)
+{
+	struct gnss_nmea_generic_data *data = dev->data;
+
+	modem_chat_release(&data->chat);
+	return modem_pipe_close(data->uart_pipe, K_SECONDS(10));
+}
+#endif
+
 static DEVICE_API(gnss, gnss_api) = {
 };
 
@@ -172,6 +182,8 @@ static int gnss_nmea_generic_pm_action(const struct device *dev, enum pm_device_
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		return gnss_nmea_generic_resume(dev);
+	case PM_DEVICE_ACTION_SUSPEND:
+		return gnss_nmea_generic_suspend(dev);
 	default:
 		return -ENOTSUP;
 	}

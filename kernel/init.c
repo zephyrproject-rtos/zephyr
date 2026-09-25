@@ -90,14 +90,11 @@ static void z_init_static_threads(void)
 #endif /* CONFIG_USERSPACE */
 
 	/*
-	 * Non-legacy static threads may be started immediately or
+	 * Static threads may be started immediately or
 	 * after a previously specified delay. Even though the
 	 * scheduler is locked, ticks can still be delivered and
 	 * processed. Take a sched lock to prevent them from running
 	 * until they are all started.
-	 *
-	 * Note that static threads defined using the legacy API have a
-	 * delay of K_FOREVER.
 	 */
 	k_sched_lock();
 	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data) {

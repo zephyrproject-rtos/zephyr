@@ -35,7 +35,7 @@ config ARC_FIRQ
 	default n if "$(BOARD_REVISION)" = "2.3.0"
 	default y if "$(BOARD_REVISION)" = "2.2.0"
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 if (ARC_MPU_VER = 2)

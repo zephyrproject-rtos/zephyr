@@ -7,7 +7,6 @@ config SSH_SERVER
 	select EXPERIMENTAL
 	select ZVFS
 	select ZVFS_EVENTFD
-	select RING_BUFFER
 	select NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
 	  SSH-2 server support.
@@ -18,7 +17,6 @@ config SSH_CLIENT
 	select EXPERIMENTAL
 	select ZVFS
 	select ZVFS_EVENTFD
-	select RING_BUFFER
 	select NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
 	  SSH-2 client support.
@@ -144,10 +142,10 @@ config SSH_DEFAULT_WELCOME_BANNER
 config SSH_SHELL
 	bool
 	depends on NET_SHELL
+	depends on SHELL_BACKEND_SSH
 	select GETOPT_LONG
 	select SHELL_GETOPT
 	select POSIX_C_LIB_EXT
-	depends on DNS_RESOLVER
 	default y
 
 endif
@@ -166,7 +164,7 @@ config SSH_HAS_INFO_BANNER
 
 config SSH_SERVER_SHELL_COUNT
 	int "SSH shell max channels (per transport)"
-	depends on SSH_SHELL && SSH_SERVER
+	depends on SHELL_BACKEND_SSH && SSH_SERVER
 	default 1
 	help
 	  This tells how many simultaneous SSH shell connections

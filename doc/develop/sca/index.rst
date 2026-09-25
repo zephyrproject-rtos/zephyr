@@ -51,6 +51,23 @@ Remember to add ``/path/to/my_tools`` to :makevar:`SCA_ROOT`.
 ``-DSCA_ROOT=<sca_root>``, or added by a Zephyr module in its :file:`module.yml`
 file, see :ref:`Zephyr Modules - Build settings <modules_build_settings>`
 
+Compiler and linker launchers
+=============================
+
+An SCA tool that needs to observe or wrap the compilation and link commands
+does so by setting the ``CMAKE_<LANG>_COMPILER_LAUNCHER`` and
+``CMAKE_<LANG>_LINKER_LAUNCHER`` variables from its :file:`sca.cmake`. They must
+be set as normal variables, not as cache entries.
+
+A launcher set this way replaces any launcher that was already configured,
+``ccache`` included. A tool that is a transparent wrapper, meaning it runs the
+command it is given unmodified, may instead keep the previous launcher by
+appending it:
+
+.. code-block:: cmake
+
+   set(CMAKE_C_COMPILER_LAUNCHER ${my_wrapper} ${CMAKE_C_COMPILER_LAUNCHER})
+
 .. _sca_native_tools:
 
 Native SCA Tool support

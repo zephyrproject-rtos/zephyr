@@ -26,6 +26,7 @@ supported:
   - watchdog
   - flash
   - netif:eth
+  - ptp_clock
   - edac
   - can
   - dac
@@ -33,4 +34,5 @@ supported:
   - crc
   - pwm
   - tsi
+  - usbd
 vendor: nxp

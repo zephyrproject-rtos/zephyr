@@ -70,7 +70,7 @@ struct i2c_ra_iic_data {
 static int calc_iic_ctrl_clock_setting(const struct device *dev, const uint32_t ctrl_rate,
 				       iic_master_clock_settings_t *clk_cfg);
 #ifdef CONFIG_I2C_TARGET
-static int calc_iic_target_clock_setting(const struct device *dev, const uint32_t slave_rate,
+static int calc_iic_target_clock_setting(const struct device *dev, const uint32_t target_rate,
 					 iic_slave_clock_settings_t *clk_cfg);
 #endif /* CONFIG_I2C_TARGET */
 
@@ -143,12 +143,12 @@ static int i2c_ra_iic_configure(const struct device *dev, uint32_t dev_config)
 
 	fsp_err = R_IIC_MASTER_Close(&data->control_ctrl);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to close I2C master instance. FSP_ERR=%d", fsp_err);
+		LOG_ERR("Failed to close I2C controller instance. FSP_ERR=%d", fsp_err);
 		return -EIO;
 	}
 	fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to open I2C master instance. FSP_ERR=%d", fsp_err);
+		LOG_ERR("Failed to open I2C controller instance. FSP_ERR=%d", fsp_err);
 		return -EIO;
 	}
 
@@ -506,7 +506,7 @@ static int i2c_ra_iic_init(const struct device *dev)
 	}
 
 	fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
-	__ASSERT(fsp_err == FSP_SUCCESS, "%s: Open iic master failed. FSP_ERR=%d", __func__,
+	__ASSERT(fsp_err == FSP_SUCCESS, "%s: Open iic controller failed. FSP_ERR=%d", __func__,
 		 fsp_err);
 
 #ifdef CONFIG_I2C_TARGET
@@ -695,7 +695,7 @@ static int calc_iic_ctrl_clock_setting(const struct device *dev, const uint32_t 
 }
 
 #ifdef CONFIG_I2C_TARGET
-static int calc_iic_target_clock_setting(const struct device *dev, const uint32_t slave_rate,
+static int calc_iic_target_clock_setting(const struct device *dev, const uint32_t target_rate,
 					 iic_slave_clock_settings_t *clk_cfg)
 {
 	const struct i2c_ra_iic_config *config = dev->config;
@@ -713,9 +713,9 @@ static int calc_iic_target_clock_setting(const struct device *dev, const uint32_
 		return ret;
 	}
 
-	if (slave_rate == I2C_SLAVE_RATE_FASTPLUS) {
+	if (target_rate == I2C_SLAVE_RATE_FASTPLUS) {
 		requested_delay_ns = 50;
-	} else if (slave_rate == I2C_SLAVE_RATE_FAST) {
+	} else if (target_rate == I2C_SLAVE_RATE_FAST) {
 		requested_delay_ns = 100;
 	} else {
 		requested_delay_ns = 250;

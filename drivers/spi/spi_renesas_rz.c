@@ -247,7 +247,7 @@ static int spi_rz_configure(const struct device *dev, const struct spi_config *s
 	}
 
 	/* SPI mode */
-	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
+	if (spi_cfg->operation & SPI_OP_MODE_PERIPHERAL) {
 		data->fsp_config->operating_mode = SPI_MODE_SLAVE;
 	} else {
 		data->fsp_config->operating_mode = SPI_MODE_MASTER;
@@ -282,7 +282,7 @@ static int spi_rz_configure(const struct device *dev, const struct spi_config *s
 		return -ENOTSUP;
 	}
 
-	/* SPI slave select polarity */
+	/* SPI chip select polarity */
 	if (spi_cfg->operation & SPI_CS_ACTIVE_HIGH) {
 		spi_extend->ssl_polarity = CONCAT(SPI_PREFIX, _SSLP_HIGH);
 	} else {
@@ -290,7 +290,7 @@ static int spi_rz_configure(const struct device *dev, const struct spi_config *s
 	}
 
 	/* Calculate bitrate */
-	if ((spi_cfg->frequency > 0) && (!(spi_cfg->operation & SPI_OP_MODE_SLAVE))) {
+	if ((spi_cfg->frequency > 0) && (!(spi_cfg->operation & SPI_OP_MODE_PERIPHERAL))) {
 #ifdef CONFIG_SPI_RENESAS_RZ_SPI_B
 		err = R_SPI_B_CalculateBitrate(spi_cfg->frequency, spi_extend->clock_source,
 					       &spi_extend->spck_div);
@@ -307,15 +307,15 @@ static int spi_rz_configure(const struct device *dev, const struct spi_config *s
 	spi_extend->spi_comm = CONCAT(SPI_PREFIX, _COMMUNICATION_FULL_DUPLEX);
 
 	if (spi_cs_is_gpio(spi_cfg) || !IS_ENABLED(CONFIG_SPI_USE_HW_SS)) {
-		if ((spi_cfg->operation & SPI_OP_MODE_SLAVE) &&
+		if ((spi_cfg->operation & SPI_OP_MODE_PERIPHERAL) &&
 		    (data->fsp_config->clk_phase == SPI_CLK_PHASE_EDGE_ODD)) {
-			LOG_DEV_ERR(dev, "The CPHA bit must be set to 1 slave mode");
+			LOG_DEV_ERR(dev, "The CPHA bit must be set to 1 peripheral mode");
 			return -EIO;
 		}
 		spi_extend->spi_clksyn = CONCAT(SPI_PREFIX, _SSL_MODE_CLK_SYN);
 	} else {
 		spi_extend->spi_clksyn = CONCAT(SPI_PREFIX, _SSL_MODE_SPI);
-		switch (spi_cfg->slave) {
+		switch (spi_cfg->peripheral) {
 		case 0:
 			spi_extend->ssl_select = CONCAT(SPI_PREFIX, _SSL_SELECT_SSL0);
 			break;
@@ -448,15 +448,15 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		goto end_transceive;
 	}
 	if (data->ctx.rx_len == 0) {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? spi_context_total_tx_len(&data->ctx)
 					 : data->ctx.tx_len;
 	} else if (data->ctx.tx_len == 0) {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? spi_context_total_rx_len(&data->ctx)
 					 : data->ctx.rx_len;
 	} else {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? MAX(spi_context_total_tx_len(&data->ctx),
 					       spi_context_total_rx_len(&data->ctx))
 					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
@@ -525,11 +525,11 @@ end_transceive:
 
 #endif /* CONFIG_SPI_RENESAS_RZ_INTERRUPT || CONFIG_SPI_RENESAS_RZ_DMA */
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(spi_ctx) && !ret) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(spi_ctx) && !ret) {
 		ret = spi_ctx->recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 	spi_context_cs_control(spi_ctx, false);
 
@@ -691,15 +691,16 @@ static void spi_rz_txi_isr(const struct device *dev) __maybe_unused;
 
 static void spi_rz_rxi_isr(const struct device *dev)
 {
-#ifndef CONFIG_SPI_SLAVE
+#ifndef CONFIG_SPI_PERIPHERAL
 	ARG_UNUSED(dev);
 	SPI_RXI_ISR();
-#else /* CONFIG_SPI_SLAVE */
+#else /* CONFIG_SPI_PERIPHERAL */
 	struct spi_rz_data *data = dev->data;
 
 	SPI_RXI_ISR();
 
-	if (spi_context_is_slave(&data->ctx) && data->fsp_ctrl->rx_count == data->fsp_ctrl->count) {
+	if (spi_context_is_peripheral(&data->ctx) &&
+	    data->fsp_ctrl->rx_count == data->fsp_ctrl->count) {
 		if (data->ctx.rx_buf != NULL && data->ctx.tx_buf != NULL) {
 			data->ctx.recv_frames = MIN(spi_context_total_tx_len(&data->ctx),
 						    spi_context_total_rx_len(&data->ctx));
@@ -721,7 +722,7 @@ static void spi_rz_rxi_isr(const struct device *dev)
 		spi_context_complete(&data->ctx, dev, 0);
 	}
 
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 }
 
 static void spi_rz_txi_isr(const struct device *dev)

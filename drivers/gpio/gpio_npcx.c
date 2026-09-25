@@ -20,9 +20,8 @@
 LOG_MODULE_REGISTER(gpio_npcx, CONFIG_GPIO_LOG_LEVEL);
 
 /* GPIO module instances */
-#define NPCX_GPIO_DEV(inst) DEVICE_DT_INST_GET(inst),
 static const struct device *const gpio_devs[] = {
-	DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEV)
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
 };
 
 /* Driver config */

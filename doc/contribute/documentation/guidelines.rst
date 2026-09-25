@@ -698,6 +698,51 @@ Cross-referencing C documentation
 
    You may provide a custom link text, similar to the built-in :rst:role:`ref` role.
 
+Cross-referencing CMake documentation
+=====================================
+
+You may use the following roles to cross-reference the documentation of Zephyr's CMake modules,
+commands, and variables.
+
+.. rst:role:: cmake:module
+
+   This role is used to reference a CMake module. For example::
+
+      See :cmake:module:`extensions` for more information.
+
+   Will render as:
+
+      See :cmake:module:`extensions` for more information.
+
+.. rst:role:: cmake:command
+
+   This role is used to reference a CMake command. For example::
+
+      See :cmake:command:`yaml_load` for more information.
+
+   Will render as:
+
+      See :cmake:command:`yaml_load` for more information.
+
+   Commands documented by CMake itself are referenced through their fully qualified name, given as
+   an explicit link target::
+
+      See :cmake:command:`target_sources <command:target_sources>` for more information.
+
+   Will render as:
+
+      See :cmake:command:`target_sources <command:target_sources>` for more information.
+
+.. rst:role:: cmake:variable
+
+   This role is used to reference a CMake variable. For example::
+
+      See :cmake:variable:`CMAKE_C_COMPILER` for more information.
+
+   Will render as:
+
+      See :cmake:variable:`CMAKE_C_COMPILER` for more information.
+
 Visual Elements
 ***************
 
@@ -813,6 +858,11 @@ To include a mermaid diagram in a document, use the :rst:dir:`mermaid` directive
             through maybe_active and maybe_inactive intermediate states before each state becomes
             stable.
 
+      ---
+      config:
+        state:
+          useMaxWidth: false
+      ---
       stateDiagram-v2
 
           State inactive {
@@ -841,6 +891,11 @@ Would render as:
          through maybe_active and maybe_inactive intermediate states before each state becomes
          stable.
 
+   ---
+   config:
+     state:
+       useMaxWidth: false
+   ---
    stateDiagram-v2
 
        State inactive {
@@ -860,6 +915,12 @@ Would render as:
        maybe_active --> active : After(x ms)
        maybe_inactive --> inactive : After(x ms)
 
+
+A diagram is drawn across the width of the page and its height follows from its aspect ratio, so a
+diagram that is taller than it is wide ends up much larger than it needs to be. Turning off
+``useMaxWidth``, as in the example above, keeps the diagram at the size Mermaid computed for it; it
+still shrinks to fit a narrow screen. The setting belongs to the diagram type, ``state`` here and
+``flowchart``, ``sequence`` or another type elsewhere.
 
 For references about supported diagrams, syntax, and samples; please refer to the `Mermaid documentation`_.
 For fast iteration when creating or updating diagrams, you can use the `Mermaid live editor`_.

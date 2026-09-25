@@ -9,6 +9,7 @@
 #include <freq.h>
 #include <dt-bindings/pinctrl/rtl87x2g-pinctrl.h>
 #include <dt-bindings/clock/rtl87x2g-clocks.h>
+#include <dt-bindings/dma/rtl87x2g-dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -579,7 +580,7 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			is-slave;
+			is-peripheral;
 		};
 
 		spi1: spi@40013400 {
@@ -592,9 +593,9 @@
 			#size-cells = <0>;
 		};
 
-		can: can@40038000 {
+		can: can@40028000 {
 			compatible = "realtek,bee-can";
-			reg = <0x40038000 0x34c>;
+			reg = <0x40028000 0x34c>;
 			interrupts = <72 1>;
 			clocks = <&cctl APB_CLK(A2C)>;
 			status = "disabled";

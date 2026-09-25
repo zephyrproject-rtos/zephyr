@@ -253,6 +253,8 @@
 			compatible = "infineon,xmc4xxx-ethernet", "snps,dwmac";
 			reg = <0x5000c000 0x3fff>;
 			interrupts = <108 1>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
 			status = "disabled";
 
 			mdio: mdio {
@@ -260,6 +262,10 @@
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
 			};
 		};
 
@@ -291,6 +297,21 @@
 				interrupts = <78 1>;
 				status = "disabled";
 			};
+		};
+
+		usb0: usb@50040000 {
+			compatible = "infineon,xmc4xxx-usb", "snps,dwc2";
+			reg = <0x50040000 0x8000>;
+			interrupts = <107 1>;
+			num-in-eps = <7>;
+			num-out-eps = <7>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x228f5930>;
+			ghwcfg4 = <0xdbf08030>;
+			g-rx-fifo-size = <282>;
+			g-np-tx-fifo-size = <16>;
+			g-tx-fifo-size = <128 128 32 16 16 16>;
+			status = "disabled";
 		};
 	};
 };

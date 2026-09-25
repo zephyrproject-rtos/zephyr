@@ -6,28 +6,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
-#include <soc.h>
-#include <stm32_ll_i2c.h>
-#include <stm32_ll_rcc.h>
-#include <stm32_cache.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
 
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2c_ll_stm32_v2_rtio);
+#include <soc.h>
+#include <stm32_cache.h>
+#include <stm32_ll_i2c.h>
+#include <stm32_ll_rcc.h>
+
+#include <errno.h>
 
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
+
+LOG_MODULE_REGISTER(i2c_ll_stm32_v2_rtio, CONFIG_I2C_LOG_LEVEL);
 
 #if CONFIG_STM32_HAL2
 #define STM32_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period) \
@@ -351,13 +352,13 @@ int i2c_stm32_target_register(const struct device *dev,
 		return ret;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32F7X)
+#if defined(I2C_CR1_WUPEN)
 	if (pm_device_wakeup_is_capable(dev)) {
 		/* Enable wake-up from stop */
 		LOG_DBG("i2c: enabling wakeup from stop");
 		LL_I2C_EnableWakeUpFromStop(cfg->i2c);
 	}
-#endif /* !CONFIG_SOC_SERIES_STM32F7X */
+#endif /* I2C_CR1_WUPEN */
 
 	LL_I2C_Enable(i2c);
 
@@ -441,13 +442,13 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 	LL_I2C_Disable(i2c);
 
-#if !defined(CONFIG_SOC_SERIES_STM32F7X)
+#if defined(I2C_CR1_WUPEN)
 	if (pm_device_wakeup_is_capable(dev)) {
 		/* Disable wake-up from STOP */
 		LOG_DBG("i2c: disabling wakeup from stop");
 		LL_I2C_DisableWakeUpFromStop(i2c);
 	}
-#endif /* !CONFIG_SOC_SERIES_STM32F7X */
+#endif /* I2C_CR1_WUPEN */
 
 	/* Release the device */
 	(void)pm_device_runtime_put(dev);

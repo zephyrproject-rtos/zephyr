@@ -157,6 +157,11 @@ int hw_irq_ctrl_is_irq_enabled(unsigned int irq)
 	return (irq_mask & ((uint64_t)1 << irq))?1:0;
 }
 
+int hw_irq_ctrl_is_irq_pending(unsigned int irq)
+{
+	return (irq_premask & ((uint64_t)1 << irq))?1:0;
+}
+
 /**
  * Get the current interrupt enable mask
  */

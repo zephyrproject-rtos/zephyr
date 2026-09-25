@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <st/mp13/stm32mp135.dtsi>
+#include <st/mp13/stm32mp135f.dtsi>
 #include <st/mp13/stm32mp135faex-pinctrl.dtsi>
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
@@ -100,6 +100,18 @@
 &cpusw {
 	clocks = <&clk_hsi>;
 	clock-frequency = <DT_FREQ_M(64)>;
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
 	status = "okay";
 };
 
@@ -311,7 +323,13 @@ csi_interface: &dcmipp {
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy0>;
 	memory-regions = <&eth_ram>;
+	nvmem-cells = <&ethernet_mac1_address>;
+	nvmem-cell-names = "mac-address";
 
+	status = "okay";
+};
+
+&ptp_clock0 {
 	status = "okay";
 };
 
@@ -332,6 +350,10 @@ csi_interface: &dcmipp {
 	status = "okay";
 };
 
+&hash {
+	status = "okay";
+};
+
 &mac1 {
 	pinctrl-0 = <&eth2_txd0_pf7
 		     &eth2_txd1_pg11
@@ -345,7 +367,13 @@ csi_interface: &dcmipp {
 	phy-handle = <&eth_phy1>;
 	memory-regions = <&eth_ram>;
 	st,ext-phyclk;
+	nvmem-cells = <&ethernet_mac2_address>;
+	nvmem-cell-names = "mac-address";
 
+	status = "okay";
+};
+
+&ptp_clock1 {
 	status = "okay";
 };
 

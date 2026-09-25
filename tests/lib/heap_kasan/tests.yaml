@@ -1,8 +1,10 @@
 tests:
   libraries.heap_kasan:
-    tags: heap asan
-    # RX does not support -fsanitize=kernel-address.
-    filter: not CONFIG_RX
+    tags:
+      - heap
+      - asan
+    # RX and TriCore do not support -fsanitize=kernel-address.
+    filter: not CONFIG_RX and not CONFIG_TRICORE
     integration_platforms:
       - qemu_riscv32
       - qemu_cortex_m3

@@ -64,7 +64,7 @@ ZTEST(test_timestamp, test_custom_timestamp)
 			"custom-timestamp: " DNAME "/" SNAME ": " TEST_STR "\r\n" :
 			"[0000000001] " DNAME "/" SNAME ": " TEST_STR "\r\n";
 
-	char package[256];
+	char __aligned(Z_LOG_MSG_ALIGNMENT) package[256];
 	uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP;
 	int err;
 

@@ -42,8 +42,6 @@ struct reassembly_buf_meta_data {
 	uint16_t conn_handle;
 };
 
-static void clear_on_disconnect(struct bt_conn *conn, uint8_t reason);
-
 NET_BUF_POOL_FIXED_DEFINE(reassembly_buf_pool, CONFIG_BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_CNT,
 			  CONFIG_BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_SIZE,
 			  sizeof(struct reassembly_buf_meta_data), NULL);
@@ -51,10 +49,6 @@ NET_BUF_POOL_FIXED_DEFINE(reassembly_buf_pool, CONFIG_BT_CHANNEL_SOUNDING_REASSE
 static sys_slist_t reassembly_bufs = SYS_SLIST_STATIC_INIT(&reassembly_bufs);
 
 struct bt_conn_le_cs_subevent_result reassembled_result;
-
-BT_CONN_CB_DEFINE(cs_conn_callbacks) = {
-	.disconnected = clear_on_disconnect,
-};
 
 /** @brief Allocates new reassembly buffer identified by the connection handle
  *
@@ -228,6 +222,10 @@ static void clear_on_disconnect(struct bt_conn *conn, uint8_t reason)
 		free_reassembly_buf(&buf);
 	}
 }
+
+BT_CONN_CB_DEFINE(cs_conn_callbacks) = {
+	.disconnected = clear_on_disconnect,
+};
 
 /** @brief Invokes user callback for new subevent results
  *

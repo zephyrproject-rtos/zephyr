@@ -117,7 +117,11 @@ void mcux_qtmr_timer_handler(const struct device *dev, uint32_t status)
 		counter_alarm_callback_t alarm_cb = data->alarm_callback;
 
 		data->alarm_callback = NULL;
-		alarm_cb(dev, config->channel, current, data->alarm_user_data);
+		/* each QTMR channel is exposed as its own counter device, so 0 is the
+		 * only alarm channel this driver accepts. Report that rather than the
+		 * hardware channel from the dts.
+		 */
+		alarm_cb(dev, 0, current, data->alarm_user_data);
 	}
 
 	if ((status & kQTMR_OverflowFlag) && data->top_callback) {
@@ -144,7 +148,7 @@ static void mcux_qtmr_isr(const struct device *timers[])
 			uint32_t channel_status = QTMR_GetStatus(config->base, ch);
 			bool sw_pending = (atomic_clear(&data->irq_pending) != 0);
 
-			/* A late alarm forced through NVIC_SetPendingIRQ has no
+			/* A late alarm forced through k_irq_set_pending() has no
 			 * hardware compare flag set. Synthesize the compare event
 			 * so the handler runs the alarm callback immediately.
 			 */
@@ -300,7 +304,7 @@ static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 			 * forcing the interrupt.
 			 */
 			atomic_set(&data->irq_pending, 1);
-			NVIC_SetPendingIRQ(config->irqn);
+			k_irq_set_pending(config->irqn);
 		} else {
 			QTMR_DisableInterrupts(config->base, config->channel,
 					       kQTMR_Compare1InterruptEnable);

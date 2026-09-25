@@ -716,6 +716,34 @@ static void vocs_client_reset(struct bt_vocs_client *inst)
 	bt_conn_drop(&inst->conn);
 }
 
+int bt_vocs_client_free_instance(struct bt_vocs *vocs)
+{
+	ARRAY_FOR_EACH_PTR(insts, inst) {
+		if (vocs == &inst->vocs) {
+			if (!atomic_test_bit(inst->flags, BT_VOCS_CLIENT_FLAG_ACTIVE)) {
+				return -EALREADY;
+			}
+
+			/* Test and set the BT_VOCS_CLIENT_FLAG_BUSY flag here to reduce, but not
+			 * eliminate, chance of any operations happening while we are free'ing this
+			 * instance.
+			 */
+			if (atomic_test_and_set_bit(inst->flags, BT_VOCS_CLIENT_FLAG_BUSY)) {
+				return -EBUSY;
+			}
+
+			vocs_client_reset(inst);
+
+			atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_BUSY);
+			atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_ACTIVE);
+
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
 int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *vocs,
 		     const struct bt_vocs_discover_param *param)
 {

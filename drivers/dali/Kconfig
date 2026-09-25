@@ -4,12 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig DALI
-	bool "Digital Addressable Lighting Interface (DALI) drivers"
+	bool "Digital Addressable Lighting Interface (DALI) drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enable generic support for DALI bus (IEC 62386).
-	  This feature is experimental and may be unstable; it requires
-	  CONFIG_EXPERIMENTAL to be enabled.
+	  This feature is experimental and may be unstable.
 
 if DALI
 

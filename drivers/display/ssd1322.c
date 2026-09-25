@@ -288,7 +288,7 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
-	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %zu", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
 	cmd_data[0] = config->column_offset + (x >> align_shift);
@@ -327,7 +327,6 @@ static void ssd1322_get_capabilities(const struct device *dev, struct display_ca
 	const struct ssd1322_config *config = dev->config;
 	struct ssd1322_data *data = dev->data;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01 | PIXEL_FORMAT_L_8;
@@ -567,7 +566,7 @@ static DEVICE_API(display, ssd1322_driver_api) = {
 		.external_vsl = DT_PROP(node_id, external_vsl),                                    \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
-			node_id, SSD1322_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),              \
+			node_id, SSD1322_WORD_SIZE(node_id) | SPI_OP_MODE_CONTROLLER, 0),          \
 		.conversion_buf = conversion_buf##node_id,                                         \
 		.conversion_buf_size = sizeof(conversion_buf##node_id),                            \
 		SSD1322_GRAYSCALE_TABLE(node_id),                                                \

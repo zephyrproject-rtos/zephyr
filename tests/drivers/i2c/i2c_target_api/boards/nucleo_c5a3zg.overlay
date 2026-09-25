@@ -34,9 +34,15 @@ i2c_test_1: &i2c2 {
 	dmas = IC2_TEST_1_DMA_TX, IC2_TEST_1_DMA_RX;
 	dma-names = "tx", "rx";
 
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb4>;
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
 		size = <256>;
 	};
+};
+
+&xspi1 {
+	status = "disabled";
 };

@@ -13,6 +13,9 @@
 
 LOG_MODULE_REGISTER(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 
+/* Datasheet: I2C/SPI is accessible 50 ms after VDD/VDDIO power-up or reset. */
+#define FXAS21002_BOOT_TIME_MS 50
+
 /* Sample period in microseconds, indexed by output data rate encoding (DR) */
 static const uint32_t sample_period[] = {
 	1250, 2500, 5000, 10000, 20000, 40000, 80000, 80000
@@ -382,6 +385,9 @@ static int fxas21002_init(const struct device *dev)
 		config->ops->byte_write(dev, FXAS21002_REG_CTRLREG1,
 					FXAS21002_CTRLREG1_RST_MASK);
 
+		/* Chip NACKs until the same 50 ms boot time as POR. */
+		k_msleep(FXAS21002_BOOT_TIME_MS);
+
 		/* Wait for the reset sequence to complete */
 		do {
 			if (config->ops->byte_read(dev, FXAS21002_REG_CTRLREG1,
@@ -452,7 +458,7 @@ static DEVICE_API(sensor, fxas21002_driver_api) = {
 
 #define FXAS21002_CONFIG_SPI(inst)								\
 		.bus_cfg = {.spi = SPI_DT_SPEC_INST_GET(inst,					\
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8)) },				\
+			SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8)) },				\
 		.ops = &fxas21002_spi_ops,							\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),				\
 		.inst_on_bus = FXAS21002_BUS_SPI,						\

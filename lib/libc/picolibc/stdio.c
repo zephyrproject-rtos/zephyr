@@ -11,6 +11,7 @@ static LIBC_DATA int (*_stdout_hook)(int);
 int z_impl_zephyr_fputc(int a, FILE *out)
 {
 	(*_stdout_hook)(a);
+	ARG_UNUSED(out);
 	return 0;
 }
 

@@ -60,17 +60,11 @@ static int set_crc_config(const struct device *dev, struct crc_ctx *ctx)
 
 	/* Check the type, polynomial and init value */
 	switch (ctx->type) {
+	case CRC16_ANSI: {
+		__fallthrough;
+	}
 	case CRC16: {
 		if (ctx->polynomial != CRC16_POLY) {
-			return -EINVAL;
-		}
-		ctx->seed &= 0xFFFFU;
-		data->xor_out = 0x0000U;
-		data->is_crc32 = false;
-		break;
-	}
-	case CRC16_ANSI: {
-		if (ctx->polynomial != CRC16_REFLECT_POLY) {
 			return -EINVAL;
 		}
 		ctx->seed &= 0xFFFFU;

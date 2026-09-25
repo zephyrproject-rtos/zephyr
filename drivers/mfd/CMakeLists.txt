@@ -47,3 +47,7 @@ zephyr_library_sources_ifdef(CONFIG_MFD_TLA2528 mfd_tla2528.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_TLE9104 mfd_tle9104.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_LP_FLEXCOMM mfd_nxp_lp_flexcomm.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_MFD_RV3028)
+  zephyr_include_directories(${CMAKE_CURRENT_LIST_DIR})
+endif()

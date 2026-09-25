@@ -15,3 +15,10 @@ tests:
       - CONFIG_ETH_DRIVER=n
       - CONFIG_ASSERT=y
       - CONFIG_NET_IF_MAX_IPV6_COUNT=3
+  net.route.ipv6.reserve_header:
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET=y
+      - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=y
+      - CONFIG_ETH_DRIVER=n
+      - CONFIG_ASSERT=y
+      - CONFIG_NET_IF_MAX_IPV6_COUNT=3

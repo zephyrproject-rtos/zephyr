@@ -13,6 +13,8 @@ config DMA_XILINX_ADMA
 	help
 	  DMA driver for Xilinx ADMA.
 
+if DMA_XILINX_ADMA
+
 config DMA_XILINX_ADMA_SG_BUFFER_COUNT
 	int "Maximum number of scatter-gather descriptors per channel"
 	default 32
@@ -27,3 +29,5 @@ config DMA_XILINX_ADMA_DESC_POOL_ALIGNMENT
 	default 64
 	help
 	  Memory alignment requirement for DMA descriptor pool allocation.
+
+endif

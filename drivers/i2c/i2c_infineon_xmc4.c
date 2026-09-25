@@ -62,7 +62,7 @@ struct ifx_xmc4_i2c_data {
 	uint32_t dev_config;
 	uint8_t target_wr_byte;
 	uint8_t target_wr_buffer[CONFIG_I2C_INFINEON_XMC4_TARGET_BUF];
-	bool ignore_slave_select;
+	bool ignore_target_select;
 	bool is_configured;
 };
 
@@ -203,7 +203,7 @@ static int ifx_xmc4_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 			/* Wait for acknowledge */
 			while ((XMC_I2C_CH_GetStatusFlag(config->i2c) &
 				XMC_I2C_CH_STATUS_FLAG_ACK_RECEIVED) == 0U) {
-				/* wait for ACK from slave */
+				/* wait for ACK from target */
 				if (XMC_I2C_CH_GetStatusFlag(config->i2c) &
 				    I2C_XMC_STATUS_FLAG_ERROR_MASK) {
 					k_sem_give(&data->operation_sem);
@@ -216,14 +216,14 @@ static int ifx_xmc4_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 
 		for (uint32_t buf_index = 0u; buf_index < msg[msg_index].len; buf_index++) {
 			if (cmd_type == XMC_I2C_CH_CMD_WRITE) {
-				/* Transmit next command from I2C master to I2C slave */
+				/* Transmit next command from I2C controller to I2C target */
 				XMC_I2C_CH_MasterTransmit(config->i2c,
 							  msg[msg_index].buf[buf_index]);
 
 				/* Wait for acknowledge */
 				while ((XMC_I2C_CH_GetStatusFlag(config->i2c) &
 					XMC_I2C_CH_STATUS_FLAG_ACK_RECEIVED) == 0U) {
-					/* wait for ACK from slave */
+					/* wait for ACK from target */
 					if (XMC_I2C_CH_GetStatusFlag(config->i2c) &
 					    I2C_XMC_STATUS_FLAG_ERROR_MASK) {
 						k_sem_give(&data->operation_sem);
@@ -252,7 +252,7 @@ static int ifx_xmc4_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 				while ((XMC_I2C_CH_GetStatusFlag(config->i2c) &
 				       (XMC_I2C_CH_STATUS_FLAG_ALTERNATIVE_RECEIVE_INDICATION |
 					XMC_I2C_CH_STATUS_FLAG_RECEIVE_INDICATION)) == 0U) {
-					/* wait for data byte from slave */
+					/* wait for data byte from target */
 					if (XMC_I2C_CH_GetStatusFlag(config->i2c) &
 					    I2C_XMC_STATUS_FLAG_ERROR_MASK) {
 						k_sem_give(&data->operation_sem);
@@ -384,10 +384,11 @@ static void i2c_xmc4_isr(const struct device *dev)
 			break;
 		}
 
-		if (!data->ignore_slave_select && (status & XMC_I2C_CH_STATUS_FLAG_SLAVE_SELECT)) {
-			data->ignore_slave_select = true;
+		if (!data->ignore_target_select &&
+		    (status & XMC_I2C_CH_STATUS_FLAG_SLAVE_SELECT)) {
+			data->ignore_target_select = true;
 
-			/* Start a slave read */
+			/* Start a target read */
 			if (status & XMC_I2C_CH_STATUS_FLAG_SLAVE_READ_REQUESTED) {
 				callbacks->read_requested(data->p_target_config,
 							  &data->target_wr_byte);
@@ -397,13 +398,13 @@ static void i2c_xmc4_isr(const struct device *dev)
 			}
 		}
 
-		/* Continue a slave read */
+		/* Continue a target read */
 		if (status & XMC_I2C_CH_STATUS_FLAG_TRANSMIT_SHIFT_INDICATION) {
 			callbacks->read_processed(data->p_target_config, &data->target_wr_byte);
 			XMC_I2C_CH_SlaveTransmit(config->i2c, data->target_wr_byte);
 		}
 
-		/* Start/Continue a slave write */
+		/* Start/Continue a target write */
 		if (status & (XMC_I2C_CH_STATUS_FLAG_RECEIVE_INDICATION |
 		    XMC_I2C_CH_STATUS_FLAG_ALTERNATIVE_RECEIVE_INDICATION)) {
 			callbacks->write_received(data->p_target_config,
@@ -412,7 +413,7 @@ static void i2c_xmc4_isr(const struct device *dev)
 
 		if ((status & XMC_I2C_CH_STATUS_FLAG_START_CONDITION_RECEIVED) ||
 		    (status & XMC_I2C_CH_STATUS_FLAG_REPEATED_START_CONDITION_RECEIVED)) {
-			data->ignore_slave_select = false;
+			data->ignore_target_select = false;
 		}
 
 		status = XMC_I2C_CH_GetStatusFlag(config->i2c);

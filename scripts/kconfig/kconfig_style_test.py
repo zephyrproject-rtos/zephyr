@@ -21,13 +21,43 @@ def _file_rules(tmp_path, text):
     return {issue.rule for issue in kconfig_style.check_file(path)}
 
 
-# Rule 1: line length, with the $(...) macro exemption.
+# Rule 1: line length, with exemptions for lines that cannot be wrapped.
 def test_line_too_long_flagged():
     assert _rules("config " + "A" * 110 + "\n") == {"line-too-long"}
 
 
 def test_line_too_long_macro_exempt():
-    assert not _rules('config X\n\tdefault "$(' + "y" * 110 + ')"\n')
+    # An unquoted macro call, so the exemption is not down to the quotes.
+    assert not _rules("config X\n\tdepends on $(" + "y" * 110 + ")\n")
+
+
+def test_line_too_long_string_exempt():
+    # Quoted strings cannot be split across continuation lines.
+    assert not _rules('config X\n\tdefault "' + "y" * 110 + '" if Z\n')
+    assert not _rules("config X\n\tdefault '" + "y" * 110 + "' if Z\n")
+
+
+def test_line_too_long_expression_flagged():
+    # Expressions can be wrapped, so lines without a string are still flagged.
+    assert _rules("config X\n\tdepends on A" + " && B" * 25 + "\n") == {"line-too-long"}
+
+
+def test_line_too_long_comment_flagged():
+    # Comments are prose that can be re-wrapped; quotes inside them are not an
+    # exemption, whether the comment fills the line or trails an expression.
+    assert _rules('# See "docs" ' + "y " * 60 + "\n") == {"line-too-long"}
+    assert _rules('config X\n\tdepends on A # see "docs" ' + "y " * 50 + "\n") == {"line-too-long"}
+
+
+def test_line_too_long_help_text_flagged():
+    # Help body text is prose that can be re-wrapped, even when it quotes
+    # something.
+    assert _rules('config X\n\thelp\n\t  Set to "y" ' + "y " * 60 + "\n") == {"line-too-long"}
+
+
+def test_line_too_long_help_macro_exempt():
+    # A macro call cited in help text still cannot be split.
+    assert not _rules("config X\n\thelp\n\t  Uses $(" + "y" * 110 + ").\n")
 
 
 # Rule 2: indentation (tabs, flat layout, help body, continuations).

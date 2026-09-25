@@ -164,7 +164,7 @@ static int flash_ambiq_read(const struct device *dev, off_t offset, void *data, 
 		return 0;
 	}
 
-	memcpy(data, (uint8_t *)(SOC_NV_FLASH_ADDR + offset), len);
+	memcpy(data, (uint8_t *)(SOC_NV_FLASH_ADDR + (ptrdiff_t)offset), len);
 
 	return 0;
 }
@@ -177,7 +177,7 @@ static int flash_ambiq_write(const struct device *dev, off_t offset, const void 
 	uint32_t aligned[FLASH_WRITE_CHUNK_SIZE / sizeof(uint32_t)] = {0};
 	const uint8_t *src = (const uint8_t *)data;
 	size_t remaining = len;
-	size_t current_offset = offset;
+	ptrdiff_t current_offset = (ptrdiff_t)offset;
 	int retry_count;
 
 	/* write address must be block size aligned and the write length must be multiple of block
@@ -258,8 +258,8 @@ static int flash_ambiq_write(const struct device *dev, off_t offset, const void 
 			ret = flash_ambiq_hal_status_to_errno(ret);
 
 			if (ret != 0) {
-				LOG_WRN("Flash write failed at offset 0x%lx (attempt %d/%d): %d",
-					(long)current_offset, retry_count + 1,
+				LOG_WRN("Flash write failed at offset 0x%tx (attempt %d/%d): %d",
+					current_offset, retry_count + 1,
 					FLASH_OPERATION_MAX_RETRIES, ret);
 				continue;
 			}
@@ -271,13 +271,13 @@ static int flash_ambiq_write(const struct device *dev, off_t offset, const void 
 				break;
 			}
 
-			LOG_WRN("Flash write verification failed at offset 0x%lx (attempt %d/%d)",
-				(long)current_offset, retry_count + 1, FLASH_OPERATION_MAX_RETRIES);
+			LOG_WRN("Flash write verification failed at offset 0x%tx (attempt %d/%d)",
+				current_offset, retry_count + 1, FLASH_OPERATION_MAX_RETRIES);
 		}
 
 		if (!write_verified) {
-			LOG_ERR("Flash write failed after %d attempts at offset 0x%lx",
-				FLASH_OPERATION_MAX_RETRIES, (long)current_offset);
+			LOG_ERR("Flash write failed after %d attempts at offset 0x%tx",
+				FLASH_OPERATION_MAX_RETRIES, current_offset);
 			ret = -EIO;
 			break;
 		}
@@ -294,7 +294,7 @@ static int flash_ambiq_write(const struct device *dev, off_t offset, const void 
 
 static bool flash_ambiq_is_erased(off_t offset, size_t len)
 {
-	const uint8_t *flash_ptr = (const uint8_t *)(SOC_NV_FLASH_ADDR + offset);
+	const uint8_t *flash_ptr = (const uint8_t *)(SOC_NV_FLASH_ADDR + (ptrdiff_t)offset);
 
 	for (size_t i = 0; i < len; i++) {
 		if (flash_ptr[i] != FLASH_ERASE_BYTE) {
@@ -321,7 +321,7 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 
 #if defined(AMBIQ_NOR_FLASH)
 	if ((offset % FLASH_ERASE_BLOCK_SIZE) != 0) {
-		LOG_ERR("offset 0x%lx is not on a page boundary", (long)offset);
+		LOG_ERR("offset 0x%tx is not on a page boundary", (ptrdiff_t)offset);
 		return -EINVAL;
 	}
 
@@ -342,7 +342,7 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 #if defined(AMBIQ_NOR_FLASH)
 	/* Apollo2/3: erase each page individually with retry logic */
 	size_t num_pages = len / FLASH_ERASE_BLOCK_SIZE;
-	size_t current_offset = offset;
+	ptrdiff_t current_offset = (ptrdiff_t)offset;
 
 	for (size_t page = 0; page < num_pages; page++) {
 		bool erase_verified = false;
@@ -364,8 +364,8 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 			ret = flash_ambiq_hal_status_to_errno(ret);
 
 			if (ret != 0) {
-				LOG_WRN("Flash erase failed at offset 0x%lx (attempt %d/%d): %d",
-					(long)current_offset, retry_count + 1,
+				LOG_WRN("Flash erase failed at offset 0x%tx (attempt %d/%d): %d",
+					current_offset, retry_count + 1,
 					FLASH_OPERATION_MAX_RETRIES, ret);
 				continue;
 			}
@@ -376,13 +376,13 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 				break;
 			}
 
-			LOG_WRN("Flash erase verification failed at offset 0x%lx (attempt %d/%d)",
-			(long)current_offset, retry_count + 1, FLASH_OPERATION_MAX_RETRIES);
+			LOG_WRN("Flash erase verification failed at offset 0x%tx (attempt %d/%d)",
+			current_offset, retry_count + 1, FLASH_OPERATION_MAX_RETRIES);
 		}
 
 		if (!erase_verified) {
-			LOG_ERR("Flash erase failed after %d attempts at offset 0x%lx",
-				FLASH_OPERATION_MAX_RETRIES, (long)current_offset);
+			LOG_ERR("Flash erase failed after %d attempts at offset 0x%tx",
+				FLASH_OPERATION_MAX_RETRIES, current_offset);
 			ret = -EIO;
 			break;
 		}
@@ -395,7 +395,7 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 
 	for (retry_count = 0; retry_count < FLASH_OPERATION_MAX_RETRIES; retry_count++) {
 		ret = am_hal_mram_main_fill(AM_HAL_MRAM_PROGRAM_KEY, FLASH_ERASE_WORD,
-					    (uint32_t *)(SOC_NV_FLASH_ADDR + offset),
+					    (uint32_t *)(SOC_NV_FLASH_ADDR + (ptrdiff_t)offset),
 					    (len / sizeof(uint32_t)));
 
 		/*
@@ -409,8 +409,10 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 		}
 #else
 		if (ret == AM_HAL_STATUS_SUCCESS) {
-			sys_cache_data_invd_range((void *)(SOC_NV_FLASH_ADDR + offset), len);
-			sys_cache_instr_flush_range((void *)(SOC_NV_FLASH_ADDR + offset), len);
+			sys_cache_data_invd_range((void *)(SOC_NV_FLASH_ADDR +
+							   (ptrdiff_t)offset), len);
+			sys_cache_instr_flush_range((void *)(SOC_NV_FLASH_ADDR +
+							     (ptrdiff_t)offset), len);
 		}
 #endif
 
@@ -418,8 +420,9 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 		ret = flash_ambiq_hal_status_to_errno(ret);
 
 		if (ret != 0) {
-			LOG_WRN("Flash erase failed at offset 0x%lx (attempt %d/%d): %d",
-				(long)offset, retry_count + 1, FLASH_OPERATION_MAX_RETRIES, ret);
+			LOG_WRN("Flash erase failed at offset 0x%tx (attempt %d/%d): %d",
+				(ptrdiff_t)offset, retry_count + 1,
+				FLASH_OPERATION_MAX_RETRIES, ret);
 			continue;
 		}
 
@@ -429,13 +432,13 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 			break;
 		}
 
-		LOG_WRN("Flash erase verification failed at offset 0x%lx (attempt %d/%d)",
-			(long)offset, retry_count + 1, FLASH_OPERATION_MAX_RETRIES);
+		LOG_WRN("Flash erase verification failed at offset 0x%tx (attempt %d/%d)",
+			(ptrdiff_t)offset, retry_count + 1, FLASH_OPERATION_MAX_RETRIES);
 	}
 
 	if (!erase_verified) {
-		LOG_ERR("Flash erase failed after %d attempts at offset 0x%lx",
-			FLASH_OPERATION_MAX_RETRIES, (long)offset);
+		LOG_ERR("Flash erase failed after %d attempts at offset 0x%tx",
+			FLASH_OPERATION_MAX_RETRIES, (ptrdiff_t)offset);
 		ret = -EIO;
 	}
 #endif

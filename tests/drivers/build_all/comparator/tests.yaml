@@ -150,3 +150,10 @@ tests:
       - CONFIG_MFD=y
     platform_allow:
       - kit_psc3m5_evk
+  drivers.comparator.build.wch_comp.ch5xx:
+    extra_args:
+      - DTC_OVERLAY_FILE="wch_comp/ch5xx.overlay"
+    platform_allow:
+      - nano_ch57x/ch570
+      - nano_ch57x/ch572
+    min_ram: 10

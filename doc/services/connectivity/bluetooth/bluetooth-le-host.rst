@@ -99,6 +99,48 @@ Connections
 Connection handling and the related APIs can be found in the
 :ref:`Connection Management <bluetooth_connection_mgmt>` section.
 
+.. _bluetooth_callback_contexts:
+
+Callback execution contexts
+===========================
+
+The Host delivers events to the application through registered callbacks, for
+example those in :c:struct:`bt_conn_cb`, :c:struct:`bt_le_scan_cb` or
+:c:struct:`bt_l2cap_chan_ops`. Unless documented otherwise, these callbacks
+are invoked from a thread context, never from an ISR. Most run in a context
+internal to the stack, but some are today invoked synchronously from within
+the API call that triggers them, and so run in the calling thread: for
+example :c:func:`bt_unpair` invokes ``bond_deleted``, and
+:c:func:`bt_gatt_unsubscribe` can invoke ``notify`` with ``NULL`` data,
+before returning. Neither behavior is part of the API: a callback delivered
+synchronously today may be deferred to a stack-internal context in a future
+release, or vice versa, and the specific thread has changed between releases
+before and may change again. Applications should rely only on the guarantees
+above, not on being called from, or before the return of, anything in
+particular.
+
+When a callback runs in a context internal to the stack, that context is
+shared with the stack's own processing: time spent in the callback delays
+other Bluetooth activity, and blocking carries an additional risk, since a
+wait that only Bluetooth processing itself can satisfy becomes a deadlock,
+because that processing cannot proceed until the callback returns. The
+classic example is allocating a buffer with ``K_FOREVER`` from a pool that is
+replenished by the same context that runs the callback. As applications
+cannot rely on which context a given callback uses, the practices below apply
+to every callback.
+
+Calling Bluetooth APIs from callbacks is common and supported, even though
+most of them may block; the blocking risk is then managed rather than
+avoided:
+
+* Keep callbacks short, and defer work that is long-running or blocks
+  indefinitely to an application-owned thread or work queue.
+* Prefer allocations with ``K_NO_WAIT`` or a bounded timeout over
+  ``K_FOREVER``, and handle the failure.
+* Size buffer pools (for example :kconfig:option:`CONFIG_BT_L2CAP_TX_BUF_COUNT`
+  or :kconfig:option:`CONFIG_BT_ATT_TX_COUNT`) so that allocations made from
+  callbacks do not have to wait.
+
 Security
 ========
 

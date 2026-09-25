@@ -29,6 +29,22 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CO
 
 #define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(CONFIG_BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS)
 
+/* The icbmsg backend invokes the endpoint receive callback from the IPC interrupt handler. */
+#define IS_IPC_RECV_IN_IRQ_CONTEXT(inst) \
+	DT_NODE_HAS_COMPAT(DT_INST_PARENT(inst), zephyr_ipc_icbmsg)
+
+#define IS_IPC_RECV_IN_IRQ_CONTEXT_PLUS(inst) IS_IPC_RECV_IN_IRQ_CONTEXT(inst) +
+
+#if (DT_INST_FOREACH_STATUS_OKAY(IS_IPC_RECV_IN_IRQ_CONTEXT_PLUS) 0) > 0
+/* Support for deferring to thread is needed. */
+#define ANY_INST_RECV_IN_IRQ_CONTEXT 1
+#endif
+
+struct ipc_block_item {
+	const void *ptr;
+	size_t len;
+};
+
 /* The retry of ipc_service_send function requires a small (tens of us) delay.
  * In order to ensure proper delay k_usleep is used when the system clock is
  * precise enough and available (CONFIG_SYS_CLOCK_TICKS_PER_SEC different than 0).
@@ -46,6 +62,9 @@ struct ipc_data {
 	const struct device *ipc;
 #if defined(CONFIG_BT_EXT_ADV)
 	struct hci_ext_adv_discard_ctx ext_adv_discard;
+#endif
+#ifdef ANY_INST_RECV_IN_IRQ_CONTEXT
+	struct k_msgq *rx_msgq;
 #endif
 };
 
@@ -311,10 +330,69 @@ static void hci_ept_bound(void *priv)
 	k_sem_give(&ipc->bound_sem);
 }
 
+#ifdef ANY_INST_RECV_IN_IRQ_CONTEXT
+/* Function defers processing of the received data to a thread.
+ * It utilizes RX buffer holding feature of the IPC service API.
+ */
+static void recv_defer_to_thread(const void *data, size_t len, const struct device *dev)
+{
+	struct ipc_data *ipc = dev->data;
+	struct ipc_block_item block;
+	int err;
+
+	block.ptr = data;
+	block.len = len;
+
+	err = ipc_service_hold_rx_buffer(&ipc->hci_ept, (void *)data);
+	if (err < 0) {
+		LOG_ERR("Failed to hold rx buffer: %d.", err);
+		return;
+	}
+
+	err = k_msgq_put(ipc->rx_msgq, &block, K_NO_WAIT);
+	if (err < 0) {
+		LOG_ERR("Failed to put data into msgq: %d.", err);
+		err = ipc_service_release_rx_buffer(&ipc->hci_ept, (void *)block.ptr);
+		__ASSERT(err == 0, "Failed to release rx buffer: %d.", err);
+	}
+}
+
+static void recv_thread(void *arg0, void *arg1, void *arg2)
+{
+	struct ipc_block_item block;
+	const struct device *dev = arg0;
+	struct ipc_data *ipc = dev->data;
+	int err;
+
+	while (1) {
+		err = k_msgq_get(ipc->rx_msgq, &block, K_FOREVER);
+		if (err < 0) {
+			LOG_ERR("Failed to get data from msgq: %d.", err);
+			continue;
+		}
+
+		bt_ipc_rx(dev, block.ptr, block.len);
+
+		err = ipc_service_release_rx_buffer(&ipc->hci_ept, (void *)block.ptr);
+		if (err < 0) {
+			LOG_ERR("Failed to release rx buffer: %d.", err);
+		}
+	}
+}
+#endif
+
 static void hci_ept_recv(const void *data, size_t len, void *priv)
 {
 	const struct device *dev = priv;
 
+#ifdef ANY_INST_RECV_IN_IRQ_CONTEXT
+	struct ipc_data *ipc = dev->data;
+
+	if (ipc->rx_msgq != NULL) {
+		recv_defer_to_thread(data, len, dev);
+		return;
+	}
+#endif
 	bt_ipc_rx(dev, data, len);
 }
 
@@ -396,7 +474,20 @@ static DEVICE_API(bt_hci, drv) = {
 	.send		= bt_ipc_send,
 };
 
+/* Define the maximum number of IPC blocks for the instance. */
+#define MAX_IPC_BLOCKS(inst) \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_PARENT(inst), zephyr_ipc_icbmsg), \
+		(DT_PROP(DT_INST_PARENT(inst), rx_blocks)), \
+		(16))
+
 #define IPC_DEVICE_INIT(inst) \
+	IF_ENABLED(IS_IPC_RECV_IN_IRQ_CONTEXT(inst), ( \
+		K_MSGQ_DEFINE(ipc_msg_queue_##inst, sizeof(struct ipc_block_item), \
+				MAX_IPC_BLOCKS(inst), sizeof(void *)); \
+		K_THREAD_DEFINE(rx_thread_id_##inst, CONFIG_BT_DRV_RX_STACK_SIZE, recv_thread, \
+			DEVICE_DT_INST_GET(inst), NULL, NULL, \
+			K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, 0); \
+	)) \
 	static struct ipc_data ipc_data_##inst = { \
 		.bound_sem = Z_SEM_INITIALIZER(ipc_data_##inst.bound_sem, 0, 1), \
 		.hci_ept_cfg = { \
@@ -408,6 +499,7 @@ static DEVICE_API(bt_hci, drv) = {
 			.priv = (void *)DEVICE_DT_INST_GET(inst), \
 		}, \
 		.ipc = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
+		IF_ENABLED(IS_IPC_RECV_IN_IRQ_CONTEXT(inst), (.rx_msgq = &ipc_msg_queue_##inst,)) \
 	}; \
 	static const struct bt_hci_driver_config ipc_config_##inst = \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \

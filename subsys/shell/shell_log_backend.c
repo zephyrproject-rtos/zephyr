@@ -40,10 +40,18 @@ void z_shell_log_backend_enable(const struct shell_log_backend *backend,
 
 	if (err == 0) {
 		fifo_reset(backend);
-		log_backend_enable(backend->backend, ctx, init_log_level);
 		log_output_ctx_set(backend->log_output, ctx);
 		backend->control_block->dropped_cnt = 0;
 		backend->control_block->state = SHELL_LOG_BACKEND_ENABLED;
+		/*
+		 * Activate the backend in the logging core as the last step.
+		 * The core dispatches messages only to active backends, so
+		 * once this call returns process() may be invoked from any
+		 * context and must already see a fully initialized backend.
+		 * Otherwise a message processed before the state is set would
+		 * hit the SHELL_LOG_BACKEND_DISABLED case and be lost.
+		 */
+		log_backend_enable(backend->backend, ctx, init_log_level);
 	}
 }
 

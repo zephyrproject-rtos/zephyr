@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_mcxn23x.dtsi"
+
+/*
+ * MCXN236 has 1 MiB of flash. Secure flash is accessed through the
+ * secure alias of the flash controller's AHB window, mirroring the
+ * peripheral/sram secure ranges in nxp_mcxn23x.dtsi.
+ */
+&flash {
+	reg = <0 DT_SIZE_M(1)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
+};

@@ -27,6 +27,7 @@ struct ds2482_config {
 
 struct ds2482_data {
 	struct w1_master_data w1_data;
+	uint8_t reg_config;
 };
 
 static int ds2482_reset_bus(const struct device *dev)
@@ -67,21 +68,20 @@ static int ds2482_write_byte(const struct device *dev, uint8_t byte)
 static int ds2482_configure(const struct device *dev, enum w1_settings_type type, uint32_t value)
 {
 	const struct ds2482_config *config = dev->config;
-
-	uint8_t reg_config = config->reg_config;
+	struct ds2482_data *data = dev->data;
 
 	switch (type) {
 	case W1_SETTING_SPEED:
-		WRITE_BIT(reg_config, DEVICE_1WS_pos, value);
+		WRITE_BIT(data->reg_config, DEVICE_1WS_pos, value);
 		break;
 	case W1_SETTING_STRONG_PULLUP:
-		WRITE_BIT(reg_config, DEVICE_SPU_pos, value);
+		WRITE_BIT(data->reg_config, DEVICE_SPU_pos, value);
 		break;
 	default:
 		return -EINVAL;
 	}
 
-	return ds2482_84_write_config(&config->i2c_spec, reg_config);
+	return ds2482_84_write_config(&config->i2c_spec, data->reg_config);
 }
 
 static int ds2482_set_channel(const struct i2c_dt_spec *spec, uint8_t channel, uint8_t channel_rb)
@@ -108,6 +108,7 @@ static int ds2482_change_bus_lock(const struct device *dev, bool lock)
 	int ret;
 
 	const struct ds2482_config *config = dev->config;
+	struct ds2482_data *data = dev->data;
 
 	ret = ds2482_change_bus_lock_impl(config->parent, lock);
 	if (ret < 0) {
@@ -130,7 +131,7 @@ static int ds2482_change_bus_lock(const struct device *dev, bool lock)
 	/*
 	 * Restore default channel configuration
 	 */
-	ret = ds2482_84_write_config(&config->i2c_spec, config->reg_config);
+	ret = ds2482_84_write_config(&config->i2c_spec, data->reg_config);
 	if (ret < 0) {
 		return ret;
 	}
@@ -141,10 +142,13 @@ static int ds2482_change_bus_lock(const struct device *dev, bool lock)
 static int ds2482_init(const struct device *dev)
 {
 	const struct ds2482_config *config = dev->config;
+	struct ds2482_data *data = dev->data;
 
 	if (!device_is_ready(config->parent)) {
 		return -ENODEV;
 	}
+
+	data->reg_config = config->reg_config;
 
 	return 0;
 }

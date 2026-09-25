@@ -624,6 +624,33 @@ For ``west flash`` to work, see :ref:`flash-and-debug-support` below. You can
 also just flash :file:`build/zephyr/zephyr.elf`, :file:`zephyr.hex`, or
 :file:`zephyr.bin` with any other tools you prefer.
 
+Before submitting a board upstream, verify that every board target you add can
+pass the project's minimum open source test suite using only code from the
+mainline Zephyr repository and its modules. The suite currently consists of:
+
+- :file:`samples/philosophers`
+- :file:`tests/kernel`
+
+For example, build the suite for a board target with:
+
+.. code-block:: console
+
+   west twister -p plank -T samples/philosophers -T tests/kernel
+
+For boards with multiple SoCs, CPU clusters, variants, or revisions, repeat the
+test suite for each new board target. A :zephyr:code-sample:`hello_world` build
+is also recommended as a quick smoke check, for example:
+
+.. code-block:: console
+
+   west build -p always -b plank/soc1/foo samples/hello_world
+   west build -p always -b plank@1.0.0/soc1/foo samples/hello_world
+
+Use :ref:`sysbuild` if the board target requires it. When using board testing
+metadata, such as ``testing: only_tags`` in the board target YAML file, make
+sure the target is still validated against the minimum test suite in local
+testing or CI.
+
 .. _porting-general-recommendations:
 
 General recommendations
@@ -837,15 +864,9 @@ starting point and the following board files will be used in addition:
   defconfig which is only used for the board and SOC / variants identified by
   ``<board>_<qualifiers>``.
 
-- :file:`<board>_<revision>_defconfig`: a specific revision defconfig which is
-  used for the board regardless of the SOC / variants.
-
 - :file:`<board>_<qualifiers>_<revision>.overlay`: a specific revision dts
   overlay which is only used for the board and SOC / variants identified by
   ``<board>_<qualifiers>``.
-
-- :file:`<board>_<revision>.overlay`: a specific revision dts overlay which is
-  used for the board regardless of the SOC / variants.
 
 This split allows boards with multiple SoCs, multi-core SoCs, or variants to
 place common revision adjustments which apply to all SoCs and variants in a
@@ -858,8 +879,7 @@ revision adjustments:
 .. code-block:: none
 
    boards/zephyr/plank
-   ├── plank_0_5_0_defconfig          # Kconfig adjustment for all plank board qualifiers on revision 0.5.0
-   ├── plank_0_5_0.overlay            # DTS overlay for all plank board qualifiers on revision 0.5.0
+   ├── plank_soc1_foo_1_5_0.overlay   # DTS overlay for plank board when building for soc1 variant foo on revision 1.5.0
    └── plank_soc1_foo_1_5_0_defconfig # Kconfig adjustment for plank board when building for soc1 variant foo on revision 1.5.0
 
 Custom revision.cmake files
@@ -898,8 +918,8 @@ The :makevar:`BOARD_REVISION` variable holds the revision value specified by the
 user.
 
 To signal to the build system that it should use a different revision than the
-one specified by the user, :file:`revision.cmake` can set the variable
-``ACTIVE_BOARD_REVISION`` to the revision to use instead. The corresponding
+one specified by the user, :file:`revision.cmake` can set the CMake variable
+:cmake:variable:`ACTIVE_BOARD_REVISION` to the revision to use instead. The corresponding
 Kconfig files and devicetree overlays must be named
 :file:`<board>_<ACTIVE_BOARD_REVISION>_defconfig` and
 :file:`<board>_<ACTIVE_BOARD_REVISION>.overlay`.

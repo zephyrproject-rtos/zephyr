@@ -795,69 +795,83 @@ __subsystem struct counter_driver_api {
 	 * @driver_ops_optional @copybrief counter_get_frequency
 	 */
 	counter_api_get_freq get_freq;
-#ifdef CONFIG_COUNTER_64BITS_FREQ
+#if defined(CONFIG_COUNTER_64BITS_FREQ) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_optional @copybrief counter_get_frequency_64
+	 * @kconfig_dep{CONFIG_COUNTER_64BITS_FREQ}
 	 */
 	counter_api_get_freq_64 get_freq_64;
 #endif /* CONFIG_COUNTER_64BITS_FREQ */
-#ifdef CONFIG_COUNTER_64BITS_TICKS
+#if defined(CONFIG_COUNTER_64BITS_TICKS) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_optional @copybrief counter_get_value_64
+	 * @kconfig_dep{CONFIG_COUNTER_64BITS_TICKS}
 	 */
 	counter_api_get_value_64 get_value_64;
 	/**
 	 * @driver_ops_optional @copybrief counter_set_value_64
+	 * @kconfig_dep{CONFIG_COUNTER_64BITS_TICKS}
 	 */
 	counter_api_set_value_64 set_value_64;
 	/**
 	 * @driver_ops_mandatory @copybrief counter_set_channel_alarm_64
+	 * @kconfig_dep{CONFIG_COUNTER_64BITS_TICKS}
 	 */
 	counter_api_set_alarm_64 set_alarm_64;
 	/**
 	 * @driver_ops_optional @copybrief counter_get_guard_period_64
+	 * @kconfig_dep{CONFIG_COUNTER_64BITS_TICKS}
 	 */
 	counter_api_get_guard_period_64 get_guard_period_64;
 	/**
 	 * @driver_ops_optional @copybrief counter_set_guard_period_64
+	 * @kconfig_dep{CONFIG_COUNTER_64BITS_TICKS}
 	 */
 	counter_api_set_guard_period_64 set_guard_period_64;
 	/**
 	 * @driver_ops_mandatory @copybrief counter_get_top_value_64
+	 * @kconfig_dep{CONFIG_COUNTER_64BITS_TICKS}
 	 */
 	counter_api_get_top_value_64 get_top_value_64;
 	/**
 	 * @driver_ops_mandatory @copybrief counter_set_top_value_64
+	 * @kconfig_dep{CONFIG_COUNTER_64BITS_TICKS}
 	 */
 	counter_api_set_top_value_64 set_top_value_64;
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
-#ifdef CONFIG_COUNTER_CAPTURE
+#if defined(CONFIG_COUNTER_CAPTURE) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_mandatory @copybrief counter_capture_configure
+	 * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
 	 */
 	counter_api_capture_configure capture_configure;
-#ifdef CONFIG_COUNTER_64BITS_TICKS
+#if defined(CONFIG_COUNTER_64BITS_TICKS) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_mandatory @copybrief counter_capture_configure_64
+	 * @kconfig_dep{CONFIG_COUNTER_CAPTURE,CONFIG_COUNTER_64BITS_TICKS}
 	 */
 	counter_api_capture_configure_64 capture_configure_64;
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 	/**
 	 * @driver_ops_mandatory @copybrief counter_enable_capture
+	 * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
 	 */
 	counter_api_enable_capture enable_capture;
 	/**
 	 * @driver_ops_mandatory @copybrief counter_disable_capture
+	 * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
 	 */
 	counter_api_disable_capture disable_capture;
 #endif /* CONFIG_COUNTER_CAPTURE */
 #if defined(CONFIG_COUNTER_CALIBRATION) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_optional @copybrief counter_set_calibration
+	 * @kconfig_dep{CONFIG_COUNTER_CALIBRATION}
 	 */
 	counter_api_set_calibration set_calibration;
 	/**
 	 * @driver_ops_optional @copybrief counter_get_calibration
+	 * @kconfig_dep{CONFIG_COUNTER_CALIBRATION}
 	 */
 	counter_api_get_calibration get_calibration;
 #endif /* CONFIG_COUNTER_CALIBRATION */
@@ -1760,6 +1774,8 @@ static inline int z_impl_counter_set_value_64(const struct device *dev, uint64_t
  * continuous) for a capture channel, and registers the callback that
  * delivers captured tick values.
  *
+ * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
+ *
  * @note The mapping from a capture channel to its input source (e.g. a
  *       physical pad or an internal signal) is vendor-specific and
  *       is not part of this API. On most SoCs the channel-to-pin
@@ -1800,6 +1816,8 @@ static inline int counter_capture_configure(const struct device *dev, uint8_t ch
 /**
  * @brief Configure a capture channel and register its callback using a DT spec.
  *
+ * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
+ *
  * @param spec Pointer to the counter capture DT spec.
  * @param cb Callback function reference.
  * @param user_data Argument passed to the callback function.
@@ -1820,6 +1838,8 @@ static inline int counter_capture_configure_dt(const struct counter_capture_dt_s
  * Configures the edge polarity and capture mode (single-shot vs
  * continuous) for a capture channel, and registers the 64b callback that
  * delivers captured tick values.
+ *
+ * @kconfig_dep{CONFIG_COUNTER_CAPTURE,CONFIG_COUNTER_64BITS_TICKS}
  *
  * @note The mapping from a capture channel to its input source (e.g. a
  *       physical pad or an internal signal) is vendor-specific and
@@ -1861,6 +1881,8 @@ static inline int counter_capture_configure_64(const struct device *dev, uint8_t
 /**
  * @brief Configure a capture channel and register its 64-bit callback using a DT spec.
  *
+ * @kconfig_dep{CONFIG_COUNTER_CAPTURE,CONFIG_COUNTER_64BITS_TICKS}
+ *
  * @param spec Pointer to the counter capture DT spec.
  * @param cb Callback function reference.
  * @param user_data Argument passed to the callback function.
@@ -1878,6 +1900,8 @@ static inline int counter_capture_configure_64_dt(const struct counter_capture_d
 
 /**
  * @brief Enable capture on a channel.
+ *
+ * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param chan_id Channel ID.
@@ -1905,6 +1929,8 @@ static inline int z_impl_counter_enable_capture(const struct device *dev, uint8_
 /**
  * @brief Enable capture on a channel using a DT spec.
  *
+ * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
+ *
  * @param spec Pointer to the counter capture DT spec.
  *
  * @retval 0 If successful.
@@ -1917,6 +1943,8 @@ static inline int counter_enable_capture_dt(const struct counter_capture_dt_spec
 
 /**
  * @brief Disable capture on a channel.
+ *
+ * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param chan_id Channel ID.
@@ -1944,6 +1972,8 @@ static inline int z_impl_counter_disable_capture(const struct device *dev, uint8
 /**
  * @brief Disable capture on a channel using a DT spec.
  *
+ * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
+ *
  * @param spec Pointer to the counter capture DT spec.
  *
  * @retval 0 If successful.
@@ -1963,6 +1993,8 @@ static inline int counter_disable_capture_dt(const struct counter_capture_dt_spe
  *
  * Calibration is specified in parts per billion (ppb). A positive value
  * speeds up the counter, a negative value slows it down.
+ *
+ * @kconfig_dep{CONFIG_COUNTER_CALIBRATION}
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param calibration Calibration value in ppb.
@@ -1986,6 +2018,8 @@ static inline int z_impl_counter_set_calibration(const struct device *dev, int32
 
 /**
  * @brief Get counter calibration value.
+ *
+ * @kconfig_dep{CONFIG_COUNTER_CALIBRATION}
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param calibration Pointer to store the calibration value in ppb.

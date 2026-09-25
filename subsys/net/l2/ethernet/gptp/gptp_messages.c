@@ -22,7 +22,7 @@ static struct net_if_timestamp_cb pdelay_response_timestamp_cb[CONFIG_NET_GPTP_N
 static bool sync_cb_registered[CONFIG_NET_GPTP_NUM_PORTS];
 static bool ts_cb_registered[CONFIG_NET_GPTP_NUM_PORTS];
 
-static const struct net_eth_addr gptp_multicast_eth_addr = {
+const struct net_eth_addr gptp_multicast_eth_addr = {
 	{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e } };
 static uint8_t ieee8021_oui[3] = { OUI_IEEE_802_1_COMMITTEE };
 
@@ -820,6 +820,16 @@ void gptp_send_sync(int port, struct net_pkt *pkt)
 	NET_GPTP_INFO("SYNC", pkt);
 
 	net_if_queue_tx(net_pkt_iface(pkt), pkt);
+}
+
+void gptp_sync_timestamp_cb_unregister(int port)
+{
+	if (!sync_cb_registered[port - 1]) {
+		return;
+	}
+
+	net_if_unregister_timestamp_cb(&sync_timestamp_cb[port - 1]);
+	sync_cb_registered[port - 1] = false;
 }
 
 void gptp_send_follow_up(int port, struct net_pkt *pkt)

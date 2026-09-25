@@ -6,7 +6,7 @@
 config XEN
 	bool
 	default y
-	depends on ARMV8_A
+	depends on ARMV8_A || ARMV9_A
 	depends on DT_HAS_XEN_XEN_ENABLED
 	select GNU_C_EXTENSIONS
 	help

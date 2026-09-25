@@ -32,6 +32,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
+#include "aics_internal.h"
 #include "common/bt_str.h"
 #include "micp_internal.h"
 
@@ -42,6 +43,20 @@ static sys_slist_t micp_mic_ctlr_cbs = SYS_SLIST_STATIC_INIT(&micp_mic_ctlr_cbs)
 
 static struct bt_micp_mic_ctlr mic_ctlrs[CONFIG_BT_MAX_CONN];
 static const struct bt_uuid *mics_uuid = BT_UUID_MICS;
+
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+static void micp_mic_ctlr_client_free_aics(void)
+{
+	ARRAY_FOR_EACH_PTR(mic_ctlrs, mic_ctlr) {
+		ARRAY_FOR_EACH_PTR(mic_ctlr->aics, aics) {
+			if (*aics != NULL) {
+				bt_aics_client_free_instance(*aics);
+				*aics = NULL;
+			}
+		}
+	}
+}
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
 static struct bt_micp_mic_ctlr *mic_ctlr_get_by_conn(const struct bt_conn *conn)
 {
@@ -509,10 +524,15 @@ static void micp_mic_ctlr_reset(struct bt_micp_mic_ctlr *mic_ctlr)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
+	struct bt_micp_mic_ctlr *mic_ctlr;
 
 	ARG_UNUSED(reason);
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
+	mic_ctlr = mic_ctlr_get_by_conn(conn);
 	if (mic_ctlr->conn == conn) {
 		micp_mic_ctlr_reset(mic_ctlr);
 	}
@@ -583,6 +603,7 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 				mic_ctlrs[i].aics[j] = bt_aics_client_free_instance_get();
 
 				if (mic_ctlrs[i].aics[j] == NULL) {
+					micp_mic_ctlr_client_free_aics();
 					bt_conn_unref(ref);
 					err = -ENOMEM;
 					goto cleanup;

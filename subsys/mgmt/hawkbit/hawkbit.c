@@ -1283,6 +1283,7 @@ static void s_http_start(void *o)
 	if (!start_http_client(&s->hb_context.sock)) {
 		s->hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
+		return;
 	}
 
 	s->hb_context.response_data_size = RESPONSE_BUFFER_SIZE;

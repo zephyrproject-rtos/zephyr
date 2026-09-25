@@ -23,7 +23,7 @@ properties:
     type: phandles
     description: |
       Port pin configuration for the various SPI signals that includes
-      MISO, MOSI, SCK, and possibly various chip selects signals.  We
+      SDI, SDO, SCK, and possibly various chip selects signals.  We
       expect that the phandles will reference pinctrl nodes.  These
       nodes will have a nodelabel that matches the Cypress SoC HAL defines
       and be of the form p<port>_<pin>_<periph><inst>_<signal>.

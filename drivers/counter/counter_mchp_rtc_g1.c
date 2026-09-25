@@ -819,7 +819,7 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 				data->channel_data[chan_id].compare_value = ticks;
 
 				/* Enable interrupt and trigger immediately */
-				NVIC_SetPendingIRQ(cfg->irq_line);
+				k_irq_set_pending(cfg->irq_line);
 			} else {
 				data->channel_data[chan_id].callback = NULL;
 				data->channel_data[chan_id].user_data = NULL;
@@ -1018,7 +1018,7 @@ static void counter_mchp_alarm_irq_handler(const struct device *const dev)
 	struct counter_mchp_dev_data *const data = dev->data;
 	const struct counter_mchp_dev_config *const cfg = dev->config;
 
-	NVIC_ClearPendingIRQ(cfg->irq_line);
+	k_irq_clear_pending(cfg->irq_line);
 	pending_irq_status = rtc_counter_get_pending_irqs(cfg->regs, cfg->max_bit_width);
 
 	/* Check for immediate interrupt trigger */
@@ -1064,7 +1064,7 @@ static void counter_mchp_top_irq_handler(const struct device *const dev)
 	const struct counter_mchp_dev_config *const cfg = dev->config;
 	uint32_t pending_irq_status = rtc_counter_get_pending_irqs(cfg->regs, cfg->max_bit_width);
 
-	NVIC_ClearPendingIRQ(cfg->irq_line);
+	k_irq_clear_pending(cfg->irq_line);
 	if (false != rtc_counter_top_irq_status(pending_irq_status, cfg->max_bit_width)) {
 		rtc_counter_top_irq_clear(cfg->regs, cfg->max_bit_width);
 

@@ -41,6 +41,7 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 #define MODEM_CELLULAR_DATA_IMEI_LEN         (16)
+#define MODEM_CELLULAR_DATA_SN_LEN           (CONFIG_MODEM_CELLULAR_SERIAL_NUMBER_MAX_SIZE + 1)
 #define MODEM_CELLULAR_DATA_MODEL_ID_LEN     (65)
 #define MODEM_CELLULAR_DATA_IMSI_LEN         (23)
 #define MODEM_CELLULAR_DATA_ICCID_LEN        (22)
@@ -78,6 +79,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT,
 	MODEM_CELLULAR_STATE_POWER_OFF_PULSE,
 	MODEM_CELLULAR_STATE_AWAIT_POWER_OFF,
+	MODEM_CELLULAR_STATE_AWAIT_DIAL,
 };
 
 enum modem_cellular_event {
@@ -99,12 +101,19 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_APN_SET,
 	MODEM_CELLULAR_EVENT_RING,
 	MODEM_CELLULAR_EVENT_PERIODIC_KICK,
-};
+	MODEM_CELLULAR_EVENT_DIAL,
+	MODEM_CELLULAR_EVENT_HANGUP,
+} __packed;
 
 struct modem_cellular_event_cb {
 	cellular_event_mask_t mask;
 	cellular_event_cb_t fn;
 	void *user_data;
+};
+
+struct modem_cellular_event_pkg {
+	uint8_t event;
+	const void *ptr;
 };
 
 /** @endcond */
@@ -152,6 +161,7 @@ struct modem_cellular_data {
 	enum cellular_registration_status registration_status_gsm;
 	enum cellular_registration_status registration_status_gprs;
 	enum cellular_registration_status registration_status_lte;
+	enum cellular_registration_status registration_status_5g;
 	enum cellular_access_technology access_tech;
 	uint8_t rssi;
 	uint8_t rsrp;
@@ -159,6 +169,7 @@ struct modem_cellular_data {
 	struct cellular_evt_network_status network_status;
 	bool network_status_valid;
 	uint8_t imei[MODEM_CELLULAR_DATA_IMEI_LEN];
+	uint8_t sn[MODEM_CELLULAR_DATA_SN_LEN];
 	uint8_t model_id[MODEM_CELLULAR_DATA_MODEL_ID_LEN];
 	uint8_t imsi[MODEM_CELLULAR_DATA_IMSI_LEN];
 	uint8_t iccid[MODEM_CELLULAR_DATA_ICCID_LEN];
@@ -173,6 +184,9 @@ struct modem_cellular_data {
 	struct modem_chat_script board_init_script;
 
 	struct net_mgmt_event_callback net_mgmt_event_callback;
+#if defined(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)
+	struct net_mgmt_event_callback if_event_callback;
+#endif
 
 	enum modem_cellular_state state;
 	const struct device *dev;
@@ -183,8 +197,9 @@ struct modem_cellular_data {
 
 	/* Event dispatcher */
 	struct k_work event_dispatch_work;
-	uint8_t event_buf[8];
-	struct k_pipe event_pipe;
+	struct k_msgq event_queue;
+	struct modem_cellular_event_pkg event_buf[8];
+	const void *event_ptr;
 
 	struct k_mutex api_lock;
 	struct modem_cellular_event_cb cb;
@@ -304,6 +319,7 @@ struct modem_cellular_vendor_config {
 struct modem_cellular_config {
 	const struct device *uart;
 	const struct modem_cellular_vendor_config *vendor;
+	const void *vendor_specific;
 	struct modem_ppp *ppp;
 	struct gpio_dt_spec power_gpio;
 	struct gpio_dt_spec reset_gpio;
@@ -347,6 +363,10 @@ void modem_cellular_emit_network_status(struct modem_cellular_data *data,
 
 void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data);
+void modem_cellular_chat_on_cgsn_sn(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data);
+void modem_cellular_chat_on_cgsn_imei(struct modem_chat *chat, char **argv, uint16_t argc,
+				      void *user_data);
 void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data);
 void modem_cellular_chat_on_csq(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -378,10 +398,13 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
  *
  * @param chat Chat instance that completed the script. Must not be NULL.
  * @param result Script completion result.
+ * @param info Extra script completion information. Must not be NULL.
  * @param user_data Pointer to the associated @ref modem_cellular_data object. Must not be NULL.
  */
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
-					  enum modem_chat_script_result result, void *user_data);
+					  enum modem_chat_script_result result,
+					  const struct modem_chat_script_completion_info *info,
+					  void *user_data);
 
 /**
  * @defgroup modem_driver_macros Cellular modem driver definition macros
@@ -466,6 +489,21 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 	);
 
 /**
+ * @brief Define a multiple match object that expects a single response followed by an "OK"
+ *
+ * Replaces a MODEM_CHAT_MATCH_DEFINE followed by MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match)
+ *
+ * @param _sym Name of the matches array object
+ * @param _match Match string per @ref MODEM_CHAT_MATCH_DEFINE
+ * @param _separators Separators string per @ref MODEM_CHAT_MATCH_DEFINE
+ * @param _callback Callback on match per @ref MODEM_CHAT_MATCH_DEFINE
+ */
+#define MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(_sym, _match, _separators, _callback)                  \
+	MODEM_CHAT_MATCHES_DEFINE(_sym,                                                            \
+		MODEM_CHAT_MATCH_INITIALIZER(_match, _separators, _callback, false, true),         \
+		MODEM_CHAT_MATCH("OK", "", NULL))
+
+/**
  * @brief Define common chat matches used by cellular modem scripts.
  *
  * Invoke this macro once at file scope. It defines matches for successful commands, common command
@@ -477,25 +515,29 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 	MODEM_CHAT_MATCHES_DEFINE(__maybe_unused allow_match,					   \
 				  MODEM_CHAT_MATCH("OK", "", NULL),				   \
 				  MODEM_CHAT_MATCH("ERROR", "", NULL));				   \
-	MODEM_CHAT_MATCH_DEFINE(imei_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused imei_match,				   \
 				"", "", modem_cellular_chat_on_imei);				   \
-	MODEM_CHAT_MATCH_DEFINE(cgmm_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgsn_sn_match,			   \
+				"", "", modem_cellular_chat_on_cgsn_sn);			   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgsn_imei_match,			   \
+				"+CGSN: ", "", modem_cellular_chat_on_cgsn_imei);		   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgmm_match,				   \
 				"", "", modem_cellular_chat_on_cgmm);				   \
-	MODEM_CHAT_MATCH_DEFINE(csq_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused csq_match,				   \
 				"+CSQ: ", ",", modem_cellular_chat_on_csq);			   \
-	MODEM_CHAT_MATCH_DEFINE(cesq_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cesq_match,				   \
 				"+CESQ: ", ",", modem_cellular_chat_on_cesq);			   \
-	MODEM_CHAT_MATCH_DEFINE(qccid_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused qccid_match,				   \
 				"+QCCID: ", "", modem_cellular_chat_on_iccid);			   \
-	MODEM_CHAT_MATCH_DEFINE(iccid_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused iccid_match,				   \
 				"+ICCID: ", "", modem_cellular_chat_on_iccid);			   \
-	MODEM_CHAT_MATCH_DEFINE(ccid_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused ccid_match,				   \
 				"+CCID: ", "", modem_cellular_chat_on_iccid);			   \
-	MODEM_CHAT_MATCH_DEFINE(cimi_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cimi_match,				   \
 				"", "", modem_cellular_chat_on_imsi);				   \
-	MODEM_CHAT_MATCH_DEFINE(cgmi_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgmi_match,				   \
 				"", "", modem_cellular_chat_on_cgmi);				   \
-	MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgmr_match,				   \
 				"", "", modem_cellular_chat_on_cgmr);				   \
 	MODEM_CHAT_MATCH_DEFINE(connect_match __maybe_unused,					   \
 				"CONNECT", "", NULL);						   \
@@ -532,12 +574,15 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
  * @param inst Devicetree instance number.
  * @param vendor_config Pointer to a constant @ref modem_cellular_vendor_config object. Must not be
  *        NULL and must remain valid for the lifetime of the device.
+ * @param _vendor_specific Pointer to an arbitrary vendor-specific configuration structure. Can be
+ *        NULL.
  */
-#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, vendor_config)                                        \
+#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, vendor_config, _vendor_specific)                      \
 	BUILD_ASSERT(vendor_config != NULL, "vendor_config must be non-NULL");                     \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.vendor = vendor_config,                                                           \
+		.vendor_specific = _vendor_specific,                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \

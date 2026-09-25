@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+config THEJAS32_INTC
+	bool "C-DAC THEJAS32 interrupt controller"
+	default y
+	depends on DT_HAS_CDAC_THEJAS32_INTC_ENABLED
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Driver for the C-DAC THEJAS32 second-level interrupt controller,
+	  which aggregates the SoC peripheral interrupt sources into the
+	  RISC-V machine external interrupt line.

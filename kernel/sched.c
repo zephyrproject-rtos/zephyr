@@ -57,6 +57,9 @@ static inline void clear_halting(struct k_thread *thread)
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 #ifdef CONFIG_SMP
+	bool ipi_idle_target_rebound = false;
+	struct k_thread *ipi_idle_target = ipi_idle_reserved_take();
+
 	if (z_is_thread_halting(_current)) {
 		/* NULL key: scheduler context, no retry possible. _current
 		 * cannot have an in-flight timeout (a running thread's
@@ -129,10 +132,27 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 
 	/* Take the new _current out of the queue */
 	if (z_is_thread_queued(thread)) {
+		/* Remove or transfer the selected thread's idle CPU coverage. */
+		if (ipi_idle_target != NULL &&
+		    thread != ipi_idle_target &&
+		    z_is_thread_queued(ipi_idle_target)) {
+			ipi_idle_target_rebound =
+				ipi_idle_thread_rebind(thread, ipi_idle_target);
+		} else {
+			ipi_idle_thread_unreserve(thread);
+		}
 		dequeue_thread(thread);
 	}
 
 	_current_cpu->swap_ok = false;
+
+	/* If this CPU consumed a different thread, preserve coverage for the
+	 * runnable thread covered by this CPU's reservation.
+	 */
+	if (!ipi_idle_target_rebound &&
+	    ipi_idle_target != NULL && z_is_thread_queued(ipi_idle_target)) {
+		flag_ipi(ipi_mask_create(ipi_idle_target));
+	}
 	return thread;
 #endif /* CONFIG_SMP */
 }
@@ -228,6 +248,8 @@ void z_sched_ready_locked(struct k_thread *thread) ALIAS_OF(ready_thread);
 static void unready_thread(struct k_thread *thread)
 {
 	if (z_is_thread_queued(thread)) {
+		/* Clear idle CPU coverage before removing the thread from the run queue. */
+		ipi_idle_thread_unreserve(thread);
 		dequeue_thread(thread);
 	}
 	update_cache(thread == _current);
@@ -652,7 +674,12 @@ struct k_thread *z_swap_next_thread(void)
 }
 
 #ifdef CONFIG_USE_SWITCH
-/* Just a wrapper around z_current_thread_set(xxx) with tracing */
+/* Just a wrapper around z_current_thread_set(xxx) with tracing.
+ *
+ * _current is not guaranteed to report @a new_thread until the switch to it
+ * has happened: see z_current_thread_set(). Code between this call and the
+ * switch must use @a new_thread directly.
+ */
 static inline void set_current(struct k_thread *new_thread)
 {
 	/* If the new thread is the same as the current thread, we
@@ -732,7 +759,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			 * confused when the "wrong" thread tries to
 			 * release the lock.
 			 */
-			z_sched_spinlock_transfer_owner();
+			z_sched_spinlock_transfer_owner(new_thread);
 
 			/* A queued (runnable) old/current thread
 			 * needs to be added back to the run queue
@@ -762,10 +789,12 @@ void *z_get_next_switch_handle(void *interrupted)
 	}
 	return ret;
 #else
-	z_sched_usage_switch(_kernel.ready_q.cache);
+	struct k_thread *next = _kernel.ready_q.cache;
+
+	z_sched_usage_switch(next);
 	_current->switch_handle = interrupted;
-	set_current(_kernel.ready_q.cache);
-	return _current->switch_handle;
+	set_current(next);
+	return next->switch_handle;
 #endif /* CONFIG_SMP */
 }
 #endif /* CONFIG_USE_SWITCH */
@@ -835,6 +864,8 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 	if ((thread->base.thread_state & new_state) == 0U) {
 		thread->base.thread_state |= new_state;
 		if (z_is_thread_queued(thread)) {
+			/* Clear idle CPU coverage before removing the thread from the run queue. */
+			ipi_idle_thread_unreserve(thread);
 			dequeue_thread(thread);
 		}
 

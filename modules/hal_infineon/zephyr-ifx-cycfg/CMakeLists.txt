@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -35,6 +35,9 @@ if(CONFIG_SOC_SERIES_PSC3)
   set(zephyr_ifx_cycfg_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/soc_psc3)
 
   zephyr_include_directories(${zephyr_ifx_cycfg_dir})
+  if(CONFIG_SOC_DIE_PSC3M6)
+    zephyr_include_directories(${zephyr_ifx_cycfg_dir}/psc3m6_device_headers)
+  endif()
   zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_HPPASS_SAR_ADC ${zephyr_ifx_cycfg_dir}/ifx_hppass_analog.c)
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_cycfg_init.c)
 endif()

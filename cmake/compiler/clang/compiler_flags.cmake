@@ -11,6 +11,8 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-deprecated-volatile")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
   "-Wno-register" "-Wno-deprecated-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp26 "-std=c++26"
+  "-Wno-register" "-Wno-deprecated-volatile")
 
 ########################################################
 # Setting compiler properties for gcc / g++ compilers. #

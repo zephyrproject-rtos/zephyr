@@ -27,6 +27,7 @@ config LED_SHELL
 	  Enable LED shell for testing.
 
 # zephyr-keep-sorted-start
+source "drivers/led/Kconfig.aw9523b"
 source "drivers/led/Kconfig.axp192"
 source "drivers/led/Kconfig.dac"
 source "drivers/led/Kconfig.fake"
@@ -46,7 +47,7 @@ source "drivers/led/Kconfig.modulino"
 source "drivers/led/Kconfig.ncp5623"
 source "drivers/led/Kconfig.npm10xx"
 source "drivers/led/Kconfig.npm13xx"
-source "drivers/led/Kconfig.pca9533"
+source "drivers/led/Kconfig.pca953x"
 source "drivers/led/Kconfig.pca9633"
 source "drivers/led/Kconfig.pwm"
 source "drivers/led/Kconfig.sct2024"

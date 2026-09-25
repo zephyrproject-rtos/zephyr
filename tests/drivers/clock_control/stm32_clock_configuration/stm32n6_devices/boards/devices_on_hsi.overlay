@@ -76,8 +76,13 @@
 	status = "disabled";
 };
 
-&adc1 {
+&adc12_common {
 	clocks = <&rcc STM32_CLOCK(AHB1, 5)>, <&rcc STM32_SRC_HSI_DIV ADC12_SEL(5)>;
+	clock-names = "adcx", "adc_ker";
+	status = "disabled";
+};
+
+&adc1 {
 	status = "disabled";
 };
 

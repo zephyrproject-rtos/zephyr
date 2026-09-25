@@ -100,18 +100,10 @@ richer, machine-readable build provenance described in :ref:`west-spdx-build-pro
 Generating SPDX documents
 -------------------------
 
-#. Pre-populate a build directory :file:`BUILD_DIR` like this:
+#. Enable :kconfig:option:`CONFIG_BUILD_OUTPUT_META` in your project, so that the build
+   records what ``west spdx`` needs.
 
-   .. code-block:: bash
-
-      west spdx --init -d BUILD_DIR
-
-   This step ensures the build directory contains the CMake metadata (a CMake file-API query)
-   required for SPDX document generation.
-
-#. Enable :kconfig:option:`CONFIG_BUILD_OUTPUT_META` in your project.
-
-#. Build your application using this pre-created build directory, like so:
+#. Build your application:
 
    .. code-block:: bash
 
@@ -138,8 +130,7 @@ Generating SPDX documents
 
    .. code-block:: bash
 
-     west spdx --init  -d BUILD_DIR/hello_world
-     west build -d BUILD_DIR/hello_world
+     west build --sysbuild -d BUILD_DIR
      west spdx -d BUILD_DIR/hello_world
 
 Output documents
@@ -211,6 +202,10 @@ Command-line options
 --------------------
 
 ``west spdx`` accepts these additional options:
+
+- ``-i``, ``--init``: create the CMake file-based API query in a build directory before it is
+  configured. Deprecated, and to be removed in Zephyr 5.0: a build with
+  :kconfig:option:`CONFIG_BUILD_OUTPUT_META` now requests the query itself.
 
 - ``-n PREFIX``: a prefix for the Document Namespaces that will be included in
   the generated SPDX documents. See `SPDX specification clause 6`_ for
@@ -411,6 +406,7 @@ There are several sub-commands available to manage patches for Zephyr or other m
 workspace:
 
 * ``apply``: apply patches listed in ``patches.yml``
+* ``reverse``: reverse patches listed in ``patches.yml`` that have been previously applied
 * ``clean``: remove all patches that have been applied, and reset to the manifest checkout state
 * ``list``: list all patches in ``patches.yml``
 * ``gh-fetch``: fetch patches from a GitHub pull request
@@ -485,6 +481,15 @@ the external application repository, and then the following commands can be run.
     west patch clean
     west update
     west patch apply --roll-back # roll-back all patches if one does not apply cleanly
+
+Optionally, patches can be reversed rather than cleaning all modules. This leaves non-conflicting,
+unrelated edits to modules in place, but removes only the changes made by patches. This is useful
+when developing patches and testing them in an application, but not wanting to clean all patches
+and lose any manual edits made to the module.
+
+.. code-block:: bash
+
+    west patch reverse
 
 If a patch needs to be reworked, remember to update the ``patches.yml`` file with the new SHA256
 checksum.

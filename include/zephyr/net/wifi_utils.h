@@ -13,6 +13,9 @@
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_UTILS_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_UTILS_H_
 
+#include <zephyr/net/wifi.h>
+#include <zephyr/net/wifi_mgmt.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -149,6 +152,53 @@ bool wifi_utils_validate_chan_5g(uint16_t chan);
  * @retval false if the channel is not valid for the band.
  */
 bool wifi_utils_validate_chan_6g(uint16_t chan);
+
+/**
+ * @brief Get the frequency band a channel belongs to.
+ *
+ * @details Channel numbers are not unique across bands: 1-14 are valid in both the
+ * 2.4 GHz and the 6 GHz band, and the 5 GHz and 6 GHz numbering overlaps above 14.
+ * The channel number alone cannot resolve that, so the lowest matching band is
+ * returned. A caller that already knows its radio is operating in the 6 GHz band
+ * must not use this function.
+ *
+ * @param chan Channel to look up.
+ *
+ * @return The band the channel belongs to.
+ * @retval WIFI_FREQ_BAND_UNKNOWN if the channel is not valid in any band.
+ */
+enum wifi_frequency_bands wifi_utils_chan_to_band(uint16_t chan);
+
+/**
+ * @brief Convert a channel number to its center frequency.
+ *
+ * @details The band must be supplied because channel numbers are not unique
+ * across bands: 1-14 are valid in both the 2.4 GHz and the 6 GHz band, and the
+ * 5 GHz and 6 GHz numbering overlaps above 14. Use wifi_utils_chan_to_band()
+ * when the band is not already known.
+ *
+ * @param band Band the channel belongs to.
+ * @param chan Channel to convert.
+ *
+ * @return The center frequency in MHz.
+ * @retval 0 Channel not valid in the band, or the band has no channel to
+ *           frequency mapping, as for WIFI_FREQ_BAND_SUB_1_GHZ.
+ */
+uint16_t wifi_utils_chan_to_freq(enum wifi_frequency_bands band, uint16_t chan);
+
+/**
+ * @brief Convert a center frequency to its channel number.
+ *
+ * @details This is the inverse of wifi_utils_chan_to_freq(). No band is
+ * needed because a center frequency is unique across the bands. Use
+ * wifi_utils_chan_to_band() on the result when the band is also wanted.
+ *
+ * @param freq Center frequency in MHz.
+ *
+ * @return The channel number.
+ * @retval 0 Frequency is not a channel center frequency in any band.
+ */
+uint16_t wifi_utils_freq_to_chan(uint16_t freq);
 
 /**
  * @}

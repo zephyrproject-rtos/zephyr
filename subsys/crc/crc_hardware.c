@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(crc, CONFIG_CRC_LOG_LEVEL);
 
 #include <zephyr/drivers/crc.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/bit_rev.h>
 
 /* This value needs to be XORed with the final crc value once crc for
  * the entire stream is calculated. This is a requirement of crc32c algo.
@@ -48,10 +49,12 @@ static int crc_operation(const struct device *const dev, struct crc_ctx *ctx, co
 uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
 	     bool reversed)
 {
-	uint8_t flag_reversed;
+	uint8_t flag_reversed = 0;
 	int ret;
 
 	if (reversed) {
+		/* We're reversing 4 bits */
+		polynomial = sys_bit_rev8(polynomial) >> 4;
 		flag_reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT;
 	}
 
@@ -64,7 +67,7 @@ uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -86,7 +89,7 @@ uint8_t crc4_ti(uint8_t seed, const uint8_t *src, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -108,7 +111,7 @@ uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -130,12 +133,13 @@ uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 	};
 
 	if (reversed) {
+		ctx.polynomial = sys_bit_rev8(ctx.polynomial);
 		ctx.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT;
 	}
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 	return ctx.result;
@@ -156,7 +160,7 @@ uint8_t crc8_rohc(uint8_t initial_value, const void *buf, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, buf, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -178,7 +182,7 @@ uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, buf, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -200,7 +204,7 @@ uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -215,14 +219,14 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
 
 	struct crc_ctx ctx = {
 		.type = CRC16,
-		.polynomial = poly,
+		.polynomial = sys_bit_rev16(poly),
 		.seed = seed,
 		.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT,
 	};
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 	return ctx.result;
@@ -243,7 +247,7 @@ uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -265,7 +269,7 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -287,7 +291,7 @@ uint32_t crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, data, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -318,7 +322,7 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *buf, size_t len, bool first_pkt, b
 
 	ret = crc_operation(crc_dev, &ctx, buf, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -342,7 +346,7 @@ uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *buf, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, buf, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -369,7 +373,7 @@ uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *const data, const size_
 
 	ret = crc_operation(crc_dev, &ctx, data, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 
@@ -391,7 +395,7 @@ uint32_t crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len)
 
 	ret = crc_operation(crc_dev, &ctx, data, len);
 	if (ret != 0) {
-		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
 	}
 

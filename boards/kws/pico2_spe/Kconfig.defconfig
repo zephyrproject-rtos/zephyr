@@ -13,7 +13,7 @@ endif # I2C_DW
 config USB_SELF_POWERED
 	default n
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 if ETH_LAN865X

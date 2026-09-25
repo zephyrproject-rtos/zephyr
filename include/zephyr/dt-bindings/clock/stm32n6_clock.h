@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32N6_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32N6_CLOCK_H_
 
-#include "stm32_common_clocks.h"
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /** Domain clocks */
 
@@ -46,7 +48,8 @@
 #define STM32_SRC_IC19		(STM32_SRC_IC18 + 1)
 #define STM32_SRC_IC20		(STM32_SRC_IC19 + 1)
 #define STM32_SRC_HSI_DIV	(STM32_SRC_IC20 + 1)
-#define STM32_SRC_TIMG		(STM32_SRC_HSI_DIV + 1)
+#define STM32_SRC_HSE_DIV2_OSC	(STM32_SRC_HSI_DIV + 1)
+#define STM32_SRC_TIMG		(STM32_SRC_HSE_DIV2_OSC + 1)
 #define STM32_SRC_HCLK1		(STM32_SRC_TIMG + 1)
 #define STM32_SRC_HCLK2		(STM32_SRC_HCLK1 + 1)
 #define STM32_SRC_HCLK3		(STM32_SRC_HCLK2 + 1)
@@ -123,6 +126,7 @@
 #define MCO1_PRE(val)		STM32_DT_CLOCK_SELECT((val), 7, 4, CCIPR5_REG)
 #define MCO2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR5_REG)
 #define MCO2_PRE(val)		STM32_DT_CLOCK_SELECT((val), 15, 12, CCIPR5_REG)
+#define MDF1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 16, CCIPR5_REG)
 
 /* MCO1 source */
 #define MCO1_SEL_HSI  0
@@ -222,5 +226,7 @@
 
 /* ADC prescaler division factor helper */
 #define ADC_PRE_DIV(pres)	((pres - 1) & 0xFFU)
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32N6_CLOCK_H_ */

@@ -551,7 +551,7 @@ static int lt7680_write(const struct device *dev, const uint16_t x, const uint16
 /**
  * @brief  Read a rectangular region of pixels from the frame-buffer.
  *
- * @note   Read-back requires the SPI bus to support half-duplex / MISO.
+ * @note   Read-back requires the SPI bus to support half-duplex / SDI.
  *         Verify your MIPI DBI host controller supports command_read.
  */
 static int lt7680_read(const struct device *dev, const uint16_t x, const uint16_t y,
@@ -1287,7 +1287,8 @@ static DEVICE_API(display, lt7680_api) = {
 	static const struct lt7680_config lt7680_config_##inst = {                                 \
 		.spi_spec =                                                                        \
 			SPI_DT_SPEC_GET(DT_INST(inst, levetop_lt7680),                             \
-					SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),  \
+					SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB |                \
+					SPI_WORD_SET(8)),                                          \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \

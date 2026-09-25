@@ -225,6 +225,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/interrupt_controller/nxp_irqsteer.h>
 #include <zephyr/cache.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/logging/log.h>
@@ -654,8 +655,8 @@ static void irqstr_release_irq_unlocked(struct irqsteer_dispatcher *disp,
 		system_irq, disp->irq_refcnt[irqsteer_master_irq_off]);
 }
 
-/* Zephyr SoC interrupt interface */
-void z_soc_irq_enable_disable(uint32_t irq, bool enable)
+/* Interrupt control API, dispatching between level 1 and IRQSTEER */
+static void nxp_irqstr_irq_enable_disable(uint32_t irq, bool enable)
 {
 	uint32_t parent_irq;
 	int i, level2_irq;
@@ -693,17 +694,17 @@ void z_soc_irq_enable_disable(uint32_t irq, bool enable)
 	}
 }
 
-void z_soc_irq_enable(uint32_t irq)
+void nxp_irqstr_irq_enable(uint32_t irq)
 {
-	z_soc_irq_enable_disable(irq, true);
+	nxp_irqstr_irq_enable_disable(irq, true);
 }
 
-void z_soc_irq_disable(uint32_t irq)
+void nxp_irqstr_irq_disable(uint32_t irq)
 {
-	z_soc_irq_enable_disable(irq, false);
+	nxp_irqstr_irq_enable_disable(irq, false);
 }
 
-int z_soc_irq_is_enabled(unsigned int irq)
+int nxp_irqstr_irq_is_enabled(unsigned int irq)
 {
 	uint32_t parent_irq;
 	int i;
@@ -734,7 +735,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 }
 
 #if defined(CONFIG_ARM)
-void z_soc_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags)
+void nxp_irqstr_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags)
 {
 	uint32_t level1_irq = irq;
 

@@ -9,4 +9,7 @@ tests:
     platform_allow:
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c6_devkitc/esp32c6/hpcore
-    tags: esp32 espnow wifi
+    tags:
+      - esp32
+      - espnow
+      - wifi

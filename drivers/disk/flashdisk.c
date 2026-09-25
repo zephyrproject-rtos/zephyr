@@ -126,7 +126,8 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 		while (offset < ctx->offset + ctx->size) {
 			rc = flash_get_page_info_by_offs(ctx->info.dev, offset, &page);
 			if (rc < 0) {
-				LOG_ERR("Error %d getting page info at offset %lx", rc, offset);
+				LOG_ERR("Error %d getting page info at offset %lx", rc,
+					(long)offset);
 				return rc;
 			}
 			if (page.size != ctx->page_size) {

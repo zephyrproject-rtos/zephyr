@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/wifi_utils.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
@@ -24,7 +25,6 @@
 LOG_MODULE_DECLARE(wifi_hwsim, CONFIG_WIFI_HWSIM_LOG_LEVEL);
 
 #define SSID_IE_ID   0
-#define HWSIM_2G_BASE_FREQ_MHZ 2407
 
 /*
  * Beacon frame layout: 24-byte 802.11 MAC header + fixed fields
@@ -344,7 +344,7 @@ static int hwsim_supp_get_scan_results2(void *if_priv)
 
 		entry->flags = 0;
 		memcpy(entry->bssid, r->bssid, ETH_ALEN);
-		entry->freq = HWSIM_2G_BASE_FREQ_MHZ + (r->channel * 5);
+		entry->freq = wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, r->channel);
 		entry->max_cw = CHAN_WIDTH_20_NOHT;
 		entry->beacon_int = 100;
 		entry->qual = 0;
@@ -403,7 +403,7 @@ static int hwsim_supp_authenticate(void *if_priv,
 	 */
 	if (params->freq > 0) {
 		radio->freq_mhz = (uint32_t)params->freq;
-		radio->channel = (uint8_t)((params->freq - HWSIM_2G_BASE_FREQ_MHZ) / 5);
+		radio->channel = (uint8_t)wifi_utils_freq_to_chan((uint16_t)params->freq);
 	}
 
 	/*
@@ -489,12 +489,11 @@ static int hwsim_supp_init_ap(void *if_priv,
 	if (params->freq.channel > 0) {
 		radio->channel = (uint8_t)params->freq.channel;
 	} else if (params->freq.freq > 0) {
-		radio->channel = (uint8_t)((params->freq.freq - HWSIM_2G_BASE_FREQ_MHZ)
-					   / 5);
+		radio->channel = (uint8_t)wifi_utils_freq_to_chan((uint16_t)params->freq.freq);
 	} else {
 		radio->channel = 1;
 	}
-	radio->freq_mhz = HWSIM_2G_BASE_FREQ_MHZ + (radio->channel * 5);
+	radio->freq_mhz = wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, radio->channel);
 	radio->ap_mode = true;
 	return 0;
 }
@@ -726,7 +725,7 @@ static int hwsim_supp_signal_poll(void *if_priv, struct wpa_signal_info *si,
 	struct hwsim_radio *radio = (struct hwsim_radio *)if_priv;
 
 	memset(si, 0, sizeof(*si));
-	si->frequency = HWSIM_2G_BASE_FREQ_MHZ + (radio->channel * 5);
+	si->frequency = wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, radio->channel);
 	si->current_noise = -95;
 	si->data.last_ack_rssi = (s8)radio->tx_power_dbm;
 	if (radio->associated && bssid != NULL) {
@@ -782,7 +781,8 @@ static int hwsim_supp_get_wiphy(void *if_priv)
 	band.wpa_supp_n_bitrates = 8;
 	for (int i = 0; i < 14; i++) {
 		band.channels[i].ch_valid = 1;
-		band.channels[i].center_frequency = 2407 + (i + 1) * 5;
+		band.channels[i].center_frequency =
+			wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, i + 1);
 		band.channels[i].wpa_supp_max_power = 20;
 	}
 	/* 11b + 11g rates (100 kbps); need at least one > 200 for IEEE80211G mode */

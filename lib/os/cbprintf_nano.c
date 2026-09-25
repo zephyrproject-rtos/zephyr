@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* for strnlen() */
+
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
@@ -296,9 +299,15 @@ start:
 			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
 
 			data = va_arg(ap, char *);
-			data_len = strlen(data);
-			if (precision >= 0 && data_len > precision) {
-				data_len = precision;
+			/*
+			 * Use strnlen() when a precision is given so the scan
+			 * for the NUL terminator stops at the precision and
+			 * does not read past a buffer that lacks a terminator.
+			 */
+			if (precision >= 0) {
+				data_len = strnlen(data, precision);
+			} else {
+				data_len = strlen(data);
 			}
 			precision = 0;
 			break;

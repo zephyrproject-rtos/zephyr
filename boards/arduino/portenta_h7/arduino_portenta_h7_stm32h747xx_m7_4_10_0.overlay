@@ -8,3 +8,9 @@
 	clock-frequency = <32768>;
 	status = "okay";
 };
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};

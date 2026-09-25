@@ -1,9 +1,11 @@
 /*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_wroom_32ue_n16.dtsi>
+#include <espressif/esp32/esp32.dtsi>
 #include <zephyr/dt-bindings/led/led.h>
 #include "yd_esp32-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -41,6 +43,11 @@
 	};
 };
 
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
 &pinctrl {
 	spim2_default: spim2_default {
 		group2 {
@@ -70,10 +77,12 @@
 };
 
 &gpio0 {
+	gpio-reserved-ranges = <6 6>, <20 1>, <24 1>, <28 4>;
 	status = "okay";
 };
 
 &gpio1 {
+	gpio-reserved-ranges = <5 2>;
 	status = "okay";
 };
 

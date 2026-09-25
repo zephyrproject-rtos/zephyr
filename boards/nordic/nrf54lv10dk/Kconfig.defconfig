@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_BT_CTLR
+	default BT
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if BOARD_NRF54LV10DK_NRF54LV10A_CPUAPP_NS
+
+config BOARD_NRF54LV10DK
+	select USE_DT_CODE_PARTITION
+
+# By default, if building for the /ns variant of the board,
+# enable building with TF-M as the Secure Processing Environment.
+config BUILD_WITH_TFM
+	default y
+
+endif # BOARD_NRF54LV10DK_NRF54LV10A_CPUAPP_NS

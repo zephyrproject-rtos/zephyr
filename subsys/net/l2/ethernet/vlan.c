@@ -33,9 +33,6 @@ LOG_MODULE_REGISTER(net_ethernet_vlan, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
  */
 #if CONFIG_NET_VLAN_COUNT > 0
 
-#define MAX_VIRT_NAME_LEN MIN(sizeof("<not attached>"), \
-			      CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN)
-
 static void vlan_iface_init(struct net_if *iface);
 static int vlan_interface_attach(struct net_if *vlan_iface,
 				 struct net_if *iface);
@@ -215,7 +212,10 @@ static bool enable_vlan_iface(struct vlan_context *ctx,
 			      struct net_if *iface)
 {
 	int iface_idx = net_if_get_by_iface(iface);
-	char name[MAX_VIRT_NAME_LEN];
+	/* Sized for the widest %d; net_virtual_set_name() truncates to
+	 * CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN.
+	 */
+	char name[sizeof("VLAN to -2147483648")];
 	int ret;
 
 	if (iface_idx < 0) {

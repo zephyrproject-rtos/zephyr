@@ -23,6 +23,7 @@ config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
 	select BT_UART
 	select EXPERIMENTAL
+	select BT_SYSTEM_WORKQUEUE_COOP
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_3WIRE_UART_ENABLED
 	help
@@ -138,21 +139,24 @@ config BT_STM32WB0
 	select USE_STM32_HAL_GPIO
 	select USE_STM32_HAL_RADIO
 	select USE_STM32_HAL_RADIO_TIMER
+	select BT_SYSTEM_WORKQUEUE_COOP
 	help
 	  ST STM32WB0 HCI Bluetooth interface
 
 config BT_USERCHAN
 	bool
-	depends on BOARD_NATIVE_SIM
+	depends on NATIVE_LIBRARY
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
 	select NATIVE_USE_NSI_ERRNO
 	help
 	  This driver provides access to the local Linux host's Bluetooth
 	  adapter using a User Channel HCI socket to the Linux kernel. It
-	  is only intended to be used with the native_sim[//64] build of Zephyr.
-	  The Bluetooth adapter must be powered off in order for Zephyr to
-	  be able to use it.
+	  can also connect to a UNIX socket or TCP HCI endpoint. It is
+	  intended to be used with native simulator based targets that run
+	  in real time, including out-of-tree boards.
+	  When using a local Bluetooth adapter, the adapter must be powered
+	  off in order for Zephyr to be able to use it.
 
 config BT_ESP32
 	bool
@@ -176,11 +180,14 @@ config BT_ESP32
 	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT if !SOC_SERIES_ESP32
 	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT if !SOC_SERIES_ESP32
 	select BT_CTLR_ADV_PERIODIC_RSP_SUPPORT \
-		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
+			SOC_SERIES_ESP32H2
 	select BT_CTLR_LE_POWER_CONTROL_SUPPORT \
-		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
+			SOC_SERIES_ESP32H2
 	select BT_CTLR_SUBRATING_SUPPORT \
-		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
+			SOC_SERIES_ESP32H2
 	help
 	  Espressif HCI bluetooth interface
 
@@ -189,7 +196,6 @@ config BT_PSOC6_BLESS
 	default y
 	depends on DT_HAS_INFINEON_BLESS_HCI_ENABLED
 	depends on ZEPHYR_HAL_INFINEON_MODULE_BLOBS
-	select BT_HCI_SETUP
 	help
 	  PSOC 6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
@@ -215,7 +221,6 @@ config BT_NXP
 	bool
 	default y
 	depends on DT_HAS_NXP_HCI_BLE_ENABLED
-	select BT_HCI_SETUP
 	select CRC if BT_HCI_SET_PUBLIC_ADDR
 	help
 	  NXP HCI bluetooth interface
@@ -235,7 +240,6 @@ config BT_AMBIQ_HCI
 	select SPI
 	select GPIO if SOC_SERIES_APOLLO4X
 	select CLOCK_CONTROL if SOC_SERIES_APOLLO4X
-	select BT_HCI_SETUP
 	select AMBIQ_COMPONENT_USE_BT
 	help
 	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
@@ -297,13 +301,18 @@ config BT_DRIVER_QUIRK_NO_AUTO_DLE
 
 config BT_HCI_SET_PUBLIC_ADDR
 	bool
-	select BT_HCI_SETUP
 	help
-	  Pass the controller's public address to the HCI driver in setup()
+	  Pass the controller's public address to the HCI driver
 
 	  This option should be enabled by drivers for controllers that support setting the
-	  public identity through vendor-specific commands. They can then implement the
-	  setup() HCI driver API function and get the address to set from the public_addr field.
+	  public identity through vendor-specific commands. The address is available to the
+	  driver through bt_hci_get_public_addr() from the time the HCI transport is opened,
+	  so that the driver can set it during open(). Drivers that instead apply it in the
+	  setup() HCI driver API function, which receives it in its public_addr field, also
+	  select BT_HCI_SETUP.
+
+	  When the application has set no public address, the driver gets BT_ADDR_ANY either
+	  way, and not BT_ADDR_NONE.
 
 	  From the application side, the public address is set using the first call to
 	  bt_id_create(), before calling bt_enable().

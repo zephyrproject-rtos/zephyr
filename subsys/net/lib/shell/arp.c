@@ -23,12 +23,13 @@ static void arp_cb(struct arp_entry *entry, void *user_data)
 	int *count = data->user_data;
 
 	if (*count == 0) {
-		PR("     Interface  Link              Address\n");
+		PR("     Interface  Link              Type     Address\n");
 	}
 
-	PR("[%2d] %d          %s %s\n", *count,
+	PR("[%2d] %d          %s %-8s %s\n", *count,
 	   net_if_get_by_iface(entry->iface),
 	   net_sprint_ll_addr(entry->eth.addr, sizeof(struct net_eth_addr)),
+	   entry->is_static ? "static" : "dynamic",
 	   net_sprint_ipv4_addr(&entry->ip));
 
 	(*count)++;
@@ -78,7 +79,7 @@ static int cmd_net_arp_flush(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_NET_ARP)
 	PR("Flushing ARP cache.\n");
-	net_arp_clear_cache(NULL);
+	net_if_ipv4_nbr_flush(NULL);
 #else
 	print_arp_error(sh);
 #endif
@@ -136,20 +137,76 @@ static int cmd_net_arp_add(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	net_arp_update(iface, &ip, &eth, false, true);
+	ret = net_arp_add_static(iface, &ip, &eth);
+	if (ret < 0) {
+		PR_WARNING("Cannot add static ARP entry (%d)\n", ret);
+		return -ENOEXEC;
+	}
+
 	PR("Added static ARP entry %s -> %s on interface %d\n", net_sprint_ipv4_addr(&ip),
 	   net_sprint_ll_addr(eth.addr, sizeof(eth.addr)), net_if_get_by_iface(iface));
+	return 0;
+}
+
+static int cmd_net_arp_del(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_in_addr ip;
+	struct net_if *iface = NULL;
+	int ret;
+	int idx;
+	const char *ip_str;
+
+	if (argc < 2) {
+		PR_WARNING("Usage: net arp del [<iface_index>] <IPv4>\n");
+		return -ENOEXEC;
+	}
+
+	if (argc >= 3) {
+		idx = get_iface_idx(sh, argv[1]);
+		if (idx <= 0) {
+			PR_WARNING("Invalid interface index: %d\n", idx);
+			return -ENOEXEC;
+		}
+		iface = net_if_get_by_index(idx);
+		if (iface == NULL) {
+			PR_WARNING("No such interface index: %d\n", idx);
+			return -ENOEXEC;
+		}
+		ip_str = argv[2];
+	} else {
+		/* Without an interface index, remove the address wherever it
+		 * was learned.
+		 */
+		ip_str = argv[1];
+	}
+
+	ret = net_addr_pton(NET_AF_INET, ip_str, &ip);
+	if (ret < 0) {
+		PR_WARNING("Invalid IPv4 address: %s\n", ip_str);
+		return -ENOEXEC;
+	}
+
+	if (!net_if_ipv4_nbr_rm(iface, &ip)) {
+		PR_WARNING("No ARP entry for %s\n", net_sprint_ipv4_addr(&ip));
+		return -ENOEXEC;
+	}
+
+	PR("Removed ARP entry %s\n", net_sprint_ipv4_addr(&ip));
 	return 0;
 }
 #endif /* CONFIG_NET_ARP && CONFIG_NET_NATIVE */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	net_cmd_arp,
-	SHELL_CMD(flush, NULL, SHELL_HELP("Remove all entries from ARP cache", ""),
+	SHELL_CMD(flush, NULL,
+		  SHELL_HELP("Remove the learned entries from the ARP cache. "
+			     "Static entries are kept.", ""),
 		  cmd_net_arp_flush),
 #if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
 	SHELL_CMD(add, NULL, SHELL_HELP("Add a static ARP entry", "[<iface_index>] <IPv4> <MAC>"),
 		  cmd_net_arp_add),
+	SHELL_CMD(del, NULL, SHELL_HELP("Remove an ARP entry", "[<iface_index>] <IPv4>"),
+		  cmd_net_arp_del),
 #endif
 	SHELL_SUBCMD_SET_END);
 

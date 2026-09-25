@@ -45,37 +45,37 @@ extern "C" {
  * they know how to format them correctly. The only restriction is
  * that all options must be added to a packet in numeric order.
  *
- * Refer to RFC 7252, section 12.2 for more information.
+ * Refer to @rfc{7252,section-12.2} for more information.
  */
 enum coap_option_num {
 	COAP_OPTION_IF_MATCH = 1,        /**< If-Match */
 	COAP_OPTION_URI_HOST = 3,        /**< Uri-Host */
 	COAP_OPTION_ETAG = 4,            /**< ETag */
 	COAP_OPTION_IF_NONE_MATCH = 5,   /**< If-None-Match */
-	COAP_OPTION_OBSERVE = 6,         /**< Observe (RFC 7641) */
+	COAP_OPTION_OBSERVE = 6,         /**< Observe (@rfc{7641}) */
 	COAP_OPTION_URI_PORT = 7,        /**< Uri-Port */
 	COAP_OPTION_LOCATION_PATH = 8,   /**< Location-Path */
-	COAP_OPTION_OSCORE = 9,          /**< OSCORE (RFC 8613) */
+	COAP_OPTION_OSCORE = 9,          /**< OSCORE (@rfc{8613}) */
 	COAP_OPTION_URI_PATH = 11,       /**< Uri-Path */
 	COAP_OPTION_CONTENT_FORMAT = 12, /**< Content-Format */
 	COAP_OPTION_MAX_AGE = 14,        /**< Max-Age */
 	COAP_OPTION_URI_QUERY = 15,      /**< Uri-Query */
 	COAP_OPTION_ACCEPT = 17,         /**< Accept */
 	COAP_OPTION_LOCATION_QUERY = 20, /**< Location-Query */
-	COAP_OPTION_BLOCK2 = 23,         /**< Block2 (RFC 7959) */
-	COAP_OPTION_BLOCK1 = 27,         /**< Block1 (RFC 7959) */
-	COAP_OPTION_SIZE2 = 28,          /**< Size2 (RFC 7959) */
+	COAP_OPTION_BLOCK2 = 23,         /**< Block2 (@rfc{7959}) */
+	COAP_OPTION_BLOCK1 = 27,         /**< Block1 (@rfc{7959}) */
+	COAP_OPTION_SIZE2 = 28,          /**< Size2 (@rfc{7959}) */
 	COAP_OPTION_PROXY_URI = 35,      /**< Proxy-Uri */
 	COAP_OPTION_PROXY_SCHEME = 39,   /**< Proxy-Scheme */
 	COAP_OPTION_SIZE1 = 60,          /**< Size1 */
-	COAP_OPTION_ECHO = 252,          /**< Echo (RFC 9175) */
-	COAP_OPTION_NO_RESPONSE = 258,   /**< No-Response (RFC 7967) */
-	COAP_OPTION_REQUEST_TAG = 292,   /**< Request-Tag (RFC 9175) */
-	COAP_OPTION_SIGNAL_701_MMS = 2,  /**< Signal 7.01 Max message size (RFC 8323) */
-	COAP_OPTION_SIGNAL_701_BWT = 4,	 /**< Signal 7.01 Block-wise transfer (RFC 8323) */
-	COAP_OPTION_SIGNAL_704_ALT_ADDR = 2, /**< Signal 7.04 Alternative-Address (RFC 8323) */
-	COAP_OPTION_SIGNAL_704_HOLD_OFF = 4, /**< Signal 7.04 Hold-Off (RFC 8323) */
-	COAP_OPTION_SIGNAL_705_BAD_CSM = 2   /**< Signal 7.05 Bad-CSM-Option (RFC 8323) */
+	COAP_OPTION_ECHO = 252,          /**< Echo (@rfc{9175}) */
+	COAP_OPTION_NO_RESPONSE = 258,   /**< No-Response (@rfc{7967}) */
+	COAP_OPTION_REQUEST_TAG = 292,   /**< Request-Tag (@rfc{9175}) */
+	COAP_OPTION_SIGNAL_701_MMS = 2,  /**< Signal 7.01 Max message size (@rfc{8323}) */
+	COAP_OPTION_SIGNAL_701_BWT = 4,	 /**< Signal 7.01 Block-wise transfer (@rfc{8323}) */
+	COAP_OPTION_SIGNAL_704_ALT_ADDR = 2, /**< Signal 7.04 Alternative-Address (@rfc{8323}) */
+	COAP_OPTION_SIGNAL_704_HOLD_OFF = 4, /**< Signal 7.04 Hold-Off (@rfc{8323}) */
+	COAP_OPTION_SIGNAL_705_BAD_CSM = 2   /**< Signal 7.05 Bad-CSM-Option (@rfc{8323}) */
 };
 
 /**
@@ -149,7 +149,7 @@ enum coap_msgtype {
  *
  * To be used when creating a response.
  *
- * Refer to RFC 7252, section 12.1.2 for more information.
+ * Refer to @rfc{7252,section-12.1.2} for more information.
  */
 enum coap_response_code {
 	/** 2.01 - Created */
@@ -225,6 +225,9 @@ enum coap_response_code {
 #define COAP_TOKEN_MAX_LEN 8UL
 #define COAP_FIXED_HEADER_SIZE 4UL
 
+/** Maximum length of the ETag option value (@rfc{7252,section-5.10.6}) */
+#define COAP_ETAG_MAX_LEN 8UL
+
 /* CoAP TCP header constants (RFC 8323) */
 /* Len/TKL + Code */
 #define COAP_TCP_BASIC_HEADER_SIZE        (2)
@@ -260,7 +263,7 @@ enum coap_content_format {
  * @brief Set of No-Response option values for CoAP.
  *
  * To be used when encoding or decoding a No-Response option defined
- * in RFC 7967.
+ * in @rfc{7967}.
  */
 enum coap_no_response {
 	COAP_NO_RESPONSE_SUPPRESS_2_XX = 0x02,
@@ -787,11 +790,9 @@ int coap_handle_request(struct coap_packet *cpkt,
 
 /**
  * Represents the size of each block that will be transferred using
- * block-wise transfers [RFC7959]:
+ * block-wise transfers (@rfc{7959}):
  *
  * Each entry maps directly to the value that is used in the wire.
- *
- * https://tools.ietf.org/html/rfc7959
  */
 enum coap_block_size {
 	COAP_BLOCK_16,   /**< 16-byte block size */
@@ -801,7 +802,7 @@ enum coap_block_size {
 	COAP_BLOCK_256,  /**< 256-byte block size */
 	COAP_BLOCK_512,  /**< 512-byte block size */
 	COAP_BLOCK_1024, /**< 1024-byte block size */
-	COAP_BLOCK_BERT, /**< BERT block size (RFC 8323) - acts like 1024 for calculations */
+	COAP_BLOCK_BERT, /**< BERT block size (@rfc{8323}) - acts like 1024 for calculations */
 };
 
 /**
@@ -1108,11 +1109,14 @@ bool coap_remove_observer(struct coap_resource *resource,
  * @brief Returns the observer that matches address @a addr
  * and has token @a token.
  *
+ * An empty token is a valid token: the endpoint and an empty token
+ * together name one observer, as any other endpoint and token pair do.
+ *
  * @param observers Pointer to the array of observers
  * @param len Size of the array of observers
  * @param addr Address of the endpoint observing a resource
  * @param token Pointer to the token
- * @param token_len Length of valid bytes in the token
+ * @param token_len Length of valid bytes in the token, which may be zero
  *
  * @return A pointer to a observer if a match is found, NULL
  * otherwise.
@@ -1362,7 +1366,7 @@ void coap_set_transmission_parameters(const struct coap_transmission_parameters 
  * @brief Check if a CoAP packet contains unsupported critical options.
  *
  * This function checks if a parsed CoAP packet contains any critical options
- * that this build does not support. Per RFC 7252 Section 5.4.1, unrecognized
+ * that this build does not support. Per @rfc{7252,section-5.4.1}, unrecognized
  * critical options must cause the message to be rejected.
  *
  * Currently checks for:

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/MCXE31BMPB-pinctrl.h>
+#include <nxp/mcx/mcxe/pinctrl/MCXE31BMPB-pinctrl.h>
 
 &pinctrl {
 	eirq0_default {

@@ -261,6 +261,9 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 
 	if (*len >= (buf_len - 1)) {
 		LOG_DBG("Packet too large. Got %u but only has %u", *len, (buf_len - 1));
+		/* Drain checksum to keep RX stream aligned with GDB RSP framing */
+		(void)z_gdb_getchar();
+		(void)z_gdb_getchar();
 		/* NACK packet */
 		z_gdb_putchar('-');
 		return -2;
@@ -514,16 +517,18 @@ static int gdb_mem_write_aligned(const uint8_t *buf, uintptr_t addr,
 		/* Write data to memory */
 		*(uint32_t *)mem_ptr = data.u32;
 
-		/* Point to the next aligned datum. */
-		mem_ptr += align;
+		if (remaining > 0) {
+			/* Point to the next aligned datum. */
+			mem_ptr += align;
 
-		if (write_sz != align) {
-			/*
-			 * Since we are not writing a full aligned datum,
-			 * we need to do read-modify-write. Hence reading
-			 * it here before the next hex2bin() call.
-			 */
-			data.u32 = *(uint32_t *)mem_ptr;
+			if (write_sz != align) {
+				/*
+				 * Since we are not writing a full aligned datum,
+				 * we need to do read-modify-write. Hence reading
+				 * it here before the next hex2bin() call.
+				 */
+				data.u32 = *(uint32_t *)mem_ptr;
+			}
 		}
 
 		/*

@@ -11,7 +11,6 @@
 
 /* (2^31 / 2^8(shift) */
 #define ADXL362_TEMP_QSCALE   8388608
-#define ADXL362_TEMP_LSB_PER_C 15
 
 #define ADXL362_COMPLEMENT         0xf000
 
@@ -49,8 +48,10 @@ static inline void adxl362_temp_convert_q31(q31_t *out, int16_t data_in)
 		data_in |= ADXL362_COMPLEMENT;
 	}
 
-	*out = ((data_in - ADXL362_TEMP_BIAS_LSB) / ADXL362_TEMP_LSB_PER_C
-			+ ADXL362_TEMP_BIAS_TEST_CONDITION) * ADXL362_TEMP_QSCALE;
+	int32_t milli_c = (data_in - ADXL362_TEMP_BIAS_LSB) * ADXL362_TEMP_MC_PER_LSB +
+			  (ADXL362_TEMP_BIAS_TEST_CONDITION * 1000);
+
+	*out = (q31_t)(((int64_t)milli_c * ADXL362_TEMP_QSCALE) / 1000);
 }
 
 static inline void adxl362_accel_convert_q31(q31_t *out, int16_t data_in, int32_t range)

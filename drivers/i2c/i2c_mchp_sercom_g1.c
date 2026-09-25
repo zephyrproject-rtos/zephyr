@@ -122,6 +122,14 @@ struct i2c_mchp_dev_data {
 #if defined(CONFIG_I2C_TARGET)
 	bool first_read;
 	uint8_t tgt_xfer_data;
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	uint8_t rx_buf_internal[CONFIG_I2C_MCHP_TARGET_BUFF_SIZE];
+	uint32_t rx_len;
+	uint8_t *tx_buf_ptr;
+	uint32_t tx_pos;
+	uint32_t tx_len;
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 #endif /*CONFIG_I2C_TARGET*/
 };
 
@@ -215,7 +223,7 @@ static inline void i2c_set_ack(const struct device *dev, bool ack)
 	}
 }
 
-/* Checks if NACK was received from I2C slave */
+/* Checks if NACK was received from I2C target */
 static inline bool i2c_got_nack(const struct device *dev)
 {
 	return (I2CM(dev).SERCOM_STATUS & SERCOM_I2CM_STATUS_RXNACK_Msk) != 0;
@@ -240,7 +248,10 @@ static void i2c_write_addr(const struct device *dev, uint16_t addr, bool is_read
 /* Calculates baud rate register values for requested I2C bitrate */
 static bool i2c_baudrate_calc(uint32_t bitrate, uint32_t sys_clock_rate, uint32_t *baud_val)
 {
-	uint32_t baud_value = 0U;
+	uint32_t baud_offset;
+	uint32_t baud_min;
+	uint32_t baud_max;
+	uint32_t baud_value;
 
 	/* Reference clock frequency must be at least two times the baud rate */
 	if (sys_clock_rate < (2U * bitrate)) {
@@ -251,54 +262,50 @@ static bool i2c_baudrate_calc(uint32_t bitrate, uint32_t sys_clock_rate, uint32_
 
 	if (bitrate > I2C_BITRATE_FAST_PLUS) {
 		/* HS mode baud calculation: BAUD = (f_ref / f_scl) - 2 */
-		baud_value = (sys_clock_rate / bitrate) - 2U;
+		baud_offset = 2U;
 	} else {
 		/* Standard, FM and FM+ baud calculation:
 		 * BAUD = (f_ref / f_scl) - ((f_ref * T_RISE_ns) / 1,000,000,000) - 10
 		 */
-		baud_value = (sys_clock_rate / bitrate) -
-			     ((sys_clock_rate * I2C_TRISE_DEFAULT_NS) / 1000000000U) - 10U;
+		baud_offset = ((sys_clock_rate * I2C_TRISE_DEFAULT_NS) / 1000000000U) + 10U;
 	}
 
 	if (bitrate <= I2C_BITRATE_FAST) {
 		/* For I2C clock speed up to 400 kHz, the value of BAUD<7:0>
 		 * determines both SCL_L and SCL_H with SCL_L = SCL_H
 		 */
-		if (baud_value > (I2C_BAUD_MAX * 2U)) {
-			/* Set baud rate to the maximum possible value */
-			baud_value = I2C_BAUD_MAX;
-		} else if (baud_value <= 1U) {
-			/* Baud value cannot be 0. Set baud rate to minimum possible */
-			baud_value = 1U;
-		} else {
-			baud_value /= 2U;
-		}
-
-		*baud_val = baud_value;
-
-		return true;
+		baud_min = 2U;
+		baud_max = I2C_BAUD_MAX * 2U;
+	} else {
+		/* To maintain the ratio of SCL_L:SCL_H to 2:1, the max value of
+		 * BAUD_LOW<15:8>:BAUD<7:0> can be 0xFF:0x7F. Hence BAUD_LOW + BAUD
+		 * can not exceed 255+127 = 382
+		 */
+		baud_min = 4U;
+		baud_max = I2C_BAUD_LOW_HIGH_MAX - 1U;
 	}
 
-	/* To maintain the ratio of SCL_L:SCL_H to 2:1, the max value of
-	 * BAUD_LOW<15:8>:BAUD<7:0> can be 0xFF:0x7F. Hence BAUD_LOW + BAUD
-	 * can not exceed 255+127 = 382
-	 */
-	if (baud_value >= I2C_BAUD_LOW_HIGH_MAX) {
-		/* Set baud rate to the maximum possible value while
-		 * maintaining SCL_L:SCL_H to 2:1
-		 */
-		baud_value = (0xFFUL << 8U) | (0x7FU);
-	} else if (baud_value <= 3U) {
-		/* Baud value cannot be 0. Set baud rate to minimum possible
-		 * value while maintaining SCL_L:SCL_H to 2:1
-		 */
-		baud_value = (2UL << 8U) | 1U;
+	/* Tested before the subtraction below, which would otherwise wrap */
+	if ((sys_clock_rate / bitrate) < (baud_offset + baud_min)) {
+		LOG_ERR("Reference clock %u Hz is too slow for I2C bitrate %u Hz", sys_clock_rate,
+			bitrate);
+		return false;
+	}
+
+	baud_value = (sys_clock_rate / bitrate) - baud_offset;
+
+	if (baud_value > baud_max) {
+		LOG_ERR("Reference clock %u Hz is too fast for I2C bitrate %u Hz", sys_clock_rate,
+			bitrate);
+		return false;
+	}
+
+	if (bitrate <= I2C_BITRATE_FAST) {
+		*baud_val = baud_value / 2U;
 	} else {
 		/* For Fm+ mode, I2C SCL_L:SCL_H to 2:1 */
-		baud_value = ((((baud_value * 2U) / 3U) << 8U) | (baud_value / 3U));
+		*baud_val = ((((baud_value * 2U) / 3U) << 8U) | (baud_value / 3U));
 	}
-
-	*baud_val = baud_value;
 
 	return true;
 }
@@ -383,7 +390,7 @@ static int i2c_apply_speed(const struct device *dev, uint32_t config)
 
 	if (!i2c_set_baudrate(dev, f_scl, f_ref)) {
 		LOG_ERR("Failed to set baudrate");
-		return -EIO;
+		return -EINVAL;
 	}
 
 	return 0;
@@ -1024,7 +1031,18 @@ static void i2c_target_on_addr_match(const struct device *dev, uint16_t status)
 	const struct i2c_target_callbacks *cb = data->tgt_cfg->callbacks;
 
 	if ((status & SERCOM_I2CS_STATUS_DIR_Msk) != 0) {
-		/* Controller is reading - get first byte */
+		/* Controller is reading from target */
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+		/* Flush accumulated write data before read (repeated START pattern) */
+		if ((data->rx_len > 0U) && (cb->buf_write_received != NULL)) {
+			cb->buf_write_received(data->tgt_cfg, data->rx_buf_internal, data->rx_len);
+			data->rx_len = 0;
+		}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
+
+#ifndef CONFIG_I2C_TARGET_BUFFER_MODE
+		/* Get first byte to send */
 		if (cb->read_requested != NULL) {
 			if (cb->read_requested(data->tgt_cfg, &data->tgt_xfer_data) < 0) {
 				/* Error - wait for next START */
@@ -1032,9 +1050,11 @@ static void i2c_target_on_addr_match(const struct device *dev, uint16_t status)
 				return;
 			}
 		}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 		data->first_read = true;
 	} else {
 		/* Controller is writing */
+#ifndef CONFIG_I2C_TARGET_BUFFER_MODE
 		if (cb->write_requested != NULL) {
 			if (cb->write_requested(data->tgt_cfg) < 0) {
 				/* Error - NACK the address */
@@ -1042,6 +1062,7 @@ static void i2c_target_on_addr_match(const struct device *dev, uint16_t status)
 				return;
 			}
 		}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 	}
 }
 
@@ -1052,6 +1073,7 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 	const struct i2c_target_callbacks *cb = data->tgt_cfg->callbacks;
 
 	if ((status & SERCOM_I2CS_STATUS_DIR_Msk) != 0) {
+		/* Controller is reading from target */
 
 		if (data->first_read) {
 			/* First DRDY: load first byte prepared in AMATCH */
@@ -1066,6 +1088,7 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 				return;
 			}
 
+#ifndef CONFIG_I2C_TARGET_BUFFER_MODE
 			/* Get next byte */
 			if (cb->read_processed != NULL) {
 				if (cb->read_processed(data->tgt_cfg, &data->tgt_xfer_data) < 0) {
@@ -1073,11 +1096,55 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 					return;
 				}
 			}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 		}
 
 		/* Load data to send - writing DATA clears DRDY */
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+		if (data->tx_len == 0U) {
+			/* Request a new buffer of data to send */
+			if (cb->buf_read_requested == NULL) {
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+				return;
+			}
+
+			int ret = cb->buf_read_requested(data->tgt_cfg, &data->tx_buf_ptr,
+							 &data->tx_len);
+			if (ret != 0) {
+				LOG_ERR("Target callback failed to provide data (error code=%d), "
+					"sending NACK",
+					ret);
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+				return;
+			}
+			data->tx_pos = 0;
+			if ((data->tx_len == 0U) || (data->tx_buf_ptr == NULL)) {
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+				return;
+			}
+		}
+
+		/* Send next byte from the buffer */
+		I2CS(dev).SERCOM_DATA = data->tx_buf_ptr[data->tx_pos];
+		data->tx_len--;
+		data->tx_pos++;
+#else
 		I2CS(dev).SERCOM_DATA = data->tgt_xfer_data;
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 	} else {
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+		/* Store to the internal buffer */
+		if (data->rx_len < CONFIG_I2C_MCHP_TARGET_BUFF_SIZE) {
+			data->rx_buf_internal[data->rx_len] = I2CS(dev).SERCOM_DATA;
+			data->rx_len++;
+		} else {
+			LOG_WRN("Buffer overflow: rx_len=%u >= MAX=%u", data->rx_len,
+				CONFIG_I2C_MCHP_TARGET_BUFF_SIZE);
+			data->rx_len = 0;
+			i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+		}
+#else
 		data->tgt_xfer_data = I2CS(dev).SERCOM_DATA;
 
 		if (cb->write_received != NULL) {
@@ -1087,6 +1154,7 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 				return;
 			}
 		}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 	}
 }
 
@@ -1095,6 +1163,15 @@ static void i2c_target_on_stop(const struct device *dev)
 {
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 	const struct i2c_target_callbacks *cb = data->tgt_cfg->callbacks;
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	if ((data->rx_len > 0U) && (cb->buf_write_received != NULL)) {
+		cb->buf_write_received(data->tgt_cfg, data->rx_buf_internal, data->rx_len);
+	}
+	data->rx_len = 0;
+	data->tx_len = 0;
+	data->tx_pos = 0;
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 
 	if (cb->stop != NULL) {
 		cb->stop(data->tgt_cfg);
@@ -1316,6 +1393,13 @@ static int i2c_mchp_target_register(const struct device *dev, struct i2c_target_
 
 	/* Store pointer to original config - callbacks use CONTAINER_OF on this */
 	data->tgt_cfg = cfg;
+	data->first_read = false;
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	data->rx_len = 0;
+	data->tx_len = 0;
+	data->tx_pos = 0;
+	data->tx_buf_ptr = NULL;
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 
 	i2c_enable(dev, false);
 	i2c_setup_target_mode(dev);

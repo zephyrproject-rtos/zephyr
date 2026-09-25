@@ -46,7 +46,7 @@ static int mtch9010_configure_gpio(const struct device *dev);
 static int mtch9010_configure_int_gpio(const struct device *dev);
 static int mtch9010_device_reset(const struct device *dev);
 static int mtch9010_timeout_receive(const struct device *dev, char *buffer, uint8_t buffer_len,
-				    uint16_t milliseconds);
+				    uint32_t milliseconds);
 static int mtch9010_lock_settings(const struct device *dev);
 static int mtch9010_update_heartbeat(const struct device *dev);
 
@@ -350,8 +350,8 @@ static int mtch9010_init(const struct device *dev)
 #ifdef CONFIG_MTCH9010_OVERRIDE_DELAY_ENABLE
 	/* Print warning */
 	if (config->sleep_time != 0) {
-		uint16_t timeout =
-			(config->sleep_time) * 1000 + CONFIG_MTCH9010_SAMPLE_DELAY_TIMEOUT_MS;
+		uint32_t timeout =
+			(config->sleep_time_s) * 1000 + CONFIG_MTCH9010_SAMPLE_DELAY_TIMEOUT_MS;
 		LOG_INST_WRN(config->log, "Device will wait up-to %u ms when fetching samples",
 			     (timeout));
 	}
@@ -398,7 +398,7 @@ static int mtch9010_command_send(const struct device *dev, const char *str)
 
 /* Returns the number of bytes received */
 static int mtch9010_timeout_receive(const struct device *dev, char *buffer, uint8_t buffer_len,
-				    uint16_t milliseconds)
+				    uint32_t milliseconds)
 {
 	const struct mtch9010_config *config = (const struct mtch9010_config *)dev->config;
 	const struct device *uart_dev = config->uart_dev;
@@ -578,7 +578,7 @@ int mtch9010_decode_char_buffer(const char *buffer, uint8_t format, struct mtch9
 	}
 
 	/* Check to see if the first digit is valid */
-	if (isdigit(buffer[0]) == 0) {
+	if ((isdigit((unsigned char)buffer[0]) == 0) && (buffer[0] != '-')) {
 		return -EINVAL;
 	}
 
@@ -714,6 +714,11 @@ static int mtch9010_sample_fetch(const struct device *dev, enum sensor_channel c
 	case SENSOR_CHAN_MTCH9010_OUT_STATE: {
 		/* I/O output state - poll GPIO */
 
+		if (config->out_gpio.port == NULL) {
+			LOG_INST_ERR(config->log, "OUT GPIO not configured");
+			return -ENOTSUP;
+		}
+
 		data->last_out_state = gpio_pin_get_dt(&config->out_gpio);
 		if (data->last_out_state < 0) {
 			LOG_ERR("GPIO Error %d", data->last_out_state);
@@ -748,12 +753,12 @@ static int mtch9010_sample_fetch(const struct device *dev, enum sensor_channel c
 		}
 
 		/* Blocking Wait for Sensor Data */
-		uint16_t timeout = CONFIG_MTCH9010_SAMPLE_DELAY_TIMEOUT_MS;
+		uint32_t timeout = CONFIG_MTCH9010_SAMPLE_DELAY_TIMEOUT_MS;
 
 		if (config->sleep_time != 0) {
 
 #ifdef CONFIG_MTCH9010_OVERRIDE_DELAY_ENABLE
-			timeout = (config->sleep_time) * 1000 +
+			timeout = (config->sleep_time_s) * 1000 +
 				  CONFIG_MTCH9010_SAMPLE_DELAY_TIMEOUT_MS;
 #else
 			LOG_INST_ERR(config->log, "Wake mode is disabled if sleep period is "
@@ -917,6 +922,10 @@ static DEVICE_API(sensor, mtch9010_api_funcs) = {
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, sleep_period),\
 		(DT_INST_ENUM_IDX(inst, sleep_period)), (0))
 
+#define MTCH9010_SLEEP_TIME_SEC_INIT(inst)                                                         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, sleep_period),\
+		(DT_INST_PROP(inst, sleep_period)), (0))
+
 #define MTCH9010_OUTPUT_MODE_INIT(inst)                                                            \
 	COND_CODE_0(DT_INST_PROP_OR(inst, extended_output_enable, false),\
 		(MTCH9010_OUTPUT_FORMAT_CURRENT),\
@@ -957,6 +966,7 @@ static DEVICE_API(sensor, mtch9010_api_funcs) = {
 		.enable_cfg_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(inst), cfg_en_gpios, {0}),      \
 		.mode = MTCH9010_OPERATING_MODE_INIT(inst),                                        \
 		.sleep_time = MTCH9010_SLEEP_TIME_INIT(inst),                                      \
+		.sleep_time_s = MTCH9010_SLEEP_TIME_SEC_INIT(inst),                                \
 		.extended_mode_enable = DT_INST_PROP_OR(inst, extended_output_enable, false),      \
 		.format = MTCH9010_OUTPUT_MODE_INIT(inst),                                         \
 		.ref_mode = MTCH9010_REF_MODE_INIT(inst),                                          \

@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Sahaj Sarup
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_NANO_R4
+	select SOC_R7FA4M1AB3CFM

@@ -7,6 +7,7 @@
 
 #include <zephyr/version.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net/wifi_utils.h>
 
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
@@ -57,6 +58,9 @@ int siwx91x_status(const struct device *dev,
 
 	memset(status, 0, sizeof(*status));
 
+	/* Derived from the channel below, once the channel is known. */
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
+
 	status->state = sidev->state;
 	if (sidev->state <= WIFI_STATE_INACTIVE) {
 		return 0;
@@ -73,10 +77,6 @@ int siwx91x_status(const struct device *dev,
 	status->ssid_len = strlen(status->ssid);
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 
-	if (interface & SL_WIFI_2_4GHZ_INTERFACE) {
-		status->band = WIFI_FREQ_BAND_2_4_GHZ;
-	}
-
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_CLIENT_INTERFACE) {
 		sl_wifi_operational_statistics_t operational_statistics = { };
 
@@ -86,6 +86,7 @@ int siwx91x_status(const struct device *dev,
 		status->link_mode = wlan_info.wireless_mode;
 		status->iface_mode = WIFI_MODE_INFRA;
 		status->channel = wlan_info.channel_number;
+		status->band = wifi_utils_chan_to_band(status->channel);
 		if (status->link_mode >= WIFI_6) {
 			status->twt_capable = true;
 		}
@@ -129,6 +130,7 @@ int siwx91x_status(const struct device *dev,
 		status->iface_mode = WIFI_MODE_AP;
 		status->mfp = WIFI_MFP_DISABLE;
 		status->channel = wlan_info.channel_number;
+		status->band = wifi_utils_chan_to_band(status->channel);
 		status->beacon_interval = sl_ap_cfg.beacon_interval;
 		status->dtim_period = sl_ap_cfg.dtim_beacon_count;
 		status->link_mode = WIFI_4;
@@ -435,28 +437,30 @@ static int map_sdk_region_to_zephyr_channel_info(const sli_wifi_set_region_ap_re
 						 size_t *num_channels)
 {
 	uint8_t first_channel = sdk_reg->channel_info[0].first_channel;
+	size_t written = 0;
 	uint8_t channel;
 	uint16_t freq;
 
-	*num_channels = sdk_reg->channel_info[0].no_of_channels;
-	if (*num_channels > MAX_24GHZ_CHANNELS) {
+	if (sdk_reg->channel_info[0].no_of_channels > MAX_24GHZ_CHANNELS) {
 		return -EOVERFLOW;
 	}
 
-	for (int idx = 0; idx < *num_channels; idx++) {
+	for (int idx = 0; idx < sdk_reg->channel_info[0].no_of_channels; idx++) {
 		channel = first_channel + idx;
-		freq = 2407 + channel * 5;
-
-		if (freq > 2472) {
-			freq = 2484; /* channel 14 */
+		freq = wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, channel);
+		if (freq == 0) {
+			continue;
 		}
 
-		z_chan_info[idx].center_frequency = freq;
-		z_chan_info[idx].max_power = sdk_reg->channel_info[0].max_tx_power;
-		z_chan_info[idx].supported = 1;
-		z_chan_info[idx].passive_only = 0;
-		z_chan_info[idx].dfs = 0;
+		z_chan_info[written].center_frequency = freq;
+		z_chan_info[written].max_power = sdk_reg->channel_info[0].max_tx_power;
+		z_chan_info[written].supported = 1;
+		z_chan_info[written].passive_only = 0;
+		z_chan_info[written].dfs = 0;
+		written++;
 	}
+
+	*num_channels = written;
 
 	return 0;
 }
@@ -524,6 +528,7 @@ static void siwx91x_iface_init(struct net_if *iface)
 
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
 	sidev->iface = iface;
+	k_work_init(&sidev->on_join_work, siwx91x_on_join_work);
 
 	sl_wifi_set_callback_v2(SL_WIFI_SCAN_RESULT_EVENTS, siwx91x_on_scan, sidev);
 	sl_wifi_set_callback_v2(SL_WIFI_JOIN_EVENTS, siwx91x_on_join, sidev);

@@ -103,11 +103,7 @@ struct udc_dwc2_data {
 	uint16_t iso_out_rearm;
 	uint16_t ep_out_disable;
 	uint16_t ep_out_stall;
-	uint16_t txf_set;
 	uint16_t pending_tx_flush;
-	uint16_t dfifodepth;
-	uint16_t rxfifo_depth;
-	uint16_t max_txfifo_depth[16];
 	uint16_t sof_num;
 	/* Configuration flags */
 	unsigned int dynfifosizing : 1;
@@ -137,6 +133,7 @@ struct udc_dwc2_config {
 	size_t num_out_eps;
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
+	const uint16_t *const fifo_sizes;
 	/* Pointer to pin control configuration or NULL */
 	struct pinctrl_dev_config *const pcfg;
 	/* Pointer to vendor quirks or NULL */
@@ -162,6 +159,9 @@ static inline struct usb_dwc2_reg *dwc2_get_base(const struct device *dev)
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(infineon_usbhs)
 #include "udc_dwc2_infineon_usbhs.h"
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(infineon_xmc4xxx_usb)
+#include "udc_dwc2_xmc4xxx.h"
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs)
 #include "udc_dwc2_nrf_usbhs.h"

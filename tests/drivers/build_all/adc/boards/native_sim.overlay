@@ -475,6 +475,13 @@
 				irq-gpios = <&test_gpio 0 0>;
 			};
 
+			test_spi_adc124s021: adc124s021@1b {
+				compatible = "ti,adc124s021";
+				reg = <0x1b>;
+				spi-max-frequency = <1000000>;
+				#io-channel-cells = <1>;
+			};
+
 			test_spi_ad4170: ad4170@21 {
 				compatible = "adi,ad4170-adc";
 				reg = <0x21>;
@@ -616,6 +623,30 @@
 				compatible = "adi,ad4195-8-adc";
 				reg = <0x32>;
 				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ade7913: ade7913@33 {
+				compatible = "adi,ade7913";
+				reg = <0x33>;
+				spi-max-frequency = <1000000>;
+				#io-channel-cells = <1>;
+				clock-frequency = <8000>;
+			};
+
+			test_spi_ads1262: ads1262@33 {
+				compatible = "ti,ads1262";
+				reg = <0x33>;
+				spi-max-frequency = <8000000>;
+				drdy-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ads1263: ads1263@34 {
+				compatible = "ti,ads1263";
+				reg = <0x34>;
+				spi-max-frequency = <8000000>;
+				drdy-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 				#io-channel-cells = <1>;
 			};
 		};

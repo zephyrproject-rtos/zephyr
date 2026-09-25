@@ -4,7 +4,7 @@
 if SHIELD_MIKROE_TWO_WIRE_ETH_CLICK
 
 # LAN865X is an Ethernet MAC+PHY controller on SPI
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # SHIELD_MIKROE_TWO_WIRE_ETH_CLICK

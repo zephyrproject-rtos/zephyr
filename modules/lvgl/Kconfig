@@ -7,6 +7,7 @@ config ZEPHYR_LVGL_MODULE
 
 config LVGL
 	bool "LVGL support"
+	imply CPU_LOAD if LV_USE_SYSMON
 	help
 	  This option enables the LVGL graphics library.
 
@@ -16,6 +17,9 @@ config LV_DRAW_BUF_ALIGN
 	int
 
 config LV_USE_MONKEY
+	bool
+
+config LV_USE_SYSMON
 	bool
 
 config LV_DPI_DEF
@@ -84,16 +88,21 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16
 	prompt "Color depth (bits per pixel)"
 
-	config LV_COLOR_DEPTH_32
-		bool "32: ARGB8888"
-	config LV_COLOR_DEPTH_24
-		bool "24: RGB888"
-	config LV_COLOR_DEPTH_16
-		bool "16: RGB565"
-	config LV_COLOR_DEPTH_8
-		bool "8: RGB232"
-	config LV_COLOR_DEPTH_1
-		bool "1: monochrome"
+config LV_COLOR_DEPTH_32
+	bool "32: ARGB8888"
+
+config LV_COLOR_DEPTH_24
+	bool "24: RGB888"
+
+config LV_COLOR_DEPTH_16
+	bool "16: RGB565"
+
+config LV_COLOR_DEPTH_8
+	bool "8: RGB232"
+
+config LV_COLOR_DEPTH_1
+	bool "1: monochrome"
+
 endchoice
 
 config LV_COLOR_16_SWAP

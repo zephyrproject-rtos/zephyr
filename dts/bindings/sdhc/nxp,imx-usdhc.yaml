@@ -96,3 +96,10 @@ properties:
       Use the host's internal card detect signal (USDHC_CD) to detect the SD
       card. This signal is available as an alternative to card detect via GPIO,
       and should be connected to the SD slot's detect pin if used.
+
+  non-removable:
+    type: boolean
+    description: |
+      Indicates a non-removable device such as an SDIO Wi-Fi module.
+      When set, the host treats the device as always present and skips
+      removable card detection.

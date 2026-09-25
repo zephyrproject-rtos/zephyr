@@ -7,7 +7,6 @@ menuconfig ETH_DRIVER
 	bool "Ethernet drivers"
 	depends on NETWORKING
 	depends on !NET_TEST
-	default y if NET_L2_ETHERNET
 
 if ETH_DRIVER
 
@@ -50,7 +49,15 @@ config ETH_QEMU_EXTRA_ARGS
 	  See https://www.qemu.org/docs/master/system/invocation.html#hxtool-5
 	  for the available options.
 
+config ETH_NIC_MODEL_ONBOARD
+	bool
+	help
+	  Selected by drivers whose QEMU NIC model (ETH_NIC_MODEL) is built
+	  into the emulated machine. Such a NIC cannot be created with the
+	  QEMU -device option, so it is configured with -nic instead.
+
 # zephyr-keep-sorted-start
+source "drivers/ethernet/Kconfig.adin1140"
 source "drivers/ethernet/Kconfig.adin2111"
 source "drivers/ethernet/Kconfig.bcmgenet"
 source "drivers/ethernet/Kconfig.cyclonev"
@@ -66,7 +73,6 @@ source "drivers/ethernet/Kconfig.lan9250"
 source "drivers/ethernet/Kconfig.litex"
 source "drivers/ethernet/Kconfig.mchp"
 source "drivers/ethernet/Kconfig.native_tap"
-source "drivers/ethernet/Kconfig.numaker"
 source "drivers/ethernet/Kconfig.nxp_enet"
 source "drivers/ethernet/Kconfig.nxp_s32_gmac"
 source "drivers/ethernet/Kconfig.nxp_s32_netc"
@@ -80,9 +86,6 @@ source "drivers/ethernet/Kconfig.stm32_hal"
 source "drivers/ethernet/Kconfig.sy1xx_mac"
 source "drivers/ethernet/Kconfig.test"
 source "drivers/ethernet/Kconfig.virtio_net"
-source "drivers/ethernet/Kconfig.w5500"
-source "drivers/ethernet/Kconfig.w6100"
-source "drivers/ethernet/Kconfig.w6300"
 source "drivers/ethernet/Kconfig.wch"
 source "drivers/ethernet/Kconfig.xilinx_axi_ethernet_lite"
 source "drivers/ethernet/Kconfig.xilinx_axienet"
@@ -96,6 +99,7 @@ source "drivers/ethernet/intel/Kconfig"
 source "drivers/ethernet/nxp_imx_netc/Kconfig"
 source "drivers/ethernet/offload/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
+source "drivers/ethernet/wiznet/Kconfig"
 # zephyr-keep-sorted-stop
 
 endif # "Ethernet Drivers"

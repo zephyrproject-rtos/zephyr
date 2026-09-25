@@ -17,5 +17,6 @@ extern const struct bt_cap_initiator_cb mock_cap_initiator_cb;
 void mock_cap_initiator_init(void);
 
 DECLARE_FAKE_VOID_FUNC(mock_unicast_start_complete_cb, int, struct bt_conn *);
+DECLARE_FAKE_VOID_FUNC(mock_broadcast_start_cb, struct bt_cap_broadcast_source *);
 
 #endif /* MOCKS_CAP_INITIATOR_H_ */

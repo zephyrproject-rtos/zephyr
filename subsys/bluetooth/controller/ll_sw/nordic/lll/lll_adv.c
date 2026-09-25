@@ -1174,7 +1174,7 @@ static void isr_tx(void *param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(phy_p, 0, phy_p, phy_flags);
+	radio_switch_complete_and_tx(phy_p, PHY_FLAGS_UNUSED, phy_p, phy_flags);
 
 	/* setup Rx buffer */
 	node_rx = ull_pdu_rx_alloc_peek(1);
@@ -1207,9 +1207,12 @@ static void isr_tx(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
-	hcto += radio_rx_chain_delay_get(phy_p, 0);
+	/* RX delay uses the worst-case S8 coded reception; TX delay uses
+	 * the selected advertising coding scheme.
+	 */
+	hcto += radio_rx_chain_delay_get(phy_p, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_p);
-	hcto -= radio_tx_chain_delay_get(phy_p, 0);
+	hcto -= radio_tx_chain_delay_get(phy_p, phy_flags);
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
@@ -1232,7 +1235,7 @@ static void isr_tx(void *param)
 
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
-				 radio_tx_chain_delay_get(phy_p, 0) -
+				 radio_tx_chain_delay_get(phy_p, phy_flags) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 

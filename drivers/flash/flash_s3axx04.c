@@ -424,7 +424,7 @@ static DEVICE_API(flash, flash_s3axx04_api) = {
 #define S3AXX04_INIT(inst)                                                                         \
 	static struct s3axx04_data s3axx04_data_##inst;                                            \
 	static const struct s3axx04_config s3axx04_config_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8)),           \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8)),       \
 		.disable_wren = DT_INST_PROP(inst, disable_wren),                                  \
 		.config_regs = DT_INST_PROP(inst, config_regs),                                    \
 		.layout = {                                                                        \

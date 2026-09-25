@@ -5,7 +5,9 @@ tests:
     harness: stepper
     tags: stepper
     platform_allow: nucleo_g071rb
-    depends_on: gpio input
+    depends_on:
+      - gpio
+      - input
   sample.drivers.stepper.generic.h_bridge_4_click:
     build_only: true
     tags:

@@ -115,7 +115,7 @@ int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg
 static inline int lpspi_validate_xfer_args(const struct spi_config *spi_cfg)
 {
 	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
-	uint32_t pcs = spi_cfg->slave;
+	uint32_t pcs = spi_cfg->peripheral;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		/* the IP DOES support half duplex, need to implement driver support */
@@ -268,7 +268,7 @@ static void lpspi_basic_config(const struct device *dev, const struct spi_config
 {
 	const struct lpspi_config *config = dev->config;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	uint32_t pcs_control_bit = 1 << (LPSPI_CFGR1_PCSPOL_SHIFT + spi_cfg->slave);
+	uint32_t pcs_control_bit = 1 << (LPSPI_CFGR1_PCSPOL_SHIFT + spi_cfg->peripheral);
 	uint32_t cfgr1_val = 0;
 
 	if (spi_cfg->operation & SPI_CS_ACTIVE_HIGH) {
@@ -277,7 +277,7 @@ static void lpspi_basic_config(const struct device *dev, const struct spi_config
 		cfgr1_val &= ~pcs_control_bit;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_CONTROLLER) {
 		cfgr1_val |= LPSPI_CFGR1_MASTER_MASK;
 	}
 
@@ -347,7 +347,7 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 
 	clock_freq = data->clock_freq;
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_CONTROLLER) {
 		uint32_t ccr = 0;
 
 		/* sckdiv algorithm must run *before* delays are set in order to know prescaler */
@@ -366,7 +366,7 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 		    LPSPI_TCR_CPHA(!!(spi_cfg->operation & SPI_MODE_CPHA)) |
 		    LPSPI_TCR_LSBF(!!(spi_cfg->operation & SPI_TRANSFER_LSB)) |
 		    LPSPI_TCR_FRAMESZ(word_size - 1) |
-		    LPSPI_TCR_PRESCALE(prescaler) | LPSPI_TCR_PCS(spi_cfg->slave);
+		    LPSPI_TCR_PRESCALE(prescaler) | LPSPI_TCR_PCS(spi_cfg->peripheral);
 
 	return lpspi_wait_tx_fifo_empty(dev);
 }

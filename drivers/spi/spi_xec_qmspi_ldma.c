@@ -109,8 +109,8 @@ static int spi_feature_support(const struct spi_config *config)
 {
 	/* NOTE: bit(11) is Half-duplex(3-wire) */
 	if ((config->operation &
-	     (SPI_TRANSFER_LSB | SPI_OP_MODE_SLAVE | SPI_MODE_LOOP | SPI_HALF_DUPLEX)) != 0) {
-		LOG_ERR("Driver does not support LSB first, slave, loop back, or half-duplex");
+	     (SPI_TRANSFER_LSB | SPI_OP_MODE_PERIPHERAL | SPI_MODE_LOOP | SPI_HALF_DUPLEX)) != 0) {
+		LOG_ERR("Driver does not support LSB first, peripheral, loop back, or half-duplex");
 		return -ENOTSUP;
 	}
 
@@ -334,7 +334,7 @@ static bool req_reconfig(const struct device *dev, const struct spi_config *conf
 		return true;
 	}
 
-	if (ctx_cfg->slave != config->slave) {
+	if (ctx_cfg->peripheral != config->peripheral) {
 		return true;
 	}
 
@@ -368,19 +368,19 @@ static int mec5_qspi_configure(const struct device *dev, const struct spi_config
 
 	/* chip select */
 #ifdef DT_SPI_CTX_HAS_NO_CS_GPIOS
-	if (config->slave >= XEC_QSPI_MAX_CS) {
+	if (config->peripheral >= XEC_QSPI_MAX_CS) {
 		LOG_ERR("Invalid HW chip select [0,1]");
 		return -EINVAL;
 	}
 #else
-	if ((config->cs.cs_is_gpio == true) && (config->slave >= data->ctx.num_cs_gpios)) {
+	if ((config->cs.cs_is_gpio == true) && (config->peripheral >= data->ctx.num_cs_gpios)) {
 		LOG_ERR("Invalid GPIO chip select");
 		return -EINVAL;
 	}
 #endif
 
 	data->operation = config->operation;
-	data->cs = (uint8_t)(config->slave & 0xffu);
+	data->cs = (uint8_t)(config->peripheral & 0xffu);
 	data->freq = config->frequency;
 
 	if ((data->operation & SPI_HOLD_ON_CS) == 0) {
@@ -781,7 +781,7 @@ static int mec5_qspi_init(const struct device *dev)
 	const struct spi_config spi_cfg = {
 		.frequency = devcfg->clock_freq,
 		.operation = SPI_WORD_SET(8) | SPI_LINES_SINGLE,
-		.slave = 0,
+		.peripheral = 0,
 		.word_delay = 0,
 	};
 

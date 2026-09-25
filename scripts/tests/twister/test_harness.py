@@ -328,6 +328,41 @@ def test_harness_process_test_fault_after_run_passed_ignored():
     assert harness.status == TwisterStatus.PASS
 
 
+@pytest.mark.parametrize(
+    'line',
+    [
+        'Fatal error was unexpected, aborting...',
+        'fatal error was unexpected, aborting',
+        'Assert failed was unexpected, aborting...',
+    ],
+    ids=['ztest fatal hook', 'custom lowercase hook', 'ztest assert hook']
+)
+def test_harness_process_test_unexpected_hook_fault_overrides_ignore_faults(line):
+    """The Ztest error/assert hooks (and equivalent custom hooks) announce a
+    fault the test did not expect. That is a crash even for ignore_faults
+    tests, where the generic fatal-error banner is not acted upon."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = False
+
+    harness.process_test(line)
+
+    assert harness.fault
+
+
+def test_harness_process_test_expected_hook_fault_not_a_crash():
+    """The hooks' expected-fault messages must not trip crash detection."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = False
+
+    harness.process_test('Caught system error -- reason 3 1')
+    harness.process_test('Fatal error expected as part of test case.')
+    harness.process_test('Assert error expected as part of test case.')
+
+    assert not harness.fault
+
+
 def test_robot_configure(tmp_path):
     # Arrange
     mock_platform = mock.Mock()

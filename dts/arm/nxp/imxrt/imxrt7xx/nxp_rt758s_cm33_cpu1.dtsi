@@ -1,0 +1,11 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/imxrt/imxrt7xx/nxp_rt7xx_cm33_cpu1.dtsi>
+
+/* mimxrt758s has no HiFi4 DSP core, unlike mimxrt798s. */
+/* MU2: CPU1 to HiFi4 */
+/delete-node/ &mbox2_b;

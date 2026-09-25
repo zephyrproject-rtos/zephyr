@@ -277,7 +277,7 @@ static int gpio_mspm0_pin_interrupt_configure(const struct device *port,
 		DL_GPIO_clearInterruptStatus(config->base, BIT(pin));
 		DL_GPIO_disableInterrupt(config->base, BIT(pin));
 		break;
-	case GPIO_INT_MODE_EDGE:
+	case GPIO_INT_MODE_EDGE: {
 		uint32_t polarity = 0x00;
 
 		if (trig & GPIO_INT_TRIG_LOW) {
@@ -299,6 +299,7 @@ static int gpio_mspm0_pin_interrupt_configure(const struct device *port,
 		DL_GPIO_clearInterruptStatus(config->base, BIT(pin));
 		DL_GPIO_enableInterrupt(config->base, BIT(pin));
 		break;
+	}
 	case GPIO_INT_MODE_LEVEL:
 		return -ENOTSUP;
 	}

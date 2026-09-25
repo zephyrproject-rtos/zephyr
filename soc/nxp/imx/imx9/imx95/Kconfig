@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_MIMX9596_M7
@@ -15,7 +15,6 @@ config SOC_MIMX9596_M7
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
 	select HAS_PM
-	select PM_STATE_SET_IRQ_UNLOCKED
 
 config SOC_MIMX9596_A55
 	select ARM64

@@ -10,8 +10,8 @@
  * @ingroup xen_dom0_sysctl
  */
 
-#ifndef __XEN_DOM0_SYSCTL_H__
-#define __XEN_DOM0_SYSCTL_H__
+#ifndef ZEPHYR_INCLUDE_XEN_DOM0_SYSCTL_H_
+#define ZEPHYR_INCLUDE_XEN_DOM0_SYSCTL_H_
 
 #include <xen/public/xen.h>
 #include <xen/public/sysctl.h>
@@ -83,4 +83,4 @@ int xen_sysctl_cpu_hotplug(uint32_t cpu, bool enable);
 
 /** @} */
 
-#endif /* __XEN_DOM0_SYSCTL_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_DOM0_SYSCTL_H_ */

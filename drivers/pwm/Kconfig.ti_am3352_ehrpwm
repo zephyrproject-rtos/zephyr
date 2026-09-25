@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_TI_AM3352_EHRPWM
-	bool "TI EHRPWM based PWM controller"
+	bool "TI EHRPWM PWM driver"
 	default y
 	depends on DT_HAS_TI_AM3352_EHRPWM_ENABLED
 	depends on CLOCK_CONTROL

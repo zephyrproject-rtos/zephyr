@@ -17,6 +17,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(RM3100_STREAM, CONFIG_SENSOR_LOG_LEVEL);
 
+/** A streaming read-config describes triggers, not channels: struct sensor_read_config
+ * keeps "channels" and "triggers" in the same union and "count" is the trigger count.
+ * A data-ready event always carries all three axes, so the encoded channel mask is
+ * fixed here instead of being derived from the read-config.
+ */
+static const struct sensor_chan_spec rm3100_stream_chan_spec[] = {
+	{ SENSOR_CHAN_MAGN_XYZ, 0 },
+};
+
 static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, int err,
 				   void *arg)
 {
@@ -69,9 +78,6 @@ static void rm3100_stream_get_data(const struct device *dev)
 	}
 
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
-	const struct sensor_chan_spec *const channels = cfg->channels;
-	const size_t num_channels = cfg->count;
 	uint8_t *buf;
 	uint32_t buf_len;
 	uint32_t min_buf_len = sizeof(struct rm3100_encoded_data);
@@ -88,31 +94,42 @@ static void rm3100_stream_get_data(const struct device *dev)
 
 	edata = (struct rm3100_encoded_data *)buf;
 
-	err = rm3100_encode(dev, channels, num_channels, buf);
+	err = rm3100_encode(dev, rm3100_stream_chan_spec,
+			    ARRAY_SIZE(rm3100_stream_chan_spec), buf);
 	if (err != 0) {
 		LOG_ERR("Failed to encode sensor data");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
 
-	struct rtio_sqe *status_wr_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *status_rd_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *write_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *read_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->rtio.ctx);
+	/*
+	 * Acquire the chain's five SQEs atomically: the bus RTIO context is
+	 * shared across reads, so a per-SQE acquire that falls back to
+	 * rtio_sqe_drop_all could free an SQE still in flight from another
+	 * chain.
+	 */
+	struct rtio_sqe *sqes[5];
 
-	if (!write_sqe || !read_sqe || !complete_sqe) {
+	if (rtio_sqe_acquire_array(data->rtio.ctx, ARRAY_SIZE(sqes), sqes) != 0) {
 		LOG_ERR("Failed to acquire RTIO SQEs");
-		rtio_sqe_drop_all(data->rtio.ctx);
 
 		data->stream.iodev_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
 
+	struct rtio_sqe *status_wr_sqe = sqes[0];
+	struct rtio_sqe *status_rd_sqe = sqes[1];
+	struct rtio_sqe *write_sqe = sqes[2];
+	struct rtio_sqe *read_sqe = sqes[3];
+	struct rtio_sqe *complete_sqe = sqes[4];
+
 	uint8_t val;
 
-	val = RM3100_REG_STATUS | REG_READ_BIT;
+	val = RM3100_REG_STATUS;
+	if (rtio_is_spi(data->rtio.type)) {
+		val |= REG_READ_BIT;
+	}
 
 	rtio_sqe_prep_tiny_write(status_wr_sqe,
 				 data->rtio.iodev,
@@ -134,7 +151,10 @@ static void rm3100_stream_get_data(const struct device *dev)
 	}
 	status_rd_sqe->flags |= RTIO_SQE_CHAINED;
 
-	val = RM3100_REG_MX | REG_READ_BIT;
+	val = RM3100_REG_MX;
+	if (rtio_is_spi(data->rtio.type)) {
+		val |= REG_READ_BIT;
+	}
 
 	rtio_sqe_prep_tiny_write(write_sqe,
 				 data->rtio.iodev,

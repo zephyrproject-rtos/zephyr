@@ -677,7 +677,7 @@ int itds_2533020201601_init(const struct device *dev)
 
 /* SPI configuration */
 #define ITDS_2533020201601_SPI_OPERATION \
-	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define ITDS_2533020201601_CONFIG_SPI(inst)                                                        \
 	{.bus_cfg =                                                                                \

@@ -77,6 +77,8 @@ config SOC_SERIES_BSIM_NRFXX
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 	select PINCTRL_DYNAMIC if PINCTRL
+	select ARCH_HAS_IRQ_PENDING_OPS
+	select ARCH_HAS_IRQ_GET_ACTIVE
 	help
 	  Any NRF simulated SOC with BabbleSim, based on the POSIX arch
 

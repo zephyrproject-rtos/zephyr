@@ -18,14 +18,19 @@ config DYNAMIC_INTERRUPTS
 config ISR_STACK_SIZE
 	default 2048
 
+# PM requires at least 680 bytes of idle stack. Set to a safe value.
+config IDLE_STACK_SIZE
+	default 2048 if PM
+
 config XTAL_FREQ_HZ
 	int
 	default $(dt_node_int_prop_int,/cpus/cpu@0,xtal-freq)
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	# ESP32-C5 systimer is always 16MHz regardless of XTAL frequency.
-	# The hardware adjusts the fractional divider automatically.
-	default 16000000 if SOC_SERIES_ESP32C5
+	# The C5 and C61 systimer always counts at 16MHz: the hardware
+	# applies a fixed fractional divider to the XTAL clock, so the
+	# tick rate does not follow the XTAL frequency.
+	default 16000000 if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61
 	default 10400000 if XTAL_FREQ_HZ = 26000000
 	default 16000000 if XTAL_FREQ_HZ = 32000000
 	default 16000000 if XTAL_FREQ_HZ = 40000000
@@ -108,6 +113,12 @@ if BT_ESP32
 
 configdefault BT_RX_STACK_SIZE
 	default 2048 if BT_SETTINGS
+
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048 if BT_SETTINGS && !WIFI_NM_WPA_SUPPLICANT
+
+configdefault SHELL_STACK_SIZE
+	default 4096 if BT_SHELL
 
 config BT_BUF_ACL_TX_COUNT
 	default 10

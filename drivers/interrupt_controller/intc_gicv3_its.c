@@ -79,7 +79,7 @@ static inline int fls_z(unsigned int x)
 	return 0;
 }
 
-/* wait 500ms & wakeup every millisecond */
+/* Poll for up to 500ms. */
 #define WAIT_QUIESCENT 500
 
 static int its_force_quiescent(struct gicv3_its_data *data)
@@ -103,7 +103,7 @@ static int its_force_quiescent(struct gicv3_its_data *data)
 			return -EBUSY;
 		}
 
-		k_msleep(1);
+		k_busy_wait(USEC_PER_MSEC);
 		reg = sys_read32(data->base + GITS_CTLR);
 	}
 
@@ -567,8 +567,9 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 		}
 	}
 
-	/* ITT must be of power of 2 */
+	/* ITT must be power of 2 — round up to next power-of-2 */
 	nr_ites = MAX(2, nites);
+	nr_ites = 1 << fls_z(nr_ites - 1);
 	alloc_size = ROUND_UP(nr_ites * entry_size, 256);
 
 	LOG_INF("Allocating ITT for DeviceID %x and %d vectors (%ld bytes entry)",

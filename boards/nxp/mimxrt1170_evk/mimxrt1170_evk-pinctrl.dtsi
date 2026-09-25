@@ -6,7 +6,7 @@
  * from mimxrt1170_evk.mex
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1176dvmaa-pinctrl.dtsi>
+#include <nxp/imxrt/imxrt11xx/pinctrl/mimxrt1176dvmaa-pinctrl.dtsi>
 
 &pinctrl {
 	/* conflicts with fxos8700 sensor */

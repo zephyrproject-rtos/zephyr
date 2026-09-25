@@ -17,7 +17,7 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y if !MODEM
 
 endif # BOARD_RDDRONE_FMUK66

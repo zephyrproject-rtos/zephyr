@@ -12,8 +12,8 @@
 #include <zephyr/ztest.h>
 
 #define SPI_MODE (SPI_MODE_CPOL | SPI_WORD_SET(8) | SPI_LINES_SINGLE)
-#define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE)
-#define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE)
+#define SPIM_OP	 (SPI_OP_MODE_CONTROLLER | SPI_MODE)
+#define SPIS_OP	 (SPI_OP_MODE_PERIPHERAL | SPI_MODE)
 
 static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_OP);
 static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
@@ -66,7 +66,7 @@ static uint8_t *buf_alloc(size_t len, bool spim)
 ZTEST(spi_error_cases, test_SPI_HALF_DUPLEX_not_supported)
 {
 	int rv;
-	int slave_rv;
+	int peripheral_rv;
 	struct spi_dt_spec spim_invalid = spim;
 	struct spi_config spis_config_invalid = spis_config;
 
@@ -75,32 +75,34 @@ ZTEST(spi_error_cases, test_SPI_HALF_DUPLEX_not_supported)
 
 	rv = spi_transceive_dt(&spim_invalid, tdata.stx_set, tdata.srx_set);
 	zassert_equal(rv, -ENOTSUP, "Got %d instead", rv);
-	slave_rv = spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -ENOTSUP, "Got %d instead", slave_rv);
+	peripheral_rv =
+		spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -ENOTSUP, "Got %d instead", peripheral_rv);
 }
 
 ZTEST(spi_error_cases, test_SPI_OP_MODE_invalid)
 {
 	int rv;
-	int slave_rv;
+	int peripheral_rv;
 	struct spi_dt_spec spim_invalid = spim;
 	struct spi_config spis_config_invalid = spis_config;
 
-	spim_invalid.config.operation |= SPI_OP_MODE_SLAVE;
-	spis_config_invalid.operation &= !SPI_OP_MODE_SLAVE;
+	spim_invalid.config.operation |= SPI_OP_MODE_PERIPHERAL;
+	spis_config_invalid.operation &= !SPI_OP_MODE_PERIPHERAL;
 
-	/* Check that Operation Mode Slave on spim is not supported */
+	/* Check that Operation Mode Peripheral on spim is not supported */
 	rv = spi_transceive_dt(&spim_invalid, tdata.stx_set, tdata.srx_set);
 	zassert_equal(rv, -EINVAL, "Got %d instead", rv);
-	/* Check that Operation Mode Master on spis is not supported */
-	slave_rv = spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -EINVAL, "Got %d instead", slave_rv);
+	/* Check that Operation Mode Controller on spis is not supported */
+	peripheral_rv =
+		spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -EINVAL, "Got %d instead", peripheral_rv);
 }
 
 ZTEST(spi_error_cases, test_SPI_MODE_LOOP_not_supported)
 {
 	int rv;
-	int slave_rv;
+	int peripheral_rv;
 	struct spi_dt_spec spim_invalid = spim;
 	struct spi_config spis_config_invalid = spis_config;
 
@@ -109,14 +111,15 @@ ZTEST(spi_error_cases, test_SPI_MODE_LOOP_not_supported)
 
 	rv = spi_transceive_dt(&spim_invalid, tdata.stx_set, tdata.srx_set);
 	zassert_equal(rv, -EINVAL, "Got %d instead", rv);
-	slave_rv = spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -EINVAL, "Got %d instead", slave_rv);
+	peripheral_rv =
+		spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -EINVAL, "Got %d instead", peripheral_rv);
 }
 
 ZTEST(spi_error_cases, test_only_SPI_LINES_SINGLE_supported)
 {
 	int rv;
-	int slave_rv;
+	int peripheral_rv;
 	struct spi_dt_spec spim_invalid = spim;
 	struct spi_config spis_config_invalid = spis_config;
 
@@ -125,8 +128,9 @@ ZTEST(spi_error_cases, test_only_SPI_LINES_SINGLE_supported)
 
 	rv = spi_transceive_dt(&spim_invalid, tdata.stx_set, tdata.srx_set);
 	zassert_equal(rv, -EINVAL, "Got %d instead", rv);
-	slave_rv = spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -EINVAL, "Got %d instead", slave_rv);
+	peripheral_rv =
+		spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -EINVAL, "Got %d instead", peripheral_rv);
 
 	spim_invalid = spim;
 	spis_config_invalid = spis_config;
@@ -135,8 +139,9 @@ ZTEST(spi_error_cases, test_only_SPI_LINES_SINGLE_supported)
 
 	rv = spi_transceive_dt(&spim_invalid, tdata.stx_set, tdata.srx_set);
 	zassert_equal(rv, -EINVAL, "Got %d instead", rv);
-	slave_rv = spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -EINVAL, "Got %d instead", slave_rv);
+	peripheral_rv =
+		spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -EINVAL, "Got %d instead", peripheral_rv);
 
 	spim_invalid = spim;
 	spis_config_invalid = spis_config;
@@ -145,14 +150,15 @@ ZTEST(spi_error_cases, test_only_SPI_LINES_SINGLE_supported)
 
 	rv = spi_transceive_dt(&spim_invalid, tdata.stx_set, tdata.srx_set);
 	zassert_equal(rv, -EINVAL, "Got %d instead", rv);
-	slave_rv = spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -EINVAL, "Got %d instead", slave_rv);
+	peripheral_rv =
+		spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -EINVAL, "Got %d instead", peripheral_rv);
 }
 
 ZTEST(spi_error_cases, test_only_8BIT_supported)
 {
 	int rv;
-	int slave_rv;
+	int peripheral_rv;
 	struct spi_dt_spec spim_invalid = spim;
 	struct spi_config spis_config_invalid = spis_config;
 
@@ -161,8 +167,9 @@ ZTEST(spi_error_cases, test_only_8BIT_supported)
 
 	rv = spi_transceive_dt(&spim_invalid, tdata.stx_set, tdata.srx_set);
 	zassert_equal(rv, -EINVAL, "Got %d instead", rv);
-	slave_rv = spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -EINVAL, "Got %d instead", slave_rv);
+	peripheral_rv =
+		spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -EINVAL, "Got %d instead", peripheral_rv);
 }
 
 ZTEST(spi_error_cases, test_unsupported_frequency)
@@ -178,47 +185,47 @@ ZTEST(spi_error_cases, test_unsupported_frequency)
 
 ZTEST(spi_error_cases, test_spis_scattered_tx_buf_not_supported)
 {
-	int slave_rv;
+	int peripheral_rv;
 
 	tdata.sets[2].count = 2;
-	slave_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -ENOTSUP, "Got %d instead", slave_rv);
+	peripheral_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -ENOTSUP, "Got %d instead", peripheral_rv);
 }
 
 ZTEST(spi_error_cases, test_spis_scattered_rx_buf_not_supported)
 {
-	int slave_rv;
+	int peripheral_rv;
 
 	tdata.sets[3].count = 2;
-	slave_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -ENOTSUP, "Got %d instead", slave_rv);
+	peripheral_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -ENOTSUP, "Got %d instead", peripheral_rv);
 }
 
 ZTEST(spi_error_cases, test_spis_tx_buf_too_big)
 {
-	int slave_rv;
+	int peripheral_rv;
 
 	tdata.bufs[2].len = (size_t)65536;
-	slave_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -EINVAL, "Got %d instead", slave_rv);
+	peripheral_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -EINVAL, "Got %d instead", peripheral_rv);
 }
 
 ZTEST(spi_error_cases, test_spis_rx_buf_too_big)
 {
-	int slave_rv;
+	int peripheral_rv;
 
 	tdata.bufs[3].len = (size_t)65536;
-	slave_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -EINVAL, "Got %d instead", slave_rv);
+	peripheral_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -EINVAL, "Got %d instead", peripheral_rv);
 }
 
 ZTEST(spi_error_cases, test_spis_tx_buf_not_in_ram)
 {
-	int slave_rv;
+	int peripheral_rv;
 
 	tdata.bufs[2].buf = (void *)0x12345678;
-	slave_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -ENOTSUP, "Got %d instead", slave_rv);
+	peripheral_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
+	zassert_equal(peripheral_rv, -ENOTSUP, "Got %d instead", peripheral_rv);
 }
 
 static void before(void *not_used)

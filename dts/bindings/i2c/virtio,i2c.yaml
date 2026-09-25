@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  VIRTIO I2C adapter device (ID:34)
+
+compatible: "virtio,i2c"
+
+include: [i2c-controller.yaml, base.yaml]
+
+examples:
+  - |
+    virtio_mmio0: virtio_mmio@a000000 {
+            compatible = "virtio,mmio";
+            reg = <0xa000000 0x200>;
+            interrupts = <0 16 4>;
+            status = "okay";
+
+            virtio_i2c0: virtio-i2c {
+                    compatible = "virtio,i2c";
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+                    status = "okay";
+
+                    eeprom0: eeprom@50 {
+                            compatible = "atmel,at24";
+                            reg = <0x50>;
+                            size = <256>;
+                            pagesize = <8>;
+                            address-width = <8>;
+                            timeout = <5>;
+                    };
+            };
+    };

@@ -7,12 +7,16 @@ supported:
   - adc
   - arduino_gpio
   - crc
+  - crypto
   - dma
   - entropy
   - gpio
   - memc
+  - netif:eth
   - octospi
+  - ptp_clock
   - rtc
+  - sdhc
   - uart
   - usbd
   - watchdog

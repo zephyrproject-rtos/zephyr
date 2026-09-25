@@ -269,7 +269,7 @@ static int counter_smartbond_set_alarm(const struct device *dev, uint8_t chan,
 		 * for absolute depending on the flag.
 		 */
 		if (irq_on_late) {
-			NVIC_SetPendingIRQ(config->irqn);
+			k_irq_set_pending(config->irqn);
 		} else {
 			data->callback = NULL;
 		}
@@ -280,7 +280,7 @@ static int counter_smartbond_set_alarm(const struct device *dev, uint8_t chan,
 			 * should be triggered. No need to enable interrupt
 			 * on TIMER just make sure interrupt is pending.
 			 */
-			NVIC_SetPendingIRQ(config->irqn);
+			k_irq_set_pending(config->irqn);
 		} else {
 			timer->TIMER2_CTRL_REG |= TIMER2_TIMER2_CTRL_REG_TIM_IRQ_EN_Msk;
 		}
@@ -322,7 +322,7 @@ static uint32_t counter_smartbond_get_pending_int(const struct device *dev)
 	/* There is no register to check TIMER peripheral to check for interrupt
 	 * pending, check directly in NVIC.
 	 */
-	return NVIC_GetPendingIRQ(config->irqn);
+	return k_irq_is_pending(config->irqn);
 }
 
 static int counter_smartbond_init_timer(const struct device *dev)

@@ -33,7 +33,7 @@ properties:
       - 2
       - 3
     description: |
-      Slave select to be asserted during transfer operation
+      Chip select to be asserted during transfer operation
 
   interrupts:
     required: true

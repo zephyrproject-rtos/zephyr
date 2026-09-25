@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PACKET_TYPE            0
 #define EVT_BLUE_INITIALIZED   0x01
 
-/* Needs to be aligned with the SPI master buffer size */
+/* Needs to be aligned with the SPI controller buffer size */
 #define SPI_MAX_MSG_LEN        255
 
 static uint8_t rxmsg[SPI_MAX_MSG_LEN];
@@ -70,14 +70,18 @@ const static struct spi_buf_set tx_bufs = {
 
 /*
  * This finds an arbitrary node with compatible
- * "zephyr,bt-hci-spi-slave". There should just be one in the
+ * "zephyr,bt-hci-spi-peripheral". There should just be one in the
  * devicetree.
  *
  * If for some reason you have more than one of these in your
  * devicetree, replace this macro definition to pick one, e.g. using
  * DT_NODELABEL().
  */
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_bt_hci_spi_peripheral)
+#define HCI_SPI_NODE           DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_bt_hci_spi_peripheral)
+#else
 #define HCI_SPI_NODE           DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_bt_hci_spi_slave)
+#endif
 
 /*
  * This is the SPI bus controller device used to exchange data with
@@ -85,7 +89,7 @@ const static struct spi_buf_set tx_bufs = {
  */
 static const struct device *const spi_hci_dev = DEVICE_DT_GET(DT_BUS(HCI_SPI_NODE));
 static struct spi_config spi_cfg = {
-	.operation = SPI_WORD_SET(8) | SPI_OP_MODE_SLAVE,
+	.operation = SPI_WORD_SET(8) | SPI_OP_MODE_PERIPHERAL,
 };
 
 /*
@@ -102,8 +106,8 @@ static K_SEM_DEFINE(sem_spi_tx, 0, 1);
 
 static inline int spi_send(struct net_buf *buf)
 {
-	uint8_t header_master[5] = { 0 };
-	uint8_t header_slave[5] = { READY_NOW, SANITY_CHECK,
+	uint8_t header_controller[5] = { 0 };
+	uint8_t header_peripheral[5] = { READY_NOW, SANITY_CHECK,
 				    0x00, 0x00, 0x00 };
 	int ret;
 
@@ -114,23 +118,23 @@ static inline int spi_send(struct net_buf *buf)
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
-	header_slave[STATUS_HEADER_TOREAD] = buf->len;
+	header_peripheral[STATUS_HEADER_TOREAD] = buf->len;
 
 	gpio_pin_set(irq.port, irq.pin, 1);
 
 	/* Coordinate transfer lock with the spi rx thread */
 	k_sem_take(&sem_spi_tx, K_FOREVER);
 
-	tx.buf = header_slave;
+	tx.buf = header_peripheral;
 	tx.len = 5;
-	rx.buf = header_master;
+	rx.buf = header_controller;
 	rx.len = 5;
 	do {
 		ret = spi_transceive(spi_hci_dev, &spi_cfg, &tx_bufs, &rx_bufs);
 		if (ret < 0) {
 			LOG_ERR("SPI transceive error: %d", ret);
 		}
-	} while (header_master[STATUS_HEADER_READY] != SPI_READ);
+	} while (header_controller[STATUS_HEADER_READY] != SPI_READ);
 
 	tx.buf = buf->data;
 	tx.len = buf->len;
@@ -149,8 +153,8 @@ static inline int spi_send(struct net_buf *buf)
 
 static void bt_tx_thread(void *p1, void *p2, void *p3)
 {
-	uint8_t header_master[5];
-	uint8_t header_slave[5] = { READY_NOW, SANITY_CHECK,
+	uint8_t header_controller[5];
+	uint8_t header_peripheral[5] = { READY_NOW, SANITY_CHECK,
 				    0x00, 0x00, 0x00 };
 	struct net_buf *buf = NULL;
 
@@ -168,9 +172,9 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 	(void)memset(txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
 	while (1) {
-		tx.buf = header_slave;
+		tx.buf = header_peripheral;
 		tx.len = 5;
-		rx.buf = header_master;
+		rx.buf = header_controller;
 		rx.len = 5;
 
 		do {
@@ -179,10 +183,10 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 			if (ret < 0) {
 				LOG_ERR("SPI transceive error: %d", ret);
 			}
-		} while ((header_master[STATUS_HEADER_READY] != SPI_READ) &&
-			 (header_master[STATUS_HEADER_READY] != SPI_WRITE));
+		} while ((header_controller[STATUS_HEADER_READY] != SPI_READ) &&
+			 (header_controller[STATUS_HEADER_READY] != SPI_WRITE));
 
-		if (header_master[STATUS_HEADER_READY] == SPI_READ) {
+		if (header_controller[STATUS_HEADER_READY] == SPI_READ) {
 			/* Unblock the spi tx thread and wait for it */
 			k_sem_give(&sem_spi_tx);
 			k_sem_take(&sem_spi_rx, K_FOREVER);
@@ -289,7 +293,7 @@ int main(void)
 				0, K_NO_WAIT);
 	k_thread_name_set(&bt_tx_thread_data, "bt_tx_thread");
 
-	/* Send a vendor event to announce that the slave is initialized */
+	/* Send a vendor event to announce that the peripheral is initialized */
 	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 	evt_hdr = net_buf_add(buf, sizeof(*evt_hdr));
 	evt_hdr->evt = BT_HCI_EVT_VENDOR;

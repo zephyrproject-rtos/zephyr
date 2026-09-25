@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
@@ -158,6 +159,8 @@ const char *wifi_band_txt(enum wifi_frequency_bands band)
 		return "5GHz";
 	case WIFI_FREQ_BAND_6_GHZ:
 		return "6GHz";
+	case WIFI_FREQ_BAND_SUB_1_GHZ:
+		return "Sub-1GHz";
 	case WIFI_FREQ_BAND_UNKNOWN:
 	default:
 		return "UNKNOWN";
@@ -173,6 +176,14 @@ const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth)
 		return "40 MHz";
 	case WIFI_FREQ_BANDWIDTH_80MHZ:
 		return "80 MHz";
+	case WIFI_FREQ_BANDWIDTH_1MHZ:
+		return "1 MHz";
+	case WIFI_FREQ_BANDWIDTH_2MHZ:
+		return "2 MHz";
+	case WIFI_FREQ_BANDWIDTH_4MHZ:
+		return "4 MHz";
+	case WIFI_FREQ_BANDWIDTH_8MHZ:
+		return "8 MHz";
 	case WIFI_FREQ_BANDWIDTH_UNKNOWN:
 	default:
 		return "UNKNOWN";
@@ -367,6 +378,10 @@ const char *wifi_conn_status_txt(enum wifi_conn_status status)
 		return "Connection timeout";
 	case WIFI_STATUS_CONN_AP_NOT_FOUND:
 		return "AP not found";
+	case WIFI_STATUS_CONN_AUTH_REJECT:
+		return "Authentication rejected";
+	case WIFI_STATUS_CONN_ASSOC_REJECT:
+		return "Association rejected";
 	default:
 		return "UNKNOWN";
 	}
@@ -601,20 +616,34 @@ static int wifi_disconnect(uint64_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DISCONNECT, wifi_disconnect);
 
+void wifi_mgmt_raise_connect_result_status_event(struct net_if *iface,
+						 const struct wifi_status *status)
+{
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	if (status->status == 0) {
+		roaming_params.roaming_cnt_11k = 0;
+		roaming_params.roaming_cnt_11v = 0;
+	}
+#endif
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_CONNECT_RESULT,
+					iface, status,
+					sizeof(struct wifi_status));
+}
+
 void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status)
 {
 	struct wifi_status cnx_status = {
 		.status = status,
 	};
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
-	if (status == 0) {
-		roaming_params.roaming_cnt_11k = 0;
-		roaming_params.roaming_cnt_11v = 0;
-	}
-#endif
-	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_CONNECT_RESULT,
-					iface, &cnx_status,
+	wifi_mgmt_raise_connect_result_status_event(iface, &cnx_status);
+}
+
+void wifi_mgmt_raise_disconnect_result_status_event(struct net_if *iface,
+						    const struct wifi_status *status)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_DISCONNECT_RESULT,
+					iface, status,
 					sizeof(struct wifi_status));
 }
 
@@ -624,9 +653,7 @@ void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status)
 		.status = status,
 	};
 
-	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_DISCONNECT_RESULT,
-					iface, &cnx_status,
-					sizeof(struct wifi_status));
+	wifi_mgmt_raise_disconnect_result_status_event(iface, &cnx_status);
 }
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
@@ -645,7 +672,8 @@ static int wifi_start_roaming(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	if (wifi_mgmt_api->bss_support_neighbor_rep(dev, iface) &&
+	if (wifi_mgmt_api->bss_support_neighbor_rep != NULL &&
+	    wifi_mgmt_api->bss_support_neighbor_rep(dev, iface) &&
 	    wifi_mgmt_api->send_11k_neighbor_request != NULL &&
 	    roaming_params.roaming_cnt_11k < CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING_RETRY) {
 		memset(&roaming_params.neighbor_rep, 0x0, sizeof(roaming_params.neighbor_rep));
@@ -698,11 +726,7 @@ static int wifi_neighbor_rep_complete(uint64_t mgmt_request, struct net_if *ifac
 
 	for (int i = 0; i < roaming_params.neighbor_rep.neighbor_cnt; i++) {
 		params.band_chan[i].channel = roaming_params.neighbor_rep.neighbor_ap[i].channel;
-		if (params.band_chan[i].channel > 14) {
-			params.band_chan[i].band = WIFI_FREQ_BAND_5_GHZ;
-		} else {
-			params.band_chan[i].band = WIFI_FREQ_BAND_2_4_GHZ;
-		}
+		params.band_chan[i].band = wifi_utils_chan_to_band(params.band_chan[i].channel);
 	}
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->candidate_scan == NULL) {
 		return -ENOTSUP;
@@ -1671,7 +1695,7 @@ void wifi_mgmt_raise_ap_enable_result_event(struct net_if *iface,
 
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_ENABLE_RESULT,
 					iface, &cnx_status,
-					sizeof(enum wifi_ap_status));
+					sizeof(struct wifi_status));
 }
 
 void wifi_mgmt_raise_ap_disable_result_event(struct net_if *iface,
@@ -1683,7 +1707,7 @@ void wifi_mgmt_raise_ap_disable_result_event(struct net_if *iface,
 
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_DISABLE_RESULT,
 					iface, &cnx_status,
-					sizeof(enum wifi_ap_status));
+					sizeof(struct wifi_status));
 }
 
 void wifi_mgmt_raise_ap_sta_connected_event(struct net_if *iface,

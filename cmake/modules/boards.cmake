@@ -2,50 +2,77 @@
 #
 # Copyright (c) 2021, Nordic Semiconductor ASA
 
-# Validate board and setup boards target.
-#
-# This CMake module will validate the BOARD argument as well as splitting the
-# BOARD argument into <BOARD> and <BOARD_REVISION>.
-#
-# If a board implementation is not found for the specified board an error will
-# be raised and list of valid boards will be printed.
-#
-# If user provided board is a board alias, the board will be adjusted to real
-# board name.
-#
-# If board name is deprecated, then board will be adjusted to new board name and
-# a deprecation warning will be printed to the user.
-#
-# Outcome:
-# The following variables will be defined when this CMake module completes:
-#
-# - BOARD:                       Board, without revision field.
-# - BOARD_REVISION:              Board revision
-# - BOARD_QUALIFIERS:            Board qualifiers
-# - NORMALIZED_BOARD_QUALIFIERS: Board qualifiers in lower-case format where slashes have been
-#                                replaced with underscores
-# - NORMALIZED_BOARD_TARGET:     Board target in lower-case format where slashes have been
-#                                replaced with underscores
-# - BOARD_DIR:                   Board directory with the implementation for selected board
-# - ARCH_DIR:                    Arch dir for extracted from selected board
-# - BOARD_ROOT:                  BOARD_ROOT with ZEPHYR_BASE appended
-#
-# The following targets will be defined when this CMake module completes:
-# - boards: when invoked, a list of valid boards will be printed
-#
-# Required variables:
-# - BOARD: Board name, including any optional revision field, for example: `foo` or `foo@1.0.0`
-#
-# Optional variables:
-# - BOARD_ROOT: CMake list of board roots containing board implementations
-# - ARCH_ROOT:  CMake list of arch roots containing arch implementations
-#
-# Optional environment variables:
-# - ZEPHYR_BOARD_ALIASES: Environment setting pointing to a CMake file
-#                         containing board aliases.
-#
-# Variables set by this module and not mentioned above are for internal
-# use only, and may be removed, renamed, or re-purposed without prior notice.
+#[=======================================================================[.rst:
+boards
+######
+
+Validate board and setup boards target.
+
+This CMake module will validate the :cmake:variable:`BOARD` argument as well as splitting it into
+``<BOARD>`` and ``<BOARD_REVISION>``.
+
+If a board implementation is not found for the specified board an error will be raised and list of
+valid boards will be printed.
+
+If user provided board is a board alias, the board will be adjusted to real board name.
+
+If board name is deprecated, then board will be adjusted to new board name and a deprecation warning
+will be printed to the user.
+
+Required variables
+******************
+
+* :cmake:variable:`BOARD`
+
+Optional variables
+******************
+
+* :cmake:variable:`BOARD_ROOT`
+* :cmake:variable:`ARCH_ROOT`
+
+Variables
+*********
+
+The following variables will be defined when this CMake module completes:
+
+* :cmake:variable:`BOARD`
+* :cmake:variable:`BOARD_REVISION`
+* :cmake:variable:`BOARD_QUALIFIERS`
+* :cmake:variable:`NORMALIZED_BOARD_QUALIFIERS`
+* :cmake:variable:`NORMALIZED_BOARD_TARGET`
+* :cmake:variable:`BOARD_DIR`
+* :cmake:variable:`ARCH_DIR`
+* :cmake:variable:`BOARD_ROOT`
+
+Targets
+********
+
+The following targets will be defined when this CMake module completes:
+
+* ``boards``
+
+   When invoked, a list of valid boards will be printed.
+
+Optional environment variables
+******************************
+
+:envvar:`ZEPHYR_BOARD_ALIASES`
+
+  Environment setting pointing to a CMake file containing board aliases.
+
+Example usage
+*************
+
+.. code-block:: cmake
+
+   # BOARD is normally given on the command line, for example:
+   #   west build -b nrf52840dk/nrf52840
+   include(boards)
+
+   message(STATUS "Building for ${BOARD} (${NORMALIZED_BOARD_TARGET})")
+   message(STATUS "Board files are in ${BOARD_DIR}")
+
+#]=======================================================================]
 
 include_guard(GLOBAL)
 
@@ -78,37 +105,48 @@ function(parse_board_components board_in name_out revision_out qualifiers_out)
   set(${qualifiers_out} ${CMAKE_MATCH_4}  PARENT_SCOPE)
 endfunction()
 
+zephyr_get(ZEPHYR_BOARD_ALIASES)
+if(DEFINED ZEPHYR_BOARD_ALIASES)
+  include(${ZEPHYR_BOARD_ALIASES})
+
+  string(REGEX REPLACE "(@[^@/]+)" "" alias_check "${BOARD}")
+  set(revision "${CMAKE_MATCH_1}")
+  while(alias_check)
+    if(DEFINED ${alias_check}_BOARD_ALIAS)
+      set(board_alias "${${alias_check}_BOARD_ALIAS}")
+      message(STATUS "Aliased BOARD=${BOARD} changed to ${board_alias}")
+      set(BOARD "${board_alias}")
+      if(revision)
+        string(REGEX REPLACE "@[^/]*" "" BOARD "${BOARD}")
+        string(REGEX REPLACE "^([^/]+)" "\\1${revision}" BOARD "${BOARD}")
+      endif()
+      set(BOARD "${BOARD}${extra_board_qualifier}")
+      break()
+    endif()
+    string(REGEX REPLACE "(/([^/]*)|([^/]+))$" "" alias_check "${alias_check}")
+    set(extra_board_qualifier "/${CMAKE_MATCH_2}${extra_board_qualifier}")
+  endwhile()
+endif()
+
 parse_board_components(
   BOARD
   BOARD BOARD_REVISION BOARD_QUALIFIERS
 )
 
-zephyr_get(ZEPHYR_BOARD_ALIASES)
-if(DEFINED ZEPHYR_BOARD_ALIASES)
-  include(${ZEPHYR_BOARD_ALIASES})
-  if(${BOARD}_BOARD_ALIAS)
-    set(BOARD_ALIAS ${BOARD} CACHE STRING "Board alias, provided by user")
-    parse_board_components(
-      ${BOARD}_BOARD_ALIAS
-      BOARD BOARD_ALIAS_REVISION BOARD_ALIAS_QUALIFIERS
-    )
-    message(STATUS "Aliased BOARD=${BOARD_ALIAS} changed to ${BOARD}")
-    if(NOT DEFINED BOARD_REVISION)
-      set(BOARD_REVISION ${BOARD_ALIAS_REVISION})
-    endif()
-    set(BOARD_QUALIFIERS ${BOARD_ALIAS_QUALIFIERS}/${BOARD_QUALIFIERS})
-  endif()
-endif()
-
 include(${ZEPHYR_BASE}/boards/deprecated.cmake)
-if(${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED)
-  set(BOARD_DEPRECATED ${BOARD}/${BOARD_QUALIFIERS} CACHE STRING "Deprecated BOARD, provided by user")
+if("${BOARD_QUALIFIERS}" STREQUAL "")
+  set(board_deprecated_key ${BOARD})
+else()
+  set(board_deprecated_key ${BOARD}/${BOARD_QUALIFIERS})
+endif()
+if(${board_deprecated_key}_DEPRECATED)
+  set(BOARD_DEPRECATED ${board_deprecated_key} CACHE STRING "Deprecated BOARD, provided by user")
   message(WARNING
     "Deprecated BOARD=${BOARD_DEPRECATED} specified, "
-    "board automatically changed to: ${${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED}."
+    "board automatically changed to: ${${board_deprecated_key}_DEPRECATED}."
   )
   parse_board_components(
-    ${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED
+    ${board_deprecated_key}_DEPRECATED
     BOARD BOARD_DEPRECATED_REVISION BOARD_QUALIFIERS
   )
   if(DEFINED BOARD_DEPRECATED_REVISION)

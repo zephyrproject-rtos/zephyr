@@ -338,12 +338,13 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 {
 	const struct mcux_elcdif_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->rgb_mode.panelWidth;
 	capabilities->y_resolution = config->rgb_mode.panelHeight;
 	capabilities->supported_pixel_formats = supported_fmts;
 	capabilities->current_pixel_format = ((struct mcux_elcdif_data *)dev->data)->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->supported_events =
+		DISPLAY_EVENT_FRAME_DONE | DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_FIFO_UNDERFLOW;
 }
 
 static int mcux_elcdif_register_event_cb(const struct device *dev, display_event_cb_t cb,
@@ -351,8 +352,6 @@ static int mcux_elcdif_register_event_cb(const struct device *dev, display_event
 					 uint32_t *out_reg_handle)
 {
 	struct mcux_elcdif_data *dev_data = dev->data;
-	const uint32_t supported_events =
-		DISPLAY_EVENT_FRAME_DONE | DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_FIFO_UNDERFLOW;
 
 	k_sem_take(&dev_data->cb_sem, K_FOREVER);
 
@@ -368,11 +367,6 @@ static int mcux_elcdif_register_event_cb(const struct device *dev, display_event
 	}
 	if (!in_isr) {
 		LOG_ERR("Registration failed: only ISR context is supported for this driver");
-		k_sem_give(&dev_data->cb_sem);
-		return -ENOTSUP;
-	}
-	if (event_mask & ~supported_events) {
-		LOG_ERR("Registration failed: unsupported event supplied");
 		k_sem_give(&dev_data->cb_sem);
 		return -ENOTSUP;
 	}

@@ -144,7 +144,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		}
 
 		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
-		if (ret > 0) {
+		if (ret >= 0) {
 			printk("  Frame Duration: %d us\n",
 			       bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
 		}
@@ -304,10 +304,10 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 		}
 
 		ret = bt_audio_codec_cfg_get_frame_dur(stream->codec_cfg);
-		if (ret > 0) {
+		if (ret >= 0) {
 			frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
 		} else {
-			printk("Error: Frame duration not set, cannot start codec.");
+			printk("Error: Frame duration not set, cannot start codec: %d", ret);
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
 					       BT_BAP_ASCS_REASON_CODEC_DATA);
 			return ret;

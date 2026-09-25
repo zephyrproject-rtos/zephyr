@@ -584,7 +584,7 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 		ctx->queries[i].additional_queries++;
 
 		ret = dns_query_servers(ctx, i, dns_data->data, len,
-					net_buf_max_len(dns_data),
+					net_buf_tailroom(dns_data),
 					dns_cname, true);
 		if (ret < 0) {
 			ret = DNS_EAI_SYSTEM;
@@ -1415,8 +1415,8 @@ static int dns_query_next_server(struct dns_resolve_context *ctx, int query_idx)
 				 pending_query->query);
 	if (!(ret < 0)) {
 		ret = dns_query_servers(ctx, query_idx, dns_data->data,
-					net_buf_max_len(dns_data),
-					net_buf_max_len(dns_data),
+					net_buf_tailroom(dns_data),
+					net_buf_tailroom(dns_data),
 					dns_qname, false);
 	}
 
@@ -1926,7 +1926,7 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			if (dns_cname) {
 				ret = dns_copy_qname(dns_cname->data,
 						     &dns_cname->len,
-						     net_buf_max_len(dns_cname),
+						     net_buf_tailroom(dns_cname),
 						     dns_msg, pos);
 				if (ret < 0) {
 					errno = -ret;
@@ -2043,6 +2043,147 @@ static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
 	return zsock_setsockopt(sock, level, option, &new_limit, sizeof(new_limit));
 }
 
+#if defined(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT)
+/* True when no query is still waiting to hear from this server, so its socket
+ * can be replaced without losing an answer that is on its way.
+ */
+static bool dns_server_is_idle(struct dns_resolve_context *ctx, int server_idx,
+			       int except_query_idx)
+{
+	for (int i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		/* The query about to be sent is already marked as awaiting a
+		 * reply by the time it gets here, so it does not count.
+		 */
+		if (i == except_query_idx) {
+			continue;
+		}
+
+		if (dns_server_awaiting_reply(&ctx->queries[i], server_idx)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* Give the server's socket a new local port.
+ *
+ * RFC 5452 9.2: an attacker who cannot see a query has to guess the identifier
+ * and the source port together to forge an answer to it. The identifier is
+ * already drawn afresh for every query; the port was chosen once, when the
+ * socket was opened, and then reused for the life of the resolver, so a single
+ * observed query gave it away for good.
+ *
+ * The socket is closed and opened again rather than rebound, because a bound
+ * UDP socket cannot be rebound. The port itself is left to the system: binding
+ * to zero is what the resolver already does at startup, and the dispatcher
+ * reads back the port that was chosen.
+ *
+ * A server whose socket cannot be replaced is left without one, which the
+ * resolver already treats as unavailable: the query goes to the next server
+ * instead. Getting here means the system is out of sockets, in which case the
+ * old one could not have been kept either.
+ */
+static void dns_randomize_source_port(struct dns_resolve_context *ctx,
+				      int server_idx, int query_idx)
+{
+	struct dns_server_info *server = &ctx->servers[server_idx];
+	struct net_sockaddr_storage local;
+	net_socklen_t local_len;
+	int old_sock = server->sock;
+	int sock;
+	int ret;
+
+	/* Multicast DNS and LLMNR are spoken on a fixed port, and the
+	 * dispatcher pairs a resolver with a responder by that port.
+	 */
+	if (server->is_mdns || server->is_llmnr) {
+		return;
+	}
+
+	if (old_sock < 0 || !dns_server_is_idle(ctx, server_idx, query_idx)) {
+		return;
+	}
+
+	/* Keep the address the dispatcher was bound to, drop the port. */
+	memcpy(&local, &server->dispatcher.local_addr_storage, sizeof(local));
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && local.ss_family == NET_AF_INET6) {
+		net_sin6(net_sad(&local))->sin6_port = 0;
+		local_len = sizeof(struct net_sockaddr_in6);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && local.ss_family == NET_AF_INET) {
+		net_sin(net_sad(&local))->sin_port = 0;
+		local_len = sizeof(struct net_sockaddr_in);
+	} else {
+		return;
+	}
+
+	/* Give the old socket up first. Its descriptor is then free for the
+	 * replacement, which matters where the descriptor budget is sized for
+	 * exactly the sockets the resolver holds.
+	 */
+	(void)dns_dispatcher_unregister(&server->dispatcher);
+
+	ARRAY_FOR_EACH(ctx->fds, j) {
+		if (ctx->fds[j].fd == old_sock) {
+			ctx->fds[j].fd = -1;
+			break;
+		}
+	}
+
+	zsock_close(old_sock);
+	server->sock = -1;
+
+	sock = zsock_socket(server->dns_server_addr.ss_family, NET_SOCK_DGRAM,
+			    NET_IPPROTO_UDP);
+	if (sock < 0) {
+		NET_ERR("Cannot get a socket to renew the source port (%d)", -errno);
+		return;
+	}
+
+	if (server->if_index > 0) {
+		ret = bind_to_iface(sock, net_sad(&server->dns_server_addr),
+				    server->if_index);
+		if (ret < 0) {
+			zsock_close(sock);
+			return;
+		}
+	}
+
+	ARRAY_FOR_EACH(ctx->fds, j) {
+		if (ctx->fds[j].fd < 0) {
+			ctx->fds[j].fd = sock;
+			ctx->fds[j].events = ZSOCK_POLLIN;
+			break;
+		}
+	}
+
+	server->sock = sock;
+
+	ret = register_dispatcher(ctx, server->dispatcher.svc, server,
+				  net_sad(&local), local_len, NULL, NULL);
+	if (ret < 0) {
+		/* The old socket is gone and the new one is not dispatched, so
+		 * an answer arriving on it would not be seen. Give the socket
+		 * up: the resolver treats a server without one as unavailable
+		 * and moves on to the next.
+		 */
+		NET_ERR("Cannot dispatch the renewed socket for server %d (%d)",
+			server_idx, ret);
+
+		ARRAY_FOR_EACH(ctx->fds, j) {
+			if (ctx->fds[j].fd == sock) {
+				ctx->fds[j].fd = -1;
+				break;
+			}
+		}
+
+		zsock_close(sock);
+		server->sock = -1;
+	}
+}
+#endif /* CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT */
+
 /* Must be invoked with context lock held */
 static int dns_write(struct dns_resolve_context *ctx,
 		     int server_idx,
@@ -2058,7 +2199,15 @@ static int dns_write(struct dns_resolve_context *ctx,
 	int ret, sock, family;
 	char *query_name;
 
+	if (IS_ENABLED(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT)) {
+		dns_randomize_source_port(ctx, server_idx, query_idx);
+	}
+
 	sock = ctx->servers[server_idx].sock;
+	if (sock < 0) {
+		return -ENOTCONN;
+	}
+
 	family = ctx->servers[server_idx].dns_server_addr.ss_family;
 	server = net_sad(&ctx->servers[server_idx].dns_server_addr);
 	dns_id = ctx->queries[query_idx].id;
@@ -2252,13 +2401,13 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 		}
 
 		ret = dns_msg_pack_qname(&len, buf->data,
-					 net_buf_max_len(buf),
+					 net_buf_tailroom(buf),
 					 query_name);
 		if (ret >= 0) {
 			/* If the query string + \0 + query type (A or AAAA)
 			 * does not fit the tmp buf, then bail out
 			 */
-			if ((len + 2) > net_buf_max_len(buf)) {
+			if ((len + 2) > net_buf_tailroom(buf)) {
 				net_buf_unref(buf);
 				return -ENOMEM;
 			}
@@ -2634,8 +2783,8 @@ try_resolve:
 	}
 
 	ret = dns_query_servers(ctx, i, dns_data->data,
-				net_buf_max_len(dns_data),
-				net_buf_max_len(dns_data),
+				net_buf_tailroom(dns_data),
+				net_buf_tailroom(dns_data),
 				dns_qname, false);
 	if (ret < 0) {
 		ret = -ENOENT;
@@ -2739,6 +2888,11 @@ static int dns_resolve_close_locked(struct dns_resolve_context *ctx)
 
 	ctx->state = DNS_RESOLVE_CONTEXT_DEACTIVATING;
 
+	/* Cancel any queries still in flight so their timers are unlinked
+	 * from the kernel timeout list before this context is torn down
+	 */
+	dns_resolve_cancel_all(ctx);
+
 	/* ctx->net_ctx is never used in "deactivating" state. Additionally
 	 * following code is guaranteed to be executed only by one thread at a
 	 * time, due to required "active" -> "deactivating" state change. This
@@ -2777,6 +2931,21 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 	k_mutex_unlock(&ctx->lock);
 
 	return ret;
+}
+
+bool dns_resolve_is_active(struct dns_resolve_context *ctx)
+{
+	bool active;
+
+	if (ctx == NULL) {
+		return false;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	active = (ctx->state == DNS_RESOLVE_CONTEXT_ACTIVE);
+	k_mutex_unlock(&ctx->lock);
+
+	return active;
 }
 
 static bool dns_server_exists(struct dns_resolve_context *ctx,
@@ -2864,8 +3033,6 @@ static int do_dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 
 	if (ctx->state == DNS_RESOLVE_CONTEXT_ACTIVE &&
 	    (do_close || ctx->init_called == 0)) {
-		dns_resolve_cancel_all(ctx);
-
 		err = dns_resolve_close_locked(ctx);
 		if (err) {
 			goto unlock;
@@ -3063,7 +3230,8 @@ int dns_resolve_init_default(struct dns_resolve_context *ctx)
 		break;
 	}
 
-#if defined(CONFIG_MDNS_RESOLVER) && (MDNS_SERVER_COUNT > 0)
+#if defined(CONFIG_MDNS_RESOLVER) && (MDNS_SERVER_COUNT > 0) && \
+	defined(CONFIG_MDNS_RESOLVER_AUTO_ADD_UNSCOPED)
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
 	dns_servers[DNS_SERVER_COUNT + 1] = MDNS_IPV6_ADDR;
 	dns_servers[DNS_SERVER_COUNT] = MDNS_IPV4_ADDR;
@@ -3075,7 +3243,7 @@ int dns_resolve_init_default(struct dns_resolve_context *ctx)
 	dns_servers[DNS_SERVER_COUNT] = MDNS_IPV4_ADDR;
 #endif
 #endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
-#endif /* MDNS_RESOLVER && MDNS_SERVER_COUNT > 0 */
+#endif /* MDNS_RESOLVER && MDNS_SERVER_COUNT > 0 && MDNS_RESOLVER_AUTO_ADD_UNSCOPED */
 
 #if defined(CONFIG_LLMNR_RESOLVER) && (LLMNR_SERVER_COUNT > 0)
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)

@@ -18,21 +18,22 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM_ARM_M_SWITCH_H_
 
 #include <stdint.h>
+#include <cmsis_core.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/kernel/thread.h>
 
-/* GCC/gas has a code generation bugglet on thumb.  The R7 register is
- * the ABI-defined frame pointer, though it's usually unused in zephyr
- * due to -fomit-frame-pointer (and the fact the DWARF on ARM doesn't
- * really need it).  But when it IS enabled, which sometimes seems to
- * happen due to toolchain internals, GCC is unable to allow its use
- * in the clobber list of an asm() block (I guess it can't generate
- * spill/fill code without using the frame?).
+/* GCC/gas and clang have a code generation bugglet on thumb:
+ * The R7 register is the ABI-defined frame pointer, though it's
+ * usually unused in zephyr due to -fomit-frame-pointer (and the fact
+ * the DWARF on ARM doesn't really need it). But when it IS enabled,
+ * e.g. due to tests that pass CONFIG_FRAME_POINTER, GCC is unable to
+ * allow its use in the clobber list of an asm() block
+ * (Presumably it can't generate spill/fill code without using the frame?).
  *
  * When absolutely needed, this kconfig unmasks a workaround where we
  * spill/fill R7 around the switch manually.
  */
-#ifdef CONFIG_ARM_GCC_FP_WORKAROUND
+#ifdef CONFIG_ARM_FP_CLOBBER_WORKAROUND
 #define _R7_CLOBBER_OPT(expr) expr
 #else
 #define _R7_CLOBBER_OPT(expr) /**/
@@ -182,11 +183,24 @@ static inline void arm_m_exc_tail(void)
 	 * our bookkeeping around EXC_RETURN, so do it early.
 	 */
 	void z_check_stack_sentinel(void);
-	void *isr_lr = (void *)*arm_m_exc_lr_ptr;
 
 	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {
 		z_check_stack_sentinel();
 	}
+
+#ifndef CONFIG_SMP
+	/* Fast path: with nothing new to run, return straight to the
+	 * interrupted thread instead of detouring through arm_m_exc_exit().
+	 * This is the same predicate z_sched_next_handle() evaluates there,
+	 * only earlier: a nested interrupt that readies a thread patches the
+	 * same (topmost) LR slot from its own tail, so no wakeup is lost.
+	 */
+	if (_kernel.ready_q.cache == _current) {
+		return;
+	}
+#endif
+
+	void *isr_lr = (void *)*arm_m_exc_lr_ptr;
 
 	if (isr_lr != arm_m_cs_ptrs.lr_fixup) {
 		/* We need to return to arm_m_exc_exit only if an exception is returning to thread
@@ -233,10 +247,10 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 	 * context switch unless you're in the kernel!).
 	 */
 	extern uint32_t arm_m_switch_control;
-	uint32_t control;
+	CONTROL_Type control = {.w = __get_CONTROL()};
 
-	__asm__ volatile("mrs %0, control" : "=r"(control));
-	arm_m_switch_control = (control & ~1) | (_current->arch.mode & 1);
+	__ASSERT_NO_MSG(!control.b.nPRIV);
+	arm_m_switch_control = control.w | (_current->arch.mode & 1);
 #endif
 
 	/* new switch handle in r4, old switch handle pointer in r5.
@@ -333,7 +347,7 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 			 _R7_CLOBBER_OPT("pop {r7};")::"r"(r4),
 			 "r"(r5)
 			 : "r6", "r8", "r9", "r10",
-#ifndef CONFIG_ARM_GCC_FP_WORKAROUND
+#ifndef CONFIG_ARM_FP_CLOBBER_WORKAROUND
 			   "r7",
 #endif
 			   "r11");

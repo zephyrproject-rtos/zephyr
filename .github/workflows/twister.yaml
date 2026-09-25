@@ -29,7 +29,7 @@ jobs:
       group: zephyr-runner-v2-linux-x64-4xlarge
     timeout-minutes: 60
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.4.20260912
       options: '--entrypoint /bin/bash'
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
@@ -156,7 +156,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.4.20260912
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -171,11 +171,12 @@ jobs:
       CCACHE_IGNOREOPTIONS: '-specs=* --specs=*'
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
-      TWISTER_COMMON: ' --test-config tests/test_config_ci.yaml --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 2 --post-build-checks '
+      TWISTER_COMMON: ' --test-config tests/test_config_ci.yaml --force-color --inline-logs -v -N -M --retry-failed 2 --timeout-multiplier 2 --post-build-checks '
       WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered -j 32'
       PR_OPTIONS: ' --clobber-output --integration -j 16'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
+      HEXAGON_TOOLCHAIN_PATH: /opt/toolchains/hexagon/host
     steps:
       - name: Print cloud service information
         run: |
@@ -230,6 +231,7 @@ jobs:
           cd /opt/bsim_west/bsim
           git fetch -n origin ${BSIM_VERSION}
           git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          git config --global http.version HTTP/1.1
           west update
           make everything -s -j 8
 
@@ -286,6 +288,11 @@ jobs:
             fi
           fi
 
+          if [ ! -f twister-out/twister.json ]; then
+            echo "Twister did not produce a twister.json file, something went wrong."
+            exit 1
+          fi
+
       - name: Print ccache stats
         if: always()
         run: |
@@ -299,6 +306,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             twister-out/twister.xml
+            twister-out/twister.log
             twister-out/twister.json
             module_tests/twister.xml
             testplan.json
@@ -355,8 +363,9 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() && (github.event_name == 'push') }}
-        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1.2.1
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Publish Unit Test Results

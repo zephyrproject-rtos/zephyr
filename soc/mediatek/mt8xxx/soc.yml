@@ -14,6 +14,7 @@ family:
           - name: mt8188
             cpuclusters:
               - name: adsp
+              - name: a55
       - name: mt8196
         socs:
           - name: mt8196

@@ -202,7 +202,7 @@ static void esp_hosted_mcu_rx_data(const uint8_t *payload, uint16_t len, uint8_t
 	 * path, so never block here: a full pool must drop the frame rather than
 	 * stall the other protocol. The upper transports recover the loss.
 	 */
-	pkt = net_pkt_rx_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (pkt == NULL) {
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 		data->stats.errors.rx++;
@@ -248,28 +248,6 @@ static enum wifi_security_type esp_hosted_mcu_map_security(int authmode)
 		return WIFI_SECURITY_TYPE_SAE;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
-	}
-}
-
-/* Map a Zephyr security type to the esp_wifi wifi_auth_mode_t the soft-AP expects. */
-static int esp_hosted_mcu_ap_authmode(enum wifi_security_type security)
-{
-	switch (security) {
-	case WIFI_SECURITY_TYPE_NONE:
-		return 0; /* OPEN */
-	case WIFI_SECURITY_TYPE_WPA_PSK:
-		return 2; /* WPA_PSK */
-	case WIFI_SECURITY_TYPE_PSK:
-	case WIFI_SECURITY_TYPE_PSK_SHA256:
-		return 3; /* WPA2_PSK */
-	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
-		return 4; /* WPA_WPA2_PSK */
-	case WIFI_SECURITY_TYPE_SAE:
-	case WIFI_SECURITY_TYPE_SAE_H2E:
-	case WIFI_SECURITY_TYPE_SAE_AUTO:
-		return 6; /* WPA3_PSK */
-	default:
-		return -ENOTSUP;
 	}
 }
 
@@ -448,6 +426,28 @@ static int esp_hosted_mcu_disconnect(const struct device *dev, struct net_if *if
 }
 
 #if defined(CONFIG_WIFI_ESP_HOSTED_MCU_AP_STA_MODE)
+/* Map a Zephyr security type to the esp_wifi wifi_auth_mode_t the soft-AP expects. */
+static int esp_hosted_mcu_ap_authmode(enum wifi_security_type security)
+{
+	switch (security) {
+	case WIFI_SECURITY_TYPE_NONE:
+		return 0; /* OPEN */
+	case WIFI_SECURITY_TYPE_WPA_PSK:
+		return 2; /* WPA_PSK */
+	case WIFI_SECURITY_TYPE_PSK:
+	case WIFI_SECURITY_TYPE_PSK_SHA256:
+		return 3; /* WPA2_PSK */
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		return 4; /* WPA_WPA2_PSK */
+	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
+		return 6; /* WPA3_PSK */
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int esp_hosted_mcu_ap_enable(const struct device *dev, struct net_if *iface,
 				    struct wifi_connect_req_params *params)
 {

@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/kinetis/MK22FN512VLH12-pinctrl.h>
+#include <nxp/kinetis/k2x/pinctrl/MK22FN512VLH12-pinctrl.h>
 
 &pinctrl {
 	ftm0_default: ftm0_default {

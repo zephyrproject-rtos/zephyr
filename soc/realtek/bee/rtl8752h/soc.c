@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/reboot.h>
@@ -60,11 +61,11 @@ static void rtl8752h_isr_register(void)
 		uint32_t expected_zephyr_isr = FlashVectorTable_INT[irq];
 
 		if (current_isr != expected_zephyr_isr) {
-			if (NVIC_GetEnableIRQ(irq) == 1) {
-				NVIC_DisableIRQ(irq);
+			if (irq_is_enabled(irq) != 0) {
+				irq_disable(irq);
 				z_isr_install(irq, (void *)current_isr, NULL);
 				RamVectorTableUpdate(irq + 16, (IRQ_Fun)_isr_wrapper);
-				NVIC_EnableIRQ(irq);
+				irq_enable(irq);
 			} else {
 				z_isr_install(irq, (void *)current_isr, NULL);
 				RamVectorTableUpdate(irq + 16, (IRQ_Fun)_isr_wrapper);

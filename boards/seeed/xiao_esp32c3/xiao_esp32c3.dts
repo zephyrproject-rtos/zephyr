@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3/esp32c3_fx4.dtsi>
+#include <espressif/esp32c3/esp32c3.dtsi>
 #include "xiao_esp32c3-pinctrl.dtsi"
 #include "seeed_xiao_connector.dtsi"
 #include <espressif/partitions_0x0_default.dtsi>
@@ -29,6 +29,11 @@
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &uart0 {

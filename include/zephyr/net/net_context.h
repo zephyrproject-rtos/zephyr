@@ -400,7 +400,7 @@ __net_socket struct net_context {
 #if defined(CONFIG_NET_IPV6)
 		/**
 		 * Source address selection preferences. Currently used only for IPv6,
-		 * see RFC 5014 for details.
+		 * see @rfc{5014} for details.
 		 */
 		uint16_t addr_preferences;
 #endif
@@ -454,7 +454,7 @@ __net_socket struct net_context {
 			/** MRDS (Maximum Reassembled Datagram Size), 0 = not set */
 			struct net_udp_opt_mrds mrds;
 #if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
-			/** DPLPMTUD (RFC 9869) per-socket state. */
+			/** DPLPMTUD (@rfc{9869}) per-socket state. */
 			struct {
 				/** Generic engine path handle (per destination). */
 				struct net_dplpmtud_path path;
@@ -1460,7 +1460,7 @@ enum net_context_option {
 	NET_OPT_RECV_HOPLIMIT     = 24, /**< Receive hop limit information */
 	NET_OPT_DONT_FRAGMENT     = 25, /**< Disable local IP fragmentation */
 	NET_OPT_LINGER            = 26, /**< Socket linger (SO_LINGER) */
-	NET_OPT_UDP_OPT           = 27, /**< UDP options master enable (RFC 9868) */
+	NET_OPT_UDP_OPT           = 27, /**< UDP options master enable (@rfc{9868}) */
 	NET_OPT_UDP_OPT_OCS       = 28, /**< UDP options: Option Checksum */
 	NET_OPT_UDP_OPT_APC       = 29, /**< UDP options: Additional Payload Checksum */
 	NET_OPT_UDP_OPT_FRAG      = 30, /**< UDP options: Fragmentation */
@@ -1474,7 +1474,7 @@ enum net_context_option {
 	NET_OPT_UDP_OPT_UCMP      = 38, /**< UDP options: UNSAFE Compression */
 	NET_OPT_UDP_OPT_UENC      = 39, /**< UDP options: UNSAFE Encryption */
 	NET_OPT_UDP_OPT_UEXP      = 40, /**< UDP options: UNSAFE Experimental */
-	NET_OPT_UDP_OPT_DPLPMTUD  = 41, /**< UDP options: DPLPMTUD enable (RFC 9869) */
+	NET_OPT_UDP_OPT_DPLPMTUD  = 41, /**< UDP options: DPLPMTUD enable (@rfc{9869}) */
 	NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND = 42, /**< UDP options: app echoes RES itself */
 };
 
@@ -1507,7 +1507,7 @@ int net_context_get_option(struct net_context *context,
 			   void *value, uint32_t *len);
 
 /**
- * @brief Enable or disable DPLPMTUD (RFC 9869) on a UDP context.
+ * @brief Enable or disable DPLPMTUD (@rfc{9869}) on a UDP context.
  *
  * When enabled, the stack probes the path MTU using UDP options and answers
  * incoming probes. Must be a UDP context.

@@ -66,6 +66,10 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 	if ((config->min_uv > INT32_MIN) || (config->max_uv < INT32_MAX)) {
 
 		ret = regulator_get_voltage(dev, &current_uv);
+		/* get_voltage is optional; without it there is nothing to snap */
+		if (ret == -ENOSYS) {
+			goto skip_range_snap;
+		}
 		if (ret < 0) {
 			return ret;
 		}
@@ -84,6 +88,7 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 		}
 	}
 
+skip_range_snap:
 	if (is_enabled) {
 		data->refcnt++;
 		if ((config->flags & REGULATOR_BOOT_OFF) != 0U) {

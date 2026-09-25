@@ -30,3 +30,9 @@ by manipulating sys.path for now.
 Eventually, as APIs stabilize, the python-devicetree code in this
 repository will disappear, and a standalone repository will be the
 'main' one.
+
+edtlib.py and dtlib.py libraries can be tested using tox environment
+(https://pypi.org/project/tox/):
+   $ pip install tox
+   $ cd python-devicetree
+   $ tox

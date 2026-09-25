@@ -813,9 +813,6 @@ static int adin2111_read_tx_space(const struct device *dev, uint32_t *space)
 static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct adin2111_port_config *cfg = dev->config;
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	struct adin2111_port_data *data = dev->data;
-#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 	const struct device *adin = cfg->adin;
 	struct adin2111_data *ctx = cfg->adin->data;
 	size_t pkt_len = net_pkt_get_len(pkt);
@@ -1550,7 +1547,8 @@ static const struct ethernet_api adin2111_port_api = {
 				     &name##_port_config_##port_n, CONFIG_ETH_INIT_PRIORITY,	\
 				     &adin2111_port_api, NET_ETH_MTU);
 
-#define ADIN2111_SPI_OPERATION ((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
+#define ADIN2111_SPI_OPERATION									\
+	((uint16_t)(SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
 #define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)					\
 	ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);		\
 	COND_CODE_1(DT_INST_PROP(inst, spi_oa),							\

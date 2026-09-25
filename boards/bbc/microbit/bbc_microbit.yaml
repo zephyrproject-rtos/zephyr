@@ -10,7 +10,7 @@ testing:
   ignore_tags:
     - net
 supported:
-  - ble
+  - bluetooth
   - i2c
   - gpio
   - pwm

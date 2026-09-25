@@ -322,7 +322,7 @@ static int sys_clock_driver_init(void)
 #endif
 
 	/* Enable RTC interrupt. */
-	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	k_irq_clear_pending(DT_INST_IRQN(0));
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
 	irq_enable(DT_INST_IRQN(0));

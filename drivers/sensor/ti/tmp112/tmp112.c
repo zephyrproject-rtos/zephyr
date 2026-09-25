@@ -13,6 +13,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 #include "tmp112.h"
@@ -254,21 +255,20 @@ static DEVICE_API(sensor, tmp112_driver_api) = {
 	.channel_get = tmp112_channel_get,
 };
 
-int tmp112_init(const struct device *dev)
+static int tmp112_setup(const struct device *dev)
 {
 	const struct tmp112_config *cfg = dev->config;
 	struct tmp112_data *data = dev->data;
 	int ret;
 
-	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
-		return -EINVAL;
-	}
-
 	data->one_shot = (cfg->cr == 0);
+
+	/* Initialize in shutdown; the PM handler will put the device into
+	 * the correct state based on the preconditions and configuration.
+	 */
 	data->config_reg = TMP112_CONV_RATE(data->one_shot ? 0 : cfg->cr - 1) |
 			   TMP112_CONV_RES_MASK | (cfg->extended_mode ? TMP112_CONFIG_EM : 0) |
-			   (data->one_shot ? TMP112_CONFIG_SD : 0);
+			   TMP112_CONFIG_SD;
 
 	ret = tmp112_update_config(dev, 0, 0);
 	if (ret) {
@@ -291,6 +291,40 @@ int tmp112_init(const struct device *dev)
 	return 0;
 }
 
+static int tmp112_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct tmp112_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		return tmp112_setup(dev);
+	case PM_DEVICE_ACTION_RESUME:
+		/* One-shot mode keeps the sensor shut down between fetches. */
+		if (data->one_shot) {
+			return 0;
+		}
+		return tmp112_update_config(dev, TMP112_CONFIG_SD, 0);
+	case PM_DEVICE_ACTION_SUSPEND:
+		return tmp112_update_config(dev, TMP112_CONFIG_SD, TMP112_CONFIG_SD);
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+int tmp112_init(const struct device *dev)
+{
+	const struct tmp112_config *cfg = dev->config;
+
+	if (!device_is_ready(cfg->bus.bus)) {
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
+		return -EINVAL;
+	}
+
+	return pm_device_driver_init(dev, tmp112_pm_action);
+}
+
 #define TMP112_INST(inst)                                                                          \
 	static struct tmp112_data tmp112_data_##inst;                                              \
 	static const struct tmp112_config tmp112_config_##inst = {                                 \
@@ -301,8 +335,10 @@ int tmp112_init(const struct device *dev)
 		.extended_mode = DT_INST_PROP(inst, extended_mode),                                \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp112_init, NULL, &tmp112_data_##inst,                 \
-				     &tmp112_config_##inst, POST_KERNEL,                           \
+	PM_DEVICE_DT_INST_DEFINE(inst, tmp112_pm_action);                                          \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp112_init, PM_DEVICE_DT_INST_GET(inst),               \
+				     &tmp112_data_##inst, &tmp112_config_##inst, POST_KERNEL,      \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tmp112_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMP112_INST)

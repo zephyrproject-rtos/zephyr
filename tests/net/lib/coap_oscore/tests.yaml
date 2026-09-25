@@ -4,8 +4,9 @@ tests:
     min_flash: 192
     tags: net
     depends_on: netif
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-            or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")
+    filter: CONFIG_COAP_OSCORE and
+            (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+            or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))
     extra_configs:
       - CONFIG_COAP_OSCORE_MAX_CONTEXTS=2
       - CONFIG_COAP_OSCORE_EXCHANGE_CACHE_SIZE=4
@@ -23,6 +24,7 @@ tests:
     min_flash: 192
     tags: net
     depends_on: netif
+    filter: CONFIG_COAP_OSCORE
     extra_configs:
       - CONFIG_TEST_OSCORE_SALT_ONLY=y
       - CONFIG_COAP_OSCORE_MASTER_SALT_MAX_LEN=0

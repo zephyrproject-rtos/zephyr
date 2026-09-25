@@ -45,17 +45,23 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 int32_t z_impl_k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
 {
 	void *buffer;
+	size_t total_size;
 	int32_t ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, alloc_init, stack);
 
-	buffer = z_thread_malloc(num_entries * sizeof(stack_data_t));
-	if (buffer != NULL) {
-		k_stack_init(stack, buffer, num_entries);
-		stack->flags = K_STACK_FLAG_ALLOC;
-		ret = 0;
-	} else {
+	/* Reject allocation sizes that cannot be represented. */
+	if (size_mul_overflow(num_entries, sizeof(stack_data_t), &total_size)) {
 		ret = -ENOMEM;
+	} else {
+		buffer = z_thread_malloc(total_size);
+		if (buffer != NULL) {
+			k_stack_init(stack, buffer, num_entries);
+			stack->flags = K_STACK_FLAG_ALLOC;
+			ret = 0;
+		} else {
+			ret = -ENOMEM;
+		}
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, alloc_init, stack, ret);

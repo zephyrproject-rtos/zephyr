@@ -439,7 +439,7 @@ static int paw32xx_pm_action(const struct device *dev,
 }
 #endif
 
-#define PAW32XX_SPI_MODE (SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | \
+#define PAW32XX_SPI_MODE (SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | \
 			  SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
 #define PAW32XX_INIT(n)								\

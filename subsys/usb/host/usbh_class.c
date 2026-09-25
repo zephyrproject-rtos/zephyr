@@ -14,6 +14,20 @@
 
 LOG_MODULE_REGISTER(usbh_class, CONFIG_USBH_LOG_LEVEL);
 
+bool usbh_class_is_any_iface_bound(struct usb_device *const udev)
+{
+	STRUCT_SECTION_FOREACH(usbh_class_node, c_node) {
+		struct usbh_class_data *const c_data = c_node->c_data;
+
+		if (c_node->state == USBH_CLASS_STATE_BOUND &&
+		    c_data->udev == udev) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void usbh_class_init_all(void)
 {
 	int ret;
@@ -144,6 +158,11 @@ void usbh_class_probe_device(struct usb_device *const udev)
 	filter_data.proto = udev->dev_desc.bDeviceProtocol;
 
 	usbh_class_probe_function(udev, &filter_data, USBH_CLASS_IFNUM_DEVICE);
+
+	/* Single-function device matched at device level, no need to scan interfaces */
+	if (usbh_class_is_any_iface_bound(udev)) {
+		return;
+	}
 
 	/* To support multi-function devices, match against each function */
 

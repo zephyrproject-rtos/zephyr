@@ -6,7 +6,7 @@
  * from mm_swiftio.mex
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1052dvl6b-pinctrl.dtsi>
+#include <nxp/imxrt/imxrt10xx/pinctrl/mimxrt1052dvl6b-pinctrl.dtsi>
 
 &pinctrl {
 	pinmux_csi: pinmux_csi {

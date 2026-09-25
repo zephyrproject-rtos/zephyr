@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -89,9 +90,6 @@ LOG_MODULE_DECLARE(bflb_wifi, CONFIG_WIFI_LOG_LEVEL);
 /* HT Capabilities Info: HT20 + Short GI for 20MHz (IEEE 802.11n Table 9-152) */
 #define BFLB_HT_CAP_HT20_SGI20 0x012CU
 
-#define BFLB_24GHZ_BASE_FREQ       2407U
-#define BFLB_24GHZ_CH14_FREQ       2484U
-#define BFLB_24GHZ_CH_SPACING      5U
 #define BFLB_DEFAULT_MAX_DBM       20
 #define BFLB_DEFAULT_BEACON_TU     100
 #define BFLB_DEFAULT_AP_CHANNEL    6
@@ -1273,9 +1271,7 @@ static int bflb_wpa_supp_get_wiphy(void *if_priv)
 			    band.wpa_supp_n_channels < WPA_SUPP_SBAND_MAX_CHANNELS;
 		     i++) {
 			uint8_t ch = country->channel24G_chan[i];
-			uint16_t freq =
-				(ch == 14) ? BFLB_24GHZ_CH14_FREQ
-					   : (BFLB_24GHZ_BASE_FREQ + ch * BFLB_24GHZ_CH_SPACING);
+			uint16_t freq = wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, ch);
 
 			band.channels[band.wpa_supp_n_channels].center_frequency = freq;
 			band.channels[band.wpa_supp_n_channels].wpa_supp_max_power =
@@ -1287,7 +1283,7 @@ static int bflb_wpa_supp_get_wiphy(void *if_priv)
 		/* Default: channels 1-11 */
 		for (i = 1; i <= 11; i++) {
 			band.channels[band.wpa_supp_n_channels].center_frequency =
-				BFLB_24GHZ_BASE_FREQ + i * BFLB_24GHZ_CH_SPACING;
+				wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, i);
 			band.channels[band.wpa_supp_n_channels].wpa_supp_max_power =
 				BFLB_DEFAULT_MAX_DBM;
 			band.channels[band.wpa_supp_n_channels].ch_valid = 1;

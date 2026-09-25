@@ -153,6 +153,7 @@ ZTEST(os_mgmt_mpstat, test_read)
 	bool received;
 	struct smp_hdr *header;
 	struct memory_pools_info_t receive_response = { 0 };
+	size_t decoded = 0;
 	uint8_t i = 0;
 	uint8_t common_malloc_index = 255;
 	uint8_t kernel_malloc_index = 255;
@@ -162,6 +163,10 @@ ZTEST(os_mgmt_mpstat, test_read)
 	uint32_t kernel_malloc_diff_size = 0;
 	bool found_common_malloc_area = false;
 	bool found_kernel_malloc_area = false;
+
+	struct zcbor_map_decode_key_val output_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("mpools", parse_heap_entries, &receive_response),
+	};
 
 	memset(buffer, 0, sizeof(buffer));
 	memset(buffer_out, 0, sizeof(buffer_out));
@@ -203,9 +208,9 @@ ZTEST(os_mgmt_mpstat, test_read)
 
 	/* Get the response value to compare */
 	zcbor_new_decode_state(zsd, 6, nb->data, nb->len, 1, NULL, 0);
-	ok = parse_heap_entries(zsd, &receive_response);
-
+	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
+	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element");
 
 	const uint32_t libc_malloc_min = (9 * CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE) / 10;
 	const uint32_t libc_malloc_max = (11 * CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE) / 10;
@@ -246,6 +251,7 @@ ZTEST(os_mgmt_mpstat, test_read)
 	buffer_size = 0;
 	memset(zse, 0, sizeof(zse));
 	memset(zsd, 0, sizeof(zsd));
+	output_decode[0].found = false;
 	cleanup_test(NULL);
 
 	/* Test 2: Malloc in the libc common area and ensure only that memory pool changes */
@@ -283,8 +289,9 @@ ZTEST(os_mgmt_mpstat, test_read)
 
 	/* Get the response value to compare */
 	zcbor_new_decode_state(zsd, 6, nb->data, nb->len, 1, NULL, 0);
-	ok = parse_heap_entries(zsd, &receive_response);
+	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
+	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element");
 
 	/* Check that the common libc heap size has reduced and that the kernel heap size is
 	 * unchanged
@@ -304,6 +311,7 @@ ZTEST(os_mgmt_mpstat, test_read)
 	buffer_size = 0;
 	memset(zse, 0, sizeof(zse));
 	memset(zsd, 0, sizeof(zsd));
+	output_decode[0].found = false;
 	cleanup_test(NULL);
 
 	/* Test 3: Malloc in the kernel area and ensure only that memory pool changes */
@@ -341,8 +349,9 @@ ZTEST(os_mgmt_mpstat, test_read)
 
 	/* Get the response value to compare */
 	zcbor_new_decode_state(zsd, 6, nb->data, nb->len, 1, NULL, 0);
-	ok = parse_heap_entries(zsd, &receive_response);
+	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
+	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element");
 
 	/* Check that the kernel heap size has reduced and that the common libc heap size is
 	 * unchanged
@@ -362,6 +371,7 @@ ZTEST(os_mgmt_mpstat, test_read)
 	buffer_size = 0;
 	memset(zse, 0, sizeof(zse));
 	memset(zsd, 0, sizeof(zsd));
+	output_decode[0].found = false;
 	cleanup_test(NULL);
 
 	/* Test 4: Check after both mallocs and frees that the values match the default */
@@ -398,8 +408,9 @@ ZTEST(os_mgmt_mpstat, test_read)
 
 	/* Get the response value to compare */
 	zcbor_new_decode_state(zsd, 6, nb->data, nb->len, 1, NULL, 0);
-	ok = parse_heap_entries(zsd, &receive_response);
+	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
+	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element");
 
 	/* Check that both heap sizes are unchanged from the original values */
 	zassert_true(receive_response.heaps[common_malloc_index].free_blocks ==
@@ -415,6 +426,7 @@ ZTEST(os_mgmt_mpstat, test_read)
 	buffer_size = 0;
 	memset(zse, 0, sizeof(zse));
 	memset(zsd, 0, sizeof(zsd));
+	output_decode[0].found = false;
 
 	/* Ensure that a smaller malloc used less free blocks */
 	zassert_true(kernel_malloc_diff_size < common_malloc_diff_size,

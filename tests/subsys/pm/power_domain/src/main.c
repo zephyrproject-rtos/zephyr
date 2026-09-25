@@ -288,6 +288,135 @@ ZTEST(power_domain_1cpu, test_power_domain_device_balanced)
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 }
 
+
+/* Devices and synchronization used to force get-vs-async-suspend ordering. */
+#define TEST_DOMAIN_ASYNC DT_NODELABEL(test_domain_async)
+#define TEST_DEV_ASYNC    DT_NODELABEL(test_dev_async)
+
+static bool block_async_suspend;
+static K_SEM_DEFINE(async_suspend_started, 0, 1);
+static K_SEM_DEFINE(async_suspend_continue, 0, 1);
+static K_SEM_DEFINE(async_get_started, 0, 1);
+static struct k_thread async_get_thread;
+K_THREAD_STACK_DEFINE(async_get_stack, 1024);
+static int domain_async_resume_count;
+static int domain_async_suspend_count;
+
+static const struct device *const domain_async = DEVICE_DT_GET(TEST_DOMAIN_ASYNC);
+static const struct device *const dev_async = DEVICE_DT_GET(TEST_DEV_ASYNC);
+
+static int domain_async_pm_action(const struct device *dev, enum pm_device_action pm_action)
+{
+	if (pm_action == PM_DEVICE_ACTION_RESUME) {
+		domain_async_resume_count++;
+	} else if (pm_action == PM_DEVICE_ACTION_SUSPEND) {
+		domain_async_suspend_count++;
+	}
+
+	return domain_pm_action(dev, pm_action);
+}
+
+static int async_pm_action(const struct device *dev, enum pm_device_action pm_action)
+{
+	/* Hold the device suspend action open after async suspend has started. */
+	if ((pm_action == PM_DEVICE_ACTION_SUSPEND) && block_async_suspend) {
+		k_sem_give(&async_suspend_started);
+		k_sem_take(&async_suspend_continue, K_FOREVER);
+		block_async_suspend = false;
+	}
+
+	return deva_pm_action(dev, pm_action);
+}
+
+PM_DEVICE_DT_DEFINE(TEST_DOMAIN_ASYNC, domain_async_pm_action);
+DEVICE_DT_DEFINE(TEST_DOMAIN_ASYNC, NULL, PM_DEVICE_DT_GET(TEST_DOMAIN_ASYNC), NULL, NULL,
+		 POST_KERNEL, 10, NULL);
+
+PM_DEVICE_DT_DEFINE(TEST_DEV_ASYNC, async_pm_action);
+DEVICE_DT_DEFINE(TEST_DEV_ASYNC, NULL, PM_DEVICE_DT_GET(TEST_DEV_ASYNC), NULL, NULL, POST_KERNEL,
+		 20, NULL);
+
+static void get_async_device(void *arg1, void *arg2, void *arg3)
+{
+	int ret;
+
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	k_sem_give(&async_get_started);
+	ret = pm_device_runtime_get(dev_async);
+	zassert_equal(ret, 0);
+}
+
+ZTEST(power_domain_1cpu, test_power_domain_get_while_async_suspend)
+{
+	enum pm_device_state state;
+	int ret;
+
+	pm_device_init_suspended(domain_async);
+	pm_device_init_suspended(dev_async);
+	domain_async_resume_count = 0;
+	domain_async_suspend_count = 0;
+
+	ret = pm_device_runtime_enable(domain_async);
+	zassert_equal(ret, 0);
+	ret = pm_device_runtime_enable(dev_async);
+	zassert_equal(ret, 0);
+
+	/* Start from an active child that has claimed its power domain. */
+	ret = pm_device_runtime_get(dev_async);
+	zassert_equal(ret, 0);
+	zassert_true(pm_device_is_powered(dev_async));
+	zassert_equal(domain_async_resume_count, 1);
+	zassert_equal(domain_async_suspend_count, 0);
+
+	k_sem_reset(&async_suspend_started);
+	k_sem_reset(&async_suspend_continue);
+	k_sem_reset(&async_get_started);
+	block_async_suspend = true;
+
+	/* Queue async suspend and stop it inside the child suspend callback. */
+	ret = pm_device_runtime_put_async(dev_async, K_NO_WAIT);
+	zassert_equal(ret, 0);
+	zassert_equal(k_sem_take(&async_suspend_started, K_SECONDS(1)), 0);
+
+	pm_device_state_get(dev_async, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+	/* Force a resume request to arrive while the async suspend is running. */
+	k_thread_create(&async_get_thread, async_get_stack, K_THREAD_STACK_SIZEOF(async_get_stack),
+			get_async_device, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(CONFIG_SYSTEM_WORKQUEUE_PRIORITY), 0, K_NO_WAIT);
+
+	zassert_equal(k_sem_take(&async_get_started, K_SECONDS(1)), 0);
+
+	/* Keep the suspend blocked for a short duration while get() is running. */
+	k_sleep(K_MSEC(100));
+
+	/* Let suspend finish */
+	k_sem_give(&async_suspend_continue);
+	zassert_equal(k_thread_join(&async_get_thread, K_SECONDS(1)), 0);
+	k_sleep(K_MSEC(10));
+
+	/* The child must be active and must keep the domain powered/refcounted. */
+	pm_device_state_get(dev_async, &state);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+	pm_device_state_get(domain_async, &state);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+	zassert_true(pm_device_is_powered(dev_async));
+	zassert_true(atomic_test_bit(&dev_async->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED));
+	zassert_equal(pm_device_runtime_usage(dev_async), 1);
+	zassert_equal(pm_device_runtime_usage(domain_async), 1);
+
+	/* The domain should not have cycled */
+	zassert_equal(domain_async_resume_count, 1);
+	zassert_equal(domain_async_suspend_count, 0);
+
+	ret = pm_device_runtime_put(dev_async);
+	zassert_equal(ret, 0);
+}
+
 ZTEST(power_domain_1cpu, test_on_power_domain)
 {
 	zassert_true(device_is_ready(domain), "Device is not ready!");

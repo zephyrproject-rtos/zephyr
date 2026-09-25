@@ -13,39 +13,6 @@
 # https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated,
 # so these aliases are eventually removed
 
-set(arduino_uno_r4_minima_DEPRECATED
-    arduino_uno_r4@minima
-)
-set(arduino_uno_r4_wifi_DEPRECATED
-    arduino_uno_r4@wifi
-)
-set(esp32c6_devkitc_DEPRECATED
-    esp32c6_devkitc/esp32c6/hpcore
-)
-set(neorv32_DEPRECATED
-    neorv32/neorv32/up5kdemo
-)
-set(panb511evb_DEPRECATED
-    panb611evb
-)
-set(xiao_esp32c6_DEPRECATED
-    xiao_esp32c6/esp32c6/hpcore
-)
-set(esp32_devkitc_wroom/esp32/procpu_DEPRECATED
-    esp32_devkitc/esp32/procpu
-)
-set(esp32_devkitc_wrover/esp32/procpu_DEPRECATED
-    esp32_devkitc/esp32/procpu
-)
-set(esp32_devkitc_wroom/esp32/appcpu_DEPRECATED
-    esp32_devkitc/esp32/appcpu
-)
-set(esp32_devkitc_wrover/esp32/appcpu_DEPRECATED
-    esp32_devkitc/esp32/appcpu
-)
-set(scobc_module1_DEPRECATED
-    scobc_a1
-)
 set(fvp_base_revc_2xaemv8a_DEPRECATED
     fvp_base_revc_2xaem/v8a
 )
@@ -64,8 +31,8 @@ set(esp32s3_devkitm/esp32s3/appcpu_DEPRECATED
 set(ubx_evk_iris_w1_fidelex/rw612_DEPRECATED
     ubx_evk_iris_w1@fidelix/rw612
 )
-set(it51xxx_evb_DEPRECATED
-    it515xx_evb/it51526aw
+set(it515xx_evb_DEPRECATED
+    it51xxx_evb/it51526aw
 )
 set(weact_stm32h5_core_DEPRECATED
     weact_stm32h562_core
@@ -84,4 +51,70 @@ set(bl54l15u_dvk/nrf54l15/cpuflpr_DEPRECATED
 )
 set(elemrv/elemrv_n_DEPRECATED
     elemrv_flask_n
+)
+set(adafruit_metro_rp2350/rp2350b/m33_DEPRECATED
+    adafruit_metro_rp2350/rp2350b/m33_0
+)
+set(motion_2350_pro/rp2350a/m33_DEPRECATED
+    motion_2350_pro/rp2350a/m33_0
+)
+set(motion_2350_pro/rp2350a/hazard3_DEPRECATED
+    motion_2350_pro/rp2350a/hazard3_0
+)
+set(beetle_rp2350/rp2350a/m33_DEPRECATED
+    beetle_rp2350/rp2350a/m33_0
+)
+set(beetle_rp2350/rp2350a/hazard3_DEPRECATED
+    beetle_rp2350/rp2350a/hazard3_0
+)
+set(pico2_spe/rp2350a/m33_DEPRECATED
+    pico2_spe/rp2350a/m33_0
+)
+set(pico_plus2/rp2350b/m33_DEPRECATED
+    pico_plus2/rp2350b/m33_0
+)
+set(pico_plus2/rp2350b/hazard3_DEPRECATED
+    pico_plus2/rp2350b/hazard3_0
+)
+set(rpi_pico2/rp2350a/m33_DEPRECATED
+    rpi_pico2/rp2350a/m33_0
+)
+set(rpi_pico2/rp2350a/m33/w_DEPRECATED
+    rpi_pico2/rp2350a/m33_0/w
+)
+set(rpi_pico2/rp2350a/m33/mcuboot_DEPRECATED
+    rpi_pico2/rp2350a/m33_0/mcuboot
+)
+set(rpi_pico2/rp2350a/m33/w/mcuboot_DEPRECATED
+    rpi_pico2/rp2350a/m33_0/w/mcuboot
+)
+set(rpi_pico2/rp2350a/hazard3_DEPRECATED
+    rpi_pico2/rp2350a/hazard3_0
+)
+set(xiao_rp2350/rp2350a/m33_DEPRECATED
+    xiao_rp2350/rp2350a/m33_0
+)
+set(xiao_rp2350/rp2350a/hazard3_DEPRECATED
+    xiao_rp2350/rp2350a/hazard3_0
+)
+set(rp2350_zero/rp2350a/m33_DEPRECATED
+    rp2350_zero/rp2350a/m33_0
+)
+set(rp2350_zero/rp2350a/hazard3_DEPRECATED
+    rp2350_zero/rp2350a/hazard3_0
+)
+set(rp2350b_core/rp2350b/m33_DEPRECATED
+    rp2350b_core/rp2350b/m33_0
+)
+set(rp2350b_core/rp2350b/hazard3_DEPRECATED
+    rp2350b_core/rp2350b/hazard3_0
+)
+set(w5500_evb_pico2/rp2350a/m33_DEPRECATED
+    w5500_evb_pico2/rp2350a/m33_0
+)
+set(w6100_evb_pico2/rp2350a/m33_DEPRECATED
+    w6100_evb_pico2/rp2350a/m33_0
+)
+set(w6300_evb_pico2/rp2350a/m33_DEPRECATED
+    w6300_evb_pico2/rp2350a/m33_0
 )

@@ -14,7 +14,7 @@ config EXTERNAL_MEM_CONFIG_DATA
 config NXP_IMX_EXTERNAL_SDRAM
 	default y
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y # No cache memory support is required for driver
 
 endif # CPU_CORTEX_M7

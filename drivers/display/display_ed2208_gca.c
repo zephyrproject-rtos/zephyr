@@ -235,7 +235,7 @@ static int ed2208_gca_write(const struct device *dev, const uint16_t x, const ui
 	}
 
 	if (buf == NULL || desc->buf_size < buf_len) {
-		LOG_ERR("Invalid buffer: %p (%zu < %zu)", buf, desc->buf_size, buf_len);
+		LOG_ERR("Invalid buffer: %p (%zu < %zu)", buf, (size_t)desc->buf_size, buf_len);
 		return -EINVAL;
 	}
 
@@ -316,7 +316,6 @@ static void ed2208_gca_get_capabilities(const struct device *dev, struct display
 	const struct ed2208_gca_config *config = dev->config;
 	struct ed2208_gca_data *data = dev->data;
 
-	memset(caps, 0, sizeof(*caps));
 	memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
@@ -408,7 +407,7 @@ static DEVICE_API(display, ed2208_gca_api) = {
 			{                                                                          \
 				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
 				.config = MIPI_DBI_SPI_CONFIG_DT_INST(                             \
-					inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),            \
+					inst, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8), 0),        \
 			},                                                                         \
 		.busy_gpio = GPIO_DT_SPEC_INST_GET(inst, busy_gpios),                              \
 		.color_palette = DT_PROP(DT_INST_CHILD(inst, color_palette), colors),              \

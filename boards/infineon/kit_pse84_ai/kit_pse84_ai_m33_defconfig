@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -35,11 +35,3 @@ CONFIG_TRUSTED_EXECUTION_SECURE=y
 CONFIG_CODE_DATA_RELOCATION=y
 
 CONFIG_USE_DT_CODE_PARTITION=y
-
-# Enable MXCRYPTO TRNG entropy driver
-CONFIG_ENTROPY_GENERATOR=y
-CONFIG_ENTROPY_INFINEON_MXCRYPTO_TRNG=y
-
-# Enable MXCRYPTO hardware crypto driver
-CONFIG_CRYPTO=y
-CONFIG_CRYPTO_INFINEON_MXCRYPTO=y

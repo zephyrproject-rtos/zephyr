@@ -49,9 +49,6 @@ tests:
       - cdns_swerv/s400/pmp/whisper
       - cdns_swerv/s420/whisper
       - cdns_swerv/s420/64/whisper
-      # In S-mode only SSIP (IRQ 1) can be triggered from software; the
-      # shared interrupt test requires two independent triggerable IRQ lines.
-      - qemu_riscv64/qemu_virt_riscv64/smode
       # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
@@ -62,7 +59,9 @@ tests:
       - mips
     extra_configs:
       - CONFIG_SHARED_INTERRUPTS=y
-    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    # In S-mode only SSIP (IRQ 1) can be triggered from software; the
+    # shared interrupt test requires two independent triggerable IRQ lines.
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and not CONFIG_RISCV_S_MODE
   arch.shared_interrupt.lto: &shared-interrupt-lto
     platform_exclude:
       # excluded because of failures during test_prevent_interruption
@@ -77,9 +76,6 @@ tests:
       - cdns_swerv/s400/pmp/whisper
       - cdns_swerv/s420/whisper
       - cdns_swerv/s420/64/whisper
-      # In S-mode only SSIP (IRQ 1) can be triggered from software; the
-      # shared interrupt test requires two independent triggerable IRQ lines.
-      - qemu_riscv64/qemu_virt_riscv64/smode
       # On it8xxx2_evb, current trigger_irq implementation of RISC-V architecture
       # does not trigger interrupts
       - it8xxx2_evb
@@ -99,9 +95,11 @@ tests:
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
       - CONFIG_LTO=y
     # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
+    # In S-mode only SSIP (IRQ 1) can be triggered from software; the
+    # shared interrupt test requires two independent triggerable IRQ lines.
     filter: >
       not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
-      and not CONFIG_CODE_DATA_RELOCATION
+      and not CONFIG_CODE_DATA_RELOCATION and not CONFIG_RISCV_S_MODE
   arch.shared_interrupt.lto.speed:
     <<: *shared-interrupt-lto
     extra_configs:

@@ -2296,10 +2296,54 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	return NET_OK;
 }
 
+/* Builds a fragment from an IPv6 plus fragment header template followed by
+ * payload_len bytes of a running counter, positioned for
+ * net_ipv6_handle_fragment_hdr(). Copies the IPv6 header to hdr.
+ */
+static struct net_pkt *build_reass_fragment(const uint8_t *tmpl, size_t tmpl_len,
+					    uint16_t payload_len, uint8_t *data,
+					    struct net_ipv6_hdr *hdr)
+{
+	struct net_pkt_cursor backup;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_alloc_with_buffer(iface1, tmpl_len + payload_len,
+					NET_AF_UNSPEC, 0, ALLOC_TIMEOUT);
+	zassert_not_null(pkt, "packet");
+
+	net_pkt_set_family(pkt, NET_AF_INET6);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_cursor_init(pkt);
+
+	memcpy(hdr, tmpl, sizeof(struct net_ipv6_hdr));
+
+	ret = net_pkt_write(pkt, tmpl, sizeof(struct net_ipv6_hdr) + 1);
+	zassert_true(ret == 0, "IPv6 header append failed");
+
+	net_pkt_cursor_backup(pkt, &backup);
+
+	ret = net_pkt_write(pkt, tmpl + sizeof(struct net_ipv6_hdr) + 1,
+			    tmpl_len - sizeof(struct net_ipv6_hdr) - 1);
+	zassert_true(ret == 0, "IPv6 fragment header append failed");
+
+	while (payload_len--) {
+		ret = net_pkt_write_u8(pkt, (*data)++);
+		zassert_true(ret == 0, "IPv6 payload append failed");
+	}
+
+	net_pkt_set_ipv6_hdr_prev(pkt, offsetof(struct net_ipv6_hdr, nexthdr));
+	net_pkt_set_ipv6_fragment_start(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_overwrite(pkt, true);
+
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return pkt;
+}
+
 ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 {
 	struct net_ipv6_hdr ipv6_hdr;
-	struct net_pkt_cursor backup;
 	struct net_pkt *pkt1;
 	struct net_pkt *pkt2;
 	uint16_t payload1_len;
@@ -2313,83 +2357,19 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
 
-	/* Fragment 1 */
 	data = 0U;
 	payload1_len = NET_IPV6_MTU - sizeof(ipv6_reass_frag1);
 	payload2_len = test_recv_payload_len - payload1_len;
 
-	pkt1 = net_pkt_alloc_with_buffer(iface1, NET_IPV6_MTU, NET_AF_UNSPEC,
-					 0, ALLOC_TIMEOUT);
-	zassert_not_null(pkt1, "packet");
-
-	net_pkt_set_family(pkt1, NET_AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt1, sizeof(struct net_ipv6_hdr));
-	net_pkt_cursor_init(pkt1);
-
-	memcpy(&ipv6_hdr, ipv6_reass_frag1, sizeof(struct net_ipv6_hdr));
-
-	ret = net_pkt_write(pkt1, ipv6_reass_frag1,
-			    sizeof(struct net_ipv6_hdr) + 1);
-	zassert_true(ret == 0, "IPv6 header append failed");
-
-	net_pkt_cursor_backup(pkt1, &backup);
-
-	ret = net_pkt_write(pkt1,
-			    ipv6_reass_frag1 + sizeof(struct net_ipv6_hdr) + 1,
-			    sizeof(ipv6_reass_frag1) -
-			    sizeof(struct net_ipv6_hdr) - 1);
-	zassert_true(ret == 0, "IPv6 fragment header append failed");
-
-	while (payload1_len--) {
-		ret = net_pkt_write_u8(pkt1, data++);
-		zassert_true(ret == 0, "IPv6 header append failed");
-	}
-
-	net_pkt_set_ipv6_hdr_prev(pkt1, offsetof(struct net_ipv6_hdr, nexthdr));
-	net_pkt_set_ipv6_fragment_start(pkt1, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_overwrite(pkt1, true);
-
-	net_pkt_cursor_restore(pkt1, &backup);
+	pkt1 = build_reass_fragment(ipv6_reass_frag1, sizeof(ipv6_reass_frag1),
+				    payload1_len, &data, &ipv6_hdr);
 
 	ret = net_ipv6_handle_fragment_hdr(pkt1, &ipv6_hdr,
 					   NET_IPV6_NEXTHDR_FRAG);
 	zassert_true(ret == NET_OK, "IPv6 frag1 reassembly failed");
 
-	/* Fragment 2 */
-
-	pkt2 = net_pkt_alloc_with_buffer(iface1, payload2_len +
-					 sizeof(ipv6_reass_frag2),
-					 NET_AF_UNSPEC, 0, ALLOC_TIMEOUT);
-	zassert_not_null(pkt2, "packet");
-
-	net_pkt_set_family(pkt2, NET_AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt2, sizeof(struct net_ipv6_hdr));
-	net_pkt_cursor_init(pkt2);
-
-	memcpy(&ipv6_hdr, ipv6_reass_frag2, sizeof(struct net_ipv6_hdr));
-
-	ret = net_pkt_write(pkt2, ipv6_reass_frag2,
-			    sizeof(struct net_ipv6_hdr) + 1);
-	zassert_true(ret == 0, "IPv6 header append failed");
-
-	net_pkt_cursor_backup(pkt2, &backup);
-
-	ret = net_pkt_write(pkt2,
-			    ipv6_reass_frag2 + sizeof(struct net_ipv6_hdr) + 1,
-			    sizeof(ipv6_reass_frag2) -
-			    sizeof(struct net_ipv6_hdr) - 1);
-	zassert_true(ret == 0, "IPv6 fragment header append failed");
-
-	while (payload2_len--) {
-		ret = net_pkt_write_u8(pkt2, data++);
-		zassert_true(ret == 0, "IPv6 header append failed");
-	}
-
-	net_pkt_set_ipv6_hdr_prev(pkt2, offsetof(struct net_ipv6_hdr, nexthdr));
-	net_pkt_set_ipv6_fragment_start(pkt2, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_overwrite(pkt2, true);
-
-	net_pkt_cursor_restore(pkt2, &backup);
+	pkt2 = build_reass_fragment(ipv6_reass_frag2, sizeof(ipv6_reass_frag2),
+				    payload2_len, &data, &ipv6_hdr);
 
 	ret = net_ipv6_handle_fragment_hdr(pkt2, &ipv6_hdr,
 					   NET_IPV6_NEXTHDR_FRAG);
@@ -2399,6 +2379,148 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 		NET_DBG("Timeout while waiting interface data");
 		zassert_true(false, "Timeout");
 	}
+
+	net_icmp_cleanup_ctx(&ctx);
+}
+
+/* Reassembly timeout-vs-completion race test state */
+static K_SEM_DEFINE(race_reached, 0, 1);
+static K_SEM_DEFINE(race_resume, 0, 1);
+static K_THREAD_STACK_DEFINE(race_worker_stack, CONFIG_ZTEST_STACK_SIZE);
+static struct k_thread race_worker;
+static struct net_pkt *race_final_frag;
+static struct net_ipv6_hdr race_final_hdr;
+static struct k_work_delayable *race_timer;
+static bool race_armed;
+
+/* CONFIG_TRACING_USER hook run on entry to k_work_cancel_delayable(), before
+ * the work lock is taken. Reassembly completion cancels the slot timer first;
+ * when armed for that timer, signal the test and block so the slot timeout
+ * can fire against the same slot. One-shot, so the timeout handler's own
+ * cancel passes straight through.
+ */
+void sys_trace_k_work_cancel_delayable_enter_user(struct k_work_delayable *dwork)
+{
+	if (race_armed && dwork == race_timer) {
+		race_armed = false;
+		k_sem_give(&race_reached);
+		k_sem_take(&race_resume, K_FOREVER);
+	}
+}
+
+static void race_count_cb(struct net_ipv6_reassembly *reassembly, void *data)
+{
+	uint8_t *packets = (uint8_t *)data;
+
+	ARG_UNUSED(reassembly);
+
+	++*packets;
+}
+
+/* Records the timer of the only active reassembly slot. */
+static void race_timer_cb(struct net_ipv6_reassembly *reassembly, void *data)
+{
+	ARG_UNUSED(data);
+
+	race_timer = &reassembly->timer;
+}
+
+/* Delivers the final fragment from its own thread so the main thread stays free
+ * to advance time while the completion path is paused in the hook.
+ */
+static void race_worker_fn(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	(void)net_ipv6_handle_fragment_hdr(race_final_frag, &race_final_hdr,
+					   NET_IPV6_NEXTHDR_FRAG);
+}
+
+/* Exercises the reassembly timeout against completion of the same slot.
+ *
+ * The final fragment drives reassembly completion while the per-slot timeout
+ * handler runs concurrently against the same slot. The timer cancel hook
+ * pins the interleaving: completion is paused at its cancel, the slot timeout
+ * is allowed to fire, then completion resumes. The timeout handler must wait
+ * for completion to finish rather than release the fragments under it, so
+ * the reassembled echo reply is delivered and the slot is released.
+ */
+ZTEST(net_ipv6_fragment, test_reassembly_timeout_race)
+{
+	struct net_ipv6_hdr hdr1;
+	struct net_pkt *pkt1;
+	uint16_t payload1_len;
+	uint16_t payload2_len;
+	uint8_t data;
+	uint8_t packets;
+	int ret;
+	struct net_icmp_ctx ctx;
+
+	race_armed = false;
+	k_sem_reset(&race_reached);
+	k_sem_reset(&race_resume);
+	k_sem_reset(&wait_data);
+
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET6, NET_ICMPV6_ECHO_REPLY,
+				0, handle_ipv6_echo_reply);
+	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
+		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
+
+	data = 0U;
+	payload1_len = NET_IPV6_MTU - sizeof(ipv6_reass_frag1);
+	payload2_len = test_recv_payload_len - payload1_len;
+
+	/* First fragment arms the slot timeout. */
+	pkt1 = build_reass_fragment(ipv6_reass_frag1, sizeof(ipv6_reass_frag1),
+				    payload1_len, &data, &hdr1);
+	ret = net_ipv6_handle_fragment_hdr(pkt1, &hdr1, NET_IPV6_NEXTHDR_FRAG);
+	zassert_equal(ret, NET_OK, "IPv6 frag1 reassembly failed");
+
+	packets = 0;
+	net_ipv6_frag_foreach(race_count_cb, &packets);
+	zassert_equal(packets, 1, "Expected one pending reassembly");
+
+	race_timer = NULL;
+	net_ipv6_frag_foreach(race_timer_cb, NULL);
+	zassert_not_null(race_timer, "Reassembly slot timer not found");
+
+	/* Prepare the final fragment for delivery from the worker thread. */
+	race_final_frag = build_reass_fragment(ipv6_reass_frag2,
+					       sizeof(ipv6_reass_frag2),
+					       payload2_len, &data,
+					       &race_final_hdr);
+
+	race_armed = true;
+
+	k_thread_create(&race_worker, race_worker_stack,
+			K_THREAD_STACK_SIZEOF(race_worker_stack),
+			race_worker_fn, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+
+	/* Wait until completion is inside reassembly and paused. */
+	zassert_equal(k_sem_take(&race_reached, K_SECONDS(1)), 0,
+		      "Reassembly completion path was not reached");
+
+	/* Let the slot timeout fire while completion is paused. */
+	k_sleep(K_MSEC(CONFIG_NET_IPV6_FRAGMENT_TIMEOUT * 1000 + 200));
+
+	/* Resume completion. */
+	k_sem_give(&race_resume);
+
+	zassert_equal(k_thread_join(&race_worker, K_SECONDS(2)), 0,
+		      "Reassembly completion did not finish");
+
+	/* The reassembled echo reply must have reached the ICMP handler. */
+	zassert_equal(k_sem_take(&wait_data, WAIT_TIME), 0,
+		      "Reassembled packet was not delivered");
+
+	/* The slot must be released after completion. */
+	k_sleep(K_MSEC(100));
+	packets = 0;
+	net_ipv6_frag_foreach(race_count_cb, &packets);
+	zassert_equal(packets, 0, "Reassembly slot was not released");
 
 	net_icmp_cleanup_ctx(&ctx);
 }

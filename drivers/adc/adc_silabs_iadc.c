@@ -47,6 +47,16 @@ LOG_MODULE_REGISTER(iadc, CONFIG_ADC_LOG_LEVEL);
 #define IADC_PORT_MASK 0xF0
 #define IADC_PIN_MASK  0x0F
 
+/* Number of results the scan FIFO holds, which is the highest data valid level. Without DMA
+ * the FIFO is read out once a scan has finished, so a single scan must not produce more
+ * results than this.
+ */
+#define IADC_SCAN_FIFO_DEPTH ((_IADC_SCANFIFOCFG_DVL_MASK >> _IADC_SCANFIFOCFG_DVL_SHIFT) + 1U)
+
+#define IADC_ERROR_FLAGS                                                                           \
+	(IADC_IF_PORTALLOCERR | IADC_IF_POLARITYERR | IADC_IF_EM23ABORTERROR |                     \
+	 IADC_IF_SCANFIFOOF | IADC_IF_SCANFIFOUF)
+
 struct iadc_dma_channel {
 	const struct device *dma_dev;
 	struct dma_block_config blk_cfg;
@@ -80,6 +90,9 @@ struct iadc_data {
 	uint8_t digital_averaging;
 	size_t data_size;
 	uint8_t *buffer;
+	atomic_t sampling;         /* Set while a sampling is waiting to be completed */
+	uint32_t pending_channels; /* Channels of the current sampling not yet converted */
+	uint8_t *sample_ptr;       /* Where the next result of the current sampling goes */
 };
 
 struct iadc_config {
@@ -211,18 +224,63 @@ static void iadc_dma_stop(const struct device *dev)
 	dma->enabled = false;
 }
 
+#endif /* CONFIG_ADC_SILABS_IADC_DMA */
+
+/* The interrupt handler and the DMA callback can both end a sampling. Whoever gets here first
+ * stops the conversion and completes the sampling, the other one finds nothing left to do.
+ * A second completion would leave the context's semaphore signaled and let later reads
+ * return before their conversion is done.
+ */
+static bool iadc_sampling_end(const struct device *dev)
+{
+	const struct iadc_config *config = dev->config;
+	struct iadc_data *data = dev->data;
+
+	if (!atomic_cas(&data->sampling, 1, 0)) {
+		return false;
+	}
+
+	sl_hal_iadc_disable_interrupts(config->base, IADC_IEN_SCANTABLEDONE | IADC_ERROR_FLAGS);
+	sl_hal_iadc_stop_scan(config->base);
+#ifdef CONFIG_ADC_SILABS_IADC_DMA
+	iadc_dma_stop(dev);
+#endif
+
+	return true;
+}
+
+static void iadc_sampling_failed(struct iadc_data *data, int status)
+{
+	/* Unlike adc_context_on_sampling_done(), adc_context_complete() leaves the timer of a
+	 * sequence with an interval running.
+	 */
+	adc_context_disable_timer(&data->ctx);
+	adc_context_complete(&data->ctx, status);
+}
+
+#ifdef CONFIG_ADC_SILABS_IADC_DMA
 static void iadc_dma_cb(const struct device *dma_dev, void *user_data, uint32_t channel, int status)
 {
 	struct iadc_data *data = user_data;
 	const struct device *dev = data->dev;
+	const struct iadc_config *config = dev->config;
+	uint32_t err = sl_hal_iadc_get_pending_interrupts(config->base) & IADC_ERROR_FLAGS;
 
-	if (status < 0) {
-		LOG_ERR("DMA transfer error: %d", status);
-		adc_context_complete(&data->ctx, status);
+	if (!iadc_sampling_end(dev)) {
 		return;
 	}
 
-	iadc_dma_stop(dev);
+	if (status < 0) {
+		LOG_ERR("DMA transfer error: %d", status);
+		iadc_sampling_failed(data, status);
+		return;
+	}
+
+	if (err != 0U) {
+		LOG_ERR("IADC error, flags=%08x", err);
+		iadc_sampling_failed(data, -EIO);
+		return;
+	}
 
 	adc_context_on_sampling_done(&data->ctx, dev);
 }
@@ -488,24 +546,56 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	return res;
 }
 
+/* Convert the next pending channels, as many as the scan FIFO has room for */
+static void iadc_start_scan_part(const struct device *dev)
+{
+	const struct iadc_config *config = dev->config;
+	struct iadc_data *data = dev->data;
+	uint32_t mask = 0U;
+
+	for (size_t i = 0; (i < IADC_SCAN_FIFO_DEPTH) && (data->pending_channels != 0U); i++) {
+		uint32_t channel = LSB_GET(data->pending_channels);
+
+		mask |= channel;
+		data->pending_channels &= ~channel;
+	}
+
+	sl_hal_iadc_set_scan_mask(config->base, mask);
+	sl_hal_iadc_start_scan(config->base);
+}
+
 static void iadc_start_scan(const struct device *dev)
 {
 	const struct iadc_config *config = dev->config;
-	__maybe_unused struct iadc_data *data = dev->data;
+	struct iadc_data *data = dev->data;
 	IADC_TypeDef *iadc = (IADC_TypeDef *)config->base;
+
+	sl_hal_iadc_clear_interrupts(iadc, IADC_IF_SCANTABLEDONE | IADC_ERROR_FLAGS);
+	atomic_set(&data->sampling, 1);
 
 #ifdef CONFIG_ADC_SILABS_IADC_DMA
 	if (data->dma.dma_dev) {
+		int ret;
+
 		data->dma.blk_cfg.dest_address = (uintptr_t)data->buffer;
-		iadc_dma_start(dev);
-	} else {
-		sl_hal_iadc_enable_interrupts(iadc, IADC_IEN_SCANTABLEDONE);
+		ret = iadc_dma_start(dev);
+		if (ret < 0) {
+			atomic_clear(&data->sampling);
+			iadc_sampling_failed(data, ret);
+			return;
+		}
+
+		sl_hal_iadc_enable_interrupts(iadc, IADC_ERROR_FLAGS);
+		sl_hal_iadc_start_scan(iadc);
+		return;
 	}
-#else
-	sl_hal_iadc_enable_interrupts(iadc, IADC_IEN_SCANTABLEDONE);
 #endif
 
-	sl_hal_iadc_start_scan(iadc);
+	data->pending_channels = data->channels;
+	data->sample_ptr = data->buffer;
+
+	sl_hal_iadc_enable_interrupts(iadc, IADC_IEN_SCANTABLEDONE | IADC_ERROR_FLAGS);
+	iadc_start_scan_part(dev);
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)
@@ -529,30 +619,43 @@ static void iadc_isr(void *arg)
 	const struct device *dev = (const struct device *)arg;
 	const struct iadc_config *config = dev->config;
 	struct iadc_data *data = dev->data;
-	uint8_t *sample_ptr = data->buffer;
 	IADC_TypeDef *iadc = config->base;
 	sl_hal_iadc_result_t sample;
 	uint32_t flags, err;
 
 	flags = sl_hal_iadc_get_pending_interrupts(iadc);
-	sl_hal_iadc_clear_interrupts(iadc, flags);
+	err = flags & IADC_ERROR_FLAGS;
 
-	err = flags & (IADC_IF_PORTALLOCERR | IADC_IF_POLARITYERR | IADC_IF_EM23ABORTERROR |
-		       IADC_IF_SCANFIFOOF | IADC_IF_SCANFIFOUF);
-
-	if (flags & IADC_IF_SCANTABLEDONE) {
-		while (sl_hal_iadc_get_scan_fifo_cnt(iadc) > 0) {
-			sample = sl_hal_iadc_pull_scan_fifo_result(iadc);
-			memcpy(sample_ptr, &sample.data, data->data_size);
-			sample_ptr += data->data_size;
+	if (err != 0U) {
+		/* The DMA callback looks at the error flags as well, so end the sampling
+		 * before clearing them.
+		 */
+		if (iadc_sampling_end(dev)) {
+			LOG_ERR("IADC error, flags=%08x", err);
+			iadc_sampling_failed(data, -EIO);
 		}
 
-		adc_context_on_sampling_done(&data->ctx, dev);
+		sl_hal_iadc_clear_interrupts(iadc, flags);
+		return;
 	}
 
-	if (err) {
-		LOG_ERR("IADC error, flags=%08x", err);
-		adc_context_complete(&data->ctx, -EIO);
+	sl_hal_iadc_clear_interrupts(iadc, flags);
+
+	if (((flags & IADC_IF_SCANTABLEDONE) != 0U) && (data->dma.dma_dev == NULL)) {
+		while (sl_hal_iadc_get_scan_fifo_cnt(iadc) > 0) {
+			sample = sl_hal_iadc_pull_scan_fifo_result(iadc);
+			memcpy(data->sample_ptr, &sample.data, data->data_size);
+			data->sample_ptr += data->data_size;
+		}
+
+		if (data->pending_channels != 0U) {
+			iadc_start_scan_part(dev);
+			return;
+		}
+
+		if (iadc_sampling_end(dev)) {
+			adc_context_on_sampling_done(&data->ctx, dev);
+		}
 	}
 }
 

@@ -31,6 +31,10 @@ static struct coredump_backend_api
 extern struct coredump_backend_api coredump_backend_in_memory;
 static struct coredump_backend_api
 	*backend_api = &coredump_backend_in_memory;
+#elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_AMD_ACP_PANIC_DUMP)
+extern struct coredump_backend_api coredump_backend_amd_acp_panic_dump;
+static struct coredump_backend_api
+	*backend_api = &coredump_backend_amd_acp_panic_dump;
 #elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_OTHER)
 extern struct coredump_backend_api coredump_backend_other;
 static struct coredump_backend_api
@@ -332,6 +336,18 @@ void coredump(unsigned int reason, const struct arch_esf *esf,
 {
 	z_coredump_start();
 
+#ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
+	/*
+	 * Freeze every other CPU as early as possible so their captured
+	 * register state reflects the moment of the panic, not whatever
+	 * they've done since. Thawed at the very end, after the
+	 * memory-region walk below has read each thread's (possibly
+	 * frozen) stack/struct, to avoid a torn read if a frozen thread
+	 * resumed mid-dump.
+	 */
+	arch_coredump_freeze_other_cpus();
+#endif
+
 	dump_header(reason);
 
 	if (esf != NULL) {
@@ -342,6 +358,12 @@ void coredump(unsigned int reason, const struct arch_esf *esf,
 	dump_threads_metadata();
 #endif
 
+#ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
+	for (unsigned int cpu = 0; cpu < CONFIG_MP_MAX_NUM_CPUS; cpu++) {
+		arch_coredump_cpu_snapshot_dump(cpu);
+	}
+#endif
+
 	if (thread != NULL) {
 #ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN
 		dump_thread(thread, /* is_current */ true);
@@ -349,6 +371,10 @@ void coredump(unsigned int reason, const struct arch_esf *esf,
 	}
 
 	process_memory_region_list(thread);
+
+#ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
+	arch_coredump_thaw_other_cpus();
+#endif
 
 	z_coredump_end();
 }

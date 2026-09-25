@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# size of stack for initialization and main thread
-CONFIG_MAIN_STACK_SIZE=3072
-
 # enable logger
 CONFIG_LOG=y
 

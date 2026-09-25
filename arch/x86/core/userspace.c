@@ -152,6 +152,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
 				     size_t *unused_ptr)
 {
+
+	ARG_UNUSED(stack_size);
+
 	if (!IS_ENABLED(CONFIG_INIT_STACKS) || !IS_ENABLED(CONFIG_THREAD_STACK_INFO)) {
 		/*
 		 * This is needed to ensure that the call to z_stack_space_get() below is properly

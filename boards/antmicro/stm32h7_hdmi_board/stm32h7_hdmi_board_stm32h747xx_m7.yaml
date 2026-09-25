@@ -19,6 +19,7 @@ supported:
   - memc
   - netif:eth
   - nvs
+  - ptp_clock
   - qspi
   - spi
   - uart

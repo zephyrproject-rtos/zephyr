@@ -538,11 +538,11 @@ static int sam_hsmci_request_inner(const struct device *dev, struct sdhc_command
 		if ((sd_data->block_size & 0x3) == 0 && (((uint32_t)sd_data->data) & 0x3) == 0) {
 			size = (sd_data->block_size + 3) >> 2;
 			hsmci->HSMCI_MR &= ~HSMCI_MR_FBYTE;
-			byte_mode = true;
+			byte_mode = false;
 		} else {
 			size = sd_data->block_size;
 			hsmci->HSMCI_MR |= HSMCI_MR_FBYTE;
-			byte_mode = false;
+			byte_mode = true;
 		}
 
 		hsmci->HSMCI_BLKR =

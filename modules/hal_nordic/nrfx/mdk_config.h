@@ -270,12 +270,33 @@
 #endif
 #endif
 
+#ifdef CONFIG_SOC_NRF54LV10A_CPUAPP
+#ifndef NRF54LV10A_XXAA
+#define NRF54LV10A_XXAA 1
+#endif
+#ifndef NRF_APPLICATION
+#define NRF_APPLICATION 1
+#endif
+#endif
+
+#ifdef CONFIG_SOC_NRF54LV10A_CPUFLPR
+#ifndef NRF54LV10A_XXAA
+#define NRF54LV10A_XXAA 1
+#endif
+#ifndef NRF_FLPR
+#define NRF_FLPR 1
+#endif
+#endif
+
 #ifdef CONFIG_SOC_NRF7120_ENGA_CPUAPP
 #ifndef NRF7120_ENGA_XXAA
 #define NRF7120_ENGA_XXAA 1
 #endif
 #ifndef NRF_APPLICATION
 #define NRF_APPLICATION 1
+#endif
+#ifndef NRF_ENABLE_NRF7120_APPROTECT_BOOT_WORKAROUND
+#define NRF_ENABLE_NRF7120_APPROTECT_BOOT_WORKAROUND 1
 #endif
 #endif
 
@@ -288,12 +309,21 @@
 #endif
 #endif
 
+#ifdef CONFIG_SOC_NRF7120_DEVELOP_IN_NRF7120E
+#ifndef DEVELOP_IN_NRF7120E
+#define DEVELOP_IN_NRF7120E 1
+#endif
+#endif
+
 #ifdef CONFIG_SOC_NRF7120E_ENGA_CPUAPP
 #ifndef NRF7120E_ENGA_XXAA
 #define NRF7120E_ENGA_XXAA 1
 #endif
 #ifndef NRF_APPLICATION
 #define NRF_APPLICATION 1
+#endif
+#ifndef NRF_ENABLE_NRF7120_APPROTECT_BOOT_WORKAROUND
+#define NRF_ENABLE_NRF7120_APPROTECT_BOOT_WORKAROUND 1
 #endif
 #endif
 
@@ -450,8 +480,8 @@
 #include <zephyr/devicetree.h>
 
 /*
- * Inject HAL "NFCT_PINS_AS_GPIOS" definition if user requests to
- * configure the NFCT pins as GPIOS. Do the same with "CONFIG_GPIO_AS_PINRESET"
+ * Inject HAL "NRF_CONFIG_NFCT_PINS_AS_GPIOS" definition if user requests to
+ * configure the NFCT pins as GPIOS. Do the same with "NRF_CONFIG_GPIO_AS_PINRESET"
  * to configure the reset GPIO as nRESET. This way, the HAL will take care of
  * doing the proper configuration sequence during system init.
  */

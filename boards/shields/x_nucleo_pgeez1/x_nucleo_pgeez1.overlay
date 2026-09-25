@@ -21,7 +21,7 @@
 	status = "okay";
 
 	m95p32_x_nucleo_pgeez1: eeprom@0 {
-		compatible = "jedec,nor";
+		compatible = "st,m95p32", "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(32)>; /* 32 Mbits */
 		erase-block-size = <512>;

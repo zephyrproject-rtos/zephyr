@@ -212,7 +212,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	switch (data->fifo_config.fifo_read_mode) {
 	case ADXL367_8B:
-		fifo_bytes = fifo_packet_cnt;
+		fifo_bytes = fifo_packet_cnt * sample_numb;
 		break;
 	case ADXL367_12B: {
 		unsigned int fifo_bits = fifo_packet_cnt * sample_numb * 12;
@@ -245,7 +245,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		break;
 	}
 	default:
-		fifo_bytes = fifo_packet_cnt * 2;
+		fifo_bytes = fifo_packet_cnt * sample_numb * 2;
 		packet_size *= 2;
 		break;
 	}

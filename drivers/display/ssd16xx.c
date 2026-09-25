@@ -563,7 +563,6 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height -
 			     config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
@@ -1099,7 +1098,7 @@ static struct ssd16xx_quirks quirks_solomon_ssd1683 = {
 		.dbi_config = {                                         \
 			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
 			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
-				SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |  \
+				SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | \
 				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),       \
 		},                                                      \
 		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\

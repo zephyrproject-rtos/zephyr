@@ -8,6 +8,7 @@
 
 __weak void _exit(int status)
 {
+	ARG_UNUSED(status);
 	printf("exit\n");
 	while (1) {
 		Z_SPIN_DELAY(100);

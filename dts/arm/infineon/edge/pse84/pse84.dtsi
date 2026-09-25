@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,13 +13,23 @@
 		reg = <0x24000000 0x100000>;
 	};
 
-	rram {
+	rram_controller: rram_controller@42200000 {
+		compatible = "infineon,rram-controller";
+		reg = <0x42200000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
+		status = "disabled";
 
-		rram: rram@22000000 {
+		rram0: rram0@22000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x22000000 DT_SIZE_K(512)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x22000000 DT_SIZE_K(512)>;
+			write-block-size = <16>;
+			erase-block-size = <16>;
+			status = "disabled";
 		};
 	};
 
@@ -395,18 +405,41 @@
 			};
 		};
 
+		/* System-reserved: channels 0-3, 8-10; interrupts 0-2, 6-7.
+		 * ch0 and 1 are used for communication with the secure enclave
+		 * ch2 is used to monitor RRAM operations
+		 * ch3 is used to handle PDL semaphores
+		 * ch 8-9-10 are used by TF-M
+		 * intr0 and 1 are used for secure enclave purposes
+		 * intr2 is used for the RRAM
+		 * Application-usable: channels 4-7, 11-15; interrupts 3-5.
+		 */
 		ipc0: ipc@422a0000 {
 			compatible = "infineon,ipc";
 			reg = <0x422a0000 0x1200>;
 			status = "disabled";
-			#ipc-config-cells = <3>;
+			#ipc-config-cells = <2>;
+			channel-count = <16>;
+			interrupt-count = <8>;
+			channel-mask = <0xf8f0>;
+			interrupt-mask = <0x38>;
 		};
 
+		/* System-reserved: channels 0, 1, 15; interrupts 0-4.
+		 * ch0 is reserved
+		 * ch1 and 15 are used by SRF
+		 * intr 0-4 are used by SRF
+		 * Application-usable: channels 2-14; interrupts 5-7.
+		 */
 		ipc1: ipc@441d0000 {
 			compatible = "infineon,ipc";
 			reg = <0x441d0000 0x1200>;
 			status = "disabled";
-			#ipc-config-cells = <3>;
+			#ipc-config-cells = <2>;
+			channel-count = <16>;
+			interrupt-count = <8>;
+			channel-mask = <0x7ffc>;
+			interrupt-mask = <0xe0>;
 		};
 
 		scb0: scb@42990000 {
@@ -1230,6 +1263,18 @@
 			};
 		};
 
+		axidmac: axidmac@441a0000 {
+			#dma-cells = <1>;
+			compatible = "infineon,mdma";
+			reg = <0x441a0000 0x1800>;
+			dma-channels = <4>;
+			interrupts = <98 4>,  /* CH0 */
+				     <99 4>,  /* CH1 */
+				     <100 4>, /* CH2 */
+				     <101 4>; /* CH3 */
+			status = "disabled";
+		};
+
 		dma0: dw@42270000 {
 			#dma-cells = <1>;
 			compatible = "infineon,dma";
@@ -1394,6 +1439,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x228fe052>;
 			ghwcfg4 = <0xe2103a20>;
+			g-rx-fifo-size = <543>;
+			g-np-tx-fifo-size = <64>;
+			g-tx-fifo-size = <768 768 768 768 768 768 768 752>;
 			status = "disabled";
 			mmio-peri-inst = <1>;
 			mmio-peri-group = <3>;

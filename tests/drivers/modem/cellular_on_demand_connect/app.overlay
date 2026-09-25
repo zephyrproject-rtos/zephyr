@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Leica Geosystems AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Instantiate a Quectel EG25-G modem_cellular device on an emulated UART so the
+ * driver FSM can be exercised on native_sim without real hardware.
+ */
+
+/ {
+	modem_uart: uart-emul {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+
+		modem: modem {
+			compatible = "quectel,eg25-g";
+			status = "okay";
+		};
+	};
+
+	aliases {
+		modem = &modem;
+	};
+};

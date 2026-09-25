@@ -7,7 +7,6 @@
 #include <st/l4/stm32l4.dtsi>
 #include <zephyr/dt-bindings/clock/stm32l4plus_clock.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
-#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 /delete-node/ &quadspi;
 
@@ -277,12 +276,6 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
-
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
@@ -401,9 +394,9 @@
 			interrupt-names = "dcmi";
 			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
 			dmas = <&dma1 1 91 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-					    STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS |
+					    STM32_DMA_MEM_INC | STM32_DMA_PERIPH_32BITS |
 					    STM32_DMA_MEM_32BITS |
-					    STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+					    STM32_DMA_PRIORITY_HIGH)>;
 			status = "disabled";
 		};
 
@@ -465,6 +458,14 @@
 			status = "disabled";
 		};
 
+		hash: crypto@50060400 {
+			compatible = "st,stm32-hash";
+			reg = <0x50060400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			resets = <&rctl STM32_RESET(AHB2, 17)>;
+			status = "disabled";
+		};
+
 		rng: rng@50060800 {
 			nist-config = <0xf00d00>;
 			health-test-magic = <0x17590abc>;
@@ -493,6 +494,34 @@
 			sai1_b: sai1b@40015424 {
 				reg = <0x40015424 0x20>;
 				dmas = <&dma2 2 38 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		sai2: sai2@40015800 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40015800 0x400>;
+			ranges;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLLSAI1_P SAI2_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
+			status = "disabled";
+
+			sai2_a: sai2a@40015804 {
+				reg = <0x40015804 0x20>;
+				dmas = <&dma2 1 39 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai2_b: sai2b@40015824 {
+				reg = <0x40015824 0x20>;
+				dmas = <&dma2 2 40 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -529,6 +558,13 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+		};
+
+		dma2d: dma@4002b000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x4002b000 0xc00>;
+			interrupts = <90 0>;
+			status = "disabled";
 		};
 	};
 

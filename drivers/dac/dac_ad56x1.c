@@ -125,7 +125,8 @@ BUILD_ASSERT(CONFIG_DAC_AD56X1_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 #define DAC_AD56X1_INST_DEFINE(index, name, res)                                                   \
 	static const struct ad56x1_config config_##name##_##index = {                              \
 		.bus = SPI_DT_SPEC_INST_GET(index,                                                 \
-					    SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8)), \
+					    SPI_OP_MODE_CONTROLLER | SPI_MODE_CPHA |               \
+					    SPI_WORD_SET(8)),                                      \
 		.resolution = res};                                                                \
 	DEVICE_DT_INST_DEFINE(index, ad56x1_init, NULL, NULL, &config_##name##_##index,            \
 			      POST_KERNEL, CONFIG_DAC_AD56X1_INIT_PRIORITY, &ad56x1_driver_api);

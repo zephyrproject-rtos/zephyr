@@ -228,7 +228,9 @@ static DEVICE_API(wdt, wdt_ti_rti_api) = {
 	{                                                                                          \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(i, 0), (						   \
 			IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), wdt_ti_rti_isr,     \
-				DEVICE_DT_INST_GET(i), DT_INST_IRQ(i, flags));                     \
+				DEVICE_DT_INST_GET(i),                                             \
+				COND_CODE_1(DT_INST_IRQ_HAS_CELL(i, flags),                        \
+					(DT_INST_IRQ(i, flags)), (0)));                            \
 			irq_enable(DT_INST_IRQN(i));                                               \
 		));										   \
 	};                                                                                         \

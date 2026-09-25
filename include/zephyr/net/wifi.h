@@ -60,6 +60,16 @@ enum wifi_conn_status {
 	WIFI_STATUS_CONN_TIMEOUT,
 	/** Connection failed - AP not found */
 	WIFI_STATUS_CONN_AP_NOT_FOUND,
+	/** Connection failed - the AP rejected the authentication.
+	 * The IEEE 802.11 status code from the Authentication frame is reported in
+	 * the status_code field of \ref wifi_status.
+	 */
+	WIFI_STATUS_CONN_AUTH_REJECT,
+	/** Connection failed - the AP rejected the association.
+	 * The IEEE 802.11 status code from the (Re)Association Response frame is
+	 * reported in the status_code field of \ref wifi_status.
+	 */
+	WIFI_STATUS_CONN_ASSOC_REJECT,
 	/** Last connection status */
 	WIFI_STATUS_CONN_LAST_STATUS,
 	/** Connection disconnected status */
@@ -146,11 +156,11 @@ enum wifi_wep_key_type {
 enum wifi_eap_type {
 	/** No EPA  security. */
 	WIFI_EAP_TYPE_NONE = 0,
-	/** EPA GTC security, refer to rfc3748 chapter 5. */
+	/** EPA GTC security, refer to @rfc{3748,section-5}. */
 	WIFI_EAP_TYPE_GTC = 6,
-	/** EPA TLS security, refer to rfc5216. */
+	/** EPA TLS security, refer to @rfc{5216}. */
 	WIFI_EAP_TYPE_TLS = 13,
-	/** EPA TTLS security, refer to rfc5281. */
+	/** EPA TTLS security, refer to @rfc{5281}. */
 	WIFI_EAP_TYPE_TTLS = 21,
 	/** EPA PEAP security, refer to draft-josefsson-pppext-eap-tls-eap-06.txt. */
 	WIFI_EAP_TYPE_PEAP = 25,
@@ -293,6 +303,9 @@ enum wifi_frequency_bands {
 	/** 6 GHz band (Wi-Fi 6E, also extends to 7GHz). */
 	WIFI_FREQ_BAND_6_GHZ,
 
+	/** Sub-1GHz band (Wi-Fi HaLow, 802.11ah)*/
+	WIFI_FREQ_BAND_SUB_1_GHZ,
+
 	/** Number of frequency bands available. */
 	__WIFI_FREQ_BAND_AFTER_LAST,
 	/** Highest frequency band available. */
@@ -314,6 +327,15 @@ enum wifi_frequency_bandwidths {
 	WIFI_FREQ_BANDWIDTH_40MHZ,
 	/** 80 MHz. */
 	WIFI_FREQ_BANDWIDTH_80MHZ,
+
+	/** 1 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_1MHZ,
+	/** 2 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_2MHZ,
+	/** 4 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_4MHZ,
+	/** 8 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_8MHZ,
 
 	/** Number of frequency bandwidths available. */
 	__WIFI_FREQ_BANDWIDTH_AFTER_LAST,

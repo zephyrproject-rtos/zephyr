@@ -12,7 +12,7 @@ supported:
   - spi
   - gpio
   - usb_device
-  - ble
+  - bluetooth
   - pwm
   - arduino_i2c
   - arduino_spi

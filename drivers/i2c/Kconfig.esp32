@@ -27,7 +27,7 @@ config I2C_ESP32_TARGET_BUF
 	  Size in bytes of the per-instance RX buffer used by the ESP32
 	  I2C target driver when CONFIG_I2C_TARGET_BUFFER_MODE is
 	  enabled. Bytes received during a write transaction are cached
-	  until the master issues STOP, at which point buf_write_received
+	  until the controller issues STOP, at which point buf_write_received
 	  is invoked once with the accumulated data. Reads stream out of
 	  the pointer supplied by buf_read_requested and are not bounded
 	  by this size.

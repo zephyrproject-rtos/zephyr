@@ -647,7 +647,7 @@ struct net_udp_hdr {
 	uint16_t chksum;
 } __packed;
 
-/** @brief UDP Options Maximum Reassembled Datagram Size (MRDS), RFC 9868.
+/** @brief UDP Options Maximum Reassembled Datagram Size (MRDS), @rfc{9868}.
  *
  * Value type for the @c ZSOCK_UDP_OPT_MRDS socket option and the
  * @c ZSOCK_UDP_OPT_CMSG_MRDS ancillary control message.
@@ -659,7 +659,7 @@ struct net_udp_opt_mrds {
 	uint8_t segs;
 };
 
-/** @brief UDP Options Timestamp (TIME), RFC 9868.
+/** @brief UDP Options Timestamp (TIME), @rfc{9868}.
  *
  * Value type for the @c ZSOCK_UDP_OPT_CMSG_TIME ancillary control message.
  */
@@ -1448,7 +1448,7 @@ static inline bool net_ipv6_is_addr_solicited_node_raw(const uint8_t *addr)
 
 /**
  *  @brief Check if the IPv6 address is solicited node multicast address
- *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
+ *  FF02:0:0:0:0:1:FFXX:XXXX defined in @rfc{3513}
  *
  *  @param addr IPv6 address.
  *
@@ -1726,7 +1726,7 @@ net_ipv6_is_addr_mcast_link_all_nodes(const struct net_in6_addr *addr)
 
 /**
  *  @brief Create solicited node IPv6 multicast address
- *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
+ *  FF02:0:0:0:0:1:FFXX:XXXX defined in @rfc{3513}
  *
  *  @param src IPv6 address.
  *  @param dst IPv6 address.
@@ -1846,7 +1846,7 @@ static inline void net_ipv6_addr_get_v4_mapped(const struct net_in6_addr *addr6,
 /**
  *  @brief Generate IPv6 address using a prefix and interface identifier.
  *         Interface identifier is either generated from EUI-64 (MAC) defined
- *         in RFC 4291 or from randomized value defined in RFC 7217.
+ *         in @rfc{4291} or from randomized value defined in @rfc{7217}.
  *
  *  @param iface Network interface
  *  @param prefix IPv6 prefix, can be left out in which case fe80::/64 is used
@@ -2209,7 +2209,8 @@ static inline bool net_sockaddr_cmp(const struct net_sockaddr *a, const struct n
 		return false;
 	}
 
-	if (a->sa_family == NET_AF_INET) {
+	switch (a->sa_family) {
+	case NET_AF_INET: {
 		const struct net_sockaddr_in *a4 = net_sin(a);
 		const struct net_sockaddr_in *b4 = net_sin(b);
 
@@ -2220,7 +2221,7 @@ static inline bool net_sockaddr_cmp(const struct net_sockaddr *a, const struct n
 		return net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
 	}
 
-	if (b->sa_family == NET_AF_INET6) {
+	case NET_AF_INET6: {
 		const struct net_sockaddr_in6 *a6 = net_sin6(a);
 		const struct net_sockaddr_in6 *b6 = net_sin6(b);
 
@@ -2231,8 +2232,10 @@ static inline bool net_sockaddr_cmp(const struct net_sockaddr *a, const struct n
 		return net_ipv6_addr_cmp(&a6->sin6_addr, &b6->sin6_addr);
 	}
 
-	/* Invalid address family */
-	return false;
+	default:
+		/* Invalid address family */
+		return false;
+	}
 }
 
 /**

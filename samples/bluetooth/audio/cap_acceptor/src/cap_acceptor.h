@@ -17,6 +17,7 @@
 
 /** Struct to contain information for a specific peer (CAP) device */
 struct peer_config {
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 	/** Stream for the source endpoint */
 	struct bt_cap_stream source_stream;
 	/** Streams for the sink endpoint */
@@ -25,10 +26,11 @@ struct peer_config {
 	struct k_sem source_stream_sem;
 	/** Semaphore to help wait for a release operation if the sink stream is not idle */
 	struct k_sem sink_stream_sem;
-	/** ACL connection object for the peer device */
-	struct bt_conn *conn;
 	/** Current sequence number for TX */
 	uint16_t tx_seq_num;
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
+	/** ACL connection object for the peer device */
+	struct bt_conn *conn;
 };
 
 /**

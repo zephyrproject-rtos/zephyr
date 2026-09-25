@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/mimx8ml8dvnlz-pinctrl.dtsi>
+#include <nxp/imx/pinctrl/mimx8ml8dvnlz-pinctrl.dtsi>
 
 &pinctrl {
 	uart1_default: uart1_default {
@@ -22,6 +22,24 @@
 			drive-strength = "x1";
 			pinmux = <&iomuxc_uart4_rxd_uart_rx_uart4_rx>,
 				 <&iomuxc_uart4_txd_uart_tx_uart4_tx>;
+			slew-rate = "slow";
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group0 {
+			bias-pull-up;
+			drive-strength = "x1";
+			pinmux = <&iomuxc_spdif_ext_clk_pwm_out_pwm1_out>;
+			slew-rate = "slow";
+		};
+	};
+
+	pwm2_default: pwm2_default {
+		group0 {
+			bias-pull-up;
+			drive-strength = "x1";
+			pinmux = <&iomuxc_gpio1_io11_pwm_out_pwm2_out>;
 			slew-rate = "slow";
 		};
 	};

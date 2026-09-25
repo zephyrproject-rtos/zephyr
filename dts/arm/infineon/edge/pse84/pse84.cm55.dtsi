@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -373,6 +373,13 @@
 
 &tcpwm1_23 {
 	interrupts = <119 4>;
+};
+
+&axidmac {
+	interrupts = <76 4>, /* CH0 */
+		     <77 4>, /* CH1 */
+		     <78 4>, /* CH2 */
+		     <79 4>; /* CH3 */
 };
 
 &dma0 {

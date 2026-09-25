@@ -37,9 +37,8 @@ ZTEST_BMEM int woken;
 ZTEST_BMEM int timeout;
 ZTEST_BMEM struct k_futex simple_futex;
 ZTEST_BMEM struct k_futex multiple_futex[TOTAL_THREADS_WAITING];
+ZTEST_BMEM atomic_t any_address_futex;
 struct k_futex no_access_futex;
-ZTEST_BMEM atomic_t not_a_futex;
-ZTEST_BMEM struct sys_mutex also_not_a_futex;
 
 struct k_thread futex_tid;
 struct k_thread futex_wake_tid;
@@ -534,6 +533,93 @@ ZTEST(futex, test_futex_multiple_threads_wait_wake)
 }
 
 /**
+ * @brief Verify that wake-one resumes threads in correct order.
+ *
+ * @details
+ * k_futex_wake() with wake_all unset shall resume only the one thread waiting
+ * on this futex with the highest priority.
+ *
+ * Test steps:
+ * - Block a batch of user threads with different priorities on one futex.
+ * - Block a single thread with the highest priority on a different futex.
+ * - Sleep to let threads execute.
+ * - Repeatedly issue a single wake without wake_all from another thread on
+ *   the first futex and check that the highest priority waiter on that futex
+ *   is resumed by joining it. Also check that futex value has only been
+ *   decremented by one, indicating that only one thread was resumed.
+ * - Finally, wake and join the single waiter on the second futex.
+ *
+ * Expected result:
+ * - Waiters resume in the correct order.
+ *
+ * @see k_futex_wake()
+ * @see k_futex_wait()
+ */
+ZTEST(futex, test_futex_multiple_threads_wait_wake_one_priority)
+{
+	/*
+	 * Waiting thread priority and order:
+	 * - Highest priority is index 1, so it should come first
+	 * - Middle is index 0, so it should come second
+	 * - Lowest is index 2, so it should come last
+	 */
+	const int wait_thread_prio[TOTAL_THREADS_WAITING] = {PRIO_WAIT - 1, PRIO_WAIT - 2,
+							     PRIO_WAIT};
+	const int wait_thread_order[TOTAL_THREADS_WAITING] = {1, 0, 2};
+
+	timeout = K_TICKS_FOREVER;
+	/* Set to 1 so that futex_multiple_wake_task passes false to wake_all */
+	woken = 1;
+
+	atomic_clear(&multiple_futex[0].val);
+	atomic_set(&multiple_futex[1].val, 1);
+
+	/* Start waiting threads on same futex (index 0) with given priority */
+	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+		atomic_inc(&multiple_futex[0].val);
+		k_thread_create(&multiple_tid[i], multiple_stack[i], STACK_SIZE,
+				futex_multiple_wait_wake_task, &timeout, INT_TO_POINTER(0), NULL,
+				wait_thread_prio[i], K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+	}
+
+	/* Start single waiter with highest overall priority on different futex (index 1) */
+	k_thread_create(&futex_tid, stack_1, STACK_SIZE, futex_multiple_wait_wake_task, &timeout,
+			INT_TO_POINTER(1), NULL, PRIO_WAIT - TOTAL_THREADS_WAITING,
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	/* Giving time for the other threads to execute */
+	k_sleep(K_MSEC(100));
+
+	/*
+	 * Repeatedly wake one thread (because woken == 1) on same futex (index 0)
+	 * and join expected waiter based on order
+	 */
+	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+		k_thread_create(&futex_wake_tid, futex_wake_stack, STACK_SIZE,
+				futex_multiple_wake_task, &woken, INT_TO_POINTER(0), NULL,
+				PRIO_WAKE, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+		/* Giving time for the other threads to execute */
+		k_sleep(K_MSEC(100));
+
+		/* Join the waiter in the expected order */
+		zassert_true(k_thread_join(&multiple_tid[wait_thread_order[i]], K_SECONDS(1)) == 0,
+			     "wake one did not resume expected waiter");
+		/* Check that only a single thread was resumed */
+		zassert_true(atomic_get(&multiple_futex[0].val) == TOTAL_THREADS_WAITING - i - 1,
+			     "wake one resumed more than one thread");
+	}
+
+	/* Wake remaining waiter on different futex (index 1) */
+	k_thread_create(&futex_wake_tid, futex_wake_stack, STACK_SIZE, futex_multiple_wake_task,
+			&woken, INT_TO_POINTER(1), NULL, PRIO_WAKE, K_USER | K_INHERIT_PERMS,
+			K_NO_WAIT);
+
+	zassert_true(k_thread_join(&futex_tid, K_SECONDS(1)) == 0,
+		     "single futex waiter did not resume");
+}
+
+/**
  * @brief Verify that independent futexes wake independently.
  *
  * @details
@@ -588,19 +674,28 @@ ZTEST(futex, test_futex_independent_wait_wake)
 	}
 }
 
+ZTEST_USER(futex, test_user_futex_any_address)
+{
+	int ret;
+
+	/* Use futex from arbitrary userspace-accessible address */
+	ret = k_futex_wait((struct k_futex *)&any_address_futex, 0, K_NO_WAIT);
+	zassert_equal(ret, -ETIMEDOUT, "didn't time out");
+	ret = k_futex_wake((struct k_futex *)&any_address_futex, false);
+	zassert_equal(ret, 0, "didn't succeed");
+}
+
 /**
- * @brief Verify that futex calls reject invalid objects, values and states.
+ * @brief Verify that futex calls reject invalid values and states.
  *
  * @details
  * From user mode every futex argument is untrusted, so each way it can be
- * wrong has its own error: memory the caller cannot access is -EACCES, an
- * address that is not a futex kernel object is -EINVAL, a mismatched
- * expected value is -EAGAIN, and a matching value with K_NO_WAIT times out
- * with -ETIMEDOUT.
+ * wrong has its own error: memory the caller cannot access is -EACCES, a
+ * mismatched expected value is -EAGAIN, and a matching value with K_NO_WAIT
+ * times out with -ETIMEDOUT.
  *
  * Test steps:
  * - Wait on and wake a futex the caller has no access to.
- * - Wait on and wake two objects that are not futexes.
  * - Wait with an expected value that does not match the futex.
  * - Wait with the matching value and K_NO_WAIT.
  *
@@ -619,18 +714,6 @@ ZTEST_USER(futex, test_futex_bad_inputs)
 	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
 	ret = k_futex_wake(&no_access_futex, false);
 	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
-
-	/* Access to memory, but not a kernel object */
-	ret = k_futex_wait((struct k_futex *)&not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
-	ret = k_futex_wake((struct k_futex *)&not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
-
-	/* Access to memory, but wrong object type */
-	ret = k_futex_wait((struct k_futex *)&also_not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
-	ret = k_futex_wake((struct k_futex *)&also_not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
 
 	/* Wait with unexpected value */
 	atomic_set(&simple_futex.val, 100);

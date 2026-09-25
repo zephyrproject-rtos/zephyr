@@ -37,4 +37,4 @@ properties:
     type: int
     description: |
         Default character clocked out when the TX buffer pointer is NULL.
-        Applies to SPI master and slave configurations.
+        Applies to SPI controller and peripheral configurations.

@@ -31,6 +31,7 @@ ZTEST(mtch9010_utility, test_result_decode)
 	const char *test_pattern_3 = "999 12405\n\r";
 	const char *test_pattern_4 = "0 1234\n\r";
 	const char *test_pattern_5 = "100 -99\n\r";
+	const char *test_pattern_6 = "-99\n\r";
 
 	/* Bad Decodes */
 	const char *bad_decode_pattern_1 = "10\n\r";
@@ -76,6 +77,12 @@ ZTEST(mtch9010_utility, test_result_decode)
 					  &test_result);
 	zassert_equal(ret, 0, "Unable to decode test_pattern_5");
 	zassert_equal(test_result.measurement, 100, "Decoded value does not match expected");
+	zassert_equal(test_result.delta, -99, "Decoded value does not match expected");
+
+	/* Test Negative Delta in Delta only format */
+	ret = mtch9010_decode_char_buffer(test_pattern_6, MTCH9010_OUTPUT_FORMAT_DELTA,
+					  &test_result);
+	zassert_equal(ret, 0, "Unable to decode test_pattern_6");
 	zassert_equal(test_result.delta, -99, "Decoded value does not match expected");
 
 	/* Test Bad Decode 1 - Incorrect format */

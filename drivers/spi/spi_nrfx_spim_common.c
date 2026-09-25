@@ -96,7 +96,7 @@ static bool spi_config_equal(const struct spi_config *a, const struct spi_config
 {
 	if (a->frequency != b->frequency ||
 	    a->operation != b->operation ||
-	    a->slave != b->slave ||
+	    a->peripheral != b->peripheral ||
 	    a->cs.cs_is_gpio != b->cs.cs_is_gpio ||
 	    a->word_delay != b->word_delay) {
 		return false;
@@ -493,8 +493,8 @@ int spi_nrfx_spim_common_configure(const struct device *dev, const struct spi_co
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s", dev->name);
+	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_CONTROLLER) {
+		LOG_ERR("Peripheral mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 

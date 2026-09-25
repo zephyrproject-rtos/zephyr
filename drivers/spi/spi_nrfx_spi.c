@@ -106,8 +106,8 @@ static int configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s", dev->name);
+	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_CONTROLLER) {
+		LOG_ERR("Peripheral mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
@@ -246,7 +246,7 @@ static int transceive(const struct device *dev,
 			if (error == -ETIMEDOUT) {
 				LOG_WRN("Waiting for WAKE acknowledgment timed out");
 				/* If timeout occurs, try to perform the transfer
-				 * anyway, just in case the slave device was unable
+				 * anyway, just in case the peripheral device was unable
 				 * to signal that it was already awaken and prepared
 				 * for the transfer.
 				 */

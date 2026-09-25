@@ -6,11 +6,15 @@ name: NXP FRDM-MCXL255 (CPU1)
 type: mcu
 arch: arm
 ram: 32
-flash: 0
+flash: 32
 toolchain:
   - zephyr
   - gnuarmemb
 supported:
   - uart
   - i2c
+  - mbox
+  - rtc
+  - input
+  - counter
 vendor: nxp

@@ -49,6 +49,7 @@ extern "C" {
 
 struct coap_service_data {
 	int sock_fd;
+	bool close_requested;
 	struct coap_observer observers[CONFIG_COAP_SERVICE_OBSERVERS];
 	struct coap_pending pending[CONFIG_COAP_SERVICE_PENDING_MESSAGES];
 #if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
@@ -60,6 +61,15 @@ struct coap_service_data {
 	 */
 	struct coap_oscore_exchange *oscore_exchange_cache;
 #endif /* CONFIG_COAP_OSCORE */
+	/* Local address to send the reply from; NET_AF_UNSPEC means let the OS pick. */
+	struct net_sockaddr_storage current_local_addr;
+	struct net_sockaddr_storage pending_local_addr[CONFIG_COAP_SERVICE_PENDING_MESSAGES];
+	/* Cached at coap_service_start() so the hot receive path doesn't recompute it. */
+	bool secure;
+	/* Set when the socket agreed to turn on PKTINFO. Some offloaded
+	 * sockets support recvfrom() but not recvmsg().
+	 */
+	bool pktinfo_supported;
 };
 
 struct coap_service {
@@ -229,7 +239,7 @@ struct coap_service {
  * @brief Define an OSCORE-enabled CoAP service with static resources.
  *
  * Behaves like @ref COAP_SERVICE_DEFINE but additionally wires OSCORE support
- * (RFC 8613) into the service. A per-service OSCORE exchange cache is allocated
+ * (@rfc{8613}) into the service. A per-service OSCORE exchange cache is allocated
  * statically.
  *
  * @note Requires @kconfig{CONFIG_COAP_OSCORE}. When that option is disabled the

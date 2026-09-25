@@ -1,8 +1,34 @@
 common:
   depends_on: netif
+  # websocket_connect() needs SHA-1 for Sec-WebSocket-Key, which the TF-M
+  # crypto partition does not provide.
+  filter: not CONFIG_BUILD_WITH_TFM
 tests:
   net.socket.websocket:
     min_ram: 21
     tags:
       - net
       - websocket
+  net.socket.websocket.asan:
+    min_ram: 21
+    tags:
+      - net
+      - websocket
+    # The handshake tests log a mismatching Sec-WebSocket-Accept value, which
+    # is the only path that reads the parser supplied header slice, so check it
+    # for overreads.
+    extra_configs:
+      - CONFIG_ASAN=y
+      - CONFIG_LOG=y
+      - CONFIG_NET_LOG=y
+      - CONFIG_NET_WEBSOCKET_LOG_LEVEL_DBG=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+  net.socket.websocket.dedicated_heap:
+    min_ram: 21
+    tags:
+      - net
+      - websocket
+    extra_configs:
+      - CONFIG_WEBSOCKET_DEDICATED_HEAP=y

@@ -130,10 +130,11 @@ void shell_remote_cli_cbpprintf(const struct shell *sh, enum shell_vt100_color c
 #ifdef CONFIG_MULTITHREADING
 	err = k_sem_take(&sh_remote->sem, K_MSEC(CONFIG_SHELL_REMOTE_TIMEOUT_MS));
 #else
-	uint32_t t = k_uptime_get_32();
+	uint64_t start = k_uptime_ticks();
+	uint64_t ticks = k_ms_to_ticks_ceil64(CONFIG_SHELL_REMOTE_TIMEOUT_MS);
 
 	while (sh_remote->processed == false) {
-		if (k_uptime_get_32() - t > CONFIG_SHELL_REMOTE_TIMEOUT_MS) {
+		if (k_uptime_ticks() - start > ticks) {
 			err = -ETIMEDOUT;
 			break;
 		}
@@ -159,12 +160,14 @@ static void cmd_get(struct shell_remote_cli *sh_remote, const struct shell_remot
 	entry = z_shell_cmd_get(msg->parent, msg->idx, &sh_remote->loc);
 
 	if (entry == NULL) {
-		LOG_DBG("Command not found parent:%s, idx:%d", msg->parent->syntax, msg->idx);
+		LOG_DBG("Command not found parent:%s, idx:%d",
+			msg->parent ? msg->parent->syntax : "NULL", msg->idx);
 		cmd_result(&sh_remote->ept, -ENODEV);
 		/* Failed to get the command. */
 		return;
 	} else if (strlen(entry->syntax) == 0) {
-		LOG_DBG("Empty syntax, parent:%s, idx:%d", msg->parent->syntax, msg->idx);
+		LOG_DBG("Empty syntax, parent:%s, idx:%d",
+			msg->parent ? msg->parent->syntax : "NULL", msg->idx);
 		cmd_result(&sh_remote->ept, -ENOEXEC);
 		/* Command is empty. */
 		return;

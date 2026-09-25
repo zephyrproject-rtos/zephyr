@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m85";
 			reg = <0>;
@@ -216,7 +216,7 @@
 			reg-names = "channel", "common";
 			clocks = <&iclk MSTPA 22>;
 			dma-channels = <8>;
-			#dma-cells = <2>;
+			#dma-cells = <1>;
 			status = "disabled";
 		};
 
@@ -243,6 +243,7 @@
 			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358000 0x100>;
+			channel = <0>;
 			clocks = <&sciclk MSTPB 31>;
 			status = "disabled";
 
@@ -268,6 +269,11 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci1: sci1@40358100 {
@@ -275,6 +281,7 @@
 			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358100 0x100>;
+			channel = <1>;
 			clocks = <&sciclk MSTPB 30>;
 			status = "disabled";
 
@@ -300,6 +307,11 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci2: sci2@40358200 {
@@ -307,6 +319,7 @@
 			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358200 0x100>;
+			channel = <2>;
 			clocks = <&sciclk MSTPB 29>;
 			status = "disabled";
 
@@ -339,6 +352,7 @@
 			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358300 0x100>;
+			channel = <3>;
 			clocks = <&sciclk MSTPB 28>;
 			status = "disabled";
 
@@ -371,6 +385,7 @@
 			interrupts = <20 1>, <21 1>, <22 1>, <23 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358400 0x100>;
+			channel = <4>;
 			clocks = <&sciclk MSTPB 27>;
 			status = "disabled";
 
@@ -403,6 +418,7 @@
 			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358900 0x100>;
+			channel = <9>;
 			clocks = <&sciclk MSTPB 22>;
 			status = "disabled";
 
@@ -430,13 +446,13 @@
 			};
 		};
 
-		flash: flash-controller@40100000 {
-			compatible = "renesas,ra-flash-hp-controller";
+		faci: faci@40100000 {
+			compatible = "renesas,ra-faci";
 			reg = <0x40100000 0x20000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+			ranges;
 			interrupts = <49 1>, <50 1>;
 			interrupt-names = "frdyi", "fiferr";
+			status = "okay";
 		};
 
 		adc0: adc@40332000 {
@@ -671,10 +687,17 @@
 			channel = <0>;
 			interrupt-names = "ulpti";
 			interrupts = <36 1>;
+			count-source = "ULPT_CLOCK_LOCO";
+			prescaler = <0>;
 			status = "disabled";
 
 			timer {
 				compatible = "renesas,ra-ulpt-timer";
+				status = "disabled";
+			};
+
+			counter {
+				compatible = "renesas,ra-ulpt-counter";
 				status = "disabled";
 			};
 		};
@@ -683,10 +706,17 @@
 			compatible = "renesas,ra-ulpt";
 			reg = <0x40220100 0x100>;
 			channel = <1>;
+			count-source = "ULPT_CLOCK_LOCO";
+			prescaler = <0>;
 			status = "disabled";
 
 			timer {
 				compatible = "renesas,ra-ulpt-timer";
+				status = "disabled";
+			};
+
+			counter {
+				compatible = "renesas,ra-ulpt-counter";
 				status = "disabled";
 			};
 		};
@@ -959,8 +989,8 @@
 			max-bus-freq = <DT_FREQ_M(52)>;
 			clocks = <&pclkb MSTPC 12>;
 			reg = <0x40252000 0x0400>;
-			interrupt-names = "accs", "card", "dma-req";
-			interrupts = <57 12>, <58 12>, <59 12>;
+			interrupt-names = "accs", "card", "dma-req", "sdio-int";
+			interrupts = <57 12>, <58 12>, <59 12>, <60 12>;
 			status = "disabled";
 		};
 

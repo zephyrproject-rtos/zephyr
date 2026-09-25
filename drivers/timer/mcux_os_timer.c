@@ -262,6 +262,8 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 		slept_time_ticks = counter_get_top_value(counter_dev) - slept_time_ticks;
 	}
 	slept_time_us = counter_ticks_to_us(counter_dev, slept_time_ticks);
+	/* Compensate for PM3 exit overhead not tracked by the counter */
+	slept_time_us += pm_state_next_get(0)->exit_latency_us;
 	cyc_sys_compensated += CYC_PER_US * slept_time_us;
 
 	if (IS_ENABLED(CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF)) {
@@ -471,6 +473,10 @@ static int sys_clock_driver_init(void)
 		counter_max_val = counter_get_max_top_value(counter_dev);
 	}
 #endif
+
+#ifndef CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE
+	z_sys_clock_lpm_init();
+#endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
 
 #if (DT_INST_PROP(0, wakeup_source))
 	NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(0));

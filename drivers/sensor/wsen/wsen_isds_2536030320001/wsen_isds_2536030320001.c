@@ -922,7 +922,7 @@ static int isds_2536030320001_init(const struct device *dev)
  */
 
 #define ISDS_2536030320001_SPI_OPERATION                                                           \
-	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define ISDS_2536030320001_CONFIG_SPI(inst)                                                        \
 	{.bus_cfg =                                                                                \

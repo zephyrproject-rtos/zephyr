@@ -91,3 +91,15 @@ static inline int z_vrfy_adc_read_async(const struct device *dev,
 }
 #include <zephyr/syscalls/adc_read_async_mrsh.c>
 #endif /* CONFIG_ADC_ASYNC */
+
+#ifdef CONFIG_ADC_STREAM
+static inline int z_vrfy_adc_get_decoder(const struct device *dev,
+					 const struct adc_decoder_api **api)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_ADC));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(api, sizeof(struct adc_decoder_api *)));
+
+	return z_impl_adc_get_decoder(dev, api);
+}
+#include <zephyr/syscalls/adc_get_decoder_mrsh.c>
+#endif /* CONFIG_ADC_STREAM */

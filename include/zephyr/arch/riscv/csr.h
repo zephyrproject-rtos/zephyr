@@ -114,6 +114,14 @@
 #define SIP_SSIP	MIP_SSIP
 #define SIP_STIP	MIP_STIP
 
+/*
+ * Counter-enable bits. mcounteren, scounteren and hcounteren share this
+ * layout. Each one controls access from the privilege mode below it.
+ */
+#define COUNTEREN_CY	(1 << 0)	/* cycle counter */
+#define COUNTEREN_TM	(1 << 1)	/* time counter */
+#define COUNTEREN_IR	(1 << 2)	/* instret counter */
+
 #define PRV_U	0
 #define PRV_S	1
 #define PRV_H	2
@@ -175,6 +183,13 @@
 /* MNSTATUS bit fields */
 #define MNSTATUS_NMIE 0x00000008 /* NMI Enable (bit 3) */
 #endif                           /* CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY */
+
+/* Zkr CSR addresses */
+#define CSR_SEED    0x015
+#define CSR_MSECCFG 0x747
+
+/* MSECCFG bit fields */
+#define MSECCFG_SSEED 0x00000200 /* S-mode access to the seed CSR (bit 9) */
 
 #define DEFAULT_RSTVEC	0x00001000
 #define CLINT_BASE	0x02000000

@@ -5,7 +5,7 @@
 
 if BOARD_EMSBC_NEON_CM7
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault EEPROM

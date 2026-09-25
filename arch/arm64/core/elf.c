@@ -205,7 +205,7 @@ static int movw_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t lo
 			      uintptr_t sym_base_addr)
 {
 	int64_t x;
-	uint32_t imm;
+	uint64_t imm;
 	int lsb = 0; /* LSB of X to be used */
 	bool is_movnz = false;
 	enum aarch64_reloc_type type = AARCH64_RELOC_TYPE_ABS;
@@ -413,10 +413,11 @@ static int imm_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t loc
 	/* Mask X sign bit and upper bits. */
 	x = (int64_t)(x & ~BIT_MASK(len - 1)) >> (len - 1);
 
-	/* Incrementing X will either overflow and set it to 0 or
-	 * set it 1. Any other case indicates that there was an overflow in relocation.
+	/* A value that fits a signed len-bit field leaves either all-zero
+	 * (positive) or all-one (negative) bits above the field, so the
+	 * check value is exactly 0 or -1. Anything else is an overflow.
 	 */
-	if ((int64_t)x++ > 1) {
+	if (x < -1 || x > 0) {
 		return -ERANGE;
 	}
 

@@ -75,7 +75,10 @@ int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 
 /**
  * @brief Function for sending PTP message using a specified transport. The message is sent
- * to the address provided with @ref ptp_msg message structure.
+ * to the address provided with @ref ptp_msg message structure. For UDP transports the
+ * destination port is overridden with the well-known PTP port of the used socket. If the
+ * address stored in the message is not usable for the transport, the message is sent to
+ * the default multicast address.
  *
  * @param[in] port Pointer to the PTP Port structure.
  * @param[in] msg  Pointer to the message to be send.

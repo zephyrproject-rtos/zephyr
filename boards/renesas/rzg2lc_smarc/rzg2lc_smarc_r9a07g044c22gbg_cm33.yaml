@@ -11,3 +11,5 @@ supported:
   - gpio
   - i2c
   - pwm
+  - mbox
+  - spi

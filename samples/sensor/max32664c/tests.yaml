@@ -9,7 +9,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
     tags:
       - sensors
-      - heart rate
+      - heart_rate
     filter: dt_compat_enabled("maxim,max32664c")
     depends_on:
       - i2c

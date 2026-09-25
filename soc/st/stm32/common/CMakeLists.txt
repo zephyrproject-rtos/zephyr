@@ -7,6 +7,8 @@ zephyr_sources(
   soc_config.c
 )
 
+zephyr_sources_ifdef(CONFIG_STM32_NEOCHROM_GPU2D stm32_neochrom_gpu2d.c)
+
 zephyr_sources_ifdef(CONFIG_STM32_BACKUP_SRAM stm32_backup_sram.c)
 zephyr_linker_sources_ifdef(CONFIG_STM32_BACKUP_SRAM SECTIONS stm32_backup_sram.ld)
 
@@ -17,6 +19,7 @@ endif()
 zephyr_sources_ifdef(CONFIG_STM32_WKUP_PINS pwr_wkupctrl.c)
 zephyr_sources_ifdef(CONFIG_STM32_IOCELL stm32_iocell.c)
 zephyr_sources_ifdef(CONFIG_STM32_XSPIM stm32_xspim.c)
+zephyr_sources_ifdef(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION stm32_xspi_hal_timer.c)
 
 if(CONFIG_PM AND CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP)
   message(WARNING "\
@@ -25,11 +28,8 @@ SoC Power Management (CONFIG_PM) enabled but the DBGMCU is still enabled \
 in STOP modes due to internal oscillators that remain active.")
 endif()
 
-if(CONFIG_PINCTRL_STM32 OR CONFIG_GPIO_STM32)
-  zephyr_sources(gpioport_mgr.c)
-endif()
-
 zephyr_sources_ifdef(CONFIG_DCACHE stm32_cache.c)
 zephyr_sources_ifdef(CONFIG_POWEROFF poweroff_common.c)
 
 zephyr_sources_ifdef(CONFIG_STM32_BACKUP_PROTECTION stm32_backup_domain.c)
+zephyr_sources_ifdef(CONFIG_STM32_GPIOPORT_MGR gpioport_mgr.c)

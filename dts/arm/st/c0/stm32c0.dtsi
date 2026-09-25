@@ -65,10 +65,11 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/reset/stm32c0_reset.h>
-#include <zephyr/dt-bindings/power/stm32_pwr.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -322,6 +323,7 @@
 			prescaler = <32768>;
 			alarms-count = <1>;
 			alrm-exti-line = <19>;
+			wakeup-source; /* Enable use as system timer companion */
 			status = "disabled";
 		};
 
@@ -378,6 +380,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -399,6 +407,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};
@@ -495,13 +509,14 @@
 			status = "disabled";
 		};
 
-		adc1: adc@40012400 {
+		adc1_common: adc@40012400 {
 			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x40012400 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 20)>;
 			clock-names = "adcx";
-			interrupts = <12 0>;
-			#io-channel-cells = <1>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <2>;
@@ -509,6 +524,13 @@
 			st,adc-oversampler = "minimal";
 			st,adc-internal-regulator = "startup-sw-delay";
 			status = "disabled";
+
+			adc1: adc@40012400 {
+				reg = <0x40012400 0x100>;
+				interrupts = <12 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		dma1: dma@40020000 {

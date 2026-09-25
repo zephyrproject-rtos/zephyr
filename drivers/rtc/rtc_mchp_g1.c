@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(rtc_mchp_g1, CONFIG_RTC_LOG_LEVEL);
 #define RTC_ALARM_PENDING           (1)
 
 /* Timeout values for WAIT_FOR macro */
-#define TIMEOUT_REG_SYNC 5000
+#define TIMEOUT_REG_SYNC 10000
 #define DELAY_US         1
 
 #ifdef CONFIG_RTC_ALARM
@@ -54,15 +54,6 @@ struct rtc_mchp_time {
 	uint32_t month;
 	uint32_t year;
 };
-
-/* Do the peripheral interrupt related configuration */
-#ifdef CONFIG_RTC_ALARM
-#define RTC_MCHP_IRQ_HANDLER(n)                                                                    \
-	static void rtc_mchp_irq_config_##n(const struct device *dev)                              \
-	{                                                                                          \
-		RTC_MCHP_IRQ_CONNECT(n, 0);                                                        \
-	}
-#endif /* CONFIG_RTC_ALARM */
 
 /* Clock configuration structure for RTC. */
 struct rtc_mchp_clock {
@@ -120,7 +111,7 @@ static inline void rtc_sync_busy(const rtc_registers_t *regs, uint32_t sync_flag
 {
 	if (WAIT_FOR(((regs->MODE2.RTC_SYNCBUSY & sync_flag) == 0), TIMEOUT_REG_SYNC,
 		     k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("RTC reset timed out");
+		LOG_ERR("Timeout waiting for RTC_SYNCBUSY to clear");
 	}
 }
 
@@ -918,7 +909,7 @@ static DEVICE_API(rtc, rtc_mchp_api) = {
 
 /* Defines the RTC interrupt configurations. */
 #ifdef CONFIG_RTC_ALARM
-#define RTC_MCHP_IRQ_CONNECT(n, m)                                                                 \
+#define RTC_MCHP_IRQ_CONNECT(m, n)                                                                 \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority),     \
 			    rtc_mchp_isr, DEVICE_DT_INST_GET(n), 0);                               \
@@ -937,7 +928,7 @@ static DEVICE_API(rtc, rtc_mchp_api) = {
 #define RTC_MCHP_IRQ_HANDLER(n)                                                                    \
 	static void rtc_mchp_irq_config_##n(const struct device *dev)                              \
 	{                                                                                          \
-		RTC_MCHP_IRQ_CONNECT(n, 0);                                                        \
+		LISTIFY(DT_INST_NUM_IRQS(n), RTC_MCHP_IRQ_CONNECT, (;), n);                        \
 	}
 #endif /* CONFIG_RTC_ALARM */
 

@@ -10,6 +10,7 @@ flash: 1024
 supported:
   - arduino_gpio
   - arduino_i2c
+  - ptp_clock
   - uart
   - gpio
   - counter

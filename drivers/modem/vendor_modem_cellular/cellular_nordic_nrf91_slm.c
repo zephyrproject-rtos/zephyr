@@ -12,27 +12,21 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
 MODEM_CHAT_MATCHES_DEFINE(nordic_nrf91_slm_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
-MODEM_CHAT_MATCH_DEFINE(xiccid_match, "%XICCID: ", "", modem_cellular_chat_on_iccid);
+MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(xiccid_match, "%XICCID: ", "", modem_cellular_chat_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(uicc_initialized, "%XSIM: 1", "", NULL);
 
 /* clang-format off */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_init_chat_script_cmds,
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN", imei_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMI", cgmi_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT%XSIM=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=41", uicc_initialized),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT%XICCID", xiccid_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT%XICCID", xiccid_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT%XSIM=0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT#XCMUX=1", ok_match));
 /* clang-format on */
@@ -90,6 +84,6 @@ static const struct modem_cellular_vendor_config nrf91_slm_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3))                            \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf91_slm_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf91_slm_vendor, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SLM)

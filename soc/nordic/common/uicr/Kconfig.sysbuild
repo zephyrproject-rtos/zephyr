@@ -11,7 +11,7 @@ config NRF_GENERATE_UICR
 	  of the UICR generator image. See the UICR generator options for further details.
 
 config NRF_HALTIUM_GENERATE_UICR
-	bool "[DEPRECATED] Renamed to NRF_GENERATE_UICR"
+	bool "Renamed to NRF_GENERATE_UICR [DEPRECATED]"
 	depends on SOC_SERIES_NRF54H || SOC_SERIES_NRF92
 	select DEPRECATED
 	select NRF_GENERATE_UICR

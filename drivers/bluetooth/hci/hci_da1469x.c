@@ -194,7 +194,7 @@ static void rx_isr_start(void)
 {
 	if (rx.deferred) {
 		rx.deferred = false;
-		NVIC_SetPendingIRQ(CMAC2SYS_IRQn);
+		k_irq_set_pending(CMAC2SYS_IRQn);
 	}
 
 	irq_enable(CMAC2SYS_IRQn);
@@ -442,7 +442,6 @@ static int bt_da1469x_open(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_BT_HCI_HOST
 static int bt_da1469x_close(const struct device *dev)
 {
 	irq_disable(CMAC2SYS_IRQn);
@@ -450,7 +449,6 @@ static int bt_da1469x_close(const struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_BT_HCI_HOST */
 
 static int bt_da1469x_send(const struct device *dev, struct net_buf *buf)
 {

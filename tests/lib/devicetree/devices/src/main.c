@@ -64,6 +64,19 @@ DEVICE_DEFINE(manual_dev, "Manual Device", dev_init, NULL,
 DEVICE_DT_DEFINE(TEST_NOLABEL, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 90, NULL);
 
+static const struct device *const comma_devs[] = {
+	DEVICE_DT_GET_COMMA(TEST_GPIO)
+	DEVICE_DT_GET_COMMA(TEST_I2C)
+};
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_gpio_device
+
+static const struct device *const comma_inst_devs[] = {
+	DEVICE_DT_INST_GET_COMMA(0)
+	DEVICE_DT_INST_GET_COMMA(1)
+};
+
 #define DEV_HDL(node_id) device_handle_get(DEVICE_DT_GET(node_id))
 #define DEV_HDL_NAME(name) device_handle_get(DEVICE_GET(name))
 
@@ -94,6 +107,14 @@ ZTEST(devicetree_devices, test_init_get)
 		      DEVICE_GET(manual_dev));
 	zassert_equal(DEVICE_INIT_DT_GET(TEST_NOLABEL)->dev,
 		      DEVICE_DT_GET(TEST_NOLABEL));
+
+	/* Check DEVICE_DT_GET_COMMA */
+	zassert_equal(comma_devs[0], DEVICE_DT_GET(TEST_GPIO));
+	zassert_equal(comma_devs[1], DEVICE_DT_GET(TEST_I2C));
+
+	/* Check DEVICE_DT_INST_GET_COMMA */
+	zassert_equal(comma_inst_devs[0], DEVICE_DT_INST_GET(0));
+	zassert_equal(comma_inst_devs[1], DEVICE_DT_INST_GET(1));
 
 	/* Check init functions */
 	zassert_equal(DEVICE_DT_GET(TEST_GPIO)->ops.init, dev_init);

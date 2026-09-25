@@ -213,6 +213,11 @@ int posix_irq_is_enabled(unsigned int irq)
 	return hw_irq_ctrl_is_irq_enabled(irq);
 }
 
+int posix_irq_is_pending(unsigned int irq)
+{
+	return hw_irq_ctrl_is_irq_pending(irq);
+}
+
 int posix_get_current_irq(void)
 {
 	return currently_running_irq;

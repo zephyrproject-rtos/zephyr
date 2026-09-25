@@ -30,8 +30,10 @@
 			status = "disabled";
 		};
 
-		adc4: adc@46021000 {
-			interrupts = <59 0>;
+		adc4_common: adc@46021000 {
+			adc4: adc@46021000 {
+				interrupts = <59 0>;
+			};
 		};
 
 		i2c1: i2c@40005400 {
@@ -56,6 +58,14 @@
 
 		aes: crypto@420c0000 {
 			interrupts = <52 0>;
+		};
+
+		hash: crypto@420c0400 {
+			interrupts = <55 0>;
+		};
+
+		pka: pka@420c2000 {
+			interrupts = <56 0>;
 		};
 
 		rng: rng@420c0800 {

@@ -157,10 +157,10 @@ int cache_data_flush_and_invd_range(void *addr, size_t size);
  * The API is provided to dynamically detect the data cache line size at run
  * time.
  *
- * The function must be implemented only when CONFIG_DCACHE_LINE_SIZE_DETECT is
+ * The function must be implemented only when CONFIG_DCACHE_LINE_SIZE_DETECT_SUPPORT is
  * defined.
  *
- * @kconfig_dep{CONFIG_DCACHE_LINE_SIZE_DETECT}
+ * @kconfig_dep{CONFIG_DCACHE_LINE_SIZE_DETECT_SUPPORT}
  *
  * @retval size Size of the d-cache line.
  * @retval 0 The d-cache is not enabled.
@@ -296,10 +296,10 @@ int cache_instr_flush_and_invd_range(void *addr, size_t size);
  * The API is provided to dynamically detect the instruction cache line size at
  * run time.
  *
- * The function must be implemented only when @kconfig{CONFIG_ICACHE_LINE_SIZE_DETECT} is
+ * The function must be implemented only when @kconfig{CONFIG_ICACHE_LINE_SIZE_DETECT_SUPPORT} is
  * defined.
  *
- * @kconfig_dep{CONFIG_ICACHE_LINE_SIZE_DETECT}
+ * @kconfig_dep{CONFIG_ICACHE_LINE_SIZE_DETECT_SUPPORT}
  *
  * @retval size Size of the i-cache line.
  * @retval 0 The i-cache is not enabled.

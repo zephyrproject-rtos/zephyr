@@ -159,7 +159,7 @@ int arch_dcache_flush_and_invd_range(void *addr, size_t size);
 #define cache_data_flush_and_invd_range(addr, size) \
 	arch_dcache_flush_and_invd_range(addr, size)
 
-#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT) || defined(__DOXYGEN__)
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT_SUPPORT) || defined(__DOXYGEN__)
 
 /**
  *
@@ -168,7 +168,7 @@ int arch_dcache_flush_and_invd_range(void *addr, size_t size);
  * The API is provided to dynamically detect the data cache line size at run
  * time.
  *
- * The function must be implemented only when CONFIG_DCACHE_LINE_SIZE_DETECT is
+ * The function must be implemented only when CONFIG_DCACHE_LINE_SIZE_DETECT_SUPPORT is
  * defined.
  *
  * @retval size Size of the d-cache line.
@@ -178,7 +178,7 @@ size_t arch_dcache_line_size_get(void);
 
 #define cache_data_line_size_get arch_dcache_line_size_get
 
-#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT || __DOXYGEN__ */
+#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT_SUPPORT || __DOXYGEN__ */
 
 #endif /* CONFIG_DCACHE || __DOXYGEN__ */
 
@@ -313,7 +313,7 @@ int arch_icache_flush_and_invd_range(void *addr, size_t size);
 #define cache_instr_flush_and_invd_range(addr, size) \
 	arch_icache_flush_and_invd_range(addr, size)
 
-#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT) || defined(__DOXYGEN__)
+#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT_SUPPORT) || defined(__DOXYGEN__)
 
 /**
  *
@@ -322,7 +322,7 @@ int arch_icache_flush_and_invd_range(void *addr, size_t size);
  * The API is provided to dynamically detect the instruction cache line size at
  * run time.
  *
- * The function must be implemented only when CONFIG_ICACHE_LINE_SIZE_DETECT is
+ * The function must be implemented only when CONFIG_ICACHE_LINE_SIZE_DETECT_SUPPORT is
  * defined.
  *
  * @retval size Size of the d-cache line.
@@ -333,7 +333,7 @@ size_t arch_icache_line_size_get(void);
 
 #define cache_instr_line_size_get arch_icache_line_size_get
 
-#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT || __DOXYGEN__ */
+#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT_SUPPORT || __DOXYGEN__ */
 
 #endif /* CONFIG_ICACHE || __DOXYGEN__ */
 

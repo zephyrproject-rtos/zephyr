@@ -12,6 +12,8 @@ compatible: "maxim,max7219"
 
 include: spi-device.yaml
 
+class: display
+
 properties:
   scan-limit:
     type: int

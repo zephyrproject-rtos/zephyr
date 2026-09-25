@@ -38,6 +38,14 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 #define DISPLAY_NODE(n) DT_INVALID_NODE
 #endif
 
+/* Every selected node must be a display controller, whether it comes from the
+ * "zephyr,displays" list or from the chosen node.
+ */
+#define DISPLAY_NODE_CLASS_ASSERT(n)                                                               \
+	BUILD_ASSERT(DT_NODE_HAS_CLASS(DISPLAY_NODE(n), display),                                  \
+		     "LVGL display " #n " is not a display controller node");
+FOR_EACH(DISPLAY_NODE_CLASS_ASSERT, (), LV_DISPLAYS_IDX_LIST)
+
 #define IS_MONOCHROME_DISPLAY                                                                      \
 	UTIL_OR(IS_EQ(CONFIG_LV_Z_BITS_PER_PIXEL, 1), IS_EQ(CONFIG_LV_COLOR_DEPTH_1, 1))
 
@@ -45,18 +53,33 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 	UTIL_AND(IS_EQ(IS_MONOCHROME_DISPLAY, 1),                                                  \
 		 IS_EQ(CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER, 1))
 
+/* Map Zephyr config to LVGL's render modes. */
+#ifdef CONFIG_LV_Z_FULL_REFRESH
+#define RENDER_MODE LV_DISPLAY_RENDER_MODE_FULL
+#elif CONFIG_LV_Z_PARTIAL_REFRESH
+#define RENDER_MODE LV_DISPLAY_RENDER_MODE_PARTIAL
+#elif CONFIG_LV_Z_DIRECT_RENDERING
+#define RENDER_MODE LV_DISPLAY_RENDER_MODE_DIRECT
+#else
+#error No valid rendering mode configured
+#endif
+
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
 
 #define DISPLAY_WIDTH(n)  DT_PROP(DISPLAY_NODE(n), width)
 #define DISPLAY_HEIGHT(n) DT_PROP(DISPLAY_NODE(n), height)
 
 #if IS_MONOCHROME_DISPLAY
-/* monochrome buffers are expected to have 8 preceding bytes for the color palette */
+/* monochrome buffers are expected to have 8 preceding bytes for the color palette.
+ * Ensure the buffer can hold at least the data necessary for
+ * an aligned line (8 * width pixels on a Vtiled display, so width bytes)
+ * so get_max_row doesn't result in LVGL being able to render less than 1 line.
+ */
 #define BUFFER_SIZE(n)                                                                             \
-	(((CONFIG_LV_Z_VDB_SIZE * ROUND_UP(DISPLAY_WIDTH(n), 8) *                                  \
-	   ROUND_UP(DISPLAY_HEIGHT(n), 8)) /                                                       \
-	  100) / 8 +                                                                               \
-	 8)
+	(MAX(((CONFIG_LV_Z_VDB_SIZE * ROUND_UP(DISPLAY_WIDTH(n), 8) *                              \
+	ROUND_UP(DISPLAY_HEIGHT(n), 8)) / 100) / 8,                                                \
+	ROUND_UP(DISPLAY_WIDTH(n), 8))                                                             \
+	+ 8)
 #else
 #define BUFFER_SIZE(n)                                                                             \
 	(CONFIG_LV_Z_BITS_PER_PIXEL *                                                              \
@@ -81,7 +104,7 @@ static uint8_t *mono_vtile_buf_p[DT_ZEPHYR_DISPLAYS_COUNT] = {NULL};
 #if defined(CONFIG_LV_Z_VDB_CUSTOM_SECTION)
 #define LV_BUF_SECTION	Z_GENERIC_SECTION(.lvgl_buf)
 #elif defined(CONFIG_LV_Z_VDB_ZEPHYR_REGION)
-#define LV_BUF_SECTION	Z_GENERIC_SECTION(CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME)
+#define LV_BUF_SECTION	__attribute__((section(CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME)))
 #else
 #define LV_BUF_SECTION
 #endif
@@ -128,9 +151,16 @@ static void lvgl_log(lv_log_level_t level, const char *buf)
 	case LV_LOG_LEVEL_TRACE:
 		LOG_DBG("%s", buf + (sizeof("[Trace] ") - 1));
 		break;
-	case LV_LOG_LEVEL_USER:
-		LOG_INF("%s", buf + (sizeof("[User] ") - 1));
+	case LV_LOG_LEVEL_USER: {
+		static const char prefix[] = "[User] ";
+
+		if (strncmp(buf, prefix, sizeof(prefix) - 1) == 0) {
+			LOG_PRINTK("%s", buf + (sizeof(prefix) - 1));
+		} else {
+			LOG_PRINTK("%s", buf);
+		}
 		break;
+	}
 	}
 }
 #endif
@@ -141,14 +171,17 @@ static void lvgl_allocate_rendering_buffers_static(lv_display_t *display, int di
 {
 #ifdef CONFIG_LV_Z_DOUBLE_VDB
 	lv_display_set_buffers(display, buf0_p[disp_idx], buf1_p[disp_idx], disp_buf_size[disp_idx],
-			       LV_DISPLAY_RENDER_MODE_PARTIAL);
+			       RENDER_MODE);
 #else
 	lv_display_set_buffers(display, buf0_p[disp_idx], NULL, disp_buf_size[disp_idx],
-			       LV_DISPLAY_RENDER_MODE_PARTIAL);
+			       RENDER_MODE);
 #endif /* CONFIG_LV_Z_DOUBLE_VDB */
 
 #if ALLOC_MONOCHROME_CONV_BUFFER
-	lvgl_set_mono_conversion_buffer(mono_vtile_buf_p[disp_idx], disp_buf_size[disp_idx]);
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
+
+	data->mono_conv_buf = mono_vtile_buf_p[disp_idx];
+	data->mono_conv_buf_size = disp_buf_size[disp_idx];
 #endif
 }
 
@@ -217,10 +250,11 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 		LOG_ERR("Failed to allocate memory for vtile buffer");
 		return -ENOMEM;
 	}
-	lvgl_set_mono_conversion_buffer(vtile_buf, buf_size);
+	data->mono_conv_buf = vtile_buf;
+	data->mono_conv_buf_size = buf_size;
 #endif /* ALLOC_MONOCHROME_CONV_BUFFER */
 
-	lv_display_set_buffers(display, buf0, buf1, buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+	lv_display_set_buffers(display, buf0, buf1, buf_size, RENDER_MODE);
 	return 0;
 }
 #endif /* CONFIG_LV_Z_BUFFER_ALLOC_STATIC */
@@ -391,10 +425,6 @@ int lvgl_init(void)
 		if (err < 0) {
 			return err;
 		}
-#endif
-
-#ifdef CONFIG_LV_Z_FULL_REFRESH
-		lv_display_set_render_mode(lv_displays[i], LV_DISPLAY_RENDER_MODE_FULL);
 #endif
 	}
 

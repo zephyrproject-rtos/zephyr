@@ -318,7 +318,8 @@ struct i2s_config {
 	/** Size of one RX/TX memory block (buffer) in bytes. */
 	size_t block_size;
 	/** Read/Write timeout. Number of milliseconds to wait in case TX queue
-	 * is full or RX queue is empty, or 0, or SYS_FOREVER_MS.
+	 * is full or RX queue is empty, or 0, or SYS_FOREVER_MS. i2s_buf_write()
+	 * also applies it to the transmit block allocation.
 	 */
 	int32_t timeout;
 };
@@ -513,6 +514,10 @@ static inline int i2s_write(const struct device *dev, void *mem_block,
  * This function acquires a memory block from the I2S channel TX queue
  * and copies the provided data buffer into it. It is otherwise equivalent
  * to i2s_write().
+ *
+ * The timeout configured in @ref i2s_config applies independently to acquiring
+ * the memory block and to enqueueing it, so in the worst case this call can
+ * block for twice that period rather than once.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param buf Pointer to a buffer containing the data to transmit.

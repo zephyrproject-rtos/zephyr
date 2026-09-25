@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/ism330dhcx.h>
+
+/ {
+	aliases {
+		accel0 = &adafruit_ism330dhcx;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_ism330dhcx: ism330dhcx@6a {
+		compatible = "st,ism330dhcx";
+		reg = <0x6a>;
+		accel-odr = <ISM330DHCX_DT_ODR_104Hz>;
+		gyro-odr = <ISM330DHCX_DT_ODR_104Hz>;
+	};
+};

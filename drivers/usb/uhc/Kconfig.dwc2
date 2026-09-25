@@ -14,7 +14,7 @@ if UHC_DWC2
 
 config UHC_DWC2_STACK_SIZE
 	int "UHC DWC2 driver thread stack size"
-	default 512
+	default 1024
 	help
 	  DWC2 driver thread stack size.
 
@@ -44,7 +44,7 @@ config UHC_DWC2_RESET_HOLD_MS
 	  Root-port reset hold time in milliseconds.
 
 	  USB 2.0 requires ordinary reset signaling to be asserted for at least
-	  10 ms, but reset issued from a root port must last at least 50 ms..
+	  10 ms, but reset issued from a root port must last at least 50 ms.
 
 	  The default value is set to 50 ms.
 

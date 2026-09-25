@@ -12,6 +12,7 @@ ram: 64
 supported:
   - adc
   - clock_control
+  - comparator
   - counter
   - dac
   - dma

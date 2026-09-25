@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <zephyr/dt-bindings/reset/stm32c5_reset.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
@@ -146,14 +147,15 @@
 	};
 
 	soc {
-		adc1: adc@42028000 {
+		adc12_common: adc@42028000 {
 			compatible = "st,stm32n6-adc", "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x42028000 0x100>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 				 <&rcc STM32_SRC_PSIS ADCDAC_SEL(1)>;
 			clock-names = "adcx", "adc_ker";
-			interrupts = <32 0>;
-			#io-channel-cells = <1>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 5 8 13 25 48 139 289>;
 			st,adc-sequencer = "programmable";
@@ -162,6 +164,13 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
 			status = "disabled";
+
+			adc1: adc@42028000 {
+				reg = <0x42028000 0x100>;
+				interrupts = <32 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		crc: crc@40023000 {
@@ -184,15 +193,20 @@
 			compatible = "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x40028000 0x1400>;
 			clock-names = "mac-clk-int", "stm-eth", "mac-clk-tx", "mac-clk-rx",
-				      "eth1clk-sel", "eth1clkdiv-sel", "eth1refclk-sel";
+				      "mac-clk-ptp", "eth1clk-sel", "eth1clkdiv-sel",
+				      "eth1refclk-sel";
 			clocks = <&rcc STM32_CLOCK(AHB1, 18)>,
 				 <&rcc STM32_CLOCK(AHB1, 19)>,
 				 <&rcc STM32_CLOCK(AHB1, 20)>,
 				 <&rcc STM32_CLOCK(AHB1, 21)>,
+				 <&rcc STM32_SRC_HCLK ETH1PTPCLK_SEL(1)>,
 				 <&rcc STM32_SRC_HSE ETH1CLK_SEL(3)>,
 				 <&rcc STM32_SRC_HSE ETH1CLKDIV_SEL(0)>,
 				 <&rcc STM32_SRC_HSE ETH1REFCLK_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB1, 19)>;
 			interrupts = <94 0>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
 			status = "disabled";
 
 			mdio: mdio {
@@ -484,6 +498,55 @@
 			status = "disabled";
 		};
 
+		pwr: power@44020800 {
+			compatible = "st,stm32-pwr";
+			reg = <0x44020800 0x400>;
+
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				st,max-wkup-line-idx = <7>;
+
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@2 {
+					reg = <0x2>;
+					wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@3 {
+					reg = <0x3>;
+					/* Available only on STM32C551 and higher */
+				};
+
+				wkup@4 {
+					reg = <0x4>;
+					wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@5 {
+					reg = <0x5>;
+					wkup-gpios = <&gpiob 7 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@6 {
+					reg = <0x6>;
+					/* Available only on STM32C551 and higher */
+				};
+
+				wkup@7 {
+					reg = <0x7>;
+					/* Available only on STM32C551 and higher */
+				};
+			};
+		};
+
 		spi1: spi@40013000 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
@@ -507,6 +570,20 @@
 			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			status = "disabled";
+		};
+
+		xspi1: spi@47001400 {
+			compatible = "st,stm32-xspi-controller";
+			reg = <0x47001400 0x400>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <91 0>;
+			clock-names = "xspix", "xspi-ker";
+			clocks = <&rcc STM32_CLOCK(AHB4, 20)>,
+				 <&rcc STM32_SRC_PSIK XSPI1_SEL(1)>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			op-mode = "MSPI_OP_MODE_CONTROLLER";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
@@ -580,12 +657,6 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
 		};
 
 		timers7: timers@40001400 {
@@ -601,12 +672,6 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-			};
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
 			};
 		};
 

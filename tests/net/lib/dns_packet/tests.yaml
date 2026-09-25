@@ -4,5 +4,4 @@ tests:
     tags:
       - dns
       - net
-    timeout: 200
     depends_on: netif

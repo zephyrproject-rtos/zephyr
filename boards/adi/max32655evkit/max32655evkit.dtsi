@@ -91,13 +91,13 @@
 		m4_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-m4";
-			reg = <0x0 DT_SIZE_K(352)>;
+			reg = <0x0 DT_SIZE_K(320)>;
 		};
 
-		storage_partition: partition@58000 {
+		storage_partition: partition@50000 {
 			compatible = "zephyr,mapped-partition";
 			label = "storage-m4";
-			reg = <0x58000 DT_SIZE_K(32)>;
+			reg = <0x50000 DT_SIZE_K(64)>;
 		};
 
 		rv32_partition: partition@60000 {

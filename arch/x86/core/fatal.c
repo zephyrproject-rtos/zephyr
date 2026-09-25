@@ -492,11 +492,11 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 		    !z_x86_kpti_is_access_ok(virt, get_ptables(esf))) {
 			was_valid_access = false;
 		} else
-#else
+#endif /* CONFIG_X86_KPTI */
 		{
 			was_valid_access = k_mem_page_fault(virt);
 		}
-#endif /* CONFIG_X86_KPTI */
+
 		if (was_valid_access) {
 			/* Page fault handled, re-try */
 			return;

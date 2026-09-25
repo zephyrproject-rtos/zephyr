@@ -1,0 +1,234 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMXRT266X
+	bool
+	select SOC_FAMILY_NXP_IMXRT
+
+config SOC_SERIES
+	default "imxrt266x" if SOC_SERIES_IMXRT266X
+
+#
+# The i.MX RT266x family differs along exactly two functional axes -- the NPU
+# (Neutron N256) and the Display and Graphics block. See the per-part feature
+# table in dts/arm/nxp/imxrt/imxrt266x/nxp_rt2661.dtsi. It is not a ladder:
+# MIMXRT2661 has the NPU without the display block, and MIMXRT2662 the reverse.
+#
+# MIMXRT2660 has neither and was added once its device pack was released.
+#
+
+config SOC_MIMXRT2660
+	bool
+	select SOC_SERIES_IMXRT266X
+
+config SOC_MIMXRT2661
+	bool
+	select SOC_SERIES_IMXRT266X
+
+config SOC_MIMXRT2662
+	bool
+	select SOC_SERIES_IMXRT266X
+
+config SOC_MIMXRT2663
+	bool
+	select SOC_SERIES_IMXRT266X
+
+# Forward declaration so SysbuildKconfigBasicNoModules can resolve the select
+# references below. The full definition with selects lives in Kconfig.
+config SOC_SERIES_IMXRT266X_CM85
+	bool
+
+config SOC_MIMXRT2660_CM85
+	bool
+	select SOC_MIMXRT2660
+	select SOC_SERIES_IMXRT266X_CM85
+
+config SOC_MIMXRT2661_CM85
+	bool
+	select SOC_MIMXRT2661
+	select SOC_SERIES_IMXRT266X_CM85
+
+config SOC_MIMXRT2662_CM85
+	bool
+	select SOC_MIMXRT2662
+	select SOC_SERIES_IMXRT266X_CM85
+
+config SOC_MIMXRT2663_CM85
+	bool
+	select SOC_MIMXRT2663
+	select SOC_SERIES_IMXRT266X_CM85
+
+config SOC
+	default "mimxrt2660" if SOC_MIMXRT2660
+	default "mimxrt2661" if SOC_MIMXRT2661
+	default "mimxrt2662" if SOC_MIMXRT2662
+	default "mimxrt2663" if SOC_MIMXRT2663
+
+#
+# Orderable part numbers, exactly as listed in the data sheet ordering
+# information (IMXRT2660EC Rev. 1 Draft E, Table 2).
+#
+# Suffix nomenclature: <temperature grade><package><speed><silicon revision>
+#   temperature: A = Automotive, C = Industrial, D = Consumer,
+#                X = Extended Industrial
+#   package:     HP = 281BGA hybrid pitch, 11 x 11 mm
+#                VV = 289BGA 0.8 mm pitch, 14 x 14 mm
+#   speed:       A = 1 GHz, 8 = 800 MHz
+#
+# Maximum core frequency follows the part number rather than the part: every
+# C/D part runs at 1 GHz and every ...8A part at 800 MHz. MIMXRT2663 uniquely
+# also offers Extended Industrial at 1 GHz. MIMXRT2661 has no Automotive grade.
+#
+
+config SOC_PART_NUMBER_MIMXRT2660CHPAA
+	bool
+	select SOC_MIMXRT2660
+
+config SOC_PART_NUMBER_MIMXRT2660CVVAA
+	bool
+	select SOC_MIMXRT2660
+
+config SOC_PART_NUMBER_MIMXRT2660DHPAA
+	bool
+	select SOC_MIMXRT2660
+
+config SOC_PART_NUMBER_MIMXRT2660DVVAA
+	bool
+	select SOC_MIMXRT2660
+
+config SOC_PART_NUMBER_MIMXRT2660XHP8A
+	bool
+	select SOC_MIMXRT2660
+
+config SOC_PART_NUMBER_MIMXRT2660XVV8A
+	bool
+	select SOC_MIMXRT2660
+
+config SOC_PART_NUMBER_MIMXRT2661CHPAA
+	bool
+	select SOC_MIMXRT2661
+
+config SOC_PART_NUMBER_MIMXRT2661CVVAA
+	bool
+	select SOC_MIMXRT2661
+
+config SOC_PART_NUMBER_MIMXRT2661DHPAA
+	bool
+	select SOC_MIMXRT2661
+
+config SOC_PART_NUMBER_MIMXRT2661DVVAA
+	bool
+	select SOC_MIMXRT2661
+
+config SOC_PART_NUMBER_MIMXRT2661XHP8A
+	bool
+	select SOC_MIMXRT2661
+
+config SOC_PART_NUMBER_MIMXRT2661XVV8A
+	bool
+	select SOC_MIMXRT2661
+
+config SOC_PART_NUMBER_MIMXRT2662AHP8A
+	bool
+	select SOC_MIMXRT2662
+
+config SOC_PART_NUMBER_MIMXRT2662AVV8A
+	bool
+	select SOC_MIMXRT2662
+
+config SOC_PART_NUMBER_MIMXRT2662CHPAA
+	bool
+	select SOC_MIMXRT2662
+
+config SOC_PART_NUMBER_MIMXRT2662CVVAA
+	bool
+	select SOC_MIMXRT2662
+
+config SOC_PART_NUMBER_MIMXRT2662DHPAA
+	bool
+	select SOC_MIMXRT2662
+
+config SOC_PART_NUMBER_MIMXRT2662DVVAA
+	bool
+	select SOC_MIMXRT2662
+
+config SOC_PART_NUMBER_MIMXRT2662XHP8A
+	bool
+	select SOC_MIMXRT2662
+
+config SOC_PART_NUMBER_MIMXRT2662XVV8A
+	bool
+	select SOC_MIMXRT2662
+
+config SOC_PART_NUMBER_MIMXRT2663AHP8A
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER_MIMXRT2663AVV8A
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER_MIMXRT2663CHPAA
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER_MIMXRT2663CVVAA
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER_MIMXRT2663DHPAA
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER_MIMXRT2663DVVAA
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER_MIMXRT2663XHP8A
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER_MIMXRT2663XHPAA
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER_MIMXRT2663XVV8A
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER_MIMXRT2663XVVAA
+	bool
+	select SOC_MIMXRT2663
+
+config SOC_PART_NUMBER
+	default "MIMXRT2660CHPAA" if SOC_PART_NUMBER_MIMXRT2660CHPAA
+	default "MIMXRT2660CVVAA" if SOC_PART_NUMBER_MIMXRT2660CVVAA
+	default "MIMXRT2660DHPAA" if SOC_PART_NUMBER_MIMXRT2660DHPAA
+	default "MIMXRT2660DVVAA" if SOC_PART_NUMBER_MIMXRT2660DVVAA
+	default "MIMXRT2660XHP8A" if SOC_PART_NUMBER_MIMXRT2660XHP8A
+	default "MIMXRT2660XVV8A" if SOC_PART_NUMBER_MIMXRT2660XVV8A
+	default "MIMXRT2661CHPAA" if SOC_PART_NUMBER_MIMXRT2661CHPAA
+	default "MIMXRT2661CVVAA" if SOC_PART_NUMBER_MIMXRT2661CVVAA
+	default "MIMXRT2661DHPAA" if SOC_PART_NUMBER_MIMXRT2661DHPAA
+	default "MIMXRT2661DVVAA" if SOC_PART_NUMBER_MIMXRT2661DVVAA
+	default "MIMXRT2661XHP8A" if SOC_PART_NUMBER_MIMXRT2661XHP8A
+	default "MIMXRT2661XVV8A" if SOC_PART_NUMBER_MIMXRT2661XVV8A
+	default "MIMXRT2662AHP8A" if SOC_PART_NUMBER_MIMXRT2662AHP8A
+	default "MIMXRT2662AVV8A" if SOC_PART_NUMBER_MIMXRT2662AVV8A
+	default "MIMXRT2662CHPAA" if SOC_PART_NUMBER_MIMXRT2662CHPAA
+	default "MIMXRT2662CVVAA" if SOC_PART_NUMBER_MIMXRT2662CVVAA
+	default "MIMXRT2662DHPAA" if SOC_PART_NUMBER_MIMXRT2662DHPAA
+	default "MIMXRT2662DVVAA" if SOC_PART_NUMBER_MIMXRT2662DVVAA
+	default "MIMXRT2662XHP8A" if SOC_PART_NUMBER_MIMXRT2662XHP8A
+	default "MIMXRT2662XVV8A" if SOC_PART_NUMBER_MIMXRT2662XVV8A
+	default "MIMXRT2663AHP8A" if SOC_PART_NUMBER_MIMXRT2663AHP8A
+	default "MIMXRT2663AVV8A" if SOC_PART_NUMBER_MIMXRT2663AVV8A
+	default "MIMXRT2663CHPAA" if SOC_PART_NUMBER_MIMXRT2663CHPAA
+	default "MIMXRT2663CVVAA" if SOC_PART_NUMBER_MIMXRT2663CVVAA
+	default "MIMXRT2663DHPAA" if SOC_PART_NUMBER_MIMXRT2663DHPAA
+	default "MIMXRT2663DVVAA" if SOC_PART_NUMBER_MIMXRT2663DVVAA
+	default "MIMXRT2663XHP8A" if SOC_PART_NUMBER_MIMXRT2663XHP8A
+	default "MIMXRT2663XHPAA" if SOC_PART_NUMBER_MIMXRT2663XHPAA
+	default "MIMXRT2663XVV8A" if SOC_PART_NUMBER_MIMXRT2663XVV8A
+	default "MIMXRT2663XVVAA" if SOC_PART_NUMBER_MIMXRT2663XVVAA

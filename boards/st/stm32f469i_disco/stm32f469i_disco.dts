@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "stm32f469i_disco_common.dtsi"
+#include "stm32f469i_disco-common.dtsi"
 
 &i2c1 {
 	ft5336: ft5336@2a {

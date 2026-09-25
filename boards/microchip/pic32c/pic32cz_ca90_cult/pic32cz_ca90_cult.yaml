@@ -15,5 +15,8 @@ supported:
   - gpio
   - i2c
   - pinctrl
+  - rtc
+  - spi
   - uart
+  - watchdog
 vendor: microchip

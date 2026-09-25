@@ -7,10 +7,6 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 
-/*
- * 0xB00 is CSR mcycle
- * 0xB02 is CSR minstret
- */
 void supervisor_thread_function(void *p1, void *p2, void *p3)
 {
 	register unsigned long cycle_before, cycle_count;
@@ -22,11 +18,15 @@ void supervisor_thread_function(void *p1, void *p2, void *p3)
 	while (1) {
 		k_sleep(K_MSEC(2000));
 
-		inst_before = csr_read(0xB02);
-		cycle_before = csr_read(0xB00);
-		thread = k_current_get();
-		cycle_count = csr_read(0xB00);
-		inst_count = csr_read(0xB02);
+		inst_before = csr_read(minstret);
+		cycle_before = csr_read(mcycle);
+		/* Explicitly invoke system call. k_current_get fails to benchmark
+		 * properly if CONFIG_CURRENT_THREAD_USE_TLS is enabled since it
+		 * returns the thread-local cached thread ID
+		 */
+		thread = k_sched_current_thread_query();
+		cycle_count = csr_read(mcycle);
+		inst_count = csr_read(minstret);
 
 		if (cycle_count > cycle_before) {
 			cycle_count -= cycle_before;
@@ -43,7 +43,7 @@ void supervisor_thread_function(void *p1, void *p2, void *p3)
 		/* Remove CSR accesses to be more accurate */
 		inst_count -= 3;
 
-		printf("Supervisor thread(%p):\t%8lu cycles\t%8lu instructions\n",
-			thread, cycle_count, inst_count);
+		printf("Supervisor thread(%p):\t%8lu cycles\t%8lu instructions\n", thread,
+		       cycle_count, inst_count);
 	}
 }

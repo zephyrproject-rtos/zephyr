@@ -182,6 +182,13 @@ config NET_SHELL_TCP_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_NATIVE_TCP && NET_TCP)
 
+config NET_SHELL_TFTP_CLIENT_SUPPORTED
+	bool "TFTP client"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || TFTP_LIB
+	select SHELL_GETOPT if TFTP_LIB
+	select GETOPT_LONG if TFTP_LIB
+
 config NET_SHELL_UDP_SUPPORTED
 	bool "Send / receive UDP data"
 	default y

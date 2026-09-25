@@ -62,7 +62,7 @@ struct spi_silabs_eusart_config {
 	const struct silabs_clock_control_cmu_config clock_cfg;
 	uint32_t clock_frequency;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t mosi_overrun;
+	uint8_t sdo_overrun;
 };
 
 #ifdef CONFIG_SPI_SILABS_EUSART_DMA
@@ -116,8 +116,8 @@ static int spi_silabs_eusart_setup(const struct device *dev, const struct spi_co
 		return -ENOTSUP;
 	}
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -373,7 +373,7 @@ static uint32_t spi_eusart_fill_desc(const struct spi_silabs_eusart_config *cfg,
 			new_blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		} else {
 			/* Null buffer pointer means sending dummy byte */
-			new_blk_cfg->source_address = (uint32_t)&(cfg->mosi_overrun);
+			new_blk_cfg->source_address = (uint32_t)&(cfg->sdo_overrun);
 			new_blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		}
 	} else {
@@ -784,7 +784,7 @@ static DEVICE_API(spi, spi_silabs_eusart_api) = {
 		.base = (EUSART_TypeDef *)DT_INST_REG_ADDR(n), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
 		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(n), \
-		.mosi_overrun = (uint8_t)SPI_MOSI_OVERRUN_DT(n), \
+		.sdo_overrun = (uint8_t)SPI_SDO_OVERRUN_DT(n), \
 		.clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000), \
 	}; \
 	PM_DEVICE_DT_INST_DEFINE(n, spi_silabs_eusart_pm_action); \

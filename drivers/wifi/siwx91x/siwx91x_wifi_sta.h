@@ -9,6 +9,7 @@
 
 struct device;
 struct wifi_connect_req_params;
+struct k_work;
 
 int siwx91x_connect(const struct device *dev, struct net_if *iface,
 		    struct wifi_connect_req_params *params);
@@ -18,5 +19,6 @@ unsigned int siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, unsi
 						    void *data, uint32_t data_length, void *arg);
 unsigned int siwx91x_on_join(sl_wifi_event_t event, unsigned int status,
 			     void *data, uint32_t data_length, void *arg);
+void siwx91x_on_join_work(struct k_work *work);
 
 #endif

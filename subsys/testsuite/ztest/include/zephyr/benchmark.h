@@ -14,6 +14,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @cond INTERNAL_HIDDEN */
 /*
  * Identifier builders for the linker-visible symbols that the ZTEST_BENCHMARK*()
@@ -112,8 +116,8 @@ void benchmark_main(void);
 		.name = #benchmark,								\
 		.iterations = samples,								\
 		.setup = setup_fn,								\
-		.teardown = teardown_fn,							\
 		.run = Z_ZTEST_BENCHMARK_FN(suite_name, benchmark),				\
+		.teardown = teardown_fn,							\
 		.suite = &Z_ZTEST_BENCHMARK_SUITE_NODE(suite_name),				\
 	};											\
 	static __noinline void Z_ZTEST_BENCHMARK_FN(suite_name, benchmark)(void)
@@ -133,8 +137,8 @@ void benchmark_main(void);
 	static const STRUCT_SECTION_ITERABLE(ztest_benchmark_timed,				\
 					Z_ZTEST_BENCHMARK_TIMED_NODE(testsuite, benchmark)) =	\
 	{											\
-		.name = #benchmark,								\
 		.duration_ms = duration,							\
+		.name = #benchmark,								\
 		.setup = setup_fn,								\
 		.run = Z_ZTEST_BENCHMARK_FN(testsuite, benchmark),				\
 		.teardown = teardown_fn,							\
@@ -145,4 +149,9 @@ void benchmark_main(void);
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* ZTEST_BENCHMARK_H */

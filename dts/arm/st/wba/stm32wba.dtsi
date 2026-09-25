@@ -5,15 +5,16 @@
  */
 
 #include <arm/armv8-m.dtsi>
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/stm32wba_clock.h>
-#include <zephyr/dt-bindings/reset/stm32wba_reset.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
-#include <zephyr/dt-bindings/pwm/pwm.h>
-#include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/reset/stm32wba_reset.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -458,6 +459,12 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers16: timers@40014400 {
@@ -504,22 +511,30 @@
 			};
 		};
 
-		adc4: adc@46021000 {
+		adc4_common: adc@46021000 {
 			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x46021000 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(AHB4, 5)>,
 				 <&rcc STM32_SRC_HCLK1 ADC_SEL(0)>;
 			clock-names = "adcx", "adc_ker";
-			interrupts = <65 0>;
-			#io-channel-cells = <1>;
+			st,adc-clock-source = "ASYNC";
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 4 8 13 20 40 80 815>;
 			num-sampling-time-common-channels = <2>;
-			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "fixed";
 			st,adc-oversampler = "minimal";
 			st,adc-internal-regulator = "startup-hw-status";
 			status = "disabled";
+
+			adc4: adc@46021000 {
+				reg = <0x46021000 0x100>;
+				interrupts = <65 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		lptim1: timers@46004400 {
@@ -552,6 +567,24 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
 			resets = <&rctl STM32_RESET(AHB2, 16)>;
 			interrupts = <58 0>;
+			status = "disabled";
+		};
+
+		hash: crypto@420c0400 {
+			compatible = "st,stm32-hash";
+			reg = <0x420c0400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			resets = <&rctl STM32_RESET(AHB2, 17)>;
+			interrupts = <61 0>;
+			status = "disabled";
+		};
+
+		pka: pka@420c2000 {
+			compatible = "st,stm32wba-pka";
+			reg = <0x420c2000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 21)>;
+			resets = <&rctl STM32_RESET(AHB2, 21)>;
+			interrupts = <62 0>;
 			status = "disabled";
 		};
 

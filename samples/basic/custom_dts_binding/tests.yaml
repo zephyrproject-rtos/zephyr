@@ -5,9 +5,12 @@ tests:
     tags:
       - gpio
       - devicetree
-    platform_allow: nucleo_l073rz
-    integration_platforms:
+    platform_allow:
       - nucleo_l073rz
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
     depends_on: gpio
     harness: console
     harness_config:

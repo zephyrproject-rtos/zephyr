@@ -10,6 +10,7 @@
 /**
  * @file
  * @brief Public API for CPU Power Management
+ * @ingroup power_management_cpu_api
  */
 
 #include <zephyr/types.h>
@@ -20,8 +21,10 @@
 extern "C" {
 #endif
 
-/* System reset types. */
+/** Warm system reset, used as argument to pm_system_reset(). */
 #define SYS_WARM_RESET 0
+
+/** Cold system reset, used as argument to pm_system_reset(). */
 #define SYS_COLD_RESET 1
 /**
  * @defgroup power_management_cpu_api CPU Power Management

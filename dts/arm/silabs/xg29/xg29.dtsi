@@ -57,6 +57,13 @@
 			clocks = <&em01grpaclk>;
 		};
 
+		exportclk: exportclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <1>;
+			clocks = <&sysclk>;
+		};
+
 		hclk: hclk {
 			compatible = "fixed-factor-clock";
 			#clock-cells = <0>;
@@ -200,6 +207,29 @@
 			interrupt-names = "cmu";
 			interrupts = <52 2>;
 			status = "okay";
+
+			clkout: clkout {
+				compatible = "silabs,series-clock-output";
+				#address-cells = <1>;
+				#clock-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				clkout0: clock-output@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				clkout1: clock-output@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				clkout2: clock-output@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+			};
 		};
 
 		clk_hfxo: hfxo: hfxo@5000c000 {

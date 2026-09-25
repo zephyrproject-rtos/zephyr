@@ -199,6 +199,8 @@
 
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
+
+	zephyr,random-mac-address;
 };
 
 &mdio {
@@ -225,4 +227,8 @@
 	input-src = "RXDC";
 	pinctrl-0 = <&can_tx_p1_12_node1 &can_rx_p1_13_node1>;
 	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
 };

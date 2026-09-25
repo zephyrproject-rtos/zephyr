@@ -10,8 +10,9 @@ Checks the given files against the "Basic Formatting Rules" documented in
 doc/contribute/style/kconfig.rst:
 
   1. Line length: keep lines to 100 columns or fewer. Lines containing a
-     Kconfig macro expansion '$(...)' are exempt, as such calls cannot be
-     wrapped across lines.
+     Kconfig macro expansion '$(...)' or a quoted string are exempt, as
+     neither can be split across continuation lines. Comments and 'help' text
+     are prose that can be re-wrapped, so they are not exempt.
   2. Indentation: use a flat layout with tabs - entries at column 0, properties
      at a single tab, and 'help' entry text at one tab plus two extra spaces.
      Continuation lines may use any number of tabs but must not mix in spaces.
@@ -89,6 +90,23 @@ def _leading_ws(line: str) -> str:
 def _columns(line: str) -> int:
     """Return the display width of 'line', expanding tabs."""
     return len(line.expandtabs(TAB_WIDTH))
+
+
+def _length_exempt(line: str, in_help: bool) -> bool:
+    """
+    Rule 1 exemptions: True if 'line' contains a Kconfig macro expansion
+    '$(...)' or a quoted string, neither of which can be split - kconfiglib
+    joins backslash continuations by raw concatenation, so the continuation's
+    leading whitespace would be injected into the value, corrupting it.
+    Comments and help body text are prose that can always be re-wrapped, so
+    they earn no exemption (except a macro call quoted in help text, which
+    still cannot be split).
+    """
+    if in_help:
+        return "$(" in line
+    c = _comment_start(line)
+    code = line if c == -1 else line[:c]
+    return "$(" in code or '"' in code or "'" in code
 
 
 def _continues(line: str) -> bool:
@@ -233,13 +251,9 @@ def lint(lines: list[str]) -> list[Issue]:
         if in_help:
             help_body.add(i)
 
-        # Rule 1: line length. Lines containing a Kconfig macro expansion
-        # '$(...)' are exempt: such calls cannot be wrapped, as kconfiglib
-        # joins backslash continuations by raw concatenation and the
-        # continuation's leading whitespace would be injected into the macro
-        # arguments, corrupting them.
+        # Rule 1: line length.
         cols = _columns(line)
-        if cols > MAX_COLUMNS and "$(" not in line:
+        if cols > MAX_COLUMNS and not _length_exempt(line, in_help):
             issues.append(
                 Issue(
                     lineno,

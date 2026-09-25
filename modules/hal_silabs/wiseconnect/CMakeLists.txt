@@ -66,7 +66,6 @@ zephyr_include_directories(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/config
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/rom_driver/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/config
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/sl_log/inc
@@ -129,7 +128,6 @@ zephyr_library_sources_ifdef(CONFIG_BT_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/sl_si91x_ble.c
 )
 
-# FIXME: Replace sli_si91x_clock_manager.c by native Zephyr access to the clocks
 if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_PM)
   zephyr_compile_definitions(
     ULPSS_CLOCK_ROMDRIVER_PRESENT # replace rsi_ulpss_clk.c
@@ -140,7 +138,6 @@ if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_PM)
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ulpss_clk.c
     # Some functions are not provided by CLOCK_ROMDRIVER_PRESENT
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_pll.c
-    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sl_si91x_clock_manager.c
   )
 endif()
 
@@ -186,6 +183,7 @@ zephyr_compile_definitions_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
   QSPI_ROMDRIVER_PRESENT # replace rsi_qspi.c
 )
 zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/rsi_d_cache.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
 )
 
@@ -319,7 +317,6 @@ if(CONFIG_PM)
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/sl_si91x_m4_ps.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sl_si91x_power_manager.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sli_si91x_power_manager.c
-    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sli_si91x_clock_manager.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_temp_sensor.c
     ${SISDK}/platform/common/src/sl_slist.c
   )
@@ -329,6 +326,8 @@ if(CONFIG_PM)
     SLI_WIRELESS_COMPONENT_PRESENT
   )
   zephyr_code_relocate(FILES
+    # if CLOCK_ROMDRIVER_PRESENT is not defined, rsi_pll.c needs to be in RAM for QSPI clock reconfiguration
+    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_pll.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sl_si91x_power_manager.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sli_si91x_power_manager.c
@@ -337,5 +336,6 @@ if(CONFIG_PM)
     ${ZEPHYR_BASE}/drivers/gpio/gpio_silabs_siwx91x.c
     ${ZEPHYR_BASE}/drivers/gpio/gpio_silabs_siwx91x_uulp.c
     LOCATION RAM
+    NOKEEP
   )
 endif() # CONFIG_PM

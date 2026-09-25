@@ -24,10 +24,11 @@ extern "C" {
  * them from newlib
  */
 #if !__MISC_VISIBLE && !__POSIX_VISIBLE
-char *strtok_r(char *__restrict, const char *__restrict, char **__restrict);
+char *strtok_r(char *__restrict __s, const char *__restrict __delim,
+	       char **__restrict __save_ptr);
 #endif
 #if __POSIX_VISIBLE < 200809L
-size_t strnlen(const char *, size_t);
+size_t strnlen(const char *__s, size_t __maxlen);
 #endif
 
 #ifdef __cplusplus

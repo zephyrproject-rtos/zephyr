@@ -18,6 +18,7 @@
 extern "C" {
 #endif
 
+#include <zephyr/arch/riscv/arch_inlines.h>
 #include <zephyr/sys/util_macro.h>
 
 #ifndef _ASMLANGUAGE
@@ -39,8 +40,12 @@ extern "C" {
 
 /* IRQs 0-15 (MCAUSE interrupt=1) */
 
+/** Supervisor Software Interrupt */
+#define RISCV_IRQ_SSOFT 1
 /** Machine Software Interrupt */
 #define RISCV_IRQ_MSOFT 3
+/** Supervisor External Interrupt */
+#define RISCV_IRQ_SEXT  9
 /** Machine External Interrupt */
 #define RISCV_IRQ_MEXT  11
 

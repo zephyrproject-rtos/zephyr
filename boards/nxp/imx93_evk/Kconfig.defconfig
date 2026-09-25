@@ -31,7 +31,7 @@ config GPIO_ADP5585_INIT_PRIORITY
 
 endif # BOARD_MIMX93_EVK_EXP_SEL_INIT
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault NET_TX_STACK_SIZE

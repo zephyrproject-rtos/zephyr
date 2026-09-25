@@ -36,135 +36,7 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
-# NOTE: keep in sync with doc/develop/modules.rst
-METADATA_SCHEMA = '''
-## A JSON Schema (Draft 2020-12) for basic validation of the structure of a
-## metadata YAML file.
-##
-$schema: "https://json-schema.org/draft/2020-12/schema"
-type: object
-properties:
-  name:
-    type: string
-  build:
-    type: object
-    properties:
-      cmake:
-        type: string
-      kconfig:
-        type: string
-      cmake-ext:
-        type: boolean
-      kconfig-ext:
-        type: boolean
-      sysbuild-cmake:
-        type: string
-      sysbuild-kconfig:
-        type: string
-      sysbuild-cmake-ext:
-        type: boolean
-      sysbuild-kconfig-ext:
-        type: boolean
-      depends:
-        type: array
-        items:
-          type: string
-      settings:
-        type: object
-        properties:
-          board_root:
-            type: string
-          dts_root:
-            type: string
-          snippet_root:
-            type: string
-          soc_root:
-            type: string
-          arch_root:
-            type: string
-          module_ext_root:
-            type: string
-          sca_root:
-            type: string
-  tests:
-    type: array
-    items:
-      type: string
-  samples:
-    type: array
-    items:
-      type: string
-  boards:
-    type: array
-    items:
-      type: string
-  blobs:
-    type: array
-    items:
-      type: object
-      properties:
-        path:
-          type: string
-        sha256:
-          type: string
-        type:
-          type: string
-          enum: ['img', 'lib']
-        version:
-          type: string
-        license-path:
-          type: string
-        click-through:
-          type: boolean
-        url:
-          anyOf:
-            - type: string
-            - type: array
-              items:
-                type: string
-        description:
-          type: string
-        doc-url:
-          type: string
-        fetcher:
-          type: string
-        size:
-          type: integer
-      required:
-        - path
-        - sha256
-        - type
-        - version
-        - license-path
-        - url
-        - description
-  security:
-    type: object
-    properties:
-      external-references:
-        type: array
-        items:
-          type: string
-  package-managers:
-    type: object
-    properties:
-      pip:
-        type: object
-        properties:
-          requirement-files:
-            type: array
-            items:
-              type: string
-  runners:
-    type: array
-    items:
-      type: object
-      properties:
-        file:
-          type: string
-      required:
-        - file
-'''
+METADATA_SCHEMA_PATH = Path(__file__).parent / 'schemas' / 'module-schema.yaml'
 
 MODULE_YML_PATH = PurePath('zephyr/module.yml')
 # Path to the blobs folder
@@ -178,7 +50,8 @@ try:
     import jsonschema
     from jsonschema.exceptions import best_match
 
-    SCHEMA = yaml.load(METADATA_SCHEMA, Loader=SafeLoader)
+    with METADATA_SCHEMA_PATH.open() as f:
+        SCHEMA = yaml.load(f.read(), Loader=SafeLoader)
     VALIDATOR_CLASS = jsonschema.validators.validator_for(SCHEMA)
     VALIDATOR_CLASS.check_schema(SCHEMA)
     VALIDATOR = VALIDATOR_CLASS(SCHEMA)

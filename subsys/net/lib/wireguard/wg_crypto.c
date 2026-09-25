@@ -1359,7 +1359,7 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 		return -ENOMEM;
 	}
 
-	copied = net_buf_linearize(buf->data, net_buf_max_len(buf), pkt->buffer,
+	copied = net_buf_linearize(buf->data, net_buf_tailroom(buf), pkt->buffer,
 				   ip_udp_hdr_len + sizeof(struct msg_transport_data),
 				   data_len);
 	if (copied != data_len) {

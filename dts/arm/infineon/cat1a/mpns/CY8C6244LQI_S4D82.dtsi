@@ -8,8 +8,6 @@
 #include <arm/armv7-m.dtsi>
 #include "../psoc6_04/psoc6_04.68-qfn.dtsi"
 
-/delete-node/ &scb3;
-
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };

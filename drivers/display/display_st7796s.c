@@ -192,8 +192,6 @@ static void st7796s_get_capabilities(const struct device *dev,
 {
 	const struct st7796s_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
-
 	capabilities->current_pixel_format = st7796s_get_pixelfmt(dev);
 	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
 	capabilities->x_resolution = config->width;
@@ -453,7 +451,7 @@ static DEVICE_API(display, st7796s_api) = {
 		.dbi_config = {							\
 			.config = MIPI_DBI_SPI_CONFIG_DT(			\
 						DT_DRV_INST(n),			\
-						SPI_OP_MODE_MASTER |		\
+						SPI_OP_MODE_CONTROLLER |	\
 						SPI_WORD_SET(8),		\
 						0),				\
 			.mode = DT_INST_STRING_UPPER_TOKEN_OR(n, mipi_mode,	\

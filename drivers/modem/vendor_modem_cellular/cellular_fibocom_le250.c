@@ -14,7 +14,7 @@ MODEM_CHAT_MATCHES_DEFINE(fibocom_le250_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCH
 /*
  * Configure reporting, collect the standard modem identifiers, and then put
  * the UART into 3GPP TS 27.010 basic-mode multiplexing at 115200 baud with a
- * 127-byte frame.
+ * frame sized by CONFIG_MODEM_CMUX_MTU.
  */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	fibocom_le250_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
@@ -27,13 +27,15 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CCID", ccid_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2", 1000));
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN", imei_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMI", cgmi_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CCID", ccid_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU)
+					",10,3,30,10,2",
+					1000));
 
 MODEM_CHAT_SCRIPT_DEFINE(fibocom_le250_init_chat_script, fibocom_le250_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -46,7 +48,7 @@ MODEM_CHAT_SCRIPT_DEFINE(fibocom_le250_dial_chat_script, fibocom_le250_dial_chat
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(fibocom_le250_periodic_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CSQ", csq_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(fibocom_le250_periodic_chat_script,
 			 fibocom_le250_periodic_chat_script_cmds, abort_matches,
@@ -97,6 +99,6 @@ static const struct modem_cellular_vendor_config fibocom_le250_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &fibocom_le250_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &fibocom_le250_vendor, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_FIBOCOM_LE250)

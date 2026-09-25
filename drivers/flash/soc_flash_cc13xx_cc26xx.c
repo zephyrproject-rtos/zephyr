@@ -263,7 +263,7 @@ static int flash_cc13xx_cc26xx_read(const struct device *dev, off_t offs,
 		return -EINVAL;
 	}
 
-	memcpy(data, (void *)offs, size);
+	memcpy(data, (void *)(uintptr_t)offs, size);
 
 	return 0;
 }

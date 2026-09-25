@@ -22,6 +22,10 @@
 #include <soc_isr_stacking.h>
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_SYSCALL_INTMASK
+#include <soc_syscall.h>
+#endif
+
 /*
 * Privilege-level abstractions. When CONFIG_RISCV_S_MODE is set the
 * kernel runs in Supervisor mode and must use S-mode CSRs. Otherwise
@@ -35,6 +39,7 @@
 #define RV_TVAL      stval
 #define STATUS_IE    SSTATUS_SIE
 #define STATUS_PP    SSTATUS_SPP
+#define STATUS_PIE   SSTATUS_SPIE
 #define TRAP_RET     sret
 /*
  * In S-mode, ecall (cause=9) is kept in M-mode for SBI.  ARCH_EXCEPT in
@@ -51,6 +56,7 @@
 #define RV_TVAL      mtval
 #define STATUS_IE    MSTATUS_IEN
 #define STATUS_PP    MSTATUS_MPP
+#define STATUS_PIE   MSTATUS_MPIE
 #define TRAP_RET     mret
 #define EXC_SYSCALL  RISCV_EXC_ECALLM
 #endif
@@ -109,6 +115,7 @@
 
 /* imports */
 GDATA(_sw_isr_table)
+GDATA(_kernel)
 GTEXT(__soc_handle_irq)
 GTEXT(z_riscv_fault)
 GTEXT(z_irq_spurious)
@@ -286,25 +293,45 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	lw t2, 0(t0)		/* t0 = RV_EPC */
 1:
 #endif
-	andi t0, t2, 0x7f	/* keep only the opcode bits */
-	/*
+	/* Move to RVC check if the instruction is not 32-bit encoded */
+	andi t0, t2, 3
+	xori t0, t0, 3
+	bnez t0, 2f		/* not a 32-bit encoding, RVC check below */
+
+	/* RISC-V base floating-point opcodes are 7 bits long. We map them
+	 * into a 32-bit O(1) lookup table by shifting the opcode right by 2.
+	 *
+	 * Opcodes and their resulting lookup bit indices:
 	 * Major FP opcodes:
-	 * 0000111 = LOAD-FP
-	 * 0100111 = STORE-FP
-	 * 1000011 = MADD
-	 * 1000111 = MSUB
-	 * 1001011 = NMSUB
-	 * 1001111 = NMADD
-	 * 1010011 = OP-FP
+	 * 0000111 = LOAD-FP  >> 2 -> 1
+	 * 0100111 = STORE-FP >> 2 -> 9
+	 * 1000011 = MADD     >> 2 -> 16
+	 * 1000111 = MSUB     >> 2 -> 17
+	 * 1001011 = NMSUB    >> 2 -> 18
+	 * 1001111 = NMADD    >> 2 -> 19
+	 * 1010011 = OP-FP    >> 2 -> 20
+	 *
+	 * Combined Bitmask: 0x001F0202
+	 *
+	 * When funct3 is not 1, 2, 3 or 4, 0*00111 is not floating point
+	 * Combined Bitmask in this case: 0x001F0000
 	 */
-	xori t1, t0, 0b1010011	/* OP-FP */
-	beqz t1, is_fp
-	ori  t1, t0, 0b0100000
-	xori t1, t1, 0b0100111	/* LOAD-FP / STORE-FP */
-	beqz t1, is_fp
-	ori  t1, t0, 0b0001100
-	xori t1, t1, 0b1001111	/* MADD / MSUB / NMSUB / NMADD */
-	beqz t1, is_fp
+	/* 1. Preparing the Bitmask (Done first for efficient register usage) */
+	/* Lower 12 bit masks should be 0 for vector instructions */
+	li t0, 0x3c3c
+	srli t1, t2, 12
+	andi t1, t1, 7
+	srl t0, t0, t1
+	andi t0, t0, 0x202 /* 0 for vector instructions with opcode 0b0*00111 */
+	li   t1, 0x001F0000 /* Load the pre-calculated O(1) upper 20 bits of FP opcode bitmask */
+	or t1, t1, t0       /* Final bitmask which accounts for vector instructions */
+
+	/* 2. Perform the O(1) branchless lookup */
+	srli t0, t2, 2
+	andi t0, t0, 0x1f
+	srl  t1, t1, t0		/* bit 0 set = FP major opcode */
+	andi t1, t1, 1
+	bnez t1, is_fp
 	/*
 	 * The FRCSR, FSCSR, FRRM, FSRM, FSRMI, FRFLAGS, FSFLAGS and FSFLAGSI
 	 * are in fact CSR instructions targeting the fcsr, frm and fflags
@@ -314,7 +341,8 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	 * SYSTEM = 0b1110011, op = 0b.xx where xx is never 0
 	 * The csr# of interest are: 1=fflags, 2=frm, 3=fcsr
 	 */
-	xori t1, t0, 0b1110011	/* SYSTEM opcode */
+	/* t0 holds t2[6:2]. Check for SYSTEM opcode (28) since its verified t2[1:0] == 0b11 */
+	xori t1, t0, 0b11100
 	bnez t1, 2f		/* not a CSR insn */
 	srli t0, t2, 12
 	andi t0, t0, 0x3
@@ -599,8 +627,44 @@ is_user_syscall:
 	call z_riscv_pmp_kernelmode_enable
 #endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
-	/* It is safe to re-enable IRQs now */
+#ifdef CONFIG_RISCV_SOC_HAS_SYSCALL_INTMASK
+	/* On some SoCs an interrupt taken in the syscall body must be held off
+	 * without clearing mstatus.MIE. The SoC provides SOC_SYSCALL_INTMASK to
+	 * mask the body its own way, for example by raising a hardware
+	 * interrupt level threshold. The state it changes is part of the SoC
+	 * context saved on entry, so the exception exit path restores it on
+	 * syscall return, and a context switch out of the body lands in the
+	 * incoming thread's own exit path with its own saved state.
+	 *
+	 * The caller-saved temporaries are free here: the dispatch above is
+	 * done with them and the syscall arguments are reloaded from the ESF
+	 * below, so the macro may clobber them.
+	 */
+	SOC_SYSCALL_INTMASK
+#endif
+	/* It is safe to re-enable IRQs now. */
 	csrs RV_STATUS, STATUS_IE
+
+#ifdef CONFIG_RISCV_SOC_SYSCALL_CLOSE_ECALL
+	/*
+	 * Leave the ecall exception before running the syscall body. On some
+	 * SoCs a fault raised by the body itself, such as the stack guard
+	 * catching a call chain that runs too deep, cannot be delivered while
+	 * this exception is open and locks the core up instead.
+	 *
+	 * Return to the next instruction with the previous privilege set to
+	 * machine mode, so the body continues on this stack with these
+	 * privileges but outside the exception. The exception program counter
+	 * and status register are already saved in the frame and the exit path
+	 * reloads both, so borrowing them here is safe.
+	 */
+	la t0, close_ecall_done
+	csrw RV_EPC, t0
+	li t0, STATUS_PP | STATUS_PIE
+	csrs RV_STATUS, t0
+	TRAP_RET
+close_ecall_done:
+#endif /* CONFIG_RISCV_SOC_SYSCALL_CLOSE_ECALL */
 
 	/*
 	 * Same as for is_kernel_syscall: increment saved RV_EPC by 4 to
@@ -796,6 +860,20 @@ check_reschedule:
 
 	/* Get pointer to current thread on this CPU */
 	lr a1, ___cpu_t_current_OFFSET(s0)
+
+#if !defined(CONFIG_SMP) && !defined(CONFIG_SCHED_THREAD_USAGE)
+	/*
+	 * Fast path: when the scheduler's ready queue cache still designates
+	 * the current thread, no reschedule is needed.  In that case all of
+	 * the bookkeeping in z_get_next_switch_handle() reduces to no-ops on
+	 * uniprocessor builds (and the stack sentinel, when enabled, was
+	 * already checked above), so the call can be skipped altogether.
+	 * This is the common case when returning from an interrupt.
+	 */
+	la t0, _kernel
+	lr t0, _kernel_offset_to_ready_q_cache(t0)
+	beq t0, a1, no_reschedule
+#endif /* !CONFIG_SMP && !CONFIG_SCHED_THREAD_USAGE */
 
 	/*
 	 * Get next thread to schedule with z_get_next_switch_handle().

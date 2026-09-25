@@ -27,15 +27,19 @@
 		zephyr,flash-controller = &flash;
 	};
 
-	cpus {
+	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		/* Both HP cores implement the same ISA, so the base and the
+		 * extension list are described once for all of them here.
+		 */
+		riscv,isa-base = "rv32i";
+		riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "espressif,riscv", "riscv";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 			reg = <0>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
@@ -47,8 +51,6 @@
 		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "espressif,riscv", "riscv";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 			reg = <1>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
@@ -62,7 +64,7 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
 				min-residency-us = <1000>;
-				exit-latency-us = <50>;
+				exit-latency-us = <0>;
 			};
 
 			deep_sleep: deep_sleep {
@@ -242,6 +244,15 @@
 			};
 		};
 
+		rtc_timer: rtc_timer@50112000 {
+			compatible = "espressif,esp32-rtc-timer";
+			reg = <0x50112000 DT_SIZE_K(1)>;
+			clocks = <&clock ESP32_MODULE_MAX>;
+			interrupts = <LP_TIMER_REG0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		trng0: trng@50126000 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x50126000 0x4>;
@@ -381,6 +392,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x7e5ffaf0>;
 			ghwcfg4 = <0xdff09041>;
+			g-rx-fifo-size = <256>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <128 64 64 64 64 64 64>;
 		};
 
 		usb_otg_fs: usb_otg@50040000 {
@@ -395,6 +409,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x224dd930>;
 			ghwcfg4 = <0xd3f0a030>;
+			g-rx-fifo-size = <64>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <32 16 16 16>;
 			phy-dp-pin = <27>;
 			phy-dm-pin = <26>;
 		};
@@ -590,6 +607,16 @@
 			status = "disabled";
 		};
 
+		ppa: ppa@50087000 {
+			compatible = "espressif,esp32-ppa";
+			reg = <0x50087000 DT_SIZE_K(4)>,
+			      <0x50088000 DT_SIZE_K(4)>;
+			reg-names = "ppa", "dma2d";
+			interrupts = <DMA2D_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		dma_axi: dma@5008a000 {
 			compatible = "espressif,esp32-gdma";
 			reg = <0x5008a000 DT_SIZE_K(4)>;
@@ -644,16 +671,27 @@
 			status = "okay";
 		};
 
-		mipi_dsi: mipi-dsi@500a0000 {
-			compatible = "espressif,esp-mipi-dsi";
-			reg = <0x500a0000 0x800 0x500a0800 0x800>;
-			reg-names = "host", "bridge";
+		dsi_display: display-controller@500a0800 {
+			compatible = "espressif,esp-dsi-display";
+			reg = <0x500a0800 0x800>;
+			interrupts = <DW_GDMA_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			dma-channel = <0>;
 			#address-cells = <1>;
-			#size-cells = <0>;
-			data-lanes = <2>;
-			lane-bit-rate-mbps = <1000>;
-			dpi-clock-freq-mhz = <48>;
+			#size-cells = <1>;
 			status = "disabled";
+
+			mipi_dsi: mipi-dsi@500a0000 {
+				compatible = "espressif,esp-mipi-dsi";
+				reg = <0x500a0000 0x800 0x500a0800 0x800>;
+				reg-names = "host", "bridge";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				data-lanes = <2>;
+				phy-clock = <1000000000>;
+				dpi-clock-frequency = <48000000>;
+				status = "disabled";
+			};
 		};
 
 		sdhc: sdhc@50083000 {
@@ -686,6 +724,7 @@
 			clocks = <&clock ESP32_EMAC_MODULE>,
 				 <&clock ESP32_EMAC_PTP_MODULE>;
 			clock-names = "mac", "ptp";
+			snps,perfect-filter-entries = <9>;
 			status = "disabled";
 
 			mdio: mdio {

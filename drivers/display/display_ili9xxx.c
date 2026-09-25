@@ -366,8 +366,6 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 	struct ili9xxx_data *data = dev->data;
 	const struct ili9xxx_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
-
 	capabilities->supported_pixel_formats =
 		PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_RGB_565X;
 	capabilities->current_pixel_format = data->pixel_format;
@@ -540,7 +538,7 @@ static DEVICE_API(display, ili9xxx_api) = {
 								 MIPI_DBI_MODE_SPI_4WIRE),         \
 				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
 					INST_DT_ILI9XXX(n, t),                                     \
-					SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),                  \
+					SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8), 0),              \
 			},                                                                         \
 		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),                      \
 		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),                              \

@@ -311,27 +311,6 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 	   wifi_mfp_txt(entry->mfp));
 }
 
-static int wifi_freq_to_channel(int frequency)
-{
-	int channel;
-
-	if (frequency == 2484) { /* channel 14 */
-		channel = 14;
-	} else if ((frequency <= 2472) && (frequency >= 2412)) {
-		channel = ((frequency - 2412) / 5) + 1;
-	} else if ((frequency <= 5320) && (frequency >= 5180)) {
-		channel = ((frequency - 5180) / 5) + 36;
-	} else if ((frequency <= 5720) && (frequency >= 5500)) {
-		channel = ((frequency - 5500) / 5) + 100;
-	} else if ((frequency <= 5895) && (frequency >= 5745)) {
-		channel = ((frequency - 5745) / 5) + 149;
-	} else {
-		channel = frequency;
-	}
-
-	return channel;
-}
-
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 static enum wifi_frequency_bands wifi_freq_to_band(int frequency)
 {
@@ -366,7 +345,7 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 	}
 
 	rssi = raw->rssi;
-	channel = wifi_freq_to_channel(raw->frequency);
+	channel = wifi_utils_freq_to_chan(raw->frequency);
 	band = wifi_freq_to_band(raw->frequency);
 
 	PR("%-4d | %-4u (%-6s) | %-4d | %s |      %-4d        ",
@@ -402,6 +381,25 @@ static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
 	context.scan_result = 0U;
 }
 
+static void print_ieee80211_codes(const struct shell *sh,
+				  struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_status *status = cb->info;
+
+	/* Not every producer of these events fills in the codes */
+	if (cb->info_length < sizeof(struct wifi_status)) {
+		return;
+	}
+
+	if (status->status_code != 0) {
+		PR("IEEE 802.11 status code %u\n", status->status_code);
+	}
+
+	if (status->reason_code != 0) {
+		PR("IEEE 802.11 reason code %u\n", status->reason_code);
+	}
+}
+
 static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
@@ -421,6 +419,7 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 
 		PR_WARNING("Connection request failed (%s/%d)\n",
 			   wifi_conn_status_txt(st), st);
+		print_ieee80211_codes(sh, cb);
 	} else {
 		PR("Connected\n");
 	}
@@ -450,6 +449,8 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 			PR("Disconnected\n");
 		}
 	}
+
+	print_ieee80211_codes(sh, cb);
 }
 
 static void print_twt_params(uint8_t dialog_token, uint8_t flow_id,
@@ -2755,7 +2756,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		   "<max power(dBm)>\t<passive transmission only(y/n)>\t<DFS supported(y/n)>\n");
 		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
 			PR("  %d\t\t\t%d\t\t\t%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
-			   wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
+			   wifi_utils_freq_to_chan(chan_info[chan_idx].center_frequency),
 			   chan_info[chan_idx].center_frequency,
 			   chan_info[chan_idx].supported ? "y" : "n",
 			   chan_info[chan_idx].max_power,
@@ -4663,6 +4664,33 @@ static int validate_srv_proto_type(int type)
 	return 0;
 }
 
+/* Convert an SSI hex string into the caller's buffer */
+static int parse_nan_ssi(const struct shell *sh, const char *arg, uint8_t *ssi, size_t ssi_size,
+			 uint16_t *ssi_len)
+{
+	size_t hex_len = strlen(arg);
+
+	if (hex_len == 0) {
+		*ssi_len = 0;
+		return 0;
+	}
+
+	if (hex_len / 2 + hex_len % 2 > ssi_size) {
+		PR_ERROR("SSI is %zu bytes, max %zu (%s)\n",
+			 hex_len / 2 + hex_len % 2, ssi_size,
+			"CONFIG_WIFI_NAN_MAX_SSI_LEN");
+		return -EINVAL;
+	}
+
+	*ssi_len = hex2bin(arg, hex_len, ssi, ssi_size);
+	if (*ssi_len == 0) {
+		PR_ERROR("Invalid SSI hex string\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /* Parse NAN publish arguments */
 static int parse_nan_args_publish(const struct shell *sh, size_t argc, char *argv[],
 				  struct wifi_nan_params *params)
@@ -4713,17 +4741,13 @@ static int parse_nan_args_publish(const struct shell *sh, size_t argc, char *arg
 			params->publish.freq_list[sizeof(params->publish.freq_list) - 1] = '\0';
 			break;
 		}
-		case 'd': {
-			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->publish.ssi,
-					      sizeof(params->publish.ssi));
-			if (ssi_len == 0 && strlen(state->optarg) > 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->publish.ssi,
+					  sizeof(params->publish.ssi),
+					  &params->publish.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->publish.ssi_len = ssi_len;
 			break;
-		}
 		case 'u':
 			params->publish.unsolicited = shell_strtol(state->optarg, 10, &ret) != 0;
 			break;
@@ -4806,17 +4830,13 @@ static int parse_nan_args_update_publish(const struct shell *sh, size_t argc, ch
 		case 'n':
 			params->update_publish.publish_id = shell_strtol(state->optarg, 10, &ret);
 			break;
-		case 'd': {
-			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->update_publish.ssi,
-					      sizeof(params->update_publish.ssi));
-			if (ssi_len == 0 && strlen(state->optarg) > 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->update_publish.ssi,
+					  sizeof(params->update_publish.ssi),
+					  &params->update_publish.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->update_publish.ssi_len = ssi_len;
 			break;
-		}
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -4879,17 +4899,13 @@ static int parse_nan_args_subscribe(const struct shell *sh, size_t argc, char *a
 		case 'f':
 			params->subscribe.freq = shell_strtoul(state->optarg, 10, &ret);
 			break;
-		case 'd': {
-			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->subscribe.ssi,
-					      sizeof(params->subscribe.ssi));
-			if (ssi_len == 0 && strlen(state->optarg) > 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->subscribe.ssi,
+					  sizeof(params->subscribe.ssi),
+					  &params->subscribe.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->subscribe.ssi_len = ssi_len;
 			break;
-		}
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -4975,17 +4991,13 @@ static int parse_nan_args_transmit(const struct shell *sh, size_t argc, char *ar
 				return -EINVAL;
 			}
 			break;
-		case 'd': {
-			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->transmit.ssi,
-					      sizeof(params->transmit.ssi));
-			if (ssi_len == 0 && strlen(state->optarg) > 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->transmit.ssi,
+					  sizeof(params->transmit.ssi),
+					  &params->transmit.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->transmit.ssi_len = ssi_len;
 			break;
-		}
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -5528,8 +5540,8 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 			    "Default is 0. 0:No WPA3 enterprise mode, "
 			    "1:Suite-b mode, 2:Suite-b-192-bit mode, 3:WPA3-enterprise-only mode\n"
 			    "[-T, --TLS-cipher]: 0:TLS-NONE, 1:TLS-ECC-P384, 2:TLS-RSA-3K\n"
-			    "[-A, --verify-peer-cert]: apply for EAP-PEAP-MSCHAPv2 and "
-			    "EAP-TTLS-MSCHAPv2\n"
+			    "[-A, --verify-peer-cert]: apply for EAP-PEAP-MSCHAPv2, "
+			    "EAP-PEAP-GTC and EAP-TTLS-MSCHAPv2\n"
 			    "Default is 0. 0:do not use CA to verify peer, "
 			    "1:use CA to verify peer\n"
 				"[-V, --eap-version]: Forced eap-version. 0, 1 or -1.\n"

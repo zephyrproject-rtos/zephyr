@@ -14,8 +14,10 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/phy.h>
 #include <zephyr/sys/device_mmio.h>
 
 /*
@@ -74,6 +76,22 @@
 #define NB_TX_DESCS		CONFIG_DWMAC_NB_TX_DESCS
 #define NB_RX_DESCS		CONFIG_DWMAC_NB_RX_DESCS
 
+/*
+ * The devicetree node of the first MAC instance. The snps,dwmac properties
+ * are assumed to be the same for all instances.
+ */
+
+BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(snps_dwmac),
+	     "No device tree node with compatible \"snps,dwmac\" found");
+
+#define DWMAC_DT_NODE DT_INST(0, snps_dwmac)
+
+/* multicast filter capabilities of the hardware */
+#define DWMAC_MULTICAST_FILTER_BINS	DT_PROP_OR(DWMAC_DT_NODE, snps_multicast_filter_bins, 0)
+#define DWMAC_PERFECT_FILTER_ENTRIES	DT_PROP(DWMAC_DT_NODE, snps_perfect_filter_entries)
+/* MAC address entry 0 holds the station address */
+#define DWMAC_MULTICAST_PERFECT_SLOTS	(DWMAC_PERFECT_FILTER_ENTRIES - 1)
+
 /* stack size for RX refill thread */
 #define RX_REFILL_STACK_SIZE	1024
 
@@ -104,6 +122,12 @@ struct dwmac_config {
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	const struct device *ptp_clock;
 	const clock_control_subsys_t ptp_clk;
+#endif
+#if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
+	/* MMC counter registers, one per entry of mmc_vendor */
+	const uint16_t *mmc_regs;
+	/* vendor specific statistics, terminated by a NULL key */
+	struct net_stats_eth_vendor *mmc_vendor;
 #endif
 };
 
@@ -144,6 +168,11 @@ struct dwmac_priv {
 	struct k_thread rx_refill_thread;
 
 	struct k_spinlock spinlock;
+
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
+	/* given by the MAC interrupt when an MDIO transaction completes */
+	struct k_sem mdio_done;
+#endif
 };
 
 /*
@@ -211,7 +240,15 @@ struct dwmac_priv {
 int dwmac_probe(const struct device *dev);
 int dwmac_bus_init(const struct device *dev);
 int dwmac_platform_init(const struct device *dev);
+void dwmac_setup_multicast_filter(const struct device *dev, const struct ethernet_filter *filter);
 void dwmac_isr(const struct device *ddev);
+/*
+ * Called by the QoS core whenever the PHY reports a link at a new speed, after
+ * MAC_CONF has been updated. Platforms feeding the MAC from a speed-dependent
+ * clock, as RGMII ones typically do, override this to retune that clock. The
+ * default implementation does nothing.
+ */
+void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_speed speed);
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if *iface);
 #endif
@@ -782,6 +819,10 @@ extern const struct ethernet_api dwmac_api;
 /* 17.1.73, 17.1.75 */
 
 #define MAC_ADDRESS_LOW(n)			(0x0304 + 8 * (n))
+
+/* 17.1.80 and up: MAC management counters (MMC) */
+
+#define DWMAC_MMC_BASE				0x0700
 
 /*
  * MTL Register Definitions
@@ -1394,9 +1435,16 @@ extern const struct ethernet_api dwmac_api;
 /* GMAC register map */
 #define DWMAC_MACCR      (DWMAC_MAC_OFFSET + 0x0000)
 #define DWMAC_MACFFR     (DWMAC_MAC_OFFSET + 0x0004)
+#define DWMAC_MACHTHR    (DWMAC_MAC_OFFSET + 0x0008)
+#define DWMAC_MACHTLR    (DWMAC_MAC_OFFSET + 0x000C)
 #define DWMAC_MACVERR    (DWMAC_MAC_OFFSET + 0x0020)
-#define DWMAC_MACA0HR    (DWMAC_MAC_OFFSET + 0x0040)
-#define DWMAC_MACA0LR    (DWMAC_MAC_OFFSET + 0x0044)
+#define DWMAC_MACAHR(n)  (DWMAC_MAC_OFFSET + 0x0040 + 8 * (n))
+#define DWMAC_MACALR(n)  (DWMAC_MAC_OFFSET + 0x0044 + 8 * (n))
+#define DWMAC_MACA0HR    DWMAC_MACAHR(0)
+#define DWMAC_MACA0LR    DWMAC_MACALR(0)
+
+/* MAC address high register bits (entries 1 and up) */
+#define DWMAC_MACAHR_AE  BIT(31)
 
 #define DWMAC_DMABMR       (DWMAC_DMA_OFFSET + 0x0000)
 #define DWMAC_DMATPDR      (DWMAC_DMA_OFFSET + 0x0004)
@@ -1420,6 +1468,7 @@ extern const struct ethernet_api dwmac_api;
 
 /* MAC frame filter bits */
 #define DWMAC_MACFFR_PM    BIT(0)
+#define DWMAC_MACFFR_HM    BIT(2)
 #define DWMAC_MACFFR_PAM   BIT(4)
 
 /* DMA status bits */
@@ -1440,7 +1489,17 @@ extern const struct ethernet_api dwmac_api;
 
 /* DMA bus mode bits */
 #define DWMAC_DMABMR_SR    BIT(0)
+#define DWMAC_DMABMR_DA    BIT(1)
+#define DWMAC_DMABMR_DSL   GENMASK(6, 2)
 #define DWMAC_DMABMR_EDFE  BIT(7)
+#define DWMAC_DMABMR_PBL   GENMASK(13, 8)
+#define DWMAC_DMABMR_PR    GENMASK(15, 14)
+#define DWMAC_DMABMR_FB    BIT(16)
+#define DWMAC_DMABMR_RPBL  GENMASK(22, 17)
+#define DWMAC_DMABMR_USP   BIT(23)
+#define DWMAC_DMABMR_PBLx8 BIT(24)
+#define DWMAC_DMABMR_AAL   BIT(25)
+#define DWMAC_DMABMR_MB    BIT(26)
 
 /* DMA interrupt enable bits */
 #define DWMAC_DMAIER_TIE   BIT(0)
@@ -1469,6 +1528,9 @@ extern const struct ethernet_api dwmac_api;
 #define DWMAC_HWFR_FIFO2K  BIT(19)
 #define DWMAC_HWFR_ALTDESC BIT(24)
 
+/* MAC management counters (MMC) */
+#define DWMAC_MMC_BASE (DWMAC_MAC_OFFSET + 0x0100)
+
 /* DWMAC v3.x MDIO registers (GMAC core) */
 #define MAC_MDIO_ADDRESS (DWMAC_MAC_OFFSET + 0x0010)
 #define MAC_MDIO_DATA    (DWMAC_MAC_OFFSET + 0x0014)
@@ -1483,6 +1545,255 @@ extern const struct ethernet_api dwmac_api;
 #define MAC_MDIO_DATA_GD GENMASK(15, 0)
 
 #endif /* CONFIG_ETH_DWC_ETHER_1000_CORE */
+
+/*
+ * MAC management counters (MMC)
+ *
+ * The block has the same layout in both cores,
+ * DWMAC_MMC_BASE being its offset.
+ */
+#define DWMAC_MMC_CONTROL               (DWMAC_MMC_BASE + 0x0000)
+#define DWMAC_MMC_RX_INTERRUPT          (DWMAC_MMC_BASE + 0x0004)
+#define DWMAC_MMC_TX_INTERRUPT          (DWMAC_MMC_BASE + 0x0008)
+#define DWMAC_MMC_RX_INTERRUPT_MASK     (DWMAC_MMC_BASE + 0x000C)
+#define DWMAC_MMC_TX_INTERRUPT_MASK     (DWMAC_MMC_BASE + 0x0010)
+#define DWMAC_MMC_IPC_RX_INTERRUPT_MASK (DWMAC_MMC_BASE + 0x0100)
+#define DWMAC_MMC_IPC_RX_INTERRUPT      (DWMAC_MMC_BASE + 0x0108)
+#define DWMAC_MMC_FPE_TX_INTERRUPT      (DWMAC_MMC_BASE + 0x01A0)
+#define DWMAC_MMC_FPE_TX_INTERRUPT_MASK (DWMAC_MMC_BASE + 0x01A4)
+#define DWMAC_MMC_FPE_RX_INTERRUPT      (DWMAC_MMC_BASE + 0x01C0)
+#define DWMAC_MMC_FPE_RX_INTERRUPT_MASK (DWMAC_MMC_BASE + 0x01C4)
+
+/* MMC control bits */
+#define DWMAC_MMC_CONTROL_CNTRST     BIT(0)
+#define DWMAC_MMC_CONTROL_CNTSTOPRO  BIT(1)
+#define DWMAC_MMC_CONTROL_RSTONRD    BIT(2)
+#define DWMAC_MMC_CONTROL_CNTFREEZ   BIT(3)
+#define DWMAC_MMC_CONTROL_CNTPRST    BIT(4)
+#define DWMAC_MMC_CONTROL_CNTPRSTLVL BIT(5)
+#define DWMAC_MMC_CONTROL_UCDBC      BIT(8)
+
+/*
+ * MMC counters
+ *
+ * Which of them exist depends on the IP version and on its configuration, so
+ * each platform lists the ones it implements with DWMAC_MMC_COUNTERS_DEFINE().
+ */
+#define DWMAC_MMC_TX_OCTET_COUNT_GOOD_BAD              (DWMAC_MMC_BASE + 0x0014)
+#define DWMAC_MMC_TX_PACKET_COUNT_GOOD_BAD             (DWMAC_MMC_BASE + 0x0018)
+#define DWMAC_MMC_TX_BROADCAST_PACKETS_GOOD            (DWMAC_MMC_BASE + 0x001C)
+#define DWMAC_MMC_TX_MULTICAST_PACKETS_GOOD            (DWMAC_MMC_BASE + 0x0020)
+#define DWMAC_MMC_TX_64OCTETS_PACKETS_GOOD_BAD         (DWMAC_MMC_BASE + 0x0024)
+#define DWMAC_MMC_TX_65TO127OCTETS_PACKETS_GOOD_BAD    (DWMAC_MMC_BASE + 0x0028)
+#define DWMAC_MMC_TX_128TO255OCTETS_PACKETS_GOOD_BAD   (DWMAC_MMC_BASE + 0x002C)
+#define DWMAC_MMC_TX_256TO511OCTETS_PACKETS_GOOD_BAD   (DWMAC_MMC_BASE + 0x0030)
+#define DWMAC_MMC_TX_512TO1023OCTETS_PACKETS_GOOD_BAD  (DWMAC_MMC_BASE + 0x0034)
+#define DWMAC_MMC_TX_1024TOMAXOCTETS_PACKETS_GOOD_BAD  (DWMAC_MMC_BASE + 0x0038)
+#define DWMAC_MMC_TX_UNICAST_PACKETS_GOOD_BAD          (DWMAC_MMC_BASE + 0x003C)
+#define DWMAC_MMC_TX_MULTICAST_PACKETS_GOOD_BAD        (DWMAC_MMC_BASE + 0x0040)
+#define DWMAC_MMC_TX_BROADCAST_PACKETS_GOOD_BAD        (DWMAC_MMC_BASE + 0x0044)
+#define DWMAC_MMC_TX_UNDERFLOW_ERROR_PACKETS           (DWMAC_MMC_BASE + 0x0048)
+#define DWMAC_MMC_TX_SINGLE_COLLISION_GOOD_PACKETS     (DWMAC_MMC_BASE + 0x004C)
+#define DWMAC_MMC_TX_MULTIPLE_COLLISION_GOOD_PACKETS   (DWMAC_MMC_BASE + 0x0050)
+#define DWMAC_MMC_TX_DEFERRED_PACKETS                  (DWMAC_MMC_BASE + 0x0054)
+#define DWMAC_MMC_TX_LATE_COLLISION_PACKETS            (DWMAC_MMC_BASE + 0x0058)
+#define DWMAC_MMC_TX_EXCESSIVE_COLLISION_PACKETS       (DWMAC_MMC_BASE + 0x005C)
+#define DWMAC_MMC_TX_CARRIER_ERROR_PACKETS             (DWMAC_MMC_BASE + 0x0060)
+#define DWMAC_MMC_TX_OCTET_COUNT_GOOD                  (DWMAC_MMC_BASE + 0x0064)
+#define DWMAC_MMC_TX_PACKET_COUNT_GOOD                 (DWMAC_MMC_BASE + 0x0068)
+#define DWMAC_MMC_TX_EXCESSIVE_DEFERRAL_ERROR          (DWMAC_MMC_BASE + 0x006C)
+#define DWMAC_MMC_TX_PAUSE_PACKETS                     (DWMAC_MMC_BASE + 0x0070)
+#define DWMAC_MMC_TX_VLAN_PACKETS_GOOD                 (DWMAC_MMC_BASE + 0x0074)
+#define DWMAC_MMC_TX_OSIZE_PACKETS_GOOD                (DWMAC_MMC_BASE + 0x0078)
+#define DWMAC_MMC_RX_PACKETS_COUNT_GOOD_BAD            (DWMAC_MMC_BASE + 0x0080)
+#define DWMAC_MMC_RX_OCTET_COUNT_GOOD_BAD              (DWMAC_MMC_BASE + 0x0084)
+#define DWMAC_MMC_RX_OCTET_COUNT_GOOD                  (DWMAC_MMC_BASE + 0x0088)
+#define DWMAC_MMC_RX_BROADCAST_PACKETS_GOOD            (DWMAC_MMC_BASE + 0x008C)
+#define DWMAC_MMC_RX_MULTICAST_PACKETS_GOOD            (DWMAC_MMC_BASE + 0x0090)
+#define DWMAC_MMC_RX_CRC_ERROR_PACKETS                 (DWMAC_MMC_BASE + 0x0094)
+#define DWMAC_MMC_RX_ALIGNMENT_ERROR_PACKETS           (DWMAC_MMC_BASE + 0x0098)
+#define DWMAC_MMC_RX_RUNT_ERROR_PACKETS                (DWMAC_MMC_BASE + 0x009C)
+#define DWMAC_MMC_RX_JABBER_ERROR_PACKETS              (DWMAC_MMC_BASE + 0x00A0)
+#define DWMAC_MMC_RX_UNDERSIZE_PACKETS_GOOD            (DWMAC_MMC_BASE + 0x00A4)
+#define DWMAC_MMC_RX_OVERSIZE_PACKETS_GOOD             (DWMAC_MMC_BASE + 0x00A8)
+#define DWMAC_MMC_RX_64OCTETS_PACKETS_GOOD_BAD         (DWMAC_MMC_BASE + 0x00AC)
+#define DWMAC_MMC_RX_65TO127OCTETS_PACKETS_GOOD_BAD    (DWMAC_MMC_BASE + 0x00B0)
+#define DWMAC_MMC_RX_128TO255OCTETS_PACKETS_GOOD_BAD   (DWMAC_MMC_BASE + 0x00B4)
+#define DWMAC_MMC_RX_256TO511OCTETS_PACKETS_GOOD_BAD   (DWMAC_MMC_BASE + 0x00B8)
+#define DWMAC_MMC_RX_512TO1023OCTETS_PACKETS_GOOD_BAD  (DWMAC_MMC_BASE + 0x00BC)
+#define DWMAC_MMC_RX_1024TOMAXOCTETS_PACKETS_GOOD_BAD  (DWMAC_MMC_BASE + 0x00C0)
+#define DWMAC_MMC_RX_UNICAST_PACKETS_GOOD              (DWMAC_MMC_BASE + 0x00C4)
+#define DWMAC_MMC_RX_LENGTH_ERROR_PACKETS              (DWMAC_MMC_BASE + 0x00C8)
+#define DWMAC_MMC_RX_OUT_OF_RANGE_TYPE_PACKETS         (DWMAC_MMC_BASE + 0x00CC)
+#define DWMAC_MMC_RX_PAUSE_PACKETS                     (DWMAC_MMC_BASE + 0x00D0)
+#define DWMAC_MMC_RX_FIFO_OVERFLOW_PACKETS             (DWMAC_MMC_BASE + 0x00D4)
+#define DWMAC_MMC_RX_VLAN_PACKETS_GOOD_BAD             (DWMAC_MMC_BASE + 0x00D8)
+#define DWMAC_MMC_RX_WATCHDOG_ERROR_PACKETS            (DWMAC_MMC_BASE + 0x00DC)
+#define DWMAC_MMC_RX_RECEIVE_ERROR_PACKETS             (DWMAC_MMC_BASE + 0x00E0)
+#define DWMAC_MMC_RX_CONTROL_PACKETS_GOOD              (DWMAC_MMC_BASE + 0x00E4)
+#define DWMAC_MMC_TX_LPI_USEC_CNTR                     (DWMAC_MMC_BASE + 0x00EC)
+#define DWMAC_MMC_TX_LPI_TRAN_CNTR                     (DWMAC_MMC_BASE + 0x00F0)
+#define DWMAC_MMC_RX_LPI_USEC_CNTR                     (DWMAC_MMC_BASE + 0x00F4)
+#define DWMAC_MMC_RX_LPI_TRAN_CNTR                     (DWMAC_MMC_BASE + 0x00F8)
+#define DWMAC_MMC_RXIPV4_GOOD_PACKETS                  (DWMAC_MMC_BASE + 0x0110)
+#define DWMAC_MMC_RXIPV4_HEADER_ERROR_PACKETS          (DWMAC_MMC_BASE + 0x0114)
+#define DWMAC_MMC_RXIPV4_NO_PAYLOAD_PACKETS            (DWMAC_MMC_BASE + 0x0118)
+#define DWMAC_MMC_RXIPV4_FRAGMENTED_PACKETS            (DWMAC_MMC_BASE + 0x011C)
+#define DWMAC_MMC_RXIPV4_UDP_CHECKSUM_DISABLED_PACKETS (DWMAC_MMC_BASE + 0x0120)
+#define DWMAC_MMC_RXIPV6_GOOD_PACKETS                  (DWMAC_MMC_BASE + 0x0124)
+#define DWMAC_MMC_RXIPV6_HEADER_ERROR_PACKETS          (DWMAC_MMC_BASE + 0x0128)
+#define DWMAC_MMC_RXIPV6_NO_PAYLOAD_PACKETS            (DWMAC_MMC_BASE + 0x012C)
+#define DWMAC_MMC_RXUDP_GOOD_PACKETS                   (DWMAC_MMC_BASE + 0x0130)
+#define DWMAC_MMC_RXUDP_ERROR_PACKETS                  (DWMAC_MMC_BASE + 0x0134)
+#define DWMAC_MMC_RXTCP_GOOD_PACKETS                   (DWMAC_MMC_BASE + 0x0138)
+#define DWMAC_MMC_RXTCP_ERROR_PACKETS                  (DWMAC_MMC_BASE + 0x013C)
+#define DWMAC_MMC_RXICMP_GOOD_PACKETS                  (DWMAC_MMC_BASE + 0x0140)
+#define DWMAC_MMC_RXICMP_ERROR_PACKETS                 (DWMAC_MMC_BASE + 0x0144)
+#define DWMAC_MMC_RXIPV4_GOOD_OCTETS                   (DWMAC_MMC_BASE + 0x0150)
+#define DWMAC_MMC_RXIPV4_HEADER_ERROR_OCTETS           (DWMAC_MMC_BASE + 0x0154)
+#define DWMAC_MMC_RXIPV4_NO_PAYLOAD_OCTETS             (DWMAC_MMC_BASE + 0x0158)
+#define DWMAC_MMC_RXIPV4_FRAGMENTED_OCTETS             (DWMAC_MMC_BASE + 0x015C)
+#define DWMAC_MMC_RXIPV4_UDP_CHECKSUM_DISABLE_OCTETS   (DWMAC_MMC_BASE + 0x0160)
+#define DWMAC_MMC_RXIPV6_GOOD_OCTETS                   (DWMAC_MMC_BASE + 0x0164)
+#define DWMAC_MMC_RXIPV6_HEADER_ERROR_OCTETS           (DWMAC_MMC_BASE + 0x0168)
+#define DWMAC_MMC_RXIPV6_NO_PAYLOAD_OCTETS             (DWMAC_MMC_BASE + 0x016C)
+#define DWMAC_MMC_RXUDP_GOOD_OCTETS                    (DWMAC_MMC_BASE + 0x0170)
+#define DWMAC_MMC_RXUDP_ERROR_OCTETS                   (DWMAC_MMC_BASE + 0x0174)
+#define DWMAC_MMC_RXTCP_GOOD_OCTETS                    (DWMAC_MMC_BASE + 0x0178)
+#define DWMAC_MMC_RXTCP_ERROR_OCTETS                   (DWMAC_MMC_BASE + 0x017C)
+#define DWMAC_MMC_RXICMP_GOOD_OCTETS                   (DWMAC_MMC_BASE + 0x0180)
+#define DWMAC_MMC_RXICMP_ERROR_OCTETS                  (DWMAC_MMC_BASE + 0x0184)
+#define DWMAC_MMC_TX_FPE_FRAGMENT_CNTR                 (DWMAC_MMC_BASE + 0x01A8)
+#define DWMAC_MMC_TX_HOLD_REQ_CNTR                     (DWMAC_MMC_BASE + 0x01AC)
+#define DWMAC_MMC_RX_PACKET_ASSEMBLY_ERR_CNTR          (DWMAC_MMC_BASE + 0x01C8)
+#define DWMAC_MMC_RX_PACKET_SMD_ERR_CNTR               (DWMAC_MMC_BASE + 0x01CC)
+#define DWMAC_MMC_RX_PACKET_ASSEMBLY_OK_CNTR           (DWMAC_MMC_BASE + 0x01D0)
+#define DWMAC_MMC_RX_FPE_FRAGMENT_CNTR                 (DWMAC_MMC_BASE + 0x01D4)
+
+/*
+ * Keys of the counters in the vendor specific Ethernet statistics. They follow
+ * the names the Linux stmmac driver reports through ethtool.
+ */
+#define DWMAC_MMC_TX_OCTET_COUNT_GOOD_BAD_KEY              "mmc_tx_octetcount_gb"
+#define DWMAC_MMC_TX_PACKET_COUNT_GOOD_BAD_KEY             "mmc_tx_framecount_gb"
+#define DWMAC_MMC_TX_BROADCAST_PACKETS_GOOD_KEY            "mmc_tx_broadcastframe_g"
+#define DWMAC_MMC_TX_MULTICAST_PACKETS_GOOD_KEY            "mmc_tx_multicastframe_g"
+#define DWMAC_MMC_TX_64OCTETS_PACKETS_GOOD_BAD_KEY         "mmc_tx_64_octets_gb"
+#define DWMAC_MMC_TX_65TO127OCTETS_PACKETS_GOOD_BAD_KEY    "mmc_tx_65_to_127_octets_gb"
+#define DWMAC_MMC_TX_128TO255OCTETS_PACKETS_GOOD_BAD_KEY   "mmc_tx_128_to_255_octets_gb"
+#define DWMAC_MMC_TX_256TO511OCTETS_PACKETS_GOOD_BAD_KEY   "mmc_tx_256_to_511_octets_gb"
+#define DWMAC_MMC_TX_512TO1023OCTETS_PACKETS_GOOD_BAD_KEY  "mmc_tx_512_to_1023_octets_gb"
+#define DWMAC_MMC_TX_1024TOMAXOCTETS_PACKETS_GOOD_BAD_KEY  "mmc_tx_1024_to_max_octets_gb"
+#define DWMAC_MMC_TX_UNICAST_PACKETS_GOOD_BAD_KEY          "mmc_tx_unicast_gb"
+#define DWMAC_MMC_TX_MULTICAST_PACKETS_GOOD_BAD_KEY        "mmc_tx_multicast_gb"
+#define DWMAC_MMC_TX_BROADCAST_PACKETS_GOOD_BAD_KEY        "mmc_tx_broadcast_gb"
+#define DWMAC_MMC_TX_UNDERFLOW_ERROR_PACKETS_KEY           "mmc_tx_underflow_error"
+#define DWMAC_MMC_TX_SINGLE_COLLISION_GOOD_PACKETS_KEY     "mmc_tx_singlecol_g"
+#define DWMAC_MMC_TX_MULTIPLE_COLLISION_GOOD_PACKETS_KEY   "mmc_tx_multicol_g"
+#define DWMAC_MMC_TX_DEFERRED_PACKETS_KEY                  "mmc_tx_deferred"
+#define DWMAC_MMC_TX_LATE_COLLISION_PACKETS_KEY            "mmc_tx_latecol"
+#define DWMAC_MMC_TX_EXCESSIVE_COLLISION_PACKETS_KEY       "mmc_tx_exesscol"
+#define DWMAC_MMC_TX_CARRIER_ERROR_PACKETS_KEY             "mmc_tx_carrier_error"
+#define DWMAC_MMC_TX_OCTET_COUNT_GOOD_KEY                  "mmc_tx_octetcount_g"
+#define DWMAC_MMC_TX_PACKET_COUNT_GOOD_KEY                 "mmc_tx_framecount_g"
+#define DWMAC_MMC_TX_EXCESSIVE_DEFERRAL_ERROR_KEY          "mmc_tx_excessdef"
+#define DWMAC_MMC_TX_PAUSE_PACKETS_KEY                     "mmc_tx_pause_frame"
+#define DWMAC_MMC_TX_VLAN_PACKETS_GOOD_KEY                 "mmc_tx_vlan_frame_g"
+#define DWMAC_MMC_TX_OSIZE_PACKETS_GOOD_KEY                "mmc_tx_oversize_g"
+#define DWMAC_MMC_RX_PACKETS_COUNT_GOOD_BAD_KEY            "mmc_rx_framecount_gb"
+#define DWMAC_MMC_RX_OCTET_COUNT_GOOD_BAD_KEY              "mmc_rx_octetcount_gb"
+#define DWMAC_MMC_RX_OCTET_COUNT_GOOD_KEY                  "mmc_rx_octetcount_g"
+#define DWMAC_MMC_RX_BROADCAST_PACKETS_GOOD_KEY            "mmc_rx_broadcastframe_g"
+#define DWMAC_MMC_RX_MULTICAST_PACKETS_GOOD_KEY            "mmc_rx_multicastframe_g"
+#define DWMAC_MMC_RX_CRC_ERROR_PACKETS_KEY                 "mmc_rx_crc_error"
+#define DWMAC_MMC_RX_ALIGNMENT_ERROR_PACKETS_KEY           "mmc_rx_align_error"
+#define DWMAC_MMC_RX_RUNT_ERROR_PACKETS_KEY                "mmc_rx_runt_error"
+#define DWMAC_MMC_RX_JABBER_ERROR_PACKETS_KEY              "mmc_rx_jabber_error"
+#define DWMAC_MMC_RX_UNDERSIZE_PACKETS_GOOD_KEY            "mmc_rx_undersize_g"
+#define DWMAC_MMC_RX_OVERSIZE_PACKETS_GOOD_KEY             "mmc_rx_oversize_g"
+#define DWMAC_MMC_RX_64OCTETS_PACKETS_GOOD_BAD_KEY         "mmc_rx_64_octets_gb"
+#define DWMAC_MMC_RX_65TO127OCTETS_PACKETS_GOOD_BAD_KEY    "mmc_rx_65_to_127_octets_gb"
+#define DWMAC_MMC_RX_128TO255OCTETS_PACKETS_GOOD_BAD_KEY   "mmc_rx_128_to_255_octets_gb"
+#define DWMAC_MMC_RX_256TO511OCTETS_PACKETS_GOOD_BAD_KEY   "mmc_rx_256_to_511_octets_gb"
+#define DWMAC_MMC_RX_512TO1023OCTETS_PACKETS_GOOD_BAD_KEY  "mmc_rx_512_to_1023_octets_gb"
+#define DWMAC_MMC_RX_1024TOMAXOCTETS_PACKETS_GOOD_BAD_KEY  "mmc_rx_1024_to_max_octets_gb"
+#define DWMAC_MMC_RX_UNICAST_PACKETS_GOOD_KEY              "mmc_rx_unicast_g"
+#define DWMAC_MMC_RX_LENGTH_ERROR_PACKETS_KEY              "mmc_rx_length_error"
+#define DWMAC_MMC_RX_OUT_OF_RANGE_TYPE_PACKETS_KEY         "mmc_rx_outofrangetype"
+#define DWMAC_MMC_RX_PAUSE_PACKETS_KEY                     "mmc_rx_pause_frames"
+#define DWMAC_MMC_RX_FIFO_OVERFLOW_PACKETS_KEY             "mmc_rx_fifo_overflow"
+#define DWMAC_MMC_RX_VLAN_PACKETS_GOOD_BAD_KEY             "mmc_rx_vlan_frames_gb"
+#define DWMAC_MMC_RX_WATCHDOG_ERROR_PACKETS_KEY            "mmc_rx_watchdog_error"
+#define DWMAC_MMC_RX_RECEIVE_ERROR_PACKETS_KEY             "mmc_rx_error"
+#define DWMAC_MMC_RX_CONTROL_PACKETS_GOOD_KEY              "mmc_rx_control_g"
+#define DWMAC_MMC_TX_LPI_USEC_CNTR_KEY                     "mmc_tx_lpi_usec"
+#define DWMAC_MMC_TX_LPI_TRAN_CNTR_KEY                     "mmc_tx_lpi_tran"
+#define DWMAC_MMC_RX_LPI_USEC_CNTR_KEY                     "mmc_rx_lpi_usec"
+#define DWMAC_MMC_RX_LPI_TRAN_CNTR_KEY                     "mmc_rx_lpi_tran"
+#define DWMAC_MMC_RXIPV4_GOOD_PACKETS_KEY                  "mmc_rx_ipv4_gd"
+#define DWMAC_MMC_RXIPV4_HEADER_ERROR_PACKETS_KEY          "mmc_rx_ipv4_hderr"
+#define DWMAC_MMC_RXIPV4_NO_PAYLOAD_PACKETS_KEY            "mmc_rx_ipv4_nopay"
+#define DWMAC_MMC_RXIPV4_FRAGMENTED_PACKETS_KEY            "mmc_rx_ipv4_frag"
+#define DWMAC_MMC_RXIPV4_UDP_CHECKSUM_DISABLED_PACKETS_KEY "mmc_rx_ipv4_udsbl"
+#define DWMAC_MMC_RXIPV6_GOOD_PACKETS_KEY                  "mmc_rx_ipv6_gd"
+#define DWMAC_MMC_RXIPV6_HEADER_ERROR_PACKETS_KEY          "mmc_rx_ipv6_hderr"
+#define DWMAC_MMC_RXIPV6_NO_PAYLOAD_PACKETS_KEY            "mmc_rx_ipv6_nopay"
+#define DWMAC_MMC_RXUDP_GOOD_PACKETS_KEY                   "mmc_rx_udp_gd"
+#define DWMAC_MMC_RXUDP_ERROR_PACKETS_KEY                  "mmc_rx_udp_err"
+#define DWMAC_MMC_RXTCP_GOOD_PACKETS_KEY                   "mmc_rx_tcp_gd"
+#define DWMAC_MMC_RXTCP_ERROR_PACKETS_KEY                  "mmc_rx_tcp_err"
+#define DWMAC_MMC_RXICMP_GOOD_PACKETS_KEY                  "mmc_rx_icmp_gd"
+#define DWMAC_MMC_RXICMP_ERROR_PACKETS_KEY                 "mmc_rx_icmp_err"
+#define DWMAC_MMC_RXIPV4_GOOD_OCTETS_KEY                   "mmc_rx_ipv4_gd_octets"
+#define DWMAC_MMC_RXIPV4_HEADER_ERROR_OCTETS_KEY           "mmc_rx_ipv4_hderr_octets"
+#define DWMAC_MMC_RXIPV4_NO_PAYLOAD_OCTETS_KEY             "mmc_rx_ipv4_nopay_octets"
+#define DWMAC_MMC_RXIPV4_FRAGMENTED_OCTETS_KEY             "mmc_rx_ipv4_frag_octets"
+#define DWMAC_MMC_RXIPV4_UDP_CHECKSUM_DISABLE_OCTETS_KEY   "mmc_rx_ipv4_udsbl_octets"
+#define DWMAC_MMC_RXIPV6_GOOD_OCTETS_KEY                   "mmc_rx_ipv6_gd_octets"
+#define DWMAC_MMC_RXIPV6_HEADER_ERROR_OCTETS_KEY           "mmc_rx_ipv6_hderr_octets"
+#define DWMAC_MMC_RXIPV6_NO_PAYLOAD_OCTETS_KEY             "mmc_rx_ipv6_nopay_octets"
+#define DWMAC_MMC_RXUDP_GOOD_OCTETS_KEY                    "mmc_rx_udp_gd_octets"
+#define DWMAC_MMC_RXUDP_ERROR_OCTETS_KEY                   "mmc_rx_udp_err_octets"
+#define DWMAC_MMC_RXTCP_GOOD_OCTETS_KEY                    "mmc_rx_tcp_gd_octets"
+#define DWMAC_MMC_RXTCP_ERROR_OCTETS_KEY                   "mmc_rx_tcp_err_octets"
+#define DWMAC_MMC_RXICMP_GOOD_OCTETS_KEY                   "mmc_rx_icmp_gd_octets"
+#define DWMAC_MMC_RXICMP_ERROR_OCTETS_KEY                  "mmc_rx_icmp_err_octets"
+#define DWMAC_MMC_TX_FPE_FRAGMENT_CNTR_KEY                 "mmc_tx_fpe_fragment_cntr"
+#define DWMAC_MMC_TX_HOLD_REQ_CNTR_KEY                     "mmc_tx_hold_req_cntr"
+#define DWMAC_MMC_RX_PACKET_ASSEMBLY_ERR_CNTR_KEY          "mmc_rx_packet_assembly_err_cntr"
+#define DWMAC_MMC_RX_PACKET_SMD_ERR_CNTR_KEY               "mmc_rx_packet_smd_err_cntr"
+#define DWMAC_MMC_RX_PACKET_ASSEMBLY_OK_CNTR_KEY           "mmc_rx_packet_assembly_ok_cntr"
+#define DWMAC_MMC_RX_FPE_FRAGMENT_CNTR_KEY                 "mmc_rx_fpe_fragment_cntr"
+
+#define DWMAC_MMC_COUNTER_REG(counter)  DWMAC_MMC_##counter,
+#define DWMAC_MMC_COUNTER_STAT(counter) { .key = DWMAC_MMC_##counter##_KEY },
+
+/*
+ * Define the MMC counters a platform implements. "list" is a function-like
+ * macro invoking its argument once per counter, in the order the counters are
+ * reported:
+ *
+ *   #define FOO_MMC_COUNTERS(X)          \
+ *           X(TX_OCTET_COUNT_GOOD_BAD)   \
+ *           X(TX_PACKET_COUNT_GOOD_BAD)
+ *
+ *   DWMAC_MMC_COUNTERS_DEFINE(foo_mmc, FOO_MMC_COUNTERS);
+ *
+ * DWMAC_MMC_CONFIG_INIT(foo_mmc) then goes into the struct dwmac_config
+ * initializer. Both expand to nothing without vendor specific statistics.
+ */
+#if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
+#define DWMAC_MMC_COUNTERS_DEFINE(name, list)                                                      \
+	static const uint16_t name##_regs[] = { list(DWMAC_MMC_COUNTER_REG) };                     \
+	static struct net_stats_eth_vendor name##_vendor[] = {                                     \
+		list(DWMAC_MMC_COUNTER_STAT)                                                       \
+		{ .key = NULL, .value = 0 }                                                        \
+	}
+#define DWMAC_MMC_CONFIG_INIT(name) .mmc_regs = name##_regs, .mmc_vendor = name##_vendor,
+#else
+#define DWMAC_MMC_COUNTERS_DEFINE(name, list)
+#define DWMAC_MMC_CONFIG_INIT(name)
+#endif
 
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_ */

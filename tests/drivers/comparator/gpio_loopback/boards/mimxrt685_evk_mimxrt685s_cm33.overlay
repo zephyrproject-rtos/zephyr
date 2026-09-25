@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/rt/MIMXRT685SFVKB-pinctrl.h>
+#include <nxp/imxrt/imxrt6xx/pinctrl/MIMXRT685SFVKB-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 /*

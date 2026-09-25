@@ -136,7 +136,7 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	rc = onoff_release(mgr);
 #else
-	rc = nrf_clock_control_release(drv_data->clk_dev, NULL);
+	rc = nrf_clock_control_release(clk_dev, NULL);
 #endif
 	/* Returns non-negative value on success. Cap to 0 as API states. */
 	rc = MIN(rc, 0);

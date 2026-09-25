@@ -234,7 +234,12 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 	if (test_started) {
 		hdr = NET_IPV6_HDR(pkt);
 
-		if (net_ipv6_addr_cmp_raw(hdr->dst, mdns_server_ipv6_addr)) {
+		/* Answers to a query from port 5353 go to the group; an answer
+		 * to a one-off lookup goes back to the querier alone, so both
+		 * destinations have to be picked up here.
+		 */
+		if (net_ipv6_addr_cmp_raw(hdr->dst, mdns_server_ipv6_addr) ||
+		    net_ipv6_addr_cmp_raw(hdr->dst, (const uint8_t *)&sender_ll_addr)) {
 			/* Multi-homed test: grab the outgoing mDNS response separately. */
 			if (mh_capture_active && mh_response_pkt == NULL &&
 			    mh_mdns_udp_pkt(pkt)) {
@@ -430,7 +435,11 @@ static void cleanup(void *d)
 	mh_reset_capture();
 }
 
-static void send_msg(const uint8_t *data, size_t len)
+/* A query from port 5353 is one multicast DNS responder talking to another; a
+ * query from anywhere else is a one-off lookup, which RFC 6762 6.7 answers
+ * differently. Tests that care say which they are sending.
+ */
+static void send_msg_from_port(const uint8_t *data, size_t len, uint16_t src_port)
 {
 	struct net_pkt *pkt;
 	int res;
@@ -448,7 +457,7 @@ static void send_msg(const uint8_t *data, size_t len)
 	res = net_pkt_write(pkt, ipv6_hdr_rest, sizeof(ipv6_hdr_rest));
 	zassert_equal(res, 0, "pkt write for rest of the header failed");
 
-	res = net_pkt_write_be16(pkt, 5353);
+	res = net_pkt_write_be16(pkt, src_port);
 	zassert_equal(res, 0, "pkt write for UDP src port failed");
 
 	res = net_pkt_write_be16(pkt, 5353);
@@ -466,6 +475,11 @@ static void send_msg(const uint8_t *data, size_t len)
 
 	res = net_recv_data(iface1, pkt);
 	zassert_equal(res, 0, "net_recv_data() failed");
+}
+
+static void send_msg(const uint8_t *data, size_t len)
+{
+	send_msg_from_port(data, len, 5353);
 }
 
 static struct dns_sd_rec *alloc_ext_record(const char *instance, const char *service,
@@ -679,6 +693,67 @@ ZTEST(test_mdns_responder, test_basic_query)
 	zassert_ok(res, "Did not receive a response");
 
 	check_basic_query_resp(response_pkts[0]);
+}
+
+/* RFC 6762 6.7: a query that did not come from port 5353 is a one-off lookup,
+ * and the answer to it has to be one a conventional resolver understands. It
+ * repeats the identifier and the question, leaves the cache flush bit clear,
+ * and carries a short time to live, because whatever caches it is not a
+ * multicast DNS cache.
+ */
+ZTEST(test_mdns_responder, test_legacy_unicast_query)
+{
+	static const uint16_t query_id = 0x1234;
+	static uint8_t zephyr_local_query[] = {
+		/* Header, with an identifier the answer has to repeat */
+		0x12, 0x34, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* zephyr.local */
+		0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
+		/* AAAA record */
+		0x00, 0x1c, 0x00, 0x01
+	};
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+	uint16_t qtype;
+	uint16_t qclass;
+	struct net_pkt *pkt;
+
+	/* Anything other than 5353 makes this a one-off lookup */
+	send_msg_from_port(zephyr_local_query, sizeof(zephyr_local_query), 45678);
+
+	zassert_ok(k_sem_take(&wait_data, RESPONSE_TIMEOUT), "Did not receive a response");
+
+	pkt = response_pkts[0];
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_header.id), query_id,
+		      "Answer carries id 0x%04x, the query used 0x%04x",
+		      net_ntohs(resp_header.id), query_id);
+	zassert_equal(net_ntohs(resp_header.qdcount), 1,
+		      "Answer does not repeat the question");
+	zassert_true(net_ntohs(resp_header.ancount) >= 1, "Answer carries no records");
+
+	/* The repeated question */
+	validate_label(pkt, "zephyr", false);
+	validate_label(pkt, "local", true);
+	zassert_ok(net_pkt_read_be16(pkt, &qtype), "net_pkt read failed");
+	zassert_equal(qtype, DNS_RR_TYPE_AAAA, "Repeated question has the wrong type");
+	zassert_ok(net_pkt_read_be16(pkt, &qclass), "net_pkt read failed");
+	zassert_equal(qclass, DNS_CLASS_IN, "Repeated question has the wrong class");
+
+	/* The first answer, which names the question rather than repeating it */
+	skip_labels(pkt);
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_AAAA, "Invalid record type");
+	zassert_equal(net_ntohs(resp_record.class_), DNS_CLASS_IN,
+		      "Answer class is 0x%04x; the cache flush bit does not belong here",
+		      net_ntohs(resp_record.class_));
+	zassert_true(net_ntohl(resp_record.ttl) <= 10,
+		     "Answer TTL is %u, which is too long to hand to a cache that "
+		     "knows nothing of multicast DNS", net_ntohl(resp_record.ttl));
 }
 
 static void check_basic_dns_sd_query_resp(struct net_pkt *pkt)

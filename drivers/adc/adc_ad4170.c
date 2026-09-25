@@ -1241,7 +1241,7 @@ static DEVICE_API(adc, adc_ad4170_driver_api) = {
 #define AD4170_ADC_INIT(compat, inst, id)                                                          \
 	static const struct ad4170_config ad4170_config_##compat##_##inst = {                      \
 		.bus = SPI_DT_SPEC_GET(DT_INST_AD4170(inst, compat),                               \
-				       SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA |        \
+				       SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA |    \
 					       SPI_WORD_SET(8) | SPI_TRANSFER_MSB),                \
 		.resolution = AD4170_ADC_RESOLUTION,                                               \
 		.bipolar = DT_INST_PROP_OR(inst, bipolar, 1),                                      \

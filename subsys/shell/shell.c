@@ -116,11 +116,10 @@ static int cmd_precheck(const struct shell *sh,
 	return 0;
 }
 
-static inline void state_set(const struct shell *sh, enum shell_state state)
+/* Print prompt if shell is active and not in bypass mode. */
+static void cond_print_prompt(const struct shell *sh)
 {
-	sh->ctx->state = state;
-
-	if (state == SHELL_STATE_ACTIVE && !sh->ctx->bypass) {
+	if (sh->ctx->state == SHELL_STATE_ACTIVE && !sh->ctx->bypass) {
 		cmd_buffer_clear(sh);
 		if (z_flag_print_noinit_get(sh)) {
 			z_shell_fprintf(sh, SHELL_WARNING, "%s",
@@ -129,6 +128,11 @@ static inline void state_set(const struct shell *sh, enum shell_state state)
 		}
 		z_shell_print_prompt_and_cmd(sh);
 	}
+}
+
+static inline void state_set(const struct shell *sh, enum shell_state state)
+{
+	sh->ctx->state = state;
 }
 
 static inline enum shell_state state_get(const struct shell *sh)
@@ -1367,7 +1371,7 @@ static void ctrl_metakeys_handle(const struct shell *sh, char data)
 		if (sh->ctx->readline_state == SHELL_READLINE_ACTIVE) {
 			sh->ctx->readline_state = SHELL_READLINE_CANCELED;
 		} else {
-			state_set(sh, SHELL_STATE_ACTIVE);
+			cond_print_prompt(sh);
 		}
 		break;
 
@@ -1485,7 +1489,7 @@ static void state_collect(const struct shell *sh)
 				z_flag_cmd_ctx_set(sh, false);
 				/* Check if bypass mode ended. */
 				if (!(volatile shell_bypass_cb_t *)sh->ctx->bypass) {
-					state_set(sh, SHELL_STATE_ACTIVE);
+					cond_print_prompt(sh);
 				} else {
 					continue;
 				}
@@ -1528,7 +1532,7 @@ static void state_collect(const struct shell *sh)
 				/* Function responsible for printing prompt
 				 * on received NL.
 				 */
-				state_set(sh, SHELL_STATE_ACTIVE);
+				cond_print_prompt(sh);
 				continue;
 			}
 
@@ -1961,6 +1965,9 @@ int shell_start(const struct shell *sh)
 	 */
 	z_cursor_next_line_move(sh);
 	state_set(sh, SHELL_STATE_ACTIVE);
+
+	/* Print prompt. */
+	cond_print_prompt(sh);
 
 	z_shell_unlock(sh);
 

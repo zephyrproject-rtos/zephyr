@@ -12,6 +12,7 @@ supported:
   - arduino_i2c
   - arduino_gpio
   - arduino_spi
+  - ptp_clock
   - uart
   - gpio
   - netif:eth

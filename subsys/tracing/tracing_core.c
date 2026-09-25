@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_backend.h>
@@ -53,25 +54,22 @@ static K_THREAD_STACK_DEFINE(tracing_thread_stack,
 
 static void tracing_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
-	uint8_t *transferring_buf;
-	uint32_t transferring_length, tracing_buffer_max_length;
+	uint8_t *buf;
+	uint32_t len;
+	struct ring_buf *rb = tracing_buffer_get_ring_buf();
 
 	tracing_thread_tid = k_current_get();
 
-	tracing_buffer_max_length = tracing_buffer_capacity_get();
-
 	while (true) {
-		if (tracing_buffer_is_empty()) {
-			k_sem_take(&tracing_thread_sem, K_FOREVER);
-		} else {
-			transferring_length =
-				tracing_buffer_get_claim(
-						&transferring_buf,
-						tracing_buffer_max_length);
-			tracing_buffer_handle(transferring_buf,
-					      transferring_length);
-			tracing_buffer_get_finish(transferring_length);
+		while (true) {
+			len = ring_buf_get_ptr(rb, &buf, 0);
+			if (len == 0) {
+				break;
+			}
+			tracing_buffer_handle(buf, len);
+			ring_buf_consume(rb, len);
 		}
+		k_sem_take(&tracing_thread_sem, K_FOREVER);
 	}
 }
 

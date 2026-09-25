@@ -79,7 +79,7 @@
 			};
 
 			ds3231: rtc@68 {
-				compatible = "maxim,ds3231";
+				compatible = "maxim,ds3231-mfd";
 				reg = <0x68>;
 			};
 		};

@@ -15,7 +15,7 @@ config I2C_MCUX_LPI2C_BUS_RECOVERY
 	default y
 	depends on I2C_MCUX_LPI2C && PINCTRL
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_MIMXRT1024_EVK

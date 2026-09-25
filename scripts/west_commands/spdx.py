@@ -25,11 +25,9 @@ SPDX_DESCRIPTION = """\
 This command creates an SPDX bill of materials following the completion
 of a Zephyr build.
 
-Prior to the build, an empty file must be created at
-BUILDDIR/.cmake/api/v1/query/codemodel-v2 in order to enable
-the CMake file-based API, which the SPDX command relies upon.
-This can be done by calling `west spdx --init` prior to
-calling `west build`."""
+Enable CONFIG_BUILD_OUTPUT_META in the application and build it as usual.
+The build then asks CMake for the file-based API this command reads, so the
+build directory needs no preparation."""
 
 
 class ZephyrSpdx(WestCommand):
@@ -40,9 +38,13 @@ class ZephyrSpdx(WestCommand):
         parser = parser_adder.add_parser(self.name, description=self.description)
 
         # If you update these options, make sure to keep the docs in
-        # doc/guides/west/zephyr-cmds.rst up to date.
+        # doc/develop/west/zephyr-cmds.rst up to date.
         parser.add_argument(
-            '-i', '--init', action="store_true", help="initialize CMake file-based API"
+            '-i',
+            '--init',
+            action="store_true",
+            help="[DEPRECATED] initialize CMake file-based API; a build with "
+            "CONFIG_BUILD_OUTPUT_META now requests it itself",
         )
         parser.add_argument('-d', '--build-dir', help="build directory")
         parser.add_argument('-n', '--namespace-prefix', help="namespace prefix")
@@ -84,6 +86,11 @@ class ZephyrSpdx(WestCommand):
             self.do_run_spdx(args)
 
     def do_run_init(self, args):
+        self.wrn(
+            "west spdx --init is deprecated and will be removed in Zephyr 5.0: "
+            "a build with CONFIG_BUILD_OUTPUT_META requests the CMake file-based API "
+            "itself, so the build directory no longer needs to be prepared."
+        )
         self.inf("initializing CMake file-based API prior to build")
 
         if not args.build_dir:

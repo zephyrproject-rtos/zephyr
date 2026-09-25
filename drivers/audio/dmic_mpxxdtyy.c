@@ -166,7 +166,7 @@ static int mpxxdtyy_initialize(const struct device *dev)
 	const struct mpxxdtyy_config *config = dev->config;
 	struct mpxxdtyy_data *const data = dev->data;
 
-	if (!device_is_ready(config->comm_master)) {
+	if (!device_is_ready(config->comm_dev)) {
 		return -ENODEV;
 	}
 
@@ -175,7 +175,7 @@ static int mpxxdtyy_initialize(const struct device *dev)
 }
 
 static const struct mpxxdtyy_config mpxxdtyy_config = {
-	.comm_master = DEVICE_DT_GET(DT_INST_BUS(0)),
+	.comm_dev = DEVICE_DT_GET(DT_INST_BUS(0)),
 };
 
 static struct mpxxdtyy_data mpxxdtyy_data;

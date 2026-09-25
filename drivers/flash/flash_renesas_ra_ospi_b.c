@@ -518,10 +518,11 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 
 		err = R_OSPI_B_Erase(
 			&ospi_b_data->ospi_b_ctrl,
-			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + offset),
+			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + (uintptr_t)offset),
 			erase_size);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Erase at address 0x%lx, size %zu Failed", offset, erase_size);
+			LOG_ERR("Erase at address 0x%lx, size %zu Failed",
+				(long)offset, erase_size);
 			ret = -EIO;
 			break;
 		}
@@ -598,9 +599,10 @@ static int flash_renesas_ra_ospi_b_write(const struct device *dev, off_t offset,
 
 		err = R_OSPI_B_Write(
 			&ospi_b_data->ospi_b_ctrl, p_src,
-			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + offset), size);
+			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS +
+				    (uintptr_t)offset), size);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Write at address 0x%lx, size %zu", offset, size);
+			LOG_ERR("Write at address 0x%lx, size %zu", (long)offset, size);
 			ret = -EIO;
 			break;
 		}

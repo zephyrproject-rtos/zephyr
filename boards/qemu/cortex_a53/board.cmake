@@ -26,23 +26,15 @@ if(CONFIG_INPUT_VIRTIO)
   endif()
 endif()
 
-if(CONFIG_DISK_DRIVER_VIRTIO_BLK)
-  # The matching "-drive ...,id=vblk" is added by
-  # cmake/emu/qemu/virtio_blk.cmake; attach it here so the MMIO virtio-blk
-  # device is backed by the disk image.
-  set(virtio_blk_mmio_dev "virtio-blk-device,drive=vblk,bus=virtio-mmio-bus.4")
-  set(blk_size ${CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE})
-  # QEMU requires physical_block_size >= logical_block_size.
-  set(virtio_blk_mmio_dev
-    "${virtio_blk_mmio_dev},logical_block_size=${blk_size},physical_block_size=${blk_size}")
-  set(QEMU_VIRTIO_BLK_FLAGS -device ${virtio_blk_mmio_dev})
-endif()
+# MMIO transport the block device is attached to, matching the virtio_mmio node
+# it hangs off in the board devicetree. The device itself is added by
+# cmake/emu/qemu/virtio_blk.cmake.
+set(QEMU_VIRTIO_BLK_TRANSPORT bus=virtio-mmio-bus.4)
 
 set(QEMU_BOARD_FLAGS
   -cpu ${QEMU_CPU_TYPE}
   ${QEMU_VIRTIO_ENTROPY_FLAGS}
   ${QEMU_VIRTIO_INPUT_FLAGS}
-  ${QEMU_VIRTIO_BLK_FLAGS}
   -machine ${QEMU_MACH}
   )
 

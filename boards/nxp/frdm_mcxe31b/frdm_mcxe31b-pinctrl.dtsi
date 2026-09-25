@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/MCXE31BMPB-pinctrl.h>
+#include <nxp/mcx/mcxe/pinctrl/MCXE31BMPB-pinctrl.h>
 
 &pinctrl {
 	eirq0_default: eirq0_default {
@@ -46,6 +46,23 @@
 		group2 {
 			pinmux = <PTA7_CAN0_TX>;
 			output-enable;
+		};
+	};
+
+	pinmux_emios0_pwm: pinmux_emios0_pwm {
+		group1 {
+			pinmux = <PTD0_EMIOS_0_CH2_G_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTD1_EMIOS_0_CH3_G_O>;
+			output-enable;
+		};
+
+		group3 {
+			pinmux = <PTB16_EMIOS_0_CH4_G_I>;
+			input-enable;
 		};
 	};
 
@@ -135,6 +152,46 @@
 		};
 	};
 
+	pinmux_emac: pinmux_emac {
+		group1 {
+			/* RMII outputs. The slowest slew rate matches NXP's
+			 * reference pin configuration for this board.
+			 */
+			pinmux = <PTC2_EMAC_MII_RMII_TXD0>,
+				 <PTD7_EMAC_MII_RMII_TXD1>,
+				 <PTD12_EMAC_MII_RMII_TX_EN>;
+			output-enable;
+			slew-rate = "slowest";
+		};
+
+		group2 {
+			pinmux = <PTC1_EMAC_MII_RMII_RXD0>,
+				 <PTC0_EMAC_MII_RMII_RXD1>,
+				 <PTC17_EMAC_MII_RMII_RX_DV>;
+			input-enable;
+		};
+
+		group3 {
+			/* 50 MHz RMII reference clock supplied by the PHY */
+			pinmux = <PTD11_EMAC_MII_RMII_TX_CLK>;
+			input-enable;
+			slew-rate = "slowest";
+		};
+	};
+
+	pinmux_emac_mdio: pinmux_emac_mdio {
+		group1 {
+			pinmux = <(PTB4_EMAC_MII_RMII_MDIO_O | PTB4_EMAC_MII_RMII_MDIO_I)>;
+			input-enable;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTB5_EMAC_MII_RMII_MDC>;
+			output-enable;
+		};
+	};
+
 	pinmux_sai_0: pinmux_sai_0 {
 		group1 {
 			/* Each entry combines the pad's output mux with its
@@ -151,6 +208,25 @@
 				 <NXP_SIUL2_PINMUX(0, 0, 77, 7, 321, 1)>;
 			output-enable;
 			input-enable;
+		};
+	};
+
+	pinmux_qspi: pinmux_qspi {
+		group0 {
+			pinmux = <PTD10_QUADSPI_SCKFA_O>,
+				 <PTC3_QUADSPI_PCSFA>;
+			output-enable;
+			nxp,drive-strength;
+		};
+
+		group1 {
+			pinmux = <(PTD11_QUADSPI_IOFA0_O | PTD11_QUADSPI_IOFA0_I)>,
+				 <(PTD7_QUADSPI_IOFA1_O | PTD7_QUADSPI_IOFA1_I)>,
+				 <(PTD12_QUADSPI_IOFA2_O | PTD12_QUADSPI_IOFA2_I)>,
+				 <(PTC2_QUADSPI_IOFA3_O | PTC2_QUADSPI_IOFA3_I)>;
+			input-enable;
+			output-enable;
+			nxp,drive-strength;
 		};
 	};
 };

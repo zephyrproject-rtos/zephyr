@@ -561,7 +561,6 @@ extern "C" {
  * @retval 1 if string must be packaged at runtime.
  * @retval 0 if string can be statically packaged.
  */
-#if Z_C_GENERIC
 #define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ...) ({\
 	int _rv; \
 	if ((flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS) { \
@@ -571,9 +570,6 @@ extern "C" {
 	} \
 	_rv; \
 })
-#else
-#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ...) 1
-#endif
 
 /** @brief Get storage size for given argument.
  *
@@ -596,12 +592,12 @@ extern "C" {
 	__auto_type __v = Z_ARGIFY(Z_CONSTIFY(v)); \
 	/* Static code analysis may complain about unused variable. */ \
 	(void)__v; \
-	size_t __arg_size = _Generic((v), \
+	size_t __measured_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
 			sizeof((__v)) /* NOLINT(bugprone-sizeof-expression) */ \
 		); \
-	__arg_size; \
+	__measured_size; \
 })
 #endif
 
@@ -625,8 +621,8 @@ extern "C" {
 		/* Static code analysis may complain about unused variable. */ \
 		(void)_v; \
 		(void)_d; \
-		size_t arg_size = Z_CBPRINTF_ARG_SIZE(arg); \
-		size_t _wsize = arg_size / sizeof(int); \
+		size_t _stored_size = Z_CBPRINTF_ARG_SIZE(arg); \
+		size_t _wsize = _stored_size / sizeof(int); \
 		z_cbprintf_wcpy((int *)(buf), \
 			      (int *) _Generic(Z_ARGIFY(arg), float : &_d, default : &_v), \
 			      _wsize); \
@@ -719,34 +715,44 @@ do { \
 		(_idx) += sizeof(int); \
 		(_align_offset) += sizeof(int); \
 	} \
-	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
+	uint32_t _packed_size = Z_CBPRINTF_ARG_SIZE(_arg); \
 	uint8_t _loc = (uint8_t)(_idx / sizeof(int)); \
 	if (arg_idx < 1 + _fros_cnt) { \
 		if (_ros_pos_en) { \
-			_ros_pos_buf[_ros_pos_idx++] = _loc; \
+			_ros_pos_buf[_ros_pos_idx] = _loc; \
+			_ros_pos_idx++; \
 		} \
 	} else if (Z_CBPRINTF_IS_PCHAR(_arg, 0)) { \
 		if (_cros_en) { \
 			if (Z_CBPRINTF_IS_X_PCHAR(arg_idx, _arg, _flags)) { \
 				if (_rws_pos_en) { \
-					_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
-					_rws_buffer[_rws_pos_idx++] = _loc; \
+					_rws_buffer[_rws_pos_idx] = arg_idx - 1; \
+					_rws_pos_idx++; \
+					_rws_buffer[_rws_pos_idx] = _loc; \
+					_rws_pos_idx++; \
 				} \
 			} else { \
 				if (_ros_pos_en) { \
-					_ros_pos_buf[_ros_pos_idx++] = _loc; \
+					_ros_pos_buf[_ros_pos_idx] = _loc; \
+					_ros_pos_idx++; \
 				} \
 			} \
 		} else if (_rws_pos_en) { \
-			_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
-			_rws_buffer[_rws_pos_idx++] = (uint8_t)(_idx / sizeof(int)); \
+			_rws_buffer[_rws_pos_idx] = arg_idx - 1; \
+			_rws_pos_idx++; \
+			_rws_buffer[_rws_pos_idx] = (uint8_t)(_idx / sizeof(int)); \
+			_rws_pos_idx++; \
+		} else { \
+			/* Neither position buffer is enabled, nothing to record. */ \
 		} \
+	} else { \
+		/* Not a read-only string argument, nothing to record. */ \
 	} \
 	if ((_buf) && (_idx) < (int)(_max)) { \
 		Z_CBPRINTF_STORE_ARG(&(_buf)[(_idx)], _arg); \
 	} \
-	(_idx) += (_arg_size); \
-	(_align_offset) += (_arg_size); \
+	(_idx) += (_packed_size); \
+	(_align_offset) += (_packed_size); \
 } while (false)
 
 /** @brief Package single argument.
@@ -870,10 +876,12 @@ do { \
 		/* Append string locations. */ \
 		uint8_t *_pbuf_loc = &_pbuf[_pkg_len]; \
 		for (size_t _ros_idx = 0; _ros_idx < _ros_cnt; _ros_idx++) { \
-			*_pbuf_loc++ = _ros_pos_buf[_ros_idx]; \
+			*_pbuf_loc = _ros_pos_buf[_ros_idx]; \
+			_pbuf_loc++; \
 		} \
 		for (size_t _rws_idx = 0; _rws_idx < (2 * _rws_cnt); _rws_idx++) { \
-			*_pbuf_loc++ = _rws_buffer[_rws_idx]; \
+			*_pbuf_loc = _rws_buffer[_rws_idx]; \
+			_pbuf_loc++; \
 		} \
 	} \
 	/* Store length */ \
@@ -895,23 +903,10 @@ do { \
 	} \
 } while (false)
 
-#if Z_C_GENERIC
 #define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
 				  ... /* fmt, ... */) \
 	Z_CBPRINTF_STATIC_PACKAGE_GENERIC(packaged, inlen, outlen, \
 					  align_offset, flags, __VA_ARGS__)
-#else
-#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
-				  ... /* fmt, ... */) \
-do { \
-	/* Small trick needed to avoid warning on always true */ \
-	if (((uintptr_t)packaged + 1) != 1) { \
-		outlen = cbprintf_package(packaged, inlen, flags, __VA_ARGS__); \
-	} else { \
-		outlen = cbprintf_package(NULL, align_offset, flags, __VA_ARGS__); \
-	} \
-} while (false)
-#endif /* Z_C_GENERIC */
 
 #ifdef __cplusplus
 }

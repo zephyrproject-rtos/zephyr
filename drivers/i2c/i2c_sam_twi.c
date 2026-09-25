@@ -11,7 +11,7 @@
  * @brief I2C bus (TWI) driver for Atmel SAM MCU family.
  *
  * Limitations:
- * - Only I2C Master Mode with 7 bit addressing is currently supported.
+ * - Only I2C Controller Mode with 7 bit addressing is currently supported.
  * - No reentrancy support.
  */
 
@@ -127,7 +127,7 @@ static int i2c_sam_twi_configure(const struct device *dev, uint32_t config)
 	int ret;
 
 	if (!(config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Master Mode is not enabled");
+		LOG_ERR("Controller Mode is not enabled");
 		return -EIO;
 	}
 
@@ -158,10 +158,10 @@ static int i2c_sam_twi_configure(const struct device *dev, uint32_t config)
 		goto unlock;
 	}
 
-	/* Disable Slave Mode */
+	/* Disable Target Mode */
 	twi->TWI_CR = TWI_CR_SVDIS;
 
-	/* Enable Master Mode */
+	/* Enable Controller Mode */
 	twi->TWI_CR = TWI_CR_MSEN;
 
 	ret = 0;
@@ -173,7 +173,7 @@ unlock:
 
 static void write_msg_start(Twi *const twi, struct twi_msg *msg, uint8_t daddr)
 {
-	/* Set slave address and number of internal address bytes. */
+	/* Set target address and number of internal address bytes. */
 	twi->TWI_MMR = TWI_MMR_DADR(daddr);
 
 	/* Write first data byte on I2C bus */
@@ -187,7 +187,7 @@ static void read_msg_start(Twi *const twi, struct twi_msg *msg, uint8_t daddr)
 {
 	uint32_t twi_cr_stop;
 
-	/* Set slave address and number of internal address bytes */
+	/* Set target address and number of internal address bytes */
 	twi->TWI_MMR = TWI_MMR_MREAD | TWI_MMR_DADR(daddr);
 
 	/* In single data byte read the START and STOP must both be set */
@@ -229,7 +229,7 @@ static int i2c_sam_twi_transfer(const struct device *dev,
 		 * REMARK: Dirty workaround:
 		 *
 		 * The controller does not have a documented, generic way to
-		 * issue RESTART when changing transfer direction as master.
+		 * issue RESTART when changing transfer direction as controller.
 		 * Send a stop condition in such a case.
 		 */
 		if (num_msgs > 1) {

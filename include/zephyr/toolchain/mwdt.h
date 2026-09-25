@@ -128,6 +128,12 @@
 #define __fallthrough     __attribute__((fallthrough))
 #endif
 
+/* ccac is LLVM based and accepts "#pragma GCC diagnostic". Declare this
+ * explicitly rather than inheriting it from the __GNUC__ version check in
+ * gcc.h, which reports a pre-4.6 version for this compiler.
+ */
+#define TOOLCHAIN_HAS_PRAGMA_DIAG 1
+
 #define TOOLCHAIN_HAS_C_GENERIC                 1
 #define TOOLCHAIN_HAS_C_AUTO_TYPE               1
 

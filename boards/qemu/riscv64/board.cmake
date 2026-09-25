@@ -24,12 +24,28 @@ if(CONFIG_INPUT_VIRTIO)
   endif()
 endif()
 
+if(CONFIG_RISCV_S_MODE_EXTERNAL_SBI)
+  set(qemu_bios default)
+else()
+  set(qemu_bios none)
+endif()
+
 set(QEMU_BOARD_FLAGS
   -machine virt
-  -bios none
+  -bios ${qemu_bios}
   -m 256
   -cpu ${qemu_riscv_cpu}
   ${QEMU_VIRTIO_INPUT_FLAGS}
   )
+
+if(CONFIG_QEMU_DEVICE_LOADER)
+  set(QEMU_KERNEL_OPTION "")
+  math(EXPR max_cpu_index "${CONFIG_MP_MAX_NUM_CPUS} - 1")
+  foreach(cpu_num RANGE 0 ${max_cpu_index})
+    list(APPEND QEMU_KERNEL_OPTION
+      "-device;loader,file=\$<TARGET_FILE:\${logical_target_for_zephyr_elf}>,cpu-num=${cpu_num}"
+    )
+  endforeach()
+endif()
 
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

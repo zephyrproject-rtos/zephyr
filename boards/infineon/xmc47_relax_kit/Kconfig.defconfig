@@ -4,7 +4,7 @@
 
 if BOARD_XMC47_RELAX_KIT
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 config TEST_RANDOM_GENERATOR

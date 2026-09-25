@@ -543,9 +543,10 @@ static struct mce_mas_instance mce_mas_instances[CONFIG_BT_MAX_CONN][MAP_MAS_MAX
 static struct mce_mns_instance mce_mns_instances[CONFIG_BT_MAX_CONN];
 
 /* MCE MAS instance management */
-static struct mce_mas_instance *mce_mas_alloc(struct bt_conn *conn)
+static struct mce_mas_instance *mce_mas_alloc(struct bt_conn *conn, uint8_t instance_id)
 {
 	uint8_t index;
+	struct mce_mas_instance *inst;
 
 	if (conn == NULL) {
 		bt_shell_warn("conn is NULL");
@@ -559,13 +560,23 @@ static struct mce_mas_instance *mce_mas_alloc(struct bt_conn *conn)
 	}
 
 	ARRAY_FOR_EACH(mce_mas_instances[index], i) {
-		struct mce_mas_instance *inst = &mce_mas_instances[index][i];
+		inst = &mce_mas_instances[index][i];
+
+		if ((inst->conn != NULL) && (inst->instance_id == instance_id)) {
+			bt_shell_warn("Instance %d already connected", instance_id);
+			return NULL;
+		}
+	}
+
+	ARRAY_FOR_EACH(mce_mas_instances[index], i) {
+		inst = &mce_mas_instances[index][i];
 
 		if (inst->conn != NULL) {
 			continue;
 		}
 
 		inst->conn = bt_conn_ref(conn);
+		inst->instance_id = instance_id;
 		return inst;
 	}
 
@@ -624,7 +635,7 @@ static void mce_mas_select(void)
 	}
 
 	/* Find next available MCE MAS instance for this connection */
-	for (size_t j = 0; j < MAP_MAS_MAX_NUM; j++) {
+	ARRAY_FOR_EACH(mce_mas_instances[index], j) {
 		struct mce_mas_instance *inst = &mce_mas_instances[index][j];
 
 		if (inst->conn != NULL) {
@@ -1055,7 +1066,7 @@ static int cmd_mce_mas_rfcomm_connect(const struct shell *sh, size_t argc, char 
 		supported_features = BT_MAP_MANDATORY_SUPPORTED_FEATURES;
 	}
 
-	inst = mce_mas_alloc(default_conn);
+	inst = mce_mas_alloc(default_conn, instance_id);
 	if (inst == NULL) {
 		shell_error(sh, "Cannot allocate MCE MAS instance");
 		return -ENOMEM;
@@ -1063,16 +1074,8 @@ static int cmd_mce_mas_rfcomm_connect(const struct shell *sh, size_t argc, char 
 
 	inst->supported_features = supported_features;
 	inst->channel = channel;
-	inst->instance_id = instance_id;
 
-	err = bt_map_mce_mas_cb_register(&inst->mce_mas, &mce_mas_cb);
-	if (err != 0) {
-		mce_mas_free(&inst->mce_mas);
-		shell_error(sh, "Failed to register MCE MAS cb (err %d)", err);
-		return err;
-	}
-
-	err = bt_map_mce_mas_rfcomm_connect(default_conn, &inst->mce_mas, channel);
+	err = bt_map_mce_mas_rfcomm_connect(default_conn, &inst->mce_mas, &mce_mas_cb, channel);
 	if (err != 0) {
 		mce_mas_free(&inst->mce_mas);
 		shell_error(sh, "RFCOMM connect failed (err %d)", err);
@@ -1133,7 +1136,7 @@ static int cmd_mce_mas_l2cap_connect(const struct shell *sh, size_t argc, char *
 		supported_features = BT_MAP_MANDATORY_SUPPORTED_FEATURES;
 	}
 
-	inst = mce_mas_alloc(default_conn);
+	inst = mce_mas_alloc(default_conn, instance_id);
 	if (inst == NULL) {
 		shell_error(sh, "Cannot allocate MCE MAS instance");
 		return -ENOMEM;
@@ -1141,16 +1144,8 @@ static int cmd_mce_mas_l2cap_connect(const struct shell *sh, size_t argc, char *
 
 	inst->supported_features = supported_features;
 	inst->psm = psm;
-	inst->instance_id = instance_id;
 
-	err = bt_map_mce_mas_cb_register(&inst->mce_mas, &mce_mas_cb);
-	if (err != 0) {
-		mce_mas_free(&inst->mce_mas);
-		shell_error(sh, "Failed to register MCE MAS cb (err %d)", err);
-		return err;
-	}
-
-	err = bt_map_mce_mas_l2cap_connect(default_conn, &inst->mce_mas, psm);
+	err = bt_map_mce_mas_l2cap_connect(default_conn, &inst->mce_mas, &mce_mas_cb, psm);
 	if (err != 0) {
 		mce_mas_free(&inst->mce_mas);
 		shell_error(sh, "L2CAP connect failed (err %d)", err);
@@ -2507,6 +2502,24 @@ static struct bt_map_mce_mns_cb mce_mns_cb = {
 };
 
 /* MCE MNS commands */
+static int cmd_mce_mns_register(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	ARRAY_FOR_EACH(mce_mns_instances, i) {
+		struct mce_mns_instance *inst = &mce_mns_instances[i];
+
+		err = bt_map_mce_mns_register(&inst->mce_mns, &mce_mns_cb);
+		if (err != 0) {
+			shell_error(sh, "Failed to register MCE MNS server [%zu] (err %d)", i, err);
+			return -ENOEXEC;
+		}
+	}
+	shell_print(sh, "MCE MNS server(s) registered");
+
+	return 0;
+}
+
 struct mce_server {
 	struct bt_map_mce_mns_rfcomm_server rfcomm_server;
 	struct bt_map_mce_mns_l2cap_server l2cap_server;
@@ -2614,7 +2627,6 @@ static int mce_mns_rfcomm_accept(struct bt_conn *conn, struct bt_map_mce_mns_rfc
 				 struct bt_map_mce_mns **mce_mns)
 {
 	struct mce_mns_instance *inst;
-	int err;
 
 	inst = mce_mns_alloc(conn);
 	if (inst == NULL) {
@@ -2623,12 +2635,6 @@ static int mce_mns_rfcomm_accept(struct bt_conn *conn, struct bt_map_mce_mns_rfc
 	}
 
 	inst->supported_features = mce_server.supported_features;
-	err = bt_map_mce_mns_cb_register(&inst->mce_mns, &mce_mns_cb);
-	if (err != 0) {
-		mce_mns_free(&inst->mce_mns);
-		bt_shell_error("Failed to register MCE MNS cb (err %d)", err);
-		return err;
-	}
 	*mce_mns = &inst->mce_mns;
 	return 0;
 }
@@ -2709,7 +2715,6 @@ static int mce_mns_l2cap_accept(struct bt_conn *conn, struct bt_map_mce_mns_l2ca
 				struct bt_map_mce_mns **mce_mns)
 {
 	struct mce_mns_instance *inst;
-	int err;
 
 	inst = mce_mns_alloc(conn);
 	if (inst == NULL) {
@@ -2718,12 +2723,6 @@ static int mce_mns_l2cap_accept(struct bt_conn *conn, struct bt_map_mce_mns_l2ca
 	}
 
 	inst->supported_features = mce_server.supported_features;
-	err = bt_map_mce_mns_cb_register(&inst->mce_mns, &mce_mns_cb);
-	if (err != 0) {
-		mce_mns_free(&inst->mce_mns);
-		bt_shell_error("Failed to register MCE MNS cb (err %d)", err);
-		return err;
-	}
 	*mce_mns = &inst->mce_mns;
 	return 0;
 }
@@ -2964,9 +2963,10 @@ static struct mse_mas_instance mse_mas_instances[CONFIG_BT_MAX_CONN][MAP_MAS_MAX
 static struct mse_mns_instance mse_mns_instances[CONFIG_BT_MAX_CONN];
 
 /* MSE MAS instance management */
-static struct mse_mas_instance *mse_mas_alloc(struct bt_conn *conn)
+static struct mse_mas_instance *mse_mas_alloc(struct bt_conn *conn, uint8_t instance_id)
 {
 	uint8_t index;
+	struct mse_mas_instance *inst;
 
 	if (conn == NULL) {
 		bt_shell_warn("conn is NULL");
@@ -2980,13 +2980,23 @@ static struct mse_mas_instance *mse_mas_alloc(struct bt_conn *conn)
 	}
 
 	ARRAY_FOR_EACH(mse_mas_instances[index], i) {
-		struct mse_mas_instance *inst = &mse_mas_instances[index][i];
+		inst = &mse_mas_instances[index][i];
+
+		if ((inst->conn != NULL) && (inst->instance_id == instance_id)) {
+			bt_shell_warn("Instance %d already connected", instance_id);
+			return NULL;
+		}
+	}
+
+	ARRAY_FOR_EACH(mse_mas_instances[index], i) {
+		inst = &mse_mas_instances[index][i];
 
 		if (inst->conn != NULL) {
 			continue;
 		}
 
 		inst->conn = bt_conn_ref(conn);
+		inst->instance_id = instance_id;
 		return inst;
 	}
 
@@ -3045,7 +3055,7 @@ static void mse_mas_select(void)
 	}
 
 	/* Find next available MSE MAS instance for this connection */
-	for (size_t j = 0; j < MAP_MAS_MAX_NUM; j++) {
+	ARRAY_FOR_EACH(mse_mas_instances[index], j) {
 		struct mse_mas_instance *inst = &mse_mas_instances[index][j];
 
 		if (inst->conn != NULL) {
@@ -3095,7 +3105,7 @@ static struct mse_mns_instance *mse_mns_find(struct bt_map_mse_mns *mse_mns)
 		return NULL;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(mse_mns_instances); i++) {
+	ARRAY_FOR_EACH(mse_mns_instances, i) {
 		struct mse_mns_instance *inst = &mse_mns_instances[i];
 
 		if (&inst->mse_mns == mse_mns) {
@@ -3405,6 +3415,28 @@ static int cmd_mse_mas_select(const struct shell *sh, size_t argc, char *argv[])
 	return -ENOEXEC;
 }
 
+static int cmd_mse_mas_register(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	ARRAY_FOR_EACH(mse_mas_instances, i) {
+		ARRAY_FOR_EACH(mse_mas_instances[i], j) {
+			struct mse_mas_instance *inst = &mse_mas_instances[i][j];
+
+			err = bt_map_mse_mas_register(&inst->mse_mas, &mse_mas_cb);
+			if (err != 0) {
+				shell_error(sh,
+					    "Failed to register MSE MAS server [%zu][%zu] (err %d)",
+					    i, j, err);
+				return -ENOEXEC;
+			}
+		}
+	}
+	shell_print(sh, "MSE MAS server(s) registered");
+
+	return 0;
+}
+
 struct mse_server {
 	struct bt_map_mse_mas_rfcomm_server rfcomm_server;
 	struct bt_map_mse_mas_l2cap_server l2cap_server;
@@ -3535,8 +3567,6 @@ static int mse_mas_rfcomm_accept(struct bt_conn *conn, struct bt_map_mse_mas_rfc
 {
 	struct mse_mas_instance *inst;
 	struct mse_server *s = NULL;
-	uint8_t conn_index;
-	int err;
 
 	ARRAY_FOR_EACH(mse_server, index) {
 		if (&mse_server[index].rfcomm_server == server) {
@@ -3550,23 +3580,7 @@ static int mse_mas_rfcomm_accept(struct bt_conn *conn, struct bt_map_mse_mas_rfc
 		return -ENOMEM;
 	}
 
-	/* Check if L2CAP connection already exists */
-	conn_index = bt_conn_index(conn);
-	if (conn_index >= CONFIG_BT_MAX_CONN) {
-		bt_shell_warn("conn index %u out of range (max %u)", conn_index,
-			      CONFIG_BT_MAX_CONN);
-		return -ENODEV;
-	}
-
-	for (size_t i = 0; i < ARRAY_SIZE(mse_mas_instances[conn_index]); i++) {
-		inst = &mse_mas_instances[conn_index][i];
-
-		if ((inst->conn != NULL) && (inst->psm == s->l2cap_server.server.l2cap.psm)) {
-			return -EAGAIN;
-		}
-	}
-
-	inst = mse_mas_alloc(conn);
+	inst = mse_mas_alloc(conn, s->instance_id);
 	if (inst == NULL) {
 		bt_shell_error("Cannot allocate MSE MAS instance");
 		return -ENOMEM;
@@ -3574,13 +3588,6 @@ static int mse_mas_rfcomm_accept(struct bt_conn *conn, struct bt_map_mse_mas_rfc
 
 	inst->channel = server->server.rfcomm.channel;
 	inst->supported_features = s->supported_features;
-	inst->instance_id = s->instance_id;
-	err = bt_map_mse_mas_cb_register(&inst->mse_mas, &mse_mas_cb);
-	if (err != 0) {
-		mse_mas_free(&inst->mse_mas);
-		bt_shell_error("Failed to register MSE MAS cb (err %d)", err);
-		return err;
-	}
 	*mse_mas = &inst->mse_mas;
 	return 0;
 }
@@ -3648,8 +3655,6 @@ static int mse_mas_l2cap_accept(struct bt_conn *conn, struct bt_map_mse_mas_l2ca
 {
 	struct mse_mas_instance *inst;
 	struct mse_server *s = NULL;
-	uint8_t conn_index;
-	int err;
 
 	ARRAY_FOR_EACH(mse_server, index) {
 		if (&mse_server[index].l2cap_server == server) {
@@ -3663,24 +3668,7 @@ static int mse_mas_l2cap_accept(struct bt_conn *conn, struct bt_map_mse_mas_l2ca
 		return -ENOMEM;
 	}
 
-	/* Check if RFCOMM connection already exists */
-	conn_index = bt_conn_index(conn);
-	if (conn_index >= CONFIG_BT_MAX_CONN) {
-		bt_shell_warn("conn index %u out of range (max %u)", conn_index,
-			      CONFIG_BT_MAX_CONN);
-		return -ENODEV;
-	}
-
-	for (size_t i = 0; i < ARRAY_SIZE(mse_mas_instances[conn_index]); i++) {
-		inst = &mse_mas_instances[conn_index][i];
-
-		if ((inst->conn != NULL) &&
-		    (inst->channel == s->rfcomm_server.server.rfcomm.channel)) {
-			return -EAGAIN;
-		}
-	}
-
-	inst = mse_mas_alloc(conn);
+	inst = mse_mas_alloc(conn, s->instance_id);
 	if (inst == NULL) {
 		bt_shell_error("Cannot allocate MSE MAS instance");
 		return -ENOMEM;
@@ -3688,13 +3676,6 @@ static int mse_mas_l2cap_accept(struct bt_conn *conn, struct bt_map_mse_mas_l2ca
 
 	inst->psm = server->server.l2cap.psm;
 	inst->supported_features = s->supported_features;
-	inst->instance_id = s->instance_id;
-	err = bt_map_mse_mas_cb_register(&inst->mse_mas, &mse_mas_cb);
-	if (err != 0) {
-		mse_mas_free(&inst->mse_mas);
-		bt_shell_error("Failed to register MSE MAS cb (err %d)", err);
-		return err;
-	}
 	*mse_mas = &inst->mse_mas;
 	return 0;
 }
@@ -5003,14 +4984,7 @@ static int cmd_mse_mns_rfcomm_connect(const struct shell *sh, size_t argc, char 
 
 	inst->supported_features = supported_features;
 
-	err = bt_map_mse_mns_cb_register(&inst->mse_mns, &mse_mns_cb);
-	if (err != 0) {
-		mse_mns_free(&inst->mse_mns);
-		shell_error(sh, "Failed to register MSE MNS cb (err %d)", err);
-		return err;
-	}
-
-	err = bt_map_mse_mns_rfcomm_connect(default_conn, &inst->mse_mns, channel);
+	err = bt_map_mse_mns_rfcomm_connect(default_conn, &inst->mse_mns, &mse_mns_cb, channel);
 	if (err != 0) {
 		mse_mns_free(&inst->mse_mns);
 		shell_error(sh, "RFCOMM connect failed (err %d)", err);
@@ -5092,14 +5066,7 @@ static int cmd_mse_mns_l2cap_connect(const struct shell *sh, size_t argc, char *
 
 	inst->supported_features = supported_features;
 
-	err = bt_map_mse_mns_cb_register(&inst->mse_mns, &mse_mns_cb);
-	if (err != 0) {
-		mse_mns_free(&inst->mse_mns);
-		shell_error(sh, "Failed to register MSE MNS cb (err %d)", err);
-		return err;
-	}
-
-	err = bt_map_mse_mns_l2cap_connect(default_conn, &inst->mse_mns, psm);
+	err = bt_map_mse_mns_l2cap_connect(default_conn, &inst->mse_mns, &mse_mns_cb, psm);
 	if (err != 0) {
 		mse_mns_free(&inst->mse_mns);
 		shell_error(sh, "L2CAP connect failed (err %d)", err);
@@ -6499,6 +6466,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	mce_mns_cmds,
+	SHELL_CMD_ARG(register, NULL, HELP_NONE, cmd_mce_mns_register, 1, 0),
 	SHELL_CMD_ARG(rfcomm_register, NULL, HELP_NONE, cmd_mce_mns_rfcomm_register, 1, 0),
 	SHELL_CMD_ARG(rfcomm_disconnect, NULL, HELP_NONE, cmd_mce_mns_rfcomm_disconnect, 1, 0),
 	SHELL_CMD_ARG(l2cap_register, NULL, HELP_NONE, cmd_mce_mns_l2cap_register, 1, 0),
@@ -6521,6 +6489,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	mse_mas_cmds,
 	SHELL_CMD_ARG(select, NULL, "<instance_id>", cmd_mse_mas_select, 2, 0),
+	SHELL_CMD_ARG(register, NULL, HELP_NONE, cmd_mse_mas_register, 1, 0),
 	SHELL_CMD_ARG(rfcomm_register, NULL, HELP_NONE, cmd_mse_mas_rfcomm_register, 1, 0),
 	SHELL_CMD_ARG(rfcomm_disconnect, NULL, HELP_NONE, cmd_mse_mas_rfcomm_disconnect, 1, 0),
 	SHELL_CMD_ARG(l2cap_register, NULL, HELP_NONE, cmd_mse_mas_l2cap_register, 1, 0),

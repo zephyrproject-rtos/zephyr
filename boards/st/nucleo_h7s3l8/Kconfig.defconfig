@@ -6,7 +6,7 @@
 
 if BOARD_NUCLEO_H7S3L8
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_NUCLEO_H7S3L8

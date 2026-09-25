@@ -7,5 +7,7 @@ config USBC_VBUS_ADC
 	bool "USB-C VBUS ADC"
 	default y
 	depends on DT_HAS_ZEPHYR_USB_C_VBUS_ADC_ENABLED
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_USB_C_VBUS_ADC),discharge-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_USB_C_VBUS_ADC),power-gpios)
 	help
 	  Measure VBUS with an ADC through a voltage divider

@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2024 Ian Wakely
+ *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /delete-node/ &flash0;

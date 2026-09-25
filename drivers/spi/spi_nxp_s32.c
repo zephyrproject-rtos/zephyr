@@ -268,7 +268,7 @@ static int spi_nxp_s32_configure(const struct device *dev,
 
 	bool clk_phase, clk_polarity;
 	bool lsb, hold_cs;
-	bool slave_mode, cs_active_high;
+	bool peripheral_mode, cs_active_high;
 
 	uint8_t frame_size;
 
@@ -293,28 +293,28 @@ static int spi_nxp_s32_configure(const struct device *dev,
 	hold_cs		= !!(spi_cfg->operation & SPI_HOLD_ON_CS);
 	lsb		= !!(spi_cfg->operation & SPI_TRANSFER_LSB);
 
-	slave_mode	= !!(SPI_OP_MODE_GET(spi_cfg->operation));
+	peripheral_mode	= !!(SPI_OP_MODE_GET(spi_cfg->operation));
 	frame_size	= SPI_WORD_SIZE_GET(spi_cfg->operation);
 	cs_active_high	= !!(spi_cfg->operation & SPI_CS_ACTIVE_HIGH);
 
-	if (slave_mode == (!!(config->spi_hw_cfg->Mcr & SPI_MCR_MSTR_MASK))) {
-		LOG_ERR("SPI mode (master/slave) must be same as configured in DT");
+	if (peripheral_mode == (!!(config->spi_hw_cfg->Mcr & SPI_MCR_MSTR_MASK))) {
+		LOG_ERR("SPI mode (controller/peripheral) must be same as configured in DT");
 		return -ENOTSUP;
 	}
 
-	if (slave_mode && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for enable SPI in slave mode is not enabled");
+	if (peripheral_mode && !IS_ENABLED(CONFIG_SPI_PERIPHERAL)) {
+		LOG_ERR("Kconfig for enable SPI in peripheral mode is not enabled");
 		return -ENOTSUP;
 	}
 
-	if (slave_mode && lsb) {
-		LOG_ERR("SPI does not support to shifting out with LSB in slave mode");
+	if (peripheral_mode && lsb) {
+		LOG_ERR("SPI does not support to shifting out with LSB in peripheral mode");
 		return -ENOTSUP;
 	}
 
-	if (spi_cfg->slave >= config->num_cs) {
-		LOG_ERR("Slave %d excess the allowed maximum value (%d)",
-			spi_cfg->slave, config->num_cs - 1);
+	if (spi_cfg->peripheral >= config->num_cs) {
+		LOG_ERR("Peripheral %d excess the allowed maximum value (%d)",
+			spi_cfg->peripheral, config->num_cs - 1);
 		return -ENOTSUP;
 	}
 
@@ -339,7 +339,7 @@ static int spi_nxp_s32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (!slave_mode) {
+	if (!peripheral_mode) {
 
 		if ((spi_cfg->frequency < SPI_NXP_S32_MIN_FREQ) ||
 			(spi_cfg->frequency > SPI_NXP_S32_MAX_FREQ)) {
@@ -359,7 +359,7 @@ static int spi_nxp_s32_configure(const struct device *dev,
 		if (!spi_cs_is_gpio(spi_cfg)) {
 			/* Use inner CS signal from SPI module */
 			data->transfer_cfg.PushrCmd |= hold_cs << 15U;
-			data->transfer_cfg.PushrCmd |= (1U << spi_cfg->slave);
+			data->transfer_cfg.PushrCmd |= (1U << spi_cfg->peripheral);
 		}
 	}
 
@@ -372,16 +372,16 @@ static int spi_nxp_s32_configure(const struct device *dev,
 	data->ctx.config	= spi_cfg;
 	data->bytes_per_frame	= SPI_NXP_S32_BYTE_PER_FRAME(frame_size);
 
-	if (slave_mode) {
+	if (peripheral_mode) {
 		LOG_DBG("SPI configuration: cpol = %u, cpha = %u,"
-			" lsb = %u, frame_size = %u, mode: slave",
+			" lsb = %u, frame_size = %u, mode: peripheral",
 			clk_polarity, clk_phase, lsb, frame_size);
 	} else {
 		LOG_DBG("SPI configuration: frequency = %uHz, cpol = %u,"
 			" cpha = %u, lsb = %u, hold_cs = %u, frame_size = %u,"
-			" mode: master, CS = %u\n",
+			" mode: controller, CS = %u\n",
 			best_baud.frequency, clk_polarity, clk_phase,
-			lsb, hold_cs, frame_size, spi_cfg->slave);
+			lsb, hold_cs, frame_size, spi_cfg->peripheral);
 	}
 
 	return 0;
@@ -447,11 +447,11 @@ static int transceive(const struct device *dev,
 
 	spi_context_cs_control(context, false);
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(context) && !ret) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(context) && !ret) {
 		ret = data->ctx.recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 #endif /* CONFIG_NXP_S32_SPI_INTERRUPT */
 
 	spi_context_release(context, ret);
@@ -617,12 +617,15 @@ static DEVICE_API(spi, spi_nxp_s32_driver_api) = {
 	LISTIFY(__DEBRACKET SPI_INSTANCE_COUNT, SPI_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
 #define SPI_NXP_S32_NUM_CS(n)		DT_INST_PROP(n, num_cs)
-#define SPI_NXP_S32_IS_MASTER(n)	!DT_INST_PROP(n, slave)
+#define SPI_NXP_S32_IS_PERIPHERAL(n)	\
+	(DT_INST_PROP(n, peripheral) || DT_INST_PROP(n, slave))
 
-#ifdef CONFIG_SPI_SLAVE
-#define SPI_NXP_S32_SET_SLAVE(n)	.SlaveMode = DT_INST_PROP(n, slave),
+#define SPI_NXP_S32_IS_CONTROLLER(n)	!SPI_NXP_S32_IS_PERIPHERAL(n)
+
+#ifdef CONFIG_SPI_PERIPHERAL
+#define SPI_NXP_S32_SET_PERIPHERAL(n)	.SlaveMode = SPI_NXP_S32_IS_PERIPHERAL(n),
 #else
-#define SPI_NXP_S32_SET_SLAVE(n)
+#define SPI_NXP_S32_SET_PERIPHERAL(n)
 #endif
 
 #ifdef CONFIG_NXP_S32_SPI_INTERRUPT
@@ -664,14 +667,14 @@ static DEVICE_API(spi, spi_nxp_s32_driver_api) = {
 #define SPI_NXP_S32_INSTANCE_CONFIG(n)							\
 	static const Spi_Ip_ConfigType spi_nxp_s32_default_config_##n = {		\
 		.Instance = SPI_NXP_S32_HW_INSTANCE(n),					\
-		.Mcr = (SPI_MCR_MSTR(SPI_NXP_S32_IS_MASTER(n)) |			\
+		.Mcr = (SPI_MCR_MSTR(SPI_NXP_S32_IS_CONTROLLER(n)) |			\
 			SPI_MCR_CONT_SCKE(0U) |	SPI_MCR_FRZ(0U) |			\
 			SPI_MCR_MTFE(0U) | SPI_MCR_SMPL_PT(0U) |			\
 			SPI_MCR_PCSIS(BIT_MASK(SPI_NXP_S32_NUM_CS(n))) |		\
 			SPI_MCR_MDIS(0U) | SPI_MCR_XSPI(1U) | SPI_MCR_HALT(1U)),	\
 		.TransferMode = SPI_IP_POLLING,						\
 		.StateIndex   = n,							\
-		SPI_NXP_S32_SET_SLAVE(n)						\
+		SPI_NXP_S32_SET_PERIPHERAL(n)						\
 	}
 
 #define SPI_NXP_S32_TRANSFER_CONFIG(n)							\

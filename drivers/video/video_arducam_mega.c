@@ -1351,7 +1351,7 @@ static int arducam_mega_init(const struct device *dev)
 	static const struct arducam_mega_config arducam_mega_cfg_##inst = {                        \
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
 			inst,                                                                      \
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_LOCK_ON),    \
+			SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_LOCK_ON),\
 	};                                                                                         \
                                                                                                    \
 	static struct arducam_mega_data arducam_mega_data_##inst;                                  \

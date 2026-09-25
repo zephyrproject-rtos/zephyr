@@ -12,6 +12,9 @@
 #include "nrf_clock_calibration.h"
 #include "clock_control_nrf_common.h"
 #include <nrfx_clock_lfclk.h>
+#ifdef CONFIG_NRFX_CLOCK_LFRC
+#include <nrfx_clock_lfrc.h>
+#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/irq.h>
@@ -177,7 +180,7 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 	}
 }
 
-static void clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
+static void lfclk_clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
 {
 	switch (event) {
 	case NRFX_CLOCK_LFCLK_EVT_LFCLK_STARTED:
@@ -186,7 +189,7 @@ static void clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
 		}
 		common_clkstarted_handle(CLOCK_DEVICE_LFCLK);
 		break;
-#if NRF_CLOCK_HAS_CALIBRATION || NRF_LFRC_HAS_CALIBRATION
+#if NRF_CLOCK_HAS_CALIBRATION
 	case NRFX_CLOCK_LFCLK_EVT_CAL_DONE:
 		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 			z_nrf_clock_calibration_done_handler();
@@ -202,36 +205,43 @@ static void clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
 	}
 }
 
-static void onoff_start(struct onoff_manager *mgr, onoff_notify_fn notify)
+#if defined(CONFIG_NRFX_CLOCK_LFRC) && NRF_LFRC_HAS_CALIBRATION
+static void lfrc_clock_event_handler(nrfx_clock_lfrc_evt_type_t event)
 {
-	int err;
-
-	err = common_async_start(CLOCK_DEVICE_LFCLK, common_onoff_started_callback, notify,
-				 COMMON_CTX_ONOFF);
-	if (err < 0) {
-		notify(mgr, err);
+	switch (event) {
+	case NRFX_CLOCK_LFRC_EVT_CAL_DONE:
+		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
+			z_nrf_clock_calibration_done_handler();
+		} else {
+			/* Should not happen when calibration is disabled. */
+			__ASSERT_NO_MSG(false);
+		}
+		break;
+	default:
+		__ASSERT_NO_MSG(0);
+		break;
 	}
 }
-
-static void onoff_stop(struct onoff_manager *mgr, onoff_notify_fn notify)
-{
-	int res;
-
-	res = common_stop(CLOCK_DEVICE_LFCLK, COMMON_CTX_ONOFF);
-	notify(mgr, res);
-}
+#endif
 
 void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 {
 	static atomic_t on;
+#if CONFIG_CLOCK_CONTROL_NRF_ONOFF
 	static struct onoff_client cli;
+#endif
 
 	if (atomic_set(&on, 1) == 0) {
 		int err;
-		struct onoff_manager *mgr = &((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->mgr;
 
-		sys_notify_init_spinwait(&cli.notify);
-		err = onoff_request(mgr, &cli);
+#if CONFIG_CLOCK_CONTROL_NRF_ONOFF
+	struct onoff_manager *mgr = &((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->mgr;
+
+	sys_notify_init_spinwait(&cli.notify);
+	err = onoff_request(mgr, &cli);
+#else
+	err = common_async_start(CLOCK_DEVICE_LFCLK, NULL, NULL, COMMON_CTX_API);
+#endif
 		__ASSERT_NO_MSG(err >= 0);
 	}
 
@@ -254,121 +264,34 @@ void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 	}
 }
 
-static int api_start(const struct device *dev, clock_control_subsys_t subsys, clock_control_cb_t cb,
-		     void *user_data)
-{
-	ARG_UNUSED(subsys);
-	ARG_UNUSED(dev);
-
-	return common_async_start(CLOCK_DEVICE_LFCLK, cb, user_data, COMMON_CTX_API);
-}
-
-static int api_blocking_start(const struct device *dev, clock_control_subsys_t subsys)
-{
-	ARG_UNUSED(subsys);
-	ARG_UNUSED(dev);
-
-	struct k_sem sem = Z_SEM_INITIALIZER(sem, 0, 1);
-	int err;
-
-	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
-		return -ENOTSUP;
-	}
-
-	err = api_start(NULL, NULL, common_blocking_start_callback, &sem);
-	if (err < 0) {
-		return err;
-	}
-
-	return k_sem_take(&sem, K_MSEC(500));
-}
-
-static int api_stop(const struct device *dev, clock_control_subsys_t subsys)
-{
-	ARG_UNUSED(subsys);
-	ARG_UNUSED(dev);
-
-	return common_stop(CLOCK_DEVICE_LFCLK, COMMON_CTX_API);
-}
-
-static enum clock_control_status api_get_status(const struct device *dev,
-						clock_control_subsys_t subsys)
-{
-	ARG_UNUSED(subsys);
-	ARG_UNUSED(dev);
-
-	return COMMON_GET_STATUS(((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->flags);
-}
-
-static int api_request(const struct device *dev, const struct nrf_clock_spec *spec,
-		       struct onoff_client *cli)
-{
-	ARG_UNUSED(spec);
-	ARG_UNUSED(dev);
-
-	return onoff_request(&((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->mgr, cli);
-}
-
-static int api_release(const struct device *dev, const struct nrf_clock_spec *spec)
-{
-	ARG_UNUSED(spec);
-	ARG_UNUSED(dev);
-
-	return onoff_release(&((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->mgr);
-}
-
-static int api_cancel_or_release(const struct device *dev, const struct nrf_clock_spec *spec,
-				 struct onoff_client *cli)
-{
-	ARG_UNUSED(spec);
-	ARG_UNUSED(dev);
-
-	return onoff_cancel_or_release(&((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->mgr,
-				       cli);
-}
-
 static int clk_init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
-	int err;
-	static const struct onoff_transitions transitions = {.start = onoff_start,
-							     .stop = onoff_stop};
-
-	common_connect_irq();
-
-	if (nrfx_clock_lfclk_init(clock_event_handler) != 0) {
+	if (nrfx_clock_lfclk_init(lfclk_clock_event_handler) != 0) {
 		return -EIO;
 	}
+
+#if defined(CONFIG_NRFX_CLOCK_LFRC) && NRF_LFRC_HAS_CALIBRATION
+	IRQ_CONNECT(DT_IRQN(DT_INST(0, nordic_nrf_lfrc)),
+		    DT_IRQ(DT_INST(0, nordic_nrf_lfrc), priority),
+		    nrfx_clock_lfrc_irq_handler,
+		    NULL, 0);
+	irq_enable(DT_IRQN(DT_INST(0, nordic_nrf_lfrc)));
+
+	if (nrfx_clock_lfrc_init(lfrc_clock_event_handler) != 0) {
+		return -EIO;
+	}
+#endif
 
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 		z_nrf_clock_calibration_init();
 	}
 
-	err = onoff_manager_init(&((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->mgr,
-				 &transitions);
-	if (err < 0) {
-		return err;
-	}
-
-	((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->flags = CLOCK_CONTROL_STATUS_OFF;
-
-	return 0;
+	return common_clk_init(dev);
 }
 
 CLOCK_CONTROL_NRF_IRQ_HANDLERS_ITERABLE(clock_control_nrf_lfclk, &nrfx_clock_lfclk_irq_handler);
 
-static DEVICE_API(nrf_clock_control, clock_control_api) = {
-	.std_api = {
-		.on = api_blocking_start,
-		.off = api_stop,
-		.async_on = api_start,
-		.get_status = api_get_status,
-	},
-	.request = api_request,
-	.release = api_release,
-	.cancel_or_release = api_cancel_or_release,
-};
+extern struct nrf_clock_control_driver_api common_clock_control_api;
 
 static common_clock_data_t data;
 
@@ -379,4 +302,4 @@ static const common_clock_config_t config = {
 };
 
 DEVICE_DT_DEFINE(CLOCK_NODE_LFCLK, clk_init, NULL, &data, &config, PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_api);
+		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &common_clock_control_api);

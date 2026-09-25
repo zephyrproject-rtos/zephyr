@@ -76,14 +76,6 @@ LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 #if STM32_SDMMC_USE_DMA
-
-static const uint32_t table_priority[] = {
-	DMA_PRIORITY_LOW,
-	DMA_PRIORITY_MEDIUM,
-	DMA_PRIORITY_HIGH,
-	DMA_PRIORITY_VERY_HIGH
-};
-
 struct sdmmc_dma_stream {
 	const struct device *dev;
 	uint32_t channel;
@@ -238,6 +230,7 @@ static void stm32_sdmmc_dma_cb(const struct device *dev, void *arg,
 static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma_stream *dma)
 {
 	int ret;
+	struct dma_config hal_dma_cfg = dma->cfg;
 
 	if (!device_is_ready(dma->dev)) {
 		LOG_ERR("Failed to get dma dev");
@@ -255,19 +248,23 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 		return ret;
 	}
 
+	hal_dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	hal_dma_cfg.source_data_size = 4U;
+	hal_dma_cfg.dest_data_size = 4U;
+	hal_dma_cfg.source_burst_length = 16U;
+	hal_dma_cfg.dest_burst_length = 16U;
+	ret = dma_stm32_zcfg_to_halcfg(dma->dev, &hal_dma_cfg, &handle->Init,
+				       DMA_ADDR_ADJ_NO_CHANGE, DMA_ADDR_ADJ_INCREMENT);
+	if (ret < 0) {
+		return ret;
+	}
+
 	handle->Instance                 = STM32_DMA_GET_INSTANCE(dma->reg, dma->channel_nb);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
 	handle->Init.Channel             = dma->cfg.dma_slot * DMA_CHANNEL_1;
-	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
-	handle->Init.MemInc              = DMA_MINC_ENABLE;
-	handle->Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-	handle->Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
 	handle->Init.Mode                = DMA_PFCTRL;
-	handle->Init.Priority            = table_priority[dma->cfg.channel_priority];
 	handle->Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
 	handle->Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
-	handle->Init.MemBurst            = DMA_MBURST_INC4;
-	handle->Init.PeriphBurst         = DMA_PBURST_INC4;
 #else
 	BUILD_ASSERT(STM32_SDMMC_USE_DMA_SHARED == 1, "Only txrx is supported on this family");
 	/* handle->Init.Direction is not initialised here on purpose.
@@ -275,12 +272,6 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	 * configured before each read/write call.
 	 */
 	handle->Init.Request             = dma->cfg.dma_slot;
-	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
-	handle->Init.MemInc              = DMA_MINC_ENABLE;
-	handle->Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-	handle->Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
-	handle->Init.Mode                = DMA_NORMAL;
-	handle->Init.Priority            = table_priority[dma->cfg.channel_priority];
 #endif
 
 	return ret;
@@ -981,16 +972,16 @@ void stm32_sdmmc_get_card_csd(const struct device *dev, uint32_t csd[4])
 #if STM32_SDMMC_USE_DMA
 
 #define SDMMC_DMA_CHANNEL_INIT(dir, dir_cap)				\
-	.dev = DEVICE_DT_GET(STM32_DMA_CTLR(0, dir)),			\
+	.dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(0, dir)),		\
 	.channel = DT_INST_DMAS_CELL_BY_NAME(0, dir, channel),		\
 	.channel_nb = DT_DMAS_CELL_BY_NAME(				\
 			DT_DRV_INST(0), dir, channel),			\
 	.reg = (DMA_TypeDef *)DT_REG_ADDR(				\
 			DT_PHANDLE_BY_NAME(DT_DRV_INST(0), dmas, dir)),	\
 	.cfg = {							\
-		.dma_slot = STM32_DMA_SLOT(0, dir, slot),		\
+		.dma_slot = STM32_DT_INST_DMA_SLOT(0, dir),		\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-				STM32_DMA_CHANNEL_CONFIG(0, dir)),	\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(0, dir)),	\
 		.dma_callback = stm32_sdmmc_dma_cb,			\
 		.linked_channel = STM32_DMA_HAL_OVERRIDE,		\
 	},

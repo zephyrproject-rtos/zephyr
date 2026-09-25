@@ -304,6 +304,7 @@ ZTEST(dlist_api, test_sflist)
 	};
 	sys_sfnode_t *node = NULL;
 	int ii;
+	int max_test_flag = MIN((uintptr_t)0x7, SYS_SFLIST_FLAGS_MASK);
 
 	sys_sflist_init(&test_list);
 
@@ -398,22 +399,26 @@ ZTEST(dlist_api, test_sflist)
 	 * sys_sfnode_init()
 	 */
 	sys_sflist_init(&test_list);
-	/* Only iterating 0..3 due to limited range of flag values */
-	for (ii = 0; ii < 4; ii++) {
-		sys_sfnode_init(&data_node[ii].node, ii);
-		sys_sflist_append(&test_list, &data_node[ii].node);
+	struct data_node flag_node[8] = {
+		{.data = 0}, {.data = 1}, {.data = 2}, {.data = 3},
+		{.data = 4}, {.data = 5}, {.data = 6}, {.data = 7},
+	};
+	/* Test up to eight values within the flag capacity of this ABI. */
+	for (ii = 0; ii <= max_test_flag; ii++) {
+		sys_sfnode_init(&flag_node[ii].node, ii);
+		sys_sflist_append(&test_list, &flag_node[ii].node);
 	}
-	for (ii = 0; ii < 4; ii++) {
+	for (ii = 0; ii <= max_test_flag; ii++) {
 		node = sys_sflist_get(&test_list);
 		zassert_equal(sys_sfnode_flags_get(node), ii,
 			      "wrong flags value");
 		/* Place the nodes back on the list with the flags set
 		 * in reverse order for the next test
 		 */
-		sys_sfnode_flags_set(node, 3 - ii);
+		sys_sfnode_flags_set(node, max_test_flag - ii);
 		sys_sflist_append(&test_list, node);
 	}
-	for (ii = 3; ii >= 0; ii--) {
+	for (ii = max_test_flag; ii >= 0; ii--) {
 		node = sys_sflist_get(&test_list);
 		zassert_equal(sys_sfnode_flags_get(node), ii,
 			      "wrong flags value");

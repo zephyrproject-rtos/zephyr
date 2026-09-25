@@ -1129,6 +1129,91 @@
 				status = "disabled";
 			};
 		};
+
+		/* CA55_0 <-> CM33 */
+		mbox1: mhu@40400020 {
+			compatible = "renesas,rz-mhu-mbox";
+			unit = <1>;
+			reg = <0x40400020 0x20>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
+			interrupts = <69 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CA55_1 <-> CM33 */
+		mbox3: mhu@40400060 {
+			compatible = "renesas,rz-mhu-mbox";
+			unit = <3>;
+			reg = <0x40400060 0x20>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
+			interrupts = <71 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CA55_0 */
+		mbox4: mhu@40400080 {
+			compatible = "renesas,rz-mhu-mbox";
+			unit = <4>;
+			reg = <0x40400080 0x20>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
+			interrupts = <78 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CA55_1 */
+		mbox5: mhu@404000a0 {
+			compatible = "renesas,rz-mhu-mbox";
+			unit = <5>;
+			reg = <0x404000a0 0x20>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
+			interrupts = <79 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		spi0: spi@4004ac00 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x4004ac00 DT_SIZE_K(1)>;
+			interrupts = <415 1>, <413 1>, <414 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@4004b000 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x4004b000 DT_SIZE_K(1)>;
+			interrupts = <418 1>, <416 1>, <417 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@4004b400 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x4004b400 DT_SIZE_K(1)>;
+			interrupts = <421 1>, <419 1>, <420 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 

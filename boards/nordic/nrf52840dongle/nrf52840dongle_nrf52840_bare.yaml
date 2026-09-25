@@ -10,7 +10,7 @@ toolchain:
 supported:
   - adc
   - usbd
-  - ble
+  - bluetooth
   - pwm
   - spi
   - watchdog

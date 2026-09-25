@@ -12,3 +12,9 @@
 	model = "NXP FRDM_MCXL255 board";
 	compatible = "nxp,mcxl255", "nxp,mcx";
 };
+
+&aon_kpp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_aon_kpp0>;
+	pinctrl-names = "default";
+};

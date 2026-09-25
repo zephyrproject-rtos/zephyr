@@ -398,7 +398,7 @@ static int iis328dq_init(const struct device *dev)
  */
 
 #define IIS328DQ_SPI_OPERATION                                                                     \
-	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define IIS328DQ_CONFIG_SPI(inst)                                                                  \
 	{                                                                                          \

@@ -32,13 +32,13 @@ This is the ultimate application we want to run.
    :alt: Emulator architecture showing tests, emulators and drivers
 
 Below that are peripheral drivers, such as the AT24 EEPROM driver. We can test
-peripheral drivers using an emulation driver connected via a emulated I2C
-controller/emulator which passes I2C traffic from the AT24 driver to the AT24
-simulator.
+peripheral drivers using a peripheral emulator connected via a bus controller
+emulator which passes e.g. I2C traffic from the AT24 driver (peripheral driver)
+to the AT24 simulator (the peripheral emulator).
 
 Separately we can test the STM32 and NXP I2C drivers on real hardware using API
-tests. These require some sort of device attached to the bus, but with this, we
-can validate much of the driver functionality.
+tests. These require some sort of peripheral device attached to the bus, but
+with this, we can validate much of the driver functionality.
 
 Putting the two together, we can test the application and peripheral code
 entirely on native_sim. Since we know that the I2C driver on the real hardware

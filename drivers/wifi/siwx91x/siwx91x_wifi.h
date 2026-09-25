@@ -26,6 +26,8 @@ struct siwx91x_dev {
 	uint8_t max_num_sta;
 	bool reboot_needed;
 	bool hidden_ssid;
+	/* Runs net_if_dormant_off / IP / PS off the WiseConnect event engine */
+	struct k_work on_join_work;
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 	struct k_event fds_recv_event;

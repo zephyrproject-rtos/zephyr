@@ -20,6 +20,9 @@
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/pinctrl.h>
 
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+
 #include <i3c.h>
 
 #include <zephyr/logging/log.h>
@@ -648,6 +651,8 @@ static int max32_i3c_recover_bus(const struct device *dev)
 	int ret = 0;
 	uint8_t ibi_type;
 
+	pm_policy_device_power_lock_get(dev);
+
 	/* Return to IDLE if in SDR message mode */
 	if (max32_i3c_state_get(regs) == MXC_V_I3C_CONT_STATUS_STATE_SDR_NORM) {
 		max32_i3c_request_emit_stop(dev->data, regs);
@@ -685,6 +690,8 @@ static int max32_i3c_recover_bus(const struct device *dev)
 			       MXC_V_I3C_CONT_STATUS_STATE_IDLE, 1000) == -ETIMEDOUT) {
 		ret = -EBUSY;
 	}
+
+	pm_policy_device_power_lock_put(dev);
 
 	return ret;
 }
@@ -880,6 +887,8 @@ static int max32_i3c_transfer(const struct device *dev, struct i3c_device_desc *
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
+	pm_policy_device_power_lock_get(dev);
+
 	max32_i3c_wait_idle(data, regs);
 	max32_i3c_xfer_reset(regs);
 
@@ -950,6 +959,9 @@ out_xfer_i3c_stop_unlock:
 	max32_i3c_request_emit_stop(data, regs);
 	max32_i3c_errwarn_clear_all_nowait(regs);
 	max32_i3c_status_clear_all(regs);
+
+	pm_policy_device_power_lock_put(dev);
+
 	k_mutex_unlock(&data->lock);
 
 	return ret;
@@ -976,6 +988,8 @@ static int max32_i3c_do_daa(const struct device *dev)
 	uint32_t intmask;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
+
+	pm_policy_device_power_lock_get(dev);
 
 	ret = max32_i3c_state_wait_timeout(regs, MXC_V_I3C_CONT_STATUS_STATE_IDLE, 100, 100000);
 	if (ret == -ETIMEDOUT) {
@@ -1110,6 +1124,8 @@ out_daa:
 	max32_i3c_interrupt_enable(regs, intmask);
 
 out_daa_unlock:
+	pm_policy_device_power_lock_put(dev);
+
 	k_mutex_unlock(&data->lock);
 
 	return ret;
@@ -1137,6 +1153,8 @@ static int max32_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pa
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
+
+	pm_policy_device_power_lock_get(dev);
 
 	max32_i3c_xfer_reset(regs);
 
@@ -1219,6 +1237,8 @@ out_ccc_stop:
 	if (ret > 0) {
 		ret = 0;
 	}
+
+	pm_policy_device_power_lock_put(dev);
 
 	k_mutex_unlock(&data->lock);
 
@@ -1425,9 +1445,6 @@ int max32_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 		}
 	}
 
-	/* Disable controller interrupt while we configure IBI rules. */
-	MXC_I3C_Controller_DisableInt(regs, MXC_F_I3C_CONT_INTCLR_TARG_START);
-
 	LOG_DBG("IBI enabling for 0x%02x (BCR 0x%02x)", target->dynamic_addr, target->bcr);
 
 	msb = (target->dynamic_addr & BIT(6)) == BIT(6);
@@ -1481,17 +1498,23 @@ int max32_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 		idx = 0;
 	}
 
-	data->ibi.addr[idx] = target->dynamic_addr;
-	data->ibi.num_addr += 1U;
-
-	max32_i3c_ibi_rules_setup(data, regs);
+	/* Disable controller interrupt while we configure IBI rules. */
+	MXC_I3C_Controller_DisableInt(regs, MXC_F_I3C_CONT_INTCLR_TARG_START);
 
 	/* Tell target to enable IBI */
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, true, &i3c_events);
 	if (ret != 0) {
 		LOG_ERR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		goto out;
 	}
+
+	data->ibi.addr[idx] = target->dynamic_addr;
+	data->ibi.num_addr += 1U;
+
+	max32_i3c_ibi_rules_setup(data, regs);
+
+	pm_policy_device_power_lock_get(dev);
 
 out:
 	if (data->ibi.num_addr > 0U) {
@@ -1534,18 +1557,22 @@ int max32_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc *targ
 	/* Disable controller interrupt while we configure IBI rules. */
 	MXC_I3C_Controller_DisableInt(regs, MXC_F_I3C_CONT_INTCLR_TARG_START);
 
-	data->ibi.addr[idx] = 0U;
-	data->ibi.num_addr -= 1U;
-
 	/* Tell target to disable IBI */
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, false, &i3c_events);
 	if (ret != 0) {
 		LOG_ERR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		goto out;
 	}
+
+	data->ibi.addr[idx] = 0U;
+	data->ibi.num_addr -= 1U;
 
 	max32_i3c_ibi_rules_setup(data, regs);
 
+	pm_policy_device_power_lock_put(dev);
+
+out:
 	if (data->ibi.num_addr > 0U) {
 		/*
 		 * Enable controller to raise interrupt when a target
@@ -1553,7 +1580,6 @@ int max32_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc *targ
 		 */
 		MXC_I3C_Controller_EnableInt(regs, MXC_F_I3C_CONT_INTCLR_TARG_START);
 	}
-out:
 
 	return ret;
 }
@@ -1683,6 +1709,82 @@ static int max32_i3c_config_get(const struct device *dev, enum i3c_config_type t
 	return 0;
 }
 
+static int max32_i3c_pm_resume(const struct device *dev)
+{
+	const struct max32_i3c_config *cfg = dev->config;
+#ifdef CONFIG_PM_S2RAM
+	const struct max32_i3c_data *data = dev->data;
+	struct i3c_config_controller ctrl_config;
+#endif /* CONFIG_PM_S2RAM */
+	int ret;
+
+	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+	if (ret) {
+		return ret;
+	}
+
+	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
+	if ((ret < 0) && (ret != -ENOENT)) {
+		return ret;
+	}
+
+#ifdef CONFIG_PM_S2RAM
+	if (!(cfg->regs->cont_ctrl0 & MXC_S_I3C_CONT_CTRL0_EN_ON)) {
+		/* Source and destination should not overlap so copy configuration first */
+		memcpy(&ctrl_config, &data->common.ctrl_config, sizeof(ctrl_config));
+		ret = max32_i3c_configure(dev, I3C_CONFIG_CONTROLLER, &ctrl_config);
+		if (ret) {
+			return ret;
+		}
+	}
+
+#endif /* CONFIG_PM_S2RAM */
+
+	return 0;
+}
+
+static int max32_i3c_pm_suspend(const struct device *dev)
+{
+	const struct max32_i3c_config *cfg = dev->config;
+	int ret;
+
+	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_SLEEP);
+	if ((ret < 0) && (ret != -ENOENT)) {
+		return ret;
+	}
+
+	ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
+}
+
+static int max32_i3c_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = max32_i3c_pm_resume(dev);
+		if (ret) {
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = max32_i3c_pm_suspend(dev);
+		if (ret) {
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 /**
  * @brief Initialize the hardware.
  *
@@ -1746,7 +1848,7 @@ static int max32_i3c_init(const struct device *dev)
 		}
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, max32_i3c_pm_action);
 }
 
 static int max32_i3c_i2c_api_configure(const struct device *dev, uint32_t dev_config)
@@ -1766,6 +1868,8 @@ static int max32_i3c_i2c_api_transfer(const struct device *dev, struct i2c_msg *
 	size_t chunk_size;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
+
+	pm_policy_device_power_lock_get(dev);
 
 	max32_i3c_wait_idle(data, regs);
 
@@ -1837,6 +1941,9 @@ out_xfer_i2c_stop_unlock:
 	max32_i3c_request_emit_stop(data, regs);
 	max32_i3c_errwarn_clear_all_nowait(regs);
 	max32_i3c_status_clear_all(regs);
+
+	pm_policy_device_power_lock_put(dev);
+
 	k_mutex_unlock(&data->lock);
 
 	return ret;
@@ -1898,7 +2005,8 @@ static DEVICE_API(i3c, max32_i3c_driver_api) = {
 		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(id, i3c_scl_hz, 0),                  \
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(id, i2c_scl_hz, 0),                  \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(id, max32_i3c_init, NULL, &max32_i3c_data_##id,                      \
+	PM_DEVICE_DT_INST_DEFINE(id, max32_i3c_pm_action);                                         \
+	DEVICE_DT_INST_DEFINE(id, max32_i3c_init, PM_DEVICE_DT_INST_GET(id), &max32_i3c_data_##id, \
 			      &max32_i3c_config_##id, POST_KERNEL,                                 \
 			      CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &max32_i3c_driver_api);         \
 	static void max32_i3c_config_func_##id(const struct device *dev)                           \

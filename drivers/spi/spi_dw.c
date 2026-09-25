@@ -41,10 +41,10 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-static inline bool spi_dw_is_slave(struct spi_dw_data *spi)
+static inline bool spi_dw_is_peripheral(struct spi_dw_data *spi)
 {
-	return (IS_ENABLED(CONFIG_SPI_SLAVE) &&
-		spi_context_is_slave(&spi->ctx));
+	return (IS_ENABLED(CONFIG_SPI_PERIPHERAL) &&
+		spi_context_is_peripheral(&spi->ctx));
 }
 
 static void completed(const struct device *dev, int error)
@@ -71,7 +71,7 @@ out:
 	/* Disabling the controller */
 	clear_bit_ssienr(dev);
 
-	if (!spi_dw_is_slave(spi)) {
+	if (!spi_dw_is_peripheral(spi)) {
 		if (spi_cs_is_gpio(ctx->config)) {
 			spi_context_cs_control(ctx, false);
 		} else {
@@ -199,14 +199,14 @@ static int spi_dw_configure(const struct device *dev,
 	}
 
 	/* Verify if requested op mode is relevant to this controller */
-	if (config->operation & SPI_OP_MODE_SLAVE) {
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
 		if (!(info->serial_target)) {
-			LOG_ERR("Slave mode not supported");
+			LOG_ERR("Peripheral mode not supported");
 			return -ENOTSUP;
 		}
 	} else {
 		if (info->serial_target) {
-			LOG_ERR("Master mode not supported");
+			LOG_ERR("Controller mode not supported");
 			return -ENOTSUP;
 		}
 	}
@@ -268,14 +268,14 @@ static int spi_dw_configure(const struct device *dev,
 	/* At this point, it's mandatory to set this on the context! */
 	spi->ctx.config = config;
 
-	if (!spi_dw_is_slave(spi)) {
-		/* Baud rate and Slave select, for master only */
+	if (!spi_dw_is_peripheral(spi)) {
+		/* Baud rate and peripheral select, for controller only */
 		write_baudr(dev, SPI_DW_CLK_DIVIDER(info->clock_frequency,
 						    config->frequency));
 	}
 
-	if (spi_dw_is_slave(spi)) {
-		LOG_DBG("Installed slave config %p:"
+	if (spi_dw_is_peripheral(spi)) {
+		LOG_DBG("Installed peripheral config %p:"
 			    " ws/dfs %u/%u, mode %u/%u/%u",
 			    config,
 			    SPI_WORD_SIZE_GET(config->operation), spi->dfs,
@@ -286,8 +286,8 @@ static int spi_dw_configure(const struct device *dev,
 			    (SPI_MODE_GET(config->operation) &
 			     SPI_MODE_LOOP) ? 1 : 0);
 	} else {
-		LOG_DBG("Installed master config %p: freq %uHz (div = %u),"
-			    " ws/dfs %u/%u, mode %u/%u/%u, slave %u",
+		LOG_DBG("Installed controller config %p: freq %uHz (div = %u),"
+			    " ws/dfs %u/%u, mode %u/%u/%u, peripheral %u",
 			    config, config->frequency,
 			    SPI_DW_CLK_DIVIDER(info->clock_frequency,
 					       config->frequency),
@@ -298,7 +298,7 @@ static int spi_dw_configure(const struct device *dev,
 			     SPI_MODE_CPHA) ? 1 : 0,
 			    (SPI_MODE_GET(config->operation) &
 			     SPI_MODE_LOOP) ? 1 : 0,
-			    config->slave);
+			    config->peripheral);
 	}
 
 	return 0;
@@ -331,7 +331,7 @@ static void spi_dw_update_txftlr(const struct device *dev,
 	uint32_t dw_spi_txftlr_dflt = (info->fifo_depth * 1) / 2;
 	uint32_t reg_data = dw_spi_txftlr_dflt;
 
-	if (spi_dw_is_slave(spi)) {
+	if (spi_dw_is_peripheral(spi)) {
 		if (!spi->ctx.tx_len) {
 			reg_data = 0U;
 		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
@@ -394,7 +394,7 @@ static int transceive(const struct device *dev,
 	/* ToDo: add a way to determine EEPROM mode */
 
 	if (tmod >= DW_SPI_CTRLR0_TMOD_RX &&
-	    !spi_dw_is_slave(spi)) {
+	    !spi_dw_is_peripheral(spi)) {
 		reg_data = spi_dw_compute_ndf(rx_bufs->buffers,
 					      rx_bufs->count,
 					      spi->dfs);
@@ -408,8 +408,8 @@ static int transceive(const struct device *dev,
 		write_ctrlr1(dev, 0);
 	}
 
-	if (spi_dw_is_slave(spi)) {
-		/* Enabling MISO line relevantly */
+	if (spi_dw_is_peripheral(spi)) {
+		/* Enabling SDO line relevantly */
 		if (tmod == DW_SPI_CTRLR0_TMOD_RX) {
 			tmod |= DW_SPI_CTRLR0_SLV_OE;
 		} else {
@@ -435,7 +435,7 @@ static int transceive(const struct device *dev,
 	/* Does Rx thresholds needs to be lower? */
 	reg_data = dw_spi_rxftlr_dflt;
 
-	if (spi_dw_is_slave(spi)) {
+	if (spi_dw_is_peripheral(spi)) {
 		if (spi->ctx.rx_len &&
 		    spi->ctx.rx_len < dw_spi_rxftlr_dflt) {
 			reg_data = spi->ctx.rx_len - 1;
@@ -455,12 +455,12 @@ static int transceive(const struct device *dev,
 		DW_SPI_IMR_UNMASK;
 	write_imr(dev, reg_data);
 
-	if (!spi_dw_is_slave(spi)) {
+	if (!spi_dw_is_peripheral(spi)) {
 		/* if cs is not defined as gpio, use hw cs */
 		if (spi_cs_is_gpio(config)) {
 			spi_context_cs_control(&spi->ctx, true);
 		} else {
-			write_ser(dev, BIT(config->slave));
+			write_ser(dev, BIT(config->peripheral));
 		}
 	}
 
@@ -469,11 +469,11 @@ static int transceive(const struct device *dev,
 
 	ret = spi_context_wait_for_completion(&spi->ctx);
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&spi->ctx) && !ret) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(&spi->ctx) && !ret) {
 		ret = spi->ctx.recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 out:
 	spi_context_release(&spi->ctx, ret);

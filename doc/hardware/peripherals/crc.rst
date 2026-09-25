@@ -14,8 +14,8 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:option:`CRC_HW`
-* :kconfig:option:`CRC_INIT_PRIORITY`
+* :kconfig:option:`CONFIG_CRC_DRIVER`
+* :kconfig:option:`CONFIG_CRC_DRIVER_INIT_PRIORITY`
 
 API Reference
 *************

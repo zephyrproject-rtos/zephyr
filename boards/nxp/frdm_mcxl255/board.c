@@ -66,6 +66,11 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFIRC_to_MAIN_CLK);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_gpio0))
+	CLOCK_EnableClock(kCLOCK_GateAonPORT);
+	CLOCK_EnableClock(kCLOCK_GateAonGPIO);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	RESET_ReleasePeripheralReset(kGPIO1_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateGPIO1);
@@ -149,6 +154,19 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonUART);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_kpp0))
+	CLOCK_AttachClk(kFRO16K_to_AON_KPP);
+	CLOCK_EnableClock(kCLOCK_GateAonKPP);
+	RESET_ReleasePeripheralReset(kAonKPP_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
+	CLOCK_AttachClk(kFRO12M_to_ADC0);
+	CLOCK_SetClockDiv(kCLOCK_DivADC0, 1U);
+	RESET_ReleasePeripheralReset(kADC0_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_GateADC0);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr0)) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr1))
 	CLOCK_AttachClk(kFROdiv4_to_AON_TMR);
@@ -184,6 +202,11 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GatePERIPH_GROUP1);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
+	/* Select 1 MHz clock source for OSTIMER0. */
+	CLOCK_AttachClk(kCLK_1M_to_OSTIMER0);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
 	if (!CLOCK_IsRoscInitialized()) {
 		rosc_init_config_t rosc_init_config;
@@ -195,6 +218,12 @@ void board_early_init_hook(void)
 		rosc_init_config.detectionTimeoutSwitchedMode = 50U;
 		(void)CLOCK_InitRosc(&rosc_init_config);
 	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lptmr0))
+	CLOCK_AttachClk(kFRO16K_to_AON_LPTMR);
+	RESET_ReleasePeripheralReset(kAonLPTMR_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_GateAonLPTMR);
 #endif
 
 	/* Set SystemCoreClock variable. */

@@ -58,7 +58,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb330000 0x20>, <0xeb3f0400 0x1000>;
+			reg = <0xeb330000 0x10000>, <0xeb3f0400 0x200>;
 			reg-names = "ctrl", "msg";
 			xlnx,ipi-id = <2>;
 			#address-cells = <1>;
@@ -69,7 +69,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb340000 0x20>, <0xeb3f0600 0x1000>;
+			reg = <0xeb340000 0x10000>, <0xeb3f0600 0x200>;
 			reg-names = "ctrl", "msg";
 			xlnx,ipi-id = <3>;
 			#address-cells = <1>;
@@ -80,7 +80,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb350000 0x20>, <0xeb3f0800 0x1000>;
+			reg = <0xeb350000 0x10000>, <0xeb3f0800 0x200>;
 			reg-names = "ctrl", "msg";
 			xlnx,ipi-id = <4>;
 			#address-cells = <1>;
@@ -91,7 +91,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb360000 0x20>, <0xeb3f0a00 0x1000>;
+			reg = <0xeb360000 0x10000>, <0xeb3f0a00 0x200>;
 			reg-names = "ctrl", "msg";
 			xlnx,ipi-id = <5>;
 			#address-cells = <1>;
@@ -102,7 +102,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb370000 0x20>, <0xeb3f0c00 0x1000>;
+			reg = <0xeb370000 0x10000>, <0xeb3f0c00 0x200>;
 			reg-names = "ctrl", "msg";
 			xlnx,ipi-id = <6>;
 			#address-cells = <1>;
@@ -113,7 +113,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb380000 0x20>, <0xeb3f0e00 0x1000>;
+			reg = <0xeb380000 0x10000>, <0xeb3f0e00 0x200>;
 			reg-names = "ctrl", "msg";
 			xlnx,ipi-id = <7>;
 			#address-cells = <1>;
@@ -124,7 +124,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb3a0000 0x20>;
+			reg = <0xeb3a0000 0x1000>;
 			reg-names = "ctrl";
 			xlnx,ipi-id = <9>;
 			#address-cells = <1>;
@@ -135,7 +135,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb3b0000 0x20>;
+			reg = <0xeb3b0000 0x1000>;
 			reg-names = "ctrl";
 			xlnx,ipi-id = <10>;
 			#address-cells = <1>;
@@ -146,7 +146,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb3b1000 0x20>;
+			reg = <0xeb3b1000 0x1000>;
 			reg-names = "ctrl";
 			xlnx,ipi-id = <11>;
 			#address-cells = <1>;
@@ -157,7 +157,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb3b2000 0x20>;
+			reg = <0xeb3b2000 0x1000>;
 			reg-names = "ctrl";
 			xlnx,ipi-id = <12>;
 			#address-cells = <1>;
@@ -168,7 +168,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb3b3000 0x20>;
+			reg = <0xeb3b3000 0x1000>;
 			reg-names = "ctrl";
 			xlnx,ipi-id = <13>;
 			#address-cells = <1>;
@@ -179,7 +179,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb3b4000 0x20>;
+			reg = <0xeb3b4000 0x1000>;
 			reg-names = "ctrl";
 			xlnx,ipi-id = <14>;
 			#address-cells = <1>;
@@ -190,7 +190,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb3b5000 0x20>;
+			reg = <0xeb3b5000 0x1000>;
 			reg-names = "ctrl";
 			xlnx,ipi-id = <15>;
 			#address-cells = <1>;
@@ -201,7 +201,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb310000 0x20>, <0xeb3f0000 0x1000>;
+			reg = <0xeb310000 0x10000>, <0xeb3f0000 0x200>;
 			reg-names = "ctrl", "msg";
 			xlnx,ipi-id = <0>;
 			#address-cells = <1>;
@@ -212,7 +212,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb320000 0x20>, <0xeb3f0200 0x1000>;
+			reg = <0xeb320000 0x10000>, <0xeb3f0200 0x200>;
 			reg-names = "ctrl", "msg";
 			xlnx,ipi-id = <1>;
 			#address-cells = <1>;
@@ -223,7 +223,7 @@
 			compatible = "xlnx,mbox-versal-ipi-mailbox";
 			status = "disabled";
 			interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg = <0xeb390000 0x20>;
+			reg = <0xeb390000 0x1000>;
 			reg-names = "ctrl";
 			xlnx,ipi-id = <8>;
 			#address-cells = <1>;

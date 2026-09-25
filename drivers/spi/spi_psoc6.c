@@ -184,7 +184,7 @@ static uint32_t spi_psoc6_get_freqdiv(uint32_t frequency)
 	return oversample;
 }
 
-static void spi_psoc6_master_get_defaults(struct cy_stc_scb_spi_config *cfg)
+static void spi_psoc6_controller_get_defaults(struct cy_stc_scb_spi_config *cfg)
 {
 	cfg->spiMode = CY_SCB_SPI_MASTER;
 	cfg->subMode = CY_SCB_SPI_MOTOROLA;
@@ -229,12 +229,12 @@ static int spi_psoc6_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
-		spi_psoc6_master_get_defaults(&data->cfg);
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_CONTROLLER) {
+		spi_psoc6_controller_get_defaults(&data->cfg);
 
-		if (spi_cfg->slave >= SPI_CHIP_SELECT_COUNT) {
-			LOG_ERR("Slave %d is greater than or equal to %d",
-				spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
+		if (spi_cfg->peripheral >= SPI_CHIP_SELECT_COUNT) {
+			LOG_ERR("Peripheral %d is greater than or equal to %d",
+				spi_cfg->peripheral, SPI_CHIP_SELECT_COUNT);
 			return -EINVAL;
 		}
 
@@ -260,7 +260,7 @@ static int spi_psoc6_configure(const struct device *dev,
 
 		data->ctx.config = spi_cfg;
 	} else {
-		/* Slave mode is not implemented yet. */
+		/* Peripheral mode is not implemented yet. */
 		return -ENOTSUP;
 	}
 
@@ -314,7 +314,7 @@ static int spi_psoc6_transceive(const struct device *dev,
 	}
 
 	Cy_SCB_SPI_Init(config->base, &data->cfg, NULL);
-	Cy_SCB_SPI_SetActiveSlaveSelect(config->base, spi_cfg->slave);
+	Cy_SCB_SPI_SetActiveSlaveSelect(config->base, spi_cfg->peripheral);
 	Cy_SCB_SPI_Enable(config->base);
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);

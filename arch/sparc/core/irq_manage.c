@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/interrupt_controller/intc_irqmp.h>
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <zephyr/logging/log.h>
@@ -32,7 +33,7 @@ void z_sparc_enter_irq(uint32_t irl)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	if (irl != 141U) {
-		irl = z_sparc_int_get_source(irl);
+		irl = intc_irqmp_get_source(irl);
 		ite = &_sw_isr_table[irl];
 		ite->isr(ite->arg);
 	} else {
@@ -40,7 +41,7 @@ void z_sparc_enter_irq(uint32_t irl)
 	}
 #else
 	/* Get the actual interrupt source from the interrupt controller */
-	irl = z_sparc_int_get_source(irl);
+	irl = intc_irqmp_get_source(irl);
 	ite = &_sw_isr_table[irl];
 	ite->isr(ite->arg);
 #endif
@@ -50,3 +51,27 @@ void z_sparc_enter_irq(uint32_t irl)
 	z_check_stack_sentinel();
 #endif
 }
+
+#ifdef CONFIG_LEON_IRQMP
+/*
+ * The SPARC port assumes an IRQMP-style interrupt controller: the trap
+ * path above already queries it for the interrupt source. Map the
+ * architecture interrupt control functions to the IRQMP driver here so
+ * every SoC using it gets them; an SoC with a different controller
+ * provides its own implementation instead.
+ */
+void arch_irq_enable(unsigned int irq)
+{
+	intc_irqmp_irq_enable(irq);
+}
+
+void arch_irq_disable(unsigned int irq)
+{
+	intc_irqmp_irq_disable(irq);
+}
+
+int arch_irq_is_enabled(unsigned int irq)
+{
+	return intc_irqmp_irq_is_enabled(irq);
+}
+#endif /* CONFIG_LEON_IRQMP */

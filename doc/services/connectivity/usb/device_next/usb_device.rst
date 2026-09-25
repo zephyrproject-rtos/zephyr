@@ -9,7 +9,7 @@ Overview
 USB device support consists of the USB device controller (UDC) drivers
 , :ref:`udc_api`, and USB device stack, :ref:`usbd_api`.
 The :ref:`udc_api` provides a generic and vendor independent interface to USB
-device controllers, and although, there a is clear separation between these
+device controllers, and although, there is a clear separation between these
 layers, the purpose of :ref:`udc_api` is to serve Zephyr's USB device stack
 exclusively.
 
@@ -43,8 +43,8 @@ Samples
 
 * :zephyr:code-sample:`zperf` To build the sample for the device support,
   set the configuration overlay file
-  ``-DDEXTRA_CONF_FILE=overlay-usbd_next_ecm.conf`` and devicetree overlay file
-  ``-DDTC_OVERLAY_FILE="usbd_next_ecm.overlay`` either directly or via ``west``.
+  ``-DEXTRA_CONF_FILE=overlay-usbd.conf`` and devicetree overlay file
+  ``-DDTC_OVERLAY_FILE=usbd_cdc_ecm.overlay`` either directly or via ``west``.
 
 .. _usb_device_next_howto_configure:
 

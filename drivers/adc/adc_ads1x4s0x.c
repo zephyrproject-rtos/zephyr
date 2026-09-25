@@ -630,7 +630,7 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 	uint16_t acquisition_time_value = ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time);
 	uint16_t acquisition_time_unit = ADC_ACQ_TIME_UNIT(channel_cfg->acquisition_time);
 
-	ADS1X4S0X_REGISTER_INPMUX_SET_DEFAULTS(gain);
+	ADS1X4S0X_REGISTER_INPMUX_SET_DEFAULTS(input_mux);
 	ADS1X4S0X_REGISTER_REF_SET_DEFAULTS(reference_control);
 	ADS1X4S0X_REGISTER_DATARATE_SET_DEFAULTS(data_rate);
 	ADS1X4S0X_REGISTER_PGA_SET_DEFAULTS(gain);
@@ -1580,7 +1580,7 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 	)                                                                                         \
 	static const struct ads1x4s0x_config config_##name##_##n = {                              \
 		.bus = SPI_DT_SPEC_INST_GET(                                                      \
-			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8)),                 \
+			n, SPI_OP_MODE_CONTROLLER | SPI_MODE_CPHA | SPI_WORD_SET(8)),             \
 		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##name##_##n,))               \
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                      \
 		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                          \

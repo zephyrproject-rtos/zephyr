@@ -13,11 +13,14 @@ supported:
   - can
   - counter
   - crc
+  - crypto
   - dma
+  - dmic
   - i2c
   - gpio
   - memc
   - netif:eth
+  - ptp_clock
   - pwm
   - rtc
   - spi

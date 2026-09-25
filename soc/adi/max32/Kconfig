@@ -21,6 +21,7 @@ config SOC_FAMILY_MAX32_M33
 	select CPU_HAS_ARM_SAU
 	select ARMV8_M_DSP
 	select HAS_PM
+	select HAS_POWEROFF
 	select PM_STATE_SET_IRQ_UNLOCKED
 
 config SOC_FAMILY_MAX32_M4
@@ -31,6 +32,7 @@ config SOC_FAMILY_MAX32_M4
 	select CPU_HAS_FPU
 	select CPU_HAS_ICACHE
 	select HAS_PM
+	select HAS_POWEROFF
 	select PM_STATE_SET_IRQ_UNLOCKED
 	select CLOCK_CONTROL
 

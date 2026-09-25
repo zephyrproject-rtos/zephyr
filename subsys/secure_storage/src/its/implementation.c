@@ -4,6 +4,7 @@
 #include <zephyr/secure_storage/its.h>
 #include <zephyr/secure_storage/its/store.h>
 #include <zephyr/secure_storage/its/transform.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
@@ -15,6 +16,15 @@ LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 BUILD_ASSERT(sizeof(secure_storage_its_uid_t) == 4); /* ITS UIDs are 32-bit */
 BUILD_ASSERT(1 << SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE >= SECURE_STORAGE_ITS_CALLER_COUNT);
 BUILD_ASSERT(SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE + SECURE_STORAGE_ITS_UID_BIT_SIZE == 32);
+#endif
+
+/* For logging a `secure_storage_its_uid_t`, whose width depends on the configuration. */
+#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
+#define UID_FMT           "%u/%#llx"
+#define UID_ARGS(its_uid) (its_uid).caller_id, (unsigned long long)(its_uid).uid
+#else
+#define UID_FMT           "%u/%#lx"
+#define UID_ARGS(its_uid) (its_uid).caller_id, (unsigned long)(its_uid).uid
 #endif
 
 static psa_status_t make_its_uid(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
@@ -72,6 +82,12 @@ static psa_status_t transform_stored_data(
 						      data_size, data, data_len, create_flags);
 	if (ret != PSA_SUCCESS) {
 		log_failed_operation("transform", "from", ret);
+		/* Not listed for the ITS API by the PSA specification, which assumes storage
+		 * that is protected by hardware. Passed on because that isn't the case here.
+		 */
+		if (ret == PSA_ERROR_INVALID_SIGNATURE || ret == PSA_ERROR_DATA_CORRUPT) {
+			return ret;
+		}
 		return PSA_ERROR_GENERIC_ERROR;
 	}
 	return PSA_SUCCESS;
@@ -103,8 +119,13 @@ static bool keep_stored_entry(secure_storage_its_uid_t uid, size_t data_length, 
 	*ret = get_entry(uid, sizeof(existing_data), existing_data, &existing_data_len,
 			 &existing_create_flags);
 	if (*ret != PSA_SUCCESS) {
-		/* The entry either doesn't exist or is corrupted. */
-		/* Allow overwriting corrupted entries to not be stuck with them forever. */
+		/* Allow overwriting entries that can't be read back to not be stuck with them
+		 * forever, but make it visible as it may be a sign of corruption or tampering.
+		 */
+		if (*ret != PSA_ERROR_DOES_NOT_EXIST) {
+			LOG_WRN("%s entry " UID_FMT " that failed to be read back. (%d)",
+				"Overwriting", UID_ARGS(uid), *ret);
+		}
 		return false;
 	}
 	if (existing_create_flags & PSA_STORAGE_FLAG_WRITE_ONCE) {
@@ -114,15 +135,8 @@ static bool keep_stored_entry(secure_storage_its_uid_t uid, size_t data_length, 
 	if (existing_data_len == data_length &&
 	    existing_create_flags == create_flags &&
 	    !memcmp(existing_data, p_data, data_length)) {
-#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
-		LOG_DBG("Not writing entry %u/%#llx to storage because its stored data"
-			" (of length %zu) is identical.", uid.caller_id,
-			(unsigned long long)uid.uid, data_length);
-#else
-		LOG_DBG("Not writing entry %u/%#lx to storage because its stored data"
-			" (of length %zu) is identical.", uid.caller_id,
-			(unsigned long)uid.uid, data_length);
-#endif
+		LOG_DBG("Not writing entry " UID_FMT " to storage because its stored data"
+			" (of length %zu) is identical.", UID_ARGS(uid), data_length);
 		*ret = PSA_SUCCESS;
 		return true;
 	}
@@ -150,9 +164,9 @@ static psa_status_t store_entry(secure_storage_its_uid_t uid, size_t data_length
 	return ret;
 }
 
-psa_status_t secure_storage_its_set(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
-				    size_t data_length, const void *p_data,
-				    psa_storage_create_flags_t create_flags)
+static psa_status_t its_set(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
+			    size_t data_length, const void *p_data,
+			    psa_storage_create_flags_t create_flags)
 {
 	psa_status_t ret;
 	secure_storage_its_uid_t its_uid;
@@ -176,6 +190,7 @@ psa_status_t secure_storage_its_set(secure_storage_its_caller_id_t caller_id, ps
 	ret = store_entry(its_uid, data_length, p_data, create_flags);
 	return ret;
 }
+
 psa_status_t secure_storage_its_get(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
 				    size_t data_offset, size_t data_size,
 				    void *p_data, size_t *p_data_length)
@@ -188,10 +203,6 @@ psa_status_t secure_storage_its_get(secure_storage_its_caller_id_t caller_id, ps
 
 	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
 		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-	if (data_size == 0) {
-		*p_data_length = 0;
-		return PSA_SUCCESS;
 	}
 
 	ret = get_stored_data(its_uid, stored_data, &stored_data_len);
@@ -239,8 +250,7 @@ psa_status_t secure_storage_its_get_info(secure_storage_its_caller_id_t caller_i
 	return ret;
 }
 
-psa_status_t secure_storage_its_remove(secure_storage_its_caller_id_t caller_id,
-				       psa_storage_uid_t uid)
+static psa_status_t its_remove(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid)
 {
 	psa_status_t ret;
 	secure_storage_its_uid_t its_uid;
@@ -259,12 +269,49 @@ psa_status_t secure_storage_its_remove(secure_storage_its_caller_id_t caller_id,
 	/* Allow overwriting corrupted entries as well to not be stuck with them forever. */
 	if (ret == PSA_SUCCESS ||
 	    ret == PSA_ERROR_STORAGE_FAILURE ||
-	    ret == PSA_ERROR_GENERIC_ERROR) {
+	    ret == PSA_ERROR_GENERIC_ERROR ||
+	    ret == PSA_ERROR_INVALID_SIGNATURE ||
+	    ret == PSA_ERROR_DATA_CORRUPT) {
+		if (ret != PSA_SUCCESS) {
+			LOG_WRN("%s entry " UID_FMT " that failed to be read back. (%d)",
+				"Removing", UID_ARGS(its_uid), ret);
+		}
 		ret = secure_storage_its_store_remove(its_uid);
 		if (ret != PSA_SUCCESS) {
 			log_failed_operation("remove", "from", ret);
 			return PSA_ERROR_STORAGE_FAILURE;
 		}
 	}
+	return ret;
+}
+
+/* Serializes the operations that modify an entry, which read it back before deciding what
+ * to write or remove. Retrieving an entry doesn't need it, as it makes a single call to the
+ * store module and then works on its own copy of the data.
+ */
+static K_MUTEX_DEFINE(s_write_mutex);
+
+psa_status_t secure_storage_its_set(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
+				    size_t data_length, const void *p_data,
+				    psa_storage_create_flags_t create_flags)
+{
+	psa_status_t ret;
+
+	k_mutex_lock(&s_write_mutex, K_FOREVER);
+	ret = its_set(caller_id, uid, data_length, p_data, create_flags);
+	k_mutex_unlock(&s_write_mutex);
+
+	return ret;
+}
+
+psa_status_t secure_storage_its_remove(secure_storage_its_caller_id_t caller_id,
+				       psa_storage_uid_t uid)
+{
+	psa_status_t ret;
+
+	k_mutex_lock(&s_write_mutex, K_FOREVER);
+	ret = its_remove(caller_id, uid);
+	k_mutex_unlock(&s_write_mutex);
+
 	return ret;
 }

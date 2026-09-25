@@ -75,4 +75,7 @@ endif
 configdefault CPU_LOAD
 	default y if LV_USE_PERF_MONITOR
 
+configdefault LV_Z_POINTER_FROM_CHOSEN_TOUCH
+	default n if LV_Z_DEMO_KEYPAD_AND_ENCODER
+
 source "Kconfig.zephyr"

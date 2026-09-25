@@ -603,7 +603,7 @@ static DEVICE_API(adc, api) = {
                                                                                                    \
 	static const struct ads1118_config config_##n = {                                          \
 		.spi = SPI_DT_SPEC_INST_GET(n,                                                     \
-				SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8)),             \
+				SPI_OP_MODE_CONTROLLER | SPI_MODE_CPHA | SPI_WORD_SET(8)),         \
 		.resolution = ADS1118_RESOLUTION,                                                  \
 		.multiplexer = true,                                                               \
 		.is_temperature_mode = DT_INST_PROP(n, ti_temperature_mode_enable),                \

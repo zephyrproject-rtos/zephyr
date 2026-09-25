@@ -261,8 +261,8 @@ static int spi_smartbond_configure(const struct spi_smartbond_cfg *cfg,
 		return 0;
 	}
 
-	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not yet supported");
+	if (spi_cfg->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not yet supported");
 		return -ENOTSUP;
 	}
 
@@ -583,7 +583,7 @@ static void spi_smartbond_isr_trigger(const struct device *dev)
 	case SPI_SMARTBOND_TRANSFER_NONE:
 		__fallthrough;
 	default:
-		__ASSERT_MSG_INFO("Invalid transfer mode");
+		LOG_ERR("Invalid transfer mode");
 		break;
 	}
 
@@ -664,7 +664,7 @@ static void spi_smartbond_isr(void *args)
 	case SPI_SMARTBOND_TRANSFER_NONE:
 		__fallthrough;
 	default:
-		__ASSERT_MSG_INFO("Invalid transfer mode");
+		LOG_ERR("Invalid transfer mode");
 		break;
 	}
 
@@ -1034,7 +1034,7 @@ static int spi_smartbond_dma_trigger(const struct device *dev)
 		case SPI_SMARTBOND_TRANSFER_NONE:
 			__fallthrough;
 		default:
-			__ASSERT_MSG_INFO("Invalid transfer mode");
+			LOG_ERR("Invalid transfer mode");
 			break;
 		}
 

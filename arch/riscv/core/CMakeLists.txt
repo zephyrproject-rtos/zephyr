@@ -2,6 +2,8 @@
 
 zephyr_library()
 
+zephyr_cc_option_ifdef(CONFIG_FRAME_POINTER -mno-omit-leaf-frame-pointer)
+
 zephyr_library_sources(
   cpu_idle.c
   fatal.c
@@ -21,6 +23,7 @@ if(CONFIG_SMP)
   zephyr_library_sources(ipi.c)
 
   zephyr_library_sources_ifdef(CONFIG_RISCV_SMP_IPI_CLINT ipi_clint.c)
+  zephyr_library_sources_ifdef(CONFIG_RISCV_SMP_IPI_SBI ipi_sbi.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_FPU_SHARING fpu.c fpu.S)
@@ -28,11 +31,13 @@ zephyr_library_sources_ifdef(CONFIG_PM_S2RAM pm_s2ram.c pm_s2ram.S)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_USE_ISR_WRAPPER isr.S)
-zephyr_library_sources_ifdef(CONFIG_RISCV_S_MODE sbi.S)
+zephyr_library_sources_ifdef(CONFIG_RISCV_S_MODE_INTERNAL_SBI sbi.S)
+zephyr_library_sources_ifdef(CONFIG_RISCV_USER_COUNTER_ACCESS counters.c)
 zephyr_library_sources_ifdef(CONFIG_RISCV_PMP pmp.c pmp.S)
 zephyr_linker_sources_ifdef(CONFIG_RISCV_PMP ROM_SECTIONS pmp.ld)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
+zephyr_library_sources_ifdef(CONFIG_RISCV_USER_STRING_NLEN_VALIDATE userspace.c)
 zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
 zephyr_library_sources_ifdef(CONFIG_ARCH_STACKWALK stacktrace.c)
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)

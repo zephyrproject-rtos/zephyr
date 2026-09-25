@@ -8,6 +8,7 @@
 
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/types.h>
 
 #include <zephyr/device.h>
@@ -398,17 +399,24 @@ static void oacp_ind_handler(struct bt_conn *conn,
 		}
 
 		if (req_opcode == BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC) {
-			if (net_buf.len == sizeof(checksum)) {
-				checksum = net_buf_simple_pull_le32(&net_buf);
-				LOG_DBG("Object checksum 0x%08x\n", checksum);
-				if (otc_inst->cb->obj_checksum_calculated) {
-					otc_inst->cb->obj_checksum_calculated(
-						otc_inst, conn, result_code, checksum);
+			if (result_code == BT_GATT_OTS_OACP_RES_SUCCESS) {
+				if (net_buf.len == sizeof(checksum)) {
+					checksum = net_buf_simple_pull_le32(&net_buf);
+					LOG_DBG("Object checksum 0x%08x", checksum);
+				} else {
+					LOG_DBG("Invalid indication data len %u after opcode and "
+						"result pulled",
+						net_buf.len);
+					return;
 				}
 			} else {
-				LOG_ERR("Invalid indication data len %u after opcode and result "
-					"pulled", net_buf.len);
-				return;
+				/* The checksum is omitted in error responses */
+				checksum = 0U;
+			}
+
+			if (otc_inst->cb != NULL && otc_inst->cb->obj_checksum_calculated != NULL) {
+				otc_inst->cb->obj_checksum_calculated(otc_inst, conn, result_code,
+								      checksum);
 			}
 		}
 
@@ -1421,12 +1429,13 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 	}
 
 	if ((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
-		LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", offset);
+		LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", (long)offset);
 		return -EINVAL;
 	}
 
 	if (offset > otc_inst->cur_object.size.cur) {
-		LOG_ERR("offset %ld exceeds cur size %zu", offset, otc_inst->cur_object.size.cur);
+		LOG_ERR("offset %ld exceeds cur size %zu",
+			(long)offset, otc_inst->cur_object.size.cur);
 		return -EINVAL;
 	}
 
@@ -1438,8 +1447,8 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 
 	if (((len + offset) > otc_inst->cur_object.size.alloc) &&
 	    !BT_OTS_OBJ_GET_PROP_APPEND(otc_inst->cur_object.props)) {
-		LOG_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu."
-		, (len + offset), otc_inst->cur_object.size.alloc);
+		LOG_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu.",
+			(len + (long)offset), otc_inst->cur_object.size.alloc);
 		return -EINVAL;
 	}
 
@@ -1482,13 +1491,14 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
 	}
 
 	if ((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
-		LOG_DBG("offset exceeds %ld UINT32 and must be >= 0", offset);
+		LOG_DBG("offset exceeds %ld UINT32 and must be >= 0", (long)offset);
 		return -EINVAL;
 	}
 
 	if ((len + offset) > otc_inst->cur_object.size.cur) {
 		LOG_DBG("The sum of offset (%ld) and length (%zu) exceed the Current Size %lu "
-			"alloc %zu.", offset, len, (len + offset), otc_inst->cur_object.size.cur);
+			"alloc %zu.", (long)offset, len, (len + (long)offset),
+			otc_inst->cur_object.size.cur);
 		return -EINVAL;
 	}
 

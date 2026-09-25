@@ -477,7 +477,6 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 		}
 		break;
 	/* The following are currently not allowed at all */
-	case K_OBJ_FUTEX:			/* Lives in user memory */
 	case K_OBJ_SYS_MUTEX:			/* Lives in user memory */
 	case K_OBJ_NET_SOCKET:			/* Indeterminate size */
 		LOG_ERR("forbidden object type '%s' requested",
@@ -632,11 +631,14 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 Z_GENERIC_SECTION(.kobject_data.text.dummies)
 __weak struct k_object *z_object_gperf_find(const void *obj)
 {
+	ARG_UNUSED(obj);
 	return NULL;
 }
 Z_GENERIC_SECTION(.kobject_data.text.dummies)
 __weak void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
+	ARG_UNUSED(func);
+	ARG_UNUSED(context);
 }
 #else
 Z_GENERIC_SECTION(.kobject_data.text.dummies)

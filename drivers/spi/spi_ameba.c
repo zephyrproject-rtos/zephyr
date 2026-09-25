@@ -67,9 +67,9 @@ struct spi_ameba_config {
 };
 
 static int spi_ameba_configure(const struct device *dev, const struct spi_config *spi_cfg);
-static inline bool spi_ameba_is_slave(struct spi_ameba_data *data)
+static inline bool spi_ameba_is_peripheral(struct spi_ameba_data *data)
 {
-	return (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(&data->ctx));
+	return (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(&data->ctx));
 }
 
 static bool spi_ameba_transfer_ongoing(struct spi_ameba_data *data)
@@ -183,7 +183,7 @@ static void spi_ameba_receive_data(const struct device *dev)
 						      (uint16_t *)data->ctx.rx_buf);
 				}
 			} else if (spi_context_rx_buf_on(ctx) || spi_context_rx_on(ctx)) {
-				/* for Master mode, doing TX also will got RX data,
+				/* for controller mode, doing TX also will got RX data,
 				 * so drop the dummy data
 				 * OR fix for case: rx half end: buf1 is null
 				 * but len1 !=0, skip len1 and rx into buf2
@@ -240,8 +240,8 @@ static void spi_ameba_send_data(const struct device *dev)
 				txdata = (datalen <= 8)
 					? UNALIGNED_GET((const uint8_t *)(ctx->tx_buf))
 					: UNALIGNED_GET((const uint16_t *)(ctx->tx_buf));
-			} else if (!spi_ameba_is_slave(data)) {
-				/* For master mode: Push a dummy to TX FIFO for Read */
+			} else if (!spi_ameba_is_peripheral(data)) {
+				/* For controller mode: Push a dummy to TX FIFO for Read */
 				txdata = 0U;
 			}
 		} else if (spi_context_rx_on(ctx)) { /* rx bigger than tx */
@@ -393,10 +393,10 @@ static int spi_ameba_wait_dma_rx_tx_done(const struct device *dev)
 	k_timeout_t timeout;
 
 	/*
-	 * In slave mode we do not know when the transaction will start. Hence,
+	 * In peripheral mode we do not know when the transaction will start. Hence,
 	 * it doesn't make sense to have timeout in this case.
 	 */
-	if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(&data->ctx)) {
+	if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(&data->ctx)) {
 		timeout = K_FOREVER;
 	} else {
 		timeout = K_MSEC(1000);
@@ -863,7 +863,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 			goto end;
 		}
 
-		if (spi_ameba_is_slave(data)) {
+		if (spi_ameba_is_peripheral(data)) {
 			if (tx_bufs) { /* && tx_bufs->buffers*/
 				int_mask = SPI_BIT_TXEIM;
 			}
@@ -940,8 +940,8 @@ static int spi_ameba_configure(const struct device *dev, const struct spi_config
 		return 0;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s", dev->name);
+	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_CONTROLLER) {
+		LOG_ERR("Peripheral mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
@@ -968,7 +968,7 @@ static int spi_ameba_configure(const struct device *dev, const struct spi_config
 
 	SSI_StructInit(&spi_init_struct);
 
-	if (spi_ameba_is_slave(data)) {
+	if (spi_ameba_is_peripheral(data)) {
 		SSI_SetRole(spi, SSI_SLAVE);
 		spi_init_struct.SPI_Role = SSI_SLAVE;
 		LOG_DBG("SPI ROLE: SSI_SLAVE");
@@ -987,7 +987,7 @@ static int spi_ameba_configure(const struct device *dev, const struct spi_config
 									 : SCPOL_INACTIVE_IS_LOW));
 	SSI_SetDataFrameSize(spi, (SPI_WORD_SIZE_GET(spi_cfg->operation) - 1)); /* DataFrameSize */
 
-	if (!(spi_ameba_is_slave(data))) {
+	if (!(spi_ameba_is_peripheral(data))) {
 		/* set frequency */
 		bus_freq = 100000000;
 		LOG_DBG("%s %u freq%u", __func__, __LINE__, spi_cfg->frequency);

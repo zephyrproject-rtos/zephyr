@@ -26,7 +26,7 @@
 
 #define SEM_TIMEOUT (K_MSEC(100))
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
-#define TOTAL_THREADS_WAITING (5)
+#define TOTAL_THREADS_WAITING (5U)
 
 #define SEC2MS(s) ((s) * 1000)
 #define QSEC2MS(s) ((s) * 250)
@@ -97,11 +97,17 @@ struct k_thread tdata;
 
 void sem_give_task(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_sem_give((struct k_sem *)p1);
 }
 
 void sem_reset_take_task(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_sem_reset((struct k_sem *)p1);
 	zassert_false(k_sem_take((struct k_sem *)p1, K_FOREVER));
 }
@@ -147,17 +153,28 @@ void isr_sem_take(const void *semaphore)
 
 void sem_take_timeout_forever_helper(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_sleep(K_MSEC(100));
 	k_sem_give(&simple_sem);
 }
 
 void sem_take_timeout_isr_helper(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 	sem_give_from_isr(&simple_sem);
 }
 
 void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	expect_k_sem_take_nomsg(&low_prio_sem, K_FOREVER, 0);
 	expect_k_sem_take_nomsg(&multiple_thread_sem, K_FOREVER, 0);
 
@@ -166,6 +183,9 @@ void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
 
 void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 	expect_k_sem_take_nomsg(&mid_prio_sem, K_FOREVER, 0);
 	expect_k_sem_take_nomsg(&multiple_thread_sem, K_FOREVER, 0);
 
@@ -174,6 +194,9 @@ void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
 
 void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	expect_k_sem_take_nomsg(&high_prio_sem, K_FOREVER, 0);
 	expect_k_sem_take_nomsg(&multiple_thread_sem, K_FOREVER, 0);
@@ -184,6 +207,9 @@ void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 /* First function for mutual exclusion test */
 void sem_queue_mutual_exclusion1(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 	for (int i = 0; i < 1000; i++) {
 		expect_k_sem_take_nomsg(&mut_sem, K_FOREVER, 0);
 
@@ -203,6 +229,9 @@ void sem_queue_mutual_exclusion1(void *p1, void *p2, void *p3)
 /* Second function for mutual exclusion test */
 void sem_queue_mutual_exclusion2(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 	for (int i = 0; i < 1000; i++) {
 		expect_k_sem_take_nomsg(&mut_sem, K_FOREVER, 0);
 
@@ -221,6 +250,9 @@ void sem_queue_mutual_exclusion2(void *p1, void *p2, void *p3)
 
 void sem_take_multiple_high_prio_long_helper(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 	expect_k_sem_take_nomsg(&high_prio_long_sem, K_FOREVER, 0);
 	expect_k_sem_take_nomsg(&multiple_thread_sem, K_FOREVER, 0);
 
@@ -483,7 +515,7 @@ ZTEST_USER(semaphore, test_sem_count_get)
 	expect_k_sem_count_get_nomsg(&msg_sema, SEM_INIT_VAL + 1);
 	expect_k_sem_take_nomsg(&msg_sema, K_FOREVER, 0);
 	/**TESTPOINT: sem count get after take*/
-	for (int i = 0; i < SEM_MAX_VAL; i++) {
+	for (unsigned int i = 0U; i < SEM_MAX_VAL; i++) {
 		expect_k_sem_count_get_nomsg(&msg_sema, SEM_INIT_VAL + i);
 		k_sem_give(&msg_sema);
 	}
@@ -920,7 +952,7 @@ ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
 	/* Give the semaphore by a thread and verify the semaphore's
 	 * count is as expected
 	 */
-	for (int i = 1; i <= SEM_MAX_VAL; i++) {
+	for (unsigned int i = 1U; i <= SEM_MAX_VAL; i++) {
 		k_sem_give(&simple_sem);
 		expect_k_sem_count_get_nomsg(&simple_sem, i);
 	}
@@ -929,7 +961,7 @@ ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
 	 * continue to run k_sem_give,
 	 * the count of simple_sem will not increase anymore
 	 */
-	for (int i = 0; i < 5; i++) {
+	for (unsigned int i = 0U; i < 5; i++) {
 		k_sem_give(&simple_sem);
 		expect_k_sem_count_get_nomsg(&simple_sem, SEM_MAX_VAL);
 	}
@@ -977,7 +1009,7 @@ ZTEST(semaphore, test_sem_give_take_from_isr)
 	expect_k_sem_count_get_nomsg(&simple_sem, 0U);
 
 	/* give semaphore from an isr and do a check for the count */
-	for (int i = 0; i < SEM_MAX_VAL; i++) {
+	for (unsigned int i = 0U; i < SEM_MAX_VAL; i++) {
 		sem_give_from_isr(&simple_sem);
 		expect_k_sem_count_get_nomsg(&simple_sem, i + 1);
 	}
@@ -996,6 +1028,9 @@ ZTEST(semaphore, test_sem_give_take_from_isr)
 
 void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 	/* get blocked until the test thread gives the semaphore */
 	expect_k_sem_take_nomsg(&multiple_thread_sem, K_FOREVER, 0);
 
@@ -1034,7 +1069,7 @@ ZTEST(semaphore, test_sem_multiple_threads_wait)
 	 * correctly by running twice.
 	 */
 	for (int repeat_count = 0; repeat_count < 2; repeat_count++) {
-		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+		for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 			k_thread_create(&multiple_tid[i],
 					multiple_stack[i], STACK_SIZE,
 					sem_multiple_threads_wait_helper,
@@ -1047,7 +1082,7 @@ ZTEST(semaphore, test_sem_multiple_threads_wait)
 		k_sleep(K_MSEC(500));
 
 		/* give the semaphores */
-		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+		for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 			k_sem_give(&multiple_thread_sem);
 		}
 
@@ -1055,7 +1090,7 @@ ZTEST(semaphore, test_sem_multiple_threads_wait)
 		k_sleep(K_MSEC(500));
 
 		/* check if all the threads are done. */
-		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+		for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 			expect_k_sem_take(&simple_sem, K_FOREVER, 0,
 				"Some of the threads did not get multiple_thread_sem: %d != %d");
 		}
@@ -1063,7 +1098,7 @@ ZTEST(semaphore, test_sem_multiple_threads_wait)
 		expect_k_sem_count_get_nomsg(&simple_sem, 0U);
 		expect_k_sem_count_get_nomsg(&multiple_thread_sem, 0U);
 
-		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+		for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 			k_thread_join(&multiple_tid[i], K_FOREVER);
 		}
 	}
@@ -1135,6 +1170,11 @@ ZTEST(semaphore, test_sem_measure_timeouts)
 
 void sem_measure_timeout_from_thread_helper(void *p1, void *p2, void *p3)
 {
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	/* first sync the 2 threads */
 	k_sem_give(&simple_sem);
 
@@ -1198,6 +1238,8 @@ ZTEST(semaphore, test_sem_measure_timeout_from_thread)
 
 void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 	int timeout = POINTER_TO_INT(p1);
 	int64_t start_ticks, end_ticks, diff_ticks;
 
@@ -1252,7 +1294,7 @@ ZTEST(semaphore_1cpu, test_sem_multiple_take_and_timeouts)
 	/* Multiple threads timeout and the sequence in which it times out
 	 * is pushed into a pipe and checked later on.
 	 */
-	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+	for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 		k_thread_create(&multiple_tid[i],
 				multiple_stack[i], STACK_SIZE,
 				sem_multiple_take_and_timeouts_helper,
@@ -1260,7 +1302,7 @@ ZTEST(semaphore_1cpu, test_sem_multiple_take_and_timeouts)
 				K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
 
-	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+	for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 		k_pipe_read(&timeout_info_pipe, (uint8_t *)&timeout, sizeof(int), K_FOREVER);
 		zassert_equal(timeout, QSEC2MS(i + 1),
 			     "timeout did not occur properly: %d != %d",
@@ -1268,13 +1310,16 @@ ZTEST(semaphore_1cpu, test_sem_multiple_take_and_timeouts)
 	}
 
 	/* cleanup */
-	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+	for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 		k_thread_join(&multiple_tid[i], K_FOREVER);
 	}
 }
 
 void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
 {
+
+	ARG_UNUSED(p3);
+
 	int rc;
 	int timeout = POINTER_TO_INT(p1);
 	struct k_sem *sema = p2;
@@ -1348,7 +1393,7 @@ ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
 	/* Multiple threads timeout on different semaphores and the sequence
 	 * in which it times out is pushed into a pipe and checked later on.
 	 */
-	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+	for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 		k_thread_create(&multiple_tid[i],
 				multiple_stack[i], STACK_SIZE,
 				sem_multi_take_timeout_diff_sem_helper,
@@ -1357,7 +1402,7 @@ ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
 				K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
 
-	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+	for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 		rc = k_pipe_read(&timeout_info_pipe, (uint8_t *)&retrieved_info,
 			sizeof(struct timeout_info), K_FOREVER);
 		zassert_true(rc == sizeof(struct timeout_info),
@@ -1366,7 +1411,7 @@ ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
 		zassert_true(retrieved_info.timeout == SEC2MS(i + 1),
 			     "timeout did not occur properly");
 	}
-	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+	for (unsigned int i = 0U; i < TOTAL_THREADS_WAITING; i++) {
 		k_thread_join(&multiple_tid[i], K_FOREVER);
 	}
 }

@@ -59,7 +59,7 @@ struct i2c_rcar_data {
 #define RCAR_I2C_ICMCR_TSBE     BIT(2)  /* Start Byte Transmission Enable */
 #define RCAR_I2C_ICMCR_FSB      BIT(1)  /* Forced Stop onto the Bus */
 #define RCAR_I2C_ICMCR_ESG      BIT(0)  /* Enable Start Generation */
-#define RCAR_I2C_ICMCR_MASTER   (RCAR_I2C_ICMCR_MDBS | RCAR_I2C_ICMCR_MIE)
+#define RCAR_I2C_ICMCR_CONTROLLER (RCAR_I2C_ICMCR_MDBS | RCAR_I2C_ICMCR_MIE)
 
 /* Bits to manage ICMIER and ICMSR registers */
 #define RCAR_I2C_MNR            BIT(6)  /* Master Nack Received */
@@ -121,7 +121,7 @@ static int i2c_rcar_finish(const struct device *dev)
 	int ret;
 
 	/* Enable STOP generation */
-	i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER | RCAR_I2C_ICMCR_FSB);
+	i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_CONTROLLER | RCAR_I2C_ICMCR_FSB);
 	i2c_rcar_write(dev, RCAR_I2C_ICMSR, 0);
 
 	/* Wait for STOP to be transmitted */
@@ -129,7 +129,7 @@ static int i2c_rcar_finish(const struct device *dev)
 	i2c_rcar_write(dev, RCAR_I2C_ICMSR, 0);
 
 	/* Disable STOP generation */
-	i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER);
+	i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_CONTROLLER);
 
 	return ret;
 }
@@ -137,10 +137,10 @@ static int i2c_rcar_finish(const struct device *dev)
 static int i2c_rcar_set_addr(const struct device *dev,
 			     uint8_t chip, uint8_t read)
 {
-	/* Set slave address & transfer mode */
+	/* Set target address & transfer mode */
 	i2c_rcar_write(dev, RCAR_I2C_ICMAR, (chip << 1) | read);
 	/* Reset */
-	i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER | RCAR_I2C_ICMCR_ESG);
+	i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_CONTROLLER | RCAR_I2C_ICMCR_ESG);
 	/* Clear Status */
 	i2c_rcar_write(dev, RCAR_I2C_ICMSR, 0);
 
@@ -158,12 +158,12 @@ static int i2c_rcar_transfer_msg(const struct device *dev, struct i2c_msg *msg)
 	int ret = 0;
 
 	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-		/* Reading as master */
-		i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER);
+		/* Reading as controller */
+		i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_CONTROLLER);
 
 		for (i = 0; i < msg->len; i++) {
 			if (msg->len - 1 == i) {
-				i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER |
+				i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_CONTROLLER |
 					       RCAR_I2C_ICMCR_FSB);
 			}
 
@@ -181,11 +181,11 @@ static int i2c_rcar_transfer_msg(const struct device *dev, struct i2c_msg *msg)
 			msg->buf[i] = i2c_rcar_read(dev, RCAR_I2C_ICRXD_ICTXD) & 0xff;
 		}
 	} else {
-		/* Writing as master */
+		/* Writing as controller */
 		for (i = 0; i < msg->len; i++) {
 			i2c_rcar_write(dev, RCAR_I2C_ICRXD_ICTXD, msg->buf[i]);
 
-			i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER);
+			i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_CONTROLLER);
 
 			/* Start data transmission */
 			reg = i2c_rcar_read(dev, RCAR_I2C_ICMSR);
@@ -225,7 +225,7 @@ static int i2c_rcar_transfer(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		/* Send slave address */
+		/* Send target address */
 		if (i2c_rcar_set_addr(dev, addr, !!(msgs->flags & I2C_MSG_READ))) {
 			return -EIO; /* No ACK received */
 		}
@@ -259,7 +259,7 @@ static int i2c_rcar_configure(const struct device *dev, uint32_t dev_config)
 {
 	uint8_t cdf, scgd;
 
-	/* We only support Master mode */
+	/* We only support Controller mode */
 	if ((dev_config & I2C_MODE_CONTROLLER) != I2C_MODE_CONTROLLER) {
 		return -ENOTSUP;
 	}
@@ -287,13 +287,13 @@ static int i2c_rcar_configure(const struct device *dev, uint32_t dev_config)
 	/* Setting ICCCR to recommended value */
 	i2c_rcar_write(dev, RCAR_I2C_ICCCR, (scgd << 3) | cdf);
 
-	/* Reset slave mode */
+	/* Reset target mode */
 	i2c_rcar_write(dev, RCAR_I2C_ICSIER, 0);
 	i2c_rcar_write(dev, RCAR_I2C_ICSAR, 0);
 	i2c_rcar_write(dev, RCAR_I2C_ICSCR, 0);
 	i2c_rcar_write(dev, RCAR_I2C_ICSSR, 0);
 
-	/* Reset master mode */
+	/* Reset controller mode */
 	i2c_rcar_write(dev, RCAR_I2C_ICMIER, 0);
 	i2c_rcar_write(dev, RCAR_I2C_ICMCR, 0);
 	i2c_rcar_write(dev, RCAR_I2C_ICMSR, 0);

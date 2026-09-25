@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2019 Intel Corp.
+
+if BOARD_QEMU_X86_64
+
+config BUILD_OUTPUT_BIN
+	default n
+
+# The EEPROM emulator must be initialized after the flash simulator
+config EEPROM_INIT_PRIORITY
+	default 60
+	depends on EEPROM
+
+config KERNEL_VM_SIZE
+	default 0x10000000 if ACPI
+
+endif # BOARD_QEMU_X86_64

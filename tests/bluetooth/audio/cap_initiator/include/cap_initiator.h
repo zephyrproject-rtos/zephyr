@@ -22,8 +22,16 @@ DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_discovery_complete_cb, struct 
 		       const struct bt_csip_set_coordinator_set_member *,
 		       const struct bt_csip_set_coordinator_csis_inst *);
 DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_start_complete_cb, int, struct bt_conn *);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_start_codec_configured_cb);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_start_qos_configured_cb);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_start_enabled_cb);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_start_connected_cb);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_start_started_cb);
 DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_update_complete_cb, int, struct bt_conn *);
 DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_stop_complete_cb, int, struct bt_conn *);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_stop_disabled_cb);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_stop_stopped_cb);
+DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_unicast_stop_released_cb);
 DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_broadcast_started_cb, struct bt_cap_broadcast_source *);
 DECLARE_FAKE_VOID_FUNC(mock_cap_initiator_broadcast_stopped_cb, struct bt_cap_broadcast_source *,
 		       uint8_t);

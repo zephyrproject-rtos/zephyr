@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Vestas Wind Systems A/S
+ * Copyright (c) 2021-2026 Vestas Wind Systems A/S
  * Copyright (c) 2018 Karsten Koenig
  * Copyright (c) 2018 Alexander Wachter
  *
@@ -37,7 +37,7 @@ extern "C" {
  * @brief Interfaces for CAN controllers
  * @ingroup can_interface
  * @since 1.12
- * @version 1.1.0
+ * @version 1.2.0
  *
  * @{
  */
@@ -311,6 +311,41 @@ typedef void (*can_state_change_callback_t)(const struct device *dev,
 					    struct can_bus_err_cnt err_cnt,
 					    void *user_data);
 
+struct can_state_change_callback;
+
+/**
+ * @brief Defines the state change callback handler function signature
+ *
+ * @param dev      Pointer to the device structure for the driver instance.
+ * @param callback Pointer to the callback structure.
+ * @param state    State of the CAN controller.
+ * @param err_cnt  CAN controller error counter values.
+ */
+typedef void (*can_state_change_callback_handler_t)(const struct device *dev,
+						    struct can_state_change_callback *callback,
+						    enum can_state state,
+						    struct can_bus_err_cnt err_cnt);
+/**
+ * @brief CAN state change callback.
+ *
+ * This struct is used to register a CAN state callback. As many callbacks as needed can be added as
+ * long as each of them are unique pointers of struct can_state_callback.
+ *
+ * @note This structure should not be allocated on a stack.
+ *
+ * This type is opaque. Member data should not be accessed directly by the application.
+ *
+ * @see can_init_state_change_callback()
+ * @see can_add_state_change_callback()
+ * @see can_remove_state_change_callback()
+ */
+struct can_state_change_callback {
+	/** Single-linked list node */
+	sys_snode_t node;
+	/** Callback function */
+	can_state_change_callback_handler_t handler;
+};
+
 /**
  * @def_driverbackendgroup{CAN Controller,can_controller}
  * @{
@@ -370,12 +405,11 @@ struct can_driver_config {
 		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),			\
 		.min_bitrate = DT_CAN_TRANSCEIVER_MIN_BITRATE(node_id, _min_bitrate),		\
 		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, _max_bitrate),		\
-		.bitrate = DT_PROP_OR(node_id, bitrate,						\
-			DT_PROP_OR(node_id, bus_speed, CONFIG_CAN_DEFAULT_BITRATE)),            \
+		.bitrate = DT_PROP_OR(node_id, bitrate, CONFIG_CAN_DEFAULT_BITRATE),		\
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),				\
 		IF_ENABLED(CONFIG_CAN_FD_MODE,							\
-			(.bitrate_data = DT_PROP_OR(node_id, bitrate_data,                      \
-			 DT_PROP_OR(node_id, bus_speed_data, CONFIG_CAN_DEFAULT_BITRATE_DATA)), \
+			(.bitrate_data = DT_PROP_OR(node_id, bitrate_data,			\
+						    CONFIG_CAN_DEFAULT_BITRATE_DATA),		\
 			 .sample_point_data = DT_PROP_OR(node_id, sample_point_data, 0),))	\
 	}
 
@@ -401,10 +435,16 @@ struct can_driver_data {
 	can_mode_t mode;
 	/** True if the CAN controller is started, false otherwise. */
 	bool started;
-	/** State change callback function pointer or NULL. */
-	can_state_change_callback_t state_change_cb;
-	/** State change callback user data pointer or NULL. */
-	void *state_change_cb_user_data;
+	/** Legacy state change callback. */
+	struct can_state_change_callback legacy_state_change_cb;
+	/** Legacy state change callback function pointer or NULL. */
+	can_state_change_callback_t legacy_state_change_cb_handler;
+	/** Legacy state change callback user data pointer or NULL. */
+	void *legacy_state_change_cb_user_data;
+	/** Lock for changing the list of state change callbacks. */
+	struct k_spinlock state_change_callback_lock;
+	/** List of state change callbacks. */
+	sys_slist_t state_change_callbacks;
 };
 
 /**
@@ -486,14 +526,6 @@ typedef int (*can_get_state_t)(const struct device *dev, enum can_state *state,
 			       struct can_bus_err_cnt *err_cnt);
 
 /**
- * @brief Callback API upon setting a state change callback
- * See @a can_set_state_change_callback() for argument description
- */
-typedef void(*can_set_state_change_callback_t)(const struct device *dev,
-					       can_state_change_callback_t callback,
-					       void *user_data);
-
-/**
  * @brief Callback API upon getting the CAN core clock rate
  * See @a can_get_core_clock() for argument description
  */
@@ -504,6 +536,29 @@ typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
  * See @a can_get_max_filters() for argument description
  */
 typedef int (*can_get_max_filters_t)(const struct device *dev, bool ide);
+
+/**
+ * @brief Optional callback API for notification on when state change callbacks are enabled.
+ *
+ * CAN controller drivers can e.g. use this optional callback for enabling/disabling IRQs used for
+ * reporting state changes.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param enabled true if state change callbacks are enabled, false otherwise.
+ * @retval 0 on success.
+ * @retval -EIO General input/output error.
+ */
+typedef int (*can_state_change_callbacks_enabled_t)(const struct device *dev, bool enabled);
+
+/**
+ * @brief Fire registered CAN state change handler callbacks.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param state   State of the CAN controller.
+ * @param err_cnt CAN controller error counter values.
+ */
+void can_fire_state_change_callbacks(const struct device *dev, enum can_state state,
+				     struct can_bus_err_cnt err_cnt);
 
 /**
  * @driver_ops{CAN Controller}
@@ -553,9 +608,9 @@ __subsystem struct can_driver_api {
 	 */
 	can_get_state_t get_state;
 	/**
-	 * @driver_ops_mandatory @copybrief can_set_state_change_callback
+	 * @driver_ops_optional @copybrief can_state_change_callbacks_enabled_t
 	 */
-	can_set_state_change_callback_t set_state_change_callback;
+	can_state_change_callbacks_enabled_t state_change_callbacks_enabled;
 	/**
 	 * @driver_ops_mandatory @copybrief can_get_core_clock
 	 */
@@ -1402,7 +1457,18 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
  * The same message queue can be used for multiple filters.
  *
  * @note The message queue must be initialized before calling this function and
- * the caller must have appropriate permissions on it.
+ * the caller must have appropriate permissions on it. Its message size must
+ * equal @c sizeof(struct can_frame); use @a CAN_MSGQ_DEFINE() to get this
+ * right.
+ *
+ * @warning The CAN controller driver retains the message queue pointer for as
+ * long as the filter is installed. The message queue must therefore remain
+ * valid until the filter is removed with @a can_remove_rx_filter(); received
+ * frames are otherwise written to freed memory. Use @a CAN_MSGQ_DEFINE() to
+ * statically define the message queue. Message queues obtained from
+ * @a k_object_alloc() may not be used, as they are freed once the last thread
+ * holding permission on them releases it or terminates; such message queues
+ * are rejected when this function is called from user mode.
  *
  * @warning Message queue overruns are silently ignored and overrun frames
  * discarded. Custom error handling can be implemented by using
@@ -1414,7 +1480,8 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
- * @retval -EINVAL if the requested filter type is invalid.
+ * @retval -EINVAL if the requested filter type is invalid or if the message
+ *                 queue message size differs from @c sizeof(struct can_frame).
  * @retval -ENOTSUP if the requested filter type is not supported.
  * @retval -EIO General input/output error, failed to add filter.
  */
@@ -1535,16 +1602,56 @@ static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeo
  * Only one callback can be registered per controller. Calling this function
  * again overrides any previously registered callback.
  *
+ * @deprecated Use can_add_state_change_callback() and can_remove_state_change_callback() instead.
+ *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param callback  Callback function.
  * @param user_data User data to pass to callback function.
  */
-static inline void can_set_state_change_callback(const struct device *dev,
-						 can_state_change_callback_t callback,
-						 void *user_data)
+__deprecated void can_set_state_change_callback(const struct device *dev,
+						can_state_change_callback_t callback,
+						void *user_data);
+
+/**
+ * @brief Initialize a CAN controller state change callback structure
+ *
+ * @param callback Pointer to the callback structure.
+ * @param handler  Callback handler function.
+ */
+static inline void can_init_state_change_callback(struct can_state_change_callback *callback,
+						  can_state_change_callback_handler_t handler)
 {
-	DEVICE_API_GET(can, dev)->set_state_change_callback(dev, callback, user_data);
+	__ASSERT_NO_MSG(callback != NULL);
+	__ASSERT_NO_MSG(handler != NULL);
+
+	callback->handler = handler;
 }
+
+/**
+ * @brief Add a callback for CAN controller state change events
+ *
+ * Add a callback for CAN controller state change events. The callback
+ * function will be called in interrupt context.
+ *
+ * @param dev      Pointer to the device structure for the driver instance.
+ * @param callback Pointer to the callback structure.
+ * @retval 0 on success, negative errno value on failure.
+ */
+int can_add_state_change_callback(const struct device *dev,
+				  struct can_state_change_callback *callback);
+
+/**
+ * @brief Remove a callback for CAN controller state change events
+ *
+ * Remove a callback for CAN controller state change events.
+ *
+ * @param dev      Pointer to the device structure for the driver instance.
+ * @param callback Pointer to the callback structure.
+ * @retval 0 on success, negative errno value on failure.
+ * @retval -EINVAL Callback not found.
+ */
+int can_remove_state_change_callback(const struct device *dev,
+				     struct can_state_change_callback *callback);
 
 /** @} */
 

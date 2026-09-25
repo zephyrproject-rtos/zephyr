@@ -49,7 +49,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_LOG_BACKEND_NET), "syslog backend not enabled");
 
 ZTEST(test_log_output_net, test_format)
 {
-	char package[256];
+	char __aligned(Z_LOG_MSG_ALIGNMENT) package[256];
 
 	static const char *exp_str =
 		"<134>1 1970-01-01T00:00:01.000000Z zephyr - - - - " DNAME "/" SNAME ": " TEST_STR;

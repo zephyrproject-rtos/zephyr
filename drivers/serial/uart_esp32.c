@@ -167,7 +167,7 @@ struct uart_esp32_data {
 };
 
 #if CONFIG_PM
-#define TX_POLL       BIT(0)
+#define TX_DRAIN      BIT(0)
 #define TX_INT_STREAM BIT(1)
 #define TX_ASYNC      BIT(2)
 #define RX_INT        BIT(3)
@@ -238,8 +238,8 @@ static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
 	}
 
 #if CONFIG_PM
-	if (!(data->pm_lock_bits & TX_POLL)) {
-		uart_esp32_pm_policy_state_lock_get(dev, TX_POLL);
+	if (!(data->pm_lock_bits & TX_DRAIN)) {
+		uart_esp32_pm_policy_state_lock_get(dev, TX_DRAIN);
 
 		/* Enable ISR to aid controlling power lock */
 		uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TX_DONE);
@@ -416,12 +416,25 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	uint32_t inv_mask = 0;
 
 	/*
-	 * On P4, switching UART clock source (e.g. XTAL to PLL_F80M)
+	 * On P4 and C61, switching UART clock source (e.g. XTAL to PLL_F80M)
 	 * breaks the reg_update sync mechanism, causing uart_ll_update()
 	 * to spin forever. Keep the ROM-configured clock source (XTAL).
 	 * IDF also does not change UART clock source during driver init.
+	 *
+	 * On C6, UART_SCLK_DEFAULT is PLL_F80M while the reset default
+	 * and ROM selection are XTAL, so this switch moves a live port
+	 * onto the PLL right after cold-boot PLL bring-up, which
+	 * intermittently latches a wrong effective clock: the port then
+	 * corrupts essentially every frame for the whole session. Warm
+	 * resets never reproduce it (PLL already settled), and re-running
+	 * this configure with identical values once the clock tree is
+	 * stable heals the port instantly - the fault is the latch, not
+	 * the values. Keep the UART on the always-stable XTAL instead;
+	 * the fractional divider keeps standard rates within ~0.1%.
 	 */
-#if !CONFIG_SOC_SERIES_ESP32P4
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	uart_hal_set_sclk(&data->hal, UART_SCLK_XTAL);
+#elif !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
 #endif
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
@@ -558,7 +571,25 @@ static void uart_esp32_irq_tx_disable(const struct device *dev)
 	uart_hal_disable_intr_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
 
 #ifdef CONFIG_PM
+	unsigned int key = irq_lock();
+
+	/*
+	 * The FIFO may still hold bytes to send. Arm TX_DONE, then check
+	 * if the transmitter is already idle: TX_DONE only fires at the
+	 * end of a transfer, so otherwise the interrupt never comes.
+	 */
+	uart_esp32_pm_policy_state_lock_get(dev, TX_DRAIN);
+	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TX_DONE);
+	uart_hal_ena_intr_mask(&data->hal, UART_INTR_TX_DONE);
+
+	if (uart_hal_is_tx_idle(&data->hal)) {
+		uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
+		uart_esp32_pm_policy_state_lock_put(dev, TX_DRAIN);
+	}
+
 	uart_esp32_pm_policy_state_lock_put(dev, TX_INT_STREAM);
+
+	irq_unlock(key);
 #endif
 }
 
@@ -576,10 +607,6 @@ static void uart_esp32_irq_rx_disable(const struct device *dev)
 
 	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
 	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
-
-#ifdef CONFIG_PM
-	uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
-#endif
 }
 
 static int uart_esp32_irq_tx_complete(const struct device *dev)
@@ -662,10 +689,6 @@ static void uart_esp32_irq_rx_enable(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
 
-#ifdef CONFIG_PM
-	uart_esp32_pm_policy_state_lock_get(dev, RX_INT);
-#endif
-
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_FULL);
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
 	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
@@ -694,10 +717,8 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 
 #if CONFIG_PM
 	if (uart_intr_status & UART_INTR_TX_DONE) {
-		if (data->pm_lock_bits & TX_POLL) {
-			uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
-			uart_esp32_pm_policy_state_lock_put(dev, TX_POLL);
-		}
+		uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
+		uart_esp32_pm_policy_state_lock_put(dev, TX_DRAIN);
 	}
 #endif
 
@@ -1112,6 +1133,10 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	 */
 	uart_hal_set_rxfifo_full_thr(&data->hal, 1);
 	uart_esp32_irq_rx_enable(dev);
+
+#ifdef CONFIG_PM
+	uart_esp32_pm_policy_state_lock_get(dev, RX_INT);
+#endif
 
 	err = dma_start(config->dma_dev, config->rx_dma_channel);
 	if (err) {

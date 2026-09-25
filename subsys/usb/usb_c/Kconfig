@@ -115,6 +115,15 @@ config USBC_DRP_DUTY_CYCLE
 	    30% = Prefer Sink role (70% as Sink, 30% as Source)
 	    70% = Prefer Source role (70% as Source, 30% as Sink)
 
+config USBC_LOG_PD_MSG_NAMES
+	bool "Log PD message names"
+	help
+	  Log the human-readable PD message name, for example
+	  "Source_Capabilities", alongside the raw header in the Protocol
+	  Layer SEND and RECV log lines. Enabling this setting simplifies
+	  debugging, but the message name tables result in a larger code
+	  size.
+
 module = USBC_STACK
 module-str = usbc stack
 source "subsys/logging/Kconfig.template.log_config"

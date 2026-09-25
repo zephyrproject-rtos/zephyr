@@ -11,3 +11,6 @@ common:
   depends_on: netif
 tests:
   net.ptp.port_events: {}
+  net.ptp.port_events.hybrid:
+    extra_configs:
+      - CONFIG_PTP_NETWORK_MODE_HYBRID=y

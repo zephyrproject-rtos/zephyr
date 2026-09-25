@@ -1662,7 +1662,7 @@ void *net_stack_buffer_alloc_rx(int offset, int len)
 
 		net_buf_add(p, p->size);
 		net_buf_pull(p, offset);
-		alloc_len -= p->len;
+		alloc_len -= p->size;
 		offset = 0;
 		p = p->frags;
 	}

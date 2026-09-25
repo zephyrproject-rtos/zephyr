@@ -19,8 +19,8 @@ tests:
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - rpi_pico/rp2040/mcuboot
       - rpi_pico/rp2040/w/mcuboot
-      - rpi_pico2/rp2350a/m33/mcuboot
-      - rpi_pico2/rp2350a/m33/w/mcuboot
+      - rpi_pico2/rp2350a/m33_0/mcuboot
+      - rpi_pico2/rp2350a/m33_0/w/mcuboot
       - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
       - raytac_an54lv_db_15/nrf54l15/cpuapp/ns
   drivers.adc.b_u585i_iot02a_adc4:
@@ -58,6 +58,7 @@ tests:
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk
+      - stm32h7_renode_reference_board
       - stm32u083c_dk
     extra_args:
       - EXTRA_CONF_FILE=overlay-dma-stm32.conf
@@ -128,3 +129,18 @@ tests:
       - bg29_rb4420a
       - xg29_rb4412a
       - kg100s_rb4332a
+  drivers.adc.dma_silabs_s3:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-dma-silabs-s3.conf"
+    depends_on:
+      - dma
+    platform_allow:
+      - sixg301_rb4407a
+  drivers.adc.dma_silabs_async_s3:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-dma-silabs-s3.conf"
+      - CONFIG_ADC_ASYNC=y
+    depends_on:
+      - dma
+    platform_allow:
+      - sixg301_rb4407a

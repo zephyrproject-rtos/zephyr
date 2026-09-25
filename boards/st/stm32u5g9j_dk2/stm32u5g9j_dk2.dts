@@ -248,11 +248,19 @@
 	status = "okay";
 };
 
+&adc12_common {
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
+&adc4_common {
+	st,adc-prescaler = <1>;
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <2>;
 	status = "okay";
 
 	#address-cells = <1>;
@@ -278,8 +286,6 @@
 &adc4 {
 	pinctrl-0 = <&adc4_in4_pc3>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <1>;
 	status = "okay";
 
 	#address-cells = <1>;
@@ -301,7 +307,6 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &otghs_phy {
-	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_16MHz";
 	status = "okay";
 };
 
@@ -403,5 +408,13 @@ zephyr_udc0: &usbotg_hs {
 };
 
 zephyr_jpegenc: &jpeg {
+	status = "okay";
+};
+
+&gpu2d {
+	status = "okay";
+};
+
+&dma2d {
 	status = "okay";
 };

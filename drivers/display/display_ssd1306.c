@@ -554,7 +554,7 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 		return 0;
 	}
 
-	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %zu", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
 	if (config->compatible == COMPATIBLE_SH1106 || config->compatible == COMPATIBLE_CH1115) {
@@ -781,7 +781,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 
 #define SSD1306_CONFIG_SPI(node_id)                                                                \
 	.bus = {.spi = SPI_DT_SPEC_GET(                                                            \
-			node_id, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))},        \
+			node_id, SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))},    \
 	.bus_ready = ssd1306_bus_ready_spi,                                                        \
 	.write_bus = ssd1306_write_bus_spi,                                                        \
 	.bus_name = ssd1306_bus_name_spi,                                                          \

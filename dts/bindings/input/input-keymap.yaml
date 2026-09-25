@@ -17,12 +17,16 @@ properties:
 
   row-size:
     type: int
+    min: 1
+    max: 255
     required: true
     description: |
       The number of rows in the keymap.
 
   col-size:
     type: int
+    min: 1
+    max: 255
     required: true
     description: |
       The number of columns in the keymap.

@@ -7,6 +7,6 @@ toolchain:
   - gnuarmemb
 supported:
   - usb_device
-  - ble
+  - bluetooth
   - pwm
 vendor: makerdiary

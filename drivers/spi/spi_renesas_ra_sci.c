@@ -94,7 +94,7 @@ static inline void _renesas_ra_spi_context_cs_control(const struct device *dev, 
 }
 
 /*
- * This function should be called by drivers to control the chip select line in master mode
+ * This function should be called by drivers to control the chip select line in controller mode
  * in the case of the CS being a GPIO, help to control the cs gpio when changing the CS GPIO
  * active state in runtime.
  */
@@ -133,7 +133,7 @@ static inline bool renesas_ra_sci_context_configured(const struct device *dev,
 
 	if ((data->config.frequency == config->frequency) &&
 	    (data->config.operation == config->operation) &&
-	    (data->config.slave == config->slave)) {
+	    (data->config.peripheral == config->peripheral)) {
 		return true;
 	}
 
@@ -177,7 +177,7 @@ static void renesas_ra_sci_spi_callback(spi_callback_args_t *p_args)
 
 	switch (p_args->event) {
 	case SPI_EVENT_TRANSFER_COMPLETE:
-		if (!spi_context_is_slave(&data->ctx)) {
+		if (!spi_context_is_peripheral(&data->ctx)) {
 			if (data->fsp_ctrl.rx_count == data->fsp_ctrl.count ||
 			    data->fsp_ctrl.tx_count == data->fsp_ctrl.count) {
 
@@ -197,7 +197,7 @@ static void renesas_ra_sci_spi_callback(spi_callback_args_t *p_args)
 				return;
 			}
 		}
-#ifdef CONFIG_SPI_SLAVE
+#ifdef CONFIG_SPI_PERIPHERAL
 		else if (data->fsp_ctrl.rx_count == data->fsp_ctrl.count) {
 			if (data->ctx.rx_buf != NULL && data->ctx.tx_buf != NULL) {
 				data->ctx.recv_frames = MIN(spi_context_total_tx_len(&data->ctx),
@@ -208,7 +208,7 @@ static void renesas_ra_sci_spi_callback(spi_callback_args_t *p_args)
 				/* Do nothing */
 			}
 		}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 		renesas_ra_spi_context_cs_control(dev, false);
 		spi_context_complete(&data->ctx, dev, 0);
 		break;
@@ -247,8 +247,8 @@ static int renesas_ra_sci_spi_configure(const struct device *dev, const struct s
 		return -ENOTSUP;
 	}
 
-	if ((config->operation & SPI_OP_MODE_SLAVE) && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for enable SPI in slave mode is not enabled");
+	if ((config->operation & SPI_OP_MODE_PERIPHERAL) && !IS_ENABLED(CONFIG_SPI_PERIPHERAL)) {
+		LOG_ERR("Kconfig for enable SPI in peripheral mode is not enabled");
 		return -ENOTSUP;
 	}
 
@@ -257,7 +257,7 @@ static int renesas_ra_sci_spi_configure(const struct device *dev, const struct s
 		return -ENOTSUP;
 	}
 
-	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) &&
+	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) &&
 	    (config->frequency == 0)) {
 		LOG_ERR("Invalid frequency value");
 		return -EINVAL;
@@ -268,7 +268,7 @@ static int renesas_ra_sci_spi_configure(const struct device *dev, const struct s
 		return -EINVAL;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
 		data->fsp_cfg.operating_mode = SPI_MODE_SLAVE;
 	} else {
 		data->fsp_cfg.operating_mode = SPI_MODE_MASTER;
@@ -292,7 +292,7 @@ static int renesas_ra_sci_spi_configure(const struct device *dev, const struct s
 		data->fsp_cfg.bit_order = SPI_BIT_ORDER_MSB_FIRST;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 		fsp_err = R_SCI_SPI_CalculateBitrate(config->frequency, &data->fsp_ext_cfg.clk_div,
 						     true);
 		if (fsp_err != FSP_SUCCESS) {
@@ -393,15 +393,15 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 #ifdef CONFIG_SPI_RENESAS_RA_SCI_INTERRUPT
 	if (data->ctx.rx_len == 0) {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? spi_context_total_tx_len(&data->ctx)
 					 : data->ctx.tx_len;
 	} else if (data->ctx.tx_len == 0) {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? spi_context_total_rx_len(&data->ctx)
 					 : data->ctx.rx_len;
 	} else {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? MAX(spi_context_total_tx_len(&data->ctx),
 					       spi_context_total_rx_len(&data->ctx))
 					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
@@ -484,11 +484,11 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	spi_context_complete(&data->ctx, dev, ret);
 #endif /* CONFIG_SPI_RENESAS_RA_SCI_INTERRUPT */
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && !ret) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(&data->ctx) && !ret) {
 		ret = data->ctx.recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 release:
 	if ((ret < 0) || !IS_ENABLED(CONFIG_SPI_RENESAS_RA_SCI_INTERRUPT)) {

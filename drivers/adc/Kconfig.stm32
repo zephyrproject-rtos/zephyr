@@ -17,7 +17,7 @@ config ADC_STM32
 	select PINCTRL
 	select ADC_ASYNC if ADC_STREAM
 	select ADC_HAS_SEQUENCE_PRIORITY if \
-		$(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_ADC),$(ADC_STM32_INJECTED_SUPPORT))
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_ADC),$(ADC_STM32_INJECTED_SUPPORT),True)
 	help
 	  Enable the driver implementation for the stm32xx ADC
 

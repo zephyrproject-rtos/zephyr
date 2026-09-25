@@ -38,14 +38,9 @@ extern "C" {
 #endif
 
 /** @cond INTERNAL_HIDDEN */
-/*
- * Flag bits are stored in the low bits of the node address, so a node must be
- * aligned to at least 4 bytes. Not every ABI gives uintptr_t that alignment
- * naturally, so require it explicitly. See SYS_SFLIST_FLAGS_MASK below.
- */
 struct _sfnode {
 	uintptr_t next_and_flags;
-} __aligned(sizeof(void *));
+};
 /** @endcond */
 
 /** Flagged single-linked list node structure. */
@@ -221,10 +216,11 @@ static inline void sys_sflist_init(sys_sflist_t *list)
  */
 #define SYS_SFLIST_STATIC_INIT(ptr_to_list) {NULL, NULL}
 
-/* Flag bits are stored in unused LSB of the sys_sfnode_t pointer */
+/** Mask of flag bits available in a node pointer on this ABI. */
 #define SYS_SFLIST_FLAGS_MASK	((uintptr_t)(__alignof__(sys_sfnode_t) - 1))
-/* At least 2 available flag bits are expected */
-BUILD_ASSERT(SYS_SFLIST_FLAGS_MASK >= 0x3);
+
+/** Number of flag bits available in a node pointer on this ABI. */
+#define SYS_SFLIST_FLAG_BITS LOG2(__alignof__(sys_sfnode_t))
 
 static inline sys_sfnode_t *z_sfnode_next_peek(const sys_sfnode_t *node)
 {
@@ -283,8 +279,7 @@ static inline sys_sfnode_t *sys_sflist_peek_tail(const sys_sflist_t *list)
  * @brief Fetch flags value for a particular sfnode
  *
  * @param node A pointer to the node to fetch flags from
- * @return The value of flags, which will be between 0 and 3 on 32-bit
- *         architectures, or between 0 and 7 on 64-bit architectures
+ * @return The flags value, between zero and @ref SYS_SFLIST_FLAGS_MASK.
  */
 static inline uint8_t sys_sfnode_flags_get(const sys_sfnode_t *node)
 {
@@ -294,10 +289,10 @@ static inline uint8_t sys_sfnode_flags_get(const sys_sfnode_t *node)
 /**
  * @brief Initialize an sflist node
  *
- * Set an initial flags value for this slist node, which can be a value between
- * 0 and 3 on 32-bit architectures, or between 0 and 7 on 64-bit architectures.
- * These flags will persist even if the node is moved around within a list,
- * removed, or transplanted to a different slist.
+ * Set an initial flags value for this slist node. The value must fit in the
+ * number of bits reported by @ref SYS_SFLIST_FLAG_BITS. These flags will
+ * persist even if the node is moved around within a list, removed, or
+ * transplanted to a different slist.
  *
  * This is ever so slightly faster than sys_sfnode_flags_set() and should
  * only be used on a node that hasn't been added to any list.
@@ -314,10 +309,10 @@ static inline void sys_sfnode_init(sys_sfnode_t *node, uint8_t flags)
 /**
  * @brief Set flags value for an sflist node
  *
- * Set a flags value for this slist node, which can be a value between
- * 0 and 3 on 32-bit architectures, or between 0 and 7 on 64-bit architectures.
- * These flags will persist even if the node is moved around within a list,
- * removed, or transplanted to a different slist.
+ * Set a flags value for this slist node. The value must fit in the number of
+ * bits reported by @ref SYS_SFLIST_FLAG_BITS. These flags will persist even if
+ * the node is moved around within a list, removed, or transplanted to a
+ * different slist.
  *
  * @param node A pointer to the node to set the flags on
  * @param flags The flags value to set

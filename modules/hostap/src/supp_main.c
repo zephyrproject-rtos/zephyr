@@ -42,6 +42,19 @@ static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "eloop.h"
 #include "wpa_supplicant/config.h"
 #include "wpa_supplicant_i.h"
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
+/* struct wpa_sm is private to rsn_supp, pulled in only for this debug-only
+ * print. wpa_i.h is not self-contained - it needs struct wpa_sm_ctx,
+ * struct wpa_sm_mlo and enum wpa_rsn_override (all in wpa.h), matching the
+ * exact preamble wpa.c itself uses right before including wpa_i.h.
+ */
+#include "rsn_supp/wpa.h"
+#include "preauth.h"
+#include "pmksa_cache.h"
+#include "rsn_supp/wpa_i.h"
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK */
+
 #include "fst/fst.h"
 #include "wpa_cli_zephyr.h"
 #include "ctrl_iface_zephyr.h"
@@ -238,6 +251,15 @@ static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
 
 	/* Only interested in CTRL-EVENTs */
 	if (strncmp(txt, "CTRL-EVENT", 10) == 0) {
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
+		if (strncmp(txt, "CTRL-EVENT-CONNECTED", 20) == 0 && wpa_s->wpa) {
+			char pmk_hex[2 * PMK_LEN_MAX + 1];
+
+			wpa_snprintf_hex(pmk_hex, sizeof(pmk_hex),
+					 wpa_s->wpa->pmk, wpa_s->wpa->pmk_len);
+			wpa_printf(MSG_ERROR, "WPA: PMK = %s", pmk_hex);
+		}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK */
 		if (strncmp(txt, "CTRL-EVENT-SIGNAL-CHANGE", 24) == 0) {
 			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
 						NET_EVENT_WIFI_CMD_SIGNAL_CHANGE,
@@ -340,10 +362,28 @@ static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level, enum wpa_msg_t
 #endif
 }
 
-static int supplicant_register_iface_type(struct net_if *iface)
+static uint32_t get_iface_caps(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api;
+	uint32_t caps = 0;
+
+	if (dev == NULL || dev->api == NULL) {
+		return 0;
+	}
+
+	off_api = (struct net_wifi_mgmt_offload *)dev->api;
+	if (off_api->wifi_mgmt_api != NULL &&
+	    off_api->wifi_mgmt_api->get_iface_caps != NULL) {
+		caps = off_api->wifi_mgmt_api->get_iface_caps(dev, iface);
+	}
+
+	return caps & BIT_MASK(WIFI_TYPE_MAX);
+}
+
+static int supplicant_register_iface_type(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
 	struct wifi_nm_instance *nm = wifi_nm_get_instance("wifi_supplicant");
 	uint32_t caps = 0;
 	int ret;
@@ -352,18 +392,7 @@ static int supplicant_register_iface_type(struct net_if *iface)
 		return -EINVAL;
 	}
 
-	off_api = (struct net_wifi_mgmt_offload *)dev->api;
-
-	/* Query driver for its static role capabilities.
-	 * If the driver does not implement get_iface_caps, fall back to
-	 * WIFI_TYPE_STA plus WIFI_TYPE_SAP when CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
-	 * is enabled.
-	 */
-	if (off_api != NULL && off_api->wifi_mgmt_api != NULL &&
-	    off_api->wifi_mgmt_api->get_iface_caps != NULL) {
-		caps = off_api->wifi_mgmt_api->get_iface_caps(dev, iface);
-	}
-	caps &= BIT_MASK(WIFI_TYPE_MAX);
+	caps = get_iface_caps(iface);
 
 	if (caps == 0) {
 		/* No caps declared: default to STA */
@@ -599,17 +628,23 @@ static void interface_handler(struct net_mgmt_event_callback *cb,
 	}
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	if (wifi_nm_iface_is_sap(iface)) {
+	if (IS_BIT_SET(get_iface_caps(iface), WIFI_TYPE_SAP)) {
 		if (mgmt_event == NET_EVENT_IF_ADMIN_UP) {
+			int ret = 0;
 			LOG_INF("Network interface %d (%p) up", net_if_get_by_iface(iface), iface);
-			zephyr_hostapd_add_iface(&ctx->hostapd);
+			ret = zephyr_hostapd_add_iface(&ctx->hostapd, iface);
+			if (ret < 0) {
+				LOG_ERR("Add hostapd interface %d (%p) fail",
+					net_if_get_by_iface(iface), iface);
+			}
+
 			return;
 		}
 
 		if (mgmt_event == NET_EVENT_IF_ADMIN_DOWN) {
 			LOG_INF("Network interface %d (%p) down", net_if_get_by_iface(iface),
 				iface);
-			zephyr_hostapd_del_iface(&ctx->hostapd);
+			zephyr_hostapd_del_iface(&ctx->hostapd, iface);
 			return;
 		}
 		LOG_INF("Wrong network interface mgmt event");
@@ -642,8 +677,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	if (wifi_nm_iface_is_sap(iface)) {
-		ret = zephyr_hostapd_add_iface(&ctx->hostapd);
+	if (IS_BIT_SET(get_iface_caps(iface), WIFI_TYPE_SAP)) {
+		ret = zephyr_hostapd_add_iface(&ctx->hostapd, iface);
 		if (ret < 0) {
 			LOG_ERR("Add hostapd interface %d (%p) fail", net_if_get_by_iface(iface),
 				iface);
@@ -695,7 +730,7 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 		}
 
 		if (msg->len != sizeof(event_msg)) {
-			LOG_ERR("Received incomplete message: got: %d, expected:%d",
+			LOG_ERR("Received incomplete message: got: %zu, expected:%zu",
 				msg->len, sizeof(event_msg));
 			goto out;
 		}

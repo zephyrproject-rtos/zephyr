@@ -20,7 +20,7 @@ properties:
 
   ioswp:
     type: boolean
-    description: Swap SPI MOSI and MISO pins
+    description: Swap SPI SDO and SDI pins
 
   st,spi-data-width:
     type: string
