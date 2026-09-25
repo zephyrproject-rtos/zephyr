@@ -19,6 +19,8 @@
 #define DEFAULT_CCA_MODE              (gPhyCCAMode1_c)
 #define IEEE802154_ACK_REQUEST        (1 << 5)
 #define IEEE802154_MIN_LENGTH         (5)
+/* Imm-ACK PSDU length with FCS: FCF (2) + DSN (1) + FCS (2) = 5 bytes. */
+#define IEEE802154_IMM_ACK_LENGTH           (IEEE802154_MIN_LENGTH)
 #define IEEE802154_FRM_CTL_LO_OFFSET  (0)
 #define IEEE802154_DSN_OFFSET         (2)
 #define IEEE802154_FRM_TYPE_MASK      (0x7)
