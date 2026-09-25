@@ -43,57 +43,28 @@
 #define SFDP_FIELD(inst, prop, dw_no, mask) \
 	FIELD_GET(mask, SFDP_DW(inst, prop, dw_no))
 
-#define USES_8D_8D_8D(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_OCTAL && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_DUAL)
-#define USES_8S_8S_8S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_OCTAL && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
-#define USES_1S_8D_8D(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_OCTAL_1_8_8 && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_DUAL)
-#define USES_1S_8S_8S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_OCTAL_1_8_8 && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
-#define USES_1S_1S_8S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_OCTAL_1_1_8 && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
-#define USES_4S_4D_4D(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_QUAD && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_DUAL)
-#define USES_4S_4S_4S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_QUAD && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
-#define USES_1S_4D_4D(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_QUAD_1_4_4 && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_DUAL)
-#define USES_1S_4S_4S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_QUAD_1_4_4 && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
-#define USES_1S_1S_4S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_QUAD_1_1_4 && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
-#define USES_2S_2S_2S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_DUAL && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
-#define USES_1S_2D_2D(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_DUAL_1_2_2 && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_DUAL)
-#define USES_1S_2S_2S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_DUAL_1_2_2 && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
-#define USES_1S_1S_2S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_DUAL_1_1_2 && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
-#define USES_1S_1D_1D(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_SINGLE && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_DUAL)
-#define USES_1S_1S_1S(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_SINGLE && \
-	 DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_SINGLE)
+#define USES_DR(inst, rate) \
+	(DT_INST_ENUM_IDX(inst, mspi_data_rate) == MSPI_DATA_RATE_##rate)
+#define USES_IO(inst, op, mode) \
+	(DT_INST_ENUM_IDX_OR(inst, op##_io_mode, \
+		DT_INST_ENUM_IDX(inst, mspi_io_mode)) == MSPI_IO_MODE_##mode)
 
-#define USES_OCTAL_IO(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_OCTAL)
+#define USES_8D_8D_8D(inst, op) (USES_DR(inst, DUAL)   && USES_IO(inst, op, OCTAL))
+#define USES_8S_8S_8S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, OCTAL))
+#define USES_1S_8D_8D(inst, op) (USES_DR(inst, S_D_D)  && USES_IO(inst, op, OCTAL_1_8_8))
+#define USES_1S_8S_8S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, OCTAL_1_8_8))
+#define USES_1S_1S_8S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, OCTAL_1_1_8))
+#define USES_4S_4D_4D(inst, op) (USES_DR(inst, DUAL)   && USES_IO(inst, op, QUAD))
+#define USES_4S_4S_4S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, QUAD))
+#define USES_1S_4D_4D(inst, op) (USES_DR(inst, S_D_D)  && USES_IO(inst, op, QUAD_1_4_4))
+#define USES_1S_4S_4S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, QUAD_1_4_4))
+#define USES_1S_1S_4S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, QUAD_1_1_4))
+#define USES_2S_2S_2S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, DUAL))
+#define USES_1S_2D_2D(inst, op) (USES_DR(inst, S_D_D)  && USES_IO(inst, op, DUAL_1_2_2))
+#define USES_1S_2S_2S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, DUAL_1_2_2))
+#define USES_1S_1S_2S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, DUAL_1_1_2))
+#define USES_1S_1D_1D(inst, op) (USES_DR(inst, S_D_D)  && USES_IO(inst, op, SINGLE))
+#define USES_1S_1S_1S(inst, op) (USES_DR(inst, SINGLE) && USES_IO(inst, op, SINGLE))
 
 #define BFP_DW1_ADDRESS_BYTES(inst) \
 	SFDP_FIELD(inst, sfdp_bfp, 1, GENMASK(18, 17))
@@ -113,7 +84,8 @@
 	SFDP_FIELD(inst, sfdp_bfp, 18, GENMASK(30, 29))
 
 #define CMD_EXTENSION(inst) \
-	(!USES_8D_8D_8D(inst) ?      CMD_EXTENSION_NONE : \
+	(!(USES_8D_8D_8D(inst, read) || \
+	   USES_8D_8D_8D(inst, write)) ? CMD_EXTENSION_NONE : \
 	 (BFP_DW18_CMD_EXT(inst) \
 	  == BFP_DW18_CMD_EXT_INV) ? CMD_EXTENSION_INVERSE \
 				   : CMD_EXTENSION_SAME)
@@ -124,47 +96,49 @@
 #define FF84_DW1_BIT(inst, bit) (SFDP_DW(inst, sfdp_ff84, 1) & BIT(bit))
 
 #define SFDP_CMD_PP(inst) \
-	USES_1S_4S_4S(inst) ? SPI_NOR_CMD_PP_1_4_4 : \
-	USES_1S_1S_4S(inst) ? SPI_NOR_CMD_PP_1_1_4 : \
+	USES_1S_8S_8S(inst, write) ? SPI_NOR_CMD_PP_1_8_8 : \
+	USES_1S_1S_8S(inst, write) ? SPI_NOR_CMD_PP_1_1_8 : \
+	USES_1S_4S_4S(inst, write) ? SPI_NOR_CMD_PP_1_4_4 : \
+	USES_1S_1S_4S(inst, write) ? SPI_NOR_CMD_PP_1_1_4 : \
 	SPI_NOR_CMD_PP
 #define SFDP_CMD_PP_4B(inst) \
-	USES_1S_8S_8S(inst) && FF84_DW1_BIT(inst, 24) ? 0x8E : \
-	USES_1S_1S_8S(inst) && FF84_DW1_BIT(inst, 23) ? 0x84 : \
-	USES_1S_4S_4S(inst) && FF84_DW1_BIT(inst, 8) ? SPI_NOR_CMD_PP_1_4_4_4B : \
-	USES_1S_1S_4S(inst) && FF84_DW1_BIT(inst, 7) ? SPI_NOR_CMD_PP_1_1_4_4B : \
+	USES_1S_8S_8S(inst, write) && FF84_DW1_BIT(inst, 24) ? SPI_NOR_CMD_PP_1_8_8_4B : \
+	USES_1S_1S_8S(inst, write) && FF84_DW1_BIT(inst, 23) ? SPI_NOR_CMD_PP_1_1_8_4B : \
+	USES_1S_4S_4S(inst, write) && FF84_DW1_BIT(inst, 8) ? SPI_NOR_CMD_PP_1_4_4_4B : \
+	USES_1S_1S_4S(inst, write) && FF84_DW1_BIT(inst, 7) ? SPI_NOR_CMD_PP_1_1_4_4B : \
 	FF84_DW1_BIT(inst, 6) ? SPI_NOR_CMD_PP_4B \
 	: 0
 #define SFDP_CMD_FAST_READ(inst) \
-	USES_1S_8D_8D(inst) ? 0 : \
-	USES_1S_8S_8S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(15, 8)) : \
-	USES_1S_1S_8S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(31, 24)) : \
-	USES_4S_4D_4D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(31, 24)) : \
-	USES_4S_4S_4S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 7, GENMASK(31, 24)) : \
-	USES_1S_4D_4D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(15, 8)) : \
-	USES_1S_4S_4S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(15, 8)) : \
-	USES_1S_1S_4S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(31, 24)) : \
-	USES_2S_2S_2S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 6, GENMASK(31, 24)) : \
-	USES_1S_2D_2D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(31, 24)) : \
-	USES_1S_2S_2S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(31, 24)) : \
-	USES_1S_1S_2S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(15, 8)) : \
-	USES_1S_1D_1D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(15, 8)) : \
+	USES_1S_8D_8D(inst, read) ? 0 : \
+	USES_1S_8S_8S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(15, 8)) : \
+	USES_1S_1S_8S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(31, 24)) : \
+	USES_4S_4D_4D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(31, 24)) : \
+	USES_4S_4S_4S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 7, GENMASK(31, 24)) : \
+	USES_1S_4D_4D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(15, 8)) : \
+	USES_1S_4S_4S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(15, 8)) : \
+	USES_1S_1S_4S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(31, 24)) : \
+	USES_2S_2S_2S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 6, GENMASK(31, 24)) : \
+	USES_1S_2D_2D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(31, 24)) : \
+	USES_1S_2S_2S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(31, 24)) : \
+	USES_1S_1S_2S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(15, 8)) : \
+	USES_1S_1D_1D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(15, 8)) : \
 	SPI_NOR_CMD_READ_FAST
 #define SFDP_CMD_FAST_READ_4B(inst) \
-	USES_8D_8D_8D(inst) ? 0xEE : \
-	USES_8S_8S_8S(inst) ? 0xEC : \
-	USES_1S_8D_8D(inst) && FF84_DW1_BIT(inst, 22) ? 0xFD : \
-	USES_1S_8S_8S(inst) && FF84_DW1_BIT(inst, 21) ? 0xCC : \
-	USES_1S_1S_8S(inst) && FF84_DW1_BIT(inst, 20) ? 0x7C : \
-	USES_4S_4D_4D(inst) ? 0 : \
-	USES_4S_4S_4S(inst) ? 0 : \
-	USES_1S_4D_4D(inst) && FF84_DW1_BIT(inst, 15) ? 0xEE : \
-	USES_1S_4S_4S(inst) && FF84_DW1_BIT(inst, 5) ? 0xEC : \
-	USES_1S_1S_4S(inst) && FF84_DW1_BIT(inst, 4) ? 0x6C : \
-	USES_2S_2S_2S(inst) ? 0 : \
-	USES_1S_2D_2D(inst) && FF84_DW1_BIT(inst, 14) ? 0xBE : \
-	USES_1S_2S_2S(inst) && FF84_DW1_BIT(inst, 3) ? 0xBC : \
-	USES_1S_1S_2S(inst) && FF84_DW1_BIT(inst, 2) ? 0x3C : \
-	USES_1S_1D_1D(inst) && FF84_DW1_BIT(inst, 13) ? 0x0E : \
+	USES_8D_8D_8D(inst, read) ? 0xEE : \
+	USES_8S_8S_8S(inst, read) ? 0xEC : \
+	USES_1S_8D_8D(inst, read) && FF84_DW1_BIT(inst, 22) ? 0xFD : \
+	USES_1S_8S_8S(inst, read) && FF84_DW1_BIT(inst, 21) ? 0xCC : \
+	USES_1S_1S_8S(inst, read) && FF84_DW1_BIT(inst, 20) ? 0x7C : \
+	USES_4S_4D_4D(inst, read) ? 0 : \
+	USES_4S_4S_4S(inst, read) ? 0 : \
+	USES_1S_4D_4D(inst, read) && FF84_DW1_BIT(inst, 15) ? 0xEE : \
+	USES_1S_4S_4S(inst, read) && FF84_DW1_BIT(inst, 5) ? 0xEC : \
+	USES_1S_1S_4S(inst, read) && FF84_DW1_BIT(inst, 4) ? 0x6C : \
+	USES_2S_2S_2S(inst, read) ? 0 : \
+	USES_1S_2D_2D(inst, read) && FF84_DW1_BIT(inst, 14) ? 0xBE : \
+	USES_1S_2S_2S(inst, read) && FF84_DW1_BIT(inst, 3) ? 0xBC : \
+	USES_1S_1S_2S(inst, read) && FF84_DW1_BIT(inst, 2) ? 0x3C : \
+	USES_1S_1D_1D(inst, read) && FF84_DW1_BIT(inst, 13) ? 0x0E : \
 	FF84_DW1_BIT(inst, 1) ? SPI_NOR_CMD_READ_FAST_4B : \
 	0
 
@@ -176,55 +150,55 @@
 		  ? SFDP_CMD_FAST_READ_4B(inst) \
 		  : SFDP_CMD_FAST_READ(inst), \
 	.read_mode_bit_cycles = \
-		USES_1S_8S_8S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(7, 5)) : \
-		USES_1S_1S_8S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(23, 21)) : \
-		USES_4S_4D_4D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(23, 21)) : \
-		USES_4S_4S_4S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 7, GENMASK(23, 21)) : \
-		USES_1S_4D_4D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(7, 5)) : \
-		USES_1S_4S_4S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(7, 5)) : \
-		USES_1S_1S_4S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(23, 21)) : \
-		USES_2S_2S_2S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 6, GENMASK(23, 21)) : \
-		USES_1S_2D_2D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(23, 21)) : \
-		USES_1S_2S_2S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(23, 21)) : \
-		USES_1S_1S_2S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(7, 5)) : \
-		USES_1S_1D_1D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(7, 5)) : \
-		USES_1S_1S_1S(inst) ? 0 : \
+		USES_1S_8S_8S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(7, 5)) : \
+		USES_1S_1S_8S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(23, 21)) : \
+		USES_4S_4D_4D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(23, 21)) : \
+		USES_4S_4S_4S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 7, GENMASK(23, 21)) : \
+		USES_1S_4D_4D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(7, 5)) : \
+		USES_1S_4S_4S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(7, 5)) : \
+		USES_1S_1S_4S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(23, 21)) : \
+		USES_2S_2S_2S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 6, GENMASK(23, 21)) : \
+		USES_1S_2D_2D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(23, 21)) : \
+		USES_1S_2S_2S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(23, 21)) : \
+		USES_1S_1S_2S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(7, 5)) : \
+		USES_1S_1D_1D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(7, 5)) : \
+		USES_1S_1S_1S(inst, read) ? 0 : \
 		0, \
 	.read_dummy_cycles = DT_INST_PROP_OR(inst, rx_dummy, \
-		USES_8D_8D_8D(inst) ? SFDP_FIELD(inst, sfdp_ff05, 6, GENMASK(4, 0)) : \
-		USES_8S_8S_8S(inst) ? SFDP_FIELD(inst, sfdp_ff05, 6, GENMASK(9, 5)) : \
-		USES_1S_8S_8S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(4, 0)) : \
-		USES_1S_1S_8S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(20, 16)) : \
-		USES_4S_4D_4D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(20, 16)) : \
-		USES_4S_4S_4S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 7, GENMASK(20, 16)) : \
-		USES_1S_4D_4D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(4, 0)) : \
-		USES_1S_4S_4S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(4, 0)) : \
-		USES_1S_1S_4S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(20, 16)) : \
-		USES_2S_2S_2S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 6, GENMASK(20, 16)) : \
-		USES_1S_2D_2D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(20, 16)) : \
-		USES_1S_2S_2S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(20, 16)) : \
-		USES_1S_1S_2S(inst) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(4, 0)) : \
-		USES_1S_1D_1D(inst) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(4, 0)) : \
-		USES_1S_1S_1S(inst) ? 8 : \
+		USES_8D_8D_8D(inst, read) ? SFDP_FIELD(inst, sfdp_ff05, 6, GENMASK(4, 0)) : \
+		USES_8S_8S_8S(inst, read) ? SFDP_FIELD(inst, sfdp_ff05, 6, GENMASK(9, 5)) : \
+		USES_1S_8S_8S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(4, 0)) : \
+		USES_1S_1S_8S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 17, GENMASK(20, 16)) : \
+		USES_4S_4D_4D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(20, 16)) : \
+		USES_4S_4S_4S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 7, GENMASK(20, 16)) : \
+		USES_1S_4D_4D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 23, GENMASK(4, 0)) : \
+		USES_1S_4S_4S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(4, 0)) : \
+		USES_1S_1S_4S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 3, GENMASK(20, 16)) : \
+		USES_2S_2S_2S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 6, GENMASK(20, 16)) : \
+		USES_1S_2D_2D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(20, 16)) : \
+		USES_1S_2S_2S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(20, 16)) : \
+		USES_1S_1S_2S(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 4, GENMASK(4, 0)) : \
+		USES_1S_1D_1D(inst, read) ? SFDP_FIELD(inst, sfdp_bfp, 22, GENMASK(4, 0)) : \
+		USES_1S_1S_1S(inst, read) ? 8 : \
 		0), \
 	.uses_4byte_addr = USES_4BYTE_ADDR(inst), \
 	.cmd_extension = CMD_EXTENSION(inst), \
-	.sfdp_addr_4 = USES_OCTAL_IO(inst) \
+	.sfdp_addr_4 = USES_IO(inst, read, OCTAL) \
 		     ? (SFDP_FIELD(inst, sfdp_ff05, 1, BIT(31)) == 0) \
 		     : false, \
-	.sfdp_dummy_20 = USES_OCTAL_IO(inst) \
+	.sfdp_dummy_20 = USES_IO(inst, read, OCTAL) \
 		       ? (SFDP_FIELD(inst, sfdp_ff05, 1, BIT(30)) == 1) \
 		       : false, \
-	.rdsr_addr_4 = USES_OCTAL_IO(inst) \
+	.rdsr_addr_4 = USES_IO(inst, read, OCTAL) \
 		     ? (SFDP_FIELD(inst, sfdp_ff05, 1, BIT(29)) == 1) \
 		     : false, \
-	.rdsr_dummy = USES_OCTAL_IO(inst) \
+	.rdsr_dummy = USES_IO(inst, read, OCTAL) \
 		    ? (SFDP_FIELD(inst, sfdp_ff05, 1, BIT(28)) ? 8 : 4) \
 		    : 0, \
-	.rdid_addr_4 = USES_OCTAL_IO(inst) \
+	.rdid_addr_4 = USES_IO(inst, read, OCTAL) \
 		     ? (SFDP_FIELD(inst, sfdp_ff05, 1, BIT(29)) == 1) \
 		     : false, \
-	.rdid_dummy = USES_OCTAL_IO(inst) \
+	.rdid_dummy = USES_IO(inst, read, OCTAL) \
 		    ? (SFDP_FIELD(inst, sfdp_ff05, 1, BIT(28)) ? 8 : 4) \
 		    : 0, }
 
@@ -335,8 +309,7 @@
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, sfdp_bfp), \
 		"sfdp-bfp property needed in " \
 			DT_NODE_FULL_NAME(DT_DRV_INST(inst))); \
-	BUILD_ASSERT((DT_INST_ENUM_IDX(inst, mspi_io_mode) \
-		      != MSPI_IO_MODE_OCTAL) || \
+	BUILD_ASSERT(!USES_IO(inst, read, OCTAL) || \
 		     DT_INST_NODE_HAS_PROP(inst, sfdp_ff05), \
 		"sfdp-ff05 property needed in " \
 			DT_NODE_FULL_NAME(DT_DRV_INST(inst))); \
@@ -344,7 +317,8 @@
 		     DT_INST_NODE_HAS_PROP(inst, sfdp_ff84), \
 		"sfdp-ff84 property needed in " \
 			DT_NODE_FULL_NAME(DT_DRV_INST(inst))); \
-	BUILD_ASSERT(!USES_8D_8D_8D(inst) || \
+	BUILD_ASSERT(!(USES_8D_8D_8D(inst, read) || \
+		       USES_8D_8D_8D(inst, write)) || \
 		     BFP_DW18_CMD_EXT(inst) <= BFP_DW18_CMD_EXT_INV, \
 		"Unsupported Octal Command Extension mode in " \
 			DT_NODE_FULL_NAME(DT_DRV_INST(inst))); \
