@@ -103,6 +103,10 @@
 	status = "okay";
 };
 
+&wifi {
+	status = "okay";
+};
+
 /* Internal LDO channel 1 powers the on-board PSRAM at 1.8 V. */
 &ldo {
 	status = "okay";
