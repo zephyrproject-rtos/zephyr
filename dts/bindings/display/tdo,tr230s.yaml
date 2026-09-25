@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: Apache-2.0
+
+title: Shanghai Top Display Optoelectronics TR230S display bridge/controller
+
+description: |
+  The TR230S is a display bridge/controller that accepts RGB565 pixel data
+  from a host and drives an attached RGB display panel. Panel width and height
+  are provided through the common display-controller binding.
+
+  The supported host interface is MIPI DBI Type C using four-wire SPI. The
+  WAIT input is controller-ready flow control and is checked before each
+  controller transaction.
+
+compatible: "tdo,tr230s"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  mipi-max-frequency:
+    default: 100000000
+
+  wait-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Controller-ready input. The active logical state means that the TR230S
+      can accept a new controller transaction.
+
+  ready-timeout-ms:
+    type: int
+    default: 0
+    description: |
+      Maximum time to wait for controller readiness. Zero waits indefinitely,
+      matching the manufacturer's STM32 example polling behavior.
+
+  reset-pre-delay-ms:
+    type: int
+    default: 10
+    description: |
+      Delay before asserting hardware reset, in milliseconds. The 10 ms
+      default follows the manufacturer's STM32 example and was validated on
+      hardware; shorter timing did not initialize the tested module reliably.
+
+  reset-pulse-ms:
+    type: int
+    default: 10
+    description: |
+      Hardware-reset pulse width, in milliseconds. The 10 ms default follows
+      the manufacturer's STM32 example and was validated on hardware; shorter
+      timing did not initialize the tested module reliably.
+
+  post-reset-delay-ms:
+    type: int
+    default: 2000
+    description: |
+      Minimum time after releasing hardware reset before the first controller
+      transaction, in milliseconds. The 2000 ms default follows the
+      manufacturer's STM32 example and was validated on hardware; shorter
+      timing did not initialize the tested module reliably.
+
+  initial-brightness:
+    type: int
+    required: true
+    description: |
+      Initial non-blanked brightness in Zephyr display API units from 0 to 255,
+      where 255 is full brightness. A later set_brightness() call replaces
+      this value.
