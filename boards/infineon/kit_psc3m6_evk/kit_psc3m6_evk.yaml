@@ -19,4 +19,5 @@ supported:
   - pinctrl
   - rtc
   - watchdog
+  - spi
 vendor: infineon

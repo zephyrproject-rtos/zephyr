@@ -60,4 +60,13 @@ config IFX_SPI_MAX_DATA_WIDTH
 	  Maximum supported data width for SPI transactions.
 	  PSoC4 devices typically support up to 16 bits, while others support 32 bits.
 
+config IFX_SPI_PDL_TS_FIELD_QUIRK
+	bool
+	default y if SOC_DIE_PSC3M6 || SOC_SERIES_PSE84
+	help
+	  Enabled for SoCs whose PDL fixed the SCB SPI config field name
+	  "enableTransferSeparation". Older PDL revisions misspell it as
+	  "enableTransferSeperation"; the driver picks the field name from
+	  this symbol.
+
 endif # USE_INFINEON_SPI
