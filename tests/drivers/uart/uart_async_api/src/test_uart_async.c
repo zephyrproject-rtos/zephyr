@@ -1204,8 +1204,8 @@ ZTEST_USER(uart_async_var_buf_length, test_var_buf_length)
 
 	zassert_equal(uart_config_get(uart_dev, &uart_cfg), 0);
 	baudrate = uart_cfg.baudrate;
-	if (uart_cfg.baudrate > CONFIG_VAR_LENGTH_BUFFER_TEST_BUADRATE_LIMIT) {
-		uart_cfg.baudrate = CONFIG_VAR_LENGTH_BUFFER_TEST_BUADRATE_LIMIT;
+	if (uart_cfg.baudrate > CONFIG_VAR_LENGTH_BUFFER_TEST_BAUDRATE_LIMIT) {
+		uart_cfg.baudrate = CONFIG_VAR_LENGTH_BUFFER_TEST_BAUDRATE_LIMIT;
 		zassert_ok(uart_configure(uart_dev, &uart_cfg));
 	}
 
