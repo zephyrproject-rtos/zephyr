@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	bme280@76 {
+		status = "okay";
+		compatible = "bosch,bme280";
+		reg = <0x76>;
+	};
+};

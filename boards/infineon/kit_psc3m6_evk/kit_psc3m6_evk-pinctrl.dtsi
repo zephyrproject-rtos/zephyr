@@ -22,3 +22,14 @@
 &p3_2_scb4_uart_rx {
 	input-enable;
 };
+
+/* I2C (SCB0) pin drive modes — open-drain for I2C bus */
+&p9_0_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p9_2_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};

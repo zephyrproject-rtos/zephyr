@@ -9,6 +9,7 @@
  * Common devicetree content for the kit_psc3m6_evk board variants.
  */
 
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -111,6 +112,18 @@ uart4: &scb4 {
 	pinctrl-names = "default";
 };
 
+/* I2C (SCB0: P9.0 SCL, P9.2 SDA) */
+i2c0: &scb0 {
+	compatible = "infineon,i2c";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	clocks = <&peri0_group4_8bit_2>;
+	pinctrl-0 = <&p9_0_scb0_i2c_scl &p9_2_scb0_i2c_sda>;
+	pinctrl-names = "default";
+};
+
 /* Peripheral clock dividers */
 &peri0_group4_8bit_0 {
 	status = "okay";
@@ -118,6 +131,11 @@ uart4: &scb4 {
 };
 
 &peri0_group4_8bit_1 {
+	status = "okay";
+	clock-div = <86>;
+};
+
+&peri0_group4_8bit_2 {
 	status = "okay";
 	clock-div = <86>;
 };
