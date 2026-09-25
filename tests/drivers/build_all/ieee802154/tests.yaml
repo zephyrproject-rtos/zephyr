@@ -8,6 +8,9 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
   drivers.ieee802154.build.cc13xx_cc26xx:
     platform_allow: cc1352r_sensortag
   drivers.ieee802154.build.kw41z:
