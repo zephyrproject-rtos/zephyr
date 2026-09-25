@@ -30,6 +30,17 @@ config ESP_SPIRAM_MEMTEST
 	help
 	  Runs a memory test on initialization.
 
+config ESP_MBEDTLS_HEAP_ALLOC_EXT_RAM
+	bool "Allocate the Mbed TLS heap in external RAM (PSRAM)"
+	depends on MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_HEAP_CUSTOM_SECTION
+	help
+	  Place the Mbed TLS heap in the .mbedtls_heap linker section and
+	  rely on the Espressif SoC linker scripts, which already map that
+	  section into the SoC's external RAM (PSRAM) region. This frees up
+	  internal SRAM and allows MBEDTLS_HEAP_SIZE to be sized well beyond
+	  what internal RAM alone could hold.
+
 choice SPIRAM_MODE
 	prompt "Mode (QUAD/OCT/HEX) of SPI RAM chip in use"
 	default SPIRAM_MODE_HEX if SOC_SERIES_ESP32P4
