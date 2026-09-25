@@ -28,12 +28,13 @@ if(CONFIG_CMSIS_NN)
   endif()
 
   if(CONFIG_CMSIS_NN_BASICMATH)
-    file(GLOB SRC "${CMSIS_NN_DIR}/Source/BasicMathFunctions/*_*.c")
-    zephyr_library_sources(${SRC})
+    file(GLOB SRC "${CMSIS_NN_DIR}/Source/BasicMathFunctions/*_s8*.c")
+    file(GLOB SRC_S16 "${CMSIS_NN_DIR}/Source/BasicMathFunctions/*_s16*.c")
+    zephyr_library_sources(${SRC} ${SRC_S16})
   endif()
 
   if(CONFIG_CMSIS_NN_CONCATENATION)
-    file(GLOB SRC "${CMSIS_NN_DIR}/Source/ConcatenationFunctions/*_*.c")
+    file(GLOB SRC "${CMSIS_NN_DIR}/Source/ConcatenationFunctions/*_s8*.c")
     zephyr_library_sources(${SRC})
   endif()
 
@@ -68,8 +69,7 @@ if(CONFIG_CMSIS_NN)
   endif()
 
   if(CONFIG_CMSIS_NN_RESHAPE)
-    file(GLOB SRC "${CMSIS_NN_DIR}/Source/ReshapeFunctions/*_*.c")
-    zephyr_library_sources(${SRC})
+    zephyr_library_sources(${CMSIS_NN_DIR}/Source/ReshapeFunctions/arm_reshape_s8.c)
   endif()
 
   if(CONFIG_CMSIS_NN_SOFTMAX)
