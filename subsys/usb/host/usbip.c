@@ -243,7 +243,6 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 		}
 	}
 
-	xfer->interval = cmd->submit.interval;
 	cmd_nd->xfer = xfer;
 	ret = usbh_xfer_enqueue(dev_ctx->udev, xfer);
 	if (ret) {

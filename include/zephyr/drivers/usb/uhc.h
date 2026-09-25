@@ -63,9 +63,23 @@ struct usb_host_interface {
 	uint8_t alternate;
 };
 
-struct usb_host_ep {
-	/** Pointer to the endpoint descriptor */
-	struct usb_ep_descriptor *desc;
+/**
+ * @brief USB host pipe, the controller side of a device endpoint
+ */
+struct usb_host_pipe {
+	/** Pipe specific info */
+	union {
+		/** Pointer to the endpoint descriptor */
+		struct usb_ep_descriptor *desc;
+		/** Control endpoint maximum packet size */
+		uint16_t control_mps;
+	};
+	/** Pointer to the USB device the endpoint belongs to */
+	struct usb_device *udev;
+	/** Opaque controller pipe handle, NULL if not used */
+	void *controller_pipe;
+	/** Pipe is enabled at the controller level */
+	bool enabled;
 };
 
 /**
@@ -92,11 +106,35 @@ struct usb_device {
 	void *cfg_desc;
 	/** Pointers to device interfaces */
 	struct usb_host_interface ifaces[UHC_INTERFACES_MAX + 1];
-	/** Pointers to device OUT endpoints */
-	struct usb_host_ep ep_out[16];
-	/** Pointers to device IN endpoints */
-	struct usb_host_ep ep_in[16];
+	/** Pipes of the device OUT endpoints */
+	struct usb_host_pipe pipe_out[16];
+	/** Pipes of the device IN endpoints */
+	struct usb_host_pipe pipe_in[16];
 };
+
+/**
+ * @brief Get USB device pipe by endpoint address.
+ *
+ * Endpoint 0 has only one pipe, the IN one, because a control endpoint needs
+ * no separate pipe per direction. If a controller ever needs both, this has
+ * to be improved.
+ *
+ * @param[in] udev Pointer to USB device instance
+ * @param[in] ep   Endpoint address
+ *
+ * @return Pointer to the IN or OUT pipe of the endpoint.
+ */
+static inline struct usb_host_pipe *uhc_get_udev_pipe(struct usb_device *const udev,
+						      const uint8_t ep)
+{
+	uint8_t idx = USB_EP_GET_IDX(ep) & 0xFU;
+
+	if (USB_EP_DIR_IS_IN(ep) || (idx == 0U)) {
+		return &udev->pipe_in[idx];
+	} else {
+		return &udev->pipe_out[idx];
+	}
+}
 
 /**
  * @brief USB control transfer stage
@@ -126,12 +164,6 @@ struct uhc_transfer {
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */
 	uint8_t ep;
-	/** Endpoint type */
-	uint8_t type;
-	/** Maximum packet size */
-	uint16_t mps;
-	/** Interval, used for periodic transfers only */
-	uint16_t interval;
 	/** Start frame, used for periodic transfers only */
 	uint16_t start_frame;
 	/** Flag marks request buffer is queued */
@@ -195,6 +227,7 @@ struct uhc_event {
 	sys_snode_t node;
 	/** Event type */
 	enum uhc_event_type type;
+	/** Event type specific info */
 	union {
 		/** Event status value, if any */
 		int status;
@@ -307,10 +340,11 @@ __subsystem struct uhc_driver_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
-	int (*ep_enqueue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
-	int (*ep_dequeue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
+	/* Optional, drivers without controller pipe resources omit these */
+	int (*pipe_enable)(const struct device *dev, struct usb_host_pipe *const pipe);
+	int (*pipe_disable)(const struct device *dev, struct usb_host_pipe *const pipe);
+	int (*pipe_enqueue)(const struct device *dev, struct uhc_transfer *const xfer);
+	int (*pipe_dequeue)(const struct device *dev, struct uhc_transfer *const xfer);
 };
 /**
  * @endcond
@@ -501,6 +535,41 @@ struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
 void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
 
 /**
+ * @brief Enable the pipe of a device endpoint at the controller level
+ *
+ * Prepare the controller resources required to communicate with an endpoint
+ * of a USB device. The endpoint descriptor, or the control endpoint maximum
+ * packet size for endpoint 0, must be assigned before this call. Drivers
+ * without controller pipe resources treat this as a no-op.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -EALREADY pipe is already enabled
+ * @retval -EINVAL endpoint address is invalid or endpoint is not configured
+ */
+int uhc_pipe_enable(const struct device *dev, struct usb_device *const udev, const uint8_t ep);
+
+/**
+ * @brief Disable the pipe of a device endpoint at the controller level
+ *
+ * Release the controller resources claimed by uhc_pipe_enable().
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -EALREADY pipe is not enabled
+ * @retval -EINVAL endpoint address is invalid
+ */
+int uhc_pipe_disable(const struct device *dev, struct usb_device *const udev, const uint8_t ep);
+
+/**
  * @brief Queue USB host controller transfer
  *
  * Add transfer to the queue. If the queue is empty, the transfer
@@ -512,7 +581,7 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  */
-int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
+int uhc_pipe_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Remove a USB host controller transfers from queue
@@ -525,7 +594,7 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  */
-int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
+int uhc_pipe_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Initialize USB host controller
