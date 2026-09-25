@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/cat1b/mpns/psc3m5fds2afq1_s.dtsi>
+#include <arm/infineon/cat1b/psc3/system_clocks.dtsi>
+#include "kit_psc3m5_cc2-common.dtsi"
+#include "kit_psc3m5_cc2-pinctrl.dtsi"
+#include "kit_psc3m5_cc2-partitions.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &flash_controller;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,canbus = &can1;
+		zephyr,entropy = &mxcryptolite_trng;
+	};
+};
+
+&mxcryptolite_crypto {
+	status = "okay";
+};
+
+&mxcryptolite_trng {
+	status = "okay";
+};
+
+&flash_controller {
+	status = "okay";
+};
