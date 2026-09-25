@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM in the Xilinx Zynq-7000 processing system.
+
+  The second register range is the GEMx_CLK_CTRL register of the SLCR,
+  through which the driver retunes the TX clock to the link speed.
+  The MAC does not support half duplex at 1000 Mbit/s; restrict the PHY
+  with its default-speeds property if that matters.
+
+compatible: "xlnx,zynq-gem"
+
+include: cdns,gem.yaml
+
+properties:
+  reg-names:
+    required: true
+    description: |
+      Names of the register ranges: "mac" for the GEM itself and "clkc"
+      for its clock control register in the SLCR.
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Rate in Hz of the PLL supplying the GEM TX clock, by default the
+      IO PLL. The GEM TX clock is derived from it through the two
+      dividers of the clock control register, which the driver sets to
+      match the link speed reported by the PHY.
