@@ -36,6 +36,7 @@ tests:
       - nucleo_h753zi
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_psc3m5_evk
+      - kit_psc3m6_evk/psc3m6ges3ahq1
     integration_platforms:
       - nucleo_h753zi
   drivers.uart.async_api.nrf_uart:
