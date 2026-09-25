@@ -11,4 +11,5 @@ supported:
   - hwinfo
   - watchdog
   - uart
+  - spi
 vendor: ti
