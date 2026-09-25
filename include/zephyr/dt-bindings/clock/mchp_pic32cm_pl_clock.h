@@ -11,8 +11,8 @@
  * Clock subsystem IDs. To be used in devicetree nodes, and as argument for clock API.
  */
 
-#ifndef INCLUDE_ZEPHYR_DT_BINDINGS_CLOCK_MCHP_PIC32CM_PL_CLOCK_H_
-#define INCLUDE_ZEPHYR_DT_BINDINGS_CLOCK_MCHP_PIC32CM_PL_CLOCK_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_PIC32CM_PL_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_PIC32CM_PL_CLOCK_H_
 
 /* Clock subsystem Types */
 /** @brief Subsystem type: On-chip oscillator high frequency (OSCHF). */
@@ -308,4 +308,4 @@
 /** Maximum valid MCLKPERIPH derive ID value. */
 #define CLOCK_MCHP_MCLKPERIPH_ID_MAX (38)
 
-#endif /* INCLUDE_ZEPHYR_DT_BINDINGS_CLOCK_MCHP_PIC32CM_PL_CLOCK_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_PIC32CM_PL_CLOCK_H_ */
