@@ -6,12 +6,16 @@
 #include <andes_csr.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/arch/riscv/arch.h>
 
 /* exports */
 GTEXT(__reset)
 
 /* imports */
 GTEXT(__initialize)
+#ifdef CONFIG_RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC
+GTEXT(_irq_vector_table)
+#endif
 
 SECTION_FUNC(reset, __reset)
 
@@ -62,6 +66,15 @@ cache_enable_finish:
 	/* Enable misaligned access and non-blocking load */
 	li t0, (1 << 8) | (1 << 6)
 	csrs NDS_MMISC_CTL, t0
+
+#ifdef CONFIG_RISCV_CUSTOM_CSR_ANDES_VECTORED_PLIC
+	/* Enable VEC_PLIC bit for Vectored PLIC extension. */
+	csrsi NDS_MMISC_CTL, 2
+
+	/* Set mtvec to the generated vector table. */
+	la t0, _irq_vector_table
+	csrw mtvec, t0
+#endif
 
 	/* Jump to __initialize */
 	call __initialize

@@ -19,6 +19,10 @@
 #include <zephyr/drivers/interrupt_controller/riscv_aplic_direct.h>
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_MCAUSE
+extern unsigned long __soc_read_mcause(void);
+#endif
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
@@ -33,7 +37,9 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 	ARG_UNUSED(unused);
 
-#ifdef CONFIG_RISCV_S_MODE
+#if defined(CONFIG_RISCV_SOC_HAS_CUSTOM_MCAUSE)
+	cause = __soc_read_mcause();
+#elif defined(CONFIG_RISCV_S_MODE)
 	cause = csr_read(scause);
 #else
 	cause = csr_read(mcause);
