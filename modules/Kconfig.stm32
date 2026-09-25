@@ -959,4 +959,49 @@ config USE_STM32_UTIL_I3C
 	help
 	  Enable STM32Cube I3C Timing Utility functions (UTILS) module driver
 
+config USE_STM32_HAL_PSA_CRYPTO_DRIVERS
+	bool "STM32 PSA crypto drivers [EXPERIMENTAL]"
+	default y
+	depends on MBEDTLS_PSA_CRYPTO_C
+	select HAS_STM32LIB
+	select EXPERIMENTAL
+
+if USE_STM32_HAL_PSA_CRYPTO_DRIVERS
+
+config USE_STM32_HAL_PSA_CRYPTO_DRIVERS_AES
+	bool "STM32 AES PSA crypto driver"
+	default y if $(dt_has_compat,$(DT_COMPAT_ST_STM32_AES))
+	select USE_STM32_HAL_AES if STM32_HAL2
+	select USE_STM32_HAL_CRYP if !STM32_HAL2
+	select USE_STM32_HAL_CRYP_EX if !STM32_HAL2
+
+config USE_STM32_HAL_PSA_CRYPTO_DRIVERS_CRYP
+	bool "STM32 CRYP PSA crypto driver"
+	default y if $(dt_has_compat,$(DT_COMPAT_ST_STM32_CRYP))
+	select USE_STM32_HAL_CRYP
+	select USE_STM32_HAL_CRYP_EX
+
+config USE_STM32_HAL_PSA_CRYPTO_DRIVERS_SAES
+	bool "STM32 SAES PSA crypto driver"
+	default y if $(dt_has_compat,$(DT_COMPAT_ST_STM32_SAES))
+	select USE_STM32_HAL_PSA_CRYPTO_DRIVERS_AES
+
+config USE_STM32_HAL_PSA_CRYPTO_DRIVERS_HASH
+	bool "STM32 HASH PSA crypto driver"
+	default y if $(dt_has_compat,$(DT_COMPAT_ST_STM32_HASH))
+	select USE_STM32_HAL_HASH
+	select USE_STM32_HAL_HASH_EX
+
+config USE_STM32_HAL_PSA_CRYPTO_DRIVERS_RNG
+	bool "STM32 RNG PSA crypto driver"
+	select USE_STM32_HAL_RNG
+	select USE_STM32_HAL_RNG_EX
+	help
+	  This config is likely not required since Zephyr integration of
+	  PSA Crypto relies on the Zephyr entropy driver.
+	  Keep this config disabled unless you want to bypass Zephyr
+	  entropy driver.
+
+endif # USE_HAL_STM32_PSA_CRYPTO_DRIVERS
+
 endif # HAS_STM32CUBE
