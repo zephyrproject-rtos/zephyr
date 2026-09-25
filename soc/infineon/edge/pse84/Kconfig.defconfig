@@ -62,4 +62,11 @@ config TFM_BL2_NOT_SUPPORTED
 config TFM_PLATFORM_HANDLES_MERGE
 	default y
 
+# PSE84 has two cores with two ITM trace bus IDs
+# setting them to their defaults when building for each core
+# ensures we use the correct ID for the correct core
+config TRACING_BACKEND_ITM_BUS_ID
+	default 1 if CPU_CORTEX_M33
+	default 4 if CPU_CORTEX_M55
+
 endif # SOC_SERIES_PSE84
