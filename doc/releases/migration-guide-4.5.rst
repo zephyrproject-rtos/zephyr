@@ -2761,6 +2761,10 @@ MCUmgr
     the new ``hash_len`` field holds the actual length. Code that reads ``hash``
     must use ``hash_len`` instead of assuming :c:macro:`IMG_MGMT_DATA_SHA_LEN`.
 
+* :c:func:`smp_client_transport_register` now returns ``int``: ``0`` when the transport is
+  registered and ``-EEXIST`` when another transport has already claimed its type. The change is
+  source compatible; existing callers that ignore the result need no change.
+
 Network buffers
 ===============
 

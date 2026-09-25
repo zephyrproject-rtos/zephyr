@@ -47,5 +47,5 @@ void stub_smp_client_transport_register(void)
 	smp_transport_init(&smpt_test);
 	smp_client_transport.smpt = &smpt_test;
 	smp_client_transport.smpt_type = SMP_SERIAL_TRANSPORT;
-	smp_client_transport_register(&smp_client_transport);
+	(void)smp_client_transport_register(&smp_client_transport);
 }

@@ -319,7 +319,9 @@ static void smp_spi_start(void)
 	}
 
 #ifdef CONFIG_SMP_CLIENT
-	smp_client_transport_register(&smp_spi_client_transport);
+	if (smp_client_transport_register(&smp_spi_client_transport) != 0) {
+		LOG_ERR("SMP SPI client transport type already claimed");
+	}
 #endif
 
 	rc = smp_spi_arm_transfer();

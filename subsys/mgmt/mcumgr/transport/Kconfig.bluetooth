@@ -111,3 +111,39 @@ config MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
 	  will be statically defined and registered.
 
 endif # MCUMGR_TRANSPORT_BT
+
+menuconfig MCUMGR_TRANSPORT_BT_CLIENT
+	bool "Bluetooth client MCUmgr SMP transport [EXPERIMENTAL]"
+	depends on BT_GATT_CLIENT && SMP_CLIENT
+	select MCUMGR_TRANSPORT_REASSEMBLY
+	select EXPERIMENTAL
+	help
+	  Enables sending SMP client commands to a Bluetooth peer that runs the SMP service,
+	  with this device as the GATT client. Only the GATT client role is needed, not the
+	  central role. It can be enabled together with MCUMGR_TRANSPORT_BT.
+
+	  Fragments are ATT_MTU-3 bytes, so enable BT_GATT_AUTO_UPDATE_MTU or call
+	  bt_gatt_exchange_mtu(), or every fragment is limited to 20 bytes.
+	  MCUMGR_TRANSPORT_NETBUF_SIZE must not exceed the peer's, because the image upload
+	  client sizes its frames from it.
+
+if MCUMGR_TRANSPORT_BT_CLIENT
+
+config MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS
+	int "Bluetooth client SMP transmit credits"
+	range 1 255
+	default 2
+	help
+	  Number of write without response fragments the transport may have in flight. Must
+	  not exceed BT_ATT_TX_COUNT, which a build assertion checks.
+
+config MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDIT_TIMEOUT
+	int "Bluetooth client SMP transmit credit timeout in milliseconds"
+	range 1 10000
+	default 500
+	help
+	  How long the first fragment of a packet waits for a transmit credit before the
+	  packet is dropped. The SMP client retries a dropped packet. The wait blocks the
+	  MCUmgr work queue.
+
+endif # MCUMGR_TRANSPORT_BT_CLIENT

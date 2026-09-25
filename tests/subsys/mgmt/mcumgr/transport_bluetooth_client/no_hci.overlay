@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Jeff Welder
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Builds the Bluetooth host without a controller; the test never calls bt_enable() */
+/ {
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+};
