@@ -22,7 +22,7 @@ choice LV_Z_COLOR_FORMAT
 	default LV_Z_COLOR_FORMAT_I1
 endchoice
 
-config LV_DPI_DEF
+config LV_Z_DPI_DEF
 	default 130
 
 config LV_Z_VDB_SIZE

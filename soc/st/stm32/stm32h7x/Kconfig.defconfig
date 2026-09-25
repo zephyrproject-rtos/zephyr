@@ -20,7 +20,7 @@ configdefault CACHE_MANAGEMENT
 
 if LVGL
 
-config LV_DRAW_DMA2D_HAL_INCLUDE
+config LV_Z_DRAW_DMA2D_HAL_INCLUDE
 	default "stm32h7xx.h"
 
 endif # LVGL

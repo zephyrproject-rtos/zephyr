@@ -16,6 +16,104 @@
  * definitions below take precedence over those.
  */
 
+#define LV_DPI_DEF CONFIG_LV_Z_DPI_DEF
+#define LV_DRAW_BUF_ALIGN CONFIG_LV_Z_DRAW_BUF_ALIGN
+
+#if defined(CONFIG_LV_USE_DRAW_DMA2D) && !defined(CONFIG_LV_Z_DRAW_DMA2D)
+#error "CONFIG_LV_USE_DRAW_DMA2D has no effect; use CONFIG_LV_Z_DRAW_DMA2D instead"
+#endif
+#if defined(CONFIG_LV_USE_DRAW_DAVE2D) && !defined(CONFIG_LV_Z_DRAW_DAVE2D)
+#error "CONFIG_LV_USE_DRAW_DAVE2D has no effect; use CONFIG_LV_Z_DRAW_DAVE2D instead"
+#endif
+#if defined(CONFIG_LV_USE_DRAW_PXP) && !defined(CONFIG_LV_Z_DRAW_PXP)
+#error "CONFIG_LV_USE_DRAW_PXP has no effect; use CONFIG_LV_Z_DRAW_PXP instead"
+#endif
+#if defined(CONFIG_LV_USE_NEMA_GFX) && !defined(CONFIG_LV_Z_USE_NEMA_GFX)
+#error "CONFIG_LV_USE_NEMA_GFX has no effect; use CONFIG_LV_Z_USE_NEMA_GFX instead"
+#endif
+#if defined(CONFIG_LV_USE_NEMA_VG) && !defined(CONFIG_LV_Z_USE_NEMA_VG)
+#error "CONFIG_LV_USE_NEMA_VG has no effect; use CONFIG_LV_Z_USE_NEMA_VG instead"
+#endif
+
+#ifdef CONFIG_LV_Z_DRAW_DMA2D
+#define LV_USE_DRAW_DMA2D 1
+#else
+#define LV_USE_DRAW_DMA2D 0
+#endif
+#ifdef CONFIG_LV_Z_DRAW_DMA2D_INTERRUPT
+#define LV_USE_DRAW_DMA2D_INTERRUPT 1
+#else
+#define LV_USE_DRAW_DMA2D_INTERRUPT 0
+#endif
+#ifdef CONFIG_LV_Z_DRAW_DMA2D_HAL_INCLUDE
+#define LV_DRAW_DMA2D_HAL_INCLUDE CONFIG_LV_Z_DRAW_DMA2D_HAL_INCLUDE
+#else
+#define LV_DRAW_DMA2D_HAL_INCLUDE "stm32h7xx_hal.h"
+#endif
+#ifdef CONFIG_LV_Z_DRAW_DAVE2D
+#define LV_USE_DRAW_DAVE2D 1
+#else
+#define LV_USE_DRAW_DAVE2D 0
+#endif
+#ifdef CONFIG_LV_Z_DRAW_PXP
+#define LV_USE_DRAW_PXP 1
+#else
+#define LV_USE_DRAW_PXP 0
+#endif
+
+#ifdef CONFIG_LV_Z_USE_NEMA_GFX
+#define LV_USE_NEMA_GFX 1
+#else
+#define LV_USE_NEMA_GFX 0
+#endif
+#ifdef CONFIG_LV_Z_NEMA_USE_CACHE
+#define LV_NEMA_USE_CACHE 1
+#else
+#define LV_NEMA_USE_CACHE 0
+#endif
+#ifdef CONFIG_LV_Z_NEMA_CACHE_HAL_INCLUDE
+#define LV_NEMA_CACHE_HAL_INCLUDE CONFIG_LV_Z_NEMA_CACHE_HAL_INCLUDE
+#else
+#define LV_NEMA_CACHE_HAL_INCLUDE "stm32u5xx_hal.h"
+#endif
+#ifdef CONFIG_LV_Z_USE_NEMA_VG
+#define LV_USE_NEMA_VG 1
+#else
+#define LV_USE_NEMA_VG 0
+#endif
+#ifdef CONFIG_LV_Z_NEMA_GFX_MAX_RESX
+#define LV_NEMA_GFX_MAX_RESX CONFIG_LV_Z_NEMA_GFX_MAX_RESX
+#else
+#define LV_NEMA_GFX_MAX_RESX 800
+#endif
+#ifdef CONFIG_LV_Z_NEMA_GFX_MAX_RESY
+#define LV_NEMA_GFX_MAX_RESY CONFIG_LV_Z_NEMA_GFX_MAX_RESY
+#else
+#define LV_NEMA_GFX_MAX_RESY 600
+#endif
+#if defined(CONFIG_LV_Z_NEMA_LIB_M33_REVC)
+#define LV_USE_NEMA_LIB 1
+#elif defined(CONFIG_LV_Z_NEMA_LIB_M33_NEMAPVG)
+#define LV_USE_NEMA_LIB 2
+#elif defined(CONFIG_LV_Z_NEMA_LIB_M55)
+#define LV_USE_NEMA_LIB 3
+#elif defined(CONFIG_LV_Z_NEMA_LIB_M7)
+#define LV_USE_NEMA_LIB 4
+#else
+#define LV_USE_NEMA_LIB 0
+#endif
+#if defined(CONFIG_LV_Z_NEMA_HAL_STM32)
+#define LV_USE_NEMA_HAL 1
+#ifdef CONFIG_LV_Z_NEMA_STM32_HAL_INCLUDE
+#define LV_NEMA_STM32_HAL_INCLUDE CONFIG_LV_Z_NEMA_STM32_HAL_INCLUDE
+#else
+#define LV_NEMA_STM32_HAL_INCLUDE "stm32u5xx_hal.h"
+#endif
+#else
+#define LV_USE_NEMA_HAL 0
+#define LV_NEMA_STM32_HAL_INCLUDE "stm32u5xx_hal.h"
+#endif
+
 /*
  * Default color format. LV_COLOR_DEPTH is derived from the color format of
  * the LVGL module Kconfig otherwise, so it is defined here as well. The
@@ -67,7 +165,7 @@
 #endif
 
 /* Provide definition to align LVGL buffers */
-#define LV_ATTRIBUTE_MEM_ALIGN __aligned(CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE)
+#define LV_ATTRIBUTE_MEM_ALIGN __aligned(CONFIG_LV_Z_ATTRIBUTE_MEM_ALIGN_SIZE)
 
 #define LV_COLOR_16_SWAP_DISABLE_WARNING 1
 #ifdef CONFIG_LV_COLOR_16_SWAP

@@ -13,7 +13,7 @@ config MEMC
 
 if LVGL
 
-config LV_USE_DRAW_DMA2D
+config LV_Z_DRAW_DMA2D
 	default y
 
 config STM32_LTDC_FB_NUM

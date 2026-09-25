@@ -135,7 +135,7 @@ FOR_EACH(LV_BUFFERS_DEFINE, (), LV_DISPLAYS_IDX_LIST);
 
 #endif /* CONFIG_LV_Z_BUFFER_ALLOC_STATIC */
 
-#if CONFIG_LV_Z_LOG_LEVEL != 0
+#if LV_USE_LOG
 static void lvgl_log(lv_log_level_t level, const char *buf)
 {
 	switch (level) {
@@ -163,7 +163,7 @@ static void lvgl_log(lv_log_level_t level, const char *buf)
 	}
 	}
 }
-#endif
+#endif /* LV_USE_LOG */
 
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
 
@@ -285,7 +285,7 @@ static void lvgl_timer_handler_work(struct k_work *work)
 
 	/* schedule next timer verification */
 	if (wait_time == LV_NO_TIMER_READY) {
-		wait_time = CONFIG_LV_DEF_REFR_PERIOD;
+		wait_time = LV_DEF_REFR_PERIOD;
 	}
 
 	k_work_schedule_for_queue(&lvgl_workqueue, dwork, K_MSEC(wait_time));
@@ -386,9 +386,9 @@ int lvgl_init(void)
 	lv_init();
 	lv_tick_set_cb(k_uptime_get_32);
 
-#if CONFIG_LV_Z_LOG_LEVEL != 0
+#if LV_USE_LOG
 	lv_log_register_print_cb(lvgl_log);
-#endif
+#endif /* LV_USE_LOG */
 
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
 	lvgl_fs_init();

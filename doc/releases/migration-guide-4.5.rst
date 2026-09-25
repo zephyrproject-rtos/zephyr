@@ -2826,7 +2826,37 @@ lvgl
   :kconfig:option:`CONFIG_LV_Z_COLOR_FORMAT_ARGB8888`. The build fails if a non-default color
   format is still selected in the LVGL module Kconfig and differs from the Zephyr option.
 
-* ``CONFIG_LV_USE_PXP`` was replaced by ``CONFIG_LV_USE_DRAW_PXP``.
+* ``CONFIG_LV_USE_PXP`` was replaced by ``CONFIG_LV_Z_DRAW_PXP``.
+
+* Use :kconfig:option:`CONFIG_LV_Z_DPI_DEF` instead of ``CONFIG_LV_DPI_DEF`` to set the default
+  DPI. The LVGL module option no longer controls this value in Zephyr builds.
+
+* Use :kconfig:option:`CONFIG_LV_Z_DRAW_BUF_ALIGN` instead of ``CONFIG_LV_DRAW_BUF_ALIGN``
+  for draw buffer address alignment, and :kconfig:option:`CONFIG_LV_Z_ATTRIBUTE_MEM_ALIGN_SIZE`
+  instead of ``CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE`` for memory alignment. The former LVGL module
+  option no longer controls draw buffer alignment in Zephyr builds.
+
+* Use ``CONFIG_LV_Z_DRAW_DMA2D``, ``CONFIG_LV_Z_DRAW_DMA2D_INTERRUPT``, and
+  ``CONFIG_LV_Z_DRAW_DMA2D_HAL_INCLUDE`` instead of the corresponding ``CONFIG_LV_USE_DRAW_DMA2D``,
+  ``CONFIG_LV_USE_DRAW_DMA2D_INTERRUPT``, and ``CONFIG_LV_DRAW_DMA2D_HAL_INCLUDE`` options.
+  Similarly, replace ``CONFIG_LV_USE_DRAW_DAVE2D`` and ``CONFIG_LV_USE_DRAW_PXP`` with
+  ``CONFIG_LV_Z_DRAW_DAVE2D`` and ``CONFIG_LV_Z_DRAW_PXP``.
+
+* The Zephyr NemaGFX integration now uses ``LV_Z_USE_NEMA_GFX`` and ``LV_Z_NEMA_*`` Kconfig
+  options for the renderer, library, HAL, cache, vector graphics, and resolution settings.
+  Replace the corresponding ``LV_USE_NEMA_GFX``, ``LV_NEMA_*``, and ``LV_USE_NEMA_VG`` options
+  in application configuration and board defaults. LVGL's options for these settings no longer
+  control Zephyr builds.
+
+* The log level of the Zephyr LVGL integration no longer follows the LVGL log level. It is now
+  selected with the standard :kconfig:option:`CONFIG_LV_Z_LOG_LEVEL` choice
+  (``CONFIG_LV_Z_LOG_LEVEL_DBG`` etc.) and defaults to :kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`.
+  LVGL's own logging is still configured with ``CONFIG_LV_USE_LOG`` and ``CONFIG_LV_LOG_LEVEL_*``.
+  LVGL messages forwarded to the Zephyr logging subsystem are filtered by both levels, so set
+  ``CONFIG_LV_Z_LOG_LEVEL_DBG=y`` to see LVGL trace messages.
+
+* ``CONFIG_LV_USE_SYSMON`` no longer implies :kconfig:option:`CONFIG_CPU_LOAD`. Enable
+  :kconfig:option:`CONFIG_CPU_LOAD` for the system monitor to report the CPU usage.
 
 * The ``zephyr,lvgl-pointer-input`` devicetree binding marks the ``swap-xy``, ``invert-x``, and
   ``invert-y`` properties as **deprecated**. Users should instead add the corresponding

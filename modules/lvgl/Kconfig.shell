@@ -12,8 +12,8 @@ if LV_Z_SHELL
 config LV_Z_MAX_MONKEY_COUNT
 	int "Maximum number of monkeys"
 	default 4
-	depends on LV_USE_MONKEY
 	help
-	  Number of monkey instances that can exist in parallel
+	  Number of monkey instances that can exist in parallel. Only used if
+	  the LVGL monkey test (LV_USE_MONKEY) is enabled.
 
 endif

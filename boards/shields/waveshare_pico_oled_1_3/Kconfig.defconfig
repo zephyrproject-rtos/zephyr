@@ -7,7 +7,7 @@ if DISPLAY
 
 if LVGL
 
-config LV_DPI_DEF
+config LV_Z_DPI_DEF
 	default 110
 
 choice LV_Z_COLOR_FORMAT

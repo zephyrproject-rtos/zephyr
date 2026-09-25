@@ -34,7 +34,7 @@ choice LV_Z_RENDERING_MODE
 	default LV_Z_FULL_REFRESH
 endchoice
 
-config LV_DPI_DEF
+config LV_Z_DPI_DEF
 	default 128
 
 # Use offloaded render thread

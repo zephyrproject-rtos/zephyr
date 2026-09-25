@@ -15,7 +15,7 @@ config LV_Z_VDB_SIZE
 
 # Default Dot Per Inch. [px/inch]
 # Used to initialize default sizes such as widgets sized, style paddings.
-config LV_DPI_DEF
+config LV_Z_DPI_DEF
 	default 128
 
 # Use offloaded render thread

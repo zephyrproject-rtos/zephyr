@@ -4,70 +4,83 @@
 
 menu "LVGL Zephyr NemaGFX support"
 
-config LV_USE_NEMA_GFX
-	bool
+config LV_Z_USE_NEMA_GFX
+	bool "NemaGFX renderer"
 	depends on DT_HAS_ST_NEOCHROM_GPU2D_ENABLED
 	select STM32_NEOCHROM_GPU2D
 
-config LV_NEMA_USE_CACHE
-	bool
-	depends on LV_USE_NEMA_GFX
+config LV_Z_NEMA_USE_CACHE
+	bool "NemaGFX cache maintenance"
+	depends on LV_Z_USE_NEMA_GFX
 
-config LV_NEMA_CACHE_HAL_INCLUDE
-	string
+config LV_Z_NEMA_CACHE_HAL_INCLUDE
+	string "NemaGFX cache HAL header"
 	default "stm32u5xx_hal.h"
-	depends on LV_USE_NEMA_GFX && LV_NEMA_USE_CACHE
+	depends on LV_Z_USE_NEMA_GFX && LV_Z_NEMA_USE_CACHE
+	help
+	  Header providing the CMSIS data cache maintenance functions used by
+	  the NemaGFX renderer.
 
-choice LV_USE_NEMA_LIB
+choice LV_Z_USE_NEMA_LIB
 	prompt "NemaGFX static library"
-	depends on LV_USE_NEMA_GFX
+	depends on LV_Z_USE_NEMA_GFX
+	default LV_Z_NEMA_LIB_M33_REVC
 
-config LV_NEMA_LIB_NONE
-	bool "LV_NEMA_LIB_NONE"
+config LV_Z_NEMA_LIB_M33_REVC
+	bool "Cortex-M33 (Rev C)"
 
-config LV_NEMA_LIB_M33_REVC
-	bool "LV_NEMA_LIB_M33_REVC"
+config LV_Z_NEMA_LIB_M33_NEMAPVG
+	bool "Cortex-M33 (NemaPVG)"
 
-config LV_NEMA_LIB_M33_NEMAPVG
-	bool "LV_NEMA_LIB_M33_NEMAPVG"
+config LV_Z_NEMA_LIB_M55
+	bool "Cortex-M55"
 
-config LV_NEMA_LIB_M55
-	bool "LV_NEMA_LIB_M55"
-
-config LV_NEMA_LIB_M7
-	bool "LV_NEMA_LIB_M7"
+config LV_Z_NEMA_LIB_M7
+	bool "Cortex-M7"
 
 endchoice
 
-choice LV_USE_NEMA_HAL
+choice LV_Z_USE_NEMA_HAL
 	prompt "NemaGFX HAL"
-	depends on LV_USE_NEMA_GFX
+	depends on LV_Z_USE_NEMA_GFX
+	default LV_Z_NEMA_HAL_CUSTOM
 
-config LV_NEMA_HAL_CUSTOM
-	bool "LV_NEMA_HAL_CUSTOM"
+config LV_Z_NEMA_HAL_CUSTOM
+	bool "Custom"
 
-config LV_NEMA_HAL_STM32
-	bool "LV_NEMA_HAL_STM32"
+config LV_Z_NEMA_HAL_STM32
+	bool "STM32"
 
 endchoice
 
-config LV_NEMA_STM32_HAL_INCLUDE
-	string
-	depends on LV_USE_NEMA_GFX && LV_NEMA_HAL_STM32
+config LV_Z_NEMA_STM32_HAL_INCLUDE
+	string "NemaGFX STM32 HAL header"
+	default "stm32u5xx_hal.h"
+	depends on LV_Z_USE_NEMA_GFX && LV_Z_NEMA_HAL_STM32
+	help
+	  STM32 HAL header included by the NemaGFX STM32 HAL bundled with LVGL.
 
-config LV_USE_NEMA_VG
-	bool
-	depends on LV_USE_NEMA_GFX
+config LV_Z_USE_NEMA_VG
+	bool "NemaVG vector graphics"
+	depends on LV_Z_USE_NEMA_GFX
 
-config LV_NEMA_GFX_MAX_RESX
-	int
-	depends on LV_USE_NEMA_VG
+config LV_Z_NEMA_GFX_MAX_RESX
+	int "NemaVG max horizontal resolution (px)"
+	default 800
+	depends on LV_Z_USE_NEMA_GFX
+	help
+	  Canvas width NemaVG is initialized for. Together with the vertical
+	  resolution it also sizes the NemaGFX memory pool
+	  (RESX * RESY + 10 KiB).
 
-config LV_NEMA_GFX_MAX_RESY
-	int
-	depends on LV_USE_NEMA_VG
+config LV_Z_NEMA_GFX_MAX_RESY
+	int "NemaVG max vertical resolution (px)"
+	default 600
+	depends on LV_Z_USE_NEMA_GFX
+	help
+	  Canvas height NemaVG is initialized for.
 
-if LV_USE_NEMA_GFX && LV_NEMA_HAL_CUSTOM
+if LV_Z_USE_NEMA_GFX && LV_Z_NEMA_HAL_CUSTOM
 
 config FPU
 	default y
@@ -82,6 +95,6 @@ config LV_Z_NEMA_HAL_RING_SIZE
 	help
 	  Size of the NemaGFX command ring.
 
-endif # LV_USE_NEMA_GFX
+endif # LV_Z_USE_NEMA_GFX
 
 endmenu
