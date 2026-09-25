@@ -590,6 +590,14 @@ config WIFI_ESP32_MESH_VOTE_PERCENTAGE
 	  self-organized election, as a whole percent (100 = unanimous). Only
 	  relevant in the auto role.
 
+config WIFI_ESP32_MESH_ALLOW_ROOT_CONFLICTS
+	bool "Allow multiple roots in one mesh network"
+	help
+	  Let more than one root coexist in the same mesh network. When
+	  disabled, a root that detects another root yields and rejoins the
+	  tree as a child, so nodes booting at the same time still converge on
+	  a single root. Only relevant in the auto role.
+
 config WIFI_ESP32_MESH_SEND_BLOCK_TIME_MS
 	int "Mesh send block time (milliseconds)"
 	default 30000
