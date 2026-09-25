@@ -43,6 +43,17 @@ config SOC_NRF7120E_CPUFLPR
 
 if SOC_SERIES_NRF71
 
+config SOC_SERIES_NRF71_SKIP_PREV_STAGE_INIT
+	bool "Skip setup done by a previous secure boot stage"
+	default y if BOOTLOADER_MCUBOOT
+	help
+	  Skip the setup that a previous secure boot stage has already applied
+	  and locked: MPC overrides and OSCILLATORS/REGULATORS security
+	  attribution. GRTC and IPCT setup still run.
+
+	  Enable this in images started by a bootloader that performs this
+	  setup.
+
 config SOC_NRF7120_APPROTECT_BOOT_WORKAROUND
 	bool
 	default y if (SOC_NRF7120_CPUAPP || SOC_NRF7120E_CPUAPP)
