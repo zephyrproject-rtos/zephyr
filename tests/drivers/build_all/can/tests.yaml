@@ -23,6 +23,9 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
   drivers.can.build_all.infineon:
     platform_allow:
       - kit_psc3m5_evk
@@ -31,6 +34,9 @@ tests:
       - qemu_x86
   drivers.can.build_all.loopback:
     platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
       - native_sim
       - native_sim/native/64
   drivers.can.build_all.max32:
@@ -62,6 +68,9 @@ tests:
     extra_args:
       - SNIPPET=socketcan-native-sim
     platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
       - native_sim
       - native_sim/native/64
   drivers.can.build_all.nrf:
