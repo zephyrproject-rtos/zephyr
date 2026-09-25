@@ -133,6 +133,8 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+#elif defined(CONFIG_SOC_SERIES_STM32WL3X)
+		LL_APB0_GRP1_EnableClock(LL_APB0_GRP1_PERIPH_DBGMCU);
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32C5X)
@@ -145,6 +147,8 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_IWDG4_STOP);
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 		LL_DBGMCU_APB4_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG_STOP);
+#elif defined(CONFIG_SOC_SERIES_STM32WL3X)
+		LL_DBGMCU_APB0_GRP1_FreezePeriph(LL_DBGMCU_APB0_GRP1_IWDG_STOP);
 #else
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_IWDG_STOP);
 #endif
@@ -278,9 +282,9 @@ static int iwdg_stm32_init(const struct device *dev)
 	if (err < 0) {
 		return err;
 	}
-#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if defined(CONFIG_SOC_SERIES_STM32WB0X) || defined(CONFIG_SOC_SERIES_STM32WL3X)
 	/**
-	 * On STM32WB0, application must wait two slow clock cycles
+	 * On STM32WB0 and STM32WL3, application must wait two slow clock cycles
 	 * before accessing the IWDG IP after turning on the WDGEN
 	 * bit in RCC registers. However, there is no register that
 	 * can be polled for this event.
@@ -303,7 +307,7 @@ static int iwdg_stm32_init(const struct device *dev)
 
 	/* Clear WDRSTF bit after polling completes */
 	LL_RCC_ClearFlag_WDGRSTREL();
-#endif /* defined(CONFIG_SOC_SERIES_STM32WB0X) */
+#endif /* CONFIG_SOC_SERIES_STM32WB0X || CONFIG_SOC_SERIES_STM32WL3X */
 #endif /* DT_INST_NODE_HAS_PROP(0, clocks) */
 
 	/*
