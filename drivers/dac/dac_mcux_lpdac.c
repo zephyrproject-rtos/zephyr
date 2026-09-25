@@ -11,6 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include <fsl_dac.h>
 
@@ -33,6 +34,11 @@ LOG_MODULE_REGISTER(dac_mcux_lpdac, CONFIG_DAC_LOG_LEVEL);
  *
  * An API call that arrives while the device is not active returns -EBUSY rather
  * than writing a register block that is gated or has lost its contents.
+ *
+ * A node that names power states in zephyr,disabling-power-states gets those
+ * states blocked for as long as its output is on, so a consumer that holds a
+ * runtime reference does not have to know which system states would break the
+ * output it asked for.
  */
 
 struct mcux_lpdac_config {
@@ -40,13 +46,50 @@ struct mcux_lpdac_config {
 	const struct pinctrl_dev_config *pincfg;
 	dac_reference_voltage_source_t ref_voltage;
 	bool low_power;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool pm_device_constraints;
+#endif
 };
 
 struct mcux_lpdac_data {
 	bool configured;
 	bool output_on;
 	uint32_t value;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool power_locked;
+#endif
 };
+
+/*
+ * Block the power states the node declares in zephyr,disabling-power-states for
+ * exactly as long as the output is on and the device is active: taken when a
+ * value is first written, dropped when the device suspends, and taken again when
+ * a resume restores the output.
+ */
+static void mcux_lpdac_power_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	const struct mcux_lpdac_config *config = dev->config;
+	struct mcux_lpdac_data *data = dev->data;
+
+	if (config->pm_device_constraints && !data->power_locked) {
+		pm_policy_device_power_lock_get(dev);
+		data->power_locked = true;
+	}
+#endif
+}
+
+static void mcux_lpdac_power_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct mcux_lpdac_data *data = dev->data;
+
+	if (data->power_locked) {
+		pm_policy_device_power_lock_put(dev);
+		data->power_locked = false;
+	}
+#endif
+}
 
 /*
  * Write the devicetree configuration into the register block. DAC_Init()
@@ -115,6 +158,9 @@ static int mcux_lpdac_channel_setup(const struct device *dev,
 	data->output_on = false;
 	data->value = 0U;
 
+	/* DAC_Init() left GCR[DACEN] clear, so the output this was holding is gone. */
+	mcux_lpdac_power_lock_put(dev);
+
 	return 0;
 }
 
@@ -142,6 +188,8 @@ static int mcux_lpdac_write_value(const struct device *dev, uint8_t channel, uin
 		LOG_ERR("device is not active");
 		return -EBUSY;
 	}
+
+	mcux_lpdac_power_lock_get(dev);
 
 	DAC_Enable(config->base, true);
 	DAC_SetData(config->base, value);
@@ -188,6 +236,7 @@ static int mcux_lpdac_pm_callback(const struct device *dev, enum pm_device_actio
 		 * rather than starting to drive a pin at 0 V.
 		 */
 		if (data->output_on) {
+			mcux_lpdac_power_lock_get(dev);
 			DAC_Enable(config->base, true);
 			DAC_SetData(config->base, data->value);
 		}
@@ -207,6 +256,14 @@ static int mcux_lpdac_pm_callback(const struct device *dev, enum pm_device_actio
 		if (err < 0 && err != -ENOENT) {
 			return err;
 		}
+
+		/*
+		 * The output is off from here, so stop blocking the states that
+		 * would have broken it. Under runtime PM this runs when the last
+		 * consumer reference is dropped, which is the point where nothing
+		 * wants the output any more.
+		 */
+		mcux_lpdac_power_lock_put(dev);
 
 		return 0;
 
@@ -232,6 +289,13 @@ static DEVICE_API(dac, mcux_lpdac_driver_api) = {
 	.write_value = mcux_lpdac_write_value,
 };
 
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#define MCUX_LPDAC_PM_DEVICE_CONSTRAINTS_INIT(n)                                                   \
+	.pm_device_constraints = DT_INST_NODE_HAS_PROP(n, zephyr_disabling_power_states),
+#else
+#define MCUX_LPDAC_PM_DEVICE_CONSTRAINTS_INIT(n)
+#endif
+
 #define MCUX_LPDAC_INIT(n)                                                                         \
 	static struct mcux_lpdac_data mcux_lpdac_data_##n;                                         \
                                                                                                    \
@@ -244,6 +308,7 @@ static DEVICE_API(dac, mcux_lpdac_driver_api) = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.ref_voltage = DT_INST_PROP(n, voltage_reference),                                 \
 		.low_power = DT_INST_PROP(n, low_power_mode),                                      \
+		MCUX_LPDAC_PM_DEVICE_CONSTRAINTS_INIT(n)                                           \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mcux_lpdac_init, PM_DEVICE_DT_INST_GET(n),                        \
