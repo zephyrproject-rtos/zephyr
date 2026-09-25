@@ -1314,6 +1314,11 @@ static int open(const struct device *instance)
 		return rv;
 	}
 
+	if (IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICBMSG_HANDLE_PENDING_MESSAGES)) {
+		/* Handling is done before RX signal is enabled so no risk of race condition. */
+		handle_pending_messages(instance);
+	}
+
 	return mbox_set_enabled_dt(&config->mbox_rx, true);
 }
 
