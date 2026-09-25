@@ -56,6 +56,13 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	can_phy0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&gpio_prt12 5 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
 };
 
 /* Enable GPIO ports used by board peripherals */
@@ -87,6 +94,10 @@
 	status = "okay";
 };
 
+&gpio_prt12 {
+	status = "okay";
+};
+
 &gpio_prt10 {
 	status = "okay";
 };
@@ -111,6 +122,19 @@ uart4: &scb4 {
 	pinctrl-names = "default";
 };
 
+/* CAN (CANFD0 channel 1: P5.2 RX, P5.3 TX) */
+&canfd0 {
+	status = "okay";
+};
+
+&can1 {
+	status = "okay";
+	phys = <&can_phy0>;
+	clocks = <&peri0_group4_16_5bit_0>;
+	pinctrl-0 = <&p5_2_can1_ttcan_rx &p5_3_can1_ttcan_tx>;
+	pinctrl-names = "default";
+};
+
 /* Peripheral clock dividers */
 &peri0_group4_8bit_0 {
 	status = "okay";
@@ -120,6 +144,11 @@ uart4: &scb4 {
 &peri0_group4_8bit_1 {
 	status = "okay";
 	clock-div = <86>;
+};
+
+&peri0_group4_16_5bit_0 {
+	status = "okay";
+	clock-div = <1>;
 };
 
 &watchdog0 {
