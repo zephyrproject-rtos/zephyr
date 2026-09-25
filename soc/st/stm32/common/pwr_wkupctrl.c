@@ -21,6 +21,9 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(pwr_wkupctrl, CONFIG_SOC_LOG_LEVEL);
+
 /** Node identifier for the wake-up controller */
 #define WKUP_CTLR DT_DRV_INST(0)
 
@@ -508,10 +511,12 @@ void stm32_pwrc_dispatch_wakeup_gpio_irqs(void)
 		const struct device *gpio_port;
 
 		if (!ll_pwr_is_wake_up_line_enabled(ll_line)) {
+			LOG_DBG("Ignore WKUP%u: wake-up line not enabled", line_idx);
 			continue;
 		}
 
 		if (!is_wake_up_line_flag_active(line_idx)) {
+			LOG_DBG("Ignore WKUP%u: wake-up line flag not active", line_idx);
 			continue;
 		}
 
@@ -522,13 +527,19 @@ void stm32_pwrc_dispatch_wakeup_gpio_irqs(void)
 			 * This can happen on series with a mux if the line was
 			 * used with an internal source (maybe other cases?).
 			 */
+			LOG_DBG("Ignore WKUP%u: not associated to a pin", line_idx);
 			continue;
 		}
 
 		gpio_port = stm32_gpioport_get(pin_desc->port_idx);
 		if (gpio_port == NULL) {
+			LOG_ERR("Wake-up line %u pending, but GPIO%c doesn't exist?!",
+				line_idx, 'A' + pin_desc->port_idx);
 			continue;
 		}
+
+		LOG_DBG("Dispatching WKUP%u as interrupt on GPIO%c pin %u",
+			line_idx, 'A' + pin_desc->port_idx, pin_desc->pin_num);
 
 		gpio_data = gpio_port->data;
 		gpio_fire_callbacks(&gpio_data->cb, gpio_port, BIT(pin_desc->pin_num));
