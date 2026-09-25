@@ -1848,7 +1848,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	}
 
 	LOG_DBG("RX FIFO depth %u", usb_dwc2_get_grxfsiz(sys_read32(grxfsiz_reg)));
-	if (CONFIG_UDC_DRIVER_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (IS_ENABLED(CONFIG_UDC_DRIVER_LOG_LEVEL_DBG)) {
 		val = sys_read32((mem_addr_t)&base->gnptxfsiz);
 		LOG_DBG("NPTX FIFO depth %u addr %u",
 			usb_dwc2_get_gnptxfsiz_nptxfdep(val),
