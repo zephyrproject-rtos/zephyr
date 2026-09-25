@@ -33,6 +33,7 @@
 		zephyr,sram = &dram0;
 		zephyr,entropy = &rng;
 		zephyr,display = &fb0;
+		zephyr,pcie-controller = &pcie0;
 	};
 
 	leds {
