@@ -28,4 +28,7 @@ configdefault NET_MGMT_EVENT_STACK_SIZE
 configdefault NET_SOCKETS_SERVICE_STACK_SIZE
 	default 8192
 
+configdefault NET_PKT_TIMESTAMP_STACK_SIZE
+	default 4096
+
 endif # BOARD_HIFIVE_UNLEASHED
