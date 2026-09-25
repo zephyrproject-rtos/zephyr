@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - cordic
+  filter: dt_compat_enabled("infineon,mxcordic")
+  platform_allow:
+    - kit_psc3m6_evk
+  integration_platforms:
+    - kit_psc3m6_evk/psc3m6ges3ahq1
+
+tests:
+  boards.infineon.cordic:
+    harness: ztest
