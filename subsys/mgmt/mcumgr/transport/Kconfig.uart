@@ -9,7 +9,7 @@
 # Options defined in this file should be prefixed:
 #  MCUMGR_TRANSPORT_UART_
 
-menuconfig MCUMGR_TRANSPORT_UART
+config MCUMGR_TRANSPORT_UART
 	bool "UART MCUmgr SMP transport"
 	depends on CONSOLE
 	depends on BASE64
@@ -21,15 +21,3 @@ menuconfig MCUMGR_TRANSPORT_UART
 	  Enables handling of SMP commands received over UART. This is a lightweight alternative
 	  to MCUMGR_TRANSPORT_SHELL. It allows MCUmgr commands to be received over UART without
 	  requiring an additional thread.
-
-if MCUMGR_TRANSPORT_UART
-
-config MCUMGR_TRANSPORT_UART_MTU
-	int "UART SMP MTU"
-	default 256
-	help
-	  Maximum size of SMP frames sent and received over UART, in bytes. This value must
-	  satisfy the following relation:
-	  MCUMGR_TRANSPORT_UART_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + 2
-
-endif # MCUMGR_TRANSPORT_UART

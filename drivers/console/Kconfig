@@ -234,14 +234,14 @@ config UART_MCUMGR_RX_BUF_COUNT
 	default 2
 	help
 	  Specifies the number of the MCUmgr UART receive buffers. Receive buffers hold received
-	  MCUmgr fragments prior to reassembly. If using SMP over console: this setting's value
-	  must satisfy the following relation:
-	    UART_MCUMGR_RX_BUF_COUNT * UART_MCUMGR_RX_BUF_SIZE >= MCUMGR_TRANSPORT_UART_MTU
+	  MCUmgr fragments prior to reassembly. If using SMP over console, each buffer holds one
+	  received line until it has been decoded into the SMP packet buffer, so this value limits
+	  how many fragments can be queued for processing. It does not limit the size of an SMP
+	  packet, which is set by MCUMGR_TRANSPORT_NETBUF_SIZE.
 
 	  If using raw UART (non-SMP over console) this is the size of the buffer passed to the
 	  SMP handling code which will directly be put into a netbuf, therefore unlike SMP over
-	  console, the value of this should not need to be changed from the default and does not
-	  need to satisfy the above relation.
+	  console, the value of this should not need to be changed from the default.
 
 config UART_MCUMGR_RAW_PROTOCOL
 	bool "Raw (non-SMP over console) protocol"

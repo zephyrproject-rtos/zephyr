@@ -24,8 +24,6 @@
 #include <zephyr/mgmt/mcumgr/grp/transport_mgmt/transport_mgmt.h>
 #endif
 
-BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_UART_MTU != 0, "CONFIG_MCUMGR_TRANSPORT_UART_MTU must be > 0");
-
 struct device;
 
 static void smp_uart_process_rx_queue(struct k_work *work);
