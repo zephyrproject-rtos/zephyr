@@ -128,7 +128,7 @@ static void usbh_class_probe_function(struct usb_device *const udev,
 		}
 
 		ret = usbh_class_probe(c_data, udev, iface);
-		if (ret == -ENOTSUP) {
+		if (ret != 0) {
 			LOG_DBG("Class %s not supporting this function, skipping",
 				c_data->name);
 			continue;
