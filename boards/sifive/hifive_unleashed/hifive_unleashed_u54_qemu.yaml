@@ -12,10 +12,10 @@ simulation:
   - name: qemu
 testing:
   ignore_tags:
-    - net
     - bluetooth
     - flash
     - crypto
 supported:
   - gpio
+  - netif:eth
 vendor: sifive
