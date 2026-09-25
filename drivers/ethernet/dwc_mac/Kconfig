@@ -126,8 +126,7 @@ config ETH_STM32_DWC_ETHER_1000
 	select CRC
 	default y
 	help
-	  This enables the Synopsys DesignWare MAC driver for STM32 SoCs.
-	  Applicable for STM32F1/F2/F4/F7 series; tested only on F2/F4/F7.
+	  This enables the Synopsys DesignWare MAC driver on STM32 F1/F2/F4/F7.
 
 config ETH_ROCKCHIP_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based Rockchip RK3588"
