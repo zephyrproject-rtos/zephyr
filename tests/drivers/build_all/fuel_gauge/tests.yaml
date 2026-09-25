@@ -9,6 +9,10 @@ tests:
     build_only: true
     platform_allow:
       - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
 
   drivers.fuel_gauge.emul.build:
     tags:
@@ -17,5 +21,9 @@ tests:
     build_only: true
     platform_allow:
       - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_EMUL=y
