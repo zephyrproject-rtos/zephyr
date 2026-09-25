@@ -38,6 +38,7 @@ tests:
       - native_sim/native/64
     integration_platforms:
       - native_sim
+      - native_sim/native/64
     depends_on:
       - gpio
       - adc
@@ -52,6 +53,9 @@ tests:
   drivers.gpio.build.adc_lmp90xxx_gpio:
     min_ram: 32
     platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
       - native_sim
       - native_sim/native/64
     depends_on:
