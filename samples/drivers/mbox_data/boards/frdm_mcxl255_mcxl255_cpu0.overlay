@@ -1,0 +1,18 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox_a 1>, <&mbox_a 0>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+/* The mbox_data sample does not use the RTC. */
+&rtc {
+	status = "disabled";
+};
