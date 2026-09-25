@@ -59,7 +59,7 @@
 #include <memory.h>
 #include <hw_init.h>
 #include <soc_init.h>
-#include <soc_random.h>
+#include "bootloader_random.h"
 
 #if defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
 #error "APPCPU does not need this file!"
@@ -143,8 +143,8 @@ void map_rom_segments(int core, struct rom_segments *map)
 	unsigned int segments = 0;
 	unsigned int ram_segments = 0;
 
-	if (esp_rom_flash_read(offset, &bootloader_image_hdr, sizeof(esp_image_header_t), true) !=
-	    0) {
+	if (bootloader_flash_read(offset, &bootloader_image_hdr, sizeof(esp_image_header_t),
+				  true) != 0) {
 		ESP_EARLY_LOGE(TAG, "Failed to read image header at %x", offset);
 		abort();
 	}
@@ -153,8 +153,8 @@ void map_rom_segments(int core, struct rom_segments *map)
 
 	while (segments++ < ESP_IMAGE_MAX_SEGMENTS) {
 
-		if (esp_rom_flash_read(offset, &segment_hdr,
-					      sizeof(esp_image_segment_header_t), true) != 0) {
+		if (bootloader_flash_read(offset, &segment_hdr,
+					  sizeof(esp_image_segment_header_t), true) != 0) {
 			ESP_EARLY_LOGE(TAG, "Failed to read segment header at %x", offset);
 			abort();
 		}
@@ -337,19 +337,24 @@ static void boot_start(void)
 		ESP_EARLY_LOGE(TAG, "HW init failed, aborting");
 		abort();
 	}
-#endif
 
-	soc_random_enable();
+	bootloader_random_enable();
+#endif
 
 #if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_BOOTLOADER_MCUBOOT)
 	map_rom_segments(0, &map);
+
+#ifdef CONFIG_ESP_SIMPLE_BOOT
+	/* Disable random number generator before jumping to the application.
+	 * Note: MCUboot bootloader disables the RNG later in the boot process.
+	 */
+	bootloader_random_disable();
+#endif
 
 	/* Disable glitch detection as it can be falsely triggered by EMI interference */
 	ana_clock_glitch_reset_config(false);
 
 	ESP_EARLY_LOGI(TAG, "libc heap size %d kB.", libc_heap_size / 1024);
-
-	soc_random_disable();
 
 	__esp_platform_app_start();
 #endif /* CONFIG_ESP_SIMPLE_BOOT || CONFIG_BOOTLOADER_MCUBOOT */

@@ -42,7 +42,7 @@
 /* Stack headroom kept free above the loader segments */
 #define BOOTLOADER_STACK_OVERHEAD 0x2000
 
-#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1C00
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x2200
 #define BOOTLOADER_DRAM_LOADER_SEG_LEN 0x0C00
 
 /* Upper limit of SRAM available for MCUboot bootloader segments. The
