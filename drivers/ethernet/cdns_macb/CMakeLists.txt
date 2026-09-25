@@ -3,6 +3,7 @@
 
 # Core
 zephyr_library_sources_ifdef(CONFIG_ETH_CDNS_MACB_CORE eth_cdns_macb_core.c)
+zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_CDNS_MACB eth_cdns_macb_ptp.c)
 
 # Platform specific drivers
 # zephyr-keep-sorted-start
