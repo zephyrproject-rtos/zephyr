@@ -56,4 +56,14 @@ config BUILD_OUTPUT_ADJUST_LMA
 config TFM_BL2_NOT_SUPPORTED
 	default y
 
+# CoreSight tags each core's ITM ATB stream with a distinct trace id so the CSTF
+# funnel and the ETF demux can separate the two when both cores trace. On the
+# PSE84 the CM33 ITM is id 1 and the CM55 ITM is id 4. The firmware writes this
+# into ITM_TCR.TRACEBUSID; the host reads the id per core from its part
+# description, so the two must agree. Default it per core here rather than leaving
+# every image on the backend's generic id 1, which put both cores on the same id.
+config TRACING_BACKEND_ITM_BUS_ID
+	default 1 if CPU_CORTEX_M33
+	default 4 if CPU_CORTEX_M55
+
 endif # SOC_SERIES_PSE84
