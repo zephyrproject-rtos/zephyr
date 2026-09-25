@@ -176,3 +176,17 @@
 &sai1 {
 	status = "okay";
 };
+
+&slcd {
+	pinctrl-0 = <&lcd_seg3_pa6 &lcd_seg4_pa7 &lcd_com0_pa8
+		     &lcd_com1_pa9 &lcd_com2_pa10 &lcd_seg17_pa15
+		     &lcd_seg5_pb0 &lcd_seg6_pb1 &lcd_seg8_pb4
+		     &lcd_seg9_pb5 &lcd_com3_pb9 &lcd_seg12_pb12
+		     &lcd_seg13_pb13 &lcd_seg14_pb14 &lcd_seg15_pb15
+		     &lcd_vlcd_pc3 &lcd_seg22_pc4 &lcd_seg23_pc5
+		     &lcd_seg24_pc6 &lcd_seg25_pc7 &lcd_seg26_pc8
+		     &lcd_seg28_pd8 &lcd_seg29_pd9 &lcd_seg30_pd10 &lcd_seg31_pd11
+		     &lcd_seg32_pd12 &lcd_seg33_pd13 &lcd_seg34_pd14 &lcd_seg35_pd15>;
+	pinctrl-names = "default";
+	custom-character-slot-count = <32>;
+};
