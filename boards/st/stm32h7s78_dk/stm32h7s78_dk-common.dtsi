@@ -334,6 +334,12 @@ st_cam_i2c: &i2c1 {
 };
 
 &xspi1 {
+	/* Change the compatible here, and keep xspi for other boards */
+	compatible = "st,stm32-xspi-controller";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,csbound = <3>;
+	clock-frequency = <DT_FREQ_M(50)>;
+
 	pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_dqs0_po2
 		     &xspim_p1_dqs1_po3 &xspim_p1_clk_po4
 		     &xspim_p1_io0_pp0 &xspim_p1_io1_pp1 &xspim_p1_io2_pp2
@@ -347,22 +353,36 @@ st_cam_i2c: &i2c1 {
 	status = "okay";
 
 	memc: aps256xxn-obr@0 {
-		compatible = "st,stm32-xspi-psram";
+		compatible = "st,psram-device", "aps-z8";
 		reg = <0>;
 		size = <DT_SIZE_M(256)>; /* 256 Mbits */
-		max-frequency = <DT_FREQ_M(200)>;
-		fixed-latency;
-		io-x16-mode;
-		read-latency = <4>;
-		write-latency = <1>;
-		burst-length = <0>;
-		st,csbound = <11>;
-		st,refresh = <129>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
+		mspi-hardware-ce-num = <0>;
+		read-command = <0x20>;
+		write-command = <0xa0>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <5>;
+		tx-dummy = <5>;
+		memmap-config = <1 0 DT_SIZE_M(64) 0>;
+		ce-break-config = <1024 4>;
+		st,timing-config = <1>;
+		zephyr,pm-device-runtime-auto;
+		aps-version = "APS6408L";
+		st,mem-type = "apmem";
+
 		status = "okay";
 	};
 };
 
 &xspi2 {
+	/* Change the compatible here, and keep xspi for other boards */
+	compatible = "st,stm32-xspi-controller";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,csbound = <0>;
+	clock-frequency = <DT_FREQ_M(50)>;
 	pinctrl-0 = <&xspim_p2_clk_pn6 &xspim_p2_ncs1_pn1
 		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3
 		     &xspim_p2_io2_pn4 &xspim_p2_io3_pn5
@@ -371,22 +391,41 @@ st_cam_i2c: &i2c1 {
 		     &xspim_p2_dqs0_pn0>;
 	pinctrl-names = "default";
 
+	dmas = <&hpdma1 0 3 STM32_DMA_PERIPH_TX
+		&hpdma1 1 3 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+
 	status = "okay";
 
-	ext_flash_ctrl: xspi-nor-flash@0 {
-		compatible = "st,stm32-xspi-nor";
+	ext_flash_ctrl: nor-flash-controller@0 {
+		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(1024)>; /* 1 Gbits */
-		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <XSPI_OCTO_MODE>;
-		data-rate = <XSPI_DTR_TRANSFER>;
-		four-byte-opcodes;
-		status = "okay";
+		read-command = <0xee11>;
+		write-command = <0x12ed>;
+		rx-dummy = <20>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+		mspi-hardware-ce-num = <0>;
+		st,mem-type = "macronix";
+		command-length = "INSTR_2_BYTE";
+		/* do not provide the jedec-id = [c2 81 39] */
+
+		/*
+		 * Allow Rd in MemoryMapped mode (permission = 1)
+		 * as ext memory region ATTR is ATTR_MPU_FLASH
+		 * Requires ext memory region ATTR set to ATTR_MPU_IO
+		 * to Read and Wr in MemoryMapped mode (permission = 0)
+		 */
+		memmap-config = <1 0 DT_SIZE_M(128) 1>;
 
 		/* XSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
+
+		status = "okay";
 
 		ext_flash: mx66uw1g45: ext-flash@0 {
 			compatible = "soc-nv-flash";
@@ -395,7 +434,7 @@ st_cam_i2c: &i2c1 {
 			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
+			ranges = <0x0 0x0 DT_SIZE_M(128)>;
 		};
 	};
 };

@@ -214,6 +214,12 @@
 };
 
 &xspi2 {
+	/* Change the compatible here, and keep xspi for other boards */
+	compatible = "st,stm32-xspi-controller";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,csbound = <0>;
+	clock-frequency = <DT_FREQ_M(50)>;
+
 	pinctrl-0 = <&xspim_p2_clk_pn6 &xspim_p2_ncs1_pn1
 		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3
 		     &xspim_p2_io2_pn4 &xspim_p2_io3_pn5
@@ -222,30 +228,51 @@
 		     &xspim_p2_dqs0_pn0>;
 	pinctrl-names = "default";
 
+	dmas = <&hpdma1 0 3 STM32_DMA_PERIPH_TX
+		&hpdma1 1 3 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+
 	status = "okay";
 
-	ext_flash_ctrl: xspi-nor-flash@0 {
-		compatible = "st,stm32-xspi-nor";
+	ext_flash_ctrl: nor-flash-controller@0 {
+		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(256)>; /* 256Mbits */
-		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <XSPI_OCTO_MODE>;
-		data-rate = <XSPI_DTR_TRANSFER>;
-		four-byte-opcodes;
-		status = "okay";
 
+		read-command = <0xee11>;
+		write-command = <0x12ed>;
+		rx-dummy = <20>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+		mspi-hardware-ce-num = <0>;
+		st,mem-type = "macronix";
+		command-length = "INSTR_2_BYTE";
+		/* do not provide the jedec-id = [c2 81 39] */
+
+		/*
+		 * Allow Rd in MemoryMapped mode (permission = 1)
+		 * as ext memory region ATTR is ATTR_MPU_FLASH
+		 * Requires ext memory region ATTR set to ATTR_MPU_IO
+		 * to Read and Wr in MemoryMapped mode (permission = 0)
+		 */
+		memmap-config = <1 0 DT_SIZE_M(32) 1>;
+
+		/* external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(32)>;
 
-		ext_flash: mx25uw25645: xspi-nor-flash@0 {
+		status = "okay";
+
+		ext_flash: mx25uw25645: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(32)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
+			ranges = <0x0 0x0 DT_SIZE_M(64)>;
 		};
 	};
 };
