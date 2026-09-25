@@ -76,6 +76,12 @@ static inline bool mcumgr_serial_process_frag_raw(struct mcumgr_serial_rx_ctxt *
 {
 	uint16_t total_size;
 
+	if (frag_len > net_buf_tailroom(rx_ctxt->nb)) {
+		/* Payload is too large to fit into buffer. */
+		mcumgr_serial_free_rx_ctxt(rx_ctxt);
+		return false;
+	}
+
 	net_buf_add_mem(rx_ctxt->nb, frag, frag_len);
 
 	if (rx_ctxt->nb->len < sizeof(struct smp_hdr)) {
