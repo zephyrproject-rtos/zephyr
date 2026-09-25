@@ -136,6 +136,19 @@
 "./scripts/build/gen_app_partitions.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
+"./scripts/build/uf2conv.py" = [
+    "B011",     # https://docs.astral.sh/ruff/rules/assert-false
+    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
+    "E711",     # https://docs.astral.sh/ruff/rules/none-comparison
+    "E722",     # https://docs.astral.sh/ruff/rules/bare-except
+    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
+    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
+    "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
+    "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
+    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
+    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
+    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
+]
 "./scripts/ci/upload_test_results_es.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
@@ -762,6 +775,7 @@ exclude = [
     "./samples/subsys/testsuite/pytest/basic/pytest/conftest.py",
     "./samples/subsys/testsuite/pytest/basic/pytest/test_sample.py",
     "./samples/subsys/zbus/remote_mock/remote_mock.py",
+    "./scripts/build/uf2conv.py",
     "./scripts/check_maintainers.py",
     "./scripts/ci/upload_test_results_es.py",
     "./scripts/dts/python-devicetree/src/devicetree/_private.py",
