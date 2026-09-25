@@ -122,7 +122,7 @@ int mpxxdtyy_i2s_configure(const struct device *dev, struct dmic_cfg *cfg)
 	}
 
 	/* configure I2S channels */
-	struct i2s_config i2s_cfg;
+	struct i2s_config i2s_cfg = {0};
 
 	i2s_cfg.word_size = chan_size;
 	i2s_cfg.channels = cfg->channel.req_num_chan;
