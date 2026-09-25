@@ -1,0 +1,48 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0_6 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM LED P5.0";
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&pwm1_4 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED P6.0";
+		};
+	};
+};
+
+/* Second channel reuses the peripheral clock divider already set up by the board. */
+&tcpwm1_4 {
+	status = "okay";
+
+	pwm1_4: pwm1_4 {
+		status = "okay";
+		clocks = <&peri0_group0_16bit_2>;
+		pinctrl-0 = <&p6_0_pwm1_4>;
+		pinctrl-names = "default";
+	};
+};
+
+&pinctrl {
+	p6_0_pwm1_4: p6_0_pwm1_4 {
+		drive-push-pull;
+	};
+};

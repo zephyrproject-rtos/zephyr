@@ -22,3 +22,8 @@
 &p3_2_scb4_uart_rx {
 	input-enable;
 };
+
+/* PWM (TCPWM0_6) pin drive mode */
+&p5_0_pwm0_6 {
+	drive-push-pull;
+};
