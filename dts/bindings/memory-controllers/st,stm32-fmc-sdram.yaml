@@ -107,10 +107,20 @@ properties:
   refresh-rate:
     type: int
     required: true
-    description:
+    description: |
       A 13-bit field defines the refresh rate of the SDRAM device. It is
       expressed in number of memory clock cycles. It must be set at least to
       41 SDRAM clock cycles.
+
+      Compute it from the refresh period and the number of rows given in the
+      SDRAM datasheet, and from the SDRAM clock, which is the FMC clock
+      divided by the SDCLK period set in st,sdram-control:
+
+        refresh-rate = refresh period / number of rows * SDRAM clock - 20
+
+      The 20 cycles are a margin for a refresh request that arrives while a
+      read is being served. For example, 64 ms / 4096 rows at 56 MHz gives
+      855.
 
 child-binding:
   description: SDRAM bank.
