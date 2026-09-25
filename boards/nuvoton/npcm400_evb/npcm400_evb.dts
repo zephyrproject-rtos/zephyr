@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nuvoton/npcm400.dtsi>
+#include <zephyr/dt-bindings/flash_controller/npcm_qspi.h>
 
 / {
 	model = "Nuvoton NPCM400 evaluation board";
@@ -17,4 +18,30 @@
 	};
 
 	aliases {};
+};
+
+&qspi_fiu0 {
+	status = "okay";
+	/*
+	 * Write-protect pin function, applied on-demand via
+	 * FLASH_NPCM_EX_OP_SET_QSPI_OPER. ext_flash's WP# is wired to
+	 * GPIO76 on this EVB (GPIO55 is used for quad data instead).
+	 */
+	pinctrl-0 = <&fiu0_wp_gpio76>;
+	pinctrl-names = "default";
+
+	ext_flash: w25q256jv@0 {
+		compatible = "nuvoton,npcm-nor";
+		size = <DT_SIZE_M(32 * 8)>;
+		reg = <0>;
+		enter-4byte-addr = <0xa5>;
+		status = "okay";
+
+		/* quad spi bus configuration of nor flash device */
+		qspi-flags = <NPCM_QSPI_SW_CS1>;
+		mapped-addr = <0x70000000>;
+		pinctrl-0 = <&fiu0_shd_cs_io0_io1_clk_gpio44_45_46_47
+			     &fiu0_shd_quad_io2_io3_clk_gpio55_56>;
+		pinctrl-names = "default";
+	};
 };

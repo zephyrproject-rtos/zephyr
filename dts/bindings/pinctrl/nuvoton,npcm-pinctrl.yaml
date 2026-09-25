@@ -1,0 +1,75 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NPCM pin controller.
+
+  Pin multiplexing, pull-up/down enables, and low-voltage selects are all bits in the System
+  Configuration (SCFG) block. The nuvoton,npcm-pinfunc node lists the bits of every pin
+  function; this controller writes the ones a pin group selects.
+
+  Each child is a pin group, and each of its children configures one pin by selecting a pin
+  function with pinmux. The SoC devicetree provides a group for every peripheral port, so a
+  board only adds per-pin settings. Example, I2C6B with SDA pulled up at 1.8 V:
+
+    &i2c6b_scl_sda_gpio16_17 {
+      sda {
+        bias-pull-up;
+        nuvoton,voltage-level-mv = <1800>;
+      };
+    };
+
+    &i2c6b {
+      pinctrl-0 = <&i2c6b_scl_sda_gpio16_17>;
+      pinctrl-names = "default";
+    };
+
+  A multiplexed pin is returned to GPIO by selecting its pin_gpioNN_gpio function.
+
+compatible: "nuvoton,npcm-pinctrl"
+
+include: base.yaml
+
+properties:
+  nuvoton,scfg:
+    type: phandle
+    required: true
+    description: SCFG register block.
+
+child-binding:
+  description: A pin group.
+
+  child-binding:
+    description: |
+      One pin of a group.
+
+      The bias and voltage properties need the selected function to have the matching SCFG
+      control (nuvoton,pull-up-reg, nuvoton,pull-down-reg, or nuvoton,low-voltage-reg);
+      otherwise applying the state fails with -ENOTSUP. Without them, the pin's current
+      setting is kept.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-up
+          - bias-pull-down
+
+    properties:
+      pinmux:
+        type: phandle
+        required: true
+        description: Pin function to select, a child of the nuvoton,npcm-pinfunc node.
+
+      nuvoton,voltage-level-mv:
+        type: int
+        enum: [1800, 3300]
+        description: |
+          Input voltage level of the pin. The low-voltage selects reset to 1.8 V, so a pin
+          used at 3.3 V needs <3300>.
+
+      nuvoton,device-control:
+        type: array
+        description: |
+          An extra SCFG bit written with this pin, as <register bit value>, for per-port
+          controls such as tri-state or write protect. One bit per pin node.
