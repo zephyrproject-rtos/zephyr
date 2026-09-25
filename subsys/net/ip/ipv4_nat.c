@@ -661,6 +661,11 @@ static bool ipv4_nat_process(struct npf_test *test, struct net_pkt *pkt)
 		goto match;
 	}
 
+	/* Traffic to this host is delivered locally, never translated */
+	if (net_ipv4_is_my_addr_raw(iphdr->dst)) {
+		goto no_match;
+	}
+
 	rule = iptable_rule_match(pkt, iphdr);
 	if (rule == NULL) {
 		goto no_match;
