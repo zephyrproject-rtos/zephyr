@@ -93,16 +93,23 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 void z_impl_k_thread_abort(k_tid_t thread)
 {
 	bool self_abort = (thread == _current);
+	unsigned int key = 0U;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
 
 	if (self_abort) {
+		/* An interrupt switching away before z_thread_abort() marks the
+		 * thread dead would reclaim the CSAs of a still runnable thread.
+		 */
+		key = irq_lock();
 		_current_cpu->arch.to_reclaim = thread;
 	}
 
 	z_thread_abort(thread);
 
-	if (!self_abort) {
+	if (self_abort) {
+		irq_unlock(key);
+	} else {
 		z_tricore_reclaim_csa(thread);
 	}
 
