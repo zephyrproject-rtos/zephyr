@@ -277,7 +277,9 @@ static int ifx_hppass_sar_configure_group(mem_addr_t ctrl_base, uint32_t channel
 		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX2_SEL, mux_sel[2]) |
 		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX3_SEL, mux_sel[3]) |
 		/* MFD wires TR0 to FW_PULSE via trig-in-0-type */
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_TR_SEL, CY_HPPASS_SAR_TRIG_0);
+		FIELD_PREP(IFX_HPPASS_SAR_SEQ_TR_SEL, CY_HPPASS_SAR_TRIG_0) |
+		FIELD_PREP(IFX_HPPASS_SAR_SEQ_SAMP_TIME_SEL,
+			   CY_HPPASS_SAR_SAMP_TIME_0);
 
 	sys_write32(seq_entry_reg, ctrl_base + IFX_HPPASS_SAR_SEQ_ENTRY(group));
 
