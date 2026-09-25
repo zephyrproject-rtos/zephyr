@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Substrings from LOG_* calls in src/main.c (core tag: app, rad, ppr, flpr, …)
 MARK_ERR = r".*<err> \w+\/app: error 100.*"
-MARK_WRN = r".*<wrn> \w+\/app: warning 78187493520.*"
+MARK_WRN = r".*<wrn> \w+\/app: warning 0x1234567890.*"
 MARK_INF = r".*<inf> \w+\/app: info test.*"
 MARK_DBG = r".*<dbg> \w+\/app: debug 1000 100.*"
 
