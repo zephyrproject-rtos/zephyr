@@ -176,7 +176,7 @@ void ppp_fsm_init(struct ppp_fsm *fsm, uint16_t protocol)
 {
 	fsm->protocol = protocol;
 	fsm->state = PPP_INITIAL;
-	fsm->flags = 0U;
+	fsm->flags = FSM_RESTART;
 
 	k_work_init_delayable(&fsm->timer, ppp_fsm_timeout);
 }
@@ -321,6 +321,10 @@ void ppp_fsm_lower_up(struct ppp_fsm *fsm)
 
 	switch (fsm->state) {
 	case PPP_CLOSED:
+	case PPP_STOPPED:
+		/* Nothing to do,
+		 * ppp_fsm_open() drives the STOPPED/CLOSED -> REQUEST_SENT restart.
+		 */
 		break;
 
 	case PPP_INITIAL:
