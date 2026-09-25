@@ -603,6 +603,37 @@ static void discard_table(uint64_t *table, unsigned int level)
 }
 
 /*
+ * Restore, in a private table at @a level, the entries of [virt, virt+size)
+ * to what a global block mapping @a block_desc at the level above gives them:
+ * a private table stands in for that block when a range within it was
+ * changed, and the range going global again cannot simply share the block.
+ */
+static void globalize_block_range(uint64_t *table, uint64_t block_desc, uintptr_t virt,
+				  size_t size, unsigned int level)
+{
+	size_t level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
+	uint64_t desc = block_desc | PTE_BLOCK_DESC_NG;
+	unsigned int i;
+
+	if (level == XLAT_LAST_LEVEL) {
+		desc = (desc & ~PTE_DESC_TYPE_MASK) | PTE_PAGE_DESC;
+	}
+	for ( ; size; virt += level_size, size -= level_size) {
+		i = XLAT_TABLE_VA_IDX(virt, level);
+		if (is_table_desc(table[i], level)) {
+			uint64_t *subtable = pte_desc_table(table[i]);
+
+			discard_table(subtable, level + 1);
+			dec_table_ref(subtable);
+		} else if (is_free_desc(table[i])) {
+			table_usage(table, 1);
+		}
+		table[i] = desc | ((uint64_t)i << LEVEL_TO_VA_SIZE_SHIFT(level));
+		debug_show_pte(&table[i], level);
+	}
+}
+
+/*
  * preserve_private must be true when propagating demand paging state
  * (page out/page in, AF/dirty sync) so that private mappings keep their
  * permissions, and false when the caller wants to strip private mappings
@@ -645,19 +676,24 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table, uintptr_t v
 
 		if (step != level_size) {
 			/* boundary falls in the middle of this pte */
-			__ASSERT(is_table_desc(src_table[i], level),
-				 "can't have partial block pte here");
 			if (!is_table_desc(dst_table[i], level)) {
 				/* we need more fine grained boundaries */
 				if (!expand_to_table(&dst_table[i], level)) {
 					return -ENOMEM;
 				}
 			}
-			ret = globalize_table(pte_desc_table(dst_table[i]),
-					      pte_desc_table(src_table[i]), virt, step, level + 1,
-					      preserve_private);
-			if (ret) {
-				return ret;
+			if (is_table_desc(src_table[i], level)) {
+				ret = globalize_table(pte_desc_table(dst_table[i]),
+						      pte_desc_table(src_table[i]),
+						      virt, step, level + 1,
+						      preserve_private);
+				if (ret) {
+					return ret;
+				}
+			} else {
+				/* the global mapping is a block: its pages go back into the table */
+				globalize_block_range(pte_desc_table(dst_table[i]), src_table[i],
+						      virt, step, level + 1);
 			}
 			continue;
 		}
