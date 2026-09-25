@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
+#include <zephyr/net/ptp_time.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
 
@@ -50,14 +51,16 @@ BUILD_ASSERT(CONFIG_NET_BUF_DATA_SIZE <= CDNS_MACB_RX_BUFFER_MAX,
 /*
  * The DMA imposes certain constraints on the buffers:
  * 1. Receive buffer addresses must be 4-byte aligned, the two low bits of the
- *    address word are the used and wrap bits. The DMA accesses memory with the
- *    data bus width, so buffers are also required to be aligned to that width
- *    and their size to be a multiple of it.
+ *    address word are the used and wrap bits, and 8-byte aligned with
+ *    timestamped descriptors, where bit 2 flags a valid timestamp. The DMA
+ *    accesses memory with the data bus width, so buffers are also required to
+ *    be aligned to that width and their size to be a multiple of it.
  * 2. If a data cache is enabled, buffers must also be aligned to the cache line
  *    size and their size must be a multiple of the cache line size, as cache
  *    lines are invalidated for received data.
  */
 #define CDNS_MACB_DCACHE_LINE_SIZE COND_CODE_1(CONFIG_DCACHE, (CONFIG_DCACHE_LINE_SIZE), (0))
+#define CDNS_MACB_RX_BUFFER_ALIGN  COND_CODE_1(CONFIG_PTP_CLOCK_CDNS_MACB, (8), (4))
 
 #define CDNS_MACB_ASSERT_BUFFER_ALIGNMENT(bus_width)                                               \
 	BUILD_ASSERT(((CONFIG_NET_BUF_DATA_SIZE) %                                                 \
@@ -66,9 +69,10 @@ BUILD_ASSERT(CONFIG_NET_BUF_DATA_SIZE <= CDNS_MACB_RX_BUFFER_MAX,
 		     "cache line size");                                                           \
 	BUILD_ASSERT(COND_CODE_0(CONFIG_NET_BUF_ALIGNMENT, (sizeof(void *)),                       \
 				 (CONFIG_NET_BUF_ALIGNMENT)) >=                                    \
-			     MAX(((bus_width) / 8), CDNS_MACB_DCACHE_LINE_SIZE),                   \
-		     "CONFIG_NET_BUF_ALIGNMENT must be at least the data bus width or cache "      \
-		     "line size");                                                                 \
+			     MAX(MAX(((bus_width) / 8), CDNS_MACB_DCACHE_LINE_SIZE),               \
+				 CDNS_MACB_RX_BUFFER_ALIGN),                                       \
+		     "CONFIG_NET_BUF_ALIGNMENT must be at least the data bus width, cache "        \
+		     "line size or receive buffer alignment");                                     \
 	IF_ENABLED(CONFIG_DCACHE,                                                                  \
 		   (BUILD_ASSERT((CONFIG_NET_BUF_ALIGNMENT) % (CONFIG_DCACHE_LINE_SIZE) == 0,      \
 				 "CONFIG_NET_BUF_ALIGNMENT must be a multiple of the data cache "  \
@@ -141,7 +145,8 @@ enum cdns_macb_phy_iface {
 
 /*
  * Hardware descriptor. With CONFIG_ETH_CDNS_MACB_DMA_64BIT the descriptor
- * grows to 16 bytes and carries the upper address bits (GEM_DMACFG.ADDR64).
+ * carries the upper address bits (GEM_DMACFG.ADDR64), with
+ * CONFIG_PTP_CLOCK_CDNS_MACB the timestamp words (GEM_DMACFG.RXEXT/TXEXT).
  */
 struct cdns_macb_dma_desc {
 	uint32_t addr;
@@ -149,6 +154,10 @@ struct cdns_macb_dma_desc {
 #ifdef CONFIG_ETH_CDNS_MACB_DMA_64BIT
 	uint32_t addrh;
 	uint32_t resvd;
+#endif
+#ifdef CONFIG_PTP_CLOCK_CDNS_MACB
+	uint32_t ts1;
+	uint32_t ts2;
 #endif
 };
 
@@ -170,6 +179,9 @@ struct cdns_macb_config {
 	const struct device *phy_dev;
 	struct net_eth_mac_config mac_cfg;
 	struct cdns_macb_rings *rings;
+#if defined(CONFIG_PTP_CLOCK_CDNS_MACB)
+	const struct device *ptp_clock;
+#endif
 	uint32_t caps;
 	/* GEM_DMACFG.FBLDO: 1, 4, 8 or 16 */
 	uint8_t dma_burst_length;
@@ -277,8 +289,15 @@ extern const struct ethernet_api cdns_macb_api;
 #define GEM_SAT(n) (0x008c + (n) * 8) /* Specific address n top, n = 0..3 */
 #define GEM_SA_COUNT 4
 #define MACB_MID   0x00fc /* Module ID */
+#define GEM_TISUBN 0x01bc /* 1588 Timer Increment Sub-ns */
+#define GEM_TSH    0x01c0 /* 1588 Timer Seconds High */
+#define GEM_TSL    0x01d0 /* 1588 Timer Seconds Low */
+#define GEM_TN     0x01d4 /* 1588 Timer Nanoseconds */
+#define GEM_TA     0x01d8 /* 1588 Timer Adjust */
+#define GEM_TI     0x01dc /* 1588 Timer Increment */
 #define GEM_DCFG1  0x0280 /* Design Config 1 */
 #define GEM_DCFG2  0x0284 /* Design Config 2 */
+#define GEM_DCFG5  0x0290 /* Design Config 5 */
 #define GEM_DCFG6  0x0294 /* Design Config 6 */
 #define GEM_DCFG10 0x02a4 /* Design Config 10 */
 
@@ -294,6 +313,10 @@ extern const struct ethernet_api cdns_macb_api;
 /* Upper 32 address bits of the descriptor rings, shared by all queues */
 #define MACB_TBQPH 0x04c8
 #define MACB_RBQPH 0x04d4
+
+/* Descriptor timestamp insertion control */
+#define GEM_TXBDCTRL 0x04cc
+#define GEM_RXBDCTRL 0x04d0
 
 /*
  * Register fields
@@ -401,6 +424,8 @@ extern const struct ethernet_api cdns_macb_api;
 #define GEM_DMACFG_TXCOEN     BIT(11)         /* TX checksum offload enable */
 #define GEM_DMACFG_RXBS       GENMASK(23, 16) /* DMA receive buffer size in 64 byte units */
 #define GEM_DMACFG_DDRP       BIT(24)         /* Discard when no AHB resource */
+#define GEM_DMACFG_RXEXT      BIT(28)         /* RX descriptors with timestamp words */
+#define GEM_DMACFG_TXEXT      BIT(29)         /* TX descriptors with timestamp words */
 #define GEM_DMACFG_ADDR64     BIT(30)         /* 64-bit descriptor addresses */
 
 /* MID */
@@ -419,9 +444,27 @@ extern const struct ethernet_api cdns_macb_api;
 #define GEM_DCFG2_RX_PKT_BUFF BIT(20) /* RX packet buffer in SRAM mode */
 #define GEM_DCFG2_TX_PKT_BUFF BIT(21) /* TX packet buffer in SRAM mode */
 
+/* GEM_DCFG5 */
+#define GEM_DCFG5_TSU BIT(8) /* Time stamp unit present */
+
 /* GEM_DCFG6 */
 #define GEM_DCFG6_QUEUE_MASK GENMASK(7, 0) /* Priority queues 1..7 present */
 #define GEM_DCFG6_DAW64      BIT(23)       /* 64-bit DMA addressing available */
+
+/* 1588 time stamp unit */
+#define GEM_TISUBN_SUBNSINCRL GENMASK(31, 24) /* Sub-ns increment [7:0] */
+#define GEM_TISUBN_SUBNSINCRH GENMASK(15, 0)  /* Sub-ns increment [23:8] */
+#define GEM_TI_NSINCR         GENMASK(7, 0)   /* Nanosecond increment */
+#define GEM_TSH_SEC           GENMASK(15, 0)  /* Seconds [47:32] */
+#define GEM_TA_ADJ            GENMASK(29, 0)  /* Nanoseconds to add or subtract */
+#define GEM_TA_SUB            BIT(31)         /* Subtract instead of add */
+
+/* GEM_TXBDCTRL / GEM_RXBDCTRL */
+#define GEM_BDCTRL_TSMODE GENMASK(5, 4) /* Which frames get a descriptor timestamp */
+#define GEM_TSMODE_DISABLED  0
+#define GEM_TSMODE_PTP_EVENT 1
+#define GEM_TSMODE_PTP_ALL   2
+#define GEM_TSMODE_ALL       3
 
 /* GEM_DCFG10 */
 #define GEM_DCFG10_RXBD_RDBUFF GENMASK(11, 8)
@@ -432,9 +475,10 @@ extern const struct ethernet_api cdns_macb_api;
  */
 
 /* RX address word */
-#define MACB_RX_USED BIT(0) /* Set by hardware once the buffer is filled */
-#define MACB_RX_WRAP BIT(1) /* Last descriptor of the ring */
-#define MACB_RX_ADDR GENMASK(31, 2)
+#define MACB_RX_USED   BIT(0) /* Set by hardware once the buffer is filled */
+#define MACB_RX_WRAP   BIT(1) /* Last descriptor of the ring */
+#define GEM_RX_TSVALID BIT(2) /* Timestamp words are valid, timestamped descriptors only */
+#define MACB_RX_ADDR   GENMASK(31, 2)
 
 /* RX control word */
 #define MACB_RX_FRMLEN      GENMASK(12, 0) /* Frame length, GEM without jumbo frames */
@@ -455,6 +499,7 @@ extern const struct ethernet_api cdns_macb_api;
 #define GEM_TX_FRMLEN         GENMASK(13, 0) /* Buffer length */
 #define MACB_TX_LAST          BIT(15)        /* Last buffer of the frame */
 #define MACB_TX_NOCRC         BIT(16)        /* Do not append the FCS */
+#define GEM_TX_TSVALID        BIT(23)        /* Timestamp words are valid */
 #define MACB_TX_LATE_COLL     BIT(26)        /* Late collision, Zynq */
 #define MACB_TX_BUF_EXHAUSTED BIT(27)        /* Buffers exhausted mid frame */
 #define MACB_TX_UNDERRUN      BIT(28)        /* Transmit under run */
@@ -464,5 +509,55 @@ extern const struct ethernet_api cdns_macb_api;
 
 #define MACB_TX_ERR_MASK                                                                           \
 	(MACB_TX_LATE_COLL | MACB_TX_BUF_EXHAUSTED | MACB_TX_UNDERRUN | MACB_TX_ERROR)
+
+/* Timestamp words, the descriptor holds the low 6 bits of the seconds only */
+#define GEM_TS1_NSEC    GENMASK(29, 0)
+#define GEM_TS1_SECL    GENMASK(31, 30) /* Seconds [1:0] */
+#define GEM_TS2_SECH    GENMASK(3, 0)   /* Seconds [5:2] */
+#define GEM_TS_SEC_BITS 6
+
+/*
+ * Time stamp unit helpers, shared by the core and the PTP clock device
+ */
+
+/* Read the TSU time; the caller holds the driver lock */
+static inline void cdns_macb_tsu_read(mm_reg_t base, struct net_ptp_time *tm)
+{
+	uint32_t nsec, nsec_again, secl, sech;
+
+	nsec = sys_read32(base + GEM_TN);
+	secl = sys_read32(base + GEM_TSL);
+	sech = sys_read32(base + GEM_TSH);
+	nsec_again = sys_read32(base + GEM_TN);
+
+	/* The nanoseconds rolled over between the reads, take the later time */
+	if (nsec > nsec_again) {
+		nsec = nsec_again;
+		secl = sys_read32(base + GEM_TSL);
+		sech = sys_read32(base + GEM_TSH);
+	}
+
+	tm->second = ((uint64_t)FIELD_GET(GEM_TSH_SEC, sech) << 32) | secl;
+	tm->nanosecond = nsec;
+}
+
+/* Turn the timestamp words of a descriptor into a time, given the TSU time close to it */
+static inline void cdns_macb_desc_timestamp(uint32_t ts1, uint32_t ts2,
+					    const struct net_ptp_time *tsu, struct net_ptp_time *tm)
+{
+	uint64_t sec = (FIELD_GET(GEM_TS2_SECH, ts2) << 2) | FIELD_GET(GEM_TS1_SECL, ts1);
+
+	/* The upper bits of the seconds come from the TSU */
+	sec |= tsu->second & ~(uint64_t)BIT_MASK(GEM_TS_SEC_BITS);
+
+	/* The descriptor's seconds are ahead of the TSU's: they wrapped in between */
+	if (((sec & BIT(GEM_TS_SEC_BITS - 1)) != 0U) &&
+	    ((tsu->second & BIT(GEM_TS_SEC_BITS - 1)) == 0U)) {
+		sec -= BIT(GEM_TS_SEC_BITS);
+	}
+
+	tm->second = sec;
+	tm->nanosecond = FIELD_GET(GEM_TS1_NSEC, ts1);
+}
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_CDNS_MACB_ETH_CDNS_MACB_PRIV_H_ */

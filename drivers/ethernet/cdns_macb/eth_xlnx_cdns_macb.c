@@ -206,6 +206,9 @@ int cdns_macb_platform_init(const struct device *dev)
 			DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                      \
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                  \
 			.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),                             \
+			IF_ENABLED(CONFIG_PTP_CLOCK_CDNS_MACB,                                     \
+				   (.ptp_clock = DEVICE_DT_GET_OR_NULL(                            \
+						   DT_INST_CHILD(n, ptp_clock)),))                 \
 			.rings = &prefix##n##_rings,                                               \
 			.caps = (caps_),                                                           \
 			.dma_burst_length = 16,                                                    \
