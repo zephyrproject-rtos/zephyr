@@ -74,7 +74,7 @@ def parse_dotconfig(dotconfig_path: Path):
                     options[match.group(1)] = False
                 continue
 
-            key, value = line.split("=")
+            key, value = line.split("=", 1)
 
             if value == "y":
                 value = True
