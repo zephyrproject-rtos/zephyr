@@ -1490,14 +1490,6 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 		LOG_DBG("Broadcast RSTDAA was NACK.");
 	}
 
-	/* Set previously stored OD high period back */
-	ctrl_cfg.scl_od_min.high_ns = prev_od_high_ns;
-	ret = i3c_configure_controller(dev, &ctrl_cfg);
-	if (ret != 0) {
-		LOG_ERR("%s: Open Drain Normal speed set failed", dev->name);
-		return ret;
-	}
-
 	/*
 	 * Disable all events from targets to avoid them
 	 * interfering with bus initialization,
@@ -1548,6 +1540,14 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 				LOG_ERR("DAA was not successful.");
 			}
 		}
+	}
+
+	/* Restore the configured OD high period now that addressing is done */
+	ctrl_cfg.scl_od_min.high_ns = prev_od_high_ns;
+	ret = i3c_configure_controller(dev, &ctrl_cfg);
+	if (ret != 0) {
+		LOG_ERR("%s: Open Drain Normal speed set failed", dev->name);
+		return ret;
 	}
 
 	/*
