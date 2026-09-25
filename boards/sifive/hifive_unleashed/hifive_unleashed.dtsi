@@ -71,3 +71,19 @@
 &gpio0 {
 	status = "okay";
 };
+
+&eth0 {
+	status = "okay";
+	phy-handle = <&eth0_phy>;
+	phy-connection-type = "gmii";
+	local-mac-address = [00 00 00 01 02 03];
+};
+
+&eth0_mdio {
+	status = "okay";
+
+	eth0_phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+	};
+};
