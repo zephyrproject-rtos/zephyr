@@ -53,6 +53,14 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Ethernet
+
+  * The Xilinx GEM Ethernet driver, :kconfig:option:`CONFIG_ETH_XLNX_GEM` and
+    :kconfig:option:`CONFIG_MDIO_XLNX_GEM` with the devicetree compatibles
+    :dtcompatible:`xlnx,gem` and :dtcompatible:`xlnx,gem-mdio`, is deprecated in favour of
+    the Cadence MACB/GEM driver, :kconfig:option:`CONFIG_ETH_XLNX_CDNS_MACB`. See the
+    migration guide.
+
 New APIs and options
 ====================
 ..
