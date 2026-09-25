@@ -306,12 +306,15 @@ scan_delegator_sync_state_get_by_values(uint32_t broadcast_id, uint8_t addr_type
 static inline void print_qos(const struct bt_bap_qos_cfg *qos)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
-	bt_shell_print("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u latency %u pd %u",
-		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency,
-		       qos->pd);
+	bt_shell_print("QoS: interval %u framing 0x%02x packing 0x%02x phy 0x%02x sdu %u "
+		       "rtn %u latency %u pd %u",
+		       qos->sdu_interval, qos->framing, qos->packing, qos->phy,
+		       qos->max_sdu, qos->rtn, qos->latency, qos->pd);
 #else
-	bt_shell_print("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u pd %u",
-		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->pd);
+	bt_shell_print("QoS: interval %u framing 0x%02x packing 0x%02x phy 0x%02x sdu %u "
+		       "rtn %u pd %u",
+		       qos->sdu_interval, qos->framing, qos->packing, qos->phy,
+		       qos->max_sdu, qos->rtn, qos->pd);
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 }
 

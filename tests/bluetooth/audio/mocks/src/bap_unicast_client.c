@@ -647,23 +647,23 @@ int bt_bap_unicast_client_qos_from_group(const struct bt_bap_stream *stream,
 	if (dir == BT_AUDIO_DIR_SINK) {
 		qos->pd = unicast_group->sink_pd;
 		qos->latency = unicast_group->cig_param.c_to_p_latency;
-		qos->interval = unicast_group->cig_param.c_to_p_interval;
+		qos->sdu_interval = unicast_group->cig_param.c_to_p_interval;
 		iso_qos = &bap_iso->tx.qos;
 	} else {
 		qos->pd = unicast_group->source_pd;
 		qos->latency = unicast_group->cig_param.p_to_c_latency;
-		qos->interval = unicast_group->cig_param.p_to_c_interval;
+		qos->sdu_interval = unicast_group->cig_param.p_to_c_interval;
 		iso_qos = &bap_iso->rx.qos;
 	}
 
 	qos->framing = unicast_group->cig_param.framing;
 	qos->phy = iso_qos->phy;
 	qos->rtn = iso_qos->rtn;
-	qos->sdu = iso_qos->sdu;
+	qos->max_sdu = iso_qos->sdu;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	qos->max_pdu = iso_qos->max_pdu;
-	qos->burst_number = iso_qos->burst_number;
-	qos->num_subevents = bap_iso->qos.num_subevents;
+	qos->test.max_pdu = iso_qos->max_pdu;
+	qos->test.burst_number = iso_qos->burst_number;
+	qos->test.num_subevents = bap_iso->qos.num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	return 0;

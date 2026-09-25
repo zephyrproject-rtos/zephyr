@@ -50,12 +50,12 @@ LOG_MODULE_REGISTER(bt_bap_stream, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
 	defined(CONFIG_BT_BAP_BROADCAST_SINK)
 void bt_bap_qos_cfg_to_iso_qos(struct bt_iso_chan_io_qos *io, const struct bt_bap_qos_cfg *qos_cfg)
 {
-	io->sdu = qos_cfg->sdu;
+	io->sdu = qos_cfg->max_sdu;
 	io->phy = qos_cfg->phy;
 	io->rtn = qos_cfg->rtn;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	io->burst_number = qos_cfg->burst_number;
-	io->max_pdu = qos_cfg->max_pdu;
+	io->burst_number = qos_cfg->test.burst_number;
+	io->max_pdu = qos_cfg->test.max_pdu;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT ||                                                          \
@@ -187,18 +187,28 @@ bool bt_bap_qos_cfg_eq(const struct bt_bap_qos_cfg *a, const struct bt_bap_qos_c
 
 	return a->pd == b->pd &&
 	       a->framing == b->framing &&
+	       a->packing == b->packing &&
 	       a->phy == b->phy &&
 	       a->rtn == b->rtn &&
-	       a->sdu == b->sdu &&
+	       a->max_sdu == b->max_sdu &&
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
 	       a->latency == b->latency &&
 #endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	       a->max_pdu == b->max_pdu &&
-	       a->burst_number == b->burst_number &&
-	       a->num_subevents == b->num_subevents &&
+	       a->test.max_pdu == b->test.max_pdu &&
+	       a->test.burst_number == b->test.burst_number &&
+	       a->test.num_subevents == b->test.num_subevents &&
+	#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	       a->test.big.irc == b->test.big.irc &&
+	       a->test.big.pto == b->test.big.pto &&
+	#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+	#if defined(CONFIG_BT_BAP_UNICAST)
+	       a->test.cig.flush_timeout == b->test.cig.flush_timeout &&
+	       a->test.cig.wca == b->test.cig.wca &&
+	#endif /* CONFIG_BT_BAP_UNICAST */
+	       a->test.iso_interval == b->test.iso_interval &&
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
-	       a->interval == b->interval;
+	       a->sdu_interval == b->sdu_interval;
 }
 
 struct bt_conn *bt_bap_ep_get_conn(const struct bt_bap_ep *ep)
@@ -228,9 +238,9 @@ struct bt_conn *bt_bap_ep_get_conn(const struct bt_bap_ep *ep)
 
 enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_bap_qos_cfg *qos)
 {
-	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
-	    qos->interval > BT_ISO_SDU_INTERVAL_MAX) {
-		LOG_DBG("Interval not within allowed range: %u (%u-%u)", qos->interval,
+	if (qos->sdu_interval < BT_ISO_SDU_INTERVAL_MIN ||
+	    qos->sdu_interval > BT_ISO_SDU_INTERVAL_MAX) {
+		LOG_DBG("Interval not within allowed range: %u (%u-%u)", qos->sdu_interval,
 			BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX);
 		return BT_BAP_ASCS_REASON_INTERVAL;
 	}
@@ -246,8 +256,8 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_bap_qos_cfg *qos)
 		return BT_BAP_ASCS_REASON_PHY;
 	}
 
-	if (qos->sdu > BT_ISO_MAX_SDU) {
-		LOG_DBG("Invalid SDU %u", qos->sdu);
+	if (qos->max_sdu > BT_ISO_MAX_SDU) {
+		LOG_DBG("Invalid SDU %u", qos->max_sdu);
 		return BT_BAP_ASCS_REASON_SDU;
 	}
 
@@ -1155,7 +1165,8 @@ enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *str
 
 	if (qos_pref->latency < qos->latency) {
 		/* Latency is a preferred value. Print debug info but do not fail. */
-		LOG_DBG("Latency %u higher than preferred max %u", qos->latency, qos_pref->latency);
+		LOG_DBG("Latency %u higher than preferred max %u", qos->latency,
+			qos_pref->latency);
 	}
 
 	if (!IN_RANGE(qos->pd, qos_pref->pd_min, qos_pref->pd_max)) {

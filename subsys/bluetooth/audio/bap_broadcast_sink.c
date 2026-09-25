@@ -333,9 +333,9 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 		LOG_DBG("stream %p ep %p len %zu", stream, stream->ep, buf_len);
 	}
 
-	if (buf_len > stream->qos->sdu) {
+	if (buf_len > stream->qos->max_sdu) {
 		LOG_WRN("Received %u octets but stream %p was only configured for %u", buf_len,
-			stream, stream->qos->sdu);
+			stream, stream->qos->max_sdu);
 	}
 
 	if (ops != NULL && ops->recv != NULL) {
@@ -1079,12 +1079,12 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	ep->qos.framing = sink->biginfo.framing;
 	ep->qos.phy = sink->biginfo.phy;
 	ep->qos.rtn = 0U; /* unknown for broadcast sinks */
-	ep->qos.sdu = sink->biginfo.max_sdu;
-	ep->qos.interval = sink->biginfo.sdu_interval;
+	ep->qos.max_sdu = sink->biginfo.max_sdu;
+	ep->qos.sdu_interval = sink->biginfo.sdu_interval;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	ep->qos.max_pdu = sink->biginfo.max_pdu;
-	ep->qos.burst_number = sink->biginfo.burst_number;
-	ep->qos.num_subevents = sink->biginfo.sub_evt_count;
+	ep->qos.test.max_pdu = sink->biginfo.max_pdu;
+	ep->qos.test.burst_number = sink->biginfo.burst_number;
+	ep->qos.test.num_subevents = sink->biginfo.sub_evt_count;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &ep->qos);
 	(void)memcpy(&ep->codec_cfg, codec_cfg, sizeof(*codec_cfg));

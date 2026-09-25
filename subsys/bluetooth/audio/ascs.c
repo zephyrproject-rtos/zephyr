@@ -784,18 +784,19 @@ static void ascs_ep_get_status_qos(struct bt_bap_ep *ep, struct net_buf_simple *
 	qos = net_buf_simple_add(buf, sizeof(*qos));
 	qos->cig_id = ep->cig_id;
 	qos->cis_id = ep->cis_id;
-	sys_put_le24(ep->stream->qos->interval, qos->interval);
+	sys_put_le24(ep->stream->qos->sdu_interval, qos->interval);
 	qos->framing = ep->stream->qos->framing;
 	qos->phy = ep->stream->qos->phy;
-	qos->sdu = sys_cpu_to_le16(ep->stream->qos->sdu);
+	qos->sdu = sys_cpu_to_le16(ep->stream->qos->max_sdu);
 	qos->rtn = ep->stream->qos->rtn;
 	qos->latency = sys_cpu_to_le16(ep->stream->qos->latency);
 	sys_put_le24(ep->stream->qos->pd, qos->pd);
 
 	LOG_DBG("dir %s codec id 0x%02x interval %u framing 0x%02x phy 0x%02x "
 		"rtn %u latency %u pd %u",
-		bt_audio_dir_to_str(ep->dir), ep->stream->codec_cfg->id, ep->stream->qos->interval,
-		ep->stream->qos->framing, ep->stream->qos->phy, ep->stream->qos->rtn,
+		bt_audio_dir_to_str(ep->dir), ep->stream->codec_cfg->id,
+		ep->stream->qos->sdu_interval, ep->stream->qos->framing,
+		ep->stream->qos->phy, ep->stream->qos->rtn,
 		ep->stream->qos->latency, ep->stream->qos->pd);
 }
 
@@ -1012,7 +1013,7 @@ static void ascs_update_sdu_size(struct bt_bap_ep *ep)
 		return;
 	}
 
-	io_qos->sdu = qos_cfg->sdu;
+	io_qos->sdu = qos_cfg->max_sdu;
 	io_qos->rtn = qos_cfg->rtn;
 }
 
@@ -2248,8 +2249,8 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 	struct bt_bap_stream *stream;
 
 	LOG_DBG("ase %p cig 0x%02x cis 0x%02x interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u "
-		"latency %u pd %u", ase, cig_id, cis_id, qos->interval, qos->framing, qos->phy,
-		qos->sdu, qos->rtn, qos->latency, qos->pd);
+		"latency %u pd %u", ase, cig_id, cis_id, qos->sdu_interval, qos->framing, qos->phy,
+		qos->max_sdu, qos->rtn, qos->latency, qos->pd);
 
 	switch (ep->state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
@@ -2427,10 +2428,10 @@ static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 			continue;
 		}
 
-		cqos.interval = sys_get_le24(qos->interval);
+		cqos.sdu_interval = sys_get_le24(qos->interval);
 		cqos.framing = qos->framing;
 		cqos.phy = qos->phy;
-		cqos.sdu = sys_le16_to_cpu(qos->sdu);
+		cqos.max_sdu = sys_le16_to_cpu(qos->sdu);
 		cqos.rtn = qos->rtn;
 		cqos.latency = sys_le16_to_cpu(qos->latency);
 		cqos.pd = sys_get_le24(qos->pd);
