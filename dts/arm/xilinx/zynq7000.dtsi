@@ -108,6 +108,11 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
+			gem0_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
+			};
 		};
 
 		gem1: ethernet@e000c000 {
@@ -129,6 +134,11 @@
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+			};
+
+			gem1_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
 			};
 		};
 
