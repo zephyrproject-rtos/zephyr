@@ -283,6 +283,22 @@
 			#size-cells = <0>;
 		};
 
+		eth0: ethernet@10090000 {
+			compatible = "sifive,fu540-c000-gem", "cdns,gem";
+			reg = <0x10090000 0x2000 0x100a0000 0x1000>;
+			reg-names = "mac", "mgmt";
+			interrupt-parent = <&plic>;
+			interrupts = <53 1>;
+			status = "disabled";
+
+			eth0_mdio: mdio {
+				compatible = "cdns,macb-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+
 		gpio0: gpio@10060000 {
 			compatible = "sifive,gpio0";
 			gpio-controller;
