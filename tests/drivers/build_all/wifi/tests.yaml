@@ -3,6 +3,9 @@ common:
   tags:
     - drivers
     - wifi
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
 tests:
   drivers.net.wifi.build.spi:
     extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
