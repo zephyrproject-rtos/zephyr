@@ -83,6 +83,18 @@
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
 				status = "disabled";
 			};
+
+			unicomm0_spi: unicomm0_spi@40618000 {
+				compatible = "ti,unicomm-spi";
+				reg = <0x40618000 DT_SIZE_K(8)>;
+				interrupts = <34 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				dmas = <&dma 0 53>, <&dma 1 54>;
+				dma-names = "tx", "rx";
+				status = "disabled";
+			};
 		};
 
 		unicomm1: unicomm1@40632000 {
@@ -100,6 +112,18 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+
+			unicomm1_spi: unicomm1_spi@40619000 {
+				compatible = "ti,unicomm-spi";
+				reg = <0x40619000 DT_SIZE_K(8)>;
+				interrupts = <35 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				dmas = <&dma 2 55>, <&dma 3 56>;
+				dma-names = "tx", "rx";
 				status = "disabled";
 			};
 		};
@@ -140,6 +164,18 @@
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
 				status = "disabled";
 			};
+
+			unicomm3_spi: unicomm3_spi@40658000 {
+				compatible = "ti,unicomm-spi";
+				reg = <0x40658000 DT_SIZE_K(8)>;
+				interrupts = <37 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				dmas = <&dma 4 59>, <&dma 5 60>;
+				dma-names = "tx", "rx";
+				status = "disabled";
+			};
 		};
 
 		unicomm4: unicomm4@40672000 {
@@ -157,6 +193,18 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+
+			unicomm4_spi: unicomm4_spi@40659000 {
+				compatible = "ti,unicomm-spi";
+				reg = <0x40659000 DT_SIZE_K(8)>;
+				interrupts = <38 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				dmas = <&dma 6 61>, <&dma 7 62>;
+				dma-names = "tx", "rx";
 				status = "disabled";
 			};
 		};
