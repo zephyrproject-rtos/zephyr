@@ -98,7 +98,7 @@ static int smp_uart_tx_pkt(struct net_buf *nb)
 static void smp_client_handle_reqs(struct k_work *work)
 {
 	if (response_buf) {
-		smp_client_single_response(response_buf, &res_hdr);
+		smp_client_single_response(&smpt_test, response_buf, &res_hdr);
 	}
 }
 

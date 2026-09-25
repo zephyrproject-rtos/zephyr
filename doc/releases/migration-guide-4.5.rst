@@ -2756,6 +2756,12 @@ MCUmgr
     the new ``hash_len`` field holds the actual length. Code that reads ``hash``
     must use ``hash_len`` instead of assuming :c:macro:`IMG_MGMT_DATA_SHA_LEN`.
 
+* :c:func:`smp_client_single_response` takes the SMP transport the response was received on as
+  a new first argument, and ``res_hdr`` must be in host byte order. A response now only
+  completes a pending command that was sent on that transport and has the same group and
+  command ID. Responses from a server that does not echo the group and command ID are ignored,
+  and the command is retried until it times out.
+
 Network buffers
 ===============
 
