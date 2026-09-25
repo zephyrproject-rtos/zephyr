@@ -1039,10 +1039,6 @@ static int dma_stm32_init(const struct device *dev)
 		config->streams[i].busy = false;
 	}
 
-	((struct dma_stm32_data *)dev->data)->dma_ctx.magic = 0;
-	((struct dma_stm32_data *)dev->data)->dma_ctx.dma_channels = 0;
-	((struct dma_stm32_data *)dev->data)->dma_ctx.atomic = 0;
-
 	return 0;
 }
 
@@ -1065,6 +1061,27 @@ static int dma_stm32_get_status(const struct device *dev,
 	return 0;
 }
 
+static bool dma_stm32_chan_filter(const struct device *dev, int id, void *filter_param)
+{
+	const struct dma_stm32_data *data = dev->data;
+	const struct dma_context *dma_ctx = &data->dma_ctx;
+
+	if (id >= dma_ctx->dma_channels) {
+		return -EINVAL;
+	}
+
+	/* Automatic reservation if no filter_param */
+	if (!filter_param) {
+		return true;
+	}
+
+	if (*(uint32_t *)filter_param != id) {
+		return false;
+	}
+
+	return true;
+}
+
 static DEVICE_API(dma, dma_funcs) = {
 	.reload		 = dma_stm32_reload,
 	.config		 = dma_stm32_configure,
@@ -1073,6 +1090,7 @@ static DEVICE_API(dma, dma_funcs) = {
 	.get_status	 = dma_stm32_get_status,
 	.suspend	 = dma_stm32_suspend,
 	.resume		 = dma_stm32_resume,
+	.chan_filter	 = dma_stm32_chan_filter,
 };
 
 /*
@@ -1146,7 +1164,16 @@ static DEVICE_API(dma, dma_funcs) = {
 		.linked_list_buffer = dma_stm32_linked_list_buffer##index	\
 	};									\
 										\
-	static struct dma_stm32_data dma_stm32_data_##index;			\
+	ATOMIC_DEFINE(dma_stm32_atomic_##index,					\
+		      DT_INST_PROP(index, dma_channels));			\
+										\
+	static struct dma_stm32_data dma_stm32_data_##index = {			\
+		.dma_ctx = {							\
+			.magic = DMA_MAGIC,					\
+			.dma_channels = DT_INST_PROP(index, dma_channels),	\
+			.atomic = dma_stm32_atomic_##index,			\
+		},								\
+	};                                                                      \
 										\
 	DEVICE_DT_INST_DEFINE(index, dma_stm32_init, NULL,			\
 			      &dma_stm32_data_##index,				\
