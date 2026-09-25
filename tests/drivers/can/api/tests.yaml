@@ -29,6 +29,81 @@ tests:
     extra_args: DTC_OVERLAY_FILE=twaifd-enable.overlay
     platform_allow:
       - esp32c5_devkitc/esp32c5/hpcore
+  drivers.can.api.twai.pm:
+    tags: pm
+    extra_args:
+      - DTC_OVERLAY_FILE=twai-enable.overlay
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32h2_devkitm
+  drivers.can.api.twai0.pm:
+    tags: pm
+    extra_args:
+      - DTC_OVERLAY_FILE=twai0-enable.overlay
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+  drivers.can.api.twai.pm.periph_pd:
+    tags: pm
+    extra_args:
+      - DTC_OVERLAY_FILE=twai-enable.overlay
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
+    platform_allow:
+      - esp32h2_devkitm
+  drivers.can.api.twai0.pm.periph_pd:
+    tags: pm
+    extra_args:
+      - DTC_OVERLAY_FILE=twai0-enable.overlay
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+  drivers.can.api.twaifd.pm:
+    tags: pm
+    extra_args:
+      - DTC_OVERLAY_FILE=twaifd-enable.overlay
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+  drivers.can.api.twaifd.pm.periph_pd:
+    tags: pm
+    extra_args:
+      - DTC_OVERLAY_FILE=twaifd-enable.overlay
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
   drivers.can.api.nxp_s32_canxl.non_rx_fifo:
     extra_configs:
       - CONFIG_CAN_NXP_S32_RX_FIFO=n
