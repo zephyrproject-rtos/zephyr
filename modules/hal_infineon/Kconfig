@@ -1,4 +1,6 @@
-# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_HAL_INFINEON_MODULE
@@ -174,6 +176,11 @@ config USE_INFINEON_SMIF
 	bool
 	help
 	  Enable SMIF HAL driver for Infineon devices
+
+config USE_INFINEON_MXCORDIC
+	bool
+	help
+	  Enable MXCORDIC math accelerator HAL driver Infineon devices
 
 endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6_LEGACY || SOC_FAMILY_INFINEON_PSOC4
 
