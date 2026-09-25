@@ -1126,6 +1126,9 @@ static void test_var_buf_length_callback(const struct device *dev, struct uart_e
 					 void *user_data)
 {
 	switch (evt->type) {
+	case UART_TX_DONE:
+		k_sem_give(&tx_done);
+		break;
 	case UART_RX_RDY:
 		memcpy((void *)&var_length_rx_buf[var_length_buf_rx_idx],
 		       &evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
@@ -1184,7 +1187,7 @@ static ZTEST_BMEM uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE];
 
 	ret = uart_tx(uart_dev, tx_buffer, tx_len, 100 * USEC_PER_MSEC);
 	zassert_true(ret == 0, "[buff=%zu][tx=%zu]Failed to TX: %d\n", buf_len, tx_len, ret);
-	k_msleep(10);
+	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 
 	uart_rx_disable(uart_dev);
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(500)), 0,
