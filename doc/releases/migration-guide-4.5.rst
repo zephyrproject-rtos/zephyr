@@ -788,6 +788,42 @@ ESPI
 Ethernet
 ========
 
+* The Xilinx GEM Ethernet driver has been replaced by the Cadence MACB/GEM driver, which
+  follows the structure of the Linux ``macb`` driver and transfers packets without copying.
+
+  * The devicetree compatibles ``xlnx,gem`` and ``xlnx,gem-mdio`` have been removed. The GEM
+    nodes of the Zynq-7000 and ZynqMP SoCs are now ``compatible = "xlnx,zynq-gem", "cdns,gem"``
+    and ``compatible = "xlnx,zynqmp-gem", "cdns,gem"`` (:dtcompatible:`xlnx,zynq-gem`,
+    :dtcompatible:`xlnx,zynqmp-gem`, :dtcompatible:`cdns,gem`), the MDIO child node is
+    :dtcompatible:`cdns,macb-mdio`. Boards only reference the SoC nodes and need no change
+    unless they set the removed properties.
+  * The hardware configuration properties of the ``xlnx,gem`` binding have been removed:
+    ``amba-ahb-burst-length``, ``hw-rx-buffer-size``, ``hw-rx-buffer-offset``,
+    ``hw-tx-buffer-size-full``, ``rx-buffer-descriptors``, ``tx-buffer-descriptors``,
+    ``rx-buffer-size``, ``tx-buffer-size``, ``handle-rx-in-isr``, ``handle-tx-in-workq``,
+    ``disable-rx-checksum-offload``, ``disable-tx-checksum-offload`` and the feature flags
+    ``ignore-ipg-rxer``, ``disable-reject-nsp``, ``ipg-stretch``, ``sgmii-mode``,
+    ``disable-reject-fcs-crc-errors``, ``rx-halfdup-while-tx``, ``disable-pause-copy``,
+    ``discard-rx-fcs``, ``discard-rx-length-errors``, ``pause-frame``, ``tbi``,
+    ``ext-address-match``, ``long-frame-rx-support``, ``unicast-hash``, ``multicast-hash``,
+    ``reject-broadcast``, ``discard-non-vlan``, ``discard-rx-frame-ahb-unavail``,
+    ``ahb-packet-endian-swap`` and ``ahb-md-endian-swap``. The driver derives the
+    configuration from the design configuration registers of the core; the PHY interface is
+    taken from ``phy-connection-type`` (SGMII mode included) and the ring sizes from
+    :kconfig:option:`CONFIG_ETH_CDNS_MACB_NB_TX_DESCS` and
+    :kconfig:option:`CONFIG_ETH_CDNS_MACB_NB_RX_DESCS`. Checksum offload is controlled by
+    :kconfig:option:`CONFIG_ETH_CDNS_MACB_TX_HW_CHECKSUM` and
+    :kconfig:option:`CONFIG_ETH_CDNS_MACB_RX_HW_CHECKSUM`.
+  * The ``include/zephyr/dt-bindings/ethernet/xlnx_gem.h`` header has been removed.
+  * ``CONFIG_ETH_XLNX_GEM`` is replaced by :kconfig:option:`CONFIG_ETH_XLNX_CDNS_MACB` and
+    ``CONFIG_MDIO_XLNX_GEM`` by :kconfig:option:`CONFIG_MDIO_CDNS_MACB`.
+  * The receive descriptors point directly at the fragments of the network buffer pool, so
+    :kconfig:option:`CONFIG_NET_BUF_FIXED_DATA_SIZE` is required,
+    :kconfig:option:`CONFIG_NET_BUF_DATA_SIZE` must be a multiple of 64 and
+    :kconfig:option:`CONFIG_NET_BUF_RX_COUNT` should be well above
+    :kconfig:option:`CONFIG_ETH_CDNS_MACB_NB_RX_DESCS`. With a data cache,
+    :kconfig:option:`CONFIG_NET_BUF_ALIGNMENT` defaults to the cache line size.
+
 * The WIZnet Ethernet drivers now share one set of Kconfig options. Replace
   ``CONFIG_ETH_W5500_*``, ``CONFIG_ETH_W6100_*`` and ``CONFIG_ETH_W6300_*`` with the matching
   ``CONFIG_ETH_WIZNET_*`` option.
