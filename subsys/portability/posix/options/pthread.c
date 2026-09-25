@@ -357,7 +357,7 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 		return EINVAL;
 	}
 
-	if (attr->stack != NULL) {
+	if (attr->stack != NULL && attr->stack != stackaddr) {
 		ret = k_thread_stack_free(attr->stack);
 		if (ret == 0) {
 			LOG_DBG("Freed attr %p thread stack %zu@%p", _attr,
