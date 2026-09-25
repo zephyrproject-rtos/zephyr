@@ -11,4 +11,10 @@ config NUM_IRQS
 config ASSERT
 	default n
 
+config LOG_BACKEND_IPC_FSC
+	default n
+
+config LOG_FRONTEND_IPC_FSC
+	default n
+
 endif # SOC_NRF54H20_CPUPPR
