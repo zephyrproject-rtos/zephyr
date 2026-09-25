@@ -1445,6 +1445,10 @@ Serial
   driver, which now provides support for the Broadcom BCM283x auxiliary UART through vendor-specific
   extensions. (:github:`115112`)
 
+* :kconfig:option:`CONFIG_UART_NS16550_DW8250_DW_APB` now follows devicetree: it is
+  enabled for :dtcompatible:`snps,dw-apb-uart` nodes and cannot be set otherwise. Add that
+  compatible to the UART nodes instead of setting the option in Kconfig. (:github:`120368`)
+
 SPI
 ===
 
