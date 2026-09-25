@@ -475,6 +475,40 @@ int stm32_pwrc_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t
 
 	const uint32_t ll_wakeup_line = wakeup_line_to_ll_val(pin_desc->line_idx);
 
+	if (ll_pwr_is_wake_up_line_enabled(ll_wakeup_line)) {
+		bool display_info_message = true;
+
+#if HAS_MUXED_WKUP_LINES
+		const uint32_t active_source = get_wake_up_line_source(pin_desc->line_idx);
+
+		if (active_source != pin_desc->src_select) {
+			const struct wkup_pin_desc *old_pin_desc =
+				search_line_descriptor(pin_desc->line_idx);
+
+			if (old_pin_desc == NULL) {
+				LOG_WRN("Reconfiguring wake-up line %u from internal "
+					"source %u to GPIO%c pin %u",
+					pin_desc->line_idx, active_source,
+					'A' + pin_desc->port_idx, pin_desc->pin_num);
+			} else {
+				LOG_WRN("Reconfiguring wake-up line %u from GPIO%c "
+					"pin %u to GPIO%c pin %u",
+					pin_desc->line_idx,
+					'A' + old_pin_desc->port_idx, old_pin_desc->pin_num,
+					'A' + pin_desc->port_idx, pin_desc->pin_num);
+			}
+
+			display_info_message = false;
+		}
+#endif /* HAS_MUXED_WKUP_LINES */
+
+		if (display_info_message) {
+			LOG_INF("Reconfiguring wake-up line %u (GPIO%c pin %u)",
+				pin_desc->line_idx,
+				'A' + pin_desc->port_idx, pin_desc->pin_num);
+		}
+	}
+
 #if !DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl)
 	/* Polarity is configurable except on F1-like series */
 
