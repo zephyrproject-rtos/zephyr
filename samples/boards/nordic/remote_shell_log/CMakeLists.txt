@@ -12,6 +12,6 @@ if(NOT (CONFIG_BOARD_NRF54H20DK_NRF54H20_CPUAPP))
   message(FATAL_ERROR "${BOARD}/${BOARD_QUALIFIERS} is not supported for this sample")
 endif()
 
-project(coresight_stm_shell)
+project(remote_shell_log)
 
 target_sources(app PRIVATE src/main.c)

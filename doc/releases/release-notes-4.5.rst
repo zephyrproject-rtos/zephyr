@@ -1995,7 +1995,7 @@ New Samples
 * :zephyr:code-sample:`coap-client-tcp`
 * :zephyr:code-sample:`color-palette`
 * :zephyr:code-sample:`coredump-udp-demo-shell`
-* :zephyr:code-sample:`coresight_stm_shell`
+* :zephyr:code-sample:`remote_shell_log`
 * :zephyr:code-sample:`cpu_freq_thermal_cap`
 * :zephyr:code-sample:`cpu_freq_timing_noise`
 * :zephyr:code-sample:`cs40l26`

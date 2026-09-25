@@ -16,7 +16,7 @@ common:
     - nrf54h20dk/nrf54h20/cpuapp
 
 tests:
-  sample.boards.nrf.coresight_stm_shell:
+  sample.boards.nrf.remote_shell_log:
     required_snippets:
       - nordic-log-stm
     harness: pytest
