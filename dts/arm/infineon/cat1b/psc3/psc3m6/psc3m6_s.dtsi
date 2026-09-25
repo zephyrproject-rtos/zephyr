@@ -256,5 +256,12 @@
 				interrupt-names = "int0", "int1";
 			};
 		};
+
+		cordic0: cordic@52240000 {
+			compatible = "infineon,mxcordic";
+			reg = <0x52240000 0x100>;
+			interrupts = <119 4>;
+			status = "disabled";
+		};
 	};
 };
