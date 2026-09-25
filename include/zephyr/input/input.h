@@ -31,6 +31,7 @@
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/subsystem_workq.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
@@ -168,6 +169,10 @@ struct input_callback {
  */
 #define INPUT_CALLBACK_DEFINE(_dev, _callback, _user_data)                     \
 	INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, _callback)
+
+/** @cond INTERNAL_HIDDEN */
+K_SUBSYSTEM_WORK_QUEUE_DECLARE(input, INPUT);
+/** @endcond */
 
 #ifdef __cplusplus
 }

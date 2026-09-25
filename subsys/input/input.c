@@ -6,6 +6,7 @@
 
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/subsystem_workq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -103,3 +104,5 @@ K_THREAD_DEFINE(input,
 		INPUT_THREAD_PRIORITY, 0, 0);
 
 #endif /* CONFIG_INPUT_MODE_THREAD */
+
+K_SUBSYSTEM_WORK_QUEUE_DEFINE(input, INPUT);

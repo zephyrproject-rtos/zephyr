@@ -1,0 +1,25 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config $(module)_DEDICATED_WORKQUEUE
+	bool "Use a dedicated workqueue for $(module-str)"
+	depends on MULTITHREADING
+	help
+	  Use a dedicated workqueue for $(module-str) instead of the system
+	  workqueue.
+
+if $(module)_DEDICATED_WORKQUEUE
+
+config $(module)_DEDICATED_WORKQUEUE_STACK_SIZE
+	int "Dedicated workqueue stack size for $(module-str)"
+	default 1024
+	help
+	  Stack size for the dedicated $(module-str) workqueue thread.
+
+config $(module)_DEDICATED_WORKQUEUE_PRIORITY
+	int "Dedicated workqueue priority for $(module-str)"
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  Thread priority for the dedicated $(module-str) workqueue thread.
+
+endif # $(module)_DEDICATED_WORKQUEUE
