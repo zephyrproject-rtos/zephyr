@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ESP32 LCD_CAM RGB display controller.
+
+  Owns the framebuffer and streams it to a parallel RGB panel, so it is the
+  node "zephyr,display" should point at. Pixel timing is given by a
+  zephyr,panel-timing child node named display-timings.
+
+compatible: "espressif,esp32-lcd-cam-rgb"
+
+include: [base.yaml, display-controller.yaml]
+
+properties:
+  data-bus-width:
+    type: int
+    required: true
+    enum: [16, 18, 24]
+    description: Parallel RGB data bus width.
+
+  display-controller:
+    type: phandle
+    description: |
+      Phandle of the panel controller. Blanking calls are forwarded to it and
+      it is initialized before the RGB stream starts.
