@@ -221,6 +221,7 @@ int siwx91x_connect(const struct device *dev,
 		    struct wifi_connect_req_params *params)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
+	sl_wifi_mfp_mode_t mfp;
 	sl_wifi_client_configuration_t wifi_config = {
 		.bss_type = SL_WIFI_BSS_TYPE_INFRASTRUCTURE,
 		.encryption = SL_WIFI_DEFAULT_ENCRYPTION,
@@ -296,10 +297,27 @@ int siwx91x_connect(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* The Zephyr mfp values match the values expected by
-	 * Wiseconnect's mfp, even though the enum type differs.
-	 */
-	ret = sl_wifi_set_mfp(interface, (sl_wifi_mfp_mode_t)params->mfp);
+	if (params->mfp == WIFI_MFP_UNKNOWN) {
+		switch (params->security) {
+		case WIFI_SECURITY_TYPE_PSK:
+		case WIFI_SECURITY_TYPE_PSK_SHA256:
+		case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+			mfp = SL_WIFI_MFP_CAPABLE;
+			break;
+		case WIFI_SECURITY_TYPE_SAE:
+		case WIFI_SECURITY_TYPE_SAE_H2E:
+		case WIFI_SECURITY_TYPE_SAE_AUTO:
+			mfp = SL_WIFI_MFP_REQUIRED;
+			break;
+		default:
+			mfp = SL_WIFI_MFP_DISABLED;
+			break;
+		}
+	} else {
+		mfp = (sl_wifi_mfp_mode_t)params->mfp;
+	}
+
+	ret = sl_wifi_set_mfp(interface, mfp);
 	if (ret != SL_STATUS_OK) {
 		LOG_ERR("Failed to set MFP: 0x%x", ret);
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
