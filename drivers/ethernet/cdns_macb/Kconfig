@@ -61,6 +61,7 @@ config ETH_CDNS_MACB_RESET
 
 configdefault NET_BUF_ALIGNMENT
 	default DCACHE_LINE_SIZE if DCACHE
+	default 8 if PTP_CLOCK_CDNS_MACB
 
 # The RX descriptor ring holds buffers of the RX data pool, so give systems
 # with plenty of memory a larger pool, and with it a larger ring.
@@ -161,6 +162,8 @@ config ETH_CDNS_MACB_RX_HW_CHECKSUM_EN
 	depends on ETH_CDNS_MACB_RX_HW_CHECKSUM
 	depends on NET_CHECKSUM_OFFLOAD
 	default y
+
+rsource "Kconfig.ptp"
 
 endif # ETH_CDNS_MACB_CORE
 
