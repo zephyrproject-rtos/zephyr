@@ -25,6 +25,18 @@ tests:
       - mps2/an385
       - qemu_arc/qemu_arc_em
       - qemu_riscv32e/qemu_virt_riscv32e
+  kernel.memory_protection.userspace.pmp_stack_guard.riscv:
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_RISCV_PMP
+    platform_allow:
+      - qemu_riscv32
+      - qemu_riscv32e/qemu_virt_riscv32e
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_TEST_HW_STACK_PROTECTION=y
+      - CONFIG_PMP_POWER_OF_TWO_ALIGNMENT=n
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
+    integration_platforms:
+      - qemu_riscv32
   kernel.memory_protection.userspace.gap_filling.arc:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
     arch_allow: arc
