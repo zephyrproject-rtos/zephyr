@@ -10,8 +10,8 @@
  * @ingroup clock_control_rpi_pico
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_RPI_PICO_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_RPI_PICO_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_RPI_PICO_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_RPI_PICO_H_
 
 #include <zephyr/device.h>
 
@@ -34,4 +34,4 @@ int clock_control_rpi_pico_reconfigure(const struct device *dev);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_RPI_PICO_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_RPI_PICO_H_ */
