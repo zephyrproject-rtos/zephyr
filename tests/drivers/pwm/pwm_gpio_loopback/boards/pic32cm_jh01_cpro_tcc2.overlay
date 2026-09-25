@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect PA12 to PA13 */
+
+#define PWM_NODE    tcc2
+#define PWM_PINCTRL tcc2_pwm_default
+#define PWM_COMPAT "microchip,tcc-g1-pwm"
+#include "mchp_pwm_loopback_support.dtsi"
+
+/ {
+	zephyr,user {
+		pwms = <&tcc2 1 PWM_MSEC(20) 0>;
+		gpios = <&porta 13 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&porta {
+	status = "okay";
+};
+
+&pinctrl {
+	tcc2_pwm_default: tcc2_pwm_default {
+		group1 {
+			pinmux = <PA12E_TCC2_WO0>;
+		};
+	};
+};

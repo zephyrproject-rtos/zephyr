@@ -114,14 +114,22 @@ tests:
   drivers.pwm.gpio_loopback_tcc0.mchp:
     platform_allow:
       - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
     extra_args:
       - FILE_SUFFIX=tcc0
 
   drivers.pwm.gpio_loopback_tcc1.mchp:
     platform_allow:
       - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
     extra_args:
       - FILE_SUFFIX=tcc1
+
+  drivers.pwm.gpio_loopback_tcc2.mchp:
+    platform_allow:
+      - pic32cm_jh01_cpro
+    extra_args:
+      - FILE_SUFFIX=tcc2
 
   drivers.pwm.gpio_loopback_tcc4.mchp:
     platform_allow:
