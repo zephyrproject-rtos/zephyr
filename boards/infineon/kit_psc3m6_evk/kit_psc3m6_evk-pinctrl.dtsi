@@ -22,3 +22,12 @@
 &p3_2_scb4_uart_rx {
 	input-enable;
 };
+
+/* CAN pin drive modes */
+&p5_2_can1_ttcan_rx {
+	input-enable;
+};
+
+&p5_3_can1_ttcan_tx {
+	drive-push-pull;
+};
