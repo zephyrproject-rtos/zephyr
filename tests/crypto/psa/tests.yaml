@@ -21,25 +21,29 @@ common:
     - psa
 
 tests:
-  crypto.psa.with_entropy_driver:
-    filter: CONFIG_CSPRNG_ENABLED
-    # Pick a platform which has an entropy driver and enable it.
+  crypto.psa.stm32_psa_crypto_drivers:
+    # The STM32 PSA crypto drivers are enabled from devicetree, so cover one
+    # board per STM32 series that enables the AES peripheral. Each board also
+    # enables the RNG peripheral, hence the entropy driver can be used.
+    platform_allow:
+      - b_l4s5i_iot01a
+      - b_u585i_iot02a
+      - nucleo_c5a3zg
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32h573i_dk
+      - stm32l562e_dk
     integration_platforms:
-      - native_sim/native/64
-    extra_configs:
-      - CONFIG_ENTROPY_GENERATOR=y
-  crypto.psa.without_entropy_driver:
-    filter: not CONFIG_CSPRNG_ENABLED
-    # Pick a platform which does not have an entropy driver. In this case we
-    # enable the timer random generator because it's always available on all
-    # platforms.
-    # Explicitly select CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG because this is
-    # not "automatically selected" when there is no CSPRNG available.
-    integration_platforms:
-      - qemu_x86
-    extra_configs:
-      - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG=y
-      - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG=y
-      - CONFIG_TEST_RANDOM_GENERATOR=y
-      # PSA Crypto needs some heap, but MINIMAL_LIBC has none by default.
-      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=2048
+      - b_l4s5i_iot01a
+      - b_u585i_iot02a
+      - nucleo_c5a3zg
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32h573i_dk
+      - stm32l562e_dk
