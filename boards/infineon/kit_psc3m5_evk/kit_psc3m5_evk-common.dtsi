@@ -52,6 +52,21 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	/*
+	 * Onboard TLE9251VLEXUMA1 CAN transceiver feeding the CAN screw
+	 * terminals. STB (standby) is wired to P7.6 and has an internal
+	 * pull-up, so without this node the transceiver powers up in
+	 * standby, the transmitter stays disabled, and can1 goes bus-off
+	 * within about 1 ms of the first can_send() (-ENETUNREACH), with
+	 * the error counters still reading zero.
+	 */
+	can_phy: can-phy {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&gpio_prt7 6 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &gpio_prt0 {
@@ -75,6 +90,11 @@
 };
 
 &gpio_prt6 {
+	status = "okay";
+};
+
+/* Drives the onboard CAN transceiver's STB pin (P7.6). */
+&gpio_prt7 {
 	status = "okay";
 };
 
@@ -112,6 +132,7 @@ uart3: &scb3 {
 	clocks = <&peri0_group4_16_5bit_0>;
 	pinctrl-0 = <&p5_2_can1_rx &p5_3_can1_tx>;
 	pinctrl-names = "default";
+	phys = <&can_phy>;
 };
 
 &watchdog0 {
