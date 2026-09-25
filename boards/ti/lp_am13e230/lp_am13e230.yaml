@@ -9,4 +9,5 @@ flash: 512
 supported:
   - pinctrl
   - uart
+  - spi
 vendor: ti
