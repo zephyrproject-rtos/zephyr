@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+config SAMPLE_COLORED_OUTPUT
+	bool "Highlight input event values in shell output"
+	depends on SHELL_VT100_COLORS
+	default y
+	help
+	  Highlight input event values in green in the shell output.
+
+source "Kconfig.zephyr"
