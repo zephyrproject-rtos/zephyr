@@ -306,6 +306,11 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
+			eth0_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
+			};
 		};
 
 		gpio0: gpio@10060000 {
