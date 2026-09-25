@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_ESP32_LCD_CAM_RGB
+	bool "ESP32 LCD_CAM RGB display controller"
+	default y
+	depends on SOC_SERIES_ESP32S3
+	depends on DT_HAS_ESPRESSIF_ESP32_LCD_CAM_RGB_ENABLED
+	help
+	  Enable the ESP32-S3 LCD_CAM RGB display controller. It owns the
+	  framebuffer and streams it to a parallel RGB panel.
+
+config DISPLAY_ESP32_LCD_CAM_RGB_INIT_PRIORITY
+	int "LCD_CAM RGB init priority"
+	default DISPLAY_INIT_PRIORITY
+	depends on DISPLAY_ESP32_LCD_CAM_RGB
+	help
+	  Initialization priority of the LCD_CAM RGB display controller. Its value
+	  must not be lower than the init priority value of the panel controller,
+	  which has to be ready before the RGB stream starts.
+
+config DISPLAY_ESP32_LCD_CAM_RGB_BOUNCE_BUFFER_SIZE
+	int "LCD_CAM RGB bounce buffer size per instance (bytes)"
+	depends on DISPLAY_ESP32_LCD_CAM_RGB
+	range 1024 65536
+	default 16128
+	help
+	  Maximum internal SRAM reserved for the bounce buffers of each
+	  LCD_CAM RGB display instance. The driver selects a layout within this
+	  limit based on the framebuffer size. Each DMA chunk must be 256 to
+	  4032 bytes and a multiple of 64 bytes. The DMA ring contains at least
+	  four bounce buffers, each holding one chunk. The framebuffer must divide
+	  evenly into chunks, with a whole number of frame chunks per ring cycle.
