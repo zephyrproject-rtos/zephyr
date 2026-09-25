@@ -11,11 +11,17 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
   drivers.auxdisplay.build.i2c:
     extra_args: DTC_OVERLAY_FILE="i2c_devices.overlay"
     extra_configs:
       - CONFIG_I2C=y
     platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
       - native_sim
       - native_sim/native/64
   drivers.auxdisplay.build.spi:
@@ -25,10 +31,16 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
   drivers.auxdisplay.build.uart:
     extra_args: DTC_OVERLAY_FILE="uart_devices.overlay"
     extra_configs:
       - CONFIG_SERIAL=y
     platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
       - native_sim
       - native_sim/native/64
