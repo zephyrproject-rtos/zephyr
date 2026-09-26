@@ -205,7 +205,7 @@ static int nxp_video_sdma_flush(const struct device *dev, bool cancel)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 	struct nxp_video_sdma_data *data = dev->data;
-	struct video_buf *vbuf;
+	struct video_buffer *vbuf;
 
 	if (!cancel) {
 		/* Wait for DMA to signal it is empty */
