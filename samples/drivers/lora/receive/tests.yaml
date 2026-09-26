@@ -38,3 +38,33 @@ tests:
       - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
     integration_platforms:
       - nucleo_wl55jc
+  sample.drivers.lora.receive.gfsk.loramac:
+    filter: dt_compat_enabled("semtech,sx1261") or
+      dt_compat_enabled("semtech,sx1262")
+    build_only: true
+    extra_configs:
+      - CONFIG_LORA_GFSK=y
+      - CONFIG_SAMPLE_LORA_GFSK=y
+    integration_platforms:
+      - rak11720
+  sample.drivers.lora.receive.gfsk.lbm:
+    filter: dt_compat_enabled("semtech,sx1261") or
+      dt_compat_enabled("semtech,sx1262") or
+      dt_compat_enabled("semtech,sx1272") or
+      dt_compat_enabled("semtech,sx1276")
+    build_only: true
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORA_GFSK=y
+      - CONFIG_SAMPLE_LORA_GFSK=y
+    integration_platforms:
+      - rak11720
+  sample.drivers.lora.receive.gfsk.native:
+    filter: dt_compat_enabled("st,stm32wl-subghz-radio")
+    build_only: true
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
+      - CONFIG_LORA_GFSK=y
+      - CONFIG_SAMPLE_LORA_GFSK=y
+    integration_platforms:
+      - nucleo_wl55jc
