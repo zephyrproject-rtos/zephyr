@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - i3c
+  depends_on: i3c
+  harness: console
+  harness_config:
+    fixture: dual_board_loopback_pair
+tests:
+  drivers.i3c.dual_board_loopback.controller_driven.i3c_target:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    filter: dt_alias_exists("test-i3c") and dt_chosen_enabled("zephyr,sync-uart")
