@@ -6,9 +6,6 @@
 
 if SOC_MIMX8MM6_M4
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 400000000
-
 config IPM_IMX
 	default y
 	depends on IPM

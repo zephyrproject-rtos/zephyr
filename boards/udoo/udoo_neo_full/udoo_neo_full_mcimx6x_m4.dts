@@ -52,6 +52,10 @@
 	};
 };
 
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(227)>;
+};
+
 &uart5 {
 	status = "okay";
 	current-speed = <115200>;

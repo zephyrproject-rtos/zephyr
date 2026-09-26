@@ -5,6 +5,7 @@
  */
 
 /dts-v1/;
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include "arty_a7_arm_designstart.dtsi"
 
@@ -14,6 +15,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(50)>;
 
 		cpu0: cpu@0 {
 			device_type = "cpu";

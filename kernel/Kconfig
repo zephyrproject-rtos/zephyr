@@ -756,6 +756,8 @@ config SYS_CLOCK_TICKS_PER_SEC
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
 	default 0 if TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	default $(dt_node_int_prop_int,/cpus/cpu@0,timebase-frequency) \
+		if $(dt_node_has_prop,/cpus/cpu@0,timebase-frequency)
 	depends on SYS_CLOCK_EXISTS
 	help
 	  This option specifies the frequency of the hardware timer used for the

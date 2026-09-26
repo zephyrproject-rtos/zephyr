@@ -10,9 +10,6 @@ config NUM_IRQS
 	# - include the UART interrupts and ethernet interrupts
 	default 43
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 12000000
-
 if UART_STELLARIS
 
 config UART_STELLARIS_PORT_0

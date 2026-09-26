@@ -4,9 +4,6 @@
 
 if SOC_SERIES_CC13X2X7_CC26X2X7
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 32768
-
 # Note that when using the RTC as system clock, this needs to be 32768
 # to reduce truncation errors from accumulating due to conversion to/from
 # time, ticks, and HW cycles

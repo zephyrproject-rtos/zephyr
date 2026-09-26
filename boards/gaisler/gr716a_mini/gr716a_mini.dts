@@ -13,6 +13,10 @@
 	model = "GR716-MINI Development Board";
 	compatible = "gaisler,gr716a-mini";
 
+	cpus {
+		timebase-frequency = <DT_FREQ_M(20)>;
+	};
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;

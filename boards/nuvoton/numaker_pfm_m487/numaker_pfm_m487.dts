@@ -13,6 +13,10 @@
 	model = "Nuvoton PFM M487 board";
 	compatible = "nuvoton,pfm-m487", "nuvoton,m487";
 
+	cpus {
+		timebase-frequency = <DT_FREQ_M(192)>;
+	};
+
 	aliases {
 		led0 = &red_led;
 		led1 = &yellow_led;
