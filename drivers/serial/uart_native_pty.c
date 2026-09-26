@@ -146,7 +146,7 @@ static DEVICE_API(uart, np_uart_driver_api) = {
 };
 
 #define NATIVE_PTY_INSTANCE(inst)                                        \
-	static struct native_pty_config native_pty_##inst##_cfg = {      \
+	static const struct native_pty_config native_pty_##inst##_cfg = { \
 		.on_stdinout = DT_INST_PROP(inst, on_stdinout),          \
 	};                                                               \
 	static struct native_pty_status native_pty_status_##inst;        \

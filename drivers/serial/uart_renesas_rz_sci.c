@@ -535,7 +535,7 @@ static int uart_rz_init(const struct device *dev)
 			 .p_callback = uart_rz_sci_event_handler,                                  \
 			 .p_context = (void *)DEVICE_DT_INST_GET(n),)) };                          \
 	PINCTRL_DT_DEFINE(SCI_NODE(n));                                                            \
-	static struct uart_rz_sci_config uart_rz_config_##n = {                                    \
+	static const struct uart_rz_sci_config uart_rz_config_##n = {                              \
 		.pin_config = PINCTRL_DT_DEV_CONFIG_GET(SCI_NODE(n)),                              \
 		COND_CODE_1(CONFIG_UART_RENESAS_RZ_SCI_B,                      \
 			(.fsp_api = &g_uart_on_sci_b),                         \
