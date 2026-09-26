@@ -125,7 +125,7 @@ manifest:
       revision: 45d23287f5b41be49612281a5e7c802c6a415388
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
-      revision: d20117c9e88cf9018d6fa06744dddac700c3e3a1
+      revision: 73591f72850bfebe95c6f30f6e75a773abb711cd
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
