@@ -215,6 +215,7 @@ if(NOT BOARD_DIR)
 endif()
 
 set(format_str "{NAME}\;{DIR}\;")
+set(format_str "${format_str}{DEFAULT_QUALIFIER}\;")
 set(format_str "${format_str}{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISION_EXACT}\;")
 set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{QUALIFIERS}")
 
@@ -231,7 +232,7 @@ endif()
 
 if(NOT "${ret_board}" STREQUAL "")
   string(STRIP "${ret_board}" ret_board)
-  set(single_val "NAME;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
+  set(single_val "NAME;DEFAULT_QUALIFIER;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
   set(multi_val  "DIR;REVISIONS;SOCS;QUALIFIERS")
   cmake_parse_arguments(LIST_BOARD "" "${single_val}" "${multi_val}" ${ret_board})
   list(GET LIST_BOARD_DIR 0 BOARD_DIR)
@@ -299,14 +300,26 @@ elseif(DEFINED BOARD_REVISION)
 endif()
 
 if(LIST_BOARD_QUALIFIERS)
-  # Allow users to omit the SoC when building for a board with a single SoC.
+  if(LIST_BOARD_DEFAULT_QUALIFIER)
+    # Allow boards to define a qualifier path that will be used whenever
+    # qualifiers are omitted, or when a leading slash is used to extend it.
+    if(NOT DEFINED BOARD_QUALIFIERS)
+      set(BOARD_QUALIFIERS "${LIST_BOARD_DEFAULT_QUALIFIER}")
+    elseif("/${BOARD_QUALIFIERS}" MATCHES "^//.*")
+      string(REGEX REPLACE "^/" "${LIST_BOARD_DEFAULT_QUALIFIER}/" BOARD_QUALIFIERS
+             "${BOARD_QUALIFIERS}")
+    endif()
+  endif()
+
+  # Single SoC boards retain their legacy shortcut even if they do not set an
+  # explicit default qualifier.
   list(LENGTH LIST_BOARD_SOCS socs_length)
   if(socs_length EQUAL 1)
     set(BOARD_SINGLE_SOC TRUE)
     set(BOARD_${BOARD}_SINGLE_SOC TRUE)
     if(NOT DEFINED BOARD_QUALIFIERS)
       set(BOARD_QUALIFIERS "${LIST_BOARD_SOCS}")
-    elseif("/${BOARD_QUALIFIERS}" MATCHES "^//.*")
+    elseif(NOT LIST_BOARD_DEFAULT_QUALIFIER AND "/${BOARD_QUALIFIERS}" MATCHES "^//.*")
       string(REGEX REPLACE "^/" "${LIST_BOARD_SOCS}/" BOARD_QUALIFIERS "${BOARD_QUALIFIERS}")
     endif()
   endif()
