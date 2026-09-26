@@ -32,6 +32,40 @@
  */
 #define DEEP_SLEEP_PERIPH_SAVE_RESTORE
 
+/*
+ * arch_busy_wait()'s free-running counter is not a Zephyr device (no
+ * PM_DEVICE hook), so it can't be stopped/restarted at the driver level.
+ * Derive its base address from the same "busy-wait-timer" DT phandle
+ * mchp_xec_rtos_timer.c uses to stop/restart.
+ */
+#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT) &&                                                   \
+	DT_NODE_HAS_PROP(DT_NODELABEL(rtimer), busy_wait_timer)
+#define BUSY_WAIT_TMR_ADDR DT_REG_ADDR(DT_PHANDLE(DT_NODELABEL(rtimer), busy_wait_timer))
+
+static void deep_sleep_save_busy_wait_timer(void)
+{
+	uintptr_t ctrl_addr = BUSY_WAIT_TMR_ADDR + MCHP_BTMR_CTRL_OFS;
+
+	sys_write32(sys_read32(ctrl_addr) & ~(MCHP_BTMR_CTRL_START | MCHP_BTMR_CTRL_ENABLE),
+		    ctrl_addr);
+}
+
+static void deep_sleep_restore_busy_wait_timer(void)
+{
+	uintptr_t ctrl_addr = BUSY_WAIT_TMR_ADDR + MCHP_BTMR_CTRL_OFS;
+
+	sys_write32(sys_read32(ctrl_addr) | MCHP_BTMR_CTRL_ENABLE | MCHP_BTMR_CTRL_START,
+		    ctrl_addr);
+}
+#else
+static void deep_sleep_save_busy_wait_timer(void)
+{
+}
+
+static void deep_sleep_restore_busy_wait_timer(void)
+{
+}
+#endif
 
 /*
  * Light sleep: PLL remains on. Fastest wake latency.
@@ -124,18 +158,6 @@ struct ds_timer_info {
 
 const struct ds_timer_info ds_timer_tbl[] = {
 	{
-		(uintptr_t)&B16TMR0_REGS->CTRL, 0
-	},
-	{
-		(uintptr_t)&B16TMR1_REGS->CTRL, 0
-	},
-	{
-		(uintptr_t)&B32TMR0_REGS->CTRL, 0
-	},
-	{
-		(uintptr_t)&B32TMR1_REGS->CTRL, 0
-	},
-	{
 		(uintptr_t)&CCT_REGS->CTRL,
 		(MCHP_CCT_CTRL_COMP1_SET | MCHP_CCT_CTRL_COMP0_SET),
 	},
@@ -210,6 +232,7 @@ void soc_deep_sleep_periph_save(void)
 {
 	deep_sleep_save_uarts();
 	deep_sleep_save_ecs();
+	deep_sleep_save_busy_wait_timer();
 	deep_sleep_save_timers();
 }
 
@@ -217,6 +240,7 @@ void soc_deep_sleep_periph_restore(void)
 {
 	deep_sleep_restore_ecs();
 	deep_sleep_restore_uarts();
+	deep_sleep_restore_busy_wait_timer();
 	deep_sleep_restore_timers();
 }
 
