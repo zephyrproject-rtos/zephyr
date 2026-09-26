@@ -214,7 +214,7 @@ def _check_chip(output, ecst_args):
     if ecst_args.chip_name == INVALID_INPUT:
         message = f'Invalid chip name, '
         message += "should be npcx4m3, npcx4m8, npcx9m8, npcx9m7, npcx9m6, " \
-                   "npcx7m7, npcx7m6, npcx7m5, npck3m8k."
+                   "npcx7m7, npcx7m6, npcx7m5,  npck3m8k, npck6m9k."
         _exit_with_failure_delete_file(output, message)
 
 def _set_anchor(output, ecst_args):
@@ -456,6 +456,7 @@ def _set_firmware_load_start_address(output, ecst_args):
     fw_load_addr_to_print = _hex_print_format(fw_load_addr)
     fw_length_to_print = _hex_print_format(fw_length)
     fw_end_addr_to_print = _hex_print_format(fw_end_addr)
+    no_fw_addr_check = ecst_args.no_fw_addr_check
 
     if fw_length == INVALID_INPUT:
         message = f'Cannot read firmware length'
@@ -475,7 +476,8 @@ def _set_firmware_load_start_address(output, ecst_args):
             f'is not 16 bytes aligned'
         _exit_with_failure_delete_file(output, message)
 
-    if (fw_load_addr > end_ram) or (fw_load_addr < start_ram):
+    if (not no_fw_addr_check and
+        ((fw_load_addr > end_ram) or (fw_load_addr < start_ram))):
         message = f'Firmware load address ({fw_load_addr_to_print}) ' \
             f'should be between start ({start_ram_to_print}) '\
             f'and end ({end_ram_to_print}) of RAM'
@@ -516,6 +518,7 @@ def _set_firmware_entry_point(output, ecst_args):
     fw_length = ecst_args.firmware_length
     fw_load_addr = ecst_args.firmware_load_address
     fw_end_addr = fw_load_addr + fw_length
+    no_fw_addr_check = ecst_args.no_fw_addr_check
 
     # check if fwep flag wasn't set and set it to fw load address if needed
     if fw_entry_pt is None:
@@ -535,7 +538,8 @@ def _set_firmware_entry_point(output, ecst_args):
                 fw_entry_byte = input_file.read(4)
                 fw_entry_pt = int.from_bytes(fw_entry_byte, "little")
 
-            if fw_entry_pt < fw_load_addr or fw_entry_pt > fw_end_addr:
+            if (not no_fw_addr_check and
+                (fw_entry_pt < fw_load_addr or fw_entry_pt > fw_end_addr)):
                 output_file.close()
                 input_file.close()
                 message = f'Firmware entry point ' \

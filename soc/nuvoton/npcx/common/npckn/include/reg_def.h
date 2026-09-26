@@ -242,7 +242,9 @@ struct glue_reg {
 	volatile uint8_t reserved7[2];
 	/* 0x030: Exteral Power-Up Reset Control */
 	volatile uint8_t EPURST_CTL;
-	volatile uint8_t reserved8[7];
+	/* 0x031: Exteral Power-Up Reset Debounce */
+	volatile uint8_t EPURST_DBC;
+	volatile uint8_t reserved8[6];
 	/* 0x038: PSL Control and Status 3 */
 	volatile uint8_t PSL_CTS3;
 	/* 0x039: PSL Control and Status 3 */

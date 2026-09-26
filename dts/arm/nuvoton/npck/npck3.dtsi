@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <arm/armv7-m.dtsi>
+
 /* NPCK3 series pinmux mapping table */
 #include "npck3/npck3-alts-map.dtsi"
 /* NPCK3 series mapping table between MIWU wui bits and source device */
@@ -225,6 +227,12 @@
 		};
 
 		gpiostb0: gpio@400ab000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x400ab000 0x2000>;
+			gpio-controller;
+			index = <0x12>;
+			ngpios = <8>;
+			#gpio-cells = <2>;
 			wui-maps = <&wui_io_stb00 &wui_io_stb01 &wui_io_stb02 &wui_io_stb03
 				    &wui_io_stb04 &wui_none &wui_none &wui_none>;
 
@@ -233,6 +241,12 @@
 		};
 
 		gpiostb1: gpio@400ad000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x400ad000 0x2000>;
+			gpio-controller;
+			index = <0x13>;
+			ngpios = <8>;
+			#gpio-cells = <2>;
 			wui-maps = <&wui_none &wui_io_stb11_psl_in0
 				    &wui_io_stb12_psl_in1 &wui_io_stb13_psl_in2
 				    &wui_io_stb14_psl_in3 &wui_io_stb15_psl_in4
@@ -265,14 +279,24 @@
 				status = "disabled";
 			};
 		};
+	};
 
-		lct0: lct@400dd000 {
-			compatible = "nuvoton,npck-lct";
-			reg = <0x400dd000 0x10>;
-			interrupts = <17 4>;
-			/* The maximum counter value is (16 weeks - 1 second) */
-			maximum-cnt-in-sec = <9676799>;
-			pwr-by-vsby;
+	soc-if {
+		i2c1_b: io_i2c_ctrl1_portb {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <NPCX_I2C_CTRL_PORT(1, 1)>;
+			controller = <&i2c_ctrl1>;
+			status = "disabled";
+		};
+
+		i2c4_b: io_i2c_ctrl4_portb {
+			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port = <NPCX_I2C_CTRL_PORT(4, 1)>;
+			controller = <&i2c_ctrl4>;
 			status = "disabled";
 		};
 	};

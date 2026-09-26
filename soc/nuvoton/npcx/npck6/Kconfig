@@ -1,20 +1,21 @@
-# Nuvoton NPCK3 EC series
+# Nuvoton NPCK6 EC series
 
-# Copyright (c) 2025 Nuvoton Technology Corporation.
+# Copyright (c) 2026 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NPCK3
+config SOC_SERIES_NPCK6
 	select ARM
-	select CPU_CORTEX_M4
+	select CPU_CORTEX_M33
 	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
+	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
 	select HAS_PM
 	select PM_STATE_SET_IRQ_UNLOCKED
 	select HAS_SWO
 	select SOC_EARLY_INIT_HOOK
 
-if SOC_SERIES_NPCK3
+if SOC_SERIES_NPCK6
 
 config SOC_NPCK_EPURST_DISABLE
 	bool "Disable all External Power-Up Reset Inputs"
@@ -25,9 +26,9 @@ config SOC_NPCK_EPURST_DISABLE
 	  enable it if needed.
 
 config SOC_NPCK_DEBUG_DISABLE
-	bool "Disable all K3 debug interfaces"
+	bool "Disable all K6 debug interfaces"
 	help
-	  Disable all K3 debug interface during initialization.
+	  Disable all K6 debug interface during initialization.
 
 config NPCK_EPURST_DEBOUNCE_TIME_SEC
 	int "Debounce time of the EXT_PURST"
@@ -36,4 +37,4 @@ config NPCK_EPURST_DEBOUNCE_TIME_SEC
 	  This option specifices the debounce time for EXT_PURST. The unit is seconds,
 	  and the valid value is from 1 to 31.
 
-endif # SOC_SERIES_NPCK3
+endif # SOC_SERIES_NPCK6

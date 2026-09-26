@@ -48,11 +48,15 @@
 	 BIT(15) | BIT(16) | BIT(17) | BIT(18))	/* DEVALT0_LK - DEVALTJ_LK */
 
 /* NPCX9 Clock configuration and limitation */
-#define MAX_OFMCLK 100000000
+#define MAX_OFMCLK  100000000
+#define MAX_FMCLK   (MAX_OFMCLK / 2)
+#define MAX_AHB6CLK (MAX_OFMCLK / 2)
+#define MAX_FIUCLK  (MAX_OFMCLK / 2)
 
 #include <reg_def.h>
 #include <clock_def.h>
 #include <soc_dt.h>
+#include <soc_clock.h>
 #include <soc_pins.h>
 #include <soc_power.h>
 
