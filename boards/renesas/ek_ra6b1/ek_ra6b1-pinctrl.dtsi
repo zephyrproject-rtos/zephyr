@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/renesas/ra6b1-pinctrl.h>
+
+&pinctrl {
+	uart_default: uart_default {
+		group1 {
+			pinmux = <RAFW_PINMUX(UART_TX, 0, 12)>;
+		};
+
+		group2 {
+			pinmux = <RAFW_PINMUX(UART_RX, 0, 13)>;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/ uart_sleep: uart_sleep {
+		group1 {
+			pinmux = <RAFW_PINMUX(UART_TX, 0, 12)>;
+			sleep-hardware-state;
+		};
+
+		group2 {
+			pinmux = <RAFW_PINMUX(UART_RX, 0, 13)>;
+			bias-pull-up;
+			sleep-hardware-state;
+		};
+	};
+
+	usbdfs_default: usbdfs_default {
+		group1 {
+			pinmux = <RAFW_PINMUX(USB, 1, 6)>,
+				 <RAFW_PINMUX(USB, 1, 7)>;
+		};
+	};
+};

@@ -1,0 +1,265 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <renesas/ra/ra6/r7ka6b1_icu.dtsi>
+#include <mem.h>
+#include <freq.h>
+
+/ {
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	crg {
+		osc: osc {
+			interrupt-parent = <&icu>;
+
+			xtal32k: xtal32k {
+				compatible = "fixed-clock";
+				clock-frequency = <32768>;
+				#clock-cells = <0>;
+				status = "reserved";
+			};
+
+			rcx: rcx {
+				compatible = "renesas,ra6b1-osc";
+				clock-frequency = <DT_FREQ_K(32)>;
+				#clock-cells = <0>;
+				calibration-interval = <1000>;
+				calibration-cycles = <10>;
+				status = "okay";
+			};
+
+			rclp: rclp {
+				compatible = "renesas,ra6b1-osc";
+				clock-frequency = <DT_FREQ_K(512)>;
+				#clock-cells = <0>;
+				calibration-interval = <1000>;
+				calibration-cycles = <10>;
+				status = "okay";
+			};
+
+			divn_clk: divn_clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(32)>;
+				#clock-cells = <0>;
+				status = "okay";
+			};
+
+			xtal32m: xtal32m {
+				compatible = "renesas,ra6b1-osc";
+				clock-frequency = <DT_FREQ_M(32)>;
+				#clock-cells = <0>;
+				status = "okay";
+			};
+
+			xtal64m: xtal64m {
+				compatible = "renesas,ra6b1-osc";
+				clock-frequency = <DT_FREQ_M(64)>;
+				#clock-cells = <0>;
+				status = "reserved";
+			};
+
+			rchs: rchs {
+				compatible = "renesas,ra6b1-osc";
+				clock-frequency = <DT_FREQ_M(32)>;
+				#clock-cells = <0>;
+				calibration-interval = <10000>;
+				calibration-cycles = <10000>;
+				status = "reserved";
+			};
+
+			sys_pll: sys_pll {
+				compatible = "renesas,ra6b1-osc";
+				clock-frequency = <DT_FREQ_M(128)>;
+				#clock-cells = <0>;
+				interrupts = <7 ICU_EVENT_PLLSYS_IRQ 0>;
+				interrupt-names = "pll_lock";
+				status = "reserved";
+			};
+
+			pllusb: pllusb {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(48)>;
+				#clock-cells = <0>;
+				status = "reserved";
+			};
+		};
+
+		sys_clk: sys_clk {
+			compatible = "renesas,ra6b1-clk";
+			clock-src = <&rchs>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+
+		lp_clk: lp_clk {
+			compatible = "renesas,ra6b1-clk";
+			clock-src = <&rcx>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		entropy_reserved_ram: memory@33128000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x33128000 0x86c>;
+			zephyr,memory-region = "ENTROPY";
+		};
+	};
+
+	soc {
+		interrupt-parent = <&icu>;
+
+		sram0: memory@23000000 {
+			compatible = "mmio-sram";
+			reg = <0x23000000 DT_SIZE_K(352)>;
+		};
+
+		nor_psram: memory@36000000 {
+			compatible = "zephyr,memory-region";
+			device_type = "memory";
+			reg = <0x36000000 DT_SIZE_M(128)>;
+			zephyr,memory-region = "NOR_PSRAM";
+		};
+
+		flash_controller: nvmc@40600100 {
+			compatible = "renesas,ra6b1-nvmc";
+			reg = <0x40600100 0xb4>;
+			interrupts = <0 ICU_EVENT_NVMCW_IRQ 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			flash0: flash@4000000 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <8>;
+				reg = <0x04000000 DT_SIZE_K(1536)>;
+				ranges = <0x0 0x04000000 DT_SIZE_K(1536)>;
+				#address-cells = <0x1>;
+				#size-cells = <0x1>;
+			};
+		};
+
+		pinctrl: pin-controller@40300c00 {
+			compatible = "renesas,rafw-pinctrl";
+			reg = <0x40300c00 0xfc>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpio0: gpio@40300c00 {
+				compatible = "renesas,rafw-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				port = <0>;
+				reg = <0x40300c00 36>,
+				      <0x40300c24 128>,
+				      <0x40100070 12>,
+				      <0x40100108 60>;
+				reg-names = "data", "mode", "latch", "wkup";
+				interrupts = <3 ICU_EVENT_WKUPCW_P0_IRQ 0>;
+				status = "disabled";
+			};
+
+			gpio1: gpio@40300c04 {
+				compatible = "renesas,rafw-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				port = <1>;
+				reg = <0x40300c04 32>,
+				      <0x40300ca4 32>,
+				      <0x4010007c 12>,
+				      <0x4010010c 56>;
+				reg-names = "data", "mode", "latch", "wkup";
+				interrupts = <4 ICU_EVENT_WKUPCW_P1_IRQ 0>;
+				status = "disabled";
+			};
+
+			gpio2: gpio@40300c08 {
+				compatible = "renesas,rafw-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				port = <2>;
+				reg = <0x40300c08 28>,
+				      <0x40300cc4 32>,
+				      <0x40100088 12>,
+				      <0x40100110 52>;
+				reg-names = "data", "mode", "latch", "wkup";
+				interrupts = <5 ICU_EVENT_WKUPCW_P2_IRQ 0>;
+				status = "disabled";
+			};
+		};
+
+		uart: uart@40300100 {
+			compatible = "renesas,ra6b1-uart";
+			reg = <0x40300100 0x100>;
+			channel = <0>;
+			periph-clock-config = <0x01>;
+			interrupts = <1 ICU_EVENT_UARTWB1_IRQ 0>, <2 ICU_EVENT_UARTWB1_TXR_IRQ 0>;
+			interrupt-names = "gen", "tei";
+			status = "disabled";
+		};
+
+		uart2: uart@40300200 {
+			compatible = "renesas,ra6b1-uart";
+			reg = <0x40300200 0x100>;
+			channel = <1>;
+			periph-clock-config = <0x04>;
+			interrupts = <ICU_IELSR_UNSPECIFIED ICU_EVENT_NONE ICU_EVENT_PRIO_LOWEST>,
+				     <ICU_IELSR_UNSPECIFIED ICU_EVENT_NONE ICU_EVENT_PRIO_LOWEST>;
+			interrupt-names = "gen", "tei";
+			status = "disabled";
+		};
+
+		uart3: uart@40300300 {
+			compatible = "renesas,ra6b1-uart";
+			reg = <0x40300300 0x100>;
+			channel = <2>;
+			periph-clock-config = <0x10>;
+			interrupts = <ICU_IELSR_UNSPECIFIED ICU_EVENT_NONE ICU_EVENT_PRIO_LOWEST>,
+				     <ICU_IELSR_UNSPECIFIED ICU_EVENT_NONE ICU_EVENT_PRIO_LOWEST>;
+			interrupt-names = "gen", "tei";
+			status = "disabled";
+		};
+
+		uart4: uart@40300400 {
+			compatible = "renesas,ra6b1-uart";
+			reg = <0x40300400 0x100>;
+			channel = <3>;
+			periph-clock-config = <0x40>;
+			interrupts = <ICU_IELSR_UNSPECIFIED ICU_EVENT_NONE ICU_EVENT_PRIO_LOWEST>,
+				     <ICU_IELSR_UNSPECIFIED ICU_EVENT_NONE ICU_EVENT_PRIO_LOWEST>;
+			interrupt-names = "gen", "tei";
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

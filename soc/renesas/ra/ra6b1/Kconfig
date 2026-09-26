@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA6B1
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_FPU
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_HAS_ARM_SAU
+	select ARMV8_M_DSP
+	select HAS_RENESAS_RAFW_FSP
+	select SRAM_VECTOR_TABLE # Let Zephyr copy IVT to the beginning of SRAM
+	select STATIC_INIT_GNU # needed for functions in .init_array section
+	select SOC_EARLY_RESET_HOOK
+	select FPU
+	select ARM_MPU

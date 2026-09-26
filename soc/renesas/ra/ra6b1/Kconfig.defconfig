@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RA6B1
+
+config NUM_IRQS
+	default 60
+
+DT_LPCLK_PATH := $(dt_nodelabel_path,lp_clk)
+DT_SYSCLK_PATH := $(dt_nodelabel_path,sys_clk)
+DT_LPCLK_SRC_PATH := $(dt_node_ph_prop_path,$(DT_LPCLK_PATH),clock-src)
+DT_SYSCLK_SRC_PATH := $(dt_node_ph_prop_path,$(DT_SYSCLK_PATH),clock-src)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_SYSCLK_SRC_PATH),clock-frequency) if CORTEX_M_SYSTICK
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_LOAD_OFFSET
+	default 0x2000 if !USE_DT_CODE_PARTITION
+
+config ROM_START_OFFSET
+	default 0x200
+
+config MINIMAL_LIBC_RAND
+	default y if MINIMAL_LIBC
+
+endif # SOC_SERIES_RA6B1

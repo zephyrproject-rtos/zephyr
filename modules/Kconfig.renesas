@@ -13,6 +13,11 @@ config HAS_RENESAS_RZ_FSP
 	help
 	  Enable Renesas RZ FSP support
 
+config HAS_RENESAS_RAFW_FSP
+	bool
+	help
+	  Enable Renesas RAFW FSP support
+
 if HAS_RENESAS_RA_FSP
 
 config USE_RA_FSP_SCI_B_UART

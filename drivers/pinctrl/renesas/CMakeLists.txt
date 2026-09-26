@@ -9,5 +9,6 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_RZT2M rz/pinctrl_rzt2m.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_SMARTBOND smartbond/pinctrl_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_RENESAS_RZ rz/pinctrl_renesas_rz.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_RENESAS_RZA2M rz/pinctrl_renesas_rza2m.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_RENESAS_RAFW rafw/pinctrl_renesas_rafw.c)
 
 add_subdirectory_ifdef(CONFIG_PINCTRL_RCAR_PFC rcar)
