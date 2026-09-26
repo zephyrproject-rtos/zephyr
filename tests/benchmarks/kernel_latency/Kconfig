@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Kernel Latency Benchmark"
+
+config KERNEL_BENCH_NUM_SAMPLES
+	int "Number of samples per benchmark"
+	default 1000
+	help
+	  Samples recorded for each benchmark. Percentiles need enough of
+	  them to resolve: p99 needs a hundred, p99.9 a thousand. Raise
+	  CONFIG_ZTEST_BENCHMARK_MAX_SAMPLES to match.
+
+source "Kconfig.zephyr"
