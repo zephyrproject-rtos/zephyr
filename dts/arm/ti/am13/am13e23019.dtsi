@@ -5,6 +5,7 @@
  */
 
 #include "am13e.dtsi"
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
 
 / {
 	#address-cells = <1>;
@@ -47,6 +48,166 @@
 
 				#address-cells = <1>;
 				#size-cells = <1>;
+			};
+		};
+
+		unicomm0: unicomm0@40630000 {
+			reg = <0x40630000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <34 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm0_uart: unicomm0_uart@40600000 {
+				reg = <0x40600000 DT_SIZE_K(8)>;
+				interrupts = <34 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+
+			unicomm0_spi: unicomm0_spi@40618000 {
+				reg = <0x40618000 DT_SIZE_K(8)>;
+				interrupts = <34 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "ti,unicomm-spi";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+		};
+
+		unicomm1: unicomm1@40632000 {
+			reg = <0x40632000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <35 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm1_uart: unicomm1_uart@40601000 {
+				reg = <0x40601000 DT_SIZE_K(8)>;
+				interrupts = <35 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+
+			unicomm1_spi: unicomm1_spi@40619000 {
+				reg = <0x40619000 DT_SIZE_K(8)>;
+				interrupts = <35 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "ti,unicomm-spi";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+		};
+
+		unicomm2: unicomm2@40634000 {
+			reg = <0x40634000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <36 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm2_uart: unicomm2_uart@40602000 {
+				reg = <0x40602000 DT_SIZE_K(8)>;
+				interrupts = <36 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+		};
+
+		unicomm3: unicomm3@40670000 {
+			reg = <0x40670000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <37 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm3_uart: unicomm3_uart@40640000 {
+				reg = <0x40640000 DT_SIZE_K(8)>;
+				interrupts = <37 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+
+			unicomm3_spi: unicomm3_spi@40658000 {
+				reg = <0x40658000 DT_SIZE_K(8)>;
+				interrupts = <37 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "ti,unicomm-spi";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+		};
+
+		unicomm4: unicomm4@40672000 {
+			reg = <0x40672000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <38 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm4_uart: unicomm4_uart@40641000 {
+				reg = <0x40641000 DT_SIZE_K(8)>;
+				interrupts = <38 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+
+			unicomm4_spi: unicomm4_spi@40659000 {
+				reg = <0x40659000 DT_SIZE_K(8)>;
+				interrupts = <38 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "ti,unicomm-spi";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+		};
+
+		unicomm5: unicomm5@40674000 {
+			reg = <0x40674000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <39 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm5_uart: unicomm5_uart@40642000 {
+				reg = <0x40642000 DT_SIZE_K(8)>;
+				interrupts = <39 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
 			};
 		};
 	};
