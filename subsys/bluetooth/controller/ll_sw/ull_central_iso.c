@@ -962,7 +962,6 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->lll.npi = 0U;
 	cis->lll.flush = LLL_CIS_FLUSH_NONE;
 	cis->lll.active = 0U;
-	cis->lll.datapath_ready_rx = 0U;
 	cis->lll.tx.payload_count = 0U;
 	cis->lll.rx.payload_count = 0U;
 
