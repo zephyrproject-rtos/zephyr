@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: LPCLK Modifier configuration.
+compatible: "microchip,pic32cx-bz-lpclk"
+
+properties:
+  lpclk-div-modifier:
+    type: string
+    enum:
+      - "div_by_1"
+      - "div_by_1.024"
+    default: "div_by_1"
+    description: LPCLK Modifier in Counter/Delay Mode

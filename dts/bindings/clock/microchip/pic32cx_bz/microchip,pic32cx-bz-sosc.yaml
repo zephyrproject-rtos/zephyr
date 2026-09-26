@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: Secondary Oscillator (SOSC) configuration.
+compatible: "microchip,pic32cx-bz-sosc"
+
+properties:
+  sosc-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: Oscillator Enable
