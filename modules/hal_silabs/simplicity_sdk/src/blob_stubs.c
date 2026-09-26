@@ -28,6 +28,7 @@
 #include <sxsymcrypt/aead.h>
 #include <sxsymcrypt/aes.h>
 #include <sxsymcrypt/blkcipher.h>
+#include <sxsymcrypt/cmmask.h>
 #include <sxsymcrypt/keyref.h>
 #include <sxsymcrypt/statuscodes.h>
 #endif
@@ -507,6 +508,16 @@ int sx_blkcipher_run(struct sxblkcipher *c)
 }
 
 int sx_blkcipher_wait(struct sxblkcipher *c)
+{
+	return SX_OK;
+}
+
+int sx_cm_load_mask(struct sxcmmask *c, uint32_t value)
+{
+	return SX_OK;
+}
+
+int sx_channel_wait(struct sxchannel *c)
 {
 	return SX_OK;
 }
