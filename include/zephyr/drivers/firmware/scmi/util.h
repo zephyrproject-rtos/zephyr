@@ -46,6 +46,11 @@
  * @brief Devicetree compatible string for the SMC transport.
  */
 #define DT_SCMI_TRANSPORT_COMPATIBLE arm_scmi_smc
+#elif CONFIG_ARM_SCMI_OPTEE_TRANSPORT
+/**
+ * @brief Devicetree compatible string for the OP-TEE transport.
+ */
+#define DT_SCMI_TRANSPORT_COMPATIBLE linaro_scmi_optee
 #else
 #error "Transport needs to define COMPATIBLE macro"
 #endif
@@ -112,6 +117,20 @@
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_IS_BASE(node_id),	\
 		    (DT_PROP_HAS_IDX(node_id, shmem, idx)),	\
 		    (0))
+#elif CONFIG_ARM_SCMI_OPTEE_TRANSPORT
+/** @brief Check if a protocol node has an associated channel
+ *
+ * For OP-TEE transport using a single shared channel, only the base SCMI node
+ * defines the primary channel (idx 0). All child protocols share this base channel.
+ *
+ * @param node_id Protocol node identifier
+ * @param idx Channel index (0 for TX)
+ */
+#define DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, idx) \
+	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_IS_BASE(node_id), \
+		    (IS_EQ(idx, 0)), \
+		    (0))
+
 #else
 #error "Transport with static channels needs to define HAS_CHAN macro"
 #endif
