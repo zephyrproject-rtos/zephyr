@@ -8,6 +8,17 @@ config DMA_MCHP_DMAC_G1
 	help
 	  Enables the G1 DMA driver support for Microchip MCUs.
 
+if DMA_MCHP_DMAC_G1
+
+config DMA_MCHP_DMAC_G1_DESC_POOL_SIZE
+	int "Linked descriptor pool size"
+	default 8
+	help
+	  Number of descriptors in the pool for multi-block transfers.
+	  These are shared across all channels.
+
+endif # DMA_MCHP_DMAC_G1
+
 config DMA_MCHP_DMAC_G2
 	bool "Microchip G2 DMA driver"
 	default y
