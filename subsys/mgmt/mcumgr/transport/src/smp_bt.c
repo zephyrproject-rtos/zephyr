@@ -115,13 +115,14 @@ struct smp_bt_user_data {
 };
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+static struct smp_bt_user_data incoming_bridge_data;
+
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_GATT_CLIENT)
 static uint8_t smp_bt_bridge_discover(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				      struct bt_gatt_discover_params *params);
 
 static uint8_t smp_bt_bridge_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 				    const void *data, uint16_t len);
-
-static struct smp_bt_user_data incoming_bridge_data;
 
 static const struct bt_uuid_128 bt_uuid_smp_svc = BT_UUID_INIT_128(SMP_BT_SVC_UUID_VAL);
 static const struct bt_uuid_128 bt_uuid_smp_chr = BT_UUID_INIT_128(SMP_BT_CHR_UUID_VAL);
@@ -136,7 +137,8 @@ static struct bt_gatt_subscribe_params bt_smp_subscribe_params = {
 	.notify = smp_bt_bridge_notify,
 };
 static bool outgoing_connection_was_successful;
-#endif
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_GATT_CLIENT */
+#endif /* CONFIG_MCUMGR_GRP_TRANSPORT */
 
 /* Verification of user data being able to fit */
 BUILD_ASSERT(sizeof(struct smp_bt_user_data) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE,
@@ -253,7 +255,8 @@ static struct conn_param_data *conn_param_data_get(const struct bt_conn *conn)
 	return NULL;
 }
 
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#if defined(CONFIG_MCUMGR_GRP_TRANSPORT) && defined(CONFIG_BT_CENTRAL) && \
+    defined(CONFIG_BT_GATT_CLIENT)
 /* Helper function that returns conn_param_data for an outgoing connection. */
 static struct conn_param_data *outgoing_conn_param_data_get(void)
 {
@@ -661,6 +664,7 @@ int smp_bt_unregister(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_GATT_CLIENT)
 static uint8_t smp_bt_bridge_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 				    const void *data, uint16_t len)
 {
@@ -837,14 +841,14 @@ static uint8_t smp_bt_bridge_discover(struct bt_conn *conn, const struct bt_gatt
 
 	return BT_GATT_ITER_STOP;
 }
-#endif
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_GATT_CLIENT */
+#endif /* CONFIG_MCUMGR_GRP_TRANSPORT */
 
 /* BT connected callback. */
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	struct conn_param_data *cpd = NULL;
-	int rc;
 
 	if (err == 0) {
 		cpd = conn_param_data_get(conn);
@@ -860,40 +864,48 @@ static void connected(struct bt_conn *conn, uint8_t err)
 			return;
 		}
 
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_GATT_CLIENT)
 		if ((cpd->state & OUTGOING_CONNECTION) != 0) {
 			LOG_ERR("Failed to connect to: %s (%u)", bt_conn_dst_str(conn), err);
 			k_sem_give(&cpd->smp_notify_sem);
 			bt_conn_drop(&conn);
 			outgoing_connection_was_successful = false;
 		}
+#endif
 
 		return;
 	}
 
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_GATT_CLIENT)
 	if ((cpd->state & OUTGOING_CONNECTION) == 0) {
 		return;
 	}
 
 	/* Set up outgoing connection for service discovery */
-	cpd->state |= CONNECTED;
-	LOG_INF("Connected to: %s (%p)", bt_conn_dst_str(conn), conn);
+	{
+		int rc;
 
-	bt_smp_discover_params.uuid = &bt_uuid_smp_svc.uuid;
-	bt_smp_discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
-	bt_smp_discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+		cpd->state |= CONNECTED;
+		LOG_INF("Connected to: %s (%p)", bt_conn_dst_str(conn), conn);
 
-	rc = bt_gatt_discover(conn, &bt_smp_discover_params);
+		bt_smp_discover_params.uuid = &bt_uuid_smp_svc.uuid;
+		bt_smp_discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+		bt_smp_discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 
-	if (rc != 0) {
-		LOG_ERR("SMP service discovery failed: %d", rc);
-		outgoing_connection_was_successful = false;
-		k_sem_give(&cpd->smp_notify_sem);
+		rc = bt_gatt_discover(conn, &bt_smp_discover_params);
+
+		if (rc != 0) {
+			LOG_ERR("SMP service discovery failed: %d", rc);
+			outgoing_connection_was_successful = false;
+			k_sem_give(&cpd->smp_notify_sem);
+		}
 	}
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_GATT_CLIENT */
 #else
 	if (err == 0) {
 		(void)conn_param_data_alloc(conn);
 	}
-#endif
+#endif /* CONFIG_MCUMGR_GRP_TRANSPORT */
 }
 
 /* BT disconnected callback. */
@@ -1003,6 +1015,7 @@ static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outg
 #endif
 
 	if (outgoing) {
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_GATT_CLIENT)
 		uint32_t address_type = 0;
 		struct bt_conn_le_create_param *create_param = BT_CONN_LE_CREATE_CONN;
 		struct bt_le_conn_param *connection_param = BT_LE_CONN_PARAM_DEFAULT;
@@ -1115,6 +1128,12 @@ static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outg
 		}
 
 		return outgoing_connection_was_successful;
+#else
+		/* Outgoing bridge requires CONFIG_BT_CENTRAL and CONFIG_BT_GATT_CLIENT */
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_TRANSPORT_OUTGOING_NOT_SUPPORTED);
+		return false;
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_GATT_CLIENT */
 	}
 
 	ud = net_buf_user_data(cnr->nb);
@@ -1135,6 +1154,7 @@ static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outg
 static void smp_bt_bridge_disconnect(struct smp_transport_bridge *bridge, bool outgoing)
 {
 	if (outgoing == true) {
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_GATT_CLIENT)
 		struct conn_param_data *cpd = outgoing_conn_param_data_get();
 
 		if (cpd != NULL) {
@@ -1150,6 +1170,7 @@ static void smp_bt_bridge_disconnect(struct smp_transport_bridge *bridge, bool o
 				LOG_ERR("Failed to disconnect BT MCUmgr outgoing bridge: %d", rc);
 			}
 		}
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_GATT_CLIENT */
 	} else {
 		struct conn_param_data *cpd;
 
@@ -1168,6 +1189,7 @@ static void smp_bt_bridge_disconnect(struct smp_transport_bridge *bridge, bool o
 	}
 }
 
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_GATT_CLIENT)
 static void smp_bt_gatt_written(struct bt_conn *conn, void *user_data)
 {
 	struct conn_param_data *cpd = conn_param_data_get(conn);
@@ -1178,6 +1200,7 @@ static void smp_bt_gatt_written(struct bt_conn *conn, void *user_data)
 		k_sem_give(&cpd->smp_notify_sem);
 	}
 }
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_GATT_CLIENT */
 
 static int smp_bt_bridge_tx(const struct smp_transport_bridge *bridge, struct net_buf *nb,
 			    bool outgoing)
@@ -1185,6 +1208,7 @@ static int smp_bt_bridge_tx(const struct smp_transport_bridge *bridge, struct ne
 	struct smp_bt_user_data *ud;
 
 	if (outgoing == true) {
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_GATT_CLIENT)
 		int rc;
 		struct conn_param_data *cpd = outgoing_conn_param_data_get();
 		uint16_t mtu_size;
@@ -1288,6 +1312,10 @@ static int smp_bt_bridge_tx(const struct smp_transport_bridge *bridge, struct ne
 outgoing_cleanup:
 		smp_packet_free(nb);
 		return rc;
+#else
+		smp_packet_free(nb);
+		return MGMT_ERR_BRIDGED_CONNECTION_UNAVAILABLE;
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_GATT_CLIENT */
 	}
 
 	ud = net_buf_user_data(nb);
@@ -1310,8 +1338,10 @@ static bool smp_bt_bridge_modes(zcbor_state_t *output_data, int *rc)
 	     zcbor_tstr_put_lit(output_data, "Bluetooth Low Energy") &&
 	     zcbor_tstr_put_lit(output_data, "incoming") &&
 	     zcbor_bool_put(output_data, true) &&
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_GATT_CLIENT)
 	     zcbor_tstr_put_lit(output_data, "outgoing") &&
 	     zcbor_bool_put(output_data, true) &&
+#endif
 	     zcbor_map_end_encode(output_data, 2);
 
 	*rc = MGMT_RETURN_CHECK(ok);

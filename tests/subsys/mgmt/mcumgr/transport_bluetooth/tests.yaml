@@ -13,3 +13,13 @@ common:
   build_only: true
 tests:
   mgmt.mcumgr.transport.bluetooth: {}
+
+  # Regression: outgoing bridge requires BT_CENTRAL and BT_GATT_CLIENT.
+  mgmt.mcumgr.transport.bluetooth.peripheral_only:
+    extra_configs:
+      - CONFIG_BT_CENTRAL=n
+      - CONFIG_BT_GATT_CLIENT=n
+
+  mgmt.mcumgr.transport.bluetooth.no_gatt_client:
+    extra_configs:
+      - CONFIG_BT_GATT_CLIENT=n
