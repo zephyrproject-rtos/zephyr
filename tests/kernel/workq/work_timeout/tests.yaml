@@ -1,0 +1,19 @@
+tests:
+  kernel.workqueue.work_timeout.disabled:
+    min_flash: 34
+    tags:
+      - kernel
+      - workqueue
+  kernel.workqueue.work_timeout:
+    min_flash: 34
+    tags:
+      - kernel
+      - workqueue
+    # On qemu_rx, arch_system_halt() (brk) does not actually halt; it raises
+    # another fatal error, re-entering this handler and recursing forever.
+    platform_exclude:
+      - qemu_rx
+    extra_configs:
+      - CONFIG_WORKQUEUE_WORK_TIMEOUT=y
+    ignore_faults: true
+    ignore_qemu_crash: true

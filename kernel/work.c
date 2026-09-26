@@ -599,6 +599,17 @@ bool k_work_cancel_sync(struct k_work *work,
 }
 
 #if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+#if defined(CONFIG_ARCH_STACKWALK)
+static bool work_timeout_trace_cb(void *cookie, unsigned long addr)
+{
+	ARG_UNUSED(cookie);
+
+	LOG_ERR("  ra: %p", (void *)addr);
+
+	return true;
+}
+#endif /* CONFIG_ARCH_STACKWALK */
+
 static void work_timeout_handler(struct _timeout *record)
 {
 	struct k_work_q *queue = CONTAINER_OF(record, struct k_work_q, work_timeout_record);
@@ -640,6 +651,24 @@ static void work_timeout_handler(struct _timeout *record)
 		queue, space, name, work, handler);
 
 	k_thread_abort(queue->thread_id);
+
+	/*
+	 * For an essential queue, k_thread_abort() above already panics
+	 * (via z_thread_abort()'s essential-thread check) and never returns,
+	 * so the rest of this function only runs for non-essential queues.
+	 */
+#if defined(CONFIG_ARCH_STACKWALK)
+	/*
+	 * Walk the queue thread's own saved context here to report it
+	 * correctly. Only valid if queue->thread_id isn't the thread that
+	 * got interrupted: if it is (it was still running when the timeout
+	 * fired), this reports the interrupted context's position instead.
+	 */
+	LOG_ERR("queue %p thread %p backtrace:", queue, queue->thread_id);
+	arch_stack_walk(work_timeout_trace_cb, NULL, queue->thread_id, NULL);
+#endif /* CONFIG_ARCH_STACKWALK */
+
+	z_except_reason(K_ERR_WORK_TIMEOUT);
 }
 
 static void work_timeout_start_locked(struct k_work_q *queue, struct k_work *work)
