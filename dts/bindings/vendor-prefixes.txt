@@ -35,6 +35,7 @@ adaptrum	Adaptrum, Inc.
 adh	AD Holdings Plc.
 adh-tech	ADH Technology Co. Ltd.
 adi	Analog Devices, Inc.
+adsemi	AD Semiconductor Co., Ltd.
 advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
 aesc	Aesc Silicon
