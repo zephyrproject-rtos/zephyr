@@ -1,5 +1,7 @@
 common:
-  platform_allow: qemu_x86_64
+  platform_allow:
+    - qemu_x86_64
+    - qemu_cortex_a53
   harness: console
   harness_config:
     type: one_line
