@@ -4,7 +4,15 @@
 
 '''Runner for the Bouffalo Lab open source command-line flash tool (bflb-flash-command-uart)'''
 
-from runners.core import BuildConfiguration, MissingProgram, RunnerCaps, ZephyrBinaryRunner
+from functools import partial
+
+from runners.core import (
+    BuildConfiguration,
+    MissingProgram,
+    RunnerCaps,
+    ZephyrBinaryRunner,
+    depr_action,
+)
 
 DEFAULT_PORT = '/dev/ttyUSB0'
 DEFAULT_SPEED = '2000000'
@@ -48,16 +56,23 @@ class BlFlashCommandBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, erase=True, dev_id=True, flash_addr=True, file=True)
+        return RunnerCaps(
+            commands={'flash'},
+            erase=True,
+            dev_id=True,
+            flash_addr=True,
+            file=True,
+            baud_rate=True,
+        )
 
     @classmethod
     def do_add_parser(cls, parser):
-        parser.set_defaults(dev_id=DEFAULT_PORT)
+        parser.set_defaults(dev_id=DEFAULT_PORT, baud_rate=DEFAULT_SPEED)
         parser.add_argument(
             '-b',
-            '--baud-rate',
-            default=DEFAULT_SPEED,
-            help=f"serial port speed to use, default is {str(DEFAULT_SPEED)}",
+            dest='baud_rate',
+            action=partial(depr_action, cls=cls, replacement='--baud-rate'),
+            help='Deprecated, use --baud-rate instead.',
         )
         parser.add_argument(
             '-ch',
@@ -117,7 +132,7 @@ class BlFlashCommandBinaryRunner(ZephyrBinaryRunner):
             '--port',
             self.port,
             '--baudrate',
-            self.baud_rate,
+            str(self.baud_rate),
             '--chipname',
             self.chipname,
             '--flash',
