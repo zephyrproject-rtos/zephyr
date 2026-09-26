@@ -748,6 +748,49 @@ ZTEST(dns_resolve, test_dns_query_ipv6_cancel)
 	verify_cancelled();
 }
 
+ZTEST(dns_resolve, test_dns_query_cancel_with_name_after_cname)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int expected_status = DNS_EAI_CANCELED;
+	uint16_t dns_id;
+	int slot;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&dns_id,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	/* Following a CNAME alias re-queries the alias target in the same
+	 * slot, which replaces query_hash with the hash of the target name.
+	 */
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	slot = get_slot_by_id(ctx, dns_id);
+	zassert_true(slot >= 0, "Pending query not found");
+	ctx->queries[slot].query_hash ^= 0xffff;
+	k_mutex_unlock(&ctx->lock);
+
+	/* The caller only knows the name it asked for */
+	ret = dns_cancel_addr_info_with_name(NAME4, DNS_QUERY_TYPE_A, dns_id);
+	if (ret != 0) {
+		/* Free the slot so that the following tests are not affected */
+		(void)dns_cancel_addr_info(dns_id);
+		k_sem_reset(&wait_data);
+	}
+	zassert_equal(ret, 0, "Cannot cancel query by name after CNAME");
+
+	if (k_sem_take(&wait_data, K_NO_WAIT)) {
+		zassert_true(false, "Callback not called on cancel");
+	}
+
+	verify_cancelled();
+}
+
 struct expected_status {
 	int status1;
 	int status2;
