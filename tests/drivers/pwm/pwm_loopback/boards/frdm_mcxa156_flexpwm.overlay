@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	pinmux_flexpwm0_pwm0_loopback: pinmux_flexpwm0_pwm0_loopback {
+		group0 {
+			pinmux = <PWM0_X0_P3_12>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm0_pwm2_loopback: pinmux_flexpwm0_pwm2_loopback {
+		group0 {
+			pinmux = <PWM0_X2_P3_14>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+};
+
+/* To test this sample, connect P3_12 (J1-15) ---> P3_14 (J1-12) */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&flexpwm0_pwm0 2 0 PWM_POLARITY_NORMAL>, /* P3_12, channel X, out */
+		       <&flexpwm0_pwm2 2 0 PWM_POLARITY_NORMAL>; /* P3_14, channel X, in */
+	};
+
+	/* The GPIO LED node also claims P3_12, and configuring it as a GPIO would
+	 * take the pin mux away from FlexPWM.
+	 */
+	leds {
+		status = "disabled";
+	};
+};
+
+&flexpwm0_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm0_pwm0_loopback>;
+	pinctrl-names = "default";
+};
+
+&flexpwm0_pwm2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm0_pwm2_loopback>;
+	pinctrl-names = "default";
+};

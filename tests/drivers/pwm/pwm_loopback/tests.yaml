@@ -9,6 +9,24 @@ tests:
     harness: ztest
     harness_config:
       fixture: pwm_loopback
+  drivers.pwm.frdm_mcxa156_flexpwm.loopback:
+    tags:
+      - pwm
+      - drivers
+      - userspace
+    extra_args: DTC_OVERLAY_FILE="boards/frdm_mcxa156_flexpwm.overlay"
+    extra_configs:
+      - CONFIG_TEST_PWM_PERIOD_NSEC=20000000
+      - CONFIG_TEST_PWM_PULSE_NSEC=10000000
+      - CONFIG_TEST_PWM_PERIOD_USEC=20000
+      - CONFIG_TEST_PWM_PULSE_USEC=10000
+    platform_allow:
+      - frdm_mcxa156
+    depends_on: pwm
+    filter: dt_compat_enabled("test-pwm-loopback")
+    harness: ztest
+    harness_config:
+      fixture: pwm_loopback
   drivers.pwm.s32k5xxcvb_s32k566_ftm.loopback:
     tags:
       - pwm
