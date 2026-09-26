@@ -15,6 +15,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 
@@ -326,8 +327,9 @@ static int bme280_read_compensation(const struct device *dev)
 
 		data->dig_h2 = (hbuf[1] << 8) | hbuf[0];
 		data->dig_h3 = hbuf[2];
-		data->dig_h4 = (hbuf[3] << 4) | (hbuf[4] & 0x0F);
-		data->dig_h5 = ((hbuf[4] >> 4) & 0x0F) | (hbuf[5] << 4);
+		/* dig_h4 and dig_h5 are signed 12-bit values */
+		data->dig_h4 = sign_extend((hbuf[3] << 4) | (hbuf[4] & 0x0F), 11);
+		data->dig_h5 = sign_extend(((hbuf[4] >> 4) & 0x0F) | (hbuf[5] << 4), 11);
 		data->dig_h6 = hbuf[6];
 	}
 
