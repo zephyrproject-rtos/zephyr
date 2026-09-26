@@ -76,9 +76,10 @@ def safe_open(path, mode, **kwargs):
 # Record framing, identical for every event:
 #   uint64_t timestamp (ns)   <- present when CONFIG_TRACING_CTF_TIMESTAMP=y
 #   uint16_t id
+#   uint8_t  cpu_id           <- stream event.context (SMP support)
 #   <packed, byte-aligned event specific fields>
-HDR = struct.Struct("<QH")
-HDR_NO_TS = struct.Struct("<H")
+HDR = struct.Struct("<QHB")
+HDR_NO_TS = struct.Struct("<HB")
 
 # Map a TSDL integer typedef to a struct format character and byte size.
 TYPES = {
@@ -450,9 +451,9 @@ class TraceReader:
         new = 0
         while off + hsz <= n:
             if self.has_ts:
-                ts, eid = self.hdr.unpack_from(data, off)
+                ts, eid, cpu_id = self.hdr.unpack_from(data, off)
             else:
-                (eid,) = self.hdr.unpack_from(data, off)
+                eid, cpu_id = self.hdr.unpack_from(data, off)
                 ts = None
             edef = self.defs.get(eid)
             if edef is None:
@@ -472,6 +473,7 @@ class TraceReader:
                 self._prev_raw = ts
                 ts += self._ts_off
             fields, _ = edef.decode(data, off + hsz)
+            fields["cpu_id"] = cpu_id
             off += rec
             self._consume(ts, eid, edef.name, fields)
             new += 1
