@@ -10,8 +10,8 @@
  * @ingroup clock_control_mchp_xec
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_CLOCK_CONTROL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
@@ -62,4 +62,4 @@ int z_mchp_xec_pcr_periph_reset(uint8_t rst_idx, uint8_t rst_pos);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_CLOCK_CONTROL_H_ */

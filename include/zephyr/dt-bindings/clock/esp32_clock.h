@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32_CLOCK_H_
 
 /* Supported CPU clock Sources */
 #define ESP32_CPU_CLK_SRC_XTAL 0U
@@ -85,4 +85,4 @@
 #define ESP32_SARADC_MODULE     118               /**< SAR ADC module */
 #define ESP32_BT_LC_MODULE      119               /**< BT link controller module */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32_CLOCK_H_ */
