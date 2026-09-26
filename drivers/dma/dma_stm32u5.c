@@ -519,6 +519,37 @@ int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *
 
 	return 0;
 }
+#else
+int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
+			     hal_dma_handle_t *hdma, uint16_t source_addr_adj,
+			     uint16_t dest_addr_adj)
+{
+	hal_dma_direct_xfer_config_t *xfer_cfg;
+	__ASSERT_NO_MSG(dma != NULL && zephyr_config != NULL && xfer_cfg != NULL);
+
+	memset(xfer_cfg, 0, sizeof(*xfer_cfg));
+
+	xfer_cfg->request = (hal_dma_request_source_t)zephyr_config->dma_slot;
+	/*
+	 * N.B.: u5-dma distinguishes M2M from M2P/P2M but not M2P from P2M;
+	 * LL_DMA_DIRECTION_PERIPH_TO_MEMORY/MEMORY_TO_PERIPH are identical.
+	 */
+	xfer_cfg->direction = (zephyr_config->channel_direction == MEM2MEM)
+		? LL_DMA_DIRECTION_MEMORY_TO_MEMORY : LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+	xfer_cfg->src_inc = source_addr_adj;
+	xfer_cfg->dest_inc = dest_addr_adj;
+	xfer_cfg->src_data_width = HAL_DMA_SRC_DATA_WIDTH_BYTE;
+	xfer_cfg->dest_data_width = HAL_DMA_DEST_DATA_WIDTH_BYTE;
+	xfer_cfg->priority =
+		(hal_dma_priority_t)table_priority[zephyr_config->channel_priority];
+
+	if (HAL_DMA_SetConfigDirectXfer(hdma, xfer_cfg) != HAL_OK) {
+		LOG_ERR("XSPI DMA config failed");
+		return -EIO;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_STM32_HAL2 */
 
 static int dma_stm32_disable_stream(DMA_TypeDef *dma, uint32_t id)
