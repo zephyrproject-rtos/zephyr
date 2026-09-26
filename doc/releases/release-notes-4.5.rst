@@ -680,6 +680,26 @@ New APIs and options
   * :c:enumerator:`PIXEL_FORMAT_YUYV`
   * :c:macro:`PANEL_PIXEL_FORMAT_YUYV`
 
+* DSP
+
+  * :c:enum:`zdsp_transform_status`
+  * :c:func:`zdsp_cfft_init_q15`
+  * :c:func:`zdsp_cfft_q15`
+  * :c:func:`zdsp_cfft_init_q31`
+  * :c:func:`zdsp_cfft_q31`
+  * :c:func:`zdsp_cfft_init_f16`
+  * :c:func:`zdsp_cfft_f16`
+  * :c:func:`zdsp_cfft_init_f32`
+  * :c:func:`zdsp_cfft_f32`
+  * :c:func:`zdsp_rfft_init_q15`
+  * :c:func:`zdsp_rfft_q15`
+  * :c:func:`zdsp_rfft_init_q31`
+  * :c:func:`zdsp_rfft_q31`
+  * :c:func:`zdsp_rfft_fast_init_f16`
+  * :c:func:`zdsp_rfft_fast_f16`
+  * :c:func:`zdsp_rfft_fast_init_f32`
+  * :c:func:`zdsp_rfft_fast_f32`
+
 * Entropy
 
   * :kconfig:option:`CONFIG_ENTROPY_RISCV_ZKR` (architectural entropy driver based on the
