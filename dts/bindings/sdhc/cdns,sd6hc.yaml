@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence SD Host Controller (SD6HC)
+
+compatible: "cdns,sd6hc"
+
+include: ["cdns,sdhc.yaml"]
