@@ -31,13 +31,13 @@ void z_tricore_reclaim_csa(struct k_thread *thread)
 		return;
 	}
 
-	csa = UINT_TO_POINTER(((pcxi & 0xF0000) << 12) | ((pcxi & 0xFFFF) << 6));
+	csa = UINT_TO_POINTER(z_tricore_pcx_to_addr(pcxi));
 	key = irq_lock();
 	__asm volatile("dsync" ::: "memory");
 
 	while (csa->pcxi != 0) {
 		csa->pcxi &= 0xFFFFF;
-		csa = UINT_TO_POINTER(((csa->pcxi & 0xF0000) << 12) | ((csa->pcxi & 0xFFFF) << 6));
+		csa = UINT_TO_POINTER(z_tricore_pcx_to_addr(csa->pcxi));
 	}
 
 	csa->pcxi = cr_read(TRICORE_FCX);
@@ -54,11 +54,8 @@ unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t 
 
 	__asm volatile("disable" ::: "memory");
 	uint32_t fcx = cr_read(TRICORE_FCX);
-	z_tricore_lower_context_t *lower =
-		(z_tricore_lower_context_t *)(((fcx & 0xF0000) << 12) | ((fcx & 0xFFFF) << 6));
-	z_tricore_upper_context_t *upper =
-		(z_tricore_upper_context_t *)(((lower->pcxi & 0xF0000) << 12) |
-					      ((lower->pcxi & 0xFFFF) << 6));
+	z_tricore_lower_context_t *lower = UINT_TO_POINTER(z_tricore_pcx_to_addr(fcx));
+	z_tricore_upper_context_t *upper = UINT_TO_POINTER(z_tricore_pcx_to_addr(lower->pcxi));
 	cr_write(TRICORE_FCX, upper->pcxi);
 	if (icr & 0x8000) {
 		__asm volatile("enable" ::: "memory");
