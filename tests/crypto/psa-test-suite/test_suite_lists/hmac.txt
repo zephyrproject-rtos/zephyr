@@ -1,0 +1,11 @@
+basename=test_suite_psa_crypto_hash
+PSA HMAC
+
+basename=test_suite_psa_crypto
+PSA import/export HMAC key
+PSA key policy: HMAC
+PSA MAC setup
+PSA MAC sign
+PSA MAC verify
+PSA cipher: incorrect key type (HMAC)
+PSA key derivation setup: not a key derivation algorithm (HMAC)

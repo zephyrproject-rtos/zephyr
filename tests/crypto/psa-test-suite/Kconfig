@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TF_PSA_CRYPTO_PATH
+	string "Path of the TF PSA Crypto source tree"
+	default "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}"
+
+config MBEDTLS_FRAMEWORK_PATH
+	string "Path of the Mbed TLS framework source tree"
+	help
+	  Path to mbedtsl-framework source tree. If not set, framework/
+	  subdirectory of tf_psa_crypto root directory
+	  (TF_PSA_CRYPTO_PATH) is used.
+
+config TF_PSA_CRYPTO_TEST_BUILD_PATH
+	string "Path of the generated test files from TF-PSA-Crypto"
+	help
+	  Path to tf-psa-crypto build directory. If not set, build/
+	  subdirectory of tf_psa_crypto root directory
+	  (TF_PSA_CRYPTO_PATH) is used.
+
+config PSA_TEST_SUITE_LIST
+	string "Path of the files that defines tests to be embedded"
+	default "all.txt"
+
+config PSA_TEST_SUITE_MBEDTLS_HEAP_SIZE
+	int "Byte size of the mbedtls heap used for the test"
+	default 128000
+	help
+          The TF PSA Crypto test suite uses a dedicated mbedtls heap
+	  (MBEDTLS_MEMORY_BUFFER_ALLOC_C enabled) that must be
+	  sized according to the target tests. This heap is wiped
+	  between tests so that a failing test does not compromise
+	  the next executed ones.
+
+	  Not the heap is allocatetd in the test main function stac,
+	  hence enough stack must be provisioned by the system.
+
+config PSA_TEST_SUITE_DATA_LINE_MAX_SIZE
+	int "Max length of tesst data string in test suites data"
+	default 16384
+	help
+	  Max length supported for input/output data read from the
+	  test suite .data files. If a test case has a data line
+	  description in the test suite .datax file (generated from
+	  the test suite .data file, equivalent sizes), input and
+	  output vectors won't be extracted and test will be skipped.
+
+	  Note that the line buffer is allocated in the mbedtls
+	  heap used for the tests, see PSA_TEST_SUITE_MBEDTLS_HEAP_SIZE.
+
+	  16kByte should be enough. Lower this value only if you
+	  need small mbedtls heap for the tests.

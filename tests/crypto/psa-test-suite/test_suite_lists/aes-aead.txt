@@ -1,0 +1,14 @@
+basename=test_suite_psa_crypto
+PSA key policy: AEAD
+PSA AEAD
+PSA Multipart AEAD
+PSA symmetric encrypt multipart: CCM*-no-tag
+PSA symmetric decrypt: CCM*-no-tag
+PSA symmetric encrypt/decrypt: CCM*-no-tag
+PSA Multipart Nonce Generation: AES - CCM
+PSA Multipart Nonce Generation, AES - CCM
+PSA Multipart Set Nonce: AES - CCM
+PSA Multipart Set Nonce, AES - CCM
+PSA Multipart State Checks, AES - GCM
+PSA Multipart State Checks, AES - CCM
+PSA generate key: AES, 128 bits, GCM

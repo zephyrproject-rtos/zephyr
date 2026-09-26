@@ -1,0 +1,18 @@
+basename=test_suite_psa_crypto
+PSA import/export AES-
+PSA import AES:
+PSA import/export AES key:
+PSA import AES:
+PSA key policy: AES
+PSA generate key: invalid key size: AES, 64 bits
+PSA interruptible export public key: AES
+PSA cipher setup: good, AES-
+PSA symmetric encrypt: AES-
+PSA symmetric encrypt multipart: AES-
+PSA symmetric decrypt: AES-
+PSA symmetric decrypt multipart: AES-
+PSA symmetric encrypt/decrypt: AES-
+PSA symmetric decryption multipart: AES-
+PSA symmetric decryption multipart: AES-
+PSA symmetric encrypt/decrypt multipart: AES-
+PSA generate key: AES, 128 bits, CTR
