@@ -87,7 +87,14 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 		}
 		break;
 	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-		if (!ring_buf_is_empty(&event->pipe->buf)) {
+		/*
+		 * A closed or resetting pipe is readable. k_pipe_read() returns
+		 * any remaining bytes, then -EPIPE or -ECANCELED. Without
+		 * this, k_poll() waits forever.
+		 */
+		if (!ring_buf_is_empty(&event->pipe->buf) ||
+		    (event->pipe->flags & PIPE_FLAG_OPEN) == 0U ||
+		    (event->pipe->flags & PIPE_FLAG_RESET) != 0U) {
 			*state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
 			return true;
 		}
