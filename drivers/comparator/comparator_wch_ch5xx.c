@@ -13,6 +13,7 @@
 #include <zephyr/drivers/comparator/comparator_wch_ch5xx.h>
 #include <zephyr/dt-bindings/pinctrl/ch570-pinctrl.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 
 #include <hal_ch32fun.h>
@@ -31,6 +32,8 @@ struct comparator_wch_config {
 	uint32_t irq_nr;
 	uint8_t nref_voltage_mv;
 	void (*irq_config_func)(const struct device *dev);
+	const struct device *clock_dev;
+	uint8_t clock_id;
 };
 
 struct comparator_wch_data {
@@ -139,8 +142,15 @@ static int comparator_wch_init(const struct device *dev)
 	const struct comparator_wch_config *config = dev->config;
 	const struct pinctrl_state *pin_state;
 	CMP_TypeDef *regs = config->regs;
+	clock_control_subsys_t clock_sys;
 	uint32_t ctrl = 0U;
 	int err;
+
+	clock_sys = (clock_control_subsys_t)(uintptr_t)config->clock_id;
+	err = clock_control_on(config->clock_dev, clock_sys);
+	if (err != 0) {
+		return err;
+	}
 
 	err = pinctrl_lookup_state(config->pin_cfg, PINCTRL_STATE_DEFAULT, &pin_state);
 	if (err != 0) {
@@ -199,6 +209,8 @@ static DEVICE_API(comparator, comparator_wch_driver_api) = {
 		.irq_nr = DT_INST_IRQN(idx),                                                       \
 		.nref_voltage_mv = DT_INST_ENUM_IDX(idx, nref_voltage),                            \
 		.irq_config_func = comparator_wch_irq_config_func_##idx,                           \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
+		.clock_id = DT_INST_CLOCKS_CELL(idx, id),                                          \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, &comparator_wch_init, NULL, &comparator_wch_##idx##_data,       \
 			      &comparator_wch_##idx##_config, PRE_KERNEL_1,                        \
