@@ -89,3 +89,8 @@ zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_SEMIHOST
   log_backend_semihost.c
 )
+
+zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_WHISPER
+  log_backend_whisper.c
+)
