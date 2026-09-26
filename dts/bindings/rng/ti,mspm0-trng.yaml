@@ -16,14 +16,6 @@ properties:
   interrupts:
     required: true
 
-  ti,clk-div:
-    type: int
+  clocks:
     required: true
-    enum:
-      - 1
-      - 2
-      - 4
-      - 6
-      - 8
-    description: |
-      Clock divider selection value.
+    description: MCLK clock source phandle
