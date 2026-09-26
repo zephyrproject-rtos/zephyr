@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Erbium AXI-to-MRAM bridge and per-bank controller registers. The controller
+  provides configuration, ECC status and bank test registers for the 16 MiB
+  MRAM data window. Firmware initializes the banks before entering Zephyr.
+
+  The CPU register map and interrupt routing are documented at:
+  https://github.com/openhwfoundation/core-et-erbium/blob/325b32b7efaa2c2ab9c91001c89d3f49a4740826/doc/cpu_mm.md
+  https://github.com/openhwfoundation/core-et-erbium/blob/325b32b7efaa2c2ab9c91001c89d3f49a4740826/doc/interrupts.md
+
+compatible: "aifoundry,erbium-mram-controller"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

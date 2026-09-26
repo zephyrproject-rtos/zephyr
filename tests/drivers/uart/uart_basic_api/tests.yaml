@@ -1,4 +1,13 @@
 tests:
+  drivers.uart.basic_api.shakti_nekko:
+    extra_args: CONF_FILE=prj_poll.conf
+    tags:
+      - drivers
+      - uart
+    harness: keyboard
+    platform_allow: erbium
+    integration_platforms:
+      - erbium
   drivers.uart.basic_api:
     tags:
       - drivers

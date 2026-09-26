@@ -4,6 +4,8 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/uart.h)
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_UART_SHAKTI_NEKKO uart_shakti_nekko.c)
+
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_SERIAL_TEST serial_test.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ASYNC_RX_HELPER uart_async_rx.c)
