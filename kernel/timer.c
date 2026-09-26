@@ -204,6 +204,15 @@ retry:
 out:
 	k_spin_unlock(&timer_lock, key);
 
+#ifdef CONFIG_OBJ_CORE_TIMER
+	/* On success the caller is about to free the storage; the timer
+	 * object type list must not reference it anymore.
+	 */
+	if (ret == 0) {
+		k_obj_core_unlink(K_OBJ_CORE(timer));
+	}
+#endif /* CONFIG_OBJ_CORE_TIMER */
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, ret);
 
 	return ret;
