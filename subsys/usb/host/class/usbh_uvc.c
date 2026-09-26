@@ -1530,7 +1530,7 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
-		usbh_xfer_free(host_data->udev, xfer);
+		(void)uhc_xfer_unref(xfer);
 		return -ENOMEM;
 	}
 
@@ -1544,7 +1544,7 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	if (ret != 0) {
 		LOG_ERR("Enqueue failed: ret=%d", ret);
 		net_buf_unref(buf);
-		usbh_xfer_free(host_data->udev, xfer);
+		(void)uhc_xfer_unref(xfer);
 		return ret;
 	}
 
