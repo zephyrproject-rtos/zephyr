@@ -65,6 +65,36 @@ static void nxp_video_sdma_configure_inputs(const struct nxp_video_sdma_config *
 	INPUTMUX_Deinit(INPUTMUX0);
 }
 
+/*
+ * Single place that defines what "no stream is running" means, so that the start
+ * and the cancel path cannot drift apart.
+ */
+static void nxp_video_sdma_reset_stream_state(struct nxp_video_sdma_data *data)
+{
+	k_sem_reset(&data->stream_empty);
+	data->buf_reload_flag = true;
+	data->stream_starved = false;
+	data->active_buf = NULL;
+}
+
+/*
+ * Hand a buffer the driver owns back to the application. The buffer is reported
+ * as holding no data: enqueue() presets bytesused to a full stripe, so leaving
+ * it alone would claim valid pixels that were never captured. The video API
+ * signals this with VIDEO_BUF_ABORTED, which this driver cannot use as it has no
+ * poll signal support yet.
+ */
+static void nxp_video_sdma_return_buf(struct nxp_video_sdma_data *data, struct video_buffer **buf)
+{
+	if (*buf == NULL) {
+		return;
+	}
+
+	(*buf)->bytesused = 0;
+	k_fifo_put(&data->fifo_out, *buf);
+	*buf = NULL;
+}
+
 /* Executed in interrupt context */
 static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 				uint32_t channel, int status)
@@ -102,7 +132,7 @@ static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 		data->active_buf->line_offset = (data->frame_idx / 2) * SDMA_LINE_COUNT;
 		data->active_buf->timestamp = k_uptime_get_32();
 		k_fifo_put(&data->fifo_out, data->active_buf);
-
+		data->active_buf = NULL;
 	}
 	/* Toggle buffer reload flag*/
 	data->buf_reload_flag = !data->buf_reload_flag;
@@ -138,6 +168,7 @@ static int nxp_video_sdma_set_stream(const struct device *dev, bool enable,
 
 	/* Setup parameters for SmartDMA engine */
 	data->params.smartdma_stack = data->smartdma_stack;
+	nxp_video_sdma_reset_stream_state(data);
 	/* SmartDMA continuously streams data once started. If user
 	 * has not provided a framebuffer, we can't start DMA.
 	 */
@@ -156,10 +187,6 @@ static int nxp_video_sdma_set_stream(const struct device *dev, bool enable,
 	if (ret < 0) {
 		return ret;
 	}
-	/* Reset stream state variables */
-	k_sem_reset(&data->stream_empty);
-	data->buf_reload_flag = true;
-	data->stream_starved = false;
 
 	ret = dma_start(config->dma_dev, 0);
 	if (ret < 0) {
@@ -213,10 +240,19 @@ static int nxp_video_sdma_flush(const struct device *dev, bool cancel)
 	} else {
 		/* Stop DMA engine */
 		dma_stop(config->dma_dev, 0);
+		/*
+		 * Return the buffers the driver itself still owns, otherwise the
+		 * caller can never recover them and a later stream start runs
+		 * with an incomplete pool.
+		 */
+		nxp_video_sdma_return_buf(data, &data->active_buf);
+		nxp_video_sdma_return_buf(data, &data->queued_buf);
 		/* Forward all buffers in fifo_in to fifo_out */
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
+			vbuf->bytesused = 0;
 			k_fifo_put(&data->fifo_out, vbuf);
 		}
+		nxp_video_sdma_reset_stream_state(data);
 	}
 	return 0;
 }
