@@ -15,4 +15,5 @@ zephyr_library_sources_ifdef(CONFIG_AUXDISPLAY_NXP_SLCD auxdisplay_nxp_slcd.c)
 zephyr_library_sources_ifdef(CONFIG_AUXDISPLAY_PT6314 auxdisplay_pt6314.c)
 zephyr_library_sources_ifdef(CONFIG_AUXDISPLAY_SERLCD auxdisplay_serlcd.c)
 zephyr_library_sources_ifdef(CONFIG_AUXDISPLAY_TM1637 auxdisplay_tm1637.c)
+zephyr_library_sources_ifdef(CONFIG_AUXDISPLAY_US2066 auxdisplay_us2066.c)
 # zephyr-keep-sorted-stop
