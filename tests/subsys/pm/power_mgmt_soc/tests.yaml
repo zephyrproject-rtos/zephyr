@@ -6,6 +6,7 @@ tests:
       - mec15xxevb_assy6853
       - mec1501modular_assy6885
       - nucleo_f429zi
+      - nucleo_h753zi
       - nucleo_wb55rg
       - nucleo_l476rg
       - twr_ke18f

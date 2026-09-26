@@ -18,6 +18,14 @@ configdefault SHARED_INTERRUPTS
 configdefault CACHE_MANAGEMENT
 	default y if CPU_CORTEX_M7
 
+if PM
+config PM_DEVICE
+	default y
+
+config STM32_LPTIM_TIMER
+	default y
+endif # PM
+
 if LVGL
 
 config LV_DRAW_DMA2D_HAL_INCLUDE

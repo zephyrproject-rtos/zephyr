@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,system-timer= &lptim1;
+	};
+};
+
+&lptim1 {
+	/*
+	 * To use LPTIM1 as system timer, two clock sources need to be provided:
+	 *   APB1 bus clock that powers the register interface of LPTIM1,
+	 *   LSI that powers the timer's counter.
+	 */
+	clocks = <&rcc STM32_CLOCK(APB1, 9)>,
+	         <&rcc STM32_SRC_LSI LPTIM1_SEL(4)>;
+	st,prescaler = <1>;
+	status = "okay";
+};
+
+

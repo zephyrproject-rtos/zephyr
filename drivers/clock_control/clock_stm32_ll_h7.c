@@ -24,6 +24,14 @@
 /* Power supply / regulator configuration node */
 #define PWRC_NODE DT_INST(0, st_stm32h7_pwr)
 
+/* Dummy value to use automatic voltage scale selection */
+#define VOLTAGE_SCALE_AUTOMATIC 0xFFFFFFFFu
+
+#define SELECTED_VOLTAGE_SCALE								\
+	COND_CODE_1(DT_NODE_HAS_PROP(PWRC_NODE, voltage_scale),				\
+		(CONCAT(LL_PWR_REGU_VOLTAGE_SCALE, DT_PROP(PWRC_NODE, voltage_scale))),	\
+		(VOLTAGE_SCALE_AUTOMATIC))
+
 /* Macros to fill up prescaler values */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
@@ -290,9 +298,8 @@ static uint32_t get_sysclk_frequency(void)
 
 #if !defined(CONFIG_CPU_CORTEX_M4)
 
-static int32_t prepare_regulator_voltage_scale(void)
+static void activate_vos0(void)
 {
-	/* Put the CPU in the highest voltage scale supported by the board */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	/* VOS0 is always safe to use on STM32H7RS */
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
@@ -323,21 +330,42 @@ static int32_t prepare_regulator_voltage_scale(void)
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
 	}
 #endif
-
-	return 0;
 }
 
-static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
+static int32_t set_regulator_vos(uint32_t sysclk_freq, uint32_t wanted_scale)
 {
+	uint32_t minimal_scale, scale_to_apply;
 
-	/* After sysclock is configured, tweak the voltage scale down */
-	/* to reduce power consumption */
+	if (sysclk_freq > MHZ(400)) {
+		/* On some STM32H7 platforms, activating VOS0 is more complex
+		 * than just setting a register. Handle it separately. */
+		activate_vos0();
+		return 0;
+	}
 
-	/* Needs some smart work to configure properly */
-	/* LL_PWR_REGULATOR_SCALE3 is lowest power consumption */
-	/* Must be done in accordance to the Maximum allowed frequency vs VOS*/
-	/* See RM0433 page 352 for more details */
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+	if (sysclk_freq <= MHZ(200)) {
+		minimal_scale = LL_PWR_REGU_VOLTAGE_SCALE3;
+	} else if (sysclk_freq <= MHZ(300)) {
+		minimal_scale = LL_PWR_REGU_VOLTAGE_SCALE2;
+	} else {
+		minimal_scale = LL_PWR_REGU_VOLTAGE_SCALE1;
+	}
+
+	if (wanted_scale == VOLTAGE_SCALE_AUTOMATIC) {
+		scale_to_apply = minimal_scale;
+	} else if (wanted_scale < minimal_scale) {
+		/*
+		 * This ought to never happen thanks to the
+		 * compile-time checks, but better safe than
+		 * sorry. Ideally, an error message should be
+		 * logged if this ever occurs...
+		 */
+		scale_to_apply = minimal_scale;
+	} else {
+		scale_to_apply = wanted_scale;
+	}
+
+	LL_PWR_SetRegulVoltageScaling(scale_to_apply);
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 #else
@@ -1036,8 +1064,16 @@ static int set_up_plls(void)
 		LL_RCC_PLL1S_Enable();
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	LL_RCC_PLL1_Enable();
-	while (LL_RCC_PLL1_IsReady() != 1U) {
+	/*
+	 * PLL1 may be enabled in devicetree so its dividers/multipliers are
+	 * configured, even when SYSCLK runs off another clock source (e.g. HSI)
+	 * at boot/resume and PLL1 is only enabled on-demand for high-performance
+	 * bursts. Only enable PLL1 and wait for lock if it is the SYSCLK source.
+	 */
+	if (IS_ENABLED(STM32_SYSCLK_SRC_PLL)) {
+		LL_RCC_PLL1_Enable();
+		while (LL_RCC_PLL1_IsReady() != 1U) {
+		}
 	}
 
 #endif /* STM32_PLL_ENABLED */
@@ -1193,9 +1229,6 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
-	/* Configure Voltage scale to comply with the desired system frequency */
-	prepare_regulator_voltage_scale();
-
 	/* Current hclk value */
 	old_hclk_freq = get_startup_hclk_frequency();
 
@@ -1213,8 +1246,11 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set flash latency */
 
 	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
-	/* If freq increases, set flash latency before any clock setting */
+	/* If freq increases, set flash latency and voltage scale before any
+	 * clock setting */
 	if (new_hclk_freq > old_hclk_freq) {
+		set_regulator_vos(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+				  SELECTED_VOLTAGE_SCALE);
 		LL_SetFlashLatency(new_hclk_freq);
 	}
 
@@ -1264,12 +1300,13 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Set FLASH latency */
 	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
-	/* If freq not increased, set flash latency after all clock setting */
+	/* If freq not increased, set flash latency and voltage scale after all
+	 * clock setting */
 	if (new_hclk_freq <= old_hclk_freq) {
+		set_regulator_vos(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+				  SELECTED_VOLTAGE_SCALE);
 		LL_SetFlashLatency(new_hclk_freq);
 	}
-
-	optimize_regulator_voltage_scale(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif /* CONFIG_CPU_CORTEX_M7 */
@@ -1297,6 +1334,18 @@ void HAL_RCC_CSSCallback(void)
 	stm32_hse_css_callback();
 }
 #endif /* STM32_HSE_CSS */
+
+/* Asserts fSYSCLK <= `freq_mhz` if `vos` is selected on PWR node */
+#define ASSERT_VALID_VOS(vos, freq_mhz)						\
+	BUILD_ASSERT(DT_PROP_OR(PWRC_NODE, voltage_scale, 0) != (vos) ||	\
+		     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= MHZ(freq_mhz),	\
+		     "Maximal system clock frequency in voltage scale " #vos	\
+		     " is " #freq_mhz " MHz.");
+
+ASSERT_VALID_VOS(3, 200);
+ASSERT_VALID_VOS(2, 300);
+ASSERT_VALID_VOS(1, 400);
+ASSERT_VALID_VOS(0, 480);
 
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so
