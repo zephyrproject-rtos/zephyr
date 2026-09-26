@@ -6,6 +6,9 @@
 
 #define DT_DRV_COMPAT nxp_enet_qos_mac
 
+#include <zephyr/kernel.h>
+#include <zephyr/irq.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
 
@@ -18,6 +21,8 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
 
 static const uint32_t rx_desc_refresh_flags =
 	OWN_FLAG | RX_INTERRUPT_ON_COMPLETE_FLAG | BUF1_ADDR_VALID_FLAG;
+
+#define ENET_QOS_TX_FLUSH_TIMEOUT_US 1000U
 
 K_THREAD_STACK_DEFINE(enet_qos_rx_stack, CONFIG_ETH_NXP_ENET_QOS_RX_THREAD_STACK_SIZE);
 static struct k_work_q rx_work_queue;
@@ -52,6 +57,113 @@ static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
+static inline void enet_qos_tx_desc_init(enet_qos_t *base, struct nxp_enet_qos_tx_data *tx);
+
+/*
+ * Takes the packet the transmit DMA was given, if it is still ours to
+ * return, and empties the slot in the same step. Completion and abandonment
+ * race against each other, so exactly one of them may release the packet.
+ * The saved header travels with it, so the pair can never be split.
+ */
+static struct net_pkt *enet_qos_tx_claim(struct nxp_enet_qos_tx_data *tx, struct net_buf **header)
+{
+	unsigned int key = irq_lock();
+	struct net_pkt *pkt = tx->pkt;
+
+	*header = tx->tx_header;
+	tx->pkt = NULL;
+	tx->tx_header = NULL;
+	irq_unlock(key);
+
+	return pkt;
+}
+
+/* Returns a claimed packet, its fragments and the transmit slot. */
+static void enet_qos_tx_release(const struct device *dev, struct net_pkt *pkt,
+				struct net_buf *header)
+{
+	struct nxp_enet_qos_mac_data *data = dev->data;
+	struct net_buf *fragment = pkt->frags;
+
+	(void)k_work_cancel_delayable(&data->tx.watchdog);
+
+	while (fragment != NULL) {
+		/* Read the link before dropping the reference: the buffer
+		 * may be freed the moment the last holder lets go of it.
+		 */
+		struct net_buf *next = fragment->frags;
+
+		net_pkt_frag_unref(fragment);
+		fragment = next;
+	}
+
+	net_pkt_frag_unref(header);
+	net_pkt_unref(pkt);
+
+	k_sem_give(&data->tx.tx_sem);
+}
+
+/*
+ * Abandons a transmission the DMA is not going to finish. The descriptors
+ * are taken back, the transmit queue is flushed and the ring is left in the
+ * state a fresh send expects, so that the interface transmits again once the
+ * link returns.
+ */
+static void enet_qos_tx_abort(const struct device *dev)
+{
+	const struct nxp_enet_qos_mac_config *config = dev->config;
+	struct nxp_enet_qos_mac_data *data = dev->data;
+	enet_qos_t *base = config->base;
+	struct net_buf *header;
+	struct net_pkt *pkt = enet_qos_tx_claim(&data->tx, &header);
+	uint32_t flush_wait_us = 0;
+
+	if (pkt == NULL) {
+		return;
+	}
+
+	LOG_WRN("%s abandoning transmission of packet %p", dev->name, pkt);
+	eth_stats_update_errors_tx(data->iface);
+
+	/* Claiming the packet serializes teardown, the losing caller returns
+	 * on the NULL check above and a new send cannot start before the
+	 * release below returns the slot, so the register read-modify-writes
+	 * here have no concurrent writer.
+	 */
+	base->DMA_CH[0].DMA_CHX_TX_CTRL &= ~ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, ST, 0b1);
+
+	base->MTL_QUEUE[0].MTL_TXQX_OP_MODE |=
+		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, FTQ, 0b1);
+	/* Hardware clears FTQ when the flush completes. Bound the wait so a
+	 * wedged queue cannot spin the CPU forever.
+	 */
+	while (ENET_QOS_REG_GET(MTL_QUEUE_MTL_TXQX_OP_MODE, FTQ,
+				base->MTL_QUEUE[0].MTL_TXQX_OP_MODE)) {
+		if (flush_wait_us++ >= ENET_QOS_TX_FLUSH_TIMEOUT_US) {
+			LOG_ERR("%s transmit queue flush did not complete", dev->name);
+			break;
+		}
+		k_busy_wait(1U);
+	}
+
+	enet_qos_tx_desc_init(base, &data->tx);
+
+	base->DMA_CH[0].DMA_CHX_TX_CTRL |= ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, ST, 0b1);
+
+	enet_qos_tx_release(dev, pkt, header);
+}
+
+static void eth_nxp_enet_qos_tx_watchdog(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct nxp_enet_qos_tx_data *tx_data =
+		CONTAINER_OF(dwork, struct nxp_enet_qos_tx_data, watchdog);
+	struct nxp_enet_qos_mac_data *data =
+		CONTAINER_OF(tx_data, struct nxp_enet_qos_mac_data, tx);
+
+	enet_qos_tx_abort(net_if_get_device(data->iface));
+}
+
 static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
@@ -62,7 +174,9 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	volatile union nxp_enet_qos_tx_desc *last_desc_ptr;
 
 	struct net_buf *fragment = pkt->frags;
+	struct net_buf *tx_header;
 	int frags_count = 0, total_bytes = 0;
+	unsigned int key;
 
 	/* Only allow send of the maximum normal packet size */
 	while (fragment != NULL) {
@@ -82,11 +196,10 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	net_pkt_ref(pkt);
 
-	data->tx.pkt = pkt;
 	/* Need to save the header because the ethernet stack
 	 * otherwise discards it from the packet after this call
 	 */
-	data->tx.tx_header = pkt->frags;
+	tx_header = pkt->frags;
 
 	LOG_DBG("Setting up TX descriptors for packet %p", pkt);
 
@@ -112,10 +225,24 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	LOG_DBG("Starting TX DMA on packet %p", pkt);
 
+	/*
+	 * Publish the packet, arm the watchdog and start the DMA as a single
+	 * step under irq_lock, together with the descriptor ownership and the
+	 * tail pointer. An abort from a carrier-loss callback then observes
+	 * either no outstanding packet or a fully built submission, never a
+	 * half-built one, so it cannot free a packet this path is still
+	 * reading or reinitialize the ring while it is being filled.
+	 */
+	key = irq_lock();
+
 	/* Set the DMA ownership of all the used descriptors */
 	for (int i = 0; i < frags_count; i++) {
 		data->tx.descriptors[i].read.control2 |= OWN_FLAG;
 	}
+
+	data->tx.pkt = pkt;
+	data->tx.tx_header = tx_header;
+	(void)k_work_reschedule(&data->tx.watchdog, K_MSEC(CONFIG_ETH_NXP_ENET_QOS_TX_TIMEOUT_MS));
 
 	/* This implementation is clearly naive and basic, it just changes the
 	 * ring length for every TX send, there is room for optimization
@@ -124,6 +251,8 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	base->DMA_CH[0].DMA_CHX_TXDESC_TAIL_PTR =
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TXDESC_TAIL_PTR, TDTP,
 			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t) tx_desc_ptr));
+
+	irq_unlock(key);
 
 	return 0;
 }
@@ -134,24 +263,25 @@ static void tx_dma_done(struct k_work *work)
 		CONTAINER_OF(work, struct nxp_enet_qos_tx_data, tx_done_work);
 	struct nxp_enet_qos_mac_data *data =
 		CONTAINER_OF(tx_data, struct nxp_enet_qos_mac_data, tx);
-	struct net_pkt *pkt = tx_data->pkt;
-	struct net_buf *fragment = pkt->frags;
+	struct net_buf *header;
+	struct net_pkt *pkt = enet_qos_tx_claim(tx_data, &header);
+
+	if (pkt == NULL) {
+		/* The watchdog or a carrier loss already abandoned this
+		 * transmission, or this is a repeat of an interrupt already
+		 * handled. There is nothing left to return, and returning it
+		 * a second time would underflow the reference counts of a
+		 * packet and buffers that now belong to someone else.
+		 */
+		LOG_DBG("TX DMA done on nonexistent packet");
+		return;
+	}
 
 	LOG_DBG("TX DMA completed on packet %p", pkt);
 
-	/* Returning the buffers and packet to the pool */
-	while (fragment != NULL) {
-		net_pkt_frag_unref(fragment);
-		fragment = fragment->frags;
-	}
-
-	net_pkt_frag_unref(data->tx.tx_header);
-	net_pkt_unref(pkt);
-
 	eth_stats_update_pkts_tx(data->iface);
 
-	/* Allows another send */
-	k_sem_give(&data->tx.tx_sem);
+	enet_qos_tx_release(net_if_get_device(data->iface), pkt, header);
 }
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
@@ -278,13 +408,21 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 		return;
 	}
 
-	if (state->is_up) {
-		net_eth_carrier_on(data->iface);
-	} else {
+	LOG_INF("Link is %s", state->is_up ? "up" : "down");
+
+	if (!state->is_up) {
 		net_eth_carrier_off(data->iface);
+
+		/* A frame handed to the transmit DMA when the link drops is
+		 * never written back, so the completion interrupt that
+		 * returns the packet and the transmit slot never arrives.
+		 * Reclaim both here.
+		 */
+		enet_qos_tx_abort(dev);
+		return;
 	}
 
-	LOG_INF("Link is %s", state->is_up ? "up" : "down");
+	net_eth_carrier_on(data->iface);
 }
 
 static inline int enet_qos_dma_reset(enet_qos_t *base)
@@ -557,6 +695,9 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 
 	/* Work upon a complete transmission by a channel's TX DMA */
 	k_work_init(&data->tx.tx_done_work, tx_dma_done);
+
+	/* Reclaims the transmit slot from a DMA that does not complete */
+	k_work_init_delayable(&data->tx.watchdog, eth_nxp_enet_qos_tx_watchdog);
 
 	return ret;
 }
