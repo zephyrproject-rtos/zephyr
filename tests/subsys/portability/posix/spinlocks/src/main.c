@@ -66,8 +66,40 @@ ZTEST(posix_spinlocks, test_spin_lock_unlock)
 	zassert_ok(pthread_spin_trylock(&lock), "pthread_spin_trylock() failed");
 	zassert_ok(pthread_spin_unlock(&lock), "pthread_spin_unlock() failed");
 
-	zassert_ok(pthread_spin_destroy(&lock), "pthread_spin_init() failed");
-	zassert_equal(pthread_spin_destroy(&lock), EINVAL, "pthread_spin_unlock() did not fail");
+	zassert_ok(pthread_spin_destroy(&lock), "pthread_spin_destroy() failed");
+	zassert_equal(lock, (pthread_spinlock_t)-1,
+		      "pthread_spin_destroy() did not invalidate lock handle");
+	zassert_equal(pthread_spin_destroy(&lock), EINVAL,
+		      "pthread_spin_destroy() on destroyed lock did not return EINVAL");
+	zassert_equal(pthread_spin_lock(&lock), EINVAL,
+		      "pthread_spin_lock() on destroyed lock did not return EINVAL");
+	zassert_equal(pthread_spin_trylock(&lock), EINVAL,
+		      "pthread_spin_trylock() on destroyed lock did not return EINVAL");
+	zassert_equal(pthread_spin_unlock(&lock), EINVAL,
+		      "pthread_spin_unlock() on destroyed lock did not return EINVAL");
+}
+
+ZTEST(posix_spinlocks, test_spin_destroyed_handle_invalidation)
+{
+	pthread_spinlock_t lock1;
+	pthread_spinlock_t lock2;
+
+	zassert_ok(pthread_spin_init(&lock1, PTHREAD_PROCESS_PRIVATE));
+	zassert_ok(pthread_spin_destroy(&lock1));
+
+	/* Reallocating the recycled pool slot with a new lock must not revive lock1 */
+	zassert_ok(pthread_spin_init(&lock2, PTHREAD_PROCESS_PRIVATE));
+
+	zassert_equal(pthread_spin_lock(&lock1), EINVAL,
+		      "stale destroyed handle unexpectedly accessed reallocated slot");
+	zassert_equal(pthread_spin_trylock(&lock1), EINVAL,
+		      "stale destroyed handle unexpectedly trylocked reallocated slot");
+	zassert_equal(pthread_spin_unlock(&lock1), EINVAL,
+		      "stale destroyed handle unexpectedly unlocked reallocated slot");
+	zassert_equal(pthread_spin_destroy(&lock1), EINVAL,
+		      "stale destroyed handle unexpectedly destroyed reallocated slot");
+
+	zassert_ok(pthread_spin_destroy(&lock2));
 }
 
 ZTEST_SUITE(posix_spinlocks, NULL, NULL, NULL, NULL, NULL);
