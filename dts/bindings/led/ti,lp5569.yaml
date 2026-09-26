@@ -4,6 +4,8 @@ compatible: "ti,lp5569"
 
 include: i2c-device.yaml
 
+class: led
+
 properties:
   enable-gpios:
     type: phandle-array
