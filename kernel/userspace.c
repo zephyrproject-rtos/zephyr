@@ -74,9 +74,13 @@ static struct k_spinlock obj_lock;         /* kobj struct data */
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
+
+extern int z_msgq_cleanup(struct k_msgq *msgq, bool locked);
+extern int z_stack_cleanup(struct k_stack *stack, bool locked);
+extern int z_pipe_cleanup(struct k_pipe *pipe, bool locked);
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
-static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
+static void unref_check(struct k_object *ko, uintptr_t index, bool locked);
 
 const char *otype_to_str(enum k_objects otype)
 {
@@ -236,6 +240,13 @@ static struct dyn_obj *dyn_object_find_locked(const void *obj)
 	}
 
 	return NULL;
+}
+
+static void clear_perms_cb(struct k_object *ko, void *ctx_ptr)
+{
+	uintptr_t id = (uintptr_t)ctx_ptr;
+
+	unref_check(ko, id, false);
 }
 
 static struct dyn_obj *dyn_object_find(const void *obj)
@@ -593,7 +604,7 @@ static unsigned int thread_index_get(struct k_thread *thread)
  * sys_dlist_remove() below is mutually exclusive with concurrent
  * obj_list traversal in k_object_wordlist_foreach() on another CPU.
  */
-static void unref_check(struct k_object *ko, uintptr_t index)
+static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
 {
 	k_spinlock_key_t key = k_spin_lock(&obj_lock);
 
@@ -625,14 +636,14 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	switch (ko->type) {
 #ifdef CONFIG_PIPES
 	case K_OBJ_PIPE:
-		k_pipe_cleanup((struct k_pipe *)ko->name);
+		z_pipe_cleanup((struct k_pipe *)ko->name, locked);
 		break;
 #endif /* CONFIG_PIPES */
 	case K_OBJ_MSGQ:
-		k_msgq_cleanup((struct k_msgq *)ko->name);
+		z_msgq_cleanup((struct k_msgq *)ko->name, locked);
 		break;
 	case K_OBJ_STACK:
-		k_stack_cleanup((struct k_stack *)ko->name);
+		z_stack_cleanup((struct k_stack *)ko->name, locked);
 		break;
 	default:
 		/* Nothing to do */
@@ -640,8 +651,13 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	}
 
 	sys_dlist_remove(&dyn->dobj_list);
-	k_free(dyn->data);
-	k_free(dyn);
+	if (locked) {
+		k_free_sched_locked(dyn->data);
+		k_free_sched_locked(dyn);
+	} else {
+		k_free(dyn->data);
+		k_free(dyn);
+	}
 out:
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 	k_spin_unlock(&obj_lock, key);
@@ -691,19 +707,19 @@ void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
 #ifdef CONFIG_DYNAMIC_OBJECTS
 		k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
-		unref_check(ko, index);
+		unref_check(ko, index, false);
 		k_spin_unlock(&lists_lock, key);
 #else
-		unref_check(ko, index);
+		unref_check(ko, index, false);
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 	}
 }
 
-static void clear_perms_cb(struct k_object *ko, void *ctx_ptr)
+static void clear_perms_cb_locked(struct k_object *ko, void *ctx_ptr)
 {
 	uintptr_t id = (uintptr_t)ctx_ptr;
 
-	unref_check(ko, id);
+	unref_check(ko, id, true);
 }
 
 void k_thread_perms_all_clear(struct k_thread *thread)
@@ -711,7 +727,7 @@ void k_thread_perms_all_clear(struct k_thread *thread)
 	uintptr_t index = thread_index_get(thread);
 
 	if ((int)index != -1) {
-		k_object_wordlist_foreach(clear_perms_cb, (void *)index);
+		k_object_wordlist_foreach(clear_perms_cb_locked, (void *)index);
 	}
 }
 

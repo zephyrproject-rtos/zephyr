@@ -157,6 +157,15 @@ K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 #endif /* CONFIG_GEN_PRIV_STACKS */
 
+/*
+ * Variants of k_heap_free()/k_free() for callers that already hold
+ * _sched_spinlock, avoiding recursive locking when waking heap waiters.
+ * Woken threads are readied but not rescheduled; the caller must ensure
+ * a reschedule happens after releaseing the scheduler lock.
+ */
+void k_heap_free_sched_locked(struct k_heap *heap, void *mem);
+void k_free_sched_locked(void *mem);
+
 /* Calculate stack usage. */
 int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
 
