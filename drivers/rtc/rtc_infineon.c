@@ -242,6 +242,12 @@ static void ifx_cat1_rtc_isr_handler(const void *arg)
 #endif
 }
 
+/* Cy_RTC_CenturyInterrupt is a definition for a WEAK function from the hal_infineon module */
+void Cy_RTC_CenturyInterrupt(void)
+{
+	ifx_cat1_rtc_century_interrupt();
+}
+
 static int ifx_cat1_rtc_init(const struct device *dev)
 {
 	struct ifx_cat1_rtc_data *data = dev->data;
@@ -250,7 +256,9 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 	uint16_t state;
 	int ret = 0;
 
+#ifndef CONFIG_RTC_INFINEON_SKIP_SECURE_ACCESS
 	Cy_SysClk_ClkBakSetSource(CY_SYSCLK_BAK_IN_CLKLF);
+#endif
 
 	/* The state and century fields share one backup register, so the whole
 	 * read-decide-write sequence has to be atomic.
