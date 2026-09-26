@@ -26,7 +26,6 @@
 #include <zephyr/sys/__assert.h>
 #include <stddef.h>
 #include <ctype.h>
-#include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <zephyr/net/http/parser_url.h>
@@ -559,17 +558,22 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 	}
 
 	if (u->field_set & (1 << UF_PORT)) {
-		/* Don't bother with endp; we've already validated the string */
-		unsigned long v;
+		/* The digits were validated by http_parse_host(). Convert only
+		 * UF_PORT.len bytes, buf is not required to be NUL-terminated.
+		 */
+		const char *port = buf + u->field_data[UF_PORT].off;
+		uint32_t v = 0U;
 
-		v = strtoul(buf + u->field_data[UF_PORT].off, NULL, 10);
+		for (uint16_t i = 0U; i < u->field_data[UF_PORT].len; i++) {
+			v = (v * 10U) + (uint32_t)(port[i] - '0');
 
-		/* Ports have a max value of 2^16 */
-		if (v > 0xffff) {
-			return 1;
+			/* Ports have a max value of 2^16 */
+			if (v > 0xffffU) {
+				return 1;
+			}
 		}
 
-		u->port = (uint16_t) v;
+		u->port = (uint16_t)v;
 	}
 
 	return 0;

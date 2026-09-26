@@ -616,6 +616,33 @@ ZTEST(http_header_fields_fn, test_parse_url)
 	}
 }
 
+ZTEST(http_header_fields_fn, test_parse_url_port_bounds)
+{
+	/* Only "a:1" is passed in, the trailing digits must be ignored */
+	static const char url[] = "a:12345";
+	struct http_parser_url u;
+	int rv;
+
+	(void)memset(&u, 0, sizeof(u));
+	rv = http_parser_parse_url(url, 3U, 1, &u);
+	zassert_equal(rv, 0, "http_parser_parse_url error");
+	zassert_equal(u.port, 1U, "port parsed past buflen");
+	zassert_equal(u.field_data[UF_PORT].len, 1U, "wrong port length");
+
+	(void)memset(&u, 0, sizeof(u));
+	rv = http_parser_parse_url("a:65535", strlen("a:65535"), 1, &u);
+	zassert_equal(rv, 0, "http_parser_parse_url error");
+	zassert_equal(u.port, 65535U, "wrong port");
+
+	(void)memset(&u, 0, sizeof(u));
+	rv = http_parser_parse_url("a:65536", strlen("a:65536"), 1, &u);
+	zassert_not_equal(rv, 0, "out of range port accepted");
+
+	(void)memset(&u, 0, sizeof(u));
+	rv = http_parser_parse_url("a:4294967297", strlen("a:4294967297"), 1, &u);
+	zassert_not_equal(rv, 0, "out of range port accepted");
+}
+
 ZTEST(http_header_fields_fn, test_method_str)
 {
 	/**TESTPOINT: Check test_method_str function*/
