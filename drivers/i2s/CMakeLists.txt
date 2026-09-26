@@ -6,8 +6,11 @@ zephyr_library()
 
 zephyr_library_sources(i2s_common.c)
 
+zephyr_library_include_directories_ifdef(CONFIG_I2S_AMEBA ${ZEPHYR_BASE}/drivers/dma)
+
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_I2S_AMBIQ i2s_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_I2S_AMEBA i2s_ameba.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_ESP32 i2s_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_INFINEON i2s_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_LITEX i2s_litex.c)
