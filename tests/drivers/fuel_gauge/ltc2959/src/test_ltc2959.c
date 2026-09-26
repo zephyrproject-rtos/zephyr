@@ -186,21 +186,21 @@ ZTEST_F(ltc2959, test_remaining_capacity_roundtrip)
 	int ret;
 	union fuel_gauge_prop_val in, out;
 
-	in.remaining_capacity_uah = 1234567; /* µAh */
-	ret = fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY_UAH, in);
+	in.remaining_capacity = 1234567; /* µAh */
+	ret = fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY, in);
 	zassert_equal(ret, 0, "set ACR failed (%d)", ret);
 
-	ret = fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY_UAH, &out);
+	ret = fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY, &out);
 	zassert_equal(ret, 0, "get ACR failed (%d)", ret);
 
-	int32_t diff = (int32_t)out.remaining_capacity_uah - (int32_t)in.remaining_capacity_uah;
+	int32_t diff = (int32_t)out.remaining_capacity - (int32_t)in.remaining_capacity;
 
 	if (diff < 0) {
 		diff = -diff;
 	}
 
 	zassert_true(diff <= 1, "ACR mismatch: in=%d out=%d diff=%d tol=1",
-		     (int)in.remaining_capacity_uah, (int)out.remaining_capacity_uah, (int)diff);
+		     (int)in.remaining_capacity, (int)out.remaining_capacity, (int)diff);
 }
 
 ZTEST_F(ltc2959, test_remaining_capacity_reserved_guard)
@@ -209,24 +209,24 @@ ZTEST_F(ltc2959, test_remaining_capacity_reserved_guard)
 	union fuel_gauge_prop_val in, out;
 
 	/* 0xFFFFFFFF counts ≈ 2,289,000,000 µAh (533 nAh/LSB) */
-	in.remaining_capacity_uah = 2289000000U;
-	ret = fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY_UAH, in);
+	in.remaining_capacity = 2289000000U;
+	ret = fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY, in);
 	zassert_equal(ret, 0, "set ACR near fullscale failed (%d)", ret);
 
-	ret = fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY_UAH, &out);
+	ret = fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_REMAINING_CAPACITY, &out);
 	zassert_equal(ret, 0, "get ACR near fullscale failed (%d)", ret);
 
 	/* We expect the driver to write 0xFFFFFFFE instead, so out <= in and close */
-	zassert_true(out.remaining_capacity_uah <= in.remaining_capacity_uah,
+	zassert_true(out.remaining_capacity <= in.remaining_capacity,
 		     "ACR guard failed: got larger than requested");
-	int32_t diff = (int32_t)in.remaining_capacity_uah - (int32_t)out.remaining_capacity_uah;
+	int32_t diff = (int32_t)in.remaining_capacity - (int32_t)out.remaining_capacity;
 
 	if (diff < 0) {
 		diff = -diff;
 	}
 
 	zassert_true(diff <= 1, "ACR guard too lossy: in=%d out=%d |diff|=%d",
-		     (int)in.remaining_capacity_uah, (int)out.remaining_capacity_uah, (int)diff);
+		     (int)in.remaining_capacity, (int)out.remaining_capacity, (int)diff);
 }
 
 ZTEST_F(ltc2959, test_cc_config_sanitized)
