@@ -1,0 +1,19 @@
+description: |
+  Xilinx Zynq-7000 PS SD/SDIO host controller (Arasan-derived SDHCI IP,
+  UG585 ch. 13). PIO/polling only in the current driver -- see
+  drivers/sdhc/xlnx_zynq_sdhc.c for why DMA and UHS are deferred.
+
+compatible: "xlnx,zynq-8.9a"
+
+include: [sdhc.yaml]
+
+properties:
+  reg:
+    required: true
+
+  broken-cd:
+    type: boolean
+    description:
+      There is no usable card-detect signal into the controller on this
+      board -- always report a card present instead of polling
+      present_state's CARD_INSRT bit.
