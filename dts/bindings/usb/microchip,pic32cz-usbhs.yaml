@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip PIC32CZ USBHS device controller
+
+description: |
+  USB device controller for the PIC32CZ CA family's USBHS peripheral
+  (module name="USBHS" id="U2261", usb_otg_2_0_ctlr_v2).
+
+  The peripheral is a Mentor Graphics Inventra core behind a Microchip
+  wrapper: the wrapper registers occupy the low offsets, the Inventra core
+  starts at offset 0x1000, and a PHY control block sits at 0x1500.
+
+  The signals are on dedicated pads, not on GPIO, so there is no pinctrl
+  property. Each instance needs a 270 ohm 1% resistor from its USBRBIASn
+  pad to AGND; without it the PHY will not meet the USB electrical spec.
+
+  The driver supports the device role only. It forces a B-plug identity in
+  software and never consults the USBID pad.
+
+compatible: "microchip,pic32cz-usbhs"
+
+include:
+  - name: usb-ep.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  maximum-speed:
+    type: string
+    description: |
+      Highest speed the controller advertises. "full-speed" leaves
+      POWER.HSEN clear; "high-speed" sets it. Omitted means full speed:
+      which speed a port may run at is a property of the connector and
+      its routing, not of the controller, so a board that has not said
+      so gets the slower of the two rather than the faster.
+
+  drd-gpios:
+    type: phandle-array
+    description: |
+      Select line of the analog switch that connects the Type-C CC
+      pull-down resistors, where the board routes them through one
+      instead of fitting them. Driven to its active level during init,
+      so the flags in the phandle carry which throw is the device side
+      and the driver encodes no polarity of its own.
+
+      Omit it on a board whose Rd resistors are fitted.
+
+  vbus-enable-gpios:
+    type: phandle-array
+    description: |
+      Enable input of the VBUS power switch on the connector, where the
+      board can source 5 V onto it. Driven to its inactive level during
+      init: a device that sources VBUS into a host puts two supplies
+      against each other. The flags in the phandle carry the polarity.
+
+      Omit it on a board that cannot source VBUS on this port.
+
+examples:
+  - |
+    /* USBHS1 is the Type-C connector on the CA90 Curiosity Ultra. */
+
+    usbhs1: usb@4f012000 {
+            compatible = "microchip,pic32cz-usbhs";
+            reg = <0x4f012000 0x2000>;
+            interrupts = <214 0>;
+            clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_HUSB1>;
+            clock-names = "mclk";
+            num-bidir-endpoints = <8>;
+            maximum-speed = "full-speed";
+            status = "okay";
+    };
