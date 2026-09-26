@@ -7,6 +7,54 @@
 #include <dt-bindings/pic32c/pic32cz_ca/pic32cz_ca90/pic32cz8110ca90208-pinctrl.h>
 
 &pinctrl {
+	eth_default: eth_default {
+		group1 {
+			pinmux = <PA1K_ETH_GTX0>,
+				 <PA0K_ETH_GTX1>,
+				 <PD4K_ETH_GTX2>,
+				 <PD3K_ETH_GTX3>,
+				 <PD17K_ETH_GTX4>,
+				 <PD16K_ETH_GTX5>,
+				 <PD15K_ETH_GTX6>,
+				 <PD14K_ETH_GTX7>,
+				 <PA2K_ETH_GTXEN>,
+				 <PD2K_ETH_GTXER>,
+				 <PD5L_ETH_GTXCK>,
+				 <PA21K_ETH_TXCK>,
+				 <PD20K_ETH_GRX4>,
+				 <PD21K_ETH_GRX5>,
+				 <PD19K_ETH_GRX6>,
+				 <PD18K_ETH_GRX7>,
+				 <PA6K_ETH_GRXER>,
+				 <PD9K_ETH_GCRS>,
+				 <PD8K_ETH_GCOL>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PD11K_ETH_GRX0>,
+				 <PD12L_ETH_GREFCK>;
+			input-enable;
+			bias-pull-up;
+		};
+
+		group3 {
+			pinmux = <PD10K_ETH_GRX1>,
+				 <PD7K_ETH_GRX2>,
+				 <PD6K_ETH_GRX3>,
+				 <PA5K_ETH_GRXDV>;
+			input-enable;
+			bias-pull-down;
+		};
+	};
+
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <PA3K_ETH_GMDC>,
+				 <PA4K_ETH_GMDIO>;
+		};
+	};
+
 	sercom1_uart_default: sercom1_uart_default {
 		group1 {
 			pinmux = <PC4D_SERCOM1_PAD0>,

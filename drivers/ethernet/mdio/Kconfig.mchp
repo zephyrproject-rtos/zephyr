@@ -8,3 +8,12 @@ config MDIO_MCHP_GMAC_G1
 	default y
 	help
 	  Enable Microchip MCU Family MDIO driver.
+
+config MDIO_MCHP_GMAC_G2
+	bool "Microchip G2 GMAC MDIO driver"
+	default y
+	depends on DT_HAS_MICROCHIP_GMAC_G2_MDIO_ENABLED
+	select PINCTRL
+	help
+	  Enable the Clause 22 MDIO driver of the Microchip G2 GMAC, the
+	  "ETH" peripheral of PIC32CZ CA.

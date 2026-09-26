@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G2 GMAC Ethernet controller
+
+description: |
+  Microchip G2 GMAC Ethernet controller, the "ETH" peripheral of PIC32CZ CA.
+
+  A Cadence GEM core behind a Microchip wrapper. The wrapper (CTRLA, CTRLB,
+  EVCTRL, SYNCB, WPCTRL) occupies the start of the block and the MAC core
+  follows at offset 0x1000; one reg entry covers both. The MAC supports
+  GMII at 1000 Mbit/s, and MII and RMII at 10/100 Mbit/s.
+
+  The core has several DMA queues, each with its own interrupt line. The
+  driver moves all traffic through queue 0, parks the others on an inert
+  descriptor and leaves every interrupt source of theirs masked, so their
+  lines stay unconnected and never assert.
+
+  This is not the peripheral microchip,gmac-g1-eth drives: that one is the
+  10/100 GMAC of SAM E5x and PIC32CX SG, with a different register map and no
+  wrapper.
+
+  The MDIO bus is a child node, compatible "microchip,gmac-g2-mdio", and the
+  PHY sits under that. Nesting them this way also orders their drivers: at
+  equal init priority a device is initialized after the devicetree nodes it
+  depends on, so the controller applies its pin configuration before the PHY
+  driver releases the PHY from reset.
+
+compatible: "microchip,gmac-g2-eth"
+
+include:
+  - name: ethernet-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: |
+      One interrupt per DMA queue, queue 0 first. Only queue 0 is serviced.
+
+  num-queues:
+    type: int
+    required: true
+    description: |
+      Number of hardware TX and RX queues.
+      Range: 1 - 8
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      "mclk-ahb" and "mclk-apb", the bus clocks; "gclk-tx", the 125 MHz
+      generic clock that becomes GTXCK in GMII mode; and "gclk-tsu", the
+      timestamp unit clock. The wrapper's software reset does not complete
+      without gclk-tsu running, so it is required even with no PTP in use.
+
+  phy-handle:
+    required: true
+
+  phy-connection-type:
+    required: true
+    description: |
+      "gmii", "mii" or "rmii"; any other value fails the build. Only "gmii"
+      reaches 1000 Mbit/s.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

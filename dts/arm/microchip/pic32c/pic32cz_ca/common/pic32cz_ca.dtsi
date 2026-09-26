@@ -207,6 +207,27 @@
 			status = "disabled";
 		};
 
+		eth: ethernet@45070000 {
+			compatible = "microchip,gmac-g2-eth";
+			reg = <0x45070000 0x1800>;
+			interrupts = <202 0>, <203 0>, <204 0>, <205 0>, <206 0>, <207 0>;
+			interrupt-names = "q0", "q1", "q2", "q3", "q4", "q5";
+			num-queues = <6>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_GMAC_AHB>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_GMAC_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_GMAC_TX>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_GMAC_TSU>;
+			clock-names = "mclk-ahb", "mclk-apb", "gclk-tx", "gclk-tsu";
+			status = "disabled";
+
+			mdio: mdio {
+				compatible = "microchip,gmac-g2-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		sercom2: sercom@45800000 {
 			compatible = "microchip,sercom-g1";
 			reg = <0x45800000 0x36>;

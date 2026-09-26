@@ -45,3 +45,93 @@ config ETH_MCHP_RX_THREAD_PRIORITY
 	  This options sets the priority of that thread.
 
 endif # ETH_MCHP_GMAC_G1
+
+menuconfig ETH_MCHP_GMAC_G2
+	bool "Microchip G2 GMAC Ethernet driver"
+	default y
+	depends on ETH_DRIVER
+	depends on DT_HAS_MICROCHIP_GMAC_G2_ETH_ENABLED
+	select EXPERIMENTAL
+	select PINCTRL
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT && DCACHE
+	select CACHE_MANAGEMENT if DCACHE
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_GMAC_G2_ETH),nvmem-cells)
+	help
+	  Enable the Ethernet driver for the Microchip G2 GMAC, the gigabit
+	  "ETH" peripheral of PIC32CZ CA (a Cadence GEM core behind a
+	  Microchip wrapper). GMII at 10/100/1000 Mbit/s; MII and RMII at
+	  10/100 Mbit/s.
+
+	  Not the GMAC microchip,gmac-g1-eth drives: that is the 10/100 core
+	  of SAM E5x and PIC32CX SG, with a different register map.
+
+if ETH_MCHP_GMAC_G2
+
+config ETH_MCHP_GMAC_G2_RX_BUF_COUNT
+	int "Receive descriptors"
+	default 32
+	range 2 1024
+	help
+	  Receive descriptors, each with a 1536-byte frame buffer owned by
+	  the driver. This is how many frames the MAC can absorb in a burst
+	  before the receive thread gets to run.
+
+config ETH_MCHP_GMAC_G2_TX_BUF_COUNT
+	int "Transmit descriptors"
+	default 16
+	range 2 1024
+	help
+	  Transmit descriptors, each with a 1536-byte frame buffer owned by
+	  the driver. One of them always stays empty. With
+	  CONFIG_ETH_MCHP_GMAC_G2_TX_ZEROCOPY there are no driver buffers and a
+	  frame takes one descriptor per fragment of its packet.
+
+config ETH_MCHP_GMAC_G2_TX_ZEROCOPY
+	bool "Zero-copy transmit"
+	depends on NET_L2_ETHERNET
+	help
+	  Let the MAC read each frame straight out of the packet it was sent
+	  in, one descriptor per fragment, instead of copying the frame into a
+	  driver-owned buffer first. The driver keeps a reference to the
+	  packet until the frame is on the wire, so the packet has to stay
+	  unchanged until then: the network stack never writes to a packet it
+	  has sent, but an application handing its own packets to the driver
+	  must not reuse one while the driver still holds it.
+
+	  It saves the copy and the CONFIG_ETH_MCHP_GMAC_G2_TX_BUF_COUNT
+	  frame buffers. A frame with more fragments than
+	  CONFIG_ETH_MCHP_GMAC_G2_TX_BUF_COUNT - 1 cannot be sent and is
+	  refused with -EMSGSIZE, so with small network buffers the ring has
+	  to be sized for the fragment count rather than the frame count.
+	  Packet data has to be in memory the MAC can reach.
+
+config ETH_MCHP_GMAC_G2_TX_INT_MODERATION
+	int "Transmit interrupt moderation, in 800 ns units"
+	default 0
+	range 0 255
+	help
+	  How long the MAC holds back the transmit-complete interrupt after a
+	  frame has gone, so that one interrupt reclaims several frames. 0
+	  interrupts once per frame.
+
+	  Worth setting only where the transmitter runs near line rate and the
+	  processor is short: 50, 40 us, reclaims about four full-size frames
+	  per interrupt at gigabit. The transmit ring has to hold more frames
+	  than go out in that time, or the sender waits for the interrupt.
+
+config ETH_MCHP_GMAC_G2_RX_THREAD_STACK_SIZE
+	int "Receive thread stack size"
+	default 1536
+	help
+	  Stack of the thread that hands received frames to the network
+	  stack.
+
+config ETH_MCHP_GMAC_G2_RX_THREAD_PRIORITY
+	int "Receive thread priority"
+	default 2
+	help
+	  Priority of the receive thread, cooperative or preemptive as
+	  CONFIG_NET_TC_THREAD_PREEMPTIVE selects.
+
+endif # ETH_MCHP_GMAC_G2
