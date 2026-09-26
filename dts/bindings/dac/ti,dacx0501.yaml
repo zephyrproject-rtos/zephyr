@@ -24,7 +24,19 @@ properties:
       - "mul2"
       - "mul1"
       - "div2"
+      - "div2-mul2"
     description: |
       This setting can be used to control the output voltage range within the supported bit
       resolution. mul2 will double the output range but lower the resolution, while div2 will
       lower the range but double the resolution.
+      div2-mul2 is needed for 2.7 V ≤ VDD ≤ 3.3 V and internal reference to get full scale output
+      up to internal (2.5 V) reference.
+examples:
+  - |
+    #VDD=3.3V, internal reference
+    dac80501: dac80501@48 {
+      compatible = "ti,dacx0501";
+      voltage-reference = "internal";
+      output-gain = "div2-mul2";
+      reg = <0x48>;
+    }
