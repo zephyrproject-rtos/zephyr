@@ -356,6 +356,58 @@ config TFM_PUBLIC_KEY_FORMAT_HASH
 
 endchoice
 
+choice TFM_MCUBOOT_ENCRYPTION
+	prompt "Image encryption key-wrapping scheme in BL2"
+	default TFM_MCUBOOT_ENCRYPTION_NONE
+	help
+	  Selects whether MCUboot (BL2) expects encrypted images and, if so,
+	  which algorithm wraps the per-image AES content-encryption key that
+	  is stored in the image TLV area. Maps to the TF-M options
+	  MCUBOOT_ENC_IMAGES and MCUBOOT_ENCRYPT_RSA/MCUBOOT_ENCRYPT_KW.
+
+	  Only the update images (*_signed_encrypted.bin) are encrypted. BL2
+	  decrypts an image while moving it from the secondary to the primary
+	  slot, so the images flashed to the primary slot stay unencrypted.
+
+config TFM_MCUBOOT_ENCRYPTION_NONE
+	bool "Disabled"
+	help
+	  Image encryption is disabled. Images are signed but not encrypted.
+
+config TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	bool "RSA-OAEP"
+	help
+	  Wrap the AES content-encryption key using RSA-OAEP.
+	  Corresponds to TF-M MCUBOOT_ENCRYPT_RSA option.
+
+endchoice
+
+if !TFM_MCUBOOT_ENCRYPTION_NONE
+
+config TFM_MCUBOOT_ENCRYPTION_KEY_LEN
+	int "Image encryption AES key length"
+	default 128
+	help
+	  Length in bits of the AES content-encryption key used to encrypt the
+	  image payload. Valid values are 128 and 256. Maps to the TF-M
+	  MCUBOOT_ENC_KEY_LEN option.
+
+config TFM_MCUBOOT_ENCRYPTION_KEY_FILE
+	string "Path to private key used to encrypt firmware images"
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-rsa2048-priv.pem" if TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	default ""
+	help
+	  The path and filename for the key file used to encrypt the secure and
+	  non-secure firmware images. For RSA-OAEP this is the RSA private key.
+	  It is embedded in BL2 to unwrap the AES content-encryption key and
+	  its public half wraps that key when the images are encrypted. Maps to
+	  the TF-M MCUBOOT_KEY_ENC option.
+
+	  The default is a publicly known MCUboot test key and provides no
+	  confidentiality. Use your own private key for production.
+
+endif # !TFM_MCUBOOT_ENCRYPTION_NONE
+
 config TFM_MCUBOOT_IMAGE_NUMBER
 	int "Granularity of FW updates of TFM and app"
 	range 1 2
