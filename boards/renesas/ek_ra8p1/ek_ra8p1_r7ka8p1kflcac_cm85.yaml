@@ -8,6 +8,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - dmic
   - gpio
   - uart
   - spi

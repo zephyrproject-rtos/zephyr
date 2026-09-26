@@ -283,6 +283,11 @@ config USE_RA_FSP_SSI
 	help
 	  Enable RA FSP I2S SSI driver
 
+config USE_RA_FSP_PDM
+	bool
+	help
+	  Enable RA FSP PDM driver
+
 config USE_RA_FSP_IOPORT
 	bool
 	help
