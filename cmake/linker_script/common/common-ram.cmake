@@ -77,7 +77,6 @@ zephyr_iterable_section(NAME net_buf_pool GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_W
 
 if(CONFIG_NETWORKING)
   zephyr_iterable_section(NAME net_if     GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
-  zephyr_iterable_section(NAME net_if_dev GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
   zephyr_iterable_section(NAME net_l2     GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
   zephyr_iterable_section(NAME eth_bridge GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
 endif()
