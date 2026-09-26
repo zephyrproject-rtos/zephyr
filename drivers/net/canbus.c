@@ -11,7 +11,6 @@
 #include <zephyr/net/canbus.h>
 #include <zephyr/net/socketcan.h>
 #include <zephyr/drivers/can.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/device.h>
 
 #include <zephyr/logging/log.h>
@@ -19,17 +18,9 @@ LOG_MODULE_REGISTER(net_canbus, CONFIG_NET_CANBUS_LOG_LEVEL);
 
 #define SEND_TIMEOUT K_MSEC(100)
 
-struct net_canbus_context {
-	struct net_if *iface;
-};
-
-struct net_canbus_config {
-	const struct device *can_dev;
-};
-
 static void net_canbus_recv(const struct device *dev, struct can_frame *frame, void *user_data)
 {
-	struct net_canbus_context *ctx = user_data;
+	struct z_net_canbus_context *ctx = user_data;
 	struct net_pkt *pkt;
 	int ret;
 
@@ -59,8 +50,8 @@ static void net_canbus_recv(const struct device *dev, struct can_frame *frame, v
 static int net_canbus_setsockopt(const struct device *dev, void *obj, int level,
 				 int optname, const void *optval, net_socklen_t optlen)
 {
-	const struct net_canbus_config *cfg = dev->config;
-	struct net_canbus_context *context = dev->data;
+	const struct z_net_canbus_config *cfg = dev->config;
+	struct z_net_canbus_context *context = dev->data;
 	struct net_context *ctx = obj;
 	int ret;
 
@@ -84,7 +75,7 @@ static int net_canbus_setsockopt(const struct device *dev, void *obj, int level,
 
 static void net_canbus_close(const struct device *dev, int filter_id)
 {
-	const struct net_canbus_config *cfg = dev->config;
+	const struct z_net_canbus_config *cfg = dev->config;
 
 	can_remove_rx_filter(cfg->can_dev, filter_id);
 }
@@ -101,7 +92,7 @@ static void net_canbus_send_tx_callback(const struct device *dev, int error, voi
 
 static int net_canbus_send(const struct device *dev, struct net_pkt *pkt)
 {
-	const struct net_canbus_config *cfg = dev->config;
+	const struct z_net_canbus_config *cfg = dev->config;
 	int ret;
 
 	if (net_pkt_family(pkt) != NET_AF_CAN) {
@@ -126,16 +117,16 @@ static int net_canbus_send(const struct device *dev, struct net_pkt *pkt)
 static void net_canbus_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct net_canbus_context *context = dev->data;
+	struct z_net_canbus_context *context = dev->data;
 
 	context->iface = iface;
 
 	LOG_DBG("Init CAN interface %p dev %p", iface, dev);
 }
 
-static int net_canbus_init(const struct device *dev)
+int z_net_canbus_init(const struct device *dev)
 {
-	const struct net_canbus_config *cfg = dev->config;
+	const struct z_net_canbus_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->can_dev)) {
 		LOG_ERR("CAN device not ready");
@@ -145,24 +136,9 @@ static int net_canbus_init(const struct device *dev)
 	return 0;
 }
 
-static struct canbus_api net_canbus_api = {
+const struct canbus_api z_net_canbus_api = {
 	.iface_api.init = net_canbus_iface_init,
 	.send = net_canbus_send,
 	.close = net_canbus_close,
 	.setsockopt = net_canbus_setsockopt,
 };
-
-#define NET_CANBUS_INIT(node_id)                                                                   \
-	static struct net_canbus_context net_canbus_ctx_##node_id;                                 \
-	static const struct net_canbus_config net_canbus_cfg_##node_id = {                         \
-		.can_dev = DEVICE_DT_GET(node_id),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	NET_DEVICE_INIT(net_canbus_##node_id, DEVICE_DT_NAME(node_id),                             \
-			net_canbus_init, NULL,                                                     \
-			&net_canbus_ctx_##node_id,                                                 \
-			&net_canbus_cfg_##node_id,                                                 \
-			CONFIG_NET_CANBUS_INIT_PRIORITY, &net_canbus_api,                          \
-			CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);               \
-
-DT_FOREACH_CLASS_STATUS_OKAY(can, NET_CANBUS_INIT)

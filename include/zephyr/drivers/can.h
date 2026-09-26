@@ -875,7 +875,8 @@ struct can_device_state {
  *
  * @details Defines a device which implements the CAN API. May generate a custom
  * device_state container struct and init_fn wrapper when needed depending on
- * @kconfig{CONFIG_CAN_STATS}.
+ * @kconfig{CONFIG_CAN_STATS}. With @kconfig{CONFIG_NET_CANBUS}, also defines the
+ * CAN bus network interface of the device.
  *
  * @param node_id   The devicetree node identifier.
  * @param init_fn   Name of the init function of the driver.
@@ -892,6 +893,7 @@ struct can_device_state {
  */
 #define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
+	IF_ENABLED(CONFIG_NET_CANBUS, (Z_NET_CANBUS_DEVICE_DT_DEFINE(node_id))) \
 	Z_CAN_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
 	Z_CAN_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
@@ -916,6 +918,7 @@ struct can_device_state {
 
 #define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
+	IF_ENABLED(CONFIG_NET_CANBUS, (Z_NET_CANBUS_DEVICE_DT_DEFINE(node_id))) \
 	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			 prio, api, __VA_ARGS__)
 
@@ -1915,5 +1918,10 @@ static inline bool can_frame_matches_filter(const struct can_frame *frame,
 #endif
 
 #include <zephyr/syscalls/can.h>
+
+#if defined(CONFIG_NET_CANBUS)
+/* Provides Z_NET_CANBUS_DEVICE_DT_DEFINE() for CAN_DEVICE_DT_DEFINE() */
+#include <zephyr/net/canbus.h>
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CAN_H_ */
