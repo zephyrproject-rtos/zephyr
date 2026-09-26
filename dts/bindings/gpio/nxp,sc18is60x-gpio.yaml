@@ -1,0 +1,26 @@
+#
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+description: |
+  GPIO controller part for an NXP SC18IS60x bridge.
+  Any compatible node shall be a child of an SC18IS60x MFD parent.
+
+compatible: "nxp,sc18is60x-gpio"
+
+include: gpio-controller.yaml
+
+on-bus: nxp,sc18is60x
+
+properties:
+  "#gpio-cells":
+    required: true
+    const: 2
+
+  ngpios:
+    required: true
+
+gpio-cells:
+  - pin
+  - flags

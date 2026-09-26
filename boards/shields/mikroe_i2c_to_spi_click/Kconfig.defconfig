@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MIKROE_I2C_TO_SPI_CLICK
+
+config I2C
+	default y
+
+config SPI
+	default y
+
+config GPIO
+	default y
+
+endif # SHIELD_MIKROE_I2C_TO_SPI_CLICK

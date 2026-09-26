@@ -1,0 +1,34 @@
+#
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-FileCopyrightText: Copyright tinyvision.ai
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for NXP SC18IS60x bridge MFD parents.
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description:
+      Driver reset pin of the bridge.
+      If connected directly to the MCU, this pin should be configured
+      as active low.
+
+  int-gpios:
+    type: phandle-array
+    description:
+      Driver interrupt pin of the bridge. Allows the driver to wait until
+      a command has finished before starting another.
+      If connected directly to the MCU, this pin should be configured
+      as active low.
+
+  buffer-size:
+    type: int
+    description: Internal data buffer size in bytes (silicon limit).
+
+  ss-count:
+    type: int
+    description: Number of hardware SPI chip-selects.
+
+bus: nxp,sc18is60x
