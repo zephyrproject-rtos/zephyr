@@ -97,9 +97,17 @@ list(APPEND zephyr_cmake_modules arch)
 list(APPEND zephyr_cmake_modules soc)
 
 foreach(component ${SUB_COMPONENTS})
-  if(NOT ${component} IN_LIST zephyr_cmake_modules)
+  # SUB_COMPONENTS has the form "<module>[:<functionA>[:<functionB>...]]"
+  # The regex match places the module name in first match, and functions in second match group.
+  # The string output `ignore` itself is ignored as all data needed is found in the match groups.
+  string(REGEX MATCH "^([^:]*)(.*)" ignore "${component}")
+  set(module ${CMAKE_MATCH_1})
+  list(APPEND modules_requested ${module})
+  string(REPLACE ":" ";" functions "${CMAKE_MATCH_2}")
+  set(${module}_functions ${functions})
+  if(NOT ${module} IN_LIST zephyr_cmake_modules)
     message(FATAL_ERROR
-      "Subcomponent '${component}' not default module for Zephyr CMake build system.\n"
+      "Subcomponent '${module}' not default module for Zephyr CMake build system.\n"
       "Please choose one or more valid components: ${zephyr_cmake_modules}"
     )
   endif()
@@ -116,12 +124,23 @@ foreach(module IN LISTS zephyr_cmake_modules)
 
   if(NOT "${module}" MATCHES ";")
     if(COMMAND ${module}_init)
-      cmake_language(CALL ${module}_init)
+      if(DEFINED ${module}_functions)
+        foreach(f ${${module}_functions})
+          if(NOT "${f}" MATCHES "^${module}_" OR NOT COMMAND ${f})
+            message(FATAL_ERROR "function: ${f}, not a function in Zephyr CMake module: ${module}")
+          endif()
+          cmake_language(CALL ${f})
+        endforeach()
+      else()
+        cmake_language(CALL ${module}_init)
+      endif()
+    elseif(DEFINED ${module}_functions)
+      message(FATAL_ERROR "module ${module} doesn't support direct function initialization")
     endif()
   endif()
 
-  list(REMOVE_ITEM SUB_COMPONENTS ${module})
-  if(DEFINED SUB_COMPONENTS AND NOT SUB_COMPONENTS)
+  list(REMOVE_ITEM modules_requested ${module})
+  if(DEFINED modules_requested AND NOT modules_requested)
     # All requested Zephyr CMake modules have been loaded, so let's return.
     if(COMMAND yaml_save)
       yaml_save(NAME build_info)
