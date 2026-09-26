@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,10 @@
 		flexspi: spi@40020000 {
 			reg = <0x40020000 0x1000>, <0x80000000 DT_SIZE_M(8)>;
 			reg-names = "reg_base", "ahb";
+		};
+
+		fmu: flash-controller@40095000 {
+			reg = <0x40095000 0x1000>;
 		};
 	};
 };
