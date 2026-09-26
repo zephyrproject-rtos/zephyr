@@ -15,8 +15,11 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include "rtc_utils.h"
+#ifdef CONFIG_RTC_RV3028_TIMESTAMP
+#include <zephyr/drivers/rtc/rtc_rv3028.h>
+#endif
 
-#define RV3028_REG_EVENT_CONTROL        0x13
+#define RV3028_REG_EVENT_CONTROL 0x13
 LOG_MODULE_REGISTER(rtc_rv3028, CONFIG_RTC_LOG_LEVEL);
 
 /* Convert part per billion calibration value to a number of clock pulses added or removed each
@@ -48,6 +51,12 @@ LOG_MODULE_REGISTER(rtc_rv3028, CONFIG_RTC_LOG_LEVEL);
 
 struct rv3028_config {
 	const struct device *mfd;
+#ifdef CONFIG_RTC_RV3028_TIMESTAMP
+	const uint8_t timestamp_edge_detection;
+	const uint8_t timestamp_filtering;
+	const uint8_t timestamp_overwrite;
+	const bool timestamp_source_backup;
+#endif /* CONFIG_RTC_RV3028_TIMESTAMP */
 };
 
 struct rv3028_data {
@@ -59,6 +68,10 @@ struct rv3028_data {
 	rtc_update_callback update_callback;
 	void *update_user_data;
 #endif /* CONFIG_RTC_UPDATE */
+#ifdef CONFIG_RTC_RV3028_TIMESTAMP
+	rtc_rv3028_timestamp_callback timestamp_callback;
+	void *timestamp_user_data;
+#endif /* CONFIG_RTC_RV3028_TIMESTAMP */
 };
 
 static int rv3028_set_time(const struct device *dev, const struct rtc_time *timeptr)
@@ -333,7 +346,6 @@ unlock:
 
 	return err;
 }
-
 #endif /* CONFIG_RTC_ALARM */
 
 #if defined(CONFIG_RTC_UPDATE)
@@ -466,6 +478,200 @@ static int rv3028_get_calibration(const struct device *dev, int32_t *freq_ppb)
 }
 #endif /* CONFIG_RTC_CALIBRATION */
 
+#if defined(CONFIG_RTC_RV3028_TIMESTAMP)
+static void timestamp_isr(const struct device *dev)
+{
+	struct rv3028_data *data = dev->data;
+
+	if (data->timestamp_callback != NULL) {
+		data->timestamp_callback(dev, data->timestamp_user_data);
+	}
+}
+
+/**
+ * @copydoc rtc_rv3028_timestamp_set_callback()
+ */
+int rtc_rv3028_timestamp_set_callback(const struct device *dev,
+				      rtc_rv3028_timestamp_callback callback, void *user_data)
+{
+	const struct rv3028_config *config = dev->config;
+	struct rv3028_data *data = dev->data;
+	int err;
+	uint8_t val = 0;
+
+	mfd_rv3028_lock_sem(config->mfd);
+
+	mfd_rv3028_set_irq_handler(config->mfd, dev, RV3028_DEV_EVI, timestamp_isr);
+	data->timestamp_callback = callback;
+	data->timestamp_user_data = user_data;
+
+	val = 0;
+	if (callback != NULL) {
+		val |= RV3028_CONTROL2_EIE;
+	}
+
+	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_CONTROL2,
+				     RV3028_CONTROL2_EIE | RV3028_CONTROL2_TSE,
+				     val | RV3028_CONTROL2_TSE);
+	if (err) {
+		goto unlock;
+	}
+
+unlock:
+	mfd_rv3028_unlock_sem(config->mfd);
+
+	return err;
+}
+
+/**
+ * @copydoc rtc_rv3028_timestamp_is_pending()
+ */
+int rtc_rv3028_timestamp_is_pending(const struct device *dev)
+{
+	const struct rv3028_config *config = dev->config;
+	uint8_t status;
+	int err;
+
+	mfd_rv3028_lock_sem(config->mfd);
+
+	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_STATUS, &status);
+	if (err) {
+		goto unlock;
+	}
+
+	if (status & RV3028_STATUS_EVF) {
+		/* Event flag pending. */
+		err = 1;
+	}
+
+unlock:
+	mfd_rv3028_unlock_sem(config->mfd);
+
+	return err;
+}
+
+/**
+ * @copydoc rtc_rv3028_timestamp_enable()
+ */
+int rtc_rv3028_timestamp_enable(const struct device *dev)
+{
+	const struct rv3028_config *config = dev->config;
+	int err;
+
+	mfd_rv3028_lock_sem(config->mfd);
+
+	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_EVENT_CONTROL, RV3028_EVENTCONTROL_TSR,
+				     RV3028_EVENTCONTROL_TSR);
+	if (err) {
+		goto unlock;
+	}
+
+unlock:
+	mfd_rv3028_unlock_sem(config->mfd);
+
+	return err;
+}
+
+/**
+ * @copydoc rtc_rv3028_timestamp_disable()
+ */
+int rtc_rv3028_timestamp_disable(const struct device *dev)
+{
+	const struct rv3028_config *config = dev->config;
+	int err;
+
+	mfd_rv3028_lock_sem(config->mfd);
+
+	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_EVENT_CONTROL, RV3028_EVENTCONTROL_TSR,
+				     0);
+	if (err) {
+		goto unlock;
+	}
+
+unlock:
+	mfd_rv3028_unlock_sem(config->mfd);
+
+	return err;
+}
+
+/**
+ * @copydoc rtc_rv3028_timestamp_get_timestamp()
+ */
+int rtc_rv3028_timestamp_get_timestamp(const struct device *dev, uint16_t *count,
+				       struct rtc_time *timeptr)
+{
+	const struct rv3028_config *config = dev->config;
+	uint8_t counter;
+	uint8_t date[6];
+	uint8_t status;
+	int err;
+
+	if (timeptr == NULL) {
+		return -EINVAL;
+	}
+
+	mfd_rv3028_lock_sem(config->mfd);
+
+	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_TS_COUNT, &counter);
+	if (err) {
+		mfd_rv3028_unlock_sem(config->mfd);
+		return err;
+	}
+
+	if (count == 0) {
+		mfd_rv3028_unlock_sem(config->mfd);
+		return -ENODATA;
+	}
+
+	if (count != NULL) {
+		*count = counter;
+	}
+
+	/* Get all timestamp data. */
+	err = mfd_rv3028_read_regs(config->mfd, RV3028_REG_TS_SECONDS, date, sizeof(date));
+	if (err) {
+		mfd_rv3028_unlock_sem(config->mfd);
+		return err;
+	}
+
+	/* Clear event flag. */
+	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_STATUS, &status);
+	if (err) {
+		mfd_rv3028_unlock_sem(config->mfd);
+		return err;
+	}
+
+	if (status & RV3028_STATUS_EVF) {
+		err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_STATUS, RV3028_STATUS_EVF, 0);
+		if (err) {
+			mfd_rv3028_unlock_sem(config->mfd);
+			return err;
+		}
+	}
+
+	mfd_rv3028_unlock_sem(config->mfd);
+
+	memset(timeptr, 0U, sizeof(*timeptr));
+	timeptr->tm_sec = bcd2bin(date[0] & RV3028_SECONDS_MASK);
+	timeptr->tm_min = bcd2bin(date[1] & RV3028_MINUTES_MASK);
+	timeptr->tm_hour = bcd2bin(date[2] & RV3028_HOURS_24H_MASK);
+	timeptr->tm_mday = bcd2bin(date[3] & RV3028_DATE_MASK);
+	timeptr->tm_mon = bcd2bin(date[4] & RV3028_MONTH_MASK) - RV3028_MONTH_OFFSET;
+	timeptr->tm_year = bcd2bin(date[5] & RV3028_YEAR_MASK) + RV3028_YEAR_OFFSET;
+	timeptr->tm_yday = -1;
+	timeptr->tm_isdst = -1;
+	timeptr->tm_wday = -1;
+
+	LOG_DBG("get ts: year = %d, mon = %d, mday = %d, wday = %d, hour = %d, "
+		"min = %d, sec = %d, count = %d",
+		timeptr->tm_year, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_wday,
+		timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, counter);
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_RTC_RV3028_TIMESTAMP) */
+
 static int rv3028_init(const struct device *dev)
 {
 	const struct rv3028_config *config = dev->config;
@@ -497,6 +703,41 @@ static int rv3028_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if defined(CONFIG_RTC_RV3028_TIMESTAMP)
+	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_STATUS, &regs[0]);
+	if (err) {
+		return -ENODEV;
+	}
+
+	regs[0] = config->timestamp_filtering << RV3028_EVENTCONTROL_FILTER_SHIFT;
+	if (config->timestamp_edge_detection == RV3028_EVENT_RISING_EDGE) {
+		regs[0] |= RV3028_EVENTCONTROL_EHL;
+	}
+
+	if (config->timestamp_source_backup) {
+		regs[0] |= RV3028_EVENTCONTROL_TSS;
+	}
+
+	if (config->timestamp_overwrite == RV3028_EVENT_OVERWRITE_LAST) {
+		regs[0] |= RV3028_EVENTCONTROL_TSOW;
+	}
+
+	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_EVENT_CONTROL,
+				     RV3028_EVENTCONTROL_FILTER_MASK | RV3028_EVENTCONTROL_EHL |
+					     RV3028_EVENTCONTROL_TSS | RV3028_EVENTCONTROL_TSOW,
+				     regs[0]);
+	if (err) {
+		return -ENODEV;
+	}
+
+	/* Enable timestamp function. */
+	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_CONTROL2, RV3028_CONTROL2_TSE,
+				     RV3028_CONTROL2_TSE);
+	if (err) {
+		return -ENODEV;
+	}
+#endif /* defined(CONFIG_RTC_RV3028_TIMESTAMP) */
+
 	return 0;
 }
 
@@ -522,7 +763,14 @@ static DEVICE_API(rtc, rv3028_driver_api) = {
 #define RV3028_INIT(inst)                                                                          \
 	static const struct rv3028_config rv3028_config_##inst = {                                 \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_RTC_RV3028_TIMESTAMP,                                            \
+		 (.timestamp_edge_detection = DT_INST_ENUM_IDX_OR(inst, timestamp_edge_detection,  \
+								 RV3028_EVENT_FALLING_EDGE),      \
+		  .timestamp_filtering = DT_INST_ENUM_IDX_OR(inst, timestamp_filtering, \
+								 RV3028_EVENTCONTROL_FILTER_NO),   \
+		  .timestamp_overwrite = DT_INST_ENUM_IDX_OR(inst, timestamp_overwrite,            \
+								 RV3028_EVENT_OVERWRITE_FIRST),    \
+		  .timestamp_source_backup = DT_INST_PROP(inst, timestamp_source_backup),))};     \
                                                                                                    \
 	static struct rv3028_data rv3028_data_##inst;                                              \
                                                                                                    \
