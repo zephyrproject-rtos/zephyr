@@ -1,54 +1,130 @@
 /*
  * Copyright 2026 Linumiz
+ * Copyright (c) 2026 Texas Instruments Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_CRYPTO_MSPM0_AES
 #define DT_DRV_COMPAT ti_mspm0_aes
+#else
+#define DT_DRV_COMPAT ti_mspm0_aes_adv
+#endif
 
-#include <zephyr/crypto/cipher.h>
-#include <zephyr/crypto/crypto.h>
-#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/irq.h>
-#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <ti/driverlib/dl_aes.h>
+#include "crypto_mspm0_aes.h"
 
-#define AES_HW_CAPS	(CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
-#define AES_BLOCK_SIZE	16
+LOG_MODULE_REGISTER(msp_aes, CONFIG_CRYPTO_LOG_LEVEL);
 
-/*
- * The block cycle for AES module is 300 cycles (MSPM0_AES_BLOCK_CYC)
- * AES_BLOCK_TIMEOUT applies a safety margin i.e. 300 << 1 = 600 cycles
- * K_CYC(AES_BLOCK_TIMEOUT) converts this cycle count to a timeout
- * period in system ticks AES_SEM_TIMEOUT.
- */
-#define MSPM0_AES_BLOCK_CYC	300
-#define AES_BLOCK_TIMEOUT	(MSPM0_AES_BLOCK_CYC << 1)
-#define AES_WAIT_TIMEOUT	K_USEC(10)
-#define AES_SEM_TIMEOUT		K_CYC(AES_BLOCK_TIMEOUT)
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+static int aes_load_data_word(volatile uint32_t *reg, const uint8_t *ptr, uint8_t len)
+{
+	for (uint8_t i = 0; i < len; i++) {
+		*reg = sys_get_le32(ptr);
+		ptr += 4;
+	}
 
-LOG_MODULE_REGISTER(aes, CONFIG_CRYPTO_LOG_LEVEL);
+	return 0;
+}
 
-struct crypto_mspm0_aes_config {
-	AES_Regs *regs;
-	void (*irq_config_func)(const struct device *dev);
-};
+static int aes_set_key(aes_ti_mspm0_reg_t *regs, const uint8_t *key, uint32_t keylen)
+{
+	uint8_t num_words;
 
-struct mspm0_aes_session {
-	DL_AES_KEY_LENGTH keylen;
-	DL_AES_MODE aesconfig;
-	enum cipher_op op;
-	bool in_use;
-};
+	switch (keylen) {
+	case AES_MSPM0_AESACTL0_KLX_128:
+		num_words = AES_BLOCK_WORDS;
+		break;
+	case AES_MSPM0_AESACTL0_KLX_256:
+		num_words = AES_BLOCK_WORDS * 2;
+		break;
+	default:
+		LOG_ERR("Invalid key length");
+		return -EINVAL;
+	}
 
-struct crypto_mspm0_aes_data {
-	struct mspm0_aes_session sessions[CONFIG_CRYPTO_MSPM0_MAX_SESSION];
-	struct k_mutex device_mutex;
-	struct k_sem aes_done;
-};
+	return aes_load_data_word(&regs->aesakey, key, num_words);
+}
+
+static int aes_load_data_in(aes_ti_mspm0_reg_t *regs, const uint8_t *data)
+{
+	return aes_load_data_word(&regs->aesadin, data, AES_BLOCK_WORDS);
+}
+
+static int aes_get_data_out(aes_ti_mspm0_reg_t *regs, uint8_t *data)
+{
+	for (uint8_t i = 0; i < AES_BLOCK_WORDS; i++) {
+		sys_put_le32(regs->aesadout, data);
+		data += 4;
+	}
+
+	return 0;
+}
+
+static int aes_load_xor_data_in(aes_ti_mspm0_reg_t *regs, const uint8_t *data)
+{
+	return aes_load_data_word(&regs->aesaxdin, data, AES_BLOCK_WORDS);
+}
+
+static int aes_load_xor_data_in_without_trigger(aes_ti_mspm0_reg_t *regs, const uint8_t *data)
+{
+	return aes_load_data_word(&regs->aesaxin, data, AES_BLOCK_WORDS);
+}
+#else
+static void aes_adv_load_words(volatile uint32_t *reg, const uint8_t *ptr, uint8_t len)
+{
+	for (uint8_t i = 0; i < len; i++) {
+		reg[i] = ((uint32_t)ptr[0] <<  0) |
+			 ((uint32_t)ptr[1] <<  8) |
+			 ((uint32_t)ptr[2] << 16) |
+			 ((uint32_t)ptr[3] << 24);
+		ptr += 4;
+	}
+}
+
+static void aes_adv_read_words(uint8_t *ptr, volatile uint32_t *reg, uint8_t len)
+{
+	for (uint8_t i = 0; i < len; i++) {
+		uint32_t val = reg[i];
+
+		ptr[0] = (val >>  0) & 0xff;
+		ptr[1] = (val >>  8) & 0xff;
+		ptr[2] = (val >> 16) & 0xff;
+		ptr[3] = (val >> 24) & 0xff;
+		ptr += 4;
+	}
+}
+
+static int aes_adv_load_key(aes_adv_ti_mspm0_reg_t *regs, const uint8_t *key, uint32_t keylen)
+{
+	uint8_t num_words;
+
+	switch (keylen) {
+	case AESADV_MSPM0_CTRL_KEYSIZE_128:
+		num_words = AES_BLOCK_WORDS;
+		break;
+	case AESADV_MSPM0_CTRL_KEYSIZE_256:
+		num_words = AES_BLOCK_WORDS * 2;
+		break;
+	default:
+		LOG_ERR("Invalid key length");
+		return -EINVAL;
+	}
+
+	aes_adv_load_words(regs->key, key, num_words);
+
+	return 0;
+}
+
+static void aes_adv_load_iv(aes_adv_ti_mspm0_reg_t *regs, const uint8_t *iv)
+{
+	aes_adv_load_words(regs->iv, iv, 4);
+}
+#endif
 
 static int validate_pkt(struct cipher_pkt *pkt)
 {
@@ -77,19 +153,35 @@ static int aes_hw_init(struct cipher_ctx *ctx)
 	struct mspm0_aes_session *session = ctx->drv_sessn_state;
 	int ret;
 
-	DL_AES_softwareReset(config->regs);
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+	/* AES software reset */
+	config->regs->aesactl0 |= AES_MSPM0_AESACTL0_SWRST;
 
-	DL_AES_init(config->regs, session->aesconfig, session->keylen);
+	/* Write command, operation and key length */
+	config->regs->aesactl0 = (config->regs->aesactl0 &
+				      ~(AES_MSPM0_AESACTL0_CMX_MASK |
+				      AES_MSPM0_AESACTL0_OPX_MASK |
+				      AES_MSPM0_AESACTL0_KLX_MASK)) |
+				      session->aesconfig | session->keylen;
 
-	ret = DL_AES_setKey(config->regs, ctx->key.bit_stream, session->keylen);
-	if (ret != DL_AES_STATUS_SUCCESS) {
+	ret = aes_set_key(config->regs, ctx->key.bit_stream, session->keylen);
+	if (ret != 0) {
 		LOG_ERR("AES HW init setkey failed : %d", ret);
 		return ret;
 	}
 
-	DL_AES_setAllKeyWritten(config->regs);
+	/* All bytes written to AESAKEY */
+	config->regs->aesastat |= AES_MSPM0_AESASTAT_KEYWR;
+#else
+	ret = aes_adv_load_key(config->regs, ctx->key.bit_stream, session->keylen);
+	if (ret != 0) {
+		LOG_ERR("AES ADV HW init setkey failed : %d", ret);
+		return ret;
+	}
+	config->regs->ctrl = session->aesconfig | session->keylen;
+#endif
 
-	return ret;
+	return 0;
 }
 
 static int crypto_aes_ecb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
@@ -123,12 +215,24 @@ static int crypto_aes_ecb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 		goto cleanup;
 	}
 
+#ifdef CONFIG_CRYPTO_MSPM0_AES_ADV
+	config->regs->c_length_0 = pkt->in_len;
+#endif
+
 	do {
+#ifdef CONFIG_CRYPTO_MSPM0_AES
 		/* load the block */
-		ret = DL_AES_loadDataIn(config->regs, &pkt->in_buf[bytes_processed]);
-		if (ret != DL_AES_STATUS_SUCCESS) {
+		ret = aes_load_data_in(config->regs, &pkt->in_buf[bytes_processed]);
+		if (ret != 0) {
 			break;
 		}
+#else
+		/* enable interrupt before writing data for next block */
+		config->regs->cpu_int.imask |= AESADV_MSPM0_IMASK_OUTPUTRDY_MASK;
+		aes_adv_load_words(config->regs->data,
+				   &pkt->in_buf[bytes_processed],
+				   AES_BLOCK_WORDS);
+#endif
 
 		/* wait for AES operation completion */
 		ret = k_sem_take(&data->aes_done, AES_SEM_TIMEOUT);
@@ -136,11 +240,17 @@ static int crypto_aes_ecb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 			break;
 		}
 
+#ifdef CONFIG_CRYPTO_MSPM0_AES
 		/* read the dataout */
-		ret = DL_AES_getDataOut(config->regs, &pkt->out_buf[bytes_processed]);
-		if (ret != DL_AES_STATUS_SUCCESS) {
+		ret = aes_get_data_out(config->regs, &pkt->out_buf[bytes_processed]);
+		if (ret != 0) {
 			break;
 		}
+#else
+		aes_adv_read_words(&pkt->out_buf[bytes_processed],
+				   config->regs->data,
+				   AES_BLOCK_WORDS);
+#endif
 
 		bytes_processed += AES_BLOCK_SIZE;
 
@@ -192,45 +302,64 @@ static int crypto_aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 		goto cleanup;
 	}
 
+#ifdef CONFIG_CRYPTO_MSPM0_AES
 	/* Enable cipher mode for cbc */
-	DL_AES_enableCipherMode(config->regs);
+	config->regs->aesactl0 |= AES_MSPM0_AESACTL0_CMEN;
 
 	/* change the mode from pre-gen to use-pre-gen key mode for decrypt */
 	if (session->op == CRYPTO_CIPHER_OP_DECRYPT) {
-		DL_AES_MODE aesmode;
+		uint32_t aesmode;
 
 		ret = k_sem_take(&data->aes_done, AES_SEM_TIMEOUT);
 		if (ret != 0) {
 			goto cleanup;
 		}
 
-		aesmode = DL_AES_MODE_DECRYPT_KEY_IS_FIRST_ROUND_KEY_CBC_MODE;
+		aesmode = AES_MSPM0_AESACTL0_CMX_CBC | AES_MSPM0_AESACTL0_OPX_DECRYPT_FIRST_KEY;
 
-		DL_AES_init(config->regs, aesmode, session->keylen);
-		DL_AES_setAllKeyWritten(config->regs);
+		/* Write command, operation and key length */
+		config->regs->aesactl0 = (config->regs->aesactl0 & ~(AES_MSPM0_AESACTL0_CMX_MASK |
+								     AES_MSPM0_AESACTL0_OPX_MASK |
+								     AES_MSPM0_AESACTL0_KLX_MASK)) |
+					  aesmode | session->keylen;
+
+		/* All bytes written to AESAKEY */
+		config->regs->aesastat |= AES_MSPM0_AESASTAT_KEYWR;
 	}
 
 	/* load iv */
-	ret = DL_AES_loadXORDataInWithoutTrigger(config->regs, iv);
-	if (ret != DL_AES_STATUS_SUCCESS) {
+	ret = aes_load_xor_data_in_without_trigger(config->regs, iv);
+	if (ret != 0) {
 		goto cleanup;
 	}
+#else
+	/* load iv */
+	aes_adv_load_iv(config->regs, iv);
+
+	config->regs->c_length_0 = pkt->in_len;
+#endif
 
 	do {
+#ifdef CONFIG_CRYPTO_MSPM0_AES
 		/* load the next block */
 		if (session->op == CRYPTO_CIPHER_OP_DECRYPT) {
-			ret = DL_AES_loadDataIn(config->regs,
-						&pkt->in_buf[bytes_processed]);
-			if (ret != DL_AES_STATUS_SUCCESS) {
+			ret = aes_load_data_in(config->regs, &pkt->in_buf[bytes_processed]);
+			if (ret != 0) {
 				break;
 			}
 		} else {
-			ret = DL_AES_loadXORDataIn(config->regs,
-						   &pkt->in_buf[bytes_processed]);
-			if (ret != DL_AES_STATUS_SUCCESS) {
+			ret = aes_load_xor_data_in(config->regs, &pkt->in_buf[bytes_processed]);
+			if (ret != 0) {
 				break;
 			}
 		}
+#else
+		/* enable interrupt before writing data for next block */
+		config->regs->cpu_int.imask |= AESADV_MSPM0_IMASK_OUTPUTRDY_MASK;
+		aes_adv_load_words(config->regs->data,
+				   &pkt->in_buf[bytes_processed],
+				   AES_BLOCK_WORDS);
+#endif
 
 		/* wait for AES operation completion */
 		ret = k_sem_take(&data->aes_done, AES_SEM_TIMEOUT);
@@ -238,10 +367,11 @@ static int crypto_aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 			break;
 		}
 
+#ifdef CONFIG_CRYPTO_MSPM0_AES
 		/* xor the iv with internal state */
 		if (session->op == CRYPTO_CIPHER_OP_DECRYPT) {
-			ret = DL_AES_loadXORDataInWithoutTrigger(config->regs, iv);
-			if (ret != DL_AES_STATUS_SUCCESS) {
+			ret = aes_load_xor_data_in_without_trigger(config->regs, iv);
+			if (ret != 0) {
 				break;
 			}
 			/* update iv to current ciphertext block for next block's XOR */
@@ -249,10 +379,16 @@ static int crypto_aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 		}
 
 		/* read the dataout */
-		ret = DL_AES_getDataOut(config->regs, &pkt->out_buf[bytes_processed]);
-		if (ret != DL_AES_STATUS_SUCCESS) {
+		ret = aes_get_data_out(config->regs, &pkt->out_buf[bytes_processed]);
+		if (ret != 0) {
 			break;
 		}
+#else
+		aes_adv_read_words(&pkt->out_buf[bytes_processed],
+				   config->regs->data,
+				   AES_BLOCK_WORDS);
+#endif
+
 		bytes_processed += AES_BLOCK_SIZE;
 
 	} while (bytes_processed < pkt->in_len);
@@ -271,16 +407,29 @@ static void crypto_mspm0_aes_isr(const struct device *dev)
 {
 	const struct crypto_mspm0_aes_config *config = dev->config;
 	struct crypto_mspm0_aes_data *data = dev->data;
-
-	/* DL_AES_getPendingInterrupt reads from IIDX reg
-	 * on CPU read the current interrupt is cleared by the hardware and the
-	 * corresponding interrupt flag in RIS and MIS are cleared as well.
+	/* Current interrupt is cleared by the hardware on reading IIDX
+	 * register and corresponding interrupt flag in RIS and MIS are
+	 * cleared as well.
 	 */
-	if (!DL_AES_getPendingInterrupt(config->regs)) {
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+	if (!(config->regs->cpu_int.iidx)) {
 		LOG_ERR("No pending Interrupts");
 		return;
 	}
 	k_sem_give(&data->aes_done);
+#else
+	switch (config->regs->cpu_int.iidx) {
+	case 1:
+		config->regs->cpu_int.imask &= ~AESADV_MSPM0_IMASK_OUTPUTRDY_MASK;
+		k_sem_give(&data->aes_done);
+		break;
+	case 3:
+		k_sem_give(&data->aes_done);
+		break;
+	default:
+		break;
+	}
+#endif
 }
 
 static int aes_session_setup(const struct device *dev, struct cipher_ctx *ctx,
@@ -288,8 +437,7 @@ static int aes_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 {
 	struct crypto_mspm0_aes_data *data = dev->data;
 	struct mspm0_aes_session *session = NULL;
-	DL_AES_KEY_LENGTH keylen;
-	DL_AES_MODE aesconfig;
+	uint32_t keylen, aesconfig;
 	int ret;
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES || ctx == NULL || ctx->key.bit_stream == NULL) {
@@ -302,10 +450,18 @@ static int aes_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 
 	switch (ctx->keylen) {
 	case 16U:
-		keylen = DL_AES_KEY_LENGTH_128;
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+		keylen = AES_MSPM0_AESACTL0_KLX_128;
+#else
+		keylen = AESADV_MSPM0_CTRL_KEYSIZE_128;
+#endif
 		break;
 	case 32U:
-		keylen = DL_AES_KEY_LENGTH_256;
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+		keylen = AES_MSPM0_AESACTL0_KLX_256;
+#else
+		keylen = AESADV_MSPM0_CTRL_KEYSIZE_256;
+#endif
 		break;
 	default:
 		LOG_ERR("key size is not supported");
@@ -314,16 +470,28 @@ static int aes_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 
 	switch (mode) {
 	case CRYPTO_CIPHER_MODE_ECB:
-		aesconfig = (op == CRYPTO_CIPHER_OP_ENCRYPT)
-			? DL_AES_MODE_ENCRYPT_ECB_MODE
-			: DL_AES_MODE_DECRYPT_SAME_KEY_ECB_MODE;
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+		aesconfig = AES_MSPM0_AESACTL0_CMX_ECB |
+			    ((op == CRYPTO_CIPHER_OP_ENCRYPT)
+			    ? AES_MSPM0_AESACTL0_OPX_ENCRYPT
+			    : AES_MSPM0_AESACTL0_OPX_DECRYPT);
+#else
+		aesconfig = (op == CRYPTO_CIPHER_OP_ENCRYPT) ? AESADV_MSPM0_CTRL_DIR : 0;
+#endif
 		ctx->ops.block_crypt_hndlr = crypto_aes_ecb_op;
 		break;
 
 	case CRYPTO_CIPHER_MODE_CBC:
-		aesconfig = (op == CRYPTO_CIPHER_OP_ENCRYPT)
-			? DL_AES_MODE_ENCRYPT_CBC_MODE
-			: DL_AES_MODE_GEN_FIRST_ROUND_KEY_CBC_MODE;
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+		aesconfig = AES_MSPM0_AESACTL0_CMX_CBC |
+			    ((op == CRYPTO_CIPHER_OP_ENCRYPT)
+			    ? AES_MSPM0_AESACTL0_OPX_ENCRYPT
+			    : AES_MSPM0_AESACTL0_OPX_GEN_FIRST_KEY);
+#else
+		aesconfig = (op == CRYPTO_CIPHER_OP_ENCRYPT) ?
+			    (AESADV_MSPM0_CTRL_DIR | AESADV_MSPM0_CTRL_CBC)
+			    : AESADV_MSPM0_CTRL_CBC;
+#endif
 		ctx->ops.cbc_crypt_hndlr = crypto_aes_cbc_op;
 		break;
 
@@ -347,7 +515,7 @@ static int aes_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 	}
 
 	if (session == NULL) {
-		LOG_ERR("All %d session(s) in use", CONFIG_CRYPTO_MSPM0_MAX_SESSION);
+		LOG_ERR("All session in use");
 		ret = -EBUSY;
 		goto out;
 	}
@@ -407,20 +575,31 @@ static int crypto_aes_init(const struct device *dev)
 {
 	const struct crypto_mspm0_aes_config *config = dev->config;
 
-	DL_AES_enablePower(config->regs);
+	if (!(config->regs->pwren & AES_MSPM0_PWREN_MASK)) {
+		config->regs->pwren = AES_MSPM0_PWREN_KEY | AES_MSPM0_PWREN_MASK;
+	}
 
-	delay_cycles(CONFIG_MSPM0_PERIPH_STARTUP_DELAY);
+	k_busy_wait(k_cyc_to_us_ceil32(CONFIG_MSPM0_PERIPH_STARTUP_DELAY));
 
+#ifdef CONFIG_CRYPTO_MSPM0_AES
 	/* disable interrupt */
-	DL_AES_disableInterrupt(config->regs);
+	config->regs->cpu_int.imask &= ~(AES_MSPM0_IMASK_AESRDY_MASK);
 
 	/* clear interrupt status regs */
-	DL_AES_clearInterruptStatus(config->regs);
+	config->regs->cpu_int.iclr |= AES_MSPM0_ICLR_AESRDY_MASK;
+#else
+	/* disable interrupt */
+	config->regs->cpu_int.imask &= ~(AESADV_MSPM0_IMASK_INT_MASK);
 
+	/* clear interrupt status regs */
+	config->regs->cpu_int.iclr |= AESADV_MSPM0_ICLR_INT_MASK;
+#endif
 	config->irq_config_func(dev);
 
+#ifdef CONFIG_CRYPTO_MSPM0_AES
 	/* enable interrupt */
-	DL_AES_enableInterrupt(config->regs);
+	config->regs->cpu_int.imask |= AES_MSPM0_IMASK_AESRDY_MASK;
+#endif
 
 	return 0;
 }
@@ -441,7 +620,9 @@ static DEVICE_API(crypto, crypto_enc_funcs) = {
 	}											\
 												\
 	static const struct crypto_mspm0_aes_config crypto_aes_config_##n = {			\
-		.regs = (AES_Regs *)DT_INST_REG_ADDR(n),					\
+		.regs = COND_CODE_1(CONFIG_CRYPTO_MSPM0_AES,					\
+			((aes_ti_mspm0_reg_t *)DT_INST_REG_ADDR(n)),				\
+			((aes_adv_ti_mspm0_reg_t *)DT_INST_REG_ADDR(n))),			\
 		.irq_config_func = crypto_mspm0_irq_config_##n,					\
 	};											\
 												\
