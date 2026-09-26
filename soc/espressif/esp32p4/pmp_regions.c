@@ -24,10 +24,15 @@ PMP_SOC_REGION_DEFINE(esp32p4_soc_rom, DT_REG_ADDR(SOC_ROM_NODE),
 /*
  * ESP32-P4 IRAM text region.
  *
- * On ESP32-P4, IRAM and DRAM share the same 768KB physical memory space
- * (0x4ff00000-0x4ffc0000). The split between code (IRAM) and data (DRAM)
- * is determined at link time. Only the IRAM text portion should be
- * executable.
+ * IRAM and DRAM share one 768KB physical window (0x4ff00000-0x4ffc0000); the
+ * code/data split is decided at link time. Only the IRAM text needs a global
+ * read+execute PMP entry so kernel code executes from RAM. Kernel data
+ * accesses are covered by the kernel-mode dynamic catch-all entry under MPRV,
+ * so a blanket read+write SRAM entry is not needed. Covering only the text
+ * also keeps user-mode data access falling through to the per-thread
+ * memory-domain partitions, so partition permissions (for example read-only
+ * or no-access regions) are actually enforced instead of being shadowed by a
+ * global read+write+execute grant over all of SRAM.
  */
 extern char _iram_text_start[];
 extern char _iram_text_end[];
@@ -37,22 +42,19 @@ PMP_SOC_REGION_DEFINE(esp32p4_iram_text, _iram_text_start, _iram_text_end, PMP_R
 /*
  * Flash-mapped read-only data (DROM).
  *
- * Const data and string literals live in a separate MMU window from
- * executable flash text (__rom_region). Without an explicit PMP entry,
- * user mode cannot read that window. Use _image_rodata_* so sections
+ * Const data and string literals map into the same unified flash cache
+ * window as the executable text, but past __rom_region_end, so the
+ * read-only region entry does not cover them. User-mode loads of const
+ * data are permission checked against PMP, so this window must be
+ * explicitly allowed as read-only. Use _image_rodata_* so sections
  * after __rodata_region_end that still map into DROM are covered.
+ *
+ * The CPU subsystem (CLINT-style timer and software interrupt) and the
+ * peripheral bus are not listed here: SoC regions are granted to both
+ * kernel and user mode, and user threads must not reach those windows.
+ * Kernel accesses to them are covered by the kernel-mode catch-all entry.
  */
 extern char _image_rodata_start[];
 extern char _image_rodata_end[];
 
 PMP_SOC_REGION_DEFINE(esp32p4_flash_rodata, _image_rodata_start, _image_rodata_end, PMP_R);
-
-/*
- * ESP32-P4 peripheral region.
- *
- * HP peripherals at 0x50000000-0x50200000 and LP peripherals at 0x50100000+.
- * An explicit PMP entry is needed because PMP_NO_LOCK_GLOBAL enforces
- * U-mode checks via MPRV.
- */
-PMP_SOC_REGION_DEFINE(esp32p4_periph, (const void *)0x50000000, (const void *)0x50200000,
-		      PMP_R | PMP_W);
