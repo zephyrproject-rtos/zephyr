@@ -17,9 +17,22 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 #include "eth_dwmac_priv.h"
 
 LOG_MODULE_REGISTER(dwmac_ptp_clock, CONFIG_ETHERNET_LOG_LEVEL);
+
+#define DWMAC_PTP_PINCTRL_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+
+struct dwmac_ptp_config {
+	const struct device *eth_dev;
+#if DWMAC_PTP_PINCTRL_ENABLED
+	const struct pinctrl_dev_config *pincfg;
+#endif
+};
 
 struct dwmac_ptp_data {
 	uint32_t default_addend;
@@ -133,7 +146,8 @@ static int dwmac_ptp_rate_adjust(const struct device *dev, double ratio)
 
 static int dwmac_ptp_init(const struct device *dev)
 {
-	const struct device *eth_dev = dev->config;
+	const struct dwmac_ptp_config *cfg = dev->config;
+	const struct device *eth_dev = cfg->eth_dev;
 	const struct dwmac_config *eth_cfg = eth_dev->config;
 	struct dwmac_ptp_data *data = dev->data;
 	mm_reg_t base = DEVICE_MMIO_GET(eth_dev);
@@ -142,6 +156,15 @@ static int dwmac_ptp_init(const struct device *dev)
 	uint32_t addend_val;
 	uint64_t temp;
 	int ret;
+
+#if DWMAC_PTP_PINCTRL_ENABLED
+	if (cfg->pincfg != NULL) {
+		ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif /* DWMAC_PTP_PINCTRL_ENABLED */
 
 	ret = clock_control_get_rate(eth_cfg->clock, eth_cfg->ptp_clk, &ptp_clk_rate);
 	if (ret < 0) {
@@ -220,10 +243,30 @@ const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if
 	return config->ptp_clock;
 }
 
+#if DWMAC_PTP_PINCTRL_ENABLED
+#define DWMAC_PTP_PINCTRL_DEFINE(n)                                                                \
+	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default), (PINCTRL_DT_INST_DEFINE(n);))
+
+#define DWMAC_PTP_PINCTRL_CONFIG(n)                                                                \
+	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default),                                           \
+		   (.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))
+#else
+#define DWMAC_PTP_PINCTRL_DEFINE(n)
+#define DWMAC_PTP_PINCTRL_CONFIG(n)
+#endif
+
 #define PTP_CLOCK_DWMAC_INIT(n)                                                                    \
+	DWMAC_PTP_PINCTRL_DEFINE(n)                                                                \
+                                                                                                   \
+	static const struct dwmac_ptp_config dwmac_ptp_config_##n = {                              \
+		.eth_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                       \
+		DWMAC_PTP_PINCTRL_CONFIG(n)                                                        \
+	};                                                                                         \
+                                                                                                   \
 	static struct dwmac_ptp_data dwmac_ptp_data_##n;                                           \
+                                                                                                   \
 	DEVICE_DT_INST_DEFINE(n, dwmac_ptp_init, NULL, &dwmac_ptp_data_##n,                        \
-			      DEVICE_DT_GET(DT_INST_PARENT(n)), POST_KERNEL,                       \
+			      &dwmac_ptp_config_##n, POST_KERNEL,                                  \
 			      CONFIG_PTP_CLOCK_INIT_PRIORITY, &dwmac_ptp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PTP_CLOCK_DWMAC_INIT)

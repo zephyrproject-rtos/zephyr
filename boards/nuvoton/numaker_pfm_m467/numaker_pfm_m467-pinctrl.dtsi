@@ -33,7 +33,7 @@
 		};
 	};
 
-	/* EMAC multi-function pins for TX, REFCLK, RX and PPS pins */
+	/* EMAC multi-function pins for TX, REFCLK and RX pins */
 	emac_default: emac_default {
 		group0 {
 			pinmux = <PE10MFP_EMAC0_RMII_TXD0>,
@@ -43,8 +43,7 @@
 				 <PC7MFP_EMAC0_RMII_RXD0>,
 				 <PC6MFP_EMAC0_RMII_RXD1>,
 				 <PA7MFP_EMAC0_RMII_CRSDV>,
-				 <PA6MFP_EMAC0_RMII_RXERR>,
-				 <PB6MFP_EMAC0_PPS>;
+				 <PA6MFP_EMAC0_RMII_RXERR>;
 		};
 	};
 
@@ -53,6 +52,13 @@
 		group0 {
 			pinmux = <PE8MFP_EMAC0_RMII_MDC>,
 				 <PE9MFP_EMAC0_RMII_MDIO>;
+		};
+	};
+
+	/* EMAC multi-function pin for the PTP clock PPS output */
+	emac_ptp_default: emac_ptp_default {
+		group0 {
+			pinmux = <PB6MFP_EMAC0_PPS>;
 		};
 	};
 
