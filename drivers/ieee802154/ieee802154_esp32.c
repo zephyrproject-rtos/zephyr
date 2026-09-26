@@ -189,6 +189,9 @@ static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx
 	net_pkt_set_ieee802154_lqi(pkt, frame_info->lqi);
 	net_pkt_set_ieee802154_rssi_dbm(pkt, frame_info->rssi);
 	net_pkt_set_ieee802154_ack_fpb(pkt, frame_info->pending);
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	net_pkt_set_timestamp_ns(pkt, frame_info->timestamp * NSEC_PER_USEC);
+#endif
 
 	err = net_recv_data(data->iface, pkt);
 	if (err != 0) {
