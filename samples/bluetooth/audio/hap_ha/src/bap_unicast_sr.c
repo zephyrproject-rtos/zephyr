@@ -36,14 +36,17 @@
 
 #include "hap_ha.h"
 
+#define SUPPORTED_FRAME_SIZE_MIN 30U
+#define SUPPORTED_FRAME_SIZE_MAX 60U
+
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  BT_ISO_SDU_BUF_SIZE(SUPPORTED_FRAME_SIZE_MAX),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ,
-	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u,
-	HAP_CONTEXT);
+	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1),
+	SUPPORTED_FRAME_SIZE_MIN, SUPPORTED_FRAME_SIZE_MAX, 1u, HAP_CONTEXT);
 
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
@@ -149,14 +152,14 @@ static void print_qos(const struct bt_bap_qos_cfg *qos)
  * Second iteration: 0x00 0x01
  * Third iteration : 0x00 0x01 0x02
  *
- * And so on, until it wraps around the configured MTU (CONFIG_BT_ISO_TX_MTU)
+ * And so on, until it wraps around the configured SDU (SUPPORTED_FRAME_SIZE_MAX)
  *
  * @param work Pointer to the work structure
  */
 static void audio_timer_timeout(struct k_work *work)
 {
 	int ret;
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t buf_data[SUPPORTED_FRAME_SIZE_MAX];
 	static bool data_initialized;
 	struct net_buf *buf;
 	static size_t len_to_send = 1U;
