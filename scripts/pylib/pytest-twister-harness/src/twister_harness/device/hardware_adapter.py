@@ -12,7 +12,7 @@ from pathlib import Path
 from serial import SerialException
 
 from twister_harness.device.device_adapter import DeviceAdapter
-from twister_harness.device.utils import log_command, terminate_process
+from twister_harness.device.utils import log_command
 from twister_harness.exceptions import (
     TwisterHarnessException,
     TwisterHarnessTimeoutException,
@@ -116,6 +116,13 @@ class HardwareAdapter(DeviceAdapter):
 
     def _device_launch(self) -> None:
         """Flash and run application on a device and connect with serial port."""
+        if not self.command:
+            msg = 'Flash command is empty, please verify if it was generated properly.'
+            logger.error(msg)
+            raise TwisterHarnessException(msg)
+
+        self.device_config.dut.run_hook('pre')
+
         if self.device_config.flash_before:
             # For hardware devices with shared USB or software USB, connect after flashing.
             # Retry for up to 10 seconds for USB-CDC based devices to enumerate.
@@ -139,18 +146,12 @@ class HardwareAdapter(DeviceAdapter):
 
     def _flash_and_run(self) -> None:
         """Flash application on a device."""
-        if not self.command:
-            msg = 'Flash command is empty, please verify if it was generated properly.'
-            logger.error(msg)
-            raise TwisterHarnessException(msg)
-
-        if self.device_config.pre_script:
-            self._run_custom_script(self.device_config.pre_script, self.base_timeout)
 
         if self.device_config.id:
             logger.debug('Flashing device %s', self.device_config.id)
         log_command(logger, 'Flashing command', self.command, level=logging.DEBUG)
 
+        self.device_config.dut.run_hook('pre_flash')
         process = stdout = None
         try:
             process = subprocess.Popen(
@@ -171,8 +172,7 @@ class HardwareAdapter(DeviceAdapter):
                 stdout_decoded = stdout.decode(errors='ignore')
                 with open(self.device_log_path, 'a+') as log_file:
                     log_file.write(stdout_decoded)
-            if self.device_config.post_flash_script:
-                self._run_custom_script(self.device_config.post_flash_script, self.base_timeout)
+            self.device_config.dut.run_hook('post_flash')
             if process is not None and process.returncode == 0:
                 logger.debug('Flashing finished')
             else:
@@ -183,25 +183,5 @@ class HardwareAdapter(DeviceAdapter):
     def _close_device(self) -> None:
         # Run post script only if the reader thread is started to avoid running it
         # multiple times and when in initialization phase
-        if self.is_reader_started() and self.device_config.post_script:
-            self._run_custom_script(self.device_config.post_script, self.base_timeout)
-
-    @staticmethod
-    def _run_custom_script(script_path: str | Path, timeout: float) -> None:
-        with subprocess.Popen(
-            str(script_path), stderr=subprocess.PIPE, stdout=subprocess.PIPE
-        ) as proc:
-            try:
-                stdout, stderr = proc.communicate(timeout=timeout)
-                logger.debug(stdout.decode())
-                if proc.returncode != 0:
-                    msg = f'Custom script failure: \n{stderr.decode(errors="ignore")}'
-                    logger.error(msg)
-                    raise TwisterHarnessException(msg)
-
-            except subprocess.TimeoutExpired as exc:
-                terminate_process(proc)
-                proc.communicate(timeout=timeout)
-                msg = f'Timeout occurred ({timeout}s) during execution custom script: {script_path}'
-                logger.error(msg)
-                raise TwisterHarnessTimeoutException(msg) from exc
+        if self.is_reader_started():
+            self.device_config.dut.run_hook('post')
