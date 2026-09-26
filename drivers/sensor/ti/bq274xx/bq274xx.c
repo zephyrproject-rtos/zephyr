@@ -37,8 +37,14 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 /* Time to wait for CFGUP bit to be set, up to 1 second according to the
  * technical reference manual, keep some headroom like the Linux driver.
  */
-#define BQ274XX_CFGUP_DELAY K_MSEC(25)
-#define BQ274XX_CFGUP_MAX_TRIES 100
+#define BQ274XX_CFGUP_DELAY     K_MSEC(500)
+#define BQ274XX_CFGUP_MAX_TRIES 4
+
+/* Datasheet (Sec 8.11) requires minimum 66 µs bus-free time (t_BUF)
+ * between the STOP condition of the write and the START of the read.
+ * 70 µs provides a safe, deterministic margin.
+ */
+#define BQ274XX_CMD_DELAY 70
 
 /* Time to set pin in order to exit shutdown mode */
 #define PIN_DELAY_TIME K_MSEC(1)
@@ -112,6 +118,8 @@ static int bq274xx_ctrl_reg_write(const struct device *dev, uint16_t subcommand)
 		LOG_ERR("Failed to write into control register");
 		return -EIO;
 	}
+
+	k_usleep(BQ274XX_CMD_DELAY);
 
 	return 0;
 }
@@ -392,11 +400,19 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	const struct bq274xx_config *const config = dev->config;
 	struct bq274xx_data *data = dev->data;
 	const struct bq274xx_regs *regs;
-	int ret;
+	int ret = 0;
 	uint16_t designenergy_mwh, taperrate;
 	uint8_t block[BQ27XXX_DM_SZ];
 	bool block_modified = false;
 	uint16_t id;
+
+	/* Lock the entire configuration sequence to protect the Control register state */
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	/* Double-check in case another thread configured it while we waited for the lock */
+	if (data->configured) {
+		goto unlock;
+	}
 
 	if (data->regs == NULL) {
 		k_sleep(K_TIMEOUT_ABS_MS(POWER_UP_DELAY_MS));
@@ -404,16 +420,18 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		ret = bq274xx_get_device_type(dev, &id);
 		if (ret < 0) {
 			LOG_ERR("Unable to get device ID");
-			return -EIO;
+			goto unlock;
 		}
-
+		/* Note: Value returned is 0x0421 even if the product is bq27441-G1 (TRM of bq27441)
+		 */
 		if (id == BQ27421_DEVICE_ID) {
 			data->regs = &bq27421_regs;
 		} else if (id == BQ27427_DEVICE_ID) {
 			data->regs = &bq27427_regs;
 		} else {
 			LOG_ERR("Unsupported device ID: 0x%04x", id);
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto unlock;
 		}
 	}
 	regs = data->regs;
@@ -425,29 +443,29 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY_A);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
-		return -EIO;
+		goto unlock;
 	}
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY_B);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
-		return -EIO;
+		goto unlock;
 	}
 
 	ret = bq274xx_mode_cfgupdate(dev, true);
 	if (ret < 0) {
-		return ret;
+		goto unlock;
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXT_DATA_CONTROL, 0x00);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable block data memory");
-		return -EIO;
+		goto unlock;
 	}
 
 	ret = bq274xx_read_block(dev, BQ274XX_SUBCLASS_82, block, sizeof(block));
 	if (ret < 0) {
-		return ret;
+		goto unlock;
 	}
 
 	bq274xx_update_block(block,
@@ -468,42 +486,51 @@ static int bq274xx_gauge_configure(const struct device *dev)
 
 		ret = bq274xx_write_block(dev, block, sizeof(block));
 		if (ret < 0) {
-			return ret;
+			goto unlock;
 		}
 
 		if (data->regs == &bq27427_regs) {
 			ret = bq27427_ccgain_quirk(dev);
 			if (ret < 0) {
-				return ret;
+				goto unlock;
 			}
 		}
 
 		ret = bq274xx_ensure_chemistry(dev);
 		if (ret < 0) {
-			return ret;
+			goto unlock;
 		}
 
 		ret = bq274xx_mode_cfgupdate(dev, false);
 		if (ret < 0) {
-			return ret;
+			goto unlock;
+		}
+	} else {
+
+		ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_EXIT_CFGUPDATE);
+		if (ret < 0) {
+			LOG_ERR("Failed to exit configuration mode");
+			goto unlock;
 		}
 	}
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SEALED);
 	if (ret < 0) {
 		LOG_ERR("Failed to seal the gauge");
-		return -EIO;
+		goto unlock;
 	}
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_BAT_INSERT);
 	if (ret < 0) {
 		LOG_ERR("Unable to configure BAT Detect");
-		return -EIO;
+		goto unlock;
 	}
 
 	data->configured = true;
 
-	return 0;
+unlock:
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int bq274xx_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -587,6 +614,7 @@ static int bq274xx_channel_get(const struct device *dev, enum sensor_channel cha
 static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct bq274xx_data *data = dev->data;
+	int64_t now = k_uptime_get();
 	int ret = -ENOTSUP;
 
 	if (!data->configured) {
@@ -596,6 +624,18 @@ static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel ch
 		}
 	}
 
+	/* The BQ274xx updates measurements once per second.
+	 * To comply with the 2 commands/second limit and avoid watchdog resets,
+	 * we skip I2C transactions if a fetch occurred within the last 1000 ms.
+	 */
+	if (data->last_fetch_ms != 0 && (now - data->last_fetch_ms) < 1000) {
+		return -EBUSY;
+	}
+
+	/* Recommendation: In your application code, try to avoid calling SENSOR_CHAN_ALL.
+	 * Instead, call fetch for the specific channels you need.
+	 * to eliminate any risk of back-to-back I2C violations.
+	 */
 	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_VOLTAGE) {
 		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_VOLTAGE,
 					   &data->voltage);
@@ -696,17 +736,17 @@ static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel ch
 	}
 
 	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_STATE_OF_HEALTH) {
-		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_SOH,
-					   &data->state_of_health);
-
-		data->state_of_health = (data->state_of_health) & 0x00FF;
+		ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_SOH, &data->state_of_health);
 
 		if (ret < 0) {
 			LOG_ERR("Failed to read state of health");
 			return -EIO;
 		}
+
+		data->state_of_health = (data->state_of_health) & 0x00FF;
 	}
 
+	data->last_fetch_ms = now;
 	return ret;
 }
 
@@ -718,7 +758,10 @@ static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel ch
 static int bq274xx_gauge_init(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
+	struct bq274xx_data *data = dev->data;
 	int ret = 0;
+
+	k_mutex_init(&data->lock);
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
@@ -750,39 +793,44 @@ static int bq274xx_gauge_init(const struct device *dev)
 #ifdef CONFIG_BQ274XX_PM
 static int bq274xx_enter_shutdown_mode(const struct device *dev)
 {
-	int ret;
+	struct bq274xx_data *data = dev->data;
+	int ret = 0;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY_A);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
-		return ret;
+		goto unlock;
 	}
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_UNSEAL_KEY_B);
 	if (ret < 0) {
 		LOG_ERR("Unable to unseal the battery");
-		return ret;
+		goto unlock;
 	}
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SHUTDOWN_ENABLE);
 	if (ret < 0) {
 		LOG_ERR("Unable to enable shutdown mode");
-		return ret;
+		goto unlock;
 	}
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SHUTDOWN);
 	if (ret < 0) {
 		LOG_ERR("Unable to enter shutdown mode");
-		return ret;
+		goto unlock;
 	}
 
 	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_SEALED);
 	if (ret < 0) {
 		LOG_ERR("Failed to seal the gauge");
-		return ret;
+		goto unlock;
 	}
 
-	return 0;
+unlock:
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int bq274xx_exit_shutdown_mode(const struct device *dev)
