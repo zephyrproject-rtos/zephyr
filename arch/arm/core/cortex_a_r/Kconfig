@@ -199,6 +199,16 @@ config CPU_CORTEX_R52
 	help
 	  This option signifies the use of a Cortex-R52 CPU
 
+config CPU_CORTEX_R52_TCM_INIT
+	bool "Initialize Cortex-R52 TCM region mappings"
+	depends on CPU_CORTEX_R52
+	help
+	  Program enabled ATCM, BTCM, and CTCM region mappings at the start of
+	  reset, before stacks or writable data are accessed. The configuration
+	  is supplied by the z_arm_tcm_a_region, z_arm_tcm_b_region, and
+	  z_arm_tcm_c_region words. A region is left unchanged when bit zero of
+	  its word is clear.
+
 config CPU_CORTEX_R52_CACHE_SEGREGATION
 	bool "Control segregation of L1 I/D-Cache ways between Flash and AXIM"
 	depends on CPU_CORTEX_R52
