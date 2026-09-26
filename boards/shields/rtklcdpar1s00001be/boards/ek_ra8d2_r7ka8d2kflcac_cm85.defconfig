@@ -16,8 +16,8 @@ config LV_Z_VDB_ZEPHYR_REGION
 config LV_Z_VDB_ZEPHYR_REGION_NAME
 	default "SDRAM"
 
-config LV_ATTRIBUTE_MEM_ALIGN_SIZE
-	default 4 if LV_USE_DRAW_DAVE2D
+config LV_Z_ATTRIBUTE_MEM_ALIGN_SIZE
+	default 4 if LV_Z_DRAW_DAVE2D
 
 config LV_Z_VDB_ALIGN
 	default 64

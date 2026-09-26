@@ -15,15 +15,15 @@ config LV_Z_VDB_SIZE
 
 # Default Dot Per Inch. [px/inch]
 # Used to initialize default sizes such as widgets sized, style paddings.
-config LV_DPI_DEF
+config LV_Z_DPI_DEF
 	default 128
 
 # Use offloaded render thread
 config LV_Z_FLUSH_THREAD
 	default y
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_1  # 1 byte per pixel
+choice LV_Z_COLOR_FORMAT
+	default LV_Z_COLOR_FORMAT_I1
 endchoice
 
 endif # LVGL

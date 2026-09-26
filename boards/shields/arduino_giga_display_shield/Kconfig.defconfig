@@ -8,7 +8,7 @@ if LVGL
 config INPUT
 	default y
 
-config LV_DPI_DEF
+config LV_Z_DPI_DEF
 	default 128
 
 config LV_Z_FLUSH_THREAD

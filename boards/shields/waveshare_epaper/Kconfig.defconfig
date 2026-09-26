@@ -15,13 +15,13 @@ config LV_Z_VDB_SIZE
 	default 16 if SHIELD_WAVESHARE_EPAPER_GDEW075T7
 	default 16
 
-config LV_DPI_DEF
+config LV_Z_DPI_DEF
 	default 188 if SHIELD_WAVESHARE_EPAPER_GDEH0154A07
 	default 120 if SHIELD_WAVESHARE_EPAPER_GDEW042T2
 	default 130
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_1
+choice LV_Z_COLOR_FORMAT
+	default LV_Z_COLOR_FORMAT_I1
 endchoice
 
 endif # LVGL
