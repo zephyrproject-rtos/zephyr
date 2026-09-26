@@ -1,0 +1,46 @@
+common:
+  harness: console
+  ignore_faults: true
+  ignore_qemu_crash: true
+  tags:
+    - kernel
+    - m68k
+tests:
+  arch.m68k.fatal.illegal.m68000:
+    platform_allow:
+      - qemu_m68k/qemu_virt_m68k_m68000
+    extra_configs:
+      - CONFIG_TEST_M68K_FATAL_ILLEGAL_INSTRUCTION=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "vector: 4  pc: 0x[0-9a-f]+  sr: 0x[0-9a-f]+"
+  arch.m68k.fatal.illegal.m68010:
+    platform_allow:
+      - qemu_m68k/qemu_virt_m68k_m68010
+    extra_configs:
+      - CONFIG_TEST_M68K_FATAL_ILLEGAL_INSTRUCTION=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "vector: 4  pc: 0x[0-9a-f]+  sr: 0x[0-9a-f]+"
+        - "format/vector: 0x0010"
+  arch.m68k.fatal.trap.m68000:
+    platform_allow:
+      - qemu_m68k/qemu_virt_m68k_m68000
+    extra_configs:
+      - CONFIG_TEST_M68K_FATAL_UNHANDLED_TRAP=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "vector: 32  pc: 0x[0-9a-f]+  sr: 0x[0-9a-f]+"
+  arch.m68k.fatal.trap.m68010:
+    platform_allow:
+      - qemu_m68k/qemu_virt_m68k_m68010
+    extra_configs:
+      - CONFIG_TEST_M68K_FATAL_UNHANDLED_TRAP=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "vector: 32  pc: 0x[0-9a-f]+  sr: 0x[0-9a-f]+"
+        - "format/vector: 0x0080"

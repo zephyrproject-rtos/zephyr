@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Motorola M68000 processor
+
+compatible: "motorola,m68000"
+
+include: cpu.yaml
