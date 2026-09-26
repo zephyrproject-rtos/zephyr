@@ -14,6 +14,41 @@ config SOC_SERIES_STM32MP13X
 	select KERNEL_DIRECT_MAP if MMU
 	select SOC_EARLY_INIT_HOOK
 	select SYS_CLOCK_EXISTS
-	select XIP
+	select XIP if !SOC_SERIES_STM32MP13X_FSBL
 	# STM32-specific options
 	select HAS_STM32CUBE
+
+config SOC_SERIES_STM32MP13X_FSBL
+	bool
+	help
+	  Build Zephyr for direct startup as an STM32MP13 first-stage image,
+	  before DDR and the full clock tree have been initialized by a previous
+	  boot stage. This enables the clock configuration and memory mappings
+	  required to initialize external DDR.
+
+config SOC_SERIES_STM32MP13X_DDR_INIT
+	bool
+	default y if DT_HAS_ST_STM32MP13_DDR_ENABLED
+	select USE_STM32_HAL_DDR
+	help
+	  Initialize the STM32MP13 DDR (Double Data Rate) controller and PHY
+	  (Physical Interface) from devicetree.
+
+config SOC_SERIES_STM32MP13X_DDR_INIT_PRIORITY
+	int
+	default 2
+	depends on SOC_SERIES_STM32MP13X_DDR_INIT
+
+config SOC_SERIES_STM32MP13X_BOOTROM_HEADER
+	bool "Generate an STM32MP13 BootROM image"
+	select BUILD_OUTPUT_BIN
+	help
+	  Generate an unsigned STM32 version 2 image containing the Zephyr binary
+	  and the header required by the STM32MP13 BootROM (Boot Read-Only Memory).
+
+config SOC_SERIES_STM32MP13X_BOOTROM_HEADER_BINARY_TYPE
+	hex
+	default 0x10
+	depends on SOC_SERIES_STM32MP13X_BOOTROM_HEADER
+	help
+	  Set the STM32 binary type for a first-stage bootloader image.

@@ -20,6 +20,24 @@
 
 #define VECTOR_ADDRESS ((uintptr_t)_vector_start)
 
+#define DEVICE_RO (MPERM_R | MT_DEVICE | MATTR_MAY_MAP_L1_SECTION)
+#define DEVICE_RW (MPERM_R | MPERM_W | MT_DEVICE | MATTR_MAY_MAP_L1_SECTION)
+#define NORMAL_RW                                                                                  \
+	(MT_NORMAL | MATTR_SHARED | MPERM_R | MPERM_W | MATTR_CACHE_OUTER_WB_WA |                  \
+	 MATTR_CACHE_INNER_WB_WA | MATTR_MAY_MAP_L1_SECTION)
+#define NORMAL_RX                                                                                  \
+	(MT_NORMAL | MATTR_SHARED | MPERM_R | MPERM_X | MATTR_CACHE_OUTER_WB_WA |                  \
+	 MATTR_CACHE_INNER_WB_WA | MATTR_MAY_MAP_L1_SECTION)
+
+#if defined(CONFIG_SOC_SERIES_STM32MP13X_FSBL)
+#define DDR_NODE   DT_COMPAT_GET_ANY_STATUS_OKAY(st_stm32mp13_ddr)
+#define DDR_MEMORY DT_PHANDLE(DDR_NODE, memory_region)
+#define DDR_BASE   DT_REG_ADDR(DDR_MEMORY)
+
+BUILD_ASSERT(DDR_BASE == DRAM_MEM_BASE,
+	     "DDR memory-region must be set to 0xC0000000 on this platform");
+#endif
+
 void relocate_vector_table(void)
 {
 	write_sctlr(read_sctlr() & ~HIVECS);
@@ -35,44 +53,34 @@ void relocate_vector_table(void)
 
 void soc_early_init_hook(void)
 {
-	/* Update CMSIS SystemCoreClock variable (HCLK) */
-	SystemCoreClock = 1000000000U;
+	/* Record the clock established by the previous boot stage. */
+	SystemCoreClockUpdate();
 
-	/* Clear TE bit to take exceptions in Thumb mode to fix the DDR init */
+	/* Clear the TE (Thumb Exception) bit to support DDR initialization. */
 	write_sctlr(read_sctlr() & ~SCTLR_TE_Msk);
 	barrier_isync_fence_full();
 }
 
 static const struct arm_mmu_region mmu_regions[] = {
-	MMU_REGION_FLAT_ENTRY("APB1", 0x40000000, 0x19400, MPERM_R | MPERM_W | MT_DEVICE),
+	/* 0x40000000 */ MMU_REGION_FLAT_ENTRY("PERIPH",  PERIPH_BASE,         MB(512),  DEVICE_RW),
+	/* 0x60000000 */ MMU_REGION_FLAT_ENTRY("FMC",     AXI_BUS_MEMORY_BASE, MB(256),  DEVICE_RO),
+	/* 0x70000000 */ MMU_REGION_FLAT_ENTRY("QSPI",    QSPI_MEM_BASE,       MB(256),  DEVICE_RO),
+	/* 0x80000000 */ MMU_REGION_FLAT_ENTRY("FMC",     FMC_NAND_MEM_BASE,   MB(256),  DEVICE_RW),
+	/* 0xA0021000 */ MMU_REGION_FLAT_ENTRY("GIC",     GIC_BASE,            KB(28),   DEVICE_RW),
+	/*            */ MMU_REGION_FLAT_ENTRY("vectors", VECTOR_ADDRESS,      KB(4),    NORMAL_RX),
 
-	MMU_REGION_FLAT_ENTRY("APB2", 0x44000000, 0x14000, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("AHB2", 0x48000000, 0x1040000, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("APB6", 0x4C000000, 0xC400, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("AHB4", 0x50000000, 0xD400, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("APB3", 0x50020000, 0xA400, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("DEBUG APB", 0x50080000, 0x5D000, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("AHB5", 0x54000000, 0x8000, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("AXIMC", 0x57000000, 0x100000, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("AHB6", 0x58000000, 0x10000, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("APB4", 0x5A000000, 0x7400, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("APB5", 0x5C000000, 0xA400, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("GIC", 0xA0021000, 0x7000, MPERM_R | MPERM_W | MT_DEVICE),
-
-	MMU_REGION_FLAT_ENTRY("vectors", 0xC0000000, 0x1000, MPERM_R | MPERM_X | MT_NORMAL),
-
-	MMU_REGION_FLAT_ENTRY("DAPBUS", 0xE0080000, 0x5D000, MPERM_R | MPERM_W | MT_DEVICE),
+#if defined(CONFIG_SOC_SERIES_STM32MP13X_FSBL)
+	/* 0x30000000 */ MMU_REGION_FLAT_ENTRY("SRAM",    AHB_SRAM,            KB(32),   NORMAL_RW),
+	/*
+	 * Map the full 1 GiB DDR window for the STM32Cube size probe. ddr_check_size()
+	 * detects address aliasing by writing at increasing power-of-two offsets;
+	 * with 512 MiB installed, it must access 0xE0000000 to detect the wraparound.
+	 * Mapping only the installed capacity would cause an MMU (Memory Management Unit)
+	 * translation fault before the console is initialized. The installed capacity
+	 * remains described by st,mem-size; the extra mapping is for probing only.
+	 */
+	/* 0xC0000000 */ MMU_REGION_FLAT_ENTRY("DDR",     DRAM_MEM_BASE,       MB(1024), NORMAL_RW),
+#endif
 };
 
 const struct arm_mmu_config mmu_config = {

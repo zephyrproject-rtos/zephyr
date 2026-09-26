@@ -18,8 +18,14 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/sys/util.h>
 
-/** Offset between RCC_MP_xxxENSETR and RCC_MP_xxxENCLRR registers */
+/** Offset between RCC (Reset and Clock Control) enable-set and enable-clear registers. */
 #define RCC_CLR_OFFSET		0x4
+
+#define STM32_AXI_DIV  DT_PROP_OR(DT_NODELABEL(rcc), axi_prescaler, 1)
+#define STM32_APB3_DIV DT_PROP_OR(DT_NODELABEL(rcc), apb3_prescaler, 1)
+#define STM32_APB4_DIV DT_PROP_OR(DT_NODELABEL(rcc), apb4_prescaler, 1)
+#define STM32_APB5_DIV DT_PROP_OR(DT_NODELABEL(rcc), apb5_prescaler, 1)
+#define STM32_APB6_DIV DT_PROP_OR(DT_NODELABEL(rcc), apb6_prescaler, 1)
 
 /** @brief Verifies clock is part of active clock configuration */
 int enabled_clock(uint32_t src_clk)
@@ -331,7 +337,7 @@ static DEVICE_API(clock_control, stm32_clock_control_api) = {
 static void set_up_fixed_clock_sources(void)
 {
 	if (IS_ENABLED(STM32_HSE_ENABLED)) {
-		/* Enable HSE */
+		/* Enable the HSE (High-Speed External) oscillator. */
 		LL_RCC_HSE_Enable();
 		while (LL_RCC_HSE_IsReady() != 1) {
 			/* Wait for HSE ready */
@@ -339,7 +345,7 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_HSI_ENABLED)) {
-		/* Enable HSI if not enabled */
+		/* Enable the HSI (High-Speed Internal) oscillator if needed. */
 		if (LL_RCC_HSI_IsReady() != 1) {
 			/* Enable HSI */
 			LL_RCC_HSI_Enable();
@@ -350,11 +356,57 @@ static void set_up_fixed_clock_sources(void)
 	}
 }
 
+/**
+ * Convert a power-of-two divisor to its STM32MP13 RCC encoding.
+ * @param divisor Clock divisor.
+ * @return Encoded RCC prescaler value.
+ */
+static uint32_t stm32_mp13_prescaler(uint32_t divisor)
+{
+	return find_lsb_set(divisor) - 1U;
+}
+
+/** Program all STM32MP13 bus prescalers from devicetree. */
+static void set_up_bus_prescalers(void)
+{
+	/* Set the Cortex-A7 interconnect and microcontroller bus divider. */
+	LL_RCC_SetMLHCLKPrescaler(stm32_mp13_prescaler(STM32_AHB_PRESCALER));
+	while ((RCC->MLAHBDIVR & RCC_MLAHBDIVR_MLAHBDIVRDY) == 0U) {
+	}
+
+	LL_RCC_SetAPB1Prescaler(stm32_mp13_prescaler(STM32_APB1_PRESCALER));
+	while ((RCC->APB1DIVR & RCC_APB1DIVR_APB1DIVRDY) == 0U) {
+	}
+
+	LL_RCC_SetAPB2Prescaler(stm32_mp13_prescaler(STM32_APB2_PRESCALER));
+	while ((RCC->APB2DIVR & RCC_APB2DIVR_APB2DIVRDY) == 0U) {
+	}
+
+	LL_RCC_SetAPB3Prescaler(stm32_mp13_prescaler(STM32_APB3_DIV));
+	while ((RCC->APB3DIVR & RCC_APB3DIVR_APB3DIVRDY) == 0U) {
+	}
+
+	LL_RCC_SetAPB4Prescaler(stm32_mp13_prescaler(STM32_APB4_DIV));
+	while ((RCC->APB4DIVR & RCC_APB4DIVR_APB4DIVRDY) == 0U) {
+	}
+
+	LL_RCC_SetAPB5Prescaler(stm32_mp13_prescaler(STM32_APB5_DIV));
+	while ((RCC->APB5DIVR & RCC_APB5DIVR_APB5DIVRDY) == 0U) {
+	}
+
+	LL_RCC_SetAPB6Prescaler(stm32_mp13_prescaler(STM32_APB6_DIV));
+	while ((RCC->APB6DIVR & RCC_APB6DIVR_APB6DIVRDY) == 0U) {
+	}
+}
+
 static int stm32_clock_control_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	set_up_fixed_clock_sources();
+	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32MP13X_FSBL)) {
+		set_up_bus_prescalers();
+	}
 
 #if STM32_SYSCLK_SRC_HSE
 
@@ -371,60 +423,122 @@ static int stm32_clock_control_init(const struct device *dev)
 #elif STM32_SYSCLK_SRC_PLL
 
 	BUILD_ASSERT(IS_ENABLED(STM32_HSE_ENABLED),
-		     "STM32MP13 PLL requires HSE to be enabled!");
+		     "STM32MP13 phase-locked loop requires HSE to be enabled!");
 
-	/* The default system clock source is HSI, but the bootloader may have switched it. */
-	/* Switch back to HSE for clock setup as PLL1 configuration must not be modified */
-	/* while active.*/
+	/*
+	 * PLLs (Phase-Locked Loops) 1 and 2 share an input. An application running
+	 * from DDR (Double Data Rate) memory must preserve PLL2 and its input clock.
+	 * Its previous boot stage must already have selected HSE for PLL1 setup.
+	 */
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_STM32MP13X_FSBL) &&
+	    LL_RCC_PLL12_GetSource() != LL_RCC_PLL12SOURCE_HSE) {
+		return -ENOTSUP;
+	}
 
+	/* Move the Cortex-A7 off PLL1 before reprogramming it. */
 	LL_RCC_SetMPUClkSource(LL_RCC_MPU_CLKSOURCE_HSE);
 	while (stm32_reg_read_bits(&RCC->MPCKSELR, RCC_MPCKSELR_MPUSRCRDY) !=
 	       RCC_MPCKSELR_MPUSRCRDY) {
 	}
 
-	stm32_reg_clear_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVPEN);
-	while (stm32_reg_read_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVPEN) == RCC_PLL1CR_DIVPEN) {
-	};
+#if defined(STM32_PLL2_ENABLED)
+	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32MP13X_FSBL)) {
+		/* Only the FSBL (First-Stage Bootloader) may stop clocks before DDR is in use. */
+		/*
+		 * Take the AXI (Advanced eXtensible Interface) bus off PLL2 before
+		 * reprogramming it.
+		 */
+		LL_RCC_SetAXISSClkSource(LL_RCC_AXISS_CLKSOURCE_HSE);
+		while ((RCC->ASSCKSELR & RCC_ASSCKSELR_AXISSRCRDY) == 0U) {
+		}
 
-	stm32_reg_clear_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVQEN);
-	while (stm32_reg_read_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVQEN) == RCC_PLL1CR_DIVQEN) {
-	};
-
-	stm32_reg_clear_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVREN);
-	while (stm32_reg_read_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVREN) == RCC_PLL1CR_DIVREN) {
-	};
-
-	uint32_t pll1_n = DT_PROP(DT_NODELABEL(pll1), mul_n);
-	uint32_t pll1_m = DT_PROP(DT_NODELABEL(pll1), div_m);
-	uint32_t pll1_p = DT_PROP(DT_NODELABEL(pll1), div_p);
-	uint32_t pll1_fracn = DT_PROP(DT_NODELABEL(pll1), fracn);
-
-	LL_RCC_PLL1_SetN(pll1_n);
-	while (LL_RCC_PLL1_GetN() != pll1_n) {
+		/* Stop the PLL2 outputs and VCO (Voltage-Controlled Oscillator). */
+		LL_RCC_PLL2P_Disable();
+		LL_RCC_PLL2Q_Disable();
+		LL_RCC_PLL2R_Disable();
+		LL_RCC_PLL2_Disable();
+		while (LL_RCC_PLL2_IsReady() != 0U) {
+		}
 	}
-	LL_RCC_PLL1_SetM(pll1_m);
-	while (LL_RCC_PLL1_GetM() != pll1_m) {
+#endif
+
+	/* Stop the PLL1 outputs and VCO before changing its factors. */
+	stm32_reg_clear_bits(&RCC->PLL1CR,
+			     RCC_PLL1CR_DIVPEN | RCC_PLL1CR_DIVQEN | RCC_PLL1CR_DIVREN);
+	while ((RCC->PLL1CR & (RCC_PLL1CR_DIVPEN | RCC_PLL1CR_DIVQEN | RCC_PLL1CR_DIVREN)) != 0U) {
 	}
-	LL_RCC_PLL1_SetP(pll1_p);
-	while (LL_RCC_PLL1_GetP() != pll1_p) {
-	}
-	LL_RCC_PLL1_SetFRACV(pll1_fracn);
-	while (LL_RCC_PLL1_GetFRACV() != pll1_fracn) {
+	LL_RCC_PLL1_Disable();
+	while (LL_RCC_PLL1_IsReady() != 0U) {
 	}
 
+	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32MP13X_FSBL)) {
+		/* Select the shared PLL1/PLL2 input before DDR initialization. */
+		LL_RCC_PLL12_SetSource(LL_RCC_PLL12SOURCE_HSE);
+		while ((RCC->RCK12SELR & RCC_RCK12SELR_PLL12SRCRDY) == 0U) {
+		}
+	}
+
+	/* Configure the Cortex-A7 clock using the PLL1 factors specified in devicetree. */
+	LL_RCC_PLL1_SetN(STM32_PLL_N_MULTIPLIER);
+	LL_RCC_PLL1_SetM(STM32_PLL_M_DIVISOR);
+	LL_RCC_PLL1_SetP(STM32_PLL_P_DIVISOR);
+	/* Latch the new PLL1 fractional value while fractional updates are disabled. */
+	LL_RCC_PLL1FRACV_Disable();
+	LL_RCC_PLL1_SetFRACV(STM32_PLL_FRACN_VALUE);
+	LL_RCC_PLL1FRACV_Enable();
+
+	/* Start PLL1, then enable its P output for the Cortex-A7 clock. */
 	LL_RCC_PLL1_Enable();
-	while (LL_RCC_PLL1_IsReady() != 1) {
+	while (LL_RCC_PLL1_IsReady() != 1U) {
 	}
 
-	stm32_reg_set_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVPEN);
-	while (stm32_reg_read_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVPEN) != RCC_PLL1CR_DIVPEN) {
-	};
+	LL_RCC_PLL1P_Enable();
+
+#if defined(STM32_PLL2_ENABLED)
+	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32MP13X_FSBL)) {
+		/* Program PLL2 outputs for the AXI and DDR clock domains. */
+		LL_RCC_PLL2_SetN(STM32_PLL2_N_MULTIPLIER);
+		LL_RCC_PLL2_SetM(STM32_PLL2_M_DIVISOR);
+		LL_RCC_PLL2_SetP(STM32_PLL2_P_DIVISOR);
+		LL_RCC_PLL2_SetQ(STM32_PLL2_Q_DIVISOR);
+		LL_RCC_PLL2_SetR(STM32_PLL2_R_DIVISOR);
+		/* Latch the new PLL2 fractional value while fractional updates are disabled. */
+		LL_RCC_PLL2FRACV_Disable();
+		LL_RCC_PLL2_SetFRACV(STM32_PLL2_FRACN_VALUE);
+		LL_RCC_PLL2FRACV_Enable();
+		/* Start PLL2 before enabling the outputs requested by devicetree. */
+		LL_RCC_PLL2_Enable();
+		while (LL_RCC_PLL2_IsReady() != 1U) {
+		}
+
+		if (IS_ENABLED(STM32_PLL2_P_ENABLED)) {
+			LL_RCC_PLL2P_Enable();
+		}
+		if (IS_ENABLED(STM32_PLL2_Q_ENABLED)) {
+			LL_RCC_PLL2Q_Enable();
+		}
+		if (IS_ENABLED(STM32_PLL2_R_ENABLED)) {
+			LL_RCC_PLL2R_Enable();
+		}
+
+		/* Set the AXI interconnect divider. */
+		LL_RCC_SetACLKPrescaler(STM32_AXI_DIV - 1U);
+		while ((RCC->AXIDIVR & RCC_AXIDIVR_AXIDIVRDY) == 0U) {
+		}
+		/* Move the AXI interconnect to the configured PLL2P output. */
+		LL_RCC_SetAXISSClkSource(LL_RCC_AXISS_CLKSOURCE_PLL2);
+		while ((RCC->ASSCKSELR & RCC_ASSCKSELR_AXISSRCRDY) == 0U) {
+		}
+	}
+#endif
 
 	LL_RCC_SetMPUClkSource(LL_RCC_MPU_CLKSOURCE_PLL1);
 	while (LL_RCC_GetMPUClkSource() != LL_RCC_MPU_CLKSOURCE_PLL1) {
 	}
 
 #endif
+
+	SystemCoreClock = STM32_HCLK_FREQUENCY;
 
 	return 0;
 }

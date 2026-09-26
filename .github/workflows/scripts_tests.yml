@@ -14,6 +14,7 @@ on:
       - 'scripts/checkpatch/**'
       - 'scripts/cmake/**'
       - 'scripts/kconfig/**'
+      - 'soc/st/stm32/stm32mp13x/utils/**'
       - '.github/workflows/scripts_tests.yml'
   pull_request:
     branches:
@@ -25,6 +26,7 @@ on:
       - 'scripts/checkpatch/**'
       - 'scripts/cmake/**'
       - 'scripts/kconfig/**'
+      - 'soc/st/stm32/stm32mp13x/utils/**'
       - '.github/workflows/scripts_tests.yml'
 
 permissions:
@@ -81,4 +83,5 @@ jobs:
           ZEPHYR_BASE: ./
         run: |
           echo "Run script tests"
-          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig
+          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig \
+            ./soc/st/stm32/stm32mp13x/utils
