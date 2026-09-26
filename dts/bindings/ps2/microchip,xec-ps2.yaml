@@ -18,13 +18,13 @@ properties:
     type: array
     required: true
     description: |
-      Array of GIRQ and bit position pairs for each interrupt
+      Array of encoded GIRQ and bit position for each interrupt
       signal the block generates.
 
-  pcrs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
-    description: PS2 PCR register index and bit position
+    description: Encoded PS2 PCR register index and bit position
 
   wakerx-gpios:
     type: phandle-array
