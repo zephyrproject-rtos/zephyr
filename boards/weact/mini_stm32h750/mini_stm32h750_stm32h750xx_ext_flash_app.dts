@@ -32,6 +32,11 @@
 	};
 };
 
+&ext_flash_ctrl {
+	/* Read-only memory-mapped access for execution in place */
+	memmap-config = <1 0 DT_SIZE_M(8) 1>;
+};
+
 &ext_flash {
 	status = "okay";
 
