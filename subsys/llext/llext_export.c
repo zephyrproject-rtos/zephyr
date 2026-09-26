@@ -153,5 +153,3 @@ EXPORT_SYMBOL(__ac_pop_13_to_26v);
 EXPORT_SYMBOL(__ac_pop_none);
 EXPORT_SYMBOL(__ac_pop_nonev);
 #endif
-
-#include <zephyr/syscall_exports_llext.c>
