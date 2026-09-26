@@ -158,6 +158,74 @@ static int scmi_base_implementation_version_get(struct scmi_msg_base_impl_ver_re
 	return ret;
 }
 
+static int scmi_base_discover_list_proto(struct scmi_platform_info *rev)
+{
+	/*
+	 * There can be up to 4 8-bit SCMI protocol IDs in one uint32_t
+	 * field of the reply buffer. There are always two additional
+	 * fields which precede the protocol IDs, status and number of
+	 * protocols.
+	 */
+	uint32_t reply_buffer[((SCMI_BASE_PROTOCOL_ID_MAX + 1) / sizeof(uint32_t)) + 2] = { 0 };
+	struct scmi_message msg, reply;
+	struct scmi_protocol *proto;
+	uint32_t skip = 0;
+	int i, ret;
+
+	for (i = 0; i < (SCMI_BASE_PROTOCOL_ID_MAX + 1) / 32; i++) {
+		rev->list_protocols[i] = 0;
+	}
+
+	proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
+	if (!proto) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(DISCOVER_LIST_PROTOCOLS, SCMI_COMMAND, proto->id, 0x0);
+	msg.len = sizeof(skip);
+	msg.content = &skip;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(int32_t) +	/* status */
+		    sizeof(uint32_t) +	/* num_protocols */
+		    (sizeof(uint32_t) * DIV_ROUND_UP(rev->num_protocols - 1, 4));
+	reply.content = reply_buffer;
+
+	ret = scmi_send_message(proto, &msg, &reply, false);
+	if (ret < 0) {
+		LOG_ERR("base proto list failed (%d)", ret);
+		return ret;
+	}
+
+	if (reply_buffer[0] != SCMI_SUCCESS) {
+		return scmi_status_to_errno(reply_buffer[0]);
+	}
+
+	for (i = 0; i < reply_buffer[1]; i++) {
+		/*
+		 * Parse the supported 8-bit SCMI protocol IDs out of
+		 * the reply. Use the number of protocols in reply
+		 * buffer field 1 to determine how many protocol IDs
+		 * should be processed here, and then process them from
+		 * the reply buffer field 2 and onward, byte by byte or
+		 * SCMI protocol ID by SCMI protocol ID.
+		 *
+		 * The right side math extracts one 8-bit SCMI protocol
+		 * ID from the reply buffer, and converts it into a bit
+		 * in range 0..31, which is set in matching position in
+		 * the list_protocols 256-bit long bitfield composed of
+		 * 32-bit uint32_t types.
+		 */
+		rev->list_protocols[i / 32] |=
+			BIT((reply_buffer[2 + (i / 4)] >> ((i % 4) * 8)) % 32);
+	}
+
+	/* Base protocol is always present. */
+	rev->list_protocols[0] |= BIT(SCMI_PROTOCOL_BASE);
+
+	return 0;
+}
+
 union scmi_base_msgs_t {
 	struct scmi_msg_base_attributes attr;
 	struct scmi_msg_base_vendor_id_reply vendor_id;
@@ -242,6 +310,11 @@ int scmi_base_get_platform_info(struct scmi_platform_info *rev)
 	}
 
 	rev->impl_ver = msgs.impl_ver.impl_ver;
+
+	ret = scmi_base_discover_list_proto(rev);
+	if (ret) {
+		return ret;
+	}
 
 	LOG_DBG("scmi base revision info vendor '%s:%s' fw version 0x%x protocols:%d agents:%d",
 		rev->vendor_id, rev->sub_vendor_id, rev->impl_ver, rev->num_protocols,
