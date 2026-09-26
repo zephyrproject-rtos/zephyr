@@ -73,4 +73,9 @@ config BINDESC_APP_BUILD_VERSION
 	help
 	  The application git reference, such as "v3.3.0-18-g2c85d9224fca"
 
+config BINDESC_MANIFEST_GIT_DESC
+	bool "Manifest git reference"
+	help
+	  The manifest git reference, such as "v3.3.0-18-g2c85d9224fca"
+
 endif # BINDESC_DEFINE_VERSION
