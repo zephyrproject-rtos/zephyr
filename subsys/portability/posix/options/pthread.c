@@ -467,25 +467,54 @@ extern struct sys_sem pthread_key_lock;
 
 static void posix_thread_finalize(struct posix_thread *t, void *retval)
 {
-	sys_snode_t *node_l, *node_s;
+	sys_snode_t *node_l = NULL;
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
 	struct pthread_key_data *key_data;
+	size_t iteration = 0;
 
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&t->key_list, node_l, node_s) {
-		thread_spec_data = (pthread_thread_data *)node_l;
-		if (thread_spec_data != NULL) {
-			key_obj = thread_spec_data->key;
-			if (key_obj->destructor != NULL) {
-				(key_obj->destructor)(thread_spec_data->spec_data);
-			}
+	while (iteration < PTHREAD_DESTRUCTOR_ITERATIONS) {
+		void (*destructor)(void *value) = NULL;
+		void *spec_data = NULL;
 
-			SYS_SEM_LOCK(&pthread_key_lock) {
-				key_data = CONTAINER_OF(thread_spec_data, struct pthread_key_data,
+		node_l = NULL;
+		SYS_SEM_LOCK(&pthread_key_lock) {
+			node_l = sys_slist_get(&t->key_list);
+			if (node_l != NULL) {
+				thread_spec_data = (pthread_thread_data *)node_l;
+				key_obj = thread_spec_data->key;
+				if (key_obj != NULL) {
+					destructor = key_obj->destructor;
+					spec_data = thread_spec_data->spec_data;
+				}
+
+				key_data = CONTAINER_OF(thread_spec_data,
+							struct pthread_key_data,
 							thread_data);
 				sys_dlist_remove(&key_data->node);
 				k_free(key_data);
 			}
+		}
+
+		if (node_l == NULL) {
+			break;
+		}
+
+		if (destructor != NULL && spec_data != NULL) {
+			destructor(spec_data);
+			iteration++;
+		}
+	}
+
+	/* Drain any remaining entries without executing destructors */
+	SYS_SEM_LOCK(&pthread_key_lock) {
+		while ((node_l = sys_slist_get(&t->key_list)) != NULL) {
+			thread_spec_data = (pthread_thread_data *)node_l;
+			key_data = CONTAINER_OF(thread_spec_data,
+						struct pthread_key_data,
+						thread_data);
+			sys_dlist_remove(&key_data->node);
+			k_free(key_data);
 		}
 	}
 
