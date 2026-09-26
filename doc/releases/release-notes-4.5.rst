@@ -2048,6 +2048,12 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* Profiling
+
+  * Added a :ref:`performance event subsystem <profiling-perf>` with provider-based event
+    discovery, standalone counter sessions, supervisor-only C APIs, and optional ``perf list``
+    and ``perf stat`` shell commands.
+
 * Crypto
 
   * Added AES CFB and OFB cipher mode support.

@@ -280,6 +280,12 @@
 @{
 @}
 
+@brief Performance measurement and profiling services.
+@defgroup profiling Profiling
+@ingroup os_services
+@{
+@}
+
 @brief Device Management
 @defgroup device_mgmt Device Management
 @ingroup os_services
