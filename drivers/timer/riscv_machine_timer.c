@@ -99,7 +99,19 @@ static void timer_isr(const void *arg)
 	 */
 	set_mtimecmp(UINT64_MAX);
 
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/*
+	 * Setting mtimecmp to UINT64_MAX above deasserts MTIP, so enable
+	 * interrupts to let the announce below be preempted.
+	 */
+	arch_irq_unlock(RV_STATUS_IE);
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 	timer_core_announce();
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	(void)arch_irq_lock();
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 }
 
 uint32_t sys_clock_cycle_get_32(void)
