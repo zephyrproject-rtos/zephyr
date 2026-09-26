@@ -1716,38 +1716,6 @@ void uart_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 	irq_unlock(key);
 }
 
-static void uart_stm32_dma_replace_buffer(const struct device *dev)
-{
-	const struct uart_stm32_config *config = dev->config;
-	USART_TypeDef *usart = config->usart;
-	struct uart_stm32_data *data = dev->data;
-
-	/* Replace the buffer and reload the DMA */
-	LOG_DBG("Replacing RX buffer: %d", data->rx_next_buffer_len);
-
-	/* reload DMA */
-	data->dma_rx.offset = 0;
-	data->dma_rx.counter = 0;
-	data->dma_rx.buffer = data->rx_next_buffer;
-	data->dma_rx.buffer_length = data->rx_next_buffer_len;
-	data->dma_rx.blk_cfg.block_size = data->dma_rx.buffer_length;
-	data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.buffer;
-	data->rx_next_buffer = NULL;
-	data->rx_next_buffer_len = 0;
-
-	dma_reload(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
-			data->dma_rx.blk_cfg.source_address,
-			data->dma_rx.blk_cfg.dest_address,
-			data->dma_rx.blk_cfg.block_size);
-
-	dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
-
-	LL_USART_ClearFlag_IDLE(usart);
-
-	/* Request next buffer */
-	async_evt_rx_buf_request(data);
-}
-
 void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 			       uint32_t channel, int status)
 {
@@ -1766,16 +1734,44 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 
 		/* true since this functions occurs when buffer is full */
 		data->dma_rx.counter = data->dma_rx.buffer_length;
-		async_evt_rx_rdy(data);
+
 		if (data->rx_next_buffer != NULL) {
+			const struct uart_stm32_config *config = uart_dev->config;
+			USART_TypeDef *usart = config->usart;
+			uint8_t *next_buffer = data->rx_next_buffer;
+			size_t next_buffer_len = data->rx_next_buffer_len;
+
+			/* Re-arm the DMA on the already staged buffer before
+			 * running the user callbacks. While the DMA is stopped
+			 * an incoming byte only survives in the single-entry RDR,
+			 * so re-arming after the (potentially lengthy) RX_RDY and
+			 * RX_BUF_RELEASED callbacks can drop a byte when the RX
+			 * buffers are small (one DMA completion per received byte).
+			 */
+			data->dma_rx.blk_cfg.block_size = next_buffer_len;
+			data->dma_rx.blk_cfg.dest_address = (uint32_t)next_buffer;
+			dma_reload(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
+					data->dma_rx.blk_cfg.source_address,
+					(uint32_t)next_buffer, next_buffer_len);
+			dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+			LL_USART_ClearFlag_IDLE(usart);
+
+			/* Notify the completed buffer, still the current one */
+			async_evt_rx_rdy(data);
 			async_evt_rx_buf_release(data);
 
-			/* replace the buffer when the current
-			 * is full and not the same as the next
-			 * one.
-			 */
-			uart_stm32_dma_replace_buffer(uart_dev);
+			/* The staged buffer is now the active one */
+			data->dma_rx.offset = 0;
+			data->dma_rx.counter = 0;
+			data->dma_rx.buffer = next_buffer;
+			data->dma_rx.buffer_length = next_buffer_len;
+			data->rx_next_buffer = NULL;
+			data->rx_next_buffer_len = 0;
+
+			/* Request next buffer */
+			async_evt_rx_buf_request(data);
 		} else {
+			async_evt_rx_rdy(data);
 			/* Buffer full without valid next buffer,
 			 * an UART_RX_DISABLED event must be generated,
 			 * but uart_stm32_async_rx_disable() cannot be
