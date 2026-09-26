@@ -11,24 +11,31 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
 #include <hardware/flash.h>
 
+#include "flash_priv.h"
+
 LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 
 #define DT_DRV_COMPAT raspberrypi_pico_flash_controller
 
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
+
 #define PAGE_SIZE   256
-#define SECTOR_SIZE DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
+#define SECTOR_SIZE DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 #define ERASE_VALUE 0xff
-#define FLASH_SIZE  KB(CONFIG_FLASH_SIZE)
+#define FLASH_SIZE  DT_REG_SIZE(SOC_NV_FLASH_NODE)
+
+#define FLASH_SEM_TIMEOUT (k_is_in_isr() ? K_NO_WAIT : K_FOREVER)
 
 #ifdef CONFIG_FLASH_RPI_PICO_READ_UNTRANSLATED
 #define PICO_FLASH_READ_BASE XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE
 #else
-#define PICO_FLASH_READ_BASE CONFIG_FLASH_BASE_ADDRESS
+#define PICO_FLASH_READ_BASE DT_REG_ADDR(SOC_NV_FLASH_NODE)
 #endif
 
 static const struct flash_parameters flash_rpi_parameters = {
@@ -38,6 +45,26 @@ static const struct flash_parameters flash_rpi_parameters = {
 
 static uint8_t flash_ram_buffer[PAGE_SIZE];
 
+#ifdef CONFIG_MULTITHREADING
+static K_SEM_DEFINE(flash_rpi_sem, 1, 1);
+#endif
+
+static inline int flash_rpi_sem_take(void)
+{
+#ifdef CONFIG_MULTITHREADING
+	return k_sem_take(&flash_rpi_sem, FLASH_SEM_TIMEOUT);
+#else
+	return 0;
+#endif
+}
+
+static inline void flash_rpi_sem_give(void)
+{
+#ifdef CONFIG_MULTITHREADING
+	k_sem_give(&flash_rpi_sem);
+#endif
+}
+
 static bool is_valid_range(off_t offset, uint32_t size)
 {
 	return (offset >= 0) && ((offset + size) <= FLASH_SIZE);
@@ -45,6 +72,8 @@ static bool is_valid_range(off_t offset, uint32_t size)
 
 static int flash_rpi_read(const struct device *dev, off_t offset, void *data, size_t size)
 {
+	int ret;
+
 	ARG_UNUSED(dev);
 
 	if (size == 0) {
@@ -56,7 +85,14 @@ static int flash_rpi_read(const struct device *dev, off_t offset, void *data, si
 		return -EINVAL;
 	}
 
+	ret = flash_rpi_sem_take();
+	if (ret != 0) {
+		return ret;
+	}
+
 	memcpy(data, (uint8_t *)(PICO_FLASH_READ_BASE + (uintptr_t)offset), size);
+
+	flash_rpi_sem_give();
 
 	return 0;
 }
@@ -66,6 +102,7 @@ static int flash_rpi_write(const struct device *dev, off_t offset, const void *d
 	uint32_t key;
 	size_t bytes_to_write;
 	uint8_t *data_pointer = (uint8_t *)data;
+	int ret;
 
 	ARG_UNUSED(dev);
 
@@ -79,7 +116,14 @@ static int flash_rpi_write(const struct device *dev, off_t offset, const void *d
 		return -EINVAL;
 	}
 
-	key = irq_lock();
+	ret = flash_rpi_sem_take();
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_FLASH_RPI_PICO_LOCK_IRQS)) {
+		key = irq_lock();
+	}
 
 	if ((offset & (PAGE_SIZE - 1)) > 0) {
 		bytes_to_write = MIN(PAGE_SIZE - (offset & (PAGE_SIZE - 1)), size);
@@ -104,7 +148,11 @@ static int flash_rpi_write(const struct device *dev, off_t offset, const void *d
 		flash_write_partial(offset, flash_ram_buffer, size);
 	}
 
-	irq_unlock(key);
+	if (IS_ENABLED(CONFIG_FLASH_RPI_PICO_LOCK_IRQS)) {
+		irq_unlock(key);
+	}
+
+	flash_rpi_sem_give();
 
 	return 0;
 }
@@ -112,6 +160,7 @@ static int flash_rpi_write(const struct device *dev, off_t offset, const void *d
 static int flash_rpi_erase(const struct device *dev, off_t offset, size_t size)
 {
 	uint32_t key;
+	int ret;
 
 	if (size == 0) {
 		return 0;
@@ -129,11 +178,22 @@ static int flash_rpi_erase(const struct device *dev, off_t offset, size_t size)
 		return -EINVAL;
 	}
 
-	key = irq_lock();
+	ret = flash_rpi_sem_take();
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_FLASH_RPI_PICO_LOCK_IRQS)) {
+		key = irq_lock();
+	}
 
 	flash_range_erase(offset, size);
 
-	irq_unlock(key);
+	if (IS_ENABLED(CONFIG_FLASH_RPI_PICO_LOCK_IRQS)) {
+		irq_unlock(key);
+	}
+
+	flash_rpi_sem_give();
 
 	return 0;
 }
