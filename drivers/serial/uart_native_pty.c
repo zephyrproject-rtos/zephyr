@@ -392,19 +392,26 @@ static void native_pty_uart_async_poll_function(void *arg1, void *arg2, void *ar
 	const struct device *dev = arg1;
 	struct native_pty_status *data = dev->data;
 	struct uart_event evt;
+	/* Data reported by UART_RX_RDY must stay valid until the user has read it. */
+	size_t rx_offset = 0;
 	int rc;
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 
 	while (data->async.rx_len) {
-		rc = np_uart_read_n(data, data->async.rx_buf, data->async.rx_len);
+		rc = np_uart_read_n(data, data->async.rx_buf + rx_offset,
+				    data->async.rx_len - rx_offset);
 		if (rc > 0) {
 			/* Data received */
 			evt.type = UART_RX_RDY;
 			evt.data.rx.buf = data->async.rx_buf;
-			evt.data.rx.offset = 0;
+			evt.data.rx.offset = rx_offset;
 			evt.data.rx.len = rc;
+			rx_offset += rc;
+			if (rx_offset >= data->async.rx_len) {
+				rx_offset = 0;
+			}
 			/* User callback */
 			if (data->async.user_callback) {
 				data->async.user_callback(data->async.dev, &evt,
@@ -413,7 +420,7 @@ static void native_pty_uart_async_poll_function(void *arg1, void *arg2, void *ar
 		}
 		if ((data->async.rx_len != 0) && (rc < 0)) {
 			/* Sleep if RX not disabled and last read didn't result in any data */
-			k_sleep(K_MSEC(10));
+			k_sleep(K_USEC(CONFIG_UART_NATIVE_PTY_RX_POLL_PERIOD_US));
 		}
 	}
 
