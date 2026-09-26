@@ -98,6 +98,8 @@ int pthread_spin_destroy(pthread_spinlock_t *lock)
 	err = sys_bitarray_free(&posix_spinlock_bitarray, 1, bit);
 	__ASSERT_NO_MSG(err == 0);
 
+	*lock = (pthread_spinlock_t)-1;
+
 	return 0;
 }
 
@@ -120,6 +122,7 @@ int pthread_spin_lock(pthread_spinlock_t *lock)
 
 int pthread_spin_trylock(pthread_spinlock_t *lock)
 {
+	int ret;
 	size_t bit;
 	struct k_spinlock *l;
 
@@ -130,7 +133,12 @@ int pthread_spin_trylock(pthread_spinlock_t *lock)
 	}
 
 	bit = posix_spinlock_to_offset(l);
-	return k_spin_trylock(l, &posix_spinlock_key[bit]);
+	ret = k_spin_trylock(l, &posix_spinlock_key[bit]);
+	if (ret < 0) {
+		return -ret;
+	}
+
+	return 0;
 }
 
 int pthread_spin_unlock(pthread_spinlock_t *lock)
