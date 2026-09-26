@@ -53,5 +53,20 @@
 			ti,divider = <1>;
 			status = "disabled";
 		};
+
+		opa0: opa@40020000 {
+			 compatible = "ti,mspm0-opamp";
+			 reg = <0x40020000 0x2000>;
+			 clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			 status = "disabled";
+		};
+
+		opa1: opa@40022000 {
+			 compatible = "ti,mspm0-opamp";
+			 reg = <0x40022000 0x2000>;
+			 clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			 status = "disabled";
+		};
+
 	};
 };
