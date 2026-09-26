@@ -1889,6 +1889,7 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 	struct dw_i3c_data *data = dev->data;
 	int pos = get_free_pos(data->free_pos);
 	uint32_t dat = 0U;
+	uint8_t addr;
 
 	if (pos < 0) {
 		LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
@@ -1901,13 +1902,12 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 
 	LOG_DBG("%s: Attaching %s", dev->name, desc->dev->name);
 
-	if (desc->dynamic_addr != 0U) {
-		dat |= DEV_ADDR_TABLE_DYNAMIC_ADDR(desc->dynamic_addr);
-	}
-
-	if (desc->static_addr != 0U) {
-		dat |= DEV_ADDR_TABLE_STATIC_ADDR(desc->static_addr);
-	}
+	/*
+	 * Transfer commands take the target address from DAT DEV_DYNAMIC_ADDR.
+	 */
+	addr = desc->dynamic_addr != 0U ? desc->dynamic_addr : desc->static_addr;
+	dat |= DEV_ADDR_TABLE_DYNAMIC_ADDR(addr);
+	dat |= DEV_ADDR_TABLE_STATIC_ADDR(desc->static_addr);
 	dat |= DEV_ADDR_TABLE_SIR_REJECT;
 
 	sys_write32(dat, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
