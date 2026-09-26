@@ -208,7 +208,7 @@ static int regset_target_lib_buf_read_requested(struct i2c_target_config *config
 	const struct regset_target_lib_config *cfg = dev->config;
 
 	*ptr = &cfg->buffer[data->buffer_idx];
-	*len = cfg->buffer_size;
+	*len = cfg->buffer_size - data->buffer_idx;
 
 	return 0;
 }
