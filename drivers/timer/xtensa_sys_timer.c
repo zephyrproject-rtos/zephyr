@@ -81,6 +81,8 @@ static void ccompare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
+	k_spinlock_key_t key = sys_clock_lock();
+
 	/* Disarm the IRQ. Writing CCOMPARE is what clears the pending timer
 	 * interrupt, and the match is on equality, so a compare one behind the
 	 * current count both acknowledges it and puts the next match a whole
@@ -90,7 +92,7 @@ static void ccompare_isr(const void *arg)
 	 */
 	set_ccompare(ccount_raw() - 1);
 
-	timer_core_announce();
+	timer_core_announce_from(key);
 }
 
 #ifdef CONFIG_SMP
