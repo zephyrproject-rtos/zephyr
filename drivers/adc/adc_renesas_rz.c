@@ -435,6 +435,7 @@ static int adc_rz_init(const struct device *dev)
 		.window_a_ipl = BSP_IRQ_DISABLED,                                                  \
 		.window_b_irq = FSP_INVALID_VECTOR,                                                \
 		.window_b_ipl = BSP_IRQ_DISABLED,                                                  \
+		.p_reg = (void *)DT_INST_REG_ADDR(idx),                                            \
 	};                                                                                         \
 	static const struct adc_rz_config adc_rz_config_##idx = {                                  \
 		.channel_available_mask = DT_INST_PROP(idx, channel_available_mask),               \
@@ -486,6 +487,7 @@ static int adc_rz_init(const struct device *dev)
 		.window_a_ipl = BSP_IRQ_DISABLED,                                                  \
 		.window_b_irq = FSP_INVALID_VECTOR,                                                \
 		.window_b_ipl = BSP_IRQ_DISABLED,                                                  \
+		.p_reg = (void *)DT_INST_REG_ADDR(idx),                                            \
 	};                                                                                         \
 	static const struct adc_rz_config adc_rz_config_##idx = {                                  \
 		.channel_available_mask = DT_INST_PROP(idx, channel_available_mask),               \

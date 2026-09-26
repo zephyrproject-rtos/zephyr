@@ -301,7 +301,7 @@ static int spi_rz_rspi_configure(const struct device *dev, const struct spi_conf
 	/* Add callback, which will be called when transfer completed or error occur. */
 	data->fsp_config->p_callback = spi_callbacks;
 	/* Data is passed into spi_callbacks. */
-	data->fsp_config->p_context = dev;
+	data->fsp_config->p_context = (void *)dev;
 	/* Open module RSPI. */
 	err = config->fsp_api->open(data->fsp_ctrl, data->fsp_config);
 	if (err != FSP_SUCCESS) {
@@ -769,6 +769,11 @@ static void rz_dma_int_isr(void *irq)
 		.p_api = &g_transfer_on_dmac_b,                                                    \
 	};
 #else /* CONFIG_USE_RZ_FSP_DMAC */
+#define RZ_DMA_CH_REG_OFFSET(ch) ((((ch) / 8U) * 0x400U) + (((ch) % 8U) * 0x40U))
+#define RZ_DMA_CH_REG_ADDR(n, dir)                                                                 \
+	(DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, dir)) +                                          \
+	 RZ_DMA_CH_REG_OFFSET(DT_INST_DMAS_CELL_BY_NAME(n, dir, channel)))
+
 #define RSPI_DMA_RZG_DEFINE(n, dir, TRIG, spi_channel)                                             \
 	static dmac_instance_ctrl_t g_transfer##n##_##dir##_ctrl;                                  \
 	static void g_spi##n##_##dir##_transfer_callback(dmac_callback_args_t *p_args)             \
@@ -810,6 +815,7 @@ static void rz_dma_int_isr(void *irq)
 		.channel_scheduling = DMAC_CHANNEL_SCHEDULING_FIXED,                               \
 		.p_callback = g_spi##n##_##dir##_transfer_callback,                                \
 		.p_context = NULL,                                                                 \
+		.p_reg = (void *)RZ_DMA_CH_REG_ADDR(n, dir),                                       \
 	};                                                                                         \
 	const transfer_cfg_t g_transfer##n##_##dir##_cfg = {                                       \
 		.p_info = &g_transfer##n##_##dir##_info,                                           \

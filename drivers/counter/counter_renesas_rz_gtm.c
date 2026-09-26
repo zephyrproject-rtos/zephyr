@@ -694,7 +694,7 @@ void counter_rz_gtm_ovf_isr(const struct device *dev)
 		.period_counts = (uint32_t)RZ_GTM_TOP_VALUE,                                       \
 		.channel = DT_PROP(RZ_GTM(inst), channel),                                         \
 		.p_callback = counter_rz_gtm_irq_handler,                                          \
-		.p_context = DEVICE_DT_GET(DT_DRV_INST(inst)),                                     \
+		.p_context = (void *)DEVICE_DT_GET(DT_DRV_INST(inst)),                             \
 		.p_extend = &g_timer##inst##_extend,                                               \
 		.cycle_end_ipl = DT_IRQ_BY_NAME(RZ_GTM(inst), overflow, priority),                 \
 		.cycle_end_irq = DT_IRQ_BY_NAME(RZ_GTM(inst), overflow, irq),                      \

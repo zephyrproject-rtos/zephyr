@@ -610,6 +610,7 @@ void counter_rz_cmtw_cmwi_isr(const struct device *dev)
 	static cmtw_extended_cfg_t g_timer##inst##_extend = {                                      \
 		.clear_source = CMTW_CLEAR_SOURCE_DISABLED,                                        \
 		.counter_size = TIMER_VARIANT_32_BIT,                                              \
+		.p_reg = (void *)DT_REG_ADDR(RZ_CMTW(inst)),                                       \
 	};                                                                                         \
 	static timer_cfg_t g_timer##inst##_cfg = {                                                 \
 		.mode = TIMER_MODE_PERIODIC,                                                       \
@@ -617,7 +618,7 @@ void counter_rz_cmtw_cmwi_isr(const struct device *dev)
 		.source_div = DT_ENUM_IDX(RZ_CMTW(inst), prescaler),                               \
 		.channel = DT_PROP(RZ_CMTW(inst), channel),                                        \
 		.p_callback = counter_rz_cmtw_irq_handler,                                         \
-		.p_context = DEVICE_DT_GET(DT_DRV_INST(inst)),                                     \
+		.p_context = (void *)DEVICE_DT_GET(DT_DRV_INST(inst)),                             \
 		.p_extend = &g_timer##inst##_extend,                                               \
 		.cycle_end_ipl = DT_IRQ_BY_NAME(RZ_CMTW(inst), cmwi, priority),                    \
 		.cycle_end_irq = DT_IRQ_BY_NAME(RZ_CMTW(inst), cmwi, irq),                         \

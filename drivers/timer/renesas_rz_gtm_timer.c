@@ -197,7 +197,7 @@ static int sys_clock_driver_init(void)
 		.period_counts = 0,                                                                \
 		.channel = DT_PROP(TIMER_NODE, channel),                                           \
 		.p_callback = ostm_irq_handler,                                                    \
-		.p_context = DEVICE_DT_INST_GET(0),                                                \
+		.p_context = (void *)DEVICE_DT_INST_GET(0),                                        \
 		.p_extend = &g_timer0_extend,                                                      \
 		.cycle_end_ipl = DT_IRQ(TIMER_NODE, priority),                                     \
 		.cycle_end_irq = DT_IRQN(TIMER_NODE),                                              \
