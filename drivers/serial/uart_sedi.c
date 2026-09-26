@@ -67,7 +67,7 @@ static void uart_sedi_cb(struct device *port);
 	PM_DEVICE_DT_INST_DEFINE(n,                                   \
 			    uart_sedi_pm_action);		      \
 	DEVICE_DT_INST_DEFINE(n,			              \
-		      &uart_sedi_init,				      \
+		      uart_sedi_init,				      \
 		      PM_DEVICE_DT_INST_GET(n),			      \
 		      &drv_data_##n, &config_info_##n,		      \
 		      PRE_KERNEL_1,				      \
