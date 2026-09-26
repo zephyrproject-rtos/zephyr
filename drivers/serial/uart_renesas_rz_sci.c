@@ -562,7 +562,7 @@ static int uart_rz_init(const struct device *dev)
 			(UART_RZ_CONFIG_FUNC(n);))                        \
 		return uart_rz_init(dev);                                                          \
 	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(n, &uart_rz_init_##n, NULL, &uart_rz_sci_data_##n,                   \
+	DEVICE_DT_INST_DEFINE(n, uart_rz_init_##n, NULL, &uart_rz_sci_data_##n,                    \
 			      &uart_rz_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,      \
 			      &uart_rz_sci_driver_api);
 
