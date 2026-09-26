@@ -53,7 +53,12 @@ _ASM_FILE_PROLOGUE
 	sub	x0, sp, x0			// x0' = sp' - x0 = sp
 	msr	SPSel, #0
 	stp	x16, x17, [sp, -(___esf_t_SIZEOF - ___esf_t_x16_x17_OFFSET)]
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	stp	x18, x19, [sp, -(___esf_t_SIZEOF - ___esf_t_x18_x19_OFFSET)]
+	stp	x28, lr,  [sp, -(___esf_t_SIZEOF - ___esf_t_x28_lr_OFFSET)]
+#else
 	stp	x18, lr,  [sp, -(___esf_t_SIZEOF - ___esf_t_x18_lr_OFFSET)]
+#endif
 	bl	z_arm64_quick_stack_check
 	.endif
 #endif
@@ -66,6 +71,33 @@ _ASM_FILE_PROLOGUE
 	stp	x10, x11, [sp, ___esf_t_x10_x11_OFFSET]
 	stp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
 	stp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
+	/*
+	 * When CONFIG_EXTRA_EXCEPTION_INFO is enabled, x19-x28 are saved
+	 * and restored on every exception entry/exit, adding 80 bytes of
+	 * stack space and ~10 STP/LDP pairs to the interrupt latency.
+	 */
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	/* The exception from el1 does not need to save x16, x17, x18 and lr */
+	.if	\el == el0
+#endif
+	stp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
+	stp	x18, x19, [sp, ___esf_t_x18_x19_OFFSET]
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	.endif
+#endif
+	stp	x20, x21, [sp, ___esf_t_x20_x21_OFFSET]
+	stp	x22, x23, [sp, ___esf_t_x22_x23_OFFSET]
+	stp	x24, x25, [sp, ___esf_t_x24_x25_OFFSET]
+	stp	x26, x27, [sp, ___esf_t_x26_x27_OFFSET]
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	.if	\el == el0
+#endif
+	stp	x28, lr, [sp, ___esf_t_x28_lr_OFFSET]
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	.endif
+#endif
+#else
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	/* The exception from el1 does not need to save x16, x17, x18 and lr */
 	.if	\el == el0
@@ -74,6 +106,7 @@ _ASM_FILE_PROLOGUE
 	stp	x18, lr, [sp, ___esf_t_x18_lr_OFFSET]
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	.endif
+#endif
 #endif
 
 #ifdef CONFIG_FRAME_POINTER
@@ -307,8 +340,15 @@ SECTION_FUNC(TEXT, z_arm64_quick_stack_check)
 	mrs	x18, sp_el0
 	ldp	x16, x17, [x18, -(___esf_t_SIZEOF - ___esf_t_x16_x17_OFFSET)]
 	stp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	ldp	x16, x17, [x18, -(___esf_t_SIZEOF - ___esf_t_x18_x19_OFFSET)]
+	stp	x16, x17, [sp, ___esf_t_x18_x19_OFFSET]
+	ldp	x16, x17, [x18, -(___esf_t_SIZEOF - ___esf_t_x28_lr_OFFSET)]
+	stp	x16, x17, [sp, ___esf_t_x28_lr_OFFSET]
+#else
 	ldp	x16, x17, [x18, -(___esf_t_SIZEOF - ___esf_t_x18_lr_OFFSET)]
 	stp	x16, x17, [sp, ___esf_t_x18_lr_OFFSET]
+#endif
 	ret
 1:	/*
 	 * If stack overflow, save the current sp and then switch sp to safe
@@ -382,7 +422,16 @@ z_arm64_exit_exc_fpu_done:
 	ldp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
 	ldp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
 	ldp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	ldp	x18, x19, [sp, ___esf_t_x18_x19_OFFSET]
+	ldp	x20, x21, [sp, ___esf_t_x20_x21_OFFSET]
+	ldp	x22, x23, [sp, ___esf_t_x22_x23_OFFSET]
+	ldp	x24, x25, [sp, ___esf_t_x24_x25_OFFSET]
+	ldp	x26, x27, [sp, ___esf_t_x26_x27_OFFSET]
+	ldp	x28, lr,  [sp, ___esf_t_x28_lr_OFFSET]
+#else
 	ldp	x18, lr, [sp, ___esf_t_x18_lr_OFFSET]
+#endif
 
 #ifdef CONFIG_FRAME_POINTER
 	ldr	x29, [sp,  ___esf_t_fp_OFFSET]

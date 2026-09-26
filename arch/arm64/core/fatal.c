@@ -207,7 +207,16 @@ static void esf_dump(const struct arch_esf *esf)
 	EXCEPTION_DUMP("x12: 0x%016llx  x13: 0x%016llx", esf->x12, esf->x13);
 	EXCEPTION_DUMP("x14: 0x%016llx  x15: 0x%016llx", esf->x14, esf->x15);
 	EXCEPTION_DUMP("x16: 0x%016llx  x17: 0x%016llx", esf->x16, esf->x17);
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	EXCEPTION_DUMP("x18: 0x%016llx  x19: 0x%016llx", esf->x18, esf->x19);
+	EXCEPTION_DUMP("x20: 0x%016llx  x21: 0x%016llx", esf->x20, esf->x21);
+	EXCEPTION_DUMP("x22: 0x%016llx  x23: 0x%016llx", esf->x22, esf->x23);
+	EXCEPTION_DUMP("x24: 0x%016llx  x25: 0x%016llx", esf->x24, esf->x25);
+	EXCEPTION_DUMP("x26: 0x%016llx  x27: 0x%016llx", esf->x26, esf->x27);
+	EXCEPTION_DUMP("x28: 0x%016llx  lr:  0x%016llx", esf->x28, esf->lr);
+#else
 	EXCEPTION_DUMP("x18: 0x%016llx  lr:  0x%016llx", esf->x18, esf->lr);
+#endif
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
