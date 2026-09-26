@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the LoRaWAN emulator backend APIs.
+ * @ingroup lorawan_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_LORAWAN_EMUL_H_
 #define ZEPHYR_INCLUDE_LORAWAN_EMUL_H_
 
