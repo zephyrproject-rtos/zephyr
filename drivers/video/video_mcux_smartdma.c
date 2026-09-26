@@ -52,6 +52,19 @@ struct nxp_video_sdma_data {
 	uint32_t frame_idx;
 };
 
+static void nxp_video_sdma_configure_inputs(const struct nxp_video_sdma_config *config)
+{
+	INPUTMUX_Init(INPUTMUX0);
+	INPUTMUX_AttachSignal(INPUTMUX0, 0,
+			      config->vsync_pin + (SMARTDMAARCHB_INMUX0 << PMUX_SHIFT));
+	INPUTMUX_AttachSignal(INPUTMUX0, 1,
+			      config->hsync_pin + (SMARTDMAARCHB_INMUX0 << PMUX_SHIFT));
+	INPUTMUX_AttachSignal(INPUTMUX0, 2,
+			      config->pclk_pin + (SMARTDMAARCHB_INMUX0 << PMUX_SHIFT));
+	/* Turnoff clock to inputmux to save power. Clock is only needed to make changes */
+	INPUTMUX_Deinit(INPUTMUX0);
+}
+
 /* Executed in interrupt context */
 static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 				uint32_t channel, int status)
@@ -106,6 +119,13 @@ static int nxp_video_sdma_set_stream(const struct device *dev, bool enable,
 	if (!enable) {
 		return dma_stop(config->dma_dev, 0);
 	}
+
+	/*
+	 * The INPUTMUX routing is not necessarily retained across a low power
+	 * state, so reattach the camera signals on every stream start rather
+	 * than only once at init.
+	 */
+	nxp_video_sdma_configure_inputs(config);
 
 	/* Setup dma configuration for SmartDMA */
 	sdma_config.dma_slot = kSMARTDMA_CameraDiv16FrameQVGA;
@@ -302,16 +322,8 @@ static int nxp_video_sdma_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	INPUTMUX_Init(INPUTMUX0);
 	/* Attach Camera VSYNC, HSYNC, and PCLK as inputs 0, 1, and 2 of the SmartDMA */
-	INPUTMUX_AttachSignal(INPUTMUX0, 0,
-			      config->vsync_pin + (SMARTDMAARCHB_INMUX0 << PMUX_SHIFT));
-	INPUTMUX_AttachSignal(INPUTMUX0, 1,
-			      config->hsync_pin + (SMARTDMAARCHB_INMUX0 << PMUX_SHIFT));
-	INPUTMUX_AttachSignal(INPUTMUX0, 2,
-			      config->pclk_pin + (SMARTDMAARCHB_INMUX0 << PMUX_SHIFT));
-	/* Turnoff clock to inputmux to save power. Clock is only needed to make changes */
-	INPUTMUX_Deinit(INPUTMUX0);
+	nxp_video_sdma_configure_inputs(config);
 
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
