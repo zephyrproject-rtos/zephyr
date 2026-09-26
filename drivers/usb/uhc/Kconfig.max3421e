@@ -24,4 +24,13 @@ config MAX3421E_OSC_WAIT_RETRIES
 	help
 	  Specify the number of retries for oscillator ready event.
 
+config UHC_MAX3421E_DEBOUNCE_DELAY_MS
+	int "Connection debounce delay in ms"
+	range 100 2500
+	default 100
+	help
+	  Set the delay used to debounce device connection and disconnection
+	  events. The USB 2.0 specification requires a minimum debounce interval
+	  of 100 ms.
+
 endif #UHC_MAX3421E
