@@ -17,7 +17,7 @@ same port instead.
 
 The **source** role sends a 100 Hz sine wave (16-bit mono, 8000 samples/s) as
 RTP packets using payload type 97. Packets are sent every 50 ms, each carrying
-800 samples (one complete period of the tone).
+400 samples (five complete periods of the tone).
 
 The **sink** role joins the multicast group and receives the stream using a
 callback-based API. It logs a heartbeat everty 5 seconds with the received
