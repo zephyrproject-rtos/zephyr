@@ -713,6 +713,12 @@
 				pinmux = <DT_CAT1_PINMUX(6, 1, HSIOM_SEL_ACT_15)>;
 			};
 
+			/* srss_ext_clk */
+			/omit-if-no-ref/ p7_4_srss_ext_clk: p7_4_srss_ext_clk {
+				pinmux = <DT_CAT1_PINMUX(7, 4, HSIOM_SEL_ACT_4)>;
+				input-enable;
+			};
+
 			/* PWM tcpwm_line*/
 			/omit-if-no-ref/ p1_0_pwm0_1: p1_0_pwm0_1 {
 				pinmux = <DT_CAT1_PINMUX(1, 0, HSIOM_SEL_ACT_1)>;
