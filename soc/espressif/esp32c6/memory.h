@@ -37,7 +37,6 @@
 
 #define DRAM_SHARED_BUFFERS_START      0x4086ad08
 #define DRAM_SHARED_BUFFERS_END        0x4087c610
-#define DRAM_STACK_START        DRAM_SHARED_BUFFERS_END
 #define DRAM_ROM_BSS_DATA_START 0x4087e610
 
 /* Upper boundary of user-usable SRAM */

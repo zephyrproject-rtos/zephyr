@@ -37,7 +37,6 @@
 
 #define DRAM_SHARED_BUFFERS_START       0x3fccb264
 #define DRAM_SHARED_BUFFERS_END         0x3fcdcb70
-#define DRAM_STACK_START         DRAM_SHARED_BUFFERS_END
 #define DRAM_ROM_BSS_DATA_START  0x3fcdeb70
 
 /* Upper boundary of user-usable SRAM */

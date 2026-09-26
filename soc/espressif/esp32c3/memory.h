@@ -37,7 +37,6 @@
 #define IRAM_DRAM_OFFSET         0x700000
 #define DRAM_SHARED_BUFFERS_START       0x3fccae00
 #define DRAM_SHARED_BUFFERS_END         0x3fcdc710
-#define DRAM_STACK_START         DRAM_SHARED_BUFFERS_END
 #define DRAM_ROM_BSS_DATA_START  0x3fcde710
 
 /* Upper boundary of user-usable SRAM */
