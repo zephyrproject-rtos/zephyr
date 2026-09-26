@@ -201,7 +201,7 @@ struct _cpu {
 
 	/* Per CPU architecture specifics */
 	struct _cpu_arch arch;
-};
+} Z_CACHE_ALIGN_SMP;
 
 typedef struct _cpu _cpu_t;
 
