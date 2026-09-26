@@ -8,6 +8,8 @@
 
 #include <zephyr/sys/util_macro.h>
 
+#include "ak099xx.h"
+
 #define AKM09918C_REG_WIA1  0x00
 #define AKM09918C_REG_WIA2  0x01
 #define AKM09918C_REG_RSV1  0x02
@@ -28,20 +30,10 @@
 #define AKM09918C_REG_TS2   0x34
 
 /* Who-I-Am register values */
-#define AKM09918C_WIA1 0x48
 #define AKM09918C_WIA2 0x0c
 
 /* ST1 values */
-#define AKM09918C_ST1_DRDY BIT(0)
-#define AKM09918C_ST1_DOR  BIT(1)
-
-/* CNTL2 values */
-#define AKM09918C_CNTL2_PWR_DOWN       0x00
-#define AKM09918C_CNTL2_SINGLE_MEASURE BIT(0)
-#define AKM09918C_CNTL2_CONTINUOUS_1   BIT(1)
-#define AKM09918C_CNTL2_CONTINUOUS_2   BIT(2)
-#define AKM09918C_CNTL2_CONTINUOUS_3   (BIT(1) | BIT(2))
-#define AKM09918C_CNTL2_CONTINUOUS_4   BIT(3)
+#define AKM09918C_ST1_DOR BIT(1)
 
 /* CNTL3 values */
 #define AKM09918C_CNTL3_SRST BIT(0)

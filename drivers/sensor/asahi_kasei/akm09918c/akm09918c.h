@@ -51,40 +51,6 @@ struct akm09918c_config {
 	struct i2c_dt_spec i2c;
 };
 
-static inline uint8_t akm09918c_hz_to_reg(const struct sensor_value *val)
-{
-	if (val->val1 >= 100) {
-		return AKM09918C_CNTL2_CONTINUOUS_4;
-	} else if (val->val1 >= 50) {
-		return AKM09918C_CNTL2_CONTINUOUS_3;
-	} else if (val->val1 >= 20) {
-		return AKM09918C_CNTL2_CONTINUOUS_2;
-	} else if (val->val1 > 0) {
-		return AKM09918C_CNTL2_CONTINUOUS_1;
-	} else {
-		return AKM09918C_CNTL2_PWR_DOWN;
-	}
-}
-
-static inline void akm09918c_reg_to_hz(uint8_t reg, struct sensor_value *val)
-{
-	val->val1 = 0;
-	val->val2 = 0;
-	switch (reg) {
-	case AKM09918C_CNTL2_CONTINUOUS_1:
-		val->val1 = 10;
-		break;
-	case AKM09918C_CNTL2_CONTINUOUS_2:
-		val->val1 = 20;
-		break;
-	case AKM09918C_CNTL2_CONTINUOUS_3:
-		val->val1 = 50;
-		break;
-	case AKM09918C_CNTL2_CONTINUOUS_4:
-		val->val1 = 100;
-		break;
-	}
-}
 int akm09918c_start_measurement_blocking(const struct device *dev, enum sensor_channel chan);
 
 int akm09918c_fetch_measurement_blocking(const struct device *dev, int16_t *x, int16_t *y,

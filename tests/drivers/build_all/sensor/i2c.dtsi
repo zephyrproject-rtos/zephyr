@@ -1706,3 +1706,8 @@ test_i2c_pmsa003i: pmsa003i@dc {
 	reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 	set-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 };
+
+test_i2c_ak09940a: ak09940a@dd {
+	compatible = "asahi-kasei,ak09940a";
+	reg = <0xdd>;
+};
