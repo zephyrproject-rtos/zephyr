@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <broadcom/bcm2711-pinctrl.dtsi>
+
+#include "../common/rpi_common.dtsi"
