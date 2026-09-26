@@ -83,7 +83,12 @@ void k_free(void *ptr)
 
 #if (K_HEAP_MEM_POOL_SIZE > 0)
 
-K_HEAP_DEFINE(_system_heap, Z_HEAP_MIN_SIZE_FOR(K_HEAP_MEM_POOL_SIZE));
+/*
+ * K_HEAP_DEFINE() spelled out so the pool follows 'zephyr,kernel-heap'. Without
+ * the chosen, __heapmem_named() is the __noinit_named() the macro would have used.
+ */
+Z_HEAP_DEFINE_IN_SECT(_system_heap, Z_HEAP_MIN_SIZE_FOR(K_HEAP_MEM_POOL_SIZE),
+		      __heapmem_named(kheap_buf__system_heap));
 #define _SYSTEM_HEAP (&_system_heap)
 
 #if defined(CONFIG_SYS_HEAP_KASAN_SYSTEM)

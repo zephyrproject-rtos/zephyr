@@ -518,6 +518,28 @@ device.
      - See description of ``zephyr,ipc_rx``.
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
+   * - zephyr,kernel-heap
+     - Memory region node that holds the system heap: the
+       :kconfig:option:`CONFIG_COMMON_LIBC_MALLOC` ``malloc()`` arena and the
+       ``k_malloc()``/``k_heap`` pool sized by
+       :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`, but not a
+       :c:macro:`K_HEAP_DEFINE` heap anywhere else. The node needs a
+       ``zephyr,memory-region`` property. Defaults to the ``zephyr,sram``
+       region, and overflowing the region fails the link. Note that under
+       :kconfig:option:`CONFIG_USERSPACE` the arena stays in the app-memory
+       partition the MPU opens to user threads and only the pool moves, and
+       that with :kconfig:option:`CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE` at its
+       ``-1`` default the arena takes whatever the linker left unused in this
+       region rather than in ``zephyr,sram``
+   * - zephyr,kernel-stacks
+     - Memory region node that holds the kernel stacks: the ISR, main, idle and
+       system work queue stacks and every :c:macro:`K_KERNEL_STACK_DEFINE`
+       stack, which without :kconfig:option:`CONFIG_USERSPACE` includes the
+       :c:macro:`K_THREAD_STACK_DEFINE` stacks too. The node needs a
+       ``zephyr,memory-region`` property. Defaults to the ``zephyr,sram``
+       region, and overflowing the region fails the link. Note that a
+       core-local memory such as a TCM cannot be reached by other bus masters,
+       which breaks a driver that DMAs out of a stack buffer
    * - zephyr,led-strip
      - A LED-strip node which is used to determine the timings of the
        WS2812 GPIO driver
