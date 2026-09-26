@@ -14,6 +14,11 @@
 
 #include "isoal.h"
 #include "ull_iso_types.h"
+
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
+#include "pdu.h"
+
 #include "lll.h"
 #include "lll_conn_iso.h"
 #include "ull_conn_iso_types.h"
