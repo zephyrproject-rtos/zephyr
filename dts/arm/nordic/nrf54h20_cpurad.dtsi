@@ -31,6 +31,10 @@ wdt011: &cpurad_wdt011 {};
 /delete-node/ &s2ram;
 
 / {
+	chosen {
+		zephyr,bt-hci = &bt_hci_controller;
+	};
+
 	soc {
 		compatible = "simple-bus";
 		interrupt-parent = <&cpurad_nvic>;
@@ -41,6 +45,10 @@ wdt011: &cpurad_wdt011 {};
 			reg = <0xa3000000 0x1000000>;
 		};
 	};
+};
+
+&bt_hci_controller {
+	status = "okay";
 };
 
 &cpurad_ppb {

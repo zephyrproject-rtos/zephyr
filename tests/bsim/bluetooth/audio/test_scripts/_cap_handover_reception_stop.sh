@@ -11,7 +11,8 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # WEST_TOPDIR/zephyr/subsys/bluetooth/controller/ll_sw/ull_conn_iso.c:1025
 # See https://github.com/zephyrproject-rtos/zephyr/issues/82399
 
-SIMULATION_ID="${BOARD_TS}_cap_handover_central"
+SIMULATION_ID="${BOARD_TS}_cap_handover_reception_stop"
+
 VERBOSITY_LEVEL=2
 NR_OF_DEVICES=3
 EXECUTE_TIMEOUT=240

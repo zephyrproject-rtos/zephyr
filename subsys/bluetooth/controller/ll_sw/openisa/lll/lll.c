@@ -224,9 +224,9 @@ void lll_disable(void *param)
 	}
 	{
 		struct lll_event *next;
-		uint8_t idx;
+		void *idx;
 
-		idx = UINT8_MAX;
+		idx = NULL;
 		next = ull_prepare_dequeue_iter(&idx);
 		while (next) {
 			if (!next->is_aborted &&
@@ -240,8 +240,10 @@ void lll_disable(void *param)
 				 *       the prepare pipeline hence re-iterate
 				 *       through the prepare pipeline.
 				 */
-				idx = UINT8_MAX;
+				idx = NULL;
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+			} else if (!idx) {
+				break;
 			}
 
 			next = ull_prepare_dequeue_iter(&idx);
@@ -500,13 +502,18 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			uint8_t is_resume, uint8_t is_dequeue)
 {
 	struct lll_event *p;
-	uint8_t idx;
+	void *idx;
 	int err;
 
 	/* Find the ready prepare in the pipeline */
-	idx = UINT8_MAX;
+	idx = NULL;
 	p = ull_prepare_dequeue_iter(&idx);
 	while (p && (p->is_aborted || p->is_resume)) {
+		if (!idx) {
+			p = NULL;
+			break;
+		}
+
 		p = ull_prepare_dequeue_iter(&idx);
 	}
 
@@ -553,6 +560,8 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 				} else {
 					next = p;
 				}
+			} else if (!idx) {
+				break;
 			}
 
 			p = ull_prepare_dequeue_iter(&idx);
@@ -598,6 +607,10 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 	/* Find next prepare needing preempt timeout to be setup */
 	do {
+		if (!idx) {
+			return err;
+		}
+
 		p = ull_prepare_dequeue_iter(&idx);
 		if (!p) {
 			return err;
@@ -704,7 +717,7 @@ static void preempt(void *param)
 {
 	lll_prepare_cb_t resume_cb;
 	struct lll_event *next;
-	uint8_t idx;
+	void *idx;
 	int err;
 
 	/* No event to abort */
@@ -713,7 +726,7 @@ static void preempt(void *param)
 	}
 
 	/* Check if any prepare in pipeline */
-	idx = UINT8_MAX;
+	idx = NULL;
 	next = ull_prepare_dequeue_iter(&idx);
 	if (!next) {
 		return;
@@ -721,6 +734,11 @@ static void preempt(void *param)
 
 	/* Find a prepare that is ready and not a resume */
 	while (next && (next->is_aborted || next->is_resume)) {
+		if (!idx) {
+			next = NULL;
+			break;
+		}
+
 		next = ull_prepare_dequeue_iter(&idx);
 	}
 
@@ -759,10 +777,10 @@ static void preempt(void *param)
 	/* Check if resume requested */
 	if (err == -EAGAIN) {
 		struct lll_event *iter;
-		uint8_t iter_idx;
+		void *iter_idx;
 
 		/* Abort any duplicates so that they get dequeued */
-		iter_idx = UINT8_MAX;
+		iter_idx = NULL;
 		iter = ull_prepare_dequeue_iter(&iter_idx);
 		while (iter) {
 			if (!iter->is_aborted &&
@@ -776,8 +794,10 @@ static void preempt(void *param)
 				 *       the prepare pipeline hence re-iterate
 				 *       through the prepare pipeline.
 				 */
-				idx = UINT8_MAX;
+				idx = NULL;
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+			} else if (!iter_idx) {
+				break;
 			}
 
 			iter = ull_prepare_dequeue_iter(&iter_idx);

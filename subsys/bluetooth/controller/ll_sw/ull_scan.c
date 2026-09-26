@@ -428,8 +428,17 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US));
 
 #if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW)
+#if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT)
+		ll_scan_ticker_ext[handle].ticks_slot_window = ticks_interval;
+		ll_scan_ticker_ext[handle].is_drift_in_window = 1U;
+#else /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT */
 		ll_scan_ticker_ext[handle].ticks_slot_window =
 			scan->ull.ticks_slot + ticks_slot_overhead;
+#endif /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT */
+#else /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
+		ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
 #endif /* CONFIG_BT_TICKER_EXT */
 
 	} else {
@@ -443,7 +452,14 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		lll->ticks_window = 0U;
 
 #if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW)
 		ll_scan_ticker_ext[handle].ticks_slot_window = ticks_interval;
+#if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT)
+		ll_scan_ticker_ext[handle].is_drift_in_window = 1U;
+#endif /* CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT */
+#else /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
+		ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
 #endif /* CONFIG_BT_TICKER_EXT */
 	}
 
@@ -575,7 +591,6 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	}
 
 	ticks_anchor = ticker_ticks_now_get();
-	ticks_anchor += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 	if (!lll->conn) {
@@ -649,8 +664,11 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* Request Extended Scan stop */
 	scan->is_stop = 1U;
-	cpu_dmb();
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	/* Flag LLL to stop */
+	scan->lll.is_stop = 1U;
+	cpu_dmb();
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_BASE + handle,
 					scan, &scan->lll);

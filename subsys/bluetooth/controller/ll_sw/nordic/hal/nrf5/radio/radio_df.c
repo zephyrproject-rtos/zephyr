@@ -238,9 +238,12 @@ uint8_t radio_df_ant_num_get(void)
 
 static inline void radio_df_mode_set(uint8_t mode)
 {
-	NRF_RADIO->DFEMODE &= ~RADIO_DFEMODE_DFEOPMODE_Msk;
-	NRF_RADIO->DFEMODE |= ((mode << RADIO_DFEMODE_DFEOPMODE_Pos)
-			       & RADIO_DFEMODE_DFEOPMODE_Msk);
+	uint32_t dfemode;
+
+	dfemode = NRF_RADIO->DFEMODE;
+	dfemode &= ~RADIO_DFEMODE_DFEOPMODE_Msk;
+	dfemode |= ((mode << RADIO_DFEMODE_DFEOPMODE_Pos) & RADIO_DFEMODE_DFEOPMODE_Msk);
+	NRF_RADIO->DFEMODE = dfemode;
 }
 
 void radio_df_mode_set_aoa(void)
