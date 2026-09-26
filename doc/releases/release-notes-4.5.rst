@@ -2088,6 +2088,16 @@ Libraries / Subsystems
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
 
+* Networking
+
+  * Added tracking of local ports bound through offloaded sockets
+    (:kconfig:option:`CONFIG_NET_SOCKETS_OFFLOAD_PORT_TRACKING`). Offloaded
+    sockets bind in the offload engine, outside the ``net_context`` layer, so
+    :c:func:`net_context_port_in_use` could not see them. It now also consults
+    the socket layer, so every user of that check accounts for offloaded
+    bindings. Port-in-use checks therefore behave the same way on native,
+    offloaded and mixed native/offloaded setups.
+
 * Management
 
   * MCUmgr

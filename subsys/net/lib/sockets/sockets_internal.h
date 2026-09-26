@@ -20,6 +20,13 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 
 int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout);
 
+#if defined(CONFIG_NET_NATIVE)
+/* Native IP sockets all share this vtable; used to tell them apart from
+ * offloaded sockets by the vtable installed on an fd.
+ */
+extern const struct socket_op_vtable sock_fd_op_vtable;
+#endif
+
 static inline void sock_set_flag(struct net_context *ctx, uintptr_t mask,
 				 uintptr_t flag)
 {

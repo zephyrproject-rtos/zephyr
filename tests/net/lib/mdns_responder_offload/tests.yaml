@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - net
+    - dns
+    - mdns
+  harness: pytest
+  # Offloaded sockets bind real host ports (5353) and join host multicast
+  # groups, so this must run on the native_sim host network stack.
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  # Only build/run with gcc to keep a single DUT per run otherwise the MDNS
+  # responses would not be distinguishable between the two DUTs.
+  integration_toolchains:
+    - host/gnu
+tests:
+  net.mdns.offload:
+    harness_config:
+      # The DUT is launched once and shared by the per-family test cases.
+      pytest_dut_scope: module
+      # Require the host to provide a routable address of each family so a
+      # missing family fails instead of silently skipping. Drop a flag here if
+      # the CI host is not guaranteed to be dual-stack.
+      pytest_args:
+        - "--require-ipv4"
+        # Zephyr's cloud runners are not guaranteed to have a routable IPv6 address, so make it
+        # optional for now. If the host has no IPv6 address, the IPv6 test case will be skipped.
+        # - "--require-ipv6"

@@ -393,6 +393,31 @@ struct zsock_addrinfo {
  */
 __syscall void *zsock_get_context_object(int sock);
 
+/** @cond INTERNAL_HIDDEN */
+
+/* Offloaded sockets bind their local port in the offload engine, outside the
+ * net_context list, so net_context_port_in_use() cannot see them. The socket
+ * layer tracks those bindings and implements this query; net_context consults
+ * it so the port-in-use result covers native and offloaded sockets alike.
+ */
+#if defined(CONFIG_NET_SOCKETS_OFFLOAD_PORT_TRACKING)
+bool net_socket_offloaded_port_in_use(enum net_ip_protocol ip_proto, uint16_t local_port,
+				      const struct net_sockaddr *local_addr);
+#else
+static inline bool net_socket_offloaded_port_in_use(enum net_ip_protocol ip_proto,
+						    uint16_t local_port,
+						    const struct net_sockaddr *local_addr)
+{
+	ARG_UNUSED(ip_proto);
+	ARG_UNUSED(local_port);
+	ARG_UNUSED(local_addr);
+
+	return false;
+}
+#endif /* CONFIG_NET_SOCKETS_OFFLOAD_PORT_TRACKING */
+
+/** @endcond */
+
 /**
  * @brief Create a network socket
  *

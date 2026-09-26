@@ -981,10 +981,9 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	return offset;
 }
 
-int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst,
-				    const struct net_in_addr *addr4,
-				    const struct net_in6_addr *addr6,
-				    uint8_t *buf, uint16_t buf_size)
+int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst, const struct net_in_addr *addr4,
+				    const struct net_in6_addr *addr6, uint8_t *buf,
+				    uint16_t buf_size)
 {
 	static const char query[] = { "\x09_services\x07_dns-sd\x04_udp\x05local" };
 	/* offset of '.local' in the above */

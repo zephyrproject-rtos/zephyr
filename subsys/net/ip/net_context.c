@@ -413,12 +413,18 @@ static uint16_t find_available_port(struct net_context *context,
 #define find_available_port(...) 0
 #endif
 
-bool net_context_port_in_use(enum net_ip_protocol proto,
-			   uint16_t local_port,
-			   const struct net_sockaddr *local_addr)
+bool net_context_port_in_use(enum net_ip_protocol proto, uint16_t local_port,
+			     const struct net_sockaddr *local_addr)
 {
-	return check_used_port(NULL, NULL, proto, net_htons(local_port),
-			       local_addr, false, false, false) != 0;
+	if (check_used_port(NULL, NULL, proto, net_htons(local_port), local_addr, false, false,
+			    false) != 0) {
+		return true;
+	}
+
+	/* Offloaded sockets bind their port in the offload engine, outside the
+	 * net_context list checked above. The socket layer tracks those bindings.
+	 */
+	return net_socket_offloaded_port_in_use(proto, local_port, local_addr);
 }
 
 #if defined(CONFIG_NET_CONTEXT_CHECK)
