@@ -5,6 +5,7 @@ tests:
       - asan
     # RX and TriCore do not support -fsanitize=kernel-address.
     filter: not CONFIG_RX and not CONFIG_TRICORE
+    toolchain_exclude: arcmwdt
     integration_platforms:
       - qemu_riscv32
       - qemu_cortex_m3
@@ -13,3 +14,10 @@ tests:
       - native_sim
     extra_configs:
       - arch:posix:CONFIG_PICOLIBC=y
+  # arcmwdt defaults to minimal libc; KASAN needs symbols like
+  # setjmp/longjmp, so set ARCMWDT_LIBC=y to use full mwlibc.
+  libraries.heap_kasan.arcmwdtlib:
+    tags: heap asan
+    toolchain_allow: arcmwdt
+    extra_configs:
+      - CONFIG_ARCMWDT_LIBC=y
