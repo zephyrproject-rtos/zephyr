@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: Broadcom BCM54213PE Ethernet PHY
+
+compatible: "brcm,bcm54213pe"
+
+include: ethernet-phy-common.yaml
+
+properties:
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
+
+  brcm,rgmii-delay:
+    type: string
+    description: |
+      Internal RGMII clock delay added by the PHY.
+
+      - "none": no internal delay
+      - "id": enable RX and TX delay
+      - "rxid": enable RX delay only
+      - "txid": enable TX delay only
+
+      Use "id" when the MAC adds no delay and the board has no delay traces,
+      e.g. GENET in "rgmii" mode on Raspberry Pi 4.
+    enum:
+      - "none"
+      - "id"
+      - "rxid"
+      - "txid"
+    default: "id"
