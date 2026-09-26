@@ -35,6 +35,11 @@ LOG_MODULE_REGISTER(pi4ioe5v6408, CONFIG_GPIO_LOG_LEVEL);
 #define NUM_PINS 8U
 #define ALL_PINS ((uint8_t)BIT_MASK(NUM_PINS))
 
+/* Bound on re-reads of a still-asserted INT line, so a line held low by a
+ * fault cannot spin the work queue forever.
+ */
+#define INT_DRAIN_PASSES 8U
+
 struct pi4ioe5v6408_pin_state {
 	uint8_t dir;
 	uint8_t hiz;
@@ -68,42 +73,107 @@ struct pi4ioe5v6408_config {
 	bool interrupt_enabled;
 };
 
+/*
+ * Point the chip's per-pin reference at the level the inputs rest at now and
+ * drop any latched status, leaving INT deasserted.  The chip raises INT when
+ * an input deviates from REG_IN_DEFAULT_STATE, so a reference left behind by
+ * an earlier pin configuration keeps the open-drain line pulled low and no
+ * further edge can ever be delivered.  Callers that race with the work
+ * handler hold the lock.
+ */
+static int pi4ioe5v6408_resync(const struct device *dev)
+{
+	const struct pi4ioe5v6408_config *cfg = dev->config;
+	struct pi4ioe5v6408_data *data = dev->data;
+	uint8_t input;
+	uint8_t status;
+	int rc;
+
+	rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_IN_STATE, &input);
+	if (rc != 0) {
+		return rc;
+	}
+
+	rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_IN_DEFAULT_STATE, input);
+	if (rc != 0) {
+		return rc;
+	}
+
+	data->irq_state.last_input = input;
+
+	return i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &status);
+}
+
 static void pi4ioe5v6408_handle_interrupt(const struct device *dev)
 {
 	const struct pi4ioe5v6408_config *cfg = dev->config;
 	struct pi4ioe5v6408_data *data = dev->data;
 	struct pi4ioe5v6408_irq_state *irq = &data->irq_state;
 	uint8_t prev, curr, transitioned;
-	uint8_t fired = 0;
+	uint8_t fired;
 	uint8_t status;
+	unsigned int pass = 0;
 	int rc;
 
-	k_sem_take(&data->lock, K_FOREVER);
+	do {
+		k_sem_take(&data->lock, K_FOREVER);
 
-	if (!irq->rising && !irq->falling) {
+		/*
+		 * With no INT line there is nothing latched to release, so an
+		 * unarmed poll can return without touching the bus.  On the
+		 * interrupt path the latch must be cleared even when no
+		 * consumer has registered an edge yet, otherwise the very
+		 * first stray assertion holds INT low for good.
+		 */
+		if (!cfg->interrupt_enabled && irq->rising == 0U && irq->falling == 0U) {
+			k_sem_give(&data->lock);
+			return;
+		}
+
+		prev = irq->last_input;
+		rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_IN_STATE, &curr);
+		if (rc != 0) {
+			k_sem_give(&data->lock);
+			return;
+		}
+		irq->last_input = curr;
+		transitioned = prev ^ curr;
+
+		fired = irq->rising & transitioned & curr;
+		fired |= irq->falling & transitioned & prev;
+
+		if (cfg->interrupt_enabled) {
+			/*
+			 * Re-reference against the level just sampled before
+			 * releasing the latch, so an input resting away from
+			 * the old reference cannot re-assert INT immediately.
+			 */
+			rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_IN_DEFAULT_STATE, curr);
+			if (rc != 0) {
+				k_sem_give(&data->lock);
+				return;
+			}
+		}
+
+		(void)i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &status);
+
 		k_sem_give(&data->lock);
-		return;
-	}
 
-	prev = irq->last_input;
-	rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_IN_STATE, &curr);
-	if (rc) {
-		k_sem_give(&data->lock);
-		return;
-	}
-	irq->last_input = curr;
-	transitioned = prev ^ curr;
+		if (fired != 0U) {
+			gpio_fire_callbacks(&data->callbacks, dev, fired);
+		}
 
-	fired = irq->rising & transitioned & curr;
-	fired |= irq->falling & transitioned & prev;
+		if (!cfg->interrupt_enabled) {
+			return;
+		}
 
-	(void)i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &status);
-
-	k_sem_give(&data->lock);
-
-	if (fired) {
-		gpio_fire_callbacks(&data->callbacks, dev, fired);
-	}
+		/*
+		 * An input that changed while the registers above were being
+		 * read leaves INT asserted with no new edge for the SoC to
+		 * report.  Drain those before returning.
+		 */
+		pass++;
+	} while (gpio_pin_get_dt(&cfg->int_gpio) > 0 && pass < INT_DRAIN_PASSES);
 }
 
 static void pi4ioe5v6408_work_handler(struct k_work *work)
@@ -191,6 +261,16 @@ static int pi4ioe5v6408_pin_configure(const struct device *dev, gpio_pin_t pin, 
 		goto out;
 	}
 	rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_IO_DIR, st->dir);
+	if (rc != 0) {
+		goto out;
+	}
+
+	/*
+	 * Enabling a pull or turning the pin into an output moves the level
+	 * the chip sees, which would read as a deviation from the reference
+	 * taken at init and latch INT.  Re-reference before returning.
+	 */
+	rc = pi4ioe5v6408_resync(dev);
 
 out:
 	k_sem_give(&data->lock);
@@ -306,6 +386,12 @@ static int pi4ioe5v6408_pin_interrupt_configure(const struct device *dev, gpio_p
 	}
 
 	if (cfg->interrupt_enabled) {
+		/* Arm against the current levels, not a stale reference. */
+		rc = pi4ioe5v6408_resync(dev);
+		if (rc != 0) {
+			goto out;
+		}
+
 		mask = irq->rising | irq->falling;
 		rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_INT_MASK, (uint8_t)~mask);
 	}
@@ -327,7 +413,6 @@ static int pi4ioe5v6408_init(const struct device *dev)
 {
 	const struct pi4ioe5v6408_config *cfg = dev->config;
 	struct pi4ioe5v6408_data *data = dev->data;
-	uint8_t scratch;
 	int rc;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
@@ -346,24 +431,21 @@ static int pi4ioe5v6408_init(const struct device *dev)
 		return rc;
 	}
 
-	rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_IN_STATE, &data->irq_state.last_input);
-	if (rc) {
-		return rc;
-	}
-
 	/*
-	 * Use the current resting input level as the per-pin default state, so
-	 * the chip latches an interrupt on any deviation from rest rather than
-	 * on transitions back to the post-reset all-zero default.  Without
-	 * this, e.g. an active-low button that idles high (1, non-default)
-	 * would only trigger on release, not on press.
+	 * Mask every source until a consumer arms one.  Drivers sitting on
+	 * other pins of this expander configure them long after this point,
+	 * and an unmasked pin would latch INT on the first such change with
+	 * nobody yet able to release it.
 	 */
-	rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_IN_DEFAULT_STATE, data->irq_state.last_input);
-	if (rc) {
+	rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_INT_MASK, ALL_PINS);
+	if (rc != 0) {
 		return rc;
 	}
 
-	(void)i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &scratch);
+	rc = pi4ioe5v6408_resync(dev);
+	if (rc != 0) {
+		return rc;
+	}
 
 	if (cfg->interrupt_enabled) {
 		if (!gpio_is_ready_dt(&cfg->int_gpio)) {
