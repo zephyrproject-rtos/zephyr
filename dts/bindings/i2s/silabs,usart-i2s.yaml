@@ -1,0 +1,91 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 2 I2S (Inter-Integrated Circuit Sound)
+
+description: |
+  Silicon Labs Series 2+ USART peripheral operating in I2S mode (synchronous
+  audio). The hardware uses the same USART registers as SPI/UART; the pinout must
+  include TX (data), RX (data in), CLK (bit clock), and CS (word select / LRCLK)
+  when using this binding.
+
+  **TXBL vs left channel:** ``USARTnTXBL`` means **Transmit Buffer Level** — the
+  DMA fires when the TX FIFO has room. The ``BL`` suffix is **not** "left".
+  With ``DMASPLIT=0`` (stereo), one ``txbl`` LDMA transfer supplies both L and R.
+  With ``DMASPLIT=1`` (mono), ``txbl`` happens to service the LRCLK-low slot and
+  ``txblright`` the LRCLK-high slot; use ``silabs,mono-tx-slot`` to pick which
+  slot carries application audio.
+
+  Stereo (``channels = 2``): one LDMA channel on ``txbl`` (``USARTnTXBL``) moves
+  interleaved [L, R, ...] samples via ``USARTn_TXDOUBLE``.
+
+  Mono TX (``channels = 1``): requires both ``txbl`` and ``txblright`` in
+  ``dma-names`` (``USARTnTXBL`` + ``USARTnTXBLRIGHT``). The driver uses dual LDMA
+  with ``I2SCTRL.DMASPLIT = 1`` — one channel streams the mono buffer, the other
+  feeds fixed silence on the unused slot. Each slot is written via ``USARTn_TXDOUBLE``
+  (one LDMA trigger per channel slot). Use ``silabs,mono-tx-slot`` to pick left vs
+  right. RX remains stereo-only (``channels = 2``).
+
+  Legacy ``dma-names`` ``tx`` and ``tx-right`` are still accepted as aliases for
+  ``txbl`` and ``txblright``.
+
+  Because a single USART cannot be driven by both the SPI and I2S drivers, enable
+  this compatible on a USART instance only in a board or application overlay,
+  not in the shared SoC DTSI.
+
+  Audio data is moved using the SoC LDMA controller (see ``dmas`` / ``dma-names``).
+  Use request selects from the SoC-specific
+  ``zephyr/dt-bindings/dma/silabs/<soc>-dma.h`` header.
+
+compatible: "silabs,usart-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    description: |
+      Name the USART peripheral bus clock (typically ``peripheral``). Do **not**
+      list a CLKOUT / MCLK provider here: putting a CLKOUT node in ``clocks``
+      created a Zephyr init dependency that hung boot on xg27_rb4194a before
+      the console came up. Use ``silabs,mclk-out`` instead.
+
+  silabs,mclk-out:
+    type: phandle
+    description: |
+      Optional phandle to a ``clock-output@N`` child under
+      ``silabs,series-clock-output`` that supplies codec MCLK. The driver gates
+      the parent device with the child's ``reg`` as the clock subsystem via
+      clock_control_on()/off() on configure / de-configure. Prefer this over
+      naming an ``mclk`` entry in ``clocks`` / ``clock-names``.
+
+  dmas:
+    required: true
+    description: |
+      DMA specifiers: ``txbl`` (USARTnTXBL), optional ``txblright``
+      (USARTnTXBLRIGHT for mono TX), and ``rx`` (USARTnRXDATAV).
+
+  dma-names:
+    required: true
+    description: |
+      Must include ``txbl`` (or legacy ``tx``) and ``rx``. Add ``txblright`` (or
+      legacy ``tx-right``) to enable ``channels = 1`` TX (both USARTnTXBL and
+      USARTnTXBLRIGHT request lines are required).
+
+  silabs,mono-tx-slot:
+    type: string
+    enum:
+      - left
+      - right
+    default: right
+    description: |
+      Mono TX slot when ``channels = 1`` (which slot carries application audio;
+      the other slot is padded with silence).
