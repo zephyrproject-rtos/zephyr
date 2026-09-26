@@ -1010,6 +1010,24 @@ int hl78xx_api_func_get_modem_info(const struct device *dev, enum hl78xx_modem_i
 	}
 }
 
+bool hl78xx_fw_supports_ntn(const struct device *dev)
+{
+	struct hl78xx_data *data;
+	char fw_version[MDM_REVISION_LENGTH];
+
+	if ((dev == NULL) || (dev->data == NULL)) {
+		return false;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	safe_strncpy(fw_version, (const char *)data->identity.fw_version, sizeof(fw_version));
+	k_mutex_unlock(&data->api_lock);
+
+	return hl78xx_fw_version_supports_ntn(fw_version);
+}
+
 int hl78xx_api_func_get_modem_info_standard(const struct device *dev,
 					    enum cellular_modem_info_type type, char *info,
 					    size_t size)
