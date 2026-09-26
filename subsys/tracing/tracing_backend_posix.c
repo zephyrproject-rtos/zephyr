@@ -22,10 +22,11 @@ static void tracing_backend_posix_init(void)
 }
 
 static void tracing_backend_posix_output(
-		const struct tracing_backend *backend,
+		const struct tracing_backend *backend, uint8_t stream_id,
 		uint8_t *data, uint32_t length)
 {
 	ARG_UNUSED(backend);
+	ARG_UNUSED(stream_id);
 
 	tracing_backend_posix_output_bottom(data, length, out_stream);
 }

@@ -33,6 +33,19 @@ extern struct k_spinlock tracing_lock;
  */
 bool is_tracing_enabled(void);
 
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+/**
+ * @brief Sample the tracing clock.
+ *
+ * Meant to be called from the emission path with the tracing lock held, so that
+ * the order in which CPUs sample the clock matches the order in which their
+ * events reach the tracing buffer.
+ *
+ * @return Current tracing timestamp in nanoseconds.
+ */
+uint64_t tracing_timestamp_get(void);
+#endif
+
 /**
  * @brief Enable or disable emission of tracing data at runtime.
  *
@@ -60,10 +73,12 @@ int tracing_backends_flush(void);
 /**
  * @brief Give tracing buffer to backend.
  *
+ * @param stream_id Trace stream the data belongs to. The core emits a single
+ *                  stream, id 0, until per-CPU streams are wired up.
  * @param data Tracing buffer address.
  * @param length Tracing buffer length.
  */
-void tracing_buffer_handle(uint8_t *data, uint32_t length);
+void tracing_buffer_handle(uint8_t stream_id, uint8_t *data, uint32_t length);
 
 /**
  * @brief Handle tracing packet drop.
