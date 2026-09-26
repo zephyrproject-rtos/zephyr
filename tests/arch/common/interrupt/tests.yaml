@@ -52,6 +52,9 @@ tests:
       # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
+      # No trigger_irq implementation for the Microchip AIC in
+      # interrupt_util.h yet.
+      - sama5d27_som1_ek1
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
@@ -82,6 +85,9 @@ tests:
       # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
+      # No trigger_irq implementation for the Microchip AIC in
+      # interrupt_util.h yet.
+      - sama5d27_som1_ek1
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
