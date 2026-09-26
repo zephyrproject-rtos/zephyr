@@ -605,11 +605,16 @@ config ISR_TABLES_LOCAL_DECLARATION
 
 config DYNAMIC_INTERRUPTS
 	bool "Installation of IRQs at runtime"
+	depends on !GEN_SW_ISR_TABLE_SWITCH
 	select SRAM_SW_ISR_TABLE
 	help
 	  Enable installation of interrupts at runtime, which will move some
 	  interrupt-related data structures to RAM instead of ROM, and
 	  on some architectures increase code size.
+
+	  This requires a software ISR table that can be written to, so it is
+	  unavailable with CONFIG_GEN_SW_ISR_TABLE_SWITCH, where the table is
+	  a generated switch statement instead of an array.
 
 config SHARED_INTERRUPTS
 	bool "Set this to enable support for shared interrupts [EXPERIMENTAL]"
