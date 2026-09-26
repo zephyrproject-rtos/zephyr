@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright 2026 Ezurio
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO signals exposed on the SMARC 2.x module connector.
+
+    SMARC (Smart Mobility ARChitecture) is an SGET-standardized computer-on-module
+    form factor built around a 314-pin edge connector. This binding provides a
+    nexus mapping so carrier-board (shield) overlays can reference SMARC connector
+    GPIO-style signals by standardized index values, independent of the SoC or
+    expanders on any particular module (e.g. GPIO_IO0..GPIO_IO13, GBE LED pins).
+
+    Cell 0 is the SMARC GPIO_IO signal index. Each module board maps these to its
+    own SoC GPIO controller through the nexus gpio-map property. Reference pins
+    using the SMARC_GPIO_IO* constants in <dt-bindings/gpio/smarc-gpio.h>, e.g.
+
+        reset-gpios = <&smarc_gpio SMARC_GPIO_IO6 GPIO_ACTIVE_LOW>;
+
+compatible: "smarc-gpio"
+
+include: [gpio-nexus.yaml, base.yaml]

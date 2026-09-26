@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Ezurio
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SMARC I2S0 master clock is sourced from the module SAI3 on this SoM. */
+&audio_codec {
+	clocks = <&ccm IMX_CCM_SAI3_CLK 0x0 0x0>;
+};

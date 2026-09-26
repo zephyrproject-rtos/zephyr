@@ -1,0 +1,121 @@
+# SPDX-FileCopyrightText: Copyright 2026 Ezurio
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NITROGEN93_SMARC
+
+if GPIO
+
+config I2C
+	default y
+
+endif # GPIO
+
+if CAN
+
+config GPIO_PCA_SERIES_INIT_PRIORITY
+	default 60
+
+config CAN_TRANSCEIVER_INIT_PRIORITY
+	default 65
+
+endif # CAN
+
+if I2S_MCUX_SAI
+
+# The i.MX93 (imx9 family) derives the SAI MCLK from the CCM composite
+# clocks, not from an "audio PLL" as on the i.MXRT series. The
+# i2s_mcux_sai driver only implements clock_audio_pll_config_t setup for
+# IMXRT10XX/IMXRT11XX/IMXRT118X, so this must stay disabled here.
+config I2S_HAS_PLL_SETTING
+	default n
+
+endif # I2S_MCUX_SAI
+
+if NETWORKING
+
+config ETH_DRIVER
+	default y
+
+config NET_TX_STACK_SIZE
+	default 8192
+
+config NET_RX_STACK_SIZE
+	default 8192
+
+config NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+config NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+config UDC_WORKQUEUE_STACK_SIZE
+	default 4096
+
+if BOARD_NITROGEN93_SMARC_MIMX9352_A55_NX611
+
+if WIFI
+
+config WIFI_NXP
+	default y
+
+choice NXP_WIFI_PART
+	default NXP_IW61X
+endchoice
+
+choice NXP_IW61X_MODULE
+	default NXP_IW611_EZURIO_NX611
+endchoice
+
+endif # WIFI
+
+endif # BOARD_NITROGEN93_SMARC_MIMX9352_A55_NX611
+
+endif # NETWORKING
+
+if USB_DEVICE_STACK_NEXT
+
+# Double the default stack sizes for the USB device stack threads on ARM64
+config USBD_THREAD_STACK_SIZE
+	default 2048
+
+if !NETWORKING
+
+config UDC_WORKQUEUE_STACK_SIZE
+	default 1024
+
+endif # !NETWORKING
+
+endif # USB_DEVICE_STACK_NEXT
+
+if BOARD_NITROGEN93_SMARC_MIMX9352_A55_NX611
+
+if BT
+
+choice BT_NXP_MODULE
+	default BT_NXP_EZURIO_NX611
+endchoice
+
+config BT_BUF_ACL_TX_COUNT
+	default 8
+
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	default 255
+
+config BT_RX_STACK_SIZE
+	default 4096
+
+endif # BT
+
+endif # BOARD_NITROGEN93_SMARC_MIMX9352_A55_NX611
+
+if IMX_USDHC
+
+config GPIO
+	default y
+
+endif # IMX_USDHC
+
+endif # BOARD_NITROGEN93_SMARC
