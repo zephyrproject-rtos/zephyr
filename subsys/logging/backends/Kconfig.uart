@@ -22,7 +22,7 @@ config LOG_BACKEND_UART_BUFFER_SIZE
 	default 1
 	help
 	  In deferred logging mode, sets the maximum number of bytes which can be buffered in
-	  RAM before log_output_flush is automatically called on the UART backend.  The buffer
+	  RAM before log_output_flush is automatically called on the UART backend. The buffer
 	  will also be flushed after each log message.
 
 	  In immediate logging mode, processed log messages are not buffered and are always
@@ -35,6 +35,18 @@ config LOG_BACKEND_UART_AUTOSTART
 	  When enabled automatically start the UART logging backend on
 	  application start. When disabled, the application needs to start
 	  the backend manually using log_backend_enable().
+
+config LOG_BACKEND_UART_SUSPEND_ON_IDLE
+	bool "Suspend UART backend when log queue is idle"
+	depends on PM_DEVICE_RUNTIME
+	depends on !LOG_MODE_IMMEDIATE
+	help
+	  When enabled, the UART device is suspended via Runtime PM as soon as
+	  the deferred logging queue is completely empty, and resumed automatically
+	  before the next log burst begins. This eliminates UART clock drain
+	  during CPU sleep on PM-capable platforms. Requires PM_DEVICE_RUNTIME
+	  support in the UART driver. Not compatible with immediate logging mode
+	  since there is no deferred queue to drain.
 
 backend = UART
 backend-str = uart
