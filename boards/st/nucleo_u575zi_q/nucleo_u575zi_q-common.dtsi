@@ -221,6 +221,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&vref4 {
+	status = "okay";
+};
+
 &vbat4 {
 	status = "okay";
 };

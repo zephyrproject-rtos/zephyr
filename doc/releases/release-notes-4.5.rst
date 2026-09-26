@@ -526,6 +526,8 @@ New APIs and options
     :c:enumerator:`ADC_REF_INTERNAL` when the callback is NULL.
     :c:func:`adc_raw_to_millivolts_dt` falls back to channel DT
     ``zephyr,vref-mv`` when :c:func:`adc_ref_get` fails.
+  * :kconfig:option:`CONFIG_ADC_STM32_VREFINT_CALIBRATE` (measure VREF+ from
+    VREFINT at init and on ``sequence.calibrate``)
 
 * Architectures
 
@@ -2167,6 +2169,20 @@ Devicetree
 
 Other notable changes
 *********************
+
+* ADC
+
+  * STM32 ADC driver (:dtcompatible:`st,stm32-adc`): when
+    :kconfig:option:`CONFIG_ADC_STM32_VREFINT_CALIBRATE` is enabled,
+    :c:func:`adc_ref_internal` may return a measured scale instead of DT
+    ``vref-mv``. Any ADC named by an :dtcompatible:`st,stm32-vref`
+    ``io-channels`` property can take that measurement; the result is
+    cached SoC-wide. See the :ref:`migration guide<migration_4.5>` ADC section.
+
+  * STM32G4 SoC dtsi files now describe the extra VREFINT inputs that exist in
+    silicon: :dtcompatible:`st,stm32-vref` ``vref3`` (ADC3, G491 and up),
+    ``vref4`` and ``vref5`` (ADC4/ADC5, G473 and up). Nodes stay disabled;
+    boards enable the instance they use. ADC2 has no VREFINT mux.
 
 * Bluetooth
 

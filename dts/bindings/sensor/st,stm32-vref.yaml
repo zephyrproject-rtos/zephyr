@@ -1,7 +1,15 @@
 # Copyright (c) 2023 Kenneth J. Miller <ken@miller.ec>
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 VREF+.
+description: |
+  STM32 VREF+.
+
+  The st,stm32-vref sensor driver can report VREF+ via the sensor API.
+  The STM32 ADC driver may also consume these nodes (channel, factory cal)
+  when CONFIG_ADC_STM32_VREFINT_CALIBRATE is enabled, to seed
+  adc_ref_internal(). io-channels names the ADC instance that can convert
+  VREFINT; several nodes may exist on SoCs where more than one ADC has
+  that mux. The sensor remains independently usable.
 
 compatible: "st,stm32-vref"
 
