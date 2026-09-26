@@ -64,6 +64,22 @@ System Clock
 This board configuration uses a system clock frequency of 24 MHz.
 Cortex-A55 Core runs up to 1.4 GHz.
 
+CPU Frequency Scaling
+---------------------
+
+The Cortex-A55 supports :ref:`CPU frequency scaling <cpu_freq>` through the ARM_PLL P-state
+driver, which offers performance states at 1.4 GHz and 900 MHz. Only the core clock is
+reprogrammed, so both frequencies have to be usable at the VDD_SOC level set by the boot
+loader.
+
+Use this configuration to run the :zephyr:code-sample:`cpu_freq_on_demand` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/cpu_freq/on_demand
+   :host-os: unix
+   :board: frdm_imx91/mimx9131
+   :goals: build
+
 Serial Port
 -----------
 

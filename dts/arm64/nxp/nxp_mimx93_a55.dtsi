@@ -39,6 +39,32 @@
 		};
 	};
 
+	/*
+	 * Cortex-A55 performance states, ordered by decreasing performance as
+	 * required by the CPU frequency scaling subsystem. Only the core clock
+	 * is changed, so all frequencies must be usable at the VDD_SOC level
+	 * set by the boot loader.
+	 */
+	performance-states {
+		pstate_0: pstate-0 {
+			compatible = "nxp,imx9-pstate";
+			load-threshold = <60>;
+			clock-frequency = <DT_FREQ_M(1692)>;
+		};
+
+		pstate_1: pstate-1 {
+			compatible = "nxp,imx9-pstate";
+			load-threshold = <30>;
+			clock-frequency = <DT_FREQ_M(1400)>;
+		};
+
+		pstate_2: pstate-2 {
+			compatible = "nxp,imx9-pstate";
+			load-threshold = <0>;
+			clock-frequency = <DT_FREQ_M(900)>;
+		};
+	};
+
 	power-states {
 		idle: power-state-idle {
 			compatible = "zephyr,power-state";
@@ -89,6 +115,37 @@
 	ana_pll: ana_pll@44480000 {
 		compatible = "nxp,imx-ana";
 		reg = <0x44480000 DT_SIZE_K(64)>;
+	};
+
+	arm_pll: arm-pll@44481000 {
+		compatible = "nxp,imx9-pll";
+		reg = <0x44481000 0x100>;
+		#clock-cells = <0>;
+		pll-mode = "integer";
+
+		/* 24 MHz / 1 * 141 / 2 */
+		opp-0 {
+			clock-frequency = <DT_FREQ_M(1692)>;
+			rdiv = <1>;
+			mfi = <141>;
+			odiv = <2>;
+		};
+
+		/* 24 MHz / 1 * 175 / 3 */
+		opp-1 {
+			clock-frequency = <DT_FREQ_M(1400)>;
+			rdiv = <1>;
+			mfi = <175>;
+			odiv = <3>;
+		};
+
+		/* 24 MHz / 1 * 150 / 4 */
+		opp-2 {
+			clock-frequency = <DT_FREQ_M(900)>;
+			rdiv = <1>;
+			mfi = <150>;
+			odiv = <4>;
+		};
 	};
 
 	ccm: ccm@44450000 {

@@ -1,21 +1,66 @@
 /*
  * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
 #include <stdio.h>
+#include <string.h>
 #include <zephyr/kernel.h>
+
+#include <zephyr/irq.h>
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cpu_freq/cpu_freq.h>
 
 #define NUM_THREADS (2 * (CONFIG_MP_MAX_NUM_CPUS - 1))
 
+/*
+ * Iterations of the benchmark loop. Sized so that the loop takes roughly ten
+ * milliseconds on a 1 GHz class core: long enough to swamp the measurement
+ * overhead, short enough that the interrupt lock below is not held for a
+ * disruptive amount of time and that a 24-bit system counter cannot wrap.
+ */
+#define BENCH_ITERATIONS 2000000U
+
+#define BENCH_STACK_SIZE 2048
+
 LOG_MODULE_REGISTER(cpu_freq_soc_test, LOG_LEVEL_INF);
 
 const struct pstate *soc_pstates_dt[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(performance_states), PSTATE_DT_GET, (,))};
+
+#define NUM_PSTATES ARRAY_SIZE(soc_pstates_dt)
+
+/*
+ * One P-state sweep, as measured by pstate_benchmark_run(). The benchmark runs
+ * on a thread of its own, where ztest's assertion macros are not reliable: a
+ * failing assertion aborts that thread only, so k_thread_join() still succeeds
+ * and the failure is never attributed to the test case. The benchmark therefore
+ * only records what it observed and the test thread does the checking.
+ */
+struct bench_result {
+	unsigned int cpu;
+	/* cpu_freq_pstate_set() return value, per P-state. */
+	int ret[NUM_PSTATES];
+	/* Duration of the measured window, 0 if the P-state was not set. */
+	uint64_t cycles[NUM_PSTATES];
+	/* cpu_freq_pstate_set() return value for the P-state restored at the end. */
+	int restore_ret;
+};
+
+/* One entry per CPU; a single CPU build only uses index 0. */
+static struct bench_result bench_results[CONFIG_MP_MAX_NUM_CPUS];
+
+/* Written by the benchmark so that the loop is not optimized away. */
+static volatile uint32_t bench_sink;
+
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_CPU_MASK)
+static K_THREAD_STACK_ARRAY_DEFINE(bench_stacks, CONFIG_MP_MAX_NUM_CPUS, BENCH_STACK_SIZE);
+static struct k_thread bench_threads[CONFIG_MP_MAX_NUM_CPUS];
+#endif
 
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 static K_THREAD_STACK_ARRAY_DEFINE(busy_thread_stacks, NUM_THREADS, 1024);
@@ -131,6 +176,160 @@ ZTEST(cpu_freq_soc, test_soc_pstates)
 	for (i = 0; i < NUM_THREADS; i++) {
 		k_thread_abort(&busy_threads[i]);
 	}
+#endif
+}
+
+/*
+ * Fixed integer workload. It touches no memory beyond a register or two, so
+ * the time it takes is a function of the core clock and nothing else.
+ */
+static void cpu_benchmark(void)
+{
+	uint32_t acc = 1U;
+
+	for (uint32_t i = 0U; i < BENCH_ITERATIONS; i++) {
+		acc = (acc * 1664525U) + 1013904223U;
+	}
+
+	bench_sink = acc;
+}
+
+/*
+ * Time the fixed workload once per P-state on the CPU this runs on. The
+ * struct bench_result to fill in is passed as p1; it already holds the CPU
+ * this thread is pinned to. No assertion is made here, see struct
+ * bench_result: the results are checked by bench_result_check() on the test
+ * thread.
+ *
+ * The cycle counter is the system timer, which on an SoC where the P-state
+ * only reprograms the core clock keeps running at a fixed rate. A faster core
+ * therefore finishes the workload sooner, so the reported durations are
+ * expected to grow as the P-state table moves from the highest performance
+ * state to the lowest.
+ */
+static void pstate_benchmark_run(void *p1, void *p2, void *p3)
+{
+	struct bench_result *res = p1;
+	unsigned int key;
+	uint64_t start;
+	size_t i;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (i = 0; i < NUM_PSTATES; i++) {
+		/* Warm up outside the lock: caches, branch predictors, TLB. */
+		cpu_benchmark();
+
+		/*
+		 * Locking interrupts keeps the current CPU fixed, as
+		 * cpu_freq_pstate_set() requires, and keeps interrupt handling
+		 * out of the measured window.
+		 */
+		key = irq_lock();
+
+		res->ret[i] = cpu_freq_pstate_set(soc_pstates_dt[i]);
+		if (res->ret[i] == 0) {
+			start = k_cycle_get_64();
+			cpu_benchmark();
+			res->cycles[i] = k_cycle_get_64() - start;
+		}
+
+		irq_unlock(key);
+	}
+
+	/* Restore the highest P-state. */
+	key = irq_lock();
+	res->restore_ret = cpu_freq_pstate_set(soc_pstates_dt[0]);
+	irq_unlock(key);
+}
+
+/*
+ * Check and report one sweep. Called on the thread running the test case, so
+ * that a failure fails the test case.
+ */
+static void bench_result_check(const struct bench_result *res)
+{
+	for (size_t i = 0; i < NUM_PSTATES; i++) {
+		zassert_equal(res->ret[i], 0, "CPU %u: failed to set P-state %zu", res->cpu, i);
+		zassert_true(res->cycles[i] > 0,
+			     "CPU %u: cycle counter did not advance on P-state %zu", res->cpu, i);
+
+		LOG_INF("CPU %u P-state %zu (threshold=%u%%): %u iterations in %" PRIu64 " us",
+			res->cpu, i, soc_pstates_dt[i]->load_threshold, BENCH_ITERATIONS,
+			k_cyc_to_us_floor64(res->cycles[i]));
+	}
+
+	zassert_equal(res->restore_ret, 0, "CPU %u: failed to restore P-state 0", res->cpu);
+}
+
+/*
+ * Run the P-state benchmark on every CPU.
+ *
+ * On an SoC where a P-state is a cluster wide setting, every CPU reports the
+ * same frequency; the point is that the transition is requested from, and
+ * measurable on, each of them.
+ */
+ZTEST(cpu_freq_soc, test_pstate_benchmark)
+{
+	if (!IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		/* k_cycle_get_64() asserts and returns 0 without it. */
+		ztest_test_skip();
+	}
+
+	if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
+		/*
+		 * Simulated time does not advance while the simulated CPU
+		 * computes, so there is nothing to measure.
+		 */
+		ztest_test_skip();
+	}
+
+	zassert_true(ARRAY_SIZE(soc_pstates_dt) > 0, "No P-states defined in devicetree");
+
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_CPU_MASK)
+	int priority = k_thread_priority_get(k_current_get());
+
+	/*
+	 * One CPU at a time: the thread is pinned before it is started, because
+	 * a running thread cannot change its CPU mask, and is joined before the
+	 * next CPU is measured.
+	 */
+	for (unsigned int cpu = 0; cpu < arch_num_cpus(); cpu++) {
+		struct bench_result *res = &bench_results[cpu];
+		k_tid_t tid;
+		int ret;
+
+		memset(res, 0, sizeof(*res));
+		res->cpu = cpu;
+
+		tid = k_thread_create(&bench_threads[cpu], bench_stacks[cpu],
+				      K_THREAD_STACK_SIZEOF(bench_stacks[cpu]),
+				      pstate_benchmark_run, res, NULL, NULL, priority, 0,
+				      K_FOREVER);
+
+		ret = k_thread_cpu_pin(tid, (int)cpu);
+		zassert_equal(ret, 0, "Failed to pin benchmark thread to CPU %u", cpu);
+
+		k_thread_start(tid);
+
+		ret = k_thread_join(tid, K_FOREVER);
+		zassert_equal(ret, 0, "Failed to join benchmark thread of CPU %u", cpu);
+
+		bench_result_check(res);
+	}
+#else
+	/*
+	 * Without affinity support there is nothing to pin to: run the sweep
+	 * once on the CPU that runs the test, which is CPU 0 on a single CPU
+	 * build.
+	 */
+	memset(&bench_results[0], 0, sizeof(bench_results[0]));
+	bench_results[0].cpu = 0;
+
+	pstate_benchmark_run(&bench_results[0], NULL, NULL);
+
+	bench_result_check(&bench_results[0]);
 #endif
 }
 
