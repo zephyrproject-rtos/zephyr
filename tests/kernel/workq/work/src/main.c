@@ -1298,6 +1298,102 @@ ZTEST(work_1cpu, test_workq_1cpu_running_cancel_sync)
 	zassert_equal(rc, 0, "bad: %d", rc);
 }
 
+/* Cooperative priority between coophi (running the work) and the ztest
+ * thread. The ztest thread is cooperative too, so these helpers do not
+ * preempt it. The test has to sleep before they can enter
+ * k_work_cancel_sync() and land on pending_cancels.
+ */
+#define CANCEL_HELPER_PRIORITY K_PRIO_COOP(1)
+
+BUILD_ASSERT(COOPHI_PRIORITY < CANCEL_HELPER_PRIORITY,
+	     "cancel helper not lower priority than coophi");
+BUILD_ASSERT(CANCEL_HELPER_PRIORITY < CONFIG_ZTEST_THREAD_PRIORITY,
+	     "cancel helper not higher priority than ZTEST");
+
+static K_THREAD_STACK_DEFINE(cancel_helper1_stack, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(cancel_helper2_stack, STACK_SIZE);
+static struct k_thread cancel_helper1;
+static struct k_thread cancel_helper2;
+static struct k_work_sync cancel_sync1;
+static struct k_work_sync cancel_sync2;
+
+static void cancel_sync_thread(void *p1, void *p2, void *p3)
+{
+	struct k_work *work = p1;
+	struct k_work_sync *sync = p2;
+	bool *waited = p3;
+
+	*waited = k_work_cancel_sync(work, sync);
+}
+
+/**
+ * @brief Verify concurrent k_work_cancel_sync() waiters are all woken.
+ *
+ * @details
+ * finalize_cancel_locked() must release every canceller queued for the same
+ * work item. If it stops after the first match, a second k_work_cancel_sync()
+ * caller remains blocked on its semaphore after the item is already idle.
+ *
+ * Test steps:
+ * - Submit a blocking handler to the high-priority cooperative queue and
+ *   sleep so the item is running when cancellation starts.
+ * - Start two cooperative threads that call k_work_cancel_sync() with
+ *   distinct k_work_sync objects, then sleep so both can pend.
+ * - Release the handler and join both threads.
+ *
+ * Expected result:
+ * - Both threads return, each reporting that a wait was required, the handler
+ *   ran once, and the work item is idle. A hang on either join is a failure.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_cancel_sync()
+ */
+ZTEST(work_1cpu, test_workq_1cpu_running_cancel_sync_multi)
+{
+	bool waited1 = false;
+	bool waited2 = false;
+	int rc;
+
+	reset_counters();
+	k_work_init(&common_work, rel_handler);
+
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
+	zassert_equal(rc, 1);
+	k_sleep(K_TICKS(1)); /* coophi picks it up, blocks in rel_handler */
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_RUNNING);
+
+	(void)k_thread_create(&cancel_helper1, cancel_helper1_stack, STACK_SIZE,
+			      cancel_sync_thread, &common_work, &cancel_sync1,
+			      &waited1, CANCEL_HELPER_PRIORITY, 0, K_NO_WAIT);
+	(void)k_thread_create(&cancel_helper2, cancel_helper2_stack, STACK_SIZE,
+			      cancel_sync_thread, &common_work, &cancel_sync2,
+			      &waited2, CANCEL_HELPER_PRIORITY, 0, K_NO_WAIT);
+	k_sleep(K_TICKS(1)); /* both reach their k_sem_take() */
+
+	zassert_equal(k_work_busy_get(&common_work),
+		      K_WORK_RUNNING | K_WORK_CANCELING);
+
+	handler_release();
+
+	rc = k_thread_join(&cancel_helper1, K_SECONDS(2));
+	if (rc != 0) {
+		k_thread_abort(&cancel_helper1);
+	}
+	zassert_ok(rc, "first canceller hung in k_work_cancel_sync");
+
+	rc = k_thread_join(&cancel_helper2, K_SECONDS(2));
+	if (rc != 0) {
+		k_thread_abort(&cancel_helper2);
+	}
+	zassert_ok(rc, "second canceller hung in k_work_cancel_sync");
+
+	zassert_true(waited1);
+	zassert_true(waited2);
+	zassert_equal(coophi_counter(), 1);
+	zassert_equal(k_sem_take(&sync_sem, K_NO_WAIT), 0);
+	zassert_equal(k_work_busy_get(&common_work), 0);
+}
+
 /**
  * @brief Verify cancelling a running item on SMP requires a synchronous wait.
  *
