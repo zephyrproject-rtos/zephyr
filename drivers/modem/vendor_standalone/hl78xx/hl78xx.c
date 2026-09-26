@@ -202,18 +202,6 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 		return "device awake";
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
-	case MODEM_HL78XX_EVENT_WDSI_UPDATE:
-		return "wdsi update";
-	case MODEM_HL78XX_EVENT_WDSI_RESTART:
-		return "wdsi restart";
-	case MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_REQUEST:
-		return "wdsi download request";
-	case MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_PROGRESS:
-		return "wdsi download progress";
-	case MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_COMPLETE:
-		return "wdsi download complete";
-	case MODEM_HL78XX_EVENT_WDSI_INSTALL_REQUEST:
-		return "wdsi install request";
 	case MODEM_HL78XX_EVENT_WDSI_INSTALLING_FIRMWARE:
 		return "wdsi installing firmware";
 	case MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_SUCCEEDED:
@@ -1323,51 +1311,52 @@ void hl78xx_on_wdsi(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 	struct hl78xx_evt event = {.type = HL78XX_LTE_FOTA_UPDATE_STATUS};
-	int wsi_status = -1;
-	uint32_t wsi_data = 0;
+	int wdsi_level = -1;
+	uint32_t wdsi_data = 0;
 
 	if (argc < 2) {
 		return;
 	}
-	wsi_status = ATOI(argv[1], -1, "wdsi");
-	if (wsi_status == -1) {
+	wdsi_level = ATOI(argv[1], -1, "wdsi");
+	if (wdsi_level < 0) {
 		return;
 	}
-	data->status.wdsi.level = wsi_status;
 	if (argc == 3) {
-		wsi_data = ATOI(argv[2], 0, "data");
-		data->status.wdsi.data = wsi_data;
+		wdsi_data = ATOI(argv[2], 0, "data");
 	}
-	if (data->status.wdsi.level == WDSI_FIRMWARE_AVAILABLE) {
-		data->status.wdsi.fota_size = wsi_data;
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_UPDATE);
-	} else if (data->status.wdsi.level == WDSI_BOOTSTRAP_CREDENTIALS_PRESENT) {
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_RESTART);
-	} else if (data->status.wdsi.level == WDSI_FIRMWARE_DOWNLOAD_REQUEST) {
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_REQUEST);
-	} else if (data->status.wdsi.level == WDSI_DOWNLOAD_IN_PROGRESS) {
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_PROGRESS);
-		data->status.wdsi.progress = wsi_data;
-	} else if (data->status.wdsi.level == WDSI_FIRMWARE_DOWNLOADED) {
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_COMPLETE);
-	} else if (data->status.wdsi.level == WDSI_FIRMWARE_INSTALL_REQUEST) {
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_INSTALL_REQUEST);
-	} else if (data->status.wdsi.level == WDSI_FIRMWARE_UPDATE_START) {
+	data->status.wdsi.level = (enum wdsi_indication)wdsi_level;
+	data->status.wdsi.data = wdsi_data;
+
+	switch (wdsi_level) {
+	case WDSI_FIRMWARE_AVAILABLE:
+		data->status.wdsi.fota_size = wdsi_data;
+		break;
+	case WDSI_DOWNLOAD_IN_PROGRESS:
+		data->status.wdsi.progress = (int)wdsi_data;
+		break;
+	case WDSI_FIRMWARE_UPDATE_START:
+		/* The modem installs and reboots on its own from here; hold
+		 * the driver state machine off the AT channel meanwhile.
+		 */
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_INSTALLING_FIRMWARE);
-	} else if (data->status.wdsi.level == WDSI_FIRMWARE_UPDATE_SUCCESS) {
+		break;
+	case WDSI_FIRMWARE_UPDATE_SUCCESS:
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_SUCCEEDED);
-	} else if (data->status.wdsi.level == WDSI_FIRMWARE_UPDATE_FAILED) {
+		break;
+	case WDSI_FIRMWARE_UPDATE_FAILED:
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_FAILED);
-	} else {
-		/* other WDSI levels during FOTA can be handled here if needed */
+		break;
+	default:
+		break;
 	}
-	if ((data->status.wdsi.level == WDSI_DOWNLOAD_IN_PROGRESS &&
-	     (data->status.wdsi.progress == 0 || data->status.wdsi.progress == 100)) ||
-	    data->status.wdsi.level != WDSI_DOWNLOAD_IN_PROGRESS) {
-		event.content.wdsi_indication = data->status.wdsi.level;
-		event_dispatcher_dispatch(&event);
-	}
-	HL78XX_LOG_DBG("WDSI: %d %d", wsi_status, wsi_data);
+
+	/* Forward every indication verbatim; FOTA policy, sequencing and the
+	 * user agreement replies belong to the application.
+	 */
+	event.content.wdsi.indication = (enum wdsi_indication)wdsi_level;
+	event.content.wdsi.data = wdsi_data;
+	event_dispatcher_dispatch(&event);
+	HL78XX_LOG_DBG("WDSI: %d %u", wdsi_level, wdsi_data);
 }
 
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
@@ -2903,18 +2892,22 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 	int ret;
 
 #ifdef CONFIG_HL78XX_GNSS
-	/* Check and process any pending GNSS mode entry request */
-	if (hl78xx_gnss_is_pending(data)) {
-		const struct hl78xx_config *config = data->devices.hl78xx->config;
+	/* A GNSS mode request queued while the modem was registering must not
+	 * be executed here: entering GNSS mode now takes the carrier that just
+	 * came up (CFUN=4) and discards a fresh registration -- a 7-minute-old
+	 * queued request once killed a registration and stranded a device.
+	 * Drop the request and tell the application it was blocked; it decides
+	 * whether and when to ask again.
+	 */
+	if (hl78xx_gnss_check_and_clear_pending(data)) {
+		struct hl78xx_evt gnss_evt = {
+			.type = HL78XX_GNSS_EVENT_START_BLOCKED,
+			.content.status = false,
+		};
 
-		if (config->variant->carrier_on_gnss_pending &&
-		    config->variant->carrier_on_gnss_pending(data)) {
-			return 0;
-		}
-
-		LOG_INF("Processing pending GNSS mode request (queued before modem ready)");
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT);
-		return 0;
+		LOG_WRN("Dropping queued GNSS mode request: the carrier is on, notifying the "
+			"application");
+		event_dispatcher_dispatch(&gnss_evt);
 	}
 	notif_carrier_on(data->devices.hl78xx);
 #endif /* CONFIG_HL78XX_GNSS */
@@ -3121,12 +3114,9 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 		break;
 
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
-	case MODEM_HL78XX_EVENT_WDSI_UPDATE:
-	case MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_REQUEST:
-	case MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_PROGRESS:
-	case MODEM_HL78XX_EVENT_WDSI_INSTALL_REQUEST:
+	case MODEM_HL78XX_EVENT_WDSI_INSTALLING_FIRMWARE:
+		data->status.wdsi.installing = true;
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_FOTA);
-		data->status.wdsi.in_progress = true;
 		break;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
@@ -3191,113 +3181,48 @@ static int hl78xx_on_carrier_on_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_fota_state_enter(struct hl78xx_data *data)
 {
-	HL78XX_LOG_DBG("Entering FOTA state");
-	hl78xx_start_timer(data, K_MSEC(100));
-	/* Decide best time to start FOTA */
+	/* The modem installs the firmware and reboots by itself from here.
+	 * This state only keeps the rest of the driver off the AT channel
+	 * until the post-install restart is detected.
+	 */
+	LOG_INF("Firmware install started, waiting for the modem to restart");
 	return 0;
 }
 
 static void hl78xx_fota_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	switch (evt) {
-	case MODEM_HL78XX_EVENT_TIMEOUT:
-		/* Start FOTA process */
-		if (data->status.wdsi.in_progress == true) {
-			if (data->status.wdsi.level == WDSI_FIRMWARE_DOWNLOAD_REQUEST &&
-			    data->status.wdsi.fota_state != HL78XX_WDSI_FOTA_DOWNLOADING) {
-				LOG_INF("FOTA available, notifying modem...");
-				hl78xx_delegate_event(data,
-						      MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_REQUEST);
-			} else if (data->status.wdsi.level == WDSI_FIRMWARE_INSTALL_REQUEST &&
-				   data->status.wdsi.fota_state != HL78XX_WDSI_FOTA_INSTALLING) {
-				LOG_INF("FOTA downloaded, notifying modem...");
-				hl78xx_delegate_event(data,
-						      MODEM_HL78XX_EVENT_WDSI_INSTALL_REQUEST);
-			} else {
-				HL78XX_LOG_DBG("FOTA in progress, notifying modem...");
-				hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_WDSI_UPDATE);
-			}
-		}
-		break;
-	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
-		HL78XX_LOG_DBG("FOTA script completed successfully.");
-		break;
-	case MODEM_HL78XX_EVENT_WDSI_UPDATE:
-		if (data->status.wdsi.level == WDSI_DM_SESSION_CLOSED) {
-			LOG_INF("FOTA DM session closed.");
-			if (data->status.wdsi.in_progress == true) {
-				LOG_INF("FOTA update process completed, rebooting modem...");
-			} else {
-				LOG_INF("FOTA update process not started, returning to "
-					"carrier on state...");
-			}
-			break;
-		}
-		break;
-	case MODEM_HL78XX_EVENT_WDSI_RESTART:
-		LOG_INF("FOTA modem restart occurred...%d", data->status.boot.is_booted_previously);
-		break;
-	case MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_REQUEST:
-		if (data->status.wdsi.fota_state == HL78XX_WDSI_FOTA_DOWNLOADING) {
-			return;
-		}
-		LOG_INF("FOTA download requested File size %d bytes, starting download...",
-			data->status.wdsi.fota_size);
-		data->status.wdsi.fota_state = HL78XX_WDSI_FOTA_DOWNLOADING;
-		hl78xx_run_fota_script_download_accept_async(data);
-		break;
-	case MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_PROGRESS:
-		LOG_INF("FOTA update in progress, completion... %d%%", data->status.wdsi.progress);
-		break;
-	case MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_COMPLETE:
-		LOG_INF("FOTA download completed...");
-		data->status.wdsi.fota_state = HL78XX_WDSI_FOTA_DOWNLOAD_COMPLETED;
-		break;
-	case MODEM_HL78XX_EVENT_WDSI_INSTALL_REQUEST:
-		LOG_INF("FOTA install request received...");
-		data->status.wdsi.fota_state = HL78XX_WDSI_FOTA_INSTALLING;
-		hl78xx_run_fota_script_install_accept_async(data);
-		break;
-	case MODEM_HL78XX_EVENT_WDSI_INSTALLING_FIRMWARE:
-		LOG_INF("Install accepted, FOTA update installing...");
-		LOG_INF("This may take several minutes, please wait...");
-		LOG_INF("Do not power off the modem!!!");
-		break;
 	case MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_SUCCEEDED:
-		LOG_INF("FOTA firmware install succeeded...Waiting for modem +KSUP");
-		data->status.wdsi.fota_state = HL78XX_WDSI_FOTA_INSTALL_COMPLETED;
-		data->status.wdsi.in_progress = false;
-		data->status.wdsi.progress = 0;
+		/* Result indication before the restart is detected; keep
+		 * waiting for the modem reboot.
+		 */
+		LOG_INF("Firmware install succeeded, waiting for modem restart");
 		break;
 	case MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_FAILED:
-		LOG_INF("FOTA firmware install failed...");
-		data->status.wdsi.in_progress = false;
+		/* Install ended without a restart; resume normal operation.
+		 * The application received the failure indication and owns
+		 * the recovery policy.
+		 */
+		LOG_ERR("Firmware install failed, resuming normal operation");
+		data->status.wdsi.installing = false;
 		data->status.wdsi.progress = 0;
-		/* TODO: fail, do something */
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_ON);
 		break;
 	case MODEM_HL78XX_EVENT_MDM_RESTART:
-		if (data->status.wdsi.in_progress == true) {
-			/* FOTA update in progress, waiting for it to complete */
-			data->status.wdsi.fota_state = HL78XX_WDSI_FOTA_IDLE;
-		} else {
-			LOG_INF("Exiting FOTA state, re-initializing modem...");
-			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
-		}
+		LOG_INF("Modem restarted after firmware install, re-initializing");
+		data->status.wdsi.installing = false;
+		data->status.wdsi.progress = 0;
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
-	case MODEM_HL78XX_EVENT_REGISTERED:
-		/* stay in FOTA state */
-		hl78xx_start_timer(data, K_MSEC(100));
+	case MODEM_HL78XX_EVENT_SUSPEND:
+		/* Powering the modem down mid-install risks an inconsistent
+		 * modem firmware; refuse and let the install finish.
+		 */
+		LOG_WRN("Suspend ignored: firmware install in progress");
 		break;
 	default:
 		break;
 	}
-}
-
-static int hl78xx_on_fota_state_leave(struct hl78xx_data *data)
-{
-	HL78XX_LOG_DBG("Exiting FOTA state");
-	hl78xx_stop_timer(data);
-	return 0;
 }
 
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
@@ -4175,7 +4100,7 @@ const static struct hl78xx_state_handlers hl78xx_state_table[] = {
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	[MODEM_HL78XX_STATE_FOTA] = {
 		hl78xx_on_fota_state_enter,
-		hl78xx_on_fota_state_leave,
+		NULL,
 		hl78xx_fota_event_handler
 	},
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */

@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 #include <zephyr/drivers/cellular.h>
 #include <zephyr/sys/util_macro.h>
@@ -796,7 +797,79 @@ enum wdsi_indication {
 	/** Download in progress, percentage indicated */
 	WDSI_DOWNLOAD_IN_PROGRESS = 18,
 	/** Session started with Bootstrap server (+WDSI: 23,0) or DM server (+WDSI: 23,1) */
-	WDSI_SESSION_STARTED = 23
+	WDSI_SESSION_STARTED = 23,
+	/** Server requests a device reboot, user agreement required */
+	WDSI_DEVICE_REBOOT_REQUEST = 24,
+	/** Server requests an application uninstall, user agreement required */
+	WDSI_APP_UNINSTALL_REQUEST = 25
+};
+
+/**
+ * @brief Download failure reasons reported with @ref WDSI_FIRMWARE_DOWNLOAD_ISSUE
+ *
+ * Values carried in the +WDSI: 11,\<Data\> parameter.
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
+ */
+enum hl78xx_wdsi_download_issue {
+	/** Not enough memory in the device to save the update package */
+	HL78XX_WDSI_DL_ISSUE_NO_MEMORY = 0,
+	/** HTTP/HTTPS error occurred, see +WDSE */
+	HL78XX_WDSI_DL_ISSUE_HTTP_ERROR = 1,
+	/** Corrupted update package (CRC or signature check failed) */
+	HL78XX_WDSI_DL_ISSUE_CORRUPT_PACKAGE = 2,
+	/** RAM issue, resume possible but a platform reboot is suggested first */
+	HL78XX_WDSI_DL_ISSUE_RAM = 3,
+	/** Download issue, the package download can be resumed */
+	HL78XX_WDSI_DL_ISSUE_RESUMABLE = 4,
+	/** Flash issue during package download */
+	HL78XX_WDSI_DL_ISSUE_FLASH = 5
+};
+
+/**
+ * @brief AirVantage device services indication event payload
+ *
+ * Payload of @ref HL78XX_LTE_FOTA_UPDATE_STATUS events. Every +WDSI
+ * indication received from the modem is forwarded verbatim; the driver
+ * takes no FOTA decisions on its own.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
+ */
+struct hl78xx_wdsi_evt {
+	/** Indication code (+WDSI event) */
+	enum wdsi_indication indication;
+	/** Indication data. Package size in bytes for
+	 * @ref WDSI_FIRMWARE_AVAILABLE, download percentage for
+	 * @ref WDSI_DOWNLOAD_IN_PROGRESS, failure reason
+	 * (@ref hl78xx_wdsi_download_issue) for
+	 * @ref WDSI_FIRMWARE_DOWNLOAD_ISSUE, session type for
+	 * @ref WDSI_SESSION_STARTED, 0 otherwise.
+	 */
+	uint32_t data;
+};
+
+/**
+ * @brief AirVantage user agreement types
+ *
+ * Agreements the modem may request via +WDSI when the corresponding
+ * user agreement mode (+WDSC) is enabled. The application answers with
+ * hl78xx_airvantage_agreement_accept() or
+ * hl78xx_airvantage_agreement_delay().
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
+ */
+enum hl78xx_airvantage_agreement {
+	/** Connection to the AirVantage server (@ref WDSI_USER_AGREEMENT_REQUEST) */
+	HL78XX_AIRVANTAGE_AGREEMENT_CONNECT = 0,
+	/** Firmware package download (@ref WDSI_FIRMWARE_DOWNLOAD_REQUEST) */
+	HL78XX_AIRVANTAGE_AGREEMENT_DOWNLOAD,
+	/** Firmware package install (@ref WDSI_FIRMWARE_INSTALL_REQUEST) */
+	HL78XX_AIRVANTAGE_AGREEMENT_INSTALL,
+	/** Device reboot (@ref WDSI_DEVICE_REBOOT_REQUEST) */
+	HL78XX_AIRVANTAGE_AGREEMENT_REBOOT,
+	/** Application uninstall (@ref WDSI_APP_UNINSTALL_REQUEST) */
+	HL78XX_AIRVANTAGE_AGREEMENT_UNINSTALL,
+	/** Agreement type count */
+	HL78XX_AIRVANTAGE_AGREEMENT_COUNT
 };
 
 /**
@@ -865,10 +938,11 @@ struct hl78xx_evt {
 		/** Radio access technology mode (for HL78XX_LTE_RAT_UPDATE) */
 		enum hl78xx_cell_rat_mode rat_mode;
 #if defined(CONFIG_MODEM_HL78XX_AIRVANTAGE) || defined(__DOXYGEN__)
-		/** AirVantage device service indication
+		/** AirVantage device services indication
+		 * (for HL78XX_LTE_FOTA_UPDATE_STATUS)
 		 * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
 		 */
-		enum wdsi_indication wdsi_indication;
+		struct hl78xx_wdsi_evt wdsi;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 #if defined(CONFIG_HL78XX_GNSS) || defined(__DOXYGEN__)
 		/** GNSS event status. @kconfig_dep{CONFIG_HL78XX_GNSS} */
@@ -1579,6 +1653,83 @@ static inline int hl78xx_get_network_info(const struct device *dev,
 }
 
 /**
+ * @brief Whether an HL78xx firmware revision string supports NB-NTN.
+ *
+ * Parses the raw AT+CGMR reply, e.g. "HL7812.5.7.4.0": an optional model
+ * prefix up to the first dot, then up to four numeric components compared
+ * against 5.7.4.0, the first HL7812 release with NB-NTN support. Trailing
+ * non-numeric suffixes are ignored; a NULL, empty or non-numeric revision
+ * compares as unsupported.
+ *
+ * @param fw_version Firmware revision string as reported by AT+CGMR.
+ *
+ * @retval true when the revision is 5.7.4.0 or newer.
+ * @retval false otherwise, including on a malformed revision.
+ */
+static inline bool hl78xx_fw_version_supports_ntn(const char *fw_version)
+{
+	const uint32_t min_version[4] = {5U, 7U, 4U, 0U};
+	uint32_t part[4] = {0U, 0U, 0U, 0U};
+	const char *cursor = fw_version;
+	int count = 0;
+
+	if (fw_version == NULL) {
+		return false;
+	}
+
+	if ((*cursor < '0') || (*cursor > '9')) {
+		cursor = strchr(fw_version, '.');
+		if (cursor == NULL) {
+			return false;
+		}
+		cursor++;
+	}
+
+	while ((count < 4) && (*cursor >= '0') && (*cursor <= '9')) {
+		uint32_t value = 0U;
+
+		while ((*cursor >= '0') && (*cursor <= '9')) {
+			value = (value * 10U) + (uint32_t)(*cursor - '0');
+			cursor++;
+		}
+
+		part[count] = value;
+		count++;
+
+		if (*cursor != '.') {
+			break;
+		}
+		cursor++;
+	}
+
+	if (count == 0) {
+		return false;
+	}
+
+	for (int i = 0; i < 4; i++) {
+		if (part[i] != min_version[i]) {
+			return part[i] > min_version[i];
+		}
+	}
+
+	return true;
+}
+
+/**
+ * @brief Whether the modem's reported firmware revision supports NB-NTN.
+ *
+ * Evaluates the AT+CGMR revision cached at initialisation with
+ * hl78xx_fw_version_supports_ntn(). NB-NTN requires firmware 5.7.4.0 (R6);
+ * selecting RAT 3 on older firmware is refused by the modem.
+ *
+ * @param dev Cellular network device instance.
+ *
+ * @retval true when the cached revision is 5.7.4.0 or newer.
+ * @retval false otherwise, including before the revision has been read.
+ */
+bool hl78xx_fw_supports_ntn(const struct device *dev);
+
+/**
  * @brief Check whether the current RSRP meets the configured threshold.
  *
  * @param dev Cellular network device instance
@@ -2051,6 +2202,45 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev);
  * @return 0 on success, negative errno on failure
  */
 int hl78xx_stop_airvantage_dm_session(const struct device *dev);
+
+/**
+ * @brief Accept a pending AirVantage user agreement request
+ *
+ * Sends the +WDSR accept reply for the given agreement type. Call this
+ * after the matching request indication arrived in a
+ * @ref HL78XX_LTE_FOTA_UPDATE_STATUS event.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
+ *
+ * @param dev Pointer to the modem device
+ * @param agreement Agreement type being answered
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_airvantage_agreement_accept(const struct device *dev,
+				       enum hl78xx_airvantage_agreement agreement);
+
+/**
+ * @brief Delay a pending AirVantage user agreement request
+ *
+ * Sends the +WDSR delay reply for the given agreement type. The modem
+ * repeats the user agreement request after the delay elapses; a pending
+ * delay survives a power cycle and the new request is raised at the
+ * next start-up.
+ *
+ * A delay of 0 asks the modem to refuse the request. The modem rejects
+ * a refusal (+CME ERROR: 3) for install, reboot and uninstall
+ * agreements; those can only be delayed.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
+ *
+ * @param dev Pointer to the modem device
+ * @param agreement Agreement type being answered
+ * @param delay_minutes Delay in minutes before the modem asks again (0 to 1440)
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_airvantage_agreement_delay(const struct device *dev,
+				      enum hl78xx_airvantage_agreement agreement,
+				      uint16_t delay_minutes);
 
 /**
  * @brief Drive the modem WAKE pin low.

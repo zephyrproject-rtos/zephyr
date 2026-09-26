@@ -290,6 +290,95 @@ GNSS_AUX_DATA_CALLBACK_DEFINE(GNSS_DEVICE, gnss_aux_data_cb);
 
 #endif /* CONFIG_HL78XX_GNSS */
 
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+/**
+ * @brief Send a +WDSR accept reply and log a failure.
+ */
+static void app_fota_accept(enum hl78xx_airvantage_agreement agreement)
+{
+	int err = hl78xx_airvantage_agreement_accept(modem, agreement);
+
+	if (err < 0) {
+		LOG_ERR("FOTA agreement reply failed: %d", err);
+	}
+}
+
+/**
+ * @brief Drive the AirVantage FOTA flow from the +WDSI indication stream.
+ *
+ * The driver forwards every indication verbatim and takes no decisions:
+ * connecting, downloading, installing and rebooting each wait for the
+ * application's reply. This sample accepts every user agreement as it
+ * arrives; a real application would apply its own policy (battery,
+ * network, business state) and may defer a step instead with
+ * hl78xx_airvantage_agreement_delay(). Replies are sent directly from the
+ * event monitor context to keep the sample simple; production code should
+ * hand them to its own work queue.
+ */
+static void app_handle_fota_indication(enum wdsi_indication indication, uint32_t data)
+{
+	switch (indication) {
+	case WDSI_USER_AGREEMENT_REQUEST:
+		LOG_INF("FOTA: server requests a connection, accepting");
+		app_fota_accept(HL78XX_AIRVANTAGE_AGREEMENT_CONNECT);
+		break;
+	case WDSI_AUTHENTICATION_SUCCESS:
+		LOG_INF("FOTA: authenticated, DM session started");
+		fota_update_status = (int)WDSI_SESSION_STARTED;
+		break;
+	case WDSI_SESSION_STARTED:
+		LOG_INF("FOTA: session started (type %u)", data);
+		fota_update_status = (int)WDSI_SESSION_STARTED;
+		break;
+	case WDSI_FIRMWARE_DOWNLOAD_REQUEST:
+		LOG_INF("FOTA: download requested, accepting");
+		app_fota_accept(HL78XX_AIRVANTAGE_AGREEMENT_DOWNLOAD);
+		fota_update_status = (int)WDSI_FIRMWARE_DOWNLOAD_REQUEST;
+		k_sem_give(&fota_complete_rerun);
+		break;
+	case WDSI_FIRMWARE_AVAILABLE:
+		LOG_INF("FOTA: package available, %u bytes", data);
+		break;
+	case WDSI_DOWNLOAD_IN_PROGRESS:
+		LOG_INF("FOTA: download progress %u%%", data);
+		break;
+	case WDSI_FIRMWARE_DOWNLOADED:
+		LOG_INF("FOTA: package downloaded and stored");
+		break;
+	case WDSI_FIRMWARE_DOWNLOAD_ISSUE:
+		LOG_ERR("FOTA: download issue, reason %u", data);
+		fota_update_status = (int)WDSI_FIRMWARE_UPDATE_FAILED;
+		k_sem_give(&fota_complete_rerun);
+		break;
+	case WDSI_FIRMWARE_INSTALL_REQUEST:
+		LOG_INF("FOTA: install requested, accepting (modem reboots on completion)");
+		app_fota_accept(HL78XX_AIRVANTAGE_AGREEMENT_INSTALL);
+		break;
+	case WDSI_DEVICE_REBOOT_REQUEST:
+		LOG_INF("FOTA: device reboot requested, accepting");
+		app_fota_accept(HL78XX_AIRVANTAGE_AGREEMENT_REBOOT);
+		break;
+	case WDSI_FIRMWARE_UPDATE_START:
+		LOG_INF("FOTA: install running, do not power off the modem");
+		break;
+	case WDSI_FIRMWARE_UPDATE_SUCCESS:
+		LOG_INF("FOTA: install succeeded");
+		k_sem_reset(&network_connected_sem);
+		fota_update_status = (int)WDSI_FIRMWARE_UPDATE_SUCCESS;
+		k_sem_give(&fota_complete_rerun);
+		break;
+	case WDSI_FIRMWARE_UPDATE_FAILED:
+		LOG_ERR("FOTA: install failed");
+		fota_update_status = (int)WDSI_FIRMWARE_UPDATE_FAILED;
+		k_sem_give(&fota_complete_rerun);
+		break;
+	default:
+		LOG_INF("FOTA: indication %d (data %u)", indication, data);
+		break;
+	}
+}
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
 #ifdef CONFIG_HL78XX_EVT_MONITOR
 static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_entry *context)
 {
@@ -316,32 +405,8 @@ static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_en
 		break;
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	case HL78XX_LTE_FOTA_UPDATE_STATUS:
-		LOG_INF("%d HL78XX modem FOTA update status: %d", __LINE__,
-			event->content.wdsi_indication);
-		if (event->content.wdsi_indication == WDSI_FIRMWARE_UPDATE_SUCCESS) {
-			LOG_INF("FOTA update complete, restarting modem...");
-			k_sem_reset(&network_connected_sem);
-			fota_update_status = (int)WDSI_FIRMWARE_UPDATE_SUCCESS;
-			k_sem_give(&fota_complete_rerun);
-		} else if (event->content.wdsi_indication == WDSI_FIRMWARE_UPDATE_FAILED) {
-			LOG_INF("FOTA update failed.");
-			fota_update_status = (int)WDSI_FIRMWARE_UPDATE_FAILED;
-			k_sem_give(&fota_complete_rerun);
-		} else if (event->content.wdsi_indication == WDSI_FIRMWARE_DOWNLOAD_REQUEST &&
-			   fota_update_status != (int)WDSI_FIRMWARE_DOWNLOAD_REQUEST) {
-			LOG_INF("FOTA download requested, starting download...");
-			if (fota_update_status != (int)WDSI_SESSION_STARTED) {
-				return;
-			}
-			fota_update_status = (int)WDSI_FIRMWARE_DOWNLOAD_REQUEST;
-			k_sem_give(&fota_complete_rerun);
-		} else if (event->content.wdsi_indication == WDSI_SESSION_STARTED) {
-			LOG_INF("FOTA session started...");
-			fota_update_status = (int)WDSI_SESSION_STARTED;
-		} else {
-			/* Other WDSI indications can be handled here if needed */
-		}
-
+		app_handle_fota_indication(event->content.wdsi.indication,
+					   event->content.wdsi.data);
 		break;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
