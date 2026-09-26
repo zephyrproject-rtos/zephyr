@@ -38,12 +38,7 @@ properties:
       The SDMMC_CD signal will be bypassed, force card detect is enableded.
 
   bus-width:
-    type: int
     default: 4
-    enum:
-      - 1
-      - 4
-      - 8
     description: |
       Not all SDMMC instances have 8-bit data lines, but all have 4-bit data lines.
       By default 4-bit data line is enabled and can be adjusted based on the SDMMC
