@@ -43,6 +43,20 @@ properties:
       Display rotation (CW) in degrees.
       If not defined, rotation is off by default.
 
+  gdo-flags:
+    type: int
+    default: 0
+    description: |
+      Gate scanning options, written as the last parameter of the Driver
+      Output Control command. The meaning of the bits depends on the
+      controller, typically:
+
+        - bit 2 (GD): select G1 as the first output gate
+        - bit 1 (SM): scan even gates first, then odd gates
+        - bit 0 (TB): scan gates in reverse order, from the last gate to G0
+
+      Set the bits required by the panel wiring.
+
 child-binding:
   description: |
     Child nodes describe refresh profiles. Each refresh profile

@@ -460,6 +460,7 @@
 				width = <480>;
 				height = <800>;
 				busy-gpios = <&test_gpio 0 0>;
+				gdo-flags = <0x02>;
 			};
 
 			test_mipi_dbi_ed2208_gca: ed2208_gca@25 {

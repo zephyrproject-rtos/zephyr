@@ -118,6 +118,7 @@ struct ssd16xx_config {
 	uint16_t width;
 	bool ram_ping_pong_mode2;
 	uint8_t tssv;
+	uint8_t gdo_flags;
 };
 
 static int ssd16xx_set_profile(const struct device *dev,
@@ -806,7 +807,7 @@ static int ssd16xx_set_profile(const struct device *dev,
 	}
 
 	gdo_len = push_y_param(dev, gdo, last_gate);
-	gdo[gdo_len++] = 0U;
+	gdo[gdo_len++] = config->gdo_flags;
 	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_GDO_CTRL, gdo, gdo_len);
 	if (err < 0) {
 		return err;
@@ -1140,6 +1141,7 @@ static struct ssd16xx_quirks quirks_solomon_ssd1683 = {
 		.ram_ping_pong_mode2 = DT_PROP_OR(n, ram_ping_pong_mode2, false),	\
 		.rotation = DT_PROP(n, rotation),			\
 		.tssv = DT_PROP_OR(n, tssv, 0),				\
+		.gdo_flags = DT_PROP(n, gdo_flags),			\
 		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\
 		.profiles = {						\
 			[SSD16XX_PROFILE_FULL] =			\
