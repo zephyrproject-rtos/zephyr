@@ -34,9 +34,6 @@ configdefault SYS_CLOCK_TICKS_PER_SEC
 configdefault CLOCK_CONTROL
 	default y
 
-configdefault UART_NS16550_DW8250_DW_APB
-	default y
-
 configdefault ZERO_LATENCY_IRQS
 	default y
 
