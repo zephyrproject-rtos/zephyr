@@ -164,35 +164,41 @@ static void ipct_configuration(void)
 }
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
-#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 #if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
 	!defined(__ZEPHYR__)
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_wifi_antsw)
-#define WIFI_ANTSW_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf71_wifi_antsw)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw)
+#define ANTSW_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf71_antsw)
 
 /* Steering an unpowered switch is meaningless: require pwr_antswc to power it. */
 BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc),
-	     "wifi-antsw steering requires pwr_antswc to power the antenna switch");
+	     "antsw steering requires pwr_antswc to power the antenna switch");
 
 /*
- * Steer the antenna switch (ANTSW) towards WLAN before the Wi-Fi core is
- * started. This runs before the GPIO driver is up, so the pin (described in
- * devicetree) is configured directly through the nrf_gpio HAL, which keeps the
- * access on the P0 alias that matches the build's security state. Powering the
- * switch is handled separately by pwr_antswc.
+ * Steer the antenna switch (ANTSW) towards its Kconfig-selected default
+ * radio (CONFIG_SOC_NRF71_ANTSW_DEFAULT) before either radio that shares it
+ * starts using it. This runs before the GPIO driver is up, so the pin
+ * (described in devicetree) is configured directly through the nrf_gpio
+ * HAL, which keeps the access on the P0 alias that matches the build's
+ * security state. Powering the switch is handled separately by pwr_antswc.
  */
 static void antsw_setup(void)
 {
-	uint32_t wlan_psel = NRF_DT_GPIOS_TO_PSEL(WIFI_ANTSW_NODE, wlan_gpios);
+	uint32_t sel_psel = NRF_DT_GPIOS_TO_PSEL(ANTSW_NODE, sel_gpios);
 
-	/* Drive the pin low (WLAN) before enabling the output, then configure it
-	 * as a plain output. No pull is needed on a driven output.
+	/* Drive the pin to the WLAN or BLE position before enabling the output,
+	 * then configure it as a plain output. No pull is needed on a driven
+	 * output.
 	 */
-	nrf_gpio_pin_clear(wlan_psel);
-	nrf_gpio_cfg_output(wlan_psel);
+	if (IS_ENABLED(CONFIG_SOC_NRF71_ANTSW_DEFAULT_BLE)) {
+		nrf_gpio_pin_set(sel_psel);
+	} else {
+		nrf_gpio_pin_clear(sel_psel);
+	}
+	nrf_gpio_cfg_output(sel_psel);
 }
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_wifi_antsw) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw) */
 
+#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 static void wifi_setup(void)
 {
 	/* Kickstart the LMAC processor */
@@ -242,15 +248,16 @@ int nordicsemi_nrf71_init(void)
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc)
-	/* Power on the antenna switch before starting the Wi-Fi core. */
+	/* Power on the antenna switch before steering it or starting the Wi-Fi core. */
 	*(volatile uint32_t *)PWR_ANTSWC_REG |= PWR_ANTSWC_ENABLE;
 #endif
 
-#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_wifi_antsw)
-	/* Steer the (now powered) antenna switch towards WLAN before Wi-Fi boot. */
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw)
+	/* Steer the (now powered) antenna switch towards its default radio. */
 	antsw_setup();
 #endif
+
+#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 	wifi_setup();
 #endif
 
