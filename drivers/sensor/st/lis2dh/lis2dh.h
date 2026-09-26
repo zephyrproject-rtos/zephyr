@@ -99,6 +99,8 @@
 #define LIS2DH_EN_CLICK_INT1		BIT(7)
 #define LIS2DH_EN_IA_INT1		BIT(6)
 #define LIS2DH_EN_DRDY1_INT1		BIT(4)
+#define LIS2DH_I1_IA1				BIT(5)
+#define LIS2DH_EN_FIFO_OVRN_INT1	BIT(1)
 
 #define LIS2DH_REG_CTRL4		0x23
 #define LIS2DH_CTRL4_ST_SHIFT		1
@@ -129,6 +131,7 @@
 #define LIS2DH_REG_CTRL5		0x24
 #define LIS2DH_EN_LIR_INT2		BIT(1)
 #define LIS2DH_EN_LIR_INT1		BIT(3)
+#define LIS2DH_EN_FIFO			BIT(6)
 
 #define LIS2DH_REG_CTRL6		0x25
 #define LIS2DH_EN_CLICK_INT2		BIT(7)
@@ -154,6 +157,19 @@
 #define LIS2DH_REG_ACCEL_X_MSB		0x29
 #define LIS2DH_REG_ACCEL_Y_MSB		0x2B
 #define LIS2DH_REG_ACCEL_Z_MSB		0x2D
+
+#define LIS2DH_FIFO_CTRL_REG		0x2E
+
+#define LIS2DH_REG_FIFO_SRC		0x2F
+#define LIS2DH_FIFO_SRC_WTM		BIT(7)
+#define LIS2DH_FIFO_SRC_OVR		BIT(6)
+#define LIS2DH_FIFO_SRC_EMPTY	BIT(5)
+#define LIS2DH_FIFO_SRC_FSS4	BIT(4)
+#define LIS2DH_FIFO_SRC_FSS3	BIT(3)
+#define LIS2DH_FIFO_SRC_FSS2	BIT(2)
+#define LIS2DH_FIFO_SRC_FSS1	BIT(1)
+#define LIS2DH_FIFO_SRC_FSS0	BIT(0)
+#define LIS2DH_FIFO_SRC_FSS_MASK	BIT_MASK(5)
 
 #define LIS2DH_REG_INT1_CFG		0x30
 #define LIS2DH_REG_INT1_SRC		0x31
@@ -280,6 +296,10 @@ struct lis2dh_data {
 	const struct sensor_trigger *trig_tap;
 	atomic_t trig_flags;
 	enum sensor_channel chan_drdy;
+
+	sensor_trigger_handler_t handler_fifo_full;
+	const struct sensor_trigger *trig_fifo_full;
+	enum sensor_channel chan_fifo_full;
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS2DH_THREAD_STACK_SIZE);
