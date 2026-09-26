@@ -113,6 +113,7 @@ static void modem_chat_log_received_command(struct modem_chat *chat)
 
 static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_script_result result)
 {
+	struct k_sem *sync_waiter = chat->script_stopped_sem;
 	struct modem_chat_script_completion_info info;
 	modem_chat_script_callback callback;
 	uint16_t script_chat_it;
@@ -169,6 +170,11 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 	k_work_cancel(&chat->script_send_work);
 	k_work_cancel_delayable(&chat->script_send_timeout_work);
 
+	if (sync_waiter) {
+		/* Store result before releasing chat object */
+		*chat->script_result = result;
+	}
+
 	/* Clear script running state */
 	atomic_clear_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT);
 
@@ -177,11 +183,10 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 		callback(chat, result, &info, user_data);
 	}
 
-	/* Store result of script for script stoppted indication */
-	chat->script_result = result;
-
-	/* Indicate script stopped */
-	k_sem_give(&chat->script_stopped_sem);
+	/* Unblock sync waiter */
+	if (sync_waiter) {
+		k_sem_give(sync_waiter);
+	}
 }
 
 static void modem_chat_set_script_send_state(struct modem_chat *chat,
@@ -899,7 +904,6 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 	chat->matches[MODEM_CHAT_MATCHES_INDEX_UNSOL] = config->unsol_matches;
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_UNSOL] = config->unsol_matches_size;
 	atomic_set(&chat->script_state, 0);
-	k_sem_init(&chat->script_stopped_sem, 0, 1);
 	k_work_init(&chat->receive_work, modem_chat_process_handler);
 	k_work_init(&chat->script_run_work, modem_chat_script_run_handler);
 	k_work_init_delayable(&chat->script_timeout_work, modem_chat_script_timeout_handler);
@@ -930,11 +934,16 @@ bool modem_chat_is_running(struct modem_chat *chat)
 	return atomic_test_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT);
 }
 
-int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat_script *script)
+static int _run_script_internal(struct modem_chat *chat, const struct modem_chat_script *script,
+				struct k_sem *waiter, enum modem_chat_script_result *result)
 {
 	bool script_is_running;
 
 	__ASSERT_NO_MSG(script != NULL);
+	if (waiter != NULL) {
+		/* Both waiter and result must be provided */
+		__ASSERT_NO_MSG(result != NULL);
+	}
 
 	if (chat->pipe == NULL) {
 		return -EPERM;
@@ -965,28 +974,38 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 		return -EBUSY;
 	}
 
-	k_sem_reset(&chat->script_stopped_sem);
+	chat->script_stopped_sem = waiter;
+	chat->script_result = result;
 
 	chat->pending_script = script;
 	modem_work_submit(&chat->script_run_work);
 	return 0;
 }
 
+int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat_script *script)
+{
+	return _run_script_internal(chat, script, NULL, NULL);
+}
+
 int modem_chat_run_script(struct modem_chat *chat, const struct modem_chat_script *script)
 {
+	enum modem_chat_script_result result = MODEM_CHAT_SCRIPT_RESULT_ABORT;
+	struct k_sem waiter;
 	int ret;
 
-	ret = modem_chat_run_script_async(chat, script);
+	k_sem_init(&waiter, 0, 1);
+
+	ret = _run_script_internal(chat, script, &waiter, &result);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = k_sem_take(&chat->script_stopped_sem, K_FOREVER);
+	ret = k_sem_take(&waiter, K_FOREVER);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return (chat->script_result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) ? 0 : -EAGAIN;
+	return (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) ? 0 : -EAGAIN;
 }
 
 void modem_chat_script_abort(struct modem_chat *chat)
@@ -1014,8 +1033,6 @@ void modem_chat_release(struct modem_chat *chat)
 	chat->script = NULL;
 	chat->script_chat_it = 0;
 	atomic_set(&chat->script_state, 0);
-	chat->script_result = MODEM_CHAT_SCRIPT_RESULT_ABORT;
-	k_sem_reset(&chat->script_stopped_sem);
 	chat->script_send_state = MODEM_CHAT_SCRIPT_SEND_STATE_IDLE;
 	chat->script_send_pos = 0;
 	chat->parse_match = NULL;
