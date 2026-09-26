@@ -486,7 +486,7 @@ static DEVICE_API(bt_hci, drv) = {
 				MAX_IPC_BLOCKS(inst), sizeof(void *)); \
 		K_THREAD_DEFINE(rx_thread_id_##inst, CONFIG_BT_DRV_RX_STACK_SIZE, recv_thread, \
 			DEVICE_DT_INST_GET(inst), NULL, NULL, \
-			K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, 0); \
+			K_PRIO_PREEMPT(0), 0, 0); \
 	)) \
 	static struct ipc_data ipc_data_##inst = { \
 		.bound_sem = Z_SEM_INITIALIZER(ipc_data_##inst.bound_sem, 0, 1), \
