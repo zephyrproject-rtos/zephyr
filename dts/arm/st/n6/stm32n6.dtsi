@@ -1755,6 +1755,19 @@
 			domain = <STM32_DT_IOCELL_VDDIO5>;
 		};
 	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
+		io-channels = <&adc2 16>;
+		status = "disabled";
+	};
+
+	vddcore: vddcore {
+		compatible = "st,stm32-vddcore";
+		io-channels = <&adc2 17>;
+		status = "disabled";
+	};
 };
 
 &nvic {

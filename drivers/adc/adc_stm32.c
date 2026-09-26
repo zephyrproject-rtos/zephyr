@@ -222,11 +222,7 @@ struct stream {
 };
 #endif /* CONFIG_ADC_STM32_DMA */
 
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-typedef uint32_t adc_data_size_t;
-#else
 typedef uint16_t adc_data_size_t;
-#endif
 
 struct adc_sub_stm32_data {
 	struct adc_context ctx;
@@ -355,8 +351,8 @@ static int adc_stm32_dma_start(const struct device *dev,
 
 	blk_cfg = &dma->dma_blk_cfg;
 
-	/* prepare the block */
-	blk_cfg->block_size = channel_count * sizeof(adc_data_size_t);
+	/* Prepare the block_size */
+	blk_cfg->block_size = channel_count * dma->dma_cfg.source_data_size;
 
 	/* Source and destination */
 	blk_cfg->source_address = (uint32_t)LL_ADC_DMA_GetRegAddr(adc, LL_ADC_DMA_REG_REGULAR_DATA);
