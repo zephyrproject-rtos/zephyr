@@ -28,6 +28,9 @@ split among several packets. Since GATT guarantees ordered delivery of
 packets, the SMP header in the first fragment contains sufficient information
 for reassembly.
 
+The transport does not depend on the connection role: the SMP server can be either the Central or
+the Peripheral of the connection.
+
 .. _mcumgr_smp_transport_uart:
 
 UART/serial and console

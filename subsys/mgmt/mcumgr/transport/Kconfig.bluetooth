@@ -11,9 +11,12 @@
 
 menuconfig MCUMGR_TRANSPORT_BT
 	bool "Bluetooth MCUmgr SMP transport"
-	depends on BT_PERIPHERAL
+	depends on BT_CONN
 	help
 	  Enables handling of SMP commands received over Bluetooth.
+
+	  The SMP service is registered in the local GATT server and can be used by a connected
+	  peer regardless of the local connection role (Central or Peripheral).
 
 if MCUMGR_TRANSPORT_BT
 
