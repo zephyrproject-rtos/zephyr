@@ -1,0 +1,114 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+title: Emulated PCIe Endpoint device
+
+description: |
+  This binding describes a process-local PCIe endpoint emulator. It
+  implements the Zephyr PCIe EP driver API purely in software, within the
+  same process as the emulation host (for example native_sim). The
+  emulated endpoint is NOT externally PCIe-enumerable: it does not appear
+  on any physical or virtual PCIe bus and cannot be discovered by an
+  external host. It is intended for testing PCIe endpoint applications on
+  POSIX/native targets.
+
+compatible: "zephyr,pcie-ep-emul"
+
+include: base.yaml
+
+properties:
+  vendor-id:
+    type: int
+    required: true
+    description: |
+      16-bit PCI vendor ID exposed in the emulated configuration space.
+      The range is enforced by a build-time assertion in the driver.
+
+  device-id:
+    type: int
+    required: true
+    description: |
+      16-bit PCI device ID exposed in the emulated configuration space.
+      The range is enforced by a build-time assertion in the driver.
+
+  class-code:
+    type: int
+    required: true
+    description: |
+      24-bit PCI class code (base class, sub-class and programming
+      interface) exposed in the emulated configuration space. The range
+      is enforced by a build-time assertion in the driver.
+
+  revision-id:
+    type: int
+    required: true
+    description: |
+      8-bit PCI revision ID exposed in the emulated configuration space.
+      The range is enforced by a build-time assertion in the driver.
+
+  bar-sizes:
+    type: array
+    required: true
+    description: |
+      Size in bytes of each of the 6 emulated Base Address Registers.
+      Exactly 6 cells are required, one per BAR. A zero entry disables the
+      corresponding BAR. Non-zero entries must be a power of two and at
+      least 4096 (the minimum PCIe BAR alignment); this is validated at
+      build time by the driver.
+
+  msi-vectors:
+    type: int
+    required: true
+    description: |
+      Number of MSI vectors the emulated endpoint supports. Must be zero
+      or a power of two up to 32 (validated at build time by the driver).
+      A non-zero value models an MSI capability in the emulated
+      configuration space; zero means no MSI capability is present and
+      MSI interrupts are rejected by pcie_ep_raise_irq().
+
+  msix-vectors:
+    type: int
+    required: true
+    description: |
+      Number of MSI-X vectors the emulated endpoint supports. Must be at
+      most 2048 (validated at build time by the driver). A non-zero value
+      models an MSI-X capability in the emulated configuration space and
+      requires at least one enabled BAR large enough to hold the MSI-X
+      table and PBA (validated at build time by the driver); zero means no MSI-X capability
+      is present and MSI-X interrupts are rejected by pcie_ep_raise_irq().
+
+  legacy-irq:
+    type: boolean
+    description: |
+      Present if the emulated endpoint supports legacy (INTx) interrupts.
+      When absent, legacy interrupts are rejected by pcie_ep_raise_irq().
+
+  dmas:
+    description: |
+      Optional pair of DMA channel specifiers used for host-memory data
+      transfers. If present, exactly two entries are required, ordered
+      host-to-device first and device-to-host second, with matching
+      dma-names. Channels must be dedicated: each direction of each
+      endpoint instance requires its own exclusive channel; channels must
+      not be shared between directions or between endpoint instances.
+      Each channel is claimed from its controller by its exact devicetree
+      channel number at driver init and held for the device lifetime, so
+      claims do not depend on device init order; if a named channel is
+      already claimed by another user, the offending endpoint releases
+      any channels it already claimed and fails to initialize.
+      The DMA API does not standardize the channel-filter parameter used
+      for exact claims, so the referenced controllers must implement the
+      zephyr,dma-emul filter convention (uint32_t channel number passed
+      by address); this is enforced by a build-time assertion in the
+      driver.
+
+  dma-names:
+    description: |
+      Names for the optional DMA channels. If dmas is present, exactly
+      two entries are required:
+        dma-names = "host-to-device", "device-to-host";
+      As for dmas, the named channels must be dedicated per direction per
+      endpoint instance and must not be shared.
+    enum:
+      - "host-to-device"
+      - "device-to-host"
