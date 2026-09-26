@@ -128,6 +128,8 @@ int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffe
 const char *get_frame_type_name(enum http2_frame_type type);
 #if defined(CONFIG_ZTEST)
 int qpack_encode_int(uint8_t *buf, size_t buflen, int prefix_n, uint8_t prefix, uint64_t value);
+int qpack_decode_int(const uint8_t *buf, size_t buflen, int prefix_n, uint64_t *value);
+int h3_parse_qpack_headers(struct http_client_ctx *client, const uint8_t *buf, size_t buflen);
 #endif
 
 void populate_request_ctx(struct http_request_ctx *req_ctx, uint8_t *data, size_t len,
