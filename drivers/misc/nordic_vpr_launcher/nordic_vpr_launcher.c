@@ -13,6 +13,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #include <hal/nrf_vpr.h>
 #if (DT_ANY_INST_HAS_BOOL_STATUS_OKAY(enable_secure) || \
@@ -38,6 +41,9 @@ struct nordic_vpr_launcher_config {
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(hibernation_ram_block)
 	int32_t ram_block_id;
 #endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+	const struct pinctrl_dev_config *pcfg;
+#endif
 };
 
 /* Determine if all code that will be copied is 8 byte aligned. If yes then optimized
@@ -58,6 +64,18 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 	if (config->exec_addr == 0) {
 		return 0;
 	}
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+	/* Apply the pin configuration (routing, drive, pull) for VPR-owned pins. */
+	if (config->pcfg != NULL) {
+		int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
+		if (ret < 0) {
+			LOG_ERR("Failed to apply pinctrl state (%d)", ret);
+			return ret;
+		}
+	}
+#endif
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(source_memory)
 	if (config->size > 0U) {
@@ -123,6 +141,8 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 				  DT_REG_SIZE(DT_INST_PHANDLE(inst, source_memory))),              \
 				 "Execution memory exceeds source memory size");))                 \
                                                                                                    \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, pinctrl_0), (PINCTRL_DT_INST_DEFINE(inst);))        \
+                                                                                                   \
 	static const struct nordic_vpr_launcher_config config##inst = {                            \
 		.vpr = (NRF_VPR_Type *)DT_INST_REG_ADDR(inst),                                     \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, execution_memory),                          \
@@ -134,6 +154,8 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 			    .size = DT_REG_SIZE(DT_INST_PHANDLE(inst, execution_memory)),))        \
 		IF_ENABLED(DT_ANY_INST_HAS_PROP_STATUS_OKAY(hibernation_ram_block),                \
 			   (.ram_block_id = DT_INST_PROP_OR(inst, hibernation_ram_block, -1),))    \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, pinctrl_0),                                 \
+			   (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),))                        \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, nordic_vpr_launcher_init, NULL, NULL, &config##inst,           \
