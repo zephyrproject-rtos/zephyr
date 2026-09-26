@@ -46,6 +46,7 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		sdhc0 = &sdmmc1;
+		ext-nor0 = &ext_flash_ctrl;
 	};
 
 	dcmi_camera_connector: connector_dcmi_camera {
@@ -127,6 +128,11 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &quadspi {
+	compatible = "st,stm32-qspi-controller";
+	clock-names = "qspix";
+	clock-frequency = <DT_FREQ_M(100)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,cs-high-time = <2>; /* >= 50 ns */
 	pinctrl-names = "default";
 	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
 		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
@@ -134,16 +140,25 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	ext_flash_ctrl: qspi-flash-controller@0 {
-		compatible = "st,stm32-qspi-nor";
+		compatible = "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
-		qspi-max-frequency = <100000000>;
-		cs-high-time = <2>; /* >= 50 ns */
+		jedec-id = [ef 40 17];
+		sfdp-bfp = [e5 20 f9 ff ff ff ff 03
+			    44 eb 08 6b 08 3b 42 bb
+			    fe ff ff ff ff ff 00 00
+			    ff ff 40 eb 0c 20 0f 52
+			    10 d8 00 00 36 02 a6 00
+			    82 ea 14 c4 e9 63 76 33
+			    7a 75 7a 75 f7 a2 d5 5c
+			    19 f7 4d ff e9 30 f8 80];
+		mspi-max-frequency = <DT_FREQ_M(100)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+		initial-soft-reset;
+		t-reset-recovery = <2000000>; /* 2 ms */
 		status = "okay";
-		spi-bus-width = <4>;
-		writeoc = "PP_1_1_4";
-		reset-cmd;
-		reset-cmd-wait = <2000>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
