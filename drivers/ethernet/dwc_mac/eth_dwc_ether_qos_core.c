@@ -277,7 +277,7 @@ static void dwmac_tx_release(const struct device *dev)
 #ifdef CONFIG_PTP_CLOCK_DWC_MAC
 				if ((des3_val & TDES3_TTSS) != 0U) {
 					pkt->timestamp.second = d->des1;
-					pkt->timestamp.nanosecond = d->des0;
+					pkt->timestamp.nanosecond = DWMAC_PTP_SUBSEC_TO_NS(d->des0);
 					net_if_add_tx_timestamp(pkt);
 				}
 #endif /* CONFIG_PTP_CLOCK_DWC_MAC */
@@ -334,7 +334,8 @@ static void dwmac_receive(const struct device *dev)
 			if (p->rx_pkt != NULL) {
 				if (d->des0 != UINT32_MAX && d->des1 != UINT32_MAX) {
 					p->rx_pkt->timestamp.second = d->des1;
-					p->rx_pkt->timestamp.nanosecond = d->des0;
+					p->rx_pkt->timestamp.nanosecond =
+						DWMAC_PTP_SUBSEC_TO_NS(d->des0);
 					net_pkt_set_rx_timestamping(p->rx_pkt, true);
 				}
 
