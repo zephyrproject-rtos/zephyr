@@ -30,6 +30,9 @@
 /* Reset reg */
 #define STM32_RST	0U
 
+/* Timer Peripheral */
+#define STM32_RESET_PERIPH_TIM12	0x728
+
 /* USART/UART Peripheral */
 #define STM32_RESET_PERIPH_USART1	0x77C
 #define STM32_RESET_PERIPH_USART2	0x780
@@ -40,6 +43,10 @@
 #define STM32_RESET_PERIPH_UART7	0x794
 #define STM32_RESET_PERIPH_UART8	0x798
 #define STM32_RESET_PERIPH_UART9	0x79C
+
+/* Camera peripherals */
+#define STM32_RESET_PERIPH_CSI2		0x858
+#define STM32_RESET_PERIPH_DCMIPP	0x85C
 
 /* I3C Peripheral */
 #define STM32_RESET_PERIPH_I3C1		0x8C8

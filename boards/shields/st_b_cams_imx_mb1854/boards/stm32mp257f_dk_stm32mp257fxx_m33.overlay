@@ -1,0 +1,9 @@
+/*
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&csi_i2c {
+	status = "okay";
+};

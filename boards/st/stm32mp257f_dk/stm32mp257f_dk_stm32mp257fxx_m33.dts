@@ -7,7 +7,9 @@
 /dts-v1/;
 #include <st/mp2/stm32mp257_m33.dtsi>
 #include <st/mp2/stm32mp257fakx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 
 / {
 	model = "STMicroelectronics STM32MP257F-DK board";
@@ -42,6 +44,30 @@
 	aliases {
 		led0 = &orange_led_9;
 		sw0 = &button_user2;
+	};
+
+	/* CN8 camera connector: CAM.RST on PB1, CAM_EN on PB11 */
+	csi_connector: connector_csi {
+		compatible = "raspberrypi,csi-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_IO0 0 &gpiob 1 0>,
+			   <CSI_IO1 0 &gpiob 11 0>;
+	};
+};
+
+&gpiob {
+	csi_gpio0_hog: csi-gpio0-hog {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	csi_gpio1_hog: csi-gpio1-hog {
+		gpio-hog;
+		gpios = <11 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
 	};
 };
 
@@ -91,3 +117,19 @@
 	pinctrl-names = "default";
 	status = "disabled";
 };
+
+csi_i2c: &i2c2 {
+	/* Shared with the LVDS touch panel: disable i2c2 on the Cortex-A35 side */
+	pinctrl-0 = <&i2c2_scl_pf2 &i2c2_sda_pf0>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>;
+};
+
+csi_interface: &dcmipp {
+	port {
+		csi_ep_in: endpoint {};
+	};
+};
+
+csi_capture_port: &pipe_main {};

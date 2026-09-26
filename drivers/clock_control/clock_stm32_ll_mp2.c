@@ -165,6 +165,15 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = LL_RCC_GetFDCANClockFreq(LL_RCC_FDCAN_CLKSOURCE);
 		break;
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(timers12))
+	case STM32_CLOCK_PERIPH_TIM12:
+		/* Timer group 1 kernel clock equals APB1 when APB1 is not divided */
+		if (LL_RCC_GetAPB1Prescaler() != 0U) {
+			return -ENOTSUP;
+		}
+		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		break;
+#endif
 	case STM32_CLOCK_PERIPH_WWDG1:
 		/* The WWDG1 clock is derived from the APB3 clock */
 		*rate = SystemCoreClock >> (LL_RCC_Get_LSMCUDIVR() + LL_RCC_GetAPB3Prescaler());
