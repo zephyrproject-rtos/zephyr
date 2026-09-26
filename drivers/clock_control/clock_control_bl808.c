@@ -66,6 +66,7 @@ LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define CRYSTAL_ID_FREQ_26000000       4
 
 #define CRYSTAL_FREQ_TO_ID(freq) CONCAT(CRYSTAL_ID_FREQ_, freq)
+#define CRYSTAL_FREQ DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency)
 
 /*
  * CLK_AT_LEAST_MUL: minimum CPU cycles per microsecond, used for busy-wait loops.
@@ -86,6 +87,8 @@ LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #else
 #define CLK_AT_LEAST_MUL 32
 #endif
+
+#define TARGET_TIMEBASE_FREQ DT_PROP(DT_PATH(cpus), timebase_frequency)
 
 /*
  * HBN_RSV3 crystal type flag (Bouffalo SDK).
@@ -1002,7 +1005,7 @@ static void clock_control_bl808_deinit_uhspll(void)
 
 static void clock_control_bl808_init_uhspll(uint32_t top_frequency)
 {
-	uint32_t xtal_hz = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency);
+	uint32_t xtal_hz = CRYSTAL_FREQ;
 	uint32_t pll_mhz = top_frequency / MHZ(1U);
 	uint32_t refdiv = uhspll_refdiv(xtal_hz);
 	uint32_t xtal_mhz = xtal_hz / MHZ(1);
@@ -1316,7 +1319,7 @@ static __ramfunc uint32_t clock_control_bl808_get_xclk(const struct device *dev)
 	if ((tmp & 1U) == 0U) {
 		return BFLB_RC32M_FREQUENCY;
 	}
-	return DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency);
+	return CRYSTAL_FREQ;
 }
 
 /* Get FCLK (CPU core clock): XCLK when root_clk_sel[1]=0, PLL output otherwise. */
@@ -1352,7 +1355,15 @@ static __ramfunc uint32_t clock_control_bl808_get_fclk(const struct device *dev)
 
 static uint32_t clock_control_bl808_mtimer_get_fclk_src_div(const struct device *dev)
 {
-	return (clock_control_bl808_get_fclk(dev) / MHZ(1) - 1);
+	if (clock_control_bl808_get_fclk(dev) < TARGET_TIMEBASE_FREQ) {
+		LOG_ERR("Timebase frequency is too fast for this configuration");
+		return 0;
+	} else if (clock_control_bl808_get_fclk(dev) / BIT(MCU_MISC_REG_MCU_RTC_DIV_LEN)
+		   > TARGET_TIMEBASE_FREQ) {
+		LOG_ERR("Timebase frequency is too slow for this configuration");
+		return BIT(MCU_MISC_REG_MCU_RTC_DIV_LEN) - 1;
+	}
+	return (clock_control_bl808_get_fclk(dev) / TARGET_TIMEBASE_FREQ - 1);
 }
 
 /* Get HCLK (AHB bus clock): FCLK divided by (hclk_div + 1). */
@@ -1452,7 +1463,11 @@ static __bflb_critfunc void clock_control_bl808_init_root_as_crystal(const struc
 
 static uint32_t clock_control_bl808_mtimer_get_xclk_src_div(const struct device *dev)
 {
-	return (clock_control_bl808_get_xclk(dev) / 1000 / 1000 - 1);
+	if (clock_control_bl808_get_xclk(dev) < TARGET_TIMEBASE_FREQ) {
+		LOG_ERR("Timebase frequency is invalid for this configuration");
+		return 0;
+	}
+	return (clock_control_bl808_get_xclk(dev) / TARGET_TIMEBASE_FREQ - 1);
 }
 
 /* Set F32K source mux in HBN: 0 = RC32K, 1 = XTAL32K. */
@@ -2103,7 +2118,7 @@ static int clock_control_bl808_get_rate(const struct device *dev, clock_control_
 	} else if ((enum bl808_clkid)sys == bl808_clkid_clk_bclk) {
 		*rate = clock_control_bl808_get_bclk(dev);
 	} else if ((enum bl808_clkid)sys == bl808_clkid_clk_crystal) {
-		*rate = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency);
+		*rate = CRYSTAL_FREQ;
 	} else if ((enum bl808_clkid)sys == bl808_clkid_clk_160mux) {
 		if (data->wifipll.enabled || data->aupll.enabled) {
 			*rate = clock_control_bl808_get_160m(dev);
@@ -2179,8 +2194,7 @@ static DEVICE_API(clock_control, clock_control_bl808_api) = {
 };
 
 static const struct clock_control_bl808_config clock_control_bl808_config = {
-	.crystal_id = CRYSTAL_FREQ_TO_ID(
-		DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency)),
+	.crystal_id = CRYSTAL_FREQ_TO_ID(CRYSTAL_FREQ),
 };
 
 static struct clock_control_bl808_data clock_control_bl808_data = {
@@ -2334,6 +2348,8 @@ BUILD_ASSERT(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m), clock_frequency) ==
 	(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, uhspll_top), clock_frequency) / MHZ(1))
 BUILD_ASSERT(UHSPLL_DT_MHZ >= 400 && UHSPLL_DT_MHZ <= 2300 && (UHSPLL_DT_MHZ % 50) == 0,
 	     "UHS PLL clock-frequency must be a multiple of 50 MHz within 400-2300 MHz");
+
+BUILD_ASSERT(TARGET_TIMEBASE_FREQ > KHZ(40), "Timebase frequency should be greater than 40 KHz");
 
 DEVICE_DT_INST_DEFINE(0, clock_control_bl808_init, NULL, &clock_control_bl808_data,
 		      &clock_control_bl808_config, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,

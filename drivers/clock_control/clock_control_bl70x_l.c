@@ -74,6 +74,8 @@ LOG_MODULE_REGISTER(clock_control_bl70x_l, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define BL70X_L_TARGET_BASIC_CLOCK MHZ(32)
 
+#define TARGET_TIMEBASE_FREQ DT_PROP(DT_PATH(cpus), timebase_frequency)
+
 enum bl70x_l_clkid {
 #if defined(CONFIG_SOC_SERIES_BL70XL)
 	bl70x_l_clkid_clk_root = BL70XL_CLKID_CLK_ROOT,
@@ -496,9 +498,17 @@ static uint32_t clock_control_bl70x_l_mtimer_get_clk_src_div(const struct device
 {
 #if defined(CONFIG_SOC_SERIES_BL70XL)
 	/* BL70XL mtimer source 0 is XCLK, not BCLK */
-	return clock_control_bl70x_l_get_xclk(dev) / 1000 / 1000 - 1;
+	return clock_control_bl70x_l_get_xclk(dev) / TARGET_TIMEBASE_FREQ - 1;
 #else
-	return clock_control_bl70x_l_get_bclk(dev) / 1000 / 1000 - 1;
+	if (clock_control_bl70x_l_get_bclk(dev) < TARGET_TIMEBASE_FREQ) {
+		LOG_ERR("Timebase frequency is too fast for this configuration");
+		return 0;
+	} else if (clock_control_bl70x_l_get_bclk(dev) / BIT(GLB_CPU_RTC_DIV_LEN)
+		   > TARGET_TIMEBASE_FREQ) {
+		LOG_ERR("Timebase frequency is too slow for this configuration");
+		return BIT(GLB_CPU_RTC_DIV_LEN) - 1;
+	}
+	return clock_control_bl70x_l_get_bclk(dev) / TARGET_TIMEBASE_FREQ - 1;
 #endif
 }
 
@@ -996,7 +1006,7 @@ static int clock_control_bl70x_l_get_rate(const struct device *dev, clock_contro
 	} else if ((enum bl70x_l_clkid)sys == bl70x_l_clkid_clk_bclk) {
 		*rate = clock_control_bl70x_l_get_bclk(dev);
 	} else if ((enum bl70x_l_clkid)sys == bl70x_l_clkid_clk_crystal) {
-		*rate = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency);
+		*rate = BFLB_RC32M_FREQUENCY;
 	} else if ((enum bl70x_l_clkid)sys == bl70x_l_clkid_clk_rc32m) {
 		*rate = BFLB_RC32M_FREQUENCY;
 	} else {
@@ -1114,6 +1124,14 @@ BUILD_ASSERT(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m), clock_frequency) ==
 BUILD_ASSERT(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency) ==
 		     BFLB_RC32M_FREQUENCY,
 	     "Crystal must be 32M for BL70x/L");
+
+#if defined(CONFIG_SOC_SERIES_BL70XL)
+BUILD_ASSERT(TARGET_TIMEBASE_FREQ >= MHZ(1) && TARGET_TIMEBASE_FREQ <= BFLB_RC32M_FREQUENCY,
+	     "Timebase frequency should be >= than 1 MHz and <= than 32MHz");
+#else
+BUILD_ASSERT(TARGET_TIMEBASE_FREQ > KHZ(10) && TARGET_TIMEBASE_FREQ <= MHZ(72),
+	     "Timebase frequency should be greater than 10 KHz and <= than 72MHz");
+#endif
 
 DEVICE_DT_INST_DEFINE(0, clock_control_bl70x_l_init, NULL, &clock_control_bl70x_l_data, NULL,
 		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_bl70x_l_api);
