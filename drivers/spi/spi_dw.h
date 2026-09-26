@@ -202,6 +202,7 @@ __maybe_unused static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 #define DW_SPI_CTRLR0_TMOD_SHIFT	(10)
 #define DW_SPI_CTRLR0_SLV_OE_BIT	(12)
 #define DW_SPI_CTRLR0_SRL_BIT		(13)
+#define DW_SPI_CTRLR0_SSI_IS_MST_BIT	(31)
 #endif
 
 #if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
@@ -213,6 +214,10 @@ __maybe_unused static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 #define DW_SPI_CTRLR0_SCPOL		BIT(DW_SPI_CTRLR0_SCPOL_BIT)
 #define DW_SPI_CTRLR0_SRL		BIT(DW_SPI_CTRLR0_SRL_BIT)
 #define DW_SPI_CTRLR0_SLV_OE		BIT(DW_SPI_CTRLR0_SLV_OE_BIT)
+
+#if defined(CONFIG_SPI_DW_HSSI)
+#define DW_SPI_CTRLR0_SSI_IS_MST	BIT(DW_SPI_CTRLR0_SSI_IS_MST_BIT)
+#endif
 
 #define DW_SPI_CTRLR0_TMOD_TX_RX	(0)
 #define DW_SPI_CTRLR0_TMOD_TX		(1 << DW_SPI_CTRLR0_TMOD_SHIFT)
