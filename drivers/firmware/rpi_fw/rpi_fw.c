@@ -22,6 +22,12 @@ LOG_MODULE_REGISTER(rpi_fw, CONFIG_LOG_DEFAULT_LEVEL);
 #define RPI_FW_BUF_OVERHEAD     (3 * sizeof(uint32_t))
 #define RPI_FW_TAG_HDR_SIZE     (sizeof(struct rpi_fw_tag_header))
 
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+#define RPI_FW_SHM_MEM_ATTR K_MEM_ARM_NORMAL_NC
+#else
+#define RPI_FW_SHM_MEM_ATTR K_MEM_CACHE_NONE
+#endif
+
 struct rpi_fw_tag_header {
 	uint32_t tag;
 	uint32_t data_size;
@@ -182,7 +188,7 @@ static int rpi_fw_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 	k_sem_init(&data->reply, 0, 1);
 
-	device_map(&data->shm, config->shm, config->shm_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
+	device_map(&data->shm, config->shm, config->shm_size, RPI_FW_SHM_MEM_ATTR | K_MEM_PERM_RW);
 
 	if (!device_is_ready(mbox_dev)) {
 		LOG_ERR_DEVICE_NOT_READY(mbox_dev);
