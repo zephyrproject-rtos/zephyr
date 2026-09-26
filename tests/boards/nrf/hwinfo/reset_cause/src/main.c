@@ -222,6 +222,18 @@ static void print_current_reset_cause(uint32_t *cause)
 	print_bar();
 }
 
+/* Verify that a previously detected reset cause is no longer set. */
+static void test_previous_reset_cause_absent(uint32_t cause, uint32_t previous, const char *name)
+{
+	LOG_INF("TEST that %s is not set", name);
+	if (cause & previous) {
+		LOG_INF("%s is still set (cause=0x%x)", name, cause);
+	} else {
+		LOG_INF("PASS: %s is not set", name);
+	}
+	print_bar();
+}
+
 /* Clear reset cause. */
 static void test_clear_reset_cause(void)
 {
@@ -267,6 +279,7 @@ void test_reset_software(uint32_t cause)
 			if (cause & RESET_SOFTWARE) {
 				LOG_INF("PASS: RESET_SOFTWARE detected");
 				print_bar();
+				test_previous_reset_cause_absent(cause, RESET_PIN, "RESET_PIN");
 				/* Check RESET_SOFTWARE can be cleared */
 				test_clear_reset_cause();
 			} else {
@@ -322,6 +335,8 @@ void test_reset_watchdog(uint32_t cause)
 			if (cause & RESET_WATCHDOG) {
 				LOG_INF("PASS: RESET_WATCHDOG detected");
 				print_bar();
+				test_previous_reset_cause_absent(cause, RESET_SOFTWARE,
+					"RESET_SOFTWARE");
 				/* Check RESET_WATCHDOG can be cleared */
 				test_clear_reset_cause();
 			} else {
@@ -364,7 +379,9 @@ void test_reset_cpu_lockup(uint32_t cause)
 			if (cause & RESET_CPU_LOCKUP) {
 				LOG_INF("PASS: RESET_CPU_LOCKUP detected");
 				print_bar();
-				/* Check RESET_SOFTWARE can be cleared */
+				test_previous_reset_cause_absent(cause, RESET_WATCHDOG,
+					"RESET_WATCHDOG");
+				/* Check RESET_CPU_LOCKUP can be cleared */
 				test_clear_reset_cause();
 			} else {
 				LOG_ERR("FAIL: RESET_CPU_LOCKUP not set");
