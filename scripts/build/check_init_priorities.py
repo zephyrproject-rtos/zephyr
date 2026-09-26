@@ -23,6 +23,7 @@ import logging
 import os
 import pathlib
 import pickle
+import re
 import sys
 
 from elftools.elf.elffile import ELFFile
@@ -56,6 +57,19 @@ _DEFERRED_INIT_PROP_NAME = "zephyr,deferred-init"
 
 # The offset of the init pointer in "struct device", in number of pointers.
 DEVICE_INIT_OFFSET = 5
+
+# Matches the linker section generated for each init entry, for example
+# ".z_init_PRE_KERNEL_1_P_50_SUB_00039_". Some linkers (e.g. lld) print the
+# address on the same line, right after the section name; others (e.g. GNU
+# ld) print the section name alone and the address on the following line.
+_MAP_SECTION_RE = re.compile(
+    r"^\s*\.z_init_(?P<level>[A-Za-z0-9_]+)_P_(?P<priority>\d+)_SUB_(?P<subpriority>\d+)_"
+    r"(?:\s+(?P<addr>0x[0-9a-fA-F]+).*)?\s*$"
+)
+
+# Matches the address/size/object line following a section-name-only line in
+# a GNU ld map file, for example "0x0000000c        0x8 app/libapp.a(main.c.obj)".
+_MAP_OBJECT_RE = re.compile(r"^\s*(?P<addr>0x[0-9a-fA-F]+)\s+0x[0-9a-fA-F]+\s+\S+\s*$")
 
 
 class Priority:
@@ -204,6 +218,7 @@ class ZephyrInitLevels:
         """Process the init level and find the init functions and devices."""
         self.devices = {}
         self.initlevels = {}
+        self.initlevel_entries = {}
 
         for i, level in enumerate(_DEVICE_INIT_LEVELS):
             start = self._init_level_addr[level]
@@ -213,6 +228,7 @@ class ZephyrInitLevels:
                 stop = self._init_level_addr[_DEVICE_INIT_LEVELS[i + 1]]
 
             self.initlevels[level] = []
+            self.initlevel_entries[level] = []
 
             priority = 0
             addr = start
@@ -236,9 +252,83 @@ class ZephyrInitLevels:
                     self.devices[ordinal] = (prio, arg0_name)
 
                 self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
+                self.initlevel_entries[level].append((addr, arg0_name))
 
                 addr += size
                 priority += 1
+
+
+class MapInitPriorities:
+    """Parse a linker map file for the device/init entry priorities.
+
+    Reads the ".z_init_<level>_P_<priority>_SUB_<subpriority>_" sections
+    generated for each initialization entry and records, for the address of
+    each entry, the priority and subpriority encoded in its section name.
+
+    Attributes:
+        map_file_path: path of the zephyr.map file to parse.
+    """
+
+    def __init__(self, map_file_path):
+        self.priorities = {}
+        self._parse(map_file_path)
+
+    def _parse(self, map_file_path):
+        with open(map_file_path) as map_file:
+            lines = map_file.readlines()
+
+        for idx, line in enumerate(lines):
+            match = _MAP_SECTION_RE.match(line)
+            if not match:
+                continue
+
+            addr_str = match.group("addr")
+            if addr_str is None:
+                if idx + 1 >= len(lines):
+                    continue
+
+                addr_match = _MAP_OBJECT_RE.match(lines[idx + 1])
+                if not addr_match:
+                    continue
+
+                addr_str = addr_match.group("addr")
+
+            addr = int(addr_str, 16)
+            self.priorities[addr] = (
+                int(match.group("priority")),
+                int(match.group("subpriority")),
+            )
+
+
+def _print_priorities(zephyr_init_levels, map_priorities, log):
+    """Print, per init level, each init function with its map priority/subpriority."""
+    entries = []
+    for level in _DEVICE_INIT_LEVELS:
+        for addr, func_name in zephyr_init_levels.initlevel_entries[level]:
+            prio_subprio = map_priorities.get(addr)
+            if prio_subprio is None:
+                log.warning(f"no map entry found for {func_name} at {addr:#x}")
+                continue
+
+            priority, subpriority = prio_subprio
+            entries.append((level, func_name, priority, subpriority))
+
+    name_width = max((len(func_name) for _, func_name, _, _ in entries), default=0)
+    priority_width = max((len(str(priority)) for _, _, priority, _ in entries), default=0)
+    subpriority_width = max((len(str(subpriority)) for _, _, _, subpriority in entries), default=0)
+
+    entries_by_level = {level: [] for level in _DEVICE_INIT_LEVELS}
+    for level, func_name, priority, subpriority in entries:
+        entries_by_level[level].append((func_name, priority, subpriority))
+
+    for level in _DEVICE_INIT_LEVELS:
+        print(level)
+        for func_name, priority, subpriority in entries_by_level[level]:
+            print(
+                f"  {func_name.ljust(name_width)} : "
+                f"priority = {str(priority).rjust(priority_width)}, "
+                f"sub-priority = {str(subpriority).rjust(subpriority_width)}"
+            )
 
 
 class Validator:
@@ -393,6 +483,14 @@ def _parse_args(argv):
         help="name of the pickled edtlib.EDT file",
         type=pathlib.Path,
     )
+    parser.add_argument(
+        "-p",
+        "--priorities",
+        action="store_true",
+        help="print, for each init level, the init function names with the "
+        "priority and subpriority found in the zephyr.map file next to "
+        "--elf-file, instead of checking the device dependencies",
+    )
 
     return parser.parse_args(argv)
 
@@ -424,6 +522,19 @@ def main(argv=None):
     args = _parse_args(argv)
 
     log = _init_log(args.verbose, args.output)
+
+    if args.priorities:
+        map_file_path = pathlib.Path(args.elf_file).with_name("zephyr.map")
+        if not map_file_path.exists():
+            log.error(f"No map file found. Expecting {map_file_path}")
+            return 1
+
+        log.info(f"check_init_priorities: {args.elf_file} {map_file_path}")
+        with open(args.elf_file, "rb") as elf_file:
+            zephyr_init_levels = ZephyrInitLevels(args.elf_file, elf_file)
+        map_priorities = MapInitPriorities(map_file_path).priorities
+        _print_priorities(zephyr_init_levels, map_priorities, log)
+        return 0
 
     log.info(f"check_init_priorities: {args.elf_file}")
 
