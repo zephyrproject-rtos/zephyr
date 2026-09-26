@@ -1,0 +1,5 @@
+# Copyright (c) 2026 nanoCH32V305 contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NANO_CH32V305
+	select SOC_CH32V305
