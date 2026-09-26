@@ -71,6 +71,13 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define PCIE_MISC_PCIE_STATUS_PCIE_PHYLINKUP_MASK 0x10
 #define PCIE_MISC_PCIE_STATUS_PCIE_DL_ACTIVE_MASK 0x20
 
+#define PCIE_MISC_HARD_PCIE_HARD_DEBUG                  0x4204
+#define PCIE_MISC_HARD_PCIE_HARD_DEBUG_SERDES_IDDQ_MASK 0x08000000
+
+#define PCIE_RGR1_SW_INIT_1            0x9210
+#define PCIE_RGR1_SW_INIT_1_PERST_MASK 0x1
+#define PCIE_RGR1_SW_INIT_1_INIT_MASK  0x2
+
 #define PCIE_RC_CFG_PRIV1_ID_VAL3                 0x043c
 #define PCIE_RC_CFG_PRIV1_ID_VAL3_CLASS_CODE_MASK 0xffffff
 
@@ -129,6 +136,7 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define BCM2712_RC_BAR4_PCI    0x0
 #define BCM2712_SCB0_SIZE      0x400000
 
+#define BCM2711_BURST_SIZE 0x0
 #define BCM2712_BURST_SIZE 0x1
 
 #define BCM2712_CLOCK_RATE 750000000ULL /* 750Mhz */
@@ -435,6 +443,7 @@ static int pcie_brcmstb_parse_regions(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_SOC_BCM2712)
 static mm_reg_t pcie_brcmstb_mdio_from_pkt(int port, int regad, int cmd)
 {
 	return (mm_reg_t)cmd << 20 | port << 16 | regad;
@@ -461,6 +470,7 @@ static void pcie_brcmstb_munge_pll(const struct device *dev)
 		pcie_brcmstb_mdio_write(data->cfg_addr, MDIO_PORT0, regs[i], vals[i]);
 	}
 }
+#endif /* CONFIG_SOC_BCM2712 */
 
 static void pcie_brcmstb_set_outbound_win(const struct device *dev, uint8_t win, uintptr_t cpu_addr,
 					  uintptr_t pcie_addr, size_t size)
@@ -504,21 +514,44 @@ static int pcie_brcmstb_setup(const struct device *dev)
 {
 	const struct pcie_brcmstb_config *config = dev->config;
 	struct pcie_brcmstb_data *data = dev->data;
+	uint32_t burst_size;
 	uint32_t tmp;
 	uint16_t tmp16;
 
-	/* This block is for BCM2712 only */
+#if defined(CONFIG_SOC_BCM2712)
 	pcie_brcmstb_munge_pll(dev);
 	tmp = sys_read32(data->cfg_addr + PCIE_RC_PL_PHY_CTL_15);
 	tmp &= ~PCIE_RC_PL_PHY_CTL_15_PM_CLK_PERIOD_MASK;
 	tmp |= PCIE_RC_PL_PHY_CTL_15_PM_CLK_PERIOD;
 	sys_write32(tmp, data->cfg_addr + PCIE_RC_PL_PHY_CTL_15);
 
+	burst_size = BCM2712_BURST_SIZE;
+#else
+	/* Reset the bridge and assert PERST# */
+	tmp = sys_read32(data->cfg_addr + PCIE_RGR1_SW_INIT_1);
+	tmp |= PCIE_RGR1_SW_INIT_1_INIT_MASK | PCIE_RGR1_SW_INIT_1_PERST_MASK;
+	sys_write32(tmp, data->cfg_addr + PCIE_RGR1_SW_INIT_1);
+	k_busy_wait(200);
+
+	/* Take the bridge out of reset */
+	tmp &= ~PCIE_RGR1_SW_INIT_1_INIT_MASK;
+	sys_write32(tmp, data->cfg_addr + PCIE_RGR1_SW_INIT_1);
+
+	tmp = sys_read32(data->cfg_addr + PCIE_MISC_HARD_PCIE_HARD_DEBUG);
+	tmp &= ~PCIE_MISC_HARD_PCIE_HARD_DEBUG_SERDES_IDDQ_MASK;
+	sys_write32(tmp, data->cfg_addr + PCIE_MISC_HARD_PCIE_HARD_DEBUG);
+
+	/* Wait for SerDes to be stable */
+	k_busy_wait(200);
+
+	burst_size = BCM2711_BURST_SIZE;
+#endif
+
 	tmp = sys_read32(data->cfg_addr + PCIE_MISC_MISC_CTRL);
 	tmp |= PCIE_MISC_MISC_CTRL_SCB_ACCESS_EN_MASK;
 	tmp |= PCIE_MISC_MISC_CTRL_CFG_READ_UR_MODE_MASK;
 	tmp &= ~PCIE_MISC_MISC_CTRL_MAX_BURST_SIZE_MASK;
-	tmp |= (BCM2712_BURST_SIZE << PCIE_MISC_MISC_CTRL_MAX_BURST_SIZE_LSB);
+	tmp |= (burst_size << PCIE_MISC_MISC_CTRL_MAX_BURST_SIZE_LSB);
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_MISC_CTRL);
 
 	uint64_t rc_bar2_offset = config->common->ranges[DMA_RANGES_IDX].host_map_addr -
@@ -531,9 +564,11 @@ static int pcie_brcmstb_setup(const struct device *dev)
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_RC_BAR2_CONFIG_LO);
 	sys_write32(upper_32_bits(rc_bar2_offset), data->cfg_addr + PCIE_MISC_RC_BAR2_CONFIG_HI);
 
+#if defined(CONFIG_SOC_BCM2712)
 	tmp = sys_read32(data->cfg_addr + PCIE_MISC_UBUS_BAR2_CONFIG_REMAP);
 	tmp |= PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_ACCESS_ENABLE_MASK;
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_UBUS_BAR2_CONFIG_REMAP);
+#endif
 
 	/* Set SCB Size */
 	tmp = sys_read32(data->cfg_addr + PCIE_MISC_MISC_CTRL);
@@ -542,6 +577,7 @@ static int pcie_brcmstb_setup(const struct device *dev)
 	       << PCIE_MISC_MISC_CTRL_SCB0_SIZE_LSB;
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_MISC_CTRL);
 
+#if defined(CONFIG_SOC_BCM2712)
 	tmp = sys_read32(data->cfg_addr + PCIE_MISC_UBUS_CTRL);
 	tmp |= PCIE_MISC_UBUS_CTRL_UBUS_PCIE_REPLY_ERR_DIS_MASK;
 	tmp |= PCIE_MISC_UBUS_CTRL_UBUS_PCIE_REPLY_DECERR_DIS_MASK;
@@ -552,6 +588,7 @@ static int pcie_brcmstb_setup(const struct device *dev)
 	sys_write32(BCM2712_UBUS_TIMEOUT_TICKS, data->cfg_addr + PCIE_MISC_UBUS_TIMEOUT);
 	sys_write32(BCM2712_RC_CONFIG_RETRY_TIMEOUT_TICKS,
 		    data->cfg_addr + PCIE_MISC_RC_CONFIG_RETRY_TIMEOUT);
+#endif
 
 	tmp = sys_read32(data->cfg_addr + PCIE_MISC_RC_BAR1_CONFIG_LO);
 	tmp &= ~PCIE_MISC_RC_BAR1_CONFIG_LO_SIZE_MASK;
@@ -611,10 +648,16 @@ static int pcie_brcmstb_init(const struct device *dev)
 	/* PCIe Setup */
 	pcie_brcmstb_setup(dev);
 
-	/* Assert PERST# */
+	/* Deassert PERST# */
+#if defined(CONFIG_SOC_BCM2712)
 	tmp = sys_read32(data->cfg_addr + PCIE_MISC_PCIE_CTRL);
 	tmp |= PCIE_MISC_PCIE_CTRL_PCIE_PERSTB_MASK;
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_PCIE_CTRL);
+#else
+	tmp = sys_read32(data->cfg_addr + PCIE_RGR1_SW_INIT_1);
+	tmp &= ~PCIE_RGR1_SW_INIT_1_PERST_MASK;
+	sys_write32(tmp, data->cfg_addr + PCIE_RGR1_SW_INIT_1);
+#endif
 
 	k_busy_wait(PCIE_RESET_CONFIG_WAIT_US);
 
