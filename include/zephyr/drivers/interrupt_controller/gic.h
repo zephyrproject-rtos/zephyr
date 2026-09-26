@@ -418,6 +418,14 @@ void arm_gic_secondary_init(void);
  */
 void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list);
 
+/**
+ * @brief Raise SGI to one CPU selected by MPIDR affinity
+ *
+ * @param sgi_id      SGI ID 0 to 15
+ * @param target_aff  target affinity in MPIDR form
+ */
+void gic_raise_sgi_by_affinity(unsigned int sgi_id, uint64_t target_aff);
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GIC_H_ */

@@ -381,6 +381,17 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_lis
 	barrier_isync_fence_full();
 }
 
+void gic_raise_sgi_by_affinity(unsigned int sgi_id, uint64_t target_aff)
+{
+	uint32_t aff0 = MPIDR_AFFLVL(target_aff, 0);
+
+	if (aff0 >= 16U) {
+		return;
+	}
+
+	gic_raise_sgi(sgi_id, target_aff, (uint16_t)BIT(aff0));
+}
+
 /*
  * Wake up GIC redistributor.
  * clear ProcessorSleep and wait till ChildAsleep is cleared.
