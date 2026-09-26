@@ -1,0 +1,81 @@
+/*
+ * SPDX-FileCopyrightText: 2026 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,pcie-controller = &pcie_test;
+	};
+
+	test_intc: test-intc {
+		compatible = "zephyr,test-irq-controller";
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+	pcie_test: pcie-test {
+		compatible = "pcie-controller";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		virtio_pci_test: virtio-pci-test {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x10fe>;
+			interrupts = <5 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+	};
+
+	test_bars {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		test_bar0: bar@0 {
+			reg = <0 0x20000>;
+		};
+
+		test_bar1: bar@1 {
+			reg = <1 0x1000>;
+		};
+
+		test_bar2: bar@2 {
+			reg = <2 0x1000>;
+		};
+	};
+
+	test_common_layout {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		test_common_cfg: common@100 {
+			reg = <0x100 0x100>;
+		};
+	};
+
+	test_isr_layout {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		test_isr_cfg: isr@0 {
+			reg = <0 0x100>;
+		};
+	};
+
+	test_notify_layout {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		test_notify_cfg: notify@0 {
+			reg = <0 0x100>;
+		};
+	};
+};
