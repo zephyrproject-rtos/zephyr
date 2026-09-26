@@ -163,6 +163,7 @@ static struct crypto_mchp_sha_session *crypto_mchp_sha_get_unused_session(void)
 	k_sem_take(&mchp_sha_session_sem, K_FOREVER);
 	for (int i = 0; i < ARRAY_SIZE(mchp_sha_sessions); i++) {
 		if (!mchp_sha_sessions[i].in_use) {
+			mchp_sha_sessions[i].in_use = true;
 			session = &mchp_sha_sessions[i];
 			break;
 		}
