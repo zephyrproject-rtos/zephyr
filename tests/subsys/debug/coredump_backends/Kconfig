@@ -15,3 +15,9 @@ config TEST_STORED_DUMP_SIZE
 	help
 	  Test expects coredump backend storage with the size given.
 	  If zero, then it is ignored and not compared with the actual size.
+
+config TEST_BACKEND_ERROR
+	bool "Expect the backend to report an error"
+	help
+	  Set if the backend is expected to fail, e.g. because it is
+	  misconfigured, and to report it through COREDUMP_QUERY_GET_ERROR.
