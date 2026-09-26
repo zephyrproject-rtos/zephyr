@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2026 Kenta IDA <fuga@fugafuga.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "../m5stack_cores3/m5stack_cores3_appcpu.dts"
+
+/ {
+	model = "M5Stack StackChan APPCPU";
+};
