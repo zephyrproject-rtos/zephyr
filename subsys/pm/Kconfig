@@ -231,6 +231,14 @@ config PM_DEVICE_RUNTIME_DEFAULT_ENABLE
 	  property zephyr,pm-device-runtime-auto to all nodes in the
 	  devicetree.
 
+config PM_DEVICE_RUNTIME_TESTING
+	bool "PM device runtime testing"
+	help
+	  This option enables test hooks at the runtime PM get, put and power
+	  domain action linearization points, so that tests can hold one
+	  operation before it commits and enforce a deterministic ordering.
+	  Shall only be used for testing purposes.
+
 endif # PM_DEVICE_RUNTIME
 
 config PM_DEVICE_SHELL
