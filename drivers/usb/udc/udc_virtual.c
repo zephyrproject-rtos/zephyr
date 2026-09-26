@@ -40,6 +40,7 @@ struct udc_vrt_data {
 	struct k_thread thread_data;
 	uint8_t addr;
 	uint16_t frame_number;
+	enum uvb_speed bus_speed;
 };
 
 struct udc_vrt_event {
@@ -269,9 +270,13 @@ static void udc_vrt_uvb_cb(const void *const vrt_priv,
 	case UVB_EVT_SUSPEND:
 		__fallthrough;
 	case UVB_EVT_RESUME:
-		__fallthrough;
+		if (udc_is_enabled(dev)) {
+			vrt_submit_uvb_event(dev, type, NULL);
+		}
+		break;
 	case UVB_EVT_RESET:
 		if (udc_is_enabled(dev)) {
+			priv->bus_speed = POINTER_TO_INT(data);
 			vrt_submit_uvb_event(dev, type, NULL);
 		}
 		break;
@@ -372,10 +377,22 @@ static int udc_vrt_host_wakeup(const struct device *dev)
 
 static enum udc_bus_speed udc_vrt_device_speed(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_vrt_data *priv = udc_get_private(dev);
 
-	/* FIXME: get actual device speed */
-	return data->caps.hs ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS;
+	switch (priv->bus_speed) {
+	case UVB_SPEED_FS:
+		return UDC_BUS_SPEED_FS;
+	case UVB_SPEED_HS:
+		return UDC_BUS_SPEED_HS;
+	case UVB_SPEED_SS:
+		return UDC_BUS_SPEED_SS;
+	case UVB_SPEED_LS:
+		__fallthrough;
+	default:
+		break;
+	}
+
+	return UDC_BUS_UNKNOWN;
 }
 
 static int udc_vrt_enable(const struct device *dev)

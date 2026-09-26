@@ -620,6 +620,16 @@ static void vrt_device_act(const struct device *dev,
 	case UVB_DEVICE_ACT_RWUP:
 		type = UHC_EVT_RWUP;
 		break;
+	case UVB_DEVICE_ACT_LS:
+		type = UHC_EVT_DEV_CONNECTED_LS;
+		priv->speed = USB_SPEED_SPEED_LS;
+		/*
+		 * Low-speed devices get a keep-alive (low-speed EOP) per frame
+		 * instead of SOF (USB 2.0 11.8.4.1), UVB_EVT_SOF is used for both.
+		 */
+		priv->sof_period = K_MSEC(1);
+		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
+		break;
 	case UVB_DEVICE_ACT_FS:
 		type = UHC_EVT_DEV_CONNECTED_FS;
 		priv->speed = USB_SPEED_SPEED_FS;
@@ -635,6 +645,8 @@ static void vrt_device_act(const struct device *dev,
 	case UVB_DEVICE_ACT_REMOVED:
 		type = UHC_EVT_DEV_REMOVED;
 		break;
+	case UVB_DEVICE_ACT_SS:
+		__fallthrough;
 	default:
 		type = UHC_EVT_ERROR;
 	}
@@ -676,13 +688,26 @@ static int uhc_vrt_bus_suspend(const struct device *dev)
 	return uvb_advert(priv->host_node, UVB_EVT_SUSPEND, NULL);
 }
 
+static enum uvb_speed vrt_uvb_speed(const enum usb_device_speed speed)
+{
+	switch (speed) {
+	case USB_SPEED_SPEED_LS:
+		return UVB_SPEED_LS;
+	case USB_SPEED_SPEED_HS:
+		return UVB_SPEED_HS;
+	default:
+		return UVB_SPEED_FS;
+	}
+}
+
 static int uhc_vrt_bus_reset(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	int ret;
 
 	k_timer_stop(&priv->sof_timer);
-	ret = uvb_advert(priv->host_node, UVB_EVT_RESET, NULL);
+	ret = uvb_advert(priv->host_node, UVB_EVT_RESET,
+			 INT_TO_POINTER(vrt_uvb_speed(priv->speed)));
 	/* TDRSTR */
 	k_msleep(50);
 	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
