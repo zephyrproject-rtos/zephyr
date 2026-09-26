@@ -1,0 +1,9 @@
+sample:
+  name: UWB Ranging Controlee
+  description: Demonstrates UWB DS-TWR Controlee ranging
+tests:
+  sample.uwb.demo_ranging_controlee:
+    build_only: true
+    tags: uwb
+    integration_platforms:
+      - native_sim
