@@ -244,8 +244,10 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define SLV_DEBUG_STATUS 0x88
 
 #define SLV_INTR_REQ                        0x8c
-#define SLV_INTR_REQ_SIR_DATA_LENGTH(x)     (((x) << 16) & GENMASK(23, 16))
-#define SLV_INTR_REQ_MDB(x)                 (((x) << 8) & GENMASK(15, 8))
+#define SLV_INTR_REQ_SIR_DATA_LENGTH_MASK   GENMASK(23, 16)
+#define SLV_INTR_REQ_SIR_DATA_LENGTH(x)     (((x) << 16) & SLV_INTR_REQ_SIR_DATA_LENGTH_MASK)
+#define SLV_INTR_REQ_MDB_MASK               GENMASK(15, 8)
+#define SLV_INTR_REQ_MDB(x)                 (((x) << 8) & SLV_INTR_REQ_MDB_MASK)
 #define SLV_INTR_REQ_IBI_STS(x)             (((x) & GENMASK(9, 8)) >> 8)
 #define SLV_INTR_REQ_IBI_STS_IBI_ACCEPT     0x01
 #define SLV_INTR_REQ_IBI_STS_IBI_NO_ATTEMPT 0x03
@@ -1522,6 +1524,11 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 		if ((request->payload_len > 5) || (request->payload_len == 0)) {
 			return -EINVAL;
 		}
+
+		/* Clear stale MDB/SIR_DATA_LENGTH: the IP does not auto-clear
+		 * between IBIs.
+		 */
+		slv_intr_req &= ~(SLV_INTR_REQ_SIR_DATA_LENGTH_MASK | SLV_INTR_REQ_MDB_MASK);
 
 		/* MDB should be the first byte of the payload */
 		slv_intr_req |= SLV_INTR_REQ_MDB(request->payload[0]) |
