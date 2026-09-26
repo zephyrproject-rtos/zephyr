@@ -38,6 +38,11 @@
 extern "C" {
 #endif
 
+/** @brief Parameters of the setup() driver API op.
+ *
+ *  @deprecated Together with the op itself, see bt_hci_setup(). A driver takes
+ *              the public address from bt_hci_get_public_addr() instead.
+ */
 struct bt_hci_setup_params {
 	/** The public identity address to give to the controller. This field is used when the
 	 *  driver selects @kconfig{CONFIG_BT_HCI_SET_PUBLIC_ADDR} to indicate that it supports
@@ -183,6 +188,8 @@ typedef int (*bt_hci_api_send_t)(const struct device *dev, struct net_buf *buf);
 /**
  * @brief Callback API for HCI vendor-specific setup.
  * See bt_hci_setup() for argument description
+ *
+ * @deprecated See bt_hci_setup().
  */
 typedef int (*bt_hci_api_setup_t)(const struct device *dev,
 				  const struct bt_hci_setup_params *param);
@@ -224,6 +231,8 @@ __subsystem struct bt_hci_driver_api {
 	/**
 	 * @driver_ops_optional @copybrief bt_hci_setup
 	 * @kconfig_dep{CONFIG_BT_HCI_SETUP}
+	 *
+	 * @deprecated See bt_hci_setup().
 	 */
 	bt_hci_api_setup_t setup;
 #endif /* CONFIG_BT_HCI_SETUP */
@@ -423,6 +432,15 @@ static inline int bt_hci_send(const struct device *dev, struct net_buf *buf)
  *
  * @note @kconfig{CONFIG_BT_HCI_SETUP} must be selected for this
  * field to be available.
+ *
+ * @deprecated A driver performs its vendor-specific initialization inside
+ *             open(), over its own transport, with the helpers of hci_pkt.h
+ *             and hci_lockstep.h, and takes the public address from
+ *             bt_hci_get_public_addr(). Unlike setup(), that works in every
+ *             build type, including one without a Bluetooth Host. The op, this
+ *             function, @ref bt_hci_setup_params and
+ *             @kconfig{CONFIG_BT_HCI_SETUP} are removed two releases after
+ *             this one; see the 4.5 migration guide.
  *
  * @return 0 on success or negative POSIX error number on failure.
  */

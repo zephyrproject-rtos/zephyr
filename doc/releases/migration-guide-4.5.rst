@@ -2175,6 +2175,45 @@ Bluetooth HCI
   their data (:c:struct:`bt_hci_driver_data`) and config (:c:struct:`bt_hci_driver_config`)
   structs.
 
+* The HCI driver ``setup()`` op, :c:func:`bt_hci_setup`, :c:struct:`bt_hci_setup_params` and
+  :kconfig:option:`CONFIG_BT_HCI_SETUP` are deprecated and will be removed two releases from
+  now. A driver that implements ``setup()`` moves that work into
+  :c:member:`bt_hci_driver_api.open`, where it runs before the transport is handed to its user:
+
+  * Vendor-specific commands go over the driver's own transport instead of the Host's command
+    APIs, which are not valid until ``open()`` has returned and do not exist in a build without
+    a Host. :file:`include/zephyr/bluetooth/hci_pkt.h` frames a command packet and parses its
+    response, and :file:`include/zephyr/drivers/bluetooth/hci_lockstep.h` sends one and waits for
+    the response over the driver's send function, honoring the controller's command flow
+    control. The driver feeds every packet it receives to
+    :c:func:`bt_hci_lockstep_feed` while the helper is in use. A driver that resets its
+    controller by other means than an HCI command while opening, for example with a reset
+    line, calls :c:func:`bt_hci_lockstep_reset` after that reset, since the helper otherwise
+    keeps the command allowance the previous session ended with.
+  * The public address that ``setup()`` received in
+    :c:member:`bt_hci_setup_params.public_addr` is available from
+    :c:func:`bt_hci_get_public_addr` at any point after the Host has set it, which is before
+    the transport is opened. Like the ``setup()`` parameter, it is ``BT_ADDR_ANY``, and not
+    ``BT_ADDR_NONE``, when no public address was set, so the check a driver makes on it stays
+    the same.
+  * ``select BT_HCI_SETUP`` goes from the driver's Kconfig. A driver that took the public
+    address selects :kconfig:option:`CONFIG_BT_HCI_SET_PUBLIC_ADDR`, which no longer implies
+    the deprecated option.
+
+  :file:`drivers/bluetooth/hci/hci_silabs_siwx91x.c` is the smallest converted driver to
+  read as an example. Vendor initialization then also runs in builds without a Host, where
+  ``setup()`` was never called at all, which is a behavior change worth checking for a
+  controller that was previously left unconfigured there.
+
+  An H:4 vendor extension implementing ``bt_h4_vnd_setup()``, which the H:4 driver calls
+  from its ``setup()``, keeps being called through the deprecation window, and goes with the
+  rest of the deprecated mechanism. :c:func:`bt_hci_transport_setup` is not a replacement for
+  it: the H:4 driver calls that hook while opening, before it enables its own UART reception
+  and before it pulses its reset line, so HCI commands sent from there would have to bypass
+  the H:4 driver's transmit and receive paths, and a reset line would undo what they
+  configured. That hook stays the place for work that is not HCI, such as the bootloader
+  firmware upload that the NXP extension performs there.
+
 * The HCI driver :c:member:`bt_hci_driver_api.open` callback no longer has a ``recv`` parameter;
   rather the common HCI driver layer code takes care of managing this as part of the common
   data struct. There is a new :c:func:`bt_hci_recv` API for drivers to pass data the higher

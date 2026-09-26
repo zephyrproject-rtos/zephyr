@@ -317,10 +317,18 @@ config BT_HCI_SET_PUBLIC_ADDR
 	  From the application side, the public address is set using the first call to
 	  bt_id_create(), before calling bt_enable().
 
+	  The option states a capability of the driver: it applies the address to its
+	  controller by whatever means the controller has, which can be a vendor-specific
+	  HCI command sent over the transport. The address is stored in the local driver
+	  only. A generic transport driver does not forward it to the far end of the
+	  transport and does not select this option; the Host then sets the address with
+	  the HCI_VS_Write_BD_ADDR command where the controller supports it, see BT_HCI_VS.
+
 config BT_HCI_SETUP
 	bool
+	select DEPRECATED
 	help
-	  Enable the HCI vendor-specific Setup function.
+	  Enable the HCI vendor-specific Setup function [DEPRECATED].
 
 	  This option has to be enabled when the BT Controller requires execution
 	  of the vendor-specific commands sequence to initialize the BT Controller
@@ -329,6 +337,12 @@ config BT_HCI_SETUP
 	  The user should generally avoid changing it via menuconfig or in
 	  configuration files. This option are enabled by the vendor-specific
 	  HCI extension, where the Setup function is implemented.
+
+	  Deprecated: a driver performs its vendor-specific initialization in
+	  open() instead, over its own transport, with the helpers of
+	  hci_pkt.h and hci_lockstep.h, and takes the public address from
+	  bt_hci_get_public_addr(). Unlike setup(), that also works in a build
+	  without a Host. See the 4.5 migration guide.
 
 config BT_DRV_TX_STACK_SIZE
 	int
