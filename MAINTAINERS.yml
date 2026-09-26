@@ -3643,7 +3643,11 @@ Intel Platforms (Agilex):
     - soc/intel/intel_socfpga/
     - dts/arm64/intel/
     - dts/bindings/*/intel,agilex*
+    - dts/bindings/seu/
     - dts/arm/intel_socfpga_std/
+    - drivers/seu/
+    - include/zephyr/drivers/seu/
+    - samples/drivers/seu/
   labels:
     - "platform: Intel SoC FPGA Agilex"
 
