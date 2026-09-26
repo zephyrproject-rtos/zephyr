@@ -9,6 +9,7 @@ family:
     - name: mimxrt1024
     - name: mimxrt1041
     - name: mimxrt1042
+    - name: mimxrt1051
     - name: mimxrt1052
     - name: mimxrt1062
     - name: mimxrt1064
