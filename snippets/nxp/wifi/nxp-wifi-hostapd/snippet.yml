@@ -1,0 +1,11 @@
+name: nxp-wifi-hostapd
+description: NXP Wi-Fi wpa_supplicant/hostapd configuration.
+append:
+  EXTRA_CONF_FILE: nxp-wifi-hostapd.conf
+boards:
+  /.*rw612.*/:
+    append:
+      EXTRA_CONF_FILE: boards/rw612.conf
+  /.*mimxrt1060.*/:
+    append:
+      EXTRA_CONF_FILE: boards/mimxrt1060_evk_mimxrt1062_qspi_C.conf

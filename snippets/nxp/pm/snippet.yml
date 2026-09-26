@@ -1,0 +1,5 @@
+name: nxp-pm
+description: Enables PM, PM device support.
+append:
+  EXTRA_CONF_FILE: nxp-pm.conf
+  EXTRA_DTC_OVERLAY_FILE: nxp-pm.overlay
