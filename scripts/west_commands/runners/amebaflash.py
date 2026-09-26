@@ -51,7 +51,7 @@ class AmebaFlashBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         # Enable flash; support erase/reset toggles; flash addr; file override; tool passthrough
-        return RunnerCaps(commands={"flash"}, erase=True, reset=True)
+        return RunnerCaps(commands={"flash"}, erase=True, reset=True, baud_rate=True)
 
     @classmethod
     def do_add_parser(cls, parser: argparse.ArgumentParser):
@@ -62,6 +62,10 @@ class AmebaFlashBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
+        # The HAL flash script reads args.baudrate; map the generic
+        # --baud-rate capability onto it when given.
+        if args.baud_rate is not None:
+            args.baudrate = args.baud_rate
         return AmebaFlashBinaryRunner(cfg, args)
 
     def do_run(self, command, **kwargs):
