@@ -184,7 +184,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	uint16_t entry;
 	volatile uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
 	int ret = 0;
-	void *phys_block_ptr;
+	void *phys_block_ptr = NULL;
 
 	/*
 	 * Cached addresses for both physical and virtual.
@@ -242,6 +242,18 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	key = k_spin_lock(&tlb_lock);
 
 	entry_idx = get_tlb_entry_idx(va);
+
+	/*
+	 * Overwriting a live entry would leave the page it maps allocated but
+	 * unreachable, and silently pull the memory from under its user.
+	 */
+	if (tlb_entries[entry_idx] & TLB_ENABLE_BIT) {
+		k_spin_unlock(&tlb_lock, key);
+		if (phys_block_ptr)
+			sys_mem_blocks_free_contiguous(&L2_PHYS_SRAM_REGION, phys_block_ptr, 1);
+		ret = -EEXIST;
+		goto out;
+	}
 
 #ifdef CONFIG_SOC_INTEL_COMM_WIDGET
 	used_pages++;
