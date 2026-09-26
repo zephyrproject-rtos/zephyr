@@ -30,6 +30,7 @@ config DAC_MCUX_LPDAC
 	bool "NXP MCUX LPDAC driver"
 	default y
 	depends on DT_HAS_NXP_LPDAC_ENABLED
+	select PINCTRL
 	help
 	  Enable the driver for the NXP MCUX LPDAC.
 
