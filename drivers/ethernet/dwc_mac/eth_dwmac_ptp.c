@@ -181,24 +181,32 @@ static int dwmac_ptp_init(const struct device *dev)
 
 	uint32_t ctrl = sys_read32(base + DWMAC_PTP_CTRL_REG);
 
-	if (IS_ENABLED(CONFIG_PTP)) {
-		/* Use PTPv2 */
-		ctrl |= BIT(10);
-		/* enable timestamping for L2 PTP packets */
-		if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
-			ctrl |= BIT(11);
-		}
-		/* enable timestamping for IPv4 PTP packets */
-		if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
-			ctrl |= BIT(13);
-		}
-		/* enable timestamping for IPv6 PTP packets */
-		if (IS_ENABLED(CONFIG_PTP_UDP_IPV6_PROTOCOL)) {
-			ctrl |= BIT(12);
-		}
-	} else {
-		/* Enable timestamping for all received packets */
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_ALL)) {
 		ctrl |= DWMAC_PTP_CTRL_ALL_RX;
+	} else {
+		/* all event messages, for both E2E and P2P delay mechanisms */
+		uint32_t snaptypsel = DWMAC_PTP_CTRL_SNAPTYPSEL_EVENT;
+
+#ifdef CONFIG_ETH_DWC_ETHER_1000_CORE
+		/* older cores select a clock node type here instead */
+		if (FIELD_GET(DWMAC_MACVERR_SNPSVER, sys_read32(base + DWMAC_MACVERR)) <
+		    DWMAC_CORE_3_70) {
+			snaptypsel = DWMAC_PTP_CTRL_SNAPTYPSEL_P2P_TC;
+		}
+#endif
+		ctrl |= FIELD_PREP(DWMAC_PTP_CTRL_SNAPTYPSEL, snaptypsel);
+	}
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTPV2)) {
+		ctrl |= DWMAC_PTP_CTRL_PTPV2;
+	}
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_L2)) {
+		ctrl |= DWMAC_PTP_CTRL_L2;
+	}
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_IPV4)) {
+		ctrl |= DWMAC_PTP_CTRL_IPV4;
+	}
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_IPV6)) {
+		ctrl |= DWMAC_PTP_CTRL_IPV6;
 	}
 
 	sys_write32(ctrl, base + DWMAC_PTP_CTRL_REG);
