@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas RA OSPI
@@ -13,6 +13,11 @@ properties:
   reg:
     required: true
 
+  unit:
+    type: int
+    required: true
+    description: OSPI unit number
+
   pinctrl-0:
     required: true
 
@@ -21,3 +26,12 @@ properties:
 
   clocks:
     required: true
+
+  ddr-sampling-extension:
+    type: int
+    default: 0
+    min: 0
+    max: 7
+    description: |
+      Optional DDR sampling extension configuration, required for DDR transactions.
+      Read OSPI_B hardware manual for more details.
