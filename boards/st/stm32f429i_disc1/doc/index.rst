@@ -12,15 +12,16 @@ some highlights of the STM32F429I-DISC1 board:
 - On-board ST-LINK/V2-B debugger/programmer with SWD connector
 - Flexible board power supply:
 
-  - ST-LINK/V2-1 USB connector
+  - ST-LINK/V2-B USB connector
   - User USB FS connector
-  - VIN from Arduino* compatible connectors
+  - External 5 V or 3 V supply on the P1/P2 extension headers
 
 - Two push-buttons: USER and RESET
 - USB OTG FS with micro-AB connector
-- 2.4-inch QVGA LCD with MIPI DSI interface and capacitive touch screen
+- 2.4-inch QVGA TFT LCD with ILI9341 controller (RGB interface) and resistive touch screen
 - 64Mbit SDRAM
-- L3GD20, ST-MEMS motion sensor 3-axis digital output gyroscope
+- I3G4250D, ST-MEMS motion sensor 3-axis digital output gyroscope
+  (L3GD20 on boards before MB1075 revision E)
 - Six LEDs
 
 	- LD1 (red/green) for USB communication
@@ -85,14 +86,14 @@ Default Zephyr Peripheral Mapping:
 - UART_1_RX : PA10
 - USER_PB : PA0
 - LD3 : PG13
-- LD4 : PG12
+- LD4 : PG14
 - I2C_1_SCL : PB8
 - I2C_1_SDA : PB9
 - I2C_2_SCL : PB10
 - I2C_2_SDA : PB11
 - I2C_3_SCL : PA8
 - I2C_3_SDA : PC9
-- SPI_5_CS : PF6
+- SPI_5_CS : PC2
 - SPI_5_SCK : PF7
 - SPI_5_MISO : PF8
 - SPI_5_MOSI : PF9
@@ -116,7 +117,7 @@ The default communication settings are 115200 8N1.
 USB Port
 ===========
 
-The STM32F429I-DISC1 Discovery kit has a USB FS capable Micro-B port. It is connected to the on-chip
+The STM32F429I-DISC1 Discovery kit has a USB FS capable Micro-AB port. It is connected to the on-chip
 OTG_HS peripheral, but operates in FS mode only since no HS PHY is present. The board supports device
 and host OTG operation, but only device mode has been tested with Zephyr at this time.
 
@@ -183,7 +184,7 @@ You can debug an application in the usual way.  Here is an example for the
    https://www.st.com/en/evaluation-tools/32f429idiscovery.html
 
 .. _STM32F429I-DISC1 board User Manual:
-   https://www.st.com/web/en/resource/technical/document/user_manual/DM00097320.pdf
+   https://www.st.com/resource/en/user_manual/um1670-discovery-kit-with-stm32f429zi-mcu-stmicroelectronics.pdf
 
 .. _STM32F429ZI on www.st.com:
    https://www.st.com/en/microcontrollers/stm32f429-439.html
