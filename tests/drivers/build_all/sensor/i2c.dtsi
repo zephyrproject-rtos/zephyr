@@ -1706,3 +1706,10 @@ test_i2c_pmsa003i: pmsa003i@dc {
 	reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 	set-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 };
+
+test_i2c_d7s: d7s@dd {
+	compatible = "omron,d7s";
+	reg = <0xdd>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
