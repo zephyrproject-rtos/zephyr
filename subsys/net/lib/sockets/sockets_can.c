@@ -383,7 +383,16 @@ static bool is_already_attached(struct socketcan_filter *sfilter,
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
-		if (receivers[i].ctx != ctx && receivers[i].iface == iface &&
+		/* Must also require ctx != NULL here. can_close_socket()
+		 * clears receivers[i].ctx to NULL for the entry being
+		 * closed, but leaves iface/can_id/can_mask on that same
+		 * entry unchanged. Without this check, every close() finds
+		 * its own just-cleared entry (NULL != ctx is trivially
+		 * true) and concludes some other socket still needs the
+		 * filter, so the native filter is never actually removed.
+		 */
+		if (receivers[i].ctx != NULL && receivers[i].ctx != ctx &&
+		    receivers[i].iface == iface &&
 		    ((receivers[i].can_id & receivers[i].can_mask) ==
 		     (UNALIGNED_GET(&sfilter->can_id) &
 		      UNALIGNED_GET(&sfilter->can_mask)))) {
@@ -415,8 +424,15 @@ static int close_socket(struct net_context *ctx)
 
 static int can_close_socket(struct net_context *ctx)
 {
-	int i, ret;
+	int i, ret = 0;
 
+	/* A single socket can have registered more than one filter (each
+	 * setsockopt(CAN_RAW_FILTER) call adds one receivers[] entry for the
+	 * same ctx) -- so we must clear every entry belonging to this ctx,
+	 * not just the first one. The original code returned as soon as it
+	 * found one match, leaking every filter slot after the first for any
+	 * socket with more than one filter.
+	 */
 	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
 		if (receivers[i].ctx == ctx) {
 			struct socketcan_filter sfilter;
@@ -430,19 +446,52 @@ static int can_close_socket(struct net_context *ctx)
 						net_context_get_iface(ctx),
 						ctx)) {
 				/* We can detach now as there are no other
-				 * sockets that have same filter.
+				 * sockets that have same filter. Record the
+				 * result instead of returning early -- the
+				 * net_context_put() below must always run, so
+				 * one filter's detach failing can't be allowed
+				 * to skip cleanup for the rest of this socket.
 				 */
-				ret = close_socket(ctx);
-				if (ret < 0) {
-					return ret;
+				int close_ret = close_socket(ctx);
+
+				if (close_ret < 0 && ret == 0) {
+					ret = close_ret;
 				}
 			}
-
-			return 0;
 		}
 	}
 
-	return 0;
+	/* Drain any CAN packets left sitting in this socket's receive queue.
+	 * These are net_pkt buffers queued by zcan_received_cb() for frames
+	 * that matched a filter but were never read via recv() before
+	 * close() -- if we don't free them here, they stay allocated
+	 * forever, leaking net_pkt/net_buf pool slots independently of the
+	 * net_context leak fixed above.
+	 */
+	while (1) {
+		struct net_pkt *pkt = k_fifo_get(&ctx->recv_q, K_NO_WAIT);
+
+		if (pkt == NULL) {
+			break;
+		}
+
+		net_pkt_unref(pkt);
+	}
+
+	/* Release the net_context itself back to the CONFIG_NET_MAX_CONTEXTS
+	 * pool. Unconditional -- the context's lifetime is owned by the fd
+	 * existing at all, not by whether a filter happened to be registered
+	 * on it. A socket that never called setsockopt(CAN_RAW_FILTER) never
+	 * gets a receivers[] entry, so gating this call on "was one found"
+	 * leaked the context for that case too. Without this call the
+	 * context stays marked NET_CONTEXT_IN_USE forever, so every
+	 * close()+socket() cycle on a CAN socket permanently burns one slot
+	 * until the pool is exhausted and socket()/bind() start failing with
+	 * -ENOENT for every CAN socket in the system.
+	 */
+	net_context_put(ctx);
+
+	return ret;
 }
 
 static int can_sock_close_vmeth(void *obj)
