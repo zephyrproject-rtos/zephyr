@@ -72,15 +72,9 @@ int bma4xx_configure(const struct device *dev, struct bma4xx_runtime_config *cfg
 						   FIELD_PREP(BMA4XX_FIFO_ACC_EN, 0));
 		__ASSERT(res == 0, "%s could not disable fifo acceleration", __func__);
 
-		res |= dev_data->hw_ops->write_reg(dev, BMA4XX_REG_CMD,
-						   FIELD_PREP(BMA4XX_CMD_FIFO_FLUSH, 1));
+		res |= dev_data->hw_ops->write_reg(dev, BMA4XX_REG_CMD, BMA4XX_CMD_FIFO_FLUSH);
 		__ASSERT(res == 0, "%s could not flush fifo", __func__);
 	}
-
-	/* Switch to performance power mode */
-	res |= dev_data->hw_ops->write_reg(dev, BMA4XX_REG_ACCEL_CONFIG,
-					   FIELD_PREP(BMA4XX_BIT_ACC_PERF_MODE, 1));
-	__ASSERT(res == 0, "%s could not enable performance power mode", __func__);
 
 	/* Enable non-latch mode
 	 * Regarding the discussion in the Bosch Community, enabling latch mode on bma4xx
@@ -111,8 +105,9 @@ int bma4xx_configure(const struct device *dev, struct bma4xx_runtime_config *cfg
 					   FIELD_PREP(BMA4XX_MASK_ACC_RANGE, cfg->accel_fs_range));
 	__ASSERT(res == 0, "%s could not write acceleration range", __func__);
 
-	/* Write data rate and bandwidth */
-	uint8_t odr_bw_value = FIELD_PREP(BMA4XX_MASK_ACC_CONF_ODR, cfg->accel_odr) |
+	/* Write data rate, bandwidth and performance power mode */
+	uint8_t odr_bw_value = FIELD_PREP(BMA4XX_BIT_ACC_PERF_MODE, 1) |
+			       FIELD_PREP(BMA4XX_MASK_ACC_CONF_ODR, cfg->accel_odr) |
 			       FIELD_PREP(BMA4XX_MASK_ACC_CONF_BWP, cfg->accel_bwp);
 
 	res |= dev_data->hw_ops->write_reg(dev, BMA4XX_REG_ACCEL_CONFIG, odr_bw_value);
