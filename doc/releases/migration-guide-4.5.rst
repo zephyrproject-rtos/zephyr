@@ -166,6 +166,14 @@ Boards
   ``SOC_RP2350[AB]_HAZARD3``/``_M33`` Kconfig symbols are deprecated and will both be removed in a
   future release.
 
+* :zephyr:board:`rak4631` now supports the WisBlock ecosystem. A WisBlock Base
+  Board shield (e.g. :ref:`rakwireless_rak19007`) is required to expose the
+  sensor and IO slots:
+
+  .. code-block:: shell
+
+     west build -b rak4631/nrf52840 --shield rakwireless_rak19007
+
 * The Kconfig options :kconfig:option:`CONFIG_SRAM_SIZE` and
   :kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` have been deprecated, boards should instead use the
   devicetree ``zephyr.sram`` chosen node to specify the RAM node which will be used (whose values
