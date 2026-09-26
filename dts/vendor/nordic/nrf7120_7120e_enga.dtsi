@@ -80,6 +80,11 @@
 		};
 	};
 
+	usbhs_phy: usbhs_phy {
+		compatible = "nordic,nrf-usbhs-phy-type1";
+		status = "reserved";
+	};
+
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -399,6 +404,35 @@
 				reg = <0x58000 0x1000>;
 				interrupts = <88 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+			};
+
+			usbhs_wrapper: usbhs_wrapper@5a000 {
+				compatible = "nordic,nrf-usbhs-wrapper";
+				reg = <0x5a000 0x1000>;
+				ranges = <0x20000 0x20000 0x1a000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				regulator = <&vregusb>;
+				phy = <&usbhs_phy>;
+				status = "disabled";
+
+				usbhs: usbhs@20000 {
+					compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
+					reg = <0x20000 0x1a000>;
+					interrupts = <90 NRF_DEFAULT_IRQ_PRIORITY>;
+					num-in-eps = <16>;
+					num-out-eps = <16>;
+					ghwcfg1 = <0x0>;
+					ghwcfg2 = <0x22affc52>;
+					ghwcfg4 = <0xfe10aa60>;
+					status = "disabled";
+				};
+
+				usbhs_bc12: usbhs_bc12 {
+					compatible = "nordic,nrf-usbhs-bc12";
+					charging-mode = "BC12_TYPE_NONE";
+					status = "disabled";
+				};
 			};
 
 			mspi00: mspi@5b000 {
@@ -1067,6 +1101,14 @@
 					reg = <0x504 0x1>;
 					status = "disabled";
 				};
+			};
+
+			vregusb: regulator@121000 {
+				compatible = "nordic,vregusb-regulator";
+				reg = <0x121000 0x1000>;
+				status = "disabled";
+				regulator-name = "VREGUSB";
+				interrupts = <289 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
 			lfrc: clock-controller@123000 {
