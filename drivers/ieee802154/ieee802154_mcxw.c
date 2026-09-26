@@ -579,11 +579,24 @@ static int mcxw_src_clear_entry(bool extended, uint8_t *address)
 static int handle_ack(struct mcxw_context *mcxw_radio)
 {
 	uint8_t len;
+	uint8_t alloc_len;
 	struct net_pkt *pkt;
 	int err = 0;
 
 	len = mcxw_radio->rx_ack_frame.length;
-	pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
+
+	/* NBU firmware strips FCS on Imm-ACKs after hardware verification,
+	 * but Enh-ACKs are delivered with FCS included.
+	 * OpenThread expects the PSDU to always include FCS.
+	 * Append 2 dummy FCS bytes for Imm-ACKs only.
+	 */
+	alloc_len = len;
+	if (len > 0 && len < IEEE802154_ACK_LENGTH) {
+		alloc_len = len + IEEE802154_FCS_LENGTH;
+	}
+
+	pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, alloc_len,
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
@@ -594,6 +607,16 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 		LOG_ERR("Failed to write to a packet.");
 		err = -ENOMEM;
 		goto free_ack;
+	}
+
+	if (len > 0 && len < IEEE802154_ACK_LENGTH) {
+		static const uint8_t dummy_fcs[IEEE802154_FCS_LENGTH] = {0};
+
+		if (net_pkt_write(pkt, dummy_fcs, IEEE802154_FCS_LENGTH) < 0) {
+			LOG_ERR("Failed to append dummy FCS.");
+			err = -ENOMEM;
+			goto free_ack;
+		}
 	}
 
 	net_pkt_set_ieee802154_lqi(pkt, mcxw_radio->rx_ack_frame.lqi);

@@ -195,7 +195,7 @@ config OPENTHREAD_CRYPTO_PSA
 	bool "PSA Crypto API"
 	default y
 	select PSA_CRYPTO
-	select OPENTHREAD_PLATFORM_KEY_REF if !OPENTHREAD_COPROCESSOR_RCP
+	select OPENTHREAD_PLATFORM_KEY_REF
 	imply OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
 	help
 	  Use PSA Crypto API as backend for cryptographic operations instead
