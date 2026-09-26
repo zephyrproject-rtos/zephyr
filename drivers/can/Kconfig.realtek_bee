@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_REALTEK_BEE
-	bool "CAN driver for Realtek Bee series SoC"
+	bool "Realtek Bee CAN driver"
 	default y
 	depends on DT_HAS_REALTEK_BEE_CAN_ENABLED
 	select HAL_REALTEK_BEE_CAN
