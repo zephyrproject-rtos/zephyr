@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Fabien Proriol
+# SPDX-License-Identifier: Apache-2.0
+
+description: ON Semiconductor NCN5130 KNX TP1 transceiver
+
+compatible: "onnn,ncn5130"
+
+properties:
+  uart:
+    type: phandle
+    required: true
+    description: UART device used for communication with the NCN5130 (38400 bps, 8E1)
