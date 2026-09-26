@@ -142,6 +142,13 @@ config I2C_RTIO_FALLBACK_MSGS
 		an issue where you are using RTIO, your driver does not implement submit natively,
 		and get an error relating to not enough i2c msgs this is the Kconfig to manipulate.
 
+config I2C_RTIO_SUBMISSION_QUEUE_PRIORITY
+	bool "Priority-based scheduling for the I2C RTIO submission queue"
+
+config I2C_RTIO_PRIORITY_LEVELS
+	int "Number of priority levels"
+	default 4
+	depends on I2C_RTIO_SUBMISSION_QUEUE_PRIORITY
 endif # I2C_RTIO
 
 
