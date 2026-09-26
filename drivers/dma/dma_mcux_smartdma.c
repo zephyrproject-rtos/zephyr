@@ -8,6 +8,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/dma/dma_mcux_smartdma.h>
 
 #include <soc.h>
@@ -29,6 +30,8 @@ struct dma_mcux_smartdma_data {
 	/* Installed DMA callback and user data */
 	dma_callback_t callback;
 	void *user_data;
+	/* Set while this driver holds the PM policy state lock taken in start() */
+	atomic_t pm_lock_active;
 };
 
 /* Seems to be written to smartDMA control register when it is configured */
@@ -61,12 +64,27 @@ static int dma_mcux_smartdma_configure(const struct device *dev,
 	return 0;
 }
 
+/*
+ * Release the PM policy state lock taken by start(), if this driver still holds
+ * it. stop() runs in thread context and the completion IRQ can preempt it, so
+ * the test and clear have to be atomic: otherwise both paths observe the flag as
+ * set and put the lock twice.
+ */
+static void dma_mcux_smartdma_pm_lock_release(struct dma_mcux_smartdma_data *data)
+{
+	if (atomic_cas(&data->pm_lock_active, 1, 0)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
 static int dma_mcux_smartdma_start(const struct device *dev, uint32_t channel)
 {
 	const struct dma_mcux_smartdma_config *config = dev->config;
+	struct dma_mcux_smartdma_data *data = dev->data;
 
 	/* Block PM transition until DMA completes */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	atomic_set(&data->pm_lock_active, 1);
 
 	/* Kick off SMARTDMA */
 	config->base->CTRL = SMARTDMA_MAGIC | SMARTDMA_BOOT;
@@ -77,14 +95,13 @@ static int dma_mcux_smartdma_start(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_smartdma_stop(const struct device *dev, uint32_t channel)
 {
-	ARG_UNUSED(dev);
+	struct dma_mcux_smartdma_data *data = dev->data;
 	ARG_UNUSED(channel);
 
 	/* Stop DMA  */
 	SMARTDMA_Reset();
 
-	/* Release PM lock */
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	dma_mcux_smartdma_pm_lock_release(data);
 
 	return 0;
 }
@@ -100,14 +117,13 @@ static int dma_mcux_smartdma_init(const struct device *dev)
 
 static void dma_mcux_smartdma_irq(const struct device *dev)
 {
-	const struct dma_mcux_smartdma_data *data = dev->data;
+	struct dma_mcux_smartdma_data *data = dev->data;
 
 	if (data->callback) {
 		data->callback(dev, data->user_data, 0, 0);
 	}
 
-	/* Release PM lock */
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	dma_mcux_smartdma_pm_lock_release(data);
 }
 
 /**
