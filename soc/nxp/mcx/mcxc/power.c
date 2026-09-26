@@ -11,7 +11,7 @@
 
 #include <fsl_common.h>
 
-LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
+LOG_MODULE_REGISTER(power, CONFIG_PM_LOG_LEVEL);
 
 /* MCXC242/MCXC444 are KE-like: use STOP + Partial Stop options (PSTOP1/2). */
 
