@@ -9,8 +9,7 @@
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/arch/common/sys_io.h>
 
-#define KICK0_UNLOCK_VAL (0x68EF3490U)
-#define KICK1_UNLOCK_VAL (0xD172BC5AU)
+#include "ctrl_partitions.h"
 
 #define K3_UNLOCK_CONTROL_MODULE_(node_id)                                                         \
 	const uint32_t conf_##node_id[] = DT_PROP(node_id, ti_unlock_offsets);                     \
