@@ -1,0 +1,8 @@
+# Copyright (c) 2026, Bana Tawalbeh
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenTitan AES Hardware Accelerator
+
+compatible: "lowrisc,opentitan-aes"
+
+include: [base.yaml]

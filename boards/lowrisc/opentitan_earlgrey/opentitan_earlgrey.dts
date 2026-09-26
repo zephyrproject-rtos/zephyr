@@ -37,3 +37,7 @@
 &spi1 {
 	status = "okay";
 };
+
+&aes {
+	status = "okay";
+};
