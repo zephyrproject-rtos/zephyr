@@ -269,6 +269,7 @@ tests:
       - CONFIG_BT_BAP_UNICAST_SERVER=n
       - CONFIG_BT_BAP_UNICAST_CLIENT=n
       - CONFIG_BT_BAP_BROADCAST_SINK=n
+      - CONFIG_BT_ASCS=n
   bluetooth.audio.shell.only_broadcast_sink:
     <<: *audio_shell_config
     extra_configs:
