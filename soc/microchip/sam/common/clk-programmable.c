@@ -31,7 +31,7 @@ struct clk_programmable {
 
 #define to_clk_programmable(ptr) CONTAINER_OF(ptr, struct clk_programmable, clk)
 
-static struct clk_programmable clocks_prog[8];
+static struct clk_programmable clocks_prog[SOC_NUM_CLOCK_PROGRAMMABLE];
 static uint32_t clocks_prog_idx;
 
 static int clk_programmable_get_rate(const struct device *dev,
@@ -51,6 +51,11 @@ static int clk_programmable_get_rate(const struct device *dev,
 	css = pckr & PMC_PCK_CSS_Msk;
 
 	for (i = 0; i < prog->num_parents; i++) {
+		if (prog->mux_table == NULL) {
+			parent = prog->parents[css];
+			break;
+		}
+
 		if (css == prog->mux_table[i]) {
 			parent = prog->parents[i];
 			break;
