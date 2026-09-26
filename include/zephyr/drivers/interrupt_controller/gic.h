@@ -388,6 +388,31 @@ void arm_gic_irq_clear_pending(unsigned int irq);
 void arm_gic_irq_set_priority(unsigned int irq, unsigned int prio, unsigned int flags);
 
 /**
+ * @brief Route an SPI/extended-SPI interrupt to a specific core
+ *
+ * Programs GICD_IROUTER for @p irq with specific-affinity routing (IRM=0)
+ * targeting the core identified by @p mpidr, analogous to pinning a thread
+ * to a CPU with k_thread_cpu_pin(). Only valid for SPIs/extended SPIs, and
+ * only takes effect once GICv3 affinity routing itself is enabled
+ * (GICD_CTLR.ARE_S/ARE_NS) - true by default on builds with
+ * CONFIG_ARMV8_A_NS or CONFIG_GIC_SINGLE_SECURITY_STATE, and on any SoC
+ * whose own EL3/Secure pre-init already enables it.
+ *
+ * Callable at any time after the interrupt is connected, from any core -
+ * unlike arm_gic_irq_enable()'s implicit self-affinity (which always
+ * targets whichever core is calling it), this can target an arbitrary
+ * core. If called after arm_gic_irq_enable(), this call's target wins.
+ *
+ * @param irq   interrupt ID (must be an SPI or extended SPI)
+ * @param mpidr target core's MPIDR affinity value. On arm64 this can come
+ *              from a specific CPU's devicetree node
+ *              (@c DT_REG_ADDR(DT_NODELABEL(cpuX))), or, for the core the
+ *              caller is currently pinned to, from
+ *              @c MPIDR_TO_CORE(GET_MPIDR())
+ */
+void arm_gic_irq_set_affinity(unsigned int irq, uint64_t mpidr);
+
+/**
  * @brief Get active interrupt ID
  *
  * @return Returns the ID of an active interrupt
