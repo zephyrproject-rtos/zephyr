@@ -1,0 +1,35 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon CAT1 parallel trace port (Arm CoreSight SoC-600 / DEBUG600).
+
+  Enabling this node routes the trace-clock and trace-data pins through HSIOM so
+  an external trace probe can capture the ETM/ITM instruction trace off the
+  trace port. This applies to the CAT1 MCUs that carry the DEBUG600 trace
+  subsystem, such as PSOC Edge E84 (CAT1D) and PSOC Control C3 (CAT1B).
+
+  On the parts with a secure world, two things can only be done by firmware
+  running on the secure CM33, not by a debug host: routing the pins through HSIOM
+  (a secure peripheral), and enabling the DEBUG600 trace-output clock (behind the
+  SYS access port). This driver does both, so a debug host only has to program
+  the trace fabric (the ETM, ATB funnel, ETF and TPIU) through the ordinary core
+  access port. Without the trace clock the TPIU output path is unclocked and
+  enabling it stalls the debug bus.
+
+  The node is disabled by default. Enable it (and provide the pin group) from a
+  board overlay or a trace snippet.
+
+compatible: "infineon,cat1-trace"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  trace-port-width:
+    type: int
+    default: 4
+    enum: [1, 2, 4]
+    description: |
+      Number of parallel trace data lanes in use. Informational: the pins that
+      are actually routed are those listed in the pinctrl-0 group. Must match
+      the TPIU port size the debug host programs.

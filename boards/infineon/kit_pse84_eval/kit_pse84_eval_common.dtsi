@@ -47,6 +47,26 @@
 	};
 };
 
+/ {
+	soc {
+		/*
+		 * Parallel trace port on the MIPI-20 debug header. Disabled by
+		 * default; enable with the pse84-trace snippet (or set status to
+		 * "okay") on the secure CM33 image, which owns the HSIOM pins.
+		 */
+		trace_port: trace-port {
+			compatible = "infineon,cat1-trace";
+			pinctrl-0 = <&p20_0_debug600_trace_clock
+				     &p20_4_debug600_trace_data0
+				     &p20_3_debug600_trace_data1
+				     &p20_2_debug600_trace_data2
+				     &p20_1_debug600_trace_data3>;
+			pinctrl-names = "default";
+			status = "disabled";
+		};
+	};
+};
+
 &watchdog0 {
 	status = "okay";
 };
