@@ -21,14 +21,6 @@ menuconfig MCUMGR_TRANSPORT_SHELL
 
 if MCUMGR_TRANSPORT_SHELL
 
-config MCUMGR_TRANSPORT_SHELL_MTU
-	int "Shell SMP MTU"
-	default 256
-	help
-	  Maximum size of SMP frames sent and received over shell. This value must satisfy the
-	  following relation:
-	  MCUMGR_TRANSPORT_SHELL_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + 2
-
 config MCUMGR_TRANSPORT_SHELL_RX_BUF_COUNT
 	int "Shell SMP RX buffer count"
 	default 2

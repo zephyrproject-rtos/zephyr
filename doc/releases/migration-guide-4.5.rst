@@ -2762,6 +2762,16 @@ MCUmgr
   :ref:`mcumgr_os_application_info` command now always reports the board target as hardware
   platform; the pre-4.3 board and board revision output is no longer available.
 
+* ``CONFIG_MCUMGR_TRANSPORT_UART_MTU`` and ``CONFIG_MCUMGR_TRANSPORT_SHELL_MTU`` have been
+  removed. They had no effect: serial frames are limited to 127 bytes and the maximum SMP packet
+  size is set by :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE`. Remove them from
+  configuration files.
+
+* The ``get_mtu`` member of :c:struct:`smp_transport_api_t` and the ``smp_transport_get_mtu_fn``
+  type have been removed, as they were never used by the SMP layer. Out-of-tree transports must
+  stop setting ``get_mtu``. Transports remain responsible for fragmenting outgoing packets in
+  their ``output`` function (see :c:type:`smp_transport_out_fn`).
+
 * The image management client (:kconfig:option:`CONFIG_MCUMGR_GRP_IMG_CLIENT`)
   now supports SHA-512 image digests in addition to SHA-256:
 

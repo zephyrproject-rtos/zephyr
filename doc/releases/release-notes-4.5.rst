@@ -249,6 +249,9 @@ Removed APIs and options
 * MCUmgr
 
     * ``CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM``
+    * ``CONFIG_MCUMGR_TRANSPORT_UART_MTU``
+    * ``CONFIG_MCUMGR_TRANSPORT_SHELL_MTU``
+    * ``smp_transport_get_mtu_fn`` and the ``get_mtu`` member of :c:struct:`smp_transport_api_t`
 
 * Networking
 

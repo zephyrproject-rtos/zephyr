@@ -488,18 +488,6 @@ static uint16_t smp_bt_conn_get_mtu(struct bt_conn *conn)
 	return bt_gatt_get_mtu(conn) - BT_GATT_MESSAGE_OVERHEAD;
 }
 
-static uint16_t smp_bt_nb_get_mtu(const struct net_buf *nb)
-{
-	struct bt_conn *conn;
-
-	conn = smp_bt_conn_from_pkt(nb);
-	if (conn == NULL) {
-		return 0;
-	}
-
-	return smp_bt_conn_get_mtu(conn);
-}
-
 static void smp_bt_ud_free(void *ud)
 {
 	struct smp_bt_user_data *user_data = ud;
@@ -1369,7 +1357,6 @@ static void smp_bt_setup(void)
 	}
 
 	smp_bt_transport.functions.output = smp_bt_tx_pkt;
-	smp_bt_transport.functions.get_mtu = smp_bt_nb_get_mtu;
 	smp_bt_transport.functions.ud_copy = smp_bt_ud_copy;
 	smp_bt_transport.functions.ud_free = smp_bt_ud_free;
 	smp_bt_transport.functions.query_valid_check = smp_bt_query_valid_check;

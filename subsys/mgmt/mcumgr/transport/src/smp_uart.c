@@ -24,8 +24,6 @@
 #include <zephyr/mgmt/mcumgr/grp/transport_mgmt/transport_mgmt.h>
 #endif
 
-BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_UART_MTU != 0, "CONFIG_MCUMGR_TRANSPORT_UART_MTU must be > 0");
-
 struct device;
 
 static void smp_uart_process_rx_queue(struct k_work *work);
@@ -86,11 +84,6 @@ static void smp_uart_rx_frag(struct uart_mcumgr_rx_buf *rx_buf)
 {
 	k_fifo_put(&smp_uart_rx_fifo, rx_buf);
 	k_work_submit(&smp_uart_work);
-}
-
-static uint16_t smp_uart_get_mtu(const struct net_buf *nb)
-{
-	return CONFIG_MCUMGR_TRANSPORT_UART_MTU;
 }
 
 static int smp_uart_tx_pkt(struct net_buf *nb)
@@ -184,7 +177,6 @@ static int smp_uart_init(void)
 	int rc;
 
 	smp_uart_transport.functions.output = smp_uart_tx_pkt;
-	smp_uart_transport.functions.get_mtu = smp_uart_get_mtu;
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	smp_uart_transport.functions.bridge_connect = smp_uart_bridge_connect;

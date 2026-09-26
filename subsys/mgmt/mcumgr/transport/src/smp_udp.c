@@ -146,13 +146,6 @@ static int smp_udp6_tx(struct net_buf *nb)
 }
 #endif
 
-static uint16_t smp_udp_get_mtu(const struct net_buf *nb)
-{
-	ARG_UNUSED(nb);
-
-	return CONFIG_MCUMGR_TRANSPORT_UDP_MTU;
-}
-
 static int smp_udp_ud_copy(struct net_buf *dst, const struct net_buf *src)
 {
 	struct net_sockaddr *src_ud = net_buf_user_data(src);
@@ -454,7 +447,6 @@ static void smp_udp_start(void)
 
 	k_sem_init(&smp_udp_configs.ipv4.network_ready_sem, 0, 1);
 	smp_udp_configs.ipv4.smp_transport.functions.output = smp_udp4_tx;
-	smp_udp_configs.ipv4.smp_transport.functions.get_mtu = smp_udp_get_mtu;
 	smp_udp_configs.ipv4.smp_transport.functions.ud_copy = smp_udp_ud_copy;
 	smp_udp_configs.ipv4.smp_transport.functions.ud_init = smp_udp_ud_init;
 
@@ -477,7 +469,6 @@ static void smp_udp_start(void)
 
 	k_sem_init(&smp_udp_configs.ipv6.network_ready_sem, 0, 1);
 	smp_udp_configs.ipv6.smp_transport.functions.output = smp_udp6_tx;
-	smp_udp_configs.ipv6.smp_transport.functions.get_mtu = smp_udp_get_mtu;
 	smp_udp_configs.ipv6.smp_transport.functions.ud_copy = smp_udp_ud_copy;
 	smp_udp_configs.ipv6.smp_transport.functions.ud_init = smp_udp_ud_init;
 

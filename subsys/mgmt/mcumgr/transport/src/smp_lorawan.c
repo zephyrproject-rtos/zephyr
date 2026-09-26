@@ -21,8 +21,6 @@ static void smp_lorawan_downlink(uint8_t port, uint8_t flags, int16_t rssi, int8
 
 static int smp_lorawan_uplink(struct net_buf *nb);
 
-static uint16_t smp_lorawan_get_mtu(const struct net_buf *nb);
-
 static struct lorawan_downlink_cb lorawan_smp_downlink_cb = {
 	.port = CONFIG_MCUMGR_TRANSPORT_LORAWAN_FRAME_PORT,
 	.cb = smp_lorawan_downlink,
@@ -30,7 +28,6 @@ static struct lorawan_downlink_cb lorawan_smp_downlink_cb = {
 
 struct smp_transport smp_lorawan_transport = {
 	.functions.output = smp_lorawan_uplink,
-	.functions.get_mtu = smp_lorawan_get_mtu,
 };
 
 #ifdef CONFIG_SMP_CLIENT
@@ -217,18 +214,6 @@ static int smp_lorawan_uplink(struct net_buf *nb)
 	smp_packet_free(nb);
 
 	return rc;
-}
-
-static uint16_t smp_lorawan_get_mtu(const struct net_buf *nb)
-{
-	ARG_UNUSED(nb);
-
-	uint8_t max_data_size;
-	uint8_t temp;
-
-	lorawan_get_payload_sizes(&max_data_size, &temp);
-
-	return (uint16_t)max_data_size;
 }
 
 static void smp_lorawan_start(void)

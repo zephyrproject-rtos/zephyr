@@ -188,13 +188,6 @@ out:
 	return ret;
 }
 
-static uint16_t smp_spi_get_mtu(const struct net_buf *nb)
-{
-	ARG_UNUSED(nb);
-
-	return CONFIG_MCUMGR_TRANSPORT_SPI_MTU;
-}
-
 /* The peripheral drives data-ready-gpios while response chunks are queued. */
 static uint16_t smp_spi_prepare_tx_locked(void)
 {
@@ -310,7 +303,6 @@ static void smp_spi_start(void)
 	k_mutex_init(&tx_lock);
 
 	smp_spi_transport.functions.output = smp_spi_tx_pkt;
-	smp_spi_transport.functions.get_mtu = smp_spi_get_mtu;
 
 	rc = smp_transport_init(&smp_spi_transport);
 	if (rc != 0) {
