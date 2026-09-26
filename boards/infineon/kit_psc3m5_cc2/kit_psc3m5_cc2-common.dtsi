@@ -1,0 +1,352 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Infineon PSOC Control C3M5 Connectivity Card 2";
+	compatible = "infineon,kit_psc3m5_cc2", "infineon,PSC3M5";
+
+	aliases {
+		led0 = &user_led0;
+		led1 = &user_led1;
+		sw0 = &user_bt0;
+		watchdog0 = &watchdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led0: led_0 {
+			label = "LED_0";
+			gpios = <&gpio_prt9 4 GPIO_ACTIVE_LOW>;
+		};
+
+		user_led1: led_1 {
+			label = "LED_1";
+			gpios = <&gpio_prt9 5 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_bt0: user_btn0 {
+			label = "SW_1";
+			gpios = <&gpio_prt4 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/*
+	 * mikroBUS socket GPIO nexus.
+	 *
+	 * Indices 0 (AN) and 1 (RST) are not mapped. AN is an analog net shared
+	 * with potentiometer POT1 rather than a GPIO, and RST is tied to 3V3
+	 * through a pull-up and not routed to the SoC.
+	 *
+	 * Indices 10 (SCL) and 11 (SDA) are not mapped either. The 0 ohm links
+	 * that would tie the socket's I2C pins to the SCB3 data lines are not
+	 * fitted, so they do not reach the SoC.
+	 *
+	 * Index 6 (PWM) is a plain GPIO. P0.1 has no TCPWM option in this
+	 * package, so the socket cannot supply hardware PWM.
+	 */
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <2 0 &gpio_prt5 3 0>,	/* CS   */
+			   <3 0 &gpio_prt5 2 0>,	/* SCK  */
+			   <4 0 &gpio_prt5 1 0>,	/* MISO */
+			   <5 0 &gpio_prt5 0 0>,	/* MOSI */
+			   <6 0 &gpio_prt0 1 0>,	/* PWM  */
+			   <7 0 &gpio_prt0 0 0>,	/* INT  */
+			   <8 0 &gpio_prt2 2 0>,	/* RX   */
+			   <9 0 &gpio_prt2 3 0>;	/* TX   */
+	};
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt1 {
+	status = "okay";
+};
+
+&gpio_prt2 {
+	status = "okay";
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+&gpio_prt4 {
+	status = "okay";
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
+
+&gpio_prt6 {
+	status = "okay";
+};
+
+&gpio_prt7 {
+	status = "okay";
+};
+
+&gpio_prt8 {
+	status = "okay";
+};
+
+&gpio_prt9 {
+	status = "okay";
+};
+
+/* Console UART on SCB1, routed to the debug probe's virtual COM port. */
+uart1: &scb1 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+
+	clocks = <&peri0_group4_8bit_0>;
+
+	pinctrl-0 = <&p2_2_scb1_uart_rx &p2_3_scb1_uart_tx>;
+	pinctrl-names = "default";
+};
+
+&peri0_group4_8bit_0 {
+	status = "okay";
+	clock-div = <86>;
+};
+
+&peri0_group4_16_5bit_0 {
+	status = "okay";
+	clock-div = <1>;
+};
+
+&canfd0 {
+	status = "okay";
+};
+
+/*
+ * CAN FD. The front end is galvanically isolated: the controller signals reach
+ * a TLE9371VSJ transceiver through a 2DIB1400F dual digital isolator.
+ *
+ * The transceiver standby pin is tied to the isolated ground and standby is
+ * active high, so the transceiver is permanently in normal mode. No
+ * can-transceiver-gpio node and no phys property are required.
+ */
+&can1 {
+	status = "okay";
+	clocks = <&peri0_group4_16_5bit_0>;
+	pinctrl-0 = <&p6_2_can1_rx &p6_3_can1_tx>;
+	pinctrl-names = "default";
+};
+
+/*
+ * mikroBUS SPI on SCB3.
+ *
+ * The socket is SPI only: its SCL and SDA pins sit behind unfitted 0 ohm
+ * links and do not reach the SoC.
+ *
+ * The chip select is driven by the SCB rather than as a GPIO.
+ */
+spi3: &scb3 {
+	compatible = "infineon,spi";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	clocks = <&peri0_group4_8bit_1>;
+
+	pinctrl-0 = <&p5_0_scb3_spi_m_mosi &p5_1_scb3_spi_m_miso
+		     &p5_2_scb3_spi_m_clk &p5_3_scb3_spi_m_select0>;
+	pinctrl-names = "default";
+};
+
+&peri0_group4_8bit_1 {
+	status = "okay";
+	clock-div = <1>;
+};
+
+/*
+ * mikroBUS bus label.
+ *
+ * mikrobus_i2c is not declared: the socket's I2C pins are isolated from the
+ * SoC by unfitted 0 ohm links, so no I2C shield can work here.
+ *
+ * mikrobus_uart is not declared: the socket's UART is the console SCB.
+ */
+mikrobus_spi: &scb3 {};
+
+/*
+ * PWM output on P9.0.
+ *
+ * The user LEDs on P9.4 and P9.5 have no TCPWM option, so they cannot be
+ * driven by hardware PWM. The pins that do have a direct TCPWM option are the
+ * motor 2 inverter gate drive signals on the power board connector:
+ *
+ *	P9.0  V2_H  pwm2_6		P9.1  V2_L  pwm2_6 complementary
+ *	P9.2  W2_H  pwm2_7		P9.3  W2_L  pwm2_7 complementary
+ *	P8.2  U2_H  pwm2_5		P8.3  U2_L  pwm2_5 complementary
+ *
+ * These drive inverter gate drivers. An application must not toggle them
+ * while a power board is attached.
+ */
+&tcpwm2_6 {
+	status = "okay";
+
+	pwm2_6: pwm2_6 {
+		status = "okay";
+		clocks = <&peri0_group5_16bit_0>;
+		pinctrl-0 = <&p9_0_pwm2_6>;
+		pinctrl-names = "default";
+	};
+};
+
+/*
+ * tcpwm2_6 is in peripheral group 5. This divider gives a period range
+ * suitable for LED-rate PWM; an application needing a different range
+ * overrides the node in its own overlay.
+ */
+&peri0_group5_16bit_0 {
+	status = "okay";
+	clock-div = <9600>;
+};
+
+&watchdog0 {
+	status = "okay";
+};
+
+&mcwdt0 {
+	status = "okay";
+};
+
+/*
+ * No 32.768 kHz watch crystal is fitted on this board. P0.0 and P0.1, which
+ * are the fixed WCO pins on the die, are routed to the mikroBUS socket.
+ */
+&clk_wco {
+	status = "disabled";
+};
+
+&fll0 {
+	clock-frequency = <96000000>;
+	status = "okay";
+};
+
+&dpll_lp0 {
+	status = "okay";
+	clock-frequency = <180000000>;
+
+	feedback-div = <45>;
+	reference-div = <6>;
+	output-div = <2>;
+	fraction-div = <0>;
+	dco-mode-enable;
+};
+
+&dpll_lp1 {
+	status = "okay";
+	clock-frequency = <240000000>;
+
+	feedback-div = <60>;
+	reference-div = <6>;
+	output-div = <2>;
+	fraction-div = <0>;
+	dco-mode-enable;
+};
+
+&path_mux0 {
+	status = "okay";
+};
+
+&path_mux1 {
+	status = "okay";
+};
+
+&path_mux2 {
+	status = "okay";
+};
+
+&path_mux3 {
+	status = "okay";
+};
+
+&clk_hf0 {
+	source-path = <IFX_CLK_HF_IN_CLKPATH1>;
+	status = "okay";
+};
+
+&clk_hf1 {
+	source-path = <IFX_CLK_HF_IN_CLKPATH1>;
+	status = "okay";
+};
+
+/*
+ * CLK_HF2 feeds peripheral group 4 (UART, CAN FD, SPI). Sourcing it from
+ * dpll_lp1 (240 MHz) divided by 3 gives 80 MHz, which supports CiA 601-3
+ * compliant CAN FD bit rates.
+ */
+&clk_hf2 {
+	source-path = <IFX_CLK_HF_IN_CLKPATH2>;
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_3>;
+	status = "okay";
+};
+
+&clk_hf3 {
+	source-path = <IFX_CLK_HF_IN_CLKPATH2>;
+	status = "okay";
+};
+
+/*
+ * HPPASS SAR ADC. The board's two potentiometers are the only analog inputs
+ * that are user signals; the remaining channels carry motor drive and PFC
+ * sense through the power board connector.
+ *
+ * The SAR has 12 direct channels (0-11) followed by four muxed samplers of
+ * four slots each, so the channel number is 12 + 4 * sampler + mux input.
+ * POT1 is on AN_B4 (channel 12) and POT2 on AN_B5 (channel 16).
+ *
+ * POT1 shares its net with the mikroBUS AN pin.
+ */
+&hppass_analog0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* POT1 - AN_B4 */
+	channel@c {
+		reg = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+	};
+
+	/* POT2 - AN_B5 */
+	channel@10 {
+		reg = <16>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+	};
+};

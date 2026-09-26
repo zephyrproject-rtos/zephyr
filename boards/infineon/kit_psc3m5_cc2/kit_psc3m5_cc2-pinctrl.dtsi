@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&p2_2_scb1_uart_rx {
+	input-enable;
+};
+
+&p2_3_scb1_uart_tx {
+	drive-push-pull;
+};
+
+&p6_2_can1_rx {
+	input-enable;
+};
+
+&p6_3_can1_tx {
+	drive-push-pull;
+};
+
+&p5_0_scb3_spi_m_mosi {
+	drive-push-pull;
+};
+
+&p5_1_scb3_spi_m_miso {
+	input-enable;
+};
+
+&p5_2_scb3_spi_m_clk {
+	drive-push-pull;
+};
+
+&p5_3_scb3_spi_m_select0 {
+	drive-push-pull;
+};
+
+&p9_0_pwm2_6 {
+	drive-push-pull;
+};
