@@ -76,6 +76,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 	stack_init->mstatus = RV_STATUS_DEF_RESTORE;
 
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_ZFINX)
+	thread->arch.zfinx_fcsr = 0;
+	thread->arch.exception_depth = 1;
+	stack_init->zfinx_fcsr = 0;
+#endif
+
+#if defined(CONFIG_RISCV_ISA_EXT_F)
 #if defined(CONFIG_FPU_SHARING)
 	/* thread birth happens through the exception return path */
 	thread->arch.exception_depth = 1;
@@ -83,6 +90,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* Unshared FP mode: enable FPU of each thread. */
 	stack_init->mstatus |= MSTATUS_FS_INIT;
 #endif
+#endif /* CONFIG_RISCV_ISA_EXT_F */
 
 #if defined(CONFIG_USERSPACE)
 	/* Clear user thread context */
@@ -329,9 +337,33 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 }
 #endif /* !CONFIG_MULTITHREADING */
 
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_ZFINX)
+int arch_float_disable(struct k_thread *thread)
+{
+	if (thread == NULL) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Zfinx keeps floating-point values in the integer registers, which
+	 * are always preserved. There is no FPU context to release, only the
+	 * thread option has to be cleared.
+	 */
+	thread->base.user_options &= ~K_FP_REGS;
+
+	return 0;
+}
+
+int arch_float_enable(struct k_thread *thread __unused, unsigned int options __unused)
+{
+	/* floats always gets enabled automatically at the moment */
+	return 0;
+}
+#endif /* CONFIG_FPU_SHARING && CONFIG_RISCV_ISA_EXT_ZFINX */
+
 int arch_coprocessors_disable(struct k_thread *thread)
 {
-#ifdef CONFIG_FPU_SHARING
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 	return arch_float_disable(thread);
 #else
 	return -ENOTSUP;

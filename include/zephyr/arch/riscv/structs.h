@@ -18,12 +18,13 @@ struct _cpu_arch {
 	unsigned long hartid;
 	bool online;
 #endif
-#ifdef CONFIG_FPU_SHARING
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 	atomic_ptr_val_t fpu_owner;
 	uint32_t fpu_state;
 #endif
 #if defined(CONFIG_CPP) && !defined(CONFIG_USERSPACE) &&                                           \
-	!(defined(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS > 1)) && !defined(CONFIG_FPU_SHARING)
+	!(defined(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS > 1)) &&                                  \
+	!(defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F))
 	/* Empty struct has size 0 in C, size 1 in C++. Force them to be the same. */
 	uint8_t unused_cpp_size_compatibility;
 #endif
