@@ -8,6 +8,7 @@
  * @file zephyr/dsp/utils.h
  *
  * @brief Extra utility functions for DSP
+ * @ingroup math_dsp_utils_shifts
  */
 
 #ifndef ZEPHYR_INCLUDE_DSP_UTILS_H_
