@@ -605,7 +605,6 @@ static int mspi_stm32_qspi_hal_init(QSPI_HandleTypeDef *hmspi)
 
 	/* Initialize remaining QSPI handle parameters */
 	hmspi->Init.FifoThreshold = MSPI_STM32_FIFO_THRESHOLD;
-	hmspi->Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
 	hmspi->Init.ClockMode = QSPI_CLOCK_MODE_0;
 	hmspi->Init.FlashID = QSPI_FLASH_ID_1;
 	hmspi->Init.DualFlash = QSPI_DUALFLASH_DISABLE;
@@ -1344,8 +1343,9 @@ static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 				.SampleShifting = (DT_INST_PROP(index, st_ssht_enable)         \
 						  ? QSPI_SAMPLE_SHIFTING_HALFCYCLE             \
 						  : QSPI_SAMPLE_SHIFTING_NONE),                \
-				.FlashSize = 0x19,                                             \
-				.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE,               \
+				.FlashSize = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26) - 1,     \
+				.ChipSelectHighTime =                                          \
+					DT_INST_PROP(index, st_cs_high_time) - 1,              \
 				.ClockMode = QSPI_CLOCK_MODE_0,                                \
 				.FlashID = QSPI_FLASH_ID_1,                                    \
 				.DualFlash = QSPI_DUALFLASH_DISABLE,                           \
