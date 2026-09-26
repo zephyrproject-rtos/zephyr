@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(ssd16xx);
  */
 
 #define EPD_PANEL_NUMOF_ROWS_PER_PAGE	8
-#define SSD16XX_PANEL_FIRST_PAGE	0
+#define SSD16XX_PANEL_FIRST_SOURCE	0
 #define SSD16XX_PANEL_FIRST_GATE	0
 #define SSD16XX_PIXELS_PER_BYTE		8
 #define SSD16XX_DEFAULT_TR_VALUE	25U
@@ -53,6 +53,8 @@ struct ssd16xx_quirks {
 	uint8_t pp_width_bits;
 	/* Width (bits) of integer type representing a y coordinate */
 	uint8_t pp_height_bits;
+	/* RAM x addresses are given in pixels instead of bytes */
+	bool pp_x_in_pixels;
 
 	/*
 	 * Device specific flags to be included in
@@ -173,6 +175,10 @@ static inline size_t push_x_param(const struct device *dev,
 				  uint8_t *data, uint16_t x)
 {
 	const struct ssd16xx_config *config = dev->config;
+
+	if (!config->quirks->pp_x_in_pixels) {
+		x /= SSD16XX_PIXELS_PER_BYTE;
+	}
 
 	if (config->quirks->pp_width_bits == 8) {
 		data[0] = (uint8_t)x;
@@ -382,26 +388,26 @@ static int ssd16xx_set_window(const struct device *dev,
 
 	switch (data->orientation) {
 	case DISPLAY_ORIENTATION_NORMAL:
-		x_start = (panel_h - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (panel_h - 1 - (y + desc->height - 1)) / SSD16XX_PIXELS_PER_BYTE;
+		x_start = (panel_h - 1 - y);
+		x_end = (panel_h - 1 - (y + desc->height - 1));
 		y_start = x;
 		y_end = (x + desc->width - 1);
 		break;
 	case DISPLAY_ORIENTATION_ROTATED_90:
-		x_start = (panel_h - 1 - x) / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (panel_h - 1 - (x + desc->width - 1)) / SSD16XX_PIXELS_PER_BYTE;
+		x_start = (panel_h - 1 - x);
+		x_end = (panel_h - 1 - (x + desc->width - 1));
 		y_start = (config->width - 1 - y);
 		y_end = (config->width - 1 - (y + desc->height - 1));
 		break;
 	case DISPLAY_ORIENTATION_ROTATED_180:
-		x_start = y / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (y + desc->height - 1) / SSD16XX_PIXELS_PER_BYTE;
+		x_start = y;
+		x_end = (y + desc->height - 1);
 		y_start = (config->width - 1 - x);
 		y_end = (config->width - 1 - (x + desc->width - 1));
 		break;
 	case DISPLAY_ORIENTATION_ROTATED_270:
-		x_start = x / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (x + desc->width - 1) / SSD16XX_PIXELS_PER_BYTE;
+		x_start = x;
+		x_end = (x + desc->width - 1);
 		y_start = y;
 		y_end = (y + desc->height - 1);
 		break;
@@ -630,6 +636,7 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd)
 	const struct ssd16xx_config *config = dev->config;
 	uint16_t panel_h = config->height / EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 	uint16_t last_gate = config->width - 1;
+	uint16_t last_source;
 	uint8_t clear_page[64];
 	int err;
 
@@ -641,20 +648,22 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd)
 		panel_h += 1;
 	}
 
+	last_source = panel_h * EPD_PANEL_NUMOF_ROWS_PER_PAGE - 1;
+
 	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE,
 				  SSD16XX_DATA_ENTRY_XIYDY);
 	if (err < 0) {
 		return err;
 	}
 
-	err = ssd16xx_set_ram_param(dev, SSD16XX_PANEL_FIRST_PAGE,
-				    panel_h - 1, last_gate,
+	err = ssd16xx_set_ram_param(dev, SSD16XX_PANEL_FIRST_SOURCE,
+				    last_source, last_gate,
 				    SSD16XX_PANEL_FIRST_GATE);
 	if (err < 0) {
 		return err;
 	}
 
-	err = ssd16xx_set_ram_ptr(dev, SSD16XX_PANEL_FIRST_PAGE, last_gate);
+	err = ssd16xx_set_ram_ptr(dev, SSD16XX_PANEL_FIRST_SOURCE, last_gate);
 	if (err < 0) {
 		return err;
 	}
@@ -1023,6 +1032,18 @@ static struct ssd16xx_quirks quirks_solomon_ssd1675a = {
 };
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1677)
+static const struct ssd16xx_quirks quirks_solomon_ssd1677 = {
+	.max_width = 680,
+	.max_height = 960,
+	.pp_width_bits = 16,
+	.pp_height_bits = 16,
+	.pp_x_in_pixels = true,
+	.ctrl2_full = SSD16XX_GEN2_CTRL2_DISPLAY,
+	.ctrl2_partial = SSD16XX_GEN2_CTRL2_DISPLAY | SSD16XX_GEN2_CTRL2_MODE2,
+};
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1680)
 static const struct ssd16xx_quirks quirks_solomon_ssd1680 = {
 	.max_width = 296,
@@ -1144,6 +1165,8 @@ DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1673, SSD16XX_DEFINE,
 			     &quirks_solomon_ssd1673);
 DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1675a, SSD16XX_DEFINE,
 			     &quirks_solomon_ssd1675a);
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1677, SSD16XX_DEFINE,
+			     &quirks_solomon_ssd1677);
 DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1680, SSD16XX_DEFINE,
 			     &quirks_solomon_ssd1680);
 DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1681, SSD16XX_DEFINE,
