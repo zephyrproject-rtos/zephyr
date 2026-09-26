@@ -1137,8 +1137,11 @@ static int pthread_timedjoin_internal(pthread_t pthread, void **status, k_timeou
 	return 0;
 }
 
+#if defined(CONFIG_POSIX_NON_PORTABLE) || defined(__DOXYGEN__)
 /**
  * @brief Await a thread termination with timeout.
+ *
+ * @kconfig_dep{CONFIG_POSIX_NON_PORTABLE}
  *
  * Non-portable GNU extension of IEEE 1003.1
  */
@@ -1156,12 +1159,15 @@ int pthread_timedjoin_np(pthread_t pthread, void **status, const struct timespec
 /**
  * @brief Check a thread for termination.
  *
+ * @kconfig_dep{CONFIG_POSIX_NON_PORTABLE}
+ *
  * Non-portable GNU extension of IEEE 1003.1
  */
 int pthread_tryjoin_np(pthread_t pthread, void **status)
 {
 	return pthread_timedjoin_internal(pthread, status, K_NO_WAIT);
 }
+#endif /* CONFIG_POSIX_NON_PORTABLE */
 
 /**
  * @brief Await a thread termination.
@@ -1430,6 +1436,7 @@ int pthread_attr_destroy(pthread_attr_t *_attr)
 	return 0;
 }
 
+#if defined(CONFIG_POSIX_NON_PORTABLE) || defined(__DOXYGEN__)
 int pthread_setname_np(pthread_t thread, const char *name)
 {
 #ifdef CONFIG_THREAD_NAME
@@ -1478,6 +1485,7 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 	return 0;
 #endif
 }
+#endif /* CONFIG_POSIX_NON_PORTABLE */
 
 int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void))
 {
