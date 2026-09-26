@@ -228,7 +228,8 @@
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x230>;
-		refresh-rate = <0x603>;
+		/* 64 ms / 4096 rows x 80 MHz SDCLK (HCLK3 / 3) - 20 */
+		refresh-rate = <1230>;
 
 		bank@1 {
 			reg = <1>;
