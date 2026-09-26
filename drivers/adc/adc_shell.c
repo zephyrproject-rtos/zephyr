@@ -298,14 +298,53 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 	return retval;
 }
 
+static void adc_periodic_read_handler(struct k_work *work);
+
+/* Periodic read state; samples are taken from the system workqueue so that the
+ * shell thread stays free to deliver the key press that stops the read.
+ */
+static struct {
+	const struct shell *sh;
+	const struct device *dev;
+	struct adc_sequence sequence;
+	int16_t sample;
+	k_timeout_t period;
+	atomic_t running;
+} adc_periodic;
+
+static K_WORK_DELAYABLE_DEFINE(adc_periodic_work, adc_periodic_read_handler);
+
+static void adc_periodic_read_handler(struct k_work *work)
+{
+	int retval;
+
+	ARG_UNUSED(work);
+
+	retval = adc_read(adc_periodic.dev, &adc_periodic.sequence);
+	if (retval < 0) {
+		shell_error(adc_periodic.sh, "read failed: %d", retval);
+		shell_set_bypass(adc_periodic.sh, NULL, NULL);
+		atomic_clear(&adc_periodic.running);
+		return;
+	}
+
+	shell_print(adc_periodic.sh, "read: %i", adc_periodic.sample);
+	k_work_reschedule(&adc_periodic_work, adc_periodic.period);
+}
+
+/* Any byte received while the periodic read runs stops it. */
 static void adc_shell_read_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
 				     void *user_data)
 {
-	ARG_UNUSED(sh);
+	struct k_work_sync sync;
+
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
+	ARG_UNUSED(user_data);
 
-	*(bool *)user_data = true;
+	(void)k_work_cancel_delayable_sync(&adc_periodic_work, &sync);
+	shell_set_bypass(sh, NULL, NULL);
+	atomic_clear(&adc_periodic.running);
 }
 
 #define BUFFER_SIZE 1
@@ -347,30 +386,29 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	bool stop = false;
-	bool msg_one_shot = true;
-
-	shell_set_bypass(sh, adc_shell_read_bypass_cb, &stop);
-
-	while (!stop) {
-		retval = adc_read(adc->dev, &sequence);
-		if (retval >= 0) {
-			shell_print(sh, "read: %i", m_sample_buffer[0]);
-		} else {
-			break;
-		}
-
-		if (msg_one_shot) {
-			msg_one_shot = false;
-			shell_print(sh, "Hit any key to exit");
-		}
-
-		k_msleep(period_ms);
+	if (retval < 0) {
+		return retval;
 	}
 
-	shell_set_bypass(sh, NULL, NULL);
+	if (!atomic_cas(&adc_periodic.running, 0, 1)) {
+		shell_error(sh, "Periodic read is already running");
+		return -EBUSY;
+	}
 
-	return stop ? 0 : retval;
+	adc_periodic.sh = sh;
+	adc_periodic.dev = adc->dev;
+	adc_periodic.sequence = sequence;
+	adc_periodic.sequence.buffer = &adc_periodic.sample;
+	adc_periodic.sequence.buffer_size = sizeof(adc_periodic.sample);
+	adc_periodic.period = K_MSEC(period_ms);
+
+	shell_print(sh, "Hit any key to exit");
+
+	/* The shell thread only invokes the bypass callback once this command returns. */
+	shell_set_bypass(sh, adc_shell_read_bypass_cb, NULL);
+	k_work_schedule(&adc_periodic_work, adc_periodic.period);
+
+	return 0;
 }
 
 static void adc_shell_print_acq_time(const struct shell *sh, uint16_t acq_time)
