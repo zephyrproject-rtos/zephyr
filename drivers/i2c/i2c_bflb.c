@@ -32,9 +32,9 @@ LOG_MODULE_REGISTER(i2c_bflb, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_WAIT_TIMEOUT_MS	200
 #if defined(CONFIG_SOC_SERIES_BL616CL)
-#define I2C_MAX_PACKET_LENGTH	0x3FF
+#define I2C_MAX_PACKET_LENGTH	0x400
 #else
-#define I2C_MAX_PACKET_LENGTH	0xFF
+#define I2C_MAX_PACKET_LENGTH	0x100
 #endif
 #define I2C_MAX_FREQ_40M	MHZ(80)
 
@@ -50,7 +50,7 @@ struct i2c_bflb_cfg {
 struct i2c_bflb_data {
 	/* Can't be longer than I2C_MAX_PACKET_LENGTH so let's make our life easier */
 	uint8_t transfer_buffer[I2C_MAX_PACKET_LENGTH];
-	uint8_t next_transfer_len;
+	uint16_t next_transfer_len;
 	struct k_mutex lock;
 };
 
@@ -389,13 +389,13 @@ static void i2c_bflb_set_address(const struct device *dev, uint32_t address, boo
 #if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 	if (addr_10b) {
 		tmp |= I2C_CR_I2C_10B_ADDR_EN;
-		tmp |= ((address & 0x3FF) << I2C_CR_I2C_SLV_ADDR_SHIFT);
+		tmp |= ((address & 0x3ff) << I2C_CR_I2C_SLV_ADDR_SHIFT);
 	} else {
 		tmp &= ~I2C_CR_I2C_10B_ADDR_EN;
-		tmp |= ((address & 0x7F) << I2C_CR_I2C_SLV_ADDR_SHIFT);
+		tmp |= ((address & 0x7f) << I2C_CR_I2C_SLV_ADDR_SHIFT);
 	}
 #else
-	tmp |= ((address & 0x7F) << I2C_CR_I2C_SLV_ADDR_SHIFT);
+	tmp |= ((address & 0x7f) << I2C_CR_I2C_SLV_ADDR_SHIFT);
 #endif
 	sys_write32(tmp, config->base + I2C_CONFIG_OFFSET);
 }
@@ -432,12 +432,12 @@ static inline bool i2c_bflb_errored(const struct device *dev)
 	return (tmp & (I2C_ARB_INT | I2C_FER_INT)) != 0;
 }
 
-static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
+static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint16_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp;
 	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
-	uint8_t j;
+	uint16_t j;
 
 	tmp = sys_read32(config->base + I2C_CONFIG_OFFSET);
 	tmp &= ~I2C_CR_I2C_PKT_DIR;
@@ -449,7 +449,7 @@ static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
 	tmp |= ((len - 1) << I2C_CR_I2C_PKT_LEN_SHIFT) & I2C_CR_I2C_PKT_LEN_MASK;
 	sys_write32(tmp, config->base + I2C_CONFIG_OFFSET);
 
-	for (uint8_t i = 0; i < len && !sys_timepoint_expired(end_timeout);) {
+	for (uint16_t i = 0; i < len && !sys_timepoint_expired(end_timeout);) {
 		if (i2c_bflb_nacked(dev) || i2c_bflb_errored(dev)) {
 			LOG_DBG("write: NAK/error after %u/%u bytes", i, len);
 			return -EIO;
@@ -478,12 +478,12 @@ static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
 	return 0;
 }
 
-static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
+static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint16_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp;
 	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
-	uint8_t j;
+	uint16_t j;
 
 	tmp = sys_read32(config->base + I2C_CONFIG_OFFSET);
 	tmp |= I2C_CR_I2C_PKT_DIR;
@@ -497,7 +497,7 @@ static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
 
 	i2c_bflb_trigger(dev);
 
-	for (uint8_t i = 0; i < len && !sys_timepoint_expired(end_timeout);) {
+	for (uint16_t i = 0; i < len && !sys_timepoint_expired(end_timeout);) {
 		if (i2c_bflb_nacked(dev) || i2c_bflb_errored(dev)) {
 			uint32_t sts = sys_read32(config->base + I2C_INT_STS_OFFSET);
 
@@ -511,7 +511,7 @@ static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
 			tmp = sys_read32(config->base + I2C_FIFO_RDATA_OFFSET);
 			j = 0;
 			for (; j < 4 && i + j < len; j++) {
-				buf[i + j] = (tmp >> ((j % 4) * 8)) & 0xFF;
+				buf[i + j] = (tmp >> ((j % 4) * 8)) & 0xff;
 			}
 			i += j;
 		}
@@ -538,7 +538,7 @@ static int i2c_bflb_prepare_transfer(const struct device *dev,
 		&& (msgs[i].flags & I2C_MSG_RW_MASK) == (msgs[0].flags & I2C_MSG_RW_MASK)
 		&& (msgs[i].flags & I2C_MSG_STOP) == 0
 		&& (msgs[i].flags & I2C_MSG_RESTART) == 0
-		&& p + msgs[i].len < &(data->transfer_buffer[I2C_MAX_PACKET_LENGTH]); i++) {
+		&& p + msgs[i].len <= &(data->transfer_buffer[I2C_MAX_PACKET_LENGTH]); i++) {
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 			memcpy(p, msgs[i].buf, msgs[i].len);
 			p += msgs[i].len;
@@ -550,8 +550,8 @@ static int i2c_bflb_prepare_transfer(const struct device *dev,
 		return i - 1;
 	}
 
-	if (p + msgs[i].len >= &(data->transfer_buffer[I2C_MAX_PACKET_LENGTH])) {
-		LOG_ERR("Cannot send packet of length > 255");
+	if (p + msgs[i].len > &(data->transfer_buffer[I2C_MAX_PACKET_LENGTH])) {
+		LOG_ERR("Cannot have packets of length > %d", I2C_MAX_PACKET_LENGTH);
 		return -ENOTSUP;
 	}
 
@@ -575,7 +575,7 @@ static int i2c_bflb_check_msgs(struct i2c_msg *msgs, uint8_t num_msgs, bool *add
 {
 	for (uint8_t i = 0; i < num_msgs; i++) {
 		if (msgs[i].len > I2C_MAX_PACKET_LENGTH) {
-			LOG_ERR("Cannot send packet of length > 255");
+			LOG_ERR("Cannot have packets of length > %d", I2C_MAX_PACKET_LENGTH);
 			return -ENOTSUP;
 		}
 		if ((msgs[i].flags & I2C_MSG_ADDR_10_BITS) != 0) {
@@ -623,7 +623,7 @@ static int i2c_bflb_wait_completion(const struct device *dev)
 }
 
 static int i2c_bflb_do_read(const struct device *dev, struct i2c_bflb_data *data,
-			     struct i2c_msg *msgs, uint8_t start, uint8_t count)
+			     struct i2c_msg *msgs, uint16_t start, uint16_t count)
 {
 	int ret;
 	uint8_t *p;
@@ -633,7 +633,7 @@ static int i2c_bflb_do_read(const struct device *dev, struct i2c_bflb_data *data
 		return ret;
 	}
 	p = data->transfer_buffer;
-	for (uint8_t j = start; j < start + count; j++) {
+	for (uint16_t j = start; j < start + count; j++) {
 		memcpy(msgs[j].buf, p, msgs[j].len);
 		p += msgs[j].len;
 	}
