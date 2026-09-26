@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Christopher Ruehl
+# SPDX-License-Identifier: Apache-2.0
+
+# Vishay VEML3328 RGBCIR Color Sensor With I2C Interface
+
+config VEML3328
+	bool "Vishay VEML3328 RGBCIR Color Sensor"
+	default y
+	depends on DT_HAS_VISHAY_VEML3328_ENABLED
+	select I2C
+	help
+	  Enable Vishay VEML3328 RGBCIR color sensor driver.
