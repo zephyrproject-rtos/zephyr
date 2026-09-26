@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config LT8912B
+	bool "Lontium LT8912B MIPI DSI to HDMI bridge"
+	default y
+	depends on DT_HAS_LONTIUM_LT8912B_ENABLED
+	select MIPI_DSI
+	select I2C
+	help
+	  Enable driver for the Lontium LT8912B MIPI DSI to HDMI bridge.

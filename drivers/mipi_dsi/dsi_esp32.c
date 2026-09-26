@@ -125,7 +125,12 @@ static int mipi_dsi_esp32_attach(const struct device *dev, uint8_t channel,
 		return -ENODEV;
 	}
 
-	bool low_power_cmds = (mdev->mode_flags & MIPI_DSI_MODE_LPM) != 0;
+	/* A peripheral that derives its clocks from the stream (a DSI to HDMI
+	 * bridge) needs the data lanes to stay in high speed through the
+	 * blanking periods, which leaves no room for low power commands.
+	 */
+	bool hs_blanking = (mdev->mode_flags & MIPI_DSI_MODE_HS_BLANKING) != 0;
+	bool low_power_cmds = (mdev->mode_flags & MIPI_DSI_MODE_LPM) != 0 && !hs_blanking;
 
 	mipi_dsi_esp32_set_command_speed(hal, low_power_cmds);
 
@@ -135,8 +140,9 @@ static int mipi_dsi_esp32_attach(const struct device *dev, uint8_t channel,
 
 	mipi_dsi_host_ll_dpi_set_pattern_type(hal->host, MIPI_DSI_PATTERN_NONE);
 
-	mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, true, true);
-	mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, true, true, true, true);
+	mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, !hs_blanking, !hs_blanking);
+	mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, !hs_blanking, !hs_blanking,
+						       !hs_blanking, !hs_blanking);
 	mipi_dsi_host_ll_dpi_enable_lp_command(hal->host, low_power_cmds);
 	mipi_dsi_host_ll_dpi_enable_frame_ack(hal->host, true);
 
@@ -187,7 +193,15 @@ static int mipi_dsi_esp32_attach(const struct device *dev, uint8_t channel,
 
 	mipi_dsi_host_ll_enable_video_mode(hal->host, true);
 
-	mipi_dsi_host_ll_set_clock_lane_state(hal->host, MIPI_DSI_LL_CLOCK_LANE_STATE_AUTO);
+	/* The clock lane runs continuously unless the peripheral supports the
+	 * non-continuous behavior (DSI spec 5.6.1), which lets the host stop it
+	 * whenever the data lanes are in low power.
+	 */
+	bool non_continuous_clk = (mdev->mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS) != 0;
+
+	mipi_dsi_host_ll_set_clock_lane_state(hal->host, non_continuous_clk
+							  ? MIPI_DSI_LL_CLOCK_LANE_STATE_AUTO
+							  : MIPI_DSI_LL_CLOCK_LANE_STATE_HS);
 
 	mipi_dsi_brg_ll_enable_dpi_output(hal->bridge, true);
 	mipi_dsi_brg_ll_update_dpi_config(hal->bridge);

@@ -41,6 +41,30 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+HDMI Output
+===========
+
+The HDMI connector is driven by an on-board Lontium LT8912B MIPI DSI to
+HDMI bridge, configured over I2C. With :kconfig:option:`CONFIG_DISPLAY`
+enabled the board provides a display device (``zephyr,display``) that
+outputs 1280x720 at about 56 Hz over HDMI; the framebuffer uses the
+``PIXEL_FORMAT_BGR_888`` pixel format. The devicetree carries the timing
+values for an alternative 1920x1080 mode at 30 Hz, which TVs accept but
+most PC monitors reject. The bridge streams the framebuffer as it is laid
+out and offers no panel controls, so :c:func:`display_blanking_on`,
+:c:func:`display_blanking_off` and :c:func:`display_set_orientation` are
+not supported for the HDMI output.
+
+.. warning::
+
+   The LT8912B has no reset line on this board and is back-powered
+   through the 5 V hot-plug detect line of an attached HDMI cable.
+   When the board is powered on or power cycled with the HDMI cable
+   plugged in, the bridge misses its power-on reset and produces no
+   output until the next clean power up. Power the board with the HDMI
+   cable unplugged and connect it after boot; hot-plugging and
+   replugging while the board is running work reliably.
+
 Programming and Debugging
 *************************
 
