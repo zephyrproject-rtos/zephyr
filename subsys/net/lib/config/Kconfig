@@ -244,6 +244,21 @@ config NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 	  If this option is set, then the SNTP server to use for system
 	  clock init can be set using DHCPv4 option.
 
+config NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+	bool "SNTP server to use for system clock init can be set at runtime"
+	help
+	  If this option is set, then the application can select the SNTP
+	  server at runtime using net_config_sntp_set_server().
+
+config NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN
+	int "Maximum length of the SNTP server name set at runtime"
+	depends on NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+	default 63
+	range 1 255
+	help
+	  Maximum length, without the terminating nul, of the server name
+	  accepted by net_config_sntp_set_server().
+
 config NET_CONFIG_SNTP_INIT_TIMEOUT
 	int "SNTP timeout to init system clock (ms)"
 	default 3000
