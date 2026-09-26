@@ -843,6 +843,70 @@ ZTEST(test_mdns_responder, test_basic_dns_sd_query)
 	check_basic_dns_sd_query_resp(response_pkts[0]);
 }
 
+static void check_direct_dns_sd_query_resp(struct net_pkt *pkt, enum dns_rr_type qtype,
+					   uint16_t additional_count)
+{
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_header.ancount), 1, "Invalid answer count");
+	zassert_equal(net_ntohs(resp_header.arcount), additional_count,
+		      "Invalid additional record count");
+
+	validate_label(pkt, "zephyr", false);
+	validate_label(pkt, "_foo", false);
+	validate_label(pkt, "_udp", false);
+	validate_label(pkt, "local", true);
+
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), qtype, "Invalid record type");
+}
+
+ZTEST(test_mdns_responder, test_direct_dns_sd_srv_query)
+{
+	static const uint8_t query[] = {
+		/* Header */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* zephyr._foo._udp.local */
+		0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72,
+		0x04, 0x5f, 0x66, 0x6f, 0x6f,
+		0x04, 0x5f, 0x75, 0x64, 0x70,
+		0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
+		/* SRV record */
+		0x00, 0x21, 0x00, 0x01,
+	};
+
+	send_msg(query, sizeof(query));
+
+	zassert_ok(k_sem_take(&wait_data, RESPONSE_TIMEOUT), "Did not receive an SRV response");
+	check_direct_dns_sd_query_resp(response_pkts[0], DNS_RR_TYPE_SRV, 2U);
+}
+
+ZTEST(test_mdns_responder, test_direct_dns_sd_txt_query)
+{
+	static const uint8_t query[] = {
+		/* Header */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* zephyr._foo._udp.local */
+		0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72,
+		0x04, 0x5f, 0x66, 0x6f, 0x6f,
+		0x04, 0x5f, 0x75, 0x64, 0x70,
+		0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
+		/* TXT record */
+		0x00, 0x10, 0x00, 0x01,
+	};
+
+	send_msg(query, sizeof(query));
+
+	zassert_ok(k_sem_take(&wait_data, RESPONSE_TIMEOUT), "Did not receive a TXT response");
+	check_direct_dns_sd_query_resp(response_pkts[0], DNS_RR_TYPE_TXT, 0U);
+}
+
 /* Verify a PTR answer's name is exactly service.proto.domain (three labels,
  * uncompressed) -- used to confirm which service a response packet answers.
  */

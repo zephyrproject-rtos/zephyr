@@ -145,6 +145,44 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	uint8_t *buf, uint16_t buf_size, bool announce);
 
 /**
+ * @brief Handle a DNS SRV Query with DNS Service Discovery
+ *
+ * The response contains the SRV record in the Answer section and the
+ * corresponding A and AAAA records in the Additional section.
+ *
+ * @param iface the network interface the query was received on
+ * @param inst the DNS-SD record to advertise
+ * @param addr4 pointer to the IPv4 address, or NULL
+ * @param addr6 pointer to the IPv6 address, or NULL
+ * @param buf output buffer
+ * @param buf_size size of the output buffer
+ *
+ * @return on success, number of bytes written to @p buf
+ * @return on failure, a negative errno value
+ */
+int dns_sd_handle_srv_query(struct net_if *iface, const struct dns_sd_rec *inst,
+	const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
+	uint8_t *buf, uint16_t buf_size);
+
+/**
+ * @brief Handle a DNS TXT Query with DNS Service Discovery
+ *
+ * The response contains the TXT record in the Answer section.
+ *
+ * @param inst the DNS-SD record to advertise
+ * @param addr4 pointer to the IPv4 address, or NULL
+ * @param addr6 pointer to the IPv6 address, or NULL
+ * @param buf output buffer
+ * @param buf_size size of the output buffer
+ *
+ * @return on success, number of bytes written to @p buf
+ * @return on failure, a negative errno value
+ */
+int dns_sd_handle_txt_query(const struct dns_sd_rec *inst,
+	const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
+	uint8_t *buf, uint16_t buf_size);
+
+/**
  * @brief Handle a Service Type Enumeration with DNS Service Discovery
  *
  * This function should be called once for each type of advertised service.
