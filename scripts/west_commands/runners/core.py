@@ -362,6 +362,11 @@ class RunnerCaps:
     - skip_load: whether the runner supports the --load/--no-load option, which
       allows skipping the load of image on target before starting a debug session
       (this option only affects the 'debug' command)
+
+    - baud_rate: whether the runner supports a --baud-rate option, which
+      sets the serial speed used to talk to the target. Runners providing
+      a default should do so with ``parser.set_defaults(baud_rate=...)``
+      in their do_add_parser() implementation.
     '''
 
     commands: set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
@@ -380,6 +385,7 @@ class RunnerCaps:
                        # to allow other commands to use the rtt address
     dry_run: bool = False
     skip_load: bool = False
+    baud_rate: bool = False
     batch_debug: bool = False # In batch mode, GDB exits with status 0 after loading;
                               # for automated debugging, add --batch with 'monitor go',
                               # 'disconnect', and 'quit' commands (named batch_debug in west),
@@ -708,6 +714,11 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             parser.add_argument('--rtt-address', help=argparse.SUPPRESS)
 
+        parser.add_argument('--baud-rate', dest='baud_rate',
+                            help=("serial baud rate to use. "
+                                  "Default value depends on each specific runner."
+                                  if caps.baud_rate else argparse.SUPPRESS))
+
         parser.add_argument('--dry-run', action='store_true',
                             help=('''Print all the commands without actually
                             executing them''' if caps.dry_run else argparse.SUPPRESS))
@@ -768,6 +779,8 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--rtt-address')
         if args.dry_run and not caps.dry_run:
             _missing_cap(cls, '--dry-run')
+        if getattr(args, 'baud_rate', None) and not caps.baud_rate:
+            _missing_cap(cls, '--baud-rate')
 
         ret = cls.do_create(cfg, args)
         if args.erase:
