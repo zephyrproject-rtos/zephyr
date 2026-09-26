@@ -16,5 +16,6 @@
 #endif
 
 #include <fsl_device_registers.h>
+#include <soc_common.h>
 
 #endif /* ZEPHYR_SOC_ARM_NXP_LPC_LPC84X_SOC_H_ */
