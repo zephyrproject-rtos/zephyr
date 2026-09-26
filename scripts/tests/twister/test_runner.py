@@ -2365,6 +2365,7 @@ def test_projectbuilder_cmake():
     pb.testsuite.extra_conf_files = ['some', 'files2']
     pb.testsuite.extra_overlay_confs = ['some', 'files3']
     pb.testsuite.extra_dtc_overlay_files = ['some', 'files4']
+    pb.testsuite.alt_config_dir = None
     pb.options.extra_args = ['other', 'args']
     pb.cmake_assemble_args = mock.Mock(return_value=['dummy'])
     cmake_res_mock = mock.Mock()
@@ -2381,7 +2382,8 @@ def test_projectbuilder_cmake():
         pb.testsuite.extra_overlay_confs,
         pb.testsuite.extra_dtc_overlay_files,
         pb.options.extra_args,
-        pb.instance.build_dir
+        pb.instance.build_dir,
+        overlay_roots=None,
     )
     pb.run_cmake.assert_called_once_with(['dummy'], ['dummy filter'])
 
