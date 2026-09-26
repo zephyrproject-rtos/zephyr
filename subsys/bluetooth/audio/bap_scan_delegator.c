@@ -658,12 +658,14 @@ static void bond_deleted_cb(uint8_t id, const bt_addr_le_t *addr)
 		err = k_mutex_lock(&internal_state->mutex, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
 		__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
+		/* Client may be NULL if the bond was never tracked, e.g. if it was restored from
+		 * settings before this module was ready, or if it never got added because the
+		 * client list was full
+		 */
 		client = get_bass_client(internal_state, id, addr);
-		__ASSERT(client != NULL,
-			 "Could not get client from bond with id 0x%02X and addr %s", id,
-			 bt_addr_le_str(addr));
-
-		clear_bass_client(client);
+		if (client != NULL) {
+			clear_bass_client(client);
+		}
 
 		err = k_mutex_unlock(&internal_state->mutex);
 		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
