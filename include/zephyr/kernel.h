@@ -4927,6 +4927,76 @@ static inline k_tid_t k_work_queue_thread_get(struct k_work_q *queue)
 	return queue->thread_id;
 }
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+struct z_static_work_q_data {
+	struct k_work_q *init_queue;
+	k_thread_stack_t *init_stack;
+	size_t init_stack_size;
+	int init_prio;
+	bool init_no_yield;
+#ifdef CONFIG_WORKQUEUE_WORK_TIMEOUT
+	uint32_t init_work_timeout_ms;
+#endif
+#ifdef CONFIG_THREAD_NAME
+	const char *init_name;
+#endif
+};
+
+/*
+ * Refer to K_WORK_QUEUE_DEFINE() for information on arguments; @p thread_name
+ * is the name given to the work queue thread.
+ */
+#define Z_WORK_QUEUE_DEFINE(name, thread_name, stack_size, prio, no_yield, work_timeout_ms)        \
+	static K_KERNEL_STACK_DEFINE(_k_work_q_stack_##name, stack_size);                          \
+	struct k_work_q name;                                                                      \
+	static const STRUCT_SECTION_ITERABLE(z_static_work_q_data,                                 \
+					     _k_work_q_data_##name) = {                            \
+		.init_queue = &name,                                                               \
+		.init_stack = _k_work_q_stack_##name,                                              \
+		.init_stack_size = K_KERNEL_STACK_SIZEOF(_k_work_q_stack_##name),                  \
+		.init_prio = (prio),                                                               \
+		.init_no_yield = (no_yield),                                                       \
+		IF_ENABLED(CONFIG_WORKQUEUE_WORK_TIMEOUT,                                          \
+			   (.init_work_timeout_ms = (work_timeout_ms),))                           \
+		IF_ENABLED(CONFIG_THREAD_NAME, (.init_name = (thread_name),))                      \
+	}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Statically define and initialize a work queue.
+ *
+ * This defines the work queue and a kernel stack of @p stack_size bytes for
+ * its thread. The kernel starts the work queue thread once the kernel is up,
+ * before POST_KERNEL device and SYS_INIT initialization, so work may be
+ * submitted to the queue from any POST_KERNEL or later initialization
+ * function.
+ *
+ * The work queue thread runs only in kernel mode and is essential, so the
+ * work queue cannot be stopped. If CONFIG_THREAD_NAME is enabled, the thread
+ * is named after @p name.
+ *
+ * The work queue can be accessed outside the module where it is defined
+ * using:
+ *
+ * @code extern struct k_work_q <name>; @endcode
+ *
+ * @param name Name of the work queue.
+ * @param stack_size Stack size in bytes.
+ * @param prio Priority of the work queue thread.
+ * @param no_yield @c true to prevent the work queue thread from yielding
+ *        between work items, see k_work_queue_config::no_yield.
+ * @param ... Optional work item timeout in milliseconds, zero or omitted for
+ *        none. Only used if CONFIG_WORKQUEUE_WORK_TIMEOUT is enabled, see
+ *        k_work_queue_config::work_timeout_ms.
+ */
+#define K_WORK_QUEUE_DEFINE(name, stack_size, prio, no_yield, ...)                                 \
+	Z_WORK_QUEUE_DEFINE(name, STRINGIFY(name), stack_size, prio, no_yield,                     \
+			    COND_CODE_1(IS_EMPTY(__VA_ARGS__), (0), (__VA_ARGS__)))
+
 /** @} */
 
 struct k_work_user;
