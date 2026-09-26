@@ -454,8 +454,9 @@
 			reg = <0x420c0800 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 18)>;
 			interrupts = <94 0>;
-			nist-config = <0xf00d00>;
-			health-test-config = <0xaac7>;
+			nist-config = <0x8351f00>;
+			health-test-config = <0x6a8b>;
+			noise-source-control = <0x1ff>;
 			status = "disabled";
 		};
 

@@ -88,6 +88,12 @@
 			st,has-sha512-algorithm;
 		};
 
+		rng: rng@420c0800 {
+			nist-config = <0x8f01e00>;
+			health-test-config = <0x6689>;
+			noise-source-control = <0x2357f>;
+		};
+
 		pwr: power@44020800 {
 			wakeup-controller {
 				wkup@6 {

@@ -187,6 +187,8 @@
 &rng {
 	/* True RNG noise source is the default one */
 	/delete-property/ noise-source-control;
+	nist-config = <0x8451f00>;
+	health-test-config = <0xaac7>;
 };
 
 &die_temp {

@@ -211,7 +211,7 @@ static void configure_rng(void)
 #endif /* health_test_config */
 
 #if DT_INST_NODE_HAS_PROP(0, noise_source_control)
-	cur_nscr = LL_RNG_GetNoiseConfig(rng);
+	cur_nscr = stm32_reg_read(&rng->NSCR);
 #endif /* noise_source_control */
 
 	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr ||
@@ -229,7 +229,7 @@ static void configure_rng(void)
 #endif /* health_test_config */
 
 #if DT_INST_NODE_HAS_PROP(0, noise_source_control)
-		LL_RNG_SetNoiseConfig(rng, DT_INST_PROP(0, noise_source_control));
+		stm32_reg_write(&rng->NSCR, DT_INST_PROP(0, noise_source_control));
 #endif /* noise_source_control */
 
 		LL_RNG_DisableCondReset(rng);

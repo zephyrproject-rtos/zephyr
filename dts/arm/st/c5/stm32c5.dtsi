@@ -457,7 +457,8 @@
 				 <&rcc STM32_SRC_CK48 NO_SEL>;
 			interrupts = <64 0>;
 			nist-config = <0x8451f00>;
-			health-test-config = <0xaac7>;
+			health-test-config = <0x6684>;
+			noise-source-control = <0x1bf>;
 			status = "disabled";
 		};
 
