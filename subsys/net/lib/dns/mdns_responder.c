@@ -691,7 +691,8 @@ static void send_sd_response(int sock,
 			     struct net_sockaddr *src_addr,
 			     size_t addrlen,
 			     struct net_buf *result,
-			     struct net_if *recv_if)
+			     struct net_if *recv_if,
+			     enum dns_rr_type qtype)
 {
 	struct net_if *iface;
 	net_socklen_t dst_len;
@@ -788,8 +789,9 @@ static void send_sd_response(int sock,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION)
-		&& dns_sd_is_service_type_enumeration(&filter)) {
+	if (qtype == DNS_RR_TYPE_PTR &&
+	    IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION) &&
+	    dns_sd_is_service_type_enumeration(&filter)) {
 
 		/*
 		 * RFC 6763, Section 9
@@ -834,18 +836,23 @@ static void send_sd_response(int sock,
 			if (service_type_enum) {
 				ret = dns_sd_handle_service_type_enum(record, addr4, addr6,
 						result->data, result_size);
-				if (ret < 0) {
-					NET_DBG("dns_sd_handle_service_type_enum() failed (%d)",
-						ret);
-					continue;
-				}
-			} else {
+			} else if (qtype == DNS_RR_TYPE_PTR) {
 				ret = dns_sd_handle_ptr_query(iface, record, addr4, addr6,
-						result->data, result_size, false);
-				if (ret < 0) {
-					NET_DBG("dns_sd_handle_ptr_query() failed (%d)", ret);
-					continue;
-				}
+							      result->data, result_size, false);
+			} else if (qtype == DNS_RR_TYPE_SRV) {
+				ret = dns_sd_handle_srv_query(iface, record, addr4, addr6,
+							      result->data, result_size);
+			} else if (qtype == DNS_RR_TYPE_TXT) {
+				ret = dns_sd_handle_txt_query(record, addr4, addr6,
+							      result->data, result_size);
+			} else {
+				continue;
+			}
+
+			if (ret < 0) {
+				NET_DBG("Failed to create DNS-SD %s response (%d)",
+					dns_qtype_to_str(qtype), ret);
+				continue;
 			}
 
 			result->len = ret;
@@ -947,9 +954,11 @@ static int dns_read(int sock,
 				hostname, ".local");
 			send_response(sock, family, src_addr, addrlen,
 				      result, qtype, recv_if, dns_id);
-		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
-			&& qtype == DNS_RR_TYPE_PTR) {
-			send_sd_response(sock, family, src_addr, addrlen, result, recv_if);
+		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD) &&
+			   (qtype == DNS_RR_TYPE_PTR || qtype == DNS_RR_TYPE_SRV ||
+			    qtype == DNS_RR_TYPE_TXT)) {
+			send_sd_response(sock, family, src_addr, addrlen, result, recv_if,
+					 qtype);
 		}
 
 	} while (--queries);
