@@ -18,6 +18,7 @@
 		led1 = &blue_led;
 		sw0 = &user_button;
 		spi-flash0 = &w25q128jv;
+		ext-nor0 = &w25q128jv;
 	};
 
 	chosen {
@@ -117,6 +118,11 @@
 };
 
 &quadspi {
+	compatible = "st,stm32-qspi-controller";
+	clock-names = "qspix";
+	clock-frequency = <DT_FREQ_M(80)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,cs-high-time = <4>; /* >= 50 ns */
 	pinctrl-names = "default";
 	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb10
 		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
@@ -124,12 +130,21 @@
 	status = "okay";
 
 	w25q128jv: qspi-nor-flash@0 {
-		compatible = "st,stm32-qspi-nor";
+		compatible = "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(128)>; /* 128 Mbits */
-		qspi-max-frequency = <80000000>;
-		cs-high-time = <4>; /* >= 50 ns */
-		spi-bus-width = <4>;
+		sfdp-bfp = [e5 20 f9 ff ff ff ff 07
+			    44 eb 08 6b 08 3b 42 bb
+			    fe ff ff ff ff ff 00 00
+			    ff ff 40 eb 0c 20 0f 52
+			    10 d8 00 00 36 02 a6 00
+			    82 ea 14 c9 e9 63 76 33
+			    7a 75 7a 75 f7 a2 d5 5c
+			    19 f7 4d ff e9 30 f8 80];
+		mspi-max-frequency = <DT_FREQ_M(80)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
 		status = "okay";
 
 		partitions {
