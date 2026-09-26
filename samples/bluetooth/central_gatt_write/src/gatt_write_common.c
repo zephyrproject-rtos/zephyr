@@ -11,6 +11,9 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/sys/atomic.h>
 
 /* Count down number of write commands after all PHY and connection updates */
 #define COUNT_THROUGHPUT 1000U
@@ -203,7 +206,7 @@ uint32_t *write_countdown;
 /* Function pointer used to restart scanning on ACL disconnect */
 void (*start_scan_func)(void);
 
-static void write_cmd_cb(struct bt_conn *conn, void *user_data)
+static void record_and_step(struct bt_conn *conn, uint16_t len)
 {
 	static uint32_t cycle_stamp;
 	uint64_t delta;
@@ -351,18 +354,166 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 		param_update_idx++;
 
 	} else {
-		uint16_t len;
-
 		write_count++;
-
-		/* Extract the 16-bit data length stored in user_data */
-		len = (uint32_t)user_data & 0xFFFF;
-
 		write_len += len;
 		write_rate = ((uint64_t)write_len << 3) * (METRICS_INTERVAL * NSEC_PER_SEC) /
 			     delta;
 	}
 }
+
+static void write_cmd_cb(struct bt_conn *conn, void *user_data)
+{
+	/* The 16-bit data length is stored in user_data */
+	record_and_step(conn, (uint32_t)user_data & 0xFFFF);
+}
+
+#if defined(CONFIG_USE_NOTIFY)
+/* Vendor specific Throughput Measurement service and Notify characteristic */
+#define NOTIFY_SVC_UUID_BYTES \
+	0xCC, 0x7B, 0xCB, 0x32, 0x07, 0x08, 0x17, 0xAF, \
+	0xD3, 0x43, 0x1E, 0x5D, 0x20, 0x0D, 0xEC, 0x1A
+#define NOTIFY_CHRC_UUID_BYTES \
+	0x1E, 0x25, 0x21, 0x59, 0x67, 0x84, 0x78, 0x9E, \
+	0x30, 0x4D, 0xE9, 0x91, 0x81, 0x13, 0xB0, 0xF7
+
+static struct bt_uuid_128 notify_svc_uuid = BT_UUID_INIT_128(NOTIFY_SVC_UUID_BYTES);
+static struct bt_uuid_128 notify_chrc_uuid = BT_UUID_INIT_128(NOTIFY_CHRC_UUID_BYTES);
+
+/* Set by the peripheral's CCC handler when the peer subscribes */
+static uint8_t notify_enabled;
+
+/* Number of notifications received by the central (subscriber) */
+static atomic_t notify_rx_count;
+
+static void notify_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
+{
+	ARG_UNUSED(attr);
+
+	notify_enabled = (value == BT_GATT_CCC_NOTIFY);
+	printk("%s: notify %s\n", __func__, notify_enabled ? "enabled" : "disabled");
+}
+
+BT_GATT_SERVICE_DEFINE(notify_svc,
+	BT_GATT_PRIMARY_SERVICE(&notify_svc_uuid),
+	BT_GATT_CHARACTERISTIC(&notify_chrc_uuid.uuid, BT_GATT_CHRC_NOTIFY,
+			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
+	BT_GATT_CCC(notify_ccc_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+);
+
+/* attrs[1] is the Notify characteristic value attribute */
+#define NOTIFY_ATTR (&notify_svc.attrs[1])
+
+static void notify_sent_cb(struct bt_conn *conn, void *user_data)
+{
+	record_and_step(conn, (uint32_t)user_data & 0xFFFF);
+}
+
+/* Peripheral (notifier) transmit path.
+ *
+ * Returns 0 when a notification was queued, -EAGAIN if the peer has not yet
+ * subscribed, or a negative error code otherwise.
+ */
+int notify_data(struct bt_conn *conn)
+{
+	static uint8_t data[BT_ATT_MAX_ATTRIBUTE_LEN];
+	struct bt_gatt_notify_params params = {0};
+	uint16_t len;
+	int err;
+
+	if (!notify_enabled) {
+		return -EAGAIN;
+	}
+
+	len = bt_gatt_get_mtu(conn) - 3U;
+	if (len > sizeof(data)) {
+		len = sizeof(data);
+	}
+
+	params.attr = NOTIFY_ATTR;
+	params.data = data;
+	params.len = len;
+	params.func = notify_sent_cb;
+	params.user_data = (void *)((uint32_t)len);
+
+	err = bt_gatt_notify_cb(conn, &params);
+	if (err && err != -ENOMEM) {
+		printk("%s: Notify failed (%d).\n", __func__, err);
+	}
+
+	return err;
+}
+
+static uint8_t notify_recv_cb(struct bt_conn *conn,
+			      struct bt_gatt_subscribe_params *params,
+			      const void *data, uint16_t length)
+{
+	ARG_UNUSED(params);
+
+	if (data == NULL) {
+		/* Unsubscribed */
+		return BT_GATT_ITER_STOP;
+	}
+
+	atomic_inc(&notify_rx_count);
+	record_and_step(conn, length);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static struct bt_gatt_discover_params notify_discover_params;
+static struct bt_gatt_subscribe_params notify_subscribe_params;
+
+static uint8_t notify_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				  struct bt_gatt_discover_params *params)
+{
+	int err;
+
+	if (attr == NULL) {
+		printk("%s: Notify characteristic not found.\n", __func__);
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (params->type == BT_GATT_DISCOVER_CHARACTERISTIC) {
+		uint16_t value_handle = bt_gatt_attr_value_handle(attr);
+
+		notify_subscribe_params.notify = notify_recv_cb;
+		notify_subscribe_params.value = BT_GATT_CCC_NOTIFY;
+		notify_subscribe_params.value_handle = value_handle;
+		/* CCC descriptor immediately follows the value handle */
+		notify_subscribe_params.ccc_handle = value_handle + 1U;
+
+		err = bt_gatt_subscribe(conn, &notify_subscribe_params);
+		if (err && err != -EALREADY) {
+			printk("%s: Subscribe failed (%d).\n", __func__, err);
+		} else {
+			printk("%s: Subscribed for notifications.\n", __func__);
+		}
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+void notify_subscribe(struct bt_conn *conn)
+{
+	int err;
+
+	notify_discover_params.uuid = &notify_chrc_uuid.uuid;
+	notify_discover_params.func = notify_discover_cb;
+	notify_discover_params.start_handle = 0x0001;
+	notify_discover_params.end_handle = 0xffff;
+	notify_discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+
+	err = bt_gatt_discover(conn, &notify_discover_params);
+	if (err) {
+		printk("%s: Discover failed (%d).\n", __func__, err);
+	}
+}
+
+uint32_t notify_rx_get(void)
+{
+	return (uint32_t)atomic_get(&notify_rx_count);
+}
+#endif /* CONFIG_USE_NOTIFY */
 
 static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err,
 			    struct bt_gatt_exchange_params *params)
@@ -418,6 +569,15 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 		if (err) {
 			printk("Failed to set security (%d).\n", err);
 		}
+	}
+#endif
+
+#if defined(CONFIG_USE_NOTIFY)
+	if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
+		/* Central is the subscriber: discover and subscribe to the
+		 * peripheral's notify characteristic.
+		 */
+		notify_subscribe(conn);
 	}
 #endif
 

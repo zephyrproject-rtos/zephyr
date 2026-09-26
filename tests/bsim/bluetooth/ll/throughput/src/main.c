@@ -29,7 +29,18 @@
  * peripheral sample is referenced using a pointer and the pointer will be used
  * to setup the throughput measurement countdown.
  */
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
+#if defined(CONFIG_USE_NOTIFY)
+/* GATT Notify is one-directional: only the peripheral transmits, and every
+ * notification it sends is received by the central (1:1). The two counts must
+ * therefore be equal. Unlike the full-duplex Write path (where the peripheral
+ * count is intentionally higher), a higher peripheral count here would make the
+ * central reach its target first, exit, and disconnect the peripheral before it
+ * finishes. The count spans the PHY and connection update sweep so the rate is
+ * measured once the link has settled at 2M.
+ */
+#define COUNT_CENTRAL    55000U
+#define COUNT_PERIPHERAL 55000U
+#elif defined(CONFIG_BT_USER_PHY_UPDATE)
 #define COUNT_CENTRAL    17000U
 #define COUNT_PERIPHERAL 17600U
 #else /* !CONFIG_BT_USER_PHY_UPDATE */
@@ -53,6 +64,14 @@
  *  Throughput = 400 * 244 * 8 = 780800 bps
  */
 #define WRITE_RATE 780800 /* GATT Write bps recorded in this test */
+
+/* Notify Throughput calculation (one-directional):
+ *  Only the peripheral transmits data PDUs; the central replies with empty
+ *  PDUs. At 2M PHY with a 50 ms connection interval the measured notify
+ *  throughput is ~1.37 Mbps (700 * 244 * 8 bps). A conservative floor is
+ *  asserted to guard against regressions.
+ */
+#define NOTIFY_RATE_MIN 1200000 /* GATT Notify bps floor recorded in this test */
 
 extern uint32_t central_gatt_write(uint32_t count);
 extern uint32_t peripheral_gatt_write(uint32_t count);
@@ -78,11 +97,19 @@ static void test_central_main(void)
 	write_rate = central_gatt_write(COUNT_CENTRAL);
 
 	printk("%s: Write Rate = %u bps\n", __func__, write_rate);
+#if defined(CONFIG_USE_NOTIFY)
+	if (write_rate >= NOTIFY_RATE_MIN) {
+		PASS("Central tests passed\n");
+	} else {
+		FAIL("Central tests failed\n");
+	}
+#else
 	if (write_rate == WRITE_RATE) {
 		PASS("Central tests passed\n");
 	} else {
 		FAIL("Central tests failed\n");
 	}
+#endif
 
 	/* Give extra time for peripheral side to finish its iterations */
 	k_sleep(K_SECONDS(1));
@@ -97,11 +124,19 @@ static void test_peripheral_main(void)
 	write_rate = peripheral_gatt_write(COUNT_PERIPHERAL);
 
 	printk("%s: Write Rate = %u bps\n", __func__, write_rate);
+#if defined(CONFIG_USE_NOTIFY)
+	if (write_rate >= NOTIFY_RATE_MIN) {
+		PASS("Peripheral tests passed\n");
+	} else {
+		FAIL("Peripheral tests failed\n");
+	}
+#else
 	if (write_rate == WRITE_RATE) {
 		PASS("Peripheral tests passed\n");
 	} else {
 		FAIL("Peripheral tests failed\n");
 	}
+#endif
 }
 
 static void test_gatt_write_init(void)

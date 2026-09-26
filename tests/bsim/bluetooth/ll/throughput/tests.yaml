@@ -27,3 +27,12 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_ll_throughput_prj_conf_overlay-no_phy_update_conf
       tests_scripts:
         - tests_scripts/gatt_write_no_phy_update.sh
+
+  bluetooth.controller.throughput_notify:
+    extra_overlay_confs:
+      - overlay-notify.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_throughput_prj_conf_overlay-notify_conf
+      tests_scripts:
+        - tests_scripts/gatt_notify.sh

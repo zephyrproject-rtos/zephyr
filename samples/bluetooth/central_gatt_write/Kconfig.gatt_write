@@ -17,3 +17,11 @@ config USE_PHY_UPDATE_ITERATION_ONCE
 	depends on BT_USER_PHY_UPDATE
 	help
 	  Perform PHY Update for a single iteration.
+
+config USE_NOTIFY
+	bool "Use GATT Notifications instead of Write without Response"
+	help
+	  Exercise the one-directional GATT Notification throughput path: the
+	  peripheral streams notifications and the central subscribes and
+	  receives them. When disabled (default), both peers transmit GATT
+	  Write without Response commands (full-duplex).

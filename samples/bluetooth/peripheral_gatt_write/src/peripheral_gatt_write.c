@@ -17,6 +17,9 @@ extern int write_cmd(struct bt_conn *conn);
 extern struct bt_conn *conn_connected;
 extern uint32_t last_write_rate;
 extern uint32_t *write_countdown;
+#if defined(CONFIG_USE_NOTIFY)
+extern int notify_data(struct bt_conn *conn);
+#endif
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -132,6 +135,35 @@ uint32_t peripheral_gatt_write(uint32_t count)
 		}
 
 		if (conn) {
+#if defined(CONFIG_USE_NOTIFY)
+			err = notify_data(conn);
+			bt_conn_unref(conn);
+
+			if (err == -EAGAIN) {
+				/* Not subscribed yet: this path has no blocking
+				 * call, so busy-looping would starve lower
+				 * priority threads (e.g. the HCI RX task).
+				 */
+				k_sleep(K_MSEC(10));
+				continue;
+			}
+
+			/* Only advance the countdown once a notification was
+			 * actually queued (i.e. the peer has subscribed).
+			 */
+			if (err == 0 && count) {
+				if ((count % 1000U) == 0U) {
+					printk("GATT Notify countdown %u\n", count);
+				}
+
+				count--;
+				if (!count) {
+					break;
+				}
+			}
+
+			k_yield();
+#else
 			write_cmd(conn);
 			bt_conn_unref(conn);
 
@@ -147,6 +179,7 @@ uint32_t peripheral_gatt_write(uint32_t count)
 			}
 
 			k_yield();
+#endif
 		} else {
 			k_sleep(K_SECONDS(1));
 		}
