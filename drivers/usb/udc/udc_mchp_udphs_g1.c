@@ -29,13 +29,15 @@ LOG_MODULE_REGISTER(udc_mchp_udphs_g1, CONFIG_UDC_DRIVER_LOG_LEVEL);
 struct udc_sam_config {
 	udphs_registers_t *base;
 	uint8_t *fifo;
-	const struct atmel_sam_pmc_config clock_cfg;
+	const struct atmel_sam_pmc_config pclk_cfg;
+	const struct atmel_sam_pmc_config hclk_cfg;
 	const struct pinctrl_dev_config *pincfg;
 	const struct udphs_ep_desc *ep_desc;
 	uint32_t speed_idx:8;
 	uint32_t num_of_eps:8;
 	uint32_t sof_enable:1;
 	uint32_t dma_enable:1;
+	uint32_t hclk_is_fixed:1;
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
 	struct gpio_dt_spec vbus_gpio;
@@ -387,6 +389,8 @@ static int sam_prep_out(const struct device *dev,
 		struct udphs_request req = {0};
 
 		sys_cache_data_invd_range(buf->data, buf->size);
+		__DSB();
+
 		req.buf = buf->data;
 		req.len = MIN(buf->size, UDC_SAM_MAX_DMA_LEN);
 
@@ -421,6 +425,7 @@ static int sam_prep_in(const struct device *dev,
 		struct udphs_request req = {0};
 
 		sys_cache_data_flush_range(buf->data, buf->len);
+		__DSB();
 
 		req.is_in = true;
 		req.buf = buf->data;
@@ -626,6 +631,52 @@ static ALWAYS_INLINE void udc_thread_handler(const struct device *const dev)
 	udc_unlock_internal(dev);
 }
 
+static int start_clock(const struct device *dev)
+{
+	const struct udc_sam_config *config = dev->config;
+	int ret;
+
+	ret = clock_control_on(SAM_DT_PMC_CONTROLLER, (void *)&config->pclk_cfg);
+	if (ret) {
+		LOG_ERR("Failed to enable pclk");
+		return ret;
+	}
+
+	if (!config->hclk_is_fixed) {
+		ret = clock_control_on(SAM_DT_PMC_CONTROLLER, (void *)&config->hclk_cfg);
+		if (ret) {
+			LOG_ERR("Failed to enable hclk");
+
+			clock_control_off(SAM_DT_PMC_CONTROLLER, (void *)&config->pclk_cfg);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int stop_clock(const struct device *dev)
+{
+	const struct udc_sam_config *config = dev->config;
+	int ret;
+
+	if (!config->hclk_is_fixed) {
+		ret = clock_control_off(SAM_DT_PMC_CONTROLLER, (void *)&config->hclk_cfg);
+		if (ret) {
+			LOG_ERR("Failed to disable hclk");
+			return ret;
+		}
+	}
+
+	ret = clock_control_off(SAM_DT_PMC_CONTROLLER, (void *)&config->pclk_cfg);
+	if (ret) {
+		LOG_ERR("Failed to disable pclk");
+		return ret;
+	}
+
+	return 0;
+}
+
 static int ALWAYS_INLINE dma_out(const struct device *dev, const uint8_t chan, uint32_t status)
 {
 	struct udc_sam_data *const priv = udc_get_private(dev);
@@ -655,6 +706,7 @@ static int ALWAYS_INLINE dma_out(const struct device *dev, const uint8_t chan, u
 
 	if ((status & UDPHS_DMASTATUS_END_TR_ST_Msk) || (size == 0)) {
 		sys_cache_data_invd_range(buf->data, buf->len);
+		__DSB();
 
 		atomic_clear_bit(&priv->xfer_running,
 				 udc_ep_to_bnum(idx | USB_EP_DIR_OUT));
@@ -880,6 +932,8 @@ static void sam_isr_handler(const struct device *dev)
 		udphs->UDPHS_IEN &= ~UDPHS_IEN_DET_SUSPD_Msk;
 		LOG_DBG("Suspend detected %s", dev->name);
 
+		stop_clock(dev);
+
 		if (!udc_is_suspended(dev)) {
 			udc_set_suspended(dev, true);
 			udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
@@ -887,6 +941,8 @@ static void sam_isr_handler(const struct device *dev)
 	}
 
 	if (status & UDPHS_INTSTA_WAKE_UP_Msk) {
+		start_clock(dev);
+
 		udphs->UDPHS_CLRINT = UDPHS_CLRINT_WAKE_UP_Msk;
 		LOG_DBG("Wake Up detected %s", dev->name);
 	}
@@ -1283,12 +1339,13 @@ static int udc_sam_enable(const struct device *dev)
 {
 	const struct udc_sam_config *config = dev->config;
 	udphs_registers_t *const udphs = config->base;
+	int ret;
 
 	LOG_DBG("Enable device %s", dev->name);
 
-	if (clock_control_on(SAM_DT_PMC_CONTROLLER, (void *)&config->clock_cfg) != 0) {
-		LOG_ERR("Failed to enable pclk");
-		return -EIO;
+	ret = start_clock(dev);
+	if (ret) {
+		return ret;
 	}
 
 	/*
@@ -1319,6 +1376,7 @@ static int udc_sam_disable(const struct device *dev)
 {
 	const struct udc_sam_config *config = dev->config;
 	udphs_registers_t *const udphs = config->base;
+	int ret;
 
 	LOG_DBG("Disable device %s", dev->name);
 
@@ -1329,9 +1387,9 @@ static int udc_sam_disable(const struct device *dev)
 	udphs_reset_ep_all(udphs);
 	udphs_stop(udphs);
 
-	if (clock_control_off(SAM_DT_PMC_CONTROLLER, (void *)&config->clock_cfg) != 0) {
-		LOG_ERR("Failed to disable pclk");
-		return -EIO;
+	ret = stop_clock(dev);
+	if (ret) {
+		return ret;
 	}
 
 	return 0;
@@ -1375,9 +1433,11 @@ static int udc_sam_init(const struct device *dev)
 
 	udphs_stop(udphs);
 
-	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0 && ret != -ENOENT) {
-		return ret;
+	if (config->pincfg) {
+		ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
 	}
 
 	if (config->vbus_gpio.port) {
@@ -1423,17 +1483,17 @@ static int udc_sam_driver_preinit(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Make sure we start from a clean slate */
-	if (clock_control_on(SAM_DT_PMC_CONTROLLER, (void *)&config->clock_cfg) != 0) {
-		LOG_ERR("Failed to enable pclk");
-		return -EIO;
+	ret = start_clock(dev);
+	if (ret) {
+		return ret;
 	}
 
+	/* Make sure we start from a clean slate */
 	udphs_reset(udphs);
 
-	if (clock_control_off(SAM_DT_PMC_CONTROLLER, (void *)&config->clock_cfg) != 0) {
-		LOG_ERR("Failed to disable pclk");
-		return -EIO;
+	ret = stop_clock(dev);
+	if (ret) {
+		return ret;
 	}
 
 	k_mutex_init(&data->mutex);
@@ -1570,6 +1630,15 @@ static void udc_sam_irq_disable_func_##n(const struct device *dev)	\
 		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)),	\
 		    (NULL))
 
+#define UDC_SAM_HCLK_IS_FIXED(n)					\
+	DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR_BY_NAME(DT_DRV_INST(n), hclk),\
+			   fixed_clock)
+
+#define UDC_SAM_HCLK_DT_INST_DEV_CONFIG_GET(n)				\
+	COND_CODE_1(UDC_SAM_HCLK_IS_FIXED(n),				\
+		    ({0}),						\
+		    (SAM_DT_CLOCK_PMC_CFG(1, DT_DRV_INST(n))))
+
 #define UDC_SAM_DEVICE_DEFINE(n)							\
 	UDC_SAM_PINCTRL_DT_INST_DEFINE(n);						\
 	UDC_SAM_IRQ_CONFIG_DEFINE(i, n);						\
@@ -1609,13 +1678,15 @@ static void udc_sam_irq_disable_func_##n(const struct device *dev)	\
 	static const struct udc_sam_config udc_sam_config_##n = {			\
 		.base = (udphs_registers_t *)DT_INST_REG_ADDR_BY_IDX(n, 1),		\
 		.fifo = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(n, 0),			\
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),				\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+		.pclk_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),				\
+		.hclk_cfg = UDC_SAM_HCLK_DT_INST_DEV_CONFIG_GET(n),			\
+		.pincfg = UDC_SAM_PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.ep_desc = sam_ep_desc,							\
 		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),		\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),			\
 		.sof_enable = IS_ENABLED(CONFIG_UDC_ENABLE_SOF),			\
 		.dma_enable = IS_ENABLED(CONFIG_UDC_MCHP_UDPHS_G1_DMA),			\
+		.hclk_is_fixed = UDC_SAM_HCLK_IS_FIXED(n),				\
 		.ep_cfg_in = ep_cfg_in_##n,						\
 		.ep_cfg_out = ep_cfg_out_##n,						\
 		.irq_config_func = udc_sam_irq_config_func_##n,				\
