@@ -2,11 +2,14 @@
  * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2019 Intel Corporation
  * Copyright (c) 2025 Basalte bv
+ * Copyright (c) 2026 Xsight Labs
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /* Copied from linker.ld */
+
+#include <nocache-region.ld>
 
 /* Non-cached region of RAM */
 SECTION_DATA_PROLOGUE(_NOCACHE_SECTION_NAME,(NOLOAD),)
@@ -24,7 +27,7 @@ SECTION_DATA_PROLOGUE(_NOCACHE_SECTION_NAME,(NOLOAD),)
 #include <snippets-nocache-section.ld>
 
 	_nocache_noload_ram_end = .;
-} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+} GROUP_DATA_LINK_IN(NOCACHE_REGION, NOCACHE_REGION)
 _nocache_noload_ram_size = _nocache_noload_ram_end - _nocache_noload_ram_start;
 
 /* Non-cached loadable region of RAM and ROM */
@@ -41,7 +44,7 @@ SECTION_DATA_PROLOGUE(_NOCACHE_LOAD_SECTION_NAME,,)
 #endif
 	_nocache_load_ram_end = .;
 	_nocache_ram_end = .;
-} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+} GROUP_DATA_LINK_IN(NOCACHE_REGION, ROMABLE_REGION)
 _nocache_load_ram_size = _nocache_load_ram_end - _nocache_load_ram_start;
 _nocache_load_rom_start = LOADADDR(_NOCACHE_LOAD_SECTION_NAME);
 _nocache_ram_size = _nocache_ram_end - _nocache_ram_start;

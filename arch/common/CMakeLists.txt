@@ -83,6 +83,21 @@ zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
   ramfunc.ld
 )
 
+if(CONFIG_NOCACHE_MEMORY)
+  # The linker needs the region as a bare token, so turn the Kconfig
+  # string into a define rather than consuming it from autoconf.h.
+  if("${CONFIG_NOCACHE_MEMORY_REGION}" STREQUAL "")
+    set(nocache_region RAMABLE_REGION)
+  else()
+    set(nocache_region ${CONFIG_NOCACHE_MEMORY_REGION})
+  endif()
+
+  file(CONFIGURE
+    OUTPUT ${PROJECT_BINARY_DIR}/include/generated/nocache-region.ld
+    CONTENT "#define NOCACHE_REGION ${nocache_region}\n"
+  )
+endif()
+
 zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   RAM_SECTIONS
   nocache.ld
