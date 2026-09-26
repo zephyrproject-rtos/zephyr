@@ -34,6 +34,42 @@
 
 LOG_MODULE_REGISTER(video_native_sim_fifo, CONFIG_VIDEO_LOG_LEVEL);
 
+/* Any size up to 1920x1080, the width being a multiple of the pixels per macropixel */
+#define VIDEO_NSI_FIFO_FORMAT_CAP(pixfmt, step)                                                    \
+	{                                                                                          \
+		.pixelformat = pixfmt,                                                             \
+		.width_min = (step),                                                               \
+		.width_max = 1920,                                                                 \
+		.height_min = 1,                                                                   \
+		.height_max = 1080,                                                                \
+		.width_step = (step),                                                              \
+		.height_step = 1,                                                                  \
+	}
+
+/* Uncompressed formats only: every frame is exactly pitch * height bytes */
+static const struct video_format_cap video_nsi_fifo_fmts[] = {
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565, 1),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_RGB24, 1),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_BGR24, 1),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_XRGB32, 1),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_BGRX32, 1),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_YUYV, 2),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_GREY, 1),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_SRGGB8, 1),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_SGRBG8, 1),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_SBGGR8, 1),
+	VIDEO_NSI_FIFO_FORMAT_CAP(VIDEO_PIX_FMT_SGBRG8, 1),
+	{0},
+};
+
+/* Format used until the application selects another one */
+static const struct video_format video_nsi_fifo_default_fmt = {
+	.type = VIDEO_BUF_TYPE_OUTPUT,
+	.pixelformat = VIDEO_PIX_FMT_RGB565,
+	.width = 320,
+	.height = 240,
+};
+
 struct video_nsi_fifo_config {
 	/** FIFO path coming from the devicetree, NULL when the property is not set */
 	const char *fifo_path;
@@ -44,17 +80,13 @@ struct video_nsi_fifo_config {
 	size_t stack_size;
 	/** Delay before polling the FIFO again when the host provided no complete frame */
 	uint32_t poll_interval_ms;
-	/** Fixed format of the frames the host writer is expected to provide */
-	struct video_format fmt;
-	/** Single entry (plus terminator) format capability list */
-	const struct video_format_cap *format_caps;
 };
 
 struct video_nsi_fifo_data {
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_thread thread;
-	/** Protects streaming, fd, frame_offset, discard and the head of fifo_in */
+	/** Protects streaming, fmt, fd, frame_offset, discard and fifo_in */
 	struct k_mutex lock;
 	/** Wakes the thread up when a buffer is queued or the stream is started */
 	struct k_sem wake_sem;
@@ -63,8 +95,8 @@ struct video_nsi_fifo_data {
 	const char *fifo_path_arg;
 	/** FIFO path in use, resolved at init */
 	const char *path;
-	/** Size of a complete frame in bytes, computed at init */
-	uint32_t frame_size;
+	/** Format of the frames the host writer is expected to provide */
+	struct video_format fmt;
 	/** Number of bytes of the frame currently being read */
 	size_t frame_offset;
 	uint32_t frames_delivered;
@@ -118,7 +150,7 @@ static void video_nsi_fifo_deliver(struct video_nsi_fifo_data *data, struct vide
 	__ASSERT_NO_MSG(popped == vbuf);
 	ARG_UNUSED(popped);
 
-	vbuf->bytesused = data->frame_size;
+	vbuf->bytesused = data->fmt.size;
 	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 	data->frames_delivered++;
@@ -163,7 +195,7 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			LOG_DBG("Reopened the host FIFO %s", data->path);
 		}
 
-		ret = video_nsi_fifo_read_bottom(data->fd, vbuf->buffer, data->frame_size,
+		ret = video_nsi_fifo_read_bottom(data->fd, vbuf->buffer, data->fmt.size,
 						 &data->frame_offset);
 		if (ret == 0) {
 			data->frame_offset = 0;
@@ -187,8 +219,8 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			if (data->frame_offset > 0) {
 				LOG_WRN("Incomplete frame discarded, is the host writing %ux%u %s "
 					"frames?",
-					cfg->fmt.width, cfg->fmt.height,
-					VIDEO_FOURCC_TO_STR(cfg->fmt.pixelformat));
+					data->fmt.width, data->fmt.height,
+					VIDEO_FOURCC_TO_STR(data->fmt.pixelformat));
 			}
 			data->frame_offset = 0;
 			data->discard = false;
@@ -204,50 +236,80 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 	}
 }
 
+static bool video_nsi_fifo_is_supported(const struct video_format *fmt)
+{
+	const struct video_format_cap *cap;
+	size_t idx;
+
+	if (video_format_caps_index(video_nsi_fifo_fmts, fmt, &idx) < 0) {
+		return false;
+	}
+
+	/* video_format_caps_index() does not check the steps */
+	cap = &video_nsi_fifo_fmts[idx];
+
+	return ((fmt->width - cap->width_min) % cap->width_step == 0) &&
+	       ((fmt->height - cap->height_min) % cap->height_step == 0);
+}
+
 static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format *fmt)
 {
-	const struct video_nsi_fifo_config *cfg = dev->config;
+	struct video_nsi_fifo_data *data = dev->data;
+	int ret;
 
 	if (fmt->type != VIDEO_BUF_TYPE_OUTPUT) {
 		return -EINVAL;
 	}
 
-	/*
-	 * The devicetree declares the format and the host writer must produce it:
-	 * scaling and pixel format conversion are done by the writer (e.g. ffmpeg).
-	 */
-	if ((fmt->pixelformat != cfg->fmt.pixelformat) || (fmt->width != cfg->fmt.width) ||
-	    (fmt->height != cfg->fmt.height)) {
-		LOG_ERR("Only %ux%u %s is supported, adjust the host writer instead",
-			cfg->fmt.width, cfg->fmt.height, VIDEO_FOURCC_TO_STR(cfg->fmt.pixelformat));
+	/* Scaling and pixel format conversion are up to the host writer (e.g. ffmpeg) */
+	if (!video_nsi_fifo_is_supported(fmt)) {
+		LOG_ERR("Unsupported format %s %ux%u", VIDEO_FOURCC_TO_STR(fmt->pixelformat),
+			fmt->width, fmt->height);
 		return -ENOTSUP;
 	}
 
-	return video_estimate_fmt_size(fmt);
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	/* Streaming and the queued buffers both rely on the current frame size */
+	if (data->streaming || !k_fifo_is_empty(&data->fifo_in)) {
+		LOG_ERR("Cannot change the format while streaming or with buffers queued");
+		ret = -EBUSY;
+	} else {
+		data->fmt = *fmt;
+	}
+
+	k_mutex_unlock(&data->lock);
+
+	return ret;
 }
 
 static int video_nsi_fifo_get_fmt(const struct device *dev, struct video_format *fmt)
 {
-	const struct video_nsi_fifo_config *cfg = dev->config;
+	struct video_nsi_fifo_data *data = dev->data;
 
 	if (fmt->type != VIDEO_BUF_TYPE_OUTPUT) {
 		return -EINVAL;
 	}
 
-	*fmt = cfg->fmt;
+	k_mutex_lock(&data->lock, K_FOREVER);
+	*fmt = data->fmt;
+	k_mutex_unlock(&data->lock);
 
-	return video_estimate_fmt_size(fmt);
+	return 0;
 }
 
 static int video_nsi_fifo_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct video_nsi_fifo_config *cfg = dev->config;
-
 	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
 		return -EINVAL;
 	}
 
-	caps->format_caps = cfg->format_caps;
+	caps->format_caps = video_nsi_fifo_fmts;
 	caps->min_vbuf_count = 1;
 
 	return 0;
@@ -296,22 +358,28 @@ unlock:
 static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct video_nsi_fifo_data *data = dev->data;
+	int ret = 0;
 
 	if (vbuf->type != VIDEO_BUF_TYPE_OUTPUT) {
 		return -EINVAL;
 	}
 
-	if (vbuf->size < data->frame_size) {
+	/* Check and queue under the lock, so that set_fmt() cannot run in between */
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (vbuf->size < data->fmt.size) {
 		LOG_ERR("Buffer too small: %u bytes provided, %u needed", vbuf->size,
-			data->frame_size);
-		return -EINVAL;
+			data->fmt.size);
+		ret = -EINVAL;
+	} else {
+		vbuf->bytesused = 0;
+		k_fifo_put(&data->fifo_in, vbuf);
+		k_sem_give(&data->wake_sem);
 	}
 
-	vbuf->bytesused = 0;
-	k_fifo_put(&data->fifo_in, vbuf);
-	k_sem_give(&data->wake_sem);
+	k_mutex_unlock(&data->lock);
 
-	return 0;
+	return ret;
 }
 
 static int video_nsi_fifo_dequeue(const struct device *dev, struct video_buffer **vbuf,
@@ -388,17 +456,13 @@ static int video_nsi_fifo_init(const struct device *dev)
 {
 	const struct video_nsi_fifo_config *cfg = dev->config;
 	struct video_nsi_fifo_data *data = dev->data;
-	struct video_format fmt = cfg->fmt;
 	int ret;
 
-	ret = video_estimate_fmt_size(&fmt);
+	data->fmt = video_nsi_fifo_default_fmt;
+	ret = video_estimate_fmt_size(&data->fmt);
 	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format %s for a raw frame video source",
-			VIDEO_FOURCC_TO_STR(fmt.pixelformat));
 		return ret;
 	}
-
-	data->frame_size = fmt.size;
 
 	/* The native simulator resets unset string options to NULL before parsing */
 	if (data->fifo_path_arg != NULL) {
@@ -427,46 +491,18 @@ static int video_nsi_fifo_init(const struct device *dev)
 	return 0;
 }
 
-/* Whether a pixel format packs several columns in a single macropixel */
-#define VIDEO_NSI_FIFO_EVEN_WIDTH_RGB565 0
-#define VIDEO_NSI_FIFO_EVEN_WIDTH_YUYV   1
-#define VIDEO_NSI_FIFO_EVEN_WIDTH_GREY   0
-
-#define VIDEO_NSI_FIFO_PIXFMT(inst)                                                                \
-	UTIL_CAT(VIDEO_PIX_FMT_, DT_INST_STRING_UPPER_TOKEN(inst, pixel_format))
-
-#define VIDEO_NSI_FIFO_EVEN_WIDTH(inst)                                                            \
-	UTIL_CAT(VIDEO_NSI_FIFO_EVEN_WIDTH_, DT_INST_STRING_UPPER_TOKEN(inst, pixel_format))
-
 /* "/tmp/zephyr-<device>-<pid>.fifo", 20 digits fit any pid */
 #define VIDEO_NSI_FIFO_DEFAULT_PATH_SIZE(inst)                                                     \
 	(sizeof("/tmp/zephyr--.fifo") + sizeof(DEVICE_DT_NAME(DT_DRV_INST(inst))) + 20)
 
 #define VIDEO_NSI_FIFO_DEFINE(inst)                                                                \
-	BUILD_ASSERT(DT_INST_PROP(inst, width) > 0, "width must not be zero");                     \
-	BUILD_ASSERT(DT_INST_PROP(inst, height) > 0, "height must not be zero");                   \
 	BUILD_ASSERT(DT_INST_PROP(inst, poll_interval_ms) > 0,                                     \
 		     "poll-interval-ms must not be zero, it would busy loop the worker thread");   \
-	BUILD_ASSERT(!VIDEO_NSI_FIFO_EVEN_WIDTH(inst) || (DT_INST_PROP(inst, width) % 2 == 0),     \
-		     "this pixel format packs two columns per macropixel, width must be even");    \
                                                                                                    \
 	K_KERNEL_STACK_DEFINE(video_nsi_fifo_stack_##inst,                                         \
 			      CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);                           \
                                                                                                    \
 	static char video_nsi_fifo_default_path_##inst[VIDEO_NSI_FIFO_DEFAULT_PATH_SIZE(inst)];    \
-                                                                                                   \
-	static const struct video_format_cap video_nsi_fifo_caps_##inst[] = {                      \
-		{                                                                                  \
-			.pixelformat = VIDEO_NSI_FIFO_PIXFMT(inst),                                \
-			.width_min = DT_INST_PROP(inst, width),                                    \
-			.width_max = DT_INST_PROP(inst, width),                                    \
-			.height_min = DT_INST_PROP(inst, height),                                  \
-			.height_max = DT_INST_PROP(inst, height),                                  \
-			.width_step = 1,                                                           \
-			.height_step = 1,                                                          \
-		},                                                                                 \
-		{0},                                                                               \
-	};                                                                                         \
                                                                                                    \
 	static const struct video_nsi_fifo_config video_nsi_fifo_config_##inst = {                 \
 		.fifo_path = DT_INST_PROP_OR(inst, fifo_path, NULL),                               \
@@ -475,14 +511,6 @@ static int video_nsi_fifo_init(const struct device *dev)
 		.stack = video_nsi_fifo_stack_##inst,                                              \
 		.stack_size = K_KERNEL_STACK_SIZEOF(video_nsi_fifo_stack_##inst),                  \
 		.poll_interval_ms = DT_INST_PROP(inst, poll_interval_ms),                          \
-		.fmt =                                                                             \
-			{                                                                          \
-				.type = VIDEO_BUF_TYPE_OUTPUT,                                     \
-				.pixelformat = VIDEO_NSI_FIFO_PIXFMT(inst),                        \
-				.width = DT_INST_PROP(inst, width),                                \
-				.height = DT_INST_PROP(inst, height),                              \
-			},                                                                         \
-		.format_caps = video_nsi_fifo_caps_##inst,                                         \
 	};                                                                                         \
                                                                                                    \
 	static struct video_nsi_fifo_data video_nsi_fifo_data_##inst;                              \

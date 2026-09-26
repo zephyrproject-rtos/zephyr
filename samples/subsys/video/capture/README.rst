@@ -139,7 +139,7 @@ video file, or one of the ``ffmpeg`` test sources:
    :goals: build
    :compact:
 
-The snippet declares a 320x240 RGB565 source, which is also the geometry and pixel format of
+The driver defaults to 320x240 RGB565, which is also the geometry and pixel format of
 the :ref:`native_sim SDL display <nsim_per_disp_sdl>`, so the frames are shown in the SDL window
 without any further configuration. Create the FIFO and start the application:
 

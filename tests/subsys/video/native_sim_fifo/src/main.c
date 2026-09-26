@@ -4,10 +4,10 @@
  */
 
 /*
- * Tests for the native_sim host FIFO video source. The driver must expose the
- * fixed devicetree format, reject any other format, keep the simulation running
- * while no writer is attached, and hand over frame aligned buffers once a host
- * writer feeds the pipe.
+ * Tests for the native_sim host FIFO video source. The driver must start with
+ * its default format, accept every format it advertises and reject the others,
+ * keep the simulation running while no writer is attached, and hand over frame
+ * aligned buffers once a host writer feeds the pipe.
  *
  * The host writer is provided by the test itself, in the native simulator
  * runner context, so that the suite needs no external tool and stays
@@ -24,11 +24,22 @@
 
 #define VIDEO_FIFO_NODE DT_NODELABEL(video_fifo)
 
-#define FIFO_WIDTH  DT_PROP(VIDEO_FIFO_NODE, width)
-#define FIFO_HEIGHT DT_PROP(VIDEO_FIFO_NODE, height)
+#define FIFO_PATH DT_PROP(VIDEO_FIFO_NODE, fifo_path)
+
+/* Default format of the driver, RGB565 */
+#define DEFAULT_WIDTH  320
+#define DEFAULT_HEIGHT 240
+
+/* Smaller RGB565 format selected by the streaming tests */
+#define FIFO_WIDTH  64
+#define FIFO_HEIGHT 32
 #define FIFO_PITCH  (FIFO_WIDTH * 2)
 #define FIFO_SIZE   (FIFO_PITCH * FIFO_HEIGHT)
-#define FIFO_PATH   DT_PROP(VIDEO_FIFO_NODE, fifo_path)
+
+/* Another format, with another number of bytes per pixel */
+#define RGB24_WIDTH  40
+#define RGB24_HEIGHT 24
+#define RGB24_SIZE   (RGB24_WIDTH * 3 * RGB24_HEIGHT)
 
 static const struct device *const fifo_dev = DEVICE_DT_GET(VIDEO_FIFO_NODE);
 
@@ -45,11 +56,26 @@ static void test_frame_fill(uint8_t seed)
 	}
 }
 
+static int test_set_format(uint32_t pixelformat, uint32_t width, uint32_t height)
+{
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+		.pixelformat = pixelformat,
+		.width = width,
+		.height = height,
+	};
+
+	return video_set_format(fifo_dev, &fmt);
+}
+
 /* Enqueue a single frame sized buffer and start the stream, creating the FIFO */
 static void test_stream_start_with_one_buffer(void)
 {
-	struct video_buffer *vbuf = video_buffer_alloc(FIFO_SIZE, K_NO_WAIT);
+	struct video_buffer *vbuf;
 
+	zassert_ok(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH, FIFO_HEIGHT));
+
+	vbuf = video_buffer_alloc(FIFO_SIZE, K_NO_WAIT);
 	zassert_not_null(vbuf, "could not allocate a video buffer");
 	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 
@@ -57,84 +83,157 @@ static void test_stream_start_with_one_buffer(void)
 	zassert_ok(video_stream_start(fifo_dev, VIDEO_BUF_TYPE_OUTPUT));
 }
 
+/* Select a format, and check that it is filled in and reported back */
+static void test_check_set_format(uint32_t pixelformat, uint32_t width, uint32_t height)
+{
+	uint32_t pitch = width * video_bits_per_pixel(pixelformat) / BITS_PER_BYTE;
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+		.pixelformat = pixelformat,
+		.width = width,
+		.height = height,
+	};
+	struct video_format cur = {.type = VIDEO_BUF_TYPE_OUTPUT};
+
+	zassert_ok(video_set_format(fifo_dev, &fmt), "%s %ux%u was rejected",
+		   VIDEO_FOURCC_TO_STR(pixelformat), width, height);
+	zassert_equal(fmt.pitch, pitch, "set_format must fill the pitch in");
+	zassert_equal(fmt.size, pitch * height, "set_format must fill the size in");
+
+	zassert_ok(video_get_format(fifo_dev, &cur));
+	zassert_true((cur.pixelformat == pixelformat) && (cur.width == width) &&
+			     (cur.height == height) && (cur.pitch == fmt.pitch) &&
+			     (cur.size == fmt.size),
+		     "get_format does not report the format just set");
+}
+
 ZTEST(video_native_sim_fifo, test_device_ready)
 {
 	zassert_true(device_is_ready(fifo_dev), "the FIFO video device is not ready");
 }
 
-ZTEST(video_native_sim_fifo, test_get_format)
+ZTEST(video_native_sim_fifo, test_default_format)
 {
 	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
 
 	zassert_ok(video_get_format(fifo_dev, &fmt));
 	zassert_equal(fmt.pixelformat, VIDEO_PIX_FMT_RGB565);
-	zassert_equal(fmt.width, FIFO_WIDTH);
-	zassert_equal(fmt.height, FIFO_HEIGHT);
-	zassert_equal(fmt.pitch, FIFO_PITCH);
-	zassert_equal(fmt.size, FIFO_SIZE);
+	zassert_equal(fmt.width, DEFAULT_WIDTH);
+	zassert_equal(fmt.height, DEFAULT_HEIGHT);
+	zassert_equal(fmt.pitch, DEFAULT_WIDTH * 2);
+	zassert_equal(fmt.size, DEFAULT_WIDTH * 2 * DEFAULT_HEIGHT);
 }
 
 ZTEST(video_native_sim_fifo, test_get_caps)
 {
 	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
+	const struct video_format_cap *rgb565 = NULL;
+	const struct video_format_cap *yuyv = NULL;
 
 	zassert_ok(video_get_caps(fifo_dev, &caps));
 	zassert_not_null(caps.format_caps);
 
-	/* Exactly one format, the devicetree one, is advertised. */
-	zassert_equal(caps.format_caps[0].pixelformat, VIDEO_PIX_FMT_RGB565);
-	zassert_equal(caps.format_caps[0].width_min, FIFO_WIDTH);
-	zassert_equal(caps.format_caps[0].width_max, FIFO_WIDTH);
-	zassert_equal(caps.format_caps[0].height_min, FIFO_HEIGHT);
-	zassert_equal(caps.format_caps[0].height_max, FIFO_HEIGHT);
-	zassert_equal(caps.format_caps[1].pixelformat, 0, "the format list is not terminated");
+	for (size_t i = 0; caps.format_caps[i].pixelformat != 0; i++) {
+		const struct video_format_cap *cap = &caps.format_caps[i];
+
+		zassert_equal(cap->width_max, 1920);
+		zassert_equal(cap->height_max, 1080);
+
+		if (cap->pixelformat == VIDEO_PIX_FMT_RGB565) {
+			rgb565 = cap;
+		} else if (cap->pixelformat == VIDEO_PIX_FMT_YUYV) {
+			yuyv = cap;
+		}
+	}
+
+	zassert_not_null(rgb565, "the default pixel format is not advertised");
+	zassert_not_null(yuyv, "YUYV is not advertised");
+	zassert_equal(yuyv->width_step, 2, "YUYV packs two pixels per macropixel");
 }
 
-ZTEST(video_native_sim_fifo, test_set_format_accepts_the_devicetree_format)
+ZTEST(video_native_sim_fifo, test_set_format_accepts_every_advertised_format)
 {
-	struct video_format fmt = {
-		.type = VIDEO_BUF_TYPE_OUTPUT,
-		.pixelformat = VIDEO_PIX_FMT_RGB565,
-		.width = FIFO_WIDTH,
-		.height = FIFO_HEIGHT,
-	};
+	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 
-	zassert_ok(video_set_format(fifo_dev, &fmt));
-	zassert_equal(fmt.pitch, FIFO_PITCH, "set_format must fill the pitch in");
-	zassert_equal(fmt.size, FIFO_SIZE, "set_format must fill the size in");
+	zassert_ok(video_get_caps(fifo_dev, &caps));
+
+	for (size_t i = 0; caps.format_caps[i].pixelformat != 0; i++) {
+		const struct video_format_cap *cap = &caps.format_caps[i];
+
+		test_check_set_format(cap->pixelformat, cap->width_min, cap->height_min);
+		test_check_set_format(cap->pixelformat, cap->width_max, cap->height_max);
+	}
 }
 
-ZTEST(video_native_sim_fifo, test_set_format_rejects_other_formats)
+ZTEST(video_native_sim_fifo, test_set_format_rejects_unsupported_formats)
 {
-	struct video_format fmt = {
-		.type = VIDEO_BUF_TYPE_OUTPUT,
-		.pixelformat = VIDEO_PIX_FMT_RGB565,
-		.width = FIFO_WIDTH,
-		.height = FIFO_HEIGHT,
-	};
+	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
 
-	fmt.width = FIFO_WIDTH * 2;
-	zassert_equal(video_set_format(fifo_dev, &fmt), -ENOTSUP, "a wider format was accepted");
+	zassert_ok(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH, FIFO_HEIGHT));
 
-	fmt.width = FIFO_WIDTH;
-	fmt.height = FIFO_HEIGHT * 2;
-	zassert_equal(video_set_format(fifo_dev, &fmt), -ENOTSUP, "a taller format was accepted");
+	zassert_equal(test_set_format(VIDEO_PIX_FMT_JPEG, FIFO_WIDTH, FIFO_HEIGHT), -ENOTSUP,
+		      "a compressed format was accepted");
+	zassert_equal(test_set_format(VIDEO_PIX_FMT_NV12, FIFO_WIDTH, FIFO_HEIGHT), -ENOTSUP,
+		      "a planar format was accepted");
+	zassert_equal(test_set_format(VIDEO_PIX_FMT_RGB565, 1921, FIFO_HEIGHT), -ENOTSUP,
+		      "a width above 1920 was accepted");
+	zassert_equal(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH, 1081), -ENOTSUP,
+		      "a height above 1080 was accepted");
+	zassert_equal(test_set_format(VIDEO_PIX_FMT_RGB565, 0, FIFO_HEIGHT), -ENOTSUP,
+		      "a zero width was accepted");
+	zassert_equal(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH, 0), -ENOTSUP,
+		      "a zero height was accepted");
+	zassert_equal(test_set_format(VIDEO_PIX_FMT_YUYV, FIFO_WIDTH + 1, FIFO_HEIGHT), -ENOTSUP,
+		      "an odd YUYV width was accepted");
 
-	fmt.height = FIFO_HEIGHT;
-	fmt.pixelformat = VIDEO_PIX_FMT_YUYV;
-	zassert_equal(video_set_format(fifo_dev, &fmt), -ENOTSUP,
-		      "another pixel format was accepted");
+	/* The format in use is left unchanged */
+	zassert_ok(video_get_format(fifo_dev, &fmt));
+	zassert_equal(fmt.pixelformat, VIDEO_PIX_FMT_RGB565);
+	zassert_equal(fmt.width, FIFO_WIDTH);
+	zassert_equal(fmt.height, FIFO_HEIGHT);
+}
+
+ZTEST(video_native_sim_fifo, test_set_format_is_refused_while_in_use)
+{
+	struct video_buffer *vbuf;
+
+	zassert_ok(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH, FIFO_HEIGHT));
+
+	vbuf = video_buffer_alloc(FIFO_SIZE, K_NO_WAIT);
+	zassert_not_null(vbuf, "could not allocate a video buffer");
+	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+	zassert_ok(video_enqueue(fifo_dev, vbuf));
+
+	/* The queued buffer is too small for a larger frame */
+	zassert_equal(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH * 2, FIFO_HEIGHT), -EBUSY,
+		      "the format changed while a buffer was queued");
+
+	/* Nor can it change while streaming, even once no buffer is queued anymore */
+	zassert_ok(video_stream_start(fifo_dev, VIDEO_BUF_TYPE_OUTPUT));
+	zassert_ok(video_driver_flush(fifo_dev, true));
+	zassert_ok(video_dequeue(fifo_dev, &vbuf, K_NO_WAIT), "the buffer was not returned");
+	zassert_equal(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH * 2, FIFO_HEIGHT), -EBUSY,
+		      "the format changed while streaming");
+
+	zassert_ok(video_stream_stop(fifo_dev, VIDEO_BUF_TYPE_OUTPUT));
+	zassert_ok(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH * 2, FIFO_HEIGHT),
+		   "the format could not change once the stream was stopped");
+
+	zassert_ok(video_buffer_release(vbuf));
 }
 
 ZTEST(video_native_sim_fifo, test_enqueue_rejects_small_buffers)
 {
+	struct video_buffer *vbuf;
+
+	zassert_ok(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH, FIFO_HEIGHT));
+
 	/*
 	 * video_enqueue() hands the driver the pool entry matching the buffer index,
 	 * not the buffer passed in, so the buffer has to come from the pool for the
 	 * driver to see the truncated size at all.
 	 */
-	struct video_buffer *vbuf = video_buffer_alloc(FIFO_SIZE - 1, K_NO_WAIT);
-
+	vbuf = video_buffer_alloc(FIFO_SIZE - 1, K_NO_WAIT);
 	zassert_not_null(vbuf, "could not allocate a video buffer");
 	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 
@@ -146,9 +245,12 @@ ZTEST(video_native_sim_fifo, test_enqueue_rejects_small_buffers)
 
 ZTEST(video_native_sim_fifo, test_no_frame_without_a_host_writer)
 {
-	struct video_buffer *vbuf = video_buffer_alloc(FIFO_SIZE, K_NO_WAIT);
+	struct video_buffer *vbuf;
 	int64_t uptime;
 
+	zassert_ok(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH, FIFO_HEIGHT));
+
+	vbuf = video_buffer_alloc(FIFO_SIZE, K_NO_WAIT);
 	zassert_not_null(vbuf, "could not allocate a video buffer");
 	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 
@@ -217,6 +319,35 @@ ZTEST(video_native_sim_fifo, test_frame_from_a_host_writer)
 	zassert_ok(video_dequeue(fifo_dev, &vbuf, K_MSEC(1000)), "no frame was delivered");
 	zassert_equal(vbuf->bytesused, FIFO_SIZE, "the frame is not a whole frame");
 	zassert_mem_equal(vbuf->buffer, test_frame, FIFO_SIZE,
+			  "the delivered frame does not match what the host wrote");
+
+	zassert_ok(video_buffer_release(vbuf));
+}
+
+ZTEST(video_native_sim_fifo, test_frame_in_the_selected_format)
+{
+	struct video_buffer *vbuf;
+
+	zassert_ok(test_set_format(VIDEO_PIX_FMT_RGB24, RGB24_WIDTH, RGB24_HEIGHT));
+
+	vbuf = video_buffer_alloc(RGB24_SIZE, K_NO_WAIT);
+	zassert_not_null(vbuf, "could not allocate a video buffer");
+	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+
+	zassert_ok(video_enqueue(fifo_dev, vbuf));
+	zassert_ok(video_stream_start(fifo_dev, VIDEO_BUF_TYPE_OUTPUT));
+
+	test_writer_fd = video_fifo_test_open_writer(FIFO_PATH);
+	zassert_true(test_writer_fd >= 0, "could not attach a host writer to %s", FIFO_PATH);
+
+	test_frame_fill(0x77);
+	zassert_equal(video_fifo_test_write(test_writer_fd, test_frame, RGB24_SIZE), RGB24_SIZE,
+		      "the host writer could not write a whole frame");
+
+	vbuf = NULL;
+	zassert_ok(video_dequeue(fifo_dev, &vbuf, K_MSEC(1000)), "no frame was delivered");
+	zassert_equal(vbuf->bytesused, RGB24_SIZE, "the frame does not have the selected size");
+	zassert_mem_equal(vbuf->buffer, test_frame, RGB24_SIZE,
 			  "the delivered frame does not match what the host wrote");
 
 	zassert_ok(video_buffer_release(vbuf));
@@ -350,6 +481,9 @@ static void video_native_sim_fifo_after(void *fixture)
 
 	/* Leave no named pipe behind on the host filesystem */
 	(void)video_fifo_test_unlink(FIFO_PATH);
+
+	/* Every test starts from the default format */
+	(void)test_set_format(VIDEO_PIX_FMT_RGB565, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 }
 
 ZTEST_SUITE(video_native_sim_fifo, NULL, NULL, NULL, video_native_sim_fifo_after, NULL);

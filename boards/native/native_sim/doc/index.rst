@@ -499,9 +499,12 @@ Here are more details on the peripherals that are currently provided with this b
 
   The device can be instantiated using the :ref:`snippet-video-native-fifo`
   snippet, or by adding a devicetree node with the
-  ``zephyr,native-sim-video-fifo`` compatible. The frame geometry and the pixel
-  format are fixed by the devicetree: the host writer is responsible for any
-  scaling and pixel format conversion.
+  ``zephyr,native-sim-video-fifo`` compatible. The application selects the
+  pixel format and the frame size, up to 1920x1080, with
+  :c:func:`video_set_format`. The default is 320x240 RGB565. The host writer
+  must produce frames of that format, as the driver does no scaling or
+  conversion. In ``ffmpeg``, RGB565, YUYV and GREY are ``rgb565le``,
+  ``yuyv422`` and ``gray``.
 
   The FIFO path is taken from the ``fifo-path`` devicetree property, and
   defaults to ``/tmp/zephyr-<device>-<pid>.fifo``. Each instance exposes its own
@@ -518,7 +521,7 @@ Here are more details on the peripherals that are currently provided with this b
      $ mkfifo /tmp/zephyr-cam.fifo
      $ zephyr.exe --video-fifo=/tmp/zephyr-cam.fifo
 
-  Then, from another terminal, feed it a test pattern:
+  Then, from another terminal, feed it a test pattern in the default format:
 
   .. code-block:: console
 

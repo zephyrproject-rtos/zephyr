@@ -10,8 +10,5 @@
 
 	video_fifo: video-fifo {
 		compatible = "zephyr,native-sim-video-fifo";
-		width = <320>;
-		height = <240>;
-		pixel-format = "RGB565";
 	};
 };

@@ -4,10 +4,8 @@
 description: |
   Native simulator video source reading raw frames from a host named pipe (FIFO).
 
-  The devicetree declares the frame format the driver expects. The host writer
-  must produce raw frames of exactly that format, width * height *
-  bytes-per-pixel bytes each: any scaling and pixel format conversion is up to
-  the writer.
+  The application selects the frame format through the video API, and the host
+  writer must produce frames of exactly that format.
 
   See the native_sim board documentation for how to feed the FIFO and for the
   details of the driver behaviour.
@@ -24,28 +22,6 @@ properties:
       if it does not exist yet. Defaults to /tmp/zephyr-<device>-<pid>.fifo. It
       can be overridden at runtime with the --<device>=<path> command line
       option.
-
-  width:
-    type: int
-    required: true
-    description: Frame width in pixels.
-
-  height:
-    type: int
-    required: true
-    description: Frame height in pixels.
-
-  pixel-format:
-    type: string
-    required: true
-    enum:
-      - "RGB565"
-      - "YUYV"
-      - "GREY"
-    description: |
-      Pixel format the driver expects from the host writer. RGB565 is
-      little-endian, matching the ffmpeg rgb565le format. YUYV matches the
-      ffmpeg yuyv422 format and GREY matches the ffmpeg gray format.
 
   poll-interval-ms:
     type: int
