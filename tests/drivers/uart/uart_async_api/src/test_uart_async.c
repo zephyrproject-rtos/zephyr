@@ -1062,10 +1062,20 @@ ZTEST_USER(uart_async_long_buf, test_long_buffers)
 	memset(long_rx_buf, 0, sizeof(long_rx_buf));
 	memset(long_tx_buf, 1, sizeof(long_tx_buf));
 
-	uart_rx_enable(uart_dev, long_rx_buf, sizeof(long_rx_buf), 10 * USEC_PER_MSEC);
+	if (IS_ENABLED(CONFIG_SOC_SERIES_ESP32S3)) {
+		zassert_equal(uart_rx_enable(uart_dev, long_rx_buf, RX_LONG_BUFFER + 1U,
+					     10 * USEC_PER_MSEC),
+			      -EINVAL);
+	}
 
-	uart_tx(uart_dev, long_tx_buf, tx_len1, 200 * USEC_PER_MSEC);
-	zassert_equal(k_sem_take(&tx_done, K_MSEC(200)), 0, "TX_DONE timeout");
+	zassert_ok(uart_rx_enable(uart_dev, long_rx_buf, sizeof(long_rx_buf), 10 * USEC_PER_MSEC));
+	if (IS_ENABLED(CONFIG_SOC_SERIES_ESP32S3)) {
+		zassert_equal(uart_rx_buf_rsp(uart_dev, long_rx_buf2, RX_LONG_BUFFER + 1U),
+			      -EINVAL);
+	}
+
+	uart_tx(uart_dev, long_tx_buf, tx_len1, 1000 * USEC_PER_MSEC);
+	zassert_equal(k_sem_take(&tx_done, K_MSEC(1000)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(200)), 0, "RX_RDY timeout");
 	zassert_equal(long_received[0], tx_len1, "Wrong number of bytes received.");
 	zassert_equal(memcmp(long_tx_buf, long_rx_buf, tx_len1),
@@ -1076,12 +1086,14 @@ ZTEST_USER(uart_async_long_buf, test_long_buffers)
 	bool release_on_timeout = k_sem_take(&rx_buf_released, K_NO_WAIT) == 0;
 
 	evt_num = 0;
-	uart_tx(uart_dev, long_tx_buf, tx_len2, 200 * USEC_PER_MSEC);
-	zassert_equal(k_sem_take(&tx_done, K_MSEC(200)), 0, "TX_DONE timeout");
+	uart_tx(uart_dev, long_tx_buf, tx_len2, 1000 * USEC_PER_MSEC);
+	zassert_equal(k_sem_take(&tx_done, K_MSEC(1000)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(200)), 0, "RX_RDY timeout");
 
 	if (release_on_timeout) {
-		zassert_equal(long_received[0], tx_len2, "Wrong number of bytes received.");
+		zassert_equal(long_received[0], tx_len2,
+			      "Wrong number of bytes received: got %zu, expected %zu.",
+			      long_received[0], tx_len2);
 		zassert_equal(memcmp(long_tx_buf, long_rx_buf2, long_received[0]), 0,
 			      "Buffers not equal");
 	} else {

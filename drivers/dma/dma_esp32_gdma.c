@@ -767,17 +767,16 @@ static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
 		desc = (esp_dma_desc_t *)dma_ll_rx_get_prefetched_desc(data,
 								       dma_channel->channel_id);
 		if (desc >= dma_channel->desc_list) {
-			/*
-			 * The GDMA writes the received length back into the
-			 * descriptor in memory. On SoCs with a data cache the CPU
-			 * copy is stale, so invalidate just the prefetched
-			 * descriptor before reading dw0.length.
-			 */
-			sys_cache_data_invd_range(desc, sizeof(*desc));
 			status->read_position = desc - dma_channel->desc_list;
-			status->total_copied = desc->dw0.length
-						+ dma_channel->desc_list[0].dw0.size
-						* status->read_position;
+		}
+		/* Prefetch can advance before GDMA receives data into that descriptor. */
+		for (size_t i = 0; i < ARRAY_SIZE(dma_channel->desc_list); ++i) {
+			desc = &dma_channel->desc_list[i];
+			sys_cache_data_invd_range(desc, sizeof(*desc));
+			status->total_copied += desc->dw0.length;
+			if (desc->next == NULL) {
+				break;
+			}
 		}
 	} else if (dma_channel->dir == DMA_TX) {
 		status->busy = !dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id);
