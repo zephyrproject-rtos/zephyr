@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_NXP_LPC_MCAN
-	bool "NXP LPC family MCAN driver"
+	bool "NXP LPC MCAN CAN driver"
 	default y
 	depends on DT_HAS_NXP_LPC_MCAN_ENABLED
 	depends on CLOCK_CONTROL
