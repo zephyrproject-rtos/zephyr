@@ -10,7 +10,8 @@ target_sources(
   userspace.c
   )
 zephyr_sources(
-  mutex.c
   user_work.c
   sem.c
 )
+zephyr_sources_ifdef(CONFIG_SYS_MUTEX_IMPL_K_MUTEX mutex_kernel.c)
+zephyr_sources_ifdef(CONFIG_SYS_MUTEX_IMPL_FUTEX mutex_futex.c)
