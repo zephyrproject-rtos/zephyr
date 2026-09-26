@@ -18,6 +18,8 @@ include:
   - name: pinctrl-device.yaml
   - name: microchip,dmec-ecia-girq.yaml
 
+class: [i3c, i2c]
+
 properties:
   reg:
     required: true
