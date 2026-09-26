@@ -487,6 +487,13 @@ Clock Control
   ``siwx91x-clock.h``. For example, ``clocks = <&clock0 SIWX91X_CLK_UART0>;`` becomes
   ``clocks = <&cmu_hp SIWX91X_CLK_UART0>;``.
 
+* Drivers had been returning inconsistent result codes for :c:func:`clock_control_on()` and
+  :c:func:`clock_control_off()` for clocks that aren't stoppable. In addition, some drivers had
+  implemented only the former function. Both has been marked as mandatory, with new helper handlers
+  added to :file:`drivers/clock_control/common_helpers.h`. Drivers are expected to use them instead
+  of writing their own, whenever feasible. See :github:`118560` for examples of how in-tree drivers
+  have been updated.
+
 Clock control nrf deprecation
 -----------------------------
 
