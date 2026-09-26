@@ -72,6 +72,8 @@ enum uvb_device_act {
 	UVB_DEVICE_ACT_HS,
 	/** Super speed device connected */
 	UVB_DEVICE_ACT_SS,
+	/** Device connected */
+	UVB_DEVICE_ACT_CONNECTED,
 	/** Device removed */
 	UVB_DEVICE_ACT_REMOVED,
 };

@@ -662,6 +662,12 @@ static void vrt_device_act(const struct device *dev,
 		priv->sof_period = K_USEC(125);
 		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
 		break;
+	case UVB_DEVICE_ACT_CONNECTED:
+		if (uhc_is_enabled(dev)) {
+			uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL);
+		}
+
+		return;
 	case UVB_DEVICE_ACT_REMOVED:
 		type = UHC_EVT_DEV_REMOVED;
 		break;
