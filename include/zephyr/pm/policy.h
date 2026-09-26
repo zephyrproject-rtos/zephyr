@@ -89,7 +89,11 @@ struct pm_policy_event {
  * ticks to the next event.
  *
  * @param cpu CPU index.
- * @param ticks The number of ticks to the next scheduled event.
+ * @param ticks The number of ticks to the next scheduled event, or -1 when no
+ * event is pending. The power subsystem clamps this to the
+ * [-1, SYS_CLOCK_MAX_WAIT] range, so an event further out than
+ * SYS_CLOCK_MAX_WAIT is reported as SYS_CLOCK_MAX_WAIT rather than wrapping
+ * negative.
  *
  * @return The power state the system should use for the given cpu. The function
  * will return NULL if system should remain into PM_STATE_ACTIVE.
@@ -275,6 +279,12 @@ void pm_policy_event_unregister(struct pm_policy_event *evt);
  * - If the earliest event is due now or already in the past, returns 0.
  * - If no events are registered, returns -1.
  *
+ * The returned tick count is not bounded by the 32-bit horizon the sleep
+ * decision uses: pm_system_suspend() saturates it at SYS_CLOCK_MAX_WAIT before
+ * passing it to pm_policy_next_state(). An event further out than that horizon
+ * therefore selects the same state as one exactly at it, and is never
+ * truncated.
+ *
  * @return Positive number of ticks if the next registered event is in the future.
  * @retval 0 The next registered event is now or in the past.
  * @retval -1 No events are registered.
@@ -288,6 +298,10 @@ int64_t pm_policy_next_event_ticks(void);
  * This optional hook allows providing an additional "next event"
  * tick value derived from proprietary or hardware-specific sources
  * that are not modeled via pm_policy_next_event_ticks().
+ *
+ * As for pm_policy_next_event_ticks(), the returned value is saturated at
+ * SYS_CLOCK_MAX_WAIT before the sleep decision is made, so a hook may report an
+ * arbitrarily distant event without special-casing the 32-bit horizon.
  *
  * @kconfig_dep{CONFIG_PM_CUSTOM_TICKS_HOOK}
  *

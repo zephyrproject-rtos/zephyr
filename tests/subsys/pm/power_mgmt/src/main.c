@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Intel Corporation.
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 #include <ksched.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 #include "dummy_driver.h"
 
 #define SLEEP_MSEC 100
@@ -28,6 +30,7 @@ static bool testing_device_runtime;
 static bool testing_device_order;
 static bool testing_force_state;
 static bool exit_post_ops_called;
+static int32_t policy_ticks;
 
 enum pm_state forced_state;
 static const struct device *device_dummy;
@@ -248,10 +251,22 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		      "PM exit post ops ran with interrupts enabled");
 }
 
+#ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
+/* Ticks reported by the custom hook; -1 means no custom event is pending */
+static int64_t custom_ticks = -1;
+
+int64_t pm_policy_next_custom_ticks(void)
+{
+	return custom_ticks;
+}
+#endif /* CONFIG_PM_CUSTOM_TICKS_HOOK */
+
 /* Our PM policy handler */
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	const struct pm_state_info *cpu_states;
+
+	policy_ticks = ticks;
 
 	zassert_true(pm_state_cpu_get_all(cpu, &cpu_states) == 2,
 		     "There is no power state defined");
@@ -335,6 +350,88 @@ ZTEST(power_management_1cpu, test_power_idle)
 	k_sleep(SLEEP_TIMEOUT);
 	zassert_true(idle_entered, "Never entered idle thread");
 }
+
+/*
+ * @brief test that a far future event does not truncate the policy tick count
+ *
+ * @details
+ *  - pm_policy_next_event_ticks() reports the ticks until the next registered
+ *    event as an int64_t, while pm_policy_next_state() takes an int32_t.
+ *  - An event scheduled beyond the int32_t tick range must therefore be
+ *    saturated, not truncated: a truncated value wraps negative, which both
+ *    trips the assertions in the PM subsystem and makes the far future event
+ *    look nearer than the kernel timeout.
+ *  - The nearer kernel timeout must still be the one handed to the policy.
+ *
+ * @see pm_policy_event_register(), pm_policy_next_event_ticks()
+ *
+ * @ingroup power_tests
+ */
+ZTEST(power_management_1cpu, test_next_event_far_future_ticks)
+{
+	struct pm_policy_event evt;
+
+	policy_ticks = -1;
+	idle_entered = false;
+
+	/*
+	 * Schedule the event past the int32_t tick range, with a one second
+	 * margin so that the remaining tick count is still out of range by the
+	 * time the idle thread evaluates it. Using an uptime relative target
+	 * keeps this independent of the tick rate.
+	 */
+	pm_policy_event_register(&evt, k_uptime_ticks() + (int64_t)INT32_MAX +
+					      CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+
+	/* give way to idle thread */
+	k_sleep(SLEEP_TIMEOUT);
+
+	pm_policy_event_unregister(&evt);
+
+	zassert_true(idle_entered, "Never entered idle thread");
+	zassert_true(policy_ticks >= 0,
+		     "Far future event truncated to a negative tick count: %d",
+		     policy_ticks);
+}
+
+#ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
+/*
+ * @brief test that a far future custom event does not truncate the policy ticks
+ *
+ * @details
+ *  - pm_policy_next_custom_ticks() reports int64_t ticks and has the same
+ *    narrowing hazard as pm_policy_next_event_ticks(), so it must be saturated
+ *    the same way before reaching pm_policy_next_state().
+ *  - Outside of this test the hook reports -1, so every other test in this
+ *    configuration also covers the case where one side has nothing pending
+ *    while the other carries a real deadline.
+ *
+ * @see pm_policy_next_custom_ticks()
+ *
+ * @ingroup power_tests
+ */
+ZTEST(power_management_1cpu, test_custom_ticks_far_future)
+{
+	policy_ticks = -1;
+	idle_entered = false;
+
+	/*
+	 * The hook reports a relative tick count, so put it just past the
+	 * int32_t range. The kernel timeout below stays the nearer deadline.
+	 */
+	custom_ticks = (int64_t)INT32_MAX + CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+	/* give way to idle thread */
+	k_sleep(SLEEP_TIMEOUT);
+
+	custom_ticks = -1;
+
+	zassert_true(idle_entered, "Never entered idle thread");
+	zassert_true(policy_ticks >= 0,
+		     "Far future custom event truncated to a negative tick count: %d",
+		     policy_ticks);
+}
+#endif /* CONFIG_PM_CUSTOM_TICKS_HOOK */
 
 static struct pm_notifier notifier = {
 	.state_entry = notify_pm_state_entry,
