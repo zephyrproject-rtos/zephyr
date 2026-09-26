@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_peri0 {
+	status = "okay";
+};
+
+&peri0_group0_16bit_0 {
+	status = "okay";
+};
+
+&tcpwm0_0 {
+	clock-frequency = <1000000>;
+	status = "okay";
+};
+
+&counter0_0 {
+	clocks = <&peri0_group0_16bit_0>;
+	status = "okay";
+};
