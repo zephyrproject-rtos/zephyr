@@ -57,11 +57,28 @@ config GIC_V3_ITS
 	# ITS generates Non-secure Group 1 LPI interrupts, requiring EL1NS
 	select ARMV8_A_NS
 	select DYNAMIC_INTERRUPTS
+	select KERNEL_MEM_POOL
 	help
 	  Support for the optional Interrupt Translation Service used to translate
 	  hardware interrupt from PCIe MSI messages for example. Please note
-	  that ITS uses dynamic memory, so HEAP_MEM_POOL_SIZE should be
-	  enough to allocate ITS tables (size is probed at runtime).
+	  that ITS allocates its tables from the system heap, whose minimum size
+	  HEAP_MEM_POOL_ADD_SIZE_GIC_V3_ITS below accounts for.
+
+# The GICv3 and ITS drivers allocate, from the system heap:
+# - LPI property table: one 64K table, 64K aligned, shared by all CPUs
+# - LPI pending table: one 64K table, 64K aligned, per redistributor/CPU
+# - Devices table: 128x4K, 4K aligned
+# - Interrupt collections table: 1x4K, 4K aligned
+#
+# 13x64K covers those on a four-CPU system. It does not include the interrupt
+# translation tables, which are 256-byte aligned and sized per device: a 32-ITE
+# table needs 256 bytes, so the remainder leaves room for a useful number of
+# them. Boards needing more can raise CONFIG_HEAP_MEM_POOL_SIZE, and an
+# application that has measured its own requirement can opt out of the minimum
+# with CONFIG_HEAP_MEM_POOL_IGNORE_MIN.
+config HEAP_MEM_POOL_ADD_SIZE_GIC_V3_ITS
+	int
+	default 851968 if GIC_V3_ITS
 
 config GIC_SAFE_CONFIG
 	bool "GIC Distributor Safe Configuration"
