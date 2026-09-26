@@ -90,6 +90,8 @@ struct i3c_renesas_ra_data {
 	bool bus_configured;     /* true if bus had been configured */
 	bool skip_address_phase; /* true to skip address phase handle */
 	uint8_t address_phase_count;
+	uint8_t daa_pending_count;
+	struct i3c_device_desc *daa_pending[I3C_RENESAS_RA_DATBAS_NUM];
 };
 
 struct i3c_renesas_ra_config {
@@ -207,6 +209,46 @@ static int i3c_renesas_ra_device_index_request(const struct device *dev, uint8_t
 	return index;
 }
 
+static int i3c_renesas_ra_defer_daa_attach(const struct device *dev,
+					   struct i3c_device_desc *target)
+{
+	struct i3c_renesas_ra_data *data = dev->data;
+
+	for (int i = 0; i < data->daa_pending_count; i++) {
+		if (data->daa_pending[i] == target) {
+			return 0;
+		}
+	}
+
+	if (data->daa_pending_count >= I3C_RENESAS_RA_DATBAS_NUM) {
+		return -ENOSPC;
+	}
+
+	data->daa_pending[data->daa_pending_count++] = target;
+
+	return 0;
+}
+
+static void i3c_renesas_ra_attach_deferred_daa_devices(
+	const struct device *dev)
+{
+	struct i3c_renesas_ra_data *data = dev->data;
+
+	for (int i = 0; i < data->daa_pending_count; i++) {
+		struct i3c_device_desc *target =
+			data->daa_pending[i];
+
+		if (i3c_is_i3c_device_attached(target)) {
+			continue;
+		}
+
+		sys_slist_append(&data->common.attached_dev.devices.i3c,
+			&target->node);
+	}
+
+	data->daa_pending_count = 0;
+}
+
 static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 						i3c_slave_info_t const *daa_rx)
 {
@@ -234,10 +276,10 @@ static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 		target->bcr = daa_rx->bcr;
 		target->dcr = daa_rx->dcr;
 
-		int aret = i3c_attach_i3c_device(target);
+		int aret = i3c_renesas_ra_defer_daa_attach(dev, target);
 
-		if (aret != 0 && aret != -EALREADY) {
-			LOG_ERR("Failed to attach target");
+		if (aret != 0) {
+			LOG_ERR("Failed to defer DAA target attachment");
 		}
 	}
 
@@ -570,8 +612,8 @@ static int i3c_renesas_ra_configure(const struct device *dev, enum i3c_config_ty
 
 		/* Set this device as master role */
 		fsp_err = R_I3C_DeviceCfgSet(data->fsp_ctrl, data->fsp_master_cfg);
-		if (ret) {
-			LOG_ERR("Failed to init i3c controller, err=%d", ret);
+		if (fsp_err != FSP_SUCCESS) {
+			LOG_ERR("Failed to init i3c controller, err=%d", fsp_err);
 			ret = -EIO;
 			goto configure_exit;
 		}
@@ -764,6 +806,7 @@ static int i3c_renesas_ra_do_daa(const struct device *dev)
 
 	/* Start DAA without address assignment to get device info */
 	data->address_phase_count = 0;
+	data->daa_pending_count = 0;
 	data->skip_address_phase = false;
 	fsp_err = R_I3C_DynamicAddressAssignmentStart(data->fsp_ctrl, I3C_CCC_ENTDAA, start_index,
 						      num_dev);
@@ -806,6 +849,7 @@ static int i3c_renesas_ra_do_daa(const struct device *dev)
 	goto daa_exit;
 
 daa_exit:
+	i3c_renesas_ra_attach_deferred_daa_devices(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	LOG_DBG("DAA %s", ret ? "failed" : "complete");
@@ -1003,7 +1047,8 @@ static int i3c_renesas_ra_i3c_transfer(const struct device *dev, struct i3c_devi
 	target_index = i3c_renesas_ra_device_index_find(
 		dev, (target->dynamic_addr) ? target->dynamic_addr : target->static_addr, false);
 	if (target_index < 0) {
-		return -ENODEV;
+		ret = -ENODEV;
+		goto i3c_xfer_exit;
 	}
 
 	/* Select target index and bitrate mode */
@@ -1095,8 +1140,9 @@ static int i3c_renesas_ra_init(const struct device *dev)
 	}
 
 	/* Configure bus */
-	if (i3c_configure(dev, I3C_CONFIG_CONTROLLER, &data->common.ctrl_config)) {
-		LOG_ERR("Failed to configure bus");
+	ret = i3c_configure(dev, I3C_CONFIG_CONTROLLER, &data->common.ctrl_config);
+	if (ret) {
+		LOG_ERR("Failed to configure bus, err=%d", ret);
 		return ret;
 	}
 
