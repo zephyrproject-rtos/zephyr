@@ -11,6 +11,7 @@
 #include <zephyr/usb_c/usbc.h>
 #include <zephyr/usb_c/tcpci.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/byteorder.h>
 #include "rt1715.h"
 
 #define DT_DRV_COMPAT richtek_rt1715
@@ -288,7 +289,7 @@ static int rt1715_tcpc_rx_fifo_enqueue(const struct device *dev)
 
 	rxbcnt = buf[0];
 	rxftype = buf[1];
-	rxhead = (buf[3] << 8) | buf[2];
+	rxhead = sys_get_le16(&buf[2]);
 
 	/* rxbcnt = 1 (frame type) + 2 (Message Header) + Rx data byte count */
 	if (rxbcnt < 3) {
