@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WUC_RTS5817
+	bool "RTS5817 WUC (Wake-Up Controller) driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5817_WUC_ENABLED
+	select SYSCON
+	help
+	  Enable the RTS5817 wake-up controller driver. This driver handles
+	  wakeup source configuration (enable/disable), wakeup detection, and
+	  wakeup status clearing for the RTS5817 fingerprint SoC.

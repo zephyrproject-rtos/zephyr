@@ -11,6 +11,7 @@
 LOG_MODULE_REGISTER(spi_rts5817);
 
 #include <zephyr/cache.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/minmax.h>
@@ -190,6 +191,96 @@ static int spi_rts5817_configure(const struct device *dev, const struct spi_conf
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int spi_rts5817_reconfigure(const struct device *dev)
+{
+	const struct spi_rts5817_config *cfg = dev->config;
+	const struct spi_dw_config *dw_cfg = cfg->dw_spi_dev->config;
+	struct spi_rts5817_data *data = dev->data;
+	const struct spi_config *config = data->ctx.config;
+	uint32_t ctrlr0 = 0U;
+
+	if (config == NULL) {
+		/* No config is installed before */
+		return 0;
+	}
+
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
+	if (config->operation & SPI_OP_MODE_SLAVE) {
+		LOG_ERR("Slave mode not supported");
+		return -ENOTSUP;
+	}
+
+	if ((config->operation & SPI_TRANSFER_LSB) ||
+	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	     (config->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
+		LOG_ERR("Unsupported configuration");
+		return -EINVAL;
+	}
+
+	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
+		LOG_ERR("Word size of %u not allowed", SPI_WORD_SIZE_GET(config->operation));
+		return -ENOTSUP;
+	}
+
+	/* Word size */
+	ctrlr0 |= SPI_WORD_SIZE_GET(config->operation) - 1;
+
+	/* Determine how many bytes are required per-frame */
+	data->dfs = SPI_WS_TO_DFS(SPI_WORD_SIZE_GET(config->operation));
+
+	/* SPI mode */
+	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) {
+		ctrlr0 |= DW_SPI_CTRLR0_SCPOL;
+	}
+
+	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) {
+		ctrlr0 |= DW_SPI_CTRLR0_SCPH;
+	}
+
+	if (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) {
+		ctrlr0 |= DW_SPI_CTRLR0_SRL;
+	}
+
+	/* Installing the configuration */
+	write_ctrlr0(cfg->dw_spi_dev, ctrlr0);
+
+	LOG_DBG("CTRLR0:%x", read_ctrlr0(cfg->dw_spi_dev));
+
+	/* Baud rate and Slave select, for master only */
+	write_baudr(cfg->dw_spi_dev, SPI_DW_CLK_DIVIDER(data->clock_frequency, config->frequency));
+
+	/* Config txftlr & rxftlr */
+	write_txftlr(cfg->dw_spi_dev, RTS5817_SPI_TXFTLR_VALUE);
+	write_rxftlr(cfg->dw_spi_dev, RTS5817_SPI_RXFTLR_VALUE);
+
+	/* Config rx sample delay */
+	if ((config->frequency >= 60000000) &&
+	    (dw_cfg->pcfg->states->pins->power_source == IO_POWER_1V8)) {
+		write_rx_sample_dly(cfg->dw_spi_dev, 0x2);
+	} else {
+		write_rx_sample_dly(cfg->dw_spi_dev, 0x1);
+	}
+
+	ctrl_reg_clear_bits(cfg, R_MST_SPI_SSI_CONTROL, MST_SCK_INTERVAL_EN_MASK);
+
+	LOG_DBG("Installed master config %p: freq %uHz (div = %u),"
+		" ws/dfs %u/%u, mode %u/%u/%u, slave %u",
+		config, config->frequency,
+		SPI_DW_CLK_DIVIDER(data->clock_frequency, config->frequency),
+		SPI_WORD_SIZE_GET(config->operation), data->dfs,
+		(SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0,
+		(SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0,
+		(SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) ? 1 : 0, config->slave);
+
+	return 0;
+}
+#endif
 
 static size_t spi_rts5817_next_chunk_len(struct spi_context *ctx)
 {
@@ -482,6 +573,28 @@ static int spi_rts5817_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int spi_rts5817_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		spi_rts5817_init(dev);
+		/*
+		 * SPI controller will lost all configuration when resume from low power mode
+		 * Reconfigure it according to the config installed in context.
+		 */
+		spi_rts5817_reconfigure(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #ifdef CONFIG_SPI_RTS5817_INTERRUPT
 #define SPI_RTS5817_IRQ_HANDLER(inst)                                                              \
 	static void spi_rts5817_irq_config_##inst(void)                                            \
@@ -513,8 +626,9 @@ static int spi_rts5817_init(const struct device *dev)
 		.clock_dev = DEVICE_DT_GET(DW_CLOCKS_CTLR(inst)),                                  \
 		.clock_subsys = (clock_control_subsys_t)DW_CLOCKS_CELL(inst, clkid),               \
 		SPI_RTS5817_IRQ_HANDLER_FUNC(inst)};                                               \
-	DEVICE_DT_INST_DEFINE(inst, spi_rts5817_init, NULL, &spi_rts5817_data_##inst,              \
-			      &spi_rts5817_config_##inst, POST_KERNEL,                             \
+	PM_DEVICE_DT_INST_DEFINE(inst, spi_rts5817_pm_action);                                     \
+	DEVICE_DT_INST_DEFINE(inst, spi_rts5817_init, PM_DEVICE_DT_INST_GET(inst),                 \
+			      &spi_rts5817_data_##inst, &spi_rts5817_config_##inst, POST_KERNEL,   \
 			      CONFIG_SPI_RTS5817_INIT_PRIORITY, &rts5817_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_RTS5817_INIT)
