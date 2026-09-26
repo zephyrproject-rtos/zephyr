@@ -45,9 +45,9 @@ const clock_pcfs_config_t pcfs_config = {.maxAllowableIDDchange = NXP_PLL_MAXIDO
 
 /*
  * The EMAC RX/TX/TS source muxes have to be attached before the MAC leaves
- * reset, and which source is correct depends on the PHY interface selected in
- * devicetree. Only set them up on SoCs that have an EMAC and only when it is
- * actually enabled.
+ * reset, and which receive and transmit sources are correct depends on the PHY
+ * interface selected in devicetree. Only set them up on SoCs that have an EMAC
+ * and only when it is actually enabled.
  */
 #if defined(FSL_FEATURE_CLOCK_HAS_EMAC) && (FSL_FEATURE_CLOCK_HAS_EMAC != 0U) && \
 	DT_NODE_HAS_STATUS_OKAY(MC_CGM_EMAC_NODE)
@@ -63,29 +63,23 @@ const clock_pcfs_config_t pcfs_config = {.maxAllowableIDDchange = NXP_PLL_MAXIDO
 
 #if DT_ENUM_HAS_VALUE(MC_CGM_EMAC_NODE, phy_connection_type, rmii)
 /*
- * The one reference clock feeds all three domains, and the MAC clocks its
- * MII-side logic at half the RMII rate.
+ * The one reference clock feeds the receive and transmit domains, and the MAC
+ * clocks its MII-side logic at half the RMII rate.
  */
 #define MC_CGM_EMAC_TXPAD_CLK_HZ MC_CGM_EMAC_RMII_REF_CLK_HZ
 #define MC_CGM_EMAC_RXPAD_CLK_HZ 0U
 #define MC_CGM_EMAC_RX_ATTACH    kEMAC_RMII_TX_CLK_to_EMAC_RX
 #define MC_CGM_EMAC_RX_SRC       CLOCK_EMAC_RMII_TX_CLK
-#define MC_CGM_EMAC_TS_ATTACH    kEMAC_RMII_TX_CLK_to_EMAC_TS
-#define MC_CGM_EMAC_TS_SRC       CLOCK_EMAC_RMII_TX_CLK
 #define MC_CGM_EMAC_CLK_DIV      2U
 #elif DT_ENUM_HAS_VALUE(MC_CGM_EMAC_NODE, phy_connection_type, mii)
 /*
  * The PHY drives the transmit and receive clocks on separate pads, already at
- * the MII-side rate. The timestamp unit is fed from the transmit clock, which
- * means it follows the link speed - fine at 100 Mbps, ten times slower at
- * 10 Mbps.
+ * the MII-side rate.
  */
 #define MC_CGM_EMAC_TXPAD_CLK_HZ MC_CGM_EMAC_MII_CLK_HZ
 #define MC_CGM_EMAC_RXPAD_CLK_HZ MC_CGM_EMAC_MII_CLK_HZ
 #define MC_CGM_EMAC_RX_ATTACH    kEMAC_RX_CLK_to_EMAC_RX
 #define MC_CGM_EMAC_RX_SRC       CLOCK_EMAC_RX_CLK
-#define MC_CGM_EMAC_TS_ATTACH    kEMAC_RMII_TX_CLK_to_EMAC_TS
-#define MC_CGM_EMAC_TS_SRC       CLOCK_EMAC_RMII_TX_CLK
 #define MC_CGM_EMAC_CLK_DIV      1U
 #else
 #error "Unsupported PHY connection type for the MCXE Ethernet MAC"
@@ -272,16 +266,17 @@ BUILD_ASSERT(MC_CGM_MUX_8_CSS_SELSTAT_MASK == MC_CGM_EMAC_SELSTAT_MASK);
 BUILD_ASSERT(MC_CGM_MUX_9_CSS_SELSTAT_MASK == MC_CGM_EMAC_SELSTAT_MASK);
 
 /*
- * Every EMAC clock domain is derived from a clock the PHY drives into the SoC,
- * so these must run only once the pads are muxed: the glitchless MC_CGM mux
- * refuses to switch to a source that is not toggling and silently leaves the
- * domain on FIRC, which is close enough to keep framing packets but far enough
- * off to corrupt every one of them. CLOCK_AttachClk() reports success either
- * way, so check the status register.
+ * The receive and transmit domains are derived from clocks the PHY drives into
+ * the SoC, so these must run only once the pads are muxed: the glitchless
+ * MC_CGM mux refuses to switch to a source that is not toggling and silently
+ * leaves the domain on FIRC, which is close enough to keep framing packets but
+ * far enough off to corrupt every one of them. CLOCK_AttachClk() reports
+ * success either way, so check the status register.
  */
 struct mc_cgm_emac_clk {
 	volatile const uint32_t *css;
 	uint32_t src;
+	uint32_t div;
 	clock_attach_id_t attach;
 	clock_div_name_t div_name;
 };
@@ -289,6 +284,7 @@ struct mc_cgm_emac_clk {
 static const struct mc_cgm_emac_clk mc_cgm_emac_rx_clk = {
 	.attach = MC_CGM_EMAC_RX_ATTACH,
 	.div_name = kCLOCK_DivEmacRxClk,
+	.div = MC_CGM_EMAC_CLK_DIV,
 	.css = &MC_CGM->MUX_7_CSS,
 	.src = MC_CGM_EMAC_RX_SRC,
 };
@@ -296,15 +292,24 @@ static const struct mc_cgm_emac_clk mc_cgm_emac_rx_clk = {
 static const struct mc_cgm_emac_clk mc_cgm_emac_tx_clk = {
 	.attach = MC_CGM_EMAC_TX_ATTACH,
 	.div_name = kCLOCK_DivEmacTxClk,
+	.div = MC_CGM_EMAC_CLK_DIV,
 	.css = &MC_CGM->MUX_8_CSS,
 	.src = MC_CGM_EMAC_TX_SRC,
 };
 
+/*
+ * The timestamp unit runs from PLL_PHI0 instead: it is locked to the crystal,
+ * keeps running regardless of the PHY and the link speed, and undivided gives
+ * the finest time resolution. Self-test of the EMAC timestamp memory also
+ * needs this clock at 1.5 times AIPS_SLOW_CLK or more, which the PHY clocks
+ * cannot provide.
+ */
 static const struct mc_cgm_emac_clk mc_cgm_emac_ts_clk = {
-	.attach = MC_CGM_EMAC_TS_ATTACH,
+	.attach = kPLL_PHI0_CLK_to_EMAC_TS,
 	.div_name = kCLOCK_DivEmacTsClk,
+	.div = 1U,
 	.css = &MC_CGM->MUX_9_CSS,
-	.src = MC_CGM_EMAC_TS_SRC,
+	.src = CLOCK_PLL_PHI0_CLK,
 };
 
 static int mc_cgm_emac_attach(const struct mc_cgm_emac_clk *clk)
@@ -325,7 +330,7 @@ static int mc_cgm_emac_attach(const struct mc_cgm_emac_clk *clk)
 		return -EIO;
 	}
 
-	if (CLOCK_SetClkDiv(clk->div_name, MC_CGM_EMAC_CLK_DIV) != kStatus_Success) {
+	if (CLOCK_SetClkDiv(clk->div_name, clk->div) != kStatus_Success) {
 		return -EIO;
 	}
 
