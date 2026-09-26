@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Muhammad Waleed Badar
 # SPDX-License-Identifier: Apache-2.0
 
-description: Broadcom BCM2711 I2C controller
+description: Broadcom BCM2711 I2C Controller
 
 compatible: "brcm,bcm2711-i2c"
 

@@ -9,4 +9,7 @@ config NUM_IRQS
 	# <zephyr/dt-bindings/interrupt-controller/bcm2835-armctrl.h>.
 	default 128
 
+configdefault CLOCK_CONTROL
+	default y
+
 endif
