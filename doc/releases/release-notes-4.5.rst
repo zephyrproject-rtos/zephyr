@@ -752,6 +752,9 @@ New APIs and options
   * :c:func:`lora_recv_duty_cycle_async`
   * :c:func:`lora_energy_detect`
   * :c:func:`lora_rssi`
+  * :c:func:`lora_recv` accepts separate ``k_timeout_t`` budgets for preamble search
+    and packet reception. The reception budget starts at preamble detection.
+    The native SX126x and LR11xx drivers support both phases.
 
 * Management
 

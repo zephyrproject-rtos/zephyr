@@ -25,8 +25,9 @@
  *   - Join accept:  5000 ms  (JOIN_ACCEPT_DELAY1_MS in join.c)
  *   - Data frames:  rx_delay from join accept (default 1000 ms)
  *
- * Each RX window listens for at most the airtime of a maximum-size
- * frame at that window's datarate, plus RX_TIMEOUT_MARGIN_MS.
+ * A packet search timeout closes an idle RX window before the next window.
+ * Once a packet is detected, reception can continue for the airtime of
+ * a maximum-size frame at that window's datarate.
  */
 
 #include <zephyr/kernel.h>
@@ -41,6 +42,13 @@ LOG_MODULE_REGISTER(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 #define RX2_DELAY_OFFSET_MS	1000
 #define RX_TIMEOUT_MARGIN_MS	100
 
+/*
+ * TS001-1.0.4 section 3.3.4 requires enough time to detect a downlink preamble.
+ * Allow the eight-symbol preamble from RP002-1.0.4 section 4.1.2 for detection;
+ * RX_SETUP_MARGIN_MS adds a separate allowance for timing uncertainty.
+ */
+#define RX_MIN_SYMBOLS		8U
+
 /* PHY frame overhead: MHDR(1) + FHDR(7) + FPort(1) + MIC(4) */
 #define PHY_OVERHEAD		13
 
@@ -53,6 +61,7 @@ static int mac_try_rx_window(struct lwan_ctx *ctx,
 	uint8_t rx_buf[MAX_RX_BUF_SIZE];
 	int64_t wake_at = tx_done + delay_ms - RX_SETUP_MARGIN_MS;
 	uint32_t timeout;
+	uint32_t search_timeout;
 	int64_t elapsed;
 	int16_t rssi;
 	int8_t snr;
@@ -64,11 +73,15 @@ static int mac_try_rx_window(struct lwan_ctx *ctx,
 	LOG_INF("%s at TX+%lld ms: freq=%u sf=%u bw=%u",
 		win_name, elapsed, rx_freq, rx_dr->sf, rx_dr->bw);
 
+	/* Include the early wake-up and a matching allowance for a late preamble. */
+	search_timeout = DIV_ROUND_UP(RX_MIN_SYMBOLS * BIT(rx_dr->sf), rx_dr->bw) +
+		2U * RX_SETUP_MARGIN_MS;
+
 	timeout = radio_airtime_params(rx_dr->sf, rx_dr->bw,
 				       rx_dr->max_payload + PHY_OVERHEAD);
 	timeout += RX_TIMEOUT_MARGIN_MS;
 
-	rx_ret = radio_rx(rx_freq, rx_dr, timeout,
+	rx_ret = radio_rx(rx_freq, rx_dr, search_timeout, timeout,
 			  rx_buf, sizeof(rx_buf), &rssi, &snr);
 
 	if (rx_ret < 0) {
@@ -199,7 +212,7 @@ static void mac_do_set_conf_msg_tries(struct lwan_ctx *ctx,
 {
 	const struct lwan_set_conf_msg_tries_req *tries_req = req->data;
 
-	ctx->conf_tries = tries_req->tries;
+	ctx->mac.nb_trans = tries_req->tries;
 	engine_signal_result(req, 0);
 }
 

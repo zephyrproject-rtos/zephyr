@@ -26,6 +26,7 @@ struct sx126x_tx_result {
 };
 
 struct sx126x_rx_result {
+	k_timepoint_t deadline;
 	int16_t rssi;
 	int8_t snr;
 	uint8_t len;
@@ -47,9 +48,13 @@ struct sx126x_data {
 	struct k_msgq tx_msgq;
 	struct sx126x_tx_result tx_result;
 
-	/* RX completion via message queue */
+	/* A preamble event and a completion event may arrive in the same IRQ. */
 	struct k_msgq rx_msgq;
-	struct sx126x_rx_result rx_result;
+	struct sx126x_rx_result rx_result[2];
+	bool rx_sync;
+	bool rx_search;
+	k_timeout_t packet_rx_timeout;
+	k_timepoint_t irq_rx_deadline;
 
 	/* RX data buffer (shared between IRQ handler and recv) */
 	uint8_t rx_buf[SX126X_MAX_PAYLOAD_LEN];

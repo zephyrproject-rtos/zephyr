@@ -273,7 +273,7 @@ static int cmd_lora_recv(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	ret = lora_recv(dev, buf, sizeof(buf),
+	ret = lora_recv(dev, buf, sizeof(buf), K_NO_WAIT,
 			timeout ? K_MSEC(timeout) : K_FOREVER, &rssi, &snr);
 	if (ret < 0) {
 		shell_error(sh, "LoRa recv failed: %i", ret);

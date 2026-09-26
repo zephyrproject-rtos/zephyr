@@ -102,8 +102,11 @@ Native Backend
 --------------
 
 The native backend is selected with
-:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE` and has additional options
-under :zephyr_file:`subsys/lorawan/native/Kconfig`:
+:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`.
+
+It uses the native SX126x or LR11xx LoRa drivers.
+
+Additional options are available under :zephyr_file:`subsys/lorawan/native/Kconfig`:
 
 * :kconfig:option:`CONFIG_LORAWAN_NATIVE_ENGINE_STACK_SIZE`
 
@@ -112,6 +115,19 @@ under :zephyr_file:`subsys/lorawan/native/Kconfig`:
 * :kconfig:option:`CONFIG_LORAWAN_NATIVE_PUBLIC_NETWORK`
 
 * :kconfig:option:`CONFIG_LORAWAN_NATIVE_DUTY_CYCLE`
+
+Enable adaptive data rate (ADR) with :c:func:`lorawan_enable_adr` to let the network
+adjust the data rate, transmit power and number of transmissions. Automatic data
+rate backoff after loss of network connectivity is not yet supported.
+
+A :c:func:`lorawan_send` call may return ``-EAGAIN`` when it must first send network
+control messages. Retry the application payload after checking
+:c:func:`lorawan_get_payload_sizes`, since the network may have changed the data rate.
+
+For confirmed uplinks, ``-ETIMEDOUT`` means the native backend did not receive
+an acknowledgment. A valid downlink without an acknowledgment also ends the
+call with this result. This does not prove the uplink was lost; retrying may
+deliver the application payload more than once.
 
 API Reference
 *************

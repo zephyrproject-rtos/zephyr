@@ -467,13 +467,18 @@ bail:
 	return err;
 }
 
-int rylr_recv(const struct device *dev, uint8_t *ret_msg, uint8_t size, k_timeout_t timeout,
+int rylr_recv(const struct device *dev, uint8_t *ret_msg, uint8_t size,
+	      k_timeout_t packet_search_timeout, k_timeout_t packet_rx_timeout,
 	      int16_t *rssi, int8_t *snr)
 {
 
 	int ret = 0;
 	struct rylr_data *data = dev->data;
 	struct rylr_recv_msg msg;
+
+	if (!K_TIMEOUT_EQ(packet_search_timeout, K_NO_WAIT)) {
+		return -ENOTSUP;
+	}
 
 	ret = k_sem_take(&data->operation_sem, K_NO_WAIT);
 	if (ret != 0) {
@@ -493,7 +498,7 @@ int rylr_recv(const struct device *dev, uint8_t *ret_msg, uint8_t size, k_timeou
 		goto exit;
 	}
 
-	ret = k_msgq_get(&data->rx_msgq, &msg, timeout);
+	ret = k_msgq_get(&data->rx_msgq, &msg, packet_rx_timeout);
 	if (ret != 0) {
 		LOG_ERR("error getting msg from queue: %d", ret);
 		goto exit;

@@ -2503,8 +2503,26 @@ SIMCOM SIM7080
   Applications configuring the :kconfig:option:`CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS`
   must update their configuration.
 
+LoRa
+****
+
+* :c:func:`lora_recv` now takes two ``k_timeout_t`` arguments:
+  ``packet_search_timeout`` and ``packet_rx_timeout``. The first bounds the wait
+  for a preamble; the second starts when that preamble is detected. To preserve
+  the previous overall timeout, pass ``K_NO_WAIT`` followed by the old timeout.
+  Out-of-tree drivers must update their ``lora_api_recv`` implementation. Drivers
+  without preamble detection must return ``-ENOTSUP`` unless the search timeout
+  is ``K_NO_WAIT``.
+
 LoRaWAN
 *******
+
+* The native backend now applies :c:func:`lorawan_set_conf_msg_tries` to both
+  confirmed and unconfirmed uplinks through their shared ``NbTrans`` count,
+  matching the LoRaMAC-node backend and LoRaWAN 1.0.4. Applications that used
+  the setter only for confirmed traffic must account for unconfirmed uplink
+  repetitions too. An accepted ``LinkADRReq`` can replace this count when ADR
+  is enabled.
 
 * The native LoRaWAN backend
   (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) now requires
