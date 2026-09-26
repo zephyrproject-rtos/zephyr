@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
+#include "ipv4.h"
+#include "udp_internal.h"
 #include "dns_pack.h"
 
 #if defined(CONFIG_DNS_RESOLVER_LOG_LEVEL_DBG)
@@ -202,6 +204,95 @@ static bool is_dns_query_packet(struct net_pkt *pkt)
 	return dst_port == 53U || dst_port == 5353U || dst_port == 5355U;
 }
 
+/* State for test_dns_cname_requery_keeps_source_port(): the first ordinary
+ * IPv4 query is answered with a CNAME, delivered through the resolver's
+ * socket so that the resolver handles it inside a dispatch.
+ */
+static bool cname_test;
+static int cname_queries;
+static uint16_t cname_ports[2];
+static uint8_t cname_answer[128];
+static size_t cname_answer_len;
+static struct net_in_addr cname_from;
+static struct net_in_addr cname_to;
+static K_SEM_DEFINE(cname_sem, 0, 2);
+
+static void cname_inject(struct k_work *work)
+{
+	struct net_if *iface = net_if_get_default();
+	struct net_pkt *pkt;
+
+	ARG_UNUSED(work);
+
+	pkt = net_pkt_alloc_with_buffer(iface, cname_answer_len, NET_AF_INET, NET_IPPROTO_UDP,
+					K_FOREVER);
+	if (pkt == NULL || net_ipv4_create(pkt, &cname_from, &cname_to) < 0 ||
+	    net_udp_create(pkt, net_htons(53U), net_htons(cname_ports[0])) < 0 ||
+	    net_pkt_write(pkt, cname_answer, cname_answer_len) < 0) {
+		test_failed = true;
+		if (pkt != NULL) {
+			net_pkt_unref(pkt);
+		}
+		return;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
+
+	if (net_recv_data(iface, pkt) < 0) {
+		test_failed = true;
+		net_pkt_unref(pkt);
+	}
+}
+
+static K_WORK_DEFINE(cname_inject_work, cname_inject);
+
+/* Build a reply to the query in pkt that answers only with a CNAME */
+static void cname_build_answer(struct net_pkt *pkt)
+{
+	static const uint8_t answer[] = {
+		0xc0, 0x0c,             /* name: the question's */
+		0x00, 0x05, 0x00, 0x01, /* CNAME, IN */
+		0x00, 0x00, 0x00, 0x3c, /* TTL */
+		0x00, 0x13,             /* rdlength */
+		5, 'a', 'l', 'i', 'a', 's', 6, 'z', 'e', 'p', 'h', 'y', 'r',
+		4, 't', 'e', 's', 't', 0,
+	};
+	uint8_t query[64];
+	size_t len = net_pkt_get_len(pkt) - NET_IPV4UDPH_LEN;
+	size_t qend = DNS_MSG_HEADER_SIZE;
+
+	net_pkt_cursor_init(pkt);
+	if (len > sizeof(query) || net_pkt_skip(pkt, NET_IPV4UDPH_LEN) < 0 ||
+	    net_pkt_read(pkt, query, len) < 0) {
+		test_failed = true;
+		return;
+	}
+
+	/* Question: the name, then type and class */
+	while (qend < len && query[qend] != 0U) {
+		qend += query[qend] + 1U;
+	}
+	qend += 1U + 4U;
+	if (qend > len || qend + sizeof(answer) > sizeof(cname_answer)) {
+		test_failed = true;
+		return;
+	}
+
+	memcpy(cname_answer, query, qend);
+	cname_answer[2] = 0x81;             /* response, recursion desired */
+	cname_answer[3] = 0x80;             /* recursion available, no error */
+	sys_put_be16(1U, &cname_answer[4]); /* one question */
+	sys_put_be16(1U, &cname_answer[6]); /* one answer */
+	sys_put_be16(0U, &cname_answer[8]);
+	sys_put_be16(0U, &cname_answer[10]);
+	memcpy(&cname_answer[qend], answer, sizeof(answer));
+	cname_answer_len = qend + sizeof(answer);
+
+	net_ipv4_addr_copy_raw((uint8_t *)&cname_from, NET_IPV4_HDR(pkt)->dst);
+	net_ipv4_addr_copy_raw((uint8_t *)&cname_to, NET_IPV4_HDR(pkt)->src);
+}
+
 static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
@@ -214,6 +305,24 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	send_count++;
+
+	if (cname_test && net_pkt_family(pkt) == NET_AF_INET) {
+		struct net_udp_hdr *udp = net_udp_get_hdr(pkt, NULL);
+
+		if (udp != NULL && net_ntohs(udp->dst_port) == 53U &&
+		    cname_queries < (int)ARRAY_SIZE(cname_ports)) {
+			cname_ports[cname_queries] = net_ntohs(udp->src_port);
+			if (cname_queries == 0) {
+				cname_build_answer(pkt);
+				k_work_submit(&cname_inject_work);
+			}
+
+			cname_queries++;
+			k_sem_give(&cname_sem);
+		}
+
+		return 0;
+	}
 
 	if (IS_ENABLED(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT)) {
 		struct net_udp_hdr *udp = net_udp_get_hdr(pkt, NULL);
@@ -1093,6 +1202,45 @@ ZTEST(dns_resolve, test_dns_query_source_port_varies)
 			  "Both queries left from port %u; an observer learns it "
 			  "from the first and need only guess the identifier",
 			  query_src_port);
+}
+
+/* A CNAME answer makes the resolver query again for the alias, from inside
+ * the dispatch of the server that sent the answer. That re-query must not
+ * renew the server's source port: doing so re-registers the dispatcher whose
+ * dispatch is running and re-initializes the lock it holds.
+ */
+ZTEST(dns_resolve, test_dns_cname_requery_keeps_source_port)
+{
+	uint16_t dns_id = 0U;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT);
+	Z_TEST_SKIP_IFDEF(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS);
+
+	timeout_query = false;
+	test_failed = false;
+	cname_queries = 0;
+	cname_ports[0] = 0U;
+	cname_ports[1] = 0U;
+	k_sem_reset(&cname_sem);
+	cname_test = true;
+
+	ret = dns_get_addr_info(NAME4, DNS_QUERY_TYPE_A, &dns_id, dns_result_cb_dummy, NULL,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	zassert_ok(k_sem_take(&cname_sem, WAIT_TIME), "the query was not sent");
+	ret = k_sem_take(&cname_sem, WAIT_TIME);
+
+	cname_test = false;
+	(void)dns_cancel_addr_info(dns_id);
+
+	zassert_false(test_failed, "could not deliver the CNAME answer");
+	zassert_ok(ret, "the CNAME answer did not cause a re-query");
+	zassert_equal(cname_ports[1], cname_ports[0],
+		      "the CNAME re-query left from port %u instead of %u, so the server's "
+		      "dispatcher was re-registered inside its own dispatch",
+		      cname_ports[1], cname_ports[0]);
 }
 
 ZTEST(dns_resolve, test_dns_query_ipv4_timeout_fallback)
@@ -2589,5 +2737,116 @@ ZTEST(dns_resolve, test_dns_query_all_servers_llmnr_enabled_dns_fanout)
 }
 
 #endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
+/* Renewing a server's source port while a reply from that server waits to
+ * be dispatched must not deadlock. The dispatch holds the dispatcher's lock
+ * and waits for the resolver lock, which the thread renewing the port holds,
+ * so the renewal must not wait for the dispatch.
+ */
+static K_THREAD_STACK_DEFINE(renew_stack, 2048);
+static struct k_thread renew_thread;
+static volatile int renew_ret;
+
+static void renew_inject_reply(const struct net_in_addr *from, uint16_t to_port)
+{
+	/* A bare response header: enough to be dispatched to the resolver */
+	static const uint8_t reply[] = { 0x55, 0xaa, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0 };
+	struct net_if *iface = net_if_get_default();
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(reply), NET_AF_INET, NET_IPPROTO_UDP,
+					K_FOREVER);
+	if (pkt == NULL || net_ipv4_create(pkt, from, &my_addr2) < 0 ||
+	    net_udp_create(pkt, net_htons(53U), net_htons(to_port)) < 0 ||
+	    net_pkt_write(pkt, reply, sizeof(reply)) < 0) {
+		test_failed = true;
+		if (pkt != NULL) {
+			net_pkt_unref(pkt);
+		}
+		return;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
+
+	if (net_recv_data(iface, pkt) < 0) {
+		test_failed = true;
+		net_pkt_unref(pkt);
+	}
+}
+
+static void renew_worker(void *p1, void *p2, void *p3)
+{
+	struct dns_resolve_context *ctx = p1;
+	struct dns_server_info *server = p2;
+	struct net_sockaddr *local = net_sad(&server->dispatcher.local_addr_storage);
+	uint16_t dns_id = 0U;
+
+	ARG_UNUSED(p3);
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	renew_inject_reply(&net_sin(net_sad(&server->dns_server_addr))->sin_addr,
+			   net_ntohs(net_sin(local)->sin_port));
+
+	/* Let the socket service thread take the dispatcher's lock and block
+	 * on the resolver lock held here.
+	 */
+	k_msleep(100);
+
+	renew_ret = dns_get_addr_info(NAME4, DNS_QUERY_TYPE_A, &dns_id, dns_result_cb_dummy,
+				      NULL, DNS_TIMEOUT);
+
+	k_mutex_unlock(&ctx->lock);
+
+	if (renew_ret == 0) {
+		(void)dns_cancel_addr_info(dns_id);
+	}
+}
+
+ZTEST(dns_resolve, test_dns_source_port_renewal_during_dispatch)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	struct dns_server_info *server = NULL;
+	uint16_t old_port;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT);
+	Z_TEST_SKIP_IFDEF(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS);
+
+	/* The first ordinary IPv4 server, which NAME4 is asked from */
+	for (int i = 0; i < ARRAY_SIZE(ctx->servers); i++) {
+		if (ctx->servers[i].sock >= 0 && !ctx->servers[i].is_mdns &&
+		    !ctx->servers[i].is_llmnr &&
+		    ctx->servers[i].dns_server_addr.ss_family == NET_AF_INET &&
+		    net_sin(net_sad(&ctx->servers[i].dns_server_addr))->sin_port ==
+			    net_htons(53U)) {
+			server = &ctx->servers[i];
+			break;
+		}
+	}
+
+	zassert_not_null(server, "no IPv4 server on port 53");
+	old_port = net_ntohs(net_sin(net_sad(&server->dispatcher.local_addr_storage))->sin_port);
+
+	/* Answering is not wanted; only the source port of the query */
+	timeout_query = true;
+	test_failed = false;
+	query_src_port = 0U;
+	renew_ret = -EINPROGRESS;
+
+	k_thread_create(&renew_thread, renew_stack, K_THREAD_STACK_SIZEOF(renew_stack),
+			renew_worker, ctx, server, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+
+	zassert_ok(k_thread_join(&renew_thread, K_SECONDS(3)),
+		   "renewing the source port during a dispatch deadlocked");
+	/* Let the dispatch that was waiting finish */
+	k_msleep(50);
+
+	zassert_false(test_failed, "could not deliver the reply");
+	zassert_ok(renew_ret, "the query was not sent (%d)", renew_ret);
+	zassert_equal(query_src_port, old_port,
+		      "the query left from port %u; the port should have been kept (%u)",
+		      query_src_port, old_port);
+}
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);

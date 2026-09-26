@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_dns_dispatcher, CONFIG_DNS_SOCKET_DISPATCHER_LOG_LEVEL);
 #include <zephyr/net/socket_service.h>
 
 #include "../../ip/net_stats.h"
+#include "dns_internal.h"
 #include "dns_pack.h"
 
 static K_MUTEX_DEFINE(lock);
@@ -68,7 +69,11 @@ static bool dns_dispatcher_can_pair(const struct dns_socket_dispatcher *a,
 	return a->ifindex == 0 || b->ifindex == 0 || a->ifindex == b->ifindex;
 }
 
+/* Both dispatcher->lock and, when pair is not NULL, pair->lock are held
+ * by the caller.
+ */
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
+			struct dns_socket_dispatcher *pair,
 			int sock, struct net_sockaddr *addr, size_t addrlen,
 			struct net_buf *dns_data, size_t buf_len)
 {
@@ -105,10 +110,8 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			ret = dispatcher->cb(dispatcher, sock,
 					     addr, addrlen,
 					     dns_data, data_len);
-		} else if (dispatcher->pair) {
-			ret = dispatcher->pair->cb(dispatcher->pair, sock,
-						   addr, addrlen,
-						   dns_data, data_len);
+		} else if (pair != NULL) {
+			ret = pair->cb(pair, sock, addr, addrlen, dns_data, data_len);
 		} else {
 			/* Discard the message as it was a query and there are none
 			 * expecting a query.
@@ -124,10 +127,8 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			ret = dispatcher->cb(dispatcher, sock,
 					     addr, addrlen,
 					     dns_data, data_len);
-		} else if (dispatcher->pair) {
-			ret = dispatcher->pair->cb(dispatcher->pair, sock,
-						   addr, addrlen,
-						   dns_data, data_len);
+		} else if (pair != NULL) {
+			ret = pair->cb(pair, sock, addr, addrlen, dns_data, data_len);
 		} else {
 			/* Discard the message as it was not a query reply and
 			 * we were a reply.
@@ -162,6 +163,7 @@ static int recv_data(struct net_socket_service_event *pev)
 {
 	struct socket_dispatch_table *table = pev->user_data;
 	struct dns_socket_dispatcher *dispatcher;
+	struct dns_socket_dispatcher *pair;
 	net_socklen_t optlen = sizeof(int);
 	struct net_buf *dns_data = NULL;
 	struct net_sockaddr_storage addr;
@@ -169,16 +171,44 @@ static int recv_data(struct net_socket_service_event *pev)
 	int family, sock_error;
 	int ret = 0, len;
 
+	/* Look up the dispatcher and its pair and take their locks while
+	 * holding the global lock. This keeps the lookup atomic with respect
+	 * to dns_dispatcher_unregister(), which clears the slot and the pair
+	 * pointer under that lock: once cleared, no new dispatch can start on
+	 * either context, and one that did already holds the context's lock,
+	 * which the wait in unregister outlasts. The order is the global
+	 * lock, then the dispatching context, then its pair.
+	 */
+	k_mutex_lock(&lock, K_FOREVER);
+
 	dispatcher = table[pev->event.fd].ctx;
 	if (dispatcher == NULL) {
-		/* The dispatch slot was cleared concurrently, for example the
-		 * server socket was just closed while its poll event was still
-		 * in flight. Nothing to dispatch to, so drop the event.
+		k_mutex_unlock(&lock);
+
+		/* The slot has no owner: it was cleared concurrently, or the
+		 * descriptor stays in a shared array that another context
+		 * keeps polled. Nothing to dispatch to, but the datagram must
+		 * still be read, or the socket service would report it again
+		 * at once and spin.
 		 */
+		if ((pev->event.revents & ZSOCK_POLLIN) != 0) {
+			uint8_t discard;
+
+			if (zsock_recvfrom(pev->event.fd, &discard, sizeof(discard),
+					   ZSOCK_MSG_DONTWAIT, NULL, NULL) < 0) {
+				NET_DBG("DNS discard recv failed (%d)", errno);
+			}
+		}
+
 		return 0;
 	}
 
+	pair = dispatcher->pair;
 	k_mutex_lock(&dispatcher->lock, K_FOREVER);
+	if (pair != NULL) {
+		k_mutex_lock(&pair->lock, K_FOREVER);
+	}
+	k_mutex_unlock(&lock);
 
 	(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
 			       ZSOCK_SO_DOMAIN, &family, &optlen);
@@ -225,7 +255,7 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	len = ret;
 
-	ret = dns_dispatch(dispatcher, pev->event.fd,
+	ret = dns_dispatch(dispatcher, pair, pev->event.fd,
 			   net_sad(&addr), addrlen,
 			   dns_data, len);
 free_buf:
@@ -234,6 +264,9 @@ free_buf:
 	}
 
 unlock:
+	if (pair != NULL) {
+		k_mutex_unlock(&pair->lock);
+	}
 	k_mutex_unlock(&dispatcher->lock);
 
 	return ret;
@@ -249,6 +282,58 @@ void dns_dispatcher_svc_handler(struct net_socket_service_event *pev)
 	}
 }
 
+/* Global lock held. A dispatch can be in flight on ctx only if it is on
+ * the registration list, owns a dispatch table slot or is paired; the
+ * lock of any other context may never have been initialized.
+ */
+static bool dispatcher_is_registered(struct dns_socket_dispatcher *ctx)
+{
+	sys_snode_t *prev_node = NULL;
+
+	if (ctx->paired || sys_slist_find(&sockets, &ctx->node, &prev_node)) {
+		return true;
+	}
+
+	ARRAY_FOR_EACH(dispatch_table, i) {
+		if (dispatch_table[i].ctx == ctx) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int dns_dispatcher_try_unregister(struct dns_socket_dispatcher *ctx)
+{
+	int ret;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!dispatcher_is_registered(ctx)) {
+		ret = dns_dispatcher_unregister(ctx);
+		k_mutex_unlock(&lock);
+		return ret;
+	}
+
+	/* A dispatch in progress on ctx holds its lock. Taking that lock
+	 * without waiting, while holding the global lock that recv_data()
+	 * needs to start a dispatch, makes sure that none is running and none
+	 * can start before the context is unregistered. Both locks are
+	 * recursive, so dns_dispatcher_unregister() then does not wait.
+	 */
+	if (k_mutex_lock(&ctx->lock, K_NO_WAIT) != 0) {
+		k_mutex_unlock(&lock);
+		return -EBUSY;
+	}
+
+	ret = dns_dispatcher_unregister(ctx);
+
+	k_mutex_unlock(&ctx->lock);
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
 int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 {
 	struct dns_socket_dispatcher *entry, *next, *found = NULL;
@@ -259,7 +344,11 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	if (sys_slist_find(&sockets, &ctx->node, &prev_node)) {
+	/* A paired context is not on the list, but it is registered and a
+	 * delegated dispatch may hold its lock, so it must not be
+	 * re-initialized below.
+	 */
+	if (ctx->paired || sys_slist_find(&sockets, &ctx->node, &prev_node)) {
 		ret = -EALREADY;
 		goto out;
 	}
@@ -318,14 +407,20 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 			goto out;
 		}
 
-		entry->pair = ctx;
-
+		/* Check the descriptors before the pairing is recorded, so a
+		 * failure leaves nothing pointing at this context.
+		 */
 		for (int i = 0; i < ctx->fds_len; i++) {
 			CHECKIF((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
 				ret = -ERANGE;
 				goto out;
 			}
+		}
 
+		entry->pair = ctx;
+		ctx->paired = true;
+
+		for (int i = 0; i < ctx->fds_len; i++) {
 			if (ctx->fds[i].fd < 0) {
 				continue;
 			}
@@ -388,7 +483,19 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 			ret = -ERANGE;
 			goto out;
 		}
+	}
 
+	ret = net_socket_service_register(ctx->svc, ctx->fds, ctx->fds_len, &dispatch_table);
+	if (ret < 0) {
+		NET_DBG("Cannot register socket service (%d)", ret);
+		goto out;
+	}
+
+	/* Claim the slots only now that nothing can fail any more, so a failed
+	 * registration leaves no slot pointing at this context. The global lock
+	 * is still held, so recv_data() cannot look a slot up in between.
+	 */
+	for (int i = 0; i < ctx->fds_len; i++) {
 		if (ctx->fds[i].fd < 0) {
 			continue;
 		}
@@ -396,12 +503,6 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
 			dispatch_table[ctx->fds[i].fd].ctx = ctx;
 		}
-	}
-
-	ret = net_socket_service_register(ctx->svc, ctx->fds, ctx->fds_len, &dispatch_table);
-	if (ret < 0) {
-		NET_DBG("Cannot register socket service (%d)", ret);
-		goto out;
 	}
 
 	sys_slist_prepend(&sockets, &ctx->node);
@@ -416,26 +517,42 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 {
 	struct dns_socket_dispatcher *entry;
 	const struct net_socket_service_desc *svc;
-	int sock;
+	bool was_registered;
 	int ret = 0;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	sock = ctx->sock;
 	svc = ctx->svc;
 
-	(void)sys_slist_find_and_remove(&sockets, &ctx->node);
+	was_registered = sys_slist_find_and_remove(&sockets, &ctx->node);
 	ctx->sock = -1;
 
-	if (sock >= 0 && sock < (int)ARRAY_SIZE(dispatch_table) &&
-	    dispatch_table[sock].ctx == ctx) {
-		dispatch_table[sock].ctx = NULL;
+	/* Registration claims a slot for every descriptor in ctx->fds that
+	 * had none, not only for ctx->sock, so release every slot this
+	 * context owns: a slot left behind would deliver the next datagram on
+	 * that descriptor to an unregistered context.
+	 */
+	ARRAY_FOR_EACH(dispatch_table, i) {
+		if (dispatch_table[i].ctx == ctx) {
+			dispatch_table[i].ctx = NULL;
+			was_registered = true;
+		}
+	}
+
+	/* A paired context is on neither, but its lock is initialized and a
+	 * delegated dispatch holds it.
+	 */
+	if (ctx->paired) {
+		was_registered = true;
+		ctx->paired = false;
 	}
 
 	/* Drop any pairing that referenced this dispatcher so that a
 	 * surviving dispatcher does not delegate to an unregistered context.
 	 * Also clear our own pair so a later re-register does not inherit a
-	 * stale partner.
+	 * stale partner. A dispatch that read the pointer before this runs
+	 * this context's callback under this context's lock, which the
+	 * barrier below waits for.
 	 */
 	SYS_SLIST_FOR_EACH_CONTAINER(&sockets, entry, node) {
 		if (entry->pair == ctx) {
@@ -460,14 +577,27 @@ out:
 	k_mutex_unlock(&lock);
 
 	/*
-	 * dispatch_table[sock] was already cleared above, so no new call into
-	 * recv_data() can pick up this ctx. But a call that already read the
-	 * (still non-NULL) pointer may still be in its critical section,
-	 * holding ctx->lock while it finishes dispatching. Wait for it here so
-	 * the caller can safely reuse/reinit ctx once we return.
+	 * recv_data() looks the context up and takes ctx->lock under the
+	 * global lock, so now that dispatch_table[sock] is cleared, no new
+	 * dispatch can pick this ctx up, and any dispatch that already did
+	 * holds ctx->lock, as does a dispatch delegated here through a pair
+	 * pointer. Wait for it here so the caller can safely reuse/reinit
+	 * ctx once we return. This runs with the global lock released: the
+	 * dispatch may re-enter the dispatcher before it returns (an
+	 * application result callback closing the resolver, or a lookup it
+	 * starts that renews another server's source port) and then needs
+	 * that lock.
+	 *
+	 * Only do this for a context that was actually registered: ctx->lock
+	 * is initialized in dns_dispatcher_register(), and a context that
+	 * never made it into the registration list, the dispatch table or a
+	 * pairing can have no dispatch in flight, but may hold an
+	 * uninitialized mutex.
 	 */
-	k_mutex_lock(&ctx->lock, K_FOREVER);
-	k_mutex_unlock(&ctx->lock);
+	if (was_registered) {
+		k_mutex_lock(&ctx->lock, K_FOREVER);
+		k_mutex_unlock(&ctx->lock);
+	}
 
 	return ret;
 }
