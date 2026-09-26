@@ -137,14 +137,35 @@
 	status = "okay";
 };
 
+&usbfs {
+	status = "okay";
+	interrupts = <95 1>, <94 1>;
+	interrupt-names = "usbfs-i", "usbfs-r";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
 &usbhs {
 	pinctrl-0 = <&usbhs_default>;
 	interrupts = <28 1>;
 	interrupt-names = "usbhs-ir";
 	status = "okay";
 
-	zephyr_udc0: udc {
+	zephyr_uhc0: uhc {
 		status = "okay";
+	};
+};
+
+&ioportd {
+	status = "okay";
+
+	/* Set PD07 to high to enable host mode on USBHS port */
+	usbhs-hog {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_HIGH>;
+		output-high;
 	};
 };
 
