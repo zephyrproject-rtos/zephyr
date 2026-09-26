@@ -1,10 +1,10 @@
 # Copyright (c) 2022 Thomas Stranger
 # SPDX-License-Identifier: Apache-2.0
 
-# Properties for the DS2485 I2C 1-Wire master with memory driver:
+# Properties for the DS2485 I2C 1-Wire controller with memory driver:
 
 description: |
-    This is a representation of the Maxim DS2485 I2C 1-Wire master w/ memory
+    This is a representation of the Maxim DS2485 I2C 1-Wire controller w/ memory
 
 compatible: "maxim,ds2485"
 

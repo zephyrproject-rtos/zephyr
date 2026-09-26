@@ -5,4 +5,4 @@ description: Maxim MAX31826 1-Wire temperature sensor
 
 compatible: "maxim,max31826"
 
-include: [sensor-device.yaml, w1-slave.yaml]
+include: [sensor-device.yaml, w1-peripheral.yaml]
