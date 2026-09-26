@@ -4063,6 +4063,61 @@ static int cmd_wifi_p2p_peer(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_wifi_p2p_set_dev_name(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+
+	context.sh = sh;
+
+	params.oper = WIFI_P2P_SET_DEV_NAME;
+
+	if (argc > 1) {
+		int opt;
+		int opt_index = 0;
+		struct sys_getopt_state *state;
+		static const struct sys_getopt_option long_options[] = {
+			{"name", sys_getopt_required_argument, 0, 'n'},
+			{"iface", sys_getopt_required_argument, 0, 'i'},
+			{"help", sys_getopt_no_argument, 0, 'h'},
+			{0, 0, 0, 0}
+		};
+
+		while ((opt = sys_getopt_long(argc, argv, "n:i:h",
+					      long_options, &opt_index)) != -1) {
+			state = sys_getopt_state_get();
+			switch (opt) {
+			case 'n':
+				/* Store the P2P device name */
+				if (strlen(state->optarg) > WIFI_P2P_DEVICE_NAME_MAX_LEN) {
+					PR_ERROR("Invalid name: Length > %d\n",
+						 WIFI_P2P_DEVICE_NAME_MAX_LEN);
+					return -EINVAL;
+				}
+				strncpy(params.device_name, state->optarg,
+					WIFI_P2P_DEVICE_NAME_MAX_LEN);
+				params.device_name[WIFI_P2P_DEVICE_NAME_MAX_LEN] = '\0';
+				break;
+			case 'i':
+				/* Already consumed by get_iface(); accepted here so
+				 * getopt doesn't reject it as an unknown option.
+				 */
+				break;
+			case 'h':
+				shell_help(sh);
+				return -ENOEXEC;
+			default:
+				PR_ERROR("Invalid option %c\n", state->optopt);
+				return -EINVAL;
+			}
+		}
+	}
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P set dev name request failed\n");
+		return -ENOEXEC;
+	}
+	return 0;
+}
 
 static int cmd_wifi_p2p_find(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -4651,6 +4706,45 @@ static int cmd_wifi_p2p_persistent_remove(const struct shell *sh, size_t argc, c
 	}
 	return 0;
 }
+
+static int cmd_wifi_p2p_status(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = { 0 };
+	char *buf;
+
+	context.sh = sh;
+
+	/* Dynamically allocate response buffer to avoid large stack usage */
+	buf = k_malloc(WIFI_P2P_STATUS_BUF_SIZE);
+	if (buf == NULL) {
+		PR_ERROR("Failed to allocate buffer for P2P status\n");
+		return -ENOMEM;
+	}
+	memset(buf, 0, WIFI_P2P_STATUS_BUF_SIZE);
+
+	params.oper = WIFI_P2P_STATUS;
+	params.status.buf = buf;
+	params.status.buf_size = WIFI_P2P_STATUS_BUF_SIZE;
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params,
+		     sizeof(struct wifi_p2p_params))) {
+		PR_WARNING("Status request failed\n");
+		k_free(buf);
+		return -ENOEXEC;
+	}
+
+	if (buf[0] == '\0') {
+		PR("P2P Status not present\n");
+	} else {
+		PR("P2P Status:\n");
+		PR("%s\n", buf);
+	}
+
+	k_free(buf);
+	return 0;
+}
+
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
@@ -5741,6 +5835,11 @@ SHELL_SUBCMD_ADD((wifi), mode, NULL,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_p2p,
+	SHELL_CMD_ARG(set_dev_name, NULL,
+		      SHELL_HELP("Set P2P device name",
+				 "[-n, --name=<dev name>]\n"
+				 "[-i, --iface=<interface index>]"),
+		      cmd_wifi_p2p_set_dev_name, 1, 4),
 	SHELL_CMD_ARG(find, NULL,
 		      SHELL_HELP("Start P2P device discovery",
 				 "[-i, --iface=<interface index>]\n"
@@ -5835,6 +5934,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "  wifi p2p persistent_remove 0\n"
 				 "  wifi p2p persistent_remove all"),
 		      cmd_wifi_p2p_persistent_remove, 2, 3),
+	SHELL_CMD_ARG(status, NULL,
+		      SHELL_HELP("Show P2P status",
+				 "[-i, --iface=<interface index>]"),
+		      cmd_wifi_p2p_status, 1, 2),
 	SHELL_SUBCMD_SET_END
 );
 
