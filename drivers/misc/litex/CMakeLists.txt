@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_LITEX
+zephyr_library()
 
-rsource "*/Kconfig"
-
-endif # SOC_FAMILY_LITEX
+zephyr_library_sources(litex_soc_ctrl.c)
