@@ -33,6 +33,7 @@ tests:
       - stm32h573i_dk
       - stm32h5f5j_dk
       - stm32l496g_disco
+      - yd_stm32h750vb
     integration_platforms:
       - apollo3p_evb
       - apollo510_evb
