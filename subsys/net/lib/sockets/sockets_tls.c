@@ -4251,8 +4251,7 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 
 	(void)k_mutex_lock(lock, K_FOREVER);
 
-	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_PREPARE,
-				   pfd, pev, pev_end);
+	ret = zvfs_fdtable_call_poll_prepare(vtable, obj, pfd, pev, pev_end);
 	if (ret != 0) {
 		goto exit;
 	}
@@ -4586,9 +4585,7 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 		 * to monitor the underlying socket now.
 		 */
 		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
-			ret = zvfs_fdtable_call_ioctl(vtable, obj,
-						   ZFD_IOCTL_POLL_PREPARE,
-						   pfd, pev, *pev + 1);
+			ret = zvfs_fdtable_call_poll_prepare(vtable, obj, pfd, pev, *pev + 1);
 			if (ret != 0 && ret != -EALREADY) {
 				goto out;
 			}
@@ -4608,8 +4605,7 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 		pfd->events &= ~ZSOCK_POLLIN;
 	}
 
-	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE,
-				   pfd, pev);
+	ret = zvfs_fdtable_call_poll_update(vtable, obj, pfd, pev);
 	if (ret != 0) {
 		goto exit;
 	}
@@ -4727,8 +4723,7 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 			fds[i].revents = 0;
 		}
 
-		ret = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_OFFLOAD,
-					   fds, nfds, remaining);
+		ret = zvfs_fdtable_call_poll_offload(vtable, ctx, fds, nfds, remaining);
 		if (ret < 0) {
 			goto exit;
 		}
@@ -5083,6 +5078,23 @@ static ssize_t tls_sock_write_vmeth(void *obj, const void *buffer,
 	return ztls_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
+static int tls_sock_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+				       struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	return ztls_poll_prepare_ctx(obj, pfd, pev, pev_end);
+}
+
+static int tls_sock_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	return ztls_poll_update_ctx(obj, pfd, pev);
+}
+
+static int tls_sock_poll_offload_vmeth(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	return ztls_poll_offload(fds, nfds, timeout);
+}
+
 static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	struct tls_context *ctx = obj;
@@ -5260,6 +5272,9 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 		.write = tls_sock_write_vmeth,
 		.close2 = tls_sock_close2_vmeth,
 		.ioctl = tls_sock_ioctl_vmeth,
+		.poll_prepare = tls_sock_poll_prepare_vmeth,
+		.poll_update = tls_sock_poll_update_vmeth,
+		.poll_offload = tls_sock_poll_offload_vmeth,
 	},
 	.shutdown = tls_sock_shutdown_vmeth,
 	.bind = tls_sock_bind_vmeth,
