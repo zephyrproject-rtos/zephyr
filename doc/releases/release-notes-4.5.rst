@@ -1233,6 +1233,7 @@ New Boards
   * :zephyr:board:`esp32c6_lcd_1_47` (``esp32c6_lcd_1_47``)
   * :zephyr:board:`esp32p4_wifi6` (``esp32p4_wifi6``)
   * :zephyr:board:`esp32p4_wifi6_dev_kit` (``esp32p4_wifi6_dev_kit``)
+  * :zephyr:board:`esp32p4_wifi6_touch_lcd_4_3` (``esp32p4_wifi6_touch_lcd_4_3``)
   * :zephyr:board:`waveshare_esp32p4_eth` (``waveshare_esp32p4_eth``)
 
 * WeAct Studio
