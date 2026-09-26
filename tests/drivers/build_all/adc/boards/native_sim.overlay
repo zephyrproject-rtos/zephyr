@@ -649,6 +649,20 @@
 				drdy-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 				#io-channel-cells = <1>;
 			};
+
+			test_spi_ads8684: ads8684@35 {
+				compatible = "ti,ads8684";
+				reg = <0x35>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ads8688: ads8688@36 {
+				compatible = "ti,ads8688";
+				reg = <0x36>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
 		};
 	};
 };
