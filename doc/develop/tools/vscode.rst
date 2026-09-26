@@ -93,6 +93,7 @@ IDE extensions
 - `nRF Kconfig Extension`_
 - `nRF DeviceTree Extension`_
 - `GNU Linker Map files Extension`_
+- `MCUXpresso for VS Code Extension`_
 
 Additional guides
 =================
@@ -109,6 +110,7 @@ Additional guides
 .. _C/C++ Extension Pack: https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools-extension-pack
 .. _C/C++ Extension documentation: https://code.visualstudio.com/docs/languages/cpp
 .. _CMake Extension documentation: https://code.visualstudio.com/docs/cpp/cmake-linux
+.. _MCUXpresso for VS Code Extension: https://marketplace.visualstudio.com/items?itemName=NXPSemiconductors.mcuxpresso
 
 .. _Checkpatch Extension: https://marketplace.visualstudio.com/items?itemName=idanp.checkpatch
 .. _EditorConfig Extension: https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig
