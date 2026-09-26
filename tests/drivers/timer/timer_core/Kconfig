@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# The shape of hardware a scenario puts the core on. tests.yaml sets these;
+# src/main.c turns them into the TIMER_CORE_* knobs a driver would state.
+
+config TEST_COUNTER_WIDTH
+	int "Width of the simulated counter, in bits"
+	default 32
+
+config TEST_ALARM_MAX_CYCLES
+	hex "Furthest the simulated alarm reaches, or 0 for the counter's own span"
+	default 0
+
+config TEST_ALARM_MIN_CYCLES
+	int "Nearest the simulated alarm can be armed, or 0 for no floor"
+	default 0
+
+choice TEST_BACKEND
+	prompt "Backend under test"
+	default TEST_BACKEND_COMPARE_ORDERED
+
+config TEST_BACKEND_COMPARE_ORDERED
+	bool "Comparator that fires on a value already passed"
+
+config TEST_BACKEND_COMPARE_EXACT
+	bool "Comparator that matches on equality only"
+
+config TEST_BACKEND_RELOAD
+	bool "One-shot relative reload"
+
+endchoice
+
+config TEST_COUNTER_NONATOMIC
+	bool "Counter the driver synthesizes rather than reads in one go"
+
+config TEST_COUNTER_NONMONOTONIC
+	bool "Counter that can read behind a value already seen"
+
+config TEST_RATE_FROM_DRIVER
+	bool "Driver states a counter rate of its own"
+
+source "Kconfig.zephyr"
