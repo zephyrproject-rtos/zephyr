@@ -289,6 +289,7 @@ struct adc_stm32_cfg {
 	bool has_channel_preselection	:1;
 	bool has_differential_support	:1;
 	bool has_injected_support	:1;
+	uint16_t ext_trigger;
 };
 
 struct adc_sub_stm32_cfg {
@@ -1496,6 +1497,18 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	}
 #endif /* ADC_STM32_DT_ANY_INST_HAS_CHANNEL_PRESELECTION */
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
+
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+#ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+	if (ctx->sequence.priority == STM32_REG_SEQ_PRIORITY) {
+		LL_ADC_REG_StopConversion(adc);
+	} else {
+		LL_ADC_INJ_StopConversion(adc);
+	}
+#else /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
+	LL_ADC_REG_StopConversion(adc);
+#endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)&&!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) */
 }
 
 static int adc_stm32_read(const struct device *dev,
@@ -2061,8 +2074,9 @@ static int adc_sub_stm32_init(const struct device *dev)
 
 #if defined(HAS_CALIBRATION)
 	adc_stm32_calibrate(dev, true);
-	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif /* HAS_CALIBRATION */
+
+	LL_ADC_REG_SetTriggerSource(adc, parent_config->ext_trigger);
 
 	/* If several ADCs are used and share a common clock property (for example ADC1/2 prescaler
 	 * value on STM32U5), none of them should be enabled when the clock is set.
@@ -2479,6 +2493,12 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_DT_INST_GENERATE_ISR)
 			(ADC_SUB_STM32_DT_DMA_CHANNEL_INIT(node_id, src, dest)),		\
 			(/* Required for other adc instances without dma */))
 
+#define EXT_TRIGGER(id)										\
+	.ext_trigger = COND_CODE_1(								\
+		DT_INST_NODE_HAS_PROP(id, st_adc_ext_trigger),					\
+		(CONCAT(LL_ADC_REG_TRIG_EXT_, DT_INST_STRING_TOKEN(id, st_adc_ext_trigger))),	\
+		(LL_ADC_REG_TRIG_SOFTWARE)),
+
 #define LIST_RESOLUTION(i, inst)								\
 	CONCAT(LL_ADC_RESOLUTION_, DT_INST_PROP_BY_IDX(inst, st_adc_resolutions, i), B)
 
@@ -2579,6 +2599,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_DT_INST_GENERATE_ISR)
 		.has_differential_support =							\
 			DT_INST_PROP(inst, st_adc_has_differential_support),			\
 		.has_injected_support = DT_INST_PROP(inst, st_adc_has_injected_support),	\
+		EXT_TRIGGER(index)								\
 		.sampling_time_table = DT_INST_PROP(inst, sampling_times),			\
 		.num_sampling_time_common_channels =						\
 			DT_INST_PROP_OR(inst, num_sampling_time_common_channels, 0),		\
