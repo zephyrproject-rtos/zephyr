@@ -1304,7 +1304,7 @@ static bool smp_bt_bridge_modes(zcbor_state_t *output_data, int *rc)
 	bool ok;
 
 	ok = zcbor_map_start_encode(output_data, 2) &&
-	     zcbor_tstr_put_lit(output_data, "type") &&
+	     zcbor_tstr_put_lit(output_data, "id") &&
 	     zcbor_uint32_put(output_data, 0) &&
 	     zcbor_tstr_put_lit(output_data, "description") &&
 	     zcbor_tstr_put_lit(output_data, "Bluetooth Low Energy") &&
@@ -1321,6 +1321,15 @@ static bool smp_bt_bridge_modes(zcbor_state_t *output_data, int *rc)
 static bool smp_bt_bridge_config_details(uint32_t mode, zcbor_state_t *output_data, int *rc)
 {
 	bool ok;
+
+	if (mode != 0) {
+		smp_mgmt_reset_writer(output_data);
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_INVALID_MODE);
+		*rc = 0;
+
+		return false;
+	}
 
 	ok = zcbor_map_start_encode(output_data, 3) &&
 	     zcbor_tstr_put_lit(output_data, "name") &&
@@ -1347,7 +1356,8 @@ static bool smp_bt_bridge_config_details(uint32_t mode, zcbor_state_t *output_da
 	     zcbor_bool_put(output_data, true) &&
 	     zcbor_map_end_encode(output_data, 3);
 
-	return MGMT_RETURN_CHECK(ok);
+	*rc = MGMT_RETURN_CHECK(ok);
+	return ok;
 }
 #endif
 #endif
