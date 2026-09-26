@@ -22,6 +22,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
 #include <cortex_m/debug.h>
+#include <zephyr/arch/arm/arm-m-switch.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -1113,7 +1114,7 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 
 #ifdef CONFIG_USE_SWITCH
 	/* Handle the stub fault to restore interrupted ICI/IT instructions */
-	if (arm_m_iciit_check(msp, psp, exc_return)) {
+	if (arm_m_udf_fixup_check(msp, psp, exc_return)) {
 		return;
 	}
 #endif
@@ -1246,7 +1247,7 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 	 * fault that happened in the ISR and shouldn't affect thread
 	 * state).
 	 */
-	if ((exc_return & 0xf000000f) == 0xf000000d) {
+	if (is_thread_return(exc_return)) {
 		arm_m_exc_tail();
 	}
 #endif
