@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Matheus Alencar
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32P4_WIFI6
+
+configdefault NET_L2_ETHERNET
+	default y
+
+endif # BOARD_ESP32P4_WIFI6
