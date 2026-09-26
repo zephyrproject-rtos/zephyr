@@ -268,6 +268,7 @@ struct eth_sam_dev_cfg {
 struct eth_sam_dev_data {
 	DEVICE_MMIO_RAM;
 	struct net_if *iface;
+	uint32_t mck_freq;
 	uint8_t mac_addr[6];
 	bool link_up;
 	struct gmac_queue queue_list[GMAC_QUEUE_NUM];
