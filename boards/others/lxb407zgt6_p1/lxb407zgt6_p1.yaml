@@ -1,0 +1,15 @@
+identifier: lxb407zgt6_p1
+name: LXB STM32F407ZGT6 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 192
+flash: 1024
+supported:
+  - gpio
+  - uart
+  - usb_device
+  - spi
+  - rtc
