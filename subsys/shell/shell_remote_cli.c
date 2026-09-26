@@ -203,10 +203,48 @@ static void cmd_get(struct shell_remote_cli *sh_remote, const struct shell_remot
 	}
 }
 
+static int handler_find_in_subtree(const struct shell_static_entry *parent,
+				   shell_cmd_handler handler, struct shell_static_entry *dloc)
+{
+	const struct shell_static_entry *entry;
+	struct shell_static_entry parent_cpy;
+	size_t idx = 0;
+
+	if (parent != NULL) {
+		memcpy(&parent_cpy, parent, sizeof(parent_cpy));
+		parent = &parent_cpy;
+	}
+
+	while ((entry = z_shell_cmd_get(parent, idx++, dloc)) != NULL) {
+		if (entry->handler == handler) {
+			return 0;
+		}
+
+		if (entry->subcmd != NULL && entry != dloc &&
+		    handler_find_in_subtree(entry, handler, dloc) == 0) {
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
+/* Function checks if received handler is a valid shell command handler. */
+static int handler_is_shell_cmd(shell_cmd_handler handler)
+{
+	struct shell_static_entry dloc;
+
+	return handler_find_in_subtree(NULL, handler, &dloc);
+}
+
 static void cmd_exec(struct shell_remote_cli *sh_remote, struct shell_remote_msg_exec *msg,
 		     size_t len)
 {
-	__ASSERT_NO_MSG(msg->argc <= CONFIG_SHELL_ARGC_MAX);
+	if (msg->argc > CONFIG_SHELL_ARGC_MAX || msg->argc < msg->cmd_lvl) {
+		cmd_result(&sh_remote->ept, -EINVAL);
+		return;
+	}
+
 	char *argv[msg->argc];
 	char *data = msg->data;
 	uint32_t cnt = 0;
@@ -219,6 +257,7 @@ static void cmd_exec(struct shell_remote_cli *sh_remote, struct shell_remote_msg
 
 	LOG_DBG("Command execute request: argc:%d, cmd_lvl:%d, handler:%p, data:%s", msg->argc,
 		msg->cmd_lvl, msg->handler, data);
+
 	/* Copy arguments to the stack buffer as shell instance buffer may be used
 	 * for shell printing.
 	 */
@@ -230,6 +269,12 @@ static void cmd_exec(struct shell_remote_cli *sh_remote, struct shell_remote_msg
 		cnt++;
 		len -= slen;
 	} while ((cnt < msg->argc) && (len > 0));
+
+	err = handler_is_shell_cmd(msg->handler);
+	if (err < 0) {
+		cmd_result(&sh_remote->ept, err);
+		return;
+	}
 
 	err = msg->handler((const struct shell *)sh_remote, argc, cmd_argv);
 
