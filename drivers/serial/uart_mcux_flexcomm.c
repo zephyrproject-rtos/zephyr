@@ -1488,7 +1488,7 @@ static struct mcux_flexcomm_data mcux_flexcomm_##n##_data = {			\
 										\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-			    &mcux_flexcomm_init,				\
+			    mcux_flexcomm_init,					\
 			    PM_DEVICE_DT_INST_GET(n),				\
 			    &mcux_flexcomm_##n##_data,				\
 			    &mcux_flexcomm_##n##_config,			\

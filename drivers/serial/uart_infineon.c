@@ -1164,7 +1164,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
 		IRQ_INFO(n)                                                                        \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init, NULL, &ifx_cat1_uart##n##_data,              \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_uart_init, NULL, &ifx_cat1_uart##n##_data,               \
 			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
 			      &ifx_cat1_uart_driver_api);
 

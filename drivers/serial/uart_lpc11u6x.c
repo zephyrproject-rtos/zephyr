@@ -424,7 +424,7 @@ static DEVICE_API(uart, uart0_api) = {
 static struct lpc11u6x_uart0_data uart0_data;
 
 DEVICE_DT_DEFINE(DT_NODELABEL(uart0),
-		    &lpc11u6x_uart0_init,
+		    lpc11u6x_uart0_init,
 		    NULL,
 		    &uart0_data, &uart0_config,
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
@@ -863,7 +863,7 @@ static const struct lpc11u6x_uartx_config uart_cfg_##idx = {	              \
 static struct lpc11u6x_uartx_data uart_data_##idx;                            \
 									      \
 DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx), 				      \
-		    &lpc11u6x_uartx_init, NULL,				      \
+		    lpc11u6x_uartx_init, NULL,				      \
 		    &uart_data_##idx, &uart_cfg_##idx,			      \
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		      \
 		    &uartx_api)

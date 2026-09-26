@@ -631,7 +631,7 @@ static DEVICE_API(uart, uart_bflb_driver_api) = {
 		.rx_fifo_threshold = 0,						\
 		BFLB_UART_IRQ_HANDLER_FUNC(instance)				\
 	};									\
-	DEVICE_DT_INST_DEINIT_DEFINE(instance, &uart_bflb_init,			\
+	DEVICE_DT_INST_DEINIT_DEFINE(instance, uart_bflb_init,			\
 			      &uart_bflb_deinit,				\
 			      PM_DEVICE_DT_INST_GET(instance),			\
 			      &uart##instance##_bflb_data,			\

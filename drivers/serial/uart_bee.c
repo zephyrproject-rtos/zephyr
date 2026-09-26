@@ -1276,7 +1276,7 @@ static DEVICE_API(uart, uart_bee_driver_api) = {
 			},                                                                         \
 		UART_DMA_CHANNEL(index, rx) UART_DMA_CHANNEL(index, tx)};                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &uart_bee_init, NULL, &uart_bee_data_##index,                 \
+	DEVICE_DT_INST_DEFINE(index, uart_bee_init, NULL, &uart_bee_data_##index,                  \
 			      &uart_bee_cfg_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,    \
 			      &uart_bee_driver_api);                                               \
                                                                                                    \
