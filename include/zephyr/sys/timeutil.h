@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/math_extras.h>
@@ -90,6 +91,23 @@ extern "C" {
 
 /* Base Year value use in calculations in "timeutil_timegm64" API */
 #define TIME_UTILS_BASE_YEAR 1900
+
+/**
+ * @brief Execute a counted NOP delay loop.
+ *
+ * Executes @p count NOP instructions in a tight loop. The loop is
+ * unrolled at compile time when the count is known, producing
+ * cycle-accurate delays suitable for bit-bang timing.
+ *
+ * @param count Number of NOP instructions to execute.
+ */
+#define timeutil_delay_cycles(count) \
+	do { \
+		TOOLCHAIN_PRAGMA_UNROLL(count) \
+		for (unsigned int _nop_i = 0; _nop_i < (unsigned int)(count); _nop_i++) { \
+			arch_nop(); \
+		} \
+	} while (0)
 
 /**
  * @brief Convert broken-down time to a POSIX epoch offset in seconds.
