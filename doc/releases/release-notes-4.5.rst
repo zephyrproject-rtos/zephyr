@@ -604,6 +604,8 @@ New APIs and options
 
   * Host
 
+    * :c:func:`bt_att_get_max_notify_size`
+    * :c:func:`bt_att_get_max_indicate_size`
     * :c:func:`bt_conn_take`
     * :c:func:`bt_conn_drop`
     * :c:func:`bt_id_reset_irk`

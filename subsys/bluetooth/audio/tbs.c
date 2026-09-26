@@ -425,11 +425,13 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 static int notify(struct bt_conn *conn, const struct bt_uuid *uuid,
 		  const struct bt_gatt_attr *attrs, const void *value, size_t value_len)
 {
-	const uint8_t att_header_size = 3U; /* opcode + handle */
-	const uint16_t att_mtu = bt_gatt_get_mtu(conn);
+	const int maxlen = bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT_NONE);
 
-	__ASSERT(att_mtu > att_header_size, "Could not get valid ATT MTU");
-	const uint16_t maxlen = att_mtu - att_header_size; /* Subtract opcode and handle */
+	if (maxlen < 0) {
+		__ASSERT(maxlen != -EINVAL, "Unexpected -EINVAL");
+		LOG_DBG("Failed to get max notification size for %p: %d", conn, maxlen);
+		return maxlen; /* contains errno value */
+	}
 
 	if (maxlen < value_len) {
 		LOG_DBG("Truncating notification to %u (was %u)", maxlen, value_len);

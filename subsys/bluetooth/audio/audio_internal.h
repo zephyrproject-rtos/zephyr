@@ -70,7 +70,6 @@ ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *
 		(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT))
 
 bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len);
-uint16_t bt_audio_get_max_ntf_size(struct bt_conn *conn);
 
 /** Checks the security of an ACL connection
  *
