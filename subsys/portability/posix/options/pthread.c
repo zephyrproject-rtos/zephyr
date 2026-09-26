@@ -357,7 +357,7 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 		return EINVAL;
 	}
 
-	if (attr->stack != NULL) {
+	if ((attr->stack != NULL) && !attr->stack_is_user) {
 		ret = k_thread_stack_free(attr->stack);
 		if (ret == 0) {
 			LOG_DBG("Freed attr %p thread stack %zu@%p", _attr,
@@ -366,6 +366,7 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 	}
 
 	attr->stack = stackaddr;
+	attr->stack_is_user = true;
 	__set_attr_stacksize(attr, stacksize);
 
 	LOG_DBG("Assigned thread stack %zu@%p to attr %p", __get_attr_stacksize(attr), attr->stack,
@@ -1329,7 +1330,7 @@ int pthread_attr_setstacksize(pthread_attr_t *_attr, size_t stacksize)
 	}
 	LOG_DBG("Allocated thread stack %zu@%p", stacksize + attr->guardsize, new_stack);
 
-	if (attr->stack != NULL) {
+	if ((attr->stack != NULL) && !attr->stack_is_user) {
 		ret = k_thread_stack_free(attr->stack);
 		if (ret == 0) {
 			LOG_DBG("Freed attr %p thread stack %zu@%p", _attr,
@@ -1339,6 +1340,7 @@ int pthread_attr_setstacksize(pthread_attr_t *_attr, size_t stacksize)
 
 	__set_attr_stacksize(attr, stacksize);
 	attr->stack = new_stack;
+	attr->stack_is_user = false;
 
 	return 0;
 }
@@ -1418,7 +1420,7 @@ int pthread_attr_destroy(pthread_attr_t *_attr)
 		return EINVAL;
 	}
 
-	ret = k_thread_stack_free(attr->stack);
+	ret = attr->stack_is_user ? 0 : k_thread_stack_free(attr->stack);
 	if (ret == 0) {
 		LOG_DBG("Freed attr %p thread stack %zu@%p", _attr, __get_attr_stacksize(attr),
 			attr->stack);
