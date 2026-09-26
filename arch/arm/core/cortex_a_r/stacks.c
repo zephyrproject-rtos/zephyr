@@ -21,6 +21,9 @@ K_KERNEL_STACK_ARRAY_DEFINE(z_arm_svc_stack, CONFIG_MP_MAX_NUM_CPUS,
 K_KERNEL_STACK_ARRAY_DEFINE(z_arm_sys_stack, CONFIG_MP_MAX_NUM_CPUS,
 		CONFIG_ARMV7_SYS_STACK_SIZE);
 
+/* Previous-mode SP from abort/undef entry; used by GDB CFI (not stacked). */
+uint32_t z_arm_coredump_fault_sp;
+
 #if defined(CONFIG_INIT_STACKS)
 void z_arm_init_stacks(void)
 {
