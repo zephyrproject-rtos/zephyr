@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,camera = &video_fifo;
+	};
+
+	video_fifo: video-fifo {
+		compatible = "zephyr,native-sim-video-fifo";
+		fifo-path = "video-native-sim-fifo-test.fifo";
+		poll-interval-ms = <1>;
+	};
+};
