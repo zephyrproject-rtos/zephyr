@@ -652,13 +652,22 @@ static DEVICE_API(audio_codec, da7212_driver_api) = {
 	.route_output = da7212_route_output,
 };
 
+/*
+ * Only a clock controller that multiplexes several clocks takes a subsystem,
+ * and it is the "name" cell of its specifier. A controller driving one clock,
+ * such as a fixed one or a PWM output, has no such cell and takes none.
+ */
+#define DA7212_MCLK_SUBSYS(n)								\
+	COND_CODE_1(DT_INST_PHA_HAS_CELL_AT_IDX(n, clocks, 0, name),			\
+		    ((clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)), \
+		    (NULL))
+
 #define DA7212_INIT(n)									\
 	static const struct da7212_driver_config da7212_device_config_##n = {		\
 		.i2c = I2C_DT_SPEC_INST_GET(n),						\
 		.clock_source = DT_INST_ENUM_IDX(n, clock_source),			\
 		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),	\
-		.mclk_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n,	\
-								 mclk, name)};		\
+		.mclk_name = DA7212_MCLK_SUBSYS(n)};					\
 											\
 	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &da7212_device_config_##n,		\
 		POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &da7212_driver_api);
