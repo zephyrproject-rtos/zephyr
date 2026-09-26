@@ -156,7 +156,7 @@ const __imx_boot_container_section container boot_header = {
 
 /* Handle CM7 core initialization based on execution mode */
 #if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
-#define CM7_BOOT_ADDRESS   (CM7_FLASH_ADDR - ADJUSTED_LMA)
+#define CM7_BOOT_ADDRESS   ((CM7_FLASH_ADDR - ADJUSTED_LMA) & 0xFFFFFFFFU)
 #else
 #define CM7_BOOT_ADDRESS   CM7_FLASH_ADDR
 #endif /* defined(CONFIG_CM7_BOOT_FROM_FLASH) */
