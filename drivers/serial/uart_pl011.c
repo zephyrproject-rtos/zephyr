@@ -770,7 +770,7 @@ void pl011_isr(const struct device *dev)
 		};									\
 	))										\
 											\
-	static struct pl011_config pl011_cfg_port_##n = {				\
+	static const struct pl011_config pl011_cfg_port_##n = {				\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
 		CLOCK_INIT(n)                                                           \
 		PINCTRL_INIT(n)	                                                        \
@@ -820,7 +820,7 @@ DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 		};                                                                                 \
 	))                                                                                         \
 	                                                                                           \
-	static struct pl011_config pl011_cfg_sbsa_##n = {                                          \
+	static const struct pl011_config pl011_cfg_sbsa_##n = {                                    \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		IF_ENABLED(PL011_NODE_USE_IRQ(n),                                                  \
 			   (.irq_config_func = pl011_irq_config_func_sbsa_##n,))		   \

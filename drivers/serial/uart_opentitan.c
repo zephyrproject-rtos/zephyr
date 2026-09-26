@@ -105,7 +105,7 @@ static DEVICE_API(uart, uart_opentitan_driver_api) = {
 #define NCO_REG(baud, clk) (BIT64(20) * (baud) / (clk))
 
 #define UART_OPENTITAN_INIT(n) \
-	static struct uart_opentitan_config uart_opentitan_config_##n = \
+	static const struct uart_opentitan_config uart_opentitan_config_##n = \
 	{ \
 		.base = DT_INST_REG_ADDR(n), \
 		.nco_reg = NCO_REG(DT_INST_PROP(n, current_speed), \

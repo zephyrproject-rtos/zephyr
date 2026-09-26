@@ -1154,7 +1154,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		UART_DMA_CHANNEL(n, tx, MEMORY_TO_PERIPHERAL, 1, 1)                                \
 			UART_DMA_CHANNEL(n, rx, PERIPHERAL_TO_MEMORY, 1, 1)};                      \
                                                                                                    \
-	static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                              \
+	static const struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                        \
 		.dt_cfg.baudrate = DT_INST_PROP(n, current_speed),                                 \
 		.dt_cfg.parity = DT_INST_ENUM_IDX(n, parity),                                      \
 		.dt_cfg.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),                                \
@@ -1164,7 +1164,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
 		IRQ_INFO(n)                                                                        \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init, NULL, &ifx_cat1_uart##n##_data,              \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_uart_init, NULL, &ifx_cat1_uart##n##_data,               \
 			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
 			      &ifx_cat1_uart_driver_api);
 

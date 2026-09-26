@@ -1949,7 +1949,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(n, ifx_cat1_uart_pm_action, PM_DEVICE_ISR_SAFE);                  \
                                                                                                    \
-	static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                              \
+	static const struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                        \
 		.dt_cfg.baudrate = DT_INST_PROP(n, current_speed),                                 \
 		.dt_cfg.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),             \
 		.dt_cfg.stop_bits = DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1),       \
@@ -1960,7 +1960,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.clk_dst = DT_INST_PROP(n, clk_dst),                                               \
 		CLOCK_GET(n) IRQ_INFO(n)};                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init##n, PM_DEVICE_DT_INST_GET(n),                 \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_uart_init##n, PM_DEVICE_DT_INST_GET(n),                  \
 			      &ifx_cat1_uart##n##_data, &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1,     \
 			      CONFIG_SERIAL_INIT_PRIORITY, &ifx_cat1_uart_driver_api);
 
