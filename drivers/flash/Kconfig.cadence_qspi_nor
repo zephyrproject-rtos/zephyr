@@ -1,6 +1,15 @@
 # Copyright (c) 2022 Intel Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
+# Macro to find node in device tree
+DT_CHOSEN_CAD_QSPI_NODE := qspi
+
+config CAD_QSPI_INTERRUPT_SUPPORT
+	bool
+	def_bool $(dt_node_has_prop,$(DT_CHOSEN_CAD_QSPI_NODE),interrupts)
+	help
+	  Enable Cadence QSPI Interrupt Support.
+
 config FLASH_CAD_QSPI_NOR
 	bool "Cadence Quad SPI Flash driver"
 	default y
