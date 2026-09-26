@@ -141,6 +141,8 @@
 };
 
 &ptp_clock {
+	pinctrl-0 = <&emac_ptp_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
