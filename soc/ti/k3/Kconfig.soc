@@ -13,6 +13,7 @@ rsource "*/Kconfig.soc"
 
 config SOC_SERIES
 	default "am62x" if SOC_SERIES_AM62X
+	default "am62ax" if SOC_AM62A7_MCU_R5F0_0
 	default "am62lx" if SOC_SERIES_AM62LX
 	default "am64x" if SOC_SERIES_AM64X
 	default "j721e" if SOC_SERIES_J721E
@@ -23,6 +24,7 @@ config SOC
 	default "am6232" if SOC_AM6232_M4 || SOC_AM6232_A53
 	default "am6234" if SOC_AM6234_M4 || SOC_AM6234_A53
 	default "am6254" if SOC_AM6254_M4 || SOC_AM6254_A53
+	default "am62a7" if SOC_AM62A7_MCU_R5F0_0
 	default "am62l3" if SOC_AM62L3_A53
 	default "am6442" if SOC_AM6442_M4 || SOC_AM6442_R5F0_0 || SOC_AM6442_R5F0_1 || SOC_AM6442_R5F1_0 || SOC_AM6442_R5F1_1
 	default "j721e" if SOC_J721E_MAIN_R5F0_0 || SOC_J721E_MAIN_R5F0_1 || \
