@@ -51,7 +51,7 @@ struct event_walk_data {
 };
 
 #ifdef CONFIG_OBJ_CORE_EVENT
-static struct k_obj_type obj_type_event;
+K_OBJ_TYPE_DEFINE(z_obj_type_event, k_event, K_OBJ_TYPE_EVENT_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_EVENT */
 
 void z_impl_k_event_init(struct k_event *event)
@@ -68,7 +68,7 @@ void z_impl_k_event_init(struct k_event *event)
 	k_object_init(event);
 
 #ifdef CONFIG_OBJ_CORE_EVENT
-	k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
+	k_obj_core_init_and_link(K_OBJ_CORE(event), &z_obj_type_event);
 #endif /* CONFIG_OBJ_CORE_EVENT */
 }
 
@@ -429,7 +429,3 @@ uint32_t z_vrfy_k_event_wait_all_safe(struct k_event *event, uint32_t events,
 }
 #include <zephyr/syscalls/k_event_wait_all_safe_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_EVENT
-K_OBJ_TYPE_DEFINE(obj_type_event, k_event, K_OBJ_TYPE_EVENT_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_EVENT */

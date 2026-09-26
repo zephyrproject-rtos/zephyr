@@ -62,6 +62,12 @@ static void sock_obj_core_init_and_link(struct sock_obj *sock)
 	if (!type_init_done) {
 		z_obj_type_init(&sock_obj_type, K_OBJ_TYPE_SOCK,
 				offsetof(struct sock_obj, obj_core));
+		/* The socket object table is permanent storage: the objects
+		 * that have been initialized are reported from it.
+		 */
+		z_obj_type_init_range(&sock_obj_type, sock_objects,
+				      &sock_objects[ARRAY_SIZE(sock_objects)],
+				      sizeof(struct sock_obj), false);
 		k_obj_type_stats_init(&sock_obj_type, &sock_obj_type_stats_desc);
 
 		type_init_done = true;
@@ -73,7 +79,7 @@ static void sock_obj_core_init_and_link(struct sock_obj *sock)
 	if (sock->init_done) {
 		k_obj_core_stats_reset(K_OBJ_CORE(sock));
 	} else {
-		k_obj_core_init_and_link(K_OBJ_CORE(sock), &sock_obj_type);
+		k_obj_core_init(K_OBJ_CORE(sock), &sock_obj_type);
 		k_obj_core_stats_register(K_OBJ_CORE(sock), &sock->stats,
 					  sizeof(struct sock_obj_type_raw_stats));
 	}

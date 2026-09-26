@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <zephyr/ztest.h>
 #include <zephyr/sys/mem_blocks.h>
 
@@ -19,6 +20,9 @@ struct k_timer timer2;
 K_STACK_DEFINE(stack1, 8);
 static struct k_stack stack2;
 stack_data_t stack2_buffer[8];
+
+static K_QUEUE_DEFINE(queue1);
+static struct k_queue queue2;
 
 static K_FIFO_DEFINE(fifo1);
 static struct k_fifo fifo2;
@@ -58,6 +62,7 @@ K_THREAD_STACK_DEFINE(thread2_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 struct obj_core_find_data {
 	struct k_obj_core *obj_core;    /* Object core to search for */
+	int count;                      /* Number of times it was reported */
 };
 
 static void thread_entry(void *p1, void *p2, void *p3)
@@ -219,6 +224,13 @@ ZTEST(obj_core, test_obj_core_stack)
 			     K_OBJ_CORE(&stack1), K_OBJ_CORE(&stack2));
 }
 
+ZTEST(obj_core, test_obj_core_queue)
+{
+	k_queue_init(&queue2);
+	common_obj_core_test(K_OBJ_TYPE_QUEUE_ID, "queue",
+			     K_OBJ_CORE(&queue1), K_OBJ_CORE(&queue2));
+}
+
 ZTEST(obj_core, test_obj_core_fifo)
 {
 	k_fifo_init(&fifo2);
@@ -281,6 +293,249 @@ ZTEST(obj_core, test_obj_core_sem)
 
 	common_obj_core_test(K_OBJ_TYPE_SEM_ID, "semaphore",
 			     K_OBJ_CORE(&sem1), K_OBJ_CORE(&sem2));
+}
+
+static int obj_core_count_op(struct k_obj_core *obj_core, void *data)
+{
+	struct obj_core_find_data *find_data = data;
+
+	if (find_data->obj_core == obj_core) {
+		find_data->count++;
+	}
+
+	return 0;
+}
+
+static int count_walk(uint32_t type_id, struct k_obj_core *obj_core)
+{
+	struct obj_core_find_data walk_data = { .obj_core = obj_core, .count = 0 };
+
+	k_obj_type_walk_locked(k_obj_type_find(type_id), obj_core_count_op, &walk_data);
+
+	return walk_data.count;
+}
+
+ZTEST(obj_core, test_obj_core_reinit)
+{
+	/* Re-initializing a static object and a registered object leaves each
+	 * reported exactly once, with the other objects still present.
+	 */
+	k_mutex_init(&mutex1);
+	k_mutex_init(&mutex2);
+	k_mutex_init(&mutex2);
+
+	common_obj_core_test(K_OBJ_TYPE_MUTEX_ID, "mutex",
+			     K_OBJ_CORE(&mutex1), K_OBJ_CORE(&mutex2));
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex1)), 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 1);
+}
+
+ZTEST(obj_core, test_obj_core_unlink)
+{
+	k_mutex_init(&mutex2);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 1);
+
+	k_obj_core_unlink(K_OBJ_CORE(&mutex2));
+	k_obj_core_unlink(K_OBJ_CORE(&mutex2));
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex1)), 1);
+
+	k_obj_core_link(K_OBJ_CORE(&mutex2));
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 1);
+}
+
+static union {
+	struct k_sem sem;
+	struct k_mutex mutex;
+} reused_storage;
+
+ZTEST(obj_core, test_obj_core_storage_reuse)
+{
+	/* An object discarded without being unregistered leaves a stale entry
+	 * that is dropped once its storage holds something else.
+	 */
+	k_sem_init(&reused_storage.sem, 0, 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&reused_storage.sem)), 1);
+
+	memset(&reused_storage, 0, sizeof(reused_storage));
+	k_mutex_init(&reused_storage.mutex);
+
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&reused_storage.sem)), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&reused_storage.mutex)), 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
+
+	k_obj_core_unlink(K_OBJ_CORE(&reused_storage.mutex));
+}
+
+static struct k_sem fill_sems[CONFIG_OBJ_CORE_MAX_DYNAMIC_OBJECTS];
+static struct k_sem extra_sem;
+
+ZTEST(obj_core, test_obj_core_registry_full)
+{
+	struct k_obj_type *type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
+	uint32_t dropped = type->dropped;
+
+	/* The registry already holds the kernel's own objects, so filling it
+	 * with as many semaphores as it has entries overflows it.
+	 */
+	for (size_t i = 0; i < ARRAY_SIZE(fill_sems); i++) {
+		k_sem_init(&fill_sems[i], 0, 1);
+	}
+	zassert_true(type->dropped > dropped, "no registration refused");
+
+	dropped = type->dropped;
+	k_sem_init(&extra_sem, 0, 1);
+	zassert_equal(type->dropped, dropped + 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&extra_sem)), 0);
+
+	/* The kernel's objects and the static ones are still reported */
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_THREAD_ID, K_OBJ_CORE(k_current_get())), 1);
+
+	/* Freeing one entry lets the next registration through */
+	k_obj_core_unlink(K_OBJ_CORE(&fill_sems[0]));
+	k_sem_init(&extra_sem, 0, 1);
+	zassert_equal(type->dropped, dropped + 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&extra_sem)), 1);
+
+	k_obj_core_unlink(K_OBJ_CORE(&extra_sem));
+	for (size_t i = 1; i < ARRAY_SIZE(fill_sems); i++) {
+		k_obj_core_unlink(K_OBJ_CORE(&fill_sems[i]));
+	}
+}
+
+static void init_stack_sem(void)
+{
+	struct k_sem sem;
+
+	k_sem_init(&sem, 0, 1);
+}
+
+static struct k_sem *isr_sem;
+
+static void init_isr_stack_sem(const void *arg)
+{
+	struct k_sem sem;
+
+	ARG_UNUSED(arg);
+	isr_sem = &sem;
+	k_sem_init(&sem, 0, 1);
+}
+
+static void work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+}
+
+ZTEST(obj_core, test_obj_core_stack_storage)
+{
+	struct k_obj_type *type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
+	uint32_t skipped = type->skipped;
+	struct k_sem sem;
+	struct k_work work;
+	struct k_work_sync sync;
+
+	/* Objects in stack storage are counted, not registered, and leave
+	 * the registry intact once their frames are gone.
+	 */
+	init_stack_sem();
+	init_stack_sem();
+	k_sem_init(&sem, 0, 1);
+	zassert_equal(type->skipped, skipped + 3);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem)), 0);
+
+	/* An object in the interrupt stack is skipped too. Some architectures
+	 * run offloaded interrupts on another exception stack, which the
+	 * kernel does not recognize: the object is then registered and stays
+	 * reported until its storage is reused.
+	 */
+	irq_offload(init_isr_stack_sem, NULL);
+	if (count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(isr_sem)) == 0) {
+		zassert_equal(type->skipped, skipped + 4);
+	} else {
+		zassert_equal(type->skipped, skipped + 3);
+		k_obj_core_unlink(K_OBJ_CORE(isr_sem));
+	}
+	skipped = type->skipped;
+
+	k_work_init(&work, work_handler);
+	k_work_submit(&work);
+	k_work_flush(&work, &sync);
+	zassert_equal(type->skipped, skipped + 1);
+
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
+}
+
+static struct k_msgq msgq3;
+static struct k_stack stack3;
+static struct k_timer timer3;
+
+ZTEST(obj_core, test_obj_core_cleanup)
+{
+	/* Releasing an object's allocated buffer, or cleaning up a timer,
+	 * ends its registration. Static objects stay reported.
+	 */
+	zassert_equal(k_msgq_alloc_init(&msgq3, 4, 4), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MSGQ_ID, K_OBJ_CORE(&msgq3)), 1);
+	zassert_equal(k_msgq_cleanup(&msgq3), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MSGQ_ID, K_OBJ_CORE(&msgq3)), 0);
+	zassert_equal(k_msgq_cleanup(&msgq1), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MSGQ_ID, K_OBJ_CORE(&msgq1)), 1);
+
+	zassert_equal(k_stack_alloc_init(&stack3, 4), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_STACK_ID, K_OBJ_CORE(&stack3)), 1);
+	zassert_equal(k_stack_cleanup(&stack3), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_STACK_ID, K_OBJ_CORE(&stack3)), 0);
+
+	k_timer_init(&timer3, NULL, NULL);
+	zassert_equal(count_walk(K_OBJ_TYPE_TIMER_ID, K_OBJ_CORE(&timer3)), 1);
+	zassert_equal(k_timer_cleanup(&timer3), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_TIMER_ID, K_OBJ_CORE(&timer3)), 0);
+}
+
+ZTEST(obj_core, test_obj_core_object_free)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	struct k_sem *sem = k_object_alloc(K_OBJ_SEM);
+
+	zassert_not_null(sem, "semaphore allocation failed");
+	k_sem_init(sem, 0, 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(sem)), 1);
+
+	k_object_free(sem);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(sem)), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+
+struct embedded {
+	uint32_t pad;
+	struct k_mutex mutex;
+};
+
+K_MEM_SLAB_DEFINE(slab3, ROUND_UP(sizeof(struct embedded), 8), 2, 8);
+
+ZTEST(obj_core, test_obj_core_released_memory)
+{
+	struct embedded *heap_obj = k_malloc(sizeof(struct embedded));
+	struct embedded *slab_obj;
+
+	/* Objects in memory returned to a heap or a slab stop being reported */
+	zassert_not_null(heap_obj, "allocation failed");
+	k_mutex_init(&heap_obj->mutex);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&heap_obj->mutex)), 1);
+	k_free(heap_obj);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&heap_obj->mutex)), 0);
+
+	zassert_equal(k_mem_slab_alloc(&slab3, (void **)&slab_obj, K_NO_WAIT), 0);
+	k_mutex_init(&slab_obj->mutex);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&slab_obj->mutex)), 1);
+	k_mem_slab_free(&slab3, slab_obj);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&slab_obj->mutex)), 0);
+
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex1)), 1);
 }
 
 ZTEST_SUITE(obj_core, NULL, NULL,

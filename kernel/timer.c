@@ -17,7 +17,7 @@
 static struct k_spinlock timer_lock;
 
 #ifdef CONFIG_OBJ_CORE_TIMER
-static struct k_obj_type obj_type_timer;
+K_OBJ_TYPE_DEFINE(z_obj_type_timer, k_timer, K_OBJ_TYPE_TIMER_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_TIMER */
 
 #if defined(CONFIG_TIMER_OBSERVER)
@@ -204,6 +204,12 @@ retry:
 out:
 	k_spin_unlock(&timer_lock, key);
 
+#ifdef CONFIG_OBJ_CORE_TIMER
+	if (ret == 0) {
+		k_obj_core_unlink(K_OBJ_CORE(timer));
+	}
+#endif /* CONFIG_OBJ_CORE_TIMER */
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, ret);
 
 	return ret;
@@ -236,7 +242,7 @@ void k_timer_init(struct k_timer *timer,
 	k_object_init(timer);
 
 #ifdef CONFIG_OBJ_CORE_TIMER
-	k_obj_core_init_and_link(K_OBJ_CORE(timer), &obj_type_timer);
+	k_obj_core_init_and_link(K_OBJ_CORE(timer), &z_obj_type_timer);
 #endif /* CONFIG_OBJ_CORE_TIMER */
 
 	z_timer_observer_on_init(timer);
@@ -459,7 +465,3 @@ static inline void z_vrfy_k_timer_user_data_set(struct k_timer *timer,
 #include <zephyr/syscalls/k_timer_user_data_set_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_OBJ_CORE_TIMER
-K_OBJ_TYPE_DEFINE(obj_type_timer, k_timer, K_OBJ_TYPE_TIMER_ID, NULL);
-#endif /* CONFIG_OBJ_CORE_TIMER */

@@ -7,7 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_
 #define ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_
 
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -53,6 +55,8 @@
 #define K_OBJ_TYPE_MUTEX_ID      K_OBJ_TYPE_ID_GEN("MUTX")
 /** Pipe object type */
 #define K_OBJ_TYPE_PIPE_ID       K_OBJ_TYPE_ID_GEN("PIPE")
+/** Queue object type */
+#define K_OBJ_TYPE_QUEUE_ID      K_OBJ_TYPE_ID_GEN("QUEU")
 /** Semaphore object type */
 #define K_OBJ_TYPE_SEM_ID        K_OBJ_TYPE_ID_GEN("SEM4")
 /** Stack object type */
@@ -85,8 +89,10 @@ struct k_obj_core;
  */
 
 /**
- * Tools may use this list as an entry point to identify all registered
- * object types and the object cores linked to them.
+ * List of every object type: those defined with K_OBJ_TYPE_DEFINE() are added
+ * at boot, those initialized with z_obj_type_init() as they are initialized.
+ * Tools may use it as an entry point to identify all object types and the
+ * object cores registered with them.
  */
 extern sys_slist_t z_obj_type_list;
 
@@ -107,21 +113,48 @@ struct k_obj_core_stats_desc {
 	int (*enable)(struct k_obj_core *obj_core);
 };
 
+/**
+ * @brief Contiguous range of permanent objects of one type
+ *
+ * Objects in the range are enumerated by walking it, so they are never
+ * registered at run time. The range holds either the objects themselves or,
+ * when @a indirect is set, pointers to them.
+ */
+struct k_obj_range {
+	const void *start;   /**< First element */
+	const void *end;     /**< One past the last element */
+	size_t      stride;  /**< Element size */
+	bool        indirect; /**< Elements are pointers to the objects */
+};
+
 /** Object type structure */
 struct k_obj_type {
 	sys_snode_t    node;   /**< Node within list of object types */
-	sys_slist_t    list;   /**< List of objects of this object type */
 	uint32_t       id;     /**< Unique type ID */
 	size_t         obj_core_offset;  /**< Offset to obj_core field */
+	/** Permanent objects of this type, walked in place */
+	struct k_obj_range statics;
+	/** Registrations refused because the registry was full */
+	uint32_t       dropped;
+	/** Registrations refused because the object lives in stack storage */
+	uint32_t       skipped;
 #ifdef CONFIG_OBJ_CORE_STATS
 	/** Pointer to object core statistics descriptor */
 	struct k_obj_core_stats_desc *stats_desc;
+	/** Offset of the stats buffer within each permanent object, if any */
+	size_t         stats_offset;
+	/** Size of the stats buffer within each permanent object (0 = none) */
+	size_t         stats_size;
 #endif /* CONFIG_OBJ_CORE_STATS */
 };
 
-/** Object core structure */
+/**
+ * Object core structure
+ *
+ * The @a type pointer doubles as the registry's validity tag: an object whose
+ * storage has been reused no longer carries the type it was registered with.
+ */
 struct k_obj_core {
-	sys_snode_t        node;   /**< Object node within object type's list */
 	struct k_obj_type *type;   /**< Object type to which object belongs */
 #ifdef CONFIG_OBJ_CORE_STATS
 	void  *stats;              /**< Pointer to kernel object's stats */
@@ -132,114 +165,92 @@ struct k_obj_core {
  * @cond INTERNAL_HIDDEN
  */
 
-/**
- * Descriptor used to register an object type with the object core framework at
- * boot. One descriptor is emitted per participating object type via
- * K_OBJ_TYPE_DEFINE(); the kernel walks them all from a single init point
- * instead of each object type providing its own SYS_INIT.
- */
-struct k_obj_core_desc {
-	struct k_obj_type *type;        /**< Object type storage to initialize */
-	const void        *objs_start;  /**< Start of static object section */
-	const void        *objs_end;    /**< End of static object section */
-	size_t             obj_core_offset; /**< Offset of obj_core in object */
-	size_t             obj_size;    /**< Stride between static objects */
-	uint32_t           type_id;     /**< Unique type ID */
 #ifdef CONFIG_OBJ_CORE_STATS
-	struct k_obj_core_stats_desc *stats_desc; /**< Stats descriptor or NULL */
-	size_t             stats_offset; /**< Offset of per-object stats buffer */
-	size_t             stats_size;   /**< Per-object stats buffer size (0=none) */
-#endif /* CONFIG_OBJ_CORE_STATS */
-};
-
-#ifdef CONFIG_OBJ_CORE_STATS
-#define Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz) \
+#define Z_OBJ_CORE_STATS_INIT(_stats, _soff, _ssz) \
 	.stats_desc = (_stats), .stats_offset = (_soff), .stats_size = (_ssz),
 #else
-#define Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz)
+#define Z_OBJ_CORE_STATS_INIT(_stats, _soff, _ssz)
 #endif /* CONFIG_OBJ_CORE_STATS */
 
-#define Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats, _soff, _ssz)      \
-	STRUCT_SECTION_START_EXTERN(_struct);                                  \
-	STRUCT_SECTION_END_EXTERN(_struct);                                    \
-	static const STRUCT_SECTION_ITERABLE(k_obj_core_desc,                  \
-					     _obj_core_desc_##_struct) = {     \
-		.type = &(_type_var),                                          \
-		.objs_start = STRUCT_SECTION_START(_struct),                   \
-		.objs_end = STRUCT_SECTION_END(_struct),                       \
-		.obj_core_offset = offsetof(struct _struct, obj_core),         \
-		.obj_size = sizeof(struct _struct),                            \
-		.type_id = (_id),                                              \
-		Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz)                     \
+#define Z_K_OBJ_TYPE_DEFINE(_type_var, _start, _end, _stride, _off, _id,       \
+			    _stats, _soff, _ssz)                               \
+	STRUCT_SECTION_ITERABLE(k_obj_type, _type_var) = {                     \
+		.id = (_id),                                                   \
+		.obj_core_offset = (_off),                                     \
+		.statics = {                                                   \
+			.start = (_start),                                     \
+			.end = (_end),                                         \
+			.stride = (_stride),                                   \
+			.indirect = false,                                     \
+		},                                                             \
+		Z_OBJ_CORE_STATS_INIT(_stats, _soff, _ssz)                     \
 	}
 
+#define Z_K_OBJ_TYPE_DEFINE_STRUCT(_type_var, _struct, _id, _stats, _soff, _ssz) \
+	STRUCT_SECTION_START_EXTERN(_struct);                                  \
+	STRUCT_SECTION_END_EXTERN(_struct);                                    \
+	Z_K_OBJ_TYPE_DEFINE(_type_var, STRUCT_SECTION_START(_struct),          \
+			    STRUCT_SECTION_END(_struct), sizeof(struct _struct), \
+			    offsetof(struct _struct, obj_core), _id, _stats,    \
+			    _soff, _ssz)
+
 /**
- * @brief Register an object type with the object core framework
+ * @brief Define an object type
  *
- * Emits a descriptor that the kernel uses at boot to initialize @a _type_var
- * and to initialize and link every statically defined object of @a _struct.
- * This replaces the per-type SYS_INIT boilerplate that would otherwise iterate
- * the object's static section by hand.
+ * Defines the object type @a _type_var, initialized at build time, whose
+ * permanent objects are the statically defined instances of @a _struct.
+ * The kernel initializes the object cores of those instances at boot.
  *
- * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _type_var Name of the object type (struct k_obj_type) to define
  * @param _struct   Object struct type (e.g. k_sem) with an obj_core member
  * @param _id       Unique type ID (e.g. K_OBJ_TYPE_SEM_ID)
  * @param _stats    Pointer to a k_obj_core_stats_desc, or NULL
  */
 #define K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats)                     \
-	Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats, 0, 0)
+	Z_K_OBJ_TYPE_DEFINE_STRUCT(_type_var, _struct, _id, _stats, 0, 0)
 
 /**
- * @brief Register an object type that also gathers per-object statistics
+ * @brief Define an object type that also gathers per-object statistics
  *
- * Like K_OBJ_TYPE_DEFINE(), but additionally registers each statically defined
- * object's embedded statistics buffer with the object core framework at boot.
+ * Like K_OBJ_TYPE_DEFINE(), but additionally registers each statically
+ * defined object's embedded statistics buffer at boot.
  *
- * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _type_var Name of the object type (struct k_obj_type) to define
  * @param _struct   Object struct type with obj_core and stats members
  * @param _id       Unique type ID
  * @param _stats    Pointer to a k_obj_core_stats_desc
  * @param _member   Name of the per-object stats buffer member within @a _struct
  */
 #define K_OBJ_TYPE_DEFINE_STATS(_type_var, _struct, _id, _stats, _member)      \
-	Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats,                   \
-			    offsetof(struct _struct, _member),                 \
-			    sizeof(((struct _struct *)0)->_member))
+	Z_K_OBJ_TYPE_DEFINE_STRUCT(_type_var, _struct, _id, _stats,            \
+				   offsetof(struct _struct, _member),          \
+				   sizeof(((struct _struct *)0)->_member))
 
 /**
- * @brief Register an object type without linking any static objects
+ * @brief Define an object type without permanent objects
  *
- * Like K_OBJ_TYPE_DEFINE(), but for object types that have no statically
- * defined instances to walk and link at boot (e.g. threads, which link their
- * own object core as they are created). Only the object type (and its stats
- * descriptor, if any) is initialized.
+ * Like K_OBJ_TYPE_DEFINE(), but for object types whose objects are all
+ * registered at run time (e.g. threads, which register their own object core
+ * as they are created).
  *
- * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _type_var Name of the object type (struct k_obj_type) to define
  * @param _struct   Object struct type with an obj_core member
  * @param _id       Unique type ID
  * @param _stats    Pointer to a k_obj_core_stats_desc, or NULL
  */
 #define K_OBJ_TYPE_DEFINE_TYPE_ONLY(_type_var, _struct, _id, _stats)           \
-	static const STRUCT_SECTION_ITERABLE(k_obj_core_desc,                  \
-					     _obj_core_desc_##_struct) = {     \
-		.type = &(_type_var),                                          \
-		.objs_start = NULL,                                            \
-		.objs_end = NULL,                                              \
-		.obj_core_offset = offsetof(struct _struct, obj_core),         \
-		.obj_size = sizeof(struct _struct),                            \
-		.type_id = (_id),                                              \
-		Z_OBJ_CORE_STATS_DESC(_stats, 0, 0)                            \
-	}
+	Z_K_OBJ_TYPE_DEFINE(_type_var, NULL, NULL, sizeof(struct _struct),     \
+			    offsetof(struct _struct, obj_core), _id, _stats, 0, 0)
 
 /**
  * INTERNAL_HIDDEN @endcond
  */
 
 /**
- * @brief Initialize a specific object type
+ * @brief Initialize an object type at run time
  *
- * Initializes a specific object type and links it into the object core
- * framework.
+ * Initializes an object type that is not defined with K_OBJ_TYPE_DEFINE()
+ * and links it into the object core framework.
  *
  * @param type Pointer to the object type to initialize
  * @param id A means to identify the object type
@@ -249,6 +260,21 @@ struct k_obj_core_desc {
  */
 struct k_obj_type *z_obj_type_init(struct k_obj_type *type,
 				   uint32_t id, size_t off);
+
+/**
+ * @brief Register the permanent objects of an object type
+ *
+ * Objects in [@a start, @a end) are enumerated by walking the range and are
+ * not registered individually. The storage must outlive the object type.
+ *
+ * @param type Pointer to the object type
+ * @param start First element of the range
+ * @param end One past the last element of the range
+ * @param stride Element size
+ * @param indirect True if the elements are pointers to the objects
+ */
+void z_obj_type_init_range(struct k_obj_type *type, const void *start,
+			   const void *end, size_t stride, bool indirect);
 
 /**
  * @brief Find a specific object type by ID
@@ -264,12 +290,15 @@ struct k_obj_type *z_obj_type_init(struct k_obj_type *type,
 struct k_obj_type *k_obj_type_find(uint32_t type_id);
 
 /**
- * @brief Walk the object type's list of object cores
+ * @brief Walk the object cores of an object type
  *
- * This function takes a global spinlock and walks the object type's list
- * of object cores and invokes the callback function on each element while
- * holding that lock. Although this will ensure that the list is not modified,
- * one can expect a significant penalty in terms of performance and latency.
+ * This function takes a global spinlock and invokes the callback on every
+ * object core of the object type while holding that lock: first the permanent
+ * objects of the type, then the objects registered at run time. A registered
+ * object whose storage has been reused is removed from the registry instead
+ * of being reported. Although the lock ensures that the registry is not
+ * modified, one can expect a significant penalty in terms of performance and
+ * latency.
  *
  * The callback function shall either return non-zero to stop further walking,
  * or it shall return 0 to continue walking.
@@ -285,13 +314,13 @@ int k_obj_type_walk_locked(struct k_obj_type *type,
 				  void *data);
 
 /**
- * @brief Walk the object type's list of object cores
+ * @brief Walk the object cores of an object type
  *
  * This function is similar to k_obj_type_walk_locked() except that it walks
- * the list without obtaining the global spinlock. No synchronization is
- * provided here. Mutation of the list of objects while this function is in
- * progress must be prevented at the application layer, otherwise
- * undefined/unreliable behavior, corruption and/or crashes may result.
+ * the registry without obtaining the global spinlock. No synchronization is
+ * provided here: objects registered or unregistered during the walk may or
+ * may not be reported, and a registered object whose storage has been reused
+ * is skipped rather than removed.
  *
  * The callback function shall either return non-zero to stop further walking,
  * or it shall return 0 to continue walking.
@@ -318,12 +347,19 @@ int k_obj_type_walk_unlocked(struct k_obj_type *type,
 void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type);
 
 /**
- * @brief Link the kernel object to the kernel object type list
+ * @brief Register the kernel object with its object type
  *
- * A kernel object can be optionally linked into the kernel object type's
- * list of objects. A kernel object must have been initialized before it
- * can be linked. Linked kernel objects can be traversed and have information
- * extracted from them by system tools.
+ * A kernel object can be optionally registered so that it is reported by
+ * k_obj_type_walk_locked() and k_obj_type_walk_unlocked(). It must have been
+ * initialized with k_obj_core_init() first. Registering an object that is
+ * already registered, or that belongs to the permanent range of its type, has
+ * no effect. An object located in the current thread's stack or in the
+ * interrupt stack is not registered and the type's @a skipped count is
+ * incremented. The registry holds no reference inside the object, so an
+ * object may be discarded without unregistering it; the stale entry is
+ * dropped when its storage is reused or when the registry is full. When the
+ * registry is full the object is not registered and the type's @a dropped
+ * count is incremented.
  *
  * @param obj_core Pointer to the kernel object
  */
@@ -342,15 +378,27 @@ void k_obj_core_init_and_link(struct k_obj_core *obj_core,
 			      struct k_obj_type *type);
 
 /**
- * @brief Unlink the kernel object from the kernel object type list
+ * @brief Unregister the kernel object from its object type
  *
- * Kernel objects can be unlinked from their respective kernel object type
- * lists. If on a list, it must be done at the end of the kernel object's life
- * cycle.
+ * Unregistering is optional and removes the object from the walks
+ * immediately, instead of when its storage is reused. Unregistering an object
+ * that is not registered has no effect.
  *
  * @param obj_core Pointer to the kernel object
  */
 void k_obj_core_unlink(struct k_obj_core *obj_core);
+
+/**
+ * @brief Unregister every kernel object located in a memory range
+ *
+ * Intended for memory allocators: removes the registry entries of all objects
+ * whose object core lies in [@a addr, @a addr + @a len) as the memory is
+ * released.
+ *
+ * @param addr Start of the released memory
+ * @param len Size of the released memory in bytes
+ */
+void k_obj_core_evict_range(const void *addr, size_t len);
 
 /** @} */
 

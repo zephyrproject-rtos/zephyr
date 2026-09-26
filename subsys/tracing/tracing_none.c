@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/sys/util.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/cpu_load.h>
 

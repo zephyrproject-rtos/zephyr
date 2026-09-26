@@ -4,6 +4,7 @@
 menuconfig OBJ_CORE
 	bool "Object core framework"
 	default n
+	select THREAD_STACK_INFO
 	help
 	  This option enables the object core framework. This will link
 	  participating kernel objects and their respective types together
@@ -12,6 +13,27 @@ menuconfig OBJ_CORE
 	  automated means.
 
 if OBJ_CORE
+config OBJ_CORE_MAX_DYNAMIC_OBJECTS
+	int "Maximum number of registered objects"
+	default 128
+	help
+	  Size of the registry of objects that are initialized at run time,
+	  such as kernel objects embedded in driver data. Statically defined
+	  objects (K_SEM_DEFINE() and the like) are enumerated in place and do
+	  not use a registry entry, and objects located in a thread's stack or
+	  in the interrupt stack are never registered. When the registry is
+	  full, further objects are not tracked and the object type's dropped
+	  count is incremented.
+
+config OBJ_CORE_EVICT_ON_FREE
+	bool "Unregister objects located in released memory"
+	default y
+	select SYS_HEAP_RELEASE_HOOK
+	help
+	  When memory is returned to a sys_heap or a memory slab, unregister
+	  every object located in it so that it stops being reported at once.
+	  The cost is a scan of the registry on each release.
+
 config OBJ_CORE_CONDVAR
 	bool "Integrate condition variables into object core framework"
 	default y
@@ -73,6 +95,13 @@ config OBJ_CORE_PIPE
 	default y
 	help
 	  When enabled, this option integrates pipes into the object core
+	  framework.
+
+config OBJ_CORE_QUEUE
+	bool "Integrate queues into object core framework"
+	default y
+	help
+	  When enabled, this option integrates queues into the object core
 	  framework.
 
 config OBJ_CORE_SEM

@@ -310,6 +310,12 @@ Removed APIs and options
 
     * ``stream_flash_erase_page()``
 
+* Tracing
+
+  * The ``_track_list_k_*`` object tracking list heads, ``SYS_PORT_TRACK_NEXT()`` and
+    :file:`include/zephyr/tracing/tracking.h`. Object tracking now enumerates objects through
+    the :ref:`object core framework <object_cores_api>`.
+
 * ZTest
 
     * ``CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT``
@@ -734,6 +740,10 @@ New APIs and options
 
 * Kernel
 
+  * :c:func:`k_obj_core_evict_range`
+  * :kconfig:option:`CONFIG_OBJ_CORE_MAX_DYNAMIC_OBJECTS`
+  * :kconfig:option:`CONFIG_OBJ_CORE_EVICT_ON_FREE`
+  * :kconfig:option:`CONFIG_OBJ_CORE_QUEUE`
   * :c:func:`k_thread_runtime_stats_is_enabled`
   * :c:func:`atomic_test_and_set_bit_to`
   * :c:macro:`K_MSGQ_DEFINE_STATIC`
@@ -2018,6 +2028,8 @@ New Samples
 * :zephyr:code-sample:`nxp_mcx_s2ram`
 * :zephyr:code-sample:`nxp_mcx_system_off`
 * :zephyr:code-sample:`nxp_smartdma_mem_to_mem`
+* :zephyr:code-sample:`object_cores`
+* :zephyr:code-sample:`object_monitor`
 * :zephyr:code-sample:`pm-latency`
 * :zephyr:code-sample:`pulse_io_byte_transfer`
 * :zephyr:code-sample:`qdec_multi`
@@ -2183,6 +2195,12 @@ Other notable changes
     options if your distribution ships an older version.
 
 * Kernel
+
+  * The :ref:`object core framework <object_cores_api>` no longer keeps registry state inside
+    the objects it tracks. Statically defined objects are enumerated in place and objects
+    initialized at run time are referenced from a bounded registry, so a kernel object may be
+    declared on a stack, embedded in freed memory or initialized again without corrupting the
+    registry. Objects in stack storage are not tracked.
 
   * :kconfig:option:`CONFIG_SCHED_CPU_MASK` no longer depends on
     :kconfig:option:`CONFIG_SCHED_SIMPLE`.  CPU affinity masks are now
