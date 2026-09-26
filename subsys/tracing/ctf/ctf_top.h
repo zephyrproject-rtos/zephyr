@@ -14,6 +14,13 @@
 #include <zephyr/tracing/tracing_format.h>
 #include <zephyr/net/net_ip.h>
 
+#ifdef CONFIG_TRACING_CTF_CIRCULAR_RAM
+#include <ctf_circular_ram.h>
+#define CTF_OUTPUT_EVENT(_event) ctf_circular_ram_write((_event), sizeof(_event))
+#else
+#define CTF_OUTPUT_EVENT(_event) tracing_format_raw_data((_event), sizeof(_event))
+#endif
+
 /* Limit strings to 20 bytes to optimize bandwidth */
 #define CTF_MAX_STRING_LEN 20
 
@@ -47,7 +54,7 @@
 		uint8_t *epacket_cursor = &epacket[0];                                             \
                                                                                                    \
 		MAP(CTF_INTERNAL_FIELD_APPEND, ##__VA_ARGS__)                                      \
-		tracing_format_raw_data(epacket, sizeof(epacket));                                 \
+		CTF_OUTPUT_EVENT(epacket);                                                         \
 	}
 
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
@@ -58,6 +65,19 @@ static inline uint64_t ctf_top_timestamp_get(void)
 	return timing_ns_get();
 }
 
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP_64
+#define CTF_EVENT(...)                                                                             \
+	{                                                                                          \
+		if (!is_tracing_enabled()) {                                                       \
+			return;                                                                    \
+		}                                                                                  \
+		int key = irq_lock();                                                              \
+		const uint64_t tstamp = sys_clock_cycle_get_64();                                  \
+	                                                                                                   \
+		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__)                                             \
+		irq_unlock(key);                                                                   \
+	}
+#else
 #define CTF_EVENT(...)                                                                             \
 	{                                                                                          \
 		if (!is_tracing_enabled()) {                                                       \
@@ -65,13 +85,14 @@ static inline uint64_t ctf_top_timestamp_get(void)
 		}                                                                                  \
 		int key = irq_lock();                                                              \
 		const uint64_t tstamp = ctf_top_timestamp_get();                                   \
-                                                                                                   \
+	                                                                                                   \
 		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__)                                             \
 		irq_unlock(key);                                                                   \
 	}
+#endif /* CONFIG_TRACING_CTF_TIMESTAMP_64 */
 #else
 #define CTF_EVENT(...) {CTF_GATHER_FIELDS(__VA_ARGS__)}
-#endif
+#endif /* CONFIG_TRACING_CTF_TIMESTAMP */
 
 /* Anonymous compound literal with 1 member. Legal since C99.
  * This permits us to take the address of literals, like so:
