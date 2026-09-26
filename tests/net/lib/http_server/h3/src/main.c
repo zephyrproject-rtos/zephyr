@@ -1528,6 +1528,101 @@ ZTEST(server_h3_function_tests, test_qpack_encode_int)
 	zassert_equal(ret, -ENOSPC, "Expected ENOSPC for empty buffer");
 }
 
+/*
+ * Regression tests for the QPACK integer / field-length bounds in the HTTP/3
+ * request header parser. These feed malformed header blocks straight into the
+ * parser functions and check that they are rejected rather than driving an
+ * out-of-bounds read in the Huffman decoder. Run under CONFIG_ASAN for the
+ * strongest signal.
+ */
+
+/* Longest integer the decoder must accept: a saturated 7-bit prefix followed
+ * by nine continuation bytes (63 bits of payload, shift 0..56).
+ */
+static const uint8_t qpack_int_longest_valid[] = {
+	0x7f, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01,
+};
+
+/* One continuation byte too many (shift would reach 63): the accumulator
+ * cannot hold it, so the decoder must reject the integer instead of wrapping.
+ */
+static const uint8_t qpack_int_too_long[] = {
+	0x7f, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01,
+};
+
+ZTEST(server_h3_function_tests, test_qpack_decode_int_boundary)
+{
+	uint64_t value;
+	int ret;
+
+	ret = qpack_decode_int(qpack_int_longest_valid,
+			       sizeof(qpack_int_longest_valid), 7, &value);
+	zassert_equal(ret, sizeof(qpack_int_longest_valid),
+		      "Longest valid integer was not fully consumed (%d)", ret);
+	zassert_equal(value, 0x7fULL + (0x1ULL << 56),
+		      "Longest valid integer decoded to 0x%llx",
+		      (unsigned long long)value);
+
+	ret = qpack_decode_int(qpack_int_too_long, sizeof(qpack_int_too_long),
+			       7, &value);
+	zassert_true(ret < 0,
+		     "Over-long integer accepted (ret %d), value would wrap", ret);
+}
+
+/* A well-formed block prefix (Required Insert Count 0, Delta Base 0) followed
+ * by a literal field line with a static name reference whose Huffman-coded
+ * value carries an over-long length integer. Without the bound the length
+ * decodes to 2^64 - 1, pos + len wraps below buflen and the Huffman decoder
+ * reads past the end of this block.
+ */
+static const uint8_t qpack_block_value_len_wrap[] = {
+	0x00,                   /* Required Insert Count = 0 */
+	0x00,                   /* Delta Base = 0 */
+	0x50,                   /* literal, static name reference, index 0 */
+	0xff,                   /* value: H = 1, 7-bit length prefix saturated */
+	0x80, 0xff, 0xff, 0xff, /* ten continuation bytes: 127 + 2^64 - 128 */
+	0xff, 0xff, 0xff, 0xff, /* wraps to 2^64 - 1, which passes the */
+	0xff, 0x01,             /* pos + len <= buflen check */
+};
+
+ZTEST(server_h3_function_tests, test_h3_qpack_value_len_no_overread)
+{
+	static struct http_client_ctx client;
+	int ret;
+
+	memset(&client, 0, sizeof(client));
+	client.fd = -1;
+
+	ret = h3_parse_qpack_headers(&client, qpack_block_value_len_wrap,
+				     sizeof(qpack_block_value_len_wrap));
+	zassert_true(ret < 0,
+		     "Parser accepted an over-long value length (ret %d)", ret);
+}
+
+/* Same block prefix, but the field line ends immediately after the name index,
+ * so there is no byte left to read the value's Huffman flag from.
+ */
+static const uint8_t qpack_block_truncated_after_name_ref[] = {
+	0x00, /* Required Insert Count = 0 */
+	0x00, /* Delta Base = 0 */
+	0x50, /* literal, static name reference, index 0, nothing follows */
+};
+
+ZTEST(server_h3_function_tests, test_h3_qpack_truncated_after_name_ref)
+{
+	static struct http_client_ctx client;
+	int ret;
+
+	memset(&client, 0, sizeof(client));
+	client.fd = -1;
+
+	ret = h3_parse_qpack_headers(&client, qpack_block_truncated_after_name_ref,
+				     sizeof(qpack_block_truncated_after_name_ref));
+	zassert_true(ret < 0,
+		     "Parser read past a field line truncated after the name reference (ret %d)",
+		     ret);
+}
+
 ZTEST(server_h3_tests, test_http1_alt_svc_is_service_scoped)
 {
 	expect_http1_alt_svc_response(SERVER_PORT, true, SERVER_PORT,
