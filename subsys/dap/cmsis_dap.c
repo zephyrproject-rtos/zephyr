@@ -270,7 +270,7 @@ static uint16_t dap_swj_pins(struct dap_link_context *const ctx,
 	uint8_t value = request[0];
 	uint8_t select = request[1];
 	uint32_t wait = sys_get_le32(&request[2]);
-	k_timepoint_t end = sys_timepoint_calc(K_USEC(wait));
+	k_timepoint_t end;
 	uint8_t state;
 
 	if (!atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
@@ -279,20 +279,44 @@ static uint16_t dap_swj_pins(struct dap_link_context *const ctx,
 		return 1U;
 	}
 
+	/* Bound the host-supplied wait. This runs on the cooperative thread
+	 * that dispatches every endpoint completion, so the wait is not the
+	 * caller's to spend: nothing else on the device is serviced while it
+	 * elapses. The field is 32-bit microseconds, so a conformant host may
+	 * legally ask for over an hour; the reference implementation caps it
+	 * at 3 s.
+	 */
+	wait = MIN(wait, (uint32_t)CONFIG_CMSIS_DAP_SWJ_PINS_MAX_WAIT_MS * USEC_PER_MSEC);
+	end = sys_timepoint_calc(K_USEC(wait));
+
 	/* Skip if nothing selected. */
 	if (select) {
 		(void)swdp_set_pins(ctx->dev, select, value);
 	}
 
-	do {
+	for (;;) {
 		(void)swdp_get_pins(ctx->dev, &state);
-		LOG_INF("select 0x%02x, value 0x%02x, wait %u, state 0x%02x",
+		LOG_DBG("select 0x%02x, value 0x%02x, wait %u, state 0x%02x",
 			select, value, wait, state);
 		if ((value & select) == (state & select)) {
 			LOG_DBG("swdp_get_pins succeeded before timeout");
 			break;
 		}
-	} while (!sys_timepoint_expired(end));
+		/* Check expiry before sleeping so the common wait == 0 request,
+		 * which every stock host issues to set and read pins, stays a
+		 * single read with no sleep, as in the reference implementation.
+		 */
+		if (sys_timepoint_expired(end)) {
+			break;
+		}
+		/* Yield between polls. A cooperative thread that never sleeps
+		 * never yields, so spinning here starves every other thread for
+		 * the whole wait, at 100% CPU, for no gain: the pins are read
+		 * over a bit-banged transport and cannot change faster than
+		 * this.
+		 */
+		k_usleep(100);
+	}
 
 	response[0] = state;
 
