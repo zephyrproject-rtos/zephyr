@@ -20,6 +20,9 @@ extern char _shared_heap_end[];
 	extern char sym##_c[];                                                                     \
 	extern char sym##_uc[];
 
+#define MEM_MAP_IMR_SYM_DECLARE(sym)                                                               \
+	extern char sym[];
+
 #define MEM_MAP_SYM_C(sym)  ((uint32_t)(uintptr_t)sym##_c)
 #define MEM_MAP_SYM_UC(sym) ((uint32_t)(uintptr_t)sym##_uc)
 
@@ -56,26 +59,35 @@ extern char _shared_heap_end[];
 		.name = region_name,                                                               \
 	},
 
+#define MEM_MAP_IMR_REGION(imr_start, imr_end, region_attrs, region_name)                          \
+	{                                                                                          \
+		.start = (uintptr_t)(imr_start),                                                   \
+		.end   = (uintptr_t)(imr_end),                                                     \
+		.attrs = region_attrs,                                                             \
+		.name = region_name,                                                               \
+	},
+
 MEM_MAP_SYM_DECLARE(_cached_start);
 MEM_MAP_SYM_DECLARE(_cached_end);
-MEM_MAP_SYM_DECLARE(__cold_start);
-MEM_MAP_SYM_DECLARE(__cold_end);
-MEM_MAP_SYM_DECLARE(__coldrodata_start);
 MEM_MAP_SYM_DECLARE(_heap_start);
 MEM_MAP_SYM_DECLARE(_heap_end);
 MEM_MAP_SYM_DECLARE(_shared_heap_start);
 MEM_MAP_SYM_DECLARE(_shared_heap_end);
 MEM_MAP_SYM_DECLARE(_image_ram_start);
 MEM_MAP_SYM_DECLARE(_image_ram_end);
-MEM_MAP_SYM_DECLARE(__imr_data_start);
-MEM_MAP_SYM_DECLARE(__imr_data_end);
-MEM_MAP_SYM_DECLARE(_imr_end);
 MEM_MAP_SYM_DECLARE(__common_ram_region_start);
 MEM_MAP_SYM_DECLARE(__common_ram_region_end);
 MEM_MAP_SYM_DECLARE(__rodata_region_start);
 MEM_MAP_SYM_DECLARE(__rodata_region_end);
 MEM_MAP_SYM_DECLARE(__text_region_start);
 MEM_MAP_SYM_DECLARE(__text_region_end);
+
+MEM_MAP_IMR_SYM_DECLARE(__cold_start);
+MEM_MAP_IMR_SYM_DECLARE(__cold_end);
+MEM_MAP_IMR_SYM_DECLARE(__coldrodata_start);
+MEM_MAP_IMR_SYM_DECLARE(__imr_data_start);
+MEM_MAP_IMR_SYM_DECLARE(__imr_data_end);
+MEM_MAP_IMR_SYM_DECLARE(_imr_end);
 
 const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	MEM_MAP_SYM_REGION(
@@ -166,56 +178,56 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	)
 
 	/* Map IMR */
-	MEM_MAP_CONST_REGION(
+	MEM_MAP_IMR_REGION(
 		IMR_ROM_EXT_CODE_BASE,
 		IMR_ROM_EXT_CODE_BASE + IMR_ROM_EXT_CODE_SIZE,
 		XTENSA_MMU_PERM_X,
 		"IMR_rom_ext_code"
 	)
 
-	MEM_MAP_CONST_REGION(
+	MEM_MAP_IMR_REGION(
 		IMR_ROM_EXT_DATABSS_BASE,
 		IMR_ROM_EXT_DATABSS_BASE + IMR_ROM_EXT_DATABSS_SIZE,
 		XTENSA_MMU_PERM_W,
 		"IMR_rom_ext_data_bss"
 	)
 
-	MEM_MAP_CONST_REGION(
+	MEM_MAP_IMR_REGION(
 		IMR_BOOT_LDR_MANIFEST_BASE - IMR_BOOT_LDR_MANIFEST_SIZE,
 		IMR_BOOT_LDR_MANIFEST_BASE,
 		XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
 		"imr stack"
 	)
 
-	MEM_MAP_CONST_REGION(
+	MEM_MAP_IMR_REGION(
 		IMR_BOOT_LDR_MANIFEST_BASE,
 		IMR_BOOT_LDR_MANIFEST_BASE + IMR_BOOT_LDR_MANIFEST_SIZE,
 		0,
 		"imr text"
 	)
 
-	MEM_MAP_CONST_REGION(
+	MEM_MAP_IMR_REGION(
 		IMR_BOOT_LDR_BSS_BASE,
 		IMR_BOOT_LDR_BSS_BASE + IMR_BOOT_LDR_BSS_SIZE,
 		0,
 		"imr bss"
 	)
 
-	MEM_MAP_CONST_REGION(
+	MEM_MAP_IMR_REGION(
 		IMR_BOOT_LDR_TEXT_ENTRY_BASE,
 		IMR_BOOT_LDR_TEXT_ENTRY_BASE + IMR_BOOT_LDR_TEXT_ENTRY_SIZE,
 		XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
 		"imr text"
 	)
 
-	MEM_MAP_CONST_REGION(
+	MEM_MAP_IMR_REGION(
 		IMR_BOOT_LDR_STACK_BASE,
 		IMR_BOOT_LDR_STACK_BASE + IMR_BOOT_LDR_STACK_SIZE,
 		XTENSA_MMU_PERM_W,
 		"imr stack"
 	)
 
-	MEM_MAP_CONST_REGION(
+	MEM_MAP_IMR_REGION(
 		IMR_LAYOUT_ADDRESS,
 		/* sizeof(struct imr_layout) happens to be 0x1000 (4096) bytes. */
 		IMR_LAYOUT_ADDRESS + sizeof(struct imr_layout),
@@ -223,21 +235,21 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 		"imr layout"
 	)
 
-	MEM_MAP_SYM_REGION(
+	MEM_MAP_IMR_REGION(
 		__cold_start,
 		__cold_end,
 		XTENSA_MMU_PERM_X,
 		"imr cold"
 	)
 
-	MEM_MAP_SYM_REGION(
+	MEM_MAP_IMR_REGION(
 		__coldrodata_start,
 		_imr_end,
 		0,
 		"imr coldrodata"
 	)
 
-	MEM_MAP_SYM_REGION(
+	MEM_MAP_IMR_REGION(
 		__imr_data_start,
 		__imr_data_end,
 		XTENSA_MMU_PERM_W,
