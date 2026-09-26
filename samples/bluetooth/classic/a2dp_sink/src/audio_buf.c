@@ -15,7 +15,7 @@
 #include <zephyr/bluetooth/sbc.h>
 #include "audio_buf.h"
 
-#if DT_HAS_ALIAS(i2s_codec_tx) && IS_ENABLED(CONFIG_I2S) && IS_ENABLED(CONFIG_AUDIO_CODEC)
+#if IS_ENABLED(CONFIG_AUDIO_CODEC)
 
 /* The whole PCM buffer (save the audio data after decoding) size */
 #define A2DP_SBC_DECODER_PCM_BUFFER_SIZE (A2DP_SBC_DATA_PLAY_SIZE_48K *\
