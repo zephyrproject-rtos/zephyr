@@ -8,6 +8,12 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "cy8cproto_040t-pinctrl.dtsi"
 
+/ {
+	aliases {
+		watchdog0 = &watchdog0;
+	};
+};
+
 uart0: &scb0 {
 	compatible = "infineon,uart";
 	status = "okay";
@@ -30,5 +36,9 @@ uart0: &scb0 {
 };
 
 &gpio_prt3 {
+	status = "okay";
+};
+
+&watchdog0 {
 	status = "okay";
 };
