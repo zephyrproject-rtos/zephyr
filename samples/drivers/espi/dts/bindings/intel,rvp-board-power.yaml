@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-compatible: "intel-rvp,board-power"
+compatible: "intel,rvp-board-power"
 
 description: |
   Board GPIO power rails binding for Modular Embedded Controller cards that are connected to
