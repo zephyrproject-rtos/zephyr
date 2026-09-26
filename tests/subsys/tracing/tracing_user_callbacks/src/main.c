@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/ztest.h>
 
 /*
@@ -16,6 +17,8 @@
  */
 static unsigned int sem_give_calls;
 static unsigned int mutex_lock_calls;
+static atomic_t isr_enter_calls;
+static atomic_t isr_exit_calls;
 
 void sys_trace_k_sem_give_enter_user(struct k_sem *sem)
 {
@@ -28,6 +31,16 @@ void sys_trace_k_mutex_lock_enter_user(struct k_mutex *mutex, k_timeout_t timeou
 	ARG_UNUSED(mutex);
 	ARG_UNUSED(timeout);
 	mutex_lock_calls++;
+}
+
+void sys_trace_isr_enter_user(void)
+{
+	atomic_inc(&isr_enter_calls);
+}
+
+void sys_trace_isr_exit_user(void)
+{
+	atomic_inc(&isr_exit_calls);
 }
 
 K_SEM_DEFINE(cb_sem, 0, 1);
@@ -46,6 +59,24 @@ ZTEST(tracing_user_callbacks, test_object_callbacks_fire)
 	k_mutex_unlock(&cb_mutex);
 	zassert_true(mutex_lock_calls > mtx_before,
 		     "sys_trace_k_mutex_lock_enter_user() was not invoked");
+}
+
+/*
+ * The ISR hooks live in each architecture's interrupt entry path rather than in
+ * generic code, so an arch that never emits them looks exactly like an arch
+ * with no interrupts. Sleeping guarantees at least one system timer interrupt.
+ */
+ZTEST(tracing_user_callbacks, test_isr_callbacks_fire)
+{
+	atomic_val_t enter_before = atomic_get(&isr_enter_calls);
+	atomic_val_t exit_before = atomic_get(&isr_exit_calls);
+
+	k_sleep(K_MSEC(50));
+
+	zassert_true(atomic_get(&isr_enter_calls) > enter_before,
+		     "sys_trace_isr_enter_user() was not invoked");
+	zassert_true(atomic_get(&isr_exit_calls) > exit_before,
+		     "sys_trace_isr_exit_user() was not invoked");
 }
 
 ZTEST_SUITE(tracing_user_callbacks, NULL, NULL, NULL, NULL, NULL);
