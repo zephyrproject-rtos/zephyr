@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: aipi_eyes_s1
+name: AiPi-Eyes-S1 Multi-Functional Development Board
+type: mcu
+arch: riscv
+ram: 480
+flash: 2040
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - dma
+  - i2c
+  - spi
+  - flash
+vendor: bflb
