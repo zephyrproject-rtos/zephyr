@@ -1,0 +1,203 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Informational networking throughput comparison.
+#
+# Runs the deterministic zperf loopback selftest (see
+# samples/net/zperf/README-loopback-icount.rst) twice on the same runner: once
+# on the pull request and once on the branch it targets. Under QEMU icount the
+# reported Mbps is a function of executed instructions per payload byte, not of
+# host speed, so the difference between the two runs is attributable to the
+# change itself.
+#
+# The result is written to the job summary. This check is advisory: it never
+# fails, and must not be added to the required checks.
+
+name: Networking throughput
+
+on:
+  pull_request:
+    paths:
+      - 'subsys/net/**'
+      - 'include/zephyr/net/**'
+      - 'lib/net_buf/**'
+      - 'include/zephyr/net_buf.h'
+      - 'drivers/net/loopback.c'
+      - 'samples/net/zperf/**'
+      - '.github/workflows/net-perf.yml'
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  net-perf:
+    name: "Networking throughput"
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
+      options: '--entrypoint /bin/bash'
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      BASE_REF: ${{ github.base_ref }}
+      SUITE: sample.net.zperf.loopback_icount
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /repo-cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      # Same manifest group filter as the twister workflow. The workspace
+      # cannot be trimmed by group to save time here: nrf_hw_models is
+      # ungrouped, so it is always cloned, and its module.yml declares a
+      # dependency on hal_nordic, which is in the hal group. Dropping that
+      # group leaves the dependency unmet and zephyr_module.py exits before
+      # twister does any work.
+      - name: Environment Setup
+        uses: ./.github/actions/zephyr-ci-env
+        with:
+          base-ref: ${{ github.base_ref }}
+          group-filter: '+ci,'
+          run-checks: 'true'
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
+      # The setup step above rebases the pull request onto the target branch, so
+      # this has to run after it: HEAD is the rebased series, not the pull
+      # request head, and origin/${BASE_REF} is exactly what the series adds to.
+      - name: Record the revisions to compare
+        run: |
+          echo "PR_SHA=$(git rev-parse HEAD)" >> ${GITHUB_ENV}
+          echo "BASE_SHA=$(git rev-parse origin/${BASE_REF})" >> ${GITHUB_ENV}
+
+      - name: Measure the pull request
+        continue-on-error: true
+        run: |
+          # The step shell already sets pipefail, but the "|| echo" below
+          # depends on it, so do not leave that to the runner default.
+          set -o pipefail
+          export ZEPHYR_BASE=${PWD}
+          ./scripts/twister -T samples/net/zperf -s "${SUITE}" \
+              -p qemu_x86 -p qemu_x86_64 --outdir pr-run 2>&1 | tee pr-run.log \
+              || echo "twister exited with status ${PIPESTATUS[0]}" | tee -a pr-run.log
+
+      # Measure the target branch with the pull request's copy of the sample, so
+      # the measuring instrument - runner, overlay, payload sizes - is identical
+      # on both sides and only the code under test differs.
+      - name: Measure the target branch
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          export ZEPHYR_BASE=${PWD}
+          git checkout -f "${BASE_SHA}"
+          git checkout "${PR_SHA}" -- samples/net/zperf
+          ./scripts/twister -T samples/net/zperf -s "${SUITE}" \
+              -p qemu_x86 -p qemu_x86_64 --outdir base-run 2>&1 | tee base-run.log \
+              || echo "twister exited with status ${PIPESTATUS[0]}" | tee -a base-run.log
+
+      - name: Restore the pull request tree
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          git checkout -f "${PR_SHA}"
+
+      # --exit-zero keeps this advisory even if a metric collapsed. A run that
+      # produced no report at all is a different matter: report what twister
+      # said, rather than leaving a bare "cannot read twister.json" behind.
+      - name: Compare and report
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          if [ ! -s pr-run/twister.json ] || [ ! -s base-run/twister.json ]; then
+              {
+                  echo "### Networking throughput"
+                  echo
+                  echo "No comparison available: a measurement produced no twister"
+                  echo "report. The tail of each run follows."
+                  echo
+                  for log in pr-run.log base-run.log; do
+                      [ -f "${log}" ] || continue
+                      echo "<details><summary>${log}</summary>"
+                      echo
+                      echo '```'
+                      tail -n 40 "${log}"
+                      echo '```'
+                      echo
+                      echo "</details>"
+                      echo
+                  done
+                  echo "This check is informational and never fails a pull request."
+              } >> "${GITHUB_STEP_SUMMARY}"
+              exit 0
+          fi
+
+          samples/net/zperf/scripts/zperf_regression.py \
+              --twister-json pr-run/twister.json \
+              --baseline-twister-json base-run/twister.json \
+              --suite "${SUITE}" \
+              --markdown net-perf.md \
+              --plot net-perf.svg \
+              --annotate \
+              --exit-zero
+          cat net-perf.md >> "${GITHUB_STEP_SUMMARY}"
+
+      # The companion workflow that comments on the pull request runs in a
+      # privileged context and cannot trust anything this job produces, so the
+      # pull request number travels as its own artifact and is checked against
+      # the measured commit there. Same shape as doc-build.yml.
+      - name: Record the pull request number
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          echo "${{ github.event.pull_request.number }}" > pr_num
+
+      - name: Upload the pull request number
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr_num
+          path: pr_num
+          if-no-files-found: ignore
+
+      - name: Upload throughput data
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: net-perf
+          path: |
+            net-perf.md
+            net-perf*.svg
+            pr-run/twister.json
+            base-run/twister.json
+            pr-run.log
+            base-run.log
+          if-no-files-found: ignore

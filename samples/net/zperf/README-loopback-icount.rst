@@ -162,6 +162,14 @@ A few non-obvious points are baked into :file:`overlay-loopback-icount.conf`:
   so any realistic packet size (up to ~500 kB) is supported.
 - **No SLIP/TAP.** The QEMU SLIP host networking backend is disabled; the run
   needs no host-side ``slip.sock``.
+- **Log buffer size.** The result lines are printed with ``printk()``, which the
+  log subsystem forwards through its deferred backend. At the default 1024 byte
+  buffer the ``qemu_x86_64`` run overflows it during the first IPv4 transfers,
+  and :kconfig:option:`CONFIG_LOG_MODE_OVERFLOW` then drops the three oldest
+  messages - which silently swallows the ``udp4_frag`` result line, so that
+  metric never reaches the report at all. The overlay raises
+  :kconfig:option:`CONFIG_LOG_BUFFER_SIZE` to 4096. The measurement itself is
+  unaffected; the 32-bit numbers are bit-identical with the larger buffer.
 
 Usage
 *****
@@ -208,13 +216,22 @@ report:
        --outdir ../build/zperf_run
 
 The scenario is allowed on both ``qemu_x86`` (32-bit) and ``qemu_x86_64``
-(64-bit); run the latter for a 64-bit data point (for example to exercise the
-64-bit checksum fast path):
+(64-bit); the latter gives a 64-bit data point (for example the 64-bit checksum
+fast path). Both can be measured in one run:
 
 .. code-block:: console
 
-   ./scripts/twister -p qemu_x86_64 -s sample.net.zperf.loopback_icount \
-       --outdir ../build/zperf_run64
+   ./scripts/twister -T samples/net/zperf -s sample.net.zperf.loopback_icount \
+       -p qemu_x86 -p qemu_x86_64 --outdir ../build/zperf_run
+
+Restricting the scan with ``-T samples/net/zperf`` avoids walking the whole
+tree for a single scenario.
+
+The two platforms report different absolute numbers and are never comparable
+with each other, so :file:`scripts/zperf_regression.py` keys every metric by
+the twister platform name (``qemu_x86/atom``, ``qemu_x86_64/atom``) and reports
+each one separately. Use ``--platform`` to restrict the report to one of them,
+given either as the full ``board/soc`` name or as just the board.
 
 Baseline and regression gate
 ============================
@@ -243,6 +260,43 @@ On a later commit, re-run and gate on a maximum allowed drop (in percent):
 The script exits non-zero if any recorded metric dropped by more than the
 tolerance, which makes it suitable as a CI regression check.
 
+Two runs can also be compared directly, without the intermediate baseline file:
+
+.. code-block:: console
+
+   samples/net/zperf/scripts/zperf_regression.py --base-dir .. \
+       --twister-json ../build/zperf_cur/twister.json \
+       --baseline-twister-json ../build/zperf_base/twister.json
+
+The remaining options shape the report rather than the measurement:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Option
+     - Meaning
+   * - ``--threshold PCT``
+     - Reporting noise floor, 1% by default. A metric that moved by less than
+       this is described as unchanged rather than as an improvement or a
+       regression. icount repeats exactly for a given binary, but two trees
+       build two different binaries, and code layout alone can move the number
+       without any change in the work performed. In practice that drift is
+       small: comparing two trees 157 commits apart, across a change that only
+       touched TCP, every UDP metric came back bit-identical on ``qemu_x86``
+       and within 0.02% on ``qemu_x86_64``.
+   * - ``--markdown PATH``
+     - Write the comparison as a markdown table, one section per platform, for a
+       GitHub Actions job summary or a pull request comment. A platform whose
+       metrics all held still is folded into a collapsed ``<details>`` block
+       whose summary line says so; one where something moved is left open.
+   * - ``--annotate``
+     - Emit one ``::notice::`` workflow command per platform, summarising the
+       metrics that moved.
+   * - ``--exit-zero``
+     - Always exit successfully. Use when the comparison is advisory and must
+       not fail a build. A missing or unbuildable baseline is reported the same
+       way, as a comparison that could not be made.
+
 .. note::
 
    For safety when the script is driven by automation, every file it reads or
@@ -251,6 +305,47 @@ tolerance, which makes it suitable as a CI regression check.
    rejected. The examples pass ``--base-dir ..`` because they read the twister
    report from the sibling ``../build`` tree while writing outputs into the
    repository.
+
+Continuous integration
+======================
+
+:file:`.github/workflows/net-perf.yml` runs this scenario on every pull request
+that touches ``subsys/net/``, ``include/zephyr/net/``, ``lib/net_buf/``, the
+loopback driver or this sample. It measures the pull request and the branch it
+targets on the same runner, on both platforms, and writes the comparison to the
+job summary.
+
+Two details make the comparison mean what it should:
+
+- The workflow runs after the pull request has been rebased onto its target
+  branch, so the difference is what the series itself does and cannot pick up
+  unrelated movement on the target branch.
+- The target branch is measured with the pull request's copy of
+  :file:`samples/net/zperf/`, so the runner, the overlay and the payload sizes
+  are identical on both sides and only the code under test differs. A pull
+  request that changes the sample therefore does not move the number by changing
+  what is being measured.
+
+A companion workflow, :file:`.github/workflows/net-perf-comment.yml`, posts the
+same report as a comment on the pull request, so the numbers are visible where
+the change is reviewed. It is a separate workflow because the measurement runs
+from a ``pull_request`` event, whose token is read-only for forks and cannot
+comment; the companion runs on ``workflow_run``, reads the report and the pull
+request number out of the artifacts, and never checks out pull request code.
+There is one comment per pull request, rewritten in place on every push, and a
+platform whose metrics all held still is collapsed so an unchanged result stays
+a single line.
+
+The check is **advisory**. It runs with ``--exit-zero``, every measuring step is
+``continue-on-error``, and it is not one of the required checks: a red or
+surprising number is information for the reviewer, never a merge blocker. A
+result that cannot be produced - because the target branch did not build, for
+instance - is reported as a comparison that was not available, and the job still
+passes.
+
+Only the loopback path is measured, so a flat report is not a claim that a
+change has no performance effect; driver, L2 and offload work will not show up
+here at all.
 
 Visualize the results
 =====================
@@ -264,3 +359,7 @@ combined with ``--baseline`` it draws grouped baseline-vs-current bars:
    samples/net/zperf/scripts/zperf_regression.py --base-dir .. \
        --twister-json ../build/zperf_cur/twister.json \
        --baseline baseline.json --plot throughput.svg
+
+With more than one platform in the report the platform name is appended to each
+file name, so the example above writes :file:`throughput-qemu_x86_atom.svg` and
+:file:`throughput-qemu_x86_64_atom.svg`.
