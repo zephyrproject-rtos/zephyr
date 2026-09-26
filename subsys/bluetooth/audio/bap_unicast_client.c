@@ -1011,10 +1011,10 @@ static bool unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_sim
 
 	ep->cig_id = qos->cig_id;
 	ep->cis_id = qos->cis_id;
-	ep->qos.interval = sys_get_le24(qos->interval);
+	ep->qos.sdu_interval = sys_get_le24(qos->interval);
 	ep->qos.framing = qos->framing;
 	ep->qos.phy = qos->phy;
-	ep->qos.sdu = sys_le16_to_cpu(qos->sdu);
+	ep->qos.max_sdu = sys_le16_to_cpu(qos->sdu);
 	ep->qos.rtn = qos->rtn;
 	ep->qos.latency = sys_le16_to_cpu(qos->latency);
 	ep->qos.pd = sys_get_le24(qos->pd);
@@ -1022,8 +1022,8 @@ static bool unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_sim
 	LOG_DBG("dir %s cig 0x%02x cis 0x%02x codec 0x%02x interval %u "
 		"framing 0x%02x phy 0x%02x rtn %u latency %u pd %u",
 		bt_audio_dir_to_str(dir), ep->cig_id, ep->cis_id, stream->codec_cfg->id,
-		ep->qos.interval, ep->qos.framing, ep->qos.phy, ep->qos.rtn, ep->qos.latency,
-		ep->qos.pd);
+		ep->qos.sdu_interval, ep->qos.framing, ep->qos.phy,
+		ep->qos.rtn, ep->qos.latency, ep->qos.pd);
 
 	__ASSERT_NO_MSG(stream->group != NULL);
 	group = (struct bt_bap_unicast_group *)stream->group;
@@ -2020,8 +2020,9 @@ static int unicast_client_add_qos(struct bt_bap_ep *ep, struct net_buf_simple *b
 
 	LOG_DBG("id 0x%02x cig 0x%02x cis 0x%02x interval %u framing 0x%02x "
 		"phy 0x%02x sdu %u rtn %u latency %u pd %u",
-		ep->id, conn_iso->info.unicast.cig_id, conn_iso->info.unicast.cis_id, qos->interval,
-		qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
+		ep->id, conn_iso->info.unicast.cig_id, conn_iso->info.unicast.cis_id,
+		qos->sdu_interval, qos->framing, qos->phy,
+		qos->max_sdu, qos->rtn, qos->latency, qos->pd);
 
 	if (buf->len + sizeof(*req) > buf->size) {
 		return -ENOMEM;
@@ -2031,10 +2032,10 @@ static int unicast_client_add_qos(struct bt_bap_ep *ep, struct net_buf_simple *b
 	req->ase_id = ep->id;
 	req->cig = conn_iso->info.unicast.cig_id;
 	req->cis = conn_iso->info.unicast.cis_id;
-	sys_put_le24(qos->interval, req->interval);
+	sys_put_le24(qos->sdu_interval, req->interval);
 	req->framing = qos->framing;
 	req->phy = qos->phy;
-	req->sdu = sys_cpu_to_le16(qos->sdu);
+	req->sdu = sys_cpu_to_le16(qos->max_sdu);
 	req->rtn = qos->rtn;
 	req->latency = sys_cpu_to_le16(qos->latency);
 	sys_put_le24(qos->pd, req->pd);
@@ -2310,23 +2311,23 @@ static void unicast_client_iso_param_to_qos_cfg(const struct bt_bap_stream *stre
 	if (dir == BT_AUDIO_DIR_SINK) {
 		qos->pd = unicast_group->sink_pd;
 		qos->latency = unicast_group->cig_param.c_to_p_latency;
-		qos->interval = unicast_group->cig_param.c_to_p_interval;
+		qos->sdu_interval = unicast_group->cig_param.c_to_p_interval;
 		iso_qos = &bap_iso->tx.qos;
 	} else {
 		qos->pd = unicast_group->source_pd;
 		qos->latency = unicast_group->cig_param.p_to_c_latency;
-		qos->interval = unicast_group->cig_param.p_to_c_interval;
+		qos->sdu_interval = unicast_group->cig_param.p_to_c_interval;
 		iso_qos = &bap_iso->rx.qos;
 	}
 
 	qos->framing = unicast_group->cig_param.framing;
 	qos->phy = iso_qos->phy;
 	qos->rtn = iso_qos->rtn;
-	qos->sdu = iso_qos->sdu;
+	qos->max_sdu = iso_qos->sdu;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	qos->max_pdu = iso_qos->max_pdu;
-	qos->burst_number = iso_qos->burst_number;
-	qos->num_subevents = bap_iso->qos.num_subevents;
+	qos->test.max_pdu = iso_qos->max_pdu;
+	qos->test.burst_number = iso_qos->burst_number;
+	qos->test.num_subevents = bap_iso->qos.num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 }
 
@@ -2489,23 +2490,23 @@ int bt_bap_unicast_client_qos_from_group(const struct bt_bap_stream *stream,
 	if (dir == BT_AUDIO_DIR_SINK) {
 		qos->pd = unicast_group->sink_pd;
 		qos->latency = unicast_group->cig_param.c_to_p_latency;
-		qos->interval = unicast_group->cig_param.c_to_p_interval;
+		qos->sdu_interval = unicast_group->cig_param.c_to_p_interval;
 		iso_qos = &bap_iso->tx.qos;
 	} else {
 		qos->pd = unicast_group->source_pd;
 		qos->latency = unicast_group->cig_param.p_to_c_latency;
-		qos->interval = unicast_group->cig_param.p_to_c_interval;
+		qos->sdu_interval = unicast_group->cig_param.p_to_c_interval;
 		iso_qos = &bap_iso->rx.qos;
 	}
 
 	qos->framing = unicast_group->cig_param.framing;
 	qos->phy = iso_qos->phy;
 	qos->rtn = iso_qos->rtn;
-	qos->sdu = iso_qos->sdu;
+	qos->max_sdu = iso_qos->sdu;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	qos->max_pdu = iso_qos->max_pdu;
-	qos->burst_number = iso_qos->burst_number;
-	qos->num_subevents = bap_iso->qos.num_subevents;
+	qos->test.max_pdu = iso_qos->max_pdu;
+	qos->test.burst_number = iso_qos->burst_number;
+	qos->test.num_subevents = bap_iso->qos.num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	return 0;
@@ -2542,7 +2543,7 @@ static void unicast_client_qos_cfg_to_iso_qos(struct bt_bap_iso *iso,
 
 	bt_bap_qos_cfg_to_iso_qos(io_qos, qos);
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	iso->chan.qos->num_subevents = qos->num_subevents;
+	iso->chan.qos->num_subevents = qos->test.num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	if (other_io_qos != NULL) {
@@ -2566,11 +2567,11 @@ static void unicast_group_set_iso_stream_param(struct bt_bap_unicast_group *grou
 	 */
 	group->cig_param.framing = qos->framing;
 	if (dir == BT_AUDIO_DIR_SOURCE) {
-		group->cig_param.p_to_c_interval = qos->interval;
+		group->cig_param.p_to_c_interval = qos->sdu_interval;
 		group->cig_param.p_to_c_latency = qos->latency;
 		group->source_pd = qos->pd;
 	} else {
-		group->cig_param.c_to_p_interval = qos->interval;
+		group->cig_param.c_to_p_interval = qos->sdu_interval;
 		group->cig_param.c_to_p_latency = qos->latency;
 		group->sink_pd = qos->pd;
 	}
@@ -2828,11 +2829,11 @@ static bool valid_unicast_group_stream_param(const struct bt_bap_unicast_group *
 	 */
 	if (dir == BT_AUDIO_DIR_SINK) {
 		if (cig_param->c_to_p_interval == 0) {
-			cig_param->c_to_p_interval = qos->interval;
-		} else if (cig_param->c_to_p_interval != qos->interval) {
+			cig_param->c_to_p_interval = qos->sdu_interval;
+		} else if (cig_param->c_to_p_interval != qos->sdu_interval) {
 			LOG_DBG("Group %p c_to_p_interval does not match stream %p: %u != %u",
 				unicast_group, param->stream, cig_param->c_to_p_interval,
-				qos->interval);
+				qos->sdu_interval);
 			return false;
 		}
 
@@ -2854,11 +2855,11 @@ static bool valid_unicast_group_stream_param(const struct bt_bap_unicast_group *
 		}
 	} else {
 		if (cig_param->p_to_c_interval == 0) {
-			cig_param->p_to_c_interval = qos->interval;
-		} else if (cig_param->p_to_c_interval != qos->interval) {
+			cig_param->p_to_c_interval = qos->sdu_interval;
+		} else if (cig_param->p_to_c_interval != qos->sdu_interval) {
 			LOG_DBG("Group %p p_to_c_interval does not match stream %p: %u != %u",
 				unicast_group, param->stream, cig_param->p_to_c_interval,
-				qos->interval);
+				qos->sdu_interval);
 			return false;
 		}
 

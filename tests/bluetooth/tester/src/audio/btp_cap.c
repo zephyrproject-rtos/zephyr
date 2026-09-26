@@ -792,9 +792,9 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	qos->phy = BT_BAP_QOS_CFG_2M;
 	qos->framing = cp->framing;
 	qos->rtn = cp->retransmission_num;
-	qos->sdu = sys_le16_to_cpu(cp->max_sdu);
+	qos->max_sdu = sys_le16_to_cpu(cp->max_sdu);
 	qos->latency = sys_le16_to_cpu(cp->max_transport_latency);
-	qos->interval = sys_get_le24(cp->sdu_interval);
+	qos->sdu_interval = sys_get_le24(cp->sdu_interval);
 	qos->pd = sys_get_le24(cp->presentation_delay);
 
 	create_param.subgroup_params = cap_params->cap_subgroup_params;

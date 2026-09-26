@@ -749,7 +749,7 @@ static int set_unicast_codec_config(const struct shell *sh, struct shell_stream 
 		/* Some audio configuration requires multiple sink channels,
 		 * so multiply the SDU based on the channel count
 		 */
-		sh_stream->qos.sdu *= chan_cnt;
+		sh_stream->qos.max_sdu *= chan_cnt;
 
 		/* If a stream has 2 channels, we make it stereo */
 		new_chan_alloc = BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT;
@@ -1481,16 +1481,16 @@ static int set_broadcast_codec_config(const struct shell *sh, struct broadcast_s
 		/* If there is more than a single channel in a single stream, we multiply the SDU by
 		 * the number of channels to be able to send multiple frames per SDU
 		 */
-		if (source->qos.sdu * chan_cnt > BT_ISO_MAX_SDU) {
+		if (source->qos.max_sdu * chan_cnt > BT_ISO_MAX_SDU) {
 
 			shell_error(sh,
 				    "Could not set SDU size for chan_cnt %zu that would result in "
 				    "SDU of size %u",
-				    chan_cnt, source->qos.sdu * chan_cnt);
+				    chan_cnt, source->qos.max_sdu * chan_cnt);
 			return -EINVAL;
 		}
 
-		source->qos.sdu *= chan_cnt;
+		source->qos.max_sdu *= chan_cnt;
 	} else {
 		if (stream_cnt > 1U && chan_cnt > 1U) {
 			shell_error(sh,
