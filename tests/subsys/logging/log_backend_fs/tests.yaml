@@ -11,6 +11,7 @@ common:
     - native_sim
     - native_sim/native/64
     - nrf52840dk/nrf52840
+    - kit_pse84_eval/pse846gps2dbzc4a/m55
     - mr_canhubk3
     - s32z2xxdc2/s32z270/rtu0
     - s32z2xxdc2/s32z270/rtu1

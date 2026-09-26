@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The board reserves the first 1 MB of the external SMIF flash for storage.
+ * Carve the three partitions this test expects out of that region, leaving
+ * storage_partition as the first erase block so it keeps a valid mapping.
+ * The erase block size of the part is 64 KB, so every partition is aligned
+ * to and a multiple of 0x10000.
+ */
+
+&storage_partition {
+	reg = <0x0 0x10000>;
+};
+
+&flash0 {
+	partitions {
+		small_partition: small@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "small";
+			reg = <0x10000 0x10000>;
+		};
+
+		medium_partition: medium@20000 {
+			compatible = "zephyr,mapped-partition";
+			label = "medium";
+			reg = <0x20000 0x40000>;
+		};
+
+		large_partition: large@60000 {
+			compatible = "zephyr,mapped-partition";
+			label = "large";
+			reg = <0x60000 0xa0000>;
+		};
+	};
+};
