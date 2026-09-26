@@ -1,0 +1,40 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32N6 power controller
+
+compatible: "st,stm32n6-pwr"
+
+include: "st,stm32-pwr.yaml"
+
+properties:
+  power-supply:
+    type: string
+    required: true
+    description: |
+      Power supply configuration
+
+      This property specifies the voltage regulators configuration
+      and indicates how the core domain voltage (Vcore) is generated.
+      Refer to your product's Datasheet and Reference Manual for details.
+
+      WARNING: If this property's value does not match the target board's
+      hardware configuration, the product will deadlock during boot which
+      prevents debugging or re-programming. If such a situation occurs,
+      configure the product to start execution in System memory instead
+      then erase the firmware with incorrect configuration.
+
+      smps: Internal SMPS supply
+        Internal SMPS is enabled and generates Vcore.
+
+      external-source: External regulator supply
+        An external supply provides Vcore; internal SMPS is disabled.
+    enum:
+      - "smps"
+      - "external-source"
+
+  external-control-pin:
+    type: int
+    description: |
+      This property describes pin that controls extenral voltage.
+      Used only when external-smps-scaling is set to dynamic.

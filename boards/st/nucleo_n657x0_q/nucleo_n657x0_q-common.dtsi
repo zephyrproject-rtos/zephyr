@@ -101,6 +101,11 @@
 	status = "okay";
 };
 
+&pwr {
+	power-supply = "external-source";
+	external-control-pin = <STM32_PINMUX('B', 12, GPIO)>;
+};
+
 &pll1 {
 	clocks = <&clk_hse>;
 	div-m = <3>;
