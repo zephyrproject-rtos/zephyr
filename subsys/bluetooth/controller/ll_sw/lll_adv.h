@@ -110,6 +110,17 @@ struct lll_adv_iso {
 	uint16_t pa_iss_us;
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 };
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+
+
+struct subevent_data_meta {
+	uint8_t response_slot_start;
+	uint8_t response_slot_count;
+	uint8_t is_data_set:1;
+	struct lll_adv_pdu data;
+};
+
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 
 struct lll_adv_sync {
 	struct lll_hdr hdr;
@@ -160,6 +171,21 @@ struct lll_adv_sync {
 	 */
 	uint8_t cte_started:1;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+	uint8_t rsp_aa[4];
+	/* PAwR (Periodic Advertising with Responses) parameters */
+	uint8_t num_subevents;
+	uint8_t subevent_interval;        /* N * 1.25ms */
+	uint8_t response_slot_delay;      /* N * 1.25ms */
+	uint8_t response_slot_spacing;    /* N * 0.125ms */
+	uint8_t num_response_slots;
+	/* PAwR (Periodic Advertising with Responses) state */
+	uint8_t is_rsp:1; /* Indicates PAwR mode */
+	uint8_t subevent_curr; /* Current subevent being transmitted */
+	uint8_t rsp_slot_curr; /* Current response slot being received */
+	struct subevent_data_meta se_data[CONFIG_BT_CTLR_ADV_PERIODIC_SUBEVENT_MAX];
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 };
 
 struct lll_adv_aux {
