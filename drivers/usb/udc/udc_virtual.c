@@ -431,6 +431,7 @@ static int udc_vrt_disable(const struct device *dev)
 static int udc_vrt_init(const struct device *dev)
 {
 	const struct udc_vrt_config *config = dev->config;
+	int ret;
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
@@ -444,7 +445,13 @@ static int udc_vrt_init(const struct device *dev)
 		return -EIO;
 	}
 
-	return uvb_subscribe(config->uhc_name, config->dev_node);
+	ret = uvb_subscribe(config->uhc_name, config->dev_node);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return uvb_to_host(config->dev_node, UVB_EVT_DEVICE_ACT,
+			   INT_TO_POINTER(UVB_DEVICE_ACT_CONNECTED));
 }
 
 static int udc_vrt_shutdown(const struct device *dev)
