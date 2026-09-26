@@ -366,9 +366,8 @@ __subsystem struct auxdisplay_driver_api {
  *
  * @param dev		Auxiliary display device instance
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_display_on(const struct device *dev);
 
@@ -388,9 +387,8 @@ static inline int z_impl_auxdisplay_display_on(const struct device *dev)
  *
  * @param dev		Auxiliary display device instance
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_display_off(const struct device *dev);
 
@@ -411,9 +409,8 @@ static inline int z_impl_auxdisplay_display_off(const struct device *dev)
  * @param dev		Auxiliary display device instance
  * @param enabled	True to enable cursor, false to disable
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_cursor_set_enabled(const struct device *dev,
 					    bool enabled);
@@ -436,9 +433,8 @@ static inline int z_impl_auxdisplay_cursor_set_enabled(const struct device *dev,
  * @param dev		Auxiliary display device instance
  * @param enabled	Set to true to enable blinking position, false to disable
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_position_blinking_set_enabled(const struct device *dev,
 						       bool enabled);
@@ -463,10 +459,9 @@ static inline int z_impl_auxdisplay_position_blinking_set_enabled(const struct d
  * @param display_shift	If true, will shift the display when characters are written
  *			(which makes it look like the display is moving, not the cursor)
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
  * @retval		-EINVAL if provided argument is invalid.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_cursor_shift_set(const struct device *dev,
 					  uint8_t direction, bool display_shift);
@@ -496,10 +491,9 @@ static inline int z_impl_auxdisplay_cursor_shift_set(const struct device *dev,
  * @param x	Exact or offset X position
  * @param y	Exact or offset Y position
  *
- * @retval	0 on success.
+ * @return	0 on success, negative errno value on failure.
  * @retval	-ENOSYS if not supported/implemented.
  * @retval	-EINVAL if provided argument is invalid.
- * @retval	-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_cursor_position_set(const struct device *dev,
 					     enum auxdisplay_position type,
@@ -529,10 +523,9 @@ static inline int z_impl_auxdisplay_cursor_position_set(const struct device *dev
  * @param x	Will be updated with the exact X position
  * @param y	Will be updated with the exact Y position
  *
- * @retval	0 on success.
+ * @return	0 on success, negative errno value on failure.
  * @retval	-ENOSYS if not supported/implemented.
  * @retval	-EINVAL if provided argument is invalid.
- * @retval	-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_cursor_position_get(const struct device *dev,
 					     int16_t *x, int16_t *y);
@@ -557,10 +550,9 @@ static inline int z_impl_auxdisplay_cursor_position_get(const struct device *dev
  * @param x	Exact or offset X position
  * @param y	Exact or offset Y position
  *
- * @retval	0 on success.
+ * @return	0 on success, negative errno value on failure.
  * @retval	-ENOSYS if not supported/implemented.
  * @retval	-EINVAL if provided argument is invalid.
- * @retval	-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_display_position_set(const struct device *dev,
 					      enum auxdisplay_position type,
@@ -590,10 +582,9 @@ static inline int z_impl_auxdisplay_display_position_set(const struct device *de
  * @param x	Will be updated with the exact X position
  * @param y	Will be updated with the exact Y position
  *
- * @retval	0 on success.
+ * @return	0 on success, negative errno value on failure.
  * @retval	-ENOSYS if not supported/implemented.
  * @retval	-EINVAL if provided argument is invalid.
- * @retval	-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_display_position_get(const struct device *dev,
 					      int16_t *x, int16_t *y);
@@ -616,8 +607,7 @@ static inline int z_impl_auxdisplay_display_position_get(const struct device *de
  * @param dev		Auxiliary display device instance
  * @param capabilities	Will be updated with the details of the auxiliary display
  *
- * @retval		0 on success.
- * @retval		-errno Negative errno code on other failure.
+ * @return		0 on success, negative errno value on failure.
  */
 __syscall int auxdisplay_capabilities_get(const struct device *dev,
 					  struct auxdisplay_capabilities *capabilities);
@@ -635,8 +625,7 @@ static inline int z_impl_auxdisplay_capabilities_get(const struct device *dev,
  *
  * @param dev	Auxiliary display device instance
  *
- * @retval	0 on success.
- * @retval	-errno Negative errno code on other failure.
+ * @return	0 on success, negative errno value on failure.
  */
 __syscall int auxdisplay_clear(const struct device *dev);
 
@@ -651,9 +640,8 @@ static inline int z_impl_auxdisplay_clear(const struct device *dev)
  * @param dev		Auxiliary display device instance
  * @param brightness	Will be updated with the current brightness
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_brightness_get(const struct device *dev,
 					uint8_t *brightness);
@@ -676,10 +664,9 @@ static inline int z_impl_auxdisplay_brightness_get(const struct device *dev,
  * @param dev		Auxiliary display device instance
  * @param brightness	The brightness level to set
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
  * @retval		-EINVAL if provided argument is invalid.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_brightness_set(const struct device *dev,
 					uint8_t brightness);
@@ -702,9 +689,8 @@ static inline int z_impl_auxdisplay_brightness_set(const struct device *dev,
  * @param dev		Auxiliary display device instance
  * @param backlight	Will be updated with the current backlight level
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_backlight_get(const struct device *dev,
 				       uint8_t *backlight);
@@ -727,10 +713,9 @@ static inline int z_impl_auxdisplay_backlight_get(const struct device *dev,
  * @param dev		Auxiliary display device instance
  * @param backlight	The backlight level to set
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
  * @retval		-EINVAL if provided argument is invalid.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_backlight_set(const struct device *dev,
 				       uint8_t backlight);
@@ -755,7 +740,7 @@ static inline int z_impl_auxdisplay_backlight_set(const struct device *dev,
  * @retval	1 on success and display busy.
  * @retval	0 on success and display not busy.
  * @retval	-ENOSYS if not supported/implemented.
- * @retval	-errno Negative errno code on other failure.
+ * @return	Negative errno value on failure.
  */
 __syscall int auxdisplay_is_busy(const struct device *dev);
 
@@ -785,10 +770,9 @@ static inline int z_impl_auxdisplay_is_busy(const struct device *dev)
  * @param dev		Auxiliary display device instance
  * @param character	Pointer to custom character structure
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
  * @retval		-EINVAL if provided argument is invalid.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_custom_character_set(const struct device *dev,
 					      struct auxdisplay_character *character);
@@ -812,9 +796,8 @@ static inline int z_impl_auxdisplay_custom_character_set(const struct device *de
  * @param data	Text data to write
  * @param len	Length of text data to write
  *
- * @retval	0 on success.
+ * @return	0 on success, negative errno value on failure.
  * @retval	-EINVAL if provided argument is invalid.
- * @retval	-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_write(const struct device *dev, const uint8_t *data,
 			       uint16_t len);
@@ -831,10 +814,9 @@ static inline int z_impl_auxdisplay_write(const struct device *dev,
  * @param dev	Auxiliary display device instance
  * @param data	Custom command structure (this may be extended by specific drivers)
  *
- * @retval	0 on success.
+ * @return	0 on success, negative errno value on failure.
  * @retval	-ENOSYS if not supported/implemented.
  * @retval	-EINVAL if provided argument is invalid.
- * @retval	-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_custom_command(const struct device *dev,
 					struct auxdisplay_custom_data *data);
@@ -858,10 +840,9 @@ static inline int z_impl_auxdisplay_custom_command(const struct device *dev,
  * @param index		Index of the custom indicator to control
  * @param enable	True to turn the indicator on, false to turn it off
  *
- * @retval		0 on success.
+ * @return		0 on success, negative errno value on failure.
  * @retval		-ENOSYS if not supported/implemented.
  * @retval		-EINVAL if provided argument is invalid.
- * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_custom_indicator_set(const struct device *dev,
 					      uint8_t index, bool enable);
