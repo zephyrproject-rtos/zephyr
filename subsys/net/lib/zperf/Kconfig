@@ -10,12 +10,63 @@ menuconfig NET_ZPERF
 	  This option enables zperf library, which allows to generate
 	  network traffic and evaluate network bandwidth in conjunction
 	  with other devices running zperf or a desktop running the
-	  iperf2 utility.
+	  iperf2 or iperf3 utility.
 
 if NET_ZPERF
 
+choice NET_ZPERF_PROTOCOL
+	prompt "iperf protocol version"
+	default NET_ZPERF_IPERF2
+	help
+	  The iperf protocol version zperf speaks. iperf2 and iperf3 are not
+	  compatible with each other on the wire, so a build supports one of
+	  them. The zperf API and shell commands are the same for both.
+
+config NET_ZPERF_IPERF2
+	bool "iperf2"
+	help
+	  Interoperate with iperf 2.0.10 and newer.
+
+config NET_ZPERF_IPERF3
+	bool "iperf3 [EXPERIMENTAL]"
+	depends on NET_TCP
+	select EXPERIMENTAL
+	select JSON_LIBRARY
+	select NET_CONTEXT_RCVTIMEO if NET_NATIVE_TCP
+	help
+	  Interoperate with iperf 3. A test runs over TCP or UDP with a
+	  single stream. Reverse, bidirectional and parallel tests and
+	  omitting the start of a test are refused, with the error an iperf3
+	  client reports for an unsupported option.
+
+endchoice
+
+if NET_ZPERF_IPERF3
+
+config NET_ZPERF_IPERF3_JSON_MAX_LEN
+	int "Largest iperf3 control message"
+	default 1024
+	range 256 8192
+	help
+	  Largest JSON message accepted or sent on the iperf3 control
+	  connection. The parameters an iperf3 client sends and the results
+	  of a single stream test are a few hundred bytes.
+
+config NET_ZPERF_IPERF3_IDLE_TIMEOUT
+	int "Seconds before an idle iperf3 test is dropped"
+	default 30
+	range 1 3600
+	depends on NET_ZPERF_SERVER
+	help
+	  An iperf3 test whose connections show no activity for this long is
+	  ended, so that a client that disappears does not keep the server
+	  from taking the next test.
+
+endif # NET_ZPERF_IPERF3
+
 config NET_ZPERF_LEGACY_HEADER_COMPAT
 	bool "Legacy iperf UDP header format"
+	depends on NET_ZPERF_IPERF2
 	help
 	  iperf 2.0.10 (2017) updated the UDP header format in a
 	  backwards incompatible manner that cannot be automatically
@@ -24,6 +75,7 @@ config NET_ZPERF_LEGACY_HEADER_COMPAT
 
 config ZPERF_SESSION_PER_THREAD
 	bool "Run each session in a separate thread"
+	depends on NET_ZPERF_IPERF2
 	select EVENTS
 	help
 	  Each session is started in its own thread. This means

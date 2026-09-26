@@ -52,53 +52,44 @@ zephyr_code_relocate(FILES src/nxp_wifi_drv.c
                      FILTER ".*\\.nxp_wifi_send|.*\\.nxp_wifi_recv"
                      LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
 
-# ZPERF
-string(JOIN "" NXP_ZPERF_UDP_UP_FILTER
-       ".*\\.udp_upload|"
-       ".*\\.cal_compensate_delay"
-)
-string(JOIN "" NXP_ZPERF_TCP_UP_FILTER
-       ".*\\.tcp_upload|"
-       ".*\\.sendall"
-)
-string(JOIN "" NXP_ZPERF_UDP_RX_FILTER
-       ".*\\.udp_recv_data|"
-       ".*\\.udp_received|"
-       ".*\\.udp_svc_handler|"
-       ".*\\.build_reply|"
-       ".*\\.zperf_receiver_send_stat"
-)
-string(JOIN "" NXP_ZPERF_TCP_RX_FILTER
-       ".*\\.tcp_recv_data|"
-       ".*\\.tcp_received|"
-       ".*\\.tcp_svc_handler"
-)
-string(JOIN "" NXP_ZPERF_SESSION_FILTER
-       ".*\\.get_session|"
-       ".*\\.zperf_reset_session_stats"
-)
-string(JOIN "" NXP_ZPERF_COMMON_FILTER
-       ".*\\.zperf_packet_duration"
-)
+      # ZPERF
+      string(JOIN "" NXP_ZPERF_CLIENT_FILTER
+             ".*\\.udp_upload|"
+             ".*\\.tcp_upload|"
+             ".*\\.sendall"
+      )
+      string(JOIN "" NXP_ZPERF_SERVER_FILTER
+             ".*\\.udp_recv_data|"
+             ".*\\.udp_received|"
+             ".*\\.udp_svc_handler|"
+             ".*\\.build_reply|"
+             ".*\\.zperf_receiver_send_stat|"
+             ".*\\.tcp_recv_data|"
+             ".*\\.tcp_received|"
+             ".*\\.tcp_svc_handler"
+      )
+      string(JOIN "" NXP_ZPERF_SESSION_FILTER
+             ".*\\.get_session|"
+             ".*\\.zperf_reset_session_stats"
+      )
+      string(JOIN "" NXP_ZPERF_COMMON_FILTER
+             ".*\\.zperf_packet_duration"
+      )
 
-zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_udp_uploader.c
-                     FILTER "${NXP_ZPERF_UDP_UP_FILTER}"
-                     LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
-zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_tcp_uploader.c
-                     FILTER "${NXP_ZPERF_TCP_UP_FILTER}"
-                     LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
-zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_udp_receiver.c
-                     FILTER "${NXP_ZPERF_UDP_RX_FILTER}"
-                     LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
-zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_tcp_receiver.c
-                     FILTER "${NXP_ZPERF_TCP_RX_FILTER}"
-                     LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
-zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_session.c
-                     FILTER "${NXP_ZPERF_SESSION_FILTER}"
-                     LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
-zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_common.c
-                     FILTER "${NXP_ZPERF_COMMON_FILTER}"
-                     LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
+      zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_iperf2_client.c
+                           FILTER "${NXP_ZPERF_CLIENT_FILTER}"
+                           LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
+      zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_udp_pacing.c
+                           LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
+      zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_iperf2_server.c
+                           FILTER "${NXP_ZPERF_SERVER_FILTER}"
+                           LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
+      zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_session.c
+                           FILTER "${NXP_ZPERF_SESSION_FILTER}"
+                           LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
+      zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_common.c
+                           FILTER "${NXP_ZPERF_COMMON_FILTER}"
+                           LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
 
 # NET STACK CORE
 zephyr_code_relocate(FILES
