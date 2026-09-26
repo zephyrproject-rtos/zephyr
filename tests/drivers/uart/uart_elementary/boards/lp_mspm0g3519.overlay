@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &uart1 {
+	pinctrl-0 = <&uart1_tx_pb4 &uart1_rx_pb5 &uart1_rts_pb9 &uart1_cts_pb8>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	hw-flow-control;
+	status = "okay";
+};
