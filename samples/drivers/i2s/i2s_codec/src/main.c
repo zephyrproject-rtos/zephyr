@@ -69,7 +69,7 @@ int main(void)
 	const struct device *const dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic0));
 #endif
 	const struct device *const codec_dev = DEVICE_DT_GET(DT_NODELABEL(audio_codec));
-	struct i2s_config config;
+	struct i2s_config config = {0};
 	struct audio_codec_cfg audio_cfg;
 	int ret = 0;
 

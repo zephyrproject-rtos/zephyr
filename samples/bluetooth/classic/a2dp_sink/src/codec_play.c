@@ -63,7 +63,7 @@ int codec_play_init(void)
 void codec_play_configure(uint32_t sample_rate, uint8_t sample_width, uint8_t channels)
 {
 	const struct device *const codec_dev = DEVICE_DT_GET(DT_NODELABEL(audio_codec));
-	struct i2s_config config;
+	struct i2s_config config = {0};
 	struct audio_codec_cfg audio_cfg;
 	size_t block_size;
 

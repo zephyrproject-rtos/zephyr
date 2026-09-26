@@ -622,6 +622,10 @@ static int i2s_siwx91x_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		return -EINVAL;
+	}
+
 	if ((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) != I2S_FMT_DATA_FORMAT_I2S) {
 		return -EINVAL;
 	}

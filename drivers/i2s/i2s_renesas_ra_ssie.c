@@ -879,6 +879,11 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 		return -EINVAL;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	if (i2s_cfg->mem_slab == NULL) {
 		LOG_ERR("No memory block to store data");
 		return -EINVAL;

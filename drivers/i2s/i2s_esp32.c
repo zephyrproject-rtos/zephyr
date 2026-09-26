@@ -1247,6 +1247,11 @@ static int i2s_esp32_config_check(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		LOG_DBG("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	if (i2s_cfg->options & I2S_OPT_LOOPBACK) {
 		LOG_DBG("Unsupported option: I2S_OPT_LOOPBACK");
 		LOG_DBG("To enable loopback, use the same SD for TX and RX pinctrl");
