@@ -800,7 +800,8 @@ static inline void ch_process_control(const struct device *dev,
 			 * for OUT - xfer->buf->len
 			 */
 			if (next_dir_is_in) {
-				size = sys_le16_to_cpu(setup->wLength);
+				size = MIN(sys_le16_to_cpu(setup->wLength),
+					   net_buf_tailroom(xfer->buf));
 
 				LOG_DBG("Control DATA IN prog=%u, tailroom=%zu",
 					size, net_buf_tailroom(xfer->buf));
