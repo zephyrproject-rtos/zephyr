@@ -60,6 +60,11 @@ if(CONFIG_SOC_SERIES_MCXW7XX)
             gPlatformSetWakeUpDelayAtInit_d=0
         )
     endif()
+    if(CONFIG_CLOCK_CONTROL_NXP_MCXW7X_OSC32K_DISABLED)
+        zephyr_compile_definitions(
+            gBoardUseFro32k_d=1
+        )
+    endif()
 endif()
 
 if(CONFIG_SOC_SERIES_MCXW2XX)
