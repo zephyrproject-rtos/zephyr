@@ -13,12 +13,14 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - can
+  - comparator
+  - dma
   - gpio
+  - i2c
+  - rtc
   - spi
   - timer
   - uart
-  - dma
-  - comparator
-  - rtc
 vendor: infineon
