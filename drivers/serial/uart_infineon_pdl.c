@@ -175,20 +175,14 @@ struct ifx_cat1_uart_config {
 
 typedef void (*ifx_cat1_uart_event_callback_t)(void *callback_arg);
 
-const uint8_t data_bits_lut[] = {
+static const uint8_t data_bits_lut[] = {
 	[UART_CFG_DATA_BITS_5] = 5, [UART_CFG_DATA_BITS_6] = 6, [UART_CFG_DATA_BITS_7] = 7,
 	[UART_CFG_DATA_BITS_8] = 8, [UART_CFG_DATA_BITS_9] = 9,
 };
 
-const uint8_t stop_bits_lut[] = {
+static const uint8_t stop_bits_lut[] = {
 	[UART_CFG_STOP_BITS_1] = CY_SCB_UART_STOP_BITS_1,
 	[UART_CFG_STOP_BITS_2] = CY_SCB_UART_STOP_BITS_2,
-};
-
-const uint8_t parity_lut[] = {
-	[UART_CFG_PARITY_NONE] = CY_SCB_UART_PARITY_NONE,
-	[UART_CFG_PARITY_ODD] = CY_SCB_UART_PARITY_ODD,
-	[UART_CFG_PARITY_EVEN] = CY_SCB_UART_PARITY_EVEN,
 };
 
 #if defined(CONFIG_PM_DEVICE_RUNTIME)
