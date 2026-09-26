@@ -57,6 +57,20 @@ properties:
 
       Set the bits required by the panel wiring.
 
+  h-mirror:
+    type: boolean
+    description: |
+      Reverse the order of the gates, mirroring the image horizontally in
+      the default orientation. Used when the panel gates are wired in
+      reverse order and the image appears mirrored left to right.
+
+  v-mirror:
+    type: boolean
+    description: |
+      Reverse the order of the sources, mirroring the image vertically in
+      the default orientation. Used when the panel sources are wired in
+      reverse order and the image appears mirrored top to bottom.
+
 child-binding:
   description: |
     Child nodes describe refresh profiles. Each refresh profile

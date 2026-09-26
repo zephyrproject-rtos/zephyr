@@ -119,6 +119,8 @@ struct ssd16xx_config {
 	bool ram_ping_pong_mode2;
 	uint8_t tssv;
 	uint8_t gdo_flags;
+	bool h_mirror;
+	bool v_mirror;
 };
 
 static int ssd16xx_set_profile(const struct device *dev,
@@ -416,6 +418,16 @@ static int ssd16xx_set_window(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (config->h_mirror) {
+		y_start = config->width - 1 - y_start;
+		y_end = config->width - 1 - y_end;
+	}
+
+	if (config->v_mirror) {
+		x_start = panel_h - 1 - x_start;
+		x_end = panel_h - 1 - x_end;
+	}
+
 	err = ssd16xx_set_ram_param(dev, x_start, x_end, y_start, y_end);
 	if (err < 0) {
 		return err;
@@ -609,24 +621,37 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 static int ssd16xx_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
+	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
+	uint8_t scan_mode;
 	int err;
 
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
+		scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
 	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XDYDX;
+		scan_mode = SSD16XX_DATA_ENTRY_XDYDX;
 	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
+		scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XIYIX;
+		scan_mode = SSD16XX_DATA_ENTRY_XIYIX;
+	} else {
+		return -EINVAL;
 	}
 
-	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE, data->scan_mode);
+	if (config->h_mirror) {
+		scan_mode ^= SSD16XX_DATA_ENTRY_YI;
+	}
+
+	if (config->v_mirror) {
+		scan_mode ^= SSD16XX_DATA_ENTRY_XI;
+	}
+
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE, scan_mode);
 	if (err < 0) {
 		return err;
 	}
 
+	data->scan_mode = scan_mode;
 	data->orientation = orientation;
 
 	return 0;
@@ -1142,6 +1167,8 @@ static struct ssd16xx_quirks quirks_solomon_ssd1683 = {
 		.rotation = DT_PROP(n, rotation),			\
 		.tssv = DT_PROP_OR(n, tssv, 0),				\
 		.gdo_flags = DT_PROP(n, gdo_flags),			\
+		.h_mirror = DT_PROP(n, h_mirror),			\
+		.v_mirror = DT_PROP(n, v_mirror),			\
 		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\
 		.profiles = {						\
 			[SSD16XX_PROFILE_FULL] =			\
