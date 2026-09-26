@@ -41,6 +41,12 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		} else {
 			if (pins->bias_pull_up || pins->bias_pull_down) {
 				cfg |= BIT(3);
+			} else if (bit0 == CH32V00X_PINMUX_ADC1_RM) {
+				/* Analog input mode */
+				cfg = 0;
+			} else {
+				/* Floating input mode */
+				cfg |= BIT(2);
 			}
 		}
 		regs->CFGLR = (regs->CFGLR & ~(0x0F << (pin * 4))) | (cfg << (pin * 4));
