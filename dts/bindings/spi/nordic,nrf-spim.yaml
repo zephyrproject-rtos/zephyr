@@ -8,6 +8,20 @@ compatible: "nordic,nrf-spim"
 include: ["nordic,nrf-spi-common.yaml", "memory-region.yaml"]
 
 properties:
+  dmm-buffer-size:
+    type: int
+    description: |
+      Maximum transfer chunk size in bytes for this controller when the
+      Nordic DMM buffer path is enabled. Must be between 1 and 65535.
+      If absent, CONFIG_SPI_NRFX_DMM_BUFFER_SIZE supplies the limit.
+      The EasyDMA MAXCNT limit also applies.
+
+      This limit also applies to DMA-accessible buffers, which do not need
+      a bounce allocation. For inaccessible buffers, full-duplex transfers
+      can allocate twice the chunk size from the controller's DMA region.
+      Allow space for those allocations and other users of the region.
+      This property has no effect on the non-DMM RAM buffer path.
+
   rx-delay-supported:
     type: boolean
     description: |
