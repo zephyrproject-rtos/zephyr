@@ -382,9 +382,9 @@ h11==0.16.0 \
     # via
     #   uvicorn
     #   wsproto
-html2pdf4doc==0.0.34 \
-    --hash=sha256:aa2fabbcaecdcae86d847d7ea8c148efd9462704672ebff9edcfce81441e98dd \
-    --hash=sha256:f44da9468e1c9da75a0a066bc9120fad1faf827b57c37e29c1f333122d5cb98b
+html2pdf4doc==0.0.35 \
+    --hash=sha256:747cbc228295049405288801416b46558a7bed50664b12d9fd1635221864c56c \
+    --hash=sha256:8b35b58da83b300bc6ab1eb556ef5ec703e27bc79ec2c1ffeebccbd56683544b
     # via strictdoc
 html5lib==1.1 \
     --hash=sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d \
@@ -1413,9 +1413,9 @@ starlette==1.6.0 \
     # via
     #   fastapi
     #   sphinx-autobuild
-strictdoc==0.29.0 \
-    --hash=sha256:1819af53bf3e8f0869239fe0d9172e7c8f9a4f1fd67c457a67ea31de85051130 \
-    --hash=sha256:fae511b228952ee5e1ff765650ac2701526ce39e32a6686f53ef384621486a90
+strictdoc==0.30.1 \
+    --hash=sha256:1e9c3fa9afaaf254a97b4a2d626db47b655f093912579c99bf731aeee0dc9759 \
+    --hash=sha256:28885881371f246ed53eecf131e1f222fe60dc276aabe47902ad7b41e349d4e9
     # via -r requirements.in
 textx==4.4.0 \
     --hash=sha256:a7b15a4698b503edde631d5227c0d0f6024898a86a7924b5fc741973305f9286 \
