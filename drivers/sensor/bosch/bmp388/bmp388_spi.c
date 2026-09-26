@@ -26,21 +26,21 @@ static int bmp388_reg_read_spi(const union bmp388_bus *bus, uint8_t regaddr, uin
 {
 	int ret;
 
-	if ((size <= 0) || (size > BMP388_SAMPLE_BUFFER_SIZE)) {
+	if ((size <= 0) || (size > BMP388_MAX_READ_SIZE)) {
 		return -EINVAL;
 	}
 
-	uint8_t buffer[size + 2];
+	uint8_t buffer[BMP388_MAX_READ_SIZE + 2];
 	const struct spi_buf rxtx_buf = {
-		.buf = &buffer,
-		.len = ARRAY_SIZE(buffer),
+		.buf = buffer,
+		.len = size + 2,
 	};
 	const struct spi_buf_set rxtx = {
 		.buffers = &rxtx_buf,
 		.count = 1
 	};
 
-	memset(buffer, 0x00, ARRAY_SIZE(buffer));
+	memset(buffer, 0x00, size + 2);
 	buffer[0] = (regaddr) | 0x80;
 
 	ret = spi_transceive_dt(&bus->spi, &rxtx, &rxtx);

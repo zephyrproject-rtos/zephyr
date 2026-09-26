@@ -8,6 +8,7 @@
  * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp388-ds001.pdf
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/pm/device.h>
@@ -220,19 +221,34 @@ static int bmp388_sample_fetch(const struct device *dev,
 {
 	struct bmp388_data *bmp3xx = dev->data;
 	uint8_t raw[BMP388_SAMPLE_BUFFER_SIZE];
+	k_timepoint_t end;
 	int ret = 0;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	pm_device_busy_set(dev);
 
+	/* Allow up to two conversion periods (ODR index 0 is 200Hz, i.e. 5ms). */
+	end = sys_timepoint_calc(K_MSEC(2U * (5U << bmp3xx->odr)));
+
 	/* Wait for status to indicate that data is ready. */
-	raw[0] = 0U;
-	while ((raw[0] & BMP388_STATUS_DRDY_PRESS) == 0U) {
+	while (true) {
 		ret = bmp388_reg_read(dev, BMP388_REG_STATUS, raw, 1);
 		if (ret < 0) {
 			goto error;
 		}
+
+		if ((raw[0] & BMP388_STATUS_DRDY_PRESS) != 0U) {
+			break;
+		}
+
+		if (sys_timepoint_expired(end)) {
+			LOG_ERR("Timed out waiting for data ready");
+			ret = -EAGAIN;
+			goto error;
+		}
+
+		k_sleep(K_MSEC(1));
 	}
 
 	ret = bmp388_reg_read(dev,
