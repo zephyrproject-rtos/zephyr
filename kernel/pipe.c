@@ -12,6 +12,8 @@
 #include <wait_q.h>
 #include <scheduler.h>
 
+ZASSERT_MODULE(KERNEL);
+
 #ifdef CONFIG_OBJ_CORE_PIPE
 static struct k_obj_type obj_type_pipe;
 #endif /* CONFIG_OBJ_CORE_PIPE */
@@ -151,6 +153,9 @@ static size_t copy_to_pending_readers(struct k_pipe *pipe, bool *need_resched,
 
 int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_timeout_t timeout)
 {
+	ZASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
+
 	int rc;
 	size_t written = 0;
 	size_t added;
@@ -234,6 +239,9 @@ out:
 
 int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout_t timeout)
 {
+	ZASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
+
 	struct pipe_buf_spec buf = { data, len, 0 };
 	int rc;
 	k_timepoint_t end = sys_timepoint_calc(timeout);
