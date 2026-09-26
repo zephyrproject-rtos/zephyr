@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 #include <zephyr/drivers/cellular.h>
 #include <zephyr/sys/util_macro.h>
@@ -1650,6 +1651,83 @@ static inline int hl78xx_get_network_info(const struct device *dev,
 {
 	return hl78xx_api_func_get_network_info(dev, type, info, size);
 }
+
+/**
+ * @brief Whether an HL78xx firmware revision string supports NB-NTN.
+ *
+ * Parses the raw AT+CGMR reply, e.g. "HL7812.5.7.4.0": an optional model
+ * prefix up to the first dot, then up to four numeric components compared
+ * against 5.7.4.0, the first HL7812 release with NB-NTN support. Trailing
+ * non-numeric suffixes are ignored; a NULL, empty or non-numeric revision
+ * compares as unsupported.
+ *
+ * @param fw_version Firmware revision string as reported by AT+CGMR.
+ *
+ * @retval true when the revision is 5.7.4.0 or newer.
+ * @retval false otherwise, including on a malformed revision.
+ */
+static inline bool hl78xx_fw_version_supports_ntn(const char *fw_version)
+{
+	const uint32_t min_version[4] = {5U, 7U, 4U, 0U};
+	uint32_t part[4] = {0U, 0U, 0U, 0U};
+	const char *cursor = fw_version;
+	int count = 0;
+
+	if (fw_version == NULL) {
+		return false;
+	}
+
+	if ((*cursor < '0') || (*cursor > '9')) {
+		cursor = strchr(fw_version, '.');
+		if (cursor == NULL) {
+			return false;
+		}
+		cursor++;
+	}
+
+	while ((count < 4) && (*cursor >= '0') && (*cursor <= '9')) {
+		uint32_t value = 0U;
+
+		while ((*cursor >= '0') && (*cursor <= '9')) {
+			value = (value * 10U) + (uint32_t)(*cursor - '0');
+			cursor++;
+		}
+
+		part[count] = value;
+		count++;
+
+		if (*cursor != '.') {
+			break;
+		}
+		cursor++;
+	}
+
+	if (count == 0) {
+		return false;
+	}
+
+	for (int i = 0; i < 4; i++) {
+		if (part[i] != min_version[i]) {
+			return part[i] > min_version[i];
+		}
+	}
+
+	return true;
+}
+
+/**
+ * @brief Whether the modem's reported firmware revision supports NB-NTN.
+ *
+ * Evaluates the AT+CGMR revision cached at initialisation with
+ * hl78xx_fw_version_supports_ntn(). NB-NTN requires firmware 5.7.4.0 (R6);
+ * selecting RAT 3 on older firmware is refused by the modem.
+ *
+ * @param dev Cellular network device instance.
+ *
+ * @retval true when the cached revision is 5.7.4.0 or newer.
+ * @retval false otherwise, including before the revision has been read.
+ */
+bool hl78xx_fw_supports_ntn(const struct device *dev);
 
 /**
  * @brief Check whether the current RSRP meets the configured threshold.
