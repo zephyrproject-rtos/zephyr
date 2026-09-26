@@ -12,36 +12,47 @@ config TACH_XEC
 	help
 	  Enable the Microchip XEC tachometer sensor.
 
+	  The number of TACH edges to measure over and the number of TACH
+	  periods the fan produces per revolution are set per instance with the
+	  tach-edges and pulses-per-round devicetree properties.
+
 if TACH_XEC
 
 choice
-	prompt "Number of tach edges"
-	default TACH_XEC_5_TACH_EDGES
+	prompt "Trigger mode"
+	default TACH_XEC_TRIGGER_NONE
 	help
-	 This value represents the number of Tach edges that
-	 will be used to determine the interval for which the number of
-	 100KHz pulses will be counted.
+	  Specify the type of triggering used by the driver.
 
-config TACH_XEC_9_TACH_EDGES
-	bool "Configure 9 tach edges or 4 tach periods"
+config TACH_XEC_TRIGGER_NONE
+	bool "No trigger"
 
-config TACH_XEC_5_TACH_EDGES
-	bool "Configure 5 tach edges or 2 tach periods"
+config TACH_XEC_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select TACH_XEC_TRIGGER
 
-config TACH_XEC_3_TACH_EDGES
-	bool "Configure 3 tach edges or 1 tach period"
-
-config TACH_XEC_2_TACH_EDGES
-	bool "Configure 2 tach edges or 1/2 tach period"
+config TACH_XEC_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select TACH_XEC_TRIGGER
 
 endchoice
 
-config TACH_XEC_EDGES
-	int
-	range 0 3
-	default 0 if TACH_XEC_2_TACH_EDGES
-	default 1 if TACH_XEC_3_TACH_EDGES
-	default 2 if TACH_XEC_5_TACH_EDGES
-	default 3 if TACH_XEC_9_TACH_EDGES
+config TACH_XEC_TRIGGER
+	bool
 
-endif #TACH_XEC
+config TACH_XEC_THREAD_PRIORITY
+	int "Thread priority"
+	depends on TACH_XEC_TRIGGER_OWN_THREAD && TACH_XEC_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config TACH_XEC_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on TACH_XEC_TRIGGER_OWN_THREAD && TACH_XEC_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts. One
+	  thread is created per enabled tachometer instance.
+
+endif # TACH_XEC
