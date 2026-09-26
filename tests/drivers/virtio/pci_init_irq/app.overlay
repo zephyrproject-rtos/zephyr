@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
+
+&virtio_input_pci {
+	status = "disabled";
+};
+
+&pcie0 {
+	virtio_pci_test: virtio-pci-test {
+		compatible = "virtio,pci";
+		vendor-id = <0x1af4>;
+		device-id = <0x10ff>;
+		interrupts = <5 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+		interrupt-parent = <&intc>;
+		zephyr,deferred-init;
+		status = "okay";
+	};
+};
