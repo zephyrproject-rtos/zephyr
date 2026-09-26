@@ -879,6 +879,11 @@ New APIs and options
     API for hardware that generates and captures timed digital edges on a
     GPIO line.
 
+* Relay
+
+  * Added the :ref:`Relay <relay_api>` driver class, a hardware-agnostic
+    on/off relay output API.
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
@@ -1847,6 +1852,11 @@ New Drivers
   * :dtcompatible:`realtek,rts5817-regulator` (:github:`108545`)
   * :dtcompatible:`sifli,sf32lb52x-ldo` (:github:`108093`)
   * :dtcompatible:`ti,mspm0-vref` (:github:`94732`)
+
+* Relay
+
+  * :dtcompatible:`zephyr,gpio-relay`
+  * :dtcompatible:`zephyr,pwm-relay`
 
 * Reset controller
 
