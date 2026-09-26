@@ -10,7 +10,7 @@ from os import path
 from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_DEVICE = '/dev/ttyUSB0'
-DEFAULT_BAUD_RATE = '57600'
+DEFAULT_BAUD_RATE = '115200'
 if platform.system() == 'Darwin':
     DEFAULT_DEVICE = '/dev/tty.SLAB_USBtoUART'
 
