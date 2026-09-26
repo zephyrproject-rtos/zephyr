@@ -228,7 +228,12 @@ class TwisterReports:
         last_overflow = ''
         lines = log.splitlines()
         for i, line in enumerate(lines):
-            if "error: ld returned" in line and "overflowed by" in lines[i - 1]:
+            # The overflow is reported on the line before the linker error, so
+            # when the linker error is the first line there is nothing to read.
+            # lines[i - 1] at i == 0 is the last line of the log, which twister
+            # takes from the handler's stderr rather than from the build.
+            previous = lines[i - 1] if i else ""
+            if "error: ld returned" in line and "overflowed by" in previous:
                 # get build step where overflow occurs
                 build_step = ""
                 if len(build_step_stack) > 0:
