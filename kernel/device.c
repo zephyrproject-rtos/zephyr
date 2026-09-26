@@ -92,7 +92,7 @@ const struct device *z_impl_device_get_binding(const char *name)
 	/* Return NULL if the device matching 'name' is not ready. */
 	STRUCT_SECTION_FOREACH(device, dev) {
 		if ((dev->name == name) || (strcmp(name, dev->name) == 0)) {
-			return z_impl_device_is_ready(dev) ? dev : NULL;
+			return z_impl_device_is_ready_nonnull(dev) ? dev : NULL;
 		}
 	}
 
@@ -113,13 +113,13 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 }
 #include <zephyr/syscalls/device_get_binding_mrsh.c>
 
-static inline bool z_vrfy_device_is_ready(const struct device *dev)
+static inline bool z_vrfy_device_is_ready_nonnull(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_DRIVER_ANY));
 
-	return z_impl_device_is_ready(dev);
+	return z_impl_device_is_ready_nonnull(dev);
 }
-#include <zephyr/syscalls/device_is_ready_mrsh.c>
+#include <zephyr/syscalls/device_is_ready_nonnull_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_DEVICE_DT_METADATA
@@ -142,7 +142,7 @@ const struct device *z_impl_device_get_by_dt_nodelabel(const char *nodelabel)
 	STRUCT_SECTION_FOREACH(device, dev) {
 		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
 
-		if (!z_impl_device_is_ready(dev) || nl == NULL) {
+		if (!z_impl_device_is_ready_nonnull(dev) || nl == NULL) {
 			continue;
 		}
 
@@ -183,16 +183,8 @@ size_t z_device_get_all_static(struct device const **devices)
 	return cnt;
 }
 
-bool z_impl_device_is_ready(const struct device *dev)
+bool z_impl_device_is_ready_nonnull(const struct device *dev)
 {
-	/*
-	 * if an invalid device pointer is passed as argument, this call
-	 * reports the `device` as not ready for usage.
-	 */
-	if (dev == NULL) {
-		return false;
-	}
-
 	return dev->state->initialized && (dev->state->init_res == 0U);
 }
 
