@@ -65,6 +65,8 @@ struct ov767x_data {
 #define OV767X_COM4               0x0D
 #define OV767X_COM6               0x0F
 #define OV767X_COM11              0x3B
+#define OV767X_COM11_HZAUTO       BIT(4)
+#define OV767X_COM11_EXP          BIT(1)
 #define OV767X_EDGE               0x3F
 #define OV767X_DNSTH              0x4C
 #define OV767X_DM_LNL             0x92
@@ -85,6 +87,7 @@ struct ov767x_data {
 #define OV767X_AECHH              0x07
 #define OV767X_AECH               0x10
 #define OV767X_COM8               0x13
+#define OV767X_COM8_AEC_EN        BIT(0)
 #define OV767X_COM9               0x14
 #define OV767X_AEW                0x24
 #define OV767X_AEB                0x25
@@ -227,7 +230,7 @@ static const struct video_reg8 ov767x_init_regtbl[] = {
 
 	{OV767X_COM4, 0x00},
 	{OV767X_COM6, 0x4b},
-	{OV767X_COM11, 0x9F}, /* Night mode */
+	{OV767X_COM11, OV767X_COM11_HZAUTO | OV767X_COM11_EXP},
 	{OV767X_EDGE, 0x04},  /* Edge Enhancement Adjustment */
 	{OV767X_DNSTH, 0x00}, /* De-noise Strength */
 
@@ -265,10 +268,10 @@ static const struct video_reg8 ov767x_init_regtbl[] = {
 	{OV767X_VREF, 0x0a},   /*  VREF */
 
 	/* AGC/AEC - Automatic Gain Control/Automatic exposure Control */
-	{OV767X_GAIN, 0x00},  /*  AGC */
-	{OV767X_AECHH, 0x3F}, /* Exposure Value */
-	{OV767X_AECH, 0xFF},
-	{OV767X_COM8, 0x66},
+	{OV767X_GAIN, 0x00}, /* AGC */
+	{OV767X_AECHH, 0x00},
+	{OV767X_AECH, 0x00},
+	{OV767X_COM8, 0x66 | OV767X_COM8_AEC_EN},
 	{OV767X_COM9, 0x21}, /*  limit the max gain */
 	{OV767X_AEW, 0x75},
 	{OV767X_AEB, 0x63},
