@@ -292,6 +292,20 @@ static void lcp_down(struct ppp_fsm *fsm)
 {
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       lcp.fsm);
+	/*
+	 * lcp_down() is reached both for a genuine termination (peer
+	 * Terminate-Request, or a local close already having set the
+	 * phase below) and for a peer-initiated renegotiation
+	 * (Configure-Request received while OPENED, RFC 1661 4.1 RCR).
+	 * Capture which one this is *before* ppp_network_all_down() runs:
+	 * that call itself writes ctx->phase to PPP_TERMINATE as a side
+	 * effect whenever an NCP was up, for either case alike, so the
+	 * phase can no longer be trusted for this decision afterwards.
+	 * The LCP fsm state still distinguishes them at this point: RTR
+	 * has already moved it to STOPPING, RCR has not left OPENED.
+	 */
+	bool terminating = fsm->state == PPP_STOPPING ||
+			    ctx->phase == PPP_TERMINATE || ctx->phase == PPP_DEAD;
 
 	memset(&ctx->lcp.peer_options.auth_proto, 0,
 	       sizeof(ctx->lcp.peer_options.auth_proto));
@@ -305,7 +319,7 @@ static void lcp_down(struct ppp_fsm *fsm)
 		ppp_network_all_down(ctx);
 	}
 
-	if (net_if_is_carrier_ok(ctx->iface) && ctx->is_enabled) {
+	if (net_if_is_carrier_ok(ctx->iface) && ctx->is_enabled && !terminating) {
 		ppp_change_phase(ctx, PPP_ESTABLISH);
 	} else {
 		ppp_change_phase(ctx, PPP_DEAD);
