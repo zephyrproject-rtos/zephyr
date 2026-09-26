@@ -103,6 +103,21 @@ extern struct k_mem_partition z_libc_partition;
 /* C library memory partitions */
 #define Z_LIBC_DATA K_APP_DMEM(z_libc_partition)
 
+#if defined(CONFIG_COMMON_LIBC_MALLOC) && (CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE != 0)
+/**
+ * @brief Return the upper bound of the libc malloc heap.
+ *
+ * Returns the address one byte past the end of the memory region handed to
+ * sys_heap_init() for the common libc malloc arena, which includes the
+ * heap end-marker written by sys_heap_init(). This boundary can be used by
+ * power-management code to determine the memory that must be retained across
+ * a retention sleep.
+ *
+ * @return Address of the first byte above the malloc heap.
+ */
+uintptr_t z_libc_heap_end(void);
+#endif /* CONFIG_COMMON_LIBC_MALLOC && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE != 0 */
+
 #ifdef __cplusplus
 }
 #endif
