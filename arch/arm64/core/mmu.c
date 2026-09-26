@@ -1550,9 +1550,38 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 {
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
+	uintptr_t virt = ptn->start;
+	const uintptr_t end = ptn->start + ptn->size;
+	int ret = 0;
 
-	return private_map(domain_ptables, "partition", ptn->start, ptn->start,
-			   ptn->size, ptn->attr.attrs | MT_NORMAL);
+	/*
+	 * A partition on memory-mapped pages (k_mem_map()) is not identity
+	 * mapped and its frames need not be contiguous: follow the kernel's
+	 * translation, one physically contiguous run at a time. Memory the
+	 * kernel does not map keeps its identity mapping.
+	 */
+	while ((virt < end) && (ret == 0)) {
+		uintptr_t phys = virt;
+		uintptr_t run = virt + CONFIG_MMU_PAGE_SIZE;
+
+		(void)arch_page_phys_get((void *)virt, &phys);
+		while (run < end) {
+			uintptr_t next = run;
+
+			(void)arch_page_phys_get((void *)run, &next);
+			if (next != phys + (run - virt)) {
+				break;
+			}
+			run += CONFIG_MMU_PAGE_SIZE;
+		}
+		run = MIN(run, end);
+
+		ret = private_map(domain_ptables, "partition", phys, virt, run - virt,
+				  ptn->attr.attrs | MT_NORMAL);
+		virt = run;
+	}
+
+	return ret;
 }
 
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
