@@ -93,7 +93,9 @@ static int discard_ep_request(struct usbh_context *const ctx,
 		uhc_xfer_buf_free(dev, xfer->buf);
 	}
 
-	return uhc_xfer_free(dev, xfer);
+	(void)uhc_xfer_unref(xfer);
+
+	return 0;
 }
 
 static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
@@ -156,6 +158,7 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	struct usbh_context *uhs_ctx;
+	struct usbh_class_data *c_data;
 	struct uhc_event event;
 	usbh_udev_cb_t cb;
 	int ret;
@@ -167,10 +170,21 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
 		cb = event.xfer->cb;
 
+		/*
+		 * Unanchor before the completion callback so a driver may free
+		 * or resubmit the transfer from within its callback, and release
+		 * the accounting after it so a drain waits for the callback.
+		 */
+		c_data = usbh_class_xfer_unanchor(event.xfer);
+
 		if (event.xfer->cb) {
 			ret = cb(event.xfer->udev, event.xfer);
 		} else {
 			ret = discard_ep_request(uhs_ctx, event.xfer);
+		}
+
+		if (c_data != NULL) {
+			usbh_class_xfer_release(c_data);
 		}
 
 		if (ret) {

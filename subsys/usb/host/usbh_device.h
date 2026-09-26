@@ -82,14 +82,6 @@ static inline struct net_buf *usbh_xfer_buf_alloc(struct usb_device *udev,
 	return uhc_xfer_buf_alloc(ctx->dev, size);
 }
 
-static inline int usbh_xfer_free(const struct usb_device *udev,
-				 struct uhc_transfer *const xfer)
-{
-	struct usbh_context *const ctx = udev->ctx;
-
-	return uhc_xfer_free(ctx->dev, xfer);
-}
-
 static inline void usbh_xfer_buf_free(const struct usb_device *udev,
 				      struct net_buf *const buf)
 {
@@ -98,13 +90,8 @@ static inline void usbh_xfer_buf_free(const struct usb_device *udev,
 	uhc_xfer_buf_free(ctx->dev, buf);
 }
 
-static inline int usbh_xfer_enqueue(const struct usb_device *udev,
-				    struct uhc_transfer *const xfer)
-{
-	struct usbh_context *const ctx = udev->ctx;
-
-	return uhc_ep_enqueue(ctx->dev, xfer);
-}
+int usbh_xfer_enqueue(const struct usb_device *const udev,
+		      struct uhc_transfer *const xfer);
 
 static inline int usbh_xfer_dequeue(const struct usb_device *udev,
 				    struct uhc_transfer *const xfer)
