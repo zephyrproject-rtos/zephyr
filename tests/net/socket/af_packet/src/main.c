@@ -1357,6 +1357,170 @@ ZTEST(socket_packet, test_raw_dgram_udp_socks_recv)
 	zassert_mem_equal(rx_buf, tx_buf + offset, pkt_len, "Invalid payload received");
 }
 
+#define BLOCKED_RECV_TIMEOUT_MS  1000
+#define BLOCKED_RECV_MAX_WAIT_MS (BLOCKED_RECV_TIMEOUT_MS / 2)
+
+static K_THREAD_STACK_DEFINE(blocked_recv_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread blocked_recv_thread;
+static K_SEM_DEFINE(blocked_recv_done, 0, 1);
+static bool blocked_recv_started;
+
+static struct {
+	int sock;
+	int flags;
+	int ret;
+	int err;
+	int64_t end;
+} blocked_recv;
+
+static void blocked_recv_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	blocked_recv.ret =
+		zsock_recv(blocked_recv.sock, rx_buf, sizeof(rx_buf), blocked_recv.flags);
+	blocked_recv.err = errno;
+	blocked_recv.end = k_uptime_get();
+	k_sem_give(&blocked_recv_done);
+}
+
+static void start_blocked_recv(int sock, int flags)
+{
+	struct timeval optval = {
+		.tv_usec = BLOCKED_RECV_TIMEOUT_MS * USEC_PER_MSEC,
+	};
+	int ret;
+
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval, sizeof(optval));
+	zassert_ok(ret, "setsockopt failed (%d)", errno);
+
+	blocked_recv.sock = sock;
+	blocked_recv.flags = flags;
+	k_sem_reset(&blocked_recv_done);
+
+	blocked_recv_started = true;
+	k_thread_create(&blocked_recv_thread, blocked_recv_stack,
+			K_THREAD_STACK_SIZEOF(blocked_recv_stack), blocked_recv_fn, NULL, NULL,
+			NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+
+	k_sleep(K_MSEC(50));
+	zassert_equal(k_sem_count_get(&blocked_recv_done), 0, "recv() did not block");
+}
+
+static void wait_blocked_recv(void)
+{
+	zassert_ok(k_sem_take(&blocked_recv_done, K_MSEC(2 * BLOCKED_RECV_TIMEOUT_MS)),
+		   "recv() did not return");
+	zassert_ok(k_thread_join(&blocked_recv_thread, K_FOREVER));
+}
+
+static void send_to_self(int sock)
+{
+	struct net_sockaddr_ll dst = {
+		.sll_family = NET_AF_PACKET,
+		.sll_protocol = net_htons(ETH_P_TSN),
+	};
+	int ret;
+
+	memcpy(dst.sll_addr, lladdr2, sizeof(lladdr2));
+
+	ret = zsock_sendto(sock, test_payload, sizeof(test_payload), 0,
+			   (const struct net_sockaddr *)&dst, sizeof(dst));
+	zassert_equal(ret, sizeof(test_payload), "Cannot send all data (%d)", -errno);
+}
+
+ZTEST(socket_packet, test_packet_sock_send_during_recv)
+{
+	int64_t start;
+	int64_t elapsed;
+
+	prepare_packet_socket(&packet_sock_1, ud.second, NET_SOCK_DGRAM, net_htons(ETH_P_TSN));
+	start_blocked_recv(packet_sock_1, 0);
+
+	start = k_uptime_get();
+	send_to_self(packet_sock_1);
+	elapsed = k_uptime_get() - start;
+	zassert_true(elapsed < BLOCKED_RECV_MAX_WAIT_MS,
+		     "sendto() waited %lld ms for the blocked recv()", elapsed);
+
+	wait_blocked_recv();
+	zassert_equal(blocked_recv.ret, sizeof(test_payload), "recv() failed (%d)",
+		      blocked_recv.err);
+	zassert_true(blocked_recv.end >= start, "recv() returned before sendto()");
+	zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload), "Data mismatch");
+}
+
+static void test_close_during_recv_common(int flags)
+{
+	int64_t start;
+	int64_t elapsed;
+	int ret;
+
+	prepare_packet_socket(&packet_sock_1, ud.second, NET_SOCK_DGRAM, net_htons(ETH_P_TSN));
+	start_blocked_recv(packet_sock_1, flags);
+
+	start = k_uptime_get();
+	ret = zsock_close(packet_sock_1);
+	elapsed = k_uptime_get() - start;
+	packet_sock_1 = -1;
+	zassert_ok(ret, "close() failed (%d)", errno);
+	zassert_true(elapsed < BLOCKED_RECV_MAX_WAIT_MS,
+		     "close() waited %lld ms for the blocked recv()", elapsed);
+
+	wait_blocked_recv();
+	zassert_equal(blocked_recv.ret, -1, "recv() on a closed socket returned %d",
+		      blocked_recv.ret);
+	zassert_true(blocked_recv.end >= start, "recv() returned before close()");
+	zassert_true(blocked_recv.end - start < BLOCKED_RECV_MAX_WAIT_MS,
+		     "recv() was not woken by close()");
+}
+
+ZTEST(socket_packet, test_packet_sock_close_during_recv)
+{
+	test_close_during_recv_common(0);
+}
+
+ZTEST(socket_packet, test_packet_sock_close_during_recv_peek)
+{
+	test_close_during_recv_common(ZSOCK_MSG_PEEK);
+}
+
+ZTEST(socket_packet, test_packet_sock_recv_peek_packet_taken_by_other_reader)
+{
+	char state[32];
+	int64_t start;
+	int ret;
+
+	prepare_packet_socket(&packet_sock_1, ud.second, NET_SOCK_DGRAM, net_htons(ETH_P_TSN));
+	start_blocked_recv(packet_sock_1, ZSOCK_MSG_PEEK);
+
+	k_thread_suspend(&blocked_recv_thread);
+	send_to_self(packet_sock_1);
+	k_sleep(K_MSEC(50));
+	zassert_is_null(
+		strstr(k_thread_state_str(&blocked_recv_thread, state, sizeof(state)), "pending"),
+		"MSG_PEEK recv() was not woken by the packet (%s)", state);
+
+	ret = zsock_recv(packet_sock_1, tx_buf, sizeof(tx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(test_payload), "Cannot take the packet (%d)", -errno);
+
+	k_thread_resume(&blocked_recv_thread);
+	k_sleep(K_MSEC(50));
+	zassert_equal(k_sem_count_get(&blocked_recv_done), 0,
+		      "MSG_PEEK recv() returned %d (%d) after another reader took the packet",
+		      blocked_recv.ret, blocked_recv.err);
+
+	start = k_uptime_get();
+	send_to_self(packet_sock_1);
+
+	wait_blocked_recv();
+	zassert_equal(blocked_recv.ret, sizeof(test_payload), "recv() failed (%d)",
+		      blocked_recv.err);
+	zassert_true(blocked_recv.end >= start, "recv() returned before the second packet");
+}
+
 /* Multicast group membership handling, i.e. the ZSOCK_PACKET_ADD_MEMBERSHIP
  * and ZSOCK_PACKET_DROP_MEMBERSHIP socket options.
  */
@@ -2281,6 +2445,11 @@ static void test_after(void *arg)
 	memset(&tx_buf, 0, sizeof(tx_buf));
 
 	eth_filter_ret = 0;
+
+	if (blocked_recv_started) {
+		k_thread_abort(&blocked_recv_thread);
+		blocked_recv_started = false;
+	}
 
 	test_sockets_close();
 }
