@@ -190,12 +190,18 @@ struct crsf_payload_attitude {
 /**
  * @brief Send a generic CRSF telemetry frame.
  *
+ * The frame is copied and sent asynchronously; this function does not wait
+ * for the transmission to complete.
+ *
  * @param dev Pointer to the CRSF input device
  * @param type Packet type (see @ref crsf_packet_type)
  * @param payload Pointer to payload buffer
  * @param payload_len Payload length in bytes
  *
- * @return 0 on success, negative errno on failure
+ * @retval 0 The frame was queued for transmission.
+ * @retval -EINVAL The payload is too large, or NULL with a non-zero length.
+ * @retval -EBUSY The previous frame is still being transmitted.
+ * @retval <0 Other negative errno returned by uart_tx().
  */
 int input_crsf_send_telemetry(const struct device *dev, uint8_t type, uint8_t *payload,
 			      size_t payload_len);
