@@ -79,6 +79,7 @@ struct lis2dw12_device_config {
 		const struct spi_dt_spec spi;
 #endif
 	} stmemsc_cfg;
+	const struct device *bus;
 	lis2dw12_mode_t pm;
 	uint16_t odr;
 	uint8_t range;
