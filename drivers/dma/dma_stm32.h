@@ -28,6 +28,9 @@ struct dma_stm32_stream {
 	void *user_data; /* holds the client data */
 	dma_callback_t dma_callback;
 	bool cyclic;
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER)
+	bool double_buffer;
+#endif
 };
 
 struct dma_stm32_data {
