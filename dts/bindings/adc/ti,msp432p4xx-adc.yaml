@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Gail Rojas <gailroco@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSP432P4xx ADC14 controller
+
+compatible: "ti,msp432p4xx-adc"
+
+include: adc-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
