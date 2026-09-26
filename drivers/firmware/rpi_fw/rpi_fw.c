@@ -182,7 +182,7 @@ static int rpi_fw_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 	k_sem_init(&data->reply, 0, 1);
 
-	device_map(&data->shm, config->shm, config->shm_size, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
+	device_map(&data->shm, config->shm, config->shm_size, K_MEM_ARM_NORMAL_NC | K_MEM_PERM_RW);
 
 	if (!device_is_ready(mbox_dev)) {
 		LOG_ERR_DEVICE_NOT_READY(mbox_dev);
