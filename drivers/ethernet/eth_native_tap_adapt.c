@@ -40,8 +40,9 @@
  */
 int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only)
 {
+#ifdef __linux
 	struct ifreq ifr;
-	int fd, ret = -EINVAL;
+	int fd, ret;
 
 	fd = open(dev_name, O_RDWR | O_CLOEXEC);
 	if (fd < 0) {
@@ -49,8 +50,6 @@ int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only)
 	}
 
 	(void)memset(&ifr, 0, sizeof(ifr));
-
-#ifdef __linux
 	ifr.ifr_flags = (tun_only ? IFF_TUN : IFF_TAP) | IFF_NO_PI;
 
 	strncpy(ifr.ifr_name, if_name, IFNAMSIZ - 1);
@@ -61,9 +60,21 @@ int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only)
 		close(fd);
 		return ret;
 	}
-#endif
 
 	return fd;
+#else
+	/*
+	 * Attaching to a host TUN/TAP interface is Linux specific. Fail here
+	 * instead of handing back a file descriptor which is not an interface.
+	 */
+	(void)dev_name;
+	(void)if_name;
+	(void)tun_only;
+
+	nsi_print_warning("%s: only supported on Linux hosts\n", __func__);
+
+	return -ENOTSUP;
+#endif
 }
 
 int eth_iface_remove(int fd)

@@ -2176,6 +2176,14 @@ Other notable changes
     of them, such as an HCI raw image driving an external controller, can select a
     preemptible priority again (:github:`119123`).
 
+* Boards
+
+  * ``native_sim/native/64`` can now be built and run on macOS hosts. The support
+    is experimental, is not covered by CI, and has to be enabled explicitly with
+    ``-DNATIVE_SIM_EXPERIMENTAL_MACOS=ON``. See
+    :ref:`the POSIX architecture host dependencies <posix_arch_deps>` for its
+    limitations.
+
 * Build system
 
   * The minimum required CMake version has been raised to 3.28.0, a version satisfied by the CMake package in the

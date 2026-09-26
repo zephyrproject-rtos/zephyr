@@ -2516,6 +2516,7 @@ function(zephyr_constants_library)
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_offset_header.py
     -i $<TARGET_OBJECTS:${lib_name}>
     -o ${output_path}
+    --nm ${CMAKE_NM}
     DEPENDS ${lib_name} $<TARGET_OBJECTS:${lib_name}>
   )
   add_custom_target(${target_name} DEPENDS ${output_path})
@@ -6477,6 +6478,156 @@ function(zephyr_iterable_section)
     SYMBOLS _${SECTION_NAME}_list_start _${SECTION_NAME}_list_end
     KEEP SORT NAME
   )
+
+  set_property(GLOBAL APPEND PROPERTY ZEPHYR_ITERABLE_SECTION_NAMES ${SECTION_NAME})
+endfunction()
+
+function(zephyr_generate_macho_iterable_sections)
+  if(NOT CMAKE_HOST_APPLE)
+    return()
+  endif()
+
+  set(single_args "TARGET;LINKER_SCRIPT;STRUCT_TAGS")
+  cmake_parse_arguments(MACHO "" "${single_args}" "" ${ARGN})
+
+  if(NOT DEFINED MACHO_TARGET)
+    message(FATAL_ERROR "zephyr_generate_macho_iterable_sections() requires TARGET")
+  endif()
+
+  set(output_dir ${CMAKE_CURRENT_BINARY_DIR}/macho_iterable)
+  set(header_dir ${CMAKE_CURRENT_BINARY_DIR}/include/generated/zephyr)
+  set(input_file ${output_dir}/sections.txt)
+  set(alias_input_file ${output_dir}/aliases.txt)
+  set(mapping_file ${output_dir}/sections_mapping.txt)
+  set(header_file ${header_dir}/macho_iter_sections.h)
+  set(alias_file ${output_dir}/macho_iter_sections.c)
+  set(image_alias_file ${output_dir}/macho_image_bounds.c)
+
+  file(MAKE_DIRECTORY ${output_dir} ${header_dir})
+
+  if(DEFINED MACHO_LINKER_SCRIPT)
+    file(READ ${MACHO_LINKER_SCRIPT} linker_script)
+    string(REGEX MATCHALL "_[A-Za-z0-9_]+_list_start[ \\t]*=" names "${linker_script}")
+    set(section_names)
+    foreach(name ${names})
+      string(REGEX REPLACE "^[ \\t]*_" "" name "${name}")
+      string(REGEX REPLACE "_list_start[ \\t]*=$" "" name "${name}")
+      list(APPEND section_names ${name})
+    endforeach()
+    set(alias_names ${section_names})
+  else()
+    get_property(section_names GLOBAL PROPERTY ZEPHYR_ITERABLE_SECTION_NAMES)
+    if(NOT section_names)
+      foreach(source_dir include kernel drivers subsys cmake/linker_script)
+        list(APPEND generator_args --source-dir ${ZEPHYR_BASE}/${source_dir})
+      endforeach()
+    endif()
+  endif()
+
+  list(APPEND section_names ${alias_names})
+  list(REMOVE_DUPLICATES section_names)
+  list(SORT section_names)
+  file(WRITE ${input_file} "")
+  foreach(name ${section_names})
+    file(APPEND ${input_file} "${name}\n")
+  endforeach()
+  file(WRITE ${alias_input_file} "")
+  foreach(name ${alias_names})
+    file(APPEND ${alias_input_file} "${name}\n")
+  endforeach()
+
+  set(alias_generator_args)
+  foreach(source_dir include kernel drivers subsys cmake/linker_script)
+    list(APPEND alias_generator_args --alias-source-dir ${ZEPHYR_BASE}/${source_dir})
+  endforeach()
+
+  if(DEFINED MACHO_STRUCT_TAGS)
+    list(APPEND generator_args --struct-tags ${MACHO_STRUCT_TAGS})
+    string(MAKE_C_IDENTIFIER "${MACHO_TARGET}" macho_target_id)
+    set(macho_generation_target macho_iterable_sections_${macho_target_id})
+    add_custom_command(
+      OUTPUT ${header_file} ${alias_file} ${mapping_file}
+      COMMAND ${PYTHON_EXECUTABLE}
+              ${ZEPHYR_BASE}/scripts/build/gen_macho_iter_sections.py
+              --input ${input_file}
+              --alias-input ${alias_input_file}
+              ${alias_generator_args}
+              ${generator_args}
+              --header ${header_file}
+              --aliases ${alias_file}
+              --mapping ${mapping_file}
+      DEPENDS
+        ${ZEPHYR_BASE}/scripts/build/gen_macho_iter_sections.py
+        ${ZEPHYR_BASE}/scripts/build/iter_sections.py
+        ${input_file}
+        ${alias_input_file}
+        ${MACHO_STRUCT_TAGS}
+      VERBATIM
+    )
+    add_custom_target(${macho_generation_target}
+      DEPENDS ${header_file} ${alias_file} ${mapping_file}
+    )
+
+    # The bounds the image references are only known once it is linked, and
+    # there are far too many iterable sections to emit them all: see
+    # gen_macho_aliases.py.
+    add_custom_command(
+      OUTPUT ${image_alias_file}
+      COMMAND ${PYTHON_EXECUTABLE}
+              ${ZEPHYR_BASE}/scripts/build/gen_macho_aliases.py
+              --image $<TARGET_FILE:${logical_target_for_zephyr_elf}>
+              --mapping ${mapping_file}
+              --nm ${CMAKE_NM}
+              --output ${image_alias_file}
+      DEPENDS
+        ${ZEPHYR_BASE}/scripts/build/gen_macho_aliases.py
+        ${mapping_file}
+        ${logical_target_for_zephyr_elf}
+      VERBATIM
+    )
+    add_custom_target(${macho_generation_target}_bounds DEPENDS ${image_alias_file})
+    add_dependencies(${macho_generation_target}_bounds ${macho_generation_target})
+    if(TARGET native_runner_executable)
+      add_dependencies(native_runner_executable ${macho_generation_target}_bounds)
+    endif()
+    if(DEFINED DEVICE_API_LD_TARGET AND TARGET ${DEVICE_API_LD_TARGET})
+      add_dependencies(${macho_generation_target} ${DEVICE_API_LD_TARGET})
+    endif()
+    add_dependencies(${MACHO_TARGET} ${macho_generation_target})
+    if(TARGET zephyr_interface)
+      add_dependencies(zephyr_interface ${macho_generation_target})
+    endif()
+  else()
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE}
+              ${ZEPHYR_BASE}/scripts/build/gen_macho_iter_sections.py
+              --input ${input_file}
+              --alias-input ${alias_input_file}
+              ${alias_generator_args}
+              ${generator_args}
+              --header ${header_file}
+              --aliases ${alias_file}
+      RESULT_VARIABLE result
+    )
+    if(NOT result EQUAL 0)
+      message(FATAL_ERROR "Failed to generate Mach-O iterable section metadata")
+    endif()
+  endif()
+
+  if(TARGET zephyr_interface)
+    zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/generated)
+  else()
+    target_include_directories(${MACHO_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include/generated)
+  endif()
+  get_target_property(macho_target_type ${MACHO_TARGET} TYPE)
+  if(DEFINED MACHO_STRUCT_TAGS)
+    # The bounds of this image, the only ones emitted, come from the second pass
+    target_sources(${MACHO_TARGET} INTERFACE ${image_alias_file})
+  elseif("${macho_target_type}" STREQUAL "INTERFACE_LIBRARY")
+    target_sources(${MACHO_TARGET} INTERFACE ${alias_file})
+  else()
+    target_sources(${MACHO_TARGET} PRIVATE ${alias_file})
+  endif()
 endfunction()
 
 #[=======================================================================[.rst:

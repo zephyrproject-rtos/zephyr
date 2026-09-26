@@ -595,6 +595,7 @@ zephyr_compile_options(${COMPILER_OPT_AS_LIST})
 # TODO: Include arch compiler options at this point.
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" AND
+   NOT CMAKE_C_COMPILER_ID STREQUAL "AppleClang" AND
    NOT CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM" AND
    NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
   # GCC assumed
@@ -2458,5 +2459,12 @@ toolchain_linker_finalize()
 # export build information
 build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
 build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
+
+if(CMAKE_HOST_APPLE AND TARGET native_simulator)
+  zephyr_generate_macho_iterable_sections(
+    TARGET native_simulator
+    STRUCT_TAGS ${struct_tags_json}
+  )
+endif()
 
 yaml_save(NAME build_info)
