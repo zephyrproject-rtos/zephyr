@@ -103,6 +103,19 @@ int sys_heap_runtime_stats_get(struct sys_heap *heap,
  */
 int sys_heap_runtime_stats_reset_max(struct sys_heap *heap);
 
+/** @brief Get the size of the largest free block in a sys_heap
+ *
+ * Writes to @a bytes the number of usable bytes available in the single
+ * largest contiguous free block currently in the heap: the largest value
+ * that could currently be passed to sys_heap_alloc() and still succeed,
+ * absent further fragmentation from intervening allocations or frees.
+ *
+ * @param heap Pointer to specified sys_heap
+ * @param bytes Pointer to size_t to store the result in
+ * @return -EINVAL if null pointers, otherwise 0
+ */
+int sys_heap_get_largest_free_block(struct sys_heap *heap, size_t *bytes);
+
 /** @brief Initialize sys_heap
  *
  * Initializes a sys_heap struct to manage the specified memory.
