@@ -32,6 +32,8 @@
 
 #define MS5607_CMD_CONV_READ_ADC 0x00
 
+#define MS5607_CMD_CONV_READ_PROM_WORD(n) (0xA0 + ((n) * 2))
+
 #define MS5607_CMD_CONV_READ_SENSE_T1 0xA2
 #define MS5607_CMD_CONV_READ_OFF_T1 0xA4
 #define MS5607_CMD_CONV_READ_TCS 0xA6
@@ -101,12 +103,19 @@ struct ms5607_config {
 
 struct ms5607_data {
 	/* Calibration values */
-	uint16_t sens_t1;
-	uint16_t off_t1;
-	uint16_t tcs;
-	uint16_t tco;
-	uint16_t t_ref;
-	uint16_t tempsens;
+	union {
+		struct {
+			uint16_t reserved;
+			uint16_t sens_t1;
+			uint16_t off_t1;
+			uint16_t tcs;
+			uint16_t tco;
+			uint16_t t_ref;
+			uint16_t tempsens;
+			uint16_t crc;
+		};
+		uint16_t prom[8];
+	};
 
 	/* Measured values */
 	int32_t pressure;
