@@ -1695,7 +1695,7 @@ static void shell_log_process(const struct shell *sh)
 			if (readline_active) {
 				z_cursor_restore(sh);
 				z_clear_eos(sh);
-			} else {
+			} else if (!sh->ctx->bypass) {
 				z_shell_cmd_line_erase(sh);
 			}
 
@@ -1711,7 +1711,7 @@ static void shell_log_process(const struct shell *sh)
 			}
 			z_shell_print_cmd(sh);
 			z_shell_op_cursor_position_synchronize(sh);
-		} else {
+		} else if (!sh->ctx->bypass) {
 			z_shell_print_prompt_and_cmd(sh);
 		}
 
