@@ -1536,6 +1536,11 @@ static int api_mspi_mchp_xec_qmspi_tc(const struct device *ctrl, const struct ms
 		return -ENOTSUP;
 	}
 
+	if (req->xfer_mode == MSPI_MEMMAP) {
+		LOG_ERR("Memory mapped transfers are not supported");
+		return -ENOTSUP;
+	}
+
 	if (req->num_packet == 0) {
 		return 0; /* nothing to do */
 	}
