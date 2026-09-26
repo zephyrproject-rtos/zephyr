@@ -33,6 +33,23 @@ static void init_data(struct modem_cellular_data *data)
 	data->cb.mask = CELLULAR_EVENT_NETWORK_STATUS_CHANGED;
 }
 
+/* The neighbour getter reads the vendor capability flag, so the devices below
+ * carry a config naming a vendor that reports neighbours, or one that does not.
+ */
+static const struct modem_cellular_vendor_config reporting_vendor = {
+	.reports_neighbor_cells = true,
+};
+
+static const struct modem_cellular_config reporting_config = {
+	.vendor = &reporting_vendor,
+};
+
+static const struct modem_cellular_vendor_config silent_vendor;
+
+static const struct modem_cellular_config silent_config = {
+	.vendor = &silent_vendor,
+};
+
 static struct cellular_evt_network_status make_lte(uint32_t gci, int16_t rsrp)
 {
 	struct cellular_evt_network_status status = {
@@ -46,6 +63,20 @@ static struct cellular_evt_network_status make_lte(uint32_t gci, int16_t rsrp)
 	status.cell.lte.rsrp = rsrp;
 
 	return status;
+}
+
+static struct cellular_neighbor_cell make_neighbor(uint32_t earfcn, uint16_t pci, int16_t rsrp,
+						   int8_t rsrq)
+{
+	struct cellular_neighbor_cell cell = {0};
+
+	cell.access_tech = CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN;
+	cell.cell.lte.earfcn = earfcn;
+	cell.cell.lte.phys_cell_id = pci;
+	cell.cell.lte.rsrp = rsrp;
+	cell.cell.lte.rsrq = rsrq;
+
+	return cell;
 }
 
 /* modem_cellular_emit_network_status() must raise the event on the first report
@@ -87,6 +118,7 @@ ZTEST(cellular_network_status, test_getter_states)
 	struct modem_cellular_data data;
 	const struct device dev = {
 		.data = &data,
+		.config = &reporting_config,
 		.api = &modem_cellular_api,
 	};
 	struct cellular_evt_network_status status = make_lte(0x1234567, -95);
@@ -106,6 +138,179 @@ ZTEST(cellular_network_status, test_getter_states)
 	data.network_status_valid = false;
 	zassert_equal(cellular_get_network_status(&dev, &out), -ENODATA,
 		      "getter must report no data after invalidation");
+}
+
+/* The accumulator publishes the neighbour list only on commit; the getter must
+ * report -ENODATA while a scan is in progress and the full list afterwards.
+ */
+ZTEST(cellular_network_status, test_neighbor_accumulate_and_get)
+{
+	struct modem_cellular_data data;
+	const struct device dev = {
+		.data = &data,
+		.config = &reporting_config,
+		.api = &modem_cellular_api,
+	};
+	struct cellular_neighbor_cell a = make_neighbor(100, 10, -90, -10);
+	struct cellular_neighbor_cell b = make_neighbor(200, 20, -95, -12);
+	struct cellular_neighbor_cell out[4];
+	uint8_t count;
+
+	init_data(&data);
+
+	count = ARRAY_SIZE(out);
+	zassert_equal(cellular_get_neighbor_cells(&dev, out, &count), -ENODATA,
+		      "getter must report no data before the first scan");
+
+	modem_cellular_add_neighbor_cell(&data, &a);
+
+	count = ARRAY_SIZE(out);
+	zassert_equal(cellular_get_neighbor_cells(&dev, out, &count), -ENODATA,
+		      "staged cells must not be visible before commit");
+
+	modem_cellular_add_neighbor_cell(&data, &b);
+	modem_cellular_commit_neighbor_cells(&data);
+
+	count = ARRAY_SIZE(out);
+	zassert_ok(cellular_get_neighbor_cells(&dev, out, &count));
+	zassert_equal(count, 2, "both neighbours must be returned");
+	zassert_equal(out[0].cell.lte.earfcn, 100);
+	zassert_equal(out[0].access_tech, CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN,
+		      "the access technology must select the reported union member");
+	zassert_equal(out[1].cell.lte.phys_cell_id, 20);
+	zassert_equal(out[1].cell.lte.rsrp, -95);
+}
+
+/* A completed scan with no LTE neighbours is valid, distinct from -ENODATA. */
+ZTEST(cellular_network_status, test_neighbor_empty_scan)
+{
+	struct modem_cellular_data data;
+	const struct device dev = {
+		.data = &data,
+		.config = &reporting_config,
+		.api = &modem_cellular_api,
+	};
+	struct cellular_neighbor_cell out[4];
+	uint8_t count;
+
+	init_data(&data);
+
+	modem_cellular_commit_neighbor_cells(&data);
+
+	count = ARRAY_SIZE(out);
+	zassert_ok(cellular_get_neighbor_cells(&dev, out, &count),
+		   "a completed scan with no neighbours must succeed");
+	zassert_equal(count, 0, "no neighbours reported");
+}
+
+/* A caller buffer smaller than the cached list is filled to capacity and the
+ * truncation reported, so a caller that sized low still reads what fits.
+ */
+ZTEST(cellular_network_status, test_neighbor_buffer_too_small)
+{
+	struct modem_cellular_data data;
+	const struct device dev = {
+		.data = &data,
+		.config = &reporting_config,
+		.api = &modem_cellular_api,
+	};
+	struct cellular_neighbor_cell a = make_neighbor(100, 10, -90, -10);
+	struct cellular_neighbor_cell b = make_neighbor(200, 20, -95, -12);
+	struct cellular_neighbor_cell out[1];
+	uint8_t count;
+
+	init_data(&data);
+
+	modem_cellular_add_neighbor_cell(&data, &a);
+	modem_cellular_add_neighbor_cell(&data, &b);
+	modem_cellular_commit_neighbor_cells(&data);
+
+	count = ARRAY_SIZE(out);
+	zassert_equal(cellular_get_neighbor_cells(&dev, out, &count), -ENOMEM,
+		      "a too-small buffer must report the truncation");
+	zassert_equal(count, 1, "count must report the number written");
+	zassert_equal(out[0].cell.lte.earfcn, 100, "the entries that fit must be written");
+}
+
+/* Neighbours reported beyond the staging cap are dropped, not overflowed. */
+ZTEST(cellular_network_status, test_neighbor_overflow_dropped)
+{
+	struct modem_cellular_data data;
+	const struct device dev = {
+		.data = &data,
+		.config = &reporting_config,
+		.api = &modem_cellular_api,
+	};
+	struct cellular_neighbor_cell c;
+	struct cellular_neighbor_cell out[CONFIG_MODEM_CELLULAR_MAX_NEIGHBOR_CELLS + 4];
+	uint8_t count;
+	int i;
+
+	init_data(&data);
+
+	for (i = 0; i < CONFIG_MODEM_CELLULAR_MAX_NEIGHBOR_CELLS + 2; i++) {
+		c = make_neighbor(i, i, -80, -8);
+		modem_cellular_add_neighbor_cell(&data, &c);
+	}
+	modem_cellular_commit_neighbor_cells(&data);
+
+	count = ARRAY_SIZE(out);
+	zassert_ok(cellular_get_neighbor_cells(&dev, out, &count));
+	zassert_equal(count, CONFIG_MODEM_CELLULAR_MAX_NEIGHBOR_CELLS,
+		      "excess neighbours beyond the cap must be dropped");
+}
+
+/* Each commit fully replaces the previous list; the staging buffer self-clears,
+ * so a later, shorter scan does not leak stale neighbours from an earlier one.
+ */
+ZTEST(cellular_network_status, test_neighbor_rescan_replaces)
+{
+	struct modem_cellular_data data;
+	const struct device dev = {
+		.data = &data,
+		.config = &reporting_config,
+		.api = &modem_cellular_api,
+	};
+	struct cellular_neighbor_cell a = make_neighbor(100, 10, -90, -10);
+	struct cellular_neighbor_cell b = make_neighbor(200, 20, -95, -12);
+	struct cellular_neighbor_cell c = make_neighbor(300, 30, -85, -9);
+	struct cellular_neighbor_cell out[4];
+	uint8_t count;
+
+	init_data(&data);
+
+	modem_cellular_add_neighbor_cell(&data, &a);
+	modem_cellular_add_neighbor_cell(&data, &b);
+	modem_cellular_commit_neighbor_cells(&data);
+
+	modem_cellular_add_neighbor_cell(&data, &c);
+	modem_cellular_commit_neighbor_cells(&data);
+
+	count = ARRAY_SIZE(out);
+	zassert_ok(cellular_get_neighbor_cells(&dev, out, &count));
+	zassert_equal(count, 1, "second scan must replace, not append to, the first");
+	zassert_equal(out[0].cell.lte.earfcn, 300);
+}
+
+/* A vendor whose scripts never report neighbours must be distinguishable from one
+ * that simply has not measured yet.
+ */
+ZTEST(cellular_network_status, test_neighbor_unsupported_vendor)
+{
+	struct modem_cellular_data data;
+	const struct device dev = {
+		.data = &data,
+		.config = &silent_config,
+		.api = &modem_cellular_api,
+	};
+	struct cellular_neighbor_cell out[4];
+	uint8_t count;
+
+	init_data(&data);
+
+	count = ARRAY_SIZE(out);
+	zassert_equal(cellular_get_neighbor_cells(&dev, out, &count), -ENOSYS,
+		      "a vendor that never reports neighbours must return -ENOSYS");
 }
 
 ZTEST_SUITE(cellular_network_status, NULL, NULL, NULL, NULL, NULL);
