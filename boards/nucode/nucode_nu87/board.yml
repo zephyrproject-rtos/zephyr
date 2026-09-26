@@ -1,0 +1,6 @@
+board:
+  name: nucode_nu87
+  full_name: NUCODE NU87-TinyDK
+  vendor: nucode
+  socs:
+    - name: rtl872xd
