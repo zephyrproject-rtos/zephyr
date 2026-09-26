@@ -262,6 +262,15 @@ static int spi_dw_configure(const struct device *dev,
 		ctrlr0 |= DW_SPI_CTRLR0_SRL;
 	}
 
+#ifdef CONFIG_SPI_DW_HSSI
+	/* DWC_ssi stays a peripheral until this bit is set, so SCPOL never
+	 * reaches SCLK.
+	 */
+	if ((config->operation & SPI_OP_MODE_PERIPHERAL) == 0U) {
+		ctrlr0 |= DW_SPI_CTRLR0_SSI_IS_MST;
+	}
+#endif
+
 	/* Installing the configuration */
 	write_ctrlr0(dev, ctrlr0);
 
@@ -372,6 +381,8 @@ static int transceive(const struct device *dev,
 	int ret;
 
 	spi_context_lock(&spi->ctx, asynchronous, cb, userdata, config);
+
+	clear_bit_ssienr(dev);
 
 #ifdef CONFIG_PM_DEVICE
 	if (!pm_device_is_busy(dev)) {
