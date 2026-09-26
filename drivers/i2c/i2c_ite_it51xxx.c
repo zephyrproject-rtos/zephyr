@@ -479,13 +479,58 @@ static bool target_i2c_fifo_read_to_buf(const struct device *dev, uint32_t count
 	return true;
 }
 
+static void target_i2c_fifo_put(const struct device *dev, uint8_t val)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+
+	/* Host receiving, target transmitting */
+#ifdef CONFIG_SOC_IT51526AW
+	sys_write8(val, config->i2cbase_mapping + SMB_SLDA(config->port));
+#else
+	sys_write8(val, config->target_base + SMB_SLDn);
+#endif
+}
+
+static bool target_i2c_fifo_write_from_buf(const struct device *dev)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+	struct i2c_it51xxx_data *data = dev->data;
+
+	if (data->r_index + SMB_TARGET_IT51XXX_MAX_FIFO_SIZE > sizeof(data->target_out_buffer)) {
+		LOG_ERR("I2CS ch%d: read OOB (r_index=%d + count=%d > buf_size=%d), aborting",
+			config->port, data->r_index, SMB_TARGET_IT51XXX_MAX_FIFO_SIZE,
+			sizeof(data->target_out_buffer));
+
+		/* The controller can keep clocking read bytes without issuing
+		 * a STOP, and an emptied FIFO interrupts once per byte. Feed
+		 * it a chunk of dummy data instead, so those reads are served
+		 * from the FIFO. r_index stays where it is: it already says
+		 * the buffer is spent, so every later interrupt takes this
+		 * same path until a STOP or a timeout resets the transfer.
+		 */
+		for (int i = 0; i < SMB_TARGET_IT51XXX_MAX_FIFO_SIZE; i++) {
+			target_i2c_fifo_put(dev, 0xff);
+		}
+
+		return false;
+	}
+
+	for (int i = 0; i < SMB_TARGET_IT51XXX_MAX_FIFO_SIZE; i++) {
+		target_i2c_fifo_put(dev, data->target_out_buffer[i + data->r_index]);
+	}
+	/* Index to next 16 bytes of read buffer */
+	data->r_index += SMB_TARGET_IT51XXX_MAX_FIFO_SIZE;
+
+	return true;
+}
+
 static void target_i2c_isr_fifo(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
 	struct i2c_target_config *target_cfg;
 	const struct i2c_target_callbacks *target_cb;
-	uint32_t count, len;
+	uint32_t count, len = 0;
 	uint8_t target_status, fifo_status, target_idx;
 
 #ifdef CONFIG_SOC_IT51526AW
@@ -527,7 +572,14 @@ static void target_i2c_isr_fifo(const struct device *dev)
 					target_cb->buf_read_requested(target_cfg, &rdata, &len);
 				}
 
-				if (len > sizeof(data->target_out_buffer)) {
+				if (rdata == NULL) {
+					/* No data supplied: clear the buffer so that
+					 * the transfer does not put the previous
+					 * request's bytes on the bus.
+					 */
+					memset(data->target_out_buffer, 0,
+					       sizeof(data->target_out_buffer));
+				} else if (len > sizeof(data->target_out_buffer)) {
 					LOG_ERR("I2CS ch%d: The length exceeds out_buffer size=%d",
 						config->port, sizeof(data->target_out_buffer));
 				} else {
@@ -535,18 +587,7 @@ static void target_i2c_isr_fifo(const struct device *dev)
 				}
 			}
 
-			for (int i = 0; i < SMB_TARGET_IT51XXX_MAX_FIFO_SIZE; i++) {
-				/* Host receiving, target transmitting */
-#ifdef CONFIG_SOC_IT51526AW
-				sys_write8(data->target_out_buffer[i + data->r_index],
-					   config->i2cbase_mapping + SMB_SLDA(config->port));
-#else
-				sys_write8(data->target_out_buffer[i + data->r_index],
-					   config->target_base + SMB_SLDn);
-#endif
-			}
-			/* Index to next 16 bytes of read buffer */
-			data->r_index += SMB_TARGET_IT51XXX_MAX_FIFO_SIZE;
+			target_i2c_fifo_write_from_buf(dev);
 		} else {
 			target_i2c_fifo_read_to_buf(dev, count);
 		}
@@ -634,7 +675,7 @@ static void target_i2c_isr_pio(const struct device *dev)
 #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 			/* Target shared FIFO mode */
 			if (config->target_shared_fifo_mode) {
-				uint32_t len;
+				uint32_t len = 0;
 				uint8_t *rdata = NULL;
 				uint8_t sndfpctl;
 
@@ -643,7 +684,14 @@ static void target_i2c_isr_pio(const struct device *dev)
 					target_cb->buf_read_requested(target_cfg, &rdata, &len);
 				}
 
-				if (len > sizeof(data->target_shared_fifo)) {
+				if (rdata == NULL) {
+					/* No data supplied: clear the FIFO so that
+					 * the transfer does not put the previous
+					 * request's bytes on the bus.
+					 */
+					memset(data->target_shared_fifo, 0,
+					       sizeof(data->target_shared_fifo));
+				} else if (len > sizeof(data->target_shared_fifo)) {
 					LOG_ERR("I2CS ch%d: The length exceeds shared fifo size=%d",
 						config->port, sizeof(data->target_shared_fifo));
 				} else {
