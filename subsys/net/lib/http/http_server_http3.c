@@ -564,8 +564,8 @@ static int h3_parse_frame_header(const uint8_t *buf, size_t buflen,
  *
  * @return Number of bytes consumed, or <0 on error.
  */
-static int qpack_decode_int(const uint8_t *buf, size_t buflen,
-			    int prefix_n, uint64_t *value)
+ZTESTABLE_STATIC int qpack_decode_int(const uint8_t *buf, size_t buflen,
+				      int prefix_n, uint64_t *value)
 {
 	uint8_t max_first;
 	int consumed;
@@ -590,6 +590,14 @@ static int qpack_decode_int(const uint8_t *buf, size_t buflen,
 	do {
 		if (consumed >= (int)buflen) {
 			return -EINVAL;
+		}
+
+		/* Nine continuation bytes carry 63 bits, which cannot overflow the
+		 * accumulator. Anything longer is too large to be a valid length or
+		 * index, so reject it rather than let the value wrap.
+		 */
+		if (shift > 56U) {
+			return -EBADMSG;
 		}
 
 		b = buf[consumed];
@@ -1758,8 +1766,8 @@ static int h3_process_data_frame(struct http_client_ctx *client,
  *
  * @return 0 on success, <0 on error.
  */
-static int h3_parse_qpack_headers(struct http_client_ctx *client,
-				  const uint8_t *buf, size_t buflen)
+ZTESTABLE_STATIC int h3_parse_qpack_headers(struct http_client_ctx *client,
+					    const uint8_t *buf, size_t buflen)
 {
 	uint8_t name_buf[H3_HUFFMAN_DECODE_BUF_SIZE];
 	uint8_t value_buf[H3_HUFFMAN_DECODE_BUF_SIZE];
@@ -1864,6 +1872,10 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 			}
 
 			/* Read the value */
+			if (pos >= buflen) {
+				return -EINVAL;
+			}
+
 			huffman = (buf[pos] & 0x80) != 0;
 
 			ret = qpack_decode_int(buf + pos, buflen - pos, 7, &val_len);
@@ -1873,7 +1885,7 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 
 			pos += ret;
 
-			if (pos + val_len > buflen) {
+			if (val_len > buflen - pos) {
 				return -EINVAL;
 			}
 
@@ -1915,7 +1927,7 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 
 			pos += ret;
 
-			if (pos + name_len > buflen) {
+			if (name_len > buflen - pos) {
 				return -EINVAL;
 			}
 
@@ -1958,7 +1970,7 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 
 			pos += ret;
 
-			if (pos + val_len > buflen) {
+			if (val_len > buflen - pos) {
 				return -EINVAL;
 			}
 
