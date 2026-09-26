@@ -318,6 +318,7 @@
 			reg = <0x52820000 0xfd0>;
 			interrupts = <23 4>;
 			clk-dst = <0x400>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -326,6 +327,7 @@
 			reg = <0x52840000 0xfd0>;
 			interrupts = <31 4>;
 			clk-dst = <0x401>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -334,6 +336,7 @@
 			reg = <0x52850000 0xfd0>;
 			interrupts = <32 4>;
 			clk-dst = <0x402>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -342,6 +345,7 @@
 			reg = <0x52860000 0xfd0>;
 			interrupts = <33 4>;
 			clk-dst = <0x403>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -350,6 +354,7 @@
 			reg = <0x52870000 0xfd0>;
 			interrupts = <34 4>;
 			clk-dst = <0x404>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -358,6 +363,7 @@
 			reg = <0x52c00000 0xfd0>;
 			interrupts = <35 4>;
 			clk-dst = <0x600>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
