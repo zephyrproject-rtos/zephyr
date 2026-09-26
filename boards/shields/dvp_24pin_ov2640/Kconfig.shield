@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright Panoramix Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_DVP_24PIN_OV2640
+	def_bool $(shields_list_contains,dvp_24pin_ov2640)

@@ -1,37 +1,36 @@
 /*
- * Copyright (c) 2024 Charles Dias
- *
+ * SPDX-FileCopyrightText: Copyright Panoramix Labs
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
 	chosen {
-		zephyr,camera = &zephyr_camera_dvp;
+		zephyr,camera = &dvp_24pin_interface;
 	};
 };
 
-&zephyr_camera_i2c {
+&dvp_24pin_i2c {
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>;
 
 	ov2640: ov2640@30 {
 		compatible = "ovti,ov2640";
 		reg = <0x30>;
+		clock-rate-control = <0x80>;
 		status = "okay";
 
 		port {
 			ov2640_ep_out: endpoint {
-				remote-endpoint-label = "zephyr_camera_dvp_in";
+				remote-endpoint-label = "dvp_24pin_ep_in";
 			};
 		};
 	};
 };
 
-&zephyr_camera_dvp {
+&dvp_24pin_interface {
 	status = "okay";
 
 	port {
-		zephyr_camera_dvp_in: endpoint {
+		dvp_24pin_ep_in: endpoint {
 			remote-endpoint-label = "ov2640_ep_out";
 			bus-width = <8>;
 			hsync-active = <0>;
