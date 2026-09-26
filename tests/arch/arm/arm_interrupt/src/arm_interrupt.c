@@ -9,6 +9,7 @@
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 #include <cmsis_core.h>
 #endif
+#include <zephyr/interrupt_util.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
 
@@ -674,41 +675,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	TC_PRINT("Using SGI %u for Cortex-R\n", i);
 #else
 
-	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
-		if (irq_controller_get_enable(i) == 0) {
-			/*
-			 * Interrupts configured statically with IRQ_CONNECT(.)
-			 * are automatically enabled. irq_controller_get_enable()
-			 * returning false, here, implies that the IRQ line is
-			 * either not implemented or it is not enabled, thus,
-			 * currently not in use by Zephyr.
-			 */
-
-			/* Set the NVIC line to pending. */
-			irq_controller_set_pending(i);
-
-			if (irq_controller_get_pending(i)) {
-				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented; clear the
-				 * line.
-				 */
-				irq_controller_clear_pending(i);
-
-				if (!irq_controller_get_pending(i)) {
-					/*
-					 * If the NVIC line can be successfully
-					 * un-pended, it is guaranteed that it
-					 * can be used for software interrupt
-					 * triggering.
-					 */
-					break;
-				}
-			}
-		}
-	}
-
-	zassert_true(i >= 0, "No available IRQ line to use in the test\n");
-
+	i = get_available_nvic_line(CONFIG_NUM_IRQS);
 	TC_PRINT("Available IRQ line: %u\n", i);
 #endif
 
