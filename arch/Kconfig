@@ -509,6 +509,9 @@ config NO_UNUSED_STACK_INSPECTION
 
 config MAX_THREAD_BYTES
 	int "Bytes to use when tracking object thread permissions"
+	default 5 if MP_MAX_NUM_CPUS > 4
+	default 4 if MP_MAX_NUM_CPUS > 2
+	default 3 if MP_MAX_NUM_CPUS > 1
 	default 2
 	depends on USERSPACE
 	help
@@ -516,6 +519,10 @@ config MAX_THREAD_BYTES
 	  thread permissions for that object. This controls the size of the
 	  bitfield (in bytes) and imposes a limit on how many threads can
 	  be created in the system.
+
+	  The default scales with the number of CPUs, since the kernel
+	  creates one idle thread per CPU. An application that declares many
+	  threads of its own still has to raise it further.
 
 config DYNAMIC_OBJECTS
 	bool "Allow kernel objects to be allocated at runtime"
