@@ -1,0 +1,6 @@
+shields:
+  - name: heltec_t114_v2_display
+    full_name: Heltec T114 v2 Display
+    vendor: heltec
+    supported_features:
+      - display

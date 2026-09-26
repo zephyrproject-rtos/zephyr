@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Yeray Lois Sanchez
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_HELTEC_T114_V2_DISPLAY
+
+if DISPLAY
+
+# Needed by the fixed regulators in the shield overlay.
+configdefault REGULATOR
+	default y
+
+endif # DISPLAY
+
+endif # SHIELD_HELTEC_T114_V2_DISPLAY
