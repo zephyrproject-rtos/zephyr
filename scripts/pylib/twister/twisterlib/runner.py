@@ -724,6 +724,12 @@ class ProjectBuilder(FilterBuilder):
             self.log_info(f"{script_log}", inline_logs, log_only_failed=True)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info(f"{h_log}", inline_logs)
+            # What the process wrote to stderr (a loader or sanitizer
+            # message, QEMU refusing to start) explains a console log
+            # that stops short; show it with the console output like the
+            # JSON report does.
+            if os.path.exists(he_log) and os.path.getsize(he_log) > 0:
+                self.log_info(f"{he_log}", inline_logs)
         elif os.path.exists(he_log) and os.path.getsize(he_log) > 0:
             self.log_info(f"{he_log}", inline_logs)
         elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
@@ -1654,6 +1660,10 @@ class ProjectBuilder(FilterBuilder):
         if instance.handler.ready:
             logger.debug(f"Reset instance status from '{instance.status}' to None before run.")
             instance.status = TwisterStatus.NONE
+            # The handler only fills in a reason of its own, such as the exit
+            # code, when none is set: drop whatever a loaded test plan or an
+            # earlier retry iteration left behind.
+            instance.reason = None
 
             if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()

@@ -1050,9 +1050,14 @@ class QEMUHandler(QEMUHandlerBase):
 
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
 
+        # The run command's stdout is the generator's own output (the failed
+        # command line when it fails), its stderr is what QEMU itself
+        # reports: a binary that cannot be executed, a bad option, missing
+        # firmware. The latter goes to the file the failure reports already
+        # read, so it reaches the inline log and twister.json.
         self.stdout_fn = os.path.join(instance.build_dir, "qemu.stdout")
 
-        self.stderr_fn = os.path.join(instance.build_dir, "qemu.stderr")
+        self.stderr_fn = os.path.join(instance.build_dir, "handler_stderr.log")
 
         if instance.testsuite.ignore_qemu_crash:
             self.ignore_crash = True
@@ -1215,6 +1220,44 @@ class QEMUHandler(QEMUHandlerBase):
         self.fifo_fn = os.path.join(self.instance.build_dir, "qemu-fifo")
         super()._set_qemu_filenames(sysbuild_build_dir)
 
+    # Seconds given to the monitor thread to drain the pipe after QEMU
+    # exited before it is assumed to be blocked on a fifo open.
+    EXIT_GRACE_PERIOD = 1.0
+
+    def _release_thread(self, timeout=5.0):
+        """Unblock the monitor thread after QEMU exited without connecting.
+
+        The thread opens the fifos as QEMU's counterpart, and each of those
+        opens blocks until QEMU opens the other end. When QEMU never
+        starts, for instance because the run command could not execute it,
+        the thread sits in open() for the whole test timeout. Connect to
+        the fifos in QEMU's place and disconnect again: the thread's
+        opens return, it reads EOF and finishes.
+
+        Returns True when the thread was connected to, False when it did
+        not open its end within the timeout or was gone already.
+        """
+        fifo_in, fifo_out = self._thread_get_fifo_names(self.fifo_fn)
+        in_fd = None
+        out_fd = None
+        deadline = time.time() + timeout
+        while out_fd is None and self.thread.is_alive() and time.time() < deadline:
+            try:
+                if in_fd is None:
+                    in_fd = os.open(fifo_in, os.O_RDONLY | os.O_NONBLOCK)
+                out_fd = os.open(fifo_out, os.O_WRONLY | os.O_NONBLOCK)
+            except OSError:
+                # ENOENT: the thread has not created the fifos yet, or has
+                # finished and removed them. ENXIO: it has not opened its
+                # reading end of fifo_out yet.
+                time.sleep(0.05)
+
+        if in_fd is not None:
+            os.close(in_fd)
+        if out_fd is not None:
+            os.close(out_fd)
+        return out_fd is not None
+
     def handle(self, harness):
         robot_test = getattr(harness, "is_robot_test", False) is True
 
@@ -1262,6 +1305,7 @@ class QEMUHandler(QEMUHandlerBase):
 
         failure_type = self.FailureType.NONE
         qemu_pid = None
+        never_started = False
 
         # As in BinaryHandler._handle: no terminal stdin for QEMU while the
         # --console-monitor UI owns the terminal.
@@ -1295,12 +1339,32 @@ class QEMUHandler(QEMUHandlerBase):
                         qemu_pid = int(pid_file.read())
                 logger.debug(f"No timeout, return code from QEMU ({qemu_pid}): {proc.returncode}")
                 self.returncode = proc.returncode
+                never_started = qemu_pid is None and proc.returncode != 0
+
+                # QEMU is gone, so the thread has at most buffered output
+                # left to read. If it is still around after that, it is
+                # blocked opening a fifo QEMU never connected to, which is
+                # what a run command that could not start QEMU leaves
+                # behind. Connect in QEMU's place so the thread finishes
+                # now instead of when the test timeout expires.
+                self.thread.join(self.EXIT_GRACE_PERIOD)
+                if self.thread.is_alive():
+                    logger.debug(
+                        f"QEMU exited with {proc.returncode} without connecting: "
+                        f"releasing the monitor thread"
+                    )
+                    self._release_thread()
             # Need to wait for harness to finish processing
             # output from QEMU. Otherwise it might miss some
             # messages.
             self.thread.join(max(thread_max_time - time.time(), 0))
             if self.thread.is_alive():
                 logger.debug("Timed out while monitoring QEMU output")
+            if never_started:
+                # QEMU never wrote its pid file, so the thread saw EOF on
+                # a pipe nothing ever wrote to. The exit code names the
+                # failure, not that EOF.
+                self.instance.reason = None
 
             if os.path.exists(self.pid_fn):
                 try:

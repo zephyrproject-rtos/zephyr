@@ -797,21 +797,26 @@ def test_projectbuilder_log_info(
 
 
 TESTDATA_5 = [
-    (True, False, False, "Valgrind error", 0, 0, 'build_dir/valgrind.log'),
-    (True, False, False, "Error", 0, 0, 'build_dir/build.log'),
-    (False, True, False, None, 1024, 0, 'build_dir/handler.log'),
-    (False, True, False, None, 0, 0, 'build_dir/build.log'),
-    (False, False, True, None, 0, 1024, 'build_dir/device.log'),
-    (False, False, True, None, 0, 0, 'build_dir/build.log'),
-    (False, False, False, None, 0, 0, 'build_dir/build.log'),
+    (True, False, False, "Valgrind error", 0, 0, 0, ['build_dir/valgrind.log']),
+    (True, False, False, "Error", 0, 0, 0, ['build_dir/build.log']),
+    (False, True, False, None, 1024, 0, 0, ['build_dir/handler.log']),
+    (False, True, False, None, 1024, 512, 0,
+     ['build_dir/handler.log', 'build_dir/handler_stderr.log']),
+    (False, True, False, None, 0, 512, 0, ['build_dir/handler_stderr.log']),
+    (False, True, False, None, 0, 0, 0, ['build_dir/build.log']),
+    (False, False, True, None, 0, 0, 1024, ['build_dir/device.log']),
+    (False, False, True, None, 0, 0, 0, ['build_dir/build.log']),
+    (False, False, False, None, 0, 0, 0, ['build_dir/build.log']),
 ]
 
 @pytest.mark.parametrize(
     'valgrind_log_exists, handler_log_exists, device_log_exists,' \
-    ' instance_reason, handler_log_getsize, device_log_getsize, expected_log',
+    ' instance_reason, handler_log_getsize, handler_stderr_log_getsize,' \
+    ' device_log_getsize, expected_logs',
     TESTDATA_5,
     ids=['valgrind log', 'valgrind log unused',
-         'handler log', 'handler log unused',
+         'handler log', 'handler log with stderr', 'stderr only',
+         'handler log unused',
          'device log', 'device log unused',
          'no logs']
 )
@@ -823,12 +828,15 @@ def test_projectbuilder_log_info_file(
     device_log_exists,
     instance_reason,
     handler_log_getsize,
+    handler_stderr_log_getsize,
     device_log_getsize,
-    expected_log
+    expected_logs
 ):
     def mock_exists(filename, *args, **kwargs):
         if filename == 'build_dir/handler.log':
             return handler_log_exists
+        if filename == 'build_dir/handler_stderr.log':
+            return handler_stderr_log_getsize > 0
         if filename == 'build_dir/valgrind.log':
             return valgrind_log_exists
         if filename == 'build_dir/device.log':
@@ -838,6 +846,8 @@ def test_projectbuilder_log_info_file(
     def mock_getsize(filename, *args, **kwargs):
         if filename == 'build_dir/handler.log':
             return handler_log_getsize
+        if filename == 'build_dir/handler_stderr.log':
+            return handler_stderr_log_getsize
         if filename == 'build_dir/device.log':
             return device_log_getsize
         return 0
@@ -856,7 +866,9 @@ def test_projectbuilder_log_info_file(
          mock.patch('twisterlib.runner.ProjectBuilder.log_info', log_info_mock):
         pb.log_info_file(None)
 
-    log_info_mock.assert_called_with(expected_log, mock.ANY)
+    assert log_info_mock.call_args_list == [
+        mock.call(expected_log, mock.ANY) for expected_log in expected_logs
+    ]
 
 
 TESTDATA_6 = [
@@ -2591,6 +2603,8 @@ def test_projectbuilder_run(
     instance_mock.platform.arch = platform_arch
     instance_mock.testsuite.harness = harness
     instance_mock.sidecar = None
+    # A reason left over from a loaded test plan or a previous iteration.
+    instance_mock.reason = 'stale'
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
@@ -2602,6 +2616,12 @@ def test_projectbuilder_run(
     with mock.patch('twisterlib.runner.HarnessImporter.get_harness',
                     mock_harness):
         pb.run()
+
+    if ready:
+        assert instance_mock.status == TwisterStatus.NONE
+        assert instance_mock.reason is None
+    else:
+        assert instance_mock.reason == 'stale'
 
     if expect_parse_generated:
         pb.parse_generated.assert_called_once()
