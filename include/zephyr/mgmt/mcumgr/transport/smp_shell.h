@@ -19,6 +19,7 @@
  * @{
  */
 
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
@@ -30,10 +31,16 @@ extern "C" {
 
 /** @brief Data used by SMP shell */
 struct smp_shell_data {
+	/** Network buffer pool for received frames */
 	struct net_buf_pool *buf_pool;
+	/** FIFO of frames ready to be processed */
 	struct k_fifo buf_ready;
+	/** Currectly active receive buffer */
 	struct net_buf *buf;
+	/** Which parts of the SMP over console frame have been detected */
 	atomic_t esc_state;
+	/** Receiving UART shell object */
+	const struct shell_uart_common *uart;
 };
 
 /**
