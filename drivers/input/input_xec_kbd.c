@@ -6,7 +6,6 @@
 
 #define DT_DRV_COMPAT microchip_xec_kbd
 
-#include <cmsis_core.h>
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/device.h>
@@ -90,7 +89,7 @@ static void xec_kbd_set_detect_mode(const struct device *dev, bool enabled)
 		sys_write32(MCHP_KSCAN_KSO_SEL_REG_MASK, base + XEC_KBD_KSI_STS_OFS);
 
 		soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
-		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+		k_irq_clear_pending(DT_INST_IRQN(0));
 		irq_enable(DT_INST_IRQN(0));
 	} else {
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE,
