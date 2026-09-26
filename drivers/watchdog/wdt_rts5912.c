@@ -225,7 +225,7 @@ static int wdt_rts5912_init(const struct device *dev)
 	wdt_reg->DIV = cfg->div;
 
 	wdt_reg->CTRL |= WDT_CTRL_CLRRSTFLAG;
-	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	k_irq_clear_pending(DT_INST_IRQN(0));
 
 	IRQ_CONNECT(DT_INST_IRQN(0), 0, wdt_rts5912_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
