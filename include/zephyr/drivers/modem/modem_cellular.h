@@ -200,7 +200,7 @@ struct modem_cellular_data {
 	/* Event dispatcher */
 	struct k_work event_dispatch_work;
 	struct k_msgq event_queue;
-	struct modem_cellular_event_pkg event_buf[8];
+	struct modem_cellular_event_pkg event_buf[CONFIG_MODEM_CELLULAR_EVENT_QUEUE_DEPTH];
 	const void *event_ptr;
 
 	struct k_mutex api_lock;
