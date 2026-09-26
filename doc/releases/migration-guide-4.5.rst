@@ -933,6 +933,74 @@ Flash
   of determining flash bank sizes using ``reg`` size cells. No changes need be made to the
   devicetree save for removing the aforementioned property. (:github:`114971`)
 
+* The :dtcompatible:`st,stm32-xspi-nor` driver selected by
+  :kconfig:option:`CONFIG_FLASH_STM32_XSPI` is deprecated on the STM32H5 series and scheduled for
+  removal in Zephyr 5.0. Migrate to :kconfig:option:`CONFIG_MSPI_STM32_XSPI` paired with
+  :kconfig:option:`CONFIG_FLASH_MSPI_NOR` by restructuring the devicetree as shown below:
+
+  .. tabs::
+
+    .. group-tab:: Before
+
+      .. code-block:: devicetree
+
+          &xspi1 {
+            status = "okay";
+
+            xspi-nor-flash@0 {
+              compatible = "st,stm32-xspi-nor";
+              reg = <0>;
+              size = <DT_SIZE_M(512)>;
+              ospi-max-frequency = <DT_FREQ_M(50)>;
+              spi-bus-width = <XSPI_OCTO_MODE>;
+              data-rate = <XSPI_DTR_TRANSFER>;
+              four-byte-opcodes;
+              status = "okay";
+            };
+          };
+
+    .. group-tab:: After
+
+      .. code-block:: devicetree
+
+          &xspi1 {
+            compatible = "st,stm32-xspi-controller";
+            op-mode = "MSPI_OP_MODE_CONTROLLER";
+            clock-frequency = <DT_FREQ_M(50)>;
+            status = "okay";
+
+            nor-flash-controller@0 {
+              compatible = "st,nor", "jedec,nor";
+              reg = <0>;
+              size = <DT_SIZE_M(512)>;
+              mspi-max-frequency = <DT_FREQ_M(50)>;
+              mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+              mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+              st,mem-type = "macronix";
+              read-command = <0xee11>;
+              write-command = <0x12ed>;
+              rx-dummy = <20>;
+              command-length = "INSTR_2_BYTE";
+              status = "okay";
+            };
+          };
+
+  In detail:
+
+  * Controller node: set ``compatible`` to :dtcompatible:`st,stm32-xspi-controller` and add
+    ``op-mode`` and ``clock-frequency``.
+  * Flash node: set ``compatible`` to :dtcompatible:`st,nor` (with ``"jedec,nor"`` as fallback).
+  * ``ospi-max-frequency`` is renamed to ``mspi-max-frequency``.
+  * ``spi-bus-width`` is renamed to ``mspi-io-mode`` and takes an ``MSPI_IO_MODE_*`` value.
+  * ``data-rate`` is renamed to ``mspi-data-rate`` and takes an ``MSPI_DATA_RATE_*`` value.
+  * ``st,mem-type`` is required.
+  * ``read-command``, ``write-command``, ``rx-dummy`` and ``command-length`` must be set, as the
+    new driver does not take them from SFDP.
+  * ``four-byte-opcodes`` has no equivalent: an octal ``mspi-io-mode`` implies 4-byte addressing.
+
+  See :zephyr_file:`boards/st/stm32h573i_dk/stm32h573i_dk-common.dtsi` for a complete example.
+  (:github:`119215`)
+
 Fuel Gauge
 ==========
 
