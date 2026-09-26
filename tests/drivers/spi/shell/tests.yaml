@@ -1,0 +1,20 @@
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  tags:
+    - drivers
+    - spi
+    - shell
+tests:
+  drivers.spi.shell:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+  drivers.spi.shell.no_driver:
+    # The emulated SPI controller node stays enabled while its driver is not
+    # built: the shell must still link and report the bus as not found.
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_EMUL=n
