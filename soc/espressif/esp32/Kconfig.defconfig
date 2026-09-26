@@ -12,6 +12,13 @@ config MAIN_STACK_SIZE
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x1c5f21b0"
 
+# XTENSA_ESP32_SYS_TIMER (drivers/timer/Kconfig.xtensa_esp32) replaces the
+# generic XTENSA_TIMER driver for this SoC series -- see that Kconfig's
+# help text for why (CCOUNT/CCOMPARE are genuine per-core registers here,
+# unlike Xtensa SoCs with a shared external timer).
+config XTENSA_TIMER
+	default n if XTENSA_ESP32_SYS_TIMER
+
 if SMP
 
 config SCHED_CPU_MASK

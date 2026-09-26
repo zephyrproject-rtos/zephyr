@@ -222,12 +222,25 @@ int esp_intr_reserve(int intno, int cpu)
 	return 0;
 }
 
-/* Returns true if handler for interrupt is not the default unhandled interrupt handler */
-static bool intr_has_handler(int intr, int cpu)
+/* Returns true if handler for interrupt is not the default unhandled interrupt handler.
+ *
+ * _sw_isr_table has no per-CPU dimension on Xtensa: the real dispatch code
+ * (xtensa_handle_irq_lvl(), arch/xtensa/core/vector_handlers.c) indexes it as
+ * _sw_isr_table[irq] (+32/+64/+96 for higher interrupt-register groups only,
+ * never multiplied by CPU count), and the actual handler installation
+ * (irq_connect_dynamic(), below) writes to that same plain index -- it's one
+ * shared table across both cores. Multiplying by CONFIG_MP_MAX_NUM_CPUS here
+ * checked unrelated slots for any intr > 0 whenever CONFIG_MP_MAX_NUM_CPUS > 1,
+ * and was wrong even in single-core (CONFIG_MP_MAX_NUM_CPUS == 1) builds
+ * physically executing on a non-zero core -- e.g. an AMP image running on
+ * APPCPU -- since esp_core_id()/esp_cpu_get_core_id() read the real hardware
+ * PRID register regardless of that build's own Kconfig.
+ */
+static bool intr_has_handler(int intr)
 {
 	bool r;
 
-	r = _sw_isr_table[intr * CONFIG_MP_MAX_NUM_CPUS + cpu].isr != z_irq_spurious;
+	r = _sw_isr_table[intr].isr != z_irq_spurious;
 
 	return r;
 }
@@ -304,7 +317,7 @@ static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, in
 			INTC_LOG("...Unusable: int is shared, we need non-shared.");
 			return false;
 		}
-	} else if (intr_has_handler(x, cpu)) {
+	} else if (intr_has_handler(x)) {
 		INTC_LOG("....Unusable: already allocated");
 		return false;
 	}
@@ -380,10 +393,10 @@ static int get_available_int(int flags, int cpu, int force, int source)
 		esp_cpu_intr_desc_t intr_desc;
 		esp_cpu_intr_get_desc(cpu, x, &intr_desc);
 
-		INTC_LOG("Int %d reserved %d level %d %s hasIsr %d",
-			 x, intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_RESVD, intr_desc.priority,
+		INTC_LOG("Int %d reserved %d level %d %s hasIsr %d", x,
+			 intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_RESVD, intr_desc.priority,
 			 intr_desc.type == ESP_CPU_INTR_TYPE_LEVEL ? "LEVEL" : "EDGE",
-			 intr_has_handler(x, cpu));
+			 intr_has_handler(x));
 
 		if (!is_vect_desc_usable(vd, flags, cpu, force)) {
 			continue;
