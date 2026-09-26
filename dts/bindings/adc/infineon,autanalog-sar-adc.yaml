@@ -152,6 +152,19 @@ properties:
 
       Only effective when lp-mode is also set.
 
+  sample-times:
+    type: array
+    description: |
+      Optional static assignment of the 4 shared hardware sample-time slots,
+      given as a list of ADC_ACQ_TIME() specifiers (at most 4 entries).  When
+      this property is present the driver runs in static sample-time mode: the
+      slots are seeded from this table and each sequencer entry selects a slot
+      via its sample-time-sel property.  Channel acquisition times must then
+      match one of these slots.  When the property is omitted (the default) the
+      driver runs in dynamic mode, allocating slots on demand from channel
+      acquisition times and deriving each sequencer entry's slot from the
+      channels it samples.
+
 child-binding:
   properties:
     mux-buf-bypass:
