@@ -85,6 +85,71 @@ board specific properties may be appropriate. See
 
 For applications, see :zephyr:code-sample:`blinky` for a devicetree-based alternative.
 
+Symbol declarations
+*******************
+
+Symbols should be declared in one place only, this declaration should have the type of the
+symbol. This does not mean that Kconfigs cannot be changed or adapted from elsewhere, just that
+the type specifier should be on the primary symbol only. For example:
+
+.. code-block:: kconfig
+
+   config MY_AWESOME_CONFIG
+   	bool "Example text for a feature"
+
+The features of this Kconfig can be changed elsewhere without re-declaring it by doing:
+
+.. code-block:: kconfig
+
+   config MY_AWESOME_CONFIG
+   	select MY_OTHER_CONFIG
+
+This avoids issues if the original Kconfig is renamed or removed, if it is wrongly declared
+multiple times then users will be wholly unaware that the Kconfig is no longer valid.
+
+Build system defined variables
+==============================
+
+The Zephyr build system generates some Kconfig values internally itself, as the section above
+described these Kconfig should never be re-declared in Kconfig files, it is fine to reference or
+extend them. The build system currently generates board Kconfigs and devicetree ``DT_HAS_*``
+Kconfigs, this may be extended in future releases of Zephyr.
+
+Symbol extensions
+=================
+
+Symbols can be extended, like shown above with declarations, elsewhere to add new options. An
+example of this would be a choice which specifies a single option out of many possible options like
+so:
+
+.. code-block:: kconfig
+
+   choice SECURITY_BACKEND
+   	prompt "Security backend"
+
+   config SECURITY_BACKEND_NONE
+   	bool "None"
+
+   config SECURITY_BACKEND_ONE
+   	bool "One type"
+
+   config SECURITY_BACKEND_TWO
+   	bool "Two type"
+
+   endchoice
+
+By giving the choice a name, it can be extended from elsewhere without re-declaring the prompt,
+like so:
+
+.. code-block:: kconfig
+
+   choice SECURITY_BACKEND
+
+   config SECURITY_BACKEND_EXTERNAL
+   	bool "External type"
+
+   endchoice
+
 ``select`` statements
 *********************
 
