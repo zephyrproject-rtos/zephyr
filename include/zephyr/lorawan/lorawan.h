@@ -295,6 +295,14 @@ void lorawan_register_link_check_ans_callback(lorawan_link_check_ans_cb_t cb);
 int lorawan_join(const struct lorawan_join_config *config);
 
 /**
+ * @brief Query the airtime of a join request
+ *
+ * @return Airtime of join request in milliseconds if successful, negative
+ *         errno code if failure
+ */
+int lorawan_join_airtime(void);
+
+/**
  * @brief Start the LoRaWAN stack
  *
  * This function need to be called before joining the network.

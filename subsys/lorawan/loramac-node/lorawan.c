@@ -12,7 +12,9 @@
 #include "lw_priv.h"
 
 #include <LoRaMac.h>
+#include <LoRaMacHeaderTypes.h>
 #include <Region.h>
+#include <radio.h>
 #include "../nvm/lorawan_nvm.h"
 
 #ifdef CONFIG_LORAWAN_REGION_AS923
@@ -534,6 +536,42 @@ out:
 
 	k_mutex_unlock(&lorawan_join_mutex);
 	return ret;
+}
+
+int lorawan_join_airtime(void)
+{
+	GetPhyParams_t phy_params = {0};
+	uint32_t bandwidth;
+	uint32_t phy_datarate;
+	int8_t join_datarate;
+	uint32_t airtime;
+
+	k_mutex_lock(&lorawan_join_mutex, K_FOREVER);
+
+	join_datarate = RegionAlternateDr(selected_region, default_datarate,
+					  ALTERNATE_DR);
+	(void)RegionAlternateDr(selected_region, default_datarate,
+				ALTERNATE_DR_RESTORE);
+
+	phy_params.Datarate = join_datarate;
+	phy_params.Attribute = PHY_SF_FROM_DR;
+	phy_datarate = RegionGetPhyParam(selected_region, &phy_params).Value;
+	phy_params.Attribute = PHY_BW_FROM_DR;
+	bandwidth = RegionGetPhyParam(selected_region, &phy_params).Value;
+
+	if (join_datarate == DR_7) {
+		airtime = Radio.TimeOnAir(MODEM_FSK, bandwidth,
+					  phy_datarate * 1000U, 0, 5, false,
+					  LORAMAC_JOIN_REQ_MSG_SIZE, true);
+	} else {
+		airtime = Radio.TimeOnAir(MODEM_LORA, bandwidth,
+					  phy_datarate, 1, 8, false,
+					  LORAMAC_JOIN_REQ_MSG_SIZE, true);
+	}
+
+	k_mutex_unlock(&lorawan_join_mutex);
+
+	return airtime;
 }
 
 int lorawan_set_class(enum lorawan_class dev_class)
