@@ -81,18 +81,18 @@ config HAPTICS_CS40L5X_DYNAMIC_F0
 
 config HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS
 	int "Active Timeout"
-	default 100
+	default 0
 	range 0 10000
 	help
-	  After the device has finished playing an effect, wait the
-	  specified amount of time (in ms) before entering the standby state.
+	  After the device has finished playing an effect, wait the specified amount
+	  of time in milliseconds before entering the standby state.
 
 config HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS
 	int "Standby Timeout"
 	default 100
 	range 0 10000
 	help
-	  When the device enters the standby state with hibernation enabled,
-	  wait the specified amount of time (in ms) before entering hibernation.
+	  When the device enters the standby state with hibernation enabled, wait the
+	  specified amount of time in milliseconds before entering hibernation.
 
 endif #HAPTICS_CS40L5X
