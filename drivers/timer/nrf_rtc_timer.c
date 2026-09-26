@@ -17,6 +17,8 @@
 #include <haly/nrfy_rtc.h>
 #include <zephyr/irq.h>
 
+#include "timer_core_convert.h"
+
 #define RTC_BIT_WIDTH 24
 
 #if (CONFIG_NRF_RTC_COUNTER_BIT_WIDTH < RTC_BIT_WIDTH)
@@ -51,8 +53,13 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
 #define COUNTER_HALF_SPAN (COUNTER_SPAN / 2U)
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((COUNTER_HALF_SPAN - CYC_PER_TICK) / CYC_PER_TICK)
-#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
+
+#if defined(TIMER_CORE_TICKS_TO_CYCLES)
+#define MIN_SCHED_CYCLES TIMER_CORE_TICKS_TO_CYCLES(1)
+#else
+#define MIN_SCHED_CYCLES timer_core_ticks_to_cycles(1)
+#endif
+#define MAX_CYCLES (COUNTER_HALF_SPAN - MIN_SCHED_CYCLES)
 
 #define OVERFLOW_RISK_RANGE_END (COUNTER_SPAN / 16)
 #define ANCHOR_RANGE_START (COUNTER_SPAN / 8)
