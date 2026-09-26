@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_MCP251XFD
-	bool "MCP25XXFD CAN Driver"
+	bool "MCP25XXFD CAN driver"
 	default y
 	depends on DT_HAS_MICROCHIP_MCP251XFD_ENABLED
 	select CRC

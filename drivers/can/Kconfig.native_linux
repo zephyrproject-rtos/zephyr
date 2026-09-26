@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_NATIVE_LINUX
-	bool "Native Linux SocketCAN Driver"
+	bool "Native Linux SocketCAN driver"
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_CAN_ENABLED
 	depends on ARCH_POSIX

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_XMC4XXX
-	bool "Infineon XMC4xxx CAN Driver"
+	bool "Infineon XMC4xxx CAN driver"
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_CAN_NODE_ENABLED
 	select PINCTRL

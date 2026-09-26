@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_RCAR
-	bool "Renesas R-Car CAN Driver"
+	bool "Renesas R-Car CAN driver"
 	default y
 	depends on DT_HAS_RENESAS_RCAR_CAN_ENABLED
 	select PINCTRL
@@ -21,7 +21,7 @@ config CAN_RCAR_MAX_FILTERS
 	  Must be at least the size of concurrent reads.
 
 config CAN_RCAR_RSCANFD
-	bool "Renesas R-Car RS-CANFD Driver"
+	bool "Renesas R-Car RS-CANFD driver"
 	default y
 	depends on DT_HAS_RENESAS_RCAR_RSCANFD_GLOBAL_ENABLED
 	select PINCTRL

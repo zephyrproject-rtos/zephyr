@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_TCAN4X5X
-	bool "TI TCAN4x5x"
+	bool "TI TCAN4x5x driver"
 	default y
 	depends on DT_HAS_TI_TCAN4X5X_ENABLED
 	select CAN_MCAN
