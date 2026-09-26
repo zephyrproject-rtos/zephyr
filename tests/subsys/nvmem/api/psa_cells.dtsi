@@ -1,0 +1,32 @@
+/**
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026, Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_consumer1: test-consumer1 {
+		compatible = "vnd,nvmem-consumer";
+		nvmem-cells = <&cell20>, <&cell30>, <&cell40>;
+		nvmem-cell-names = "cell20", "cell30", "cell40";
+	};
+};
+
+&test_nvmem0 {
+	nvmem-layout {
+		cell20: cell@20 {
+			reg = <0x20 0x10>;
+			#nvmem-cell-cells = <0>;
+		};
+
+		cell30: cell@30 {
+			reg = <0x30 0x10>;
+			#nvmem-cell-cells = <0>;
+		};
+
+		cell40: cell@40 {
+			reg = <0x40 0x10>;
+			#nvmem-cell-cells = <0>;
+		};
+	};
+};

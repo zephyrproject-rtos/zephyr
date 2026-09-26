@@ -858,6 +858,13 @@ New APIs and options
   * Add :c:func:`dns_resolve_is_active` to check whether a DNS resolving
     context is active without reading the context internals.
 
+* NVMEM
+
+  * Devices can now natively provide NVMEM cells by implementing the new NVMEM provider device
+    API class, see :c:struct:`nvmem_provider_driver_api`.
+  * NVMEM cells can now be backed by PSA Secure Storage entries, see
+    :kconfig:option:`CONFIG_NVMEM_PROVIDER_PSA_ITS` and :kconfig:option:`CONFIG_NVMEM_PROVIDER_PSA_PS`.
+
 * Power Management
 
   * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_GET`
