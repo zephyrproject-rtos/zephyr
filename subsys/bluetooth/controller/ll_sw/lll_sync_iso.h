@@ -25,7 +25,7 @@ struct lll_sync_iso_data_chan_interleaved {
 struct lll_sync_iso {
 	struct lll_hdr hdr;
 
-	uint8_t seed_access_addr[4];
+	uint8_t seed_access_addr[PDU_ACCESS_ADDR_SIZE];
 	uint8_t base_crc_init[2];
 
 	uint16_t iso_interval;
