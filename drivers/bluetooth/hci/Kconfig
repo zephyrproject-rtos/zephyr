@@ -19,6 +19,14 @@ config BT_H4
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
 
+config BT_H4_VND_OPEN
+	bool
+	depends on BT_H4
+	help
+	  Selected by an H:4 vendor extension that implements bt_h4_vnd_open(),
+	  which the H:4 driver calls while opening the transport so that the
+	  extension configures its controller over HCI with the lockstep helper.
+
 config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
 	select BT_UART
@@ -269,7 +277,7 @@ config BT_AIROC
 	default y
 	select GPIO                          if BT_H4
 	select UART_USE_RUNTIME_CONFIGURE    if BT_H4
-	select BT_HCI_SETUP
+	select BT_H4_VND_OPEN                if BT_H4
 	select BT_HCI_SET_PUBLIC_ADDR
 	select USE_INFINEON_ABSTRACTION_RTOS if BT_CYW208XX
 	select EVENTS                        if BT_CYW208XX
@@ -353,7 +361,7 @@ config BT_H4_NXP_CTLR
 	select GPIO
 	depends on BT_H4
 	select CRC
-	select BT_HCI_SETUP
+	select BT_H4_VND_OPEN
 	default y
 	depends on DT_HAS_NXP_BT_HCI_UART_ENABLED
 	help

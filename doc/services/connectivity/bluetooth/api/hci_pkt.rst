@@ -25,3 +25,5 @@ API Reference
 .. doxygengroup:: bt_hci_pkt
 
 .. doxygengroup:: bt_hci_lockstep
+
+.. doxygengroup:: bt_hci_h4
