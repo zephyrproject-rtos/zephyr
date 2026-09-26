@@ -140,6 +140,7 @@ static int mipi_dbi_stm32_fmc_write_display(const struct device *dev,
 			sys_write8(framebuf[i], config->data_addr);
 		}
 	} else {
+		/* 16-bit mode */
 		if ((desc->buf_size & 1U) != 0U) {
 			LOG_ERR("Buffer size %zu must be even in 16-bit mode", desc->buf_size);
 			return -EINVAL;
