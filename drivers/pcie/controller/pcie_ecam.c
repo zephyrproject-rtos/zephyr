@@ -378,6 +378,9 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 
 	for (i = 0; i < n_vector; i++) {
 		vectors[i].arch.irq = its_alloc_intid(cfg->msi_parent);
+		if (vectors[i].arch.irq == ITS_INTID_INVALID) {
+			break;
+		}
 		vectors[i].arch.address = its_get_msi_addr(cfg->msi_parent);
 		vectors[i].arch.eventid = i;
 		vectors[i].arch.priority = priority;
