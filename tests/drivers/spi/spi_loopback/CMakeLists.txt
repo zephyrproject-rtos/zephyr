@@ -7,3 +7,4 @@ project(spi_loopback)
 
 target_sources(app PRIVATE src/spi.c)
 target_sources_ifdef(CONFIG_SPI_RTIO app PRIVATE src/spi_rtio.c)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/spi)

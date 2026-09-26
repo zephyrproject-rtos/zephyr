@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_rtio_loopback);
 
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/drivers/spi.h>
+#include "spi_rtio.h"
 
 #define SPI_FAST_DEV	DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_fast)
 #define SPI_SLOW_DEV	DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_slow)
@@ -390,6 +391,76 @@ static int spi_rx_every_4(struct rtio_iodev *spi_iodev)
 	return 0;
 }
 
+/* Test asymmetric SPI transceive with NULL (discard) buffers under RTIO */
+static int spi_asymmetric_null_buffers(struct rtio_iodev *spi_iodev)
+{
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+	int ret;
+
+	LOG_INF("Start asymmetric null buffers test");
+
+	/* Test 1: Directly prepared SQE transaction with NULL RX buffer (discard read) */
+	sqe = rtio_sqe_acquire(&r);
+	rtio_sqe_prep_write(sqe, spi_iodev, RTIO_PRIO_NORM,
+			    buffer_tx, 4, NULL);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_sqe_acquire(&r);
+	rtio_sqe_prep_read_discard(sqe, spi_iodev, RTIO_PRIO_NORM,
+				   4, NULL);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_sqe_acquire(&r);
+	rtio_sqe_prep_read(sqe, spi_iodev, RTIO_PRIO_NORM,
+			   buffer_rx, 4, NULL);
+
+	(void)memset(buffer_rx, 0xaa, BUF_SIZE);
+
+	rtio_submit(&r, 1);
+	cqe = rtio_cqe_consume(&r);
+	ret = cqe->result;
+	rtio_cqe_release(&r, cqe);
+
+	if (ret) {
+		LOG_ERR("Direct SQE transceive with NULL RX failed: %d", ret);
+		zassert_false(ret, "Direct SQE transceive with NULL RX failed");
+		return -1;
+	}
+
+	/* Test 2: Subsystem spi_rtio_copy decomposition of asymmetric buffers with NULL */
+	struct spi_buf tx_buf_arr[] = {
+		{ .buf = buffer_tx, .len = 3 },
+	};
+	struct spi_buf rx_buf_arr[] = {
+		{ .buf = NULL, .len = 5 },
+		{ .buf = buffer_rx, .len = 4 },
+	};
+	struct spi_buf_set tx_set = { .buffers = tx_buf_arr, .count = ARRAY_SIZE(tx_buf_arr) };
+	struct spi_buf_set rx_set = { .buffers = rx_buf_arr, .count = ARRAY_SIZE(rx_buf_arr) };
+	struct rtio_sqe *last_sqe = NULL;
+
+	ret = spi_rtio_copy(&r, spi_iodev, &tx_set, &rx_set, false, &last_sqe);
+	zassert_true(ret > 0, "spi_rtio_copy failed with code %d", ret);
+
+	int count = ret;
+
+	rtio_submit(&r, count);
+	while (count > 0) {
+		cqe = rtio_cqe_consume(&r);
+		count--;
+		if (cqe->result < 0) {
+			LOG_ERR("spi_rtio_copy transceive failed: %d", cqe->result);
+			zassert_false(cqe->result, "spi_rtio_copy transceive failed");
+			rtio_cqe_release(&r, cqe);
+			return -1;
+		}
+		rtio_cqe_release(&r, cqe);
+	}
+
+	LOG_INF("Passed asymmetric null buffers test");
+	return 0;
+}
 
 ZTEST(spi_loopback_rtio, test_spi_loopback_rtio)
 {
@@ -405,7 +476,8 @@ ZTEST(spi_loopback_rtio, test_spi_loopback_rtio)
 	    spi_null_tx_buf(&spi_slow) ||
 	    spi_rx_half_start(&spi_slow) ||
 	    spi_rx_half_end(&spi_slow) ||
-	    spi_rx_every_4(&spi_slow)
+	    spi_rx_every_4(&spi_slow) ||
+	    spi_asymmetric_null_buffers(&spi_slow)
 	    ) {
 		goto end;
 	}
@@ -419,7 +491,8 @@ ZTEST(spi_loopback_rtio, test_spi_loopback_rtio)
 	    spi_null_tx_buf(&spi_fast) ||
 	    spi_rx_half_start(&spi_fast) ||
 	    spi_rx_half_end(&spi_fast) ||
-	    spi_rx_every_4(&spi_fast)
+	    spi_rx_every_4(&spi_fast) ||
+	    spi_asymmetric_null_buffers(&spi_fast)
 	    ) {
 		goto end;
 	}
