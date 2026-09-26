@@ -129,7 +129,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.serial = ['-c set _ZEPHYR_BOARD_SERIAL ' + serial] if serial else []
         self.image_type = image_type
         self.flash_address = flash_address
-        self.gdb_init = gdb_init
+        self.gdb_init = gdb_init or []
         self.load_arg = ['-ex', 'load'] if load else []
         self.target_handle = target_handle
         self.log_file = Path(log_file).as_posix() if log_file else None
@@ -144,7 +144,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
-                          dev_id=True, rtt=True, erase=True, skip_load=True, file=True)
+                          dev_id=True, rtt=True, erase=True, skip_load=True, file=True,
+                          gdb_init=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -217,8 +218,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--gdb-client-port', default=DEFAULT_OPENOCD_GDB_PORT,
                             help='''openocd gdb client port if multiple ports come
                             up, defaults to 3333''')
-        parser.add_argument('--gdb-init', action='append',
-                            help='if given, add GDB init commands')
         parser.add_argument('--no-halt', action='store_true',
                             help='if given, no halt issued in gdb server cmd')
         parser.add_argument('--no-init', action='store_true',
@@ -486,10 +485,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             for i in self.gdb_pre_debug:
                 gdb_cmd.append("-ex")
                 gdb_cmd.append(i)
-        if self.gdb_init is not None:
-            for i in self.gdb_init:
-                gdb_cmd.append("-ex")
-                gdb_cmd.append(i)
+        gdb_cmd.extend(self.gdb_ex_args(self.gdb_init))
         if command == 'rtt':
             rtt_address = self.get_rtt_address()
             if rtt_address is None:
