@@ -43,6 +43,7 @@ this will place data and bss inside SRAM2.
 
 import argparse
 import glob
+import json
 import os
 import re
 import sys
@@ -547,7 +548,6 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         allow_abbrev=False,
     )
-    parser.add_argument("-d", "--directory", required=True, help="obj file's directory")
     parser.add_argument(
         "-i",
         "--input_rel_dict",
@@ -562,6 +562,13 @@ def parse_args():
         "-c", "--output_code", required=False, help="Output relocation code header file"
     )
     parser.add_argument(
+        "-f",
+        "--compile-commands-file",
+        required=True,
+        help="CMake compile commands file (compile_commands.json) used to map "
+        "relocated source files to their compiled object files",
+    )
+    parser.add_argument(
         "-R",
         "--default_ram_region",
         default='SRAM',
@@ -571,22 +578,58 @@ def parse_args():
     args = parser.parse_args()
 
 
-def gen_all_obj_files(searchpath):
-    return list(Path(searchpath).rglob('*.o')) + list(Path(searchpath).rglob('*.obj'))
+def canonicalize(base, path):
+    # Normalize a possibly-relative path against its build directory and
+    # collapse dot directories ('..', '.') so that equivalent paths compare equal.
+    if not os.path.isabs(path):
+        path = os.path.join(base, path)
+    return os.path.normcase(str(Path(path).resolve()))
+
+
+def build_source_to_obj_map(compile_commands_file):
+    # Build a deterministic source-file -> object-file map from the CMake
+    # compilation database (compile_commands.json).
+    obj_pattern = re.compile(r'-o\s+(\S+)')
+    mapping = {}
+
+    with open(compile_commands_file) as file_desc:
+        commands = json.load(file_desc)
+
+    for entry in commands:
+        directory = entry.get('directory', '')
+        src = entry.get('file')
+
+        # "output" field is optional and may not exist for all CMake versions:
+        # Use it when available otherwise fallback to deduce the object file based
+        # the "-o <obj>" token of the recorded compile command.
+        obj = entry.get('output')
+        if not obj:
+            command = entry.get('command', '')
+            match = obj_pattern.search(command)
+            obj = match.group(1) if match else None
+
+        if not (src and obj):
+            continue
+
+        obj_abs = canonicalize(directory, obj)
+        # Make sure the object file exists
+        if os.path.exists(obj_abs):
+            mapping[canonicalize(directory, src)] = obj_abs
+
+    return mapping
 
 
 # return the absolute path for the object file.
-def get_obj_filename(all_obj_files, filename):
-    # get the object file name which is almost always pended with .obj
-    obj_filename = filename.split("/")[-1] + ".obj"
-
-    for obj_file in all_obj_files:
-        if obj_file.name == obj_filename and filename.split("/")[-2] in obj_file.parent.name:
-            return str(obj_file)
-
-    for obj_file in all_obj_files:
-        if obj_file.name == obj_filename and obj_file.parent.name == 'app.dir':
-            return str(obj_file)
+def get_obj_filename(src_to_obj, filename):
+    # Look up the object file deterministically using the source -> object map
+    # derived from the CMake compilation database.
+    # Returns None when the source is not present in the database (e.g. not compiled).
+    #
+    # Assume that the source path is always absolute. We therefore only need to collapse
+    # any dot directory ('..'/'.') components so equivalent paths (between object
+    # and source files) compare equal
+    resolved = os.path.normcase(str(Path(filename).resolve()))
+    return src_to_obj.get(resolved)
 
 
 # Extracts all possible components for the input string:
@@ -671,8 +714,10 @@ def main():
     global mpu_align
     mpu_align = {}
     parse_args()
-    searchpath = args.directory
-    all_obj_files = gen_all_obj_files(searchpath)
+    # Deterministic source -> object mapping from the CMake compilation
+    # database. This is the sole mechanism used to locate object files.
+    src_to_obj = build_source_to_obj_map(args.compile_commands_file)
+
     linker_file = args.output
     sram_data_linker_file = args.output_sram_data
     sram_bss_linker_file = args.output_sram_bss
@@ -689,7 +734,7 @@ def main():
         full_list_of_sections: dict[SectionKind, list[OutputSection]] = defaultdict(list)
 
         for filename, symbol_filter in files:
-            obj_filename = get_obj_filename(all_obj_files, filename)
+            obj_filename = get_obj_filename(src_to_obj, filename)
             # the obj file wasn't found. Probably not compiled.
             if not obj_filename:
                 continue
