@@ -68,11 +68,6 @@ config MODEM_CELLULAR_ON_DEMAND_CONNECT
 	  Selects MODEM_DEDICATED_WORKQUEUE, which the hang-up path requires (see
 	  modem_cellular.c for why).
 
-	  Only for modems whose vendor configuration provides no network chat
-	  script; enabling it for one that does makes the driver fail to
-	  initialize (-ENOTSUP), as such a modem dials on registration regardless
-	  of the PPP interface admin state.
-
 config MODEM_CELLULAR_INIT_PRIORITY
 	int "Cellular modem driver initialization priority"
 	default 91
@@ -105,6 +100,15 @@ config MODEM_CELLULAR_CHAT_BUFFER_SIZE
 config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES
 	int "The size of the buffers used for each user pipe in bytes."
 	default 128
+
+config MODEM_CELLULAR_EVENT_QUEUE_DEPTH
+	int "Events queued for the state machine"
+	range 1 255
+	default 8
+	help
+	  Events raised before the state machine runs, such as the registration
+	  URCs and script result one received chunk carries. A full queue drops
+	  the event and logs a warning.
 
 config MODEM_CELLULAR_SERIAL_NUMBER_MAX_SIZE
 	int "The maximum size of the modem serial number string (excluding NUL)"
