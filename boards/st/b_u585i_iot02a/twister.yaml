@@ -1,0 +1,49 @@
+identifier: b_u585i_iot02a
+name: ST B_U585I_IOT02A Discovery kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 768
+flash: 2048
+supported:
+  - adc
+  - arduino_i2c
+  - arduino_spi
+  - backup_sram
+  - counter
+  - crc
+  - dac
+  - dma
+  - hts221
+  - i2c
+  - memc
+  - nvs
+  - pwm
+  - rtc
+  - spi
+  - usb_device
+  - usbd
+  - watchdog
+  - mspi
+vendor: st
+variants:
+  b_u585i_iot02a/stm32u585xx:
+    twister: true
+    flash: 2048
+  b_u585i_iot02a/stm32u585xx/ext_flash_app:
+    sysbuild: true
+    flash: 32767 # size in kB of 1 app slot minus MCUboot header size (1KB)
+    testing:
+      ignore_tags:
+        - arch
+        - arm
+        - clib
+        - cpp
+        - kernel
+        - posix
+        - cmsis-dsp
+  b_u585i_iot02a/stm32u585xx/ns:
+    ram: 512
+    flash: 1024 # size in kB of 1 app slot minus MCUboot header size (1KB)
