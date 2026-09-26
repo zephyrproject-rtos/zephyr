@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <ti/j721e_main_r5f1_0.dtsi>
+#include "beaglebone_ai64_j721e_main_r5f1_0-pinctrl.dtsi"
 #include <freq.h>
 
 / {
@@ -16,6 +17,8 @@
 		zephyr,sram = &ddr1;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
 	};
 
 	cpus {
@@ -56,4 +59,11 @@
 	rpmsg0: rpmsg0 {
 		compatible = "rpmsg-uart";
 	};
+};
+
+&uart2 {
+	status = "okay";
+	pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
 };
