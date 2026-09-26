@@ -30,8 +30,7 @@ LOG_MODULE_REGISTER(st7586s, CONFIG_DISPLAY_LOG_LEVEL);
 #define ST7586S_PPB_MONO		3
 #define ST7586S_PPB_GRAY		2
 #define ST7586S_PPC			3
-#define ST7586S_PPA_MONO		(ST7586S_PPB_MONO * ST7586S_PPC)
-#define ST7586S_PPA_GRAY		(ST7586S_PPB_GRAY * ST7586S_PPC)
+#define ST7586S_FLIP_X_EN		0x48
 
 /* Commands */
 #define ST7586S_GRAYSCALE		0x38
@@ -65,6 +64,31 @@ LOG_MODULE_REGISTER(st7586s, CONFIG_DISPLAY_LOG_LEVEL);
 #define ST7586S_SET_COL_RANGE		0x2a
 #define ST7586S_START_WRITE		0x2c
 
+typedef int (*st7586s_convert)(const struct device *dev, const uint8_t *buf, int cur_offset,
+			       uint32_t pixel_count, bool arg);
+
+/* These cannot be pure enums due to the preprocessor evaluations */
+#define PIXMAP_NORMAL	0
+#define PIXMAP_2_1_1	1
+
+enum st7586s_pixel_mapping {
+	PIXMAP_NORMAL_e = PIXMAP_NORMAL,
+	PIXMAP_2_1_1_e = PIXMAP_2_1_1,
+	PIXMAP_MAX,
+};
+
+#define IS_PIXMAP_2_1_1(inst) \
+	+ IS_EQ(DT_INST_ENUM_IDX_OR(inst, pixel_mapping, PIXMAP_NORMAL), PIXMAP_2_1_1)
+
+#define IS_PIXMAP_NORMAL(inst) \
+	+ IS_EQ(DT_INST_ENUM_IDX_OR(inst, pixel_mapping, PIXMAP_NORMAL), PIXMAP_NORMAL)
+
+#define ANY_PIXMAP_NORMAL() \
+	0 DT_INST_FOREACH_STATUS_OKAY(IS_PIXMAP_NORMAL)
+
+#define ANY_PIXMAP_2_1_1() \
+	0 DT_INST_FOREACH_STATUS_OKAY(IS_PIXMAP_2_1_1)
+
 struct st7586s_config {
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
@@ -77,6 +101,7 @@ struct st7586s_config {
 	uint8_t flip_configuration;
 	uint8_t duty;
 	uint8_t framerate;
+	enum st7586s_pixel_mapping pixel_mapping;
 	bool inversion_on;
 	uint8_t *conversion_buf;
 	size_t conversion_buf_size;
@@ -125,9 +150,23 @@ static int st7586s_blanking_off(const struct device *dev)
 
 static int st7586s_set_window(const struct device *dev, int x, int y, int width, int height)
 {
+	const struct st7586s_config *config = dev->config;
 	int ret;
 	const uint8_t y_position[] = { 0, y, 0, y + height - 1 };
-	const uint8_t x_position[] = { 0, x / ST7586S_PPC, 0, ((x + width) / ST7586S_PPC) - 1 };
+	uint8_t x_position[4] = {0};
+
+#if ANY_PIXMAP_2_1_1()
+	if (config->pixel_mapping == PIXMAP_2_1_1) {
+		x_position[1] = (x * 3U) / (2U * ST7586S_PPC);
+		x_position[3] = (((x + width) * 3U) / (2U * ST7586S_PPC)) - 1U;
+	}
+#endif
+#if ANY_PIXMAP_NORMAL()
+	if (config->pixel_mapping == PIXMAP_NORMAL) {
+		x_position[1] = x / ST7586S_PPC;
+		x_position[3] = ((x + width) / ST7586S_PPC) - 1U;
+	}
+#endif
 
 	ret = st7586s_write_command(dev, ST7586S_SET_ROW_RANGE, y_position, 4);
 	if (ret < 0) {
@@ -142,9 +181,11 @@ static int st7586s_start_write(const struct device *dev)
 	return st7586s_write_command(dev, ST7586S_START_WRITE, NULL, 0);
 }
 
+#if ANY_PIXMAP_NORMAL()
+
 /* ST7586S Mono is htiled 3 bit 3 bit 2 bit for 3 pixels */
-static int st7586s_convert_mono(const struct device *dev, const uint8_t *buf, int cur_offset,
-				uint32_t pixel_count, bool mono01)
+static int st7586s_convert_mono_normal(const struct device *dev, const uint8_t *buf, int cur_offset,
+				       uint32_t pixel_count, bool mono01)
 {
 	const struct st7586s_config *config = dev->config;
 	int i = 0;
@@ -170,11 +211,13 @@ static int st7586s_convert_mono(const struct device *dev, const uint8_t *buf, in
 }
 
 /* Convert what the conversion buffer can hold to pixelx+1 (3:0) and pixelx (7:4) */
-static int st7586s_convert_l_8(const struct device *dev, const uint8_t *buf, int cur_offset,
-			       uint32_t pixel_count)
+static int st7586s_convert_l_8_normal(const struct device *dev, const uint8_t *buf, int cur_offset,
+				      uint32_t pixel_count, bool unused)
 {
 	const struct st7586s_config *config = dev->config;
 	int i = 0;
+
+	ARG_UNUSED(unused);
 
 	for (; i / ST7586S_PPB_GRAY < config->conversion_buf_size && pixel_count > cur_offset + i;
 	     i += ST7586S_PPB_GRAY) {
@@ -185,6 +228,111 @@ static int st7586s_convert_l_8(const struct device *dev, const uint8_t *buf, int
 	return i;
 }
 
+#endif
+
+#if ANY_PIXMAP_2_1_1()
+
+static int st7586s_convert_mono_2_1_1(const struct device *dev, const uint8_t *buf, int cur_offset,
+				      uint32_t pixel_count, bool mono01)
+{
+	const struct st7586s_config *config = dev->config;
+	int i = 0;
+	uint8_t byte;
+	size_t i_d, i_cb;
+	bool x_flipped = (config->flip_configuration & ST7586S_FLIP_X_EN) == 0;
+
+	for (; (i * 3U) / (2U * ST7586S_PPB_MONO) + 1 < config->conversion_buf_size
+	       && pixel_count > cur_offset + i;
+	     i += 4U) {
+		i_d = cur_offset + i;
+		i_cb = (i * 3U) / (2U * ST7586S_PPB_MONO);
+
+		/* The data is handled by 2 cells so the x order must be taken into account */
+		if (x_flipped) {
+			byte = get_mono_px(buf, i_d) << 7
+				| get_mono_px(buf, i_d) << 6
+				| get_mono_px(buf, i_d) << 5
+				| get_mono_px(buf, i_d + 1) << 4
+				| get_mono_px(buf, i_d + 1) << 3
+				| get_mono_px(buf, i_d + 1) << 2
+				| get_mono_px(buf, i_d + 2) << 1
+				| get_mono_px(buf, i_d + 2);
+
+			config->conversion_buf[i_cb] = mono01 ? byte : ~byte;
+
+			byte = get_mono_px(buf, i_d + 2) << 7
+				| get_mono_px(buf, i_d + 2) << 6
+				| get_mono_px(buf, i_d + 2) << 5
+				| get_mono_px(buf, i_d + 3) << 4
+				| get_mono_px(buf, i_d + 3) << 3
+				| get_mono_px(buf, i_d + 3) << 2
+				| get_mono_px(buf, i_d + 3) << 1
+				| get_mono_px(buf, i_d + 3);
+
+			config->conversion_buf[i_cb + 1] = mono01 ? byte : ~byte;
+		} else {
+			byte = get_mono_px(buf, i_d) << 7
+				| get_mono_px(buf, i_d) << 6
+				| get_mono_px(buf, i_d) << 5
+				| get_mono_px(buf, i_d) << 4
+				| get_mono_px(buf, i_d) << 3
+				| get_mono_px(buf, i_d) << 2
+				| get_mono_px(buf, i_d + 1) << 1
+				| get_mono_px(buf, i_d + 1);
+
+			config->conversion_buf[i_cb] = mono01 ? byte : ~byte;
+
+			byte = get_mono_px(buf, i_d + 1) << 7
+				| get_mono_px(buf, i_d + 1) << 6
+				| get_mono_px(buf, i_d + 1) << 5
+				| get_mono_px(buf, i_d + 2) << 4
+				| get_mono_px(buf, i_d + 2) << 3
+				| get_mono_px(buf, i_d + 2) << 2
+				| get_mono_px(buf, i_d + 3) << 1
+				| get_mono_px(buf, i_d + 3);
+
+			config->conversion_buf[i_cb + 1] = mono01 ? byte : ~byte;
+		}
+	}
+	return i;
+}
+
+static int st7586s_convert_l_8_2_1_1(const struct device *dev, const uint8_t *buf, int cur_offset,
+				     uint32_t pixel_count, bool unused)
+{
+	const struct st7586s_config *config = dev->config;
+	int i = 0;
+	size_t i_d, i_cb;
+	bool x_flipped = (config->flip_configuration & ST7586S_FLIP_X_EN) == 0;
+
+	ARG_UNUSED(unused);
+
+	for (; (i * 3U) / (2U * ST7586S_PPB_GRAY) + 2 < config->conversion_buf_size
+	       && pixel_count > cur_offset + i;
+	     i += 4U) {
+		i_d = cur_offset + i;
+		i_cb = (i * 3U) / (2U * ST7586S_PPB_GRAY);
+		if (x_flipped) {
+			config->conversion_buf[i_cb] = buf[i_d + 1] >> 4
+								| (buf[i_d] >> 4) << 4;
+			config->conversion_buf[i_cb + 1] = buf[i_d + 2] >> 4
+								| (buf[i_d + 2] >> 4) << 4;
+			config->conversion_buf[i_cb + 2] = buf[i_d + 3] >> 4
+								| (buf[i_d + 3] >> 4) << 4;
+		} else {
+			config->conversion_buf[i_cb] = buf[i_d] >> 4
+								| (buf[i_d] >> 4) << 4;
+			config->conversion_buf[i_cb + 1] = buf[i_d + 1] >> 4
+								| (buf[i_d + 1] >> 4) << 4;
+			config->conversion_buf[i_cb + 2] = buf[i_d + 3] >> 4
+								| (buf[i_d + 2] >> 4) << 4;
+		}
+	}
+	return i;
+}
+
+#endif
+
 static int st7586s_write(const struct device *dev, const uint16_t x, const uint16_t y,
 			 const struct display_buffer_descriptor *desc, const void *buf)
 {
@@ -193,6 +341,10 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 	struct st7586s_data *data = dev->data;
 	size_t expected_len;
 	struct display_buffer_descriptor mipi_desc;
+	st7586s_convert convert_func;
+	uint32_t div_buf_size;
+	uint32_t mul_buf_size = 1U;
+	uint16_t align_x = 0xffU;
 	int ret, i;
 	int total = 0;
 
@@ -204,16 +356,56 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 	if (data->current_pixel_format == PIXEL_FORMAT_MONO01
 	    || data->current_pixel_format == PIXEL_FORMAT_MONO10) {
 		expected_len = desc->height * desc->width / 8;
-		if ((x % ST7586S_PPC) != 0 || (desc->width % ST7586S_PPC) != 0) {
-			LOG_ERR("X and width must be aligned on %d boundary", ST7586S_PPC);
+
+#if ANY_PIXMAP_2_1_1()
+		if (config->pixel_mapping == PIXMAP_2_1_1) {
+			convert_func = st7586s_convert_mono_2_1_1;
+			/* Pixels are spread over 2 addresses */
+			align_x = 4U;
+			mul_buf_size = 3U;
+			div_buf_size = 2U * ST7586S_PPB_MONO;
+		}
+#endif
+#if ANY_PIXMAP_NORMAL()
+		if (config->pixel_mapping == PIXMAP_NORMAL) {
+			convert_func = st7586s_convert_mono_normal;
+			align_x = ST7586S_PPC;
+			div_buf_size = ST7586S_PPB_MONO;
+		}
+#endif
+
+		if ((x % align_x) != 0 || (desc->width % align_x) != 0) {
+			LOG_ERR("X and width must be aligned on %d boundary", align_x);
 			return -EINVAL;
 		}
+
 	} else if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
 		expected_len = desc->height * desc->width / ST7586S_PPB_GRAY;
-		if ((x % ST7586S_PPA_GRAY) != 0 || (desc->width % ST7586S_PPA_GRAY) != 0) {
-			LOG_ERR("X and width must be aligned on %d boundary", ST7586S_PPA_GRAY);
+
+#if ANY_PIXMAP_2_1_1()
+		if (config->pixel_mapping == PIXMAP_2_1_1) {
+			convert_func = st7586s_convert_l_8_2_1_1;
+			align_x = 4U;
+			mul_buf_size = 3U;
+			div_buf_size = 2U * ST7586S_PPB_GRAY;
+		}
+#endif
+#if ANY_PIXMAP_NORMAL()
+		if (config->pixel_mapping == PIXMAP_NORMAL) {
+			convert_func = st7586s_convert_l_8_normal;
+			/* Minimal alignment must both be a multiple of
+			 * pixels per bytes and pixels per addresses
+			 */
+			align_x = ST7586S_PPC * ST7586S_PPB_GRAY;
+			div_buf_size = ST7586S_PPB_GRAY;
+		}
+#endif
+
+		if ((x % align_x) != 0 || (desc->width % align_x) != 0) {
+			LOG_ERR("X and width must be aligned on %d boundary", align_x);
 			return -EINVAL;
 		}
+
 	} else {
 		return -EINVAL;
 	}
@@ -241,14 +433,9 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 	mipi_desc.pitch = desc->pitch;
 
 	while (pixel_count > total) {
-		if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
-			i = st7586s_convert_l_8(dev, buf, total, pixel_count);
-			mipi_desc.buf_size = i / ST7586S_PPB_GRAY;
-		} else {
-			i = st7586s_convert_mono(dev, buf, total, pixel_count,
-						 data->current_pixel_format == PIXEL_FORMAT_MONO01);
-			mipi_desc.buf_size = i / ST7586S_PPB_MONO;
-		}
+		i = convert_func(dev, buf, total, pixel_count,
+				 data->current_pixel_format == PIXEL_FORMAT_MONO01);
+		mipi_desc.buf_size =  (mul_buf_size * i) / div_buf_size;
 
 		mipi_desc.width = mipi_desc.buf_size / desc->height;
 		mipi_desc.height = mipi_desc.buf_size / desc->width;
@@ -521,6 +708,7 @@ static DEVICE_API(display, st7586s_driver_api) = {
 		.inversion_on = DT_PROP(node_id, inversion_on),                                    \
 		.start_line = DT_PROP(node_id, start_line),                                        \
 		.display_offset = DT_PROP(node_id, display_offset),                                \
+		.pixel_mapping = DT_ENUM_IDX(node_id, pixel_mapping),                              \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
 			node_id, ST7586S_WORD_SIZE(node_id) | SPI_OP_MODE_CONTROLLER, 0),          \
