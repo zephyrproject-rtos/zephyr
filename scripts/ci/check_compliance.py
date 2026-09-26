@@ -2965,6 +2965,257 @@ class DeviceAPICheck(ComplianceTest):
                         )
 
 
+class DevicetreeClassCheck(ComplianceTest):
+    """
+    Checks that device class names declared with the "class" binding key
+    match device API classes registered with DEVICE_API(), and that, once
+    any devicetree-based driver registering a class API belongs to the
+    class through its binding, every such driver does.
+    """
+
+    name = "DevicetreeClasses"
+    doc = zephyr_doc_detail_builder("/build/dts/bindings-syntax.html#class")
+
+    BINDINGS_DIR = "dts/bindings/"
+    SOURCE_DIRS = ("drivers/", "subsys/", "modules/")
+
+    DEVICE_API_RE = re.compile(r"\bDEVICE_API\((\w+),")
+    DT_DRV_COMPAT_RE = re.compile(r"^\s*#define\s+DT_DRV_COMPAT\s+(\w+)", re.M)
+    # Device definitions, including the subsystem wrappers around them
+    # (CAN_DEVICE_DT_INST_DEFINE, ...) but not the PM_ macros.
+    DEVICE_DEFINE_RE = re.compile(r"\b(?!PM_)[A-Z0-9_]*DEVICE_DT(?:_INST)?_DEFINE\(")
+    COMMENT_RE = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
+
+    @staticmethod
+    def to_ident(name):
+        return re.sub("[-,.@/+]", "_", name.lower())
+
+    @staticmethod
+    def read(fname):
+        with open(fname, encoding="utf-8", errors="replace") as f:
+            return f.read()
+
+    @classmethod
+    def device_apis(cls, section):
+        """
+        Returns the API argument of every device definition in a source
+        section, None for a definition whose arguments cannot be delimited.
+        """
+        apis = []
+        for match in cls.DEVICE_DEFINE_RE.finditer(section):
+            depth = 1
+            start = match.end()
+            api = None
+            for pos in range(start, len(section)):
+                char = section[pos]
+                if char == "(":
+                    depth += 1
+                elif char == ")":
+                    depth -= 1
+                elif char == "," and depth == 1:
+                    start = pos + 1
+                if depth == 0:
+                    api = section[start:pos].replace("\\", "").strip()
+                    while api.startswith("(") and api.endswith(")"):
+                        api = api[1:-1].strip()
+                    break
+            apis.append(api)
+        return apis
+
+    @classmethod
+    def driver_compats(cls, content):
+        """
+        Returns the DT_DRV_COMPAT values under which a source file defines
+        devices with a device API. A driver can switch DT_DRV_COMPAT to
+        define auxiliary devices (bus wrappers, shared resources) that pass
+        a NULL API; a section is left out when all of its device
+        definitions do.
+        """
+        content = cls.COMMENT_RE.sub("", content)
+        compats = []
+        defines = list(cls.DT_DRV_COMPAT_RE.finditer(content))
+        for i, define in enumerate(defines):
+            end = defines[i + 1].start() if i + 1 < len(defines) else len(content)
+            apis = cls.device_apis(content[define.end() : end])
+            if apis and all(api == "NULL" for api in apis):
+                continue
+            compats.append(define.group(1))
+        return compats
+
+    @classmethod
+    def scan_sources(cls, sources):
+        """
+        Returns the device API classes registered in the given (path,
+        content) sources and, per source registering any, the DT_DRV_COMPAT
+        values its class devices are defined under. The classes are those
+        of the whole file: a file registering different class APIs under
+        different compatibles is checked for all of them.
+        """
+        registered = set()
+        file2info = {}
+        for fname, content in sources:
+            classes = {c for c in cls.DEVICE_API_RE.findall(content) if not c.startswith("_")}
+            if classes:
+                registered |= classes
+                file2info[fname] = (classes, cls.driver_compats(content))
+        return registered, file2info
+
+    @classmethod
+    def scan_bindings(cls, yamls):
+        """
+        Returns the bindings loaded from the given files and the mapping
+        from each compatible to its include-merged device classes. The
+        classes of a child binding without a compatible count for the
+        compatible above it, since a driver can define its class devices
+        on the child nodes of the node it matches.
+        """
+        bindings = edtlib.bindings_from_paths(yamls, ignore_errors=True)
+        compat2classes = {}
+        for binding in bindings:
+            child = binding
+            ident = None
+            while child is not None:
+                if child.compatible:
+                    ident = cls.to_ident(child.compatible)
+                if ident is not None:
+                    compat2classes.setdefault(ident, set()).update(
+                        cls.to_ident(c) for c in child.classes
+                    )
+                child = child.child_binding
+        return bindings, compat2classes
+
+    @staticmethod
+    def enforced_classes(file2info, compat2classes):
+        """
+        Returns the classes whose rollout has started: a class is enforced
+        once one devicetree-based driver registering its API belongs to the
+        class through its binding. Being named in a binding is not enough,
+        since a class can be listed next to the class it extends before its
+        own rollout (I3C bindings list i2c).
+        """
+        enforced = set()
+        for classes, compats in file2info.values():
+            for compat in compats:
+                enforced |= classes & compat2classes.get(compat, set())
+        return enforced
+
+    def changed_files(self):
+        """
+        Returns the bindings and sources the commit range touches, mapped to
+        their git status, with renames shown as deletion and addition.
+        """
+        out = git(
+            "diff",
+            "--name-status",
+            "--no-renames",
+            COMMIT_RANGE,
+            "--",
+            self.BINDINGS_DIR,
+            *self.SOURCE_DIRS,
+        )
+        changes = {}
+        for line in out.splitlines():
+            status, rel = line.split("\t", 1)
+            if rel.startswith(self.BINDINGS_DIR) or rel.endswith(".c"):
+                changes[rel] = status
+        return changes
+
+    def base_tree(self, tmpdir, changes, sources, yamls):
+        """
+        Returns the sources and binding files of the base of the commit
+        range: files the range added are dropped, and files it changed or
+        deleted are read from the base, bindings as copies under tmpdir so
+        that edtlib can load them.
+        """
+        base = COMMIT_RANGE.split("..")[0]
+
+        def unchanged(fname):
+            return os.path.relpath(fname, GIT_TOP) not in changes
+
+        base_sources = [(f, self.read(f)) for f in sources if unchanged(f)]
+        base_yamls = [y for y in yamls if unchanged(y)]
+        for rel, status in sorted(changes.items()):
+            if status == "A":
+                continue
+            content = git("show", f"{base}:{rel}")
+            if rel.endswith(".yaml"):
+                path = os.path.join(tmpdir, rel)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                base_yamls.append(path)
+            elif rel.endswith(".c"):
+                base_sources.append((rel, content))
+        return base_sources, base_yamls
+
+    def run(self):
+        from glob import glob
+
+        changes = self.changed_files()
+        if not changes:
+            self.skip("no changes to bindings or driver sources were made")
+
+        yamls = glob(f"{os.fspath(GIT_TOP / self.BINDINGS_DIR)}/**/*.yaml", recursive=True)
+        sources = []
+        for source_dir in self.SOURCE_DIRS:
+            sources += glob(f"{os.fspath(GIT_TOP / source_dir)}/**/*.c", recursive=True)
+
+        registered, file2info = self.scan_sources((f, self.read(f)) for f in sources)
+        bindings, compat2classes = self.scan_bindings(yamls)
+
+        unknown = {}
+        for binding in bindings:
+            while binding is not None:
+                self.collect_unknown_classes(binding, registered, unknown)
+                binding = binding.child_binding
+
+        for cls, paths in sorted(unknown.items()):
+            paths = sorted(paths)
+            shown = ", ".join(paths[:3])
+            more = f" and {len(paths) - 3} more" if len(paths) > 3 else ""
+            self.fmtd_failure(
+                "error",
+                "DevicetreeClasses",
+                paths[0],
+                desc=f"unknown device class '{cls}': no DEVICE_API(...) "
+                f"registration exists in the tree. Declared or inherited "
+                f"by: {shown}{more}.",
+            )
+
+        # A class covered at the base of the commit range stays enforced,
+        # so that a change dropping the class from a base binding does not
+        # disable the check for the very class it breaks.
+        enforced = self.enforced_classes(file2info, compat2classes)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_sources, base_yamls = self.base_tree(tmpdir, changes, sources, yamls)
+            _, base_file2info = self.scan_sources(base_sources)
+            _, base_compat2classes = self.scan_bindings(base_yamls)
+            enforced |= self.enforced_classes(base_file2info, base_compat2classes)
+
+        for fname, (classes, compats) in file2info.items():
+            for compat in compats:
+                if compat not in compat2classes:
+                    continue
+                for cls in sorted((classes & enforced) - compat2classes[compat]):
+                    rel = os.path.relpath(fname, GIT_TOP)
+                    self.fmtd_failure(
+                        "error",
+                        "DevicetreeClasses",
+                        rel,
+                        desc=f"registers DEVICE_API({cls}, ...) for "
+                        f"compatible '{compat}', but no binding for it "
+                        f"declares 'class: {cls}'.",
+                    )
+
+    def collect_unknown_classes(self, binding, registered, unknown):
+        if not binding.path or "dts/bindings/test/" in binding.path:
+            return
+        for cls in binding.classes:
+            if self.to_ident(cls) not in registered:
+                rel = os.path.relpath(binding.path, GIT_TOP)
+                unknown.setdefault(cls, set()).add(rel)
+
+
 def init_logs(cli_arg):
     # Initializes logging
 
