@@ -1839,6 +1839,5 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 #endif /* CONFIG_BT_NXP_CTRL_WAKE_ON_BT */
 		fw_upload.is_setup_done = true;
 	}
-
 	return 0;
 }

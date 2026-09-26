@@ -170,11 +170,18 @@ struct bt_conn_sco {
 	/* Reference to the struct bt_sco_chan */
 	struct bt_sco_chan      *chan;
 
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	/** Queue from which conn will pull data */
+	struct k_fifo           tx_queue;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
+
 	uint16_t                pkt_type;
 	uint8_t                 dev_class[3];
 	uint8_t                 link_type;
 	/* Reference to BT_HCI_CODING_FORMAT_* */
 	uint8_t                 air_mode;
+	/* Transmission interval */
+	uint8_t                 interval;
 };
 
 struct bt_conn_iso {
@@ -652,3 +659,6 @@ void bt_conn_tx_processor(void);
  * - unref the conn when popping the conn from the slist
  */
 void bt_conn_data_ready(struct bt_conn *conn);
+
+/* CONN TX complete process */
+void bt_conn_tx_complete(struct bt_conn *conn, uint16_t count);
