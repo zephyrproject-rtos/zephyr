@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: sparkfun_redboard_artemis
+  full_name: RedBoard Artemis
+  vendor: sparkfun
+  socs:
+  - name: apollo3_blue
