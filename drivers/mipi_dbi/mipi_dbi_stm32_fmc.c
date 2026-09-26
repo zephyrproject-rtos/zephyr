@@ -223,7 +223,7 @@ static DEVICE_API(mipi_dbi, mipi_dbi_stm32_fmc_driver_api) = {
  * In 8-bit mode, FMC_A[x] outputs HADDR[x] (shift by 0).
  */
 #define MIPI_DBI_FMC_ADDR_SHIFT(n)                                                                 \
-	(DT_PROP_BY_IDX(DT_INST_PARENT(n), st_control, 2) == FMC_NORSRAM_MEM_BUS_WIDTH_16 ? 1 : 0)
+	((DT_PROP_BY_IDX(DT_INST_PARENT(n), st_control, 2) == FMC_NORSRAM_MEM_BUS_WIDTH_16) ? 1 : 0)
 
 #define MIPI_DBI_FMC_GET_DATA_ADDRESS(n)                                                           \
 	(MIPI_DBI_FMC_GET_ADDRESS(n) +                                                             \
