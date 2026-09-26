@@ -19,6 +19,10 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 
 #ifdef CONFIG_SPI_INFINEON_DMA
 #include <zephyr/drivers/dma.h>
@@ -74,7 +78,6 @@ struct ifx_cat1_spi_config {
 
 	uint32_t irq_num;
 	void (*irq_config_func)(const struct device *dev);
-	cy_stc_syspm_callback_params_t spi_deep_sleep_param;
 
 	uint8_t cs_oversample[32];
 	uint8_t cs_oversample_cnt;
@@ -99,7 +102,7 @@ struct ifx_cat1_spi_data {
 	struct spi_context ctx;
 	uint8_t dfs_value;
 	size_t chunk_len;
-
+	bool configured;
 #ifdef CONFIG_SPI_INFINEON_DMA
 	struct ifx_cat1_dma_stream dma_rx;
 	struct ifx_cat1_dma_stream dma_tx;
@@ -129,6 +132,7 @@ struct ifx_cat1_spi_data {
 	uint32_t tx_buffer_size;
 	ifx_cat1_event_callback_data_t callback_data;
 	cy_stc_syspm_callback_t spi_deep_sleep;
+	cy_stc_syspm_callback_params_t spi_deep_sleep_param;
 };
 
 cy_rslt_t ifx_cat1_spi_init_cfg(const struct device *dev, cy_stc_scb_spi_config_t *scb_spi_config);
@@ -271,6 +275,34 @@ static uint8_t get_dfs_value(struct spi_context *ctx)
 	}
 }
 
+/* Single exit for every terminating path, so the async PM refs cannot leak. */
+static void spi_finish(const struct device *dev, int status)
+{
+	struct ifx_cat1_spi_data *const data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+#ifdef CONFIG_SPI_ASYNC
+	/* complete() releases the context lock, so another transfer can own ctx and
+	 * flip this flag before we read it.
+	 */
+	const bool async = ctx->asynchronous;
+#endif /* CONFIG_SPI_ASYNC */
+
+#ifdef CONFIG_SPI_INFINEON_DMA
+	dma_stop(data->dma_tx.dev_dma, data->dma_tx.dma_channel);
+	dma_stop(data->dma_rx.dev_dma, data->dma_rx.dma_channel);
+#endif
+	spi_context_cs_control(ctx, false);
+	spi_context_complete(ctx, dev, status);
+
+#ifdef CONFIG_SPI_ASYNC
+	/* Async has no waiting thread; release the transfer-held PM refs here. */
+	if (async) {
+		pm_policy_device_power_lock_put(dev);
+		(void)pm_device_runtime_put_async(dev, K_NO_WAIT);
+	}
+#endif /* CONFIG_SPI_ASYNC */
+}
+
 static void transfer_chunk(const struct device *dev)
 {
 	struct ifx_cat1_spi_data *const data = dev->data;
@@ -371,12 +403,7 @@ static void transfer_chunk(const struct device *dev)
 #endif
 
 exit:
-#ifdef CONFIG_SPI_INFINEON_DMA
-	dma_stop(data->dma_tx.dev_dma, data->dma_tx.dma_channel);
-	dma_stop(data->dma_rx.dev_dma, data->dma_rx.dma_channel);
-#endif
-	spi_context_cs_control(ctx, false);
-	spi_context_complete(ctx, dev, ret);
+	spi_finish(dev, ret);
 }
 
 static void spi_interrupt_callback(void *arg, uint32_t event)
@@ -390,6 +417,8 @@ static void spi_interrupt_callback(void *arg, uint32_t event)
 
 		Cy_SCB_SPI_AbortTransfer(config->reg_addr, &(data->context));
 		data->pending = IFX_SPI_PENDING_NONE;
+		spi_finish(dev, -EIO);
+		return;
 	}
 
 	if (event & CY_SCB_SPI_TRANSFER_CMPLT_EVENT) {
@@ -417,6 +446,28 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 	} else {
 		LOG_ERR("Unknown\n");
 	}
+}
+
+/* Route the SCB DMA triggers; must be redone after power loss. */
+static void ifx_cat1_spi_dma_trigmux_connect(const struct device *dev)
+{
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+	struct ifx_cat1_spi_data *const data = dev->data;
+
+	if (data->dma_rx.dev_dma != NULL) {
+		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
+				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_rx.dma_channel,
+				   false, TRIGGER_TYPE_LEVEL);
+	}
+
+	if (data->dma_tx.dev_dma != NULL) {
+		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
+				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_tx.dma_channel,
+				   false, TRIGGER_TYPE_EDGE);
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
 }
 #endif
 
@@ -495,6 +546,18 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 
 	scb_spi_config.enableMsbFirst = (spi_cfg->operation & SPI_TRANSFER_LSB) ? false : true;
 
+#ifdef CONFIG_PM_DEVICE
+	/*
+	 * Enable peripheral-mode wake-from-DeepSleep when this instance is marked as
+	 * a wakeup source: the select/address match logic then runs off the external
+	 * clock, so an incoming transfer wakes the device instead of being lost.
+	 * Inert in controller mode.
+	 */
+	if (pm_device_wakeup_is_enabled(dev)) {
+		scb_spi_config.enableWakeFromSleep = true;
+	}
+#endif /* CONFIG_PM_DEVICE */
+
 	/* Force free resource */
 	if (config->reg_addr != NULL) {
 		spi_free(dev);
@@ -538,6 +601,8 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 	data->dma_tx.dma_cfg.dest_data_size = data->dfs_value;
 #endif
 
+	data->configured = true;
+
 	return 0;
 }
 
@@ -551,9 +616,18 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
+	/* Resume for the transfer; suspended again on put. */
+	result = pm_device_runtime_get(dev);
+	if (result < 0) {
+		LOG_ERR("Failed to resume SPI device (result: %d)", result);
+		spi_context_release(ctx, result);
+		return result;
+	}
+
 	result = spi_config(dev, spi_cfg);
 	if (result) {
 		LOG_ERR("Error in SPI Configuration (result: 0x%x)", result);
+		(void)pm_device_runtime_put(dev);
 		spi_context_release(ctx, result);
 		return result;
 	}
@@ -561,8 +635,17 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs_value);
 	spi_context_cs_control(ctx, true);
 
+	/* Block power-loss states for the duration of the transfer. */
+	pm_policy_device_power_lock_get(dev);
+
 	transfer_chunk(dev);
 	result = spi_context_wait_for_completion(&data->ctx);
+
+	/* Sync transfer is done here; async is released in the completion path. */
+	if (!asynchronous) {
+		pm_policy_device_power_lock_put(dev);
+		(void)pm_device_runtime_put(dev);
+	}
 
 	spi_context_release(ctx, result);
 
@@ -649,7 +732,10 @@ static int ifx_cat1_spi_deinit(const struct device *dev)
 		return -EBUSY;
 	}
 
-#ifdef CONFIG_PM
+	/* Undo init's pm_device_runtime_enable() so a later re-init starts clean. */
+	(void)pm_device_runtime_disable(dev);
+
+#if defined(CONFIG_PM) && !defined(CONFIG_PM_DEVICE)
 	Cy_SysPm_UnregisterCallback(&data->spi_deep_sleep);
 #endif
 	irq_disable(config->irq_num);
@@ -665,6 +751,7 @@ static int ifx_cat1_spi_deinit(const struct device *dev)
 	 */
 	Cy_SCB_SPI_DeInit(config->reg_addr);
 	data->ctx.config = NULL;
+	data->configured = false;
 
 	return 0;
 }
@@ -699,11 +786,6 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_rx.dma_cfg.user_data = (void *)dev;
 		data->dma_rx.dma_cfg.dma_callback = dma_callback;
 		data->dma_rx.dma_cfg.source_handshake = 0;
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
-				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_rx.dma_channel,
-				   false, TRIGGER_TYPE_LEVEL);
-#endif
 	}
 
 	if (data->dma_tx.dev_dma != NULL) {
@@ -717,12 +799,9 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_tx.dma_cfg.user_data = (void *)dev;
 		data->dma_tx.dma_cfg.dma_callback = dma_callback;
 		data->dma_tx.dma_cfg.source_handshake = 1;
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
-				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_tx.dma_channel,
-				   false, TRIGGER_TYPE_EDGE);
-#endif
 	}
+
+	ifx_cat1_spi_dma_trigmux_connect(dev);
 #endif
 
 	/* Configure dt provided device signals when available */
@@ -738,11 +817,117 @@ static int ifx_cat1_spi_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-#ifdef CONFIG_PM
+	data->spi_deep_sleep_param.context = &data->context;
+
+#if defined(CONFIG_PM) && !defined(CONFIG_PM_DEVICE)
+	/*
+	 * Without device PM there are no per-device suspend/resume actions, so the
+	 * vendor SysPm callback is what preserves the SCB across DeepSleep. With
+	 * device PM the same PDL routine is driven from ifx_cat1_spi_pm_action()
+	 * instead, keeping power management in one framework.
+	 */
 	Cy_SysPm_RegisterCallback(&data->spi_deep_sleep);
 #endif
+
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int ifx_cat1_spi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct ifx_cat1_spi_config *const config = dev->config;
+	struct ifx_cat1_spi_data *const data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* pm_device_runtime_enable() suspends at init, before the first
+		 * spi_config() has run Cy_SCB_SPI_Init() on the block.
+		 */
+		if (!data->configured) {
+			break;
+		}
+		/* Refuse mid-transfer; gating would corrupt the in-flight frame. The
+		 * bus-busy bit alone reads idle between FIFO-paced DMA bursts, so ask
+		 * the context too, and check the shifter has actually drained.
+		 */
+		if (ifx_cat1_spi_is_busy(dev) ||
+		    !Cy_SCB_SPI_IsTxComplete(config->reg_addr)) {
+			return -EBUSY;
+		}
+		if (pm_device_wakeup_is_enabled(dev)) {
+			/* Arms the SPI wakeup interrupt and gates the SCB clock. */
+			(void)Cy_SCB_SPI_DeepSleepCallback(&data->spi_deep_sleep_param,
+							   CY_SYSPM_BEFORE_TRANSITION);
+			break;
+		}
+		/* Clock gate the block; clock tree left untouched. */
+		Cy_SCB_SPI_Disable(config->reg_addr, NULL);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		if (!data->configured) {
+			break;
+		}
+		if (pm_device_wakeup_is_enabled(dev)) {
+			(void)Cy_SCB_SPI_DeepSleepCallback(&data->spi_deep_sleep_param,
+							   CY_SYSPM_AFTER_TRANSITION);
+			break;
+		}
+		/* Re-enable the block; configuration is retained. */
+		Cy_SCB_SPI_Enable(config->reg_addr);
+		break;
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	case PM_DEVICE_ACTION_TURN_ON: {
+		/* Power was lost: rebuild the SCB from scratch. */
+		cy_rslt_t result;
+		int ret;
+
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
+		if (result != CY_RSLT_SUCCESS) {
+			return -EIO;
+		}
+
+		ret = spi_context_cs_configure_all(&data->ctx);
+		if (ret < 0) {
+			return ret;
+		}
+
+		config->irq_config_func(dev);
+
+#if defined(CONFIG_SPI_INFINEON_DMA)
+		/* DMA trigger routing is lost with power; reconnect it. */
+		ifx_cat1_spi_dma_trigmux_connect(dev);
+#endif
+
+		/* Replay the cached config; NULL clear defeats the no-op short-circuit. */
+		if (data->ctx.config != NULL) {
+			const struct spi_config *spi_cfg = data->ctx.config;
+
+			data->ctx.config = NULL;
+			ret = spi_config(dev, spi_cfg);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+		break;
+	}
+#endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 #if defined(CONFIG_SPI_INFINEON_DMA)
 #define SPI_DMA_CHANNEL_INIT(index, dir, ch_dir, src_data_size, dst_data_size)                     \
@@ -862,7 +1047,6 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		.irq_config_func = ifx_cat1_spi_irq_config_func_##n,                               \
                                                                                                    \
 		.spi_handle_events_func = spi_handle_events_func_##n,                              \
-		.spi_deep_sleep_param = {(CySCB_Type *)DT_INST_REG_ADDR(n), NULL},                 \
 	};                                                                                         \
                                                                                                    \
 	static struct ifx_cat1_spi_data spi_cat1_data_##n = {                                      \
@@ -872,17 +1056,21 @@ static int ifx_cat1_spi_init(const struct device *dev)
 			SPI_DMA_CHANNEL(n, rx, PERIPHERAL_TO_MEMORY, 1, 1)                         \
 				SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)               \
 					SPI_PERI_CLOCK_INIT(n)                                     \
+						.spi_deep_sleep_param = {                          \
+			(CySCB_Type *)DT_INST_REG_ADDR(n), NULL},                                 \
 						.spi_deep_sleep = {                                \
 			&Cy_SCB_SPI_DeepSleepCallback, CY_SYSPM_DEEPSLEEP,                         \
 			CY_SYSPM_SKIP_BEFORE_TRANSITION,                                           \
-			&spi_cat1_config_##n.spi_deep_sleep_param, NULL, NULL, 1}};                \
+			&spi_cat1_data_##n.spi_deep_sleep_param, NULL, NULL, 1}};                  \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_cat1_spi_pm_action);                                       \
                                                                                                    \
 	SPI_DEVICE_DT_INST_DEINIT_DEFINE(n, &ifx_cat1_spi_init,                                    \
 					 COND_CODE_1(CONFIG_DEVICE_DEINIT_SUPPORT,                 \
 						     (&ifx_cat1_spi_deinit), (NULL)),              \
-					 NULL, &spi_cat1_data_##n, &spi_cat1_config_##n,           \
-					 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,          \
-					 &ifx_cat1_spi_api);
+					 PM_DEVICE_DT_INST_GET(n), &spi_cat1_data_##n,             \
+					 &spi_cat1_config_##n, POST_KERNEL,                        \
+					 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_cat1_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_CAT1_SPI_INIT)
 
@@ -1073,6 +1261,9 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		CY_UNUSED_PARAMETER(last_ovrsmpl_val);
 	}
 
+	/* Disable, set, then re-enable so the new rate takes effect immediately. */
+	(void)ifx_cat1_utils_peri_pclk_disable_divider(config->clk_dst, &(data->clock));
+
 	if ((data->clock.block & 0x02) == 0) {
 		result = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &(data->clock),
 							      last_dvdr_val - 1);
@@ -1080,6 +1271,8 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		result = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &(data->clock),
 								   last_dvdr_val - 1, 0);
 	}
+
+	(void)ifx_cat1_utils_peri_pclk_enable_divider(config->clk_dst, &(data->clock));
 
 	return result;
 }
@@ -1176,10 +1369,12 @@ cy_rslt_t ifx_cat1_spi_init_cfg(const struct device *dev, cy_stc_scb_spi_config_
 void spi_free(const struct device *dev)
 {
 	const struct ifx_cat1_spi_config *const config = dev->config;
+	struct ifx_cat1_spi_data *const data = dev->data;
 
 	Cy_SCB_SPI_Disable(config->reg_addr, NULL);
 	Cy_SCB_SPI_DeInit(config->reg_addr);
 	irq_disable(config->irq_num);
+	data->configured = false;
 }
 
 static void spi_irq_handler(const struct device *dev)
