@@ -313,6 +313,7 @@ hazard3	Hazard3 by Luke Wren
 heimann	Heimann Sensor GmbH
 heltec	Chengdu Heltec Automation Technology Co., Ltd.
 hideep	HiDeep Inc.
+hilink	Shenzhen Hi-Link Electronic Co., Ltd.
 himax	Himax Technologies, Inc.
 hirschmann	Hirschmann Automation and Control GmbH
 hisilicon	Hisilicon Limited.
