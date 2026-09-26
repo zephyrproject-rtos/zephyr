@@ -53,6 +53,12 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 	return 0;
 }
 
+int lorawan_join_airtime(void)
+{
+	/* No physical transmission, so no backoff required */
+	return 0;
+}
+
 int lorawan_set_class(enum lorawan_class dev_class)
 {
 	switch (dev_class) {
