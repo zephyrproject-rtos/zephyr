@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ZFENCE
+	bool "Zfence"
+	select EVENTS
+	help
+	  Enable the Zfence synchronization primitive.
+
+if ZFENCE
+
+config ZFENCE_PER_FENCE_WAIT_CTX
+	bool "Per-fence synchronous wait context pool"
+	help
+	  When enabled, each fence instance maintains its own pool of wait
+	  contexts instead of drawing from a single global pool.  This
+	  removes the system-wide limit of ZFENCE_MAX_SYNC_WAITERS concurrent
+	  wait contexts.  When the wait context is not pre-bound to a fence
+	  via zfence_wait_ctx_init(), a wait context initialization equivalent
+	  is performed on every zfence_wait() call instead of once per context
+	  across the system.
+
+endif # ZFENCE

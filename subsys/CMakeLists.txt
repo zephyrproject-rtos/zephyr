@@ -65,4 +65,5 @@ add_subdirectory_ifdef(CONFIG_TASK_WDT task_wdt)
 add_subdirectory_ifdef(CONFIG_TIMING_FUNCTIONS timing)
 add_subdirectory_ifdef(CONFIG_VIDEO video)
 add_subdirectory_ifdef(CONFIG_ZBUS zbus)
+add_subdirectory_ifdef(CONFIG_ZFENCE zfence)
 # zephyr-keep-sorted-stop

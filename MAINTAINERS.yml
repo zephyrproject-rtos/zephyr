@@ -7905,6 +7905,22 @@ Xtensa arch:
     - arch
     - kernel
 
+Zfence:
+  status: maintained
+  maintainers:
+    - grace-an
+  files:
+    - include/zephyr/zfence/
+    - subsys/zfence/
+    - tests/subsys/zfence/
+    - doc/services/zfence/
+  labels:
+    - "area: Zfence"
+  tests:
+    - zfence.unit
+    - zfence.unit.per_fence
+    - zfence.unit.64bit
+
 hawkBit:
   status: maintained
   maintainers:
