@@ -15,7 +15,6 @@
 #include <ksched.h>
 #include <scheduler.h>
 #include <wait_q.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
@@ -33,6 +32,7 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 	stack->next = buffer;
 	stack->base = buffer;
 	stack->top = stack->base + num_entries;
+	stack->flags = 0;
 
 	SYS_PORT_TRACING_OBJ_INIT(k_stack, stack);
 	k_object_init(stack);
@@ -91,12 +91,12 @@ int z_stack_cleanup(struct k_stack *stack, __maybe_unused bool locked)
 	int ret = 0;
 	k_spinlock_key_t key = k_spin_lock(&stack->lock);
 
-	CHECKIF(locked && (z_waitq_head_locked(&stack->wait_q) != NULL)) {
+	if (locked && (z_waitq_head_locked(&stack->wait_q) != NULL)) {
 		ret = -EAGAIN;
 		goto out;
 	}
 
-	CHECKIF(!locked && (z_waitq_head(&stack->wait_q) != NULL)) {
+	if (!locked && (z_waitq_head(&stack->wait_q) != NULL)) {
 		ret = -EAGAIN;
 		goto out;
 	}
@@ -126,7 +126,7 @@ int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, push, stack);
 
-	CHECKIF(stack->next == stack->top) {
+	if (stack->next == stack->top) {
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -190,10 +190,10 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_stack, pop, stack, timeout);
 
 	result = z_pend_curr(&stack->lock, key, &stack->wait_q, timeout);
-	if (result == -EAGAIN) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, -EAGAIN);
+	if (result != 0) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, result);
 
-		return -EAGAIN;
+		return result;
 	}
 
 	*data = (stack_data_t)_current->base.swap_data;

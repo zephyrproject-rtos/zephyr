@@ -89,6 +89,31 @@ ZTEST(stack_fail, test_stack_push_full)
 	zassert_true(k_stack_push(&stack, data_tmp) == -ENOMEM, "push data successful");
 }
 
+/**
+ * @brief k_stack_init() must drop a leftover ALLOC flag
+ *
+ * @details k_stack_alloc_init() sets K_STACK_FLAG_ALLOC. Re-initializing
+ * over a caller buffer without cleanup() first must clear that flag,
+ * otherwise cleanup() would k_free() the static buffer.
+ *
+ * @see k_stack_alloc_init(), k_stack_init(), k_stack_cleanup()
+ */
+ZTEST(stack_fail, test_stack_init_clears_alloc)
+{
+	stack_data_t static_buf[STACK_LEN];
+	stack_data_t *allocated;
+
+	zassert_ok(k_stack_alloc_init(&stack, STACK_LEN));
+	allocated = stack.base;
+	zassert_not_null(allocated);
+
+	k_stack_init(&stack, static_buf, STACK_LEN);
+	zassert_equal(stack.flags & K_STACK_FLAG_ALLOC, 0);
+	zassert_ok(k_stack_cleanup(&stack));
+
+	k_free(allocated);
+}
+
 #ifdef CONFIG_USERSPACE
 /**
  * @brief Verifies stack pop from a user thread
