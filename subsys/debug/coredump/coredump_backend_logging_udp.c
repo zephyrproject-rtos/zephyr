@@ -260,6 +260,19 @@ static void coredump_udp_backend_start(void)
 	stream_offset = 0U;
 	udp_sock = -1;
 
+	/*
+	 * This backend drives the network stack (sockets, busy-wait TX), which is
+	 * only safe from thread context. ARCH_FATAL_ERROR_HAS_THREAD_CONTEXT gates
+	 * out cores whose fatal path never runs in thread context, but even on
+	 * those that do, a fault can still be taken from an ISR - networking is
+	 * unusable there, so bail out and report the error rather than hang.
+	 */
+	if (k_is_in_isr()) {
+		error = -EWOULDBLOCK;
+		LOG_ERR("coredump UDP: fault taken in ISR context, skipping UDP dump");
+		return;
+	}
+
 	while (LOG_PROCESS()) {
 		;
 	}

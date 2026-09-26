@@ -973,6 +973,22 @@ config ARCH_SUPPORTS_COREDUMP
 config ARCH_SUPPORTS_COREDUMP_THREADS
 	bool
 
+config ARCH_FATAL_ERROR_HAS_THREAD_CONTEXT
+	bool
+	help
+	  Selected by architectures whose fatal/exception path executes in a
+	  normal thread context: faults are taken on the faulting thread's
+	  stack and thread-level primitives remain usable (IRQs can be
+	  unmasked and work such as driving the network stack can make
+	  progress). Cores that take faults into a dedicated handler/exception
+	  context where scheduling and networking primitives (e.g. semaphores)
+	  are unusable - such as Cortex-M - must not select this.
+
+	  Subsystems that need to run schedulable work from the fatal path can
+	  depend on this symbol. Note that even when it is set a fault can
+	  still be taken from an ISR, so such code must additionally bail out
+	  at runtime when k_is_in_isr() is true.
+
 config ARCH_SUPPORTS_COREDUMP_SMP_FREEZE
 	bool
 	help
