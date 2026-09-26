@@ -4,7 +4,7 @@ tests:
   sample.usb.bluetooth.hci_usb.legacy:
     depends_on:
       - usb_device
-      - ble
+      - bluetooth
     build_only: true
     tags:
       - usb
