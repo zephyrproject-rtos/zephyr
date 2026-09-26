@@ -15,8 +15,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/posix/pthread.h>
-#include <zephyr/posix/unistd.h>
+#include <pthread.h>
+#include <unistd.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
@@ -357,7 +357,7 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 		return EINVAL;
 	}
 
-	if (attr->stack != NULL) {
+	if (attr->stack != NULL && attr->stack != stackaddr) {
 		ret = k_thread_stack_free(attr->stack);
 		if (ret == 0) {
 			LOG_DBG("Freed attr %p thread stack %zu@%p", _attr,
@@ -506,17 +506,18 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 FUNC_NORETURN
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
-	int err;
-	int barrier;
 	void *(*fun_ptr)(void *arg) = arg2;
 	struct posix_thread *t = CONTAINER_OF(k_current_get(), struct posix_thread, thread);
 
-	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
-		/* cross the barrier so that pthread_create() can continue */
-		barrier = POINTER_TO_UINT(arg3);
-		err = pthread_barrier_wait(&barrier);
-		__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
-	}
+#if defined(CONFIG_PTHREAD_CREATE_BARRIER)
+	int err;
+	pthread_barrier_t barrier;
+
+	/* cross the barrier so that pthread_create() can continue */
+	barrier = POINTER_TO_UINT(arg3);
+	err = pthread_barrier_wait(&barrier);
+	__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
+#endif
 
 	posix_thread_finalize(t, fun_ptr(arg1));
 
@@ -576,7 +577,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		   void *arg)
 {
 	int err;
-	pthread_barrier_t barrier;
+	void *barrier_ptr = NULL;
 	struct posix_thread *t = NULL;
 
 	if (!(_attr == NULL || __attr_is_runnable((struct posix_thread_attr *)_attr))) {
@@ -598,7 +599,13 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		}
 	}
 
-	if (t != NULL && IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
+#if defined(CONFIG_PTHREAD_CREATE_BARRIER)
+	pthread_barrier_t barrier;
+
+	if (t != NULL) {
+		/* use a barrier to ensure that the new thread has started
+		 * before pthread_create() returns
+		 */
 		err = pthread_barrier_init(&barrier, NULL, 2);
 		if (err != 0) {
 			/* cannot allocate barrier. move thread back to ready_q */
@@ -607,8 +614,11 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 				posix_thread_q_set(t, POSIX_THREAD_READY_Q);
 			}
 			t = NULL;
+		} else {
+			barrier_ptr = UINT_TO_POINTER(barrier);
 		}
 	}
+#endif
 
 	if (t == NULL) {
 		/* no threads are ready */
@@ -648,17 +658,16 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	/* spawn the thread */
 	k_thread_create(
 		&t->thread, t->attr.stack, __get_attr_stacksize(&t->attr) + t->attr.guardsize,
-		zephyr_thread_wrapper, (void *)arg, threadroutine,
-		IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER) ? UINT_TO_POINTER(barrier) : NULL,
+		zephyr_thread_wrapper, (void *)arg, threadroutine, barrier_ptr,
 		posix_to_zephyr_priority(t->attr.priority, t->attr.schedpolicy), 0, K_NO_WAIT);
 
-	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
-		/* wait for the spawned thread to cross our barrier */
-		err = pthread_barrier_wait(&barrier);
-		__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
-		err = pthread_barrier_destroy(&barrier);
-		__ASSERT_NO_MSG(err == 0);
-	}
+#if defined(CONFIG_PTHREAD_CREATE_BARRIER)
+	/* wait for the spawned thread to cross our barrier */
+	err = pthread_barrier_wait(&barrier);
+	__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
+	err = pthread_barrier_destroy(&barrier);
+	__ASSERT_NO_MSG(err == 0);
+#endif
 
 	/* finally provide the initialized thread to the caller */
 	*th = mark_pthread_obj_initialized(posix_thread_to_offset(t));
@@ -931,10 +940,20 @@ int pthread_attr_init(pthread_attr_t *_attr)
 
 	BUILD_ASSERT(DYNAMIC_STACK_SIZE <= PTHREAD_STACK_MAX);
 
-	*attr = (struct posix_thread_attr){0};
-	attr->guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT;
-	attr->contentionscope = PTHREAD_SCOPE_SYSTEM;
-	attr->inheritsched = PTHREAD_INHERIT_SCHED;
+	*attr = (struct posix_thread_attr){
+		.guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT,
+		.contentionscope = PTHREAD_SCOPE_SYSTEM,
+		.inheritsched = PTHREAD_INHERIT_SCHED,
+		.detachstate = PTHREAD_CREATE_JOINABLE,
+		.cancelstate = PTHREAD_CANCEL_ENABLE,
+		.canceltype = PTHREAD_CANCEL_DEFERRED,
+		.priority = DEFAULT_PTHREAD_PRIORITY,
+		.schedpolicy = DEFAULT_PTHREAD_POLICY,
+		.stack = NULL,
+		.stacksize = 0,
+		.initialized = false,
+		.caller_destroys = true,
+	};
 
 	if (DYNAMIC_STACK_SIZE > 0) {
 		attr->stack = k_thread_stack_alloc(DYNAMIC_STACK_SIZE + attr->guardsize,

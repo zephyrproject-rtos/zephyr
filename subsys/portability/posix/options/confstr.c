@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/unistd.h>
+#include <errno.h>
+
+#include <unistd.h>
+
+#ifndef _CS_V6_ENV
+#define _CS_V6_ENV 20
+#endif
 
 size_t confstr(int name, char *buf, size_t len)
 {

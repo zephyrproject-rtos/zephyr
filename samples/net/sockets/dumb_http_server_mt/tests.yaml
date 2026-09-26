@@ -13,4 +13,4 @@ common:
 tests:
   sample.net.sockets.dumb_http_server_mt:
     extra_configs:
-      - CONFIG_POSIX_API=y
+      - CONFIG_POSIX_AEP_CHOICE_PSE53=y

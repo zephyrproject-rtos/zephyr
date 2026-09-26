@@ -8,7 +8,6 @@
 
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/kernel.h>
-#include <zephyr/posix/unistd.h>
 
 int getentropy(void *buffer, size_t length)
 {

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config POSIX_API
-	bool "POSIX APIs"
+	bool "POSIX APIs [DEPRECATED]"
 	select POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS # clock_gettime(), pthread_create(), sem_get(), etc
 	select POSIX_AEP_REALTIME_MINIMAL # CLOCK_MONOTONIC, pthread_attr_setstack(), etc
@@ -12,11 +12,12 @@ config POSIX_API
 	imply POSIX_FD_MGMT # open(), close(), read(), write()
 	imply POSIX_MULTI_PROCESS # sleep(), getpid(), etc
 	imply XSI_SINGLE_PROCESS # gettimeofday()
+	select DEPRECATED
 	help
-	  This option enables the required POSIX System Interfaces (base definitions), all of PSE51,
-	  and some features found in PSE52.
-
-	  Note: in the future, this option may be deprecated in favour of subprofiling options.
+	  This option is deprecated. Applications should select CONFIG_POSIX_AEP_CHOICE_BASE,
+	  CONFIG_POSIX_AEP_CHOICE_PSE51, CONFIG_POSIX_AEP_CHOICE_PSE52, or
+	  CONFIG_POSIX_AEP_CHOICE_PSE53. Libraries should depend on
+	  CONFIG_POSIX_SYSTEM_INTERFACES and other POSIX Option Groups.
 
 choice POSIX_AEP_CHOICE
 	prompt "POSIX Subprofile"
@@ -109,6 +110,23 @@ config POSIX_AEP_CHOICE_PSE53
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
+config POSIX_AEP_CHOICE_NETAPP
+	bool "Network Appliance Profile"
+	select POSIX_SYSTEM_INTERFACES
+	select POSIX_BASE_DEFINITIONS
+	select POSIX_AEP_REALTIME_MINIMAL
+	select POSIX_AEP_REALTIME_CONTROLLER
+	select POSIX_NETWORKING if NETWORKING
+	select POSIX_RAW_SOCKETS if NETWORKING
+	select POSIX_CPUTIME
+	select POSIX_PRIORITY_SCHEDULING
+	help
+	  This profile is custom to Zephyr and does not correspond to a standard POSIX subprofile.
+	  It includes all features of PSE52 as well as the networking interfaces of PSE53, but not
+	  its multi-process, pipe, spawn or sporadic server interfaces. It is intended for
+	  networked applications that do not need process management. The networking interfaces
+	  are only enabled when CONFIG_NETWORKING is enabled.
+
 # TODO: PSE54: Multi-purpose Realtime System Profile
 
 endchoice # POSIX_AEP_CHOICE
@@ -144,6 +162,7 @@ config POSIX_AEP_REALTIME_MINIMAL
 	select POSIX_DEVICE_IO
 	select POSIX_SIGNALS
 	select POSIX_SINGLE_PROCESS
+	select XSI
 	select XSI_THREADS_EXT
 	# Options
 	select POSIX_FSYNC
@@ -204,4 +223,4 @@ config POSIX_AEP_REALTIME_DEDICATED
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
-endif # POSIX_SYSTEM_INTERFACE
+endif # POSIX_SYSTEM_INTERFACES

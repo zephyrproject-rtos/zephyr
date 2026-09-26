@@ -6,30 +6,16 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <errno.h>
-#include <stdlib.h>
-
-#if !defined(__ZEPHYR__)
-
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
-#include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <netinet/in.h>
 #include <poll.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
-#define USE_IPV6
-
-#else
-
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/poll.h>
-
-#include <zephyr/net/socket.h>
+#if defined(__ZEPHYR__)
 #include <zephyr/kernel.h>
 
 #include "net_sample_common.h"
@@ -37,7 +23,8 @@
 #ifdef CONFIG_NET_IPV6
 #define USE_IPV6
 #endif
-
+#else
+#define USE_IPV6
 #endif
 
 /* For Zephyr, keep max number of fd's in sync with max poll() capacity */

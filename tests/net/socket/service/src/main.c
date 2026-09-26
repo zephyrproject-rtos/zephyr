@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
-#include <zephyr/posix/fcntl.h>
+#include <fcntl.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/ztest_assert.h>
 

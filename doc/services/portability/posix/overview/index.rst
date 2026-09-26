@@ -85,7 +85,7 @@ leverages the ``nanosleep()`` and ``perror()`` POSIX functions.
 .. code-block:: cfg
    :caption: `prj.conf` for a simple POSIX app in Zephyr
 
-    CONFIG_POSIX_API=y
+    CONFIG_POSIX_AEP_CHOICE_PSE51=y
 
 .. code-block:: c
    :caption: A simple app that uses Zephyr's POSIX API
@@ -135,6 +135,8 @@ Enable one of the Kconfig options below to quickly configure a pre-defined
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51` (:ref:`PSE51 <posix_aep_pse51>`)
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE52` (:ref:`PSE52 <posix_aep_pse52>`)
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE53` (:ref:`PSE53 <posix_aep_pse53>`)
+* :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_NETAPP` (PSE52 plus the networking interfaces of
+  PSE53, without multi-process support)
 
 Additional POSIX :ref:`Options and Option Groups <posix_option_groups>` may be enabled as needed
 via Kconfig (e.g. ``CONFIG_POSIX_C_LIB_EXT=y``). Further fine-tuning may be accomplished via
@@ -147,19 +149,21 @@ Legacy
 ++++++
 
 Historically, Zephyr used :kconfig:option:`CONFIG_POSIX_API` to configure a set of POSIX features
-that was overloaded and always increasing in size.
-
-* :kconfig:option:`CONFIG_POSIX_API`
-
-The option is now frozen, and can be considered equivalent to the following:
+that was overloaded and always increasing in size. The option is deprecated and will be removed in
+a future release. It is equivalent to the following:
 
 * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51`
 * :kconfig:option:`CONFIG_POSIX_FD_MGMT`
 * :kconfig:option:`CONFIG_POSIX_MESSAGE_PASSING`
+* :kconfig:option:`CONFIG_POSIX_MULTI_PROCESS`
 * :kconfig:option:`CONFIG_POSIX_NETWORKING`
+* :kconfig:option:`CONFIG_XSI_SINGLE_PROCESS`
+* :kconfig:option:`CONFIG_EVENTFD`
 
-However, :kconfig:option:`CONFIG_POSIX_API` should be considered legacy and should not be used for
-new Zephyr applications.
+Applications should instead select a subprofile such as
+:kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51` together with the Option Groups they require.
+Libraries should depend on :kconfig:option:`CONFIG_POSIX_SYSTEM_INTERFACES` and the individual
+Option Groups rather than on :kconfig:option:`CONFIG_POSIX_API`.
 
 .. _IEEE: https://www.ieee.org/
 .. _IEEE Computer Society: https://www.computer.org/
