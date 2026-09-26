@@ -131,6 +131,32 @@
 			status = "disabled";
 		};
 
+		can0: can@4402e000 {
+			compatible = "microchip,mcan-g1";
+			reg = <0x4402e000 0x100>, <0x4402e100 0x200>;
+			reg-names = "wrapper", "m_can";
+			interrupts = <35 0>, <36 0>, <37 0>;
+			interrupt-names = "int0", "int1", "berr";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_CAN0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_CAN0>;
+			clock-names = "mclk", "gclk";
+			bosch,mram-cfg = <0x0 8 8 8 0 0 4 4>;
+			status = "disabled";
+		};
+
+		can1: can@44030000 {
+			compatible = "microchip,mcan-g1";
+			reg = <0x44030000 0x100>, <0x44030100 0x200>;
+			reg-names = "wrapper", "m_can";
+			interrupts = <38 0>, <39 0>, <40 0>;
+			interrupt-names = "int0", "int1", "berr";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_CAN1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_CAN1>;
+			clock-names = "mclk", "gclk";
+			bosch,mram-cfg = <0x0 8 8 8 0 0 4 4>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@44800000 {
 			compatible = "microchip,port-g1-pinctrl";
 			#address-cells = <1>;
