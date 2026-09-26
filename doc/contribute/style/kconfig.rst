@@ -27,7 +27,9 @@ When writing Kconfig files, follow these basic formatting rules:
 * **End of file**: End the file with exactly one newline.
 
 For guidance on using statements like ``select``, see
-:ref:`kconfig_tips_and_tricks` for more information.
+:ref:`kconfig_tips_and_tricks` for more information. Do not write
+``[EXPERIMENTAL]`` or ``[DEPRECATED]`` in prompts; select the marker symbol
+instead, see :ref:`kconfig_experimental_deprecated`.
 
 These formatting rules are enforced in CI by the ``KconfigFormat`` compliance
 check. You can check your Kconfig files locally with the
