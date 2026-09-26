@@ -15,14 +15,6 @@
 	reg = <0x0 DT_SIZE_K(896)>;
 };
 
-&ram03_sram {
-	cpuflpr_sram_code_data: sram@0 {
-		compatible = "mmio-sram";
-		reg = <0x0 DT_SIZE_K(116)>;
-		status = "reserved";
-	};
-};
-
 &mram_controller {
 	cpuflpr_mram: mram@3de000 {
 		compatible = "soc-nv-flash";
@@ -40,8 +32,7 @@
 };
 
 &cpuflpr_vpr {
-	execution-memory = <&cpuflpr_sram_code_data>;
-	source-memory = <&cpuflpr_mram>;
+	execution-memory = <&cpuflpr_mram>;
 };
 
 &cpuapp_vevif_tx {
