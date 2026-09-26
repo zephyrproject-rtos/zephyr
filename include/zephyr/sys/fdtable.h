@@ -28,6 +28,7 @@
 #define ZVFS_O_RDONLY 00
 #define ZVFS_O_WRONLY 01
 #define ZVFS_O_RDWR   02
+#define ZVFS_O_ACCMODE (ZVFS_O_RDONLY | ZVFS_O_WRONLY | ZVFS_O_RDWR)
 
 #define ZVFS_O_EXCL     0x0800
 #define ZVFS_O_NONBLOCK 0x4000
@@ -350,6 +351,10 @@ enum {
 	ZFD_IOCTL_SET_LOCK,
 	ZFD_IOCTL_STAT,
 	ZFD_IOCTL_TRUNCATE,
+	/**
+	 * Address of the object's own pages for zvfs_mmap(): (size_t off, size_t len,
+	 * void **addr). An object without pages of its own leaves it unimplemented.
+	 */
 	/** Set the access and modification times: (const struct timespec times[2]) */
 	ZFD_IOCTL_UTIME,
 	ZFD_IOCTL_MMAP,

@@ -45,26 +45,6 @@ static int z_vrfy_zvfs_ioctl(int fd, unsigned long request, va_list args)
 
 		K_OOPS(K_SYSCALL_MEMORY_WRITE(avail, sizeof(*avail)));
 	} break;
-	case ZFD_IOCTL_MMAP: {
-		void *addr = va_arg(check, void *);
-		size_t len = va_arg(check, size_t);
-		int prot = va_arg(check, int);
-		int flags = va_arg(check, int);
-		off_t off = va_arg(check, off_t);
-		void **maddr = va_arg(check, void **);
-
-		ARG_UNUSED(addr);
-		ARG_UNUSED(prot);
-		ARG_UNUSED(flags);
-		ARG_UNUSED(off);
-
-		if (len == 0) {
-			errno = EINVAL;
-			ret = -1;
-			break;
-		}
-		K_OOPS(K_SYSCALL_MEMORY_WRITE(maddr, sizeof(*maddr)));
-	} break;
 	default:
 		errno = EOPNOTSUPP;
 		ret = -1;

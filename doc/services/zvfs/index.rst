@@ -1,0 +1,61 @@
+.. _zvfs:
+
+Zephyr Virtual File System (ZVFS)
+#################################
+
+ZVFS is the common waypoint for every file descriptor in Zephyr. A descriptor
+is a slot in the file descriptor table that carries an I/O object and a
+vtable; ``zvfs_read()``, ``zvfs_write()``, ``zvfs_close()``, ``zvfs_ioctl()``
+and the other entry points in :file:`include/zephyr/sys/zvfs.h` dispatch
+through that vtable, so a regular file, a socket, an eventfd or a pipe are
+reached through the same calls. The POSIX and C library file interfaces sit on
+top of these entry points.
+
+Memory Mappings
+***************
+
+:kconfig:option:`CONFIG_ZVFS_MMAP` adds ``zvfs_mmap()``, ``zvfs_munmap()``,
+``zvfs_msync()`` and ``zvfs_mprotect()``: file descriptors and anonymous memory
+mapped into the address space, at the granularity of
+:kconfig:option:`CONFIG_ZVFS_MMAP_PAGE_SIZE`.
+
+Storage
+   With an MMU a mapping owns pinned anonymous pages from :c:func:`k_mem_map`,
+   with guard pages on both sides. Without one it owns a block of the kernel
+   heap; under :kconfig:option:`CONFIG_USERSPACE` the block is a power of two
+   aligned to its size, so that it can be a memory-protection region.
+
+File contents
+   A file-backed mapping is a copy: the pages are read from the file when the
+   mapping is created and, for a ``ZVFS_MAP_SHARED`` mapping that has been
+   writable, written back on ``zvfs_msync()``, on ``zvfs_munmap()`` and when
+   the owner exits, clipped to the file's size at that time. ``ZVFS_MS_INVALIDATE``
+   re-reads the pages. An object that owns its pages answers ``ZFD_IOCTL_MMAP``
+   with their address and is mapped in place, so every mapping of it aliases
+   the same memory; as they share the address, unmapping it releases them all.
+
+Modified pages
+   With :kconfig:option:`CONFIG_ZVFS_MMAP_DIRTY_TRACK`, on an MMU that offers
+   write faults to the kernel, the pages of a shared writable file mapping
+   start write-protected. The first write to a page records it as modified and
+   makes it writable, and ``zvfs_msync()`` writes back only the modified pages
+   before protecting them again. Without it the whole range is written back.
+
+Protection
+   A user thread reaches a mapping through a memory-domain partition on its
+   pages, added to the caller's domain when a user thread creates the mapping
+   and removed when it is unmapped. The kernel's view of the pages it owns
+   follows the protection as well.
+
+References and lifetime
+   A mapping counts as a reference on its open file object alongside the
+   descriptors, so the file stays open after the last descriptor is closed
+   until the last mapping of it is released. A mapping belongs to the thread
+   that created it and is released when that thread exits.
+
+``zvfs_munmap()`` of part of a mapping trims it or splits it into two pieces
+that share the original's storage, which is released with the last piece.
+A mapping granted to user mode on a board without an MMU keeps its shape, its
+protection region covers it whole: a partial ``zvfs_munmap()`` of it fails with
+``EINVAL``. ``zvfs_mprotect()`` operates on whole mappings; a range that covers
+part of one is rejected.

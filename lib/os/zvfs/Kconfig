@@ -146,6 +146,46 @@ config ZVFS_OPEN_ADD_SIZE_STDIO
 	  Number of file descriptors reserved for stdin, stdout, and stderr in the ZVFS
 	  fd table size calculation.
 
+config ZVFS_MMAP
+	bool "ZVFS memory mappings"
+	depends on ZVFS_FDTABLE
+	select SYS_ELASTIPOOL
+	help
+	  Map file descriptors and anonymous memory into the address space with
+	  zvfs_mmap(), and manage the mappings with zvfs_munmap(), zvfs_msync()
+	  and zvfs_mprotect(). A mapping keeps its file open like a descriptor
+	  does, belongs to the thread that creates it, and is released when
+	  that thread exits.
+
+if ZVFS_MMAP
+
+config ZVFS_MMAP_MAX
+	int "Maximum number of concurrent ZVFS memory mappings"
+	default 8
+	range 1 1024
+
+config ZVFS_MMAP_DIRTY_TRACK
+	bool "Track the modified pages of shared file mappings"
+	default y
+	depends on MMU && ARCH_HAS_MEM_WRITE_FAULT
+	select MEM_WRITE_FAULT_HOOK
+	help
+	  Write-protect the pages of a shared, writable file mapping and let the
+	  first write to each page fault: the page is recorded as modified and
+	  made writable, so zvfs_msync() writes back only the pages that changed
+	  and leaves the rest of the file alone. Without this, the whole range
+	  is written back.
+
+config ZVFS_MMAP_PAGE_SIZE
+	hex
+	default MMU_PAGE_SIZE if MMU
+	default 0x40
+	help
+	  Granularity of mapping lengths and file offsets: the MMU page size, or
+	  64 bytes when mappings are carved out of the kernel heap.
+
+endif # ZVFS_MMAP
+
 config ZVFS_EVENTFD
 	bool "ZVFS event file descriptor support"
 	imply ZVFS_POLL

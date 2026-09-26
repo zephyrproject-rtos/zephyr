@@ -73,6 +73,9 @@ extern "C" {
 /** Number of bits in a long long int. */
 #define BITS_PER_LONG_LONG (__CHAR_BIT__ * __SIZEOF_LONG_LONG__)
 
+/** Number of long ints needed to hold @p nbits bits. */
+#define BITS_TO_LONGS(nbits) DIV_ROUND_UP(nbits, BITS_PER_LONG)
+
 /**
  * @brief Create a contiguous bitmask starting at bit position @p l
  *        and ending at position @p h.

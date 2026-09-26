@@ -179,6 +179,11 @@ int zvfs_fd_obj_refcount(void *obj)
 		}
 	}
 
+#ifdef CONFIG_ZVFS_MMAP
+	/* a memory mapping holds the object open like a descriptor does */
+	count += z_zvfs_mmap_obj_refs(obj);
+#endif /* CONFIG_ZVFS_MMAP */
+
 	return count;
 }
 

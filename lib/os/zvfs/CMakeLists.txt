@@ -24,5 +24,10 @@ zephyr_library_sources_ifdef(CONFIG_ZVFS_FS
   zvfs_record_lock.c
 )
 zephyr_library_sources_ifdef(CONFIG_ZVFS_EVENTFD zvfs_eventfd.c)
+zephyr_library_sources_ifdef(CONFIG_ZVFS_MMAP zvfs_mmap.c)
+zephyr_library_include_directories_ifdef(CONFIG_ZVFS_MMAP
+  ${ZEPHYR_BASE}/kernel/include
+  ${ARCH_DIR}/${ARCH}/include
+)
 zephyr_library_sources_ifdef(CONFIG_ZVFS_POLL zvfs_poll.c)
 zephyr_library_sources_ifdef(CONFIG_ZVFS_SELECT zvfs_select.c)

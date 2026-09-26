@@ -38,6 +38,8 @@ struct fd_entry *zvfs_fd_entry_get(int fd);
 struct fd_entry *zvfs_fd_syscall_verify(int fd);
 
 int zvfs_fd_obj_refcount(void *obj);
+/* number of memory mappings referencing an I/O object (CONFIG_ZVFS_MMAP) */
+int z_zvfs_mmap_obj_refs(const void *obj);
 
 void zvfs_fd_offset_set(struct fd_entry *entry, size_t offset);
 

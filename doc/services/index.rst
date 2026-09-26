@@ -155,3 +155,4 @@ different platforms.
          :maxdepth: 2
 
          portability/index
+         zvfs/index

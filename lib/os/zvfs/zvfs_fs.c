@@ -30,8 +30,6 @@
 
 #include "zvfs_fs_priv.h"
 
-#define ZVFS_O_ACCMODE (ZVFS_O_RDONLY | ZVFS_O_WRONLY | ZVFS_O_RDWR)
-
 static struct zvfs_fs_desc desc_array[CONFIG_ZVFS_FS_DESC_MAX];
 
 static struct fd_op_vtable fs_fd_op_vtable;

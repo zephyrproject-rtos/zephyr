@@ -253,6 +253,11 @@ extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 /* Calculate stack usage. */
 int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
 
+#ifdef CONFIG_ZVFS_MMAP
+/* Release the memory mappings an exiting thread owns (lib/os/zvfs) */
+void z_zvfs_mmap_thread_exit(struct k_thread *thread);
+#endif /* CONFIG_ZVFS_MMAP */
+
 #ifdef CONFIG_MEM_WRITE_FAULT_HOOK
 /*
  * Offered a write fault on a present page before it is treated as fatal.

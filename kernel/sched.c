@@ -930,6 +930,9 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
 		z_thread_monitor_exit(thread);
+#ifdef CONFIG_ZVFS_MMAP
+		z_zvfs_mmap_thread_exit(thread);
+#endif /* CONFIG_ZVFS_MMAP */
 #ifdef CONFIG_THREAD_ABORT_HOOK
 		thread_abort_hook(thread);
 #endif /* CONFIG_THREAD_ABORT_HOOK */
