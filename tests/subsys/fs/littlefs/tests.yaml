@@ -51,3 +51,4 @@ tests:
     extra_configs:
       - CONFIG_APP_TEST_CUSTOM=y
       - CONFIG_FS_LITTLEFS_FC_HEAP_SIZE=16384
+      - CONFIG_FS_LITTLEFS_DISK_VERSION=y
