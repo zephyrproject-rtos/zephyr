@@ -16,6 +16,7 @@ config CLOCK_CONTROL_INFINEON_CAT1
 config CLOCK_CONTROL_IFX_FIXED_CLOCK
 	bool "Infineon fixed clock driver"
 	default y
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_INFINEON_FIXED_CLOCK),pinctrl-0)
 	depends on DT_HAS_INFINEON_FIXED_CLOCK_ENABLED
 	depends on !TRUSTED_EXECUTION_NONSECURE
 	help

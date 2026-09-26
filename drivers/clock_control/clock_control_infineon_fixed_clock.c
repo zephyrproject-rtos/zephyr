@@ -24,9 +24,18 @@
 
 #define DT_DRV_COMPAT infineon_fixed_clock
 
+#define IFX_FIXED_CLK_HAS_PINCTRL DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+
+#if IFX_FIXED_CLK_HAS_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 struct fixed_rate_clock_config {
 	uint32_t rate;
 	uint32_t system_clock; /* ifx_cat1_clock_block */
+#if IFX_FIXED_CLK_HAS_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp))
 	cy_stc_dpll_hp_config_t dpll_hp_config;
 #endif
@@ -186,6 +195,17 @@ static void clk_eco_init(void)
 static int fixed_rate_clk_init(const struct device *dev)
 {
 	const struct fixed_rate_clock_config *const config = dev->config;
+
+#if IFX_FIXED_CLK_HAS_PINCTRL
+	/* Route the clock input/crystal pins before enabling the source */
+	if (config->pcfg != NULL) {
+		int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif
 
 	switch (config->system_clock) {
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo))
@@ -382,10 +402,23 @@ static int fixed_rate_clk_init(const struct device *dev)
 #define DPLL_LP_INIT(n)
 #endif
 
+#if IFX_FIXED_CLK_HAS_PINCTRL
+#define FIXED_CLK_PINCTRL_DEFINE(n)                                                                \
+	IF_ENABLED(DT_INST_PINCTRL_HAS_IDX(n, 0), (PINCTRL_DT_INST_DEFINE(n);))
+#define FIXED_CLK_PINCTRL_INIT(n)                                                                  \
+	.pcfg = COND_CODE_1(DT_INST_PINCTRL_HAS_IDX(n, 0),                                         \
+			    (PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),
+#else
+#define FIXED_CLK_PINCTRL_DEFINE(n)
+#define FIXED_CLK_PINCTRL_INIT(n)
+#endif
+
 #define FIXED_CLK_INIT(n)                                                                          \
+	FIXED_CLK_PINCTRL_DEFINE(n)                                                                \
 	static const struct fixed_rate_clock_config fixed_rate_clock_config_##n = {                \
 		.rate = DT_INST_PROP(n, clock_frequency),                                          \
 		.system_clock = DT_INST_PROP(n, system_clock),                                     \
+		FIXED_CLK_PINCTRL_INIT(n)                                                          \
 		DPLL_HP_INIT(n)                                                                    \
 		DPLL_LP_INIT(n)                                                                    \
 	};                                                                                         \

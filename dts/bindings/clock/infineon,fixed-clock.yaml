@@ -3,11 +3,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Generic fixed-rate clock provider
+description: |
+  Generic fixed-rate clock provider
+
+  A clock source fed through a pin, such as the external clock input,
+  can route that pin with pinctrl-0. The default state is applied
+  before the source is enabled.
 
 compatible: "infineon,fixed-clock"
 
-include: fixed-clock.yaml
+include: [fixed-clock.yaml, pinctrl-device.yaml]
 
 properties:
   system-clock:
