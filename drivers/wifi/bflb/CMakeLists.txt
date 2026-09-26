@@ -15,4 +15,5 @@ zephyr_library()
 zephyr_library_link_libraries(hostap)
 
 # SoC-specific driver sources.
-add_subdirectory(wifi6)
+add_subdirectory_ifdef(CONFIG_WIFI_BFLB_WIFI6 wifi6)
+add_subdirectory_ifdef(CONFIG_WIFI_BFLB_WIFI4 wifi4)
