@@ -1,0 +1,6 @@
+board:
+  name: reterminal_sticky
+  full_name: reTerminal Sticky
+  vendor: seeed
+  socs:
+  - name: esp32s3
