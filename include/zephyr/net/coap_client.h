@@ -246,6 +246,12 @@ int coap_client_init(struct coap_client *client, const char *info);
  * Once the callback is called with last block set as true, socket can be closed or
  * used for another query.
  *
+ * A GET with the Observe option set to 0 registers an observation: the request stays active
+ * and every notification is delivered to the callback until the request is cancelled or
+ * deregistered, or until the server answers without an Observe option
+ * (@rfc{7641,section-3.2}), for instance with 4.04 once the resource is gone or because it
+ * declined the registration. That response is delivered to the callback and ends the request.
+ *
  * @note If block transfer is used, the @p payload pointer provided in @p req parameter has to
  * remain valid throughout the transaction (i.e. until the last block or an error is reported).
  * The library will need to access the payload pointer when sending consecutive payload blocks.

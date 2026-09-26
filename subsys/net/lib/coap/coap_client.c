@@ -1099,7 +1099,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 {
 	int ret = 0;
 	int block_option;
-	int block_num;
+	int block_num = 0;
 	bool blockwise_transfer = false;
 	bool last_block = false;
 	struct coap_client_internal_request *internal_req;
@@ -1353,6 +1353,20 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	 */
 	if (blockwise_transfer && !last_block) {
 		payload_len = MIN(payload_len, CONFIG_COAP_CLIENT_BLOCK_SIZE);
+	}
+
+	/* RFC 7641 3.1 and 3.2: only a 2.xx response carrying an Observe option
+	 * registers or continues an observation. One without ends it: the server
+	 * declined the registration or removed the entry, e.g. with a 4.04 once
+	 * the resource is gone. Block2 continuations of a notification carry no
+	 * Observe option (RFC 7959 3.4) and do not count. Deliver the response as
+	 * the request's final one and release the slot below.
+	 */
+	if (was_observe && !(blockwise_transfer && block_num > 0) &&
+	    coap_get_option_int(response, COAP_OPTION_OBSERVE) < 0) {
+		LOG_DBG("Response without Observe option, observation ended");
+		internal_req->is_observe = false;
+		was_observe = false;
 	}
 
 	/* Call user callback (with client->lock dropped, see
