@@ -60,6 +60,16 @@ config LORAWAN_REGION_RU864
 
 endmenu
 
+config LORAWAN_JOIN_BACKOFF_JITTER_PERCENT
+	int "Jitter percentage for each join request backoff"
+	depends on ENTROPY_GENERATOR
+	range 0 100
+	default 20
+	help
+	  Randomise the backoff between join requests by a percentage of
+	  the base backoff to desynchronise devices across the network in
+	  the case of a synchronised failure.
+
 rsource "loramac-node/Kconfig"
 
 rsource "native/Kconfig"

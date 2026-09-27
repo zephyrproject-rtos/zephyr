@@ -1,0 +1,11 @@
+common:
+  platform_allow:
+    - native_sim
+  tags:
+    - lorawan
+
+tests:
+  lorawan.join_backoff.no_jitter: {}
+  lorawan.join_backoff.jitter:
+    extra_configs:
+      - CONFIG_TEST_RANDOM_GENERATOR=y

@@ -303,6 +303,20 @@ int lorawan_join(const struct lorawan_join_config *config);
 int lorawan_join_airtime(void);
 
 /**
+ * @brief Determine how long to wait until the next join request
+ *
+ * @note See LoRaWAN 1.0.4 Specification Sections 6.2.5 and 7. The returned duration accounts
+ *       for the 6 second JoinAcceptDelay2 between the request and the second receive window.
+ *
+ * @param join_airtime            Airtime of a single join request, in milliseconds
+ * @param cumulative_join_airtime Total airtime of join request packets since network drop,
+ *                                in milliseconds
+ *
+ * @return uint32_t Duration to wait until next join request, in milliseconds
+ */
+uint32_t lorawan_join_backoff(uint16_t join_airtime, uint32_t cumulative_join_airtime);
+
+/**
  * @brief Start the LoRaWAN stack
  *
  * This function need to be called before joining the network.
