@@ -8,7 +8,7 @@ mainmenu "ADC API Test"
 source "Kconfig.zephyr"
 
 config ADC_API_SAMPLE_INTERVAL_US
-	int "Interval between repeatead samples in us"
+	int "Interval between repeated samples in us"
 	default 0
 
 config ADC_32_BITS_DATA
