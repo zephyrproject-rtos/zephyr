@@ -29,6 +29,7 @@
 /* Default format of the driver, RGB565 */
 #define DEFAULT_WIDTH  320
 #define DEFAULT_HEIGHT 240
+#define DEFAULT_SIZE   (DEFAULT_WIDTH * 2 * DEFAULT_HEIGHT)
 
 /* Smaller RGB565 format selected by the streaming tests */
 #define FIFO_WIDTH  64
@@ -45,6 +46,7 @@ static const struct device *const fifo_dev = DEVICE_DT_GET(VIDEO_FIFO_NODE);
 
 /* Frames are staged here rather than on a thread stack: they are too large */
 static uint8_t test_frame[FIFO_SIZE];
+static uint8_t test_default_frame[DEFAULT_SIZE];
 
 /* Writer left open by the running test, closed by the teardown hook */
 static int test_writer_fd = -1;
@@ -477,6 +479,35 @@ ZTEST(video_native_sim_fifo, test_partial_frame_is_discarded)
 			  "the frame is misaligned, the partial frame was not discarded");
 
 	zassert_ok(video_buffer_release(vbuf));
+}
+
+ZTEST(video_native_sim_fifo, test_pipe_holds_two_frames)
+{
+	int ret;
+
+	/* No buffer is queued, so the driver leaves in the pipe what the host writes */
+	zassert_ok(video_stream_start(fifo_dev, VIDEO_BUF_TYPE_OUTPUT));
+
+	test_writer_fd = video_fifo_test_open_writer(FIFO_PATH);
+	zassert_true(test_writer_fd >= 0, "could not attach a host writer to %s", FIFO_PATH);
+
+	/*
+	 * Two frames of the default format do not fit in the 64 KiB of a new host pipe.
+	 * The host may refuse to enlarge it, e.g. on a busy runner, so skip rather than fail.
+	 */
+	for (int i = 0; i < 2; i++) {
+		ret = video_fifo_test_write(test_writer_fd, test_default_frame, DEFAULT_SIZE);
+		zassume_equal(ret, DEFAULT_SIZE,
+			      "the pipe cannot hold two frames, the host may limit pipe sizes");
+	}
+
+	/* Twice as large a format selected while streaming: each frame takes two writes */
+	zassert_ok(test_set_format(VIDEO_PIX_FMT_RGB565, DEFAULT_WIDTH * 2, DEFAULT_HEIGHT));
+	for (int i = 0; i < 4; i++) {
+		ret = video_fifo_test_write(test_writer_fd, test_default_frame, DEFAULT_SIZE);
+		zassume_equal(ret, DEFAULT_SIZE,
+			      "the pipe cannot hold two frames of the new format");
+	}
 }
 
 static void video_native_sim_fifo_after(void *fixture)
