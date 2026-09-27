@@ -113,6 +113,8 @@ zephyr_syscall_header_ifdef(CONFIG_ZVFS_FDTABLE
 )
 zephyr_syscall_header_ifdef(CONFIG_ZVFS_FS ${ZEPHYR_BASE}/include/zephyr/sys/zvfs_fs.h)
 
+zephyr_syscall_header_ifdef(CONFIG_ZVFS_SHM ${ZEPHYR_BASE}/include/zephyr/zvfs/shm.h)
+zephyr_syscall_header_ifdef(CONFIG_ZVFS_FS ${ZEPHYR_BASE}/include/zephyr/sys/zvfs_fs.h)
 zephyr_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
 zephyr_sources_ifdef(CONFIG_BOOT_FDT boot_fdt.c)
 

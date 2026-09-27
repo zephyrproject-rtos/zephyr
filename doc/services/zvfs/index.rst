@@ -55,6 +55,27 @@ References and lifetime
 
 ``zvfs_munmap()`` of part of a mapping trims it or splits it into two pieces
 that share the original's storage, which is released with the last piece.
+
+Shared Memory Objects
+*********************
+
+:kconfig:option:`CONFIG_ZVFS_SHM` adds ``zvfs_shm_open()`` and ``zvfs_shm_unlink()``:
+named, system-wide memory objects reached through file descriptors. An object
+is created with ``ZVFS_O_CREAT`` (``ZVFS_O_EXCL`` insists on creating it), has
+size zero until ``zvfs_ftruncate()`` sizes it, and is then read and written at
+offsets like a file. It owns its pages, pinned :c:func:`k_mem_map` pages with an
+MMU and a kernel-heap block otherwise, and answers ``ZFD_IOCTL_MMAP`` with
+their address, so ``zvfs_mmap()`` maps it in place and every mapping of it
+aliases the same memory.
+
+An object is sized once: its pages may already be mapped, so a second
+``zvfs_ftruncate()`` to another size and ``ZVFS_O_TRUNC`` on a sized object
+fail with ``EBUSY``. The name is only a lookup key: ``zvfs_shm_unlink()``
+removes it at once, a later ``zvfs_shm_open()`` with ``ZVFS_O_CREAT`` makes a
+new object under the same name, and the unlinked object is freed when its last
+descriptor and its last mapping are gone. Objects come from a pool of
+:kconfig:option:`CONFIG_ZVFS_SHM_MAX`, with names shorter than
+:kconfig:option:`CONFIG_ZVFS_SHM_NAME_MAX`.
 A mapping granted to user mode on a board without an MMU keeps its shape, its
 protection region covers it whole: a partial ``zvfs_munmap()`` of it fails with
 ``EINVAL``. ``zvfs_mprotect()`` operates on whole mappings; a range that covers

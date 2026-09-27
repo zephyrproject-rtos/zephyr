@@ -176,15 +176,49 @@ config ZVFS_MMAP_DIRTY_TRACK
 	  and leaves the rest of the file alone. Without this, the whole range
 	  is written back.
 
+endif # ZVFS_MMAP
+
+config ZVFS_SHM
+	bool "ZVFS shared memory objects"
+	depends on ZVFS_FDTABLE
+	select SYS_ELASTIPOOL
+	help
+	  Named, system-wide memory objects reached through file descriptors:
+	  zvfs_shm_open() and zvfs_shm_unlink(). An object is sized once with
+	  zvfs_ftruncate(), read and written at offsets, and mapped in place by
+	  zvfs_mmap(), so every mapping of it aliases the same pages.
+
+if ZVFS_SHM
+
+config ZVFS_SHM_MAX
+	int "Maximum number of shared memory objects"
+	default 4
+	range 1 1024
+
+config ZVFS_SHM_NAME_MAX
+	int "Maximum shared memory object name length, including the terminator"
+	default 32
+	range 8 256
+
+config ZVFS_SHM_DESC_MAX
+	int
+	default ZVFS_OPEN_MAX if ZVFS_OPEN_MAX > 0
+	default 8
+	help
+	  Maximum concurrent opens of shared memory objects: every zvfs_shm_open()
+	  gets an open description of its own, with its own file position.
+
+endif # ZVFS_SHM
+
 config ZVFS_MMAP_PAGE_SIZE
 	hex
+	depends on ZVFS_MMAP || ZVFS_SHM
 	default MMU_PAGE_SIZE if MMU
 	default 0x40
 	help
-	  Granularity of mapping lengths and file offsets: the MMU page size, or
-	  64 bytes when mappings are carved out of the kernel heap.
-
-endif # ZVFS_MMAP
+	  Granularity of mapping lengths, file offsets and shared memory object
+	  sizes: the MMU page size, or 64 bytes when the storage is carved out
+	  of the kernel heap.
 
 config ZVFS_EVENTFD
 	bool "ZVFS event file descriptor support"

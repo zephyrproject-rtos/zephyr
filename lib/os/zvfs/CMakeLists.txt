@@ -25,6 +25,7 @@ zephyr_library_sources_ifdef(CONFIG_ZVFS_FS
 )
 zephyr_library_sources_ifdef(CONFIG_ZVFS_EVENTFD zvfs_eventfd.c)
 zephyr_library_sources_ifdef(CONFIG_ZVFS_MMAP zvfs_mmap.c)
+zephyr_library_sources_ifdef(CONFIG_ZVFS_SHM zvfs_shm.c)
 zephyr_library_include_directories_ifdef(CONFIG_ZVFS_MMAP
   ${ZEPHYR_BASE}/kernel/include
   ${ARCH_DIR}/${ARCH}/include

@@ -200,6 +200,30 @@ static void domain_apply_current(struct k_mem_domain *domain)
 #endif
 }
 
+/*
+ * Mappings of an object mapped in place share its address, and a domain holds
+ * one partition per range: the first such mapping in a domain owns the
+ * partition, later ones lean on it, and the owner hands it on when it goes.
+ */
+static struct zvfs_mapping *alias_in_domain(const struct zvfs_mapping *m, bool granted)
+{
+	struct zvfs_mapping *other;
+	struct zvfs_mapping *found = NULL;
+
+	K_SPINLOCK(&list_lock) {
+		SYS_DLIST_FOR_EACH_CONTAINER(&mappings, other, node) {
+			if ((other != m) && (other->domain == m->domain) &&
+			    (other->addr == m->addr) && (other->len == m->len) &&
+			    (other->granted == granted)) {
+				found = other;
+				break;
+			}
+		}
+	}
+
+	return found;
+}
+
 static int mapping_user_grant(struct zvfs_mapping *m, int prot)
 {
 	int ret;
@@ -214,6 +238,10 @@ static int mapping_user_grant(struct zvfs_mapping *m, int prot)
 		.size = ((m->mem != NULL) && !IS_ENABLED(CONFIG_MMU)) ? m->mem_size : m->len,
 		.attr = prot_to_attr(prot),
 	};
+	if ((m->mem == NULL) && (alias_in_domain(m, true) != NULL)) {
+		/* an alias already holds the partition on these pages */
+		return 0;
+	}
 	ret = k_mem_domain_add_partition(m->domain, &m->part);
 	if (ret != 0) {
 		return ret;
@@ -226,11 +254,23 @@ static int mapping_user_grant(struct zvfs_mapping *m, int prot)
 
 static void mapping_user_revoke(struct zvfs_mapping *m)
 {
-	if (m->granted) {
-		(void)k_mem_domain_remove_partition(m->domain, &m->part);
-		m->granted = false;
-		domain_apply_current(m->domain);
+	struct zvfs_mapping *heir;
+
+	if (!m->granted) {
+		return;
 	}
+	m->granted = false;
+
+	heir = (m->mem == NULL) ? alias_in_domain(m, false) : NULL;
+	if (heir != NULL) {
+		/* the partition stays for the alias, which now owns it */
+		heir->part = m->part;
+		heir->granted = true;
+		return;
+	}
+
+	(void)k_mem_domain_remove_partition(m->domain, &m->part);
+	domain_apply_current(m->domain);
 }
 #else
 static inline int mapping_user_grant(struct zvfs_mapping *m, int prot)

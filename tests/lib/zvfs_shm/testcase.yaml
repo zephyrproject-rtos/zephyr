@@ -1,0 +1,17 @@
+common:
+  tags:
+    - zvfs
+  min_ram: 64
+  platform_key:
+    - arch
+    - simulation
+tests:
+  libraries.zvfs_shm: {}
+  libraries.zvfs_shm.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: userspace
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_USERSPACE=y
+      # 8-region MPU: stack guard + thread stack leave only 3 domain slots
+      - platform:mps2/an385:CONFIG_TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION=y
