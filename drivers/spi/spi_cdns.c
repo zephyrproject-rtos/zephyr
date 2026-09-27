@@ -590,8 +590,14 @@ static int spi_cdns_init(const struct device *dev)
 {
 	const struct spi_cdns_cfg *cfg = dev->config;
 	struct spi_cdns_data *data = dev->data;
+	int err;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	cfg->irq_config();
 
@@ -811,6 +817,7 @@ static DEVICE_API(spi, spi_cdns_api) = {
 	static struct spi_cdns_data spi_cdns_data_##n = {                                          \
 		SPI_CONTEXT_INIT_LOCK(spi_cdns_data_##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_cdns_data_##n, ctx),                                     \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)                               \
 	};                                                                                         \
 	static struct spi_cdns_cfg spi_cdns_cfg_##n = {                                            \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
