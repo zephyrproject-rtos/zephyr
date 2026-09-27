@@ -98,7 +98,7 @@
 					vcom = <0x1f>;
 					gctrl = <0x35>;
 					vdvs = <0x20>;
-					mdac = <0x80>;
+					mdac = <0x00>;
 					gamma = <0x01>;
 					pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 					lcm = <0x2c>;
@@ -108,7 +108,8 @@
 					pwctrl1-param = [a4 a1];
 					pvgam-param = [d0 08 11 08 0c 15 39 33 50 36 13 14 29 2d];
 					nvgam-param = [d0 08 10 08 06 06 39 44 51 0b 16 14 2f 31];
-					ram-param = [00 f0];
+					/* Match RGB565 byte order on the 8-bit bus (LSB first). */
+					ram-param = [00 f8];
 					rgb-param = [40 02 14];
 				};
 			};
