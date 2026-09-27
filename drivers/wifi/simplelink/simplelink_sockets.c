@@ -1204,31 +1204,8 @@ static int simplelink_ioctl(void *obj, unsigned int request, va_list args)
 {
 	int sd = OBJ_TO_SD(obj);
 
-	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE:
-		return -EXDEV;
-
-	case ZFD_IOCTL_POLL_UPDATE:
-		return -EOPNOTSUPP;
-
-	case ZFD_IOCTL_POLL_OFFLOAD: {
-		struct zsock_pollfd *fds;
-		int nfds;
-		int timeout;
-
-		fds = va_arg(args, struct zsock_pollfd *);
-		nfds = va_arg(args, int);
-		timeout = va_arg(args, int);
-
-		return simplelink_poll(fds, nfds, timeout);
-	}
-
-	/* Otherwise, just forward to offloaded fcntl()
-	 * In Zephyr, fcntl() is just an alias of ioctl().
-	 */
-	default:
-		return simplelink_fcntl(sd, request, args);
-	}
+	/* In Zephyr, fcntl() is just an alias of ioctl(). */
+	return simplelink_fcntl(sd, request, args);
 }
 
 static ssize_t simplelink_read(void *obj, void *buffer, size_t count)

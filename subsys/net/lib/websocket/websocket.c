@@ -576,18 +576,6 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	struct websocket_context *ctx = obj;
 
 	switch (request) {
-	case ZFD_IOCTL_POLL_OFFLOAD: {
-		struct zsock_pollfd *fds;
-		int nfds;
-		int timeout;
-
-		fds = va_arg(args, struct zsock_pollfd *);
-		nfds = va_arg(args, int);
-		timeout = va_arg(args, int);
-
-		return websocket_poll_offload(fds, nfds, timeout);
-	}
-
 	case ZFD_IOCTL_SET_LOCK:
 		/* Ignore, don't want to overwrite underlying socket lock. */
 		return 0;

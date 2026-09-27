@@ -975,43 +975,6 @@ static int bc66x_network_ioctl(void *obj, unsigned int request, va_list args)
 
 		LOG_DBG("Setting nonblocking to %d", (*mode_ptr != 0) ? 1 : 0);
 		break;
-
-	case ZFD_IOCTL_POLL_PREPARE:
-		LOG_DBG("ZFD_IOCTL_POLL_PREPARE");
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		struct k_poll_event *pev_end = va_arg(args, struct k_poll_event *);
-
-		if (pfd->events & ZSOCK_POLLIN) {
-			if (*pev == pev_end) {
-				LOG_ERR("Cannot register poll: no slots");
-				return -ENOMEM;
-			}
-			/* Register the event to wait for data on the FIFO */
-			k_poll_event_init(*pev, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-					  K_POLL_MODE_NOTIFY_ONLY, &sock->recv_fifo);
-			(*pev)++;
-		}
-		break;
-
-	case ZFD_IOCTL_POLL_UPDATE:
-		LOG_DBG("ZFD_IOCTL_POLL_UPDATE");
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		if (pfd == NULL || pev == NULL) {
-			errno = EFAULT;
-			return -1;
-		}
-
-		bc66x_ioctl_poll_update(sock, pfd, pev);
-		break;
-
-	case ZFD_IOCTL_POLL_OFFLOAD:
-		LOG_DBG("%d = ZFD_IOCTL_POLL_OFFLOAD", request);
-		return -ENOTSUP;
-
 	case ZFD_IOCTL_SET_LOCK:
 		LOG_DBG("%d = ZFD_IOCTL_SET_LOCK", request);
 		return -EOPNOTSUPP;

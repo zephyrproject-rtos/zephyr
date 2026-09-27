@@ -296,28 +296,6 @@ static int zvfs_eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 		}
 	} break;
 
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		ret = zvfs_eventfd_poll_prepare(obj, pfd, pev, pev_end);
-	} break;
-
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		ret = zvfs_eventfd_poll_update(obj, pfd, pev);
-	} break;
-
 	default:
 		errno = EOPNOTSUPP;
 		ret = -1;

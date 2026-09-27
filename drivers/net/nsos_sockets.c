@@ -426,31 +426,6 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 	struct nsos_socket *sock = obj;
 
 	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return nsos_poll_prepare(obj, pfd, pev, pev_end, &sock->poll);
-	}
-
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return nsos_poll_update(obj, pfd, pev, &sock->poll);
-	}
-
-	case ZFD_IOCTL_POLL_OFFLOAD:
-		return -EOPNOTSUPP;
-
 	case ZVFS_F_GETFL: {
 		int flags;
 

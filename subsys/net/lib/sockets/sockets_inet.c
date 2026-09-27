@@ -3510,28 +3510,6 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		return 0;
 	}
 
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return zsock_poll_prepare_ctx(obj, pfd, pev, pev_end);
-	}
-
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return zsock_poll_update_ctx(obj, pfd, pev);
-	}
-
 	case ZFD_IOCTL_SET_LOCK: {
 		struct k_mutex *lock;
 

@@ -1109,37 +1109,12 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 {
 	LOG_INF("OFFLOAD IOCTL");
 
-	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE: {
+	ARG_UNUSED(obj);
+	ARG_UNUSED(request);
+	ARG_UNUSED(args);
 
-		LOG_INF("OFFLOAD IOCTL ZFD_IOCTL_POLL_PREPARE");
-
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return modem_socket_poll_prepare(&mdata.socket_config, obj, pfd, pev, pev_end);
-	}
-	case ZFD_IOCTL_POLL_UPDATE: {
-		LOG_INF("OFFLOAD IOCTL ZFD_IOCTL_POLL_UPDATE");
-
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return modem_socket_poll_update(obj, pfd, pev);
-	}
-
-	default:
-		errno = EINVAL;
-		return -1;
-	}
+	errno = EINVAL;
+	return -1;
 }
 
 static int offload_connect(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
