@@ -613,6 +613,23 @@ Here are more details on the peripherals that are currently provided with this b
   free buffer, the driver keeps reading without waiting; ``poll-interval-ms``
   only applies once the host has nothing more to offer.
 
+  The driver enlarges the host pipe to hold two frames. Unprivileged processes
+  are limited by ``/proc/sys/fs/pipe-max-size`` for each pipe (1 MiB by
+  default), and by ``/proc/sys/fs/pipe-user-pages-soft`` for all their pipes
+  together. When the pipe cannot hold two frames, the driver logs a warning, as
+  the frame rate may be limited: the host writer then waits for the driver to
+  make room, which it does every ``poll-interval-ms``. To avoid this, run
+  ``zephyr.exe`` with root privileges (or the CAP_SYS_RESOURCE POSIX
+  capability, to be exact), or raise the limit beforehand. 16 MiB fits two
+  frames of any supported format:
+
+  .. code-block:: console
+
+     $ sudo sysctl fs.pipe-max-size=16777216
+
+  A shorter ``poll-interval-ms`` also helps, down to one system tick, see
+  :kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`.
+
   When the application holds every buffer, the driver stops reading and the
   host writer blocks once the pipe is full, so the driver drops nothing. Use a
   rate-limited writer such as ``ffmpeg -re``: an unpaced one is read as fast as
