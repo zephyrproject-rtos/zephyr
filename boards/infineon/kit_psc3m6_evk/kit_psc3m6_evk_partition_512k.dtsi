@@ -6,7 +6,7 @@
  */
 
 /*
- * Two 216 KB application slots + a 40 KB storage partition + 40 KB reserved for boot, 512 KB total.
+ * 40 KB mcuboot, two 228 KB image slots, and 16 KB storage partition (512 KB total).
  * Valid only for the 512 KB-flash PSC3M6 MPNs (psc3m6ges3a*q1). The 256 KB MPNs
  * (psc3m6fds2a*q1) must use kit_psc3m6_evk_partition_256k.dtsi instead.
  */
@@ -29,24 +29,28 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		slot0_partition: partition@0 {
+		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "slot0";
-			reg = <0x0 DT_SIZE_K(216)>;
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(40)>;
 		};
 
-		/* 0x36000-0x3ffff dead zone: 40KB reserved for future boot_partition */
-
-		slot1_partition: partition@40000 {
+		slot0_partition: partition@a000 {
 			compatible = "zephyr,mapped-partition";
-			label = "slot1";
-			reg = <0x40000 DT_SIZE_K(216)>;
+			label = "image-0";
+			reg = <0x0000a000 DT_SIZE_K(228)>;
+		};
+
+		slot1_partition: partition@43000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00043000 DT_SIZE_K(228)>;
 		};
 
 		storage_partition: partition@76000 {
 			compatible = "zephyr,mapped-partition";
 			label = "storage";
-			reg = <0x76000 DT_SIZE_K(40)>;
+			reg = <0x0007c000 DT_SIZE_K(16)>;
 		};
 	};
 };
