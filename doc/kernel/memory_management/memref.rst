@@ -86,7 +86,9 @@ Wrap an existing allocator and publish it with :c:macro:`MEMREF_BACKEND_DEFINE`:
 
 The same pattern works on top of :c:func:`k_malloc` and :c:func:`k_free`, or on top of a memory slab
 with :c:func:`k_mem_slab_alloc` and :c:func:`k_mem_slab_free`.
-See ``tests/lib/memref/src/`` for complete examples.
+See ``tests/lib/memref/src/`` for complete examples covering each backend,
+and the :zephyr:code-sample:`memref` sample for a runnable producer and
+consumers example.
 
 Usage
 *****
@@ -149,6 +151,14 @@ Do not call them from ISR unless the backend and the destroy callback of that al
 documented as ISR safe.
 Holding a reference is a precondition of :c:func:`memref_unref`, and :c:func:`memref_ref` must not
 be used on a pointer whose count already reached zero.
+
+Sample
+******
+
+The :zephyr:code-sample:`memref` sample (:zephyr_file:`samples/data_structures/memref`) demonstrates
+the API on a ``k_heap`` backend. A producer allocates a message, shares ownership with two consumer
+threads through FIFOs, and releases its own reference, while each consumer releases its reference
+after processing.
 
 Configuration
 *************
