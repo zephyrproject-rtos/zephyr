@@ -2407,6 +2407,11 @@ def test_projectbuilder_cmake():
             'mimxrt700_evk@mx25um51345g/mimxrt798s/cm33_cpu0',
             [],
         ),
+        (
+            ['nrf54l15dk/nrf54l15/cpuapp'],
+            'nrf54l',
+            ['SHIELD=zc143ac72mipi'],
+        ),
     ],
 )
 def test_projectbuilder_cmake_platform_extra_args_matches_platform_aliases(
@@ -2415,6 +2420,7 @@ def test_projectbuilder_cmake_platform_extra_args_matches_platform_aliases(
     instance_mock = mock.Mock()
     instance_mock.handler = mock.Mock(ready=False)
     instance_mock.build_dir = os.path.join('build', 'dir')
+    instance_mock.platform.name = platform_aliases[0]
     instance_mock.platform.aliases = platform_aliases
     env_mock = mock.Mock()
 
