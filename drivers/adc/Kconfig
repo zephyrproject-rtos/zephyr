@@ -177,6 +177,7 @@ source "drivers/adc/Kconfig.ti_am335x"
 source "drivers/adc/Kconfig.tla202x"
 source "drivers/adc/Kconfig.tla2528"
 source "drivers/adc/Kconfig.vf610"
+source "drivers/adc/Kconfig.waveshare_ch32vc003"
 source "drivers/adc/Kconfig.xec"
 source "drivers/adc/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop

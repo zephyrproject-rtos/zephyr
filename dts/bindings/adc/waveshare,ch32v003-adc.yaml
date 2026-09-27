@@ -1,0 +1,15 @@
+# Copyright 2026, Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Waveshare CH32V003 ADC input controller
+
+compatible: "waveshare,ch32v003-adc"
+
+include: adc-controller.yaml
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
