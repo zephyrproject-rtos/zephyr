@@ -1,0 +1,17 @@
+# Copyright 2026, Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Waveshare CH32V003 PWM output controller
+
+compatible: "waveshare,ch32v003-pwm"
+
+include: pwm-controller.yaml
+
+properties:
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags
