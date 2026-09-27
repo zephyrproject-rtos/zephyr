@@ -109,6 +109,10 @@ endif # BOOTLOADER_MCUBOOT
 
 endif # XTENSA
 
+configdefault XIP
+	default y if !MCUBOOT && !SOC_ESP32_APPCPU_TARGET && !SOC_ESP32C5_LPCORE && \
+		!SOC_ESP32C6_LPCORE && !SOC_ESP32P4_LPCORE
+
 if BT_ESP32
 
 configdefault BT_RX_STACK_SIZE
