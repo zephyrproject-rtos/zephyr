@@ -595,6 +595,13 @@ Networking
   * :zephyr_file:`samples/subsys/mgmt/updatehub/local.conf.example` replaces
     ``overlay-prj.conf.example``.
 
+OpenThread
+==========
+
+* The :kconfig:option:`OPENTHREAD_THREAD_VERSION_1_4` Kconfig option is now enabled by default.
+
+* Applications that require an older OpenThread version must explicitly select the desired version in their project Kconfig configuration.
+
 Other subsystems
 ****************
 
