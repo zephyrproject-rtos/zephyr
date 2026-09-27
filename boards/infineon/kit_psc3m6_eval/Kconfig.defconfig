@@ -26,4 +26,7 @@ configdefault UART_CONSOLE
 configdefault SERIAL
 	default y
 
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
 endif # BOARD_KIT_PSC3M6_EVAL
