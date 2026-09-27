@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Kim Bøndergaard
+# SPDX-License-Identifier: Apache-2.0
+
+config ST7701_RGB
+	bool "Sitronix ST7701 RGB panel"
+	default y
+	depends on DISPLAY
+	depends on DT_HAS_SITRONIX_ST7701_RGB_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for ST7701 in RGB panel use-cases where
+	  initialization commands are sent over a MIPI-DBI command channel.
+
+config ST7701_RGB_INIT_PRIORITY
+	int "ST7701 RGB init priority"
+	default DISPLAY_INIT_PRIORITY
+	depends on ST7701_RGB
+	help
+	  Initialization priority for the ST7701 RGB panel driver. Its value must
+	  not be higher than the init priority value of the RGB host controller.
