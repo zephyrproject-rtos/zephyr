@@ -19,6 +19,7 @@
 #include <zephyr/sys/util_macro.h>
 
 #include "../adc/adc_waveshare_ch32v003.h"
+#include "../pwm/pwm_waveshare_ch32v003.h"
 
 LOG_MODULE_REGISTER(gpio_ch32v003, CONFIG_GPIO_LOG_LEVEL);
 
@@ -52,6 +53,28 @@ struct ch32v003_data {
 	uint8_t direction;
 	uint8_t output;
 };
+
+int ch32v003_set_pwm_duty(const struct device *dev, uint8_t duty)
+{
+	const struct ch32v003_config *cfg = dev->config;
+	struct ch32v003_data *data = dev->data;
+	int ret;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	ret = i2c_reg_write_byte_dt(&cfg->bus, REG_PWM, duty);
+	k_mutex_unlock(&data->lock);
+
+	if (ret < 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
 
 int ch32v003_get_adc_value(const struct device *dev, uint16_t *value)
 {
