@@ -1718,27 +1718,6 @@ static int offload_poll_update(void *obj, struct zvfs_pollfd *pfd,
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return modem_socket_poll_prepare(&mdata.socket_config, obj, pfd, pev, pev_end);
-	}
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return modem_socket_poll_update(obj, pfd, pev);
-	}
-
 	case ZVFS_F_GETFL:
 		return 0;
 
