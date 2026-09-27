@@ -22,7 +22,7 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus) && (__cplusplus >= 201103L)
 /* Raw pointers; arrays and functions decay during template deduction. */
 template < typename T >
 static inline bool z_ztest_is_null(T *ptr)
