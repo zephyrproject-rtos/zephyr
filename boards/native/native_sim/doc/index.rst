@@ -609,9 +609,9 @@ Here are more details on the peripherals that are currently provided with this b
 
   Frames are handed to the application as soon as they arrive, without any
   pacing of its own: the frame rate is entirely the one the host writer
-  produces. When the host has more data pending and the application still has a
-  free buffer, the driver keeps reading without waiting; ``poll-interval-ms``
-  only applies once the host has nothing more to offer.
+  produces. When the host has more data pending, the driver keeps reading
+  without waiting; ``poll-interval-ms`` only applies once the host has nothing
+  more to offer.
 
   The driver enlarges the host pipe to hold two frames. Unprivileged processes
   are limited by ``/proc/sys/fs/pipe-max-size`` for each pipe (1 MiB by
@@ -630,10 +630,11 @@ Here are more details on the peripherals that are currently provided with this b
   A shorter ``poll-interval-ms`` also helps, down to one system tick, see
   :kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`.
 
-  When the application holds every buffer, the driver stops reading and the
-  host writer blocks once the pipe is full, so the driver drops nothing. Use a
-  rate-limited writer such as ``ffmpeg -re``: an unpaced one is read as fast as
-  the application returns buffers.
+  As with a camera, the host writer never waits for the application: a frame
+  that starts while no buffer is queued is dropped whole, which the application
+  sees as a gap in the buffer timestamps. Use a rate-limited writer such as
+  ``ffmpeg -re``, as an unpaced one writes frames as fast as it can, and those
+  the application cannot keep up with are dropped.
 
 .. _nsim_per_flash_simu:
 
