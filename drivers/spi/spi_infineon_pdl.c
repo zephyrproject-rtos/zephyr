@@ -1104,8 +1104,7 @@ cy_rslt_t spi_set_frequency(const struct device *dev, uint32_t hz)
 		cy_stc_scb_spi_config_t config_structure = config->scb_spi_config;
 
 		Cy_SCB_SPI_DeInit(config->reg_addr);
-		config_structure.spiMode =
-			data->is_peripheral == false ? CY_SCB_SPI_MASTER : CY_SCB_SPI_SLAVE;
+		config_structure.spiMode = CY_SCB_SPI_MASTER;
 		config_structure.enableMsbFirst = data->msb_first;
 		config_structure.sclkMode = data->clk_mode;
 		config_structure.rxDataWidth = data->data_bits;
