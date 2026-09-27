@@ -1,0 +1,126 @@
+/*
+ * Copyright (c) 2026 Kim Bøndergaard
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * ESP32S3-TOUCH-LCD-4-V4 GPIO allocation:
+ *
+ * IO0  - BOOT button / CAN RX / Strapping pin 0
+ * IO1  - LCD_SDA / SD_MOSI
+ * IO2  - LCD_SCL / SD_SCK
+ * IO3  - LCD_R1 / Strapping pin 1
+ * IO4  - SD_MISO
+ * IO5  - LCD_B1
+ * IO6  - CAN TX
+ * IO7  - I2C_0_SCL (TP, RTC, EXTI2C, IMU, IOEX)
+ * IO8  - LCD_R3
+ * IO9  - LCD_G5
+ * IO10 - LCD_G4
+ * IO11 - LCD_G3
+ * IO12 - LCD_G2
+ * IO13 - LCD_G1
+ * IO14 - LCD_G0
+ * IO15 - I2C_0_SDA (TP, RTC, EXTI2C, IMU,IOEX)
+ * IO16 - SYS_OUT
+ * IO17 - LCD_R5
+ * IO18 - LCD_R4
+ * IO19 - USB_N
+ * IO20 - USB_P
+ * IO21 - LCD_B5
+ * IO38 - LCD_HSYNC
+ * IO39 - LCD_VSYNC
+ * IO40 - LCD_DE
+ * IO41 - LCD_PCLK
+ * IO42 - LCD_CS
+ * IO43 - UART0_TX (RS485 / ESP_TXD)
+ * IO44 - UART0_RX (RS485 / ESP_RXD)
+ * IO45 - LCD_B2 / Strapping pin 2
+ * IO46 - LCD_R1 / Strapping pin 3
+ * IO47 - LCD_B4
+ * IO48 - LCD_B3
+ * EXIO1 - TP_RST
+ * EXIO2 - TP_INT
+ * EXIO3 - LCD_RST
+ * EXIO4 - SD_SC
+ * EXIO5 - SYS_EN
+ * EXIO6 - BEE_EN
+ * EXIO7 - RTC_INT
+ * EXIO_ADC - Battery voltage
+ * EXIO_PWM - LCD_BACKLIGHT
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+&pinctrl {
+	/*
+	 * LCD-CAM output for ST7701 RGB panel  (480x480).
+	 * 16-bit RGB565 data bus + VSYNC + HSYNC + DE + PCLK.
+	 */
+	lcd_cam_default: lcd_cam_default {
+		group1 {
+			pinmux = <LCD_CAM_LCD_CLK_GPIO41>,
+				 <LCD_CAM_V_SYNC_LCD_GPIO39>,
+				 <LCD_CAM_H_SYNC_LCD_GPIO38>,
+				 <LCD_CAM_H_ENABLE_LCD_GPIO40>,
+				 <LCD_CAM_DATA_OUT0_GPIO5>,
+				 <LCD_CAM_DATA_OUT1_GPIO45>,
+				 <LCD_CAM_DATA_OUT2_GPIO48>,
+				 <LCD_CAM_DATA_OUT3_GPIO47>,
+				 <LCD_CAM_DATA_OUT4_GPIO21>,
+				 <LCD_CAM_DATA_OUT5_GPIO14>,
+				 <LCD_CAM_DATA_OUT6_GPIO13>,
+				 <LCD_CAM_DATA_OUT7_GPIO12>,
+				 <LCD_CAM_DATA_OUT8_GPIO11>,
+				 <LCD_CAM_DATA_OUT9_GPIO10>,
+				 <LCD_CAM_DATA_OUT10_GPIO9>,
+				 <LCD_CAM_DATA_OUT11_GPIO46>,
+				 <LCD_CAM_DATA_OUT12_GPIO3>,
+				 <LCD_CAM_DATA_OUT13_GPIO8>,
+				 <LCD_CAM_DATA_OUT14_GPIO18>,
+				 <LCD_CAM_DATA_OUT15_GPIO17>;
+			output-enable;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO15>, <I2C0_SCL_GPIO7>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO1>, <I2C1_SCL_GPIO2>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO4>, <SPIM2_SCLK_GPIO2>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO1>;
+			output-low;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+};
