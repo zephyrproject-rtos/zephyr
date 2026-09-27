@@ -190,10 +190,10 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_stack, pop, stack, timeout);
 
 	result = z_pend_curr(&stack->lock, key, &stack->wait_q, timeout);
-	if (result == -EAGAIN) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, -EAGAIN);
+	if (result != 0) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, result);
 
-		return -EAGAIN;
+		return result;
 	}
 
 	*data = (stack_data_t)_current->base.swap_data;
