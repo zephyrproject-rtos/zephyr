@@ -1521,6 +1521,28 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t parti
 	return 0;
 }
 
+#ifdef CONFIG_MEM_WRITE_FAULT_HOOK
+int arch_mem_domain_page_attr_set(struct k_mem_domain *domain, void *virt, size_t size,
+				  k_mem_partition_attr_t attr)
+{
+	k_spinlock_key_t key;
+	int ret;
+
+	key = k_spin_lock(&xlat_lock);
+
+	ret = ensure_private_tables(domain->arch.ptables, (uintptr_t)virt, size);
+	if (ret == 0) {
+		map_user_range(domain->arch.ptables, (uintptr_t)virt, size,
+			       partition_attr_to_pte(attr));
+		SFENCE_VMA_ASID(domain->arch.asid);
+	}
+
+	k_spin_unlock(&xlat_lock, key);
+
+	return ret;
+}
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK */
+
 int arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;

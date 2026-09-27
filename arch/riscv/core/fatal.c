@@ -225,6 +225,14 @@ void z_riscv_fault(struct arch_esf *esf)
 		mcause = csr_read(scause);
 		mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 
+#ifdef CONFIG_MEM_WRITE_FAULT_HOOK
+		if ((mcause == RISCV_EXC_STORE_PAGE_FAULT) &&
+		    z_mem_write_fault((void *)csr_read(stval))) {
+			/* Write fault resolved, re-try */
+			return;
+		}
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK */
+
 		if (mcause == RISCV_EXC_INST_PAGE_FAULT ||
 		    mcause == RISCV_EXC_LOAD_PAGE_FAULT ||
 		    mcause == RISCV_EXC_STORE_PAGE_FAULT) {

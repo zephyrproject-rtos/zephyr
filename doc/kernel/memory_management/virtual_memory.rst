@@ -191,6 +191,25 @@ mappings must be aligned on page size and have finer access control.
     function does not check if it is a valid mapped region before unmapping.
 
 
+Write Faults on Protected Pages
+===============================
+
+An architecture that selects ``ARCH_HAS_MEM_WRITE_FAULT`` can offer a write
+fault on a present, write-protected page to the kernel before it becomes a
+fatal error. With :kconfig:option:`CONFIG_MEM_WRITE_FAULT_HOOK` the fault
+handler calls ``z_mem_write_fault()`` with the faulting address; when that
+returns ``true`` the access is retried, otherwise the fault is fatal as
+before. The hook runs in exception context and must not block.
+
+A subsystem provides the hook to learn which of the pages it manages have
+been modified: it maps them read-only, records the page when the first write
+faults, and makes the page writable again. The kernel's own view changes
+through :c:func:`k_mem_update_flags`; a memory domain's view changes with
+``arch_mem_domain_page_attr_set()``, which applies partition attributes to a
+page range inside an existing partition of the domain without touching the
+kernel mapping.
+
+
 API Reference
 *************
 

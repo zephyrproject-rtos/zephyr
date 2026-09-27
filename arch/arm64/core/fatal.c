@@ -23,6 +23,7 @@
 #include <zephyr/sys/poweroff.h>
 #include <kernel_arch_func.h>
 #include <kernel_arch_interface.h>
+#include <kernel_internal.h>
 #include <zephyr/arch/exception.h>
 
 #include "paging.h"
@@ -469,6 +470,23 @@ static bool is_bti_violation(uint64_t esr)
  * PAC authentication failures typically manifest as FPAC exceptions
  * with Exception Class (EC) 0x1c.
  */
+#ifdef CONFIG_MEM_WRITE_FAULT_HOOK
+/* a data abort caused by a write to a page the translation table protects */
+static bool is_write_permission_fault(uint64_t esr)
+{
+	uint64_t ec = GET_ESR_EC(esr);
+	uint64_t iss = GET_ESR_ISS(esr);
+
+	/* data abort from a lower or the current exception level */
+	if ((ec != 0x24) && (ec != 0x25)) {
+		return false;
+	}
+
+	/* WnR set and a permission fault status code (0b0011LL) */
+	return ((iss & BIT(6)) != 0) && ((iss & 0x3c) == 0x0c);
+}
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK */
+
 static bool is_pac_failure(uint64_t esr, uint64_t far)
 {
 #ifdef CONFIG_ARM_PAC
@@ -619,6 +637,13 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 		if (z_arm64_handle_pacbti_exception(esf, esr, far)) {
 			reason = K_ERR_CPU_EXCEPTION;
 		}
+
+#ifdef CONFIG_MEM_WRITE_FAULT_HOOK
+		if ((reason != K_ERR_STACK_CHK_FAIL) && is_write_permission_fault(esr) &&
+		    z_mem_write_fault((void *)far)) {
+			return;
+		}
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK */
 
 		if (IS_ENABLED(CONFIG_DEMAND_PAGING) &&
 		    reason != K_ERR_STACK_CHK_FAIL &&

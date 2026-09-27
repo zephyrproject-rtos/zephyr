@@ -1143,6 +1143,14 @@ config CPU_HAS_MMU
 	  This hidden option is selected when the CPU has a Memory Management Unit
 	  (MMU).
 
+config ARCH_HAS_MEM_WRITE_FAULT
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  its fault handler offers write faults on present pages to
+	  z_mem_write_fault() before treating them as fatal, and if it
+	  implements arch_mem_domain_page_attr_set().
+
 config ARCH_HAS_DEMAND_PAGING
 	bool
 	help

@@ -447,6 +447,21 @@ static const struct z_exc_handle exceptions[] = {
 
 void z_x86_page_fault_handler(struct arch_esf *esf)
 {
+#ifdef CONFIG_MEM_WRITE_FAULT_HOOK
+	{
+#ifdef CONFIG_X86_64
+		uintptr_t code = esf->code;
+#else
+		uintptr_t code = esf->errorCode;
+#endif
+
+		if (((code & (PF_P | PF_WR)) == (PF_P | PF_WR)) &&
+		    z_mem_write_fault(z_x86_cr2_get())) {
+			/* Write fault resolved, re-try */
+			return;
+		}
+	}
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK */
 #ifdef CONFIG_DEMAND_PAGING
 	if ((esf->errorCode & PF_P) == 0) {
 		/* Page was non-present at time exception happened.

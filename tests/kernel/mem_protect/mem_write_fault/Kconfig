@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Write fault hook test"
+
+source "Kconfig.zephyr"
+
+config TEST_MEM_WRITE_FAULT_HOOK
+	bool
+	default y
+	depends on ARCH_HAS_MEM_WRITE_FAULT && MMU
+	select MEM_WRITE_FAULT_HOOK
+	help
+	  The test provides z_mem_write_fault() itself.

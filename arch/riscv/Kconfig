@@ -405,6 +405,7 @@ config RISCV_MMU
 	bool "RISC-V MMU Support"
 	default y
 	depends on RISCV_PRIVILEGED
+	select ARCH_HAS_MEM_WRITE_FAULT
 	depends on RISCV_S_MODE
 	depends on 64BIT
 	# All enabled harts must declare an mmu-type ...

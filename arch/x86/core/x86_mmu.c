@@ -1558,6 +1558,18 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	return apply_region(ptn->start, ptn->size, ptn->attr);
 }
 
+#ifdef CONFIG_MEM_WRITE_FAULT_HOOK
+int arch_mem_domain_page_attr_set(struct k_mem_domain *domain, void *virt, size_t size,
+				  k_mem_partition_attr_t attr)
+{
+	if (domain != current_domain) {
+		return 0;
+	}
+
+	return apply_region((uintptr_t)virt, size, attr);
+}
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK */
+
 /* Rest of the APIs don't need to do anything */
 int arch_mem_domain_thread_add(struct k_thread *thread)
 {
@@ -1839,6 +1851,22 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	return apply_region(domain->arch.ptables, (void *)partition->start,
 			    partition->size, partition->attr | MMU_P);
 }
+
+#ifdef CONFIG_MEM_WRITE_FAULT_HOOK
+int arch_mem_domain_page_attr_set(struct k_mem_domain *domain, void *virt, size_t size,
+				  k_mem_partition_attr_t attr)
+{
+	int ret = apply_region(domain->arch.ptables, virt, size, attr | MMU_P);
+	uint8_t *pos;
+
+	/* the domain's tables need not be the active ones: flush the pages regardless */
+	for (pos = virt; pos < ((uint8_t *)virt + size); pos += CONFIG_MMU_PAGE_SIZE) {
+		tlb_flush_page(pos);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK */
 
 /* Invoked from memory domain API calls, as well as during thread creation */
 int arch_mem_domain_thread_add(struct k_thread *thread)

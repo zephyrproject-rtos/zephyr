@@ -373,6 +373,27 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
  */
 int arch_mem_unmap(void *addr, size_t size);
 
+#if defined(CONFIG_MEM_WRITE_FAULT_HOOK) && defined(CONFIG_USERSPACE)
+/**
+ * Change the access attributes of pages inside a memory domain's partition
+ *
+ * The range lies within a partition already added to the domain. Only the
+ * domain's own view changes; the kernel's mapping of the pages is untouched.
+ * The caller may be resolving a fault taken by a thread of the domain, so the
+ * translation must take effect for that thread as soon as this returns.
+ *
+ * @param domain Memory domain
+ * @param virt Page-aligned base virtual address
+ * @param size Page-aligned size
+ * @param attr Partition attributes to apply to the pages
+ *
+ * @retval 0 on success
+ * @retval -errno on failure
+ */
+int arch_mem_domain_page_attr_set(struct k_mem_domain *domain, void *virt, size_t size,
+				  k_mem_partition_attr_t attr);
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK && CONFIG_USERSPACE */
+
 /**
  * Update page frame database with reserved pages
  *

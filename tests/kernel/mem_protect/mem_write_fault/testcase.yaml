@@ -1,0 +1,17 @@
+common:
+  ignore_faults: true
+  tags:
+    - kernel
+    - mmu
+    - userspace
+  filter: CONFIG_ARCH_HAS_MEM_WRITE_FAULT and CONFIG_MMU
+  platform_key:
+    - arch
+    - simulation
+tests:
+  kernel.memory_protection.mem_write_fault: {}
+  kernel.memory_protection.mem_write_fault.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_USERSPACE=y

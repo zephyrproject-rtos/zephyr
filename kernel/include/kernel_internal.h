@@ -253,6 +253,15 @@ extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 /* Calculate stack usage. */
 int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
 
+#ifdef CONFIG_MEM_WRITE_FAULT_HOOK
+/*
+ * Offered a write fault on a present page before it is treated as fatal.
+ * Returns true when the fault has been resolved and the access may retry.
+ * Runs in exception context: it must not block.
+ */
+bool z_mem_write_fault(void *addr);
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK */
+
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack);
 

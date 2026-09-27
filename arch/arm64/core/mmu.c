@@ -1630,6 +1630,28 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 			 ptn->start, ptn->size);
 }
 
+#ifdef CONFIG_MEM_WRITE_FAULT_HOOK
+int arch_mem_domain_page_attr_set(struct k_mem_domain *domain, void *virt, size_t size,
+				  k_mem_partition_attr_t attr)
+{
+	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
+	uintptr_t va = (uintptr_t)virt;
+	const uintptr_t end = va + size;
+	int ret = 0;
+
+	/* memory-mapped pages are not identity mapped: follow the kernel translation */
+	for (; (va < end) && (ret == 0); va += CONFIG_MMU_PAGE_SIZE) {
+		uintptr_t phys = va;
+
+		(void)arch_page_phys_get((void *)va, &phys);
+		ret = private_map(domain_ptables, "page attr", phys, va, CONFIG_MMU_PAGE_SIZE,
+				  attr.attrs | MT_NORMAL);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_MEM_WRITE_FAULT_HOOK */
+
 static int map_thread_stack(struct k_thread *thread,
 			    struct arm_mmu_ptables *ptables)
 {

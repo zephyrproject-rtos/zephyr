@@ -116,6 +116,15 @@ config MMU_PAGE_SIZE
 	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
 	  support multiple page sizes, put the smallest one here.
 
+config MEM_WRITE_FAULT_HOOK
+	bool
+	depends on ARCH_HAS_MEM_WRITE_FAULT
+	help
+	  Route write faults on present, write-protected pages through
+	  z_mem_write_fault() before they become fatal errors, so a subsystem
+	  can track modifications to pages it manages. Selected by the
+	  subsystem that provides the hook.
+
 menuconfig DEMAND_PAGING
 	bool "Demand paging [EXPERIMENTAL]"
 	depends on ARCH_HAS_DEMAND_PAGING
