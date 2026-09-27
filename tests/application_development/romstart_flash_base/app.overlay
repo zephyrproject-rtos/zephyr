@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2026 favoritewky
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Move the code partition above a storage partition that sits in the
+ * first flash sectors, right after the boot vectors at the base of
+ * flash. STM32F401RE: sectors 0/1 are 16KB each (boot vectors), sectors
+ * 2/3 are 16KB each (storage), sectors 4-11 host the 64KB-aligned
+ * application image.
+ */
+
+&flash0 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x08000000 0x80000>;
+
+	partitions {
+		ranges;
+
+		/delete-node/ partition@0;
+		/delete-node/ partition@20000;
+		/delete-node/ partition@40000;
+		/delete-node/ partition@60000;
+
+		storage_partition: partition@8000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x00008000 0x00008000>;
+		};
+
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00010000 0x00070000>;
+		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,settings-partition = &storage_partition;
+	};
+};
