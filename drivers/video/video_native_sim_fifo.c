@@ -121,6 +121,29 @@ static void video_nsi_fifo_cleanup(struct video_nsi_fifo_data *data)
 	}
 }
 
+/*
+ * Frames the host pipe is enlarged to hold. With room for a single one, the host writer
+ * stalls until each frame is read; more absorb jitter, at the cost of latency when the
+ * pipe fills up.
+ */
+#define VIDEO_NSI_FIFO_PIPE_FRAMES 2
+
+/* A frame larger than the host pipe can take several polls to be read */
+static void video_nsi_fifo_grow_pipe(struct video_nsi_fifo_data *data)
+{
+	uint32_t size = VIDEO_NSI_FIFO_PIPE_FRAMES * data->fmt.size;
+	int ret = video_nsi_fifo_grow_pipe_bottom(data->fd, size);
+
+	if (ret < 0) {
+		LOG_WRN("Could not enlarge the host FIFO (%d)", -nsi_errno_from_mid(-ret));
+	} else if ((uint32_t)ret < size) {
+		LOG_WRN("Host FIFO capped at %d of %u bytes, which may limit the frame rate. "
+			"Raise /proc/sys/fs/pipe-max-size or run with CAP_SYS_RESOURCE, e.g. as "
+			"root: see the native_sim board documentation",
+			ret, size);
+	}
+}
+
 static int video_nsi_fifo_open(struct video_nsi_fifo_data *data)
 {
 	int fd;
@@ -133,6 +156,7 @@ static int video_nsi_fifo_open(struct video_nsi_fifo_data *data)
 	data->fd = fd;
 	data->frame_offset = 0;
 	data->discard = false;
+	video_nsi_fifo_grow_pipe(data);
 
 	return 0;
 }
@@ -218,7 +242,10 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 
-		/* -EAGAIN: no more data for now, -EPIPE: all the writers closed the FIFO */
+		/*
+		 * -EAGAIN: no more data for now, the rest of the frame is read on a later poll.
+		 * -EPIPE: all the writers closed the FIFO.
+		 */
 		ret = -nsi_errno_from_mid(-ret);
 		if (ret == -EPIPE) {
 			/*
@@ -272,6 +299,9 @@ static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format 
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 	data->fmt = *fmt;
+	if (data->fd >= 0) {
+		video_nsi_fifo_grow_pipe(data);
+	}
 	k_mutex_unlock(&data->lock);
 
 	return 0;
