@@ -402,6 +402,21 @@ static int nsos_poll_update(struct nsos_socket *sock, struct zsock_pollfd *pfd,
 	return 0;
 }
 
+static int nsos_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+				   struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	struct nsos_socket *sock = obj;
+
+	return nsos_poll_prepare(sock, pfd, pev, pev_end, &sock->poll);
+}
+
+static int nsos_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	struct nsos_socket *sock = obj;
+
+	return nsos_poll_update(sock, pfd, pev, &sock->poll);
+}
+
 static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 {
 	struct nsos_socket *sock = obj;
@@ -1649,6 +1664,8 @@ static const struct socket_op_vtable nsos_socket_fd_op_vtable = {
 		.write = nsos_write,
 		.close = nsos_close,
 		.ioctl = nsos_ioctl,
+		.poll_prepare = nsos_poll_prepare_vmeth,
+		.poll_update = nsos_poll_update_vmeth,
 	},
 	.bind = nsos_bind,
 	.connect = nsos_connect,
