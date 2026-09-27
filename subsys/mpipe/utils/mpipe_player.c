@@ -52,9 +52,8 @@ static struct k_spinlock mpipe_players_lock;
 static void mpipe_player_msg_cb(const struct zbus_channel *chan);
 
 /*
- * Listener for the messages the pipeline posts on its bus. zbus runs it inline
- * in the posting thread, holding the channel lock, so it only ever records the
- * message and queues a command; the worker does the rest.
+ * zbus runs the listener inline in the posting thread, holding the channel
+ * lock, so it only records the message and queues a command for the worker.
  */
 ZBUS_LISTENER_DEFINE(mpipe_player_listener, mpipe_player_msg_cb);
 
@@ -70,7 +69,6 @@ static const char *const mpipe_player_domain_names[] = {
 BUILD_ASSERT(ARRAY_SIZE(mpipe_player_domain_names) == MPIPE_ERROR_DOMAIN_END,
 	     "An error domain has no name in mpipe_player_domain_names");
 
-/* A NULL entry is a mid-enum hole the size assertion cannot see */
 static const char *mpipe_player_domain_str(uint8_t domain)
 {
 	if (domain >= ARRAY_SIZE(mpipe_player_domain_names) ||
@@ -81,11 +79,11 @@ static const char *mpipe_player_domain_str(uint8_t domain)
 	return mpipe_player_domain_names[domain];
 }
 
-/* The pipeline's state in the player's words: READY is what a stop leaves behind */
 static const char *mpipe_player_state_str(enum mpipe_state state)
 {
 	switch (state) {
 	case MPIPE_STATE_READY:
+		/* READY is what a stop leaves behind */
 		return "STOPPED";
 	case MPIPE_STATE_PLAYING:
 		return "PLAYING";
@@ -96,7 +94,6 @@ static const char *mpipe_player_state_str(enum mpipe_state state)
 	}
 }
 
-/* Only the worker changes it; a reader on the worker or the shell sees a settled value */
 static enum mpipe_state mpipe_player_get_state(const struct mpipe_player *player)
 {
 	return ((const struct mpipe_element *)player->pipeline)->current_state;
@@ -109,14 +106,6 @@ static uint8_t mpipe_player_id(const struct mpipe_player *player)
 
 #if defined(CONFIG_MPIPE_PLAYER_DUMP_ON_STATE_CHANGE)
 
-/*
- * Render the graph to the console, headed by the transition that produced it.
- *
- * Through printk rather than the shell: no shell instance exists here, and a
- * dump asked for at the shell goes through that instead. A failed transition is
- * worth a graph of its own - nothing unwinds one, so what is rendered is the
- * state the pipeline broke in.
- */
 static void mpipe_player_dump_transition(struct mpipe_player *player, enum mpipe_state from,
 					 enum mpipe_state to, bool ok)
 {
@@ -137,13 +126,8 @@ static void mpipe_player_dump(struct mpipe_player *player, const char *what)
 #endif /* CONFIG_MPIPE_PLAYER_DUMP_ON_STATE_CHANGE */
 
 /*
- * Drive the pipeline to a target state. Already there is a no-op.
- *
- * One transition at a time rather than asking for the target directly. This is
- * the same work in the same order - mpipe_element_set_state_func() runs one
- * transition per iteration of its own loop either way - and it lets the player
- * see each step, which is what makes a dump per transition possible and what
- * names the transition a failure happened in.
+ * Drive the pipeline to a target state, one transition at a time so that each
+ * step can be dumped and a failure names the transition it happened in.
  */
 static void mpipe_player_set_state(struct mpipe_player *player, enum mpipe_state target)
 {
@@ -173,9 +157,7 @@ static void mpipe_player_set_state(struct mpipe_player *player, enum mpipe_state
 
 static void mpipe_player_do_play(struct mpipe_player *player)
 {
-	/* A resume continues the run it was paused in; a start from READY
-	 * begins a new one, which retires any end-of-run still queued.
-	 */
+	/* A start from READY begins a new run, which retires any queued end-of-run */
 	if (mpipe_player_get_state(player) == MPIPE_STATE_READY) {
 		player->run_id++;
 	}
@@ -183,31 +165,18 @@ static void mpipe_player_do_play(struct mpipe_player *player)
 	mpipe_player_set_state(player, MPIPE_STATE_PLAYING);
 }
 
-/*
- * Say which element failed and what it was doing. Without both, a failure on
- * the pipeline thread reads as a stall with an unexplained log line somewhere
- * above it.
- */
 static void mpipe_player_report_error(struct mpipe_player *player, const struct mpipe_message *msg)
 {
 	LOG_ERR("Player #%u: error from element #%u in %s (%d)", mpipe_player_id(player),
 		msg->origin != NULL ? msg->origin->object.id : UINT8_MAX,
 		mpipe_player_domain_str(msg->domain), msg->code);
 
-	/*
-	 * Only worth a graph when the error arrived while streaming: nothing is
-	 * torn down until the stop below, so this is the live graph at the point
-	 * it broke. An error raised during a transition finds the pipeline short
-	 * of PLAYING, and the failed transition has already dumped the same graph.
-	 */
+	/* Only while streaming: a failed transition has already dumped its graph */
 	if (mpipe_player_get_state(player) == MPIPE_STATE_PLAYING) {
 		mpipe_player_dump(player, "ERROR");
 	}
 }
 
-/*
- * Apply a single command. Returns true when the worker should exit (QUIT).
- */
 static bool mpipe_player_handle_cmd(struct mpipe_player *player,
 				    const struct mpipe_player_cmd_msg *msg)
 {
@@ -234,10 +203,8 @@ static bool mpipe_player_handle_cmd(struct mpipe_player *player,
 	case MPIPE_PLAYER_CMD_END_OF_RUN:
 	case MPIPE_PLAYER_CMD_RUN_ERROR:
 		/*
-		 * An end-of-run describes the run it was posted from. A replay
-		 * racing the end of the previous run leaves one queued behind the
-		 * replay, and acting on it would stop the run that has just
-		 * started. Drop it: the run it speaks for no longer exists.
+		 * A replay racing the end of the previous run leaves that run's
+		 * end-of-run queued behind it; acting on it would stop the new run.
 		 */
 		if (msg->run_id != player->run_id) {
 			LOG_DBG("Dropping end-of-run from run %u, now on run %u", msg->run_id,
@@ -245,9 +212,7 @@ static bool mpipe_player_handle_cmd(struct mpipe_player *player,
 			break;
 		}
 
-		/* Reported here, not in the listener: this is where it is worth
-		 * saying, and where the pipeline state the report reads is settled.
-		 */
+		/* Reported here, not in the listener, where the pipeline state is settled */
 		if (msg->cmd == MPIPE_PLAYER_CMD_RUN_ERROR) {
 			mpipe_player_report_error(player, &player->last_error);
 		} else {
@@ -272,11 +237,7 @@ static bool mpipe_player_handle_cmd(struct mpipe_player *player,
 	return false;
 }
 
-/*
- * Player worker thread. It is the sole owner of every state transition, so no
- * state change ever runs in a pipeline thread's context (which would risk a
- * thread joining itself on teardown) nor on the system work queue.
- */
+/* The worker owns every state transition: none runs in a pipeline thread's context */
 static void mpipe_player_worker(void *p1, void *p2, void *p3)
 {
 	struct mpipe_player *player = p1;
@@ -475,16 +436,10 @@ int mpipe_player_deinit(struct mpipe_player *player)
 		return -EINVAL;
 	}
 
-	/* Post QUIT here too so cleanup works even if the caller never called
-	 * mpipe_player_quit().
-	 */
+	/* In case the caller never asked for it */
 	(void)mpipe_player_post(player, MPIPE_PLAYER_CMD_QUIT);
 
-	/* Wait via k_thread_join(), not k_sem_take(&exited): the worker signals
-	 * "exited" only once, and mpipe_player_wait_quit() may have already consumed
-	 * it, so a second take could block forever. join() returns once the
-	 * worker function has returned, regardless of who consumed the semaphore.
-	 */
+	/* Join rather than take exited: mpipe_player_wait_quit() may have consumed it */
 	(void)k_thread_join(&player->worker, K_FOREVER);
 
 	/* Unregister first: a message arriving before the listener is detached is ignored */
@@ -618,11 +573,6 @@ static int cmd_player_status(const struct shell *sh, size_t argc, char **argv)
 
 #if defined(CONFIG_MPIPE_DUMP)
 
-/*
- * Write a dump to a shell instance. Going through the shell rather than the log
- * keeps prefixes and timestamps out of the graph, which is what lets the DOT
- * rendering be piped straight into dot(1).
- */
 static void mpipe_player_dump_print(void *ctx, const char *str)
 {
 	shell_fprintf((const struct shell *)ctx, SHELL_NORMAL, "%s", str);
@@ -677,7 +627,6 @@ SHELL_CMD_ARG_REGISTER(p, NULL, "Player: play/pause toggle [id]", cmd_player_tog
 SHELL_CMD_ARG_REGISTER(s, NULL, "Player: stop [id]", cmd_player_stop, 1, 1);
 SHELL_CMD_ARG_REGISTER(r, NULL, "Player: replay from the beginning [id]", cmd_player_replay, 1, 1);
 SHELL_CMD_ARG_REGISTER(q, NULL, "Player: quit [id]", cmd_player_quit, 1, 1);
-
 #if defined(CONFIG_MPIPE_DUMP)
 SHELL_CMD_ARG_REGISTER(d, NULL, "Player: dump the pipeline as a Graphviz graph [id]",
 		       cmd_player_dump, 1, 1);
