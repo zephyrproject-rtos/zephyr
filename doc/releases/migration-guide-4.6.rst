@@ -55,6 +55,13 @@ Bluetooth
 Networking
 **********
 
+OpenThread
+==========
+
+* The :kconfig:option:`OPENTHREAD_THREAD_VERSION_1_4` Kconfig option is now enabled by default.
+
+* Applications that require an older OpenThread version must explicitly select the desired version in their project Kconfig configuration.
+
 Other subsystems
 ****************
 
