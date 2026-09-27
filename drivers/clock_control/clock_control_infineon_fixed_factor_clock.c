@@ -104,6 +104,8 @@ static int fixed_factor_clk_init(const struct device *dev)
 			return -EIO;
 		}
 #endif
+		/* Refresh SystemCoreClock and the Cy_SysLib_Delay calibration */
+		SystemCoreClockUpdate();
 		break;
 
 	case IFX_PUMP:
