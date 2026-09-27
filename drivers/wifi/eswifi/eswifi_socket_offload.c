@@ -622,6 +622,33 @@ int eswifi_socket_create(int family, int type, int proto)
 	return fd;
 }
 
+static int eswifi_socket_poll_prepare(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+	ARG_UNUSED(pev_end);
+
+	return -EXDEV;
+}
+
+static int eswifi_socket_poll_update(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+
+	return -EOPNOTSUPP;
+}
+
+static int eswifi_socket_poll_offload(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+
+	return eswifi_socket_poll(fds, nfds, timeout);
+}
+
 static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
@@ -666,6 +693,9 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 		.write = eswifi_socket_write,
 		.close = eswifi_socket_close,
 		.ioctl = eswifi_socket_ioctl,
+		.poll_prepare = eswifi_socket_poll_prepare,
+		.poll_update = eswifi_socket_poll_update,
+		.poll_offload = eswifi_socket_poll_offload,
 	},
 	.bind = eswifi_socket_bind,
 	.connect = eswifi_socket_connect,
