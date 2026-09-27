@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Kim Bøndergaard
+# SPDX-License-Identifier: Apache-2.0
+
+if GPIO_CH32V003
+
+config PWM_WAVESHARE_CH32V003
+	bool "Waveshare CH32V003 PWM output"
+	default y
+	depends on PWM
+	help
+	  Enable PWM output support for the Waveshare CH32V003.
+
+config PWM_WAVESHARE_CH32V003_INIT_PRIORITY
+	int "PWM init priority"
+	default 71
+	depends on PWM_WAVESHARE_CH32V003
+	help
+	  Device driver initialization priority for CH32V003 PWM.
+
+endif # GPIO_CH32V003
