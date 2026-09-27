@@ -1,0 +1,24 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config SCD30
+	bool "SCD30 Sensor module driver"
+	default y
+	depends on DT_HAS_SENSIRION_SCD30_ENABLED
+	select I2C
+	select CRC
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_SENSIRION_SCD30),ready-gpios)
+	help
+	  Enable driver for the Sensirion SCD30 sensor module.
+
+if SCD30
+
+config SCD30_TRIGGER
+	bool "SCD30 Sensor module data ready trigger"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SENSIRION_SCD30),ready-gpios)
+	select GPIO
+	help
+	  Enable interrupt based data ready trigger support for SCD30.
+
+endif
