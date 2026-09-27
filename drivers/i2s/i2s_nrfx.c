@@ -321,7 +321,11 @@ static void data_handler(const struct device *dev,
 			}
 		}
 
-		(void)supply_next_buffers(drv_data, &next);
+		if (!supply_next_buffers(drv_data, &next) && next.p_tx_buffer != NULL &&
+		    next.p_tx_buffer != drv_data->last_tx_buffer) {
+			/* Taken off the queue above but never handed to nrfx. */
+			free_tx_buffer(drv_data, next.p_tx_buffer);
+		}
 	}
 }
 
