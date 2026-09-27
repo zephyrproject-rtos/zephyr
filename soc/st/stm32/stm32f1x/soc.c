@@ -11,12 +11,15 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 
 #include <stm32_ll_system.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_gpio.h>
 
 #include <cmsis_core.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 /**
  * Does pinctrl property `swj-cfg` have value @p v ?
