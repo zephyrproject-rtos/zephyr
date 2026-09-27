@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Hsiu-Chi Tsai
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_MULTIPLE_INSTANCES
+	bool "Also test the mipi_dbi_1 instance"
+	help
+	  Run the tests on mipi_dbi_1 as well. Both instances have eight data
+	  pins, so only the 8-bit 8080 mode is used.
+
+source "Kconfig.zephyr"
