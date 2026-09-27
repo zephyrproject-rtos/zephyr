@@ -240,7 +240,7 @@ manifest:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 266394b0f23dff8f77c54f67f89d62cee246f21d
+      revision: 2e9dbf14fa56e5907aefb07e8e75010ec5210946
       groups:
         - hal
     - name: hal_sifli
