@@ -33,6 +33,7 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 	stack->next = buffer;
 	stack->base = buffer;
 	stack->top = stack->base + num_entries;
+	stack->flags = 0;
 
 	SYS_PORT_TRACING_OBJ_INIT(k_stack, stack);
 	k_object_init(stack);
