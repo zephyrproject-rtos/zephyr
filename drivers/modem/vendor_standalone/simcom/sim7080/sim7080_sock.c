@@ -559,30 +559,11 @@ static int offload_poll_offload(void *obj, struct zvfs_pollfd *fds, int nfds, in
 }
 
 /*
- * Offloads ioctl. Supports the poll offload requests and the
- * F_GETFL/F_SETFL fcntl requests.
+ * Offloads ioctl. Supports the F_GETFL/F_SETFL fcntl requests.
  */
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE:
-		return -EXDEV;
-
-	case ZFD_IOCTL_POLL_UPDATE:
-		return -EOPNOTSUPP;
-
-	case ZFD_IOCTL_POLL_OFFLOAD: {
-		/* Poll on the given socket. */
-		struct zsock_pollfd *fds;
-		int nfds, timeout;
-
-		fds = va_arg(args, struct zsock_pollfd *);
-		nfds = va_arg(args, int);
-		timeout = va_arg(args, int);
-
-		return offload_poll(fds, nfds, timeout);
-	}
-
 	case ZVFS_F_GETFL:
 		/* The socket is always blocking, no flags are set. */
 		return 0;
