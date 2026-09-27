@@ -97,6 +97,14 @@ Bluetooth Classic
 Networking
 **********
 
+* The ``ZFD_IOCTL_POLL_PREPARE``, ``ZFD_IOCTL_POLL_UPDATE``, and
+  ``ZFD_IOCTL_POLL_OFFLOAD`` requests have been deprecated. Implement ``poll_prepare``,
+  ``poll_update``, and ``poll_offload`` in :c:struct:`fd_op_vtable` instead. Out-of-tree ioctl
+  handlers that forward these requests to an in-tree socket should use
+  ``zvfs_fdtable_call_poll_prepare()``, ``zvfs_fdtable_call_poll_update()``, and
+  ``zvfs_fdtable_call_poll_offload()``, as in-tree sockets no longer handle the ``ZFD_IOCTL_POLL_*``
+  requests in their ioctl handlers.
+
 Other subsystems
 ****************
 

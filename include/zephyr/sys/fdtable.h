@@ -312,9 +312,9 @@ enum {
 	/* Codes below 0x100 are reserved for fcntl() codes. */
 	ZFD_IOCTL_FSYNC = 0x100,
 	ZFD_IOCTL_LSEEK,
-	ZFD_IOCTL_POLL_PREPARE,
-	ZFD_IOCTL_POLL_UPDATE,
-	ZFD_IOCTL_POLL_OFFLOAD,
+	ZFD_IOCTL_POLL_PREPARE __deprecated,
+	ZFD_IOCTL_POLL_UPDATE __deprecated,
+	ZFD_IOCTL_POLL_OFFLOAD __deprecated,
 	ZFD_IOCTL_SET_LOCK,
 	ZFD_IOCTL_STAT,
 	ZFD_IOCTL_TRUNCATE,
@@ -333,6 +333,7 @@ enum {
  * @brief Call the poll prepare vmethod on an object.
  *
  * Falls back to ZFD_IOCTL_POLL_PREPARE if the vmethod is not implemented.
+ * Return errors directly as negative errno values, not as -1 with errno set.
  *
  * @param vtable vtable containing poll operation implementations
  * @param obj Object to prepare for polling
@@ -340,37 +341,57 @@ enum {
  * @param pev Pointer to the next poll event
  * @param pev_end End of the poll event array
  *
- * @return Result from the poll prepare operation
+ * @retval 0 Success
+ * @retval -EALREADY Object is already ready; poll should proceed without waiting
+ * @retval -EXDEV Polling is offloaded; poll_offload should be used
+ * @return Other negative errno values on failure
  */
 static inline int zvfs_fdtable_call_poll_prepare(const struct fd_op_vtable *vtable, void *obj,
 						 struct zvfs_pollfd *pfd, struct k_poll_event **pev,
 						 struct k_poll_event *pev_end)
 {
+	int ret;
+
 	if (vtable->poll_prepare != NULL) {
 		return vtable->poll_prepare(obj, pfd, pev, pev_end);
 	}
-	return zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_PREPARE, pfd, pev, pev_end);
+
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_PREPARE, pfd, pev, pev_end);
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+
+	return ret;
 }
 
 /**
  * @brief Call the poll update vmethod on an object.
  *
  * Falls back to ZFD_IOCTL_POLL_UPDATE if the vmethod is not implemented.
+ * Return errors directly as negative errno values, not as -1 with errno set.
  *
  * @param vtable vtable containing poll operation implementations
  * @param obj Object to update after polling
  * @param pfd Poll file descriptor
  * @param pev Pointer to the next poll event
  *
- * @return Result from the poll update operation
+ * @retval 0 Success
+ * @retval -EAGAIN Poll should be retried
+ * @return Other negative errno values on failure
  */
 static inline int zvfs_fdtable_call_poll_update(const struct fd_op_vtable *vtable, void *obj,
 						struct zvfs_pollfd *pfd, struct k_poll_event **pev)
 {
+	int ret;
+
 	if (vtable->poll_update != NULL) {
 		return vtable->poll_update(obj, pfd, pev);
 	}
-	return zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE, pfd, pev);
+
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE, pfd, pev);
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+
+	return ret;
 }
 
 /**
@@ -384,15 +405,22 @@ static inline int zvfs_fdtable_call_poll_update(const struct fd_op_vtable *vtabl
  * @param nfds Number of poll file descriptors
  * @param timeout Poll timeout in milliseconds
  *
- * @return Result from the poll offload operation
+ * @return Result of the poll operation
  */
 static inline int zvfs_fdtable_call_poll_offload(const struct fd_op_vtable *vtable, void *obj,
 						struct zvfs_pollfd *fds, int nfds, int timeout)
 {
+	int ret;
+
 	if (vtable->poll_offload != NULL) {
 		return vtable->poll_offload(obj, fds, nfds, timeout);
 	}
-	return zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_OFFLOAD, fds, nfds, timeout);
+
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_OFFLOAD, fds, nfds, timeout);
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+
+	return ret;
 }
 
 /**
