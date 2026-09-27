@@ -23,7 +23,7 @@ static const uint8_t modes[] = {
 	MIPI_DBI_MODE_8080_BUS_8_BIT,
 /* A bit-banged controller drives only the width its data-gpios lists. */
 #if !DT_NODE_HAS_COMPAT(DT_NODELABEL(mipi_dbi), zephyr_mipi_dbi_bitbang)
-#ifndef MULTIPLE_INSTANCES
+#ifndef CONFIG_TEST_MULTIPLE_INSTANCES
 	MIPI_DBI_MODE_8080_BUS_9_BIT,
 	MIPI_DBI_MODE_8080_BUS_16_BIT,
 #endif
@@ -31,7 +31,7 @@ static const uint8_t modes[] = {
 };
 
 static const struct device *const devices[] = {DEVICE_DT_GET(DT_NODELABEL(mipi_dbi)),
-#ifdef MULTIPLE_INSTANCES
+#ifdef CONFIG_TEST_MULTIPLE_INSTANCES
 					       DEVICE_DT_GET(DT_NODELABEL(mipi_dbi_1))
 #endif
 };

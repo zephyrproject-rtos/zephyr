@@ -52,9 +52,10 @@ tests:
       - rpi_pico/rp2040
       - rpi_pico2/rp2350a/m33_0
       - rpi_pico2/rp2350a/hazard3_0
+    extra_configs:
+      - CONFIG_TEST_MULTIPLE_INSTANCES=y
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_multiple_instances_4_splits.overlay
-      - MULTIPLE_INSTANCES=1
   drivers.mipi_dbi.rpi_pico.pio2.single_split:
     platform_allow:
       - rpi_pico2/rp2350a/m33_0
