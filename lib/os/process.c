@@ -860,7 +860,8 @@ static int process_vm_clone(struct k_process *parent, struct k_process *proc)
 	for (uint8_t i = 0; i < src->num_partitions; i++) {
 		struct k_mem_partition *part = &src->partitions[i];
 
-		if ((part->size == 0U) || !K_MEM_PARTITION_IS_WRITABLE(part->attr)) {
+		if ((part->size == 0U) || !K_MEM_PARTITION_IS_WRITABLE(part->attr) ||
+		    z_zvfs_mmap_is_shared(part->start)) {
 			continue;
 		}
 		ret = vm_clone_range(ctx, part->start, part->size);
@@ -1029,9 +1030,19 @@ int z_sys_clone_vm_copy(const struct sys_clone_args *args, k_pid_t *child)
 		return ret;
 	}
 
+	/* and the caller's memory mappings, in the copied address space */
+	ret = z_zvfs_mmap_clone(proc, z_process_vm_domain(proc->vm));
+	if (ret < 0) {
+		k_thread_abort(tid);
+		z_process_fds_drop(proc);
+		(void)z_process_record_free(proc);
+		return ret;
+	}
+
 	ret = k_process_init(proc, &tid, 1);
 	if (ret < 0) {
 		k_thread_abort(tid);
+		z_process_mmap_drop(proc);
 		z_process_fds_drop(proc);
 		(void)z_process_record_free(proc);
 		return ret;

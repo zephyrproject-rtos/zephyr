@@ -226,6 +226,21 @@ static inline void z_process_fds_drop(struct k_process *proc)
 }
 #endif /* CONFIG_ZVFS_FDTABLE && CONFIG_PROCESS */
 
+/* Per-process memory-mapping providers (zvfs), with the same contract */
+#if defined(CONFIG_ZVFS_MMAP) && defined(CONFIG_PROCESS)
+void z_process_mmap_exit(void);
+void z_process_mmap_drop(struct k_process *proc);
+#else
+static inline void z_process_mmap_exit(void)
+{
+}
+
+static inline void z_process_mmap_drop(struct k_process *proc)
+{
+	ARG_UNUSED(proc);
+}
+#endif /* CONFIG_ZVFS_MMAP && CONFIG_PROCESS */
+
 #ifdef CONFIG_USERSPACE
 /* permission-principal index management and the reap-time sweep */
 int16_t z_process_perm_index_alloc(void);
@@ -362,10 +377,10 @@ extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 /* Calculate stack usage. */
 int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
 
-#ifdef CONFIG_ZVFS_MMAP
+#if defined(CONFIG_ZVFS_MMAP) && !defined(CONFIG_PROCESS)
 /* Release the memory mappings an exiting thread owns (lib/os/zvfs) */
 void z_zvfs_mmap_thread_exit(struct k_thread *thread);
-#endif /* CONFIG_ZVFS_MMAP */
+#endif /* CONFIG_ZVFS_MMAP && !CONFIG_PROCESS */
 
 #ifdef CONFIG_MEM_WRITE_FAULT_HOOK
 /*

@@ -50,11 +50,26 @@ Protection
 References and lifetime
    A mapping counts as a reference on its open file object alongside the
    descriptors, so the file stays open after the last descriptor is closed
-   until the last mapping of it is released. A mapping belongs to the thread
-   that created it and is released when that thread exits.
+   until the last mapping of it is released.
+
+Ownership
+   A mapping belongs to the thread that created it or, with
+   :kconfig:option:`CONFIG_PROCESS`, to that thread's process, and is released
+   when the owner exits: in the exiting process's own context, so a shared file
+   mapping is written back by the time the process can be reaped, and otherwise
+   by the next mapping operation. A process created with a copy of its parent's
+   address space (:kconfig:option:`CONFIG_PROCESS_VM`) inherits the parent's
+   mappings: shared mappings keep aliasing the same pages, private ones are
+   copied along with the rest of the writable memory. A process started on a
+   new image has no mappings. Mapping operations only reach the caller's own
+   process's mappings.
 
 ``zvfs_munmap()`` of part of a mapping trims it or splits it into two pieces
 that share the original's storage, which is released with the last piece.
+A mapping shared with forked copies keeps its shape, as does a mapping granted
+to user mode on a board without an MMU, whose protection region covers it whole:
+a partial ``zvfs_munmap()`` of those fails with ``EINVAL``. ``zvfs_mprotect()``
+operates on whole mappings; a range that covers part of one is rejected.
 
 Shared Memory Objects
 *********************
@@ -76,7 +91,3 @@ new object under the same name, and the unlinked object is freed when its last
 descriptor and its last mapping are gone. Objects come from a pool of
 :kconfig:option:`CONFIG_ZVFS_SHM_MAX`, with names shorter than
 :kconfig:option:`CONFIG_ZVFS_SHM_NAME_MAX`.
-A mapping granted to user mode on a board without an MMU keeps its shape, its
-protection region covers it whole: a partial ``zvfs_munmap()`` of it fails with
-``EINVAL``. ``zvfs_mprotect()`` operates on whole mappings; a range that covers
-part of one is rejected.

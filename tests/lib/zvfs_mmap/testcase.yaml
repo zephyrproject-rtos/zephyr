@@ -20,3 +20,41 @@ tests:
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
       - CONFIG_USERSPACE=y
+  libraries.zvfs_mmap.process:
+    extra_configs:
+      - CONFIG_PROCESS=y
+      - CONFIG_SYS_PROCESS=y
+  libraries.zvfs_mmap.process.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: userspace
+    platform_exclude:
+      - mps2/an385
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_USERSPACE=y
+      - CONFIG_PROCESS=y
+      - CONFIG_SYS_PROCESS=y
+      - CONFIG_MAX_THREAD_BYTES=3
+  libraries.zvfs_mmap.process.vm:
+    # the fork test: a child with a copy of the address space
+    filter: CONFIG_ARCH_HAS_PROCESS_VM
+    tags: userspace
+    platform_allow:
+      - qemu_x86_64
+      - qemu_cortex_a53
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_USERSPACE=y
+      - CONFIG_PROCESS=y
+      - CONFIG_SYS_PROCESS=y
+      - CONFIG_PROCESS_VM=y
+      - CONFIG_CURRENT_THREAD_USE_TLS=n
+      - CONFIG_MAX_THREAD_BYTES=3
+      # the forked child's leader and stack come from the pools
+      - CONFIG_SYS_THREAD_THREAD_MIN=2
+      - CONFIG_SYS_THREAD_STACK_MIN=2
+      # the copied writable memory of the test process
+      - CONFIG_HEAP_MEM_POOL_SIZE=131072
+      # PROCESS_VM needs the kernel on the process's page tables
+      - platform:qemu_x86_64/atom:CONFIG_X86_KPTI=n

@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/internal/fdtable_priv.h>
+#include <zephyr/sys/thread.h>
 #include <zephyr/sys/zvfs.h>
 #include <zephyr/sys/zvfs_fs.h>
 #include <zephyr/ztest.h>
@@ -488,6 +489,7 @@ ZTEST_USER(zvfs_mmap, test_zvfs_mprotect)
 static ZTEST_BMEM int mapper_mapped;
 static ZTEST_BMEM int mapper_extra_ret;
 static ZTEST_BMEM int mapper_extra_errno;
+static ZTEST_BMEM void *mapper_addrs[CONFIG_ZVFS_MMAP_MAX];
 
 static void mapper(void *p1, void *p2, void *p3)
 {
@@ -504,7 +506,7 @@ static void mapper(void *p1, void *p2, void *p3)
 			break;
 		}
 		((uint8_t *)p)[0] = (uint8_t)i;
-		mapper_mapped++;
+		mapper_addrs[mapper_mapped++] = p;
 	}
 	errno = 0;
 	mapper_extra_ret = zvfs_mmap(PAGE, RW, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0, &p);
@@ -514,25 +516,198 @@ static void mapper(void *p1, void *p2, void *p3)
 static K_THREAD_STACK_DEFINE(mapper_stack, 4096);
 static struct k_thread mapper_thread;
 
-/* the mappings of a thread are released when it exits */
+/* the mappings of a thread are released when it exits; with processes they outlive it */
 ZTEST(zvfs_mmap, test_zvfs_mmap_owner_exit)
 {
 	uint32_t opts = IS_ENABLED(CONFIG_USERSPACE) ? (K_USER | K_INHERIT_PERMS) : 0;
 	uint8_t *p;
+	int ret;
 
 	k_thread_create(&mapper_thread, mapper_stack, K_THREAD_STACK_SIZEOF(mapper_stack), mapper,
 			NULL, NULL, NULL, K_PRIO_PREEMPT(0), opts, K_NO_WAIT);
-	zassert_ok(k_thread_join(&mapper_thread, K_SECONDS(5)));
-	zassert_equal(mapper_mapped, CONFIG_ZVFS_MMAP_MAX, "only %d of %d mappings", mapper_mapped,
-		      CONFIG_ZVFS_MMAP_MAX);
+	ret = k_thread_join(&mapper_thread, K_SECONDS(5));
+	zassert_ok(ret, "joining the mapping thread failed: %d", ret);
+	/* the whole pool, less what a faulted test thread may have left to its process */
+	zassert_true(mapper_mapped >= 1, "no mapping at all");
 	zassert_equal(mapper_extra_ret, -1, "a mapping beyond the pool succeeded");
 	zassert_equal(mapper_extra_errno, ENOMEM);
 
-	/* the next mapping operation releases them */
+	if (IS_ENABLED(CONFIG_PROCESS)) {
+		/* a member thread's mappings belong to the process: still there, still full */
+		expect_mmap_error(PAGE, RW, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0, ENOMEM);
+		for (int i = 0; i < mapper_mapped; ++i) {
+			zassert_equal(((uint8_t *)mapper_addrs[i])[0], (uint8_t)i);
+			zassert_ok(zvfs_munmap(mapper_addrs[i], PAGE));
+		}
+	}
+
+	/* otherwise the next mapping operation releases them */
 	p = map(PAGE, RW, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0);
 	zassert_equal(p[0], 0);
 	zassert_ok(zvfs_munmap(p, PAGE));
 }
+
+#ifdef CONFIG_PROCESS
+#define PROCESS_MARK 0xA5
+
+static K_THREAD_STACK_DEFINE(child_stack, 4096);
+static struct k_thread child_thread;
+
+/* map the file, fill the pool with anonymous mappings, then leave without unmapping */
+static void process_mapper(void *p1, void *p2, void *p3)
+{
+	int fd = (int)(intptr_t)p1;
+	bool call_exit = p2 != NULL;
+	void *p = NULL;
+	int n = 0;
+
+	ARG_UNUSED(p3);
+
+	if (zvfs_mmap(PAGE, RW, ZVFS_MAP_SHARED, fd, 0, &p) == 0) {
+		((uint8_t *)p)[0] = PROCESS_MARK;
+		n++;
+	}
+	while (zvfs_mmap(PAGE, RW, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0, &p) == 0) {
+		n++;
+	}
+	if (call_exit) {
+		k_exit(n);
+	}
+	/* the leader returning ends the process as well */
+}
+
+static int spawn_mapper(int fd, bool call_exit)
+{
+	k_pid_t child = NULL;
+	int wstatus = -1;
+	struct sys_clone_args args = {
+		.entry = process_mapper,
+		.p1 = (void *)(intptr_t)fd,
+		.p2 = call_exit ? &child : NULL,
+		.thread = &child_thread,
+		.stack = child_stack,
+		.stack_size = K_THREAD_STACK_SIZEOF(child_stack),
+		.prio = K_PRIO_PREEMPT(0),
+	};
+
+	int ret = sys_clone(&args, &child);
+
+	zassert_ok(ret, "sys_clone failed: %d", ret);
+	ret = k_waitpid(child, NULL, &wstatus, 0, K_FOREVER);
+	zassert_ok(ret, "k_waitpid failed: %d", ret);
+	zassert_true(K_WIFEXITED(wstatus), "wait status 0x%x", wstatus);
+
+	return K_WEXITSTATUS(wstatus);
+}
+
+/* @a n mappings can be made: the ones a child made and left are gone */
+static void expect_pool_free(int n)
+{
+	uint8_t *p[CONFIG_ZVFS_MMAP_MAX];
+
+	zassert_true((n >= 1) && (n <= CONFIG_ZVFS_MMAP_MAX), "%d mappings", n);
+	for (int i = 0; i < n; ++i) {
+		p[i] = map(PAGE, RW, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0);
+	}
+	for (int i = 0; i < n; ++i) {
+		zassert_ok(zvfs_munmap(p[i], PAGE));
+	}
+}
+
+/* the mappings of a process are released, written back, when it exits */
+ZTEST(zvfs_mmap, test_zvfs_mmap_process_exit)
+{
+	int fd = zvfs_open(TFILE, ZVFS_O_RDWR, 0);
+	int n;
+
+	zassert_true(fd >= 0, "opening %s failed: %d", TFILE, errno);
+
+	/* k_exit(): released in the child's own context, so the file is current at the reap */
+	n = spawn_mapper(fd, true);
+	expect_file_byte(fd, 0, PROCESS_MARK);
+	expect_pool_free(n);
+
+	/* the leader returning: released by the next mapping operation after the reap */
+	write_file_byte(fd, 0, file_byte(0));
+	zassert_equal(spawn_mapper(fd, false), 0);
+	expect_file_byte(fd, 0, file_byte(0));
+	expect_pool_free(n);
+	expect_file_byte(fd, 0, PROCESS_MARK);
+
+	zassert_ok(zvfs_close(fd));
+}
+#endif /* CONFIG_PROCESS */
+
+#ifdef CONFIG_PROCESS_VM
+static void fork_child(void *p1, void *p2, void *p3)
+{
+	uint8_t *shared = p1;
+	uint8_t *priv = p2;
+	uint8_t *file = p3;
+	int seen = 0;
+
+	/* the parent's values, through the copied address space */
+	seen += (shared[0] == 1);
+	seen += (priv[0] == 2);
+	seen += (file[0] == file_byte(0));
+	shared[0] = 0x11;
+	priv[0] = 0x22;
+	file[0] = 0x33;
+	k_exit(seen);
+}
+
+/* a process cloned with its address space inherits the mappings */
+ZTEST_USER(zvfs_mmap, test_zvfs_mmap_fork)
+{
+	int fd = zvfs_open(TFILE, ZVFS_O_RDWR, 0);
+	k_pid_t child = NULL;
+	int wstatus = -1;
+	int ret;
+	uint8_t *shared, *priv, *file;
+	struct sys_clone_args args = {
+		.flags = SYS_CLONE_VM_COPY,
+		.entry = fork_child,
+		.stack_size = 4096,
+		.prio = k_thread_priority_get(k_current_get()),
+		.options = K_USER,
+	};
+
+	zassert_true(fd >= 0, "opening %s failed: %d", TFILE, errno);
+	shared = map(PAGE, RW, ZVFS_MAP_SHARED | ZVFS_MAP_ANONYMOUS, -1, 0);
+	priv = map(PAGE, RW, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0);
+	file = map(PAGE, RW, ZVFS_MAP_SHARED, fd, 0);
+	shared[0] = 1;
+	priv[0] = 2;
+	args.p1 = shared;
+	args.p2 = priv;
+	args.p3 = file;
+
+	ret = sys_clone(&args, &child);
+	zassert_ok(ret, "sys_clone failed: %d", ret);
+	ret = k_waitpid(child, NULL, &wstatus, 0, K_FOREVER);
+	zassert_ok(ret, "k_waitpid failed: %d", ret);
+	zassert_true(K_WIFEXITED(wstatus), "wait status 0x%x", wstatus);
+	zassert_equal(K_WEXITSTATUS(wstatus), 3, "the child saw %d of 3 mappings",
+		      K_WEXITSTATUS(wstatus));
+
+	/* shared pages are the same pages in both; the private page was copied */
+	zassert_equal(shared[0], 0x11);
+	zassert_equal(priv[0], 2);
+	zassert_equal(file[0], 0x33);
+	zassert_ok(zvfs_msync(file, PAGE, ZVFS_MS_SYNC));
+	expect_file_byte(fd, 0, 0x33);
+
+	zassert_ok(zvfs_munmap(shared, PAGE));
+	zassert_ok(zvfs_munmap(priv, PAGE));
+	zassert_ok(zvfs_munmap(file, PAGE));
+	/* the child's copies went with the child */
+	expect_pool_free(3);
+	zassert_ok(zvfs_close(fd));
+}
+#endif /* CONFIG_PROCESS_VM */
+
+/* the faulting test cannot unmap: with processes its mapping outlives the aborted thread */
+static ZTEST_BMEM void *fault_leftover;
 
 /* a write through a read-only mapping faults */
 ZTEST_USER(zvfs_mmap, test_zvfs_mmap_fault)
@@ -544,6 +719,7 @@ ZTEST_USER(zvfs_mmap, test_zvfs_mmap_fault)
 	}
 
 	p = map(PAGE, ZVFS_PROT_READ, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0);
+	fault_leftover = (void *)p;
 	zassert_equal(p[0], 0);
 
 	ztest_set_fault_valid(true);
@@ -577,9 +753,14 @@ static void *suite_setup(void)
 	return NULL;
 }
 
+/* in the test thread: with processes, only a member of the tests' process can unmap */
 static void suite_before(void *arg)
 {
 	ARG_UNUSED(arg);
+	if (fault_leftover != NULL) {
+		(void)zvfs_munmap(fault_leftover, PAGE);
+		fault_leftover = NULL;
+	}
 	file_reset();
 }
 

@@ -19,6 +19,14 @@
  * User threads reach a mapping through a memory-domain partition on its
  * pages; the kernel view carries the protection of the pages it owns.
  *
+ * A mapping belongs to the thread that created it, or to that thread's
+ * process with CONFIG_PROCESS, and is released when the owner exits: in the
+ * owner's own context when a process exits, otherwise by the next mapping
+ * operation. A process cloned with its address space (CONFIG_PROCESS_VM)
+ * gets a copy of each of its parent's mappings that leans on the original
+ * for its pages; the last copy to go releases an original its owner has
+ * already unmapped.
+ *
  * With CONFIG_ZVFS_MMAP_DIRTY_TRACK the pages of a shared, writable file
  * mapping start write-protected. The first write to a page faults into
  * z_mem_write_fault(), which records the page as modified and makes it
@@ -38,6 +46,8 @@
 #include <zephyr/sys/internal/fdtable_priv.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
+
+#include <kernel_internal.h>
 
 #if defined(CONFIG_ZVFS_MMAP_DIRTY_TRACK) || defined(CONFIG_ARCH_MEM_DOMAIN_APPLY_CURRENT)
 #include <kernel_arch_interface.h>
@@ -61,10 +71,17 @@ struct zvfs_mapping {
 	/* the open file object, referenced until release; NULL for anonymous mappings */
 	void *obj;
 	const struct fd_op_vtable *vtable;
+	/* whose exit releases the mapping; NULL once it is gone */
+#ifdef CONFIG_PROCESS
+	struct k_process *owner;
+#else
 	k_tid_t owner;
-	/* the mapping whose storage this one leans on: a split piece's original */
+#endif
+	/* the owner exited: released by the next mapping operation */
+	bool orphan;
+	/* the mapping whose storage this one leans on: a forked copy's or a split piece's original */
 	struct zvfs_mapping *origin;
-	/* split pieces leaning on this mapping's storage */
+	/* forked copies and split pieces leaning on this mapping's storage */
 	int refs;
 	/* the remainder of a partially unmapped mapping: its own range, the original's storage */
 	bool piece;
@@ -92,12 +109,32 @@ SYS_ELASTIPOOL_DEFINE_ADVANCED(mapping_pool, sizeof(struct zvfs_mapping),
 
 /* serializes mapping operations, including the file I/O they perform */
 static K_MUTEX_DEFINE(mmap_lock);
-/* guards the list structures: also taken on the thread halt path */
+/*
+ * Guards the list: the exit paths read it under this lock alone, so only a
+ * holder of mmap_lock may add or remove records, and does so under both.
+ */
 static struct k_spinlock list_lock;
 static sys_dlist_t mappings = SYS_DLIST_STATIC_INIT(&mappings);
-static sys_dlist_t graveyard = SYS_DLIST_STATIC_INIT(&graveyard);
 
-/* the mapping that owns the storage behind @a m */
+#ifdef CONFIG_PROCESS
+static inline struct k_process *owner_self(void)
+{
+	return k_current_get()->process;
+}
+#else
+static inline k_tid_t owner_self(void)
+{
+	return k_current_get();
+}
+#endif /* CONFIG_PROCESS */
+
+/* with processes, an operation reaches the caller's own mappings only */
+static inline bool mapping_mine(const struct zvfs_mapping *m)
+{
+	return !IS_ENABLED(CONFIG_PROCESS) || (m->owner == owner_self());
+}
+
+/* the mapping that holds the pages: a forked copy's original, else itself */
 static inline struct zvfs_mapping *mapping_root(struct zvfs_mapping *m)
 {
 	return (m->origin != NULL) ? m->origin : m;
@@ -212,9 +249,9 @@ static struct zvfs_mapping *alias_in_domain(const struct zvfs_mapping *m, bool g
 
 	K_SPINLOCK(&list_lock) {
 		SYS_DLIST_FOR_EACH_CONTAINER(&mappings, other, node) {
-			if ((other != m) && (other->domain == m->domain) &&
-			    (other->addr == m->addr) && (other->len == m->len) &&
-			    (other->granted == granted)) {
+			if ((other != m) && (other->owner != NULL) &&
+			    (other->domain == m->domain) && (other->addr == m->addr) &&
+			    (other->len == m->len) && (other->granted == granted)) {
 				found = other;
 				break;
 			}
@@ -341,11 +378,23 @@ static inline void page_dirty_set(struct zvfs_mapping *m, size_t idx, bool dirty
 static void page_set_prot(struct zvfs_mapping *m, size_t idx, int prot)
 {
 	uint8_t *page = m->addr + idx * MMAP_PAGE;
+#ifdef CONFIG_PROCESS_VM
+	struct zvfs_mapping *c;
+#endif
 
 	(void)k_mem_update_flags(page, MMAP_PAGE, prot_to_kernel_flags(prot));
 #ifdef CONFIG_USERSPACE
 	if (m->granted) {
 		(void)arch_mem_domain_page_attr_set(m->domain, page, MMAP_PAGE, prot_to_attr(prot));
+	}
+#endif
+#ifdef CONFIG_PROCESS_VM
+	/* forked copies see the page through their own domains */
+	SYS_DLIST_FOR_EACH_CONTAINER(&mappings, c, node) {
+		if ((c->origin == m) && c->granted) {
+			(void)arch_mem_domain_page_attr_set(c->domain, page, MMAP_PAGE,
+							    prot_to_attr(prot));
+		}
 	}
 #endif
 }
@@ -571,9 +620,6 @@ int z_zvfs_mmap_obj_refs(const void *obj)
 		SYS_DLIST_FOR_EACH_CONTAINER(&mappings, m, node) {
 			refs += (m->obj == obj);
 		}
-		SYS_DLIST_FOR_EACH_CONTAINER(&graveyard, m, node) {
-			refs += (m->obj == obj);
-		}
 	}
 
 	return refs;
@@ -592,48 +638,6 @@ static void mapping_obj_unref(struct zvfs_mapping *m)
 	m->obj = NULL;
 }
 
-/* tear a mapping down: write back, revoke, release storage and the file */
-static int mapping_release(struct zvfs_mapping *m)
-{
-	int ret = 0;
-
-	if (m->origin != NULL) {
-		struct zvfs_mapping *origin = m->origin;
-
-		/* a piece: the last one out releases an original already unmapped */
-		ret = mapping_writeback(m, 0, m->len);
-		mapping_user_revoke(m);
-		mapping_obj_unref(m);
-		(void)sys_elastipool_free(&mapping_pool, m);
-		origin->refs--;
-		if ((origin->refs == 0) && (origin->owner == NULL)) {
-			if (mapping_release(origin) < 0) {
-				ret = -1;
-			}
-		}
-
-		return ret;
-	}
-
-	ret = mapping_writeback(m, 0, m->len);
-	mapping_user_revoke(m);
-	if (m->refs > 0) {
-		/* pieces still lean on the storage: parked, off the lists, until the last one goes */
-		m->owner = NULL;
-
-		return ret;
-	}
-	if (m->mem != NULL) {
-		storage_kernel_prot_rw(m);
-		storage_free(m);
-	}
-	mapping_track_free(m);
-	mapping_obj_unref(m);
-	(void)sys_elastipool_free(&mapping_pool, m);
-
-	return ret;
-}
-
 static void mapping_unlink(struct zvfs_mapping *m)
 {
 	K_SPINLOCK(&list_lock) {
@@ -648,35 +652,223 @@ static void mapping_link(struct zvfs_mapping *m)
 	}
 }
 
-/* mappings whose owner exited are released by the next mapping operation */
-static void graveyard_drain(void)
+/* tear a mapping down: write back, revoke, release storage and the file */
+static int mapping_release(struct zvfs_mapping *m)
 {
-	while (true) {
-		sys_dnode_t *node = NULL;
+	int ret = 0;
 
-		K_SPINLOCK(&list_lock) {
-			node = sys_dlist_get(&graveyard);
+	if (m->origin != NULL) {
+		struct zvfs_mapping *origin = m->origin;
+
+		/* a forked copy or a piece: the last one out releases an original already unmapped */
+		if (m->piece) {
+			ret = mapping_writeback(m, 0, m->len);
 		}
-		if (node == NULL) {
-			break;
+		mapping_user_revoke(m);
+		mapping_obj_unref(m);
+		(void)sys_elastipool_free(&mapping_pool, m);
+		origin->refs--;
+		if ((origin->refs == 0) && (origin->owner == NULL)) {
+			mapping_unlink(origin);
+			if (mapping_release(origin) < 0) {
+				ret = -1;
+			}
 		}
-		(void)mapping_release(CONTAINER_OF(node, struct zvfs_mapping, node));
+
+		return ret;
 	}
+
+	ret = mapping_writeback(m, 0, m->len);
+	mapping_user_revoke(m);
+	if (m->refs > 0) {
+		/* copies or pieces still lean on the storage: parked until the last one goes */
+		m->owner = NULL;
+		m->orphan = false;
+		mapping_link(m);
+
+		return ret;
+	}
+	if (m->mem != NULL) {
+		storage_kernel_prot_rw(m);
+		storage_free(m);
+	}
+	mapping_track_free(m);
+	mapping_obj_unref(m);
+	(void)sys_elastipool_free(&mapping_pool, m);
+
+	return ret;
 }
 
-void z_zvfs_mmap_thread_exit(struct k_thread *thread)
+/* release every mapping @a take selects, off the list first; mmap_lock held */
+static void mappings_release(bool (*take)(const struct zvfs_mapping *m, const void *arg),
+			     const void *arg)
 {
 	struct zvfs_mapping *m, *next;
+	sys_dlist_t taken;
 
+	sys_dlist_init(&taken);
 	K_SPINLOCK(&list_lock) {
 		SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&mappings, m, next, node) {
-			if (m->owner == thread) {
+			if (take(m, arg)) {
 				sys_dlist_remove(&m->node);
-				sys_dlist_append(&graveyard, &m->node);
+				sys_dlist_append(&taken, &m->node);
 			}
 		}
 	}
+
+	while (!sys_dlist_is_empty(&taken)) {
+		m = CONTAINER_OF(sys_dlist_get(&taken), struct zvfs_mapping, node);
+		(void)mapping_release(m);
+	}
 }
+
+static bool take_orphan(const struct zvfs_mapping *m, const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	return m->orphan;
+}
+
+/* mappings whose owner exited are released by the next mapping operation */
+static void orphans_release(void)
+{
+	mappings_release(take_orphan, NULL);
+}
+
+static bool take_owned(const struct zvfs_mapping *m, const void *arg)
+{
+	return (m->owner != NULL) && ((const void *)m->owner == arg);
+}
+
+/* the exit paths only mark: they run under locks the release cannot take */
+static void mappings_orphan(const void *owner, const struct k_mem_domain *dying)
+{
+	struct zvfs_mapping *m;
+
+#ifndef CONFIG_USERSPACE
+	ARG_UNUSED(dying);
+#endif
+	K_SPINLOCK(&list_lock) {
+		SYS_DLIST_FOR_EACH_CONTAINER(&mappings, m, node) {
+			if (!take_owned(m, owner)) {
+				continue;
+			}
+#ifdef CONFIG_USERSPACE
+			if ((dying != NULL) && (m->domain == dying)) {
+				/* the domain goes with its process: nothing left to revoke */
+				m->granted = false;
+			}
+#endif
+			m->owner = NULL;
+			m->orphan = true;
+		}
+	}
+}
+
+#ifdef CONFIG_PROCESS
+void z_process_mmap_exit(void)
+{
+	(void)k_mutex_lock(&mmap_lock, K_FOREVER);
+	mappings_release(take_owned, owner_self());
+	k_mutex_unlock(&mmap_lock);
+}
+
+void z_process_mmap_drop(struct k_process *proc)
+{
+	const struct k_mem_domain *dying = NULL;
+
+#ifdef CONFIG_PROCESS_VM
+	if (proc->vm != NULL) {
+		dying = z_process_vm_domain(proc->vm);
+	}
+#endif /* CONFIG_PROCESS_VM */
+	mappings_orphan(proc, dying);
+}
+#else
+void z_zvfs_mmap_thread_exit(struct k_thread *thread)
+{
+	mappings_orphan(thread, NULL);
+}
+#endif /* CONFIG_PROCESS */
+
+#ifdef CONFIG_PROCESS_VM
+bool z_zvfs_mmap_is_shared(uintptr_t start)
+{
+	struct zvfs_mapping *m;
+	bool shared = false;
+
+	K_SPINLOCK(&list_lock) {
+		SYS_DLIST_FOR_EACH_CONTAINER(&mappings, m, node) {
+			if (mapping_mine(m) && ((uintptr_t)m->addr == start) &&
+			    ((m->flags & ZVFS_MAP_SHARED) != 0)) {
+				shared = true;
+				break;
+			}
+		}
+	}
+
+	return shared;
+}
+
+static bool take_owned_copy(const struct zvfs_mapping *m, const void *arg)
+{
+	return take_owned(m, arg) && (m->origin != NULL);
+}
+
+int z_zvfs_mmap_clone(struct k_process *child, struct k_mem_domain *domain)
+{
+	struct k_mem_domain *parent_domain = k_current_get()->mem_domain_info.mem_domain;
+	struct zvfs_mapping *m;
+	sys_dlist_t copies;
+	int ret = 0;
+
+	sys_dlist_init(&copies);
+	(void)k_mutex_lock(&mmap_lock, K_FOREVER);
+	orphans_release();
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&mappings, m, node) {
+		struct zvfs_mapping *c;
+		void *obj;
+
+		if (!mapping_mine(m)) {
+			continue;
+		}
+		if (sys_elastipool_alloc(&mapping_pool, &obj) != 0) {
+			ret = -ENOMEM;
+			break;
+		}
+		c = obj;
+		/* the same range in the child's domain, whose partitions mirror the parent's */
+		*c = *m;
+		sys_dnode_init(&c->node);
+		c->owner = child;
+		c->mem = NULL;
+		c->mem_size = 0;
+		c->refs = 0;
+		c->piece = false;
+		c->origin = mapping_root(m);
+		c->origin->refs++;
+#ifdef CONFIG_ZVFS_MMAP_DIRTY_TRACK
+		c->dirty_map = NULL;
+#endif
+		c->granted = m->granted && (m->domain == parent_domain);
+		c->domain = c->granted ? domain : NULL;
+		sys_dlist_append(&copies, &c->node);
+	}
+
+	K_SPINLOCK(&list_lock) {
+		while (!sys_dlist_is_empty(&copies)) {
+			sys_dlist_append(&mappings, sys_dlist_get(&copies));
+		}
+	}
+	if (ret != 0) {
+		mappings_release(take_owned_copy, child);
+	}
+	k_mutex_unlock(&mmap_lock);
+
+	return ret;
+}
+#endif /* CONFIG_PROCESS_VM */
 
 static bool mapping_overlap(const struct zvfs_mapping *m, uintptr_t start, uintptr_t end,
 			    size_t *lo, size_t *hi)
@@ -745,7 +937,7 @@ int z_impl_zvfs_mmap(size_t len, int prot, int flags, int fd, size_t off, void *
 	}
 
 	(void)k_mutex_lock(&mmap_lock, K_FOREVER);
-	graveyard_drain();
+	orphans_release();
 
 	if (sys_elastipool_alloc(&mapping_pool, &obj) != 0) {
 		errno = ENOMEM;
@@ -756,7 +948,7 @@ int z_impl_zvfs_mmap(size_t len, int prot, int flags, int fd, size_t off, void *
 	*m = (struct zvfs_mapping){
 		.len = (size_t)end,
 		.off = off,
-		.owner = k_current_get(),
+		.owner = owner_self(),
 		.prot = prot,
 		.flags = flags,
 		.writable = acc != ZVFS_O_RDONLY,
@@ -825,6 +1017,24 @@ unlock:
 	return ret;
 }
 
+/* forked copies lean on the shape of their original as much as on its pages */
+static bool mapping_has_copies(const struct zvfs_mapping *root)
+{
+	struct zvfs_mapping *c;
+	bool found = false;
+
+	K_SPINLOCK(&list_lock) {
+		SYS_DLIST_FOR_EACH_CONTAINER(&mappings, c, node) {
+			if ((c->origin == root) && !c->piece) {
+				found = true;
+				break;
+			}
+		}
+	}
+
+	return found;
+}
+
 /*
  * Unmap [lo, hi) of a mapping: trim it, or split it into two pieces around the hole.
  * The storage stays whole and is released with the last piece; the hole loses its
@@ -850,6 +1060,10 @@ static int mapping_unmap_part(struct zvfs_mapping *m, size_t lo, size_t hi)
 	void *obj;
 	int ret;
 
+	if (((m->origin != NULL) && !m->piece) || mapping_has_copies(root)) {
+		/* a forked copy, or an original with forked copies: the shape is shared */
+		return -EINVAL;
+	}
 	if (!IS_ENABLED(CONFIG_MMU) && mapping_granted(m)) {
 		/* a memory-protection region is granted whole */
 		return -EINVAL;
@@ -922,12 +1136,12 @@ int z_impl_zvfs_munmap(void *addr, size_t len)
 	}
 
 	(void)k_mutex_lock(&mmap_lock, K_FOREVER);
-	graveyard_drain();
+	orphans_release();
 
 	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&mappings, m, next, node) {
 		size_t lo, hi;
 
-		if (!mapping_overlap(m, start, end, &lo, &hi)) {
+		if (!mapping_mine(m) || !mapping_overlap(m, start, end, &lo, &hi)) {
 			continue;
 		}
 		if ((lo != 0) || (hi != m->len)) {
@@ -975,6 +1189,7 @@ static int mapping_refill_others(struct zvfs_mapping *m, size_t lo, size_t hi)
 int z_impl_zvfs_msync(void *addr, size_t len, int flags)
 {
 	struct zvfs_mapping *m;
+	struct zvfs_mapping *t;
 	uintptr_t start = (uintptr_t)addr;
 	uintptr_t end;
 	bool found = false;
@@ -988,23 +1203,25 @@ int z_impl_zvfs_msync(void *addr, size_t len, int flags)
 	}
 
 	(void)k_mutex_lock(&mmap_lock, K_FOREVER);
-	graveyard_drain();
+	orphans_release();
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&mappings, m, node) {
 		size_t lo, hi;
 
-		if (!mapping_overlap(m, start, end, &lo, &hi)) {
+		if (!mapping_mine(m) || !mapping_overlap(m, start, end, &lo, &hi)) {
 			continue;
 		}
 		found = true;
+		/* a piece covers its own range; a forked copy goes through its original */
+		t = m->piece ? m : mapping_root(m);
 		if (((flags & (ZVFS_MS_SYNC | ZVFS_MS_ASYNC)) != 0) &&
-		    (mapping_writeback(m, lo, hi) < 0)) {
+		    (mapping_writeback(t, lo, hi) < 0)) {
 			ret = -1;
 		}
 		/* unsynced stores are the file's newest data, as in a shared page cache */
 		if (((flags & ZVFS_MS_INVALIDATE) != 0) &&
-		    ((mapping_writeback(m, lo, hi) < 0) || (mapping_refill(m, lo, hi) < 0) ||
-		     (mapping_refill_others(m, lo, hi) < 0))) {
+		    ((mapping_writeback(t, lo, hi) < 0) || (mapping_refill(t, lo, hi) < 0) ||
+		     (mapping_refill_others(t, lo, hi) < 0))) {
 			ret = -1;
 		}
 	}
@@ -1037,13 +1254,13 @@ int z_impl_zvfs_mprotect(void *addr, size_t len, int prot)
 	}
 
 	(void)k_mutex_lock(&mmap_lock, K_FOREVER);
-	graveyard_drain();
+	orphans_release();
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&mappings, m, node) {
 		size_t lo, hi;
 		bool shared = (m->flags & ZVFS_MAP_SHARED) != 0;
 
-		if (!mapping_overlap(m, start, end, &lo, &hi)) {
+		if (!mapping_mine(m) || !mapping_overlap(m, start, end, &lo, &hi)) {
 			continue;
 		}
 		found = true;
@@ -1061,7 +1278,10 @@ int z_impl_zvfs_mprotect(void *addr, size_t len, int prot)
 
 		mapping_user_revoke(m);
 		m->prot = prot;
-		m->dirty = m->dirty || (shared && (m->obj != NULL) && ((prot & ZVFS_PROT_WRITE) != 0));
+		if (shared && (m->obj != NULL) && ((prot & ZVFS_PROT_WRITE) != 0)) {
+			mapping_root(m)->dirty = true;
+			m->dirty = true;
+		}
 		mapping_kernel_prot(m, mapping_page_prot(m, prot));
 #ifdef CONFIG_USERSPACE
 		if (m->domain == NULL) {

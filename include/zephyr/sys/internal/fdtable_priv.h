@@ -87,6 +87,28 @@ static inline void zvfs_fds_cloexec(void)
 }
 #endif
 
+struct k_mem_domain;
+
+#if defined(CONFIG_ZVFS_MMAP) && defined(CONFIG_PROCESS_VM)
+/* give @a child, whose address space is a copy of the caller's, the caller's mappings */
+int z_zvfs_mmap_clone(struct k_process *child, struct k_mem_domain *domain);
+/* a shared mapping of the caller starts at @a start: its pages are not to be copied */
+bool z_zvfs_mmap_is_shared(uintptr_t start);
+#else
+static inline int z_zvfs_mmap_clone(struct k_process *child, struct k_mem_domain *domain)
+{
+	ARG_UNUSED(child);
+	ARG_UNUSED(domain);
+	return 0;
+}
+
+static inline bool z_zvfs_mmap_is_shared(uintptr_t start)
+{
+	ARG_UNUSED(start);
+	return false;
+}
+#endif
+
 /** zvfs_poll_prepare_fd() armed *pev with the fd's wait condition(s) */
 #define ZVFS_POLL_PREPARED 0
 /** zvfs_poll_prepare_fd() found the fd ready without waiting */

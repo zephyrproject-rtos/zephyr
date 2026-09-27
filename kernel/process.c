@@ -354,6 +354,7 @@ static void process_free_locked(struct k_process *proc, bool sched_locked)
 #ifdef CONFIG_SIGNAL
 	z_sig_process_drop(proc);
 #endif /* CONFIG_SIGNAL */
+	z_process_mmap_drop(proc);
 #ifdef CONFIG_PROCESS_VM
 	if (proc->vm != NULL) {
 		z_process_vm_teardown(proc->vm);
@@ -1109,7 +1110,8 @@ static FUNC_NORETURN void process_exit(int wstatus)
 	proc->state = K_PROCESS_EXITING;
 	k_spin_unlock(&process_lock, key);
 
-	/* POSIX: descriptors close at termination, not reap; may block here */
+	/* POSIX: mappings and descriptors go at termination, not reap; may block here */
+	z_process_mmap_exit();
 	z_process_fds_exit();
 
 	k_thread_abort(k_current_get());
