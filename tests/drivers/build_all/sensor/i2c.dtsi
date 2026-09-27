@@ -1735,3 +1735,9 @@ test_i2c_cht8305: cht8305@e0 {
 	heater;
 	disable-clock-stretching;
 };
+
+test_i2c_scd30: scd30@e1 {
+	compatible = "sensirion,scd30";
+	reg = <0xe1>;
+	ready-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+};
