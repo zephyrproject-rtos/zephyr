@@ -21,6 +21,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #include "udc_common.h"
@@ -1144,6 +1145,26 @@ int udc_stm32_init(const struct device *dev)
 	return 0;
 }
 
+/*
+ * Stop and Standby stop the controller's clocks, so keep the SoC out of
+ * them while the controller is enabled.
+ */
+static void udc_stm32_pm_policy_state_lock_get(void)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+
+static void udc_stm32_pm_policy_state_lock_put(void)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+
 static int udc_stm32_enable(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -1179,6 +1200,8 @@ static int udc_stm32_enable(const struct device *dev)
 
 	irq_enable(cfg->irqn);
 
+	udc_stm32_pm_policy_state_lock_get();
+
 	return 0;
 }
 
@@ -1187,26 +1210,33 @@ static int udc_stm32_disable(const struct device *dev)
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
 	stm32_status_t status;
+	int ret = 0;
 
 	irq_disable(cfg->irqn);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT) != 0) {
 		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN) != 0) {
 		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	status = HAL_PCD_Stop(&priv->pcd);
 	if (status != HAL_OK) {
 		LOG_ERR("PCD_Stop failed, %d", (int)status);
-		return -EIO;
+		ret = -EIO;
 	}
 
-	return 0;
+out:
+	/* udc_disable() marks the controller disabled even when this fails */
+	udc_stm32_pm_policy_state_lock_put();
+
+	return ret;
 }
 
 static int udc_stm32_shutdown(const struct device *dev)
