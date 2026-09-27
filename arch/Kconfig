@@ -48,6 +48,7 @@ config ARM
 	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_CPU_IDLE_HOOKS if CPU_CORTEX_M
 	select ARCH_HAS_DIRECT_INTERRUPTS
+	select ARCH_MEM_DOMAIN_APPLY_CURRENT if ARM_MPU && USERSPACE
 	help
 	  ARM architecture
 
@@ -1142,6 +1143,14 @@ config CPU_HAS_MMU
 	help
 	  This hidden option is selected when the CPU has a Memory Management Unit
 	  (MMU).
+
+config ARCH_MEM_DOMAIN_APPLY_CURRENT
+	bool
+	help
+	  This hidden configuration should be selected by an architecture that
+	  applies memory-domain changes at context switch rather than
+	  synchronously, and implements arch_mem_domain_apply_current() to
+	  make the calling thread's domain effective at once.
 
 config ARCH_HAS_MEM_WRITE_FAULT
 	bool

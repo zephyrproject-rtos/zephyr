@@ -345,6 +345,16 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 }
 
 #if defined(CONFIG_USERSPACE)
+#ifdef CONFIG_ARCH_MEM_DOMAIN_APPLY_CURRENT
+void arch_mem_domain_apply_current(void)
+{
+	unsigned int key = irq_lock();
+
+	z_arm_configure_dynamic_mpu_regions(k_current_get());
+	irq_unlock(key);
+}
+#endif /* CONFIG_ARCH_MEM_DOMAIN_APPLY_CURRENT */
+
 int arch_mem_domain_max_partitions_get(void)
 {
 	int available_regions = arm_core_mpu_get_max_available_dyn_regions();

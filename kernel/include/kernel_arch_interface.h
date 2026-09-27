@@ -373,6 +373,18 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
  */
 int arch_mem_unmap(void *addr, size_t size);
 
+#ifdef CONFIG_ARCH_MEM_DOMAIN_APPLY_CURRENT
+/**
+ * Apply the calling thread's memory domain to the hardware now
+ *
+ * On architectures that program memory protection from the domain at context
+ * switch, a partition added to or removed from the calling thread's domain
+ * would otherwise only take effect once the thread is switched out and in
+ * again. Called from thread context with the domain already updated.
+ */
+void arch_mem_domain_apply_current(void);
+#endif /* CONFIG_ARCH_MEM_DOMAIN_APPLY_CURRENT */
+
 #if defined(CONFIG_MEM_WRITE_FAULT_HOOK) && defined(CONFIG_USERSPACE)
 /**
  * Change the access attributes of pages inside a memory domain's partition

@@ -209,6 +209,14 @@ through :c:func:`k_mem_update_flags`; a memory domain's view changes with
 page range inside an existing partition of the domain without touching the
 kernel mapping.
 
+Architectures that program memory protection from a thread's memory domain
+only at context switch, such as Cortex-M with an MPU, select
+``ARCH_MEM_DOMAIN_APPLY_CURRENT`` and implement
+``arch_mem_domain_apply_current()``, which makes a change to the calling
+thread's own domain effective at once. A partition added from a system call
+would otherwise not cover the caller until it has been switched out and in
+again.
+
 
 API Reference
 *************
