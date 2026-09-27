@@ -169,6 +169,28 @@ properties:
     description: |
       If present, it indicates that the ADC instance supports the injected channel feature.
 
+  st,adc-ext-trigger:
+    type: string
+    default: "SOFTWARE"
+    description: |
+      If present, names the trigger we want to enable.
+      If not present, the selected trigger will be software.
+      In order to find which trigger you want to use you can have a look at the relevant
+      stm32yyxx_ll_adc.h file in the HAL.
+      You will also need to enable the relevant counter node, for example:
+
+        / &timer15 {
+             status = "okay";
+
+             counter {
+                status = "okay";
+             };
+          };
+
+          &adc1_common {
+             st,adc-ext-trigger = "TIM15_TRGO";
+          };
+
 child-binding:
   description: ADC Sub-Block instances linked to ADC Block Controller
 
