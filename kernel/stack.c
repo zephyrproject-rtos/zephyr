@@ -15,7 +15,6 @@
 #include <zephyr/toolchain.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
@@ -87,12 +86,12 @@ static int stack_cleanup(struct k_stack *stack, void **mem, __maybe_unused bool 
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, cleanup, stack);
 
-	CHECKIF(locked && (z_waitq_head_locked(&stack->wait_q) != NULL)) {
+	if (locked && (z_waitq_head_locked(&stack->wait_q) != NULL)) {
 		ret = -EAGAIN;
 		goto exit;
 	}
 
-	CHECKIF(!locked && (z_waitq_head(&stack->wait_q) != NULL)) {
+	if (!locked && (z_waitq_head(&stack->wait_q) != NULL)) {
 		ret = -EAGAIN;
 		goto exit;
 	}
@@ -134,7 +133,7 @@ int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, push, stack);
 
-	CHECKIF(stack->next == stack->top) {
+	if (stack->next == stack->top) {
 		ret = -ENOMEM;
 		goto out;
 	}
