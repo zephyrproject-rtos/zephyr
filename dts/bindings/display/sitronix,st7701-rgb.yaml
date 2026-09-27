@@ -1,0 +1,98 @@
+# Copyright (c) 2026 Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Sitronix ST7701 RGB panel with DBI command channel
+
+description: |
+  ST7701 panel driven over a parallel RGB interface, with panel control
+  commands sent over a MIPI-DBI SPI command channel.
+  The RGB host controller owns the framebuffer and the pixel timing, and
+  refers to this node through its display-controller property.
+
+compatible: "sitronix,st7701-rgb"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  pvgamctrl:
+    type: uint8-array
+    required: true
+    description: Positive voltage gamma control payload, including command byte (0xB0).
+
+  nvgamctrl:
+    type: uint8-array
+    required: true
+    description: Negative voltage gamma control payload, including command byte (0xB1).
+
+  gip-e0:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xE0, including command byte.
+
+  gip-e1:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xE1, including command byte.
+
+  gip-e2:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xE2, including command byte.
+
+  gip-e3:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xE3, including command byte.
+
+  gip-e4:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xE4, including command byte.
+
+  gip-e5:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xE5, including command byte.
+
+  gip-e6:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xE6, including command byte.
+
+  gip-e7:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xE7, including command byte.
+
+  gip-e8:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xE8, including command byte.
+
+  gip-eb:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xEB, including command byte.
+
+  gip-ec:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xEC, including command byte.
+
+  gip-ed:
+    type: uint8-array
+    required: true
+    description: GIP setting at address 0xED, including command byte.
+
+  reset-gpios:
+    type: phandle-array
+    description: GPIO controlling ST7701 reset line.
+
+  reset-delay-ms:
+    type: int
+    required: true
+    description: Delay in milliseconds while reset is asserted.
+
+  inversion-on:
+    type: boolean
+    description: Enable display inversion mode during initialization.
