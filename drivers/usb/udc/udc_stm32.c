@@ -16,6 +16,7 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
+#include <stm32_bitops.h>
 #include <string.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/gpio.h>
@@ -23,6 +24,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/bitarray.h>
 
 #include "udc_common.h"
 #include <stm32_usb_common.h>
@@ -212,6 +214,8 @@ struct udc_stm32_config {
 	uint32_t num_endpoints;
 	/* USB SRAM size (in bytes) */
 	uint32_t dram_size;
+	/* Bitmap tracking which USB SRAM words are allocated */
+	sys_bitarray_t *sram_bitmap;
 	/* IRQ_CONNECT() per-instance wrapper */
 	void (*irq_connect)(void);
 	/* Global USB interrupt IRQn */
@@ -943,14 +947,59 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	return 0;
 }
 #else
+/*
+ * Replacement for HAL_PCDEx_SetTxFiFo() which allows configuring
+ * each endpoint's TxFIFO at an arbitrary location in USB SRAM.
+ * (the HAL function allocates them consecutively)
+ */
+static inline void otg_set_ep_txfifo_cfg(stm32_pcd_handle_t *hpcd, uint8_t ep, uint16_t addr,
+					 uint16_t size)
+{
+	__ASSERT(ep != 0, "Control endpoint not supported");
+
+	const uint32_t dieptxf =
+		_VAL2FLD(USB_OTG_DIEPTXF_INEPTXSA, addr) | _VAL2FLD(USB_OTG_DIEPTXF_INEPTXFD, size);
+
+#ifdef CONFIG_STM32_HAL2
+#error HAL2 OTG support not implemented yet
+#else /* CONFIG_STM32_HAL2 */
+	stm32_reg_write(&hpcd->Instance->DIEPTXF[ep - 1U], dieptxf);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+/* Read back IN endpoint ep's TxFIFO start address and depth. See above. */
+static inline void otg_get_ep_txfifo_cfg(stm32_pcd_handle_t *hpcd, uint8_t ep, uint16_t *addr,
+					 uint16_t *size)
+{
+	__ASSERT(ep != 0, "Control endpoint not supported");
+
+#ifdef CONFIG_STM32_HAL2
+#error HAL2 OTG support not implemented yet
+#else /* CONFIG_STM32_HAL2 */
+	const uint32_t dieptxf = stm32_reg_read(&hpcd->Instance->DIEPTXF[ep - 1U]);
+
+	*addr = _FLD2VAL(USB_OTG_DIEPTXF_INEPTXSA, dieptxf);
+	*size = _FLD2VAL(USB_OTG_DIEPTXF_INEPTXFD, dieptxf);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
 static void udc_stm32_mem_init(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
 	uint32_t rxfifo_size; /* in words */
+	uint32_t ep0_words;
 	stm32_status_t __maybe_unused status;
 
 	LOG_DBG("DRAM size: %uB", cfg->dram_size);
+
+	/*
+	 * Start from a clean allocator: the controller can be re-enabled during
+	 * its lifetime, so nothing must survive from a previous init. The RxFIFO
+	 * and EP0 TxFIFO are then reserved where they are actually allocated
+	 * below, so the per-IN-endpoint TxFIFOs are only ever placed above them.
+	 */
+	(void)sys_bitarray_clear_region(cfg->sram_bitmap, cfg->sram_bitmap->num_bits, 0);
 
 	/*
 	 * In addition to the user-provided baseline, RxFIFO should fit:
@@ -970,19 +1019,20 @@ static void udc_stm32_mem_init(const struct device *dev)
 	status = HAL_PCDEx_SetRxFiFo(&priv->pcd, rxfifo_size);
 	__ASSERT_NO_MSG(status == HAL_OK);
 
-	priv->occupied_mem = rxfifo_size * 4U;
+	/* The RxFIFO is at the start of the USB SRAM */
+	(void)sys_bitarray_set_region(cfg->sram_bitmap, rxfifo_size, 0);
 
-	/* For EP0 TX, reserve only one MPS */
-	status = HAL_PCDEx_SetTxFiFo(&priv->pcd, 0,
-				     DIV_ROUND_UP(UDC_STM32_EP0_MAX_PACKET_SIZE, 4U));
+	/* For EP0 TX, reserve only one MPS right after the RxFIFO. */
+	ep0_words = DIV_ROUND_UP(UDC_STM32_EP0_MAX_PACKET_SIZE, 4U);
+	status = HAL_PCDEx_SetTxFiFo(&priv->pcd, 0, ep0_words);
 	__ASSERT_NO_MSG(status == HAL_OK);
 
-	priv->occupied_mem += UDC_STM32_EP0_MAX_PACKET_SIZE;
+	/* The EP0 TxFIFO sits immediately above the RxFIFO. */
+	(void)sys_bitarray_set_region(cfg->sram_bitmap, ep0_words, rxfifo_size);
 
-	/* Reset TX allocs */
+	/* Release every IN-endpoint TxFIFO. */
 	for (unsigned int i = 1U; i < cfg->num_endpoints; i++) {
-		status = HAL_PCDEx_SetTxFiFo(&priv->pcd, i, 0);
-		__ASSERT_NO_MSG(status == HAL_OK);
+		otg_set_ep_txfifo_cfg(&priv->pcd, i, 0U, 0U);
 	}
 }
 
@@ -992,35 +1042,38 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
+	const uint8_t idx = USB_EP_GET_IDX(ep_cfg->addr);
+	uint16_t cur_addr, cur_size;
 	unsigned int words;
+	size_t offset;
+	int ret;
 
-	if (!USB_EP_DIR_IS_IN(ep_cfg->addr) || USB_EP_GET_IDX(ep_cfg->addr) == 0U) {
+	if (!USB_EP_DIR_IS_IN(ep_cfg->addr) || idx == 0U) {
+		return 0;
+	}
+
+	/* Release the current reservation, if any, before (re-)allocating. */
+	otg_get_ep_txfifo_cfg(&priv->pcd, idx, &cur_addr, &cur_size);
+	if (cur_size != 0U) {
+		(void)sys_bitarray_free(cfg->sram_bitmap, cur_size, cur_addr);
+		otg_set_ep_txfifo_cfg(&priv->pcd, idx, 0U, 0U);
+	}
+
+	if (!enable) {
 		return 0;
 	}
 
 	words = DIV_ROUND_UP(MIN(udc_mps_ep_size(ep_cfg), cfg->ep_mps), 4U);
 	words = (words <= 64) ? words * 2 : words;
 
-	if (!enable) {
-		if (priv->occupied_mem >= (words * 4)) {
-			priv->occupied_mem -= (words * 4);
-		}
-		if (HAL_PCDEx_SetTxFiFo(&priv->pcd, USB_EP_GET_IDX(ep_cfg->addr), 0) != HAL_OK) {
-			return -EIO;
-		}
-		return 0;
-	}
-
-	if (cfg->dram_size - priv->occupied_mem < words * 4) {
-		LOG_ERR("Unable to allocate FIFO for 0x%02x", ep_cfg->addr);
+	ret = sys_bitarray_alloc(cfg->sram_bitmap, words, &offset);
+	if (ret != 0) {
+		__ASSERT(ret == -ENOSPC, "Unexpected bitarray error %d", ret);
+		LOG_ERR("Unable to allocate FIFO for 0x%02x: %d", ep_cfg->addr, ret);
 		return -ENOMEM;
 	}
 
-	if (HAL_PCDEx_SetTxFiFo(&priv->pcd, USB_EP_GET_IDX(ep_cfg->addr), words) != HAL_OK) {
-		return -EIO;
-	}
-
-	priv->occupied_mem += words * 4;
+	otg_set_ep_txfifo_cfg(&priv->pcd, idx, (uint16_t)offset, (uint16_t)words);
 
 	return 0;
 }
@@ -1674,6 +1727,9 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 												\
 	static struct udc_stm32_data CONCAT(udc, ord, _priv);					\
 												\
+	SYS_BITARRAY_DEFINE_STATIC(CONCAT(udc, ord, _sram_ba),					\
+				   DT_PROP(node_id, ram_size) / 4U);				\
+												\
 	static struct udc_data CONCAT(udc, ord, _data) = {					\
 		.mutex = Z_MUTEX_INITIALIZER(CONCAT(udc, ord, _data).mutex),			\
 		.priv = &CONCAT(udc, ord, _priv),						\
@@ -1695,6 +1751,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 		.base = (void *)DT_REG_ADDR(node_id),						\
 		.num_endpoints = DT_PROP(node_id, num_bidir_endpoints),				\
 		.dram_size = DT_PROP(node_id, ram_size),					\
+		.sram_bitmap = &CONCAT(udc, ord, _sram_ba),					\
 		.irq_connect = &CONCAT(udc, ord, _irq_connect),					\
 		.irqn = DT_IRQ_BY_NAME(node_id, _irq_name, irq),				\
 		.pclken = (struct stm32_pclken *)&CONCAT(udc, ord, _pclken),			\
