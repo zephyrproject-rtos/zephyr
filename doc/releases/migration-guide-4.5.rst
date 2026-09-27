@@ -2387,6 +2387,11 @@ Networking
   supplicant) no longer require the application to manually bump
   :kconfig:option:`CONFIG_ZVFS_EVENTFD_MAX` to account for them. (:github:`111201`)
 
+* The ``ZFD_IOCTL_POLL_PREPARE``, ``ZFD_IOCTL_POLL_UPDATE``, and
+  ``ZFD_IOCTL_POLL_OFFLOAD`` requests have been deprecated. Out-of-tree
+  implementations of :c:struct:`fd_op_vtable` should use the
+  ``poll_prepare``, ``poll_update``, and ``poll_offload`` callbacks instead.
+
 * :kconfig:option:`CONFIG_NET_L2_PTP` has been deprecated and replaced by
   :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING`. The new option more accurately describes the
   feature it enables. Applications or board configurations that explicitly enable

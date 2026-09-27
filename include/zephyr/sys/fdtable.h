@@ -298,9 +298,9 @@ enum {
 	/* Codes below 0x100 are reserved for fcntl() codes. */
 	ZFD_IOCTL_FSYNC = 0x100,
 	ZFD_IOCTL_LSEEK,
-	ZFD_IOCTL_POLL_PREPARE,
-	ZFD_IOCTL_POLL_UPDATE,
-	ZFD_IOCTL_POLL_OFFLOAD,
+	ZFD_IOCTL_POLL_PREPARE __deprecated,
+	ZFD_IOCTL_POLL_UPDATE __deprecated,
+	ZFD_IOCTL_POLL_OFFLOAD __deprecated,
 	ZFD_IOCTL_SET_LOCK,
 	ZFD_IOCTL_STAT,
 	ZFD_IOCTL_TRUNCATE,
@@ -332,10 +332,17 @@ static inline int zvfs_fdtable_call_poll_prepare(const struct fd_op_vtable *vtab
 						 struct zvfs_pollfd *pfd, struct k_poll_event **pev,
 						 struct k_poll_event *pev_end)
 {
+	int ret;
+
 	if (vtable->poll_prepare != NULL) {
 		return vtable->poll_prepare(obj, pfd, pev, pev_end);
 	}
-	return zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_PREPARE, pfd, pev, pev_end);
+
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_PREPARE, pfd, pev, pev_end);
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+
+	return ret;
 }
 
 /**
@@ -353,10 +360,17 @@ static inline int zvfs_fdtable_call_poll_prepare(const struct fd_op_vtable *vtab
 static inline int zvfs_fdtable_call_poll_update(const struct fd_op_vtable *vtable, void *obj,
 						struct zvfs_pollfd *pfd, struct k_poll_event **pev)
 {
+	int ret;
+
 	if (vtable->poll_update != NULL) {
 		return vtable->poll_update(obj, pfd, pev);
 	}
-	return zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE, pfd, pev);
+
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE, pfd, pev);
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+
+	return ret;
 }
 
 /**
@@ -375,10 +389,17 @@ static inline int zvfs_fdtable_call_poll_update(const struct fd_op_vtable *vtabl
 static inline int zvfs_fdtable_call_poll_offload(const struct fd_op_vtable *vtable, void *obj,
 						struct zvfs_pollfd *fds, int nfds, int timeout)
 {
+	int ret;
+
 	if (vtable->poll_offload != NULL) {
 		return vtable->poll_offload(obj, fds, nfds, timeout);
 	}
-	return zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_OFFLOAD, fds, nfds, timeout);
+
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+	ret = zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_OFFLOAD, fds, nfds, timeout);
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
+
+	return ret;
 }
 
 /**
