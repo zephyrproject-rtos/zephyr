@@ -10,6 +10,9 @@
  * library and must not include any Zephyr header.
  */
 
+/* For F_SETPIPE_SZ and F_GETPIPE_SZ */
+#define _GNU_SOURCE
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -82,6 +85,35 @@ int video_nsi_fifo_open_bottom(const char *path, bool *created)
 	}
 
 	return fd;
+}
+
+int video_nsi_fifo_grow_pipe_bottom(int fd, size_t size)
+{
+	int capacity = fcntl(fd, F_GETPIPE_SZ);
+
+	if (capacity < 0) {
+		return -nsi_errno_to_mid(errno);
+	}
+
+	/*
+	 * An unprivileged process gets EPERM above /proc/sys/fs/pipe-max-size, 1 MiB by
+	 * default, or once its pipes together reach /proc/sys/fs/pipe-user-pages-soft.
+	 * The kernel rounds the size up to a power of two, so halving the request,
+	 * rounded up, tries each smaller capacity until one is allowed.
+	 */
+	for (size_t req = size; req > (size_t)capacity; req = (req + 1) / 2) {
+		int ret = fcntl(fd, F_SETPIPE_SZ, (int)req);
+
+		if (ret >= 0) {
+			return ret;
+		}
+
+		if (errno != EPERM) {
+			return -nsi_errno_to_mid(errno);
+		}
+	}
+
+	return capacity;
 }
 
 int video_nsi_fifo_read_bottom(int fd, uint8_t *buf, size_t frame_size, size_t *offset)

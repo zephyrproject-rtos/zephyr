@@ -48,6 +48,23 @@ void video_nsi_fifo_unlink_bottom(const char *path);
 int video_nsi_fifo_open_bottom(const char *path, bool *created);
 
 /**
+ * @brief Enlarge the host pipe.
+ *
+ * The pipe is never shrunk. This function tries to resize the pipe to @p size
+ * bytes and, if that fails, retries with each smaller power of two until it
+ * succeeds or reaches the current size. Note that unprivileged processes are
+ * limited by /proc/sys/fs/pipe-max-size for each pipe, and by
+ * /proc/sys/fs/pipe-user-pages-soft for all their pipes together.
+ *
+ * @param fd   File descriptor returned by video_nsi_fifo_open_bottom().
+ * @param size Requested capacity in bytes.
+ *
+ * @return The capacity of the pipe in bytes, which may be less than @p size.
+ * @return A negative intermediate errno value (see nsi_errno.h) on error.
+ */
+int video_nsi_fifo_grow_pipe_bottom(int fd, size_t size);
+
+/**
  * @brief Accumulate the bytes available on the FIFO into a buffer.
  *
  * Read whatever the host made available without ever blocking, until either a
