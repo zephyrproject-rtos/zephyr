@@ -84,7 +84,7 @@ struct video_nsi_fifo_data {
 	struct k_thread thread;
 	/** Protects streaming, fmt, fd, frame_offset, discard and the head of fifo_in */
 	struct k_mutex lock;
-	/** Wakes the thread up when a buffer is queued or the stream is started */
+	/** Wakes the thread up when the stream is started */
 	struct k_sem wake_sem;
 	struct k_poll_signal *sig;
 	/** FIFO path given on the command line, NULL when the option was not used */
@@ -97,7 +97,7 @@ struct video_nsi_fifo_data {
 	size_t frame_offset;
 	int fd;
 	bool streaming;
-	/** The frame being read was cancelled by a flush, drop it once complete */
+	/** The frame being read is dropped: it started with no buffer queued, or lost its buffer */
 	bool discard;
 	/** The driver created the FIFO, so it removes it on exit */
 	bool created;
@@ -191,20 +191,28 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		struct video_buffer *vbuf;
+		bool drop;
 		int ret;
 
 		k_mutex_lock(&data->lock, K_FOREVER);
 
-		/* The buffer stays queued until it is filled, so stop and flush never lose it */
-		vbuf = k_fifo_peek_head(&data->fifo_in);
-		if (!data->streaming || (vbuf == NULL)) {
+		if (!data->streaming) {
 			k_mutex_unlock(&data->lock);
 			k_sem_take(&data->wake_sem, K_FOREVER);
 			continue;
 		}
 
+		/* The buffer stays queued until it is filled, so stop and flush never lose it */
+		vbuf = k_fifo_peek_head(&data->fifo_in);
+
+		/*
+		 * As with a camera, the host does not wait for the application: a frame
+		 * starting while no buffer is queued is still read, and dropped whole.
+		 */
+		drop = data->discard || (vbuf == NULL);
+
 		/* A larger format may have been set since the buffer was queued */
-		if (vbuf->size < data->fmt.size) {
+		if (!drop && (vbuf->size < data->fmt.size)) {
 			LOG_ERR("Buffer too small: %u bytes provided, %u needed", vbuf->size,
 				data->fmt.size);
 			(void)k_fifo_get(&data->fifo_in, K_NO_WAIT);
@@ -229,18 +237,22 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			LOG_DBG("Reopened the host FIFO %s", data->path);
 		}
 
-		ret = video_nsi_fifo_read_bottom(data->fd, vbuf->buffer, data->fmt.size,
-						 &data->frame_offset);
+		ret = video_nsi_fifo_read_bottom(data->fd, drop ? NULL : vbuf->buffer,
+						 data->fmt.size, &data->frame_offset);
 		if (ret == 0) {
 			data->frame_offset = 0;
-			if (data->discard) {
-				data->discard = false;
+			data->discard = false;
+			if (drop) {
+				LOG_DBG("Frame dropped");
 			} else {
 				video_nsi_fifo_deliver(data, vbuf);
 			}
 			k_mutex_unlock(&data->lock);
 			continue;
 		}
+
+		/* Once part of a frame is dropped, the rest is too, even if a buffer arrives */
+		data->discard = drop && (data->frame_offset > 0);
 
 		/*
 		 * -EAGAIN: no more data for now, the rest of the frame is read on a later poll.
@@ -391,7 +403,6 @@ static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer 
 	} else {
 		vbuf->bytesused = 0;
 		k_fifo_put(&data->fifo_in, vbuf);
-		k_sem_give(&data->wake_sem);
 	}
 
 	k_mutex_unlock(&data->lock);

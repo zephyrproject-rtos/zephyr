@@ -72,7 +72,7 @@ int video_nsi_fifo_grow_pipe_bottom(int fd, size_t size);
  * available, or the last writer closed the FIFO.
  *
  * @param fd         File descriptor returned by video_nsi_fifo_open_bottom().
- * @param buf        Buffer of at least @p frame_size bytes.
+ * @param buf        Buffer of at least @p frame_size bytes, or NULL to drop the frame.
  * @param frame_size Size of a complete frame in bytes.
  * @param offset     In/out number of bytes of the frame read so far.
  *

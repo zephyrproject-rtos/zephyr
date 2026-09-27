@@ -118,9 +118,21 @@ int video_nsi_fifo_grow_pipe_bottom(int fd, size_t size)
 
 int video_nsi_fifo_read_bottom(int fd, uint8_t *buf, size_t frame_size, size_t *offset)
 {
-	while (*offset < frame_size) {
-		ssize_t ret = read(fd, &buf[*offset], frame_size - *offset);
+	/* Where the frames that are dropped go, a chunk at a time */
+	static uint8_t sink[64 * 1024];
 
+	while (*offset < frame_size) {
+		size_t len = frame_size - *offset;
+		uint8_t *dst = sink;
+		ssize_t ret;
+
+		if (buf != NULL) {
+			dst = &buf[*offset];
+		} else if (len > sizeof(sink)) {
+			len = sizeof(sink);
+		}
+
+		ret = read(fd, dst, len);
 		if (ret > 0) {
 			*offset += (size_t)ret;
 		} else if (ret == 0) {

@@ -6,8 +6,9 @@
 /*
  * Tests for the native_sim host FIFO video source. The driver must start with
  * its default format, accept every format it advertises and reject the others,
- * keep the simulation running while no writer is attached, and hand over frame
- * aligned buffers once a host writer feeds the pipe.
+ * keep the simulation running while no writer is attached, hand over frame
+ * aligned buffers once a host writer feeds the pipe, and drop the frames that
+ * arrive while no buffer is queued.
  *
  * The host writer is provided by the test itself, in the native simulator
  * runner context, so that the suite needs no external tool and stays
@@ -355,7 +356,28 @@ ZTEST(video_native_sim_fifo, test_frame_in_the_selected_format)
 	zassert_ok(video_buffer_release(vbuf));
 }
 
-ZTEST(video_native_sim_fifo, test_host_waits_while_buffers_are_held)
+ZTEST(video_native_sim_fifo, test_host_writer_never_waits_for_buffers)
+{
+	int ret = DEFAULT_SIZE;
+
+	zassert_ok(video_stream_start(fifo_dev, VIDEO_BUF_TYPE_OUTPUT));
+
+	test_writer_fd = video_fifo_test_open_writer(FIFO_PATH);
+	zassert_true(test_writer_fd >= 0, "could not attach a host writer to %s", FIFO_PATH);
+
+	/* The driver thread cannot run before this one sleeps, so these writes fill the pipe */
+	for (int i = 0; (i < 8) && (ret == DEFAULT_SIZE); i++) {
+		ret = video_fifo_test_write(test_writer_fd, test_default_frame, DEFAULT_SIZE);
+	}
+	zassert_not_equal(ret, DEFAULT_SIZE, "the pipe took 8 frames without filling up");
+
+	/* With no buffer queued, the driver drops what the pipe holds, which makes room */
+	k_sleep(K_MSEC(50));
+	zassert_true(video_fifo_test_write(test_writer_fd, test_default_frame, DEFAULT_SIZE) > 0,
+		     "the host writer has to wait for a buffer");
+}
+
+ZTEST(video_native_sim_fifo, test_frames_are_dropped_while_buffers_are_held)
 {
 	struct video_buffer *vbuf = NULL;
 	struct video_buffer *none = NULL;
@@ -370,7 +392,7 @@ ZTEST(video_native_sim_fifo, test_host_waits_while_buffers_are_held)
 		      "the host writer could not write a whole frame");
 	zassert_ok(video_dequeue(fifo_dev, &vbuf, K_MSEC(1000)), "no frame was delivered");
 
-	/* The application holds the only buffer, so the next frame stays in the pipe */
+	/* The application holds the only buffer, so the next frame is dropped */
 	test_frame_fill(0x22);
 	zassert_equal(video_fifo_test_write(test_writer_fd, test_frame, FIFO_SIZE), FIFO_SIZE,
 		      "the host writer could not write a second frame");
@@ -381,10 +403,51 @@ ZTEST(video_native_sim_fifo, test_host_waits_while_buffers_are_held)
 	zassert_ok(video_enqueue(fifo_dev, vbuf));
 	vbuf = NULL;
 
+	test_frame_fill(0x33);
+	zassert_equal(video_fifo_test_write(test_writer_fd, test_frame, FIFO_SIZE), FIFO_SIZE,
+		      "the host writer could not write a third frame");
+
 	zassert_ok(video_dequeue(fifo_dev, &vbuf, K_MSEC(1000)), "no frame was delivered");
 	zassert_equal(vbuf->bytesused, FIFO_SIZE, "the frame is not a whole frame");
 	zassert_mem_equal(vbuf->buffer, test_frame, FIFO_SIZE,
-			  "the second frame was lost or corrupted");
+			  "the frame written while every buffer was held was not dropped");
+
+	zassert_ok(video_buffer_release(vbuf));
+}
+
+ZTEST(video_native_sim_fifo, test_buffer_queued_mid_frame_keeps_frames_aligned)
+{
+	struct video_buffer *vbuf;
+
+	zassert_ok(test_set_format(VIDEO_PIX_FMT_RGB565, FIFO_WIDTH, FIFO_HEIGHT));
+	zassert_ok(video_stream_start(fifo_dev, VIDEO_BUF_TYPE_OUTPUT));
+
+	test_writer_fd = video_fifo_test_open_writer(FIFO_PATH);
+	zassert_true(test_writer_fd >= 0, "could not attach a host writer to %s", FIFO_PATH);
+
+	memset(test_frame, 0xAA, FIFO_SIZE);
+	zassert_equal(video_fifo_test_write(test_writer_fd, test_frame, FIFO_SIZE / 2),
+		      FIFO_SIZE / 2, "the host writer could not write a partial frame");
+	k_sleep(K_MSEC(50));
+
+	/* The frame started with no buffer queued, so it is dropped even once one is */
+	vbuf = video_buffer_alloc(FIFO_SIZE, K_NO_WAIT);
+	zassert_not_null(vbuf, "could not allocate a video buffer");
+	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+	zassert_ok(video_enqueue(fifo_dev, vbuf));
+
+	/* The rest of the dropped frame, then a whole one */
+	zassert_equal(video_fifo_test_write(test_writer_fd, test_frame, FIFO_SIZE / 2),
+		      FIFO_SIZE / 2, "the host writer could not finish the frame");
+	test_frame_fill(0x5A);
+	zassert_equal(video_fifo_test_write(test_writer_fd, test_frame, FIFO_SIZE), FIFO_SIZE,
+		      "the host writer could not write a whole frame");
+
+	vbuf = NULL;
+	zassert_ok(video_dequeue(fifo_dev, &vbuf, K_MSEC(1000)), "no frame was delivered");
+	zassert_equal(vbuf->bytesused, FIFO_SIZE, "the frame is not a whole frame");
+	zassert_mem_equal(vbuf->buffer, test_frame, FIFO_SIZE,
+			  "the frame is misaligned, the dropped frame was not skipped");
 
 	zassert_ok(video_buffer_release(vbuf));
 }
@@ -514,7 +577,7 @@ ZTEST(video_native_sim_fifo, test_pipe_holds_two_frames)
 {
 	int ret;
 
-	/* No buffer is queued, so the driver leaves in the pipe what the host writes */
+	/* The driver thread cannot run before this one sleeps, so nothing drains the pipe */
 	zassert_ok(video_stream_start(fifo_dev, VIDEO_BUF_TYPE_OUTPUT));
 
 	test_writer_fd = video_fifo_test_open_writer(FIFO_PATH);
