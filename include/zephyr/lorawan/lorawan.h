@@ -305,6 +305,20 @@ int lorawan_join(const struct lorawan_join_config *config);
 int lorawan_join_airtime(void);
 
 /**
+ * @brief Determine how long to wait until the next join request
+ *
+ * The backoff delay must be run *before* calling @ref lorawan_join in order to
+ * prevent a constantly rebooting device from violating duty cycle limits.
+ *
+ * @note See LoRaWAN 1.0.4 Specification Sections 6.2.5 and 7.
+ *
+ * @param join_airtime Airtime of a single join request, in milliseconds
+ *
+ * @return uint32_t Duration to wait until next join request, in milliseconds
+ */
+uint32_t lorawan_join_backoff(uint16_t join_airtime);
+
+/**
  * @brief Start the LoRaWAN stack
  *
  * This function need to be called before joining the network.
