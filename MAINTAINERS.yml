@@ -6370,6 +6370,7 @@ TI Tiva C Platforms:
   files:
     - soc/ti/tiva_c/
     - boards/ti/tm4c123gxl/
+    - boards/ti/tm4c129exl/
     - dts/arm/ti/tm4c*
     - dts/bindings/*/*tiva-c*
     - drivers/*/*tiva_c*
