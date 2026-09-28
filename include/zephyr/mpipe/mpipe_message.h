@@ -137,6 +137,9 @@ struct mpipe_message {
  * returning an errno stays an errno; an error message is not for every
  * failed call.
  *
+ * Outside an ISR the call waits for the bus, so it must not be made from a
+ * listener of that same bus.
+ *
  * @code{.c}
  * struct mpipe_message msg = {
  *	.origin = &sink->element,
@@ -153,6 +156,8 @@ struct mpipe_message {
  * @retval -ENODEV The origin has no bus
  * @retval -ENOMSG The bus validator dropped the message, which the pipeline
  *                 does to every end-of-stream but the last
+ * @retval -EBUSY Posted from an ISR while the bus was in use
+ * @return Any other negative errno of zbus_chan_pub()
  */
 int mpipe_message_post(const struct mpipe_message *message);
 
