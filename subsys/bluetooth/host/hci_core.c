@@ -5016,8 +5016,15 @@ int bt_disable(void)
 	/* Clear BT_DEV_READY before disabling HCI link. It is not set if
 	 * bt_enable() failed after opening the transport, in which case a
 	 * failed disable must not set it either.
+	 *
+	 * The TX processor holds the host lock for a whole pass, so with the
+	 * lock held here no pass is under way in another thread when the
+	 * flag changes: what a pass has picked up has been sent, and every
+	 * later one holds back what is queued for the connections.
 	 */
+	bt_dev_lock();
 	was_ready = atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_READY);
+	bt_dev_unlock();
 
 #if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
@@ -5062,6 +5069,8 @@ int bt_disable(void)
 			LOG_ERR("Failed to reset BLE controller");
 			if (was_ready) {
 				atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+				/* Resume sending the data that was held back */
+				bt_tx_irq_raise();
 			}
 			atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 			return err;
