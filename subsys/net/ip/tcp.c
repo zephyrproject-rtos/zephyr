@@ -2987,9 +2987,12 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				inserted = true;
 			} else {
 				if (end_offset < len) {
-					if (end_offset) {
-						net_buf_remove_mem(conn->queue_recv_data,
-								   end_offset);
+					/* The new packet starts inside the last
+					 * queued fragment, so trim the overlap off
+					 * the end of that fragment.
+					 */
+					if (end_offset > 0) {
+						net_buf_remove_mem(last, end_offset);
 					}
 
 					/* Put new data after pending data */
