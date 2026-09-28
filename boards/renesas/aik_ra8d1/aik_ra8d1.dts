@@ -74,6 +74,7 @@
 		sw1 = &button3;
 		mipi-dsi = &mipi_dsi;
 		watchdog0 = &wdt;
+		i2c-0 = &pmod1_i2c;
 	};
 
 	sdram1: sdram@68000000 {
@@ -321,6 +322,10 @@
 	pinctrl-names = "default";
 	interrupts = <24 12>, <25 12>, <26 12>, <27 12>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
 };
 
 &spi1 {

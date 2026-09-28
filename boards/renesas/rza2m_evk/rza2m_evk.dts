@@ -23,6 +23,7 @@
 	aliases {
 		led0 = &led1_green;
 		led1 = &led1_red;
+		i2c-0 = &i2c3;
 	};
 
 	leds {

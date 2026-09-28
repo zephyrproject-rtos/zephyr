@@ -25,6 +25,7 @@
 		led1 = &led1;
 		sw0 = &sw1;
 		watchdog0 = &wdt0;
+		i2c-0 = &i2c1;
 	};
 
 	leds {

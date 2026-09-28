@@ -193,11 +193,7 @@ pmod2_serial: &{/soc/sci3@40358300/uart} {};
 pmod3_serial: &{/soc/sci1@40358100/uart} {};
 
 /* Notes: pmod1_i2c and pmod2_i2c cannot be used when SW4.1 is set to UART/SPI position */
-pmod1_i2c: &iic1 {
-	clock-frequency = <I2C_BITRATE_FAST>;
-	#address-cells = <1>;
-	#size-cells = <0>;
-};
+pmod1_i2c: &iic1 {};
 
 pmod2_i2c: &iic1 {};
 
