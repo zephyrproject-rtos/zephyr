@@ -2501,9 +2501,13 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
 
 	/* Check if we can fit more data into it, in case it doesn't fit send
-	 * the existing buffer and proceed to create a new one
+	 * the existing buffer and proceed to create a new one. The ATT buffers
+	 * are sized for the local ATT_MTU, which the negotiated one can be
+	 * smaller than.
 	 */
 	if (*buf && ((net_buf_tailroom(*buf) < sizeof(struct bt_att_notify_mult) + params->len) ||
+	    ((*buf)->len + sizeof(struct bt_att_notify_mult) + params->len >
+	     bt_att_get_mtu(conn)) ||
 	    !bt_att_tx_meta_data_match(*buf, params->func, params->user_data,
 				       BT_ATT_CHAN_OPT(params)))) {
 		int ret;
