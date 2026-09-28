@@ -71,6 +71,33 @@ static void soc_llc_init(void)
 	llc->CCUCAOR = LLC_CCUCAOR_WRALLOCPARTIALEN(1U);
 }
 
+uint32_t soc_llc_way_valid_mask(void)
+{
+	const LLC_Type *const llc = CMPT__LLC;
+	uint32_t scpadWays = 0U;
+
+	/*
+	 * The scratchpad occupies the low-numbered ways when enabled; the cache
+	 * ways are the remaining high-numbered ones. NUMSCPADWAYS is zero-based
+	 * (0 => 1 way), so the scratchpad way count is NUMSCPADWAYS + 1 when
+	 * SCPADEN is set. Any way not claimed by the scratchpad is cache.
+	 */
+	if ((llc->CCUSPCR0 & LLC_CCUSPCR0_SCPADEN_MASK) != 0U) {
+		scpadWays = ((llc->CCUSPCR0 & LLC_CCUSPCR0_NUMSCPADWAYS_MASK) >>
+			     LLC_CCUSPCR0_NUMSCPADWAYS_SHIFT) +
+			    1U;
+	}
+
+	if (scpadWays >= (uint32_t)FSL_FEATURE_LLC_WAY_COUNT) {
+		return 0U;
+	}
+
+	/* Cache ways are [scpadWays, FSL_FEATURE_LLC_WAY_COUNT); set those bits. */
+	return (uint32_t)(GENMASK(FSL_FEATURE_LLC_WAY_COUNT - 1U, scpadWays) &
+			  LLC_CCUCMWVR_WAYVALID_MASK);
+}
+
+
 /*
  * Release the sleep hold, which comes out of reset set. It pins the CMC state
  * machine at its current step, so a WFI never completes: only a debugger halt
