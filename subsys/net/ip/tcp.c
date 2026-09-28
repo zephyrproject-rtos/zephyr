@@ -1860,12 +1860,15 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
-	NET_DBG("Cleanup recv queue conn %p len %zd seq %u", conn,
-		net_pkt_get_len(conn->queue_recv_data),
-		tcp_get_seq(conn->queue_recv_data->buffer));
+	/* The queue may have been dropped after this work was scheduled. */
+	if (conn->queue_recv_data->buffer != NULL) {
+		NET_DBG("Cleanup recv queue conn %p len %zd seq %u", conn,
+			net_pkt_get_len(conn->queue_recv_data),
+			tcp_get_seq(conn->queue_recv_data->buffer));
 
-	net_buf_unref(conn->queue_recv_data->buffer);
-	conn->queue_recv_data->buffer = NULL;
+		net_buf_unref(conn->queue_recv_data->buffer);
+		conn->queue_recv_data->buffer = NULL;
+	}
 
 	k_mutex_unlock(&conn->lock);
 }
@@ -2624,7 +2627,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		NET_DBG("Queuing data: conn %p", conn);
 	}
 
-	if (!net_pkt_is_empty(conn->queue_recv_data)) {
+	if (conn->queue_recv_data->buffer != NULL) {
 		/* Place the data to correct place in the list. If the data
 		 * would not be sequential, then drop this packet.
 		 *
@@ -2714,6 +2717,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				/* error in sequence list, drop it */
 				net_buf_unref(conn->queue_recv_data->buffer);
 				conn->queue_recv_data->buffer = NULL;
+				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
 		} else {
 			NET_DBG("Cannot add new data to queue");
@@ -2724,10 +2728,11 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 	}
 
 	if (inserted) {
-		/* We need to keep the received data but free the pkt */
+		/* The buffer is owned by the queue now, or was freed with it */
 		pkt->buffer = NULL;
 
-		if (!k_work_delayable_is_pending(&conn->recv_queue_timer)) {
+		if (conn->queue_recv_data->buffer != NULL &&
+		    !k_work_delayable_is_pending(&conn->recv_queue_timer)) {
 			k_work_reschedule_for_queue(
 				&tcp_work_q, &conn->recv_queue_timer,
 				K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT));
