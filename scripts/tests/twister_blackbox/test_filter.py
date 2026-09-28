@@ -176,6 +176,160 @@ class TestVendorFilter:
 
 
 @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestPlatformFilter:
+    """Tests for --platform-filter option.
+
+    All tests use --report-filtered so platforms rejected only by the dummy
+    suites' own platform_allow list (which admits just native_sim/qemu_x86/
+    qemu_x86_64) are still visible in testplan.json. This lets assertions
+    check the *reason* a platform was rejected instead of whether it built:
+    a platform matching the --platform-filter expression must never carry the
+    reason produced by the filter itself.
+    """
+
+    REJECTED_BY_FILTER = 'Not matching --vendor/--platform-filter filters'
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize(
+        'expr, matching_platforms',
+        [
+            (
+                'soc_family == "stm32"',
+                ['nucleo_f411re', 'nucleo_g474re', 'nucleo_wb55rg'],
+            ),
+            (
+                'soc_series == "stm32f4x"',
+                ['nucleo_f401re', 'nucleo_f411re', 'nucleo_f446re', 'nucleo_f429zi'],
+            ),
+            (
+                'soc == "stm32f411xe"',
+                ['nucleo_f411re', 'stm32f411e_disco'],
+            ),
+            (
+                'arch == "arm" and vendor == "st"',
+                ['nucleo_f411re', 'nucleo_g474re', 'nucleo_wb55rg'],
+            ),
+        ],
+        ids=['soc-family', 'soc-series', 'soc', 'arch-and-vendor'],
+    )
+    def test_platform_filter_selects_matching_platforms(self, out_path, expr, matching_platforms):
+        """A platform matching --platform-filter reaches testsuite planning."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '-y',
+            '--report-filtered',
+            '--platform-filter',
+            expr,
+        ]
+        assert twister_main(args) == 0
+
+        reasons = {
+            ts['platform'].split('/')[0].split('@')[0]: ts.get('reason')
+            for ts in read_testplan(out_path)['testsuites']
+        }
+        for platform in matching_platforms:
+            assert platform in reasons, f'{platform!r} was not planned at all: {reasons!r}'
+            assert reasons[platform] != self.REJECTED_BY_FILTER, (
+                f'{platform!r} should not be rejected by the --platform-filter {expr!r} itself'
+            )
+        assert reasons.get('native_sim') == self.REJECTED_BY_FILTER
+
+    @pytest.mark.fast
+    def test_platform_filter_and_combinator_no_match(self, out_path):
+        """'and' inside a --platform-filter expression combines conditions."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '-y',
+            '--report-filtered',
+            '--platform-filter',
+            'vendor == "ite" and soc_family == "stm32"',
+        ]
+        assert twister_main(args) == 0
+
+        platforms = {ts['platform'].split('/')[0] for ts in read_testplan(out_path)['testsuites']}
+        # No board is both vendor=ite and soc_family=stm32, so none of the ITE EC
+        # or STM32 boards ever reach testsuite planning; only the suite's forced
+        # integration_platforms entry (native_sim) is present, and it too is
+        # rejected by the filter.
+        assert platforms == {'native_sim'}
+
+    @pytest.mark.fast
+    def test_platform_filter_composes_with_vendor_match(self, out_path):
+        """--vendor and --platform-filter compose with AND: a matching platform is kept."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '-y',
+            '--report-filtered',
+            '--vendor',
+            'st',
+            '--platform-filter',
+            'soc_family == "stm32"',
+        ]
+        assert twister_main(args) == 0
+
+        platforms = {
+            ts['platform'].split('/')[0].split('@')[0]
+            for ts in read_testplan(out_path)['testsuites']
+        }
+        # nucleo_f411re satisfies both halves of the filter, so it reaches
+        # testsuite planning (the dummy suite's own platform_allow list still
+        # keeps it from actually building, which is unrelated to this filter).
+        assert 'nucleo_f411re' in platforms
+        # it8xxx2_evb is vendor=ite, so it never satisfies the vendor half of
+        # this filter and is excluded before testsuite planning even starts.
+        assert 'it8xxx2_evb' not in platforms
+
+    @pytest.mark.fast
+    def test_platform_filter_invalid_expression_exits_nonzero(self, out_path):
+        """An invalid --platform-filter expression exits with a clear error instead of a crash."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '-y',
+            '--platform-filter',
+            'soc_family ===',
+        ]
+        assert twister_main(args) == 2
+
+    @pytest.mark.fast
+    def test_platform_filter_numeric_comparison_on_string_attr_exits_nonzero(self, out_path):
+        """A numeric comparison on a string attribute (e.g. soc_family) exits cleanly.
+
+        All platform attributes exposed to --platform-filter are strings, so
+        <, >, <= and >= are not documented as usable, but the underlying
+        expression grammar (shared with the testsuite 'filter:' key) still
+        accepts them syntactically. Evaluating one must not crash with an
+        unhandled ValueError.
+        """
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '-y',
+            '--platform-filter',
+            'soc_family > 1',
+        ]
+        assert twister_main(args) == 2
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
 class TestSlowFilter:
     """Tests for --enable-slow and --enable-slow-only options."""
 
