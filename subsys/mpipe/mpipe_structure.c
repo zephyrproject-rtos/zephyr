@@ -109,7 +109,7 @@ int mpipe_structure_init_fields(struct mpipe_structure *structure, uint8_t media
 	va_list args;
 	struct mpipe_value value;
 	enum mpipe_value_type type;
-	uint8_t field_id;
+	uint32_t field_id;
 	int ret;
 
 	ret = mpipe_structure_init(structure, media_type_id);
@@ -118,9 +118,15 @@ int mpipe_structure_init_fields(struct mpipe_structure *structure, uint8_t media
 	}
 
 	va_start(args, media_type_id);
-	while (1) {
-		field_id = (uint8_t)va_arg(args, uint32_t);
+	while (true) {
+		field_id = va_arg(args, uint32_t);
 		if (field_id == MPIPE_CAPS_END) {
+			break;
+		}
+
+		/* Checked before the narrowing cast, or 256 would pass as field 0 */
+		if (field_id > UINT8_MAX) {
+			ret = -EINVAL;
 			break;
 		}
 
@@ -130,7 +136,7 @@ int mpipe_structure_init_fields(struct mpipe_structure *structure, uint8_t media
 			break;
 		}
 
-		ret = mpipe_structure_append_value(structure, field_id, &value);
+		ret = mpipe_structure_append_value(structure, (uint8_t)field_id, &value);
 		if (ret != 0) {
 			break;
 		}
