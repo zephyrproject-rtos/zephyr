@@ -18,9 +18,10 @@ endif()
 
 if(CONFIG_WIFI_BFLB)
   zephyr_include_directories(
-    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${CONFIG_SOC_SERIES}/wifi
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/wifi4
     ${ZEPHYR_BASE}/drivers/wifi/bflb/wifi4
   )
+  zephyr_compile_definitions(CFG_CHIP_BL602)
   zephyr_sources(
     wifi/bflb_wifi_platform.c
     wifi/bflb_wifi_ipc.c
