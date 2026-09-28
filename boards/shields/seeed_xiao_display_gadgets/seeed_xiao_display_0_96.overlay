@@ -1,0 +1,62 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "seeed_xiao_display_gadgets.dtsi"
+
+/ {
+	chosen {
+		zephyr,display = &st7735r_seeed_xiao_display_0_96;
+	};
+
+	aliases {
+		sw0 = &usr1_seeed_xiao_display_0_96;
+		sw1 = &usr2_seeed_xiao_display_0_96;
+	};
+
+	buttons_seeed_xiao_display_0_96: buttons {
+		compatible = "gpio-keys";
+
+		usr1_seeed_xiao_display_0_96: button-usr1 {
+			gpios = <&xiao_d 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USR1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		usr2_seeed_xiao_display_0_96: button-usr2 {
+			gpios = <&xiao_d 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USR2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&mipi_dbi_seeed_xiao_display {
+	st7735r_seeed_xiao_display_0_96: st7735r@0 {
+		compatible = "sitronix,st7735r";
+		reg = <0>;
+		mipi-max-frequency = <DT_FREQ_M(10)>;
+		mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+		width = <80>;
+		height = <160>;
+		x-offset = <24>;
+		y-offset = <0>;
+		madctl = <0xc8>;
+		colmod = <0x05>;
+		frmctr1 = [01 2c 2d];
+		frmctr2 = [01 2c 2d];
+		frmctr3 = [01 2c 2d 01 2c 2d];
+		invctr = <0x07>;
+		pwctr1 = [a2 02 84];
+		pwctr2 = [c5];
+		pwctr3 = [0a 00];
+		pwctr4 = [8a 2a];
+		pwctr5 = [8a ee];
+		vmctr1 = <0x0e>;
+		gamctrp1 = [02 1c 07 12 37 32 29 2d 29 25 2b 39 00 01 03 10];
+		gamctrn1 = [03 1d 07 06 2e 2c 29 2d 2e 2e 37 3f 00 00 02 10];
+		caset = [00 18 00 67];
+		raset = [00 00 00 9f];
+	};
+};
