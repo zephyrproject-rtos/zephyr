@@ -1,0 +1,314 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
+
+configdefault NXP_WIFI_SLIM
+	default y
+
+endif # SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
+
+if NXP_WIFI_PRESET
+
+if NETWORKING
+
+configdefault NET_PKT_RX_COUNT
+	default 36 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 72 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 16 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
+
+configdefault NET_PKT_TX_COUNT
+	default 36 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 36 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 16 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
+
+configdefault NET_BUF_RX_COUNT
+	default 40 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 80 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 20 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
+
+configdefault NET_BUF_TX_COUNT
+	default 40 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 40 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 20 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
+
+configdefault NET_TC_TX_COUNT
+	default 1
+
+configdefault NET_TC_RX_COUNT
+	default 1
+
+configdefault NET_TX_STACK_SIZE
+	default 2048
+
+configdefault NET_RX_STACK_SIZE
+	default 2048
+
+configdefault NET_TC_THREAD_PRIO_CUSTOM
+	default y
+
+configdefault NET_TC_TX_THREAD_BASE_PRIO
+	default 3
+
+configdefault NET_TC_TX_SKIP_FOR_HIGH_PRIO
+	default y
+
+configdefault NET_TC_RX_THREAD_BASE_PRIO
+	default 3
+
+configdefault NET_CONTEXT_PRIORITY
+	default y
+
+configdefault NET_MAX_CONTEXTS
+	default 10
+
+configdefault NET_STATISTICS
+	default y
+
+configdefault NET_STATISTICS_WIFI
+	default y
+
+configdefault NET_STATISTICS_USER_API
+	default y
+
+configdefault NET_STATISTICS_PERIODIC_OUTPUT
+	default n
+
+configdefault NET_BUF_LOG
+	default y
+
+if NET_MGMT_EVENT
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 6144 if WIFI_NM_WPA_SUPPLICANT
+	default 4608
+
+configdefault NET_MGMT_EVENT_QUEUE_SIZE
+	default 40
+
+configdefault NET_MGMT_EVENT_QUEUE_TIMEOUT
+	default 5000
+
+configdefault NET_MGMT_THREAD_PRIO_CUSTOM
+	default y
+
+configdefault NET_MGMT_THREAD_PRIORITY
+	default 3
+
+endif # NET_MGMT_EVENT
+
+if NET_IP
+
+configdefault NET_MAX_CONN
+	default 10
+
+endif # NET_IP
+
+if NET_TCP
+
+configdefault NET_TCP_MAX_SEND_WINDOW_SIZE
+	default 46720 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 46720 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 20440 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
+
+configdefault NET_TCP_MAX_RECV_WINDOW_SIZE
+	default 46720 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 46720 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 20440 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
+
+configdefault NET_TCP_WORKQ_STACK_SIZE
+	default 2048
+
+configdefault NET_TCP_WORKER_PRIO
+	default -16
+
+endif # NET_TCP
+
+if NET_IPV4
+
+configdefault NET_IF_MAX_IPV4_COUNT
+	default 2
+
+if NET_IPV4_FRAGMENT
+
+configdefault NET_IPV4_FRAGMENT_MAX_COUNT
+	default 3
+
+configdefault NET_IPV4_FRAGMENT_MAX_PKT
+	default 7
+
+configdefault NET_IPV4_FRAGMENT_TIMEOUT
+	default 3
+
+endif # NET_IPV4_FRAGMENT
+
+endif # NET_IPV4
+
+if NET_IPV6
+
+configdefault NET_IF_MAX_IPV6_COUNT
+	default 2
+
+if NET_IPV6_FRAGMENT
+
+configdefault NET_IPV6_FRAGMENT_MAX_COUNT
+	default 3
+
+configdefault NET_IPV6_FRAGMENT_MAX_PKT
+	default 8
+
+configdefault NET_IPV6_FRAGMENT_TIMEOUT
+	default 3
+
+endif # NET_IPV6_FRAGMENT
+
+endif # NET_IPV6
+
+if DNS_RESOLVER
+
+configdefault DNS_RESOLVER_MAX_SERVERS
+	default 2
+
+endif # DNS_RESOLVER
+
+if NET_SOCKETS_SERVICE
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 4096
+
+configdefault NET_SOCKETS_SERVICE_THREAD_PRIO
+	default 3
+
+endif # NET_SOCKETS_SERVICE
+
+if NET_ZPERF
+
+configdefault ZPERF_WORK_Q_THREAD_PRIORITY
+	default 3
+
+configdefault NET_ZPERF_MAX_SESSIONS
+	default 6
+
+configdefault NET_ZPERF_MAX_PACKET_SIZE
+	default 1500
+
+endif # NET_ZPERF
+
+if ZVFS
+
+configdefault ZVFS_OPEN_MAX
+	default 30
+
+configdefault ZVFS_POLL_MAX
+	default 14
+
+endif # ZVFS
+
+endif # NETWORKING
+
+choice SCHED_ALGORITHM
+	default SCHED_MULTIQ
+endchoice # SCHED_ALGORITHM
+
+choice NET_TC_THREAD_TYPE
+	default NET_TC_THREAD_PREEMPTIVE
+endchoice # NET_TC_THREAD_TYPE
+
+configdefault THREAD_CUSTOM_DATA
+	default y
+
+configdefault REQUIRES_FULL_LIBC
+	default y
+
+configdefault CBPRINTF_FP_SUPPORT
+	default y
+
+configdefault ETH_DRIVER
+	default n
+
+configdefault LOG_PRINTK
+	default n
+
+configdefault MAIN_STACK_SIZE
+	default 4096
+
+configdefault IDLE_STACK_SIZE
+	default 1024
+
+configdefault CODE_DATA_RELOCATION_SRAM
+	default y
+
+choice COMPILER_OPTIMIZATIONS
+	default SPEED_OPTIMIZATIONS
+
+endchoice # COMPILER_OPTIMIZATIONS
+
+configdefault SYS_HEAP_VALIDATE
+	default y
+
+configdefault SYS_HEAP_RUNTIME_STATS
+	default y
+
+if WIFI_NXP
+
+configdefault NXP_WIFI_TX_RX_ZERO_COPY
+	default y
+
+configdefault NXP_WIFI_FW_DEBUG
+	default y if !NXP_WIFI_SLIM
+
+configdefault NXP_WIFI_WAKE_TIMER_ENABLE
+	default y if !NXP_WIFI_SLIM
+
+endif # WIFI_NXP
+
+if WIFI_NM_WPA_SUPPLICANT
+
+configdefault WIFI_NM_WPA_SUPPLICANT_WQ_PRIO
+	default 3
+
+configdefault WIFI_NM_WPA_SUPPLICANT_PRIO
+	default 3
+
+configdefault WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE
+	default 12288
+
+configdefault WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
+	default 12288
+
+configdefault WIFI_NM_MAX_MANAGED_INTERFACES
+	default 2
+
+configdefault WIFI_NM_WPA_SUPPLICANT_CLEANUP_INTERVAL
+	default 120
+
+if WIFI_NM_HOSTAPD_AP
+
+configdefault WIFI_NM_HOSTAPD_CLEANUP_INTERVAL
+	default 120
+
+endif # WIFI_NM_HOSTAPD_AP
+
+if MBEDTLS_ENABLE_HEAP
+
+configdefault MBEDTLS_HEAP_SIZE
+	default 90432
+
+endif # MBEDTLS_ENABLE_HEAP
+
+if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+
+configdefault MBEDTLS_SSL_IN_CONTENT_LEN
+	default 8192
+
+configdefault MBEDTLS_SSL_OUT_CONTENT_LEN
+	default 8192
+
+endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+
+configdefault SAE_PWE_EARLY_EXIT
+	default y
+
+endif # WIFI_NM_WPA_SUPPLICANT
+
+endif # NXP_WIFI_PRESET
