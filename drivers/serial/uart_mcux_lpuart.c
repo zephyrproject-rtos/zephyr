@@ -1306,6 +1306,13 @@ static int mcux_lpuart_configure_basic(const struct device *dev, const struct ua
 	/* Tx will be enabled manually after set tx-rts */
 	uart_config->enableTx = false;
 
+	/* Count the idle character from the stop bit, so trailing 1 data bits of the
+	 * last character are not taken as idle time. The async API uses the idle line
+	 * interrupt to end a reception.
+	 */
+	uart_config->rxIdleType = kLPUART_IdleTypeStopBit;
+	uart_config->rxIdleConfig = kLPUART_IdleCharacter1;
+
 	return 0;
 }
 
@@ -1323,8 +1330,6 @@ static int mcux_lpuart_configure_async(const struct device *dev)
 		return ret;
 	}
 
-	uart_config.rxIdleType = kLPUART_IdleTypeStopBit;
-	uart_config.rxIdleConfig = kLPUART_IdleCharacter1;
 	data->async.next_rx_buffer = NULL;
 	data->async.next_rx_buffer_len = 0;
 	data->async.uart_dev = dev;
