@@ -51,6 +51,9 @@ struct aesc_ip_id_table {
 #define VERSION_MINOR_MASK		GENMASK(23, 16)
 #define VERSION_PATCH_MASK		GENMASK(15, 0)
 
+/* IP core IDs */
+#define IP_ID_PRNG		16U
+
 static inline unsigned int ip_id_get_major_version(volatile uintptr_t *addr)
 {
 	const volatile struct aesc_ip_id_table *table = CONV_ADDR(addr);
