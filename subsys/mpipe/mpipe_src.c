@@ -51,9 +51,7 @@ int mpipe_src_get_property(struct mpipe_object *obj, uint32_t key, void *val)
 
 static int mpipe_src_set_caps(struct mpipe_src *src, const struct mpipe_structure *caps)
 {
-	if (src == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(src != NULL);
 
 	return mpipe_pad_set_caps(&src->src_pad, caps);
 }

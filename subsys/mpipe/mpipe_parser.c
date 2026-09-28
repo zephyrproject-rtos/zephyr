@@ -124,9 +124,8 @@ static int mpipe_parser_event(struct mpipe_pad *pad, struct mpipe_dispatch *even
 
 static int mpipe_parser_query(struct mpipe_pad *pad, struct mpipe_dispatch *query)
 {
-	if (pad == NULL || query == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(pad != NULL);
+	__ASSERT_NO_MSG(query != NULL);
 
 	int ret;
 	struct mpipe_parser *parser = (struct mpipe_parser *)pad->object.container;

@@ -19,9 +19,7 @@ LOG_MODULE_REGISTER(mpipe_sink, CONFIG_MPIPE_LOG_LEVEL);
 
 static int mpipe_sink_set_caps(struct mpipe_sink *sink, const struct mpipe_structure *caps)
 {
-	if (sink == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(sink != NULL);
 
 	return mpipe_pad_set_caps(&sink->sink_pad, caps);
 }
