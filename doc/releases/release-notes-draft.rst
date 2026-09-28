@@ -241,6 +241,12 @@ Other notable changes
 
   * NXP RW61x hwinfo reports PM4 wakeup resets as :c:macro:`RESET_LOW_POWER_WAKE`.
 
+* Interrupt controllers
+
+  * GIC v3 LPI and ITS tables use bounded static storage, making their memory requirements
+    predictable at build time and allowing initialization without a system heap. See the
+    :ref:`migration guide <migration_4.6>` for capacity sizing and heap configuration changes.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
