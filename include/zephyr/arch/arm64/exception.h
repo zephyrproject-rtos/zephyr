@@ -47,6 +47,31 @@ struct arch_esf {
 	uint64_t lr;
 	uint64_t spsr;
 	uint64_t elr;
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	/*
+	 * Callee-saved registers (x19-x28). Not saved by the regular
+	 * exception entry, which only saves the caller-saved registers:
+	 * being callee-saved, their values are still live in the
+	 * registers at any point of the exception handling path. They
+	 * are copied into the ESF by the z_arm64_save_exception_info macro
+	 * only
+	 * on the paths that may dump or unwind the frame (synchronous
+	 * faults, SError, kernel oops, syscall entry) and are never
+	 * restored from the ESF on exception exit: the C handlers
+	 * preserve them and the context switcher restores them from the
+	 * thread's callee-saved area.
+	 */
+	uint64_t x19;
+	uint64_t x20;
+	uint64_t x21;
+	uint64_t x22;
+	uint64_t x23;
+	uint64_t x24;
+	uint64_t x25;
+	uint64_t x26;
+	uint64_t x27;
+	uint64_t x28;
+#endif
 #ifdef CONFIG_FRAME_POINTER
 	uint64_t fp;
 #endif

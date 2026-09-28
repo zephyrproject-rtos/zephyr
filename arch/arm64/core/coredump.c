@@ -12,8 +12,14 @@
 /*
  * v1: 22 registers (x0-x18, lr, spsr, elr)
  * v2: 24 registers (v1 + fp, sp) - needed for GDB stack unwinding
+ * v3: 34 registers (v2 + x19-x28) - callee-saved regs captured in the
+ *     ESF on the fault paths
  */
-#define ARCH_HDR_VER			2
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+#define ARCH_HDR_VER 3
+#else
+#define ARCH_HDR_VER 2
+#endif
 
 struct arm64_arch_block {
 	struct {
@@ -36,6 +42,18 @@ struct arm64_arch_block {
 		uint64_t x16;
 		uint64_t x17;
 		uint64_t x18;
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+		uint64_t x19;
+		uint64_t x20;
+		uint64_t x21;
+		uint64_t x22;
+		uint64_t x23;
+		uint64_t x24;
+		uint64_t x25;
+		uint64_t x26;
+		uint64_t x27;
+		uint64_t x28;
+#endif
 		uint64_t lr;
 		uint64_t spsr;
 		uint64_t elr;
@@ -95,6 +113,18 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	arch_blk.r.x16 = esf->x16;
 	arch_blk.r.x17 = esf->x17;
 	arch_blk.r.x18 = esf->x18;
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	arch_blk.r.x19 = esf->x19;
+	arch_blk.r.x20 = esf->x20;
+	arch_blk.r.x21 = esf->x21;
+	arch_blk.r.x22 = esf->x22;
+	arch_blk.r.x23 = esf->x23;
+	arch_blk.r.x24 = esf->x24;
+	arch_blk.r.x25 = esf->x25;
+	arch_blk.r.x26 = esf->x26;
+	arch_blk.r.x27 = esf->x27;
+	arch_blk.r.x28 = esf->x28;
+#endif
 	arch_blk.r.lr = esf->lr;
 	arch_blk.r.spsr = esf->spsr;
 	arch_blk.r.elr = esf->elr;
@@ -164,7 +194,7 @@ static struct arm64_arch_block cpu_snapshot_blk;
 /*
  * Emit a live register snapshot for a CPU frozen by
  * arch_coredump_freeze_other_cpus(), in the same on-wire layout as the
- * panicking thread's own arch block (arm64_arch_block / ARCH_HDR_VER 2) so
+ * panicking thread's own arch block (arm64_arch_block / ARCH_HDR_VER) so
  * existing tooling can decode it without a separate format. cpu snapshots
  * use their own section ID (COREDUMP_CPU_SNAPSHOT_HDR_ID) rather than
  * COREDUMP_ARCH_HDR_ID because there is one per frozen CPU, tagged with
@@ -176,7 +206,6 @@ static struct arm64_arch_block cpu_snapshot_blk;
 void arch_coredump_cpu_snapshot_dump(unsigned int cpu)
 {
 	const struct arch_esf *esf;
-	const uint64_t *x19_x29;
 	uintptr_t sp;
 	struct k_thread *thread;
 	struct coredump_cpu_snapshot_hdr_t hdr = {
@@ -207,7 +236,7 @@ void arch_coredump_cpu_snapshot_dump(unsigned int cpu)
 		return;
 	}
 
-	if (!arm64_coredump_freeze_get_snapshot(cpu, &esf, &x19_x29, &sp, &thread)) {
+	if (!arm64_coredump_freeze_get_snapshot(cpu, &esf, &sp, &thread)) {
 		return;
 	}
 
@@ -234,10 +263,32 @@ void arch_coredump_cpu_snapshot_dump(unsigned int cpu)
 	cpu_snapshot_blk.r.x16 = esf->x16;
 	cpu_snapshot_blk.r.x17 = esf->x17;
 	cpu_snapshot_blk.r.x18 = esf->x18;
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	/*
+	 * The freeze ISR entry (z_arm64_coredump_freeze_isr) stored the live
+	 * x19-x28 of the interrupted context into the ESF, mirroring the
+	 * fault paths; without it the IRQ ESF leaves them zero, since the
+	 * callee-saved registers are only stored in the ESF on fault paths.
+	 */
+	cpu_snapshot_blk.r.x19 = esf->x19;
+	cpu_snapshot_blk.r.x20 = esf->x20;
+	cpu_snapshot_blk.r.x21 = esf->x21;
+	cpu_snapshot_blk.r.x22 = esf->x22;
+	cpu_snapshot_blk.r.x23 = esf->x23;
+	cpu_snapshot_blk.r.x24 = esf->x24;
+	cpu_snapshot_blk.r.x25 = esf->x25;
+	cpu_snapshot_blk.r.x26 = esf->x26;
+	cpu_snapshot_blk.r.x27 = esf->x27;
+	cpu_snapshot_blk.r.x28 = esf->x28;
+#endif
 	cpu_snapshot_blk.r.lr = esf->lr;
 	cpu_snapshot_blk.r.spsr = esf->spsr;
 	cpu_snapshot_blk.r.elr = esf->elr;
-	cpu_snapshot_blk.r.fp = x19_x29[10]; /* x29 */
+#ifdef CONFIG_FRAME_POINTER
+	cpu_snapshot_blk.r.fp = esf->fp;
+#else
+	cpu_snapshot_blk.r.fp = 0;
+#endif
 	cpu_snapshot_blk.r.sp = sp;
 
 	coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));

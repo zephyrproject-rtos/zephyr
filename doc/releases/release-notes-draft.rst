@@ -41,6 +41,15 @@ Security Vulnerability Related
 Libraries / Subsystems
 **********************
 
+* Architectures
+
+  * arm64: the x19-x28 callee-saved registers are now captured in the exception
+    stack frame on the paths that may dump or unwind it (synchronous faults,
+    SError, kernel oops and syscall entry) and are included in the coredump
+    architecture block, version 3, when
+    :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` is enabled. The gdbstub
+    coredump decoder was updated accordingly.
+
 * Bluetooth
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
