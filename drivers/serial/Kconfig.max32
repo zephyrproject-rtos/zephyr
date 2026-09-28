@@ -57,4 +57,12 @@ config UART_TX_CACHE_LEN
 	  Size of UART transmit buffer that is used when source buffer
 	  is not located in a DMA-able region.
 
+config UART_MAX32_RX_OVERSAMPLE_MULTIPLIER
+	int "RX oversampling multiplier"
+	depends on CLOCK_MANAGEMENT
+	range 0 64
+	default 5
+	help
+	  Default value of the RX clock oversampling multiplier.
+
 endif # UART_MAX32

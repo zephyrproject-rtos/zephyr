@@ -291,6 +291,9 @@ static int api_configure(const struct device *dev, const struct uart_config *uar
 	 *  Set baudrate
 	 */
 #ifdef CONFIG_CLOCK_MANAGEMENT
+	/* The SetFrequency() call has a side effect of setting the OSR */
+	regs->osr = CONFIG_UART_MAX32_RX_OVERSAMPLE_MULTIPLIER;
+
 	clock_rate = clock_management_get_rate(cfg->clock_data, cfg->clock_output);
 	if (clock_rate == 0) {
 		return -ENOTSUP;
