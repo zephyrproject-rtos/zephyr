@@ -244,6 +244,54 @@ static void test_mtu(void)
 	TEST_PASS("GATT server passed");
 }
 
+static void test_batch_mtu(void)
+{
+	const struct bt_gatt_attr *attrs[2];
+	struct bt_gatt_notify_params params = {
+		.data = long_chrc_data,
+		.func = notification_sent,
+		.chan_opt = BT_ATT_CHAN_OPT_ENHANCED_ONLY,
+	};
+	uint16_t mtu;
+	int err;
+
+	setup();
+
+	attrs[0] = bt_gatt_find_by_uuid(NULL, 0, TEST_LONG_CHRC_UUID);
+	attrs[1] = &attr_test_svc[1];
+	mtu = bt_gatt_get_mtu(g_conn);
+
+	/* The client did not exchange the ATT_MTU, so the EATT bearers have the
+	 * largest one, and it is smaller than the ATT buffers, which are sized
+	 * for the local UATT MTU. The notifications may only use EATT, where a
+	 * PDU that exceeds the ATT_MTU can never be sent.
+	 */
+	TEST_ASSERT(bt_gatt_get_uatt_mtu(g_conn) < mtu, "UATT MTU %u not below %u",
+		    bt_gatt_get_uatt_mtu(g_conn), mtu);
+
+	/* Together the two values make a PDU one octet larger than the ATT_MTU */
+	params.attr = attrs[0];
+	params.len = LONG_CHRC_SIZE;
+	err = bt_gatt_notify_cb(g_conn, &params);
+	if (err != 0) {
+		TEST_FAIL("First notification failed (err %d)", err);
+	}
+
+	params.attr = attrs[1];
+	params.len = mtu - 2U * NOTIFY_MULT_TUPLE_HDR_LEN - LONG_CHRC_SIZE;
+	TEST_ASSERT(params.len <= sizeof(long_chrc_data), "MTU %u too large", mtu);
+	err = bt_gatt_notify_cb(g_conn, &params);
+	if (err != 0) {
+		TEST_FAIL("Second notification failed (err %d)", err);
+	}
+
+	while (num_notifications_sent < 2) {
+		k_sleep(K_MSEC(10));
+	}
+
+	TEST_PASS("GATT server passed");
+}
+
 static void batch_sent(struct bt_conn *conn, void *user_data)
 {
 	SET_FLAG(flag_batch_sent);
@@ -296,6 +344,10 @@ static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_mtu",
 		.test_main_f = test_mtu,
+	},
+	{
+		.test_id = "gatt_server_batch_mtu",
+		.test_main_f = test_batch_mtu,
 	},
 	BSTEST_END_MARKER,
 };
