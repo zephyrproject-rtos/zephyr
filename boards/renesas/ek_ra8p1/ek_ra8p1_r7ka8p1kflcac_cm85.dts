@@ -28,6 +28,7 @@
 		sw0 = &button0;
 		mipi-dsi = &mipi_dsi;
 		sdhc0 = &sdhc0;
+		i2c-0 = &iic1;
 	};
 
 	renesas_mipi_connector: mipi-connector {

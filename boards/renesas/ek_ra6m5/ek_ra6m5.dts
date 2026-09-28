@@ -120,6 +120,7 @@
 		sw1 = &button1;
 		watchdog0 = &wdt;
 		pwm-0 = &pwm0;
+		i2c-0 = &iic1;
 	};
 };
 

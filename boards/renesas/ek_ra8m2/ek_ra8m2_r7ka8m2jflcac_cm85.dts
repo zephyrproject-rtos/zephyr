@@ -29,6 +29,7 @@
 		sw0 = &button0;
 		watchdog0 = &wdt0;
 		sdhc0 = &sdhc0;
+		i2c-0 = &iic1;
 	};
 };
 
@@ -76,6 +77,7 @@
 	pinctrl-names = "default";
 	interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 };
 
 &canfd_global {

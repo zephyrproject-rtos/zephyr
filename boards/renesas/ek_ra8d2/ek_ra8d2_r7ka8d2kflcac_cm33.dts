@@ -23,6 +23,7 @@
 	aliases {
 		led0 = &led2;
 		sw0 = &button1;
+		i2c-0 = &iic1;
 	};
 };
 
@@ -78,6 +79,7 @@
 	pinctrl-names = "default";
 	interrupts = <54 1>, <55 1>, <56 1>, <57 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 };
 
 &port_irq12 {
