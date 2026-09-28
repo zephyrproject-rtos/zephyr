@@ -103,6 +103,18 @@ uint8_t mac_cmd_next_payload_size(const struct lwan_ctx *ctx,
 void mac_cmd_commit_ul_fopts(struct lwan_ctx *ctx);
 
 /**
+ * @brief Note that a Class A downlink reached the device.
+ *
+ * Clears the TXParamSetupAns that TS001 5.8 asks the device to repeat
+ * until one does. Call it before the frame's own MAC commands are
+ * parsed, so a request this very frame carries still leaves an answer
+ * owed.
+ *
+ * @param ctx LoRaWAN context.
+ */
+void mac_cmd_dl_received(struct lwan_ctx *ctx);
+
+/**
  * @brief Process the MAC commands carried in a downlink FOpts field.
  *
  * Called by the frame parser after MIC verification and replay

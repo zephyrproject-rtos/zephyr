@@ -13,6 +13,7 @@ LOG_MODULE_DECLARE(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 
 /* LinkCheckReq on-the-wire length: CID only, no payload */
 #define MAC_CMD_LINK_CHECK_REQ_LEN	1
+#define MAC_CMD_TX_PARAM_SETUP_ANS_LEN	1
 
 /* Downlink command payload lengths in bytes, excluding the CID */
 struct mac_dl_cmd_info {
@@ -94,6 +95,37 @@ static const struct mac_dl_cmd_info *mac_cmd_dl_info(uint8_t cid)
 	return NULL;
 }
 
+/*
+ * EIRP a TxParamSetupReq's MaxEIRP index stands for, in dBm
+ * (LoRaWAN TS001 MaxEIRP table).
+ */
+static const int8_t mac_cmd_max_eirp_dbm[] = {
+	8, 10, 12, 13, 14, 16, 18, 20, 21, 24, 26, 27, 29, 30, 33, 36,
+};
+
+#define MAC_CMD_TX_PARAM_DL_DWELL	BIT(5)
+#define MAC_CMD_TX_PARAM_UL_DWELL	BIT(4)
+#define MAC_CMD_TX_PARAM_EIRP_MASK	0x0fU
+
+static void mac_cmd_handle_tx_param_setup(struct lwan_ctx *ctx, uint8_t param)
+{
+	if (ctx->region->get_dwell_tx_params == NULL) {
+		/* The region caps nothing, so it does not take this command
+		 * and does not answer it either.
+		 */
+		LOG_DBG("TxParamSetupReq ignored, region has no dwell time");
+		return;
+	}
+
+	ctx->mac.dl_dwell_time = (param & MAC_CMD_TX_PARAM_DL_DWELL) != 0U;
+	ctx->mac.ul_dwell_time = (param & MAC_CMD_TX_PARAM_UL_DWELL) != 0U;
+	ctx->mac.max_eirp_dbm = mac_cmd_max_eirp_dbm[param & MAC_CMD_TX_PARAM_EIRP_MASK];
+	ctx->mac.tx_param_setup_ans_pending = true;
+
+	LOG_INF("TxParamSetup: ul_dwell=%u dl_dwell=%u max_eirp=%d dBm",
+		ctx->mac.ul_dwell_time, ctx->mac.dl_dwell_time, ctx->mac.max_eirp_dbm);
+}
+
 void mac_cmd_process_dl_fopts(struct lwan_ctx *ctx,
 			      const uint8_t *fopts, size_t fopts_len)
 {
@@ -120,6 +152,9 @@ void mac_cmd_process_dl_fopts(struct lwan_ctx *ctx,
 			mac_cmd_handle_link_check_ans(ctx, fopts[pos + 1],
 						      fopts[pos + 2]);
 			break;
+		case MAC_CMD_TX_PARAM_SETUP:
+			mac_cmd_handle_tx_param_setup(ctx, fopts[pos + 1]);
+			break;
 		default:
 			LOG_DBG("Unhandled DL MAC command 0x%02X", cid);
 			break;
@@ -132,6 +167,11 @@ void mac_cmd_process_dl_fopts(struct lwan_ctx *ctx,
 size_t mac_cmd_next_ul_fopts_len(const struct lwan_ctx *ctx)
 {
 	size_t pos = 0;
+
+	if (ctx->mac.tx_param_setup_ans_pending &&
+	    pos + MAC_CMD_TX_PARAM_SETUP_ANS_LEN <= LWAN_MAX_FOPTS_LEN) {
+		pos += MAC_CMD_TX_PARAM_SETUP_ANS_LEN;
+	}
 
 	if (ctx->mac.link_check_pending &&
 	    pos + MAC_CMD_LINK_CHECK_REQ_LEN <= LWAN_MAX_FOPTS_LEN) {
@@ -158,8 +198,14 @@ size_t mac_cmd_build_ul_fopts(struct lwan_ctx *ctx,
 {
 	size_t pos = 0;
 
-	/* Reset the snapshot — the previous frame's emit state is now stale. */
+	/* Reset the snapshot: the previous frame's emit state is now stale. */
 	ctx->mac.ul_built_link_check_req = false;
+
+	/* An answer the server is waiting for goes out ahead of a request. */
+	if (ctx->mac.tx_param_setup_ans_pending &&
+	    pos + MAC_CMD_TX_PARAM_SETUP_ANS_LEN <= max_len) {
+		buf[pos++] = MAC_CMD_TX_PARAM_SETUP;
+	}
 
 	if (ctx->mac.link_check_pending &&
 	    pos + MAC_CMD_LINK_CHECK_REQ_LEN <= max_len) {
@@ -176,4 +222,14 @@ void mac_cmd_commit_ul_fopts(struct lwan_ctx *ctx)
 		ctx->mac.link_check_pending = false;
 		ctx->mac.ul_built_link_check_req = false;
 	}
+}
+
+void mac_cmd_dl_received(struct lwan_ctx *ctx)
+{
+	/*
+	 * TS001 5.8: a TXParamSetupAns rides every uplink until a Class A
+	 * downlink arrives, so that a lost uplink cannot leave the network
+	 * guessing which parameters the device is on.
+	 */
+	ctx->mac.tx_param_setup_ans_pending = false;
 }
