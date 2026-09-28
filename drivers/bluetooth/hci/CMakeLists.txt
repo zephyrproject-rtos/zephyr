@@ -48,6 +48,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_H4_NXP_CTLR hci_nxp_setup.c)
 zephyr_library_sources_ifdef(CONFIG_BT_H5 h5.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HCI_IPC ipc.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HCI_TI_CC35XX hci_ti_cc35xx.c)
+zephyr_library_sources_ifdef(CONFIG_BT_HCI_TI_LPF3 hci_ti.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HCI_UART_INFINEON hci_uart_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_BT_NXP hci_nxp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_PSOC6_BLESS hci_infineon_psoc6_bless.c)
@@ -60,7 +61,6 @@ zephyr_library_sources_ifdef(CONFIG_BT_STM32WB0 hci_stm32wb0.c)
 zephyr_library_sources_ifdef(CONFIG_BT_STM32WBA hci_stm32wba.c)
 zephyr_library_sources_ifdef(CONFIG_BT_STM32_IPM ipm_stm32wb.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUAPP nrf53_support.c)
-zephyr_library_sources_ifdef(CONFIG_BT_HCI_TI hci_ti.c)
 # zephyr-keep-sorted-stop
 
 zephyr_library_include_directories_ifdef(CONFIG_BT_HCI_TI_CC35XX

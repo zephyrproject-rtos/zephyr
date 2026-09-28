@@ -219,12 +219,12 @@ config BT_NXP
 	help
 	  NXP HCI bluetooth interface
 
-config BT_HCI_TI
-  bool "TI Bluetooth HCI driver"
-  default y
-  depends on DT_HAS_TI_BT_HCI_ENABLED
-  help
-    TI HCI bluetooth interface
+config BT_HCI_TI_LPF3
+	bool "TI Bluetooth HCI driver"
+	default y
+	depends on DT_HAS_TI_BT_HCI_ENABLED
+	help
+	  TI HCI bluetooth interface
 
 config BT_HCI_TI_CC35XX
 	bool "Texas Instruments CC35xx family Bluetooth Controller"
