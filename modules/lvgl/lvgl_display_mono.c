@@ -46,8 +46,8 @@ static ALWAYS_INLINE void set_px_at_pos(uint8_t *dst_buf, uint32_t x, uint32_t y
 #endif
 }
 
-static uint8_t *lvgl_transform_buffer(uint8_t *px_map, uint32_t width, uint32_t height,
-				      struct lvgl_disp_data *data)
+static uint8_t *lvgl_transform_buffer(uint8_t *px_map, uint32_t src_width, uint32_t width,
+				      uint32_t height, struct lvgl_disp_data *data)
 {
 #ifdef CONFIG_LV_Z_COLOR_MONO_HW_INVERSION
 	uint8_t clear_color = 0x00;
@@ -59,7 +59,7 @@ static uint8_t *lvgl_transform_buffer(uint8_t *px_map, uint32_t width, uint32_t 
 
 	/* Needed because LVGL reserves some bytes in the buffer for the color palette. */
 	uint8_t *src_buf = px_map + COLOR_PALETTE_HEADER_SIZE;
-	uint32_t stride = (width + CONFIG_LV_DRAW_BUF_STRIDE_ALIGN - 1) &
+	uint32_t stride = (src_width + CONFIG_LV_DRAW_BUF_STRIDE_ALIGN - 1) &
 			  ~(CONFIG_LV_DRAW_BUF_STRIDE_ALIGN - 1);
 
 	for (uint32_t y = 0; y < height; y++) {
@@ -83,6 +83,7 @@ void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *p
 	const bool is_last = lv_display_flush_is_last(display);
 
 	uint16_t w, h, x, y;
+	uint16_t src_w;
 	uint8_t *dst;
 
 #ifdef CONFIG_LV_Z_DIRECT_RENDERING
@@ -117,8 +118,18 @@ void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *p
 	}
 #endif
 
+	/*
+	 * LVGL rounds I1 areas to a multiple of 8 pixels in x, which can extend
+	 * past the right edge of a vertically tiled display.
+	 */
+	src_w = w;
+	if (((data->cap.screen_info & SCREEN_INFO_MONO_VTILED) != 0U) &&
+	    ((x + w) > data->cap.x_resolution)) {
+		w = data->cap.x_resolution - x;
+	}
+
 	/* Transform buffer from LVGL format to hardware format */
-	dst = lvgl_transform_buffer(px_map, w, h, data);
+	dst = lvgl_transform_buffer(px_map, src_w, w, h, data);
 
 	struct display_buffer_descriptor desc = {
 		.buf_size = (w * h) / 8U,
