@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
@@ -15,6 +16,12 @@ LOG_MODULE_REGISTER(memc_stm32_sdram, CONFIG_MEMC_LOG_LEVEL);
 
 /** SDRAM controller register offset. */
 #define SDRAM_OFFSET 0x140U
+
+/** Upper bound for the FMC to take a command, in ms (only the F4 HAL waits). */
+#define SDRAM_CMD_TIMEOUT_MS 1U
+
+/** Upper bound for a bank to report the mode selected by a command. */
+#define SDRAM_MODE_TIMEOUT_US 1000U
 
 /** FMC SDRAM controller bank configuration fields. */
 struct memc_stm32_sdram_bank_config {
@@ -32,6 +39,19 @@ struct memc_stm32_sdram_config {
 	const struct memc_stm32_sdram_bank_config *banks;
 	size_t banks_len;
 };
+
+static uint32_t memc_stm32_sdram_cmd_target(const struct memc_stm32_sdram_config *config)
+{
+	if (config->banks_len == 2U) {
+		return FMC_SDRAM_CMD_TARGET_BANK1_2;
+	}
+
+	if (config->banks[0].init.SDBank == FMC_SDRAM_BANK1) {
+		return FMC_SDRAM_CMD_TARGET_BANK1;
+	}
+
+	return FMC_SDRAM_CMD_TARGET_BANK2;
+}
 
 static int memc_stm32_sdram_init(const struct device *dev)
 {
@@ -53,14 +73,7 @@ static int memc_stm32_sdram_init(const struct device *dev)
 	}
 
 	/* SDRAM initialization sequence */
-	if (config->banks_len == 2U) {
-		sdram_cmd.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK1_2;
-	} else if (config->banks[0].init.SDBank == FMC_SDRAM_BANK1) {
-		sdram_cmd.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK1;
-	} else {
-		sdram_cmd.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
-	}
-
+	sdram_cmd.CommandTarget = memc_stm32_sdram_cmd_target(config);
 	sdram_cmd.AutoRefreshNumber = config->num_auto_refresh;
 	sdram_cmd.ModeRegisterDefinition = config->mode_register;
 
@@ -97,6 +110,55 @@ static int memc_stm32_sdram_init(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int memc_stm32_sdram_set_mode(const struct memc_stm32_sdram_config *config, uint32_t command,
+				     uint32_t mode)
+{
+	const FMC_SDRAM_CommandTypeDef sdram_cmd = {
+		.CommandMode = command,
+		.CommandTarget = memc_stm32_sdram_cmd_target(config),
+		.AutoRefreshNumber = 1U,
+		.ModeRegisterDefinition = 0U,
+	};
+
+	if (FMC_SDRAM_SendCommand(config->sdram, &sdram_cmd, SDRAM_CMD_TIMEOUT_MS) != HAL_OK) {
+		return -EIO;
+	}
+
+	for (size_t i = 0U; i < config->banks_len; i++) {
+		const uint32_t bank = config->banks[i].init.SDBank;
+
+		if (!WAIT_FOR(FMC_SDRAM_GetModeStatus(config->sdram, bank) == mode,
+			      SDRAM_MODE_TIMEOUT_US, k_busy_wait(1))) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	return 0;
+}
+
+static int memc_stm32_sdram_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct memc_stm32_sdram_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Low-power modes such as Stop gate the FMC clock, so the FMC
+		 * stops refreshing the SDRAM. In self-refresh the SDRAM keeps
+		 * its content without that clock.
+		 */
+		return memc_stm32_sdram_set_mode(config, FMC_SDRAM_CMD_SELFREFRESH_MODE,
+						 FMC_SDRAM_SELF_REFRESH_MODE);
+	case PM_DEVICE_ACTION_RESUME:
+		return memc_stm32_sdram_set_mode(config, FMC_SDRAM_CMD_NORMAL_MODE,
+						 FMC_SDRAM_NORMAL_MODE);
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
 
 /** SDRAM bank/s configuration initialization macro. */
 #define BANK_CONFIG(node_id)                                                   \
@@ -141,5 +203,7 @@ static const struct memc_stm32_sdram_config config = {
 	.banks_len = ARRAY_SIZE(bank_config),
 };
 
-DEVICE_DT_INST_DEFINE(0, memc_stm32_sdram_init, NULL,
-	      NULL, &config, POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
+PM_DEVICE_DT_INST_DEFINE(0, memc_stm32_sdram_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, memc_stm32_sdram_init, PM_DEVICE_DT_INST_GET(0), NULL, &config,
+		      POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
