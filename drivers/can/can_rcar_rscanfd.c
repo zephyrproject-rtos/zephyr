@@ -535,7 +535,8 @@ static void can_rcar_rscanfd_set_communication_enabled(const struct device *dev,
  * Configure the rules table by creating one rule that matches them all (reception frames).
  * The reception filters are currently implemented in software.
  */
-static inline void can_rcar_rscanfd_configure_acceptance_filter_list(const struct device *dev)
+static inline void can_rcar_rscanfd_configure_acceptance_filter_list(const struct device *dev,
+								     uint32_t afl_entry_index)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
 	uint32_t base_offset, val, shift;
@@ -560,8 +561,7 @@ static inline void can_rcar_rscanfd_configure_acceptance_filter_list(const struc
 	val |= 1 << shift;
 	can_rcar_rscanfd_write(dev, base_offset, val);
 
-	/* A page contains 16 consecutive entries */
-	base_offset = config->channel * CAN_RCAR_RSCANFD_AFL_ENTRY_SIZE;
+	base_offset = afl_entry_index * CAN_RCAR_RSCANFD_AFL_ENTRY_SIZE;
 	/* Clear the CAN ID as it won't be taken into account by the mask register */
 	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDGAFLIDN, 0);
 	/* Accept all received CAN frames */
@@ -1578,7 +1578,8 @@ static int can_rcar_rscanfd_init(const struct device *dev)
 		return ret;
 	}
 
-	can_rcar_rscanfd_configure_acceptance_filter_list(dev);
+	can_rcar_rscanfd_configure_acceptance_filter_list(dev,
+		global_data->enabled_channels_count);
 
 	can_rcar_rscanfd_configure_communication_path(dev);
 
