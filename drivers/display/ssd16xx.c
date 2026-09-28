@@ -396,8 +396,8 @@ static int ssd16xx_set_window(const struct device *dev,
 	case DISPLAY_ORIENTATION_ROTATED_180:
 		x_start = y / SSD16XX_PIXELS_PER_BYTE;
 		x_end = (y + desc->height - 1) / SSD16XX_PIXELS_PER_BYTE;
-		y_start = (x + desc->width - 1);
-		y_end = x;
+		y_start = (config->width - 1 - x);
+		y_end = (config->width - 1 - (x + desc->width - 1));
 		break;
 	case DISPLAY_ORIENTATION_ROTATED_270:
 		x_start = x / SSD16XX_PIXELS_PER_BYTE;
