@@ -16,5 +16,7 @@ zephyr_library_sources(
   mem_manage.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
+zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
+
+zephyr_library_sources_ifdef(CONFIG_HW_STACK_PROTECTION stack_protect.c)
