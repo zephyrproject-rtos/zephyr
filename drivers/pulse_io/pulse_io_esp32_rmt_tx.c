@@ -115,6 +115,7 @@ static void rmt_tx_isr(void *arg)
 	if (status & RMT_LL_EVENT_TX_DONE(id)) {
 		ch->state = RMT_CH_READY;
 		ch->result = 0;
+		rmt_pm_policy_sync(data);
 		k_sem_give(&ch->done);
 	}
 
@@ -144,6 +145,7 @@ static void rmt_tx_isr(void *arg)
 #endif
 			ch->state = RMT_CH_READY;
 			ch->result = 0;
+			rmt_pm_policy_sync(data);
 			k_sem_give(&ch->done);
 		}
 	}
@@ -371,6 +373,7 @@ int rmt_tx_start(const struct device *dev, struct rmt_channel *ch,
 	}
 
 	ch->state = RMT_CH_ACTIVE;
+	rmt_pm_policy_sync(data);
 	key = k_spin_lock(&ch->lock);
 	rmt_ll_tx_fix_idle_level(regs, id, ch->cfg.idle_high, true);
 	rmt_ll_tx_start(regs, id);
@@ -420,4 +423,5 @@ void rmt_tx_halt(const struct device *dev, struct rmt_channel *ch)
 #endif
 
 	ch->state = RMT_CH_READY;
+	rmt_pm_policy_sync(data);
 }

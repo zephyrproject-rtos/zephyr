@@ -12,6 +12,22 @@
 #include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
 #include <zephyr/logging/log.h>
 
+#if CONFIG_PM
+#include <zephyr/pm/policy.h>
+#endif
+
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && \
+	defined(SOC_RMT_SUPPORT_SLEEP_RETENTION)
+#define RMT_SLEEP_RETENTION_ENABLED 1
+#else
+#define RMT_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if RMT_SLEEP_RETENTION_ENABLED
+#include <rmt_private.h>
+#include <esp_private/sleep_retention.h>
+#endif
+
 #include <esp_private/esp_clk_tree_common.h>
 
 #ifdef CONFIG_SOC_SERIES_ESP32
@@ -409,6 +425,67 @@ static int rmt_stop(const struct device *dev, struct pulse_io_channel *chan)
 	return 0;
 }
 
+#if RMT_SLEEP_RETENTION_ENABLED
+static esp_err_t rmt_create_sleep_retention_cb(void *arg)
+{
+	int group_id = (int)(uintptr_t)arg;
+
+	return sleep_retention_entries_create(
+		rmt_retention_infos[group_id].regdma_entry_array,
+		rmt_retention_infos[group_id].array_size, REGDMA_LINK_PRI_RMT,
+		rmt_retention_infos[group_id].module);
+}
+
+static void rmt_sleep_retention_init(int group_id)
+{
+	sleep_retention_module_t module = rmt_retention_infos[group_id].module;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = rmt_create_sleep_retention_cb,
+				   .arg = (void *)(uintptr_t)group_id}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM),
+	};
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("RMT%d sleep retention init failed (%d)", group_id, err);
+	}
+}
+#endif
+
+void rmt_pm_policy_sync(struct rmt_data *data)
+{
+#if CONFIG_PM
+	bool must_lock = false;
+	k_spinlock_key_t key = k_spin_lock(&data->glock);
+
+	for (uint8_t i = 0; i < RMT_NUM_CHANNELS; i++) {
+		if (data->channels[i].state == RMT_CH_ACTIVE) {
+			must_lock = true;
+			break;
+		}
+	}
+
+	if (must_lock && !data->pm_lock_held) {
+		data->pm_lock_held = true;
+		pm_policy_state_all_lock_get();
+	} else if (!must_lock && data->pm_lock_held) {
+		data->pm_lock_held = false;
+		pm_policy_state_all_lock_put();
+	}
+
+	k_spin_unlock(&data->glock, key);
+#else
+	ARG_UNUSED(data);
+#endif
+}
+
 static int rmt_init(const struct device *dev)
 {
 	const struct rmt_config *config = dev->config;
@@ -461,6 +538,10 @@ static int rmt_init(const struct device *dev)
 		ch->hw_mem = &RMTMEM.channels[i].symbols[0];
 		k_sem_init(&ch->done, 0, 1);
 	}
+
+#if RMT_SLEEP_RETENTION_ENABLED
+	rmt_sleep_retention_init(0);
+#endif
 
 	return 0;
 }

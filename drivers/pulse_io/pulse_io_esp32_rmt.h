@@ -129,6 +129,9 @@ struct rmt_data {
 	uint32_t src_clk_hz;
 	uint32_t filter_clk_hz;
 	struct rmt_channel channels[RMT_NUM_CHANNELS];
+#if CONFIG_PM
+	bool pm_lock_held;
+#endif
 };
 
 int rmt_select_channel_clock(const struct device *dev, struct rmt_channel *ch,
@@ -142,5 +145,6 @@ int rmt_rx_start(const struct device *dev, struct rmt_channel *ch,
 		 const struct pulse_io_rx_req *req);
 void rmt_tx_halt(const struct device *dev, struct rmt_channel *ch);
 void rmt_rx_halt(const struct device *dev, struct rmt_channel *ch);
+void rmt_pm_policy_sync(struct rmt_data *data);
 
 #endif /* ZEPHYR_DRIVERS_PULSE_IO_ESPRESSIF_RMT_PULSE_IO_ESP32_RMT_H_ */

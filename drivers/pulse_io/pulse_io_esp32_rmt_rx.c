@@ -58,6 +58,7 @@ static void rmt_rx_finish(struct rmt_channel *ch)
 {
 	ch->state = RMT_CH_READY;
 	ch->result = ch->rx_overflow ? -ENOMEM : 0;
+	rmt_pm_policy_sync(ch->dev->data);
 	k_sem_give(&ch->done);
 }
 
@@ -338,6 +339,7 @@ int rmt_rx_start(const struct device *dev, struct rmt_channel *ch,
 	}
 
 	ch->state = RMT_CH_ACTIVE;
+	rmt_pm_policy_sync(data);
 	key = k_spin_lock(&ch->lock);
 	rmt_ll_rx_reset_pointer(regs, id);
 	rmt_ll_rx_set_mem_owner(regs, id, RMT_LL_MEM_OWNER_HW);
@@ -376,4 +378,5 @@ void rmt_rx_halt(const struct device *dev, struct rmt_channel *ch)
 		dma_stop(config->dma_dev, config->rx_dma_channel);
 	}
 #endif
+	rmt_pm_policy_sync(data);
 }
