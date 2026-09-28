@@ -28,6 +28,7 @@
 		led0 = &led1;
 		sw0 = &button0;
 		watchdog0 = &wdt0;
+		i2c-0 = &iic1;
 	};
 };
 
@@ -83,6 +84,7 @@
 	pinctrl-names = "default";
 	interrupts = <14 1>, <15 1>, <16 1>, <17 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 };
 
 &port_irq13 {

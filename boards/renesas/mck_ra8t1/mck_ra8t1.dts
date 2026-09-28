@@ -53,6 +53,7 @@
 		led0 = &led1;
 		sdhc0 = &sdhc0;
 		watchdog0 = &wdt;
+		i2c-0 = &iic1;
 	};
 };
 
@@ -198,6 +199,7 @@
 	clock-frequency = <I2C_BITRATE_FAST_PLUS>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &eth {

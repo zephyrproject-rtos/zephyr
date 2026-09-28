@@ -27,6 +27,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
+		i2c-0 = &iic0;
 	};
 };
 

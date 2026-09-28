@@ -75,6 +75,15 @@
 		};
 	};
 
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL1 SDA1*/
+			psels = <RA_PSEL(RA_PSEL_I2C, 4, 10)>,
+				<RA_PSEL(RA_PSEL_I2C, 4, 9)>;
+			drive-strength = "medium";
+		};
+	};
+
 	adc0_default: adc0_default {
 		group1 {
 			/* input */
