@@ -590,7 +590,7 @@ ZTEST(ipc_service_api, test_hold_release_rx_buffer)
 
 	recv_override = NULL;
 }
-#define HELD_RX_BUF_MAX 32
+#define HELD_RX_BUF_MAX 33
 
 #if IS_ENABLED(CONFIG_MULTITHREADING)
 
