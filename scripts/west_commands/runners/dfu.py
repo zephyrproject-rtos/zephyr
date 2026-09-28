@@ -16,11 +16,9 @@ DfuSeConfig = namedtuple('DfuSeConfig', ['address', 'options'])
 class DfuUtilBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for dfu-util.'''
 
-    def __init__(self, cfg, dev_id, alt, img, exe='dfu-util',
-                 dfuse_config=None):
-
+    def __init__(self, cfg, dev_id, alt, img, exe='dfu-util', dfuse_config=None):
         super().__init__(cfg)
-        self.dev_id = dev_id # Used only for error checking in do_run
+        self.dev_id = dev_id  # Used only for error checking in do_run
         self.alt = alt
         self.img = img
         self.cmd = [exe, f'-d,{dev_id}']
@@ -50,31 +48,31 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_add_parser(cls, parser):
-        parser.add_argument("--alt", required=True,
-                            help="interface alternate setting number or name")
+        parser.add_argument(
+            "--alt", required=True, help="interface alternate setting number or name"
+        )
 
         # Optional:
-        parser.add_argument("--pid", dest='dev_id',
-                            help=cls.dev_id_help())
-        parser.add_argument("--img",
-                            help="binary to flash, default is --bin-file")
-        parser.add_argument("--dfuse", default=False, action='store_true',
-                            help='''use the DfuSe protocol extensions
-                                 supported by STMicroelectronics
-                                 devices (if given, the image flash
-                                 address respects
-                                 CONFIG_FLASH_BASE_ADDRESS and
-                                 CONFIG_FLASH_LOAD_OFFSET)''')
-        parser.add_argument("--dfuse-modifiers", default='leave',
-                            help='''colon-separated list of additional
-                                 DfuSe modifiers for dfu-util's -s
-                                 option (default is
-                                 "-s <flash-address>:leave", which starts
-                                 execution immediately); requires
-                                 --dfuse
-                                 ''')
-        parser.add_argument('--dfu-util', default='dfu-util',
-                            help='dfu-util executable; defaults to "dfu-util"')
+        parser.add_argument("--pid", dest='dev_id', help=cls.dev_id_help())
+        parser.add_argument("--img", help="binary to flash, default is --bin-file")
+        parser.add_argument(
+            '--dfuse',
+            default=False,
+            action='store_true',
+            help='''use the DfuSe protocol extensions supported by STMicroelectronics devices (if
+                    given, the image flash address respects CONFIG_FLASH_BASE_ADDRESS and
+                    CONFIG_FLASH_LOAD_OFFSET)''',
+        )
+        parser.add_argument(
+            '--dfuse-modifiers',
+            default='leave',
+            help='''colon-separated list of additional DfuSe modifiers for dfu-util's -s option
+                    (default is "-s <flash-address>:leave", which starts execution immediately);
+                    requires --dfuse''',
+        )
+        parser.add_argument(
+            '--dfu-util', default='dfu-util', help='dfu-util executable; defaults to "dfu-util"'
+        )
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -84,13 +82,15 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         if args.dfuse:
             args.dt_flash = True  # --dfuse implies --dt-flash.
             build_conf = BuildConfiguration(cfg.build_dir)
-            dcfg = DfuSeConfig(address=cls.get_flash_address(args, build_conf),
-                               options=args.dfuse_modifiers)
+            dcfg = DfuSeConfig(
+                address=cls.get_flash_address(args, build_conf), options=args.dfuse_modifiers
+            )
         else:
             dcfg = None
 
-        ret = DfuUtilBinaryRunner(cfg, args.dev_id, args.alt, args.img,
-                                  exe=args.dfu_util, dfuse_config=dcfg)
+        ret = DfuUtilBinaryRunner(
+            cfg, args.dev_id, args.alt, args.img, exe=args.dfu_util, dfuse_config=dcfg
+        )
         ret.ensure_device()
         return ret
 
@@ -109,8 +109,9 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         if not self.dev_id:
-            raise RuntimeError('Please specify a USB VID:PID with the '
-                               '-i/--dev-id or --pid command-line switch.')
+            raise RuntimeError(
+                'Please specify a USB VID:PID with the -i/--dev-id or --pid command-line switch.'
+            )
         self.require(self.cmd[0])
         self.ensure_output('bin')
 
