@@ -1335,6 +1335,20 @@ Command line arguments define the initial scope in the following way:
 * ``-G/--integration``: all platforms from an ``integration_platforms`` list in
   a given test configuration file. If a test has no ``integration_platforms``
   *"scope presumption"* will happen;
+* ``--vendor`` (can be used multiple times) and/or ``--platform-filter <EXPR>``:
+  platforms matching the given vendor and/or an expression over the
+  platform's static metadata attributes (``name``, ``arch``, ``vendor``,
+  ``soc``, ``soc_series`` and ``soc_family``), e.g.
+  ``--platform-filter 'soc_family == "stm32"'`` or
+  ``--platform-filter 'arch == "arm" and vendor == "st"``. The SoC attributes
+  are derived from the SoC's :file:`soc.yml` file and are not configurable in a
+  board's ``twister.yaml`` file. These filters compose:
+  when both are given, only platforms matching *all* of them are selected;
+  multiple ``--vendor`` values are combined with a logical "or". Use
+  "and"/"or"/parentheses inside the ``--platform-filter`` expression to
+  combine multiple conditions. When combined with ``--arch``, ``--vendor``
+  and ``--platform-filter`` choose the initial platform scope and
+  ``--arch`` narrows the resulting instances.
 * No scope argument: *"scope presumption"* will happen.
 
 *"Scope presumption"*: A list of Twister's :ref:`default platforms <twister_default_testing_board>`
