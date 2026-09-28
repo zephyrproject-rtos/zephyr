@@ -61,7 +61,75 @@ New APIs and options
   like you need to add more details, add them in the API documentation code
   instead.
 
-.. zephyr-keep-sorted-start re(^\* \w)
+.. zephyr-keep-sorted-start re(^\* \w) ignorecase
+
+* Audio
+
+  * :c:member:`pcm_stream_cfg.gain_db`
+
+* Bluetooth
+
+  * Audio
+
+    * :c:func:`bt_ascs_register`
+    * :c:func:`bt_ascs_unregister`
+    * :c:func:`bt_bap_unicast_client_qos_from_group`
+    * :c:func:`bt_bap_qos_cfg_eq`
+
+  * Host
+
+    * :c:func:`bt_conn_take`
+    * :c:func:`bt_conn_drop`
+    * :c:func:`bt_le_per_adv_update_did`
+
+  * Mesh
+
+    * :c:struct:`bt_mesh_lpn_timing`
+    * :c:func:`bt_mesh_stat_lpn_timing_get`
+    * :c:func:`bt_mesh_stat_lpn_timing_reset`
+
+* Crypto
+
+  * :c:enumerator:`CRYPTO_CIPHER_MODE_CFB`
+  * :c:enumerator:`CRYPTO_CIPHER_MODE_OFB`
+  * :c:func:`cipher_cfb_op`
+  * :c:func:`cipher_ofb_op`
+
+* Devicetree
+
+  * :c:macro:`DT_IRQN_BY_NAME`
+  * :c:macro:`DT_INST_IRQN_BY_NAME`
+
+* Haptics
+
+  * :c:enumerator:`haptics_monitor`
+  * :c:enumerator:`haptics_monitor_type`
+  * :c:enumerator:`haptics_source`
+  * :c:union:`haptics_config`
+  * :c:func:`haptics_calibrate`
+  * :c:func:`haptics_monitor_get`
+  * :c:func:`haptics_monitor_set`
+  * :c:func:`haptics_select_source`
+  * :c:func:`haptics_set_level`
+  * :c:func:`haptics_stream_samples`
+
+* Kernel
+
+  * :c:func:`k_thread_runtime_stats_is_enabled`
+  * :c:func:`atomic_test_and_set_bit_to`
+
+* LoRa
+
+  * :c:func:`lora_recv_duty_cycle`
+  * :c:func:`lora_recv_duty_cycle_async`
+
+* Network
+
+  * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
+
+* Ring buffer
+
+  * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
 .. zephyr-keep-sorted-stop
 
@@ -97,6 +165,36 @@ New Samples
 
 Libraries / Subsystems
 **********************
+
+* Crypto
+
+  * Added AES CFB and OFB cipher mode support.
+
+* DFU
+
+  * Added :kconfig:option:`CONFIG_IMG_CUSTOM_SECTOR_SIZE` to allow MCUboot to use a different
+    sector size for reducing the swap-using-offset status area size.
+
+* LoRa / LoRaWAN
+
+  * Added a native LoRaWAN backend
+    (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) that implements
+    LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
+    the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
+  * :c:member:`lora_modem_config.sync_word`
+
+Devicetree
+**********
+
+  * :c:macro:`DT_NODELABEL_C_TOKEN`
+  * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
+
+
+* TF-M
+
+  * TF-M was updated from version 2.2.2 to version 2.3.0. Release notes can be
+    found at:
+    https://trustedfirmware-m.readthedocs.io/en/tf-mv2.3.0/releases/2.3.0.html
 
 Other notable changes
 *********************
