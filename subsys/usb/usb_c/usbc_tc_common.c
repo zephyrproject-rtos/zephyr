@@ -142,6 +142,7 @@ static int tc_init(const struct device *dev)
 #endif
 #ifdef CONFIG_USBC_CSM_DRP
 	usbc_timer_init(&tc->tc_t_drp_toggle, TC_T_DRP_SNK_MS);
+	tc_drp_cycle_draw(tc);
 #endif
 
 	/* Clear the flags */
