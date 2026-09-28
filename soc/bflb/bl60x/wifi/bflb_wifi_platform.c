@@ -360,12 +360,13 @@ void __wrap_rc_update_counters(uint32_t sta_idx, uint32_t a, uint32_t b)
 
 /* The rate the firmware last programmed for a station lives in its TX
  * policy table: sta_info_tab[idx] + 320 points at the policy, and the
- * first entry of the retry chain at +20 is the rate it transmits at.
- * Only the legacy set is decoded; any other format reports unknown.
+ * first entry of the retry chain at +20 is the rate it transmits at, with
+ * the retry count in its top bits.  Only the non-HT format is decoded;
+ * any other format reports unknown.
  */
 #define RC_STA_INFO_POLICY 320U
 #define POLICY_RATE_CHAIN  20U
-#define RATE_INFO_VALID    BIT(31)
+#define RATE_INFO_FMT_MASK GENMASK(13, 11)
 #define RATE_INFO_IDX_MASK 0x7fU
 
 const uint16_t bflb_wifi_legacy_rates_100kbps[] = {
@@ -393,8 +394,7 @@ int bflb_wifi_phy_rate_kbps(uint8_t sta_idx)
 	}
 
 	info = *(const uint32_t *)&policy[POLICY_RATE_CHAIN];
-	if (((info & RATE_INFO_VALID) == 0U) ||
-	    ((info & ~(RATE_INFO_VALID | RATE_INFO_IDX_MASK)) != 0U) ||
+	if (((info & RATE_INFO_FMT_MASK) != 0U) ||
 	    ((info & RATE_INFO_IDX_MASK) >= ARRAY_SIZE(bflb_wifi_legacy_rates_100kbps))) {
 		return 0;
 	}
