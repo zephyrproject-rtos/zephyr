@@ -54,7 +54,7 @@
 #define MPIPE_OBJECT_FLAG_BIN  BIT(1)
 
 /** Sentinel value to mark the end of property lists */
-#define MPIPE_PROP_LIST_END -1
+#define MPIPE_PROP_LIST_END UINT32_MAX
 
 /**
  * @brief Base object structure
