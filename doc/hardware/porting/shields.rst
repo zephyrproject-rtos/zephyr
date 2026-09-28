@@ -323,6 +323,21 @@ Relevant devicetree node labels:
 - ``xiao_dac``
 
 
+Xiao Plus
+---------
+
+This is the form factor of the Seeed Studio XIAO Plus boards. It extends the Xiao form factor with
+nine pads on the bottom side of the board, placed between the castellated pins. Shields for this
+form factor, typically carrier boards on which the module is soldered, can use the Xiao node labels
+listed above as well as the following ones.
+
+Relevant devicetree node labels:
+
+- ``xiao_plus_d`` See :dtcompatible:`seeed,xiao-plus-gpio` for GPIO pin definitions.
+- ``xiao_plus_spi``
+- ``xiao_plus_serial``
+
+
 zephyr_i2c / Stemma QT / Quiic
 ------------------------------
 
