@@ -2102,11 +2102,14 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
-	NET_DBG("[%p] cleanup recv queue len %zd seq %u", conn,
-		net_buf_frags_len(conn->queue_recv_data),
-		tcp_get_seq(conn->queue_recv_data));
+	/* The queue may have been dropped after this work was scheduled. */
+	if (conn->queue_recv_data != NULL) {
+		NET_DBG("[%p] cleanup recv queue len %zd seq %u", conn,
+			net_buf_frags_len(conn->queue_recv_data),
+			tcp_get_seq(conn->queue_recv_data));
 
-	net_buf_drop(&conn->queue_recv_data);
+		net_buf_drop(&conn->queue_recv_data);
+	}
 
 	k_mutex_unlock(&conn->lock);
 }
@@ -3007,6 +3010,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 					conn);
 				/* error in sequence list, drop it */
 				net_buf_drop(&conn->queue_recv_data);
+				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
 		} else {
 			NET_DBG("[%p] Cannot add new data to queue", conn);
@@ -3017,10 +3021,11 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 	}
 
 	if (inserted) {
-		/* We need to keep the received data but free the pkt */
+		/* The buffer is owned by the queue now, or was freed with it */
 		pkt->buffer = NULL;
 
-		if (!k_work_delayable_is_pending(&conn->recv_queue_timer)) {
+		if (conn->queue_recv_data != NULL &&
+		    !k_work_delayable_is_pending(&conn->recv_queue_timer)) {
 			k_work_reschedule_for_queue(
 				&tcp_work_q, &conn->recv_queue_timer,
 				K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT));
