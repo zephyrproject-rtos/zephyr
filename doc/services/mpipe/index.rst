@@ -14,8 +14,8 @@ The Multimedia Pipeline subsystem (mpipe) builds a media stream out of
 self-contained processing components called **elements**. An application
 declares the elements it needs, links them into a graph, and drives that graph
 through a state machine; mpipe negotiates the data format between neighboring
-elements, settles which buffer pool provides the buffers, and moves those
-buffers from one element to the next.
+elements, settles the buffer configuration, and moves the buffers from one
+element to the next.
 
 .. graphviz::
    :align: center
@@ -41,16 +41,14 @@ different devices, and a new requirement is usually one more element rather than
 a rewrite.
 
 The elements themselves live in **plugins**, grouped by media domain. A plugin
-brings its own directory, its own Kconfig and its own headers, and the build
-picks it up without any edit to the framework, so a silicon vendor or a
-middleware provider can ship elements without altering the core.
+is added on its own, with its own directory, Kconfig and headers, without
+altering the framework.
 
-mpipe performs no dynamic allocation: buffers come from pools sized while the
-pipeline starts, and everything on the negotiation path is fixed-size and held
-by value. The cost lands on the stack instead. Negotiation runs inside
-:c:func:`mpipe_element_set_state`, on whichever thread calls it, and holds
-several capabilities live at once - budget for it on that thread, which for the
-example below is the one running ``main``.
+mpipe allocates nothing dynamically. Elements and pipelines are objects the
+application owns, buffers come from pools sized when the pipeline starts, and a
+capability is a fixed-size structure passed by value. Negotiation runs on the
+thread that calls :c:func:`mpipe_element_set_state`, which therefore needs a
+stack sized for it.
 
 mpipe is optional, and it is not always the right tool. An application driving a
 single device is better served by that device's API directly. mpipe earns its
@@ -61,7 +59,7 @@ Building a pipeline
 *******************
 
 An application includes ``<zephyr/mpipe/mpipe.h>``, and only that, for the whole
-core API; each element it instantiates adds that element's own header.
+framework API; each element it instantiates adds that element's own header.
 
 Elements are plain objects the application owns; mpipe allocates none of them.
 Each element type has its own init function taking that type and an id:
@@ -137,15 +135,16 @@ Elements, pads and links
 ************************
 
 Every mpipe *element* derives from :c:struct:`mpipe_object` by embedding it as
-its first member. The object layer carries what the framework needs of anything
-it holds: an id, the container that holds it, list linkage, and the property
-callbacks. On top of it, :c:struct:`mpipe_element` adds the state machine and
-the pads, and the element bases specialize it. The types that only carry data -
-a capability, a message, a dispatch - are plain structs outside that hierarchy:
+its first member. :c:struct:`mpipe_element` adds the state machine and the pads.
+Each element base, source, sink, transform, parser and bin, adds what its kind
+of element needs, such as its pads and the hooks the negotiation calls, and a
+concrete element embeds one base and adds its own fields. The types that only
+carry data - a capability, a message, a dispatch - are plain structs outside
+that hierarchy:
 
 .. graphviz::
    :align: center
-   :caption: Inheritance is struct embedding, so upcasting is a plain C cast.
+   :caption: Inheritance tree of the mpipe structures.
 
    digraph inheritance {
      rankdir=BT;
@@ -208,7 +207,7 @@ time:
 
 .. graphviz::
    :align: center
-   :caption: What each transition does.
+   :caption: Pipeline state machine.
 
    digraph states {
      rankdir=LR;
@@ -272,7 +271,7 @@ The source drives the negotiation on ``READY`` to ``PAUSED``, in two passes:
 
 .. mermaid::
    :align: center
-   :caption: Capability negotiation, driven by the source on READY to PAUSED
+   :caption: Capability negotiation.
    :alt: Sequence diagram showing a caps query travelling from the source pad
        through the transform's two pads to the sink and the answer coming back,
        then the source fixating the format and a caps event travelling the same
@@ -346,7 +345,7 @@ that, immediately after the format is fixed and in the same transition:
 
 .. mermaid::
    :align: center
-   :caption: Buffer pool negotiation, immediately after the format is fixed
+   :caption: Buffer pool negotiation.
    :alt: Sequence diagram showing a buffer pool query travelling downstream to
        the sink, the sink proposing a pool or a config, and each element
        deciding and starting its own pool as the proposals come back upstream.
@@ -424,9 +423,9 @@ Pipeline runtime
 
 The pipeline's own thread drives the source: it acquires a buffer and pushes it
 downstream until the source reports the end of its data, at which point it sends
-an end-of-stream event downstream and pauses itself. An element that needs to
-decouple two halves of a graph onto separate threads does so by placing a
-queuing element between them.
+an end-of-stream event downstream and pauses itself. A pipeline that needs two
+parts of its graph to run on separate threads places a queue element between
+them.
 
 Tearing a running graph down is ordered carefully, and the order is what keeps
 it from losing data or deadlocking:
@@ -455,9 +454,9 @@ exactly once and never tears the graph down while a branch is still running.
 Writing an element
 ******************
 
-An element is written outside the framework and requires no change to it. It embeds
-one of the bases as its first member, calls that base's init with its own id, and
-overrides only what it cares about:
+An element is written outside the framework and requires no change to it. It
+may embed one of the bases as its first member, calls that base's init with its
+own id, and overrides only the hooks it needs:
 
 .. code-block:: c
 
@@ -480,16 +479,31 @@ overrides only what it cares about:
            return 0;
    }
 
-An element that overrides ``change_state`` must chain to its base, which is what
-performs the capability reset and the pool teardown every element is expected to
-do.
+The hooks, in the order a pipeline exercises them:
 
-The other half is saying what the element supports. A capability known at build
-time is a ``static const struct mpipe_structure`` the element copies out of, and
-``MPIPE_STRUCTURE_DEFINE`` places one in ``.rodata``; several are an array of
-them. An element backed by a device instead builds each capability inside its
-``enum_caps_fn`` by asking the driver, and one configured by the application
-takes it from a property.
+* **Element configuration**: ``set_property`` and ``get_property`` on the
+  object, which the application reaches through
+  :c:func:`mpipe_object_set_properties` and
+  :c:func:`mpipe_object_get_properties`. A property configures this element
+  only; nothing else has to agree on it.
+* **Element capabilities**: ``enum_caps_fn`` on a pad produces what the element
+  supports, one capability per index, reporting ``-ENOENT`` past the last one.
+  A capability known at build time is defined once with
+  ``MPIPE_STRUCTURE_DEFINE`` and copied out; one only known at run time is built
+  by querying the driver. ``set_caps`` applies the format the negotiation
+  settled on, which is where hardware is configured. A transform element also
+  implements ``transform_caps``, mapping a capability on one side to the other
+  side.
+* **Buffer configuration**: the downstream element proposes what it needs
+  through ``propose_buffer_pool``, and the upstream element decides through
+  ``decide_buffer_pool`` with that proposal in hand.
+* **State change**: ``change_state`` runs what the element does on each
+  transition. It must chain to its base, which performs the capability reset
+  and the pool teardown every element is expected to do.
+* **Processing function**: ``chain_fn`` on the sink pad is the heart of the
+  element. It receives a buffer, owns it, and hands back the buffer it
+  produced, or NULL when it consumed it. A source has no chain function: the
+  pipeline thread acquires buffers from its pool.
 
 Configuration Options
 *********************
@@ -498,8 +512,7 @@ Configuration Options
   option and contributes its own Kconfig file.
 * :kconfig:option:`CONFIG_MPIPE_STRUCTURE_MAX_FIELDS` sizes one capability. Size
   it for the largest union of fields that can meet in one intersection, not for
-  the number of fields an element sets, since an intersection carries through
-  the fields only one side constrains.
+  the number of fields an element sets.
 * :kconfig:option:`CONFIG_MPIPE_NET_BUF_POOL_COUNT` sizes the shared ``net_buf``
   pool: the sum of the in-flight buffers of every pipeline.
 * :kconfig:option:`CONFIG_MPIPE_BIN_MAX_CHILDREN` bounds the elements in one
