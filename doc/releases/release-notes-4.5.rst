@@ -1566,6 +1566,10 @@ New Drivers
 
   * :dtcompatible:`nxp,mecc` (:github:`105341`)
 
+* Entropy
+
+  * :dtcompatible:`aesc,prng`
+
 * :abbr:`ESPI (Enhanced Serial Peripheral Interface)`
 
   * :dtcompatible:`intel,espi-peci` (:github:`103773`)
