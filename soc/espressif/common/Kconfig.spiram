@@ -98,6 +98,7 @@ config SPIRAM_SPEED_26M
 config SPIRAM_SPEED_40M
 	bool "40MHz clock speed"
 	depends on !SOC_SERIES_ESP32P4
+	depends on !(SPIRAM_MODE_OCT && ESPTOOLPY_FLASHFREQ_120M)
 
 config SPIRAM_SPEED_80M
 	bool "80MHz clock speed"
@@ -105,9 +106,12 @@ config SPIRAM_SPEED_80M
 
 config SPIRAM_SPEED_120M
 	bool "120MHz clock speed"
-	depends on SPIRAM_MODE_QUAD && (SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || \
-		SOC_SERIES_ESP32S3)
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32S3
 	depends on ESPTOOLPY_FLASHFREQ_120M
+	help
+	  Note that with octal PSRAM on ESP32-S3, 120 MHz runs in DDR mode
+	  and the timing point tuned at boot can drift with temperature,
+	  which can cause PSRAM read and write errors.
 
 config SPIRAM_SPEED_200M
 	bool "200MHz clock speed"
