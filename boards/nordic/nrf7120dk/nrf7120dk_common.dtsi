@@ -84,6 +84,11 @@
 	};
 };
 
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <17000>;
+};
+
 &uart00 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart00_default>;
