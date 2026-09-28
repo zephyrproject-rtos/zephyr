@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_AXS5106L
+	bool "AXS5106L capacitive touch controller driver"
+	default y
+	depends on DT_HAS_CHIPSOURCETEK_AXS5106L_ENABLED
+	select GPIO
+	select I2C
+	select INPUT_TOUCH
+	help
+	  Enable driver for the ChipSourceTek AXS5106L capacitive touch
+	  controller.
+
+if INPUT_AXS5106L
+
+config INPUT_AXS5106L_PERIOD_MS
+	int "Sample period in milliseconds"
+	default 20
+	range 1 1000
+	help
+	  Period between two reads of the touch data while the panel is touched
+	  or the interrupt line stays asserted, or all the time when no interrupt
+	  GPIO is configured.
+
+endif # INPUT_AXS5106L
