@@ -25,6 +25,297 @@ static struct k_work_q hub_work_q;
 static int hub_interrupt_in_cb(struct usb_device *const udev,
 			       struct uhc_transfer *const xfer);
 
+#define ROOT_HUB_POLL_INTERVAL_US	100000
+
+/*
+ * USB 2.0 7.1.7.5: resets issued to root ports must last at least 50 ms
+ * (TDRSTR), longer than the 10-20 ms (TDRST) a hub drives on its ports.
+ */
+#define ROOT_HUB_RESET_TIME		60
+
+static bool is_root_hub(const struct usbh_hub_data *const hub_data)
+{
+	return hub_data->udev->level == 1;
+}
+
+struct root_hub_cfg_desc {
+	struct usb_cfg_descriptor cfg;
+	struct usb_if_descriptor if0;
+	struct usb_ep_descriptor ep1;
+} __packed;
+
+/* Device descriptor for full-/low-speed root hub */
+static const struct usb_device_descriptor rh_fs_dev_desc = {
+	.bLength = sizeof(struct usb_device_descriptor),
+	.bDescriptorType = USB_DESC_DEVICE,
+	.bcdUSB = sys_cpu_to_le16(USB_SRN_1_1),
+	.bDeviceClass = USB_HUB_CLASS_CODE,
+	.bDeviceSubClass = USB_HUB_SUBCLASS_CODE,
+	.bDeviceProtocol = USB_HUB_PROTOCOL_FS,
+	.bMaxPacketSize0 = 64,
+	.idVendor = sys_cpu_to_le16(0x2fe3),
+	.idProduct = sys_cpu_to_le16(0xFFF1),
+	.bcdDevice = sys_cpu_to_le16(0x0100),
+	.bNumConfigurations = 1,
+};
+
+/* Configuration descriptors for full-/low-speed root hub */
+static const struct root_hub_cfg_desc rh_fs_cfg_desc = {
+	.cfg = {
+		.bLength = sizeof(struct usb_cfg_descriptor),
+		.bDescriptorType = USB_DESC_CONFIGURATION,
+		.wTotalLength = sys_cpu_to_le16(sizeof(struct root_hub_cfg_desc)),
+		.bNumInterfaces = 1,
+		.bConfigurationValue = 1,
+		.bmAttributes = USB_SCD_RESERVED,
+	},
+	.if0 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_DESC_INTERFACE,
+		.bNumEndpoints = 1,
+		.bInterfaceClass = USB_HUB_CLASS_CODE,
+		.bInterfaceSubClass = USB_HUB_SUBCLASS_CODE,
+		.bInterfaceProtocol = USB_HUB_PROTOCOL_FS,
+	},
+	.ep1 = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_DESC_ENDPOINT,
+		.bEndpointAddress = 0x81,
+		.bmAttributes = USB_EP_TYPE_INTERRUPT,
+		.wMaxPacketSize = sys_cpu_to_le16(USBH_HUB_INT_BUFFER_SIZE),
+		.bInterval = USB_FS_INT_EP_INTERVAL(ROOT_HUB_POLL_INTERVAL_US),
+	},
+};
+
+/* Device descriptor for high speed root hub */
+static const struct usb_device_descriptor rh_hs_dev_desc = {
+	.bLength = sizeof(struct usb_device_descriptor),
+	.bDescriptorType = USB_DESC_DEVICE,
+	.bcdUSB = sys_cpu_to_le16(USB_SRN_2_0),
+	.bDeviceClass = USB_HUB_CLASS_CODE,
+	.bDeviceSubClass = USB_HUB_SUBCLASS_CODE,
+	.bDeviceProtocol = USB_HUB_PROTOCOL_HS_SINGLE_TT,
+	.bMaxPacketSize0 = 64,
+	.idVendor = sys_cpu_to_le16(0x2fe3),
+	.idProduct = sys_cpu_to_le16(0xFFF2),
+	.bcdDevice = sys_cpu_to_le16(0x0100),
+	.bNumConfigurations = 1,
+};
+
+/* Configuration descriptors for high speed root hub */
+static const struct root_hub_cfg_desc rh_hs_cfg_desc = {
+	.cfg = {
+		.bLength = sizeof(struct usb_cfg_descriptor),
+		.bDescriptorType = USB_DESC_CONFIGURATION,
+		.wTotalLength = sys_cpu_to_le16(sizeof(struct root_hub_cfg_desc)),
+		.bNumInterfaces = 1,
+		.bConfigurationValue = 1,
+		.bmAttributes = USB_SCD_RESERVED,
+	},
+	.if0 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_DESC_INTERFACE,
+		.bNumEndpoints = 1,
+		.bInterfaceClass = USB_HUB_CLASS_CODE,
+		.bInterfaceSubClass = USB_HUB_SUBCLASS_CODE,
+		/* USB 2.0 11.23.1: single-TT hub interface protocol is 0 */
+		.bInterfaceProtocol = 0,
+	},
+	.ep1 = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_DESC_ENDPOINT,
+		.bEndpointAddress = 0x81,
+		.bmAttributes = USB_EP_TYPE_INTERRUPT,
+		.wMaxPacketSize = sys_cpu_to_le16(USBH_HUB_INT_BUFFER_SIZE),
+		.bInterval = USB_HS_INT_EP_INTERVAL(ROOT_HUB_POLL_INTERVAL_US),
+	},
+};
+
+int usbh_root_hub_init(struct usbh_context *uhs_ctx)
+{
+	struct usb_device *udev;
+	int ret;
+
+	if (usbh_device_get_root(uhs_ctx) != NULL) {
+		return 0;
+	}
+
+	udev = usbh_device_alloc(uhs_ctx);
+	if (udev == NULL) {
+		LOG_ERR("Failed to allocate root hub device");
+		return -ENOMEM;
+	}
+
+	udev->speed = uhc_caps(uhs_ctx->dev).hs ? USB_SPEED_SPEED_HS
+						: USB_SPEED_SPEED_FS;
+
+	ret = usbh_device_connect(uhs_ctx, udev);
+	if (ret != 0) {
+		LOG_ERR("Failed to connect root device: %d", ret);
+	}
+
+	return ret;
+}
+
+static int root_hub_control_std_desc(struct usb_device *const udev,
+				     struct usb_setup_packet *const setup,
+				     struct net_buf *const buf)
+{
+	struct usbh_context *const ctx = udev->ctx;
+	struct uhc_device_caps caps = uhc_caps(ctx->dev);
+	const void *data = NULL;
+	size_t len = 0;
+
+	if (USB_GET_DESCRIPTOR_TYPE(setup->wValue) == USB_DESC_DEVICE) {
+		if (caps.hs) {
+			data = &rh_hs_dev_desc;
+			len = sizeof(rh_hs_dev_desc);
+		} else {
+			data = &rh_fs_dev_desc;
+			len = sizeof(rh_fs_dev_desc);
+		}
+
+	}
+
+	if (USB_GET_DESCRIPTOR_TYPE(setup->wValue) == USB_DESC_CONFIGURATION) {
+		if (caps.hs) {
+			data = &rh_hs_cfg_desc;
+			len = sizeof(rh_hs_cfg_desc);
+		} else {
+			data = &rh_fs_cfg_desc;
+			len = sizeof(rh_fs_cfg_desc);
+		}
+	}
+
+	if (data == NULL || len == 0) {
+		return -EPIPE;
+	}
+
+	len = MIN(len, setup->wLength);
+	net_buf_add_mem(buf, data, len);
+
+	return 0;
+}
+
+/* Handles every standard control request addressed to the root hub. */
+static int root_hub_control_std_req(struct usb_device *const udev,
+				    struct usb_setup_packet *const setup,
+				    struct net_buf *const buf)
+{
+	switch (setup->bRequest) {
+	case USB_SREQ_GET_DESCRIPTOR:
+		return root_hub_control_std_desc(udev, setup, buf);
+	case USB_SREQ_GET_CONFIGURATION: {
+		uint8_t cfg = udev->actual_cfg;
+
+		if (net_buf_tailroom(buf) < sizeof(cfg)) {
+			break;
+		}
+
+		net_buf_add_u8(buf, cfg);
+
+		return 0;
+	}
+	case USB_SREQ_GET_STATUS: {
+		/* Root hub is always self-powered. Remote wakeup is not tracked yet. */
+		uint16_t status = USB_GET_STATUS_SELF_POWERED;
+
+		if (net_buf_tailroom(buf) < sizeof(status)) {
+			break;
+		}
+
+		net_buf_add_le16(buf, status);
+
+		return 0;
+	}
+	case USB_SREQ_SET_FEATURE:
+	case USB_SREQ_CLEAR_FEATURE:
+		if (setup->wValue != USB_SFS_REMOTE_WAKEUP) {
+			return -EPIPE;
+		}
+
+		return 0;
+	case USB_SREQ_SET_ADDRESS:
+		/* udev->addr is updated only after this request succeeds */
+		if (setup->wValue != 1) {
+			LOG_ERR("root hub: device address is %u",
+				setup->wValue);
+		}
+
+		return 0;
+	case USB_SREQ_SET_CONFIGURATION:
+		if (udev->addr != 1) {
+			LOG_ERR("root hub: device address is %u",
+				udev->addr);
+		}
+
+		return 0;
+	default:
+		LOG_ERR("root hub: unsupported standard request 0x%02x",
+			setup->bRequest);
+		break;
+	}
+
+	return -EPIPE;
+}
+
+int usbh_root_hub_control(struct usb_device *const udev,
+			  struct usb_setup_packet *const setup,
+			  struct net_buf *const buf)
+{
+	struct usbh_context *const ctx = udev->ctx;
+
+	setup->wValue = sys_le16_to_cpu(setup->wValue);
+	setup->wIndex = sys_le16_to_cpu(setup->wIndex);
+	setup->wLength = sys_le16_to_cpu(setup->wLength);
+
+	if (setup->wLength != 0) {
+		if (buf == NULL) {
+			LOG_ERR("root hub: request 0x%02x expects %u bytes, no buffer",
+				setup->bRequest, setup->wLength);
+			return -EPIPE;
+		}
+
+		if (net_buf_tailroom(buf) < setup->wLength) {
+			LOG_ERR("root hub: buffer too small for request 0x%02x (%u < %u)",
+				setup->bRequest, net_buf_tailroom(buf), setup->wLength);
+			return -EPIPE;
+		}
+	}
+
+	if (setup->RequestType.type == USB_REQTYPE_TYPE_STANDARD) {
+		return root_hub_control_std_req(udev, setup, buf);
+	}
+
+	/* USB 2.0 11.13: hub-class functionality only exists once configured. */
+	if (setup->RequestType.type == USB_REQTYPE_TYPE_CLASS &&
+	    udev->state != USB_STATE_CONFIGURED) {
+		LOG_ERR("root hub: class request 0x%02x before configured",
+			setup->bRequest);
+		return -EPIPE;
+	}
+
+	if ((setup->bRequest == USB_HCREQ_CLEAR_FEATURE ||
+	     setup->bRequest == USB_HCREQ_SET_FEATURE) &&
+	     setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_OTHER &&
+	     setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE) {
+		return -EPIPE;
+	}
+
+	if (setup->bRequest == USB_HCREQ_GET_DESCRIPTOR &&
+	    USB_GET_DESCRIPTOR_TYPE(setup->wValue) != USB_HUB_DESCRIPTOR_TYPE) {
+		return -EPIPE;
+	}
+
+	return uhc_root_hub_control(ctx->dev, setup, buf);
+}
+
+static uint32_t rh_poll_interval_ms(void)
+{
+	/* Identical for HS and LS/FS root hubs */
+	return ROOT_HUB_POLL_INTERVAL_US / 1000;
+}
+
 static int hub_start_interrupt(struct usbh_hub_data *hub_data)
 {
 	struct uhc_transfer *xfer;
@@ -44,6 +335,14 @@ static int hub_start_interrupt(struct usbh_hub_data *hub_data)
 	if (hub_data->int_ep == NULL) {
 		LOG_ERR("No interrupt endpoint available");
 		return -ENODEV;
+	}
+
+	if (is_root_hub(hub_data)) {
+		k_timeout_t interval = K_MSEC(rh_poll_interval_ms());
+
+		ret = k_work_reschedule_for_queue(&hub_work_q,
+						  &hub_data->rh_status_work, interval);
+		return ret < 0 ? ret : 0;
 	}
 
 	xfer = usbh_xfer_alloc(hub_data->udev,
@@ -307,8 +606,11 @@ static void hub_port_process(struct usbh_hub_data *const hub_data,
 
 			port_instance->reset_count--;
 			port_instance->state = PORT_STATE_RESETTING;
-			/* specification requires 10-20ms, Default is 20ms for worst case. */
-			k_sleep(K_MSEC(CONFIG_USBH_HUB_PORT_RESET_DELAY_MS));
+			if (is_root_hub(hub_data)) {
+				k_sleep(K_MSEC(ROOT_HUB_RESET_TIME));
+			} else {
+				k_sleep(K_MSEC(CONFIG_USBH_HUB_PORT_RESET_DELAY_MS));
+			}
 			continue;
 
 		case PORT_STATE_RESETTING:
@@ -540,6 +842,50 @@ static void hub_process_data(struct usbh_hub_data *const hub_data)
 	}
 }
 
+static void rh_status_poll_work_handler(struct k_work *work)
+{
+	struct usbh_hub_data *hub_data;
+	struct net_buf *buf;
+	bool changed = false;
+	int ret;
+
+	hub_data = CONTAINER_OF(k_work_delayable_from_work(work),
+				struct usbh_hub_data, rh_status_work);
+
+	if (!hub_data->connected || hub_data->state != HUB_STATE_OPERATIONAL) {
+		return;
+	}
+
+	buf = usbh_xfer_buf_alloc(hub_data->udev, USBH_HUB_INT_BUFFER_SIZE);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate root hub status buffer");
+		goto restart;
+	}
+
+	ret = uhc_root_hub_status(hub_data->uhs_ctx->dev, buf);
+	if (ret != 0) {
+		LOG_ERR("Root hub status poll failed: %d", ret);
+		usbh_xfer_buf_free(hub_data->udev, buf);
+		goto restart;
+	}
+
+	if (buf->len > 0) {
+		memcpy(hub_data->int_buffer, buf->data,
+		       MIN(buf->len, sizeof(hub_data->int_buffer)));
+		changed = true;
+	}
+
+	usbh_xfer_buf_free(hub_data->udev, buf);
+
+	if (changed) {
+		hub_process_data(hub_data);
+		return;
+	}
+
+restart:
+	hub_start_interrupt(hub_data);
+}
+
 static int hub_interrupt_in_cb(struct usb_device *const udev,
 			       struct uhc_transfer *const xfer)
 {
@@ -761,6 +1107,7 @@ static int usbh_hub_probe(struct usbh_class_data *const c_data,
 
 	k_mutex_init(&hub_data->lock);
 	k_work_init(&hub_data->hub_work, hub_process);
+	k_work_init_delayable(&hub_data->rh_status_work, rh_status_poll_work_handler);
 
 	k_work_submit_to_queue(&hub_work_q, &hub_data->hub_work);
 
@@ -789,6 +1136,7 @@ static int usbh_hub_removed(struct usbh_class_data *const cdata)
 	k_mutex_unlock(&hub_data->lock);
 
 	k_work_cancel_sync(&hub_data->hub_work, &sync);
+	k_work_cancel_delayable_sync(&hub_data->rh_status_work, &sync);
 
 	/* Recursively disconnect all child hubs and devices */
 	hub_recursive_disconnect(hub_data);
