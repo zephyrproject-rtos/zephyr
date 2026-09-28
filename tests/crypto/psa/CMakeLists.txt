@@ -7,3 +7,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(mbedtls)
 
 target_sources(app PRIVATE src/main.c)
+
+target_sources_ifdef(CONFIG_MBEDTLS_THREADING_ALT
+  app PRIVATE src/thread_test.c
+)
