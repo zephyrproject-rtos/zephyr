@@ -202,7 +202,7 @@ int mpipe_message_post(const struct mpipe_message *message)
 
 	__ASSERT_NO_MSG(message != NULL);
 
-	if (message->origin == NULL || message->type == 0) {
+	if (message->origin == NULL || message->type == MPIPE_MESSAGE_UNKNOWN) {
 		return -EINVAL;
 	}
 
@@ -211,7 +211,8 @@ int mpipe_message_post(const struct mpipe_message *message)
 		return -ENODEV;
 	}
 
-	return zbus_chan_pub(chan, message, K_NO_WAIT);
+	/* The validator counts an EOS before the channel is locked, so never give up on the lock */
+	return zbus_chan_pub(chan, message, k_is_in_isr() ? K_NO_WAIT : K_FOREVER);
 }
 
 int mpipe_element_init(struct mpipe_element *self, uint8_t id)
