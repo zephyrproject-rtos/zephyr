@@ -7,6 +7,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/regulator/mspm0_vref.h>
 #include <freq.h>
 
 / {
@@ -169,6 +170,8 @@
 			clocks = <&ckm MSPM0_CLOCK_BUSCLK>;
 			off-on-delay-us = <200>;
 			regulator-uv = <1400000>;
+			regulator-allowed-modes = <MSPM0_VREF_MODE_NORMAL>,
+						  <MSPM0_VREF_MODE_SHMODE>;
 			ti,clk-div = <0x1>;
 			ti,sample-cycles = <10>;
 			ti,hold-cycles = <40>;
