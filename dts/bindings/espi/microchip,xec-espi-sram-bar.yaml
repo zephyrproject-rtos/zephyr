@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip XEC eSPI SRAM BARs
+
+  An SRAM BAR maps a region of EC SRAM into the eSPI Host memory address
+  space. The XEC eSPI controller implements two SRAM BARs. The driver
+  allocates the EC SRAM region for each enabled BAR, aligned on its size
+  as required by hardware. Applications obtain the EC buffer with
+  mchp_xec_espi_sram_bar_get().
+
+  Host address bits [47:32] of both BARs are set by the espi0
+  sram-bar-addr-high property.
+
+  Example:
+
+    &espi0 {
+        sram-bars {
+            compatible = "microchip,xec-espi-sram-bar";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            sram_bar0: sram-bar@0 {
+                reg = <0>;
+                host-address = <0x20000000>;
+                size = <1024>;
+                access = "READ_WRITE";
+            };
+        };
+    };
+
+compatible: "microchip,xec-espi-sram-bar"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: eSPI SRAM BAR
+
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - reg
+
+  properties:
+    reg:
+      required: true
+      description: SRAM BAR index, 0 or 1.
+
+    host-address:
+      type: int
+      required: true
+      description: |
+        Host memory address bits [31:0] of the region. Must be aligned
+        on the region size.
+
+    size:
+      type: int
+      required: true
+      description: |
+        Region size in bytes. Power of two from 1 to 32768.
+
+    access:
+      type: string
+      required: true
+      description: Host access to the region.
+      enum:
+        - "READ_ONLY"
+        - "WRITE_ONLY"
+        - "READ_WRITE"
