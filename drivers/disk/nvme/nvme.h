@@ -428,6 +428,9 @@ struct nvme_controller {
 	uint32_t id;
 
 	msi_vector_t vectors[NVME_PCIE_MSIX_VECTORS];
+	uint8_t num_vectors;
+	ATOMIC_DEFINE(connected_vectors, NVME_PCIE_MSIX_VECTORS);
+	uint32_t num_active_qpairs;
 
 	struct nvme_controller_data cdata;
 

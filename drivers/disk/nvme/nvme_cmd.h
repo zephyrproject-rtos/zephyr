@@ -374,8 +374,6 @@ struct nvme_request {
 	sys_dnode_t			node;
 };
 
-void nvme_cmd_init(void);
-
 void nvme_completion_poll_cb(void *arg, const struct nvme_completion *cpl);
 
 #ifdef CONFIG_NVME_LOG_LEVEL_DBG
@@ -384,8 +382,6 @@ void nvme_completion_print(const struct nvme_completion *cpl);
 #define nvme_completion_print(...)
 #endif /* CONFIG_NVME_LOG_LEVEL_DBG */
 
-void nvme_cmd_request_free(struct nvme_request *request);
-
 struct nvme_request *nvme_cmd_request_alloc(void);
 
 int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
@@ -393,6 +389,8 @@ int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
 			 uint32_t id);
 
 void nvme_cmd_qpair_reset(struct nvme_cmd_qpair *qpair);
+
+void nvme_cmd_quiesce(struct nvme_controller *ctrlr);
 
 int nvme_cmd_qpair_submit_request(struct nvme_cmd_qpair *qpair,
 				  struct nvme_request *request);

@@ -32,6 +32,8 @@ static size_t map_count;
 static size_t mdr_count;
 static size_t master_count;
 static size_t allocation_count;
+static uint8_t requested_count;
+static uint8_t allocation_limit;
 static uint64_t its_address;
 
 uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
@@ -94,6 +96,8 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority, msi_vector_t *vect
 {
 	zassert_equal(priority, TEST_PRIORITY);
 	allocation_count++;
+	requested_count = n_vector;
+	n_vector = MIN(n_vector, allocation_limit);
 
 	for (uint8_t i = 0U; i < n_vector; i++) {
 		zassert_equal(vectors[i].bdf, TEST_BDF);
@@ -172,6 +176,8 @@ static void before(void *fixture)
 	mdr_count = 0U;
 	master_count = 0U;
 	allocation_count = 0U;
+	requested_count = 0U;
+	allocation_limit = UINT8_MAX;
 	its_address = TEST_ADDRESS64;
 	config_space[MSI_BASE] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64 | (1U << PCIE_MSI_MCR_MMC_SHIFT);
 	config_space[MSIX_BASE] = PCI_CAP_ID_MSIX | (1U << PCIE_MSIX_MCR_TSIZE_SHIFT);
@@ -200,6 +206,25 @@ ZTEST(pcie_msi, test_allocator_low_address)
 
 	zassert_true(pcie_msi_enable(TEST_BDF, vectors, ARRAY_SIZE(vectors), TEST_IRQ));
 	assert_msi64(TEST_ADDRESS);
+}
+
+ZTEST(pcie_msi, test_msi_allocator_rounds_down_request)
+{
+	msi_vector_t vectors[3] = {0};
+
+	config_space[MSI_BASE] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64 | (2U << PCIE_MSI_MCR_MMC_SHIFT);
+	zassert_equal(pcie_msi_vectors_allocate(TEST_BDF, TEST_PRIORITY, vectors, 3U), 2U);
+	zassert_equal(requested_count, 2U);
+}
+
+ZTEST(pcie_msi, test_msi_allocator_rounds_down_partial_allocation)
+{
+	msi_vector_t vectors[4] = {0};
+
+	config_space[MSI_BASE] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64 | (2U << PCIE_MSI_MCR_MMC_SHIFT);
+	allocation_limit = 3U;
+	zassert_equal(pcie_msi_vectors_allocate(TEST_BDF, TEST_PRIORITY, vectors, 4U), 2U);
+	zassert_equal(requested_count, 4U);
 }
 
 ZTEST(pcie_msi, test_msix_allocator_maps_table)

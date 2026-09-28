@@ -11,6 +11,7 @@ LOG_MODULE_DECLARE(nvme, CONFIG_NVME_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
+#include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <string.h>
@@ -24,8 +25,10 @@ static sys_dlist_t free_prp_list;
 static struct nvme_request request_pool[NVME_REQUEST_AMOUNT];
 static sys_dlist_t free_request;
 static sys_dlist_t pending_request;
+static struct k_spinlock cmd_lock;
 
 static void request_timeout(struct k_work *work);
+static int nvme_cmd_submit_locked(struct nvme_cmd_qpair *qpair, struct nvme_request *request);
 
 static K_WORK_DELAYABLE_DEFINE(request_timer, request_timeout);
 
@@ -197,7 +200,7 @@ void nvme_completion_print(const struct nvme_completion *cpl)
 
 #endif /* CONFIG_NVME_LOG_LEVEL_DBG */
 
-void nvme_cmd_init(void)
+static int nvme_cmd_init(void)
 {
 	int idx;
 
@@ -212,7 +215,11 @@ void nvme_cmd_init(void)
 	for (idx = 0; idx < CONFIG_NVME_PRP_LIST_AMOUNT; idx++) {
 		sys_dlist_append(&free_prp_list, &prp_list_pool[idx].node);
 	}
+
+	return 0;
 }
+
+SYS_INIT(nvme_cmd_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static struct nvme_prp_list *nvme_prp_list_alloc(void)
 {
@@ -235,7 +242,7 @@ static void nvme_prp_list_free(struct nvme_prp_list *prp_list)
 	sys_dlist_append(&free_prp_list, &prp_list->node);
 }
 
-void nvme_cmd_request_free(struct nvme_request *request)
+static void nvme_cmd_request_free(struct nvme_request *request)
 {
 	if (sys_dnode_is_linked(&request->node)) {
 		sys_dlist_remove(&request->node);
@@ -251,15 +258,18 @@ void nvme_cmd_request_free(struct nvme_request *request)
 
 struct nvme_request *nvme_cmd_request_alloc(void)
 {
+	k_spinlock_key_t key = k_spin_lock(&cmd_lock);
 	sys_dnode_t *node;
 
 	node = sys_dlist_peek_head(&free_request);
-	if (!node) {
+	if (node == NULL) {
+		k_spin_unlock(&cmd_lock, key);
 		LOG_ERR("Could not allocate request");
 		return NULL;
 	}
 
 	sys_dlist_remove(node);
+	k_spin_unlock(&cmd_lock, key);
 
 	return CONTAINER_OF(node, struct nvme_request, node);
 }
@@ -282,9 +292,10 @@ static void request_timeout(struct k_work *work)
 {
 	const uint32_t timeout_ms =
 		CONFIG_NVME_REQUEST_TIMEOUT * MSEC_PER_SEC;
-	uint32_t current = k_uptime_get_32();
 	struct nvme_request *request, *next;
 	int32_t remain = 0;
+	k_spinlock_key_t key = k_spin_lock(&cmd_lock);
+	uint32_t current = k_uptime_get_32();
 
 	ARG_UNUSED(work);
 
@@ -314,6 +325,8 @@ static void request_timeout(struct k_work *work)
 	if (request && remain > 0) {
 		k_work_reschedule(&request_timer, K_MSEC(remain));
 	}
+
+	k_spin_unlock(&cmd_lock, key);
 }
 
 static bool nvme_completion_is_retry(const struct nvme_completion *cpl)
@@ -407,7 +420,7 @@ static void nvme_cmd_request_complete(struct nvme_request *request,
 		/* Let's remove it from pending... */
 		sys_dlist_remove(&request->node);
 		/* ...and re-submit, thus re-adding to pending */
-		nvme_cmd_qpair_submit_request(request->qpair, request);
+		nvme_cmd_submit_locked(request->qpair, request);
 		request->retries++;
 	} else {
 		LOG_DBG("Request %p CMD complete on %p/%p",
@@ -455,7 +468,7 @@ static void nvme_cmd_qpair_process_completion(struct nvme_cmd_qpair *qpair)
 		}
 
 		done++;
-		if (request != NULL) {
+		if ((request != NULL) && (request->qpair == qpair)) {
 			nvme_cmd_request_complete(request, &cpl);
 			qpair->sq_head = cpl.sqhd;
 		} else {
@@ -478,9 +491,27 @@ static void nvme_cmd_qpair_process_completion(struct nvme_cmd_qpair *qpair)
 
 static void nvme_cmd_qpair_msi_handler(const void *arg)
 {
-	const struct nvme_cmd_qpair *qpair = arg;
+	const struct nvme_cmd_qpair *irq_qpair = arg;
+	struct nvme_controller *ctrlr = irq_qpair->ctrlr;
+	k_spinlock_key_t key = k_spin_lock(&cmd_lock);
 
-	nvme_cmd_qpair_process_completion((struct nvme_cmd_qpair *)qpair);
+	for (uint32_t id = irq_qpair->vector; id < ctrlr->num_active_qpairs;
+	     id += ctrlr->num_vectors) {
+		struct nvme_cmd_qpair *qpair = (id == 0U) ? ctrlr->adminq : &ctrlr->ioq[id - 1U];
+
+		nvme_cmd_qpair_process_completion(qpair);
+	}
+
+	k_spin_unlock(&cmd_lock, key);
+}
+
+void nvme_cmd_quiesce(struct nvme_controller *ctrlr)
+{
+	k_spinlock_key_t key = k_spin_lock(&cmd_lock);
+
+	/* Drain the in-flight handler before hiding queues from any pending interrupt. */
+	ctrlr->num_active_qpairs = 0U;
+	k_spin_unlock(&cmd_lock, key);
 }
 
 int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
@@ -489,10 +520,17 @@ int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
 {
 	const struct nvme_controller_config *nvme_ctrlr_cfg =
 		ctrlr->dev->config;
+	k_spinlock_key_t key;
 
-	qpair->ctrlr = ctrlr;
-	qpair->id = id;
-	qpair->vector = qpair->id;
+	if (ctrlr->num_vectors == 0U) {
+		return -EINVAL;
+	}
+
+	if (qpair->ctrlr == NULL) {
+		qpair->ctrlr = ctrlr;
+		qpair->id = id;
+		qpair->vector = (uint16_t)(id % ctrlr->num_vectors);
+	}
 
 	qpair->num_cmds = 0;
 	qpair->num_intr_handler_calls = 0;
@@ -508,12 +546,22 @@ int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
 	qpair->cq_hdbl_off = nvme_mmio_offsetof(doorbell) +
 		(qpair->id << (ctrlr->dstrd + 1)) + (1 << ctrlr->dstrd);
 
-	if (!pcie_msi_vector_connect(nvme_ctrlr_cfg->pcie->bdf,
-				     &ctrlr->vectors[qpair->vector],
-				     nvme_cmd_qpair_msi_handler, qpair, 0)) {
-		LOG_ERR("Failed to connect MSI-X vector %u", qpair->id);
-		return -EIO;
+	if (!atomic_test_bit(ctrlr->connected_vectors, qpair->vector)) {
+		if (!pcie_msi_vector_connect(nvme_ctrlr_cfg->pcie->bdf,
+					     &ctrlr->vectors[qpair->vector],
+					     nvme_cmd_qpair_msi_handler, qpair, 0)) {
+			LOG_ERR("Failed to connect MSI-X vector %u", qpair->vector);
+
+			return -EIO;
+		}
+
+		atomic_set_bit(ctrlr->connected_vectors, qpair->vector);
 	}
+
+	/* Initialization sets up the admin queue and then I/O queues in ID order. */
+	key = k_spin_lock(&cmd_lock);
+	ctrlr->num_active_qpairs = id + 1U;
+	k_spin_unlock(&cmd_lock, key);
 
 	LOG_DBG("CMD Qpair created ID %u, %u entries - cmd/cpl addr "
 		"0x%lx/0x%lx - sq/cq offsets %u/%u",
@@ -637,8 +685,7 @@ static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 	return 0;
 }
 
-int nvme_cmd_qpair_submit_request(struct nvme_cmd_qpair *qpair,
-				  struct nvme_request *request)
+static int nvme_cmd_submit_locked(struct nvme_cmd_qpair *qpair, struct nvme_request *request)
 {
 	mm_reg_t regs = DEVICE_MMIO_GET(qpair->ctrlr->dev);
 	int ret;
@@ -671,6 +718,16 @@ int nvme_cmd_qpair_submit_request(struct nvme_cmd_qpair *qpair,
 		request, qpair->num_cmds, request->cmd.cdw0.cid,
 		qpair->sq_tail - 1);
 	return 0;
+}
+
+int nvme_cmd_qpair_submit_request(struct nvme_cmd_qpair *qpair, struct nvme_request *request)
+{
+	k_spinlock_key_t key = k_spin_lock(&cmd_lock);
+	int ret = nvme_cmd_submit_locked(qpair, request);
+
+	k_spin_unlock(&cmd_lock, key);
+
+	return ret;
 }
 
 void

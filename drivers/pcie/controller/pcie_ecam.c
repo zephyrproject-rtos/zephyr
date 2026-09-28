@@ -355,16 +355,23 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 #ifdef CONFIG_GIC_V3_ITS
 	const struct pcie_ctrl_config *cfg = (const struct pcie_ctrl_config *)dev->config;
 	unsigned int device_id;
+	unsigned int first_intid;
+	bool msix = false;
 	pcie_bdf_t bdf;
 	int ret, i;
 
-	if (!n_vector) {
-		return 0;
+	if (n_vector == 0U) {
+		return 0U;
 	}
+
+#ifdef CONFIG_PCIE_MSI_X
+	msix = vectors[0].msix;
+#endif
 
 	bdf = vectors[0].bdf;
 
-	/* We do not support allocating vectors for multiple BDFs for now,
+	/*
+	 * We do not support allocating vectors for multiple BDFs for now,
 	 * This would need tracking vectors already allocated for a BDF and
 	 * re-allocating a proper table in ITS for each BDF since we can't be
 	 * sure more vectors for each BDF will be allocated later.
@@ -379,25 +386,47 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 
 	device_id = PCI_BDF_TO_DEVID(bdf);
 
-	ret = its_setup_deviceid(cfg->msi_parent, device_id, n_vector);
-	if (ret) {
-		return 0;
+	while (n_vector > 0U) {
+		ret = its_setup_deviceid(cfg->msi_parent, device_id, n_vector);
+		if (ret == 0) {
+			ret = its_alloc_map_intids(cfg->msi_parent, device_id, n_vector,
+						   &first_intid);
+			if (ret == 0) {
+				break;
+			}
+
+			LOG_WRN("Failed to allocate %u %s vectors for DeviceID %x: %d",
+				(unsigned int)n_vector, msix ? "MSI-X" : "MSI", device_id, ret);
+
+			if (ret != -ENOSPC) {
+				return 0U;
+			}
+		} else if ((ret != -ENOMEM) && (ret != -ENOTSUP)) {
+			LOG_ERR("Failed to set up %s for DeviceID %x: %d", msix ? "MSI-X" : "MSI",
+				device_id, ret);
+
+			return 0U;
+		}
+
+		/* MSI requires a power-of-two vector count. */
+		n_vector = msix ? n_vector - 1U : n_vector >> 1;
+	}
+
+	if (n_vector == 0U) {
+		LOG_ERR("Failed to allocate %s vectors for DeviceID %x: %d", msix ? "MSI-X" : "MSI",
+			device_id, ret);
+
+		return 0U;
 	}
 
 	for (i = 0; i < n_vector; i++) {
-		vectors[i].arch.irq = its_alloc_intid(cfg->msi_parent);
+		vectors[i].arch.irq = first_intid + i;
 		vectors[i].arch.address = its_get_msi_addr(cfg->msi_parent);
 		vectors[i].arch.eventid = i;
 		vectors[i].arch.priority = priority;
-
-		ret = its_map_intid(cfg->msi_parent, device_id,
-				    vectors[i].arch.eventid, vectors[i].arch.irq);
-		if (ret) {
-			break;
-		}
 	}
 
-	return i;
+	return n_vector;
 #else
 	return 0;
 #endif
