@@ -18,27 +18,16 @@
  * @ingroup mpipe_framework
  * @brief The top-level bin, and what actually runs a graph.
  *
- * A pipeline is the outermost @ref mpipe_bin. Being the outermost is what gives
- * it three jobs no inner bin has.
- *
- * It **owns the thread**. One thread sits at the head of the graph acquiring
- * buffers from the source and pushing each one downstream through the chain
- * functions until a sink consumes it. An element that needs its own thread -
- * to decouple two halves of a graph - gets one by putting a queue between them.
- *
- * It **orders the teardown**. Going down from PAUSED to READY, the pipeline
- * raises a flushing gate on every pad before the children dismantle their pools,
- * so a buffer still in flight is dropped rather than pushed into an element that
- * has already been torn down; and it joins the thread only after the children
- * have drained, because a child still holding the thread in a full queue would
- * otherwise deadlock the join. Going from PLAYING to PAUSED it does neither -
- * a pause is not a teardown, so whatever is queued survives and a resume
- * continues without loss.
- *
- * It **folds the end of the stream**. A graph with several sinks produces one
- * end-of-stream message per sink; the pipeline counts them and passes on only
- * the last, so the application is told once and never tears a graph down while
- * a branch is still running.
+ * A pipeline is the outermost @ref mpipe_bin, which gives it three jobs no
+ * inner bin has. It owns the thread that acquires buffers from the source and
+ * pushes each one downstream until a sink consumes it; a queue element gives a
+ * part of the graph a thread of its own. It orders the teardown: buffers still
+ * in flight are dropped before the children dismantle their pools, and the
+ * thread is joined only once the children have drained. A pause is not a
+ * teardown, so whatever is queued survives and a resume continues without
+ * loss. And it folds the end of the stream: a graph with several sinks
+ * produces one end-of-stream message per sink, and only the last one reaches
+ * the application.
  *
  * @{
  */
@@ -59,8 +48,9 @@
  * Enumeration of properties that can be configured for a pipeline
  */
 enum mpipe_prop_pipeline {
-	/** Thread scheduling priority used when the pipeline thread is created.
-	 *  Defaults to CONFIG_MPIPE_THREAD_DEFAULT_PRIORITY.
+	/**
+	 * Thread scheduling priority used when the pipeline thread is created.
+	 * Defaults to @kconfig{CONFIG_MPIPE_THREAD_DEFAULT_PRIORITY}.
 	 */
 	MPIPE_PROP_PIPELINE_THREAD_PRIORITY,
 };

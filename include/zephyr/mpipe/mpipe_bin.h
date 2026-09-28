@@ -27,7 +27,7 @@
  * when the transition goes up, so a downstream element is ready before anything
  * is pushed into it, and from the source towards the sink when it goes down, so
  * nothing keeps producing into an element that has already been torn down.
- * @c CONFIG_MPIPE_BIN_MAX_CHILDREN bounds the arrays that sort uses.
+ * @kconfig{CONFIG_MPIPE_BIN_MAX_CHILDREN} bounds the arrays that sort uses.
  *
  * A bin also owns the message channel its children report on, which is how a
  * failure deep in a graph reaches the application. See @ref mpipe_message.
@@ -59,43 +59,9 @@ struct mpipe_bin {
 	/** List of children elements in the bin */
 	sys_dlist_t children;
 	/**
-	 * @brief The bin's message bus.
-	 *
-	 * A one-way, out-of-band notification channel that carries
-	 * @ref mpipe_message events (end-of-stream, errors) from the elements
-	 * up to the application. It is "out-of-band" because it does not travel
-	 * along the data path (pads/buffers); it is a side channel for control
-	 * and status notifications only.
-	 *
-	 * Bus is a single zbus channel, owned by the bin and shared by all of
-	 * its children. @ref mpipe_bin_init initializes it; it needs no teardown,
-	 * as it lives entirely inside the bin and is registered nowhere else.
-	 *
-	 * A channel involves three roles:
-	 *
-	 * - Producers: elements post messages with @ref mpipe_message_post, which
-	 *   locates the bus from the message's origin element. The message is
-	 *   copied by value into the channel, so stack storage is fine. The
-	 *   application must not post to a bus that it consumes.
-	 * - Consumers: a channel can have one or more observers. Reach the channel
-	 *   with @ref mpipe_element_get_bus_chan and attach with zbus_chan_add_obs();
-	 *   three kinds are useful here:
-	 *   - Listener: the callback runs inline in the posting thread, holding the
-	 *     channel lock. Cheapest by far - no queue, no buffer - but it must not
-	 *     block or change pipeline state. Define it with ZBUS_LISTENER_DEFINE().
-	 *   - Message subscriber (needs CONFIG_ZBUS_MSG_SUBSCRIBER): the application
-	 *     reads messages from its own thread, blocking until one arrives, and no
-	 *     message is lost. Costs a net_buf per publish, taken from a pool shared
-	 *     with every other zbus channel in the system. Define it with
-	 *     ZBUS_MSG_SUBSCRIBER_DEFINE() and read with zbus_sub_wait_msg().
-	 *   - Async listener (needs CONFIG_ZBUS_ASYNC_LISTENER, which pulls in the
-	 *     message subscriber machinery): the callback runs later on the system
-	 *     work queue. Define it with ZBUS_ASYNC_LISTENER_DEFINE().
-	 *   Detach any observer with zbus_chan_rm_obs() before the bin goes away.
-	 * - Validator: an optional zbus validator, installed by
-	 *   @ref mpipe_bin_set_bus_validator, runs in the posting thread before the
-	 *   message is published, and may drop messages (e.g. collapsing N
-	 *   end-of-stream events into one). Keep it short and non-blocking.
+	 * The bin's message bus: one zbus channel carrying @ref mpipe_message
+	 * events from the children to the application, reached with
+	 * @ref mpipe_element_get_bus_chan. See @ref mpipe_message.
 	 */
 	struct zbus_runtime_channel bus;
 

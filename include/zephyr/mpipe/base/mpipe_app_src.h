@@ -87,7 +87,7 @@ int mpipe_app_src_init(struct mpipe_app_src *app_src, uint8_t id);
 /**
  * @brief Take a buffer of the element's pool to fill in place
  *
- * The buffer holds up to CONFIG_MPIPE_BASE_APP_SRC_BUF_SZ bytes. The
+ * The buffer holds up to @kconfig{CONFIG_MPIPE_BASE_APP_SRC_BUF_SZ} bytes. The
  * application writes its payload into the buffer data and hands the buffer
  * to @ref mpipe_app_src_push_buf, or releases it with net_buf_unref() if it
  * changes its mind.
@@ -130,7 +130,7 @@ int mpipe_app_src_push_buf(struct mpipe_app_src *app_src, struct net_buf *buf, u
  *
  * @param app_src The application source
  * @param data Payload bytes
- * @param size Number of bytes, bounded by CONFIG_MPIPE_BASE_APP_SRC_BUF_SZ
+ * @param size Number of bytes, bounded by @kconfig{CONFIG_MPIPE_BASE_APP_SRC_BUF_SZ}
  * @param timeout How long to wait for a free buffer, and for a queue slot
  *
  * @retval 0 Success

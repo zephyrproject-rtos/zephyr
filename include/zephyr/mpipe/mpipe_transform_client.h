@@ -62,6 +62,7 @@ struct mpipe_transform_client {
  *
  * @param transform_client Pointer to the @ref mpipe_transform_client to
  *                         initialize.
+ *
  * @param id               Unique element identifier.
  *
  * @return 0 on success, negative errno otherwise.

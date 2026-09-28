@@ -155,13 +155,12 @@ struct mpipe_value {
  * and step.
  *
  * @param[out] value Pointer to the value to set.
- * @param type Type of the value, see @ref mpipe_value_type. It is an int and not
- *             the enum itself because va_start() starts reading right after
- *             this parameter, so the parameter cannot be of a type narrower
- *             than int, which an enum is allowed to be.
+ * @param type Type of the value, see @ref mpipe_value_type, passed as an int
+ *             because va_start() needs a parameter no narrower than int.
+ *
  * @param ... Arguments initializing the value, per the rules above.
  *
- * @retval 0 on success
+ * @retval 0 Success.
  * @retval -EINVAL @p type is invalid
  */
 int mpipe_value_set(struct mpipe_value *value, int type, ...);
@@ -176,7 +175,7 @@ int mpipe_value_set(struct mpipe_value *value, int type, ...);
  * @param type Type of the value, see @ref mpipe_value_type.
  * @param args Pointer to a va_list positioned at this value's arguments.
  *
- * @retval 0 on success
+ * @retval 0 Success.
  * @retval -EINVAL @p type is invalid
  */
 int mpipe_value_set_va_list(struct mpipe_value *value, enum mpipe_value_type type, va_list *args);

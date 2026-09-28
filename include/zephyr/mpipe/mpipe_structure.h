@@ -66,7 +66,7 @@
  * @brief Media type a capability describes
  */
 enum mpipe_media_type {
-	/** Unknown media type, what a structure constraining nothing carries */
+	/** Unknown media type, what an ANY structure carries */
 	MPIPE_MEDIA_UNKNOWN = 0,
 	/** Audio in PCM format */
 	MPIPE_MEDIA_AUDIO_PCM,
@@ -88,29 +88,15 @@ enum mpipe_media_type {
  * MPIPE_CAPS_PIXEL_FORMAT and MPIPE_CAPS_INTERLEAVED, for example, are the exceptions:
  * neither has a meaningful range form, so both are always carried fixed.
  *
- * A caps field is not a property. A property configures one element, and
- * nothing else has to agree on it: a camera's gain or contrast, or the device
- * an element binds to. It is set on that element and used by that element.
- *
- * A caps field describes the data crossing a link, so both ends have to agree
- * on it before anything can flow, and that agreement is what negotiation
- * settles. The test when adding one is whether two different elements would
- * have to arrive at the same value for the stream to be correct. If only the
- * element that owns it cares, it is a property.
- *
- * MPIPE_CAPS_IMAGE_WIDTH passes that test: a camera, a converter and a display all
- * understand it and all have to agree on one number. Camera gain does not, as
- * the display neither knows nor cares what it is.
- *
- * These identifiers are shared by every domain, and one structure holds only
- * CONFIG_MPIPE_STRUCTURE_MAX_FIELDS of them at a time, so a new field earns its
- * place by meaning something to more than the element that introduced it.
- * Prefer one a whole domain agrees on, or one that spans domains the way
- * MPIPE_CAPS_FRAME_INTERVAL does for audio and video.
+ * A caps field is not a property: a property configures one element, a caps
+ * field describes the data crossing a link, so both ends must agree on it
+ * (see @ref mpipe_object). Add a field only when two different elements have
+ * to arrive at the same value for the stream to be correct, as with
+ * MPIPE_CAPS_IMAGE_WIDTH, and prefer one a whole domain agrees on: a structure
+ * holds only @kconfig{CONFIG_MPIPE_STRUCTURE_MAX_FIELDS} fields at once.
  *
  * Add it before MPIPE_CAPS_END and document its unit and value type the way the
- * entries below do, and give it a name in dump_field_names in mpipe_dump.c so a
- * dump can print it.
+ * entries below do.
  */
 enum mpipe_caps_field {
 	/** Pixel format, as a VIDEO_PIX_FMT_* fourcc, MPIPE_TYPE_UINT */
@@ -147,8 +133,8 @@ enum mpipe_caps_field {
 /**
  * @brief The structure constrains nothing and intersects with anything.
  *
- * Distinct from a structure with no fields set, which constrains nothing
- * because it is empty and therefore intersects with nothing.
+ * Distinct from an empty structure, one with no field set, which intersects
+ * with nothing.
  */
 #define MPIPE_STRUCTURE_FLAG_ANY BIT(0)
 
@@ -174,7 +160,7 @@ enum mpipe_caps_field {
  * which are parallel: `ids[i]` names the field that `values[i]` holds. A slot
  * index carries no meaning of its own, so the number of identifiers that exist
  * costs nothing here; only how many fields one structure holds at once does,
- * bounded by CONFIG_MPIPE_STRUCTURE_MAX_FIELDS.
+ * bounded by @kconfig{CONFIG_MPIPE_STRUCTURE_MAX_FIELDS}.
  */
 struct mpipe_structure {
 	/** Media type of the structure, see @ref mpipe_media_type */
@@ -205,8 +191,8 @@ struct mpipe_structure {
  * @p fields is a macro taking one argument, which it applies to each field as
  * `arg(field_id, value_initializer)`. Listing the fields once is what keeps the
  * identifiers, the values and the count from disagreeing, which would silently
- * drop a field. Defining more fields than CONFIG_MPIPE_STRUCTURE_MAX_FIELDS fails
- * the build.
+ * drop a field. Defining more fields than @kconfig{CONFIG_MPIPE_STRUCTURE_MAX_FIELDS}
+ * fails the build.
  *
  * @code{.c}
  * #define JPEG_SRC_FIELDS(X) X(MPIPE_CAPS_PIXEL_FORMAT, MPIPE_VALUE_UINT(VIDEO_PIX_FMT_JPEG))
@@ -256,9 +242,10 @@ int mpipe_structure_init(struct mpipe_structure *structure, uint8_t media_type_i
  * @retval 0 Success.
  * @retval -EINVAL @p media_type_id is not a media
  *         type, or a field identifier or value type is invalid
+ *
  * @retval -EEXIST The list names the same field twice
  * @retval -ENOSPC The list holds more fields than
- *         CONFIG_MPIPE_STRUCTURE_MAX_FIELDS
+ *         @kconfig{CONFIG_MPIPE_STRUCTURE_MAX_FIELDS}
  */
 int mpipe_structure_init_fields(struct mpipe_structure *structure, uint8_t media_type_id, ...);
 
@@ -275,21 +262,21 @@ int mpipe_structure_init_fields(struct mpipe_structure *structure, uint8_t media
 int mpipe_structure_init_any(struct mpipe_structure *structure);
 
 /**
- * @brief Check whether a structure constrains nothing.
+ * @brief Check whether a structure is ANY, constraining nothing.
  *
  * @param structure Pointer to the structure to check, may be NULL.
  *
- * @return true if the structure constrains nothing, false otherwise or if @p
- *         structure is NULL
+ * @return true if the structure is ANY, false otherwise or if @p structure is
+ *         NULL
  */
 bool mpipe_structure_is_any(const struct mpipe_structure *structure);
 
 /**
  * @brief Check whether an @ref mpipe_structure matches nothing.
  *
- * The counterpart of @ref mpipe_structure_is_any - a structure that constrains
- * nothing because it holds no field intersects with nothing, where an ANY one
- * intersects with everything.
+ * The counterpart of @ref mpipe_structure_is_any. An empty structure holds no
+ * field and intersects with nothing, where an ANY one intersects with
+ * everything.
  *
  * @param structure Pointer to the structure to check, may be NULL.
  *
@@ -311,7 +298,7 @@ bool mpipe_structure_is_empty(const struct mpipe_structure *structure);
  * @retval -EINVAL @p field_id is not a field identifier
  * @retval -EEXIST The structure already carries @p field_id
  * @retval -ENOSPC The structure already holds
- *         CONFIG_MPIPE_STRUCTURE_MAX_FIELDS fields
+ *         @kconfig{CONFIG_MPIPE_STRUCTURE_MAX_FIELDS} fields
  */
 int mpipe_structure_append_value(struct mpipe_structure *structure, uint8_t field_id,
 				 const struct mpipe_value *value);
@@ -343,10 +330,9 @@ int mpipe_structure_copy_field(const struct mpipe_structure *src, struct mpipe_s
  * The structure keeps its media type and its flags, so it can be filled in
  * again without being initialized first.
  *
- * This leaves it constraining nothing because it holds no field, which
- * intersects with nothing. It does not make it an ANY structure, which
- * constrains nothing but intersects with everything: use
- * @ref mpipe_structure_init_any for that.
+ * This leaves it empty, intersecting with nothing. It does not make it ANY,
+ * which intersects with everything: use @ref mpipe_structure_init_any for
+ * that.
  *
  * @param structure Pointer to the structure to clear.
  *
@@ -358,9 +344,8 @@ int mpipe_structure_clear(struct mpipe_structure *structure);
  * @brief Check if an @ref mpipe_structure is fixed.
  *
  * A structure is fixed when it carries at least one field and every field it
- * carries holds a single value rather than a range. A structure that
- * constrains nothing is never fixed, whether it is flagged ANY or simply
- * holds no field: there is nothing to have settled.
+ * carries holds a single value rather than a range. An ANY or empty structure
+ * is never fixed.
  *
  * @param structure Pointer to the structure to check.
  *
@@ -415,8 +400,9 @@ int mpipe_structure_remove_field(struct mpipe_structure *structure, uint8_t fiel
  * @retval 0 Success.
  * @retval -ENOENT The structures share no field, or a shared field has no
  *         common value
+ *
  * @retval -EINVAL @p out aliases an input, or the media types differ
- * @retval -ENOSPC The union does not fit CONFIG_MPIPE_STRUCTURE_MAX_FIELDS
+ * @retval -ENOSPC The union does not fit @kconfig{CONFIG_MPIPE_STRUCTURE_MAX_FIELDS}
  */
 int mpipe_structure_intersect(const struct mpipe_structure *struct1,
 			      const struct mpipe_structure *struct2, struct mpipe_structure *out);
@@ -431,8 +417,7 @@ int mpipe_structure_intersect(const struct mpipe_structure *struct1,
  * @param[out] out Pointer to storage for the result, left untouched on failure.
  *
  * @retval 0 Success.
- * @retval -ENOENT @p src constrains nothing and so has nothing to fixate,
- *         whether it is flagged ANY or simply holds no field
+ * @retval -ENOENT @p src is ANY or empty, so there is nothing to fixate
  * @retval -EINVAL @p out is @p src
  */
 int mpipe_structure_fixate(const struct mpipe_structure *src, struct mpipe_structure *out);

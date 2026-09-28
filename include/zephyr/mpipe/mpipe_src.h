@@ -54,7 +54,7 @@ enum mpipe_prop_src {
 };
 
 /**
- * @brief Base Source Element Structure
+ * @brief Base source element structure
  *
  * The source element is responsible for generating data and pushing it downstream.
  * It contains a source pad for output.
@@ -71,8 +71,8 @@ struct mpipe_src {
 	 * 0 means will run forever
 	 */
 	uint32_t num_buffers;
-	/** Set a given capability on the source pad */
-	int (*set_caps)(struct mpipe_src *src, const struct mpipe_structure *caps);
+	/** Apply the negotiated capability to the source pad */
+	int (*set_caps)(struct mpipe_src *self, const struct mpipe_structure *caps);
 	/**
 	 * Decide the buffer pool for the downstream peer.
 	 * A demand reaches a proposed pool only through
@@ -117,6 +117,7 @@ int mpipe_src_change_state(struct mpipe_element *self, enum mpipe_state_change t
  * @param obj Pointer to the @ref mpipe_object (source element)
  * @param key Property key identifier
  * @param val Pointer to the property value to set
+ *
  * @return 0 on success, negative errno on failure
  */
 int mpipe_src_set_property(struct mpipe_object *obj, uint32_t key, const void *val);
@@ -127,6 +128,7 @@ int mpipe_src_set_property(struct mpipe_object *obj, uint32_t key, const void *v
  * @param obj Pointer to the @ref mpipe_object (source element)
  * @param key Property key identifier
  * @param[out] val Pointer to store the retrieved property value
+ *
  * @return 0 on success, negative errno on failure
  */
 int mpipe_src_get_property(struct mpipe_object *obj, uint32_t key, void *val);
