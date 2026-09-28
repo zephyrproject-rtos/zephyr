@@ -10,6 +10,7 @@ tests:
       - nucleo_f103rb
       - nucleo_g031k8
       - nucleo_l152re
+      - nucleo_l4a6zg
       - nucleo_l4r5zi
       - nucleo_u083rc
       - nucleo_u385rg_q
