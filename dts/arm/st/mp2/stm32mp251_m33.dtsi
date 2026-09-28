@@ -220,6 +220,23 @@
 			status = "disabled";
 		};
 
+		timers12: timers@40060000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40060000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(TIM12, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(TIM12, STM32_RST)>;
+			interrupts = <196 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			pwm12: pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		dcmipp: dcmipp@48030000 {
 			compatible = "st,stm32-dcmipp";
 			reg = <0x48030000 DT_SIZE_K(4)>;
