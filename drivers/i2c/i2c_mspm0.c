@@ -906,12 +906,13 @@ static int i2c_mspm0_target_register(const struct device *dev, struct i2c_target
 	struct i2c_mspm0_data *data = dev->data;
 	const mm_reg_t base = config->base;
 
+	k_sem_take(&data->i2c_lock, K_FOREVER);
+
 	/* Device is already registered as target */
 	if (data->is_target || data->target_config == cfg) {
+		k_sem_give(&data->i2c_lock);
 		return -EBUSY;
 	}
-
-	k_sem_take(&data->i2c_lock, K_FOREVER);
 
 	data->target_config = cfg;
 	data->target_callbacks = cfg->callbacks;
@@ -953,11 +954,12 @@ static int i2c_mspm0_target_unregister(const struct device *dev, struct i2c_targ
 	struct i2c_mspm0_data *data = dev->data;
 	const mm_reg_t base = config->base;
 
+	k_sem_take(&data->i2c_lock, K_FOREVER);
+
 	if (data->is_target == false) {
+		k_sem_give(&data->i2c_lock);
 		return 0;
 	}
-
-	k_sem_take(&data->i2c_lock, K_FOREVER);
 
 	data->target_config = NULL;
 	data->is_target = false;
