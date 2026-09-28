@@ -9,9 +9,9 @@
  * @brief Queue element for pipeline-level threading.
  * @ingroup mpipe_queue
  *
- * The queue element decouples a pipeline into two segments running on two different threads.
- * Upstream deposits buffers into the queue's internal buffer queue; then a dedicated
- * downstream thread pulls buffers from that queue and push to the rest of the pipeline.
+ * The queue element splits a pipeline into two segments running on two threads:
+ * upstream deposits buffers into the queue, and a dedicated thread pulls them
+ * and pushes them to the rest of the pipeline.
  */
 
 #ifndef ZEPHYR_INCLUDE_MPIPE_BASE_MPIPE_QUEUE_H_
@@ -32,7 +32,7 @@
 #include <zephyr/mpipe/mpipe_transform.h>
 
 /**
- * @brief Queue Property Identifiers
+ * @brief Queue property identifiers
  */
 enum {
 	/** Number of buffers the queue can hold */
@@ -61,11 +61,7 @@ enum mpipe_base_queue_leak {
 };
 
 /**
- * @brief Queue Element Structure
- *
- * The queue element acts as a thread boundary in a pipeline. Its chain_fn enqueues
- * buffers into an internal buffer queue. A dedicated thread then dequeues buffers
- * and drives downstream elements.
+ * @brief Queue element structure
  */
 struct mpipe_queue {
 	/** Base transform element */
@@ -73,13 +69,8 @@ struct mpipe_queue {
 	/** Dedicated thread for downstream processing */
 	struct mpipe_thread thread;
 	/**
-	 * Queue for storing incoming buffer pointers.
-	 *
-	 * A k_fifo would not do here as it keeps no storage of its own: it chains its
-	 * items through a link field inside each item, so a given buffer can be on one
-	 * fifo at a time. A tee pushes the same buffer to every branch, and a branch
-	 * may start with a queue, so one buffer must be able to wait in several queues
-	 * at once. The k_msgq stores its own copy of the pointer which makes that possible.
+	 * Queue of buffer pointers. A k_msgq rather than a k_fifo, so that one
+	 * buffer can wait in several queues at once behind a tee.
 	 */
 	struct k_msgq msgq;
 	/**
@@ -89,16 +80,14 @@ struct mpipe_queue {
 	char msgq_buffer[(CONFIG_MPIPE_BASE_QUEUE_MAX_SIZE + 2) * sizeof(void *)];
 	/**
 	 * Number of buffers the queue can hold, bounded by
-	 * CONFIG_MPIPE_BASE_QUEUE_MAX_SIZE and applied on READY -> PAUSED
+	 * @kconfig{CONFIG_MPIPE_BASE_QUEUE_MAX_SIZE} and applied on READY -> PAUSED
 	 */
 	uint8_t size;
 	/** Leak policy of a full queue, an @ref mpipe_base_queue_leak */
 	uint8_t leak;
 	/**
-	 * Flushing flag. When set (on PAUSED -> READY), the chain_fn drops incoming
-	 * buffers instead of enqueuing them. This releases any upstream producer
-	 * blocked in k_msgq_put() during teardown and prevents a late buffer from
-	 * leaking into an already-drained queue (e.g. behind a tee).
+	 * Set on PAUSED -> READY: the chain function drops buffers instead of
+	 * enqueuing them, which releases a producer blocked in k_msgq_put().
 	 */
 	atomic_t flushing;
 };

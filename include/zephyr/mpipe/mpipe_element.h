@@ -82,6 +82,7 @@ struct zbus_channel;
  *
  * @param cur Current state, see @ref mpipe_state
  * @param target Target state, see @ref mpipe_state
+ *
  * @return Next intermediate state
  *
  */
@@ -93,6 +94,7 @@ struct zbus_channel;
  *
  * @param cur Current state
  * @param next Next state
+ *
  * @return State transition value
  */
 #define MPIPE_STATE_TRANSITION(cur, next) (((cur) << 2) | (next))
@@ -103,6 +105,7 @@ struct zbus_channel;
  * Given a state transition, extract the current state.
  *
  * @param trans A transition state, see @ref mpipe_state_change
+ *
  * @return The current state
  *
  */
@@ -114,6 +117,7 @@ struct zbus_channel;
  * Given a state transition, extract the next state.
  *
  * @param trans A transition state, see @ref mpipe_state_change
+ *
  * @return The next state
  *
  */
@@ -279,6 +283,7 @@ int mpipe_element_link(struct mpipe_element *element_1, struct mpipe_element *el
  *
  * @param element The element to change state of
  * @param state The element's new @ref mpipe_state
+ *
  * @return 0 on success, else the errno of the element that refused a transition
  * @retval -ENOSYS The element has no set_state hook
  * @retval -EINPROGRESS Reserved: the transition completes asynchronously

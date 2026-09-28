@@ -42,9 +42,8 @@
  * kept on the far pad because the event pass needs it to narrow back down.
  *
  * When the format event later arrives, the transform crosses it the same way
- * and **forwards it before applying it to its own pads**. The order matters:
- * an element is allowed to rewire the graph from its set_caps, so applying
- * first would change the path the event still has to travel.
+ * and forwards it before applying it to its own pads, since a set_caps hook
+ * may rewire the graph.
  *
  * @section mpipe_transform_pool Buffer pools
  *
@@ -106,13 +105,15 @@ struct mpipe_transform {
 	enum mpipe_transform_mode mode;
 
 	/**
-	 * @brief Set a given caps to an element's pad
-	 * @param transform Pointer to the transform element
+	 * @brief Apply the negotiated capability to one of the element's pads
+	 *
+	 * @param self Pointer to the transform element
 	 * @param direction Direction of the pad (@ref mpipe_pad_direction)
-	 * @param caps Capability to set (@ref mpipe_structure)
+	 * @param caps Capability to apply (@ref mpipe_structure)
+	 *
 	 * @return 0 on success, negative errno on failure
 	 */
-	int (*set_caps)(struct mpipe_transform *transform, enum mpipe_pad_direction direction,
+	int (*set_caps)(struct mpipe_transform *self, enum mpipe_pad_direction direction,
 			const struct mpipe_structure *caps);
 	/**
 	 * @brief Produce one transformation of a capability across the element
@@ -126,6 +127,7 @@ struct mpipe_transform {
 	 * @param self Pointer to the transform element
 	 * @param direction Direction of the pad to transform the capability to
 	 *                  (@ref mpipe_pad_direction)
+	 *
 	 * @param in Capability on the opposite pad to transform
 	 * @param index Index of the transformation to produce, starting at 0
 	 * @param[out] out Caller storage receiving the transformation
@@ -144,18 +146,19 @@ struct mpipe_transform {
 	 * The transform element may propose either its entire input buffer pool
 	 * (set the query's pool pointer; the pool's own config is the proposal)
 	 * or a bare config (write the query's pool_cfg). A proposed pool's ops
-	 * are then intended to be called by the upstream element. Before
-	 * proposing a pool, rebuild its config baseline from your source of
-	 * truth: the live config is the previous negotiation's applied result,
-	 * and proposing it as-is makes peer demands accumulate across replays.
+	 * are then intended to be called by the upstream element. Rebuild the
+	 * pool's config from its requirement before proposing it: the live config
+	 * is the previous negotiation's result, and proposing it as is accumulates
+	 * peer demands across replays.
 	 *
-	 * For in-place transform, the same pool may be used for both input and output. If the
-	 * pool is proposed to upstream, the element has to use @ref mpipe_transform::in_pool to
-	 * point to the pool and leave @ref mpipe_transform::out_pool as NULL so that the pool is
-	 * configured / started only by the upstream and not by the transform element itself.
+	 * An in-place transform may use one pool for input and output. When that
+	 * pool is proposed upstream, point @ref mpipe_transform::in_pool at it and
+	 * leave @ref mpipe_transform::out_pool NULL, so the pool is configured and
+	 * started by upstream only.
 	 *
 	 * @param self Pointer to the transform element
-	 * @param query Allocation query (@ref mpipe_dispatch)
+	 * @param query Buffer pool query (@ref mpipe_dispatch)
+	 *
 	 * @return 0 on success, negative errno on failure
 	 */
 	int (*propose_buffer_pool)(struct mpipe_transform *self, struct mpipe_dispatch *query);
@@ -171,7 +174,8 @@ struct mpipe_transform {
 	 * demands, so nothing accumulates across replays.
 	 *
 	 * @param self Pointer to the transform element
-	 * @param query Allocation query (@ref mpipe_dispatch)
+	 * @param query Buffer pool query (@ref mpipe_dispatch)
+	 *
 	 * @return 0 on success, negative errno on failure
 	 */
 	int (*decide_buffer_pool)(struct mpipe_transform *self, struct mpipe_dispatch *query);
@@ -193,11 +197,11 @@ struct mpipe_transform {
 int mpipe_transform_init(struct mpipe_transform *transform, uint8_t id);
 
 /**
- * @brief Set capabilities on a transform element's pad.
+ * @brief Set a capability on a transform element's pad.
  *
  * @param transform Pointer to the transform element.
- * @param direction Direction of the pad to set caps on (@ref mpipe_pad_direction).
- * @param caps Pointer to the capabilities to set.
+ * @param direction Direction of the pad to set the capability on (@ref mpipe_pad_direction).
+ * @param caps Pointer to the capability to set.
  *
  * @return 0 on success, negative errno on failure
  */

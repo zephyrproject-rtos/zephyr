@@ -36,7 +36,7 @@ enum mpipe_prop_base_tee {
 };
 
 /**
- * @brief Tee Element Structure
+ * @brief Tee element structure
  *
  * The tee element receives buffers on its single sink pad and
  * broadcasts them to all of its source pads.
