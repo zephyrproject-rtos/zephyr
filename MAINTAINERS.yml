@@ -6660,6 +6660,7 @@ USB:
     - josuah
     - MarkWangChinese
     - roma-jam
+    - AidenHu
   files:
     - drivers/usb/
     - dts/bindings/usb/
