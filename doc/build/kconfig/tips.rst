@@ -886,6 +886,43 @@ For a Kconfig symbol that enables a driver/subsystem FOO, consider having just
 usually be clear in the context of an option that can be toggled on/off, and
 makes things consistent.
 
+.. _kconfig_experimental_deprecated:
+
+Experimental and deprecated symbols
+===================================
+
+A symbol for a feature that is experimental or deprecated selects
+:kconfig:option:`CONFIG_EXPERIMENTAL` or :kconfig:option:`CONFIG_DEPRECATED`. The
+selection triggers the warnings controlled by :kconfig:option:`CONFIG_WARN_EXPERIMENTAL`
+and :kconfig:option:`CONFIG_WARN_DEPRECATED` when such a feature is enabled, and the
+Kconfig tools (``menuconfig``, ``guiconfig``, the documentation) derive the
+``[EXPERIMENTAL]`` or ``[DEPRECATED]`` suffix shown after the prompt from it. Do not write
+the suffix in the prompt:
+
+.. code-block:: kconfig
+
+   config FOO
+       bool "Foo"
+       select EXPERIMENTAL
+
+Only ``bool`` and ``tristate`` symbols can ``select``. For a symbol of another type, end the
+prompt with the exact suffix and add a promptless ``bool`` symbol that selects the marker
+when the option is in use:
+
+.. code-block:: kconfig
+
+   config FOO_SIZE
+       int "Foo size [DEPRECATED]"
+       default 0
+
+   config FOO_SIZE_DEPRECATED
+       bool
+       default y if FOO_SIZE != 0
+       select DEPRECATED
+
+Other spellings and positions of the suffix, such as ``(experimental)`` or a leading
+``[DEPRECATED]``, are not recognized and end up shown twice.
+
 Style
 =====
 

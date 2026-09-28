@@ -229,7 +229,10 @@ The following are the requirements for deprecating an existing API:
     (``__deprecated`` for  function declarations and ``__DEPRECATED_MACRO`` for
     macro definitions), or by introducing a Kconfig option (typically one that
     contains the ``DEPRECATED`` word in it) that, when enabled, reverts the APIs
-    back to their previous form
+    back to their previous form. Such a Kconfig option selects
+    :kconfig:option:`CONFIG_DEPRECATED`, which prints a warning when it is
+    enabled and adds a ``[DEPRECATED]`` suffix to its prompt (see
+    :ref:`kconfig_experimental_deprecated`)
   - Document the deprecation
   - Include the deprecation in the "API Changes" of the release notes for the
     next upcoming release
