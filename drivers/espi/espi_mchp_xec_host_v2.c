@@ -84,15 +84,6 @@
 #define MCHP_P80_MAX_BYTE_COUNT  4
 #define MCHP_P80_FIFO_READ_COUNT 8
 
-struct xec_espi_host_sram_config {
-	uint32_t host_sram1_base;
-	uint32_t host_sram2_base;
-	uint16_t ec_sram1_ofs;
-	uint16_t ec_sram2_ofs;
-	uint8_t sram1_acc_size;
-	uint8_t sram2_acc_size;
-};
-
 struct xec_espi_host_dev_config {
 	const struct device *parent;
 	uint32_t reg_base;      /* logical device registers */
@@ -1658,6 +1649,8 @@ int xec_host_dev_init(const struct device *dev)
 
 	mc_cfg_regs->HBAR_EXT = XEC_PC_DEV_MBAR_HOST_ADDR_HIGH;
 	mc_cfg_regs->SRAM_EXT = XEC_PC_SRAM_BAR_HOST_ADDR_HIGH;
+
+	xec_sram_bars_init(dev);
 
 	for (int i = 0; i < ARRAY_SIZE(hd_init_tbl); i++) {
 		if (hd_init_tbl[i] == NULL) {
