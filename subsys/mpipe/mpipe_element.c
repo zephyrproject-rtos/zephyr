@@ -39,7 +39,6 @@ void mpipe_element_add_pad(struct mpipe_element *element, struct mpipe_pad *pad)
 	__ASSERT_NO_MSG(element != NULL);
 	__ASSERT_NO_MSG(pad != NULL);
 
-	/* Set element that contains this pad */
 	pad->object.container = &element->object;
 
 	if (pad->direction == MPIPE_PAD_SRC) {
@@ -143,7 +142,7 @@ static int mpipe_element_set_state_func(struct mpipe_element *element, enum mpip
 		next = MPIPE_STATE_GET_NEXT(*current, state);
 		transition = MPIPE_STATE_TRANSITION(*current, next);
 		ret = element->change_state(element, transition);
-		/* -EINPROGRESS (asynchronous) is not handled yet and propagates as is */
+		/* -EINPROGRESS, an asynchronous transition, propagates to the caller */
 		if (ret != 0) {
 			return ret;
 		}
@@ -184,11 +183,7 @@ struct zbus_channel *mpipe_element_get_bus_chan(struct mpipe_element *element)
 
 	__ASSERT_NO_MSG(element != NULL);
 
-	/*
-	 * Only a bin owns a bus, so a bin answers with its own and anything
-	 * else with the bin holding it - the nearest one in both cases. A
-	 * container is only ever set by mpipe_bin_add(), so it is always a bin.
-	 */
+	/* A bin answers with its own bus, any other element with its bin's */
 	bin = &element->object;
 	if ((bin->flags & MPIPE_OBJECT_FLAG_BIN) == 0) {
 		bin = bin->container;

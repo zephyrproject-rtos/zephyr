@@ -58,11 +58,7 @@ int mpipe_structure_clear(struct mpipe_structure *structure)
 {
 	__ASSERT_NO_MSG(structure != NULL);
 
-	/*
-	 * Resetting num_fields to empty the structure. Every read of ids and values is
-	 * bounded by num_fields, so the slots past it are already unreachable. The media
-	 * type and the flags are left alone so the structure can be filled in again as it is.
-	 */
+	/* Reads are bounded by num_fields; the media type and flags stay */
 	structure->num_fields = 0;
 
 	return 0;
@@ -203,15 +199,11 @@ int mpipe_structure_intersect(const struct mpipe_structure *struct1,
 	struct mpipe_value intersect_value;
 	bool common = false;
 
-	/*
-	 * The result is built into out field by field, so an out that is also
-	 * an input would be read after it has been reset. Nothing needs it, so
-	 * it is refused rather than paid for with a scratch structure.
-	 */
 	__ASSERT_NO_MSG(struct1 != NULL);
 	__ASSERT_NO_MSG(struct2 != NULL);
 	__ASSERT_NO_MSG(out != NULL);
 
+	/* out is built field by field, so it cannot be an input */
 	if (out == struct1 || out == struct2) {
 		return -EINVAL;
 	}

@@ -70,7 +70,6 @@ ZTEST_F(mpipe_element_api, test_link_two_elements)
 	zassert_equal(fixture->sink_pad.object.container, (struct mpipe_object *)&fixture->sink,
 		      "Pad container shall reference the owning element");
 
-	/* src/sink are already initialised by element_before via their init functions */
 	zassert_ok(mpipe_element_link(&fixture->src, &fixture->sink, NULL),
 		   "Linking src and sink elements shall succeed");
 	zassert_true(fixture->sink_pad.peer == &fixture->src_pad,

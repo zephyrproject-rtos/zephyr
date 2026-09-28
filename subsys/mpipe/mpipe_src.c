@@ -68,18 +68,10 @@ static int mpipe_src_query(struct mpipe_pad *pad, struct mpipe_dispatch *query)
 	}
 }
 
-/*
- * Offer one candidate to the downstream peer and, when the peer accepts it,
- * keep the result on the src pad. Reports -ENODATA when the peer has nothing
- * in common with this candidate, which is the caller's cue to offer the next.
- */
+/* Offer one candidate downstream; -ENODATA says the peer has nothing in common */
 static int mpipe_src_offer_candidate(struct mpipe_src *src, const struct mpipe_structure *candidate)
 {
-	/*
-	 * The query references this frame's storage for its whole walk; the
-	 * peer answers by writing into it, so the caller's candidate is copied
-	 * rather than referenced.
-	 */
+	/* The peer answers into the query's storage, so offer a copy of the candidate */
 	struct mpipe_structure caps_storage = *candidate;
 	struct mpipe_dispatch caps_query = {
 		.type = MPIPE_DISPATCH_CAPS,
@@ -109,13 +101,7 @@ static int mpipe_src_negotiate(struct mpipe_src *src)
 	bool is_fixated;
 	int ret;
 
-	/*
-	 * Offer the supported capabilities one at a time and keep the first one
-	 * the peer accepts. Offering them individually is what allows a rejected
-	 * candidate to be retried with the next one instead of the whole
-	 * negotiation failing, and it keeps the peer's answer down to what one
-	 * candidate can match.
-	 */
+	/* Offer the capabilities one at a time and keep the first the peer accepts */
 	for (index = 0;; index++) {
 		ret = mpipe_pad_enum_caps(&src->src_pad, index, NULL, &candidate);
 		if (ret == -EAGAIN) {
@@ -123,10 +109,7 @@ static int mpipe_src_negotiate(struct mpipe_src *src)
 		}
 
 		if (ret == -ENOENT) {
-			/*
-			 * An element with no capability at all cannot negotiate,
-			 * which is a caller error rather than a failed negotiation.
-			 */
+			/* No capability at all is a caller error, not a failed negotiation */
 			return (index == 0) ? -EINVAL : -ENODATA;
 		}
 
@@ -146,13 +129,7 @@ static int mpipe_src_negotiate(struct mpipe_src *src)
 
 	is_fixated = (mpipe_structure_fixate(&src->src_pad.caps, &fixated) == 0);
 
-	/*
-	 * Push a caps event downstream. The result only matters when a fixated
-	 * capability was sent; an event carrying no capability is informational.
-	 * The event references a sacrificial copy: elements replace the event's
-	 * capability with the one that crosses them, and the source still needs
-	 * the fixated one afterwards.
-	 */
+	/* The event carries a copy: elements replace it with what crosses them */
 	if (is_fixated) {
 		event_caps = fixated;
 	}
@@ -249,14 +226,7 @@ int mpipe_src_change_state(struct mpipe_element *self, enum mpipe_state_change t
 
 		break;
 	case MPIPE_STATE_CHANGE_PAUSED_TO_READY:
-		/*
-		 * Stop the buffer pool on teardown. This is the counterpart of
-		 * the READY_TO_PAUSED start above and is what makes stop/replay
-		 * symmetric: e.g. the video pool issues video_stream_stop() and
-		 * releases its driver buffers here so a subsequent replay can
-		 * start streaming cleanly. A pool without a stop hook returns
-		 * -ENOSYS, which is not an error.
-		 */
+		/* Stop the pool started on READY -> PAUSED; -ENOSYS means no stop hook */
 		pool_ret = mpipe_buffer_pool_stop(src->pool);
 		if (pool_ret != 0 && pool_ret != -ENOSYS) {
 			LOG_ERR("Failed to stop source buffer pool");

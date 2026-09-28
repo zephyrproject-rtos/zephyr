@@ -19,12 +19,7 @@
 
 LOG_MODULE_REGISTER(mpipe_bin, CONFIG_MPIPE_LOG_LEVEL);
 
-/*
- * The framework allocates nothing, so neither may the bus underneath it.
- * subsys/mpipe/Kconfig turns ZBUS_PREFER_DYNAMIC_ALLOCATION off to get there,
- * but that is a default among several and only wins on Kconfig parse order.
- * Say what mpipe needs rather than trusting where its Kconfig is sourced.
- */
+/* The framework allocates nothing, so the bus underneath it may not either */
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC) ||                                       \
 	defined(CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC)
 #error "mpipe needs static zbus allocation: set CONFIG_ZBUS_PREFER_DYNAMIC_ALLOCATION=n"
@@ -43,11 +38,9 @@ int mpipe_bin_add(struct mpipe_bin *bin, struct mpipe_element *element, ...)
 
 	va_start(args, element);
 	while (element != NULL) {
-		/*
-		 * Check element ID uniqueness in the nearest bin
-		 * TODO: Should check in the whole pipeline
-		 */
 		struct mpipe_object *obj;
+
+		/* Ids are unique within the bin */
 
 		SYS_DLIST_FOR_EACH_CONTAINER(&bin->children, obj, node) {
 			if (element->object.id == obj->id) {
@@ -61,10 +54,7 @@ int mpipe_bin_add(struct mpipe_bin *bin, struct mpipe_element *element, ...)
 			return -ENOSPC;
 		}
 
-		/* Set the element's parent */
 		element->object.container = &bin->element.object;
-
-		/* Add the element to the bin's list of children */
 		sys_dlist_append(&bin->children, &element->object.node);
 		bin->children_num++;
 		element = va_arg(args, struct mpipe_element *);
@@ -136,16 +126,7 @@ int mpipe_bin_change_state_func(struct mpipe_element *self, enum mpipe_state_cha
 	int processed = 0;
 	bool is_up_transition;
 
-	/*
-	 * Topological sort using BFS.
-	 *
-	 * For UP/DOWN transitions:
-	 *   - Sinks/Sources first (elements with no src_pad/sink_pad links have degree 0)
-	 *   - degree = number of linked src_pads/sink_pads
-	 *   - After processing element E, for each sink_pad/src_pad of E, find the
-	 *     peer src_pad/sink_pad's container element and decrement its degree.
-	 */
-
+	/* Kahn's topological sort: sinks first going up, sources first going down */
 	is_up_transition = (transition == MPIPE_STATE_CHANGE_READY_TO_PAUSED ||
 			    transition == MPIPE_STATE_CHANGE_PAUSED_TO_PLAYING);
 
@@ -161,10 +142,8 @@ int mpipe_bin_change_state_func(struct mpipe_element *self, enum mpipe_state_cha
 		elements[num_elements] = elem;
 
 		if (is_up_transition) {
-			/* UP: degree = number of linked src_pads */
 			degree[num_elements] = mpipe_bin_count_linked_pads(elem, &elem->src_pads);
 		} else {
-			/* DOWN: degree = number of linked sink_pads */
 			degree[num_elements] = mpipe_bin_count_linked_pads(elem, &elem->sink_pads);
 		}
 
@@ -195,13 +174,7 @@ int mpipe_bin_change_state_func(struct mpipe_element *self, enum mpipe_state_cha
 
 			elements[i]->current_state = MPIPE_STATE_TRANSITION_NEXT(transition);
 
-			/*
-			 * Decrement degree of peer elements.
-			 *
-			 * For UP/DOWN transitions:
-			 *   - Iterate sink_pads/src_pads of this element to find the peer
-			 *     sink_pad/src_pad'scontainer element and decrement its degree.
-			 */
+			/* Decrement the degree of the elements this one feeds */
 			sys_dlist_t *pad_list =
 				is_up_transition ? &elements[i]->sink_pads : &elements[i]->src_pads;
 
@@ -218,17 +191,8 @@ int mpipe_bin_change_state_func(struct mpipe_element *self, enum mpipe_state_cha
 }
 
 /*
- * Bring up the bin's bus channel, with no validator: a bin has no opinion on
- * the messages passing through it. An element wrapping the bin installs one
- * with mpipe_bin_set_bus_validator().
- *
- * chan_msg is the channel's backing message buffer. It is required for every
- * bus channel and observer type: each publish copies the message into it, and
- * channel init rejects a NULL buffer.
- *
- * The channel is deliberately left out of zbus_runtime_channel_register().
- * That registry only feeds zbus_iterate_over_channels(), which mpipe never
- * calls; publishing and attaching observers work off the channel itself.
+ * No validator: a bin has no opinion on its messages, a pipeline installs one.
+ * The channel stays unregistered, since mpipe never iterates channels.
  */
 static void mpipe_bin_init_bus(struct mpipe_bin *bin)
 {
