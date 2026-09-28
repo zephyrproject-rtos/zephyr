@@ -28,7 +28,7 @@ ZTEST(mpipe_structure_api, test_new)
 	struct mpipe_structure s;
 
 	zassert_ok(mpipe_structure_init_fields(&s, MPIPE_MEDIA_AUDIO_PCM, MPIPE_CAPS_SAMPLE_RATE,
-					       MPIPE_TYPE_INT, 48000, MPIPE_CAPS_BITWIDTH,
+					       MPIPE_TYPE_INT, 48000, MPIPE_CAPS_BIT_WIDTH,
 					       MPIPE_TYPE_INT, 16, MPIPE_CAPS_END),
 		   "init &s failed");
 
@@ -37,11 +37,11 @@ ZTEST(mpipe_structure_api, test_new)
 	zassert_ok(mpipe_structure_remove_field(&s, MPIPE_CAPS_SAMPLE_RATE), "remove_field failed");
 	zassert_is_null(mpipe_structure_get_value(&s, MPIPE_CAPS_SAMPLE_RATE),
 			"removed field still found");
-	zassert_not_null(mpipe_structure_get_value(&s, MPIPE_CAPS_BITWIDTH),
+	zassert_not_null(mpipe_structure_get_value(&s, MPIPE_CAPS_BIT_WIDTH),
 			 "non-removed field missing");
 
 	mpipe_structure_clear(&s);
-	zassert_is_null(mpipe_structure_get_value(&s, MPIPE_CAPS_BITWIDTH),
+	zassert_is_null(mpipe_structure_get_value(&s, MPIPE_CAPS_BIT_WIDTH),
 			"field found after clear");
 
 	struct mpipe_structure si;
@@ -75,7 +75,7 @@ ZTEST(mpipe_structure_api, test_is_fixed_fixate_duplicate)
 
 	zassert_ok(mpipe_structure_init_fields(
 			   &fixed_s, MPIPE_MEDIA_AUDIO_PCM, MPIPE_CAPS_SAMPLE_RATE, MPIPE_TYPE_INT,
-			   48000, MPIPE_CAPS_BITWIDTH, MPIPE_TYPE_INT, 16, MPIPE_CAPS_END),
+			   48000, MPIPE_CAPS_BIT_WIDTH, MPIPE_TYPE_INT, 16, MPIPE_CAPS_END),
 		   "init &fixed_s failed");
 
 	zassert_true(mpipe_structure_is_fixed(&fixed_s), "structure not fixed");
@@ -301,7 +301,7 @@ ZTEST(mpipe_structure_api, test_cannot_intersect)
 		   "init &s_sample_int failed");
 	struct mpipe_structure s_bw;
 
-	zassert_ok(mpipe_structure_init_fields(&s_bw, MPIPE_MEDIA_AUDIO_PCM, MPIPE_CAPS_BITWIDTH,
+	zassert_ok(mpipe_structure_init_fields(&s_bw, MPIPE_MEDIA_AUDIO_PCM, MPIPE_CAPS_BIT_WIDTH,
 					       MPIPE_TYPE_INT, 16, MPIPE_CAPS_END),
 		   "init &s_bw failed");
 	struct mpipe_structure s_low;

@@ -76,11 +76,11 @@ enum mpipe_prop_transform {
  */
 enum mpipe_transform_mode {
 	/** The buffer is kept intact. */
-	MPIPE_MODE_PASSTHROUGH = 0,
+	MPIPE_TRANSFORM_MODE_PASSTHROUGH = 0,
 	/** The input buffer is directly modified. Input and output buffers are the same. */
-	MPIPE_MODE_INPLACE = 1,
+	MPIPE_TRANSFORM_MODE_INPLACE = 1,
 	/** The output buffer is allocated and differs from the input buffer. */
-	MPIPE_MODE_NORMAL = 2,
+	MPIPE_TRANSFORM_MODE_NORMAL = 2,
 };
 
 /**

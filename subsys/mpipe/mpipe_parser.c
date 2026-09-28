@@ -13,8 +13,8 @@
 
 LOG_MODULE_REGISTER(mpipe_parser, CONFIG_MPIPE_LOG_LEVEL);
 
-#define MPIPE_PAD_SINK_ID 0
-#define MPIPE_PAD_SRC_ID  1
+#define SINK_PAD_ID 0
+#define SRC_PAD_ID  1
 
 static int mpipe_parser_set_caps(struct mpipe_parser *parser, enum mpipe_pad_direction direction,
 				 const struct mpipe_structure *caps)
@@ -212,10 +212,10 @@ int mpipe_parser_init(struct mpipe_parser *parser, uint8_t id)
 
 	mpipe_element_set_name(self, "parser");
 
-	mpipe_pad_init(&parser->sink_pad, MPIPE_PAD_SINK_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
+	mpipe_pad_init(&parser->sink_pad, SINK_PAD_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
 	mpipe_element_add_pad(self, &parser->sink_pad);
 
-	mpipe_pad_init(&parser->src_pad, MPIPE_PAD_SRC_ID, MPIPE_PAD_SRC, MPIPE_PAD_ALWAYS);
+	mpipe_pad_init(&parser->src_pad, SRC_PAD_ID, MPIPE_PAD_SRC, MPIPE_PAD_ALWAYS);
 	mpipe_element_add_pad(self, &parser->src_pad);
 
 	parser->out_pool = NULL;

@@ -15,7 +15,7 @@
 
 LOG_MODULE_REGISTER(mpipe_sink, CONFIG_MPIPE_LOG_LEVEL);
 
-#define MPIPE_PAD_SINK_ID 0
+#define SINK_PAD_ID 0
 
 static int mpipe_sink_set_caps(struct mpipe_sink *sink, const struct mpipe_structure *caps)
 {
@@ -116,7 +116,7 @@ int mpipe_sink_init(struct mpipe_sink *sink, uint8_t id)
 
 	mpipe_element_set_name(self, "sink");
 
-	mpipe_pad_init(&sink->sink_pad, MPIPE_PAD_SINK_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
+	mpipe_pad_init(&sink->sink_pad, SINK_PAD_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
 	mpipe_element_add_pad(self, &sink->sink_pad);
 
 	self->change_state = mpipe_sink_change_state;

@@ -108,9 +108,9 @@ enum mpipe_caps_field {
 	/** Sampling frequency in Hz (audio), MPIPE_TYPE_UINT */
 	MPIPE_CAPS_SAMPLE_RATE,
 	/** Sample size in bits (audio), MPIPE_TYPE_UINT */
-	MPIPE_CAPS_BITWIDTH,
+	MPIPE_CAPS_BIT_WIDTH,
 	/** Number of channels (audio), MPIPE_TYPE_UINT */
-	MPIPE_CAPS_NUM_OF_CHANNEL,
+	MPIPE_CAPS_NUM_CHANNELS,
 	/**
 	 * Layout of the channels within a buffer (audio), MPIPE_TYPE_BOOLEAN: true for
 	 * interleaved (LRLRLRLR), false for non-interleaved (LLLLRRRR)

@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(mpipe_src, CONFIG_MPIPE_LOG_LEVEL);
 
-#define MPIPE_PAD_SRC_ID 0
+#define SRC_PAD_ID 0
 
 int mpipe_src_set_property(struct mpipe_object *obj, uint32_t key, const void *val)
 {
@@ -256,7 +256,7 @@ int mpipe_src_init(struct mpipe_src *src, uint8_t id)
 
 	mpipe_element_set_name(self, "src");
 
-	mpipe_pad_init(&src->src_pad, MPIPE_PAD_SRC_ID, MPIPE_PAD_SRC, MPIPE_PAD_ALWAYS);
+	mpipe_pad_init(&src->src_pad, SRC_PAD_ID, MPIPE_PAD_SRC, MPIPE_PAD_ALWAYS);
 	mpipe_element_add_pad(self, &src->src_pad);
 
 	self->object.set_property = mpipe_src_set_property;

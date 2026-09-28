@@ -14,15 +14,15 @@
 
 LOG_MODULE_REGISTER(mpipe_transform, CONFIG_MPIPE_LOG_LEVEL);
 
-#define MPIPE_PAD_SINK_ID 0
-#define MPIPE_PAD_SRC_ID  1
+#define SINK_PAD_ID 0
+#define SRC_PAD_ID  1
 
 static int mpipe_transform_process_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
 				      struct net_buf **out_buf)
 {
 	ARG_UNUSED(pad);
 
-	/* Default implementation for MPIPE_MODE_PASSTHROUGH - return same buffer */
+	/* Default implementation for MPIPE_TRANSFORM_MODE_PASSTHROUGH - return same buffer */
 	*out_buf = in_buf;
 
 	return 0;
@@ -260,7 +260,7 @@ static int mpipe_transform_query(struct mpipe_pad *pad, struct mpipe_dispatch *q
 		}
 
 		/* Configure/start the output buffer pool */
-		if (self->mode == MPIPE_MODE_NORMAL) {
+		if (self->mode == MPIPE_TRANSFORM_MODE_NORMAL) {
 			ret = mpipe_buffer_pool_configure(self->out_pool, &self->src_pad.caps);
 			if (ret != 0 && ret != -ENOSYS) {
 				LOG_ERR("Failed to configure output transform buffer pool");
@@ -398,14 +398,14 @@ int mpipe_transform_init(struct mpipe_transform *transform, uint8_t id)
 
 	mpipe_element_set_name(self, "transform");
 
-	mpipe_pad_init(&transform->sink_pad, MPIPE_PAD_SINK_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
-	mpipe_pad_init(&transform->src_pad, MPIPE_PAD_SRC_ID, MPIPE_PAD_SRC, MPIPE_PAD_ALWAYS);
+	mpipe_pad_init(&transform->sink_pad, SINK_PAD_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
+	mpipe_pad_init(&transform->src_pad, SRC_PAD_ID, MPIPE_PAD_SRC, MPIPE_PAD_ALWAYS);
 	mpipe_element_add_pad(self, &transform->sink_pad);
 	mpipe_element_add_pad(self, &transform->src_pad);
 
 	self->change_state = mpipe_transform_change_state;
 
-	transform->mode = MPIPE_MODE_PASSTHROUGH;
+	transform->mode = MPIPE_TRANSFORM_MODE_PASSTHROUGH;
 	transform->set_caps = mpipe_transform_set_caps;
 	transform->transform_caps = mpipe_transform_transform_caps;
 	transform->sink_pad.process_fn = mpipe_transform_process_fn;

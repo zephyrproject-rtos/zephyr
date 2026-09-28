@@ -97,7 +97,7 @@ static int fake_caps_query_fn(struct mpipe_pad *pad, struct mpipe_dispatch *quer
 		return -EINVAL;
 	}
 
-	return mpipe_structure_append_value(query->caps, MPIPE_CAPS_BITWIDTH, &bitwidth);
+	return mpipe_structure_append_value(query->caps, MPIPE_CAPS_BIT_WIDTH, &bitwidth);
 }
 
 ZTEST_F(mpipe_pad_api, test_caps_query_needs_storage_to_answer)
@@ -119,7 +119,7 @@ ZTEST_F(mpipe_pad_api, test_caps_query_needs_storage_to_answer)
 	query.caps = &caps;
 	zassert_ok(mpipe_pad_query(&fixture->src_pad, &query), "caps query with storage failed");
 	zassert_true(caps_query_fn_ran, "query function did not run");
-	zassert_equal(mpipe_value_get_uint(mpipe_structure_get_value(&caps, MPIPE_CAPS_BITWIDTH)),
+	zassert_equal(mpipe_value_get_uint(mpipe_structure_get_value(&caps, MPIPE_CAPS_BIT_WIDTH)),
 		      16U, "the answer did not reach the caller's storage");
 }
 
@@ -141,7 +141,7 @@ static int fake_enum_caps(struct mpipe_pad *pad, uint32_t index,
 	mpipe_structure_init(&candidate, MPIPE_MEDIA_AUDIO_PCM);
 	value.type = MPIPE_TYPE_UINT;
 	value.v_uint = widths[index];
-	zassert_ok(mpipe_structure_append_value(&candidate, MPIPE_CAPS_BITWIDTH, &value),
+	zassert_ok(mpipe_structure_append_value(&candidate, MPIPE_CAPS_BIT_WIDTH, &value),
 		   "append failed");
 
 	if (filter == NULL) {
@@ -169,13 +169,13 @@ ZTEST_F(mpipe_pad_api, test_enum_caps)
 	fixture->src_pad.enum_caps_fn = fake_enum_caps;
 
 	zassert_ok(mpipe_pad_enum_caps(&fixture->src_pad, 1, NULL, &out), "enum 1 failed");
-	zassert_equal(mpipe_value_get_uint(mpipe_structure_get_value(&out, MPIPE_CAPS_BITWIDTH)),
+	zassert_equal(mpipe_value_get_uint(mpipe_structure_get_value(&out, MPIPE_CAPS_BIT_WIDTH)),
 		      24U, "wrong capability at index 1");
 
 	/* A filter only the second capability satisfies */
 	zassert_ok(mpipe_structure_init(&filter, MPIPE_MEDIA_AUDIO_PCM), "filter init failed");
 	bitwidth.v_uint = 24U;
-	zassert_ok(mpipe_structure_append_value(&filter, MPIPE_CAPS_BITWIDTH, &bitwidth),
+	zassert_ok(mpipe_structure_append_value(&filter, MPIPE_CAPS_BIT_WIDTH, &bitwidth),
 		   "filter append failed");
 
 	zassert_equal(mpipe_pad_enum_caps(&fixture->src_pad, 0, &filter, &out), -EAGAIN,
@@ -184,18 +184,18 @@ ZTEST_F(mpipe_pad_api, test_enum_caps)
 
 	/* The search skips what does not match and stops at what does */
 	zassert_ok(mpipe_pad_enum_first(&fixture->src_pad, &filter, &out), "enum_first failed");
-	zassert_equal(mpipe_value_get_uint(mpipe_structure_get_value(&out, MPIPE_CAPS_BITWIDTH)),
+	zassert_equal(mpipe_value_get_uint(mpipe_structure_get_value(&out, MPIPE_CAPS_BIT_WIDTH)),
 		      24U, "enum_first picked the wrong capability");
 
 	/* No filter means the first capability wins */
 	zassert_ok(mpipe_pad_enum_first(&fixture->src_pad, NULL, &out), "enum_first(NULL) failed");
-	zassert_equal(mpipe_value_get_uint(mpipe_structure_get_value(&out, MPIPE_CAPS_BITWIDTH)),
+	zassert_equal(mpipe_value_get_uint(mpipe_structure_get_value(&out, MPIPE_CAPS_BIT_WIDTH)),
 		      16U, "enum_first(NULL) did not pick index 0");
 
 	/* A filter nothing satisfies exhausts the enumeration */
 	zassert_ok(mpipe_structure_init(&filter, MPIPE_MEDIA_AUDIO_PCM), "filter re-init failed");
 	bitwidth.v_uint = 32U;
-	zassert_ok(mpipe_structure_append_value(&filter, MPIPE_CAPS_BITWIDTH, &bitwidth),
+	zassert_ok(mpipe_structure_append_value(&filter, MPIPE_CAPS_BIT_WIDTH, &bitwidth),
 		   "filter re-append failed");
 	zassert_equal(mpipe_pad_enum_first(&fixture->src_pad, &filter, &out), -ENODATA,
 		      "unsatisfiable filter != -ENODATA");
