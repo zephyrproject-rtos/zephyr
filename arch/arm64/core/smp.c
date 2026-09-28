@@ -383,6 +383,16 @@ void arch_spin_relax(void)
 
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+/*
+ * ISR entry for the coredump freeze SGI, defined in vector_table.S. Stores
+ * the live callee-saved registers into the interrupted context's ESF and
+ * tail-calls z_arm64_coredump_freeze_ipi_handler() (see both for why the
+ * capture cannot happen in C).
+ */
+extern void z_arm64_coredump_freeze_isr(const void *unused);
+#endif
+
 enum coredump_freeze_state {
 	FREEZE_IDLE = 0,
 	FREEZE_REQUESTED,
@@ -391,7 +401,6 @@ enum coredump_freeze_state {
 
 struct coredump_frozen_cpu {
 	struct arch_esf esf;
-	uint64_t x19_x29[11];	/* x19..x28, x29 (fp) */
 	uintptr_t sp;		/* pre-interrupt SP -- see capture site for why
 				 * this can't just be derived later from esf's
 				 * (by-then-copied) address
@@ -446,32 +455,19 @@ static atomic_t release_requested[CONFIG_MP_MAX_NUM_CPUS];
  * released. Runs as a normal interrupt handler, so whatever this CPU was
  * doing when interrupted stays exactly as it was -- including any lock it
  * held -- until we return from here via the standard exception-return path.
+ *
+ * With CONFIG_EXTRA_EXCEPTION_INFO the SGI is connected to
+ * z_arm64_coredump_freeze_isr() instead, which stores the live x19-x28 into
+ * the interrupted context's ESF before tail-calling this function: the C
+ * interrupt dispatch may reuse the callee-saved registers for its own
+ * locals, so they cannot be captured reliably from C.
  */
-static void coredump_freeze_ipi_handler(const void *unused)
+void z_arm64_coredump_freeze_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
 	unsigned int cpu = arch_curr_cpu()->id;
 	struct coredump_frozen_cpu *fc = &frozen_cpu[cpu];
-
-	/*
-	 * x19-x29 are guaranteed to still hold the exact values the
-	 * interrupted code had: every function called between the original
-	 * interruption and here (the ISR dispatch, the GIC driver call to
-	 * find the active IRQ, ...) must have preserved them as callee-saved
-	 * registers per AAPCS64.
-	 */
-	__asm__ volatile(
-		"stp x19, x20, [%0, #0]\n\t"
-		"stp x21, x22, [%0, #16]\n\t"
-		"stp x23, x24, [%0, #32]\n\t"
-		"stp x25, x26, [%0, #48]\n\t"
-		"stp x27, x28, [%0, #64]\n\t"
-		"str x29, [%0, #80]\n\t"
-		:
-		: "r" (fc->x19_x29)
-		: "memory"
-	);
 
 	/*
 	 * _isr_wrapper() always saves the pre-interrupt sp at a fixed slot
@@ -608,7 +604,6 @@ void arch_coredump_thaw_other_cpus(void)
 
 bool arm64_coredump_freeze_get_snapshot(unsigned int cpu,
 					 const struct arch_esf **esf,
-					 const uint64_t **x19_x29,
 					 uintptr_t *sp,
 					 struct k_thread **thread)
 {
@@ -617,7 +612,6 @@ bool arm64_coredump_freeze_get_snapshot(unsigned int cpu,
 	}
 
 	*esf = &frozen_cpu[cpu].esf;
-	*x19_x29 = frozen_cpu[cpu].x19_x29;
 	*sp = frozen_cpu[cpu].sp;
 	*thread = frozen_cpu[cpu].thread;
 
@@ -648,8 +642,13 @@ int arch_smp_init(void)
 	irq_enable(SGI_FPU_IPI);
 #endif
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	IRQ_CONNECT(SGI_COREDUMP_FREEZE_IPI, SGI_COREDUMP_FREEZE_PRIO, z_arm64_coredump_freeze_isr,
+		    NULL, 0);
+#else
 	IRQ_CONNECT(SGI_COREDUMP_FREEZE_IPI, SGI_COREDUMP_FREEZE_PRIO,
-			coredump_freeze_ipi_handler, NULL, 0);
+		    z_arm64_coredump_freeze_ipi_handler, NULL, 0);
+#endif
 	irq_enable(SGI_COREDUMP_FREEZE_IPI);
 #endif
 #else

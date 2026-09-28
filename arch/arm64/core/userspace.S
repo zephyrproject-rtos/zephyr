@@ -129,6 +129,17 @@ valid_syscall_id:
 	ldr	x9, =_k_syscall_table
 	ldr	x9, [x9, x8, lsl #3]
 
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	/*
+	 * Capture the user's callee-saved registers in the ESF: a syscall
+	 * handler may terminate the thread (bad syscall, oops, user stack
+	 * check) and this is the last point where the registers are
+	 * guaranteed to still hold the values of the user context at the
+	 * syscall entry.
+	 */
+	z_arm64_save_exception_info sp
+#endif
+
 	/* Jump into the syscall */
 	msr	daifclr, #(DAIFSET_IRQ_BIT)
 	blr	x9
