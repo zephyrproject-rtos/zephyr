@@ -9,7 +9,7 @@
  * @brief Umbrella header.
  * @ingroup mpipe
  *
- * Applications include this header, and only this one, for the whole core
+ * Applications include this header, and only this one, for the whole framework
  * API; each plugin element they instantiate adds that element's own header.
  */
 
@@ -31,8 +31,8 @@
  *
  * An application declares the elements it needs, links them into a graph, and
  * drives that graph through a state machine. The framework is what negotiates
- * the data format between neighbors, settles which pool provides the buffers,
- * and moves those buffers from one element to the next.
+ * the data format between neighbors, settles the buffer configuration, and
+ * moves the buffers from one element to the next.
  *
  * @ref mpipe_object is the base every type embeds; @ref mpipe_element is what a
  * graph is made of and @ref mpipe_pad is where two elements meet;
@@ -41,16 +41,13 @@
  *
  * @section mpipe_no_alloc No dynamic allocation
  *
- * The framework allocates nothing. Buffers come from pools sized while leaving
- * READY, and every type on the negotiation path is fixed-size and held by
- * value, so a stream that runs for hours cannot fragment a heap it never
- * touches and a negotiation cannot fail for memory. The cost lands on the stack
- * instead, since a negotiation holds several capabilities live at once.
- *
- * This is a property to preserve rather than an implementation detail: a change
- * that reintroduces allocation on a negotiation path is wrong however clean it
- * looks. An element needing scratch memory takes it from the application at
- * init, the way pools and stacks are taken.
+ * The framework allocates nothing. Elements and pipelines are objects the
+ * application owns, buffers come from pools sized when the pipeline starts, and
+ * every type on the negotiation path is fixed-size and held by value, so a
+ * stream that runs for hours cannot fragment a heap it never touches. An
+ * element needing scratch memory takes it from the application at init, the
+ * way pools and stacks are taken. Negotiation runs on the thread that changes
+ * state, which needs a stack sized for it.
  *
  * @section mpipe_null Pointer parameters
  *
@@ -59,7 +56,7 @@
  * NULL anywhere else is a programming error, not a runtime condition: the
  * caller is handing over an object it owns, so there is nothing to recover
  * from and nothing useful to report. Those are trapped by an assertion, which
- * costs nothing once CONFIG_ASSERT is off.
+ * costs nothing once @kconfig{CONFIG_ASSERT} is off.
  *
  * Values are different. Where an argument carries data rather than an object -
  * a capability that may be empty, a property whose value the application
@@ -72,12 +69,10 @@
  * @ingroup mpipe
  * @brief The concrete elements, grouped by the domain they serve.
  *
- * Plugins are where the framework meets real hardware and real formats. They
- * are decentralized from the core: a plugin adds its own directory, its own
- * Kconfig and its own headers, and the build picks it up without an edit to
- * anything the core owns. A vendor or a middleware provider can therefore ship
- * elements without altering the framework, and an application pays only for the
- * domains it enables.
+ * Plugins are where the framework meets real hardware and real formats. A
+ * plugin adds its own directory, Kconfig and headers without altering the
+ * framework, so a vendor or a middleware provider can ship elements of its own,
+ * and an application pays only for the domains it enables.
  */
 
 #include <zephyr/mpipe/mpipe_bin.h>

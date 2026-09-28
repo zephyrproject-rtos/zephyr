@@ -9,14 +9,9 @@
  * @brief Shared P4WQ pool for element-level work parallelism.
  * @ingroup mpipe_workqueue
  *
- * Provides a shared P4WQ (Pooled Parallel Preemptible Priority-based Work Queue)
- * pool that elements can use to offload and parallelize work items
- * (e.g., tile-based AI inference, DCT transforms, etc.).
- *
- * Elements use the native Zephyr P4WQ API directly (k_p4wq_submit, k_p4wq_wait)
- * with the shared @ref mpipe_p4wq instance, without wrapping the API.
- *
- * Example usage in an element with parallel tile processing:
+ * Elements use the Zephyr P4WQ API directly, k_p4wq_submit() and k_p4wq_wait(),
+ * on the shared @ref mpipe_p4wq instance. An element processing tiles in
+ * parallel:
  *
  * @code
  * #include <zephyr/mpipe/mpipe_workqueue.h>
@@ -63,7 +58,7 @@
  *
  * The pool is a Zephyr P4WQ, so a work item carries its own priority and
  * deadline rather than inheriting a fixed queue priority. It exists only when
- * @c CONFIG_MPIPE_WORKQUEUE is enabled.
+ * @kconfig{CONFIG_MPIPE_WORKQUEUE} is enabled.
  *
  * @{
  */

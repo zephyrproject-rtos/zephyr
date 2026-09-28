@@ -35,12 +35,9 @@
  * nothing reaches simply stands alone in the layout, so a broken graph shows
  * itself without a separate report.
  *
- * What is rendered is the graph as it is *now*, which is not always the graph
- * the application built: an element may legitimately take itself out once it
- * has nothing left to do, and a caps filter element does exactly that,
- * relinking its neighbors to each other after negotiation and re-inserting
- * itself on PAUSED to READY. A caps filter therefore shows up linked before a
- * run and detached during one, and both readings are correct.
+ * The graph is rendered as it is now: an element that removed itself once
+ * negotiated, as a caps filter does, appears detached during a run and linked
+ * again after it.
  *
  * Nothing here allocates, and the walk holds no lock: a dump taken while the
  * pipeline is changing state is a snapshot that may catch a pad mid-update.
@@ -97,6 +94,7 @@ int mpipe_dump_caps(const struct mpipe_structure *caps, mpipe_dump_print_t print
  * @brief Name an element state.
  *
  * @param state State to name, see @ref mpipe_state.
+ *
  * @return A short human-readable name, never NULL.
  */
 const char *mpipe_dump_state_str(enum mpipe_state state);
